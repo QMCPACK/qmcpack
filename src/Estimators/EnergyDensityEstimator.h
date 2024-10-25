@@ -108,7 +108,7 @@ public:
 
   void registerOperatorEstimator(hdf_archive& file) override;
 
-  void write(hdf_archive& file);
+  void write(hdf_archive& file) override;
 
   RefVector<NESpaceGrid<Real>> getSpaceGrids();
 
