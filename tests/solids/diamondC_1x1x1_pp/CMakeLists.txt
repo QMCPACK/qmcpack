@@ -753,7 +753,7 @@ if(add_estimator_tests)
     -s
     0
     -q
-    'energydensity,EDcell'
+    'energydensity,EDcellBatched'
     -e
     20
     -c
