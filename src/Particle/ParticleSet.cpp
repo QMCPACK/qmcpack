@@ -394,25 +394,42 @@ void ParticleSet::makeMoveWithSpin(Index_t iat, const SingleParticlePos& displ, 
 }
 
 template<CoordsType CT>
-void ParticleSet::mw_makeMove(const RefVectorWithLeader<ParticleSet>& p_list, Index_t iat, const MCCoords<CT>& displs)
+void ParticleSet::mw_makeMove(const RefVectorWithLeader<ParticleSet>& p_list,
+                              Index_t iat,
+                              const MCCoords<CT>& displs,
+                              OptionalRef<std::vector<bool>> are_valid)
 {
-  mw_makeMove(p_list, iat, displs.positions);
+  mw_makeMove(p_list, iat, displs.positions, are_valid);
   if constexpr (CT == CoordsType::POS_SPIN)
     mw_makeSpinMove(p_list, iat, displs.spins);
 }
 
 void ParticleSet::mw_makeMove(const RefVectorWithLeader<ParticleSet>& p_list,
                               Index_t iat,
-                              const std::vector<SingleParticlePos>& displs)
+                              const std::vector<SingleParticlePos>& displs,
+                              OptionalRef<std::vector<bool>> are_valid)
 {
-  std::vector<SingleParticlePos> new_positions;
-  new_positions.reserve(displs.size());
+  const size_t nw = p_list.size();
+  assert(nw == displs.size());
+  const auto& lattice = p_list.getLeader().simulation_cell_.getLattice();
+  std::vector<SingleParticlePos> new_positions(nw);
 
   for (int iw = 0; iw < p_list.size(); iw++)
   {
-    p_list[iw].active_ptcl_ = iat;
-    p_list[iw].active_pos_  = p_list[iw].R[iat] + displs[iw];
-    new_positions.push_back(p_list[iw].active_pos_);
+    auto& p           = p_list[iw];
+    p.active_ptcl_    = iat;
+    new_positions[iw] = p.active_pos_ = p.R[iat] + displs[iw];
+  }
+
+  if (are_valid)
+  {
+    std::vector<bool>& valid(are_valid.value());
+    assert(nw == valid.size());
+    for (int iw = 0; iw < nw; iw++)
+      if (lattice.explicitly_defined)
+        valid[iw] = lattice.isValid(lattice.toUnit(new_positions[iw]));
+      else
+        valid[iw] = true;
   }
 
   mw_computeNewPosDistTables(p_list, iat, new_positions);
@@ -1003,10 +1020,12 @@ RefVectorWithLeader<StructFact> ParticleSet::extractSKRefList(const RefVectorWit
 //explicit instantiations
 template void ParticleSet::mw_makeMove<CoordsType::POS>(const RefVectorWithLeader<ParticleSet>& p_list,
                                                         Index_t iat,
-                                                        const MCCoords<CoordsType::POS>& displs);
+                                                        const MCCoords<CoordsType::POS>& displs,
+                                                        OptionalRef<std::vector<bool>> are_valid);
 template void ParticleSet::mw_makeMove<CoordsType::POS_SPIN>(const RefVectorWithLeader<ParticleSet>& p_list,
                                                              Index_t iat,
-                                                             const MCCoords<CoordsType::POS_SPIN>& displs);
+                                                             const MCCoords<CoordsType::POS_SPIN>& displs,
+                                                             OptionalRef<std::vector<bool>> are_valid);
 template void ParticleSet::mw_accept_rejectMove<CoordsType::POS>(const RefVectorWithLeader<ParticleSet>& p_list,
                                                                  Index_t iat,
                                                                  const std::vector<bool>& isAccepted,
