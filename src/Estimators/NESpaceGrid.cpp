@@ -588,16 +588,31 @@ void NESpaceGrid<REAL>::accumulate(const ParticlePos& R,
       {
         particles_outside[p] = false;
         Point u              = dot(axinv_, (R[p] - origin_));
+	// numerical accuracy of the dot is not good enough for this to be not produce out of bounds indexes
+	// with REAL = float, u 10^-8 outside of umin_ to  umax_ is not uncommon i.e  p > (1 in 32000)
+	// for the coordinate ranges typical of our simulations. I guess the branch predictor will mostly
+	// mitigate this.
+	auto gmapIndex = [this](int d, const auto& u) { int raw_index = floor((u[d] - this->umin_[d]) * this->odu_[d]);
+	  if ( raw_index == gmap_[d].size() )
+	    return raw_index - 1;
+	  else if ( raw_index == -1 )
+	    return 0;
+	  else
+	    return raw_index;
+	};
         try
         {
           for (int d = 0; d < OHMMS_DIM; ++d)
-            iu[d] = gmap_[d].at(floor((u[d] - umin_[d]) * odu_[d]));
+            iu[d] = gmap_[d].at(gmapIndex(d,u));
         }
         catch (const std::exception& exc)
         {
           std::ostringstream error;
-          error << "NESpaceGrid: particle: " << p << " position: " << R[p]
-                << " falls outside of the cell, for a period system all particle positions must be in the cell!\n";
+          error << "NESpaceGrid: particle: " << p << " position: " << R[p] << " u: " << u + origin_ << "   u-org: " << u << '\n'
+                << "which maps to ";
+	  for (int d = 0; d < OHMMS_DIM; ++d)
+	    error << gmapIndex(d, u) << ",  umin: " << umin_[d] << "  umax: " << umax_[d] << "  odu: " << odu_[d] << '\n';
+	  error << "which falls outside of the cell, for a period system all particle positions must be in the cell!\n";
           std::throw_with_nested(std::runtime_error(error.str()));
         }
         buf_index = buffer_offset_;
