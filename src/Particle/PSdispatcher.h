@@ -38,7 +38,10 @@ public:
   void flex_update(const RefVectorWithLeader<ParticleSet>& p_list, bool skipSK = false) const;
 
   template<CoordsType CT>
-  void flex_makeMove(const RefVectorWithLeader<ParticleSet>& p_list, int iat, const MCCoords<CT>& displs) const;
+  void flex_makeMove(const RefVectorWithLeader<ParticleSet>& p_list,
+                     int iat,
+                     const MCCoords<CT>& displs,
+                     std::vector<bool>& are_valid) const;
 
   template<CoordsType CT>
   void flex_accept_rejectMove(const RefVectorWithLeader<ParticleSet>& p_list,
