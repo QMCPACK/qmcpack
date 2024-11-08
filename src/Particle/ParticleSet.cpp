@@ -39,9 +39,7 @@ enum PSetTimers
   PS_donePbyP,
   PS_accept,
   PS_loadWalker,
-  PS_update,
-  PS_dt_move,
-  PS_mw_copy
+  PS_update
 };
 
 static const TimerNameList_t<PSetTimers> generatePSetTimerNames(std::string& obj_name)
@@ -50,9 +48,7 @@ static const TimerNameList_t<PSetTimers> generatePSetTimerNames(std::string& obj
           {PS_donePbyP, "ParticleSet:" + obj_name + "::donePbyP"},
           {PS_accept, "ParticleSet:" + obj_name + "::acceptMove"},
           {PS_loadWalker, "ParticleSet:" + obj_name + "::loadWalker"},
-          {PS_update, "ParticleSet:" + obj_name + "::update"},
-          {PS_dt_move, "ParticleSet:" + obj_name + "::dt_move"},
-          {PS_mw_copy, "ParticleSet:" + obj_name + "::mw_copy"}};
+          {PS_update, "ParticleSet:" + obj_name + "::update"}};
 }
 
 ParticleSet::ParticleSet(const SimulationCell& simulation_cell, const DynamicCoordinateKind kind)
@@ -488,14 +484,9 @@ void ParticleSet::mw_computeNewPosDistTables(const RefVectorWithLeader<ParticleS
   ParticleSet& p_leader = p_list.getLeader();
   ScopedTimer compute_newpos_scope(p_leader.myTimers[PS_newpos]);
 
-  {
-    ScopedTimer copy_scope(p_leader.myTimers[PS_mw_copy]);
-    const auto coords_list(extractCoordsRefList(p_list));
-    p_leader.coordinates_->mw_copyActivePos(coords_list, iat, new_positions);
-  }
+  p_leader.coordinates_->mw_copyActivePos(extractCoordsRefList(p_list), iat, new_positions);
 
   {
-    ScopedTimer dt_scope(p_leader.myTimers[PS_dt_move]);
     const int dist_tables_size = p_leader.DistTables.size();
     for (int i = 0; i < dist_tables_size; ++i)
     {
