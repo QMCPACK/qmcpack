@@ -393,10 +393,17 @@ TEST_CASE("SpaceGrid::BadPeriodic", "[estimators]")
   sge.pset_elec_.update();
   sge.pset_ions_.update();
 
+  std::vector<bool> p_outside(8, false);
+  // set a position a small amount outside relative to the grid density.
+  // because numerical inaccuracy in the dot product to go from cartesian to lattice coordinates we need to check that
+  // particles that end up within on index of the of the grid bounds aren't an issue.
+  // the accumulate in the periodic case has a strong assumption that minimum image has been applied to the incoming coords.
+
+  sge.pset_elec_.R[2] = {2.585144997, 1.862680197, 2.9};
+    space_grid.accumulate(sge.pset_elec_.R, values, p_outside, sge.pset_elec_.getDistTableAB(ei_tid));
+
   // set a position outside of the cell
   sge.pset_elec_.R[2] = {1.451870349, 4.381521229, 1.165202269};
-
-  std::vector<bool> p_outside(8, false);
 
   CHECK_THROWS_AS(space_grid.accumulate(sge.pset_elec_.R, values, p_outside, sge.pset_elec_.getDistTableAB(ei_tid)),
                   std::runtime_error);
