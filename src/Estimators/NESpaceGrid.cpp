@@ -613,6 +613,7 @@ void NESpaceGrid<REAL>::accumulate(const ParticlePos& R,
 	  for (int d = 0; d < OHMMS_DIM; ++d)
 	    error << gmapIndex(d, u) << ",  umin: " << umin_[d] << "  umax: " << umax_[d] << "  odu: " << odu_[d] << '\n';
 	  error << "which falls outside of the cell, for a period system all particle positions must be in the cell!\n";
+	  error << "It is very likely you have not set up your space grid correctly.\n";
           std::throw_with_nested(std::runtime_error(error.str()));
         }
         buf_index = buffer_offset_;
@@ -624,6 +625,8 @@ void NESpaceGrid<REAL>::accumulate(const ParticlePos& R,
     }
     else
     {
+      // This branch is in fact impossible to reach here or in legacy, how the logic should work for non period
+      // cartesian coordinates is TBD...
       for (p = 0; p < nparticles; p++)
       {
         Point u = dot(axinv_, (R[p] - origin_));
