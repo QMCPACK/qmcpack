@@ -403,11 +403,43 @@ TEST_CASE("SpaceGrid::BadPeriodic", "[estimators]")
   sge.pset_elec_.R[2] = {2.585144997, 1.862680197, 2.9};
   space_grid.accumulate(sge.pset_elec_.R, values, p_outside, sge.pset_elec_.getDistTableAB(ei_tid));
 
-  // set a position outside of the cell
-  sge.pset_elec_.R[2] = {1.451870349, 4.381521229, 1.165202269};
+  // set a position outside of the cell more than numerical error could ever get
+  // u = {-0.256273, 1.11711, 0.94714}
+  sge.pset_elec_.R[2] = {1.451870349, 3.481521229, 1.165202269};
 
   CHECK_THROWS_AS(space_grid.accumulate(sge.pset_elec_.R, values, p_outside, sge.pset_elec_.getDistTableAB(ei_tid)),
                   std::runtime_error);
+
+  try
+  {
+    space_grid.accumulate(sge.pset_elec_.R, values, p_outside, sge.pset_elec_.getDistTableAB(ei_tid));
+  }
+  catch (const std::exception& exc)
+  {
+    std::cout << exc.what() << '\n';
+  }
+
+
+  // This is just barely out of the unit cell in a negative direction.
+  // u = {-1.01, 0.5, 0.5}
+  sge.pset_elec_.R[2] = {-0.860156, 1.68658, -0.860156};
+  // So it should not throw
+  space_grid.accumulate(sge.pset_elec_.R, values, p_outside, sge.pset_elec_.getDistTableAB(ei_tid));
+  // But it does set a value
+  auto tensorAccessor = [](const auto& grid_data, int i, int j, int k, int iv) {
+    return grid_data[1200 * i + 60 * j + 3 * k + iv];
+  };
+  const auto& grid_data = NES::getData(space_grid);
+  CHECK(tensorAccessor(grid_data, 14, 14, 0 ,1) == Approx(2.1));
+
+    // This is just barely out of the unit cell in a negative direction.
+  // u = {1.01, 0.5, 0.5}
+  sge.pset_elec_.R[2] = {2.54674, 1.68658, 2.54674};
+  // So it should not throw
+  space_grid.accumulate(sge.pset_elec_.R, values, p_outside, sge.pset_elec_.getDistTableAB(ei_tid));
+  // But it does set a value
+  CHECK(tensorAccessor(grid_data, 14, 14, 19 ,1) == Approx(2.1));
+
 }
 
 // This should preserve some of the rather strange (to me) behavior of cartesian grids.
@@ -439,6 +471,7 @@ TEST_CASE("SpaceGrid::WeirdCartesian", "[estimators]")
 
   CHECK(space_grid.getDataVector().size() == 6000);
 
+  
   Matrix<Real> values;
   values.resize(sge.pset_elec_.getTotalNum(), num_values);
 
