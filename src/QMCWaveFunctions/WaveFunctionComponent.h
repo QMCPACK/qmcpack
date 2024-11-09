@@ -486,19 +486,6 @@ public:
   */
   virtual void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& optvars, Vector<ValueType>& dlogpsi);
 
-
-  /** Calculates the derivatives of \f$ \nabla \textnormal{log} \psi_f \f$ with respect to
-      the optimizable parameters, and the dot product of this is then
-      performed with the passed-in G_in gradient vector. This object is then
-      returned as dgradlogpsi.
-   */
-
-  virtual void evaluateGradDerivatives(const ParticleSet::ParticleGradient& G_in, std::vector<ValueType>& dgradlogpsi)
-  {
-    APP_ABORT("Need specialization of WaveFunctionComponent::evaluateGradDerivatives in " + getClassName() +
-              " class.\n");
-  }
-
   virtual void finalizeOptimization() {}
 
   /** evaluate the ratios of one virtual move with respect to all the particles
