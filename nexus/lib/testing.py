@@ -23,10 +23,10 @@ def value_diff(v1,v2,atol=def_atol,rtol=def_rtol,int_as_float=False):
     v2_bool  = isinstance(v2,(bool,np.bool_))
     v1_int   = isinstance(v1,(int,np.int_)) and not v1_bool
     v2_int   = isinstance(v2,(int,np.int_)) and not v2_bool
-    v1_float = isinstance(v1,(float,np.float_))
-    v2_float = isinstance(v2,(float,np.float_))
-    v1_str   = isinstance(v1,(str,np.string_))
-    v2_str   = isinstance(v2,(str,np.string_))
+    v1_float = isinstance(v1,(float,np.float64))
+    v2_float = isinstance(v2,(float,np.float64))
+    v1_str   = isinstance(v1,(str,np.bytes_))
+    v2_str   = isinstance(v2,(str,np.bytes_))
     if id(v1)==id(v2):
         None
     elif int_as_float and (v1_int or v1_float) and (v2_int or v2_float):

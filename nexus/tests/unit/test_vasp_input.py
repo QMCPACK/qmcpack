@@ -31,7 +31,7 @@ def format_value(v):
             s = s[:-2]
         #end if
         s += '])'
-    elif isinstance(v,(str,np.string_)):
+    elif isinstance(v,(str,np.bytes_)):
         s = "'"+v+"'"
     else:
         s = str(v)
