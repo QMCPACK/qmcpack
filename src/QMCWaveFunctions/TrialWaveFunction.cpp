@@ -501,8 +501,12 @@ void TrialWaveFunction::mw_calcRatio(const RefVectorWithLeader<TrialWaveFunction
 
 void TrialWaveFunction::prepareGroup(ParticleSet& P, int ig)
 {
+  ScopedTimer local_timer(TWF_timers_[PREPAREGROUP_TIMER]);
   for (int i = 0; i < Z.size(); ++i)
+  {
+    ScopedTimer z_timer(WFC_timers_[PREPAREGROUP_TIMER + TIMER_SKIP * i]);
     Z[i]->prepareGroup(P, ig);
+  }
 }
 
 void TrialWaveFunction::mw_prepareGroup(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
@@ -1143,7 +1147,7 @@ void TrialWaveFunction::evaluateDerivRatios(const VirtualParticleSet& VP,
 }
 
 void TrialWaveFunction::evaluateSpinorDerivRatios(const VirtualParticleSet& VP,
-                                                  const std::pair<ValueVector, ValueVector>& spinor_multiplier, 
+                                                  const std::pair<ValueVector, ValueVector>& spinor_multiplier,
                                                   const opt_variables_type& optvars,
                                                   std::vector<ValueType>& ratios,
                                                   Matrix<ValueType>& dratio)
@@ -1158,7 +1162,6 @@ void TrialWaveFunction::evaluateSpinorDerivRatios(const VirtualParticleSet& VP,
     for (int j = 0; j < ratios.size(); ++j)
       ratios[j] *= t[j];
   }
-
 }
 
 bool TrialWaveFunction::put(xmlNodePtr cur) { return true; }
@@ -1236,13 +1239,6 @@ void TrialWaveFunction::mw_evaluateParameterDerivativesWF(const RefVectorWithLea
     Vector<ValueType> dlogpsi_record_view(dlogpsi[iw], nparam);
     wf_list[iw].evaluateDerivativesWF(p_list[iw], optvars, dlogpsi_record_view);
   }
-}
-
-void TrialWaveFunction::evaluateGradDerivatives(const ParticleSet::ParticleGradient& G_in,
-                                                std::vector<ValueType>& dgradlogpsi)
-{
-  for (int i = 0; i < Z.size(); i++)
-    Z[i]->evaluateGradDerivatives(G_in, dgradlogpsi);
 }
 
 TrialWaveFunction::RealType TrialWaveFunction::KECorrection() const

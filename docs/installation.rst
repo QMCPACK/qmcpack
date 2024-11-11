@@ -18,7 +18,7 @@ To install QMCPACK, follow the steps below. Full details of each step
 are given in the referenced sections.
 
 #. Download the source code from :ref:`obrelease`
-   or :ref:`obdevelopment`.
+   or :ref:`obdevelopment`.
 
 #. Verify that you have the required compilers, libraries, and tools
    installed (:ref:`prerequisites`).
@@ -28,7 +28,7 @@ are given in the referenced sections.
    (:ref:`buildqe`).
 
 #. Run the cmake configure step and build with make
-   (:ref:`cmake` and :ref:`cmakequick`). Examples for common systems are given in :ref:`installexamples`. To activate workflow
+   (:ref:`cmake` and :ref:`cmakequick`). Examples for common systems are given in :ref:`installexamples`. To activate workflow
    tests for Quantum ESPRESSO, RMG, or PYSCF, be sure to specify QE_BIN, RMG_BIN, or ensure that the python modules are
    available when cmake is run.
 
@@ -761,7 +761,7 @@ Installing on Mac OS X using Macports
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 These instructions assume a fresh installation of macports
-and use the gcc 10.2 compiler. 
+and use the gcc 13.3 compiler. 
 
 Follow the Macports install instructions at https://www.macports.org/.
 
@@ -784,44 +784,55 @@ dependencies. Some of the tests will be skipped if not all are available.
 
 ::
 
-  sudo port install gcc11
-  sudo port select gcc mp-gcc11
-  sudo port install openmpi-gcc11
-  sudo port select --set mpi openmpi-gcc11-fortran
-  
-  sudo port install fftw-3 +gcc11
+  sudo port install gcc13
+  sudo port select gcc mp-gcc13
+  sudo port install openmpi-gcc13
+  sudo port select --set mpi openmpi-gcc13-fortran  
+
+  sudo port install fftw-3
   sudo port install libxml2
   sudo port install cmake
-  sudo port install boost +gcc11
-  sudo port install hdf5 +gcc11
-  
-  sudo port install python310
-  sudo port select --set python python310
-  sudo port select --set python3 python310
-  sudo port install py310-numpy +gcc11
-  sudo port select --set cython cython310
-  sudo port install py310-scipy +gcc11
-  sudo port install py310-h5py +gcc11
-  sudo port install py310-pandas
-  sudo port install py310-lxml
-  sudo port install py310-matplotlib  #For graphical plots with qmca
+  sudo port install boost
+  sudo port install hdf5  
+
+  # Choose python versions here and below consistent
+  # with any python brought in by e.g. boost, above.  
+
+  sudo port install python312 
+  sudo port select --set python python312
+  sudo port select --set python3 python312
+  sudo port install py312-numpy +gcc13
+  sudo port select --set cython cython313
+  sudo port install py312-scipy +gcc13
+  sudo port install py312-h5py +gcc13
+  sudo port install py312-pandas
+  sudo port install py312-lxml
+  sudo port install py312-matplotlib  #For graphical plots with qmca
 
 QMCPACK build:
 
 ::
 
   cd build
-  cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpiCXX ..
-  make -j 4 # Adjust for available core count
+  cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpiCXX \
+        -DPython3_EXECUTABLE=/opt/local/bin/python ..
+  make -j 8 # Adjust for available core count
   ls -l bin/qmcpack
+
+Specifying the python executable ensures that the python from macports is used along with
+its installed modules. Remove or modify if using a different python from the macports one.
+
+If cmake gives an error in CMake/GNUCompilers.cmake during configuration, this may be due to a known 
+issue between gcc and CMake ( https://gitlab.kitware.com/cmake/cmake/-/issues/26314 ).
+If this happens add the workaround '-DCMAKE_OSX_SYSROOT=/Library/Developer/CommandLineTools/SDKs/MacOSX14.5.sdk'.
 
 Run the deterministic tests:
 
 ::
 
-  ctest -R deterministic
+  ctest -j 8 -R deterministic
 
-This recipe was verified on February 28, 2022, on a Mac running OS X 11.6.4 "Big Sur".
+This recipe was verified on November 9, 2024 on a Mac running OS X 14.7.1 "Sonoma".
 
 Installing on Mac OS X using Homebrew (brew)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
