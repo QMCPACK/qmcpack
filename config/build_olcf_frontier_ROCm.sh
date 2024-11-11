@@ -2,7 +2,7 @@
 
 # Build script for Frontier
 # It builds all the varaints of QMCPACK in the current directory
-# last revision: Aug 19th 2024
+# last revision: Nov 11th 2024
 
 echo "Loading QMCPACK dependency modules for frontier"
 for module_name in PrgEnv-gnu PrgEnv-cray PrgEnv-amd PrgEnv-gnu-amd PrgEnv-cray-amd \
