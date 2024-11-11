@@ -197,19 +197,12 @@ cd $HOME/apps/spack
 
 # For reproducibility, use a specific version of Spack
 # Prefer to use tagged releases https://github.com/spack/spack/releases
-git checkout 0191e15a6a0c86520152694d2a75c3e595763d0a
-#commit 0191e15a6a0c86520152694d2a75c3e595763d0a (HEAD -> develop, origin/develop, origin/HEAD)
-#Author: Cameron Smith <cwsmith@users.noreply.github.com>
-#Date:   Thu Sep 26 13:07:40 2024 -0400
+git checkout eb9ff5d7a7d47f112ece5a4c70ef603a047a2fbc
+#commit eb9ff5d7a7d47f112ece5a4c70ef603a047a2fbc (HEAD -> develop, origin/develop, origin/HEAD)
+#Author: Harmen Stoppels <me@harmenstoppels.nl>
+#Date:   Tue Nov 5 13:25:19 2024 +0100
 #
-#    omega-h: add version scorec.10.8.5 and test support (#45990)
-
-#git checkout e5f53a62509452227bc84cdd2b96bb8d89d684b2
-#commit e5f53a62509452227bc84cdd2b96bb8d89d684b2 (HEAD -> develop, origin/develop, origin/HEAD)
-#Author: Paul R. C. Kent <kentpr@ornl.gov>
-#Date:   Fri Aug 16 12:04:29 2024 -0400
-#
-#    py-lxml: add v5.2.2 (#45785)
+#    paraview: add forward compat bound with cuda (#47430)
 
 echo --- Git version and last log entry
 git log -1
@@ -233,8 +226,6 @@ export PATH=$SPACK_ROOT/bin:$PATH
 echo --- Bootstrap
 spack bootstrap now
 
-##echo --- Changing RMGDFT boost dependency
-#sed -i 's/^ .* depends.*boost@1.61.*//g' $HOME/apps/spack/var/spack/repos/builtin/packages/rmgdft/package.py
 echo --- Spack list
 spack find
 echo --- Spack compilers
