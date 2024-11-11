@@ -554,9 +554,9 @@ class StatFile(QDBase):
         self.density_data = obj()
         for name in h5.keys():
             lname = name.lower()
-            if 'spin' in lname and 'density' in lname:
+            if lname == 'spindensity':
                 self.spin_density_data[name] = h5[name]
-            elif 'density' in lname:
+            elif lname == 'density':
                 self.density_data[name] = h5[name]
             #end if
         #end for
