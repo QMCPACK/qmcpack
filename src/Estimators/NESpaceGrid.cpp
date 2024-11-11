@@ -623,26 +623,29 @@ void NESpaceGrid<REAL>::accumulate(const ParticlePos& R,
           data_[buf_index] += values(p, v);
       }
     }
-    else
-    {
-      // This branch is in fact impossible to reach here or in legacy, how the logic should work for non period
-      // cartesian coordinates is TBD...
-      for (p = 0; p < nparticles; p++)
-      {
-        Point u = dot(axinv_, (R[p] - origin_));
-        if (u[0] > umin_[0] && u[0] < umax_[0] && u[1] > umin_[1] && u[1] < umax_[1] && u[2] > umin_[2] &&
-            u[2] < umax_[2])
-        {
-          particles_outside[p] = false;
-          iu[0]                = gmap_[0][floor((u[0] - umin_[0]) * odu_[0])];
-          iu[1]                = gmap_[1][floor((u[1] - umin_[1]) * odu_[1])];
-          iu[2]                = gmap_[2][floor((u[2] - umin_[2]) * odu_[2])];
-          buf_index            = buffer_offset_ + nvalues * (dm_[0] * iu[0] + dm_[1] * iu[1] + dm_[2] * iu[2]);
-          for (v = 0; v < nvalues; v++, buf_index++)
-            data_[buf_index] += values(p, v);
-        }
-      }
-    }
+    // This branch is in fact impossible to reach here or in legacy,
+    // And for purposes of coverage testing I've commented it.
+    // \todo  support cartesian grids in nonperiod cases.
+    //
+    // else
+    // {
+    //   // cartesian coordinates is TBD...
+    //   for (p = 0; p < nparticles; p++)
+    //   {
+    //     Point u = dot(axinv_, (R[p] - origin_));
+    //     if (u[0] > umin_[0] && u[0] < umax_[0] && u[1] > umin_[1] && u[1] < umax_[1] && u[2] > umin_[2] &&
+    //         u[2] < umax_[2])
+    //     {
+    //       particles_outside[p] = false;
+    //       iu[0]                = gmap_[0][floor((u[0] - umin_[0]) * odu_[0])];
+    //       iu[1]                = gmap_[1][floor((u[1] - umin_[1]) * odu_[1])];
+    //       iu[2]                = gmap_[2][floor((u[2] - umin_[2]) * odu_[2])];
+    //       buf_index            = buffer_offset_ + nvalues * (dm_[0] * iu[0] + dm_[1] * iu[1] + dm_[2] * iu[2]);
+    //       for (v = 0; v < nvalues; v++, buf_index++)
+    //         data_[buf_index] += values(p, v);
+    //     }
+    //   }
+    // }
     break;
   case CoordForm::CYLINDRICAL:
     for (p = 0; p < nparticles; p++)
