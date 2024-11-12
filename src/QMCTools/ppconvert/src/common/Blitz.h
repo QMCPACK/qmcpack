@@ -76,7 +76,7 @@ struct Array : base_type
   Array(int rs, int cs) : base_type({rs, cs}) {}
   std::ptrdiff_t extent(int d) const
   {
-    using std::get  // prevents the need for C++20 extensions in C++17
+    using std::get;  // prevents the need for C++20 extensions in C++17
     switch (d)
     {
     case 0:
