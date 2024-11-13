@@ -6,19 +6,25 @@
 #define BOOST_MULTI_ADAPTORS_BLAS_NUMERIC_HPP
 #pragma once
 
-#include "../../adaptors/complex.hpp"
+// #include <boost/multi/adaptors/complex.hpp>
 
 #include <boost/multi/array_ref.hpp>
 
 #include <boost/multi/adaptors/complex/adl.hpp>
 
-#include "../blas/complex_traits.hpp"
+#include <boost/multi/adaptors/blas/complex_traits.hpp>
 
-#include "../../detail/pointer_traits.hpp"
+// #include <boost/multi/detail/pointer_traits.hpp>
 
-#include "numeric/is_complex.hpp"
+#include <boost/multi/adaptors/blas/numeric/is_complex.hpp>
 
-#include <boost/multi/adaptors/complex.hpp>
+// #include <boost/multi/adaptors/complex.hpp>
+
+#include <functional>                                        // for negate
+#include <iterator>                                          // for iterator...
+#include <memory>                                            // for pointer_...
+#include <type_traits>                                       // for decay_t
+#include <utility>                                           // for declval
 
 #if defined(__NVCC__)
 #define BOOST_MULTI_HD __host__ __device__
@@ -36,7 +42,7 @@ template<class T> struct complex_dummy {
 
 template<
 	class A, typename Complex = typename std::decay_t<A>::element, typename T = typename multi::blas::complex_traits<Complex>::real_type,
-	class = std::enable_if_t<blas::numeric::is_complex_of<Complex, T>::value>>
+	class = std::enable_if_t<blas::numeric::is_complex_of<Complex, T>::value>>  // NOLINT(modernize-use-constraints) TODO(correaa) for C++20
 auto real(A&& array)
 	-> decltype(std::forward<A>(array).template reinterpret_array_cast<complex_dummy<T>>().template member_cast<T>(&complex_dummy<T>::real)) {
 	return std::forward<A>(array).template reinterpret_array_cast<complex_dummy<T>>().template member_cast<T>(&complex_dummy<T>::real);
@@ -44,21 +50,21 @@ auto real(A&& array)
 
 template<
 	class A, class Complex = typename std::decay_t<A>::element_type, typename T = typename complex_traits<Complex>::real_type,
-	class = std::enable_if_t<blas::numeric::is_complex_of<Complex, T>::value>>
+	class = std::enable_if_t<blas::numeric::is_complex_of<Complex, T>::value>>  // NOLINT(modernize-use-constraints) TODO(correaa) for C++20
 auto imag(A&& array)
 	-> decltype(std::forward<A>(array).template reinterpret_array_cast<complex_dummy<T>>().template member_cast<T>(&complex_dummy<T>::imag)) {
 	return std::forward<A>(array).template reinterpret_array_cast<complex_dummy<T>>().template member_cast<T>(&complex_dummy<T>::imag);
 }
 
 template<class ComplexArr, class ComplexElem = typename std::decay_t<ComplexArr>::element, typename RealElem = typename ComplexElem::value_type,
-         class = std::enable_if_t<blas::numeric::is_complex_of<ComplexElem, RealElem>::value>>
+	class = std::enable_if_t<blas::numeric::is_complex_of<ComplexElem, RealElem>::value>>  // NOLINT(modernize-use-constraints) TODO(correaa) for C++20
 auto real_doubled(ComplexArr&& array) {  // produces a real view of complex array with the last dimension duplicated and with interleaved real imaginary parts
 	return std::forward<ComplexArr>(array).template reinterpret_array_cast<RealElem>(2).rotated().flatted().unrotated();
 }
 
 template<class Ref, class Involution> class involuted;
 
-template<class It, class F, class Reference = involuted<typename std::iterator_traits<It>::reference, F>> class involuter;
+template<class It, class F, class Reference = involuted<typename std::iterator_traits<It>::reference, F>> class involuter;  // IWYU pragma: keep  // bug in iwyu 0.22/18.1.8?
 
 template<class Ref, class Involution>
 class involuted {
@@ -85,7 +91,8 @@ class involuted {
 	constexpr explicit operator decay_type() const& { return f_(r_); }
 	constexpr /*plct*/ operator decay_type() && { return f_(r_); }  // NOLINT(google-explicit-constructor,hicpp-explicit-conversions) //NOSONAR to allow terse syntax
 
-	constexpr auto operator*(decay_type const& other) const { return f_(r_) * other; }
+	// constexpr auto operator*(decay_type const& other) const { return f_(r_) * other; }
+	constexpr friend auto operator*(involuted const& self, decay_type const& other) { return self.f_(self.r_) * other; }
 
 	template<class DecayType, class = decltype(std::declval<Ref&>() = (std::declval<Involution&>())(std::declval<DecayType&&>()))>
 	constexpr auto operator=(DecayType&& other) & -> involuted& {
@@ -118,11 +125,13 @@ class involuted {
 		return other != self.operator decay_type();
 	}
 
-	template<class DecayType, std::enable_if_t<!std::is_base_of<involuted, DecayType>{}, int> = 0>
+	template<class DecayType,
+		std::enable_if_t<!std::is_base_of_v<involuted, DecayType>, int> =0>  // NOLINT(modernize-use-constraints) TODO(correaa) for C++20
 	friend constexpr auto operator==(DecayType const& other, involuted const& self) {
 		return other == self.operator decay_type();
 	}
-	template<class DecayType, std::enable_if_t<!std::is_base_of<involuted, DecayType>{}, int> = 0>
+	template<class DecayType,
+		std::enable_if_t<!std::is_base_of_v<involuted, DecayType>, int> =0>  // NOLINT(modernize-use-constraints) TODO(correaa) for C++20
 	friend constexpr auto operator!=(DecayType const& other, involuted const& self) {
 		return other != self.operator decay_type();
 	}
@@ -178,8 +187,10 @@ class involuter {
 	constexpr auto operator*() const { return reference{*it_, f_}; }
 	constexpr auto operator[](difference_type n) const { return reference{*(it_ + n), f_}; }
 
-	auto operator==(involuter const& other) const -> bool { return it_ == other.it_; }
-	auto operator!=(involuter const& other) const -> bool { return it_ != other.it_; }
+	// auto operator==(involuter const& other) const -> bool { return it_ == other.it_; }
+	// auto operator!=(involuter const& other) const -> bool { return it_ != other.it_; }
+	friend auto operator==(involuter const& slf, involuter const& thr) { return slf.it_ == thr.it_; }
+	friend auto operator!=(involuter const& slf, involuter const& thr) { return slf.it_ != thr.it_; }
 
 	constexpr auto operator+=(difference_type n) -> involuter& {
 		it_ += n;
@@ -190,8 +201,10 @@ class involuter {
 		return *this;
 	}
 
-	constexpr auto operator+(difference_type n) const { return involuter{it_ + n, f_}; }
-	constexpr auto operator-(difference_type n) const { return involuter{it_ - n, f_}; }
+	template<class = void>  // workaround for nvcc
+	constexpr friend auto operator+(involuter lhs, difference_type n) { return lhs += n; }
+	template<class = void>  // workaround for nvcc
+	constexpr friend auto operator-(involuter lhs, difference_type n) { return lhs -= n; }
 
 	auto operator-(involuter const& other) const { return it_ - other.it_; }
 
@@ -271,20 +284,22 @@ template<class A = void> struct is_conjugated : decltype(is_conjugated_aux((std:
 };
 
 template<class A, class D = std::decay_t<A>, typename Elem = typename D::element_type, typename Ptr = typename D::element_ptr,
-         std::enable_if_t<!is_complex_array<A>{}, int> = 0>
+	std::enable_if_t<!is_complex_array<A>{}, int> =0>  // NOLINT(modernize-use-constraints) TODO(correaa) for C++20
 auto conj(A&& array) -> A&& {
 	return std::forward<A>(array);
 }
 
 template<
 	class A, class D = std::decay_t<A>, typename Elem = typename D::element_type,
-	typename Ptr = std::decay_t<decltype(std::declval<A&&>().base())>, std::enable_if_t<!is_conjugated<A>{} && is_complex_array<A>{}, int> = 0>
+	typename Ptr = std::decay_t<decltype(std::declval<A&&>().base())>,
+	std::enable_if_t<!is_conjugated<A>{} && is_complex_array<A>{}, int> =0>  // NOLINT(modernize-use-constraints) TODO(correaa) for C++20
 auto conj(A&& array) -> decltype(auto) {
 	return std::forward<A>(array).template static_array_cast<Elem, conjugater<Ptr>>();
 }
 
 template<class A, class D = std::decay_t<A>, typename Elem = typename D::element_type,
-         typename Ptr = typename decltype(std::declval<A&&>().base())::underlying_type, std::enable_if_t<is_conjugated<A>{}, int> = 0>
+         typename Ptr = typename decltype(std::declval<A&&>().base())::underlying_type,
+		 std::enable_if_t<is_conjugated<A>{}, int> =0>  // NOLINT(modernize-use-constraints) TODO(correaa) for C++20
 auto conj(A&& array)
 	-> decltype(std::forward<A>(array).template static_array_cast<Elem, Ptr>()) {
 	return std::forward<A>(array).template static_array_cast<Elem, Ptr>();

@@ -7,7 +7,6 @@
 
 #include<cstddef>      // for std::size_t
 #include<type_traits>  // for make_signed_t
-#include<utility>      // for forward
 
 namespace boost::multi {
 

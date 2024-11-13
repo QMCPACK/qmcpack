@@ -5,7 +5,7 @@ project(
 	LANGUAGES CXX
 )
 
-find_package(Boost REQUIRED COMPONENTS unit_test_framework)
+find_package(Boost REQUIRED)  # REQUIRED COMPONENTS unit_test_framework)
 
 if(ENABLE_CUDA OR DEFINED CXXCUDA)
 	enable_language(CUDA)

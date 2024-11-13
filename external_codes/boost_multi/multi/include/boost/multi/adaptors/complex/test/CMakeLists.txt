@@ -3,31 +3,6 @@ cmake_minimum_required(VERSION 3.16)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# if((NOT
-#   CMAKE_CXX_COMPILER_ID
-#   STREQUAL
-#   "PGI"
-#    )
-#    AND (NOT
-#       DART_COMPILER_NAME
-#       STREQUAL
-#       "nvcc"
-#      )
-#    AND (NOT
-#       DART_COMPILER_NAME
-#       STREQUAL
-#       "icpc"
-#      )
-# )
-#   find_package(Boost REQUIRED COMPONENTS unit_test_framework)
-#   link_libraries("-lboost_unit_test_framework")
-# else()
-#   find_package(Boost REQUIRED) # cmake cannot detect this component with pgi compiler
-#   link_libraries("-lboost_unit_test_framework")
-
-#   link_libraries("-lblas") # cmake cannot detect BLAS with pgi/nvc++ but it ships with its own version
-# endif()
-
 if(CMAKE_CXX_COMPILER_ID STREQUAL "PGI")
 	add_definitions(-DRETURN_BY_STACK)
 endif()

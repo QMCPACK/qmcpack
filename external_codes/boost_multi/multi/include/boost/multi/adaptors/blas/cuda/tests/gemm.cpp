@@ -1,20 +1,17 @@
-#ifdef COMPILATION_INSTRUCTIONS
-/usr/local/cuda-11.1/bin/nvcc -x cu -std=c++17  -use_fast_math -lpthread -D_REENTRANT -DBOOST_PP_VARIADICS  -Xcudafe "--diag_suppress=implicit_return_from_non_void_function" --extended-lambda --expt-relaxed-constexpr $0 -o $0x `pkg-config --cflags --libs cudart-11.0 cublas-11.0 blas` -lboost_unit_test_framework -DBOOST_LOG_DYN_LINK -lboost_log -lboost_thread -lboost_system -lboost_log_setup -lpthread -lboost_timer&&$0x&&rm $0x; exit
-#endif
-// © Alfredo A. Correa 2020-2024
+// Copyright 2020-2024 Alfredo A. Correa
+// Distributed under the Boost Software License, Version 1.0.
+// https://www.boost.org/LICENSE_1_0.txt
 
-#define BOOST_TEST_MODULE "C++ Unit Tests for Multi cuBLAS gemm"
-#define BOOST_TEST_DYN_LINK
-#include<boost/test/unit_test.hpp>
+#include <boost/test/unit_test.hpp>  // TODO(correaa) convert into lightweight test
 #include <boost/timer/timer.hpp>
 
-#include "../../../cuda/cublas.hpp"
-#include "../../../../array.hpp"
+#include <boost/multi/adaptors/cuda/cublas.hpp>
+#include <boost/multi/array.hpp>
 
-#include "../../../../adaptors/cuda.hpp"
-#include "../../../../adaptors/blas.hpp"
+#include <boost/multi/adaptors/cuda.hpp>
+#include <boost/multi/adaptors/blas.hpp>
 
-#include<random>
+#include <random>
 
 namespace multi = boost::multi;
 
@@ -67,54 +64,54 @@ BOOST_AUTO_TEST_CASE(const multi_adaptors_blas_cuda_gemm_complex_3x2_3x2){
 }
 
 //BOOST_AUTO_TEST_CASE(multi_adaptors_blas_cuda_gemm_complex_3x2_3x2_with_context){
-//	using complex = std::complex<double>; complex const I{0, 1};
-//	namespace blas = multi::blas;
-//	multi::array<complex, 2> const a = {
-//		{1. + 2.*I, 5. + 2.*I}, 
-//		{9. - 1.*I, 9. + 1.*I}, 
-//		{1. + 1.*I, 2. + 2.*I}
-//	};
-//	multi::array<complex, 2> const b = {
-//		{ 11. - 2.*I, 5. + 2.*I},
-//		{  7. - 3.*I, 2. + 1.*I},
-//		{  8. - 1.*I, 1. + 1.*I}
-//	};
-//	{
-//		{
-//			multi::blas::context ctx;
-//			multi::array<complex, 2> c({2, 2});
-//			blas::gemm(ctx, 1., blas::H(a), b, 0., c); // c=ab, c⸆=b⸆a⸆
-//			BOOST_REQUIRE( c[1][0] == 125.-84.*I );
-//		}
-//	}
-//	{
-//		multi::cublas::context ctx;
-//		multi::cuda::array<complex, 2> const a_gpu = a;
-//		multi::cuda::array<complex, 2> const b_gpu = b;
-//		{
-//			multi::cuda::array<complex, 2> c_gpu({2, 2});
-//			blas::gemm(ctx, 1., blas::H(a_gpu), b_gpu, 0., c_gpu); // c=ab, c⸆=b⸆a⸆
-//			BOOST_REQUIRE( c_gpu[1][0] == 125.-84.*I );
-//		}
-//		{
-//			auto c_gpu =+ blas::gemm(&ctx, blas::H(a_gpu), b_gpu);
-//			BOOST_REQUIRE( c_gpu[1][0] == 125.-84.*I );
-//		}
-//	}
-//	{
-//		multi::cublas::context ctx;
-//		multi::cuda::managed::array<complex, 2> const a_gpu = a;
-//		multi::cuda::managed::array<complex, 2> const b_gpu = b;
-//		{
-//			multi::cuda::managed::array<complex, 2> c_gpu({2, 2});
-//			blas::gemm(ctx, 1., blas::H(a_gpu), b_gpu, 0., c_gpu); // c=ab, c⸆=b⸆a⸆
-//			BOOST_REQUIRE( c_gpu[1][0] == 125.-84.*I );
-//		}
-//		{
-//			auto c_gpu =+ blas::gemm(&ctx, blas::H(a_gpu), b_gpu);
-//			BOOST_REQUIRE( c_gpu[1][0] == 125.-84.*I );
-//		}
-//	}
+//  using complex = std::complex<double>; complex const I{0, 1};
+//  namespace blas = multi::blas;
+//  multi::array<complex, 2> const a = {
+//      {1. + 2.*I, 5. + 2.*I}, 
+//      {9. - 1.*I, 9. + 1.*I}, 
+//      {1. + 1.*I, 2. + 2.*I}
+//  };
+//  multi::array<complex, 2> const b = {
+//      { 11. - 2.*I, 5. + 2.*I},
+//      {  7. - 3.*I, 2. + 1.*I},
+//      {  8. - 1.*I, 1. + 1.*I}
+//  };
+//  {
+//      {
+//          multi::blas::context ctx;
+//          multi::array<complex, 2> c({2, 2});
+//          blas::gemm(ctx, 1., blas::H(a), b, 0., c); // c=ab, c⸆=b⸆a⸆
+//          BOOST_REQUIRE( c[1][0] == 125.-84.*I );
+//      }
+//  }
+//  {
+//      multi::cublas::context ctx;
+//      multi::cuda::array<complex, 2> const a_gpu = a;
+//      multi::cuda::array<complex, 2> const b_gpu = b;
+//      {
+//          multi::cuda::array<complex, 2> c_gpu({2, 2});
+//          blas::gemm(ctx, 1., blas::H(a_gpu), b_gpu, 0., c_gpu); // c=ab, c⸆=b⸆a⸆
+//          BOOST_REQUIRE( c_gpu[1][0] == 125.-84.*I );
+//      }
+//      {
+//          auto c_gpu =+ blas::gemm(&ctx, blas::H(a_gpu), b_gpu);
+//          BOOST_REQUIRE( c_gpu[1][0] == 125.-84.*I );
+//      }
+//  }
+//  {
+//      multi::cublas::context ctx;
+//      multi::cuda::managed::array<complex, 2> const a_gpu = a;
+//      multi::cuda::managed::array<complex, 2> const b_gpu = b;
+//      {
+//          multi::cuda::managed::array<complex, 2> c_gpu({2, 2});
+//          blas::gemm(ctx, 1., blas::H(a_gpu), b_gpu, 0., c_gpu); // c=ab, c⸆=b⸆a⸆
+//          BOOST_REQUIRE( c_gpu[1][0] == 125.-84.*I );
+//      }
+//      {
+//          auto c_gpu =+ blas::gemm(&ctx, blas::H(a_gpu), b_gpu);
+//          BOOST_REQUIRE( c_gpu[1][0] == 125.-84.*I );
+//      }
+//  }
 //}
 
 #if 0

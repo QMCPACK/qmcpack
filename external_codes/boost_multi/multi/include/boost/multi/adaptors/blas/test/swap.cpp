@@ -1,5 +1,4 @@
-// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
-// Copyright 2019-2023 Alfredo A. Correa
+// Copyright 2019-2024 Alfredo A. Correa
 
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi BLAS swap"
 #include <boost/test/unit_test.hpp>
@@ -50,7 +49,7 @@ BOOST_AUTO_TEST_CASE(lapack_potrf, *boost::unit_test::tolerance(0.00001)) {
 	}
 	{
 		using complex = std::complex<double>;
-		complex const            I{0, 1};
+		complex const I{0, 1};
 		multi::array<complex, 2> A = {
 			{1.0 + 2. * I,  2.0,  3.0, 4.0 + 3.0 * I},
 			{         5.0,  6.0,  7.0,           8.0},
