@@ -6,10 +6,10 @@
 #define BOOST_MULTI_DETAIL_TUPLE_ZIP_HPP
 #pragma once
 
-#include <cassert>
-#include <utility>
-
-#include <tuple>  // for deprecated functions
+#include <cstddef>      // for size_t
+#include <tuple>        // for deprecated functions  // for make_index_sequence, index_sequence, tuple_element, tuple_size, apply, tuple
+#include <type_traits>  // for declval, decay_t, conditional_t, true_type
+#include <utility>      // for forward, move
 
 namespace boost::multi {  // NOLINT(modernize-concat-nested-namespaces) keep c++14 compat
 namespace detail {
@@ -37,7 +37,7 @@ template<class T0, class... Ts> class tuple<T0, Ts...> : tuple<Ts...> {  // NOLI
 
  public:
 	constexpr auto head() const& -> T0 const& { return head_; }
-	constexpr auto head() && -> decltype(auto) { return std::move(head_); }
+	constexpr auto head() && -> T0&& { return std::move(head_); }
 	constexpr auto head() & -> T0& { return head_; }
 
 	constexpr auto tail() const& -> tail_type const& { return static_cast<tail_type const&>(*this); }
@@ -85,6 +85,21 @@ template<class T0, class... Ts> class tuple<T0, Ts...> : tuple<Ts...> {  // NOLI
 		}
 		return tail() > other.tail();
 	}
+
+ private:
+
+	template<class F, std::size_t... I>
+	constexpr auto apply_impl_(F&& fn, std::index_sequence<I...> /*012*/) const -> decltype(auto) {  // NOLINT(cert-dcl58-cpp) normal idiom to defined tuple get
+		return std::forward<F>(fn)(this->get<I>()...);
+	}
+
+ public:
+	template<class F>
+	constexpr auto apply(F&& fn) const -> decltype(auto) {  // NOLINT(cert-dcl58-cpp) normal idiom to defined tuple get
+		return apply_impl_(std::forward<F>(fn), std::make_index_sequence<sizeof...(Ts) + 1>{});
+	}
+
+	// constexpr explicit operator std::tuple<T0, Ts...>() const {return this->apply([](auto const&... xs) {return std::tuple<T0, Ts...>(xs...);});}
 
  private:
 	template<std::size_t N> struct priority : std::conditional_t<N == 0, std::true_type, priority<N - 1>> {};
@@ -282,9 +297,9 @@ constexpr auto get(tuple<T0, Ts...>&& tup) -> auto&& {
 #endif
 
 template<class... Ts>
-struct std::tuple_size<boost::multi::detail::tuple<Ts...>> {  // NOLINT(cert-dcl58-cpp) to have structured bindings
-	// cppcheck-suppress unusedStructMember
-	static constexpr std::size_t value = sizeof...(Ts);
+struct std::tuple_size<boost::multi::detail::tuple<Ts...>> : std::integral_constant<std::size_t, sizeof...(Ts)> {  // NOLINT(cert-dcl58-cpp) to have structured bindings
+	// // cppcheck-suppress unusedStructMember
+	// static constexpr std::size_t value = sizeof...(Ts);
 };
 
 template<>
@@ -307,25 +322,29 @@ struct std::tuple_element<N, boost::multi::detail::tuple<T0, Ts...>> {  // NOLIN
 	using type = typename tuple_element<N - 1, boost::multi::detail::tuple<Ts...>>::type;
 };
 
+// namespace std {  // NOLINT(cert-dcl58-cpp) to implement structured bindings
+
+// template<std::size_t N, class... Ts>
+// constexpr auto get(boost::multi::detail::tuple<Ts...> const& tp)  // NOLINT(cert-dcl58-cpp) normal idiom to defined tuple get
+//  -> decltype(boost::multi::detail::get<N>(tp)) {
+//  return boost::multi::detail::get<N>(tp);
+// }
+
+// template<std::size_t N, class... Ts>
+// constexpr auto get(boost::multi::detail::tuple<Ts...>& tp)  // NOLINT(cert-dcl58-cpp) normal idiom to defined tuple get
+//  -> decltype(boost::multi::detail::get<N>(tp)) {
+//  return boost::multi::detail::get<N>(tp);
+// }
+
+// template<std::size_t N, class... Ts>
+// constexpr auto get(boost::multi::detail::tuple<Ts...>&& tp)  // NOLINT(cert-dcl58-cpp) normal idiom to defined tuple get
+//  -> decltype(boost::multi::detail::get<N>(std::move(tp))) {
+//  return boost::multi::detail::get<N>(std::move(tp));
+// }
+
+// }  // end namespace std
+
 namespace std {  // NOLINT(cert-dcl58-cpp) to implement structured bindings
-
-template<std::size_t N, class... Ts>
-constexpr auto get(boost::multi::detail::tuple<Ts...> const& tp)  // NOLINT(cert-dcl58-cpp) normal idiom to defined tuple get
-	-> decltype(boost::multi::detail::get<N>(tp)) {
-	return boost::multi::detail::get<N>(tp);
-}
-
-template<std::size_t N, class... Ts>
-constexpr auto get(boost::multi::detail::tuple<Ts...>& tp)  // NOLINT(cert-dcl58-cpp) normal idiom to defined tuple get
-	-> decltype(boost::multi::detail::get<N>(tp)) {
-	return boost::multi::detail::get<N>(tp);
-}
-
-template<std::size_t N, class... Ts>
-constexpr auto get(boost::multi::detail::tuple<Ts...>&& tp)  // NOLINT(cert-dcl58-cpp) normal idiom to defined tuple get
-	-> decltype(boost::multi::detail::get<N>(std::move(tp))) {
-	return boost::multi::detail::get<N>(std::move(tp));
-}
 
 template<class F, class Tuple, std::size_t... I>
 constexpr auto std_apply_timpl(F&& fn, Tuple&& tp, std::index_sequence<I...> /*012*/) -> decltype(auto) {  // NOLINT(cert-dcl58-cpp) normal idiom to defined tuple get

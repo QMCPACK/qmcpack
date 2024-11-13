@@ -31,7 +31,7 @@ add_executable(hipfft.cpp.x hipfft.cpp)
 set_source_files_properties(hipfft.cpp PROPERTIES LANGUAGE HIP)
 
 # target_link_libraries(${TEST_EXE} PRIVATE multi)
-target_link_libraries(hipfft.cpp.x PRIVATE hip::hipfft Boost::unit_test_framework)
+target_link_libraries(hipfft.cpp.x PRIVATE hip::hipfft Boost::unit_test_framework multi)
 
 add_test(NAME hipfft.cpp.x COMMAND $<TARGET_FILE:hipfft.cpp.x>)
 

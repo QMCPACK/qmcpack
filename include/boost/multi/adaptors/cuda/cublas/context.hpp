@@ -10,7 +10,7 @@
 #include <boost/multi/adaptors/blas/traits.hpp>
 #include <boost/multi/adaptors/blas/core.hpp>
 
-#if not defined(MULTI_USE_HIP)
+#if !defined(MULTI_USE_HIP)
 #include <thrust/system/cuda/memory.h>  // for thrust::cuda::pointer
 #else
 #include <thrust/system/hip/memory.h>  // for thrust::cuda::pointer
@@ -309,21 +309,50 @@ class context : private std::unique_ptr<typename std::pointer_traits<hicu(blasHa
 
 	template<
 		class XXP, class XX = typename std::pointer_traits<XXP>::element_type,
-		class RRP, class RR = typename std::pointer_traits<RRP>::element_type,
+		class RRP, class RR = typename std::pointer_traits<RRP>::element_type
+		,
 		std::enable_if_t<
-			is_z<XX>{}  and is_d<RR>{} and is_assignable<RR&, decltype(XX{}.real())>{} and
-			is_convertible_v<XXP, ::thrust::hicup()::pointer<XX>> and (is_convertible_v<RRP, ::thrust::hicup()::pointer<RR>> or is_convertible_v<RRP, RR*>)
+			is_z<XX>::value
 		, int> =0
+		// ,
+		// std::enable_if_t<
+		//  is_z<XX>{}  && is_d<RR>{} && is_assignable<RR&, decltype(XX{}.real())>{} &&
+		//  is_convertible_v<XXP, ::thrust::hicup()::pointer<XX>> && (is_convertible_v<RRP, ::thrust::hicup()::pointer<RR>> or is_convertible_v<RRP, RR*>)
+		// , int> =0
 	>
 	void nrm2(int n, XXP xx, int incx, RRP rr) {
 		if(is_convertible_v<RRP, ::thrust::hicup()::pointer<RR>>) {hicu(blasSetPointerMode)(get(), HICU(BLAS_POINTER_MODE_DEVICE));}
 		if constexpr(is_convertible_v<RRP, ::thrust::hicup()::pointer<RR>>) {
-			sync_call<hicu(blasDznrm2)>(n, (DoubleComplex const*)::thrust::raw_pointer_cast(xx), incx, (double*)::thrust::raw_pointer_cast(rr) );
+			sync_call<hicu(blasDznrm2)>(n, reinterpret_cast<DoubleComplex const*>(::thrust::raw_pointer_cast(xx)), incx, reinterpret_cast<double*>(::thrust::raw_pointer_cast(rr)) );
 		} else {
-			sync_call<hicu(blasDznrm2)>(n, (DoubleComplex const*)::thrust::raw_pointer_cast(xx), incx, (double*)                           rr  );
+			sync_call<hicu(blasDznrm2)>(n, reinterpret_cast<DoubleComplex const*>(::thrust::raw_pointer_cast(xx)), incx, reinterpret_cast<double*>(                           rr ) );
 		}
 		if(is_convertible_v<RRP, ::thrust::hicup()::pointer<RR>>) {hicu(blasSetPointerMode)(get(), HICU(BLAS_POINTER_MODE_HOST));}
 	}
+
+	template<
+		class XXP, class XX = typename std::pointer_traits<XXP>::element_type,
+		class RRP, class RR = typename std::pointer_traits<RRP>::element_type
+		,
+		std::enable_if_t<
+			is_d<XX>::value
+		, int> =0
+		// ,
+		// std::enable_if_t<
+		//  is_z<XX>{}  && is_d<RR>{} && is_assignable<RR&, decltype(XX{}.real())>{} &&
+		//  is_convertible_v<XXP, ::thrust::hicup()::pointer<XX>> && (is_convertible_v<RRP, ::thrust::hicup()::pointer<RR>> or is_convertible_v<RRP, RR*>)
+		// , int> =0
+	>
+	void nrm2(int n, XXP xx, int incx, RRP rr) {
+		if(is_convertible_v<RRP, ::thrust::hicup()::pointer<RR>>) {hicu(blasSetPointerMode)(get(), HICU(BLAS_POINTER_MODE_DEVICE));}
+		if constexpr(is_convertible_v<RRP, ::thrust::hicup()::pointer<RR>>) {
+			sync_call<hicu(blasDnrm2)>(n, ::thrust::raw_pointer_cast(xx), incx, reinterpret_cast<double*>(::thrust::raw_pointer_cast(rr)) );
+		} else {
+			sync_call<hicu(blasDnrm2)>(n, ::thrust::raw_pointer_cast(xx), incx, reinterpret_cast<double*>(                           rr ) );
+		}
+		if(is_convertible_v<RRP, ::thrust::hicup()::pointer<RR>>) {hicu(blasSetPointerMode)(get(), HICU(BLAS_POINTER_MODE_HOST));}
+	}
+
 
 	template<
 		class XXP, class XX = typename std::pointer_traits<XXP>::element_type,

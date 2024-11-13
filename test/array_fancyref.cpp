@@ -3,39 +3,12 @@
 // Distributed under the Boost Software License, Version 1.0.
 // https://www.boost.org/LICENSE_1_0.txt
 
-#include <boost/multi/array.hpp>
+#include <boost/multi/array.hpp>  // for array, array_iterator, static_array
 
-// Suppress warnings from boost.test
-#if defined(__clang__)
-#  pragma clang diagnostic push
-#  pragma clang diagnostic ignored "-Wold-style-cast"
-#  pragma clang diagnostic ignored "-Wundef"
-#  pragma clang diagnostic ignored "-Wconversion"
-#  pragma clang diagnostic ignored "-Wsign-conversion"
-#  pragma clang diagnostic ignored "-Wfloat-equal"
-#elif defined(__GNUC__)
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wold-style-cast"
-#  pragma GCC diagnostic ignored "-Wundef"
-#  pragma GCC diagnostic ignored "-Wconversion"
-#  pragma GCC diagnostic ignored "-Wsign-conversion"
-#  pragma GCC diagnostic ignored "-Wfloat-equal"
-#elif defined(_MSC_VER)
-#  pragma warning(push)
-#  pragma warning(disable : 4285)  // Recursive return type for fancy_ptr if infix notationis applied
-#endif
-
-#ifndef BOOST_TEST_MODULE
-#  define BOOST_TEST_MAIN
-#endif
-
-#include <boost/test/unit_test.hpp>
-
-#if defined(__clang__)
-#  pragma clang diagnostic pop
-#elif defined(__GNUC__)
-#  pragma GCC diagnostic pop
-#endif
+#include <cstddef>      // for size_t, nullptr_t, ptrdiff_t
+#include <iterator>     // for random_access_iterator_tag
+#include <memory>       // for allocator
+#include <type_traits>  // for decay_t
 
 namespace fancy {
 
@@ -61,28 +34,15 @@ template<class T = void> class ptr {  // NOLINT(cppcoreguidelines-special-member
 	constexpr ptr(ptr const& /*other*/) = default;
 
 	// vvv it is important that these two functions are device or device host functions
-	// NOLINTNEXTLINE(fuchsia-overloaded-operator, fuchsia-trailing-return): this class simulates pointer
 	constexpr auto operator*() const noexcept -> reference { return reference{}; }
-	// NOLINTNEXTLINE(fuchsia-overloaded-operator, fuchsia-trailing-return): this class simulates pointer
 	constexpr auto operator+(difference_type /*unused*/) const noexcept -> ptr { return *this; }
-	// NOLINTNEXTLINE(fuchsia-overloaded-operator, fuchsia-trailing-return): this class simulates pointer
-
+	constexpr auto operator[](difference_type dist) const noexcept -> reference { return *(*this + dist); }
 	auto operator+=(difference_type /*difference*/) noexcept -> ptr& { return *this; }
-	// NOLINTNEXTLINE(fuchsia-overloaded-operator, fuchsia-trailing-return): this class simulates pointer
 	auto operator++() noexcept -> ptr& { return operator+=(1); }
-	// NOLINTNEXTLINE(fuchsia-overloaded-operator, fuchsia-trailing-return): this class simulates pointer
 	friend auto operator-(ptr const& /*a*/, ptr const& /*b*/) noexcept -> difference_type { return 0; }
-	// NOLINTNEXTLINE(fuchsia-overloaded-operator, fuchsia-trailing-return): this class simulates pointer
 	auto operator==(ptr const& /*other*/) const noexcept -> bool { return true; }
-	// NOLINTNEXTLINE(fuchsia-overloaded-operator, fuchsia-trailing-return): this class simulates pointer
 	auto operator!=(ptr const& /*other*/) const noexcept -> bool { return false; }
-	//  explicit operator T*() const{return &value;}
-	// NOLINTNEXTLINE(fuchsia-overloaded-operator, fuchsia-trailing-return): this class simulates pointer
-	auto operator->() const noexcept -> ptr const& { return *this; }
-	// NOLINTNEXTLINE(fuchsia-trailing-return): this class simulates pointer
-	//  friend auto to_address(ptr const& pointer) -> ptr {return pointer;}
 	explicit operator bool() const noexcept { return false; }
-	//  operator double*() const{return &value;}
 	friend auto get_allocator(ptr const& /*self*/) noexcept { return std::allocator<value_type>{}; }
 };
 
@@ -177,25 +137,21 @@ auto copy(It /*first*/, It /*last*/, multi::array_iterator<T, 2, fancy::ptr<T>> 
 	return dest;
 }
 
-//  template<class Alloc, class It, class T> // custom copy 2D (aka double strided copy)
-//  auto uninitialized_copy(Alloc&, It first, It last, multi::array_iterator<T, 2, fancy::ptr<T>> const& dest){
-//     std::cerr << "2D uninitialized_copy(...) calls raw copy 2D" << std::endl;
-//    return copy(first, last, dest);
-//  }
-
 }  // end namespace boost::multi
 
-////////////////////////////////////////////////////////////////////////////////
-// user code
-////////////////////////////////////////////////////////////////////////////////
+#include <boost/core/lightweight_test.hpp>
+#define BOOST_AUTO_TEST_CASE(CasenamE) /**/
 
-BOOST_AUTO_TEST_CASE(multi_fancy) {
-	namespace multi = boost::multi;
+auto main() -> int {  // NOLINT(readability-function-cognitive-complexity,bugprone-exception-escape)
+	BOOST_AUTO_TEST_CASE(multi_fancy) {
+		namespace multi = boost::multi;
 
-	multi::array<double, 2, fancy::allocator<double>> arr({5, 5});
-	BOOST_REQUIRE( arr.size() == 5 );
-	BOOST_REQUIRE( arr[1][1] == arr[2][2] );
+		multi::array<double, 2, fancy::allocator<double>> arr({5, 5});
+		BOOST_TEST( arr.size() == 5 );
+		BOOST_TEST( arr[1][1] == arr[2][2] );
 
-	multi::array<double, 2, fancy::allocator<double>> const arr2({0, 0});
-	BOOST_REQUIRE( arr2.size() == 0 );
+		multi::array<double, 2, fancy::allocator<double>> const arr2({0, 0});
+		BOOST_TEST( arr2.size() == 0 );
+	}
+	return boost::report_errors();
 }

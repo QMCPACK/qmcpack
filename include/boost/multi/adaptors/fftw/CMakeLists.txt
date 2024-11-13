@@ -27,7 +27,8 @@ if(PKG_CONFIG_FOUND)
 	else()
 		message(WARNING "Cannot find FFTW, FFTW-adaptor will not be tested. If you want this feature install FFTW, for example please run:"
 		                "\n    sudo apt install pkg-config libfftw3-dev"
-		                "\n    sudo dnf install fftw-devel  # in Fedora")
+		                "\n    sudo dnf install fftw-devel  # in Fedora"
+						"\n    brew install fftw pkg-config")
 	endif()
 else()
 	message(WARNING "Cannot find PkgConfig and/or FFTW, FFTW-adaptor will not be tested. If you want this feature install PkgConfig and FFTW, for example please run:"

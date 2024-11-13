@@ -1,8 +1,12 @@
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi CUDA thrust"
-#include<boost/test/unit_test.hpp>
 
 #include <thrust/host_vector.h>
 #include <thrust/device_vector.h>
+
+#include <boost/core/lightweight_test.hpp>
+#define BOOST_AUTO_TEST_CASE(CasenamE) /**/
+
+auto main() -> int {  // NOLINT(readability-function-cognitive-complexity,bugprone-exception-escape)
 
 BOOST_AUTO_TEST_CASE(vector){
 	// H has storage for 4 integers
@@ -15,15 +19,15 @@ BOOST_AUTO_TEST_CASE(vector){
 	H[3] = 46;
 
 	// H.size() returns the size of vector H
-	BOOST_TEST_REQUIRE( H.size() == 4 );
+	BOOST_TEST( H.size() == 4 );
 
 	// print contents of H
-	BOOST_TEST_REQUIRE( H[2] == 38 );
+	BOOST_TEST( H[2] == 38 );
 
 	// resize H
 	H.resize(2);
 
-	BOOST_REQUIRE( H.size() == 2 );
+	BOOST_TEST( H.size() == 2 );
 
 	// Copy host_vector H to device_vector D
 	thrust::device_vector<int> D = H;
@@ -36,7 +40,11 @@ BOOST_AUTO_TEST_CASE(vector){
 
 	// thurst::device_ptr<int> p = D.data();  // doesn't work with CUDA 11.8
 	thrust::cuda::pointer<int> p = D.data();  // this works with thrust from CUDA 12.1
-	BOOST_REQUIRE( p[0] == 99 );
+	BOOST_TEST( p[0] == 99 );
 
-	BOOST_TEST_REQUIRE( D[1] == 88 );
+	BOOST_TEST( D[1] == 88 );
+}
+
+return boost::report_errors();
+
 }

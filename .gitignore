@@ -1,6 +1,7 @@
 build*
 .build*
 .vscode
+.cache/clangd/*
 
 # Prerequisites
 *.d

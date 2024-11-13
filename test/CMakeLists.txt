@@ -3,7 +3,7 @@
 # Distributed under the Boost Software License, Version 1.0.
 # See accompanying file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt
 
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.16) # 3.16 for precompiled_headers
 
 if (DEFINED BOOST_SUPERPROJECT_VERSION AND NOT DEFINED BOOST_MULTI_STANDALONE AND BUILD_TESTING)
 
@@ -11,7 +11,7 @@ if (DEFINED BOOST_SUPERPROJECT_VERSION AND NOT DEFINED BOOST_MULTI_STANDALONE AN
 
 	if(HAVE_BOOST_TEST)
 
-		boost_test_jamfile(FILE Jamfile LINK_LIBRARIES Boost::multi Boost::unit_test_framework Boost::multi_array Boost::iterator)
+		boost_test_jamfile(FILE Jamfile LINK_LIBRARIES Boost::multi Boost::multi_array Boost::iterator)
 
 	endif()
 
@@ -22,7 +22,7 @@ else()
 	set(CMAKE_CXX_STANDARD_REQUIRED ON)
 	set(CMAKE_CXX_EXTENSIONS OFF)
 
-	find_package(Boost COMPONENTS unit_test_framework)  # tests require Boost.Test `sudo apt install libboost-test-dev`
+	find_package(Boost)  #  COMPONENTS boost unit_test_framework)  # tests require Boost.Test `sudo apt install libboost-test-dev`
 
 	if(ENABLE_CUDA)
 		enable_language(CUDA)
@@ -39,38 +39,45 @@ else()
 
 	set(WARNS
 	$<$<COMPILE_LANG_AND_ID:CUDA,NVIDIA>:
-	-Xcompiler=-Werror,-Wall,-Wextra,-Wcast-align,-Wcast-qual,-Wdouble-promotion,-Wduplicated-branches,-Wduplicated-cond,-Wformat-truncation,-Wformat=2,-Wlogical-op,-Wmisleading-indentation,-Wno-missing-include-dirs,-Wnon-virtual-dtor,-Wno-missing-declarations,-Wnon-virtual-dtor,-Wnull-dereference,-Woverloaded-virtual,-Wpointer-arith,-Wno-redundant-decls,-Wno-shadow,-Wno-switch-enum,-Wno-unknown-pragmas,-Wtrampolines,-Wuninitialized,-Wunused,-Wunused-but-set-variable,-Wunused-result,-Wno-zero-as-null-pointer-constant
-	#--expt-relaxed-constexpr --extended-lambda
-	--Werror=cross-execution-space-call -Xcudafe=--display_error_number -Xcudafe=--diag_error=incompatible_assignment_operands -Xcudafe=--diag_error=returning_ptr_to_local_variable -Xcudafe=--diag_error=subscript_out_of_range -Xcudafe=--diag_error=used_before_set -Xcudafe=--diag_error=undefined_preproc_id -Xcudafe=--diag_error=implicit_func_decl -Xcudafe=--diag_error=implicit_return_from_non_void_function -Xcudafe=--diag_error=missing_type_specifier
+		-Xcompiler=-Werror,-Wall,-Wextra,-Wcast-align,-Wcast-qual,-Wdouble-promotion,-Wduplicated-branches,-Wduplicated-cond,-Wformat-truncation,-Wformat=2,-Wlogical-op,-Wmisleading-indentation,-Wno-missing-include-dirs,-Wnon-virtual-dtor,-Wno-missing-declarations,-Wnon-virtual-dtor,-Wnull-dereference,-Woverloaded-virtual,-Wpointer-arith,-Wno-redundant-decls,-Wno-shadow,-Wno-switch-enum,-Wno-unknown-pragmas,-Wtrampolines,-Wuninitialized,-Wunused,-Wunused-but-set-variable,-Wunused-result,-Wno-zero-as-null-pointer-constant
+		#--Werror=cross-execution-space-call
+		--Werror ext-lambda-captures-this
+		--use_fast_math
+		--extra-device-vectorization
+		--restrict
+		-Xcudafe=--display_error_number -Xcudafe=--diag_error=incompatible_assignment_operands -Xcudafe=--diag_error=returning_ptr_to_local_variable -Xcudafe=--diag_error=subscript_out_of_range -Xcudafe=--diag_error=used_before_set -Xcudafe=--diag_error=undefined_preproc_id -Xcudafe=--diag_error=implicit_func_decl -Xcudafe=--diag_error=implicit_return_from_non_void_function -Xcudafe=--diag_error=missing_type_specifier
 	>
-	$<$<AND:$<CXX_COMPILER_ID:GNU>,$<NOT:$<CUDA_COMPILER_ID:NVIDIA>>,$<NOT:$<CUDA_COMPILER_ID:Clang>>>: -Werror # -Wno-unknown-warning (activates -Wunknown-pragmas)
-	# -WNSObject-attribute  # (gcc 12, not in 11)
+	$<$<AND:$<CXX_COMPILER_ID:GNU>,$<NOT:$<CUDA_COMPILER_ID:NVIDIA>>,$<NOT:$<CUDA_COMPILER_ID:Clang>>>: -Werror
+		$<$<VERSION_GREATER_EQUAL:$<CXX_COMPILER_VERSION>,12>:-ftrivial-auto-var-init=pattern>
+	# -WNSObject-attribute # (gcc 12, not in 11)
 	# -Wabi=13 -Wabi-tag # (maybe important when linking with very old libraries)
 	-Waddress
-	#-Waddress-of-packed-member # (gcc 11, not in gcc 8)
+	$<$<VERSION_GREATER_EQUAL:$<CXX_COMPILER_VERSION>,11>:-Waddress-of-packed-member>
 	-Wno-aggregate-return # (disallow return classes or structs, seems a C-compatibility warning)
 	-Waggressive-loop-optimizations
 	-Waligned-new=all # (gcc 12, not in 11)
 	# -Walloc-size-larger-than=<bytes> # (gcc 12, not in 11)
-	-Walloc-zero  # -Walloc-size-larger-than=<bytes>
+	-Walloc-zero
 	-Walloca  # -Walloca-larger-than=<number>
-	# -Warith-conversion # (gcc 11, not in gcc 9)
+	$<$<VERSION_GREATER_EQUAL:$<CXX_COMPILER_VERSION>,11>:-Warith-conversion>
 	-Warray-bounds # -Warray-bounds=<0,2>
-	# -Warray-compare # (gcc 12, not in gcc 9)
+	$<$<VERSION_GREATER_EQUAL:$<CXX_COMPILER_VERSION>,12>:-Warray-compare>
 	# -Warray-parameter #=<0,2> # (gcc 11, not in gcc 10)
-	#-Wattribute-alias #=<0,2> # (gcc 12, not in 11, not in 7)
-	#-Wattribute-warning # (gcc 9, not in 8)
+	# -Wattribute-alias #=<0,2> # (gcc 12, not in 11, not in 7)
+	$<$<VERSION_GREATER_EQUAL:$<CXX_COMPILER_VERSION>,9>:-Wattribute-warning>
 	-Wattributes
 	-Wbool-compare -Wbool-operation
-	# -Wbidi-chars -Wbidi-chars=any # (gcc 12, not in 11)
+	$<$<VERSION_GREATER_EQUAL:$<CXX_COMPILER_VERSION>,12>:-Wbidi-chars -Wbidi-chars=any>
 	-Wbuiltin-declaration-mismatch -Wbuiltin-macro-redefined
 	#-Wc++-compat
 	-Wc++0x-compat -Wc++11-compat -Wc++14-compat -Wc++17-compat
-	# -Wc++17-extensions # (gcc 12, not in 9)
+	$<$<VERSION_GREATER_EQUAL:$<CXX_COMPILER_VERSION>,12>:-Wc++17-extensions>
 	-Wc++1z-compat
-	# -Wc++20-compat -Wc++20-extensions -Wc++23-extensions -Wc++2a-compat # (gcc 11, not in gcc 9)
+	$<$<VERSION_GREATER_EQUAL:$<CXX_COMPILER_VERSION>,11>:-Wc++20-compat>
+	$<$<VERSION_GREATER_EQUAL:$<CXX_COMPILER_VERSION>,12>:-Wc++20-extensions -Wc++23-extensions>
+	$<$<VERSION_GREATER_EQUAL:$<CXX_COMPILER_VERSION>,11>:-Wc++2a-compat>
 	#-Wcannot-profile # (gcc 9, not in gcc 8)
-	#-Wcast-align=strict -Wcast-function-type # (gcc 8, not in gcc 7)
+	$<$<VERSION_GREATER_EQUAL:$<CXX_COMPILER_VERSION>,8>:-Wcast-align=strict -Wcast-function-type> # (gcc 8, not in gcc 7)
 	-Wcast-qual
 	#-Wcatch-value  #=<0, 3> # (gcc 8, not in gcc 7)
 	-Wchar-subscripts
@@ -82,7 +89,7 @@ else()
 	-Wconditionally-supported
 	-Wconversion -Wconversion-null
 	-Wcoverage-mismatch -Wcpp
-	# -Wctad-maybe-unsupported  # (gcc 12, not in 9)
+	$<$<VERSION_GREATER_EQUAL:$<CXX_COMPILER_VERSION>,12>:-Wctad-maybe-unsupported>
 	-Wctor-dtor-privacy
 	-Wdangling-else
 	# -Wdangling-pointer # (gcc 12, not in 11)
@@ -113,8 +120,8 @@ else()
 	-Wframe-address  # -Wframe-larger-than=<byte-size>
 	-Wfree-nonheap-object -Whsa
 	# -Wif-not-aligned # (gcc 8, not in 7)
-	-Wignored-attributes # -Wignored-qualifiers
-	-Wno-ignored-qualifiers
+	-Wignored-attributes
+	-Wignored-qualifiers
 	-Wimplicit-fallthrough #=3  # -Wimplicit-fallthrough=<0,5>
 	# -Winaccessible-base # (gcc 12, not in 11)
 	# -Winfinite-recursion # (gcc 12, not in 9)
@@ -149,6 +156,7 @@ else()
 	-Wnon-template-friend -Wnon-virtual-dtor
 	-Wnonnull -Wnonnull-compare
 	-Wnormalized  #=nfc -Wnormalized=[none|id|nfc|nfkc]
+	# -Wnrvo # (not in gcc 12)
 	-Wnull-dereference
 	-Wodr
 	-Wold-style-cast  # TODO(correaa) fix this
@@ -186,7 +194,7 @@ else()
 	-Wstrict-aliasing #=3 # -Wstrict-aliasing=<0,3>
 	-Wstrict-null-sentinel  #=1  -Wstrict-overflow=<0,5>
 	-Wstrict-overflow=2
-	# -Wstrict-overflow=3  # not compatible with Boost.Test
+	# -Wstrict-overflow=3  # incompatible with index_range operator-
 	# -Wstrict-overflow=4  # not compatible with stl heap
 	# -Wstrict-overflow=5  # not compatible with Boost.Test
 	# -Wstring-compare # (gcc 11, not in 9)
@@ -200,7 +208,9 @@ else()
 	-Wsuggest-attribute=noreturn # -Wsuggest-attribute=pure # (false positive in gcc 8.5.0 RedHat)
 	-Wsuggest-final-methods -Wsuggest-final-types
 	-Wsuggest-override # (gcc 12, not in gcc 11)
-	-Wswitch -Wswitch-bool -Wswitch-default -Wswitch-enum
+	-Wswitch -Wswitch-bool
+	-Wno-switch-default
+	-Wswitch-enum
 	# -Wswitch-outside-range # (gcc 11, not in gcc 9)
 	-Wswitch-unreachable
 	-Wsync-nand -Wsynth
@@ -230,7 +240,7 @@ else()
 	-Wzero-as-null-pointer-constant
 	# -Wzero-length-bounds # (gcc 12, not in 11)
 	>
-	$<$<AND:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>,$<CUDA_COMPILER_ID:Clang>>:-Werror -Wall -Wpedantic -Wextra
+	$<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>,$<CUDA_COMPILER_ID:Clang>>:-Werror -Wall -Wpedantic -Wextra
 	-Wno-error=\#warnings  # -Wno-\#warnings disable this working for a bug in rocm ~5.6
 	-WCFString-literal
 	-WCL4
@@ -346,6 +356,7 @@ else()
 	-Wcovered-switch-default
 	-Wcpp
 	-Wcstring-format-directive
+	$<$<VERSION_GREATER_EQUAL:$<CXX_COMPILER_VERSION>,18>:-Wctad-maybe-unsupported>
 	-Wctor-dtor-privacy
 	# -Wctu # (not in clang 7)
 	-Wcuda-compat
@@ -389,7 +400,7 @@ else()
 	# -Wdeprecated-volatile (clang 11, not in clang 9)
 	-Wdeprecated-writable-strings
 	-Wdirect-ivar-access
-	# -Wdisabled-macro-expansion (Boost.Test)
+	-Wdisabled-macro-expansion
 	-Wdisabled-optimization
 	-Wdiscard-qual
 	-Wdistributed-object-modifiers
@@ -434,8 +445,7 @@ else()
 	# -Wfixed-point-overflow (clang 11, not in clang 9)
 	-Wflag-enum
 	-Wflexible-array-extensions
-	-Wfloat-conversion -Wfloat-equal
-	-Wfloat-overflow-conversion -Wfloat-zero-conversion
+	-Wfloat-conversion -Wfloat-equal -Wfloat-overflow-conversion -Wfloat-zero-conversion
 	-Wfor-loop-analysis
 	-Wformat -Wformat-extra-args
 	# -Wformat-insufficient-args (clang 13, not in clang 11)
@@ -453,7 +463,7 @@ else()
 	# -Wfuture-attribute-extensions (clang 15, not in clang 13)
 	# -Wfuture-compat
 	# -Wgcc-compat
-	# -Wglobal-constructors (Boost.Test)
+	-Wglobal-constructors
 	# -Wglobal-isel (clang 11, not in clang 9)
 	-Wgnu -Wgnu-alignof-expression -Wgnu-anonymous-struct -Wgnu-array-member-paren-init -Wgnu-auto-type -Wgnu-binary-literal -Wgnu-case-range -Wgnu-complex-integer -Wgnu-compound-literal-initializer -Wgnu-conditional-omitted-operand -Wgnu-designator -Wgnu-empty-initializer -Wgnu-empty-struct -Wgnu-flexible-array-initializer -Wgnu-flexible-array-union-member -Wgnu-folding-constant -Wgnu-imaginary-constant -Wgnu-include-next
 	# -Wgnu-inline-cpp-without-extern (clang 11, not in clang 9)
@@ -471,7 +481,7 @@ else()
 	#-Wignored-pragma-intrinsic
 	#-Wignored-pragma-optimize
 	#-Wignored-pragmas (other compilers need pragmas)
-	-Wno-ignored-qualifiers  # turns out that returning const types is not really ignored by the compiler and prevents certain misleading syntaxes
+	-Wignored-qualifiers  # turns out that returning const types is not really ignored by the compiler and prevents certain misleading syntaxes
 	# -Wignored-reference-qualifiers (clang 15, not in clang 13)
 	-Wimplicit -Wimplicit-atomic-properties
 	# -Wimplicit-const-int-float-conversion (clang 11, not in clang 9)
@@ -509,7 +519,7 @@ else()
 	-Wkeyword-compat -Wkeyword-macro
 	-Wknr-promoted-parameter
 	-Wlanguage-extension-token
-	-Wlarge-by-value-copy
+	-Wno-large-by-value-copy  # subarray references can be large
 	-Wliblto
 	# -Wlinker-warnings (clang 15, not in clang 13)
 	-Wliteral-conversion -Wliteral-range
@@ -595,10 +605,13 @@ else()
 	-Woverlength-strings
 	-Woverloaded-shift-op-parentheses -Woverloaded-virtual
 	# -Woverride-init (not in clang 7)
-	-Woverride-module -Woverriding-method-mismatch -Woverriding-t-option
+	-Woverride-module -Woverriding-method-mismatch
+	# -Woverriding-option (not in clang 14)
+	# -Woverriding-t-option (not in clang 18)
 	-Wpacked
 	# -Wpadded (ask for aligment)
-	-Wparentheses -Wparentheses-equality
+	-Wparentheses
+	-Wparentheses-equality
 	-Wpartial-availability
 	# -Rpass -Rpass-analysis
 	-Wpass-failed
@@ -707,7 +720,9 @@ else()
 	-Wsuper-class-method-mismatch
 	-Wsuspicious-bzero -Wsuspicious-memaccess
 	# -Wswift-name-attribute (clang 13, not in clang 11)
-	-Wswitch -Wswitch-bool -Wswitch-default -Wswitch-enum
+	-Wswitch -Wswitch-bool
+	-Wno-switch-default
+	-Wswitch-enum
 	-Wsync-fetch-and-nand-semantics-changed
 	-Wsynth
 	# -Wtarget-clones-mixed-specifiers (clang 15, not in clang 13)
@@ -756,7 +771,7 @@ else()
 	-Wunreachable-code -Wunreachable-code-aggressive -Wunreachable-code-break
 	# -Wunreachable-code-fallthrough (clang 15, not in clang 13)
 	-Wunreachable-code-loop-increment -Wunreachable-code-return
-	-Wunsafe-buffer-usage
+	$<$<VERSION_GREATER_EQUAL:$<CXX_COMPILER_VERSION>,15>:-Wunsafe-buffer-usage>
 	-Wunsequenced
 	# -Wunsupported-abi (clang 15, not in clang 13)
 	-Wunsupported-abs -Wunsupported-availability-guard -Wunsupported-cb -Wunsupported-dll-base-class-template
@@ -766,7 +781,7 @@ else()
 	-Wunused -Wunused-argument
 	# -Wunused-but-set-parameter -Wunused-but-set-variable (clang 13, not in clang 11)
 	-Wunused-command-line-argument -Wunused-comparison -Wunused-const-variable -Wunused-exception-parameter -Wunused-function -Wunused-getter-return-value -Wunused-label -Wunused-lambda-capture -Wunused-local-typedef -Wunused-local-typedefs -Wunused-macros -Wunused-member-function -Wunused-parameter -Wunused-private-field -Wunused-property-ivar -Wunused-result -Wunused-template -Wunused-value -Wunused-variable -Wunused-volatile-lvalue
-	# -Wused-but-marked-unused (Boost.Test)
+	-Wused-but-marked-unused
 	-Wuser-defined-literals -Wuser-defined-warnings
 	-Wvarargs
 	-Wvariadic-macros
@@ -838,9 +853,24 @@ else()
 	-Wformat=2
 	-Wshadow
 	-Wuninitialized
+	--diag_suppress unrecognized_gcc_pragma
 	>
 	$<$<CXX_COMPILER_ID:MSVC>:
-	/WX /W4 /permissive- /volatile:iso # /EHsc /Zc:wchar_t /Zc:forScope /Zc:inline
+	/GS  # Enables buffer security check (can help detect stack-based buffer overflows)
+	/Wall /EHsc  # /volatile:iso /WX /Zc:wchar_t /Zc:forScope /Zc:inline /permissive- /W4
+	/wd4371  # layout of class may have changed from a previous version of the compiler due to better packing of member
+	/wd4514  # unreferenced inline function has been removed
+	/wd4623  # default constructor was implicitly defined as deleted #TODO(correaa) investigate
+	/wd4625  # copy constructor was implicitly defined as deleted
+	/wd4626  # assignment operator was implicitly defined as deleted #TODO(correaa) investigate
+	/wd4710  # function not inlined
+	/wd4711  # function selected for automatic inline expansion
+	/wd4820  # bytes padding added after base class
+	/wd4866  # compiler may not enforce left-to-right evaluation order for call
+	/wd4848  # support for attribute [[msvc::no_unique_address]] in C++17 and earlier is a vendor extension
+	/wd4868  # compiler may not enforce left-to-right evaluation order in braced initializer list
+	/wd5026  # move constructor was implicitly defined as deleted
+	/wd5027  # move assignment operator was implicitly defined as deleted
 	>
 	)
 
@@ -858,14 +888,12 @@ else()
 		# target_link_libraries(main PRIVATE multi)
 		target_compile_features   (main PUBLIC cxx_std_17)
 		target_include_directories(main PRIVATE ${PROJECT_SOURCE_DIR}/include)
-		target_compile_definitions(main PUBLIC BOOST_TEST_MODULE="C++ Unit Tests for Multi main")
 
-		target_compile_definitions(main PRIVATE "$<$<CUDA_COMPILER_ID:NVIDIA>:BOOST_PP_VARIADICS>")
+		# target_compile_definitions(main PRIVATE "$<$<CUDA_COMPILER_ID:NVIDIA>:BOOST_PP_VARIADICS>")
 
 		if(NOT DEFINED ENABLE_CIRCLE)
 			target_compile_options(main PRIVATE ${WARNS})
 		else()
-			target_compile_definitions(main PRIVATE "BOOST_TEST_DYN_LINK=1")
 			target_compile_options    (main PRIVATE -Werror -Wall)
 		endif()
 		add_test(NAME main COMMAND $<TARGET_FILE:main>)
@@ -880,30 +908,24 @@ else()
 				set_source_files_properties(${TEST_FILE} PROPERTIES LANGUAGE CUDA)
 			endif()
 
-			# target_include_directories(${TEST_EXE}        PRIVATE ${PROJECT_SOURCE_DIR}/include)
-			# target_include_directories(${TEST_EXE} SYSTEM PRIVATE ${Boost_INCLUDE_DIRS}        )
-
 			target_link_libraries(${TEST_EXE} PRIVATE multi)
-			target_link_libraries     (${TEST_EXE} PRIVATE multi Boost::unit_test_framework   )
+			target_include_directories(${TEST_EXE} SYSTEM PRIVATE ${Boost_INCLUDE_DIRS})
+			# target_link_libraries     (${TEST_EXE} PRIVATE multi Boost::boost   )
 			if(TBB_FOUND)
 				target_link_libraries     (${TEST_EXE} PRIVATE TBB::tbb)
 				target_compile_definitions(${TEST_EXE} PUBLIC TBB_FOUND=1)
 			endif()
 
-			target_compile_definitions(${TEST_EXE} PUBLIC BOOST_TEST_MODULE="C++ Unit Tests for Multi ${TEST_EXE}")
-			target_compile_definitions(${TEST_EXE} PUBLIC BOOST_TEST_DYN_LINK=1)
-			target_compile_definitions(${TEST_EXE} PUBLIC BOOST_NO_CXX98_FUNCTION_BASE=1)
-
-			target_compile_definitions(${TEST_EXE} PRIVATE "$<$<CUDA_COMPILER_ID:NVIDIA>:BOOST_PP_VARIADICS>")
-
 			if(NOT DEFINED ENABLE_CIRCLE)
 				target_compile_options(${TEST_EXE} PRIVATE ${WARNS})
 			else()
-				target_compile_definitions(${TEST_EXE} PRIVATE "BOOST_TEST_DYN_LINK=1")
 				target_compile_options    (${TEST_EXE} PRIVATE -Werror -Wall)
 			endif()
 			add_test(NAME ${TEST_EXE} COMMAND $<TARGET_FILE:${TEST_EXE}>)
 		endforeach()
+        
+		# find_package(BLAS REQUIRED)
+		# target_link_libraries(redux.cpp.x PRIVATE BLAS::BLAS)
 
 	endif()
 
