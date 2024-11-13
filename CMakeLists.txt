@@ -701,8 +701,7 @@ endif(HDF5_FOUND)
 #-------------------------------------------------------------------
 #  set up libboost library, header only
 #-------------------------------------------------------------------
-set(Boost_NO_BOOST_CMAKE on)
-find_package(Boost 1.61.0 REQUIRED)
+find_package(Boost 1.70.0 CONFIG REQUIRED headers)
 if(Boost_FOUND)
   target_compile_definitions(Boost::boost INTERFACE "HAVE_LIBBOOST")
   message(STATUS "Setting Boost_INCLUDE_DIRS=${Boost_INCLUDE_DIRS}")
