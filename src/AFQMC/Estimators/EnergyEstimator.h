@@ -59,11 +59,13 @@ public:
   {
     ScopedTimer local_timer(AFQMCTimers[energy_timer]);
     size_t nwalk = wset.size();
-    if (std::get<0>(eloc.sizes()) != nwalk || std::get<1>(eloc.sizes()) != 3)
+
+    using std::get;
+    if (get<0>(eloc.sizes()) != nwalk || get<1>(eloc.sizes()) != 3)
       eloc.reextent({static_cast<boost::multi::size_t>(nwalk), 3});
-    if (std::get<0>(ovlp.sizes()) != nwalk)
+    if (get<0>(ovlp.sizes()) != nwalk)
       ovlp.reextent(iextensions<1u>(nwalk));
-    if (std::get<0>(wprop.sizes()) != 4 || std::get<1>(wprop.sizes()) != nwalk)
+    if (get<0>(wprop.sizes()) != 4 || get<1>(wprop.sizes()) != nwalk)
       wprop.reextent({4, static_cast<boost::multi::size_t>(nwalk)});
 
     ComplexType dum, et;

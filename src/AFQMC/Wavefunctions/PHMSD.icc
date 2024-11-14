@@ -44,8 +44,9 @@ void PHMSD::Energy_shared(const WlkSet& wset, Mat&& E, TVec&& Ov)
   assert(E.dimensionality == 2);
   assert(Ov.dimensionality == 1);
   assert(E.size() == wset.size());
-  assert(std::get<0>(Ov.sizes()) == wset.size());
-  assert(std::get<1>(E.sizes()) == 3);
+
+  assert(get<0>(Ov.sizes()) == wset.size());
+  assert(get<1>(E.sizes()) == 3);
 
   ComplexType zero(0.0);
   auto Gsize = dm_size(false);
@@ -61,13 +62,14 @@ void PHMSD::Energy_shared(const WlkSet& wset, Mat&& E, TVec&& Ov)
 
   GrefA.reextent({nwalk, dm_dims(false, Alpha).first, dm_dims(false, Alpha).second});
 
+  using std::get;
   if (wgt.size() != nwalk)
     wgt.reextent(iextensions<1u>{nwalk});
   if (opSpinEJ.size() != nwalk)
     opSpinEJ.reextent(iextensions<1u>{nwalk});
   if (localGbuff.size() < 2 * Gsize)
     localGbuff.reextent(iextensions<1u>{2 * Gsize});
-  if (std::get<0>(eloc2.sizes()) != nwalk || std::get<1>(eloc2.sizes()) != 3)
+  if (get<0>(eloc2.sizes()) != nwalk || get<1>(eloc2.sizes()) != 3)
     eloc2.reextent({nwalk, 3});
 
   std::fill_n(Ov.origin(), nwalk, zero);
@@ -423,18 +425,20 @@ void PHMSD::MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool com
   using ma::T;
   assert(G.stride(1) == 1);
   assert(Ov.stride(0) == 1);
+
+  using std::get;
   if (transpose)
-    assert(std::get<0>(G.sizes()) == wset.size() && std::get<1>(G.sizes()) == size_t(dm_size(not compact)));
+    assert(get<0>(G.sizes()) == wset.size() && get<1>(G.sizes()) == size_t(dm_size(not compact)));
   else
-    assert(std::get<1>(G.sizes()) == wset.size() && std::get<0>(G.sizes()) == size_t(dm_size(not compact)));
+    assert(get<1>(G.sizes()) == wset.size() && get<0>(G.sizes()) == size_t(dm_size(not compact)));
   const int nw = wset.size();
   auto refc    = abij.reference_configuration();
   double LogOverlapFactor(wset.getLogOverlapFactor());
   assert(Ov.size() >= nw);
   std::fill_n(Ov.begin(), nw, 0);
-  for (int i = 0; i < std::get<0>(G.sizes()); i++)
+  for (int i = 0; i < get<0>(G.sizes()); i++)
     if (i % TG.TG_local().size() == TG.TG_local().rank())
-      std::fill_n(G[i].origin(), std::get<1>(G.sizes()), ComplexType(0.0));
+      std::fill_n(G[i].origin(), get<1>(G.sizes()), ComplexType(0.0));
   TG.local_barrier();
   auto Gsize = dm_size(not compact);
   if (compact)
@@ -569,8 +573,9 @@ void PHMSD::MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool com
         if (compact)
         {
           ma::product(T(Rb), GB2D0_, GB2D_);
-          //G({GAdims.first*GAdims.second,std::get<0>(G.sizes())},iw) = GB1D_;
-          ma::copy(GB1D_, G({GAdims.first * GAdims.second, std::get<0>(G.sizes())}, iw));
+          using std::get;
+          //G({GAdims.first*GAdims.second,get<0>(G.sizes())},iw) = GB1D_;
+          ma::copy(GB1D_, G({GAdims.first * GAdims.second, get<0>(G.sizes())}, iw));
         }
         else
         {
@@ -578,7 +583,7 @@ void PHMSD::MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool com
           ma::product(T(Rb), GB2D0_, GB2D_);
           ma::product(T(OrbMats.back()), GB2D_, Gfullb);
           //G({Gfulla.num_elements(),G.size(0)},iw) = G1D;
-          ma::copy(G1D, G({Gfulla.num_elements(), std::get<0>(G.sizes())}, iw));
+          ma::copy(G1D, G({Gfulla.num_elements(), get<0>(G.sizes())}, iw));
         }
       }
     }
@@ -681,9 +686,10 @@ void PHMSD::MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool com
             ma::product(T(Ra), GA2D0_shm(GA2D0_shm.extension(0), {M0, Mn}),
                         GA2D_(GA2D_.extension(0), {M0, Mn})); // can be local
             boost::multi::array_ref<ComplexType, 3> Gw(to_address(G.origin()),
-                                                       {GAdims.first, GAdims.second, long(std::get<1>(G.sizes()))});
+                                                       {GAdims.first, GAdims.second, long(get<1>(G.sizes()))});
             // copying by hand for now, implement strided copy in ma_blas
-            for (size_t k = 0; k < std::get<0>(GA2D_.sizes()); ++k)
+            using std::get;
+            for (size_t k = 0; k < get<0>(GA2D_.sizes()); ++k)
               for (size_t m = M0; m < Mn; ++m)
                 Gw[k][m][iw] = GA2D_[k][m];
           }
@@ -693,10 +699,11 @@ void PHMSD::MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool com
                         GA2D_(GA2D_.extension(0), {M0, Mn})); // can be local
             ma::product(T(OrbMats[0]), GA2D_(GA2D_.extension(0), {M0, Mn}),
                         Gfulla(Gfulla.extension(0), {M0, Mn})); // can be local
+            using std::get;
             boost::multi::array_ref<ComplexType, 3> Gw(to_address(G.origin()),
-                                                       {long(std::get<0>(Gfulla.sizes())), long(std::get<1>(Gfulla.sizes())), long(std::get<1>(G.sizes()))});
+                                                       {long(get<0>(Gfulla.sizes())), long(get<1>(Gfulla.sizes())), long(get<1>(G.sizes()))});
             // copying by hand for now, implement strided copy in ma_blas
-            for (size_t k = 0; k < std::get<0>(Gfulla.sizes()); ++k)
+            for (size_t k = 0; k < get<0>(Gfulla.sizes()); ++k)
               for (size_t m = M0; m < Mn; ++m)
                 Gw[k][m][iw] = Gfulla[k][m];
           }
@@ -731,10 +738,12 @@ void PHMSD::MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool com
           {
             ma::product(T(Rb), GB2D0_shm(GB2D0_shm.extension(0), {M0, Mn}),
                         GB2D_(GB2D_.extension(0), {M0, Mn})); // can be local
+            using std::get;
             boost::multi::array_ref<ComplexType, 3> Gw(to_address(G[GAdims.first * GAdims.second].origin()),
-                                                       {GBdims.first, GBdims.second, long(std::get<1>(G.sizes()))});
+                                                       {GBdims.first, GBdims.second, long(get<1>(G.sizes()))});
             // copying by hand for now, implement strided copy in ma_blas
-            for (size_t k = 0; k < std::get<0>(GB2D_.sizes()); ++k)
+            using std::get;
+            for (size_t k = 0; k < get<0>(GB2D_.sizes()); ++k)
               for (size_t m = M0; m < Mn; ++m)
                 Gw[k][m][iw] = GB2D_[k][m];
           }
@@ -744,10 +753,11 @@ void PHMSD::MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool com
                         GB2D_(GB2D_.extension(0), {M0, Mn})); // can be local
             ma::product(T(OrbMats[0]), GB2D_(GB2D_.extension(0), {M0, Mn}),
                         Gfullb(Gfullb.extension(0), {M0, Mn})); // can be local
+            using std::get;
             boost::multi::array_ref<ComplexType, 3> Gw(to_address(G[Gfulla.num_elements()].origin()),
-                                                       {long(std::get<0>(Gfullb.sizes())), long(std::get<1>(Gfullb.sizes())), long(std::get<1>(G.sizes()))});
+                                                       {long(get<0>(Gfullb.sizes())), long(get<1>(Gfullb.sizes())), long(get<1>(G.sizes()))});
             // copying by hand for now, implement strided copy in ma_blas
-            for (size_t k = 0; k < std::get<0>(Gfullb.sizes()); ++k)
+            for (size_t k = 0; k < get<0>(Gfullb.sizes()); ++k)
               for (size_t m = M0; m < Mn; ++m)
                 Gw[k][m][iw] = Gfullb[k][m];
           }
@@ -769,8 +779,8 @@ void PHMSD::MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool com
   else
   {
     auto Ov_         = Ov.origin();
-    const size_t nw_ = std::get<1>(G.sizes());
-    for (int ik = 0; ik < std::get<0>(G.sizes()); ++ik)
+    const size_t nw_ = get<1>(G.sizes());
+    for (int ik = 0; ik < get<0>(G.sizes()); ++ik)
       if (ik % TG.TG_local().size() == TG.TG_local().rank())
       {
         auto Gik = to_address(G[ik].origin());
@@ -814,6 +824,7 @@ void PHMSD::DensityMatrix_shared(const WlkSet& wset,
   if (localGbuff.size() < Gsize)
     localGbuff.reextent(iextensions<1u>{Gsize});
 
+  using std::get;
   if (walker_type != COLLINEAR)
   {
     if (herm)
@@ -841,15 +852,15 @@ void PHMSD::DensityMatrix_shared(const WlkSet& wset,
   else
   {
     if (herm)
-      assert(std::get<0>(RefA.sizes()) == dm_dims(false, Alpha).first && RefA.size(1) == dm_dims(false, Alpha).second);
+      assert(get<0>(RefA.sizes()) == dm_dims(false, Alpha).first && RefA.size(1) == dm_dims(false, Alpha).second);
     else
-      assert(std::get<1>(RefA.sizes()) == dm_dims(false, Alpha).first && RefA.size(0) == dm_dims(false, Alpha).second);
+      assert(get<1>(RefA.sizes()) == dm_dims(false, Alpha).first && RefA.size(0) == dm_dims(false, Alpha).second);
     if (herm)
-      assert(std::get<0>(RefB.sizes()) == dm_dims(false, Beta).first && RefB.size(1) == dm_dims(false, Beta).second);
+      assert(get<0>(RefB.sizes()) == dm_dims(false, Beta).first && RefB.size(1) == dm_dims(false, Beta).second);
     else
-      assert(std::get<1>(RefB.sizes()) == dm_dims(false, Beta).first && RefB.size(0) == dm_dims(false, Beta).second);
+      assert(get<1>(RefB.sizes()) == dm_dims(false, Beta).first && RefB.size(0) == dm_dims(false, Beta).second);
 
-    if (std::get<0>(ovlp2.sizes()) < 2 * nw)
+    if (get<0>(ovlp2.sizes()) < 2 * nw)
       ovlp2.reextent(iextensions<1u>{2 * nw});
     fill_n(ovlp2.origin(), 2 * nw, ComplexType(0.0));
     auto GAdims = dm_dims(not compact, Alpha);
@@ -1200,7 +1211,8 @@ void PHMSD::OrthogonalizeExcited(Mat&& A, SpinTypes spin, double LogOverlapFacto
     APP_ABORT(" Error: OrthogonalizeExcited not implemented with NONCOLLINEAR.\n");
   if (spin == Alpha)
   {
-    if (std::get<0>(extendedMatAlpha.sizes()) != NMO || std::get<1>(extendedMatAlpha.sizes()) != maxOccupExtendedMat.first)
+    using std::get;
+    if (get<0>(extendedMatAlpha.sizes()) != NMO || get<1>(extendedMatAlpha.sizes()) != maxOccupExtendedMat.first)
       extendedMatAlpha.reextent({NMO, maxOccupExtendedMat.first});
     extendedMatAlpha(extendedMatAlpha.extension(0), {0, NAEA}) = A;
     extendedMatAlpha(extendedMatAlpha.extension(0), {NAEA + 1, maxOccupExtendedMat.first}) =
@@ -1222,7 +1234,8 @@ void PHMSD::OrthogonalizeExcited(Mat&& A, SpinTypes spin, double LogOverlapFacto
   }
   else
   {
-    if (std::get<0>(extendedMatBeta.sizes()) != NMO || std::get<1>(extendedMatBeta.sizes()) != maxOccupExtendedMat.second)
+    using std::get;
+    if (get<0>(extendedMatBeta.sizes()) != NMO || get<1>(extendedMatBeta.sizes()) != maxOccupExtendedMat.second)
       extendedMatBeta.reextent({NMO, maxOccupExtendedMat.second});
     extendedMatBeta(extendedMatBeta.extension(0), {0, NAEB}) = A;
     extendedMatBeta(extendedMatBeta.extension(0), {NAEB + 1, maxOccupExtendedMat.second}) =

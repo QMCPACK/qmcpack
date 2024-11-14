@@ -471,15 +471,17 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type,
                               bool conjV    = false,
                               double cutoff = 1e-6)
 {
+  using std::get;
+
   int NAEA = Alpha->size(0);
   int NAEB = 0;
   int NMO  = Alpha->size(1);
   if (type == COLLINEAR)
     NAEB = Beta->size(0);
-  int nvec   = std::get<1>(CholMat.sizes());
+  int nvec   = get<1>(CholMat.sizes());
   int ncores = TG.getTotalCores(), coreid = TG.getCoreID();
 
-  assert(std::get<0>(CholMat.sizes()) == NMO * NMO);
+  assert(get<0>(CholMat.sizes()) == NMO * NMO);
   if (type == CLOSED && kN > NMO)
     APP_ABORT(" Error: kN > NMO in halfRotateCholeskyMatrix. \n");
 
@@ -500,13 +502,13 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type,
   int Qdim = NAEA * (kN_alpha - k0_alpha) + NAEB * (kN_beta - k0_beta);
   if (transpose)
   {
-    assert(std::get<0>(Q.sizes()) == nvec);
-    assert(std::get<1>(Q.sizes()) == Qdim);
+    assert(get<0>(Q.sizes()) == nvec);
+    assert(get<1>(Q.sizes()) == Qdim);
   }
   else
   {
-    assert(std::get<0>(Q.sizes()) == Qdim);
-    assert(std::get<1>(Q.sizes()) == nvec);
+    assert(get<0>(Q.sizes()) == Qdim);
+    assert(get<1>(Q.sizes()) == nvec);
   }
   std::tie(ak0, ak1) = FairDivideBoundary(coreid, Qdim, ncores);
 

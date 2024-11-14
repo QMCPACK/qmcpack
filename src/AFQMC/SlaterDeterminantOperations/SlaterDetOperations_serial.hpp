@@ -149,21 +149,25 @@ public:
                         char TA           = 'N',
                         bool noncollinear = false)
   {
+    using std::get;
+
     static_assert(pointedType<MatA>::dimensionality == 2, " dimenionality == 2");
     static_assert(std::decay<MatV>::type::dimensionality == 3, " dimenionality == 3");
     if (Ai.size() == 0)
       return;
-    assert(Ai.size() == std::get<0>(V.sizes()));
+    assert(Ai.size() == get<0>(V.sizes()));
     int nbatch = Ai.size();
     int npol   = noncollinear ? 2 : 1;
-    int NMO    = std::get<0>((*Ai[0]).sizes());
-    int NAEA   = std::get<1>((*Ai[0]).sizes());
+    int NMO    = get<0>((*Ai[0]).sizes());
+    int NAEA   = get<1>((*Ai[0]).sizes());
     int M      = NMO / npol;
     assert(NMO % npol == 0);
-    assert(std::get<0>(P1.sizes()) == NMO);
-    assert(std::get<1>(P1.sizes()) == NMO);
-    assert(std::get<1>(V.sizes()) == M);
-    assert(std::get<2>(V.sizes()) == M);
+
+    using std::get;
+    assert(get<0>(P1.sizes()) == NMO);
+    assert(get<1>(P1.sizes()) == NMO);
+    assert(get<1>(V.sizes()) == M);
+    assert(get<2>(V.sizes()) == M);
     TTensor TMN({nbatch, NMO, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
     TTensor T1({nbatch, NMO, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
     TTensor T2({nbatch, NMO, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
@@ -233,8 +237,10 @@ public:
     static_assert(pointedType<MatB>::dimensionality == 2, "Wrong dimensionality");
     static_assert(std::decay<MatC>::type::dimensionality == 3, "Wrong dimensionality");
     static_assert(std::decay<TVec>::type::dimensionality == 1, "Wrong dimensionality");
-    int NMO    = (herm ? std::get<1>((*hermA[0]).sizes()) : std::get<0>((*hermA[0]).sizes()));
-    int NAEA   = (herm ? std::get<0>((*hermA[0]).sizes()) : std::get<1>((*hermA[0]).sizes()));
+
+    using std::get;
+    int NMO    = (herm ? get<1>((*hermA[0]).sizes()) : get<0>((*hermA[0]).sizes()));
+    int NAEA   = (herm ? get<0>((*hermA[0]).sizes()) : get<1>((*hermA[0]).sizes()));
     int nbatch = Bi.size();
     assert(C.size() == nbatch);
     assert(ovlp.size() == nbatch);
@@ -269,8 +275,10 @@ public:
     static_assert(pointedType<MatB>::dimensionality == 2, "Wrong dimensionality");
     static_assert(pointedType<MatC>::dimensionality == 2, "Wrong dimensionality");
     static_assert(std::decay<TVec>::type::dimensionality == 1, "Wrong dimensionality");
-    int NMO    = (herm ? std::get<1>((*Left[0]).sizes()) : std::get<0>((*Left[0]).sizes()));
-    int NAEA   = (herm ? std::get<0>((*Left[0]).sizes()) : std::get<1>((*Left[0]).sizes()));
+
+    using std::get;
+    int NMO    = (herm ? get<1>((*Left[0]).sizes()) : get<0>((*Left[0]).sizes()));
+    int NAEA   = (herm ? get<0>((*Left[0]).sizes()) : get<1>((*Left[0]).sizes()));
     int nbatch = Left.size();
     assert(Right.size() == nbatch);
     assert(G.size() == nbatch);
@@ -301,8 +309,10 @@ public:
       return;
     assert(hermA.size() > 0);
     static_assert(std::decay<TVec>::type::dimensionality == 1, "Wrong dimensionality");
-    int NMO    = (herm ? std::get<1>((*hermA[0]).sizes()) : std::get<0>((*hermA[0]).sizes()));
-    int NAEA   = (herm ? std::get<0>((*hermA[0]).sizes()) : std::get<1>((*hermA[0]).sizes()));
+
+    using std::get;
+    int NMO    = (herm ? get<1>((*hermA[0]).sizes()) : get<0>((*hermA[0]).sizes()));
+    int NAEA   = (herm ? get<0>((*hermA[0]).sizes()) : get<1>((*hermA[0]).sizes()));
     int nbatch = Bi.size();
     assert(ovlp.size() == nbatch);
     TTensor TNN3D({nbatch, NAEA, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
@@ -315,12 +325,14 @@ public:
   void BatchedOrthogonalize(std::vector<MatA>& Ai, T LogOverlapFactor, PTR detR)
   {
     static_assert(pointedType<MatA>::dimensionality == 2, "Wrong dimensionality");
+
+    using std::get;
 #if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
     // QR on the transpose
     if (Ai.size() == 0)
       return;
-    int NMO    = std::get<0>((*Ai[0]).sizes());
-    int NAEA   = std::get<1>((*Ai[0]).sizes());
+    int NMO    = get<0>((*Ai[0]).sizes());
+    int NAEA   = get<1>((*Ai[0]).sizes());
     int nbatch = Ai.size();
     TTensor AT({nbatch, NAEA, NMO}, buffer_manager.get_generator().template get_allocator<T>());
     TMatrix T_({nbatch, NMO}, buffer_manager.get_generator().template get_allocator<T>());
@@ -353,12 +365,13 @@ public:
   template<class MatA>
   void BatchedOrthogonalize(std::vector<MatA>& Ai, T LogOverlapFactor)
   {
+    using std::get;
 #if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
     // QR on the transpose
     if (Ai.size() == 0)
       return;
-    int NMO    = std::get<0>((*Ai[0]).sizes());
-    int NAEA   = std::get<1>((*Ai[0]).sizes());
+    int NMO    = get<0>((*Ai[0]).sizes());
+    int NAEA   = get<1>((*Ai[0]).sizes());
     int nbatch = Ai.size();
     TTensor AT({nbatch, NAEA, NMO}, buffer_manager.get_generator().template get_allocator<T>());
     TMatrix T_({nbatch, NMO}, buffer_manager.get_generator().template get_allocator<T>());
