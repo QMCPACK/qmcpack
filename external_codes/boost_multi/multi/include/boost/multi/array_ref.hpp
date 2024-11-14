@@ -71,9 +71,9 @@ template<> inline constexpr bool force_element_trivial_destruction         <std:
 #include <utility>     // for forward
 
 #if !defined(__NVCC__)
-	#define BOOST_MULTI_FRIEND_CONSTEXPR friend   constexpr  // this generates a problem with intel compiler 19 and v2021 "a constexpr function cannot have a nonliteral return type"
+	#define BOOST_MULTI_FRIEND_CONSTEXPR friend constexpr  // this generates a problem with intel compiler 19 and v2021 "a constexpr function cannot have a nonliteral return type"
 #else
-	#define BOOST_MULTI_FRIEND_CONSTEXPR friend /*constexpr*/
+	#define BOOST_MULTI_FRIEND_CONSTEXPR template<class = void> friend constexpr  // workaround nvcc
 #endif
 
 #if defined(__NVCC__)

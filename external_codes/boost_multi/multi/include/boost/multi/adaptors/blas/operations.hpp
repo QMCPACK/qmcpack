@@ -78,7 +78,7 @@ template<class A,
 auto C(A&& array) -> decltype(auto) { return hermitized(std::forward<A>(array)); }  // NOLINT(readability-identifier-naming,readability-identifier-length) : conventional one-letter operation BLAS
 
 template<class A,
-	std::enable_if_t<std::decay_t<A>::rank::value == 2, int> =0>  // NOLINT(modernize-use-constraints) TODO(correaa) for C++20
+	std::enable_if_t<std::decay_t<A>::rank::value == 2, int> =0>  // NOLINT(modernize-use-constraints) for C++20
 auto J(A&& array) -> decltype(auto) { return blas::conj(std::forward<A>(array)); }  // NOLINT(readability-identifier-naming,readability-identifier-length) : conventional one-letter operation BLAS
 
 namespace operators {

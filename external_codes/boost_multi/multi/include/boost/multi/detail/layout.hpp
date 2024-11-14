@@ -908,7 +908,8 @@ namespace boost::multi::detail {
 
 		template<std::size_t Index, std::enable_if_t<(Index < std::tuple_size_v<Array>), int> =0>  // NOLINT(modernize-use-constraints) TODO(correaa)
 		friend constexpr auto get(decaying_array const& self) -> typename std::tuple_element<Index, Array>::type {
-			return std::get<Index>(static_cast<Array const&>(self));
+			using std::get;
+			return get<Index>(static_cast<Array const&>(self));
 		}
 	};
 }  // end namespace boost::multi::detail
