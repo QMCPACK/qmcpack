@@ -893,7 +893,8 @@ namespace boost::multi::detail {
 
 		template<std::size_t Index, std::enable_if_t<(Index < std::tuple_size_v<Tuple>), int> =0>  // NOLINT(modernize-use-constraints) TODO(correaa)
 		friend constexpr auto get(convertible_tuple const& self) -> typename std::tuple_element<Index, Tuple>::type {
-			return std::get<Index>(static_cast<Tuple const&>(self));
+			using std::get;
+			return get<Index>(static_cast<Tuple const&>(self));
 		}
 	};
 
