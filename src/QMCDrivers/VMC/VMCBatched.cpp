@@ -85,11 +85,9 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
     const int num_walkers   = crowd.size();
     auto& walker_leader     = walker_elecs.getLeader();
     const int num_particles = walker_leader.getTotalNum();
-    // Note std::vector<bool> is not like the rest of stl.
-    std::vector<bool> moved(num_walkers, false);
-    constexpr RealType mhalf(-0.5);
-    const bool use_drift = sft.vmcdrv_input.get_use_drift();
+    const bool use_drift    = sft.vmcdrv_input.get_use_drift();
 
+    std::vector<bool> are_valid(num_walkers);
     std::vector<TrialWaveFunction::PsiValue> ratios(num_walkers);
     std::vector<RealType> log_gf(num_walkers);
     std::vector<RealType> log_gb(num_walkers);
@@ -132,7 +130,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
           else
             drifts = deltas;
 
-          ps_dispatcher.flex_makeMove(walker_elecs, iat, drifts);
+          ps_dispatcher.flex_makeMove(walker_elecs, iat, drifts, are_valid);
 
           // This is inelegant
           if (use_drift)
@@ -155,7 +153,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
           isAccepted.clear();
 
           for (int i_accept = 0; i_accept < num_walkers; ++i_accept)
-            if (prob[i_accept] >= std::numeric_limits<RealType>::epsilon() &&
+            if (are_valid[i_accept] && prob[i_accept] >= std::numeric_limits<RealType>::epsilon() &&
                 step_context.get_random_gen()() < prob[i_accept] * std::exp(log_gb[i_accept] - log_gf[i_accept]))
             {
               crowd.incAccept();
