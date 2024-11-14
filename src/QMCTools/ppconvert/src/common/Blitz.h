@@ -76,18 +76,19 @@ struct Array : base_type
   Array(int rs, int cs) : base_type({rs, cs}) {}
   std::ptrdiff_t extent(int d) const
   {
+    using std::get;  // prevents the need for C++20 extensions in C++17
     switch (d)
     {
     case 0:
-      return std::get<0>(base_type::sizes());
+      return get<0>(base_type::sizes());
     case 1:
-      return std::get<1>(base_type::sizes());
+      return get<1>(base_type::sizes());
     }
     assert(false);
     return 0;
   }
-  auto rows() const { return std::get<0>(base_type::sizes()); }
-  auto cols() const { return std::get<1>(base_type::sizes()); }
+  auto rows() const { using std::get; return get<0>(base_type::sizes()); }  // using std::get prevents the need for C++20 extensions in C++17
+  auto cols() const { using std::get; return get<1>(base_type::sizes()); }  // using std::get prevents the need for C++20 extensions in C++17
   void resize(int rs, int cs) { base_type::reextent({rs, cs}); }
   using sizes_type = decltype(std::declval<base_type const&>().sizes());
   sizes_type shape() const { return base_type::sizes(); }
@@ -149,8 +150,9 @@ struct Array<T, 1, base_type> : base_type
   {
     switch (d)
     {
+      using std::get;  // prevents the need for C++20 extensions in C++17
     case 0:
-      return std::get<0>(base_type::sizes());
+      return get<0>(base_type::sizes());
     }
     assert(false);
     return 0;

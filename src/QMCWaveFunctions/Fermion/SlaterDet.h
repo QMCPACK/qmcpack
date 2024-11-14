@@ -295,12 +295,6 @@ public:
       Dets[i]->evaluateDerivativesWF(P, active, dlogpsi);
   }
 
-  void evaluateGradDerivatives(const ParticleSet::ParticleGradient& G_in, std::vector<ValueType>& dgradlogpsi) override
-  {
-    for (int i = 0; i < Dets.size(); i++)
-      Dets[i]->evaluateGradDerivatives(G_in, dgradlogpsi);
-  }
-
 private:
   //get Det ID
   inline int getDetID(const int iat) const
