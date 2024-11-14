@@ -260,9 +260,9 @@ struct h5data_proxy<boost::multi::array_ref<T, 2, device::device_pointer<T>>> : 
   using FileSpace::get_address;
   using data_type = boost::multi::array_ref<T, 2, device::device_pointer<T>>;
 
-  using std::get;
   inline h5data_proxy(const data_type& a)
   {
+    using std::get;
     dims[0] = get<0>(a.sizes());
     dims[1] = get<1>(a.sizes());
   }
