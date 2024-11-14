@@ -17,6 +17,7 @@ set(UTEST_HDF_INPUT0 ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp/pwscf.
 set(UTEST_HDF_INPUT1 ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp/pwscf.pwscf.h5)
 set(UTEST_HDF_INPUT2 ${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae/pwscf.pwscf.h5)
 set(UTEST_HDF_INPUT3 ${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp/LiH-arb.pwscf.h5)
+set(UTEST_HDF_INPUT3_1 ${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp/LiH-x.pwscf.h5)
 set(UTEST_HDF_INPUT4 ${qmcpack_SOURCE_DIR}/tests/solids/monoO_noncollinear_1x1x1_pp/o2_45deg_spins.pwscf.h5)
 set(UTEST_HDF_INPUT5 ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp_Tw_cplx/C_diamond-twist-third.h5)
 set(UTEST_HDF_INPUT6 ${qmcpack_SOURCE_DIR}/src/QMCWaveFunctions/tests/lcao_spinor.h5)
@@ -25,11 +26,14 @@ set(UTEST_HDF_INPUT8 ${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD/LiH.Multid
 set(UTEST_HDF_INPUT9 ${qmcpack_SOURCE_DIR}/tests/converter/test_Bi_dirac/gold.orbs.h5)
 set(UTEST_HDF_INPUT10 ${qmcpack_SOURCE_DIR}/src/QMCWaveFunctions/tests/lcao_spinor_molecule.h5)
 set(UTEST_HDF_INPUT11 ${qmcpack_SOURCE_DIR}/tests/solids/hcpBe_1x1x1_pp/pwscf.pwscf.h5)
+set(UTEST_HDF_INPUT12 ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp/C_Diamond.h5)
+set(UTEST_HDF_INPUT13 ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp_cplx/C_diamond-tiled-cplx.h5)
 
 maybe_symlink(${UTEST_HDF_INPUT0} ${UTEST_DIR}/diamondC_1x1x1.pwscf.h5)
 maybe_symlink(${UTEST_HDF_INPUT1} ${UTEST_DIR}/diamondC_2x1x1.pwscf.h5)
 maybe_symlink(${UTEST_HDF_INPUT2} ${UTEST_DIR}/bccH.pwscf.h5)
 maybe_symlink(${UTEST_HDF_INPUT3} ${UTEST_DIR}/LiH-arb.pwscf.h5)
+maybe_symlink(${UTEST_HDF_INPUT3_1} ${UTEST_DIR}/LiH-x.pwscf.h5)
 maybe_symlink(${UTEST_HDF_INPUT4} ${UTEST_DIR}/o2_45deg_spins.pwscf.h5)
 maybe_symlink(${UTEST_HDF_INPUT5} ${UTEST_DIR}/C_diamond-twist-third.h5)
 maybe_symlink(${UTEST_HDF_INPUT6} ${UTEST_DIR}/lcao_spinor.h5)
@@ -38,6 +42,8 @@ maybe_symlink(${UTEST_HDF_INPUT8} ${UTEST_DIR}/LiH.Multidet.h5)
 maybe_symlink(${UTEST_HDF_INPUT9} ${UTEST_DIR}/Bi.orbs.h5)
 maybe_symlink(${UTEST_HDF_INPUT10} ${UTEST_DIR}/lcao_spinor_molecule.h5)
 maybe_symlink(${UTEST_HDF_INPUT11} ${UTEST_DIR}/hcpBe.pwscf.h5)
+maybe_symlink(${UTEST_HDF_INPUT12} ${UTEST_DIR}/C_Diamond_2x1x1-Gaussian.h5)
+maybe_symlink(${UTEST_HDF_INPUT13} ${UTEST_DIR}/C_Diamond_2x1x1-Gaussian-tiled-cplx.h5)
 
 if(NOT QMC_DATA)
   message(VERBOSE "QMC_DATA not set. NiO_a16 based tests not added.")
@@ -71,7 +77,10 @@ set(FILES_TO_COPY
     C_diamond-twist-third.structure.xml
     C_diamond-twist-third.wfj.xml
     cartesian_order.wfnoj.xml
-    dirac_order.wfnoj.xml)
+    dirac_order.wfnoj.xml
+    rot_Be_STO.wfnoj.xml
+    rot_multi_1det_Be_STO.wfnoj.xml
+    rot_multi_2det_Be_STO.wfnoj.xml)
 
 foreach(fname ${FILES_TO_COPY})
   execute_process(COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/${fname}" ${UTEST_DIR})
@@ -86,7 +95,7 @@ else()
   set(MO_SRCS test_pyscf_complex_MO.cpp test_MO_spinor.cpp)
 endif()
 
-set(COMMON_SRC test_variable_set.cpp test_OptimizableObject.cpp)
+set(COMMON_SRC test_variable_set.cpp test_OptimizableObject.cpp test_NaNguard.cpp)
 set(TRIALWF_SRC
     test_TrialWaveFunction.cpp
     test_wavefunction_factory.cpp
@@ -101,12 +110,17 @@ set(SPOSET_SRC
     test_spo_collection_input_spline.cpp
     test_spo_collection_input_LCAO_xml.cpp
     test_spo_collection_input_MSD_LCAO_h5.cpp
-    test_einset.cpp
+    test_einset_diamondC.cpp
+    test_einset_LiH.cpp
     test_einset_spinor.cpp
+    test_spline_applyrotation.cpp
     test_CompositeSPOSet.cpp
     test_hybridrep.cpp
     test_pw.cpp
     test_ConstantSPOSet.cpp
+    test_LCAOrbitalBuilder.cpp
+    test_LCAO_diamondC_2x1x1.cpp
+    test_RotatedSPOs.cpp
     ${MO_SRCS})
 if(NiO_a16_H5_FOUND)
   set(SPOSET_SRC ${SPOSET_SRC} test_einset_NiO_a16.cpp)
@@ -133,21 +147,22 @@ set(DETERMINANT_SRC
     test_multi_dirac_determinant.cpp
     test_DiracMatrix.cpp
     test_ci_configuration.cpp
-    test_multi_slater_determinant.cpp)
+    test_multi_slater_determinant.cpp
+    test_SlaterDet.cpp)
 
 add_library(sposets_for_testing FakeSPO.cpp ConstantSPOSet.cpp)
 target_include_directories(sposets_for_testing PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(sposets_for_testing PUBLIC qmcwfs)
 
 # @TODO: Remove when rotations work for complex stuff
-if(NOT QMC_COMPLEX)
-  if(NOT ENABLE_CUDA)
-    set(SPOSET_SRC test_RotatedSPOs.cpp ${SPOSET_SRC})
-  endif()
-endif()
+#if(NOT QMC_COMPLEX)
+#  if(NOT ENABLE_CUDA)
+#    set(SPOSET_SRC test_RotatedSPOs.cpp ${SPOSET_SRC})
+#  endif()
+#endif()
 
 if(ENABLE_CUDA)
-  set(DETERMINANT_SRC ${DETERMINANT_SRC} test_DiracMatrixComputeCUDA.cpp test_cuBLAS_LU.cpp)
+  set(DETERMINANT_SRC ${DETERMINANT_SRC} test_DiracMatrixInverterCUDA.cpp test_cuBLAS_LU.cpp)
   if(NOT QMC_CUDA2HIP)
     set(DETERMINANT_SRC ${DETERMINANT_SRC} test_cuSolverInverter.cpp)
   endif()
@@ -159,7 +174,7 @@ if(ENABLE_SYCL)
   set(DETERMINANT_SRC ${DETERMINANT_SRC} test_syclSolverInverter.cpp)
 endif()
 if(ENABLE_OFFLOAD)
-  set(DETERMINANT_SRC ${DETERMINANT_SRC} test_DiracMatrixComputeOMPTarget.cpp)
+  set(DETERMINANT_SRC ${DETERMINANT_SRC} test_DiracMatrixInverterOMPTarget.cpp)
 endif(ENABLE_OFFLOAD)
 
 foreach(CATEGORY common trialwf sposet jastrow determinant)
@@ -190,7 +205,7 @@ endforeach()
 if(ENABLE_CUDA AND BUILD_MICRO_BENCHMARKS)
   set(UTEST_EXE benchmark_diracmatrixcompute)
   set(UTEST_NAME deterministic-unit_${UTEST_EXE})
-  set(BENCHMARK_SRC benchmark_DiracMatrixComputeCUDA.cpp)
+  set(BENCHMARK_SRC benchmark_DiracMatrixInverterCUDA.cpp)
   if(QMC_CUDA2HIP)
     set(BENCHMARK_SRC ${BENCHMARK_SRC} benchmark_rocSolverInverter.cpp)
   else()

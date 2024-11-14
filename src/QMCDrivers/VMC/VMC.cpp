@@ -21,7 +21,6 @@
 #include "QMCDrivers/VMC/VMCUpdateAll.h"
 #include "QMCDrivers/VMC/SOVMCUpdatePbyP.h"
 #include "QMCDrivers/VMC/SOVMCUpdateAll.h"
-#include "RandomNumberControl.h"
 #include "Concurrency/OpenMP.h"
 #include "Message/CommOperators.h"
 #include "Utilities/RunTimeManager.h"
@@ -33,6 +32,7 @@
 #else
 using TraceManager = int;
 #endif
+#include "WalkerLogManager.h"
 
 namespace qmcplusplus
 {
@@ -41,9 +41,10 @@ VMC::VMC(const ProjectData& project_data,
          MCWalkerConfiguration& w,
          TrialWaveFunction& psi,
          QMCHamiltonian& h,
+         const UPtrVector<RandomBase<QMCTraits::FullPrecRealType>>& rngs,
          Communicate* comm,
          bool enable_profiling)
-    : QMCDriver(project_data, w, psi, h, comm, "VMC", enable_profiling), UseDrift("yes")
+    : QMCDriver(project_data, w, psi, h, comm, "VMC", enable_profiling), UseDrift("yes"), rngs_(rngs)
 {
   RootName = "vmc";
   qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
@@ -66,6 +67,7 @@ bool VMC::run()
 #if !defined(REMOVE_TRACEMANAGER)
   Traces->startRun(nBlocks, traceClones);
 #endif
+  wlog_manager_->startRun(getWalkerLogCollectorRefs());
 
   LoopTimer<> vmc_loop;
   RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs, myComm->getName(), myComm->rank() == 0);
@@ -109,8 +111,8 @@ bool VMC::run()
 #if !defined(REMOVE_TRACEMANAGER)
     Traces->write_buffers(traceClones, block);
 #endif
-    if (storeConfigs)
-      recordBlock(block);
+    wlog_manager_->writeBuffers();
+    recordBlock(block);
     vmc_loop.stop();
 
     bool stop_requested = false;
@@ -132,11 +134,7 @@ bool VMC::run()
 #if !defined(REMOVE_TRACEMANAGER)
   Traces->stopRun();
 #endif
-  //copy back the random states
-#ifndef USE_FAKE_RNG
-  for (int ip = 0; ip < NumThreads; ++ip)
-    *RandomNumberControl::Children[ip] = *Rng[ip];
-#endif
+  wlog_manager_->stopRun();
   ///write samples to a file
   bool wrotesamples = DumpConfig;
   if (DumpConfig)
@@ -168,7 +166,7 @@ void VMC::resetRun()
     Movers.resize(NumThreads, nullptr);
     estimatorClones.resize(NumThreads, nullptr);
     traceClones.resize(NumThreads, nullptr);
-    Rng.resize(NumThreads);
+    wlog_collectors.resize(NumThreads);
 
     // hdf_archive::hdf_archive() is not thread-safe
     for (int ip = 0; ip < NumThreads; ++ip)
@@ -183,33 +181,29 @@ void VMC::resetRun()
 #if !defined(REMOVE_TRACEMANAGER)
       traceClones[ip] = Traces->makeClone();
 #endif
-#ifdef USE_FAKE_RNG
-      Rng[ip] = std::make_unique<FakeRandom>();
-#else
-      Rng[ip] = std::make_unique<RandomGenerator>(*RandomNumberControl::Children[ip]);
-#endif
-      hClones[ip]->setRandomGenerator(Rng[ip].get());
+      wlog_collectors[ip] = wlog_manager_->makeCollector();
+      hClones[ip]->setRandomGenerator(rngs_[ip].get());
       if (W.isSpinor())
       {
         spinors = true;
         if (qmc_driver_mode[QMC_UPDATE_MODE])
         {
-          Movers[ip] = new SOVMCUpdatePbyP(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
+          Movers[ip] = new SOVMCUpdatePbyP(*wClones[ip], *psiClones[ip], *hClones[ip], *rngs_[ip]);
         }
         else
         {
-          Movers[ip] = new SOVMCUpdateAll(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
+          Movers[ip] = new SOVMCUpdateAll(*wClones[ip], *psiClones[ip], *hClones[ip], *rngs_[ip]);
         }
       }
       else
       {
         if (qmc_driver_mode[QMC_UPDATE_MODE])
         {
-          Movers[ip] = new VMCUpdatePbyP(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
+          Movers[ip] = new VMCUpdatePbyP(*wClones[ip], *psiClones[ip], *hClones[ip], *rngs_[ip]);
         }
         else
         {
-          Movers[ip] = new VMCUpdateAll(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
+          Movers[ip] = new VMCUpdateAll(*wClones[ip], *psiClones[ip], *hClones[ip], *rngs_[ip]);
         }
       }
       Movers[ip]->nSubSteps = nSubSteps;
@@ -222,9 +216,7 @@ void VMC::resetRun()
   {
 #pragma omp parallel for
     for (int ip = 0; ip < NumThreads; ++ip)
-    {
       traceClones[ip]->transfer_state_from(*Traces);
-    }
   }
 #endif
   if (qmc_driver_mode[QMC_UPDATE_MODE])
@@ -269,7 +261,8 @@ void VMC::resetRun()
   {
     //int ip=omp_get_thread_num();
     Movers[ip]->put(qmcNode);
-    Movers[ip]->resetRun(branchEngine.get(), estimatorClones[ip], traceClones[ip], DriftModifier);
+    //Movers[ip]->resetRun(branchEngine.get(), estimatorClones[ip], traceClones[ip], DriftModifier);
+    Movers[ip]->resetRun2(branchEngine.get(), estimatorClones[ip], traceClones[ip],  wlog_collectors[ip].get(), DriftModifier);
     if (qmc_driver_mode[QMC_UPDATE_MODE])
       Movers[ip]->initWalkersForPbyP(W.begin() + wPerRank[ip], W.begin() + wPerRank[ip + 1]);
     else
@@ -288,7 +281,7 @@ void VMC::resetRun()
     qmc_common.memory_allocated += W.getActiveWalkers() * W[0]->DataSet.byteSize();
     qmc_common.print_memory_change("VMC::resetRun", before);
   }
-  
+
   for (int ip = 0; ip < NumThreads; ++ip)
     wClones[ip]->clearEnsemble();
   if (nSamplesPerThread)

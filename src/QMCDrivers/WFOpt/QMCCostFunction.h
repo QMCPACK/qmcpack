@@ -56,14 +56,14 @@ protected:
 
   /** Temp derivative properties and Hderivative properties of all the walkers
   */
-  std::vector<Matrix<Return_rt>*> DerivRecords;
+  std::vector<Matrix<Return_t>*> DerivRecords;
   std::vector<Matrix<Return_rt>*> HDerivRecords;
   Return_rt CSWeight;
 
   EffectiveWeight correlatedSampling(bool needGrad = true) override;
 
 #ifdef HAVE_LMY_ENGINE
-  int total_samples();
+  size_t total_samples();
   Return_rt LMYEngineCost_detail(cqmc::engine::LMYEngine<Return_t>* EngineObj) override;
 #endif
 

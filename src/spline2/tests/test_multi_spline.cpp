@@ -20,40 +20,6 @@
 
 namespace qmcplusplus
 {
-template<typename T>
-void test_spline_bounds()
-{
-  T x = 2.2;
-  T dx;
-  int ind;
-  int ng = 10;
-  spline2::getSplineBound(x, dx, ind, ng);
-  CHECK(dx == Approx(0.2));
-  REQUIRE(ind == 2);
-
-  // check clamping to a maximum index value
-  x = 10.5;
-  spline2::getSplineBound(x, dx, ind, ng);
-  CHECK(dx == Approx(0.5));
-  REQUIRE(ind == 10);
-
-  x = 11.5;
-  spline2::getSplineBound(x, dx, ind, ng);
-  CHECK(dx == Approx(1.0));
-  REQUIRE(ind == 10);
-
-  // check clamping to a zero index value
-  x = -1.3;
-  spline2::getSplineBound(x, dx, ind, ng);
-  CHECK(dx == Approx(0.0));
-  REQUIRE(ind == 0);
-}
-
-TEST_CASE("getSplineBound double", "[spline2]") { test_spline_bounds<double>(); }
-
-
-TEST_CASE("getSplineBound float", "[spline2]") { test_spline_bounds<float>(); }
-
 
 TEST_CASE("SymTrace", "[spline2]")
 {
@@ -200,7 +166,7 @@ struct test_splines : public test_splines_base<T, GRID_SIZE, NUM_SPLINES>
     UBspline_3d_d* aspline = mAllocator.allocateUBspline(grid[0], grid[1], grid[2], bc[0], bc[1], bc[2], data.data());
 
     for (int i = 0; i < num_splines; i++)
-      bs.copy_spline(aspline, i);
+      copy_spline<double, T>(*aspline, *bs.getSplinePtr(), i);
 
     mAllocator.destroy(aspline);
 
@@ -257,7 +223,7 @@ struct test_splines<T, 5, 1> : public test_splines_base<T, 5, 1>
     UBspline_3d_d* aspline = mAllocator.allocateUBspline(grid[0], grid[1], grid[2], bc[0], bc[1], bc[2], data.data());
 
     for (int i = 0; i < num_splines; i++)
-      bs.copy_spline(aspline, i);
+      copy_spline<double, T>(*aspline, *bs.getSplinePtr(), i);
 
     mAllocator.destroy(aspline);
 

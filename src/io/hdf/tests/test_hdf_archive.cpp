@@ -2,9 +2,10 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2024 QMCPACK developers.
 //
 // File developed by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
+//                    Peter W. Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -208,13 +209,23 @@ TEST_CASE("hdf_archive_group", "[hdf]")
   bool okay = hd.writeEntry(i, "int");
   REQUIRE(okay);
 
+  CHECK(hd.group_path_as_string() == "");
+
   hd.push("name1");
+
+  CHECK(hd.group_path_as_string() == "name1");
 
   int j = 3;
   okay  = hd.writeEntry(j, "int2");
   REQUIRE(okay);
 
+  hd.push("name2");
+  CHECK(hd.group_path_as_string() == "name1/name2");
+
   hd.close();
+
+  // Check that opening a group on a closed file throws an exception
+  REQUIRE_THROWS(hd.push("group"));
 
   hdf_archive hd2;
   hd2.open("test_group.hdf");
@@ -234,6 +245,8 @@ TEST_CASE("hdf_archive_group", "[hdf]")
   okay = hd2.readEntry(j3, "int2");
   REQUIRE(okay);
   REQUIRE(j3 == j);
+
+  REQUIRE_THROWS(hd2.push("nonexistent_group", false));
 
   hd2.close();
 }
@@ -439,4 +452,39 @@ TEST_CASE("hdf_archive_dataset_type_checking", "[hdf]")
   is_correct_type = hd2.is_dataset_of_type<int64_t>(ds_tag);
   REQUIRE(is_correct_type == false);
   REQUIRE_THROWS_AS(hd2.is_dataset_of_type<uint64_t>("tag_doesnt_exist"), std::runtime_error);
+}
+
+TEST_CASE("hdf_std_vec_bool", "[hdf]")
+{
+  hdf_archive hd;
+  hd.create("test_vec_bool.hdf");
+
+  std::vector<bool> v(3, false);
+  v[0] = true;
+
+  bool okay = hd.writeEntry(v, "vector_bool");
+  REQUIRE(okay);
+
+  const std::vector<bool> v_const(v);
+  okay = hd.writeEntry(v_const, "vector_bool_const");
+  REQUIRE(okay);
+
+  hd.close();
+
+  hdf_archive hd2;
+  okay = hd2.open("test_vec_bool.hdf");
+  REQUIRE(okay);
+
+  std::vector<bool> v2;
+  okay = hd2.readEntry(v2, "vector_bool");
+  REQUIRE(v2.size() == 3);
+  for (int i = 0; i < v.size(); i++)
+    CHECK(v[i] == v2[i]);
+
+  std::vector<bool> v2_for_const;
+  okay = hd2.readEntry(v2_for_const, "vector_bool_const");
+  REQUIRE(v2_for_const.size() == 3);
+  for (int i = 0; i < v_const.size(); i++)
+    CHECK(v_const[i] == v2_for_const[i]);
+
 }

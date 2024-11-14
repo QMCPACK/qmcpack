@@ -66,16 +66,9 @@ inline HamiltonianOperations loadKP3IndexFactorization(hdf_archive& dump,
   // single reader for now
   if (TGwfn.Global().root())
   {
-    if (!dump.push("HamiltonianOperations", false))
-    {
-      app_error() << " Error in loadKP3IndexFactorization: Group HamiltonianOperations not found. \n";
-      APP_ABORT("");
-    }
-    if (!dump.push("KP3IndexFactorization", false))
-    {
-      app_error() << " Error in loadKP3IndexFactorization: Group KP3IndexFactorization not found. \n";
-      APP_ABORT("");
-    }
+    dump.push("HamiltonianOperations", false);
+    dump.push("KP3IndexFactorization", false);
+
     if (!dump.read(dims, "dims"))
     {
       app_error() << " Error in loadKP3IndexFactorization: Problems reading dataset. \n";
@@ -557,10 +550,9 @@ inline void writeKP3IndexFactorization(hdf_archive& dump,
 
   if (TGwfn.Global().root())
   {
-    if (dump.push("HamiltonianOperations") == hdf_archive::is_closed)
-      APP_ABORT(" Error: hdf_archive::push returned false. \n");
-    if (dump.push("KP3IndexFactorization") == hdf_archive::is_closed)
-      APP_ABORT(" Error: hdf_archive::push returned false. \n");
+    dump.push("HamiltonianOperations");
+    dump.push("KP3IndexFactorization");
+
     std::vector<int> dims{NMO, NAEA, NAEB, int(nopk.size()), type, nsampleQ, gncv};
     dump.write(dims, "dims");
     std::vector<ValueType> et{E0};

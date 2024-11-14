@@ -10,7 +10,6 @@
 // File created by: Raymond Clay, rclay@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
 
-
 #include "catch.hpp"
 
 #include "OhmmsData/Libxml2Doc.h"
@@ -21,6 +20,8 @@
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 #include "Utilities/ResourceCollection.h"
 #include "QMCWaveFunctions/SpinorSet.h"
+#include "Utilities/for_testing/checkMatrix.hpp"
+#include "Particle/VirtualParticleSet.h"
 
 #include <stdio.h>
 #include <string>
@@ -58,26 +59,14 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   ptcl.addParticleSet(std::move(ions_uptr));
   ions_.create({2});
 
-  ions_.R[0][0] = 0.00000000;
-  ions_.R[0][1] = 0.00000000;
-  ions_.R[0][2] = 1.08659253;
-  ions_.R[1][0] = 0.00000000;
-  ions_.R[1][1] = 0.00000000;
-  ions_.R[1][2] = -1.08659253;
-
+  ions_.R[0] = {0.00000000, 0.00000000, 1.08659253};
+  ions_.R[1] = {0.00000000, 0.00000000, -1.08659253};
   elec_.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create({3});
-  elec_.R[0][0] = 0.1;
-  elec_.R[0][1] = -0.3;
-  elec_.R[0][2] = 1.0;
-  elec_.R[1][0] = -0.1;
-  elec_.R[1][1] = 0.3;
-  elec_.R[1][2] = 1.0;
-  elec_.R[2][0] = 0.1;
-  elec_.R[2][1] = 0.2;
-  elec_.R[2][2] = 0.3;
-
+  elec_.R[0]     = {0.1, -0.3, 1.0};
+  elec_.R[1]     = {-0.1, 0.3, 1.0};
+  elec_.R[2]     = {0.1, 0.2, 0.3};
   elec_.spins[0] = 0.0;
   elec_.spins[1] = 0.2;
   elec_.spins[2] = 0.4;
@@ -92,13 +81,12 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   ions_.update();
 
 
-  const char* particles = R"(<tmp>
-   <sposet_builder name="A" type="einspline" href="o2_45deg_spins.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" size="3" precision="float" meshfactor="4.0">
+  const char* particles = R"(
+   <sposet_builder name="A" type="einspline" href="o2_45deg_spins.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" precision="float" meshfactor="4.0">
      <sposet name="myspo" size="3">
        <occupation mode="ground"/>
      </sposet>
    </sposet_builder>
-  </tmp>
 )";
 
   Libxml2Document doc;
@@ -110,7 +98,7 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   xmlNodePtr ein1 = xmlFirstElementChild(root);
 
   SPOSetBuilderFactory fac(c, elec_, ptcl.getPool());
-  const auto spo_builder_ptr = fac.createSPOSetBuilder(ein1);
+  const auto spo_builder_ptr = fac.createSPOSetBuilder(root);
   auto& builder              = *spo_builder_ptr;
 
   auto spo = builder.createSPOSet(ein1);
@@ -317,6 +305,8 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   int OrbitalSetSize = spo->getOrbitalSetSize();
   //temporary arrays for holding the values of the up and down channels respectively.
   SPOSet::ValueVector psi_work;
+  SPOSet::ValueVector psi_work_up;
+  SPOSet::ValueVector psi_work_down;
 
   //temporary arrays for holding the gradients of the up and down channels respectively.
   SPOSet::GradVector dpsi_work;
@@ -329,6 +319,8 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
 
 
   psi_work.resize(OrbitalSetSize);
+  psi_work_up.resize(OrbitalSetSize);
+  psi_work_down.resize(OrbitalSetSize);
 
   dpsi_work.resize(OrbitalSetSize);
 
@@ -362,8 +354,13 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   elec_.update();
 
   //Now we test evaluateValue()
+  VirtualParticleSet vp(elec_, 1);
   for (unsigned int iat = 0; iat < 3; iat++)
   {
+    std::vector<ParticleSet::PosType> delta_v(1);
+    delta_v[0] = -dR[iat];
+    vp.makeMoves(elec_, iat, delta_v);
+
     psi_work = 0.0;
     elec_.makeMove(iat, -dR[iat], false);
     spo->evaluateValue(elec_, iat, psi_work);
@@ -371,6 +368,34 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
     CHECK(psi_work[0] == ComplexApprox(psiM_ref[iat][0]).epsilon(h));
     CHECK(psi_work[1] == ComplexApprox(psiM_ref[iat][1]).epsilon(h));
     CHECK(psi_work[2] == ComplexApprox(psiM_ref[iat][2]).epsilon(h));
+
+
+    std::vector<ValueType> ratios(1);
+    SPOSet::ValueVector psi(OrbitalSetSize);
+    SPOSet::ValueVector psiinv(OrbitalSetSize);
+    psiinv = 2.1;
+    std::pair<SPOSet::ValueVector, SPOSet::ValueVector> multiplier;
+    auto& up_factor = multiplier.first;
+    auto& dn_factor = multiplier.second;
+    up_factor.resize(OrbitalSetSize);
+    dn_factor.resize(OrbitalSetSize);
+    up_factor = 5.2;
+    dn_factor = -0.3;
+    spo->evaluateDetSpinorRatios(vp, psi, multiplier, psiinv, ratios);
+    //create reference value
+    RealType s = elec_.spins[iat];
+    RealType coss(0.0), sins(0.0);
+    coss = std::cos(s);
+    sins = std::sin(s);
+    ValueType eis(coss, sins);
+    ValueType emis(coss, -sins);
+
+    ValueType refVal;
+    for (int iorb = 0; iorb < OrbitalSetSize; iorb++)
+      refVal += static_cast<ValueType>(2.1) *
+          (eis * static_cast<ValueType>(5.2) * psiM_up[iat][iorb] +
+           emis * static_cast<ValueType>(-0.3) * psiM_down[iat][iorb]);
+    CHECK(ratios[0] == ComplexApprox(refVal));
     elec_.rejectMove(iat);
   }
 
@@ -626,6 +651,42 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
     std::vector<bool> accept = {false, false};
     elec_.mw_accept_rejectMove<CoordsType::POS_SPIN>(p_list, iat, accept);
   }
+
+  //Need to remember that the electrons are distored from initial positions
+  //Move them back for rotation test
+  Rnew    = elec_.R - dR;
+  elec_.R = Rnew;
+  elec_.update();
+
+  //Let's also test orbital rotation
+  //random unitary
+  SPOSet::ValueVector row0 = {ValueType(0.47586834, 0.07134236), ValueType(-0.35882226, -0.6570473),
+                              ValueType(-0.30699602, -0.3372662)};
+  SPOSet::ValueVector row1 = {ValueType(-0.09062269, -0.23061815), ValueType(0.52931815, 0.07182243),
+                              ValueType(-0.79260564, -0.15825018)};
+  SPOSet::ValueVector row2 = {ValueType(0.3187019, -0.7781333), ValueType(0.315927, -0.23321542),
+                              ValueType(0.36577135, 0.07035348)};
+  SPOSet::ValueMatrix rot_mat(3, 3);
+  for (int iorb = 0; iorb < 3; iorb++)
+  {
+    rot_mat(0, iorb) = row0[iorb];
+    rot_mat(1, iorb) = row1[iorb];
+    rot_mat(2, iorb) = row2[iorb];
+  }
+  SPOSet::ValueMatrix psiM_rot_manual(elec_.R.size(), spo->size());
+  for (int i = 0; i < elec_.R.size(); i++)
+    for (int j = 0; j < spo->size(); j++)
+    {
+      psiM_rot_manual[i][j] = 0.;
+      for (int k = 0; k < spo->size(); k++)
+        psiM_rot_manual[i][j] += psiM_ref[i][k] * rot_mat[k][j];
+    }
+
+  spo->storeParamsBeforeRotation();
+  spo->applyRotation(rot_mat, false);
+  spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
+  auto check = checkMatrix(psiM_rot_manual, psiM, true);
+  CHECKED_ELSE(check.result) { FAIL(check.result_message); }
 }
 
 #endif //QMC_COMPLEX

@@ -26,7 +26,7 @@ TEST_CASE("CUDA_allocators", "[CUDA]")
     Vector<double, CUDAManagedAllocator<double>> vec(1024);
     cudaPointerAttributes attr;
     cudaErrorCheck(cudaPointerGetAttributes(&attr, vec.data()), "cudaPointerGetAttributes failed!");
-#if (CUDART_VERSION >= 10000)
+#if (CUDART_VERSION >= 10000 || HIP_VERSION_MAJOR >= 6)
     REQUIRE(attr.type == cudaMemoryTypeManaged);
 #endif
   }
@@ -34,33 +34,35 @@ TEST_CASE("CUDA_allocators", "[CUDA]")
     Vector<double, CUDAAllocator<double>> vec(1024);
     cudaPointerAttributes attr;
     cudaErrorCheck(cudaPointerGetAttributes(&attr, vec.data()), "cudaPointerGetAttributes failed!");
-#if (CUDART_VERSION < 10000)
-    REQUIRE(attr.memoryType == cudaMemoryTypeDevice);
-#else
+#if (CUDART_VERSION >= 10000 || HIP_VERSION_MAJOR >= 6)
     REQUIRE(attr.type == cudaMemoryTypeDevice);
+#else
+    REQUIRE(attr.memoryType == cudaMemoryTypeDevice);
 #endif
   }
   { // CUDAHostAllocator
     Vector<double, CUDAHostAllocator<double>> vec(1024);
     cudaPointerAttributes attr;
     cudaErrorCheck(cudaPointerGetAttributes(&attr, vec.data()), "cudaPointerGetAttributes failed!");
-#if (CUDART_VERSION < 10000)
-    REQUIRE(attr.memoryType == cudaMemoryTypeHost);
-#else
+#if (CUDART_VERSION >= 10000 || HIP_VERSION_MAJOR >= 6)
     REQUIRE(attr.type == cudaMemoryTypeHost);
+#else
+    REQUIRE(attr.memoryType == cudaMemoryTypeHost);
 #endif
   }
+#if !defined(QMC_DISABLE_HIP_HOST_REGISTER)
   { // CUDALockedPageAllocator
     Vector<double, CUDALockedPageAllocator<double>> vec(1024);
     cudaPointerAttributes attr;
     cudaErrorCheck(cudaPointerGetAttributes(&attr, vec.data()), "cudaPointerGetAttributes failed!");
-#if (CUDART_VERSION < 10000)
-    REQUIRE(attr.memoryType == cudaMemoryTypeHost);
-#else
+#if (CUDART_VERSION >= 10000 || HIP_VERSION_MAJOR >= 6)
     REQUIRE(attr.type == cudaMemoryTypeHost);
+#else
+    REQUIRE(attr.memoryType == cudaMemoryTypeHost);
 #endif
     Vector<double, CUDALockedPageAllocator<double>> vecb(vec);
   }
+#endif
   { // CUDALockedPageAllocator zero size and copy constructor
     Vector<double, CUDALockedPageAllocator<double>> vec;
     Vector<double, CUDALockedPageAllocator<double>> vecb(vec);

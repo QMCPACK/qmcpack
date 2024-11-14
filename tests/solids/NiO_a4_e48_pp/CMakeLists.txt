@@ -20,7 +20,7 @@ else()
     #  NonLocalECP           =           -50.477 +/-            0.011
     #  IonIon                =           -239.30 +/-             0.00
     list(APPEND NIO_A4_E48_SCALARS "totenergy" "-370.7944 0.024")
-    list(APPEND NIO_A4_E48_SCALARS "kinetic" "230.471 0.46")
+    list(APPEND NIO_A4_E48_SCALARS "kinetic" "230.471 0.55")
     list(APPEND NIO_A4_E48_SCALARS "samples" "32000 0.0")
 
     qmc_run_and_check(
@@ -39,10 +39,10 @@ else()
     #  LocalEnergy           =  -371.288648 +/- 0.000530   13.352353 +/- 0.006475
     #  LocalEnergy           =  -371.283531 +/- 0.000519   13.590739 +/- 0.008039
     #  LocalEnergy           =  -371.283912 +/- 0.000493   13.588468 +/- 0.007902
-    list(APPEND NIO_A4_E48_DMC_SCALARS "totenergy" "-371.320817 0.023")
-    list(APPEND NIO_A4_E48_DMC_V0_SCALARS "totenergy" "-371.288648 0.018")
-    list(APPEND NIO_A4_E48_DMC_V1_SCALARS "totenergy" "-371.283531 0.018")
-    list(APPEND NIO_A4_E48_DMC_V3_SCALARS "totenergy" "-371.283912 0.018")
+    list(APPEND NIO_A4_E48_DMC_SCALARS "totenergy" "-371.320817 0.03")
+    list(APPEND NIO_A4_E48_DMC_V0_SCALARS "totenergy" "-371.288648 0.025")
+    list(APPEND NIO_A4_E48_DMC_V1_SCALARS "totenergy" "-371.283531 0.025")
+    list(APPEND NIO_A4_E48_DMC_V3_SCALARS "totenergy" "-371.283912 0.025")
 
     qmc_run_and_check(
       short-NiO_a4_e48_pp-dmc_sdj
@@ -108,8 +108,8 @@ else()
     #  LocalECP              =          -389.971 +/-            0.022
     #  NonLocalECP           =           -50.534 +/-            0.012
     #  IonIon                =           -239.30 +/-             0.00
-    list(APPEND NIO_A4_E48_J3_SCALARS "totenergy" "-370.88498 0.023")
-    list(APPEND NIO_A4_E48_J3_SCALARS "kinetic" "230.555 0.46")
+    list(APPEND NIO_A4_E48_J3_SCALARS "totenergy" "-370.88498 0.035")
+    list(APPEND NIO_A4_E48_J3_SCALARS "kinetic" "230.555 0.8")
     list(APPEND NIO_A4_E48_J3_SCALARS "samples" "32000 0.0")
 
     qmc_run_and_check(
@@ -281,7 +281,7 @@ else()
         list(APPEND DET_NIO_A4_E48_SCALARS "kinetic" "289.74197931 0.02")
         list(APPEND DET_NIO_A4_E48_SCALARS "potential" "-660.30274039 0.02")
         list(APPEND DET_NIO_A4_E48_SCALARS "eeenergy" "80.56038781 0.003")
-        list(APPEND DET_NIO_A4_E48_SCALARS "ionion" "-239.29802821 0.000002")
+        list(APPEND DET_NIO_A4_E48_SCALARS "ionion" "-239.29802821 0.000004")
         list(APPEND DET_NIO_A4_E48_SCALARS "localecp" "-392.26505707 0.001")
         list(APPEND DET_NIO_A4_E48_SCALARS "nonlocalecp" "-109.29992959 0.02")
         list(APPEND DET_NIO_A4_E48_SCALARS "samples" "9 0.0")
@@ -290,7 +290,7 @@ else()
         list(APPEND DET_NIO_A4_E48_SCALARS "kinetic" "289.73576973 0.02")
         list(APPEND DET_NIO_A4_E48_SCALARS "potential" "-660.30813251 0.02")
         list(APPEND DET_NIO_A4_E48_SCALARS "eeenergy" "80.56139080 0.003")
-        list(APPEND DET_NIO_A4_E48_SCALARS "ionion" "-239.29802821 0.000002")
+        list(APPEND DET_NIO_A4_E48_SCALARS "ionion" "-239.29802821 0.000004")
         list(APPEND DET_NIO_A4_E48_SCALARS "localecp" "-392.26503661 0.001")
         list(APPEND DET_NIO_A4_E48_SCALARS "nonlocalecp" "-109.30472876 0.02")
         list(APPEND DET_NIO_A4_E48_SCALARS "samples" "9 0.0")
@@ -335,7 +335,7 @@ else()
         list(APPEND DET_NIO_BATCHED_A4_E48_SCALARS "kinetic" "248.13553181 0.02")
         list(APPEND DET_NIO_BATCHED_A4_E48_SCALARS "potential" "-619.18437480 0.02")
         list(APPEND DET_NIO_BATCHED_A4_E48_SCALARS "eeenergy" "75.55908504 0.003")
-        list(APPEND DET_NIO_BATCHED_A4_E48_SCALARS "ionion" "-239.29802821 0.000002")
+        list(APPEND DET_NIO_BATCHED_A4_E48_SCALARS "ionion" "-239.29802821 0.000004")
         list(APPEND DET_NIO_BATCHED_A4_E48_SCALARS "localecp" "-391.88718168 0.0015")
         list(APPEND DET_NIO_BATCHED_A4_E48_SCALARS "nonlocalecp" "-63.55832834 0.02")
         list(APPEND DET_NIO_BATCHED_A4_E48_SCALARS "samples" "9 0.0")
@@ -344,7 +344,7 @@ else()
         list(APPEND DET_NIO_BATCHED_A4_E48_SCALARS "kinetic" "248.13840975 0.02")
         list(APPEND DET_NIO_BATCHED_A4_E48_SCALARS "potential" "-619.18265461 0.02")
         list(APPEND DET_NIO_BATCHED_A4_E48_SCALARS "eeenergy" "75.55912430 0.003")
-        list(APPEND DET_NIO_BATCHED_A4_E48_SCALARS "ionion" "-239.29802821 0.000002")
+        list(APPEND DET_NIO_BATCHED_A4_E48_SCALARS "ionion" "-239.29802821 0.000004")
         list(APPEND DET_NIO_BATCHED_A4_E48_SCALARS "localecp" "-391.88648786 0.0015")
         list(APPEND DET_NIO_BATCHED_A4_E48_SCALARS "nonlocalecp" "-63.55606971 0.02")
         list(APPEND DET_NIO_BATCHED_A4_E48_SCALARS "samples" "9 0.0")

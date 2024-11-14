@@ -25,6 +25,8 @@
 #include "Message/CommOperators.h"
 // #include "QMCDrivers/ForwardWalking/ForwardWalkingStructure.h"
 
+#include <filesystem>
+
 namespace qmcplusplus
 {
 namespace testing
@@ -91,7 +93,8 @@ public:
   /** start a block */
   void start();
 
-  /** legacy: start controller  and initialize the IDs of walkers*/
+  /** start controller  and initialize the IDs of walkers
+      \todo remove when legacy is dropped*/
   void setWalkerID(MCWalkerConfiguration& walkers);
 
   /** take averages and writes to a file */
@@ -185,7 +188,7 @@ protected:
   std::vector<int> FairOffSet;
 
   ///filename for dmc.dat
-  std::string dmcFname;
+  std::filesystem::path dmcFname;
   ///file to save energy histogram
   std::unique_ptr<std::ofstream> dmcStream;
   ///Number of walkers created by this rank

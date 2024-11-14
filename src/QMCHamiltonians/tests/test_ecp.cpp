@@ -18,6 +18,7 @@
 #include "QMCHamiltonians/ECPComponentBuilder.h"
 #include "QMCHamiltonians/NonLocalECPComponent.h"
 #include "QMCHamiltonians/SOECPComponent.h"
+#include "Utilities/RuntimeOptions.h"
 
 //for wavefunction
 #include "OhmmsData/Libxml2Doc.h"
@@ -27,8 +28,6 @@
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #include "QMCWaveFunctions/SpinorSet.h"
-//for nonlocal moves
-#include "QMCHamiltonians/NonLocalTOperator.h"
 
 
 //for Hamiltonian manipulations.
@@ -174,13 +173,8 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
 
   ions.setName("ion0");
   ions.create({2});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
-  ions.R[1][0] = 6.0;
-  ions.R[1][1] = 0.0;
-  ions.R[1][2] = 0.0;
-
+  ions.R[0]                     = {0.0, 0.0, 0.0};
+  ions.R[1]                     = {6.0, 0.0, 0.0};
   SpeciesSet& ion_species       = ions.getSpeciesSet();
   int pIdx                      = ion_species.addSpecies("Na");
   int pChargeIdx                = ion_species.addAttribute("charge");
@@ -192,14 +186,8 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   elec.setName("e");
   std::vector<int> agroup(2, 1);
   elec.create(agroup);
-  elec.R[0][0] = 2.0;
-  elec.R[0][1] = 0.0;
-  elec.R[0][2] = 0.0;
-  elec.R[1][0] = 3.0;
-  elec.R[1][1] = 0.0;
-  elec.R[1][2] = 0.0;
-
-
+  elec.R[0]                    = {2.0, 0.0, 0.0};
+  elec.R[1]                    = {3.0, 0.0, 0.0};
   SpeciesSet& tspecies         = elec.getSpeciesSet();
   int upIdx                    = tspecies.addSpecies("u");
   int downIdx                  = tspecies.addSpecies("d");
@@ -219,7 +207,8 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   elec.resetGroups();
 
   //Cool.  Now to construct a wavefunction with 1 and 2 body jastrow (no determinant)
-  TrialWaveFunction psi;
+  RuntimeOptions runtime_options;
+  TrialWaveFunction psi(runtime_options);
 
   //Add the two body jastrow
   const char* particles = R"(<tmp>
@@ -296,7 +285,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
       const auto& displ = myTable.getDisplRow(jel);
       for (int iat = 0; iat < ions.getTotalNum(); iat++)
         if (nlpp != nullptr && dist[iat] < nlpp->getRmax())
-          Value1 += nlpp->evaluateOne(elec, iat, psi, jel, dist[iat], -displ[iat], false);
+          Value1 += nlpp->evaluateOne(elec, iat, psi, jel, dist[iat], -displ[iat], std::nullopt, false);
     }
     //These numbers are validated against an alternate code path via wavefunction tester.
     CHECK(Value1 == Approx(6.9015710211e-02));
@@ -488,7 +477,8 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   ions.resetGroups();
   elec.resetGroups();
 
-  TrialWaveFunction psi;
+  RuntimeOptions runtime_options;
+  TrialWaveFunction psi(runtime_options);
 
   std::vector<PosType> kup, kdn;
   std::vector<RealType> k2up, k2dn;
@@ -556,7 +546,7 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   //Need to set up temporary data for this configuration in trial wavefunction.  Needed for ratios.
   auto logpsi = psi.evaluateLog(elec);
 
-  auto test_evaluateOne = [&]() {
+  auto test_evaluateOne = [&](bool exact) {
     RealType Value1(0.0);
     for (int jel = 0; jel < elec.getTotalNum(); jel++)
     {
@@ -564,7 +554,10 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
       const auto& displ = myTable.getDisplRow(jel);
       for (int iat = 0; iat < ions.getTotalNum(); iat++)
         if (sopp != nullptr && dist[iat] < sopp->getRmax())
-          Value1 += sopp->evaluateOne(elec, iat, psi, jel, dist[iat], RealType(-1) * displ[iat]);
+          if (exact)
+            Value1 += sopp->evaluateOneExactSpinIntegration(elec, iat, psi, jel, dist[iat], RealType(-1) * displ[iat]);
+          else
+            Value1 += sopp->evaluateOne(elec, iat, psi, jel, dist[iat], RealType(-1) * displ[iat]);
     }
     REQUIRE(Value1 == Approx(-3.530511241));
   };
@@ -572,10 +565,11 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   {
     //test with VPs
     sopp->initVirtualParticle(elec);
-    test_evaluateOne();
+    test_evaluateOne(false);
+    test_evaluateOne(true);
     sopp->deleteVirtualParticle();
     //test without VPs
-    test_evaluateOne();
+    test_evaluateOne(false);
   }
 
   //Check evaluateValueAndDerivatives
@@ -590,17 +584,18 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
 
 
   //Ref Values from soecp_eval_ref.cpp in the print_dlogpsi using finite differences
-  std::vector<RealType> dlogpsi_refs = { -0.2622341567, -0.64168132, -0.09608452334, -2.486899575e-14, -2.486899575e-14};
+  std::vector<RealType> dlogpsi_refs = {-0.2622341567, -0.64168132, -0.09608452334, -2.486899575e-14, -2.486899575e-14};
   //These weren't independently validated in soecp_eval_ref.cpp
   //trusting current values from evaluateDerivatives...which should be correct if the
   //dlogpsi comes out correct
   std::vector<RealType> dkinpsioverpsi_refs = {-3.807451601, 0.1047251267, 3.702726474, 0, 0};
   //These were independently validated in soecp_eval_ref.cpp, includes the contribution
   //from dkinpsioverpsi_refs
-  std::vector<RealType> dhpsioverpsi_refs = { -3.855727438, 0.202618546, 3.653108892, -8.169955304e-14, -8.169955304e-14};
+  std::vector<RealType> dhpsioverpsi_refs = {-3.855727438, 0.202618546, 3.653108892, -8.169955304e-14,
+                                             -8.169955304e-14};
 
 
-  auto test_evaluateValueAndDerivatives     = [&]() {
+  auto test_evaluateValueAndDerivatives = [&](bool exact) {
     dlogpsi.resize(NumOptimizables, ValueType(0));
     dhpsioverpsi.resize(NumOptimizables, ValueType(0));
     psi.evaluateDerivatives(elec, optvars, dlogpsi, dhpsioverpsi);
@@ -618,10 +613,14 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
       const auto& displ = myTable.getDisplRow(jel);
       for (int iat = 0; iat < ions.getTotalNum(); iat++)
         if (sopp != nullptr && dist[iat] < sopp->getRmax())
-          Value1 += sopp->evaluateValueAndDerivatives(elec, iat, psi, jel, dist[iat], -displ[iat], optvars, dlogpsi,
-                                                          dhpsioverpsi);
+          if (exact)
+            Value1 += sopp->evaluateValueAndDerivativesExactSpinIntegration(elec, iat, psi, jel, dist[iat], -displ[iat],
+                                                                            optvars, dlogpsi, dhpsioverpsi);
+          else
+            Value1 += sopp->evaluateValueAndDerivatives(elec, iat, psi, jel, dist[iat], -displ[iat], optvars, dlogpsi,
+                                                        dhpsioverpsi);
     }
-    REQUIRE(Value1 == Approx(-3.530511241));
+    REQUIRE(Value1 == Approx(-3.530511241).epsilon(2.e-5));
 
     for (int ip = 0; ip < NumOptimizables; ip++)
       CHECK(std::real(dhpsioverpsi[ip]) == Approx(dhpsioverpsi_refs[ip]));
@@ -629,9 +628,10 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
 
   {
     sopp->initVirtualParticle(elec);
-    test_evaluateValueAndDerivatives();
+    test_evaluateValueAndDerivatives(false);
+    test_evaluateValueAndDerivatives(true);
     sopp->deleteVirtualParticle();
-    test_evaluateValueAndDerivatives();
+    test_evaluateValueAndDerivatives(false);
   }
 }
 #endif

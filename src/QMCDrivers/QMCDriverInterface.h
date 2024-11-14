@@ -34,16 +34,10 @@ class QMCDriverInterface
 {
 public:
   using BranchEngineType = SimpleFixedNodeBranch;
-
+  using FullPrecRealType              = QMCTraits::FullPrecRealType;
   virtual bool run()                  = 0;
   virtual bool put(xmlNodePtr cur)    = 0;
   virtual void recordBlock(int block) = 0;
-
-  ///return the random generators
-  //virtual std::vector<RandomGenerator*>& getRng() = 0;
-
-  ///return the i-th random generator
-  virtual RandomGenerator& getRng(int i) = 0;
 
   virtual void setStatus(const std::string& aname, const std::string& h5name, bool append) = 0;
 
@@ -52,6 +46,8 @@ public:
   virtual void putWalkers(std::vector<xmlNodePtr>& wset)                = 0;
   virtual void putTraces(xmlNodePtr txml)                               = 0;
   virtual void requestTraces(bool allow_traces)                         = 0;
+  virtual void putWalkerLogs(xmlNodePtr wlxml)                          = 0;
+  virtual void requestWalkerLogs(bool allow_walker_logs_)               = 0;
   virtual void process(xmlNodePtr cur)                                  = 0;
   virtual QMCRunType getRunType()                                       = 0;
   virtual std::string getEngineName()                                   = 0;

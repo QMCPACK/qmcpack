@@ -28,6 +28,7 @@
 #include <ResourceCollection.h>
 #include "TestListenerFunction.h"
 #include <TrialWaveFunction.h>
+#include "Utilities/RuntimeOptions.h"
 
 using std::string;
 
@@ -52,10 +53,7 @@ TEST_CASE("Coulomb PBC A-A", "[hamiltonian]")
 
   ions.setName("ion");
   ions.create({1});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
-
+  ions.R[0]                     = {0.0, 0.0, 0.0};
   SpeciesSet& ion_species       = ions.getSpeciesSet();
   int pIdx                      = ion_species.addSpecies("H");
   int pChargeIdx                = ion_species.addAttribute("charge");
@@ -95,13 +93,8 @@ TEST_CASE("Coulomb PBC A-A BCC H", "[hamiltonian]")
 
   ions.setName("ion");
   ions.create({2});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
-  ions.R[1][0] = 1.88972614;
-  ions.R[1][1] = 1.88972614;
-  ions.R[1][2] = 1.88972614;
-
+  ions.R[0]                     = {0.0, 0.0, 0.0};
+  ions.R[1]                     = {1.88972614, 1.88972614, 1.88972614};
   SpeciesSet& ion_species       = ions.getSpeciesSet();
   int pIdx                      = ion_species.addSpecies("H");
   int pChargeIdx                = ion_species.addAttribute("charge");
@@ -137,10 +130,7 @@ TEST_CASE("Coulomb PBC A-A elec", "[hamiltonian]")
 
   elec.setName("elec");
   elec.create({1});
-  elec.R[0][0] = 0.0;
-  elec.R[0][1] = 0.5;
-  elec.R[0][2] = 0.0;
-
+  elec.R[0]                  = {0.0, 0.5, 0.0};
   SpeciesSet& tspecies       = elec.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
   int chargeIdx              = tspecies.addAttribute("charge");
@@ -256,7 +246,9 @@ void test_CoulombPBCAA_3p(DynamicCoordinateKind kind)
   RefVectorWithLeader<OperatorBase> caa_ref_list(caa, {caa, caa_clone});
 
   // dummy psi
-  TrialWaveFunction psi, psi_clone;
+  RuntimeOptions runtime_options;
+  TrialWaveFunction psi(runtime_options);
+  TrialWaveFunction psi_clone(runtime_options);
   RefVectorWithLeader<TrialWaveFunction> psi_ref_list(psi, {psi, psi_clone});
 
   ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_ref_list);
@@ -295,13 +287,8 @@ TEST_CASE("CoulombAA::mw_evaluatePerParticle", "[hamiltonian]")
 
   elec.setName("elec");
   elec.create({2});
-  elec.R[0][0] = 0.0;
-  elec.R[0][1] = 0.5;
-  elec.R[0][2] = 0.0;
-  elec.R[1][0] = 0.0;
-  elec.R[1][1] = 0.0;
-  elec.R[1][2] = 0.0;
-
+  elec.R[0]                  = {0.0, 0.5, 0.0};
+  elec.R[1]                  = {0.0, 0.0, 0.0};
   SpeciesSet& tspecies       = elec.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
   int chargeIdx              = tspecies.addAttribute("charge");
@@ -321,8 +308,9 @@ TEST_CASE("CoulombAA::mw_evaluatePerParticle", "[hamiltonian]")
   CoulombPBCAA caa(elec, true, false, kind == DynamicCoordinateKind::DC_POS_OFFLOAD);
 
   // mock golden wavefunction, only needed to satisfy APIs
-  TrialWaveFunction psi;
-  
+  RuntimeOptions runtime_options;
+  TrialWaveFunction psi(runtime_options);
+
   // informOfPerParticleListener should be called on the golden instance of this operator if there
   // are listeners present for it.  This would normally be done by QMCHamiltonian but this is a unit test.
   caa.informOfPerParticleListener();
@@ -330,19 +318,15 @@ TEST_CASE("CoulombAA::mw_evaluatePerParticle", "[hamiltonian]")
   // Now we can make a clone of the mock walker
   ParticleSet elec2(elec);
 
-  elec2.R[0][0] = 0.0;
-  elec2.R[0][1] = 0.5;
-  elec2.R[0][2] = 0.1;
-  elec2.R[1][0] = 0.6;
-  elec2.R[1][1] = 0.05;
-  elec2.R[1][2] = -0.1;
+  elec2.R[0] = {0.0, 0.5, 0.1};
+  elec2.R[1] = {0.6, 0.05, -0.1};
   elec2.update();
 
   CoulombPBCAA caa2(elec2, true, false, kind == DynamicCoordinateKind::DC_POS_OFFLOAD);
   RefVector<OperatorBase> caas{caa, caa2};
   RefVectorWithLeader<OperatorBase> o_list(caa, caas);
 
-  TrialWaveFunction psi_clone;
+  TrialWaveFunction psi_clone(runtime_options);
   RefVectorWithLeader<TrialWaveFunction> twf_list(psi, {psi, psi_clone});
 
   // Self-energy correction, no background charge for e-e interaction

@@ -22,6 +22,7 @@
 #include <numeric>
 #include "Message/CommOperators.h"
 #include "OhmmsData/ParameterSet.h"
+#include "CPU/math.hpp"
 
 namespace qmcplusplus
 {
@@ -666,7 +667,7 @@ void DescentEngine::updateParameters()
       denom           = 1;
       ValueType alpha = (static_cast<ValueType>(rand() / RAND_MAX));
       ValueType sign  = std::abs(cur_deriv_set[i]) / cur_deriv_set[i];
-      if (std::isnan(std::real(sign)))
+      if (qmcplusplus::isnan(std::real(sign)))
       {
         app_log() << "Got a nan, choosing sign randomly with 50-50 probability" << std::endl;
 

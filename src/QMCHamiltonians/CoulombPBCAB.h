@@ -61,8 +61,6 @@ public:
   Return_t myConst;
   ///cutoff radius of the short-range part
   RealType myRcut;
-  ///radial grid
-  std::shared_ptr<GridType> myGrid;
   ///Always mave a radial functor for the bare coulomb
   std::shared_ptr<const RadFunctorType> V0;
   ///Radial functor for bare coulomb, optimized for forces
@@ -71,7 +69,6 @@ public:
   std::shared_ptr<const RadFunctorType> dfV0;
   /// Flag for whether to compute forces or not
   bool ComputeForces;
-  int MaxGridPoints;
 
   ///number of particles per species of A
   std::vector<int> NofSpeciesA;
@@ -156,11 +153,11 @@ public:
                               const std::vector<ListenerVector<RealType>>& ion_listeners) const override;
 
 
-  Return_t evaluateWithIonDerivs(ParticleSet& P,
-                                 ParticleSet& ions,
-                                 TrialWaveFunction& psi,
-                                 ParticleSet::ParticlePos& hf_terms,
-                                 ParticleSet::ParticlePos& pulay_terms) override;
+  void evaluateIonDerivs(ParticleSet& P,
+                         ParticleSet& ions,
+                         TrialWaveFunction& psi,
+                         ParticleSet::ParticlePos& hf_terms,
+                         ParticleSet::ParticlePos& pulay_terms) override;
 
   /** Do nothing */
   bool put(xmlNodePtr cur) override { return true; }
@@ -232,22 +229,8 @@ private:
   ///source particle set
   ParticleSet& pset_ions_;
 
-  struct CoulombPBCABMultiWalkerResource : public Resource
-  {
-    CoulombPBCABMultiWalkerResource() : Resource("CoulombPBCAB") {}
-    Resource* makeClone() const override { return new CoulombPBCABMultiWalkerResource(*this); }
-
-    /// a walkers worth of per ion AB potential values
-    Vector<RealType> pp_samples_src;
-    /// a walkers worth of per electron AB potential values
-    Vector<RealType> pp_samples_trg;
-    /// constant values for the source particles aka ions aka A
-    Vector<RealType> pp_consts_src;
-    /// constant values for the target particles aka electrons aka B
-    Vector<RealType> pp_consts_trg;
-  };
-
-  ResourceHandle<CoulombPBCABMultiWalkerResource> mw_res_;
+  struct CoulombPBCABMultiWalkerResource;
+  ResourceHandle<CoulombPBCABMultiWalkerResource> mw_res_handle_;
 
   /** Compute the const part of the per particle coulomb AB potential.
    *  \param[out]  pp_consts_src   constant values for the source particles aka ions aka A   

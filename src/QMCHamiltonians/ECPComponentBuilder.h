@@ -48,7 +48,10 @@ struct ECPComponentBuilder : public MPIObjectBase, public QMCTraits
   std::unique_ptr<L2RadialPotential> pp_L2;
   std::map<std::string, int> angMon;
 
-  ECPComponentBuilder(const std::string& aname, Communicate* c, int nrule = -1, int llocal = -1);
+  /** constructor
+   * spin grid used for numerical integration. use 0 for exact integration.
+   */
+  ECPComponentBuilder(const std::string& aname, Communicate* c, int nrule = -1, int llocal = -1, int srule = 8);
 
   bool parse(const std::string& fname, xmlNodePtr cur);
   bool put(xmlNodePtr cur);
@@ -74,7 +77,6 @@ struct ECPComponentBuilder : public MPIObjectBase, public QMCTraits
 
   std::unique_ptr<mGridType> createGrid(xmlNodePtr cur, bool useLinear = false);
   RadialPotentialType* createVrWithBasisGroup(xmlNodePtr cur, mGridType* agrid);
-  RadialPotentialType* createVrWithData(xmlNodePtr cur, mGridType* agrid, int rCorrection = 0);
 
   void doBreakUp(const std::vector<int>& angList,
                  const Matrix<mRealType>& vnn,

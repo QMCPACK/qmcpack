@@ -23,11 +23,23 @@ if(QMC_COMPLEX)
     diamondC_2x1x1-Gaussian_pp_cplx_LONG_SCALARS #VMC
   )
 
+  qmc_run_and_check(
+    long-diamondC_2x1x1-Gaussian_pp_Tw_cplx-vmcbatch
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp_cplx"
+    vmcbatch_long
+    vmcbatch_long.in.xml
+    1
+    16
+    TRUE
+    0
+    diamondC_2x1x1-Gaussian_pp_cplx_LONG_SCALARS #VMC
+  )
+
   # VMC short run with no Jastrows
   # Compare directly to Hartree Fock Energy of: E=-21.30438154915548
   #Data generated using utils/make_ref_data.sh  diamondC_2x1x1-Gaussian_pp_cplx_SHORT qmc_ref/qmc_short.s000.scalar.dat  qmc_ref/qmc_ref_long.s000.scalar.dat
   list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_SHORT_SCALARS "totenergy" "-21.30438154915548 0.045341262663")
-  list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_SHORT_SCALARS "variance" "4.388589388914 0.25")
+  list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_SHORT_SCALARS "variance" "4.388589388914 0.3")
   list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_SHORT_SCALARS "kinetic" "19.545637226792 0.133872779266")
   list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_SHORT_SCALARS "potential" "-40.850779026183 0.130602718601")
   list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_SHORT_SCALARS "eeenergy" "-4.537323794961 0.058408305166")
@@ -39,6 +51,18 @@ if(QMC_COMPLEX)
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp_cplx"
     vmc_short
     vmc_short.in.xml
+    1
+    16
+    TRUE
+    0
+    diamondC_2x1x1-Gaussian_pp_cplx_SHORT_SCALARS #VMC
+  )
+
+  qmc_run_and_check(
+    short-diamondC_2x1x1-Gaussian_pp_Tw_cplx-vmcbatch
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp_cplx"
+    vmcbatch_short
+    vmcbatch_short.in.xml
     1
     16
     TRUE

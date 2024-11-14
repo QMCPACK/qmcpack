@@ -24,22 +24,16 @@ if(QMC_OMP)
         CACHE STRING "Offload target architecture")
     set(OPENMP_OFFLOAD_COMPILE_OPTIONS "-foffload=${OFFLOAD_TARGET} -foffload-options=\"-lm -latomic\"")
 
-    if(NOT DEFINED OFFLOAD_ARCH AND OFFLOAD_TARGET MATCHES "amdgcn-amdhsa")
-      set(OFFLOAD_ARCH gfx906)
-    endif()
-
-    if(NOT DEFINED OFFLOAD_ARCH
-       AND OFFLOAD_TARGET MATCHES "nvptx-none"
-       AND DEFINED CMAKE_CUDA_ARCHITECTURES)
-      list(LENGTH CMAKE_CUDA_ARCHITECTURES NUMBER_CUDA_ARCHITECTURES)
-      if(NUMBER_CUDA_ARCHITECTURES EQUAL "1")
-        set(OFFLOAD_ARCH sm_${CMAKE_CUDA_ARCHITECTURES})
+    if(NOT DEFINED OFFLOAD_ARCH AND DEFINED QMC_GPU_ARCHS)
+      list(LENGTH QMC_GPU_ARCHS QMC_GPU_ARCH_COUNT)
+      if(QMC_GPU_ARCH_COUNT EQUAL "1")
+        set(OFFLOAD_ARCH ${QMC_GPU_ARCHS})
       else()
         message(
           FATAL_ERROR
             "GCC does not yet support offload to multiple architectures! "
-            "Deriving OFFLOAD_ARCH from CMAKE_CUDA_ARCHITECTURES failed. "
-            "Please keep only one entry in CMAKE_CUDA_ARCHITECTURES or set OFFLOAD_ARCH.")
+            "Deriving OFFLOAD_ARCH from QMC_GPU_ARCHS failed. "
+            "Please keep only one entry in QMC_GPU_ARCHS or set OFFLOAD_ARCH.")
       endif()
     endif()
 
@@ -145,10 +139,9 @@ file(
   "#include <iostream>\n#if __GLIBC__ == 2 && ( __GLIBC_MINOR__ == 22 || __GLIBC_MINOR__ == 23 )\n#error buggy glibc version\n#endif\n int main() { return 0; }\n"
 )
 try_compile(PASS_GLIBC ${CMAKE_BINARY_DIR} ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_glibc.cxx
-            CMAKE_FLAGS "${CMAKE_CXX_FLAGS}")
+            CMAKE_FLAGS "${CMAKE_CXX_FLAGS}" OUTPUT_VARIABLE COMPILE_OUTPUT)
 if(NOT PASS_GLIBC)
-  message(FATAL_ERROR "Your system and GNU compiler are using glibc 2.22 or 2.23 which contains a buggy libmvec."
-                      "This results in crashes. Workaround needed. Alternatively upgrade or use another compiler.")
+  message(FATAL_ERROR "Test glibc compilation failed. Output:\n${COMPILE_OUTPUT}")
 endif()
 
 # Add static flags if necessary

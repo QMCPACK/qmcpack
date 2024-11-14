@@ -11,6 +11,7 @@
 
 
 #include "HamiltonianRef.h"
+#include "CPU/math.hpp"
 
 namespace qmcplusplus
 {
@@ -36,7 +37,7 @@ FullPrecRealType HamiltonianRef::evaluate(ParticleSet& P)
   for (int i = 0; i < Hrefs_.size(); ++i)
   {
     const auto LocalEnergyComponent = Hrefs_[i].get().evaluate(P);
-    if (std::isnan(LocalEnergyComponent))
+    if (qmcplusplus::isnan(LocalEnergyComponent))
       APP_ABORT("HamiltonianRef::evaluate component " + Hrefs_[i].get().getName() + " returns NaN\n");
     LocalEnergy += LocalEnergyComponent;
   }

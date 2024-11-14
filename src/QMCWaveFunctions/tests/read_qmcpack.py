@@ -5,6 +5,7 @@ import xml.etree.ElementTree as ET
 from collections import namedtuple, defaultdict
 import math
 import gaussian_orbitals
+import slater_orbitals
 import numpy as np
 
 
@@ -25,24 +26,40 @@ def read_basis_groups(atomic_basis_set):
     basis_groups =  atomic_basis_set.findall('basisGroup')
     #print basis_groups
     basis_set = []
+    is_gaussian = False
+    is_slater = False
     for basis_group in basis_groups:
-        if basis_group.attrib['type'] != 'Gaussian':
-            print('Expecting Gaussian type basisGroup')
+        if basis_group.attrib['type'] == 'Gaussian':
+            is_gaussian = True
+        if basis_group.attrib['type'] == 'Slater':
+            is_slater = True
         #print basis_group.attrib['n']
-        n = int(basis_group.attrib['n'])
+        if is_gaussian:
+            n = int(basis_group.attrib['n'])
         #print basis_group.attrib['l']
         ang_mom_l = int(basis_group.attrib['l'])
         #print basis_group.attrib['type']
         zeta_list = []
         coef_list = []
+        n_list = []
         radfuncs = basis_group.findall('radfunc')
         for radfunc in radfuncs:
             zeta = float(radfunc.attrib['exponent'])
-            contraction_coef =  float(radfunc.attrib['contraction'])
+            if is_slater:
+                n = int(radfunc.attrib['n'])
+            contraction_coef = 1.0
+            if "contraction" in radfunc.attrib:
+                contraction_coef =  float(radfunc.attrib['contraction'])
+
+            if is_slater:
+                n_list.append(n)
             zeta_list.append(zeta)
             coef_list.append(contraction_coef)
 
-        cg = gaussian_orbitals.CG_basis(ang_mom_l, len(zeta_list), zeta_list, coef_list)
+        if is_gaussian:
+            cg = gaussian_orbitals.CG_basis(ang_mom_l, len(zeta_list), zeta_list, coef_list)
+        if is_slater:
+            cg = slater_orbitals.CG_basis(ang_mom_l, len(zeta_list), n_list, zeta_list, coef_list)
         basis_set.append(cg)
 
     return basis_set
@@ -68,6 +85,9 @@ def parse_qmc_wf(fname, element_list):
 
     #  Just use the first one for now - assume up and down MO's are the same
     MO_coeff_node = tree.find('.//determinant/coefficient')
+    if MO_coeff_node is None:
+        MO_coeff_node = tree.find('.//sposet/coefficient')
+
     MO_matrix = None
     if MO_coeff_node is None:
         print('Molecular orbital coefficients not found')

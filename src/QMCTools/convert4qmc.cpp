@@ -33,8 +33,7 @@ int main(int argc, char** argv)
   mpi3::environment env(argc, argv);
   OHMMS::Controller = new Communicate(env.world());
 #endif
-  // Suppress HDF5 warning and error messages.
-  qmcplusplus::hdf_error_suppression hide_hdf_errors;
+
   if (argc < 2)
   {
     std::cout << "Usage: convert [-gaussian|-gamess|-orbitals|-dirac|-rmg] filename " << std::endl;
@@ -226,7 +225,7 @@ int main(int argc, char** argv)
         abort();
       }
       //Failed to create a parser. Try with the extension
-      std::string ext = getExtension(in_file);
+      auto ext = getExtension(in_file);
       if (parser == 0)
       {
         if (ext == "Fchk")
@@ -263,7 +262,6 @@ int main(int argc, char** argv)
         std::string token;
         pos   = prefix.find(delimiter);
         token = prefix.substr(0, pos);
-        prefix.erase(0, pos + delimiter.length());
         prefix = token;
       }
       std::cout << "Using " << prefix << " to name output files" << std::endl;

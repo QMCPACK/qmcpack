@@ -151,26 +151,10 @@ struct J1Spin : public WaveFunctionComponent
     // if target type is specified J1UniqueFunctors[i*NumTargetGroups + j] is assigned
     assert(target_type < NumTargetGroups);
     if (target_type == -1)
-    {
-      for (int i = 0; i < Nions; i++)
-        for (int j = 0; j < NumTargetGroups; j++)
-        {
-          auto igroup = Ions.getGroupID(i);
-          if (igroup == source_type && J1UniqueFunctors[igroup * NumTargetGroups + j] == nullptr)
-            J1UniqueFunctors[igroup * NumTargetGroups + j] = std::move(afunc);
-        }
-    }
+      throw std::runtime_error(
+          "J1Spin::addFunc is not compatible with spin independent Jastrow factors (target_type == -1");
     else
-    {
-      for (int i = 0; i < Nions; i++)
-        for (int j = 0; j < NumTargetGroups; j++)
-        {
-          auto igroup = Ions.getGroupID(i);
-          if (Ions.getGroupID(i) == source_type && j == target_type &&
-              J1UniqueFunctors[i * NumTargetGroups + j] == nullptr)
-            J1UniqueFunctors[igroup * Nelec + j] = std::move(afunc);
-        }
-    }
+      J1UniqueFunctors[source_type * NumTargetGroups + target_type] = std::move(afunc);
   }
 
   void recompute(const ParticleSet& P) override
@@ -184,9 +168,9 @@ struct J1Spin : public WaveFunctionComponent
     }
   }
 
-  LogValueType evaluateLog(const ParticleSet& P,
-                           ParticleSet::ParticleGradient& G,
-                           ParticleSet::ParticleLaplacian& L) override
+  LogValue evaluateLog(const ParticleSet& P,
+                       ParticleSet::ParticleGradient& G,
+                       ParticleSet::ParticleLaplacian& L) override
   {
     recompute(P);
     return log_value_ = computeGL(G, L);
@@ -221,11 +205,11 @@ struct J1Spin : public WaveFunctionComponent
     }
   }
 
-  PsiValueType ratio(ParticleSet& P, int iat) override
+  PsiValue ratio(ParticleSet& P, int iat) override
   {
     UpdateMode = ORB_PBYP_RATIO;
     curAt      = computeU(P, iat, P.getDistTableAB(myTableID).getTempDists());
-    return std::exp(static_cast<PsiValueType>(Vat[iat] - curAt));
+    return std::exp(static_cast<PsiValue>(Vat[iat] - curAt));
   }
 
   inline void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios) override
@@ -393,10 +377,10 @@ struct J1Spin : public WaveFunctionComponent
     return -simd::accumulate_n(Vat.data(), Nelec, QTFull::RealType());
   }
 
-  inline LogValueType evaluateGL(const ParticleSet& P,
-                                 ParticleSet::ParticleGradient& G,
-                                 ParticleSet::ParticleLaplacian& L,
-                                 bool fromscratch = false) override
+  inline LogValue evaluateGL(const ParticleSet& P,
+                             ParticleSet::ParticleGradient& G,
+                             ParticleSet::ParticleLaplacian& L,
+                             bool fromscratch = false) override
   {
     return log_value_ = computeGL(G, L);
   }
@@ -456,7 +440,7 @@ struct J1Spin : public WaveFunctionComponent
    *
    * Using getTempDists(). curAt, curGrad and curLap are computed.
    */
-  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override
+  PsiValue ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override
   {
     UpdateMode = ORB_PBYP_PARTIAL;
 
@@ -464,7 +448,7 @@ struct J1Spin : public WaveFunctionComponent
     curLap = accumulateGL(dU.data(), d2U.data(), P.getDistTableAB(myTableID).getTempDispls(), curGrad);
     curAt  = simd::accumulate_n(U.data(), Nions, valT());
     grad_iat += curGrad;
-    return std::exp(static_cast<PsiValueType>(Vat[iat] - curAt));
+    return std::exp(static_cast<PsiValue>(Vat[iat] - curAt));
   }
 
   /** Rejected move. Nothing to do */
@@ -506,7 +490,7 @@ struct J1Spin : public WaveFunctionComponent
     }
   }
 
-  inline LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override
+  inline LogValue updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override
   {
     log_value_ = computeGL(P.G, P.L);
     buf.forward(Bytes_in_WFBuffer);

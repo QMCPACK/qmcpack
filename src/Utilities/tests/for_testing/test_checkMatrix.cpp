@@ -54,6 +54,13 @@ TEST_CASE("checkMatrix_OhmmsMatrix_real", "[utilities][for_testing]")
   // This would be how you would fail and print the information about what element failed.
   CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
 
+  //check with epsilon
+  b_mat(0,2) = 2.6005;
+  check_matrix_result = checkMatrix(a_mat, b_mat, false, 1e-4);
+  REQUIRE(check_matrix_result.result == false);
+  check_matrix_result = checkMatrix(a_mat, b_mat, false, 1e-3);
+  REQUIRE(check_matrix_result.result == true);
+
   b_mat.resize(4, 4);
   b_mat(0, 0) = 2.3;
   b_mat(0, 1) = 4.5;

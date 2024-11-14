@@ -19,7 +19,7 @@
 #include "Message/Communicate.h"
 #include "Numerics/MatrixOperators.h"
 #include "OhmmsData/AttributeSet.h"
-#include "CPU/SIMD/simd.hpp"
+#include "CPU/SIMD/inner_product.hpp"
 #include "Utilities/ProgressReportEngine.h"
 #include "hdf/hdf_archive.h"
 #include <limits>
@@ -55,6 +55,15 @@ void SPOSet::evaluateDetRatios(const VirtualParticleSet& VP,
     evaluateValue(VP, iat, psi);
     ratios[iat] = simd::dot(psi.data(), psiinv.data(), psi.size());
   }
+}
+
+void SPOSet::evaluateDetSpinorRatios(const VirtualParticleSet& VP,
+                                     ValueVector& psi,
+                                     const std::pair<ValueVector, ValueVector>& spinor_multiplier,
+                                     const ValueVector& invrow,
+                                     std::vector<ValueType>& ratios)
+{
+  throw std::runtime_error("Need specialization of " + getClassName() + "::evaluateDetSpinorRatios");
 }
 
 void SPOSet::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list,
@@ -291,6 +300,25 @@ void SPOSet::evaluateDerivRatios(const VirtualParticleSet& VP,
   if (isOptimizable())
     throw std::logic_error("Bug!! " + getClassName() +
                            "::evaluateDerivRatios "
+                           "must be overloaded when the SPOSet is optimizable.");
+}
+
+void SPOSet::evaluateSpinorDerivRatios(const VirtualParticleSet& VP,
+                                       const std::pair<ValueVector, ValueVector>& spinor_multiplier,
+                                       const opt_variables_type& optvars,
+                                       ValueVector& psi,
+                                       const ValueVector& psiinv,
+                                       std::vector<ValueType>& ratios,
+                                       Matrix<ValueType>& dratios,
+                                       int FirstIndex,
+                                       int LastIndex)
+{
+  // Match the fallback in WaveFunctionComponent that evaluates just the ratios
+  evaluateDetSpinorRatios(VP, psi, spinor_multiplier, psiinv, ratios);
+
+  if (isOptimizable())
+    throw std::logic_error("Bug!! " + getClassName() +
+                           "::evaluateSpinorDerivRatios "
                            "must be overloaded when the SPOSet is optimizable.");
 }
 

@@ -17,6 +17,7 @@
 
 #include "Libxml2Doc.h"
 #include "Utilities/Timer.h"
+#include <array>
 #include <fstream>
 #include <iostream>
 
@@ -40,9 +41,10 @@ OhmmsXPathObject::OhmmsXPathObject(const char* expression, xmlNodePtr cur)
   }
   else
   {
-    char local[128];
-    sprintf(local, ".%s", expression);
-    put(local, m_context);
+    std::array<char, 128> local;
+    if (std::snprintf(local.data(), local.size(), ".%s", expression) < 0)
+      throw std::runtime_error("Error generating expression");
+    put(local.data(), m_context);
   }
 }
 
@@ -78,7 +80,7 @@ void OhmmsXPathObject::put(const char* expression, xmlXPathContextPtr context)
 
 Libxml2Document::Libxml2Document() : m_doc(NULL), m_root(NULL), m_context(NULL) {}
 
-Libxml2Document::Libxml2Document(const std::string& xmlfile) { parse(xmlfile); }
+Libxml2Document::Libxml2Document(const std::string& xmlfile) : m_doc(NULL), m_root(NULL), m_context(NULL) { parse(xmlfile); }
 
 Libxml2Document::~Libxml2Document()
 {

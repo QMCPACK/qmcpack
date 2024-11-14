@@ -122,6 +122,42 @@ run_restart_and_check(
   true)
 
 run_restart_and_check(
+  deterministic-restart_dmc
+  "${qmcpack_SOURCE_DIR}/tests/io/restart_dmc"
+  det_qmc_vmcbatch_dmcbatch_tm
+  8
+  2
+  check.sh
+  false)
+
+run_restart_and_check(
+  deterministic-restart_dmc
+  "${qmcpack_SOURCE_DIR}/tests/io/restart_dmc"
+  det_qmc_vmcbatch_dmcbatch_tm
+  1
+  16
+  check.sh
+  true)
+
+run_restart_and_check(
+  deterministic-restart_dmc_disable_branching
+  "${qmcpack_SOURCE_DIR}/tests/io/restart_dmc_disable_branching"
+  det_qmc_vmcbatch_dmcbatch_tm
+  8
+  2
+  check.sh
+  false)
+
+run_restart_and_check(
+  deterministic-restart_dmc_disable_branching
+  "${qmcpack_SOURCE_DIR}/tests/io/restart_dmc_disable_branching"
+  det_qmc_vmcbatch_dmcbatch_tm
+  1
+  16
+  check.sh
+  true)
+
+run_restart_and_check(
   deterministic-save_spline_coefs
   "${qmcpack_SOURCE_DIR}/tests/io/save_spline_coefs"
   qmc_short

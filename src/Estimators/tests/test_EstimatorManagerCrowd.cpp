@@ -25,11 +25,13 @@
 #include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
 #include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
 #include "Utilities/ResourceCollection.h"
+#include "Utilities/ProjectData.h"
 
 namespace qmcplusplus
 {
 TEST_CASE("EstimatorManagerCrowd::EstimatorManagerCrowd", "[estimators]")
 {
+  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
   Communicate* comm = OHMMS::Controller;
 
   using namespace testing;
@@ -37,16 +39,18 @@ TEST_CASE("EstimatorManagerCrowd::EstimatorManagerCrowd", "[estimators]")
   EstimatorManagerInput emi(estimators_doc.getRoot());
 
 
-  auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
-  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
-  auto& pset             = *(particle_pool.getParticleSet("e"));
-  auto hamiltonian_pool  = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
-  auto& twf              = *(wavefunction_pool.getWaveFunction("wavefunction"));
-  auto& ham              = *(hamiltonian_pool.getPrimary());
+  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
+  auto wavefunction_pool =
+      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
+  auto& pset            = *(particle_pool.getParticleSet("e"));
+  auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
+  auto& twf             = *(wavefunction_pool.getWaveFunction("wavefunction"));
+  auto& ham             = *(hamiltonian_pool.getPrimary());
 
-  EstimatorManagerNew emn(comm, std::move(emi), ham, pset, twf);
+  EstimatorManagerNew emn(ham, comm);
+  emn.constructEstimators(std::move(emi), pset, twf, ham, particle_pool.getPool());
 
-  CHECK(emn.getNumEstimators() == 2);
+  CHECK(emn.getNumEstimators() == 3);
   CHECK(emn.getNumScalarEstimators() == 0);
 
   EstimatorManagerCrowd emc(emn);
@@ -54,6 +58,7 @@ TEST_CASE("EstimatorManagerCrowd::EstimatorManagerCrowd", "[estimators]")
 
 TEST_CASE("EstimatorManagerCrowd PerParticleHamiltonianLogger integration", "[estimators]")
 {
+  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
   Communicate* comm = OHMMS::Controller;
 
   using namespace testing;
@@ -61,9 +66,10 @@ TEST_CASE("EstimatorManagerCrowd PerParticleHamiltonianLogger integration", "[es
   EstimatorManagerInput emi(estimators_doc.getRoot());
 
 
-  auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
-  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
-  auto& pset             = *(particle_pool.getParticleSet("e"));
+  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
+  auto wavefunction_pool =
+      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
+  auto& pset = *(particle_pool.getParticleSet("e"));
   // This is where the pset properties "properies" gain the different hamiltonian operator values.
   auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
 
@@ -75,9 +81,10 @@ TEST_CASE("EstimatorManagerCrowd PerParticleHamiltonianLogger integration", "[es
   PerParticleHamiltonianLoggerInput pphli;
   emi.append(std::move(pphli));
 
-  EstimatorManagerNew emn(comm, std::move(emi), ham, pset, twf);
+  EstimatorManagerNew emn(ham, comm);
+  emn.constructEstimators(std::move(emi), pset, twf, ham, particle_pool.getPool());
 
-  CHECK(emn.getNumEstimators() == 3);
+  CHECK(emn.getNumEstimators() == 4);
   CHECK(emn.getNumScalarEstimators() == 0);
 
   // We repeat a bunch of test_QMCHamiltonian here to get things set up.
@@ -140,7 +147,7 @@ TEST_CASE("EstimatorManagerCrowd PerParticleHamiltonianLogger integration", "[es
   emc.registerListeners(ham_list);
 
   //   Setup RNG
-  RandomGenerator rng;
+  FakeRandom<OHMMS_PRECISION_FULL> rng;
 
   // Without this QMCHamiltonian::mw_evaluate segfaults
   // Because the CoulombPBCAA hamiltonian component has PtclRhoK (StructFact) that is invalid.
@@ -154,7 +161,7 @@ TEST_CASE("EstimatorManagerCrowd PerParticleHamiltonianLogger integration", "[es
   for (int iw = 0; iw < num_walkers; ++iw)
     savePropertiesIntoWalker(*(hams[iw]), walkers[iw]);
 
-  emc.accumulate(walker_refs, p_refs, twf_refs, rng);
+  emc.accumulate(walker_refs, p_refs, twf_refs, ham_refs, rng);
 }
 
 

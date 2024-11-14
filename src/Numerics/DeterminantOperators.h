@@ -26,6 +26,7 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "CPU/BLAS.hpp"
 #include "CPU/math.hpp"
+#include "CPU/OMPThreadCountProtectorLA.hpp"
 #include "CPU/SIMD/inner_product.hpp"
 #include "Numerics/determinant_operators.h"
 #include "type_traits/template_types.hpp"
@@ -185,6 +186,7 @@ inline void InvertWithLog(T* restrict x, int n, int m, T* restrict work, int* re
 template<class MatrixA>
 inline typename MatrixA::value_type invert_matrix(MatrixA& M, bool getdet = true)
 {
+  OMPThreadCountProtectorLA protector;
   using value_type = typename MatrixA::value_type;
   const int n      = M.rows();
   std::vector<int> pivot(n);

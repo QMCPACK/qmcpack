@@ -23,6 +23,8 @@
 
 #include <stdexcept>
 #include "OhmmsSoA/VectorSoaContainer.h"
+#include "OhmmsPETE/OhmmsArray.h"
+#include "OMPTarget/OffloadAlignedAllocators.hpp"
 
 namespace qmcplusplus
 {
@@ -35,19 +37,27 @@ namespace qmcplusplus
  *    (following Gamess order)
  */
 template<class T>
-struct SoaCartesianTensor
+class SoaCartesianTensor
 {
-  using value_type = T;
-  using ggg_type   = TinyVector<Tensor<T, 3>, 3>;
+private:
+  using value_type     = T;
+  using ggg_type       = TinyVector<Tensor<T, 3>, 3>;
+  using OffloadVector  = Vector<T, OffloadPinnedAllocator<T>>;
+  using OffloadArray2D = Array<T, 2, OffloadPinnedAllocator<T>>;
+  using OffloadArray3D = Array<T, 3, OffloadPinnedAllocator<T>>;
+  using OffloadArray4D = Array<T, 4, OffloadPinnedAllocator<T>>;
 
   ///maximum angular momentum
-  size_t Lmax;
-  ///normalization factor
-  aligned_vector<T> NormFactor;
+  int Lmax;
+  /// Normalization factors
+  const std::shared_ptr<OffloadVector> norm_factor_ptr_;
+  /// norm_factor reference
+  OffloadVector& norm_factor_;
   ///composite V,Gx,Gy,Gz,[L | H00, H01, H02, H11, H12, H12]
   //   {GH000, GH001, GH002, GH011, GH012, GH022, GH111, GH112, GH122, GH222
   VectorSoaContainer<T, 20> cXYZ;
 
+public:
   /** constructor
    * @param l_max maximum angular momentum
    *
@@ -55,27 +65,125 @@ struct SoaCartesianTensor
   */
   explicit SoaCartesianTensor(const int l_max, bool addsign = false);
 
-  ///compute Ylm
-  void evaluate_bare(T x, T y, T z, T* XYZ) const;
+  /// cXYZ accessor
+  auto& getcXYZ() const { return cXYZ; }
 
+  ///compute Ylm
+  static void evaluate_bare(T x, T y, T z, T* XYZ, int lmax);
+
+  static void evaluateVGL_impl(T x,
+                               T y,
+                               T z,
+                               T* restrict XYZ,
+                               T* restrict gr0,
+                               T* restrict gr1,
+                               T* restrict gr2,
+                               T* restrict lap,
+                               int lmax,
+                               const T* normfactor,
+                               int n_normfac);
   ///compute Ylm
   inline void evaluateV(T x, T y, T z, T* XYZ) const
   {
-    evaluate_bare(x, y, z, XYZ);
+    evaluate_bare(x, y, z, XYZ, Lmax);
     for (size_t i = 0, nl = cXYZ.size(); i < nl; i++)
-      XYZ[i] *= NormFactor[i];
+      XYZ[i] *= norm_factor_[i];
   }
 
   ///compute Ylm
   inline void evaluateV(T x, T y, T z, T* XYZ)
   {
-    evaluate_bare(x, y, z, XYZ);
+    evaluate_bare(x, y, z, XYZ, Lmax);
     for (size_t i = 0, nl = cXYZ.size(); i < nl; i++)
-      XYZ[i] *= NormFactor[i];
+      XYZ[i] *= norm_factor_[i];
   }
 
   ///compute Ylm
   inline void evaluateV(T x, T y, T z) { evaluateV(x, y, z, cXYZ.data(0)); }
+
+  /**
+   * @brief evaluate for multiple electrons and multiple pbc images
+   * 
+   * @param [in] xyz electron positions [Nelec, Npbc, 3(x,y,z)]
+   * @param [out] XYZ Cartesian tensor elements [Nelec, Npbc, Nlm]
+  */
+  inline void batched_evaluateV(const OffloadArray3D& xyz, OffloadArray3D& XYZ) const
+  {
+    const size_t nElec = xyz.size(0);
+    const size_t Npbc  = xyz.size(1); // number of PBC images
+    assert(xyz.size(2) == 3);         // x,y,z
+
+    assert(XYZ.size(0) == nElec);
+    assert(XYZ.size(1) == Npbc);
+    const size_t Nlm = XYZ.size(2);
+
+    size_t nR = nElec * Npbc; // total number of positions to evaluate
+
+    auto* xyz_ptr          = xyz.data();
+    auto* XYZ_ptr          = XYZ.data();
+    auto* norm_factor__ptr = norm_factor_.data();
+
+    PRAGMA_OFFLOAD("omp target teams distribute parallel for \
+                    map(to:norm_factor__ptr[:Nlm]) \
+                    map(to:xyz_ptr[:3*nR], XYZ_ptr[:Nlm*nR])")
+    for (uint32_t ir = 0; ir < nR; ir++)
+    {
+      evaluate_bare(xyz_ptr[0 + 3 * ir], xyz_ptr[1 + 3 * ir], xyz_ptr[2 + 3 * ir], XYZ_ptr + (ir * Nlm), Lmax);
+      for (uint32_t i = 0; i < Nlm; i++)
+        XYZ_ptr[ir * Nlm + i] *= norm_factor__ptr[i];
+    }
+  }
+
+  /**
+   * @brief evaluate VGL for multiple electrons and multiple pbc images
+   * 
+   * when offload is enabled, xyz is assumed to be up to date on the device before entering the function
+   * XYZ_vgl will be up to date on the device (but not host) when this function exits
+   * 
+   * @param [in] xyz electron positions [Nelec, Npbc, 3(x,y,z)]
+   * @param [out] XYZ_vgl Cartesian tensor elements [5(v, gx, gy, gz, lapl), Nelec, Npbc, Nlm]
+  */
+  inline void batched_evaluateVGL(const OffloadArray3D& xyz, OffloadArray4D& XYZ_vgl) const
+  {
+    const size_t nElec = xyz.size(0);
+    const size_t Npbc  = xyz.size(1); // number of PBC images
+    assert(xyz.size(2) == 3);
+
+    assert(XYZ_vgl.size(0) == 5);
+    assert(XYZ_vgl.size(1) == nElec);
+    assert(XYZ_vgl.size(2) == Npbc);
+    const size_t Nlm = XYZ_vgl.size(3);
+    assert(norm_factor_.size() == Nlm);
+
+    size_t nR     = nElec * Npbc; // total number of positions to evaluate
+    size_t offset = Nlm * nR;     // stride for v/gx/gy/gz/l
+
+    auto* xyz_ptr          = xyz.data();
+    auto* XYZ_vgl_ptr      = XYZ_vgl.data();
+    auto* norm_factor__ptr = norm_factor_.data();
+    // TODO: make separate ptrs to start of v/gx/gy/gz/l?
+    // might be more readable?
+    // or just pass one ptr to evaluateVGL and apply stride/offset inside
+
+    PRAGMA_OFFLOAD("omp target teams distribute parallel for \
+                    map(to:norm_factor__ptr[:Nlm]) \
+                    map(to: xyz_ptr[:3*nR], XYZ_vgl_ptr[:5*nR*Nlm])")
+    for (uint32_t ir = 0; ir < nR; ir++)
+    {
+      constexpr T czero(0);
+      for (uint32_t i = 0; i < Nlm; i++)
+      {
+        XYZ_vgl_ptr[ir * Nlm + offset * 1 + i] = czero;
+        XYZ_vgl_ptr[ir * Nlm + offset * 2 + i] = czero;
+        XYZ_vgl_ptr[ir * Nlm + offset * 3 + i] = czero;
+        XYZ_vgl_ptr[ir * Nlm + offset * 4 + i] = czero;
+      }
+      evaluateVGL_impl(xyz_ptr[0 + 3 * ir], xyz_ptr[1 + 3 * ir], xyz_ptr[2 + 3 * ir], XYZ_vgl_ptr + (ir * Nlm),
+                       XYZ_vgl_ptr + (ir * Nlm + offset * 1), XYZ_vgl_ptr + (ir * Nlm + offset * 2),
+                       XYZ_vgl_ptr + (ir * Nlm + offset * 3), XYZ_vgl_ptr + (ir * Nlm + offset * 4), Lmax,
+                       norm_factor__ptr, Nlm);
+    }
+  }
 
   ///makes a table of \f$ r^l S_l^m \f$ and their gradients up to Lmax.
   void evaluateVGL(T x, T y, T z);
@@ -103,7 +211,9 @@ struct SoaCartesianTensor
 };
 
 template<class T>
-SoaCartesianTensor<T>::SoaCartesianTensor(const int l_max, bool addsign) : Lmax(l_max)
+SoaCartesianTensor<T>::SoaCartesianTensor(const int l_max, bool addsign)
+    : Lmax(l_max), norm_factor_ptr_(std::make_shared<OffloadVector>()), norm_factor_(*norm_factor_ptr_)
+
 {
   if (Lmax > 6)
     throw std::runtime_error("CartesianTensor can't handle Lmax > 6.\n");
@@ -112,7 +222,7 @@ SoaCartesianTensor<T>::SoaCartesianTensor(const int l_max, bool addsign) : Lmax(
   for (int i = 0; i <= Lmax; i++)
     ntot += (i + 1) * (i + 2) / 2;
   cXYZ.resize(ntot);
-  NormFactor.resize(ntot, 1);
+  norm_factor_.resize(ntot, 1);
   int p = 0;
   int a = 0, b = 0, c = 0;
   const double pi = 4.0 * std::atan(1.0);
@@ -130,24 +240,34 @@ SoaCartesianTensor<T>::SoaCartesianTensor(const int l_max, bool addsign) : Lmax(
       double L = static_cast<T>(l);
       double NormL =
           std::pow(2, L + 1) * std::sqrt(2.0 / static_cast<double>(DFactorial(2 * l + 1))) * std::pow(2.0 / pi, 0.25);
-      NormFactor[p++] = static_cast<T>(
+      norm_factor_[p++] = static_cast<T>(
           std::pow(2.0 / pi, 0.75) * std::pow(4.0, 0.5 * (a + b + c)) *
           std::sqrt(1.0 /
                     static_cast<double>((DFactorial(2 * a - 1) * DFactorial(2 * b - 1) * DFactorial(2 * c - 1)))) /
           NormL);
     }
   }
+  norm_factor_.updateTo();
 }
 
-
 template<class T>
-void SoaCartesianTensor<T>::evaluate_bare(T x, T y, T z, T* restrict XYZ) const
+void SoaCartesianTensor<T>::evaluateVGL(T x, T y, T z)
+{
+  constexpr T czero(0);
+  cXYZ = czero;
+  evaluateVGL_impl(x, y, z, cXYZ.data(0), cXYZ.data(1), cXYZ.data(2), cXYZ.data(3), cXYZ.data(4), Lmax,
+                   norm_factor_.data(), norm_factor_.size());
+}
+
+PRAGMA_OFFLOAD("omp declare target")
+template<class T>
+void SoaCartesianTensor<T>::evaluate_bare(T x, T y, T z, T* restrict XYZ, int lmax)
 {
   const T x2 = x * x, y2 = y * y, z2 = z * z;
   const T x3 = x2 * x, y3 = y2 * y, z3 = z2 * z;
   const T x4 = x3 * x, y4 = y3 * y, z4 = z3 * z;
   const T x5 = x4 * x, y5 = y4 * y, z5 = z4 * z;
-  switch (Lmax)
+  switch (lmax)
   {
   case 6:
     XYZ[83] = x2 * y2 * z2; // X2Y2Z2
@@ -242,25 +362,29 @@ void SoaCartesianTensor<T>::evaluate_bare(T x, T y, T z, T* restrict XYZ) const
     XYZ[0] = 1; // S
   }
 }
+PRAGMA_OFFLOAD("omp end declare target")
 
 
+PRAGMA_OFFLOAD("omp declare target")
 template<class T>
-void SoaCartesianTensor<T>::evaluateVGL(T x, T y, T z)
+void SoaCartesianTensor<T>::evaluateVGL_impl(T x,
+                                             T y,
+                                             T z,
+                                             T* restrict XYZ,
+                                             T* restrict gr0,
+                                             T* restrict gr1,
+                                             T* restrict gr2,
+                                             T* restrict lap,
+                                             int lmax,
+                                             const T* normfactor,
+                                             int n_normfac)
 {
-  constexpr T czero(0);
-  cXYZ = czero;
-
   const T x2 = x * x, y2 = y * y, z2 = z * z;
   const T x3 = x2 * x, y3 = y2 * y, z3 = z2 * z;
   const T x4 = x3 * x, y4 = y3 * y, z4 = z3 * z;
   const T x5 = x4 * x, y5 = y4 * y, z5 = z4 * z;
-  T* restrict XYZ = cXYZ.data(0);
-  T* restrict gr0 = cXYZ.data(1);
-  T* restrict gr1 = cXYZ.data(2);
-  T* restrict gr2 = cXYZ.data(3);
-  T* restrict lap = cXYZ.data(4);
 
-  switch (Lmax)
+  switch (lmax)
   {
   case 6:
     XYZ[83] = x2 * y2 * z2; // X2Y2Z2
@@ -599,16 +723,16 @@ void SoaCartesianTensor<T>::evaluateVGL(T x, T y, T z)
     XYZ[0] = 1; // S
   }
 
-  const size_t ntot = NormFactor.size();
-  for (size_t i = 0; i < ntot; i++)
+  for (size_t i = 0; i < n_normfac; i++)
   {
-    XYZ[i] *= NormFactor[i];
-    gr0[i] *= NormFactor[i];
-    gr1[i] *= NormFactor[i];
-    gr2[i] *= NormFactor[i];
-    lap[i] *= NormFactor[i];
+    XYZ[i] *= normfactor[i];
+    gr0[i] *= normfactor[i];
+    gr1[i] *= normfactor[i];
+    gr2[i] *= normfactor[i];
+    lap[i] *= normfactor[i];
   }
 }
+PRAGMA_OFFLOAD("omp end declare target")
 
 
 template<class T>
@@ -1110,16 +1234,16 @@ void SoaCartesianTensor<T>::evaluateVGH(T x, T y, T z)
   const size_t ntot = cXYZ.size();
   for (size_t i = 0; i < ntot; ++i)
   {
-    XYZ[i] *= NormFactor[i];
-    gr0[i] *= NormFactor[i];
-    gr1[i] *= NormFactor[i];
-    gr2[i] *= NormFactor[i];
-    h00[i] *= NormFactor[i];
-    h01[i] *= NormFactor[i];
-    h02[i] *= NormFactor[i];
-    h11[i] *= NormFactor[i];
-    h12[i] *= NormFactor[i];
-    h22[i] *= NormFactor[i];
+    XYZ[i] *= norm_factor_[i];
+    gr0[i] *= norm_factor_[i];
+    gr1[i] *= norm_factor_[i];
+    gr2[i] *= norm_factor_[i];
+    h00[i] *= norm_factor_[i];
+    h01[i] *= norm_factor_[i];
+    h02[i] *= norm_factor_[i];
+    h11[i] *= norm_factor_[i];
+    h12[i] *= norm_factor_[i];
+    h22[i] *= norm_factor_[i];
   }
 }
 
@@ -1832,26 +1956,26 @@ void SoaCartesianTensor<T>::evaluateVGHGH(T x, T y, T z)
   const size_t ntot = cXYZ.size();
   for (size_t i = 0; i < ntot; ++i)
   {
-    XYZ[i] *= NormFactor[i];
-    gr0[i] *= NormFactor[i];
-    gr1[i] *= NormFactor[i];
-    gr2[i] *= NormFactor[i];
-    h00[i] *= NormFactor[i];
-    h01[i] *= NormFactor[i];
-    h02[i] *= NormFactor[i];
-    h11[i] *= NormFactor[i];
-    h12[i] *= NormFactor[i];
-    h22[i] *= NormFactor[i];
-    gh000[i] *= NormFactor[i];
-    gh001[i] *= NormFactor[i];
-    gh002[i] *= NormFactor[i];
-    gh011[i] *= NormFactor[i];
-    gh012[i] *= NormFactor[i];
-    gh022[i] *= NormFactor[i];
-    gh111[i] *= NormFactor[i];
-    gh112[i] *= NormFactor[i];
-    gh122[i] *= NormFactor[i];
-    gh222[i] *= NormFactor[i];
+    XYZ[i] *= norm_factor_[i];
+    gr0[i] *= norm_factor_[i];
+    gr1[i] *= norm_factor_[i];
+    gr2[i] *= norm_factor_[i];
+    h00[i] *= norm_factor_[i];
+    h01[i] *= norm_factor_[i];
+    h02[i] *= norm_factor_[i];
+    h11[i] *= norm_factor_[i];
+    h12[i] *= norm_factor_[i];
+    h22[i] *= norm_factor_[i];
+    gh000[i] *= norm_factor_[i];
+    gh001[i] *= norm_factor_[i];
+    gh002[i] *= norm_factor_[i];
+    gh011[i] *= norm_factor_[i];
+    gh012[i] *= norm_factor_[i];
+    gh022[i] *= norm_factor_[i];
+    gh111[i] *= norm_factor_[i];
+    gh112[i] *= norm_factor_[i];
+    gh122[i] *= norm_factor_[i];
+    gh222[i] *= norm_factor_[i];
   }
 }
 

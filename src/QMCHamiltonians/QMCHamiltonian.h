@@ -40,7 +40,6 @@ namespace qmcplusplus
 {
 class MCWalkerConfiguration;
 class HamiltonianFactory;
-class NonLocalECPotential;
 
 /**  Collection of Local Energy Operators
  *
@@ -146,10 +145,10 @@ public:
   /** Listener Registration
    *  This must be called on a QMCHamiltonian that has acquired multiwalker resources
    */
-  static void mw_registerKineticListener(const QMCHamiltonian& ham_leader, ListenerVector<RealType> listener);
-  static void mw_registerLocalEnergyListener(const QMCHamiltonian& ham_leader, ListenerVector<RealType> listener);
-  static void mw_registerLocalPotentialListener(const QMCHamiltonian& ham_leader, ListenerVector<RealType> listener);
-  static void mw_registerLocalIonPotentialListener(const QMCHamiltonian& ham_leader, ListenerVector<RealType> listener);
+  static void mw_registerKineticListener(QMCHamiltonian& ham_leader, ListenerVector<RealType> listener);
+  static void mw_registerLocalEnergyListener(QMCHamiltonian& ham_leader, ListenerVector<RealType> listener);
+  static void mw_registerLocalPotentialListener(QMCHamiltonian& ham_leader, ListenerVector<RealType> listener);
+  static void mw_registerLocalIonPotentialListener(QMCHamiltonian& ham_leader, ListenerVector<RealType> listener);
 
   /** Some Hamiltonian components need to be informed that they are in a per particle reporting
    *  situation so additional state can be added either to them or the objects they are strongly coupled with.
@@ -162,6 +161,8 @@ public:
    */
   void informOperatorsOfListener();
 
+  ///return true if
+  inline bool hasPhysicalNLPP() const { return hasPhysicalNLPP_; }
   ///retrun the starting index
   inline int startIndex() const { return myIndex; }
   ///return the size of observables
@@ -296,12 +297,12 @@ public:
   * @param wf_grad  Re (dPsi/Psi)
   * @return Local Energy.
   */
-  FullPrecRealType evaluateIonDerivsDeterministicFast(ParticleSet& P,
-                                                      ParticleSet& ions,
-                                                      TrialWaveFunction& psi_in,
-                                                      TWFFastDerivWrapper& psi_wrapper,
-                                                      ParticleSet::ParticlePos& dedr,
-                                                      ParticleSet::ParticlePos& wf_grad);
+  void evaluateIonDerivsFast(ParticleSet& P,
+                             ParticleSet& ions,
+                             TrialWaveFunction& psi_in,
+                             TWFFastDerivWrapper& psi_wrapper,
+                             ParticleSet::ParticlePos& dedr,
+                             ParticleSet::ParticlePos& wf_grad);
 
   /** Evaluate the electron gradient of the local energy.
   * @param psi Trial Wave Function
@@ -312,52 +313,26 @@ public:
   */
   void evaluateElecGrad(ParticleSet& P, TrialWaveFunction& psi, ParticleSet::ParticlePos& EGrad, RealType delta = 1e-5);
 
-  /** evaluate local energy and derivatives w.r.t ionic coordinates.  
+  /** evaluate local energy and derivatives w.r.t ionic coordinates without randomizing the quadrature point grid.
   * @param P target particle set (electrons)
   * @param ions source particle set (ions)
   * @param psi Trial wave function
   * @param hf_terms  Re [(dH)Psi]/Psi
   * @param pulay_terms Re [(H-E_L)dPsi]/Psi 
   * @param wf_grad  Re (dPsi/Psi)
-  * @return Local Energy.
   */
-  FullPrecRealType evaluateIonDerivs(ParticleSet& P,
-                                     ParticleSet& ions,
-                                     TrialWaveFunction& psi,
-                                     ParticleSet::ParticlePos& hf_terms,
-                                     ParticleSet::ParticlePos& pulay_terms,
-                                     ParticleSet::ParticlePos& wf_grad);
-
-  /** evaluate local energy and derivatives w.r.t ionic coordinates, but deterministically.  
-  * @param P target particle set (electrons)
-  * @param ions source particle set (ions)
-  * @param psi Trial wave function
-  * @param hf_terms  Re [(dH)Psi]/Psi
-  * @param pulay_terms Re [(H-E_L)dPsi]/Psi 
-  * @param wf_grad  Re (dPsi/Psi)
-  * @return Local Energy.
-  */
-  FullPrecRealType evaluateIonDerivsDeterministic(ParticleSet& P,
-                                                  ParticleSet& ions,
-                                                  TrialWaveFunction& psi,
-                                                  ParticleSet::ParticlePos& hf_terms,
-                                                  ParticleSet::ParticlePos& pulay_terms,
-                                                  ParticleSet::ParticlePos& wf_grad);
-  /** set non local moves options
-   * @param cur the xml input
-   */
-  void setNonLocalMoves(xmlNodePtr cur);
-
-  void setNonLocalMoves(const std::string& non_local_move_option,
-                        const double tau,
-                        const double alpha,
-                        const double gamma);
+  void evaluateIonDerivs(ParticleSet& P,
+                         ParticleSet& ions,
+                         TrialWaveFunction& psi,
+                         ParticleSet::ParticlePos& hf_terms,
+                         ParticleSet::ParticlePos& pulay_terms,
+                         ParticleSet::ParticlePos& wf_grad);
 
   /** make non local moves
    * @param P particle set
    * @return the number of accepted moves
    */
-  int makeNonLocalMoves(ParticleSet& P);
+  int makeNonLocalMoves(ParticleSet& P, NonLocalTOperator& move_op);
 
   /** determine if L2 potential is present
    */
@@ -386,7 +361,8 @@ public:
 
   static std::vector<int> mw_makeNonLocalMoves(const RefVectorWithLeader<QMCHamiltonian>& ham_list,
                                                const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                               const RefVectorWithLeader<ParticleSet>& p_list);
+                                               const RefVectorWithLeader<ParticleSet>& p_list,
+                                               NonLocalTOperator& move_op);
   /** evaluate energy 
    * @param P quantum particleset
    * @param free_nlpp if true, non-local PP is a variable
@@ -406,12 +382,12 @@ public:
 
   bool get(std::ostream& os) const;
 
-  RealType get_LocalEnergy() const { return LocalEnergy; }
+  void setRandomGenerator(RandomBase<FullPrecRealType>* rng);
 
-  void setRandomGenerator(RandomGenerator* rng);
-
-  static void updateNonKinetic(OperatorBase& op, QMCHamiltonian& ham, ParticleSet& pset);
-  static void updateKinetic(OperatorBase& op, QMCHamiltonian& ham, ParticleSet& pset);
+  /// accumulate local energy and update Observables and PropertyList
+  static void updateComponent(OperatorBase& op, QMCHamiltonian& ham, ParticleSet& pset);
+  /// extract kinetic and potential energies.
+  static void updateKinetic(QMCHamiltonian& ham, ParticleSet& pset);
 
   /// initialize a shared resource and hand it to a collection
   void createResource(ResourceCollection& collection) const;
@@ -446,8 +422,8 @@ private:
   const std::string myName;
   ///vector of Hamiltonians
   std::vector<std::unique_ptr<OperatorBase>> H;
-  ///pointer to NonLocalECP
-  NonLocalECPotential* nlpp_ptr;
+  ///true if H contains NLPP
+  bool hasPhysicalNLPP_;
   ///pointer to L2Potential
   L2Potential* l2_ptr;
   ///vector of Hamiltonians
@@ -459,7 +435,7 @@ private:
   /// Total timer for H ion deriv evaluation;
   NewTimer& eval_ion_derivs_fast_timer_;
   /// timers for H components
-  TimerList_t my_timers_;
+  std::vector<std::reference_wrapper<NewTimer>> my_timers_;
   ///types of component operators
   std::map<std::string, std::string> operator_types;
   ///data
@@ -488,20 +464,9 @@ private:
   Array<TraceReal, 2>* position_sample;
 #endif
 
-  struct QMCHamiltonianMultiWalkerResource : public Resource
-  {
-    QMCHamiltonianMultiWalkerResource() : Resource("QMCHamiltonian") {}
-    // the listeners represet the connection of a particular crowds estimators to the crowds lead QMCHamiltonian.
-    // So you can not clone them.
-    Resource* makeClone() const override { return new QMCHamiltonianMultiWalkerResource(*this); }
-    std::vector<ListenerVector<RealType>> kinetic_listeners_;
-    std::vector<ListenerVector<RealType>> potential_listeners_;
-    std::vector<ListenerVector<RealType>> ion_kinetic_listeners_;
-    std::vector<ListenerVector<RealType>> ion_potential_listeners_;
-  };
-
   /// multiwalker shared resource
-  ResourceHandle<QMCHamiltonianMultiWalkerResource> mw_res_;
+  struct QMCHamiltonianMultiWalkerResource;
+  ResourceHandle<QMCHamiltonianMultiWalkerResource> mw_res_handle_;
 };
 } // namespace qmcplusplus
 #endif

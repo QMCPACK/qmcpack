@@ -24,6 +24,7 @@
 #include "ParticleTags.h"
 #include "DynamicCoordinates.h"
 #include "Walker.h"
+#include "ResourceHandle.h"
 #include "SpeciesSet.h"
 #include "Pools/PooledData.h"
 #include "OhmmsPETE/OhmmsArray.h"
@@ -287,13 +288,23 @@ public:
   /// makeMove, but now includes an update to the spin variable
   void makeMoveWithSpin(Index_t iat, const SingleParticlePos& displ, const Scalar_t& sdispl);
 
-  /// batched version of makeMove
+  /** batched version of makeMove and makeMoveAndCheck fused in one
+   *
+   * if are_valid is provided, and lattice is defined explicitly, do one check to make a move valid.
+   * isValid(Lattice.toUnit(active_pos_)): invalid move, if active_pos_ goes out of the Lattice in any direction marked with open BC.
+   * Ye: outOfBound(displ) check in makeMoveAndCheck was not used and should be deleted.
+   * Note that: drivers should reject invalid moves.
+   */
   template<CoordsType CT>
-  static void mw_makeMove(const RefVectorWithLeader<ParticleSet>& p_list, int iat, const MCCoords<CT>& displs);
+  static void mw_makeMove(const RefVectorWithLeader<ParticleSet>& p_list,
+                          int iat,
+                          const MCCoords<CT>& displs,
+                          OptionalRef<std::vector<bool>> are_valid = std::nullopt);
 
   static void mw_makeMove(const RefVectorWithLeader<ParticleSet>& p_list,
                           int iat,
-                          const std::vector<SingleParticlePos>& displs);
+                          const std::vector<SingleParticlePos>& displs,
+                          OptionalRef<std::vector<bool>> are_valid = std::nullopt);
 
   /// batched version makeMove for spin variable only
   static void mw_makeSpinMove(const RefVectorWithLeader<ParticleSet>& p_list,
@@ -425,7 +436,7 @@ public:
   void applyBC(const ParticlePos& pin, ParticlePos& pout);
   void applyBC(ParticlePos& pos);
   void applyBC(const ParticlePos& pin, ParticlePos& pout, int first, int last);
-  void applyMinimumImage(ParticlePos& pinout);
+  void applyMinimumImage(ParticlePos& pinout) const;
 
   /** load a Walker_t to the current ParticleSet
    * @param awalker the reference to the walker to be loaded
@@ -477,8 +488,8 @@ public:
   ///return the address of the i-th properties
   inline const FullPrecRealType* restrict getPropertyBase(int i) const { return Properties[i]; }
 
-  inline void setTwist(SingleParticlePos& t) { myTwist = t; }
-  inline SingleParticlePos getTwist() const { return myTwist; }
+  inline void setTwist(const SingleParticlePos& t) { myTwist = t; }
+  inline const SingleParticlePos& getTwist() const { return myTwist; }
 
   /** Initialize particles around another ParticleSet
    * Used to initialize an electron ParticleSet by an ion ParticleSet
@@ -616,7 +627,7 @@ protected:
   std::unique_ptr<StructFact> structure_factor_;
 
   ///multi walker structure factor data
-  std::unique_ptr<SKMultiWalkerMem> mw_structure_factor_data_;
+  ResourceHandle<SKMultiWalkerMem> mw_structure_factor_data_handle_;
 
   /** map to handle distance tables
    *

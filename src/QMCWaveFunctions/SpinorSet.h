@@ -14,6 +14,7 @@
 #define QMCPLUSPLUS_SPINORSET_H
 
 #include "QMCWaveFunctions/SPOSet.h"
+#include <ResourceHandle.h>
 
 namespace qmcplusplus
 {
@@ -31,6 +32,11 @@ public:
   bool isOptimizable() const override { return spo_up->isOptimizable() || spo_dn->isOptimizable(); }
   bool isOMPoffload() const override { return spo_up->isOMPoffload() || spo_dn->isOMPoffload(); }
   bool hasIonDerivs() const override { return spo_up->hasIonDerivs() || spo_dn->hasIonDerivs(); }
+  bool isRotationSupported() const override { return spo_up->isRotationSupported() && spo_dn->isRotationSupported(); }
+
+  void storeParamsBeforeRotation() override;
+
+  void applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy) override;
 
   //This class is initialized by separately building the up and down channels of the spinor set and
   //then registering them.
@@ -47,6 +53,12 @@ public:
    * @param psi values of the SPO
    */
   void evaluateValue(const ParticleSet& P, int iat, ValueVector& psi) override;
+
+  void evaluateDetSpinorRatios(const VirtualParticleSet& VP,
+                               ValueVector& psi,
+                               const std::pair<ValueVector, ValueVector>& spinor_multipler,
+                               const ValueVector& invrow,
+                               std::vector<ValueType>& ratios) override;
 
   /** evaluate the values, gradients and laplacians of this single-particle orbital set
    * @param P current ParticleSet
@@ -175,11 +187,11 @@ public:
   void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const override;
 
   /// check if the multi walker resource is owned. For testing only.
-  bool isResourceOwned() const { return bool(mw_res_); }
+  bool isResourceOwned() const { return bool(mw_res_handle_); }
 
 private:
   struct SpinorSetMultiWalkerResource;
-  std::unique_ptr<SpinorSetMultiWalkerResource> mw_res_;
+  ResourceHandle<SpinorSetMultiWalkerResource> mw_res_handle_;
 
   std::pair<RefVectorWithLeader<SPOSet>, RefVectorWithLeader<SPOSet>> extractSpinComponentRefList(
       const RefVectorWithLeader<SPOSet>& spo_list) const;

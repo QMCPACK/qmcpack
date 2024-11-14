@@ -7,7 +7,7 @@
 // http://www.boost.org/LICENSE_1_0.txt)
 
 //  See http://www.boost.org for updates, documentation, and revision history.
-// NOLINTBEGIN(misc-const-correctness) external code
+// NOLINTBEGIN(misc-const-correctness,cppcoreguidelines-avoid-const-or-ref-data-members) external code
 #include <boost/config.hpp> // msvc 6.0 needs this for warning suppression
 
 #include <boost/assert.hpp>
@@ -232,7 +232,7 @@ basic_oarchive_impl::find(const basic_oserializer & bos)
 {
     std::pair<cobject_info_set_type::iterator, bool> cresult = 
         cobject_info_set.insert(cobject_type(cobject_info_set.size(), bos));
-    return *(cresult.first);
+    return *(cresult.first);  // cppcheck-suppress returnReference ; external code, false positive in cppcheck 2.11
 }
 
 inline const basic_oarchive_impl::cobject_type &
@@ -242,7 +242,7 @@ basic_oarchive_impl::register_type(
     cobject_type co(cobject_info_set.size(), bos);
     std::pair<cobject_info_set_type::const_iterator, bool>
         result = cobject_info_set.insert(co);
-    return *(result.first);
+    return *(result.first);  // cppcheck-suppress returnReference ; external code, false positive in cppcheck 2.11
 }
 
 inline void
@@ -328,7 +328,7 @@ basic_oarchive_impl::save_pointer(
             if(bos.is_polymorphic()){
                 const serialization::extended_type_info *eti = & bos.get_eti();
                 const char * key = nullptr;
-                if(nullptr != eti) {
+                if(nullptr != eti) {  // cppcheck-suppress knownConditionTrueFalse ; external code
                     key = eti->get_key(); }
                 if(nullptr != key){
                     // the following is required by IBM C++ compiler which
@@ -468,7 +468,7 @@ basic_oarchive::get_helper_collection(){
 } // namespace detail
 } // namespace archive
 } // namespace boost
-// NOLINTEND(misc-const-correctness) external code
+// NOLINTEND(misc-const-correctness,cppcoreguidelines-avoid-const-or-ref-data-members) external code
 #ifdef BOOST_MSVC
 #pragma warning(pop)
 #endif

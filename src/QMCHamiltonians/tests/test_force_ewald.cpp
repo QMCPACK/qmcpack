@@ -20,6 +20,7 @@
 #include "QMCHamiltonians/ForceCeperley.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "LongRange/EwaldHandler3D.h"
+#include "Utilities/RuntimeOptions.h"
 
 #include <stdio.h>
 #include <string>
@@ -45,14 +46,8 @@ TEST_CASE("Chiesa Force BCC H Ewald3D", "[hamiltonian]")
 
   ions.setName("ion");
   ions.create({2});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
-  ions.R[1][0] = 1.6;
-  ions.R[1][1] = 1.6;
-  ions.R[1][2] = 1.88972614;
-
-
+  ions.R[0]                     = {0.0, 0.0, 0.0};
+  ions.R[1]                     = {1.6, 1.6, 1.88972614};
   SpeciesSet& ion_species       = ions.getSpeciesSet();
   int pIdx                      = ion_species.addSpecies("H");
   int pChargeIdx                = ion_species.addAttribute("charge");
@@ -62,14 +57,8 @@ TEST_CASE("Chiesa Force BCC H Ewald3D", "[hamiltonian]")
 
   elec.setName("elec");
   elec.create({2});
-  elec.R[0][0] = 0.5;
-  elec.R[0][1] = 0.0;
-  elec.R[0][2] = 0.0;
-  elec.R[1][0] = 0.0;
-  elec.R[1][1] = 0.5;
-  elec.R[1][2] = 0.0;
-
-
+  elec.R[0]                  = {0.5, 0.0, 0.0};
+  elec.R[1]                  = {0.0, 0.5, 0.0};
   SpeciesSet& tspecies       = elec.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
   int chargeIdx              = tspecies.addAttribute("charge");
@@ -134,13 +123,8 @@ TEST_CASE("fccz sr lr clone", "[hamiltonian]")
 
   ions.setName("ion");
   ions.create({2});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
-  ions.R[1][0] = 1.6;
-  ions.R[1][1] = 1.6;
-  ions.R[1][2] = 1.88972614;
-
+  ions.R[0]                     = {0.0, 0.0, 0.0};
+  ions.R[1]                     = {1.6, 1.6, 1.88972614};
   SpeciesSet& ion_species       = ions.getSpeciesSet();
   int pIdx                      = ion_species.addSpecies("H");
   int pChargeIdx                = ion_species.addAttribute("charge");
@@ -150,13 +134,8 @@ TEST_CASE("fccz sr lr clone", "[hamiltonian]")
 
   elec.setName("elec");
   elec.create({2});
-  elec.R[0][0] = 0.5;
-  elec.R[0][1] = 0.0;
-  elec.R[0][2] = 0.0;
-  elec.R[1][0] = 0.0;
-  elec.R[1][1] = 0.5;
-  elec.R[1][2] = 0.0;
-
+  elec.R[0]                  = {0.5, 0.0, 0.0};
+  elec.R[1]                  = {0.0, 0.5, 0.0};
   SpeciesSet& tspecies       = elec.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
   int chargeIdx              = tspecies.addAttribute("charge");
@@ -203,7 +182,8 @@ TEST_CASE("fccz sr lr clone", "[hamiltonian]")
   //  QMCDrivers/CloneManager::makeClones
   //  QMCHamiltonian::makeClone
   //  OperatorBase::add2Hamiltonian -> ForceChiesaPBCAA::makeClone
-  TrialWaveFunction psi;
+  RuntimeOptions runtime_options;
+  TrialWaveFunction psi(runtime_options);
   std::unique_ptr<ForceChiesaPBCAA> clone(dynamic_cast<ForceChiesaPBCAA*>(force.makeClone(elec, psi).release()));
   clone->evaluate(elec);
   REQUIRE(clone->getAddIonIon() == force.getAddIonIon());
@@ -233,16 +213,9 @@ TEST_CASE("fccz h3", "[hamiltonian]")
 
   ions.setName("ion");
   ions.create({3});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
-  ions.R[1][0] = 1.6;
-  ions.R[1][1] = 1.6;
-  ions.R[1][2] = 1.88972614;
-  ions.R[2][0] = 1.4;
-  ions.R[2][1] = 0.0;
-  ions.R[2][2] = 0.0;
-
+  ions.R[0]                     = {0.0, 0.0, 0.0};
+  ions.R[1]                     = {1.6, 1.6, 1.88972614};
+  ions.R[2]                     = {1.4, 0.0, 0.0};
   SpeciesSet& ion_species       = ions.getSpeciesSet();
   int pIdx                      = ion_species.addSpecies("H");
   int pChargeIdx                = ion_species.addAttribute("charge");
@@ -251,13 +224,8 @@ TEST_CASE("fccz h3", "[hamiltonian]")
 
   elec.setName("elec");
   elec.create({2});
-  elec.R[0][0] = 0.5;
-  elec.R[0][1] = 0.0;
-  elec.R[0][2] = 0.0;
-  elec.R[1][0] = 0.0;
-  elec.R[1][1] = 0.5;
-  elec.R[1][2] = 0.0;
-
+  elec.R[0]                  = {0.5, 0.0, 0.0};
+  elec.R[1]                  = {0.0, 0.5, 0.0};
   SpeciesSet& tspecies       = elec.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
   int chargeIdx              = tspecies.addAttribute("charge");

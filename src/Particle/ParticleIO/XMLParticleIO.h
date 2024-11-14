@@ -73,35 +73,21 @@ public:
   /** generic get function attribute function
    * @param tname attribute type name
    * @param oname attribute name
-   * @param pa pointer to ParticleAttrib<AT>*
    * @return pointer to the attribute
    */
   template<typename AT>
-  ParticleAttrib<AT>* getAttribute(const std::string& tname, const std::string& oname, ParticleAttrib<AT>* pa)
+  ParticleAttrib<AT>* getAttribute(const std::string& tname, const std::string& oname)
   {
-    using attrib_type                                = ParticleAttrib<AT>;
-    std::map<std::string, OhmmsObject*>::iterator it = AttribList.find(oname);
+    using attrib_type = ParticleAttrib<AT>;
+    const auto it     = AttribList.find(oname);
     if (it != AttribList.end())
     {
       OhmmsObject* o = (*it).second;
       return dynamic_cast<attrib_type*>(o);
     }
     else
-    {
-      APP_ABORT("AttribListType::getAttribute Unknown attribute " + oname + "\n");
-      /*
-      if(pa == nullptr) //only
-      {
-        pa=new attrib_type(tname,oname);
-        pa->resize(LocalNum);
-        pa->setID(AttribList.size());
-
-        AllocatedList.push_back(pa);
-        AttribList[oname]=pa;
-      }
-      */
-    }
-    return pa;
+      throw std::runtime_error("AttribListType::getAttribute Unknown attribute " + oname + "\n");
+    return nullptr;
   }
 };
 

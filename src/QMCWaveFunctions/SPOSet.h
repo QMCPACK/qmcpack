@@ -26,11 +26,17 @@
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "OptimizableObject.h"
 #include "OMPTarget/OffloadAlignedAllocators.hpp"
-#include "DualAllocatorAliases.hpp"
 
 namespace qmcplusplus
 {
 class ResourceCollection;
+
+class SPOSet;
+namespace testing
+{
+opt_variables_type& getMyVars(SPOSet& spo);
+}
+
 
 /** base class for Single-particle orbital sets
  *
@@ -50,6 +56,7 @@ public:
   using GGGMatrix         = OrbitalSetTraits<ValueType>::GradHessMatrix;
   using SPOMap            = std::map<std::string, const std::unique_ptr<const SPOSet>>;
   using OffloadMWVGLArray = Array<ValueType, 3, OffloadPinnedAllocator<ValueType>>; // [VGL, walker, Orbs]
+  using OffloadMWVArray   = Array<ValueType, 2, OffloadPinnedAllocator<ValueType>>; // [walker, Orbs]
   template<typename DT>
   using OffloadMatrix = Matrix<DT, OffloadPinnedAllocator<DT>>;
 
@@ -199,6 +206,19 @@ public:
                                  const ValueVector& psiinv,
                                  std::vector<ValueType>& ratios);
 
+  /** evaluate determinant ratios for virtual moves, specifically for Spinor SPOSets
+   * @param VP virtual particle set
+   * @param psi values of the SPO, used as a scratch space if needed
+   * @param spinor_multiplier factor to apply to the up and down components independently
+   * @param invrow the row of inverse slater matrix corresponding to the particle moved virtually
+   * @param ratios return determinant ratios
+   */
+  virtual void evaluateDetSpinorRatios(const VirtualParticleSet& VP,
+                                       ValueVector& psi,
+                                       const std::pair<ValueVector, ValueVector>& spinor_multiplier,
+                                       const ValueVector& invrow,
+                                       std::vector<ValueType>& ratios);
+
 
   /// Determinant ratios and parameter derivatives of the wavefunction for virtual moves
   virtual void evaluateDerivRatios(const VirtualParticleSet& VP,
@@ -209,6 +229,23 @@ public:
                                    Matrix<ValueType>& dratios,
                                    int FirstIndex,
                                    int LastIndex);
+
+  /** evaluate determinant ratios and parameter derivatives for virtual moves, specifically for Spinor SPOSets
+   * @param VP virtual particle set
+   * @param psi values of the SPO, used as a scratch space if needed
+   * @param spinor_multiplier factor to apply to the up and down components independently
+   * @param invrow the row of inverse slater matrix corresponding to the particle moved virtually
+   * @param ratios return determinant ratios
+   */
+  virtual void evaluateSpinorDerivRatios(const VirtualParticleSet& VP,
+                                         const std::pair<ValueVector, ValueVector>& spinor_multiplier,
+                                         const opt_variables_type& optvars,
+                                         ValueVector& psi,
+                                         const ValueVector& psiinv,
+                                         std::vector<ValueType>& ratios,
+                                         Matrix<ValueType>& dratios,
+                                         int FirstIndex,
+                                         int LastIndex);
 
 
   /** evaluate determinant ratios for virtual moves, e.g., sphere move for nonlocalPP, of multiple walkers
@@ -546,6 +583,8 @@ protected:
   IndexType OrbitalSetSize;
   /// Optimizable variables
   opt_variables_type myVars;
+
+  friend opt_variables_type& testing::getMyVars(SPOSet& spo);
 };
 
 using SPOSetPtr = SPOSet*;

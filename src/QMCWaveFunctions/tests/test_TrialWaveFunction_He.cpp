@@ -17,11 +17,12 @@
 #include "Particle/ParticleSet.h"
 #include "Particle/ParticleSetPool.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "QMCWaveFunctions/EinsplineSetBuilder.h"
+#include "BsplineFactory/EinsplineSetBuilder.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
+#include "Utilities/RuntimeOptions.h"
 #include <ResourceCollection.h>
 
 namespace qmcplusplus
@@ -36,13 +37,8 @@ std::unique_ptr<TrialWaveFunction> setup_He_wavefunction(Communicate* c,
   agroup[0] = 1;
   agroup[1] = 1;
   elec.create(agroup);
-  elec.R[0][0] = 1.0;
-  elec.R[0][1] = 2.0;
-  elec.R[0][2] = 3.0;
-  elec.R[1][0] = 1.0;
-  elec.R[1][1] = 2.1;
-  elec.R[1][2] = 2.2;
-
+  elec.R[0]            = {1.0, 2.0, 3.0};
+  elec.R[1]            = {1.0, 2.1, 2.2};
   SpeciesSet& tspecies = elec.getSpeciesSet();
   int upIdx            = tspecies.addSpecies("u");
   int downIdx          = tspecies.addSpecies("d");
@@ -57,10 +53,7 @@ std::unique_ptr<TrialWaveFunction> setup_He_wavefunction(Communicate* c,
   elec.resetGroups();
 
   ions.create({1});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
-
+  ions.R[0]                   = {0.0, 0.0, 0.0};
   SpeciesSet& he_species      = ions.getSpeciesSet();
   int He_Idx                  = he_species.addSpecies("He");
   int chargeIdx               = he_species.addAttribute("charge");
@@ -106,7 +99,8 @@ std::unique_ptr<TrialWaveFunction> setup_He_wavefunction(Communicate* c,
   REQUIRE(okay);
 
   xmlNodePtr root = doc.getRoot();
-  auto twf_ptr    = wff.buildTWF(root);
+  RuntimeOptions runtime_options;
+  auto twf_ptr = wff.buildTWF(root, runtime_options);
 
   REQUIRE(twf_ptr != nullptr);
   REQUIRE(twf_ptr->size() == 2);
@@ -253,7 +247,8 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   ParticleSet elec2b(elec2);
   elec2b.update();
 
-  TrialWaveFunction psi2;
+  RuntimeOptions runtime_options;
+  TrialWaveFunction psi2(runtime_options);
   auto orb1 = psi.getOrbitals()[0]->makeClone(elec2);
   psi2.addComponent(std::move(orb1));
   auto orb2 = psi.getOrbitals()[1]->makeClone(elec2);

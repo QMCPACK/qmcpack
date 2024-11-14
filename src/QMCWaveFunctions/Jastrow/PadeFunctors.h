@@ -67,6 +67,8 @@ struct PadeFunctor : public OptimizableFunctorBase
     reset();
   }
 
+  constexpr static bool isOMPoffload() { return false; }
+
   void setCusp(real_type cusp) override
   {
     A     = cusp;

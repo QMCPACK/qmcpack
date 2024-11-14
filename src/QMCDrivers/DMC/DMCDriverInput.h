@@ -14,6 +14,8 @@
 
 #include "Configuration.h"
 #include "OhmmsData/ParameterSet.h"
+#include "DMC/DMCRefEnergyScheme.h"
+#include "TmoveKind.h"
 
 namespace qmcplusplus
 {
@@ -32,7 +34,9 @@ public:
   bool get_reconfiguration() const { return reconfiguration_; }
   IndexType get_max_age() const { return max_age_; }
   IndexType get_branch_interval() const { return branch_interval_; }
-  const std::string& get_non_local_move() const { return NonLocalMove; }
+  double get_feedback() const { return feedback_; }
+  DMCRefEnergyScheme get_refenergy_update_scheme() const { return refenergy_update_scheme_; }
+  TmoveKind get_non_local_move() const { return tmove_kind_; }
   double get_alpha() const { return alpha_; }
   double get_gamma() const { return gamma_; }
   RealType get_reserve() const { return reserve_; }
@@ -46,16 +50,18 @@ private:
    */
   ///Interval between branching
   IndexType branch_interval_ = 1;
+  ///feed back parameter for population control
+  double feedback_ = 1.0;
+  ///input std::string to determine reference energy update scheme
+  DMCRefEnergyScheme refenergy_update_scheme_;
   ///input std::string to determine kill walkers or not
   std::string KillWalker;
   ///input std::string to determine swap walkers among mpi processors
   std::string SwapWalkers;
   /// reconfiguration flag
   bool reconfiguration_ = true;
-  ///input std::string to determine to use nonlocal move
-  std::string NonLocalMove;
-  ///input std::string to use fast gradient
-  std::string UseFastGrad;
+  ///input to control Tmove
+  TmoveKind tmove_kind_ = TmoveKind::OFF;
   ///input to control maximum age allowed for walkers.
   IndexType max_age_ = 10;
   /// reserved walkers for population growth

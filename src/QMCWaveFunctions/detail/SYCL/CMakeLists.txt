@@ -9,7 +9,7 @@
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
-set(WFSSRCS_SYCL sycl_determinant_helper.cpp)
+set(WFSSRCS_SYCL sycl_determinant_helper.cpp matrix_update_helper.cpp)
 
 add_library(qmcwfs_sycl ${WFSSRCS_SYCL})
 target_link_libraries(qmcwfs_sycl PRIVATE platform_LA SYCL::device)

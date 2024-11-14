@@ -78,8 +78,8 @@ if versions.spglib_available:
         # Assert that output is consistent with reference
         out_ref = '''
 Norm:   tot             = 8.00000003
-
-Non-Cumulative Value of C Species at Cutoff 0.6 is: 4.773264912162242
+ 
+Non-Cumulative Value of C Species at Cutoff 0.6 is: 4.77326491
 '''
         assert(text_eq(out,out_ref))
 
@@ -93,8 +93,8 @@ Non-Cumulative Value of C Species at Cutoff 0.6 is: 4.773264912162242
         # Assert that output is consistent with reference
         out_ref = '''
 Norm:   tot             = 8.00000003
-
-Cumulative Value of C Species at Cutoff 0.6 is: 1.0684248641866259
+ 
+Cumulative Value of C Species at Cutoff 0.6 is: 1.06842486
 '''
 
         # DMC extrapolated non-cumulative
@@ -109,8 +109,8 @@ Cumulative Value of C Species at Cutoff 0.6 is: 1.0684248641866259
 Extrapolating from VMC and DMC densities...
 
 Norm:   tot             = 7.999999969999998
-
-Non-Cumulative Value of C Species at Cutoff 0.6 is: 4.910093964664309
+ 
+Non-Cumulative Value of C Species at Cutoff 0.6 is: 4.91009396
 '''
         assert(text_eq(out,out_ref))
 
@@ -126,8 +126,8 @@ Non-Cumulative Value of C Species at Cutoff 0.6 is: 4.910093964664309
 Extrapolating from VMC and DMC densities...
 
 Norm:   tot             = 7.999999969999998
-
-Cumulative Value of C Species at Cutoff 0.6 is: 1.1078267486386275
+ 
+Cumulative Value of C Species at Cutoff 0.6 is: 1.10782675
 '''
         assert(text_eq(out,out_ref))
 
@@ -149,9 +149,9 @@ sample: 1
 sample: 2
 
 Norm:   tot             = 7.999999969999998
-
-Cumulative Value of C Species at Cutoff 0.6 is: 1.1078267486386275+/-0.0016066467833404942
+ 
+Cumulative Value of C Species at Cutoff 0.6 is: 1.10782675 +/- 0.00160665
 '''
-        assert(text_eq(out,out_ref))
+        assert(text_eq(out,out_ref,atol=1e-8))
     #end def test_radial_density
 #end if

@@ -1,20 +1,21 @@
 #!/bin/bash
 # This recipe is intended for ALCF Sunspot https://www.alcf.anl.gov/support-center/aurora-sunspot
-# last revision: Jan 8th 2023
+# last revision: June 11th 2024
 #
 # How to invoke this script?
 # build_alcf_sunspot_icpx.sh # build all the variants assuming the current directory is the source directory.
 # build_alcf_sunspot_icpx.sh <source_dir> # build all the variants with a given source directory <source_dir>
 # build_alcf_sunspot_icpx.sh <source_dir> <install_dir> # build all the variants with a given source directory <source_dir> and install to <install_dir>
 
-module load spack libxml2 cmake
-module load cray-hdf5/1.12.2.1
-module load oneapi/eng-compiler/2022.12.30.002
+for module_name in oneapi/release oneapi/eng-compiler
+do
+  if module is-loaded $module_name ; then module unload $module_name; fi
+done
 
+module load spack-pe-gcc cmake
+module load oneapi/eng-compiler/2024.04.15.002
+module load hdf5/1.14.3 boost/1.84.0
 module list >& module_list.txt
-
-# edit this line for your own boost header files.
-export BOOST_ROOT=/home/yeluo/opt/boost_1_80_0
 
 echo "**********************************"
 echo '$ icpx -v'
@@ -23,7 +24,7 @@ echo "**********************************"
 
 TYPE=Release
 Machine=sunspot
-Compiler=icpx
+Compiler=icpx20240227
 
 if [[ $# -eq 0 ]]; then
   source_folder=`pwd`
@@ -45,7 +46,8 @@ for name in offload_sycl_real_MP offload_sycl_real offload_sycl_cplx_MP offload_
             cpu_real_MP cpu_real cpu_cplx_MP cpu_cplx
 do
 
-CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=$TYPE"
+CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=$TYPE -DMPIEXEC_PREFLAGS='--cpu-bind;depth;-d;8'"
+unset CMAKE_CXX_FLAGS
 
 if [[ $name == *"cplx"* ]]; then
   CMAKE_FLAGS="$CMAKE_FLAGS -DQMC_COMPLEX=ON"
@@ -56,7 +58,8 @@ if [[ $name == *"_MP"* ]]; then
 fi
 
 if [[ $name == *"offload"* ]]; then
-  CMAKE_FLAGS="$CMAKE_FLAGS -DENABLE_OFFLOAD=ON"
+  CMAKE_FLAGS="$CMAKE_FLAGS -DENABLE_OFFLOAD=ON -DQMC_GPU_ARCHS=pvc"
+  CMAKE_CXX_FLAGS="-mllvm -vpo-paropt-atomic-free-reduction-slm=true"
 fi
 
 if [[ $name == *"sycl"* ]]; then
@@ -70,15 +73,16 @@ if [[ -v install_folder ]]; then
 fi
 
 echo "**********************************"
-echo "$folder"
-echo "$CMAKE_FLAGS"
+echo "folder $folder"
+echo "CMAKE_FLAGS: $CMAKE_FLAGS"
+echo "CMAKE_CXX_FLAGS: $CMAKE_CXX_FLAGS"
 echo "**********************************"
 
 mkdir $folder
 cd $folder
 
 if [ ! -f CMakeCache.txt ] ; then
-cmake $CMAKE_FLAGS  -DCMAKE_CXX_FLAGS="-mllvm -vpo-paropt-atomic-free-reduction-slm=true" \
+cmake $CMAKE_FLAGS -DCMAKE_CXX_FLAGS="$CMAKE_CXX_FLAGS" \
       -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx $source_folder
 fi
 

@@ -63,6 +63,9 @@ private:
   ///multi bspline set
   std::shared_ptr<MultiBspline<ST>> SplineInst;
 
+  ///Copy of original splines for orbital rotation
+  std::shared_ptr<std::vector<ST>> coef_copy_;
+
   vContainer_type mKK;
   VectorSoaContainer<ST, 3> myKcart;
 
@@ -78,7 +81,7 @@ protected:
   ghContainer_type mygH;
 
 public:
-  SplineC2C(const std::string& my_name) : BsplineSet(my_name) {}
+  SplineC2C(const std::string& my_name, bool use_offload = false) : BsplineSet(my_name) {}
 
   SplineC2C(const SplineC2C& in);
   virtual std::string getClassName() const override { return "SplineC2C"; }
@@ -87,6 +90,23 @@ public:
 
 
   std::unique_ptr<SPOSet> makeClone() const override { return std::make_unique<SplineC2C>(*this); }
+
+  bool isRotationSupported() const override { return true; }
+
+  /// Store an original copy of the spline coefficients for orbital rotation
+  void storeParamsBeforeRotation() override;
+
+  /*
+    Implements orbital rotations via [1,2].
+    Should be called by RotatedSPOs::apply_rotation()
+    This implementation requires that NSPOs > Nelec. In other words,
+    if you want to run a orbopt wfn, you must include some virtual orbitals!
+    Some results (using older Berkeley branch) were published in [3].
+    [1] Filippi & Fahy, JCP 112, (2000)
+    [2] Toulouse & Umrigar, JCP 126, (2007)
+    [3] Townsend et al., PRB 102, (2020)
+  */
+  void applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy) override;
 
   inline void resizeStorage(size_t n, size_t nvals)
   {
@@ -114,8 +134,8 @@ public:
     gatherv(comm, SplineInst->getSplinePtr(), SplineInst->getSplinePtr()->z_stride, offset);
   }
 
-  template<typename GT, typename BCT>
-  void create_spline(GT& xyz_g, BCT& xyz_bc)
+  template<typename BCT>
+  void create_spline(const Ugrid xyz_g[3], const BCT& xyz_bc)
   {
     resize_kpoints();
     SplineInst = std::make_shared<MultiBspline<ST>>();
@@ -198,8 +218,8 @@ public:
                      GGGVector& grad_grad_grad_psi) override;
 
   template<class BSPLINESPO>
-  friend struct SplineSetReader;
-  friend struct BsplineReaderBase;
+  friend class SplineSetReader;
+  friend struct BsplineReader;
 };
 
 extern template class SplineC2C<float>;

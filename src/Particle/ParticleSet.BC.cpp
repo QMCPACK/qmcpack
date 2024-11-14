@@ -171,7 +171,7 @@ void ParticleSet::applyBC(ParticlePos& pos)
   }
 }
 
-void ParticleSet::applyMinimumImage(ParticlePos& pinout)
+void ParticleSet::applyMinimumImage(ParticlePos& pinout) const
 {
   if (getLattice().SuperCellEnum == SUPERCELL_OPEN)
     return;

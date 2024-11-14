@@ -46,7 +46,7 @@ MomentumEstimator::Return_t MomentumEstimator::evaluate(ParticleSet& P)
   {
     PosType newpos;
     for (int i = 0; i < OHMMS_DIM; ++i)
-      newpos[i] = myRNG();
+      newpos[i] = (*myRNG)();
     //make it cartesian
     vPos[s] = lattice_.toCart(newpos);
     P.makeVirtualMoves(vPos[s]);
@@ -449,9 +449,9 @@ void MomentumEstimator::resize(const std::vector<PosType>& kin, const int Min)
     phases_vPos[im].resize(kPoints.size());
 }
 
-void MomentumEstimator::setRandomGenerator(RandomGenerator* rng)
+void MomentumEstimator::setRandomGenerator(RandomBase<FullPrecRealType>* rng)
 {
   //simply copy it
-  myRNG = *rng;
+  myRNG = rng->makeClone();
 }
 } // namespace qmcplusplus

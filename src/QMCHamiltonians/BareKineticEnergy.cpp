@@ -28,6 +28,16 @@ namespace qmcplusplus
 using WP       = WalkerProperties::Indexes;
 using Return_t = BareKineticEnergy::Return_t;
 
+struct BareKineticEnergy::MultiWalkerResource : public Resource
+{
+  MultiWalkerResource() : Resource("BareKineticEnergy") {}
+
+  std::unique_ptr<Resource> makeClone() const override { return std::make_unique<MultiWalkerResource>(*this); }
+
+  Vector<RealType> t_samples;
+  Vector<std::complex<RealType>> tcmp_samples;
+};
+
 /** constructor with particleset
    * @param target particleset
    *
@@ -170,11 +180,11 @@ void BareKineticEnergy::mw_evaluateWithParameterDerivatives(const RefVectorWithL
  * @return Value of kinetic energy operator at electron/ion positions given by P and ions.  The force contributions from
  *          this operator are added into hf_terms and pulay_terms.
  */
-Return_t BareKineticEnergy::evaluateWithIonDerivs(ParticleSet& P,
-                                                  ParticleSet& ions,
-                                                  TrialWaveFunction& psi,
-                                                  ParticleSet::ParticlePos& hf_terms,
-                                                  ParticleSet::ParticlePos& pulay_terms)
+void BareKineticEnergy::evaluateIonDerivs(ParticleSet& P,
+                                          ParticleSet& ions,
+                                          TrialWaveFunction& psi,
+                                          ParticleSet::ParticlePos& hf_terms,
+                                          ParticleSet::ParticlePos& pulay_terms)
 {
   using ParticlePos       = ParticleSet::ParticlePos;
   using ParticleGradient  = ParticleSet::ParticleGradient;
@@ -191,7 +201,6 @@ Return_t BareKineticEnergy::evaluateWithIonDerivs(ParticleSet& P,
   ParticleGradient iongradpsi_(Nions), pulaytmp_(Nions);
   //temporary arrays that will be explicitly real.
   ParticlePos pulaytmpreal_(Nions), iongradpsireal_(Nions);
-
 
   TinyVector<ParticleGradient, OHMMS_DIM> iongrad_grad_;
   TinyVector<ParticleLaplacian, OHMMS_DIM> iongrad_lapl_;
@@ -265,11 +274,9 @@ Return_t BareKineticEnergy::evaluateWithIonDerivs(ParticleSet& P,
       value_ += x * minus_over_2m_[i];
     }
   }
+
   pulaytmpreal_ -= value_ * iongradpsireal_;
-
-
   pulay_terms += pulaytmpreal_;
-  return value_;
 }
 
 void BareKineticEnergy::evaluateOneBodyOpMatrix(ParticleSet& P,
@@ -436,18 +443,15 @@ void BareKineticEnergy::createResource(ResourceCollection& collection) const
 void BareKineticEnergy::acquireResource(ResourceCollection& collection,
                                         const RefVectorWithLeader<OperatorBase>& o_list) const
 {
-  auto& O_leader = o_list.getCastedLeader<BareKineticEnergy>();
-  auto res_ptr   = dynamic_cast<MultiWalkerResource*>(collection.lendResource().release());
-  if (!res_ptr)
-    throw std::runtime_error("BareKineticEnergy::acquireResource dynamic_cast failed");
-  O_leader.mw_res_.reset(res_ptr);
+  auto& O_leader   = o_list.getCastedLeader<BareKineticEnergy>();
+  O_leader.mw_res_ = collection.lendResource<MultiWalkerResource>();
 }
 
 void BareKineticEnergy::releaseResource(ResourceCollection& collection,
                                         const RefVectorWithLeader<OperatorBase>& o_list) const
 {
   auto& O_leader = o_list.getCastedLeader<BareKineticEnergy>();
-  collection.takebackResource(std::move(O_leader.mw_res_));
+  collection.takebackResource(O_leader.mw_res_);
 }
 
 void BareKineticEnergy::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase>& o_list,
@@ -462,8 +466,8 @@ void BareKineticEnergy::mw_evaluatePerParticle(const RefVectorWithLeader<Operato
 
   auto num_particles                        = p_leader.getTotalNum();
   auto& name                                = o_leader.name_;
-  Vector<RealType>& t_samp                  = o_leader.mw_res_->t_samples;
-  Vector<std::complex<RealType>>& tcmp_samp = o_leader.mw_res_->tcmp_samples;
+  Vector<RealType>& t_samp                  = o_leader.mw_res_.getResource().t_samples;
+  Vector<std::complex<RealType>>& tcmp_samp = o_leader.mw_res_.getResource().tcmp_samples;
 
   auto num_species = p_leader.getSpeciesSet().getTotalNum();
   t_samp.resize(num_particles);

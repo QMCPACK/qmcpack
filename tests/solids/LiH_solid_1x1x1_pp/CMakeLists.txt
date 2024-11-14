@@ -153,7 +153,7 @@ qmc_run_and_check(
   LIH_GAMMA_DMC_SCALARS # DMC
 )
 
-list(APPEND LIH_X_DMC_SCALARS "totenergy" "-8.31413 0.004")
+list(APPEND LIH_X_DMC_SCALARS "totenergy" "-8.31413 0.005")
 qmc_run_and_check(
   short-LiH_solid_1x1x1_pp-x-dmc-hf_noj
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"

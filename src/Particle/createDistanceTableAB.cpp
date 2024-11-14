@@ -17,7 +17,6 @@
 #include "Particle/createDistanceTable.h"
 #include "Particle/DistanceTable.h"
 #include "Particle/SoaDistanceTableAB.h"
-#include "CPU/SIMD/algorithm.hpp"
 
 namespace qmcplusplus
 {

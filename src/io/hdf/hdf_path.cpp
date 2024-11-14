@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2023 QMCPACK developers.
 //
 // File developed by: Steven Hahn, hahnse@ornl.gov, Oak Ridge National Laboratory
 //
@@ -23,7 +23,7 @@ hdf_path& hdf_path::append(const hdf_path& p)
 {
   if (p.has_root_directory())
     path_.clear();
-  else if (path_.back() != '/')
+  else if (!path_.empty() && path_.back() != '/')
     path_.push_back('/');
   return concat(p);
 }

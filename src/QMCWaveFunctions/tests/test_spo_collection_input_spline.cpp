@@ -17,6 +17,7 @@
 #include "Particle/ParticleSet.h"
 #include "Particle/ParticleSetPool.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
+#include "Utilities/RuntimeOptions.h"
 
 #include <stdio.h>
 #include <string>
@@ -44,30 +45,15 @@ void test_diamond_2x1x1_xml_input(const std::string& spo_xml_string)
   ions_.setName("ion");
   ptcl.addParticleSet(std::move(ions_uptr));
   ions_.create({4});
-  ions_.R[0][0] = 0.0;
-  ions_.R[0][1] = 0.0;
-  ions_.R[0][2] = 0.0;
-  ions_.R[1][0] = 1.68658058;
-  ions_.R[1][1] = 1.68658058;
-  ions_.R[1][2] = 1.68658058;
-  ions_.R[2][0] = 3.37316115;
-  ions_.R[2][1] = 3.37316115;
-  ions_.R[2][2] = 0.0;
-  ions_.R[3][0] = 5.05974173;
-  ions_.R[3][1] = 5.05974173;
-  ions_.R[3][2] = 1.68658058;
-
-
+  ions_.R[0] = {0.0, 0.0, 0.0};
+  ions_.R[1] = {1.68658058, 1.68658058, 1.68658058};
+  ions_.R[2] = {3.37316115, 3.37316115, 0.0};
+  ions_.R[3] = {5.05974173, 5.05974173, 1.68658058};
   elec_.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create({2});
-  elec_.R[0][0] = 0.0;
-  elec_.R[0][1] = 0.0;
-  elec_.R[0][2] = 0.0;
-  elec_.R[1][0] = 0.0;
-  elec_.R[1][1] = 1.0;
-  elec_.R[1][2] = 0.0;
-
+  elec_.R[0]                 = {0.0, 0.0, 0.0};
+  elec_.R[1]                 = {0.0, 1.0, 0.0};
   SpeciesSet& tspecies       = elec_.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
   int chargeIdx              = tspecies.addAttribute("charge");
@@ -80,7 +66,8 @@ void test_diamond_2x1x1_xml_input(const std::string& spo_xml_string)
   xmlNodePtr ein_xml = doc.getRoot();
 
   WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
-  auto twf_ptr = wf_factory.buildTWF(ein_xml);
+  RuntimeOptions runtime_options;
+  auto twf_ptr = wf_factory.buildTWF(ein_xml, runtime_options);
 
   std::unique_ptr<SPOSet> spo(twf_ptr->getSPOSet("spo").makeClone());
 

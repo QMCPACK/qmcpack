@@ -38,8 +38,10 @@
 
 // include files
 #include <iomanip>
+#include <cmath>
 #include "PETE/PETE.h"
 #include "OhmmsPETE/OhmmsTinyMeta.h"
+#include "type_traits/complex_help.hpp"
 
 namespace qmcplusplus
 {
@@ -113,7 +115,7 @@ struct TinyVector
   inline int size() const { return D; }
 
   inline TinyVector& operator=(const TinyVector& rhs) = default;
-  inline TinyVector& operator=(TinyVector&& rhs)      = default;
+  inline TinyVector& operator=(TinyVector&& rhs) = default;
 
   template<class T1>
   inline TinyVector<T, D>& operator=(const TinyVector<T1, D>& rhs)
@@ -218,14 +220,26 @@ template<class T>
 struct printTinyVector
 {};
 
-// specialized for Vector<TinyVector<T,D> >
+/** template functor for Vector<TinyVector<T,D> streamn output
+ *  0 equivalent values are output as 0.
+ *  In the case of complex or integer type T's this can be added if needed.
+ *  But now you don't pay for this if unless T is actually real.
+ */
 template<class T, unsigned D>
 struct printTinyVector<TinyVector<T, D>>
 {
   inline static void print(std::ostream& os, const TinyVector<T, D>& r)
   {
     for (int d = 0; d < D; d++)
-      os << std::setw(18) << std::setprecision(10) << r[d];
+      if constexpr(IsComplex_t<T>::value)
+	os << std::setw(18) << std::setprecision(10) << r[d];
+      else if constexpr(IsReal_t<T>::value)
+	if (FP_ZERO == std::fpclassify(r[d]))
+	  os << std::setw(18) << std::setprecision(10) << 0;
+	else
+	  os << std::setw(18) << std::setprecision(10) << r[d];
+      else
+	os << r[d];
   }
 };
 

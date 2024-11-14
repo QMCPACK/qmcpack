@@ -182,11 +182,7 @@ bool RadialOrbitalSetBuilder<COT>::addGridH5(hdf_archive& hin)
   std::string gridtype;
   if (myComm->rank() == 0)
   {
-    if (!hin.readEntry(gridtype, "grid_type"))
-    {
-      std::cerr << "Could not read grid_type in H5; Probably Corrupt H5 file" << std::endl;
-      exit(0);
-    }
+    hin.read(gridtype, "grid_type");
   }
   myComm->bcast(gridtype);
 
@@ -345,6 +341,8 @@ void RadialOrbitalSetBuilder<COT>::finalize()
 
   for (int ib = 0; ib < norbs; ++ib)
     radTemp[ib]->convert(*grid_prec, multiset, ib, 5);
+
+  multiset.finalize();
 
   app_log() << "  Setting cutoff radius " << m_rcut_safe << std::endl << std::endl;
   m_orbitals.setRmax(static_cast<RealType>(m_rcut_safe));

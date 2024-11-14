@@ -61,29 +61,29 @@ https://anl.box.com/s/yxz1ic4kxtdtgpva5hcmlom9ixfl3v3c
 Or directly download files in the command line via curl -L -O -J <URL>
 
 # NiO-fcc-supertwist111-supershift000-S1.h5
-https://m.box.com/file/284382973675/download?shared_link=https%3A%2F%2Fanl.box.com%2Fs%2Fyxz1ic4kxtdtgpva5hcmlom9ixfl3v3c
+https://anl.box.com/shared/static/uduxhujxkm1st8pau9muin255cxr2blb.h5
 # NiO-fcc-supertwist111-supershift000-S2.h5
-https://m.box.com/file/284381326469/download?shared_link=https%3A%2F%2Fanl.box.com%2Fs%2Fyxz1ic4kxtdtgpva5hcmlom9ixfl3v3c
+https://anl.box.com/shared/static/g5ceycyjhb2b6segk7ibxup2hxnd77ih.h5
 # NiO-fcc-supertwist111-supershift000-S4.h5
-https://m.box.com/file/284383098200/download?shared_link=https%3A%2F%2Fanl.box.com%2Fs%2Fyxz1ic4kxtdtgpva5hcmlom9ixfl3v3c
+https://anl.box.com/shared/static/47sjyru249ct438j450o7nos6siuaft2.h5
 # NiO-fcc-supertwist111-supershift000-S8.h5
-https://m.box.com/file/130886492400/download?shared_link=https%3A%2F%2Fanl.box.com%2Fs%2Fyxz1ic4kxtdtgpva5hcmlom9ixfl3v3c
+https://anl.box.com/shared/static/3sgw5wsfkbptptxyuu8r4iww9om0grwk.h5
 # NiO-fcc-supertwist111-supershift000-S16.h5
-https://m.box.com/file/130890136573/download?shared_link=https%3A%2F%2Fanl.box.com%2Fs%2Fyxz1ic4kxtdtgpva5hcmlom9ixfl3v3c
+https://anl.box.com/shared/static/f2qftlejohkv48alidi5chwjspy1fk15.h5
 # NiO-fcc-supertwist111-supershift000-S24.h5
-https://m.box.com/file/332796364308/download?shared_link=https%3A%2F%2Fanl.box.com%2Fs%2Fyxz1ic4kxtdtgpva5hcmlom9ixfl3v3c
+https://anl.box.com/shared/static/hiysnip3o8e3sp15e3e931ca4js3zsnw.h5
 # NiO-fcc-supertwist111-supershift000-S32.h5
-https://m.box.com/file/130890425841/download?shared_link=https%3A%2F%2Fanl.box.com%2Fs%2Fyxz1ic4kxtdtgpva5hcmlom9ixfl3v3c
+https://anl.box.com/shared/static/tjdc8o3yt69crl8xqx7lbmqts03itfve.h5
 # NiO-fcc-supertwist111-supershift000-S48.h5
-https://m.box.com/file/332771490576/download?shared_link=https%3A%2F%2Fanl.box.com%2Fs%2Fyxz1ic4kxtdtgpva5hcmlom9ixfl3v3c
+https://anl.box.com/shared/static/7jzdg0yp2njanz5roz5j40lcqc4poxqj.h5
 # NiO-fcc-supertwist111-supershift000-S64.h5
-https://m.box.com/file/136595055334/download?shared_link=https%3A%2F%2Fanl.box.com%2Fs%2Fyxz1ic4kxtdtgpva5hcmlom9ixfl3v3c
+https://anl.box.com/shared/static/yneul9l7rq2ad35vkt4mgmr2ijxt5vb6.h5
 # NiO-fcc-supertwist111-supershift000-S128.h5
-https://m.box.com/file/178686464361/download?shared_link=https%3A%2F%2Fanl.box.com%2Fs%2Fyxz1ic4kxtdtgpva5hcmlom9ixfl3v3c
+https://anl.box.com/shared/static/a0j8gjrfvco0mnko00wq5ujt5oidlg0y.h5
 # NiO-fcc-supertwist111-supershift000-S256.h5
-https://m.box.com/file/178703355825/download?shared_link=https%3A%2F%2Fanl.box.com%2Fs%2Fyxz1ic4kxtdtgpva5hcmlom9ixfl3v3c
+https://anl.box.com/shared/static/373klkrpmc362aevkt7gb0s8rg1hs9ps.h5
 
-The above direct links were verified in June 2022 but may be fragile.
+The above direct links were verified in June 2023 but may be fragile.
 
 Only the specific problem sizes needed for the intended benchmarking runs need to be downloaded.
 

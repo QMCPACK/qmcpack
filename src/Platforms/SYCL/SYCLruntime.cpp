@@ -15,5 +15,25 @@
 
 namespace qmcplusplus
 {
-sycl::queue getSYCLDefaultDeviceDefaultQueue() { return SYCLDeviceManager::getDefaultDeviceDefaultQueue(); }
+sycl::queue& getSYCLDefaultDeviceDefaultQueue() { return SYCLDeviceManager::getDefaultDeviceDefaultQueue(); }
+
+sycl::queue createSYCLInOrderQueueOnDefaultDevice()
+{
+  return sycl::queue(getSYCLDefaultDeviceDefaultQueue().get_context(), getSYCLDefaultDeviceDefaultQueue().get_device(),
+                     sycl::property::queue::in_order());
+}
+
+sycl::queue createSYCLQueueOnDefaultDevice()
+{
+  return sycl::queue(getSYCLDefaultDeviceDefaultQueue().get_context(), getSYCLDefaultDeviceDefaultQueue().get_device());
+}
+
+size_t getSYCLdeviceFreeMem()
+{
+  auto device = getSYCLDefaultDeviceDefaultQueue().get_device();
+  if (device.has(sycl::aspect::ext_intel_free_memory))
+    return getSYCLDefaultDeviceDefaultQueue().get_device().get_info<sycl::ext::intel::info::device::free_memory>();
+  else
+    return 0;
+}
 } // namespace qmcplusplus

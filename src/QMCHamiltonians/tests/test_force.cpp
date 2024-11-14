@@ -23,6 +23,7 @@
 #include "QMCHamiltonians/CoulombPBCAA.h"
 #include "QMCHamiltonians/CoulombPBCAB.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
+#include "Utilities/RuntimeOptions.h"
 
 #include <stdio.h>
 #include <string>
@@ -41,19 +42,11 @@ TEST_CASE("Bare Force", "[hamiltonian]")
 
   ions.setName("ion");
   ions.create({1});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
-
+  ions.R[0] = {0.0, 0.0, 0.0};
   elec.setName("elec");
   elec.create({2});
-  elec.R[0][0] = 0.0;
-  elec.R[0][1] = 1.0;
-  elec.R[0][2] = 0.0;
-  elec.R[1][0] = 0.4;
-  elec.R[1][1] = 0.3;
-  elec.R[1][2] = 0.0;
-
+  elec.R[0]            = {0.0, 1.0, 0.0};
+  elec.R[1]            = {0.4, 0.3, 0.0};
   SpeciesSet& tspecies = elec.getSpeciesSet();
   int upIdx            = tspecies.addSpecies("u");
   //int chargeIdx = tspecies.addAttribute("charge");
@@ -149,22 +142,12 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
 
   ions.setName("ion");
   ions.create({2});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
-  ions.R[1][0] = 2.0;
-  ions.R[1][1] = 0.0;
-  ions.R[1][2] = 0.0;
-
+  ions.R[0] = {0.0, 0.0, 0.0};
+  ions.R[1] = {2.0, 0.0, 0.0};
   elec.setName("elec");
   elec.create({2});
-  elec.R[0][0] = 0.0;
-  elec.R[0][1] = 1.0;
-  elec.R[0][2] = 0.0;
-  elec.R[1][0] = 0.4;
-  elec.R[1][1] = 0.3;
-  elec.R[1][2] = 0.0;
-
+  elec.R[0]                   = {0.0, 1.0, 0.0};
+  elec.R[1]                   = {0.4, 0.3, 0.0};
   SpeciesSet& tspecies        = elec.getSpeciesSet();
   int upIdx                   = tspecies.addSpecies("u");
   int massIdx                 = tspecies.addAttribute("mass");
@@ -237,22 +220,23 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   ions3.createSK();
   ions3.resetGroups();
 
-  // Namely, sending in incompatible force arrays to evaluateWithIonDerivs is not
+  // Namely, sending in incompatible force arrays to evaluateIonDerivs is not
   // supposed to do harm, IF
   // 1) forces are not enabled
   CoulombPBCAA noIonForce(ions3, false, false, false);
   // 2) The species is active
   CoulombPBCAA noElecForce(elec, true, true, false);
 
-  TrialWaveFunction psi;
+  RuntimeOptions runtime_options;
+  TrialWaveFunction psi(runtime_options);
   // Making local copies here in refactoring attempt to disallow modifying
   // ForceBase members directly...
   // Probably fine for a test but if this type of behavior was needed in
   // production code in the future, a different solution would be needed.
   auto noElecForces = noElecForce.getForces();
-  noIonForce.evaluateWithIonDerivs(ions3, ions3, psi, noElecForces, noElecForces);
+  noIonForce.evaluateIonDerivs(ions3, ions3, psi, noElecForces, noElecForces);
   auto noIonForces = noIonForce.getForces();
-  noElecForce.evaluateWithIonDerivs(elec, ions3, psi, noIonForces, noIonForces);
+  noElecForce.evaluateIonDerivs(elec, ions3, psi, noIonForces, noIonForces);
 
   // It seems a bit silly to test the makeClone method
   // but this class does not use the compiler's copy constructor and
@@ -276,22 +260,12 @@ TEST_CASE("Ceperley Force", "[hamiltonian]")
 
   ions.setName("ion");
   ions.create({2});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
-  ions.R[1][0] = 2.0;
-  ions.R[1][1] = 0.0;
-  ions.R[1][2] = 0.0;
-
+  ions.R[0] = {0.0, 0.0, 0.0};
+  ions.R[1] = {2.0, 0.0, 0.0};
   elec.setName("elec");
   elec.create({2});
-  elec.R[0][0] = 0.0;
-  elec.R[0][1] = 1.0;
-  elec.R[0][2] = 0.0;
-  elec.R[1][0] = 0.2;
-  elec.R[1][1] = 0.3;
-  elec.R[1][2] = 0.0;
-
+  elec.R[0]                   = {0.0, 1.0, 0.0};
+  elec.R[1]                   = {0.2, 0.3, 0.0};
   SpeciesSet& tspecies        = elec.getSpeciesSet();
   int upIdx                   = tspecies.addSpecies("u");
   int massIdx                 = tspecies.addAttribute("mass");
@@ -356,29 +330,14 @@ TEST_CASE("Ion-ion Force", "[hamiltonian]")
 
   ions.setName("ions");
   ions.create({3});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
-  ions.R[1][0] = 2.0;
-  ions.R[1][1] = 0.0;
-  ions.R[1][2] = 0.0;
-  ions.R[2][0] = 1.0;
-  ions.R[2][1] = 1.0;
-  ions.R[2][2] = 0.0;
-
-  // Add elec
+  ions.R[0] = {0.0, 0.0, 0.0};
+  ions.R[1] = {2.0, 0.0, 0.0};
+  ions.R[2] = {1.0, 1.0, 0.0};
   elec.setName("elec");
   elec.create({3});
-  elec.R[0][0] = 0.0;
-  elec.R[0][1] = 1.0;
-  elec.R[0][2] = 0.0;
-  elec.R[1][0] = 2.0;
-  elec.R[1][1] = 1.0;
-  elec.R[1][2] = 0.0;
-  elec.R[2][0] = 1.0;
-  elec.R[2][1] = 0.0;
-  elec.R[2][2] = 0.0;
-
+  elec.R[0]                    = {0.0, 1.0, 0.0};
+  elec.R[1]                    = {2.0, 1.0, 0.0};
+  elec.R[2]                    = {1.0, 0.0, 0.0};
   SpeciesSet& ionSpecies       = ions.getSpeciesSet();
   int HIdx                     = ionSpecies.addSpecies("H");
   int HChargeIdx               = ionSpecies.addAttribute("charge");
@@ -423,19 +382,11 @@ TEST_CASE("AC Force", "[hamiltonian]")
 
   ions.setName("ion");
   ions.create({1});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
-
+  ions.R[0] = {0.0, 0.0, 0.0};
   elec.setName("elec");
   elec.create({2});
-  elec.R[0][0] = 0.0;
-  elec.R[0][1] = 1.0;
-  elec.R[0][2] = 0.0;
-  elec.R[1][0] = 0.4;
-  elec.R[1][1] = 0.3;
-  elec.R[1][2] = 0.0;
-
+  elec.R[0]            = {0.0, 1.0, 0.0};
+  elec.R[1]            = {0.4, 0.3, 0.0};
   SpeciesSet& tspecies = elec.getSpeciesSet();
   int upIdx            = tspecies.addSpecies("u");
   //int chargeIdx = tspecies.addAttribute("charge");
@@ -462,7 +413,8 @@ TEST_CASE("AC Force", "[hamiltonian]")
   elec.update();
 
   // defaults
-  TrialWaveFunction psi;
+  RuntimeOptions runtime_options;
+  TrialWaveFunction psi(runtime_options);
   QMCHamiltonian qmcHamiltonian;
 
   //This is redundant code, but necessary to avoid adding API's to

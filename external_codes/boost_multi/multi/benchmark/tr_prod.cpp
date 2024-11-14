@@ -239,7 +239,7 @@ int main() {
 	cout << tr_square_direct(A) << '\n';
 	cout << tr_square_block2(A) << '\n';
 	{
-		int const N = 32768/2;
+		multi::array<double, 2>::size_type const N = 32768/2;
 		multi::array<double, 2> A({N, N});
 		std::iota(A.data_elements(), A.data_elements() + N*N, 1.11);
 		double warm = tr_square_direct(A); cout << warm << '\n';

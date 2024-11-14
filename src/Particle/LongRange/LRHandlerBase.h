@@ -21,6 +21,7 @@
 
 #include "coulomb_types.h"
 #include "LongRange/StructFact.h"
+#include "Particle/ParticleSet.h"
 
 namespace qmcplusplus
 {

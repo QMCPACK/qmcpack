@@ -1,10 +1,17 @@
 .. _developguide:
+.. highlight:: c++
 
 Development Guide
 =================
 
 The section gives guidance on how to extend the functionality of QMCPACK. Future examples will likely include topics such as the
 addition of a Jastrow function or a new QMC method.
+
+.. admonition:: Definitions
+
+   * **Legacy**: code from previous work usually not in line current coding standards or design. It is mostly functional and correct within the context of legacy operations. Most has been modified piecemeal for years to extend functionality.
+   * **Refactoring**: Process of redesigning code in place through incremental changes toward current design and functionality goals.
+
 
 QMCPACK coding standards
 ------------------------
@@ -38,7 +45,7 @@ Files
 
 Each file should start with the header.
 
-::
+.. code:: c++
 
   //////////////////////////////////////////////////////////////////////////////////////
   // This file is distributed under the University of Illinois/NCSA Open Source License.
@@ -96,7 +103,7 @@ In QMCPACK, include paths are handled by modern CMake target dependency. Every t
 example, ``src/Particle/CMakeLists.txt`` defines `qmcparticle` target. It propagates include path ``qmcpack/src/Particle`` to
 compiling command lines in CMake via
 
-::
+.. code:: cmake
 
   TARGET_INCLUDE_DIRECTORIES(qmcparticle PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
@@ -110,7 +117,7 @@ If the compiled file is not part of the same target as `qmcparticle`, the target
 `qmcparticle`. For example, test source files under ``qmcpack/src/Particle/tests`` are not part of `qmcparticle` and thus requires
 the following additional CMake setting
 
-::
+.. code:: cmake
 
   TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcparticle)
 
@@ -161,8 +168,8 @@ Type and class names
 
 Type and class names should start with a capital letter and have a capital letter for each new word. Underscores (``_``) are not
 allowed. It's redundant to end these names with ``Type`` or ``_t``.
+.. code:: c++
 
-::
    \\no
    using ValueMatrix_t = Matrix<Value>;
    using RealType = double;
@@ -591,6 +598,7 @@ Examples:
   Foo::Foo(int var)
       : some_var_(var) {}
 
+
 Namespace formatting
 ~~~~~~~~~~~~~~~~~~~~
 
@@ -600,14 +608,12 @@ inner namespace.
 
 Examples:
 
-::
+.. code:: c++
 
   namespace ns
   {
   void foo();
   }  // ns
-
-::
 
   namespace ns1
   {
@@ -647,26 +653,29 @@ A class is not just a naming scheme for a set of variables and functions. It sho
 contain the state of a logical object, and might allow access to object data through a well-defined interface related variables,
 while preserving maximally ability to change internal implementation of the class.
 
-Do not use ``struct`` as a way to avoid controlling access to the class. Only in rare cases where a class is a fully public data
-structure ``struct`` is this appropriate. Ignore (or fix one) the many examples of this in QMCPACK.
+Do not...
+^^^^^^^^^
 
-Do not use inheritance primarily as a means to break encapsulation. If your class could aggregate or compose another class, do
-that, and access it solely through its public interface. This will reduce dependencies.
+- use ``struct`` as a way to avoid controlling access to the class. Only when the instantiated objects are public data structure is ``struct`` appropriate.
+
+- use inheritance primarily as a means to break encapsulation. If your class could aggregate or compose another class, do that, and access it solely through its public interface. This will reduce dependencies.
+
+- pass entire classes as function arguments when what the function actually requires is one or a few arguments available through the public API of a class, encapsulation is harmful when is just used to save keystrokes and hides the logical data dependence of functions.
+
+All these "idioms" are common in legacy QMCPACK code and should not be perpetuated.
 
 Casting
 ~~~~~~~
 
-In C++ source, avoid C style casts; they are difficult to search for and imprecise in function. An exception is made for
-controlling implicit conversion of simple numerical types.
-
+In C++ source, avoid C style casts; they are difficult to search for and imprecise in function.
 Explicit C++ style casts make it clear what the safety of the cast is and what sort of conversion is expected to be possible.
 
-::
+.. code::c++
 
   int c = 2;
   int d = 3;
   double a;
-  a = (double)c / d;  // Ok
+  a = static_cast<double>(c) / d;  // Ok
 
   const class1 c1;
   class2* c2;
@@ -763,6 +772,25 @@ although the Jastrow factor object must be unique per walker, the pointer to the
 During Jastrow optimization, any update to the parameter data managed by the shared pointer will be effective immediately in all
 the Jastrow objects. In another example, spline coefficients are managed by a shared pointer which achieves a single copy in
 memory shared by an SPOSet and all of its clones.
+
+Log and error output
+~~~~~~~~~~~~~~~~~~~~
+
+``app_log``, ``app_warning``, ``app_err`` and ``app_debug`` print out messages only on rank 0 to avoid repetitive messages from
+every MPI rank. For this reason, they are only suitable for outputing messages identical to all MPI ranks. ``app_debug`` prints only
+when ``--verbosity=debug`` command line option is used. Messages that come from only one or a few MPI ranks should use ``std::cout``
+and ``std::cerr``.
+
+If the code needs to be stopped after an unrecoverable error that happens uniformly on all the MPI ranks, a bad input for example,
+avoid using ``app_err`` together with ``Communicate::abort(msg)`` or ``APP_ABORT(msg)`` because any MPI rank other than rank 0 may
+stop the whole run before rank 0 is able to print out the error message. To secure the printout before stopping, use
+``Communicate::barrier_and_abort(msg)`` if an MPI communicator is available or throw a custom exception ``UniformCommunicateError``
+and capture it where ``Communicate::barrier_and_abort()`` can be used. Note that ``UniformCommunicateError`` can only be used for
+uniform error, improper use may cause QMCPACK hanging.
+
+In addition, avoid directly calling C function ``abort()``, ``exit()`` and ``MPI_Abort()`` for stopping the code.
+
+.. include:: input_code.txt
 
 .. _distance-tables:
 
@@ -885,6 +913,49 @@ An example of the second approach is
        // Code that depends on group
     }
   }
+
+Walker
+------
+.. note:: Batched Version Documentation
+	  The following documentation section describes the code design and behavior used when ``driver_version == batch`` at runtime.
+
+Lightweight representation of a markov chain walker's state. It is managed during each QMC driver section by ``MCPopulation``. Between sections it is stored in the WalkerConfigurations container class.
+
+Walker Identifiers (walker_id)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The ``Walker::walker_id_`` and ``Walker::parent_id_`` allow logging walkers for later constructing trajectories etc. The basic data relations involved are shown in :numref:`fig1`. In each QMC section each walker ID will be unique and is generated using the equation
+.. math::
+  :label: eq_walker_id
+  walker_id = walker_id = num_walkers_created_++ * num_ranks_ + rank_ + 1
+
+where ``num_walkers_created_`` is a member variable of the sole ```MCPopulation`` object on the rank and initially set to 0. Each walkers ``parent_id`` is set to 0 when it is constructed and is assigned to ``walker_id`` of the walker it is transferred or copied from. If that assignment is from previous section's or run's ``WalkerConfigurations`` object then the value of the ``Walker::getWalkerID()`` is multiplied by -1. If the Walker's initial configuration comes from the golden particle set the parent_id will be 0.
+
+.. _fig1:
+.. figure:: /uml/WalkerID_chen.pdf
+    :width: 400
+    :align: center
+
+During DMC branching and load-balancing, there are two distinct mechanisms by which new walkers appear on each rank.
+One is when a walker is transferred from another rank, the other is when walkers of multiplicity >= 2 are split.
+For a given walker, both of these mechanisms potentially occur in order within each step, transfer first and then split.
+
+During the branching stage multiplicity of a walker is derived from its weight.
+Walker multiplicity summed over all walkers gives the population of walkers for the next step.
+Based on the total multiplicity on each rank, the highest multiplicity walkers on overpopulated ranks are fully or partially sent to underpopulated ranks for optimal load balance.
+When possible rank multiplicities are balanced by transferring fewer walkers with more than one unit of multiplicity for minimized transfer traffic.
+This unit is unfortunately called 'copy' in the source code but it is simply the multiplicity that the walker will have after it is unpacked on the receiving rank.
+That amount of multiplicity is removed from the walker on the sending rank.
+When walker transfer happens, the receiving walker overwrites its ``parent_id`` with the recieved value of ``walker_id`` before assigning a new ID to its ``walker_id``.
+The multiplicity of the receiving walker is set to the multiplicity that sending walker lost.
+Walkers with multiplicity < 1 are removed before transfers for creating vacant receiving walkers and after transfers for removing fully displaced walkers.
+
+Each rank can still carry walkers with multiplicity >= 2 at this point.
+Some of these maybe exist before the population balancing and some may have been received.
+To achieve optimal sampling ergodicity, all the high multiplicity walkers will follow one trajectory for each unit of multiplicity they have which means they need to become independent replicas.
+For each unit of multiplicity >= 2, a new walker is spawned. The ``parent_id`` of each spawned walker is assigned to the ``walker_id`` of the original high multiplicity walker.
+At the end of this process all walkers have multiplicity == 1. They keep their ``walker_id``'s from spawn time.
+
+The overarching rule of ``parent_id`` is when a newly active walker is transferred or split from an older walker, the older walker's ``walker_id`` becomes the new walker's ``parent_id`` and the new walker's ``walker_id`` is the global unique ID that it was spawned with.
 
 Wavefunction
 ------------
@@ -1024,8 +1095,11 @@ three body Jastrow factors in QMCPACK only needs the row [iel][0:Nelec).
 In ``ratioGrad``, the new distances are stored in the ``Temp_r`` and
 ``Temp_dr`` members of the distance tables.
 
-Setup
-~~~~~
+Legacy Setup
+~~~~~~~~~~~~
+.. warning::
+   The following describes a deprecated method of handling user input.
+   It is not to be used for new code.
 
 A builder processes XML input, creates the wavefunction, and adds it to
 ``targetPsi``. Builders derive from ``WaveFunctionComponentBuilder``.

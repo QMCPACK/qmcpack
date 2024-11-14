@@ -18,6 +18,7 @@
 #include <map>
 #include <numeric>
 #include "Configuration.h"
+#include <ResourceHandle.h>
 #include "Particle/DistanceTable.h"
 #include "ParticleBase/ParticleAttribOps.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
@@ -101,7 +102,7 @@ class J1OrbitalSoA : public WaveFunctionComponent
   std::vector<GradDerivVec> gradLogPsi;
   std::vector<ValueDerivVec> lapLogPsi;
 
-  std::unique_ptr<J1OrbitalSoAMultiWalkerMem<RealType>> mw_mem_;
+  ResourceHandle<J1OrbitalSoAMultiWalkerMem<RealType>> mw_mem_handle_;
 
   void resizeWFOptVectors()
   {
@@ -121,10 +122,10 @@ class J1OrbitalSoA : public WaveFunctionComponent
     return -simd::accumulate_n(Vat.data(), Nelec, QTFull::RealType());
   }
 
-  inline LogValueType evaluateGL(const ParticleSet& P,
-                                 ParticleSet::ParticleGradient& G,
-                                 ParticleSet::ParticleLaplacian& L,
-                                 bool fromscratch = false) override
+  inline LogValue evaluateGL(const ParticleSet& P,
+                             ParticleSet::ParticleGradient& G,
+                             ParticleSet::ParticleLaplacian& L,
+                             bool fromscratch = false) override
   {
     return log_value_ = computeGL(G, L);
   }
@@ -247,9 +248,9 @@ public:
     }
   }
 
-  LogValueType evaluateLog(const ParticleSet& P,
-                           ParticleSet::ParticleGradient& G,
-                           ParticleSet::ParticleLaplacian& L) override
+  LogValue evaluateLog(const ParticleSet& P,
+                       ParticleSet::ParticleGradient& G,
+                       ParticleSet::ParticleLaplacian& L) override
   {
     recompute(P);
     return log_value_ = computeGL(G, L);
@@ -284,11 +285,11 @@ public:
     }
   }
 
-  PsiValueType ratio(ParticleSet& P, int iat) override
+  PsiValue ratio(ParticleSet& P, int iat) override
   {
     UpdateMode = ORB_PBYP_RATIO;
     curAt      = computeU(P.getDistTableAB(myTableID).getTempDists());
-    return std::exp(static_cast<PsiValueType>(Vat[iat] - curAt));
+    return std::exp(static_cast<PsiValue>(Vat[iat] - curAt));
   }
 
   inline void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios) override
@@ -439,7 +440,7 @@ public:
    *
    * Using getTempDists(). curAt, curGrad and curLap are computed.
    */
-  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override
+  PsiValue ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override
   {
     UpdateMode = ORB_PBYP_PARTIAL;
 
@@ -447,7 +448,7 @@ public:
     curLap = accumulateGL(dU.data(), d2U.data(), P.getDistTableAB(myTableID).getTempDispls(), curGrad);
     curAt  = simd::accumulate_n(U.data(), Nions, valT());
     grad_iat += curGrad;
-    return std::exp(static_cast<PsiValueType>(Vat[iat] - curAt));
+    return std::exp(static_cast<PsiValue>(Vat[iat] - curAt));
   }
 
   /** Rejected move. Nothing to do */
@@ -489,7 +490,7 @@ public:
     }
   }
 
-  inline LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override
+  inline LogValue updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override
   {
     log_value_ = computeGL(P.G, P.L);
     buf.forward(Bytes_in_WFBuffer);

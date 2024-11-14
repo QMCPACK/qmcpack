@@ -28,22 +28,21 @@ namespace qmcplusplus
 {
 using WP = WalkerProperties::Indexes;
 
-TimerNameList_t<SODMCTimers> SODMCTimerNames = {{SODMC_buffer, "SODMCUpdatePbyP::Buffer"},
-                                                {SODMC_movePbyP, "SODMCUpdatePbyP::movePbyP"},
-                                                {SODMC_hamiltonian, "SODMCUpdatePbyP::Hamiltonian"},
-                                                {SODMC_collectables, "SODMCUpdatePbyP::Collectables"},
-                                                {SODMC_tmoves, "SODMCUpdatePbyP::Tmoves"}};
+const TimerNameList_t<SODMCTimers> SODMCTimerNames = {{SODMC_buffer, "SODMCUpdatePbyP::Buffer"},
+                                                      {SODMC_movePbyP, "SODMCUpdatePbyP::movePbyP"},
+                                                      {SODMC_hamiltonian, "SODMCUpdatePbyP::Hamiltonian"},
+                                                      {SODMC_collectables, "SODMCUpdatePbyP::Collectables"},
+                                                      {SODMC_tmoves, "SODMCUpdatePbyP::Tmoves"}};
 
 
 /// Constructor.
 SODMCUpdatePbyPWithRejectionFast::SODMCUpdatePbyPWithRejectionFast(MCWalkerConfiguration& w,
                                                                    TrialWaveFunction& psi,
                                                                    QMCHamiltonian& h,
-                                                                   RandomGenerator& rg)
-    : QMCUpdateBase(w, psi, h, rg)
-{
-  setup_timers(myTimers, SODMCTimerNames, timer_level_medium);
-}
+                                                                   RandomBase<FullPrecRealType>& rg)
+    : QMCUpdateBase(w, psi, h, rg), myTimers(getGlobalTimerManager(), SODMCTimerNames, timer_level_medium)
+
+{}
 
 /// destructor
 SODMCUpdatePbyPWithRejectionFast::~SODMCUpdatePbyPWithRejectionFast() {}
@@ -152,7 +151,7 @@ void SODMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool 
     }
     {
       ScopedTimer local_timer(myTimers[SODMC_hamiltonian]);
-      enew = H.evaluateWithToperator(W);
+      enew = non_local_ops_.getMoveKind() == TmoveKind::OFF ? H.evaluate(W) : H.evaluateWithToperator(W);
     }
     thisWalker.resetProperty(logpsi, Psi.getPhase(), enew, rr_accepted, rr_proposed, 1.0);
     thisWalker.Weight *= branchEngine->branchWeight(enew, eold);
@@ -182,7 +181,7 @@ void SODMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool 
 #endif
   {
     ScopedTimer local_timer(myTimers[SODMC_tmoves]);
-    const int NonLocalMoveAcceptedTemp = H.makeNonLocalMoves(W);
+    const int NonLocalMoveAcceptedTemp = H.makeNonLocalMoves(W, non_local_ops_);
     if (NonLocalMoveAcceptedTemp > 0)
     {
       RealType logpsi = Psi.updateBuffer(W, w_buffer, false);

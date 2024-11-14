@@ -265,10 +265,6 @@ attribute:
 +-----------------------------+------------+--------------------------+---------+-------------------------------------------+
 | ``gpu``                     | Text       | Yes/no                   |         | GPU switch.                               |
 +-----------------------------+------------+--------------------------+---------+-------------------------------------------+
-| ``gpusharing``              | Text       | Yes/no                   | No      | Share B-spline table across GPUs.         |
-+-----------------------------+------------+--------------------------+---------+-------------------------------------------+
-| ``Spline_Size_Limit_MB``    | Integer    |                          |         | Limit B-spline table size on GPU.         |
-+-----------------------------+------------+--------------------------+---------+-------------------------------------------+
 | ``check_orb_norm``          | Text       | Yes/no                   | Yes     | Check norms of orbitals from h5 file.     |
 +-----------------------------+------------+--------------------------+---------+-------------------------------------------+
 | ``save_coefs``              | Text       | Yes/no                   | No      | Save the spline coefficients to h5 file.  |
@@ -314,32 +310,6 @@ Additional information:
     scratch memory on the compute nodes, users can perform this step on
     fat nodes and transfer back the h5 file for QMC calculations.
 
-- gpusharing
-    If enabled, spline data is shared across multiple
-    GPUs on a given computational node. For example, on a
-    two-GPU-per-node system, each GPU would have half of the orbitals.
-    This enables larger overall spline tables than would normally fit in
-    the memory of individual GPUs to be used, potentially up to the total
-    GPU memory on a node. To obtain high performance, large electron
-    counts or a high-performing CPU-GPU interconnect is required. To use
-    this feature, the following needs to be done:
-
-      -  The CUDA Multi-Process Service (MPS) needs to be used (e.g., on
-         Summit use "-alloc_flags gpumps" for bsub). If MPS is not
-         detected, sharing will be disabled.
-
-      -  CUDA_VISIBLE_DEVICES needs to be properly set to control each rank’s
-         visible CUDA devices (e.g., on OLCF Summit one needs to
-         create a resource set containing all GPUs with the respective number
-         of ranks with "jsrun –task-per-rs Ngpus -g Ngpus").
-
-- Spline_Size_Limit_MB
-    Allows distribution of the B-spline
-    coefficient table between the host and GPU memory. The compute kernels
-    access host memory via zero-copy. Although the performance penalty
-    introduced by it is significant, it allows large calculations to go
-    through.
- 
 - skip_checks
     When converting the wave function from convertpw4qmc instead
     of pw2qmcpack, there is missing ionic information. This flag bypasses the requirement
@@ -828,12 +798,21 @@ Additional information:
   The best ``delay_rank`` depends on the processor microarchitecture.
   GPU support is under development.
 
-- ``gpu`` This option is only effective when GPU features are built. Use the implementation with GPU acceleration if ``yes``.
+- ``gpu`` This option is only effective when GPU features are built. Default to using GPU. "omptarget", "cuda", "sycl", "cpu" can be set to target a specific implementation, "yes", "no" can be used to toggle on or off GPU acceleration.
 
 - ``batch`` The default value is ``yes`` if ``gpu=yes`` and ``no`` otherwise.
 
-- ``matrix_inverter`` If the value is ``gpu``, the inversion happens on the GPU and additional GPU memory is needed.
-  If the value is ``host``, the inversion happens on the CPU and doesn't need GPU memory.
+- ``matrix_inverter``. When the inversion happens on the GPU, additional GPU memory is needed. Support matrix:
+
++------------------------------------+-----------------+-----------------+
+| Build condition \\ matrix_inverter | ``host``        | ``gpu``         |
++====================================+=================+=================+
+| CUDA/HIP/SYCL not enabled          | running on host | running on host |
++------------------------------------+-----------------+-----------------+
+| CUDA/HIP/SYCL enabled and gpu==no  | running on host | running on host |
++------------------------------------+-----------------+-----------------+
+| CUDA/HIP/SYCL enabled and gpu==yes | running on host | running on GPU  |
++------------------------------------+-----------------+-----------------+
 
 .. _multideterminants:
 
@@ -932,6 +911,104 @@ the associated CSF, and the excitation degree relative to the first determinant.
   beta   1011100000000000000000000000000000000000000000000000000000
   scf    2022200000000000000000000000000000000000000000000000000000
   excitation degree  2
+
+.. _orbitalrotation:
+
+Orbital Rotation
+----------------
+Orbital rotation mixes orbitals between those occupied by electrons and those unoccupied by electrons.
+Because it changes the orbitals, a well-chosen optimized orbital rotation can improve the trial wavefunction for VMC,
+can change the nodal structure, and can potentially improve the fixed-node DMC energy.
+
+Combining orbitals is complicated by the need to maintain the normalization of the
+orbitals.
+A rotation matrix will preserve the normalization of the vectors in linear combinations.
+However the entries in a rotation matrix are not independent.
+A rotation matrix can alternatively be expressed as the matrix exponential of a skew-symmetric matrix: :math:`R = \exp(\kappa)`.
+The entries in that skew-symmetric matrix are independent and can form an independent set of optimizable parameters.
+
+
+Optimizable orbitals are given in the input file by enclosing an SPO
+in an `rotated_sposet` element.  The `determinant` element `id` attribute should reference the name of the rotated sposet.
+
+The `rotated_sposet` element requires use of the updated `sposet_collection` style.
+
+``rotated_sposet`` element:
+
+.. _Table_rotated_sposet:
+.. table::
+
+     +-----------------+--------------------------+
+     | Parent elements | ``sposet_collection``    |
+     +-----------------+--------------------------+
+     | Child elements  | ``sposet``, ``opt_vars`` |
+     +-----------------+--------------------------+
+
+Attribute:
+
++-----------------+----------+----------------+---------+------------------------------------+
+| Name            | Datatype | Values         | Default | Description                        |
++=================+==========+================+=========+====================================+
+| ``name``        | Text     |                |         | Name of rotated SPOSet             |
++-----------------+----------+----------------+---------+------------------------------------+
+| ``method``      | Text     | global/history | global  | Rotation matrix composition method |
++-----------------+----------+----------------+---------+------------------------------------+
+
+.. code-block::
+   :caption: Orbital Rotation XML element.
+   :name: Listing 1
+
+   <sposet_collection ...>
+     <rotated_sposet name="rot_spo">
+       <sposet name="spo" size="8">
+         ...
+       </sposet>
+     </rotated_sposet>
+   </sposet_collection>
+   <determinantset>
+     <slaterdeterminant>
+       <determinant sposet="rot_spo"/>
+       <determinant sposet="rot_spo"/>
+     </slaterdeterminant>
+   </determinantset>
+
+
+The `opt_vars` element can be used to specify initial rotation parameters.
+The parameters are given as a space-separated list of numbers in the element text.
+The length of this list must match the expected number of rotation parameters.
+
+Composing rotations
+~~~~~~~~~~~~~~~~~~~
+
+Rotation matrices do not commute, which consequently means the entries in the kappa matrix
+do not simply add when combining rotations.
+The parameters tracked for optimization are those for which the parameter derivatives are possibly non-zero.
+Rotations from one occupied orbital to another, or from on unoccupied orbital to another, have
+no effect on the energy, and hence have a zero parameter derivative.
+These parameters are a subset of the full number of parameters in the kappa matrix.
+When rotations are combined, the entries corresponding to zero parameter derivatives can
+take on a non-zero value (i.e. the kappa matrix gets 'filled-in').
+
+There are two ways to handle this.
+One way is to store a list of applied rotations.
+This method applies a new rotation to the coefficient matrix, and updates the coefficient matrix at each optimization step.
+This is the "history" method.
+
+.. math:: C' = \exp(\kappa_n) \dots \exp(\kappa_1) \exp(\kappa_0) C
+
+The other way is to track the full set of kappa values separately.
+After the matrix multiplication to compose the rotations, the matrix log recovers the new kappa matrix entries.
+This is the "global" method.
+This method keeps a separate copy of the coefficient matrix and updates it using the global rotation matrix at each optimization step.
+
+.. math:: \kappa_{new} &= \ln( \exp(\kappa_{\Delta}) \exp(\kappa_{old}) ) \\
+                    C' &= \exp(\kappa_{new}) C
+
+Another consequence is the rotation parameters printed in the output are meaningless past the first rotation.
+Internally, the rotation code deals only with the difference between parameters at each step.
+
+This also means that extra information needs to be stored with the results of the optimization.
+The extra information is stored in the VP HDF file.
 
 .. _backflow:
 

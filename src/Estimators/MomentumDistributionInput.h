@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2021 QMCPACK developers.
+// Copyright (c) 2023 QMCPACK developers.
 //
 // File developed by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //
@@ -24,7 +24,7 @@ class MomentumDistributionInput
 {
 public:
   using Consumer = MomentumDistribution;
-  using Real = QMCTraits::RealType;
+  using Real = QMCTraits::FullPrecRealType;
 
   class MomentumDistributionInputSection : public InputSection
   {

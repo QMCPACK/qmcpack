@@ -30,6 +30,7 @@
 #include "Containers/MinimalContainers/RecordArray.hpp"
 #include "QMCWaveFunctions/TWFFastDerivWrapper.h"
 #include "TWFGrads.hpp"
+#include "Utilities/RuntimeOptions.h"
 
 /**@defgroup MBWfs Many-body wave function group
  * @brief Classes to handle many-body trial wave functions
@@ -37,6 +38,8 @@
 
 namespace qmcplusplus
 {
+class MultiSlaterDetTableMethod;
+
 /** @ingroup MBWfs
  * @brief Class to represent a many-body trial wave function
  *
@@ -58,21 +61,22 @@ class TrialWaveFunction
 {
 public:
   // derived types from WaveFunctionComponent
-  using RealType     = WaveFunctionComponent::RealType;
-  using ComplexType  = WaveFunctionComponent::ComplexType;
+  using RealType    = WaveFunctionComponent::RealType;
+  using ComplexType = WaveFunctionComponent::ComplexType;
 
 #ifndef NDEBUG
-  using FullPrecRealType =  WaveFunctionComponent::FullPrecRealType;
+  using FullPrecRealType = WaveFunctionComponent::FullPrecRealType;
 #endif
 
   using ValueType    = WaveFunctionComponent::ValueType;
+  using ValueVector  = WaveFunctionComponent::ValueVector;
   using GradType     = WaveFunctionComponent::GradType;
   using BufferType   = WaveFunctionComponent::BufferType;
   using WFBufferType = WaveFunctionComponent::WFBufferType;
   using HessType     = WaveFunctionComponent::HessType;
   using HessVector   = WaveFunctionComponent::HessVector;
-  using LogValueType = WaveFunctionComponent::LogValueType;
-  using PsiValueType = WaveFunctionComponent::PsiValueType;
+  using LogValue     = WaveFunctionComponent::LogValue;
+  using PsiValue     = WaveFunctionComponent::PsiValue;
 
   using SPOMap = SPOSet::SPOMap;
 
@@ -89,7 +93,7 @@ public:
   ///differential laplacians
   ParticleSet::ParticleLaplacian L;
 
-  TrialWaveFunction(const std::string_view aname = "psi0", bool tasking = false);
+  TrialWaveFunction(const RuntimeOptions& runtime_options, const std::string_view aname = "psi0", bool tasking = false);
 
   // delete copy constructor
   TrialWaveFunction(const TrialWaveFunction&) = delete;
@@ -289,12 +293,19 @@ public:
   static void mw_calcRatio(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                            const RefVectorWithLeader<ParticleSet>& p_list,
                            int iat,
-                           std::vector<PsiValueType>& ratios,
+                           std::vector<PsiValue>& ratios,
                            ComputeType ct = ComputeType::ALL);
 
   /** compulte multiple ratios to handle non-local moves and other virtual moves
    */
   void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios, ComputeType ct = ComputeType::ALL);
+
+  /** Used by SOECPComponent to do faster SOC evaluation
+   */
+  void evaluateSpinorRatios(const VirtualParticleSet& VP,
+                            const std::pair<ValueVector, ValueVector>& spinor_multiplier,
+                            std::vector<ValueType>& ratios) const;
+
   /** batched version of evaluateRatios
    * Note: unlike other mw_ static functions, *this is the batch leader instead of wf_list[0].
    */
@@ -303,11 +314,27 @@ public:
                                 const RefVector<std::vector<ValueType>>& ratios_list,
                                 ComputeType ct = ComputeType::ALL);
 
+  // batched version of evaluateSpinorRatios
+  static void mw_evaluateSpinorRatios(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                      const RefVectorWithLeader<const VirtualParticleSet>& Vp_list,
+                                      const RefVector<std::pair<ValueVector, ValueVector>>& spinor_multiplier_list,
+                                      const RefVector<std::vector<ValueType>>& ratios_list);
+
   /** compute both ratios and deriatives of ratio with respect to the optimizables*/
   void evaluateDerivRatios(const VirtualParticleSet& VP,
                            const opt_variables_type& optvars,
                            std::vector<ValueType>& ratios,
                            Matrix<ValueType>& dratio);
+
+  /** compute both ratios and deriatives of ratio with respect to the optimizables
+   * Used by SOECP for exact spin integration. spinor_multiplier contains the contribution of the SOECP
+   * for the up/down components that needs to be multiplied by up/down components of spinor orbital. 
+   */
+  void evaluateSpinorDerivRatios(const VirtualParticleSet& VP,
+                                 const std::pair<ValueVector, ValueVector>& spinor_multiplier,
+                                 const opt_variables_type& optvars,
+                                 std::vector<ValueType>& ratios,
+                                 Matrix<ValueType>& dratio);
 
   void printGL(ParticleSet::ParticleGradient& G, ParticleSet::ParticleLaplacian& L, std::string tag = "GL");
 
@@ -327,8 +354,8 @@ public:
    * It returns a complex value if the wavefunction is complex.
    * @param P the active ParticleSet
    * @param iat the index of a particle moved to the new position.
-   * @param grad_iat gradients
-   * @return ratio value
+   * @param grad_iat gradients. The consumer must verify if ratio is non-zero.
+   * @return ratio value. The caller must reject zero ratio moves.
    */
   ValueType calcRatioGrad(ParticleSet& P, int iat, GradType& grad_iat);
 
@@ -336,9 +363,9 @@ public:
    * It returns a complex value if the wavefunction is complex.
    * @param P the active ParticleSet
    * @param iat the index of a particle moved to the new position.
-   * @param grad_iat real space gradient for iat
-   * @param spingrad_iat spin gradient for iat
-   * @return ratio value
+   * @param grad_iat real space gradient for iat. The consumer must verify if ratio is non-zero.
+   * @param spingrad_iat spin gradient for iat. The consumer must verify if ratio is non-zero.
+   * @return ratio value. The caller must reject zero ratio moves.
    */
   ValueType calcRatioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad_iat);
 
@@ -351,7 +378,7 @@ public:
   static void mw_calcRatioGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                const RefVectorWithLeader<ParticleSet>& p_list,
                                int iat,
-                               std::vector<PsiValueType>& ratios,
+                               std::vector<PsiValue>& ratios,
                                TWFGrads<CT>& grads);
 
   /** Prepare internal data for updating WFC correspond to a particle group
@@ -411,7 +438,7 @@ public:
 
   /** compute gradients and laplacian of the TWF with respect to each particle.
    *  See WaveFunctionComponent::evaluateGL for more detail */
-  LogValueType evaluateGL(ParticleSet& P, bool fromscratch);
+  LogValue evaluateGL(ParticleSet& P, bool fromscratch);
   /* batched version of evaluateGL.
    */
   static void mw_evaluateGL(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
@@ -454,9 +481,20 @@ public:
                                               RecordArray<ValueType>& dlogpsi,
                                               RecordArray<ValueType>& dhpsioverpsi);
 
+  /** Compute the derivatives of the log of the wavefunction with respect to optimizable parameters.
+   *  parameters
+   *  @param P particle set
+   *  @param optvars optimizable parameters
+   *  @param dlogpsi array of derivatives of the log of the wavefunction.
+   *  Note: this function differs from the evaluateDerivatives function in the way that it only computes
+   *        the derivative of the log of the wavefunction.
+  */
   void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& optvars, Vector<ValueType>& dlogpsi);
-
-  void evaluateGradDerivatives(const ParticleSet::ParticleGradient& G_in, std::vector<ValueType>& dgradlogpsi);
+  /// batched version of evaluateDerivativesWF
+  static void mw_evaluateParameterDerivativesWF(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                                const RefVectorWithLeader<ParticleSet>& p_list,
+                                                const opt_variables_type& optvars,
+                                                RecordArray<ValueType>& dlogpsi);
 
   /** evaluate the hessian w.r.t. electronic coordinates of particle iat **/
   // void evaluateHessian(ParticleSet & P, int iat, HessType& grad_grad_psi);
@@ -469,8 +507,9 @@ public:
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
 
-  void setTwist(std::vector<RealType> t) { myTwist = t; }
-  const std::vector<RealType> twist() { return myTwist; }
+  void setTwist(const std::vector<RealType>& t) { myTwist = t; }
+  void setTwist(std::vector<RealType>&& t) { myTwist = std::move(t); }
+  const std::vector<RealType>& twist() const { return myTwist; }
 
   inline void setMassTerm(ParticleSet& P)
   {
@@ -500,8 +539,14 @@ public:
   /// spomap_ reference accessor
   const SPOMap& getSPOMap() const { return *spomap_; }
 
+  /// find MSD WFCs if exist
+  RefVector<MultiSlaterDetTableMethod> findMSD() const;
+
 private:
   static void debugOnlyCheckBuffer(WFBufferType& buffer);
+
+  /// @brief top-level runtime options from project data information > WaveFunctionPool
+  const RuntimeOptions& runtime_options_;
 
   /** XML input node for a many-body wavefunction. Copied from the original one.
    * WFOpt driver needs to look it up and make its own copies.
@@ -544,7 +589,7 @@ private:
   /// timers at TrialWaveFunction function call level
   TimerList_t TWF_timers_;
   /// timers at WaveFunctionComponent function call level
-  TimerList_t WFC_timers_;
+  std::vector<std::reference_wrapper<NewTimer>> WFC_timers_;
   std::vector<RealType> myTwist;
 
   /** @{

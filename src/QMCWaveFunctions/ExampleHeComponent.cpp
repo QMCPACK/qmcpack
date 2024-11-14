@@ -62,9 +62,9 @@ bool ExampleHeComponent::put(xmlNodePtr cur)
   return true;
 }
 
-ExampleHeComponent::LogValueType ExampleHeComponent::evaluateLog(const ParticleSet& P,
-                                                                 ParticleSet::ParticleGradient& G,
-                                                                 ParticleSet::ParticleLaplacian& L)
+ExampleHeComponent::LogValue ExampleHeComponent::evaluateLog(const ParticleSet& P,
+                                                             ParticleSet::ParticleGradient& G,
+                                                             ParticleSet::ParticleLaplacian& L)
 {
   const auto& ee_table  = P.getDistTableAA(my_table_ee_idx_);
   const auto& ee_dists  = ee_table.getDistances();
@@ -111,7 +111,7 @@ ExampleHeComponent::LogValueType ExampleHeComponent::evaluateLog(const ParticleS
   return log_value_;
 }
 
-ExampleHeComponent::PsiValueType ExampleHeComponent::ratio(ParticleSet& P, int iat)
+ExampleHeComponent::PsiValue ExampleHeComponent::ratio(ParticleSet& P, int iat)
 {
   const auto& ee_table  = P.getDistTableAA(my_table_ee_idx_);
   const auto& ee_dists  = ee_table.getDistances();
@@ -134,7 +134,7 @@ ExampleHeComponent::PsiValueType ExampleHeComponent::ratio(ParticleSet& P, int i
   double log_v_old = -Z * (r_old)-u_old;
   double log_v_new = -Z * (r_new)-u_new;
 
-  return std::exp(static_cast<PsiValueType>(log_v_new - log_v_old));
+  return std::exp(static_cast<PsiValue>(log_v_new - log_v_old));
 }
 
 ExampleHeComponent::GradType ExampleHeComponent::evalGrad(ParticleSet& P, int iat)
@@ -159,7 +159,7 @@ ExampleHeComponent::GradType ExampleHeComponent::evalGrad(ParticleSet& P, int ia
   return Z * rhat + rhat12 * du;
 }
 
-ExampleHeComponent::PsiValueType ExampleHeComponent::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+ExampleHeComponent::PsiValue ExampleHeComponent::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {
   const auto& ee_table   = P.getDistTableAA(my_table_ee_idx_);
   const auto& ee_dists   = ee_table.getDistances();
@@ -195,11 +195,11 @@ ExampleHeComponent::PsiValueType ExampleHeComponent::ratioGrad(ParticleSet& P, i
   double log_v_old = -Z * (r_old)-u_old;
   double log_v_new = -Z * (r_new)-u_new;
 
-  return std::exp(static_cast<PsiValueType>(log_v_new - log_v_old));
+  return std::exp(static_cast<PsiValue>(log_v_new - log_v_old));
 }
 
 
-ExampleHeComponent::LogValueType ExampleHeComponent::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
+ExampleHeComponent::LogValue ExampleHeComponent::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
 {
   return evaluateLog(P, P.G, P.L);
 }

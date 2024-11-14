@@ -24,12 +24,14 @@
 #include "Message/MPIObjectBase.h"
 
 #ifdef HAVE_LMY_ENGINE
-//#include "Eigen/Dense"
 #include "formic/utils/matrix.h"
 #include "formic/utils/lmyengine/engine.h"
 #endif
 
 #include "EngineHandle.h"
+
+#include <memory>
+
 namespace qmcplusplus
 {
 class DescentEngine;
@@ -66,8 +68,8 @@ public:
     SUM_INDEX_SIZE
   };
 
-  using EffectiveWeight = QMCTraits::QTFull::RealType;
-
+  using EffectiveWeight  = QMCTraits::QTFull::RealType;
+  using FullPrecRealType = QMCTraits::FullPrecRealType;
   ///Constructor.
   QMCCostFunctionBase(ParticleSet& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm);
 
@@ -83,7 +85,7 @@ public:
   ///Path and name of the HDF5 prefix where CI coeffs are saved
   std::string newh5;
   ///assign optimization parameter i
-  Return_t& Params(int i) override { return OptVariables[i]; }
+  Return_rt& Params(int i) override { return OptVariables[i]; }
   ///return optimization parameter i
   Return_t Params(int i) const override { return OptVariables[i]; }
   int getType(int i) const { return OptVariables.getType(i); }
@@ -136,6 +138,10 @@ public:
 
   virtual Return_rt fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left, Matrix<Return_rt>& Right) = 0;
 
+  virtual Return_rt fillHamVec(std::vector<Return_rt>& ham);
+  virtual void calcOvlParmVec(const std::vector<Return_rt>& parm,
+                              std::vector<Return_rt>& ovlParmVec);
+
 #ifdef HAVE_LMY_ENGINE
   Return_rt LMYEngineCost(const bool needDeriv, cqmc::engine::LMYEngine<Return_t>* EngineObj);
 #endif
@@ -145,6 +151,8 @@ public:
   //Legacy drivers currently use both checkConfigurations and engine_checkConfigurations with duplicated code
   //Providing an EngineHandle object to the batched drivers allows both cases to be handled in one function
   virtual void checkConfigurations(EngineHandle& handle) = 0;
+  //for SR method
+  virtual void checkConfigurationsSR(EngineHandle& handle);
 #ifdef HAVE_LMY_ENGINE
   virtual void engine_checkConfigurations(cqmc::engine::LMYEngine<Return_t>* EngineObj,
                                           DescentEngine& descentEngineObj,
@@ -152,7 +160,7 @@ public:
 
 #endif
 
-  void setRng(RefVector<RandomGenerator> r);
+  void setRng(RefVector<RandomBase<FullPrecRealType>> r);
 
   inline bool getneedGrads() const { return needGrads; }
 
@@ -219,7 +227,6 @@ protected:
   Return_rt curVar_abs;
 
   Return_rt w_beta;
-  std::string GEVType;
   Return_rt vmc_or_dmc;
   bool needGrads;
   ///whether we are targeting an excited state
@@ -260,7 +267,7 @@ protected:
   xmlNodePtr m_wfPtr;
   ///document node to be dumped
   xmlDocPtr m_doc_out;
-  ///parameters to be updated
+  ///parameters to be updated`
   std::map<std::string, xmlNodePtr> paramNodes;
   ///coefficients to be updated
   std::map<std::string, xmlNodePtr> coeffNodes;
@@ -270,8 +277,8 @@ protected:
   std::string RootName;
 
   ///Random number generators
-  UPtrVector<RandomGenerator> RngSaved;
-  std::vector<RandomGenerator*> MoverRng;
+  UPtrVector<RandomBase<FullPrecRealType>> RngSaved;
+  std::vector<RandomBase<FullPrecRealType>*> MoverRng;
 
   /// optimized parameter names
   std::vector<std::string> variational_subset_names;
@@ -299,7 +306,7 @@ protected:
   ///** Fixed  Laplacian , \f$\nabla^2\ln\Psi\f$, components */
   std::vector<ParticleLaplacian*> d2LogPsi;
   ///stream for debug
-  std::ostream* debug_stream;
+  std::unique_ptr<std::ostream> debug_stream;
 
   bool checkParameters();
   void updateXmlNodes();

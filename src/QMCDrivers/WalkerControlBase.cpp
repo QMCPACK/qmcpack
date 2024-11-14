@@ -61,8 +61,8 @@ void WalkerControlBase::start()
 {
   if (MyContext == 0)
   {
-    std::string hname(myComm->getName());
-    hname.append(".dmc.dat");
+    std::filesystem::path hname(myComm->getName());
+    hname.concat(".dmc.dat");
     if (hname != dmcFname)
     {
       dmcStream = std::make_unique<std::ofstream>(hname.c_str());
@@ -75,7 +75,7 @@ void WalkerControlBase::start()
       //         if (WriteRN)
       (*dmcStream) << std::setw(20) << "LivingFraction";
       (*dmcStream) << std::endl;
-      dmcFname = hname;
+      dmcFname = std::move(hname);
     }
   }
 }
@@ -83,14 +83,12 @@ void WalkerControlBase::start()
 void WalkerControlBase::setWalkerID(MCWalkerConfiguration& walkers)
 {
   start(); //do the normal start
-  MCWalkerConfiguration::iterator wit(walkers.begin());
-  MCWalkerConfiguration::iterator wit_end(walkers.end());
-  for (; wit != wit_end; ++wit)
+  for (const auto& walker : walkers)
   {
-    if ((*wit)->ID == 0)
+    if (walker->getWalkerID() == 0)
     {
-      (*wit)->ID       = (++NumWalkersCreated) * num_contexts_ + MyContext;
-      (*wit)->ParentID = (*wit)->ID;
+      walker->setWalkerID((++NumWalkersCreated) * num_contexts_ + MyContext);
+      walker->setParentID(walker->getWalkerID());
     }
   }
 }
@@ -211,14 +209,8 @@ int WalkerControlBase::branch(int iter, MCWalkerConfiguration& W, FullPrecRealTy
     walker->Multiplicity = 1.0;
   }
 
-  //set the global number of walkers
-  W.setGlobalNumWalkers(nw_tot);
   // Update offsets in non-MPI case, needed to ensure checkpoint outputs the correct
-  // number of configurations.
-  if (W.WalkerOffsets.size() == 2)
-  {
-    W.WalkerOffsets[1] = nw_tot;
-  }
+  W.setWalkerOffsets({0, nw_tot});
   return nw_tot;
 }
 
@@ -421,8 +413,8 @@ int WalkerControlBase::copyWalkers(MCWalkerConfiguration& W)
     else
       *awalker = *wRef;
     // not fully sure this is correct or even used
-    awalker->ID       = (i - size_good_w) * num_contexts_ + MyContext;
-    awalker->ParentID = wRef->ParentID;
+    awalker->setWalkerID((i - size_good_w) * num_contexts_ + MyContext);
+    awalker->setParentID(wRef->getParentID());
   }
 
   //clear the WalkerList to populate them with the good walkers

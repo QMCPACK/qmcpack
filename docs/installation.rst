@@ -18,7 +18,7 @@ To install QMCPACK, follow the steps below. Full details of each step
 are given in the referenced sections.
 
 #. Download the source code from :ref:`obrelease`
-   or :ref:`obdevelopment`.
+   or :ref:`obdevelopment`.
 
 #. Verify that you have the required compilers, libraries, and tools
    installed (:ref:`prerequisites`).
@@ -28,7 +28,7 @@ are given in the referenced sections.
    (:ref:`buildqe`).
 
 #. Run the cmake configure step and build with make
-   (:ref:`cmake` and :ref:`cmakequick`). Examples for common systems are given in :ref:`installexamples`. To activate workflow
+   (:ref:`cmake` and :ref:`cmakequick`). Examples for common systems are given in :ref:`installexamples`. To activate workflow
    tests for Quantum ESPRESSO, RMG, or PYSCF, be sure to specify QE_BIN, RMG_BIN, or ensure that the python modules are
    available when cmake is run.
 
@@ -186,7 +186,7 @@ Building with CMake
 The build system for QMCPACK is based on CMake. It will autoconfigure
 based on the detected compilers and libraries. The most recent version
 of CMake has the best detection for the greatest variety of systems. The
-minimum required version of CMake is 3.17.0. Most
+minimum required version of CMake is 3.21.0. Most
 computer installations have a sufficiently recent CMake, though it might
 not be the default.
 
@@ -282,20 +282,22 @@ the path to the source directory.
 
   ::
 
-    QMC_COMPLEX           Build the complex (general twist/k-point) version (1:yes, 0:no)
-    QMC_MIXED_PRECISION   Build the mixed precision (mixing double/float) version
-                          (1:yes (QMC_CUDA=1 default), 0:no (QMC_CUDA=0 default)).
+    QMC_COMPLEX           ON/OFF(default). Build the complex (general twist/k-point) version.
+    QMC_MIXED_PRECISION   ON/OFF(default). Build the mixed precision (mixing double/float) version
                           Mixed precision calculations can be signifiantly faster but should be
                           carefully checked validated against full double precision runs,
                           particularly for large electron counts.
     ENABLE_OFFLOAD        ON/OFF(default). Enable OpenMP target offload for GPU acceleration.
-    QMC_CUDA              Enable legacy CUDA code path for NVIDIA GPU acceleration (1:yes, 0:no)
     ENABLE_CUDA           ON/OFF(default). Enable CUDA code path for NVIDIA GPU acceleration.
                           Production quality for AFQMC and real-space performance portable implementation.
-                          Use CMAKE_CUDA_ARCHITECTURES, default 70, to set the actual GPU architecture.
-    QMC_CUDA2HIP          ON/OFF(default). To be set ON, it requires either QMC_CUDA or ENABLE_CUDA to be ON.
-                          Compile CUDA source code as HIP and use ROCm libraries for AMD GPUs.
+    QMC_CUDA2HIP          ON/OFF(default). Map all CUDA kernels and library calls to HIP and use ROCm libraries.
+                          Set both ENABLE_CUDA and QMC_CUDA2HIP ON to target AMD GPUs.
     ENABLE_SYCL           ON/OFF(default). Enable SYCL code path. Only support Intel GPUs and OneAPI compilers.
+    QMC_GPU_ARCHS         Specify GPU architectures. For example, "gfx90a" targets AMD MI200 series GPUs.
+                          "sm_80;sm_70" creates a single executable running on both NVIDIA A100 and V100 GPUs.
+                          Mixing vendor "gfx90a;sm_70" is not supported. If not set, atempt to derive it
+                          from CMAKE_CUDA_ARCHITECTURES or CMAKE_HIP_ARCHITECTURES if available and then
+                          atempt to auto-detect existing GPUs.
 
 - General build options
 
@@ -340,6 +342,7 @@ the path to the source directory.
                            saving default use of symbolic links for test files. Useful
                            if the build is on a separate filesystem from the source, as
                            required on some HPC systems.
+    ENABLE_PPCONVERT       ON/OFF. Enable the ppconvert tool. If requirements are met, it is ON by default.
 
 - BLAS/LAPACK related
 
@@ -452,13 +455,13 @@ For example, using Clang 14 on Summit.
 
   ::
   
-    -D ENABLE_OFFLOAD=ON -D ENABLE_CUDA=ON -D CMAKE_CUDA_ARCHITECTURES=70
+    -D ENABLE_OFFLOAD=ON -D ENABLE_CUDA=ON -D QMC_GPU_ARCHS=sm_80
 
 Similarly, HIP features can be enabled in conjunction with the offload code path to improve performance on AMD GPUs.
 
   ::
 
-    -D ENABLE_OFFLOAD=ON -D ENABLE_CUDA=ON -D QMC_CUDA2HIP=ON -DCMAKE_HIP_ARCHITECTURES=gfx906
+    -D ENABLE_OFFLOAD=ON -D ENABLE_CUDA=ON -D QMC_CUDA2HIP=ON -D QMC_GPU_ARCHS=gfx90a
 
 Similarly, SYCL features can be enabled in conjunction with the offload code path to improve performance on Intel GPUs.
 
@@ -758,7 +761,7 @@ Installing on Mac OS X using Macports
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 These instructions assume a fresh installation of macports
-and use the gcc 10.2 compiler. 
+and use the gcc 13.3 compiler. 
 
 Follow the Macports install instructions at https://www.macports.org/.
 
@@ -781,44 +784,55 @@ dependencies. Some of the tests will be skipped if not all are available.
 
 ::
 
-  sudo port install gcc11
-  sudo port select gcc mp-gcc11
-  sudo port install openmpi-gcc11
-  sudo port select --set mpi openmpi-gcc11-fortran
-  
-  sudo port install fftw-3 +gcc11
+  sudo port install gcc13
+  sudo port select gcc mp-gcc13
+  sudo port install openmpi-gcc13
+  sudo port select --set mpi openmpi-gcc13-fortran  
+
+  sudo port install fftw-3
   sudo port install libxml2
   sudo port install cmake
-  sudo port install boost +gcc11
-  sudo port install hdf5 +gcc11
-  
-  sudo port install python310
-  sudo port select --set python python310
-  sudo port select --set python3 python310
-  sudo port install py310-numpy +gcc11
-  sudo port select --set cython cython310
-  sudo port install py310-scipy +gcc11
-  sudo port install py310-h5py +gcc11
-  sudo port install py310-pandas
-  sudo port install py310-lxml
-  sudo port install py310-matplotlib  #For graphical plots with qmca
+  sudo port install boost
+  sudo port install hdf5  
+
+  # Choose python versions here and below consistent
+  # with any python brought in by e.g. boost, above.  
+
+  sudo port install python312 
+  sudo port select --set python python312
+  sudo port select --set python3 python312
+  sudo port install py312-numpy +gcc13
+  sudo port select --set cython cython313
+  sudo port install py312-scipy +gcc13
+  sudo port install py312-h5py +gcc13
+  sudo port install py312-pandas
+  sudo port install py312-lxml
+  sudo port install py312-matplotlib  #For graphical plots with qmca
 
 QMCPACK build:
 
 ::
 
   cd build
-  cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpiCXX ..
-  make -j 4 # Adjust for available core count
+  cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpiCXX \
+        -DPython3_EXECUTABLE=/opt/local/bin/python ..
+  make -j 8 # Adjust for available core count
   ls -l bin/qmcpack
+
+Specifying the python executable ensures that the python from macports is used along with
+its installed modules. Remove or modify if using a different python from the macports one.
+
+If cmake gives an error in CMake/GNUCompilers.cmake during configuration, this may be due to a known 
+issue between gcc and CMake ( https://gitlab.kitware.com/cmake/cmake/-/issues/26314 ).
+If this happens add the workaround '-DCMAKE_OSX_SYSROOT=/Library/Developer/CommandLineTools/SDKs/MacOSX14.5.sdk'.
 
 Run the deterministic tests:
 
 ::
 
-  ctest -R deterministic
+  ctest -j 8 -R deterministic
 
-This recipe was verified on February 28, 2022, on a Mac running OS X 11.6.4 "Big Sur".
+This recipe was verified on November 9, 2024 on a Mac running OS X 14.7.1 "Sonoma".
 
 Installing on Mac OS X using Homebrew (brew)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -898,34 +912,114 @@ accelerators.
 Building QMCPACK
 ^^^^^^^^^^^^^^^^
 
-Note that these build instructions are preliminary as the
-software environment is subject to change. As of December 2018, the
-IBM XL compiler does not support C++14, so we currently use the
-gnu compiler.
+As of April 2023, LLVM Clang (>=15) is the only compiler, validated by QMCPACK developers,
+on Summit for OpenMP offloading computation to NVIDIA GPUs.
 
 For ease of reproducibility we provide build scripts for Summit.
 
 ::
 
   cd qmcpack
-  ./config/build_olcf_summit.sh
-  ls bin
+  ./config/build_olcf_summit_Clang.sh
+  ls build_*/bin
 
-Building Quantum ESPRESSO
-^^^^^^^^^^^^^^^^^^^^^^^^^
-We provide a build script for the v6.4.1 release of Quantum ESPRESSO (QE).
-The following can be used to build a CPU version of QE on Summit,
-placing the script in the external\_codes/quantum\_espresso directory.
+Running QMCPACK
+^^^^^^^^^^^^^^^
+Job script example with one MPI rank per GPU.
 
 ::
 
-  cd external_codes/quantum_espresso
-  ./build_qe_olcf_summit.sh
+  #!/bin/bash
+  # Begin LSF directives
+  #BSUB -P MAT151
+  #BSUB -J test
+  #BSUB -o tst.o%J
+  #BSUB -W 60
+  #BSUB -nnodes 1
+  #BSUB -alloc_flags smt1
+  # End LSF directives and begin shell commands
 
-Note that performance is
-not yet optimized although vendor libraries are
-used. Alternatively, the wavefunction files can be generated on
-another system and the converted HDF5 files copied over.
+  module load gcc/9.3.0
+  module load spectrum-mpi
+  module load cuda
+  module load essl
+  module load netlib-lapack
+  module load hdf5/1.10.7
+  module load fftw
+  # private module until OLCF provides a new llvm build
+  module use /gpfs/alpine/mat151/world-shared/opt/modules
+  module load llvm/release-15.0.0-cuda11.0
+
+  NNODES=$(((LSB_DJOB_NUMPROC-1)/42))
+  RANKS_PER_NODE=6
+  RS_PER_NODE=6
+
+  exe_path=/gpfs/alpine/mat151/world-shared/opt/qmcpack/release-3.16.0/build_summit_Clang_offload_cuda_real/bin
+
+  prefix=NiO-fcc-S1-dmc
+
+  export OMP_NUM_THREADS=7
+  jsrun -n $NNODES -a $RANKS_PER_NODE -c $((RANKS_PER_NODE*OMP_NUM_THREADS)) -g 6 -r 1 -d packed -b packed:$OMP_NUM_THREADS \
+        --smpiargs="-disable_gpu_hooks" $exe_path/qmcpack --enable-timers=fine $prefix.xml >& $prefix.out
+
+Installing on ORNL OLCF Frontier/Crusher
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Frontier is a HPE Cray EX supercomputer located at the Oak Ridge Leadership Computing Facility.
+Each Frontier compute node consists of [1x] 64-core AMD CPU with access to 512 GB of DDR4 memory.
+Each node also contains [4x] AMD MI250X, each with 2 Graphics Compute Dies (GCDs) for a total of 8 GCDs per node.
+Crusher is the test and development system of Frontier with exactly the same node architecture.
+
+Building QMCPACK
+^^^^^^^^^^^^^^^^
+
+As of April 2023, ROCm Clang (>= 5.3.0) is the only compiler, validated by QMCPACK developers,
+on Frontier for OpenMP offloading computation to AMD GPUs.
+
+For ease of reproducibility we provide build scripts for Frontier.
+
+::
+
+  cd qmcpack
+  ./config/build_olcf_frontier_ROCm.sh
+  ls build_*/bin
+
+Running QMCPACK
+^^^^^^^^^^^^^^^
+Job script example with one MPI rank per GPU.
+
+::
+
+  #!/bin/bash
+  #SBATCH -A MAT151
+  #SBATCH -J test
+  #SBATCH -o tst.o%J
+  #SBATCH -t 01:30:00
+  #SBATCH -N 1
+
+  echo "Loading QMCPACK dependency modules for crusher"
+  module unload PrgEnv-gnu PrgEnv-cray PrgEnv-amd PrgEnv-gnu-amd PrgEnv-cray-amd
+  module unload amd amd-mixed gcc gcc-mixed cce cce-mixed
+  module load PrgEnv-amd amd/5.4.3
+  module unload cray-libsci
+  module load cmake/3.22.2
+  module load cray-fftw
+  module load openblas/0.3.17-omp
+  module load cray-hdf5-parallel
+
+  exe_path=/lustre/orion/mat151/world-shared/opt/qmcpack/develop-20230411/build_crusher_rocm543_offload_cuda2hip_real/bin
+
+  prefix=NiO-fcc-S128-dmc
+
+  module list >& module_list.txt # record modules loaded at run
+  ldd $exe_path/qmcpack >& ldd.out # double check dynamic libraries
+
+  RANKS_PER_NODE=8
+  TOTAL_RANKS=$((SLURM_JOB_NUM_NODES * RANKS_PER_NODE))
+  THREAD_SLOTS=7
+  export OMP_NUM_THREADS=7 # change this to 1 if running with only 1 thread is intended.
+  srun -n $TOTAL_RANKS --ntasks-per-node=$RANKS_PER_NODE --gpus-per-task=1 -c $THREAD_SLOTS --gpu-bind=closest \
+       $exe_path/qmcpack --enable-timers=fine $prefix.xml >& $prefix.out
 
 Installing on NERSC Cori, Haswell Partition, Cray XC40
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

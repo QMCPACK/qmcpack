@@ -22,12 +22,29 @@
 
 namespace qmcplusplus
 {
+struct CoulombPBCAB::CoulombPBCABMultiWalkerResource : public Resource
+{
+  CoulombPBCABMultiWalkerResource() : Resource("CoulombPBCAB") {}
+  std::unique_ptr<Resource> makeClone() const override
+  {
+    return std::make_unique<CoulombPBCABMultiWalkerResource>(*this);
+  }
+
+  /// a walkers worth of per ion AB potential values
+  Vector<RealType> pp_samples_src;
+  /// a walkers worth of per electron AB potential values
+  Vector<RealType> pp_samples_trg;
+  /// constant values for the source particles aka ions aka A
+  Vector<RealType> pp_consts_src;
+  /// constant values for the target particles aka electrons aka B
+  Vector<RealType> pp_consts_trg;
+};
+
 CoulombPBCAB::CoulombPBCAB(ParticleSet& ions, ParticleSet& elns, bool computeForces)
     : ForceBase(ions, elns),
       myTableIndex(elns.addTable(ions)),
       myConst(0.0),
       ComputeForces(computeForces),
-      MaxGridPoints(10000),
       Peln(elns),
       pset_ions_(ions)
 {
@@ -119,11 +136,11 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate(ParticleSet& P)
   return value_;
 }
 
-CoulombPBCAB::Return_t CoulombPBCAB::evaluateWithIonDerivs(ParticleSet& P,
-                                                           ParticleSet& ions,
-                                                           TrialWaveFunction& psi,
-                                                           ParticleSet::ParticlePos& hf_terms,
-                                                           ParticleSet::ParticlePos& pulay_terms)
+void CoulombPBCAB::evaluateIonDerivs(ParticleSet& P,
+                                     ParticleSet& ions,
+                                     TrialWaveFunction& psi,
+                                     ParticleSet::ParticlePos& hf_terms,
+                                     ParticleSet::ParticlePos& pulay_terms)
 {
   if (ComputeForces)
   {
@@ -132,9 +149,6 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluateWithIonDerivs(ParticleSet& P,
     hf_terms -= forces_;
     //And no Pulay contribution.
   }
-  else
-    value_ = evalLR(P) + evalSR(P) + myConst;
-  return value_;
 }
 
 #if !defined(REMOVE_TRACEMANAGER)
@@ -265,10 +279,11 @@ void CoulombPBCAB::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
 
   auto num_centers            = p_leader.getTotalNum();
   auto& name                  = o_leader.name_;
-  Vector<RealType>& ve_sample = o_leader.mw_res_->pp_samples_trg;
-  Vector<RealType>& vi_sample = o_leader.mw_res_->pp_samples_src;
-  const auto& ve_consts       = o_leader.mw_res_->pp_consts_trg;
-  const auto& vi_consts       = o_leader.mw_res_->pp_consts_src;
+  auto& mw_res                = o_leader.mw_res_handle_.getResource();
+  Vector<RealType>& ve_sample = mw_res.pp_samples_trg;
+  Vector<RealType>& vi_sample = mw_res.pp_samples_src;
+  const auto& ve_consts       = mw_res.pp_consts_trg;
+  const auto& vi_consts       = mw_res.pp_consts_src;
   auto num_species            = p_leader.getSpeciesSet().getTotalNum();
   ve_sample.resize(NptclB);
   vi_sample.resize(NptclA);
@@ -496,16 +511,19 @@ void CoulombPBCAB::initBreakup(ParticleSet& P)
   kcdifferent =
       (std::abs(pset_ions_.getLattice().LR_kc - P.getLattice().LR_kc) > std::numeric_limits<RealType>::epsilon());
   minkc = std::min(pset_ions_.getLattice().LR_kc, P.getLattice().LR_kc);
-  //AB->initBreakup(*PtclB);
   //initBreakup is called only once
-  //AB = LRCoulombSingleton::getHandler(*PtclB);
   AB      = LRCoulombSingleton::getHandler(P);
   myConst = evalConsts(P);
   myRcut  = AB->get_rc(); //Basis.get_rc();
   // create the spline function for the short-range part assuming pure potential
+  auto myGrid  = LinearGrid<RealType>();
+  const int ng = P.getLattice().num_ewald_grid_points;
+  app_log() << "    CoulombPBCAB::initBreakup\n  Setting a linear grid=[0," << myRcut
+            << ") number of grid points =" << ng << std::endl;
+  myGrid.set(0, myRcut, ng);
   if (V0 == nullptr)
   {
-    V0 = LRCoulombSingleton::createSpline4RbyVs(AB.get(), myRcut, myGrid.get());
+    V0 = LRCoulombSingleton::createSpline4RbyVs(AB.get(), myRcut, myGrid);
     if (Vat.size())
     {
       APP_ABORT("CoulombPBCAB::initBreakup.  Vat is not empty\n");
@@ -519,9 +537,9 @@ void CoulombPBCAB::initBreakup(ParticleSet& P)
   {
     dAB = LRCoulombSingleton::getDerivHandler(P);
     if (fV0 == nullptr)
-      fV0 = LRCoulombSingleton::createSpline4RbyVs(dAB.get(), myRcut, myGrid.get());
+      fV0 = LRCoulombSingleton::createSpline4RbyVs(dAB.get(), myRcut, myGrid);
     if (dfV0 == nullptr)
-      dfV0 = LRCoulombSingleton::createSpline4RbyVsDeriv(dAB.get(), myRcut, myGrid.get());
+      dfV0 = LRCoulombSingleton::createSpline4RbyVsDeriv(dAB.get(), myRcut, myGrid);
     if (fVat.size())
     {
       APP_ABORT("CoulombPBCAB::initBreakup.  Vat is not empty\n");
@@ -539,24 +557,23 @@ void CoulombPBCAB::initBreakup(ParticleSet& P)
  */
 void CoulombPBCAB::add(int groupID, std::unique_ptr<RadFunctorType>&& ppot)
 {
-  if (myGrid == nullptr)
-  {
-    myGrid = std::make_shared<LinearGrid<RealType>>();
-    int ng = std::min(MaxGridPoints, static_cast<int>(myRcut / 1e-3) + 1);
-    app_log() << "    CoulombPBCAB::add \n Setting a linear grid=[0," << myRcut << ") number of grid =" << ng
-              << std::endl;
-    myGrid->set(0, myRcut, ng);
-  }
+  //FIXME still using magic numbers in the local potential grid.
+  const int MaxGridPoints = 10000;
+  const size_t ng         = std::min(MaxGridPoints, static_cast<int>(myRcut / 1e-3) + 1);
+  app_log() << "    CoulombPBCAB::add \n Setting a linear grid=[0," << myRcut << ") number of grid =" << ng
+            << std::endl;
+  auto agrid_local = LinearGrid<RealType>();
+  agrid_local.set(0.0, myRcut, ng);
+  RealType dr = agrid_local[1] - agrid_local[0];
   if (Vspec[groupID] == nullptr)
   {
     V0.reset();
 
     app_log() << "    Creating the short-range pseudopotential for species " << groupID << std::endl;
-    int ng = myGrid->size();
     std::vector<RealType> v(ng);
     for (int ig = 1; ig < ng - 2; ig++)
     {
-      RealType r = (*myGrid)[ig];
+      RealType r = agrid_local[ig];
       //need to multiply r for the LR
       v[ig] = -r * AB->evaluateLR(r) + ppot->splint(r);
     }
@@ -564,8 +581,8 @@ void CoulombPBCAB::add(int groupID, std::unique_ptr<RadFunctorType>&& ppot)
     //by construction, v has to go to zero at the boundary
     v[ng - 2]      = 0.0;
     v[ng - 1]      = 0.0;
-    RealType deriv = (v[1] - v[0]) / ((*myGrid)[1] - (*myGrid)[0]);
-    auto rfunc     = std::make_unique<RadFunctorType>(myGrid->makeClone(), v);
+    RealType deriv = (v[1] - v[0]) / dr;
+    auto rfunc     = std::make_unique<RadFunctorType>(agrid_local.makeClone(), v);
     rfunc->spline(0, deriv, ng - 1, 0.0);
     for (int iat = 0; iat < NptclA; iat++)
     {
@@ -578,7 +595,6 @@ void CoulombPBCAB::add(int groupID, std::unique_ptr<RadFunctorType>&& ppot)
   if (ComputeForces && fVspec[groupID] == nullptr)
   {
     app_log() << "    Creating the short-range pseudopotential derivatives for species " << groupID << std::endl;
-    int ng = myGrid->size();
     //This is the value coming from optimized breakup for FORCES, not for energy.
     //Also.  Goal of this section is to create and store d/dr(rV), not d/dr(V)!!!
     std::vector<RealType> v(ng);
@@ -588,7 +604,7 @@ void CoulombPBCAB::add(int groupID, std::unique_ptr<RadFunctorType>&& ppot)
     RealType lr_val(0), lr_deriv(0);
     for (int ig = 1; ig < ng - 2; ig++)
     {
-      RealType r = (*myGrid)[ig];
+      RealType r = agrid_local[ig];
       ppot_val   = ppot->splint(r, ppot_deriv, ppot_2deriv);
       lr_val     = dAB->evaluateLR(r);
       lr_deriv   = dAB->lrDf(r);
@@ -605,10 +621,10 @@ void CoulombPBCAB::add(int groupID, std::unique_ptr<RadFunctorType>&& ppot)
     dv[ng - 2] = 0;
     dv[ng - 1] = 0;
 
-    auto ffunc  = std::make_unique<RadFunctorType>(myGrid->makeClone(), v);
-    auto fdfunc = std::make_unique<RadFunctorType>(myGrid->makeClone(), dv);
+    auto ffunc  = std::make_unique<RadFunctorType>(agrid_local.makeClone(), v);
+    auto fdfunc = std::make_unique<RadFunctorType>(agrid_local.makeClone(), dv);
 
-    RealType fderiv = (dv[1] - dv[0]) / ((*myGrid)[1] - (*myGrid)[0]);
+    RealType fderiv = (dv[1] - dv[0]) / dr;
 
     ffunc->spline(0, dv[0], ng - 1, 0.0);
     fdfunc->spline(0, fderiv, ng - 1, 0.0);
@@ -730,18 +746,15 @@ void CoulombPBCAB::createResource(ResourceCollection& collection) const
 void CoulombPBCAB::acquireResource(ResourceCollection& collection,
                                    const RefVectorWithLeader<OperatorBase>& o_list) const
 {
-  auto& o_leader = o_list.getCastedLeader<CoulombPBCAB>();
-  auto res_ptr   = dynamic_cast<CoulombPBCABMultiWalkerResource*>(collection.lendResource().release());
-  if (!res_ptr)
-    throw std::runtime_error("CoulombPBCAA::acquireResource dynamic_cast failed");
-  o_leader.mw_res_.reset(res_ptr);
+  auto& o_leader          = o_list.getCastedLeader<CoulombPBCAB>();
+  o_leader.mw_res_handle_ = collection.lendResource<CoulombPBCABMultiWalkerResource>();
 }
 
 void CoulombPBCAB::releaseResource(ResourceCollection& collection,
                                    const RefVectorWithLeader<OperatorBase>& o_list) const
 {
   auto& o_leader = o_list.getCastedLeader<CoulombPBCAB>();
-  collection.takebackResource(std::move(o_leader.mw_res_));
+  collection.takebackResource(o_leader.mw_res_handle_);
 }
 
 } // namespace qmcplusplus

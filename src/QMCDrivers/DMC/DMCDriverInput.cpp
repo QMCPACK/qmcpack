@@ -19,10 +19,12 @@ void DMCDriverInput::readXML(xmlNodePtr node)
 {
   ParameterSet parameter_set_;
   std::string reconfig_str;
+  std::string refE_update_scheme_str;
+  std::string nonlocalmove_str;
   parameter_set_.add(reconfig_str, "reconfiguration", {"no", "yes", "runwhileincorrect"});
-  parameter_set_.add(NonLocalMove, "nonlocalmove", {"no", "yes", "v0", "v1", "v3"});
-  parameter_set_.add(NonLocalMove, "nonlocalmoves", {"no", "yes", "v0", "v1", "v3"});
   parameter_set_.add(max_age_, "MaxAge");
+  parameter_set_.add(feedback_, "feedback");
+  parameter_set_.add(refE_update_scheme_str, "refenergy_update_scheme", {"unlimited_history", "limited_history"});
 
   // from DMC.cpp put(xmlNodePtr)
   parameter_set_.add(branch_interval_, "branchInterval");
@@ -31,11 +33,12 @@ void DMCDriverInput::readXML(xmlNodePtr node)
   parameter_set_.add(branch_interval_, "subStep");
   parameter_set_.add(branch_interval_, "sub_stepd");
 
-  //from NonLocalTOperator.cpp
+  //for NonLocalTOperator
   parameter_set_.add(alpha_, "alpha");
   parameter_set_.add(gamma_, "gamma");
-
   parameter_set_.add(reserve_, "reserve");
+  parameter_set_.add(nonlocalmove_str, "nonlocalmove", {"no", "yes", "v0", "v1", "v3"});
+  parameter_set_.add(nonlocalmove_str, "nonlocalmoves", {"no", "yes", "v0", "v1", "v3"});
 
   parameter_set_.put(node);
 
@@ -46,14 +49,26 @@ void DMCDriverInput::readXML(xmlNodePtr node)
                              "is still desired, set reconfiguration to \"runwhileincorrect\" instead of \"yes\".");
   reconfiguration_ = (reconfig_str == "yes");
 
-  if (NonLocalMove == "yes" || NonLocalMove == "v0")
+  if (nonlocalmove_str == "yes" || nonlocalmove_str == "v0")
+  {
     app_summary() << "  Using Non-local T-moves v0, M. Casula, PRB 74, 161102(R) (2006)";
-  else if (NonLocalMove == "v1")
+    tmove_kind_ = TmoveKind::V0;
+  }
+  else if (nonlocalmove_str == "v1")
+  {
     app_summary() << "  Using Non-local T-moves v1, M. Casula et al., JCP 132, 154113 (2010)";
-  else if (NonLocalMove == "v3")
+    tmove_kind_ = TmoveKind::V1;
+  }
+  else if (nonlocalmove_str == "v3")
+  {
     app_summary() << "  Using Non-local T-moves v3, an approximation to v1";
+    tmove_kind_ = TmoveKind::V3;
+  }
   else
+  {
     app_summary() << "  Using Locality Approximation";
+    tmove_kind_ = TmoveKind::OFF;
+  }
   app_summary() << std::endl;
 
   // TODO: similar check for alpha and gamma
@@ -64,6 +79,11 @@ void DMCDriverInput::readXML(xmlNodePtr node)
 
   if (reserve_ < 1.0)
     throw std::runtime_error("You can only reserve walkers above the target walker count");
+
+  if (refE_update_scheme_str == "unlimited_history")
+    refenergy_update_scheme_ = DMCRefEnergyScheme::UNLIMITED_HISTORY;
+  else
+    refenergy_update_scheme_ = DMCRefEnergyScheme::LIMITED_HISTORY;
 }
 
 std::ostream& operator<<(std::ostream& o_stream, const DMCDriverInput& dmci) { return o_stream; }

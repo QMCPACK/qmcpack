@@ -18,6 +18,7 @@
 #include "Particle/ParticleSetPool.h"
 #include "WaveFunctionFactory.h"
 #include "LCAO/LCAOrbitalSet.h"
+#include "Utilities/RuntimeOptions.h"
 
 #include <stdio.h>
 #include <string>
@@ -35,8 +36,8 @@ void test_LiH_msd_xml_input(const std::string& spo_xml_string,
   Communicate* c = OHMMS::Controller;
 
   ParticleSetPool ptcl = ParticleSetPool(c);
-  auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
-  auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto ions_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto elec_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions_(*ions_uptr);
   ParticleSet& elec_(*elec_uptr);
 
@@ -71,7 +72,8 @@ void test_LiH_msd_xml_input(const std::string& spo_xml_string,
   xmlNodePtr ein_xml = doc.getRoot();
 
   WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
-  auto twf_ptr = wf_factory.buildTWF(ein_xml);
+  RuntimeOptions runtime_options;
+  auto twf_ptr = wf_factory.buildTWF(ein_xml, runtime_options);
 
   auto& spo = dynamic_cast<const LCAOrbitalSet&>(twf_ptr->getSPOSet(check_sponame));
   REQUIRE(spo.getOrbitalSetSize() == check_spo_size);
@@ -197,8 +199,8 @@ void test_LiH_msd_xml_input_with_positron(const std::string& spo_xml_string,
   Communicate* c = OHMMS::Controller;
 
   ParticleSetPool ptcl = ParticleSetPool(c);
-  auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
-  auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto ions_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto elec_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions_(*ions_uptr);
   ParticleSet& elec_(*elec_uptr);
 
@@ -240,7 +242,8 @@ void test_LiH_msd_xml_input_with_positron(const std::string& spo_xml_string,
   xmlNodePtr ein_xml = doc.getRoot();
 
   WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
-  auto twf_ptr = wf_factory.buildTWF(ein_xml);
+  RuntimeOptions runtime_options;
+  auto twf_ptr = wf_factory.buildTWF(ein_xml, runtime_options);
 
   auto& spo = dynamic_cast<const LCAOrbitalSet&>(twf_ptr->getSPOSet(check_sponame));
   REQUIRE(spo.getOrbitalSetSize() == check_spo_size);

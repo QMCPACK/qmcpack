@@ -39,9 +39,7 @@ enum PSetTimers
   PS_donePbyP,
   PS_accept,
   PS_loadWalker,
-  PS_update,
-  PS_dt_move,
-  PS_mw_copy
+  PS_update
 };
 
 static const TimerNameList_t<PSetTimers> generatePSetTimerNames(std::string& obj_name)
@@ -50,9 +48,7 @@ static const TimerNameList_t<PSetTimers> generatePSetTimerNames(std::string& obj
           {PS_donePbyP, "ParticleSet:" + obj_name + "::donePbyP"},
           {PS_accept, "ParticleSet:" + obj_name + "::acceptMove"},
           {PS_loadWalker, "ParticleSet:" + obj_name + "::loadWalker"},
-          {PS_update, "ParticleSet:" + obj_name + "::update"},
-          {PS_dt_move, "ParticleSet:" + obj_name + "::dt_move"},
-          {PS_mw_copy, "ParticleSet:" + obj_name + "::mw_copy"}};
+          {PS_update, "ParticleSet:" + obj_name + "::update"}};
 }
 
 ParticleSet::ParticleSet(const SimulationCell& simulation_cell, const DynamicCoordinateKind kind)
@@ -63,6 +59,7 @@ ParticleSet::ParticleSet(const SimulationCell& simulation_cell, const DynamicCoo
       is_spinor_(false),
       active_ptcl_(-1),
       active_spin_val_(0.0),
+      myTimers(getGlobalTimerManager(), generatePSetTimerNames(myName), timer_level_medium),
       myTwist(0.0),
       ParentName("0"),
       TotalNum(0),
@@ -70,7 +67,6 @@ ParticleSet::ParticleSet(const SimulationCell& simulation_cell, const DynamicCoo
       coordinates_(createDynamicCoordinates(kind))
 {
   initPropertyList();
-  setup_timers(myTimers, generatePSetTimerNames(myName), timer_level_medium);
 }
 
 ParticleSet::ParticleSet(const ParticleSet& p)
@@ -81,6 +77,7 @@ ParticleSet::ParticleSet(const ParticleSet& p)
       active_ptcl_(-1),
       active_spin_val_(0.0),
       my_species_(p.getSpeciesSet()),
+      myTimers(getGlobalTimerManager(), generatePSetTimerNames(myName), timer_level_medium),
       myTwist(0.0),
       ParentName(p.parentName()),
       group_offsets_(p.group_offsets_),
@@ -113,7 +110,6 @@ ParticleSet::ParticleSet(const ParticleSet& p)
 
   if (p.structure_factor_)
     structure_factor_ = std::make_unique<StructFact>(*p.structure_factor_);
-  setup_timers(myTimers, generatePSetTimerNames(myName), timer_level_medium);
   myTwist = p.myTwist;
 
   G = p.G;
@@ -394,25 +390,42 @@ void ParticleSet::makeMoveWithSpin(Index_t iat, const SingleParticlePos& displ, 
 }
 
 template<CoordsType CT>
-void ParticleSet::mw_makeMove(const RefVectorWithLeader<ParticleSet>& p_list, Index_t iat, const MCCoords<CT>& displs)
+void ParticleSet::mw_makeMove(const RefVectorWithLeader<ParticleSet>& p_list,
+                              Index_t iat,
+                              const MCCoords<CT>& displs,
+                              OptionalRef<std::vector<bool>> are_valid)
 {
-  mw_makeMove(p_list, iat, displs.positions);
+  mw_makeMove(p_list, iat, displs.positions, are_valid);
   if constexpr (CT == CoordsType::POS_SPIN)
     mw_makeSpinMove(p_list, iat, displs.spins);
 }
 
 void ParticleSet::mw_makeMove(const RefVectorWithLeader<ParticleSet>& p_list,
                               Index_t iat,
-                              const std::vector<SingleParticlePos>& displs)
+                              const std::vector<SingleParticlePos>& displs,
+                              OptionalRef<std::vector<bool>> are_valid)
 {
-  std::vector<SingleParticlePos> new_positions;
-  new_positions.reserve(displs.size());
+  const size_t nw = p_list.size();
+  assert(nw == displs.size());
+  const auto& lattice = p_list.getLeader().simulation_cell_.getLattice();
+  std::vector<SingleParticlePos> new_positions(nw);
 
   for (int iw = 0; iw < p_list.size(); iw++)
   {
-    p_list[iw].active_ptcl_ = iat;
-    p_list[iw].active_pos_  = p_list[iw].R[iat] + displs[iw];
-    new_positions.push_back(p_list[iw].active_pos_);
+    auto& p           = p_list[iw];
+    p.active_ptcl_    = iat;
+    new_positions[iw] = p.active_pos_ = p.R[iat] + displs[iw];
+  }
+
+  if (are_valid)
+  {
+    std::vector<bool>& valid(are_valid.value());
+    assert(nw == valid.size());
+    for (int iw = 0; iw < nw; iw++)
+      if (lattice.explicitly_defined)
+        valid[iw] = lattice.isValid(lattice.toUnit(new_positions[iw]));
+      else
+        valid[iw] = true;
   }
 
   mw_computeNewPosDistTables(p_list, iat, new_positions);
@@ -471,14 +484,9 @@ void ParticleSet::mw_computeNewPosDistTables(const RefVectorWithLeader<ParticleS
   ParticleSet& p_leader = p_list.getLeader();
   ScopedTimer compute_newpos_scope(p_leader.myTimers[PS_newpos]);
 
-  {
-    ScopedTimer copy_scope(p_leader.myTimers[PS_mw_copy]);
-    const auto coords_list(extractCoordsRefList(p_list));
-    p_leader.coordinates_->mw_copyActivePos(coords_list, iat, new_positions);
-  }
+  p_leader.coordinates_->mw_copyActivePos(extractCoordsRefList(p_list), iat, new_positions);
 
   {
-    ScopedTimer dt_scope(p_leader.myTimers[PS_dt_move]);
     const int dist_tables_size = p_leader.DistTables.size();
     for (int i = 0; i < dist_tables_size; ++i)
     {
@@ -705,7 +713,7 @@ void ParticleSet::mw_accept_rejectMove(const RefVectorWithLeader<ParticleSet>& p
                                        const std::vector<bool>& isAccepted,
                                        bool forward_mode)
 {
-  if (CT == CoordsType::POS_SPIN)
+  if constexpr (CT == CoordsType::POS_SPIN)
     mw_accept_rejectSpinMove(p_list, iat, isAccepted);
   mw_accept_rejectMove(p_list, iat, isAccepted, forward_mode);
 }
@@ -791,7 +799,7 @@ void ParticleSet::mw_donePbyP(const RefVectorWithLeader<ParticleSet>& p_list, bo
   if (!skipSK && p_leader.structure_factor_)
   {
     auto sk_list = extractSKRefList(p_list);
-    StructFact::mw_updateAllPart(sk_list, p_list, *p_leader.mw_structure_factor_data_);
+    StructFact::mw_updateAllPart(sk_list, p_list, p_leader.mw_structure_factor_data_handle_);
   }
 
   auto& dts = p_leader.DistTables;
@@ -901,9 +909,8 @@ void ParticleSet::initPropertyList()
 
 int ParticleSet::addPropertyHistory(int leng)
 {
-  int newL                                    = PropertyHistory.size();
-  std::vector<FullPrecRealType> newVecHistory = std::vector<FullPrecRealType>(leng, 0.0);
-  PropertyHistory.push_back(newVecHistory);
+  int newL = PropertyHistory.size();
+  PropertyHistory.push_back(std::vector<FullPrecRealType>(leng, 0.0));
   PHindex.push_back(0);
   return newL;
 }
@@ -959,12 +966,7 @@ void ParticleSet::acquireResource(ResourceCollection& collection, const RefVecto
     ps_leader.DistTables[i]->acquireResource(collection, extractDTRefList(p_list, i));
 
   if (ps_leader.structure_factor_)
-  {
-    auto res_ptr = dynamic_cast<SKMultiWalkerMem*>(collection.lendResource().release());
-    if (!res_ptr)
-      throw std::runtime_error("ParticleSet::acquireResource SKMultiWalkerMem dynamic_cast failed");
-    p_list.getLeader().mw_structure_factor_data_.reset(res_ptr);
-  }
+    p_list.getLeader().mw_structure_factor_data_handle_ = collection.lendResource<SKMultiWalkerMem>();
 }
 
 void ParticleSet::releaseResource(ResourceCollection& collection, const RefVectorWithLeader<ParticleSet>& p_list)
@@ -975,7 +977,7 @@ void ParticleSet::releaseResource(ResourceCollection& collection, const RefVecto
     ps_leader.DistTables[i]->releaseResource(collection, extractDTRefList(p_list, i));
 
   if (ps_leader.structure_factor_)
-    collection.takebackResource(std::move(p_list.getLeader().mw_structure_factor_data_));
+    collection.takebackResource(p_list.getLeader().mw_structure_factor_data_handle_);
 }
 
 RefVectorWithLeader<DistanceTable> ParticleSet::extractDTRefList(const RefVectorWithLeader<ParticleSet>& p_list, int id)
@@ -1009,10 +1011,12 @@ RefVectorWithLeader<StructFact> ParticleSet::extractSKRefList(const RefVectorWit
 //explicit instantiations
 template void ParticleSet::mw_makeMove<CoordsType::POS>(const RefVectorWithLeader<ParticleSet>& p_list,
                                                         Index_t iat,
-                                                        const MCCoords<CoordsType::POS>& displs);
+                                                        const MCCoords<CoordsType::POS>& displs,
+                                                        OptionalRef<std::vector<bool>> are_valid);
 template void ParticleSet::mw_makeMove<CoordsType::POS_SPIN>(const RefVectorWithLeader<ParticleSet>& p_list,
                                                              Index_t iat,
-                                                             const MCCoords<CoordsType::POS_SPIN>& displs);
+                                                             const MCCoords<CoordsType::POS_SPIN>& displs,
+                                                             OptionalRef<std::vector<bool>> are_valid);
 template void ParticleSet::mw_accept_rejectMove<CoordsType::POS>(const RefVectorWithLeader<ParticleSet>& p_list,
                                                                  Index_t iat,
                                                                  const std::vector<bool>& isAccepted,

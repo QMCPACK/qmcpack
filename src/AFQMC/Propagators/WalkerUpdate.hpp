@@ -20,6 +20,7 @@
 
 #include "Configuration.h"
 #include "AFQMC/config.h"
+#include "CPU/math.hpp"
 
 namespace qmcplusplus
 {
@@ -64,7 +65,7 @@ void hybrid_walker_update(Wlk&& w,
 
   if (imp_sampl)
     ratioOverlaps = overlap / old_ovlp;
-  if (!std::isfinite(ratioOverlaps.real()) && apply_constrain && imp_sampl)
+  if (!qmcplusplus::isfinite(ratioOverlaps.real()) && apply_constrain && imp_sampl)
   {
     scale = 0.0;
     eloc  = old_eloc;
@@ -79,7 +80,7 @@ void hybrid_walker_update(Wlk&& w,
   }
   ComplexType eloc_ = eloc;
 
-  if ((!std::isfinite(eloc.real())) || (std::abs(eloc.real()) < std::numeric_limits<RealType>::min()))
+  if ((!qmcplusplus::isfinite(eloc.real())) || (std::abs(eloc.real()) < std::numeric_limits<RealType>::min()))
   {
     scale = 0.0;
     eloc  = old_eloc;
@@ -129,7 +130,7 @@ void local_energy_walker_update(Wlk&& w,
   RealType scale            = 1.0;
   ComplexType ratioOverlaps = overlap / old_ovlp;
 
-  if (!std::isfinite((ratioOverlaps * MFfactor).real()) && apply_constrain)
+  if (!qmcplusplus::isfinite((ratioOverlaps * MFfactor).real()) && apply_constrain)
   {
     scale = 0.0;
     eloc  = old_eloc;
@@ -137,7 +138,7 @@ void local_energy_walker_update(Wlk&& w,
   else
     scale = (apply_constrain ? (std::max(0.0, std::cos(std::arg(ratioOverlaps) - MFfactor.imag()))) : 1.0);
 
-  if ((!std::isfinite(eloc.real())) || (std::abs(eloc.real()) < std::numeric_limits<RealType>::min()))
+  if ((!qmcplusplus::isfinite(eloc.real())) || (std::abs(eloc.real()) < std::numeric_limits<RealType>::min()))
   {
     scale = 0.0;
     eloc  = old_eloc;
