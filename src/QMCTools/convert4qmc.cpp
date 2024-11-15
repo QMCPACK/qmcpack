@@ -37,7 +37,7 @@ int main(int argc, char** argv)
   if (argc < 2)
   {
     std::cout << "Usage: convert [-gaussian|-gamess|-orbitals|-dirac|-rmg] filename " << std::endl;
-    std::cout << "[-nojastrow -hdf5 -prefix title -addCusp -production -batched -optJStaged -NbImages NimageX NimageY NimageZ]" << std::endl;
+    std::cout << "[-nojastrow -hdf5 -prefix title -addCusp -production -NbImages NimageX NimageY NimageZ]" << std::endl;
     std::cout << "[-psi_tag psi0 -ion_tag ion0 -gridtype log|log0|linear -first ri -last rf]" << std::endl;
     std::cout << "[-size npts -multidet multidet.h5 -ci file.out -threshold cimin -TargetState state_number "
                  "-NaturalOrbitals NumToRead -optDetCoeffs -legacy]"
@@ -77,8 +77,6 @@ int main(int argc, char** argv)
       int TargetState = 0;
       bool legacy     = false;
       bool addJastrow = true;
-      bool batched    = false; // Will become true by default in version 4. 
-      bool optJStaged = false; //Selecting Staged optimization of J1+J2 the J3
       bool usehdf5    = false;
       bool h5         = false;
       bool useprefix  = false;
@@ -132,14 +130,6 @@ int main(int argc, char** argv)
         else if (a == "-psi_tag")
         {
           psi_tag = argv[++iargc];
-        }
-        else if (a == "-batched")
-        {
-          batched = true;
-        }
-        else if (a == "-optJStaged")
-        {
-          optJStaged = true;
         }
         else if (a == "-production")
         {
@@ -314,8 +304,6 @@ int main(int argc, char** argv)
       {
         parser->addJastrow = addJastrow;
         parser->WFS_name   = jastrow;
-        parser->batched    = batched;
-        parser->optJStaged = optJStaged;
         if (parser->PBC)
         {
           std::cout << "Generating Inputs for Supertwist  with coordinates:" << parser->STwist_Coord[0] << "  "
@@ -323,13 +311,6 @@ int main(int argc, char** argv)
           parser->dumpPBC(psi_tag, ion_tag);
         }
         else
-<<<<<<< HEAD
-          parser->dump(psi_tag, ion_tag);
-	if(batched)
-		parser->dumpStdInputBatch(psi_tag, ion_tag);
-	else
-		parser->dumpStdInputProd(psi_tag, ion_tag);
-=======
 	{
 	  if (parser->legacy)
              parser->dump_Legacy(psi_tag, ion_tag);
@@ -340,7 +321,6 @@ int main(int argc, char** argv)
            parser->dumpStdInputProdLegacy(psi_tag, ion_tag);
 	else
            parser->dumpStdInputProd(psi_tag, ion_tag);
->>>>>>> 8e255cc80 (Making batched version of the code the default version)
       }
       else
       {
@@ -354,10 +334,7 @@ int main(int argc, char** argv)
         }
         else
           parser->dump(psi_tag, ion_tag);
-	if(batched)
-		parser->dumpStdInputBatch(psi_tag, ion_tag);
-	else
-		parser->dumpStdInputProd(psi_tag, ion_tag);
+        parser->dumpStdInput(psi_tag, ion_tag);
       }
     }
     catch (const std::exception& e)
