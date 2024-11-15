@@ -35,6 +35,7 @@ dft_shared = obj(
     mixing_beta      = 0.4,
     nspin            = 2,
     hubbard          = {'U':{'Fe-3d': 2.0}},
+    hubbard_proj     = 'ortho-atomic',
     start_mag        = obj(Fe=0.1),
     kshift           = (0,0,0),
     pseudos          = pseudos,
