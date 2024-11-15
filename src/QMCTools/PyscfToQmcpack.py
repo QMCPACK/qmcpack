@@ -20,7 +20,24 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[],sp_twist=[],weight=1.
   from pyscf.pbc import tools
   from numpy import empty
   import numpy
-  
+ 
+  # Try to import cupy, but set a flag if it's unavailable
+  try:
+      import cupy as cp
+      CUPY_AVAILABLE = True
+  except ImportError:
+      CUPY_AVAILABLE = False
+
+
+  def ensure_numpy(arr):
+    """
+    Ensures that the input array is a NumPy array.
+    If CuPy is available and the array is a CuPy array, it converts it to a NumPy array.
+    Otherwise, it returns the array unchanged.
+    """
+    if CUPY_AVAILABLE and isinstance(arr, cp.ndarray):
+        return arr.get()  # Convert CuPy array to NumPy
+    return arr  # Return the array as is (if it's already a NumPy array or CuPy is not available)
 
   PBC=False
   Gamma=False
@@ -43,12 +60,12 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[],sp_twist=[],weight=1.
 
   SizeMode=len(ComputeMode)
   for i in range(SizeMode):
-     if ComputeMode[i] in ("UHF","KUHF","UKS","SymAdaptedUHF","SymAdaptedUKS"):
-           Restricted=False
+     if ComputeMode[i] in ("UHF","KUHF","UKS","DFUKS","SymAdaptedUHF","SymAdaptedUKS"):
+          Restricted=False
      if ComputeMode[i]=="pbc":
-           PBC=True
-           if Restricted==False:
-              sys.exit("Unrestricted calculations with PBC not supported (yet) - contact Developers")
+         PBC=True
+         if Restricted==False:
+             sys.exit("Unrestricted calculations with PBC not supported (yet) - contact Developers")
 
   if PBC and len(kpts) == 0:
         Gamma=True
@@ -500,26 +517,42 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[],sp_twist=[],weight=1.
  
   GroupParameter.create_dataset("SpinRestricted",(1,),dtype="b1",data=Restricted)
   GroupDet=H5_qmcpack.create_group("Super_Twist")
+
+  # Now ensure that all elements in mo_coeff are NumPy arrays
+
+
   if not PBC:
     if Restricted==True:
       NbAO, NbMO =mo_coeff.shape 
       if loc_cell.cart==True:
+        mo_coeff = [ensure_numpy(coeff) for coeff in mo_coeff]
         eigenset=GroupDet.create_dataset("eigenset_0",(NbMO,NbAO),dtype="f8",data=order_mo_coef(mo_coeff))
       else:
+        mo_coeff = [ensure_numpy(coeff) for coeff in mo_coeff]
         eigenset=GroupDet.create_dataset("eigenset_0",(NbMO,NbAO),dtype="f8",data=list(zip(*mo_coeff)))
 
+      mf.mo_energy = ensure_numpy(mf.mo_energy)
       eigenvalue=GroupDet.create_dataset("eigenval_0",(1,NbMO),dtype="f8",data=mf.mo_energy)
     else:
       NbAO, NbMO =mo_coeff[0].shape 
-      if loc_cell.cart==True:
-        eigenset_up=GroupDet.create_dataset("eigenset_0",(NbMO,NbAO),dtype="f8",data=order_mo_coef(mo_coeff[0]))
-        eigenset_dn=GroupDet.create_dataset("eigenset_1",(NbMO,NbAO),dtype="f8",data=order_mo_coef(mo_coeff[1]))
-      else:
-        eigenset_up=GroupDet.create_dataset("eigenset_0",(NbMO,NbAO),dtype="f8",data=list(zip(*mo_coeff[0])))
-        eigenset_dn=GroupDet.create_dataset("eigenset_1",(NbMO,NbAO),dtype="f8",data=list(zip(*mo_coeff[1])))
+      mo_coeff0 = [ensure_numpy(coeff) for coeff in mo_coeff[0]]
+      mo_coeff1 = [ensure_numpy(coeff) for coeff in mo_coeff[1]]
 
-      eigenvalue_up=GroupDet.create_dataset("eigenval_0",(1,NbMO),dtype="f8",data=mf.mo_energy[0])
-      eigenvalue_dn=GroupDet.create_dataset("eigenval_1",(1,NbMO),dtype="f8",data=mf.mo_energy[1])
+      if loc_cell.cart==True:
+        eigenset_up=GroupDet.create_dataset("eigenset_0",(NbMO,NbAO),dtype="f8",data=order_mo_coef(mo_coeff0))
+        eigenset_dn=GroupDet.create_dataset("eigenset_1",(NbMO,NbAO),dtype="f8",data=order_mo_coef(mo_coeff1))
+        #eigenset_up=GroupDet.create_dataset("eigenset_0",(NbMO,NbAO),dtype="f8",data=order_mo_coef(mo_coeff[0]))
+        #eigenset_dn=GroupDet.create_dataset("eigenset_1",(NbMO,NbAO),dtype="f8",data=order_mo_coef(mo_coeff[1]))
+      else:
+        eigenset_up=GroupDet.create_dataset("eigenset_0",(NbMO,NbAO),dtype="f8",data=list(zip(*mo_coeff0)))
+        eigenset_dn=GroupDet.create_dataset("eigenset_1",(NbMO,NbAO),dtype="f8",data=list(zip(*mo_coeff1)))
+        #eigenset_up=GroupDet.create_dataset("eigenset_0",(NbMO,NbAO),dtype="f8",data=list(zip(*mo_coeff[0])))
+        #eigenset_dn=GroupDet.create_dataset("eigenset_1",(NbMO,NbAO),dtype="f8",data=list(zip(*mo_coeff[1])))
+
+      mo_energy0 = ensure_numpy(mf.mo_energy[0])
+      mo_energy1 = ensure_numpy(mf.mo_energy[1])
+      eigenvalue_up=GroupDet.create_dataset("eigenval_0",(1,NbMO),dtype="f8",data=mo_energy0)
+      eigenvalue_dn=GroupDet.create_dataset("eigenval_1",(1,NbMO),dtype="f8",data=mo_energy1)
  
   else:
     #Cell Parameters
