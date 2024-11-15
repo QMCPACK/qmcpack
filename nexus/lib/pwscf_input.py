@@ -1458,7 +1458,7 @@ class hubbard(Card):
                                 for in1 in index1:
                                     for in2 in index2:
                                         if in2 in nn[in1]:
-                                            combs.append([in1, in2])
+                                            combs.append([in1+1, in2+1])
                                         #end if
                                     #end for
                                 #end for
@@ -2116,7 +2116,8 @@ def generate_any_pwscf_input(**kwargs):
     has_v72_keys = any(([_ in kwargs.keys() for _ in hub_keys_v72]))
     if has_pre72_keys + has_v72_keys > 1:
         PwscfInput.class_error('Please use {} for QE version <7.2 and {} for QE version >=7.2'.format(hub_keys_pre72, hub_keys_v72))
-    #end if     occ               = kwargs.get_optional('occupations',None)
+    #end if     
+    occ               = kwargs.get_optional('occupations',None)
     
     #make an empty input file
     pw = PwscfInput()
