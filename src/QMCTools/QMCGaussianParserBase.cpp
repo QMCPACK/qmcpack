@@ -58,6 +58,7 @@ QMCGaussianParserBase::QMCGaussianParserBase()
       Periodicity(false),
       UseHDF5(false),
       PBC(false),
+      legacy(false),
       production(false),
       batched(false),
       optJStaged(false),
@@ -125,6 +126,7 @@ QMCGaussianParserBase::QMCGaussianParserBase(int argc, char** argv)
       Periodicity(false),
       UseHDF5(false),
       PBC(false),
+      legacy(false),
       production(false),
       zeroCI(false),
       orderByExcitation(false),
@@ -1739,7 +1741,285 @@ void QMCGaussianParserBase::createGridNode(int argc, char** argv)
 
 void QMCGaussianParserBase::dump(const std::string& psi_tag, const std::string& ion_tag)
 {
-  std::cout << " QMCGaussianParserBase::dump " << std::endl;
+  std::cout << " QMCGaussianParserBase::dump Batched Code" << std::endl;
+  if (!Structure)
+  {
+    //if (UseHDF5 || multidetH5)
+    if (UseHDF5)
+    {
+      bool IsComplex = (isSpinor) ? true : false;
+      hdf_archive hout;
+      hout.create(h5file.c_str(), H5F_ACC_TRUNC);
+      hout.push("PBC", true);
+      hout.write(PBC, "PBC");
+      hout.pop();
+      //Adding generic code name to the H5 file.
+      std::string CodeName("generic");
+      hout.push("application", true);
+      hout.write(CodeName, "code");
+      hout.pop();
+      hout.push("parameters", true);
+      hout.write(ECP, "ECP");
+      //Assumes MO-Coeff always real as this path is only for molecules and for generating stand alone H5file.
+      hout.write(IsComplex, "IsComplex");
+      hout.write(multideterminant, "Multidet");
+      hout.write(NumberOfAlpha, "NbAlpha");
+      hout.write(NumberOfBeta, "NbBeta");
+      hout.write(NumberOfEls, "NbTotElec");
+      hout.write(SpinRestricted, "SpinRestricted");
+      hout.write(BohrUnit, "Unit");
+      hout.write(numMO, "numAO");
+      hout.write(numMO, "numMO");
+      hout.write(SpinMultiplicity, "spin");
+      hout.pop();
+      hout.close();
+    }
+
+    xmlDocPtr doc_p      = xmlNewDoc((const xmlChar*)"1.0");
+    xmlNodePtr qm_root_p = xmlNewNode(NULL, BAD_CAST "qmcsystem");
+    if (PBC)
+    {
+      app_log()
+          << "ABORT::THIS IS NOT SUPPOSED TO HAPPEN. PBC are ON but you are not in an HDF5 path. Contact developers"
+          << std::endl;
+      exit(0);
+      // xmlAddChild(qm_root_p, createCell());
+    }
+    auto ionSet = createIonSet();
+    if (ionSet != nullptr)
+    {
+      xmlAddChild(qm_root_p, ionSet);
+      xmlAddChild(qm_root_p, createElectronSet(ion_tag));
+      xmlDocSetRootElement(doc_p, qm_root_p);
+      std::string fname = Title + ".structure.xml";
+      xmlSaveFormatFile(fname.c_str(), doc_p, 1);
+      xmlFreeDoc(doc_p);
+    }
+    else
+    {
+      xmlFreeNode(qm_root_p);
+      xmlFreeDoc(doc_p);
+      throw std::runtime_error("convert4qmc: IonSet creation failed in QMCGaussianParserBase::dump, check out of "
+                               "bounds for valence calculation\n");
+    }
+    Structure = true;
+  }
+  xmlDocPtr doc      = xmlNewDoc((const xmlChar*)"1.0");
+  xmlNodePtr qm_root = xmlNewNode(NULL, BAD_CAST "qmcsystem");
+  /*
+  {
+    //wavefunction
+    xmlNodePtr wfPtr = xmlNewNode(NULL, (const xmlChar*)"wavefunction");
+    xmlNewProp(wfPtr, (const xmlChar*)"name", (const xmlChar*)psi_tag.c_str());
+    xmlNewProp(wfPtr, (const xmlChar*)"target", (const xmlChar*)"e");
+    {
+
+      xmlNodePtr detset = xmlNewNode(NULL, (const xmlChar*)"determinantset");
+      xmlNodePtr sposetCollPtr = xmlNewNode(NULL, (const xmlChar*)"sposet_collection");
+
+      xmlNewProp(sposetCollPtr, (const xmlChar*)"type", (const xmlChar*)"MolecularOrbital");
+      xmlNewProp(sposetCollPtr, (const xmlChar*)"name", (const xmlChar*)"LCAOBSet");
+      xmlNewProp(sposetCollPtr, (const xmlChar*)"source", (const xmlChar*)ion_tag.c_str());
+      xmlNewProp(sposetCollPtr, (const xmlChar*)"transform", (const xmlChar*)"yes");
+
+      if (DoCusp == true)
+        xmlNewProp(sposetCollPtr, (const xmlChar*)"cuspCorrection", (const xmlChar*)"yes");
+      if (UseHDF5 || singledetH5)
+        xmlNewProp(sposetCollPtr, (const xmlChar*)"href", (const xmlChar*)h5file.c_str());
+      //BASISSET
+      {
+        std::ostringstream up_size, down_size, b_size;
+        up_size << NumberOfAlpha;
+        down_size << NumberOfBeta;
+        b_size << numMO;
+
+
+        xmlNodePtr sposetup = xmlNewNode(NULL, (const xmlChar*)"sposet");
+        xmlNewProp(sposetup, (const xmlChar*)"name", (const xmlChar*)"spo-up");
+        if (multideterminant)
+            xmlNewProp(sposetup, (const xmlChar*)"size", (const xmlChar*)b_size.str().c_str());
+	else
+            xmlNewProp(sposetup, (const xmlChar*)"size", (const xmlChar*)up_size.str().c_str());
+        if (DoCusp == true)
+            xmlNewProp(sposetup, (const xmlChar*)"cuspInfo", (const xmlChar*)"../spo-up.cuspInfo.xml");
+        //add occupation
+        xmlNodePtr occ_data = xmlNewNode(NULL, (const xmlChar*)"occupation");
+        xmlNewProp(occ_data, (const xmlChar*)"mode", (const xmlChar*)"ground");
+        xmlAddChild(sposetup, occ_data);
+
+        //add coefficients
+        xmlNodePtr coeff_data = xmlNewNode(NULL, (const xmlChar*)"coefficient");
+        xmlNewProp(coeff_data, (const xmlChar*)"size", (const xmlChar*)b_size.str().c_str());
+        xmlNewProp(coeff_data, (const xmlChar*)"spindataset", (const xmlChar*)"0");
+        xmlAddChild(sposetup, coeff_data);
+        xmlAddChild(sposetCollPtr, sposetup);
+
+
+	///DownDet
+
+        xmlNodePtr sposetdn = xmlNewNode(NULL, (const xmlChar*)"sposet");
+        xmlSetProp(sposetdn, (const xmlChar*)"name", (const xmlChar*)"spo-dn");
+        if (multideterminant)
+          xmlSetProp(sposetdn, (const xmlChar*)"size", (const xmlChar*)b_size.str().c_str());
+	else
+          xmlSetProp(sposetdn, (const xmlChar*)"size", (const xmlChar*)down_size.str().c_str());
+        if (DoCusp == true)
+          xmlSetProp(sposetdn, (const xmlChar*)"cuspInfo", (const xmlChar*)"../spo-dn.cuspInfo.xml");
+        //add occupation
+        xmlNodePtr occ_datadn = xmlNewNode(NULL, (const xmlChar*)"occupation");
+        xmlNewProp(occ_datadn, (const xmlChar*)"mode", (const xmlChar*)"ground");
+        xmlAddChild(sposetdn, occ_datadn);
+        //add coefficients
+        xmlNodePtr coeff_data_dn = xmlNewNode(NULL, (const xmlChar*)"coefficient");
+        xmlNewProp(coeff_data_dn, (const xmlChar*)"size", (const xmlChar*)b_size.str().c_str());
+        if (SpinRestricted)
+             xmlNewProp(coeff_data_dn, (const xmlChar*)"spindataset", (const xmlChar*)"0");
+	else
+             xmlNewProp(coeff_data_dn, (const xmlChar*)"spindataset", (const xmlChar*)"1");
+        xmlAddChild(sposetdn, coeff_data_dn);
+        xmlAddChild(sposetCollPtr, sposetdn);
+
+
+        xmlNodePtr slaterdet = xmlNewNode(NULL, (const xmlChar*)"slaterdeterminant");
+
+        if (multideterminant)
+	{
+          xmlNodePtr multislaterdetPtr = NULL;
+          multislaterdetPtr = createMultiDeterminantSetFromH5();
+          xmlAddChild(slaterdet,multislaterdetPtr );
+	}
+	else
+	{
+          xmlNodePtr udet = xmlNewNode(NULL, (const xmlChar*)"determinant");
+          xmlNewProp(udet, (const xmlChar*)"id", (const xmlChar*)"spo-up");
+          xmlAddChild(slaterdet,udet );
+         
+          xmlNodePtr ddet = xmlNewNode(NULL, (const xmlChar*)"determinant");
+          xmlNewProp(ddet, (const xmlChar*)"id", (const xmlChar*)"spo-dn");
+          xmlAddChild(slaterdet,ddet );
+	}
+
+        xmlAddChild(detset, slaterdet);
+
+      }
+      xmlAddChild(wfPtr, sposetCollPtr);
+      xmlAddChild(wfPtr, detset);
+      if (addJastrow)
+      {
+        std::cout << R"(Adding Two-Body and One-Body jastrows with rcut="10" and size="10")" << std::endl;
+        if (NumberOfEls > 1)
+        {
+          xmlAddChild(wfPtr, createJ2());
+        }
+        xmlAddChild(wfPtr, createJ1());
+        if (NumberOfEls > 1)
+        {
+          std::cout << "Adding Three-Body jastrows with rcut=\"5\"" << std::endl;
+          xmlAddChild(wfPtr, createJ3());
+        }
+      }
+    }
+    xmlAddChild(qm_root, wfPtr);
+  }*/
+// Function to create sposet nodes with common properties
+xmlNodePtr createSposetNode(const std::string &name, const std::string &size, bool doCusp, const std::string &cuspInfoPath) {
+    xmlNodePtr sposet = xmlNewNode(NULL, (const xmlChar*)"sposet");
+    xmlNewProp(sposet, (const xmlChar*)"name", (const xmlChar*)name.c_str());
+    xmlNewProp(sposet, (const xmlChar*)"size", (const xmlChar*)size.c_str());
+    if (doCusp) {
+        xmlNewProp(sposet, (const xmlChar*)"cuspInfo", (const xmlChar*)cuspInfoPath.c_str());
+    }
+
+    // Add occupation
+    xmlNodePtr occ_data = xmlNewNode(NULL, (const xmlChar*)"occupation");
+    xmlNewProp(occ_data, (const xmlChar*)"mode", (const xmlChar*)"ground");
+    xmlAddChild(sposet, occ_data);
+
+    // Add coefficients
+    xmlNodePtr coeff_data = xmlNewNode(NULL, (const xmlChar*)"coefficient");
+    xmlNewProp(coeff_data, (const xmlChar*)"size", (const xmlChar*)size.c_str());
+    xmlAddChild(sposet, coeff_data);
+
+    return sposet;
+}
+
+xmlNodePtr createDeterminantNode(const std::string &id) {
+    xmlNodePtr det = xmlNewNode(NULL, (const xmlChar*)"determinant");
+    xmlNewProp(det, (const xmlChar*)"id", (const xmlChar*)id.c_str());
+    return det;
+}
+
+{
+    // Wavefunction
+    xmlNodePtr wfPtr = xmlNewNode(NULL, (const xmlChar*)"wavefunction");
+    xmlNewProp(wfPtr, (const xmlChar*)"name", (const xmlChar*)psi_tag.c_str());
+    xmlNewProp(wfPtr, (const xmlChar*)"target", (const xmlChar*)"e");
+
+    // Determinant set
+    xmlNodePtr detset = xmlNewNode(NULL, (const xmlChar*)"determinantset");
+    xmlNodePtr sposetCollPtr = xmlNewNode(NULL, (const xmlChar*)"sposet_collection");
+
+    xmlNewProp(sposetCollPtr, (const xmlChar*)"type", (const xmlChar*)"MolecularOrbital");
+    xmlNewProp(sposetCollPtr, (const xmlChar*)"name", (const xmlChar*)"LCAOBSet");
+    xmlNewProp(sposetCollPtr, (const xmlChar*)"source", (const xmlChar*)ion_tag.c_str());
+    xmlNewProp(sposetCollPtr, (const xmlChar*)"transform", (const xmlChar*)"yes");
+
+    if (DoCusp) {
+        xmlNewProp(sposetCollPtr, (const xmlChar*)"cuspCorrection", (const xmlChar*)"yes");
+    }
+    if (UseHDF5 || singledetH5) {
+        xmlNewProp(sposetCollPtr, (const xmlChar*)"href", (const xmlChar*)h5file.c_str());
+    }
+
+    // Create sposet nodes
+    std::ostringstream up_size, down_size, b_size;
+    up_size << NumberOfAlpha;
+    down_size << NumberOfBeta;
+    b_size << numMO;
+
+    xmlAddChild(sposetCollPtr, createSposetNode("spo-up", multideterminant ? b_size.str() : up_size.str(), DoCusp, "../spo-up.cuspInfo.xml"));
+    xmlAddChild(sposetCollPtr, createSposetNode("spo-dn", multideterminant ? b_size.str() : down_size.str(), DoCusp, "../spo-dn.cuspInfo.xml"));
+
+    xmlAddChild(wfPtr, sposetCollPtr);
+
+    // Slater determinant
+    xmlNodePtr slaterdet = xmlNewNode(NULL, (const xmlChar*)"slaterdeterminant");
+
+    if (multideterminant) {
+        xmlNodePtr multislaterdetPtr = createMultiDeterminantSetFromH5();
+        xmlAddChild(slaterdet, multislaterdetPtr);
+    } else {
+        xmlAddChild(slaterdet, createDeterminantNode("spo-up"));
+        xmlAddChild(slaterdet, createDeterminantNode("spo-dn"));
+    }
+
+    xmlAddChild(detset, slaterdet);
+    xmlAddChild(wfPtr, detset);
+
+    // Add Jastrow factors if needed
+    if (addJastrow) {
+        std::cout << R"(Adding Two-Body and One-Body jastrows with rcut="10" and size="10")" << std::endl;
+        if (NumberOfEls > 1) {
+            xmlAddChild(wfPtr, createJ2());
+        }
+        xmlAddChild(wfPtr, createJ1());
+        if (NumberOfEls > 1) {
+            std::cout << "Adding Three-Body jastrows with rcut=\"5\"" << std::endl;
+            xmlAddChild(wfPtr, createJ3());
+        }
+    }
+
+    xmlAddChild(qm_root, wfPtr);
+}
+
+  xmlDocSetRootElement(doc, qm_root);
+  std::string fname = Title + ".wf" + WFS_name + ".xml";
+  xmlSaveFormatFile(fname.c_str(), doc, 1);
+  xmlFreeDoc(doc);
+}
+void QMCGaussianParserBase::dump_Legacy(const std::string& psi_tag, const std::string& ion_tag)
+{
+  std::cout << " QMCGaussianParserBase::dump Legacy" << std::endl;
   if (!Structure)
   {
     //if (UseHDF5 || multidetH5)
@@ -1810,6 +2090,7 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag, const std::string& 
     xmlNewProp(wfPtr, (const xmlChar*)"name", (const xmlChar*)psi_tag.c_str());
     xmlNewProp(wfPtr, (const xmlChar*)"target", (const xmlChar*)"e");
     {
+
       xmlNodePtr detPtr = xmlNewNode(NULL, (const xmlChar*)"determinantset");
       xmlNewProp(detPtr, (const xmlChar*)"type", (const xmlChar*)"MolecularOrbital");
       xmlNewProp(detPtr, (const xmlChar*)"name", (const xmlChar*)"LCAOBSet");
@@ -2037,7 +2318,171 @@ void QMCGaussianParserBase::dumpPBC(const std::string& psi_tag, const std::strin
 
 void QMCGaussianParserBase::dumpStdInputProd(const std::string& psi_tag, const std::string& ion_tag)
 {
-  std::cout << " Generating production input file designed for large calculations." << std::endl;
+  std::cout << " Generating production input file designed for large calculations in the Batched Code Style." << std::endl;
+  std::cout << " Modify according to the accuracy you would like to achieve. Make sure to adjust the number of Walkers per rank to your machine" << std::endl;
+
+  std::string fname = Title + ".qmc.in-wf" + WFS_name + ".xml";
+
+  xmlDocPtr doc_input      = xmlNewDoc((const xmlChar*)"1.0");
+  xmlNodePtr qm_root_input = xmlNewNode(NULL, BAD_CAST "simulation");
+
+  ///Adding Project id
+  {
+    xmlNodePtr project = xmlNewNode(NULL, (const xmlChar*)"project");
+    xmlNewProp(project, (const xmlChar*)"id", (const xmlChar*)Title.c_str());
+    xmlNewProp(project, (const xmlChar*)"series", (const xmlChar*)"0");
+    xmlAddChild(project, parameter(project, "driver_version", "batch"));
+    xmlAddChild(qm_root_input, project);
+  }
+  ///Adding Link to Partcle Set and Wave function
+  {
+    std::string Ptclname = Title + ".structure.xml";
+    xmlNodePtr ptcl      = xmlNewNode(NULL, (const xmlChar*)"include");
+    xmlNewProp(ptcl, (const xmlChar*)"href", (const xmlChar*)Ptclname.c_str());
+    xmlAddChild(qm_root_input, ptcl);
+
+    std::string Wfsname = Title + ".wf" + WFS_name + ".xml";
+    xmlNodePtr wfs      = xmlNewNode(NULL, (const xmlChar*)"include");
+    xmlNewProp(wfs, (const xmlChar*)"href", (const xmlChar*)Wfsname.c_str());
+    xmlAddChild(qm_root_input, wfs);
+  }
+
+  ///Adding Hamiltonian
+  {
+    xmlAddChild(qm_root_input, createHamiltonian(ion_tag, psi_tag));
+  }
+  ///Adding Optimization Block based on One Shift Only
+  if (addJastrow)
+  {
+    ///Adding a VMC Block to help equilibrate
+    xmlNodePtr initvmc = xmlNewNode(NULL, (const xmlChar*)"qmc");
+    xmlNewProp(initvmc, (const xmlChar*)"method", (const xmlChar*)"vmc");
+    xmlNewProp(initvmc, (const xmlChar*)"move", (const xmlChar*)"pbyp");
+    //xmlNewProp(initvmc, (const xmlChar*)"checkpoint", (const xmlChar*)"-1");
+    {
+      xmlAddChild(initvmc, parameter(initvmc, "walkers_per_rank", "100"));
+      xmlAddChild(initvmc, parameter(initvmc, "warmupSteps", "10"));
+      xmlAddChild(initvmc, parameter(initvmc, "blocks", "10"));
+      xmlAddChild(initvmc, parameter(initvmc, "steps", "5"));
+      xmlAddChild(initvmc, parameter(initvmc, "substeps", "2"));
+      xmlAddChild(initvmc, parameter(initvmc, "timestep", "0.1"));
+      xmlAddChild(initvmc, parameter(initvmc, "usedrift", "no"));
+    }
+    xmlAddChild(qm_root_input, initvmc);
+
+
+    ///Adding First loop of Cheap optimization blocks
+    xmlNodePtr loopopt1 = xmlNewNode(NULL, (const xmlChar*)"loop");
+    xmlNewProp(loopopt1, (const xmlChar*)"max", (const xmlChar*)"4");
+    {
+      xmlNodePtr initopt = xmlNewNode(NULL, (const xmlChar*)"qmc");
+      xmlNewProp(initopt, (const xmlChar*)"method", (const xmlChar*)"linear");
+      xmlNewProp(initopt, (const xmlChar*)"move", (const xmlChar*)"pbyp");
+      xmlNewProp(initopt, (const xmlChar*)"checkpoint", (const xmlChar*)"-1");
+      //xmlNewProp(initopt,(const xmlChar*)"gpu", (const xmlChar*)"no");
+      {
+        xmlNodePtr estimator = xmlNewNode(NULL, (const xmlChar*)"estimator");
+        xmlNewProp(estimator, (const xmlChar*)"name", (const xmlChar*)"LocalEnergy");
+        xmlNewProp(estimator, (const xmlChar*)"hdf5", (const xmlChar*)"no");
+        xmlAddChild(initopt, estimator);
+
+        xmlAddChild(initopt, parameter(initopt, "blocks", "20"));
+        xmlAddChild(initopt, parameter(initopt, "warmupSteps", "10"));
+        xmlAddChild(initopt, parameter(initopt, "timestep", "0.5"));
+        xmlAddChild(initopt, parameter(initopt, "walkers_per_rank", "100"));
+        xmlAddChild(initopt, parameter(initopt, "samples", "80000"));
+        xmlAddChild(initopt, parameter(initopt, "substeps", "5"));
+        xmlAddChild(initopt, parameter(initopt, "usedrift", "no"));
+        xmlAddChild(initopt, parameter(initopt, "MinMethod", "OneShiftOnly"));
+        xmlAddChild(initopt, parameter(initopt, "minwalkers", "0.1"));
+      }
+      xmlAddChild(loopopt1, initopt);
+    }
+    xmlAddChild(qm_root_input, loopopt1);
+
+    ///Adding loop for  optimization blocks
+    xmlNodePtr loopopt = xmlNewNode(NULL, (const xmlChar*)"loop");
+    xmlNewProp(loopopt, (const xmlChar*)"max", (const xmlChar*)"10");
+    {
+      xmlNodePtr initopt = xmlNewNode(NULL, (const xmlChar*)"qmc");
+      xmlNewProp(initopt, (const xmlChar*)"method", (const xmlChar*)"linear");
+      xmlNewProp(initopt, (const xmlChar*)"move", (const xmlChar*)"pbyp");
+      xmlNewProp(initopt, (const xmlChar*)"checkpoint", (const xmlChar*)"-1");
+      //xmlNewProp(initopt,(const xmlChar*)"gpu", (const xmlChar*)"no");
+      {
+        xmlNodePtr estimator = xmlNewNode(NULL, (const xmlChar*)"estimator");
+        xmlNewProp(estimator, (const xmlChar*)"name", (const xmlChar*)"LocalEnergy");
+        xmlNewProp(estimator, (const xmlChar*)"hdf5", (const xmlChar*)"no");
+        xmlAddChild(initopt, estimator);
+
+        xmlAddChild(initopt, parameter(initopt, "blocks", "40 "));
+        xmlAddChild(initopt, parameter(initopt, "warmupSteps", "10"));
+        xmlAddChild(initopt, parameter(initopt, "timestep", "0.5"));
+        xmlAddChild(initopt, parameter(initopt, "walkers_per_rank", "100"));
+        xmlAddChild(initopt, parameter(initopt, "samples", "160000"));
+        xmlAddChild(initopt, parameter(initopt, "substeps", "5"));
+        xmlAddChild(initopt, parameter(initopt, "usedrift", "no"));
+        xmlAddChild(initopt, parameter(initopt, "MinMethod", "OneShiftOnly"));
+        xmlAddChild(initopt, parameter(initopt, "minwalkers", "0.5"));
+      }
+      xmlAddChild(loopopt, initopt);
+    }
+    xmlAddChild(qm_root_input, loopopt);
+  }
+
+
+  ///Adding a VMC Block to the Input
+  xmlNodePtr vmc = xmlNewNode(NULL, (const xmlChar*)"qmc");
+  xmlNewProp(vmc, (const xmlChar*)"method", (const xmlChar*)"vmc");
+  xmlNewProp(vmc, (const xmlChar*)"move", (const xmlChar*)"pbyp");
+  xmlNewProp(vmc, (const xmlChar*)"checkpoint", (const xmlChar*)"-1");
+  //xmlNewProp(vmc,(const xmlChar*)"gpu", (const xmlChar*)"no");
+  {
+    xmlNodePtr estimator = xmlNewNode(NULL, (const xmlChar*)"estimator");
+    xmlNewProp(estimator, (const xmlChar*)"name", (const xmlChar*)"LocalEnergy");
+    xmlNewProp(estimator, (const xmlChar*)"hdf5", (const xmlChar*)"no");
+    xmlAddChild(vmc, estimator);
+
+    xmlAddChild(vmc, parameter(vmc, "walkers_per_rank", "100"));
+    xmlAddChild(vmc, parameter(vmc, "stepsbetweensamples", "10"));
+    xmlAddChild(vmc, parameter(vmc, "substeps", "30"));
+    xmlAddChild(vmc, parameter(vmc, "warmupSteps", "10"));
+    xmlAddChild(vmc, parameter(vmc, "blocks", "20"));
+    xmlAddChild(vmc, parameter(vmc, "timestep", "0.1"));
+    xmlAddChild(vmc, parameter(vmc, "usedrift", "no"));
+  }
+  xmlAddChild(qm_root_input, vmc);
+
+  ///Adding a DMC Block to the Input
+  xmlNodePtr dmc = xmlNewNode(NULL, (const xmlChar*)"qmc");
+  xmlNewProp(dmc, (const xmlChar*)"method", (const xmlChar*)"dmc");
+  xmlNewProp(dmc, (const xmlChar*)"move", (const xmlChar*)"pbyp");
+  xmlNewProp(dmc, (const xmlChar*)"checkpoint", (const xmlChar*)"20");
+  //xmlNewProp(dmc,(const xmlChar*)"gpu", (const xmlChar*)"no");
+  {
+    xmlNodePtr estimator = xmlNewNode(NULL, (const xmlChar*)"estimator");
+    xmlNewProp(estimator, (const xmlChar*)"name", (const xmlChar*)"LocalEnergy");
+    xmlNewProp(estimator, (const xmlChar*)"hdf5", (const xmlChar*)"no");
+    xmlAddChild(dmc, estimator);
+
+    xmlAddChild(dmc, parameter(dmc, "walkers_per_rank", "1i00"));
+    xmlAddChild(dmc, parameter(dmc, "warmupSteps", "100"));
+    xmlAddChild(dmc, parameter(dmc, "timestep", "0.0005"));
+    xmlAddChild(dmc, parameter(dmc, "steps", "30"));
+    xmlAddChild(dmc, parameter(dmc, "blocks", "1000"));
+    if (ECP == true)
+       xmlAddChild(dmc, parameter(dmc, "nonlocalmoves", "v3"));
+  }
+  xmlAddChild(qm_root_input, dmc);
+
+  xmlDocSetRootElement(doc_input, qm_root_input);
+  xmlSaveFormatFile(fname.c_str(), doc_input, 1);
+  xmlFreeDoc(doc_input);
+}
+
+void QMCGaussianParserBase::dumpStdInputProdLegacy(const std::string& psi_tag, const std::string& ion_tag)
+{
+  std::cout << " Generating production input file designed for large calculations in the legacy Code Style." << std::endl;
   std::cout << " Modify according to the accuracy you would like to achieve. " << std::endl;
 
   std::string fname = Title + ".qmc.in-wf" + WFS_name + ".xml";
@@ -2779,7 +3224,7 @@ xmlNodePtr QMCGaussianParserBase::createHamiltonian(const std::string& ion_tag, 
 
         for (int iat = 0; iat < AtomNames.size(); iat++)
         {
-          std::string PPname = AtomNames[iat] + ".qmcpp.xml";
+          std::string PPname = AtomNames[iat] + ".ccECP.xml";
           xmlNodePtr a       = xmlNewNode(NULL, (const xmlChar*)"pseudo");
           xmlNewProp(a, (const xmlChar*)"elementType", (const xmlChar*)AtomNames[iat].c_str());
           xmlNewProp(a, (const xmlChar*)"href", (const xmlChar*)PPname.c_str());

@@ -42,6 +42,7 @@ struct QMCGaussianParserBase
   bool Periodicity;
   bool UseHDF5;
   bool PBC;
+  bool legacy;
   bool production;
   bool batched;
   bool optJStaged;
@@ -162,10 +163,12 @@ struct QMCGaussianParserBase
 
   virtual void dumpPBC(const std::string& psi_tag, const std::string& ion_tag);
 
+  virtual void dump_Legacy(const std::string& psi_tag, const std::string& ion_tag);
   virtual void dump(const std::string& psi_tag, const std::string& ion_tag);
 
   void dumpStdInput(const std::string& psi_tag, const std::string& ion_tag);
 
+  void dumpStdInputProdLegacy(const std::string& psi_tag, const std::string& ion_tag);
   void dumpStdInputProd(const std::string& psi_tag, const std::string& ion_tag);
 
   void dumpStdInputBatch(const std::string& psi_tag, const std::string& ion_tag);
