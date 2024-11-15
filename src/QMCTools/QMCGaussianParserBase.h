@@ -44,8 +44,6 @@ struct QMCGaussianParserBase
   bool PBC;
   bool legacy;
   bool production;
-  bool batched;
-  bool optJStaged;
   bool zeroCI;
   bool orderByExcitation;
   bool addJastrow;
@@ -170,8 +168,6 @@ struct QMCGaussianParserBase
 
   void dumpStdInputProdLegacy(const std::string& psi_tag, const std::string& ion_tag);
   void dumpStdInputProd(const std::string& psi_tag, const std::string& ion_tag);
-
-  void dumpStdInputBatch(const std::string& psi_tag, const std::string& ion_tag);
 
 
   //static std::vector<std::string> IonName;

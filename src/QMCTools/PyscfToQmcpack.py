@@ -534,6 +534,7 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[],sp_twist=[],weight=1.
       mf.mo_energy = ensure_numpy(mf.mo_energy)
       eigenvalue=GroupDet.create_dataset("eigenval_0",(1,NbMO),dtype="f8",data=mf.mo_energy)
     else:
+
       NbAO, NbMO =mo_coeff[0].shape 
       mo_coeff0 = [ensure_numpy(coeff) for coeff in mo_coeff[0]]
       mo_coeff1 = [ensure_numpy(coeff) for coeff in mo_coeff[1]]
