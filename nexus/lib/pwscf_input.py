@@ -2108,12 +2108,15 @@ def generate_any_pwscf_input(**kwargs):
     nspin             = kwargs.get_optional('nspin',None)
     nbnd              = kwargs.get_optional('nbnd',None)
     hubbard_u         = kwargs.get_optional('hubbard_u',None)
-    hubbardc          = kwargs.get_optional('hubbard',None)
-    if hubbard_u != None and hubbardc != None:
-        PwscfInput.class_error('Both "Hubbard_u" input in &SYSTEM namelist and "HUBBARD" card are defined. If you use QE version \
-> 7.1, please use "HUBBARD" card only, otherwise use the hubbard_u (e.g. Hubbard_U(1) = 6) and ')
-    #end if 
-    occ               = kwargs.get_optional('occupations',None)
+    # Pre 7.2 Hubbard tags
+    hub_keys_pre72 = 'hubbard_u hubbard_j0 hubbard_j U_projection_type'.lower().split()
+    has_pre72_keys = any(([_ in kwargs.keys() for _ in hub_keys_pre72]))
+    # QE >=7.2 Hubbard tags
+    hub_keys_v72 = 'hubbard hubbard_proj'.lower().split()
+    has_v72_keys = any(([_ in kwargs.keys() for _ in hub_keys_v72]))
+    if has_pre72_keys + has_v72_keys > 1:
+        PwscfInput.class_error('Please use {} for QE version <7.2 and {} for QE version >=7.2'.format(hub_keys_pre72, hub_keys_v72))
+    #end if     occ               = kwargs.get_optional('occupations',None)
     
     #make an empty input file
     pw = PwscfInput()
