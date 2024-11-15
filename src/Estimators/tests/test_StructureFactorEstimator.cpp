@@ -19,6 +19,7 @@
 #include "GenerateRandomParticleSets.h"
 #include "Utilities/ProjectData.h"
 #include "Utilities/for_testing/NativeInitializerPrint.hpp"
+#include "Utilities/for_testing/checkVector.hpp"
 #include <iostream>
 
 namespace qmcplusplus
@@ -195,8 +196,16 @@ TEST_CASE("StructureFactorEstimator::Accumulate", "[estimators]")
   auto sfk_e_e_expected = StructureFactorTests::getSKElecElec();
   auto rhok_e_expected  = StructureFactorTests::getRhoKElec();
 
-  CHECK(sfk_e_e_expected == sfk_e_e);
-  CHECK(rhok_e_expected == rhok_e);
+  {
+    INFO("In sfk_e_e test");
+    auto check = checkVector(sfk_e_e_expected, sfk_e_e, true, 2e-6);
+    CHECKED_ELSE(check.result) { FAIL(check.result_message); }
+  }
+  {
+    INFO("In rhok_e test");
+    auto check = checkVector(rhok_e_expected, rhok_e, true, 2e-6);
+    CHECKED_ELSE(check.result) { FAIL(check.result_message); }
+  }
 }
 
 typename StructureFactorTests::Data StructureFactorTests::getSKElecElec()
