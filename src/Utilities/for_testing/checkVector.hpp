@@ -9,8 +9,8 @@
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef QMCPLUSPLUS_CHECKMATRIX_HPP
-#define QMCPLUSPLUS_CHECKMATRIX_HPP
+#ifndef QMCPLUSPLUS_CHECKVECTOR_HPP
+#define QMCPLUSPLUS_CHECKVECTOR_HPP
 
 #include "catch.hpp"
 
@@ -23,47 +23,46 @@
 namespace qmcplusplus
 {
 
-struct CheckMatrixResult
+struct CheckVectorResult
 {
   bool result;
   std::string result_message;
 };
 
-/** This function checks equality a_mat and b_mat elements
+ /** This function checks equality a_vec and b_vec elements
  *  M1, M2 need to have their element type declared M1::value_type
  *         and have an operator(i,j) accessor.
  *  I leave the c++14 template meta programming to insure 
  *  this as an exercise for the reader. Or just enjoy the compiler error.
  *
- *  \param[in] a_mat     - reference matrix, if padded must be identical to b_mat,
- *                         can be a smaller than b_mat in which case it is compared to upper
- *                         left block of b_mat.
- *  \param[in] b_mat     - the matrix to check
- *  \param[in] check_all - if true continue to check matrix elements after failure
+ *  \param[in] a_vec     - reference vector, if padded must be identical to b_vec,
+ *                         can be a smaller than b_vec in which case it is compared to upper
+ *                         left block of b_vec.
+ *  \param[in] b_vec     - the vectorto check
+ *  \param[in] check_all - if true continue to check vector elements after failure
  *  \param[in] eps       - add a tolerance for Catch Approx checks. Default to same as in Approx. 
  */
 template<class M1, class M2>
-CheckMatrixResult checkMatrix(M1& a_mat,
-                              M2& b_mat,
+CheckVectorResult checkVector(M1& a_vec,
+                              M2& b_vec,
                               const bool check_all            = false,
                               std::optional<const double> eps = std::nullopt)
 {
   // This allows use to check a padded b matrix with a nonpadded a
-  if (a_mat.rows() > b_mat.rows() || a_mat.cols() > b_mat.cols())
-    return {false, "b_mat is too small for a_mat to be a checkable block"};
+  if (a_vec.size() > b_vec.size())
+    return {false, "b_vec is too small for a_vec to be a checkable segment"};
   std::stringstream error_msg;
-  auto matrixElementError = [&error_msg](int i, int j, auto& a_mat, auto& b_mat) {
-    error_msg << "checkMatrix found bad element at " << i << ":" << j << "  " << a_mat(i, j) << " != " << b_mat(i, j)
+  auto vectorElementError = [&error_msg](int i, auto& a_vec, auto& b_vec) {
+    error_msg << "checkVector found bad element at " << i << "  " << a_vec[i] << " != " << b_vec[i]
               << '\n';
   };
   bool all_elements_match = true;
-  for (int i = 0; i < a_mat.rows(); i++)
-    for (int j = 0; j < a_mat.cols(); j++)
+  for (int i = 0; i < a_vec.size(); i++)
     {
-      bool approx_equality = approxEquality<typename M1::value_type>(a_mat(i, j), b_mat(i, j), eps);
+      bool approx_equality = approxEquality<typename M1::value_type>(a_vec[i], b_vec[i], eps);
       if (!approx_equality)
       {
-        matrixElementError(i, j, a_mat, b_mat);
+        vectorElementError(i, a_vec, b_vec);
         all_elements_match = false;
         if (!check_all)
           return {false, error_msg.str()};
@@ -71,6 +70,6 @@ CheckMatrixResult checkMatrix(M1& a_mat,
     }
   return {all_elements_match, error_msg.str()};
 }
-
 } // namespace qmcplusplus
+
 #endif
