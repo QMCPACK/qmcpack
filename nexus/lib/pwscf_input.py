@@ -1458,7 +1458,7 @@ class hubbard(Card):
                                 for in1 in index1:
                                     for in2 in index2:
                                         if in2 in nn[in1]:
-                                            combs.append([in1, in2])
+                                            combs.append([in1+1, in2+1])
                                         #end if
                                     #end for
                                 #end for
