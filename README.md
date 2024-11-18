@@ -49,7 +49,7 @@ P. Kent _et al._ J. Chem. Phys. **152** 174105 (2020), https://doi.org/10.1063/5
  * BLAS/LAPACK, numerical library. Use vendor and platform-optimized libraries.
  * LibXml2, XML parser, http://xmlsoft.org/
  * HDF5 v1.10.0 or later, portable I/O library, http://www.hdfgroup.org/HDF5/
- * BOOST v1.61.0 or newer, peer-reviewed portable C++ source libraries, http://www.boost.org
+ * BOOST v1.70.0 or newer, peer-reviewed portable C++ source libraries, http://www.boost.org
  * FFTW, FFT library, http://www.fftw.org/
  * MPI, parallel library. Optional, but a near requirement for production calculations.
  * Python3. Older versions are not supported as of January 2020.
