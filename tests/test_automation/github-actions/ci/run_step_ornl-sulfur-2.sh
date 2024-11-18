@@ -94,9 +94,6 @@ case "$1" in
         echo "Configure for building with CUDA 12.1 and" \
              "GCC11 system compiler" 
 
-        echo "Set PATHs to cuda-12.1"
-        export PATH=/usr/local/cuda-12.1/bin:$PATH
-
         # Make current environment variables available to subsequent steps
         echo "PATH=$PATH" >> $GITHUB_ENV
         echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> $GITHUB_ENV
