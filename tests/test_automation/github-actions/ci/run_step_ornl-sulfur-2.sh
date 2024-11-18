@@ -91,8 +91,11 @@ case "$1" in
       ;;
 
       *"V100-GCC11-MPI-CUDA"*)
-        echo "Configure for building with CUDA 12.1 and" \
-             "GCC11 system compiler" 
+        echo "Configure for building with CUDA and" \
+             "GCC11 system compiler"
+
+        echo "Set PATHs to CUDA"     
+        export PATH=/usr/local/cuda/bin:$PATH
 
         # Make current environment variables available to subsequent steps
         echo "PATH=$PATH" >> $GITHUB_ENV
