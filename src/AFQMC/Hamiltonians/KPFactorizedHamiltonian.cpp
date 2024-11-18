@@ -163,8 +163,10 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
       APP_ABORT("");
     }
     E0 = E_[0] + E_[1];
+
+    using std::get;
     if (nmo_per_kp.size() != nkpts || nchol_per_kp.size() != nkpts || kminus.size() != nkpts ||
-        std::get<0>(QKtok2.sizes()) != nkpts || std::get<1>(QKtok2.sizes()) != nkpts)
+        get<0>(QKtok2.sizes()) != nkpts || get<1>(QKtok2.sizes()) != nkpts)
     {
       app_error() << " Error in KPFactorizedHamiltonian::getHamiltonianOperations():"
                   << " Inconsistent dimension (NMOPerKP,NCholPerKP,QKtTok2): " << nkpts << " " << nmo_per_kp.size()
@@ -562,6 +564,8 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
           int nchol = nchol_per_kp[Q];
           Sp3Tensor_ref Likn(to_address(LQKikn[Q][K].origin()), {ni, nk, nchol});
           // NOTE: LQKbnl is indexed by the K index of 'b', L[Q][Kb]
+          using std::get;
+
           if (type == COLLINEAR)
           {
             { // Alpha
@@ -571,7 +575,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
             }
             { // Beta
               auto PsiQK = get_PsiK<boost::multi::array<SPComplexType, 2>>(nmo_per_kp, PsiT[2 * nd + 1], QK);
-              assert(std::get<0>(PsiQK.sizes()) == nb);
+              assert(get<0>(PsiQK.sizes()) == nb);
               Sp3Tensor_ref Lbnl(to_address(LQKbnl[nq0 + number_of_symmetric_Q + Qmap[Q] - 1][QK].origin()),
                                  {nb, nchol, ni});
               ma_rotate::getLank_from_Lkin(PsiQK, Likn, Lbnl, buff);
@@ -580,7 +584,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
           else
           {
             auto PsiQK = get_PsiK<SpMatrix>(nmo_per_kp, PsiT[nd], QK, npol == 2);
-            assert(std::get<0>(PsiQK.sizes()) == na);
+            assert(get<0>(PsiQK.sizes()) == na);
             Sp3Tensor_ref Lbnl(to_address(LQKbnl[nq0 + Qmap[Q] - 1][QK].origin()), {na, nchol, npol * ni});
             ma_rotate::getLank_from_Lkin(PsiQK, Likn, Lbnl, buff, npol == 2);
           }
@@ -889,13 +893,16 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
       APP_ABORT("");
     }
     E0 = E_[0] + E_[1];
+
+    using std::get;
+
     if (nmo_per_kp.size() != nkpts || nchol_per_kp.size() != nkpts || kminus.size() != nkpts ||
-        std::get<0>(QKtok2.sizes()) != nkpts || std::get<1>(QKtok2.sizes()) != nkpts)
+        get<0>(QKtok2.sizes()) != nkpts || get<1>(QKtok2.sizes()) != nkpts)
     {
       app_error() << " Error in KPFactorizedHamiltonian::getHamiltonianOperations():"
                   << " Inconsistent dimension (NMOPerKP,NCholPerKP,QKtTok2): " << nkpts << " " << nmo_per_kp.size()
-                  << " " << nchol_per_kp.size() << " " << kminus.size() << " " << std::get<0>(QKtok2.sizes()) << " "
-                  << std::get<1>(QKtok2.sizes()) << std::endl;
+                  << " " << nchol_per_kp.size() << " " << kminus.size() << " " << get<0>(QKtok2.sizes()) << " "
+                  << get<1>(QKtok2.sizes()) << std::endl;
       APP_ABORT("");
     }
   }
