@@ -40,6 +40,8 @@ namespace afqmc
 // testing the use of dynamic data transfer during execution to reduce memory in GPU
 // when an approach is found, integrate in original class through additional template parameter
 
+using std::get;  // for C++17 compatibility
+
 template<class LQKankMatrix>
 class KP3IndexFactorization_batched
 {
@@ -181,10 +183,11 @@ public:
         dev_Q2vbias(typename IVector::extensions_type{nopk.size()}, IAllocator{allocator_}),
         dev_Qmap(Qmap),
         dev_nelpk(nelpk),
-        dev_a0pk(typename IMatrix::extensions_type{std::get<0>(nelpk.sizes()), std::get<1>(nelpk.sizes())}, IAllocator{allocator_}),
+        dev_a0pk(typename IMatrix::extensions_type{get<0>(nelpk.sizes()), get<1>(nelpk.sizes())}, IAllocator{allocator_}),
         dev_QKToK2(QKToK2),
         EQ(nopk.size() + 2)
   {
+    using std::get;
     using std::copy_n;
     using std::fill_n;
     nocc_max = *std::max_element(nelpk.origin(), nelpk.origin() + nelpk.num_elements());
