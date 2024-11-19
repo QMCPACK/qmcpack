@@ -185,7 +185,7 @@ qmc = generate_qmcpack(
     #skip_submit          = True,
     identifier           = 'qmc',
     path                 = basepath + 'qmc',
-    job                  = job(cores=12,threads=4,app='qmcpack'),
+    job                  = job(cores=16,threads=4,app='qmcpack'),
     system               = system,
     twistnum             = 0,
     estimators           = [sdens, edens, mom_dist, dm_est],  # Requested estimators. These will be run in all QMC series.
