@@ -16,6 +16,7 @@
 
 #include "EstimatorManagerInput.h"
 #include "ScalarEstimatorInputs.h"
+#include "DipoleMomentInput.h"
 #include "MomentumDistributionInput.h"
 #include "OneBodyDensityMatricesInput.h"
 #include "SpinDensityInput.h"

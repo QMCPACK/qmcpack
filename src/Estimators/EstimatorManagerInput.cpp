@@ -76,6 +76,8 @@ void EstimatorManagerInput::readXML(xmlNodePtr cur)
         appendScalarEstimatorInput<RMCLocalEnergyInput>(child);
         app_warning() << "RMCLocalEnergyEstimator support is at best experimental with batch drivers" << std::endl;
       }
+      else if (atype == "dipolemoment")
+        appendEstimatorInput<DipoleMomentInput>(child);
       else if (atype == "onebodydensitymatrices")
         appendEstimatorInput<OneBodyDensityMatricesInput>(child);
       else if (atype == "spindensity")

@@ -18,6 +18,7 @@
 
 #include "EstimatorManagerNew.h"
 #include "EstimatorInputDelegates.h"
+#include "DipoleMoment.h"
 #include "SpinDensityNew.h"
 #include "MomentumDistribution.h"
 #include "OneBodyDensityMatrices.h"
@@ -101,7 +102,8 @@ void EstimatorManagerNew::constructEstimators(EstimatorManagerInput&& emi,
                                               const PSPool& pset_pool)
 {
   for (auto& est_input : emi.get_estimator_inputs())
-    if (!(createEstimator<SpinDensityInput>(est_input, pset.getLattice(), pset.getSpeciesSet()) ||
+    if (!(createEstimator<DipoleMomentInput>(est_input, pset_pool) ||
+          createEstimator<SpinDensityInput>(est_input, pset.getLattice(), pset.getSpeciesSet()) ||
           createEstimator<MomentumDistributionInput>(est_input, pset.getTotalNum(), pset.getTwist(),
                                                      pset.getLattice()) ||
           createEstimator<SelfHealingOverlapInput>(est_input, twf) ||

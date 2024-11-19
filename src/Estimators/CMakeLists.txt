@@ -29,6 +29,7 @@ set(QMCEST_SRC
     EstimatorManagerCrowd.cpp
     CollectablesEstimator.cpp
     OperatorEstBase.cpp
+    DipoleMoment.cpp
     SpinDensityNew.cpp
     MomentumDistribution.cpp
     OneBodyDensityMatricesInput.cpp
