@@ -569,7 +569,10 @@ public:
       for (int n = 0; n < nwalk; n++)
         fill_n(E[n].origin(), 1, ComplexType(E0));
       // must use Gc since GKK is is SP
-      int na = 0, nk = 0, nb = 0;
+#if defined(MIXED_PRECISION)
+      int na = 0, nk = 0;
+#endif
+      int nb = 0;
       for (int K = 0; K < nkpts; ++K)
       {
 #if defined(MIXED_PRECISION)
@@ -591,16 +594,13 @@ public:
         }
         nk += ni;
 #else
-        nk = nopk[K];
         {
-          na = nelpk[nd][K];
           CVector_ref haj_K(make_device_ptr(haj[nd * nkpts + K].origin()), {nocc_max * npol * nmo_max});
           SpMatrix_ref Gaj(GKK[0][K][K].origin(), {nwalk, nocc_max * npol * nmo_max});
           ma::product(ComplexType(1.), Gaj, haj_K, ComplexType(1.), E({0, nwalk}, 0));
         }
         if (walker_type == COLLINEAR)
         {
-          na = nelpk[nd][nkpts + K];
           CVector_ref haj_K(make_device_ptr(haj[nd * nkpts + K].origin()) + nocc_max * nmo_max, {nocc_max * nmo_max});
           SpMatrix_ref Gaj(GKK[1][K][K].origin(), {nwalk, nocc_max * nmo_max});
           ma::product(ComplexType(1.), Gaj, haj_K, ComplexType(1.), E({0, nwalk}, 0));

@@ -2443,7 +2443,7 @@ void NOMSD<devPsiT>::vMF(Vec&& v)
   //       which should be exactly zero, suffers from truncation errors.
   //       Set it to zero.
   for (int i = 0; i < v.num_elements(); i++)
-    v[i] = ComplexType(real(v[i]), 0.0);
+    v[i] = ComplexType(real(ComplexType(v[i])), 0.0);
 }
 
 template<class devPsiT>
