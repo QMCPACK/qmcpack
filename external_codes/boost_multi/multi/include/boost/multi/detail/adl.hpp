@@ -14,12 +14,13 @@
 #include <thrust/uninitialized_copy.h>
 #endif
 
-#include <algorithm>  // for std::copy, std::copy_n, std::equal, etc
-#include <cstddef>      // std::size_t
-#include <iterator>   // for begin, end
-#include <memory>     // for uninitialized_copy, etc
-#include <type_traits>  // std::conditional_t
-#include <utility>
+#include <algorithm>    // for for_each, copy_n, fill, fill_n, lexicographical_compare, swap_ranges  // IWYU pragma: keep  // bug in iwyu 0.18
+#include <cstddef>      // for size_t
+#include <functional>   // for equal_to
+#include <iterator>     // for iterator_traits, distance, size
+#include <memory>       // for allocator_traits, allocator, pointer_traits
+#include <type_traits>  // for decay_t, enable_if_t, conditional_t, declval, is_pointer, true_type
+#include <utility>      // for forward, addressof
 
 #ifdef _MULTI_FORCE_TRIVIAL_STD_COMPLEX
 #include<complex>
@@ -43,38 +44,6 @@ namespace adl { \
 }  /* end namespace multi */ \
 }  /* end namespace boost */
 
-namespace boost::multi {
-
-template<class Element>
-inline constexpr bool force_element_trivial = false;
-
-template <class Element>
-inline constexpr bool force_element_trivial_destruction = force_element_trivial<Element>;
-
-template <class Element>
-inline constexpr bool force_element_trivial_default_construction = force_element_trivial<Element>;
-
-#ifdef _MULTI_FORCE_TRIVIAL_STD_COMPLEX
-template<class T>
-inline constexpr bool force_element_trivial<std::complex<T>> = std::is_trivial_v<T>;
-
-template<class T>
-inline constexpr bool force_element_trivial_destruction<std::complex<T>> = std::is_trivially_default_constructible_v<T>;
-
-template<class T>
-inline constexpr bool force_element_trivial_default_construction<std::complex<T>> = std::is_trivially_destructible_v<T>;
-
-template<> inline constexpr bool force_element_trivial                     <std::complex<double>> = true;
-template<> inline constexpr bool force_element_trivial_default_construction<std::complex<double>> = true;
-template<> inline constexpr bool force_element_trivial_destruction         <std::complex<double>> = true;
-
-template<> inline constexpr bool force_element_trivial                     <std::complex<float >> = true;
-template<> inline constexpr bool force_element_trivial_default_construction<std::complex<float >> = true;
-template<> inline constexpr bool force_element_trivial_destruction         <std::complex<float >> = true;
-#endif
-
-}  // end namespace boost::multi
-
 #define BOOST_MULTI_DECLRETURN(ExpR) -> decltype(ExpR) {return ExpR;}  // NOLINT(cppcoreguidelines-macro-usage) saves a lot of typing
 #define BOOST_MULTI_JUSTRETURN(ExpR)                   {return ExpR;}  // NOLINT(cppcoreguidelines-macro-usage) saves a lot of typing
 
@@ -95,6 +64,8 @@ class adl_copy_n_t {
 	template<class... As> constexpr auto operator()(As&&... args) const BOOST_MULTI_DECLRETURN(_(priority<4>{}, std::forward<As>(args)...))
 };
 inline constexpr adl_copy_n_t adl_copy_n;
+
+// there is no move_n (std::move_n), use copy_n(std::make_move_iterator(first), count) instead
 
 class adl_move_t {
 	template<class... As>           constexpr auto _(priority<0>/**/,                      As&&... args) const BOOST_MULTI_DECLRETURN(              std::    move(                      std::forward<As>(args)...))
@@ -124,6 +95,20 @@ class adl_fill_n_t {
 };
 inline constexpr adl_fill_n_t adl_fill_n;
 
+class adl_fill_t {
+	template<         class... As> constexpr auto _(priority<0>/**/,          As&&... args) const BOOST_MULTI_DECLRETURN(              std::  fill              (std::forward<As>(args)...))
+#if defined(__NVCC__) || defined(__HIP_PLATFORM_NVIDIA__) || defined(__HIP_PLATFORM_AMD__) || defined(__HIPCC__)
+	template<         class... As> constexpr auto _(priority<1>/**/,          As&&... args) const BOOST_MULTI_DECLRETURN(           thrust::  fill              (std::forward<As>(args)...))
+#endif
+	template<         class... As> constexpr auto _(priority<2>/**/,          As&&... args) const BOOST_MULTI_DECLRETURN(                     fill              (std::forward<As>(args)...))
+	template<class T, class... As> constexpr auto _(priority<3>/**/, T&& arg, As&&... args) const BOOST_MULTI_DECLRETURN(std::decay_t<T>::    fill(std::forward<T>(arg), std::forward<As>(args)...))
+	template<class T, class... As> constexpr auto _(priority<4>/**/, T&& arg, As&&... args) const BOOST_MULTI_DECLRETURN(std::forward<T>(arg).fill              (std::forward<As>(args)...))
+
+ public:
+	template<class... As> constexpr auto operator()(As&&... args) const BOOST_MULTI_DECLRETURN(_(priority<4>{}, std::forward<As>(args)...))
+};
+inline constexpr adl_fill_t adl_fill;
+
 class adl_equal_t {
 	template<         class...As> constexpr auto _(priority<1>/**/,          As&&...args) const BOOST_MULTI_DECLRETURN(               std::  equal(                      std::forward<As>(args)...))
 #if defined(__NVCC__) || defined(__HIP_PLATFORM_NVIDIA__) || defined(__HIP_PLATFORM_AMD__) || defined(__HIPCC__)
@@ -139,15 +124,13 @@ class adl_equal_t {
 };
 inline constexpr adl_equal_t adl_equal;
 
-template<class... Args> struct adl_custom_copy;
-
 #ifndef _MSC_VER
-template<class... As, class = std::enable_if_t<sizeof...(As) == 0> > void copy(As...) = delete;
+template<class... As, class = std::enable_if_t<sizeof...(As) == 0> > void copy(As...) = delete;  // NOLINT(modernize-use-constraints) TODO(correaa)
 #endif
 
 class adl_copy_t {
 	template<class InputIt, class OutputIt,
-		class=std::enable_if_t<std::is_assignable_v<typename std::iterator_traits<OutputIt>::reference, typename std::iterator_traits<InputIt>::reference>>
+		class=std::enable_if_t<std::is_assignable_v<typename std::iterator_traits<OutputIt>::reference, typename std::iterator_traits<InputIt>::reference>>  // NOLINT(modernize-use-constraints) TODO(correaa)
 	>
 	                               constexpr auto _(priority<1>/**/, InputIt first, InputIt last, OutputIt d_first) const BOOST_MULTI_DECLRETURN(std::copy(first, last, d_first))
 #if defined(__NVCC__) || defined(__HIP_PLATFORM_NVIDIA__) || defined(__HIP_PLATFORM_AMD__) || defined(__HIPCC__)
@@ -164,12 +147,12 @@ class adl_copy_t {
 inline constexpr adl_copy_t adl_copy;
 
 namespace adl {
-	namespace custom {template<class...> struct fill_t;}
+	// namespace custom {template<class...> struct fill_t;}
 	class fill_t {
 		template<class... As>          auto _(priority<1>/**/,          As&&... args) const BOOST_MULTI_DECLRETURN(              std::  fill              (std::forward<As>(args)...))
 		template<class... As>          auto _(priority<2>/**/,          As&&... args) const BOOST_MULTI_DECLRETURN(                     fill              (std::forward<As>(args)...))
 		template<class T, class... As> auto _(priority<3>/**/, T&& arg, As&&... args) const BOOST_MULTI_DECLRETURN(std::forward<T>(arg).fill              (std::forward<As>(args)...))
-		template<class... As>          auto _(priority<4>/**/,          As&&... args) const BOOST_MULTI_DECLRETURN(custom::             fill_t<As&&...>::_(std::forward<As>(args)...))
+		// template<class... As>          auto _(priority<4>/**/,          As&&... args) const BOOST_MULTI_DECLRETURN(custom::             fill_t<As&&...>::_(std::forward<As>(args)...))
 	
 	 public:
 		template<class... As> auto operator()(As&&... args) const BOOST_MULTI_DECLRETURN(_(priority<5>{}, std::forward<As>(args)...))
@@ -202,7 +185,7 @@ constexpr auto me_to_address(priority<1> /**/, T const& ptr) noexcept
 	return std::pointer_traits<T>::to_address(ptr);
 }
 
-template<class T, std::enable_if_t<std::is_pointer<T>{}, int> =0>
+template<class T, std::enable_if_t<std::is_pointer<T>{}, int> =0>  // NOLINT(modernize-use-constraints) TODO(correaa)
 constexpr auto me_to_address(priority<2>/**/, T const& ptr) noexcept -> T {
     static_assert(! std::is_function_v<T>);
     return ptr;
@@ -315,22 +298,26 @@ class adl_uninitialized_copy_t {
 	#if __cplusplus >= 202002L
 		using ValueType = typename std::iterator_traits<FwdIt>::value_type;
 		if(
-			   std::is_constant_evaluated() 
+			   std::is_constant_evaluated()
 			&& (std::is_trivially_default_constructible_v<ValueType> || multi::force_element_trivial_default_construction<ValueType>)
 		) {
 			return std::              copy(first, last, d_first);
-	    } else
-	#endif
-		{
-			return std::uninitialized_copy(first, last, d_first);
 		}
+	#endif
+		return std::uninitialized_copy(first, last, d_first);
 	}
-// #if defined(__CUDACC__) || defined(__CUDA__) || defined(__NVCC__) || defined(__HIP_PLATFORM_NVIDIA__) || defined(__HIP_PLATFORM_AMD__) || defined(__HIPCC__)
 #if defined(__CUDACC__) || defined(__HIPCC__)
-	template<class... As>          constexpr auto _(priority<2>/**/,                        As&&... args) const BOOST_MULTI_DECLRETURN(                  ::thrust::uninitialized_copy(                    std::forward<As>(args)...))  // doesn't work with culang 17, cuda 12 ?
+	template<class InIt, class FwdIt, class ValueType = typename std::iterator_traits<FwdIt>::value_type>
+	constexpr auto _(priority<2>/**/, InIt first, InIt last, FwdIt d_first) const -> decltype(::thrust::uninitialized_copy(first, last, d_first))  // doesn't work with culang 17, cuda 12 ?
+	{
+		if(std::is_trivially_default_constructible_v<ValueType> || multi::force_element_trivial_default_construction<ValueType>) {
+			return ::thrust::copy(first, last, d_first);
+		}
+		return ::thrust::uninitialized_copy(first, last, d_first);
+	}
 #endif
-	template<class TB, class... As       > constexpr auto _(priority<3>/**/, TB   first, As&&... args       ) const BOOST_MULTI_DECLRETURN(                        uninitialized_copy(                 first , std::forward<As>(args)...))
-	template<class TB, class TE, class DB> constexpr auto _(priority<4>/**/, TB   first, TE last, DB d_first) const BOOST_MULTI_DECLRETURN(std::decay_t<DB>      ::uninitialized_copy(                 first , last, d_first            ))
+	template<class TB, class... As       > constexpr auto _(priority<3>/**/, TB&& first, As&&... args       ) const BOOST_MULTI_DECLRETURN(                        uninitialized_copy(                 std::forward<TB>(first) , std::forward<As>(args)...))
+	template<class TB, class TE, class DB> constexpr auto _(priority<4>/**/, TB&& first, TE&& last, DB&& d_first) const BOOST_MULTI_DECLRETURN(std::decay_t<DB>      ::uninitialized_copy(                 std::forward<TB>(first) , std::forward<TE>(last), std::forward<DB>(d_first)            ))
 	template<class TB, class... As       > constexpr auto _(priority<5>/**/, TB&& first, As&&... args       ) const BOOST_MULTI_DECLRETURN(std::decay_t<TB>      ::uninitialized_copy(std::forward<TB>(first), std::forward<As>(args)...))
 	template<class TB, class... As       > constexpr auto _(priority<6>/**/, TB&& first, As&&... args       ) const BOOST_MULTI_DECLRETURN(std::forward<TB>(first).uninitialized_copy(                         std::forward<As>(args)...))
 
@@ -343,19 +330,23 @@ class adl_uninitialized_copy_n_t {
 	template<class... As>          constexpr auto _(priority<1>/**/,        As&&... args) const BOOST_MULTI_DECLRETURN(                  std::uninitialized_copy_n(std::forward<As>(args)...))
 	template<class... As>          constexpr auto _(priority<2>/**/,        As&&... args) const BOOST_MULTI_DECLRETURN(                       uninitialized_copy_n(std::forward<As>(args)...))
 #if defined(__NVCC__) || defined(__HIP_PLATFORM_NVIDIA__) || defined(__HIP_PLATFORM_AMD__) || defined(__HIPCC__)
-	template<class... As>          constexpr auto _(priority<3>/**/, As&&... args) const BOOST_MULTI_DECLRETURN(                    ::thrust::uninitialized_copy_n(std::forward<As>(args)...))
-	template<class... As, class OutputIt = std::decay_t<decltype((std::declval<As>(), ...))>,
-		std::enable_if_t<
-			   std::is_trivially_default_constructible_v<typename std::iterator_traits<OutputIt>::value_type>
-			|| multi::force_element_trivial_default_construction<typename std::iterator_traits<OutputIt>::value_type>
-		, int> =0
-	> constexpr auto _(priority<4>/**/, As&&... args) const BOOST_MULTI_DECLRETURN(                                  ::thrust::copy_n(std::forward<As>(args)...))
+	template<
+		class It, class Size, class ItFwd,
+		class ValueType = typename std::iterator_traits<ItFwd>::value_type,
+		class = std::enable_if_t<! std::is_rvalue_reference_v<typename std::iterator_traits<It>::reference> >
+	>
+	constexpr auto _(priority<3>/**/, It first, Size count, ItFwd d_first) const -> decltype(::thrust::uninitialized_copy_n(first, count, d_first)) {
+		if(std::is_trivially_default_constructible_v<ValueType> || multi::force_element_trivial_default_construction<ValueType>) {
+			return ::thrust::copy_n(first, count, d_first);
+		}
+		return ::thrust::uninitialized_copy_n(first, count, d_first);
+	}
 #endif
-	template<class T, class... As> constexpr auto _(priority<5>/**/, T&& arg, As&&... args) const BOOST_MULTI_DECLRETURN(std::decay_t<T>::    uninitialized_copy_n(std::forward<T>(arg), std::forward<As>(args)...))
-	template<class T, class... As> constexpr auto _(priority<6>/**/, T&& arg, As&&... args) const BOOST_MULTI_DECLRETURN(std::forward<T>(arg).uninitialized_copy_n(std::forward<As>(args)...))
+	template<class T, class... As> constexpr auto _(priority<4>/**/, T&& arg, As&&... args) const BOOST_MULTI_DECLRETURN(std::decay_t<T>::    uninitialized_copy_n(std::forward<T>(arg), std::forward<As>(args)...))
+	template<class T, class... As> constexpr auto _(priority<5>/**/, T&& arg, As&&... args) const BOOST_MULTI_DECLRETURN(std::forward<T>(arg).uninitialized_copy_n(std::forward<As>(args)...))
 
  public:
-	template<class... As> constexpr auto operator()(As&&... args) const BOOST_MULTI_DECLRETURN(_(priority<7>{}, std::forward<As>(args)...))  // TODO(correaa) this might trigger a compiler crash with g++ 7.5 because of operator&() && overloads
+	template<class... As> constexpr auto operator()(As&&... args) const BOOST_MULTI_DECLRETURN(_(priority<5>{}, std::forward<As>(args)...))  // TODO(correaa) this might trigger a compiler crash with g++ 7.5 because of operator&() && overloads
 };
 inline constexpr adl_uninitialized_copy_n_t adl_uninitialized_copy_n;
 
@@ -399,17 +390,25 @@ auto alloc_uninitialized_copy_n(Alloc& alloc, InputIt first, Size count, Forward
 template<class Alloc, class InputIt, class Size, class ForwardIt>
 auto alloc_uninitialized_move_n(Alloc& alloc, InputIt first, Size count, ForwardIt d_first) {
 	ForwardIt current = d_first;
+	#if defined(__clang__)
+	#pragma clang diagnostic push
+	#pragma clang diagnostic ignored "-Wunknown-warning-option"
+	#pragma clang diagnostic ignored "-Wunsafe-buffer-usage"  // TODO(correaa) use checked span
+	#endif
 	try {
 		for(; count > 0; ++first, ++current, --count) {  // NOLINT(altera-unroll-loops) TODO(correaa) consider using an algorithm
 			std::allocator_traits<Alloc>::construct(alloc, std::addressof(*current), std::move(*first));
 		}
 		return current;
 	} catch(...) {
-		for(; d_first != current; ++d_first) {  // NOLINT(altera-unroll-loops) TODO(correaa) consider using an algorithm
+		for(; d_first != current; ++d_first) {  // NOLINT(altera-unroll-loops,altera-id-dependent-backward-branch) TODO(correaa) consider using an algorithm
 			std::allocator_traits<Alloc>::destroy(alloc, std::addressof(*d_first));
 		}
 		throw;
 	}
+	#if defined(__clang__)
+	#pragma clang diagnostic pop
+	#endif
 }
 
 template<class T, class InputIt, class ForwardIt>
@@ -417,7 +416,9 @@ constexpr auto alloc_uninitialized_copy(std::allocator<T>&/*allocator*/, InputIt
 	return adl_uninitialized_copy(first, last, d_first);
 }
 
-template<class Alloc, class InputIt, class ForwardIt, class=decltype(std::addressof(*std::declval<ForwardIt>())), class=std::enable_if_t<std::is_constructible_v<typename std::iterator_traits<ForwardIt>::value_type, typename std::iterator_traits<InputIt>::reference>>>
+template<class Alloc, class InputIt, class ForwardIt, class=decltype(std::addressof(*std::declval<ForwardIt>())),
+	class=std::enable_if_t<std::is_constructible_v<typename std::iterator_traits<ForwardIt>::value_type, typename std::iterator_traits<InputIt>::reference>>  // NOLINT(modernize-use-constraints) TODO(correaa)
+>
 #if __cplusplus >= 202002L
 constexpr
 #endif
@@ -458,13 +459,14 @@ auto alloc_uninitialized_fill_n(Alloc& alloc, ForwardIt first, Size n, T const& 
 }  // end namespace xtd
 
 class adl_distance_t {
-	template<class... As>          constexpr auto _(priority<1>/**/,        As&&... args) const BOOST_MULTI_DECLRETURN(              std::    distance(std::forward<As>(args)...))
-	template<class... As>          constexpr auto _(priority<2>/**/,        As&&... args) const BOOST_MULTI_DECLRETURN(                       distance(std::forward<As>(args)...))
-	template<class T, class... As> constexpr auto _(priority<3>/**/, T&& arg, As&&... args) const BOOST_MULTI_DECLRETURN(  std::decay_t<T>::  distance(std::forward<T>(arg), std::forward<As>(args)...))
-	template<class T, class... As> constexpr auto _(priority<4>/**/, T&& arg, As&&... args) const BOOST_MULTI_DECLRETURN(std::forward<T>(arg).distance(std::forward<As>(args)...))
+	template<class... As>          constexpr auto _(priority<1>/**/,          As&&... args) const BOOST_MULTI_DECLRETURN(              std::    distance(std::forward<As>(args)...))
+	template<class... As>          constexpr auto _(priority<2>/**/,          As&&... args) const BOOST_MULTI_DECLRETURN(                       distance(std::forward<As>(args)...))
+	template<class It1, class It2> constexpr auto _(priority<3>/**/, It1 it1, It2 it2     ) const BOOST_MULTI_DECLRETURN(it2 - it1)
+	template<class T, class... As> constexpr auto _(priority<4>/**/, T&& arg, As&&... args) const BOOST_MULTI_DECLRETURN(  std::decay_t<T>::  distance(std::forward<T>(arg), std::forward<As>(args)...))
+	template<class T, class... As> constexpr auto _(priority<5>/**/, T&& arg, As&&... args) const BOOST_MULTI_DECLRETURN(std::forward<T>(arg).distance(std::forward<As>(args)...))
 
  public:
-	template<class... As> constexpr auto operator()(As&&... args) const BOOST_MULTI_DECLRETURN(_(priority<4>{}, std::forward<As>(args)...))
+	template<class... As> constexpr auto operator()(As&&... args) const BOOST_MULTI_DECLRETURN(_(priority<5>{}, std::forward<As>(args)...))
 };
 inline constexpr adl_distance_t adl_distance;
 
@@ -519,13 +521,13 @@ class adl_swap_ranges_t {
 inline constexpr adl_swap_ranges_t adl_swap_ranges;
 
 class adl_lexicographical_compare_t {
-	template<class... As>          /*[[gnu::pure]]*/ constexpr auto _(priority<1>/**/,          As&&... args) const BOOST_MULTI_DECLRETURN(              std::  lexicographical_compare(std::forward<As>(args)...))
+	template<class... As>          constexpr auto _(priority<1>/**/,          As&&... args) const BOOST_MULTI_DECLRETURN(              std::  lexicographical_compare(std::forward<As>(args)...))
 	template<class... As>          constexpr auto _(priority<2>/**/,          As&&... args) const BOOST_MULTI_DECLRETURN(                     lexicographical_compare(std::forward<As>(args)...))
 	template<class T, class... As> constexpr auto _(priority<3>/**/, T&& arg, As&&... args) const BOOST_MULTI_DECLRETURN(  std::decay_t<T>::  lexicographical_compare(std::forward<T>(arg), std::forward<As>(args)...))
 	template<class T, class... As> constexpr auto _(priority<4>/**/, T&& arg, As&&... args) const BOOST_MULTI_DECLRETURN(std::forward<T>(arg).lexicographical_compare(std::forward<As>(args)...))
 
  public:
-	template<class... As> /*[[gnu::pure]]*/ constexpr   auto operator()(As&&... args) const BOOST_MULTI_DECLRETURN(_(priority<4>{}, std::forward<As>(args)...))
+	template<class... As> constexpr auto operator()(As&&... args) const BOOST_MULTI_DECLRETURN(_(priority<4>{}, std::forward<As>(args)...))
 };
 inline constexpr adl_lexicographical_compare_t adl_lexicographical_compare;
 
@@ -620,14 +622,14 @@ class adl_alloc_uninitialized_copy_t {
 inline constexpr adl_alloc_uninitialized_copy_t adl_alloc_uninitialized_copy;
 
 class adl_alloc_uninitialized_copy_n_t {
-	template<class Alloc, class... As> constexpr auto _(priority<1>/**/, Alloc&& /*alloc*/, As&&... args) const BOOST_MULTI_DECLRETURN(                  adl_uninitialized_copy_n(std::forward<As>(args)...) )  // NOLINT(cppcoreguidelines-missing-std-forward)
-	template<class... As>              constexpr auto _(priority<2>/**/,                   As&&... args) const BOOST_MULTI_DECLRETURN(                     alloc_uninitialized_copy_n(std::forward<As>(args)...))
-//  template<class... As>              constexpr auto _(priority<3>/**/,                   As&&... args) const BOOST_MULTI_DECLRETURN(              xtd::alloc_uninitialized_copy_n(std::forward<As>(args)...))
+	template<class Alloc, class... As> constexpr auto _(priority<1>/**/, Alloc&& /*alloc*/, As&&... args) const BOOST_MULTI_DECLRETURN(                       adl_uninitialized_copy_n(std::forward<As>(args)...))  // NOLINT(cppcoreguidelines-missing-std-forward)
+	template<class... As>              constexpr auto _(priority<2>/**/,                    As&&... args) const BOOST_MULTI_DECLRETURN(                     alloc_uninitialized_copy_n(std::forward<As>(args)...))
+//  template<class... As>              constexpr auto _(priority<3>/**/,                    As&&... args) const BOOST_MULTI_DECLRETURN(                xtd::alloc_uninitialized_copy_n(std::forward<As>(args)...))
 // #if defined(__NVCC__)
 //  there is no thrust alloc uninitialized copy 
 // #endif
-	template<class T, class... As>     constexpr auto _(priority<5>/**/, T&& arg,          As&&... args) const BOOST_MULTI_DECLRETURN(    std::decay_t<T>::alloc_uninitialized_copy_n(std::forward<T>(arg), std::forward<As>(args)...))
-	template<class T, class... As>     constexpr auto _(priority<6>/**/, T&& arg,          As&&... args) const BOOST_MULTI_DECLRETURN(std::forward<T>(arg).alloc_uninitialized_copy_n(std::forward<As>(args)...))
+	template<class T, class... As>     constexpr auto _(priority<5>/**/, T&& arg,           As&&... args) const BOOST_MULTI_DECLRETURN(    std::decay_t<T>::alloc_uninitialized_copy_n(std::forward<T>(arg), std::forward<As>(args)...))
+	template<class T, class... As>     constexpr auto _(priority<6>/**/, T&& arg,           As&&... args) const BOOST_MULTI_DECLRETURN(std::forward<T>(arg).alloc_uninitialized_copy_n(std::forward<As>(args)...))
 
  public:
 	template<class... As> constexpr auto operator()(As&&... args) const {return _(priority<6>{}, std::forward<As>(args)...);}
@@ -636,7 +638,7 @@ inline constexpr adl_alloc_uninitialized_copy_n_t adl_alloc_uninitialized_copy_n
 
 class alloc_uninitialized_move_n_t {
 // TODO(correaa) : fallback to no alloc version
-	template<class... As>          constexpr auto _(priority<1>/**/,          As&&... args) const {return(                 xtd::  alloc_uninitialized_move_n(std::forward<As>(args)...));}
+	template<class... As>          constexpr auto _(priority<1>/**/,          As&&... args) const {return(                             xtd::  alloc_uninitialized_move_n(std::forward<As>(args)...));}
 	template<class... As>          constexpr auto _(priority<2>/**/,          As&&... args) const BOOST_MULTI_DECLRETURN(                     alloc_uninitialized_move_n(std::forward<As>(args)...))
 	template<class T, class... As> constexpr auto _(priority<3>/**/, T&& arg, As&&... args) const BOOST_MULTI_DECLRETURN(std::forward<T>(arg).alloc_uninitialized_move_n(std::forward<As>(args)...))
 

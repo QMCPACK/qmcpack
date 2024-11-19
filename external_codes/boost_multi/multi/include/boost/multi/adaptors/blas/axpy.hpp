@@ -6,14 +6,19 @@
 #define BOOST_MULTI_ADAPTORS_BLAS_AXPY_HPP
 #pragma once
 
+#include <boost/multi/adaptors/blas/core.hpp>
+// #include <boost/multi/adaptors/complex.hpp>
+
 #include <boost/multi/array_ref.hpp>
 
-#include <boost/multi/adaptors/blas/core.hpp>
-#include <boost/multi/adaptors/complex.hpp>
+#include <cassert>                            // for assert
+#include <complex>                             // for complex
+#include <iterator>                            // for iterator_traits, rando...
+#include <type_traits>                         // for enable_if_t, decay_t
+#include <utility>                             // for forward, declval
 
 #define BOOST_MULTI_DECLRETURN(ExpR) -> decltype(ExpR) {return ExpR;}  // NOLINT(cppcoreguidelines-macro-usage) saves a lot of typing
-#define JUSTRETURN(ExpR)                   {return ExpR;}  // NOLINT(cppcoreguidelines-macro-usage) saves a lot of typing
-// TODO(correaa) ^^^ fix macro name
+#define BOOST_MULTI_JUSTRETURN(ExpR)                   {return ExpR;}  // NOLINT(cppcoreguidelines-macro-usage) saves a lot of typing
 
 namespace boost::multi::blas {
 
@@ -22,12 +27,12 @@ using core::axpy;
 template<class It1, class Size, class OutIt>
 auto axpy_n(typename It1::value_type alpha, It1 first, Size n, OutIt d_first)
 ->decltype(axpy(n, &alpha, first.base(), first.stride(), d_first.base(), d_first.stride()), d_first + n) {
-	return axpy(n, &alpha, base(first) , stride(first) , base(d_first) , stride(d_first) ), d_first + n; }
+	return axpy(n, &alpha, first.base(), first.stride(), d_first.base() , stride(d_first) ), d_first + n; }
 
 template<class Context, class It1, class Size, class OutIt>//, class=std::enable_if_t<is_context<decltype(*Context{})>{}>>
 auto axpy_n(Context ctxt, typename It1::value_type alpha, It1 first, Size n, OutIt d_first)
 ->decltype(ctxt->axpy(n, &alpha, first.base(), first.stride(), d_first.base(), d_first.stride()), d_first + n) {
-	return ctxt->axpy(n, &alpha, base(first) , stride(first) , base(d_first) , stride(d_first) ), d_first + n; }
+	return ctxt->axpy(n, &alpha, first.base(), first.stride(), d_first.base(), d_first.stride()), d_first + n; }
 
 template<class Context, class X1DIt, class Y1D, typename = decltype( std::declval<Y1D&&>()[0] = 0.0, *X1DIt{} )>
 auto axpy(Context ctxt, typename X1DIt::element alpha, X1DIt x, Y1D&& y)  // NOLINT(readability-identifier-length) conventional BLAS names
@@ -37,7 +42,7 @@ auto axpy(Context ctxt, typename X1DIt::element alpha, X1DIt x, Y1D&& y)  // NOL
 template<class Context, class X1D, class Y1D, typename = decltype( std::declval<Y1D&&>()[0] = 0.0, size(std::declval<X1D const&>()) )>
 auto axpy(Context ctxt, typename X1D::element alpha, X1D const& x, Y1D&& y)  // NOLINT(readability-identifier-length) conventional BLAS names
 ->decltype(                                                        std::forward<Y1D>(y)) { assert(x.size() == y.size() );
-	return axpy_n(ctxt, alpha,   begin(x),   size(y),   begin(y)), std::forward<Y1D>(y); }
+	return axpy_n(ctxt, alpha,   x.begin(),   y.size(),   y.begin()), std::forward<Y1D>(y); }
 
 template<class X1D, class Y1D, typename = decltype( std::declval<Y1D&&>()[0] = 0.0 )>
 auto axpy(typename X1D::element alpha, X1D const& x, Y1D&& y)  // NOLINT(readability-identifier-length) conventional BLAS names
@@ -109,7 +114,8 @@ class axpy_range {
 	auto begin() const -> iterator{ return {ctxt_, alpha_, x_begin_         }; }
 	auto end()   const -> iterator{ return {ctxt_, alpha_, x_begin_ + count_}; }
 
-	auto size() const -> size_type{return end() - begin();}
+	auto size() const -> size_type { return end() - begin(); }
+	auto extensions() const { return extensions_t<1>{ {0, size()} }; }
 
 	template<class Other>
 	friend auto operator+=(Other&& other, axpy_range const& self) -> Other&& {
@@ -126,7 +132,8 @@ class axpy_range {
 	auto operator*=(Scale s) & -> axpy_range& {alpha_ *= s; return *this;}  // NOLINT(readability-identifier-length) conventional BLAS naming
 };
 
-template<class Context, class Scalar, class X1D, class=std::enable_if_t<is_context<Context>{}>>
+template<class Context, class Scalar, class X1D,
+	class=std::enable_if_t<is_context<Context>{}>>  // NOLINT(modernize-use-constraints) for C++20
 auto axpy(Context&& ctxt, Scalar a, X1D const& x)  // NOLINT(readability-identifier-length) conventional BLAS naming
 -> axpy_range<Context, Scalar, typename X1D::const_iterator> {  // NOLINT(readability-identifier-length) conventional BLAS naming
 	return {std::forward<Context>(ctxt), a, begin(x), end(x)};
@@ -136,7 +143,7 @@ template<class Scalar, class X1D>
 auto axpy(Scalar a, X1D const& x)  // NOLINT(readability-identifier-length) conventional BLAS naming
 {
 	auto ctxtp = blas::default_context_of(x.base());
-	return axpy_range<decltype(ctxtp), Scalar, typename X1D::const_iterator>{ctxtp, a, begin(x), end(x)};  // TODO(correaa) fix temporary
+	return axpy_range<decltype(ctxtp), Scalar, typename X1D::const_iterator>{ctxtp, a, begin(x), end(x)};
 }
 
 template<class AA, class X>
@@ -154,15 +161,16 @@ class scaled {
 
 namespace operators {
 
-template<class T> struct algebraic_traits {static auto one() {return T{1.0};}};
+template<class T> struct algebraic_traits {static auto one() { return T{1.0}; }};
 
 template<class T> struct algebraic_traits<std  ::complex<T>> {static auto one() {return std  ::complex<T>{T{1}, T{0}};}};
-template<class T> struct algebraic_traits<multi::complex<T>> {static auto one() {return multi::complex<T>{T{1}, T{0}};}};
+// template<class T> struct algebraic_traits<multi::complex<T>> {static auto one() {return multi::complex<T>{T{1}, T{0}};}};
 
 template<class X1D, class Y1D> auto operator+=(X1D&& x, Y1D const& other) BOOST_MULTI_DECLRETURN(axpy(+algebraic_traits<typename Y1D::value_type>::one(), other, std::forward<X1D>(x)))  // NOLINT(fuchsia-default-arguments-calls,readability-identifier-length) conventional name in BLAS
 template<class X1D, class Y1D> auto operator-=(X1D&& x, Y1D const& other) BOOST_MULTI_DECLRETURN(axpy(-algebraic_traits<typename Y1D::value_type>::one(), other, std::forward<X1D>(x)))  // NOLINT(fuchsia-default-arguments-calls,readability-identifier-length) conventional name in BLAS
 
-template<class X, std::enable_if_t<X::dimensionality == 1, int> =0>
+template<class X,
+	std::enable_if_t<X::dimensionality == 1, int> =0>  // NOLINT(modernize-use-constraints) for C++20
 auto operator*(typename X::element_type a, X const& x) {return scaled{a, x};}  // NOLINT(readability-identifier-length) conventional BLAS naming
 
 template<class X1D, class Y1D> auto operator+(X1D const& x, Y1D const& y) -> std::decay_t<decltype(x.decay())> {auto X = x.decay(); X += y; return X;}  // NOLINT(readability-identifier-length) conventional name in BLAS
@@ -173,6 +181,6 @@ template<class X1D, class Y1D> auto operator-(X1D const& x, Y1D const& y) -> std
 } // end namespace boost::multi::blas
 
 #undef BOOST_MULTI_DECLRETURN
-#undef JUSTRETURN
+#undef BOOST_MULTI_JUSTRETURN
 
 #endif  // BOOST_MULTI_ADAPTORS_BLAS_AXPY_HPP

@@ -243,17 +243,18 @@ public:
   template<class MatG, class MatA>
   void vbias(const MatG& G, MatA&& v, double a = 1.0)
   {
+    using std::get;
     if (transposed_G_for_vbias_)
     {
-      assert(std::get<0>(G.sizes()) == std::get<1>(v.sizes()));
-      assert(std::get<1>(G.sizes()) == size_of_G_for_vbias());
+      assert(get<0>(G.sizes()) == get<1>(v.sizes()));
+      assert(get<1>(G.sizes()) == size_of_G_for_vbias());
     }
     else
     {
-      assert(std::get<0>(G.sizes()) == size_of_G_for_vbias());
-      assert(std::get<1>(G.sizes()) == std::get<1>(v.sizes()));
+      assert(get<0>(G.sizes()) == size_of_G_for_vbias());
+      assert(get<1>(G.sizes()) == get<1>(v.sizes()));
     }
-    assert(std::get<0>(v.sizes()) == HamOp.local_number_of_cholesky_vectors());
+    assert(get<0>(v.sizes()) == HamOp.local_number_of_cholesky_vectors());
     if (ci.size() == 1)
     {
       // HamOp expects a compact Gc with alpha/beta components
@@ -285,11 +286,12 @@ public:
   template<class MatX, class MatA>
   void vHS(MatX&& X, MatA&& v, double a = 1.0)
   {
-    assert(std::get<0>(X.sizes()) == HamOp.local_number_of_cholesky_vectors());
+    using std::get;
+    assert(get<0>(X.sizes()) == HamOp.local_number_of_cholesky_vectors());
     if (transposed_vHS_)
-      assert(std::get<1>(X.sizes()) == std::get<0>(v.sizes()));
+      assert(get<1>(X.sizes()) == get<0>(v.sizes()));
     else
-      assert(std::get<1>(X.sizes()) == std::get<1>(v.sizes()));
+      assert(get<1>(X.sizes()) == get<1>(v.sizes()));
     HamOp.vHS(std::forward<MatX>(X), std::forward<MatA>(v), a);
     TG.local_barrier();
   }
@@ -538,13 +540,14 @@ public:
       }                    // TG.Node().root()
       TG.Node().barrier(); // for safety
     }
-    assert(std::get<0>(RefOrbMats.sizes()) == ndet);
-    assert(std::get<1>(RefOrbMats.sizes()) == std::get<1>(A.sizes()));
+    using std::get;
+    assert(get<0>(RefOrbMats.sizes()) == ndet);
+    assert(get<1>(RefOrbMats.sizes()) == get<1>(A.sizes()));
     auto&& RefOrbMats_(boost::multi::static_array_cast<ComplexType, ComplexType*>(RefOrbMats));
     auto&& A_(boost::multi::static_array_cast<ComplexType, Ptr>(A));
     using std::copy_n;
     int n0, n1;
-    std::tie(n0, n1) = FairDivideBoundary(TG.getLocalTGRank(), int(std::get<1>(A.sizes())), TG.getNCoresPerTG());
+    std::tie(n0, n1) = FairDivideBoundary(TG.getLocalTGRank(), int(get<1>(A.sizes())), TG.getNCoresPerTG());
     for (int i = 0; i < ndet; i++)
       copy_n(RefOrbMats_[i].origin() + n0, n1 - n0, A_[i].origin() + n0);
     TG.TG_local().barrier();

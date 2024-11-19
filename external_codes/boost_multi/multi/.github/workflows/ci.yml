@@ -22,6 +22,7 @@ env:
   GIT_FETCH_JOBS: 8
   NET_RETRY_COUNT: 5
   DEFAULT_BUILD_VARIANT: debug,release
+  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
 
 jobs:
   posix:
@@ -470,6 +471,7 @@ jobs:
             addrmd: "64"
             os: windows-2019
 
+    timeout-minutes: 120
     runs-on: ${{matrix.os}}
 
     steps:
@@ -517,6 +519,7 @@ jobs:
             addrmd: "64"
             os: windows-2022
 
+    timeout-minutes: 120
     runs-on: ${{matrix.os}}
 
     steps:

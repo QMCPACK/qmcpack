@@ -7,12 +7,13 @@
 #define BOOST_MULTI_DETAIL_CONFIG_NODISCARD_HPP
 
 // clang-format off
+
 #ifdef __has_cpp_attribute
 
 // No discard first
 #  ifdef __NVCC__
 #    define BOOST_MULTI_NODISCARD(MsG)
-#  elif __has_cpp_attribute(nodiscard) && (__cplusplus >= 201703L || (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L))
+#  elif __has_cpp_attribute(nodiscard)
 #    if (__has_cpp_attribute(nodiscard) >= 201907L) && (__cplusplus >= 202002L || (defined(_MSVC_LANG) && _MSVC_LANG >= 202002L))
 #      define BOOST_MULTI_NODISCARD(MsG) [[nodiscard]]  // [[nodiscard(MsG)]] in c++20 empty message is not allowed with paren
 #    else
@@ -23,7 +24,7 @@
 #  endif 
 
 // No discard class
-#  if(__has_cpp_attribute(nodiscard) && !defined(__NVCC__) && (!defined(__clang__) || (defined(__clang__) && (__cplusplus >= 202002L)))) && (__cplusplus >= 201703L || (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L))
+#  if(__has_cpp_attribute(nodiscard) && !defined(__NVCC__) && (!defined(__clang__) || (defined(__clang__) && (__cplusplus >= 202002L))))
 #    if (__has_cpp_attribute(nodiscard) >= 201907L) && (__cplusplus >= 202002L || (defined(_MSVC_LANG) && _MSVC_LANG >= 202002L))
 #      define BOOST_MULTI_NODISCARD_CLASS(MsG) [[nodiscard_(MsG)]]
 #    else

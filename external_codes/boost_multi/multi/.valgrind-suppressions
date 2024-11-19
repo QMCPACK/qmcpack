@@ -13,3 +13,105 @@
    fun:cudaMalloc*
    ...
 }
+{
+   <suppression_for_nvidia_opencl_hwloc>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   obj:/usr/lib/x86_64-linux-gnu/libnvidia-opencl.so.*
+   obj:/usr/lib/x86_64-linux-gnu/libnvidia-opencl.so.*
+   obj:/usr/lib/x86_64-linux-gnu/libOpenCL.so.1.0.0
+   fun:clGetPlatformIDs
+   obj:/usr/lib/x86_64-linux-gnu/hwloc/hwloc_opencl.so
+   obj:/usr/lib/x86_64-linux-gnu/libhwloc.so.*
+   fun:hwloc_topology_load
+   fun:opal_hwloc_base_get_topology
+   obj:*
+   fun:orte_init
+   fun:orte_submit_init
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:*
+   obj:/usr/lib/x86_64-linux-gnu/libpciaccess.so.0.*
+   ...
+   fun:pci_get_strings
+   obj:/usr/lib/x86_64-linux-gnu/hwloc/hwloc_pci.so
+   ...
+   obj:/usr/lib/x86_64-linux-gnu/libhwloc.so.*
+   fun:hwloc_topology_load
+   fun:opal_hwloc_base_get_topology
+   obj:*
+   fun:orte_init
+   fun:orte_submit_init
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:*
+   fun:*
+   obj:/usr/lib/x86_64-linux-gnu/libpciaccess.so.0.*
+   ...
+   fun:pci_get_strings
+   obj:/usr/lib/x86_64-linux-gnu/hwloc/hwloc_pci.so
+   ...
+   obj:/usr/lib/x86_64-linux-gnu/libhwloc.so.*
+   fun:hwloc_topology_load
+   fun:opal_hwloc_base_get_topology
+   obj:*
+   fun:*
+   fun:*
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   obj:/usr/lib/x86_64-linux-gnu/libnvidia-opencl.so.*
+   ...
+   obj:/usr/lib/x86_64-linux-gnu/libOpenCL.so.1.0.0
+   fun:clGetPlatformIDs
+   obj:/usr/lib/x86_64-linux-gnu/hwloc/hwloc_opencl.so
+   obj:/usr/lib/x86_64-linux-gnu/libhwloc.so.*
+   fun:hwloc_topology_load
+   fun:opal_hwloc_base_get_topology
+   obj:*
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   obj:/usr/lib/x86_64-linux-gnu/libnvidia-opencl.so.*
+   ...
+   obj:/usr/lib/x86_64-linux-gnu/libOpenCL.so.1.0.0
+   fun:clGetPlatformIDs
+   obj:/usr/lib/x86_64-linux-gnu/hwloc/hwloc_opencl.so
+   obj:/usr/lib/x86_64-linux-gnu/libhwloc.so.*
+   fun:hwloc_topology_load
+   fun:opal_hwloc_base_get_topology
+   obj:*
+   fun:*
+}
+{
+   <suppression_for_libopen_mpi>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   obj:/usr/lib/x86_64-linux-gnu/libstdc++.so.*
+   fun:call_init*
+   ...
+   fun:_dl_init
+   fun:_dl_catch_exception
+   fun:dl_open_worker
+   ...
+   fun:_dl_catch_exception
+   fun:_dl_open
+   fun:dlopen_doit
+   fun:_dl_catch_exception
+   fun:_dl_catch_error
+   fun:_dlerror_run
+}

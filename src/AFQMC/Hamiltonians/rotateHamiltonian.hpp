@@ -773,6 +773,7 @@ inline void rotateHijkl_single_node(std::string& type,
     std::fill_n(Rl.origin(), Rl.num_elements(), SPComplexType(0.0));
 
   {
+    using std::get;
     //   Q(k,a,n) = sum_i ma::conj(Amat(i,a)) * V2_fact(ik,n)
     //   R(l,a,n) = sum_i ma::conj(Amat(i,a)) * ma::conj(V2_fact(li,n))
 
@@ -798,7 +799,7 @@ inline void rotateHijkl_single_node(std::string& type,
     {
       // Qk[norb*NAEA,nvec]
       // Rl[nvec,norb*NAEA]
-      int n0_, n1_, sz_ = std::get<0>(Qk.sizes());
+      int n0_, n1_, sz_ = get<0>(Qk.sizes());
       std::tie(n0_, n1_) = FairDivideBoundary(coreid, sz_, ncores);
       if (n1_ - n0_ > 0)
         ma::transpose(Qk.sliced(n0_, n1_), Rl(Rl.extension(0), {n0_, n1_}));

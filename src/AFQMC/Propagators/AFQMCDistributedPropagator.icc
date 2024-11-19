@@ -60,14 +60,15 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
   if (transposed_G_)
     G_ext = iextensions<2u>{nwalk, Gsize};
 
-  if (std::get<1>(MFfactor.sizes()) != nsteps || std::get<2>(MFfactor.sizes()) != nwalk)
+  using std::get;
+  if (get<1>(MFfactor.sizes()) != nsteps || get<2>(MFfactor.sizes()) != nwalk)
     MFfactor = C3Tensor({2, nsteps, nwalk});
-  if (std::get<1>(hybrid_weight.sizes()) != nsteps || std::get<2>(hybrid_weight.sizes()) != nwalk)
+  if (get<1>(hybrid_weight.sizes()) != nsteps || get<2>(hybrid_weight.sizes()) != nwalk)
     hybrid_weight = C3Tensor({2, nsteps, nwalk});
 
-  if (std::get<0>(new_overlaps.sizes()) != nwalk)
+  if (get<0>(new_overlaps.sizes()) != nwalk)
     new_overlaps = CVector(iextensions<1u>{nwalk});
-  if (std::get<0>(new_energies.sizes()) != nwalk || std::get<1>(new_energies.sizes()) != 3)
+  if (get<0>(new_energies.sizes()) != nwalk || get<1>(new_energies.sizes()) != 3)
     new_energies = CMatrix({nwalk, 3});
 
   //  Summary of temporary memory usage:

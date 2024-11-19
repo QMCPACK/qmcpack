@@ -47,22 +47,22 @@ struct [[nodiscard]] imaginary<void> {
 	[[nodiscard]] constexpr auto operator/(imaginary<T> other) const { return T{1} / other._value; }
 };
 
-constexpr imaginary<void> I{};  // NOLINT(readability-identifier-length) imaginary unit
+inline constexpr imaginary<void> I{};  // NOLINT(readability-identifier-length) imaginary unit
 
 namespace literals {
 // constexpr imaginary<double> operator""_i(unsigned long long d) {
 //  return imaginary<double>{static_cast<double>(d)};
 // }
 
-constexpr auto operator"" _i(long double value) { return imaginary<double>{static_cast<double>(value)}; }
+constexpr auto operator""_i(long double value) { return imaginary<double>{static_cast<double>(value)}; }
 //  constexpr auto operator""   i(long double value) {return imaginary<double>{static_cast<double>(value)};}
-constexpr auto operator"" _I(long double value) { return imaginary<double>{static_cast<double>(value)}; }
+constexpr auto operator""_I(long double value) { return imaginary<double>{static_cast<double>(value)}; }
 
 //  constexpr auto operator"" f_i(long double value) {return imaginary<float >{static_cast<float >(value)};}
 constexpr auto operator""_f_i(long double value) { return imaginary<float>{static_cast<float>(value)}; }
-constexpr auto operator"" _if(long double value) { return imaginary<float>{static_cast<float>(value)}; }
+constexpr auto operator""_if(long double value) { return imaginary<float>{static_cast<float>(value)}; }
 constexpr auto operator""_F_I(long double value) { return imaginary<float>{static_cast<float>(value)}; }
-constexpr auto operator"" _IF(long double value) { return imaginary<float>{static_cast<float>(value)}; }
+constexpr auto operator""_IF(long double value) { return imaginary<float>{static_cast<float>(value)}; }
 
 // template<char... Chars>
 // constexpr auto operator""_FI() noexcept {}
