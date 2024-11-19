@@ -98,15 +98,16 @@ inline void calculate_energy(EMat&& locV, const MatA& Gc, MatB&& Gcloc, const Sp
 {
   // W[nwalk][2][NMO][NAEA]
 
+  using std::get;
   assert(locV.dimensionality == 2);
-  assert(std::get<1>(Gc.sizes()) == std::get<1>(Gcloc.sizes()));
-  assert(Vakbl.size(0) == std::get<0>(Gcloc.sizes()));
-  assert(std::get<0>(Gc.sizes()) == Vakbl.size(1));
+  assert(get<1>(Gc.sizes()) == get<1>(Gcloc.sizes()));
+  assert(Vakbl.size(0) == get<0>(Gcloc.sizes()));
+  assert(get<0>(Gc.sizes()) == Vakbl.size(1));
 
   using Type      = typename std::decay<EMat>::type::element;
   const Type half = Type(0.5);
 
-  int nwalk = std::get<1>(Gc.sizes());
+  int nwalk = get<1>(Gc.sizes());
   // Vakbl * Gc(bl,nw) = Gcloc(ak,nw)
   ma::product(Vakbl, Gc, std::forward<MatB>(Gcloc));
 

@@ -34,7 +34,6 @@ struct complex_traits<::thrust::complex<T>> {
 };
 #endif
 
-
 }  // end namespace boost::multi::blas
 
 #endif

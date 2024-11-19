@@ -9,28 +9,29 @@ if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
 	set(CMAKE_CUDA_ARCHITECTURES native)
 endif()
 
-set(CMAKE_CXX_STANDARD 17)
+# set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 # set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-relaxed-constexpr --extended-lambda --Werror=cross-execution-space-call -Xcudafe \"--display_error_number\"")
 
-find_package(Boost REQUIRED COMPONENTS unit_test_framework)
+find_package(Boost)  #  COMPONENTS boost unit_test_framework)  # tests require Boost.Core LightweightTest
 
+include(CTest)
 enable_testing()
 
-find_program(MEMORYCHECK_COMMAND valgrind)
-set(MEMORYCHECK_COMMAND_OPTIONS "--leak-check=full --error-exitcode=1")
-include(CTest)
+# find_program(MEMORYCHECK_COMMAND valgrind)
+# set(MEMORYCHECK_COMMAND_OPTIONS "--leak-check=full --error-exitcode=1")
 
-find_package(Boost COMPONENTS unit_test_framework timer)
+find_package(Boost COMPONENTS timer)
 if(NOT Boost_FOUND)
-	message(ERROR "  Cannot find Boost.Timer. Try\n    sudo apt install libboost-timer-dev  # in Debian/Ubuntu")
+  message(ERROR "  Cannot find Boost.Timer. Try\n    sudo apt install libboost-timer-dev  # in Debian/Ubuntu")
 endif()
 
 set(TEST_SRCS
     array.cu
     memory_resource.cu
+	run_reduce.cu
 	set_identity_kernel.cu
     speed.cu
     speed_algo.cu

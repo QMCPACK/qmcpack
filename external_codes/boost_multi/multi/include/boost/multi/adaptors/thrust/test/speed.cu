@@ -3,7 +3,6 @@
 // https://www.boost.org/LICENSE_1_0.txt
 
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi CUDA thrust universal copy and assignment"
-#include <boost/test/unit_test.hpp>
 
 #include <boost/multi/array.hpp>
 
@@ -27,12 +26,17 @@ inline constexpr bool multi::force_element_trivial_default_construction<thrust::
 // template<>
 // inline constexpr bool multi::force_element_trivial_default_construction<std::complex<float>> = true;
 
-using test_types = boost::mpl::list<
-	char, unsigned, int,
-	::thrust::complex<double>,  // std::complex<double>,
-	::thrust::complex<float>,  // std::complex<float>,
-	double, float
->;
+// using test_types = boost::mpl::list<
+//  char, unsigned, int,
+//  ::thrust::complex<double>,  // std::complex<double>,
+//  ::thrust::complex<float>,  // std::complex<float>,
+//  double, float
+// >;
+
+#include <boost/core/lightweight_test.hpp>
+#define BOOST_AUTO_TEST_CASE(CasenamE) /**/
+
+auto main() -> int {  // NOLINT(readability-function-cognitive-complexity,bugprone-exception-escape)
 
 BOOST_AUTO_TEST_CASE(warmup) {
 	using T = double;
@@ -107,7 +111,8 @@ BOOST_AUTO_TEST_CASE(warmup) {
 	}
 }
 
-BOOST_AUTO_TEST_CASE_TEMPLATE(thrust_nonuniversal_speed, T, test_types) {
+BOOST_AUTO_TEST_CASE(thrust_nonuniversal_speed) {
+	using T = ::thrust::complex<double>;
 	std::cout << typeid(T).name() << " ******************************************\n";
 
 	auto const n = 8000;
@@ -178,7 +183,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(thrust_nonuniversal_speed, T, test_types) {
 	}
 }
 
-BOOST_AUTO_TEST_CASE_TEMPLATE(thrust_universal_speed, T, test_types) {
+BOOST_AUTO_TEST_CASE(thrust_universal_speed) {
+	using T = ::thrust::complex<double>;
 	std::cout << typeid(T).name() << " ******************************************\n";
 
 	auto const n = 8000;
@@ -222,7 +228,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(thrust_universal_speed, T, test_types) {
 		double                        ratio = rate / memcpy_rate;
 
 		std::cout << "cctor      rate = " << rate << " GB/s (ratio = " << ratio << ")\n";
-		BOOST_WARN(ratio >= threshold);
+		// BOOST_WARN(ratio >= threshold);
 	}
 	{  // assign
 		auto tick = std::chrono::high_resolution_clock::now();
@@ -247,4 +253,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(thrust_universal_speed, T, test_types) {
 		std::cout << "subasssign rate = " << rate << " GB/s (ratio = " << ratio << ")\n";
 		BOOST_TEST(ratio >= threshold);
 	}
+}
+
+return boost::report_errors();
 }

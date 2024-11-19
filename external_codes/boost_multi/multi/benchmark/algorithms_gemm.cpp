@@ -1,13 +1,12 @@
-// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
-// © Alfredo Correa 2021
+// Copyright 2019-2024 Alfredo A. Correa
+// Distributed under the Boost Software License, Version 1.0.
+// https://www.boost.org/LICENSE_1_0.txt
 
-#define BOOST_TEST_MODULE "C++ Unit Tests for Multi gemm (not blas)"
-#define BOOST_TEST_DYN_LINK
 #include<boost/test/unit_test.hpp>
 
-#include "../array.hpp"
+#include <boost/multi/array.hpp>
 
-#include "../algorithms/gemm.hpp"
+#include <boost/multi/algorithms/gemm.hpp>
 
 #include <numeric>
 #include <random>
