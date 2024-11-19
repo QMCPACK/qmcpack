@@ -680,7 +680,7 @@ class XsfFile(StandardFile):
                         if n%ncols==0:
                             c += '\n    '
                         #end if
-                        c += ' {0:12.8f}'.format(v)
+                        c += ' {0:14.8E}'.format(v)
                         n+=1
                     #end for
                     c += '\n   END_DATAGRID_{0}D_{1}\n'.format(d,dgk)
