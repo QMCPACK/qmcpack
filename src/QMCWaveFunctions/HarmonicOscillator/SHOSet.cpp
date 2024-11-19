@@ -410,11 +410,11 @@ void SHOSet::test_derivatives()
             qn += int2string(state_info[m].quantum_number[d]) + " ";
           app_log() << "    " << qn;
           for (int d = 0; d < DIM; ++d)
-            app_log() << real(dpsi[m][d]) << " ";
+            app_log() << std::real(dpsi[m][d]) << " ";
           app_log() << std::endl;
           app_log() << "    " << qn;
           for (int d = 0; d < DIM; ++d)
-            app_log() << real(dpsin[m][d]) << " ";
+            app_log() << std::real(dpsin[m][d]) << " ";
           app_log() << std::endl;
         }
         app_log() << "    laplacians" << std::endl;
@@ -424,8 +424,8 @@ void SHOSet::test_derivatives()
           std::string qn = "";
           for (int d = 0; d < DIM; ++d)
             qn += int2string(state_info[m].quantum_number[d]) + " ";
-          app_log() << "    " << qn << real(d2psi[m] / psi[m]) << std::endl;
-          app_log() << "    " << qn << real(d2psin[m] / psi[m]) << std::endl;
+          app_log() << "    " << qn << std::real(d2psi[m] / psi[m]) << std::endl;
+          app_log() << "    " << qn << std::real(d2psin[m] / psi[m]) << std::endl;
         }
         p++;
       }
