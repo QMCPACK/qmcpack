@@ -3,7 +3,7 @@
 // https://www.boost.org/LICENSE_1_0.txt
 
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi CUDA thrust universal copy and assignment"
-// #include<boost/test/unit_test.hpp>
+#include<boost/test/unit_test.hpp>
 
 #include <boost/multi/array.hpp>
 //#include<thrust/system/cuda/memory.h>
@@ -23,13 +23,6 @@ void doNotOptimize(T const& val) {
   asm volatile("" : : "g"(val) : "memory");
 }
 
-
-#include <boost/core/lightweight_test.hpp>
-#define BOOST_AUTO_TEST_CASE(CasenamE) /**/
-
-// #define BOOST_REQUIRE_CLOSE(X, Y, ToL) BOOST_TEST( std::abs( (X) - (Y) ) < (ToL) )
-
-int main() {
 BOOST_AUTO_TEST_CASE(thrust_universal_speed_algo) {
 
 	auto const n = 8000;
@@ -114,8 +107,4 @@ BOOST_AUTO_TEST_CASE(thrust_universal_speed_algo) {
 
 BOOST_AUTO_TEST_CASE(thrust_run) {
 	multi::array<long, 1, thrust::cuda::allocator<long>> A(100);
-}
-
-return boost::report_errors();
-
 }

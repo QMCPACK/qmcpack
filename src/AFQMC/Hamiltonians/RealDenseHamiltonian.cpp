@@ -61,16 +61,14 @@ HamiltonianOperations RealDenseHamiltonian::getHamiltonianOperations(bool pureSD
   using RMatrix_ref   = boost::multi::array_ref<RealType, 2>;
   using Sp3Tensor_ref = boost::multi::array_ref<SPComplexType, 3>;
 
-  using std::get;
-
   if (type == COLLINEAR)
     assert(PsiT.size() % 2 == 0);
   int nspins = ((type != COLLINEAR) ? 1 : 2);
   int ndet   = PsiT.size() / nspins;
-  int nup    = get<0>(PsiT[0].sizes());
+  int nup    = std::get<0>(PsiT[0].sizes());
   int ndown  = 0;
   if (nspins == 2)
-    ndown = get<0>(PsiT[1].sizes());
+    ndown = std::get<0>(PsiT[1].sizes());
   int NEL = nup + ndown;
 
   // distribute work over equivalent nodes in TGprop.TG() across TG.Global()
@@ -178,14 +176,11 @@ HamiltonianOperations RealDenseHamiltonian::getHamiltonianOperations(bool pureSD
                   << " Problems reading /Hamiltonian/DenseFactorized/L. \n";
       APP_ABORT("");
     }
-
-    using std::get;
-
-    if (get<0>(Likn.sizes()) != NMO * NMO || get<1>(Likn.sizes()) != local_ncv)
+    if (std::get<0>(Likn.sizes()) != NMO * NMO || std::get<1>(Likn.sizes()) != local_ncv)
     {
       app_error() << " Error in RealDenseHamiltonian::getHamiltonianOperations():"
                   << " Problems reading /Hamiltonian/DenseFactorized/L. \n"
-                  << " Unexpected dimensions: " << get<0>(Likn.sizes()) << " " << get<1>(Likn.sizes()) << std::endl;
+                  << " Unexpected dimensions: " << std::get<0>(Likn.sizes()) << " " << std::get<1>(Likn.sizes()) << std::endl;
       APP_ABORT("");
     }
     dump.pop();

@@ -46,10 +46,8 @@ void verify_approx(M1 const& A, M2 const& B)
   // casting in case operator[] returns a fancy reference
   using element1 = typename std::decay<M1>::type::element;
   using element2 = typename std::decay<M2>::type::element;
-
-  using std::get;
-  REQUIRE(get<0>(A.sizes()) == get<0>(B.sizes()));
-  for (int i = 0; i < get<0>(A.sizes()); i++)
+  REQUIRE(std::get<0>(A.sizes()) == std::get<0>(B.sizes()));
+  for (int i = 0; i < std::get<0>(A.sizes()); i++)
     myCHECK(element1(A[i]), element2(B[i]));
 }
 

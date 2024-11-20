@@ -82,9 +82,8 @@ public:
   template<class MatA, class MatB, class MatC>
   T MixedDensityMatrix(const MatA& hermA, const MatB& B, MatC&& C, T LogOverlapFactor, bool compact, bool herm = true)
   {
-    using std::get;
-    int NMO  = (herm ? get<1>(hermA.sizes()) : get<0>(hermA.sizes()));
-    int NAEA = (herm ? get<0>(hermA.sizes()) : get<1>(hermA.sizes()));
+    int NMO  = (herm ? std::get<1>(hermA.sizes()) : std::get<0>(hermA.sizes()));
+    int NAEA = (herm ? std::get<0>(hermA.sizes()) : std::get<1>(hermA.sizes()));
     TMatrix TNN({NAEA, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
     TMatrix TNM({NAEA, NMO}, buffer_manager.get_generator().template get_allocator<T>());
     TVector WORK(iextensions<1u>{work_size}, buffer_manager.get_generator().template get_allocator<T>());
@@ -96,10 +95,8 @@ public:
   template<class MatA, class MatC>
   T MixedDensityMatrix(const MatA& A, MatC&& C, T LogOverlapFactor, bool compact = false)
   {
-    using std::get;
-
-    int NMO  = get<0>(A.sizes());
-    int NAEA = get<1>(A.sizes());
+    int NMO  = std::get<0>(A.sizes());
+    int NAEA = std::get<1>(A.sizes());
     TMatrix TNN({NAEA, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
     TMatrix TNM({NAEA, NMO}, buffer_manager.get_generator().template get_allocator<T>());
     TVector WORK(iextensions<1u>{work_size}, buffer_manager.get_generator().template get_allocator<T>());
@@ -116,9 +113,8 @@ public:
                               bool compact = false,
                               bool useSVD  = false)
   {
-    using std::get;
-    int NMO  = get<0>(A.sizes());
-    int NAEA = get<1>(A.sizes());
+    int NMO  = std::get<0>(A.sizes());
+    int NAEA = std::get<1>(A.sizes());
     if (useSVD)
     {
       TMatrix TNN1({NAEA, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
@@ -153,13 +149,12 @@ public:
                                   MatQ&& QQ0,
                                   bool compact = false)
   {
-    using std::get;
-    int Nact = get<0>(hermA.sizes());
-    int NEL  = get<1>(B.sizes());
-    int NMO  = get<0>(B.sizes());
-    assert(get<1>(hermA.sizes()) == get<0>(B.sizes()));
-    assert(get<0>(QQ0.sizes()) == Nact);
-    assert(get<1>(QQ0.sizes()) == NEL);
+    int Nact = std::get<0>(hermA.sizes());
+    int NEL  = std::get<1>(B.sizes());
+    int NMO  = std::get<0>(B.sizes());
+    assert(std::get<1>(hermA.sizes()) == std::get<0>(B.sizes()));
+    assert(std::get<0>(QQ0.sizes()) == Nact);
+    assert(std::get<1>(QQ0.sizes()) == NEL);
     TMatrix TNN({NEL, NEL}, buffer_manager.get_generator().template get_allocator<T>());
     TMatrix TAB({Nact, NEL}, buffer_manager.get_generator().template get_allocator<T>());
     TMatrix TNM({NEL, NMO}, buffer_manager.get_generator().template get_allocator<T>());
@@ -179,11 +174,10 @@ public:
                                         integer* ref,
                                         bool compact = false)
   {
-    using std::get;
-    int Nact = get<0>(hermA.sizes());
-    int NEL  = get<1>(B.sizes());
-    int NMO  = get<0>(B.sizes());
-    assert(get<1>(hermA.sizes()) == get<0>(B.sizes()));
+    int Nact = std::get<0>(hermA.sizes());
+    int NEL  = std::get<1>(B.sizes());
+    int NMO  = std::get<0>(B.sizes());
+    assert(std::get<1>(hermA.sizes()) == std::get<0>(B.sizes()));
     TMatrix TNN({NEL, NEL}, buffer_manager.get_generator().template get_allocator<T>());
     TMatrix TAB({Nact, NEL}, buffer_manager.get_generator().template get_allocator<T>());
     TMatrix TNM({NEL, NMO}, buffer_manager.get_generator().template get_allocator<T>());
@@ -197,8 +191,7 @@ public:
   template<class MatA>
   T Overlap(const MatA& A, T LogOverlapFactor)
   {
-    using std::get;
-    int NAEA = get<1>(A.sizes());
+    int NAEA = std::get<1>(A.sizes());
     TMatrix TNN({NAEA, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
     TMatrix TNN2({NAEA, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
     IVector IWORK(iextensions<1u>{NAEA + 1}, buffer_manager.get_generator().template get_allocator<int>());
@@ -208,8 +201,7 @@ public:
   template<class MatA, class MatB>
   T Overlap(const MatA& hermA, const MatB& B, T LogOverlapFactor, bool herm = true)
   {
-    using std::get;
-    int NAEA = (herm ? get<0>(hermA.sizes()) : get<1>(hermA.sizes()));
+    int NAEA = (herm ? std::get<0>(hermA.sizes()) : std::get<1>(hermA.sizes()));
     TMatrix TNN({NAEA, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
     TMatrix TNN2({NAEA, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
     IVector IWORK(iextensions<1u>{NAEA + 1}, buffer_manager.get_generator().template get_allocator<int>());
@@ -219,8 +211,7 @@ public:
   template<class MatA, class MatB>
   T Overlap_noHerm(const MatA& A, const MatB& B, T LogOverlapFactor)
   {
-    using std::get;
-    int NAEA = get<1>(A.sizes());
+    int NAEA = std::get<1>(A.sizes());
     TMatrix TNN({NAEA, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
     TMatrix TNN2({NAEA, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
     IVector IWORK(iextensions<1u>{NAEA + 1}, buffer_manager.get_generator().template get_allocator<int>());
@@ -231,12 +222,11 @@ public:
   template<typename integer, class MatA, class MatB, class MatC>
   T OverlapForWoodbury(const MatA& hermA, const MatB& B, T LogOverlapFactor, integer* ref, MatC&& QQ0)
   {
-    using std::get;
-    int Nact = get<0>(hermA.sizes());
-    int NEL  = get<1>(B.sizes());
-    assert(get<1>(hermA.sizes()) == get<0>(B.sizes()));
-    assert(get<0>(QQ0.sizes()) == Nact);
-    assert(get<1>(QQ0.sizes()) == NEL);
+    int Nact = std::get<0>(hermA.sizes());
+    int NEL  = std::get<1>(B.sizes());
+    assert(std::get<1>(hermA.sizes()) == std::get<0>(B.sizes()));
+    assert(std::get<0>(QQ0.sizes()) == Nact);
+    assert(std::get<1>(QQ0.sizes()) == NEL);
     TMatrix TNN({NEL, NEL}, buffer_manager.get_generator().template get_allocator<T>());
     TMatrix TMN({Nact, NEL}, buffer_manager.get_generator().template get_allocator<T>());
     TVector WORK(iextensions<1u>{work_size}, buffer_manager.get_generator().template get_allocator<T>());
@@ -249,18 +239,14 @@ public:
   void Propagate(Mat&& A, const MatP1& P1, const MatV& V, int order = 6, char TA = 'N', bool noncollinear = false)
   {
     int npol = noncollinear ? 2 : 1;
-
-    using std::get;
-    int NMO  = get<0>(A.sizes());
-    int NAEA = get<1>(A.sizes());
+    int NMO  = std::get<0>(A.sizes());
+    int NAEA = std::get<1>(A.sizes());
     int M    = NMO / npol;
     assert(NMO % npol == 0);
-
-    using std::get;
-    assert(get<0>(P1.sizes()) == NMO);
-    assert(get<1>(P1.sizes()) == NMO);
-    assert(get<0>(V.sizes()) == M);
-    assert(get<1>(V.sizes()) == M);
+    assert(std::get<0>(P1.sizes()) == NMO);
+    assert(std::get<1>(P1.sizes()) == NMO);
+    assert(std::get<0>(V.sizes()) == M);
+    assert(std::get<1>(V.sizes()) == M);
     TMatrix TMN({NMO, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
     TMatrix T1({M, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
     TMatrix T2({M, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
@@ -293,11 +279,10 @@ public:
   template<class Mat>
   T Orthogonalize(Mat&& A, T LogOverlapFactor)
   {
-    using std::get;
 #if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
     // QR on the transpose
-    int NMO  = get<0>(A.sizes());
-    int NAEA = get<1>(A.sizes());
+    int NMO  = std::get<0>(A.sizes());
+    int NAEA = std::get<1>(A.sizes());
     TMatrix AT({NAEA, NMO}, buffer_manager.get_generator().template get_allocator<T>());
     TVector scl(iextensions<1u>{NMO}, buffer_manager.get_generator().template get_allocator<T>());
     TVector TAU(iextensions<1u>{NMO}, buffer_manager.get_generator().template get_allocator<T>());
@@ -307,10 +292,10 @@ public:
     ma::geqrf(AT, TAU, WORK);
     using ma::determinant_from_geqrf;
     using ma::scale_columns;
-    T res = determinant_from_geqrf(get<0>(AT.sizes()), AT.origin(), AT.stride(0), scl.origin(), LogOverlapFactor);
+    T res = determinant_from_geqrf(std::get<0>(AT.sizes()), AT.origin(), AT.stride(0), scl.origin(), LogOverlapFactor);
     ma::gqr(AT, TAU, WORK);
     ma::transpose(AT, A);
-    scale_columns(get<0>(A.sizes()), get<1>(A.sizes()), A.origin(), A.stride(0), scl.origin());
+    scale_columns(std::get<0>(A.sizes()), std::get<1>(A.sizes()), A.origin(), A.stride(0), scl.origin());
 #else
     int NMO = A.size();
     TVector TAU(iextensions<1u>{NMO}, buffer_manager.get_generator().template get_allocator<T>());
@@ -318,9 +303,7 @@ public:
     IVector IWORK(iextensions<1u>{NMO + 1}, buffer_manager.get_generator().template get_allocator<int>());
     ma::gelqf(std::forward<Mat>(A), TAU, WORK);
     T res(0.0);
-
-    using std::get;
-    for (int i = 0; i < get<1>(A.sizes()); i++)
+    for (int i = 0; i < std::get<1>(A.sizes()); i++)
     {
       if (real(A[i][i]) < 0)
         IWORK[i] = -1;
@@ -330,8 +313,8 @@ public:
     }
     res = std::exp(res - LogOverlapFactor);
     ma::glq(std::forward<Mat>(A), TAU, WORK);
-    for (int i = 0; i < get<0>(A.sizes()); ++i)
-      for (int j = 0; j < get<1>(A.sizes()); ++j)
+    for (int i = 0; i < std::get<0>(A.sizes()); ++i)
+      for (int j = 0; j < std::get<1>(A.sizes()); ++j)
         A[i][j] *= T(IWORK[j]);
 #endif
     return res;

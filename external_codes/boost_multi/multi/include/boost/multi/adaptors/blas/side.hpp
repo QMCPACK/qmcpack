@@ -17,8 +17,7 @@ inline auto swap(side sid) noexcept -> side {
 	switch(sid) {
 		case side::left : return side::right;
 		case side::right: return side::left ;
-	}  // __builtin_unreachable();  // LCOV_EXCL_LINE
-	return {};
+	} __builtin_unreachable();  // LCOV_EXCL_LINE
 }
 
 } // end namespace boost::multi::blas

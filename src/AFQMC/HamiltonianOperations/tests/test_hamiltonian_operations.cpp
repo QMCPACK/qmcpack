@@ -255,15 +255,14 @@ void ham_ops_basic_serial(boost::mpi3::communicator& world)
     HOps.vHS(X, vHS, sqrtdt);
     TG.local_barrier();
     ComplexType Vsum = 0;
-    using std::get;
     if (HOps.transposed_vHS())
     {
-      for (int i = 0; i < get<1>(vHS.sizes()); i++)
+      for (int i = 0; i < std::get<1>(vHS.sizes()); i++)
         Vsum += vHS[0][i];
     }
     else
     {
-      for (int i = 0; i < get<0>(vHS.sizes()); i++)
+      for (int i = 0; i < std::get<0>(vHS.sizes()); i++)
         Vsum += vHS[i][0];
     }
     if (std::abs(file_data.Vsum) > 1e-8)

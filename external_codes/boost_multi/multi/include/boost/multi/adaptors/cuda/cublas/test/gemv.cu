@@ -1,11 +1,12 @@
 // -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
-// Copyright 2023-2024 Alfredo A. Correa
+// Copyright 2023 Alfredo A. Correa
 
-#include <boost/core/lightweight_test.hpp>
+#define BOOST_TEST_MODULE "C++ Unit Tests for Multi CUBLAS gemv"
+#include<boost/test/unit_test.hpp>
 
 #include <boost/multi/adaptors/cuda/cublas.hpp>
 
-#include <boost/multi/adaptors/blas/gemv.hpp>
+#include <boost/multi/adaptors/blas/gemm.hpp>
 #include <boost/multi/adaptors/blas/axpy.hpp>
 #include <boost/multi/adaptors/blas/nrm2.hpp>
 #include <boost/multi/adaptors/thrust.hpp>
@@ -14,11 +15,6 @@
 
 namespace multi = boost::multi;
 
-#define BOOST_AUTO_TEST_CASE(CasenamE) /**/
-
-#define BOOST_REQUIRE_CLOSE(X, Y, ToL) BOOST_TEST( std::abs( (X) - (Y) ) < (ToL) )
-
-int main() {
 BOOST_AUTO_TEST_CASE(multi_blas_gemv_complex) {
 	namespace blas = multi::blas;
 	using complex = thrust::complex<double>;
@@ -38,7 +34,7 @@ BOOST_AUTO_TEST_CASE(multi_blas_gemv_complex) {
 	multi::array<complex, 1> const Y_copy = Y_gpu;
 
 	using blas::operators::operator-;
-	BOOST_REQUIRE_CLOSE( +blas::nrm2(Y_copy - multi::array<complex, 1>{ {214.02, 0.0}, {106.43, 0.0}, {188.37, 0.0} }) , 0.0, 1e-13);
+	BOOST_REQUIRE_SMALL( +blas::nrm2(Y_copy - multi::array<complex, 1>{ {214.02, 0.0}, {106.43, 0.0}, {188.37, 0.0} }) , 1e-13);
 }
 
 BOOST_AUTO_TEST_CASE(multi_blas_gemv_complex_value) {
@@ -58,7 +54,7 @@ BOOST_AUTO_TEST_CASE(multi_blas_gemv_complex_value) {
 	multi::array<complex, 1> const Y_copy = Y_gpu;
 
 	using blas::operators::operator-;
-	BOOST_REQUIRE_CLOSE( +blas::nrm2(Y_copy - multi::array<complex, 1>{ {209.22, 0.0}, {100.43, 0.0}, {181.17, 0.0} }) , 0.0, 1e-13);
+	BOOST_REQUIRE_SMALL( +blas::nrm2(Y_copy - multi::array<complex, 1>{ {209.22, 0.0}, {100.43, 0.0}, {181.17, 0.0} }) , 1e-13);
 }
 
 BOOST_AUTO_TEST_CASE(cublas_gemv_real) {
@@ -80,7 +76,5 @@ BOOST_AUTO_TEST_CASE(cublas_gemv_real) {
 	multi::array<T, 1> const Y_copy = Y_gpu;
 
 	using blas::operators::operator-;
-	BOOST_REQUIRE_CLOSE( +blas::nrm2(Y_copy - multi::array<T, 1>{ 214.02, 106.43, 188.37 }) , 0.0, 1e-13);
+	BOOST_REQUIRE_SMALL( +blas::nrm2(Y_copy - multi::array<T, 1>{ 214.02, 106.43, 188.37 }) , 1e-13);
 }
-
-return boost::report_errors();}

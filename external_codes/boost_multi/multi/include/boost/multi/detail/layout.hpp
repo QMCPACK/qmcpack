@@ -5,33 +5,20 @@
 #ifndef BOOST_MULTI_DETAIL_LAYOUT_HPP
 #define BOOST_MULTI_DETAIL_LAYOUT_HPP
 
-#include <boost/multi/detail/config/NO_UNIQUE_ADDRESS.hpp>
-#include <boost/multi/detail/index_range.hpp>    // IWYU pragma: export  // for index_extension, extension_t, tuple, intersection, range, operator!=, operator==
-#include <boost/multi/detail/operators.hpp>      // IWYU pragma: export  // for equality_comparable
-#include <boost/multi/detail/serialization.hpp>  // IWYU pragma: export  // for archive_traits
-#include <boost/multi/detail/tuple_zip.hpp>      // IWYU pragma: export  // for get, tuple, tuple_prepend, tail, tuple_prepend_t, ht_tuple
-#include <boost/multi/detail/types.hpp>          // IWYU pragma: export  // for dimensionality_type, index, size_type, difference_type, size_t
+#include <boost/multi/detail/index_range.hpp>
+#include <boost/multi/detail/operators.hpp>
+#include <boost/multi/detail/tuple_zip.hpp>
 
-#include <algorithm>                             // for max
-#include <array>                                 // for array
-#include <cassert>                               // for assert
-#include <cstddef>                               // for size_t, ptrdiff_t, __GLIBCXX__
-#include <cstdlib>                               // for abs
-#include <initializer_list>                      // for initializer_list
-#include <memory>                                // for swap
-#include <tuple>                                 // for tuple_element, tuple, tuple_size, tie, make_index_sequence, index_sequence
-#include <type_traits>                           // for enable_if_t, integral_constant, decay_t, declval, make_signed_t, common_type_t
-#include <utility>                               // for forward
+#include <boost/multi/detail/config/ASSERT.hpp>
 
-// clang-format off
-namespace boost::multi { template <boost::multi::dimensionality_type D, typename SSize = multi::size_type> struct layout_t; }
-namespace boost::multi::detail { template <class ...Ts> class tuple; }
-// clang-format on
+#include <tuple>
+#include <type_traits>  // for make_signed_t
+#include <utility>      // for swap
 
 #if defined(__NVCC__)
-	#define BOOST_MULTI_HD __host__ __device__
+#define BOOST_MULTI_HD __host__ __device__
 #else
-	#define BOOST_MULTI_HD
+#define BOOST_MULTI_HD
 #endif
 
 namespace boost::multi {
@@ -52,7 +39,7 @@ constexpr auto tuple_tail(Tuple&& t)  // NOLINT(readability-identifier-length) s
 
 }  // end namespace detail
 
-// template<dimensionality_type D, typename SSize=multi::size_type> struct layout_t;
+template<dimensionality_type D, typename SSize=multi::size_type> struct layout_t;
 
 template<dimensionality_type D>
 struct extensions_t : boost::multi::detail::tuple_prepend_t<index_extension, typename extensions_t<D-1>::base_> {
@@ -67,66 +54,66 @@ struct extensions_t : boost::multi::detail::tuple_prepend_t<index_extension, typ
 	extensions_t() = default;
 	using nelems_type = multi::index;
 
-	template<class T = void, std::enable_if_t<sizeof(T*) && D == 1, int> = 0>  // NOLINT(modernize-use-constraints) TODO(correaa)
+	template<class T = void, std::enable_if_t<sizeof(T*) && D == 1, int> = 0>
 	// cppcheck-suppress noExplicitConstructor ; to allow passing tuple<int, int> // NOLINTNEXTLINE(runtime/explicit)
 	constexpr extensions_t(multi::size_t size) : extensions_t{index_extension{size}} {}  // NOLINT(google-explicit-constructor,hicpp-explicit-conversions) : allow terse syntax
 
-	template<class T = void, std::enable_if_t<sizeof(T*) && D == 1, int> = 0>  // NOLINT(modernize-use-constraints) TODO(correaa)
+	template<class T = void, std::enable_if_t<sizeof(T*) && D == 1, int> = 0>
 	// cppcheck-suppress noExplicitConstructor ; to allow passing tuple<int, int> // NOLINTNEXTLINE(runtime/explicit)
 	constexpr extensions_t(index_extension ext1) : base_{ext1} {}  // NOLINT(google-explicit-constructor,hicpp-explicit-conversions) allow terse syntax
 
-	template<class T = void, std::enable_if_t<sizeof(T*) && D == 2, int> = 0>  // NOLINT(modernize-use-constraints) TODO(correaa)
+	template<class T = void, std::enable_if_t<sizeof(T*) && D == 2, int> = 0>
 	constexpr extensions_t(index_extension ext1, index_extension ext2) : base_{ext1, ext2} {}
 
-	template<class T = void, std::enable_if_t<sizeof(T*) && D == 3, int> = 0>  // NOLINT(modernize-use-constraints) TODO(correaa)
+	template<class T = void, std::enable_if_t<sizeof(T*) && D == 3, int> = 0>
 	constexpr extensions_t(index_extension ext1, index_extension ext2, index_extension ext3) : base_{ext1, ext2, ext3} {}
 
-	template<class T = void, std::enable_if_t<sizeof(T*) && D == 4, int> = 0>  // NOLINT(modernize-use-constraints) TODO(correaa)
+	template<class T = void, std::enable_if_t<sizeof(T*) && D == 4, int> = 0>
 	constexpr extensions_t(index_extension ext1, index_extension ext2, index_extension ext3, index_extension ext4) noexcept : base_{ext1, ext2, ext3, ext4} {}
 
-	template<class T = void, std::enable_if_t<sizeof(T*) && D == 5, int> = 0>  // NOLINT(modernize-use-constraints) TODO(correaa)
+	template<class T = void, std::enable_if_t<sizeof(T*) && D == 5, int> = 0>
 	constexpr extensions_t(index_extension ext1, index_extension ext2, index_extension ext3, index_extension ext4, index_extension ext5) : base_{ext1, ext2, ext3, ext4, ext5} {}
 
-	template<class T = void, std::enable_if_t<sizeof(T*) && D == 6, int> = 0>  // NOLINT(modernize-use-constraints) TODO(correaa)
+	template<class T = void, std::enable_if_t<sizeof(T*) && D == 6, int> = 0>
 	constexpr extensions_t(index_extension ext1, index_extension ext2, index_extension ext3, index_extension ext4, index_extension ext5, index_extension ext6) : base_{ext1, ext2, ext3, ext4, ext5, ext6} {}
 
-	template<class T1, class T = void, class = decltype(base_{tuple<T1>{}}), std::enable_if_t<sizeof(T*) && D == 1, int> = 0>  // NOLINT(modernize-use-constraints) TODO(correaa)
+	template<class T1, class T = void, class = decltype(base_{tuple<T1>{}}), std::enable_if_t<sizeof(T*) && D == 1, int> = 0>
 	// cppcheck-suppress noExplicitConstructor ; to allow passing tuple<int, int> // NOLINTNEXTLINE(runtime/explicit)
 	constexpr extensions_t(tuple<T1> extensions) : base_{std::move(extensions)} {} // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
 
-	template<class T1, class T = void, class = decltype(base_{::std::tuple<T1>{}}), std::enable_if_t<sizeof(T*) && D == 1, int> = 0>  // NOLINT(modernize-use-constraints) TODO(correaa)
+	template<class T1, class T = void, class = decltype(base_{::std::tuple<T1>{}}), std::enable_if_t<sizeof(T*) && D == 1, int> = 0>
 	// cppcheck-suppress noExplicitConstructor ; to allow passing tuple<int, int> // NOLINTNEXTLINE(runtime/explicit)
 	constexpr extensions_t(::std::tuple<T1> extensions) : base_{std::move(extensions)} {} // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
 
-	template<class T1, class T2, class T = void, class = decltype(base_{tuple<T1, T2>{}}), std::enable_if_t<sizeof(T*) && D == 2, int> = 0>  // NOLINT(modernize-use-constraints) TODO(correaa)
+	template<class T1, class T2, class T = void, class = decltype(base_{tuple<T1, T2>{}}), std::enable_if_t<sizeof(T*) && D == 2, int> = 0>
 	// cppcheck-suppress noExplicitConstructor ; to allow passing tuple<int, int> // NOLINTNEXTLINE(runtime/explicit)
 	constexpr extensions_t(tuple<T1, T2> extensions) : base_{std::move(extensions)} {} // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
 
-	template<class T1, class T2, class T = void, class = decltype(base_{::std::tuple<T1, T2>{}}), std::enable_if_t<sizeof(T*) && D == 2, int> = 0>  // NOLINT(modernize-use-constraints) TODO(correaa)
+	template<class T1, class T2, class T = void, class = decltype(base_{::std::tuple<T1, T2>{}}), std::enable_if_t<sizeof(T*) && D == 2, int> = 0>
 	// cppcheck-suppress noExplicitConstructor ; to allow passing tuple<int, int> // NOLINTNEXTLINE(runtime/explicit)
 	constexpr extensions_t(::std::tuple<T1, T2> extensions) : base_{std::move(extensions)} {} // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
 
-	template<class T1, class T2, class T3, class T = void, class = decltype(base_{tuple<T1, T2, T3>{}}), std::enable_if_t<sizeof(T*) && D == 3, int> = 0>  // NOLINT(modernize-use-constraints) TODO(correaa)
+	template<class T1, class T2, class T3, class T = void, class = decltype(base_{tuple<T1, T2, T3>{}}), std::enable_if_t<sizeof(T*) && D == 3, int> = 0>
 	// cppcheck-suppress noExplicitConstructor ; to allow passing tuple<int, int, int> // NOLINTNEXTLINE(runtime/explicit)
 	constexpr extensions_t(tuple<T1, T2, T3> extensions) : base_{std::move(extensions)} {} // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
 
-	template<class T1, class T2, class T3, class T = void, class = decltype(base_{::std::tuple<T1, T2, T3>{}}), std::enable_if_t<sizeof(T*) && D == 3, int> = 0>  // NOLINT(modernize-use-constraints) TODO(correaa)
+	template<class T1, class T2, class T3, class T = void, class = decltype(base_{::std::tuple<T1, T2, T3>{}}), std::enable_if_t<sizeof(T*) && D == 3, int> = 0>
 	// cppcheck-suppress noExplicitConstructor ; to allow passing tuple<int, int, int> // NOLINTNEXTLINE(runtime/explicit)
 	constexpr extensions_t(::std::tuple<T1, T2, T3> extensions) : base_{std::move(extensions)} {} // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
 
-	template<class T1, class T2, class T3, class T4, class T = void, class = decltype(base_{tuple<T1, T2, T3, T4>{}}), std::enable_if_t<sizeof(T*) && D == 4, int> = 0>  // NOLINT(modernize-use-constraints) TODO(correaa)
+	template<class T1, class T2, class T3, class T4, class T = void, class = decltype(base_{tuple<T1, T2, T3, T4>{}}), std::enable_if_t<sizeof(T*) && D == 4, int> = 0>
 	// cppcheck-suppress noExplicitConstructor ; to allow passing tuple<int, int> // NOLINTNEXTLINE(runtime/explicit)
 	constexpr extensions_t(tuple<T1, T2, T3, T4> extensions) : base_{std::move(extensions)} {} // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
 
-	template<class T1, class T2, class T3, class T4, class T = void, class = decltype(base_{::std::tuple<T1, T2, T3, T4>{}}), std::enable_if_t<sizeof(T*) && D == 4, int> = 0>  // NOLINT(modernize-use-constraints) TODO(correaa)
+	template<class T1, class T2, class T3, class T4, class T = void, class = decltype(base_{::std::tuple<T1, T2, T3, T4>{}}), std::enable_if_t<sizeof(T*) && D == 4, int> = 0>
 	// cppcheck-suppress noExplicitConstructor ; to allow passing tuple<int, int> // NOLINTNEXTLINE(runtime/explicit)
 	constexpr extensions_t(::std::tuple<T1, T2, T3, T4> extensions) : base_{std::move(extensions)} {} // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
 
-	template<class T1, class T2, class T3, class T4, class T5, class T = void, class = decltype(base_{tuple<T1, T2, T3, T4, T5>{}}), std::enable_if_t<sizeof(T*) && D == 5, int> = 0>  // NOLINT(modernize-use-constraints) TODO(correaa)
+	template<class T1, class T2, class T3, class T4, class T5, class T = void, class = decltype(base_{tuple<T1, T2, T3, T4, T5>{}}), std::enable_if_t<sizeof(T*) && D == 5, int> = 0>
 	// cppcheck-suppress noExplicitConstructor ; to allow passing tuple<int, int> // NOLINTNEXTLINE(runtime/explicit)
 	constexpr extensions_t(tuple<T1, T2, T3, T4, T5> extensions) : base_{std::move(extensions)} {} // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
 
-	template<class T1, class T2, class T3, class T4, class T5, class T = void, class = decltype(base_{::std::tuple<T1, T2, T3, T4, T5>{}}), std::enable_if_t<sizeof(T*) && D == 5, int> = 0>  // NOLINT(modernize-use-constraints) TODO(correaa)
+	template<class T1, class T2, class T3, class T4, class T5, class T = void, class = decltype(base_{::std::tuple<T1, T2, T3, T4, T5>{}}), std::enable_if_t<sizeof(T*) && D == 5, int> = 0>
 	// cppcheck-suppress noExplicitConstructor ; to allow passing tuple<int, int> // NOLINTNEXTLINE(runtime/explicit)
 	constexpr extensions_t(::std::tuple<T1, T2, T3, T4, T5> extensions) : base_{std::move(extensions)} {} // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
 
@@ -192,9 +179,6 @@ struct extensions_t : boost::multi::detail::tuple_prepend_t<index_extension, typ
 		return false;
 	}
 
-	auto size() const {return this->get<0>().size();}
-	auto sizes() const {return this->apply([](auto const&... xs){return multi::detail::mk_tuple(xs.size()...);});}
-
  private:
 	template<class Archive, std::size_t... I>
 	void serialize_impl_(Archive& arxiv, std::index_sequence<I...> /*unused012*/) {
@@ -236,22 +220,19 @@ struct extensions_t : boost::multi::detail::tuple_prepend_t<index_extension, typ
 		};
 	}
 
-	template<std::size_t Index, std::enable_if_t<(Index < D), int> =0>  // NOLINT(modernize-use-constraints) TODO(correaa)
+	template<std::size_t Index, std::enable_if_t<(Index < D), int> =0>
 	friend constexpr auto get(extensions_t const& self) -> typename std::tuple_element<Index, base_>::type {
 		using boost::multi::detail::get;
 		return get<Index>(self.base());
 	}
 
-	template<std::size_t Index, std::enable_if_t<(Index < D), int> =0>  // NOLINT(modernize-use-constraints) TODO(correaa)
+	template<std::size_t Index, std::enable_if_t<(Index < D), int> =0>
 	constexpr auto get() const -> typename std::tuple_element<Index, base_>::type {
 		using boost::multi::detail::get;
 		return get<Index>(this->base());
 	}
 
-	template<class Fn>
-	constexpr auto apply(Fn&& fn) const -> decltype(auto) {
-		return std::apply(std::forward<Fn>(fn), this->base());
-	}
+	// constexpr operator base_ const&() const { return impl_; }  // NOLINT(google-explicit-constructor,hicpp-explicit-conversions) TODO(correaa) use inheritance from tuple to avoid this and implement get in std::
 };
 
 template<> struct extensions_t<0> : tuple<> {
@@ -356,7 +337,7 @@ template<> struct extensions_t<1> : tuple<multi::index_extension> {
 	static constexpr auto to_linear(index const& idx) -> difference_type  /*const*/ {return idx;}
 	constexpr auto operator()(index const& idx) const -> difference_type {return to_linear(idx);}
 	constexpr auto operator[](index idx) const {
-		return multi::detail::tuple<multi::index>{this->base().get<0>()[idx]};
+		return multi::detail::tuple<multi::index>{std::get<0>(this->base())[idx]};
 	}
 
 	template<class... Indices>
@@ -394,13 +375,13 @@ template<> struct extensions_t<1> : tuple<multi::index_extension> {
 		arxiv & multi::archive_traits<Archive>::make_nvp("extension", extension_);
 	}
 
-	template<std::size_t Index, std::enable_if_t<(Index < 1), int> =0>  // NOLINT(modernize-use-constraints) TODO(correaa)
+	template<std::size_t Index, std::enable_if_t<(Index < 1), int> =0>
 	constexpr auto get() const -> decltype(auto) {  // -> typename std::tuple_element<Index, base_>::type {
 		using boost::multi::detail::get;
 		return get<Index>(this->base());
 	}
 
-	template<std::size_t Index, std::enable_if_t<(Index < 1), int> =0>  // NOLINT(modernize-use-constraints) TODO(correaa)
+	template<std::size_t Index, std::enable_if_t<(Index < 1), int> =0>
 	friend constexpr auto get(extensions_t const& self) -> decltype(auto) {  // -> typename std::tuple_element<Index, base_>::type {
 		using boost::multi::detail::get;
 		return get<Index>(self.base());
@@ -412,14 +393,6 @@ template<dimensionality_type D> using iextensions = extensions_t<D>;
 template<boost::multi::dimensionality_type D>
 constexpr auto array_size_impl(boost::multi::extensions_t<D> const&)
 	-> std::integral_constant<std::size_t, static_cast<std::size_t>(D)>;
-
-extensions_t(multi::size_t) -> extensions_t<1>;
-extensions_t(multi::size_t, multi::size_t) -> extensions_t<2>;
-extensions_t(multi::size_t, multi::size_t, multi::size_t) -> extensions_t<3>;
-extensions_t(multi::size_t, multi::size_t, multi::size_t, multi::size_t) -> extensions_t<4>;
-extensions_t(multi::size_t, multi::size_t, multi::size_t, multi::size_t, multi::size_t) -> extensions_t<5>;
-extensions_t(multi::size_t, multi::size_t, multi::size_t, multi::size_t, multi::size_t, multi::size_t) -> extensions_t<6>;
-extensions_t(multi::size_t, multi::size_t, multi::size_t, multi::size_t, multi::size_t, multi::size_t, multi::size_t) -> extensions_t<7>;
 
 }  // end namespace boost::multi
 
@@ -444,7 +417,7 @@ struct std::tuple_element<Index, boost::multi::extensions_t<D>> {  // NOLINT(cer
 	using type = typename std::tuple_element<Index, typename boost::multi::extensions_t<D>::base_>::type;
 };
 
-namespace std {  // NOLINT(cert-dcl58-cpp)
+namespace std {
 
 // clang wants tuple_size to be a class, not a struct with -Wmismatched-tags
 #if !defined(__GLIBCXX__) || (__GLIBCXX__ <= 20190406)
@@ -464,34 +437,21 @@ template<> class tuple_size<boost::multi::extensions_t<5>> : public std::integra
 #endif
 
 #if !defined(_MSC_VER) && (!defined(__GLIBCXX__) || (__GLIBCXX__ <= 20240707) )
-template<std::size_t N, ::boost::multi::dimensionality_type D>
-constexpr auto get(::boost::multi::extensions_t<D> const& tp)  // NOLINT(cert-dcl58-cpp) normal idiom to defined tuple get, gcc workaround
-->decltype(tp.template get<N>()) {
-	return tp.template get<N>(); }
-
-
-// template<std::size_t N>  // , boost::multi::dimensionality_type D>
-// constexpr auto get(boost::multi::extensions_t<2> const& tp)  // NOLINT(cert-dcl58-cpp) normal idiom to defined tuple get, gcc workaround
-// // ->decltype(tp.template get<N>()) {
-// -> decltype(auto) {
-//  return tp.template get<N>(); }
-
-template<std::size_t N, ::boost::multi::dimensionality_type D>
-constexpr auto get(::boost::multi::extensions_t<D>& tp)  // NOLINT(cert-dcl58-cpp) normal idiom to defined tuple get, gcc workaround
+template<std::size_t N, boost::multi::dimensionality_type D>
+constexpr auto get(boost::multi::extensions_t<D> const& tp)  // NOLINT(cert-dcl58-cpp) normal idiom to defined tuple get, gcc workaround
 ->decltype(tp.template get<N>()) {
 	return tp.template get<N>(); }
 
 template<std::size_t N, boost::multi::dimensionality_type D>
-constexpr auto get(::boost::multi::extensions_t<D>&& tp)  // NOLINT(cert-dcl58-cpp) normal idiom to defined tuple get, gcc workaround
+constexpr auto get(boost::multi::extensions_t<D>& tp)  // NOLINT(cert-dcl58-cpp) normal idiom to defined tuple get, gcc workaround
+->decltype(tp.template get<N>()) {
+	return tp.template get<N>(); }
+
+template<std::size_t N, boost::multi::dimensionality_type D>
+constexpr auto get(boost::multi::extensions_t<D>&& tp)  // NOLINT(cert-dcl58-cpp) normal idiom to defined tuple get, gcc workaround
 ->decltype(std::move(tp).template get<N>()) {
 	return std::move(tp).template get<N>(); }
 #endif
-
-template <typename Fn, boost::multi::dimensionality_type D>
-constexpr auto
-apply(Fn&& fn, boost::multi::extensions_t<D> const& xs) noexcept -> decltype(auto) {  // NOLINT(cert-dcl58-cpp) I have to specialize std::apply as a workaround
-	return xs.apply(std::forward<Fn>(fn));
-}
 
 }  // end namespace std
 
@@ -534,20 +494,17 @@ struct layout_t<0, SSize>
 	friend constexpr auto dimensionality(layout_t const& /*self*/) {return rank_v;}
 
  private:
-	BOOST_MULTI_NO_UNIQUE_ADDRESS sub_type    sub_   ;
-	BOOST_MULTI_NO_UNIQUE_ADDRESS stride_type stride_;  // = {};
-	offset_type offset_;
-	nelems_type nelems_;
+	sub_type    sub_    = {};  // TODO(correaa)  use  [[no_unique_address]] in C++20
+	stride_type stride_ = {};  // TODO(correaa)  use  [[no_unique_address]] in C++20
+	offset_type offset_ =  0;
+	nelems_type nelems_ =  1;  // TODO(correaa) : or std::numeric_limits<nelems_type>::max(); ?
 
 	template<dimensionality_type, typename> friend struct layout_t;
 
  public:
 	layout_t() = default;
-
-	BOOST_MULTI_HD constexpr explicit layout_t(extensions_type const& /*nil*/)
-	: offset_{0}, nelems_{1} {}
-	
-	// BOOST_MULTI_HD constexpr explicit layout_t(extensions_type const& /*nil*/, strides_type const& /*nil*/) {}
+	BOOST_MULTI_HD constexpr explicit layout_t(extensions_type const& /*nil*/) {}
+	BOOST_MULTI_HD constexpr explicit layout_t(extensions_type const& /*nil*/, strides_type const& /*nil*/) {}
 
 	BOOST_MULTI_HD constexpr layout_t(sub_type sub, stride_type stride, offset_type offset, nelems_type nelems)  // NOLINT(bugprone-easily-swappable-parameters)
 	: sub_{sub}, stride_{stride}, offset_{offset}, nelems_{nelems} {}
@@ -566,7 +523,7 @@ struct layout_t<0, SSize>
 	[[nodiscard]] constexpr auto nelemss() const {return nelemss_type{};}
 
 	constexpr auto operator()() const {return offset_;}
-	// constexpr explicit operator offset_type() const {return offset_;}
+	constexpr explicit operator offset_type() const {return offset_;}
 
 	constexpr auto stride() const -> stride_type = delete;
 	constexpr auto offset() const -> offset_type {return offset_;}
@@ -599,14 +556,6 @@ struct layout_t<0, SSize>
 			== std::tie(other.sub_, other.stride_, other.offset_, other.nelems_)
 		;
 	}
-
-	friend BOOST_MULTI_HD constexpr auto operator!=(layout_t const& self, layout_t const& other) {
-		return
-			   std::tie(self .sub_, self .stride_, self .offset_, self .nelems_)
-			!= std::tie(other.sub_, other.stride_, other.offset_, other.nelems_)
-		;
-	}
-
 	constexpr auto operator< (layout_t const& other) const -> bool {
 		return std::tie(offset_, nelems_) < std::tie(other.offset_, other.nelems_);
 	}
@@ -651,19 +600,18 @@ struct layout_t
 	[[deprecated("for compatibility with Boost.MultiArray, use static `dimensionality` instead")]]
 	static constexpr auto num_dimensions() {return dimensionality;}  // NOSONAR(cpp:S1133)
 
-	friend constexpr auto dimensionality(layout_t const& /*self*/) { return rank_v; }
+	friend constexpr auto dimensionality(layout_t const& /*self*/) {return rank_v;}
 
  private:
-	sub_type    sub_    ;
-	stride_type stride_ ;  // =  1;  // or std::numeric_limits<stride_type>::max()?
-	offset_type offset_ ;
-	nelems_type nelems_ ;
+	sub_type    sub_    = {};
+	stride_type stride_ =  1;  // or std::numeric_limits<stride_type>::max()?
+	offset_type offset_ =  0;
+	nelems_type nelems_ =  0;
 
 	template<dimensionality_type, typename> friend struct layout_t;
 
  public:
 	layout_t() = default;
-
 	BOOST_MULTI_HD constexpr explicit layout_t(extensions_type const& extensions) :
 		sub_{
 			std::apply(
@@ -723,14 +671,6 @@ struct layout_t
 			== std::tie(other.sub_, other.stride_, other.offset_, other.nelems_)
 		;
 	}
-
-	friend BOOST_MULTI_HD constexpr auto operator!=(layout_t const& self, layout_t const& other) -> bool {
-		return 
-			   std::tie(self .sub_, self .stride_, self .offset_, self. nelems_)
-			!= std::tie(other.sub_, other.stride_, other.offset_, other.nelems_)
-		;
-	}
-
 	constexpr BOOST_MULTI_HD auto operator< (layout_t const& other) const -> bool {
 		return
 			   std::tie(      sub_,       stride_,       offset_,       nelems_)
@@ -752,11 +692,10 @@ struct layout_t
 
 	friend constexpr auto size(layout_t const& self) noexcept -> size_type {return self.size();}
 	       constexpr auto size()        const        noexcept -> size_type {
-		if(nelems_ == 0) {return 0;}
-		// BOOST_MULTI_ACCESS_ASSERT(stride_);  // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay) : normal in a constexpr function
+	//  if(nelems_ == 0) {return 0;}
+		BOOST_MULTI_ACCESS_ASSERT(stride_);  // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay) : normal in a constexpr function
 		// if(nelems_ != 0) {MULTI_ACCESS_ASSERT(stride_ != 0);}
 		// return nelems_ == 0?0:nelems_/stride_;
-		// assert(stride_ != 0);
 		return nelems_/stride_;
 	}
 
@@ -812,18 +751,11 @@ struct layout_t
 		return *this;
 	}
 
-	template<class TT>
-	constexpr static void ce_swap(TT& t1, TT& t2) {
-		TT tmp = std::move(t1);
-		t1 = std::move(t2);
-		t2 = tmp;
-	}
-
 	constexpr auto transpose() -> layout_t& {
-		// using std::swap;
-		ce_swap(stride_, sub_.stride_);
-		ce_swap(offset_, sub_.offset_);
-		ce_swap(nelems_, sub_.nelems_);
+		using std::swap;
+		swap(stride_, sub_.stride_);
+		swap(offset_, sub_.offset_);
+		swap(nelems_, sub_.nelems_);
 		return *this;
 	}
 	constexpr auto reverse() -> layout_t& {
@@ -863,7 +795,7 @@ constexpr auto operator*(extensions_t<1> const& extensions_1d, extensions_t<1> c
 
 }  // end namespace boost::multi
 
-namespace boost::multi::detail {
+namespace boost::multi {
 
 	template<class Tuple>
 	struct convertible_tuple : Tuple {
@@ -881,20 +813,21 @@ namespace boost::multi::detail {
 		/*explicit*/ operator array_type() const& noexcept {return to_array();}  // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
 		/*explicit*/ operator array_type() && noexcept {return to_array();}  // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
 
-		#ifdef __clang__
-			#pragma clang diagnostic push
-			#pragma clang diagnostic ignored "-Wreturn-stack-address"
-		#endif
-		[[deprecated("This is here for nominal compatiblity with Boost.MultiArray, this would be a dangling conversion")]]
-		operator std::ptrdiff_t const*() const &&;  /*{ return to_array().data(); }*/ // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
-		#ifdef __clang__
-			#pragma clang diagnostic pop
-		#endif
+		[[deprecated("dangling conversion")]]
+		operator std::ptrdiff_t const*() const {  // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
+			#ifdef __clang__
+				#pragma clang diagnostic push
+				#pragma clang diagnostic ignored "-Wreturn-stack-address"
+			#endif
+			return to_array().data();
+			#ifdef __clang__
+				#pragma clang diagnostic pop
+			#endif
+		}
 
-		template<std::size_t Index, std::enable_if_t<(Index < std::tuple_size_v<Tuple>), int> =0>  // NOLINT(modernize-use-constraints) TODO(correaa)
+		template<std::size_t Index, std::enable_if_t<(Index < std::tuple_size_v<Tuple>), int> =0>
 		friend constexpr auto get(convertible_tuple const& self) -> typename std::tuple_element<Index, Tuple>::type {
-			using std::get;
-			return get<Index>(static_cast<Tuple const&>(self));
+			return std::get<Index>(static_cast<Tuple const&>(self));
 		}
 	};
 
@@ -906,16 +839,15 @@ namespace boost::multi::detail {
 		[[deprecated("possible dangling conversion, use `std::array<T, D> p` instead of `auto* p`")]]
 		constexpr operator std::ptrdiff_t const*() const {return Array::data();}  // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
 
-		template<std::size_t Index, std::enable_if_t<(Index < std::tuple_size_v<Array>), int> =0>  // NOLINT(modernize-use-constraints) TODO(correaa)
+		template<std::size_t Index, std::enable_if_t<(Index < std::tuple_size_v<Array>), int> =0>
 		friend constexpr auto get(decaying_array const& self) -> typename std::tuple_element<Index, Array>::type {
-			using std::get;
-			return get<Index>(static_cast<Array const&>(self));
+			return std::get<Index>(static_cast<Array const&>(self));
 		}
 	};
-}  // end namespace boost::multi::detail
+}  // end namespace boost::multi
 
-template<class Tuple> struct std::tuple_size<boost::multi::detail::convertible_tuple<Tuple>> : std::integral_constant<std::size_t, std::tuple_size_v<Tuple>> {};  // NOLINT(cert-dcl58-cpp) normal idiom to defined tuple size
-template<class Array> struct std::tuple_size<boost::multi::detail::decaying_array<Array>> : std::integral_constant<std::size_t, std::tuple_size_v<Array>> {};  // NOLINT(cert-dcl58-cpp) normal idiom to defined tuple size
+template<class Tuple> struct std::tuple_size<boost::multi::convertible_tuple<Tuple>> : std::integral_constant<std::size_t, std::tuple_size_v<Tuple>> {};  // NOLINT(cert-dcl58-cpp) normal idiom to defined tuple size
+template<class Array> struct std::tuple_size<boost::multi::decaying_array<Array>> : std::integral_constant<std::size_t, std::tuple_size_v<Array>> {};  // NOLINT(cert-dcl58-cpp) normal idiom to defined tuple size
 
 #ifdef __clang__
 #  pragma clang diagnostic pop
