@@ -413,9 +413,9 @@ Tp MixedDensityMatrix_noHerm_wSVD(const MatA& A,
     assert( get<1>(C.sizes()) == get<0>(A.sizes()) );
   }
 
+  using std::real;
   using ma::determinant_from_geqrf;
   using ma::H;
-  using ma::real;
   using ma::T;
   using ma::term_by_term_matrix_vector;
 

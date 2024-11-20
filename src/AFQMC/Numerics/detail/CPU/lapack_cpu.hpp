@@ -134,7 +134,7 @@ inline void gesvd_bufferSize(const int m, const int n, std::complex<T>* a, int& 
   int status;
   lwork = -1;
   gesvd('A', 'A', m, n, a, m, nullptr, nullptr, m, nullptr, m, &work, lwork, &rwork, status);
-  lwork = int(real(work));
+  lwork = int(std::real(work));
 }
 
 inline void geev(char* jobvl,
@@ -332,7 +332,7 @@ inline void hevr(char& JOBZ,
          LIWORK, INFO);
   if (query)
   {
-    LWORK  = int(real(WORK[0]));
+    LWORK  = int(std::real(WORK[0]));
     LRWORK = int(RWORK[0]);
     LIWORK = int(IWORK[0]);
   }
@@ -373,7 +373,7 @@ inline void hevr(char& JOBZ,
          LIWORK, INFO);
   if (query)
   {
-    LWORK  = int(real(WORK[0]));
+    LWORK  = int(std::real(WORK[0]));
     LRWORK = int(RWORK[0]);
     LIWORK = int(IWORK[0]);
   }
@@ -489,7 +489,7 @@ inline void gvx(int ITYPE,
          IFAIL, INFO);
   if (query)
   {
-    LWORK = int(real(WORK[0]));
+    LWORK = int(std::real(WORK[0]));
   }
 }
 
@@ -527,7 +527,7 @@ inline void gvx(int ITYPE,
          IFAIL, INFO);
   if (query)
   {
-    LWORK = int(real(WORK[0]));
+    LWORK = int(std::real(WORK[0]));
   }
 }
 
@@ -622,7 +622,7 @@ inline void getri_bufferSize(int n, std::complex<float> const* a, int lda, int& 
   int status;
   lwork = -1;
   cgetri(n, nullptr, lda, nullptr, &work, lwork, status);
-  lwork = int(real(work));
+  lwork = int(std::real(work));
 }
 
 inline void getri_bufferSize(int n, std::complex<double> const* a, int lda, int& lwork)
@@ -631,7 +631,7 @@ inline void getri_bufferSize(int n, std::complex<double> const* a, int lda, int&
   int status;
   lwork = -1;
   zgetri(n, nullptr, lda, nullptr, &work, lwork, status);
-  lwork = int(real(work));
+  lwork = int(std::real(work));
 }
 
 
@@ -745,7 +745,7 @@ inline void geqrf_bufferSize(int m, int n, T* a, int lda, int& lwork)
   int status;
   lwork = -1;
   geqrf(m, n, nullptr, lda, nullptr, &work, lwork, status);
-  lwork = int(real(work));
+  lwork = int(std::real(work));
 }
 
 inline void gelqf(int M,
@@ -809,7 +809,7 @@ inline void gelqf_bufferSize(int m, int n, T* a, int lda, int& lwork)
   int status;
   lwork = -1;
   gelqf(m, n, nullptr, lda, nullptr, &work, lwork, status);
-  lwork = int(real(work));
+  lwork = int(std::real(work));
 }
 
 inline void gqr(int M,
@@ -875,7 +875,7 @@ inline void gqr_bufferSize(int m, int n, int k, T* a, int lda, int& lwork)
   int status;
   lwork = -1;
   gqr(m, n, k, nullptr, lda, nullptr, &work, lwork, status);
-  lwork = int(real(work));
+  lwork = int(std::real(work));
 }
 
 inline void glq(int M,
@@ -941,7 +941,7 @@ inline void glq_bufferSize(int m, int n, int k, T* a, int lda, int& lwork)
   int status;
   lwork = -1;
   glq(m, n, k, nullptr, lda, nullptr, &work, lwork, status);
-  lwork = int(real(work));
+  lwork = int(std::real(work));
 }
 
 template<typename T1, typename T2>
