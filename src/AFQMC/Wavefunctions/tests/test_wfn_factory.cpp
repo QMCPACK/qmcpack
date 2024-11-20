@@ -183,9 +183,9 @@ void wfn_fac(boost::mpi3::communicator& world)
       {
         for (auto it = wset.begin(); it != wset.end(); ++it)
         {
-          CHECK(real(*it->E1()) == Approx(real(file_data.E0 + file_data.E1)));
-          CHECK(real(*it->EXX() + *it->EJ()) == Approx(real(file_data.E2)));
-          CHECK(imag(it->energy()) == Approx(imag(file_data.E0 + file_data.E1 + file_data.E2)));
+          CHECK(std::real(ComplexType(*it->E1())) == Approx(std::real(file_data.E0 + file_data.E1)));
+          CHECK(std::real(*it->EXX() + *it->EJ()) == Approx(std::real(file_data.E2)));
+          CHECK(std::imag(it->energy()) == Approx(std::imag(file_data.E0 + file_data.E1 + file_data.E2)));
         }
       }
       else
@@ -217,8 +217,7 @@ void wfn_fac(boost::mpi3::communicator& world)
           Xsum = 0;
           for (int i = 0; i < X.size(); i++)
             Xsum += X[i][n];
-          CHECK(real(Xsum) == Approx(real(file_data.Xsum)));
-          CHECK(imag(Xsum) == Approx(imag(file_data.Xsum)));
+          CHECK(Xsum == ComplexApprox(file_data.Xsum));
         }
       }
       else
@@ -259,8 +258,7 @@ void wfn_fac(boost::mpi3::communicator& world)
             for (int i = 0; i < get<0>(vHS.sizes()); i++)
               Vsum += vHS[i][n];
           }
-          CHECK(real(Vsum) == Approx(real(file_data.Vsum)));
-          CHECK(imag(Vsum) == Approx(imag(file_data.Vsum)));
+          CHECK(Vsum == ComplexApprox(file_data.Vsum));
         }
       }
       else
@@ -309,8 +307,8 @@ void wfn_fac(boost::mpi3::communicator& world)
       wfn2.Overlap(wset2);
       for (auto it = wset2.begin(); it != wset2.end(); ++it)
       {
-        CHECK(real(*it->overlap()) == Approx(1.0));
-        CHECK(imag(*it->overlap()) == Approx(0.0));
+        CHECK(std::real(ComplexType(*it->overlap())) == Approx(1.0));
+        CHECK(std::imag(ComplexType(*it->overlap())) == Approx(0.0));
       }
 
       wfn2.Energy(wset2);
@@ -318,9 +316,9 @@ void wfn_fac(boost::mpi3::communicator& world)
       {
         for (auto it = wset2.begin(); it != wset2.end(); ++it)
         {
-          CHECK(real(*it->E1()) == Approx(real(file_data.E0 + file_data.E1)));
-          CHECK(real(*it->EXX() + *it->EJ()) == Approx(real(file_data.E2)));
-          CHECK(imag(it->energy()) == Approx(imag(file_data.E0 + file_data.E1 + file_data.E2)));
+          CHECK(std::real(ComplexType(*it->E1())) == Approx(std::real(file_data.E0 + file_data.E1)));
+          CHECK(std::real(*it->EXX() + *it->EJ()) == Approx(std::real(file_data.E2)));
+          CHECK(std::imag(it->energy()) == Approx(std::imag(file_data.E0 + file_data.E1 + file_data.E2)));
         }
       }
       else
@@ -342,8 +340,7 @@ void wfn_fac(boost::mpi3::communicator& world)
           Xsum = 0;
           for (int i = 0; i < X.size(); i++)
             Xsum += X[i][n];
-          CHECK(real(Xsum) == Approx(real(file_data.Xsum)));
-          CHECK(imag(Xsum) == Approx(imag(file_data.Xsum)));
+          CHECK(Xsum == ComplexApprox(file_data.Xsum));
         }
       }
       else
@@ -377,8 +374,7 @@ void wfn_fac(boost::mpi3::communicator& world)
             for (int i = 0; i < get<0>(vHS.sizes()); i++)
               Vsum += vHS[i][n];
           }
-          CHECK(real(Vsum) == Approx(real(file_data.Vsum)));
-          CHECK(imag(Vsum) == Approx(imag(file_data.Vsum)));
+          CHECK(Vsum == ComplexApprox(file_data.Vsum));
         }
       }
       else
@@ -524,9 +520,9 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
     {
       for (auto it = wset.begin(); it != wset.end(); ++it)
       {
-        CHECK(real(*it->E1()) == Approx(real(file_data.E0 + file_data.E1)));
-        CHECK(real(*it->EXX() + *it->EJ()) == Approx(real(file_data.E2)));
-        CHECK(imag(it->energy()) == Approx(imag(file_data.E0 + file_data.E1 + file_data.E2)));
+        CHECK(std::real(ComplexType(*it->E1())) == Approx(std::real(file_data.E0 + file_data.E1)));
+        CHECK(std::real(*it->EXX() + *it->EJ()) == Approx(std::real(file_data.E2)));
+        CHECK(std::imag(it->energy()) == Approx(std::imag(file_data.E0 + file_data.E1 + file_data.E2)));
       }
     }
     else
@@ -560,8 +556,7 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
           for (int i = 0; i < X.size(); i++)
             Xsum += X[i][n];
         Xsum = (TGwfn.TG() += Xsum);
-        CHECK(real(Xsum) == Approx(real(file_data.Xsum)));
-        CHECK(imag(Xsum) == Approx(imag(file_data.Xsum)));
+        CHECK(Xsum == ComplexApprox(file_data.Xsum));
       }
     }
     else
@@ -617,8 +612,7 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
           }
         }
         Vsum = (TGwfn.TG() += Vsum);
-        CHECK(real(Vsum) == Approx(real(file_data.Vsum)));
-        CHECK(imag(Vsum) == Approx(imag(file_data.Vsum)));
+        CHECK(Vsum == ComplexApprox(file_data.Vsum));
       }
     }
     else
@@ -679,9 +673,9 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
     {
       for (auto it = wset2.begin(); it != wset2.end(); ++it)
       {
-        CHECK(real(*it->E1()) == Approx(real(file_data.E0 + file_data.E1)));
-        CHECK(real(*it->EXX() + *it->EJ()) == Approx(real(file_data.E2)));
-        CHECK(imag(it->energy()) == Approx(imag(file_data.E0 + file_data.E1 + file_data.E2)));
+        CHECK(std::real(ComplexType(*it->E1())) == Approx(std::real(file_data.E0 + file_data.E1)));
+        CHECK(std::real(*it->EXX() + *it->EJ()) == Approx(std::real(file_data.E2)));
+        CHECK(std::imag(it->energy()) == Approx(std::imag(file_data.E0 + file_data.E1 + file_data.E2)));
       }
     }
     else
@@ -708,8 +702,7 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
           for (int i = 0; i < X2.size(); i++)
             Xsum += X2[i][n];
         Xsum = (TGwfn.TG() += Xsum);
-        CHECK(real(Xsum) == Approx(real(file_data.Xsum)));
-        CHECK(imag(Xsum) == Approx(imag(file_data.Xsum)));
+        CHECK(Xsum == ComplexApprox(file_data.Xsum));
       }
     }
     else
@@ -760,8 +753,7 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
           }
         }
         Vsum = (TGwfn.TG() += Vsum);
-        CHECK(real(Vsum) == Approx(real(file_data.Vsum)));
-        CHECK(imag(Vsum) == Approx(imag(file_data.Vsum)));
+        CHECK(Vsum == ComplexApprox(file_data.Vsum));
       }
     }
     else
@@ -966,8 +958,7 @@ TEST_CASE("wfn_fac_collinear_phmsd", "[wavefunction_factory]")
         Xsum=0;
         for(int i=0; i<X.size(0); i++)
           Xsum += X[i][n];
-        CHECK( real(Xsum) == Approx(real(file_data.Xsum)) );
-        CHECK( imag(Xsum) == Approx(imag(file_data.Xsum)) );
+        CHECK(Xsum == ComplexApprox(file_data.Xsum));
       }
     } else
 #endif
@@ -984,8 +975,7 @@ TEST_CASE("wfn_fac_collinear_phmsd", "[wavefunction_factory]")
         ComplexType Xsum_=0;
         for(int i=0; i<X.size(0); i++)
           Xsum_ += X[i][n];
-        CHECK( real(Xsum) == Approx(real(Xsum_)) );
-        CHECK( imag(Xsum) == Approx(imag(Xsum_)) );
+        CHECK(Xsum == ComplexApprox(Xsum_));
       }
     }
 
@@ -1006,8 +996,7 @@ TEST_CASE("wfn_fac_collinear_phmsd", "[wavefunction_factory]")
           for(int i=0; i<vHS.size(0); i++)
             Vsum += vHS[i][n];
         }
-        CHECK( real(Vsum) == Approx(real(file_data.Vsum)) );
-        CHECK( imag(Vsum) == Approx(imag(file_data.Vsum)) );
+        CHECK(Vsum == ComplexApprox(file_data.Vsum));
       }
     } else
 #endif
@@ -1030,8 +1019,7 @@ TEST_CASE("wfn_fac_collinear_phmsd", "[wavefunction_factory]")
           for(int i=0; i<vHS.size(0); i++)
             Vsum_ += vHS[i][n];
         }
-        CHECK( real(Vsum) == Approx(real(Vsum_)) );
-        CHECK( imag(Vsum) == Approx(imag(Vsum_)) );
+        CHECK(Vsum == ComplexApprox(Vsum_));
       }
     }
 

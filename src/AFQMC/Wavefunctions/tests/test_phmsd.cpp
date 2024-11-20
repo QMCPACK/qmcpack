@@ -280,8 +280,8 @@ void test_phmsd(boost::mpi3::communicator& world)
     // coefficients as using factory setup.
     for (auto it = wset.begin(); it != wset.end(); ++it)
     {
-      CHECK(std::abs(real(*it->overlap())) == Approx(std::abs(real(ovlp_sum))));
-      CHECK(std::abs(imag(*it->overlap())) == Approx(std::abs(imag(ovlp_sum))));
+      CHECK(std::abs(std::real(ComplexType(*it->overlap()))) == Approx(std::abs(std::real(ovlp_sum))));
+      CHECK(std::abs(std::imag(ComplexType(*it->overlap()))) == Approx(std::abs(std::imag(ovlp_sum))));
     }
     // It's not straightforward to calculate energy directly in unit test due to half
     // rotation.
