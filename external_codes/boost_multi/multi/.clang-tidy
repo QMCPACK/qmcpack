@@ -1,4 +1,4 @@
-# Copyright 2020-2024 Alfredo A. Correa
+# -*-indent-tabs-mode:nil;c-basic-offset:2;tab-width:2;autowrap:nil;-*-
 
 WarningsAsErrors: '*'
 HeaderFilterRegex: '.'
@@ -14,6 +14,9 @@ CheckOptions:
   - { key: readability-identifier-length.MinimumLoopCounterNameLength      , value: 2          }
   - { key: readability-identifier-length.MinimumParameterNameLength        , value: 2          }
   - { key: readability-identifier-length.MinimumVariableNameLength         , value: 2          }
+  - { key: readability-identifier-naming.MacroDefinitionCase               , value: UPPER_CASE }
+  - { key: readability-identifier-naming.MacroDefinitionPrefix,            , value: BOOST_MULTI_ }
+  - { key: readability-identifier-naming.MacroDefinitionSuffix,            , value: *          }
   - { key: readability-identifier-naming.NamespaceCase                     , value: lower_case }
   - { key: readability-identifier-naming.PrivateMemberPrefix               , value: ''         }
   - { key: readability-identifier-naming.PrivateMemberSuffix               , value: _          }
@@ -29,22 +32,25 @@ CheckOptions:
 
 Checks: '*,
   -altera-struct-pack-align,
+  -clang-diagnostic-deprecated-declarations,
   -cppcoreguidelines-avoid-magic-numbers,
   -cppcoreguidelines-macro-usage,
   -fuchsia-overloaded-operator,
   -fuchsia-trailing-return,
   -llvmlibc-*,
+  -misc-include-cleaner,
   -modernize-use-nodiscard,
-  -readability-magic-numbers'
+  -readability-magic-numbers
+'
 ## explanation of the suppressed rules above:
 #  -altera-struct-pack-align,                             // this asks to use non-standard pragmas such as __attribute__((aligned(0))) and _attribute__((packed)), may interfeere with gcc/nvcc compatibility?
-#  -clang-diagnostic-deprecated-declarations              // some test run deprecated functions on purpose
+#  -clang-diagnostic-deprecated-declarations              // some test run deprecated functions on purposes
 #  -cppcoreguidelines-avoid-magic-numbers,                // all tests use magic numbers
 #  -cppcoreguidelines-macro-usage,                        // BLAS adaptors uses a lot of macros
 #  -fuchsia-overloaded-operator,                          // this library overloads operators (==, <, +, &)
+#  -fuchsia-trailing-return,                              // to allow any '-> decltype(auto)', contradicts modernize trailing
 #  -llvmlibc-*,                                           // nonsense warnings, for llvm developers
-#  -llvm-header-guard,                                    // allow PCH
-#  -misc-include-cleaner                                  // allow PCH
+#  -misc-include-cleaner,                                 // using Boost.Test
 #  -modernize-use-nodiscard,                              // this would add [[nodiscard]] to almost all functions, adding a lot of noise
-#  -readability-magic-numbers,                            // many tests use magic numbers
+#  -readability-magic-numbers,                            // all tests use magic numbers
 

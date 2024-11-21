@@ -8,7 +8,7 @@
 
 #include <boost/multi/array.hpp>
 
-#include <boost/multi/adaptors/fftw/memory.hpp>  // IWYU pragma: export
+#include <boost/multi/adaptors/fftw/memory.hpp>
 
 #include <algorithm>  // sort
 #include <chrono>

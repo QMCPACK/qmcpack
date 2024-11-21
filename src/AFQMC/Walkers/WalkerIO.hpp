@@ -373,15 +373,13 @@ bool dumpToHDF5(WalkerSet& wset, hdf_archive& dump)
       displ.reextent({TG.TG_heads().size()});
       wlk_per_blk.reserve(nblks);
 
-      using std::get;
-
       int NMO, NAEA, NAEB = 0;
       { // to limit the scope
         auto w = wset[0];
-        NMO    = get<0>((*w.SlaterMatrix(Alpha)).sizes());
-        NAEA   = get<1>((*w.SlaterMatrix(Alpha)).sizes());
+        NMO    = std::get<0>((*w.SlaterMatrix(Alpha)).sizes());
+        NAEA   = std::get<1>((*w.SlaterMatrix(Alpha)).sizes());
         if (walker_type == COLLINEAR)
-          NAEB = get<1>((*w.SlaterMatrix(Beta)).sizes());
+          NAEB = std::get<1>((*w.SlaterMatrix(Beta)).sizes());
         if (walker_type == NONCOLLINEAR)
           NMO /= 2;
       }
