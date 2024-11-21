@@ -21,8 +21,7 @@ inline auto flip(filling side) -> filling {
 	switch(side) {
 		case filling::lower: return filling::upper;
 		case filling::upper: return filling::lower;
-	}  // __builtin_unreachable();  // LCOV_EXCL_LINE
-	return {};
+	} __builtin_unreachable();  // LCOV_EXCL_LINE
 }
 
 inline auto operator-(filling side) -> filling {return flip(side);}

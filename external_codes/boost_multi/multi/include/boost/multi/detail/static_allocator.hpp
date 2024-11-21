@@ -16,18 +16,18 @@
 namespace boost::multi::detail {
 
 template<class T, std::size_t N>
-class static_allocator {  // NOSONAR(cpp:S4963) this allocator has special semantics
+class static_allocator {  //NOSONAR(cpp:S4963) this allocator has special semantics
 	bool dirty_ = false;
 
 #ifdef _MSC_VER
-	#pragma warning(push)
-	#pragma warning(disable : 4324)  // Warning that the structure is padded due to the below
-#endif
-
+#pragma warning(push)
+#pragma warning(disable : 4324)  // Warning that the structure is padded due to the below
+#endif 
+	
 	BOOST_MULTI_NO_UNIQUE_ADDRESS alignas(T) std::array<std::byte, sizeof(T) * N> buffer_;
 
 #ifdef _MSC_VER
-	#pragma warning(pop)
+#pragma warning(pop)
 #endif
 
  public:
@@ -48,27 +48,30 @@ class static_allocator {  // NOSONAR(cpp:S4963) this allocator has special seman
 		static_assert(NN == N);
 	}
 
-	static_allocator(static_allocator const& /*other*/)  // std::vector makes a copy right away
+	static_allocator(static_allocator const& /*other*/) // std::vector makes a copy right away
 	// = default;  // this copies the internal buffer
 	{}
 
-	// [[deprecated("don't move dynamic container with static_allocator")]]
+	[[deprecated("don't move dynamic container with static_allocator")]]
 	static_allocator(static_allocator&& /*other*/)  // this is called *by the elements* during move construction of a vector
-		// = delete;
-		// {throw std::runtime_error("don't move dynamic container with static_allocator");}  // this is called *by the elements* during move construction of a vector
-		noexcept {}
+	// = delete;
+	// {throw std::runtime_error("don't move dynamic container with static_allocator");}  // this is called *by the elements* during move construction of a vector
+	noexcept {}
 	// noexcept {std::memmove(buffer_.data(), other.buffer_.data(), sizeof(T)*N);}
 	// noexcept : buffer_{std::move(other.buffer_)} {}
 	// noexcept = default;
 
 	[[deprecated("don't move dynamic container with static_allocator")]]
-	auto operator=(static_allocator const& /*other*/) -> static_allocator& = delete;
+	auto operator=(static_allocator const& /*other*/) -> static_allocator&
+	= delete;
 
-	[[deprecated("don't move dynamic container with static_allocator")]] auto operator=(static_allocator&& other) -> static_allocator& = delete;
+	[[deprecated("don't move dynamic container with static_allocator")]] auto operator=(static_allocator&& other) -> static_allocator&
+	= delete;
 
 	~static_allocator() = default;
 
-	auto select_on_container_copy_construction() noexcept -> static_allocator = delete;
+	auto select_on_container_copy_construction() noexcept -> static_allocator
+	= delete;
 	// {return static_allocator{};}
 
 	using propagate_on_container_move_assignment = std::false_type;  // this forces to call move assignment of the allocator by std::vector
@@ -77,24 +80,13 @@ class static_allocator {  // NOSONAR(cpp:S4963) this allocator has special seman
 
 	static constexpr auto capacity() { return N; }
 
-#ifdef _MSC_VER
-#pragma warning( push )
-#pragma warning( disable : 4068)  // bug in MSVC 14.2/14.3
-#endif
 	BOOST_MULTI_NODISCARD("because otherwise it will generate a memory leak")
 	auto allocate([[maybe_unused]] std::size_t n) -> pointer {
 		assert(n <= N);
-		assert(!dirty_);  // do not attempt to resize a vector with static_allocator
+		assert(! dirty_);  // do not attempt to resize a vector with static_allocator
 		dirty_ = true;
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wcast-align"        // buffer_ is aligned as T
-		return reinterpret_cast<pointer>(&buffer_);  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
-#pragma GCC diagnostic pop
+		return reinterpret_cast<pointer>(buffer_.data());  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
 	}
-#ifdef _MSC_VER
-#pragma warning( pop ) 
-#endif
-
 	void deallocate(pointer /*ptr*/, [[maybe_unused]] std::size_t n) {
 		assert(n <= N);
 	}
@@ -103,15 +95,16 @@ class static_allocator {  // NOSONAR(cpp:S4963) this allocator has special seman
 };
 
 template<class T, std::size_t N, class U>
-constexpr auto operator==(static_allocator<T, N> const& /*a1*/, static_allocator<U, N> const& /*a2*/) noexcept { return true; }  // &a1 == &a2; }
+constexpr auto operator==(static_allocator<T, N> const& /*a1*/, static_allocator<U, N> const& /*a2*/) noexcept
+{ return true; } // &a1 == &a2; }
 // = delete;
 
-template<class T, std::size_t N, class U>
-auto operator!=(static_allocator<T, N> const& /*a1*/, static_allocator<U, N> const& /*a2*/) noexcept  // this is used *by the elements* when resizing a vector
-{ return false; }                                                                                     // &a1 != &a2;}
+template <class T, std::size_t N, class U>
+auto operator!=(static_allocator<T, N> const& /*a1*/, static_allocator<U, N> const& /*a2*/) noexcept // this is used *by the elements* when resizing a vector
+{ return false; } // &a1 != &a2;}
 // = delete
 
-template<class T, std::size_t N, class U>
+template <class T, std::size_t N, class U>
 [[deprecated("don't swap dynamic container with static_allocator")]]
 void swap(static_allocator<T, N>& a1, static_allocator<U, N>& a2) noexcept = delete;
 

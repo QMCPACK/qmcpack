@@ -31,24 +31,22 @@ int getrf_optimal_workspace_size(MultiArray2D&& A)
   assert(A.stride(0) > 0);
   assert(A.stride(1) == 1);
 
-  using std::get;
   int res;
-  getrf_bufferSize(get<1>(A.sizes()), get<0>(A.sizes()), pointer_dispatch(A.origin()), A.stride(0), res);
+  getrf_bufferSize(std::get<1>(A.sizes()), std::get<0>(A.sizes()), pointer_dispatch(A.origin()), A.stride(0), res);
   return res;
 }
 
 template<class MultiArray2D, class Array1D, class Buffer>
 MultiArray2D&& getrf(MultiArray2D&& m, Array1D& pivot, Buffer&& WORK)
 {
-  using std::get;
-  assert(m.stride(0) >= std::max(std::size_t(1), std::size_t(get<1>(m.sizes()))));
+  assert(m.stride(0) >= std::max(std::size_t(1), std::size_t(std::get<1>(m.sizes()))));
   assert(m.stride(1) == 1);
-  assert(pivot.size() >= std::min(get<1>(m.sizes()), get<0>(m.sizes()) + 1));
+  assert(pivot.size() >= std::min(std::get<1>(m.sizes()), std::get<0>(m.sizes()) + 1));
 
   int status = -1;
-  getrf(get<1>(m.sizes()), get<0>(m.sizes()), pointer_dispatch(m.origin()), m.stride(0), pointer_dispatch(pivot.data()), status,
+  getrf(std::get<1>(m.sizes()), std::get<0>(m.sizes()), pointer_dispatch(m.origin()), m.stride(0), pointer_dispatch(pivot.data()), status,
         pointer_dispatch(WORK.data()));
-  // assert(status==0);
+  //assert(status==0);
   return std::forward<MultiArray2D>(m);
 }
 
@@ -56,9 +54,7 @@ template<class MultiArray2D>
 int getri_optimal_workspace_size(MultiArray2D&& A)
 {
   assert(A.stride(1) == 1);
-
-  using std::get;
-  assert(get<0>(A.sizes()) == get<1>(A.sizes()));
+  assert(std::get<0>(A.sizes()) ==std::get<1>(A.sizes()));
   int lwork = -1;
   getri_bufferSize(A.size(), pointer_dispatch(A.origin()), A.stride(), lwork);
   return lwork;
@@ -67,7 +63,7 @@ int getri_optimal_workspace_size(MultiArray2D&& A)
 template<class MultiArray2D, class MultiArray1D, class Buffer>
 MultiArray2D&& getri(MultiArray2D&& A, MultiArray1D const& IPIV, Buffer&& WORK)
 {
-  //  assert(A.stride(0) > std::max(std::size_t(1), A.size(1)));
+  //	assert(A.stride(0) > std::max(std::size_t(1), A.size(1)));
   assert(A.stride(1) == 1);
   assert(IPIV.size() >= size_t(A.size()));
   assert(WORK.size() >= std::max(std::size_t(1), size_t(A.size())));
@@ -85,25 +81,23 @@ int geqrf_optimal_workspace_size(MultiArray2D&& A)
   assert(A.stride(0) > 0);
   assert(A.stride(1) == 1);
 
-  using std::get;
   int res;
-  geqrf_bufferSize(get<1>(A.sizes()), get<0>(A.sizes()), pointer_dispatch(A.origin()), A.stride(0), res);
+  geqrf_bufferSize(std::get<1>(A.sizes()), std::get<0>(A.sizes()), pointer_dispatch(A.origin()), A.stride(0), res);
   return res;
 }
 
 template<class MultiArray2D, class Array1D, class Buffer>
 MultiArray2D&& geqrf(MultiArray2D&& A, Array1D&& TAU, Buffer&& WORK)
 {
-  using std::get;
   // why was this here???
   //assert(A.stride(0) > std::max(std::size_t(1), A.size(0)));
   assert(A.stride(1) == 1);
   assert(TAU.stride(0) == 1);
-  assert(TAU.size() >= std::max(std::size_t(1), size_t(std::min(get<0>(A.sizes()), get<1>(A.sizes())))));
+  assert(TAU.size() >= std::max(std::size_t(1), size_t(std::min(std::get<0>(A.sizes()), std::get<1>(A.sizes())))));
   assert(WORK.size() >= std::max(std::size_t(1), size_t(A.size())));
 
   int status = -1;
-  geqrf(get<1>(A.sizes()), get<0>(A.sizes()), pointer_dispatch(A.origin()), A.stride(0), pointer_dispatch(TAU.origin()),
+  geqrf(std::get<1>(A.sizes()), std::get<0>(A.sizes()), pointer_dispatch(A.origin()), A.stride(0), pointer_dispatch(TAU.origin()),
         pointer_dispatch(WORK.data()), WORK.size(), status);
   assert(status == 0);
   return std::forward<MultiArray2D>(A);
@@ -115,25 +109,22 @@ int gelqf_optimal_workspace_size(MultiArray2D&& A)
   assert(A.stride(0) > 0);
   assert(A.stride(1) == 1);
 
-  using std::get;
   int res;
-  gelqf_bufferSize(get<1>(A.sizes()), get<0>(A.sizes()), pointer_dispatch(A.origin()), A.stride(0), res);
+  gelqf_bufferSize(std::get<1>(A.sizes()), std::get<0>(A.sizes()), pointer_dispatch(A.origin()), A.stride(0), res);
   return res;
 }
 
 template<class MultiArray2D, class Array1D, class Buffer>
 MultiArray2D&& gelqf(MultiArray2D&& A, Array1D&& TAU, Buffer&& WORK)
 {
-  using std::get;
   assert(A.stride(1) > 0);
   assert(A.stride(1) == 1);
   assert(TAU.stride(0) == 1);
-  assert(TAU.size() >= std::max(std::size_t(1), size_t(std::min(get<0>(A.sizes()), get<1>(A.sizes())))));
-  assert(WORK.size() >= std::max(std::size_t(1), size_t(get<1>(A.sizes()))));
+  assert(TAU.size() >= std::max(std::size_t(1), size_t(std::min(std::get<0>(A.sizes()), std::get<1>(A.sizes())))));
+  assert(WORK.size() >= std::max(std::size_t(1), size_t(std::get<1>(A.sizes()))));
 
-  using std::get;
   int status = -1;
-  gelqf(get<1>(A.sizes()), get<0>(A.sizes()), pointer_dispatch(A.origin()), A.stride(0), pointer_dispatch(TAU.data()),
+  gelqf(std::get<1>(A.sizes()), std::get<0>(A.sizes()), pointer_dispatch(A.origin()), A.stride(0), pointer_dispatch(TAU.data()),
         pointer_dispatch(WORK.data()), WORK.size(), status);
   assert(status == 0);
   return std::forward<MultiArray2D>(A);
@@ -146,9 +137,8 @@ int gqr_optimal_workspace_size(MultiArray2D&& A)
   assert(A.stride(0) > 0);
   assert(A.stride(1) == 1);
 
-  using std::get;
   int res;
-  gqr_bufferSize(get<1>(A.sizes()), get<0>(A.sizes()), std::max(std::size_t(1), size_t(std::min(get<0>(A.sizes()), get<1>(A.sizes())))),
+  gqr_bufferSize(std::get<1>(A.sizes()), std::get<0>(A.sizes()), std::max(std::size_t(1), size_t(std::min(std::get<0>(A.sizes()), std::get<1>(A.sizes())))),
                  pointer_dispatch(A.origin()), A.stride(0), res);
   return res;
 }
@@ -156,14 +146,13 @@ int gqr_optimal_workspace_size(MultiArray2D&& A)
 template<class MultiArray2D, class Array1D, class Buffer>
 MultiArray2D&& gqr(MultiArray2D&& A, Array1D&& TAU, Buffer&& WORK)
 {
-  using std::get;
   assert(A.stride(1) == 1);
   assert(TAU.stride(0) == 1);
-  assert(TAU.size() >= std::max(std::size_t(1), size_t(std::min(get<0>(A.sizes()), get<1>(A.sizes())))));
+  assert(TAU.size() >= std::max(std::size_t(1), size_t(std::min(std::get<0>(A.sizes()), std::get<1>(A.sizes())))));
   assert(WORK.size() >= std::max(std::size_t(1), size_t(A.size())));
 
   int status = -1;
-  gqr(get<1>(A.sizes()), get<0>(A.sizes()), std::max(std::size_t(1), size_t(std::min(get<0>(A.sizes()), get<1>(A.sizes())))),
+  gqr(std::get<1>(A.sizes()), std::get<0>(A.sizes()), std::max(std::size_t(1), size_t(std::min(std::get<0>(A.sizes()), std::get<1>(A.sizes())))),
       pointer_dispatch(A.origin()), A.stride(0), pointer_dispatch(TAU.origin()), pointer_dispatch(WORK.data()),
       WORK.size(), status);
   assert(status == 0);
@@ -176,9 +165,8 @@ int glq_optimal_workspace_size(MultiArray2D&& A)
   assert(A.stride(0) > 0);
   assert(A.stride(1) == 1);
 
-  using std::get;
   int res;
-  glq_bufferSize(get<1>(A.sizes()), get<0>(A.sizes()), std::max(std::size_t(1), size_t(std::min(get<0>(A.sizes()), get<1>(A.sizes())))),
+  glq_bufferSize(std::get<1>(A.sizes()), std::get<0>(A.sizes()), std::max(std::size_t(1), size_t(std::min(std::get<0>(A.sizes()), std::get<1>(A.sizes())))),
                  pointer_dispatch(A.origin()), A.stride(0), res);
   return res;
 }
@@ -186,15 +174,13 @@ int glq_optimal_workspace_size(MultiArray2D&& A)
 template<class MultiArray2D, class Array1D, class Buffer>
 MultiArray2D&& glq(MultiArray2D&& A, Array1D&& TAU, Buffer&& WORK)
 {
-  using std::get;
-
   assert(A.stride(1) == 1);
   assert(TAU.stride(0) == 1);
-  assert(TAU.size() >= std::max(std::size_t(1), size_t(std::min(get<0>(A.sizes()), get<1>(A.sizes())))));
-  assert(WORK.size() >= std::max(std::size_t(1), size_t(get<1>(A.sizes()))));
+  assert(TAU.size() >= std::max(std::size_t(1), size_t(std::min(std::get<0>(A.sizes()), std::get<1>(A.sizes())))));
+  assert(WORK.size() >= std::max(std::size_t(1), size_t(std::get<1>(A.sizes()))));
 
   int status = -1;
-  glq(get<1>(A.sizes()), get<0>(A.sizes()), std::max(std::size_t(1), size_t(std::min(get<0>(A.sizes()), get<1>(A.sizes())))),
+  glq(std::get<1>(A.sizes()), std::get<0>(A.sizes()), std::max(std::size_t(1), size_t(std::min(std::get<0>(A.sizes()), std::get<1>(A.sizes())))),
       pointer_dispatch(A.origin()), A.stride(0), pointer_dispatch(TAU.data()), pointer_dispatch(WORK.data()),
       WORK.size(), status);
   assert(status == 0);
@@ -217,9 +203,8 @@ int gesvd_optimal_workspace_size(MultiArray2D&& A)
   assert(A.stride(0) > 0);
   assert(A.stride(1) == 1);
 
-  using std::get;
   int res;
-  gesvd_bufferSize(get<1>(A.sizes()), get<0>(A.sizes()), pointer_dispatch(A.origin()), res);
+  gesvd_bufferSize(std::get<1>(A.sizes()), std::get<0>(A.sizes()), pointer_dispatch(A.origin()), res);
   return res;
 }
 
@@ -236,13 +221,11 @@ MultiArray2D&& gesvd(char jobU,
   assert(A.stride(1) > 0);
   assert(A.stride(1) == 1);
 
-  using std::get;
-
   // in C: A = U * S * VT
   // in F: At = (U * S * VT)t = VTt * S * Ut
   // so I need to switch U <--> VT when calling fortran interface
   int status = -1;
-  gesvd(jobVT, jobU, get<1>(A.sizes()), get<0>(A.sizes()), pointer_dispatch(A.origin()), A.stride(0), pointer_dispatch(S.origin()),
+  gesvd(jobVT, jobU, std::get<1>(A.sizes()), std::get<0>(A.sizes()), pointer_dispatch(A.origin()), A.stride(0), pointer_dispatch(S.origin()),
         pointer_dispatch(VT.origin()), VT.stride(0), // !!!
         pointer_dispatch(U.origin()), U.stride(0),   // !!!
         pointer_dispatch(WORK.data()), WORK.size(), pointer_dispatch(RWORK.origin()), status);
@@ -260,9 +243,7 @@ std::pair<MultiArray1D, MultiArray2D> symEig(MultiArray2D const& A)
   using Type       = typename MultiArray2D::element;
   using RealType   = typename qmcplusplus::afqmc::remove_complex<Type>::value_type;
   using extensions = typename boost::multi::layout_t<1u>::extensions_type;
-
-  using std::get;
-  assert(A.size() == get<1>(A.sizes()));
+  assert(A.size() == std::get<1>(A.sizes()));
   assert(A.stride(1) == 1);
   assert(A.size() > 0);
   int N   = A.size();
@@ -335,12 +316,10 @@ std::pair<MultiArray1D, MultiArray2D> symEigSelect(MultiArray2DA& A, int neig)
   static_assert(std::is_same<Type, TypeA>::value, "Wrong types.");
   using RealType   = typename qmcplusplus::afqmc::remove_complex<Type>::value_type;
   using extensions = typename boost::multi::layout_t<1u>::extensions_type;
-
-  using std::get;
-  assert(get<0>(A.sizes()) == get<1>(A.sizes()));
+  assert(std::get<0>(A.sizes()) == std::get<1>(A.sizes()));
   assert(A.stride(1) == 1);
-  assert(get<0>(A.sizes()) > 0);
-  int N   = get<0>(A.sizes());
+  assert(std::get<0>(A.sizes()) > 0);
+  int N   = std::get<0>(A.sizes());
   int LDA = A.stride(0);
 
   MultiArray1D eigVal(extensions{neig});
@@ -415,16 +394,14 @@ std::pair<MultiArray1D, MultiArray2D> genEigSelect(MultiArray2DA& A, MultiArray2
   static_assert(std::is_same<TypeA, TypeB>::value, "Wrong types.");
   using RealType   = typename qmcplusplus::afqmc::remove_complex<Type>::value_type;
   using extensions = typename boost::multi::layout_t<1u>::extensions_type;
-
-  using std::get;
-  assert(get<0>(A.sizes()) == get<1>(A.sizes()));
-  assert(get<0>(A.sizes()) == get<0>(S.sizes()));
-  assert(get<0>(S.sizes()) == get<1>(S.sizes()));
+  assert(std::get<0>(A.sizes()) == std::get<1>(A.sizes()));
+  assert(std::get<0>(A.sizes()) == std::get<0>(S.sizes()));
+  assert(std::get<0>(S.sizes()) == std::get<1>(S.sizes()));
   assert(A.stride(1) == 1);
-  assert(get<0>(A.sizes()) > 0);
+  assert(std::get<0>(A.sizes()) > 0);
   assert(S.stride(1) == 1);
-  assert(get<0>(S.sizes()) > 0);
-  int N   = get<0>(A.sizes());
+  assert(std::get<0>(S.sizes()) > 0);
+  int N   = std::get<0>(A.sizes());
   int LDA = A.stride(0);
   int LDS = S.stride(0);
 

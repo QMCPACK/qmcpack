@@ -37,12 +37,10 @@ void free_projection_walker_update(Wlk&& w,
                                    Mat&& hybrid_weight,
                                    WMat& work)
 {
-  using std::get;
-
   int nwalk = w.size();
   // constexpr if can be used to avoid the memory copy, by comparing the pointer types
   // between WMat and Mat/OMat
-  if (get<0>(work.sizes()) < 7 || get<1>(work.sizes()) < nwalk)
+  if (std::get<0>(work.sizes()) < 7 || std::get<1>(work.sizes()) < nwalk)
     work.reextent({7, nwalk});
 
   w.getProperty(WEIGHT, work[0]);
@@ -85,12 +83,10 @@ void hybrid_walker_update(Wlk&& w,
                           Mat&& hybrid_weight,
                           WMat& work)
 {
-  using std::get;
-
   int nwalk = w.size();
   // constexpr if can be used to avoid the memory copy, by comparing the pointer types
   // between WMat and Mat/OMat
-  if (get<0>(work.sizes()) < 7 || get<1>(work.sizes()) < nwalk)
+  if (std::get<0>(work.sizes()) < 7 || std::get<1>(work.sizes()) < nwalk)
     work.reextent({7, nwalk});
 
   bool BackProp = (w.getBPPos() >= 0 && w.getBPPos() < w.NumBackProp());
@@ -181,12 +177,10 @@ void local_energy_walker_update(Wlk&& w,
                                 Mat&& hybrid_weight,
                                 WMat& work)
 {
-  using std::get;
-
   int nwalk = w.size();
   // constexpr if can be used to avoid the memory copy, by comparing the pointer types
   // between WMat and Mat/OMat
-  if (get<0>(work.sizes()) < 12 || get<1>(work.sizes()) < nwalk)
+  if (std::get<0>(work.sizes()) < 12 || std::get<1>(work.sizes()) < nwalk)
     work.reextent({12, nwalk});
 
   bool BackProp = (w.getBPPos() >= 0 && w.getBPPos() < w.NumBackProp());

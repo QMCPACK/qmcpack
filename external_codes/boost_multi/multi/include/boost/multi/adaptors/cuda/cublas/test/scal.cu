@@ -3,7 +3,7 @@
 // https://www.boost.org/LICENSE_1_0.txt
 
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi CUBLAS gemv"
-// #include<boost/test/unit_test.hpp>
+#include<boost/test/unit_test.hpp>
 
 #include <boost/multi/adaptors/cuda/cublas.hpp>
 
@@ -18,12 +18,6 @@
 
 namespace multi = boost::multi;
 
-#include <boost/core/lightweight_test.hpp>
-#define BOOST_AUTO_TEST_CASE(CasenamE) /**/
-
-// #define BOOST_REQUIRE_CLOSE(X, Y, ToL) BOOST_TEST( std::abs( (X) - (Y) ) < (ToL) )
-
-int main() {
 BOOST_AUTO_TEST_CASE(cublas_scal_complex_column) {
 	namespace blas = multi::blas;
 
@@ -39,7 +33,7 @@ BOOST_AUTO_TEST_CASE(cublas_scal_complex_column) {
 
 	multi::array<complex, 2> arr_copy = arr;
 
-	BOOST_TEST(( (~arr_copy)[1][2] == complex{20.0, 0.0} ));
+	BOOST_REQUIRE(( (~arr_copy)[1][2] == complex{20.0, 0.0} ));
 }
 
 BOOST_AUTO_TEST_CASE(cublas_scal_complex) {
@@ -53,7 +47,5 @@ BOOST_AUTO_TEST_CASE(cublas_scal_complex) {
 	auto const alpha = complex{2.0, 3.0};
 	blas::scal(alpha, x);  // x <- alpha*x
 
-	BOOST_TEST(( x[1] == alpha*x_copy[1] ));
+	BOOST_REQUIRE(( x[1] == alpha*x_copy[1] ));
 }
-
-return boost::report_errors();}

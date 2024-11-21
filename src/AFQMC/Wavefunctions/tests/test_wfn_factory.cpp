@@ -154,11 +154,9 @@ void wfn_fac(boost::mpi3::communicator& world)
       //nwalk=nw;
       WalkerSet wset(TG, doc3.getRoot(), InfoMap["info0"], rng);
       auto initial_guess = WfnFac.getInitialGuess(wfn_name);
-
-      using std::get;
-      REQUIRE(get<0>(initial_guess.sizes()) == 2);
-      REQUIRE(get<1>(initial_guess.sizes()) == NPOL * NMO);
-      REQUIRE(get<2>(initial_guess.sizes()) == NAEA);
+      REQUIRE(std::get<0>(initial_guess.sizes()) == 2);
+      REQUIRE(std::get<1>(initial_guess.sizes()) == NPOL * NMO);
+      REQUIRE(std::get<2>(initial_guess.sizes()) == NAEA);
 
       if (type == COLLINEAR)
         wset.resize(nwalk, initial_guess[0], initial_guess[1](initial_guess.extension(1), {0, NAEB}));
@@ -241,8 +239,6 @@ void wfn_fac(boost::mpi3::communicator& world)
       TG.local_barrier();
       t1               = Time.elapsed();
       ComplexType Vsum = 0;
-
-      using std::get;
       if (std::abs(file_data.Vsum) > 1e-8)
       {
         for (int n = 0; n < nwalk; n++)
@@ -250,12 +246,12 @@ void wfn_fac(boost::mpi3::communicator& world)
           Vsum = 0;
           if (wfn.transposed_vHS())
           {
-            for (int i = 0; i < get<1>(vHS.sizes()); i++)
+            for (int i = 0; i < std::get<1>(vHS.sizes()); i++)
               Vsum += vHS[n][i];
           }
           else
           {
-            for (int i = 0; i < get<0>(vHS.sizes()); i++)
+            for (int i = 0; i < std::get<0>(vHS.sizes()); i++)
               Vsum += vHS[i][n];
           }
           CHECK(Vsum == ComplexApprox(file_data.Vsum));
@@ -266,12 +262,12 @@ void wfn_fac(boost::mpi3::communicator& world)
         Vsum = 0;
         if (wfn.transposed_vHS())
         {
-          for (int i = 0; i < get<1>(vHS.sizes()); i++)
+          for (int i = 0; i < std::get<1>(vHS.sizes()); i++)
             Vsum += vHS[0][i];
         }
         else
         {
-          for (int i = 0; i < get<0>(vHS.sizes()); i++)
+          for (int i = 0; i < std::get<0>(vHS.sizes()); i++)
             Vsum += vHS[i][0];
         }
         app_log() << " Vsum: " << setprecision(12) << Vsum << " Time: " << t1 << std::endl;
@@ -294,10 +290,9 @@ void wfn_fac(boost::mpi3::communicator& world)
 
       WalkerSet wset2(TG, doc3.getRoot(), InfoMap["info0"], rng);
       //auto initial_guess = WfnFac.getInitialGuess(wfn_name);
-      using std::get;
-      REQUIRE(get<0>(initial_guess.sizes()) == 2);
-      REQUIRE(get<1>(initial_guess.sizes()) == NPOL * NMO);
-      REQUIRE(get<2>(initial_guess.sizes()) == NAEA);
+      REQUIRE(std::get<0>(initial_guess.sizes()) == 2);
+      REQUIRE(std::get<1>(initial_guess.sizes()) == NPOL * NMO);
+      REQUIRE(std::get<2>(initial_guess.sizes()) == NAEA);
 
       if (type == COLLINEAR)
         wset2.resize(nwalk, initial_guess[0], initial_guess[1](initial_guess.extension(1), {0, NAEB}));
@@ -366,12 +361,12 @@ void wfn_fac(boost::mpi3::communicator& world)
           Vsum = 0;
           if (wfn.transposed_vHS())
           {
-            for (int i = 0; i < get<1>(vHS.sizes()); i++)
+            for (int i = 0; i < std::get<1>(vHS.sizes()); i++)
               Vsum += vHS[n][i];
           }
           else
           {
-            for (int i = 0; i < get<0>(vHS.sizes()); i++)
+            for (int i = 0; i < std::get<0>(vHS.sizes()); i++)
               Vsum += vHS[i][n];
           }
           CHECK(Vsum == ComplexApprox(file_data.Vsum));
@@ -382,12 +377,12 @@ void wfn_fac(boost::mpi3::communicator& world)
         Vsum = 0;
         if (wfn.transposed_vHS())
         {
-          for (int i = 0; i < get<1>(vHS.sizes()); i++)
+          for (int i = 0; i < std::get<1>(vHS.sizes()); i++)
             Vsum += vHS[0][i];
         }
         else
         {
-          for (int i = 0; i < get<0>(vHS.sizes()); i++)
+          for (int i = 0; i < std::get<0>(vHS.sizes()); i++)
             Vsum += vHS[i][0];
         }
         app_log() << " Vsum: " << setprecision(12) << Vsum << std::endl;
@@ -491,11 +486,9 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
 
     WalkerSet wset(TG, doc3.getRoot(), InfoMap["info0"], rng);
     auto initial_guess = WfnFac.getInitialGuess(wfn_name);
-
-    using std::get;
-    REQUIRE(get<0>(initial_guess.sizes()) == 2);
-    REQUIRE(get<1>(initial_guess.sizes()) == NPOL * NMO);
-    REQUIRE(get<2>(initial_guess.sizes()) == NAEA);
+    REQUIRE(std::get<0>(initial_guess.sizes()) == 2);
+    REQUIRE(std::get<1>(initial_guess.sizes()) == NPOL * NMO);
+    REQUIRE(std::get<2>(initial_guess.sizes()) == NAEA);
 
     if (type == COLLINEAR)
       wset.resize(nwalk, initial_guess[0], initial_guess[1](initial_guess.extension(1), {0, NAEB}));
@@ -591,8 +584,6 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
     TG.local_barrier();
     t1               = Time.elapsed();
     ComplexType Vsum = 0;
-
-    using std::get;
     if (std::abs(file_data.Vsum) > 1e-8)
     {
       for (int n = 0; n < nwalk; n++)
@@ -602,12 +593,12 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
         {
           if (wfn.transposed_vHS())
           {
-            for (int i = 0; i < get<1>(vHS.sizes()); i++)
+            for (int i = 0; i < std::get<1>(vHS.sizes()); i++)
               Vsum += vHS[n][i];
           }
           else
           {
-            for (int i = 0; i < get<0>(vHS.sizes()); i++)
+            for (int i = 0; i < std::get<0>(vHS.sizes()); i++)
               Vsum += vHS[i][n];
           }
         }
@@ -622,12 +613,12 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
       {
         if (wfn.transposed_vHS())
         {
-          for (int i = 0; i < get<1>(vHS.sizes()); i++)
+          for (int i = 0; i < std::get<1>(vHS.sizes()); i++)
             Vsum += vHS[0][i];
         }
         else
         {
-          for (int i = 0; i < get<0>(vHS.sizes()); i++)
+          for (int i = 0; i < std::get<0>(vHS.sizes()); i++)
             Vsum += vHS[i][0];
         }
       }
@@ -652,10 +643,9 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
 
     WalkerSet wset2(TG, doc3.getRoot(), InfoMap["info0"], rng);
     //auto initial_guess = WfnFac.getInitialGuess(wfn_name);
-    using std::get;
-    REQUIRE(get<0>(initial_guess.sizes()) == 2);
-    REQUIRE(get<1>(initial_guess.sizes()) == NPOL * NMO);
-    REQUIRE(get<2>(initial_guess.sizes()) == NAEA);
+    REQUIRE(std::get<0>(initial_guess.sizes()) == 2);
+    REQUIRE(std::get<1>(initial_guess.sizes()) == NPOL * NMO);
+    REQUIRE(std::get<2>(initial_guess.sizes()) == NAEA);
 
     if (type == COLLINEAR)
       wset2.resize(nwalk, initial_guess[0], initial_guess[1](initial_guess.extension(1), {0, NAEB}));
@@ -732,8 +722,6 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
     wfn2.vHS(X2, vHS, sqrtdt);
     TG.local_barrier();
     Vsum = 0;
-
-    using std::get;
     if (std::abs(file_data.Vsum) > 1e-8)
     {
       for (int n = 0; n < nwalk; n++)
@@ -743,12 +731,12 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
         {
           if (wfn.transposed_vHS())
           {
-            for (int i = 0; i < get<1>(vHS.sizes()); i++)
+            for (int i = 0; i < std::get<1>(vHS.sizes()); i++)
               Vsum += vHS[n][i];
           }
           else
           {
-            for (int i = 0; i < get<0>(vHS.sizes()); i++)
+            for (int i = 0; i < std::get<0>(vHS.sizes()); i++)
               Vsum += vHS[i][n];
           }
         }
@@ -763,12 +751,12 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
       {
         if (wfn.transposed_vHS())
         {
-          for (int i = 0; i < get<1>(vHS.sizes()); i++)
+          for (int i = 0; i < std::get<1>(vHS.sizes()); i++)
             Vsum += vHS[0][i];
         }
         else
         {
-          for (int i = 0; i < get<0>(vHS.sizes()); i++)
+          for (int i = 0; i < std::get<0>(vHS.sizes()); i++)
             Vsum += vHS[i][0];
         }
       }

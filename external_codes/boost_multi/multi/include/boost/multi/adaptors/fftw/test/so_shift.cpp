@@ -4,10 +4,11 @@
 
 #include <boost/multi/array.hpp>
 
-// #include <boost/multi/adaptors/fftw.hpp>  // includes fftw3.hpp
+#include <boost/multi/adaptors/fftw.hpp>  // includes fftw3.hpp
 
+#include <algorithm>  // for std::rotate
 #include <complex>
-#include <functional>
+#include <iostream>
 #include <numeric>  // for std::iota
 
 namespace multi = boost::multi;

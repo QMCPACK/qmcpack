@@ -144,11 +144,9 @@ void reduced_density_matrix(boost::mpi3::communicator& world)
 
     WalkerSet wset(TG, doc3.getRoot(), InfoMap["info0"], rng);
     auto initial_guess = WfnFac.getInitialGuess(wfn_name);
-
-    using std::get;
-    REQUIRE(get<0>(initial_guess.sizes()) == 2);
-    REQUIRE(get<1>(initial_guess.sizes()) == NMO);
-    REQUIRE(get<2>(initial_guess.sizes()) == NAEA);
+    REQUIRE(std::get<0>(initial_guess.sizes()) == 2);
+    REQUIRE(std::get<1>(initial_guess.sizes()) == NMO);
+    REQUIRE(std::get<2>(initial_guess.sizes()) == NAEA);
     wset.resize(nwalk, initial_guess[0], initial_guess[0]);
     using EstimPtr = std::shared_ptr<EstimatorBase>;
     std::vector<EstimPtr> estimators;

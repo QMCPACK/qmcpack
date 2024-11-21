@@ -79,8 +79,7 @@ TEST_CASE("determinant_from_getrf", "[Numerics][determinant]")
   double log_factor   = 0.0;
   double detx         = 0.06317052169675352;
   using ma::determinant_from_getrf;
-  using std::get;
-  double ovlp = determinant_from_getrf(get<0>(x.sizes()), lu.origin(), get<1>(lu.sizes()), pivot.origin(), log_factor);
+  double ovlp = determinant_from_getrf(std::get<0>(x.sizes()), lu.origin(), std::get<1>(lu.sizes()), pivot.origin(), log_factor);
   CHECK(ovlp == Approx(detx));
 }
 
@@ -105,9 +104,8 @@ TEST_CASE("strided_determinant_from_getrf", "[Numerics][determinant]")
   double log_factor      = 0.0;
   double detx            = 0.06317052169675352;
   using ma::strided_determinant_from_getrf;
-  using std::get;
-  strided_determinant_from_getrf(get<0>(x.sizes()), lus.origin(), get<1>(lu.sizes()), lu.num_elements(), pivot.origin(), get<1>(pivot.sizes()),
-                                 log_factor, to_address(ovlps.origin()), get<0>(lus.sizes()));
+  strided_determinant_from_getrf(std::get<0>(x.sizes()), lus.origin(), std::get<1>(lu.sizes()), lu.num_elements(), pivot.origin(), std::get<1>(pivot.sizes()),
+                                 log_factor, to_address(ovlps.origin()), std::get<0>(lus.sizes()));
   CHECK(ovlps[0] == Approx(detx));
   CHECK(ovlps[1] == Approx(detx));
   CHECK(ovlps[2] == Approx(detx));
@@ -134,8 +132,7 @@ TEST_CASE("batched_determinant_from_getrf", "[Numerics][determinant]")
   double log_factor      = 0.0;
   double detx            = 0.06317052169675352;
   using ma::batched_determinant_from_getrf;
-  using std::get;
-  batched_determinant_from_getrf(get<0>(x.sizes()), lu_array.data(), get<1>(lu.sizes()), pivot.origin(), get<1>(pivot.sizes()), log_factor,
+  batched_determinant_from_getrf(std::get<0>(x.sizes()), lu_array.data(), std::get<1>(lu.sizes()), pivot.origin(), std::get<1>(pivot.sizes()), log_factor,
                                  to_address(ovlps.origin()), lu_array.size());
   CHECK(ovlps[0] == Approx(detx));
   CHECK(ovlps[1] == Approx(detx));
@@ -163,8 +160,7 @@ TEST_CASE("batched_determinant_from_getrf_complex", "[Numerics][determinant]")
   std::complex<double> log_factor      = 0.0;
   std::complex<double> detx            = 0.06317052169675352;
   using ma::batched_determinant_from_getrf;
-  using std::get;
-  batched_determinant_from_getrf(get<0>(x.sizes()), lu_array.data(), get<1>(lu.sizes()), pivot.origin(), get<1>(pivot.sizes()), log_factor,
+  batched_determinant_from_getrf(std::get<0>(x.sizes()), lu_array.data(), std::get<1>(lu.sizes()), pivot.origin(), std::get<1>(pivot.sizes()), log_factor,
                                  to_address(ovlps.origin()), lu_array.size());
   CHECK(ovlps[0] == ComplexApprox(detx));
   CHECK(ovlps[1] == ComplexApprox(detx));
