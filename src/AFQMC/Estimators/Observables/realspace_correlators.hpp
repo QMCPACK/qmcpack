@@ -224,7 +224,9 @@ public:
     using std::fill_n;
     // assumes G[nwalk][spin][M][M]
     int nw(G.size());
-    int npts(std::get<1>(Orbitals.sizes()));
+
+    using std::get;
+    int npts(get<1>(Orbitals.sizes()));
     assert(G.size() == wgt.size());
     assert(wgt.size() == nw);
     assert(Xw.size() == nw);
@@ -245,11 +247,11 @@ public:
       {
         denom = mpi3CVector(iextensions<1u>{nw}, shared_allocator<ComplexType>{TG.TG_local()});
       }
-      if (std::get<0>(DMWork.sizes()) != nw || std::get<1>(DMWork.sizes()) != 3 || std::get<2>(DMWork.sizes()) != dm_size)
+      if (get<0>(DMWork.sizes()) != nw || get<1>(DMWork.sizes()) != 3 || get<2>(DMWork.sizes()) != dm_size)
       {
         DMWork = mpi3CTensor({nw, 3, dm_size}, shared_allocator<ComplexType>{TG.TG_local()});
       }
-      if (std::get<0>(Gr_host.sizes()) != nw || std::get<1>(Gr_host.sizes()) != nsp || std::get<2>(Gr_host.sizes()) != npts || std::get<3>(Gr_host.sizes()) != npts)
+      if (get<0>(Gr_host.sizes()) != nw || get<1>(Gr_host.sizes()) != nsp || get<2>(Gr_host.sizes()) != npts || get<3>(Gr_host.sizes()) != npts)
       {
         Gr_host = mpi3C4Tensor({nw, nsp, npts, npts}, shared_allocator<ComplexType>{TG.TG_local()});
       }
@@ -258,9 +260,9 @@ public:
     }
     else
     {
-      if (std::get<0>(denom.sizes()) != nw || std::get<0>(DMWork.sizes()) != nw || std::get<1>(DMWork.sizes()) != 3 || std::get<2>(DMWork.sizes()) != dm_size ||
-          std::get<0>(Gr_host.sizes()) != nw || std::get<1>(Gr_host.sizes()) != nsp || std::get<2>(Gr_host.sizes()) != npts || std::get<3>(Gr_host.sizes()) != npts ||
-          std::get<0>(DMAverage.sizes()) != nave || std::get<1>(DMAverage.sizes()) != 3 || std::get<2>(DMAverage.sizes()) != dm_size)
+      if (get<0>(denom.sizes()) != nw || get<0>(DMWork.sizes()) != nw || get<1>(DMWork.sizes()) != 3 || get<2>(DMWork.sizes()) != dm_size ||
+          get<0>(Gr_host.sizes()) != nw || get<1>(Gr_host.sizes()) != nsp || get<2>(Gr_host.sizes()) != npts || get<3>(Gr_host.sizes()) != npts ||
+          get<0>(DMAverage.sizes()) != nave || get<1>(DMAverage.sizes()) != 3 || get<2>(DMAverage.sizes()) != dm_size)
         APP_ABORT(" Error: Invalid state in accumulate_reference. \n\n\n");
     }
 
@@ -277,7 +279,7 @@ public:
 
       // T1[iw][ispin][i][r] = sum_j G[iw][ispin][i][j] * Psi(j,r)
       int i0, iN;
-      std::tie(i0, iN) = FairDivideBoundary(TG.TG_local().rank(), int(std::get<0>(G2D.sizes())), TG.TG_local().size());
+      std::tie(i0, iN) = FairDivideBoundary(TG.TG_local().rank(), int(get<0>(G2D.sizes())), TG.TG_local().size());
       ma::product(G2D.sliced(i0, iN), Orbitals, T.sliced(i0, iN));
       TG.TG_local().barrier();
 
