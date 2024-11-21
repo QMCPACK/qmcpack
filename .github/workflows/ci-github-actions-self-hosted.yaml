@@ -20,10 +20,10 @@ jobs:
       fail-fast: false
       matrix:
         jobname: [
-            GCC11-NoMPI-MKL-Real-Mixed, # mixed precision
-            GCC11-NoMPI-MKL-Complex-Mixed,
-            GCC11-NoMPI-MKL-Real, # full precision
-            GCC11-NoMPI-MKL-Complex,
+            GCC11-MPI-MKL-AFQMC-Real-Mixed, # mixed precision
+            GCC11-MPI-MKL-AFQMC-Complex-Mixed,
+            GCC11-MPI-MKL-AFQMC-Real, # full precision
+            GCC11-MPI-MKL-AFQMC-Complex,
           ]
 
     steps:

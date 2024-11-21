@@ -49,14 +49,17 @@ case "$1" in
     esac
 
     case "${GH_JOBNAME}" in
-      *"GCC11-NoMPI-MKL-"*)
+      *"GCC11-MPI-MKL-AFQMC"*)
         echo 'Configure for building with GCC and Intel MKL'
 
         source /opt/intel/oneapi/setvars.sh
 
         cmake -GNinja \
+              -DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \
+              -DCMAKE_CXX_COMPILER=/usr/lib64/openmpi/bin/mpicxx \
+              -DMPIEXEC_EXECUTABLE=/usr/lib64/openmpi/bin/mpirun \
               -DBLA_VENDOR=Intel10_64lp \
-              -DQMC_MPI=0 \
+              -DBUILD_AFQMC=ON \
               -DQMC_COMPLEX=$IS_COMPLEX \
               -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
               -DCMAKE_BUILD_TYPE=RelWithDebInfo \
