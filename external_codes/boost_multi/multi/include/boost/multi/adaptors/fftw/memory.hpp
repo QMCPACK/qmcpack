@@ -36,8 +36,10 @@ struct allocator {
 		}
 	}
 
-	constexpr auto operator==(allocator const& /*other*/) const -> bool { return true; }
-	constexpr auto operator!=(allocator const& /*other*/) const -> bool { return false; }
+	// constexpr auto operator==(allocator const& /*other*/) const -> bool { return true; }
+	// constexpr auto operator!=(allocator const& /*other*/) const -> bool { return false; }
+	constexpr friend auto operator==(allocator const& /*lhs*/, allocator const& /*rhs*/) { return true; }
+	constexpr friend auto operator!=(allocator const& /*lhs*/, allocator const& /*rhs*/) { return false; }
 
 	static constexpr auto max_size() noexcept { return std::numeric_limits<size_type>::max() / sizeof(T); }
 };

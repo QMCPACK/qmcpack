@@ -4,12 +4,20 @@ name: CMake
 
 on:
   push:
-    branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
+    branches:
+      - '**'        # matches every branch
+  # pull_request:
+  #   branches: [ "master" ]
+
+# on:
+#   push:
+#     branches: [ "master" ]
+#   pull_request:
+#     branches: [ "master" ]
 
 env:
   BUILD_TYPE: Release
+  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
 
 jobs:
   latest-cpp:
@@ -21,7 +29,7 @@ jobs:
     - name: Configure system
       run: |
           sudo apt-get -y update
-          sudo apt-get -y install libboost-test-dev
+          sudo apt-get -y install libboost-dev
 
     - name: Configure CMake
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
@@ -41,13 +49,14 @@ jobs:
 
     - name: Configure system
       run: |
+          sudo dpkg --add-architecture i386
           sudo apt-get -y update
-          sudo apt-get -y install g++-multilib libboost-test-dev
-          wget https://downloads.sourceforge.net/project/boost/boost/1.84.0/boost_1_84_0.tar.gz --no-verbose
-          tar -xf boost_1_84_0.tar.gz 
-          cd boost_1_84_0
-          ./bootstrap.sh
-          sudo ./b2 cxxflags=-m32 --with-serialization --with-test --with-timer install -j4
+          sudo apt-get -y install g++-multilib gfortran libboost-serialization-dev:i386 wget
+          # wget https://downloads.sourceforge.net/project/boost/boost/1.84.0/boost_1_84_0.tar.gz --no-verbose
+          # tar -xf boost_1_84_0.tar.gz 
+          # cd boost_1_84_0
+          # ./bootstrap.sh
+          # sudo ./b2 cxxflags=-m32 --with-serialization --with-timer install -j4
 
     - name: Configure CMake
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_CXX_FLAGS="-m32"
@@ -68,10 +77,10 @@ jobs:
     - name: Configure system
       run: |
           sudo apt-get -y update
-          sudo apt-get -y install clang libboost-test-dev
+          sudo apt-get -y install clang clang-tidy libboost-dev 
 
     - name: Configure CMake
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_CXX_COMPILER=clang++
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_CXX_CLANG_TIDY=clang-tidy
 
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
@@ -143,7 +152,7 @@ jobs:
           .\vcpkg\bootstrap-vcpkg.bat
 
     - name: Install Boost
-      run: .\vcpkg\vcpkg install boost
+      run: .\vcpkg\vcpkg install boost-multi-array boost-timer boost-serialization
 
     - name: Set up Boost environment variables
       run: |
@@ -153,10 +162,12 @@ jobs:
         echo "PATH=$(Get-Location)\vcpkg\installed\x64-windows\bin;$env:PATH" >> $env:GITHUB_ENV
 
     - name: Configure CMake
-      run: cmake -S . -B build -A x64 -DCMAKE_TOOLCHAIN_FILE=.\vcpkg\scripts\buildsystems\vcpkg.cmake -DBOOST_ROOT=.\vcpkg\installed\x64-windows
+      run: cmake -S . -B build -A x64 -DCMAKE_CXX_STANDARD=20 -DCMAKE_TOOLCHAIN_FILE=.\vcpkg\scripts\buildsystems\vcpkg.cmake -DBOOST_ROOT=.\vcpkg\installed\x64-windows
 
     - name: Build
       run: cmake --build build --config Release
 
     - name: Run tests
-      run: ctest --test-dir build --output-on-failure -C Release
+      run: ctest --test-dir build --timeout 120 --output-on-failure -C Release
+      timeout-minutes: 10
+

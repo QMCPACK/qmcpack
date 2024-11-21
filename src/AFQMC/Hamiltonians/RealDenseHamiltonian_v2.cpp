@@ -175,11 +175,12 @@ HamiltonianOperations RealDenseHamiltonian_v2::getHamiltonianOperations(bool pur
                   << " Problems reading /Hamiltonian/DenseFactorized/L. \n";
       APP_ABORT("");
     }
-    if (std::get<0>(Likn.sizes()) != NMO * NMO || std::get<1>(Likn.sizes()) != local_ncv)
+    using std::get;
+    if (get<0>(Likn.sizes()) != NMO * NMO || get<1>(Likn.sizes()) != local_ncv)
     {
       app_error() << " Error in RealDenseHamiltonian_v2::getHamiltonianOperations():"
                   << " Problems reading /Hamiltonian/DenseFactorized/L. \n"
-                  << " Unexpected dimensins: " << std::get<0>(Likn.sizes()) << " " << std::get<1>(Likn.sizes()) << std::endl;
+                  << " Unexpected dimensins: " << get<0>(Likn.sizes()) << " " << get<1>(Likn.sizes()) << std::endl;
       APP_ABORT("");
     }
     dump.pop();

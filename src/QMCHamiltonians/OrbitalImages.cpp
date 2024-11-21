@@ -568,14 +568,14 @@ void OrbitalImages::write_orbital_xsf(const std::string& sponame,
   if (value_type == real_val) // real part
     for (int p = 0; p < npoints; ++p)
     {
-      file << "  " << real(orb[p]);
+      file << "  " << std::real(orb[p]);
       if ((p + 1) % columns == 0)
         file << std::endl << "   ";
     }
   else if (value_type == imag_val) // imag part
     for (int p = 0; p < npoints; ++p)
     {
-      file << "  " << imag(orb[p]);
+      file << "  " << std::imag(orb[p]);
       if ((p + 1) % columns == 0)
         file << std::endl << "   ";
     }

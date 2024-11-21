@@ -8,8 +8,12 @@ project(
 
 add_library(multi-lapack INTERFACE)
 
-find_package(LAPACK REQUIRED)
+if(NOT DEFINED ENABLE_CIRCLE)
 
-target_link_libraries(multi-lapack INTERFACE multi LAPACK::LAPACK)
+	find_package(LAPACK REQUIRED)
 
-add_subdirectory(./test)
+	target_link_libraries(multi-lapack INTERFACE multi LAPACK::LAPACK)
+
+	add_subdirectory(./test)
+
+endif()

@@ -130,7 +130,7 @@ unsupported and untested by the developers although they may still work.
    performance at large scale requires parallel version :math:`>=` 1.10.
 
 -  BOOST, peer-reviewed portable C++ source libraries
-   (http://www.boost.org). Minimum version is 1.61.0.
+   (http://www.boost.org). Minimum version is 1.70.0 and only needs ``headers`` library.
 
 -  FFTW, FFT library (http://www.fftw.org/).
 

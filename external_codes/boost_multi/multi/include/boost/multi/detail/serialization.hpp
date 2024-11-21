@@ -4,44 +4,34 @@
 
 #ifndef BOOST_MULTI_DETAIL_SERIALIZATION_HPP_
 #define BOOST_MULTI_DETAIL_SERIALIZATION_HPP_
+#pragma once
 
-#include <algorithm>  // for std::for_each
-#include <cstddef>  // for std::byte
-#include <cstdint>  // for std::uint32_t
-#include <type_traits>
+#include <algorithm>    // for std::for_each  // IWYU pragma: keep  // bug in iwyu 0.18
+#include <cstddef>      // for size_t, byte
+#include <cstdint>      // for uint32_t
+#include <iterator>     // for next
+#include <type_traits>  // for enable_if_t, decay_t
+#include <utility>      // for forward
 
-namespace boost {  // NOLINT(modernize-concat-nested-namespaces) keep c++14 compat
-namespace archive {  // NOLINT(modernize-concat-nested-namespaces) keep c++14 compat
-namespace detail {
+namespace boost::archive::detail { template <class Ar> class common_iarchive; }  // lines 24-24
+namespace boost::archive::detail { template <class Ar> class common_oarchive; }  // lines 25-25
 
-template<class Ar> class common_iarchive;
-template<class Ar> class common_oarchive;
+namespace boost::serialization { struct binary_object; }
+namespace boost::serialization { template <class T> class array_wrapper; }
+namespace boost::serialization { template <class T> class nvp; }
 
-}  // end namespace detail
-}  // end namespace archive
+namespace cereal { template <class ArchiveType, std::uint32_t Flags> struct InputArchive; }
+namespace cereal { template <class ArchiveType, std::uint32_t Flags> struct OutputArchive; }
+namespace cereal { template <class T> class NameValuePair; }  // if you get an error here you many need to #include <cereal/archives/xml.hpp> at some point  // IWYU pragma: keep  // bug in iwyu 0.18
 
-namespace serialization {  // NOLINT(modernize-concat-nested-namespaces) keep c++14 compat
-
-template<class T> class nvp;  // dependency "in name only"
-template<class T> class array_wrapper;  // dependency "in name only"
-struct binary_object;  // dependency "in name only", if you get an error here, it means that eventually you need to include #include<boost/serialization/binary_object.hpp>
-
-template<typename T> struct version;
+// namespace boost {
+// namespace serialization {
 
 // template<class Archive, class T>//, std::enable_if_t<std::is_same<T, std::decay_t<T>>{}, int> =0>
 // auto operator>>(Archive& ar, T&& t) -> Archive& {return ar>> t;}
 
-}  // end namespace serialization
-}  // end namespace boost
-
-namespace cereal {
-
-template<class ArchiveType, std::uint32_t Flags> struct OutputArchive;
-template<class ArchiveType, std::uint32_t Flags> struct InputArchive;
-
-template<class T> class NameValuePair;  // dependency "in name only", if you get an error here you many need to #include <cereal/archives/xml.hpp> at some point
-
-}  // end namespace cereal
+// }  // end namespace serialization
+// }  // end namespace boost
 
 namespace boost {  // NOLINT(modernize-concat-nested-namespaces) keep c++14 compat
 namespace multi {
@@ -49,22 +39,22 @@ namespace multi {
 template<class Ar, class Enable = void>
 struct archive_traits {
 	template<class T>
-	/*inline*/ static auto make_nvp(char const* /*n*/, T&& value) noexcept { return std::forward<T>(value); }
+	/*inline*/ static auto make_nvp(char const* /*n*/, T&& value) noexcept { return std::forward<T>(value); }  // match original boost declaration
 };
 
-template<class Archive, class MA, std::enable_if_t<std::is_same_v<MA, std::decay_t<MA>> && (MA::dimensionality > -1), int> = 0>
+template<class Archive, class MA, std::enable_if_t<std::is_same_v<MA, std::decay_t<MA>> && (MA::dimensionality > -1), int> = 0>  // NOLINT(modernize-use-constraints) TODO(correaa)
 auto operator>>(Archive& arxiv, MA&& self)  // this is for compatibility with Archive type
 	-> decltype(arxiv >> static_cast<MA&>(std::forward<MA>(self))) {
 	return arxiv >> static_cast<MA&>(std::forward<MA>(self));
 }
 
-template<class Archive, class MA, std::enable_if_t<std::is_same_v<MA, std::decay_t<MA>> && (MA::dimensionality > -1), int> = 0>
+template<class Archive, class MA, std::enable_if_t<std::is_same_v<MA, std::decay_t<MA>> && (MA::dimensionality > -1), int> = 0>  // NOLINT(modernize-use-constraints) TODO(correaa)
 auto operator<<(Archive& arxiv, MA&& self)  // this is for compatibility with Archive type
 	-> decltype(arxiv << static_cast<MA&>(std::forward<MA>(self))) {
 	return arxiv << static_cast<MA&>(std::forward<MA>(self));
 }
 
-template<class Archive, class MA, std::enable_if_t<std::is_same_v<MA, std::decay_t<MA>> && (MA::dimensionality > -1), int> = 0>
+template<class Archive, class MA, std::enable_if_t<std::is_same_v<MA, std::decay_t<MA>> && (MA::dimensionality > -1), int> = 0>  // NOLINT(modernize-use-constraints) TODO(correaa)
 auto operator&(Archive& arxiv, MA&& self)  // this is for compatibility with Archive type
 	-> decltype(arxiv & static_cast<MA&>(std::forward<MA>(self))) {
 	return arxiv & static_cast<MA&>(std::forward<MA>(self));
@@ -134,12 +124,12 @@ struct archive_traits<
 }  // end namespace multi
 }  // end namespace boost
 
-namespace boost {
+// namespace boost {
 
-template<class T, std::size_t D, class As>
-class multi_array;
+// template<class T, std::size_t D, class As>
+// class multi_array;
 
-}  // end namespace boost
+// }  // end namespace boost
 
 namespace boost {  // NOLINT(modernize-concat-nested-namespaces) keep c++14 compat
 namespace serialization {

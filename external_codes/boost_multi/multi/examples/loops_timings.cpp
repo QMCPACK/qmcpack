@@ -12,9 +12,7 @@ $CXX $0 -o $0x -ltbb&&$0x&&rm $0x;exit
 #include<iostream>
 #include<random>
 #include<vector>
-#if __cplusplus >= 201703L
 #include<execution>
-#endif
 #include<map>
 #include<numeric>
 
@@ -199,14 +197,14 @@ cout<<"------------"<<std::endl;
 		cout<< d[d.size()/3] <<std::endl;
 	}
 	{
-/*		auto tic = watch::now();
+/*    auto tic = watch::now();
 		fill(begin(d), end(d), 0.);
 		for_each(begin(Abs), end(Abs), [&](auto&& e){
 			transform(std::execution::par_unseq, begin(d), end(d), begin(std::move(e)), begin(d), [](auto&& x, auto&& y){return x + norm(y);});
 		});
 		timings[watch::now() - tic] = "array[basis][state] storage, for_each, parunseq transform"; 
 		cout<< d[d.size()/3]<<std::endl;
-*/	}
+*/  }
 #if __cpp_lib_execution >= 201603
 	{
 		auto tic = watch::now();
@@ -232,11 +230,11 @@ for(auto&& p : timings) cout<< p.first.count()/1e9 <<"\t...."<< p.second  <<std:
 return 0;
 {
 	cout<<"v[basis][state] storage\n";
-	vector<vector<complex>> vbs(nbasis, vector<complex>(nstates));	// v[basis][state]
+	vector<vector<complex>> vbs(nbasis, vector<complex>(nstates));  // v[basis][state]
 	for_each(begin(vbs), end(vbs), [&](auto& e){generate(begin(e), end(e), gen);});
 	vector<double> d(nstates);
 	{
-	 	cout<<"\traw loops state/basis\n";
+	  cout<<"\traw loops state/basis\n";
 		auto tic = watch::now();
 		fill(begin(d), end(d), 0.);
 		for(std::size_t s = 0; s != nstates; ++s){
@@ -245,7 +243,7 @@ return 0;
 		cout<<"\t\t"<< ns{watch::now()-tic}.count()/1e9 <<" seconds\t"<<d[d.size()/2]<<std::endl;
 	}
 	{
-	 	cout<<"\traw loops basis/state\n";
+	  cout<<"\traw loops basis/state\n";
 		auto tic = watch::now();
 		fill(begin(d), end(d), 0.);
 		for(std::size_t b = 0; b != nbasis; ++b){
@@ -254,7 +252,7 @@ return 0;
 		cout<<"\t\t"<< ns{watch::now()-tic}.count()/1e9 <<" sec\t"<<d[d.size()/2]<<std::endl;
 	}
 	{
-	 	cout<<"\traw loop basis, transform states\n";
+	  cout<<"\traw loop basis, transform states\n";
 		auto tic = watch::now();
 		fill(begin(d), end(d), 0.);
 		for(std::size_t b = 0; b != nbasis; ++b)
@@ -263,7 +261,7 @@ return 0;
 	}
 #if __cpp_lib_execution >= 201603
 	{
-	 	cout<<"\traw loop basis, parallel transform states\n";
+	  cout<<"\traw loop basis, parallel transform states\n";
 		auto tic = watch::now();
 		fill(begin(d), end(d), 0.);
 		for(std::size_t b = 0; b != nbasis; ++b) // cannot parallelize this loop
@@ -274,11 +272,11 @@ return 0;
 }
 {
 	cout<<"v[state][basis] storage\n";
-	vector<vector<complex>> vsb(nstates, vector<complex>(nbasis));	// v[state][basis]
+	vector<vector<complex>> vsb(nstates, vector<complex>(nbasis));  // v[state][basis]
 	for_each(begin(vsb), end(vsb), [&](auto& e){generate(begin(e), end(e), gen);});
 	vector<double> d(nstates);
 	{
-	 	cout<<"\traw loops state/basis\n";
+	  cout<<"\traw loops state/basis\n";
 		auto tic = watch::now();
 		fill(begin(d), end(d), 0.);
 		for(std::size_t s = 0; s != nstates; ++s){
@@ -288,7 +286,7 @@ return 0;
 		cout<<"\t\t"<< ns{toc-tic}.count()/1e9 <<" sec\t"<<d[d.size()/2]<<std::endl;
 	}
 	{
-	 	cout<<"\traw loops basis/state\n";
+	  cout<<"\traw loops basis/state\n";
 		auto tic = watch::now();
 		fill(begin(d), end(d), 0.);
 		for(std::size_t b = 0; b != nbasis; ++b){
@@ -298,7 +296,7 @@ return 0;
 		cout<<"\t\t"<< ns{toc-tic}.count()/1e9 <<" sec\t"<<d[d.size()/2]<<std::endl;
 	}
 	{
-	 	cout<<"\traw loop basis transform state\n";
+	  cout<<"\traw loop basis transform state\n";
 		auto tic = watch::now();
 		fill(begin(d), end(d), 0.);
 		for(std::size_t b = 0; b != nbasis; ++b)
@@ -308,7 +306,7 @@ return 0;
 	}
 #if __cpp_lib_execution >= 201603
 	{
-	 	cout<<"\traw loop basis transform state\n";
+	  cout<<"\traw loop basis transform state\n";
 		auto tic = watch::now();
 		fill(begin(d), end(d), 0.);
 		for(std::size_t b = 0; b != nbasis; ++b)
@@ -318,7 +316,7 @@ return 0;
 	}
 #endif
 	{
-	 	cout<<"\traw loop basis transform state\n";
+	  cout<<"\traw loop basis transform state\n";
 		auto tic = watch::now();
 		fill(begin(d), end(d), 0.);
 		for(std::size_t b = 0; b != nbasis; ++b)
@@ -328,7 +326,7 @@ return 0;
 	}
 #if 0
 	{
-	 	cout<<"\traw loops basis/state\n";
+	  cout<<"\traw loops basis/state\n";
 		auto tic = watch::now();
 		fill(begin(d), end(d), 0.);
 		for(std::size_t b = 0; b != nbasis; ++b){
@@ -337,7 +335,7 @@ return 0;
 		cout<<"\t\t"<< ns{watch::now()-tic}.count()/1e9 <<" seconds\t"<<d[d.size()/2]<<std::endl;
 	}
 	{
-	 	cout<<"\traw loop basis, transform states\n";
+	  cout<<"\traw loop basis, transform states\n";
 		auto tic = watch::now();
 		fill(begin(d), end(d), 0.);
 		for(std::size_t b = 0; b != nbasis; ++b)
@@ -345,7 +343,7 @@ return 0;
 		cout<<"\t\t"<< ns{watch::now()-tic}.count()/1e9 <<" seconds\t"<<d[d.size()/2]<<std::endl;
 	}
 	while(0){
-	 	cout<<"\traw loop basis, parallel transform states\n";
+	  cout<<"\traw loop basis, parallel transform states\n";
 		auto tic = watch::now();
 		fill(begin(d), end(d), 0.);
 		for(std::size_t b = 0; b != nbasis; ++b)
@@ -355,7 +353,7 @@ return 0;
 #endif
 }
 
-#if 0	
+#if 0 
 
 
 	{
@@ -372,15 +370,15 @@ return 0;
 		multi::array_ref<double, 2> A(v.data(), {100, 100}); assert(size(A) == 100);
 		begin(A)[4][3] = 2.; // ok 
 		using multi::static_array_cast;
-	//	auto const& A_const = static_array_cast<double const>(A);
-	//	begin(A_const)[4][3] = 2.; // error, read only
+	//  auto const& A_const = static_array_cast<double const>(A);
+	//  begin(A_const)[4][3] = 2.; // error, read only
 	}
 	{
 		std::vector<double> dd(10000);
 		multi::array_ref<double, 2, std::vector<double>::iterator> arr(begin(dd), {100, 100}); assert(size(arr) == 100);
 		begin(arr)[4][3] = 2.;
-	//	assert( cbegin(arr)/2 );
-	//	assert( cbegin(arr) < cend(arr) );
+	//  assert( cbegin(arr)/2 );
+	//  assert( cbegin(arr) < cend(arr) );
 	}
 	return 0;
 
@@ -412,8 +410,8 @@ return 0;
 
 	assert( begin(A) < end(A) );
 	assert( cbegin(A) < cend(A) );
-//	assert( crbegin(A) < crend(A) );
-//	assert( crend(A) > crbegin(A) );
+//  assert( crbegin(A) < crend(A) );
+//  assert( crend(A) > crbegin(A) );
 	assert( end(A) - begin(A) == size(A) );
 	assert( rend(A) - rbegin(A) == size(A) );
 
