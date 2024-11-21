@@ -4,16 +4,15 @@
 
 #ifndef BOOST_MULTI_DETAIL_OPERATORS_HPP
 #define BOOST_MULTI_DETAIL_OPERATORS_HPP
+#pragma once
 
-#include <cstddef>      // for ptrdiff_t
-#include <iterator>     // for random_access_iterator_tag
-#include <type_traits>  // for enable_if_t, is_base_of
-#include <utility>      // for forward
+#include <type_traits>  // for enable_if
+#include <utility>  // for forward
 
 #if defined(__NVCC__)
-	#define BOOST_MULTI_HD __host__ __device__
+#define BOOST_MULTI_HD __host__ __device__
 #else
-	#define BOOST_MULTI_HD
+#define BOOST_MULTI_HD
 #endif
 
 namespace boost::multi {
@@ -45,7 +44,7 @@ struct totally_ordered2<Self, Self> : equality_comparable2<totally_ordered2<Self
 	constexpr auto self() const -> self_type const& { return static_cast<self_type const&>(*this); }
 
 	// friend auto operator< (totally_ordered2 const& self, totally_ordered2 const& other) -> bool {return     self.self() < other.self() ;}
-	friend constexpr auto operator==(totally_ordered2 const& self, totally_ordered2 const& other) -> bool { return !(self.self() < other.self()) && !(other.self() < self.self()); }
+	friend auto operator==(totally_ordered2 const& self, totally_ordered2 const& other) -> bool { return !(self.self() < other.self()) && !(other.self() < self.self()); }
 	// friend auto operator!=(totally_ordered2 const& self, totally_ordered2 const& other) {return    (s.self() < o.self()) or     (o.self() < s.self());}
 
 	friend auto operator<=(totally_ordered2 const& self, totally_ordered2 const& other) -> bool { return !(other.self() < self.self()); }
@@ -60,8 +59,8 @@ template<class T>
 struct totally_ordered2<T, void> {
 	// template<class U>
 	// friend constexpr auto operator<=(T const& self, U const& other) { return (self < other) || (self == other); }
-	// template<class U>
-	// friend constexpr auto operator>=(T const& self, U const& other) { return (other < self) || (self == other); }
+	//template<class U>
+	//friend constexpr auto operator>=(T const& self, U const& other) { return (other < self) || (self == other); }
 	// template<class U>
 	// friend constexpr auto operator>(T const& self, U const& other) { return other < self; }
 };
@@ -90,7 +89,7 @@ template<class Self> struct incrementable : totally_ordered<Self> {  // , self_m
 
 template<class T>
 struct decrementable : weakly_decrementable<T> {
-	template<class U, typename = std::enable_if_t<!std::is_base_of_v<T, U>>>  // NOLINT(modernize-use-constraints) TODO(correaa)
+	template<class U, typename = std::enable_if_t<!std::is_base_of_v<T, U>>>
 	friend constexpr auto operator--(U& self, int) -> T {
 		T tmp{self};
 		--self;
@@ -182,13 +181,13 @@ struct random_accessable  // NOLINT(fuchsia-multiple-inheritance)
 template<class T, class D>
 struct addable2 {
 	using difference_type = D;
-	template<class TT, typename = std::enable_if_t<std::is_base_of<T, TT>{}>>  // NOLINT(modernize-use-constraints) TODO(correaa)
+	template<class TT, typename = std::enable_if_t<std::is_base_of<T, TT>{}>>
 	friend constexpr auto operator+(TT&& self, difference_type const& diff) -> T {
 		T tmp{std::forward<TT>(self)};
 		tmp += diff;
 		return tmp;
 	}
-	template<class TT, typename = std::enable_if_t<std::is_base_of<T, TT>{}>>  // NOLINT(modernize-use-constraints) TODO(correaa)
+	template<class TT, typename = std::enable_if_t<std::is_base_of<T, TT>{}>>
 	friend constexpr auto operator+(difference_type const& diff, TT&& self) -> T { return std::forward<TT>(self) + diff; }
 };
 

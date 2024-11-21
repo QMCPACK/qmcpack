@@ -3,11 +3,32 @@
 // Distributed under the Boost Software License, Version 1.0.
 // https://www.boost.org/LICENSE_1_0.txt
 
-#include <boost/multi/array.hpp>  // for array, layout_t, static_array
+#include <boost/multi/array.hpp>
 
-#include <algorithm>   // for transform
-#include <functional>  // for plus  // IWYU pragma: keep
-#include <numeric>     // for accumulate
+#include <numeric>
+
+// Suppress warnings from boost.test
+#if defined(__clang__)
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wold-style-cast"
+#  pragma clang diagnostic ignored "-Wundef"
+#  pragma clang diagnostic ignored "-Wconversion"
+#  pragma clang diagnostic ignored "-Wsign-conversion"
+#  pragma clang diagnostic ignored "-Wfloat-equal"
+#elif defined(__GNUC__)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wold-style-cast"
+#  pragma GCC diagnostic ignored "-Wundef"
+#  pragma GCC diagnostic ignored "-Wconversion"
+#  pragma GCC diagnostic ignored "-Wsign-conversion"
+#  pragma GCC diagnostic ignored "-Wfloat-equal"
+#endif
+
+#ifndef BOOST_TEST_MODULE
+#  define BOOST_TEST_MAIN
+#endif
+
+#include <boost/test/unit_test.hpp>
 
 namespace multi = boost::multi;
 
@@ -34,18 +55,12 @@ auto trace_with_accumulate(Array2D const& arr) {
 	return std::accumulate(arr.diagonal().begin(), arr.diagonal().end(), static_cast<typename Array2D::element_type>(0));
 }
 
-#include <boost/core/lightweight_test.hpp>
-#define BOOST_AUTO_TEST_CASE(CasenamE) /**/
-
-auto main() -> int {  // NOLINT(readability-function-cognitive-complexity,bugprone-exception-escape)
 BOOST_AUTO_TEST_CASE(trace_test) {
 	using int_element = multi::index;
 	multi::array<int_element, 2> arr({5, 5}, 0);
 
 	auto [is, js] = extensions(arr);
-
-	// NOLINTNEXTLINE(altera-unroll-loops) testing loops
-	for(auto i : is) {
+	for(auto i : is) {  // NOLINT(altera-unroll-loops) testing loops
 		for(auto j : js) {  // NOLINT(altera-unroll-loops) testing loops
 			arr[i][j] = 10 * i + j;
 		}
@@ -53,27 +68,17 @@ BOOST_AUTO_TEST_CASE(trace_test) {
 
 	auto tr = trace_with_diagonal(arr);
 
-	BOOST_TEST( tr == 00 + 11 + 22 + 33 + 44 );
+	BOOST_REQUIRE( tr == 00 + 11 + 22 + 33 + 44 );
 
-	BOOST_TEST( trace_with_diagonal(arr) == trace_with_indices(arr) );
-	BOOST_TEST( trace_with_diagonal(arr) == trace_with_accumulate(arr) );
+	BOOST_REQUIRE( trace_with_diagonal(arr) == trace_with_indices(arr) );
+	BOOST_REQUIRE( trace_with_diagonal(arr) == trace_with_accumulate(arr) );
+//  BOOST_REQUIRE( trace_with_diagonal(arr) == trace_with_reduce(arr) );
 }
 
 BOOST_AUTO_TEST_CASE(broadcasted) {
 	multi::array<int, 2> const arr = {
-		{0, 1,  2},
-		{4, 5,  6},
-		{8, 9, 10},
-	};
-
-	BOOST_TEST( arr.diagonal().begin() != arr.diagonal().end() );
-	BOOST_TEST( arr.diagonal().end() - arr.diagonal().begin() == 3 );
-}
-
-BOOST_AUTO_TEST_CASE(broadcasted) {
-	multi::array<int, 2> const arr = {
-		{0, 1,  2,  3},
-		{4, 5,  6,  7},
+		{0, 1, 2, 3},
+		{4, 5, 6, 7},
 		{8, 9, 10, 11},
 	};
 
@@ -84,21 +89,29 @@ BOOST_AUTO_TEST_CASE(broadcasted) {
 
 	{
 		auto const& arr_instance = a3D[0];
-		BOOST_TEST( &arr_instance[3][1] == &arr[3][1] );
+		BOOST_REQUIRE( &arr_instance[3][1] == &arr[3][1] );
 	}
 	{
 		auto const& arr_instance = a3D[99];
-		BOOST_TEST( &arr_instance[3][1] == &arr[3][1] );
+		BOOST_REQUIRE( &arr_instance[3][1] == &arr[3][1] );
 	}
 	{
 		auto const& arr_instance = a3D[-99];
-		BOOST_TEST( &arr_instance[3][1] == &arr[3][1] );
+		BOOST_REQUIRE( &arr_instance[3][1] == &arr[3][1] );
 	}
 	{
 		auto const& a3D_self = a3D();
 		BOOST_TEST( &a3D_self[ 4][3][1] == &arr[3][1] );
 		BOOST_TEST( &a3D_self[99][3][1] == &arr[3][1] );
 	}
+	{
+		// [[maybe_unused]] auto const& a3D_finite = a3D({0, 9});
+		// BOOST_TEST( &a3D_finite[ 4][3][1] == &arr[3][1] );
+		// BOOST_TEST( &a3D_finite[99][3][1] == &arr[3][1] );
+	}
+
+//  BOOST_REQUIRE( a3D_finite.size() == 5 );
+//  BOOST_REQUIRE( a3D_finite.begin() + 5 == a3D_finite.end() );
 }
 
 BOOST_AUTO_TEST_CASE(broadcast_1D) {
@@ -111,7 +124,7 @@ BOOST_AUTO_TEST_CASE(broadcast_1D) {
 }
 
 BOOST_AUTO_TEST_CASE(broadcast_0D) {
-	multi::array<int, 1>       arr = {0, 1, 2, 3};
+	multi::array<int, 1> arr = {0, 1, 2, 3};
 	multi::array<int, 0> const vv(2);
 
 	auto const& v1D = vv.broadcasted();
@@ -124,8 +137,9 @@ BOOST_AUTO_TEST_CASE(broadcast_0D) {
 
 	BOOST_TEST( r1D[3] == arr[3] + 2 );
 
-	std::transform(arr.begin(), arr.end(), v1D.begin(), arr.begin(), [](auto, auto ve) { return ve; });
+	std::transform(arr.begin(), arr.end(), v1D.begin(), arr.begin(), [](auto, auto ve) {return ve;});
 	BOOST_TEST( arr[3] == 2 );
-}
 
-return boost::report_errors();}
+	// std::copy_n(v1D.begin(), arr.size(), arr.begin());
+	// BOOST_TEST( arr[3] == 2 );
+}

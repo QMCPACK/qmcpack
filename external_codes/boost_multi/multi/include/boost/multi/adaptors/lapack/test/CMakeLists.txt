@@ -1,19 +1,15 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.18)
 
-if(ENABLE_CUDA)
-	enable_language(CUDA)
-endif()
+project(
+	boost-multi-adaptors-lapack-test
+	VERSION 0.1
+	LANGUAGES CXX
+)
 
-# project(
-#   boost-multi-adaptors-lapack-test
-#   VERSION 0.1
-#   LANGUAGES CXX
-# )
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-# set(CMAKE_CXX_STANDARD_REQUIRED ON)
-# set(CMAKE_CXX_EXTENSIONS OFF)
-
-find_package(Boost REQUIRED)
+find_package(Boost REQUIRED COMPONENTS unit_test_framework)
 # add_compile_definitions(${TEST_EXE} PRIVATE ${Boost_DEFINITIONS})
 # include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 # link_libraries(${Boost_LIBRARIES})
@@ -56,7 +52,6 @@ find_package(Boost REQUIRED)
 #   # -Wpointer-sign -Wreorder -Wno-return-type -Wsign-compare -Wsequence-point -Wtrigraphs -Wunused-function -Wunused-but-set-variable -Wunused-variable -Wwrite-strings -Werror -diag-error:3846 > $<$<CXX_COMPILER_ID:MSVC>: /W4 >
 # )
 
-
 enable_testing()
 include(CTest)
 
@@ -67,11 +62,6 @@ include(CTest)
 # add_test(NAME geqrf.cpp.x COMMAND ./geqrf.cpp.x)
 
 add_executable(potrf.cpp.x potrf.cpp)
-
-if(ENABLE_CUDA)
-    set_source_files_properties(potrf.cpp PROPERTIES LANGUAGE CUDA)
-endif()
-
-target_link_libraries(potrf.cpp.x PRIVATE multi-lapack Boost::boost)
+target_link_libraries(potrf.cpp.x PRIVATE multi-lapack Boost::unit_test_framework)
 
 add_test(NAME potrf.cpp.x COMMAND $<TARGET_FILE:potrf.cpp.x>)

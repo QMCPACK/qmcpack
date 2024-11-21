@@ -6,12 +6,8 @@
 #define BOOST_MULTI_DETAIL_MEMORY_HPP
 #pragma once
 
-#include <boost/multi/utility.hpp>  // for has_rank, to_address
-
-#include <iterator>                 // for copy, iterator_traits
-#include <memory>                   // for allocator_traits
-#include <type_traits>              // for declval, enable_if_t, false_type, is_trivially_default_constructible, true_type, void_t
-#include <utility>                  // for addressof, forward
+#include <memory>  // for std::allocator_traits
+#include <type_traits>  // for std::void_t
 
 namespace boost::multi {
 
@@ -21,20 +17,20 @@ struct allocator_traits : std::allocator_traits<Alloc> {};
 // https://en.cppreference.com/w/cpp/memory/destroy
 template<
 	class Alloc, class ForwardIt,
-	std::enable_if_t<!has_rank<ForwardIt>::value, int> =0  // NOLINT(modernize-use-constraints) TODO(correaa)
+	std::enable_if_t<!has_rank<ForwardIt>::value, int> =0
 >
 void destroy(Alloc& alloc, ForwardIt first, ForwardIt last) {
 	for(; first != last; ++first) {allocator_traits<Alloc>::destroy(alloc, std::addressof(*first));}  // NOLINT(altera-unroll-loops) TODO(correaa) consider using an algorithm
 }
 
-template<class Alloc, class ForwardIt, std::enable_if_t<has_rank<ForwardIt>::value && ForwardIt::rank_v == 1, int> = 0>  // NOLINT(modernize-use-constraints) TODO(correaa)
+template<class Alloc, class ForwardIt, std::enable_if_t<has_rank<ForwardIt>::value && ForwardIt::rank_v == 1, int> = 0>
 void destroy(Alloc& alloc, ForwardIt first, ForwardIt last) {
 	//  using multi::to_address;
 	std::for_each(first, last, [&](auto& elem) {alloc.destroy(addressof(elem));});
 	// for(; first != last; ++first) {alloc.destroy(to_address(first));}  // NOLINT(altera-unroll-loops) TODO(correaa) consider using an algorithm
 }
 
-template<class Alloc, class ForwardIt, std::enable_if_t<has_rank<ForwardIt>::value && ForwardIt::rank_v != 1, int> = 0>  // NOLINT(modernize-use-constraints) TODO(correaa)
+template<class Alloc, class ForwardIt, std::enable_if_t<has_rank<ForwardIt>::value && ForwardIt::rank_v != 1, int> = 0>
 void destroy(Alloc& alloc, ForwardIt first, ForwardIt last) {
 	for(; first != last; ++first) {destroy(alloc, begin(*first), end(*first));} // NOLINT(altera-unroll-loops) TODO(correaa) consider using an algorithm
 }
@@ -66,7 +62,7 @@ auto uninitialized_default_construct_n(Alloc& alloc, ForwardIt first, Size n) ->
 template<
 	class Alloc, class ForwardIt, class Size,
 	typename T = typename std::iterator_traits<ForwardIt>::value_type,
-	typename = std::enable_if_t<! std::is_trivially_default_constructible<T>{}>  // NOLINT(modernize-use-constraints) TODO(correaa)
+	typename = std::enable_if_t<! std::is_trivially_default_constructible<T>{}>
 >
 auto uninitialized_value_construct_n(Alloc& alloc, ForwardIt first, Size n) -> ForwardIt {
 	ForwardIt current = first;  // using std::addressof;
@@ -86,7 +82,7 @@ template<class... Args> auto std_copy(Args&&... args) {
 
 namespace xtd {
 
-template<class Alloc, class InputIt, class MIt, typename = std::enable_if_t<! has_rank<MIt>{}> >  // NOLINT(modernize-use-constraints) TODO(correaa)
+template<class Alloc, class InputIt, class MIt, typename = std::enable_if_t<! has_rank<MIt>{}> >
 auto alloc_uninitialized_copy(Alloc& alloc, InputIt first, InputIt last, MIt dest) -> MIt {
 	MIt current = dest;
 //  using multi::to_address;
@@ -111,12 +107,12 @@ template<class Alloc> constexpr bool is_allocator_v = is_allocator<Alloc>::value
 
 // template<dimensionality_type N, class InputIt, class ForwardIt>
 // auto uninitialized_copy(InputIt first, InputIt last, ForwardIt dest) {
-//  while(first!=last) {  // NOLINT(altera-unroll-loops) TODO(correaa) consider using an algorithm
-//    uninitialized_copy<N-1>(begin(*first), end(*first), begin(*dest));
-//    ++first;
-//    ++dest;
-//  }
-//  return dest;
+// 	while(first!=last) {  // NOLINT(altera-unroll-loops) TODO(correaa) consider using an algorithm
+// 		uninitialized_copy<N-1>(begin(*first), end(*first), begin(*dest));
+// 		++first;
+// 		++dest;
+// 	}
+// 	return dest;
 // }
 
 }  // end namespace boost::multi

@@ -3,7 +3,7 @@
 // https://www.boost.org/LICENSE_1_0.txt
 
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi CUBLAS trsm"
-// #include<boost/test/unit_test.hpp>
+#include<boost/test/unit_test.hpp>
 
 #include <boost/multi/adaptors/cuda/cublas.hpp>
 #include <boost/multi/adaptors/blas/trsm.hpp>
@@ -14,12 +14,6 @@
 
 namespace multi = boost::multi;
 
-#include <boost/core/lightweight_test.hpp>
-#define BOOST_AUTO_TEST_CASE(CasenamE) /**/
-
-#define BOOST_REQUIRE_CLOSE(X, Y, ToL) BOOST_TEST( std::abs( (X) - (Y) ) < (ToL) )
-
-int main() {
 BOOST_AUTO_TEST_CASE(unit_trsm_multi_blas_trsm_complex_nonsquare_default_diagonal_hermitized_gemm_check_no_const) {
 	namespace blas = multi::blas;
 	using complex = thrust::complex<double>; complex const I{0.0, 1.0};  // NOLINT(readability-identifier-length) imag unit
@@ -130,4 +124,3 @@ BOOST_AUTO_TEST_CASE(default_param_unit_trsm_multi_blas_trsm_complex_nonsquare_d
 	BOOST_REQUIRE_CLOSE( B_cpy[1][0].real() , -0.72562939983295538 , 0.001);
 	BOOST_REQUIRE_CLOSE( B_cpy[1][0].imag() ,  0.046772461520104877, 0.001);
 }
-return boost::report_errors();}

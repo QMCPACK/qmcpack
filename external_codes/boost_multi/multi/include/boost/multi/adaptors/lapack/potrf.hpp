@@ -25,14 +25,14 @@ using ::core::potrf;
 template<class Iterator>
 BOOST_MULTI_NODISCARD("result has information of order of minor through .size() member")
 auto potrf(filling uplo, Iterator first, Iterator last)
-->decltype(potrf(static_cast<char>(uplo), typename std::iterator_traits<Iterator>::difference_type{}, first.base(), stride(first), std::declval<int&>()), Iterator{})
+->decltype(potrf(static_cast<char>(uplo), typename std::iterator_traits<Iterator>::difference_type{}, base(first), stride(first), std::declval<int&>()), Iterator{})
 {
 	assert( stride(first) == stride(last) );
 	assert( first->stride() == 1 );
 //  auto lda = stride(first);
 
 	int info;  // NOLINT(cppcoreguidelines-init-variables)
-	potrf(static_cast<char>(uplo), std::distance(first, last), first.base(), stride(first), info);
+	potrf(static_cast<char>(uplo), std::distance(first, last), base(first), stride(first), info);
 
 	assert( info >= 0 );
 	// if(info > 0) {std::cerr << "warning minor of order " << info << " is not possitive\n";}
@@ -47,9 +47,9 @@ auto potrf(filling uplo, A2D&& A)  // NOLINT(readability-identifier-length) conv
 	using lapack::flip;
 
 	if(stride(A) == 1) {
-		auto last = potrf(flip(uplo), A.rotated().begin(), A.rotated().end());
+		auto last = potrf(flip(uplo), begin(rotated(A)), end(rotated(A)));
 		using std::distance;
-		return A({0, distance(A.rotated().begin(), last)}, {0, distance(A.rotated().begin(), last)});
+		return A({0, distance(begin(rotated(A)), last)}, {0, distance(begin(rotated(A)), last)});
 	}
 
 	auto last = potrf(uplo, begin(A), end(A));

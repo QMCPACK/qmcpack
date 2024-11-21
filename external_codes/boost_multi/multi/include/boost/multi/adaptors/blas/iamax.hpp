@@ -5,7 +5,7 @@
 #ifndef BOOST_MULTI_ADAPTORS_BLAS_IAMAX_HPP
 #define BOOST_MULTI_ADAPTORS_BLAS_IAMAX_HPP
 
-#include <boost/multi/adaptors/blas/core.hpp>
+#include "../blas/core.hpp"
 
 namespace boost::multi::blas {
 
