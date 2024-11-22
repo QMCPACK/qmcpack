@@ -285,8 +285,10 @@ private:
   std::shared_ptr<std::vector<ValueType>> C;
   /// if true, the CI coefficients are optimized
   bool CI_Optimizable;
+public:
   //optimizable variable is shared with the clones
   std::shared_ptr<opt_variables_type> myVars;
+private:
 
   /// CSF data set. If nullptr, not using CSF
   std::shared_ptr<CSFData> csf_data_;

@@ -32,9 +32,12 @@ public:
     SelfHealingOverlapInputSection()
     {
       section_name   = "SelfHealingOverlap";
-      attributes     = {"type", "name"};
+      attributes     = {"type", "name", "param_deriv"};
       strings        = {"type", "name"};
-      default_values = {{"type", std::string("sh_overlap")},{"name", std::string("sh_overlap")}};
+      bools          = {"param_deriv"};
+      default_values = {{"type", std::string("sh_overlap")},
+                        {"name", std::string("sh_overlap")},
+                        {"param_deriv",false}};
     }
     // clang-format: on
   };
