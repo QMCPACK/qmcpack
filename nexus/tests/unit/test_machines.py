@@ -533,10 +533,10 @@ def test_workstation_scheduling():
     assert(j.threads==2)
     assert(j.local)
     assert(j.processes==2)
-    assert(j.run_options.np=='-np 2')
+    assert(j.run_options.np=='--bind-to none -np 2')
     assert(j.batch_mode==False)
     init_job(j,dir=tpath) # imitate interaction w/ simulation object
-    assert(ws.write_job(j)=='export OMP_NUM_THREADS=2\nmpirun -np 2 echo run')
+    assert(ws.write_job(j)=='export OMP_NUM_THREADS=2\nmpirun --bind-to none -np 2 echo run')
 
     j = job(machine=ws.name,serial=True)
     assert(j.machine==ws.name)
@@ -544,7 +544,7 @@ def test_workstation_scheduling():
     assert(j.threads==1)
     assert(j.serial)
     assert(j.processes==1)
-    assert(j.run_options.np=='-np 1')
+    assert(j.run_options.np=='--bind-to none -np 1')
     assert(j.batch_mode==False)
     init_job(j,dir=tpath) # imitate interaction w/ simulation object
     assert(ws.write_job(j)=='export OMP_NUM_THREADS=1\necho run')
