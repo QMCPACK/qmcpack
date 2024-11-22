@@ -45,8 +45,9 @@ P_Type generate1BodyPropagator(TaskGroup_& TG,
                                MultiArray2D const& H1,
                                bool printP1eV = false)
 {
+  using std::get;
   assert(H1.dimensionality == 2);
-  assert(std::get<0>(H1.sizes()) == std::get<1>(H1.sizes()));
+  assert(get<0>(H1.sizes()) == get<1>(H1.sizes()));
   assert(H1.stride(1) == 1);
   int NMO = H1.size();
   if (TG.TG_local().root())
@@ -83,13 +84,14 @@ P_Type generate1BodyPropagator(TaskGroup_& TG,
                                MultiArray2DB const& H1ext,
                                bool printP1eV = false)
 {
+  using std::get;
   assert(H1.dimensionality == 2);
-  assert(std::get<0>(H1.sizes()) == std::get<1>(H1.sizes()));
+  assert(get<0>(H1.sizes()) == get<1>(H1.sizes()));
   assert(H1.stride(1) == 1);
   assert(H1ext.dimensionality == 2);
-  assert(std::get<0>(H1ext.sizes()) == std::get<1>(H1ext.sizes()));
+  assert(get<0>(H1ext.sizes()) == get<1>(H1ext.sizes()));
   assert(H1ext.stride(1) == 1);
-  assert(std::get<0>(H1.sizes()) == std::get<1>(H1ext.sizes()));
+  assert(get<0>(H1.sizes()) == get<1>(H1ext.sizes()));
   int NMO = H1.size();
   if (TG.TG_local().root())
   {

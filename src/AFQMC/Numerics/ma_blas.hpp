@@ -48,14 +48,16 @@ MultiArray2DY&& copy(MultiArray2DX&& x, MultiArray2DY&& y)
   assert(x.stride(1) == 1);
   assert(y.stride(1) == 1);
   assert(x.size() == y.size());
-  assert(std::get<1>(x.sizes()) == std::get<1>(y.sizes()));
-  if ((x.stride() == std::get<1>(x.sizes())) && (y.stride() == std::get<1>(y.sizes())))
+
+  using std::get;
+  assert(get<1>(x.sizes()) == get<1>(y.sizes()));
+  if ((x.stride() == get<1>(x.sizes())) && (y.stride() == get<1>(y.sizes())))
   {
     copy(x.num_elements(), pointer_dispatch(x.origin()), 1, pointer_dispatch(y.origin()), 1);
   }
   else
   {
-    copy2D(x.size(), std::get<1>(x.sizes()), pointer_dispatch(x.origin()), x.stride(), pointer_dispatch(y.origin()), y.stride());
+    copy2D(x.size(), get<1>(x.sizes()), pointer_dispatch(x.origin()), x.stride(), pointer_dispatch(y.origin()), y.stride());
   }
   return std::forward<MultiArray2DY>(y);
 }
@@ -68,18 +70,19 @@ template<class MultiArrayNDX,
          typename = void>
 MultiArrayNDY&& copy(MultiArrayNDX&& x, MultiArrayNDY&& y)
 {
+  using std::get;
 #ifndef NDEBUG
   // only on contiguous arrays
 //  long sz(x.size());
 //  for (int i = 1; i < int(std::decay<MultiArrayNDX>::type::dimensionality); ++i)
 //    sz *= x.size(i);
 //  assert(x.num_elements() == sz);
-  assert(std::get<std::decay<MultiArrayNDX>::type::dimensionality - 1>(x.strides()) == 1);
+  assert(get<std::decay<MultiArrayNDX>::type::dimensionality - 1>(x.strides()) == 1);
 //  sz = y.size();
 //  for (int i = 1; i < int(std::decay<MultiArrayNDY>::type::dimensionality); ++i)
 //   sz *= y.size(i);
 //  assert(y.num_elements() == sz);
-  assert(std::get<std::decay<MultiArrayNDY>::type::dimensionality - 1>(y.strides()) == 1);
+  assert(get<std::decay<MultiArrayNDY>::type::dimensionality - 1>(y.strides()) == 1);
   assert(x.num_elements() == y.num_elements());
 #endif
   copy(x.num_elements(), pointer_dispatch(x.origin()), 1, pointer_dispatch(y.origin()), 1);
@@ -104,9 +107,10 @@ template<class MultiArray2Dx,
          typename = void>
 typename std::decay<MultiArray2Dx>::type::element dot(MultiArray2Dx&& x, MultiArray2Dy&& y)
 {
-  assert(x.stride() == std::get<1>(x.sizes())); // only on contiguous arrays
+  using std::get;
+  assert(x.stride() == get<1>(x.sizes())); // only on contiguous arrays
   assert(x.stride(1) == 1);         // only on contiguous arrays
-  assert(y.stride() == std::get<1>(y.sizes())); // only on contiguous arrays
+  assert(y.stride() == get<1>(y.sizes())); // only on contiguous arrays
   assert(y.stride(1) == 1);         // only on contiguous arrays
   assert(x.num_elements() == y.num_elements());
   return dot(x.num_elements(), pointer_dispatch(x.origin()), 1, pointer_dispatch(y.origin()), 1);
@@ -133,7 +137,8 @@ MultiArrayND&& scal(T a, MultiArrayND&& x)
 //  for (int i = 1; i < int(std::decay<MultiArrayND>::type::dimensionality); ++i)
 //    sz *= x.size(i);
 //  assert(x.num_elements() == sz);
-  assert(std::get<std::decay<MultiArrayND>::type::dimensionality - 1>(x.strides()) == 1); // only on contiguous arrays
+  using std::get;
+  assert(get<std::decay<MultiArrayND>::type::dimensionality - 1>(x.strides()) == 1); // only on contiguous arrays
 #endif
   scal(x.num_elements(), a, pointer_dispatch(x.origin()), 1);
   return std::forward<MultiArrayND>(x);
@@ -180,10 +185,11 @@ template<class T,
          >
 MultiArray2DB&& axpy(T x, MultiArray2DA const& a, MultiArray2DB&& b)
 {
+  using std::get;
   assert(a.num_elements() == b.num_elements());
-  assert(a.stride() == std::get<1>(a.sizes())); // only on contiguous arrays
+  assert(a.stride() == get<1>(a.sizes())); // only on contiguous arrays
   assert(a.stride(1) == 1);         // only on contiguous arrays
-  assert(b.stride() == std::get<1>(b.sizes())); // only on contiguous arrays
+  assert(b.stride() == get<1>(b.sizes())); // only on contiguous arrays
   assert(b.stride(1) == 1);         // only on contiguous arrays
   axpy(a.num_elements(), x, pointer_dispatch(a.origin()), 1, pointer_dispatch(b.origin()), 1);
   return std::forward<MultiArray2DB>(b);
@@ -199,13 +205,14 @@ template<
                                        std::decay<MultiArray1DY>::type::dimensionality == 1>::type>
 MultiArray1DY&& gemv(T alpha, MultiArray2DA const& A, MultiArray1DX const& x, T beta, MultiArray1DY&& y)
 {
+  using std::get;
   assert((IN == 'N') || (IN == 'T') || (IN == 'C'));
   if (IN == 'T' or IN == 'C')
-    assert(x.size() == std::get<1>(A.sizes()) and y.size() == A.size());
+    assert(x.size() == get<1>(A.sizes()) and y.size() == A.size());
   else if (IN == 'N')
-    assert(x.size() == A.size() and y.size() == std::get<1>(A.sizes()));
+    assert(x.size() == A.size() and y.size() == get<1>(A.sizes()));
   assert(A.stride(1) == 1); // gemv is not implemented for arrays with non-leading stride != 1
-  int M = std::get<1>(A.sizes());
+  int M = get<1>(A.sizes());
   int N = A.size();
   gemv(IN, M, N, alpha, pointer_dispatch(A.origin()), A.stride(), pointer_dispatch(x.origin()), x.stride(), beta,
        pointer_dispatch(y.origin()), y.stride());
@@ -218,10 +225,10 @@ MultiArray1DY&& gemv(MultiArray2DA const& A, MultiArray1DX const& x, MultiArray1
   return gemv<IN>(1., A, x, 0., std::forward<MultiArray1DY>(y));
 } //y := alpha*A*x
 
-//	gemm<'T', 'T'>(1., A, B, 0., C); // C = T(A*B) = T(B)*T(A) or T(C) = A*B
-//	gemm<'N', 'N'>(1., A, B, 0., C); // C = B*A = T(T(A)*T(B)) or T(C) = T(A)*T(B)
-//	gemm<'T', 'N'>(1., A, B, 0., C); // C = T(A*T(B)) = B*T(A) or T(C) = A*T(B)
-//	gemm<'N', 'T'>(1., A, B, 0., C); // C =  T(T(A)*B) = T(B)*A or T(C) = T(A)*B
+//  gemm<'T', 'T'>(1., A, B, 0., C); // C = T(A*B) = T(B)*T(A) or T(C) = A*B
+//  gemm<'N', 'N'>(1., A, B, 0., C); // C = B*A = T(T(A)*T(B)) or T(C) = T(A)*T(B)
+//  gemm<'T', 'N'>(1., A, B, 0., C); // C = T(A*T(B)) = B*T(A) or T(C) = A*T(B)
+//  gemm<'N', 'T'>(1., A, B, 0., C); // C =  T(T(A)*B) = T(B)*A or T(C) = T(A)*B
 
 template<
     char TA,
@@ -242,33 +249,34 @@ MultiArray2DC&& gemm(T alpha, MultiArray2DA const& a, MultiArray2DB const& b, T 
   int M = -1;
   int N = -1;
   int K = -1;
+  using std::get;
   if (TA == 'N' and TB == 'N')
   {
-    M = std::get<1>(a.sizes());
+    M = get<1>(a.sizes());
     N = b.size();
     K = a.size();
-    assert(a.size() == std::get<1>(b.sizes()) and c.size() == b.size() and std::get<1>(c.sizes()) == std::get<1>(a.sizes()));
+    assert(a.size() == get<1>(b.sizes()) and c.size() == b.size() and get<1>(c.sizes()) == get<1>(a.sizes()));
   }
   if ((TA == 'T' or TA == 'C') and (TB == 'T' or TB == 'C'))
   {
     M = a.size();
-    N = std::get<1>(b.sizes());
-    K = std::get<1>(a.sizes());
-    assert(std::get<1>(a.sizes()) == b.size() and c.size() == std::get<1>(b.sizes()) and std::get<1>(c.sizes()) == a.size());
+    N = get<1>(b.sizes());
+    K = get<1>(a.sizes());
+    assert(get<1>(a.sizes()) == b.size() and c.size() == get<1>(b.sizes()) and get<1>(c.sizes()) == a.size());
   }
   if ((TA == 'T' or TA == 'C') and TB == 'N')
   {
     M = a.size();
     N = b.size();
-    K = std::get<1>(a.sizes());
-    assert(std::get<1>(a.sizes()) == std::get<1>(b.sizes()) and c.size() == b.size() and std::get<1>(c.sizes()) == a.size());
+    K = get<1>(a.sizes());
+    assert(get<1>(a.sizes()) == get<1>(b.sizes()) and c.size() == b.size() and get<1>(c.sizes()) == a.size());
   }
   if (TA == 'N' and (TB == 'T' or TB == 'C'))
   {
-    M = std::get<1>(a.sizes());
-    N = std::get<1>(b.sizes());
+    M = get<1>(a.sizes());
+    N = get<1>(b.sizes());
     K = a.size();
-    assert(a.size() == b.size() and c.size() == std::get<1>(b.sizes()) and std::get<1>(c.sizes()) == std::get<1>(a.sizes()));
+    assert(a.size() == b.size() and c.size() == get<1>(b.sizes()) and get<1>(c.sizes()) == get<1>(a.sizes()));
   }
   gemm(TA, TB, M, N, K, alpha, pointer_dispatch(a.origin()), a.stride(), pointer_dispatch(b.origin()), b.stride(),
        beta, pointer_dispatch(c.origin()), c.stride());
@@ -297,33 +305,35 @@ MultiArray3DC&& gemmStridedBatched(T alpha, MultiArray3DA const& a, MultiArray3D
   int M = -1;
   int N = -1;
   int K = -1;
+
+  using std::get;
   if (TA == 'N' and TB == 'N')
   {
-    M = std::get<2>(a.sizes());
-    N = std::get<1>(b.sizes());
-    K = std::get<1>(a.sizes());
-    assert(std::get<1>(a.sizes()) == std::get<2>(b.sizes()) and std::get<1>(c.sizes()) == std::get<1>(b.sizes()) and std::get<2>(c.sizes()) == std::get<2>(a.sizes()));
+    M = get<2>(a.sizes());
+    N = get<1>(b.sizes());
+    K = get<1>(a.sizes());
+    assert(get<1>(a.sizes()) == get<2>(b.sizes()) and get<1>(c.sizes()) == get<1>(b.sizes()) and get<2>(c.sizes()) == get<2>(a.sizes()));
   }
   if ((TA == 'T' or TA == 'C') and (TB == 'T' or TB == 'C'))
   {
-    M = std::get<1>(a.sizes());
-    N = std::get<2>(b.sizes());
-    K = std::get<2>(a.sizes());
-    assert(std::get<2>(a.sizes()) == std::get<1>(b.sizes()) and std::get<1>(c.sizes()) == std::get<2>(b.sizes()) and std::get<2>(c.sizes()) == std::get<1>(a.sizes()));
+    M = get<1>(a.sizes());
+    N = get<2>(b.sizes());
+    K = get<2>(a.sizes());
+    assert(get<2>(a.sizes()) == get<1>(b.sizes()) and get<1>(c.sizes()) == get<2>(b.sizes()) and get<2>(c.sizes()) == get<1>(a.sizes()));
   }
   if ((TA == 'T' or TA == 'C') and TB == 'N')
   {
-    M = std::get<1>(a.sizes());
-    N = std::get<1>(b.sizes());
-    K = std::get<2>(a.sizes());
-    assert(std::get<2>(a.sizes()) == std::get<2>(b.sizes()) and std::get<1>(c.sizes()) == std::get<1>(b.sizes()) and std::get<2>(c.sizes()) == std::get<1>(a.sizes()));
+    M = get<1>(a.sizes());
+    N = get<1>(b.sizes());
+    K = get<2>(a.sizes());
+    assert(get<2>(a.sizes()) == get<2>(b.sizes()) and get<1>(c.sizes()) == get<1>(b.sizes()) and get<2>(c.sizes()) == get<1>(a.sizes()));
   }
   if (TA == 'N' and (TB == 'T' or TB == 'C'))
   {
-    M = std::get<2>(a.sizes());
-    N = std::get<2>(b.sizes());
-    K = std::get<1>(a.sizes());
-    assert(std::get<1>(a.sizes()) == std::get<1>(b.sizes()) and std::get<1>(c.sizes()) == std::get<2>(b.sizes()) and std::get<2>(c.sizes()) == std::get<2>(a.sizes()));
+    M = get<2>(a.sizes());
+    N = get<2>(b.sizes());
+    K = get<1>(a.sizes());
+    assert(get<1>(a.sizes()) == get<1>(b.sizes()) and get<1>(c.sizes()) == get<2>(b.sizes()) and get<2>(c.sizes()) == get<2>(a.sizes()));
   }
   gemmStridedBatched(TA, TB, M, N, K, alpha, pointer_dispatch(a.origin()), a.stride(1), a.stride(),
                      pointer_dispatch(b.origin()), b.stride(1), b.stride(), beta, pointer_dispatch(c.origin()),
@@ -353,27 +363,29 @@ MultiArray2DC&& geam(T alpha, MultiArray2DA const& a, T beta, MultiArray2DB cons
   assert(c.stride(1) == 1);
   assert((TA == 'N') || (TA == 'T') || (TA == 'C'));
   assert((TB == 'N') || (TB == 'T') || (TB == 'C'));
+
+  using std::get;
   if (TA == 'N' and TB == 'N')
   {
-    assert(a.size() == c.size() and std::get<1>(a.sizes()) == std::get<1>(c.sizes()));
-    assert(b.size() == c.size() and std::get<1>(b.sizes()) == std::get<1>(c.sizes()));
+    assert(a.size() == c.size() and get<1>(a.sizes()) == get<1>(c.sizes()));
+    assert(b.size() == c.size() and get<1>(b.sizes()) == get<1>(c.sizes()));
   }
   if ((TA == 'T' or TA == 'C') and (TB == 'T' or TB == 'C'))
   {
-    assert(std::get<1>(a.sizes()) == c.size() and a.size() == std::get<1>(c.sizes()));
-    assert(std::get<1>(b.sizes()) == c.size() and b.size() == std::get<1>(c.sizes()));
+    assert(get<1>(a.sizes()) == c.size() and a.size() == get<1>(c.sizes()));
+    assert(get<1>(b.sizes()) == c.size() and b.size() == get<1>(c.sizes()));
   }
   if ((TA == 'T' or TA == 'C') and TB == 'N')
   {
-    assert(std::get<1>(a.sizes()) == c.size() and a.size() == std::get<1>(c.sizes()));
-    assert(b.size() == c.size() and std::get<1>(b.sizes()) == std::get<1>(c.sizes()));
+    assert(get<1>(a.sizes()) == c.size() and a.size() == get<1>(c.sizes()));
+    assert(b.size() == c.size() and get<1>(b.sizes()) == get<1>(c.sizes()));
   }
   if (TA == 'N' and (TB == 'T' or TB == 'C'))
   {
-    assert(a.size() == c.size() and std::get<1>(a.sizes()) == std::get<1>(c.sizes()));
-    assert(std::get<1>(b.sizes()) == c.size() and b.size() == std::get<1>(c.sizes()));
+    assert(a.size() == c.size() and get<1>(a.sizes()) == get<1>(c.sizes()));
+    assert(get<1>(b.sizes()) == c.size() and b.size() == get<1>(c.sizes()));
   }
-  geam(TA, TB, std::get<1>(c.sizes()), c.size(), alpha, pointer_dispatch(a.origin()), a.stride(), beta,
+  geam(TA, TB, get<1>(c.sizes()), c.size(), alpha, pointer_dispatch(a.origin()), a.stride(), beta,
        pointer_dispatch(b.origin()), b.stride(), pointer_dispatch(c.origin()), c.stride());
   return std::forward<MultiArray2DC>(c);
 }
@@ -389,15 +401,18 @@ MultiArray2DC&& geam(T alpha, MultiArray2DA const& a, MultiArray2DC&& c)
   assert(a.stride(1) == 1);
   assert(c.stride(1) == 1);
   assert((TA == 'N') || (TA == 'T') || (TA == 'C'));
+
+  using std::get;
   if (TA == 'N')
   {
-    assert(a.size() == c.size() and std::get<1>(a.sizes()) == std::get<1>(c.sizes()));
+    assert(a.size() == c.size() and get<1>(a.sizes()) == get<1>(c.sizes()));
   }
   if ((TA == 'T' or TA == 'C'))
   {
-    assert(std::get<1>(a.sizes()) == c.size() and a.size() == std::get<1>(c.sizes()));
+    assert(get<1>(a.sizes()) == c.size() and a.size() == get<1>(c.sizes()));
   }
-  geam(TA, TA, std::get<1>(c.sizes()), c.size(), alpha, pointer_dispatch(a.origin()), a.stride(), T(0),
+  using std::get;
+  geam(TA, TA, get<1>(c.sizes()), c.size(), alpha, pointer_dispatch(a.origin()), a.stride(), T(0),
        pointer_dispatch(a.origin()), a.stride(), pointer_dispatch(c.origin()), c.stride());
   return std::forward<MultiArray2DC>(c);
 }
