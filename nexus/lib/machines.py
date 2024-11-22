@@ -978,7 +978,7 @@ class Workstation(Machine):
 
 
     def process_job_options(self,job):
-        job.run_options.add(np='-np '+str(job.processes))
+        job.run_options.add(np='--bind-to none -np '+str(job.processes))
     #end def process_job_options
 
 
