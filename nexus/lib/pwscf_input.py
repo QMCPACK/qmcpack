@@ -48,7 +48,7 @@ import os
 import inspect
 from copy import deepcopy
 from superstring import string2val
-from numpy import fromstring,empty,array,float64,ones,pi,dot,ceil,ndarray, where, append, unique, set_printoptions, version
+from numpy import fromstring,empty,array,float64,ones,pi,dot,ceil,ndarray, where, append, unique
 from numpy.linalg import inv
 from unit_converter import convert
 from generic import obj
@@ -395,8 +395,6 @@ class Section(Element):
 
 
     def write(self,parent):
-        if (int('.'.join(version.version.split('.', 1)[:-1]))>1):
-            set_printoptions(legacy="1.25")        
         atom_index = obj()
         if 'atomic_species' in parent and 'atoms' in parent.atomic_species:
             for i,a in enumerate(parent.atomic_species.atoms):
@@ -1933,8 +1931,6 @@ class PwscfInput(SimulationInput):
 
 
 def generate_pwscf_input(selector,**kwargs):
-    if (int('.'.join(version.version.split('.', 1)[:-1]))>1):
-        set_printoptions(legacy="1.25")
     if 'system' in kwargs:
         system = kwargs['system']
         if isinstance(system,PhysicalSystem):

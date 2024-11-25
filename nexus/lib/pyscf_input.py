@@ -498,7 +498,5 @@ $calculation
 
 
 def generate_pyscf_input(*args,**kwargs):
-    if (int('.'.join(np.version.version.split('.', 1)[:-1]))>1):
-        np.set_printoptions(legacy="1.25")
     return PyscfInput(*args,**kwargs)
 #end def generate_pyscf_input
