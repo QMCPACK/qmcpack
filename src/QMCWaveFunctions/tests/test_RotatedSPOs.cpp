@@ -730,9 +730,9 @@ TEST_CASE("RotatedSPOs construct delta matrix", "[wavefunction]")
 
 namespace testing
 {
-opt_variables_type& getMyVars(SPOSet& rot) { return rot.myVars; }
-std::vector<QMCTraits::ValueType>& getMyVarsFull(RotatedSPOs& rot) { return rot.myVarsFull_; }
-std::vector<std::vector<QMCTraits::ValueType>>& getHistoryParams(RotatedSPOs& rot) { return rot.history_params_; }
+const opt_variables_type& getMyVars(RotatedSPOs& rot) { return rot.myVars; }
+const std::vector<QMCTraits::ValueType>& getMyVarsFull(RotatedSPOs& rot) { return rot.myVarsFull_; }
+const std::vector<std::vector<QMCTraits::ValueType>>& getHistoryParams(RotatedSPOs& rot) { return rot.history_params_; }
 } // namespace testing
 
 // Test using global rotation
@@ -775,14 +775,14 @@ TEST_CASE("RotatedSPOs read and write parameters", "[wavefunction]")
   vs2.readFromHDF("rot_vp.h5", hin);
   rot2.readVariationalParameters(hin);
 
-  opt_variables_type& var = testing::getMyVars(rot2);
+  auto& var = testing::getMyVars(rot2);
   for (size_t i = 0; i < vs.size(); i++)
     CHECK(var[i] == Approx(vs[i]));
 
   //add extra parameters for full set
   vs_values.push_back(0.0);
   vs_values.push_back(0.0);
-  std::vector<SPOSet::ValueType>& full_var = testing::getMyVarsFull(rot2);
+  auto& full_var = testing::getMyVarsFull(rot2);
   for (size_t i = 0; i < full_var.size(); i++)
     CHECK(full_var[i] == ValueApprox(vs_values[i]));
 }
@@ -827,11 +827,11 @@ TEST_CASE("RotatedSPOs read and write parameters history", "[wavefunction]")
   vs2.readFromHDF("rot_vp_hist.h5", hin);
   rot2.readVariationalParameters(hin);
 
-  opt_variables_type& var = testing::getMyVars(rot2);
+  auto& var = testing::getMyVars(rot2);
   for (size_t i = 0; i < var.size(); i++)
     CHECK(var[i] == Approx(vs[i]));
 
-  auto hist = testing::getHistoryParams(rot2);
+  const auto hist = testing::getHistoryParams(rot2);
   REQUIRE(hist.size() == 1);
   REQUIRE(hist[0].size() == 4);
 }
