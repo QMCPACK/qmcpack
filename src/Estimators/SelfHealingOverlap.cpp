@@ -110,7 +110,7 @@ void SelfHealingOverlap::accumulate(const RefVector<MCPWalker>& walkers,
     // accumulate data
     assert(det_ratios.size() == data_.size());
     for (int ic = 0; ic < det_ratios.size(); ++ic)
-      data_[ic] += weight * Jprefactor * real(det_ratios[ic]); // only real supported for now
+      data_[ic] += weight * Jprefactor * std::real(det_ratios[ic]); // only real supported for now
   }
 }
 

@@ -1395,20 +1395,25 @@ class hubbard(Card):
                     #end if
             #end for
         #end for
-
     #end def read_text
 
     def write_text(self):
         manifold_dict = {} 
         contents = ''
         for param, interaction in self.hubbard.items():
+            valid_format = True
+            assert(param in ['U', 'J', 'V'])
+            assert(isinstance(interaction, dict))
             for label_manifold, value in interaction.items():
-                if not isinstance(label_manifold, tuple):
-                    # Print U and J
+                if isinstance(label_manifold, str):
+                    # Ex: {'U':{'C-2p': 1.0}}
+                    assert(isinstance(value, (int, float)))
                     contents += f"{param} {label_manifold} {value} \n"
-                else:
+                elif isinstance(label_manifold, tuple):
                     assert(len(label_manifold) == 2)
-                    if isinstance(value, float):
+                    assert(all([isinstance(_, str) for _ in label_manifold]))
+                    if isinstance(value, (int, float)):
+                        # Ex: {'V' : {('C-2p', 'C-2p'): 1e-8}}
                         atom1, manifold1 = label_manifold[0].split('-')
                         atom2, manifold2 = label_manifold[1].split('-')
                         if atom1 not in manifold_dict.keys():
@@ -1416,34 +1421,64 @@ class hubbard(Card):
                         elif manifold1 not in manifold_dict[atom1]:
                             manifold_dict[atom1].append(manifold1)
                         #end if
-
                         if atom2 not in manifold_dict.keys():
                             manifold_dict[atom2] = manifold2
                         elif manifold2 not in manifold_dict[atom2]:
                             manifold_dict[atom2].append(manifold2)
-                            #end if
-                        if isinstance(value, float):
-                            elem = self.system.structure.elem
-                            index1 = where(elem == atom1)[0] + 1
-                            index2 = where(elem == atom2)[0] + 1
-                            all_indices = unique(append(index1, index2))
-                            combs = combinations(all_indices, 2)
-                            print(all_indices)
-                            for ind1, ind2 in combs:
-                                contents += f"{param} {label_manifold[0]} {label_manifold[1]} {ind1} {ind2} {value}\n"
+                        #end if
+                        elem = self.system.structure.elem
+                        index1 = where(elem == atom1)[0] + 1
+                        index2 = where(elem == atom2)[0] + 1
+                        combs = []
+                        for in1 in index1:
+                            for in2 in index2:
+                                combs.append([in1, in2])
                             #end for
+                        #end for
+                        for ind1, ind2 in combs:
+                            contents += f"{param} {label_manifold[0]} {label_manifold[1]} {ind1} {ind2} {value}\n"
+                        #end for
                     elif isinstance(value, list):
                         for val in value:
-                            ind1 = val['indices'][0]
-                            ind2 = val['indices'][1]
-                            val = val['value']
-                            contents += f"{param} {label_manifold[0]} {label_manifold[1]} {ind1} {ind2} {val}\n"
+                            if 'indices' in val.keys() and 'value' in val.keys():
+                                # Ex: {'V' : {('C-2p', 'C-2p'): [{'indices':(1,2), 'value':1e-8}]}
+                                ind1 = val['indices'][0]
+                                ind2 = val['indices'][1]
+                                val = val['value']
+                                contents += f"{param} {label_manifold[0]} {label_manifold[1]} {ind1} {ind2} {val}\n"
+                            elif 'radius' in val.keys() and 'value' in val.keys():
+                                # Ex: {'V' : {('C-2p', 'C-2p'): [{'radius':4.5, 'value':1e-8}]} radius is in Bohr
+                                atom1, manifold1 = label_manifold[0].split('-')
+                                atom2, manifold2 = label_manifold[1].split('-')
+                                elem = self.system.structure.elem
+                                index1 = where(elem == atom1)[0]
+                                index2 = where(elem == atom2)[0]
+                                nn = self.system.structure.nearest_neighbors(rmax = val['radius'])
+                                combs = []
+                                for in1 in index1:
+                                    for in2 in index2:
+                                        if in2 in nn[in1]:
+                                            combs.append([in1+1, in2+1])
+                                        #end if
+                                    #end for
+                                #end for
+                                # import pdb
+                                # pdb.set_trace()
+                                for ind1, ind2 in combs:
+                                    contents += f"{param} {label_manifold[0]} {label_manifold[1]} {ind1} {ind2} {val['value']}\n"
+                                #end for
+                            else:
+                                valid_format = False
                             #end if 
                         #end for
                     else:
-                        self.error('Hubbard card unknown input format')
+                        valid_format = False
                     #end if 
+                else:
+                    valid_format = False
                 #end for
+                if not valid_format:
+                    self.error('Hubbard card unknown input format')
             #end for
         #end for
         for key, value in manifold_dict.items():
@@ -1454,7 +1489,8 @@ class hubbard(Card):
         #end for
         contents += '\n'
         return contents
-#end class occupations
+    #end def write_text
+#end class hubbard
 
 
 
@@ -2072,11 +2108,15 @@ def generate_any_pwscf_input(**kwargs):
     nspin             = kwargs.get_optional('nspin',None)
     nbnd              = kwargs.get_optional('nbnd',None)
     hubbard_u         = kwargs.get_optional('hubbard_u',None)
-    hubbardc          = kwargs.get_optional('hubbard',None)
-    if hubbard_u != None and hubbardc != None:
-        PwscfInput.class_error('Both "Hubbard_u" input in &SYSTEM namelist and "HUBBARD" card are defined. If you use QE version \
-> 7.1, please use "HUBBARD" card only, otherwise use the hubbard_u (e.g. Hubbard_U(1) = 6) and ')
-    #end if 
+    # Pre 7.2 Hubbard tags
+    hub_keys_pre72 = 'hubbard_u hubbard_j0 hubbard_j U_projection_type'.lower().split()
+    has_pre72_keys = any(([_ in kwargs.keys() for _ in hub_keys_pre72]))
+    # QE >=7.2 Hubbard tags
+    hub_keys_v72 = 'hubbard hubbard_proj'.lower().split()
+    has_v72_keys = any(([_ in kwargs.keys() for _ in hub_keys_v72]))
+    if has_pre72_keys + has_v72_keys > 1:
+        PwscfInput.class_error('Please use {} for QE version <7.2 and {} for QE version >=7.2'.format(hub_keys_pre72, hub_keys_v72))
+    #end if     
     occ               = kwargs.get_optional('occupations',None)
     
     #make an empty input file

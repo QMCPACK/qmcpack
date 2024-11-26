@@ -1241,13 +1241,6 @@ void TrialWaveFunction::mw_evaluateParameterDerivativesWF(const RefVectorWithLea
   }
 }
 
-void TrialWaveFunction::evaluateGradDerivatives(const ParticleSet::ParticleGradient& G_in,
-                                                std::vector<ValueType>& dgradlogpsi)
-{
-  for (int i = 0; i < Z.size(); i++)
-    Z[i]->evaluateGradDerivatives(G_in, dgradlogpsi);
-}
-
 TrialWaveFunction::RealType TrialWaveFunction::KECorrection() const
 {
   RealType sum = 0.0;

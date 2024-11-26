@@ -41,8 +41,10 @@ template<class T,
          typename = typename std::enable_if<std::decay<MultiArray1D>::type::dimensionality == 1>::type>
 MultiArray1D axpy(char TA, T a, SparseArray1D&& x, MultiArray1D&& y)
 {
+  using std::get;
+
   using ma::conj;
-  assert(std::get<0>(x.sizes()) == std::get<0>(y.sizes()));
+  assert(get<0>(x.sizes()) == get<0>(y.sizes()));
   auto vals = x.non_zero_values_data();
   auto cols = x.non_zero_indices2_data();
   if (TA == 'C')
@@ -378,8 +380,11 @@ MultiArray2D transpose(csr_matrix&& A, MultiArray2D&& AT)
 {
   using integer = typename std::decay<csr_matrix>::type::index_type;
   using Type    = typename std::decay<MultiArray2D>::type::element;
-  assert(std::get<0>(A.sizes()) == std::get<1>(AT.sizes()));
-  assert(std::get<1>(A.sizes()) == std::get<0>(AT.sizes()));
+
+  using std::get;
+
+  assert(get<0>(A.sizes()) == get<1>(AT.sizes()));
+  assert(get<1>(A.sizes()) == get<0>(AT.sizes()));
   auto& comm = *A.getAlloc().commP_;
   integer r0, rN, nrows = integer(A.size(0));
   integer rank = comm.rank(), size = comm.size();
