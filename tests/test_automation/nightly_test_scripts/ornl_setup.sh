@@ -79,11 +79,6 @@ packages:
         - spec: openssl@1.1.1k
           prefix: /usr
           buildable: False
-    libffi:
-        externals:
-        - spec: libffi@3.4.2
-          prefix: /
-          buildable: False
 EOF
 ;;
     nitrogen )
@@ -110,11 +105,6 @@ packages:
         - spec: openssl@1.1.1k
           prefix: /usr
           buildable: False
-    libffi:
-        externals:
-        - spec: libffi@3.4.2
-          prefix: /
-          buildable: False
 EOF
 ;;
     sulfur )
@@ -140,11 +130,6 @@ packages:
         externals:
         - spec: openssl@1.1.1k
           prefix: /usr
-          buildable: False
-    libffi:
-        externals:
-        - spec: libffi@3.4.2
-          prefix: /
           buildable: False
 EOF
 	;;
@@ -197,12 +182,22 @@ cd $HOME/apps/spack
 
 # For reproducibility, use a specific version of Spack
 # Prefer to use tagged releases https://github.com/spack/spack/releases
-git checkout eb9ff5d7a7d47f112ece5a4c70ef603a047a2fbc
-#commit eb9ff5d7a7d47f112ece5a4c70ef603a047a2fbc (HEAD -> develop, origin/develop, origin/HEAD)
-#Author: Harmen Stoppels <me@harmenstoppels.nl>
-#Date:   Tue Nov 5 13:25:19 2024 +0100
+
+git checkout 75b03bc12ffbabdfac0775ead5442c3f102f94c7
+#commit 75b03bc12ffbabdfac0775ead5442c3f102f94c7 (HEAD -> develop, origin/develop, origin/HEAD)
+#Author: Adam J. Stewart <ajstewart426@gmail.com>
+#Date:   Sun Nov 24 20:55:18 2024 +0100
 #
-#    paraview: add forward compat bound with cuda (#47430)
+#    glib: add v2.82.2 (#47766)
+
+#git checkout dfab174f3100840c889e8bb939260b64d93d8dbd
+#commit dfab174f3100840c889e8bb939260b64d93d8dbd (HEAD -> develop, origin/develop, origin/HEAD)
+#Author: Stephen Nicholas Swatman <stephen@v25.nl>
+#Date:   Mon Nov 18 14:04:52 2024 +0100
+#
+#    benchmark: add version 1.9.0 (#47658)
+#    
+#    This commit adds Google Benchmark v1.9.0.
 
 echo --- Git version and last log entry
 git log -1
