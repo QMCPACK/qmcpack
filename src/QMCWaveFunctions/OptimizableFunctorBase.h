@@ -47,13 +47,11 @@ namespace qmcplusplus
 struct OptimizableFunctorBase : public OptimizableObject
 {
   ///typedef for real values
-  using real_type = optimize::VariableSet::real_type;
-  ///typedef for variableset: this is going to be replaced
-  using opt_variables_type = optimize::VariableSet;
+  using real_type = opt_variables_type::real_type;
+  ///expose OptimizableObject::myVars for direct access by a few consumers. Should clean up the consumers.
+  using OptimizableObject::myVars;
   ///maximum cutoff
   real_type cutoff_radius = 0.0;
-  ///set of variables to be optimized
-  opt_variables_type myVars;
   ///default constructor
   inline OptimizableFunctorBase(const std::string& name = "") : OptimizableObject(name) {}
   ///virtual destrutor
