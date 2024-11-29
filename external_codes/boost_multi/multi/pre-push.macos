@@ -1,0 +1,22 @@
+#!/bin/bash
+# -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
+# sudo apt install ccache clang clang-tidy cmake cppcheck g++ git lcov libblas-dev pkg-config libfftw3-dev libboost-test-dev libboost-timer-dev make ninja-build valgrind
+# sudo dnf install boost-devel blas-devel ccache clang clang-tools-extra cmake cppcheck fftw-devel git lcov libasan liblas-devel libubsan ninja-build valgrind
+# install circle # mkdir -p $HOME/bin && wget https://www.circle-lang.org/linux/build_latest.tgz -P $HOME/tmp/ && tar -zxvf $HOME/tmp/build_latest.tgz --directory $HOME/bin/ && $HOME/bin/circle --version
+# install nvc++  # ($ echo 'deb [trusted=yes] https://developer.download.nvidia.com/hpc-sdk/ubuntu/amd64 /' | sudo tee /etc/apt/sources.list.d/nvhpc.list) && sudo apt-get updatesudo apt-get update && sudo apt-get install nvhpc-22-7
+#                # sudo yum-config-manager --add-repo https://developer.download.nvidia.com/hpc-sdk/rhel/nvhpc.repo && sudo yum install -y nvhpc-cuda-multi-23.1
+
+#CXX=g++-12 cmake --fresh .. -DENABLE_CUDA=1 -DCMAKE_CUDA_COMPILER=nvcc -DCMAKE_CUDA_HOST_COMPILER=g++-12 -DCMAKE_CUDA_ARCHITECTURES=61
+
+export CMAKE_GENERATOR=Ninja
+export CMAKE_CXX_COMPILER_LAUNCHER="ccache"
+
+ (mkdir -p .build.c++.std23 && cd .build.c++.std23 && CXX=c++       cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=23                                                                                   && cmake --build . &&                                           ctest -j 12 --output-on-failure) || exit 666
+ (mkdir -p .build.c++.asan  && cd .build.c++.asan  && CXX=c++       cmake .. -DCMAKE_BUILD_TYPE=Debug   -DCMAKE_CXX_FLAGS="-D_LIBCPP_DEBUG=1 -fsanitize=address -fno-omit-frame-pointer" && cmake --build . && ASAN_OPTIONS="new_delete_type_mismatch=1" ctest -j 12 --output-on-failure) || exit 666
+ (mkdir -p .build.c++.m32   && cd .build.c++.m32   && CXX=c++       cmake .. -DCMAKE_BUILD_TYPE=Release                                                                                                          && cmake --build . &&                                           ctest -j 12 --output-on-failure) || exit 666
+ (mkdir -p .build.z++       && cd .build.z++       && CXX="zig c++" cmake .. -DCMAKE_BUILD_TYPE=Release                                                                                                          && cmake --build . &&                                           ctest -j 12 --output-on-failure) || exit 666
+ (mkdir -p .build.c++.tidy  && cd .build.c++.tidy  && CXX=c++       cmake .. -DCMAKE_BUILD_TYPE=Debug   -DCMAKE_CXX_CLANG_TIDY="clang-tidy" -DCMAKE_CXX_CPPLINT="cpplint;--quiet" -DCMAKE_CXX_CPPCHECK="cppcheck;--enable=all;--suppress=missingIncludeSystem;--suppress=checkersReport;--inline-suppr;--std=c++17;--error-exitcode=1"  && cmake --build . &&                                           ctest -j 12 --output-on-failure) || exit 666
+
+#(mkdir -p .build.clang++.iwyu && cd .build.clang++.iwyu && CXX=clang++                     cmake .. -DCMAKE_CXX_INCLUDE_WHAT_YOU_USE="iwyu" && make -j 10 && ctest -j 12 --output-on-failure) || exit
+# TODO(correaa) make cppcheck work for all the code
+#(find . -name '*.hpp' -exec cppcheck --enable=all --inline-suppr --suppress=unmatchedSuppression:{} --suppress=syntaxError --suppress=missingInclude --suppress=missingIncludeSystem --suppress=preprocessorErrorDirective --suppress=syntaxError --suppress=unusedFunction --suppress=arithOperationsOnVoidPointer --suppress=sizeofDereferencedVoidPointer -D__align__ -DCUDARTAPI --language=c++ --std=c++17 --error-exitcode=666 --suppress=unmatchedSuppression {} \;) || exit

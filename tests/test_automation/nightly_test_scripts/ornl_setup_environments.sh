@@ -103,13 +103,16 @@ spack add py-numpy@${numpy_vnew}
 spack add py-scipy
 spack add py-h5py ^hdf5@${hdf5_vnew}%gcc@${gcc_vnew} +fortran +hl +mpi
 spack add quantum-espresso@7.4 +mpi +qmcpack
+export CMAKE_BUILD_PARALLEL_LEVEL=8 # For PySCF
 spack add py-pyscf
 #spack add rmgdft #Fails to compile with GCC14 due to bug in vendored SCALAPACK 
 
 #Luxury options for actual science use:
 spack add py-requests # for pseudo helper
 spack add py-ase      # full Atomic Simulation Environment
-#spack add graphviz +ghostscript +libgd +pangocairo +poppler # NEXUS requires optional PNG support
+#spack add graphviz +libgd # NEXUS requires optional PNG support in dot
+spack add libffi
+spack add graphviz +pangocairo # NEXUS requires optional PNG support in dot
 spack add py-pydot    # NEXUS optional
 spack add py-spglib   # NEXUS optional 
 spack add py-seekpath # NEXUS optional
@@ -211,13 +214,16 @@ spack add py-numpy@${numpy_vold}
 spack add py-scipy
 spack add py-h5py ^hdf5@${hdf5_vnew}%gcc@${gcc_vold} +fortran +hl +mpi
 #spack add quantum-espresso@7.4 +mpi +qmcpack
+#export CMAKE_BUILD_PARALLEL_LEVEL=8 # For PySCF
 #spack add py-pyscf
 spack add rmgdft
 
 #Luxury options for actual science use:
 spack add py-requests # for pseudo helper
 spack add py-ase      # full Atomic Simulation Environment
-#spack add graphviz +ghostscript +libgd +pangocairo +poppler # NEXUS requires optional PNG support
+#spack add graphviz +libgd # NEXUS requires optional PNG support in dot
+spack add libffi
+spack add graphviz +pangocairo # NEXUS requires optional PNG support in dot
 spack add py-pydot    # NEXUS optional
 spack add py-spglib   # NEXUS optional 
 spack add py-seekpath # NEXUS optional

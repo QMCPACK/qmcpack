@@ -4,54 +4,54 @@
 // https://www.boost.org/LICENSE_1_0.txt
 
 // Test explicitly calls deprecated function
-#if defined(__clang__)
-	#pragma clang diagnostic push
-	#pragma clang diagnositc ignored "-Wdeprecated-declarations"
-#elif defined(__GNUC__)
-	#pragma GCC diagnostic push
-	#pragma GCC diagnositc ignored "-Wdeprecated-declarations"
-#endif
+// #if defined(__clang__)
+// #  pragma clang diagnostic push
+// #  pragma clang diagnositc ignored "-Wdeprecated-declarations"
+// #elif defined(__GNUC__)
+// #  pragma GCC diagnostic push
+// #  pragma GCC diagnositc ignored "-Wdeprecated-declarations"
+// #endif
 
+#include <boost/multi/array.hpp>
+
+// #if defined(__clang__)
+// #  pragma clang diagnostic pop
+// #elif defined(__GNUC__)
+// #  pragma GCC diagnostic pop
+// #endif
+
+// Suppress warnings from other boost libraries
 #if defined(__clang__)
-	#pragma clang diagnostic push
-	#pragma clang diagnostic ignored "-Wold-style-cast"
-	#pragma clang diagnostic ignored "-Wundef"
-	#pragma clang diagnostic ignored "-Wconversion"
-	#pragma clang diagnostic ignored "-Wsign-conversion"
-	#pragma clang diagnostic ignored "-Wunknown-pragmas"
-	#pragma clang diagnostic ignored "-Wunused-variable"
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wold-style-cast"
+#  pragma clang diagnostic ignored "-Wundef"
+#  pragma clang diagnostic ignored "-Wconversion"
+#  pragma clang diagnostic ignored "-Wsign-conversion"
+#  pragma clang diagnostic ignored "-Wfloat-equal"
+#  pragma clang diagnostic ignored "-Wunknown-pragmas"
+// #  pragma clang diagnositc ignored "-Wdeprecated-declarations"
+#  pragma clang diagnostic ignored "-Wunused-variable"
 #elif defined(__GNUC__)
-	#pragma GCC diagnostic push
-	#pragma GCC diagnostic ignored "-Wold-style-cast"
-	#pragma GCC diagnostic ignored "-Wundef"
-	#pragma GCC diagnostic ignored "-Wconversion"
-	#pragma GCC diagnostic ignored "-Wsign-conversion"
-	#pragma GCC diagnostic ignored "-Wunknown-pragmas"
-	#pragma GCC diagnostic ignored "-Wunused-variable"
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wold-style-cast"
+#  pragma GCC diagnostic ignored "-Wundef"
+#  pragma GCC diagnostic ignored "-Wconversion"
+#  pragma GCC diagnostic ignored "-Wsign-conversion"
+#  pragma GCC diagnostic ignored "-Wfloat-equal"
+#  pragma GCC diagnostic ignored "-Wunknown-pragmas"
+// #  pragma GCC diagnositc ignored "-Wdeprecated-declarations"
+#  pragma GCC diagnostic ignored "-Wunused-variable"
 #endif
 
 #ifndef BOOST_TEST_MODULE
-	#define BOOST_TEST_MAIN
+#  define BOOST_TEST_MAIN
 #endif
+
+#include <boost/multi_array.hpp>
+
+#include <boost/concept_check.hpp>
 
 #include <boost/test/unit_test.hpp>
-
-#if defined(__clang__)
-	#pragma clang diagnostic pop
-#elif defined(__GNUC__)
-	#pragma GCC diagnostic pop
-#endif
-
-#include <boost/multi/array.hpp>  // for operator!=, implicit...
-// IWYU pragma: no_include <boost/multi_array/subarray.hpp>        // for const_sub_array, sub_array
-
-#include <boost/concept/assert.hpp>              // for BOOST_CONCEPT_ASSERT
-#include <boost/concept_check.hpp>               // for Assignable, CopyCons...
-#include <boost/multi_array.hpp>                 // for multi_array
-#include <boost/multi_array/concept_checks.hpp>  // for ConstMultiArrayConcept
-
-#include <cstddef>  // for ptrdiff_t
-#include <vector>   // for vector
 
 BOOST_AUTO_TEST_CASE(concepts_boost_array) {
 	using BMA [[maybe_unused]] = boost::multi_array<int, 2>;  // maybe_unused for bug in nvcc 11.8
@@ -70,40 +70,40 @@ BOOST_AUTO_TEST_CASE(concepts_boost_array_1D) {
 namespace multi = boost::multi;
 
 BOOST_AUTO_TEST_CASE(backwards) {
-	multi::array<int, 2> const MA({ 2, 2 });
+	multi::array<int, 2> const MA({2, 2});
 
-#ifdef __GNUC__
+    #ifdef __GNUC__
 	#pragma GCC diagnostic push
 	#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
+    #endif
 	// BOOST_REQUIRE(A.index_bases()[0] == 0);  // dangles?
 	// BOOST_REQUIRE(A.index_bases()[1] == 0);
 
-#ifdef __GNUC__
+    #ifdef __GNUC__
 	#pragma GCC diagnostic pop
-#endif
+    #endif
 
 	{
-#ifdef __NVCC__
-	#pragma nv_diagnostic push
-	#pragma nv_diag_suppress = deprecated_entity_with_custom_message  // nvcc #?
-#endif
+        #ifdef __NVCC__
+		#pragma nv_diagnostic push
+		#pragma nv_diag_suppress = deprecated_entity_with_custom_message  // nvcc #?
+        #endif
 
-#ifdef __GNUC__
-	#pragma GCC diagnostic push
-	#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
-	// auto ib = MA.index_bases(); (void)ib;
-	// BOOST_REQUIRE(ib[0] == 0);  // dangles?
-	// BOOST_REQUIRE(ib[1] == 0);
+        #ifdef __GNUC__
+		#pragma GCC diagnostic push
+		#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+        #endif
+		// auto ib = MA.index_bases(); (void)ib;
+		// BOOST_REQUIRE(ib[0] == 0);  // dangles?
+		// BOOST_REQUIRE(ib[1] == 0);
 
-#ifdef __GNUC__
-	#pragma GCC diagnostic pop
-#endif
+        #ifdef __GNUC__
+		#pragma GCC diagnostic pop
+        #endif
 
-#ifdef __NVCC__
-	#pragma nv_diagnostic pop
-#endif
+        #ifdef __NVCC__
+		#pragma nv_diagnostic pop
+        #endif
 	}
 	// {
 	//  #pragma GCC diagnostic push
@@ -114,53 +114,55 @@ BOOST_AUTO_TEST_CASE(backwards) {
 	//  #pragma GCC diagnostic pop
 	// }
 	{
-#ifdef __GNUC__
-	#pragma GCC diagnostic push
-	#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
-	// BOOST_REQUIRE(static_cast<std::ptrdiff_t const*>(MA.index_bases())[0] == 0);  // dangles
-	// BOOST_REQUIRE(static_cast<std::ptrdiff_t const*>(MA.index_bases())[1] == 0);
+        #ifdef __GNUC__
+		#pragma GCC diagnostic push
+		#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+        #endif
+		// BOOST_REQUIRE(static_cast<std::ptrdiff_t const*>(MA.index_bases())[0] == 0);  // dangles
+		// BOOST_REQUIRE(static_cast<std::ptrdiff_t const*>(MA.index_bases())[1] == 0);
 
-#ifdef __GNUC__
-	#pragma GCC diagnostic pop
-#endif
-	} {
-#ifdef __GNUC__
-	#pragma GCC diagnostic push
-	#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
-	// BOOST_REQUIRE(MA.index_bases()[0] == 0);  // dangles
-	// BOOST_REQUIRE(MA.index_bases()[1] == 0);
+        #ifdef __GNUC__
+		#pragma GCC diagnostic pop
+        #endif
+	}
+	{
+        #ifdef __GNUC__
+		#pragma GCC diagnostic push
+		#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+        #endif
+		// BOOST_REQUIRE(MA.index_bases()[0] == 0);  // dangles
+		// BOOST_REQUIRE(MA.index_bases()[1] == 0);
 
-#ifdef __GNUC__
-	#pragma GCC diagnostic pop
-#endif
-	} {
-#ifdef __GNUC__
-	#pragma GCC diagnostic push
-	#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
-	// std::ptrdiff_t const* ib = MA.index_bases();
-	// BOOST_REQUIRE(ib);
-	// BOOST_REQUIRE(ib[0] == 0);  // dangles
-	// BOOST_REQUIRE(ib[1] == 0);
-#ifdef __GNUC__
-	#pragma GCC diagnostic pop
-#endif
-	} {
-#ifdef __GNUC__
-	#pragma GCC diagnostic push
-	#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
-		std::vector<std::ptrdiff_t> const ib(2);
-		(void)ib;  // NOLINT(fuchsia-default-arguments-calls)
-		           // std::copy_n(static_cast<std::ptrdiff_t const*>(MA.index_bases()), 2, ib.begin());
-		           // BOOST_REQUIRE(ib[0] == 0);  // dangles
-		           // BOOST_REQUIRE(ib[1] == 0);
+        #ifdef __GNUC__
+		#pragma GCC diagnostic pop
+        #endif
+	}
+	{
+        #ifdef __GNUC__
+		#pragma GCC diagnostic push
+		#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+        #endif
+		// std::ptrdiff_t const* ib = MA.index_bases();
+		// BOOST_REQUIRE(ib);
+		// BOOST_REQUIRE(ib[0] == 0);  // dangles
+		// BOOST_REQUIRE(ib[1] == 0);
+        #ifdef __GNUC__
+		#pragma GCC diagnostic pop
+        #endif
+	}
+	{
+        #ifdef __GNUC__
+		#pragma GCC diagnostic push
+		#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+        #endif
+		std::vector<std::ptrdiff_t> const ib(2); (void)ib;  // NOLINT(fuchsia-default-arguments-calls)
+		// std::copy_n(static_cast<std::ptrdiff_t const*>(MA.index_bases()), 2, ib.begin());
+		// BOOST_REQUIRE(ib[0] == 0);  // dangles
+		// BOOST_REQUIRE(ib[1] == 0);
 
-#ifdef __GNUC__
-	#pragma GCC diagnostic pop
-#endif
+        #ifdef __GNUC__
+		#pragma GCC diagnostic pop
+        #endif
 	}
 	// {
 	//  #pragma GCC diagnostic push
@@ -192,8 +194,7 @@ BOOST_AUTO_TEST_CASE(concepts_array) {
 	BOOST_CONCEPT_ASSERT((boost::UnaryFunction<MA, MA::reference, MA::index>));
 	BOOST_CONCEPT_ASSERT((boost::BinaryFunction<MA, typename MA::element_ref, typename MA::index, typename MA::index>));
 
-	// vvv needs result_type TODO(correaa) add to array?, should result_type be array<T, D-1>? or subarray?
-	// BOOST_CONCEPT_ASSERT((boost::AdaptableGenerator<MA, boost::multi::subarray<int, 2>>));
+	// BOOST_CONCEPT_ASSERT((boost::AdaptableGenerator<MA, boost::multi::subarray<int, 2>>));  // needs result_type TODO(correaa) add to array?, should result_type be array<T, D-1>? or subarray?
 	// BOOST_CONCEPT_ASSERT((boost::AdaptableUnaryFunction<MA, MA::reference, MA::index>));
 	// BOOST_CONCEPT_ASSERT((boost::AdaptableBinaryFunction<MA, typename MA::element_ref, typename MA::index, typename MA::index>));
 
@@ -229,8 +230,7 @@ BOOST_AUTO_TEST_CASE(concepts_array_1D) {
 	BOOST_CONCEPT_ASSERT((boost::UnaryFunction<MA, MA::reference, MA::index>));
 	// BOOST_CONCEPT_ASSERT((boost::BinaryFunction<MA, typename MA::element_ref, typename MA::index, typename MA::index>));
 
-	// vvv--- needs result_type TODO(correaa) add to array?, should result_type be array<T, D-1>? or subarray?
-	// BOOST_CONCEPT_ASSERT((boost::AdaptableGenerator<MA, boost::multi::subarray<int, 2>>));
+	// BOOST_CONCEPT_ASSERT((boost::AdaptableGenerator<MA, boost::multi::subarray<int, 2>>));  // needs result_type TODO(correaa) add to array?, should result_type be array<T, D-1>? or subarray?
 	// BOOST_CONCEPT_ASSERT((boost::AdaptableUnaryFunction<MA, MA::reference, MA::index>));
 	// BOOST_CONCEPT_ASSERT((boost::AdaptableBinaryFunction<MA, typename MA::element_ref, typename MA::index, typename MA::index>));
 
@@ -259,7 +259,7 @@ BOOST_AUTO_TEST_CASE(concepts_iterator) {
 
 	BOOST_CONCEPT_ASSERT((boost::InputIterator<MAIt>));
 	BOOST_CONCEPT_ASSERT((boost::OutputIterator<MAIt, MAIt::reference>));
-	BOOST_CONCEPT_ASSERT((boost::OutputIterator<MAIt, MAIt::value_type>));
+		BOOST_CONCEPT_ASSERT((boost::OutputIterator<MAIt, MAIt::value_type>));
 
 	// Iterator Concept Checking Classes
 	BOOST_CONCEPT_ASSERT((boost::ForwardIterator<MAIt>));
@@ -285,15 +285,9 @@ BOOST_AUTO_TEST_CASE(concepts_const_iterator) {
 	//   BOOST_CONCEPT_ASSERT((boost::OutputIterator<MAIt, MAIt::value_type>));
 
 	BOOST_CONCEPT_ASSERT((boost::ForwardIterator<MAIt>));
-	//  BOOST_CONCEPT_ASSERT((boost::Mutable_ForwardIterator<MAIt>));
+//  BOOST_CONCEPT_ASSERT((boost::Mutable_ForwardIterator<MAIt>));
 	BOOST_CONCEPT_ASSERT((boost::BidirectionalIterator<MAIt>));
-	//  BOOST_CONCEPT_ASSERT((boost::Mutable_BidirectionalIterator<MAIt>));
+//  BOOST_CONCEPT_ASSERT((boost::Mutable_BidirectionalIterator<MAIt>));
 	BOOST_CONCEPT_ASSERT((boost::RandomAccessIterator<MAIt>));
-	//  BOOST_CONCEPT_ASSERT((boost::Mutable_RandomAccessIterator<MAIt>));
+//  BOOST_CONCEPT_ASSERT((boost::Mutable_RandomAccessIterator<MAIt>));
 }
-
-#if defined(__clang__)
-	#pragma clang diagnostic pop
-#elif defined(__GNUC__)
-	#pragma GCC diagnostic pop
-#endif

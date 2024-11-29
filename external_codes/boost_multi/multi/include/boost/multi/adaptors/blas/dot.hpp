@@ -5,9 +5,9 @@
 #ifndef BOOST_MULTI_ADAPTORS_BLAS_DOT_HPP
 #define BOOST_MULTI_ADAPTORS_BLAS_DOT_HPP
 
-#include <boost/multi/adaptors/blas/core.hpp>
-#include <boost/multi/adaptors/blas/numeric.hpp>     // for is_complex
-#include <boost/multi/adaptors/blas/operations.hpp>  // for blas::C
+#include "../blas/core.hpp"
+#include "../blas/numeric.hpp"     // for is_complex
+#include "../blas/operations.hpp"  // for blas::C
 
 namespace boost::multi::blas {
 
@@ -18,11 +18,11 @@ using core::dotc;
 template<class Context, class XIt, class Size, class YIt, class RPtr>
 auto dot_n(Context&& ctxt, XIt x_first, Size count, YIt y_first, RPtr rp) {
 	if constexpr(! is_complex<typename XIt::value_type>{}) {
-                                                                           std::forward<Context>(ctxt)->dot (count,            x_first.base() , stride(x_first), y_first.base(), stride(y_first), rp);
+                                                                           std::forward<Context>(ctxt)->dot (count,            base(x_first) , stride(x_first), base(y_first), stride(y_first), rp);
 	} else {
-		if      constexpr(!is_conjugated<XIt>{} && !is_conjugated<YIt>{}) {std::forward<Context>(ctxt)->dotu(count,            x_first.base() , stride(x_first), y_first.base(), stride(y_first), rp);}
-		else if constexpr(!is_conjugated<XIt>{} &&  is_conjugated<YIt>{}) {std::forward<Context>(ctxt)->dotc(count, underlying(y_first.base()), stride(y_first), x_first.base(), stride(x_first), rp);}
-		else if constexpr( is_conjugated<XIt>{} && !is_conjugated<YIt>{}) {std::forward<Context>(ctxt)->dotc(count, underlying(x_first.base()), stride(x_first), y_first.base(), stride(y_first), rp);}
+		if      constexpr(!is_conjugated<XIt>{} && !is_conjugated<YIt>{}) {std::forward<Context>(ctxt)->dotu(count,            base(x_first) , stride(x_first), base(y_first), stride(y_first), rp);}
+		else if constexpr(!is_conjugated<XIt>{} &&  is_conjugated<YIt>{}) {std::forward<Context>(ctxt)->dotc(count, underlying(base(y_first)), stride(y_first), base(x_first), stride(x_first), rp);}
+		else if constexpr( is_conjugated<XIt>{} && !is_conjugated<YIt>{}) {std::forward<Context>(ctxt)->dotc(count, underlying(base(x_first)), stride(x_first), base(y_first), stride(y_first), rp);}
 		else if constexpr( is_conjugated<XIt>{} &&  is_conjugated<YIt>{}) {static_assert(!sizeof(XIt*), "not implemented in blas");}
 	}
 
@@ -31,7 +31,7 @@ auto dot_n(Context&& ctxt, XIt x_first, Size count, YIt y_first, RPtr rp) {
 }
 
 template<class XIt, class Size, class YIt, class RPtr>
-auto dot_n(XIt x_first, Size count, YIt y_first, RPtr rp) {  //->decltype(dot_n(blas::context{}, x_first, count, y_first, rp)){
+auto dot_n(XIt x_first, Size count, YIt y_first, RPtr rp) {//->decltype(dot_n(blas::context{}, x_first, count, y_first, rp)){
 	if constexpr(is_conjugated<XIt>{}) {
 		auto ctxtp = blas::default_context_of(underlying(x_first.base()));
 		return dot_n(ctxtp, x_first, count, y_first, rp);
@@ -41,15 +41,13 @@ auto dot_n(XIt x_first, Size count, YIt y_first, RPtr rp) {  //->decltype(dot_n(
 	}
 }
 
-template<class Context, class X1D, class Y1D, class R,
-	std::enable_if_t<! multi::has_base<std::decay_t<R>>::value, int> =0>  // NOLINT(modernize-use-constraints) TODO(correaa) for C++20
+template<class Context, class X1D, class Y1D, class R, std::enable_if_t<! multi::has_base<std::decay_t<R>>::value, int> =0>
 auto dot(Context ctxt, X1D const& x, Y1D const& y, R&& res) -> R&& {  // NOLINT(readability-identifier-length) res = \sum_i x_i y_i
 	assert( size(x) == size(y) ); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
 	return blas::dot_n(ctxt, begin(x), size(x), begin(y), &res), std::forward<R>(res);
 }
 
-template<class Context, class X1D, class Y1D, class R,
-	std::enable_if_t<multi::has_base<std::decay_t<R>>::value, int> =0>  // NOLINT(modernize-use-constraints) TODO(correaa) for C++20
+template<class Context, class X1D, class Y1D, class R, std::enable_if_t<    multi::has_base<std::decay_t<R>>::value, int> =0>
 auto dot(Context ctxt, X1D const& x, Y1D const& y, R&& res) -> R&& {  // NOLINT(readability-identifier-length) res = \sum_i x_i y_i
 	assert( size(x) == size(y) ); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
 	return blas::dot_n(ctxt, begin(x), size(x), begin(y), res.base()), std::forward<R>(res);
@@ -109,35 +107,17 @@ struct dot_ref : private Ptr {
 #endif
 	auto operator+() const -> decay_type {return decay();}
 
-	// friend auto operator==(dot_ref const& self, dot_ref const& other) -> bool {return self.decay() == other.decay();}
-	// friend auto operator!=(dot_ref const& self, dot_ref const& other) -> bool {return self.decay() != other.decay();}
+	auto operator==(dot_ref const& other) const -> bool {return decay() == other.decay();}
+	auto operator!=(dot_ref const& other) const -> bool {return decay() != other.decay();}
 
-	friend auto operator==(dot_ref const& self, dot_ref const& other) -> bool {
-		return self.decay() == other.decay();
-	}
-	friend auto operator!=(dot_ref const& self, dot_ref const& other) -> bool {
-		return self.decay() != other.decay();
-	}
-
-	template<class Other>  // , class = std::enable_if_t<!std::is_same_v<dot_ref, Other> > >
-	friend auto operator==(dot_ref const& self, Other const& other) -> bool {
-		return self.decay() == other;
-	}
-	template<class Other>  // , class = std::enable_if_t<!std::is_same_v<dot_ref, Other> > >
-	friend auto operator!=(dot_ref const& self, Other const& other) -> bool {
-		return self.decay() != other;
-	}
-	template<class Other,
-		class = std::enable_if_t<!std::is_same_v<dot_ref, Other> > >  // NOLINT(modernize-use-constraints) TODO(correaa) for C++20
-	friend auto operator==(Other const& other, dot_ref const& self) -> bool {
-		return other == self.decay();
-	}
-	template<class Other,
-		class = std::enable_if_t<!std::is_same_v<dot_ref, Other> > >  // NOLINT(modernize-use-constraints) TODO(correaa) for C++20
-	friend auto operator!=(Other const& other, dot_ref const& self) -> bool {
-		return other != self.decay();
-	}
-
+	template<class Other>
+	auto operator==(Other const& other) const
+	->decltype(decay()==other) {
+		return decay()==other; }
+	template<class Other>
+	auto operator!=(Other const& other) const
+	->decltype(decay()!=other) {
+		return decay()!=other; }
 };
 
 template<class Context, class X, class Y> [[nodiscard]]

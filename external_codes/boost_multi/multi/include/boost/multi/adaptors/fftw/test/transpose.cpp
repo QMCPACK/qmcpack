@@ -2,19 +2,14 @@
 // Distributed under the Boost Software License, Version 1.0.
 // https://www.boost.org/LICENSE_1_0.txt
 
-#include <boost/core/lightweight_test.hpp>
+#include <boost/test/unit_test.hpp>
 
 #include <boost/multi/adaptors/fftw.hpp>
-#include <boost/multi/array.hpp>
 
-#include <algorithm>   // for generate
-#include <chrono>      // for operator-, duration, system...  // NOLINT(build/c++11)
-#include <complex>     // for operator==, complex
-#include <functional>  // for invoke  // IWYU pragma: keep
-#include <iostream>    // for operator<<, basic_os...
-#include <random>      // for linear_congruential_...
-#include <string>      // for operator<<, operator""s
-#include <utility>     // for move
+#include <chrono>  // NOLINT(build/c++11)
+#include <complex>
+#include <iostream>
+#include <random>
 
 namespace multi = boost::multi;
 
@@ -34,11 +29,10 @@ class watch  // NOLINT(cppcoreguidelines-special-member-functions,hicpp-special-
 	~watch() { std::cerr << label_ << ": " << elapsed_sec() << " sec" << '\n'; }  // NOLINT(cpp:S4963)
 };
 
-#define BOOST_AUTO_TEST_CASE(CasenamE) /**/
+using fftw_fixture = multi::fftw::environment;
+BOOST_TEST_GLOBAL_FIXTURE(fftw_fixture);
 
-auto main() -> int {  // NOLINT(readability-function-cognitive-complexity,bugprone-exception-escape)
-	multi::fftw::environment const env;
-
+BOOST_AUTO_TEST_CASE(fftw_transpose) {
 	using namespace std::string_literals;  // NOLINT(build/namespaces) for ""s
 
 	using complex = std::complex<double>;
@@ -56,12 +50,10 @@ auto main() -> int {  // NOLINT(readability-function-cognitive-complexity,bugpro
 
 	multi::array<complex, 2> out = in;
 
-	watch const unnamed{"transposition with aux   %ws wall, CPU (%p%)\n"s};  //  NOLINT(misc-include-cleaner) bug in clang-tidy 18
+	watch const unnamed{"transposition with aux   %ws wall, CPU (%p%)\n"s};
 
-	multi::array<complex, 2> aux{~out};
+	multi::array<complex, 2> aux = ~out;
 
 	out = std::move(aux);
-	BOOST_TEST( out[35][79] == in[79][35] );
-
-	return boost::report_errors();
+	BOOST_REQUIRE( out[35][79] == in[79][35] );
 }

@@ -30,30 +30,29 @@ if(BLAS_FOUND)
 			target_compile_definitions(multi INTERFACE BLAS_DOT_RETURNS_VOID)
 		endif()
 		if(${lib} MATCHES "Accelerate")
-			message("Some BLAS found matches Accelerate (Apple) [beware of sdot and snrm2 bugs]")
-			# message(WARNING "Apple Accelerate BLAS is known to have bugs in single precission function `sdot` and `smrm2`, be careful: https://stackoverflow.com/a/77017238/225186, https://fortran-lang.discourse.group/t/how-many-blas-libraries-have-this-error/4454/23, https://forums.developer.apple.com/forums/thread/717757")
-			# add_definitions(-DBLAS_DOT_RETURNS_VOID)
+			message("Some BLAS found matches Accelerate (Apple)")
+			message(WARNING "Apple Accelerate BLAS is know to have bugs in single precission function `sdot` and `smrm2`, be careful: https://stackoverflow.com/a/77017238/225186, https://fortran-lang.discourse.group/t/how-many-blas-libraries-have-this-error/4454/23, https://forums.developer.apple.com/forums/thread/717757")
+			add_definitions(-DBLAS_DOT_RETURNS_VOID)
 			target_compile_definitions(multi INTERFACE BLAS_DOT_RETURNS_VOID)
 		endif()
 	endforeach()
 endif()
 
 # this makes CM FetchContent friendly https://www.foonathan.net/2022/06/cmake-fetchcontent/
-# if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
-#   return()
-# endif()
+if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+	return()
+endif()
 
 if(BLAS_FOUND)
-	find_package(Boost)  # COMPONENTS boost)  # headers unit_test_framework)
-	if(Boost_FOUND)
+	find_package(Boost COMPONENTS unit_test_framework)
+	if(Boost_unit_test_framework_FOUND)
 		add_subdirectory(test)
 	else()
 		message(WARNING "Boost Unit Test Framework not found, BLAS-adaptor tests will not be compiled and run. If you want this feature, install Boost")
 	endif()
 else()
-	message(WARNING
-		"BLAS not found, BLAS-adaptor tests will not be compiled and run. If you want this feature install BLAS, for example please run:"
-		"\n    sudo apt install libblas-dev # in Ubuntu"
+	message(WARNING "BLAS not found, BLAS-adaptor tests will not be compiled and run. If you want this feature install BLAS, for example please run:"
+		"\n    sudo apt install libblas-dev"
 		"\n    sudo dnf install blas-devel  # in Fedora")
 	message(WARNING "BLA_VENDOR was set to ${BLA_VENDOR}\n")
 endif()
