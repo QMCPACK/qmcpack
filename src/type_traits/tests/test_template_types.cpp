@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2019 QMCPACK developers
+// Copyright (c) 2024 QMCPACK developers
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //
@@ -79,8 +79,6 @@ TEST_CASE("convertUPtrToRefvector", "[type_traits]")
 
   // This should cause a compilation error. a DerivedDummy cannot be converted to an OtherDummy.
   // RefVector<OtherDummy> od_ref_vec = convertUPtrToRefVector<OtherDummy>(ddv);
-
-  
 }
 
 TEST_CASE("convertPtrToRefvectorSubset", "[type_traits]")

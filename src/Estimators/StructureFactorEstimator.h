@@ -13,7 +13,6 @@
 #define QMCPLUSPLUS_STRUCTUREFACTORESTIMATOR_H
 
 #include "OperatorEstBase.h"
-#include "StructureFactorInput.h"
 
 namespace qmcplusplus
 {
@@ -23,6 +22,8 @@ namespace testing
 class StructureFactorAccess;
 }
 
+class StructureFactorInput;
+  
 class StructureFactorEstimator : public OperatorEstBase
 {
 public:
@@ -31,9 +32,9 @@ public:
   using FullPrecReal = QMCT::FullPrecRealType;
   using KPt          = TinyVector<Real, QMCTraits::DIM>;
 
-  StructureFactorEstimator(StructureFactorInput& sfi,
-                           ParticleSet& pset_ions,
-                           ParticleSet& pset_elec,
+  StructureFactorEstimator(const StructureFactorInput& sfi,
+                           const ParticleSet& pset_ions,
+                           const ParticleSet& pset_elec,
                            DataLocality data_locality = DataLocality::crowd);
 
   StructureFactorEstimator(const StructureFactorEstimator& sfe, DataLocality dl);
@@ -66,11 +67,12 @@ protected:
 private:
   StructureFactorEstimator(const StructureFactorEstimator& obdm) = default;
 
-  int elec_species_;
-  ParticleSet& elns_;
-  int ion_species_;
-  ParticleSet& ions_;
-
+  const StructureFactorInput& input_;
+  const ParticleSet& elns_;
+  const int elec_num_species_;
+  const ParticleSet& ions_;
+  const int ion_num_species_;
+  
   /// number of k points
   long long num_kpoints_;
 

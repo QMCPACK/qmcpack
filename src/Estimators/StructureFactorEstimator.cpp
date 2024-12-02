@@ -10,21 +10,25 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "StructureFactorEstimator.h"
+#include "StructureFactorInput.h"
 #include "ParticleSet.h"
 #include <LongRange/StructFact.h>
 
 namespace qmcplusplus
 {
 
-StructureFactorEstimator::StructureFactorEstimator(StructureFactorInput& sfi,
-                                                   ParticleSet& pset_ions,
-                                                   ParticleSet& pset_elec,
+StructureFactorEstimator::StructureFactorEstimator(const StructureFactorInput& sfi,
+                                                   const ParticleSet& pset_ions,
+                                                   const ParticleSet& pset_elec,
                                                    DataLocality data_locality)
-    : OperatorEstBase(data_locality), elns_(pset_elec), ions_(pset_ions)
+    : OperatorEstBase(data_locality),
+      input_(sfi),
+      elns_(pset_elec),
+      elec_num_species_(elns_.getSpeciesSet().getTotalNum()),
+      ions_(pset_ions),
+      ion_num_species_(ions_.getSpeciesSet().getTotalNum())
 {
-  my_name_      = "StructureFactorEstimator";
-  elec_species_ = elns_.getSpeciesSet().getTotalNum();
-  ion_species_  = ions_.getSpeciesSet().getTotalNum();
+  my_name_ = "StructureFactorEstimator";
 
   num_kpoints_    = pset_ions.getSimulationCell().getKLists().numk;
   kshell_offsets_ = pset_ions.getSimulationCell().getKLists().kshell;
@@ -68,10 +72,10 @@ void StructureFactorEstimator::accumulate(const RefVector<MCPWalker>& walkers,
     //sum over species
     std::copy(psets[iw].get().getSK().rhok_r[0], psets[iw].get().getSK().rhok_r[0] + num_kpoints_, rhok_tot_r_.begin());
     std::copy(psets[iw].get().getSK().rhok_i[0], psets[iw].get().getSK().rhok_i[0] + num_kpoints_, rhok_tot_i_.begin());
-    for (int i = 1; i < elec_species_; ++i)
+    for (int i = 1; i < elec_num_species_; ++i)
       accumulate_elements(psets[iw].get().getSK().rhok_r[i], psets[iw].get().getSK().rhok_r[i] + num_kpoints_,
                           rhok_tot_r_.begin());
-    for (int i = 1; i < elec_species_; ++i)
+    for (int i = 1; i < elec_num_species_; ++i)
       accumulate_elements(psets[iw].get().getSK().rhok_i[i], psets[iw].get().getSK().rhok_i[i] + num_kpoints_,
                           rhok_tot_i_.begin());
 

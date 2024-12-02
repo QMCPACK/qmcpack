@@ -12,6 +12,7 @@
 #include "catch.hpp"
 
 #include "StructureFactorEstimator.h"
+#include "StructureFactorInput.h"
 #include "ValidStructureFactorInput.h"
 #include "Particle/tests/MinimalParticlePool.h"
 #include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
