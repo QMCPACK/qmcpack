@@ -54,6 +54,7 @@ public:
   void write(hdf_archive& file);
   void collect(const RefVector<OperatorEstBase>& type_erased_operator_estimators) override;
 
+  long long getNumKPoints() { return num_kpoints_; }
 protected:
   // Testing functions
   const Vector<Real>& getSKElecElec() const { return sfk_e_e_; }
