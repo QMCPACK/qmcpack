@@ -320,6 +320,7 @@
     <parameter name="blocks">                 2 </parameter>
     <parameter name="timestep">             1.0 </parameter>
     <parameter name="usedrift">              no </parameter>
+    <parameter name="blocks_between_recompute">      10 </parameter>
   </qmc>
   <qmc gpu="yes" method="vmc" move="pbyp">
     <estimator hdf5="no" name="LocalEnergy" />
@@ -330,6 +331,7 @@
     <parameter name="blocks">                 2 </parameter>
     <parameter name="timestep">             1.0 </parameter>
     <parameter name="usedrift">             yes </parameter>
+    <parameter name="blocks_between_recompute">      10 </parameter>
   </qmc>
   <qmc checkpoint="-1" gpu="yes" method="dmc" move="pbyp">
     <estimator hdf5="no" name="LocalEnergy" />
@@ -342,5 +344,6 @@
     <parameter name="steps">                  5 </parameter>
     <parameter name="blocks">                 5 </parameter>
     <parameter name="nonlocalmoves">        yes </parameter>
+    <parameter name="blocks_between_recompute">      10 </parameter>
   </qmc>
 </simulation>
