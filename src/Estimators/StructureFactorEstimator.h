@@ -36,6 +36,8 @@ public:
                            ParticleSet& pset_elec,
                            DataLocality data_locality = DataLocality::crowd);
 
+  StructureFactorEstimator(const StructureFactorEstimator& sfe, DataLocality dl);
+
   /** accumulate 1 or more walkers of EnergyDensity samples
    */
   void accumulate(const RefVector<MCPWalker>& walkers,
@@ -51,16 +53,19 @@ public:
   UPtr<OperatorEstBase> spawnCrowdClone() const override;
 
   void registerOperatorEstimator(hdf_archive& file) override;
-  void write(hdf_archive& file);
+  void write(hdf_archive& file) override;
   void collect(const RefVector<OperatorEstBase>& type_erased_operator_estimators) override;
 
   long long getNumKPoints() { return num_kpoints_; }
+
 protected:
   // Testing functions
   const Vector<Real>& getSKElecElec() const { return sfk_e_e_; }
   const Vector<std::complex<Real>>& getRhoKElec() const { return rhok_e_; }
 
 private:
+  StructureFactorEstimator(const StructureFactorEstimator& obdm) = default;
+
   int elec_species_;
   ParticleSet& elns_;
   int ion_species_;

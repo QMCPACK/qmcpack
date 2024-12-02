@@ -26,9 +26,9 @@ StructureFactorEstimator::StructureFactorEstimator(StructureFactorInput& sfi,
   elec_species_ = elns_.getSpeciesSet().getTotalNum();
   ion_species_  = ions_.getSpeciesSet().getTotalNum();
 
-  num_kpoints_ = pset_ions.getSimulationCell().getKLists().numk;
-  kshell_offsets_   = pset_ions.getSimulationCell().getKLists().kshell;
-  int max_kshell    = kshell_offsets_.size() - 1;
+  num_kpoints_    = pset_ions.getSimulationCell().getKLists().numk;
+  kshell_offsets_ = pset_ions.getSimulationCell().getKLists().kshell;
+  int max_kshell  = kshell_offsets_.size() - 1;
 
   rhok_tot_r_.resize(num_kpoints_);
   rhok_tot_i_.resize(num_kpoints_);
@@ -47,6 +47,12 @@ StructureFactorEstimator::StructureFactorEstimator(StructureFactorInput& sfi,
     kmags_[ks]                      = std::sqrt(pset_elec.getSimulationCell().getKLists().ksq[kshell_offsets_[ks]]);
     one_over_degeneracy_kshell_[ks] = 1.0 / static_cast<Real>(kshell_offsets_[ks + 1] - kshell_offsets_[ks]);
   };
+}
+
+StructureFactorEstimator::StructureFactorEstimator(const StructureFactorEstimator& sfe, DataLocality dl)
+    : qmcplusplus::StructureFactorEstimator(sfe)
+{
+  data_locality_ = dl;
 }
 
 void StructureFactorEstimator::accumulate(const RefVector<MCPWalker>& walkers,
@@ -109,6 +115,10 @@ void StructureFactorEstimator::collect(const RefVector<OperatorEstBase>& type_er
 
 void StructureFactorEstimator::startBlock(int steps) {}
 
-UPtr<OperatorEstBase> StructureFactorEstimator::spawnCrowdClone() const {}
+UPtr<OperatorEstBase> StructureFactorEstimator::spawnCrowdClone() const
+{
+  UPtr<StructureFactorEstimator> spawn(std::make_unique<StructureFactorEstimator>(*this, data_locality_));
+  return spawn;
+}
 
 } // namespace qmcplusplus
