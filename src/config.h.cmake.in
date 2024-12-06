@@ -18,7 +18,7 @@
 #define QMCPACK_VERSION_PATCH  @qmcpack_VERSION_PATCH@
 
 /* define the release version */
-#cmakedefine QMCPACK_RELEASE  @QMCAPCK_RELEASE@
+#cmakedefine QMCPACK_RELEASE  @QMCPACK_RELEASE@
 
 /* define the git last commit date */
 // #cmakedefine QMCPLUSPLUS_LAST_CHANGED_DATE  "@QMCPLUSPLUS_LAST_CHANGED_DATE@"
