@@ -112,6 +112,13 @@ class Options(DevBase):
     def read(self,options):
         if isinstance(options,(dict,obj)):
             self.add(**options)
+        elif isinstance(options,list):
+            for o in options:
+                if not isinstance(o,str):
+                    self.error('each option must be a string')
+                #end if
+                self[str(len(self))] = o
+            #end for
         elif isinstance(options,str):
             nopts = 0
             intext = False
