@@ -12,7 +12,7 @@ working python environment exists.
 Setting environment variables
 -----------------------------
 
-To make your Python installation (must be Python 2.x as 3.x is not supported)
+To make your Python installation (must be Python 3.x, 2.x is no longer supported)
 aware of Nexus, simply set the PYTHONPATH environment variable.  For example, in bash this would look like:
 
 .. code-block:: rest
@@ -75,6 +75,14 @@ listed with ``apt`` above on Debian systems), try ‘pip3‘:
   pip3 install --user PyCifRW
   pip3 install --user cif2cell
   pip3 install --user seekpath
+
+While Nexus does not have strict version requirements, most recent
+dependency versions that have been tested and are known to work can be
+found at ``qmcpack/nexus/requirements.txt``.
+These specific library versions can be installed using the following command:
+::
+
+  pip3 install --user -r requirements.txt
 
 The purpose of each library is described below:
 
@@ -192,7 +200,7 @@ in your ``PATH``. Installation is successful if all tests pass:
 Only portions of Nexus consistent with your Python installed Python
 libraries will be tested.
 
-To run the tests with ``pytest`` (``pip install –user pytest``), enter
+To run the tests with ``pytest`` (``pip install --user pytest``), enter
 the unit test directory and simply invoke the ``pytest`` command:
 
 ::
@@ -268,7 +276,7 @@ Assessing Test Coverage (Developer Topic)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Code coverage can be assessed by using the ``coverage`` tool
-(``pip install –user coverage``):
+(``pip install --user coverage``):
 
 ::
 
