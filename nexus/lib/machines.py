@@ -120,31 +120,7 @@ class Options(DevBase):
                 self[str(len(self))] = o
             #end for
         elif isinstance(options,str):
-            nopts = 0
-            intext = False
-            nstart = -2
-            nend   = -2
-            n = 0
-            for c in options:
-                if c=='-' and nstart!=n-1 and not intext:
-                    prevdash=True
-                    if nopts>0:
-                        opt  = options[nstart:n].strip()
-                        name = opt.replace('-','').replace('=',' ').split()[0]
-                        self[name]=opt
-                    #end if
-                    nopts+=1
-                    nstart = n
-                elif c=='"' or c=="'":
-                    intext=not intext
-                #end if
-                n+=1
-            #end for
-            if nopts>0:
-                opt  = options[nstart:n].strip()
-                name = opt.replace('-','').replace('=',' ').split()[0]
-                self[name]=opt
-            #end if
+            self[str(len(self))] = options
         else:
             self.error('invalid type provided to Options')
         #end if
