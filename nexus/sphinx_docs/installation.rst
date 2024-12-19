@@ -84,6 +84,9 @@ These specific library versions can be installed using the following command:
 
   pip3 install --user -r requirements.txt
 
+``qmcpack/nexus/requirements_minimal.txt`` can be used similarly but only contains
+a recently tested version of numpy.
+
 The purpose of each library is described below:
 
 **numpy** Needed throughout Nexus for array computation. Nexus will not
