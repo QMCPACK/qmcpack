@@ -82,7 +82,7 @@ development versions, and Intel OneAPI compilers.
 
 GitHub Actions-based tests include additional version combinations from within our two year support window.
 
-Workflow tests are currently performed with Quantum Espresso v7.4.0 and PySCF v2.7.0. These check trial wavefunction generation and
+Workflow tests are currently performed with Quantum ESPRESSO v7.4.0 and PySCF v2.7.0. These check trial wavefunction generation and
 conversion through to actual QMC runs.
 
 # Building with CMake
