@@ -372,6 +372,7 @@ protected:
     NewTimer& startup_timer;
     NewTimer& production_timer;
     NewTimer& resource_timer;
+    NewTimer& walker_log_timer;
     DriverTimers(const std::string& prefix)
         : checkpoint_timer(createGlobalTimer(prefix + "CheckPoint", timer_level_medium)),
           run_steps_timer(createGlobalTimer(prefix + "RunSteps", timer_level_medium)),
@@ -386,7 +387,8 @@ protected:
           endblock_timer(createGlobalTimer(prefix + "BlockEndDataAggregation", timer_level_medium)),
           startup_timer(createGlobalTimer(prefix + "Startup", timer_level_medium)),
           production_timer(createGlobalTimer(prefix + "Production", timer_level_medium)),
-          resource_timer(createGlobalTimer(prefix + "Resources", timer_level_medium))
+          resource_timer(createGlobalTimer(prefix + "Resources", timer_level_medium)),
+	  walker_log_timer(createGlobalTimer(prefix + "Walker Logging", timer_level_fine))
     {}
   };
 
