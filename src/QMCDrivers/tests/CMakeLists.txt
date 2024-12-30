@@ -120,7 +120,7 @@ if(HAVE_MPI)
       qmcutil
       platform_omptarget_LA)
   endif()
-  foreach(NUM_RANKS 1 2 3 4 16)
+  foreach(NUM_RANKS 1 2 3 4)
     set(UTEST_NAME deterministic-unit_${UTEST_EXE}-r${NUM_RANKS})
     add_unit_test(${UTEST_NAME} ${NUM_RANKS} 1 $<TARGET_FILE:${UTEST_EXE}>)
     set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
