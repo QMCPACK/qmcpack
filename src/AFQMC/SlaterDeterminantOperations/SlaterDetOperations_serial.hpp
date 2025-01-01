@@ -80,7 +80,7 @@ public:
                        bool compact = false,
                        bool herm    = true)
   {
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
     APP_ABORT(" Error: SlaterDetOperations_serial should not be here. \n");
 #endif
     return Base::MixedDensityMatrix(hermA, B, C, LogOverlapFactor, compact);
@@ -96,7 +96,7 @@ public:
                                   communicator& comm,
                                   bool compact = false)
   {
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
     APP_ABORT(" Error: SlaterDetOperations_serial should not be here. \n");
 #endif
     return Base::MixedDensityMatrixForWoodbury(hermA, B, std::forward<MatC>(C), LogOverlapFactor, ref,
@@ -106,7 +106,7 @@ public:
   template<class MatA, class MatB>
   T Overlap(const MatA& hermA, const MatB& B, T LogOverlapFactor, communicator& comm, bool herm = true)
   {
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
     APP_ABORT(" Error: SlaterDetOperations_serial should not be here. \n");
 #endif
     return Base::Overlap(hermA, B, LogOverlapFactor);
@@ -120,7 +120,7 @@ public:
                        MatC&& QQ0,
                        communicator& comm)
   {
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
     APP_ABORT(" Error: SlaterDetOperations_serial should not be here. \n");
 #endif
     return Base::OverlapForWoodbury(hermA, B, LogOverlapFactor, ref, std::forward<MatC>(QQ0));
@@ -135,7 +135,7 @@ public:
                  char TA           = 'N',
                  bool noncollinear = false)
   {
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
     APP_ABORT(" Error: SlaterDetOperations_serial should not be here. \n");
 #endif
     Base::Propagate(std::forward<Mat>(A), P1, V, order, TA, noncollinear);
@@ -327,7 +327,7 @@ public:
     static_assert(pointedType<MatA>::dimensionality == 2, "Wrong dimensionality");
 
     using std::get;
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
     // QR on the transpose
     if (Ai.size() == 0)
       return;
@@ -366,7 +366,7 @@ public:
   void BatchedOrthogonalize(std::vector<MatA>& Ai, T LogOverlapFactor)
   {
     using std::get;
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
     // QR on the transpose
     if (Ai.size() == 0)
       return;

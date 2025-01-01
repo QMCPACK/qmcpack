@@ -327,7 +327,7 @@ private:
     // put this in shared memory!!!
     StaticMatrix Gt({NMO, NMO}, buffer_manager.get_generator().template get_allocator<ComplexType>());
     CMatrix_ref GtC(Gt.origin(), {NMO * NMO, 1});
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
     if (Grot.size() < R.num_elements())
       Grot = stdCVector(iextensions<1u>(R.num_elements()));
 #endif
@@ -349,7 +349,7 @@ private:
 
         //  (a,a,a,a)
         ma::product(Gup.sliced(i0, iN), ma::T(Gup), R);
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
         using std::copy_n;
         copy_n(R.origin(), R.num_elements(), Grot.origin());
         ma::axpy(Xw[iw], Grot, DMWork[iw].sliced(size_t(i0) * M2, size_t(iN) * M2));
@@ -363,7 +363,7 @@ private:
         for (int i = 0; i < NMO; ++i)
         {
           ma::product(ComplexType(-1.0), GtC, G[iw][0].sliced(i, i + 1), ComplexType(0.0), Q);
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
           using std::copy_n;
           copy_n(Q.origin(), Q.num_elements(), Grot.origin());
           ma::axpy(Xw[iw], Grot.sliced(0, Q.num_elements()),
@@ -375,7 +375,7 @@ private:
 
         //  (a,a,b,b)
         ma::product(Gup.sliced(i0, iN), ma::T(Gdn), R);
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
         using std::copy_n;
         copy_n(R.origin(), R.num_elements(), Grot.origin());
         ma::axpy(Xw[iw], Grot, DMWork[iw].sliced(M4 + size_t(i0) * M2, M4 + size_t(iN) * M2));
@@ -385,7 +385,7 @@ private:
 
         //  (b,b,b,b)
         ma::product(Gdn.sliced(i0, iN), ma::T(Gdn), R);
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
         using std::copy_n;
         copy_n(R.origin(), R.num_elements(), Grot.origin());
         ma::axpy(Xw[iw], Grot, DMWork[iw].sliced(2 * M4 + size_t(i0) * M2, 2 * M4 + size_t(iN) * M2));
@@ -399,7 +399,7 @@ private:
         for (int i = 0; i < NMO; ++i)
         {
           ma::product(ComplexType(-1.0), GtC, G[iw][1].sliced(i, i + 1), ComplexType(0.0), Q);
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
           using std::copy_n;
           copy_n(Q.origin(), Q.num_elements(), Grot.origin());
           ma::axpy(Xw[iw], Grot.sliced(0, Q.num_elements()),

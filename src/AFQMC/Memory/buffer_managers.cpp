@@ -20,7 +20,7 @@ namespace qmcplusplus
 namespace afqmc
 {
 std::unique_ptr<HostBufferManager::generator_t> HostBufferManager::generator(nullptr);
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
 std::unique_ptr<DeviceBufferManager::generator_t> DeviceBufferManager::generator(nullptr);
 bool DeviceBufferManager::initialized_by_derived_class(false);
 #else
@@ -40,7 +40,7 @@ void setup_memory_managers(mpi3::shared_communicator& local, size_t size)
 
 void setup_memory_managers(mpi3::shared_communicator& node, size_t size, int nc)
 {
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
   setup_memory_managers(node, size);
 #else
   mpi3::shared_communicator local(
@@ -53,7 +53,7 @@ void update_memory_managers()
 {
   HostBufferManager host_buffer;
   host_buffer.get_generator().update();
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
   DeviceBufferManager dev_buffer;
   dev_buffer.get_generator().update();
 #else
