@@ -26,7 +26,7 @@ SetupPools::SetupPools()
   ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
   comm = OHMMS::Controller;
 
-  std::cout << "For purposes of multithreaded testing max threads is forced to 8" << '\n';
+  app_log() << "For purposes of multithreaded testing max threads is forced to 8" << std::endl;
   Concurrency::OverrideMaxCapacity<> override(8);
 
   particle_pool     = std::make_unique<ParticleSetPool>(MinimalParticlePool::make_diamondC_1x1x1(comm));
