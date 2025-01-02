@@ -95,6 +95,10 @@ set(QMC_GPU_ARCHS
     ${QMC_GPU_ARCHS}
     CACHE STRING "Accelerator device architectures" FORCE)
 
+if(QMC_GPU_ARCHS)
+  message(STATUS "GPU device architectures: ${QMC_GPU_ARCHS}")
+endif()
+
 # QMC_GPU_ARCHS is the single source of truth and thus overwrite CMAKE_CUDA/HIP_ARCHITECTURES
 if(ENABLE_CUDA)
   if(QMC_CUDA2HIP)
