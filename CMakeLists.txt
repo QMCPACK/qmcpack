@@ -105,7 +105,6 @@ if(ENABLE_CUDA AND NOT QMC_CUDA2HIP)
 endif()
 
 include(DetermineDeviceArchitectures)
-message(STATUS "GPU device architectures: ${QMC_GPU_ARCHS}")
 
 #--------------------------------------------------------------------
 # Set compiler-time parameters
@@ -195,17 +194,17 @@ mark_as_advanced(QMC_EXP_THREADING)
 #--------------------------------------------------------------------
 
 # Add optional sanitizers ASAN, UBSAN, MSAN
-set(VALID_SANITIZERS "none" "asan" "ubsan" "tsan" "msan")
-set(ENABLE_SANITIZER
-    "none"
-    CACHE STRING "none,asan,ubsan,tsan,msan")
+set(VALID_SANITIZERS "asan" "ubsan" "tsan" "msan")
+set(ENABLE_SANITIZER "" CACHE STRING "asan,ubsan,tsan,msan")
 set_property(CACHE ENABLE_SANITIZER PROPERTY STRINGS ${VALID_SANITIZERS})
 
-# Perform sanitizer option check, only works in debug mode
-if(NOT ENABLE_SANITIZER IN_LIST VALID_SANITIZERS)
-  message(FATAL_ERROR "Invalid -DENABLE_SANITIZER=${ENABLE_SANITIZER}, value must be one of ${VALID_SANITIZERS}")
-else()
-  message(STATUS "Enable sanitizer ENABLE_SANITIZER=${ENABLE_SANITIZER}")
+if(ENABLE_SANITIZER)
+  # Perform sanitizer option check, only works in debug mode
+  if(NOT ENABLE_SANITIZER IN_LIST VALID_SANITIZERS)
+    message(FATAL_ERROR "Invalid -DENABLE_SANITIZER=${ENABLE_SANITIZER}, value must be one of ${VALID_SANITIZERS}")
+  else()
+    message(STATUS "Enable sanitizer ENABLE_SANITIZER=${ENABLE_SANITIZER}")
+  endif()
 endif()
 
 #--------------------------------------------------------------------
@@ -318,7 +317,7 @@ include(TestCxx17Library)
 #-----------------------------------------------------------------------
 # SETUP SANITIZERS FLAGS
 #-----------------------------------------------------------------------
-if(NOT "${ENABLE_SANITIZER}" STREQUAL "none")
+if(ENABLE_SANITIZER)
   if(NOT ${COMPILER} MATCHES "GNU" AND NOT ${COMPILER} MATCHES "Clang")
     message(FATAL_ERROR "-DENABLE_SANITIZER=${ENABLE_SANITIZER} only works with GNU or Clang compilers")
   endif()
