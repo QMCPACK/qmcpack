@@ -57,11 +57,11 @@ option(QMC_OMP "Enable/disable OpenMP" ON)
 option(QMC_COMPLEX "Build for complex binary" OFF)
 option(ENABLE_CUDA "Build with GPU support through CUDA" OFF)
 option(QMC_CUDA2HIP "Map all CUDA kernels and library calls to HIP" OFF)
-if(QMC_CUDA2HIP OR ENABLE_HIP)
+if(QMC_CUDA2HIP OR BUILD_AFQMC_HIP)
   set(ENABLE_ROCM ON) # option(ENABLE_ROCM) will be no-op
 endif()
 # explicit HIP source codes only exist in AFQMC.
-option(ENABLE_HIP "Build with with GPU support through explicit HIP source code" OFF)
+option(BUILD_AFQMC_HIP "Build with with GPU support in AFQMC through explicit HIP source code" OFF)
 option(ENABLE_ROCM "Build with with GPU support through ROCM libraries" OFF)
 option(ENABLE_OFFLOAD "Enable OpenMP offload" OFF)
 option(ENABLE_SYCL "Enable SYCL offload" OFF)
@@ -848,9 +848,9 @@ if(USE_NVTX_API AND QMC_CUDA2HIP)
 endif(USE_NVTX_API AND QMC_CUDA2HIP)
 
 #-------------------------------------------------------------------
-#  set up HIP compiler options
+#  set up AFQMC-specific HIP compiler options
 #-------------------------------------------------------------------
-if(ENABLE_HIP)
+if(BUILD_AFQMC_HIP)
   if(NOT ENABLE_ROCM)
     message(FATAL_ERROR "ROCM is required to use HIP. Please set ENABLE_ROCM=ON.")
   endif()
@@ -859,7 +859,7 @@ if(ENABLE_HIP)
   add_library(HIP::HIP INTERFACE IMPORTED)
   # temporarily put hipsparse hipblas here for convenience, should be moved to Platforms.
   target_link_libraries(HIP::HIP INTERFACE roc::hipsparse roc::hipblas)
-  target_compile_definitions(HIP::HIP INTERFACE "ENABLE_HIP")
+  target_compile_definitions(HIP::HIP INTERFACE "BUILD_AFQMC_HIP")
 
   # FindHIP sets HIP_PLATFORM to amd or nvcc
   message(STATUS "FindHIP determined HIP_PLATFORM is ${HIP_PLATFORM}.")
@@ -870,7 +870,7 @@ if(ENABLE_HIP)
   else()
     message(FATAL_ERROR "Unknown HIP platform ${HIP_PLATFORM} only support 'amd' or 'nvcc'")
   endif()
-endif(ENABLE_HIP)
+endif(BUILD_AFQMC_HIP)
 
 #-------------------------------------------------------------------
 #  set up SYCL compiler options and libraries

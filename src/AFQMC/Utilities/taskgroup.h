@@ -119,7 +119,7 @@ public:
         global_(gTG.Global()),
         node_(gTG.Node()),
         core_(gTG.Cores()),
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
         local_tg_(node_.split(node_.rank(), node_.rank())),
         tgrp_(),
         tgrp_cores_(),
@@ -131,11 +131,11 @@ public:
         tg_heads_(global_.split(node_.rank() % ((nc < 1) ? (1) : (std::min(nc, node_.size()))), global_.rank()))
 #endif
   {
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
     if (nc != 1)
     {
       nc = 1;
-      app_log() << " WARNING: Code was compiled with ENABLE_CUDA or ENABLE_HIP, setting ncores=1. \n";
+      app_log() << " WARNING: Code was compiled with ENABLE_CUDA or BUILD_AFQMC_HIP, setting ncores=1. \n";
     }
 #endif
     setup(nn, nc);
@@ -146,7 +146,7 @@ public:
         global_(other.Global()),
         node_(other.Node()),
         core_(other.Cores()),
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
         local_tg_(node_.split(node_.rank(), node_.rank())),
         tgrp_(),
         tgrp_cores_(),
@@ -158,11 +158,11 @@ public:
         tg_heads_(global_.split(node_.rank() % ((nc < 1) ? (1) : (std::min(nc, node_.size()))), global_.rank()))
 #endif
   {
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
     if (nc != 1)
     {
       nc = 1;
-      app_log() << " WARNING: Code was compiled with ENABLE_CUDA or ENABLE_HIP, setting ncores=1. \n";
+      app_log() << " WARNING: Code was compiled with ENABLE_CUDA or BUILD_AFQMC_HIP, setting ncores=1. \n";
     }
 #endif
     setup(nn, nc);
@@ -227,7 +227,7 @@ public:
   int getNGroupsPerTG() const { return nnodes_per_TG; }
 
 // THIS NEEDS TO CHANGE IN GPU CODE!
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
   int getLocalGroupNumber() const { return getTGRank(); }
 #else
   int getLocalGroupNumber() const { return core_.rank() % nnodes_per_TG; }

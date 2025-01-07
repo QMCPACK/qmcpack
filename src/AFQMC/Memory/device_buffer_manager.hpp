@@ -28,7 +28,7 @@ namespace afqmc
 // Class that manages the memory resource that generates allcators for device memory.
 // Follows a monostate-type pattern. All variables are static and refer to a global instance
 // of the resource.
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
 class DeviceBufferManager
 {
 public:

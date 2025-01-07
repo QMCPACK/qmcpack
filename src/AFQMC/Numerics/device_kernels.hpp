@@ -51,7 +51,7 @@
 #include "AFQMC/Numerics/detail/CUDA/Kernels/inplace_product.cuh"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/get_diagonal.cuh"
 
-#elif defined(ENABLE_HIP)
+#elif defined(BUILD_AFQMC_HIP)
 
 #include "AFQMC/Numerics/detail/HIP/Kernels/determinant.hip.h"
 #include "AFQMC/Numerics/detail/HIP/Kernels/adotpby.hip.h"

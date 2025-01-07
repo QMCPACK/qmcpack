@@ -207,19 +207,23 @@ before doing significant production. i.e. Check the details below.
  * Additional QMCPACK options
 
 ```
-     QE_BIN              Location of Quantum Espresso binaries including pw2qmcpack.x
-     RMG_BIN             Location of RMG binary
-     QMC_DATA            Specify data directory for QMCPACK performance and integration tests
-     QMC_INCLUDE         Add extra include paths
-     QMC_EXTRA_LIBS      Add extra link libraries
-     QMC_BUILD_STATIC    ON/OFF(default). Add -static flags to build
+     BUILD_AFQMC            ON/OFF(default). Build the Auxiliary-Field Quantum Monte Carlo (AFQMC) feature
+     BUILD_AFQMC_WITH_NCCL  ON/OFF(default). Enable the optimized code path using NVIDIA Collective Communications Library (NCCL) in AFQMC.
+                            AFQMC and CUDA features required to enable this feature.
+     BUILD_AFQMC_HIP        ON/OFF(default). Enable HIP accelerated code paths in AFQMC. AFQMC feature required to enable this feature.
+     QE_BIN                 Location of Quantum Espresso binaries including pw2qmcpack.x
+     RMG_BIN                Location of RMG binary
+     QMC_DATA               Specify data directory for QMCPACK performance and integration tests
+     QMC_INCLUDE            Add extra include paths
+     QMC_EXTRA_LIBS         Add extra link libraries
+     QMC_BUILD_STATIC       ON/OFF(default). Add -static flags to build
      QMC_SYMLINK_TEST_FILES Set to zero to require test files to be copied. Avoids space
                             saving default use of symbolic links for test files. Useful
                             if the build is on a separate filesystem from the source, as
                             required on some HPC systems.
-     ENABLE_TIMERS       ON(default)/OFF. Enable fine-grained timers. Timers are on by default but at level coarse
-                         to avoid potential slowdown in tiny systems.
-                         For systems beyond tiny sizes (100+ electrons) there is no risk.
+     ENABLE_TIMERS          ON(default)/OFF. Enable fine-grained timers. Timers are on by default but at level coarse
+                            to avoid potential slowdown in tiny systems.
+                            For systems beyond tiny sizes (100+ electrons) there is no risk.
 ```
 
   * libxml2 related

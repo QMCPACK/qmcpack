@@ -21,7 +21,7 @@
 #if defined(ENABLE_CUDA)
 #include "AFQMC/Numerics/detail/CUDA/sparse_cuda_gpu_ptr.hpp"
 #include "AFQMC/Numerics/detail/CUDA/sparse_cuda_catch_all.hpp"
-#elif defined(ENABLE_HIP)
+#elif defined(BUILD_AFQMC_HIP)
 #include "AFQMC/Numerics/detail/HIP/sparse_hip_gpu_ptr.hpp"
 #include "AFQMC/Numerics/detail/HIP/sparse_hip_catch_all.hpp"
 #endif
