@@ -347,6 +347,8 @@ the path to the source directory.
                            if the build is on a separate filesystem from the source, as
                            required on some HPC systems.
     ENABLE_PPCONVERT       ON/OFF. Enable the ppconvert tool. If requirements are met, it is ON by default.
+    USE_OBJECT_TARGET      ON/OFF(default). Use CMake object library targets to workaround linker not being able to handle hybrid
+                           binary archives which contain both host and device codes.
 
 - BLAS/LAPACK related
 

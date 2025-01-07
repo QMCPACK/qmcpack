@@ -223,6 +223,8 @@ before doing significant production. i.e. Check the details below.
      ENABLE_TIMERS          ON(default)/OFF. Enable fine-grained timers. Timers are on by default but at level coarse
                             to avoid potential slowdown in tiny systems.
                             For systems beyond tiny sizes (100+ electrons) there is no risk.
+     USE_OBJECT_TARGET      ON/OFF(default). Use CMake object library targets to workaround linker not being able to handle hybrid
+                            binary archives which contain both host and device codes.
 ```
 
   * libxml2 related
