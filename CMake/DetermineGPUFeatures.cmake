@@ -2,8 +2,22 @@
 # QMC_GPU option
 #--------------------------------------------------------------------
 
+# Guess QMC_GPU_DEFAULT if QMC_GPU_ARCHS is provided. Only use the first entry if there are more.
+if(QMC_GPU_ARCHS)
+  list(GET QMC_GPU_ARCHS 0 GPU_ARCH_0)
+  if(GPU_ARCH_0 MATCHES "^sm_")
+    set(QMC_GPU_DEFAULT "openmp;cuda")
+  elseif(GPU_ARCH_0 MATCHES "^gfx")
+    set(QMC_GPU_DEFAULT "openmp;hip")
+  elseif(GPU_ARCH_0 MATCHES "^intel_gpu_")
+    set(QMC_GPU_DEFAULT "openmp;sycl")
+  else()
+    set(QMC_GPU_DEFAULT "")
+  endif()
+endif()
+
 set(VALID_QMC_GPU_FEATURES "openmp" "cuda" "hip" "sycl")
-set(QMC_GPU "" CACHE STRING "Semicolon-separated list of GPU features to enable (openmp,cuda,hip,sycl)")
+set(QMC_GPU ${QMC_GPU_DEFAULT} CACHE STRING "Semicolon-separated list of GPU features to enable (openmp,cuda,hip,sycl)")
 set_property(CACHE QMC_GPU PROPERTY STRINGS ${VALID_QMC_GPU_FEATURES})
 
 set(ENABLE_OFFLOAD OFF)
