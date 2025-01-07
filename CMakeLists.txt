@@ -58,9 +58,8 @@ option(QMC_COMPLEX "Build for complex binary" OFF)
 if(DEFINED ENABLE_CUDA OR DEFINED ENABLE_ROCM OR DEFINED QMC_CUDA2HIP OR DEFINED ENABLE_SYCL OR DEFINED ENABLE_OFFLOAD)
   message(
     FATAL_ERROR "ENABLE_CUDA, ENABLE_ROCM, QMC_CUDA2HIP, ENABLE_SYCL and ENABLE_OFFLOAD CMake options are removed. "
-                "When not building from scratch, their entries in CMakeCache.txt needs to be removed.\n"
-                "Use QMC_GPU option with its value selected from \"openmp;cuda;hip;sycl\". "
-                "Recommended values: \"openmp;cuda\" for NVIDIA, \"openmp;hip\" for AMD, \"openmp;sycl\" for Intel.")
+                "Use QMC_GPU instead. See details of this option explained in the user guide. "
+                "When not building from scratch, their cached entries in CMakeCache.txt needs to be removed.")
 endif()
 
 include(DetermineGPUFeatures)

@@ -190,12 +190,8 @@ before doing significant production. i.e. Check the details below.
                           Mixed precision calculations can be signifiantly faster but should be
                           carefully checked validated against full double precision runs,
                           particularly for large electron counts.
-    ENABLE_OFFLOAD        ON/OFF(default). Enable OpenMP target offload for GPU acceleration.
-    ENABLE_CUDA           ON/OFF(default). Enable CUDA code path for NVIDIA GPU acceleration.
-                          Production quality for AFQMC and real-space performance portable implementation.
-    QMC_CUDA2HIP          ON/OFF(default). Map all CUDA kernels and library calls to HIP and use ROCm libraries.
-                          Set both ENABLE_CUDA and QMC_CUDA2HIP ON to target AMD GPUs.
-    ENABLE_SYCL           ON/OFF(default). Enable SYCL code path. Only support Intel GPUs and OneAPI compilers.
+    QMC_GPU               Semicolon-separated list of GPU features to build (openmp,cuda,hip,sycl).
+                          "openmp", "cuda", "hip" and "sycl" for GPU acceleration via OpenMP offload, CUDA, HIP and SYCL.
     QMC_GPU_ARCHS         Specify GPU architectures. For example, "gfx90a" targets AMD MI200 series GPUs.
                           "sm_80;sm_70" creates a single executable running on both NVIDIA A100 and V100 GPUs.
                           Mixing vendor "gfx90a;sm_70" is not supported. If not set, atempt to derive it
