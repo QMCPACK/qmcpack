@@ -329,6 +329,10 @@ the path to the source directory.
 
   ::
 
+    BUILD_AFQMC            ON/OFF(default). Build the Auxiliary-Field Quantum Monte Carlo (AFQMC) feature
+    BUILD_AFQMC_WITH_NCCL  ON/OFF(default). Enable the optimized code path using NVIDIA Collective Communications Library (NCCL) in AFQMC.
+                           AFQMC and CUDA features required to enable this feature.
+    BUILD_AFQMC_HIP        ON/OFF(default). Enable HIP accelerated code paths in AFQMC. AFQMC feature required to enable this feature.
     ENABLE_TIMERS          ON(default)/OFF. Enable fine-grained timers. Timers are on by default but at level coarse
                            to avoid potential slowdown in tiny systems.
                            For systems beyond tiny sizes (100+ electrons) there is no risk.
