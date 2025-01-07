@@ -9,6 +9,11 @@ Notable changes to QMCPACK are documented in this file.
   backflow optimization can use previously released versions of QMCPACK or work towards its reimplementation in the modern code.
   [#4688](https://github.com/QMCPACK/qmcpack/pull/4688)
 
+* ENABLE_CUDA, ENABLE_ROCM, QMC_CUDA2HIP, ENABLE_SYCL and ENABLE_OFFLOAD CMake options are replaced by a single QMC_GPU option.
+  See details of this option explained in the user guide.
+  When not building from scratch, their cached entries in CMakeCache.txt needs to be removed.
+  [#5267](https://github.com/QMCPACK/qmcpack/pull/5267)
+
 ## [3.17.1] - 2023-08-25
 
 This minor release is recommended for all users and includes a couple of build fixes and a NEXUS improvement.
