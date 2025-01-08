@@ -190,18 +190,17 @@ before doing significant production. i.e. Check the details below.
                           Mixed precision calculations can be signifiantly faster but should be
                           carefully checked validated against full double precision runs,
                           particularly for large electron counts.
-    ENABLE_OFFLOAD        ON/OFF(default). Enable OpenMP target offload for GPU acceleration.
-    ENABLE_CUDA           ON/OFF(default). Enable CUDA code path for NVIDIA GPU acceleration.
-                          Production quality for AFQMC and real-space performance portable implementation.
-    QMC_CUDA2HIP          ON/OFF(default). Map all CUDA kernels and library calls to HIP and use ROCm libraries.
-                          Set both ENABLE_CUDA and QMC_CUDA2HIP ON to target AMD GPUs.
-    ENABLE_SYCL           ON/OFF(default). Enable SYCL code path. Only support Intel GPUs and OneAPI compilers.
+    QMC_GPU               Semicolon-separated list of GPU features to build (openmp,cuda,hip,sycl).
+                          "openmp", "cuda", "hip" and "sycl" for GPU acceleration via OpenMP offload, CUDA, HIP and SYCL.
+                          Recommended values: "openmp;cuda" for NVIDIA, "openmp;hip" for AMD, "openmp;sycl" for Intel.
+                          Its default value is set to the recommended value if QMC_GPU_ARCHS indicates a specific vendor
+                          or left empty otherwise.
     QMC_GPU_ARCHS         Specify GPU architectures. For example, "gfx90a" targets AMD MI200 series GPUs.
+                          "intel_gpu_pvc" targets Intel Data Center GPU Max 1xxx.
                           "sm_80;sm_70" creates a single executable running on both NVIDIA A100 and V100 GPUs.
                           Mixing vendor "gfx90a;sm_70" is not supported. If not set, atempt to derive it
                           from CMAKE_CUDA_ARCHITECTURES or CMAKE_HIP_ARCHITECTURES if available and then
                           atempt to auto-detect existing GPUs.
-
 ```
 
  * Additional QMCPACK options
@@ -224,6 +223,8 @@ before doing significant production. i.e. Check the details below.
      ENABLE_TIMERS          ON(default)/OFF. Enable fine-grained timers. Timers are on by default but at level coarse
                             to avoid potential slowdown in tiny systems.
                             For systems beyond tiny sizes (100+ electrons) there is no risk.
+     USE_OBJECT_TARGET      ON/OFF(default). Use CMake object library targets to workaround linker not being able to handle hybrid
+                            binary archives which contain both host and device codes.
 ```
 
   * libxml2 related
