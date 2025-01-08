@@ -1,6 +1,8 @@
 <?xml version="1.0"?>
 <simulation>
-  <project id="ref" series="0"/>
+<project id="ref" series="0">
+  <parameter name="driver_version">legacy</parameter>
+</project>
   <random seed="11"/>
   <wavefunction name="psi0" target="e">
     <determinantset type="bspline" href="lda.pwscf.h5" sort="1" tilematrix="3 0 0 0 3 0 0 0 1" 

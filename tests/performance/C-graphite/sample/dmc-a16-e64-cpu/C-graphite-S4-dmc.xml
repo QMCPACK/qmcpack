@@ -2,6 +2,7 @@
 <simulation xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.mcc.uiuc.edu/qmc/schema/molecu.xsd">
   <project id="C-graphite-S4-dmc" series="0">
     <application name="qmcapp" role="molecu" class="serial" version="0.2"/>\
+    <parameter name="driver_version">legacy</parameter>
   </project>
 
   <random seed="11"/>

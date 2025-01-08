@@ -4,6 +4,7 @@
    <!-- all output files will be prefixed by "O.q0.opt" -->
    <project id="O.q0.opt" series="0">
       <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
+    <parameter name="driver_version">legacy</parameter>
    </project>
 
 
