@@ -13,12 +13,8 @@
     <pairpot name="ElecElec" type="coulomb" source="e" target="e"/>
     <pairpot name="ELEMENT-ECP" type="pseudo" source="ion0" target="e" 
          format="xml" wavefunction="psi0" >
-<pseudo elementType="O" format="xml" href="/projects/QMC_2014_training/O.BFD.xml" >
-  <parameter name="driver_version">legacy</parameter>
-</project>
-<pseudo elementType="H" format="xml" href="/projects/QMC_2014_training/H.BFD.xml" >
-  <parameter name="driver_version">legacy</parameter>
-</project>
+       <pseudo elementType="O" format="xml" href="/projects/QMC_2014_training/O.BFD.xml" />
+       <pseudo elementType="H" format="xml" href="/projects/QMC_2014_training/H.BFD.xml" />
     </pairpot>
     <constant name="IonIon" type="coulomb" source="ion0" target="ion0"/>
   </hamiltonian>
