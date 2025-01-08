@@ -308,7 +308,7 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
     TG.global_barrier();
     // KPFactorizedHamiltonian matrices are read by THCHamiltonian object when needed,
     // since their ownership is passed to the HamOps object.
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
     //      if(alt == "yes" || alt == "true")
     //        return Hamiltonian(RealDenseHamiltonian(AFinfo,cur,std::move(H1),TG,
     //                                        NuclearCoulombEnergy,FrozenCoreEnergy));

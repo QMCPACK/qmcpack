@@ -32,7 +32,7 @@
 #include "AFQMC/Memory/CUDA/cuda_arch.h"
 #include "AFQMC/Numerics/device_kernels.hpp"
 #include "cuda_runtime.h"
-#elif ENABLE_HIP
+#elif BUILD_AFQMC_HIP
 #include "AFQMC/Memory/device_pointers.hpp"
 #include "AFQMC/Memory/HIP/hip_arch.h"
 #include "AFQMC/Numerics/device_kernels.hpp"
@@ -351,7 +351,7 @@ inline void memory_report()
   qmcplusplus::app_log() << " --> GPU Memory Available,  Total in MB: " << (free_ >> 20) << " "
                          << (tot_ >> 20) << "\n"
                          << std::endl;
-#elif ENABLE_HIP
+#elif BUILD_AFQMC_HIP
   size_t free_, tot_;
   hipMemGetInfo(&free_, &tot_);
   qmcplusplus::app_log() << " --> GPU Memory Available,  Total in MB: " << (free_ >> 20) << " "
@@ -367,7 +367,7 @@ void sampleGaussianFields_n(device::device_pointer<T> V, int n, Dummy& r)
 {
   kernels::sampleGaussianRNG(to_address(V), n, arch::afqmc_curand_generator);
 }
-#elif defined(ENABLE_HIP)
+#elif defined(BUILD_AFQMC_HIP)
 template<class T, class Dummy>
 void sampleGaussianFields_n(device::device_pointer<T> V, int n, Dummy& r)
 {

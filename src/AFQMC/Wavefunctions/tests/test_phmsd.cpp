@@ -309,7 +309,7 @@ TEST_CASE("test_read_phmsd", "[test_read_phmsd]")
     infoLog.pause();
   auto node = world.split_shared(world.rank());
 
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
   arch::INIT(node);
   using Alloc = device::device_allocator<ComplexType>;
 #else
@@ -329,7 +329,7 @@ TEST_CASE("test_phmsd", "[read_phmsd]")
     infoLog.pause();
   auto node = world.split_shared(world.rank());
 
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
   arch::INIT(node);
   using Alloc = device::device_allocator<ComplexType>;
 #else
