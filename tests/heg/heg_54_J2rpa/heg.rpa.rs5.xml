@@ -4,6 +4,7 @@ xsi:noNamespaceSchemaLocation="http://www.mcc.uiuc.edu/qmc/schema/molecu.xsd">
   <project id="HEG.rs5.rpa" series="1">
     <application name="qmcapp" role="molecu" class="serial" version="0.2">
   </application>
+    <parameter name="driver_version">legacy</parameter>
   </project>
   <!--
   <random parallel="false" seed="1359823"/>

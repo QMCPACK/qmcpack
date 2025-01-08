@@ -1,5 +1,7 @@
 <simulation>
-  <project id="eg2d_dpsi" series="0"/>
+<project id="eg2d_dpsi" series="0">
+  <parameter name="driver_version">legacy</parameter>
+</project>
   <random seed="137"/>
   <qmcsystem>
     <simulationcell>

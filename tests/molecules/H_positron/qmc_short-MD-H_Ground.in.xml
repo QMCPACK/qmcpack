@@ -1,6 +1,8 @@
 <?xml version="1.0"?>
 <simulation>
-  <project id="qmc_short-MD-H_Ground" series="0"/>
+<project id="qmc_short-MD-H_Ground" series="0">
+  <parameter name="driver_version">legacy</parameter>
+</project>
   <qmcsystem>
     <particleset name="ion0" size="1">
       <group name="H">

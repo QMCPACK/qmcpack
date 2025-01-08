@@ -3,6 +3,7 @@
     <application class="serial" name="qmcapp" role="molecu" version="0.2">
       DMC for NiO-fcc-S48-tw0
     </application>
+    <parameter name="driver_version">legacy</parameter>
   </project>
 
   <random seed="49154" />

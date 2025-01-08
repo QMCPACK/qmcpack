@@ -82,6 +82,9 @@ def change_to_unified_drivers(tree):
     nodes = qmc.findall("./parameter[@name='walkers']")
     if nodes:
       add_or_change_attribute(nodes[0], 'name', 'walkers_per_rank')
+  proj_nodes = tree.findall(".//project")
+  for proj in proj_nodes:
+    add_or_change_parameter(proj, 'driver_version', 'batched')
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description="Adjust QMCPACK input files")

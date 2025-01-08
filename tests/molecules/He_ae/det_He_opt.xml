@@ -1,6 +1,8 @@
 <?xml version="1.0"?>
 <simulation>
-  <project id="det_He_opt" series="0"/>
+<project id="det_He_opt" series="0">
+  <parameter name="driver_version">legacy</parameter>
+</project>
   <random seed="509"/>
 
   <!-- Location of atoms -->

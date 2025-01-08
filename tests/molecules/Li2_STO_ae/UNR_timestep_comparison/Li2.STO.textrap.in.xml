@@ -9,6 +9,7 @@
       Reference VMC energy: -14.9472(2) Ha
       Reference DMC energy: -14.9890(2) Ha (t=0 extrapolated)
     </application>
+    <parameter name="driver_version">legacy</parameter>
   </project>
   <random parallel="true" seed="-1"/>
   <particleset name="e">

@@ -1,6 +1,8 @@
 <?xml version="1.0"?>
 <simulation>
-  <project id="qmc_short-MD-C4_AE_Mol_Ground_QP" series="0"/>
+<project id="qmc_short-MD-C4_AE_Mol_Ground_QP" series="0">
+  <parameter name="driver_version">legacy</parameter>
+</project>
 
   <include href="C4_AE_Mol_QP.structure.xml"/>
   <include href="C4_AE_Mol_QP_Ground.wfnoj.xml"/>
