@@ -33,7 +33,7 @@ codebase.
 
 Links to more information in other sections of the manual:
 
- - **Build instructions:** :ref:`OpenMP target offload <offloadbuild>` section of the :ref:`obtaininginstalling` chapter.
+ - **GPU related build options:** :ref:`cmakeoptions` section of the :ref:`obtaininginstalling` chapter.
 
  - **Supported features:** :ref:`gpufeatures` section of the :ref:`chap:features` chapter.
 

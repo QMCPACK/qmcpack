@@ -414,68 +414,6 @@ the path to the source directory.
 See :ref:`Sanitizer-Libraries` for more information.
 
 
-.. _offloadbuild:
-
-Notes for OpenMP target offload to accelerators (experimental)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-QMCPACK is currently being updated to support OpenMP target offload and obtain performance
-portability across GPUs from different vendors. This is currently an experimental feature
-and is not suitable for production. Additional implementation in QMCPACK as
-well as improvements in open-source and vendor compilers is required for production status 
-to be reached. The following compilers have been verified:
-
-- LLVM Clang 15. Support NVIDIA GPUs.
-
-  ::
-
-    -D ENABLE_OFFLOAD=ON
-
-  Clang and its downstream compilers support two extra options
-  
-  ::
-
-    OFFLOAD_TARGET for the offload target. default nvptx64-nvidia-cuda.
-    OFFLOAD_ARCH for the target architecture (sm_80, gfx906, ...) if not using the compiler default.
-
-- AMD ROCm/AOMP LLVM-based compilers. Support AMD GPUs.
-  
-  ::
-  
-    -D ENABLE_OFFLOAD=ON -D OFFLOAD_TARGET=amdgcn-amd-amdhsa -D OFFLOAD_ARCH=gfx906
-
-- Intel oneAPI 2022.1.0 icx/icpx compilers. Support Intel GPUs.
-  
-  ::
-  
-    -D ENABLE_OFFLOAD=ON -D OFFLOAD_TARGET=spir64
-
-- HPE Cray 13. It is derived from Clang and supports NVIDIA and AMD GPUs.
-  
-  ::
-  
-    -D ENABLE_OFFLOAD=ON -D OFFLOAD_TARGET=nvptx64-nvidia-cuda -D OFFLOAD_ARCH=sm_80
-
-OpenMP offload features can be used together with vendor specific code paths to maximize QMCPACK performance.
-Some new CUDA functionality has been implemented to improve performance on NVIDIA GPUs in conjunction with the offload code paths:
-For example, using Clang 14 on Summit.
-
-  ::
-  
-    -D ENABLE_OFFLOAD=ON -D ENABLE_CUDA=ON -D QMC_GPU_ARCHS=sm_80
-
-Similarly, HIP features can be enabled in conjunction with the offload code path to improve performance on AMD GPUs.
-
-  ::
-
-    -D ENABLE_OFFLOAD=ON -D ENABLE_CUDA=ON -D QMC_CUDA2HIP=ON -D QMC_GPU_ARCHS=gfx90a
-
-Similarly, SYCL features can be enabled in conjunction with the offload code path to improve performance on Intel GPUs.
-
-  ::
-
-    -D ENABLE_OFFLOAD=ON -D ENABLE_SYCL=ON
-
-
 Installation from CMake
 ~~~~~~~~~~~~~~~~~~~~~~~
 
