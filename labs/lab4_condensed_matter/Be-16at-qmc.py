@@ -146,6 +146,7 @@ for kgrid in kgrids:
 
         # optimization run
         opt = generate_qmcpack(
+            driver       = 'legacy',
             identifier   = 'opt',
             path         = directory+'/opt-16at',
             job          = qmc_job,
@@ -166,6 +167,7 @@ for kgrid in kgrids:
     # DMC run
     ntwists = kgrid[0]*kgrid[1]*kgrid[2]
     qmc = generate_qmcpack(
+        driver       = 'legacy',
         identifier   = 'dmc',
         path         = directory+'/dmc-16at_'+ks,
         job          = job(nodes=ntwists,minutes=20,threads=16,queue="qmcpack",app=qmcpack,queue="R.qmc"),

@@ -102,6 +102,7 @@ opt = generate_qmcpack(
     # input format selector   
     input_type   = 'basic',
     # qmcpack input parameters
+    driver       = 'legacy',
     corrections  = [], 
     jastrows     = [('J1','bspline',8),   # 1 body bspline jastrow
                     ('J2','bspline',8)],  # 2 body bspline jastrow
@@ -162,6 +163,7 @@ p2q = generate_pw2qmcpack(
     
 # final dmc run
 qmc = generate_qmcpack( 
+   driver = 'legacy',
     # nexus inputs
     identifier   = 'qmc',           # identifier/file prefix       
     path         = 'graphene/qmc',  # directory for dmc run       
