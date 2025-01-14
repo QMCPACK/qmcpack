@@ -830,11 +830,11 @@ A build recipe for Polaris can be found at ``<qmcpack_source>/config/build_alcf_
 
 Installing on ALCF Aurora
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
-Aurora is a 10,624 node HPE Cray-Ex based system. It has 166 racks with 21,248 CPUs and 63,744 GPUs.
+Aurora is a 10,624 node HPE Cray EX based system. It has 166 racks with 21,248 CPUs and 63,744 GPUs.
 Each node consists of 2 Intel Xeon CPU Max 9470C (codename Sapphire Rapids or SPR) with on-package HBM
 and 6 Intel Data Center GPU Max 1550 (codename Ponte Vecchio or PVC).
 Each Xeon has 52 physical cores supporting 2 hardware threads per core and 64GB of HBM. Each CPU has 512 GB of DDR5.
-A build recipe for Polaris can be found at ``<qmcpack_source>/config/build_alcf_aurora_icpx.sh``
+A build recipe for Aurora can be found at ``<qmcpack_source>/config/build_alcf_aurora_icpx.sh``
 
 Installing on ORNL OLCF Frontier/Crusher
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
