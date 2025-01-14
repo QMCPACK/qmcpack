@@ -163,7 +163,6 @@ p2q = generate_pw2qmcpack(
     
 # final dmc run
 qmc = generate_qmcpack( 
-   driver = 'legacy',
     # nexus inputs
     identifier   = 'qmc',           # identifier/file prefix       
     path         = 'graphene/qmc',  # directory for dmc run       
@@ -173,6 +172,7 @@ qmc = generate_qmcpack(
     # input format selector                                      
     input_type   = 'basic',
     # qmcpack input parameters
+    driver       = 'legacy',
     corrections  = [],              # no finite size corrections
     jastrows     = [],              # overwritten from opt
     calculations = [                # qmcpack input parameters for qmc

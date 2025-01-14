@@ -147,8 +147,8 @@ sdens = spindensity(
     )
 
 qmc = generate_qmcpack(
-   driver = 'legacy',
     #skip_submit          = True,
+    driver               = 'legacy',
     identifier           = 'qmc',
     path                 = basepath + 'qmc',
     job                  = job(cores=12,threads=4,app='qmcpack_complex'),
