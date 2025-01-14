@@ -1,6 +1,6 @@
 #!/bin/bash
 # This recipe is intended for ALCF Aurora https://www.alcf.anl.gov/support-center/aurora-sunspot
-# last revision: Sep 23th 2024
+# last revision: Jan 13th 2025
 #
 # How to invoke this script?
 # build_alcf_aurora_icpx.sh # build all the variants assuming the current directory is the source directory.
