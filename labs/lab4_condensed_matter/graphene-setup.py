@@ -152,6 +152,7 @@ linopt2.energy = 0.8
 
 # optimization run
 opt = generate_qmcpack(
+    driver       = 'legacy',
     identifier   = 'opt',
     path         = directory+'/opt',
     job          = qmc_job,

@@ -94,6 +94,7 @@ p2q = generate_pw2qmcpack(
     )
 
 optJ12 = generate_qmcpack(
+    driver               = 'legacy',
     identifier           = 'optJ12',
     path                 = basepath + 'optJ12',
     job                  = job(cores=16,threads=4,app='qmcpack'),
@@ -116,6 +117,7 @@ optJ12 = generate_qmcpack(
 
 J3_rcut = system.structure.rwigner()
 optJ123 = generate_qmcpack(
+    driver               = 'legacy',
     identifier           = 'optJ123',
     path                 = basepath + 'optJ123',
     job                  = job(cores=16,threads=4,app='qmcpack'),
@@ -182,6 +184,7 @@ dm_est = onebodydensitymatrices(
 # Finally, note that for large numbers of blocks, the stat.h5 file's disk footprint can get considerably large.
 # This is especially true for dense grids, say spindensity with (300x300x300).
 qmc = generate_qmcpack(
+    driver               = 'legacy',
     #skip_submit          = True,
     identifier           = 'qmc',
     path                 = basepath + 'qmc',

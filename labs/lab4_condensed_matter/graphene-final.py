@@ -143,6 +143,7 @@ linopt2.samples = 20000
 
 # optimization run
 opt = generate_qmcpack(
+    driver       = 'legacy',
     identifier   = 'opt',
     path         = directory+'/opt',
     job          = qmc_job,
@@ -160,6 +161,7 @@ sims.append(opt)
 
 # DMC run
 qmc1 = generate_qmcpack(
+    driver       = 'legacy',
     identifier   = 'dmc',
     path         = directory+'/dmc-smallmem',
     job          = qmc_job,
@@ -194,6 +196,7 @@ sims.append(qmc1)
 
 # DMC run
 qmc2 = generate_qmcpack(
+    driver       = 'legacy',
     identifier   = 'dmc',
     path         = directory+'/dmc-largemem',
     job          = qmc_job,
