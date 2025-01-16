@@ -58,7 +58,7 @@ private:
 
 public:
   /// constructor
-  ProjectData(const std::string& atitle = "", DriverVersion de = DriverVersion::LEGACY);
+  ProjectData(const std::string& atitle = "", DriverVersion de = DriverVersion::BATCH);
 
   bool get(std::ostream& os) const;
   bool put(std::istream& is);
