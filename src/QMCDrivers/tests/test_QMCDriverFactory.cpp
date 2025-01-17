@@ -72,7 +72,7 @@ TEST_CASE("QMCDriverFactory create VMC Driver", "[qmcapp]")
   comm = OHMMS::Controller;
 
   using DV = ProjectData::DriverVersion;
-  ProjectData test_project("testing",DV::LEGACY);
+  ProjectData test_project("testing", DV::LEGACY);
   QMCDriverFactory driver_factory(test_project);
 
   Libxml2Document doc;
@@ -143,7 +143,7 @@ TEST_CASE("QMCDriverFactory create DMC driver", "[qmcapp]")
   comm = OHMMS::Controller;
 
   using DV = ProjectData::DriverVersion;
-  ProjectData test_project("testing",DV::LEGACY);
+  ProjectData test_project("testing", DV::LEGACY);
   QMCDriverFactory driver_factory(test_project);
 
   Libxml2Document doc;
