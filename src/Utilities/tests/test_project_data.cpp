@@ -88,6 +88,7 @@ TEST_CASE("ProjectData::TestDriverVersion", "[ohmmsapp]")
   SECTION("driver version batch")
   {
     ProjectData proj;
+    REQUIRE(proj.getDriverVersion() == DV::BATCH);
 
     const char* xml_input = R"(
       <project id="test1" series="1">
@@ -109,7 +110,6 @@ TEST_CASE("ProjectData::TestDriverVersion", "[ohmmsapp]")
   SECTION("driver version legacy")
   {
     ProjectData proj;
-    REQUIRE(proj.getDriverVersion() == DV::LEGACY);
 
     const char* xml_input = R"(
       <project id="test1" series="1">
