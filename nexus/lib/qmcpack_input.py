@@ -7364,7 +7364,7 @@ gen_basic_input_defaults = obj(
     J3_rcut        = 5.0,              
     J1_rcut_open   = 5.0,              
     J2_rcut_open   = 10.0,
-    driver         = 'legacy', # legacy,batched
+    driver         = 'batched', # legacy,batched
     # batched driver inputs
     orbitals_cpu   = None,     # place/evaluate orbitals on cpu if on gpu
     matrix_inv_cpu = None,     # evaluate matrix inverse on cpu if on gpu

@@ -4,6 +4,10 @@ Notable changes to QMCPACK are documented in this file.
 
 ## [Unreleased]
 
+* IMPORTANT: the default drivers are now the batched versions in both QMCPACK and NEXUS. To recover legacy v3 behavior in QMCPACK,
+  set the driver_version parameter to legacy https://qmcpack.readthedocs.io/en/develop/input_overview.html#driver-version-parameter
+  . For NEXUS put driver = 'legacy' within generate_qmcpack sections. 
+
 * Support for backflow optimization has been removed as part of refactoring and cleaning the codebase. QMC runs using backflow
   wavefunctions are still supported. This feature is expected to eventually be reimplemented in v4. Users needing
   backflow optimization can use previously released versions of QMCPACK or work towards its reimplementation in the modern code.
@@ -25,6 +29,7 @@ This minor release is recommended for all users and includes a couple of build f
 ### NEXUS
 
 * NEXUS: Support for spinor inputs. [#4707](https://github.com/QMCPACK/qmcpack/pull/4707)
+
 ## [3.17.0] - 2023-08-18
 
 This is a recommended release for all users. Thanks to everyone who contributed directly, reported an issue, or suggested an
