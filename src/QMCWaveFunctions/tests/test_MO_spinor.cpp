@@ -20,6 +20,7 @@
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 #include "Utilities/ResourceCollection.h"
 #include "QMCWaveFunctions/SpinorSet.h"
+#include "OhmmsData/Libxml2Doc.h"
 
 namespace qmcplusplus
 {

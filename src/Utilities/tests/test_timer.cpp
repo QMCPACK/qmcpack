@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 #include "Utilities/TimerManager.h"
+#include "OhmmsData/Libxml2Doc.h"
 
 using namespace std::chrono_literals;
 
