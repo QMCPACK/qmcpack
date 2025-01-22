@@ -10,6 +10,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "catch.hpp"
+
+#include "OhmmsData/Libxml2Doc.h"
 #include "QMCDrivers/WFOpt/QMCCostFunctionBase.h"
 #include "Utilities/RuntimeOptions.h"
 

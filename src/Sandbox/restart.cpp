@@ -29,6 +29,7 @@
 #include "mpi/collectives.h"
 #include "ParticleBase/ParticleAttribOps.h"
 #include "Concurrency/OpenMP.h"
+#include "OhmmsData/Libxml2Doc.h"
 
 using namespace std;
 using namespace qmcplusplus;
