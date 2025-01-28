@@ -48,11 +48,12 @@ SelfHealingOverlap::SelfHealingOverlap(SelfHealingOverlapInput&& inp_, const Tri
   }
   else if (nmsd==0 and nsd==1)
   {// slater-det wavefunction
-    wf_type = sd_rot_wf;
-    const SlaterDet& sd = sd_refvec[0];
-    nparams = sd.myVars.size();
-    if(nparams==0)
-      throw std::runtime_error("SelfHealingOverlap: slaterdet wavefunction has no parameters.\n  Please check that <rotated_sposet/>'s appear in the input file.");
+    throw std::runtime_error("SelfHealingOverlap: slaterdet wavefunction implementation incomplete");
+    //wf_type = sd_rot_wf;
+    //const SlaterDet& sd = sd_refvec[0];
+    //nparams = sd.myVars.size();
+    //if(nparams==0)
+    //  throw std::runtime_error("SelfHealingOverlap: slaterdet wavefunction has no parameters.\n  Please check that <rotated_sposet/>'s appear in the input file.");
   }
   else
   {
@@ -134,12 +135,13 @@ void SelfHealingOverlap::accumulate(const RefVector<MCPWalker>& walkers,
     }
     else if(wf_type==sd_rot_wf)
     {
+    throw std::runtime_error("SelfHealingOverlap: slaterdet wavefunction implementation incomplete");
       auto sd_refvec = psi.findSD();
-      SlaterDet& sd = sd_refvec[0];
-      if(sd.myVars.size()==0)
-        throw std::runtime_error("SelfHealingOverlap: in accumulate, slaterdet has no parameters");
-      // collect parameter derivatives: (dpsi/dc_i)/psi
-      sd.evaluateDerivativesWF(pset,sd.myVars,det_ratios);
+      //SlaterDet& sd = sd_refvec[0];
+      //if(sd.myVars.size()==0)
+      //  throw std::runtime_error("SelfHealingOverlap: in accumulate, slaterdet has no parameters");
+      //// collect parameter derivatives: (dpsi/dc_i)/psi
+      //sd.evaluateDerivativesWF(pset,sd.myVars,det_ratios);
     }
     else
       throw std::runtime_error("SelfHealingOverlap: impossible branch reached, contact the developers");
