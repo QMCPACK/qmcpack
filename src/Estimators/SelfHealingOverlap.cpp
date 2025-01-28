@@ -128,6 +128,7 @@ void SelfHealingOverlap::accumulate(const RefVector<MCPWalker>& walkers,
       else
       {
         const auto& vars = *msd.myVars;
+        assert(vars.size()>0);
         msd.evaluateDerivativesWF(pset,vars,det_ratios);
       }
     }
@@ -135,6 +136,8 @@ void SelfHealingOverlap::accumulate(const RefVector<MCPWalker>& walkers,
     {
       auto sd_refvec = psi.findSD();
       SlaterDet& sd = sd_refvec[0];
+      if(sd.myVars.size()==0)
+        throw std::runtime_error("SelfHealingOverlap: in accumulate, slaterdet has no parameters");
       // collect parameter derivatives: (dpsi/dc_i)/psi
       sd.evaluateDerivativesWF(pset,sd.myVars,det_ratios);
     }
