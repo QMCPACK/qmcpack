@@ -294,7 +294,7 @@ public:
   T Orthogonalize(Mat&& A, T LogOverlapFactor)
   {
     using std::get;
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
     // QR on the transpose
     int NMO  = get<0>(A.sizes());
     int NAEA = get<1>(A.sizes());

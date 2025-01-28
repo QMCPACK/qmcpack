@@ -140,6 +140,7 @@ std::unique_ptr<SPOSet> HybridRepSetReader<SA>::create_spline_set(const std::str
                                                                   int spin,
                                                                   const BandInfoGroup& bandgroup)
 {
+  spline_reader_.setCheckNorm(checkNorm);
   auto bspline = std::make_unique<SA>(my_name);
   app_log() << "  ClassName = " << bspline->getClassName() << std::endl;
   // set info for Hybrid

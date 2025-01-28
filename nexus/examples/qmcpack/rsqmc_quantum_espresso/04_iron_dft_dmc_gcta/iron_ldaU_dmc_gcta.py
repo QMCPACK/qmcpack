@@ -98,6 +98,7 @@ p2q = generate_pw2qmcpack(
     )
 
 optJ12 = generate_qmcpack(
+    driver               = 'legacy',
     identifier           = 'optJ12',
     path                 = basepath + 'optJ12',
     job                  = job(cores=16,threads=4,app='qmcpack'),
@@ -119,6 +120,7 @@ optJ12 = generate_qmcpack(
 
 J3_rcut = system.structure.rwigner()
 optJ123 = generate_qmcpack(
+    driver               = 'legacy',
     identifier           = 'optJ123',
     path                 = basepath + 'optJ123',
     job                  = job(cores=16,threads=4,app='qmcpack'),
@@ -146,6 +148,7 @@ sdens = spindensity(
 
 qmc = generate_qmcpack(
     #skip_submit          = True,
+    driver               = 'legacy',
     identifier           = 'qmc',
     path                 = basepath + 'qmc',
     job                  = job(cores=12,threads=4,app='qmcpack_complex'),

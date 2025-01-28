@@ -49,7 +49,7 @@ public:
   bool initialize_voronoi(std::map<std::string, Point>& points);
   void write_description(std::ostream& os, std::string& indent);
   int allocate_buffer_space(BufferType& buf);
-  void registerCollectables(std::vector<ObservableHelper>& h5desc, hdf_archive& file, int grid_index) const;
+  void registerCollectables(std::vector<ObservableHelper>& h5desc, hdf_archive& file, const hdf_path& enclosing_path, int grid_index) const;
   void evaluate(const ParticlePos& R,
                 const Matrix<RealType>& values,
                 BufferType& buf,

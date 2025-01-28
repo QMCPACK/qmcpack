@@ -23,7 +23,7 @@
 #include "OhmmsData/XMLParsingString.h"
 #include "Message/CommOperators.h"
 #include "Message/UniformCommunicateError.h"
-
+#include "OhmmsData/Libxml2Doc.h"
 #include <array>
 
 //#define QMCCOSTFUNCTION_DEBUG

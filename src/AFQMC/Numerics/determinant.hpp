@@ -16,7 +16,7 @@
 #define AFQMC_NUMERICS_HELPERS_HPP
 
 #include <cassert>
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
 #include "AFQMC/Memory/custom_pointers.hpp"
 #include "AFQMC/Numerics/device_kernels.hpp"
 #endif
@@ -175,7 +175,7 @@ inline void scale_columns(int n, int m, T* A, int lda, T* scl)
 
 } // namespace ma
 
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
 namespace device
 {
 // using thrust for now to avoid kernels!!!

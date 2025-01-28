@@ -542,7 +542,7 @@ void SDetOps_complex_serial(Allocator alloc, BufferManager b)
 
   // Batched
   // TODO fix CPU.
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
   //SECTION("batched_density_matrix")
   {
     boost::multi::array<Type, 3, Allocator> Gw({3, NMO, NMO}, alloc);
@@ -978,7 +978,7 @@ TEST_CASE("SDetOps_complex_serial", "[sdet_ops]")
   auto world = boost::mpi3::environment::get_world_instance();
   auto node  = world.split_shared(world.rank());
 
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
   arch::INIT(node);
   using Alloc = device::device_allocator<ComplexType>;
 #else

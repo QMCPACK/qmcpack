@@ -18,7 +18,7 @@ gcc_vllvmoffload=${gcc_vold}
 
 # LLVM 
 # Dates at https://releases.llvm.org/
-llvm_vnew=19.1.3 # Released 2024-10-30
+llvm_vnew=19.1.4 # Released 2024-11-19
 llvm_voffload=${llvm_vnew}
 cuda_voffload=12.4.0 # CUDA version for offload builds
 

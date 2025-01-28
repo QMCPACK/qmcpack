@@ -1,5 +1,7 @@
 <simulation>
-  <project id="m5" series="0"/>
+<project id="m5" series="0">
+  <parameter name="driver_version">legacy</parameter>
+</project>
 
   <qmcsystem>
     <simulationcell>

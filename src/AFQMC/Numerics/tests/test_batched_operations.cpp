@@ -43,7 +43,7 @@ namespace qmcplusplus
 {
 using namespace afqmc;
 
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
 template<typename T>
 using Alloc = device::device_allocator<T>;
 #else

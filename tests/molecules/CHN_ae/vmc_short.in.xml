@@ -1,6 +1,8 @@
 <?xml version="1.0"?>
 <simulation>
-  <project id="vmc_short" series="0"/>
+<project id="vmc_short" series="0">
+  <parameter name="driver_version">legacy</parameter>
+</project>
   <include href="CHN.structure.xml"/>
   <include href="CHN.wfj.xml"/>
   <hamiltonian name="h0" type="generic" target="e">

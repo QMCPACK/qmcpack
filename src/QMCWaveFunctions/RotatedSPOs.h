@@ -21,8 +21,9 @@ namespace qmcplusplus
 class RotatedSPOs;
 namespace testing
 {
-std::vector<QMCTraits::ValueType>& getMyVarsFull(RotatedSPOs& rot);
-std::vector<std::vector<QMCTraits::ValueType>>& getHistoryParams(RotatedSPOs& rot);
+const opt_variables_type& getMyVars(RotatedSPOs& rot);
+const std::vector<QMCTraits::ValueType>& getMyVarsFull(RotatedSPOs& rot);
+const std::vector<std::vector<QMCTraits::ValueType>>& getHistoryParams(RotatedSPOs& rot);
 } // namespace testing
 
 class RotatedSPOs : public SPOSet, public OptimizableObject
@@ -479,8 +480,9 @@ private:
   /// Use global rotation or history list
   bool use_global_rot_ = true;
 
-  friend std::vector<ValueType>& testing::getMyVarsFull(RotatedSPOs& rot);
-  friend std::vector<std::vector<ValueType>>& testing::getHistoryParams(RotatedSPOs& rot);
+  friend const opt_variables_type& testing::getMyVars(RotatedSPOs& rot);
+  friend const std::vector<ValueType>& testing::getMyVarsFull(RotatedSPOs& rot);
+  friend const std::vector<std::vector<ValueType>>& testing::getHistoryParams(RotatedSPOs& rot);
 };
 
 

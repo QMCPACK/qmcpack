@@ -1,6 +1,6 @@
 #!/bin/bash
 # This recipe is intended for ALCF Aurora https://www.alcf.anl.gov/support-center/aurora-sunspot
-# last revision: Sep 23th 2024
+# last revision: Jan 13th 2025
 #
 # How to invoke this script?
 # build_alcf_aurora_icpx.sh # build all the variants assuming the current directory is the source directory.
@@ -41,7 +41,7 @@ else
   exit
 fi
 
-for name in offload_sycl_real_MP offload_sycl_real offload_sycl_cplx_MP offload_sycl_cplx \
+for name in gpu_real_MP gpu_real gpu_cplx_MP gpu_cplx \
             cpu_real_MP cpu_real cpu_cplx_MP cpu_cplx
 do
 
@@ -56,13 +56,9 @@ if [[ $name == *"_MP"* ]]; then
   CMAKE_FLAGS="$CMAKE_FLAGS -DQMC_MIXED_PRECISION=ON"
 fi
 
-if [[ $name == *"offload"* ]]; then
-  CMAKE_FLAGS="$CMAKE_FLAGS -DENABLE_OFFLOAD=ON -DQMC_GPU_ARCHS=pvc"
+if [[ $name == *"gpu"* ]]; then
+  CMAKE_FLAGS="$CMAKE_FLAGS -DQMC_GPU_ARCHS=intel_gpu_pvc"
   CMAKE_CXX_FLAGS="-mllvm -vpo-paropt-atomic-free-reduction-slm=true"
-fi
-
-if [[ $name == *"sycl"* ]]; then
-  CMAKE_FLAGS="$CMAKE_FLAGS -DENABLE_SYCL=ON"
 fi
 
 folder=build_${Machine}_${Compiler}_${name}

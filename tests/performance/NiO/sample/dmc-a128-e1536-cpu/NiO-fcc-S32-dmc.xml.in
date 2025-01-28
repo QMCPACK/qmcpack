@@ -4,6 +4,7 @@
     <application name="qmcapp" role="molecu" class="serial" version="0.2">
       DMC for NiO-fcc-S32-tw0
     </application>
+    <parameter name="driver_version">legacy</parameter>
   </project>
 
   <random seed="49154"/>
@@ -235,6 +236,7 @@
     <parameter name="blocks">                 2 </parameter>
     <parameter name="timestep">             1.0 </parameter>
     <parameter name="usedrift">              no </parameter>
+    <parameter name="blocks_between_recompute">      2 </parameter>
   </qmc>
   <qmc method="vmc" move="pbyp" gpu="yes">
     <estimator name="LocalEnergy" hdf5="no" />
@@ -245,6 +247,7 @@
     <parameter name="blocks">                 2 </parameter>
     <parameter name="timestep">             1.0 </parameter>
     <parameter name="usedrift">             yes </parameter>
+    <parameter name="blocks_between_recompute">      2 </parameter>
   </qmc>
   <qmc method="dmc" move="pbyp" checkpoint="-1" gpu="yes">
     <estimator name="LocalEnergy" hdf5="no" />
@@ -257,5 +260,6 @@
     <parameter name="steps">                  5 </parameter>
     <parameter name="blocks">                 5 </parameter>
     <parameter name="nonlocalmoves">        yes </parameter>
+    <parameter name="blocks_between_recompute">      5 </parameter>
   </qmc>
 </simulation>

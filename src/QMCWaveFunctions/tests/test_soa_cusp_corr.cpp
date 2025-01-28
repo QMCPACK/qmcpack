@@ -14,16 +14,14 @@
 #include "catch.hpp"
 
 #include "Configuration.h"
-
 #include "Message/Communicate.h"
 #include "Numerics/OneDimGridBase.h"
 #include "ParticleIO/XMLParticleIO.h"
 #include "Numerics/GaussianBasisSet.h"
-
 #include "QMCWaveFunctions/LCAO/LCAOrbitalSet.h"
 #include "QMCWaveFunctions/LCAO/CuspCorrectionConstruction.h"
-
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
+#include "OhmmsData/Libxml2Doc.h"
 
 namespace qmcplusplus
 {

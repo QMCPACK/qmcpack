@@ -51,6 +51,7 @@ c4q = generate_convert4qmc(
     )
 
 qmc = generate_qmcpack(
+    driver       = 'legacy',
     block        = True,
     identifier   = 'vmc',
     path         = 'diamond_ta/vmc',
