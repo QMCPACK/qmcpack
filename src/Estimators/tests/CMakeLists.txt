@@ -17,16 +17,17 @@ set(TEST_ESTIMATORS_HELP
     EstimatorManagerInputTest.cpp
     GenerateRandomParticleSets.cpp
     EnergyDensityTest.cpp
+    EDenEstimatorManagerIntegrationTest.cpp
     MockGoldWalkerElements.cpp
-    EstimatorTesting.cpp)
+    EstimatorTesting.cpp
+    SpaceGridTest.cpp)
 
 if(USE_OBJECT_TARGET)
   add_library(test_estimators_help OBJECT ${TEST_ESTIMATORS_HELP})
 else()
   add_library(test_estimators_help ${TEST_ESTIMATORS_HELP})
 endif()
-
-target_link_libraries(test_estimators_help catch_main qmcestimators minimal_testing_pools)
+target_link_libraries(test_estimators_help catch_main qmcestimators minimal_testing_pools utilities_for_test)
 
 set(UTEST_EXE test_${SRC_DIR})
 set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
@@ -35,6 +36,9 @@ set(UTEST_HDF_INPUT_SPINOR ${qmcpack_SOURCE_DIR}/tests/solids/monoO_noncollinear
 set(UTEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
 maybe_symlink(${UTEST_HDF_INPUT} ${UTEST_DIR}/diamondC_1x1x1.pwscf.h5)
 maybe_symlink(${UTEST_HDF_INPUT_SPINOR} ${UTEST_DIR}/o2_45deg_spins.pwscf.h5)
+foreach(fname C.BFD.xml)
+  maybe_symlink(${qmcpack_SOURCE_DIR}/tests/pseudopotentials_for_tests/${fname} ${UTEST_DIR}/${fname})
+endforeach()
 
 set(SRCS
     test_accumulator.cpp

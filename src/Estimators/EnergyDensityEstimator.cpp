@@ -17,6 +17,8 @@
 namespace qmcplusplus
 {
 
+using Real = NEEnergyDensityEstimator::Real;
+
 struct PosCharge
 {
   NEEnergyDensityEstimator::ParticlePos r_ptcls;
@@ -54,6 +56,7 @@ NEEnergyDensityEstimator::NEEnergyDensityEstimator(const EnergyDensityInput& inp
       pset_dynamic_(getParticleSet(pset_pool, input.get_dynamic()))
 {
   requires_listener_ = true;
+  my_name_           = input.get_name();
   n_particles_       = pset_dynamic_.getTotalNum();
   if (!(input_.get_static().empty()))
   {
@@ -228,6 +231,9 @@ void NEEnergyDensityEstimator::accumulate(const RefVector<MCPWalker>& walkers,
     walkers_weight_ += walkers[iw].get().Weight;
     evaluate(psets[iw], walkers[iw], iw);
   }
+  std::fill(reduced_local_kinetic_values_.begin(), reduced_local_kinetic_values_.end(), 0.0);
+  std::fill(reduced_local_pot_values_.begin(), reduced_local_pot_values_.end(), 0.0);
+  std::fill(reduced_local_ion_pot_values_.begin(), reduced_local_ion_pot_values_.end(), 0.0);
 }
 
 void NEEnergyDensityEstimator::evaluate(ParticleSet& pset, const MCPWalker& walker, const int walker_index)
@@ -271,16 +277,18 @@ void NEEnergyDensityEstimator::evaluate(ParticleSet& pset, const MCPWalker& walk
   if (pset_static_)
   {
     const ParticleSet& Ps = *pset_static_;
-    const auto& Vs        = reduced_local_ion_pot_values_[walker_index];
+    auto& Vs              = reduced_local_ion_pot_values_[walker_index];
+    Vs.resize(Ps.getTotalNum());
     if (!input_.get_ion_points())
+    {
       for (int i = 0; i < Ps.getTotalNum(); i++)
       {
         ed_values_(p_count, W) = weight;
         ed_values_(p_count, T) = 0.0;
-        if (Vs.size() > i)
-          ed_values_(p_count, V) = weight * Vs[i];
+        ed_values_(p_count, V) = weight * Vs[i];
         p_count++;
       }
+    }
     else
       for (int i = 0; i < Ps.getTotalNum(); i++)
       {
@@ -329,7 +337,7 @@ void NEEnergyDensityEstimator::collect(const RefVector<OperatorEstBase>& type_er
   int num_crowds = type_erased_operator_estimators.size();
   for (int ig = 0; ig < spacegrids_.size(); ++ig)
   {
-    RefVector<NESpaceGrid<Real>> crowd_grids;
+    RefVector<const NESpaceGrid<Real>> crowd_grids;
     crowd_grids.reserve(num_crowds);
     for (OperatorEstBase& crowd_oeb : type_erased_operator_estimators)
     {
@@ -388,6 +396,13 @@ void NEEnergyDensityEstimator::write(hdf_archive& file)
   file.pop();
 }
 
+void NEEnergyDensityEstimator::zero()
+{
+  for (auto& spacegrid : spacegrids_)
+    spacegrid->zero();
+  walkers_weight_ = 0;
+}
+
 std::unique_ptr<OperatorEstBase> NEEnergyDensityEstimator::spawnCrowdClone() const
 {
   auto spawn_data_locality = data_locality_;
@@ -400,6 +415,12 @@ std::unique_ptr<OperatorEstBase> NEEnergyDensityEstimator::spawnCrowdClone() con
 RefVector<NESpaceGrid<NEEnergyDensityEstimator::Real>> NEEnergyDensityEstimator::getSpaceGrids()
 {
   return convertUPtrToRefVector(spacegrids_);
+}
+
+void NEEnergyDensityEstimator::normalize(QMCT::RealType invTotWgt)
+{
+  for (auto& spacegrid : spacegrids_)
+    spacegrid->normalize(invTotWgt);
 }
 
 void NEEnergyDensityEstimator::startBlock(int steps) {}
