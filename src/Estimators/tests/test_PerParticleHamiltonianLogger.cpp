@@ -11,10 +11,11 @@
 
 #include "catch.hpp"
 
-#include <filesystem>
 #include "PerParticleHamiltonianLogger.h"
+
+#include <filesystem>
+
 #include "Utilities/StdRandom.h"
-#include "OhmmsData/Libxml2Doc.h"
 
 namespace qmcplusplus
 {

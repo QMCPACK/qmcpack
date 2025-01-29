@@ -22,6 +22,10 @@ using Real = OperatorEstBase::Real;
 OperatorEstBase::OperatorEstBase(DataLocality data_locality, const std::string& name, const std::string& type)
     : data_locality_(data_locality), my_name_(name), my_type_(type), walkers_weight_(0)
 {}
+using Real = OperatorEstBase::Real;
+
+OperatorEstBase::OperatorEstBase(DataLocality dl) : data_locality_(dl), walkers_weight_(0) {}
+>>>>>>> f2280bc8d (initial synthetic PR)
 
 OperatorEstBase::OperatorEstBase(const OperatorEstBase& oth)
     : data_locality_(oth.data_locality_), my_name_(oth.my_name_), my_type_(oth.my_type_), walkers_weight_(0)
@@ -34,6 +38,12 @@ void OperatorEstBase::collect(const RefVector<OperatorEstBase>& type_erased_oper
     std::transform(data_.begin(), data_.end(), crowd_oeb.get_data().begin(), data_.begin(), std::plus<>{});
     walkers_weight_ += crowd_oeb.walkers_weight_;
   }
+}
+
+void OperatorEstBase::zero(RefVector<OperatorEstBase>& type_erased_operator_estimators)
+{
+  for (OperatorEstBase& crowd_oeb : type_erased_operator_estimators)
+    crowd_oeb.zero();
 }
 
 void OperatorEstBase::normalize(QMCT::RealType invTotWgt)
