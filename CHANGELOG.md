@@ -26,7 +26,6 @@ walker logging capability among many others. All users and developers are encour
 * GPU accelerated LCAO calculations with Gaussian basis sets for isolated molecules through periodic solids. E.g. via
   [#5021](https://github.com/QMCPACK/qmcpack/pull/5021), [#4808](https://github.com/QMCPACK/qmcpack/pull/4808)
 * GPU acceleration of real-to-real spline wavefunctions (SplineR2R) [#5198](https://github.com/QMCPACK/qmcpack/pull/5198)
-* New QMC_GPU cmake option for simplified GPU builds.  [#5267](https://github.com/QMCPACK/qmcpack/pull/5267)
 * Updated build recipes for ALCF Aurora and Polaris [#5279](https://github.com/QMCPACK/qmcpack/pull/5279), OLCF Frontier
   [#5284](https://github.com/QMCPACK/qmcpack/pull/5284), NERSC Perlmutter [#5281](https://github.com/QMCPACK/qmcpack/5281).
 * Fast implementation of spin orbit by exact spin integration [#5119](https://github.com/QMCPACK/qmcpack/pull/5119)
