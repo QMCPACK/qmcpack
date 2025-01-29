@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2023 QMCPACK developers.
+// Copyright (c) 2025 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //
@@ -12,11 +12,10 @@
 
 #include "catch.hpp"
 
-#include <iostream>
 #include "EnergyDensityInput.h"
 #include "EstimatorTesting.h"
 #include "ValidEnergyDensityInput.h"
-#include "OhmmsData/Libxml2Doc.h"
+#include <iostream>
 
 namespace qmcplusplus
 {

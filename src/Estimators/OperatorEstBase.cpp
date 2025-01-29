@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2022 QMCPACK developers.
+// Copyright (c) 2025 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -17,6 +17,8 @@
 
 namespace qmcplusplus
 {
+using Real = OperatorEstBase::Real;
+
 OperatorEstBase::OperatorEstBase(DataLocality dl) : data_locality_(dl), walkers_weight_(0) {}
 
 OperatorEstBase::OperatorEstBase(const OperatorEstBase& oth)
@@ -29,8 +31,13 @@ void OperatorEstBase::collect(const RefVector<OperatorEstBase>& type_erased_oper
   {
     std::transform(data_.begin(), data_.end(), crowd_oeb.get_data().begin(), data_.begin(), std::plus<>{});
     walkers_weight_ += crowd_oeb.walkers_weight_;
-    crowd_oeb.zero();
   }
+}
+
+void OperatorEstBase::zero(RefVector<OperatorEstBase>& type_erased_operator_estimators)
+{
+  for (OperatorEstBase& crowd_oeb : type_erased_operator_estimators)
+    crowd_oeb.zero();
 }
 
 void OperatorEstBase::normalize(QMCT::RealType invTotWgt)

@@ -35,6 +35,17 @@ class MinimalHamiltonianPool
 </hamiltonian>
   )";
 
+  static constexpr const char* const hamiltonian_eeeips_xml = R"(
+<hamiltonian name="h0" type="generic" target="e">
+  <pairpot type="coulomb" name="ElecElec" source="e" target="e"/>
+  <pairpot type="coulomb" name="ElecIon" source="ion" target="e"/>
+  <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml">
+     <pseudo elementType="C" href="C.BFD.xml"/>
+  </pairpot>
+</hamiltonian>
+  )";
+
+
 public:
   static HamiltonianPool make_hamWithEE(Communicate* comm,
                                         ParticleSetPool& particle_pool,
@@ -57,6 +68,20 @@ public:
     HamiltonianPool hpool(particle_pool, wavefunction_pool, comm);
     Libxml2Document doc;
     doc.parseFromString(hamiltonian_eeei_xml);
+
+    xmlNodePtr root = doc.getRoot();
+    hpool.put(root);
+
+    return hpool;
+  }
+
+  static HamiltonianPool makeHamWithEEEIPS(Communicate* comm,
+                                           ParticleSetPool& particle_pool,
+                                           WaveFunctionPool& wavefunction_pool)
+  {
+    HamiltonianPool hpool(particle_pool, wavefunction_pool, comm);
+    Libxml2Document doc;
+    doc.parseFromString(hamiltonian_eeeips_xml);
 
     xmlNodePtr root = doc.getRoot();
     hpool.put(root);

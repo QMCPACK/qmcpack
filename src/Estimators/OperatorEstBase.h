@@ -81,11 +81,12 @@ public:
    *
    *  This is assumed to be called from only from one thread per crowds->rank
    *  reduction. Implied is this is during a global sync or there is a guarantee
-   *  that the crowd operator estimators accumulation data is not being written to.
+   *  that the crowd operator estimators accumulation data is not being written to.  *  The input operators are not zeroed after collect is called, the owner of the operators must handle the accumulated state explicitly.
    *
    *  There could be concurrent operations inside the scope of the collect call.
    */
   virtual void collect(const RefVector<OperatorEstBase>& oebs);
+  virtual void zero(RefVector<OperatorEstBase>& oebs);
 
   virtual void normalize(QMCT::RealType invToWgt);
 
@@ -137,7 +138,7 @@ public:
 
   /** zero data appropriately for the DataLocality
    */
-  void zero();
+  virtual void zero();
 
   /** Return the total walker weight for this block
    */
