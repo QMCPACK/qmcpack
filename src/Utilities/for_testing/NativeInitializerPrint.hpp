@@ -78,6 +78,17 @@ inline std::ostream& operator<<(std::ostream& out, const NativePrint<std::vector
   return out;
 }
 
+template<class T, std::size_t N>
+inline std::ostream& operator<<(std::ostream& out, const NativePrint<std::array<T, N>>& np_arr)
+{
+  out << "{ ";
+  auto arr = np_arr.get_obj();
+  for (int i = 0; i < N; ++i)
+    out << std::setprecision(10) << arr[i] << ", ";
+  out << " }";
+  return out;
+}
+
 template<class T>
 inline std::ostream& operator<<(std::ostream& out, const NativePrint<Vector<T>>& np_vec)
 {
@@ -86,6 +97,30 @@ inline std::ostream& operator<<(std::ostream& out, const NativePrint<Vector<T>>&
   for (T& t : vec)
     out << std::setprecision(10) << t << ", ";
   out << " }";
+  return out;
+}
+
+template<class T>
+inline std::ostream& operator<<(
+    std::ostream& out,
+    const NativePrint<std::unordered_map<std::string, std::vector<Vector<T>>>>& np_crowd_energy)
+{
+  out << "{";
+  auto& crowd_energy = np_crowd_energy.get_obj();
+  for (auto iter = crowd_energy.begin(); iter != crowd_energy.end(); ++iter)
+  {
+    out << "{{\"" << iter->first << "\"}, {";
+    auto& v_walkers = iter->second;
+    for (auto& v_particles : v_walkers)
+    {
+      out << "{";
+      for (const T& t : v_particles)
+        out << std::setprecision(10) << t << ", ";
+      out << "},";
+    }
+    out << " }},\n";
+  }
+  out << "};";
   return out;
 }
 
