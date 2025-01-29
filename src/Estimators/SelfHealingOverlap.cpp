@@ -20,7 +20,10 @@
 namespace qmcplusplus
 {
 SelfHealingOverlap::SelfHealingOverlap(SelfHealingOverlapInput&& inp_, const TrialWaveFunction& wfn, DataLocality dl)
-    : OperatorEstBase(dl), input_(std::move(inp_)), wf_type(no_wf), use_param_deriv(input_.input_section_.get<bool>("param_deriv"))
+    : OperatorEstBase(dl),
+      input_(std::move(inp_)),
+      wf_type(no_wf),
+      use_param_deriv(input_.input_section_.get<bool>("param_deriv"))
 {
   auto msd_refvec = wfn.findMSD();
   auto sd_refvec  = wfn.findSD();
@@ -29,21 +32,22 @@ SelfHealingOverlap::SelfHealingOverlap(SelfHealingOverlapInput&& inp_, const Tri
   auto nmsd = msd_refvec.size();
 
   size_t nparams;
-  if (nmsd==1 and nsd==0)
-  {// multi-slater-det wavefunction
-    wf_type = msd_wf;
+  if (nmsd == 1 and nsd == 0)
+  { // multi-slater-det wavefunction
+    wf_type                              = msd_wf;
     const MultiSlaterDetTableMethod& msd = msd_refvec[0];
     if (!use_param_deriv)
       nparams = msd.getLinearExpansionCoefs().size();
     else
     {
-        throw std::runtime_error("SelfHealingOverlap: use_param_deriv implementation incomplete, needs access to param count from wavefunction component myVars");
+      throw std::runtime_error("SelfHealingOverlap: use_param_deriv implementation incomplete, needs access to param "
+                               "count from wavefunction component myVars");
     }
-    if(nparams==0)
+    if (nparams == 0)
       throw std::runtime_error("SelfHealingOverlap: multidet wavefunction has no parameters.");
   }
-  else if (nmsd==0 and nsd==1)
-  {// slater-det wavefunction
+  else if (nmsd == 0 and nsd == 1)
+  { // slater-det wavefunction
     throw std::runtime_error("SelfHealingOverlap: slaterdet wavefunction implementation incomplete");
   }
   else
@@ -55,10 +59,9 @@ SelfHealingOverlap::SelfHealingOverlap(SelfHealingOverlapInput&& inp_, const Tri
 #ifndef QMC_COMPLEX
   const size_t data_size = nparams;
 #else
-  const size_t data_size = 2*nparams;
+  const size_t data_size = 2 * nparams;
 #endif
   data_.resize(data_size, 0.0);
-
 }
 
 
@@ -110,21 +113,22 @@ void SelfHealingOverlap::accumulate(const RefVector<MCPWalker>& walkers,
       if (!wc->isFermionic())
         wcs_jastrow.push_back(wc.get());
 
-    if (wf_type==msd_wf)
+    if (wf_type == msd_wf)
     {
-      auto msd_refvec = psi.findMSD();
+      auto msd_refvec                = psi.findMSD();
       MultiSlaterDetTableMethod& msd = msd_refvec[0];
       // collect parameter derivatives: (dpsi/dc_i)/psi
       if (!use_param_deriv)
         msd.calcIndividualDetRatios(det_ratios);
       else
       {
-        throw std::runtime_error("SelfHealingOverlap: use_param_deriv implementation incomplete, needs call to msd.evaluateDerivatives with correct myVars");
+        throw std::runtime_error("SelfHealingOverlap: use_param_deriv implementation incomplete, needs call to "
+                                 "msd.evaluateDerivatives with correct myVars");
       }
     }
-    else if(wf_type==sd_rot_wf)
+    else if (wf_type == sd_rot_wf)
     {
-    throw std::runtime_error("SelfHealingOverlap: slaterdet wavefunction implementation incomplete");
+      throw std::runtime_error("SelfHealingOverlap: slaterdet wavefunction implementation incomplete");
       auto sd_refvec = psi.findSD();
     }
     else
@@ -147,8 +151,8 @@ void SelfHealingOverlap::accumulate(const RefVector<MCPWalker>& walkers,
       data_[ic] += weight * std::real(Jprefactor) * det_ratios[ic];
 #else
       auto value = weight * Jprefactor * std::conj(det_ratios[ic]);
-      data_[2*ic  ] += std::real(value);
-      data_[2*ic+1] += std::imag(value);
+      data_[2 * ic] += std::real(value);
+      data_[2 * ic + 1] += std::imag(value);
 #endif
     }
   }
