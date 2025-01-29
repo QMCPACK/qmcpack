@@ -20,14 +20,8 @@
 namespace qmcplusplus
 {
 SelfHealingOverlap::SelfHealingOverlap(SelfHealingOverlapInput&& inp_, const TrialWaveFunction& wfn, DataLocality dl)
-    : OperatorEstBase(dl), input_(std::move(inp_)), wf_type(no_wf)
+    : OperatorEstBase(dl), input_(std::move(inp_)), wf_type(no_wf), use_param_deriv(input_.input_section_.get<bool>("param_deriv"))
 {
-  //my_name_ = input_.get_name();
-
-  auto& inp = this->input_.input_section_;
-
-  use_param_deriv = inp.get<bool>("param_deriv");
-
   auto msd_refvec = wfn.findMSD();
   auto sd_refvec  = wfn.findSD();
 
@@ -150,7 +144,7 @@ void SelfHealingOverlap::accumulate(const RefVector<MCPWalker>& walkers,
     for (int ic = 0; ic < det_ratios.size(); ++ic)
     {
 #ifndef QMC_COMPLEX
-      data_[ic] += weight * Jprefactor * det_ratios[ic];
+      data_[ic] += weight * std::real(Jprefactor) * det_ratios[ic];
 #else
       auto value = weight * Jprefactor * std::conj(det_ratios[ic]);
       data_[2*ic  ] += std::real(value);

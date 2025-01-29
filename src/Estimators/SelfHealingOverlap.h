@@ -52,7 +52,7 @@ public:
   wf_types wf_type;
 
   /// use direct parameter derivative for MSD or not
-  bool use_param_deriv;
+  const bool use_param_deriv;
 
 
 public:
