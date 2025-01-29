@@ -42,7 +42,9 @@ SelfHealingOverlap::SelfHealingOverlap(SelfHealingOverlapInput&& inp_, const Tri
     if (!use_param_deriv)
       nparams = msd.getLinearExpansionCoefs().size();
     else
-      nparams = msd.myVars->size();
+    {
+        throw std::runtime_error("SelfHealingOverlap: use_param_deriv implementation incomplete, needs access to param count from wavefunction component myVars");
+    }
     if(nparams==0)
       throw std::runtime_error("SelfHealingOverlap: multidet wavefunction has no parameters.");
   }
@@ -123,9 +125,7 @@ void SelfHealingOverlap::accumulate(const RefVector<MCPWalker>& walkers,
         msd.calcIndividualDetRatios(det_ratios);
       else
       {
-        const auto& vars = *msd.myVars;
-        assert(vars.size()>0);
-        msd.evaluateDerivativesWF(pset,vars,det_ratios);
+        throw std::runtime_error("SelfHealingOverlap: use_param_deriv implementation incomplete, needs call to msd.evaluateDerivatives with correct myVars");
       }
     }
     else if(wf_type==sd_rot_wf)
