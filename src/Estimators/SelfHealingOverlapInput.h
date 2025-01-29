@@ -23,7 +23,7 @@ class SelfHealingOverlapInput
 {
 public:
   using Consumer = SelfHealingOverlap;
-  using Real = QMCTraits::RealType;
+  using Real     = QMCTraits::RealType;
 
   class SelfHealingOverlapInputSection : public InputSection
   {
@@ -37,7 +37,7 @@ public:
       bools          = {"param_deriv"};
       default_values = {{"type", std::string("sh_overlap")},
                         {"name", std::string("sh_overlap")},
-                        {"param_deriv",false}};
+                        {"param_deriv", false}};
     }
     // clang-format: on
   };
