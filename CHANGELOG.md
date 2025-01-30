@@ -30,7 +30,7 @@ walker logging capability among many others. All users and developers are encour
   [#5284](https://github.com/QMCPACK/qmcpack/pull/5284), NERSC Perlmutter [#5281](https://github.com/QMCPACK/qmcpack/5281).
 * Fast implementation of spin orbit by exact spin integration [#5119](https://github.com/QMCPACK/qmcpack/pull/5119)
 * Simple implementation of Stochastic Reconfiguration optimization scheme [#5017](https://github.com/QMCPACK/qmcpack/pull/5017)
-* Improved regularization scheme in Stochastic Reconfiguration and added documentation [#5157](https://github.com/QMCPACK/qmcpack/pull/5157)
+* Improved regularization in Stochastic Reconfiguration optimization and added documentation [#5157](https://github.com/QMCPACK/qmcpack/pull/5157)
 * Implement determinant locality approximation (DLA) with T-move (TM) [#5103](https://github.com/QMCPACK/qmcpack/pull/5103)
 * Converter for determinants coming from a PySCF CAS-CI or CAS-SCF calculations [#5005](https://github.com/QMCPACK/qmcpack/pull/5005)
 * Fast, efficient implementation of SOC [#4933](https://github.com/QMCPACK/qmcpack/pull/4933)
