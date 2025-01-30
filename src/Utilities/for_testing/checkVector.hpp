@@ -29,7 +29,7 @@ struct CheckVectorResult
   std::string result_message;
 };
 
- /** This function checks equality a_vec and b_vec elements
+/** This function checks equality a_vec and b_vec elements
  *  M1, M2 need to have their element type declared M1::value_type
  *         and have an operator(i,j) accessor.
  *  I leave the c++14 template meta programming to insure 
@@ -53,21 +53,20 @@ CheckVectorResult checkVector(M1& a_vec,
     return {false, "b_vec is too small for a_vec to be a checkable segment"};
   std::stringstream error_msg;
   auto vectorElementError = [&error_msg](int i, auto& a_vec, auto& b_vec) {
-    error_msg << "checkVector found bad element at " << i << "  " << a_vec[i] << " != " << b_vec[i]
-              << '\n';
+    error_msg << "checkVector found bad element at " << i << "  " << a_vec[i] << " != " << b_vec[i] << '\n';
   };
   bool all_elements_match = true;
   for (int i = 0; i < a_vec.size(); i++)
+  {
+    bool approx_equality = approxEquality<typename M1::value_type>(a_vec[i], b_vec[i], eps);
+    if (!approx_equality)
     {
-      bool approx_equality = approxEquality<typename M1::value_type>(a_vec[i], b_vec[i], eps);
-      if (!approx_equality)
-      {
-        vectorElementError(i, a_vec, b_vec);
-        all_elements_match = false;
-        if (!check_all)
-          return {false, error_msg.str()};
-      }
+      vectorElementError(i, a_vec, b_vec);
+      all_elements_match = false;
+      if (!check_all)
+        return {false, error_msg.str()};
     }
+  }
   return {all_elements_match, error_msg.str()};
 }
 } // namespace qmcplusplus
