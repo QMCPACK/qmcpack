@@ -23,9 +23,23 @@
 namespace qmcplusplus
 {
 
+/** return structure from vector check
+ *  For clean use with catch2 CHECKED_ELSE macro
+ *  If you would rather have an empty string carry success semantics I disagree
+ *  and so do others, it also makes it use with CHECKED_ELSE less clear.
+ *  https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#f21-to-return-multiple-out-values-prefer-returning-a-struct
+ */
 struct CheckVectorResult
 {
+  /** If matrix check is successful result = true
+   *  if one or more elements fails result = false
+   */
   bool result;
+  /**  always a valid std::string object
+   *   result = true --> default constructured string at this time
+   *   result = false --> result_message element failure information,
+   *   the extent of which is determined by check_all flag to checkVector
+   */
   std::string result_message;
 };
 
@@ -40,11 +54,12 @@ struct CheckVectorResult
  *                         left block of b_vec.
  *  \param[in] b_vec     - the vectorto check
  *  \param[in] check_all - if true continue to check vector elements after failure
- *  \param[in] eps       - add a tolerance for Catch Approx checks. Default to same as in Approx. 
+ *  \param[in] eps       - add a tolerance for Catch Approx checks. Default to same as in Approx.
+ *  The semantics of the return value are discussed above.
  */
 template<class M1, class M2>
-CheckVectorResult checkVector(M1& a_vec,
-                              M2& b_vec,
+CheckVectorResult checkVector(const M1& a_vec,
+                              const M2& b_vec,
                               const bool check_all            = false,
                               std::optional<const double> eps = std::nullopt)
 {

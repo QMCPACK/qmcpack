@@ -24,9 +24,21 @@
 namespace qmcplusplus
 {
 
+/** return structure from matrix check
+ *  For easy use with catch2 CHECKED_ELSE macro
+ *  Also see
+ *  https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#f21-to-return-multiple-out-values-prefer-returning-a-struct
+ */
 struct CheckMatrixResult
 {
+  /** If matrix check is successful result = true
+   *  if one or more elements fails result = false
+   */
   bool result;
+  /**  always a valid std::string object
+   *   result = true --> default constructured string at this time
+   *   result = false --> result_message element failure information, the extent of which is determined by check_all flag to checkMatrix
+   */
   std::string result_message;
 };
 
@@ -41,11 +53,12 @@ struct CheckMatrixResult
  *                         left block of b_mat.
  *  \param[in] b_mat     - the matrix to check
  *  \param[in] check_all - if true continue to check matrix elements after failure
- *  \param[in] eps       - add a tolerance for Catch Approx checks. Default to same as in Approx. 
+ *  \param[in] eps       - add a tolerance for Catch Approx checks. Default to same as in Approx.
+ *  The semantics of the return value are discussed above.
  */
 template<class M1, class M2>
-CheckMatrixResult checkMatrix(M1& a_mat,
-                              M2& b_mat,
+CheckMatrixResult checkMatrix(const M1& a_mat,
+                              const M2& b_mat,
                               const bool check_all            = false,
                               std::optional<const double> eps = std::nullopt)
 {
