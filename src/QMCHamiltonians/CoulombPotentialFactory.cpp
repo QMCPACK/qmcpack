@@ -142,7 +142,7 @@ void HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
     }
     else
     {
-      targetH->addOperator(std::make_unique<CoulombPotential<Return_t>>(*ptclA, quantum, doForces), title, physical);
+      targetH->addOperator(std::make_unique<CoulombPotential>(*ptclA, quantum, doForces), title, physical);
     }
   }
   else //X-e type, for X=some other source
@@ -150,7 +150,7 @@ void HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
     if (applyPBC)
       targetH->addOperator(std::make_unique<CoulombPBCAB>(*ptclA, targetPtcl), title);
     else
-      targetH->addOperator(std::make_unique<CoulombPotential<Return_t>>(*ptclA, targetPtcl, true), title);
+      targetH->addOperator(std::make_unique<CoulombPotential>(*ptclA, targetPtcl, true), title);
   }
 }
 
