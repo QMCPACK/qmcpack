@@ -26,7 +26,7 @@
  */
 namespace qmcplusplus
 {
-  
+
 TEST_CASE("NativePrint::array", "[utilities][for_testing]")
 {
   std::ostringstream oss;
@@ -51,11 +51,10 @@ TEST_CASE("NativePrint::unordered_map<std::string, std::vector<Vector<T>>>", "[u
 
   std::ostringstream oss2;
   std::unordered_map<std::string, std::vector<Vector<int>>> test_map2{{"alpha", {{0, 1}, {2}}},
-                                                                        {"beta", {{3}, {4}}},
-                                                                        {"lambda", {{6, 3}, {3, 3}}}};
+                                                                      {"beta", {{3}, {4}}},
+                                                                      {"lambda", {{6, 3}, {3, 3}}}};
   oss2 << NativePrint(test_map2);
   CHECK(std::string("{{{\"lambda\"}, {{6, 3, },{3, 3, }, }},\n{{\"beta\"}, {{3, },{4, }, "
                     "}},\n{{\"alpha\"}, {{0, 1, },{2, }, }},\n};") == oss2.str());
-
 }
 } // namespace qmcplusplus
