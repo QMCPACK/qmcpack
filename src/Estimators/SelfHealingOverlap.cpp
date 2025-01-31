@@ -32,7 +32,7 @@ SelfHealingOverlap::SelfHealingOverlap(SelfHealingOverlapInput&& inp_, const Tri
   auto nmsd = msd_refvec.size();
 
   size_t nparams;
-  if (nmsd == 1 and nsd == 0)
+  if (nmsd == 1 && nsd == 0)
   { // multi-slater-det wavefunction
     wf_type                              = msd_wf;
     const MultiSlaterDetTableMethod& msd = msd_refvec[0];
@@ -46,7 +46,7 @@ SelfHealingOverlap::SelfHealingOverlap(SelfHealingOverlapInput&& inp_, const Tri
     if (nparams == 0)
       throw std::runtime_error("SelfHealingOverlap: multidet wavefunction has no parameters.");
   }
-  else if (nmsd == 0 and nsd == 1)
+  else if (nmsd == 0 && nsd == 1)
   { // slater-det wavefunction
     throw std::runtime_error("SelfHealingOverlap: slaterdet wavefunction implementation incomplete");
   }
@@ -138,7 +138,7 @@ void SelfHealingOverlap::accumulate(const RefVector<MCPWalker>& walkers,
     WaveFunctionComponent::LogValue Jval = 0.0;
     for (auto& wc : wcs_jastrow)
       Jval += wc->get_log_value();
-    auto Jprefactor = std::exp(-2. * Jval);
+    RealType Jprefactor = std::exp(std::real(-2. * Jval));
 
     // accumulate weight (required by all estimators, otherwise inf results)
     walkers_weight_ += weight;
@@ -148,7 +148,7 @@ void SelfHealingOverlap::accumulate(const RefVector<MCPWalker>& walkers,
     for (int ic = 0; ic < det_ratios.size(); ++ic)
     {
 #ifndef QMC_COMPLEX
-      data_[ic] += weight * std::real(Jprefactor) * det_ratios[ic];
+      data_[ic] += weight * Jprefactor * det_ratios[ic];
 #else
       auto value = weight * Jprefactor * std::conj(det_ratios[ic]);
       data_[2 * ic] += std::real(value);
