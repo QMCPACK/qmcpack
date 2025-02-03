@@ -9,6 +9,11 @@
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //////////////////////////////////////////////////////////////////////////////////////
 
+/** \file
+ *  testing utility function to check vector indexed its return value structure
+ *  this not intended to be used in actual application code
+ */
+
 #ifndef QMCPLUSPLUS_CHECKVECTOR_HPP
 #define QMCPLUSPLUS_CHECKVECTOR_HPP
 
@@ -25,8 +30,12 @@ namespace qmcplusplus
 
 /** return structure from vector check
  *  For clean use with catch2 CHECKED_ELSE macro
- *  If you would rather have an empty string carry success semantics I disagree
- *  and so do others, it also makes it use with CHECKED_ELSE less clear.
+ *  pass/fail --> true/false in result.
+ *  result_message should/must contain information in case of fail.
+ *  We reserve the right to report information in result message in the case of pass.
+ *
+ *  DO NOT use result_message presense or contents to determine pass fail.
+ *  If this bothers you see
  *  https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#f21-to-return-multiple-out-values-prefer-returning-a-struct
  */
 struct CheckVectorResult
@@ -46,8 +55,6 @@ struct CheckVectorResult
 /** This function checks equality a_vec and b_vec elements
  *  M1, M2 need to have their element type declared M1::value_type
  *         and have an operator(i,j) accessor.
- *  I leave the c++14 template meta programming to insure 
- *  this as an exercise for the reader. Or just enjoy the compiler error.
  *
  *  \param[in] a_vec     - reference vector, if padded must be identical to b_vec,
  *                         can be a smaller than b_vec in which case it is compared to upper
@@ -66,9 +73,9 @@ CheckVectorResult checkVector(const M1& a_vec,
   // This allows use to check a padded b matrix with a nonpadded a
   if (a_vec.size() > b_vec.size())
     return {false, "b_vec is too small for a_vec to be a checkable segment"};
-  std::stringstream error_msg;
-  auto vectorElementError = [&error_msg](int i, auto& a_vec, auto& b_vec) {
-    error_msg << "checkVector found bad element at " << i << "  " << a_vec[i] << " != " << b_vec[i] << '\n';
+  std::stringstream result_msg;
+  auto vectorElementError = [&result_msg](int i, auto& a_vec, auto& b_vec) {
+    result_msg << "checkVector found bad element at " << i << "  " << a_vec[i] << " != " << b_vec[i] << '\n';
   };
   bool all_elements_match = true;
   for (int i = 0; i < a_vec.size(); i++)
@@ -79,10 +86,10 @@ CheckVectorResult checkVector(const M1& a_vec,
       vectorElementError(i, a_vec, b_vec);
       all_elements_match = false;
       if (!check_all)
-        return {false, error_msg.str()};
+        return {false, result_msg.str()};
     }
   }
-  return {all_elements_match, error_msg.str()};
+  return {all_elements_match, result_msg.str()};
 }
 } // namespace qmcplusplus
 

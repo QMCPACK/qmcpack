@@ -19,7 +19,6 @@
 namespace qmcplusplus
 {
 
-
 template<typename T, IsComplex<T> = true>
 bool approxEquality(T val_a, T val_b, std::optional<double> eps)
 {
@@ -47,5 +46,5 @@ extern template bool approxEquality<std::complex<double>>(std::complex<double> v
                                                           std::complex<double> val_b,
                                                           std::optional<double> eps);
 
-}
+} // namespace qmcplusplus
 #endif
