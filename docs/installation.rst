@@ -65,7 +65,7 @@ corresponding to the release. To obtain the latest release:
 
 -  Download the latest QMCPACK distribution from http://www.qmcpack.org.
 
--  Untar the archive (e.g., ``tar xvf qmcpack_v1.3.tar.gz``).
+-  Untar the archive (e.g., ``tar xvf v4.0.0.tar.gz``).
 
 Releases can also be obtained from the ‘master’ branch of the QMCPACK
 git repository, similar to obtaining the development version
@@ -1365,10 +1365,10 @@ The tests include the following:
   behavior to higher statistical accuracy.
 
 - Converter tests: to check conversion of trial wavefunctions
-  from codes such as QE and GAMESS to QMCPACK's
+  from codes such as QE, PySCF, and GAMESS to QMCPACK's
   formats. These should always pass.
 
-- Workflow tests: in the case of QE, we test the
+- Workflow tests: in the case of QE and PySCF, we test the
   entire cycle of DFT calculation, trial wavefunction conversion, and
   a subsequent VMC run.
 

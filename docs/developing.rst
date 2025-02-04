@@ -917,15 +917,17 @@ An example of the second approach is
 Walker
 ------
 .. note:: Batched Version Documentation
-	  The following documentation section describes the code design and behavior used when ``driver_version == batch`` at runtime.
+	  The following documentation section describes the code design and behavior used when the modern ``driver_version == batch`` at runtime.
 
-Lightweight representation of a markov chain walker's state. It is managed during each QMC driver section by ``MCPopulation``. Between sections it is stored in the WalkerConfigurations container class.
+Lightweight representation of a Markov chain walker's state. It is managed during each QMC driver section by ``MCPopulation``. Between sections it is stored in the WalkerConfigurations container class.
 
 Walker Identifiers (walker_id)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 The ``Walker::walker_id_`` and ``Walker::parent_id_`` allow logging walkers for later constructing trajectories etc. The basic data relations involved are shown in :numref:`fig1`. In each QMC section each walker ID will be unique and is generated using the equation
+
 .. math::
   :label: eq_walker_id
+
   walker_id = walker_id = num_walkers_created_++ * num_ranks_ + rank_ + 1
 
 where ``num_walkers_created_`` is a member variable of the sole ```MCPopulation`` object on the rank and initially set to 0. Each walkers ``parent_id`` is set to 0 when it is constructed and is assigned to ``walker_id`` of the walker it is transferred or copied from. If that assignment is from previous section's or run's ``WalkerConfigurations`` object then the value of the ``Walker::getWalkerID()`` is multiplied by -1. If the Walker's initial configuration comes from the golden particle set the parent_id will be 0.
@@ -945,7 +947,7 @@ Based on the total multiplicity on each rank, the highest multiplicity walkers o
 When possible rank multiplicities are balanced by transferring fewer walkers with more than one unit of multiplicity for minimized transfer traffic.
 This unit is unfortunately called 'copy' in the source code but it is simply the multiplicity that the walker will have after it is unpacked on the receiving rank.
 That amount of multiplicity is removed from the walker on the sending rank.
-When walker transfer happens, the receiving walker overwrites its ``parent_id`` with the recieved value of ``walker_id`` before assigning a new ID to its ``walker_id``.
+When walker transfer happens, the receiving walker overwrites its ``parent_id`` with the received value of ``walker_id`` before assigning a new ID to its ``walker_id``.
 The multiplicity of the receiving walker is set to the multiplicity that sending walker lost.
 Walkers with multiplicity < 1 are removed before transfers for creating vacant receiving walkers and after transfers for removing fully displaced walkers.
 
