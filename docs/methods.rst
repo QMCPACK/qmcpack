@@ -137,7 +137,8 @@ identical runs with different numbers of crowds will not give numerically identi
 
 Crowds are owned by MPI processes and the number of crowds is specifed on a per MPI process basis. If a user requests 4 crowds
 and there are 16 walkers per MPI rank, then each crowd will have 4 walkers.
-For the purposes of pure CPU runs, it is generally sufficient and often optimal to have a single crowd. For large GPU runs, either for large electron
+For the purposes of pure CPU runs, it is generally sufficient to have the number of crowds matche the number of threads
+spawned by each MPI process and one walker per crowd. For large GPU runs, either for large electron
 count runs or for those with large numbers of walkers, using multiple (2,4,8) crowds per MPI process (and therefore per GPU) is
 generally optimal. The optimal settings depend on details of the hardware and the specifics of a given run, so benchmarking is
 recommended. Settings do not need to be reoptimized for runs with similar electron and walker counts on the same hardware.
@@ -163,7 +164,7 @@ There are notable changes in the driver input section when moving from classic d
   - When running on GPUs, tuning ``walkers_per_rank`` or ``total_walkers`` is needed to maximize GPU throughput,
     just like tuning ``walkers`` in the classic drivers.
 
-  - ``crowds`` can be added in batched drivers to specify the number of crowds and optimize peformance on GPUs.
+  - ``crowds`` can be optionally added in batched drivers to specify the number of crowds and optimize peformance on GPUs.
 
   - Only particle-by-particle moves are supported. All-particle moves are not yet supported. Provide feedback if you have a use for these. 
 
