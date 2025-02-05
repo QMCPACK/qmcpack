@@ -124,6 +124,7 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces, bo
     {
       app_log() << "  Check passed." << std::endl;
     }
+
   }
   prefix_ = "F_AA";
   app_log() << "  Maximum K shell " << AA->MaxKshell << std::endl;
@@ -331,14 +332,14 @@ void CoulombPBCAA::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
       app_log() << "accumtest: CoulombPBCAA::evaluate()" << std::endl;
       app_log() << "accumtest:   tot:" << Vnow << std::endl;
       app_log() << "accumtest:   sum:" << Vsum << std::endl;
-      APP_ABORT("Trace check failed");
+      throw std::runtime_error("Trace check failed");
     }
     if (std::abs(Vcsum - Vcnow) > TraceManager::trace_tol)
     {
       app_log() << "accumtest: CoulombPBCAA::evalConsts()" << std::endl;
       app_log() << "accumtest:   tot:" << Vcnow << std::endl;
       app_log() << "accumtest:   sum:" << Vcsum << std::endl;
-      APP_ABORT("Trace check failed");
+      throw std::runtime_error("Trace check failed");
     }
 #endif
 
