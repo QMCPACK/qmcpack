@@ -22,7 +22,6 @@
 #include <MCWalkerConfiguration.h>
 #include "ForceBase.h"
 #include "OperatorBase.h"
-#include <numeric>
 
 namespace qmcplusplus
 {

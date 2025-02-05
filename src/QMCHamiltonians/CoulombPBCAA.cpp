@@ -320,7 +320,7 @@ void CoulombPBCAA::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
     for (const ListenerVector<RealType>& listener : listeners)
       listener.report(walker_index, name, v_sample);
 
-#if defined TRACE_CHECK && defined NDEBUG
+#ifndef NDEBUG
     RealType Vlrnow = cpbcaa.evalLR(pset);
     RealType Vsrnow = cpbcaa.evalSR(pset);
     RealType Vcnow  = cpbcaa.myConst;
