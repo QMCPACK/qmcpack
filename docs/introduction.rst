@@ -13,11 +13,12 @@ isolated molecular systems and to bulk (periodic) systems including metals and i
 methods are increasingly testable allowing for greater confidence in predictions and convergence to e.g. chemically accurate
 results in some cases.
 
-QMCPACK is written in C++ and is designed with the modularity afforded by object-oriented programming. High parallel and
-computational efficiencies are achievable on the largest supercomputers. Because of the modular architecture, the addition of new
-wavefunctions, algorithms, and observables is relatively straightforward. For parallelization, QMCPACK uses a fully hybrid
-OpenMP/MPI approach to optimize memory usage and to take advantage of the growing number of cores per SMP node or graphical
-processing units (GPUs) and accelerators. Finally, QMCPACK uses standard file formats for input and output in XML and HDF5 to
+QMCPACK is written in C++ and is designed with the modularity afforded by object-oriented and generic programming. High parallel and
+computational efficiencies are achievable on workstations through to the largest supercomputers. Because of the modular architecture,
+the addition of new wavefunctions, algorithms, and observables is relatively straightforward. For parallelization, QMCPACK uses a fully hybrid
+OpenMP/MPI approach to optimize memory usage and to take advantage of many-core CPU nodes. OpenMP offload and a limited amount of CUDA/HIP/SYCL
+is utilized for support of NVIDIA, AMD, and Intel graphical processing units (GPUs) and accelerators. Finally, QMCPACK uses standard
+file formats for input and output in XML and HDF5 to
 facilitate data exchange.
 
 This manual currently serves as an introduction to the essential features of QMCPACK and as a guide to installing and running it.
@@ -40,9 +41,9 @@ installations for common workstations and supercomputers that you can reuse.
 
 To build QMCPACK:
 
-#. Download the latest QMCPACK distribution from http://www.qmcpack.org.
+#. Download the latest QMCPACK distribution via https://www.qmcpack.org.
 
-#. Untar the archive (e.g., ``tar xvf qmcpack_v1.3.tar.gz``).
+#. Untar the archive (e.g., ``tar xvf v4.0.0.tar.gz``).
 
 #. Check the instructions in the README file.
 
@@ -160,10 +161,9 @@ including the following:
 Support and Contacting the Developers
 -------------------------------------
 
-Questions about installing, applying, or extending QMCPACK can be posted on the QMCPACK Google group at
-https://groups.google.com/forum/#!forum/qmcpack. You may also email any of the developers, but we recommend checking the group
-first. Particular attention is given to any problem reports. Technical questions can also be posted on the QMCPACK GitHub
-repository https://github.com/QMCPACK/qmcpack/issues.
+Questions about installing, applying, or extending QMCPACK can be posted on the QMCPACK Google group at https://groups.google.com/forum/#!forum/qmcpack
+or as an issue on the QMCPACK GitHub repository https://github.com/QMCPACK/qmcpack/issues. You may also email any of the developers, but we recommend
+checking the group first. Particular attention is given to any problem reports.
 
 .. _performance:
 
@@ -171,8 +171,8 @@ Performance
 -----------
 
 QMCPACK implements modern Monte Carlo (MC) algorithms, is highly parallel, and is written using very efficient code for high
-per-CPU or on-node performance. In particular, the code is highly vectorizable, giving high performance on modern central
-processing units (CPUs) and GPUs. We believe QMCPACK delivers performance either comparable to or better than other QMC codes when
+per-CPU, GPU or on-node performance. In particular, the code is highly vectorizable, giving high performance on modern central
+processing units (CPUs) and graphics processing units (GPUs). We believe QMCPACK delivers performance either comparable to or better than other QMC codes when
 similar calculations are run, particularly for the most common QMC methods and for large systems. If you find a calculation where
 this is not the case, or you simply find performance slower than expected, please post on the Google group or contact one of the
 developers. These reports are valuable. If your calculation is sufficiently mainstream we will optimize QMCPACK to improve the
@@ -286,14 +286,15 @@ consideration.
 Code
 ~~~~
 
-We will continue to improve the accessibility and usability of QMCPACK through combinations of more convenient input parameters,
-improved workflow, integration with more quantum chemical and density functional codes, and a wider range of examples. Suggestions
-are very welcome, both from new users of QMC and from those experienced with other QMC codes.
+The codebase is being transitioned to a single performance portable design, often referred to as the *batched code*. As of the beginning of 2025,
+these  codepaths are now the default, have been heavily tested, and also used for numerous publications. The batched codepaths largely offer the same
+feature set on all platforms, whether CPU systems or GPUs from NVIDIA, Intel, or AMD. Unlike QMCPACK's original GPU implementation, the
+intent of the new code is for calculations to fallback to CPU execution where GPU implementations are not available. The implementations
+will be optimized and further matured based on the feedback received applying them to current science problems. 
 
-A main development focus is the creation of a single performance portable version of the code. All features will consequently be
-available on all platforms, including accelerators (GPUs) from NVIDIA, AMD, and Intel. These new implementations are currently
-referred to as the *batched code*. As the initial batched implementation is matured, observables and other functionality will be
-prioritized based on feedback received.
+We will continue to improve the usability and reliability of QMCPACK through combinations of more convenient input parameters,
+improved workflows, integration with more quantum chemical and density functional codes, and a wider range of examples. Suggestions
+are very welcome, both from new users of QMC and from those experienced with other QMC codes.
 
 Documentation and examples
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -303,9 +304,8 @@ i.e., the VMC and DMC methods, auxiliary field QMC, how to obtain and optimize t
 covers at least 95% of use cases, and nearly all production research calculations.
 
 Because of its history as an academically developed research code, QMCPACK also contains a variety of additional QMC methods,
-trial wavefunction forms, potentials, etc., that, although far from critical, might be very useful for specialized calculations or
-particular material or chemical systems. If you are interested in these please ask - generally the features are immature, but we
-might have historical inputs available. New descriptions will be added over time but can also be prioritized and added on request
-(e.g., if a specialized Jastrow factor would help or a historical Jastrow form is needed for benchmarking).
+trial wavefunction forms, potentials, etc., that while not mature,  might be useful for specialized calculations on
+particular material or chemical or model systems. If you are interested in these please ask -- we might have historical inputs available.
+For example, if an older/historical Jastrow factor form that was previously used for a single paper is needed for benchmarking, we can look into the status.
 
 .. bibliography:: /bibs/introduction.bib
