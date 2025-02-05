@@ -2,13 +2,18 @@
 
 Notable changes to QMCPACK are documented in this file.
 
-## [Unreleased]
+## [4.0.0] - 2025-02-05
 
-Unreleased updates include an important change in the default driver behavior, significantly expanded GPU support including fully
+This major release includes an important change in the default driver behavior, significantly expanded GPU support including fully
 GPU accelerated LCAO/Gaussian-basis set wavefunction support for both molecular and solid-state systems, improved GPU configuration
-options, a new fast spin-orbit implementation based on exact spin integration, a stochastic reconfiguration based wavefunction
-optimizer for large parameter sets, expanded implementation of the determinant localization (DLA) approach, self-healing, and a new
-walker logging capability among many others. All users and developers are encouraged to check the extensive list of updates.
+options, a new fast spin-orbit implementation based on exact spin integration, a stochastic reconfiguration-based wavefunction
+optimizer for large parameter sets, self-healing wavefunction optimization, expanded implementation of the determinant localization (DLA)
+approach, and a new walker logging capability among many others. High-performance CPU execution is fully supported on laptops through
+to the largest CPU clusters. High-performance GPU execution on NVIDIA, Intel, and AMD GPUs is also fully supported on single GPUs up to
+the largest supercomputers. All users and developers are encouraged to check the extensive list of updates. In most cases small updates
+to old input files will be required to run with v4.0.0, which now also checks inputs more strictly for validity. NEXUS workflow scripts will
+need the least amount of changes. See the sections "QMCPACK's Performance Portable Implementation" and "Updating input files for batched
+drivers" in the manual, e.g., https://qmcpack.readthedocs.io/en/develop/performance_portable.html
 
 * IMPORTANT: the default drivers are now the batched versions in both QMCPACK and NEXUS. As detailed in the user guide, small
   updates may be needed to inputs for the new batched versions. In addition to performance portable CPU and GPU support, the new
