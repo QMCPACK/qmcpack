@@ -53,7 +53,7 @@ public:
 
   void registerData(ParticleSet& P, WFBufferType& buf) override;
 
-  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
+  LogValue updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
 
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override;
 
@@ -61,7 +61,7 @@ public:
    * @param P current configuration
    * @param iat the particle thas is being moved
    */
-  PsiValueType ratio(ParticleSet& P, int iat) override;
+  PsiValue ratio(ParticleSet& P, int iat) override;
 
   void ratioUp(ParticleSet& P, int iat);
 
@@ -87,9 +87,9 @@ public:
    *contribution of the determinant to G(radient) and L(aplacian)
    *for local energy calculations.
    */
-  LogValueType evaluateLog(const ParticleSet& P,
-                           ParticleSet::ParticleGradient& G,
-                           ParticleSet::ParticleLaplacian& L) override;
+  LogValue evaluateLog(const ParticleSet& P,
+                       ParticleSet::ParticleGradient& G,
+                       ParticleSet::ParticleLaplacian& L) override;
 
   std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
 
@@ -157,7 +157,7 @@ public:
   IndexVector Pivot;
 
   ///current ratio
-  PsiValueType curRatio;
+  PsiValue curRatio;
   ///cummulate ratio for particle-by-particle update
   RealType cumRatio;
   ///address of  dpsiU[0][0]

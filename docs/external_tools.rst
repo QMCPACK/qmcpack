@@ -25,6 +25,12 @@ In general:
 
 These set the basic flags required to build with either of these sanitizer libraries which are mutually exclusive. Depending on your system and linker, these may be incompatible with the "Release" build, so set ``-DCMAKE_BUILD_TYPE=Debug`` or ``-DCMAKE_BUILD_TYPE=RelWithDebInfo``. They are tested on GitHub Actions CI using deterministic tests ``ctest -L deterministic`` (currently ubsan). See the following links for additional information on use, run time, and build options of the sanitizers: https://clang.llvm.org/docs/AddressSanitizer.html & https://clang.llvm.org/docs/MemorySanitizer.html.
 
+Doxygen source documentation
+----------------------------
+
+If doxygen and optionally dot from graphviz are detected by CMake, a qmcpack_doxygen target will be defined. ``make qmcpack_doxygen`` will then generate html-based
+documentation in the build directory. This target is not enabled by default because generation of the documentation may take several minutes. This automatically
+generated documentation includes class diagrams and browsable and searchable lists of all functions, classes, and files. 
 
 Intel VTune
 -----------

@@ -179,7 +179,9 @@ void SFNBranch::updateParamAfterPopControl(const MCDataType<FullPrecRealType>& w
     if (WarmUpToDoSteps == 0)
       throw UniformCommunicateError("Bug: WarmUpToDoSteps should be larger than 0 during warmup.");
 
-    // update Etrial based on ENOW as ENOW is not yet converged in warmup stage
+    // Use Enow as the best estimate of ground state energy during warmup.
+    vParam[SBVP::EREF] = vParam[SBVP::ENOW];
+    // update Etrial based on Enow as Enow is not yet converged in warmup stage
     if (BranchMode[B_POPCONTROL])
     {
       if (BranchMode[B_KILLNODES])
@@ -233,7 +235,7 @@ void SFNBranch::printStatus() const
   if (BranchMode[B_RMC])
   {
     o << "====================================================";
-    o << "\n  End of a RMC block";
+    o << "\n  End of a RMC section";
     o << "\n    QMC counter                   = " << iParam[B_COUNTER];
     o << "\n    time step                     = " << vParam[SBVP::TAU];
     o << "\n    effective time step           = " << vParam[SBVP::TAUEFF];
@@ -246,7 +248,7 @@ void SFNBranch::printStatus() const
   else // running DMC
   {
     o << "====================================================";
-    o << "\n  End of a DMC block";
+    o << "\n  End of a DMC section";
     o << "\n    QMC counter                   = " << iParam[B_COUNTER];
     o << "\n    time step                     = " << vParam[SBVP::TAU];
     o << "\n    effective time step           = " << vParam[SBVP::TAUEFF];

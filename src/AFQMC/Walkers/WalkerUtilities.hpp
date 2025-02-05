@@ -18,6 +18,7 @@
 #include "AFQMC/config.0.h"
 #include "Utilities/FairDivide.h"
 #include "AFQMC/Walkers/WalkerConfig.hpp"
+#include "CPU/math.hpp"
 
 #include "mpi3/communicator.hpp"
 
@@ -44,10 +45,10 @@ inline void BasicWalkerData(WlkBucket& wlk, DVec& curData, communicator& comm)
     ComplexType weight = w_data[iw][0];
     ComplexType ovlp   = w_data[iw][1];
     ComplexType eloc   = w_data[iw][2];
-    ;
+
     data[6]++; // all walkers
-    if (std::abs(weight) <= 1e-6 || (!std::isfinite(std::abs(ovlp))) || (!std::isfinite((weight * eloc).real())) ||
-        (!std::isfinite((weight * eloc).imag())))
+    if (std::abs(weight) <= 1e-6 || (!qmcplusplus::isfinite(std::abs(ovlp))) ||
+        (!qmcplusplus::isfinite((weight * eloc).real())) || (!qmcplusplus::isfinite((weight * eloc).imag())))
     {
       w_data[iw][0] = ComplexType(0.0, 0.0);
       w_data[iw][1] = ComplexType(1.0, 0.0);

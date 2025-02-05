@@ -914,6 +914,51 @@ An example of the second approach is
     }
   }
 
+Walker
+------
+.. note:: Batched Version Documentation
+	  The following documentation section describes the code design and behavior used when the modern ``driver_version == batch`` at runtime.
+
+Lightweight representation of a Markov chain walker's state. It is managed during each QMC driver section by ``MCPopulation``. Between sections it is stored in the WalkerConfigurations container class.
+
+Walker Identifiers (walker_id)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The ``Walker::walker_id_`` and ``Walker::parent_id_`` allow logging walkers for later constructing trajectories etc. The basic data relations involved are shown in :numref:`fig1`. In each QMC section each walker ID will be unique and is generated using the equation
+
+.. math::
+  :label: eq_walker_id
+
+  walker_id = walker_id = num_walkers_created_++ * num_ranks_ + rank_ + 1
+
+where ``num_walkers_created_`` is a member variable of the sole ```MCPopulation`` object on the rank and initially set to 0. Each walkers ``parent_id`` is set to 0 when it is constructed and is assigned to ``walker_id`` of the walker it is transferred or copied from. If that assignment is from previous section's or run's ``WalkerConfigurations`` object then the value of the ``Walker::getWalkerID()`` is multiplied by -1. If the Walker's initial configuration comes from the golden particle set the parent_id will be 0.
+
+.. _fig1:
+.. figure:: /uml/WalkerID_chen.pdf
+    :width: 400
+    :align: center
+
+During DMC branching and load-balancing, there are two distinct mechanisms by which new walkers appear on each rank.
+One is when a walker is transferred from another rank, the other is when walkers of multiplicity >= 2 are split.
+For a given walker, both of these mechanisms potentially occur in order within each step, transfer first and then split.
+
+During the branching stage multiplicity of a walker is derived from its weight.
+Walker multiplicity summed over all walkers gives the population of walkers for the next step.
+Based on the total multiplicity on each rank, the highest multiplicity walkers on overpopulated ranks are fully or partially sent to underpopulated ranks for optimal load balance.
+When possible rank multiplicities are balanced by transferring fewer walkers with more than one unit of multiplicity for minimized transfer traffic.
+This unit is unfortunately called 'copy' in the source code but it is simply the multiplicity that the walker will have after it is unpacked on the receiving rank.
+That amount of multiplicity is removed from the walker on the sending rank.
+When walker transfer happens, the receiving walker overwrites its ``parent_id`` with the received value of ``walker_id`` before assigning a new ID to its ``walker_id``.
+The multiplicity of the receiving walker is set to the multiplicity that sending walker lost.
+Walkers with multiplicity < 1 are removed before transfers for creating vacant receiving walkers and after transfers for removing fully displaced walkers.
+
+Each rank can still carry walkers with multiplicity >= 2 at this point.
+Some of these maybe exist before the population balancing and some may have been received.
+To achieve optimal sampling ergodicity, all the high multiplicity walkers will follow one trajectory for each unit of multiplicity they have which means they need to become independent replicas.
+For each unit of multiplicity >= 2, a new walker is spawned. The ``parent_id`` of each spawned walker is assigned to the ``walker_id`` of the original high multiplicity walker.
+At the end of this process all walkers have multiplicity == 1. They keep their ``walker_id``'s from spawn time.
+
+The overarching rule of ``parent_id`` is when a newly active walker is transferred or split from an older walker, the older walker's ``walker_id`` becomes the new walker's ``parent_id`` and the new walker's ``walker_id`` is the global unique ID that it was spawned with.
+
 Wavefunction
 ------------
 

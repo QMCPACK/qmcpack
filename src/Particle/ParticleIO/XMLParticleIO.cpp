@@ -178,7 +178,9 @@ bool XMLParticleParser::readXML(xmlNodePtr cur)
     }
 
     if (ntot > 0 && num_non_zero_group != nat_group.size())
-      throw UniformCommunicateError("Some 'group' XML element node doesn't contain a 'size' attribute! 'size = 0' is not allowed in the input. Make appropriate adjustments to the input or converter.");
+      throw UniformCommunicateError(
+          "Some 'group' XML element node doesn't contain a 'size' attribute! 'size = 0' is not allowed in the input. "
+          "Make appropriate adjustments to the input or converter.");
   }
 
   { // parse all the 'attrib's to obtain or verify the total number of particles
@@ -441,13 +443,19 @@ void XMLParticleParser::getPtclAttrib(xmlNodePtr cur, int in_offset, int copy_si
   pAttrib.add(utype, condition_tag); //condition
   pAttrib.add(size_in, "size");      //size
   pAttrib.put(cur);
+
   if (oname.empty() || otype.empty())
   {
     app_error() << "   Missing attrib/@name or attrib/@datatype " << std::endl;
     app_error() << R"(     <attrib name="aname"  datatype="atype"/>)" << std::endl;
     return;
   }
-  int t_id = ref_AttribList.getAttribType(otype);
+
+  if (utype == 1 && !ref_.getLattice().explicitly_defined)
+    throw UniformCommunicateError(
+        "Fractional coordinates cannot be used without an explicit lattice in the <simulationcell/>!");
+
+  const int t_id = ref_AttribList.getAttribType(otype);
 
   if (oname == ionid_tag)
     throw UniformCommunicateError("'ionid' should not be parsed by getPtclAttrib.");
@@ -457,29 +465,25 @@ void XMLParticleParser::getPtclAttrib(xmlNodePtr cur, int in_offset, int copy_si
     //cloning is not going to work
     if (t_id == PA_IndexType)
     {
-      ParticleIndex* obj = nullptr;
-      obj                = ref_AttribList.getAttribute(otype, oname, obj);
+      ParticleIndex* obj = ref_AttribList.getAttribute<PtclOnLatticeTraits::Index_t>(otype, oname);
       ParticleAttribXmlNode<ParticleIndex> a(*obj, static_cast<PosUnit>(utype));
       a.put(cur, in_offset, copy_size, out_offset);
     }
     else if (t_id == PA_ScalarType)
     {
-      ParticleScalar* obj = nullptr;
-      obj                 = ref_AttribList.getAttribute(otype, oname, obj);
+      ParticleScalar* obj = ref_AttribList.getAttribute<PtclOnLatticeTraits::Scalar_t>(otype, oname);
       ParticleAttribXmlNode<ParticleScalar> a(*obj, static_cast<PosUnit>(utype));
       a.put(cur, in_offset, copy_size, out_offset);
     }
     else if (t_id == PA_PositionType)
     {
-      ParticlePos* obj = nullptr;
-      obj              = ref_AttribList.getAttribute(otype, oname, obj);
+      ParticlePos* obj = ref_AttribList.getAttribute<PtclOnLatticeTraits::SingleParticlePos>(otype, oname);
       ParticleAttribXmlNode<ParticlePos> a(*obj, static_cast<PosUnit>(utype));
       a.put(cur, in_offset, copy_size, out_offset);
     }
     else if (t_id == PA_TensorType)
     {
-      ParticleTensor* obj = nullptr;
-      obj                 = ref_AttribList.getAttribute(otype, oname, obj);
+      ParticleTensor* obj = ref_AttribList.getAttribute<PtclOnLatticeTraits::Tensor_t>(otype, oname);
       ParticleAttribXmlNode<ParticleTensor> a(*obj, static_cast<PosUnit>(utype));
       a.put(cur, in_offset, copy_size, out_offset);
     }

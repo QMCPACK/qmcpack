@@ -26,6 +26,7 @@
 #else
 using TraceManager = int;
 #endif
+#include "WalkerLogCollector.h"
 
 namespace qmcplusplus
 {
@@ -37,6 +38,7 @@ QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w,
                              RandomBase<FullPrecRealType>& rg)
     : csoffset(0),
       Traces(0),
+      wlog_collector(0),
       W(w),
       Psi(psi),
       Guide(guide),
@@ -57,6 +59,7 @@ QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w,
                              RandomBase<FullPrecRealType>& rg)
     : csoffset(0),
       Traces(0),
+      wlog_collector(0),
       W(w),
       Psi(psi),
       Guide(psi),
@@ -98,7 +101,8 @@ void QMCUpdateBase::setDefaults()
 
 bool QMCUpdateBase::put(xmlNodePtr cur)
 {
-  H.setNonLocalMoves(cur);
+  if (H.hasPhysicalNLPP())
+    non_local_ops_.put(cur);
   bool s = myParams.put(cur);
   if (debug_checks_str_ == "no")
     debug_checks_ = DriverDebugChecks::ALL_OFF;
@@ -112,6 +116,16 @@ bool QMCUpdateBase::put(xmlNodePtr cur)
       debug_checks_ |= DriverDebugChecks::CHECKGL_AFTER_TMOVE;
   }
   return s;
+}
+
+void QMCUpdateBase::resetRun2(BranchEngineType* brancher,
+                              EstimatorManagerBase* est,
+                              TraceManager* traces,
+                              WalkerLogCollector* wlog_collector_,
+                              const DriftModifierBase* driftmodifer)
+{
+  wlog_collector = wlog_collector_;
+  resetRun(brancher, est, traces, driftmodifer);
 }
 
 void QMCUpdateBase::resetRun(BranchEngineType* brancher,
@@ -184,6 +198,8 @@ void QMCUpdateBase::startBlock(int steps)
 #if !defined(REMOVE_TRACEMANAGER)
   Traces->startBlock(steps);
 #endif
+  if (wlog_collector)
+    wlog_collector->startBlock();
   nAccept              = 0;
   nReject              = 0;
   nAllRejected         = 0;
@@ -277,7 +293,7 @@ QMCUpdateBase::RealType QMCUpdateBase::getNodeCorrection(const ParticleSet::Part
 void QMCUpdateBase::checkLogAndGL(ParticleSet& pset, TrialWaveFunction& twf, const std::string_view location)
 {
   bool success = true;
-  TrialWaveFunction::LogValueType log_value{twf.getLogPsi(), twf.getPhase()};
+  TrialWaveFunction::LogValue log_value{twf.getLogPsi(), twf.getPhase()};
   ParticleSet::ParticleGradient G_saved  = twf.G;
   ParticleSet::ParticleLaplacian L_saved = twf.L;
 
@@ -294,7 +310,7 @@ void QMCUpdateBase::checkLogAndGL(ParticleSet& pset, TrialWaveFunction& twf, con
   std::ostringstream msg;
   auto& ref_G = twf.G;
   auto& ref_L = twf.L;
-  TrialWaveFunction::LogValueType ref_log{twf.getLogPsi(), twf.getPhase()};
+  TrialWaveFunction::LogValue ref_log{twf.getLogPsi(), twf.getPhase()};
   if (std::abs(std::exp(log_value) - std::exp(ref_log)) > std::abs(std::exp(ref_log)) * threshold)
   {
     success = false;

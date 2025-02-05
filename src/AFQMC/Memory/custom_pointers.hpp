@@ -16,7 +16,7 @@
 #define AFQMC_CUSTOM_POINTERS_HPP
 
 #include "AFQMC/Memory/raw_pointers.hpp"
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
 #include "AFQMC/Memory/device_pointers.hpp"
 //#include "AFQMC/Memory/CUDA/cuda_utilities.h"
 //#include "AFQMC/Memory/CUDA/cuda_init.h"

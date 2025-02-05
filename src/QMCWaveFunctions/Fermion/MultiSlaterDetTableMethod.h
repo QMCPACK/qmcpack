@@ -43,7 +43,7 @@ struct CSFData
  *  @brief An AntiSymmetric WaveFunctionComponent composed of a linear combination of SlaterDeterminants.
  *
  *\f[
- *MS({\bf R}) = \sum_n c_n S_n({\bf R})
+ *MSD({\bf R}) = \sum_n c_n S_n({\bf R})
  *\f].
  *
  *The (S)ingle(P)article(O)rbitalSet template parameter is an
@@ -97,6 +97,7 @@ public:
 
   std::string getClassName() const override { return "MultiSlaterDetTableMethod"; }
   bool isFermionic() const final { return true; }
+  bool isMultiDet() const final { return true; }
   bool isOptimizable() const override { return true; }
   void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override;
   void checkOutVariables(const opt_variables_type& active) override;
@@ -106,19 +107,23 @@ public:
   //builds orbital rotation parameters using MultiSlater member variables
   void buildOptVariables();
 
-  LogValueType evaluate_vgl_impl(const ParticleSet& P,
-                                 ParticleSet::ParticleGradient& g_tmp,
-                                 ParticleSet::ParticleLaplacian& l_tmp);
+  LogValue evaluate_vgl_impl(const ParticleSet& P,
+                             ParticleSet::ParticleGradient& g_tmp,
+                             ParticleSet::ParticleLaplacian& l_tmp);
 
-  LogValueType evaluateLog(const ParticleSet& P,
-                           ParticleSet::ParticleGradient& G,
-                           ParticleSet::ParticleLaplacian& L) override;
+  LogValue evaluateLog(const ParticleSet& P,
+                       ParticleSet::ParticleGradient& G,
+                       ParticleSet::ParticleLaplacian& L) override;
 
-  /*  void mw_evaluateLog(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                      const RefVectorWithLeader<ParticleSet>& p_list,
-                      const RefVector<ParticleSet::ParticleGradient>& G_list,
-                      const RefVector<ParticleSet::ParticleLaplacian>& L_list) const override ;
-*/
+  /** Compute ratios of the individual Slater determinants and the total MSD value.
+   *\f[
+   *ratio_n = Det_n / \frac{\sum_n c_n Det_n}
+   *\f].
+   */
+  void calcIndividualDetRatios(Vector<ValueType>& ratios);
+
+  const std::vector<ValueType>& getLinearExpansionCoefs() const;
+
   void prepareGroup(ParticleSet& P, int ig) override;
 
   void mw_prepareGroup(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
@@ -137,20 +142,23 @@ public:
   void mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& WFC_list,
                     const RefVectorWithLeader<ParticleSet>& P_list,
                     int iat,
-                    std::vector<PsiValueType>& ratios,
+                    std::vector<PsiValue>& ratios,
                     std::vector<GradType>& grad_new) const override;
 
   void mw_calcRatio(const RefVectorWithLeader<WaveFunctionComponent>& WFC_list,
                     const RefVectorWithLeader<ParticleSet>& P_list,
                     int iat,
-                    std::vector<PsiValueType>& ratios) const override;
+                    std::vector<PsiValue>& ratios) const override;
 
-  PsiValueType ratio(ParticleSet& P, int iat) override;
-  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
+  PsiValue ratio(ParticleSet& P, int iat) override;
+  PsiValue ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
   //ratioGradWithSpin, but includes tthe spin gradient info
-  PsiValueType ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad_iat) override;
+  PsiValue ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad_iat) override;
 
   void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios) override;
+
+  void evaluateSpinorRatios(const VirtualParticleSet& VP, const std::pair<ValueVector, ValueVector>& spinor_multiplier, std::vector<ValueType>& ratios) override;
+
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override
   {
@@ -169,7 +177,7 @@ public:
                             bool safe_to_delay = false) const override;
 
   void registerData(ParticleSet& P, WFBufferType& buf) override;
-  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
+  LogValue updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override;
 
   void createResource(ResourceCollection& collection) const override;
@@ -217,31 +225,31 @@ private:
   /** an implementation shared by evalGrad and ratioGrad. Use precomputed data
    * @param newpos to distinguish evalGrad(false) ratioGrad(true)
    */
-  PsiValueType evalGrad_impl(ParticleSet& P, int iat, bool newpos, GradType& g_at);
+  PsiValue evalGrad_impl(ParticleSet& P, int iat, bool newpos, GradType& g_at);
   /// multi walker version of evalGrad_impl
   static void mw_evalGrad_impl(const RefVectorWithLeader<WaveFunctionComponent>& WFC_list,
                                const RefVectorWithLeader<ParticleSet>& P_list,
                                int iat,
                                bool newpos,
                                std::vector<GradType>& grad_now,
-                               std::vector<PsiValueType>& psi_list);
+                               std::vector<PsiValue>& psi_list);
 
   /** an implementation shared by evalGrad and ratioGrad. No use of precomputed data
    * @param newpos to distinguish evalGrad(false) ratioGrad(true)
    */
-  PsiValueType evalGrad_impl_no_precompute(ParticleSet& P, int iat, bool newpos, GradType& g_at);
+  PsiValue evalGrad_impl_no_precompute(ParticleSet& P, int iat, bool newpos, GradType& g_at);
 
   //implemtation for evalGradWithSpin
-  PsiValueType evalGradWithSpin_impl(ParticleSet& P, int iat, bool newpos, GradType& g_at, ComplexType& sg_at);
+  PsiValue evalGradWithSpin_impl(ParticleSet& P, int iat, bool newpos, GradType& g_at, ComplexType& sg_at);
   //implemtation for evalGradWithSpin with no precomputation
-  PsiValueType evalGradWithSpin_impl_no_precompute(ParticleSet& P,
-                                                   int iat,
-                                                   bool newpos,
-                                                   GradType& g_at,
-                                                   ComplexType& sg_at);
+  PsiValue evalGradWithSpin_impl_no_precompute(ParticleSet& P,
+                                               int iat,
+                                               bool newpos,
+                                               GradType& g_at,
+                                               ComplexType& sg_at);
 
   // compute the new multi determinant to reference determinant ratio based on temporarycoordinates.
-  PsiValueType computeRatio_NewMultiDet_to_NewRefDet(int det_id) const;
+  PsiValue computeRatio_NewMultiDet_to_NewRefDet(int det_id) const;
 
   /** precompute C_otherDs for a given particle group
    * @param P a particle set
@@ -259,11 +267,12 @@ private:
                                                   Vector<ValueType>& dlogpsi);
 
   /** compute parameter derivatives of CI/CSF coefficients
-   * @param multi_det_to_ref multideterminant over the reference single determinant
    * @param dlogpsi saved derivatives
-   * @param det_id provide this argument to affect determinant group id for virtual moves
+   * @param move when one electron virtual move was proposed, pass the determinant group of the moved electron and
+   *             the ratio of multideterminant and the reference single determinant
    */
-  void evaluateDerivativesMSD(const PsiValueType& multi_det_to_ref, Vector<ValueType>& dlogpsi, int det_id = -1) const;
+  void evaluateDerivativesMSD(Vector<ValueType>& dlogpsi,
+                              std::optional<std::pair<unsigned, PsiValue>> move = std::nullopt) const;
 
   /// determinant collection
   std::vector<std::unique_ptr<MultiDiracDeterminant>> Dets;
@@ -288,12 +297,12 @@ private:
   const bool use_pre_computing_;
 
   /// current psi over ref single det
-  PsiValueType psi_ratio_to_ref_det_;
+  PsiValue psi_ratio_to_ref_det_;
   /// new psi over new ref single det when one particle is moved
-  PsiValueType new_psi_ratio_to_new_ref_det_;
+  PsiValue new_psi_ratio_to_new_ref_det_;
 
   size_t ActiveSpin;
-  PsiValueType curRatio;
+  PsiValue curRatio;
 
   /// C_n x D^1_n x D^2_n ... D^3_n with one D removed. Summed by group. [spin, unique det id]
   //std::vector<Vector<ValueType, OffloadPinnedAllocator<ValueType>>> C_otherDs;

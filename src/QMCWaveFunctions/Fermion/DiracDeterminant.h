@@ -82,7 +82,7 @@ public:
 
   void updateAfterSweep(const ParticleSet& P, ParticleSet::ParticleGradient& G, ParticleSet::ParticleLaplacian& L);
 
-  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
+  LogValue updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
 
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override;
 
@@ -94,17 +94,21 @@ public:
    * @param P current configuration
    * @param iat the particle thas is being moved
    */
-  PsiValueType ratio(ParticleSet& P, int iat) override;
+  PsiValue ratio(ParticleSet& P, int iat) override;
 
   //Ye: TODO, good performance needs batched SPO evaluation.
   //void mw_calcRatio(const std::vector<WaveFunctionComponent*>& wfc_list,
   //                  const std::vector<ParticleSet*>& p_list,
   //                  int iat,
-  //                  std::vector<PsiValueType>& ratios) override;
+  //                  std::vector<PsiValue>& ratios) override;
 
   /** compute multiple ratios for a particle move
    */
   void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios) override;
+
+  void evaluateSpinorRatios(const VirtualParticleSet& VP,
+                            const std::pair<ValueVector, ValueVector>& spinor_multipler,
+                            std::vector<ValueType>& ratios) override;
 
   void mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                          const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
@@ -115,14 +119,20 @@ public:
                            std::vector<ValueType>& ratios,
                            Matrix<ValueType>& dratios) override;
 
-  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
+  void evaluateSpinorDerivRatios(const VirtualParticleSet& VP,
+                                 const std::pair<ValueVector, ValueVector>& spinor_multipler,
+                                 const opt_variables_type& optvars,
+                                 std::vector<ValueType>& ratios,
+                                 Matrix<ValueType>& dratios) override;
 
-  PsiValueType ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad) final;
+  PsiValue ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
+
+  PsiValue ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad) final;
 
   void mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                     const RefVectorWithLeader<ParticleSet>& p_list,
                     int iat,
-                    std::vector<PsiValueType>& ratios,
+                    std::vector<PsiValue>& ratios,
                     std::vector<GradType>& grad_new) const override;
 
   GradType evalGrad(ParticleSet& P, int iat) override;
@@ -167,9 +177,9 @@ public:
   void restore(int iat) override;
 
   ///evaluate log of a determinant for a particle set
-  LogValueType evaluateLog(const ParticleSet& P,
-                           ParticleSet::ParticleGradient& G,
-                           ParticleSet::ParticleLaplacian& L) override;
+  LogValue evaluateLog(const ParticleSet& P,
+                       ParticleSet::ParticleGradient& G,
+                       ParticleSet::ParticleLaplacian& L) override;
 
   //Ye: TODO, good performance needs batched SPO evaluation.
   //void mw_evaluateLog(const std::vector<WaveFunctionComponent*>& wfc_list,
@@ -179,10 +189,10 @@ public:
 
   void recompute(const ParticleSet& P) override;
 
-  LogValueType evaluateGL(const ParticleSet& P,
-                          ParticleSet::ParticleGradient& G,
-                          ParticleSet::ParticleLaplacian& L,
-                          bool fromscratch) override;
+  LogValue evaluateGL(const ParticleSet& P,
+                      ParticleSet::ParticleGradient& G,
+                      ParticleSet::ParticleLaplacian& L,
+                      bool fromscratch) override;
 
   void evaluateHessian(ParticleSet& P, HessVector& grad_grad_psi) override;
 
@@ -252,7 +262,7 @@ public:
    */
   int invRow_id;
 
-  PsiValueType curRatio;
+  PsiValue curRatio;
   ValueType* FirstAddressOfdV;
   ValueType* LastAddressOfdV;
 
@@ -270,7 +280,7 @@ private:
   void resizeScratchObjectsForIonDerivs();
 
   /// internal function computing ratio and gradients after computing the SPOs, used by ratioGrad.
-  PsiValueType ratioGrad_compute(int iat, GradType& grad_iat);
+  PsiValue ratioGrad_compute(int iat, GradType& grad_iat);
 };
 
 extern template class DiracDeterminant<>;

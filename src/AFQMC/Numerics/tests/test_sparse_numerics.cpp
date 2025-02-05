@@ -63,7 +63,7 @@ void test_sparse_matrix_mult(Allocator const& alloc = {})
   A_[2][1] = 3.;
   A_[0][1] = 9.;
 
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
   A_.remove_empty_spaces();
   ma::sparse::csr_matrix<double, int, int, Allocator> A(A_);
 #else
@@ -124,7 +124,7 @@ void test_sparse_matrix_mult(Allocator const& alloc = {})
     verify_approx(C, D2);
   }
 
-#if !defined(ENABLE_CUDA) && !defined(ENABLE_HIP)
+#if !defined(ENABLE_CUDA) && !defined(BUILD_AFQMC_HIP)
   // test that everything is fine after this
   A.remove_empty_spaces();
   // matrix-matrix
@@ -187,7 +187,7 @@ TEST_CASE("sparse_ma_operations", "[matrix_operations]")
   auto world = boost::mpi3::environment::get_world_instance();
   auto node  = world.split_shared(world.rank());
 
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
   arch::INIT(node);
   using Alloc = device::device_allocator<double>;
   afqmc::setup_memory_managers(node, 10uL * 1024uL * 1024uL);

@@ -22,6 +22,7 @@
 #include "AFQMC/config.h"
 #include "AFQMC/Numerics/ma_blas.hpp"
 #include "AFQMC/Walkers/WalkerConfig.hpp"
+#include "CPU/math.hpp"
 
 namespace qmcplusplus
 {
@@ -36,10 +37,12 @@ void free_projection_walker_update(Wlk&& w,
                                    Mat&& hybrid_weight,
                                    WMat& work)
 {
+  using std::get;
+
   int nwalk = w.size();
   // constexpr if can be used to avoid the memory copy, by comparing the pointer types
   // between WMat and Mat/OMat
-  if (std::get<0>(work.sizes()) < 7 || std::get<1>(work.sizes()) < nwalk)
+  if (get<0>(work.sizes()) < 7 || get<1>(work.sizes()) < nwalk)
     work.reextent({7, nwalk});
 
   w.getProperty(WEIGHT, work[0]);
@@ -82,10 +85,12 @@ void hybrid_walker_update(Wlk&& w,
                           Mat&& hybrid_weight,
                           WMat& work)
 {
+  using std::get;
+
   int nwalk = w.size();
   // constexpr if can be used to avoid the memory copy, by comparing the pointer types
   // between WMat and Mat/OMat
-  if (std::get<0>(work.sizes()) < 7 || std::get<1>(work.sizes()) < nwalk)
+  if (get<0>(work.sizes()) < 7 || get<1>(work.sizes()) < nwalk)
     work.reextent({7, nwalk});
 
   bool BackProp = (w.getBPPos() >= 0 && w.getBPPos() < w.NumBackProp());
@@ -108,7 +113,7 @@ void hybrid_walker_update(Wlk&& w,
 
     if (imp_sampl)
       ratioOverlaps = work[4][i] / old_ovlp;
-    if (!std::isfinite(ratioOverlaps.real()) && apply_constrain && imp_sampl)
+    if (!qmcplusplus::isfinite(ratioOverlaps.real()) && apply_constrain && imp_sampl)
     {
       scale = 0.0;
       eloc  = old_eloc;
@@ -123,7 +128,7 @@ void hybrid_walker_update(Wlk&& w,
     }
     ComplexType eloc_ = eloc;
 
-    if ((!std::isfinite(eloc.real())) || (std::abs(eloc.real()) < std::numeric_limits<RealType>::min()))
+    if ((!qmcplusplus::isfinite(eloc.real())) || (std::abs(eloc.real()) < std::numeric_limits<RealType>::min()))
     {
       scale = 0.0;
       eloc  = old_eloc;
@@ -176,10 +181,12 @@ void local_energy_walker_update(Wlk&& w,
                                 Mat&& hybrid_weight,
                                 WMat& work)
 {
+  using std::get;
+
   int nwalk = w.size();
   // constexpr if can be used to avoid the memory copy, by comparing the pointer types
   // between WMat and Mat/OMat
-  if (std::get<0>(work.sizes()) < 12 || std::get<1>(work.sizes()) < nwalk)
+  if (get<0>(work.sizes()) < 12 || get<1>(work.sizes()) < nwalk)
     work.reextent({12, nwalk});
 
   bool BackProp = (w.getBPPos() >= 0 && w.getBPPos() < w.NumBackProp());
@@ -205,7 +212,7 @@ void local_energy_walker_update(Wlk&& w,
     RealType scale            = 1.0;
     ComplexType ratioOverlaps = work[7][i] / old_ovlp;
 
-    if (!std::isfinite((ratioOverlaps * work[8][i]).real()) && apply_constrain)
+    if (!qmcplusplus::isfinite((ratioOverlaps * work[8][i]).real()) && apply_constrain)
     {
       scale = 0.0;
       eloc  = old_eloc;
@@ -213,7 +220,7 @@ void local_energy_walker_update(Wlk&& w,
     else
       scale = (apply_constrain ? (std::max(0.0, std::cos(std::arg(ratioOverlaps) - work[8][i].imag()))) : 1.0);
 
-    if ((!std::isfinite(eloc.real())) || (std::abs(eloc.real()) < std::numeric_limits<RealType>::min()))
+    if ((!qmcplusplus::isfinite(eloc.real())) || (std::abs(eloc.real()) < std::numeric_limits<RealType>::min()))
     {
       scale = 0.0;
       eloc  = old_eloc;

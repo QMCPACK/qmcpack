@@ -1,17 +1,23 @@
 #!/bin/bash
 
-# Build script for Frontier and its test and development system Crusher at OLCF
-# See https://github.com/QMCPACK/qmcpack/pull/4123 for more details on the module file if needed
+# Build script for Frontier
+# It builds all the varaints of QMCPACK in the current directory
+# last revision: Jan 13th 2025
 
-echo "Loading QMCPACK dependency modules for crusher"
-module unload PrgEnv-gnu PrgEnv-cray PrgEnv-amd PrgEnv-gnu-amd PrgEnv-cray-amd
-module unload amd amd-mixed gcc gcc-mixed cce cce-mixed
-module load PrgEnv-amd amd/5.4.3
-module load  craype/2.7.16 # hard-coded version. 2.7.19 and 2.7.20 cause CC segfault.
+echo "Loading QMCPACK dependency modules for frontier"
+for module_name in PrgEnv-gnu PrgEnv-cray PrgEnv-amd PrgEnv-gnu-amd PrgEnv-cray-amd \
+                   amd amd-mixed gcc gcc-mixed gcc-native cce cce-mixed rocm
+do
+  if module is-loaded $module_name ; then module unload $module_name; fi
+done
+
+module load PrgEnv-amd amd/6.3.1
+module unload darshan-runtime
+unset HIP_PATH # it messed up clang as a HIP compiler.
 module unload cray-libsci
-module load cmake/3.22.2
+module load cmake/3.27.9
 module load cray-fftw
-module load openblas/0.3.17-omp
+module load openblas/0.3.26-omp
 module load cray-hdf5-parallel
 
 # edit this line if you are not a member of mat151
@@ -20,7 +26,7 @@ export BOOST_ROOT=/ccs/proj/mat151/opt/boost/boost_1_81_0
 module list >& module_list.txt
 
 TYPE=Release
-Compiler=rocm543
+Compiler=rocm631
 
 if [[ $# -eq 0 ]]; then
   source_folder=`pwd`
@@ -38,7 +44,7 @@ else
   exit
 fi
 
-for name in offload_cuda2hip_real_MP offload_cuda2hip_real offload_cuda2hip_cplx_MP offload_cuda2hip_cplx \
+for name in gpu_real_MP gpu_real gpu_cplx_MP gpu_cplx \
             cpu_real_MP cpu_real cpu_cplx_MP cpu_cplx
 do
 
@@ -52,15 +58,11 @@ if [[ $name == *"_MP"* ]]; then
   CMAKE_FLAGS="$CMAKE_FLAGS -DQMC_MIXED_PRECISION=ON"
 fi
 
-if [[ $name == *"offload"* ]]; then
-  CMAKE_FLAGS="$CMAKE_FLAGS -DENABLE_OFFLOAD=ON"
+if [[ $name == *"gpu"* ]]; then
+  CMAKE_FLAGS="$CMAKE_FLAGS -DQMC_GPU_ARCHS=gfx90a"
 fi
 
-if [[ $name == *"cuda2hip"* ]]; then
-  CMAKE_FLAGS="$CMAKE_FLAGS -DENABLE_CUDA=ON -DQMC_CUDA2HIP=ON -DCMAKE_HIP_ARCHITECTURES=gfx90a"
-fi
-
-folder=build_crusher_${Compiler}_${name}
+folder=build_frontier_${Compiler}_${name}
 
 if [[ -v install_folder ]]; then
   CMAKE_FLAGS="$CMAKE_FLAGS -DCMAKE_INSTALL_PREFIX=$install_folder/$folder"
@@ -74,7 +76,7 @@ mkdir $folder
 cd $folder
 if [ ! -f CMakeCache.txt ] ; then
 cmake $CMAKE_FLAGS -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=CC -DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment \
-      -DCMAKE_C_FLAGS=--gcc-toolchain=/opt/cray/pe/gcc/11.2.0/snos -DCMAKE_CXX_FLAGS=--gcc-toolchain=/opt/cray/pe/gcc/11.2.0/snos \
+      -DCMAKE_CXX_FLAGS="-add-runpath" \
       $source_folder
 fi
 

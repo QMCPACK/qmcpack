@@ -26,11 +26,12 @@ int call() {
 template<int(*F)(char*, int*)>
 std::string call() {
 	int len = -1;
-	std::array<char, MPI_MAX_PROCESSOR_NAME> name{};
+	std::string name(MPI_MAX_PROCESSOR_NAME, '\0');  // std::array<char, MPI_MAX_PROCESSOR_NAME> name{};
 	auto const e = static_cast<enum error>((*F)(name.data(), &len));
 	assert(len >= 0);
+	name.resize(static_cast<std::size_t>(len));
 	if(e != mpi3::error::success) {throw std::system_error{e, "cannot call function " + std::string{__PRETTY_FUNCTION__}};}
-	return {name.data(), static_cast<std::size_t>(len)};
+	return name;
 }
 
 template<class FT, FT* F, class... Args, decltype(static_cast<enum error>((*F)(std::declval<Args>()...)))* = nullptr>

@@ -9,7 +9,9 @@ parameters based on the measured energies, variance, and statistics.
 
 -->
   <!--Name and Series number of the project.-->
-  <project id="rmg-Diamond2-1x1x1-gamma-ccECP" series="0"/>
+<project id="rmg-Diamond2-1x1x1-gamma-ccECP" series="0">
+  <parameter name="driver_version">legacy</parameter>
+</project>
   <!--Link to the location of the Atomic Coordinates and the location of the Wavefunction.-->
   <include href="rmg-Diamond2-1x1x1-gamma-ccECP.structure.xml"/>
   <include href="rmg-Diamond2-1x1x1-gamma-ccECP.wfnoj.xml"/>

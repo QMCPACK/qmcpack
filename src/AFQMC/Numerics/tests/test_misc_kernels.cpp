@@ -32,7 +32,7 @@
 #if defined(ENABLE_CUDA)
 #include "AFQMC/Numerics/detail/CUDA/blas_cuda_gpu_ptr.hpp"
 #include "AFQMC/Numerics/device_kernels.hpp"
-#elif defined(ENABLE_HIP)
+#elif defined(BUILD_AFQMC_HIP)
 #include "AFQMC/Numerics/detail/HIP/blas_hip_gpu_ptr.hpp"
 #include "AFQMC/Numerics/device_kernels.hpp"
 #endif
@@ -50,7 +50,7 @@ namespace qmcplusplus
 {
 using namespace afqmc;
 
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
 template<typename T>
 using Alloc = device::device_allocator<T>;
 #else
@@ -76,19 +76,20 @@ TEST_CASE("axpyBatched", "[Numerics][misc_kernels]")
   Tensor2D<std::complex<double>> x({3, 4}, 1.0, alloc);
   Tensor1D<std::complex<double>> a(iextensions<1u>{3}, 2.0, alloc);
   std::vector<pointer<std::complex<double>>> x_batched, y_batched;
-  for (int i = 0; i < std::get<0>(x.sizes()); i++)
+  using std::get;
+  for (int i = 0; i < get<0>(x.sizes()); i++)
   {
     x_batched.emplace_back(x[i].origin());
     y_batched.emplace_back(y[i].origin());
   }
   using ma::axpyBatched;
-  axpyBatched(std::get<1>(x.sizes()), to_address(a.origin()), x_batched.data(), 1, y_batched.data(), 1, x_batched.size());
+  axpyBatched(get<1>(x.sizes()), to_address(a.origin()), x_batched.data(), 1, y_batched.data(), 1, x_batched.size());
   // 1 + 2 = 3.
   Tensor2D<std::complex<double>> ref({3, 4}, 3.0, alloc);
   verify_approx(y, ref);
 }
 
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
 // Not in dispatching routine yet, called directly from AFQMCBasePropagator.
 TEST_CASE("construct_X", "[Numerics][misc_kernels]")
 {

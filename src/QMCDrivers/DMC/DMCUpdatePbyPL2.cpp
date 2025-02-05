@@ -211,7 +211,7 @@ void DMCUpdatePbyPL2::advanceWalker(Walker_t& thisWalker, bool recompute)
     }
     {
       ScopedTimer local_timer(myTimers[DMC_hamiltonian]);
-      enew = H.evaluateWithToperator(W);
+      enew = non_local_ops_.getMoveKind() == TmoveKind::OFF ? H.evaluate(W) : H.evaluateWithToperator(W);
     }
     thisWalker.resetProperty(logpsi, Psi.getPhase(), enew, rr_accepted, rr_proposed, 1.0);
     thisWalker.Weight *= branchEngine->branchWeight(enew, eold);
@@ -241,7 +241,7 @@ void DMCUpdatePbyPL2::advanceWalker(Walker_t& thisWalker, bool recompute)
 #endif
   {
     ScopedTimer local_timer(myTimers[DMC_tmoves]);
-    const int NonLocalMoveAcceptedTemp = H.makeNonLocalMoves(W);
+    const int NonLocalMoveAcceptedTemp = H.makeNonLocalMoves(W, non_local_ops_);
     if (NonLocalMoveAcceptedTemp > 0)
     {
       RealType logpsi = Psi.updateBuffer(W, w_buffer, false);

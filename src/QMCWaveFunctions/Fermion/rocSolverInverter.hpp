@@ -24,6 +24,7 @@
 #include "CUDA/CUDAallocator.hpp"
 #include "ROCm/rocsolver.hpp"
 #include "QMCWaveFunctions/detail/CUDA/delayed_update_helper.h"
+#include "CPU/math.hpp"
 
 namespace qmcplusplus
 {
@@ -47,7 +48,7 @@ class rocSolverInverter
   Vector<T_FP, CUDAAllocator<T_FP>> work_gpu;
 
   // CUDA specific variables
-  rocblas_handle h_rocsolver_;
+  rocblas_handle h_rocsolver_ = nullptr;
   hipStream_t hstream_;
 
   /** resize the internal storage
@@ -56,6 +57,12 @@ class rocSolverInverter
    */
   inline void resize(int norb)
   {
+    if (!h_rocsolver_)
+    {
+      rocsolverErrorCheck(rocblas_create_handle(&h_rocsolver_), "rocblas_create_handle failed!");
+      rocsolverErrorCheck(rocblas_set_stream(h_rocsolver_, hstream_), "rocblas_set_stream failed!");
+    }
+
     if (Mat1_gpu.rows() != norb)
     {
       Mat1_gpu.resize(norb, norb);
@@ -80,16 +87,12 @@ class rocSolverInverter
 
 public:
   /// default constructor
-  rocSolverInverter()
-  {
-    cudaErrorCheck(hipStreamCreate(&hstream_), "hipStreamCreate failed!");
-    rocsolverErrorCheck(rocblas_create_handle(&h_rocsolver_), "rocblas_create_handle failed!");
-    rocsolverErrorCheck(rocblas_set_stream(h_rocsolver_, hstream_), "rocblas_set_stream failed!");
-  }
+  rocSolverInverter() { cudaErrorCheck(hipStreamCreate(&hstream_), "hipStreamCreate failed!"); }
 
   ~rocSolverInverter()
   {
-    rocsolverErrorCheck(rocblas_destroy_handle(h_rocsolver_), "rocblas_destroy_handle failed!");
+    if (h_rocsolver_)
+      rocsolverErrorCheck(rocblas_destroy_handle(h_rocsolver_), "rocblas_destroy_handle failed!");
     cudaErrorCheck(hipStreamDestroy(hstream_), "hipStreamDestroy failed!");
   }
 
@@ -119,7 +122,7 @@ public:
                                   hipMemcpyDeviceToHost, hstream_),
                    "hipMemcpyAsync for LU_diag failed!");
     // check LU success
-    cudaErrorCheck(hipStreamSynchronize(hstream_), "hipStreamSynchronize failed!");
+    cudaErrorCheck(hipStreamSynchronize(hstream_), "hipStreamSynchronize after getrf failed!");
     if (ipiv[0] != 0)
     {
       std::ostringstream err;
@@ -137,7 +140,7 @@ public:
     cudaErrorCheck(hipMemcpyAsync(Ainv.data(), Ainv_gpu.data(), Ainv.size() * sizeof(TMAT), hipMemcpyDeviceToHost,
                                   hstream_),
                    "hipMemcpyAsync for Ainv failed!");
-    // no need to wait because : For transfers from device memory to pageable host memory, the function will return only once the copy has completed.
+    cudaErrorCheck(hipStreamSynchronize(hstream_), "hipStreamSynchronize after getrs failed!");
     if (ipiv[0] != 0)
     {
       std::ostringstream err;
@@ -175,7 +178,7 @@ public:
                                   hipMemcpyDeviceToHost, hstream_),
                    "hipMemcpyAsync failed!");
     // check LU success
-    cudaErrorCheck(hipStreamSynchronize(hstream_), "hipStreamSynchronize failed!");
+    cudaErrorCheck(hipStreamSynchronize(hstream_), "hipStreamSynchronize after getrf failed!");
     if (ipiv[0] != 0)
     {
       std::ostringstream err;
@@ -194,7 +197,8 @@ public:
     cudaErrorCheck(hipMemcpyAsync(Ainv.data(), Ainv_gpu.data(), Ainv.size() * sizeof(TMAT), hipMemcpyDeviceToHost,
                                   hstream_),
                    "hipMemcpyAsync failed!");
-    // no need to wait because : For transfers from device memory to pageable host memory, the function will return only once the copy has completed.
+    // check solve success
+    cudaErrorCheck(hipStreamSynchronize(hstream_), "hipStreamSynchronize after getrs failed!");
     if (ipiv[0] != 0)
     {
       std::ostringstream err;
@@ -202,6 +206,13 @@ public:
       std::cerr << err.str();
       throw std::runtime_error(err.str());
     }
+
+    std::ostringstream nan_msg;
+    for (int i = 0; i < norb; i++)
+      if (qmcplusplus::isnan(std::norm(Ainv[i][i])))
+        nan_msg << "  Ainv[" << i << "][" << i << "] has bad value " << Ainv[i][i] << std::endl;
+    if (const std::string str = nan_msg.str(); !str.empty())
+      throw std::runtime_error("Inverse matrix diagonal check found:\n" + str);
   }
 };
 } // namespace qmcplusplus

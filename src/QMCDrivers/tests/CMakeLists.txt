@@ -20,6 +20,7 @@ set(UTEST_HDF_INPUT ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp/pwscf.p
 maybe_symlink(${UTEST_HDF_INPUT} ${UTEST_DIR}/diamondC_1x1x1.pwscf.h5)
 
 set(DRIVER_TEST_SRC
+    test_WalkerLogCollector.cpp
     test_TauParams.cpp
     test_vmc.cpp
     test_dmc.cpp
@@ -71,16 +72,17 @@ set(DRIVER_TEST_SRC
     SetupPools.cpp
     test_Crowd.cpp
     test_MCPopulation.cpp
-    test_ContextForSteps.cpp
     test_QMCDriverInput.cpp
     test_QMCDriverNew.cpp
     test_VMCDriverInput.cpp
-    test_VMCFactoryNew.cpp
     test_VMCBatched.cpp
     test_DMCBatched.cpp
     test_SFNBranch.cpp
     test_QMCCostFunctionBatched.cpp
     test_QMCCostFunctionBase.cpp
+    test_LinearMethod.cpp
+    test_ConjugateGradient.cpp
+    test_Eigensolver.cpp
     test_WFOptDriverInput.cpp)
 add_executable(${UTEST_EXE} ${DRIVER_TEST_SRC})
 target_link_libraries(${UTEST_EXE} catch_main qmcdriver)

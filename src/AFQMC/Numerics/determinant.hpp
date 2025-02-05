@@ -16,7 +16,7 @@
 #define AFQMC_NUMERICS_HELPERS_HPP
 
 #include <cassert>
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
 #include "AFQMC/Memory/custom_pointers.hpp"
 #include "AFQMC/Numerics/device_kernels.hpp"
 #endif
@@ -30,7 +30,7 @@ inline T determinant_from_getrf(int n, T* M, int lda, int* pivot, T LogOverlapFa
   T sg(1.0);
   for (int i = 0, ip = 1; i != n; i++, ip++)
   {
-    if (real(M[i * lda + i]) < 0.0)
+    if (std::real(M[i * lda + i]) < 0.0)
     {
       res += std::log(-static_cast<T>(M[i * lda + i]));
       sg *= -1.0;
@@ -50,7 +50,7 @@ inline void determinant_from_getrf(int n, T* M, int lda, int* pivot, T LogOverla
   T sg(1.0);
   for (int i = 0, ip = 1; i != n; i++, ip++)
   {
-    if (real(M[i * lda + i]) < 0.0)
+    if (std::real(M[i * lda + i]) < 0.0)
     {
       *res += std::log(-static_cast<T>(M[i * lda + i]));
       sg *= -1.0;
@@ -98,7 +98,7 @@ T determinant_from_geqrf(int n, T* M, int lda, T* buff, T LogOverlapFactor)
   T res(0.0);
   for (int i = 0; i < n; i++)
   {
-    if (real(M[i * lda + i]) < 0.0)
+    if (std::real(M[i * lda + i]) < 0.0)
       buff[i] = T(-1.0);
     else
       buff[i] = T(1.0);
@@ -158,7 +158,7 @@ inline void determinant_from_geqrf(int n, T* M, int lda, T* buff)
 {
   for (int i = 0; i < n; i++)
   {
-    if (real(M[i * lda + i]) < 0)
+    if (std::real(M[i * lda + i]) < 0)
       buff[i] = T(-1.0);
     else
       buff[i] = T(1.0);
@@ -175,7 +175,7 @@ inline void scale_columns(int n, int m, T* A, int lda, T* scl)
 
 } // namespace ma
 
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
 namespace device
 {
 // using thrust for now to avoid kernels!!!

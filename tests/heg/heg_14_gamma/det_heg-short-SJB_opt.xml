@@ -4,14 +4,15 @@
 <application name="qmcapp" class="serial">
 Sample qmc run for Slater-Jastrow-Backflow HEG.
 </application>
+    <parameter name="driver_version">legacy</parameter>
 </project>
 <random seed="153"/>
 <include href="heg.ptcl.xml"/>
 <qmcsystem>
   <wavefunction name="psi0" target="e">
-    <sposet_builder type="free">
+    <sposet_collection type="free">
       <sposet name="spo-ud" size="7"/>
-    </sposet_builder>
+    </sposet_collection>
 <determinantset>
     <slaterdeterminant>
       <determinant id="updet" sposet="spo-ud"/>

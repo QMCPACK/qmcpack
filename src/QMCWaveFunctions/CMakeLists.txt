@@ -24,6 +24,7 @@ add_subdirectory(detail)
 set(WFBASE_SRCS
     OptimizableFunctorBase.cpp
     VariableSet.cpp
+    NaNguard.cpp
     WaveFunctionPool.cpp
     WaveFunctionComponent.cpp
     WaveFunctionComponentBuilder.cpp
@@ -36,11 +37,8 @@ set(WFBASE_SRCS
     HarmonicOscillator/SHOSet.cpp
     HarmonicOscillator/SHOSetBuilder.cpp
     ExampleHeBuilder.cpp
-    ExampleHeComponent.cpp)
-
-if(NOT QMC_COMPLEX)
-  set(WFBASE_SRCS ${WFBASE_SRCS} RotatedSPOs.cpp)
-endif(NOT QMC_COMPLEX)
+    ExampleHeComponent.cpp
+    RotatedSPOs.cpp)
 
 if(QMC_COMPLEX)
   set(WFBASE_SRCS ${WFBASE_SRCS} SpinorSet.cpp)
@@ -80,28 +78,24 @@ if(OHMMS_DIM MATCHES 3)
   endif(QMC_COMPLEX)
 
   if(HAVE_EINSPLINE)
-    if(NOT MIXED_PRECISION)
-      set(FERMION_SRCS ${FERMION_SRCS} EinsplineSet.cpp)
-    endif(NOT MIXED_PRECISION)
     set(FERMION_SRCS
         ${FERMION_SRCS}
-        EinsplineSetBuilderCommon.cpp
-        EinsplineSetBuilderOld.cpp
-        AtomicOrbital.cpp
-        EinsplineSetBuilderReadBands_ESHDF.cpp
-        EinsplineSetBuilderESHDF.fft.cpp
-        EinsplineSetBuilder_createSPOs.cpp
-        BsplineFactory/createComplexDouble.cpp
-        BsplineFactory/createComplexSingle.cpp
+        BsplineFactory/EinsplineSetBuilderCommon.cpp
+        BsplineFactory/EinsplineSetBuilderESHDF.fft.cpp
+        BsplineFactory/EinsplineSetBuilder_createSPOs.cpp
+        BsplineFactory/createBsplineComplex.cpp
         BsplineFactory/HybridRepCenterOrbitals.cpp
+        BsplineFactory/SplineSetReader.cpp
+        BsplineFactory/HybridRepSetReader.cpp
+        BsplineFactory/OneSplineOrbData.cpp
         BandInfo.cpp
-        BsplineFactory/BsplineReaderBase.cpp)
+        BsplineFactory/BsplineReader.cpp)
     set(FERMION_OMPTARGET_SRCS Fermion/DiracDeterminantBatched.cpp Fermion/MultiDiracDeterminant.2.cpp)
     if(QMC_COMPLEX)
-      set(FERMION_SRCS ${FERMION_SRCS} EinsplineSpinorSetBuilder.cpp BsplineFactory/SplineC2C.cpp)
+      set(FERMION_SRCS ${FERMION_SRCS} BsplineFactory/EinsplineSpinorSetBuilder.cpp BsplineFactory/SplineC2C.cpp)
       set(FERMION_OMPTARGET_SRCS ${FERMION_OMPTARGET_SRCS} BsplineFactory/SplineC2COMPTarget.cpp)
     else(QMC_COMPLEX)
-      set(FERMION_SRCS ${FERMION_SRCS} BsplineFactory/createRealSingle.cpp BsplineFactory/createRealDouble.cpp
+      set(FERMION_SRCS ${FERMION_SRCS} BsplineFactory/createBsplineReal.cpp
         BsplineFactory/SplineC2R.cpp BsplineFactory/SplineR2R.cpp)
       set(FERMION_OMPTARGET_SRCS ${FERMION_OMPTARGET_SRCS} BsplineFactory/SplineC2ROMPTarget.cpp)
     endif(QMC_COMPLEX)
@@ -109,7 +103,7 @@ if(OHMMS_DIM MATCHES 3)
   endif(HAVE_EINSPLINE)
 
   # plane wave SPO
-  set(FERMION_SRCS ${FERMION_SRCS} PlaneWave/PWBasis.cpp PlaneWave/PWParameterSet.cpp PlaneWave/PWOrbitalBuilder.cpp)
+  set(FERMION_SRCS ${FERMION_SRCS} PlaneWave/PWBasis.cpp PlaneWave/PWParameterSet.cpp PlaneWave/PWOrbitalSetBuilder.cpp)
   if(QMC_COMPLEX)
     set(FERMION_SRCS ${FERMION_SRCS} PlaneWave/PWOrbitalSet.cpp)
   else()
@@ -138,7 +132,12 @@ set(FERMION_SRCS
     TWFFastDerivWrapper.cpp
     TWFGrads.cpp
     WaveFunctionFactory.cpp)
-set(FERMION_OMPTARGET_SRCS ${FERMION_OMPTARGET_SRCS} Fermion/MultiSlaterDetTableMethod.cpp)
+
+set(FERMION_OMPTARGET_SRCS ${FERMION_OMPTARGET_SRCS} Fermion/MultiSlaterDetTableMethod.cpp Fermion/DiracMatrixInverterOMPTarget.cpp)
+
+if(ENABLE_CUDA)
+  set(FERMION_SRCS ${FERMION_SRCS} Fermion/DiracMatrixInverterCUDA.cpp)
+endif()
 
 ####################################
 # create libqmcwfs
@@ -153,16 +152,10 @@ target_include_directories(qmcwfs PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(qmcwfs PUBLIC qmcutil qmcparticle platform_runtime platform_LA)
 target_link_libraries(qmcwfs PRIVATE einspline Math::FFTW3)
 
-if(USE_OBJECT_TARGET)
-  add_library(qmcwfs_omptarget OBJECT ${JASTROW_OMPTARGET_SRCS} ${FERMION_OMPTARGET_SRCS})
-else(USE_OBJECT_TARGET)
-  add_library(qmcwfs_omptarget ${JASTROW_OMPTARGET_SRCS} ${FERMION_OMPTARGET_SRCS})
-endif(USE_OBJECT_TARGET)
+add_library(qmcwfs_omptarget OBJECT ${JASTROW_OMPTARGET_SRCS} ${FERMION_OMPTARGET_SRCS})
 
 target_include_directories(qmcwfs_omptarget PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(qmcwfs_omptarget PUBLIC qmcutil qmcparticle containers platform_LA)
-
-target_compile_options(qmcwfs_omptarget PRIVATE "$<$<BOOL:${ENABLE_OFFLOAD_CLANG_DEBUG_O3}>:$<$<CONFIG:DEBUG>:-O3>>")
 
 target_link_libraries(qmcwfs PUBLIC qmcwfs_omptarget)
 

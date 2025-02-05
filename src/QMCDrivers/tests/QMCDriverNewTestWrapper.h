@@ -33,12 +33,14 @@ public:
                           QMCDriverInput&& input,
                           WalkerConfigurations& wc,
                           MCPopulation&& population,
+                          const RefVector<RandomBase<FullPrecRealType>>& rng_refs,
                           Communicate* comm)
       : QMCDriverNew(test_project,
                      std::move(input),
-                     std::nullopt,
+                     nullptr,
                      wc,
                      std::move(population),
+                     rng_refs,
                      "QMCDriverTestWrapper::",
                      comm,
                      "QMCDriverNewTestWrapper")
@@ -52,10 +54,10 @@ public:
   {
     // We want to test the reserve ability as well
     AdjustedWalkerCounts awc =
-        adjustGlobalWalkerCount(*myComm, 0, qmcdriver_input_.get_total_walkers(), qmcdriver_input_.get_walkers_per_rank(),
-                                1.0, qmcdriver_input_.get_num_crowds());
+        adjustGlobalWalkerCount(*myComm, 0, qmcdriver_input_.get_total_walkers(),
+                                qmcdriver_input_.get_walkers_per_rank(), 1.0, qmcdriver_input_.get_num_crowds());
 
-    Base::initializeQMC(awc);
+    initPopulationAndCrowds(awc);
   }
 
   void testAdjustGlobalWalkerCount()
@@ -63,7 +65,7 @@ public:
     AdjustedWalkerCounts awc;
     if (myComm->size() == 4)
     {
-      awc = adjustGlobalWalkerCount(*myComm, 0, 64, 0, 1.0, 0);
+      awc = adjustGlobalWalkerCount(*myComm, 0, 64, 0, 1.0, 8);
       if (myComm->rank() == 1)
       {
         CHECK(awc.global_walkers == 64);
@@ -74,7 +76,7 @@ public:
         CHECK(awc.walkers_per_crowd[7] == 2);
       }
 
-      awc = adjustGlobalWalkerCount(*myComm, 4, 0, 0, 1.0, 0);
+      awc = adjustGlobalWalkerCount(*myComm, 4, 0, 0, 1.0, 8);
       if (myComm->rank() == 1)
       {
         CHECK(awc.global_walkers == 16);
@@ -130,11 +132,10 @@ public:
 
     if (myComm->size() == 2)
     {
-      awc = adjustGlobalWalkerCount(*myComm, 0, 28, 0, 1.0, 0);
+      awc = adjustGlobalWalkerCount(*myComm, 0, 28, 0, 1.0, 8);
       if (myComm->rank() == 0)
       {
         CHECK(awc.global_walkers == 28);
-        CHECK(awc.walkers_per_crowd.size() == Concurrency::maxCapacity());
         CHECK(awc.walkers_per_rank.size() == 2);
         CHECK(awc.walkers_per_rank[0] == 14);
         // \todo for std::thread these will be ones
@@ -161,8 +162,15 @@ public:
     {
       // Ask for 14 total walkers on 16 ranks (inconsistent input)
       // results in fatal exception on all ranks.
-      CHECK_THROWS_AS(adjustGlobalWalkerCount(*myComm, 0, 14, 0, 0, 0), UniformCommunicateError);
+      CHECK_THROWS_AS(adjustGlobalWalkerCount(*myComm, 0, 14, 0, 0, 8), UniformCommunicateError);
     }
+  }
+
+  void testDetermintNumCrowds()
+  {
+    CHECK(determineNumCrowds(4, 8) == 4);
+    CHECK(determineNumCrowds(0, 8) == 8);
+    CHECK(determineNumCrowds(4, 2) == 2);
   }
 
   bool run() override { return false; }
@@ -176,24 +184,21 @@ public:
   };
 
   void testMeasureImbalance() { measureImbalance("Test"); }
+  void testDetermineStepsPerBlock()
+  {
+    CHECK(QMCDriverNew::determineStepsPerBlock(6, 36, 2, 3) == 2);
+    CHECK(QMCDriverNew::determineStepsPerBlock(6, 36, 1, 6) == 1);
+    CHECK(QMCDriverNew::determineStepsPerBlock(6, 33, 3, 2) == 3);
+    CHECK(QMCDriverNew::determineStepsPerBlock(6, 33, 0, 2) == 3);
+    CHECK(QMCDriverNew::determineStepsPerBlock(6, 25, 0, 2) == 3);
+    CHECK(QMCDriverNew::determineStepsPerBlock(6, 24, 0, 2) == 2);
+    CHECK(QMCDriverNew::determineStepsPerBlock(6, 0, 2, 2) == 2);
+    CHECK(QMCDriverNew::determineStepsPerBlock(6, 0, 0, 2) == 1);
+
+    CHECK_THROWS_WITH(QMCDriverNew::determineStepsPerBlock(6, 13, 1, 2),
+                      Catch::Contains("more than the total number of walkers"));
+  }
 };
-
-template<class CONCURRENCY>
-void QMCDriverNewTestWrapper::TestNumCrowdsVsNumThreads<CONCURRENCY>::operator()(int num_crowds)
-{}
-
-template<>
-void QMCDriverNewTestWrapper::TestNumCrowdsVsNumThreads<ParallelExecutor<Executor::OPENMP>>::operator()(int num_crowds)
-{
-  if (Concurrency::maxCapacity<>() != 8)
-    throw std::runtime_error("OMP_NUM_THREADS must be 8 for this test.");
-  if (num_crowds > 8)
-    CHECK_THROWS_AS(checkNumCrowdsLTNumThreads(num_crowds), UniformCommunicateError);
-  else
-    checkNumCrowdsLTNumThreads(num_crowds);
-  return;
-}
-
 
 } // namespace testing
 } // namespace qmcplusplus

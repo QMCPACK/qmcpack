@@ -342,6 +342,8 @@ void RadialOrbitalSetBuilder<COT>::finalize()
   for (int ib = 0; ib < norbs; ++ib)
     radTemp[ib]->convert(*grid_prec, multiset, ib, 5);
 
+  multiset.finalize();
+
   app_log() << "  Setting cutoff radius " << m_rcut_safe << std::endl << std::endl;
   m_orbitals.setRmax(static_cast<RealType>(m_rcut_safe));
 }

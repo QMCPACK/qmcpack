@@ -17,8 +17,8 @@
 #include "Particle/ParticleSet.h"
 #include "Particle/ParticleSetPool.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
-#include "QMCWaveFunctions/EinsplineSetBuilder.h"
-#include "QMCWaveFunctions/EinsplineSpinorSetBuilder.h"
+#include "BsplineFactory/EinsplineSetBuilder.h"
+#include "BsplineFactory/EinsplineSpinorSetBuilder.h"
 #include <ResourceCollection.h>
 
 #include <stdio.h>
@@ -89,9 +89,10 @@ TEST_CASE("Einspline SPO from HDF NiO a16 97 electrons", "[wavefunction]")
   tspecies(chargeIdx, upIdx) = -1;
 
   //diamondC_2x1x1
-  const char* particles = R"(<tmp>
-<determinantset type="einspline" href="NiO-fcc-supertwist111-supershift000-S4.h5" tilematrix="1 0 0 0 1 1 0 2 -2" twistnum="0" source="ion" meshfactor="1.0" precision="float" size="97" gpu="omptarget"/>
-</tmp>
+  const char* particles = R"(
+<sposet_collection type="einspline" href="NiO-fcc-supertwist111-supershift000-S4.h5" tilematrix="1 0 0 0 1 1 0 2 -2" twistnum="0" source="ion" meshfactor="1.0" precision="float" gpu="omptarget">
+  <sposet name="updet" size="97"/>
+</sposet_collection>
 )";
 
   Libxml2Document doc;
@@ -102,7 +103,7 @@ TEST_CASE("Einspline SPO from HDF NiO a16 97 electrons", "[wavefunction]")
 
   xmlNodePtr ein1 = xmlFirstElementChild(root);
 
-  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, ein1);
+  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, root);
   auto spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo);
 

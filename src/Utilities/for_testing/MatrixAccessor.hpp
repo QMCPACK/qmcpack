@@ -47,8 +47,8 @@ public:
       return data_[i + j * m_];
   }
 
-  size_t rows() { return m_; }
-  size_t cols() { return n_; }
+  size_t rows() const { return m_; }
+  size_t cols() const { return n_; }
 
 private:
   size_t m_;

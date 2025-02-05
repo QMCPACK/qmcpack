@@ -41,10 +41,7 @@ inline void find_coefs_1d(Ugrid grid, BCtype_s bc, float* data, intptr_t dstride
 }
 } // namespace einspline
 
-template<typename T,
-         typename COEFS_ALLOC         = aligned_allocator<T>,
-         typename MULTI_SPLINE_ALLOC  = aligned_allocator<typename bspline_traits<T, 3>::SplineType>,
-         typename SINGLE_SPLINE_ALLOC = aligned_allocator<typename bspline_traits<T, 3>::SingleSplineType>>
+template<typename T, typename ALLOC = aligned_allocator<T>>
 class BsplineAllocator
 {
   using SplineType       = typename bspline_traits<T, 3>::SplineType;
@@ -53,9 +50,9 @@ class BsplineAllocator
   using real_type        = typename bspline_traits<T, 3>::real_type;
 
   /// allocators
-  COEFS_ALLOC coefs_allocator;
-  MULTI_SPLINE_ALLOC multi_spline_allocator;
-  SINGLE_SPLINE_ALLOC single_spline_allocator;
+  ALLOC coefs_allocator;
+  using MultiAlloc = typename std::allocator_traits<ALLOC>::template rebind_alloc<SplineType>;
+  MultiAlloc multi_spline_allocator;
 
 public:
   ///default constructor
@@ -76,16 +73,16 @@ public:
   void destroy(SingleSplineType* spline)
   {
     coefs_allocator.deallocate(spline->coefs, spline->coefs_size);
-    single_spline_allocator.deallocate(spline, 1);
+    delete spline;
   }
 
   ///allocate a multi-bspline structure
   SplineType* allocateMultiBspline(Ugrid x_grid,
                                    Ugrid y_grid,
                                    Ugrid z_grid,
-                                   BCType xBC,
-                                   BCType yBC,
-                                   BCType zBC,
+                                   const BCType& xBC,
+                                   const BCType& yBC,
+                                   const BCType& zBC,
                                    int num_splines);
 
   ///allocate a UBspline_3d_d, it can be made template to support UBspline_3d_s
@@ -108,18 +105,14 @@ public:
   void copy(UBT* single, MBT* multi, int i, const int* offset, const int* N);
 };
 
-template<typename T, typename COEFS_ALLOC, typename MULTI_SPLINE_ALLOC, typename SINGLE_SPLINE_ALLOC>
-typename BsplineAllocator<T, COEFS_ALLOC, MULTI_SPLINE_ALLOC, SINGLE_SPLINE_ALLOC>::SplineType* BsplineAllocator<
-    T,
-    COEFS_ALLOC,
-    MULTI_SPLINE_ALLOC,
-    SINGLE_SPLINE_ALLOC>::allocateMultiBspline(Ugrid x_grid,
-                                               Ugrid y_grid,
-                                               Ugrid z_grid,
-                                               BCType xBC,
-                                               BCType yBC,
-                                               BCType zBC,
-                                               int num_splines)
+template<typename T, typename ALLOC>
+typename BsplineAllocator<T, ALLOC>::SplineType* BsplineAllocator<T, ALLOC>::allocateMultiBspline(Ugrid x_grid,
+                                                                                                  Ugrid y_grid,
+                                                                                                  Ugrid z_grid,
+                                                                                                  const BCType& xBC,
+                                                                                                  const BCType& yBC,
+                                                                                                  const BCType& zBC,
+                                                                                                  int num_splines)
 {
   // Create new spline
   SplineType* spline = multi_spline_allocator.allocate(1);
@@ -161,7 +154,7 @@ typename BsplineAllocator<T, COEFS_ALLOC, MULTI_SPLINE_ALLOC, SINGLE_SPLINE_ALLO
   z_grid.delta_inv = 1.0 / z_grid.delta;
   spline->z_grid   = z_grid;
 
-  const int N = getAlignedSize<real_type, COEFS_ALLOC::alignment>(num_splines);
+  const int N = getAlignedSize<real_type, ALLOC::alignment>(num_splines);
 
   spline->x_stride = (size_t)Ny * (size_t)Nz * (size_t)N;
   spline->y_stride = Nz * N;
@@ -173,26 +166,23 @@ typename BsplineAllocator<T, COEFS_ALLOC, MULTI_SPLINE_ALLOC, SINGLE_SPLINE_ALLO
   return spline;
 }
 
-template<typename T, typename COEFS_ALLOC, typename MULTI_SPLINE_ALLOC, typename SINGLE_SPLINE_ALLOC>
-typename BsplineAllocator<T, COEFS_ALLOC, MULTI_SPLINE_ALLOC, SINGLE_SPLINE_ALLOC>::SingleSplineType* BsplineAllocator<
-    T,
-    COEFS_ALLOC,
-    MULTI_SPLINE_ALLOC,
-    SINGLE_SPLINE_ALLOC>::allocateUBspline(Ugrid x_grid,
-                                           Ugrid y_grid,
-                                           Ugrid z_grid,
-                                           BCType xBC,
-                                           BCType yBC,
-                                           BCType zBC,
-                                           T* data)
+template<typename T, typename ALLOC>
+typename BsplineAllocator<T, ALLOC>::SingleSplineType* BsplineAllocator<T, ALLOC>::allocateUBspline(Ugrid x_grid,
+                                                                                                    Ugrid y_grid,
+                                                                                                    Ugrid z_grid,
+                                                                                                    BCType xBC,
+                                                                                                    BCType yBC,
+                                                                                                    BCType zBC,
+                                                                                                    T* data)
 {
   // Create new spline
-  SingleSplineType* spline = single_spline_allocator.allocate(1);
-  spline->spcode           = bspline_traits<T, 3>::single_spcode;
-  spline->tcode            = bspline_traits<T, 3>::tcode;
-  spline->xBC              = xBC;
-  spline->yBC              = yBC;
-  spline->zBC              = zBC;
+  auto* spline = new SingleSplineType;
+
+  spline->spcode = bspline_traits<T, 3>::single_spcode;
+  spline->tcode  = bspline_traits<T, 3>::tcode;
+  spline->xBC    = xBC;
+  spline->yBC    = yBC;
+  spline->zBC    = zBC;
 
   // Setup internal variables
   int Mx = x_grid.num;
@@ -264,39 +254,6 @@ typename BsplineAllocator<T, COEFS_ALLOC, MULTI_SPLINE_ALLOC, SINGLE_SPLINE_ALLO
       }
   }
   return spline;
-}
-
-template<typename T, typename COEFS_ALLOC, typename MULTI_SPLINE_ALLOC, typename SINGLE_SPLINE_ALLOC>
-template<typename UBT, typename MBT>
-void BsplineAllocator<T, COEFS_ALLOC, MULTI_SPLINE_ALLOC, SINGLE_SPLINE_ALLOC>::copy(UBT* single,
-                                                                                     MBT* multi,
-                                                                                     int i,
-                                                                                     const int* offset,
-                                                                                     const int* N)
-{
-  using out_type        = typename bspline_type<MBT>::value_type;
-  using in_type         = typename bspline_type<UBT>::value_type;
-  intptr_t x_stride_in  = single->x_stride;
-  intptr_t y_stride_in  = single->y_stride;
-  intptr_t x_stride_out = multi->x_stride;
-  intptr_t y_stride_out = multi->y_stride;
-  intptr_t z_stride_out = multi->z_stride;
-  intptr_t offset0      = static_cast<intptr_t>(offset[0]);
-  intptr_t offset1      = static_cast<intptr_t>(offset[1]);
-  intptr_t offset2      = static_cast<intptr_t>(offset[2]);
-  const intptr_t istart = static_cast<intptr_t>(i);
-  const intptr_t n0 = N[0], n1 = N[1], n2 = N[2];
-  for (intptr_t ix = 0; ix < n0; ++ix)
-    for (intptr_t iy = 0; iy < n1; ++iy)
-    {
-      out_type* restrict out = multi->coefs + ix * x_stride_out + iy * y_stride_out + istart;
-      const in_type* restrict in =
-          single->coefs + (ix + offset0) * x_stride_in + (iy + offset1) * y_stride_in + offset2;
-      for (intptr_t iz = 0; iz < n2; ++iz)
-      {
-        out[iz * z_stride_out] = static_cast<out_type>(in[iz]);
-      }
-    }
 }
 
 } // namespace qmcplusplus

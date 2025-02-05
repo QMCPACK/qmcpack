@@ -15,7 +15,6 @@
 
 #include "Lattice/ParticleBConds3DSoa.h"
 #include "DistanceTable.h"
-#include "CPU/SIMD/algorithm.hpp"
 
 namespace qmcplusplus
 {

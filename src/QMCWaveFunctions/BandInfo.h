@@ -37,11 +37,9 @@ struct BandInfo
   double Energy;
   ///  This is true if we should make distinct copies represeninting a +k, -k pair
   bool MakeTwoCopies;
-  /// True if this state is a core state
-  bool IsCoreState;
   ///default constructor
   BandInfo()
-      : TwistIndex(0), BandIndex(-1), BandGroup(0), Spin(0), Energy(1e9), MakeTwoCopies(false), IsCoreState(false)
+      : TwistIndex(0), BandIndex(-1), BandGroup(0), Spin(0), Energy(1e9), MakeTwoCopies(false)
   {}
 
   /** operator to determine the order of any band

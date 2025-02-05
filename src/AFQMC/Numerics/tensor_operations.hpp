@@ -17,7 +17,7 @@
 
 #include <cassert>
 #include "AFQMC/Numerics/detail/utilities.hpp"
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
 #include "AFQMC/Memory/custom_pointers.hpp"
 #include "AFQMC/Numerics/device_kernels.hpp"
 #endif
@@ -277,7 +277,7 @@ void transpose_wabn_to_wban(int nwalk, int na, int nb, int nchol, T const* Tab, 
 
 } //namespace ma
 
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
 namespace device
 {
 template<typename T, typename Q>

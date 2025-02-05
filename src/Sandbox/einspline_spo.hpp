@@ -173,7 +173,7 @@ struct einspline_spo
         einsplines[i]->create(grid, BC, nSplinesPerBlock);
         if (init_random)
           for (int j = 0; j < nSplinesPerBlock; ++j)
-            einsplines[i]->copy_spline(aspline, j);
+            copy_spline<double, T>(*aspline, *einsplines[i]->getSplinePtr(), j);
       }
       mAllocator.destroy(aspline);
     }

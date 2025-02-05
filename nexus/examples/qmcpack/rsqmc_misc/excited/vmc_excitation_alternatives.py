@@ -81,6 +81,7 @@ conv = generate_pw2qmcpack(
     )
 
 opt = generate_qmcpack(
+    driver          = 'legacy',
     identifier      = 'opt',
     path            = 'diamond/opt',
     job             = job(cores=16,threads=16,app='qmcpack', hours = 1),
@@ -108,6 +109,7 @@ opt = generate_qmcpack(
 ############ Ground State at Gamma #############################################
 ################################################################################
 qmc_ground = generate_qmcpack(
+    driver         = 'legacy',
     det_format     = 'old',
     identifier     = 'vmc',
     path           = 'diamond/vmc_ground',
@@ -141,6 +143,7 @@ qmc_ground = generate_qmcpack(
 
 # up channel, gamma vb gamma cb
 qmc_optical = generate_qmcpack(
+    driver         = 'legacy',
     det_format     = 'old',
     identifier     = 'vmc',
     path           = 'diamond/vmc_optical_up_g-vb-g-cb',
@@ -167,6 +170,7 @@ qmc_optical = generate_qmcpack(
 
 # up channel, band index 
 qmc_optical = generate_qmcpack(
+    driver         = 'legacy',
     det_format     = 'old',
     identifier     = 'vmc',
     path           = 'diamond/vmc_optical_up_band-index',
@@ -193,6 +197,7 @@ qmc_optical = generate_qmcpack(
 
 # up channel, energy index
 qmc_optical = generate_qmcpack(
+    driver         = 'legacy',
     det_format     = 'old',
     identifier     = 'vmc',
     path           = 'diamond/vmc_optical_up_energy-index',
@@ -219,6 +224,7 @@ qmc_optical = generate_qmcpack(
 
 # up channel, lowest index
 qmc_optical = generate_qmcpack(
+    driver         = 'legacy',
     skip_submit    = 0,
     det_format     = 'old',
     identifier     = 'vmc',
@@ -254,6 +260,7 @@ qmc_optical = generate_qmcpack(
 
 # triplet, energy index
 qmc_optical = generate_qmcpack(
+    driver         = 'legacy',
     det_format     = 'old',
     identifier     = 'vmc',
     path           = 'diamond/vmc_optical_triplet_energy-index',
@@ -280,6 +287,7 @@ qmc_optical = generate_qmcpack(
 
 # triplet, lowest
 qmc_optical = generate_qmcpack(
+    driver         = 'legacy',
     det_format     = 'old',
     identifier     = 'vmc',
     path           = 'diamond/vmc_optical_triplet_lowest',
@@ -314,6 +322,7 @@ qmc_optical = generate_qmcpack(
 
 # singlet, energy index
 qmc_optical = generate_qmcpack(
+    driver         = 'legacy',
     det_format     = 'old',
     identifier     = 'vmc',
     path           = 'diamond/vmc_optical_singlet_energy-index',
@@ -340,6 +349,7 @@ qmc_optical = generate_qmcpack(
 
 # singlet, lowest
 qmc_optical = generate_qmcpack(
+    driver         = 'legacy',
     det_format     = 'old',
     identifier     = 'vmc',
     path           = 'diamond/vmc_optical_singlet_lowest',

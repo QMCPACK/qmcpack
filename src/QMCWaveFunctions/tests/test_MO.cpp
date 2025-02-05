@@ -20,6 +20,7 @@
 #include "QMCWaveFunctions/LCAO/LCAOrbitalBuilder.h"
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 #include <ResourceCollection.h>
+#include "OhmmsData/Libxml2Doc.h"
 
 namespace qmcplusplus
 {
@@ -356,12 +357,10 @@ void test_EtOH_mw(bool transform)
   SPOSet::ValueVector d2psiref_0(n_mo);
   // Call makeMove to compute the distances
   //ParticleSet::SingleParticlePos newpos(0.0001, 0.0, 0.0);
-  //std::cout << elec.R[0] << std::endl;
   //elec.makeMove(0, newpos);
   //elec.update();
   elec.R[0] = {0.0001, 0.0, 0.0};
   elec.update();
-  std::cout << elec.R[0] << std::endl;
   // set up second walkers
   // auto elec2 = elec.makeClone();
   sposet->evaluateVGL(elec, 0, psiref_0, dpsiref_0, d2psiref_0);
@@ -447,6 +446,8 @@ void test_EtOH_mw(bool transform)
       // test values from OffloadMWVArray impl.
       CHECK(std::real(psi_v_list[iw].get()[iorb]) == Approx(psi_list[iw].get()[iorb]));
     }
+    CHECK(std::real(psi_v_list[0].get()[iorb]) == Approx(psiref_0[iorb]));
+    CHECK(std::real(psi_v_list[1].get()[iorb]) == Approx(psiref_1[iorb]));
     CHECK(std::real(psi_list[0].get()[iorb]) == Approx(psiref_0[iorb]));
     CHECK(std::real(psi_list[1].get()[iorb]) == Approx(psiref_1[iorb]));
     CHECK(std::real(d2psi_list[0].get()[iorb]) == Approx(d2psiref_0[iorb]));
@@ -545,15 +546,10 @@ void test_Ne(bool transform)
 
     sposet->evaluateValue(elec, 0, values);
 
-    std::cout << "values = " << values << std::endl;
-
     // Generated from gen_mo.py for position [1e-05, 0.0, 0.0]
     CHECK(values[0] == Approx(-16.11819042));
 
     sposet->evaluateVGL(elec, 0, values, dpsi, d2psi);
-    std::cout << "values = " << values << std::endl;
-    std::cout << "dpsi = " << dpsi << std::endl;
-    std::cout << "d2psi = " << d2psi << std::endl;
     // Generated from gen_mo.py for position [1e-05, 0.0, 0.0]
     CHECK(values[0] == Approx(-16.11819042));
     CHECK(dpsi[0][0] == Approx(0.1747261458));

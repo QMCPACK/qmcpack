@@ -38,7 +38,7 @@ TEST_CASE("SoA Cartesian Tensor", "[numerics]")
   double z = -0.5;
   ct.evaluateV(x, y, z);
 
-  double* XYZ = ct.cXYZ.data(0);
+  const double* XYZ = ct.getcXYZ().data(0);
 
   CHECK(XYZ[0] == Approx(0.282094791774));
   CHECK(XYZ[1] == Approx(0.635183265474));
@@ -135,11 +135,11 @@ TEST_CASE("SoA Cartesian Tensor evaluateVGL subset", "[numerics]")
   double z = -0.5;
   ct.evaluateVGL(x, y, z);
 
-  double* XYZ = ct.cXYZ.data(0);
-  double* gr0 = ct.cXYZ.data(1);
-  double* gr1 = ct.cXYZ.data(2);
-  double* gr2 = ct.cXYZ.data(3);
-  double* lap = ct.cXYZ.data(4);
+  const double* XYZ = ct.getcXYZ().data(0);
+  const double* gr0 = ct.getcXYZ().data(1);
+  const double* gr1 = ct.getcXYZ().data(2);
+  const double* gr2 = ct.getcXYZ().data(3);
+  const double* lap = ct.getcXYZ().data(4);
 
   CHECK(XYZ[0] == Approx(0.282094791774));
   CHECK(gr0[0] == Approx(0));
@@ -193,16 +193,16 @@ TEST_CASE("SoA Cartesian Tensor evaluateVGH subset", "[numerics]")
   double z = -0.5;
   ct.evaluateVGH(x, y, z);
 
-  double* XYZ = ct.cXYZ.data(0);
-  double* gr0 = ct.cXYZ.data(1);
-  double* gr1 = ct.cXYZ.data(2);
-  double* gr2 = ct.cXYZ.data(3);
-  double* h00 = ct.cXYZ.data(4);
-  double* h01 = ct.cXYZ.data(5);
-  double* h02 = ct.cXYZ.data(6);
-  double* h11 = ct.cXYZ.data(7);
-  double* h12 = ct.cXYZ.data(8);
-  double* h22 = ct.cXYZ.data(9);
+  const double* XYZ = ct.getcXYZ().data(0);
+  const double* gr0 = ct.getcXYZ().data(1);
+  const double* gr1 = ct.getcXYZ().data(2);
+  const double* gr2 = ct.getcXYZ().data(3);
+  const double* h00 = ct.getcXYZ().data(4);
+  const double* h01 = ct.getcXYZ().data(5);
+  const double* h02 = ct.getcXYZ().data(6);
+  const double* h11 = ct.getcXYZ().data(7);
+  const double* h12 = ct.getcXYZ().data(8);
+  const double* h22 = ct.getcXYZ().data(9);
 
   CHECK(XYZ[0] == Approx(0.282094791774));
   CHECK(gr0[0] == Approx(0));

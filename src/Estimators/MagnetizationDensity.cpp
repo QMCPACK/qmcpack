@@ -44,11 +44,12 @@ MagnetizationDensity::MagnetizationDensity(const MagnetizationDensity& magdens, 
 }
 void MagnetizationDensity::startBlock(int steps){};
 
-size_t MagnetizationDensity::getFullDataSize() { return npoints_ * DIM; }
+size_t MagnetizationDensity::getFullDataSize() const { return npoints_ * DIM; }
 
 void MagnetizationDensity::accumulate(const RefVector<MCPWalker>& walkers,
                                       const RefVector<ParticleSet>& psets,
                                       const RefVector<TrialWaveFunction>& wfns,
+                                      const RefVector<QMCHamiltonian>& hams,
                                       RandomBase<FullPrecReal>& rng)
 {
   for (int iw = 0; iw < walkers.size(); ++iw)

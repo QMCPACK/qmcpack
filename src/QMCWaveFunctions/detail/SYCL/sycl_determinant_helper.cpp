@@ -17,14 +17,14 @@ namespace qmcplusplus
 {
 template<typename T>
 sycl::event applyW_stageV_sycl(sycl::queue& aq,
-                               const std::vector<sycl::event>& dependencies,
                                const int* restrict delay_list_gpu,
                                const int delay_count,
                                T* restrict temp_gpu,
                                const int numorbs,
                                const int ndelay,
                                T* restrict V_gpu,
-                               const T* restrict Ainv)
+                               const T* restrict Ainv,
+                               const std::vector<sycl::event>& dependencies)
 {
   const size_t BS = 128;
   const size_t NB = (numorbs + BS - 1) / BS;
@@ -48,44 +48,44 @@ sycl::event applyW_stageV_sycl(sycl::queue& aq,
 }
 
 template sycl::event applyW_stageV_sycl(sycl::queue& aq,
-                                        const std::vector<sycl::event>& dependencies,
                                         const int* restrict delay_list_gpu,
                                         const int delay_count,
                                         float* restrict temp_gpu,
                                         const int numorbs,
                                         const int ndelay,
                                         float* restrict V_gpu,
-                                        const float* restrict Ainv);
+                                        const float* restrict Ainv,
+                                        const std::vector<sycl::event>& dependencies);
 
 template sycl::event applyW_stageV_sycl(sycl::queue& aq,
-                                        const std::vector<sycl::event>& dependencies,
                                         const int* restrict delay_list_gpu,
                                         const int delay_count,
                                         double* restrict temp_gpu,
                                         const int numorbs,
                                         const int ndelay,
                                         double* restrict V_gpu,
-                                        const double* restrict Ainv);
+                                        const double* restrict Ainv,
+                                        const std::vector<sycl::event>& dependencies);
 
 template sycl::event applyW_stageV_sycl(sycl::queue& aq,
-                                        const std::vector<sycl::event>& dependencies,
                                         const int* restrict delay_list_gpu,
                                         const int delay_count,
                                         std::complex<float>* restrict temp_gpu,
                                         const int numorbs,
                                         const int ndelay,
                                         std::complex<float>* restrict V_gpu,
-                                        const std::complex<float>* restrict Ainv);
+                                        const std::complex<float>* restrict Ainv,
+                                        const std::vector<sycl::event>& dependencies);
 
 template sycl::event applyW_stageV_sycl(sycl::queue& aq,
-                                        const std::vector<sycl::event>& dependencies,
                                         const int* restrict delay_list_gpu,
                                         const int delay_count,
                                         std::complex<double>* restrict temp_gpu,
                                         const int numorbs,
                                         const int ndelay,
                                         std::complex<double>* restrict V_gpu,
-                                        const std::complex<double>* restrict Ainv);
+                                        const std::complex<double>* restrict Ainv,
+                                        const std::vector<sycl::event>& dependencies);
 
 
 template<typename T, typename TMAT, typename INDEX>

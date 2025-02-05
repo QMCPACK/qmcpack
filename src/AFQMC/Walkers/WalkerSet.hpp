@@ -19,7 +19,7 @@ namespace qmcplusplus
 {
 namespace afqmc
 {
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
 using WalkerSet = SerialWalkerSet;
 #else
 using WalkerSet = SharedWalkerSet;

@@ -22,6 +22,7 @@
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "Message/MPIObjectBase.h"
+#include "libxml/xpath.h"
 
 #ifdef HAVE_LMY_ENGINE
 #include "formic/utils/matrix.h"
@@ -68,7 +69,7 @@ public:
     SUM_INDEX_SIZE
   };
 
-  using EffectiveWeight = QMCTraits::QTFull::RealType;
+  using EffectiveWeight  = QMCTraits::QTFull::RealType;
   using FullPrecRealType = QMCTraits::FullPrecRealType;
   ///Constructor.
   QMCCostFunctionBase(ParticleSet& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm);
@@ -85,7 +86,7 @@ public:
   ///Path and name of the HDF5 prefix where CI coeffs are saved
   std::string newh5;
   ///assign optimization parameter i
-  Return_t& Params(int i) override { return OptVariables[i]; }
+  Return_rt& Params(int i) override { return OptVariables[i]; }
   ///return optimization parameter i
   Return_t Params(int i) const override { return OptVariables[i]; }
   int getType(int i) const { return OptVariables.getType(i); }
@@ -138,6 +139,10 @@ public:
 
   virtual Return_rt fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left, Matrix<Return_rt>& Right) = 0;
 
+  virtual Return_rt fillHamVec(std::vector<Return_rt>& ham);
+  virtual void calcOvlParmVec(const std::vector<Return_rt>& parm,
+                              std::vector<Return_rt>& ovlParmVec);
+
 #ifdef HAVE_LMY_ENGINE
   Return_rt LMYEngineCost(const bool needDeriv, cqmc::engine::LMYEngine<Return_t>* EngineObj);
 #endif
@@ -147,6 +152,8 @@ public:
   //Legacy drivers currently use both checkConfigurations and engine_checkConfigurations with duplicated code
   //Providing an EngineHandle object to the batched drivers allows both cases to be handled in one function
   virtual void checkConfigurations(EngineHandle& handle) = 0;
+  //for SR method
+  virtual void checkConfigurationsSR(EngineHandle& handle);
 #ifdef HAVE_LMY_ENGINE
   virtual void engine_checkConfigurations(cqmc::engine::LMYEngine<Return_t>* EngineObj,
                                           DescentEngine& descentEngineObj,
@@ -221,7 +228,6 @@ protected:
   Return_rt curVar_abs;
 
   Return_rt w_beta;
-  std::string GEVType;
   Return_rt vmc_or_dmc;
   bool needGrads;
   ///whether we are targeting an excited state

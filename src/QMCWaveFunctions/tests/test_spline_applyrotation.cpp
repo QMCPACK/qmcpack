@@ -16,8 +16,8 @@
 #include "Particle/ParticleSet.h"
 #include "Particle/ParticleSetPool.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
-#include "QMCWaveFunctions/EinsplineSetBuilder.h"
-#include "QMCWaveFunctions/EinsplineSpinorSetBuilder.h"
+#include "BsplineFactory/EinsplineSetBuilder.h"
+#include "BsplineFactory/EinsplineSpinorSetBuilder.h"
 #include "QMCWaveFunctions/BsplineFactory/SplineC2C.h"
 #include "Utilities/for_testing/checkMatrix.hpp"
 
@@ -64,16 +64,17 @@ TEST_CASE("Spline applyRotation zero rotation", "[wavefunction]")
 
   // Load diamondC_1x1x1 wfn and explicitly construct a SplineC2C object with 7 orbitals
   // This results in padding of the spline coefs table and thus is a more stringent test.
-  const char* particles = R"(<tmp>
-<determinantset type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" gpu="no" precision="double" size="7"/>
-</tmp>)";
+  const char* particles = R"(
+<sposet_collection type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" gpu="no" precision="double">
+  <sposet name="updet" size="7"/>
+</sposet_collection>)";
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);
   REQUIRE(okay);
   xmlNodePtr root = doc.getRoot();
   xmlNodePtr ein1 = xmlFirstElementChild(root);
-  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, ein1);
+  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, root);
   auto spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo);
 
@@ -123,7 +124,8 @@ TEST_CASE("Spline applyRotation zero rotation", "[wavefunction]")
       for (int k = 0; k < orbitalsetsize; k++)
         psiM_rot_manual[i][j] += psiM_bare[i][k] * rot_mat[k][j];
     }
-  checkMatrix(psiM_rot_manual, psiM_rot);
+  auto check = checkMatrix(psiM_rot_manual, psiM_rot, true);
+  CHECKED_ELSE(check.result) { FAIL(check.result_message); }
 
   // Check grad
   SPOSet::GradMatrix dpsiM_rot_manual(elec_.R.size(), orbitalsetsize);
@@ -157,7 +159,8 @@ TEST_CASE("Spline applyRotation zero rotation", "[wavefunction]")
         d2psiM_rot_manual[i][j] += d2psiM_bare[i][k] * rot_mat[k][j];
     }
 
-  checkMatrix(d2psiM_rot_manual, d2psiM_rot);
+  check = checkMatrix(d2psiM_rot_manual, d2psiM_rot, true, 2e-4);
+  CHECKED_ELSE(check.result) { FAIL(check.result_message); }
 
 } // TEST_CASE
 
@@ -197,16 +200,17 @@ TEST_CASE("Spline applyRotation one rotation", "[wavefunction]")
 
   // Load diamondC_1x1x1 wfn and explicitly construct a SplineC2C object with 7 orbitals
   // This results in padding of the spline coefs table and thus is a more stringent test.
-  const char* particles = R"(<tmp>
-<determinantset type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" gpu="no" precision="double" size="7"/>
-</tmp>)";
+  const char* particles = R"(
+<sposet_collection type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" gpu="no" precision="double">
+  <sposet name="updet" size="7"/>
+</sposet_collection>)";
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);
   REQUIRE(okay);
   xmlNodePtr root = doc.getRoot();
   xmlNodePtr ein1 = xmlFirstElementChild(root);
-  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, ein1);
+  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, root);
   auto spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo);
 
@@ -329,7 +333,8 @@ TEST_CASE("Spline applyRotation one rotation", "[wavefunction]")
       for (int k = 0; k < orbitalsetsize; k++)
         psiM_rot_manual[i][j] += psiM_bare[i][k] * rot_mat[k][j];
     }
-  checkMatrix(psiM_rot_manual, psiM_rot);
+  auto check = checkMatrix(psiM_rot_manual, psiM_rot, true);
+  CHECKED_ELSE(check.result) { FAIL(check.result_message); }
 
   // Check grad
   SPOSet::GradMatrix dpsiM_rot_manual(elec_.R.size(), orbitalsetsize);
@@ -363,7 +368,8 @@ TEST_CASE("Spline applyRotation one rotation", "[wavefunction]")
         d2psiM_rot_manual[i][j] += d2psiM_bare[i][k] * rot_mat[k][j];
     }
 
-  checkMatrix(d2psiM_rot_manual, d2psiM_rot);
+  check = checkMatrix(d2psiM_rot_manual, d2psiM_rot, true, 2e-4);
+  CHECKED_ELSE(check.result) { FAIL(check.result_message); }
 
 } // TEST_CASE
 
@@ -403,16 +409,17 @@ TEST_CASE("Spline applyRotation two rotations", "[wavefunction]")
 
   // Load diamondC_1x1x1 wfn and explicitly construct a SplineC2C object with 7 orbitals
   // This results in padding of the spline coefs table and thus is a more stringent test.
-  const char* particles = R"(<tmp>
-<determinantset type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" gpu="no" precision="double" size="7"/>
-</tmp>)";
+  const char* particles = R"(
+<sposet_collection type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" gpu="no" precision="double">
+  <sposet name="updet" size="7"/>
+</sposet_collection>)";
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);
   REQUIRE(okay);
   xmlNodePtr root = doc.getRoot();
   xmlNodePtr ein1 = xmlFirstElementChild(root);
-  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, ein1);
+  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, root);
   auto spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo);
 
@@ -630,7 +637,8 @@ TEST_CASE("Spline applyRotation two rotations", "[wavefunction]")
       for (int k = 0; k < orbitalsetsize; k++)
         psiM_rot_manual[i][j] += psiM_bare[i][k] * rot_mat_tot[k][j];
     }
-  checkMatrix(psiM_rot_manual, psiM_rot);
+  auto check = checkMatrix(psiM_rot_manual, psiM_rot, true);
+  CHECKED_ELSE(check.result) { FAIL(check.result_message); }
 
   // Check grad
   SPOSet::GradMatrix dpsiM_rot_manual(elec_.R.size(), orbitalsetsize);
@@ -663,7 +671,8 @@ TEST_CASE("Spline applyRotation two rotations", "[wavefunction]")
       for (int k = 0; k < orbitalsetsize; k++)
         d2psiM_rot_manual[i][j] += d2psiM_bare[i][k] * rot_mat_tot[k][j];
     }
-  checkMatrix(d2psiM_rot_manual, d2psiM_rot);
+  check = checkMatrix(d2psiM_rot_manual, d2psiM_rot, true, 2e-4);
+  CHECKED_ELSE(check.result) { FAIL(check.result_message); }
 
 } // TEST_CASE
 
@@ -704,16 +713,17 @@ TEST_CASE("Spline applyRotation complex rotation", "[wavefunction]")
 
   // Load diamondC_1x1x1 wfn and explicitly construct a SplineC2C object with 7 orbitals
   // This results in padding of the spline coefs table and thus is a more stringent test.
-  const char* particles = R"(<tmp>
-<determinantset type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" gpu="no" precision="double" size="7"/>
-</tmp>)";
+  const char* particles = R"(
+<sposet_collection type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" gpu="no" precision="double">
+  <sposet name="updet" size="7"/>
+</sposet_collection>)";
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);
   REQUIRE(okay);
   xmlNodePtr root = doc.getRoot();
   xmlNodePtr ein1 = xmlFirstElementChild(root);
-  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, ein1);
+  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, root);
   auto spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo);
 
@@ -771,7 +781,8 @@ TEST_CASE("Spline applyRotation complex rotation", "[wavefunction]")
       for (int k = 0; k < orbitalsetsize; k++)
         psiM_rot_manual[i][j] += psiM_bare[i][k] * rot_mat[k][j];
     }
-  checkMatrix(psiM_rot_manual, psiM_rot);
+  auto check = checkMatrix(psiM_rot_manual, psiM_rot, true);
+  CHECKED_ELSE(check.result) { FAIL(check.result_message); }
 
   // Check grad
   SPOSet::GradMatrix dpsiM_rot_manual(elec_.R.size(), orbitalsetsize);
@@ -804,7 +815,8 @@ TEST_CASE("Spline applyRotation complex rotation", "[wavefunction]")
       for (int k = 0; k < orbitalsetsize; k++)
         d2psiM_rot_manual[i][j] += d2psiM_bare[i][k] * rot_mat[k][j];
     }
-  checkMatrix(d2psiM_rot_manual, d2psiM_rot);
+  check = checkMatrix(d2psiM_rot_manual, d2psiM_rot, true, 2e-4);
+  CHECKED_ELSE(check.result) { FAIL(check.result_message); }
 } // TEST_CASE
 #endif
 } // namespace qmcplusplus

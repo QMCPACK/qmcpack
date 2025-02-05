@@ -19,6 +19,9 @@
 
 namespace qmcplusplus
 {
+
+hdf_error_suppression hide_hdf_errors;
+
 hdf_archive::~hdf_archive()
 {
 #if defined(ENABLE_PHDF5)
@@ -145,7 +148,7 @@ bool hdf_archive::create(const std::filesystem::path& fname, unsigned flags)
   if (!(Mode[IS_PARALLEL] || Mode[IS_MASTER]))
     throw std::runtime_error("Only create file in parallel or by master but not every rank!");
   close();
-  file_id = H5Fcreate(fname.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, access_id);
+  file_id = H5Fcreate(fname.c_str(), flags, H5P_DEFAULT, access_id);
   return file_id != is_closed;
 }
 

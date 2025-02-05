@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2024 QMCPACK developers.
 //
 // File developed by: D. Das, University of Illinois at Urbana-Champaign
 //                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
@@ -11,6 +11,7 @@
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
 //                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+//                    Peter W. Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
 //                    Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp
 //
@@ -35,7 +36,7 @@ namespace qmcplusplus
  * RealTypehe template (P)articleSet(A)ttribute is a generic container  of position types.
  * RealTypehe template (G)radient(A)ttribute is a generic container of gradients types.
  * Data members for each walker
- * - ID : identity for a walker. default is 0.
+ * - walker_id_ : identity for a walker. default is 0.
  * - Age : generation after a move is accepted.
  * - Weight : weight to take the ensemble averages
  * - Multiplicity : multiplicity for branching. Probably can be removed.
@@ -81,31 +82,56 @@ public:
   using Buffer_t   = PooledData<RealType>;
   /** }@ */
 
-  ///id reserved for forward walking
-  long ID;
-  ///id reserved for forward walking
-  long ParentID;
-  ///DMCgeneration
-  int Generation;
-  ///Age of this walker age is incremented when a walker is not moved after a sweep
-  int Age;
-  ///Weight of the walker
-  FullPrecRealType Weight;
-  /** Number of copies for branching
+private:
+  /** walker identifier during a QMCSection
    *
-   * When Multiplicity = 0, this walker will be destroyed.
+   *  batched:
+   *  Only MCPopulation should set A living walker will have a WalkerID > 0
+   *  0 is the value of a default constructed walker.
+   *  Any negative value must have been set by an outside entity and indicates
+   *  an invalid walker ID.
    */
-  FullPrecRealType Multiplicity;
+  long walker_id_ = 0;
+  /** walker identifier that provided the initial state of walker
+   *
+   *  batched:
+   *  default constructed = 0;
+   *  parentID > 0 it is the walkerID in this section it was assigned from
+   *  parentID < 0 it is the  walkerID of a walker in a WalkerConfiguration
+   *  used to construct an initial population of walkers.
+   */
+  long parent_id_ = 0;
+
+public:
+  /** allegedly DMC generation
+   *  PD: I can find no evidence it is ever updated anywhere in the code.
+   */
+  int Generation = 0;
+  ///Age is incremented when a walker is not moved after a sweep
+  int Age = 0;
+  ///Weight of the walker
+  FullPrecRealType Weight = 1.0;
+  /** Number of replicas of this walker after branching
+   * When Multiplicity = 0, this walker will be destroyed.
+   * PD: It seems to me that this should be an integer.
+   */
+  FullPrecRealType Multiplicity = 1.0;
   /// mark true if this walker is being sent.
   bool SendInProgress;
-  /// if true, this walker is either copied or tranferred from another MPI rank.
+
+  /** if true, this walker is either a copy to lower multiplicity or tranferred from another MPI rank.
+   *  This walker will need distance table, jastrow factors, etc recomputed.
+   *  So this is really a variable tracking the "cache" of the ParticleSet, etc.
+   *  \todo this is a smell and would be nice to address in ParticleSet refactoring.
+   */
   bool wasTouched = true;
 
   /** The configuration vector (3N-dimensional vector to store
      the positions of all the particles for a single walker)*/
   ParticlePos R;
 
-  //Dynamical spin variable.
+  /** Spin configuration vector (size N)
+   *  i.e. Dynamical spin variable. */
   ParticleScalar spins;
 #if !defined(SOA_MEMORY_OPTIMIZED)
   /** \f$ \nabla_i d\log \Psi for the i-th particle */
@@ -137,27 +163,45 @@ public:
   void set_has_been_on_wire(bool tf) { has_been_on_wire_ = tf; }
 #endif
 
-  ///create a walker for n-particles
-  inline explicit Walker(int nptcl = 0)
-      : Properties(1, WP::NUMPROPERTIES, 1, WP::MAXPROPERTIES)
-  {
-    ID                 = 0;
-    ParentID           = 0;
-    Generation         = 0;
-    Age                = 0;
-    Weight             = 1.0;
-    Multiplicity       = 1.0;
+  long getWalkerID() const { return walker_id_; }
+  long getParentID() const { return parent_id_; }
+  /** set function for walker walker_id_
+   *  only necessary because as an optimization we reuse walkers.
+   */
+  void setWalkerID(long walker_id) { walker_id_ = walker_id; }
+  void setParentID(long parent_id) { parent_id_ = parent_id; }
 
+  /// create a walker for n-particles
+  inline explicit Walker(int nptcl = 0) : Properties(1, WP::NUMPROPERTIES, 1, WP::MAXPROPERTIES)
+  {
     if (nptcl > 0)
       resize(nptcl);
-    //static_cast<Matrix<FullPrecRealType>>(Properties) = 0.0;
   }
 
   Walker(const Walker& a) : Properties(1, WP::NUMPROPERTIES, 1, WP::MAXPROPERTIES) { makeCopy(a); }
+  Walker(const Walker& a, long walker_id, long parent_id) : Properties(1, WP::NUMPROPERTIES, 1, WP::MAXPROPERTIES)
+  {
+    makeCopy(a);
+    // makeCopy replaces walker_id_ and parent_id with a.walker_id_  ...
+    // so these can not be set in the contructor initializer list
+    walker_id_ = walker_id;
+    parent_id_ = parent_id;
+  }
+
+  /** create a valid walker for n-particles (batched version)
+   *  the goal is for this walker is valid after construction
+   *  without the need for more initialization functions to be called.
+   */
+  inline explicit Walker(long walker_id, long parent_id, int nptcl = 0)
+      : walker_id_(walker_id), parent_id_(parent_id), Properties(1, WP::NUMPROPERTIES, 1, WP::MAXPROPERTIES)
+  {
+    if (nptcl > 0)
+      resize(nptcl);
+  }
 
   inline int addPropertyHistory(int leng)
   {
-    int newL                            = PropertyHistory.size();
+    int newL = PropertyHistory.size();
     PropertyHistory.push_back(std::vector<RealType>(leng, 0.0));
     PHindex.push_back(0);
     return newL;
@@ -220,15 +264,27 @@ public:
     L.resize(nptcl);
   }
 
-  ///copy the content of a walker
+  /** assign the content of a walker
+   *  except:
+   *  SendInProgress
+   *  wasTouched
+   *  has_been_on_wire
+   *
+   *  Special Behavior:
+   *  R & spins
+   *  Properties.copy instead of operator= ConstantSizeMatrix has strict size semantics for assignment.
+   *                                       but they seem like they should be fine.
+   *  PropertyHistory
+   */
   inline void makeCopy(const Walker& a)
   {
-    ID                 = a.ID;
-    ParentID           = a.ParentID;
-    Generation         = a.Generation;
-    Age                = a.Age;
-    Weight             = a.Weight;
-    Multiplicity       = a.Multiplicity;
+    walker_id_   = a.walker_id_;
+    parent_id_   = a.parent_id_;
+    Generation   = a.Generation;
+    Age          = a.Age;
+    Weight       = a.Weight;
+    Multiplicity = a.Multiplicity;
+    // PD. \todo Why this strange idiom, something wrong with ParticleAttrib assignment operator
     if (R.size() != a.R.size())
       resize(a.R.size());
     R = a.R;
@@ -329,7 +385,7 @@ public:
 
   /** byte size for a packed message
    *
-   * ID, Age, Properties, R, Drift, DataSet is packed
+   * walker_id_, Age, Properties, R, Drift, DataSet is packed
    */
   inline size_t byteSize()
   {
@@ -348,8 +404,8 @@ public:
     // walker data must be placed at the beginning
     assert(DataSet.size() == 0);
     // scalars
-    DataSet.add(ID);
-    DataSet.add(ParentID);
+    DataSet.add(walker_id_);
+    DataSet.add(parent_id_);
     DataSet.add(Generation);
     DataSet.add(Age);
     // vectors
@@ -380,7 +436,7 @@ public:
   {
     assert(DataSet.size() != 0);
     DataSet.rewind();
-    DataSet >> ID >> ParentID >> Generation >> Age;
+    DataSet >> walker_id_ >> parent_id_ >> Generation >> Age;
     // vectors
     assert(R.size() != 0);
     DataSet.get(R.first_address(), R.last_address());
@@ -405,7 +461,7 @@ public:
   void updateBuffer()
   {
     DataSet.rewind();
-    DataSet << ID << ParentID << Generation << Age;
+    DataSet << walker_id_ << parent_id_ << Generation << Age;
     // vectors
     DataSet.put(R.first_address(), R.last_address());
     DataSet.put(spins.first_address(), spins.last_address());

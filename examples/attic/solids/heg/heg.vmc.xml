@@ -6,6 +6,7 @@
       Sample qmc runs for HEG. See Note 1 and 2 to modify the number of
       particles.
     </application>
+    <parameter name="driver_version">legacy</parameter>
   </project>
   <!-- set seed to -1 for random seems -->
   <random seed="11"/>

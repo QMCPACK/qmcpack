@@ -15,14 +15,14 @@ case "$1" in
 
     QMC_DATA_DIR=/scratch/ci/QMC_DATA_FULL
 
-    if [ -d ${GITHUB_WORKSPACE}/../qmcpack-build ]
+    if [ -d ${GITHUB_WORKSPACE}/../qmcpack-build-1 ]
     then
-      echo "Found existing out-of-source build directory ${GITHUB_WORKSPACE}/../qmcpack-build, removing"
-      rm -fr ${GITHUB_WORKSPACE}/../qmcpack-build
+      echo "Found existing out-of-source build directory ${GITHUB_WORKSPACE}/../qmcpack-build-1, removing"
+      rm -fr ${GITHUB_WORKSPACE}/../qmcpack-build-1
     fi
 
-    echo "Creating new out-of-source build directory ${GITHUB_WORKSPACE}/../qmcpack-build"
-    cd ${GITHUB_WORKSPACE}/.. && mkdir qmcpack-build && cd qmcpack-build
+    echo "Creating new out-of-source build directory ${GITHUB_WORKSPACE}/../qmcpack-build-1"
+    cd ${GITHUB_WORKSPACE}/.. && mkdir qmcpack-build-1 && cd qmcpack-build-1
     
     # Build variants
     # Real or Complex configuration
@@ -49,14 +49,17 @@ case "$1" in
     esac
 
     case "${GH_JOBNAME}" in
-      *"GCC11-NoMPI-MKL-"*)
+      *"GCC11-MPI-MKL-AFQMC"*)
         echo 'Configure for building with GCC and Intel MKL'
 
         source /opt/intel/oneapi/setvars.sh
 
         cmake -GNinja \
+              -DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \
+              -DCMAKE_CXX_COMPILER=/usr/lib64/openmpi/bin/mpicxx \
+              -DMPIEXEC_EXECUTABLE=/usr/lib64/openmpi/bin/mpirun \
               -DBLA_VENDOR=Intel10_64lp \
-              -DQMC_MPI=0 \
+              -DBUILD_AFQMC=ON \
               -DQMC_COMPLEX=$IS_COMPLEX \
               -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
               -DCMAKE_BUILD_TYPE=RelWithDebInfo \
@@ -68,14 +71,14 @@ case "$1" in
     ;;  
 
   build)
-    cd ${GITHUB_WORKSPACE}/../qmcpack-build
+    cd ${GITHUB_WORKSPACE}/../qmcpack-build-1
     ninja
     ;;
    
   test)
     source /opt/intel/oneapi/setvars.sh
     echo "Running deterministic tests"
-    cd ${GITHUB_WORKSPACE}/../qmcpack-build
+    cd ${GITHUB_WORKSPACE}/../qmcpack-build-1
     ctest --output-on-failure -L deterministic -j 32
     ;;
     

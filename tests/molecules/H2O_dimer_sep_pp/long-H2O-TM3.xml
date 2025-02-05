@@ -4,6 +4,7 @@
     <application name="qmcapp" role="molecu" class="serial" version="0.2">
       Simple Example of moleculear H2O
     </application>
+    <parameter name="driver_version">legacy</parameter>
   </project>
 
   <include href="H2O.ptcl.xml"/>

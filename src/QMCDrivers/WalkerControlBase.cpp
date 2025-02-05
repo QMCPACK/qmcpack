@@ -85,10 +85,10 @@ void WalkerControlBase::setWalkerID(MCWalkerConfiguration& walkers)
   start(); //do the normal start
   for (const auto& walker : walkers)
   {
-    if (walker->ID == 0)
+    if (walker->getWalkerID() == 0)
     {
-      walker->ID       = (++NumWalkersCreated) * num_contexts_ + MyContext;
-      walker->ParentID = walker->ID;
+      walker->setWalkerID((++NumWalkersCreated) * num_contexts_ + MyContext);
+      walker->setParentID(walker->getWalkerID());
     }
   }
 }
@@ -413,8 +413,8 @@ int WalkerControlBase::copyWalkers(MCWalkerConfiguration& W)
     else
       *awalker = *wRef;
     // not fully sure this is correct or even used
-    awalker->ID       = (i - size_good_w) * num_contexts_ + MyContext;
-    awalker->ParentID = wRef->ParentID;
+    awalker->setWalkerID((i - size_good_w) * num_contexts_ + MyContext);
+    awalker->setParentID(wRef->getParentID());
   }
 
   //clear the WalkerList to populate them with the good walkers

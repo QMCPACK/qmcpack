@@ -30,10 +30,14 @@ class RealSpacePositionsOMPTarget : public DynamicCoordinates
 {
 public:
   RealSpacePositionsOMPTarget()
-      : DynamicCoordinates(DynamicCoordinateKind::DC_POS_OFFLOAD), is_host_position_changed_(false)
+      : DynamicCoordinates(DynamicCoordinateKind::DC_POS_OFFLOAD),
+        copyActivePos_timer_(createGlobalTimer("PosOMPTarget::copyActivePos", timer_level_fine))
   {}
+
   RealSpacePositionsOMPTarget(const RealSpacePositionsOMPTarget& in)
-      : DynamicCoordinates(DynamicCoordinateKind::DC_POS_OFFLOAD), RSoA(in.RSoA)
+      : DynamicCoordinates(DynamicCoordinateKind::DC_POS_OFFLOAD),
+        RSoA(in.RSoA),
+        copyActivePos_timer_(in.copyActivePos_timer_)
   {
     RSoA_hostview.attachReference(RSoA.size(), RSoA.capacity(), RSoA.data());
     updateH2D();
@@ -88,10 +92,11 @@ public:
                         const std::vector<PosType>& new_positions) const override
   {
     assert(this == &coords_list.getLeader());
-    auto& coords_leader = coords_list.getCastedLeader<RealSpacePositionsOMPTarget>();
+    ScopedTimer copy_scope(copyActivePos_timer_);
 
-    const auto nw    = coords_list.size();
-    auto& mw_new_pos = coords_leader.mw_mem_handle_.getResource().mw_new_pos;
+    auto& coords_leader = coords_list.getCastedLeader<RealSpacePositionsOMPTarget>();
+    auto& mw_new_pos    = coords_leader.mw_mem_handle_.getResource().mw_new_pos;
+    const auto nw       = coords_list.size();
     mw_new_pos.resize(nw);
 
     for (int iw = 0; iw < nw; iw++)
@@ -235,10 +240,13 @@ private:
   PosVectorSoa RSoA_hostview;
 
   ///if true, host position has been changed while the device copy has not been updated.
-  bool is_host_position_changed_;
+  bool is_host_position_changed_ = false;
 
   ///if true, mw_new_pos has been updated with active positions.
   bool is_nw_new_pos_prepared;
+
+  /// timer for copyActivePos
+  NewTimer& copyActivePos_timer_;
 
   void updateH2D()
   {

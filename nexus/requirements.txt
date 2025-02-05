@@ -1,0 +1,13 @@
+# While Nexus does not have strict version requirements, this requirements file
+# corresponds to versions that have been tested and are known to work.
+# Last updated: 2024/12/16
+
+numpy==2.2.0
+scipy==1.14.1
+matplotlib==3.10.0
+h5py==3.12.1
+pydot==3.0.3
+spglib==2.4.0 # Some functionality is broken in 2.5.0
+pycifrw==4.4.6
+cif2cell==2.1.0
+seekpath==2.1.0

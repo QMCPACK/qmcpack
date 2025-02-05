@@ -37,6 +37,7 @@ class QMCDriverInterface;
 class WaveFunctionPool;
 class HamiltonianPool;
 class ProjectData;
+class EstimatorManagerNew;
 
 class QMCDriverFactory
 {
@@ -44,10 +45,11 @@ public:
   struct DriverAssemblyState
   {
     std::bitset<QMC_MODE_MAX> what_to_do;
-    bool append_run         = false;
-    bool enable_profiling   = false;
-    std::string traces_tag  = "none";
-    QMCRunType new_run_type = QMCRunType::DUMMY;
+    bool append_run            = false;
+    bool enable_profiling      = false;
+    std::string traces_tag     = "none";
+    std::string walkerlogs_tag = "none";
+    QMCRunType new_run_type    = QMCRunType::DUMMY;
   };
 
   /** Application uses this constructor
