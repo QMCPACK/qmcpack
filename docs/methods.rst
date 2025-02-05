@@ -137,7 +137,7 @@ identical runs with different numbers of crowds will not give numerically identi
 
 Crowds are owned by MPI processes and the number of crowds is specifed on a per MPI process basis. If a user requests 4 crowds
 and there are 16 walkers per MPI rank, then each crowd will have 4 walkers.
-For the purposes of pure CPU runs, it is generally sufficient to have the number of crowds matche the number of threads
+For the purposes of pure CPU runs, it is generally sufficient to have the number of crowds match the number of threads
 spawned by each MPI process and one walker per crowd. For large GPU runs, either for large electron
 count runs or for those with large numbers of walkers, using multiple (2,4,8) crowds per MPI process (and therefore per GPU) is
 generally optimal. The optimal settings depend on details of the hardware and the specifics of a given run, so benchmarking is
