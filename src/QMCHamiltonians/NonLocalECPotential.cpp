@@ -409,12 +409,14 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
     auto& ve_samples  = O_leader.mw_res_handle_.getResource().ve_samples;
     auto& vi_samples  = O_leader.mw_res_handle_.getResource().vi_samples;
     int num_electrons = pset_leader.getTotalNum();
+    const std::string ion_listener_operator_name{O_leader.getName() + "Ion"};
     for (int iw = 0; iw < nw; ++iw)
     {
       Vector<Real> ve_sample(ve_samples.begin(iw), num_electrons);
       Vector<Real> vi_sample(vi_samples.begin(iw), O_leader.NumIons);
       for (const ListenerVector<Real>& listener : listeners->electron_values)
         listener.report(iw, O_leader.getName(), ve_sample);
+
       for (const ListenerVector<Real>& listener : listeners->ion_values)
         listener.report(iw, O_leader.getName(), vi_sample);
     }

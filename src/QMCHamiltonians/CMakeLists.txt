@@ -23,6 +23,7 @@ set(HAMSRCS
     QMCHamiltonian.cpp
     Hdispatcher.cpp
     BareKineticEnergy.cpp
+    CoulombPotential.cpp
     CoulombPBCAA.cpp
     CoulombPBCAB.cpp
     EwaldRef.cpp
