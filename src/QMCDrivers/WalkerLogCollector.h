@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2024 QMCPACK developers.
+// Copyright (c) 2025 QMCPACK developers.
 //
 // File developed by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //
@@ -14,7 +14,7 @@
 #define QMCPLUSPLUS_WALKERLOGCOLLECTOR_H
 
 #include "WalkerLogBuffer.h"
-
+#include "Utilities/TimerManager.h"
 
 namespace qmcplusplus
 {
@@ -68,6 +68,25 @@ public:
   int energy_index;
 
 private:
+  static constexpr std::string_view my_name_{"WalkerLogCollector"};
+  enum Timer
+  {
+    START = 0,
+    COLLECT,
+    CHECK_BUFFERS
+  };
+  static constexpr std::array<std::string_view, 3> suffixes_{"start", "collect", "check_buffers"};
+  static TimerNameList_t<Timer> create_names(const std::string_view& my_name)
+  {
+    TimerNameList_t<Timer> timer_names;
+    using namespace std::string_literals;
+    std::string prefix{"WalkerLog:"s + std::string{my_name} + "::"s};
+    for (std::size_t i = 0; i < suffixes_.size(); ++i)
+      timer_names.push_back({static_cast<Timer>(i), prefix + std::string{suffixes_[i]}});
+    return timer_names;
+  }
+  TimerList_t walker_log_collector_timers_;
+
   // temporary (contiguous) storage for awful ParticleAttrib<> quantities
   /// tmp storage for walker positions
   Array<WLog::Real, 2> Rtmp;

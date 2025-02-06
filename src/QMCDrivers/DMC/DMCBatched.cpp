@@ -304,11 +304,8 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     crowd.accumulate(step_context.get_random_gen());
   }
 
-  {
-    ScopedTimer walker_log_timer(timers.walker_log_timer);
-    // collect walker logs
-    crowd.collectStepWalkerLog(sft.global_step);
-  }
+  // collect walker logs
+  crowd.collectStepWalkerLog(sft.global_step);
 
   { // T-moves
     ScopedTimer tmove_timer(dmc_timers.tmove_timer);
@@ -461,14 +458,10 @@ bool DMCBatched::run()
 
   //initialize WalkerLogManager and collectors
   WalkerLogManager wlog_manager(walker_logs_input, allow_walker_logs, get_root_name(), myComm);
-
-  {
-    ScopedTimer walker_log_timer(timers_.walker_log_timer);
-    for (auto& crowd : crowds_)
-      crowd->setWalkerLogCollector(wlog_manager.makeCollector());
-    //register walker log collectors into the manager
-    wlog_manager.startRun(Crowd::getWalkerLogCollectorRefs(crowds_));
-  }
+  for (auto& crowd : crowds_)
+    crowd->setWalkerLogCollector(wlog_manager.makeCollector());
+  //register walker log collectors into the manager
+  wlog_manager.startRun(Crowd::getWalkerLogCollectorRefs(crowds_));
 
   StateForThread dmc_state(qmcdriver_input_, *drift_modifier_, *branch_engine_, population_, steps_per_block_,
                            serializing_crowd_walkers_);
@@ -539,10 +532,7 @@ bool DMCBatched::run()
       if (qmcdriver_input_.get_measure_imbalance())
         measureImbalance("Block " + std::to_string(block));
       endBlock();
-      {
-        ScopedTimer walker_log_timer(timers_.walker_log_timer);
-        wlog_manager.writeBuffers();
-      }
+      wlog_manager.writeBuffers();
       recordBlock(block);
     }
 

@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2024 QMCPACK developers.
+// Copyright (c) 2025 QMCPACK developers.
 //
 // File developed by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //
@@ -15,15 +15,13 @@
 
 
 #include <Configuration.h>
+#include <unordered_set>
 #include "OhmmsPETE/OhmmsArray.h"
 #include "hdf/hdf_archive.h"
-
-#include <unordered_set>
-
+#include "Utilities/TimerManager.h"
 
 namespace qmcplusplus
 {
-
 
 /// Basic data types for walker log data
 struct WLog
@@ -119,6 +117,27 @@ public:
   hsize_t hdf_file_pointer;
 
 private:
+  static constexpr std::string_view my_name_{"WalkerLogBuffer"};
+  enum Timer
+  {
+    COLLECT = 0,
+    ADD_ROW,
+    WRITE,
+    RESET,
+    MAKE_NEW_ROW
+  };
+  static constexpr std::array<std::string_view, 5> suffixes_{"collect", "add_row", "write", "reset", "make_new_row"};
+  static TimerNameList_t<Timer> create_names(const std::string_view& my_name)
+  {
+    TimerNameList_t<Timer> timer_names;
+    using namespace std::string_literals;
+    std::string prefix{"WalkerLog:"s + std::string{my_name} + "::"s};
+    for (std::size_t i = 0; i < suffixes_.size(); ++i)
+      timer_names.push_back({static_cast<Timer>(i), prefix + std::string{suffixes_[i]}});
+    return timer_names;
+  }
+  TimerList_t walker_log_buffer_timers_;
+
   /// index of current quantity during WalkerLogCollector::collect()
   size_t quantity_index;
   /** buffer row location data for each walker quantity
@@ -131,14 +150,7 @@ private:
   Array<T, 2> buffer;
 
 public:
-  WalkerLogBuffer()
-  {
-    label            = "?";
-    first_collect    = true;
-    walker_data_size = 0;
-    quantity_index   = 0;
-    resetBuffer();
-  }
+  WalkerLogBuffer();
 
   /// current number of rows in the data buffer
   inline size_t nrows() { return buffer.size(0); }
@@ -163,33 +175,14 @@ public:
   inline bool sameAs(const WalkerLogBuffer<T>& ref) { return buffer.size(1) == ref.buffer.size(1); }
 
   /// collect data for a single walker quantity of scalar type into the current buffer row
-  inline void collect(const std::string& name, const T& value)
-  {
-    size_t irow = 0;
-    if (first_collect)
-    { // cache walker quantity info on first collect
-      WalkerQuantityInfo wqi_(name, 1, walker_data_size);
-      quantity_info.push_back(wqi_);
-      walker_data_size = wqi_.buffer_end;
-      resetRowSize(walker_data_size);
-    }
-    else
-    { // make a new buffer row if needed
-      if (quantity_index == 0)
-        makeNewRow();
-      irow = buffer.size(0) - 1;
-    }
-    // place the scalar walker quantity into the current buffer row
-    auto& wqi                      = quantity_info[quantity_index];
-    buffer(irow, wqi.buffer_start) = value;
-    quantity_index++;
-  }
-
+  void collect(const std::string& name, const T& value);
 
   /// collect data for a single walker quantity of array type into the current buffer row
   template<unsigned D>
   inline void collect(const std::string& name, Array<T, D> arr)
   {
+    ScopedTimer timer(walker_log_buffer_timers_[Timer::COLLECT]);
+
     size_t n1 = arr.size(0);
     size_t n2, n3, n4;
     n2 = n3 = n4 = 0;
@@ -228,6 +221,7 @@ public:
   template<unsigned D>
   inline void collect(const std::string& name, Array<std::complex<T>, D> arr)
   {
+    ScopedTimer timer(walker_log_buffer_timers_[Timer::COLLECT]);
     size_t n1 = arr.size(0);
     size_t n2, n3, n4;
     n2 = n3 = n4 = 0;
@@ -271,6 +265,7 @@ public:
   /// add a data row from another buffer to this one
   inline void addRow(WalkerLogBuffer<T> other, size_t i)
   {
+    ScopedTimer timer(walker_log_buffer_timers_[Timer::ADD_ROW]);
     auto& other_buffer = other.buffer;
     if (first_collect)
     {
@@ -293,6 +288,8 @@ public:
   /// write a summary of quantities in the buffer
   inline void writeSummary(std::string pad = "  ")
   {
+    ScopedTimer timer(walker_log_buffer_timers_[Timer::WRITE]);
+
     std::string pad2 = pad + "  ";
     std::string pad3 = pad2 + "  ";
     app_log() << std::endl;
@@ -341,6 +338,7 @@ public:
   /// write the buffer data into the HDF file
   inline void writeHDF(hdf_archive& f, hsize_t& file_pointer)
   {
+    ScopedTimer timer(walker_log_buffer_timers_[Timer::WRITE]);
     auto& top = label;
     hsize_t dims[2];
     dims[0] = buffer.size(0);
@@ -358,6 +356,7 @@ private:
   /// make space as quantities are added to the buffer for the first time
   inline void resetRowSize(size_t row_size)
   {
+    ScopedTimer timer(walker_log_buffer_timers_[Timer::RESET]);
     auto nrows = buffer.size(0);
     if (nrows == 0)
       nrows++;
@@ -378,6 +377,8 @@ private:
   /// allocate a full new row at the end of the buffer
   inline void makeNewRow()
   {
+    ScopedTimer timer(walker_log_buffer_timers_[Timer::MAKE_NEW_ROW]);
+
     size_t nrows    = buffer.size(0);
     size_t row_size = buffer.size(1);
     if (row_size == 0)

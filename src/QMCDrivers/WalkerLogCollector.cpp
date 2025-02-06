@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2024 QMCPACK developers.
+// Copyright (c) 2025 QMCPACK developers.
 //
 // File developed by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //
@@ -23,7 +23,7 @@ namespace qmcplusplus
 
 using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
 
-WalkerLogCollector::WalkerLogCollector(const WalkerLogState& state) : state_(state) { init(); }
+  WalkerLogCollector::WalkerLogCollector(const WalkerLogState& state) : walker_log_collector_timers_(getGlobalTimerManager(), create_names(my_name_), timer_level_medium), state_(state) { init(); }
 
 
 void WalkerLogCollector::init()
@@ -43,6 +43,7 @@ void WalkerLogCollector::init()
 
 void WalkerLogCollector::startBlock()
 {
+  ScopedTimer timer(walker_log_collector_timers_[Timer::START]);
   if (!state_.logs_active)
     return; // no-op for driver if logs are inactive
   if (state_.verbose)
@@ -57,6 +58,8 @@ void WalkerLogCollector::collect(const MCPWalker& walker,
                                  const QMCHamiltonian& ham,
                                  int step)
 {
+  ScopedTimer timer(walker_log_collector_timers_[Timer::COLLECT]);
+
   if (!state_.logs_active)
     return; // no-op for driver if logs are inactive
 
@@ -175,6 +178,8 @@ void WalkerLogCollector::resetBuffers()
 
 void WalkerLogCollector::checkBuffers()
 {
+  ScopedTimer timer(walker_log_collector_timers_[Timer::CHECK_BUFFERS]);
+
   if (state_.verbose)
     app_log() << "WalkerLogCollector::checkBuffers" << std::endl;
   size_t nrows       = walker_property_int_buffer.nrows();
