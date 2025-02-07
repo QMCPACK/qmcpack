@@ -28,8 +28,7 @@ TimerNameList_t<WalkerLogManager::Timer> WalkerLogManager::create_names(const st
 }
 
 WalkerLogManager::WalkerLogManager(WalkerLogInput& inp, bool allow_logs, std::string series_root, Communicate* comm)
-  :
-  walker_log_timers_(getGlobalTimerManager(), create_names(my_name_), timer_level_medium)
+    : walker_log_timers_(getGlobalTimerManager(), create_names(my_name_), timer_level_medium)
 {
   communicator            = comm;
   file_root               = series_root;

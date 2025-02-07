@@ -23,7 +23,11 @@ namespace qmcplusplus
 
 using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
 
-  WalkerLogCollector::WalkerLogCollector(const WalkerLogState& state) : walker_log_collector_timers_(getGlobalTimerManager(), create_names(my_name_), timer_level_medium), state_(state) { init(); }
+WalkerLogCollector::WalkerLogCollector(const WalkerLogState& state)
+    : walker_log_collector_timers_(getGlobalTimerManager(), create_names(my_name_), timer_level_medium), state_(state)
+{
+  init();
+}
 
 
 void WalkerLogCollector::init()
