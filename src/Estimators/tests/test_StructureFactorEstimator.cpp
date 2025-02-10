@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2024 QMCPACK developers.
+// Copyright (c) 2025 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //
@@ -10,8 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "catch.hpp"
-
-#include "StructureFactorEstimator.h"
+#include "test_StructureFactorEstimator.h"
 #include "StructureFactorInput.h"
 #include "ValidStructureFactorInput.h"
 #include "Particle/tests/MinimalParticlePool.h"
@@ -28,30 +27,8 @@ namespace qmcplusplus
 
 constexpr bool generate_test_data = false;
 
-namespace testing
-{
-class StructureFactorAccess
-{
-  using Real = StructureFactorEstimator::Real;
-
-public:
-  const Vector<Real>& getSKElecElec(const StructureFactorEstimator& sfe) const { return sfe.getSKElecElec(); }
-  const Vector<std::complex<Real>>& getRhoKElec(const StructureFactorEstimator& sfe) const { return sfe.getRhoKElec(); }
-};
-} // namespace testing
-
-/// Provides the canned test data for testing
-class StructureFactorTests
-{
-  using Real  = StructureFactorEstimator::Real;
-  using Data  = Vector<Real>;
-  using DataC = Vector<std::complex<Real>>;
-
-public:
-  static Data getSKElecElec();
-  static DataC getRhoKElec();
-};
-
+using Value = QMCTraits::ValueType;
+  
 TEST_CASE("StructureFactorEstimator::StructureFactorEstimator", "[estimators]")
 {
   using Input = qmcplusplus::testing::ValidStructureFactorInput;
@@ -173,6 +150,7 @@ TEST_CASE("StructureFactorEstimator::Accumulate", "[estimators]")
   testing::RandomForTest<QMCT::RealType> rft;
   rft.fillVecRng(rng_reals);
   auto it_rng_reals = rng_reals.begin();
+
   for (ParticleSet& pset : psets)
   {
     pset.R[0] = ParticleSet::PosType(*it_rng_reals++, *it_rng_reals++, *it_rng_reals++);
@@ -197,8 +175,8 @@ TEST_CASE("StructureFactorEstimator::Accumulate", "[estimators]")
     std::cout << NativePrint(rhok_e) << '\n';
     FAIL_CHECK("Test always fails when generating new test reference data.");
   }
-  auto sfk_e_e_expected = StructureFactorTests::getSKElecElec();
-  auto rhok_e_expected  = StructureFactorTests::getRhoKElec();
+  auto sfk_e_e_expected = StructureFactorTests::getSKElecElec<Value>();
+  auto rhok_e_expected  = StructureFactorTests::getRhoKElec<Value>();
 
   {
     INFO("In sfk_e_e test");
@@ -212,7 +190,8 @@ TEST_CASE("StructureFactorEstimator::Accumulate", "[estimators]")
   }
 }
 
-typename StructureFactorTests::Data StructureFactorTests::getSKElecElec()
+template<>
+typename StructureFactorTests::Data StructureFactorTests::getSKElecElec<StructureFactorEstimator::Real>()
 {
   Data sfk_e_e_expected = {
       19.73622409, 19.85599833, 13.72912952, 18.7567436,  18.7567436,  13.72912952,  19.85599833,  19.73622409,
@@ -295,7 +274,8 @@ typename StructureFactorTests::Data StructureFactorTests::getSKElecElec()
   return sfk_e_e_expected;
 }
 
-typename StructureFactorTests::DataC StructureFactorTests::getRhoKElec()
+template<>
+typename StructureFactorTests::DataC StructureFactorTests::getRhoKElec<StructureFactorEstimator::Real>()
 {
   DataC rhok_e_expected = {
       {0.592406798, -1.491295186},    {3.584709528, -1.712368125},     {0.399798283, -3.005949682},
@@ -504,5 +484,7 @@ typename StructureFactorTests::DataC StructureFactorTests::getRhoKElec()
   };
   return rhok_e_expected;
 }
+
+
 
 } // namespace qmcplusplus
