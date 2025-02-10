@@ -28,7 +28,7 @@ namespace qmcplusplus
 constexpr bool generate_test_data = false;
 
 using Value = QMCTraits::ValueType;
-  
+
 TEST_CASE("StructureFactorEstimator::StructureFactorEstimator", "[estimators]")
 {
   using Input = qmcplusplus::testing::ValidStructureFactorInput;
@@ -169,7 +169,7 @@ TEST_CASE("StructureFactorEstimator::Accumulate", "[estimators]")
 
   if constexpr (generate_test_data)
   {
-    std::cout << "sfk_e_e_exected = ";
+    std::cout << "sfk_e_e_expected = ";
     std::cout << NativePrint(sfk_e_e) << '\n';
     std::cout << "rhok_e_expected = ";
     std::cout << NativePrint(rhok_e) << '\n';
@@ -178,14 +178,17 @@ TEST_CASE("StructureFactorEstimator::Accumulate", "[estimators]")
   auto sfk_e_e_expected = StructureFactorTests::getSKElecElec<Value>();
   auto rhok_e_expected  = StructureFactorTests::getRhoKElec<Value>();
 
+  double tolerance = 1e-8;
+  if constexpr (std::is_same_v<RealAlias<QMCTraits::ValueType>, float>)
+    tolerance = 1e-6;
   {
     INFO("In sfk_e_e test");
-    auto check = checkVector(sfk_e_e_expected, sfk_e_e, true, 2e-6);
+    auto check = checkVector(sfk_e_e_expected, sfk_e_e, true, tolerance);
     CHECKED_ELSE(check.result) { FAIL(check.result_message); }
   }
   {
     INFO("In rhok_e test");
-    auto check = checkVector(rhok_e_expected, rhok_e, true, 2e-6);
+    auto check = checkVector(rhok_e_expected, rhok_e, true, tolerance);
     CHECKED_ELSE(check.result) { FAIL(check.result_message); }
   }
 }

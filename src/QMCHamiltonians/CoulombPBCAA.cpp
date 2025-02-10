@@ -329,7 +329,7 @@ void CoulombPBCAA::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
 
     double tolerance = TraceManager::trace_tol;
     // In the case of VALUE complex I find this to be as bad as 1e-6
-    if constexpr(IsComplex_t<QMCTraits::ValueType>::value)
+    if constexpr(std::is_same_v<RealAlias<QMCTraits::ValueType>, float>)
       tolerance = 1e-6;
     
     if (std::abs(Vsum - Vnow) > tolerance)
