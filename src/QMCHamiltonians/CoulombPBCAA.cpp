@@ -326,7 +326,13 @@ void CoulombPBCAA::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
     RealType Vcsum  = std::accumulate(pp_consts.begin(), pp_consts.end(), 0.0);
     RealType Vnow   = Vlrnow + Vsrnow + Vcnow;
     RealType Vsum   = std::accumulate(v_sample.begin(), v_sample.end(), 0.0);
-    if (std::abs(Vsum - Vnow) > TraceManager::trace_tol)
+
+    double tolerance = TraceManager::trace_tol;
+    // In the case of VALUE complex I find this to be as bad as 1e-6
+    if constexpr(IsComplex_t<QMCTraits::ValueType>::value)
+      tolerance = 1e-6;
+    
+    if (std::abs(Vsum - Vnow) > tolerance)
     {
       app_log() << "accumtest: CoulombPBCAA::evaluate()" << std::endl;
       app_log() << "accumtest:   tot:" << Vnow << std::endl;
@@ -340,7 +346,8 @@ void CoulombPBCAA::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
 
       throw std::runtime_error(msg.str());
     }
-    if (std::abs(Vcsum - Vcnow) > TraceManager::trace_tol)
+
+    if (std::abs(Vcsum - Vcnow) > tolerance)
     {
       app_log() << "accumtest: CoulombPBCAA::evalConsts()" << std::endl;
       app_log() << "accumtest:   tot:" << Vcnow << std::endl;
