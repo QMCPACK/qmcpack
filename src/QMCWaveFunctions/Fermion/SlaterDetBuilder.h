@@ -28,7 +28,9 @@ class BackflowTransformation;
 class DiracDeterminantBase;
 class MultiSlaterDetTableMethod;
 struct CSFData;
-class SPOSet;
+template<typename T>
+class SPOSetT;
+using SPOSet = SPOSetT<QMCTraits::QTBase::ValueType>;
 class SPOSetBuilder;
 class SPOSetBuilderFactory;
 struct ci_configuration;
