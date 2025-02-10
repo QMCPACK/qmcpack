@@ -190,136 +190,32 @@ public:
   void collect(const std::string& name, Array<std::complex<T>, D> arr);
 
   /// add a data row from another buffer to this one
-  inline void addRow(WalkerLogBuffer<T> other, size_t i)
-  {
-    ScopedTimer timer(walker_log_buffer_timers_[Timer::ADD_ROW]);
-    auto& other_buffer = other.buffer;
-    if (first_collect)
-    {
-      resetRowSize(other_buffer.size(1));
-      quantity_info = other.quantity_info;
-      first_collect = false;
-    }
-    else
-    {
-      if (buffer.size(1) != other_buffer.size(1))
-        throw std::runtime_error("WalkerLogBuffer::add_row  Row sizes must match.");
-      makeNewRow();
-    }
-    size_t ib = buffer.size(0) - 1;
-    for (size_t j = 0; j < buffer.size(1); ++j)
-      buffer(ib, j) = other_buffer(i, j);
-  }
-
+  void addRow(WalkerLogBuffer<T> other, size_t i);
 
   /// write a summary of quantities in the buffer
-  inline void writeSummary(std::string pad = "  ")
-  {
-    ScopedTimer timer(walker_log_buffer_timers_[Timer::WRITE]);
-
-    std::string pad2 = pad + "  ";
-    std::string pad3 = pad2 + "  ";
-    app_log() << std::endl;
-    app_log() << pad << "WalkerLogBuffer(" << label << ")" << std::endl;
-    app_log() << pad2 << "nrows       = " << buffer.size(0) << std::endl;
-    app_log() << pad2 << "row_size    = " << buffer.size(1) << std::endl;
-    for (size_t n = 0; n < quantity_info.size(); ++n)
-    {
-      auto& wqi = quantity_info[n];
-      app_log() << pad2 << "quantity " << n << ":  " << wqi.dimension << "  " << wqi.size << "  " << wqi.unit_size
-                << "  " << wqi.buffer_start << "  " << wqi.buffer_end << " (" << wqi.name << ")" << std::endl;
-    }
-    app_log() << pad << "end WalkerLogBuffer(" << label << ")" << std::endl;
-  }
+  void writeSummary(std::string pad = "  ");
 
   /// write the data_layout for all walker quantities in the HDF file
-  inline void registerHDFData(hdf_archive& f)
-  {
-    auto& top = label;
-    f.push(top);
-    f.push("data_layout");
-    for (auto& wqi : quantity_info)
-    {
-      f.push(wqi.name);
-      f.write(wqi.dimension, "dimension");
-      f.write(wqi.shape, "shape");
-      f.write(wqi.size, "size");
-      f.write(wqi.unit_size, "unit_size");
-      f.write(wqi.buffer_start, "index_start");
-      f.write(wqi.buffer_end, "index_end");
-      f.pop();
-    }
-    f.pop();
-    f.pop();
-    if (!f.open_groups())
-      throw std::runtime_error("WalkerLogBuffer(" + label +
-                               ")::register_hdf_data() some hdf groups are still open at the end of registration");
-    hdf_file_pointer = 0;
-  }
-
+  void registerHDFData(hdf_archive& f);
 
   /// write the buffer data into the HDF file
-  inline void writeHDF(hdf_archive& f) { writeHDF(f, hdf_file_pointer); }
-
+  void writeHDF(hdf_archive& f);
 
   /// write the buffer data into the HDF file
-  inline void writeHDF(hdf_archive& f, hsize_t& file_pointer)
-  {
-    ScopedTimer timer(walker_log_buffer_timers_[Timer::WRITE]);
-    auto& top = label;
-    hsize_t dims[2];
-    dims[0] = buffer.size(0);
-    dims[1] = buffer.size(1);
-    if (dims[0] > 0)
-    {
-      f.push(top);
-      h5d_append(f.top(), "data", file_pointer, buffer.dim(), dims, buffer.data());
-      f.pop();
-    }
-    f.flush();
-  }
+  void writeHDF(hdf_archive& f, hsize_t& file_pointer);
 
 private:
   /// make space as quantities are added to the buffer for the first time
-  inline void resetRowSize(size_t row_size)
-  {
-    ScopedTimer timer(walker_log_buffer_timers_[Timer::RESET]);
-    auto nrows = buffer.size(0);
-    if (nrows == 0)
-      nrows++;
-    if (nrows != 1)
-      throw std::runtime_error("WalkerLogBuffer::reset_rowsize  row_size (number of columns) should only be changed "
-                               "during growth of the first row.");
-    auto buffer_old(buffer);
-    buffer.resize(nrows, row_size);
-    std::copy_n(buffer_old.data(), buffer_old.size(), buffer.data());
-    if (buffer.size(0) != 1)
-      throw std::runtime_error(
-          "WalkerLogBuffer::reset_rowsize  buffer should contain only a single row upon completion.");
-    if (buffer.size(1) != row_size)
-      throw std::runtime_error("WalkerLogBuffer::reset_rowsize  length of buffer row should match the requested "
-                               "row_size following the reset/udpate.");
-  }
+  void resetRowSize(size_t row_size);
 
   /// allocate a full new row at the end of the buffer
-  inline void makeNewRow()
-  {
-    ScopedTimer timer(walker_log_buffer_timers_[Timer::MAKE_NEW_ROW]);
-
-    size_t nrows    = buffer.size(0);
-    size_t row_size = buffer.size(1);
-    if (row_size == 0)
-      throw std::runtime_error("WalkerLogBuffer::makeNewRow  Cannot make a new row of size zero.");
-    nrows++;
-    // resizing buffer(type Array) doesn't preserve data. Thus keep old data and copy over
-    auto buffer_old(buffer);
-    buffer.resize(nrows, row_size);
-    std::copy_n(buffer_old.data(), buffer_old.size(), buffer.data());
-  }
+  void makeNewRow();
 };
 
+// explicit instantiations
 extern template class WalkerLogBuffer<WLog::Int>;
 extern template class WalkerLogBuffer<WLog::Real>;
+// and for templated member functions.
 extern template void WalkerLogBuffer<WLog::Int>::collect<2>(const std::string& name, Array<WLog::Int, 2>);
 extern template void WalkerLogBuffer<WLog::Real>::collect<2>(const std::string& name, Array<WLog::Real, 2>);
 extern template void WalkerLogBuffer<WLog::Real>::collect<1>(const std::string& name, Array<WLog::Real, 1>);
