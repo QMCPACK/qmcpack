@@ -177,90 +177,17 @@ public:
   /// collect data for a single walker quantity of scalar type into the current buffer row
   void collect(const std::string& name, const T& value);
 
-  /// collect data for a single walker quantity of array type into the current buffer row
+  /** collect data for a single walker quantity of array type into the current buffer row
+   *  Only D = 1,2 are actually used by any dependent code so only those D's are explicit instantiated
+   */
   template<unsigned D>
-  inline void collect(const std::string& name, Array<T, D> arr)
-  {
-    ScopedTimer timer(walker_log_buffer_timers_[Timer::COLLECT]);
+  void collect(const std::string& name, Array<T, D> arr);
 
-    size_t n1 = arr.size(0);
-    size_t n2, n3, n4;
-    n2 = n3 = n4 = 0;
-    if (D > 4)
-      throw std::runtime_error("WalkerLogBuffer::collect  Only arrays up to dimension 4 are currently supported.");
-    if (D > 1)
-      n2 = arr.size(1);
-    if (D > 2)
-      n3 = arr.size(2);
-    if (D > 3)
-      n4 = arr.size(3);
-    size_t irow = 0;
-    if (first_collect)
-    { // cache walker quantity info on first collect
-      WalkerQuantityInfo wqi_(name, 1, walker_data_size, n1, n2, n3, n4);
-      quantity_info.push_back(wqi_);
-      walker_data_size = wqi_.buffer_end;
-      resetRowSize(walker_data_size);
-    }
-    else
-    { // make a new buffer row if needed
-      if (quantity_index == 0)
-        makeNewRow();
-      irow = buffer.size(0) - 1;
-    }
-    // place the array walker quantity into the current buffer row
-    auto& wqi   = quantity_info[quantity_index];
-    auto& arr1d = arr.storage();
-    for (size_t n = 0; n < arr1d.size(); ++n)
-      buffer(irow, wqi.buffer_start + n) = arr1d[n];
-    quantity_index++;
-  }
-
-
-  /// collect data for a single walker quantity of complex array type into the current buffer row
+  /** collect data for a single walker quantity of complex array type into the current buffer row
+   *  Only D = 1,2 are actually used by any dependent code so only those D's are explicit instantiated
+   */
   template<unsigned D>
-  inline void collect(const std::string& name, Array<std::complex<T>, D> arr)
-  {
-    ScopedTimer timer(walker_log_buffer_timers_[Timer::COLLECT]);
-    size_t n1 = arr.size(0);
-    size_t n2, n3, n4;
-    n2 = n3 = n4 = 0;
-    if (D > 4)
-      throw std::runtime_error("WalkerLogBuffer::collect  Only arrays up to dimension 4 are currently supported.");
-    if (D > 1)
-      n2 = arr.size(1);
-    if (D > 2)
-      n3 = arr.size(2);
-    if (D > 3)
-      n4 = arr.size(3);
-    size_t irow = 0;
-    if (first_collect)
-    { // cache walker quantity info on first collect
-      WalkerQuantityInfo wqi_(name, 2, walker_data_size, n1, n2, n3, n4);
-      quantity_info.push_back(wqi_);
-      walker_data_size = wqi_.buffer_end;
-      resetRowSize(walker_data_size);
-    }
-    else
-    { // make a new buffer row if needed
-      if (quantity_index == 0)
-        makeNewRow();
-      irow = buffer.size(0) - 1;
-    }
-    // place the complex array walker quantity into the current buffer row
-    auto& wqi   = quantity_info[quantity_index];
-    auto& arr1d = arr.storage();
-    size_t n    = 0;
-    for (size_t i = 0; i < arr1d.size(); ++i)
-    {
-      buffer(irow, wqi.buffer_start + n) = std::real(arr1d[i]);
-      ++n;
-      buffer(irow, wqi.buffer_start + n) = std::imag(arr1d[i]);
-      ++n;
-    }
-    quantity_index++;
-  }
-
+  void collect(const std::string& name, Array<std::complex<T>, D> arr);
 
   /// add a data row from another buffer to this one
   inline void addRow(WalkerLogBuffer<T> other, size_t i)
@@ -393,6 +320,13 @@ private:
 
 extern template class WalkerLogBuffer<WLog::Int>;
 extern template class WalkerLogBuffer<WLog::Real>;
+extern template void WalkerLogBuffer<WLog::Int>::collect<2>(const std::string& name, Array<WLog::Int, 2>);
+extern template void WalkerLogBuffer<WLog::Real>::collect<2>(const std::string& name, Array<WLog::Real, 2>);
+extern template void WalkerLogBuffer<WLog::Real>::collect<1>(const std::string& name, Array<WLog::Real, 1>);
+extern template void WalkerLogBuffer<WLog::Real>::collect<2>(const std::string& name,
+                                                             Array<std::complex<WLog::Real>, 2>);
+extern template void WalkerLogBuffer<WLog::Real>::collect<1>(const std::string& name,
+                                                             Array<std::complex<WLog::Real>, 1>);
 
 } // namespace qmcplusplus
 
