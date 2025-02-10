@@ -141,8 +141,8 @@ void SplineC2C<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_co
         // cur_elem points to the real componend of the coefficient.
         // Imag component is adjacent in memory.
         const auto cur_elem = Nsplines * i + 2 * j;
-        ST newval_r{0.};
-        ST newval_i{0.};
+        RealType newval_r{0.};
+        RealType newval_i{0.};
         for (IndexType k = 0; k < OrbitalSetSize; k++)
         {
           const auto index = Nsplines * i + 2 * k;
