@@ -148,8 +148,8 @@ void SplineC2C<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_co
           const auto index = Nsplines * i + 2 * k;
           ST zr            = (*coef_copy_)[index];
           ST zi            = (*coef_copy_)[index + 1];
-          ST wr            = rot_mat[k][j].real();
-          ST wi            = rot_mat[k][j].imag();
+          auto wr          = rot_mat[k][j].real();
+          auto wi          = rot_mat[k][j].imag();
           newval_r += zr * wr - zi * wi;
           newval_i += zr * wi + zi * wr;
         }
