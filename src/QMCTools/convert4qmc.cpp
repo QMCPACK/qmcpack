@@ -40,7 +40,7 @@ int main(int argc, char** argv)
     std::cout << "[-nojastrow -hdf5 -prefix title -addCusp -production -NbImages NimageX NimageY NimageZ]" << std::endl;
     std::cout << "[-psi_tag psi0 -ion_tag ion0 -gridtype log|log0|linear -first ri -last rf]" << std::endl;
     std::cout << "[-size npts -multidet multidet.h5 -ci file.out -threshold cimin -TargetState state_number "
-                 "-NaturalOrbitals NumToRead -optDetCoeffs]"
+                 "-NaturalOrbitals NumToRead -optDetCoeffs -legacy]"
               << std::endl;
     std::cout << "Defaults : -gridtype log -first 1e-6 -last 100 -size 1001 -ci required -threshold 0.01 -TargetState "
                  "0 -prefix sample"
@@ -75,6 +75,7 @@ int main(int argc, char** argv)
       std::string prefix;
 
       int TargetState = 0;
+      bool legacy     = false;
       bool addJastrow = true;
       bool usehdf5    = false;
       bool h5         = false;
@@ -121,6 +122,10 @@ int main(int argc, char** argv)
         else if (a == "-hdf5")
         {
           usehdf5 = true;
+        }
+        else if (a == "-legacy")
+        {
+          legacy = true;
         }
         else if (a == "-psi_tag")
         {
@@ -260,6 +265,7 @@ int main(int argc, char** argv)
       parser->debug       = debug;
       parser->DoCusp      = addCusp;
       parser->UseHDF5     = usehdf5;
+      parser->legacy      = legacy;
       parser->singledetH5 = h5;
       if (h5)
       {
@@ -305,8 +311,16 @@ int main(int argc, char** argv)
           parser->dumpPBC(psi_tag, ion_tag);
         }
         else
-          parser->dump(psi_tag, ion_tag);
-        parser->dumpStdInputProd(psi_tag, ion_tag);
+	{
+	  if (parser->legacy)
+             parser->dump_Legacy(psi_tag, ion_tag);
+	  else
+             parser->dump(psi_tag, ion_tag);
+	}
+	if (parser->legacy)
+           parser->dumpStdInputProdLegacy(psi_tag, ion_tag);
+	else
+           parser->dumpStdInputProd(psi_tag, ion_tag);
       }
       else
       {
