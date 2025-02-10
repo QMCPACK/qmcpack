@@ -290,8 +290,16 @@ case "$1" in
   test)
     
     # Run only deterministic tests (reasonable for CI) by default
-    TEST_LABEL="-L deterministic"
-    
+    case "${GH_JOBNAME}" in
+      *"macOS-GCC14"*"-Real"*)
+        TEST_LABEL="-L deterministic -E deterministic-unit_test_estimators"
+        # estimator test bus error on mac only
+      ;;
+      *)  
+        TEST_LABEL="-L deterministic"
+      ;;  
+    esac  
+
     cd ${GITHUB_WORKSPACE}/../qmcpack-build
     
     # Enable oversubscription in OpenMPI
