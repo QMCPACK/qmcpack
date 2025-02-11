@@ -124,7 +124,6 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces, bo
     {
       app_log() << "  Check passed." << std::endl;
     }
-
   }
   prefix_ = "F_AA";
   app_log() << "  Maximum K shell " << AA->MaxKshell << std::endl;
@@ -324,22 +323,43 @@ void CoulombPBCAA::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
     RealType Vlrnow = cpbcaa.evalLR(pset);
     RealType Vsrnow = cpbcaa.evalSR(pset);
     RealType Vcnow  = cpbcaa.myConst;
-    RealType Vcsum = std::accumulate(pp_consts.begin(), pp_consts.end(), 0.0);
+    RealType Vcsum  = std::accumulate(pp_consts.begin(), pp_consts.end(), 0.0);
     RealType Vnow   = Vlrnow + Vsrnow + Vcnow;
     RealType Vsum   = std::accumulate(v_sample.begin(), v_sample.end(), 0.0);
-    if (std::abs(Vsum - Vnow) > TraceManager::trace_tol)
+
+    double tolerance = TraceManager::trace_tol;
+    // In the case of VALUE complex I find this to be as bad as 1e-6
+    if constexpr(std::is_same_v<RealAlias<QMCTraits::ValueType>, float>)
+      tolerance = 1e-6;
+    
+    if (std::abs(Vsum - Vnow) > tolerance)
     {
       app_log() << "accumtest: CoulombPBCAA::evaluate()" << std::endl;
       app_log() << "accumtest:   tot:" << Vnow << std::endl;
       app_log() << "accumtest:   sum:" << Vsum << std::endl;
-      throw std::runtime_error("Trace check failed");
+      std::ostringstream msg;
+      msg << std::setprecision(14);
+      msg << "Trace check failed\n"
+          << "accumtest: CoulombPBCAA::evaluate()\n"
+          << "accumtest:   tot:" << Vnow << '\n'
+          << "accumtest:   sum:" << Vsum << '\n';
+
+      throw std::runtime_error(msg.str());
     }
-    if (std::abs(Vcsum - Vcnow) > TraceManager::trace_tol)
+
+    if (std::abs(Vcsum - Vcnow) > tolerance)
     {
       app_log() << "accumtest: CoulombPBCAA::evalConsts()" << std::endl;
       app_log() << "accumtest:   tot:" << Vcnow << std::endl;
       app_log() << "accumtest:   sum:" << Vcsum << std::endl;
-      throw std::runtime_error("Trace check failed");
+      std::ostringstream msg;
+      msg << std::setprecision(14);
+      msg << "Track check failed\n"
+          << "accumtest: CoulombPBCAA::evalConsts()\n"
+          << "accumtest:   tot:" << Vcnow << '\n'
+          << "accumtest:   sum:" << Vcsum << '\n';
+
+      throw std::runtime_error(msg.str());
     }
 #endif
 
