@@ -88,10 +88,12 @@ std::unique_ptr<WalkerLogCollector> WalkerLogManager::makeCollector() const
 
 void WalkerLogManager::startRun(RefVector<WalkerLogCollector>&& collectors)
 {
-  ScopedTimer timer(walker_log_timers_[Timer::START]);
-  collectors_in_run_ = std::move(collectors);
   if (!state.logs_active)
     return; // no-op for driver if logs are inactive
+
+  ScopedTimer timer(walker_log_timers_[Timer::START]);
+
+  collectors_in_run_ = std::move(collectors);
   if (collectors_in_run_.empty())
     throw std::runtime_error("BUG collectors are empty but walker logs are active");
   if (state.verbose)
@@ -105,9 +107,11 @@ void WalkerLogManager::startRun(RefVector<WalkerLogCollector>&& collectors)
 
 void WalkerLogManager::stopRun()
 {
-  ScopedTimer timer(walker_log_timers_[Timer::STOP]);
   if (!state.logs_active)
     return; // no-op for driver if logs are inactive
+
+  ScopedTimer timer(walker_log_timers_[Timer::STOP]);
+
   if (state.verbose)
     app_log() << "WalkerLogManager::stopRun " << std::endl;
   collectors_in_run_.clear();
@@ -118,10 +122,11 @@ void WalkerLogManager::stopRun()
 
 void WalkerLogManager::writeBuffers()
 {
-  ScopedTimer timer(walker_log_timers_[Timer::WRITE]);
-  const RefVector<WalkerLogCollector>& collectors = collectors_in_run_;
   if (!state.logs_active)
     return; // no-op for driver if logs are inactive
+
+  ScopedTimer timer(walker_log_timers_[Timer::WRITE]);
+
   if (state.verbose)
     app_log() << "WalkerLogManager::writeBuffers " << std::endl;
 
@@ -144,6 +149,7 @@ void WalkerLogManager::writeBuffers()
     wmed_particle_real_buffer.resetBuffer();
   }
 
+  const RefVector<WalkerLogCollector>& collectors = collectors_in_run_;
   // collect energy information and extract info from min/max/median energy walkers
   if (write_min_data || write_max_data || write_med_data)
   {
