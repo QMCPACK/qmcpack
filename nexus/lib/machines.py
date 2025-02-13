@@ -110,30 +110,19 @@ class Options(DevBase):
 
 
     def read(self,options):
-        nopts = 0
-        intext = False
-        nstart = -2
-        nend   = -2
-        n = 0
-        for c in options:
-            if c=='-' and nstart!=n-1 and not intext:
-                prevdash=True
-                if nopts>0:
-                    opt  = options[nstart:n].strip()
-                    name = opt.replace('-','').replace('=',' ').split()[0]
-                    self[name]=opt
+        if isinstance(options,(dict,obj)):
+            self.add(**options)
+        elif isinstance(options,list):
+            for o in options:
+                if not isinstance(o,str):
+                    self.error('each option must be a string')
                 #end if
-                nopts+=1
-                nstart = n
-            elif c=='"' or c=="'":
-                intext=not intext
-            #end if
-            n+=1
-        #end for
-        if nopts>0:
-            opt  = options[nstart:n].strip()
-            name = opt.replace('-','').replace('=',' ').split()[0]
-            self[name]=opt
+                self[str(len(self))] = o
+            #end for
+        elif isinstance(options,str):
+            self[str(len(self))] = options
+        else:
+            self.error('invalid type provided to Options')
         #end if
     #end def read
 
