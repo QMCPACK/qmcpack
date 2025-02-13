@@ -15,7 +15,8 @@
 namespace qmcplusplus
 {
 
-FakeSPO::FakeSPO() : SPOSet("one_FakeSPO")
+template<typename T>
+FakeSPO<T>::FakeSPO() : SPOSet("one_FakeSPO")
 {
   a.resize(3, 3);
 
@@ -78,11 +79,14 @@ FakeSPO::FakeSPO() : SPOSet("one_FakeSPO")
   gv[3] = TinyVector<ValueType, DIM>(0.4, 0.3, 0.1);
 }
 
-std::unique_ptr<SPOSet> FakeSPO::makeClone() const { return std::make_unique<FakeSPO>(*this); }
+template<typename T>
+std::unique_ptr<SPOSetT<T>> FakeSPO<T>::makeClone() const { return std::make_unique<FakeSPO<T>>(*this); }
 
-void FakeSPO::setOrbitalSetSize(int norbs) { OrbitalSetSize = norbs; }
+template<typename T>
+void FakeSPO<T>::setOrbitalSetSize(int norbs) { OrbitalSetSize = norbs; }
 
-void FakeSPO::evaluateValue(const ParticleSet& P, int iat, ValueVector& psi)
+template<typename T>
+void FakeSPO<T>::evaluateValue(const ParticleSet& P, int iat, ValueVector& psi)
 {
   if (iat < 0)
     for (int i = 0; i < psi.size(); i++)
@@ -95,7 +99,8 @@ void FakeSPO::evaluateValue(const ParticleSet& P, int iat, ValueVector& psi)
       psi[i] = a2(iat, i);
 }
 
-void FakeSPO::evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi)
+template<typename T>
+void FakeSPO<T>::evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi)
 {
   if (OrbitalSetSize == 3)
   {
@@ -115,12 +120,13 @@ void FakeSPO::evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradV
   }
 }
 
-void FakeSPO::evaluate_notranspose(const ParticleSet& P,
-                                   int first,
-                                   int last,
-                                   ValueMatrix& logdet,
-                                   GradMatrix& dlogdet,
-                                   ValueMatrix& d2logdet)
+template<typename T>
+void FakeSPO<T>::evaluate_notranspose(const ParticleSet& P,
+                                      int first,
+                                      int last,
+                                      ValueMatrix& logdet,
+                                      GradMatrix& dlogdet,
+                                      ValueMatrix& d2logdet)
 {
   if (OrbitalSetSize == 3)
   {
@@ -141,5 +147,12 @@ void FakeSPO::evaluate_notranspose(const ParticleSet& P,
       }
   }
 }
+
+#if !defined(MIXED_PRECISION)
+template class FakeSPO<double>;
+template class FakeSPO<std::complex<double>>;
+#endif
+template class FakeSPO<float>;
+template class FakeSPO<std::complex<float>>;
 
 } // namespace qmcplusplus
