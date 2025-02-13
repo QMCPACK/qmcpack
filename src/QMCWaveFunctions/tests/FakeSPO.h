@@ -18,7 +18,7 @@
 namespace qmcplusplus
 {
 
-template <typename T>
+template<typename T>
 class FakeSPO : public SPOSetT<T>
 {
 public:

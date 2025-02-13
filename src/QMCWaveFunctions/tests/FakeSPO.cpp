@@ -80,10 +80,16 @@ FakeSPO<T>::FakeSPO() : SPOSet("one_FakeSPO")
 }
 
 template<typename T>
-std::unique_ptr<SPOSetT<T>> FakeSPO<T>::makeClone() const { return std::make_unique<FakeSPO<T>>(*this); }
+std::unique_ptr<SPOSetT<T>> FakeSPO<T>::makeClone() const
+{
+  return std::make_unique<FakeSPO<T>>(*this);
+}
 
 template<typename T>
-void FakeSPO<T>::setOrbitalSetSize(int norbs) { OrbitalSetSize = norbs; }
+void FakeSPO<T>::setOrbitalSetSize(int norbs)
+{
+  OrbitalSetSize = norbs;
+}
 
 template<typename T>
 void FakeSPO<T>::evaluateValue(const ParticleSet& P, int iat, ValueVector& psi)
