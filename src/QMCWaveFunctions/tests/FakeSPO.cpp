@@ -82,7 +82,7 @@ FakeSPO<T>::FakeSPO() : SPOSet("one_FakeSPO")
 template<typename T>
 std::unique_ptr<SPOSetT<T>> FakeSPO<T>::makeClone() const
 {
-  return std::make_unique<FakeSPO<T>>(*this);
+  return std::make_unique<FakeSPO>(*this);
 }
 
 template<typename T>
