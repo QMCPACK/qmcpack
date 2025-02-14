@@ -24,17 +24,17 @@ class FakeSPO : public SPOSetT<T>
 public:
   using SPOSet = SPOSetT<T>;
   using SPOSet::DIM;
-  using ValueType = typename SPOSet::ValueType;
+  using Value       = typename SPOSet::ValueType;
   using ValueVector = typename SPOSet::ValueVector;
   using ValueMatrix = typename SPOSet::ValueMatrix;
-  using GradType = typename SPOSet::GradType;
-  using GradVector = typename SPOSet::GradVector;
-  using GradMatrix = typename SPOSet::GradMatrix;
+  using Grad        = typename SPOSet::GradType;
+  using GradVector  = typename SPOSet::GradVector;
+  using GradMatrix  = typename SPOSet::GradMatrix;
 
-  Matrix<ValueType> a;
-  Matrix<ValueType> a2;
-  Vector<ValueType> v;
-  Matrix<ValueType> v2;
+  Matrix<Value> a;
+  Matrix<Value> a2;
+  Vector<Value> v;
+  Matrix<Value> v2;
 
   GradVector gv;
 

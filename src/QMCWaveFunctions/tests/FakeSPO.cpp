@@ -73,10 +73,10 @@ FakeSPO<T>::FakeSPO() : SPOSet("one_FakeSPO")
   v2(3, 3) = 2.2;
 
   gv.resize(4);
-  gv[0] = TinyVector<ValueType, DIM>(1.0, 0.0, 0.1);
-  gv[1] = TinyVector<ValueType, DIM>(1.0, 2.0, 0.1);
-  gv[2] = TinyVector<ValueType, DIM>(2.0, 1.0, 0.1);
-  gv[3] = TinyVector<ValueType, DIM>(0.4, 0.3, 0.1);
+  gv[0] = TinyVector<Value, DIM>(1.0, 0.0, 0.1);
+  gv[1] = TinyVector<Value, DIM>(1.0, 2.0, 0.1);
+  gv[2] = TinyVector<Value, DIM>(2.0, 1.0, 0.1);
+  gv[3] = TinyVector<Value, DIM>(0.4, 0.3, 0.1);
 }
 
 template<typename T>
@@ -140,7 +140,7 @@ void FakeSPO<T>::evaluate_notranspose(const ParticleSet& P,
       for (int j = 0; j < 3; j++)
       {
         logdet(j, i)  = a(i, j);
-        dlogdet[i][j] = gv[j] + GradType(i);
+        dlogdet[i][j] = gv[j] + Grad(i);
       }
   }
   else if (OrbitalSetSize == 4)
@@ -149,7 +149,7 @@ void FakeSPO<T>::evaluate_notranspose(const ParticleSet& P,
       for (int j = 0; j < 4; j++)
       {
         logdet(j, i)  = a2(i, j);
-        dlogdet[i][j] = gv[j] + GradType(i);
+        dlogdet[i][j] = gv[j] + Grad(i);
       }
   }
 }

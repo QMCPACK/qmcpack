@@ -28,12 +28,12 @@ using std::string;
 
 namespace qmcplusplus
 {
-using RealType    = QMCTraits::RealType;
-using ValueType   = QMCTraits::ValueType;
-using ComplexType = QMCTraits::ComplexType;
-using PosType     = QMCTraits::PosType;
-using LogValue    = std::complex<QMCTraits::QTFull::RealType>;
-using PsiValue    = QMCTraits::QTFull::ValueType;
+using Real     = QMCTraits::RealType;
+using Value    = QMCTraits::ValueType;
+using Complex  = QMCTraits::ComplexType;
+using Pos      = QMCTraits::PosType;
+using LogValue = std::complex<QMCTraits::QTFull::RealType>;
+using PsiValue = QMCTraits::QTFull::ValueType;
 
 template<typename T1, typename T2>
 void check_matrix(Matrix<T1>& a, Matrix<T2>& b)
@@ -51,11 +51,11 @@ void check_matrix(Matrix<T1>& a, Matrix<T2>& b)
 template<typename DET>
 void test_DiracDeterminant_first(const DetMatInvertor inverter_kind)
 {
-  auto spo_init  = std::make_unique<FakeSPO<ValueType>>();
+  auto spo_init  = std::make_unique<FakeSPO<Value>>();
   const int norb = 3;
   spo_init->setOrbitalSetSize(norb);
   DET ddb(std::move(spo_init), 0, norb, 1, inverter_kind);
-  auto spo = dynamic_cast<FakeSPO<ValueType>*>(ddb.getPhi());
+  auto spo = dynamic_cast<FakeSPO<Value>*>(ddb.getPhi());
 
   // occurs in call to registerData
   ddb.dpsiV.resize(norb);
@@ -67,7 +67,7 @@ void test_DiracDeterminant_first(const DetMatInvertor inverter_kind)
   elec.create({3});
   ddb.recompute(elec);
 
-  Matrix<ValueType> b;
+  Matrix<Value> b;
   b.resize(3, 3);
 
   b(0, 0) = 0.6159749342;
@@ -102,10 +102,10 @@ void test_DiracDeterminant_first(const DetMatInvertor inverter_kind)
   check_matrix(ddb.psiM, b);
 
   // set virtutal particle position
-  PosType newpos(0.3, 0.2, 0.5);
+  Pos newpos(0.3, 0.2, 0.5);
 
   elec.makeVirtualMoves(newpos);
-  std::vector<ValueType> ratios(elec.getTotalNum());
+  std::vector<Value> ratios(elec.getTotalNum());
   ddb.evaluateRatiosAlltoOne(elec, ratios);
 
   CHECK(std::real(ratios[0]) == Approx(1.2070809985));
@@ -119,10 +119,10 @@ void test_DiracDeterminant_first(const DetMatInvertor inverter_kind)
   CHECK(std::real(ratio_0) == Approx(-0.5343861437));
 
   VirtualParticleSet VP(elec, 2);
-  std::vector<PosType> newpos2(2);
-  std::vector<ValueType> ratios2(2);
+  std::vector<Pos> newpos2(2);
+  std::vector<Value> ratios2(2);
   newpos2[0] = newpos - elec.R[1];
-  newpos2[1] = PosType(0.2, 0.5, 0.3) - elec.R[1];
+  newpos2[1] = Pos(0.2, 0.5, 0.3) - elec.R[1];
   VP.makeMoves(elec, 1, newpos2);
   ddb.evaluateRatios(VP, ratios2);
 
@@ -159,11 +159,11 @@ TEST_CASE("DiracDeterminant_first", "[wavefunction][fermion]")
 template<typename DET>
 void test_DiracDeterminant_second(const DetMatInvertor inverter_kind)
 {
-  auto spo_init  = std::make_unique<FakeSPO<ValueType>>();
+  auto spo_init  = std::make_unique<FakeSPO<Value>>();
   const int norb = 4;
   spo_init->setOrbitalSetSize(norb);
   DET ddb(std::move(spo_init), 0, norb, 1, inverter_kind);
-  auto spo = dynamic_cast<FakeSPO<ValueType>*>(ddb.getPhi());
+  auto spo = dynamic_cast<FakeSPO<Value>*>(ddb.getPhi());
 
   // occurs in call to registerData
   ddb.dpsiV.resize(norb);
@@ -175,7 +175,7 @@ void test_DiracDeterminant_second(const DetMatInvertor inverter_kind)
   elec.create({4});
   ddb.recompute(elec);
 
-  Matrix<ValueType> orig_a;
+  Matrix<Value> orig_a;
   orig_a.resize(4, 4);
   orig_a = spo->a2;
 
@@ -188,9 +188,9 @@ void test_DiracDeterminant_second(const DetMatInvertor inverter_kind)
   }
 
   //check_matrix(ddb.psiM, b);
-  DiracMatrix<ValueType> dm;
+  DiracMatrix<Value> dm;
 
-  Matrix<ValueType> a_update1, scratchT;
+  Matrix<Value> a_update1, scratchT;
   a_update1.resize(4, 4);
   scratchT.resize(4, 4);
   a_update1 = spo->a2;
@@ -199,7 +199,7 @@ void test_DiracDeterminant_second(const DetMatInvertor inverter_kind)
     a_update1(j, 0) = spo->v2(0, j);
   }
 
-  Matrix<ValueType> a_update2;
+  Matrix<Value> a_update2;
   a_update2.resize(4, 4);
   a_update2 = spo->a2;
   for (int j = 0; j < norb; j++)
@@ -208,7 +208,7 @@ void test_DiracDeterminant_second(const DetMatInvertor inverter_kind)
     a_update2(j, 1) = spo->v2(1, j);
   }
 
-  Matrix<ValueType> a_update3;
+  Matrix<Value> a_update3;
   a_update3.resize(4, 4);
   a_update3 = spo->a2;
   for (int j = 0; j < norb; j++)
@@ -225,7 +225,7 @@ void test_DiracDeterminant_second(const DetMatInvertor inverter_kind)
                   scratchT.cols());
   LogValue det_update1;
   dm.invert_transpose(scratchT, a_update1, det_update1);
-  PsiValue det_ratio1 = LogToValue<ValueType>::convert(det_update1 - ddb.get_log_value());
+  PsiValue det_ratio1 = LogToValue<Value>::convert(det_update1 - ddb.get_log_value());
 #ifdef DUMP_INFO
   app_log() << "det 0 = " << std::exp(ddb.get_log_value()) << std::endl;
   app_log() << "det 1 = " << std::exp(det_update1) << std::endl;
@@ -242,7 +242,7 @@ void test_DiracDeterminant_second(const DetMatInvertor inverter_kind)
   simd::transpose(a_update2.data(), a_update2.rows(), a_update2.cols(), scratchT.data(), scratchT.rows(),
                   scratchT.cols());
   dm.invert_transpose(scratchT, a_update2, det_update2);
-  PsiValue det_ratio2_val = LogToValue<ValueType>::convert(det_update2 - det_update1);
+  PsiValue det_ratio2_val = LogToValue<Value>::convert(det_update2 - det_update1);
 #ifdef DUMP_INFO
   app_log() << "det 1 = " << std::exp(ddb.get_log_value()) << std::endl;
   app_log() << "det 2 = " << std::exp(det_update2) << std::endl;
@@ -258,7 +258,7 @@ void test_DiracDeterminant_second(const DetMatInvertor inverter_kind)
   simd::transpose(a_update3.data(), a_update3.rows(), a_update3.cols(), scratchT.data(), scratchT.rows(),
                   scratchT.cols());
   dm.invert_transpose(scratchT, a_update3, det_update3);
-  PsiValue det_ratio3_val = LogToValue<ValueType>::convert(det_update3 - det_update2);
+  PsiValue det_ratio3_val = LogToValue<Value>::convert(det_update3 - det_update2);
 #ifdef DUMP_INFO
   app_log() << "det 2 = " << std::exp(ddb.get_log_value()) << std::endl;
   app_log() << "det 3 = " << std::exp(det_update3) << std::endl;
@@ -300,12 +300,12 @@ TEST_CASE("DiracDeterminant_second", "[wavefunction][fermion]")
 template<typename DET>
 void test_DiracDeterminant_delayed_update(const DetMatInvertor inverter_kind)
 {
-  auto spo_init  = std::make_unique<FakeSPO<ValueType>>();
+  auto spo_init  = std::make_unique<FakeSPO<Value>>();
   const int norb = 4;
   spo_init->setOrbitalSetSize(norb);
   // maximum delay 2
   DET ddc(std::move(spo_init), 0, norb, 2, inverter_kind);
-  auto spo = dynamic_cast<FakeSPO<ValueType>*>(ddc.getPhi());
+  auto spo = dynamic_cast<FakeSPO<Value>*>(ddc.getPhi());
 
   // occurs in call to registerData
   ddc.dpsiV.resize(norb);
@@ -317,7 +317,7 @@ void test_DiracDeterminant_delayed_update(const DetMatInvertor inverter_kind)
   elec.create({4});
   ddc.recompute(elec);
 
-  Matrix<ValueType> orig_a;
+  Matrix<Value> orig_a;
   orig_a.resize(4, 4);
   orig_a = spo->a2;
 
@@ -330,9 +330,9 @@ void test_DiracDeterminant_delayed_update(const DetMatInvertor inverter_kind)
   }
 
   //check_matrix(ddc.psiM, b);
-  DiracMatrix<ValueType> dm;
+  DiracMatrix<Value> dm;
 
-  Matrix<ValueType> a_update1, scratchT;
+  Matrix<Value> a_update1, scratchT;
   scratchT.resize(4, 4);
   a_update1.resize(4, 4);
   a_update1 = spo->a2;
@@ -341,7 +341,7 @@ void test_DiracDeterminant_delayed_update(const DetMatInvertor inverter_kind)
     a_update1(j, 0) = spo->v2(0, j);
   }
 
-  Matrix<ValueType> a_update2;
+  Matrix<Value> a_update2;
   a_update2.resize(4, 4);
   a_update2 = spo->a2;
   for (int j = 0; j < norb; j++)
@@ -350,7 +350,7 @@ void test_DiracDeterminant_delayed_update(const DetMatInvertor inverter_kind)
     a_update2(j, 1) = spo->v2(1, j);
   }
 
-  Matrix<ValueType> a_update3;
+  Matrix<Value> a_update3;
   a_update3.resize(4, 4);
   a_update3 = spo->a2;
   for (int j = 0; j < norb; j++)
@@ -368,7 +368,7 @@ void test_DiracDeterminant_delayed_update(const DetMatInvertor inverter_kind)
                   scratchT.cols());
   LogValue det_update1;
   dm.invert_transpose(scratchT, a_update1, det_update1);
-  PsiValue det_ratio1 = LogToValue<ValueType>::convert(det_update1 - ddc.get_log_value());
+  PsiValue det_ratio1 = LogToValue<Value>::convert(det_update1 - ddc.get_log_value());
 #ifdef DUMP_INFO
   app_log() << "det 0 = " << std::exp(ddc.get_log_value()) << std::endl;
   app_log() << "det 1 = " << std::exp(det_update1) << std::endl;
@@ -392,7 +392,7 @@ void test_DiracDeterminant_delayed_update(const DetMatInvertor inverter_kind)
                   scratchT.cols());
   LogValue det_update2;
   dm.invert_transpose(scratchT, a_update2, det_update2);
-  PsiValue det_ratio2_val = LogToValue<ValueType>::convert(det_update2 - det_update1);
+  PsiValue det_ratio2_val = LogToValue<Value>::convert(det_update2 - det_update1);
 #ifdef DUMP_INFO
   app_log() << "det 1 = " << std::exp(ddc.get_log_value()) << std::endl;
   app_log() << "det 2 = " << std::exp(det_update2) << std::endl;
@@ -412,7 +412,7 @@ void test_DiracDeterminant_delayed_update(const DetMatInvertor inverter_kind)
                   scratchT.cols());
   LogValue det_update3;
   dm.invert_transpose(scratchT, a_update3, det_update3);
-  PsiValue det_ratio3_val = LogToValue<ValueType>::convert(det_update3 - det_update2);
+  PsiValue det_ratio3_val = LogToValue<Value>::convert(det_update3 - det_update2);
 #ifdef DUMP_INFO
   app_log() << "det 2 = " << std::exp(ddc.get_log_value()) << std::endl;
   app_log() << "det 3 = " << std::exp(det_update3) << std::endl;
