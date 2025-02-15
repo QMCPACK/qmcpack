@@ -144,12 +144,12 @@ TEST_CASE("DiracDeterminant_first", "[wavefunction][fermion]")
   test_DiracDeterminant_first<DiracDeterminant<>>(DetMatInvertor::HOST);
   test_DiracDeterminant_first<DiracDeterminant<>>(DetMatInvertor::ACCEL);
 #if defined(ENABLE_CUDA)
-  test_DiracDeterminant_first<DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>>(
+  test_DiracDeterminant_first<DiracDeterminant<DelayedUpdateCUDA<Value, QMCTraits::QTFull::ValueType>>>(
       DetMatInvertor::HOST);
-  test_DiracDeterminant_first<DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>>(
+  test_DiracDeterminant_first<DiracDeterminant<DelayedUpdateCUDA<Value, QMCTraits::QTFull::ValueType>>>(
       DetMatInvertor::ACCEL);
 #elif defined(ENABLE_SYCL)
-  test_DiracDeterminant_first<DiracDeterminant<DelayedUpdateSYCL<ValueType, QMCTraits::QTFull::ValueType>>>(
+  test_DiracDeterminant_first<DiracDeterminant<DelayedUpdateSYCL<Value, QMCTraits::QTFull::ValueType>>>(
       DetMatInvertor::HOST);
 #endif
 }
@@ -287,12 +287,12 @@ TEST_CASE("DiracDeterminant_second", "[wavefunction][fermion]")
   test_DiracDeterminant_second<DiracDeterminant<>>(DetMatInvertor::HOST);
   test_DiracDeterminant_second<DiracDeterminant<>>(DetMatInvertor::ACCEL);
 #if defined(ENABLE_CUDA)
-  test_DiracDeterminant_second<DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>>(
+  test_DiracDeterminant_second<DiracDeterminant<DelayedUpdateCUDA<Value, QMCTraits::QTFull::ValueType>>>(
       DetMatInvertor::HOST);
-  test_DiracDeterminant_second<DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>>(
+  test_DiracDeterminant_second<DiracDeterminant<DelayedUpdateCUDA<Value, QMCTraits::QTFull::ValueType>>>(
       DetMatInvertor::ACCEL);
 #elif defined(ENABLE_SYCL)
-  test_DiracDeterminant_second<DiracDeterminant<DelayedUpdateSYCL<ValueType, QMCTraits::QTFull::ValueType>>>(
+  test_DiracDeterminant_second<DiracDeterminant<DelayedUpdateSYCL<Value, QMCTraits::QTFull::ValueType>>>(
       DetMatInvertor::HOST);
 #endif
 }
@@ -446,12 +446,12 @@ TEST_CASE("DiracDeterminant_delayed_update", "[wavefunction][fermion]")
   test_DiracDeterminant_delayed_update<DiracDeterminant<>>(DetMatInvertor::HOST);
   test_DiracDeterminant_delayed_update<DiracDeterminant<>>(DetMatInvertor::ACCEL);
 #if defined(ENABLE_CUDA)
-  test_DiracDeterminant_delayed_update<DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>>(
+  test_DiracDeterminant_delayed_update<DiracDeterminant<DelayedUpdateCUDA<Value, QMCTraits::QTFull::ValueType>>>(
       DetMatInvertor::HOST);
-  test_DiracDeterminant_delayed_update<DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>>(
+  test_DiracDeterminant_delayed_update<DiracDeterminant<DelayedUpdateCUDA<Value, QMCTraits::QTFull::ValueType>>>(
       DetMatInvertor::ACCEL);
 #elif defined(ENABLE_SYCL)
-  test_DiracDeterminant_delayed_update<DiracDeterminant<DelayedUpdateSYCL<ValueType, QMCTraits::QTFull::ValueType>>>(
+  test_DiracDeterminant_delayed_update<DiracDeterminant<DelayedUpdateSYCL<Value, QMCTraits::QTFull::ValueType>>>(
       DetMatInvertor::HOST);
 #endif
 }
@@ -460,9 +460,9 @@ TEST_CASE("DiracDeterminant_delayed_update", "[wavefunction][fermion]")
 template<typename DET>
 void test_DiracDeterminant_spinor_update(const DetMatInvertor inverter_kind)
 {
-  using ValueType         = QMCTraits::ValueType;
-  using PosType           = QMCTraits::PosType;
-  using GradType          = QMCTraits::GradType;
+  using Value             = QMCTraits::ValueType;
+  using Pos               = QMCTraits::PosType;
+  using Grad              = QMCTraits::GradType;
   using LogValue          = WaveFunctionComponent::LogValue;
   using ParticlePos       = ParticleSet::ParticlePos;
   using ParticleGradient  = ParticleSet::ParticleGradient;
@@ -507,19 +507,19 @@ void test_DiracDeterminant_spinor_update(const DetMatInvertor inverter_kind)
   //Our test case is going to be three electron gas orbitals distinguished by 3 different kpoints.
   //Independent SPO's for the up and down channels.
   //
-  std::vector<PosType> kup, kdn;
-  std::vector<RealType> k2up, k2dn;
+  std::vector<Pos> kup, kdn;
+  std::vector<Real> k2up, k2dn;
 
 
   kup.resize(nelec);
-  kup[0] = PosType(0, 0, 0);
-  kup[1] = PosType(0.1, 0.2, 0.3);
-  kup[2] = PosType(0.4, 0.5, 0.6);
+  kup[0] = Pos(0, 0, 0);
+  kup[1] = Pos(0.1, 0.2, 0.3);
+  kup[2] = Pos(0.4, 0.5, 0.6);
 
   kdn.resize(nelec);
-  kdn[0] = PosType(0, 0, 0);
-  kdn[1] = PosType(-0.1, 0.2, -0.3);
-  kdn[2] = PosType(0.4, -0.5, 0.6);
+  kdn[0] = Pos(0, 0, 0);
+  kdn[1] = Pos(-0.1, 0.2, -0.3);
+  kdn[2] = Pos(0.4, -0.5, 0.6);
 
   auto spo_up = std::make_unique<FreeOrbital>("free_orb_up", kup);
   auto spo_dn = std::make_unique<FreeOrbital>("free_orb_up", kdn);
@@ -532,7 +532,7 @@ void test_DiracDeterminant_spinor_update(const DetMatInvertor inverter_kind)
 
   ParticleGradient G;
   ParticleLaplacian L;
-  ParticleAttrib<ComplexType> SG;
+  ParticleAttrib<Complex> SG;
 
   G.resize(nelec);
   L.resize(nelec);
@@ -542,8 +542,8 @@ void test_DiracDeterminant_spinor_update(const DetMatInvertor inverter_kind)
   L  = 0.0;
   SG = 0.0;
 
-  PosType dr(0.1, -0.05, 0.2);
-  RealType ds = 0.3;
+  Pos dr(0.1, -0.05, 0.2);
+  Real ds = 0.3;
 
   app_log() << " BEFORE\n";
   app_log() << " R = " << elec_.R << std::endl;
@@ -554,30 +554,30 @@ void test_DiracDeterminant_spinor_update(const DetMatInvertor inverter_kind)
 
   LogValue logref = dd.evaluateLog(elec_, G, L);
 
-  CHECK(logref == ComplexApprox(ValueType(-1.1619939279564413, 0.8794794652468605)));
-  CHECK(G[0][0] == ComplexApprox(ValueType(0.13416635, 0.2468612)));
-  CHECK(G[0][1] == ComplexApprox(ValueType(-1.1165475, 0.71497753)));
-  CHECK(G[0][2] == ComplexApprox(ValueType(0.0178403, 0.08212244)));
-  CHECK(G[1][0] == ComplexApprox(ValueType(1.00240841, 0.12371593)));
-  CHECK(G[1][1] == ComplexApprox(ValueType(1.62679698, -0.41080777)));
-  CHECK(G[1][2] == ComplexApprox(ValueType(1.81324632, 0.78589013)));
-  CHECK(G[2][0] == ComplexApprox(ValueType(-1.10994555, 0.15525902)));
-  CHECK(G[2][1] == ComplexApprox(ValueType(-0.46335602, -0.50809713)));
-  CHECK(G[2][2] == ComplexApprox(ValueType(-1.751199, 0.10949589)));
-  CHECK(L[0] == ComplexApprox(ValueType(-2.06554158, 1.18145239)));
-  CHECK(L[1] == ComplexApprox(ValueType(-5.06340536, 0.82126749)));
-  CHECK(L[2] == ComplexApprox(ValueType(-4.82375261, -1.97943258)));
+  CHECK(logref == ComplexApprox(Value(-1.1619939279564413, 0.8794794652468605)));
+  CHECK(G[0][0] == ComplexApprox(Value(0.13416635, 0.2468612)));
+  CHECK(G[0][1] == ComplexApprox(Value(-1.1165475, 0.71497753)));
+  CHECK(G[0][2] == ComplexApprox(Value(0.0178403, 0.08212244)));
+  CHECK(G[1][0] == ComplexApprox(Value(1.00240841, 0.12371593)));
+  CHECK(G[1][1] == ComplexApprox(Value(1.62679698, -0.41080777)));
+  CHECK(G[1][2] == ComplexApprox(Value(1.81324632, 0.78589013)));
+  CHECK(G[2][0] == ComplexApprox(Value(-1.10994555, 0.15525902)));
+  CHECK(G[2][1] == ComplexApprox(Value(-0.46335602, -0.50809713)));
+  CHECK(G[2][2] == ComplexApprox(Value(-1.751199, 0.10949589)));
+  CHECK(L[0] == ComplexApprox(Value(-2.06554158, 1.18145239)));
+  CHECK(L[1] == ComplexApprox(Value(-5.06340536, 0.82126749)));
+  CHECK(L[2] == ComplexApprox(Value(-4.82375261, -1.97943258)));
 
   //This is a workaround for the fact that I haven't implemented
   // evaluateLogWithSpin().  Shouldn't be needed unless we do drifted all-electron moves...
   for (int iat = 0; iat < nelec; iat++)
     dd.evalGradWithSpin(elec_, iat, SG[iat]);
 
-  CHECK(SG[0] == ComplexApprox(ValueType(-1.05686704, -2.01802154)));
-  CHECK(SG[1] == ComplexApprox(ValueType(1.18922259, 2.80414598)));
-  CHECK(SG[2] == ComplexApprox(ValueType(-0.62617675, -0.51093984)));
+  CHECK(SG[0] == ComplexApprox(Value(-1.05686704, -2.01802154)));
+  CHECK(SG[1] == ComplexApprox(Value(1.18922259, 2.80414598)));
+  CHECK(SG[2] == ComplexApprox(Value(-0.62617675, -0.51093984)));
 
-  GradType g_singleeval(0.0);
+  Grad g_singleeval(0.0);
   g_singleeval = dd.evalGrad(elec_, 1);
 
   CHECK(g_singleeval[0] == ComplexApprox(G[1][0]));
@@ -590,28 +590,28 @@ void test_DiracDeterminant_spinor_update(const DetMatInvertor inverter_kind)
   //
   elec_.makeMoveAndCheckWithSpin(1, dr, ds);
 
-  ValueType ratio_new;
-  ValueType spingrad_new;
-  GradType grad_new;
+  Value ratio_new;
+  Value spingrad_new;
+  Grad grad_new;
 
   //This tests ratio only evaluation.  Indirectly a call to evaluate(P,iat)
   ratio_new = dd.ratio(elec_, 1);
-  CHECK(ratio_new == ComplexApprox(ValueType(1.7472917722050971, 1.1900872950904169)));
+  CHECK(ratio_new == ComplexApprox(Value(1.7472917722050971, 1.1900872950904169)));
 
   ratio_new = dd.ratioGrad(elec_, 1, grad_new);
-  CHECK(ratio_new == ComplexApprox(ValueType(1.7472917722050971, 1.1900872950904169)));
-  CHECK(grad_new[0] == ComplexApprox(ValueType(0.5496675534224996, -0.07968022499097227)));
-  CHECK(grad_new[1] == ComplexApprox(ValueType(0.4927399293808675, -0.29971549854643653)));
-  CHECK(grad_new[2] == ComplexApprox(ValueType(1.2792642963632226, 0.12110307514989149)));
+  CHECK(ratio_new == ComplexApprox(Value(1.7472917722050971, 1.1900872950904169)));
+  CHECK(grad_new[0] == ComplexApprox(Value(0.5496675534224996, -0.07968022499097227)));
+  CHECK(grad_new[1] == ComplexApprox(Value(0.4927399293808675, -0.29971549854643653)));
+  CHECK(grad_new[2] == ComplexApprox(Value(1.2792642963632226, 0.12110307514989149)));
 
   grad_new     = 0;
   spingrad_new = 0;
   ratio_new    = dd.ratioGradWithSpin(elec_, 1, grad_new, spingrad_new);
-  CHECK(ratio_new == ComplexApprox(ValueType(1.7472917722050971, 1.1900872950904169)));
-  CHECK(grad_new[0] == ComplexApprox(ValueType(0.5496675534224996, -0.07968022499097227)));
-  CHECK(grad_new[1] == ComplexApprox(ValueType(0.4927399293808675, -0.29971549854643653)));
-  CHECK(grad_new[2] == ComplexApprox(ValueType(1.2792642963632226, 0.12110307514989149)));
-  CHECK(spingrad_new == ComplexApprox(ValueType(1.164708841479661, 0.9576425115390172)));
+  CHECK(ratio_new == ComplexApprox(Value(1.7472917722050971, 1.1900872950904169)));
+  CHECK(grad_new[0] == ComplexApprox(Value(0.5496675534224996, -0.07968022499097227)));
+  CHECK(grad_new[1] == ComplexApprox(Value(0.4927399293808675, -0.29971549854643653)));
+  CHECK(grad_new[2] == ComplexApprox(Value(1.2792642963632226, 0.12110307514989149)));
+  CHECK(spingrad_new == ComplexApprox(Value(1.164708841479661, 0.9576425115390172)));
 
 
   //Cool.  Now we test the transition between rejecting a move and accepting a move.
@@ -624,7 +624,7 @@ void test_DiracDeterminant_spinor_update(const DetMatInvertor inverter_kind)
   CHECK(g_singleeval[1] == ComplexApprox(G[1][1]));
   CHECK(g_singleeval[2] == ComplexApprox(G[1][2]));
 
-  ValueType spingrad_old_test;
+  Value spingrad_old_test;
   g_singleeval = dd.evalGradWithSpin(elec_, 1, spingrad_old_test);
 
   CHECK(spingrad_old_test == ComplexApprox(SG[1]));
@@ -647,7 +647,7 @@ void test_DiracDeterminant_spinor_update(const DetMatInvertor inverter_kind)
   //logval for the new configuration has been computed with python.
   //The others reference values are computed earlier in this section.  New values equal the previous
   // "new values" associated with the previous trial moves.
-  CHECK(lognew == ComplexApprox(ValueType(-0.41337396772929913, 1.4774106123071726)));
+  CHECK(lognew == ComplexApprox(Value(-0.41337396772929913, 1.4774106123071726)));
   CHECK(G[1][0] == ComplexApprox(grad_new[0]));
   CHECK(G[1][1] == ComplexApprox(grad_new[1]));
   CHECK(G[1][2] == ComplexApprox(grad_new[2]));
@@ -659,9 +659,9 @@ TEST_CASE("DiracDeterminant_spinor_update", "[wavefunction][fermion]")
   test_DiracDeterminant_spinor_update<DiracDeterminant<>>(DetMatInvertor::HOST);
   test_DiracDeterminant_spinor_update<DiracDeterminant<>>(DetMatInvertor::ACCEL);
 #ifdef ENABLE_CUDA
-  test_DiracDeterminant_spinor_update<DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>>(
+  test_DiracDeterminant_spinor_update<DiracDeterminant<DelayedUpdateCUDA<Value, QMCTraits::QTFull::ValueType>>>(
       DetMatInvertor::HOST);
-  test_DiracDeterminant_spinor_update<DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>>(
+  test_DiracDeterminant_spinor_update<DiracDeterminant<DelayedUpdateCUDA<Value, QMCTraits::QTFull::ValueType>>>(
       DetMatInvertor::ACCEL);
 #endif
 }
