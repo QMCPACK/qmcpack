@@ -36,7 +36,7 @@ using PsiValue = QMCTraits::QTFull::ValueType;
 template<PlatformKind PL>
 void test_DiracDeterminantBatched_first()
 {
-  using Det  = DiracDeterminantBatched<PL, Value, QMCTraits::QTFull::ValueType>;
+  using Det      = DiracDeterminantBatched<PL, Value, QMCTraits::QTFull::ValueType>;
   auto spo_init  = std::make_unique<FakeSPO<Value>>();
   const int norb = 3;
   spo_init->setOrbitalSetSize(norb);
@@ -139,7 +139,7 @@ TEST_CASE("DiracDeterminantBatched_first", "[wavefunction][fermion]")
 template<PlatformKind PL>
 void test_DiracDeterminantBatched_second()
 {
-  using Det  = DiracDeterminantBatched<PL, Value, QMCTraits::QTFull::ValueType>;
+  using Det      = DiracDeterminantBatched<PL, Value, QMCTraits::QTFull::ValueType>;
   auto spo_init  = std::make_unique<FakeSPO<Value>>();
   const int norb = 4;
   spo_init->setOrbitalSetSize(norb);
@@ -274,7 +274,7 @@ TEST_CASE("DiracDeterminantBatched_second", "[wavefunction][fermion]")
 template<PlatformKind PL>
 void test_DiracDeterminantBatched_delayed_update(int delay_rank, DetMatInvertor matrix_inverter_kind)
 {
-  using Det  = DiracDeterminantBatched<PL, Value, QMCTraits::QTFull::ValueType>;
+  using Det      = DiracDeterminantBatched<PL, Value, QMCTraits::QTFull::ValueType>;
   auto spo_init  = std::make_unique<FakeSPO<Value>>();
   const int norb = 4;
   spo_init->setOrbitalSetSize(norb);
