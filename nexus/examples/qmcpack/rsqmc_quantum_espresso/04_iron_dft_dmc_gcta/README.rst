@@ -63,3 +63,4 @@ Specifically, without this keyword, the twist averaged DMC energy is ``-123.9042
 An alternative way to run GCTA is to use ``gcta = 'afl'``, which uses an "adapted Fermi level" that guarantees charge neutrality but does not target the SCF magnetization.
 This can be useful in noncollinear calculations where a single total magnetization is not defined.
 Detailed description and performance of ``'safl'`` and ``'afl'`` can be found in `this article <https://pubs.acs.org/doi/10.1021/acs.jctc.4c00058>`_.
+Also see the Nexus documentation for the details of the ``gcta`` implementation.
