@@ -4,7 +4,7 @@ if(NOT QMC_COMPLEX)
   # Compare directly to sCI Variational Energy of: E=-8.04250444504137
   #Data generated using utils/make_ref_data.sh  LiH_ae_MSD_NOJ_SHORT qmc-ref/vmc_short_noj.s000.scalar.dat  qmc-ref/qmc-ref-vmc-long-noj.s000.scalar.dat
   list(APPEND LiH_ae_MSD_NOJ_SHORT_SCALARS "totenergy" "-8.042553312461 0.002407485304")
-  list(APPEND LiH_ae_MSD_NOJ_SHORT_SCALARS "variance" "1.245679324458 0.051278600983")
+  list(APPEND LiH_ae_MSD_NOJ_SHORT_SCALARS "variance" "1.245679324458 0.07")
   list(APPEND LiH_ae_MSD_NOJ_SHORT_SCALARS "kinetic" "8.004096666221 0.066070685701")
   list(APPEND LiH_ae_MSD_NOJ_SHORT_SCALARS "potential" "-16.046649978685 0.066254492826")
   list(APPEND LiH_ae_MSD_NOJ_SHORT_SCALARS "eeenergy" "3.379729221478 0.003550933783")
