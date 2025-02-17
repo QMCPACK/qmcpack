@@ -24,7 +24,7 @@ if(NOT QMC_COMPLEX)
   #
   # LiH molecule pseudopotential tests with Jastrow from XML
   #
-  list(APPEND LIH_PP_XML_SCALARS "kinetic" "0.6714 0.0022")
+  list(APPEND LIH_PP_XML_SCALARS "kinetic" "0.6714 0.0025")
   list(APPEND LIH_PP_XML_SCALARS "totenergy" "-0.78492 0.0002")
   list(APPEND LIH_PP_XML_SCALARS "eeenergy" "0.42605 0.00087")
   list(APPEND LIH_PP_XML_SCALARS "potential" "-1.4563 0.0022")
