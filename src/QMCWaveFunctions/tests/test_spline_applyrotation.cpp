@@ -684,7 +684,7 @@ TEST_CASE("Spline applyRotation complex rotation", "[wavefunction]")
   Communicate* c = OHMMS::Controller;
 
   // diamondC_1x1x1
-  ParticleSet::ParticleLayout lattice;
+  CrystalLattice<OHMMS_PRECISION_FULL, OHMMS_DIM> lattice;
   lattice.R = {3.37316115, 3.37316115, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
 
   ParticleSetPool ptcl = ParticleSetPool(c);

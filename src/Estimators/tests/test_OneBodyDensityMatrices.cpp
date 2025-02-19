@@ -294,7 +294,7 @@ TEST_CASE("OneBodyDensityMatrices::generateSamples", "[estimators]")
     xmlNodePtr node = doc.getRoot();
     OneBodyDensityMatricesInput obdmi(node);
 
-    OneBodyDensityMatrices obDenMat(std::move(obdmi), pset_target.getLattice(), species_set, spo_map, pset_target);
+    OneBodyDensityMatrices obDenMat(std::move(obdmi), pset_target.getFullPrecLattice(), species_set, spo_map, pset_target);
 
     testing::OneBodyDensityMatricesTests<QMCTraits::FullPrecRealType> obdmt;
     //Get control over which rng is used.
@@ -332,7 +332,7 @@ TEST_CASE("OneBodyDensityMatrices::generateSamplesForSpinor", "[estimators]")
     xmlNodePtr node = doc.getRoot();
     OneBodyDensityMatricesInput obdmi(node);
 
-    OneBodyDensityMatrices obDenMat(std::move(obdmi), pset_target.getLattice(), species_set, spo_map, pset_target);
+    OneBodyDensityMatrices obDenMat(std::move(obdmi), pset_target.getFullPrecLattice(), species_set, spo_map, pset_target);
 
     testing::OneBodyDensityMatricesTests<QMCTraits::FullPrecRealType> obdmt;
     //Get control over which rng is used.
@@ -368,7 +368,7 @@ TEST_CASE("OneBodyDensityMatrices::spawnCrowdClone()", "[estimators]")
   xmlNodePtr node = doc.getRoot();
   OneBodyDensityMatricesInput obdmi(node);
 
-  OneBodyDensityMatrices original(std::move(obdmi), pset_target.getLattice(), species_set, spomap, pset_target);
+  OneBodyDensityMatrices original(std::move(obdmi), pset_target.getFullPrecLattice(), species_set, spomap, pset_target);
   auto clone = original.spawnCrowdClone();
   REQUIRE(clone != nullptr);
   REQUIRE(clone.get() != &original);
@@ -396,7 +396,7 @@ TEST_CASE("OneBodyDensityMatrices::accumulate", "[estimators]")
   auto& pset_target = *(particle_pool.getParticleSet("e"));
   auto& pset_source = *(particle_pool.getParticleSet("ion"));
   auto& species_set = pset_target.getSpeciesSet();
-  OneBodyDensityMatrices obdm(std::move(obdmi), pset_target.getLattice(), species_set, spomap, pset_target);
+  OneBodyDensityMatrices obdm(std::move(obdmi), pset_target.getFullPrecLattice(), species_set, spomap, pset_target);
 
   std::vector<MCPWalker> walkers;
   int nwalkers = 3;
@@ -493,7 +493,7 @@ TEST_CASE("OneBodyDensityMatrices::evaluateMatrix", "[estimators]")
     auto& spomap      = wavefunction_pool.getWaveFunction("wavefunction")->getSPOMap();
     auto& pset_target = *(particle_pool.getParticleSet("e"));
     auto& species_set = pset_target.getSpeciesSet();
-    OneBodyDensityMatrices obdm(std::move(obdmi), pset_target.getLattice(), species_set, spomap, pset_target);
+    OneBodyDensityMatrices obdm(std::move(obdmi), pset_target.getFullPrecLattice(), species_set, spomap, pset_target);
     auto& trial_wavefunction = *(wavefunction_pool.getPrimary());
 
     // Because we can't control or consistent know the global random state we must initialize particle positions to known values.
@@ -545,7 +545,7 @@ TEST_CASE("OneBodyDensityMatrices::registerAndWrite", "[estimators]")
   auto& spomap      = wavefunction_pool.getWaveFunction("wavefunction")->getSPOMap();
   auto& pset_target = *(particle_pool.getParticleSet("e"));
   auto& species_set = pset_target.getSpeciesSet();
-  OneBodyDensityMatrices obdm(std::move(obdmi), pset_target.getLattice(), species_set, spomap, pset_target);
+  OneBodyDensityMatrices obdm(std::move(obdmi), pset_target.getFullPrecLattice(), species_set, spomap, pset_target);
 
   testing::OneBodyDensityMatricesTests<QMCTraits::FullPrecRealType> obdmt;
   obdmt.testRegisterAndWrite(obdm);

@@ -101,13 +101,13 @@ void EstimatorManagerNew::constructEstimators(EstimatorManagerInput&& emi,
                                               const PSPool& pset_pool)
 {
   for (auto& est_input : emi.get_estimator_inputs())
-    if (!(createEstimator<SpinDensityInput>(est_input, pset.getLattice(), pset.getSpeciesSet()) ||
+    if (!(createEstimator<SpinDensityInput>(est_input, pset.getFullPrecLattice(), pset.getSpeciesSet()) ||
           createEstimator<MomentumDistributionInput>(est_input, pset.getTotalNum(), pset.getTwist(),
-                                                     pset.getLattice()) ||
+                                                     pset.getFullPrecLattice()) ||
           createEstimator<SelfHealingOverlapInput>(est_input, twf) ||
-          createEstimator<OneBodyDensityMatricesInput>(est_input, pset.getLattice(), pset.getSpeciesSet(),
+          createEstimator<OneBodyDensityMatricesInput>(est_input, pset.getFullPrecLattice(), pset.getSpeciesSet(),
                                                        twf.getSPOMap(), pset) ||
-          createEstimator<MagnetizationDensityInput>(est_input, pset.getLattice()) ||
+          createEstimator<MagnetizationDensityInput>(est_input, pset.getFullPrecLattice()) ||
           createEstimator<PerParticleHamiltonianLoggerInput>(est_input, my_comm_->rank()) ||
           createEstimator<EnergyDensityInput>(est_input, pset_pool)))
       throw UniformCommunicateError(std::string(error_tag_) +

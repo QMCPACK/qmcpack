@@ -33,8 +33,7 @@ class SpinDensityInput
 {
 public:
   using Real               = QMCTraits::RealType;
-  using POLT               = PtclOnLatticeTraits;
-  using Lattice            = POLT::ParticleLayout;
+  using Lattice            = CrystalLattice<OHMMS_PRECISION_FULL, OHMMS_DIM>;
   using PosType            = QMCTraits::PosType;
   using Consumer           = SpinDensityNew;
   static constexpr int DIM = QMCTraits::DIM;

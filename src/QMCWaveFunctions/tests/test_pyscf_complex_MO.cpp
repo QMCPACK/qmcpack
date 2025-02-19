@@ -44,7 +44,7 @@ void test_C_diamond()
     REQUIRE(okay);
     xmlNodePtr root = doc.getRoot();
 
-    ParticleSet::ParticleLayout lattice;
+    CrystalLattice<OHMMS_PRECISION_FULL, OHMMS_DIM> lattice;
     // BCC H
     lattice.R = {3.37316115, 3.37316115, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
     lattice.reset();
