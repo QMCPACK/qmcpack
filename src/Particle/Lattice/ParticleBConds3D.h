@@ -28,7 +28,8 @@ struct DTD_BConds<T, 3, PPPO>
 {
   T Linv0, L0, Linv1, L1, Linv2, L2, r2max, dummy;
 
-  inline DTD_BConds(const CrystalLattice<T, 3>& lat)
+  template<typename TT>
+  inline DTD_BConds(const CrystalLattice<TT, 3>& lat)
       : Linv0(lat.OneOverLength[0]),
         L0(lat.Length[0]),
         Linv1(lat.OneOverLength[1]),
@@ -164,7 +165,8 @@ struct DTD_BConds<T, 3, PPPG>
   TinyVector<TinyVector<T, 3>, 3> rb;
   std::vector<TinyVector<T, 3>> corners;
 
-  DTD_BConds(const CrystalLattice<T, 3>& lat)
+  template<typename TT>
+  DTD_BConds(const CrystalLattice<TT, 3>& lat)
   {
     rb[0] = lat.a(0);
     rb[1] = lat.a(1);

@@ -32,7 +32,7 @@ TEST_CASE("kcontainer at gamma in 3D", "[longrange]")
   const std::vector<double> kcs = {blat, std::sqrt(2) * blat, std::sqrt(3) * blat};
   const std::vector<int> nks    = {6, 18, 26};
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  CrystalLattice<OHMMS_PRECISION_FULL, OHMMS_DIM> lattice;
   lattice.R.diagonal(1.0);
   lattice.set(lattice.R); // compute Rv and Gv from R
 
@@ -68,7 +68,7 @@ TEST_CASE("kcontainer at twist in 3D", "[longrange]")
   // twist one shell of kvectors
   const double kc = blat + 1e-6;
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  CrystalLattice<OHMMS_PRECISION_FULL, OHMMS_DIM> lattice;
   lattice.R.diagonal(1.0);
   lattice.set(lattice.R); // compute Rv and Gv from R
 
@@ -99,7 +99,7 @@ TEST_CASE("kcontainer at gamma in 2D", "[longrange]")
   const std::vector<double> kcs = {blat, std::sqrt(2) * blat, 2 * blat};
   const std::vector<int> nks    = {4, 8, 12};
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  CrystalLattice<OHMMS_PRECISION_FULL, OHMMS_DIM> lattice;
   lattice.R.diagonal(1.0);
   lattice.set(lattice.R); // compute Rv and Gv from R
 
@@ -135,7 +135,7 @@ TEST_CASE("kcontainer at twist in 2D", "[longrange]")
   // twist one shell of kvectors
   const double kc = blat + 1e-6;
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  CrystalLattice<OHMMS_PRECISION_FULL, OHMMS_DIM> lattice;
   lattice.R.diagonal(1.0);
   lattice.set(lattice.R); // compute Rv and Gv from R
 

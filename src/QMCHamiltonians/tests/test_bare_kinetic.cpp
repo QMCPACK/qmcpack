@@ -96,7 +96,7 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
 
   //Cell definition:
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  CrystalLattice<OHMMS_PRECISION_FULL, OHMMS_DIM> lattice;
   lattice.BoxBConds = true; // periodic
   lattice.R.diagonal(20);
   lattice.LR_dim_cutoff = 15;

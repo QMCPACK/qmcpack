@@ -47,7 +47,7 @@ void test_hcpBe_rotation(bool use_single_det, bool use_nlpp_batched)
 
   ParticleSetPool pp(c);
 
-  ParticleSet::ParticleLayout lattice;
+  CrystalLattice<OHMMS_PRECISION_FULL, OHMMS_DIM> lattice;
   lattice.R(0, 0) = 4.32747284;
   lattice.R(0, 1) = 0.00000000;
   lattice.R(0, 2) = 0.00000000;

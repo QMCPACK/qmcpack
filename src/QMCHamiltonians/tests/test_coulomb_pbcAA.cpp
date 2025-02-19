@@ -43,7 +43,7 @@ TEST_CASE("Coulomb PBC A-A", "[hamiltonian]")
   const double vmad_sc               = -1.4186487397403098;
   LRCoulombSingleton::CoulombHandler = 0;
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  CrystalLattice<OHMMS_PRECISION_FULL, OHMMS_DIM> lattice;
   lattice.BoxBConds = true; // periodic
   lattice.R.diagonal(1.0);
   lattice.reset();
@@ -82,7 +82,7 @@ TEST_CASE("Coulomb PBC A-A BCC H", "[hamiltonian]")
   const double vmad_sc               = -1.4186487397403098 / alat;
   LRCoulombSingleton::CoulombHandler = 0;
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  CrystalLattice<OHMMS_PRECISION_FULL, OHMMS_DIM> lattice;
   lattice.BoxBConds = true; // periodic
   lattice.R.diagonal(alat);
   lattice.reset();
@@ -120,7 +120,7 @@ TEST_CASE("Coulomb PBC A-A elec", "[hamiltonian]")
 {
   LRCoulombSingleton::CoulombHandler = 0;
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  CrystalLattice<OHMMS_PRECISION_FULL, OHMMS_DIM> lattice;
   lattice.BoxBConds = true; // periodic
   lattice.R.diagonal(1.0);
   lattice.reset();
@@ -158,7 +158,7 @@ TEST_CASE("Coulomb PBC A-A BCC", "[hamiltonian]")
   const double vmad_bcc              = -1.819616724754322 / alat;
   LRCoulombSingleton::CoulombHandler = 0;
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  CrystalLattice<OHMMS_PRECISION_FULL, OHMMS_DIM> lattice;
   lattice.BoxBConds = true; // periodic
   lattice.R         = 0.5 * alat;
   lattice.R(0, 0)   = -0.5 * alat;
@@ -199,7 +199,7 @@ void test_CoulombPBCAA_3p(DynamicCoordinateKind kind)
   const double vmad_bcc              = -1.819616724754322 / alat;
   LRCoulombSingleton::CoulombHandler = 0;
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  CrystalLattice<OHMMS_PRECISION_FULL, OHMMS_DIM> lattice;
   lattice.BoxBConds = true; // periodic
   lattice.R         = 0.5 * alat;
   lattice.R(0, 0)   = -0.5 * alat;
@@ -277,7 +277,7 @@ TEST_CASE("CoulombAA::mw_evaluatePerParticle", "[hamiltonian]")
   LRCoulombSingleton::CoulombHandler = 0;
 
   // Constructing a mock "golden" set of walker elements
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  CrystalLattice<OHMMS_PRECISION_FULL, OHMMS_DIM> lattice;
   lattice.BoxBConds = true; // periodic
   lattice.R.diagonal(1.0);
   lattice.reset();

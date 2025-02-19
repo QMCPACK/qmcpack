@@ -123,7 +123,7 @@ TEST_CASE("symmetric_distance_table PBC", "[particle]")
 TEST_CASE("particle set lattice with vacuum", "[particle]")
 {
   // PPP case
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
+  CrystalLattice<OHMMS_PRECISION_FULL, OHMMS_DIM> Lattice;
   Lattice.BoxBConds          = true;
   Lattice.R                  = {1.0, 2.0, 3.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0};
   Lattice.explicitly_defined = true;

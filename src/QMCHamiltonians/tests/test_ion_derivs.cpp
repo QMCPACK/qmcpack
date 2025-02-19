@@ -1299,7 +1299,7 @@ TEST_CASE("Eloc_Derivatives:slater_fastderiv_complex_pbc", "[hamiltonian]")
 
   Communicate* c = OHMMS::Controller;
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  CrystalLattice<OHMMS_PRECISION_FULL, OHMMS_DIM> lattice;
   lattice.BoxBConds[0]             = 1; // periodic
   lattice.BoxBConds[1]             = 1; // periodic
   lattice.BoxBConds[2]             = 1; // periodic
