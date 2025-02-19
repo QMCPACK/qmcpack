@@ -11,6 +11,8 @@
 
 
 #include "SimulationCell.h"
+#include "Lattice/CrystalLattice.h"
+#include <type_traits>
 
 namespace qmcplusplus
 {
@@ -18,20 +20,20 @@ namespace qmcplusplus
 template<typename REAL>
 SimulationCellT<REAL>::SimulationCellT() = default;
 
+  template<typename>
+  constexpr auto always_false = false;
+  
 template<typename REAL>
-SimulationCellT<REAL>::SimulationCellT(const Lattice& lattice) : lattice_(lattice)
+template<typename REALP, unsigned D>
+SimulationCellT<REAL>::SimulationCellT(const CrystalLattice<REALP, D>& lattice)
 {
-  full_lattice_.set(lattice.getR());
+  static_assert(std::is_floating_point_v<REAL> && std::is_floating_point_v<REALP> );
+  if constexpr (!std::is_same_v<REALP, QMCTraits::FullPrecRealType>)
+    static_assert(always_false<REALP>, "You should never be trying to use a reduced precision lattice to construct a simulation cell");
+  full_lattice_ = lattice;
   resetLRBox();
 }
-
-  template<typename REAL>
-SimulationCellT<REAL>::SimulationCellT(const LatticeFullPrec& lattice) : full_lattice_(lattice)
-{
-  lattice_.set(lattice.getR());
-  resetLRBox();
-}
-
+  
 template<typename REAL>
 void SimulationCellT<REAL>::resetLRBox()
 {
@@ -81,7 +83,9 @@ void SimulationCellT<REAL>::resetLRBox()
 
 #ifdef MIXED_PRECISION
 template class SimulationCellT<float>;
+template SimulationCellT<float>::SimulationCellT(const CrystalLattice<double, OHMMS_DIM>& lattice);
 #else
 template class SimulationCellT<double>;
+template SimulationCellT<double>::SimulationCellT(const CrystalLattice<double, OHMMS_DIM>& lattice);
 #endif
 } // namespace qmcplusplus

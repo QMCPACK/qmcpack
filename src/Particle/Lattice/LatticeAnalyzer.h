@@ -16,6 +16,8 @@
 #ifndef QMCPLUSPLUS_LATTICE_ANALYZER_H
 #define QMCPLUSPLUS_LATTICE_ANALYZER_H
 #include "OhmmsPETE/TinyVector.h"
+#include "CrystalLattice.h"
+
 namespace qmcplusplus
 {
 /** enumeration for DTD_BConds specialization

@@ -30,8 +30,8 @@ public:
   SimulationCellT();
   // Who uses these, the application uses the default constructor and that fills in lattice_ and full_lattice_
   // from ParticleSetPool
-  SimulationCellT(const Lattice& lattice);
-  SimulationCellT(const LatticeFullPrec& lattice);
+  template<typename REALP, unsigned D>
+  SimulationCellT(const CrystalLattice<REALP, D>& lattice);
 
   const Lattice& getLattice() const { return lattice_; }
   /// Full Precision Lattice, if you doing anything with the lattice wrt kpoints use this!
@@ -64,6 +64,15 @@ private:
 };
 
 using SimulationCell = SimulationCellT<QMCTraits::RealType>;
+
+#ifdef MIXED_PRECISION
+extern template class SimulationCellT<float>;
+extern template SimulationCellT<float>::SimulationCellT(const CrystalLattice<double, OHMMS_DIM>& lattice);
+#else
+extern template class SimulationCellT<double>;
+extern template SimulationCellT<double>::SimulationCellT(const CrystalLattice<double, OHMMS_DIM>& lattice);
+#endif
+
   
 } // namespace qmcplusplus
 #endif

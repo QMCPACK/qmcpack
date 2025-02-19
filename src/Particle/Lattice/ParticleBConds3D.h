@@ -17,6 +17,7 @@
 
 #include <config.h>
 #include "Lattice/CrystalLattice.h"
+#include "LatticeAnalyzer.h"
 
 namespace qmcplusplus
 {
