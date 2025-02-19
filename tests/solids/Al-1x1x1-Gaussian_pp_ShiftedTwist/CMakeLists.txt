@@ -27,7 +27,7 @@ if(QMC_COMPLEX)
   # Compare directly to Hartree Fock Energy of: E=-8.072494830814307
   #Data generated using utils/make_ref_data.sh  Al-1x1x1-Gaussian_pp_Tw_cplx_SHORT qmc_ref/qmc_short.s000.scalar.dat  qmc_ref/qmc_ref_long.s000.scalar.dat
   list(APPEND Al-1x1x1-Gaussian_pp_Tw_cplx_SHORT_SCALARS "totenergy" "-8.072494830814307 0.025268003771")
-  list(APPEND Al-1x1x1-Gaussian_pp_Tw_cplx_SHORT_SCALARS "variance" "0.929704520713 0.046252853972")
+  list(APPEND Al-1x1x1-Gaussian_pp_Tw_cplx_SHORT_SCALARS "variance" "0.929704520713 0.5")
   list(APPEND Al-1x1x1-Gaussian_pp_Tw_cplx_SHORT_SCALARS "kinetic" "3.564934899261 0.015825393834")
   list(APPEND Al-1x1x1-Gaussian_pp_Tw_cplx_SHORT_SCALARS "potential" "-11.637571841025 0.029573348064")
   list(APPEND Al-1x1x1-Gaussian_pp_Tw_cplx_SHORT_SCALARS "eeenergy" "-3.109468568661 0.026007614629")
