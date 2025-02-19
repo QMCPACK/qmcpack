@@ -410,7 +410,7 @@ private:
     {
       mRealType uk = evalYk(std::sqrt(ksq[ki]));
       Fk_symm[ks]  = uk;
-      while (ki < KList.kshell[ks + 1] && ki < Fk.size())
+      while (ki < kshell[ks + 1] && ki < Fk.size())
         Fk[ki++] = uk;
     }
     //for(int ki=0; ki<KList.getKptsCartWorking().size(); ki++){
