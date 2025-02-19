@@ -54,9 +54,7 @@ TEST_CASE("kspace jastrow", "[wavefunction]")
   xmlNodePtr part1 = xmlFirstElementChild(root);
 
   // read lattice
-  ParticleSet::ParticleLayout lattice;
-  LatticeParser lp(lattice);
-  lp.put(part1);
+  ParticleLayoutT<QMCTraits::FullPrecRealType> lattice = makeFullPrecParticleLayout(part1);
   lattice.print(app_log(), 0);
 
   const SimulationCell simulation_cell(lattice);

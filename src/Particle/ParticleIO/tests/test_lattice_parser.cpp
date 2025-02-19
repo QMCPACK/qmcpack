@@ -49,14 +49,13 @@ TEST_CASE("read_lattice_xml", "[particle_io][xml]")
 
     xmlNodePtr root = doc.getRoot();
 
-    CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> uLattice;
-    LatticeParser lp(uLattice);
-    REQUIRE_NOTHROW(lp.put(root));
+    REQUIRE_NOTHROW(makeFullPrecParticleLayout(root));
+    ParticleLayoutT<QMCTraits::FullPrecRealType> lattice = makeFullPrecParticleLayout(root);
 
-    CHECK(uLattice.R[0] == Approx(3.8));
-    CHECK(uLattice.Volume == Approx(3.8 * 3.8 * 3.8));
+    CHECK(lattice.R[0] == Approx(3.8));
+    CHECK(lattice.getVolume() == Approx(3.8 * 3.8 * 3.8));
 
-    CHECK(uLattice.LR_dim_cutoff == Approx(20));
+    CHECK(lattice.LR_dim_cutoff == Approx(20));
   }
 
   SECTION("invalid n p p input")
@@ -81,9 +80,7 @@ TEST_CASE("read_lattice_xml", "[particle_io][xml]")
 
     xmlNodePtr root = doc.getRoot();
 
-    CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> uLattice;
-    LatticeParser lp(uLattice);
-    REQUIRE_THROWS_WITH(lp.put(root),
+    REQUIRE_THROWS_WITH(makeFullPrecParticleLayout(root),
                         "LatticeParser::put. In \"bconds\", non periodic directions must be placed after the periodic "
                         "ones.");
   }
@@ -110,9 +107,7 @@ TEST_CASE("read_lattice_xml", "[particle_io][xml]")
 
     xmlNodePtr root = doc.getRoot();
 
-    CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> uLattice;
-    LatticeParser lp(uLattice);
-    REQUIRE_THROWS_WITH(lp.put(root),
+    REQUIRE_THROWS_WITH(makeFullPrecParticleLayout(root),
                         "LatticeParser::put. In \"bconds\", non periodic directions must be placed after the periodic "
                         "ones.");
   }
@@ -143,12 +138,11 @@ TEST_CASE("read_lattice_xml_lrhandle", "[particle_io][xml]")
 
     xmlNodePtr root = doc.getRoot();
 
-    CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> uLattice;
-    LatticeParser lp(uLattice);
-    REQUIRE_NOTHROW(lp.put(root));
+    REQUIRE_NOTHROW(makeFullPrecParticleLayout(root));
+    ParticleLayoutT<QMCTraits::FullPrecRealType> lattice = makeFullPrecParticleLayout(root);
 
-    CHECK(uLattice.R[8] == Approx(10.0));
-    CHECK(uLattice.LR_dim_cutoff == Approx(30));
+    CHECK(lattice.R[8] == Approx(10.0));
+    CHECK(lattice.LR_dim_cutoff == Approx(30));
   }
 
   SECTION("valid p p n ewald_quasi2d input")
@@ -174,9 +168,7 @@ TEST_CASE("read_lattice_xml_lrhandle", "[particle_io][xml]")
 
     xmlNodePtr root = doc.getRoot();
 
-    CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> uLattice;
-    LatticeParser lp(uLattice);
-    REQUIRE_NOTHROW(lp.put(root));
+    REQUIRE_NOTHROW(makeFullPrecParticleLayout(root));
   }
 
   SECTION("invalid p p p ewald_quasi2d input")
@@ -202,9 +194,7 @@ TEST_CASE("read_lattice_xml_lrhandle", "[particle_io][xml]")
 
     xmlNodePtr root = doc.getRoot();
 
-    CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> uLattice;
-    LatticeParser lp(uLattice);
-    REQUIRE_THROWS_WITH(lp.put(root),
+    REQUIRE_THROWS_WITH(makeFullPrecParticleLayout(root),
                         "LatticeParser::put. Quasi 2D Ewald only works with boundary condition 'p p n'!");
   }
 }

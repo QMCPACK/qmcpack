@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2021 QMCPACK developers.
+// Copyright (c) 2025 QMCPACK developers.
 //
 // File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
@@ -15,51 +15,73 @@
 namespace qmcplusplus
 {
 
-SimulationCell::SimulationCell() = default;
+template<typename REAL>
+SimulationCellT<REAL>::SimulationCellT() = default;
 
-SimulationCell::SimulationCell(const Lattice& lattice)
-    : lattice_(lattice)
+template<typename REAL>
+SimulationCellT<REAL>::SimulationCellT(const Lattice& lattice) : lattice_(lattice)
 {
+  full_lattice_.set(lattice.getR());
   resetLRBox();
 }
 
-void SimulationCell::resetLRBox()
+  template<typename REAL>
+SimulationCellT<REAL>::SimulationCellT(const LatticeFullPrec& lattice) : full_lattice_(lattice)
 {
-  if (lattice_.SuperCellEnum != SUPERCELL_OPEN)
+  lattice_.set(lattice.getR());
+  resetLRBox();
+}
+
+template<typename REAL>
+void SimulationCellT<REAL>::resetLRBox()
+{
+  // We don't want to use the reduced precision lattice for any of this
+  if (full_lattice_.getSuperCellEnum() != SUPERCELL_OPEN)
   {
-    lattice_.SetLRCutoffs(lattice_.Rv);
-    LRBox_        = lattice_;
+    full_lattice_.SetLRCutoffs(full_lattice_.getRv());
+    full_lrbox_       = full_lattice_;
     bool changed = false;
-    if (lattice_.SuperCellEnum == SUPERCELL_SLAB && lattice_.VacuumScale != 1.0)
+    if (full_lattice_.getSuperCellEnum() == SUPERCELL_SLAB && full_lattice_.getVacuumScale() != 1.0)
     {
-      LRBox_.R(2, 0) *= lattice_.VacuumScale;
-      LRBox_.R(2, 1) *= lattice_.VacuumScale;
-      LRBox_.R(2, 2) *= lattice_.VacuumScale;
+      full_lrbox_.getR()(2, 0) *= full_lattice_.getVacuumScale();
+      full_lrbox_.getR()(2, 1) *= full_lattice_.getVacuumScale();
+      full_lrbox_.getR()(2, 2) *= full_lattice_.getVacuumScale();
       changed = true;
     }
-    else if (lattice_.SuperCellEnum == SUPERCELL_WIRE && lattice_.VacuumScale != 1.0)
+    else if (full_lattice_.getSuperCellEnum() == SUPERCELL_WIRE && full_lattice_.getVacuumScale() != 1.0)
     {
-      LRBox_.R(1, 0) *= lattice_.VacuumScale;
-      LRBox_.R(1, 1) *= lattice_.VacuumScale;
-      LRBox_.R(1, 2) *= lattice_.VacuumScale;
-      LRBox_.R(2, 0) *= lattice_.VacuumScale;
-      LRBox_.R(2, 1) *= lattice_.VacuumScale;
-      LRBox_.R(2, 2) *= lattice_.VacuumScale;
+      full_lrbox_.getR()(1, 0) *= full_lattice_.getVacuumScale();
+      full_lrbox_.getR()(1, 1) *= full_lattice_.getVacuumScale();
+      full_lrbox_.getR()(1, 2) *= full_lattice_.getVacuumScale();
+      full_lrbox_.getR()(2, 0) *= full_lattice_.getVacuumScale();
+      full_lrbox_.getR()(2, 1) *= full_lattice_.getVacuumScale();
+      full_lrbox_.getR()(2, 2) *= full_lattice_.getVacuumScale();
       changed = true;
     }
-    LRBox_.reset();
-    LRBox_.SetLRCutoffs(LRBox_.Rv);
-    LRBox_.printCutoffs(app_log());
+    full_lrbox_.reset();
+    full_lrbox_.SetLRCutoffs(full_lrbox_.getRv());
+    full_lrbox_.printCutoffs(app_log());
 
     if (changed)
     {
       app_summary() << "  Simulation box changed by vacuum supercell conditions" << std::endl;
       app_log() << "--------------------------------------- " << std::endl;
-      LRBox_.print(app_log());
+      full_lrbox_.print(app_log());
       app_log() << "--------------------------------------- " << std::endl;
     }
-
-    k_lists_.updateKLists(LRBox_, LRBox_.LR_kc, LRBox_.ndim);
+    full_lrbox_.reset();
+    full_lrbox_.SetLRCutoffs(full_lrbox_.getRv());
+    full_lrbox_.printCutoffs(app_log());
+    
+    k_lists_.updateKLists<FullPrecReal>(full_lrbox_, full_lrbox_.LR_kc, full_lrbox_.ndim);
   }
+  LRBox_ = full_lrbox_;
+  lattice_ = full_lattice_;
 }
-}
+
+#ifdef MIXED_PRECISION
+template class SimulationCellT<float>;
+#else
+template class SimulationCellT<double>;
+#endif
+} // namespace qmcplusplus

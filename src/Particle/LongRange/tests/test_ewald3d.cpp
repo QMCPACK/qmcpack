@@ -24,7 +24,7 @@ using mRealType = EwaldHandler3D::mRealType;
  */
 TEST_CASE("ewald3d", "[lrhandler]")
 {
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
+  CrystalLattice<QMCTraits::FullPrecRealType, OHMMS_DIM> Lattice;
   Lattice.BoxBConds     = true;
   Lattice.LR_dim_cutoff = 30.;
   Lattice.R.diagonal(5.0);
@@ -46,8 +46,7 @@ TEST_CASE("ewald3d", "[lrhandler]")
   CHECK(handler.Sigma == Approx(std::sqrt(Lattice.LR_kc / (2.0 * Lattice.LR_rc))));
 
   std::cout << "handler.MaxKshell is " << handler.MaxKshell << std::endl;
-  CHECK( (std::is_same<OHMMS_PRECISION, OHMMS_PRECISION_FULL>::value ?
-     handler.MaxKshell == 78 : handler.MaxKshell >= 117 && handler.MaxKshell <= 128 ));
+  CHECK(handler.MaxKshell == 78);
   CHECK(handler.LR_rc == Approx(2.5));
   CHECK(handler.LR_kc == Approx(12));
 
@@ -73,7 +72,7 @@ TEST_CASE("ewald3d", "[lrhandler]")
  */
 TEST_CASE("ewald3d df", "[lrhandler]")
 {
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
+  CrystalLattice<QMCTraits::FullPrecRealType, OHMMS_DIM> Lattice;
   Lattice.BoxBConds     = true;
   Lattice.LR_dim_cutoff = 30.;
   Lattice.R.diagonal(5.0);
@@ -95,8 +94,7 @@ TEST_CASE("ewald3d df", "[lrhandler]")
   CHECK(handler.Sigma == Approx(std::sqrt(Lattice.LR_kc / (2.0 * Lattice.LR_rc))));
 
   std::cout << "handler.MaxKshell is " << handler.MaxKshell << std::endl;
-  CHECK( (std::is_same<OHMMS_PRECISION, OHMMS_PRECISION_FULL>::value ?
-     handler.MaxKshell == 78 : handler.MaxKshell >= 117 && handler.MaxKshell <= 128 ));
+  CHECK(handler.MaxKshell == 78);
   CHECK(handler.LR_rc == Approx(2.5));
   CHECK(handler.LR_kc == Approx(12));
 

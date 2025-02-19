@@ -20,20 +20,30 @@
 
 namespace qmcplusplus
 {
+
+ParticleLayoutT<QMCTraits::FullPrecRealType> makeFullPrecParticleLayout(xmlNodePtr cur);
+
+
 class LatticeParser
 {
-  using ParticleLayout = PtclOnLatticeTraits::ParticleLayout;
+  ParticleLayoutT<QMCTraits::FullPrecRealType>& full_prec_ref_;
+  using ParticleLayout = ParticleLayoutT<QMCTraits::RealType>;
   ParticleLayout& ref_;
-
 public:
-  LatticeParser(ParticleLayout& lat) : ref_(lat) {}
+  template<typename T1, unsigned D>
+  LatticeParser(CrystalLattice<T1,D>& full_lat) : full_prec_ref_(full_lat), ref_(full_lat) {
+    static_assert(std::is_same_v<T1, QMCTraits::FullPrecRealType>, "This should never get called with a reduced precision lattice");
+  }
+  template<typename T1, typename T2, unsigned D>
+  LatticeParser(CrystalLattice<T1,D>& full_lat, CrystalLattice<T2,D>& lat ) : full_prec_ref_(full_lat), ref_(lat) {}
   bool put(xmlNodePtr cur);
 };
 
-
 class LatticeXMLWriter
 {
-  using ParticleLayout = PtclOnLatticeTraits::ParticleLayout;
+  template<typename T>
+  using ParticleLayoutT = typename PtclOnLatticeTraitsT<T>::ParticleLayout;
+  using ParticleLayout = ParticleLayoutT<QMCTraits::FullPrecRealType>;
   const ParticleLayout& ref_;
 
 public:
@@ -42,6 +52,6 @@ public:
   xmlNodePtr createNode();
 };
 
-
+  
 } // namespace qmcplusplus
 #endif

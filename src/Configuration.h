@@ -74,18 +74,21 @@ struct QMCTraits
 
 /** Particle traits to use UniformGridLayout for the ParticleLayout.
  */
-struct PtclOnLatticeTraits
+template<typename PREC>
+struct PtclOnLatticeTraitsT
 {
-  using ParticleLayout = CrystalLattice<OHMMS_PRECISION, OHMMS_DIM>;
+  using ParticleLayout = CrystalLattice<PREC, OHMMS_DIM>;
   using QTFull         = QMCTraits::QTFull;
 
   using Index_t   = int;
   using Scalar_t  = QTFull::RealType;
   using Complex_t = QTFull::ComplexType;
 
-  using SingleParticleIndex = ParticleLayout::SingleParticleIndex;
-  using SingleParticlePos   = ParticleLayout::SingleParticlePos;
-  using Tensor_t            = ParticleLayout::Tensor_t;
+  using SingleParticleIndex = typename ParticleLayout::SingleParticleIndex;
+  using SingleParticlePos   = typename ParticleLayout::SingleParticlePos;
+  using SingleParticlePosFull   = typename CrystalLattice<OHMMS_PRECISION_FULL, OHMMS_DIM>::SingleParticlePos;
+
+  using Tensor_t            = typename ParticleLayout::Tensor_t;
 
   using ParticleIndex  = ParticleAttrib<Index_t>;
   using ParticleScalar = ParticleAttrib<Scalar_t>;
@@ -97,6 +100,10 @@ struct PtclOnLatticeTraits
   using SingleParticleValue = QTFull::ValueType;
 };
 
+using PtclOnLatticeTraits = PtclOnLatticeTraitsT<OHMMS_PRECISION>;
+
+template<typename T>
+using ParticleLayoutT = typename PtclOnLatticeTraitsT<T>::ParticleLayout;
 
 // For unit tests
 //  Check if we are compiling with Catch defined.  Could use other symbols if needed.

@@ -208,7 +208,7 @@ TEST_CASE("SkAll", "[hamiltonian]")
   // In order to compare to analytic result, need the list
   // of k-vectors in cartesian coordinates.
   // Luckily, ParticleSet stores that in SK->getKLists().kpts_cart
-  int nkpts = elec->getSimulationCell().getKLists().numk;
+  int nkpts = elec->getSimulationCell().getKLists().getNumK();
   std::cout << "\n";
   std::cout << "SkAll results:\n";
   std::cout << std::fixed;
@@ -229,7 +229,7 @@ TEST_CASE("SkAll", "[hamiltonian]")
   std::cout << std::setprecision(5);
   for (int k = 0; k < nkpts; k++)
   {
-    auto kvec      = elec->getSimulationCell().getKLists().kpts_cart[k];
+    auto kvec      = elec->getSimulationCell().getKLists().getKptsCartWorking()[k];
     RealType kx    = kvec[0];
     RealType ky    = kvec[1];
     RealType kz    = kvec[2];

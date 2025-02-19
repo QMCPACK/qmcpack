@@ -53,9 +53,10 @@ EwaldHandler3D::EwaldHandler3D(const EwaldHandler3D& aLR, ParticleSet& ref)
 
 void EwaldHandler3D::fillFk(const KContainer& KList)
 {
-  Fk.resize(KList.kpts_cart.size());
-  Fkg.resize(KList.kpts_cart.size());
-  const std::vector<int>& kshell(KList.kshell);
+  const auto& kpts_cart = KList.getKptsCartWorking();
+  Fk.resize(kpts_cart.size());
+  Fkg.resize(kpts_cart.size());
+  const std::vector<int>& kshell(KList.getKShell());
 
   MaxKshell = kshell.size() - 1;
 
@@ -63,12 +64,13 @@ void EwaldHandler3D::fillFk(const KContainer& KList)
   kMag.resize(MaxKshell);
   mRealType kgauss = 1.0 / (4 * Sigma * Sigma);
   mRealType knorm  = 4 * M_PI / Volume;
+  const auto ksq = KList.getKSQWorking();
   for (int ks = 0, ki = 0; ks < Fk_symm.size(); ks++)
   {
-    mRealType t2e = KList.ksq[ki] * kgauss;
-    mRealType uk  = knorm * std::exp(-t2e) / KList.ksq[ki];
+    mRealType t2e = ksq[ki] * kgauss;
+    mRealType uk  = knorm * std::exp(-t2e) / ksq[ki];
     Fk_symm[ks]   = uk;
-    while (ki < KList.kshell[ks + 1] && ki < Fk.size())
+    while (ki < kshell[ks + 1] && ki < Fk.size())
       Fk[ki++] = uk;
   }
 

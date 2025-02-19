@@ -35,19 +35,19 @@ void EwaldHandlerQuasi2D::fillFk(const KContainer& KList)
 {
   const mRealType knorm = M_PI / area;
   mRealType kmag, uk;
-
-  Fk.resize(KList.kpts_cart.size());
-  MaxKshell = KList.kshell.size() - 1;
+  const auto& kpts_cart = KList.getKptsCartWorking();
+  Fk.resize(kpts_cart.size());
+  MaxKshell = KList.getKShell().size() - 1;
   Fk_symm.resize(MaxKshell);
 
   kmags.resize(MaxKshell);
   for (int ks = 0, ki = 0; ks < Fk_symm.size(); ks++)
   {
-    kmag = std::sqrt(KList.ksq[ki]);
+    kmag = std::sqrt(KList.getKSQWorking()[ki]);
     kmags[ks] = kmag; // store k magnitutes
     uk = knorm/kmag;
     Fk_symm[ks] = uk;
-    while (ki < KList.kshell[ks + 1] && ki < Fk.size())
+    while (ki < KList.getKShell()[ks + 1] && ki < Fk.size())
       Fk[ki++] = uk;
   }
 }

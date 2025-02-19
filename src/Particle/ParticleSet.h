@@ -249,8 +249,10 @@ public:
 
   const auto& getSimulationCell() const { return simulation_cell_; }
   const auto& getLattice() const { return simulation_cell_.getLattice(); }
+  const auto& getFullPrecLattice() const { return simulation_cell_.getFullPrecLattice(); }
   auto& getPrimitiveLattice() const { return const_cast<ParticleLayout&>(simulation_cell_.getPrimLattice()); }
   const auto& getLRBox() const { return simulation_cell_.getLRBox(); }
+  const auto& getFullLRBox() const { return simulation_cell_.getFullLRBox(); }
 
   inline bool isSameMass() const { return same_mass_; }
   inline bool isSpinor() const { return is_spinor_; }

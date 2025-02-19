@@ -267,16 +267,16 @@ private:
 
   void fillFk(const KContainer& KList)
   {
-    Fk.resize(KList.kpts_cart.size());
-    const std::vector<int>& kshell(KList.kshell);
+    Fk.resize(KList.getKptsCartWorking().size());
+    const std::vector<int>& kshell(KList.getKShell());
     if (MaxKshell >= kshell.size())
       MaxKshell = kshell.size() - 1;
     Fk_symm.resize(MaxKshell);
     for (int ks = 0, ki = 0; ks < Fk_symm.size(); ks++)
     {
-      mRealType uk = evalFk(std::sqrt(KList.ksq[ki]));
+      mRealType uk = evalFk(std::sqrt(KList.getKSQWorking()[ki]));
       Fk_symm[ks]  = uk;
-      while (ki < KList.kshell[ks + 1] && ki < Fk.size())
+      while (ki < kshell[ks + 1] && ki < Fk.size())
         Fk[ki++] = uk;
     }
     //for(int ki=0; ki<KList.kpts_cart.size(); ki++){
