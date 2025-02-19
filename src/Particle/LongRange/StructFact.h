@@ -21,11 +21,11 @@
 #include <NewTimer.h>
 #include <OMPTarget/OffloadAlignedAllocators.hpp>
 #include <type_traits/template_types.hpp>
+#include "KContainer.h"
 
 namespace qmcplusplus
 {
 class ParticleSet;
-class KContainer;
 struct SKMultiWalkerMem;
 
 /** @ingroup longrange

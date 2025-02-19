@@ -518,7 +518,7 @@ void XMLSaveParticle::get(std::ostream& fxml, int olevel) const
   ref_.begin_node(fxml);
   fxml.setf(std::ios::scientific);
   fxml.precision(15);
-  LatticeXMLWriter latticeout(ref_.getLattice());
+  LatticeXMLWriter latticeout(ref_.getFullPrecLattice());
   latticeout.get(fxml);
   for (int i = 0; i < SpeciesName.size(); i++)
   {

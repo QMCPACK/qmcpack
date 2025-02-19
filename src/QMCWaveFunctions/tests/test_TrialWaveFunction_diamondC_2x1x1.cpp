@@ -63,9 +63,10 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay, const OffloadSwitche
       offload_switches.jas ? DynamicCoordinateKind::DC_POS_OFFLOAD : DynamicCoordinateKind::DC_POS;
 
   // diamondC_2x1x1
-  ParticleSet::ParticleLayout lattice;
-  lattice.R         = {6.7463223, 6.7463223, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
-  lattice.BoxBConds = {1, 1, 1};
+  ParticleLayoutT<double> lattice;
+  Tensor<double, 3> lattice_mat{6.7463223, 6.7463223, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
+  lattice.set(lattice_mat);
+  lattice.setBoxBConds({1, 1, 1});
   lattice.reset();
 
   ParticleSetPool ptcl = ParticleSetPool(c);

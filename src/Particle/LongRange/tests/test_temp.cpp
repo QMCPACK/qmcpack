@@ -36,7 +36,7 @@ struct EslerCoulomb3D
  */
 TEST_CASE("temp3d", "[lrhandler]")
 {
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
+  CrystalLattice<QMCTraits::FullPrecRealType, OHMMS_DIM> Lattice;
   Lattice.BoxBConds     = true;
   Lattice.LR_dim_cutoff = 30.;
   Lattice.R.diagonal(5.0);
@@ -55,8 +55,7 @@ TEST_CASE("temp3d", "[lrhandler]")
   handler.initBreakup(ref);
 
   std::cout << "handler.MaxKshell is " << handler.MaxKshell << std::endl;
-  CHECK( (std::is_same<OHMMS_PRECISION, OHMMS_PRECISION_FULL>::value ?
-     handler.MaxKshell == 78 : handler.MaxKshell >= 117 && handler.MaxKshell <= 128 ));
+  CHECK( handler.MaxKshell == 78);
   CHECK(Approx(handler.LR_rc) == 2.5);
   CHECK(Approx(handler.LR_kc) == 12);
 

@@ -20,23 +20,32 @@ namespace qmcplusplus
 {
 class ParticleSetPool;
 
-class SimulationCell
+template<typename REAL>
+class SimulationCellT
 {
 public:
-  using Lattice = PtclOnLatticeTraits::ParticleLayout;
-
-  SimulationCell();
-  SimulationCell(const Lattice& lattice);
+  using FullPrecReal = QMCTraits::FullPrecRealType;
+  using Lattice = typename PtclOnLatticeTraits::ParticleLayout;
+  using LatticeFullPrec = ParticleLayoutT<FullPrecReal>;
+  SimulationCellT();
+  // Who uses these, the application uses the default constructor and that fills in lattice_ and full_lattice_
+  // from ParticleSetPool
+  SimulationCellT(const Lattice& lattice);
+  SimulationCellT(const LatticeFullPrec& lattice);
 
   const Lattice& getLattice() const { return lattice_; }
+  /// Full Precision Lattice, if you doing anything with the lattice wrt kpoints use this!
+  const auto& getFullPrecLattice() const { return full_lattice_; }
   const Lattice& getPrimLattice() const { return primative_lattice_; }
   const Lattice& getLRBox() const { return LRBox_; }
+  const auto& getFullLRBox() const { return full_lrbox_; }
 
   void resetLRBox();
 
   /// access k_lists_ read only
   const KContainer& getKLists() const { return k_lists_; }
 
+  LatticeFullPrec& getFullLattice() { return full_lattice_; }
 private:
   ///simulation cell lattice
   Lattice lattice_;
@@ -44,11 +53,17 @@ private:
   Lattice primative_lattice_;
   ///long-range box
   Lattice LRBox_;
+  ///For kpoint calculations
+  LatticeFullPrec full_lattice_;
+  LatticeFullPrec full_lrbox_;
 
   /// K-Vector List.
   KContainer k_lists_;
 
   friend class ParticleSetPool;
 };
+
+using SimulationCell = SimulationCellT<QMCTraits::RealType>;
+  
 } // namespace qmcplusplus
 #endif

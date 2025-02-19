@@ -87,7 +87,7 @@ bool ParticleSetPool::readSimulationCellXML(xmlNodePtr cur)
   bool lattice_defined = false;
   try
   {
-    LatticeParser a(simulation_cell_->lattice_);
+    LatticeParser a(simulation_cell_->full_lattice_, simulation_cell_->lattice_);
     lattice_defined = a.put(cur);
   }
   catch (const UniformCommunicateError& ue)

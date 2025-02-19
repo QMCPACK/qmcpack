@@ -64,6 +64,33 @@ struct CheckVectorResult
  *  \param[in] eps       - add a tolerance for Catch Approx checks. Default to same as in Approx.
  *  The semantics of the return value are discussed above.
  */
+template<unsigned D>
+CheckVectorResult checkVector(const std::vector<TinyVector<int, D>>& a_vec,
+                              const std::vector<TinyVector<int, D>>& b_vec,
+                              const bool check_all = false)
+{
+  // This allows use to check a padded b matrix with a nonpadded a
+  if (a_vec.size() > b_vec.size())
+    return {false, "b_vec is too small for a_vec to be a checkable segment"};
+  std::stringstream result_msg;
+  auto vectorElementError = [&result_msg](int i, auto& a_vec, auto& b_vec) {
+    result_msg << "checkVector found bad element at " << i << "  " << a_vec[i] << " != " << b_vec[i] << '\n';
+  };
+  bool all_elements_match = true;
+  for (int i = 0; i < a_vec.size(); i++)
+  {
+    bool equality = a_vec[i] == b_vec[i];
+    if (!equality)
+    {
+      vectorElementError(i, a_vec, b_vec);
+      all_elements_match = false;
+      if (!check_all)
+        return {false, result_msg.str()};
+    }
+  }
+  return {all_elements_match, result_msg.str()};
+}
+
 template<class M1, class M2>
 CheckVectorResult checkVector(const M1& a_vec,
                               const M2& b_vec,
@@ -91,6 +118,7 @@ CheckVectorResult checkVector(const M1& a_vec,
   }
   return {all_elements_match, result_msg.str()};
 }
+
 } // namespace qmcplusplus
 
 #endif

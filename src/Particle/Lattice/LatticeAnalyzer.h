@@ -38,7 +38,10 @@ enum
 };
 
 
-///generic class to analyze a Lattice
+/** generic class to analyze a Lattice
+ *  NOTE: There is no constructor but operator() should be considered one in most
+ *        cases as the "class" is invalid until it is called since mySC is not intialized.
+ */
 template<typename T, unsigned D>
 struct LatticeAnalyzer
 {};

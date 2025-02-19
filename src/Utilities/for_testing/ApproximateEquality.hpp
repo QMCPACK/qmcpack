@@ -16,6 +16,8 @@
 
 #include <optional>
 #include "type_traits/complex_help.hpp"
+#include "OhmmsPETE/TinyVector.h"
+
 namespace qmcplusplus
 {
 
@@ -36,7 +38,7 @@ bool approxEquality(T val_a, T val_b, std::optional<double> eps)
   else
     return val_a == Approx(val_b);
 }
-
+  
 extern template bool approxEquality<float>(float val_a, float val_b, std::optional<double> eps);
 extern template bool approxEquality<std::complex<float>>(std::complex<float> val_a,
                                                          std::complex<float> val_b,

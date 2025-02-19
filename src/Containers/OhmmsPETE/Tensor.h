@@ -231,6 +231,7 @@ public:
 
   //TJW: add these 12/16/97 to help with NegReflectAndZeroFace BC:
   // These are the same as operator[] but with () instead:
+  // \todo remove this redundant and non idiomatic operator
   inline Type_t& operator()(unsigned int i) { return X[i]; }
 
   inline Type_t operator()(unsigned int i) const { return X[i]; }

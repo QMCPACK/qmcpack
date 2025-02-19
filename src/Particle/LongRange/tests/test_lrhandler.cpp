@@ -29,7 +29,7 @@ struct CoulombF2
  */
 TEST_CASE("dummy", "[lrhandler]")
 {
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
+  CrystalLattice<QMCTraits::FullPrecRealType, OHMMS_DIM> Lattice;
   Lattice.BoxBConds     = true;
   Lattice.LR_dim_cutoff = 30.;
   Lattice.R.diagonal(5.0);
@@ -48,8 +48,7 @@ TEST_CASE("dummy", "[lrhandler]")
   handler.initBreakup(ref);
 
   std::cout << "handler.MaxKshell is " << handler.MaxKshell << std::endl;
-  CHECK( (std::is_same<OHMMS_PRECISION, OHMMS_PRECISION_FULL>::value ?
-     handler.MaxKshell == 78 : handler.MaxKshell >= 117 && handler.MaxKshell <= 128 ));
+  CHECK( handler.MaxKshell == 78);
   CHECK(handler.LR_kc == Approx(12));
   CHECK(handler.LR_rc == Approx(0));
 
@@ -61,8 +60,8 @@ TEST_CASE("dummy", "[lrhandler]")
   //  the full Coulomb potential should be retained in kspace
   for (int ish = 0; ish < handler.MaxKshell; ish++)
   {
-    int ik           = ref.getSimulationCell().getKLists().kshell[ish];
-    double k2        = ref.getSimulationCell().getKLists().ksq[ik];
+    int ik           = ref.getSimulationCell().getKLists().getKShell()[ish];
+    double k2        = ref.getSimulationCell().getKLists().getKSQWorking()[ik];
     double fk_expect = fk(k2);
     CHECK(handler.Fk_symm[ish] == Approx(norm * fk_expect));
   }
