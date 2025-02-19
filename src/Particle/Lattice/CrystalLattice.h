@@ -314,7 +314,7 @@ public:
 
   // Allow assignment operator between say T=double and T=float
   template<class TT, unsigned DD>
-  friend class CrystalLattice;
+  friend struct CrystalLattice;
 
   friend class LatticeParser;
 };
