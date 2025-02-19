@@ -90,16 +90,8 @@ def test_options():
 
     # read
     opts = '-a -b 1 -c=2 --dname="0 1 2" --evar -fval -gval other --hval'
-    ref = obj(
-        a     = '-a',
-        b     = '-b 1',
-        c     = '-c=2',
-        dname = '--dname="0 1 2"',
-        evar  = '--evar',
-        fval  = '-fval',
-        gval  = '-gval other',
-        hval  = '--hval',
-        )
+    ref = obj()
+    ref['0'] = opts
     o = Options()
     o.read(opts)
     assert(object_eq(o.to_obj(),ref))
@@ -107,7 +99,7 @@ def test_options():
     # write
     opts_write = o.write()
     o2 = Options()
-    o2.read(opts_write)
+    o2.read(opts_write.strip())
     assert(object_eq(o2.to_obj(),ref))
 #end def test_options
 
