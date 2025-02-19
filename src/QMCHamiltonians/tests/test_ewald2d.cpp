@@ -22,7 +22,7 @@ TEST_CASE("Coulomb PBC A-A Ewald2D square", "[hamiltonian]")
   LRCoulombSingleton::CoulombHandler = 0;
   LRCoulombSingleton::this_lr_type = LRCoulombSingleton::STRICT2D;
   const double vmad_sq = -1.95013246;
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  CrystalLattice<OHMMS_PRECISION_FULL, OHMMS_DIM> lattice;
   lattice.BoxBConds = true; // periodic
   lattice.ndim = 2;
   lattice.R.diagonal(1.0);
@@ -57,7 +57,7 @@ TEST_CASE("Coulomb PBC A-A Ewald2D body center", "[hamiltonian]")
   LRCoulombSingleton::this_lr_type = LRCoulombSingleton::STRICT2D;
   const double vmad_bc = -2.7579038;
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  CrystalLattice<OHMMS_PRECISION_FULL, OHMMS_DIM> lattice;
   lattice.BoxBConds = true; // periodic
   lattice.ndim = 2;
   lattice.R = 0.0;
@@ -101,7 +101,7 @@ TEST_CASE("Coulomb PBC A-A Ewald2D triangular", "[hamiltonian]")
   const double vmad_tri = -1.1061025865191676;
   const double alat = std::sqrt(2.0*M_PI/std::sqrt(3));
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  CrystalLattice<OHMMS_PRECISION_FULL, OHMMS_DIM> lattice;
   lattice.BoxBConds = true; // periodic
   lattice.ndim = 2;
   lattice.R = 0.0;
@@ -141,7 +141,7 @@ TEST_CASE("Coulomb PBC A-A Ewald2D honeycomb", "[hamiltonian]")
   const double vmad_hon = -1.510964233;
   const double alat = std::sqrt(2.0*M_PI/std::sqrt(3));
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  CrystalLattice<OHMMS_PRECISION_FULL, OHMMS_DIM> lattice;
   lattice.BoxBConds = true; // periodic
   lattice.ndim = 2;
   lattice.R = 0.0;
@@ -189,7 +189,7 @@ TEST_CASE("Coulomb PBC A-A Ewald2D tri. in rect.", "[hamiltonian]")
   const double vmad_tri = -1.1061025865191676;
   const RealType alat = std::sqrt(2.0*M_PI/std::sqrt(3));
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  CrystalLattice<OHMMS_PRECISION_FULL, OHMMS_DIM> lattice;
   lattice.BoxBConds = true; // periodic
   lattice.ndim = 2;
   lattice.R = 0.0;

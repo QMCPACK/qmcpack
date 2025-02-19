@@ -32,7 +32,7 @@ void test_diamond_2x1x1_xml_input(const std::string& spo_xml_string)
   Communicate* c = OHMMS::Controller;
 
   // diamondC_2x1x1
-  ParticleSet::ParticleLayout lattice;
+  CrystalLattice<OHMMS_PRECISION_FULL, OHMMS_DIM> lattice;
   lattice.R = {6.7463223, 6.7463223, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
 
   ParticleSetPool ptcl = ParticleSetPool(c);

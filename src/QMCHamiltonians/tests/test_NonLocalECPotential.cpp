@@ -69,7 +69,7 @@ TEST_CASE("NonLocalECPotential", "[hamiltonian]")
   using Position     = QMCTraits::PosType;
   using testing::getParticularListener;
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  CrystalLattice<OHMMS_PRECISION_FULL, OHMMS_DIM> lattice;
   lattice.BoxBConds = true; // periodic
   lattice.R.diagonal(20.0);
   lattice.LR_dim_cutoff = 15;

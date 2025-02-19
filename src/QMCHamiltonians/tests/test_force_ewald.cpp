@@ -34,7 +34,7 @@ TEST_CASE("Chiesa Force BCC H Ewald3D", "[hamiltonian]")
 {
   Communicate* c = OHMMS::Controller;
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  CrystalLattice<OHMMS_PRECISION_FULL, OHMMS_DIM> lattice;
   lattice.BoxBConds = true; // periodic
   lattice.R.diagonal(3.77945227);
   lattice.LR_dim_cutoff = 40;
@@ -111,7 +111,7 @@ TEST_CASE("Chiesa Force BCC H Ewald3D", "[hamiltonian]")
 // test SR and LR pieces separately
 TEST_CASE("fccz sr lr clone", "[hamiltonian]")
 {
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  CrystalLattice<OHMMS_PRECISION_FULL, OHMMS_DIM> lattice;
   lattice.BoxBConds = true; // periodic
   lattice.R.diagonal(3.77945227);
   lattice.LR_dim_cutoff = 40;
@@ -201,7 +201,7 @@ TEST_CASE("fccz sr lr clone", "[hamiltonian]")
 // 3 H atoms randomly distributed in a box
 TEST_CASE("fccz h3", "[hamiltonian]")
 {
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  CrystalLattice<OHMMS_PRECISION_FULL, OHMMS_DIM> lattice;
   lattice.BoxBConds = true; // periodic
   lattice.R.diagonal(3.77945227);
   lattice.LR_dim_cutoff = 40;

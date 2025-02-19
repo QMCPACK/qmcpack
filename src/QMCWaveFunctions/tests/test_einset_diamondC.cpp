@@ -34,7 +34,7 @@ void test_einset_diamond_1x1x1(bool use_offload)
 {
   Communicate* c = OHMMS::Controller;
 
-  ParticleSet::ParticleLayout lattice;
+  CrystalLattice<OHMMS_PRECISION_FULL, OHMMS_DIM> lattice;
   // monoO
   // lattice.R(0,0) = {5.10509515, -3.23993545,  0.0, 5.10509515, 3.23993545, 0.0, -6.49690625, 0.0, 7.08268015};
 
@@ -305,7 +305,7 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1 5 electrons", "[wavefunction]")
 {
   Communicate* c = OHMMS::Controller;
 
-  ParticleSet::ParticleLayout lattice;
+  CrystalLattice<OHMMS_PRECISION_FULL, OHMMS_DIM> lattice;
   // diamondC_2x1x1
   lattice.R = {6.7463223, 6.7463223, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
 
@@ -503,7 +503,7 @@ TEST_CASE("EinsplineSetBuilder CheckLattice", "[wavefunction]")
 {
   Communicate* c = OHMMS::Controller;
 
-  ParticleSet::ParticleLayout lattice;
+  CrystalLattice<OHMMS_PRECISION_FULL, OHMMS_DIM> lattice;
   lattice.R       = 0.0;
   lattice.R(0, 0) = 1.0;
   lattice.R(1, 1) = 1.0;

@@ -38,7 +38,7 @@ TEST_CASE("Jastrow 2D", "[wavefunction]")
   //   TwoBodyJastrow<BsplineFunctor<RealType>> j2;
   //   RadialJastrowBuilder jastrow(Communicator, ParticleSet);
   //   ParticleSet( SimulationCell( CrystalLattice ) )
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  CrystalLattice<OHMMS_PRECISION_FULL, OHMMS_DIM> lattice;
   lattice.BoxBConds = true;
   lattice.R.diagonal(70.89815403622065);
   lattice.ndim = 2;
