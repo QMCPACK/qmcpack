@@ -27,7 +27,7 @@ using vec_t = TinyVector<double, 3>;
  */
 TEST_CASE("Crystal_lattice_periodic_bulk", "[lattice]")
 {
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
+  CrystalLattice<OHMMS_PRECISION_FULL, OHMMS_DIM> Lattice;
   Lattice.BoxBConds = false; // Open BC
   Lattice.R.diagonal(0.4);
   Lattice.reset();

@@ -79,6 +79,9 @@ public:
   ///default constructor, assign a huge supercell
   CrystalLattice();
 
+  template<typename TT>
+  CrystalLattice(const Tensor<TT, D>& tensor);
+
   /** modern factory function
    *  friend has to be any possible
    */
@@ -114,9 +117,9 @@ public:
   ///supercell enumeration
   int SuperCellEnum;
   ///The boundary condition in each direction.
-  TinyVector<int, D> BoxBConds;
+  TinyVector<int, D> BoxBConds{false,false,false};
   ///The scale factor for adding vacuum.
-  T VacuumScale;
+  T VacuumScale = 1.0;
   //@{
   /**@brief Physical properties of a supercell*/
   /// Volume of a supercell
@@ -161,7 +164,7 @@ public:
   //angles between the two lattice vectors
   SingleParticlePos ABC;
   ///true, the lattice is defined by the input instead of an artificial default
-  bool explicitly_defined;
+  bool explicitly_defined = false;
 
   /**@param i the index of the directional vector, \f$i\in [0,D)\f$
    *@return The lattice vector of the ith direction
@@ -216,13 +219,7 @@ public:
   }
 
   /// return true if any direction of reduced coordinates u goes larger than 0.5
-  inline bool outOfBound(const TinyVector<T, D>& u) const
-  {
-    for (int i = 0; i < D; ++i)
-      if (std::abs(u[i]) > 0.5)
-        return true;
-    return false;
-  }
+  bool outOfBound(const TinyVector<T, D>& u) const;
 
   inline void applyMinimumImage(TinyVector<T, D>& c) const
   {
@@ -322,8 +319,19 @@ public:
   friend class LatticeParser;
 };
 
+extern template struct CrystalLattice<double, OHMMS_DIM>;
+extern template CrystalLattice<double, OHMMS_DIM>::CrystalLattice(const Tensor<double, OHMMS_DIM>& tensor);
+extern template CrystalLattice<double, OHMMS_DIM>::CrystalLattice(const Tensor<float, OHMMS_DIM>& tensor);
+extern template void CrystalLattice<double, OHMMS_DIM>::set(const Tensor<double, OHMMS_DIM>& tensor);
+extern template void CrystalLattice<double, OHMMS_DIM>::set(const Tensor<float, OHMMS_DIM>& tensor);
+
+extern template struct CrystalLattice<float, OHMMS_DIM>;
+extern template CrystalLattice<float, OHMMS_DIM>::CrystalLattice(const Tensor<double, OHMMS_DIM>& tensor);
+extern template CrystalLattice<float, OHMMS_DIM>::CrystalLattice(const Tensor<float, OHMMS_DIM>& tensor);
+extern template void CrystalLattice<float, OHMMS_DIM>::set(const Tensor<double, OHMMS_DIM>& tensor);
+extern template void CrystalLattice<float, OHMMS_DIM>::set(const Tensor<float, OHMMS_DIM>& tensor);
+
 } // namespace qmcplusplus
 //including the definitions of the member functions
-#include "CrystalLattice.cpp"
 
 #endif
