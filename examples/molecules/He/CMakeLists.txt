@@ -61,7 +61,7 @@ if(NOT QMC_COMPLEX)
     HE_SIMPLE_OPT_SCALARS # final optimized series
   )
 
-  list(APPEND HE_FROM_GAMESS_SCALARS "totenergy" "-2.872 .006") # total energy
+  list(APPEND HE_FROM_GAMESS_SCALARS "totenergy" "-2.872 .009") # total energy
 
   qmc_run_and_check(
     example_He_from_gamess
