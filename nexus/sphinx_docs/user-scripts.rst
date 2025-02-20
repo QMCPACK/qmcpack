@@ -263,7 +263,7 @@ atomic/electronic structure to simulate:
 
 The simulation objects created in this way are just data.  They represent requests for particular simulations to be carried out at a later time.  No simulation runs are actually performed during the creation of these objects. A basic example of generation input for each of the four major codes currently supported by Nexus is given below.
 
-Quantum Espresso (PWSCF) generation:
+Quantum ESPRESSO (PWSCF) generation:
 ************************************
 
 ::
@@ -611,7 +611,7 @@ Metallic systems
 The charge and the net spin are expected to vary from twist to twist in metallic systems in general.
 In Nexus, this can be handled via grand-canonical twist-averaging (GCTA), by specifying the ``gcta`` argument in the ``generate_qmcpack()`` function.
 The ``gcta`` argument can take the values given in :ref:`Table 2 <table2>`.
-Currently, only workflows that use Quantum Espresso (PWSCF) are supported by ``gcta``.
+Currently, only workflows that use Quantum ESPRESSO (PWSCF) are supported by ``gcta``.
 
 .. _table2:
 
@@ -670,7 +670,7 @@ Currently, only workflows that use Quantum Espresso (PWSCF) are supported by ``g
 - Due to the hardcoded nature of the limited dependency traceback capability implemented in ``gcta``, hybrid functionals in PWSCF will currently not work with ``safl`` and ``scf``.
   This is because NSCF calculations are not possible with the hybrid functionals, requiring a direct (``scf`` -> ``pw2qmcpack``) instead of (``scf`` -> ``nscf`` -> ``pw2qmcpack``).
 - ``gcta`` argument will currently not work if there is a single twist in the system (it only activates when there are multiple twists).
-- ``gcta`` currently supports only Quantum Espresso (PWSCF).
+- ``gcta`` currently supports only Quantum ESPRESSO (PWSCF).
 
 Please contact the developers if any of these issues are critical for research.
 

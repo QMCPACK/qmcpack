@@ -113,7 +113,7 @@ excited state calculations with QMCPACK.
 
 Of course, to run full calculations, the simulation codes and converters
 involved must be installed as well. These include a modified version of
-Quantum Espresso (``pw.x``, ``pw2qmcpack.x``, optionally
+Quantum ESPRESSO (``pw.x``, ``pw2qmcpack.x``, optionally
 ``pw2casino.x``), QMCPACK (``qmcpack``, ``qmcpack_complex``,
 ``convert4qmc``, ``wfconvert``, ``ppconvert``), SQD (``sqd``, packaged
 with QMCPACK), VASP, and/or GAMESS. Complete coverage of this task is

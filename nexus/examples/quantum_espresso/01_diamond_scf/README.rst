@@ -2,7 +2,7 @@ Nexus QE+QMCPACK Example 1: Diamond primitive cell (DFT only)
 =============================================================
 
 In this example, we give an introduction to Nexus by using it to run a simple 
-system (diamond) with Quantum Espresso.  The Nexus script we will use is 
+system (diamond) with Quantum ESPRESSO.  The Nexus script we will use is 
 ``diamond_lda.py`` in the current directory.
 
 If you have not used Nexus before, we recommend you briefly read the 
