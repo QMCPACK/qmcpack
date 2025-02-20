@@ -36,7 +36,7 @@ sys.path.append(os.path.abspath('extensions'))
 import sphinx_rtd_theme
 
 extensions = ['sphinxcontrib.bibtex', "sphinx_rtd_theme"]
-bibtex_bibfiles = []
+bibtex_bibfiles = ['bibs/methods.bib']
 
 numfig = True
 
