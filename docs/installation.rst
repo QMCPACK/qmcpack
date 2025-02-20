@@ -1178,7 +1178,7 @@ options and different versions of the application. A full list can be displayed 
     ppconvert [off]         on, off                 Install with pseudopotential
                                                     converter.
     qe [on]                 on, off                 Install with patched Quantum
-                                                    Espresso 6.4.0
+                                                    ESPRESSO 6.4.0
     timers [off]            on, off                 Build with support for timers
 
   Installation Phases:
