@@ -47,9 +47,11 @@ void WalkerLogCollector::init()
 
 void WalkerLogCollector::startBlock()
 {
-  ScopedTimer timer(walker_log_collector_timers_[Timer::START]);
   if (!state_.logs_active)
     return; // no-op for driver if logs are inactive
+
+  ScopedTimer timer(walker_log_collector_timers_[Timer::START]);
+
   if (state_.verbose)
     app_log() << "WalkerLogCollector::startBlock " << std::endl;
   resetBuffers(); // resize buffers to zero rows
@@ -62,10 +64,10 @@ void WalkerLogCollector::collect(const MCPWalker& walker,
                                  const QMCHamiltonian& ham,
                                  int step)
 {
-  ScopedTimer timer(walker_log_collector_timers_[Timer::COLLECT]);
-
   if (!state_.logs_active)
     return; // no-op for driver if logs are inactive
+
+  ScopedTimer timer(walker_log_collector_timers_[Timer::COLLECT]);
 
   // only collect walker data at steps matching the period (default 1)
   int current_step = (step == -1) ? pset.current_step : step;
