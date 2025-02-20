@@ -14,7 +14,7 @@ settings(
     sleep         = 3,
     machine       = 'ws16',
     status_only   = 0,
-    generate_only = 1,
+    generate_only = 0,
     )
 
 ppset(
