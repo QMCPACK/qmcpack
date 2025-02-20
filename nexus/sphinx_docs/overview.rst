@@ -9,7 +9,7 @@ What Nexus is
 Nexus is a collection of tools, written in Python, to perform
 complex electronic structure calculations and analyze the results.  The main
 focus is currently on performing arbitrary Quantum Monte Carlo (QMC)
-calculations with QMCPACK; however, VASP, Quantum Espresso, and GAMESS are
+calculations with QMCPACK; however, VASP, Quantum ESPRESSO, and GAMESS are
 also supported.  A single QMC calculation typically requires several
 previous calculations with other codes to produce a starting guess for the
 many-body wavefunction and convert it into a form that QMCPACK understands.
@@ -24,7 +24,7 @@ What Nexus can do
 
 The capabilities of Nexus currently include crystal structure
 generation, standalone Density Functional Theory (DFT) calculations with
-PWSCF (Quantum Espresso) or VASP,  quantum chemical calculations with GAMESS,
+PWSCF (Quantum ESPRESSO) or VASP,  quantum chemical calculations with GAMESS,
 Hartree-Fock (HF) calculations of atoms with the SQD code (packaged with
 QMCPACK), complete QMC calculations with QMCPACK (including wavefunction
 optimization, Variational Monte Carlo (VMC), and Diffusion Monte Carlo (DMC) in
