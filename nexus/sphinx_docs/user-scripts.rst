@@ -665,9 +665,9 @@ Currently, only workflows that use Quantum ESPRESSO (PWSCF) are supported by ``g
   In most cases, this is not an issue due to the residual convergence error in NSCF, which effectively acts as a small randomizer of eigenvalues.
   However, it is possible to avoid this issue altogether, which requires re-implementation of ``gcta``.
   In this new potential version, a table of sorted eigenvalues and the **k**-points they folded from are kept together.
-  Then, since the the number of electrons that needs to be occupied is known, the occupations can be set for each **k**-point and their folded twists.
+  Then, since the number of electrons that needs to be occupied is known, the occupations can be set for each **k**-point and their folded twists.
   It avoids the (:math:`e_i < E_F`) comparison which is numerically problematic if there are eigenvalue degeneracies.
-- Due to the hardcoded nature of the limited dependency traceback capability implemented in ``gcta``, hybrid functionals in PWSCF will currently not work with ``safl`` and ``scf``.
+- Due to the hard-coded nature of the limited dependency traceback capability implemented in ``gcta``, hybrid functionals in PWSCF will currently not work with ``safl`` and ``scf``.
   This is because NSCF calculations are not possible with the hybrid functionals, requiring a direct (``scf`` -> ``pw2qmcpack``) instead of (``scf`` -> ``nscf`` -> ``pw2qmcpack``).
 - ``gcta`` argument will currently not work if there is a single twist in the system (it only activates when there are multiple twists).
 - ``gcta`` currently supports only Quantum ESPRESSO (PWSCF).
