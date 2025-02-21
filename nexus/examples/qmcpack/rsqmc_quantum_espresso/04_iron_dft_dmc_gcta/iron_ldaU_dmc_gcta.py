@@ -51,12 +51,9 @@ qmc_shared = obj(
     pseudos        = pseudos,
     )
 
-# read the primitive cell
-structure = read_structure('Fe_bcc.xsf')
-structure.change_units('B')
-
+# define the physical system
 system = generate_physical_system(
-    structure  = structure.copy(),
+    structure  = 'Fe_bcc.xsf',
     kgrid      = (6,6,6),
     kshift     = (0,0,0),
     net_spin   = 6, # The net_spin to be used in Jastrow optimizations is chosen as an integer close to the SCF value of 5.66.
@@ -80,7 +77,7 @@ scf = generate_pwscf(
 
 nscf = generate_pwscf(
     identifier        = 'nscf',
-    path              = basepath + 'nscf',
+    path              = basepath + 'nscf', # A different path is currently required for nscf since gcta-safl requires scf magnetization, which gets overwritten otherwise
     job               = job(cores=16, app='pw.x'),
     calculation       = 'nscf',
     system            = system,
@@ -106,11 +103,12 @@ optJ12 = generate_qmcpack(
     qmc                  = 'opt',
     J2                   = True,
     minmethod            = 'oneshift',
-    warmupsteps          = 10,
     init_cycles          = 5,
     cycles               = 5,
-    blocks               = 10,
-    steps                = 50,
+    walkers_per_rank     = 8,
+    warmupsteps          = 10,
+    samples              = 2e5,
+    blocks               = 100,
     minwalkers           = 0.3,
     corrections          = [],
     dependencies         = (p2q,'orbitals'),
@@ -129,11 +127,12 @@ optJ123 = generate_qmcpack(
     J3                   = True,
     J3_rcut              = J3_rcut,
     minmethod            = 'oneshift',
-    warmupsteps          = 10,
     init_cycles          = 0,
     cycles               = 10,
-    blocks               = 10,
-    steps                = 50,
+    walkers_per_rank     = 8,
+    warmupsteps          = 10,
+    samples              = 2e5,
+    blocks               = 100,
     minwalkers           = 0.5,
     corrections          = [],
     dependencies         = [(p2q,'orbitals'), (optJ12,'jastrow')],

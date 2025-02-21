@@ -43,7 +43,7 @@ The overall structure of the input file reflects different aspects of the QMC si
   <?xml version="1.0"?>
   <simulation>
 
-  <project id="vmc" series="0">
+  <project id="my_vmc" series="0">
     ...
   </project>
 
@@ -101,7 +101,7 @@ Project
 -------
 
 The ``<project>`` tag uses the ``id`` and ``series`` attributes.
-The value of ``id`` is the first part of the prefix for output file names.
+The value of ``id`` is the first part of the prefix for output file names. Common choices include the name of the material, molecule, or science project.
 
 Output file names also contain the series number, starting at the value given by the
 ``series`` tag.  After every ``<qmc>`` section, the series value will increment, giving each section a unique prefix.
@@ -115,15 +115,15 @@ Time limits
 ~~~~~~~~~~~
 Batched drivers check against ``max_seconds`` and make efforts to stop the execution cleanly at the end of a block before reaching the maximum time. Classic drivers can also take the now-deprecated ``maxcpusecs`` parameter for the same effect in the per driver XML section.
 
-In addition, a file named ``id`` plus ``.STOP``, in this case ``vmc.STOP``, stops QMCPACK execution on the fly cleanly once being found in the working directory.
+In addition, a file named by the project ``id`` plus ``.STOP``, in this case ``my_vmc.STOP``, stops QMCPACK execution on the fly cleanly at the end of the current block once being found in the working directory.
 
 
 .. _driver-version-parameter:
 
 Driver version
 ~~~~~~~~~~~~~~
-The ``driver_version`` parameter selects between the new performance-portable batched drivers and the previous drivers (now referred to as the 'legacy drivers').
-The values for this parameter are ``legacy`` or ``batch`` (alternately, ``batched``).
+The ``driver_version`` parameter selects between the current performance-portable batched drivers and the previous drivers (now referred to as the 'legacy drivers').
+The values for this parameter are ``legacy`` or ``batch`` (alternately, ``batched``). The default for this parameter is ``batch``.
 
 
 Random number initialization

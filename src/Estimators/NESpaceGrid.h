@@ -107,9 +107,14 @@ public:
    *  \param[out]     particles_outside    mask vector of particles falling outside the grid box
    *  \param[in]      dtab                 particle A to Particle B distance table
    *
-   *  right now cartesian grids are all accumulated as if they were "periodic" which honestly does not
-   *  seem to be well defined with repsect to these grids.  But for the particle cell itself it doesn't make
-   *  sense that it be periodic unless it is exactly comenserate with the particle cell (at least IMHO)
+   *  right now cartesian grids are assumed to be periodic because this was the legacy behavior 
+   *  In the period case the assumption minimum image is called holds, a out of bounds exception will occur
+   *  for anything coordinate more than one grid cell outside of the periodic boundaries and density can
+   *  incorrectly be accumulated at the edges of the grid for particles outside of the minimum image boundary
+   *  but within one grid cell for grids that think they are period but getting coordinates that aren't within
+   *  the minimum image.
+   *  It also does seem that you could define a cartesian grid that wasn't commensurate with the whole cell,
+   *  legacy didn't have logic for that and so you should never do it.
    */
   void accumulate(const ParticlePos& R,
                   const Matrix<Real>& values,

@@ -125,7 +125,7 @@ public:
       }
       else if (cname == "n2r" || cname == "ontop2rdm")
       {
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
         std::string str("false");
         ParameterSet m_param;
         m_param.add(str, "use_host_memory");
@@ -193,10 +193,12 @@ public:
       APP_ABORT("Runtime Error: iav out of range in full1rdm::accumulate. \n\n\n");
 
     int nw(wset.size());
-    int nrefs(std::get<1>(Refs.sizes()));
+
+    using std::get;
+    int nrefs(get<1>(Refs.sizes()));
     double LogOverlapFactor(wset.getLogOverlapFactor());
     LocalTGBufferManager shm_buffer_manager;
-    StaticSHM4Tensor G4D({nw, nspins, std::get<0>(Gdims), std::get<1>(Gdims)},
+    StaticSHM4Tensor G4D({nw, nspins, get<0>(Gdims), get<1>(Gdims)},
                          shm_buffer_manager.get_generator().template get_allocator<ComplexType>());
     StaticSHMVector DevOv(iextensions<1u>{2 * nw},
                           shm_buffer_manager.get_generator().template get_allocator<ComplexType>());

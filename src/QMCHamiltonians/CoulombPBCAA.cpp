@@ -23,6 +23,7 @@
 #include <ResourceCollection.h>
 #include <Message/UniformCommunicateError.h>
 #include "Numerics/OneDimCubicSplineLinearGrid.h"
+#include <numeric>
 
 namespace qmcplusplus
 {
@@ -123,6 +124,7 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces, bo
     {
       app_log() << "  Check passed." << std::endl;
     }
+
   }
   prefix_ = "F_AA";
   app_log() << "  Maximum K shell " << AA->MaxKshell << std::endl;
@@ -317,6 +319,30 @@ void CoulombPBCAA::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
 
     for (const ListenerVector<RealType>& listener : listeners)
       listener.report(walker_index, name, v_sample);
+
+#ifndef NDEBUG
+    RealType Vlrnow = cpbcaa.evalLR(pset);
+    RealType Vsrnow = cpbcaa.evalSR(pset);
+    RealType Vcnow  = cpbcaa.myConst;
+    RealType Vcsum = std::accumulate(pp_consts.begin(), pp_consts.end(), 0.0);
+    RealType Vnow   = Vlrnow + Vsrnow + Vcnow;
+    RealType Vsum   = std::accumulate(v_sample.begin(), v_sample.end(), 0.0);
+    if (std::abs(Vsum - Vnow) > TraceManager::trace_tol)
+    {
+      app_log() << "accumtest: CoulombPBCAA::evaluate()" << std::endl;
+      app_log() << "accumtest:   tot:" << Vnow << std::endl;
+      app_log() << "accumtest:   sum:" << Vsum << std::endl;
+      throw std::runtime_error("Trace check failed");
+    }
+    if (std::abs(Vcsum - Vcnow) > TraceManager::trace_tol)
+    {
+      app_log() << "accumtest: CoulombPBCAA::evalConsts()" << std::endl;
+      app_log() << "accumtest:   tot:" << Vcnow << std::endl;
+      app_log() << "accumtest:   sum:" << Vcsum << std::endl;
+      throw std::runtime_error("Trace check failed");
+    }
+#endif
+
     return value;
   };
 
@@ -326,6 +352,17 @@ void CoulombPBCAA::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
     coulomb_aa.value_ = evaluate_walker(iw, coulomb_aa, p_list[iw], listeners);
   }
 }
+
+void CoulombPBCAA::mw_evaluatePerParticleWithToperator(const RefVectorWithLeader<OperatorBase>& o_list,
+                                                       const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                                       const RefVectorWithLeader<ParticleSet>& p_list,
+                                                       const std::vector<ListenerVector<RealType>>& listeners,
+                                                       const std::vector<ListenerVector<RealType>>& ion_listeners) const
+
+{
+  mw_evaluatePerParticle(o_list, wf_list, p_list, listeners, ion_listeners);
+}
+
 
 void CoulombPBCAA::evaluateIonDerivs(ParticleSet& P,
                                      ParticleSet& ions,
@@ -631,7 +668,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalConsts(bool report)
 }
 
 
-CoulombPBCAA::Return_t CoulombPBCAA::evalSR(ParticleSet& P)
+CoulombPBCAA::Return_t CoulombPBCAA::evalSR(const ParticleSet& P) const
 {
   ScopedTimer local_timer(evalSR_timer_);
   const auto& d_aa(P.getDistTableAA(d_aa_ID));
@@ -738,7 +775,7 @@ std::vector<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSR_offload(const RefVec
   return values;
 }
 
-CoulombPBCAA::Return_t CoulombPBCAA::evalLR(ParticleSet& P)
+CoulombPBCAA::Return_t CoulombPBCAA::evalLR(const ParticleSet& P) const
 {
   ScopedTimer local_timer(evalLR_timer_);
   mRealType res = 0.0;

@@ -730,9 +730,9 @@ TEST_CASE("RotatedSPOs construct delta matrix", "[wavefunction]")
 
 namespace testing
 {
-opt_variables_type& getMyVars(SPOSet& rot) { return rot.myVars; }
-std::vector<QMCTraits::ValueType>& getMyVarsFull(RotatedSPOs& rot) { return rot.myVarsFull_; }
-std::vector<std::vector<QMCTraits::ValueType>>& getHistoryParams(RotatedSPOs& rot) { return rot.history_params_; }
+const opt_variables_type& getMyVars(RotatedSPOs& rot) { return rot.myVars; }
+const std::vector<QMCTraits::ValueType>& getMyVarsFull(RotatedSPOs& rot) { return rot.myVarsFull_; }
+const std::vector<std::vector<QMCTraits::ValueType>>& getHistoryParams(RotatedSPOs& rot) { return rot.history_params_; }
 } // namespace testing
 
 // Test using global rotation
@@ -740,7 +740,7 @@ TEST_CASE("RotatedSPOs read and write parameters", "[wavefunction]")
 {
   //There is an issue with the real<->complex parameter parsing to h5 in QMC_COMPLEX.
   //This needs to be fixed in a future PR.
-  auto fake_spo = std::make_unique<FakeSPO>();
+  auto fake_spo = std::make_unique<FakeSPO<QMCTraits::ValueType>>();
   fake_spo->setOrbitalSetSize(4);
   RotatedSPOs rot("fake_rot", std::move(fake_spo));
   int nel = 2;
@@ -762,7 +762,7 @@ TEST_CASE("RotatedSPOs read and write parameters", "[wavefunction]")
     rot.writeVariationalParameters(hout);
   }
 
-  auto fake_spo2 = std::make_unique<FakeSPO>();
+  auto fake_spo2 = std::make_unique<FakeSPO<QMCTraits::ValueType>>();
   fake_spo2->setOrbitalSetSize(4);
 
   RotatedSPOs rot2("fake_rot", std::move(fake_spo2));
@@ -775,14 +775,14 @@ TEST_CASE("RotatedSPOs read and write parameters", "[wavefunction]")
   vs2.readFromHDF("rot_vp.h5", hin);
   rot2.readVariationalParameters(hin);
 
-  opt_variables_type& var = testing::getMyVars(rot2);
+  auto& var = testing::getMyVars(rot2);
   for (size_t i = 0; i < vs.size(); i++)
     CHECK(var[i] == Approx(vs[i]));
 
   //add extra parameters for full set
   vs_values.push_back(0.0);
   vs_values.push_back(0.0);
-  std::vector<SPOSet::ValueType>& full_var = testing::getMyVarsFull(rot2);
+  auto& full_var = testing::getMyVarsFull(rot2);
   for (size_t i = 0; i < full_var.size(); i++)
     CHECK(full_var[i] == ValueApprox(vs_values[i]));
 }
@@ -791,7 +791,7 @@ TEST_CASE("RotatedSPOs read and write parameters", "[wavefunction]")
 TEST_CASE("RotatedSPOs read and write parameters history", "[wavefunction]")
 {
   //Problem with h5 parameter parsing for complex build.  To be fixed in future PR.
-  auto fake_spo = std::make_unique<FakeSPO>();
+  auto fake_spo = std::make_unique<FakeSPO<QMCTraits::ValueType>>();
   fake_spo->setOrbitalSetSize(4);
   RotatedSPOs rot("fake_rot", std::move(fake_spo));
   rot.set_use_global_rotation(false);
@@ -814,7 +814,7 @@ TEST_CASE("RotatedSPOs read and write parameters history", "[wavefunction]")
     rot.writeVariationalParameters(hout);
   }
 
-  auto fake_spo2 = std::make_unique<FakeSPO>();
+  auto fake_spo2 = std::make_unique<FakeSPO<QMCTraits::ValueType>>();
   fake_spo2->setOrbitalSetSize(4);
 
   RotatedSPOs rot2("fake_rot", std::move(fake_spo2));
@@ -827,11 +827,11 @@ TEST_CASE("RotatedSPOs read and write parameters history", "[wavefunction]")
   vs2.readFromHDF("rot_vp_hist.h5", hin);
   rot2.readVariationalParameters(hin);
 
-  opt_variables_type& var = testing::getMyVars(rot2);
+  auto& var = testing::getMyVars(rot2);
   for (size_t i = 0; i < var.size(); i++)
     CHECK(var[i] == Approx(vs[i]));
 
-  auto hist = testing::getHistoryParams(rot2);
+  const auto hist = testing::getHistoryParams(rot2);
   REQUIRE(hist.size() == 1);
   REQUIRE(hist[0].size() == 4);
 }

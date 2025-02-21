@@ -41,7 +41,8 @@ set(QMCEST_SRC
     ReferencePointsInput.cpp
     NEReferencePoints.cpp
     NESpaceGrid.cpp
-    EnergyDensityEstimator.cpp)
+    EnergyDensityEstimator.cpp
+    StructureFactorInput.cpp)
 
 ####################################
 # create libqmcestimators

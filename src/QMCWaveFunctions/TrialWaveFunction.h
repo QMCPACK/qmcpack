@@ -38,6 +38,7 @@
 
 namespace qmcplusplus
 {
+class SlaterDet;
 class MultiSlaterDetTableMethod;
 
 /** @ingroup MBWfs
@@ -496,8 +497,6 @@ public:
                                                 const opt_variables_type& optvars,
                                                 RecordArray<ValueType>& dlogpsi);
 
-  void evaluateGradDerivatives(const ParticleSet::ParticleGradient& G_in, std::vector<ValueType>& dgradlogpsi);
-
   /** evaluate the hessian w.r.t. electronic coordinates of particle iat **/
   // void evaluateHessian(ParticleSet & P, int iat, HessType& grad_grad_psi);
   /** evaluate the hessian hessian w.r.t. electronic coordinates of particle iat **/
@@ -540,6 +539,9 @@ public:
 
   /// spomap_ reference accessor
   const SPOMap& getSPOMap() const { return *spomap_; }
+
+  /// find SD WFCs if exist
+  RefVector<SlaterDet> findSD() const;
 
   /// find MSD WFCs if exist
   RefVector<MultiSlaterDetTableMethod> findMSD() const;

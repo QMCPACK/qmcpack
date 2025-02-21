@@ -30,6 +30,7 @@ struct ValidSpaceGridInput
     SPHERICAL,
     WITH_STEP,
     WITHOUT_STEP,
+    WEIRD_CARTESIAN,
     NUM_CASES
   };
   static constexpr std::array<std::string_view, NUM_CASES> xml{
@@ -79,12 +80,32 @@ struct ValidSpaceGridInput
     <axis p1="r2" scale="6.9" label="phi"   grid="0 1"/>
     <axis p1="r3" scale="6.9" label="theta" grid="0 1"/>
   </spacegrid>
-)XML"};
+)XML",
+      R"XML(
+  <spacegrid coord="cartesian">
+    <origin p1="zero"/>
+    <axis p1="r1" label="x"     grid="-0.5 (0.1) 0.5"/>
+    <axis p1="r2" label="y"   grid="-0.5 (0.1) 0.5"/>
+    <axis p1="r3" label="z" scale="0.5" grid="-1.0 (0.1) 1.0"/>
+  </spacegrid>
+)XML"
+
+  };
 };
 
 struct InvalidSpaceGridInput
 {
-  static constexpr std::array<std::string_view, 5> xml{
+  enum bad
+  {
+    LABELCART = 0,
+    COORD,
+    LABELSPHR,
+    MISSINGAXIS,
+    BADGRID,
+    NUMBAD
+  };
+
+  static constexpr std::array<std::string_view, NUMBAD> xml{
       R"XML(
   <spacegrid coord="cartesian">
     <axis p1="a1" scale=".5" label="x" grid="-1 (.1) 1"/>
@@ -123,15 +144,6 @@ struct InvalidSpaceGridInput
     <axis p1="r3" scale="6.9" label="theta" grid="0 1"/>
   </spacegrid>
       )XML"};
-
-  enum bad
-  {
-    LABELCART = 0,
-    COORD,
-    LABELSPHR,
-    MISSINGAXIS,
-    BADGRID
-  };
 };
 } // namespace testing
 } // namespace qmcplusplus

@@ -590,10 +590,10 @@ void OneBodyDensityMatrices::evaluateMatrix(ParticleSet& pset_target,
       for (int n = 0; n < basis_size_sq; ++n)
       {
         Value val = NDM(n);
-        data_[ij] += real(val);
+        data_[ij] += std::real(val);
         ij++;
 #if defined(QMC_COMPLEX)
-        data_[ij] += imag(val);
+        data_[ij] += std::imag(val);
         ij++;
 #endif
       }
@@ -780,7 +780,7 @@ inline void OneBodyDensityMatrices::normalizeBasis(ParticleSet& pset_target)
       bnorms[i] += qmcplusplus::conj(basis_values_[i]) * basis_values_[i] * dV;
   }
   for (int i = 0; i < basis_size_; ++i)
-    basis_norms_[i] = 1.0 / std::sqrt(real(bnorms[i]));
+    basis_norms_[i] = 1.0 / std::sqrt(std::real(bnorms[i]));
 }
 
 void OneBodyDensityMatrices::registerOperatorEstimator(hdf_archive& file)

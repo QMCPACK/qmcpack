@@ -61,7 +61,7 @@ if(ENABLE_CUDA)
       Numerics/detail/CUDA/Kernels/Auwn_Bun_Cuw.cu
       Numerics/detail/CUDA/Kernels/inplace_product.cu
       Numerics/detail/CUDA/Kernels/get_diagonal.cu)
-elseif(ENABLE_HIP)
+elseif(BUILD_AFQMC_HIP)
   set(AFQMC_HIP_SRCS
       Numerics/detail/HIP/hip_kernel_utils.cpp
       Numerics/detail/HIP/Kernels/determinant.hip.cpp
@@ -102,7 +102,7 @@ endif()
 if(ENABLE_CUDA)
   add_library(afqmc ${AFQMC_SRCS})
   target_link_libraries(afqmc PRIVATE CUDA::curand CUDA::cusparse CUDA::cusolver CUDA::cublas)
-elseif(ENABLE_HIP)
+elseif(BUILD_AFQMC_HIP)
   set_source_files_properties(${AFQMC_HIP_SRCS} PROPERTIES LANGUAGE HIP)
   add_library(afqmc_hip_lib ${AFQMC_HIP_SRCS})
   target_link_libraries(afqmc_hip_lib PUBLIC HIP::HIP ROCM::libraries Boost::boost qmc_external_thrust)
@@ -137,13 +137,13 @@ if(BUILD_UNIT_TESTS)
   set(AFQMC_UNIT_TEST_INPUT_REAL_DENSE ${qmcpack_SOURCE_DIR}/tests/afqmc/Ne_cc-pvdz/ham_chol_dense.h5
                                        ${qmcpack_SOURCE_DIR}/tests/afqmc/Ne_cc-pvdz/wfn_rhf.dat)
   if(QMC_COMPLEX)
-    if(ENABLE_CUDA OR ENABLE_HIP)
+    if(ENABLE_CUDA OR BUILD_AFQMC_HIP)
       set(AFQMC_UNIT_TEST_INPUTS ${AFQMC_UNIT_TEST_INPUT_SYM})
     else()
       set(AFQMC_UNIT_TEST_INPUTS ${AFQMC_UNIT_TEST_INPUT_SYM} ${AFQMC_UNIT_TEST_INPUT_NOSYM})
     endif()
   else()
-    if(ENABLE_CUDA OR ENABLE_HIP)
+    if(ENABLE_CUDA OR BUILD_AFQMC_HIP)
       set(AFQMC_UNIT_TEST_INPUTS ${AFQMC_UNIT_TEST_INPUT_REAL_DENSE})
     else()
       set(AFQMC_UNIT_TEST_INPUTS ${AFQMC_UNIT_TEST_INPUT_REAL})

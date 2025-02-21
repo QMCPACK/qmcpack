@@ -33,12 +33,27 @@ public:
   using ValueType   = QMCTraits::ValueType;
   using PosType     = QMCTraits::PosType;
 
+
+  enum wf_types
+  {
+    msd_wf = 0,
+    sd_rot_wf,
+    no_wf
+  };
+
   //data members set only during construction
   const SelfHealingOverlapInput input_;
 
   /** @ingroup SelfHealingOverlap mutable data members
    */
   Vector<ValueType> det_ratios;
+
+  /// wavefunction type
+  wf_types wf_type;
+
+  /// use direct parameter derivative for MSD or not
+  const bool use_param_deriv;
+
 
 public:
   /** Constructor for SelfHealingOverlapInput 

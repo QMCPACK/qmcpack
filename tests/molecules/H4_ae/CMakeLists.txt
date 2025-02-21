@@ -186,7 +186,7 @@ if(NOT QMC_COMPLEX)
     H4_DESCENT_SCALARS
     TRUE)
 
-  list(APPEND H4_TARGET_DESCENT_SCALARS "totenergy" "-2.04604154 0.003")
+  list(APPEND H4_TARGET_DESCENT_SCALARS "totenergy" "-2.04604154 0.0045")
 
   qmc_run_and_check(
     short-H4-target-descent

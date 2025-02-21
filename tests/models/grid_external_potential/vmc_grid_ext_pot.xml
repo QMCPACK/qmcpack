@@ -1,5 +1,7 @@
 <simulation>
-  <project id="grid_ext_pot" series="0"/>
+<project id="grid_ext_pot" series="0">
+  <parameter name="driver_version">legacy</parameter>
+</project>
   <qmcsystem>
     <simulationcell>
       <parameter name="lattice" units="bohr">

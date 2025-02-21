@@ -143,9 +143,11 @@ void propg_fac_shared(boost::mpi3::communicator& world)
 
     WalkerSet wset(TG, doc3.getRoot(), InfoMap["info0"], rng);
     auto initial_guess = WfnFac.getInitialGuess(wfn_name);
-    REQUIRE(std::get<0>(initial_guess.sizes()) == 2);
-    REQUIRE(std::get<1>(initial_guess.sizes()) == NPOL * NMO);
-    REQUIRE(std::get<2>(initial_guess.sizes()) == NAEA);
+
+    using std::get;
+    REQUIRE(get<0>(initial_guess.sizes()) == 2);
+    REQUIRE(get<1>(initial_guess.sizes()) == NPOL * NMO);
+    REQUIRE(get<2>(initial_guess.sizes()) == NAEA);
     wset.resize(nwalk, initial_guess[0], initial_guess[0]);
     //                         initial_guess[1](XXX.extension(0),{0,NAEB}));
 
@@ -315,9 +317,11 @@ void propg_fac_distributed(boost::mpi3::communicator& world, int ngrp)
 
     WalkerSet wset(TG, doc3.getRoot(), InfoMap["info0"], rng);
     auto initial_guess = WfnFac.getInitialGuess(wfn_name);
-    REQUIRE(std::get<0>(initial_guess.sizes()) == 2);
-    REQUIRE(std::get<1>(initial_guess.sizes()) == NPOL * NMO);
-    REQUIRE(std::get<2>(initial_guess.sizes()) == NAEA);
+
+    using std::get;
+    REQUIRE(get<0>(initial_guess.sizes()) == 2);
+    REQUIRE(get<1>(initial_guess.sizes()) == NPOL * NMO);
+    REQUIRE(get<2>(initial_guess.sizes()) == NAEA);
     wset.resize(nwalk, initial_guess[0], initial_guess[0]);
 
     const char* propg_xml_block0 = R"(<Propagator name="prop0"><parameter name="nnodes">)";
@@ -418,7 +422,7 @@ TEST_CASE("propg_fac_shared", "[propagator_factory]")
     infoLog.pause();
   auto node = world.split_shared(world.rank());
 
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
   arch::INIT(node);
 #endif
   setup_memory_managers(node, 10uL * 1024uL * 1024uL);
@@ -434,7 +438,7 @@ TEST_CASE("propg_fac_distributed", "[propagator_factory]")
     infoLog.pause();
   auto node = world.split_shared(world.rank());
 
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
   int ngrp(world.size());
   arch::INIT(node);
 #else

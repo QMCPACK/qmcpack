@@ -73,6 +73,8 @@ class JeeIOrbitalSoA : public WaveFunctionComponent
   std::map<std::string, std::unique_ptr<FT>> J3Unique;
   //YYYY
   std::map<FT*, int> J3UniqueIndex;
+  ///optimizable variables extracted from functors
+  opt_variables_type myVars;
 
   /// the cutoff for e-I pairs
   std::vector<valT> Ion_cutoff;

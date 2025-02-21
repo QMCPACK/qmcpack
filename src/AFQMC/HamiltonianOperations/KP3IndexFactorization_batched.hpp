@@ -40,6 +40,8 @@ namespace afqmc
 // testing the use of dynamic data transfer during execution to reduce memory in GPU
 // when an approach is found, integrate in original class through additional template parameter
 
+using std::get;  // for C++17 compatibility
+
 template<class LQKankMatrix>
 class KP3IndexFactorization_batched
 {
@@ -181,10 +183,11 @@ public:
         dev_Q2vbias(typename IVector::extensions_type{nopk.size()}, IAllocator{allocator_}),
         dev_Qmap(Qmap),
         dev_nelpk(nelpk),
-        dev_a0pk(typename IMatrix::extensions_type{std::get<0>(nelpk.sizes()), std::get<1>(nelpk.sizes())}, IAllocator{allocator_}),
+        dev_a0pk(typename IMatrix::extensions_type{get<0>(nelpk.sizes()), get<1>(nelpk.sizes())}, IAllocator{allocator_}),
         dev_QKToK2(QKToK2),
         EQ(nopk.size() + 2)
   {
+    using std::get;
     using std::copy_n;
     using std::fill_n;
     nocc_max = *std::max_element(nelpk.origin(), nelpk.origin() + nelpk.num_elements());
@@ -478,13 +481,15 @@ public:
                     bool addEJ  = true,
                     bool addEXX = true)
   {
+    using std::get;  // for C++17 compatibility
+
     using std::copy_n;
     using std::fill_n;
     int nkpts = nopk.size();
-    assert(std::get<1>(E.sizes()) >= 3);
+    assert(get<1>(E.sizes()) >= 3);
     assert(nd >= 0 && nd < nelpk.size());
 
-    int nwalk     = std::get<1>(Gc.sizes());
+    int nwalk     = get<1>(Gc.sizes());
     int nspin     = (walker_type == COLLINEAR ? 2 : 1);
     int npol      = (walker_type == NONCOLLINEAR ? 2 : 1);
     int nmo_tot   = std::accumulate(nopk.begin(), nopk.end(), 0);
@@ -497,7 +502,7 @@ public:
       noccb_tot = std::accumulate(nelpk[nd].begin() + nkpts, nelpk[nd].begin() + 2 * nkpts, 0);
     int getKr = KEright != nullptr;
     int getKl = KEleft != nullptr;
-    if (std::get<0>(E.sizes()) != nwalk || std::get<1>(E.sizes()) < 3)
+    if (get<0>(E.sizes()) != nwalk || get<1>(E.sizes()) < 3)
       APP_ABORT(" Error in AFQMC/HamiltonianOperations/sparse_matrix_energy::calculate_energy(). Incorrect matrix "
                 "dimensions \n");
 
@@ -523,13 +528,13 @@ public:
       Knc = local_nCV;
       if (getKr)
       {
-        assert(std::get<0>(KEright->sizes()) == nwalk && std::get<1>(KEright->sizes()) == local_nCV);
-        assert(KEright->stride(0) == std::get<1>(KEright->sizes()));
+        assert(get<0>(KEright->sizes()) == nwalk && get<1>(KEright->sizes()) == local_nCV);
+        assert(KEright->stride(0) == get<1>(KEright->sizes()));
       }
       if (getKl)
       {
-        assert(std::get<0>(KEleft->sizes()) == nwalk && std::get<1>(KEleft->sizes()) == local_nCV);
-        assert(KEleft->stride(0) == std::get<1>(KEleft->sizes()));
+        assert(get<0>(KEleft->sizes()) == nwalk && get<1>(KEleft->sizes()) == local_nCV);
+        assert(KEleft->stride(0) == get<1>(KEleft->sizes()));
       }
     }
     else if (getKr or getKl)
@@ -564,7 +569,10 @@ public:
       for (int n = 0; n < nwalk; n++)
         fill_n(E[n].origin(), 1, ComplexType(E0));
       // must use Gc since GKK is is SP
-      int na = 0, nk = 0, nb = 0;
+#if defined(MIXED_PRECISION)
+      int na = 0, nk = 0;
+#endif
+      int nb = 0;
       for (int K = 0; K < nkpts; ++K)
       {
 #if defined(MIXED_PRECISION)
@@ -586,16 +594,13 @@ public:
         }
         nk += ni;
 #else
-        nk = nopk[K];
         {
-          na = nelpk[nd][K];
           CVector_ref haj_K(make_device_ptr(haj[nd * nkpts + K].origin()), {nocc_max * npol * nmo_max});
           SpMatrix_ref Gaj(GKK[0][K][K].origin(), {nwalk, nocc_max * npol * nmo_max});
           ma::product(ComplexType(1.), Gaj, haj_K, ComplexType(1.), E({0, nwalk}, 0));
         }
         if (walker_type == COLLINEAR)
         {
-          na = nelpk[nd][nkpts + K];
           CVector_ref haj_K(make_device_ptr(haj[nd * nkpts + K].origin()) + nocc_max * nmo_max, {nocc_max * nmo_max});
           SpMatrix_ref Gaj(GKK[1][K][K].origin(), {nwalk, nocc_max * nmo_max});
           ma::product(ComplexType(1.), Gaj, haj_K, ComplexType(1.), E({0, nwalk}, 0));
@@ -938,7 +943,7 @@ public:
         }
       }
 
-      // move calculation of H1 here	
+      // move calculation of H1 here    
       // NOTE: For CLOSED/NONCOLLINEAR, can do all walkers simultaneously to improve perf. of GEMM
       //       Not sure how to do it for COLLINEAR.
       if(addEXX) {  
@@ -1198,8 +1203,9 @@ public:
       >
   void vHS(MatA& X, MatB&& v, double a = 1., double c = 0.)
   {
+    using std::get;  // for C++17 compatibility
     int nkpts = nopk.size();
-    int nwalk = std::get<1>(X.sizes());
+    int nwalk = get<1>(X.sizes());
     assert(v.size() == nwalk);
     int nspin     = (walker_type == COLLINEAR ? 2 : 1);
     int nmo_tot   = std::accumulate(nopk.begin(), nopk.end(), 0);
@@ -1367,13 +1373,14 @@ public:
       >
   void vbias(const MatA& G, MatB&& v, double a = 1., double c = 0., int nd = 0)
   {
+    using std::get;  // for C++17 compatibility
     using ma::gemmBatched;
 
     int nkpts = nopk.size();
     assert(nd >= 0 && nd < nelpk.size());
-    int nwalk = std::get<1>(G.sizes());
-    assert(std::get<0>(v.sizes()) == 2 * local_nCV);
-    assert(std::get<1>(v.sizes()) == nwalk);
+    int nwalk = get<1>(G.sizes());
+    assert(get<0>(v.sizes()) == 2 * local_nCV);
+    assert(get<1>(v.sizes()) == nwalk);
     int nspin     = (walker_type == COLLINEAR ? 2 : 1);
     int npol      = (walker_type == NONCOLLINEAR ? 2 : 1);
     int nmo_tot   = std::accumulate(nopk.begin(), nopk.end(), 0);
@@ -1583,11 +1590,13 @@ private:
   template<class MatA, class MatB, class IVec, class IVec2>
   void GKaKjw_to_GKKwaj(MatA const& GKaKj, MatB&& GKKaj, IVec&& nocc, IVec2&& dev_no, IVec2&& dev_a0)
   {
+    using std::get;  // for C++17 compatibility
+
     int npol    = (walker_type == NONCOLLINEAR) ? 2 : 1;
     int nmo_max = *std::max_element(nopk.begin(), nopk.end());
     //      int nocc_max = *std::max_element(nocc.begin(),nocc.end());
-    int nmo_tot = std::get<1>(GKaKj.sizes());
-    int nwalk   = std::get<2>(GKaKj.sizes());
+    int nmo_tot = get<1>(GKaKj.sizes());
+    int nwalk   = get<2>(GKaKj.sizes());
     int nkpts   = nopk.size();
     assert(GKKaj.num_elements() >= nkpts * nkpts * nwalk * nocc_max * npol * nmo_max);
 
@@ -1602,8 +1611,10 @@ private:
     int npol    = (walker_type == NONCOLLINEAR) ? 2 : 1;
     int nmo_max = *std::max_element(nopk.begin(), nopk.end());
     //      int nocc_max = *std::max_element(nocc.begin(),nocc.end());
-    int nmo_tot = std::get<1>(GKaKj.sizes());
-    int nwalk   = std::get<2>(GKaKj.sizes());
+
+    using std::get;  // for C++17 compatibility
+    int nmo_tot = get<1>(GKaKj.sizes());
+    int nwalk   = get<2>(GKaKj.sizes());
     int nkpts   = nopk.size();
     assert(GQKaj.num_elements() >= nkpts * nkpts * nwalk * nocc_max * npol * nmo_max);
 
@@ -1620,9 +1631,11 @@ private:
   template<class MatA, class MatB>
   void vKKwij_to_vwKiKj(MatA const& vKK, MatB&& vKiKj)
   {
+    using std::get;
+
     int nmo_max = *std::max_element(nopk.begin(), nopk.end());
-    int nwalk   = std::get<0>(vKiKj.sizes());
-    int nmo_tot = std::get<1>(vKiKj.sizes());
+    int nwalk   = get<0>(vKiKj.sizes());
+    int nmo_tot = get<1>(vKiKj.sizes());
     int nkpts   = nopk.size();
 
     using ma::vKKwij_to_vwKiKj;
@@ -1633,8 +1646,10 @@ private:
   template<class MatA, class MatB>
   void vbias_from_v1(ComplexType a, MatA const& v1, MatB&& vbias)
   {
+    using std::get;
+
     using BType   = typename std::decay<MatB>::type::element;
-    int nwalk     = std::get<1>(vbias.sizes());
+    int nwalk     = get<1>(vbias.sizes());
     int nkpts     = nopk.size();
     int nchol_max = *std::max_element(ncholpQ.begin(), ncholpQ.end());
 

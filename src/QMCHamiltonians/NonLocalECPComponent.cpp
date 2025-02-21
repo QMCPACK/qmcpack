@@ -268,7 +268,7 @@ void NonLocalECPComponent::mw_evaluateOne(const RefVectorWithLeader<NonLocalECPC
       const_vp_list.push_back(*component.VP);
       deltaV_list.push_back(component.deltaV);
       psiratios_list.push_back(component.psiratio);
-      psiratios_det_list.push_back(component.psiratio);
+      psiratios_det_list.push_back(component.psiratio_det);
     }
 
     ResourceCollectionTeamLock<VirtualParticleSet> vp_res_lock(collection, vp_list);

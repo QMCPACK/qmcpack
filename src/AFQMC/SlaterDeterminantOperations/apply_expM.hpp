@@ -36,12 +36,13 @@ namespace base
 template<class MatA, class MatB, class MatC>
 inline void apply_expM(const MatA& V, MatB&& S, MatC& T1, MatC& T2, int order = 6, char TA = 'N')
 {
-  assert(std::get<0>(V.sizes()) == std::get<1>(V.sizes()));
-  assert(std::get<1>(V.sizes()) == std::get<0>(S.sizes()));
-  assert(std::get<0>(S.sizes()) == std::get<0>(T1.sizes()));
-  assert(std::get<1>(S.sizes()) == std::get<1>(T1.sizes()));
-  assert(std::get<0>(S.sizes()) == std::get<0>(T2.sizes()));
-  assert(std::get<1>(S.sizes()) == std::get<1>(T2.sizes()));
+  using std::get;
+  assert(get<0>(V.sizes()) == get<1>(V.sizes()));
+  assert(get<1>(V.sizes()) == get<0>(S.sizes()));
+  assert(get<0>(S.sizes()) == get<0>(T1.sizes()));
+  assert(get<1>(S.sizes()) == get<1>(T1.sizes()));
+  assert(get<0>(S.sizes()) == get<0>(T2.sizes()));
+  assert(get<1>(S.sizes()) == get<1>(T2.sizes()));
 
   using ma::H;
   using ma::T;
@@ -56,7 +57,7 @@ inline void apply_expM(const MatA& V, MatB&& S, MatC& T1, MatC& T2, int order = 
 
   // getting around issue in multi, fix later
   //T1 = S;
-  T1.sliced(0, std::get<0>(T1.sizes())) = S;
+  T1.sliced(0, get<0>(T1.sizes())) = S;
   for (int n = 1; n <= order; n++)
   {
     ComplexType fact = im * static_cast<ComplexType>(1.0 / static_cast<double>(n));
@@ -82,12 +83,13 @@ namespace shm
 template<class MatA, class MatB, class MatC, class communicator>
 inline void apply_expM(const MatA& V, MatB&& S, MatC& T1, MatC& T2, communicator& comm, int order = 6, char TA = 'N')
 {
-  assert(std::get<0>(V.sizes()) == std::get<0>(S.sizes()));
-  assert(std::get<1>(V.sizes()) == std::get<0>(S.sizes()));
-  assert(std::get<0>(S.sizes()) == std::get<0>(T1.sizes()));
-  assert(std::get<1>(S.sizes()) == std::get<1>(T1.sizes()));
-  assert(std::get<0>(S.sizes()) == std::get<0>(T2.sizes()));
-  assert(std::get<1>(S.sizes()) == std::get<1>(T2.sizes()));
+  using std::get;
+  assert(get<0>(V.sizes()) == get<0>(S.sizes()));
+  assert(get<1>(V.sizes()) == get<0>(S.sizes()));
+  assert(get<0>(S.sizes()) == get<0>(T1.sizes()));
+  assert(get<1>(S.sizes()) == get<1>(T1.sizes()));
+  assert(get<0>(S.sizes()) == get<0>(T2.sizes()));
+  assert(get<1>(S.sizes()) == get<1>(T2.sizes()));
 
   using ComplexType = typename std::decay<MatB>::type::element;
 
@@ -118,7 +120,7 @@ inline void apply_expM(const MatA& V, MatB&& S, MatC& T1, MatC& T2, communicator
       ma::product(fact, V.sliced(M0, Mn), *pT1, zero, (*pT2).sliced(M0, Mn));
     // overload += ???
     for (int i = M0; i < Mn; i++)
-      for (int j = 0, je = std::get<1>(S.sizes()); j < je; j++)
+      for (int j = 0, je = get<1>(S.sizes()); j < je; j++)
         S[i][j] += (*pT2)[i][j];
     comm.barrier();
     std::swap(pT1, pT2);
@@ -139,22 +141,24 @@ inline void apply_expM(const MatA& V, MatB&& S, MatC& T1, MatC& T2, int order = 
   static_assert(std::decay<MatA>::type::dimensionality == 3, " batched::apply_expM::dimenionality == 3");
   static_assert(std::decay<MatB>::type::dimensionality == 3, " batched::apply_expM::dimenionality == 3");
   static_assert(std::decay<MatC>::type::dimensionality == 3, " batched::apply_expM::dimenionality == 3");
-  assert(std::get<0>(V.sizes()) == std::get<0>(S.sizes()));
-  assert(std::get<0>(V.sizes()) == std::get<0>(T1.sizes()));
-  assert(std::get<0>(V.sizes()) == std::get<0>(T2.sizes()));
-  assert(std::get<1>(V.sizes()) == std::get<2>(V.sizes()));
-  assert(std::get<2>(V.sizes()) == std::get<1>(S.sizes()));
-  assert(std::get<1>(S.sizes()) == std::get<1>(T1.sizes()));
-  assert(std::get<2>(S.sizes()) == std::get<2>(T1.sizes()));
-  assert(std::get<1>(S.sizes()) == std::get<1>(T2.sizes()));
-  assert(std::get<2>(S.sizes()) == std::get<2>(T2.sizes()));
+
+  using std::get;
+  assert(get<0>(V.sizes()) == get<0>(S.sizes()));
+  assert(get<0>(V.sizes()) == get<0>(T1.sizes()));
+  assert(get<0>(V.sizes()) == get<0>(T2.sizes()));
+  assert(get<1>(V.sizes()) == get<2>(V.sizes()));
+  assert(get<2>(V.sizes()) == get<1>(S.sizes()));
+  assert(get<1>(S.sizes()) == get<1>(T1.sizes()));
+  assert(get<2>(S.sizes()) == get<2>(T1.sizes()));
+  assert(get<1>(S.sizes()) == get<1>(T2.sizes()));
+  assert(get<2>(S.sizes()) == get<2>(T2.sizes()));
   // for now limit to continuous
-  assert(S.stride(0) == std::get<1>(S.sizes()) * std::get<2>(S.sizes()));
-  assert(T1.stride(0) == std::get<1>(T1.sizes()) * std::get<2>(T1.sizes()));
-  assert(T2.stride(0) == std::get<1>(T2.sizes()) * std::get<2>(T2.sizes()));
-  assert(S.stride(1) == std::get<2>(S.sizes()));
-  assert(T1.stride(1) == std::get<2>(T1.sizes()));
-  assert(T2.stride(1) == std::get<2>(T2.sizes()));
+  assert(S.stride(0) == get<1>(S.sizes()) * get<2>(S.sizes()));
+  assert(T1.stride(0) == get<1>(T1.sizes()) * get<2>(T1.sizes()));
+  assert(T2.stride(0) == get<1>(T2.sizes()) * get<2>(T2.sizes()));
+  assert(S.stride(1) == get<2>(S.sizes()));
+  assert(T1.stride(1) == get<2>(T1.sizes()));
+  assert(T2.stride(1) == get<2>(T2.sizes()));
   assert(S.stride(2) == 1);
   assert(T1.stride(2) == 1);
   assert(T2.stride(2) == 1);
@@ -197,22 +201,24 @@ inline void apply_expM_noncollinear(const MatA& V, MatB&& S, MatC& T1, MatC& T2,
   static_assert(std::decay<MatA>::type::dimensionality == 3, " batched::apply_expM::dimenionality == 3");
   static_assert(std::decay<MatB>::type::dimensionality == 3, " batched::apply_expM::dimenionality == 3");
   static_assert(std::decay<MatC>::type::dimensionality == 3, " batched::apply_expM::dimenionality == 3");
-  assert(std::get<0>(V.sizes()) * 2 == std::get<0>(S.sizes()));
-  assert(std::get<0>(V.sizes()) * 2 == std::get<0>(T1.sizes()));
-  assert(std::get<0>(V.sizes()) * 2 == std::get<0>(T2.sizes()));
-  assert(std::get<1>(V.sizes()) == std::get<2>(V.sizes()));
-  assert(std::get<2>(V.sizes()) == std::get<1>(S.sizes()));
-  assert(std::get<1>(S.sizes()) == std::get<1>(T1.sizes()));
-  assert(std::get<2>(S.sizes()) == std::get<2>(T1.sizes()));
-  assert(std::get<1>(S.sizes()) == std::get<1>(T2.sizes()));
-  assert(std::get<2>(S.sizes()) == std::get<2>(T2.sizes()));
+
+  using std::get;
+  assert(get<0>(V.sizes()) * 2 == get<0>(S.sizes()));
+  assert(get<0>(V.sizes()) * 2 == get<0>(T1.sizes()));
+  assert(get<0>(V.sizes()) * 2 == get<0>(T2.sizes()));
+  assert(get<1>(V.sizes()) == get<2>(V.sizes()));
+  assert(get<2>(V.sizes()) == get<1>(S.sizes()));
+  assert(get<1>(S.sizes()) == get<1>(T1.sizes()));
+  assert(get<2>(S.sizes()) == get<2>(T1.sizes()));
+  assert(get<1>(S.sizes()) == get<1>(T2.sizes()));
+  assert(get<2>(S.sizes()) == get<2>(T2.sizes()));
   // for now limit to continuous
-  assert(S.stride(0) == std::get<1>(S.sizes()) * std::get<2>(S.sizes()));
-  assert(T1.stride(0) == std::get<1>(T1.sizes()) * std::get<2>(T1.sizes()));
-  assert(T2.stride(0) == std::get<1>(T2.sizes()) * std::get<2>(T2.sizes()));
-  assert(S.stride(1) == std::get<2>(S.sizes()));
-  assert(T1.stride(1) == std::get<2>(T1.sizes()));
-  assert(T2.stride(1) == std::get<2>(T2.sizes()));
+  assert(S.stride(0) == get<1>(S.sizes()) * get<2>(S.sizes()));
+  assert(T1.stride(0) == get<1>(T1.sizes()) * get<2>(T1.sizes()));
+  assert(T2.stride(0) == get<1>(T2.sizes()) * get<2>(T2.sizes()));
+  assert(S.stride(1) == get<2>(S.sizes()));
+  assert(T1.stride(1) == get<2>(T1.sizes()));
+  assert(T2.stride(1) == get<2>(T2.sizes()));
   assert(S.stride(2) == 1);
   assert(T1.stride(2) == 1);
   assert(T2.stride(2) == 1);
@@ -230,9 +236,9 @@ inline void apply_expM_noncollinear(const MatA& V, MatB&& S, MatC& T1, MatC& T2,
 
   int nbatch = S.size();
   int ldv    = V.stride(1);
-  int M      = std::get<2>(T2.sizes());
-  int N      = std::get<1>(T2.sizes());
-  int K      = std::get<1>(T1.sizes());
+  int M      = get<2>(T2.sizes());
+  int N      = get<1>(T2.sizes());
+  int K      = get<1>(T1.sizes());
 
   std::vector<pointerA> Vi;
   std::vector<pointerC> T1i;

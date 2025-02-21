@@ -685,7 +685,7 @@ int EinsplineSetBuilder::OccupyBands_ESHDF(hdf_archive& h5,
       numOrbs_counter++;
     orbIndex++;
   }
-  app_log() << "We will read " << NumDistinctOrbitals << " distinct complex-valued orbitals from h5.\n";
+  app_log() << "We will read " << orbIndex << " distinct complex-valued orbitals from h5." << std::endl;
   return orbIndex;
 }
 

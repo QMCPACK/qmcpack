@@ -79,11 +79,6 @@ packages:
         - spec: openssl@1.1.1k
           prefix: /usr
           buildable: False
-    libffi:
-        externals:
-        - spec: libffi@3.4.2
-          prefix: /
-          buildable: False
 EOF
 ;;
     nitrogen )
@@ -110,11 +105,6 @@ packages:
         - spec: openssl@1.1.1k
           prefix: /usr
           buildable: False
-    libffi:
-        externals:
-        - spec: libffi@3.4.2
-          prefix: /
-          buildable: False
 EOF
 ;;
     sulfur )
@@ -140,11 +130,6 @@ packages:
         externals:
         - spec: openssl@1.1.1k
           prefix: /usr
-          buildable: False
-    libffi:
-        externals:
-        - spec: libffi@3.4.2
-          prefix: /
           buildable: False
 EOF
 	;;
@@ -197,19 +182,22 @@ cd $HOME/apps/spack
 
 # For reproducibility, use a specific version of Spack
 # Prefer to use tagged releases https://github.com/spack/spack/releases
-git checkout 0191e15a6a0c86520152694d2a75c3e595763d0a
-#commit 0191e15a6a0c86520152694d2a75c3e595763d0a (HEAD -> develop, origin/develop, origin/HEAD)
-#Author: Cameron Smith <cwsmith@users.noreply.github.com>
-#Date:   Thu Sep 26 13:07:40 2024 -0400
-#
-#    omega-h: add version scorec.10.8.5 and test support (#45990)
 
-#git checkout e5f53a62509452227bc84cdd2b96bb8d89d684b2
-#commit e5f53a62509452227bc84cdd2b96bb8d89d684b2 (HEAD -> develop, origin/develop, origin/HEAD)
-#Author: Paul R. C. Kent <kentpr@ornl.gov>
-#Date:   Fri Aug 16 12:04:29 2024 -0400
+git checkout 75b03bc12ffbabdfac0775ead5442c3f102f94c7
+#commit 75b03bc12ffbabdfac0775ead5442c3f102f94c7 (HEAD -> develop, origin/develop, origin/HEAD)
+#Author: Adam J. Stewart <ajstewart426@gmail.com>
+#Date:   Sun Nov 24 20:55:18 2024 +0100
 #
-#    py-lxml: add v5.2.2 (#45785)
+#    glib: add v2.82.2 (#47766)
+
+#git checkout dfab174f3100840c889e8bb939260b64d93d8dbd
+#commit dfab174f3100840c889e8bb939260b64d93d8dbd (HEAD -> develop, origin/develop, origin/HEAD)
+#Author: Stephen Nicholas Swatman <stephen@v25.nl>
+#Date:   Mon Nov 18 14:04:52 2024 +0100
+#
+#    benchmark: add version 1.9.0 (#47658)
+#    
+#    This commit adds Google Benchmark v1.9.0.
 
 echo --- Git version and last log entry
 git log -1
@@ -233,8 +221,6 @@ export PATH=$SPACK_ROOT/bin:$PATH
 echo --- Bootstrap
 spack bootstrap now
 
-##echo --- Changing RMGDFT boost dependency
-#sed -i 's/^ .* depends.*boost@1.61.*//g' $HOME/apps/spack/var/spack/repos/builtin/packages/rmgdft/package.py
 echo --- Spack list
 spack find
 echo --- Spack compilers

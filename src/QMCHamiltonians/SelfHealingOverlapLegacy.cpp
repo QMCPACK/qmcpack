@@ -103,7 +103,7 @@ SelfHealingOverlapLegacy::Return_t SelfHealingOverlapLegacy::evaluate(ParticleSe
   // accumulate data
   assert(det_ratios.size() == ncoef);
   for (int ic = 0; ic < det_ratios.size(); ++ic)
-    P.Collectables[offset+ic] += weight * Jprefactor * real(det_ratios[ic]); // only real supported for now
+    P.Collectables[offset+ic] += weight * Jprefactor * std::real(det_ratios[ic]); // only real supported for now
 
   return 0.0;
 }

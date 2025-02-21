@@ -352,9 +352,9 @@ TEST_CASE("Ion-ion Force", "[hamiltonian]")
   elecSpecies(massIdx, upIdx)    = 1.0;
   elec.resetGroups();
 
-  CoulombPotential<OperatorBase::Return_t> ionForce(ions, false, true);
-  CoulombPotential<OperatorBase::Return_t> elecIonForce(elec, ions, true); // Should be zero
-  CoulombPotential<OperatorBase::Return_t> elecForce(elec, true, true);    // Should be zero
+  CoulombPotential ionForce(ions, false, true);
+  CoulombPotential elecIonForce(elec, ions, true); // Should be zero
+  CoulombPotential elecForce(elec, true, true);    // Should be zero
 
   double coeff0[3] = {-0.60355339059, -0.35355339059, 0.0};
   double coeff1[3] = {0.60355339059, -0.35355339059, 0.0};

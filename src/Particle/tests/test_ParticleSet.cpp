@@ -18,6 +18,7 @@
 #include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTable.h"
+#include "ResourceCollection.h"
 
 namespace qmcplusplus
 {
@@ -123,8 +124,9 @@ TEST_CASE("particle set lattice with vacuum", "[particle]")
 {
   // PPP case
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
-  Lattice.BoxBConds = true;
-  Lattice.R         = {1.0, 2.0, 3.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0};
+  Lattice.BoxBConds          = true;
+  Lattice.R                  = {1.0, 2.0, 3.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0};
+  Lattice.explicitly_defined = true;
 
   Lattice.VacuumScale = 2.0;
   Lattice.reset();
@@ -174,6 +176,22 @@ TEST_CASE("particle set lattice with vacuum", "[particle]")
     CHECK(source.getLRBox().R(2, 0) == 0.0);
     CHECK(source.getLRBox().R(2, 1) == 0.0);
     CHECK(source.getLRBox().R(2, 2) == 2.0);
+
+    source.create({1});
+    source.R[0] = {0.5, 1.5, 2.0};
+
+    ParticleSet source_clone(source);
+    RefVectorWithLeader<ParticleSet> p_ref_list(source, {source, source_clone});
+
+    ResourceCollection pset_res("test_pset_res");
+    source.createResource(pset_res);
+    ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_ref_list);
+
+    std::vector<ParticleSet::PosType> displs{{1.0, 2.0, 3.0}, {0.0, 1.0, 0.0}};
+    std::vector<bool> are_valid(displs.size());
+    ParticleSet::mw_makeMove(p_ref_list, 0, displs, are_valid);
+    CHECK(are_valid[0]);  // "p" direction, outside box allowed
+    CHECK(!are_valid[1]); // "n" direction, outside box not allowed
   }
 }
 

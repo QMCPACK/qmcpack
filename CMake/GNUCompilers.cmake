@@ -24,7 +24,7 @@ if(QMC_OMP)
         CACHE STRING "Offload target architecture")
     set(OPENMP_OFFLOAD_COMPILE_OPTIONS "-foffload=${OFFLOAD_TARGET} -foffload-options=\"-lm -latomic\"")
 
-    if(NOT DEFINED OFFLOAD_ARCH AND DEFINED QMC_GPU_ARCHS)
+    if(NOT OFFLOAD_ARCH AND QMC_GPU_ARCHS)
       list(LENGTH QMC_GPU_ARCHS QMC_GPU_ARCH_COUNT)
       if(QMC_GPU_ARCH_COUNT EQUAL "1")
         set(OFFLOAD_ARCH ${QMC_GPU_ARCHS})
@@ -37,7 +37,7 @@ if(QMC_OMP)
       endif()
     endif()
 
-    if(DEFINED OFFLOAD_ARCH)
+    if(OFFLOAD_ARCH)
       if(OFFLOAD_TARGET MATCHES "amdgcn-amdhsa")
         set(OPENMP_OFFLOAD_COMPILE_OPTIONS
             "${OPENMP_OFFLOAD_COMPILE_OPTIONS} -foffload-options=${OFFLOAD_TARGET}=\"-march=${OFFLOAD_ARCH}\"")
@@ -139,10 +139,9 @@ file(
   "#include <iostream>\n#if __GLIBC__ == 2 && ( __GLIBC_MINOR__ == 22 || __GLIBC_MINOR__ == 23 )\n#error buggy glibc version\n#endif\n int main() { return 0; }\n"
 )
 try_compile(PASS_GLIBC ${CMAKE_BINARY_DIR} ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_glibc.cxx
-            CMAKE_FLAGS "${CMAKE_CXX_FLAGS}")
+            CMAKE_FLAGS "${CMAKE_CXX_FLAGS}" OUTPUT_VARIABLE COMPILE_OUTPUT)
 if(NOT PASS_GLIBC)
-  message(FATAL_ERROR "Your system and GNU compiler are using glibc 2.22 or 2.23 which contains a buggy libmvec."
-                      "This results in crashes. Workaround needed. Alternatively upgrade or use another compiler.")
+  message(FATAL_ERROR "Test glibc compilation failed. Output:\n${COMPILE_OUTPUT}")
 endif()
 
 # Add static flags if necessary

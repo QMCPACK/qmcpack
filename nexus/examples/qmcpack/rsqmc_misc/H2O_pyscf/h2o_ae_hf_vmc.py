@@ -39,6 +39,7 @@ c4q = generate_convert4qmc(
     )
 
 qmc = generate_qmcpack(
+    driver       = 'legacy',
     identifier   = 'vmc',
     path         = 'h2o_ae_hf',
     job          = job(cores=10),

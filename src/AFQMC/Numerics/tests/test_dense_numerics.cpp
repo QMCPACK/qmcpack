@@ -44,7 +44,7 @@
 #include "multi/array.hpp"
 #include "multi/array_ref.hpp"
 
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
 #include "mpi3/communicator.hpp"
 #include "mpi3/shared_communicator.hpp"
 #include "AFQMC/Memory/custom_pointers.hpp"
@@ -321,11 +321,12 @@ void test_dense_matrix_mult()
     array<std::complex<double>, 2> A({3, 3});
     array<std::complex<double>, 2> B({3, 3});
 
-    for (int i = 0, k = 0; i < std::get<0>(A.sizes()); i++)
-      for (int j = 0; j < std::get<1>(A.sizes()); j++, k++)
+    using std::get;
+    for (int i = 0, k = 0; i < get<0>(A.sizes()); i++)
+      for (int j = 0; j < get<1>(A.sizes()); j++, k++)
         A[i][j] = m_a[k];
-    for (int i = 0, k = 0; i < std::get<0>(A.sizes()); i++)
-      for (int j = 0; j < std::get<1>(A.sizes()); j++, k++)
+    for (int i = 0, k = 0; i < get<0>(A.sizes()); i++)
+      for (int j = 0; j < get<1>(A.sizes()); j++, k++)
         B[i][j] = m_b[k];
 
     array<std::complex<double>, 2> C = ma::exp(A);
@@ -335,7 +336,7 @@ void test_dense_matrix_mult()
 
 TEST_CASE("dense_ma_operations", "[matrix_operations]") { test_dense_matrix_mult(); }
 
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
 template<class Allocator>
 void test_dense_mat_vec_device(Allocator& alloc)
 {

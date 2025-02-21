@@ -62,10 +62,11 @@ void myCHECK(const std::complex<double>& a, const std::complex<double>& b)
 template<class M1, class M2>
 void check(M1&& A, M2& B)
 {
-  REQUIRE(std::get<0>(A.sizes()) == std::get<0>(B.sizes()));
-  REQUIRE(std::get<1>(A.sizes()) == std::get<1>(B.sizes()));
-  for (int i = 0; i < std::get<0>(A.sizes()); i++)
-    for (int j = 0; j < std::get<1>(A.sizes()); j++)
+  using std::get;
+  REQUIRE(get<0>(A.sizes()) == get<0>(B.sizes()));
+  REQUIRE(get<1>(A.sizes()) == get<1>(B.sizes()));
+  for (int i = 0; i < get<0>(A.sizes()); i++)
+    for (int j = 0; j < get<1>(A.sizes()); j++)
       myCHECK(A[i][j], B[i][j]);
 }
 
@@ -541,7 +542,7 @@ void SDetOps_complex_serial(Allocator alloc, BufferManager b)
 
   // Batched
   // TODO fix CPU.
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
   //SECTION("batched_density_matrix")
   {
     boost::multi::array<Type, 3, Allocator> Gw({3, NMO, NMO}, alloc);
@@ -663,12 +664,13 @@ TEST_CASE("SDetOps_complex_mpi3", "[sdet_ops]")
   array A({NEL, NMO});
   array B({NMO, NEL});
 
-  for (int i = 0, k = 0; i < std::get<0>(A.sizes()); i++)
-    for (int j = 0; j < std::get<1>(A.sizes()); j++, k++)
+  using std::get;
+  for (int i = 0, k = 0; i < get<0>(A.sizes()); i++)
+    for (int j = 0; j < get<1>(A.sizes()); j++, k++)
       A[i][j] = m_a[k];
 
-  for (int i = 0, k = 0; i < std::get<0>(B.sizes()); i++)
-    for (int j = 0; j < std::get<1>(B.sizes()); j++, k++)
+  for (int i = 0, k = 0; i < get<0>(B.sizes()); i++)
+    for (int j = 0; j < get<1>(B.sizes()); j++, k++)
       B[i][j] = m_b[k];
 
   array_ref Aref(m_a.data(), {NEL, NMO});
@@ -836,12 +838,13 @@ TEST_CASE("SDetOps_complex_csr", "[sdet_ops]")
   array A({NMO, NEL}); // Will be transposed when Acsr is built
   array B({NMO, NEL});
 
-  for (int i = 0, k = 0; i < std::get<0>(A.sizes()); i++)
-    for (int j = 0; j < std::get<1>(A.sizes()); j++, k++)
+  using std::get;
+  for (int i = 0, k = 0; i < get<0>(A.sizes()); i++)
+    for (int j = 0; j < get<1>(A.sizes()); j++, k++)
       A[i][j] = m_a[k];
 
-  for (int i = 0, k = 0; i < std::get<0>(B.sizes()); i++)
-    for (int j = 0; j < std::get<1>(B.sizes()); j++, k++)
+  for (int i = 0, k = 0; i < get<0>(B.sizes()); i++)
+    for (int j = 0; j < get<1>(B.sizes()); j++, k++)
       B[i][j] = m_b[k];
 
   boost::multi::array_ref<Type, 2> Bref(m_b.data(), {NMO, NEL});
@@ -975,7 +978,7 @@ TEST_CASE("SDetOps_complex_serial", "[sdet_ops]")
   auto world = boost::mpi3::environment::get_world_instance();
   auto node  = world.split_shared(world.rank());
 
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
   arch::INIT(node);
   using Alloc = device::device_allocator<ComplexType>;
 #else

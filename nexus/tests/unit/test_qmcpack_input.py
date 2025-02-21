@@ -1279,6 +1279,7 @@ def test_generate():
     # legacy drivers
     qi = generate_qmcpack_input(
         input_type      = 'basic',
+        driver          = 'legacy',
         system          = system,
         randomsrc       = False,
         pseudos         = ['V.opt.xml','O.opt.xml'],
@@ -1826,6 +1827,7 @@ def test_incorporate_system():
 
     qi = generate_qmcpack_input(
         input_type      = 'basic',
+        driver          = 'legacy',
         system          = system,
         pseudos         = ['V.opt.xml','O.opt.xml'],
         spin_polarized  = True,

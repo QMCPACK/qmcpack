@@ -556,7 +556,8 @@ class StatFile(QDBase):
             lname = name.lower()
             if 'spin' in lname and 'density' in lname:
                 self.spin_density_data[name] = h5[name]
-            elif 'density' in lname:
+            # Below if condition contains guards against EnergyDensity and OneBodyDensityMatrices in stat.h5
+            elif 'density' in lname and 'energy' not in lname and 'onebody' not in lname:
                 self.density_data[name] = h5[name]
             #end if
         #end for

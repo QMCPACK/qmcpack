@@ -21,8 +21,9 @@ namespace qmcplusplus
 class RotatedSPOs;
 namespace testing
 {
-std::vector<QMCTraits::ValueType>& getMyVarsFull(RotatedSPOs& rot);
-std::vector<std::vector<QMCTraits::ValueType>>& getHistoryParams(RotatedSPOs& rot);
+const opt_variables_type& getMyVars(RotatedSPOs& rot);
+const std::vector<QMCTraits::ValueType>& getMyVarsFull(RotatedSPOs& rot);
+const std::vector<std::vector<QMCTraits::ValueType>>& getHistoryParams(RotatedSPOs& rot);
 } // namespace testing
 
 class RotatedSPOs : public SPOSet, public OptimizableObject
@@ -193,7 +194,7 @@ public:
   void evaluateDerivativesWF(ParticleSet& P,
                              const opt_variables_type& optvars,
                              Vector<ValueType>& dlogpsi,
-                             const QTFull::ValueType& psiCurrent,
+                             const FullPrecValue& psiCurrent,
                              const std::vector<ValueType>& Coeff,
                              const std::vector<size_t>& C2node_up,
                              const std::vector<size_t>& C2node_dn,
@@ -479,8 +480,9 @@ private:
   /// Use global rotation or history list
   bool use_global_rot_ = true;
 
-  friend std::vector<ValueType>& testing::getMyVarsFull(RotatedSPOs& rot);
-  friend std::vector<std::vector<ValueType>>& testing::getHistoryParams(RotatedSPOs& rot);
+  friend const opt_variables_type& testing::getMyVars(RotatedSPOs& rot);
+  friend const std::vector<ValueType>& testing::getMyVarsFull(RotatedSPOs& rot);
+  friend const std::vector<std::vector<ValueType>>& testing::getHistoryParams(RotatedSPOs& rot);
 };
 
 

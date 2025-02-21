@@ -124,6 +124,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   auto& pset_leader       = walker_elecs.getLeader();
   const int num_particles = pset_leader.getTotalNum();
 
+  std::vector<bool> are_valid(num_walkers);
   MCCoords<CT> drifts(num_walkers), drifts_reverse(num_walkers);
   MCCoords<CT> walker_deltas(num_walkers * num_particles), deltas(num_walkers);
   TWFGrads<CT> grads_now(num_walkers), grads_new(num_walkers);
@@ -195,7 +196,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
           assert(qmcplusplus::isfinite(rr[i]));
 #endif
 
-        ps_dispatcher.flex_makeMove(walker_elecs, iat, drifts);
+        ps_dispatcher.flex_makeMove(walker_elecs, iat, drifts, are_valid);
 
         twf_dispatcher.flex_calcRatioGrad(walker_twfs, walker_elecs, iat, ratios, grads_new);
 
@@ -229,7 +230,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
         isAccepted.clear();
 
         for (int iw = 0; iw < num_walkers; ++iw)
-          if ((!rejects[iw]) && prob[iw] >= std::numeric_limits<RealType>::epsilon() &&
+          if (are_valid[iw] && !rejects[iw] && prob[iw] >= std::numeric_limits<RealType>::epsilon() &&
               step_context.get_random_gen()() < prob[iw])
           {
             crowd.incAccept();

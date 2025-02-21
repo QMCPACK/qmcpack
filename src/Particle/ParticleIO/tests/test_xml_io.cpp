@@ -27,6 +27,26 @@ namespace qmcplusplus
 {
 TEST_CASE("read_particleset_xml", "[particle_io][xml]")
 {
+  const char* particles_frac = R"(
+<particleset name="ion0" size="1">
+  <group name="He">
+    <parameter name="charge">2</parameter>
+  </group>
+  <attrib name="position" datatype="posArray" condition="1">
+    0.1 0.2 0.3
+  </attrib>
+</particleset>
+)";
+  Libxml2Document doc_frac;
+  REQUIRE(doc_frac.parseFromString(particles_frac));
+
+  const SimulationCell simulation_cell;
+  ParticleSet ions_bad(simulation_cell);
+
+  XMLParticleParser parse_ions_bad(ions_bad);
+  REQUIRE_THROWS_WITH(parse_ions_bad.readXML(doc_frac.getRoot()),
+                      "Fractional coordinates cannot be used without an explicit lattice in the <simulationcell/>!");
+
   const char* particles = R"(<tmp>
 <particleset name="ion0" size="1">
   <group name="He">
@@ -57,12 +77,11 @@ TEST_CASE("read_particleset_xml", "[particle_io][xml]")
   REQUIRE(okay);
 
   xmlNodePtr root = doc.getRoot();
+  xmlNodePtr part1 = xmlFirstElementChild(root);
 
-  const SimulationCell simulation_cell;
   ParticleSet ions(simulation_cell), electrons(simulation_cell);
 
   XMLParticleParser parse_ions(ions);
-  xmlNodePtr part1 = xmlFirstElementChild(root);
   parse_ions.readXML(part1);
 
   REQUIRE(ions.groups() == 1);

@@ -37,6 +37,8 @@ public:
   static int getBufferStart(const NESpaceGrid<REAL>& nesg) { return nesg.buffer_start_; }
   static int getBufferEnd(const NESpaceGrid<REAL>& nesg) { return nesg.buffer_end_; }
   static auto* getOdu(const NESpaceGrid<REAL>& nesg) { return nesg.odu_; }
+  static int getNDomains(const NESpaceGrid<REAL>& nesg) { return nesg.ndomains_; }
+  static int getAxisGridSizes(const NESpaceGrid<REAL>& nesg) { return nesg.ndomains_; }
 };
 
 template<ValidSpaceGridInput::valid VALID>
@@ -348,18 +350,17 @@ TEST_CASE("SpaceGrid::Accumulate::outside", "[estimators]")
   // new pset R's
   // check again
   auto min_R =
-    ParticleSet::ParticlePos{{1.883366346, 2.136350632, 3.188981533},   {0.09710352868, -0.76751858, -1.89306891}};
+      ParticleSet::ParticlePos{{1.883366346, 2.136350632, 3.188981533}, {0.09710352868, -0.76751858, -1.89306891}};
   sge.pset_elec_.applyMinimumImage(min_R);
   sge.pset_elec_.R = min_R;
 
   sge.pset_elec_.update();
   std::cout << NativePrint(p_outside) << '\n';
-  
+
   std::vector<bool> p_outside_2(8, false);
   space_grid.accumulate(sge.pset_elec_.R, values, p_outside_2, sge.pset_elec_.getDistTableAB(ei_tid));
 
   std::cout << NativePrint(p_outside_2) << '\n';
-
 }
 
 TEST_CASE("SpaceGrid::BadPeriodic", "[estimators]")
@@ -393,13 +394,126 @@ TEST_CASE("SpaceGrid::BadPeriodic", "[estimators]")
   sge.pset_elec_.update();
   sge.pset_ions_.update();
 
-  // set a position outside of the cell
-  sge.pset_elec_.R[2] = {1.451870349, 4.381521229, 1.165202269};
-
   std::vector<bool> p_outside(8, false);
+  // set a position a small amount outside relative to the grid density.
+  // because numerical inaccuracy in the dot product to go from cartesian to lattice coordinates we need to check that
+  // particles that end up within on index of the of the grid bounds aren't an issue.
+  // the accumulate in the periodic case has a strong assumption that minimum image has been applied to the incoming coords.
+
+  sge.pset_elec_.R[2] = {2.585144997, 1.862680197, 2.9};
+  space_grid.accumulate(sge.pset_elec_.R, values, p_outside, sge.pset_elec_.getDistTableAB(ei_tid));
+
+  // set a position outside of the cell more than numerical error could ever get
+  // u = {-0.256273, 1.11711, 0.94714}
+  sge.pset_elec_.R[2] = {1.451870349, 3.481521229, 1.165202269};
 
   CHECK_THROWS_AS(space_grid.accumulate(sge.pset_elec_.R, values, p_outside, sge.pset_elec_.getDistTableAB(ei_tid)),
                   std::runtime_error);
+
+  try
+  {
+    space_grid.accumulate(sge.pset_elec_.R, values, p_outside, sge.pset_elec_.getDistTableAB(ei_tid));
+  }
+  catch (const std::exception& exc)
+  {
+    std::cout << exc.what() << '\n';
+  }
+
+
+  // This is just barely out of the unit cell in a negative direction.
+  // u = {-1.01, 0.5, 0.5}
+  sge.pset_elec_.R[2] = {-0.860156, 1.68658, -0.860156};
+  // So it should not throw
+  space_grid.accumulate(sge.pset_elec_.R, values, p_outside, sge.pset_elec_.getDistTableAB(ei_tid));
+  // But it does set a value
+  auto tensorAccessor = [](const auto& grid_data, int i, int j, int k, int iv) {
+    return grid_data[1200 * i + 60 * j + 3 * k + iv];
+  };
+  const auto& grid_data = NES::getData(space_grid);
+  CHECK(tensorAccessor(grid_data, 14, 14, 0 ,1) == Approx(2.1));
+
+    // This is just barely out of the unit cell in a negative direction.
+  // u = {1.01, 0.5, 0.5}
+  sge.pset_elec_.R[2] = {2.54674, 1.68658, 2.54674};
+  // So it should not throw
+  space_grid.accumulate(sge.pset_elec_.R, values, p_outside, sge.pset_elec_.getDistTableAB(ei_tid));
+  // But it does set a value
+  CHECK(tensorAccessor(grid_data, 14, 14, 19 ,1) == Approx(2.1));
+
+}
+
+// This should preserve some of the rather strange (to me) behavior of cartesian grids.
+TEST_CASE("SpaceGrid::WeirdCartesian", "[estimators]")
+{
+  using Input = testing::ValidSpaceGridInput;
+  Communicate* comm;
+  comm = OHMMS::Controller;
+  testing::SpaceGridEnv<Input::valid::WEIRD_CARTESIAN> sge(comm);
+  int num_values = 3;
+  NESpaceGrid<Real> space_grid(*(sge.sgi_), sge.ref_points_->get_points(), num_values, true);
+  using NES         = testing::NESpaceGridTests<double>;
+  auto buffer_start = NES::getBufferStart(space_grid);
+  auto buffer_end   = NES::getBufferEnd(space_grid);
+  space_grid.write_description(std::cout, std::string(""));
+  auto& sgi = *(sge.sgi_);
+  auto& agr = sgi.get_axis_grids();
+  std::cout << "AxisGridDomains: ";
+  for (int id = 0; id < OHMMS_DIM; ++id)
+  {
+    CHECK(NES::getOdu(space_grid)[id] == agr[id].odu);
+    std::cout << NativePrint(agr[id].ndom_int) << ',';
+  }
+  std::cout << '\n';
+  //CHECK(buffer_start == 0);
+  //CHECK(buffer_end == 23999);
+
+  CHECK(space_grid.nDomains() == 2000);
+
+  CHECK(space_grid.getDataVector().size() == 6000);
+
+  
+  Matrix<Real> values;
+  values.resize(sge.pset_elec_.getTotalNum(), num_values);
+
+  for (int ip = 0; ip < sge.pset_elec_.getTotalNum(); ++ip)
+    for (int iv = 0; iv < num_values; ++iv)
+      values(ip, iv) = ip + 0.1 * iv;
+
+  const int ei_tid = sge.pset_elec_.addTable(sge.pset_ions_);
+  sge.pset_elec_.update();
+  sge.pset_ions_.update();
+
+  auto min_R = sge.pset_elec_.R;
+  sge.pset_elec_.applyMinimumImage(min_R);
+
+  std::vector<bool> p_outside(8, false);
+  space_grid.accumulate(min_R, values, p_outside, sge.pset_elec_.getDistTableAB(ei_tid));
+
+  // check that what's in data_pool is what is expected.
+  const auto& grid_data = NES::getData(space_grid);
+
+  auto tensorAccessor = [](const auto& grid_data, int i, int j, int k, int iv) {
+    return grid_data[600 * i + 60 * j + 3 * k + iv];
+  };
+
+  CHECK(tensorAccessor(grid_data, 7, 6, 13, 0) == Approx(1.0));
+  CHECK(tensorAccessor(grid_data, 5, 8, 9, 0) == Approx(2.0));
+  // new pset R's
+  // check again
+  min_R =
+      ParticleSet::ParticlePos{{-0.6759092808, 0.835668385, 1.985307097},   {0.09710352868, -0.76751858, -1.89306891},
+                               {-0.5605484247, -0.9578875303, 1.476860642}, {2.585144997, 1.862680197, 3.282609463},
+                               {-0.1961335093, 1.111888766, -0.578481257},  {1.794641614, 1.6000278, -0.9474347234},
+                               {2.157717228, 0.9254754186, 2.263158321},    {1.883366346, 2.136350632, 3.188981533}};
+  sge.pset_elec_.applyMinimumImage(min_R);
+  sge.pset_elec_.R = min_R;
+
+  sge.pset_elec_.update();
+
+  std::vector<bool> p_outside_2(8, false);
+  space_grid.accumulate(sge.pset_elec_.R, values, p_outside_2, sge.pset_elec_.getDistTableAB(ei_tid));
+
+  CHECK(tensorAccessor(grid_data, 9, 9, 7, 2) == Approx(0.0));
 }
 
 TEST_CASE("SpaceGrid::hdf5", "[estimators]")

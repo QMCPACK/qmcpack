@@ -98,7 +98,7 @@ QMCMain::QMCMain(Communicate* c)
       << "\n  MPI group ID              = " << myComm->getGroupID()
       << "\n  Number of ranks in group  = " << myComm->size()
       << "\n  MPI ranks per node        = " << node_comm.size()
-#if defined(ENABLE_OFFLOAD) || defined(ENABLE_CUDA) || defined(ENABLE_HIP) || defined(ENABLE_SYCL)
+#if defined(ENABLE_OFFLOAD) || defined(ENABLE_CUDA) || defined(ENABLE_ROCM) || defined(ENABLE_SYCL)
       << "\n  Accelerators per node     = " << DeviceManager::getGlobal().getNumDevices()
 #endif
       << std::endl;
@@ -128,16 +128,15 @@ QMCMain::QMCMain(Communicate* c)
 
   // Record features configured in cmake or selected via command-line arguments to the printout
   app_summary() << std::endl;
-#if !defined(ENABLE_OFFLOAD) && !defined(ENABLE_CUDA) && !defined(ENABLE_HIP) && !defined(ENABLE_SYCL)
+#if !defined(ENABLE_OFFLOAD) && !defined(ENABLE_CUDA) && !defined(ENABLE_ROCM) && !defined(ENABLE_SYCL)
   app_summary() << "  CPU only build" << std::endl;
 #else // GPU case
 #if defined(ENABLE_OFFLOAD)
   app_summary() << "  OpenMP target offload to accelerators build option is enabled" << std::endl;
 #endif
-#if defined(ENABLE_HIP)
-  app_summary() << "  HIP acceleration with direct HIP source code build option is enabled" << std::endl;
+#if defined(BUILD_AFQMC_HIP)
+  app_summary() << "  HIP acceleration with direct HIP source code in AFQMC build option is enabled" << std::endl;
 #endif
-
 #if defined(QMC_CUDA2HIP) && defined(ENABLE_CUDA)
   app_summary() << "  HIP acceleration with CUDA source code build option is enabled" << std::endl;
 #elif defined(ENABLE_CUDA)

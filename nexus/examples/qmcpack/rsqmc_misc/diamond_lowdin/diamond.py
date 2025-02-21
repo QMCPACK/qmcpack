@@ -120,6 +120,7 @@ dm_estimator = dm1b(
         )
 
 qmc = generate_qmcpack(
+    driver       = 'legacy',
     identifier   = 'vmc_1rdm_noJ',
     path         = 'vmc_1rdm_noJ',
     job          = job(cores=3,app='qmcpack_complex',hours=1),

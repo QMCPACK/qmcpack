@@ -97,10 +97,10 @@ potentially poor starting guess for particle positions). In DMC, the
 walker population is a dynamic feature of the calculation and must be
 large enough to avoid introducing bias in expectation values.
 
-The tradeoff of moving to a the sampling procedure for the integration
+The tradeoff of moving to a sampling procedure for the integration
 is that it introduces statistical error into the calculation which
 diminishes slowly with the number of samples (it falls off like
-:math:`1/(\# of samples)` by the Central Limit Theorem). The good news
+:math:`1/\sqrt{\text{# of samples}}` by the Central Limit Theorem). The good news
 for ground state QMC is that this error can be reduced more rapidly
 through the discovery of better guesses at the detailed nature of the
 many-body wavefunction.

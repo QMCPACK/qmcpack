@@ -23,6 +23,7 @@
 #include "QMCHamiltonians/NonLocalECPComponent.h"
 #include "TestListenerFunction.h"
 #include "Utilities/RuntimeOptions.h"
+#include "OhmmsData/Libxml2Doc.h"
 
 namespace qmcplusplus
 {

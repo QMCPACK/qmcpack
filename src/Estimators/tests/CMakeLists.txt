@@ -69,6 +69,7 @@ set(SRCS
     test_NESpaceGrid.cpp
     test_EnergyDensityInput.cpp
     test_EnergyDensityEstimator.cpp
+    test_StructureFactorInput.cpp
     )
 
 add_executable(${UTEST_EXE} ${SRCS})
