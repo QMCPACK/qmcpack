@@ -182,22 +182,12 @@ cd $HOME/apps/spack
 
 # For reproducibility, use a specific version of Spack
 # Prefer to use tagged releases https://github.com/spack/spack/releases
-
-git checkout 75b03bc12ffbabdfac0775ead5442c3f102f94c7
-#commit 75b03bc12ffbabdfac0775ead5442c3f102f94c7 (HEAD -> develop, origin/develop, origin/HEAD)
-#Author: Adam J. Stewart <ajstewart426@gmail.com>
-#Date:   Sun Nov 24 20:55:18 2024 +0100
+git checkout 75c3d0a053c9705e1c1f88a94c47ffd36f4be1dd
+#commit 75c3d0a053c9705e1c1f88a94c47ffd36f4be1dd (HEAD -> develop, origin/develop, origin/HEAD)
+#Author: Lehman Garrison <lgarrison@flatironinstitute.org>
+#Date:   Wed Feb 19 10:14:35 2025 -0500
 #
-#    glib: add v2.82.2 (#47766)
-
-#git checkout dfab174f3100840c889e8bb939260b64d93d8dbd
-#commit dfab174f3100840c889e8bb939260b64d93d8dbd (HEAD -> develop, origin/develop, origin/HEAD)
-#Author: Stephen Nicholas Swatman <stephen@v25.nl>
-#Date:   Mon Nov 18 14:04:52 2024 +0100
-#
-#    benchmark: add version 1.9.0 (#47658)
-#    
-#    This commit adds Google Benchmark v1.9.0.
+#    py-yt: add 4.4.0 and dependencies (#47571)
 
 echo --- Git version and last log entry
 git log -1
