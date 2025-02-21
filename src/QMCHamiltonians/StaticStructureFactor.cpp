@@ -51,7 +51,7 @@ bool StaticStructureFactor::put(xmlNodePtr cur)
 {
   using std::sqrt;
   reset();
-  const k2_t& k2_init = Pinit.getSimulationCell().getKLists().ksq;
+  const k2_t& k2_init = Pinit.getSimulationCell().getKLists().getKSQWorking();
 
   std::string write_report = "no";
   OhmmsAttributeSet attrib;
@@ -108,7 +108,7 @@ void StaticStructureFactor::registerCollectables(std::vector<ObservableHelper>& 
 {
   h5desc.emplace_back(hdf_path(name_) / "kpoints");
   auto& oh = h5desc.back();
-  oh.addProperty(const_cast<std::vector<PosType>&>(Pinit.getSimulationCell().getKLists().kpts_cart), "value", file);
+  oh.addProperty(const_cast<std::vector<PosType>&>(Pinit.getSimulationCell().getKLists().getKptsCartWorking()), "value", file);
 
   std::vector<int> ng(2);
   ng[0] = 2;

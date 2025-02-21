@@ -50,7 +50,7 @@ public:
   using Real          = RealAlias<Value>;
   using FullPrecReal  = RealAlias<FullPrecValue>;
   using Grad          = TinyVector<Value, OHMMS_DIM>;
-  using Lattice       = PtclOnLatticeTraits::ParticleLayout;
+  using Lattice       = CrystalLattice<OHMMS_PRECISION_FULL, OHMMS_DIM>;
   using Position      = QMCTraits::PosType;
 
   using Evaluator  = OneBodyDensityMatricesInput::Evaluator;

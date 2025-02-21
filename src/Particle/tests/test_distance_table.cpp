@@ -338,9 +338,7 @@ SimulationCell parse_pbc_fcc_lattice()
   xmlNodePtr part1 = xmlFirstElementChild(root);
 
   // read lattice
-  ParticleSet::ParticleLayout lattice;
-  LatticeParser lp(lattice);
-  lp.put(part1);
+  ParticleLayoutT<QMCTraits::FullPrecRealType> lattice = makeFullPrecParticleLayout(part1);
   lattice.print(app_log(), 0);
 
   return SimulationCell(lattice);
@@ -371,9 +369,7 @@ SimulationCell parse_pbc_lattice()
   xmlNodePtr part1 = xmlFirstElementChild(root);
 
   // read lattice
-  ParticleSet::ParticleLayout lattice;
-  LatticeParser lp(lattice);
-  lp.put(part1);
+  ParticleLayoutT<QMCTraits::FullPrecRealType> lattice = makeFullPrecParticleLayout(part1);
   lattice.print(app_log(), 0);
 
   return SimulationCell(lattice);

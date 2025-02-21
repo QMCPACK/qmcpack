@@ -87,7 +87,7 @@ TEST_CASE("MomentumDistribution::MomentumDistribution", "[estimators]")
   DataLocality dl = DataLocality::crowd;
 
   // Build from input
-  MomentumDistribution md(std::move(mdi), pset.getTotalNum(), pset.getTwist(), pset.getLattice(), dl);
+  MomentumDistribution md(std::move(mdi), pset.getTotalNum(), pset.getTwist(), pset.getFullPrecLattice(), dl);
 
   CHECK(md.twist[0] == Approx(0.0));
   CHECK(md.twist[1] == Approx(0.0));
@@ -141,7 +141,7 @@ TEST_CASE("MomentumDistribution::accumulate", "[estimators]")
                                     {3.657151589, 4.883870516, 4.201243939}, {2.97317591, 4.245644974, 4.284564732}};
 
   // Build from input
-  MomentumDistribution md(std::move(mdi), pset.getTotalNum(), pset.getTwist(), pset.getLattice(), dl);
+  MomentumDistribution md(std::move(mdi), pset.getTotalNum(), pset.getTwist(), pset.getFullPrecLattice(), dl);
 
   // Test accumulate
 
@@ -245,7 +245,7 @@ TEST_CASE("MomentumDistribution::spawnCrowdClone", "[estimators]")
   DataLocality dl = DataLocality::crowd;
 
   // Build from input
-  MomentumDistribution md(std::move(mdi), pset.getTotalNum(), pset.getTwist(), pset.getLattice(), dl);
+  MomentumDistribution md(std::move(mdi), pset.getTotalNum(), pset.getTwist(), pset.getFullPrecLattice(), dl);
 
   auto clone = md.spawnCrowdClone();
   REQUIRE(clone != nullptr);
@@ -256,7 +256,7 @@ TEST_CASE("MomentumDistribution::spawnCrowdClone", "[estimators]")
   // for MomentumDistribution.  Then checks relevant to that should be added.
   MomentumDistributionInput fail_mdi(node);
   dl = DataLocality::rank;
-  MomentumDistribution fail_md(std::move(fail_mdi), pset.getTotalNum(), pset.getTwist(), pset.getLattice(), dl);
+  MomentumDistribution fail_md(std::move(fail_mdi), pset.getTotalNum(), pset.getTwist(), pset.getFullPrecLattice(), dl);
   CHECK_THROWS_AS(clone = fail_md.spawnCrowdClone(), std::runtime_error);
 }
 

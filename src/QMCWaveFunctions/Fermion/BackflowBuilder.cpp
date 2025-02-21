@@ -403,8 +403,8 @@ std::unique_ptr<BackflowFunctionBase> BackflowBuilder::addRPA(xmlNodePtr cur)
       Rs = 100.0;
     }
   }
-  int indx        = targetPtcl.getSimulationCell().getKLists().ksq.size() - 1;
-  RealType Kc_max = std::pow(targetPtcl.getSimulationCell().getKLists().ksq[indx], 0.5);
+  int indx        = targetPtcl.getSimulationCell().getKLists().getKSQWorking().size() - 1;
+  RealType Kc_max = std::pow(targetPtcl.getSimulationCell().getKLists().getKSQWorking()[indx], 0.5);
   if (Kc < 0)
   {
     Kc = 2.0 * std::pow(2.25 * M_PI, 1.0 / 3.0) / tlen;
@@ -563,7 +563,7 @@ void BackflowBuilder::makeLongRange_twoBody(xmlNodePtr cur, Backflow_ee_kSpace* 
         {
           fout << std::sqrt(targetPtcl.getSimulationCell()
                                 .getKLists()
-                                .ksq[targetPtcl.getSimulationCell().getKLists().kshell[i]])
+                                .getKSQWorking()[targetPtcl.getSimulationCell().getKLists().getKShell()[i]])
                << " " << yk[i] << std::endl;
         }
         fout.close();

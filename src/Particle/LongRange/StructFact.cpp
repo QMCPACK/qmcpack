@@ -75,7 +75,7 @@ void StructFact::mw_updateAllPart(const RefVectorWithLeader<StructFact>& sk_list
     const size_t nw          = p_list.size();
     const size_t num_species = p_leader.groups();
     const auto& kpts_cart    = sk_leader.k_lists_.get_kpts_cart_soa();
-    const size_t nk          = sk_leader.k_lists_.numk;
+    const size_t nk          = sk_leader.k_lists_.getNumK();
     const size_t nk_padded   = kpts_cart.capacity();
 
     auto& coordinates_leader = static_cast<const RealSpacePositionsOMPTarget&>(p_leader.getCoordinates());
@@ -139,11 +139,11 @@ void StructFact::computeRhok(const ParticleSet& P)
 {
   const size_t num_ptcls   = P.getTotalNum();
   const size_t num_species = P.groups();
-  const size_t nk          = k_lists_.numk;
+  const size_t nk          = k_lists_.getNumK();
   resize(nk, num_species, num_ptcls);
-
   rhok_r = 0.0;
   rhok_i = 0.0;
+  const auto& kpts_cart = k_lists_.getKptsCartWorking();
   if (StorePerParticle)
   {
     // save per particle and species value
@@ -157,7 +157,7 @@ void StructFact::computeRhok(const ParticleSet& P)
 #pragma omp simd
       for (int ki = 0; ki < nk; ki++)
       {
-        qmcplusplus::sincos(dot(k_lists_.kpts_cart[ki], pos), &eikr_i_ptr[ki], &eikr_r_ptr[ki]);
+        qmcplusplus::sincos(dot(kpts_cart[ki], pos), &eikr_i_ptr[ki], &eikr_r_ptr[ki]);
         rhok_r_ptr[ki] += eikr_r_ptr[ki];
         rhok_i_ptr[ki] += eikr_i_ptr[ki];
       }
@@ -176,7 +176,7 @@ void StructFact::computeRhok(const ParticleSet& P)
       for (int ki = 0; ki < nk; ki++)
       {
         RealType s, c;
-        qmcplusplus::sincos(dot(k_lists_.kpts_cart[ki], pos), &s, &c);
+        qmcplusplus::sincos(dot(kpts_cart[ki], pos), &s, &c);
         rhok_r_ptr[ki] += c;
         rhok_i_ptr[ki] += s;
       }
@@ -191,7 +191,7 @@ void StructFact::computeRhok(const ParticleSet& P)
         const size_t offset          = ib * kblock_size;
         const size_t this_block_size = std::min(kblock_size, nk - offset);
         for (int ki = 0; ki < this_block_size; ki++)
-          phiV[ki] = dot(k_lists_.kpts_cart[ki + offset], pos);
+          phiV[ki] = dot(kpts_cart[ki + offset], pos);
         eval_e2iphi(this_block_size, phiV, eikr_r_temp, eikr_i_temp);
         for (int ki = 0; ki < this_block_size; ki++)
         {

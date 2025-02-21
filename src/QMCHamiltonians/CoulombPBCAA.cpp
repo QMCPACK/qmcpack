@@ -306,7 +306,7 @@ void CoulombPBCAA::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
           v1 = 0.0;
           for (int s = 0; s < num_species; ++s)
             v1 += z * cpbcaa.Zspec[s] *
-                cpbcaa.AA->evaluate(pset.getSimulationCell().getKLists().kshell, PtclRhoK.rhok_r[s], PtclRhoK.rhok_i[s],
+	      cpbcaa.AA->evaluate(pset.getSimulationCell().getKLists().getKShell(), PtclRhoK.rhok_r[s], PtclRhoK.rhok_i[s],
                                     PtclRhoK.eikr_r[i], PtclRhoK.eikr_i[i]);
           v_sample[i] += v1;
           Vlr += v1;
@@ -420,7 +420,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluate_sp(ParticleSet& P)
         v1 = 0.0;
         for (int s = 0; s < NumSpecies; ++s)
           v1 += z * Zspec[s] *
-              AA->evaluate(P.getSimulationCell().getKLists().kshell, PtclRhoK.rhok_r[s], PtclRhoK.rhok_i[s],
+	    AA->evaluate(P.getSimulationCell().getKLists().getKShell(), PtclRhoK.rhok_r[s], PtclRhoK.rhok_i[s],
                            PtclRhoK.eikr_r[i], PtclRhoK.eikr_i[i]);
         V_samp(i) += v1;
         Vlr += v1;
@@ -623,7 +623,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalConsts(bool report)
     }
     // perform long-range Madelung sum
     const StructFact& PtclRhoK(Ps.getSK());
-    v1 = AA->evaluate_slab(0, Ps.getSimulationCell().getKLists().kshell, PtclRhoK.eikr_r[0], PtclRhoK.eikr_i[0],
+    v1 = AA->evaluate_slab(0, Ps.getSimulationCell().getKLists().getKShell(), PtclRhoK.eikr_r[0], PtclRhoK.eikr_i[0],
                            PtclRhoK.eikr_r[0], PtclRhoK.eikr_i[0]);
     if (report)
       app_log() << "   LR Madelung = " << v1 << std::endl;
@@ -794,7 +794,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalLR(const ParticleSet& P) const
       {
         const RealType z = std::abs(dr[jat][slab_dir]);
         u += Zat[jat] *
-            AA->evaluate_slab(z, P.getSimulationCell().getKLists().kshell, PtclRhoK.eikr_r[iat], PtclRhoK.eikr_i[iat],
+	  AA->evaluate_slab(z, P.getSimulationCell().getKLists().getKShell(), PtclRhoK.eikr_r[iat], PtclRhoK.eikr_i[iat],
                               PtclRhoK.eikr_r[jat], PtclRhoK.eikr_i[jat]);
       }
       res += Zat[iat] * u;
@@ -807,7 +807,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalLR(const ParticleSet& P) const
       mRealType Z1 = Zspec[spec1];
       for (int spec2 = spec1; spec2 < NumSpecies; spec2++)
       {
-        mRealType temp = AA->evaluate(P.getSimulationCell().getKLists().kshell, PtclRhoK.rhok_r[spec1],
+        mRealType temp = AA->evaluate(P.getSimulationCell().getKLists().getKShell(), PtclRhoK.rhok_r[spec1],
                                       PtclRhoK.rhok_i[spec1], PtclRhoK.rhok_r[spec2], PtclRhoK.rhok_i[spec2]);
         if (spec2 == spec1)
           temp *= 0.5;

@@ -22,8 +22,7 @@ class SpeciesSet;
 
 namespace testing
 {
-using POLT    = PtclOnLatticeTraits;
-using Lattice = POLT::ParticleLayout;
+using Lattice = CrystalLattice<OHMMS_PRECISION_FULL,OHMMS_DIM>;
 
 enum class SpeciesCases
 {

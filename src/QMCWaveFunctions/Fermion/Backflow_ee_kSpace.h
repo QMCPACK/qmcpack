@@ -64,7 +64,7 @@ public:
   {
     NumKShells = yk.size();
     Fk         = yk;
-    NumKVecs   = P.getSimulationCell().getKLists().kshell[NumKShells + 1];
+    NumKVecs   = P.getSimulationCell().getKLists().getKShell()[NumKShells + 1];
     Rhok.resize(NumKVecs);
     if (Optimize)
       numParams = NumKShells;
