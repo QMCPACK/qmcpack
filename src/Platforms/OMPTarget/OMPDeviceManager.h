@@ -26,6 +26,9 @@ class OMPDeviceManager
 
 public:
   OMPDeviceManager(int& default_device_num, int& num_devices, int local_rank, int local_size);
+
+  // print device information
+  void printInfo() const;
 };
 } // namespace qmcplusplus
 
