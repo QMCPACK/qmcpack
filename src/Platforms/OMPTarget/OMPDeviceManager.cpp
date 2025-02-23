@@ -14,6 +14,7 @@
 #include "OMPDeviceManager.h"
 #include <stdexcept>
 #include <omp.h>
+#include "config.h"
 #include "OutputManager.h"
 #include "determineDefaultDeviceNum.h"
 
@@ -41,4 +42,13 @@ OMPDeviceManager::OMPDeviceManager(int& default_device_num, int& num_devices, in
     omp_set_default_device(omp_default_device_num);
   }
 }
+
+void OMPDeviceManager::printInfo() const
+{
+  app_summary() << "  OpenMP target offload to accelerators build option is enabled" << std::endl;
+#if defined(QMC_OFFLOAD_MEM_ASSOCIATED)
+  app_log() << "    Using omp_target_associate_ptr for memory mapping" << std::endl;
+#endif
+}
+
 } // namespace qmcplusplus
