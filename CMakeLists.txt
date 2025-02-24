@@ -800,7 +800,10 @@ if(ENABLE_ROCM)
     target_link_libraries(ROCM::libraries INTERFACE roc::rocsolver roc::rocrand)
   endif()
   message("Project HIP_FLAGS: ${CMAKE_HIP_FLAGS}")
-  option(QMC_DISABLE_HIP_HOST_REGISTER "Disable hipHostRegister for pinning host memory" ON)
+  option(QMC_DISABLE_HIP_HOST_REGISTER "Disable hipHostRegister for pinning host memory" OFF)
+  if(QMC_DISABLE_HIP_HOST_REGISTER)
+    message(STATUS "Use of hipHostRegister disabled")
+  endif()
 endif(ENABLE_ROCM)
 
 if(USE_NVTX_API AND QMC_CUDA2HIP)
@@ -869,22 +872,24 @@ if(ENABLE_SYCL)
   endif()
 endif(ENABLE_SYCL)
 
-#--------------------------------------------------------------------
-#  Resolve Vendor(CUDA/HIP/SYCL) and OpenMP runtime incompatibilities
-#--------------------------------------------------------------------
+#-----------------------------------------------------
+#  Resolve Vendor and OpenMP runtime incompatibilities
+#-----------------------------------------------------
 # Some OpenMP offload runtime libraries have composibility issue with vendor native ones.
 # A workaround is making the vendor native runtime responsible for memory allocations and OpenMP associate/disassocate them.
-set(QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT OFF)
-if(ENABLE_OFFLOAD)
+# CUDA/HIP supported, not SYCL
+if(${COMPILER} MATCHES "Clang" AND QMC_CUDA2HIP AND ENABLE_OFFLOAD)
   # Known issue HIP<5.5 https://github.com/ROCm/aomp/issues/253
-  message("check ${COMPILER} ${QMC_CUDA2HIP} ${hip_VERSION}")
-  if(${COMPILER} MATCHES "Clang" AND QMC_CUDA2HIP AND hip_VERSION VERSION_LESS "5.5")
-    set(QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT ON)
-  endif()
+  # Known performance issue remains in 6.3.3
+  set(QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT ON)
+else()
+  set(QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT OFF)
 endif()
-cmake_dependent_option(QMC_OFFLOAD_MEM_ASSOCIATED "Manage OpenMP memory allocations via the vendor runtime"
-  ${QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT} "ENABLE_OFFLOAD;ENABLE_CUDA" OFF)
-
+cmake_dependent_option(QMC_OFFLOAD_MEM_ASSOCIATED "Use omp_target_associate_ptr instead of direct OpenMP offload maps in dual-space allocators"
+  ${QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT} "ENABLE_OFFLOAD;ENABLE_CUDA;NOT ENABLE_SYCL" OFF)
+if(QMC_OFFLOAD_MEM_ASSOCIATED)
+  message(STATUS "Use omp_target_associate_ptr instead of direct OpenMP offload maps in dual-space allocators")
+endif()
 
 #-------------------------------------------------------------------
 # set up VTune ittnotify library
