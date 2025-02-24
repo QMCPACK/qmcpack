@@ -801,6 +801,9 @@ if(ENABLE_ROCM)
   endif()
   message("Project HIP_FLAGS: ${CMAKE_HIP_FLAGS}")
   option(QMC_DISABLE_HIP_HOST_REGISTER "Disable hipHostRegister for pinning host memory" OFF)
+  if(QMC_DISABLE_HIP_HOST_REGISTER)
+    message(STATUS "Use of hipHostRegister disabled")
+  endif()
 endif(ENABLE_ROCM)
 
 if(USE_NVTX_API AND QMC_CUDA2HIP)
@@ -882,8 +885,11 @@ if(${COMPILER} MATCHES "Clang" AND QMC_CUDA2HIP AND ENABLE_OFFLOAD)
 else()
   set(QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT OFF)
 endif()
-cmake_dependent_option(QMC_OFFLOAD_MEM_ASSOCIATED "Manage OpenMP memory allocations via the vendor runtime"
+cmake_dependent_option(QMC_OFFLOAD_MEM_ASSOCIATED "Use omp_target_associate_ptr instead of direct OpenMP offload maps in dual-space allocators"
   ${QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT} "ENABLE_OFFLOAD;ENABLE_CUDA;NOT ENABLE_SYCL" OFF)
+if(QMC_OFFLOAD_MEM_ASSOCIATED)
+  message(STATUS "Use omp_target_associate_ptr instead of direct OpenMP offload maps in dual-space allocators")
+endif()
 
 #-------------------------------------------------------------------
 # set up VTune ittnotify library
