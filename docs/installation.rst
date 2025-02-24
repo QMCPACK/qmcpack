@@ -350,6 +350,15 @@ the path to the source directory.
     USE_OBJECT_TARGET      ON/OFF(default). Use CMake object library targets to workaround linker not being able to handle hybrid
                            binary archives which contain both host and device codes.
 
+- Expert performance fine tuning options
+
+  ::
+
+    QMC_OFFLOAD_MEM_ASSOCIATED     ON/OFF. ON by default only when using both OpenMP offload and HIP
+                                   programming models and the host compiler is Clang based.
+    QMC_DISABLE_HIP_HOST_REGISTER  ON/OFF(default). If ON, make all the use of hipHostRegister/Unregister
+                                   as no-op, namely disabling all the use of pinned memory.
+
 - BLAS/LAPACK related
 
   ::
