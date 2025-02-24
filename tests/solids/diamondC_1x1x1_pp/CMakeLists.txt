@@ -9,6 +9,10 @@ list(APPEND DIAMOND_SCALARS "samples" "128000 0.0")
 list(APPEND DIAMOND_SCALARS "mpc" "-2.453044 0.004431")
 #  LIST(APPEND DIAMOND_SCALARS "flux" "0.0 0.4")
 
+# PW does not setup density; MPC can not be used
+set(DIAMOND_SCALARS_NO_MPC ${DIAMOND_SCALARS})
+list(REMOVE_ITEM DIAMOND_SCALARS_NO_MPC "mpc")
+
 qmc_run_and_check(
   short-diamondC_1x1x1_pp-vmc_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
@@ -19,6 +23,30 @@ qmc_run_and_check(
   TRUE
   0
   DIAMOND_SCALARS # VMC
+)
+
+qmc_run_and_check(
+  short-diamondC_1x1x1_pp-vmcbatch_sdj
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+  qmc_short
+  qmc_short_vmcbatch.in.xml
+  1
+  16
+  TRUE
+  0
+  DIAMOND_SCALARS # VMC
+)
+
+qmc_run_and_check(
+  short-diamondC_1x1x1_pp-vmcbatch_pw_sdj
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+  qmc_short_pw
+  qmc_short_vmcbatch_pw.in.xml
+  1
+  16
+  TRUE
+  0
+  DIAMOND_SCALARS_NO_MPC # VMC
 )
 
 # Hybridrep is not implemented in legacy CUDA but should be correctly error trapped
