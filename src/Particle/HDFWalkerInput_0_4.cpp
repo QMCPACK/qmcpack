@@ -127,62 +127,71 @@ bool HDFWalkerInput_0_4::read_hdf5(const std::filesystem::path& h5name)
 {
   size_t nw_in = 0;
 
-  hdf_archive hin(myComm, false); //everone reads this
-  bool success = hin.open(h5name, H5F_ACC_RDONLY);
-  //check if hdf and xml versions can work together
-  HDFVersion aversion;
-
-  hin.read(aversion, hdf::version);
-  if (!(aversion < i_info.version))
+  // This prevents a strange race condition I've see where the previous sections
+  // for sure already closed hdf5 file isn't available.
+  try
   {
-    int found_group = hin.is_group(hdf::main_state);
-    hin.push(hdf::main_state);
-    hin.read(nw_in, hdf::num_walkers);
-  }
-  else
-  {
-    app_error() << " Mismatched version. xml = " << i_info.version << " hdf = " << aversion << std::endl;
-  }
-
-  if (nw_in == 0)
-  {
-    app_error() << " No walkers in " << h5name << std::endl;
-    return false;
-  }
-
-  using Buffer_t = std::vector<QMCTraits::RealType>;
-  std::array<size_t, 3> dims{nw_in, num_ptcls_, OHMMS_DIM};
-  Buffer_t posin(dims[0] * dims[1] * dims[2]);
-  hin.readSlabReshaped(posin, dims, hdf::walkers);
-  std::vector<QMCTraits::FullPrecRealType> weights_in(nw_in);
-  const bool has_weights = hin.readEntry(weights_in, hdf::walker_weights);
-
-  std::vector<int> woffsets;
-  hin.read(woffsets, "walker_partition");
-
-  int np1 = myComm->size() + 1;
-  if (woffsets.size() != np1)
-  {
-    woffsets.resize(myComm->size() + 1, 0);
-    FairDivideLow(nw_in, myComm->size(), woffsets);
-  }
-
-  app_log() << " HDFWalkerInput_0_4::put getting " << dims[0] << " walkers " << posin.size() << std::endl;
-  nw_in = woffsets[myComm->rank() + 1] - woffsets[myComm->rank()];
-  {
-    const int nitems    = num_ptcls_ * OHMMS_DIM;
-    const int curWalker = wc_list_.getActiveWalkers();
-    wc_list_.createWalkers(nw_in, num_ptcls_);
-
-    auto it = posin.begin() + woffsets[myComm->rank()] * nitems;
-    for (int i = 0; i < nw_in; ++i, it += nitems)
-      copy(it, it + nitems, get_first_address(wc_list_[i + curWalker]->R));
-    if (has_weights)
+    hdf_archive hin(myComm, false); //everone reads this
+    myComm->barrier();
+    bool success = hin.open(h5name, H5F_ACC_RDONLY);
+    //check if hdf and xml versions can work together
+    HDFVersion aversion;
+    hin.read(aversion, hdf::version);
+    if (!(aversion < i_info.version))
     {
-      const auto woffset = woffsets[myComm->rank()];
-      for (int i = 0; i < nw_in; ++i)
-        wc_list_[i + curWalker]->Weight = weights_in[i + woffset];
+      int found_group = hin.is_group(hdf::main_state);
+      hin.push(hdf::main_state);
+      hin.read(nw_in, hdf::num_walkers);
     }
+    else
+    {
+      app_error() << " Mismatched version. xml = " << i_info.version << " hdf = " << aversion << std::endl;
+    }
+
+    if (nw_in == 0)
+    {
+      app_error() << " No walkers in " << h5name << std::endl;
+      return false;
+    }
+
+    using Buffer_t = std::vector<QMCTraits::RealType>;
+    std::array<size_t, 3> dims{nw_in, num_ptcls_, OHMMS_DIM};
+    Buffer_t posin(dims[0] * dims[1] * dims[2]);
+    hin.readSlabReshaped(posin, dims, hdf::walkers);
+    std::vector<QMCTraits::FullPrecRealType> weights_in(nw_in);
+    const bool has_weights = hin.readEntry(weights_in, hdf::walker_weights);
+
+    std::vector<int> woffsets;
+    hin.read(woffsets, "walker_partition");
+
+    int np1 = myComm->size() + 1;
+    if (woffsets.size() != np1)
+    {
+      woffsets.resize(myComm->size() + 1, 0);
+      FairDivideLow(nw_in, myComm->size(), woffsets);
+    }
+
+    app_log() << " HDFWalkerInput_0_4::put getting " << dims[0] << " walkers " << posin.size() << std::endl;
+    nw_in = woffsets[myComm->rank() + 1] - woffsets[myComm->rank()];
+    {
+      const int nitems    = num_ptcls_ * OHMMS_DIM;
+      const int curWalker = wc_list_.getActiveWalkers();
+      wc_list_.createWalkers(nw_in, num_ptcls_);
+
+      auto it = posin.begin() + woffsets[myComm->rank()] * nitems;
+      for (int i = 0; i < nw_in; ++i, it += nitems)
+        copy(it, it + nitems, get_first_address(wc_list_[i + curWalker]->R));
+      if (has_weights)
+      {
+        const auto woffset = woffsets[myComm->rank()];
+        for (int i = 0; i < nw_in; ++i)
+          wc_list_[i + curWalker]->Weight = weights_in[i + woffset];
+      }
+    }
+  }
+  catch (...)
+  {
+    throw std::runtime_error("Failed to open: " + h5name.string() + "to read walkers!");
   }
 
   return true;
