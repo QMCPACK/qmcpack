@@ -71,14 +71,14 @@ echo --- Host is $ourhostname
 case "$ourhostname" in
     sulfur )
 	if [[ $jobtype == "nightly" ]]; then
-	    buildsys="clangnewmpi gccnewnompi gccnewmpi gccoldmpi clangnewmpi_complex gccnewnompi_complex gccnewmpi_complex clangnewmpi_mixed gccnewnompi_mixed gccnewmpi_mixed clangnewmpi_mixed_complex gccnewnompi_mixed_complex gccnewmpi_mixed_complex \
+	    buildsys="gccnewmpi_mkl clangnewmpi gccnewnompi gccnewmpi gccoldmpi clangnewmpi_complex gccnewnompi_complex gccnewmpi_complex clangnewmpi_mixed gccnewnompi_mixed gccnewmpi_mixed clangnewmpi_mixed_complex gccnewnompi_mixed_complex gccnewmpi_mixed_complex \
 		clangoffloadmpi_offloadcuda \
 		clangoffloadnompi_offloadcuda clangoffloadnompi_offloadcuda_debug \
 		clangoffloadnompi_offloadcuda_complex clangoffloadnompi_offloadcuda_complex_debug \
 		clangoffloadnompi_offloadcuda_mixed clangoffloadnompi_offloadcuda_mixed_debug \
 		clangoffloadnompi_offloadcuda_mixed_complex clangoffloadnompi_offloadcuda_mixed_complex_debug"
 	else
-	    buildsys="clangnewmpi gccnewmpi clangnewmpi_complex clangnewmpi_mixed clangnewmpi_mixed_complex clangoffloadmpi_offloadcuda"
+	    buildsys="gccnewmpi_mkl clangnewmpi gccnewmpi clangnewmpi_complex clangnewmpi_mixed clangnewmpi_mixed_complex clangoffloadmpi_offloadcuda"
 	fi
 	export QMC_DATA=/scratch/${USER}/QMC_DATA_FULL # Route to directory containing performance test files
 	;;
@@ -165,6 +165,9 @@ export OMPI_MCA_rmaps_base_oversubscribe=true
 
 # LLVM Offload bug workaround
 export LIBOMP_USE_HIDDEN_HELPER_TASK=OFF
+
+# Avoid use of staging buffer on AMD GPUs, see https://github.com/QMCPACK/qmcpack/pull/5339
+export LIBOMPTARGET_AMDGPU_MAX_ASYNC_COPY_BYTES=0
 
 module() { eval `/usr/bin/modulecmd bash $*`; }
 
@@ -423,14 +426,13 @@ fi
 if [[ $sys == *"aocl"* ]]; then
 QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-AOCL
 export QMC_OPTIONS="${QMC_OPTIONS};-DBLA_VENDOR=AOCL"
-fi
-
-# MKL
-# MKLROOT set in sourced Intel mklvars.sh 
-if [[ $sys == *"mkl"* ]]; then
-QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-MKL
-# MKL setup used by many builds for BLAS, LAPACK etc.
-source /opt/intel2020/mkl/bin/mklvars.sh intel64
+else
+    if [[ $sys == *"mkl"* ]]; then
+	QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-MKL
+	export QMC_OPTIONS="${QMC_OPTIONS};-DBLA_VENDOR=Intel10_64_dyn"
+    else
+	export QMC_OPTIONS="${QMC_OPTIONS};-DBLA_VENDOR=OpenBLAS"
+    fi
 fi
 
 # Complex
