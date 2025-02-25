@@ -66,23 +66,25 @@ Nightly testing currently includes at least the following software versions:
 
 * Compilers
   * GCC 14.2.0, 12.4.0
-  * Clang/LLVM 19.1.4
-* Boost 1.86.0, 1.79.0
+  * Clang/LLVM 19.1.7
+* Boost 1.87.0, 1.79.0
 * HDF5 1.14.5
 * FFTW 3.3.10
 * CMake 3.30.5
 * MPI
-  * OpenMPI 5.0.5
-* CUDA 12.4
-* ROCm 6.3.0
+  * OpenMPI 5.0.6
+* CUDA 12.8
+* ROCm 6.3.2
+* Python 3.13.1
+* NumPy 2.2.2
 
 For GPU acceleration on NVIDIA GPUs we test LLVM with CUDA using the above versions. On AMD GPUs we support using the latest ROCm
 version and its matching amdclang compiler, as listed above. On a developmental basis we also check the latest Clang and GCC
 development versions, and Intel OneAPI compilers.
 
-GitHub Actions-based tests include additional version combinations from within our two year support window.
+GitHub Actions-based tests include additional version combinations from within our two-year support window.
 
-Workflow tests are currently performed with Quantum ESPRESSO v7.4.0 and PySCF v2.7.0. These check trial wavefunction generation and
+Workflow tests are currently performed with Quantum ESPRESSO v7.4.1 and PySCF v2.8.0. These check trial wavefunction generation and
 conversion through to actual QMC runs.
 
 # Building with CMake

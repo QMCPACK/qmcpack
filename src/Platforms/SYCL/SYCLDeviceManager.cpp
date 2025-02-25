@@ -132,6 +132,11 @@ SYCLDeviceManager::SYCLDeviceManager(int& default_device_num, int& num_devices, 
   }
 }
 
+void SYCLDeviceManager::printInfo() const
+{
+  app_summary() << "  SYCL acceleration build option is enabled" << std::endl;
+}
+
 sycl::queue& SYCLDeviceManager::getDefaultDeviceDefaultQueue()
 {
   if (!default_device_queue)
