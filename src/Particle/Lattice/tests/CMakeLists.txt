@@ -17,4 +17,8 @@ add_executable(${UTEST_EXE} test_ParticleBConds.cpp test_CrystalLattice.cpp test
 target_include_directories(${UTEST_EXE} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../..")
 target_link_libraries(${UTEST_EXE} catch_main qmcutil platform_runtime qmcparticle)
 
+if(USE_OBJECT_TARGET)
+  target_link_libraries(${UTEST_EXE} qmcparticle_omptarget)
+endif()
+
 add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
