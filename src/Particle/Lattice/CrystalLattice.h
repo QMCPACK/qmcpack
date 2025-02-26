@@ -79,11 +79,9 @@ public:
   ///default constructor, assign a huge supercell
   CrystalLattice();
 
-  template<typename TT>
-  CrystalLattice(const Tensor<TT, D>& tensor);
-
   /** modern factory function
    *  friend has to be any possible
+   *  Stepping stone to CrystalLattice(const LatticeInput& input)
    */
   friend CrystalLattice<double, OHMMS_DIM> makeFullPrecParticleLayout(xmlNodePtr cur);
 
@@ -109,15 +107,23 @@ public:
   auto getSimulationCellRadius() const { return SimulationCellRadius; }
   bool getDiagonalOnly() const { return DiagonalOnly; }
 
-  void setBoxBConds(TinyVector<int, D> bbc) { BoxBConds = bbc; }
-  void setVacuumScale(Real vscale) { VacuumScale = vscale; }
+  void setBoxBConds(TinyVector<int, D> bbc)
+  {
+    BoxBConds = bbc;
+    reset();
+  }
+  void setVacuumScale(Real vscale)
+  {
+    VacuumScale = vscale;
+    reset();
+  }
 
   ///true, if off-diagonal elements are zero so that other classes can take advantage of this
   bool DiagonalOnly;
   ///supercell enumeration
   int SuperCellEnum;
   ///The boundary condition in each direction.
-  TinyVector<int, D> BoxBConds{false,false,false};
+  TinyVector<int, D> BoxBConds{false, false, false};
   ///The scale factor for adding vacuum.
   T VacuumScale = 1.0;
   //@{
@@ -320,14 +326,10 @@ public:
 };
 
 extern template struct CrystalLattice<double, OHMMS_DIM>;
-extern template CrystalLattice<double, OHMMS_DIM>::CrystalLattice(const Tensor<double, OHMMS_DIM>& tensor);
-extern template CrystalLattice<double, OHMMS_DIM>::CrystalLattice(const Tensor<float, OHMMS_DIM>& tensor);
 extern template void CrystalLattice<double, OHMMS_DIM>::set(const Tensor<double, OHMMS_DIM>& tensor);
 extern template void CrystalLattice<double, OHMMS_DIM>::set(const Tensor<float, OHMMS_DIM>& tensor);
 
 extern template struct CrystalLattice<float, OHMMS_DIM>;
-extern template CrystalLattice<float, OHMMS_DIM>::CrystalLattice(const Tensor<double, OHMMS_DIM>& tensor);
-extern template CrystalLattice<float, OHMMS_DIM>::CrystalLattice(const Tensor<float, OHMMS_DIM>& tensor);
 extern template void CrystalLattice<float, OHMMS_DIM>::set(const Tensor<double, OHMMS_DIM>& tensor);
 extern template void CrystalLattice<float, OHMMS_DIM>::set(const Tensor<float, OHMMS_DIM>& tensor);
 

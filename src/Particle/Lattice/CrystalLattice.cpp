@@ -38,15 +38,6 @@ CrystalLattice<T, D>::CrystalLattice()
   reset();
 }
 
-template<typename T, unsigned D>
-template<typename TT>
-CrystalLattice<T, D>::CrystalLattice(const Tensor<TT, D>& lat)
-{
-  explicitly_defined = true;
-  R                  = lat;
-  reset();
-}
-
 template<class T, unsigned D>
 bool CrystalLattice<T, D>::outOfBound(const TinyVector<T, D>& u) const
 {
@@ -202,14 +193,10 @@ inline bool operator!=(const CrystalLattice<T, D>& lhs, const CrystalLattice<T, 
 }
 
 template struct CrystalLattice<double, OHMMS_DIM>;
-template CrystalLattice<double, OHMMS_DIM>::CrystalLattice(const Tensor<double, OHMMS_DIM>& tensor);
-template CrystalLattice<double, OHMMS_DIM>::CrystalLattice(const Tensor<float, OHMMS_DIM>& tensor);
 template void CrystalLattice<double, OHMMS_DIM>::set(const Tensor<double, OHMMS_DIM>& tensor);
 template void CrystalLattice<double, OHMMS_DIM>::set(const Tensor<float, OHMMS_DIM>& tensor);
 
 template struct CrystalLattice<float, OHMMS_DIM>;
-template CrystalLattice<float, OHMMS_DIM>::CrystalLattice(const Tensor<double, OHMMS_DIM>& tensor);
-template CrystalLattice<float, OHMMS_DIM>::CrystalLattice(const Tensor<float, OHMMS_DIM>& tensor);
 template void CrystalLattice<float, OHMMS_DIM>::set(const Tensor<double, OHMMS_DIM>& tensor);
 template void CrystalLattice<float, OHMMS_DIM>::set(const Tensor<float, OHMMS_DIM>& tensor);
 
