@@ -38,6 +38,25 @@ CrystalLattice<T, D>::CrystalLattice()
   reset();
 }
 
+template<typename T, unsigned D>
+template<typename TT>
+CrystalLattice<T, D>::CrystalLattice(const Tensor<TT, D>& lat)
+{
+  explicitly_defined = true;
+  R                  = lat;
+  reset();
+}
+
+template<class T, unsigned D>
+bool CrystalLattice<T, D>::outOfBound(const TinyVector<T, D>& u) const
+{
+  for (int i = 0; i < D; ++i)
+    if (std::abs(u[i]) > 0.5)
+      return true;
+  return false;
+}
+
+
 template<class T, unsigned D>
 template<class TT>
 void CrystalLattice<T, D>::set(const Tensor<TT, D>& lat)
@@ -181,5 +200,18 @@ inline bool operator!=(const CrystalLattice<T, D>& lhs, const CrystalLattice<T, 
 {
   return !(lhs == rhs);
 }
+
+template struct CrystalLattice<double, OHMMS_DIM>;
+template CrystalLattice<double, OHMMS_DIM>::CrystalLattice(const Tensor<double, OHMMS_DIM>& tensor);
+template CrystalLattice<double, OHMMS_DIM>::CrystalLattice(const Tensor<float, OHMMS_DIM>& tensor);
+template void CrystalLattice<double, OHMMS_DIM>::set(const Tensor<double, OHMMS_DIM>& tensor);
+template void CrystalLattice<double, OHMMS_DIM>::set(const Tensor<float, OHMMS_DIM>& tensor);
+
+template struct CrystalLattice<float, OHMMS_DIM>;
+template CrystalLattice<float, OHMMS_DIM>::CrystalLattice(const Tensor<double, OHMMS_DIM>& tensor);
+template CrystalLattice<float, OHMMS_DIM>::CrystalLattice(const Tensor<float, OHMMS_DIM>& tensor);
+template void CrystalLattice<float, OHMMS_DIM>::set(const Tensor<double, OHMMS_DIM>& tensor);
+template void CrystalLattice<float, OHMMS_DIM>::set(const Tensor<float, OHMMS_DIM>& tensor);
+
 
 } // namespace qmcplusplus

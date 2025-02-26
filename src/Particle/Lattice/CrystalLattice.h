@@ -23,6 +23,7 @@
 #define OHMMS_CRYSTALLATTICE_H
 #include <limits>
 #include <iostream>
+#include <OhmmsData/Libxml2Doc.h>
 #include "config/stdlib/Constants.h"
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsPETE/Tensor.h"
@@ -54,6 +55,8 @@ enum
 template<class T, unsigned D>
 struct CrystalLattice : public LRBreakupParameters<T, D>
 {
+public:
+  using Real = T;
   /// alias to the base class
   using Base = LRBreakupParameters<T, D>;
 
@@ -63,7 +66,7 @@ struct CrystalLattice : public LRBreakupParameters<T, D>
     DIM = D
   };
   //@{
-  ///the type of scalar
+  ///the type of scalar, actually can only be real based on Configuration.h
   using Scalar_t = T;
   ///the type of a D-dimensional position vector
   using SingleParticlePos = TinyVector<T, D>;
@@ -73,14 +76,50 @@ struct CrystalLattice : public LRBreakupParameters<T, D>
   using Tensor_t = Tensor<T, D>;
   //@}
 
+  ///default constructor, assign a huge supercell
+  CrystalLattice();
+
+  template<typename TT>
+  CrystalLattice(const Tensor<TT, D>& tensor);
+
+  /** modern factory function
+   *  friend has to be any possible
+   */
+  friend CrystalLattice<double, OHMMS_DIM> makeFullPrecParticleLayout(xmlNodePtr cur);
+
+  const auto& getBoxBConds() const { return BoxBConds; }
+  const auto& getG() const { return G; }
+  const auto& getGv() const { return Gv; }
+  int getSuperCellEnum() const { return SuperCellEnum; }
+  const auto& getR() const { return R; };
+  const auto& getOneOverLength() const { return OneOverLength; }
+  const auto& getLength() const { return Length; }
+  const auto& getRv() const { return Rv; }
+  const auto& getVacuumScale() const { return VacuumScale; }
+  bool getExplicitlyDefined() const { return explicitly_defined; }
+  // \todo remove this and factor resetLRBox into lattice?
+  auto& getR() { return R; };
+  auto getVolume() const { return Volume; }
+  auto getCenter() const { return Center; }
+  // These are all a result of calling LatticeAnalyzer and not valid until reset is called after any number of changes
+  // to the lattice.
+  auto getCellRadiusSq() const { return CellRadiusSq; }
+  auto getWignerSeitzRadius() const { return WignerSeitzRadius; }
+  auto getWignerSeitzRadius_G() const { return WignerSeitzRadius_G; }
+  auto getSimulationCellRadius() const { return SimulationCellRadius; }
+  bool getDiagonalOnly() const { return DiagonalOnly; }
+
+  void setBoxBConds(TinyVector<int, D> bbc) { BoxBConds = bbc; }
+  void setVacuumScale(Real vscale) { VacuumScale = vscale; }
+
   ///true, if off-diagonal elements are zero so that other classes can take advantage of this
   bool DiagonalOnly;
   ///supercell enumeration
   int SuperCellEnum;
   ///The boundary condition in each direction.
-  TinyVector<int, D> BoxBConds;
+  TinyVector<int, D> BoxBConds{false,false,false};
   ///The scale factor for adding vacuum.
-  T VacuumScale;
+  T VacuumScale = 1.0;
   //@{
   /**@brief Physical properties of a supercell*/
   /// Volume of a supercell
@@ -125,10 +164,7 @@ struct CrystalLattice : public LRBreakupParameters<T, D>
   //angles between the two lattice vectors
   SingleParticlePos ABC;
   ///true, the lattice is defined by the input instead of an artificial default
-  bool explicitly_defined;
-
-  ///default constructor, assign a huge supercell
-  CrystalLattice();
+  bool explicitly_defined = false;
 
   /**@param i the index of the directional vector, \f$i\in [0,D)\f$
    *@return The lattice vector of the ith direction
@@ -183,13 +219,7 @@ struct CrystalLattice : public LRBreakupParameters<T, D>
   }
 
   /// return true if any direction of reduced coordinates u goes larger than 0.5
-  inline bool outOfBound(const TinyVector<T, D>& u) const
-  {
-    for (int i = 0; i < D; ++i)
-      if (std::abs(u[i]) > 0.5)
-        return true;
-    return false;
-  }
+  bool outOfBound(const TinyVector<T, D>& u) const;
 
   inline void applyMinimumImage(TinyVector<T, D>& c) const
   {
@@ -243,6 +273,7 @@ struct CrystalLattice : public LRBreakupParameters<T, D>
 
     explicitly_defined = rhs.explicitly_defined;
     BoxBConds          = rhs.BoxBConds;
+    SuperCellEnum      = rhs.getSuperCellEnum();
     VacuumScale        = rhs.VacuumScale;
     R                  = rhs.R;
     reset();
@@ -280,10 +311,27 @@ struct CrystalLattice : public LRBreakupParameters<T, D>
 
   //! Print out CrystalLattice Data
   void print(std::ostream&, int level = 2) const;
+
+  // Allow assignment operator between say T=double and T=float
+  template<class TT, unsigned DD>
+  friend struct CrystalLattice;
+
+  friend class LatticeParser;
 };
+
+extern template struct CrystalLattice<double, OHMMS_DIM>;
+extern template CrystalLattice<double, OHMMS_DIM>::CrystalLattice(const Tensor<double, OHMMS_DIM>& tensor);
+extern template CrystalLattice<double, OHMMS_DIM>::CrystalLattice(const Tensor<float, OHMMS_DIM>& tensor);
+extern template void CrystalLattice<double, OHMMS_DIM>::set(const Tensor<double, OHMMS_DIM>& tensor);
+extern template void CrystalLattice<double, OHMMS_DIM>::set(const Tensor<float, OHMMS_DIM>& tensor);
+
+extern template struct CrystalLattice<float, OHMMS_DIM>;
+extern template CrystalLattice<float, OHMMS_DIM>::CrystalLattice(const Tensor<double, OHMMS_DIM>& tensor);
+extern template CrystalLattice<float, OHMMS_DIM>::CrystalLattice(const Tensor<float, OHMMS_DIM>& tensor);
+extern template void CrystalLattice<float, OHMMS_DIM>::set(const Tensor<double, OHMMS_DIM>& tensor);
+extern template void CrystalLattice<float, OHMMS_DIM>::set(const Tensor<float, OHMMS_DIM>& tensor);
 
 } // namespace qmcplusplus
 //including the definitions of the member functions
-#include "CrystalLattice.cpp"
 
 #endif
