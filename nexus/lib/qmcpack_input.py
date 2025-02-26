@@ -76,9 +76,9 @@
 #       coefficient, hamiltonian, coulomb, constant, pseudopotential,# 
 #       pseudo, mpc, localenergy, energydensity, reference_points,   #
 #       spacegrid, origin, axis, chiesa, density, nearestneighbors,  #
-#       neighbor_trace, dm1b, spindensity, magnetizationdensity,     #
-#       structurefactor, init, scalar_traces, array_traces,          #
-#       particle_traces, traces, loop, linear, cslinear, vmc, dmc.   #
+#       neighbor_trace, dm1b, spindensity, structurefactor, init,    #
+#       scalar_traces, array_traces, particle_traces, traces, loop,  #
+#       linear, cslinear, vmc, dmc.                                  #
 #                                                                    #
 #   QIxmlFactory                                                     #
 #     Class supports comprehension of XML elements that share the    #
@@ -2225,14 +2225,6 @@ class spindensity(QIxml):
     identifier  = 'name'
 #end class spindensity
 
-class magnetizationdensity(QIxml):
-    tag = 'estimator'
-    attributes  = ['type','name','report']
-    parameters  = ['dr','grid','center','corner','integrator','samples']
-    write_types = obj(report=yesno)
-    identifier  = 'name'
-#end class magnetizationdensity
-
 class structurefactor(QIxml):
     tag = 'estimator'
     attributes  = ['type','name','report']
@@ -2357,7 +2349,6 @@ estimator = QIxmlFactory(
                  nearestneighbors       = nearestneighbors,
                  dm1b                   = dm1b,
                  spindensity            = spindensity,
-                 magnetizationdensity   = magnetizationdensity,
                  structurefactor        = structurefactor,
                  force                  = force,
                  forwardwalking         = forwardwalking,
@@ -2718,7 +2709,7 @@ classes = [   #standard classes
     correlation,coefficients,loop,linear,cslinear,vmc,dmc,vmc_batch,dmc_batch,linear_batch,
     atomicbasisset,basisgroup,init,var,traces,scalar_traces,particle_traces,array_traces,
     reference_points,nearestneighbors,neighbor_trace,dm1b,
-    coefficient,radfunc,spindensity,structurefactor,magnetizationdensity,
+    coefficient,radfunc,spindensity,structurefactor,
     sposet,bspline_builder,composite_builder,heg_builder,include,
     multideterminant,detlist,ci,mcwalkerset,csf,det,
     optimize,cg_optimizer,flex_optimizer,optimize_qmc,wftest,kspace_jastrow,
@@ -2923,9 +2914,6 @@ density.defaults.set(
     )
 spindensity.defaults.set(
     type='spindensity',name='SpinDensity'
-    )
-magnetizationdensity.defaults.set(
-    type='magnetizationdensity',name='MagnetizationDensity'
     )
 skall.defaults.set(
     type='skall',name='skall',source='ion0',target='e',hdf5=True
