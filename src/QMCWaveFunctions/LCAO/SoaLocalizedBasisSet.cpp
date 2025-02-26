@@ -95,7 +95,8 @@ template<class COT, typename ORBT>
 SoaLocalizedBasisSet<COT, ORBT>::SoaLocalizedBasisSet(ParticleSet& ions, ParticleSet& els)
     : ions_(ions),
       myTableIndex(els.addTable(ions, DTModes::NEED_FULL_TABLE_ANYTIME | DTModes::NEED_VP_FULL_TABLE_ON_HOST)),
-      SuperTwist(0.0)
+      SuperTwist(0.0),
+      NumCenter_timer_(createGlobalTimer("SoaLocalizedBasisSet::mw_evaluateVGL_Numcenter", timer_level_fine))
 {
   NumCenters = ions.getTotalNum();
   NumTargets = els.getTotalNum();
@@ -112,7 +113,8 @@ SoaLocalizedBasisSet<COT, ORBT>::SoaLocalizedBasisSet(const SoaLocalizedBasisSet
       ions_(a.ions_),
       myTableIndex(a.myTableIndex),
       SuperTwist(a.SuperTwist),
-      BasisOffset(a.BasisOffset)
+      BasisOffset(a.BasisOffset),
+      NumCenter_timer_(createGlobalTimer("SoaLocalizedBasisSet::mw_evaluateVGL_Numcenter", timer_level_fine))
 {
   LOBasisSet.reserve(a.LOBasisSet.size());
   for (auto& elem : a.LOBasisSet)
@@ -230,6 +232,7 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateVGL(const RefVectorWithLeader<S
   auto& displ_list_tr = basis_leader.mw_mem_handle_.getResource().displ_list_tr;
   Tv_list.resize(3 * NumCenters * Nw);
   displ_list_tr.resize(3 * NumCenters * Nw);
+  {
 
   for (size_t iw = 0; iw < P_list.size(); iw++)
   {
@@ -243,16 +246,24 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateVGL(const RefVectorWithLeader<S
         displ_list_tr[idim + 3 * (iw + c * Nw)] = displ[c][idim];
       }
   }
+  }
 #if defined(QMC_COMPLEX)
   Tv_list.updateTo();
 #endif
-  displ_list_tr.updateTo();
 
+  //Not sure if this transfer is needed but since assumed in device_data();
+  Tv_list.updateTo();
+  displ_list_tr.updateTo();
+  
+
+  {
+  ScopedTimer NumCenter_Wrapper(NumCenter_timer_);
   for (int c = 0; c < NumCenters; c++)
   {
     auto one_species_basis_list = extractOneSpeciesBasisRefList(basis_list, IonID[c]);
     LOBasisSet[IonID[c]]->mw_evaluateVGL(one_species_basis_list, pset_leader.getLattice(), vgl_v, displ_list_tr,
                                          Tv_list, Nw, BasisSetSize, c, BasisOffset[c], NumCenters);
+  }
   }
 }
 
@@ -403,6 +414,8 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValue(const RefVectorWithLeader
 #if defined(QMC_COMPLEX)
   Tv_list.updateTo();
 #endif
+  ///Not Sure Why Tv_List was not updated in the real case... 
+  Tv_list.updateTo();
   displ_list_tr.updateTo();
 
   for (int c = 0; c < NumCenters; c++)
