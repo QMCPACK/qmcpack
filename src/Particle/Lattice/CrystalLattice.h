@@ -23,11 +23,16 @@
 #define OHMMS_CRYSTALLATTICE_H
 #include <limits>
 #include <iostream>
-#include <OhmmsData/Libxml2Doc.h>
 #include "config/stdlib/Constants.h"
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsPETE/Tensor.h"
 #include "LRBreakupParameters.h"
+
+/** forward declare xmlNodePtr xmlNodePtr
+ *  these are c types so I follow libmxml2's scheme to forward declare
+ */
+typedef struct _xmlNode xmlNode;
+typedef xmlNode *xmlNodePtr;
 
 namespace qmcplusplus
 {
