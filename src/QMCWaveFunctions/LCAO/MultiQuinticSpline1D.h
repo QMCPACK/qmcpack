@@ -189,7 +189,7 @@ inline void batched_evaluate(const OffloadArray2D& r,
   const T* coeff_ptr    = coeffs_.device_data();
   const T* fderiv_ptr   = first_deriv_.device_data();
 
-  // 3) Cache frequently used scalars
+  // 3) Using stack variables to trigger firstprivate transfer  
   const double one_over_log_delta = myGrid.OneOverLogDelta;
   const T      lower_bound        = myGrid.lower_bound;
   const T      log_delta          = myGrid.LogDelta;
