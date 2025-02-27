@@ -159,7 +159,8 @@ public:
     auto* norm_factor__ptr = norm_factor_.device_data();
 
     PRAGMA_OFFLOAD("omp target teams distribute parallel for \
-                    is_device_ptr(factorLM__ptr, factorL__ptr, norm_factor__ptr, factor2L__ptr, xyz_ptr, Ylm_vgl_ptr)")
+                    is_device_ptr(factorLM__ptr, factorL__ptr, norm_factor__ptr, factor2L__ptr) \
+                    is_device_ptr(xyz_ptr, Ylm_vgl_ptr)")
     for (uint32_t ir = 0; ir < nR; ir++)
       evaluateVGL_impl(xyz_ptr[0 + 3 * ir], xyz_ptr[1 + 3 * ir], xyz_ptr[2 + 3 * ir], Ylm_vgl_ptr + (ir * Nlm), Lmax,
                        factorL__ptr, factorLM__ptr, factor2L__ptr, norm_factor__ptr, offset);
@@ -283,131 +284,110 @@ inline SoaSphericalTensor<T>::SoaSphericalTensor(const int l_max, bool addsign)
 
 PRAGMA_OFFLOAD("omp declare target")
 template<typename T>
-inline void SoaSphericalTensor<T>::evaluate_bare(
-    T x, T y, T z,
-    T* restrict Ylm,
-    int lmax,
-    const T* restrict factorL,
-    const T* restrict factorLM)
+inline void SoaSphericalTensor<T>::evaluate_bare(T x,
+                                                 T y,
+                                                 T z,
+                                                 T* restrict Ylm,
+                                                 int lmax,
+                                                 const T* factorL,
+                                                 const T* factorLM)
 {
   constexpr T czero(0);
   constexpr T cone(1);
-  // Instead of std::atan:
-  constexpr T myPi = T(3.14159265358979323846);
-  const T omega    = cone / std::sqrt(T(4) * myPi);
-
-  // Epsilon^2 for near-axis detection
+  const T pi       = 4.0 * std::atan(1.0);
+  const T omega    = 1.0 / std::sqrt(4.0 * pi);
   constexpr T eps2 = std::numeric_limits<T>::epsilon() * std::numeric_limits<T>::epsilon();
 
-  // 1) Compute r, ctheta, cphi, sphi
-  const T r2xy = x*x + y*y;
-  const T r    = std::sqrt(r2xy + z*z);
-
-  T ctheta, cphi, sphi;
+  /*  Calculate r, cos(theta), sin(theta), cos(phi), sin(phi) from input
+      coordinates. Check here the coordinate singularity at cos(theta) = +-1.
+      This also takes care of r=0 case. */
+  T cphi, sphi, ctheta;
+  T r2xy = x * x + y * y;
+  T r    = std::sqrt(r2xy + z * z);
   if (r2xy < eps2)
   {
-    // near z-axis
     cphi   = czero;
     sphi   = cone;
     ctheta = (z < czero) ? -cone : cone;
   }
   else
   {
-    const T rInv  = cone / r; // safe since r > 0 if r2xy>=eps2 or z!=0
-    ctheta = (z * rInv);
-    // clamp ctheta to [-1,1]
-    ctheta = (ctheta > cone)  ? cone  : ctheta;
-    ctheta = (ctheta < -cone) ? -cone : ctheta;
-
-    // reciprocal for x,y plane
-    const T rxyi = cone / std::sqrt(r2xy);
-    cphi = x * rxyi;
-    sphi = y * rxyi;
+    ctheta = z / r;
+    //protect ctheta, when ctheta is slightly >1 or <-1
+    if (ctheta > cone)
+      ctheta = cone;
+    if (ctheta < -cone)
+      ctheta = -cone;
+    T rxyi = cone / std::sqrt(r2xy);
+    cphi   = x * rxyi;
+    sphi   = y * rxyi;
   }
-
-  // stheta = sqrt(1 - ctheta^2)
-  const T stheta = std::sqrt(cone - ctheta*ctheta);
-
-  // 2) Compute Associated Legendre polynomials P_l^m
-  //    - Ylm[0] = 1
+  T stheta = std::sqrt(cone - ctheta * ctheta);
+  /* Now to calculate the associated legendre functions P_lm from the
+     recursion relation from l=0 to Lmax. Conventions of J.D. Jackson,
+     Classical Electrodynamics are used. */ 
   Ylm[0] = cone;
-
-  // (a) P_ll and P_l,l-1
+  // calculate P_ll and P_l,l-1
   T fac = cone;
-  int j  = -1;
+  int j = -1;
   for (int l = 1; l <= lmax; l++)
   {
-    j   += 2;         // j: 1, 3, 5, ...
-    fac *= -T(j) * stheta;
-    const int ll = index(l, l);
-    const int l1 = index(l, l-1);
-    const int l2 = index(l-1, l-1);
-
+    j += 2;
+    fac *= -j * stheta;
+    int ll  = index(l, l);
+    int l1  = index(l, l - 1);
+    int l2  = index(l - 1, l - 1);
     Ylm[ll] = fac;
-    Ylm[l1] = T(j) * ctheta * Ylm[l2];
+    Ylm[l1] = j * ctheta * Ylm[l2];
   }
-
-  // (b) Recur for other P_l^m
-  // Jackson's convention: For m in [0..lmax-1], l in [m+2..lmax]
+  // Use recurence to get other plm's //
   for (int m = 0; m < lmax - 1; m++)
   {
-    int j = 2*m + 1; // starts at 1 for m=0, 3 for m=1, etc.
+    int j = 2 * m + 1;
     for (int l = m + 2; l <= lmax; l++)
     {
       j += 2;
-      const int lm  = index(l,   m);
-      const int l1  = index(l-1, m);
-      const int l2  = index(l-2, m);
-
-      Ylm[lm] = (ctheta * T(j) * Ylm[l1] - (l + m - 1)*Ylm[l2]) / T(l - m);
+      int lm  = index(l, m);
+      int l1  = index(l - 1, m);
+      int l2  = index(l - 2, m);
+      Ylm[lm] = (ctheta * j * Ylm[l1] - (l + m - 1) * Ylm[l2]) / (l - m);
     }
   }
-
-  // 3) Multiply by r^l and incorporate azimuthal part
-  //    Y_0^0 => 1/sqrt(4*pi)
-  Ylm[0] = omega;
-
-  T rpow = cone;
+  // Now to calculate r^l Y_lm. //
+  T sphim, cphim, temp;
+  Ylm[0] = omega; //1.0/sqrt(pi4);
+  T rpow = 1.0;
   for (int l = 1; l <= lmax; l++)
   {
     rpow *= r;
-    // factorL[l] is sqrt( (2*l+1)/(4*pi) ), for instance
-    T scale_l = rpow * factorL[l];
-
-    // multiply the m=0 term
-    const int l0 = index(l,0);
-    Ylm[l0] *= scale_l;
-
-    // Build up cphi^m, sphi^m iteratively
-    T cphim = cone; // cphi^0
-    T sphim = czero;
-
+    //fac = rpow*sqrt(static_cast<T>(2*l+1))*omega;//rpow*sqrt((2*l+1)/pi4);
+    //factorL[l] = sqrt(2*l+1)/sqrt(4*pi)
+    fac    = rpow * factorL[l];
+    int l0 = index(l, 0);
+    Ylm[l0] *= fac;
+    cphim = cone;
+    sphim = czero;
     for (int m = 1; m <= l; m++)
     {
-      // rotate (cphim, sphim) by (cphi, sphi)
-      T tmpC  = cphim*cphi - sphim*sphi;
-      T tmpS  = sphim*cphi + cphim*sphi;
-      cphim   = tmpC;
-      sphim   = tmpS;
-
-      const int lmPos = index(l, m);
-      // factorLM[lmPos] might be e.g. sqrt( (l-m+1)(l+m) ) or something.
-      scale_l *= factorLM[lmPos];
-
-      // multiply P_l^m by scale_l
-      T tmpVal = Ylm[lmPos] * scale_l;
-
-      // store real part => cphim, imaginary => sphi => Ylm(l, -m)
-      Ylm[lmPos]        = tmpVal * cphim;
-      Ylm[ index(l, -m) ] = tmpVal * sphim;
+      temp   = cphim * cphi - sphim * sphi;
+      sphim  = sphim * cphi + cphim * sphi;
+      cphim  = temp;
+      int lm = index(l, m);
+      fac *= factorLM[lm];
+      temp    = fac * Ylm[lm];
+      Ylm[lm] = temp * cphim;
+      lm      = index(l, -m);
+      Ylm[lm] = temp * sphim;
     }
   }
+  //for (int i=0; i<Ylm.size(); i++)
+  //  Ylm[i]*= norm_factor_[i];
 }
 PRAGMA_OFFLOAD("omp end declare target")
 
 
-
 PRAGMA_OFFLOAD("omp declare target")
+
 template<typename T>
 inline void SoaSphericalTensor<T>::evaluateVGL_impl(const T x,
                                                     const T y,
@@ -420,87 +400,71 @@ inline void SoaSphericalTensor<T>::evaluateVGL_impl(const T x,
                                                     const T* normfactor,
                                                     size_t offset)
 {
-  // 1) Evaluate the base spherical harmonics [0..Nlm-1] in Ylm_vgl
-  evaluate_bare(x, y, z, Ylm_vgl, lmax, factorL, factorLM);
-
-  // 2) Basic parameters
-  const int Nlm = (lmax + 1) * (lmax + 1);
+  T* restrict Ylm = Ylm_vgl;
+  // T* restrict Ylm = cYlm.data(0);
+  evaluate_bare(x, y, z, Ylm, lmax, factorL, factorLM);
+  const size_t Nlm = (lmax + 1) * (lmax + 1);
 
   constexpr T czero(0);
   constexpr T ahalf(0.5);
-
-  // 3) Identify gradient / laplacian blocks
   T* restrict gYlmX = Ylm_vgl + offset * 1;
   T* restrict gYlmY = Ylm_vgl + offset * 2;
   T* restrict gYlmZ = Ylm_vgl + offset * 3;
-  T* restrict lYlm  = Ylm_vgl + offset * 4;
+  T* restrict lYlm  = Ylm_vgl + offset * 4; // just need to set to zero
 
-  // For the l=0 component, just set gradient/laplacian to 0
   gYlmX[0] = czero;
   gYlmY[0] = czero;
   gYlmZ[0] = czero;
   lYlm[0]  = czero;
 
-  // 4) Compute gradients for l=1..lmax
-  //    we store `lmBasePrev = index(l-1,0)` once per l instead of re-calling it inside the loop.
+  // Calculating Gradient now//
   for (int l = 1; l <= lmax; l++)
   {
-    // factor2L[l] often = ( (2*l + 1) / (2*l - 1) ) or similar
+    //T fac = ((T) (2*l+1))/(2*l-1);
     T fac = factor2L[l];
-
-    // The base offset for shell (l-1) with m=0
-    const int lmBasePrev = index(l - 1, 0);
-
     for (int m = -l; m <= l; m++)
     {
+      int lm = index(l - 1, 0);
       T gx, gy, gz, dpr, dpi, dmr, dmi;
       const int ma = std::abs(m);
-
-      const T cp = std::sqrt(fac * (l - ma - 1) * (l - ma));
-      const T cm = std::sqrt(fac * (l + ma - 1) * (l + ma));
-      const T c0 = std::sqrt(fac * (l - ma) * (l + ma));
-
-      // if l>ma => gz = c0 * Ylm[(l-1,m)] = c0 * Ylm[lmBasePrev + m]
-      gz = (l > ma) ? (c0 * Ylm_vgl[lmBasePrev + m]) : czero;
-
-      // dpr, dpi if (l>ma+1)
+      const T cp   = std::sqrt(fac * (l - ma - 1) * (l - ma));
+      const T cm   = std::sqrt(fac * (l + ma - 1) * (l + ma));
+      const T c0   = std::sqrt(fac * (l - ma) * (l + ma));
+      gz           = (l > ma) ? c0 * Ylm[lm + m] : czero;
       if (l > ma + 1)
       {
-        dpr = cp * Ylm_vgl[lmBasePrev + (ma + 1)];
-        dpi = cp * Ylm_vgl[lmBasePrev - (ma + 1)];
+        dpr = cp * Ylm[lm + ma + 1];
+        dpi = cp * Ylm[lm - ma - 1];
       }
       else
       {
         dpr = czero;
         dpi = czero;
       }
-
-      // dmr, dmi if (l>1)
       if (l > 1)
       {
         switch (ma)
         {
-        case 0: // ma=0
-          dmr = -cm * Ylm_vgl[lmBasePrev + 1];
-          dmi =  cm * Ylm_vgl[lmBasePrev - 1];
+        case 0:
+          dmr = -cm * Ylm[lm + 1];
+          dmi = cm * Ylm[lm - 1];
           break;
-        case 1: // ma=1
-          dmr =  cm * Ylm_vgl[lmBasePrev];
-          dmi =  czero;
+        case 1:
+          dmr = cm * Ylm[lm];
+          dmi = czero;
           break;
-        default: // ma >= 2
-          dmr =  cm * Ylm_vgl[lmBasePrev + (ma - 1)];
-          dmi =  cm * Ylm_vgl[lmBasePrev - (ma - 1)];
-          break;
+        default:
+          dmr = cm * Ylm[lm + ma - 1];
+          dmi = cm * Ylm[lm - ma + 1];
         }
       }
       else
       {
-        dmr = cm * Ylm_vgl[lmBasePrev];
+        dmr = cm * Ylm[lm];
         dmi = czero;
+        //dmr = (l==1) ? cm*Ylm[lm]:0.0;
+        //dmi = 0.0;
       }
-
-      // combine them into (gx, gy)
       if (m < 0)
       {
         gx = ahalf * (dpi - dmi);
@@ -511,37 +475,29 @@ inline void SoaSphericalTensor<T>::evaluateVGL_impl(const T x,
         gx = ahalf * (dpr - dmr);
         gy = ahalf * (dpi + dmi);
       }
-
-      // Store results in the shell l => index(l,m)
-      const int lmCurr = index(l, m);
-
-      if (ma > 0) // multiply gradient by normfactor if ma != 0
+      lm = index(l, m);
+      if (ma)
       {
-        const T nf = normfactor[lmCurr];
-        gYlmX[lmCurr] = nf * gx;
-        gYlmY[lmCurr] = nf * gy;
-        gYlmZ[lmCurr] = nf * gz;
+        gYlmX[lm] = normfactor[lm] * gx;
+        gYlmY[lm] = normfactor[lm] * gy;
+        gYlmZ[lm] = normfactor[lm] * gz;
       }
       else
       {
-        // if ma=0 => skip the normfactor for gradient
-        gYlmX[lmCurr] = gx;
-        gYlmY[lmCurr] = gy;
-        gYlmZ[lmCurr] = gz;
+        gYlmX[lm] = gx;
+        gYlmY[lm] = gy;
+        gYlmZ[lm] = gz;
       }
-    } // end for m
-  } // end for l
-
-  // 5) Multiply the base spherical harmonics Ylm by normfactor for all i,
-  //    and set lYlm[i] = 0
+    }
+  }
   for (int i = 0; i < Nlm; i++)
   {
-    Ylm_vgl[i] *= normfactor[i];
-    lYlm[i] = czero;
+    Ylm[i] *= normfactor[i];
+    lYlm[i] = 0;
   }
+  //for (int i=0; i<Ylm.size(); i++) gradYlm[i]*= norm_factor_[i];
 }
 PRAGMA_OFFLOAD("omp end declare target")
-
 
 template<typename T>
 inline void SoaSphericalTensor<T>::evaluateVGL(T x, T y, T z)
