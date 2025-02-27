@@ -761,12 +761,11 @@ public:
     assert(psi_vgl.size(1) == nElec);
     assert(psi_vgl.size(2) == nBasTot);
 
-    ///These are assumed to be already on Device. 
-    auto& ylm_vgl      = atom_bs_leader.mw_mem_handle_.getResource().ylm_vgl;
-    auto& rnl_vgl      = atom_bs_leader.mw_mem_handle_.getResource().rnl_vgl;
-    auto& dr           = atom_bs_leader.mw_mem_handle_.getResource().dr;
-    auto& r            = atom_bs_leader.mw_mem_handle_.getResource().r;
-    auto& correctphase = atom_bs_leader.mw_mem_handle_.getResource().correctphase;
+
+    auto& ylm_vgl = atom_bs_leader.mw_mem_handle_.getResource().ylm_vgl;
+    auto& rnl_vgl = atom_bs_leader.mw_mem_handle_.getResource().rnl_vgl;
+    auto& dr      = atom_bs_leader.mw_mem_handle_.getResource().dr;
+    auto& r       = atom_bs_leader.mw_mem_handle_.getResource().r;
 
     size_t nRnl = RnlID.size();
     size_t nYlm = Ylm.size();
@@ -775,10 +774,11 @@ public:
     rnl_vgl.resize(3, nElec, Nxyz, nRnl);
     dr.resize(nElec, Nxyz, 3);
     r.resize(nElec, Nxyz);
+
+
+    // TODO: move these outside?
+    auto& correctphase = atom_bs_leader.mw_mem_handle_.getResource().correctphase;
     correctphase.resize(nElec);
-
-
-
 
     auto* correctphase_dev_ptr  = correctphase.device_data();
     auto* periodic_image_displacements_device_ptr = periodic_image_displacements_.device_data();
@@ -790,8 +790,10 @@ public:
     auto* Tv_list_dev_ptr       = Tv_list.device_data();
 
 
+
     constexpr RealType cone(1);
     constexpr RealType ctwo(2);
+
 
     ///Assumed to be already on DEVICE
     //V,Gx,Gy,Gz,L
@@ -801,7 +803,7 @@ public:
     auto* restrict dpsi_z_dev_ptr = psi_vgl.device_data_at(3, 0, 0);
     auto* restrict d2psi_dev_ptr  = psi_vgl.device_data_at(4, 0, 0);
 
-    {
+{
     ScopedTimer local_timer(phase_timer_);
 #if !defined(QMC_COMPLEX)
 
@@ -827,41 +829,25 @@ public:
 #endif
 }
 
-{
+    {
       ScopedTimer local_timer(nelec_pbc_timer_);
-
-      const size_t total_size = nElec * Nxyz;
-
-       PRAGMA_OFFLOAD("omp target teams distribute parallel for \
-                       is_device_ptr(periodic_image_displacements_device_ptr, \
-                                   dr_device_ptr, r_device_ptr, displ_list_device_ptr)")
-       for (size_t idx = 0; idx < total_size; idx++)
-       {
-            // Reconstruct original indices
-            const size_t i_e = idx / Nxyz;
-            const size_t i_xyz = idx % Nxyz;
-          
-            // Precompute indices using fused index math
-            const size_t displ_base = 3 * (i_e + center_idx * nElec);
-            const size_t image_base = 3 * i_xyz;
-            const size_t dr_base = 3 * idx;  // idx = i_xyz + Nxyz*i_e
-          
-            // Load displacements in coalesced pattern
-            const RealType dx = -(displ_list_device_ptr[displ_base]
-                               + periodic_image_displacements_device_ptr[image_base]);
-            const RealType dy = -(displ_list_device_ptr[displ_base + 1]
-                               + periodic_image_displacements_device_ptr[image_base + 1]);
-            const RealType dz = -(displ_list_device_ptr[displ_base + 2]
-                               + periodic_image_displacements_device_ptr[image_base + 2]);
-          
-            // Coalesced writes (x,y,z contiguous in memory)
-            dr_device_ptr[dr_base] = dx;
-            dr_device_ptr[dr_base + 1] = dy;
-            dr_device_ptr[dr_base + 2] = dz;
-          
-            // Direct distance calculation
-            r_device_ptr[idx] = std::sqrt(dx*dx + dy*dy + dz*dz);
-       }
+      auto* periodic_image_displacements_ptr = periodic_image_displacements_.data();
+      PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) \
+                      is_device_ptr(periodic_image_displacements_device_ptr) \
+                      is_device_ptr( dr_device_ptr, r_device_ptr, displ_list_device_ptr) ")
+      for (size_t i_e = 0; i_e < nElec; i_e++)
+        for (int i_xyz = 0; i_xyz < Nxyz; i_xyz++)
+        {
+          RealType tmp_r2 = 0.0;
+          for (size_t i_dim = 0; i_dim < 3; i_dim++)
+          {
+            dr_device_ptr[i_dim + 3 * (i_xyz + Nxyz * i_e)] = -(displ_list_device_ptr[i_dim + 3 * (i_e + center_idx * nElec)] +
+                                                         periodic_image_displacements_device_ptr[i_dim + 3 * i_xyz]);
+            tmp_r2 += dr_device_ptr[i_dim + 3 * (i_xyz + Nxyz * i_e)] * dr_device_ptr[i_dim + 3 * (i_xyz + Nxyz * i_e)];
+          }
+          r_device_ptr[i_xyz + Nxyz * i_e] = std::sqrt(tmp_r2);
+          //printf("particle %lu image %d, %lf, %lf\n", i_e, i_xyz, tmp_r2, dr_ptr[3 * (i_xyz + Nxyz * i_e)]);
+        }
     }
 
     {
@@ -877,12 +863,9 @@ public:
     {
       ScopedTimer local_timer(psi_timer_);
       const int bset_size = BasisSetSize;
-
-      ///Assumption of data already on Device.
       auto* phase_fac_dev_ptr = periodic_image_phase_factors_.device_data();
       auto* LM_dev_ptr        = LM.device_data();
       auto* NL_dev_ptr        = NL.device_data();
-
 
       RealType* restrict phi_dev_ptr   = rnl_vgl.device_data_at(0, 0, 0, 0);
       RealType* restrict dphi_dev_ptr  = rnl_vgl.device_data_at(1, 0, 0, 0);
@@ -893,7 +876,6 @@ public:
       const RealType* restrict ylm_y_dev_ptr = ylm_vgl.device_data_at(2, 0, 0, 0); //gradY
       const RealType* restrict ylm_z_dev_ptr = ylm_vgl.device_data_at(3, 0, 0, 0); //gradZ
       const RealType* restrict ylm_l_dev_ptr = ylm_vgl.device_data_at(4, 0, 0, 0); //lap
-
 
       PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) \
 		      is_device_ptr(ylm_v_dev_ptr, ylm_x_dev_ptr, ylm_y_dev_ptr, ylm_z_dev_ptr, ylm_l_dev_ptr, \
@@ -994,7 +976,6 @@ public:
     auto& rnl_v = atom_bs_leader.mw_mem_handle_.getResource().rnl_v;
     auto& dr    = atom_bs_leader.mw_mem_handle_.getResource().dr;
     auto& r     = atom_bs_leader.mw_mem_handle_.getResource().r;
-    auto& correctphase = atom_bs_leader.mw_mem_handle_.getResource().correctphase;
 
     const size_t nRnl = RnlID.size();
     const size_t nYlm = Ylm.size();
@@ -1003,10 +984,10 @@ public:
     rnl_v.resize(nElec, Nxyz, nRnl);
     dr.resize(nElec, Nxyz, 3);
     r.resize(nElec, Nxyz);
+
+    // TODO: move these outside?
+    auto& correctphase = atom_bs_leader.mw_mem_handle_.getResource().correctphase;
     correctphase.resize(nElec);
-
-    
-
 
     //Assuming These are correctly computed on Device 
     auto* periodic_image_displacements_device_ptr = periodic_image_displacements_.device_data();
@@ -1014,17 +995,13 @@ public:
     auto* r_device_ptr                            = r.device_data();
     auto* correctphase_dev_ptr                    = correctphase.device_data();
 
+
     //Values updated to Device in SoaLocalizedBasisSet.cpp
     auto* displ_list_device_ptr                   = displ_list.device_data(); 
     auto* Tv_list_dev_ptr       = Tv_list.device_data();
 
 
-
-    // need to map Tensor<T,3> vals to device
-    //auto* latR_ptr = lattice.R.data();
-
-
-    {
+{
     ScopedTimer local_timer(phase_timer_);
 #if !defined(QMC_COMPLEX)
 
@@ -1052,42 +1029,26 @@ public:
 	    }
 #endif
     }
+
+
     {
       ScopedTimer local_timer(nelec_pbc_timer_);
-
-      const size_t total_size = nElec * Nxyz;
-
-       PRAGMA_OFFLOAD("omp target teams distribute parallel for \
-                       is_device_ptr(periodic_image_displacements_device_ptr, \
-                                   dr_device_ptr, r_device_ptr, displ_list_device_ptr)")
-       for (size_t idx = 0; idx < total_size; idx++)
-       {
-            const size_t i_e = idx / Nxyz;
-            const size_t i_xyz = idx % Nxyz;
-          
-            // Precompute indices using fused index math
-            const size_t displ_base = 3 * (i_e + center_idx * nElec);
-            const size_t image_base = 3 * i_xyz;
-            const size_t dr_base = 3 * idx;  // idx = i_xyz + Nxyz*i_e
-          
-            // Load displacements in coalesced pattern
-            const RealType dx = -(displ_list_device_ptr[displ_base]
-                               + periodic_image_displacements_device_ptr[image_base]);
-            const RealType dy = -(displ_list_device_ptr[displ_base + 1]
-                               + periodic_image_displacements_device_ptr[image_base + 1]);
-            const RealType dz = -(displ_list_device_ptr[displ_base + 2]
-                               + periodic_image_displacements_device_ptr[image_base + 2]);
-          
-            // Coalesced writes (x,y,z contiguous in memory)
-            dr_device_ptr[dr_base] = dx;
-            dr_device_ptr[dr_base + 1] = dy;
-            dr_device_ptr[dr_base + 2] = dz;
-          
-            // Direct distance calculation
-            r_device_ptr[idx] = std::sqrt(dx*dx + dy*dy + dz*dz);
-       }
+      PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) \
+                      is_device_ptr(periodic_image_displacements_device_ptr) \
+                      is_device_ptr( dr_device_ptr, r_device_ptr, displ_list_device_ptr) ")
+      for (size_t i_e = 0; i_e < nElec; i_e++)
+        for (int i_xyz = 0; i_xyz < Nxyz; i_xyz++)
+        {
+          RealType tmp_r2 = 0.0;
+          for (size_t i_dim = 0; i_dim < 3; i_dim++)
+          {
+            dr_device_ptr[i_dim + 3 * (i_xyz + Nxyz * i_e)] = -(displ_list_device_ptr[i_dim + 3 * (i_e + center_idx * nElec)] +
+                                                         periodic_image_displacements_device_ptr[i_dim + 3 * i_xyz]);
+            tmp_r2 += dr_device_ptr[i_dim + 3 * (i_xyz + Nxyz * i_e)] * dr_device_ptr[i_dim + 3 * (i_xyz + Nxyz * i_e)];
+          }
+          r_device_ptr[i_xyz + Nxyz * i_e] = std::sqrt(tmp_r2);
+        }
     }
-
 
     {
       ScopedTimer local(rnl_timer_);
@@ -1099,9 +1060,10 @@ public:
       Ylm.batched_evaluateV(dr, ylm_v);
     }
 
-
     {
       ScopedTimer local_timer(psi_timer_);
+      ///Phase for PBC containing the phase for the nearest image displacement and the correction due to the Distance table.
+      ///
       const int bset_size = BasisSetSize;
       const size_t total_tasks = nElec * bset_size;
   
@@ -1117,39 +1079,18 @@ public:
                       is_device_ptr(phase_fac_dev_ptr, LM_dev_ptr, NL_dev_ptr, \
                                   psi_dev_ptr, correctphase_dev_ptr, \
                                   ylm_dev_ptr, rnl_dev_ptr)")
-      for (size_t idx = 0; idx < total_tasks; ++idx)
-      {
-        // Reconstruct indices
-        const int i_e = idx / bset_size;
-        const int ib = idx % bset_size;
-  
-        // Load basis indices once
-        const int lm = LM_dev_ptr[ib];
-        const int nl = NL_dev_ptr[ib];
-  
-        // Accumulator in register
-        VT psi = 0;
-  
-        // Base offset for this electron's spatial data
-        const size_t base_offset = i_e * Nxyz;
-        const VT phase_scale = correctphase_dev_ptr[i_e];
-  
-        // Coalesced access pattern for spatial data
-        for (int i_xyz = 0; i_xyz < Nxyz; ++i_xyz)
+      for (int i_e = 0; i_e < nElec; i_e++)
+        for (int ib = 0; ib < bset_size; ++ib)
         {
-          const size_t spatial_idx = base_offset + i_xyz;
-          const auto phase = phase_fac_dev_ptr[i_xyz] * phase_scale;
-  
-          // Optimized memory access pattern
-          const size_t ylm_idx = spatial_idx * nYlm + lm;
-          const size_t rnl_idx = spatial_idx * nRnl + nl;
-  
-          psi += ylm_dev_ptr[ylm_idx] * rnl_dev_ptr[rnl_idx] * phase;
+          VT psi = 0;
+          for (int i_xyz = 0; i_xyz < Nxyz; i_xyz++)
+          {
+            const ValueType Phase = phase_fac_dev_ptr[i_xyz] * correctphase_dev_ptr[i_e];
+            psi += ylm_dev_ptr[(i_xyz + Nxyz * i_e) * nYlm + LM_dev_ptr[ib]] *
+                rnl_dev_ptr[(i_xyz + Nxyz * i_e) * nRnl + NL_dev_ptr[ib]] * Phase;
+          }
+          psi_dev_ptr[BasisOffset + ib + i_e * nBasTot] = psi;
         }
-  
-        // Coalesced write to output
-        psi_dev_ptr[BasisOffset + ib + i_e * nBasTot] = psi;
-      }
     }
   }
 

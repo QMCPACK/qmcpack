@@ -251,8 +251,6 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateVGL(const RefVectorWithLeader<S
   Tv_list.updateTo();
 #endif
 
-  //Not sure if this transfer is needed but since assumed in device_data();
-  Tv_list.updateTo();
   displ_list_tr.updateTo();
   
 
@@ -414,8 +412,6 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValue(const RefVectorWithLeader
 #if defined(QMC_COMPLEX)
   Tv_list.updateTo();
 #endif
-  ///Not Sure Why Tv_List was not updated in the real case... 
-  Tv_list.updateTo();
   displ_list_tr.updateTo();
 
   for (int c = 0; c < NumCenters; c++)
