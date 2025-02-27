@@ -28,12 +28,6 @@
 #include "OhmmsPETE/Tensor.h"
 #include "LRBreakupParameters.h"
 
-/** forward declare xmlNodePtr xmlNodePtr
- *  these are c types so I follow libmxml2's scheme to forward declare
- */
-typedef struct _xmlNode xmlNode;
-typedef xmlNode *xmlNodePtr;
-
 namespace qmcplusplus
 {
 /** enumeration to classify a CrystalLattice
@@ -83,12 +77,6 @@ public:
 
   ///default constructor, assign a huge supercell
   CrystalLattice();
-
-  /** modern factory function
-   *  friend has to be any possible
-   *  Stepping stone to CrystalLattice(const LatticeInput& input)
-   */
-  friend CrystalLattice<double, OHMMS_DIM> makeFullPrecParticleLayout(xmlNodePtr cur);
 
   const auto& getBoxBConds() const { return BoxBConds; }
   const auto& getG() const { return G; }
