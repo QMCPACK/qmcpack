@@ -1133,17 +1133,17 @@ public:
         const int nl = NL_dev_ptr[ib];
   
         // Accumulator in register
-        RealType psi = 0;
+        VT psi = 0;
   
         // Base offset for this electron's spatial data
         const size_t base_offset = i_e * Nxyz;
-        const RealType phase_scale = correctphase_dev_ptr[i_e];
+        const VT phase_scale = correctphase_dev_ptr[i_e];
   
         // Coalesced access pattern for spatial data
         for (int i_xyz = 0; i_xyz < Nxyz; ++i_xyz)
         {
           const size_t spatial_idx = base_offset + i_xyz;
-          const RealType phase = phase_fac_dev_ptr[i_xyz] * phase_scale;
+          const auto phase = phase_fac_dev_ptr[i_xyz] * phase_scale;
   
           // Optimized memory access pattern
           const size_t ylm_idx = spatial_idx * nYlm + lm;
