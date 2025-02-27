@@ -31,6 +31,18 @@ qmc_run_and_check(
   LIH_GAMMA_SCALARS # VMC
 )
 
+qmc_run_and_check(
+  short-LiH_solid_1x1x1_pp-gamma-drift-vmcbatch_hf_noj
+  "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+  hf_vmcbatch_LiH-gamma-drift
+  hf_vmcbatch_LiH-gamma-drift.xml
+  1
+  16
+  TRUE
+  0
+  LIH_GAMMA_SCALARS # VMC
+)
+
 list(APPEND LIH_X_SCALARS "kinetic" "7.3772282047321536 0.024")
 list(APPEND LIH_X_SCALARS "localecp" "-11.414410381100344 0.025")
 list(APPEND LIH_X_SCALARS "samples" "1600000 0.0")
@@ -53,6 +65,18 @@ qmc_run_and_check(
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
   hf_vmc_LiH-x-drift
   hf_vmc_LiH-x-drift.xml
+  1
+  16
+  TRUE
+  0
+  LIH_X_SCALARS # VMC
+)
+
+qmc_run_and_check(
+  short-LiH_solid_1x1x1_pp-x-drift-vmcbatch_hf_noj
+  "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+  hf_vmcbatch_LiH-x-drift
+  hf_vmcbatch_LiH-x-drift.xml
   1
   16
   TRUE
@@ -102,6 +126,18 @@ qmc_run_and_check(
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
   hf_vmc_LiH-arb-drift
   hf_vmc_LiH-arb-drift.xml
+  1
+  16
+  ${LIH_ARB_SUCCEED}
+  0
+  LIH_ARB_SCALARS # VMC
+)
+
+qmc_run_and_check(
+  short-LiH_solid_1x1x1_pp-arb-drift-vmcbatch_hf_noj
+  "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+  hf_vmcbatch_LiH-arb-drift
+  hf_vmcbatch_LiH-arb-drift.xml
   1
   16
   ${LIH_ARB_SUCCEED}
