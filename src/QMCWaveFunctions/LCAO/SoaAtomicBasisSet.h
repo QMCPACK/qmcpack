@@ -811,7 +811,7 @@ public:
 		    correctphase_dev_ptr[i_e] = RealType(1.0);
 #else
 
-    RealType st[3] = {SuperTwist[0], SuperTwist[1], SuperTwist[2]};
+    double st[3] = {SuperTwist[0], SuperTwist[1], SuperTwist[2]};
     PRAGMA_OFFLOAD(" omp target teams distribute parallel for \
                       firstprivate(st) \
                       is_device_ptr(Tv_list_dev_ptr, correctphase_dev_ptr) ")
@@ -1035,13 +1035,9 @@ public:
 	    for (size_t i_e = 0; i_e < nElec; i_e++)
 		    correctphase_dev_ptr[i_e] = RealType(1.0);
 #else
-    // If SuperTwist is just a 3-element array, let's copy it to the device using firstprivate
-    RealType st[3] = {SuperTwist[0], SuperTwist[1], SuperTwist[2]};
-
-    // Similarly for Tv_list, assume it's a pinned+offload Vector
+    double st[3] = {SuperTwist[0], SuperTwist[1], SuperTwist[2]};
 
 
-    // Launch kernel with firstprivate(st) and is_device_ptr(...) for the arrays
     PRAGMA_OFFLOAD(" omp target teams distribute parallel for \
                       firstprivate(st) \
                       is_device_ptr(Tv_list_dev_ptr, correctphase_dev_ptr) ")
@@ -1066,7 +1062,6 @@ public:
                                    dr_device_ptr, r_device_ptr, displ_list_device_ptr)")
        for (size_t idx = 0; idx < total_size; idx++)
        {
-            // Reconstruct original indices
             const size_t i_e = idx / Nxyz;
             const size_t i_xyz = idx % Nxyz;
           
