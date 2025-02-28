@@ -188,7 +188,7 @@ public:
     auto* first_deriv_ptr = first_deriv_.device_data();
     const size_t nCols    = coeffs_.cols();
     const size_t coefsize = coeffs_.size();
-    const int nsplines   = num_splines_;
+    const int nsplines    = num_splines_;
 
     PRAGMA_OFFLOAD("omp target teams distribute parallel for \
                     is_device_ptr(coeff_ptr, first_deriv_ptr, r_ptr, u_ptr)")

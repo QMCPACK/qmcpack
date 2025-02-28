@@ -325,7 +325,7 @@ inline void SoaSphericalTensor<T>::evaluate_bare(T x,
   T stheta = std::sqrt(cone - ctheta * ctheta);
   /* Now to calculate the associated legendre functions P_lm from the
      recursion relation from l=0 to Lmax. Conventions of J.D. Jackson,
-     Classical Electrodynamics are used. */ 
+     Classical Electrodynamics are used. */
   Ylm[0] = cone;
   // calculate P_ll and P_l,l-1
   T fac = cone;
