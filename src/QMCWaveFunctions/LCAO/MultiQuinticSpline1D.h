@@ -181,43 +181,43 @@ public:
     T lower_bound             = myGrid.lower_bound;
     T log_delta               = myGrid.LogDelta;
 
-    auto* r_dev_ptr = r.device_data();
-    auto* u_dev_ptr = u.device_data();
+    auto* r_ptr = r.device_data();
+    auto* u_ptr = u.device_data();
 
-    auto* coeff_dev_ptr       = coeffs_.device_data();
-    auto* first_deriv_dev_ptr = first_deriv_.device_data();
+    auto* coeff_ptr       = coeffs_.device_data();
+    auto* first_deriv_ptr = first_deriv_.device_data();
     const size_t nCols    = coeffs_.cols();
     const size_t coefsize = coeffs_.size();
     const int nsplines   = num_splines_;
 
     PRAGMA_OFFLOAD("omp target teams distribute parallel for \
-                    is_device_ptr(coeff_dev_ptr, first_deriv_dev_ptr, r_dev_ptr, u_dev_ptr)")
+                    is_device_ptr(coeff_ptr, first_deriv_ptr, r_ptr, u_ptr)")
     for (int ir = 0; ir < nR; ir++)
     {
-      if (r_dev_ptr[ir] >= Rmax)
+      if (r_ptr[ir] >= Rmax)
       {
         for (int i = 0; i < nsplines; ++i)
-          u_dev_ptr[ir * nRnl + i] = 0.0;
+          u_ptr[ir * nRnl + i] = 0.0;
       }
-      else if (r_dev_ptr[ir] < lower_bound)
+      else if (r_ptr[ir] < lower_bound)
       {
-        const T dr = r_dev_ptr[ir] - lower_bound;
+        const T dr = r_ptr[ir] - lower_bound;
         for (int i = 0; i < nsplines; ++i)
-          u_dev_ptr[ir * nRnl + i] = coeff_dev_ptr[i] + first_deriv_dev_ptr[i] * dr;
+          u_ptr[ir * nRnl + i] = coeff_ptr[i] + first_deriv_ptr[i] * dr;
       }
       else
       {
         int loc;
-        const auto cL       = LogGridLight<T>::getCL(r_dev_ptr[ir], loc, one_over_log_delta, lower_bound, log_delta);
+        const auto cL       = LogGridLight<T>::getCL(r_ptr[ir], loc, one_over_log_delta, lower_bound, log_delta);
         const size_t offset = loc * 6;
-        const T* restrict a = coeff_dev_ptr + nCols * (offset + 0);
-        const T* restrict b = coeff_dev_ptr + nCols * (offset + 1);
-        const T* restrict c = coeff_dev_ptr + nCols * (offset + 2);
-        const T* restrict d = coeff_dev_ptr + nCols * (offset + 3);
-        const T* restrict e = coeff_dev_ptr + nCols * (offset + 4);
-        const T* restrict f = coeff_dev_ptr + nCols * (offset + 5);
+        const T* restrict a = coeff_ptr + nCols * (offset + 0);
+        const T* restrict b = coeff_ptr + nCols * (offset + 1);
+        const T* restrict c = coeff_ptr + nCols * (offset + 2);
+        const T* restrict d = coeff_ptr + nCols * (offset + 3);
+        const T* restrict e = coeff_ptr + nCols * (offset + 4);
+        const T* restrict f = coeff_ptr + nCols * (offset + 5);
         for (int i = 0; i < nsplines; ++i)
-          u_dev_ptr[ir * nRnl + i] = a[i] + cL * (b[i] + cL * (c[i] + cL * (d[i] + cL * (e[i] + cL * f[i]))));
+          u_ptr[ir * nRnl + i] = a[i] + cL * (b[i] + cL * (c[i] + cL * (d[i] + cL * (e[i] + cL * f[i]))));
       }
     }
   }
@@ -246,13 +246,13 @@ public:
     T lower_bound             = myGrid.lower_bound;
     T dlog_ratio              = myGrid.LogDelta;
 
-    auto* r_dev_ptr   = r.device_data();
-    auto* u_dev_ptr   = vgl.device_data_at(0, 0, 0, 0);
-    auto* du_dev_ptr  = vgl.device_data_at(1, 0, 0, 0);
-    auto* d2u_dev_ptr = vgl.device_data_at(2, 0, 0, 0);
+    auto* r_ptr   = r.device_data();
+    auto* u_ptr   = vgl.device_data_at(0, 0, 0, 0);
+    auto* du_ptr  = vgl.device_data_at(1, 0, 0, 0);
+    auto* d2u_ptr = vgl.device_data_at(2, 0, 0, 0);
 
-    auto* coeff_dev_ptr       = coeffs_.device_data();
-    auto* first_deriv_dev_ptr = first_deriv_.device_data();
+    auto* coeff_ptr       = coeffs_.device_data();
+    auto* first_deriv_ptr = first_deriv_.device_data();
     const size_t nCols    = coeffs_.cols();
     const size_t coefsize = coeffs_.size();
     const auto nsplines   = num_splines_;
@@ -266,48 +266,48 @@ public:
     constexpr T c20(20);
 
     PRAGMA_OFFLOAD("omp target teams distribute parallel for \
-                    is_device_ptr(first_deriv_dev_ptr, coeff_dev_ptr, r_dev_ptr, u_dev_ptr, du_dev_ptr, d2u_dev_ptr)")
+                    is_device_ptr(first_deriv_ptr, coeff_ptr, r_ptr, u_ptr, du_ptr, d2u_ptr)")
     for (size_t ir = 0; ir < nR; ir++)
     {
-      if (r_dev_ptr[ir] >= Rmax)
+      if (r_ptr[ir] >= Rmax)
       {
         for (size_t i = 0; i < nsplines; ++i)
         {
-          u_dev_ptr[ir * nRnl + i]   = 0.0;
-          du_dev_ptr[ir * nRnl + i]  = 0.0;
-          d2u_dev_ptr[ir * nRnl + i] = 0.0;
+          u_ptr[ir * nRnl + i]   = 0.0;
+          du_ptr[ir * nRnl + i]  = 0.0;
+          d2u_ptr[ir * nRnl + i] = 0.0;
         }
       }
-      else if (r_dev_ptr[ir] < lower_bound)
+      else if (r_ptr[ir] < lower_bound)
       {
-        const T dr          = r_dev_ptr[ir] - lower_bound;
-        const T* restrict a = coeff_dev_ptr;
+        const T dr          = r_ptr[ir] - lower_bound;
+        const T* restrict a = coeff_ptr;
         // const T* restrict a = coeffs_[0];
         for (size_t i = 0; i < nsplines; ++i)
         {
-          u_dev_ptr[ir * nRnl + i]   = a[i] + first_deriv_dev_ptr[i] * dr;
-          du_dev_ptr[ir * nRnl + i]  = first_deriv_dev_ptr[i];
-          d2u_dev_ptr[ir * nRnl + i] = 0.0;
+          u_ptr[ir * nRnl + i]   = a[i] + first_deriv_ptr[i] * dr;
+          du_ptr[ir * nRnl + i]  = first_deriv_ptr[i];
+          d2u_ptr[ir * nRnl + i] = 0.0;
         }
       }
       else
       {
         int loc;
-        const auto cL = LogGridLight<T>::getCL(r_dev_ptr[ir], loc, one_over_log_delta, lower_bound, dlog_ratio);
+        const auto cL = LogGridLight<T>::getCL(r_ptr[ir], loc, one_over_log_delta, lower_bound, dlog_ratio);
         // const auto cL       = myGrid.getCLForQuintic(r_list[ir], loc);
         const size_t offset = loc * 6;
-        const T* restrict a = coeff_dev_ptr + nCols * (offset + 0);
-        const T* restrict b = coeff_dev_ptr + nCols * (offset + 1);
-        const T* restrict c = coeff_dev_ptr + nCols * (offset + 2);
-        const T* restrict d = coeff_dev_ptr + nCols * (offset + 3);
-        const T* restrict e = coeff_dev_ptr + nCols * (offset + 4);
-        const T* restrict f = coeff_dev_ptr + nCols * (offset + 5);
+        const T* restrict a = coeff_ptr + nCols * (offset + 0);
+        const T* restrict b = coeff_ptr + nCols * (offset + 1);
+        const T* restrict c = coeff_ptr + nCols * (offset + 2);
+        const T* restrict d = coeff_ptr + nCols * (offset + 3);
+        const T* restrict e = coeff_ptr + nCols * (offset + 4);
+        const T* restrict f = coeff_ptr + nCols * (offset + 5);
         for (size_t i = 0; i < nsplines; ++i)
         {
-          u_dev_ptr[ir * nRnl + i] = a[i] + cL * (b[i] + cL * (c[i] + cL * (d[i] + cL * (e[i] + cL * f[i]))));
-          du_dev_ptr[ir * nRnl + i] =
+          u_ptr[ir * nRnl + i] = a[i] + cL * (b[i] + cL * (c[i] + cL * (d[i] + cL * (e[i] + cL * f[i]))));
+          du_ptr[ir * nRnl + i] =
               b[i] + cL * (ctwo * c[i] + cL * (cthree * d[i] + cL * (cfour * e[i] + cL * f[i] * cfive)));
-          d2u_dev_ptr[ir * nRnl + i] = ctwo * c[i] + cL * (csix * d[i] + cL * (c12 * e[i] + cL * f[i] * c20));
+          d2u_ptr[ir * nRnl + i] = ctwo * c[i] + cL * (csix * d[i] + cL * (c12 * e[i] + cL * f[i] * c20));
         }
       }
     }
