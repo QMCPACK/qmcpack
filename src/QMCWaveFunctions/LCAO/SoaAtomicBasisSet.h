@@ -812,15 +812,13 @@ public:
         correctphase_ptr[i_e] = RealType(1.0);
 #else
 
-      double st[3] = {SuperTwist[0], SuperTwist[1], SuperTwist[2]};
       PRAGMA_OFFLOAD(" omp target teams distribute parallel for \
-                      firstprivate(st) \
                       is_device_ptr(Tv_list_ptr, correctphase_ptr) ")
       for (size_t i_e = 0; i_e < nElec; i_e++)
       {
         RealType phasearg = 0;
         for (size_t i_dim = 0; i_dim < 3; i_dim++)
-          phasearg += st[i_dim] * Tv_list_ptr[i_dim + 3 * (i_e + center_idx * nElec)];
+          phasearg += SuperTwist[i_dim] * Tv_list_ptr[i_dim + 3 * (i_e + center_idx * nElec)];
         RealType s, c;
         qmcplusplus::sincos(-phasearg, &s, &c);
         correctphase_ptr[i_e] = ValueType(c, s);
@@ -1012,7 +1010,6 @@ public:
 #else
 
       PRAGMA_OFFLOAD(" omp target teams distribute parallel for \
-                      firstprivate(st) \
                       is_device_ptr(Tv_list_ptr, correctphase_ptr) ")
       for (size_t i_e = 0; i_e < nElec; i_e++)
       {
