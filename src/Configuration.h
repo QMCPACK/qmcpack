@@ -72,6 +72,8 @@ struct QMCTraits
   using PtclGrpIndexes = std::vector<std::pair<int, int>>;
 };
 
+using Lattice = CrystalLattice<OHMMS_PRECISION, OHMMS_DIM>;
+
 /** Particle traits to use UniformGridLayout for the ParticleLayout.
  */
 struct PtclOnLatticeTraits
@@ -96,7 +98,6 @@ struct PtclOnLatticeTraits
   using ParticleLaplacian   = ParticleAttrib<QTFull::ValueType>;
   using SingleParticleValue = QTFull::ValueType;
 };
-
 
 // For unit tests
 //  Check if we are compiling with Catch defined.  Could use other symbols if needed.

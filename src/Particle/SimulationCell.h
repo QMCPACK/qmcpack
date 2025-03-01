@@ -23,7 +23,6 @@ class ParticleSetPool;
 class SimulationCell
 {
 public:
-  using Lattice = PtclOnLatticeTraits::ParticleLayout;
 
   SimulationCell();
   SimulationCell(const Lattice& lattice);

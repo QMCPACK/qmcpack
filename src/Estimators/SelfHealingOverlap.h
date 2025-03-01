@@ -27,7 +27,6 @@ namespace qmcplusplus
 class SelfHealingOverlap : public OperatorEstBase
 {
 public:
-  using LatticeType = PtclOnLatticeTraits::ParticleLayout;
   using RealType    = QMCTraits::RealType;
   using ComplexType = QMCTraits::ComplexType;
   using ValueType   = QMCTraits::ValueType;

@@ -22,7 +22,7 @@ namespace qmcplusplus
 MomentumDistribution::MomentumDistribution(MomentumDistributionInput&& mdi,
                                            size_t np,
                                            const PosType& twist_in,
-                                           const LatticeType& lattice,
+                                           const Lattice& lattice,
                                            DataLocality dl)
     : OperatorEstBase(dl),
       input_(std::move(mdi)),

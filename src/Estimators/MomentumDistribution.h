@@ -33,7 +33,6 @@ class MomentumDistributionTests;
 class MomentumDistribution : public OperatorEstBase
 {
 public:
-  using LatticeType = PtclOnLatticeTraits::ParticleLayout;
   using RealType    = QMCTraits::RealType;
   using ComplexType = QMCTraits::ComplexType;
   using ValueType   = QMCTraits::ValueType;
@@ -45,7 +44,7 @@ public:
   ///twist angle
   const PosType twist;
   ///lattice vector
-  const LatticeType Lattice;
+  const Lattice Lattice;
   ///normalization factor for n(k)
   const RealType norm_nofK;
   ///list of k-points in Cartesian Coordinates
@@ -76,7 +75,7 @@ public:
   MomentumDistribution(MomentumDistributionInput&& mdi,
                        size_t np,
                        const PosType& twist,
-                       const LatticeType& lattice,
+                       const Lattice& lattice,
                        DataLocality dl = DataLocality::crowd);
 
   /** Constructor used when spawing crowd clones
