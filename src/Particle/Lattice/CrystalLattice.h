@@ -220,7 +220,8 @@ public:
   /// return true if any direction of reduced coordinates u goes larger than 0.5
   bool outOfBound(const TinyVector<T, D>& u) const;
 
-  inline void applyMinimumImage(TinyVector<T, D>& c) const
+  template <typename PT>
+  inline void applyMinimumImage(TinyVector<PT, D>& c) const
   {
     if (SuperCellEnum)
     {
