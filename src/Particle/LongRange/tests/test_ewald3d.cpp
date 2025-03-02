@@ -24,26 +24,26 @@ using mRealType = EwaldHandler3D::mRealType;
  */
 TEST_CASE("ewald3d", "[lrhandler]")
 {
-  Lattice Lattice;
-  Lattice.BoxBConds     = true;
-  Lattice.LR_dim_cutoff = 30.;
-  Lattice.R.diagonal(5.0);
-  Lattice.reset();
-  CHECK(Lattice.Volume == Approx(125));
-  Lattice.SetLRCutoffs(Lattice.Rv);
-  //Lattice.printCutoffs(app_log());
-  CHECK(Lattice.LR_rc == Approx(2.5));
-  CHECK(Lattice.LR_kc == Approx(12));
+  Lattice lattice;
+  lattice.BoxBConds     = true;
+  lattice.LR_dim_cutoff = 30.;
+  lattice.R.diagonal(5.0);
+  lattice.reset();
+  CHECK(lattice.Volume == Approx(125));
+  lattice.SetLRCutoffs(lattice.Rv);
+  //lattice.printCutoffs(app_log());
+  CHECK(lattice.LR_rc == Approx(2.5));
+  CHECK(lattice.LR_kc == Approx(12));
 
-  const SimulationCell simulation_cell(Lattice);
+  const SimulationCell simulation_cell(lattice);
   ParticleSet ref(simulation_cell);       // handler needs ref.getSimulationCell().getKLists()
   ref.createSK();
-  EwaldHandler3D handler(ref, Lattice.LR_kc);
+  EwaldHandler3D handler(ref, lattice.LR_kc);
 
   // make sure initBreakup changes the default sigma
-  CHECK(handler.Sigma == Approx(Lattice.LR_kc));
+  CHECK(handler.Sigma == Approx(lattice.LR_kc));
   handler.initBreakup(ref);
-  CHECK(handler.Sigma == Approx(std::sqrt(Lattice.LR_kc / (2.0 * Lattice.LR_rc))));
+  CHECK(handler.Sigma == Approx(std::sqrt(lattice.LR_kc / (2.0 * lattice.LR_rc))));
 
   std::cout << "handler.MaxKshell is " << handler.MaxKshell << std::endl;
   CHECK( (std::is_same<OHMMS_PRECISION, OHMMS_PRECISION_FULL>::value ?
@@ -73,26 +73,26 @@ TEST_CASE("ewald3d", "[lrhandler]")
  */
 TEST_CASE("ewald3d df", "[lrhandler]")
 {
-  Lattice Lattice;
-  Lattice.BoxBConds     = true;
-  Lattice.LR_dim_cutoff = 30.;
-  Lattice.R.diagonal(5.0);
-  Lattice.reset();
-  CHECK(Lattice.Volume == Approx(125));
-  Lattice.SetLRCutoffs(Lattice.Rv);
-  //Lattice.printCutoffs(app_log());
-  CHECK(Lattice.LR_rc == Approx(2.5));
-  CHECK(Lattice.LR_kc == Approx(12));
+  Lattice lattice;
+  lattice.BoxBConds     = true;
+  lattice.LR_dim_cutoff = 30.;
+  lattice.R.diagonal(5.0);
+  lattice.reset();
+  CHECK(lattice.Volume == Approx(125));
+  lattice.SetLRCutoffs(lattice.Rv);
+  //lattice.printCutoffs(app_log());
+  CHECK(lattice.LR_rc == Approx(2.5));
+  CHECK(lattice.LR_kc == Approx(12));
 
-  const SimulationCell simulation_cell(Lattice);
+  const SimulationCell simulation_cell(lattice);
   ParticleSet ref(simulation_cell);       // handler needs ref.getSimulationCell().getKLists()
   ref.createSK();
-  EwaldHandler3D handler(ref, Lattice.LR_kc);
+  EwaldHandler3D handler(ref, lattice.LR_kc);
 
   // make sure initBreakup changes the default sigma
-  CHECK(handler.Sigma == Approx(Lattice.LR_kc));
+  CHECK(handler.Sigma == Approx(lattice.LR_kc));
   handler.initBreakup(ref);
-  CHECK(handler.Sigma == Approx(std::sqrt(Lattice.LR_kc / (2.0 * Lattice.LR_rc))));
+  CHECK(handler.Sigma == Approx(std::sqrt(lattice.LR_kc / (2.0 * lattice.LR_rc))));
 
   std::cout << "handler.MaxKshell is " << handler.MaxKshell << std::endl;
   CHECK( (std::is_same<OHMMS_PRECISION, OHMMS_PRECISION_FULL>::value ?

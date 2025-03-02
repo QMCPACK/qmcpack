@@ -29,8 +29,8 @@ using vec_t = TinyVector<OHMMS_PRECISION, 3>;
 
 TEST_CASE("open_bconds", "[lattice]")
 {
-  Lattice Lattice;
-  DTD_BConds<OHMMS_PRECISION, 3, SUPERCELL_OPEN> bcond(Lattice);
+  Lattice lattice;
+  DTD_BConds<OHMMS_PRECISION, 3, SUPERCELL_OPEN> bcond(lattice);
 
   vec_t v(3.0, 4.0, 5.0);
 
@@ -55,18 +55,18 @@ TEST_CASE("open_bconds", "[lattice]")
   CHECK(Approx(rr[0]) == 50.0);
 }
 
-/** Lattice is defined but Open BC is also used.
+/** lattice is defined but Open BC is also used.
  */
 TEST_CASE("periodic_bulk_bconds", "[lattice]")
 {
-  Lattice Lattice;
-  Lattice.BoxBConds = false; // Open BC
-  Lattice.R.diagonal(0.4);
-  Lattice.reset();
+  Lattice lattice;
+  lattice.BoxBConds = false; // Open BC
+  lattice.R.diagonal(0.4);
+  lattice.reset();
 
-  CHECK(Lattice.Volume == Approx(0.4 * 0.4 * 0.4));
+  CHECK(lattice.Volume == Approx(0.4 * 0.4 * 0.4));
 
-  DTD_BConds<OHMMS_PRECISION, 3, SUPERCELL_BULK> bcond(Lattice);
+  DTD_BConds<OHMMS_PRECISION, 3, SUPERCELL_BULK> bcond(lattice);
 
   vec_t v1(0.0, 0.0, 0.0);
 
@@ -78,23 +78,23 @@ TEST_CASE("periodic_bulk_bconds", "[lattice]")
   CHECK(r2 == Approx(0.01));
 }
 
-TEST_CASE("uniform 3D Lattice layout", "[lattice]")
+TEST_CASE("uniform 3D lattice layout", "[lattice]")
 {
-  Lattice Lattice;
-  Lattice.BoxBConds = true; // periodic
+  Lattice lattice;
+  lattice.BoxBConds = true; // periodic
 
-  Lattice.R.diagonal(1.0);
-  Lattice.reset();
+  lattice.R.diagonal(1.0);
+  lattice.reset();
 
-  REQUIRE(Lattice.R(0, 0) == 1.0);
-  REQUIRE(Lattice.R(0, 1) == 0.0);
-  REQUIRE(Lattice.R(0, 2) == 0.0);
-  REQUIRE(Lattice.R(1, 0) == 0.0);
-  REQUIRE(Lattice.R(1, 1) == 1.0);
-  REQUIRE(Lattice.R(1, 2) == 0.0);
-  REQUIRE(Lattice.R(2, 0) == 0.0);
-  REQUIRE(Lattice.R(2, 1) == 0.0);
-  REQUIRE(Lattice.R(2, 2) == 1.0);
+  REQUIRE(lattice.R(0, 0) == 1.0);
+  REQUIRE(lattice.R(0, 1) == 0.0);
+  REQUIRE(lattice.R(0, 2) == 0.0);
+  REQUIRE(lattice.R(1, 0) == 0.0);
+  REQUIRE(lattice.R(1, 1) == 1.0);
+  REQUIRE(lattice.R(1, 2) == 0.0);
+  REQUIRE(lattice.R(2, 0) == 0.0);
+  REQUIRE(lattice.R(2, 1) == 0.0);
+  REQUIRE(lattice.R(2, 2) == 1.0);
 }
 
 } // namespace qmcplusplus
