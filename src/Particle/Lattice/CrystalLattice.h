@@ -69,8 +69,6 @@ public:
   using Scalar_t = T;
   ///the type of a D-dimensional position vector
   using SingleParticlePos = TinyVector<T, D>;
-  ///the type of a D-dimensional index vector
-  using SingleParticleIndex = TinyVector<int, D>;
   ///the type of a D-dimensional Tensor
   using Tensor_t = Tensor<T, D>;
   //@}
