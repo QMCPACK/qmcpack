@@ -74,35 +74,44 @@ qmc_run_and_check(
   DIAMOND_SCALARS # VMC
 )
 
-if(NOT ENABLE_OFFLOAD)
-  list(APPEND DIAMOND_KSPACE_SCALARS "totenergy" "-10.500719 0.001769")
-  list(APPEND DIAMOND_KSPACE_SCALARS "variance" "0.312264 0.028662")
-  qmc_run_and_check(
-    short-diamondC_1x1x1_pp-vmc_sdj_kspace
-    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-    qmc_short_kspace
-    qmc_short_kspace.in.xml
-    1
-    16
-    TRUE
-    0
-    DIAMOND_KSPACE_SCALARS # VMC
-  )
+list(APPEND DIAMOND_KSPACE_SCALARS "totenergy" "-10.500719 0.001769")
+list(APPEND DIAMOND_KSPACE_SCALARS "variance" "0.312264 0.028662")
+qmc_run_and_check(
+  short-diamondC_1x1x1_pp-vmc_sdj_kspace
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+  qmc_short_kspace
+  qmc_short_kspace.in.xml
+  1
+  16
+  TRUE
+  0
+  DIAMOND_KSPACE_SCALARS # VMC
+)
 
-  qmc_run_and_check(
-    short-diamondC_1x1x1_pp-vmc_sdj_kspace
-    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-    qmc_short_kspace_4_4
-    qmc_short_kspace_4_4.in.xml
-    4
-    4
-    TRUE
-    0
-    DIAMOND_KSPACE_SCALARS # VMC
-  )
-else()
-  message(VERBOSE "Skipping k-space Jastrow tests because they are not supported by OFFLOAD build (ENABLE_OFFLOAD=1)")
-endif()
+qmc_run_and_check(
+  short-diamondC_1x1x1_pp-vmc_sdj_kspace
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+  qmc_short_kspace_4_4
+  qmc_short_kspace_4_4.in.xml
+  4
+  4
+  TRUE
+  0
+  DIAMOND_KSPACE_SCALARS # VMC
+)
+
+qmc_run_and_check(
+  short-diamondC_1x1x1_pp-vmcbatch_sdj_kspace
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+  qmc_short_vmcbatch_kspace
+  qmc_short_vmcbatch_kspace.in.xml
+  1
+  16
+  TRUE
+  0
+  DIAMOND_KSPACE_SCALARS # VMC
+)
+
 
 # Reference OPT run in qmc-ref
 list(APPEND DIAMOND_OPT_SCALARS "totenergy" "-10.49370 0.0024")
