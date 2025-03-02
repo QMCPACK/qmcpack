@@ -35,7 +35,7 @@ public:
   using Grad_t      = GradType;
   using ValueVector = SPOSet::ValueVector;
   using GradVector  = SPOSet::GradVector;
-  using Lattice_t   = ParticleSet::ParticleLayout;
+  using Lattice_t   = Lattice;
   using Vector_t    = Vector<Value_t>;
   using Matrix_t    = Matrix<Value_t>;
   using pts_t       = std::vector<PosType>;

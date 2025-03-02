@@ -113,7 +113,7 @@ public:
 
   using ValueVector = SPOSet::ValueVector;
   using GradVector  = SPOSet::GradVector;
-  using Lattice_t   = ParticleSet::ParticleLayout;
+  using Lattice_t   = Lattice;
   using PSPool      = std::map<std::string, const std::unique_ptr<ParticleSet>>;
 
   ///derivative types
