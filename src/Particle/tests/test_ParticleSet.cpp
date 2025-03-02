@@ -91,7 +91,7 @@ TEST_CASE("symmetric_distance_table OpenBC", "[particle]")
 
 TEST_CASE("symmetric_distance_table PBC", "[particle]")
 {
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
+  Lattice Lattice;
   Lattice.BoxBConds = true; // periodic
   Lattice.R = ParticleSet::Tensor_t(6.74632230, 6.74632230, 0.00000000, 0.00000000, 3.37316115, 3.37316115, 3.37316115,
                                     0.00000000, 3.37316115);
@@ -123,7 +123,7 @@ TEST_CASE("symmetric_distance_table PBC", "[particle]")
 TEST_CASE("particle set lattice with vacuum", "[particle]")
 {
   // PPP case
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
+  Lattice Lattice;
   Lattice.BoxBConds          = true;
   Lattice.R                  = {1.0, 2.0, 3.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0};
   Lattice.explicitly_defined = true;

@@ -29,7 +29,7 @@ struct CoulombF2
  */
 TEST_CASE("dummy", "[lrhandler]")
 {
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
+  Lattice Lattice;
   Lattice.BoxBConds     = true;
   Lattice.LR_dim_cutoff = 30.;
   Lattice.R.diagonal(5.0);

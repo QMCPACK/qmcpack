@@ -29,7 +29,7 @@ using vec_t = TinyVector<OHMMS_PRECISION, 3>;
 
 TEST_CASE("open_bconds", "[lattice]")
 {
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
+  Lattice Lattice;
   DTD_BConds<OHMMS_PRECISION, 3, SUPERCELL_OPEN> bcond(Lattice);
 
   vec_t v(3.0, 4.0, 5.0);
@@ -59,7 +59,7 @@ TEST_CASE("open_bconds", "[lattice]")
  */
 TEST_CASE("periodic_bulk_bconds", "[lattice]")
 {
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
+  Lattice Lattice;
   Lattice.BoxBConds = false; // Open BC
   Lattice.R.diagonal(0.4);
   Lattice.reset();
@@ -80,7 +80,7 @@ TEST_CASE("periodic_bulk_bconds", "[lattice]")
 
 TEST_CASE("uniform 3D Lattice layout", "[lattice]")
 {
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
+  Lattice Lattice;
   Lattice.BoxBConds = true; // periodic
 
   Lattice.R.diagonal(1.0);

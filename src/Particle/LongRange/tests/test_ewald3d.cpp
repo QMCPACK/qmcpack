@@ -24,7 +24,7 @@ using mRealType = EwaldHandler3D::mRealType;
  */
 TEST_CASE("ewald3d", "[lrhandler]")
 {
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
+  Lattice Lattice;
   Lattice.BoxBConds     = true;
   Lattice.LR_dim_cutoff = 30.;
   Lattice.R.diagonal(5.0);
@@ -73,7 +73,7 @@ TEST_CASE("ewald3d", "[lrhandler]")
  */
 TEST_CASE("ewald3d df", "[lrhandler]")
 {
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
+  Lattice Lattice;
   Lattice.BoxBConds     = true;
   Lattice.LR_dim_cutoff = 30.;
   Lattice.R.diagonal(5.0);

@@ -23,7 +23,7 @@ namespace qmcplusplus
  */
 TEST_CASE("StructFact", "[lrhandler]")
 {
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
+  Lattice Lattice;
   Lattice.BoxBConds     = true;
   Lattice.LR_dim_cutoff = 30.;
   Lattice.R.diagonal(5.0);

@@ -35,7 +35,7 @@ struct EslerCoulomb3D_ForSRCOUL
  */
 TEST_CASE("srcoul", "[lrhandler]")
 {
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
+  Lattice Lattice;
   Lattice.BoxBConds     = true;
   Lattice.LR_dim_cutoff = 30.;
   Lattice.R.diagonal(5.0);
@@ -80,7 +80,7 @@ TEST_CASE("srcoul", "[lrhandler]")
  */
 TEST_CASE("srcoul df", "[lrhandler]")
 {
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
+  Lattice Lattice;
   Lattice.BoxBConds     = true;
   Lattice.LR_dim_cutoff = 30.;
   Lattice.R.diagonal(5.0);
