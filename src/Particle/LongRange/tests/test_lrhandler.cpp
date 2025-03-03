@@ -29,21 +29,21 @@ struct CoulombF2
  */
 TEST_CASE("dummy", "[lrhandler]")
 {
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
-  Lattice.BoxBConds     = true;
-  Lattice.LR_dim_cutoff = 30.;
-  Lattice.R.diagonal(5.0);
-  Lattice.reset();
-  CHECK(Lattice.Volume == Approx(125));
-  Lattice.SetLRCutoffs(Lattice.Rv);
-  //Lattice.printCutoffs(app_log());
-  CHECK(Lattice.LR_rc == Approx(2.5));
-  CHECK(Lattice.LR_kc == Approx(12));
+  Lattice lattice;
+  lattice.BoxBConds     = true;
+  lattice.LR_dim_cutoff = 30.;
+  lattice.R.diagonal(5.0);
+  lattice.reset();
+  CHECK(lattice.Volume == Approx(125));
+  lattice.SetLRCutoffs(lattice.Rv);
+  //lattice.printCutoffs(app_log());
+  CHECK(lattice.LR_rc == Approx(2.5));
+  CHECK(lattice.LR_kc == Approx(12));
 
-  const SimulationCell simulation_cell(Lattice);
+  const SimulationCell simulation_cell(lattice);
   ParticleSet ref(simulation_cell);       // handler needs ref.getSimulationCell().getKLists()
   ref.createSK();
-  DummyLRHandler<CoulombF2> handler(Lattice.LR_kc);
+  DummyLRHandler<CoulombF2> handler(lattice.LR_kc);
 
   handler.initBreakup(ref);
 
@@ -56,7 +56,7 @@ TEST_CASE("dummy", "[lrhandler]")
   std::vector<pRealType> rhok1(handler.MaxKshell);
   std::vector<pRealType> rhok2(handler.MaxKshell);
   CoulombF2 fk;
-  double norm = 4 * M_PI / Lattice.Volume;
+  double norm = 4 * M_PI / lattice.Volume;
   // no actual LR breakup happened in DummyLRHandler,
   //  the full Coulomb potential should be retained in kspace
   for (int ish = 0; ish < handler.MaxKshell; ish++)
