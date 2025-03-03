@@ -40,7 +40,7 @@ namespace qmcplusplus
 class PWBasis : public QMCTraits
 {
 public:
-  using ParticleLayout = ParticleSet::ParticleLayout;
+  using ParticleLayout = qmcplusplus::Lattice;
   using GIndex_t       = TinyVector<IndexType, 3>;
 
 private:

@@ -38,7 +38,7 @@ TEST_CASE("Coulomb PBC A-B", "[hamiltonian]")
 {
   LRCoulombSingleton::CoulombHandler = 0;
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  Lattice lattice;
   lattice.BoxBConds = true; // periodic
   lattice.R.diagonal(1.0);
   lattice.reset();
@@ -95,7 +95,7 @@ TEST_CASE("Coulomb PBC A-B BCC H", "[hamiltonian]")
 {
   LRCoulombSingleton::CoulombHandler = 0;
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  Lattice lattice;
   lattice.BoxBConds = true; // periodic
   lattice.R.diagonal(3.77945227);
   lattice.reset();
@@ -157,7 +157,7 @@ TEST_CASE("CoulombAB::Listener", "[hamiltonian]")
 
   LRCoulombSingleton::CoulombHandler = 0;
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  Lattice lattice;
   lattice.BoxBConds = true; // periodic
   lattice.R.diagonal(3.77945227);
   lattice.reset();
