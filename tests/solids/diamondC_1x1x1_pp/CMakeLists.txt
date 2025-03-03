@@ -76,6 +76,7 @@ qmc_run_and_check(
 
 list(APPEND DIAMOND_KSPACE_SCALARS "totenergy" "-10.500719 0.001769")
 list(APPEND DIAMOND_KSPACE_SCALARS "variance" "0.312264 0.028662")
+list(APPEND DIAMOND_KSPACE_SCALARS "samples" "128000 0.0")
 qmc_run_and_check(
   short-diamondC_1x1x1_pp-vmc_sdj_kspace
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
@@ -112,6 +113,17 @@ qmc_run_and_check(
   DIAMOND_KSPACE_SCALARS # VMC
 )
 
+qmc_run_and_check(
+  short-diamondC_1x1x1_pp-vmcbatch_sdj_kspace
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+  qmc_short_vmcbatch_kspace
+  qmc_short_vmcbatch_kspace.in.xml
+  4
+  4
+  TRUE
+  0
+  DIAMOND_KSPACE_SCALARS # VMC
+)
 
 # Reference OPT run in qmc-ref
 list(APPEND DIAMOND_OPT_SCALARS "totenergy" "-10.49370 0.0024")
