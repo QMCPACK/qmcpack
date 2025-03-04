@@ -43,7 +43,7 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   using RealType  = SPOSet::RealType;
   Communicate* c  = OHMMS::Controller;
 
-  ParticleSet::ParticleLayout lattice;
+  Lattice lattice;
   // O2 test example from pwscf non-collinear calculation.
   lattice.R = {5.10509515, -3.23993545, 0.00000000, 5.10509515, 3.23993545,
                0.00000000, -6.49690625, 0.00000000, 7.08268015};

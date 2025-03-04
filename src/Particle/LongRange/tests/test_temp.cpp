@@ -36,18 +36,18 @@ struct EslerCoulomb3D
  */
 TEST_CASE("temp3d", "[lrhandler]")
 {
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
-  Lattice.BoxBConds     = true;
-  Lattice.LR_dim_cutoff = 30.;
-  Lattice.R.diagonal(5.0);
-  Lattice.reset();
-  CHECK(Approx(Lattice.Volume) == 125);
-  Lattice.SetLRCutoffs(Lattice.Rv);
-  //Lattice.printCutoffs(app_log());
-  CHECK(Approx(Lattice.LR_rc) == 2.5);
-  CHECK(Approx(Lattice.LR_kc) == 12);
+  Lattice lattice;
+  lattice.BoxBConds     = true;
+  lattice.LR_dim_cutoff = 30.;
+  lattice.R.diagonal(5.0);
+  lattice.reset();
+  CHECK(Approx(lattice.Volume) == 125);
+  lattice.SetLRCutoffs(lattice.Rv);
+  //lattice.printCutoffs(app_log());
+  CHECK(Approx(lattice.LR_rc) == 2.5);
+  CHECK(Approx(lattice.LR_kc) == 12);
 
-  const SimulationCell simulation_cell(Lattice);
+  const SimulationCell simulation_cell(lattice);
   ParticleSet ref(simulation_cell);       // handler needs ref.getSimulationCell().getKLists()
   ref.createSK();
   LRHandlerTemp<EslerCoulomb3D, LPQHIBasis> handler(ref);

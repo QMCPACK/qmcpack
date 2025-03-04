@@ -129,7 +129,7 @@ void check_force_copy(ForceChiesaPBCAA& force, ForceChiesaPBCAA& force2)
 // PBC case
 TEST_CASE("Chiesa Force", "[hamiltonian]")
 {
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  Lattice lattice;
   lattice.BoxBConds = true; // periodic
   lattice.R.diagonal(5.0);
   lattice.LR_dim_cutoff = 25;
