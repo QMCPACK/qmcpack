@@ -55,7 +55,7 @@ void test_LCAO_DiamondC_2x1x1_real(const bool useOffload)
   REQUIRE(doc_lattice.parseFromString(particles));
 
   // read lattice
-  ParticleSet::ParticleLayout lattice;
+  Lattice lattice;
   LatticeParser lp(lattice);
   lp.put(doc_lattice.getRoot());
   lattice.print(app_log(), 0);
@@ -472,7 +472,7 @@ void test_LCAO_DiamondC_2x1x1_cplx(const bool useOffload)
   REQUIRE(doc_lattice.parseFromString(particles));
 
   // read lattice
-  ParticleSet::ParticleLayout lattice;
+  Lattice lattice;
   LatticeParser lp(lattice);
   lp.put(doc_lattice.getRoot());
   lattice.print(app_log(), 0);

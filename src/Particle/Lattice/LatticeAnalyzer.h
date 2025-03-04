@@ -16,6 +16,8 @@
 #ifndef QMCPLUSPLUS_LATTICE_ANALYZER_H
 #define QMCPLUSPLUS_LATTICE_ANALYZER_H
 #include "OhmmsPETE/TinyVector.h"
+#include "CrystalLattice.h"
+
 namespace qmcplusplus
 {
 /** enumeration for DTD_BConds specialization
@@ -38,7 +40,10 @@ enum
 };
 
 
-///generic class to analyze a Lattice
+/** generic class to analyze a Lattice
+ *  NOTE: There is no constructor but operator() should be considered one in most
+ *        cases as the "class" is invalid until it is called since mySC is not intialized.
+ */
 template<typename T, unsigned D>
 struct LatticeAnalyzer
 {};
