@@ -143,13 +143,13 @@ optJ123 = generate_qmcpack(
 from qmcpack_input import spindensity
 sdens = spindensity(
     dr = (0.05, 0.05, 0.05),   # Bohr units
-    #grid = (100,100,100),  # Alternative to dr, an NxNxN grid can be specified
+    #grid = (100,100,100),     # Alternative to dr, an NxNxN grid can be specified
     )
 
 #===== Magnetization density =====
 from qmcpack_input import magnetizationdensity
 magdens = magnetizationdensity(
-    dr         = (0.05, 0.05, 0.05),   # Grid spacing in Bohr (matching spin density)
+    dr         = (0.05, 0.05, 0.05),    # Grid spacing in Bohr (matching spin density)
     integrator = 'simpsons',            # Integration method
     samples    = 9,                     # Number of samples for integration
 )
