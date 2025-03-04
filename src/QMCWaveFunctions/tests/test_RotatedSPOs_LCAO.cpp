@@ -675,11 +675,11 @@ TEST_CASE("Rotated LCAO rotation consistency", "[qmcapp]")
   // versus the regular coefficients.
   // The coefficient matrices should match after the same rotations are applied to each.
   SPOSetPtr spoptr     = sdet->getPhi(0);
-  RotatedSPOs* rot_spo = dynamic_cast<RotatedSPOs*>(spoptr);
+  RotatedSPOs<ValueType>* rot_spo = dynamic_cast<RotatedSPOs<ValueType>*>(spoptr);
   REQUIRE(rot_spo != nullptr);
 
   SPOSetPtr spoptr1           = sdet->getPhi(1);
-  RotatedSPOs* global_rot_spo = dynamic_cast<RotatedSPOs*>(spoptr1);
+  RotatedSPOs<ValueType>* global_rot_spo = dynamic_cast<RotatedSPOs<ValueType>*>(spoptr1);
   REQUIRE(global_rot_spo != nullptr);
 
   std::vector<RealType> params1 = {0.1, 0.2};

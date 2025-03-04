@@ -93,11 +93,12 @@ DiracDeterminantBatched<PL, VT, FPVT>::DiracDeterminantBatched(std::unique_ptr<S
   static_assert(std::is_same<SPOSet::ValueType, typename UpdateEngine::Value>::value);
   resize(NumPtcls, NumPtcls);
 
-#ifndef QMC_COMPLEX
-  RotatedSPOs* rot_spo = dynamic_cast<RotatedSPOs*>(Phi.get());
-  if (rot_spo)
-    rot_spo->buildOptVariables(NumPtcls);
-#endif
+  if constexpr(IsReal_t<ValueType>::value)
+  {
+    RotatedSPOs<ValueType>* rot_spo = dynamic_cast<RotatedSPOs<ValueType>*>(Phi.get());
+    if (rot_spo)
+      rot_spo->buildOptVariables(NumPtcls);
+  }
 }
 
 template<PlatformKind PL, typename VT, typename FPVT>

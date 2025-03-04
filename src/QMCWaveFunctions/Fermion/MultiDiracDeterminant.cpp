@@ -1174,7 +1174,7 @@ void MultiDiracDeterminant::buildOptVariables(std::vector<size_t>& C2node)
 
 
 #ifndef QMC_COMPLEX
-  RotatedSPOs* rot_spo = dynamic_cast<RotatedSPOs*>(Phi.get());
+  RotatedSPOs<ValueType>* rot_spo = dynamic_cast<RotatedSPOs<ValueType>*>(Phi.get());
   if (rot_spo)
     rot_spo->buildOptVariables(m_act_rot_inds, full_rot_inds);
 #endif

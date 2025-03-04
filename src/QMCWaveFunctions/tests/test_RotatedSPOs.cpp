@@ -40,6 +40,7 @@ namespace qmcplusplus
 TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
 {
   using RealType = QMCTraits::RealType;
+  using ValueType = SPOSet::ValueType;
 
   /*
     BEGIN Boilerplate stuff to make a simple SPOSet. Copied from test_einset.cpp
@@ -106,7 +107,7 @@ TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
 
   spo->storeParamsBeforeRotation();
   // 1.) Make a RotatedSPOs object so that we can use the rotation routines
-  auto rot_spo = std::make_unique<RotatedSPOs>("one_rotated_set", std::move(spo));
+  auto rot_spo = std::make_unique<RotatedSPOs<ValueType>>("one_rotated_set", std::move(spo));
 
   // Sanity check for orbs. Expect 2 electrons, 8 orbitals, & 79507 coefs/orb.
   const auto orbitalsetsize = rot_spo->getOrbitalSetSize();
@@ -284,34 +285,37 @@ TEST_CASE("RotatedSPOs createRotationIndices", "[wavefunction]")
 {
   // No active-active or virtual-virtual rotations
   // Only active-virtual
-  RotatedSPOs::RotationIndices rot_ind;
+
+  using ValueType = SPOSet::ValueType;
+
+  RotatedSPOs<ValueType>::RotationIndices rot_ind;
   int nel = 1;
   int nmo = 3;
-  RotatedSPOs::createRotationIndices(nel, nmo, rot_ind);
+  RotatedSPOs<ValueType>::createRotationIndices(nel, nmo, rot_ind);
   CHECK(rot_ind.size() == 2);
 
   // Full rotation contains all rotations
   // Size should be number of pairs of orbitals: nmo*(nmo-1)/2
-  RotatedSPOs::RotationIndices full_rot_ind;
-  RotatedSPOs::createRotationIndicesFull(nel, nmo, full_rot_ind);
+  RotatedSPOs<ValueType>::RotationIndices full_rot_ind;
+  RotatedSPOs<ValueType>::createRotationIndicesFull(nel, nmo, full_rot_ind);
   CHECK(full_rot_ind.size() == 3);
 
   nel = 2;
-  RotatedSPOs::RotationIndices rot_ind2;
-  RotatedSPOs::createRotationIndices(nel, nmo, rot_ind2);
+  RotatedSPOs<ValueType>::RotationIndices rot_ind2;
+  RotatedSPOs<ValueType>::createRotationIndices(nel, nmo, rot_ind2);
   CHECK(rot_ind2.size() == 2);
 
-  RotatedSPOs::RotationIndices full_rot_ind2;
-  RotatedSPOs::createRotationIndicesFull(nel, nmo, full_rot_ind2);
+  RotatedSPOs<ValueType>::RotationIndices full_rot_ind2;
+  RotatedSPOs<ValueType>::createRotationIndicesFull(nel, nmo, full_rot_ind2);
   CHECK(full_rot_ind2.size() == 3);
 
   nmo = 4;
-  RotatedSPOs::RotationIndices rot_ind3;
-  RotatedSPOs::createRotationIndices(nel, nmo, rot_ind3);
+  RotatedSPOs<ValueType>::RotationIndices rot_ind3;
+  RotatedSPOs<ValueType>::createRotationIndices(nel, nmo, rot_ind3);
   CHECK(rot_ind3.size() == 4);
 
-  RotatedSPOs::RotationIndices full_rot_ind3;
-  RotatedSPOs::createRotationIndicesFull(nel, nmo, full_rot_ind3);
+  RotatedSPOs<ValueType>::RotationIndices full_rot_ind3;
+  RotatedSPOs<ValueType>::createRotationIndicesFull(nel, nmo, full_rot_ind3);
   CHECK(full_rot_ind3.size() == 6);
 }
 
@@ -320,16 +324,16 @@ TEST_CASE("RotatedSPOs constructAntiSymmetricMatrix", "[wavefunction]")
   using ValueType   = SPOSet::ValueType;
   using ValueMatrix = SPOSet::ValueMatrix;
 
-  RotatedSPOs::RotationIndices rot_ind;
+  RotatedSPOs<ValueType>::RotationIndices rot_ind;
   int nel = 1;
   int nmo = 3;
-  RotatedSPOs::createRotationIndices(nel, nmo, rot_ind);
+  RotatedSPOs<ValueType>::createRotationIndices(nel, nmo, rot_ind);
 
   ValueMatrix m3(nmo, nmo);
   m3                            = ValueType(0);
   std::vector<ValueType> params = {0.1, 0.2};
 
-  RotatedSPOs::constructAntiSymmetricMatrix(rot_ind, params, m3);
+  RotatedSPOs<ValueType>::constructAntiSymmetricMatrix(rot_ind, params, m3);
 
   // clang-format off
   std::vector<ValueType> expected_data = { 0.0,  -0.1, -0.2,
@@ -343,7 +347,7 @@ TEST_CASE("RotatedSPOs constructAntiSymmetricMatrix", "[wavefunction]")
   CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
 
   std::vector<ValueType> params_out(2);
-  RotatedSPOs::extractParamsFromAntiSymmetricMatrix(rot_ind, m3, params_out);
+  RotatedSPOs<ValueType>::extractParamsFromAntiSymmetricMatrix(rot_ind, m3, params_out);
   //Using ComplexApprox handles real or complex builds.  In any case, no imaginary component expected.
   CHECK(std::real(params_out[0]) == Approx(0.1));
   CHECK(std::real(params_out[1]) == Approx(0.2));
@@ -358,7 +362,7 @@ TEST_CASE("RotatedSPOs exponentiate matrix", "[wavefunction]")
 
   std::vector<SPOSet::ValueType> mat1_data = {0.0};
   SPOSet::ValueMatrix m1(mat1_data.data(), 1, 1);
-  RotatedSPOs::exponentiate_antisym_matrix(m1);
+  RotatedSPOs<ValueType>::exponentiate_antisym_matrix(m1);
   // Always return 1.0 (the only possible anti-symmetric 1x1 matrix is 0)
   CHECK(m1(0, 0) == ValueApprox(1.0));
 
@@ -368,7 +372,7 @@ TEST_CASE("RotatedSPOs exponentiate matrix", "[wavefunction]")
   // clang-format on
 
   SPOSet::ValueMatrix m2(mat2_data.data(), 2, 2);
-  RotatedSPOs::exponentiate_antisym_matrix(m2);
+  RotatedSPOs<ValueType>::exponentiate_antisym_matrix(m2);
 
   // clang-format off
   std::vector<ValueType> expected_rot2 = {  0.995004165278026,  -0.0998334166468282,
@@ -395,7 +399,7 @@ TEST_CASE("RotatedSPOs exponentiate matrix", "[wavefunction]")
   ValueMatrix m3(m3_input_data.data(), 3, 3);
   ValueMatrix expected_m3(expected_rot3.data(), 3, 3);
 
-  RotatedSPOs::exponentiate_antisym_matrix(m3);
+  RotatedSPOs<ValueType>::exponentiate_antisym_matrix(m3);
 
   CheckMatrixResult check_matrix_result3 = checkMatrix(m3, expected_m3, true);
   CHECKED_ELSE(check_matrix_result3.result) { FAIL(check_matrix_result3.result_message); }
@@ -431,7 +435,7 @@ TEST_CASE("RotatedSPOs log matrix", "[wavefunction]")
   std::vector<SPOSet::ValueType> mat1_data = {1.0};
   SPOSet::ValueMatrix m1(mat1_data.data(), 1, 1);
   SPOSet::ValueMatrix out_m1(1, 1);
-  RotatedSPOs::log_antisym_matrix(m1, out_m1);
+  RotatedSPOs<ValueType>::log_antisym_matrix(m1, out_m1);
   // Should always be 1.0 (the only possible anti-symmetric 1x1 matrix is 0)
   CHECK(out_m1(0, 0) == ValueApprox(0.0));
 
@@ -445,7 +449,7 @@ TEST_CASE("RotatedSPOs log matrix", "[wavefunction]")
 
   ValueMatrix rot_m2(start_rot2.data(), 2, 2);
   ValueMatrix out_m2(2, 2);
-  RotatedSPOs::log_antisym_matrix(rot_m2, out_m2);
+  RotatedSPOs<ValueType>::log_antisym_matrix(rot_m2, out_m2);
 
   SPOSet::ValueMatrix m2(mat2_data.data(), 2, 2);
   CheckMatrixResult check_matrix_result2 = checkMatrix(m2, out_m2, true);
@@ -462,7 +466,7 @@ TEST_CASE("RotatedSPOs log matrix", "[wavefunction]")
   // clang-format on
   ValueMatrix rot_m3(start_rot3.data(), 3, 3);
   ValueMatrix out_m3(3, 3);
-  RotatedSPOs::log_antisym_matrix(rot_m3, out_m3);
+  RotatedSPOs<ValueType>::log_antisym_matrix(rot_m3, out_m3);
 
   SPOSet::ValueMatrix m3(m3_input_data.data(), 3, 3);
   CheckMatrixResult check_matrix_result3 = checkMatrix(m3, out_m3, true);
@@ -500,29 +504,29 @@ TEST_CASE("RotatedSPOs exp-log matrix", "[wavefunction]")
   using ValueType   = SPOSet::ValueType;
   using ValueMatrix = SPOSet::ValueMatrix;
 
-  RotatedSPOs::RotationIndices rot_ind;
+  RotatedSPOs<ValueType>::RotationIndices rot_ind;
   int nel = 2;
   int nmo = 4;
-  RotatedSPOs::createRotationIndices(nel, nmo, rot_ind);
+  RotatedSPOs<ValueType>::createRotationIndices(nel, nmo, rot_ind);
 
   ValueMatrix rot_m4(nmo, nmo);
   rot_m4 = ValueType(0);
 
   std::vector<ValueType> params4 = {-1.1, 1.5, 0.2, -0.15};
 
-  RotatedSPOs::constructAntiSymmetricMatrix(rot_ind, params4, rot_m4);
+  RotatedSPOs<ValueType>::constructAntiSymmetricMatrix(rot_ind, params4, rot_m4);
   ValueMatrix orig_rot_m4 = rot_m4;
   ValueMatrix out_m4(nmo, nmo);
 
-  RotatedSPOs::exponentiate_antisym_matrix(rot_m4);
+  RotatedSPOs<ValueType>::exponentiate_antisym_matrix(rot_m4);
 
-  RotatedSPOs::log_antisym_matrix(rot_m4, out_m4);
+  RotatedSPOs<ValueType>::log_antisym_matrix(rot_m4, out_m4);
 
   CheckMatrixResult check_matrix_result4 = checkMatrix(out_m4, orig_rot_m4, true);
   CHECKED_ELSE(check_matrix_result4.result) { FAIL(check_matrix_result4.result_message); }
 
   std::vector<ValueType> params4out(4);
-  RotatedSPOs::extractParamsFromAntiSymmetricMatrix(rot_ind, out_m4, params4out);
+  RotatedSPOs<ValueType>::extractParamsFromAntiSymmetricMatrix(rot_ind, out_m4, params4out);
   for (int i = 0; i < params4.size(); i++)
   {
     CHECK(std::real(params4[i]) == Approx(std::real(params4out[i])));
@@ -615,7 +619,7 @@ TEST_CASE("RotatedSPOs hcpBe", "[wavefunction]")
   REQUIRE(spo);
 
   spo->storeParamsBeforeRotation();
-  auto rot_spo = std::make_unique<RotatedSPOs>("one_rotated_set", std::move(spo));
+  auto rot_spo = std::make_unique<RotatedSPOs<QMCTraits::ValueType>>("one_rotated_set", std::move(spo));
 
   // Sanity check for orbs. Expect 1 electron, 2 orbitals
   const auto orbitalsetsize = rot_spo->getOrbitalSetSize();
@@ -679,10 +683,10 @@ TEST_CASE("RotatedSPOs construct delta matrix", "[wavefunction]")
 
   int nel = 2;
   int nmo = 4;
-  RotatedSPOs::RotationIndices rot_ind;
-  RotatedSPOs::createRotationIndices(nel, nmo, rot_ind);
-  RotatedSPOs::RotationIndices full_rot_ind;
-  RotatedSPOs::createRotationIndicesFull(nel, nmo, full_rot_ind);
+  RotatedSPOs<ValueType>::RotationIndices rot_ind;
+  RotatedSPOs<ValueType>::createRotationIndices(nel, nmo, rot_ind);
+  RotatedSPOs<ValueType>::RotationIndices full_rot_ind;
+  RotatedSPOs<ValueType>::createRotationIndicesFull(nel, nmo, full_rot_ind);
   // rot_ind size is 4 and full rot_ind size is 6
 
   ValueMatrix rot_m4(nmo, nmo);
@@ -697,7 +701,7 @@ TEST_CASE("RotatedSPOs construct delta matrix", "[wavefunction]")
   std::vector<ValueType> delta_params = {0.1, 0.3, 0.2, -0.1};
   std::vector<ValueType> new_params(6);
 
-  RotatedSPOs::constructDeltaRotation(delta_params, old_params, rot_ind, full_rot_ind, new_params, rot_m4);
+  RotatedSPOs<ValueType>::constructDeltaRotation(delta_params, old_params, rot_ind, full_rot_ind, new_params, rot_m4);
 
   // clang-format off
   std::vector<ValueType> rot_data4 =
@@ -723,16 +727,23 @@ TEST_CASE("RotatedSPOs construct delta matrix", "[wavefunction]")
 
   std::vector<ValueType> new_params2(6);
   std::vector<ValueType> reverse_delta_params = {-0.1, -0.3, -0.2, 0.1};
-  RotatedSPOs::constructDeltaRotation(reverse_delta_params, new_params, rot_ind, full_rot_ind, new_params2, rot_m4);
+  RotatedSPOs<ValueType>::constructDeltaRotation(reverse_delta_params, new_params, rot_ind, full_rot_ind, new_params2, rot_m4);
   for (int i = 0; i < new_params2.size(); i++)
     CHECK(new_params2[i] == ValueApprox(old_params[i]));
 }
 
 namespace testing
 {
-const opt_variables_type& getMyVars(RotatedSPOs& rot) { return rot.myVars; }
-const std::vector<QMCTraits::ValueType>& getMyVarsFull(RotatedSPOs& rot) { return rot.myVarsFull_; }
-const std::vector<std::vector<QMCTraits::ValueType>>& getHistoryParams(RotatedSPOs& rot) { return rot.history_params_; }
+template<typename U>
+const opt_variables_type& getMyVars(RotatedSPOs<U>& rot) { return rot.myVars; }
+
+template<typename U>
+const std::vector<typename RotatedSPOs<U>::ValueType>&
+  getMyVarsFull(RotatedSPOs<U>& rot) { return rot.myVarsFull_; }
+
+template<typename U>
+const std::vector<std::vector<typename RotatedSPOs<U>::ValueType>>&
+  getHistoryParams(RotatedSPOs<U>& rot) { return rot.history_params_; }
 } // namespace testing
 
 // Test using global rotation
@@ -742,7 +753,7 @@ TEST_CASE("RotatedSPOs read and write parameters", "[wavefunction]")
   //This needs to be fixed in a future PR.
   auto fake_spo = std::make_unique<FakeSPO<QMCTraits::ValueType>>();
   fake_spo->setOrbitalSetSize(4);
-  RotatedSPOs rot("fake_rot", std::move(fake_spo));
+  RotatedSPOs<QMCTraits::ValueType> rot("fake_rot", std::move(fake_spo));
   int nel = 2;
   rot.buildOptVariables(nel);
 
@@ -765,7 +776,7 @@ TEST_CASE("RotatedSPOs read and write parameters", "[wavefunction]")
   auto fake_spo2 = std::make_unique<FakeSPO<QMCTraits::ValueType>>();
   fake_spo2->setOrbitalSetSize(4);
 
-  RotatedSPOs rot2("fake_rot", std::move(fake_spo2));
+  RotatedSPOs<QMCTraits::ValueType> rot2("fake_rot", std::move(fake_spo2));
   rot2.buildOptVariables(nel);
 
   optimize::VariableSet vs2;
@@ -793,7 +804,7 @@ TEST_CASE("RotatedSPOs read and write parameters history", "[wavefunction]")
   //Problem with h5 parameter parsing for complex build.  To be fixed in future PR.
   auto fake_spo = std::make_unique<FakeSPO<QMCTraits::ValueType>>();
   fake_spo->setOrbitalSetSize(4);
-  RotatedSPOs rot("fake_rot", std::move(fake_spo));
+  RotatedSPOs<QMCTraits::ValueType> rot("fake_rot", std::move(fake_spo));
   rot.set_use_global_rotation(false);
   int nel = 2;
   rot.buildOptVariables(nel);
@@ -817,7 +828,7 @@ TEST_CASE("RotatedSPOs read and write parameters history", "[wavefunction]")
   auto fake_spo2 = std::make_unique<FakeSPO<QMCTraits::ValueType>>();
   fake_spo2->setOrbitalSetSize(4);
 
-  RotatedSPOs rot2("fake_rot", std::move(fake_spo2));
+  RotatedSPOs<QMCTraits::ValueType> rot2("fake_rot", std::move(fake_spo2));
   rot2.buildOptVariables(nel);
 
   optimize::VariableSet vs2;
@@ -947,8 +958,8 @@ TEST_CASE("RotatedSPOs mw_ APIs", "[wavefunction]")
     //In the case that the underlying SPOSet doesn't specialize the mw_ API,
     //the underlying SPOSet will fall back to the default SPOSet mw_, which is
     //just a loop over the single walker API.
-    RotatedSPOs rot_spo0("rotated0", std::make_unique<DummySPOSetWithoutMW>("no mw 0"));
-    RotatedSPOs rot_spo1("rotated1", std::make_unique<DummySPOSetWithoutMW>("no mw 1"));
+    RotatedSPOs<QMCTraits::ValueType> rot_spo0("rotated0", std::make_unique<DummySPOSetWithoutMW>("no mw 0"));
+    RotatedSPOs<QMCTraits::ValueType> rot_spo1("rotated1", std::make_unique<DummySPOSetWithoutMW>("no mw 1"));
     RefVectorWithLeader<SPOSet> spo_list(rot_spo0, {rot_spo0, rot_spo1});
 
     ResourceCollection spo_res("test_rot_res");
@@ -1006,8 +1017,8 @@ TEST_CASE("RotatedSPOs mw_ APIs", "[wavefunction]")
     //loops over single walker APIs (which have different values enforced in
     // DummySPOSetWithoutMW
 
-    RotatedSPOs rot_spo0("rotated0", std::make_unique<DummySPOSetWithMW>("mw 0"));
-    RotatedSPOs rot_spo1("rotated1", std::make_unique<DummySPOSetWithMW>("mw 1"));
+    RotatedSPOs<QMCTraits::ValueType> rot_spo0("rotated0", std::make_unique<DummySPOSetWithMW>("mw 0"));
+    RotatedSPOs<QMCTraits::ValueType> rot_spo1("rotated1", std::make_unique<DummySPOSetWithMW>("mw 1"));
     RefVectorWithLeader<SPOSet> spo_list(rot_spo0, {rot_spo0, rot_spo1});
 
     ResourceCollection spo_res("test_rot_res");

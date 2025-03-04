@@ -98,7 +98,7 @@ std::unique_ptr<SPOSet> SPOSetBuilder::createSPOSet(xmlNodePtr cur)
     if (!sposet_ref.isRotationSupported())
       myComm->barrier_and_abort("Orbital rotation not supported with '" + sposet_ref.getName() + "' of type '" +
                                 sposet_ref.getClassName() + "'.");
-    auto rot_spo    = std::make_unique<RotatedSPOs>(sposet_ref.getName(), std::move(sposet));
+    auto rot_spo    = std::make_unique<RotatedSPOs<SPOSet::ValueType>>(sposet_ref.getName(), std::move(sposet));
     xmlNodePtr tcur = cur->xmlChildrenNode;
     while (tcur != NULL)
     {
@@ -149,7 +149,7 @@ std::unique_ptr<SPOSet> SPOSetBuilder::createRotatedSPOSet(xmlNodePtr cur)
                               sposet->getClassName() + "'.");
 
   sposet->storeParamsBeforeRotation();
-  auto rot_spo = std::make_unique<RotatedSPOs>(spo_object_name, std::move(sposet));
+  auto rot_spo = std::make_unique<RotatedSPOs<SPOSet::ValueType>>(spo_object_name, std::move(sposet));
 
   if (method == "history")
     rot_spo->set_use_global_rotation(false);

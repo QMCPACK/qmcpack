@@ -42,7 +42,7 @@ DiracDeterminant<DU_TYPE>::DiracDeterminant(std::unique_ptr<SPOSet>&& spos,
 {
   resize(NumPtcls, NumPtcls);
 
-  RotatedSPOs* rot_spo = dynamic_cast<RotatedSPOs*>(Phi.get());
+  RotatedSPOs<ValueType>* rot_spo = dynamic_cast<RotatedSPOs<ValueType>*>(Phi.get());
   if (rot_spo)
     rot_spo->buildOptVariables(NumPtcls);
 }

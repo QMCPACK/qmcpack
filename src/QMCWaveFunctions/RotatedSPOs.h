@@ -13,22 +13,52 @@
 #ifndef QMCPLUSPLUS_ROTATION_HELPER_H
 #define QMCPLUSPLUS_ROTATION_HELPER_H
 
+#include "ParticleBase/ParticleAttrib.h"
 #include "QMCWaveFunctions/SPOSet.h"
 
 
 namespace qmcplusplus
 {
+template<typename T>
 class RotatedSPOs;
+
 namespace testing
 {
-const opt_variables_type& getMyVars(RotatedSPOs& rot);
-const std::vector<QMCTraits::ValueType>& getMyVarsFull(RotatedSPOs& rot);
-const std::vector<std::vector<QMCTraits::ValueType>>& getHistoryParams(RotatedSPOs& rot);
+template<typename U>
+const opt_variables_type& getMyVars(RotatedSPOs<U>& rot);
+template<typename U>
+const std::vector<typename RotatedSPOs<U>::ValueType>& getMyVarsFull(RotatedSPOs<U>& rot);
+template<typename U>
+const std::vector<std::vector<typename RotatedSPOs<U>::ValueType>>& getHistoryParams(RotatedSPOs<U>& rot);
 } // namespace testing
 
-class RotatedSPOs : public SPOSet, public OptimizableObject
+template<typename T>
+class RotatedSPOs : public SPOSetT<T>, public OptimizableObject
 {
 public:
+
+  using SPOSet = SPOSetT<T>;
+
+  // TODO:using Value instead of ValueType
+  using ValueType         = typename SPOSet::ValueType;
+  using IndexType         = typename SPOSet::IndexType;
+  using RealType          = typename SPOSet::RealType;
+  using ComplexType       = typename SPOSet::ComplexType;
+  using GradType          = typename SPOSet::GradType;
+  using ValueMatrix       = typename SPOSet::ValueMatrix;
+  using GradMatrix        = typename SPOSet::GradMatrix;
+  using HessMatrix        = typename SPOSet::HessMatrix;
+  using GGGMatrix         = typename SPOSet::GGGMatrix;
+  using ValueVector       = typename SPOSet::ValueVector;
+  using GradVector        = typename SPOSet::GradVector;
+  using HessVector        = typename SPOSet::HessVector;
+  using GGGVector         = typename SPOSet::GGGVector;
+  using FullPrecValue     = typename SPOSet::FullPrecValue;
+  using OffloadMWVGLArray = typename SPOSet::OffloadMWVGLArray;
+  using OffloadMWVArray   = typename SPOSet::OffloadMWVArray;
+  template<typename DT>
+  using OffloadMatrix     = typename SPOSet::template OffloadMatrix<DT>;
+
   //constructor
   RotatedSPOs(const std::string& my_name, std::unique_ptr<SPOSet>&& spos);
   //destructor
@@ -134,8 +164,8 @@ public:
   //       It represents \frac{\nabla\psi_{J}}{\psi_{J}}
   // myL_J will be used to represent \frac{\nabla^2\psi_{J}}{\psi_{J}} . The Laplacian portion
   // IMPORTANT NOTE:  The value of P.L holds \nabla^2 ln[\psi] but we need  \frac{\nabla^2 \psi}{\psi} and this is what myL_J will hold
-  ParticleSet::ParticleGradient myG_temp, myG_J;
-  ParticleSet::ParticleLaplacian myL_temp, myL_J;
+  ParticleAttrib<GradType> myG_temp, myG_J;
+  ParticleAttrib<ValueType> myL_temp, myL_J;
 
   ValueMatrix Bbar;
   ValueMatrix psiM_inv;
@@ -480,9 +510,16 @@ private:
   /// Use global rotation or history list
   bool use_global_rot_ = true;
 
-  friend const opt_variables_type& testing::getMyVars(RotatedSPOs& rot);
-  friend const std::vector<ValueType>& testing::getMyVarsFull(RotatedSPOs& rot);
-  friend const std::vector<std::vector<ValueType>>& testing::getHistoryParams(RotatedSPOs& rot);
+  template<typename U>
+  friend const opt_variables_type& testing::getMyVars(RotatedSPOs<U>& rot);
+
+  template<typename U>
+  friend const std::vector<typename RotatedSPOs<U>::ValueType>&
+    testing::getMyVarsFull(RotatedSPOs<U>& rot);
+
+  template<typename U>
+  friend const std::vector<std::vector<typename RotatedSPOs<U>::ValueType>>&
+    testing::getHistoryParams(RotatedSPOs<U>& rot);
 };
 
 
