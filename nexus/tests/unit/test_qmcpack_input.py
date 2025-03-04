@@ -2013,7 +2013,7 @@ def test_magnetization_density():
         '<parameter name="grid" > 16 16 16 </parameter>',
         '<parameter name="center" > 0 0 0 </parameter>',
         '<parameter name="corner" > 1 1 1 </parameter>',
-        '<parameter name="integrator" > simpson </parameter>',
+        '<parameter name="integrator" > simpsons </parameter>',
         '<parameter name="samples" > 9 </parameter>',
         '</estimator>'
     ]
@@ -2055,7 +2055,7 @@ def test_magnetization_density():
         '<parameter name="dr" > 0.1 0.1 0.1 </parameter>',
         '<parameter name="center" > 0 0 0 </parameter>',
         '<parameter name="corner" > 1 1 1 </parameter>',
-        '<parameter name="integrator" > simpson </parameter>',
+        '<parameter name="integrator" > simpsons </parameter>',
         '<parameter name="samples" > 9 </parameter>',
         '</estimator>'
     ]
@@ -2118,7 +2118,7 @@ def test_magnetization_density():
         '<parameter name="grid" > 32 32 32 </parameter>',
         '<parameter name="center" > 0 0 0 </parameter>',
         '<parameter name="corner" > 1 1 1 </parameter>',
-        '<parameter name="integrator" > simpson </parameter>',
+        '<parameter name="integrator" > simpsons </parameter>',
         '<parameter name="samples" > 9 </parameter>',
         '</estimator>',
         '</hamiltonian>'
