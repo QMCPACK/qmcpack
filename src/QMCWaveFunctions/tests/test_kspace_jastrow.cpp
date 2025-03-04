@@ -194,10 +194,17 @@ TEST_CASE("kspace jastrow derivatives", "[wavefunction]")
   const int nopt = opt_vars.size();
   Vector<ParticleSet::ValueType> dlogpsi(nopt);
   Vector<ParticleSet::ValueType> dhpsioverpsi(nopt);
-  jas->evaluateDerivatives(elec_, opt_vars, dlogpsi, dhpsioverpsi);
 
   std::vector<double> refvals = {0.17404927, 0.30881786,  0.03441212, 0.31140348,  0.3374628,
                                  0.14393708, -0.17959687, 0.12910817, -0.14896848, 0.2460836};
+
+  dlogpsi = 0;
+  jas->evaluateDerivativesWF(elec_, opt_vars, dlogpsi);
+  for (int i = 0; i < nopt; i++)
+    CHECK(std::real(dlogpsi[i]) == Approx(refvals[i]));
+
+  dlogpsi = 0;
+  jas->evaluateDerivatives(elec_, opt_vars, dlogpsi, dhpsioverpsi);
   for (int i = 0; i < nopt; i++)
     CHECK(std::real(dlogpsi[i]) == Approx(refvals[i]));
 
@@ -238,8 +245,15 @@ TEST_CASE("kspace jastrow derivatives", "[wavefunction]")
   Vector<ParticleSet::ValueType> dlogpsi2(nopt2);
   Vector<ParticleSet::ValueType> dhpsioverpsi2(nopt2);
 
-  j2->evaluateDerivatives(elec_, opt_vars2, dlogpsi2, dhpsioverpsi2);
   std::vector<double> refvals2 = {0.66537659, 0.51973641, 0.71270004, 0.25905169, 0.4381535};
+
+  dlogpsi2 = 0.0;
+  j2->evaluateDerivativesWF(elec_, opt_vars2, dlogpsi2);
+  for (int i = 0; i < nopt2; i++)
+    CHECK(std::real(dlogpsi2[i]) == Approx(refvals2[i]));
+
+  dlogpsi2 = 0.0;
+  j2->evaluateDerivatives(elec_, opt_vars2, dlogpsi2, dhpsioverpsi2);
   for (int i = 0; i < nopt2; i++)
     CHECK(std::real(dlogpsi2[i]) == Approx(refvals2[i]));
 }
