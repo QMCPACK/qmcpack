@@ -39,13 +39,15 @@ inline void insert_columns(const MAT1& small, MAT2& big, int offset_c)
 }
 } // namespace MatrixOperators
 
-CompositeSPOSet::CompositeSPOSet(const std::string& my_name) : SPOSet(my_name)
+template<typename T>
+CompositeSPOSet<T>::CompositeSPOSet(const std::string& my_name) : SPOSetT<T>(my_name)
 {
-  OrbitalSetSize = 0;
+  this->OrbitalSetSize = 0;
   component_offsets.reserve(4);
 }
 
-CompositeSPOSet::CompositeSPOSet(const CompositeSPOSet& other) : SPOSet(other)
+template<typename T>
+CompositeSPOSet<T>::CompositeSPOSet(const CompositeSPOSet& other) : SPOSet(other)
 {
   for (auto& element : other.components)
   {
@@ -53,9 +55,11 @@ CompositeSPOSet::CompositeSPOSet(const CompositeSPOSet& other) : SPOSet(other)
   }
 }
 
-CompositeSPOSet::~CompositeSPOSet() = default;
+template<typename T>
+CompositeSPOSet<T>::~CompositeSPOSet() = default;
 
-void CompositeSPOSet::add(std::unique_ptr<SPOSet> component)
+template<typename T>
+void CompositeSPOSet<T>::add(std::unique_ptr<SPOSet> component)
 {
   if (components.empty())
     component_offsets.push_back(0); //add 0
@@ -67,11 +71,12 @@ void CompositeSPOSet::add(std::unique_ptr<SPOSet> component)
   component_laplacians.emplace_back(norbs);
   component_spin_gradients.emplace_back(norbs);
 
-  OrbitalSetSize += norbs;
-  component_offsets.push_back(OrbitalSetSize);
+  this->OrbitalSetSize += norbs;
+  component_offsets.push_back(this->OrbitalSetSize);
 }
 
-void CompositeSPOSet::report()
+template<typename T>
+void CompositeSPOSet<T>::report()
 {
   app_log() << "CompositeSPOSet" << std::endl;
   app_log() << "  ncomponents = " << components.size() << std::endl;
@@ -83,9 +88,11 @@ void CompositeSPOSet::report()
   }
 }
 
-std::unique_ptr<SPOSet> CompositeSPOSet::makeClone() const { return std::make_unique<CompositeSPOSet>(*this); }
+template<typename T>
+std::unique_ptr<SPOSetT<T>> CompositeSPOSet<T>::makeClone() const { return std::make_unique<CompositeSPOSet>(*this); }
 
-void CompositeSPOSet::evaluateValue(const ParticleSet& P, int iat, ValueVector& psi)
+template<typename T>
+void CompositeSPOSet<T>::evaluateValue(const ParticleSet& P, int iat, ValueVector& psi)
 {
   int n = 0;
   for (int c = 0; c < components.size(); ++c)
@@ -98,7 +105,8 @@ void CompositeSPOSet::evaluateValue(const ParticleSet& P, int iat, ValueVector& 
   }
 }
 
-void CompositeSPOSet::evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi)
+template<typename T>
+void CompositeSPOSet<T>::evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi)
 {
   int n = 0;
   for (int c = 0; c < components.size(); ++c)
@@ -115,12 +123,13 @@ void CompositeSPOSet::evaluateVGL(const ParticleSet& P, int iat, ValueVector& ps
   }
 }
 
-void CompositeSPOSet::evaluateVGL_spin(const ParticleSet& P,
-                                       int iat,
-                                       ValueVector& psi,
-                                       GradVector& dpsi,
-                                       ValueVector& d2psi,
-                                       ValueVector& dspin_psi)
+template<typename T>
+void CompositeSPOSet<T>::evaluateVGL_spin(const ParticleSet& P,
+                                          int iat,
+                                          ValueVector& psi,
+                                          GradVector& dpsi,
+                                          ValueVector& d2psi,
+                                          ValueVector& dspin_psi)
 {
   int n = 0;
   for (int c = 0; c < components.size(); ++c)
@@ -139,12 +148,13 @@ void CompositeSPOSet::evaluateVGL_spin(const ParticleSet& P,
   }
 }
 
-void CompositeSPOSet::evaluate_notranspose(const ParticleSet& P,
-                                           int first,
-                                           int last,
-                                           ValueMatrix& logdet,
-                                           GradMatrix& dlogdet,
-                                           ValueMatrix& d2logdet)
+template<typename T>
+void CompositeSPOSet<T>::evaluate_notranspose(const ParticleSet& P,
+                                              int first,
+                                              int last,
+                                              ValueMatrix& logdet,
+                                              GradMatrix& dlogdet,
+                                              ValueMatrix& d2logdet)
 {
   const int nat = last - first;
   for (int c = 0; c < components.size(); ++c)
@@ -161,12 +171,13 @@ void CompositeSPOSet::evaluate_notranspose(const ParticleSet& P,
   }
 }
 
-void CompositeSPOSet::evaluate_notranspose(const ParticleSet& P,
-                                           int first,
-                                           int last,
-                                           ValueMatrix& logdet,
-                                           GradMatrix& dlogdet,
-                                           HessMatrix& grad_grad_logdet)
+template<typename T>
+void CompositeSPOSet<T>::evaluate_notranspose(const ParticleSet& P,
+                                              int first,
+                                              int last,
+                                              ValueMatrix& logdet,
+                                              GradMatrix& dlogdet,
+                                              HessMatrix& grad_grad_logdet)
 {
   const int nat = last - first;
   for (int c = 0; c < components.size(); ++c)
@@ -183,13 +194,14 @@ void CompositeSPOSet::evaluate_notranspose(const ParticleSet& P,
   }
 }
 
-void CompositeSPOSet::evaluate_notranspose(const ParticleSet& P,
-                                           int first,
-                                           int last,
-                                           ValueMatrix& logdet,
-                                           GradMatrix& dlogdet,
-                                           HessMatrix& grad_grad_logdet,
-                                           GGGMatrix& grad_grad_grad_logdet)
+template<typename T>
+void CompositeSPOSet<T>::evaluate_notranspose(const ParticleSet& P,
+                                              int first,
+                                              int last,
+                                              ValueMatrix& logdet,
+                                              GradMatrix& dlogdet,
+                                              HessMatrix& grad_grad_logdet,
+                                              GGGMatrix& grad_grad_grad_logdet)
 {
   not_implemented("evaluate_notranspose(P,first,last,logdet,dlogdet,ddlogdet,dddlogdet)");
 }
@@ -204,7 +216,7 @@ std::unique_ptr<SPOSet> CompositeSPOSetBuilder::createSPOSetFromXML(xmlNodePtr c
     return nullptr;
   }
 
-  auto spo_now = std::make_unique<CompositeSPOSet>(getXMLAttributeValue(cur, "name"));
+  auto spo_now = std::make_unique<CompositeSPOSet<ValueType>>(getXMLAttributeValue(cur, "name"));
   for (int i = 0; i < spolist.size(); ++i)
   {
     const SPOSet* spo = sposet_builder_factory_.getSPOSet(spolist[i]);
@@ -218,5 +230,12 @@ std::unique_ptr<SPOSet> CompositeSPOSetBuilder::createSPOSet(xmlNodePtr cur, SPO
 {
   return createSPOSetFromXML(cur);
 }
+
+#if !defined(MIXED_PRECISION)
+template class CompositeSPOSet<double>;
+template class CompositeSPOSet<std::complex<double>>;
+#endif
+template class CompositeSPOSet<float>;
+template class CompositeSPOSet<std::complex<float>>;
 
 } // namespace qmcplusplus
