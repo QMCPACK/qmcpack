@@ -91,13 +91,13 @@ TEST_CASE("symmetric_distance_table OpenBC", "[particle]")
 
 TEST_CASE("symmetric_distance_table PBC", "[particle]")
 {
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
-  Lattice.BoxBConds = true; // periodic
-  Lattice.R = ParticleSet::Tensor_t(6.74632230, 6.74632230, 0.00000000, 0.00000000, 3.37316115, 3.37316115, 3.37316115,
+  Lattice lattice;
+  lattice.BoxBConds = true; // periodic
+  lattice.R = ParticleSet::Tensor_t(6.74632230, 6.74632230, 0.00000000, 0.00000000, 3.37316115, 3.37316115, 3.37316115,
                                     0.00000000, 3.37316115);
-  Lattice.reset();
+  lattice.reset();
 
-  const SimulationCell simulation_cell(Lattice);
+  const SimulationCell simulation_cell(lattice);
   ParticleSet source(simulation_cell);
 
   source.setName("electrons");
@@ -123,50 +123,50 @@ TEST_CASE("symmetric_distance_table PBC", "[particle]")
 TEST_CASE("particle set lattice with vacuum", "[particle]")
 {
   // PPP case
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
-  Lattice.BoxBConds          = true;
-  Lattice.R                  = {1.0, 2.0, 3.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0};
-  Lattice.explicitly_defined = true;
+  Lattice lattice;
+  lattice.BoxBConds          = true;
+  lattice.R                  = {1.0, 2.0, 3.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0};
+  lattice.explicitly_defined = true;
 
-  Lattice.VacuumScale = 2.0;
-  Lattice.reset();
+  lattice.VacuumScale = 2.0;
+  lattice.reset();
   {
-    const SimulationCell simulation_cell(Lattice);
+    const SimulationCell simulation_cell(lattice);
     ParticleSet source(simulation_cell);
     source.setName("electrons");
     source.createSK();
 
-    CHECK(Lattice.SuperCellEnum == SUPERCELL_BULK);
+    CHECK(lattice.SuperCellEnum == SUPERCELL_BULK);
     CHECK(source.getLRBox().R(0, 0) == 1.0);
     CHECK(source.getLRBox().R(0, 1) == 2.0);
     CHECK(source.getLRBox().R(0, 2) == 3.0);
   }
 
   // PPN case
-  Lattice.BoxBConds[2] = false;
-  Lattice.reset();
+  lattice.BoxBConds[2] = false;
+  lattice.reset();
   {
-    const SimulationCell simulation_cell(Lattice);
+    const SimulationCell simulation_cell(lattice);
     ParticleSet source(simulation_cell);
     source.setName("electrons");
     source.createSK();
 
-    CHECK(Lattice.SuperCellEnum == SUPERCELL_SLAB);
+    CHECK(lattice.SuperCellEnum == SUPERCELL_SLAB);
     CHECK(source.getLRBox().R(2, 0) == 0.0);
     CHECK(source.getLRBox().R(2, 1) == 0.0);
     CHECK(source.getLRBox().R(2, 2) == 2.0);
   }
 
   // PNN case
-  Lattice.BoxBConds[1] = false;
-  Lattice.reset();
+  lattice.BoxBConds[1] = false;
+  lattice.reset();
   {
-    const SimulationCell simulation_cell(Lattice);
+    const SimulationCell simulation_cell(lattice);
     ParticleSet source(simulation_cell);
     source.setName("electrons");
     source.createSK();
 
-    CHECK(Lattice.SuperCellEnum == SUPERCELL_WIRE);
+    CHECK(lattice.SuperCellEnum == SUPERCELL_WIRE);
     CHECK(source.getLRBox().R(0, 0) == 1.0);
     CHECK(source.getLRBox().R(0, 1) == 2.0);
     CHECK(source.getLRBox().R(0, 2) == 3.0);

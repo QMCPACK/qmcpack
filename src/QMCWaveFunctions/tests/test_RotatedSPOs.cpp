@@ -48,7 +48,7 @@ TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
   Communicate* c = OHMMS::Controller;
 
   // We get a "Mismatched supercell lattices" error due to default ctor?
-  ParticleSet::ParticleLayout lattice;
+  Lattice lattice;
 
   // diamondC_1x1x1
   lattice.R = {3.37316115, 3.37316115, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
@@ -566,7 +566,7 @@ TEST_CASE("RotatedSPOs hcpBe", "[wavefunction]")
   using RealType = QMCTraits::RealType;
   Communicate* c = OHMMS::Controller;
 
-  ParticleSet::ParticleLayout lattice;
+  Lattice lattice;
   lattice.R = {4.32747284, 0.00000000, 0.00000000, -2.16373642, 3.74770142,
                0.00000000, 0.00000000, 0.00000000, 6.78114995};
 
