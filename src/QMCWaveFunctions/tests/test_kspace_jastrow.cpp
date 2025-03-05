@@ -132,7 +132,7 @@ TEST_CASE("kspace jastrow derivatives", "[wavefunction]")
   xmlNodePtr part1 = xmlFirstElementChild(root);
 
   // read lattice
-  ParticleSet::ParticleLayout lattice;
+  Lattice lattice;
   LatticeParser lp(lattice);
   lp.put(part1);
   lattice.print(app_log(), 0);
@@ -183,6 +183,14 @@ TEST_CASE("kspace jastrow derivatives", "[wavefunction]")
 
   double logpsi_real = std::real(jas->evaluateLog(elec_, elec_.G, elec_.L));
   CHECK(logpsi_real == Approx(0.7137163755813973));
+  CHECK(std::real(elec_.G[0][0]) == Approx(0.0));
+  CHECK(std::real(elec_.G[0][1]) == Approx(-0.35067397));
+  CHECK(std::real(elec_.G[0][2]) == Approx(-1.18746358));
+  CHECK(std::real(elec_.G[1][0]) == Approx(0.0));
+  CHECK(std::real(elec_.G[1][1]) == Approx(-0.5971649));
+  CHECK(std::real(elec_.G[1][2]) == Approx(-1.30622405));
+  CHECK(std::real(elec_.L[0]) == Approx(-9.23735526));
+  CHECK(std::real(elec_.L[1]) == Approx(2.37396869));
 
   opt_variables_type opt_vars;
   jas->checkInVariablesExclusive(opt_vars);
@@ -195,18 +203,24 @@ TEST_CASE("kspace jastrow derivatives", "[wavefunction]")
   Vector<ParticleSet::ValueType> dlogpsi(nopt);
   Vector<ParticleSet::ValueType> dhpsioverpsi(nopt);
 
-  std::vector<double> refvals = {0.17404927, 0.30881786,  0.03441212, 0.31140348,  0.3374628,
-                                 0.14393708, -0.17959687, 0.12910817, -0.14896848, 0.2460836};
+  std::vector<double> refvals1 = {0.17404927, 0.30881786,  0.03441212, 0.31140348,  0.3374628,
+                                  0.14393708, -0.17959687, 0.12910817, -0.14896848, 0.2460836};
+  std::vector<double> refvals2 = {-0.433200292526692,  1.3469998192405797, -0.5970340626326731, 1.6549156762746264,
+                                  2.155972109951776,   0.7377064401570266, -2.33721875453341,   0.20791372534745278,
+                                  -3.0523924081649056, 1.7868809500942717};
+
 
   dlogpsi = 0;
   jas->evaluateDerivativesWF(elec_, opt_vars, dlogpsi);
   for (int i = 0; i < nopt; i++)
-    CHECK(std::real(dlogpsi[i]) == Approx(refvals[i]));
+    CHECK(std::real(dlogpsi[i]) == Approx(refvals1[i]));
 
   dlogpsi = 0;
   jas->evaluateDerivatives(elec_, opt_vars, dlogpsi, dhpsioverpsi);
   for (int i = 0; i < nopt; i++)
-    CHECK(std::real(dlogpsi[i]) == Approx(refvals[i]));
+    CHECK(std::real(dlogpsi[i]) == Approx(refvals1[i]));
+  for (int i = 0; i < nopt; i++)
+    CHECK(std::real(dhpsioverpsi[i]) == Approx(refvals2[i]));
 
   // Twobody check
   const char* jk2input = R"(<tmp>
@@ -231,8 +245,19 @@ TEST_CASE("kspace jastrow derivatives", "[wavefunction]")
 
   // update all distance tables
   elec_.update();
+  elec_.G = 0;
+  elec_.L = 0;
+  //reference values from python code in test directory
   logpsi_real = std::real(j2->evaluateLog(elec_, elec_.G, elec_.L));
   CHECK(logpsi_real == Approx(1.3399793683));
+  CHECK(std::real(elec_.G[0][0]) == Approx(0.0));
+  CHECK(std::real(elec_.G[0][1]) == Approx(1.37913407));
+  CHECK(std::real(elec_.G[0][2]) == Approx(2.47457664));
+  CHECK(std::real(elec_.G[1][0]) == Approx(0.0));
+  CHECK(std::real(elec_.G[1][1]) == Approx(-1.37913407));
+  CHECK(std::real(elec_.G[1][2]) == Approx(-2.47457664));
+  CHECK(std::real(elec_.L[0]) == Approx(-1.13586493));
+  CHECK(std::real(elec_.L[1]) == Approx(-1.13586493));
 
   opt_variables_type opt_vars2;
   j2->checkInVariablesExclusive(opt_vars2);
@@ -245,16 +270,21 @@ TEST_CASE("kspace jastrow derivatives", "[wavefunction]")
   Vector<ParticleSet::ValueType> dlogpsi2(nopt2);
   Vector<ParticleSet::ValueType> dhpsioverpsi2(nopt2);
 
-  std::vector<double> refvals2 = {0.66537659, 0.51973641, 0.71270004, 0.25905169, 0.4381535};
+  std::vector<double> refvals3 = {0.66537659, 0.51973641, 0.71270004, 0.25905169, 0.4381535};
+  std::vector<double> refvals4 = {-1.2583630528695267, -2.8959032092323866, 4.02906470009512, -11.046492939481567,
+                                  -7.338195726624974};
 
   dlogpsi2 = 0.0;
   j2->evaluateDerivativesWF(elec_, opt_vars2, dlogpsi2);
   for (int i = 0; i < nopt2; i++)
-    CHECK(std::real(dlogpsi2[i]) == Approx(refvals2[i]));
+    CHECK(std::real(dlogpsi2[i]) == Approx(refvals3[i]));
 
-  dlogpsi2 = 0.0;
+  dlogpsi2      = 0.0;
+  dhpsioverpsi2 = 0.0;
   j2->evaluateDerivatives(elec_, opt_vars2, dlogpsi2, dhpsioverpsi2);
   for (int i = 0; i < nopt2; i++)
-    CHECK(std::real(dlogpsi2[i]) == Approx(refvals2[i]));
+    CHECK(std::real(dlogpsi2[i]) == Approx(refvals3[i]));
+  for (int i = 0; i < nopt2; i++)
+    CHECK(std::real(dhpsioverpsi2[i]) == Approx(refvals4[i]));
 }
 } // namespace qmcplusplus
