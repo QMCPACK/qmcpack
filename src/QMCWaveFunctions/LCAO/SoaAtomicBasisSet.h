@@ -811,7 +811,7 @@ public:
         correctphase_ptr[i_e] = RealType(1.0);
 #else
 
-      PRAGMA_OFFLOAD(" omp target teams distribute parallel for \
+      PRAGMA_OFFLOAD("omp target teams distribute parallel for \
                       is_device_ptr(Tv_list_ptr, correctphase_ptr) ")
       for (size_t i_e = 0; i_e < nElec; i_e++)
       {
