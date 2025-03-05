@@ -780,10 +780,10 @@ public:
     auto& correctphase = atom_bs_leader.mw_mem_handle_.getResource().correctphase;
     correctphase.resize(nElec);
 
-    auto* dr_ptr                           = dr.device_data();
-    auto* r_ptr                            = r.device_data();
+    auto* dr_ptr = dr.device_data();
+    auto* r_ptr  = r.device_data();
 
-    auto* correctphase_ptr                 = correctphase.device_data();
+    auto* correctphase_ptr = correctphase.device_data();
 
     ///Updated From Distance table in SoaLocalizedBasisSet.cpp
     auto* displ_list_ptr = displ_list.device_data();
@@ -985,10 +985,10 @@ public:
     auto& correctphase = atom_bs_leader.mw_mem_handle_.getResource().correctphase;
     correctphase.resize(nElec);
 
-    auto* dr_ptr                           = dr.device_data();
-    auto* r_ptr                            = r.device_data();
+    auto* dr_ptr = dr.device_data();
+    auto* r_ptr  = r.device_data();
 
-    auto* correctphase_ptr                 = correctphase.device_data();
+    auto* correctphase_ptr = correctphase.device_data();
 
     //Values updated to Device in SoaLocalizedBasisSet.cpp
     auto* Tv_list_ptr    = Tv_list.device_data();
@@ -1058,8 +1058,8 @@ public:
       auto* psi_ptr       = psi.device_data();
       const int bset_size = BasisSetSize;
 
-      auto* ylm_ptr       = ylm_v.device_data();
-      auto* rnl_ptr       = rnl_v.device_data();
+      auto* ylm_ptr = ylm_v.device_data();
+      auto* rnl_ptr = rnl_v.device_data();
       PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2)\
                       is_device_ptr(phase_fac_ptr, LM_ptr, NL_ptr, \
                                   psi_ptr, correctphase_ptr, \

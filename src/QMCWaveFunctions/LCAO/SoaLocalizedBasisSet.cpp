@@ -230,7 +230,7 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateVGL(const RefVectorWithLeader<S
   auto& displ_list_tr = basis_leader.mw_mem_handle_.getResource().displ_list_tr;
   Tv_list.resize(3 * NumCenters * Nw);
   displ_list_tr.resize(3 * NumCenters * Nw);
- 
+
   for (size_t iw = 0; iw < P_list.size(); iw++)
   {
     const auto& coordR  = P_list[iw].activeR(iat);
@@ -243,7 +243,7 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateVGL(const RefVectorWithLeader<S
         displ_list_tr[idim + 3 * (iw + c * Nw)] = displ[c][idim];
       }
   }
-  
+
 #if defined(QMC_COMPLEX)
   Tv_list.updateTo();
 #endif
@@ -256,7 +256,6 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateVGL(const RefVectorWithLeader<S
     LOBasisSet[IonID[c]]->mw_evaluateVGL(one_species_basis_list, pset_leader.getLattice(), vgl_v, displ_list_tr,
                                          Tv_list, Nw, BasisSetSize, c, BasisOffset[c], NumCenters);
   }
-  
 }
 
 
