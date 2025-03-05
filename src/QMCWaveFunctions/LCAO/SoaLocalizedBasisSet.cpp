@@ -230,20 +230,20 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateVGL(const RefVectorWithLeader<S
   auto& displ_list_tr = basis_leader.mw_mem_handle_.getResource().displ_list_tr;
   Tv_list.resize(3 * NumCenters * Nw);
   displ_list_tr.resize(3 * NumCenters * Nw);
+ 
+  for (size_t iw = 0; iw < P_list.size(); iw++)
   {
-    for (size_t iw = 0; iw < P_list.size(); iw++)
-    {
-      const auto& coordR  = P_list[iw].activeR(iat);
-      const auto& d_table = P_list[iw].getDistTableAB(myTableIndex);
-      const auto& displ   = (P_list[iw].getActivePtcl() == iat) ? d_table.getTempDispls() : d_table.getDisplRow(iat);
-      for (int c = 0; c < NumCenters; c++)
-        for (size_t idim = 0; idim < 3; idim++)
-        {
-          Tv_list[idim + 3 * (iw + c * Nw)]       = (ions_.R[c][idim] - coordR[idim]) - displ[c][idim];
-          displ_list_tr[idim + 3 * (iw + c * Nw)] = displ[c][idim];
-        }
-    }
+    const auto& coordR  = P_list[iw].activeR(iat);
+    const auto& d_table = P_list[iw].getDistTableAB(myTableIndex);
+    const auto& displ   = (P_list[iw].getActivePtcl() == iat) ? d_table.getTempDispls() : d_table.getDisplRow(iat);
+    for (int c = 0; c < NumCenters; c++)
+      for (size_t idim = 0; idim < 3; idim++)
+      {
+        Tv_list[idim + 3 * (iw + c * Nw)]       = (ions_.R[c][idim] - coordR[idim]) - displ[c][idim];
+        displ_list_tr[idim + 3 * (iw + c * Nw)] = displ[c][idim];
+      }
   }
+  
 #if defined(QMC_COMPLEX)
   Tv_list.updateTo();
 #endif
