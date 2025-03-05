@@ -213,7 +213,6 @@ private:
   struct SoaLocalizedBSetMultiWalkerMem;
   /// multi walker resource handle
   ResourceHandle<SoaLocalizedBSetMultiWalkerMem> mw_mem_handle_;
-  NewTimer& NumCenter_timer_;
 };
 } // namespace qmcplusplus
 #endif
