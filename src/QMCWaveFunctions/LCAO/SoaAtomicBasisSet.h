@@ -780,15 +780,14 @@ public:
     auto& correctphase = atom_bs_leader.mw_mem_handle_.getResource().correctphase;
     correctphase.resize(nElec);
 
-    auto* correctphase_ptr                 = correctphase.device_data();
-    auto* periodic_image_displacements_ptr = periodic_image_displacements_.device_data();
     auto* dr_ptr                           = dr.device_data();
     auto* r_ptr                            = r.device_data();
+
+    auto* correctphase_ptr                 = correctphase.device_data();
 
     ///Updated From Distance table in SoaLocalizedBasisSet.cpp
     auto* displ_list_ptr = displ_list.device_data();
     auto* Tv_list_ptr    = Tv_list.device_data();
-
 
     constexpr RealType cone(1);
     constexpr RealType ctwo(2);
@@ -828,6 +827,7 @@ public:
 
     {
       ScopedTimer local_timer(nelec_pbc_timer_);
+      auto* periodic_image_displacements_ptr = periodic_image_displacements_.device_data();
       PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) \
                       is_device_ptr(periodic_image_displacements_ptr) \
                       is_device_ptr( dr_ptr, r_ptr, displ_list_ptr) ")
