@@ -29,6 +29,7 @@ set(PARTICLE
     createDistanceTableAA.cpp
     createDistanceTableAB.cpp
     HDFWalkerInputManager.cpp
+    Lattice/CrystalLattice.cpp
     LongRange/KContainer.cpp
     LongRange/StructFact.cpp
     LongRange/LPQHIBasis.cpp

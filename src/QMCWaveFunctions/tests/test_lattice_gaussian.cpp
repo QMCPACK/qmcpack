@@ -36,7 +36,7 @@ TEST_CASE("lattice gaussian", "[wavefunction]")
   Communicate* c;
   c = OHMMS::Controller;
 
-  ParticleSet::ParticleLayout lattice;
+  Lattice lattice;
   // initialize simulationcell for kvectors
   const char* xmltext = R"(<tmp>
   <simulationcell>
