@@ -985,23 +985,18 @@ public:
     auto& correctphase = atom_bs_leader.mw_mem_handle_.getResource().correctphase;
     correctphase.resize(nElec);
 
-    //Assuming These are correctly computed on Device
-    auto* periodic_image_displacements_ptr = periodic_image_displacements_.device_data();
     auto* dr_ptr                           = dr.device_data();
     auto* r_ptr                            = r.device_data();
+
     auto* correctphase_ptr                 = correctphase.device_data();
 
-
     //Values updated to Device in SoaLocalizedBasisSet.cpp
-    auto* displ_list_ptr = displ_list.device_data();
     auto* Tv_list_ptr    = Tv_list.device_data();
-
+    auto* displ_list_ptr = displ_list.device_data();
 
     {
       ScopedTimer local_timer(phase_timer_);
 #if !defined(QMC_COMPLEX)
-
-      auto* correctphase_ptr = correctphase.device_data();
 
       PRAGMA_OFFLOAD("omp target teams distribute parallel for \
                       is_device_ptr(correctphase_ptr) ")
@@ -1026,6 +1021,7 @@ public:
 
     {
       ScopedTimer local_timer(nelec_pbc_timer_);
+      auto* periodic_image_displacements_ptr = periodic_image_displacements_.device_data();
       PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) \
                       is_device_ptr(periodic_image_displacements_ptr) \
                       is_device_ptr( dr_ptr, r_ptr, displ_list_ptr) ")
@@ -1056,17 +1052,14 @@ public:
     {
       ScopedTimer local_timer(psi_timer_);
       ///Phase for PBC containing the phase for the nearest image displacement and the correction due to the Distance table.
-      ///
-      const int bset_size = BasisSetSize;
-
-      // Prefetch pointers to device memory
       auto* phase_fac_ptr = periodic_image_phase_factors_.device_data();
       auto* LM_ptr        = LM.device_data();
       auto* NL_ptr        = NL.device_data();
       auto* psi_ptr       = psi.device_data();
+      const int bset_size = BasisSetSize;
+
       auto* ylm_ptr       = ylm_v.device_data();
       auto* rnl_ptr       = rnl_v.device_data();
-
       PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2)\
                       is_device_ptr(phase_fac_ptr, LM_ptr, NL_ptr, \
                                   psi_ptr, correctphase_ptr, \
