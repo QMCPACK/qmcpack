@@ -155,14 +155,6 @@ struct MultiFunctorAdapter
     vgl.updateTo(); // TODO: remove when eval is offloaded
   }
 
-  inline void batched_evaluateVGL_multiCenter(OffloadArray2D& r,
-                                              OffloadArray4D& vgl,
-                                              RealType Rmax,
-                                              size_t num_centers) const
-  {
-    throw std::runtime_error("MultiFunctorAdapte::batched_evaluateVGL_multiCenter is not implemented and is being called through SoaCartesian. Please contact Developers");
-  }
-
   inline void evaluate(RealType r, RealType* restrict u, RealType* restrict du, RealType* restrict d2u)
   {
     const RealType rinv = RealType(1) / r;
