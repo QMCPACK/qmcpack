@@ -252,14 +252,60 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateVGL(const RefVectorWithLeader<S
 
   displ_list_tr.updateTo();
 
-
   {
     ScopedTimer NumCenter_Wrapper(NumCenter_timer_);
-    for (int c = 0; c < NumCenters; c++)
+
+    // Group centers by species and collect basis offsets
+    const auto& species_names = ions_.getSpeciesSet().speciesName;
+    const int num_species     = species_names.size();
+
+
+    std::vector<std::vector<size_t>> local_species_offsets(num_species);
+    std::vector<std::vector<size_t>> local_species_centers(num_species);
+
+    for (int c = 0; c < NumCenters; ++c)
     {
-      auto one_species_basis_list = extractOneSpeciesBasisRefList(basis_list, IonID[c]);
-      LOBasisSet[IonID[c]]->mw_evaluateVGL(one_species_basis_list, pset_leader.getLattice(), vgl_v, displ_list_tr,
-                                           Tv_list, Nw, BasisSetSize, c, BasisOffset[c], NumCenters);
+      const int species_id = IonID[c];
+      local_species_centers[species_id].push_back(c);
+      local_species_offsets[species_id].push_back(BasisOffset[c]);
+    }
+
+    using PinnedVector = Vector<size_t, OffloadPinnedAllocator<size_t>>;
+    std::vector<PinnedVector> species_centers(num_species);
+    std::vector<PinnedVector> species_basis_offsets(num_species);
+
+
+    for (int species_id = 0; species_id < num_species; ++species_id)
+    {
+      species_centers[species_id].resize(local_species_centers[species_id].size());
+      species_basis_offsets[species_id].resize(local_species_offsets[species_id].size());
+
+
+      // Copy from the std::vector into pinned memory
+      for (size_t i = 0; i < local_species_centers[species_id].size(); i++)
+        species_centers[species_id][i] = local_species_centers[species_id][i];
+
+      for (size_t i = 0; i < local_species_offsets[species_id].size(); i++)
+        species_basis_offsets[species_id][i] = local_species_offsets[species_id][i];
+
+
+      species_centers[species_id].updateTo();
+      species_basis_offsets[species_id].updateTo();
+    }
+
+
+    // Process each species batch
+    for (int species_id = 0; species_id < num_species; ++species_id)
+    {
+      const auto& c_list = species_centers[species_id];
+      if (c_list.size() == 0)
+        continue;
+
+      const auto& basis_offsets   = species_basis_offsets[species_id];
+      auto one_species_basis_list = extractOneSpeciesBasisRefList(basis_list, species_id);
+      LOBasisSet[species_id]->mw_evaluateVGL_batch(one_species_basis_list, pset_leader.getLattice(), vgl_v,
+                                                   displ_list_tr, Tv_list, Nw, BasisSetSize, c_list, basis_offsets,
+                                                   NumCenters);
     }
   }
 }

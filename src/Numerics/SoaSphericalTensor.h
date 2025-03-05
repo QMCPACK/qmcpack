@@ -166,6 +166,53 @@ public:
                        factorL__ptr, factorLM__ptr, factor2L__ptr, norm_factor__ptr, offset);
   }
 
+ /** Multi‐center version (flattened). 
+ *  xyz shape = [nElec * num_centers, nPBC, 3]
+ *  Ylm_vgl shape = [5, (nElec * num_centers), nPBC, nYlm]
+ *
+ */
+inline void batched_evaluateVGL_multiCenter(const OffloadArray3D& xyz, OffloadArray4D& Ylm_vgl, size_t num_centers) const
+{
+    const size_t nElec = xyz.size(0);
+    const size_t Npbc_per_center = xyz.size(1) / num_centers; // Total images = Npbc * num_centers
+    assert(xyz.size(2) == 3);
+    assert(Ylm_vgl.size(0) == 5);
+    assert(Ylm_vgl.size(1) == nElec);
+    assert(Ylm_vgl.size(2) == xyz.size(1));
+    const size_t Nlm = Ylm_vgl.size(3);
+    
+    const size_t total_positions = nElec * Npbc_per_center * num_centers;
+    const size_t offset = Nlm * total_positions;
+
+    auto* xyz_ptr = xyz.device_data();
+    auto* Ylm_vgl_ptr = Ylm_vgl.device_data();
+    auto* factorLM_ptr = factorLM_.device_data();
+    auto* factorL_ptr = factorL_.device_data();
+    auto* factor2L_ptr = factor2L_.device_data();
+    auto* norm_factor_ptr = norm_factor_.device_data();
+
+    PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(3) \
+                    is_device_ptr(factorLM_ptr, factorL_ptr, norm_factor_ptr, factor2L_ptr, xyz_ptr, Ylm_vgl_ptr)")
+    for (size_t i_c = 0; i_c < num_centers; ++i_c) {
+        for (size_t i_e = 0; i_e < nElec; ++i_e) {
+            for (size_t i_pbc = 0; i_pbc < Npbc_per_center; ++i_pbc) {
+                const size_t global_idx = i_pbc + Npbc_per_center * (i_e + i_c * nElec);
+                const size_t xyz_offset = 3 * (i_pbc + Npbc_per_center * (i_e + i_c * nElec));
+                
+                evaluateVGL_impl(xyz_ptr[xyz_offset], 
+                               xyz_ptr[xyz_offset + 1],
+                               xyz_ptr[xyz_offset + 2],
+                               Ylm_vgl_ptr + (global_idx * Nlm),
+                               Lmax,
+                               factorL_ptr,
+                               factorLM_ptr,
+                               factor2L_ptr,
+                               norm_factor_ptr,
+                               offset);
+            }
+        }
+    }
+} 
   ///compute Ylm
   inline void evaluateV(T x, T y, T z)
   {

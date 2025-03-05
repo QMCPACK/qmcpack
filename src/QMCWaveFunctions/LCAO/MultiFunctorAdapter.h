@@ -109,6 +109,15 @@ struct MultiFunctorAdapter
    * @param [out] vgl val/d1/d2 of all radial functions at all electron distances [3(val,d1,d2), Nelec, Npbc, nRnl]
    * @param Rmax radial function and derivs will evaluate to zero for any distance greater than or equal to Rmax
   */
+  inline void batched_evaluateVGL_multiCenter(OffloadArray2D& r,
+                                              OffloadArray4D& vgl,
+                                              RealType Rmax,
+                                              size_t num_centers) const
+  {
+    std::cout << "batched_evaluateVGL_multiCenter in MultiFunctorAdapter NOT IMPLEMENTED. Contact Developers"
+              << std::endl;
+    exit(0);
+  }
   inline void batched_evaluateVGL(OffloadArray2D& r, OffloadArray4D& vgl, RealType Rmax) const
   {
     r.updateFrom(); // TODO: remove when eval is offloaded
