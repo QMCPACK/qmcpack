@@ -183,10 +183,6 @@ public:
     }
   }
 
-  inline void batched_evaluateVGL_multiCenter(const OffloadArray3D& xyz, OffloadArray4D& XYZ_vgl,size_t num_centers) const
-  {
-	 throw std::runtime_error("Implemtnation of batched_evaluateVGL_multiCenter in SoaCartesian Missing. Contact Developers");
-  }
   ///makes a table of \f$ r^l S_l^m \f$ and their gradients up to Lmax.
   void evaluateVGL(T x, T y, T z);
 

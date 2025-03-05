@@ -850,7 +850,7 @@ public:
     // Batched angular evaluation
     {
       ScopedTimer local(ylm_timer_);
-      Ylm.batched_evaluateVGL_multiCenter(dr, ylm_vgl, num_centers);
+      Ylm.batched_evaluateVGL(dr, ylm_vgl);
     }
 
     {
