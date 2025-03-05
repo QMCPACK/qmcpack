@@ -844,7 +844,8 @@ public:
     // Batched radial evaluation
     {
       ScopedTimer local(rnl_timer_);
-      MultiRnl.batched_evaluateVGL_multiCenter(r, rnl_vgl, Rmax, num_centers);
+      //MultiRnl.batched_evaluateVGL_multiCenter(r, rnl_vgl, Rmax, num_centers);
+      MultiRnl.batched_evaluateVGL(r, rnl_vgl, Rmax);
     }
 
     // Batched angular evaluation

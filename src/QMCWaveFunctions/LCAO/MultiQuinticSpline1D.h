@@ -222,7 +222,7 @@ public:
     }
   }
 
-
+/*
   inline void batched_evaluateVGL_multiCenter(const OffloadArray2D& r,
                                               OffloadArray4D& vgl,
                                               T Rmax,
@@ -306,7 +306,7 @@ public:
         }
       }
     }
-  }
+  }*/
 
   /**
    * @brief evaluate value, first deriv, second deriv of MultiQuinticSpline1D for multiple electrons and multiple pbc images
