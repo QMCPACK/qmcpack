@@ -717,25 +717,26 @@ public:
     }
   }
 
-  /**
-   * @brief evaluate VGL for multiple electrons
-   * 
-   * This function should only assign to elements of psi in the range [[0:nElec],[BasisOffset:BasisOffset+BasisSetSize]].
-   * These elements are assumed to be zero when passed to this function.
-   * This function only uses only one center (center_idx) from displ_list
-   * 
-   * @param [in] atom_bs_list multi-walker list of SoaAtomicBasisSet [nWalkers]
-   * @param [in] lattice crystal lattice
-   * @param [in,out] psi_vgl wavefunction vgl for all electrons [5, nElec, nBasTot]
-   * @param [in] displ_list displacement from each electron to each center [NumCenters, nElec, 3] (flattened)
-   * @param [in] Tv_list translation vectors for computing overall phase factor [NumCenters, nElec, 3] (flattened)
-   * @param [in] nElec number of electrons
-   * @param [in] nBasTot total number of basis functions represented in psi_vgl
-   * @param [in] center_idx current center index (for indexing into displ_list)
-   * @param [in] BasisOffset index of first basis function of this center (for indexing into psi_vgl)
-   * @param [in] NumCenters total number of centers in system (for indexing into displ_list)
-   *  
-  */
+ /**
+  * @brief Batched evaluation of VGL for multiple centers of the same species
+  *
+  * This function accumulates contributions from multiple centers of the same atomic species
+  * into the specified basis function range. The basis function values are stored in
+  * psi_vgl[[0:4], [0:nElec-1], [basis_offset: basis_offset + basis_size]].
+  *
+  * @param[in] atom_bs_list     Multi-walker list of SoaAtomicBasisSet (size nWalkers)
+  * @param[in] lattice          Crystal lattice information
+  * @param[in,out] psi_vgl      Output array for VGL values [5][nWalkers][nBasTot]
+  * @param[in] displ_list       Displacement vectors for all centers and walkers
+  *                             (layout: 3 * NumCenters * nWalkers)
+  * @param[in] Tv_list          Phase translation vectors for all centers and walkers
+  *                             (layout: 3 * NumCenters * nWalkers)
+  * @param[in] nWalkers         Number of walkers (P_list.size())
+  * @param[in] nBasTot          Total number of basis functions in the system
+  * @param[in] c_list           List of center indices for this atomic species
+  * @param[in] basis_offsets    Basis function offsets for each center in c_list
+  * @param[in] NumCenters       Total number of centers in the system (for bounds checking)
+ */
   template<typename LAT, typename VT>
   inline void mw_evaluateVGL_batch(const RefVectorWithLeader<SoaAtomicBasisSet>& atom_bs_list,
                                    const LAT& lattice,
@@ -816,7 +817,6 @@ public:
       ScopedTimer local_timer(nelec_pbc_timer_);
       auto* periodic_image_displacements_ptr = periodic_image_displacements_.device_data();
 
-
       PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(3) \
                     is_device_ptr(periodic_image_displacements_ptr, dr_ptr, r_ptr, displ_list_ptr,c_list_ptr)")
       for (size_t i_c = 0; i_c < num_centers; ++i_c)
@@ -841,14 +841,11 @@ public:
       }
     }
 
-    // Batched radial evaluation
     {
       ScopedTimer local(rnl_timer_);
-      //MultiRnl.batched_evaluateVGL_multiCenter(r, rnl_vgl, Rmax, num_centers);
       MultiRnl.batched_evaluateVGL(r, rnl_vgl, Rmax);
     }
 
-    // Batched angular evaluation
     {
       ScopedTimer local(ylm_timer_);
       Ylm.batched_evaluateVGL(dr, ylm_vgl);
@@ -879,11 +876,6 @@ public:
       auto* restrict dpsi_y_ptr = psi_vgl.device_data_at(2, 0, 0);
       auto* restrict dpsi_z_ptr = psi_vgl.device_data_at(3, 0, 0);
       auto* restrict d2psi_ptr  = psi_vgl.device_data_at(4, 0, 0);
-
-      // Get multi-center data pointers
-      auto* correctphase_ptr = atom_bs_leader.mw_mem_handle_.getResource().correctphase.device_data();
-      auto* r_ptr            = r.device_data();
-      auto* dr_ptr           = dr.device_data();
 
       PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(3) \
                   is_device_ptr(ylm_v_ptr, ylm_x_ptr, ylm_y_ptr, ylm_z_ptr, ylm_l_ptr, \
