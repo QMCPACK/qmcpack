@@ -969,7 +969,7 @@ void kSpaceJastrow::evaluateDerivatives(ParticleSet& P,
         PosType Gvec(TwoBodyGvecs[i]);
         ComplexType z = TwoBody_e2iGr_new[i];
         int kk        = myVars.where(TwoBodyVarMap[i]);
-        if (kk > 0)
+        if (kk >= 0)
         {
           convertToReal(dot(P.G[iat], Gvec), tmp_dot);
           //dhpsioverpsi[kk] -= Prefactor*dot(Gvec,Gvec)*(-real(z*qmcplusplus::conj(TwoBody_rhoG[i])) + 1.0) - Prefactor*2.0*real(dot(P.G[iat],Gvec))*imag(qmcplusplus::conj(TwoBody_rhoG[i])*z);
