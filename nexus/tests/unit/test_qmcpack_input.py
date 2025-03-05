@@ -1965,6 +1965,169 @@ def test_excited_state():
 
 
 
+def test_magnetization_density():
+    """Test magnetization density estimator functionality"""
+    from qmcpack_input import QmcpackInput
+    from qmcpack_input import simulation, meta, section
+    from generic import obj
+    import numpy as np
+    # Helper function to find pattern in text allowing for flexible whitespace
+    def pattern_in_text(pattern, text):
+        """Check if pattern exists in text, allowing for flexible whitespace"""
+        # Convert multiple spaces to single space and strip
+        normalized_text = ' '.join(text.split())
+        normalized_pattern = ' '.join(pattern.split())
+        return normalized_pattern in normalized_text
+
+    # Test with grid specification
+    qi_grid = QmcpackInput(
+        simulation(
+            qmcsystem = section(
+                hamiltonian = section(
+                    name = 'h0',
+                    type = 'generic',
+                    estimators = [
+                        section(
+                            name       = 'magnetizationdensity',
+                            type       = 'magnetizationdensity',
+                            report     = 'yes',
+                            grid       = '16 16 16',
+                            center     = '0 0 0',
+                            corner     = '1 1 1',
+                            integrator = 'simpsons',
+                            samples    = 9,
+                        ),
+                    ],
+                ),
+            ),
+        ),
+    )
+    qi_grid.pluralize()
+
+    # Verify XML output structure for grid case
+    text = qi_grid.write()
+    expected_xml_patterns = [
+        '<estimator type="magnetizationdensity"',
+        'name="magnetizationdensity"',
+        'report="yes"',
+        '<parameter name="grid" > 16 16 16 </parameter>',
+        '<parameter name="center" > 0 0 0 </parameter>',
+        '<parameter name="corner" > 1 1 1 </parameter>',
+        '<parameter name="integrator" > simpsons </parameter>',
+        '<parameter name="samples" > 9 </parameter>',
+        '</estimator>'
+    ]
+    for pattern in expected_xml_patterns:
+        assert pattern_in_text(pattern, text), f"Missing or incorrect pattern: {pattern}"
+    assert 'name="dr"' not in text, "dr parameter should not be present"
+
+    # Test with dr specification
+    qi_dr = QmcpackInput(
+        simulation(
+            qmcsystem = section(
+                hamiltonian = section(
+                    name = 'h0',
+                    type = 'generic',
+                    estimators = [
+                        section(
+                            name       = 'magnetizationdensity',
+                            type       = 'magnetizationdensity',
+                            report     = 'yes',
+                            dr         = '0.1 0.1 0.1',
+                            center     = '0 0 0',
+                            corner     = '1 1 1',
+                            integrator = 'simpsons',
+                            samples    = 9,
+                        ),
+                    ],
+                ),
+            ),
+        ),
+    )
+    qi_dr.pluralize()
+
+    # Verify XML output structure for dr case
+    text = qi_dr.write()
+    expected_xml_patterns = [
+        '<estimator type="magnetizationdensity"',
+        'name="magnetizationdensity"',
+        'report="yes"',
+        '<parameter name="dr" > 0.1 0.1 0.1 </parameter>',
+        '<parameter name="center" > 0 0 0 </parameter>',
+        '<parameter name="corner" > 1 1 1 </parameter>',
+        '<parameter name="integrator" > simpsons </parameter>',
+        '<parameter name="samples" > 9 </parameter>',
+        '</estimator>'
+    ]
+    for pattern in expected_xml_patterns:
+        assert pattern_in_text(pattern, text), f"Missing or incorrect pattern: {pattern}"
+    assert 'name="grid"' not in text, "grid parameter should not be present"
+
+    # Test full system setup with grid
+    qi_full = QmcpackInput(
+        meta(
+            lattice  = obj(units='bohr'),
+            position = obj(condition='0', datatype='posArray'),
+        ),
+        simulation(
+            project = section(
+                id='qmc',
+                series=0,
+            ),
+            qmcsystem = section(
+                simulationcell = section(
+                    lattice = np.array([
+                        [10.0, 0.0, 0.0],
+                        [0.0, 10.0, 0.0],
+                        [0.0, 0.0, 10.0]
+                    ]),
+                    bconds = np.array(tuple('ppp')),
+                ),
+                hamiltonian = section(
+                    name = 'h0',
+                    type = 'generic',
+                    estimators = [
+                        section(
+                            name       = 'magnetizationdensity',
+                            type       = 'magnetizationdensity',
+                            report     = 'yes',
+                            grid       = '32 32 32',
+                            center     = '0 0 0',
+                            corner     = '1 1 1',
+                            integrator = 'simpsons',
+                            samples    = 9,
+                        ),
+                    ],
+                ),
+            ),
+        ),
+    )
+    qi_full.pluralize()
+
+    # Verify full system XML output
+    text = qi_full.write()
+    expected_xml_patterns = [
+        '<project id="qmc" series="0"',
+        '<simulationcell>',
+        '<parameter name="lattice" units="bohr"> 10.00000000 0.00000000 0.00000000 0.00000000 10.00000000 0.00000000 0.00000000 0.00000000 10.00000000 </parameter>',
+        '<parameter name="bconds"> p p p </parameter>',
+        '<hamiltonian name="h0" type="generic">',
+        '<estimator type="magnetizationdensity"',
+        'name="magnetizationdensity"',
+        'report="yes"',
+        '<parameter name="grid" > 32 32 32 </parameter>',
+        '<parameter name="center" > 0 0 0 </parameter>',
+        '<parameter name="corner" > 1 1 1 </parameter>',
+        '<parameter name="integrator" > simpsons </parameter>',
+        '<parameter name="samples" > 9 </parameter>',
+        '</estimator>',
+        '</hamiltonian>'
+    ]
+    for pattern in expected_xml_patterns:
+        assert pattern_in_text(pattern, text), f"Missing or incorrect pattern: {pattern}"
+    assert 'name="dr"' not in text, "dr parameter should not be present"
+#end def test_magnetization_density
+
 if versions.seekpath_available:
     def test_symbolic_excited_state():
         from nexus import generate_physical_system

@@ -35,18 +35,18 @@ struct EslerCoulomb3D_ForSRCOUL
  */
 TEST_CASE("srcoul", "[lrhandler]")
 {
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
-  Lattice.BoxBConds     = true;
-  Lattice.LR_dim_cutoff = 30.;
-  Lattice.R.diagonal(5.0);
-  Lattice.reset();
-  CHECK(Lattice.Volume == Approx(125));
-  Lattice.SetLRCutoffs(Lattice.Rv);
-  //Lattice.printCutoffs(app_log());
-  CHECK(Approx(Lattice.LR_rc) == 2.5);
-  CHECK(Approx(Lattice.LR_kc) == 12);
+  Lattice lattice;
+  lattice.BoxBConds     = true;
+  lattice.LR_dim_cutoff = 30.;
+  lattice.R.diagonal(5.0);
+  lattice.reset();
+  CHECK(lattice.Volume == Approx(125));
+  lattice.SetLRCutoffs(lattice.Rv);
+  //lattice.printCutoffs(app_log());
+  CHECK(Approx(lattice.LR_rc) == 2.5);
+  CHECK(Approx(lattice.LR_kc) == 12);
 
-  const SimulationCell simulation_cell(Lattice);
+  const SimulationCell simulation_cell(lattice);
   ParticleSet ref(simulation_cell);       // handler needs ref.getSimulationCell().getKLists()
   ref.createSK();
   LRHandlerSRCoulomb<EslerCoulomb3D_ForSRCOUL, LPQHISRCoulombBasis> handler(ref);
@@ -80,18 +80,18 @@ TEST_CASE("srcoul", "[lrhandler]")
  */
 TEST_CASE("srcoul df", "[lrhandler]")
 {
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
-  Lattice.BoxBConds     = true;
-  Lattice.LR_dim_cutoff = 30.;
-  Lattice.R.diagonal(5.0);
-  Lattice.reset();
-  CHECK(Lattice.Volume == Approx(125));
-  Lattice.SetLRCutoffs(Lattice.Rv);
-  //Lattice.printCutoffs(app_log());
-  CHECK(Approx(Lattice.LR_rc) == 2.5);
-  CHECK(Approx(Lattice.LR_kc) == 12);
+  Lattice lattice;
+  lattice.BoxBConds     = true;
+  lattice.LR_dim_cutoff = 30.;
+  lattice.R.diagonal(5.0);
+  lattice.reset();
+  CHECK(lattice.Volume == Approx(125));
+  lattice.SetLRCutoffs(lattice.Rv);
+  //lattice.printCutoffs(app_log());
+  CHECK(Approx(lattice.LR_rc) == 2.5);
+  CHECK(Approx(lattice.LR_kc) == 12);
 
-  const SimulationCell simulation_cell(Lattice);
+  const SimulationCell simulation_cell(lattice);
   ParticleSet ref(simulation_cell);       // handler needs ref.getSimulationCell().getKLists()
   ref.createSK();
   LRHandlerSRCoulomb<EslerCoulomb3D_ForSRCOUL, LPQHISRCoulombBasis> handler(ref);

@@ -69,7 +69,8 @@ template<class T, unsigned D, int SC>
 struct DTD_BConds
 {
   /** constructor: doing nothing */
-  inline DTD_BConds(const CrystalLattice<T, D>& lat) {}
+  template<typename TT>
+  inline DTD_BConds(const CrystalLattice<TT, D>& lat) {}
 
   /** apply BC on displ and return |displ|^2
    * @param displ a displacement vector in the Cartesian coordinate

@@ -161,7 +161,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
 
   //Cell definition:
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  Lattice lattice;
   lattice.BoxBConds = true; // periodic
   lattice.R.diagonal(20);
   lattice.LR_dim_cutoff = 15;
@@ -432,7 +432,7 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
 
   //Cell definition:
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  Lattice lattice;
   lattice.BoxBConds = false; // periodic
   lattice.R.diagonal(20);
   lattice.LR_dim_cutoff = 15;

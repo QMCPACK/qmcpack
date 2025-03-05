@@ -22,7 +22,7 @@ namespace qmcplusplus
 {
 class LatticeParser
 {
-  using ParticleLayout = PtclOnLatticeTraits::ParticleLayout;
+  using ParticleLayout = Lattice;
   ParticleLayout& ref_;
 
 public:
@@ -33,7 +33,7 @@ public:
 
 class LatticeXMLWriter
 {
-  using ParticleLayout = PtclOnLatticeTraits::ParticleLayout;
+  using ParticleLayout = Lattice;
   const ParticleLayout& ref_;
 
 public:

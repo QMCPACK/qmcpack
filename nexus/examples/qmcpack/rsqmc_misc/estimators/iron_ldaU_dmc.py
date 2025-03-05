@@ -143,8 +143,16 @@ optJ123 = generate_qmcpack(
 from qmcpack_input import spindensity
 sdens = spindensity(
     dr = (0.05, 0.05, 0.05),   # Bohr units
-    #grid = (100,100,100),  # Alternative to dr, an NxNxN grid can be specified
+    #grid = (100,100,100),     # Alternative to dr, an NxNxN grid can be specified
     )
+
+#===== Magnetization density =====
+from qmcpack_input import magnetizationdensity
+magdens = magnetizationdensity(
+    dr         = (0.05, 0.05, 0.05),    # Grid spacing in Bohr (matching spin density)
+    integrator = 'simpsons',            # Integration method
+    samples    = 9,                     # Number of samples for integration
+)
 
 #===== Energy density =====
 from qmcpack_input import generate_energydensity
@@ -188,7 +196,7 @@ qmc = generate_qmcpack(
     job                  = job(cores=16,threads=4,app='qmcpack'),
     system               = system,
     twistnum             = 0,
-    estimators           = [sdens, edens, mom_dist, dm_est],  # Requested estimators. These will be run in all QMC series.
+    estimators           = [sdens, magdens, edens, mom_dist, dm_est],  # Requested estimators. These will be run in all QMC series.
     calculations         = [
     vmc(
         walkers_per_rank = 256,

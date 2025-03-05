@@ -20,7 +20,7 @@ TEST_CASE("Coulomb PBC A-A Ewald Quasi2D exception", "[hamiltonian]")
 {
   LRCoulombSingleton::CoulombHandler = 0;
   LRCoulombSingleton::this_lr_type = LRCoulombSingleton::QUASI2D;
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  Lattice lattice;
   lattice.BoxBConds = true;
   lattice.BoxBConds[2] = false; // ppn
   lattice.ndim = 2;
@@ -52,7 +52,7 @@ TEST_CASE("Coulomb PBC A-A Ewald Quasi2D square", "[hamiltonian]")
   LRCoulombSingleton::CoulombHandler = 0;
   LRCoulombSingleton::this_lr_type = LRCoulombSingleton::QUASI2D;
   const double vmad_sq = -1.95013246;
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  Lattice lattice;
   lattice.BoxBConds = true;
   lattice.BoxBConds[2] = false; // ppn
   lattice.ndim = 2;
@@ -89,7 +89,7 @@ TEST_CASE("Coulomb PBC A-A Ewald Quasi2D triangular", "[hamiltonian]")
   const double vmad_tri = -1.106102587;
   const double alat = std::sqrt(2.0*M_PI/std::sqrt(3));
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  Lattice lattice;
   lattice.BoxBConds = true;
   lattice.BoxBConds[2] = false; // ppn
   lattice.ndim = 2;
@@ -127,7 +127,7 @@ TEST_CASE("Coulomb PBC A-A Ewald Quasi2D staggered square", "[hamiltonian]")
 {
   LRCoulombSingleton::CoulombHandler = 0; // !!!! crucial if not first test
   LRCoulombSingleton::this_lr_type = LRCoulombSingleton::QUASI2D;
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  Lattice lattice;
   lattice.BoxBConds = true;
   lattice.BoxBConds[2] = false; // ppn
   lattice.ndim = 2;
@@ -177,7 +177,7 @@ TEST_CASE("Coulomb PBC A-A Ewald Quasi2D staggered square 2x2", "[hamiltonian]")
   LRCoulombSingleton::CoulombHandler = 0; // !!!! crucial if not first test
   LRCoulombSingleton::this_lr_type = LRCoulombSingleton::QUASI2D;
   //const double vmad_sq = -1.95013246;
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  Lattice lattice;
   lattice.BoxBConds = true;
   lattice.BoxBConds[2] = false; // ppn
   lattice.ndim = 2;
@@ -232,7 +232,7 @@ TEST_CASE("Coulomb PBC A-A Ewald Quasi2D staggered triangle", "[hamiltonian]")
 {
   LRCoulombSingleton::CoulombHandler = 0; // !!!! crucial if not first test
   LRCoulombSingleton::this_lr_type = LRCoulombSingleton::QUASI2D;
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  Lattice lattice;
   lattice.BoxBConds = true;
   lattice.BoxBConds[2] = false; // ppn
   lattice.ndim = 2;
@@ -288,7 +288,7 @@ TEST_CASE("Coulomb PBC A-A Ewald Quasi2D staggered triangle 2x2", "[hamiltonian]
 {
   LRCoulombSingleton::CoulombHandler = 0; // !!!! crucial if not first test
   LRCoulombSingleton::this_lr_type = LRCoulombSingleton::QUASI2D;
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  Lattice lattice;
   lattice.BoxBConds = true;
   lattice.BoxBConds[2] = false; // ppn
   lattice.ndim = 2;
