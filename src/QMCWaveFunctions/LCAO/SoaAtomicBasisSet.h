@@ -777,8 +777,12 @@ public:
     auto* dr_ptr           = dr.device_data();
     auto* r_ptr            = r.device_data();
     auto* displ_list_ptr   = displ_list.device_data();
-    auto* correctphase_ptr = atom_bs_leader.mw_mem_handle_.getResource().correctphase.device_data();
     auto* Tv_list_ptr      = Tv_list.device_data();
+
+    auto& correctphase = atom_bs_leader.mw_mem_handle_.getResource().correctphase;
+    correctphase.resize(nElec*num_centers);
+    auto* correctphase_ptr = correctphase.device_data();
+
 
     constexpr RealType cone(1);
     constexpr RealType ctwo(2);
