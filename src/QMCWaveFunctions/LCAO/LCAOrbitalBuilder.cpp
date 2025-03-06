@@ -165,8 +165,8 @@ LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Commun
   if (basisset_map_.size() == 0 && h5_path != "")
   {
     app_warning() << "!!!!!!! Deprecated input style: missing basisset element. "
-                  << "LCAO needs an explicit basisset XML element. " << "Fallback on loading an implicit one."
-                  << std::endl;
+                  << "LCAO needs an explicit basisset XML element. "
+                  << "Fallback on loading an implicit one." << std::endl;
     basisset_map_["LCAOBSet"] = loadBasisSetFromH5(cur);
   }
 
@@ -787,7 +787,7 @@ bool LCAOrbitalBuilder::putFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
 bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
 {
   ReportEngine PRE("LCAOrbitalBuilder", "LCAOrbitalBuilder::putPBCFromH5");
-  int setVal     = -1;
+  int setVal = -1;
   int neig;
   bool IsComplex = false;
   bool MultiDet  = false;
