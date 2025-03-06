@@ -9,6 +9,9 @@
 #ifdef USE_VTUNE_API
 #include <ittnotify.h>
 #endif
+#ifdef USE_HPCTOOLKIT_API
+#include <hpctoolkit.h>
+#endif
 
 namespace qmcplusplus
 {
@@ -27,6 +30,9 @@ public:
 #ifdef USE_VTUNE_API
       __itt_resume();
 #endif
+#ifdef USE_HPCTOOLKIT_API
+      hpctoolkit_sampling_start();
+#endif
     }
   }
 
@@ -40,12 +46,16 @@ public:
 #ifdef USE_VTUNE_API
       __itt_pause();
 #endif
+#ifdef USE_HPCTOOLKIT_API
+      hpctoolkit_sampling_stop();
+#endif
     }
   }
 
   bool isActive() const { return active_; }
+
 private:
   const bool active_;
 };
-}
+} // namespace qmcplusplus
 #endif

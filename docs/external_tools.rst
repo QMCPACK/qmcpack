@@ -51,6 +51,20 @@ An example of options to be passed to CMake:
   -DUSE_VTUNE_API=ON \
   -DVTUNE_ROOT=/opt/intel/vtune_amplifier_xe
 
+HPCToolkit API
+~~~~~~~~~
+
+If the variable ``USE_HPCTOOLKIT_API`` is set, QMCPACK will check that the
+include file (``hpctoolkit.h``) and the library (``hpctoolkit.so``) can be found.
+To provide CMake with the HPCToolkit search paths, add ``HPCTOOLKIT_ROOT`` which contains ``include`` and ``lib`` sub-directories.
+
+An example of options to be passed to CMake:
+
+::
+
+  -DUSE_HPCTOOLKIT_API=ON \
+  -DHPCTOOLKIT_ROOT=/opt/hpctoolkit
+
 Timers as Tasks
 ~~~~~~~~~~~~~~~
 
