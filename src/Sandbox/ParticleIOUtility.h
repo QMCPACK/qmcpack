@@ -20,8 +20,6 @@
 namespace qmcplusplus
 {
 
-using Lattice = ParticleSet::ParticleLayout;
-
 /** create super lattice */
 Lattice createSuperLattice(const Lattice& in, const Tensor<int, OHMMS_DIM>& tmat);
 /** expand a particleset */

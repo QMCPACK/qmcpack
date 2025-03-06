@@ -181,18 +181,17 @@ public:
     T lower_bound             = myGrid.lower_bound;
     T log_delta               = myGrid.LogDelta;
 
-    auto* r_ptr = r.data();
-    auto* u_ptr = u.data();
+    auto* r_ptr = r.device_data();
+    auto* u_ptr = u.device_data();
 
-    auto* coeff_ptr       = coeffs_.data();
-    auto* first_deriv_ptr = first_deriv_.data();
+    auto* coeff_ptr       = coeffs_.device_data();
+    auto* first_deriv_ptr = first_deriv_.device_data();
     const size_t nCols    = coeffs_.cols();
     const size_t coefsize = coeffs_.size();
-    const int nsplines   = num_splines_;
+    const int nsplines    = num_splines_;
 
     PRAGMA_OFFLOAD("omp target teams distribute parallel for \
-                    map(to:coeff_ptr[:coefsize], first_deriv_ptr[:nsplines]) \
-                    map(to:r_ptr[:nR], u_ptr[:nRnl*nR])")
+                    is_device_ptr(coeff_ptr, first_deriv_ptr, r_ptr, u_ptr)")
     for (int ir = 0; ir < nR; ir++)
     {
       if (r_ptr[ir] >= Rmax)
@@ -247,13 +246,13 @@ public:
     T lower_bound             = myGrid.lower_bound;
     T dlog_ratio              = myGrid.LogDelta;
 
-    auto* r_ptr   = r.data();
-    auto* u_ptr   = vgl.data_at(0, 0, 0, 0);
-    auto* du_ptr  = vgl.data_at(1, 0, 0, 0);
-    auto* d2u_ptr = vgl.data_at(2, 0, 0, 0);
+    auto* r_ptr   = r.device_data();
+    auto* u_ptr   = vgl.device_data_at(0, 0, 0, 0);
+    auto* du_ptr  = vgl.device_data_at(1, 0, 0, 0);
+    auto* d2u_ptr = vgl.device_data_at(2, 0, 0, 0);
 
-    auto* coeff_ptr       = coeffs_.data();
-    auto* first_deriv_ptr = first_deriv_.data();
+    auto* coeff_ptr       = coeffs_.device_data();
+    auto* first_deriv_ptr = first_deriv_.device_data();
     const size_t nCols    = coeffs_.cols();
     const size_t coefsize = coeffs_.size();
     const auto nsplines   = num_splines_;
@@ -267,8 +266,7 @@ public:
     constexpr T c20(20);
 
     PRAGMA_OFFLOAD("omp target teams distribute parallel for \
-                    map(to: first_deriv_ptr[:nsplines], coeff_ptr[:coefsize]) \
-                    map(to: r_ptr[:nR], u_ptr[:nRnl*nR], du_ptr[:nRnl*nR], d2u_ptr[:nRnl*nR])")
+                    is_device_ptr(first_deriv_ptr, coeff_ptr, r_ptr, u_ptr, du_ptr, d2u_ptr)")
     for (size_t ir = 0; ir < nR; ir++)
     {
       if (r_ptr[ir] >= Rmax)

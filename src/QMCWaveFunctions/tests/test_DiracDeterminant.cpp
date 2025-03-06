@@ -469,7 +469,7 @@ void test_DiracDeterminant_spinor_update(const DetMatInvertor inverter_kind)
   using ParticleLaplacian = ParticleSet::ParticleLaplacian;
 
   // O2 test example from pwscf non-collinear calculation.
-  ParticleSet::ParticleLayout lattice;
+  Lattice lattice;
   lattice.R = {5.10509515, -3.23993545, 0.00000000, 5.10509515, 3.23993545,
                0.00000000, -6.49690625, 0.00000000, 7.08268015};
 

@@ -69,8 +69,6 @@ public:
   using Scalar_t = T;
   ///the type of a D-dimensional position vector
   using SingleParticlePos = TinyVector<T, D>;
-  ///the type of a D-dimensional index vector
-  using SingleParticleIndex = TinyVector<int, D>;
   ///the type of a D-dimensional Tensor
   using Tensor_t = Tensor<T, D>;
   //@}
@@ -220,7 +218,8 @@ public:
   /// return true if any direction of reduced coordinates u goes larger than 0.5
   bool outOfBound(const TinyVector<T, D>& u) const;
 
-  inline void applyMinimumImage(TinyVector<T, D>& c) const
+  template <typename PT>
+  inline void applyMinimumImage(TinyVector<PT, D>& c) const
   {
     if (SuperCellEnum)
     {
