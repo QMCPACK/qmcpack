@@ -135,9 +135,22 @@ public:
                     std::vector<PsiValue>& ratios,
                     std::vector<GradType>& grad_new) const override;
 
+  void mw_ratioGradWithSpin(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                            const RefVectorWithLeader<ParticleSet>& p_list,
+                            int iat,
+                            std::vector<PsiValue>& ratios,
+                            std::vector<GradType>& grad_new,
+                            std::vector<ComplexType>& spingrad_new) const override;
+
   GradType evalGrad(ParticleSet& P, int iat) override;
 
   GradType evalGradWithSpin(ParticleSet& P, int iat, ComplexType& spingrad) final;
+
+  void mw_evalGradWithSpin(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                           const RefVectorWithLeader<ParticleSet>& p_list,
+                           int iat,
+                           std::vector<GradType>& grad_now,
+                           std::vector<ComplexType>& spingrad_now) const override;
 
   GradType evalGradSource(ParticleSet& P, ParticleSet& source, int iat) override;
 
