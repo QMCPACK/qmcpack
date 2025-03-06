@@ -246,6 +246,7 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateVGL(const RefVectorWithLeader<S
       }
   
   }
+
 #if defined(QMC_COMPLEX)
   Tv_list.updateTo();
 #endif
