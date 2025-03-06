@@ -152,6 +152,7 @@ option(QMC_BUILD_STATIC "Link to static libraries" OFF)
 option(ENABLE_TIMERS "Enable internal timers" ON)
 option(ENABLE_STACKTRACE "Enable use of boost::stacktrace" OFF)
 option(USE_VTUNE_API "Enable use of VTune ittnotify APIs" OFF)
+option(USE_HPCTOOLKIT_API "Enable use of HPCToolkit start/stop APIs" OFF)
 cmake_dependent_option(USE_VTUNE_TASKS "USE VTune ittnotify task annotation" OFF "ENABLE_TIMERS AND USE_VTUNE_API" OFF)
 # CMake note - complex conditionals in cmake_dependent_option must have spaces around parentheses
 cmake_dependent_option(USE_NVTX_API "Enable/disable NVTX regions in CUDA code." OFF "ENABLE_TIMERS AND ENABLE_CUDA" OFF)
@@ -915,6 +916,29 @@ if(USE_VTUNE_API)
   endif()
 else()
   message(STATUS "VTune ittnotify APIs disabled")
+endif()
+
+#-------------------------------------------------------------------
+# set up HPCToolkit library
+#-------------------------------------------------------------------
+
+if(USE_HPCTOOLKIT_API)
+  message(STATUS "Enabling use of HPCToolkit start/stop APIs")
+  find_path(
+    HPCTOOLKIT_INCLUDE_DIR hpctoolkit.h
+    HINTS ${HPCTOOLKIT_ROOT} $ENV{HPCTOOLKIT_ROOT}
+    PATH_SUFFIXES include REQUIRED)
+  message(STATUS "Found HPCTOOLKIT_INCLUDE_DIR ${HPCTOOLKIT_INCLUDE_DIR}")
+  find_library(
+    HPCTOOLKIT_LIBRARY hpctoolkit
+    HINTS ${HPCTOOLKIT_ROOT} $ENV{HPCTOOLKIT_ROOT}
+    PATH_SUFFIXES lib64 lib REQUIRED)
+  message(STATUS "Found HPCTOOLKIT_LIBRARY ${HPCTOOLKIT_LIBRARY}")
+
+  include_directories(${HPCTOOLKIT_INCLUDE_DIR})
+  link_libraries(${HPCTOOLKIT_LIBRARY})
+else()
+  message(STATUS "HPCToolkit start/stop APIs disabled")
 endif()
 
 #-------------------------------------------------------------------
