@@ -158,6 +158,21 @@ typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad
 }
 
 template<typename DU_TYPE>
+void DiracDeterminant<DU_TYPE>::mw_evalGradWithSpin(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                                    const RefVectorWithLeader<ParticleSet>& p_list,
+                                                    int iat,
+                                                    std::vector<GradType>& grad_now,
+                                                    std::vector<ComplexType>& spingrad_now) const
+{
+  assert(this == &wfc_list.getLeader());
+  for (int iw = 0; iw < wfc_list.size(); iw++)
+  {
+    spingrad_now[iw] = 0;
+    grad_now[iw]     = wfc_list[iw].evalGradWithSpin(p_list[iw], iat, spingrad_now[iw]);
+  }
+}
+
+template<typename DU_TYPE>
 typename DiracDeterminant<DU_TYPE>::PsiValue DiracDeterminant<DU_TYPE>::ratioGrad(ParticleSet& P,
                                                                                   int iat,
                                                                                   GradType& grad_iat)
@@ -259,6 +274,19 @@ void DiracDeterminant<DU_TYPE>::mw_ratioGrad(const RefVectorWithLeader<WaveFunct
 
   for (int iw = 0; iw < wfc_list.size(); iw++)
     ratios[iw] = wfc_list.getCastedElement<DiracDeterminant<DU_TYPE>>(iw).ratioGrad_compute(iat, grad_new[iw]);
+}
+
+template<typename DU_TYPE>
+void DiracDeterminant<DU_TYPE>::mw_ratioGradWithSpin(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                                     const RefVectorWithLeader<ParticleSet>& p_list,
+                                                     int iat,
+                                                     std::vector<PsiValue>& ratios,
+                                                     std::vector<GradType>& grad_new,
+                                                     std::vector<ComplexType>& spingrad_new) const
+{
+  assert(this == &wfc_list.getLeader());
+  for (int iw = 0; iw < wfc_list.size(); iw++)
+    ratios[iw] = wfc_list[iw].ratioGradWithSpin(p_list[iw], iat, grad_new[iw], spingrad_new[iw]);
 }
 
 
