@@ -1139,6 +1139,173 @@ public:
     }
   }
 
+  template<typename LAT, typename VT>
+  inline void mw_evaluateV_batch(const RefVectorWithLeader<SoaAtomicBasisSet>& atom_bs_list,
+                           const LAT& lattice,
+                           Array<VT, 2, OffloadPinnedAllocator<VT>>& psi,
+                           const Vector<RealType, OffloadPinnedAllocator<RealType>>& displ_list,
+                           const Vector<RealType, OffloadPinnedAllocator<RealType>>& Tv_list,
+                           const size_t nElec,
+                           const size_t nBasTot,
+                           const Vector<size_t, OffloadPinnedAllocator<size_t>>& c_list,
+                           const Vector<size_t, OffloadPinnedAllocator<size_t>>& basis_offsets,
+                           const size_t NumCenters)
+  {
+    assert(this == &atom_bs_list.getLeader());
+    assert(psi.size(0) == nElec);
+    assert(psi.size(1) == nBasTot);
+    auto& atom_bs_leader = atom_bs_list.template getCastedLeader<SoaAtomicBasisSet<ROT, SH>>();
+
+    const size_t num_centers = c_list.size();
+    const int Nx             = PBCImages[0] + 1;
+    const int Ny             = PBCImages[1] + 1;
+    const int Nz             = PBCImages[2] + 1;
+    const int Nxyz           = Nx * Ny * Nz;
+    auto& ylm_v = atom_bs_leader.mw_mem_handle_.getResource().ylm_v;
+    auto& rnl_v = atom_bs_leader.mw_mem_handle_.getResource().rnl_v;
+    auto& dr    = atom_bs_leader.mw_mem_handle_.getResource().dr;
+    auto& r     = atom_bs_leader.mw_mem_handle_.getResource().r;
+
+    const size_t nRnl = RnlID.size();
+    const size_t nYlm = Ylm.size();
+
+    ylm_v.resize(nElec, Nxyz * num_centers, nYlm);
+    rnl_v.resize(nElec, Nxyz * num_centers, nRnl);
+    dr.resize(nElec, Nxyz * num_centers, 3);
+    r.resize(nElec, Nxyz * num_centers);
+    const auto* c_list_ptr        = c_list.device_data();
+    const auto* basis_offsets_ptr = basis_offsets.device_data();
+
+    auto* dr_ptr           = dr.device_data();
+    auto* r_ptr            = r.device_data();
+    auto* displ_list_ptr   = displ_list.device_data();
+    auto* Tv_list_ptr      = Tv_list.device_data();
+
+    auto& correctphase = atom_bs_leader.mw_mem_handle_.getResource().correctphase;
+    correctphase.resize(nElec*num_centers);
+    auto* correctphase_ptr = correctphase.device_data();
+
+
+    constexpr RealType cone(1);
+    constexpr RealType ctwo(2);
+
+
+    {
+      ScopedTimer local_timer(phase_timer_);
+#if !defined(QMC_COMPLEX)
+      PRAGMA_OFFLOAD("omp target teams distribute parallel for \
+                      is_device_ptr(correctphase_ptr) ")
+      for (size_t i_e = 0; i_e < nElec; i_e++)
+        correctphase_ptr[i_e] = RealType(1.0);
+#else
+
+
+      PRAGMA_OFFLOAD("omp target teams distribute parallel for \
+                      is_device_ptr(Tv_list_ptr, correctphase_ptr) ")
+      for (size_t i_e = 0; i_e < nElec; i_e++)
+      {
+        RealType phasearg = 0;
+        for (size_t i_dim = 0; i_dim < 3; i_dim++)
+          phasearg += SuperTwist[i_dim] * Tv_list_ptr[i_dim + 3 * (i_e + center_idx * nElec)];
+        RealType s, c;
+        qmcplusplus::sincos(-phasearg, &s, &c);
+        correctphase_ptr[i_e] = ValueType(c, s);
+      }
+#endif
+    }
+
+    {
+      ScopedTimer local_timer(nelec_pbc_timer_);
+      auto* periodic_image_displacements_ptr = periodic_image_displacements_.device_data();
+
+      PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(3) \
+                    is_device_ptr(periodic_image_displacements_ptr, dr_ptr, r_ptr, displ_list_ptr,c_list_ptr)")
+      for (size_t i_c = 0; i_c < num_centers; ++i_c)
+      {
+        for (size_t i_e = 0; i_e < nElec; ++i_e)
+        {
+          for (int i_xyz = 0; i_xyz < Nxyz; ++i_xyz)
+          {
+            const size_t center_idx = c_list_ptr[i_c];
+            const size_t idx        = i_xyz + Nxyz * (i_e + i_c * nElec);
+
+            RealType tmp_r2 = 0.0;
+            for (size_t i_dim = 0; i_dim < 3; i_dim++)
+            {
+              dr_ptr[i_dim + 3 * idx] = -(displ_list_ptr[i_dim + 3 * (i_e + center_idx * nElec)] +
+                                          periodic_image_displacements_ptr[i_dim + 3 * i_xyz]);
+              tmp_r2 += dr_ptr[i_dim + 3 * idx] * dr_ptr[i_dim + 3 * idx];
+            }
+            r_ptr[idx] = std::sqrt(tmp_r2);
+          }
+        }
+      }
+    }
+
+    {
+      ScopedTimer local(rnl_timer_);
+      MultiRnl.batched_evaluate(r, rnl_v, Rmax);
+    }
+
+    {
+      ScopedTimer local(ylm_timer_);
+      Ylm.batched_evaluateV(dr, ylm_v);
+    }
+
+    {
+      ScopedTimer local_timer(psi_timer_);
+      ///Phase for PBC containing the phase for the nearest image displacement and the correction due to the Distance table.
+      auto* phase_fac_ptr = periodic_image_phase_factors_.device_data();
+      auto* LM_ptr        = LM.device_data();
+      auto* NL_ptr        = NL.device_data();
+      auto* psi_ptr       = psi.device_data();
+      const int bset_size = BasisSetSize;
+
+      auto* ylm_ptr = ylm_v.device_data();
+      auto* rnl_ptr = rnl_v.device_data();
+      PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2)\
+                      is_device_ptr(phase_fac_ptr, LM_ptr, NL_ptr, \
+                                  psi_ptr, correctphase_ptr, \
+                                  ylm_ptr, rnl_ptr)")
+      for (size_t i_c = 0; i_c < num_centers; ++i_c)
+      {
+        for (int i_e = 0; i_e < nElec; ++i_e)
+        {
+          for (int ib = 0; ib < bset_size; ++ib)
+          {
+            const int nl = NL_ptr[ib];
+            const int lm = LM_ptr[ib];
+            VT psi = 0;
+
+            for (int i_xyz = 0; i_xyz < Nxyz; ++i_xyz)
+            {
+              // Calculate global index accounting for center batching
+              const size_t global_idx = i_xyz + Nxyz * (i_e + i_c * nElec);
+
+              // Phase factor with center-specific correction
+              const ValueType Phase = phase_fac_ptr[i_xyz] * correctphase_ptr[i_e + i_c * nElec];
+
+              // Angular component calculations
+              const RealType ang   = ylm_ptr[lm + nYlm * global_idx];
+
+              // Radial component calculations
+              const RealType vr        = rnl_ptr[nl + nRnl * global_idx];
+
+              // Accumulate values
+              psi += ang * vr * Phase;
+
+	    }
+
+            const size_t BasisOffset = basis_offsets_ptr[i_c];
+            const size_t store_index = BasisOffset + ib + i_e * nBasTot;
+
+            psi_ptr[store_index]    = psi;
+	  }
+	}
+      }
+    }
+
+  }
   /**
    * @brief evaluate for multiple electrons
    * 
@@ -1180,7 +1347,6 @@ public:
     const int Nxyz = Nx * Ny * Nz;
     assert(psi.size(0) == nElec);
     assert(psi.size(1) == nBasTot);
-
 
     auto& ylm_v = atom_bs_leader.mw_mem_handle_.getResource().ylm_v;
     auto& rnl_v = atom_bs_leader.mw_mem_handle_.getResource().rnl_v;
