@@ -376,8 +376,6 @@ def generate_wannier90_input(
     
     Parameters
     ----------
-    prefix : str, optional
-        Prefix for the Wannier90 calculation
     system : PhysicalSystem object, optional
         System containing structure information
     num_wann : int
