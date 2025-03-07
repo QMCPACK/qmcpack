@@ -424,7 +424,6 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValueVPs(const RefVectorWithLea
     local_offsets[s_id].push_back(BasisOffset[c]);
   }
 
-  ///Should be done only once at Begining of simulation and made available. 
   using PinnedVecSizeT = Vector<size_t, OffloadPinnedAllocator<size_t>>;
   std::vector<PinnedVecSizeT> species_centers(num_species_);
   std::vector<PinnedVecSizeT> species_center_coffsets(num_species_);
