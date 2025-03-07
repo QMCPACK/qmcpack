@@ -230,9 +230,9 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateVGL(const RefVectorWithLeader<S
 
   auto& Tv_list       = basis_leader.mw_mem_handle_.getResource().Tv_list;
   auto& displ_list_tr = basis_leader.mw_mem_handle_.getResource().displ_list_tr;
-
   Tv_list.resize(3 * NumCenters * Nw);
   displ_list_tr.resize(3 * NumCenters * Nw);
+
   for (size_t iw = 0; iw < P_list.size(); iw++)
   {
     const auto& coordR  = P_list[iw].activeR(iat);
@@ -244,7 +244,6 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateVGL(const RefVectorWithLeader<S
         Tv_list[idim + 3 * (iw + c * Nw)]       = (ions_.R[c][idim] - coordR[idim]) - displ[c][idim];
         displ_list_tr[idim + 3 * (iw + c * Nw)] = displ[c][idim];
       }
-  
   }
 
 #if defined(QMC_COMPLEX)
@@ -351,7 +350,6 @@ void SoaLocalizedBasisSet<COT, ORBT>::evaluateVGHGH(const ParticleSet& P, int ia
 }
 
 
-
 template<class COT, typename ORBT>
 void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValueVPs(const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basis_list,
                                                           const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
@@ -359,14 +357,16 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValueVPs(const RefVectorWithLea
 {
   assert(this == &basis_list.getLeader());
   auto& basis_leader = basis_list.template getCastedLeader<SoaLocalizedBasisSet<COT, ORBT>>();
-  const auto& IonID(ions_.GroupID);
-  auto& vps_leader    = vp_list.getLeader();
 
   const size_t nVPs = vp_basis_v.size(0);
   assert(vp_basis_v.size(1) == BasisSetSize); // shape [nVPs, BasisSetSize]
+  const auto& IonID(ions_.GroupID);
 
-  const auto dt_list( vps_leader.extractDTRefList(vp_list, myTableIndex) );
-  const auto coordR_list( vps_leader.extractVPCoords(vp_list) );
+  auto& vps_leader = vp_list.getLeader();
+
+
+  const auto dt_list(vps_leader.extractDTRefList(vp_list, myTableIndex));
+  const auto coordR_list(vps_leader.extractVPCoords(vp_list));
 
   // GPU arrays [NumCenters * nVPs, 3]
   // Each center c, vp index iVP => c*nVPs + iVP
