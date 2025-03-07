@@ -1293,6 +1293,12 @@ def test_job_run_command():
         ('inti'           , 'n2_t2'         ) : 'srun test.x',
         ('inti'           , 'n2_t2_e'       ) : 'srun test.x',
         ('inti'           , 'n2_t2_p2'      ) : 'srun test.x',
+        ('baseline'       , 'n1'            ) : 'srun test.x',
+        ('baseline'       , 'n1_p1'         ) : 'srun test.x',
+        ('baseline'       , 'n2'            ) : 'srun test.x',
+        ('baseline'       , 'n2_t2'         ) : 'srun test.x',
+        ('baseline'       , 'n2_t2_e'       ) : 'srun test.x',
+        ('baseline'       , 'n2_t2_p2'      ) : 'srun test.x',
         })
 
     if testing.global_data['job_ref_table']:
@@ -2094,7 +2100,21 @@ srun test.x''',
 export ENV_VAR=1
 export OMP_NUM_THREADS=1
 srun test.x''',
+        baseline = '''#!/bin/bash
+#SBATCH -A ABC123
+#SBATCH -p batch_cnms
+#SBATCH -J jobname
+#SBATCH -t 06:30:00
+#SBATCH -N 2
+#SBATCH --ntasks-per-node=128
+#SBATCH --cpus-per-task=1
+#SBATCH -o test.out
+#SBATCH -e test.err
+#SBATCH --export=ALL
 
+export ENV_VAR=1
+export OMP_NUM_THREADS=1
+srun test.x''',
         )
 
     def process_job_file(jf):
