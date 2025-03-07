@@ -991,7 +991,6 @@ public:
     auto& correctphase = atom_bs_leader.mw_mem_handle_.getResource().correctphase;
     correctphase.resize(nElec);
 
-
     auto* dr_ptr = dr.device_data();
     auto* r_ptr  = r.device_data();
 
@@ -1023,7 +1022,6 @@ public:
         correctphase_ptr[i_e] = RealType(1.0);
 #else
 
-
       PRAGMA_OFFLOAD("omp target teams distribute parallel for \
                       is_device_ptr(Tv_list_ptr, correctphase_ptr) ")
       for (size_t i_e = 0; i_e < nElec; i_e++)
@@ -1040,7 +1038,6 @@ public:
 
     {
       ScopedTimer local_timer(nelec_pbc_timer_);
-
       auto* periodic_image_displacements_ptr = periodic_image_displacements_.device_data();
       PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) \
                       is_device_ptr(periodic_image_displacements_ptr) \
@@ -1380,7 +1377,6 @@ inline void mw_evaluateV_batch(
       for (size_t i_e = 0; i_e < nElec; i_e++)
         correctphase_ptr[i_e] = RealType(1.0);
 #else
-
 
       PRAGMA_OFFLOAD("omp target teams distribute parallel for \
                       is_device_ptr(Tv_list_ptr, correctphase_ptr) ")
