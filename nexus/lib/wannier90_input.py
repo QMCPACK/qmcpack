@@ -358,7 +358,6 @@ def format_projections(projections):
 
 
 def generate_wannier90_input(
-        prefix          = 'wannier',
         system         = None,
         num_wann       = None,
         num_bands      = None,
