@@ -6,11 +6,15 @@ class Wannier90Input(SimulationInput):
     Based on Wannier90 3.1.0 manual.
     """
     
+    available_versions = [(3, 1, 0)
+                          # Example of how to add a new version
+                          #, (4, 0, 0)
+                          ]
     # Required keywords
-    required = ['num_wann', 'num_bands']
+    required_v310 = ['num_wann', 'num_bands']
 
     # All known keywords with their types
-    integers = [
+    integers_v310 = [
         'num_wann', 'num_bands', 'num_iter', 'num_print_cycles',
         'num_dump_cycles', 'num_cg_steps', 'conv_window', 'conv_noise_num',
         'num_excluded_bands', 'mp_grid', 'kmesh_tol', 'num_spins',
@@ -21,7 +25,7 @@ class Wannier90Input(SimulationInput):
         'tran_num_cell_ll', 'tran_num_cell_rr', 'tran_num_bandc'
     ]
 
-    floats = [
+    floats_v310 = [
         'conv_tol', 'conv_noise_amp', 'conv_noise_amp_global',
         'conv_window_threshold', 'dis_win_min', 'dis_win_max',
         'dis_froz_min', 'dis_froz_max', 'fermi_energy',
@@ -34,7 +38,7 @@ class Wannier90Input(SimulationInput):
         'tran_group_threshold', 'ws_distance_tol'
     ]
 
-    bools = [
+    bools_v310 = [
         'guiding_centres', 'use_bloch_phases', 'write_xyz', 'gamma_only',
         'write_vdw', 'write_hr_diag', 'write_rmn', 'write_bvec',
         'write_bstate', 'write_r_pos', 'write_proj_site', 'shell_list',
@@ -46,7 +50,7 @@ class Wannier90Input(SimulationInput):
         'write_hr', 'write_xyz', 'write_rmn', 'write_tb'
     ]
 
-    strings = [
+    strings_v310 = [
         'wannier_mode', 'restart', 'restart_mode', 'iprint',
         'length_unit', 'wvfn_formatted', 'spin', 'spinors',
         'devel_flag', 'optimisation', 'bloch_outer_window',
@@ -60,7 +64,7 @@ class Wannier90Input(SimulationInput):
     ]
 
     # Special multi-value parameters
-    arrays = [
+    arrays_v310 = [
         'unit_cell_cart',      # Unit cell vectors in Cartesian coordinates
         'atoms_cart',          # Atomic positions in Cartesian coordinates
         'atoms_frac',          # Atomic positions in fractional coordinates
@@ -76,21 +80,57 @@ class Wannier90Input(SimulationInput):
         'nnkpts'               # Explicit nearest-neighbor k-points
     ]
 
-    parameters_list = integers + floats + bools + strings
     
-    blocks_list = [
+    blocks_list_v310 = [
         'unit_cell_cart',
         'atoms_cart',
         'atoms_frac',
         'mp_grid',
         'kpoints',
+        'projections',
     ]
 
-    def __init__(self):
+    versioned_inputs = {(3, 1, 0): {
+        'required': required_v310,
+        'integers': integers_v310,
+        'floats': floats_v310,
+        'bools': bools_v310,
+        'strings': strings_v310,
+        'blocks_list': blocks_list_v310
+    }, 
+    # Example of how to add a new version
+    # (4, 0, 0): {
+    #     'required': required_v400.update(required_v310),
+    #     'integers': integers_v400.update(integers_v310),
+    #     'floats': floats_v400.update(floats_v310),
+    #     'bools': bools_v400.update(bools_v310),
+    #     'strings': strings_v400.update(strings_v310),
+    #     'blocks': blocks_list_v400.update(blocks_list_v310)
+    # }
+    }
+
+
+    def __init__(self, version:str='3.1.0'):
         """Initialize an empty Wannier90 input."""
         self.params = {}
         self.blocks = {}
-        
+        self.version = tuple([int(i) for i in version.split('.')])
+        self.check_version()
+
+    def check_version(self):
+        """Check the version of the Wannier90 input."""
+        closest_version = None
+        for version in self.available_versions:
+            if self.version >= version:
+                closest_version = version
+
+        if closest_version is None:
+            raise ValueError(f"Unsupported version: {self.version}")
+        else:
+            self.version = closest_version
+            for key, value in self.versioned_inputs[closest_version].items():
+                self[key] = value
+
     def read(self, filename):
         """Read a Wannier90 input file."""
         with open(filename, 'r') as f:
@@ -115,7 +155,7 @@ class Wannier90Input(SimulationInput):
                 self.blocks[current_block].append(line)
             else:
                 # Handle parameter lines
-                # Paramters can be in an interchangeable format:
+                # Parameters can be in an interchangeable format:
                 #   key = value
                 #   key : value
                 if '=' in line:
@@ -275,13 +315,15 @@ def format_kpoint_path(path):
         # Handle seekpath format
         kpath = path['path']
         coords = path['point_coords']
-        for start, end in zip(kpath[::2], kpath[1::2]):
+        for i in range(len(kpath)):
+            start, end = kpath[i][0], kpath[i][1]
             line = '{:s}  {: 8.6f}  {: 8.6f}  {: 8.6f}    {:s}  {: 8.6f}  {: 8.6f}  {: 8.6f}'.format(
                 start, *coords[start], end, *coords[end])
             block.append(line)
     else:
         # Handle direct format
-        for start, end in zip(path[::2], path[1::2]):
+        for i in range(len(path)):
+            start, end = path[i][0], path[i][1]
             label1, k1 = start
             label2, k2 = end
             line = '{:s}  {: 8.6f}  {: 8.6f}  {: 8.6f}    {:s}  {: 8.6f}  {: 8.6f}  {: 8.6f}'.format(
@@ -371,7 +413,6 @@ def generate_wannier90_input(
         win.add_block('atoms_cart', format_atoms_cart(elem, pos, units))
     else:
         # Use provided structure information
-        import pdb; pdb.set_trace()
         if unit_cell_cart is not None:
             win.add_block('unit_cell_cart', format_unit_cell_cart(unit_cell_cart, units))
         if atoms_cart is not None:
@@ -422,7 +463,17 @@ if __name__ == "__main__":
         num_wann = 8,
         num_bands = 12,
         mp_grid = (4,4,4),
-        projections = ['Si:sp3']
+        projections = ['Si:sp3'],
+        # kpoints = [[0.0, 0.0, 0.0],
+        #           [0.5, 0.5, 0.5]],
+        kpoint_path = {'path': [['G', 'X'], # TODO: Check later on with seekpath
+                                ['X', 'K']],
+                       'point_coords': {'G': [0.0, 0.0, 0.0],
+                                        'X': [0.5, 0.5, 0.5],
+                                        'K': [0.375, 0.375, 0.75]}},
+        # kpoint_path = [[('G', [0.0, 0.0, 0.0]), ('X', [0.5, 0.5, 0.5])],
+        #                [('X', [0.5, 0.5, 0.5]), ('K', [0.375, 0.375, 0.75])]],
+        band_num_points = 100
     )
 
     # Get input file contents as string
