@@ -351,6 +351,7 @@ void SoaLocalizedBasisSet<COT, ORBT>::evaluateVGHGH(const ParticleSet& P, int ia
 }
 
 
+
 template<class COT, typename ORBT>
 void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValueVPs(const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basis_list,
                                                           const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
@@ -359,96 +360,82 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValueVPs(const RefVectorWithLea
   assert(this == &basis_list.getLeader());
   auto& basis_leader = basis_list.template getCastedLeader<SoaLocalizedBasisSet<COT, ORBT>>();
   const auto& IonID(ions_.GroupID);
-  auto& vps_leader = vp_list.getLeader();
-
-  size_t Nw = vp_list.size();
-  assert(vp_basis_v.size(1) == BasisSetSize);
+  auto& vps_leader    = vp_list.getLeader();
 
   const size_t nVPs = vp_basis_v.size(0);
+  assert(vp_basis_v.size(1) == BasisSetSize); // shape [nVPs, BasisSetSize]
 
+  const auto dt_list( vps_leader.extractDTRefList(vp_list, myTableIndex) );
+  const auto coordR_list( vps_leader.extractVPCoords(vp_list) );
 
-  const auto dt_list(vps_leader.extractDTRefList(vp_list, myTableIndex));
-  const auto coordR_list(vps_leader.extractVPCoords(vp_list));
-
+  // GPU arrays [NumCenters * nVPs, 3]
+  // Each center c, vp index iVP => c*nVPs + iVP
   auto& Tv_list       = basis_leader.mw_mem_handle_.getResource().Tv_list;
   auto& displ_list_tr = basis_leader.mw_mem_handle_.getResource().displ_list_tr;
-  Tv_list.resize(3 * NumCenters * nVPs);
-  displ_list_tr.resize(3 * NumCenters * nVPs);
+  Tv_list.resize(3ULL * NumCenters * nVPs);
+  displ_list_tr.resize(3ULL * NumCenters * nVPs);
 
-  // TODO: need one more level of indirection for offload?
-  // need to index into walkers/vps, but need walker num for distance table
-  size_t index = 0;
-  for (size_t iw = 0; iw < vp_list.size(); iw++)
-    for (int iat = 0; iat < vp_list[iw].getTotalNum(); iat++)
+
+  
+  auto* Tv_host       = Tv_list.data();
+  auto* displ_host    = displ_list_tr.data();
+
+  // "index" is loop over each virtual point
+  // i.e. we do "for each (iw, iat) => iVP" in [0..nVPs-1]
+  size_t indexVP=0;
+  for (size_t iw=0; iw<vp_list.size(); iw++)
+  {
+    // vp_list[iw].getTotalNum() = # of virtual points in this VPS
+    int nVP_local = vp_list[iw].getTotalNum();
+    for (int iat=0; iat<nVP_local; iat++)
     {
       const auto& displ = dt_list[iw].getDisplRow(iat);
-      for (int c = 0; c < NumCenters; c++)
-        for (size_t idim = 0; idim < 3; idim++)
+      // coords for this virtual point = coordR_list[indexVP]
+      const auto& vpcoord = coordR_list[ indexVP ];
+
+      // fill for all centers c in [0..NumCenters-1]
+      for (int c=0; c<NumCenters; c++)
+      {
+        for (int dim=0; dim<3; dim++)
         {
-          Tv_list[idim + 3 * (index + c * nVPs)]       = (ions_.R[c][idim] - coordR_list[index][idim]) - displ[c][idim];
-          displ_list_tr[idim + 3 * (index + c * nVPs)] = displ[c][idim];
+          size_t idx = dim + 3ULL * (indexVP + c*(size_t)nVPs);
+          // Ion position is ions_.R[c]
+          RealType val = ions_.R[c][dim] - vpcoord[dim] - displ[c][dim];
+          Tv_host[idx]       = val;
+          displ_host[idx]    = displ[c][dim];
         }
-      index++;
+      }
+      indexVP++;
     }
+  }
+
 #if defined(QMC_COMPLEX)
   Tv_list.updateTo();
 #endif
   displ_list_tr.updateTo();
 
-  // TODO: group/sort centers by species?
-  // Group centers by species and collect basis offsets
-  const auto& species_names = ions_.getSpeciesSet().speciesName;
-  const int num_species     = species_names.size();
-
-
-  std::vector<std::vector<size_t>> local_species_offsets(num_species);
-  std::vector<std::vector<size_t>> local_species_centers(num_species);
-
-  for (int c = 0; c < NumCenters; ++c)
+  // Each center has BasisOffset[c] block for wavefunction,
+  for (int c=0; c<NumCenters; c++)
   {
-    const int species_id = IonID[c];
-    local_species_centers[species_id].push_back(c);
-    local_species_offsets[species_id].push_back(BasisOffset[c]);
+    int species_id = IonID[c];
+    
+    auto one_species_basis_list = extractOneSpeciesBasisRefList(basis_list, species_id);
+
+    LOBasisSet[species_id]->mw_evaluateV(
+       one_species_basis_list,
+       vps_leader.getLattice(),
+       vp_basis_v,
+       displ_list_tr,
+       Tv_list,
+       nVPs,
+       BasisSetSize,
+       c,             
+       BasisOffset[c], 
+       NumCenters );
   }
-
-  using PinnedVector = Vector<size_t, OffloadPinnedAllocator<size_t>>;
-  std::vector<PinnedVector> species_centers(num_species);
-  std::vector<PinnedVector> species_basis_offsets(num_species);
-  
-  
-  for (int species_id = 0; species_id < num_species; ++species_id)
-  {
-      species_centers[species_id].resize(local_species_centers[species_id].size());
-      species_basis_offsets[species_id].resize(local_species_offsets[species_id].size());
-
-
-      // Copy from the std::vector into pinned memory
-      for (size_t i = 0; i < local_species_centers[species_id].size(); i++)
-        species_centers[species_id][i] = local_species_centers[species_id][i];
-
-      for (size_t i = 0; i < local_species_offsets[species_id].size(); i++)
-        species_basis_offsets[species_id][i] = local_species_offsets[species_id][i];
-
-
-      species_centers[species_id].updateTo();
-      species_basis_offsets[species_id].updateTo();
-    }
-
-    // Process each species batch
-    for (int species_id = 0; species_id < num_species; ++species_id)
-    {
-      const auto& c_list = species_centers[species_id];
-      if (c_list.size() == 0)
-        continue;
-
-      const auto& basis_offsets   = species_basis_offsets[species_id];
-      auto one_species_basis_list = extractOneSpeciesBasisRefList(basis_list, species_id);
-      LOBasisSet[species_id]->mw_evaluateV_batch(one_species_basis_list, vps_leader.getLattice(), vp_basis_v,
-                                                   displ_list_tr, Tv_list, nVPs, BasisSetSize, c_list, basis_offsets,
-                                                   NumCenters);
-    }
-  // vp_basis_v.updateFrom();
 }
+
+
 template<class COT, typename ORBT>
 void SoaLocalizedBasisSet<COT, ORBT>::evaluateV(const ParticleSet& P, int iat, ORBT* restrict vals)
 {
