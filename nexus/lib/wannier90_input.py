@@ -244,8 +244,14 @@ def format_unit_cell_cart(axes, units='bohr'):
     axes : array_like
         3x3 array of unit cell vectors
     units : str, optional
-        Units for the cell vectors ('bohr' or 'ang')
+        Units for the cell vectors ('Bohr' or 'A')
     """
+    allowed_units = ['bohr', 'a']
+    if units.lower() not in allowed_units:
+        raise ValueError(f"Invalid units: {units}. Must be one of: {', '.join(allowed_units)}")
+    else:
+        units = units.capitalize()
+    #end if 
     block = [units]
     for v in axes:
         block.append('{: 8.6f}  {: 8.6f}  {: 8.6f}'.format(*v))
@@ -262,8 +268,14 @@ def format_atoms_cart(atoms, positions, units='bohr'):
     positions : array_like
         Array of atomic positions
     units : str, optional
-        Units for positions ('bohr' or 'ang')
+        Units for positions ('Bohr' or 'A')
     """
+    allowed_units = ['bohr', 'a']
+    if units.lower() not in allowed_units:
+        raise ValueError(f"Invalid units: {units}. Must be one of: {', '.join(allowed_units)}")
+    else:
+        units = units.capitalize()
+    #end if 
     block = [units]
     for atom, pos in zip(atoms, positions):
         block.append('{:2s}  {: 8.6f}  {: 8.6f}  {: 8.6f}'.format(atom, *pos))
@@ -357,7 +369,7 @@ def generate_wannier90_input(
         kpoints        = None,
         kpoint_path    = None,
         projections    = None,
-        units         = 'bohr',
+        units          = None,
         **kwargs
         ):
     """
@@ -390,7 +402,7 @@ def generate_wannier90_input(
     projections : list, optional
         Orbital projections, e.g. ['Ga:s,p', 'As:p']
     units : str, optional
-        Units for positions and cell vectors ('bohr' or 'ang')
+        Units for positions and cell vectors ('bohr' or 'a')
     **kwargs : dict
         Additional Wannier90 parameters
     """
@@ -406,12 +418,21 @@ def generate_wannier90_input(
     # Handle structure information
     if system is not None:
         # Get structure from PhysicalSystem
-        axes = system.structure.axes
-        pos = system.structure.pos
-        elem = system.structure.elem
+        if units is not None:
+            system_units = system.change_units(units).copy()
+        else:
+            system_units = system
+            units = system.generation_info.structure.units
+
+        axes = system_units.structure.axes
+        pos = system_units.structure.pos
+        elem = system_units.structure.elem
         win.add_block('unit_cell_cart', format_unit_cell_cart(axes, units))
         win.add_block('atoms_cart', format_atoms_cart(elem, pos, units))
     else:
+        available_units = ['Bohr', 'A']
+        available_units = [u.lower() for u in available_units]
+        assert units.lower() in available_units, f'units must be one of: {", ".join(available_units)}'
         # Use provided structure information
         if unit_cell_cart is not None:
             win.add_block('unit_cell_cart', format_unit_cell_cart(unit_cell_cart, units))
@@ -453,6 +474,8 @@ def generate_wannier90_input(
 
 if __name__ == "__main__":
     # Using direct structure input
+    print('Using direct structure input')
+
     win = generate_wannier90_input(
         prefix = 'silicon',
         unit_cell_cart = [[5.43, 0.0, 0.0],
@@ -466,16 +489,47 @@ if __name__ == "__main__":
         projections = ['Si:sp3'],
         # kpoints = [[0.0, 0.0, 0.0],
         #           [0.5, 0.5, 0.5]],
-        kpoint_path = {'path': [['G', 'X'], # TODO: Check later on with seekpath
+        # TODO: Check later on with seekpath
+        # Seekpath format
+        kpoint_path = {'path': [['G', 'X'], 
                                 ['X', 'K']],
                        'point_coords': {'G': [0.0, 0.0, 0.0],
                                         'X': [0.5, 0.5, 0.5],
                                         'K': [0.375, 0.375, 0.75]}},
-        # kpoint_path = [[('G', [0.0, 0.0, 0.0]), ('X', [0.5, 0.5, 0.5])],
-        #                [('X', [0.5, 0.5, 0.5]), ('K', [0.375, 0.375, 0.75])]],
-        band_num_points = 100
+        band_num_points = 100,
+        units = 'A'
     )
 
     # Get input file contents as string
     win_text = win.write_text()
     print(win_text)    
+
+    print('Using PhysicalSystem input')
+    from physical_system import generate_physical_system    
+    from structure import Structure
+    system = generate_physical_system(
+        structure = Structure(
+            axes = [[5.43, 0.0, 0.0],
+                    [0.0, 5.43, 0.0],
+                    [0.0, 0.0, 5.43]],
+            pos = [(0.0, 0.0, 0.0), (2.715, 2.715, 2.715)],
+            elem = ['Si', 'Si'], 
+            units = 'A'),
+        net_charge = 0,
+        net_spin = 0,
+        
+    )
+
+    win = generate_wannier90_input(
+        system = system,
+        num_wann = 8,
+        num_bands = 12,
+        mp_grid = (4,4,4),
+        projections = ['Si:sp3'],
+        # Direct kpoint path
+        kpoint_path = [[('G', [0.0, 0.0, 0.0]), ('X', [0.5, 0.5, 0.5])],
+                       [('X', [0.5, 0.5, 0.5]), ('K', [0.375, 0.375, 0.75])]],
+        band_num_points = 100)  
+
+    win_text = win.write_text()
+    print(win_text)  
