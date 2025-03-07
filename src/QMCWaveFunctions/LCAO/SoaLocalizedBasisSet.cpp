@@ -376,33 +376,32 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValueVPs(const RefVectorWithLea
   displ_list_tr.resize(3ULL * NumCenters * nVPs);
 
 
-  
-  auto* Tv_host       = Tv_list.data();
-  auto* displ_host    = displ_list_tr.data();
+  auto* Tv_host    = Tv_list.data();
+  auto* displ_host = displ_list_tr.data();
 
   // "index" is loop over each virtual point
   // i.e. we do "for each (iw, iat) => iVP" in [0..nVPs-1]
-  size_t indexVP=0;
-  for (size_t iw=0; iw<vp_list.size(); iw++)
+  size_t indexVP = 0;
+  for (size_t iw = 0; iw < vp_list.size(); iw++)
   {
     // vp_list[iw].getTotalNum() = # of virtual points in this VPS
     int nVP_local = vp_list[iw].getTotalNum();
-    for (int iat=0; iat<nVP_local; iat++)
+    for (int iat = 0; iat < nVP_local; iat++)
     {
       const auto& displ = dt_list[iw].getDisplRow(iat);
       // coords for this virtual point = coordR_list[indexVP]
-      const auto& vpcoord = coordR_list[ indexVP ];
+      const auto& vpcoord = coordR_list[indexVP];
 
       // fill for all centers c in [0..NumCenters-1]
-      for (int c=0; c<NumCenters; c++)
+      for (int c = 0; c < NumCenters; c++)
       {
-        for (int dim=0; dim<3; dim++)
+        for (int dim = 0; dim < 3; dim++)
         {
-          size_t idx = dim + 3ULL * (indexVP + c*(size_t)nVPs);
+          size_t idx = dim + 3ULL * (indexVP + c * (size_t)nVPs);
           // Ion position is ions_.R[c]
-          RealType val = ions_.R[c][dim] - vpcoord[dim] - displ[c][dim];
-          Tv_host[idx]       = val;
-          displ_host[idx]    = displ[c][dim];
+          RealType val    = ions_.R[c][dim] - vpcoord[dim] - displ[c][dim];
+          Tv_host[idx]    = val;
+          displ_host[idx] = displ[c][dim];
         }
       }
       indexVP++;
@@ -414,24 +413,49 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValueVPs(const RefVectorWithLea
 #endif
   displ_list_tr.updateTo();
 
-  // Each center has BasisOffset[c] block for wavefunction,
-  for (int c=0; c<NumCenters; c++)
+  const auto& species_names = ions_.getSpeciesSet().speciesName;
+  const int num_species_    = species_names.size();
+  std::vector<std::vector<size_t>> local_centers(num_species_);
+  std::vector<std::vector<size_t>> local_offsets(num_species_);
+  for (int c = 0; c < NumCenters; c++)
   {
-    int species_id = IonID[c];
-    
-    auto one_species_basis_list = extractOneSpeciesBasisRefList(basis_list, species_id);
+    int s_id = IonID[c];
+    local_centers[s_id].push_back(c);
+    local_offsets[s_id].push_back(BasisOffset[c]);
+  }
 
-    LOBasisSet[species_id]->mw_evaluateV(
-       one_species_basis_list,
-       vps_leader.getLattice(),
-       vp_basis_v,
-       displ_list_tr,
-       Tv_list,
-       nVPs,
-       BasisSetSize,
-       c,             
-       BasisOffset[c], 
-       NumCenters );
+  using PinnedVecSizeT = Vector<size_t, OffloadPinnedAllocator<size_t>>;
+  std::vector<PinnedVecSizeT> species_centers(num_species_);
+  std::vector<PinnedVecSizeT> species_offsets(num_species_);
+
+  // Fill pinned vectors
+  for (int s = 0; s < num_species_; s++)
+  {
+    auto& c_list_s    = species_centers[s];
+    auto& offs_list_s = species_offsets[s];
+    c_list_s.resize(local_centers[s].size());
+    offs_list_s.resize(local_offsets[s].size());
+
+    for (size_t i = 0; i < local_centers[s].size(); i++)
+      c_list_s[i] = local_centers[s][i];
+    for (size_t i = 0; i < local_offsets[s].size(); i++)
+      offs_list_s[i] = local_offsets[s][i];
+
+    c_list_s.updateTo();
+    offs_list_s.updateTo();
+  }
+
+  for (int s = 0; s < num_species_; s++)
+  {
+    auto& c_list_s    = species_centers[s];
+    auto& offs_list_s = species_offsets[s];
+    if (c_list_s.size() == 0)
+      continue;
+
+    auto basis_refs = extractOneSpeciesBasisRefList(basis_list, s);
+
+    LOBasisSet[s]->mw_evaluateV_multiCenter(basis_refs, vps_leader.getLattice(), vp_basis_v, displ_list_tr, Tv_list,
+                                            nVPs, BasisSetSize, c_list_s, offs_list_s, NumCenters);
   }
 }
 
