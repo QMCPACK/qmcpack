@@ -100,50 +100,27 @@ if(QMC_COMPLEX)
       DET_BCC_MO_VMC_SCALARS # VMC
     )
 
-    if(NOT ENABLE_OFFLOAD)
-      list(APPEND DET_BCC_MO_VMCBATCH_SCALARS "totenergy" "-136.83168203 0.000002")
-      list(APPEND DET_BCC_MO_VMCBATCH_SCALARS "kinetic" "47.51512677 0.000001")
-      list(APPEND DET_BCC_MO_VMCBATCH_SCALARS "potential" "-184.34680880 0.000002")
-      list(APPEND DET_BCC_MO_VMCBATCH_SCALARS "eeenergy" "1.70262948 0.000001")
-      list(APPEND DET_BCC_MO_VMCBATCH_SCALARS "ionion" "-119.82754227 0.000002")
-      list(APPEND DET_BCC_MO_VMCBATCH_SCALARS "localecp" "-92.25629590 0.000001")
-      list(APPEND DET_BCC_MO_VMCBATCH_SCALARS "nonlocalecp" "26.06677301 0.000001")
-      list(APPEND DET_BCC_MO_VMCBATCH_SCALARS "soecp" "-0.03237245 0.000001")
-      list(APPEND DET_BCC_MO_VMCBATCH_SCALARS "samples" "144 0.0")
+    list(APPEND DET_BCC_MO_VMCBATCH_SCALARS "totenergy" "-136.83168203 0.000002")
+    list(APPEND DET_BCC_MO_VMCBATCH_SCALARS "kinetic" "47.51512677 0.000001")
+    list(APPEND DET_BCC_MO_VMCBATCH_SCALARS "potential" "-184.34680880 0.000002")
+    list(APPEND DET_BCC_MO_VMCBATCH_SCALARS "eeenergy" "1.70262948 0.000001")
+    list(APPEND DET_BCC_MO_VMCBATCH_SCALARS "ionion" "-119.82754227 0.000002")
+    list(APPEND DET_BCC_MO_VMCBATCH_SCALARS "localecp" "-92.25629590 0.000001")
+    list(APPEND DET_BCC_MO_VMCBATCH_SCALARS "nonlocalecp" "26.06677301 0.000001")
+    list(APPEND DET_BCC_MO_VMCBATCH_SCALARS "soecp" "-0.03237245 0.000001")
+    list(APPEND DET_BCC_MO_VMCBATCH_SCALARS "samples" "144 0.0")
 
-      qmc_run_and_check(
-        deterministic-bccMo_2x1x1_SOREP-vmcbatch_sdj
-        "${qmcpack_SOURCE_DIR}/tests/solids/bccMo_2x1x1_SOREP"
-        det_Mo-vmcbatch
-        det_Mo-vmcbatch.in.xml
-        1
-        1
-        TRUE
-        0
-	DET_BCC_MO_VMCBATCH_SCALARS # VMC
-      )
-
-      list(APPEND DET_BCC_MO_DMCBATCH_SCALARS "totenergy" "-135.77458823 0.000002")
-      list(APPEND DET_BCC_MO_DMCBATCH_SCALARS "kinetic" "33.81023399 0.000001")
-      list(APPEND DET_BCC_MO_DMCBATCH_SCALARS "potential" "-169.58482222 0.000002")
-      list(APPEND DET_BCC_MO_DMCBATCH_SCALARS "eeenergy" "-1.89565777 0.000001")
-      list(APPEND DET_BCC_MO_DMCBATCH_SCALARS "ionion" "-119.82754227 0.000002")
-      list(APPEND DET_BCC_MO_DMCBATCH_SCALARS "localecp" "-65.93483104 0.000001")
-      list(APPEND DET_BCC_MO_DMCBATCH_SCALARS "nonlocalecp" "18.10088733 0.000001")
-      list(APPEND DET_BCC_MO_DMCBATCH_SCALARS "soecp" "-0.02767779 0.000001")
-
-      qmc_run_and_check(
-        deterministic-bccMo_2x1x1_SOREP-dmcbatch_sdj
-        "${qmcpack_SOURCE_DIR}/tests/solids/bccMo_2x1x1_SOREP"
-        det_Mo-vmcbatch-dmcbatch
-        det_Mo-vmcbatch-dmcbatch.in.xml
-        1
-        1
-        TRUE
-        1
-	DET_BCC_MO_DMCBATCH_SCALARS # DMC
-      )
-    endif()
+    qmc_run_and_check(
+      deterministic-bccMo_2x1x1_SOREP-vmcbatch_sdj
+      "${qmcpack_SOURCE_DIR}/tests/solids/bccMo_2x1x1_SOREP"
+      det_Mo-vmcbatch
+      det_Mo-vmcbatch.in.xml
+      1
+      1
+      TRUE
+      0
+      DET_BCC_MO_VMCBATCH_SCALARS # VMC
+    )
 
     list(APPEND DET_BCC_MO_DMC_SCALARS "totenergy" "-135.34032696 0.000002")
     list(APPEND DET_BCC_MO_DMC_SCALARS "kinetic" "29.19088964 0.000001")
@@ -164,6 +141,27 @@ if(QMC_COMPLEX)
       TRUE
       1
       DET_BCC_MO_DMC_SCALARS # DMC
+    )
+
+    list(APPEND DET_BCC_MO_DMCBATCH_SCALARS "totenergy" "-135.77458823 0.000002")
+    list(APPEND DET_BCC_MO_DMCBATCH_SCALARS "kinetic" "33.81023399 0.000001")
+    list(APPEND DET_BCC_MO_DMCBATCH_SCALARS "potential" "-169.58482222 0.000002")
+    list(APPEND DET_BCC_MO_DMCBATCH_SCALARS "eeenergy" "-1.89565777 0.000001")
+    list(APPEND DET_BCC_MO_DMCBATCH_SCALARS "ionion" "-119.82754227 0.000002")
+    list(APPEND DET_BCC_MO_DMCBATCH_SCALARS "localecp" "-65.93483104 0.000001")
+    list(APPEND DET_BCC_MO_DMCBATCH_SCALARS "nonlocalecp" "18.10088733 0.000001")
+    list(APPEND DET_BCC_MO_DMCBATCH_SCALARS "soecp" "-0.02767779 0.000001")
+
+    qmc_run_and_check(
+      deterministic-bccMo_2x1x1_SOREP-dmcbatch_sdj
+      "${qmcpack_SOURCE_DIR}/tests/solids/bccMo_2x1x1_SOREP"
+      det_Mo-vmcbatch-dmcbatch
+      det_Mo-vmcbatch-dmcbatch.in.xml
+      1
+      1
+      TRUE
+      1
+      DET_BCC_MO_DMCBATCH_SCALARS # DMC
     )
   endif()
 endif()
