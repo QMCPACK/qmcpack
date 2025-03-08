@@ -409,7 +409,7 @@ A default VMC XML block has also been populated in the input:
        <parameter name="timestep"            >    0.3             </parameter>
     </qmc>
 
-Finally, let's look at the the VMC result for the total energy.  As expected, the 
+Finally, let's look at the VMC result for the total energy.  As expected, the 
 result does not differ greatly from the optimization results, but has a smaller 
 statistical error bar:
 
