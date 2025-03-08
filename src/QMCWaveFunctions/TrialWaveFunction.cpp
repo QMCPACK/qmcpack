@@ -728,6 +728,7 @@ void TrialWaveFunction::mw_calcRatioGrad(const RefVectorWithLeader<TrialWaveFunc
         ratios[iw] *= ratios_z[iw];
     }
   }
+
   for (int iw = 0; iw < wf_list.size(); iw++)
   {
     wf_list[iw].PhaseDiff = std::arg(ratios[iw]);
