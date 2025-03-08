@@ -26,6 +26,7 @@
 #include "Numerics/GaussianBasisSet.h"
 #include "QMCWaveFunctions/LCAO/LCAOrbitalBuilder.h"
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
+#include "OhmmsData/Libxml2Doc.h"
 
 namespace qmcplusplus
 {
@@ -43,7 +44,7 @@ void test_C_diamond()
     REQUIRE(okay);
     xmlNodePtr root = doc.getRoot();
 
-    ParticleSet::ParticleLayout lattice;
+    Lattice lattice;
     // BCC H
     lattice.R = {3.37316115, 3.37316115, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
     lattice.reset();

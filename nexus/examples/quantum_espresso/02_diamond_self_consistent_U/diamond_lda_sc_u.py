@@ -34,6 +34,7 @@ for step in range(num_steps):
         # Other use examples
         # hubbard      = {'V' : {('C-2p', 'C-2p'): [{'indices':(1,2), 'value':1e-8},
         #                                           {'indices':(2,1), 'value':1e-8}]}}
+        # hubbard      = {'V' : {('C-2p', 'C-2p'): [{'radius' : 5.0, 'value':1e-8}]}} # radius is in units of Bohr
         # hubbard      = {'U':{'C-2p': 1.0},
         #                 'V':{('C-2p', 'C-2p'): 1e-8}}
     #end if

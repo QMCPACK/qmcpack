@@ -25,6 +25,7 @@ PROPERTY VALUES FOR THE ROHF  SELF-CONSISTENT FIELD WAVEFUNCTION
 <simulation>
   <project id="vmc_long_noj" series="0">
       <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
+    <parameter name="driver_version">legacy</parameter>
    </project>
    <qmcsystem>
       <simulationcell>

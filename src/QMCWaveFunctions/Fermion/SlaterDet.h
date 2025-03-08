@@ -265,15 +265,6 @@ public:
                            Vector<ValueType>& dlogpsi,
                            Vector<ValueType>& dhpsioverpsi) override
   {
-    // First zero out values, since each determinant only adds on
-    // its contribution (i.e. +=) , rather than setting the value
-    // (i.e. =)
-    for (int k = 0; k < myVars.size(); ++k)
-    {
-      int kk = myVars.where(k);
-      if (kk >= 0)
-        dlogpsi[kk] = dhpsioverpsi[kk] = 0.0;
-    }
     // Now add on contribution from each determinant to the derivatives
     for (int i = 0; i < Dets.size(); i++)
       Dets[i]->evaluateDerivatives(P, active, dlogpsi, dhpsioverpsi);
@@ -281,15 +272,6 @@ public:
 
   void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& active, Vector<ValueType>& dlogpsi) override
   {
-    // First zero out values, since each determinant only adds on
-    // its contribution (i.e. +=) , rather than setting the value
-    // (i.e. =)
-    for (int k = 0; k < myVars.size(); ++k)
-    {
-      int kk = myVars.where(k);
-      if (kk >= 0)
-        dlogpsi[kk] = 0.0;
-    }
     // Now add on contribution from each determinant to the derivatives
     for (int i = 0; i < Dets.size(); i++)
       Dets[i]->evaluateDerivativesWF(P, active, dlogpsi);

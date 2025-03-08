@@ -119,13 +119,12 @@ public:
 
     size_t nR = nElec * Npbc; // total number of positions to evaluate
 
-    auto* xyz_ptr          = xyz.data();
-    auto* XYZ_ptr          = XYZ.data();
-    auto* norm_factor__ptr = norm_factor_.data();
+    auto* xyz_ptr          = xyz.device_data();
+    auto* XYZ_ptr          = XYZ.device_data();
+    auto* norm_factor__ptr = norm_factor_.device_data();
 
     PRAGMA_OFFLOAD("omp target teams distribute parallel for \
-                    map(to:norm_factor__ptr[:Nlm]) \
-                    map(to:xyz_ptr[:3*nR], XYZ_ptr[:Nlm*nR])")
+                    is_device_ptr(norm_factor__ptr, xyz_ptr, XYZ_ptr)")
     for (uint32_t ir = 0; ir < nR; ir++)
     {
       evaluate_bare(xyz_ptr[0 + 3 * ir], xyz_ptr[1 + 3 * ir], xyz_ptr[2 + 3 * ir], XYZ_ptr + (ir * Nlm), Lmax);
@@ -158,16 +157,15 @@ public:
     size_t nR     = nElec * Npbc; // total number of positions to evaluate
     size_t offset = Nlm * nR;     // stride for v/gx/gy/gz/l
 
-    auto* xyz_ptr          = xyz.data();
-    auto* XYZ_vgl_ptr      = XYZ_vgl.data();
-    auto* norm_factor__ptr = norm_factor_.data();
+    auto* xyz_ptr          = xyz.device_data();
+    auto* XYZ_vgl_ptr      = XYZ_vgl.device_data();
+    auto* norm_factor__ptr = norm_factor_.device_data();
     // TODO: make separate ptrs to start of v/gx/gy/gz/l?
     // might be more readable?
     // or just pass one ptr to evaluateVGL and apply stride/offset inside
 
     PRAGMA_OFFLOAD("omp target teams distribute parallel for \
-                    map(to:norm_factor__ptr[:Nlm]) \
-                    map(to: xyz_ptr[:3*nR], XYZ_vgl_ptr[:5*nR*Nlm])")
+                    is_device_ptr(norm_factor__ptr, xyz_ptr, XYZ_vgl_ptr)")
     for (uint32_t ir = 0; ir < nR; ir++)
     {
       constexpr T czero(0);

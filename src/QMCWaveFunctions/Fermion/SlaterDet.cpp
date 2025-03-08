@@ -52,14 +52,9 @@ void SlaterDet::extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs)
 
 void SlaterDet::checkOutVariables(const opt_variables_type& active)
 {
-  myVars.clear();
   if (isOptimizable())
     for (int i = 0; i < Dets.size(); i++)
-    {
       Dets[i]->checkOutVariables(active);
-      myVars.insertFrom(Dets[i]->myVars);
-    }
-  myVars.getIndex(active);
 }
 
 PsiValue SlaterDet::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)

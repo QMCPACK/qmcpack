@@ -77,7 +77,7 @@ protected:
   RealType tau_              = 0.1;
   RealType spin_mass_        = 1.0;
   // call recompute at the end of each block in the full/mixed precision case.
-  IndexType blocks_between_recompute_ = std::is_same<RealType, FullPrecisionRealType>::value ? 0 : 1;
+  IndexType blocks_between_recompute_ = std::is_same<RealType, FullPrecisionRealType>::value ? 10 : 1;
   bool append_run_                    = false;
 
   // from QMCDriverFactory

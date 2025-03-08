@@ -273,7 +273,7 @@ void PWOrbitalSetBuilder::transform2GridData(PWBasis::GIndex_t& nG, int spinInde
   TinyVector<double, OHMMS_DIM> TwistAngle_DP;
   TwistAngle_DP = TwistAngle;
   hfile.write(TwistAngle_DP, "twist_angle");
-  const ParticleSet::ParticleLayout& lattice(targetPtcl.getLattice());
+  const Lattice& lattice(targetPtcl.getLattice());
   RealType dx = 1.0 / static_cast<RealType>(nG[0] - 1);
   RealType dy = 1.0 / static_cast<RealType>(nG[1] - 1);
   RealType dz = 1.0 / static_cast<RealType>(nG[2] - 1);

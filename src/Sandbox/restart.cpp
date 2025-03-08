@@ -29,6 +29,7 @@
 #include "mpi/collectives.h"
 #include "ParticleBase/ParticleAttribOps.h"
 #include "Concurrency/OpenMP.h"
+#include "OhmmsData/Libxml2Doc.h"
 
 using namespace std;
 using namespace qmcplusplus;
@@ -55,7 +56,6 @@ int main(int argc, char** argv)
   using RealType         = QMCTraits::RealType;
   using FullPrecRealType = QMCTraits::FullPrecRealType;
   using ParticlePos      = ParticleSet::ParticlePos;
-  using LatticeType      = ParticleSet::ParticleLayout;
   using TensorType       = ParticleSet::TensorType;
   using PosType          = ParticleSet::PosType;
   using uint_type        = RandomGenerator::uint_type;

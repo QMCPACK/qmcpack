@@ -8,7 +8,7 @@ The Nexus script for this example is ``h2o_ae_hf.py``.
 
 Similar to Nexus, the user interface to PySCF is in the form of pure 
 Python scripts.  Because a PySCF script can come in a wide variety of 
-custom forms (far exceeding that of a Quantum Espresso input file for 
+custom forms (far exceeding that of a Quantum ESPRESSO input file for 
 example), Nexus takes the conservative approach of only adding portions 
 to an existing user-written PySCF template script.
 
@@ -67,7 +67,7 @@ The Nexus script, ``h2o_ae_hf.py``, is shown below:
     
     run_project()
 
-The overall flow of the script should be familiar from the Quantum Espresso 
+The overall flow of the script should be familiar from the Quantum ESPRESSO 
 examples presented earlier.  If it is not, please revisit these examples before 
 proceeding.
 

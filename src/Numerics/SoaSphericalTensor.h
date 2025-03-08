@@ -110,15 +110,14 @@ public:
 
     size_t nR = nElec * Npbc; // total number of positions to evaluate
 
-    auto* xyz_ptr          = xyz.data();
-    auto* Ylm_ptr          = Ylm.data();
-    auto* factorLM__ptr    = factorLM_.data();
-    auto* factorL__ptr     = factorL_.data();
-    auto* norm_factor__ptr = norm_factor_.data();
+    auto* xyz_ptr          = xyz.device_data();
+    auto* Ylm_ptr          = Ylm.device_data();
+    auto* factorLM__ptr    = factorLM_.device_data();
+    auto* factorL__ptr     = factorL_.device_data();
+    auto* norm_factor__ptr = norm_factor_.device_data();
 
     PRAGMA_OFFLOAD("omp target teams distribute parallel for \
-                    map(to:factorLM__ptr[:Nlm], factorL__ptr[:Lmax+1], norm_factor__ptr[:Nlm]) \
-                    map(to: xyz_ptr[:3*nR], Ylm_ptr[:Nlm*nR])")
+                    is_device_ptr(factorLM__ptr, factorL__ptr, norm_factor__ptr, xyz_ptr, Ylm_ptr)")
     for (uint32_t ir = 0; ir < nR; ir++)
     {
       evaluate_bare(xyz_ptr[0 + 3 * ir], xyz_ptr[1 + 3 * ir], xyz_ptr[2 + 3 * ir], Ylm_ptr + (ir * Nlm), Lmax,
@@ -152,16 +151,16 @@ public:
     const size_t nR     = nElec * Npbc; // total number of positions to evaluate
     const size_t offset = Nlm * nR;     // stride for v/gx/gy/gz/l
 
-    auto* xyz_ptr          = xyz.data();
-    auto* Ylm_vgl_ptr      = Ylm_vgl.data();
-    auto* factorLM__ptr    = factorLM_.data();
-    auto* factorL__ptr     = factorL_.data();
-    auto* factor2L__ptr    = factor2L_.data();
-    auto* norm_factor__ptr = norm_factor_.data();
+    auto* xyz_ptr          = xyz.device_data();
+    auto* Ylm_vgl_ptr      = Ylm_vgl.device_data();
+    auto* factorLM__ptr    = factorLM_.device_data();
+    auto* factorL__ptr     = factorL_.device_data();
+    auto* factor2L__ptr    = factor2L_.device_data();
+    auto* norm_factor__ptr = norm_factor_.device_data();
 
     PRAGMA_OFFLOAD("omp target teams distribute parallel for \
-                    map(to:factorLM__ptr[:Nlm], factorL__ptr[:Lmax+1], norm_factor__ptr[:Nlm], factor2L__ptr[:Lmax+1]) \
-                    map(to: xyz_ptr[:nR*3], Ylm_vgl_ptr[:5*nR*Nlm])")
+                    is_device_ptr(factorLM__ptr, factorL__ptr, norm_factor__ptr, factor2L__ptr) \
+                    is_device_ptr(xyz_ptr, Ylm_vgl_ptr)")
     for (uint32_t ir = 0; ir < nR; ir++)
       evaluateVGL_impl(xyz_ptr[0 + 3 * ir], xyz_ptr[1 + 3 * ir], xyz_ptr[2 + 3 * ir], Ylm_vgl_ptr + (ir * Nlm), Lmax,
                        factorL__ptr, factorLM__ptr, factor2L__ptr, norm_factor__ptr, offset);
@@ -388,6 +387,7 @@ PRAGMA_OFFLOAD("omp end declare target")
 
 
 PRAGMA_OFFLOAD("omp declare target")
+
 template<typename T>
 inline void SoaSphericalTensor<T>::evaluateVGL_impl(const T x,
                                                     const T y,

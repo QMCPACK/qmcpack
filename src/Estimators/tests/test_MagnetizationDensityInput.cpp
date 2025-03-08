@@ -27,8 +27,6 @@ namespace qmcplusplus
 {
 TEST_CASE("MagnetizationDensityInput::from_xml", "[estimators]")
 {
-  using POLT    = PtclOnLatticeTraits;
-  using Lattice = POLT::ParticleLayout;
   using PosType = QMCTraits::PosType;
   using namespace testing::magdensity;
 

@@ -165,7 +165,7 @@ void ham_ops_basic_serial(boost::mpi3::communicator& world)
 
     // Calculates Overlap, G
 // NOTE: Make small factory routine!
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
     auto SDet(SlaterDetOperations_serial<ComplexType, DeviceBufferManager>(NPOL * NMO, NAEA, DeviceBufferManager{}));
 #else
     auto SDet(SlaterDetOperations_shared<ComplexType>(NPOL * NMO, NAEA));
@@ -200,8 +200,7 @@ void ham_ops_basic_serial(boost::mpi3::communicator& world)
     Eloc[0][2] = (TG.Node() += ComplexType(Eloc[0][2]));
     if (std::abs(file_data.E0 + file_data.E1) > 1e-8)
     {
-      CHECK(real(Eloc[0][0]) == Approx(real(file_data.E0 + file_data.E1)));
-      CHECK(imag(Eloc[0][0]) == Approx(imag(file_data.E0 + file_data.E1)));
+      CHECK(ComplexType(Eloc[0][0]) == ComplexApprox(file_data.E0 + file_data.E1));
     }
     else
     {
@@ -209,8 +208,7 @@ void ham_ops_basic_serial(boost::mpi3::communicator& world)
     }
     if (std::abs(file_data.E2) > 1e-8)
     {
-      CHECK(real(Eloc[0][1] + Eloc[0][2]) == Approx(real(file_data.E2)));
-      CHECK(imag(Eloc[0][1] + Eloc[0][2]) == Approx(imag(file_data.E2)));
+      CHECK(Eloc[0][1] + Eloc[0][2] == ComplexApprox(file_data.E2));
     }
     else
     {
@@ -242,8 +240,7 @@ void ham_ops_basic_serial(boost::mpi3::communicator& world)
     }
     if (std::abs(file_data.Xsum) > 1e-8)
     {
-      CHECK(real(Xsum) == Approx(real(file_data.Xsum)));
-      CHECK(imag(Xsum) == Approx(imag(file_data.Xsum)));
+      CHECK(Xsum == ComplexApprox(file_data.Xsum));
     }
     else
     {
@@ -258,20 +255,20 @@ void ham_ops_basic_serial(boost::mpi3::communicator& world)
     HOps.vHS(X, vHS, sqrtdt);
     TG.local_barrier();
     ComplexType Vsum = 0;
+    using std::get;
     if (HOps.transposed_vHS())
     {
-      for (int i = 0; i < std::get<1>(vHS.sizes()); i++)
+      for (int i = 0; i < get<1>(vHS.sizes()); i++)
         Vsum += vHS[0][i];
     }
     else
     {
-      for (int i = 0; i < std::get<0>(vHS.sizes()); i++)
+      for (int i = 0; i < get<0>(vHS.sizes()); i++)
         Vsum += vHS[i][0];
     }
     if (std::abs(file_data.Vsum) > 1e-8)
     {
-      CHECK(real(Vsum) == Approx(real(file_data.Vsum)));
-      CHECK(imag(Vsum) == Approx(imag(file_data.Vsum)));
+      CHECK(Vsum == ComplexApprox(file_data.Vsum));
     }
     else
     {
@@ -351,10 +348,9 @@ void ham_ops_basic_serial(boost::mpi3::communicator& world)
     {
       for (int j = 0; j < NMO; j++)
       {
-        if (std::abs(Mat[i][j] - real(GFock[1][0][i * NMO + j])) > 1e-5)
+        if (auto gfock = ComplexType(GFock[1][0][i * NMO + j]); std::abs(Mat[i][j] - std::real(gfock)) > 1e-5)
         {
-          std::cout << "DELTAA: " << i << " " << j << " " << Mat[i][j] << " " << real(GFock[1][0][i * NMO + j])
-                    << std::endl;
+          std::cout << "DELTAA: " << i << " " << j << " " << Mat[i][j] << " " << std::real(gfock) << std::endl;
         }
         //if(std::abs(real(GFock[1][0][i*NMO+j]))>1e-6)
         //std::cout << i << " " << j << " " << real(GFock[1][0][i*NMO+j]) << " " << std::endl;
@@ -369,10 +365,9 @@ void ham_ops_basic_serial(boost::mpi3::communicator& world)
       {
         //std::cout << Mat[i][j] << std::endl;
         //std::cout << Mat[i][j]-real(GFock[0][0][i*NMO+j]) << std::endl;
-        if (std::abs(Mat[i][j] - real(GFock[0][0][i * NMO + j])) > 1e-5)
+        if (auto gfock = ComplexType(GFock[0][0][i * NMO + j]); std::abs(Mat[i][j] - std::real(gfock)) > 1e-5)
         {
-          std::cout << "DELTAB: " << i << " " << j << " " << Mat[i][j] << " " << real(GFock[0][0][i * NMO + j])
-                    << std::endl;
+          std::cout << "DELTAB: " << i << " " << j << " " << Mat[i][j] << " " << std::real(gfock) << std::endl;
         }
         //if(std::abs(real(GFock[0][0][i*NMO+j]))>1e-6)
         //std::cout << i << " " << j << " " << real(GFock[0][0][i*NMO+j]) << " " << real(GFock[0][1][i*NMO+j]) << " " << real(GFock[0][2][i*NMO+j]) << std::endl;
@@ -386,7 +381,7 @@ TEST_CASE("ham_ops_basic_serial", "[hamiltonian_operations]")
   auto world = boost::mpi3::environment::get_world_instance();
   auto node  = world.split_shared(world.rank());
 
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
 
   arch::INIT(node);
   using Alloc = device::device_allocator<ComplexType>;

@@ -253,7 +253,7 @@ void InitMolecularSystem::initWithVolume(ParticleSet* ions, ParticleSet* els)
     }
   }
 
-  ParticleSet::ParticleLayout slattice(ions->getLattice());
+  Lattice slattice(ions->getLattice());
   slattice.set(newbox);
 
   app_log() << "  InitMolecularSystem::initWithVolume " << std::endl;

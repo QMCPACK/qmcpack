@@ -187,15 +187,16 @@ public:
       int ncol(NAEA + ((walker_type == CLOSED) ? 0 : NAEB));
       int nx((walker_type == COLLINEAR) ? 2 : 1);
 
+      using std::get;
       // 1. check structures
-      if (std::get<0>(Refs.sizes()) != wset.size() || std::get<1>(Refs.sizes()) != nrefs || std::get<2>(Refs.sizes()) != nrow * ncol)
+      if (get<0>(Refs.sizes()) != wset.size() || get<1>(Refs.sizes()) != nrefs || get<2>(Refs.sizes()) != nrow * ncol)
         Refs = mpi3CTensor({wset.size(), nrefs, nrow * ncol}, Refs.get_allocator());
       DeviceBufferManager buffer_manager;
       StaticMatrix detR({wset.size(), nrefs * nx},
                         buffer_manager.get_generator().template get_allocator<ComplexType>());
 
       int n0, n1;
-      std::tie(n0, n1) = FairDivideBoundary(TG.getLocalTGRank(), int(std::get<2>(Refs.sizes())), TG.getNCoresPerTG());
+      std::tie(n0, n1) = FairDivideBoundary(TG.getLocalTGRank(), int(get<2>(Refs.sizes())), TG.getNCoresPerTG());
       boost::multi::array_ref<ComplexType, 3> Refs_(to_address(Refs.origin()), Refs.extensions());
 
       // 2. setup back propagated references

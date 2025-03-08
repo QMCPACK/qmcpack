@@ -79,11 +79,6 @@ packages:
         - spec: openssl@1.1.1k
           prefix: /usr
           buildable: False
-    libffi:
-        externals:
-        - spec: libffi@3.4.2
-          prefix: /
-          buildable: False
 EOF
 ;;
     nitrogen )
@@ -110,11 +105,6 @@ packages:
         - spec: openssl@1.1.1k
           prefix: /usr
           buildable: False
-    libffi:
-        externals:
-        - spec: libffi@3.4.2
-          prefix: /
-          buildable: False
 EOF
 ;;
     sulfur )
@@ -140,11 +130,6 @@ packages:
         externals:
         - spec: openssl@1.1.1k
           prefix: /usr
-          buildable: False
-    libffi:
-        externals:
-        - spec: libffi@3.4.2
-          prefix: /
           buildable: False
 EOF
 	;;
@@ -197,12 +182,12 @@ cd $HOME/apps/spack
 
 # For reproducibility, use a specific version of Spack
 # Prefer to use tagged releases https://github.com/spack/spack/releases
-git checkout eb9ff5d7a7d47f112ece5a4c70ef603a047a2fbc
-#commit eb9ff5d7a7d47f112ece5a4c70ef603a047a2fbc (HEAD -> develop, origin/develop, origin/HEAD)
-#Author: Harmen Stoppels <me@harmenstoppels.nl>
-#Date:   Tue Nov 5 13:25:19 2024 +0100
+git checkout 75c3d0a053c9705e1c1f88a94c47ffd36f4be1dd
+#commit 75c3d0a053c9705e1c1f88a94c47ffd36f4be1dd (HEAD -> develop, origin/develop, origin/HEAD)
+#Author: Lehman Garrison <lgarrison@flatironinstitute.org>
+#Date:   Wed Feb 19 10:14:35 2025 -0500
 #
-#    paraview: add forward compat bound with cuda (#47430)
+#    py-yt: add 4.4.0 and dependencies (#47571)
 
 echo --- Git version and last log entry
 git log -1

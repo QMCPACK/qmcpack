@@ -83,6 +83,7 @@ opt = generate_qmcpack(
     # input format selector   
     input_type   = 'basic',
     # qmcpack input parameters
+    driver       = 'legacy',
     corrections  = [], 
     jastrows     = [('J1','bspline',8,6),   # 1 body bspline jastrow
                     ('J2','bspline',8,8)],  # 2 body bspline jastrow
@@ -119,6 +120,7 @@ qmc = generate_qmcpack(
     # input format selector                                      
     input_type   = 'basic',
     # qmcpack input parameters
+    driver       = 'legacy',
     corrections  = [],              # no finite size corrections
     jastrows     = [],              # overwritten from opt
     calculations = [                # qmcpack input parameters for qmc

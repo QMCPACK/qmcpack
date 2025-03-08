@@ -24,6 +24,7 @@
 #include "Concurrency/Info.hpp"
 #include "type_traits/ConvertToReal.h"
 #include "NaNguard.h"
+#include "Fermion/SlaterDet.h"
 #include "Fermion/MultiSlaterDetTableMethod.h"
 
 namespace qmcplusplus
@@ -105,6 +106,15 @@ const SPOSet& TrialWaveFunction::getSPOSet(const std::string& name) const
   if (spoit == spomap_->end())
     throw std::runtime_error("SPOSet " + name + " cannot be found!");
   return *spoit->second;
+}
+
+RefVector<SlaterDet> TrialWaveFunction::findSD() const
+{
+  RefVector<SlaterDet> refs;
+  for (auto& component : Z)
+    if (auto* comp_ptr = dynamic_cast<SlaterDet*>(component.get()); comp_ptr)
+      refs.push_back(*comp_ptr);
+  return refs;
 }
 
 RefVector<MultiSlaterDetTableMethod> TrialWaveFunction::findMSD() const

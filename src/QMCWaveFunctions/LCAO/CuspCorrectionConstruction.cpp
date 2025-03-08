@@ -23,7 +23,7 @@
 #include "MultiQuinticSpline1D.h"
 #include "Numerics/MinimizeOneDim.h"
 #include "OhmmsData/AttributeSet.h"
-
+#include "OhmmsData/Libxml2Doc.h"
 
 namespace qmcplusplus
 {

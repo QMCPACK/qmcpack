@@ -96,6 +96,7 @@ conv = generate_pw2qmcpack(
     )
 
 qmc = generate_qmcpack(
+    driver         = 'legacy',
     det_format     = 'old',
     identifier     = 'vmc',
     path           = 'diamond/vmc_opt_tiling',
@@ -119,6 +120,7 @@ qmc = generate_qmcpack(
     )
 
 qmc_optical = generate_qmcpack(
+    driver         = 'legacy',
     det_format     = 'old',
     identifier     = 'vmc',
     path           = 'diamond/vmc_opt_tiling_optical',

@@ -205,6 +205,43 @@ qmc_run_and_check(
   BCC_H_PW_SCALARS # VMC
 )
 
+qmc_run_and_check(
+  short-bccH_1x1x1_ae-vmcbatch_sdj-pw
+  "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
+  qmc_short_batch_pw
+  qmc_short_batch_pw.in.xml
+  1
+  16
+  TRUE
+  0
+  BCC_H_PW_SCALARS # VMC
+)
+
+qmc_run_and_check(
+  short-bccH_1x1x1_ae-vmcbatch_sdj-pw
+  "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
+  qmc_short_batch_pw
+  qmc_short_batch_pw.in.xml
+  16
+  1
+  TRUE
+  0
+  BCC_H_PW_SCALARS # VMC
+)
+
+qmc_run_and_check(
+  short-bccH_1x1x1_ae-vmcbatch_sdj-pw
+  "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
+  qmc_short_batch_pw
+  qmc_short_batch_pw.in.xml
+  4
+  4
+  TRUE
+  0
+  BCC_H_PW_SCALARS # VMC
+)
+
+
 #
 # Long variants of above, about 1/2 hour with 16 cores
 #

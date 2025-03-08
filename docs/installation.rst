@@ -65,7 +65,7 @@ corresponding to the release. To obtain the latest release:
 
 -  Download the latest QMCPACK distribution from http://www.qmcpack.org.
 
--  Untar the archive (e.g., ``tar xvf qmcpack_v1.3.tar.gz``).
+-  Untar the archive (e.g., ``tar xvf v4.0.0.tar.gz``).
 
 Releases can also be obtained from the ‘master’ branch of the QMCPACK
 git repository, similar to obtaining the development version
@@ -130,7 +130,7 @@ unsupported and untested by the developers although they may still work.
    performance at large scale requires parallel version :math:`>=` 1.10.
 
 -  BOOST, peer-reviewed portable C++ source libraries
-   (http://www.boost.org). Minimum version is 1.61.0.
+   (http://www.boost.org). Minimum version is 1.70.0 and only needs ``headers`` library.
 
 -  FFTW, FFT library (http://www.fftw.org/).
 
@@ -287,13 +287,13 @@ the path to the source directory.
                           Mixed precision calculations can be signifiantly faster but should be
                           carefully checked validated against full double precision runs,
                           particularly for large electron counts.
-    ENABLE_OFFLOAD        ON/OFF(default). Enable OpenMP target offload for GPU acceleration.
-    ENABLE_CUDA           ON/OFF(default). Enable CUDA code path for NVIDIA GPU acceleration.
-                          Production quality for AFQMC and real-space performance portable implementation.
-    QMC_CUDA2HIP          ON/OFF(default). Map all CUDA kernels and library calls to HIP and use ROCm libraries.
-                          Set both ENABLE_CUDA and QMC_CUDA2HIP ON to target AMD GPUs.
-    ENABLE_SYCL           ON/OFF(default). Enable SYCL code path. Only support Intel GPUs and OneAPI compilers.
+    QMC_GPU               Semicolon-separated list of GPU features to build (openmp,cuda,hip,sycl).
+                          "openmp", "cuda", "hip" and "sycl" for GPU acceleration via OpenMP offload, CUDA, HIP and SYCL.
+                          Recommended values: "openmp;cuda" for NVIDIA, "openmp;hip" for AMD, "openmp;sycl" for Intel.
+                          Its default value is set to the recommended value if QMC_GPU_ARCHS indicates a specific vendor
+                          or left empty otherwise.
     QMC_GPU_ARCHS         Specify GPU architectures. For example, "gfx90a" targets AMD MI200 series GPUs.
+                          "intel_gpu_pvc" targets Intel Data Center GPU Max 1xxx.
                           "sm_80;sm_70" creates a single executable running on both NVIDIA A100 and V100 GPUs.
                           Mixing vendor "gfx90a;sm_70" is not supported. If not set, atempt to derive it
                           from CMAKE_CUDA_ARCHITECTURES or CMAKE_HIP_ARCHITECTURES if available and then
@@ -329,6 +329,10 @@ the path to the source directory.
 
   ::
 
+    BUILD_AFQMC            ON/OFF(default). Build the Auxiliary-Field Quantum Monte Carlo (AFQMC) feature
+    BUILD_AFQMC_WITH_NCCL  ON/OFF(default). Enable the optimized code path using NVIDIA Collective Communications Library (NCCL) in AFQMC.
+                           AFQMC and CUDA features required to enable this feature.
+    BUILD_AFQMC_HIP        ON/OFF(default). Enable HIP accelerated code paths in AFQMC. AFQMC feature required to enable this feature.
     ENABLE_TIMERS          ON(default)/OFF. Enable fine-grained timers. Timers are on by default but at level coarse
                            to avoid potential slowdown in tiny systems.
                            For systems beyond tiny sizes (100+ electrons) there is no risk.
@@ -343,6 +347,19 @@ the path to the source directory.
                            if the build is on a separate filesystem from the source, as
                            required on some HPC systems.
     ENABLE_PPCONVERT       ON/OFF. Enable the ppconvert tool. If requirements are met, it is ON by default.
+    USE_OBJECT_TARGET      ON/OFF(default). Use CMake object library targets to workaround linker not being able to handle hybrid
+                           binary archives which contain both host and device codes.
+
+- Expert performance fine tuning options
+
+  ::
+
+    QMC_OFFLOAD_MEM_ASSOCIATED     ON/OFF. ON by default only when using both OpenMP offload and HIP
+                                   programming models and the host compiler is Clang based.
+                                   Use omp_target_associate_ptr instead of direct OpenMP offload maps in dual-space allocators.
+                                   Allocate device memory using vendor runtimes instead of the OpenMP runtime.
+    QMC_DISABLE_HIP_HOST_REGISTER  ON/OFF(default). If ON, make all the use of hipHostRegister/Unregister
+                                   as no-op, namely disabling all the use of pinned memory.
 
 - BLAS/LAPACK related
 
@@ -406,68 +423,6 @@ the path to the source directory.
 `Clang thread sanitizer library msan <https://clang.llvm.org/docs/MemorySanitizer.html>`_
 
 See :ref:`Sanitizer-Libraries` for more information.
-
-
-.. _offloadbuild:
-
-Notes for OpenMP target offload to accelerators (experimental)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-QMCPACK is currently being updated to support OpenMP target offload and obtain performance
-portability across GPUs from different vendors. This is currently an experimental feature
-and is not suitable for production. Additional implementation in QMCPACK as
-well as improvements in open-source and vendor compilers is required for production status 
-to be reached. The following compilers have been verified:
-
-- LLVM Clang 15. Support NVIDIA GPUs.
-
-  ::
-
-    -D ENABLE_OFFLOAD=ON
-
-  Clang and its downstream compilers support two extra options
-  
-  ::
-
-    OFFLOAD_TARGET for the offload target. default nvptx64-nvidia-cuda.
-    OFFLOAD_ARCH for the target architecture (sm_80, gfx906, ...) if not using the compiler default.
-
-- AMD ROCm/AOMP LLVM-based compilers. Support AMD GPUs.
-  
-  ::
-  
-    -D ENABLE_OFFLOAD=ON -D OFFLOAD_TARGET=amdgcn-amd-amdhsa -D OFFLOAD_ARCH=gfx906
-
-- Intel oneAPI 2022.1.0 icx/icpx compilers. Support Intel GPUs.
-  
-  ::
-  
-    -D ENABLE_OFFLOAD=ON -D OFFLOAD_TARGET=spir64
-
-- HPE Cray 13. It is derived from Clang and supports NVIDIA and AMD GPUs.
-  
-  ::
-  
-    -D ENABLE_OFFLOAD=ON -D OFFLOAD_TARGET=nvptx64-nvidia-cuda -D OFFLOAD_ARCH=sm_80
-
-OpenMP offload features can be used together with vendor specific code paths to maximize QMCPACK performance.
-Some new CUDA functionality has been implemented to improve performance on NVIDIA GPUs in conjunction with the offload code paths:
-For example, using Clang 14 on Summit.
-
-  ::
-  
-    -D ENABLE_OFFLOAD=ON -D ENABLE_CUDA=ON -D QMC_GPU_ARCHS=sm_80
-
-Similarly, HIP features can be enabled in conjunction with the offload code path to improve performance on AMD GPUs.
-
-  ::
-
-    -D ENABLE_OFFLOAD=ON -D ENABLE_CUDA=ON -D QMC_CUDA2HIP=ON -D QMC_GPU_ARCHS=gfx90a
-
-Similarly, SYCL features can be enabled in conjunction with the offload code path to improve performance on Intel GPUs.
-
-  ::
-
-    -D ENABLE_OFFLOAD=ON -D ENABLE_SYCL=ON
 
 
 Installation from CMake
@@ -878,89 +833,19 @@ package. This was successfully tested under OS X 10.15.7 "Catalina" on October 2
 
     ctest -R deterministic
 
-Installing on ALCF Theta, Cray XC40
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Theta is a 9.65 petaflops system manufactured by Cray with 3,624 compute nodes.
-Each node features a second-generation Intel Xeon Phi 7230 processor and 192 GB DDR4 RAM.
-
-::
-
-  export CRAYPE_LINK_TYPE=dynamic
-  module load cmake/3.20.4
-  module unload cray-libsci
-  module load cray-hdf5-parallel
-  module load gcc/8.3.0   # Make C++ 14 standard library available to the Intel compiler
-  export BOOST_ROOT=/soft/libraries/boost/1.64.0/intel
-  cmake -DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment ..
-  make -j 24
-  ls -l bin/qmcpack
-
 Installing on ALCF Polaris
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 Polaris is a HPE Apollo Gen10+ based 44 petaflops system.
 Each node features a AMD EPYC 7543P CPU and 4 NVIDIA A100 GPUs.
 A build recipe for Polaris can be found at ``<qmcpack_source>/config/build_alcf_polaris_Clang.sh``
 
-Installing on ORNL OLCF Summit
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Summit is an IBM system at the ORNL OLCF built with IBM Power System AC922
-nodes. They have two IBM Power 9 processors and six NVIDIA Volta V100
-accelerators.
-
-Building QMCPACK
-^^^^^^^^^^^^^^^^
-
-As of April 2023, LLVM Clang (>=15) is the only compiler, validated by QMCPACK developers,
-on Summit for OpenMP offloading computation to NVIDIA GPUs.
-
-For ease of reproducibility we provide build scripts for Summit.
-
-::
-
-  cd qmcpack
-  ./config/build_olcf_summit_Clang.sh
-  ls build_*/bin
-
-Running QMCPACK
-^^^^^^^^^^^^^^^
-Job script example with one MPI rank per GPU.
-
-::
-
-  #!/bin/bash
-  # Begin LSF directives
-  #BSUB -P MAT151
-  #BSUB -J test
-  #BSUB -o tst.o%J
-  #BSUB -W 60
-  #BSUB -nnodes 1
-  #BSUB -alloc_flags smt1
-  # End LSF directives and begin shell commands
-
-  module load gcc/9.3.0
-  module load spectrum-mpi
-  module load cuda
-  module load essl
-  module load netlib-lapack
-  module load hdf5/1.10.7
-  module load fftw
-  # private module until OLCF provides a new llvm build
-  module use /gpfs/alpine/mat151/world-shared/opt/modules
-  module load llvm/release-15.0.0-cuda11.0
-
-  NNODES=$(((LSB_DJOB_NUMPROC-1)/42))
-  RANKS_PER_NODE=6
-  RS_PER_NODE=6
-
-  exe_path=/gpfs/alpine/mat151/world-shared/opt/qmcpack/release-3.16.0/build_summit_Clang_offload_cuda_real/bin
-
-  prefix=NiO-fcc-S1-dmc
-
-  export OMP_NUM_THREADS=7
-  jsrun -n $NNODES -a $RANKS_PER_NODE -c $((RANKS_PER_NODE*OMP_NUM_THREADS)) -g 6 -r 1 -d packed -b packed:$OMP_NUM_THREADS \
-        --smpiargs="-disable_gpu_hooks" $exe_path/qmcpack --enable-timers=fine $prefix.xml >& $prefix.out
+Installing on ALCF Aurora
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+Aurora is a 10,624 node HPE Cray EX based system. It has 166 racks with 21,248 CPUs and 63,744 GPUs.
+Each node consists of 2 Intel Xeon CPU Max 9470C (codename Sapphire Rapids or SPR) with on-package HBM
+and 6 Intel Data Center GPU Max 1550 (codename Ponte Vecchio or PVC).
+Each Xeon has 52 physical cores supporting 2 hardware threads per core and 64GB of HBM. Each CPU has 512 GB of DDR5.
+A build recipe for Aurora can be found at ``<qmcpack_source>/config/build_alcf_aurora_icpx.sh``
 
 Installing on ORNL OLCF Frontier/Crusher
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1020,113 +905,6 @@ Job script example with one MPI rank per GPU.
   export OMP_NUM_THREADS=7 # change this to 1 if running with only 1 thread is intended.
   srun -n $TOTAL_RANKS --ntasks-per-node=$RANKS_PER_NODE --gpus-per-task=1 -c $THREAD_SLOTS --gpu-bind=closest \
        $exe_path/qmcpack --enable-timers=fine $prefix.xml >& $prefix.out
-
-Installing on NERSC Cori, Haswell Partition, Cray XC40
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Cori is a Cray XC40 that includes 16-core Intel "Haswell" nodes
-installed at NERSC. In the following example, the source code is
-cloned in \$HOME/qmc/git\_QMCPACK and QMCPACK is built in the scratch
-space.
-
-::
-
-  mkdir $HOME/qmc
-  mkdir $HOME/qmc/git_QMCPACK
-  cd $HOME/qmc_git_QMCPACK
-  git clone https://github.com/QMCPACK/qmcpack.git
-  cd qmcpack
-  git checkout v3.7.0 # Edit for desired version
-  export CRAYPE_LINK_TYPE=dynamic
-  module unload cray-libsci
-  module load boost/1.70.0
-  module load cray-hdf5-parallel
-  module load cmake/3.14.4
-  module load gcc/8.3.0 # Make C++ 14 standard library available to the Intel compiler
-  cd $SCRATCH
-  mkdir build_cori_hsw
-  cd build_cori_hsw
-  cmake -DQMC_SYMLINK_TEST_FILES=0 -DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment $HOME/qmc/git_QMCPACK/qmcpack/
-  nice make -j 8
-  ls -l bin/qmcpack
-
-When the preceding was tested on June 15, 2020, the following module and
-software versions were present:
-
-::
-
-  build_cori_hsw> module list
-  Currently Loaded Modulefiles:
-  1) modules/3.2.11.4                                 13) xpmem/2.2.20-7.0.1.1_4.8__g0475745.ari
-  2) nsg/1.2.0                                        14) job/2.2.4-7.0.1.1_3.34__g36b56f4.ari
-  3) altd/2.0                                         15) dvs/2.12_2.2.156-7.0.1.1_8.6__g5aab709e
-  4) darshan/3.1.7                                    16) alps/6.6.57-7.0.1.1_5.10__g1b735148.ari
-  5) intel/19.0.3.199                                 17) rca/2.2.20-7.0.1.1_4.42__g8e3fb5b.ari
-  6) craype-network-aries                             18) atp/2.1.3
-  7) craype/2.6.2                                     19) PrgEnv-intel/6.0.5
-  8) udreg/2.3.2-7.0.1.1_3.29__g8175d3d.ari           20) craype-haswell
-  9) ugni/6.0.14.0-7.0.1.1_7.32__ge78e5b0.ari         21) cray-mpich/7.7.10
-  10) pmi/5.0.14                                      22) craype-hugepages2M
-  11) dmapp/7.1.1-7.0.1.1_4.43__g38cf134.ari          23) gcc/8.3.0
-  12) gni-headers/5.0.12.0-7.0.1.1_6.27__g3b1768f.ari 24) cmake/3.14.4
-
-The following slurm job file can be used to run the tests:
-
-::
-
-  #!/bin/bash
-  #SBATCH --qos=debug
-  #SBATCH --time=00:10:00
-  #SBATCH --nodes=1
-  #SBATCH --tasks-per-node=32
-  #SBATCH --constraint=haswell
-  echo --- Start `date`
-  echo --- Working directory: `pwd`
-  ctest -VV -R deterministic
-  echo --- End `date`
-
-Installing on NERSC Cori, Xeon Phi KNL partition, Cray XC40
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Cori is a Cray XC40 that includes Intel Xeon Phi Knight's Landing (KNL) nodes. The following build recipe ensures that the code
-generation is appropriate for the KNL nodes. The source is assumed to
-be in \$HOME/qmc/git\_QMCPACK/qmcpack as per the Haswell example.
-
-::
-
-  export CRAYPE_LINK_TYPE=dynamic
-  module swap craype-haswell craype-mic-knl # Only difference between Haswell and KNL recipes
-  module unload cray-libsci
-  module load boost/1.70.0
-  module load cray-hdf5-parallel
-  module load cmake/3.14.4
-  module load gcc/8.3.0 # Make C++ 14 standard library available to the Intel compiler
-  cd $SCRATCH
-  mkdir build_cori_knl
-  cd build_cori_knl
-  cmake -DQMC_SYMLINK_TEST_FILES=0 -DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment $HOME/qmc/git_QMCPACK/qmcpack/
-  nice make -j 8
-  ls -l bin/qmcpack
-
-When the preceding was tested on June 15, 2020, the following module and
-software versions were present:
-
-::
-
-  build_cori_knl> module list
-    Currently Loaded Modulefiles:
-    1) modules/3.2.11.4                                 13) xpmem/2.2.20-7.0.1.1_4.8__g0475745.ari
-    2) nsg/1.2.0                                        14) job/2.2.4-7.0.1.1_3.34__g36b56f4.ari
-    3) altd/2.0                                         15) dvs/2.12_2.2.156-7.0.1.1_8.6__g5aab709e
-    4) darshan/3.1.7                                    16) alps/6.6.57-7.0.1.1_5.10__g1b735148.ari
-    5) intel/19.0.3.199                                 17) rca/2.2.20-7.0.1.1_4.42__g8e3fb5b.ari
-    6) craype-network-aries                             18) atp/2.1.3
-    7) craype/2.6.2                                     19) PrgEnv-intel/6.0.5
-    8) udreg/2.3.2-7.0.1.1_3.29__g8175d3d.ari           20) craype-mic-knl
-    9) ugni/6.0.14.0-7.0.1.1_7.32__ge78e5b0.ari         21) cray-mpich/7.7.10
-   10) pmi/5.0.14                                       22) craype-hugepages2M
-   11) dmapp/7.1.1-7.0.1.1_4.43__g38cf134.ari           23) gcc/8.3.0
-   12) gni-headers/5.0.12.0-7.0.1.1_6.27__g3b1768f.ari  24) cmake/3.14.4
 
 Installing on systems with ARMv8-based processors
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1411,7 +1189,7 @@ options and different versions of the application. A full list can be displayed 
     ppconvert [off]         on, off                 Install with pseudopotential
                                                     converter.
     qe [on]                 on, off                 Install with patched Quantum
-                                                    Espresso 6.4.0
+                                                    ESPRESSO 6.4.0
     timers [off]            on, off                 Build with support for timers
 
   Installation Phases:
@@ -1598,10 +1376,10 @@ The tests include the following:
   behavior to higher statistical accuracy.
 
 - Converter tests: to check conversion of trial wavefunctions
-  from codes such as QE and GAMESS to QMCPACK's
+  from codes such as QE, PySCF, and GAMESS to QMCPACK's
   formats. These should always pass.
 
-- Workflow tests: in the case of QE, we test the
+- Workflow tests: in the case of QE and PySCF, we test the
   entire cycle of DFT calculation, trial wavefunction conversion, and
   a subsequent VMC run.
 

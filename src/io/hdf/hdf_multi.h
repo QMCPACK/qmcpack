@@ -18,7 +18,7 @@
 #include "hdf_hyperslab.h"
 
 #ifdef BUILD_AFQMC
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
 #include "AFQMC/Memory/device_pointers.hpp"
 #endif
 #endif
@@ -63,8 +63,9 @@ struct h5data_proxy<boost::multi::array<T, 2, Alloc>> : public h5_space_type<T, 
 
   inline h5data_proxy(const data_type& a)
   {
-    dims[0] = std::get<0>(a.sizes());
-    dims[1] = std::get<1>(a.sizes());
+    using std::get;
+    dims[0] = get<0>(a.sizes());
+    dims[1] = get<1>(a.sizes());
   }
 
   inline bool read(data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
@@ -92,12 +93,13 @@ struct h5data_proxy<boost::multi::array_ref<T, 1, Ptr>> : public h5_space_type<T
 
   inline bool read(data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
+    using std::get;
     if (!checkShapeConsistency<T>(grp, aname, FileSpace::rank, dims))
     {
       if (dims[0] > 0)
       {
         std::cerr << " Error: multi::array_ref can't be resized in h5data_proxy<>::read." << std::endl;
-        std::cerr << dims[0] << " " << std::get<0>(ref.sizes()) << std::endl;
+        std::cerr << dims[0] << " " << get<0>(ref.sizes()) << std::endl;
       }
       return false;
     }
@@ -120,18 +122,21 @@ struct h5data_proxy<boost::multi::array_ref<T, 2, Ptr>> : public h5_space_type<T
 
   inline h5data_proxy(const data_type& a)
   {
-    dims[0] = std::get<0>(a.sizes());
-    dims[1] = std::get<1>(a.sizes());
+    using std::get;
+    dims[0] = get<0>(a.sizes());
+    dims[1] = get<1>(a.sizes());
   }
 
   inline bool read(data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
+    using std::get;
+
     if (!checkShapeConsistency<T>(grp, aname, FileSpace::rank, dims))
     {
       if (dims[0] * dims[1] > 0)
       {
         std::cerr << " Error: multi::array_ref can't be resized in h5data_proxy<>::read." << std::endl;
-        std::cerr << dims[0] << " " << dims[1] << " " << std::get<0>(ref.sizes()) << " " << std::get<1>(ref.sizes()) << std::endl;
+        std::cerr << dims[0] << " " << dims[1] << " " << get<0>(ref.sizes()) << " " << get<1>(ref.sizes()) << std::endl;
       }
       return false;
     }
@@ -146,7 +151,7 @@ struct h5data_proxy<boost::multi::array_ref<T, 2, Ptr>> : public h5_space_type<T
 
 
 #ifdef BUILD_AFQMC
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
 // Specializations for cuda_gpu_allocator
 // Need buffered I/O and copies to gpu
 template<typename T>
@@ -257,18 +262,20 @@ struct h5data_proxy<boost::multi::array_ref<T, 2, device::device_pointer<T>>> : 
 
   inline h5data_proxy(const data_type& a)
   {
-    dims[0] = std::get<0>(a.sizes());
-    dims[1] = std::get<1>(a.sizes());
+    using std::get;
+    dims[0] = get<0>(a.sizes());
+    dims[1] = get<1>(a.sizes());
   }
 
   inline bool read(data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
+    using std::get;
     if (!checkShapeConsistency<T>(grp, aname, FileSpace::rank, dims))
     {
       if (dims[0] * dims[1] > 0)
       {
         std::cerr << " Error: multi::array_ref can't be resized in h5data_proxy<>::read." << std::endl;
-        std::cerr << dims[0] << " " << dims[1] << " " << std::get<0>(ref.sizes()) << " " << std::get<1>(ref.sizes()) << std::endl;
+        std::cerr << dims[0] << " " << dims[1] << " " << get<0>(ref.sizes()) << " " << get<1>(ref.sizes()) << std::endl;
       }
       return false;
     }

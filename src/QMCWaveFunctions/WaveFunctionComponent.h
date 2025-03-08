@@ -86,8 +86,6 @@ public:
 
   /** current update mode */
   int UpdateMode;
-  ///list of variables this WaveFunctionComponent handles
-  opt_variables_type myVars;
   ///Bytes in WFBuffer
   size_t Bytes_in_WFBuffer;
 

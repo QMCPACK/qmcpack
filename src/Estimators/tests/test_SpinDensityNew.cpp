@@ -139,7 +139,7 @@ TEST_CASE("SpinDensityNew::SpinDensityNew(SPInput, SpeciesSet)", "[estimators]")
   species_set(iattribute, ispecies) = 2;
   SpinDensityInput sdi_copy         = sdi;
   SpinDensityNew(std::move(sdi), species_set);
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  Lattice lattice;
 }
 
 TEST_CASE("SpinDensityNew::SpinDensityNew(SPInput, Lattice, SpeciesSet)", "[estimators]")

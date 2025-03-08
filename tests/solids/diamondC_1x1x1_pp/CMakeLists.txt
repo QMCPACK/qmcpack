@@ -9,6 +9,10 @@ list(APPEND DIAMOND_SCALARS "samples" "128000 0.0")
 list(APPEND DIAMOND_SCALARS "mpc" "-2.453044 0.004431")
 #  LIST(APPEND DIAMOND_SCALARS "flux" "0.0 0.4")
 
+# PW does not setup density; MPC can not be used
+set(DIAMOND_SCALARS_NO_MPC ${DIAMOND_SCALARS})
+list(REMOVE_ITEM DIAMOND_SCALARS_NO_MPC "mpc")
+
 qmc_run_and_check(
   short-diamondC_1x1x1_pp-vmc_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
@@ -19,6 +23,30 @@ qmc_run_and_check(
   TRUE
   0
   DIAMOND_SCALARS # VMC
+)
+
+qmc_run_and_check(
+  short-diamondC_1x1x1_pp-vmcbatch_sdj
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+  qmc_short
+  qmc_short_vmcbatch.in.xml
+  1
+  16
+  TRUE
+  0
+  DIAMOND_SCALARS # VMC
+)
+
+qmc_run_and_check(
+  short-diamondC_1x1x1_pp-vmcbatch_pw_sdj
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+  qmc_short_pw
+  qmc_short_vmcbatch_pw.in.xml
+  1
+  16
+  TRUE
+  0
+  DIAMOND_SCALARS_NO_MPC # VMC
 )
 
 # Hybridrep is not implemented in legacy CUDA but should be correctly error trapped
@@ -46,35 +74,56 @@ qmc_run_and_check(
   DIAMOND_SCALARS # VMC
 )
 
-if(NOT ENABLE_OFFLOAD)
-  list(APPEND DIAMOND_KSPACE_SCALARS "totenergy" "-10.500719 0.001769")
-  list(APPEND DIAMOND_KSPACE_SCALARS "variance" "0.312264 0.028662")
-  qmc_run_and_check(
-    short-diamondC_1x1x1_pp-vmc_sdj_kspace
-    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-    qmc_short_kspace
-    qmc_short_kspace.in.xml
-    1
-    16
-    TRUE
-    0
-    DIAMOND_KSPACE_SCALARS # VMC
-  )
+list(APPEND DIAMOND_KSPACE_SCALARS "totenergy" "-10.500719 0.001769")
+list(APPEND DIAMOND_KSPACE_SCALARS "variance" "0.312264 0.028662")
+list(APPEND DIAMOND_KSPACE_SCALARS "samples" "128000 0.0")
+qmc_run_and_check(
+  short-diamondC_1x1x1_pp-vmc_sdj_kspace
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+  qmc_short_kspace
+  qmc_short_kspace.in.xml
+  1
+  16
+  TRUE
+  0
+  DIAMOND_KSPACE_SCALARS # VMC
+)
 
-  qmc_run_and_check(
-    short-diamondC_1x1x1_pp-vmc_sdj_kspace
-    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-    qmc_short_kspace_4_4
-    qmc_short_kspace_4_4.in.xml
-    4
-    4
-    TRUE
-    0
-    DIAMOND_KSPACE_SCALARS # VMC
-  )
-else()
-  message(VERBOSE "Skipping k-space Jastrow tests because they are not supported by OFFLOAD build (ENABLE_OFFLOAD=1)")
-endif()
+qmc_run_and_check(
+  short-diamondC_1x1x1_pp-vmc_sdj_kspace
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+  qmc_short_kspace_4_4
+  qmc_short_kspace_4_4.in.xml
+  4
+  4
+  TRUE
+  0
+  DIAMOND_KSPACE_SCALARS # VMC
+)
+
+qmc_run_and_check(
+  short-diamondC_1x1x1_pp-vmcbatch_sdj_kspace
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+  qmc_short_vmcbatch_kspace
+  qmc_short_vmcbatch_kspace.in.xml
+  1
+  16
+  TRUE
+  0
+  DIAMOND_KSPACE_SCALARS # VMC
+)
+
+qmc_run_and_check(
+  short-diamondC_1x1x1_pp-vmcbatch_sdj_kspace
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+  qmc_short_vmcbatch_kspace
+  qmc_short_vmcbatch_kspace.in.xml
+  4
+  4
+  TRUE
+  0
+  DIAMOND_KSPACE_SCALARS # VMC
+)
 
 # Reference OPT run in qmc-ref
 list(APPEND DIAMOND_OPT_SCALARS "totenergy" "-10.49370 0.0024")
@@ -272,23 +321,19 @@ qmc_run_and_check(
   LONG_DIAMOND_DMC_ALLP_SCALARS # DMC
 )
 
-if(NOT ENABLE_OFFLOAD)
-  list(APPEND LONG_DIAMOND_KSPACE_SCALARS "totenergy" "-10.500719 0.001769")
-  list(APPEND LONG_DIAMOND_KSPACE_SCALARS "variance" "0.312264 0.028662")
-  qmc_run_and_check(
-    long-diamondC_1x1x1_pp-vmc_sdj_kspace
-    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-    qmc_long_kspace
-    qmc_long_kspace.in.xml
-    1
-    16
-    TRUE
-    0
-    LONG_DIAMOND_KSPACE_SCALARS # VMC
-  )
-else()
-  message(VERBOSE "Skipping k-space Jastrow tests because they are not supported by OFFLOAD build (ENABLE_OFFLOAD=1)")
-endif()
+list(APPEND LONG_DIAMOND_KSPACE_SCALARS "totenergy" "-10.500719 0.001769")
+list(APPEND LONG_DIAMOND_KSPACE_SCALARS "variance" "0.312264 0.028662")
+qmc_run_and_check(
+  long-diamondC_1x1x1_pp-vmc_sdj_kspace
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+  qmc_long_kspace
+  qmc_long_kspace.in.xml
+  1
+  16
+  TRUE
+  0
+  LONG_DIAMOND_KSPACE_SCALARS # VMC
+)
 
 # Reference DMC run in qmc-ref "-10.531583 0.000265"
 list(APPEND LONG_DIAMOND_DMC_SCALARS "totenergy" "-10.531583 0.000815")
@@ -1358,19 +1403,17 @@ else()
   list(APPEND DET_DIAMOND_KSPACE_SCALARS "flux" "-10.16222139 0.000001")
 endif()
 
-if(NOT ENABLE_OFFLOAD)
-  qmc_run_and_check(
-    deterministic-diamondC_1x1x1_pp-vmc_sdj_kspace
-    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-    det_qmc_short_kspace
-    det_qmc_short_kspace.in.xml
-    1
-    1
-    TRUE
-    0
-    DET_DIAMOND_KSPACE_SCALARS # VMC
-  )
-endif()
+qmc_run_and_check(
+  deterministic-diamondC_1x1x1_pp-vmc_sdj_kspace
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+  det_qmc_short_kspace
+  det_qmc_short_kspace.in.xml
+  1
+  1
+  TRUE
+  0
+  DET_DIAMOND_KSPACE_SCALARS # VMC
+)
 
 if(QMC_MIXED_PRECISION)
   list(APPEND DET_DIAMOND_DMC_SCALARS "totenergy" "-10.52331645 0.00001129")

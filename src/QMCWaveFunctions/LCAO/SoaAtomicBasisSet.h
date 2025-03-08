@@ -259,7 +259,7 @@ public:
 
     //This is needed because of mixed precision builds.  Putting 1.0 and 2.0 directly into final
     //dpsi and dhpsi assignments at the end of this function can occasionally cause whole RHS
-    //to be typed as double, which is bad.   
+    //to be typed as double, which is bad.
     constexpr T cone(1.);
     constexpr T ctwo(2.);
 
@@ -420,7 +420,7 @@ public:
 
     //This is needed because of mixed precision builds.  Putting 1.0, 2.0, and 3.0 directly into final
     //dpsi, dhpsi, and dghpsi assignments at the end of this function can occasionally cause whole RHS
-    //to be typed as double, which is bad.   
+    //to be typed as double, which is bad.
     constexpr T cone(1.0);
     constexpr T ctwo(2.0);
     constexpr T cthree(3.0);
@@ -780,40 +780,41 @@ public:
     auto& correctphase = atom_bs_leader.mw_mem_handle_.getResource().correctphase;
     correctphase.resize(nElec);
 
-    auto* dr_ptr = dr.data();
-    auto* r_ptr  = r.data();
+    auto* dr_ptr = dr.device_data();
+    auto* r_ptr  = r.device_data();
 
-    auto* correctphase_ptr = correctphase.data();
+    auto* correctphase_ptr = correctphase.device_data();
 
-    auto* Tv_list_ptr    = Tv_list.data();
-    auto* displ_list_ptr = displ_list.data();
+    ///Updated From Distance table in SoaLocalizedBasisSet.cpp
+    auto* displ_list_ptr = displ_list.device_data();
+    auto* Tv_list_ptr    = Tv_list.device_data();
 
     constexpr RealType cone(1);
     constexpr RealType ctwo(2);
 
+
+    ///Assumed to be already on DEVICE
     //V,Gx,Gy,Gz,L
-    auto* restrict psi_ptr    = psi_vgl.data_at(0, 0, 0);
-    auto* restrict dpsi_x_ptr = psi_vgl.data_at(1, 0, 0);
-    auto* restrict dpsi_y_ptr = psi_vgl.data_at(2, 0, 0);
-    auto* restrict dpsi_z_ptr = psi_vgl.data_at(3, 0, 0);
-    auto* restrict d2psi_ptr  = psi_vgl.data_at(4, 0, 0);
+    auto* restrict psi_ptr    = psi_vgl.device_data_at(0, 0, 0);
+    auto* restrict dpsi_x_ptr = psi_vgl.device_data_at(1, 0, 0);
+    auto* restrict dpsi_y_ptr = psi_vgl.device_data_at(2, 0, 0);
+    auto* restrict dpsi_z_ptr = psi_vgl.device_data_at(3, 0, 0);
+    auto* restrict d2psi_ptr  = psi_vgl.device_data_at(4, 0, 0);
 
     {
       ScopedTimer local_timer(phase_timer_);
-#if not defined(QMC_COMPLEX)
+#if !defined(QMC_COMPLEX)
 
-      PRAGMA_OFFLOAD("omp target teams distribute parallel for map(to:correctphase_ptr[:nElec]) ")
+      PRAGMA_OFFLOAD("omp target teams distribute parallel for \
+                      is_device_ptr(correctphase_ptr) ")
       for (size_t i_e = 0; i_e < nElec; i_e++)
-        correctphase_ptr[i_e] = 1.0;
-
+        correctphase_ptr[i_e] = RealType(1.0);
 #else
-      auto* SuperTwist_ptr = SuperTwist.data();
 
-      PRAGMA_OFFLOAD("omp target teams distribute parallel for map(to:SuperTwist_ptr[:SuperTwist.size()], \
-		      Tv_list_ptr[3*nElec*center_idx:3*nElec], correctphase_ptr[:nElec]) ")
+      PRAGMA_OFFLOAD("omp target teams distribute parallel for \
+                      is_device_ptr(Tv_list_ptr, correctphase_ptr) ")
       for (size_t i_e = 0; i_e < nElec; i_e++)
       {
-        //RealType phasearg = dot(3, SuperTwist.data(), 1, Tv_list.data() + 3 * i_e, 1);
         RealType phasearg = 0;
         for (size_t i_dim = 0; i_dim < 3; i_dim++)
           phasearg += SuperTwist[i_dim] * Tv_list_ptr[i_dim + 3 * (i_e + center_idx * nElec)];
@@ -826,10 +827,10 @@ public:
 
     {
       ScopedTimer local_timer(nelec_pbc_timer_);
-      auto* periodic_image_displacements_ptr = periodic_image_displacements_.data();
+      auto* periodic_image_displacements_ptr = periodic_image_displacements_.device_data();
       PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) \
-                      map(to:periodic_image_displacements_ptr[:3*Nxyz]) \
-                      map(to: dr_ptr[:3*nElec*Nxyz], r_ptr[:nElec*Nxyz], displ_list_ptr[3*nElec*center_idx:3*nElec]) ")
+                      is_device_ptr(periodic_image_displacements_ptr) \
+                      is_device_ptr( dr_ptr, r_ptr, displ_list_ptr) ")
       for (size_t i_e = 0; i_e < nElec; i_e++)
         for (int i_xyz = 0; i_xyz < Nxyz; i_xyz++)
         {
@@ -857,27 +858,26 @@ public:
 
     {
       ScopedTimer local_timer(psi_timer_);
-      auto* phase_fac_ptr = periodic_image_phase_factors_.data();
-      auto* LM_ptr        = LM.data();
-      auto* NL_ptr        = NL.data();
       const int bset_size = BasisSetSize;
+      auto* phase_fac_ptr = periodic_image_phase_factors_.device_data();
+      auto* LM_ptr        = LM.device_data();
+      auto* NL_ptr        = NL.device_data();
 
-      RealType* restrict phi_ptr   = rnl_vgl.data_at(0, 0, 0, 0);
-      RealType* restrict dphi_ptr  = rnl_vgl.data_at(1, 0, 0, 0);
-      RealType* restrict d2phi_ptr = rnl_vgl.data_at(2, 0, 0, 0);
+      RealType* restrict phi_ptr   = rnl_vgl.device_data_at(0, 0, 0, 0);
+      RealType* restrict dphi_ptr  = rnl_vgl.device_data_at(1, 0, 0, 0);
+      RealType* restrict d2phi_ptr = rnl_vgl.device_data_at(2, 0, 0, 0);
 
+      const RealType* restrict ylm_v_ptr = ylm_vgl.device_data_at(0, 0, 0, 0); //value
+      const RealType* restrict ylm_x_ptr = ylm_vgl.device_data_at(1, 0, 0, 0); //gradX
+      const RealType* restrict ylm_y_ptr = ylm_vgl.device_data_at(2, 0, 0, 0); //gradY
+      const RealType* restrict ylm_z_ptr = ylm_vgl.device_data_at(3, 0, 0, 0); //gradZ
+      const RealType* restrict ylm_l_ptr = ylm_vgl.device_data_at(4, 0, 0, 0); //lap
 
-      const RealType* restrict ylm_v_ptr = ylm_vgl.data_at(0, 0, 0, 0); //value
-      const RealType* restrict ylm_x_ptr = ylm_vgl.data_at(1, 0, 0, 0); //gradX
-      const RealType* restrict ylm_y_ptr = ylm_vgl.data_at(2, 0, 0, 0); //gradY
-      const RealType* restrict ylm_z_ptr = ylm_vgl.data_at(3, 0, 0, 0); //gradZ
-      const RealType* restrict ylm_l_ptr = ylm_vgl.data_at(4, 0, 0, 0); //lap
       PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) \
-                      map(to:phase_fac_ptr[:Nxyz], LM_ptr[:BasisSetSize], NL_ptr[:BasisSetSize]) \
-		      map(to:ylm_v_ptr[:nYlm*nElec*Nxyz], ylm_x_ptr[:nYlm*nElec*Nxyz], ylm_y_ptr[:nYlm*nElec*Nxyz], ylm_z_ptr[:nYlm*nElec*Nxyz], ylm_l_ptr[:nYlm*nElec*Nxyz], \
-                      phi_ptr[:nRnl*nElec*Nxyz], dphi_ptr[:nRnl*nElec*Nxyz], d2phi_ptr[:nRnl*nElec*Nxyz], \
-                      psi_ptr[:nBasTot*nElec], dpsi_x_ptr[:nBasTot*nElec], dpsi_y_ptr[:nBasTot*nElec], dpsi_z_ptr[:nBasTot*nElec], d2psi_ptr[:nBasTot*nElec], \
-                      correctphase_ptr[:nElec], r_ptr[:nElec*Nxyz], dr_ptr[:3*nElec*Nxyz]) ")
+		      is_device_ptr(ylm_v_ptr, ylm_x_ptr, ylm_y_ptr, ylm_z_ptr, ylm_l_ptr, \
+                      phi_ptr, dphi_ptr, d2phi_ptr,psi_ptr, dpsi_x_ptr, dpsi_y_ptr, dpsi_z_ptr, d2psi_ptr) \
+                      is_device_ptr(phase_fac_ptr, LM_ptr, NL_ptr) \
+                      is_device_ptr(correctphase_ptr, r_ptr, dr_ptr) ")
       for (int i_e = 0; i_e < nElec; i_e++)
         for (int ib = 0; ib < bset_size; ++ib)
         {
@@ -985,34 +985,29 @@ public:
     auto& correctphase = atom_bs_leader.mw_mem_handle_.getResource().correctphase;
     correctphase.resize(nElec);
 
-    auto* dr_ptr = dr.data();
-    auto* r_ptr  = r.data();
+    auto* dr_ptr = dr.device_data();
+    auto* r_ptr  = r.device_data();
 
-    auto* correctphase_ptr = correctphase.data();
+    auto* correctphase_ptr = correctphase.device_data();
 
-    auto* Tv_list_ptr    = Tv_list.data();
-    auto* displ_list_ptr = displ_list.data();
-
-    // need to map Tensor<T,3> vals to device
-    auto* latR_ptr = lattice.R.data();
-
+    //Values updated to Device in SoaLocalizedBasisSet.cpp
+    auto* Tv_list_ptr    = Tv_list.device_data();
+    auto* displ_list_ptr = displ_list.device_data();
 
     {
       ScopedTimer local_timer(phase_timer_);
-#if not defined(QMC_COMPLEX)
+#if !defined(QMC_COMPLEX)
 
-      PRAGMA_OFFLOAD("omp target teams distribute parallel for map(to:correctphase_ptr[:nElec]) ")
+      PRAGMA_OFFLOAD("omp target teams distribute parallel for \
+                      is_device_ptr(correctphase_ptr) ")
       for (size_t i_e = 0; i_e < nElec; i_e++)
-        correctphase_ptr[i_e] = 1.0;
-
+        correctphase_ptr[i_e] = RealType(1.0);
 #else
-      auto* SuperTwist_ptr = SuperTwist.data();
 
-      PRAGMA_OFFLOAD("omp target teams distribute parallel for map(to:SuperTwist_ptr[:SuperTwist.size()], \
-		      Tv_list_ptr[3*nElec*center_idx:3*nElec], correctphase_ptr[:nElec]) ")
+      PRAGMA_OFFLOAD("omp target teams distribute parallel for \
+                      is_device_ptr(Tv_list_ptr, correctphase_ptr) ")
       for (size_t i_e = 0; i_e < nElec; i_e++)
       {
-        //RealType phasearg = dot(3, SuperTwist.data(), 1, Tv_list.data() + 3 * i_e, 1);
         RealType phasearg = 0;
         for (size_t i_dim = 0; i_dim < 3; i_dim++)
           phasearg += SuperTwist[i_dim] * Tv_list_ptr[i_dim + 3 * (i_e + center_idx * nElec)];
@@ -1023,12 +1018,13 @@ public:
 #endif
     }
 
+
     {
       ScopedTimer local_timer(nelec_pbc_timer_);
-      auto* periodic_image_displacements_ptr = periodic_image_displacements_.data();
+      auto* periodic_image_displacements_ptr = periodic_image_displacements_.device_data();
       PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) \
-                      map(to:periodic_image_displacements_ptr[:3*Nxyz]) \
-                      map(to: dr_ptr[:3*nElec*Nxyz], r_ptr[:nElec*Nxyz], displ_list_ptr[3*nElec*center_idx:3*nElec]) ")
+                      is_device_ptr(periodic_image_displacements_ptr) \
+                      is_device_ptr( dr_ptr, r_ptr, displ_list_ptr) ")
       for (size_t i_e = 0; i_e < nElec; i_e++)
         for (int i_xyz = 0; i_xyz < Nxyz; i_xyz++)
         {
@@ -1043,7 +1039,6 @@ public:
         }
     }
 
-
     {
       ScopedTimer local(rnl_timer_);
       MultiRnl.batched_evaluate(r, rnl_v, Rmax);
@@ -1057,17 +1052,18 @@ public:
     {
       ScopedTimer local_timer(psi_timer_);
       ///Phase for PBC containing the phase for the nearest image displacement and the correction due to the Distance table.
-      auto* phase_fac_ptr = periodic_image_phase_factors_.data();
-      auto* LM_ptr        = LM.data();
-      auto* NL_ptr        = NL.data();
-      auto* psi_ptr       = psi.data();
+      auto* phase_fac_ptr = periodic_image_phase_factors_.device_data();
+      auto* LM_ptr        = LM.device_data();
+      auto* NL_ptr        = NL.device_data();
+      auto* psi_ptr       = psi.device_data();
       const int bset_size = BasisSetSize;
 
-      auto* ylm_ptr = ylm_v.data();
-      auto* rnl_ptr = rnl_v.data();
-      PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) \
-                      map(to:phase_fac_ptr[:Nxyz], LM_ptr[:BasisSetSize], NL_ptr[:BasisSetSize]) \
-		      map(to:ylm_ptr[:nYlm*nElec*Nxyz], rnl_ptr[:nRnl*nElec*Nxyz], psi_ptr[:nBasTot*nElec], correctphase_ptr[:nElec])")
+      auto* ylm_ptr = ylm_v.device_data();
+      auto* rnl_ptr = rnl_v.device_data();
+      PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2)\
+                      is_device_ptr(phase_fac_ptr, LM_ptr, NL_ptr, \
+                                  psi_ptr, correctphase_ptr, \
+                                  ylm_ptr, rnl_ptr)")
       for (int i_e = 0; i_e < nElec; i_e++)
         for (int ib = 0; ib < bset_size; ++ib)
         {

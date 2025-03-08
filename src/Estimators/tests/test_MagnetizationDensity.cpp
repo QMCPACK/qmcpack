@@ -183,7 +183,7 @@ TEST_CASE("MagnetizationDensity::gridAssignment", "[estimators]")
                                     {6.03341616, 0, 1.77067004},           //bin 6
                                     {2.78496304, 0, 5.31201011}};          //bin 7
 
-  ParticleSet::ParticleLayout lattice;
+  Lattice lattice;
   lattice.R(0, 0) = 5.10509515;
   lattice.R(0, 1) = -3.23993545;
   lattice.R(0, 2) = 0.00000000;
@@ -295,7 +295,7 @@ TEST_CASE("MagnetizationDensity::IntegrationTest", "[estimators]")
   using namespace testing;
 
   // O2 test example from pwscf non-collinear calculation.
-  ParticleSet::ParticleLayout lattice;
+  Lattice lattice;
   lattice.R(0, 0) = 5.10509515;
   lattice.R(0, 1) = -3.23993545;
   lattice.R(0, 2) = 0.00000000;

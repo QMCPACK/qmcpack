@@ -233,9 +233,11 @@ void test_phmsd(boost::mpi3::communicator& world)
     RandomGenerator rng;
     WalkerSet wset(TG, doc3.getRoot(), InfoMap["info0"], rng);
     auto initial_guess = WfnFac.getInitialGuess(wfn_name);
-    REQUIRE(std::get<0>(initial_guess.sizes()) == 2);
-    REQUIRE(std::get<1>(initial_guess.sizes()) == NMO);
-    REQUIRE(std::get<2>(initial_guess.sizes()) == NAEA);
+
+    using std::get;
+    REQUIRE(get<0>(initial_guess.sizes()) == 2);
+    REQUIRE(get<1>(initial_guess.sizes()) == NMO);
+    REQUIRE(get<2>(initial_guess.sizes()) == NAEA);
 
     wset.resize(nwalk, initial_guess[0], initial_guess[1](initial_guess.extension(1), {0, NAEB}));
     // 1. Test Overlap Explicitly
@@ -278,8 +280,8 @@ void test_phmsd(boost::mpi3::communicator& world)
     // coefficients as using factory setup.
     for (auto it = wset.begin(); it != wset.end(); ++it)
     {
-      CHECK(std::abs(real(*it->overlap())) == Approx(std::abs(real(ovlp_sum))));
-      CHECK(std::abs(imag(*it->overlap())) == Approx(std::abs(imag(ovlp_sum))));
+      CHECK(std::abs(std::real(ComplexType(*it->overlap()))) == Approx(std::abs(std::real(ovlp_sum))));
+      CHECK(std::abs(std::imag(ComplexType(*it->overlap()))) == Approx(std::abs(std::imag(ovlp_sum))));
     }
     // It's not straightforward to calculate energy directly in unit test due to half
     // rotation.
@@ -307,7 +309,7 @@ TEST_CASE("test_read_phmsd", "[test_read_phmsd]")
     infoLog.pause();
   auto node = world.split_shared(world.rank());
 
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
   arch::INIT(node);
   using Alloc = device::device_allocator<ComplexType>;
 #else
@@ -327,7 +329,7 @@ TEST_CASE("test_phmsd", "[read_phmsd]")
     infoLog.pause();
   auto node = world.split_shared(world.rank());
 
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
   arch::INIT(node);
   using Alloc = device::device_allocator<ComplexType>;
 #else

@@ -21,16 +21,17 @@ namespace qmcplusplus
 
 DeviceManager::DeviceManager(int local_rank, int local_size)
     : default_device_num(-1),
-      num_devices(0)
+      num_devices(0),
 #if defined(ENABLE_CUDA)
-      , cuda_dm_(default_device_num, num_devices, local_rank, local_size)
+      cuda_dm_(default_device_num, num_devices, local_rank, local_size),
 #endif
 #if defined(ENABLE_OFFLOAD)
-      , omptarget_dm_(default_device_num, num_devices, local_rank, local_size)
+      omptarget_dm_(default_device_num, num_devices, local_rank, local_size),
 #endif
 #if defined(ENABLE_SYCL)
-      , sycl_dm_(default_device_num, num_devices, local_rank, local_size)
+      sycl_dm_(default_device_num, num_devices, local_rank, local_size),
 #endif
+      dummy(0)
 {
   if (num_devices > 0)
   {
@@ -59,5 +60,26 @@ const DeviceManager& DeviceManager::getGlobal()
   if (!global)
     throw std::runtime_error("DeviceManager::getGlobal the global instance was not initialized.");
   return *global;
+}
+
+void DeviceManager::printInfo() const
+{
+  app_summary() << std::endl;
+#if !defined(ENABLE_OFFLOAD) && !defined(ENABLE_CUDA) && !defined(ENABLE_ROCM) && !defined(ENABLE_SYCL)
+  app_summary() << "  CPU only build" << std::endl;
+#else // GPU case
+#if defined(ENABLE_CUDA)
+  cuda_dm_.printInfo();
+#endif
+#if defined(ENABLE_OFFLOAD)
+  omptarget_dm_.printInfo();
+#endif
+#if defined(ENABLE_SYCL)
+  sycl_dm_.printInfo();
+#endif
+#if defined(BUILD_AFQMC_HIP)
+  app_summary() << "  HIP acceleration with direct HIP source code in AFQMC build option is enabled" << std::endl;
+#endif
+#endif // GPU case end
 }
 } // namespace qmcplusplus

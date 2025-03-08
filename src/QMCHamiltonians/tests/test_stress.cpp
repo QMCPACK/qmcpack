@@ -30,7 +30,7 @@ namespace qmcplusplus
 // PBC case
 TEST_CASE("Stress BCC H Ewald3D", "[hamiltonian]")
 {
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  Lattice lattice;
   lattice.BoxBConds = true; // periodic
   lattice.R.diagonal(3.24957306);
   lattice.LR_dim_cutoff = 40;

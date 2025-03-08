@@ -131,7 +131,8 @@ public:
         stdCMatrix R;
         if (!dump.readEntry(R, "RotationMatrix"))
           APP_ABORT("Error reading RotationMatrix.\n");
-        if (std::get<1>(R.sizes()) != NMO)
+        using std::get;
+        if (get<1>(R.sizes()) != NMO)
           APP_ABORT("Error Wrong dimensions in RotationMatrix.\n");
         dim[0] = R.size();
         dim[1] = 0;
@@ -143,9 +144,10 @@ public:
         {
           if (!dump.readEntry(I, "Indices"))
             APP_ABORT("Error reading Indices.\n");
-          if (std::get<1>(I.sizes()) != 2)
+          using std::get;
+          if (get<1>(I.sizes()) != 2)
             APP_ABORT("Error Wrong dimensions in Indices.\n");
-          dim[1] = std::get<0>(I.sizes());
+          dim[1] = get<0>(I.sizes());
         }
         TG.Node().broadcast_n(dim, 2, 0);
         XRot = sharedCMatrix({dim[0], NMO}, make_node_allocator<ComplexType>(TG));
@@ -244,6 +246,7 @@ public:
     assert(G.num_elements() == G_host.num_elements());
     assert(G.extensions() == G_host.extensions());
 
+    using std::get;
     // check structure dimensions
     if (iref == 0)
     {
@@ -251,7 +254,7 @@ public:
       {
         denom = mpi3CVector(iextensions<1u>{nw}, shared_allocator<ComplexType>{TG.TG_local()});
       }
-      if (std::get<0>(DMWork.sizes()) != nw || std::get<1>(DMWork.sizes()) != dm_size)
+      if (get<0>(DMWork.sizes()) != nw || get<1>(DMWork.sizes()) != dm_size)
       {
         DMWork = mpi3CMatrix({nw, dm_size}, shared_allocator<ComplexType>{TG.TG_local()});
       }
@@ -260,8 +263,8 @@ public:
     }
     else
     {
-      if (std::get<0>(denom.sizes()) != nw || std::get<0>(DMWork.sizes()) != nw || std::get<1>(DMWork.sizes()) != dm_size || std::get<0>(DMAverage.sizes()) != nave ||
-          std::get<1>(DMAverage.sizes()) != dm_size)
+      if (get<0>(denom.sizes()) != nw || get<0>(DMWork.sizes()) != nw || get<1>(DMWork.sizes()) != dm_size || get<0>(DMAverage.sizes()) != nave ||
+          get<1>(DMAverage.sizes()) != dm_size)
         APP_ABORT(" Error: Invalid state in accumulate_reference. \n\n\n");
     }
 
@@ -427,9 +430,11 @@ private:
   template<class MatG, class CVec>
   void acc_with_rotation(MatG&& G, CVec&& Xw)
   {
+    using std::get;
+
     int nw(G.size());
-    assert(std::get<2>(G.sizes()) == std::get<3>(G.sizes()));
-    assert(std::get<2>(G.sizes()) == std::get<1>(XRot.sizes()));
+    assert(get<2>(G.sizes()) == get<3>(G.sizes()));
+    assert(get<2>(G.sizes()) == get<1>(XRot.sizes()));
 
     if (walker_type == NONCOLLINEAR)
       APP_ABORT("Error: Not yet implemented: acc_with_rotation && noncollinear.\n");

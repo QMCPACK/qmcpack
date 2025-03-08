@@ -18,7 +18,7 @@
 #if defined(ENABLE_CUDA)
 #include <cuda_runtime.h>
 #include "AFQMC/Memory/CUDA/cuda_utilities.h"
-#elif defined(ENABLE_HIP)
+#elif defined(BUILD_AFQMC_HIP)
 #include <hip/hip_runtime.h>
 #include "AFQMC/Memory/HIP/hip_utilities.h"
 #endif
@@ -29,7 +29,7 @@ namespace qmc_cuda
 {
 extern bool afqmc_cuda_handles_init;
 }
-#elif defined(ENABLE_HIP)
+#elif defined(BUILD_AFQMC_HIP)
 namespace qmc_hip
 {
 extern bool afqmc_hip_handles_init;
@@ -43,7 +43,7 @@ inline int number_of_devices()
   if (not qmc_cuda::afqmc_cuda_handles_init)
     throw std::runtime_error(" Error: Uninitialized CUDA environment.");
   cudaGetDeviceCount(&num_devices);
-#elif defined(ENABLE_HIP)
+#elif defined(BUILD_AFQMC_HIP)
   if (not qmc_hip::afqmc_hip_handles_init)
     throw std::runtime_error(" Error: Uninitialized HIP environment.");
   hipGetDeviceCount(&num_devices);

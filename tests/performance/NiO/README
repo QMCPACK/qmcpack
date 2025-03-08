@@ -216,18 +216,10 @@ their speed.
 
 7. Additional considerations
 
-When testing the mixed precision build, note that it performs more
-computation than the full precision build to ensure numerical
-accuracy.  One significant overhead is the recomputation of the
-inverse of the Slater determinants at every block.  It can be diluted
-by setting larger steps or substeps in the driver (VMC/DMC) block of
-the XML input file or completely disabled by adding the following line
-in each block.
-<parameter name="blocks_between_recompute">0</parameter>
-
-These settings will be revisited once performance data is obtained and
-analyzed for a wide variety of platforms, with the goal of short but
-representative runs.
-
-Please ask in QMCPACK's Google group if you have any questions.
-https://groups.google.com/forum/#!forum/qmcpack
+The performance runs have settings to recompute the inverse of the Slater determinants at a different frequency to the defaults. The
+recomputation is controlled by the blocks_between_recompute parameter and is set so that this occurs once per QMC section. This
+ensures that the relevant code paths are utilized in these short runs and is included in any performance analysis based on them. The
+defaults, which depend on whether the build is mixed or full precision, are described in
+https://qmcpack.readthedocs.io/en/develop/methods.html . To maintain numerical accuracy in production QMC calculations this
+recomputation must be performed at a minimum frequency determined by the electron count, precision, and details of the simulated
+system.
