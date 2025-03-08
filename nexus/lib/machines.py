@@ -744,6 +744,7 @@ class Machine(NexusCore):
     errfile_extension  = None
 
     allow_warnings = True
+    queue_configs = None
 
     @staticmethod
     def get_hostname():
@@ -1882,6 +1883,92 @@ class Supercomputer(Machine):
         self.not_implemented()
     #end def write_job_header
 
+@staticmethod
+    def walltime_to_seconds(walltime_str):
+        """
+        Convert walltime string to total seconds
+        Handles formats: 'dd:hh:mm:ss', 'hh:mm:ss', 'mm:ss', 'seconds'
+        """
+        try:
+            parts = walltime_str.split(':')
+            seconds = 0
+            if len(parts) == 4:    # dd:hh:mm:ss
+                seconds += int(parts[0]) * 24 * 3600  # days
+                seconds += int(parts[1]) * 3600       # hours
+                seconds += int(parts[2]) * 60         # minutes
+                seconds += int(parts[3])              # seconds
+            elif len(parts) == 3:  # hh:mm:ss
+                seconds += int(parts[0]) * 3600       # hours
+                seconds += int(parts[1]) * 60         # minutes
+                seconds += int(parts[2])              # seconds
+            elif len(parts) == 2:  # mm:ss
+                seconds += int(parts[0]) * 60         # minutes
+                seconds += int(parts[1])              # seconds
+            elif len(parts) == 1:  # seconds only
+                seconds += int(parts[0])
+            else:
+                raise ValueError(f"Invalid walltime format: {walltime_str}, accepted formats: 'dd:hh:mm:ss', 'hh:mm:ss', 'mm:ss', 'seconds'")
+            return seconds
+        except (ValueError, IndexError) as e:
+            raise ValueError(f"Failed to parse walltime '{walltime_str}': {str(e)}")
+        #end try
+    #end def walltime_to_seconds
+
+    def validate_queue_config(self, job):
+        """
+        Validate job against queue configuration constraints
+        Returns True if valid, raises an error with detailed message if invalid
+        """
+        if self.queue_configs is None:
+            return True
+        #end if
+
+        # Check if queue is specified
+        if job.queue is None:
+            self.error('Queue must be specified. Available queues: {}'.format(list(self.queue_configs.keys())))
+            return False
+        #end if
+
+        # Check if queue exists
+        if job.queue not in self.queue_configs:
+            self.error('Queue "{}" is not available. Available queues: {}'.format(
+                job.queue, list(self.queue_configs.keys())))
+            return False
+        #end if
+
+        config = self.queue_configs[job.queue]
+        errors = []
+
+        # Validate nodes
+        assert isinstance(config['max_nodes'], int), 'max_nodes in the queue config must be an integer for queue "{}"'.format(job.queue)
+        if 'max_nodes' in config and job.nodes > config['max_nodes']:
+            errors.append('Number of nodes requested ({}) exceeds the maximum allowed ({})'.format(
+                job.nodes, config['max_nodes']))
+        #end if
+
+        # Validate walltime if specified
+        if 'max_walltime' in config:
+            try:
+                max_seconds = self.walltime_to_seconds(config['max_walltime'])
+                job_seconds = job.total_seconds()
+                if job_seconds > max_seconds:
+                    errors.append('Walltime requested ({} secs) exceeds the maximum allowed ({})'.format(
+                        job.walltime, config['max_walltime']))
+                #end if
+            except ValueError as e:
+                errors.append(str(e))
+            #end try
+        #end if
+
+        # Report all validation errors at once
+        if errors:
+            self.error('Job validation failed for queue "{}":\n  {}'.format(
+                job.queue, '\n  '.join(errors)))
+            return False
+        #end if
+
+        return True
+    #end def validate_queue_config
 
     def read_process_id(self,output):
         pid = None
@@ -3213,8 +3300,34 @@ class Baseline(Supercomputer):
     name = 'baseline'
     requires_account = True
     batch_capable    = True
-
+    queue_configs={
+        'batch': {
+            'max_nodes': 128,
+            'max_walltime': '24:00:00',
+        },
+        'batch_low_memory': {
+            'max_nodes': 68,
+            'max_walltime': '24:00:00',
+        },
+        'batch_high_memory': {
+            'max_nodes': 70,
+            'max_walltime': '24:00:00',
+        },
+        'batch_ccsi': {
+            'max_nodes': 20,
+            'max_walltime': '24:00:00',
+        },
+        'batch_cnms': {
+            'max_nodes': 20,
+            'max_walltime': '24:00:00',
+        },
+        'gpu_acmhs': {
+            'max_nodes': 1,
+            'max_walltime': '24:00:00',
+        }
+    }
     def write_job_header(self,job):
+        self.validate_queue_config(job)
         if job.queue is None:
             job.queue = 'batch_cnms'
         #end if
@@ -3943,7 +4056,7 @@ Lassen(        756,   2,    21,  512,  100,   'lrun',     'bsub',   'bjobs',   '
 Ruby(         1480,   2,    28,  192,  100,   'srun',   'sbatch',  'squeue', 'scancel')
 Kestrel(      2144,   2,    52,  256,  100,   'srun',   'sbatch',  'squeue', 'scancel')
 Inti(           13,   2,    64,  256,  100,   'srun',   'sbatch',  'squeue', 'scancel')
-Baseline(       20,   2,    64,  512,  100,   'srun',   'sbatch',  'squeue', 'scancel')
+Baseline(      128,   2,    64,  512,  100,   'srun',   'sbatch',  'squeue', 'scancel')
 
 
 #machine accessor functions
