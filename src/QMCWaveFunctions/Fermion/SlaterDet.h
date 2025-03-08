@@ -133,6 +133,20 @@ public:
     }
   }
 
+  inline void mw_evaluateSpinorRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                      const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                                      const RefVector<std::pair<ValueVector, ValueVector>>& spinor_multiplier_list,
+                                      std::vector<std::vector<ValueType>>& ratios) const final
+  {
+    if (wfc_list.size())
+    {
+      // assuming all the VP.refPtcl are identical
+      const int det_id = getDetID(vp_list[0].refPtcl);
+      Dets[det_id]->mw_evaluateSpinorRatios(extract_DetRef_list(wfc_list, det_id), vp_list, spinor_multiplier_list,
+                                            ratios);
+    }
+  }
+
   PsiValue ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
 
   PsiValue ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad_iat) override;

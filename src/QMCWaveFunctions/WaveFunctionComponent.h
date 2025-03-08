@@ -568,6 +568,13 @@ public:
                                     std::vector<PsiValue>& ratios,
                                     std::vector<GradType>& grad_new,
                                     std::vector<ComplexType>& spingrad_new) const;
+
+protected:
+  // Batched version of evaluateSpinorRatios, serialize over walkers
+  void mw_evaluateSpinorRatios_serialized(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                          const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                                          const RefVector<std::pair<ValueVector, ValueVector>>& spinor_multiplier_list,
+                                          std::vector<std::vector<ValueType>>& ratios) const;
 };
 } // namespace qmcplusplus
 #endif

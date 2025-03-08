@@ -174,6 +174,13 @@ public:
                             const std::pair<ValueVector, ValueVector>& spinor_multiplier,
                             std::vector<ValueType>& ratios) override;
 
+  inline void mw_evaluateSpinorRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                      const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                                      const RefVector<std::pair<ValueVector, ValueVector>>& spinor_multiplier_list,
+                                      std::vector<std::vector<ValueType>>& ratios) const override
+  {
+    mw_evaluateSpinorRatios_serialized(wfc_list, vp_list, spinor_multiplier_list, ratios);
+  }
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override
   {

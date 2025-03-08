@@ -259,6 +259,15 @@ void WaveFunctionComponent::mw_evaluateSpinorRatios(
     const RefVector<std::pair<ValueVector, ValueVector>>& spinor_multiplier_list,
     std::vector<std::vector<ValueType>>& ratios) const
 {
+  mw_evaluateRatios(wfc_list, vp_list, ratios);
+}
+
+void WaveFunctionComponent::mw_evaluateSpinorRatios_serialized(
+    const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+    const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+    const RefVector<std::pair<ValueVector, ValueVector>>& spinor_multiplier_list,
+    std::vector<std::vector<ValueType>>& ratios) const
+{
   assert(this == &wfc_list.getLeader());
   for (int iw = 0; iw < wfc_list.size(); iw++)
     wfc_list[iw].evaluateSpinorRatios(vp_list[iw], spinor_multiplier_list[iw], ratios[iw]);
