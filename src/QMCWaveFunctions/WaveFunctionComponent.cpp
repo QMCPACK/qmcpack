@@ -147,8 +147,6 @@ void WaveFunctionComponent::mw_ratioGradWithSpin(const RefVectorWithLeader<WaveF
                                                  std::vector<ComplexType>& spingrad_new) const
 {
   mw_ratioGrad(wfc_list, p_list, iat, ratios, grad_new);
-  for (int iw = 0; iw < wfc_list.size(); iw++)
-    spingrad_new[iw] = 0;
 }
 
 void WaveFunctionComponent::mw_accept_rejectMove(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
