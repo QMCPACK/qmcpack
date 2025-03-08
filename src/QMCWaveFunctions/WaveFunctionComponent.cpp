@@ -93,12 +93,9 @@ void WaveFunctionComponent::mw_evalGradWithSpin(const RefVectorWithLeader<WaveFu
                                                 std::vector<GradType>& grad_now,
                                                 std::vector<ComplexType>& spingrad_now) const
 {
-  assert(this == &wfc_list.getLeader());
+  mw_evalGrad(wfc_list, p_list, iat, grad_now);
   for (int iw = 0; iw < wfc_list.size(); iw++)
-  {
     spingrad_now[iw] = 0;
-    grad_now[iw]     = wfc_list[iw].evalGradWithSpin(p_list[iw], iat, spingrad_now[iw]);
-  }
 }
 
 void WaveFunctionComponent::mw_calcRatio(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
@@ -149,9 +146,9 @@ void WaveFunctionComponent::mw_ratioGradWithSpin(const RefVectorWithLeader<WaveF
                                                  std::vector<GradType>& grad_new,
                                                  std::vector<ComplexType>& spingrad_new) const
 {
-  assert(this == &wfc_list.getLeader());
+  mw_ratioGrad(wfc_list, p_list, iat, ratios, grad_new);
   for (int iw = 0; iw < wfc_list.size(); iw++)
-    ratios[iw] = wfc_list[iw].ratioGradWithSpin(p_list[iw], iat, grad_new[iw], spingrad_new[iw]);
+    spingrad_new[iw] = 0;
 }
 
 void WaveFunctionComponent::mw_accept_rejectMove(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
