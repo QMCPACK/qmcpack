@@ -3314,7 +3314,7 @@ class Baseline(Supercomputer):
     batch_capable    = True
     queue_configs={
         'batch': {
-            'max_nodes': 128,
+            'max_nodes': 138,
             'max_walltime': '24:00:00',
         },
         'batch_low_memory': {
