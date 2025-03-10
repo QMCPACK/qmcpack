@@ -131,6 +131,15 @@ public:
   using WaveFunctionComponent::evaluateSpinorRatios;
   using WaveFunctionComponent::mw_evaluateRatios;
 
+  inline virtual void mw_evaluateSpinorRatios(
+      const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+      const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+      const RefVector<std::pair<ValueVector, ValueVector>>& spinor_multiplier_list,
+      std::vector<std::vector<ValueType>>& ratios) const override
+  {
+    mw_evaluateSpinorRatios_serialized(wfc_list, vp_list, spinor_multiplier_list, ratios);
+  }
+
   // used by DiracDeterminantWithBackflow
   virtual void evaluateDerivatives(ParticleSet& P,
                                    const opt_variables_type& active,
@@ -188,7 +197,6 @@ protected:
   // it is frequently Dual and its consistency not guaranteed.
   ValueMatrix dummy_vmt;
 #endif
-
 };
 
 } // namespace qmcplusplus

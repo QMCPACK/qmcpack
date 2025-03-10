@@ -252,7 +252,7 @@ the text below (without the comments):
 
 
 The binary string “000000” indicates that none of the six stages of
-simulation progression have been completed. These stages correpond to
+simulation progression have been completed. These stages correspond to
 the following actions/states: writing input files (“``setup``”), copying
 pseudopotential files (“``sent_files``”), submitting simulation jobs for
 execution (“``submitted``”), the completion of a simulation job
@@ -266,7 +266,7 @@ itself.
 Next, run the example in generate mode. Set “``status_only`` =0” and
 “``generate_only`` =1”, then run the example script again. Instead of
 showing workflow status, Nexus will now perform a dry run of the
-workflows by generating all of the run directories and input files. The
+workflows by generating all the run directories and input files. The
 output should contain text similar to what is shown below:
 
 .. code:: rest

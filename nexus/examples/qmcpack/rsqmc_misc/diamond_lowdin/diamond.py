@@ -87,7 +87,7 @@ nscf = generate_pwscf(
 # To obtain the overlaps between the Bloch states and atomic orbitals,
 # projwfc.x needs to be run. The overlaps will be stored in:
 # pwscf_output/pwscf.save/atomic_proj.xml
-# WARNING: Always check the the <OVERLAPS> element is written to atomic_proj.xml
+# WARNING: Always check the <OVERLAPS> element is written to atomic_proj.xml
 #          Sometimes QE will not write <OVERLAPS> if running on >1 core.
 pwf = generate_projwfc(
     identifier      = 'pwf',
