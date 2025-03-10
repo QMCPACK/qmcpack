@@ -433,21 +433,6 @@ void MultiSlaterDetTableMethod::mw_evalGrad(const RefVectorWithLeader<WaveFuncti
   mw_evalGrad_impl(WFC_list, P_list, iat, false, grad_now, psi_list);
 }
 
-void MultiSlaterDetTableMethod::mw_evalGradWithSpin(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                                    const RefVectorWithLeader<ParticleSet>& p_list,
-                                                    int iat,
-                                                    std::vector<GradType>& grad_now,
-                                                    std::vector<ComplexType>& spingrad_now) const
-{
-  assert(this == &wfc_list.getLeader());
-  for (int iw = 0; iw < wfc_list.size(); iw++)
-  {
-    spingrad_now[iw] = 0;
-    grad_now[iw]     = wfc_list[iw].evalGradWithSpin(p_list[iw], iat, spingrad_now[iw]);
-  }
-}
-
-
 WaveFunctionComponent::PsiValue MultiSlaterDetTableMethod::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {
   ScopedTimer local_timer(RatioGradTimer);
@@ -524,18 +509,6 @@ void MultiSlaterDetTableMethod::mw_ratioGrad(const RefVectorWithLeader<WaveFunct
       det.curRatio *= psi_list[iw] / det.psi_ratio_to_ref_det_;
     ratios[iw] = det.curRatio;
   }
-}
-
-void MultiSlaterDetTableMethod::mw_ratioGradWithSpin(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                                     const RefVectorWithLeader<ParticleSet>& p_list,
-                                                     int iat,
-                                                     std::vector<PsiValue>& ratios,
-                                                     std::vector<GradType>& grad_new,
-                                                     std::vector<ComplexType>& spingrad_new) const
-{
-  assert(this == &wfc_list.getLeader());
-  for (int iw = 0; iw < wfc_list.size(); iw++)
-    ratios[iw] = wfc_list[iw].ratioGradWithSpin(p_list[iw], iat, grad_new[iw], spingrad_new[iw]);
 }
 
 WaveFunctionComponent::PsiValue MultiSlaterDetTableMethod::computeRatio_NewMultiDet_to_NewRefDet(int det_id) const

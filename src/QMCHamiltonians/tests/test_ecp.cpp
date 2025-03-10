@@ -554,10 +554,12 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
       const auto& displ = myTable.getDisplRow(jel);
       for (int iat = 0; iat < ions.getTotalNum(); iat++)
         if (sopp != nullptr && dist[iat] < sopp->getRmax())
+        {
           if (exact)
             Value1 += sopp->evaluateOneExactSpinIntegration(elec, iat, psi, jel, dist[iat], RealType(-1) * displ[iat]);
           else
             Value1 += sopp->evaluateOne(elec, iat, psi, jel, dist[iat], RealType(-1) * displ[iat]);
+        }
     }
     REQUIRE(Value1 == Approx(-3.530511241));
   };
@@ -613,12 +615,14 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
       const auto& displ = myTable.getDisplRow(jel);
       for (int iat = 0; iat < ions.getTotalNum(); iat++)
         if (sopp != nullptr && dist[iat] < sopp->getRmax())
+        {
           if (exact)
             Value1 += sopp->evaluateValueAndDerivativesExactSpinIntegration(elec, iat, psi, jel, dist[iat], -displ[iat],
                                                                             optvars, dlogpsi, dhpsioverpsi);
           else
             Value1 += sopp->evaluateValueAndDerivatives(elec, iat, psi, jel, dist[iat], -displ[iat], optvars, dlogpsi,
                                                         dhpsioverpsi);
+        }
     }
     REQUIRE(Value1 == Approx(-3.530511241).epsilon(2.e-5));
 
