@@ -1883,7 +1883,7 @@ class Supercomputer(Machine):
         self.not_implemented()
     #end def write_job_header
 
-@staticmethod
+    @staticmethod
     def walltime_to_seconds(walltime_str):
         """
         Convert walltime string to total seconds
@@ -1913,6 +1913,18 @@ class Supercomputer(Machine):
             raise ValueError(f"Failed to parse walltime '{walltime_str}': {str(e)}")
         #end try
     #end def walltime_to_seconds
+    @ staticmethod
+    def seconds_to_walltime(seconds):
+        """
+        Convert total seconds to walltime string
+        Handles formats: 'dd:hh:mm:ss', 'hh:mm:ss', 'mm:ss', 'seconds'
+        """
+        days = seconds // 86400
+        hours = (seconds % 86400) // 3600
+        minutes = (seconds % 3600) // 60
+        seconds = seconds % 60
+        return f"{days}:{hours:02d}:{minutes:02d}:{seconds:02d}"
+    #end def seconds_to_walltime
 
     def validate_queue_config(self, job):
         """
@@ -1952,8 +1964,8 @@ class Supercomputer(Machine):
                 max_seconds = self.walltime_to_seconds(config['max_walltime'])
                 job_seconds = job.total_seconds()
                 if job_seconds > max_seconds:
-                    errors.append('Walltime requested ({} secs) exceeds the maximum allowed ({})'.format(
-                        job.walltime, config['max_walltime']))
+                    errors.append('Walltime requested ({}) exceeds the maximum allowed ({})'.format(
+                        self.seconds_to_walltime(job_seconds), self.seconds_to_walltime(max_seconds)))
                 #end if
             except ValueError as e:
                 errors.append(str(e))
