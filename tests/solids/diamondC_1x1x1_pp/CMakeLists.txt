@@ -101,6 +101,30 @@ qmc_run_and_check(
   DIAMOND_KSPACE_SCALARS # VMC
 )
 
+qmc_run_and_check(
+  short-diamondC_1x1x1_pp-vmcbatch_sdj_kspace
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+  qmc_short_vmcbatch_kspace
+  qmc_short_vmcbatch_kspace.in.xml
+  1
+  16
+  TRUE
+  0
+  DIAMOND_KSPACE_SCALARS # VMC
+)
+
+qmc_run_and_check(
+  short-diamondC_1x1x1_pp-vmcbatch_sdj_kspace
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+  qmc_short_vmcbatch_kspace
+  qmc_short_vmcbatch_kspace.in.xml
+  4
+  4
+  TRUE
+  0
+  DIAMOND_KSPACE_SCALARS # VMC
+)
+
 # Reference OPT run in qmc-ref
 list(APPEND DIAMOND_OPT_SCALARS "totenergy" "-10.49370 0.0024")
 list(APPEND DIAMOND_OPT_SCALARS "kinetic" "11.5504 0.021")
