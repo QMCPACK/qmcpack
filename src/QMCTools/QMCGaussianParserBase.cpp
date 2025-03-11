@@ -1877,16 +1877,16 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag, const std::string& 
         xmlAddChild(sposetCollPtr, sposetdn);
 
 
-        xmlNodePtr slaterdet = xmlNewNode(NULL, (const xmlChar*)"slaterdeterminant");
 
         if (multideterminant)
 	{
           xmlNodePtr multislaterdetPtr = NULL;
           multislaterdetPtr = createMultiDeterminantSetFromH5();
-          xmlAddChild(slaterdet,multislaterdetPtr );
+          xmlAddChild(detset,multislaterdetPtr );
 	}
 	else
 	{
+          xmlNodePtr slaterdet = xmlNewNode(NULL, (const xmlChar*)"slaterdeterminant");
           xmlNodePtr udet = xmlNewNode(NULL, (const xmlChar*)"determinant");
           xmlNewProp(udet, (const xmlChar*)"id", (const xmlChar*)"spo-up");
           xmlAddChild(slaterdet,udet );
@@ -1894,9 +1894,10 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag, const std::string& 
           xmlNodePtr ddet = xmlNewNode(NULL, (const xmlChar*)"determinant");
           xmlNewProp(ddet, (const xmlChar*)"id", (const xmlChar*)"spo-dn");
           xmlAddChild(slaterdet,ddet );
+          xmlAddChild(detset, slaterdet);
 	}
 
-        xmlAddChild(detset, slaterdet);
+
 
       }
       xmlAddChild(wfPtr, sposetCollPtr);
@@ -1916,21 +1917,6 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag, const std::string& 
         }
       }
     }
-    xmlAddChild(qm_root, wfPtr);
-
-    // Add Jastrow factors if needed
-    if (addJastrow) {
-        std::cout << R"(Adding Two-Body and One-Body jastrows with rcut="10" and size="10")" << std::endl;
-        if (NumberOfEls > 1) {
-            xmlAddChild(wfPtr, createJ2());
-        }
-        xmlAddChild(wfPtr, createJ1());
-        if (NumberOfEls > 1) {
-            std::cout << "Adding Three-Body jastrows with rcut=\"5\"" << std::endl;
-            xmlAddChild(wfPtr, createJ3());
-        }
-    }
-
     xmlAddChild(qm_root, wfPtr);
 }
 
@@ -2130,7 +2116,10 @@ void QMCGaussianParserBase::dump_Legacy(const std::string& psi_tag, const std::s
     if (!singledetH5)
       std::cout << "Consider using HDF5 via -hdf5 for higher performance and smaller wavefunction files" << std::endl;
 }
-
+void QMCGaussianParserBase::dumpPBCLegacy(const std::string& psi_tag, const std::string& ion_tag)
+{
+	throw std::runtime_error("Legacy PBC Generation of non production input not supported. Please rerun with --prod command");
+}
 void QMCGaussianParserBase::dumpPBC(const std::string& psi_tag, const std::string& ion_tag)
 {
   std::cout << " QMCGaussianParserBase::dumpPBC " << std::endl;
@@ -2366,7 +2355,6 @@ void QMCGaussianParserBase::dumpStdInputProd(const std::string& psi_tag, const s
     xmlAddChild(vmc, estimator);
 
     xmlAddChild(vmc, parameter(vmc, "walkers_per_rank", "100"));
-    xmlAddChild(vmc, parameter(vmc, "stepsbetweensamples", "10"));
     xmlAddChild(vmc, parameter(vmc, "substeps", "30"));
     xmlAddChild(vmc, parameter(vmc, "warmupSteps", "10"));
     xmlAddChild(vmc, parameter(vmc, "blocks", "20"));
@@ -2387,7 +2375,7 @@ void QMCGaussianParserBase::dumpStdInputProd(const std::string& psi_tag, const s
     xmlNewProp(estimator, (const xmlChar*)"hdf5", (const xmlChar*)"no");
     xmlAddChild(dmc, estimator);
 
-    xmlAddChild(dmc, parameter(dmc, "walkers_per_rank", "1i00"));
+    xmlAddChild(dmc, parameter(dmc, "walkers_per_rank", "100"));
     xmlAddChild(dmc, parameter(dmc, "warmupSteps", "100"));
     xmlAddChild(dmc, parameter(dmc, "timestep", "0.0005"));
     xmlAddChild(dmc, parameter(dmc, "steps", "30"));
@@ -2452,7 +2440,6 @@ void QMCGaussianParserBase::dumpStdInputProdLegacy(const std::string& psi_tag, c
       xmlNewProp(estimator, (const xmlChar*)"hdf5", (const xmlChar*)"no");
       xmlAddChild(initvmc, estimator);
 
-      xmlAddChild(initvmc, parameter(initvmc, "walkers", "1"));
       xmlAddChild(initvmc, parameter(initvmc, "samplesperthread", "1"));
       xmlAddChild(initvmc, parameter(initvmc, "stepsbetweensamples", "10"));
       xmlAddChild(initvmc, parameter(initvmc, "substeps", "5"));
@@ -2574,6 +2561,7 @@ void QMCGaussianParserBase::dumpStdInputProdLegacy(const std::string& psi_tag, c
   xmlFreeDoc(doc_input);
 }
 
+
 void QMCGaussianParserBase::dumpStdInput(const std::string& psi_tag, const std::string& ion_tag)
 {
   std::cout << " Generating Standard Input file containing VMC, standard optmization, and DMC blocks." << std::endl;
@@ -2692,7 +2680,7 @@ void QMCGaussianParserBase::dumpStdInput(const std::string& psi_tag, const std::
         xmlAddChild(initopt, parameter(initopt, "warmupSteps", "100"));
         xmlAddChild(initopt, parameter(initopt, "blocks", "20"));
         xmlAddChild(initopt, parameter(initopt, "timestep", "0.5"));
-        xmlAddChild(initopt, parameter(initopt, "walkers", "1"));
+        //xmlAddChild(initopt, parameter(initopt, "walkers", "1"));
         xmlAddChild(initopt, parameter(initopt, "samples", "16000"));
         xmlAddChild(initopt, parameter(initopt, "substeps", "4"));
         xmlAddChild(initopt, parameter(initopt, "usedrift", "no"));
@@ -2728,7 +2716,7 @@ void QMCGaussianParserBase::dumpStdInput(const std::string& psi_tag, const std::
         xmlAddChild(initopt, parameter(initopt, "warmupSteps", "100"));
         xmlAddChild(initopt, parameter(initopt, "blocks", "20"));
         xmlAddChild(initopt, parameter(initopt, "timestep", "0.5"));
-        xmlAddChild(initopt, parameter(initopt, "walkers", "1"));
+        //xmlAddChild(initopt, parameter(initopt, "walkers", "1"));
         xmlAddChild(initopt, parameter(initopt, "samples", "64000"));
         xmlAddChild(initopt, parameter(initopt, "substeps", "4"));
         xmlAddChild(initopt, parameter(initopt, "usedrift", "no"));
@@ -2807,6 +2795,9 @@ void QMCGaussianParserBase::dumpStdInput(const std::string& psi_tag, const std::
 
 xmlNodePtr QMCGaussianParserBase::createHamiltonian(const std::string& ion_tag, const std::string& psi_tag)
 {
+  xmlNodePtr qmcSystemPtr = xmlNewNode(NULL, (const xmlChar*)"qmcsystem");
+//  throw std::runtime_error("Die Mpther fucker");
+
   xmlNodePtr hamPtr = xmlNewNode(NULL, (const xmlChar*)"hamiltonian");
   xmlNewProp(hamPtr, (const xmlChar*)"name", (const xmlChar*)"h0");
   xmlNewProp(hamPtr, (const xmlChar*)"type", (const xmlChar*)"generic");
@@ -2884,7 +2875,9 @@ xmlNodePtr QMCGaussianParserBase::createHamiltonian(const std::string& ion_tag, 
       xmlAddChild(hamPtr, chiesaPtr);
     }
   }
-  return hamPtr;
+    // Append the Hamiltonian node to the qmcsystem node
+  xmlAddChild(qmcSystemPtr, hamPtr);
+  return qmcSystemPtr;
 }
 
 int QMCGaussianParserBase::numberOfExcitationsCSF(std::string& occ)

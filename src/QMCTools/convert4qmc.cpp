@@ -323,19 +323,21 @@ int main(int argc, char** argv)
            parser->dumpStdInputProd(psi_tag, ion_tag);
       }
       else
-      {
-        parser->addJastrow = addJastrow;
-        parser->WFS_name   = jastrow;
-        if (parser->PBC)
-        {
-          std::cout << "Generating Inputs for Supertwist  with coordinates:" << parser->STwist_Coord[0] << "  "
-                    << parser->STwist_Coord[1] << "  " << parser->STwist_Coord[2] << std::endl;
-          parser->dumpPBC(psi_tag, ion_tag);
-        }
-        else
-          parser->dump(psi_tag, ion_tag);
-        parser->dumpStdInput(psi_tag, ion_tag);
-      }
+{
+  parser->addJastrow = addJastrow;
+  parser->WFS_name   = jastrow;
+  if (parser->PBC)
+  {
+    std::cout << "Generating Inputs for Supertwist  with coordinates:" << parser->STwist_Coord[0] << "  "
+              << parser->STwist_Coord[1] << "  " << parser->STwist_Coord[2] << std::endl;
+    parser->dumpPBC(psi_tag, ion_tag);
+  }
+  else
+  {
+    parser->dump(psi_tag, ion_tag); // Always use batched code when not in production
+  }
+  parser->dumpStdInput(psi_tag, ion_tag);
+}
     }
     catch (const std::exception& e)
     {
