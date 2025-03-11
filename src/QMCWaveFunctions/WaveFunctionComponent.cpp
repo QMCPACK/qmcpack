@@ -98,6 +98,20 @@ void WaveFunctionComponent::mw_evalGradWithSpin(const RefVectorWithLeader<WaveFu
     spingrad_now[iw] = 0;
 }
 
+void WaveFunctionComponent::mw_evalGradWithSpin_serialized(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                                           const RefVectorWithLeader<ParticleSet>& p_list,
+                                                           int iat,
+                                                           std::vector<GradType>& grad_now,
+                                                           std::vector<ComplexType>& spingrad_now) const
+{
+  assert(this == &wfc_list.getLeader());
+  for (int iw = 0; iw < wfc_list.size(); iw++)
+  {
+    spingrad_now[iw] = 0;
+    grad_now[iw]     = wfc_list[iw].evalGradWithSpin(p_list[iw], iat, spingrad_now[iw]);
+  }
+}
+
 void WaveFunctionComponent::mw_calcRatio(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                                          const RefVectorWithLeader<ParticleSet>& p_list,
                                          int iat,
@@ -147,8 +161,18 @@ void WaveFunctionComponent::mw_ratioGradWithSpin(const RefVectorWithLeader<WaveF
                                                  std::vector<ComplexType>& spingrad_new) const
 {
   mw_ratioGrad(wfc_list, p_list, iat, ratios, grad_new);
+}
+
+void WaveFunctionComponent::mw_ratioGradWithSpin_serialized(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                                            const RefVectorWithLeader<ParticleSet>& p_list,
+                                                            int iat,
+                                                            std::vector<PsiValue>& ratios,
+                                                            std::vector<GradType>& grad_new,
+                                                            std::vector<ComplexType>& spingrad_new) const
+{
+  assert(this == &wfc_list.getLeader());
   for (int iw = 0; iw < wfc_list.size(); iw++)
-    spingrad_new[iw] = 0;
+    ratios[iw] = wfc_list[iw].ratioGradWithSpin(p_list[iw], iat, grad_new[iw], spingrad_new[iw]);
 }
 
 void WaveFunctionComponent::mw_accept_rejectMove(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
@@ -256,6 +280,15 @@ void WaveFunctionComponent::mw_evaluateRatios(const RefVectorWithLeader<WaveFunc
 }
 
 void WaveFunctionComponent::mw_evaluateSpinorRatios(
+    const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+    const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+    const RefVector<std::pair<ValueVector, ValueVector>>& spinor_multiplier_list,
+    std::vector<std::vector<ValueType>>& ratios) const
+{
+  mw_evaluateRatios(wfc_list, vp_list, ratios);
+}
+
+void WaveFunctionComponent::mw_evaluateSpinorRatios_serialized(
     const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
     const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
     const RefVector<std::pair<ValueVector, ValueVector>>& spinor_multiplier_list,

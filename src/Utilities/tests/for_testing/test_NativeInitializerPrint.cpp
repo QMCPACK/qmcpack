@@ -14,7 +14,7 @@
 #include <string>
 #include <array>
 #include <unordered_map>
-#include <strstream>
+#include <sstream>
 #include "NativeInitializerPrint.hpp"
 
 /** \file
