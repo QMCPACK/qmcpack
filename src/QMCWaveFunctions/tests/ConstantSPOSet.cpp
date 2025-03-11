@@ -85,7 +85,11 @@ void ConstantSPOSet<T>::evaluateValue(const ParticleSet& P, int iat, ValueVector
 };
 
 template<typename T>
-void ConstantSPOSet<T>::evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi)
+void ConstantSPOSet<T>::evaluateVGL(const ParticleSet& P,
+                                    int iat,
+                                    ValueVector& psi,
+                                    GradVector& dpsi,
+                                    ValueVector& d2psi)
 {
   for (int iorb = 0; iorb < this->OrbitalSetSize; iorb++)
   {
