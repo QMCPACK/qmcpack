@@ -841,10 +841,13 @@ class DummySPOSetWithoutMW : public SPOSetT<T>
 {
 public:
   using SPOSet = SPOSetT<T>;
-  using ValueVector = typename SPOSet::ValueVector;
-  using ValueMatrix = typename SPOSet::ValueMatrix;
-  using GradVector  = typename SPOSet::GradVector;
-  using GradMatrix  = typename SPOSet::GradMatrix;
+  using ValueVector   = typename SPOSet::ValueVector;
+  using ValueMatrix   = typename SPOSet::ValueMatrix;
+  using GradVector    = typename SPOSet::GradVector;
+  using GradMatrix    = typename SPOSet::GradMatrix;
+  using ComplexType   = typename SPOSet::ComplexType;
+  template<typename DT>
+  using OffloadMatrix = typename SPOSet::template OffloadMatrix<DT>;
 
   DummySPOSetWithoutMW(const std::string& my_name) : SPOSet(my_name) {}
   void setOrbitalSetSize(int norbs) override {}
@@ -910,7 +913,11 @@ template<typename T>
 class DummySPOSetWithMW : public DummySPOSetWithoutMW<T>
 {
 public:
-  using ValueVector = typename DummySPOSetWithoutMW<T>::ValueVector;
+  using ValueVector   = typename DummySPOSetWithoutMW<T>::ValueVector;
+  using GradVector    = typename DummySPOSetWithoutMW<T>::GradVector;
+  using ComplexType   = typename DummySPOSetWithoutMW<T>::ComplexType;
+  template<typename DT>
+  using OffloadMatrix = typename DummySPOSetWithoutMW<T>::template OffloadMatrix<DT>;
   DummySPOSetWithMW(const std::string& my_name) : DummySPOSetWithoutMW<T>(my_name) {}
   void mw_evaluateValue(const RefVectorWithLeader<SPOSet>& spo_list,
                         const RefVectorWithLeader<ParticleSet>& P_list,
