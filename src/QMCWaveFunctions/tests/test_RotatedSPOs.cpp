@@ -963,10 +963,10 @@ TEST_CASE("RotatedSPOs mw_ APIs", "[wavefunction]")
     //In the case that the underlying SPOSet doesn't specialize the mw_ API,
     //the underlying SPOSet will fall back to the default SPOSet mw_, which is
     //just a loop over the single walker API.
-    using ValueType = SPOSet::ValueType;
+    using Value = SPOSet::ValueType;
 
-    RotatedSPOs rot_spo0("rotated0", std::make_unique<DummySPOSetWithoutMW<ValueType>>("no mw 0"));
-    RotatedSPOs rot_spo1("rotated1", std::make_unique<DummySPOSetWithoutMW<ValueType>>("no mw 1"));
+    RotatedSPOs rot_spo0("rotated0", std::make_unique<DummySPOSetWithoutMW<Value>>("no mw 0"));
+    RotatedSPOs rot_spo1("rotated1", std::make_unique<DummySPOSetWithoutMW<Value>>("no mw 1"));
     RefVectorWithLeader<SPOSet> spo_list(rot_spo0, {rot_spo0, rot_spo1});
 
     ResourceCollection spo_res("test_rot_res");
@@ -1023,10 +1023,10 @@ TEST_CASE("RotatedSPOs mw_ APIs", "[wavefunction]")
     //in the underlying SPO and not using the default SPOSet implementation which
     //loops over single walker APIs (which have different values enforced in
     // DummySPOSetWithoutMW
-    using ValueType = SPOSet::ValueType;
+    using Value = SPOSet::ValueType;
 
-    RotatedSPOs rot_spo0("rotated0", std::make_unique<DummySPOSetWithMW<ValueType>>("mw 0"));
-    RotatedSPOs rot_spo1("rotated1", std::make_unique<DummySPOSetWithMW<ValueType>>("mw 1"));
+    RotatedSPOs rot_spo0("rotated0", std::make_unique<DummySPOSetWithMW<Value>>("mw 0"));
+    RotatedSPOs rot_spo1("rotated1", std::make_unique<DummySPOSetWithMW<Value>>("mw 1"));
     RefVectorWithLeader<SPOSet> spo_list(rot_spo0, {rot_spo0, rot_spo1});
 
     ResourceCollection spo_res("test_rot_res");
