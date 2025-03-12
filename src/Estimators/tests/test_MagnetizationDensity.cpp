@@ -368,8 +368,8 @@ TEST_CASE("MagnetizationDensity::IntegrationTest", "[estimators]")
     mup(1, iorb) = uprow1[iorb];
     mdn(1, iorb) = dnrow1[iorb];
   }
-  auto spo_up = std::make_unique<ConstantSPOSet>("ConstantUpSet", nelec, norb);
-  auto spo_dn = std::make_unique<ConstantSPOSet>("ConstantDnSet", nelec, norb);
+  auto spo_up = std::make_unique<ConstantSPOSet<Value>>("ConstantUpSet", nelec, norb);
+  auto spo_dn = std::make_unique<ConstantSPOSet<Value>>("ConstantDnSet", nelec, norb);
 
   spo_up->setRefVals(mup);
   spo_dn->setRefVals(mdn);

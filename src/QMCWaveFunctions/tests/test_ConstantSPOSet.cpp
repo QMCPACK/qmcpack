@@ -74,7 +74,7 @@ TEST_CASE("ConstantSPOSet", "[wavefunction]")
   psiG.resize(norb);
 
   //Test of value only constructor.
-  auto sposet = std::make_unique<ConstantSPOSet>("constant_spo", nelec, norb);
+  auto sposet = std::make_unique<ConstantSPOSet<Value>>("constant_spo", nelec, norb);
   sposet->setRefVals(spomat);
   sposet->setRefEGrads(gradspomat);
   sposet->setRefELapls(laplspomat);
