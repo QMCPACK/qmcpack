@@ -42,7 +42,7 @@ inline void insert_columns(const MAT1& small, MAT2& big, int offset_c)
 template<typename T>
 CompositeSPOSet<T>::CompositeSPOSet(const std::string& my_name) : SPOSetT<T>(my_name)
 {
-  this->OrbitalSetSize = 0;
+  SPOSet::OrbitalSetSize = 0;
   component_offsets.reserve(4);
 }
 
@@ -71,8 +71,8 @@ void CompositeSPOSet<T>::add(std::unique_ptr<SPOSet> component)
   component_laplacians.emplace_back(norbs);
   component_spin_gradients.emplace_back(norbs);
 
-  this->OrbitalSetSize += norbs;
-  component_offsets.push_back(this->OrbitalSetSize);
+  SPOSet::OrbitalSetSize += norbs;
+  component_offsets.push_back(SPOSet::OrbitalSetSize);
 }
 
 template<typename T>

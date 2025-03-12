@@ -18,10 +18,10 @@ template<typename T>
 ConstantSPOSet<T>::ConstantSPOSet(const std::string& my_name, const int nparticles, const int norbitals)
     : SPOSetT<T>(my_name), numparticles_(nparticles)
 {
-  this->OrbitalSetSize = norbitals;
-  ref_psi_.resize(numparticles_, this->OrbitalSetSize);
-  ref_egrad_.resize(numparticles_, this->OrbitalSetSize);
-  ref_elapl_.resize(numparticles_, this->OrbitalSetSize);
+  SPOSet::OrbitalSetSize = norbitals;
+  ref_psi_.resize(numparticles_, SPOSet::OrbitalSetSize);
+  ref_egrad_.resize(numparticles_, SPOSet::OrbitalSetSize);
+  ref_elapl_.resize(numparticles_, SPOSet::OrbitalSetSize);
 
   ref_psi_   = 0.0;
   ref_egrad_ = 0.0;
@@ -31,7 +31,7 @@ ConstantSPOSet<T>::ConstantSPOSet(const std::string& my_name, const int nparticl
 template<typename T>
 std::unique_ptr<SPOSetT<T>> ConstantSPOSet<T>::makeClone() const
 {
-  auto myclone = std::make_unique<ConstantSPOSet>(this->my_name_, numparticles_, this->OrbitalSetSize);
+  auto myclone = std::make_unique<ConstantSPOSet>(SPOSet::my_name_, numparticles_, SPOSet::OrbitalSetSize);
   myclone->setRefVals(ref_psi_);
   myclone->setRefEGrads(ref_egrad_);
   myclone->setRefELapls(ref_elapl_);
@@ -53,7 +53,7 @@ void ConstantSPOSet<T>::setOrbitalSetSize(int norbs) { APP_ABORT("ConstantSPOSet
 template<typename T>
 void ConstantSPOSet<T>::setRefVals(const ValueMatrix& vals)
 {
-  assert(vals.cols() == this->OrbitalSetSize);
+  assert(vals.cols() == SPOSet::OrbitalSetSize);
   assert(vals.rows() == numparticles_);
   ref_psi_ = vals;
 };
@@ -61,7 +61,7 @@ void ConstantSPOSet<T>::setRefVals(const ValueMatrix& vals)
 template<typename T>
 void ConstantSPOSet<T>::setRefEGrads(const GradMatrix& grads)
 {
-  assert(grads.cols() == this->OrbitalSetSize);
+  assert(grads.cols() == SPOSet::OrbitalSetSize);
   assert(grads.rows() == numparticles_);
   ref_egrad_ = grads;
 };
@@ -69,7 +69,7 @@ void ConstantSPOSet<T>::setRefEGrads(const GradMatrix& grads)
 template<typename T>
 void ConstantSPOSet<T>::setRefELapls(const ValueMatrix& lapls)
 {
-  assert(lapls.cols() == this->OrbitalSetSize);
+  assert(lapls.cols() == SPOSet::OrbitalSetSize);
   assert(lapls.rows() == numparticles_);
   ref_elapl_ = lapls;
 };
@@ -79,8 +79,8 @@ void ConstantSPOSet<T>::evaluateValue(const ParticleSet& P, int iat, ValueVector
 {
   const auto* vp = dynamic_cast<const VirtualParticleSet*>(&P);
   int ptcl = vp ? vp->refPtcl : iat;
-  assert(psi.size() == this->OrbitalSetSize);
-  for (int iorb = 0; iorb < this->OrbitalSetSize; iorb++)
+  assert(psi.size() == SPOSet::OrbitalSetSize);
+  for (int iorb = 0; iorb < SPOSet::OrbitalSetSize; iorb++)
     psi[iorb] = ref_psi_(ptcl, iorb);
 };
 
@@ -91,7 +91,7 @@ void ConstantSPOSet<T>::evaluateVGL(const ParticleSet& P,
                                     GradVector& dpsi,
                                     ValueVector& d2psi)
 {
-  for (int iorb = 0; iorb < this->OrbitalSetSize; iorb++)
+  for (int iorb = 0; iorb < SPOSet::OrbitalSetSize; iorb++)
   {
     psi[iorb]   = ref_psi_(iat, iorb);
     dpsi[iorb]  = ref_egrad_(iat, iorb);

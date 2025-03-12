@@ -906,7 +906,7 @@ public:
                             GradMatrix& dlogdet,
                             ValueMatrix& d2logdet) override
   {}
-  std::string getClassName() const override { return this->my_name_; }
+  std::string getClassName() const override { return SPOSet::my_name_; }
 };
 
 template<typename T>
