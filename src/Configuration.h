@@ -72,7 +72,7 @@ struct QMCTraits
   using PtclGrpIndexes = std::vector<std::pair<int, int>>;
 };
 
-using Lattice = CrystalLattice<OHMMS_PRECISION, OHMMS_DIM>;
+using Lattice = CrystalLattice<OHMMS_PRECISION_FULL, OHMMS_DIM>;
 
 /** Particle traits to use UniformGridLayout for the ParticleLayout.
  */
