@@ -249,7 +249,7 @@ public:
 
   const auto& getSimulationCell() const { return simulation_cell_; }
   const auto& getLattice() const { return simulation_cell_.getLattice(); }
-  auto& getPrimitiveLattice() const { return const_cast<ParticleLayout&>(simulation_cell_.getPrimLattice()); }
+  auto& getPrimitiveLattice() const { return const_cast<Lattice&>(simulation_cell_.getPrimLattice()); }
   const auto& getLRBox() const { return simulation_cell_.getLRBox(); }
 
   inline bool isSameMass() const { return same_mass_; }
@@ -288,13 +288,23 @@ public:
   /// makeMove, but now includes an update to the spin variable
   void makeMoveWithSpin(Index_t iat, const SingleParticlePos& displ, const Scalar_t& sdispl);
 
-  /// batched version of makeMove
+  /** batched version of makeMove and makeMoveAndCheck fused in one
+   *
+   * if are_valid is provided, and lattice is defined explicitly, do one check to make a move valid.
+   * isValid(Lattice.toUnit(active_pos_)): invalid move, if active_pos_ goes out of the Lattice in any direction marked with open BC.
+   * Ye: outOfBound(displ) check in makeMoveAndCheck was not used and should be deleted.
+   * Note that: drivers should reject invalid moves.
+   */
   template<CoordsType CT>
-  static void mw_makeMove(const RefVectorWithLeader<ParticleSet>& p_list, int iat, const MCCoords<CT>& displs);
+  static void mw_makeMove(const RefVectorWithLeader<ParticleSet>& p_list,
+                          int iat,
+                          const MCCoords<CT>& displs,
+                          OptionalRef<std::vector<bool>> are_valid = std::nullopt);
 
   static void mw_makeMove(const RefVectorWithLeader<ParticleSet>& p_list,
                           int iat,
-                          const std::vector<SingleParticlePos>& displs);
+                          const std::vector<SingleParticlePos>& displs,
+                          OptionalRef<std::vector<bool>> are_valid = std::nullopt);
 
   /// batched version makeMove for spin variable only
   static void mw_makeSpinMove(const RefVectorWithLeader<ParticleSet>& p_list,

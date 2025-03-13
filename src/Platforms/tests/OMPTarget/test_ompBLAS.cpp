@@ -22,6 +22,163 @@
 
 namespace qmcplusplus
 {
+template<typename T>
+void test_gemm(const int M, const int N, const int K, const char transa, const char transb)
+{
+  const int a0 = transa == 'T' ? M : K;
+  const int a1 = transa == 'T' ? K : M;
+
+  const int b0 = transb == 'T' ? K : N;
+  const int b1 = transb == 'T' ? N : K;
+
+  using vec_t = Vector<T, OMPallocator<T>>;
+  using mat_t = Matrix<T, OMPallocator<T>>;
+
+  ompBLAS::ompBLAS_handle handle;
+
+  mat_t A(a0, a1); // Input matrix
+  mat_t B(b0, b1); // Input matrix
+  mat_t C(N, M);   // Result matrix ompBLAS
+  mat_t D(N, M);   // Result matrix BLAS
+
+  // Fill data
+  for (int j = 0; j < a0; j++)
+    for (int i = 0; i < a1; i++)
+      A[j][i] = i * 3 + j * 4;
+
+  for (int j = 0; j < b0; j++)
+    for (int i = 0; i < b1; i++)
+      B[j][i] = i * 4 + j * 5;
+
+  A.updateTo();
+  B.updateTo();
+
+  T alpha(1);
+  T alpha_half(0.5);
+  T beta(0);
+  T beta1(1);
+
+  // U[X,Y] denotes a row-major matrix U with X rows and Y cols
+  // element U(i,j) is located at: U.data() + sizeof(U_type) * (i*ldU + j)
+  //
+  // A,B,C,D are treated as row-major matrices, but the arguments to gemm are treated as col-major
+  // so the call below to ompBLAS::gemm is equivalent to one of the following (with row-major matrices)
+  // transa/transb == 'N'/'N':   C[N,M] = A[K,M] * B[N,K]; C = B * A
+  // transa/transb == 'N'/'T':   C[N,M] = A[K,M] * B[K,N]; C = B^t * A
+  // transa/transb == 'T'/'N':   C[N,M] = A[M,K] * B[N,K]; C = B * A^t
+  // transa/transb == 'T'/'T':   C[N,M] = A[M,K] * B[K,N]; C = B^t * A^t
+
+  // alpha 0.5, beta 0
+  ompBLAS::gemm(handle, transa, transb, M, N, K, alpha_half, A.device_data(), a1, B.device_data(), b1, beta,
+                C.device_data(), M);
+  // alpha 0.5, beta 1
+  ompBLAS::gemm(handle, transa, transb, M, N, K, alpha_half, A.device_data(), a1, B.device_data(), b1, beta1,
+                C.device_data(), M);
+  C.updateFrom();
+
+  BLAS::gemm(transa, transb, M, N, K, alpha, A.data(), a1, B.data(), b1, beta, D.data(), M);
+
+  for (int j = 0; j < N; j++)
+    for (int i = 0; i < M; i++)
+    {
+      CHECK(std::real(C[j][i]) == Approx(std::real(D[j][i])));
+      CHECK(std::imag(C[j][i]) == Approx(std::imag(D[j][i])));
+    }
+
+  mat_t A2(a0, a1); // Input matrix
+  mat_t B2(b0, b1); // Input matrix
+  mat_t C2(N, M);   // Result matrix ompBLAS
+  mat_t D2(N, M);   // Result matrix BLAS
+
+  // Fill data
+  for (int j = 0; j < a0; j++)
+    for (int i = 0; i < a1; i++)
+      A2[j][i] = j * 3 + i * 4;
+
+  for (int j = 0; j < b0; j++)
+    for (int i = 0; i < b1; i++)
+      B2[j][i] = j * 4 + i * 5;
+
+  A2.updateTo();
+  B2.updateTo();
+
+  Vector<const T*, OMPallocator<const T*>> Aarr(2), Barr(2);
+  Vector<T*, OMPallocator<T*>> Carr(2);
+
+  Aarr[0] = A2.device_data();
+  Aarr[1] = A.device_data();
+  Barr[0] = B2.device_data();
+  Barr[1] = B.device_data();
+
+  Carr[0] = C.device_data();
+  Carr[1] = C2.device_data();
+
+  Aarr.updateTo();
+  Barr.updateTo();
+  Carr.updateTo();
+
+  // alpha 0.5, beta 0
+  ompBLAS::gemm_batched(handle, transa, transb, M, N, K, alpha_half, Aarr.device_data(), a1, Barr.device_data(), b1,
+                        beta, Carr.device_data(), M, 2);
+  // alpha 0.5, beta 1
+  ompBLAS::gemm_batched(handle, transa, transb, M, N, K, alpha_half, Aarr.device_data(), a1, Barr.device_data(), b1,
+                        beta1, Carr.device_data(), M, 2);
+  C.updateFrom();
+  C2.updateFrom();
+
+  BLAS::gemm(transa, transb, M, N, K, alpha, A2.data(), a1, B2.data(), b1, beta, D2.data(), M);
+
+  for (int j = 0; j < N; j++)
+    for (int i = 0; i < M; i++)
+    {
+      CHECK(std::real(C2[j][i]) == Approx(std::real(D[j][i])));
+      CHECK(std::imag(C2[j][i]) == Approx(std::imag(D[j][i])));
+    }
+
+  for (int j = 0; j < N; j++)
+    for (int i = 0; i < M; i++)
+    {
+      CHECK(std::real(C[j][i]) == Approx(std::real(D2[j][i])));
+      CHECK(std::imag(C[j][i]) == Approx(std::imag(D2[j][i])));
+    }
+}
+
+TEST_CASE("ompBLAS gemm", "[OMP]")
+{
+  const int M = 37;
+  const int N = 71;
+  const int K = 23;
+
+  // Non-batched test
+  std::cout << "Testing NN gemm" << std::endl;
+  test_gemm<float>(M, N, K, 'N', 'N');
+  test_gemm<double>(M, N, K, 'N', 'N');
+#if defined(QMC_COMPLEX)
+  test_gemm<std::complex<float>>(N, M, K, 'N', 'N');
+  test_gemm<std::complex<double>>(N, M, K, 'N', 'N');
+#endif
+  std::cout << "Testing NT gemm" << std::endl;
+  test_gemm<float>(M, N, K, 'N', 'T');
+  test_gemm<double>(M, N, K, 'N', 'T');
+#if defined(QMC_COMPLEX)
+  test_gemm<std::complex<float>>(N, M, K, 'N', 'T');
+  test_gemm<std::complex<double>>(N, M, K, 'N', 'T');
+#endif
+  std::cout << "Testing TN gemm" << std::endl;
+  test_gemm<float>(M, N, K, 'T', 'N');
+  test_gemm<double>(M, N, K, 'T', 'N');
+#if defined(QMC_COMPLEX)
+  test_gemm<std::complex<float>>(N, M, K, 'T', 'N');
+  test_gemm<std::complex<double>>(N, M, K, 'T', 'N');
+#endif
+  std::cout << "Testing TT gemm" << std::endl;
+  test_gemm<float>(M, N, K, 'T', 'T');
+  test_gemm<double>(M, N, K, 'T', 'T');
+#if defined(QMC_COMPLEX)
+  test_gemm<std::complex<float>>(N, M, K, 'T', 'T');
+  test_gemm<std::complex<double>>(N, M, K, 'T', 'T');
+#endif
+}
 
 template<typename T>
 void test_gemv(const int M_b, const int N_b, const char trans)
@@ -150,18 +307,25 @@ void test_gemv_batched(const int M_b, const int N_b, const char trans, const int
   // Run tests
   Vector<T, OMPallocator<T>> alpha(batch_count);
   Vector<T, OMPallocator<T>> beta(batch_count);
+  Vector<T, OMPallocator<T>> beta1(batch_count);
 
   for (int batch = 0; batch < batch_count; batch++)
   {
-    alpha[batch] = T(1);
+    alpha[batch] = T(0.5);
     beta[batch]  = T(0);
+    beta1[batch] = T(1);
   }
 
   alpha.updateTo();
   beta.updateTo();
+  beta1.updateTo();
 
+  // alpha 0.5, beta 0
   ompBLAS::gemv_batched(handle, trans, N_b, M_b, alpha.device_data(), Bptrs.device_data(), N_b, Aptrs.device_data(), 1,
                         beta.device_data(), Cptrs.device_data(), 1, batch_count);
+  // alpha 0.5, beta 1
+  ompBLAS::gemv_batched(handle, trans, N_b, M_b, alpha.device_data(), Bptrs.device_data(), N_b, Aptrs.device_data(), 1,
+                        beta1.device_data(), Cptrs.device_data(), 1, batch_count);
 
   for (int batch = 0; batch < batch_count; batch++)
   {
@@ -177,7 +341,7 @@ void test_gemv_batched(const int M_b, const int N_b, const char trans, const int
   }
 }
 
-TEST_CASE("OmpBLAS gemv", "[OMP]")
+TEST_CASE("ompBLAS gemv", "[OMP]")
 {
   const int M           = 137;
   const int N           = 79;
@@ -201,7 +365,7 @@ TEST_CASE("OmpBLAS gemv", "[OMP]")
 #endif
 }
 
-TEST_CASE("OmpBLAS gemv notrans", "[OMP]")
+TEST_CASE("ompBLAS gemv notrans", "[OMP]")
 {
   const int M           = 137;
   const int N           = 79;
@@ -364,7 +528,7 @@ void test_ger_batched(const int M, const int N, const int batch_count)
   }
 }
 
-TEST_CASE("OmpBLAS ger", "[OMP]")
+TEST_CASE("ompBLAS ger", "[OMP]")
 {
   const int M           = 137;
   const int N           = 79;

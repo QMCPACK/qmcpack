@@ -177,8 +177,8 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W)
     int im = minus[lower];     //walker index to be replaced
     int ip = plus[lower];      //walker index to be duplicated
     W[im]->makeCopy(*(W[ip])); //copy the walker
-    W[im]->ParentID = W[ip]->ID;
-    W[im]->ID       = (++NumWalkersCreated) * num_contexts_ + MyContext;
+    W[im]->setParentID(W[ip]->getWalkerID());
+    W[im]->setWalkerID((++NumWalkersCreated) * num_contexts_ + MyContext);
     minus.pop_back(); //remove it
     plus.pop_back();  //remove it
   }
@@ -273,8 +273,8 @@ void WalkerReconfigurationMPI::recvWalkers(MCWalkerConfiguration& W, const std::
       size_t byteSize = W[im]->byteSize();
       myComm->comm.receive_n(W[im]->DataSet.data(), byteSize, plusN[ic]);
       W[im]->copyFromBuffer();
-      W[im]->ParentID = W[im]->ID;
-      W[im]->ID       = (++NumWalkersCreated) * num_contexts_ + MyContext;
+      W[im]->setParentID(W[im]->getWalkerID());
+      W[im]->setWalkerID((++NumWalkersCreated) * num_contexts_ + MyContext);
       --last;
     }
     ++ic;

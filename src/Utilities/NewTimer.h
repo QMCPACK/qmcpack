@@ -29,7 +29,12 @@
 #endif
 
 #ifdef USE_NVTX_API
+#ifndef QMC_CUDA2HIP
 #include <nvToolsExt.h>
+#else
+#include <roctracer/roctracer_roctx.h>
+#include "ROCm/cuda2hip.h"
+#endif
 #endif
 
 #define USE_STACK_TIMERS

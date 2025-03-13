@@ -17,10 +17,25 @@ endif()
 if(QMC_OMP)
   if(CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM")
     if(ENABLE_OFFLOAD)
-      set(OFFLOAD_TARGET
-          "spir64"
-          CACHE STRING "Offload target architecture")
-      set(OPENMP_OFFLOAD_COMPILE_OPTIONS "-fopenmp-targets=${OFFLOAD_TARGET}")
+      if(OFFLOAD_ARCH OR QMC_GPU_ARCHS)
+        # for ahead-of-time compilation and linking
+        # if OFFLOAD_ARCH not defined, overwrite it with QMC_GPU_ARCHS
+        if(NOT OFFLOAD_ARCH AND QMC_GPU_ARCHS)
+          set(OFFLOAD_ARCH ${QMC_GPU_ARCHS})
+        endif()
+        if(OFFLOAD_ARCH MATCHES "^intel_gpu_")
+          set(OPENMP_OFFLOAD_COMPILE_OPTIONS "-fopenmp-targets=spir64_gen")
+	  string(REGEX REPLACE "^intel_gpu_" "" INTEL_GPU_ARCH "${OFFLOAD_ARCH}")
+          set(OpenMP_OFFLOAD_LINKER_FLAGS "-Xs \"-device ${INTEL_GPU_ARCH}\"")
+        else()
+          message(FATAL_ERROR "Invalid Intel GPU architecture \"${OFFLOAD_ARCH}\"! Did you miss \"intel_gpu_\" prefix?")
+        endif()
+      else()
+        set(OFFLOAD_TARGET
+            "spir64"
+            CACHE STRING "Offload target architecture")
+        set(OPENMP_OFFLOAD_COMPILE_OPTIONS "-fopenmp-targets=${OFFLOAD_TARGET}")
+      endif()
     endif(ENABLE_OFFLOAD)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fiopenmp")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fiopenmp")

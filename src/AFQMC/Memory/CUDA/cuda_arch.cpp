@@ -12,21 +12,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
+#include "cuda_arch.h"
 #include <cassert>
 #include <cstdlib>
 #include <iostream>
 #include <stdexcept>
-#include <cuda_runtime.h>
-#include "AFQMC/Memory/CUDA/cuda_init.h"
-#include "cuda_arch.h"
 #include "AFQMC/Memory/device_pointers.hpp"
-#include "mpi3/communicator.hpp"
-#include "mpi3/shared_communicator.hpp"
-#include "cublas_v2.h"
-//#include "cublasXt.h"
-#include "cusparse.h"
-#include "cusolverDn.h"
-#include "curand.h"
 
 namespace arch
 {

@@ -326,7 +326,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     {
       ScopedTimer offload(offload_timer_);
       PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(nw * num_teams) \
-                        nowait depend(out: r_dr_ptr[:mw_new_old_dist_displ.size()])")
+                          depend(out: r_dr_ptr[:mw_new_old_dist_displ.size()])")
       for (int iw = 0; iw < nw; ++iw)
         for (int team_id = 0; team_id < num_teams; team_id++)
         {

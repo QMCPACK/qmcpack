@@ -23,6 +23,7 @@ set(HAMSRCS
     QMCHamiltonian.cpp
     Hdispatcher.cpp
     BareKineticEnergy.cpp
+    CoulombPotential.cpp
     CoulombPBCAA.cpp
     CoulombPBCAB.cpp
     EwaldRef.cpp
@@ -46,7 +47,9 @@ set(HAMSRCS
     SpeciesKineticEnergy.cpp
     LatticeDeviationEstimator.cpp
     SpaceWarpTransformation.cpp
-    ObservableHelper.cpp)
+    SelfHealingOverlapLegacy.cpp
+    ObservableHelper.cpp
+    Listener.cpp)
 
 if(OHMMS_DIM MATCHES 3)
   set(HAMSRCS

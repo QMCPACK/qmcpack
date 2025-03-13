@@ -96,7 +96,7 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
 
   //Cell definition:
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  Lattice lattice;
   lattice.BoxBConds = true; // periodic
   lattice.R.diagonal(20);
   lattice.LR_dim_cutoff = 15;
@@ -201,17 +201,17 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   RealType logpsi = psi.evaluateLog(elec);
 
   RealType keval = bare_ke.evaluate(elec);
-
   //This is validated against an alternate code path (waveefunction tester for local energy).
   CHECK(keval == Approx(-0.147507745));
+  CHECK(keval == Approx(bare_ke.getValue()));
 
   ParticleSet::ParticlePos HFTerm, PulayTerm;
   HFTerm.resize(ions.getTotalNum());
   PulayTerm.resize(ions.getTotalNum());
 
-  RealType keval2 = bare_ke.evaluateWithIonDerivs(elec, ions, psi, HFTerm, PulayTerm);
+  bare_ke.evaluateIonDerivs(elec, ions, psi, HFTerm, PulayTerm);
+  CHECK(keval == Approx(bare_ke.getValue()));
 
-  CHECK(keval2 == Approx(-0.147507745));
   //These are validated against finite differences (delta=1e-6).
   CHECK(PulayTerm[0][0] == Approx(-0.13166));
   CHECK(PulayTerm[0][1] == Approx(0.0));

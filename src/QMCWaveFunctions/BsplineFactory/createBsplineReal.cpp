@@ -11,7 +11,6 @@
 
 
 #include "QMCWaveFunctions/BsplineFactory/createBsplineReader.h"
-#include <PlatformSelector.hpp>
 #include "SplineSetReader.h"
 #include "HybridRepSetReader.h"
 
@@ -21,15 +20,10 @@ namespace qmcplusplus
  *  spline storage and computation precision is ST
  */
 template<typename ST>
-std::unique_ptr<BsplineReader> createBsplineReal(EinsplineSetBuilder* e, bool hybrid_rep, const std::string& useGPU)
+std::unique_ptr<BsplineReader> createBsplineReal(EinsplineSetBuilder* e, bool hybrid_rep)
 {
-  app_summary()
-      << "    Using real valued spline SPOs with real " << SplineStoragePrecision<ST>::value
-      << " precision storage (R2R)." << std::endl;
-  if (CPUOMPTargetSelector::selectPlatform(useGPU) == PlatformKind::OMPTARGET)
-    app_summary() << "OpenMP offload has not been implemented to support real valued spline SPOs with real storage!"
-                  << std::endl;
-  app_summary() << "    Running on CPU." << std::endl;
+  app_summary() << "    Using real valued spline SPOs with real " << SplineStoragePrecision<ST>::value
+                << " precision storage (R2R)." << std::endl;
 
   std::unique_ptr<BsplineReader> aReader;
   if (hybrid_rep)
@@ -44,13 +38,12 @@ std::unique_ptr<BsplineReader> createBsplineReal(EinsplineSetBuilder* e, bool hy
 
 std::unique_ptr<BsplineReader> createBsplineReal(EinsplineSetBuilder* e,
                                                  bool use_single,
-                                                 bool hybrid_rep,
-                                                 const std::string& useGPU)
+                                                 bool hybrid_rep)
 {
   if (use_single)
-    return createBsplineReal<float>(e, hybrid_rep, useGPU);
+    return createBsplineReal<float>(e, hybrid_rep);
   else
-    return createBsplineReal<double>(e, hybrid_rep, useGPU);
+    return createBsplineReal<double>(e, hybrid_rep);
 }
 
 } // namespace qmcplusplus

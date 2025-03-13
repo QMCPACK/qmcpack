@@ -28,7 +28,9 @@ class BackflowTransformation;
 class DiracDeterminantBase;
 class MultiSlaterDetTableMethod;
 struct CSFData;
-class SPOSet;
+template<typename T>
+class SPOSetT;
+using SPOSet = SPOSetT<QMCTraits::QTBase::ValueType>;
 class SPOSetBuilder;
 class SPOSetBuilderFactory;
 struct ci_configuration;
@@ -90,7 +92,7 @@ private:
                    std::vector<std::string>& CItags,
                    std::vector<ValueType>& coeff,
                    bool& optimizeCI,
-                   std::vector<int>& nptcls,
+                   const std::vector<int>& nptcls,
                    std::unique_ptr<CSFData>& csf_data_ptr) const;
 
   bool readDetListH5(xmlNodePtr cur,
@@ -99,7 +101,7 @@ private:
                      std::vector<std::string>& CItags,
                      std::vector<ValueType>& coeff,
                      bool& optimizeCI,
-                     std::vector<int>& nptcls) const;
+                     const std::vector<int>& nptcls) const;
 
   template<typename VT,
            std::enable_if_t<(std::is_same<VT, ValueType>::value) && (std::is_floating_point<VT>::value), int> = 0>

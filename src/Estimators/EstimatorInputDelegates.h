@@ -2,13 +2,13 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2022 QMCPACK developers.
+// Copyright (c) 2024 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
 /** \file
- *  Compilation units that construct QMCDriverInput need visibility to the actual input classe
+ *  Compilation units that construct QMCDriverInput need visibility to the actual input classes
  *  types in the delegation tree.
  */
 #ifndef QMCPLUSPLUS_QMCDRIVERINPUTDELEGATES_H
@@ -21,5 +21,7 @@
 #include "SpinDensityInput.h"
 #include "MagnetizationDensityInput.h"
 #include "PerParticleHamiltonianLoggerInput.h"
+#include "SelfHealingOverlapInput.h"
+#include "EnergyDensityInput.h"
 
 #endif

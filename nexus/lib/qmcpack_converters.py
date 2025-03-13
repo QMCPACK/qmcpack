@@ -632,7 +632,7 @@ class Convert4qmcInput(SimulationInput):
             if v is not None and not isinstance(v,self.input_types[k]):
                 valid = False
                 if exit:
-                    self.error('keyword input {0} must be of type {1}\nyou provided a value of type {2}\nplease revise your input and try again'.format(k,self.input_types[k].__name__),v.__class__.__name__)
+                    self.error('keyword input {0} must be of type {1}\nyou provided a value of type {2}\nplease revise your input and try again'.format(k,self.input_types[k].__name__,v.__class__.__name__))
                 #end if
                 break
             #end if
@@ -738,7 +738,7 @@ class Convert4qmc(Simulation):
     generic_identifier     = 'convert4qmc'
     application            = 'convert4qmc'
     application_properties = set(['serial'])
-    application_results    = set(['orbitals','particles'])
+    application_results    = set(['orbitals','particles','determinantset'])
     renew_app_command      = True
 
     def __init__(self,*args,**kwargs):
@@ -786,12 +786,7 @@ class Convert4qmc(Simulation):
 
 
     def check_result(self,result_name,sim):
-        calculating_result = False
-        if result_name=='orbitals':
-            calculating_result = True
-        elif result_name=='particles':
-            calculating_result = True
-        #end if        
+        calculating_result = result_name in self.application_results
         return calculating_result
     #end def check_result
 
@@ -806,6 +801,8 @@ class Convert4qmc(Simulation):
             result.orbfile = os.path.join(self.locdir,orbfile)
         elif result_name=='particles':
             result.location = os.path.join(self.locdir,ptcl_file)
+        elif result_name=='determinantset':
+            result.location = os.path.join(self.locdir,wfn_file)            
         else:
             self.error('ability to get result '+result_name+' has not been implemented')
         #end if        

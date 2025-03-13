@@ -25,12 +25,6 @@ using opt_variables_type = optimize::VariableSet;
 
 class OptimizableObject
 {
-public:
-  OptimizableObject(const std::string& name) : name_(name) {}
-
-  const std::string& getName() const { return name_; }
-  bool isOptimized() const { return is_optimized_; }
-
 private:
   /** Name of the optimizable object
    */
@@ -39,7 +33,16 @@ private:
    */
   bool is_optimized_ = false;
 
+protected:
+  ///optimizable variables in use
+  opt_variables_type myVars;
+
 public:
+  OptimizableObject(const std::string& name) : name_(name) {}
+
+  const std::string& getName() const { return name_; }
+  bool isOptimized() const { return is_optimized_; }
+
   /** check in variational parameters to the global list of parameters used by the optimizer.
    * @param active a super set of optimizable variables
    *

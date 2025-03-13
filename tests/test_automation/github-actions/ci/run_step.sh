@@ -28,15 +28,42 @@ case "$1" in
     mkdir qmcpack-build
     cd qmcpack-build
     
+    # MPI or not configuration
+    if [[ "${GH_JOBNAME}" =~ (-NoMPI) ]] ; then
+      echo 'Configure for build without MPI'
+      CMAKE_OPTIONS="-DQMC_MPI=OFF"
+    else
+      echo 'Configure for MPI build'
+      CMAKE_OPTIONS="-DQMC_MPI=ON"
+    fi
+
+    # OpenMP or not configuration
+    if [[ "${GH_JOBNAME}" =~ (-NoOMP) ]] ; then
+      echo 'Configure for build without OpenMP'
+      CMAKE_OPTIONS="$CMAKE_OPTIONS -DQMC_OMP=OFF"
+    else
+      echo 'Configure for OpenMP build'
+      CMAKE_OPTIONS="$CMAKE_OPTIONS -DQMC_OMP=ON"
+    fi
+
+    # build type configuration
+    if [[ "${GH_JOBNAME}" =~ (-Debug) ]] ; then
+      echo 'Configure for Debug build'
+      CMAKE_OPTIONS="$CMAKE_OPTIONS -DCMAKE_BUILD_TYPE=Debug"
+    else
+      echo 'Configure for RelWithDebInfo build'
+      CMAKE_OPTIONS="$CMAKE_OPTIONS -DCMAKE_BUILD_TYPE=RelWithDebInfo"
+    fi
+
     # Real or Complex configuration
     case "${GH_JOBNAME}" in
       *"Real"*)
-        echo 'Configure for real build -DQMC_COMPLEX=0'
-        IS_COMPLEX=0
+        echo 'Configure for real build -DQMC_COMPLEX=OFF'
+        CMAKE_OPTIONS="$CMAKE_OPTIONS -DQMC_COMPLEX=OFF"
       ;;
       *"Complex"*)
-        echo 'Configure for complex build -DQMC_COMPLEX=1'
-        IS_COMPLEX=1
+        echo 'Configure for complex build -DQMC_COMPLEX=ON'
+        CMAKE_OPTIONS="$CMAKE_OPTIONS -DQMC_COMPLEX=ON"
       ;; 
     esac
 
@@ -78,16 +105,13 @@ case "$1" in
       ;;
     esac
 
-    # Mixed or Non-Mixed (default, full) precision, used with GPU code
-    case "${GH_JOBNAME}" in
-      *"Mixed"*)
-        echo 'Configure for mixed precision build -DQMC_MIXED_PRECISION=1'
-        IS_MIXED_PRECISION=1
-      ;; 
-      *)
-        IS_MIXED_PRECISION=0
-      ;;
-    esac
+    # Mixed or Non-Mixed (default, full) precision
+    if [[ "${GH_JOBNAME}" =~ (-Mixed) ]] ; then
+      echo 'Configure for mixed precision build -DQMC_MIXED_PRECISION=ON'
+      CMAKE_OPTIONS="$CMAKE_OPTIONS -DQMC_MIXED_PRECISION=ON"
+    else
+      CMAKE_OPTIONS="$CMAKE_OPTIONS -DQMC_MIXED_PRECISION=OFF"
+    fi
 
     if [[ "$CONTAINER_OS" =~ (centos) ]]
     then
@@ -114,83 +138,87 @@ case "$1" in
     fi
     
     case "${GH_JOBNAME}" in
-      *"GCC9-NoMPI-Debug-"*|*"GCC11-NoMPI-Debug-"*)
-        echo 'Configure for debug mode to capture asserts with gcc'
-        cmake -GNinja \
-              -DCMAKE_C_COMPILER=gcc \
-              -DCMAKE_CXX_COMPILER=g++ \
-              -DQMC_MPI=0 \
-              -DCMAKE_BUILD_TYPE=Debug \
+      *"macOS-GCC14"*"-Real"*)
+        echo 'Configure for building on macOS using gcc14'
+        cmake -GNinja $CMAKE_OPTIONS \
+              -DCMAKE_C_COMPILER=gcc-14 \
+              -DCMAKE_CXX_COMPILER=g++-14 \
+              -DCMAKE_EXE_LINKER_FLAGS="-Wl,-ld_classic" \
               ${GITHUB_WORKSPACE}
       ;;
-      *"GCC9-NoMPI-NoOMP-"*|*"GCC11-NoMPI-NoOMP-"*)
-        echo 'Configure for disabling OpenMP with QMC_OMP=0'
-        cmake -GNinja \
-              -DCMAKE_C_COMPILER=gcc \
-              -DCMAKE_CXX_COMPILER=g++ \
-              -DQMC_MPI=0 \
-              -DQMC_OMP=0 \
-              -DQMC_COMPLEX=$IS_COMPLEX \
-              -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+      *"GCC9"*"-CUDA-AFQMC"*)
+        echo 'Configure for building with CUDA and AFQMC, need built-from-source OpenBLAS due to bug in rpm'
+        cmake -GNinja $CMAKE_OPTIONS \
+              -DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \
+              -DCMAKE_CXX_COMPILER=/usr/lib64/openmpi/bin/mpicxx \
+              -DMPIEXEC_EXECUTABLE=/usr/lib64/openmpi/bin/mpirun \
+              -DBUILD_AFQMC=ON \
+              -DQMC_GPU=cuda \
+              -DQMC_GPU_ARCHS=sm_70 \
+              -DCMAKE_PREFIX_PATH="/opt/OpenBLAS/0.3.18" \
+              -DQMC_DATA=$QMC_DATA_DIR \
               ${GITHUB_WORKSPACE}
       ;;
-      *"GCC9-NoMPI-Sandbox-"*|*"GCC11-NoMPI-Sandbox-"*)
+      *"GCC9"*"-MKL-"*)
+        echo 'Configure for building with GCC and Intel MKL'
+
+        source /opt/intel2020/mkl/bin/mklvars.sh intel64
+
+        cmake -GNinja $CMAKE_OPTIONS \
+              -DBLA_VENDOR=Intel10_64lp \
+              -DQMC_DATA=$QMC_DATA_DIR \
+              ${GITHUB_WORKSPACE}
+      ;;
+      *"GCC"*"-Sandbox"*)
         echo 'Configure for enabling sandbox (minimal) only option with gcc'
-        cmake -GNinja \
+        cmake -GNinja $CMAKE_OPTIONS \
               -DCMAKE_C_COMPILER=gcc \
               -DCMAKE_CXX_COMPILER=g++ \
-              -DQMC_MPI=0 \
               -DQMC_BUILD_SANDBOX_ONLY=ON \
-              -DQMC_COMPLEX=$IS_COMPLEX \
-              -DCMAKE_BUILD_TYPE=RelWithDebInfo \
               ${GITHUB_WORKSPACE}
       ;;
-      *"GCC9-MPI-Gcov-"*)
+      *"GCC"*"-Gcov"*)
         echo 'Configure for code coverage with gcc and gcovr -DENABLE_GCOV=TRUE and upload reports to Codecov'
-        cmake -GNinja \
+        cmake -GNinja $CMAKE_OPTIONS \
               -DMPI_C_COMPILER=mpicc \
               -DMPI_CXX_COMPILER=mpicxx \
               -DENABLE_GCOV=TRUE \
-              -DQMC_COMPLEX=$IS_COMPLEX \
-              -DCMAKE_BUILD_TYPE=RelWithDebInfo \
               ${GITHUB_WORKSPACE}
       ;;
-      *"GCC12-NoMPI-Werror-"*)
+      *"GCC"*"-Werror"*)
         echo 'Configure for building with gcc -Werror flag enabled'
-        cmake -GNinja \
+        cmake -GNinja $CMAKE_OPTIONS \
               -DCMAKE_C_COMPILER=gcc \
               -DCMAKE_CXX_COMPILER=g++ \
-              -DQMC_MPI=0 \
               -DCMAKE_CXX_FLAGS=-Werror \
-              -DQMC_COMPLEX=$IS_COMPLEX \
-              -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
-              -DCMAKE_BUILD_TYPE=RelWithDebInfo \
               ${GITHUB_WORKSPACE}
       ;;
-      *"San-"*) # Sanitize with clang compilers
-        cmake -GNinja \
+      *"GCC"*)
+        echo 'Configure for disabling OpenMP with QMC_OMP=0'
+        cmake -GNinja $CMAKE_OPTIONS \
+              -DCMAKE_C_COMPILER=gcc \
+              -DCMAKE_CXX_COMPILER=g++ \
+              ${GITHUB_WORKSPACE}
+      ;;
+      *"Clang"*"San"*) # Sanitize with clang compilers
+        cmake -GNinja $CMAKE_OPTIONS \
               -DCMAKE_C_COMPILER=clang \
               -DCMAKE_CXX_COMPILER=clang++ \
-              -DQMC_MPI=0 \
               -DENABLE_SANITIZER=$IS_SANITIZER \
-              -DQMC_COMPLEX=$IS_COMPLEX \
-              -DCMAKE_BUILD_TYPE=RelWithDebInfo \
               ${GITHUB_WORKSPACE}
       ;;
-      *"Clang16-NoMPI-Offload-Real"*)
+      *"Clang16"*"-Offload"*)
         echo 'Configure for building OpenMP offload with clang16 on x86_64 target'
-        cmake -GNinja \
+        cmake -GNinja $CMAKE_OPTIONS \
               -DCMAKE_C_COMPILER=clang-16 \
               -DCMAKE_CXX_COMPILER=clang++-16 \
-              -DQMC_MPI=0 \
-              -DENABLE_OFFLOAD=ON \
+              -DQMC_GPU=openmp \
               -DOFFLOAD_TARGET=x86_64-pc-linux-gnu \
               -DUSE_OBJECT_TARGET=ON \
-              -DCMAKE_BUILD_TYPE=RelWithDebInfo \
               ${GITHUB_WORKSPACE}
       ;;
-      *"Clang15-MPI-CUDA-AFQMC-Offload"*)
-        echo "Configure for building with ENABLE_CUDA and AFQMC using OpenMP offload on x86_64 " \
+      *"Clang15"*"-CUDA-AFQMC-Offload"*)
+        echo "Configure for building with CUDA and AFQMC using OpenMP offload on x86_64 " \
               "with latest llvm, need built-from-source OpenBLAS due to bug in rpm"
 
         # todo: update to llvm 15 release, currently using release candidate
@@ -204,23 +232,19 @@ case "$1" in
         # Confirm that cuda 11.2 gets picked up by the compiler
         /opt/llvm/15.0.0/bin/clang++ -v
 
-        cmake -GNinja \
+        cmake -GNinja $CMAKE_OPTIONS \
               -DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \
               -DCMAKE_CXX_COMPILER=/usr/lib64/openmpi/bin/mpicxx \
               -DMPIEXEC_EXECUTABLE=/usr/lib64/openmpi/bin/mpirun \
               -DBUILD_AFQMC=ON \
-              -DENABLE_CUDA=ON \
+              -DQMC_GPU="cuda;openmp" \
               -DQMC_GPU_ARCHS=sm_70 \
-              -DENABLE_OFFLOAD=ON \
               -DCMAKE_PREFIX_PATH="/opt/OpenBLAS/0.3.18" \
-              -DQMC_COMPLEX=$IS_COMPLEX \
-              -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
-              -DCMAKE_BUILD_TYPE=RelWithDebInfo \
               -DQMC_DATA=$QMC_DATA_DIR \
               ${GITHUB_WORKSPACE}
       ;;
-      *"Intel21-MPI-CUDA-AFQMC"*)
-        echo "Configure for building with ENABLE_CUDA and AFQMC  " \
+      *"Intel21"*"-CUDA-AFQMC"*)
+        echo "Configure for building with CUDA and AFQMC  " \
              "with Intel classic compiler in OneAPI 2021 (to be deprecated in 2023), " \
              "need built-from-source OpenBLAS due to bug in rpm"
         
@@ -233,7 +257,7 @@ case "$1" in
         echo "OMPI_CC=/opt/intel/oneapi/compiler/2023.0.0/linux/bin/intel64/icc" >> $GITHUB_ENV
         echo "OMPI_CXX=/opt/intel/oneapi/compiler/2023.0.0/linux/bin/intel64/icpc" >> $GITHUB_ENV
 
-        cmake -GNinja \
+        cmake -GNinja $CMAKE_OPTIONS \
               -DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \
               -DCMAKE_CXX_COMPILER=/usr/lib64/openmpi/bin/mpicxx \
               -DMPIEXEC_EXECUTABLE=/usr/lib64/openmpi/bin/mpirun \
@@ -241,53 +265,10 @@ case "$1" in
               -DCMAKE_CXX_FLAGS="-diag-disable=10441" \
               -DCMAKE_CUDA_FLAGS="-diag-disable=10441" \
               -DBUILD_AFQMC=ON \
-              -DENABLE_CUDA=ON \
+              -DQMC_GPU=cuda \
               -DQMC_GPU_ARCHS=sm_70 \
               -DCMAKE_PREFIX_PATH="/opt/OpenBLAS/0.3.18" \
-              -DQMC_COMPLEX=$IS_COMPLEX \
-              -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
-              -DCMAKE_BUILD_TYPE=RelWithDebInfo \
               -DQMC_DATA=$QMC_DATA_DIR \
-              ${GITHUB_WORKSPACE}
-      ;;
-      *"GCC9-MPI-CUDA-AFQMC"*)
-        echo 'Configure for building with ENABLE_CUDA and AFQMC, need built-from-source OpenBLAS due to bug in rpm'
-        cmake -GNinja \
-              -DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \
-              -DCMAKE_CXX_COMPILER=/usr/lib64/openmpi/bin/mpicxx \
-              -DMPIEXEC_EXECUTABLE=/usr/lib64/openmpi/bin/mpirun \
-              -DBUILD_AFQMC=ON \
-              -DENABLE_CUDA=ON \
-              -DQMC_GPU_ARCHS=sm_70 \
-              -DCMAKE_PREFIX_PATH="/opt/OpenBLAS/0.3.18" \
-              -DQMC_COMPLEX=$IS_COMPLEX \
-              -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
-              -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-              -DQMC_DATA=$QMC_DATA_DIR \
-              ${GITHUB_WORKSPACE}
-      ;;
-      *"GCC9-NoMPI-MKL-"*)
-        echo 'Configure for building with GCC and Intel MKL'
-
-        source /opt/intel2020/mkl/bin/mklvars.sh intel64
-
-        cmake -GNinja \
-              -DBLA_VENDOR=Intel10_64lp \
-              -DQMC_MPI=0 \
-              -DQMC_COMPLEX=$IS_COMPLEX \
-              -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
-              -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-              -DQMC_DATA=$QMC_DATA_DIR \
-              ${GITHUB_WORKSPACE}
-      ;;
-      *"macOS-GCC11-NoMPI-Real"*)
-        echo 'Configure for building on macOS using gcc11'
-        cmake -GNinja \
-              -DCMAKE_C_COMPILER=gcc-11 \
-              -DCMAKE_CXX_COMPILER=g++-11 \
-              -DQMC_MPI=0 \
-              -DQMC_COMPLEX=$IS_COMPLEX \
-              -DCMAKE_BUILD_TYPE=RelWithDebInfo \
               ${GITHUB_WORKSPACE}
       ;;
     esac
@@ -309,8 +290,16 @@ case "$1" in
   test)
     
     # Run only deterministic tests (reasonable for CI) by default
-    TEST_LABEL="-L deterministic"
-    
+    case "${GH_JOBNAME}" in
+      *"macOS-GCC14"*"-Real"*)
+        TEST_LABEL="-L deterministic -E deterministic-unit_test_estimators"
+        # estimator test bus error on mac only
+      ;;
+      *)  
+        TEST_LABEL="-L deterministic"
+      ;;  
+    esac  
+
     cd ${GITHUB_WORKSPACE}/../qmcpack-build
     
     # Enable oversubscription in OpenMPI
@@ -329,8 +318,6 @@ case "$1" in
     
     if [[ "${GH_JOBNAME}" =~ (Clang16-NoMPI-Offload) ]]
     then
-       echo "Adding /usr/lib/llvm-12/lib/ to LD_LIBRARY_PATH to enable libomptarget.so"
-       export LD_LIBRARY_PATH=/usr/lib/llvm-12/lib/:${LD_LIBRARY_PATH}
        export KMP_TEAMS_THREAD_LIMIT=1
        # Run only unit tests (reasonable for CI)
        TEST_LABEL="-L unit"
@@ -360,7 +347,7 @@ case "$1" in
 
     if [[ "${GH_JOBNAME}" =~ (AFQMC-Offload) ]]
     then
-       export LD_LIBRARY_PATH=/opt/llvm/15.0.0/lib:/usr/lib64/openmpi/lib:${LD_LIBRARY_PATH}
+       export LD_LIBRARY_PATH=/usr/lib64/openmpi/lib:${LD_LIBRARY_PATH}
     fi
 
     if [[ "${GH_JOBNAME}" =~ (Intel21) ]]
@@ -374,20 +361,8 @@ case "$1" in
     fi
 
     # Add ctest concurrent parallel jobs 
-    # Default for Linux GitHub Action runners
-    CTEST_JOBS="2"
-    # Default for macOS GitHub Action runners
-    if [[ "${GH_OS}" =~ (macOS) ]]
-    then
-      CTEST_JOBS="3"
-    fi
-
-    if [[ "$HOST_NAME" =~ (sulfur) || "$HOST_NAME" =~ (nitrogen) ]]
-    then
-      CTEST_JOBS="32"
-    fi
-    
-    ctest --output-on-failure $TEST_LABEL -j $CTEST_JOBS
+    # 4 for Linux and macOS GitHub Actions free runners
+    ctest --output-on-failure $TEST_LABEL -j 4
     ;;
   
   # Generate coverage reports

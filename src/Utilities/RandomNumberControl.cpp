@@ -28,14 +28,34 @@
 namespace qmcplusplus
 {
 ///initialize the static data members
-PrimeNumberSet<RandomBase<QMCTraits::FullPrecRealType>::uint_type> RandomNumberControl::PrimeNumbers;
-UPtrVector<RandomBase<QMCTraits::FullPrecRealType>> RandomNumberControl::Children;
+PrimeNumberSet<RandomNumberControl::uint_type> RandomNumberControl::PrimeNumbers;
+UPtrVector<RandomNumberControl::Generator> RandomNumberControl::Children;
 RandomBase<QMCTraits::FullPrecRealType>::uint_type RandomNumberControl::Offset = 11u;
 
 /// constructors and destructors
 RandomNumberControl::RandomNumberControl(const char* aname)
     : OhmmsElementBase(aname), NeverBeenInitialized(true), myCur(NULL) //, Offset(5)
 {}
+
+UPtrVector<RandomNumberControl::Generator>& RandomNumberControl::getChildren()
+{
+  if (Children.size() == 0)
+  {
+    app_warning() << "  Initializing global RandomNumberControl! "
+                  << "This message should not be seen in production code but only in unit tests." << std::endl;
+    make_seeds();
+  }
+  return Children;
+}
+
+RefVector<RandomNumberControl::Generator> RandomNumberControl::getChildrenRefs()
+{
+  auto& rngs_children = getChildren();
+  RefVector<Generator> rng_refs;
+  for (auto& child: rngs_children)
+    rng_refs.push_back(*child);
+  return rng_refs;
+}
 
 /// generic output
 bool RandomNumberControl::get(std::ostream& os) const
@@ -220,9 +240,7 @@ void RandomNumberControl::write(const std::string& fname, Communicate* comm)
 }
 
 //switch between write functions
-void RandomNumberControl::write(const RefVector<RandomBase<FullPrecRealType>>& rng,
-                                const std::string& fname,
-                                Communicate* comm)
+void RandomNumberControl::write(const RefVector<Generator>& rng, const std::string& fname, Communicate* comm)
 {
   std::string h5name = fname + ".random.h5";
   hdf_archive hout(comm, true); //attempt to write in parallel
@@ -291,9 +309,7 @@ void RandomNumberControl::read_parallel(hdf_archive& hin, Communicate* comm)
 }
 
 //Parallel write
-void RandomNumberControl::write_parallel(const RefVector<RandomBase<FullPrecRealType>>& rng,
-                                         hdf_archive& hout,
-                                         Communicate* comm)
+void RandomNumberControl::write_parallel(const RefVector<Generator>& rng, hdf_archive& hout, Communicate* comm)
 {
   // cast integer to size_t
   const size_t nthreads  = static_cast<size_t>(omp_get_max_threads());
@@ -406,9 +422,7 @@ void RandomNumberControl::read_rank_0(hdf_archive& hin, Communicate* comm)
 }
 
 //scatter write
-void RandomNumberControl::write_rank_0(const RefVector<RandomBase<FullPrecRealType>>& rng,
-                                       hdf_archive& hout,
-                                       Communicate* comm)
+void RandomNumberControl::write_rank_0(const RefVector<Generator>& rng, hdf_archive& hout, Communicate* comm)
 {
   // cast integer to size_t
   const size_t nthreads  = static_cast<size_t>(omp_get_max_threads());

@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2021 QMCPACK developers.
+// Copyright (c) 2024 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //
@@ -18,9 +18,10 @@ namespace qmcplusplus
 {
 namespace testing
 {
-// clang-format: off
-constexpr std::array<const char*, 4> invalid_one_body_density_matrices_input_sections{
-    R"(
+struct InvalidOneBodyDensityMatricesInput
+{
+  static constexpr std::array<const char*, 4> xml{
+      R"(
 <estimator type="dm1b" name="DensityMatrices">
   <parameter name="basis"        >  spo_u spo_uv  </parameter>
   <parameter name="evaluator"    >  matrix        </parameter>
@@ -31,7 +32,7 @@ constexpr std::array<const char*, 4> invalid_one_body_density_matrices_input_sec
   <parameter name="use_drift"    >  no            </parameter>
 </estimator>
 )",
-    R"(
+      R"(
 <estimator type="dm1b" name="DensityMatrices">
   <parameter name="basis"        >  dm_basis      </parameter>
   <parameter name="evaluator"    >  loop          </parameter>
@@ -42,7 +43,7 @@ constexpr std::array<const char*, 4> invalid_one_body_density_matrices_input_sec
   <parameter name="use_drift"    >  yes           </parameter>
 </estimator>
 )",
-    R"(
+      R"(
 <estimator type="dm1b" name="DensityMatrices">
   <parameter name="basis"        >  dm_basis      </parameter>
   <parameter name="evaluator"    >  loop          </parameter>
@@ -54,7 +55,7 @@ constexpr std::array<const char*, 4> invalid_one_body_density_matrices_input_sec
   <parameter name="acceptance_ratio"> yes         </parameter>
 </estimator>
 )",
-    R"(
+      R"(
 <estimator type="dm1b" name="DensityMatrices">
   <parameter name="basis"        >  dm_basis      </parameter>
   <parameter name="evaluator"    >  loop          </parameter>
@@ -65,14 +66,15 @@ constexpr std::array<const char*, 4> invalid_one_body_density_matrices_input_sec
   <parameter name="use_drift"    >  yes           </parameter>
   <parameter name="acceptance_ratio"> yes         </parameter>
 </estimator>
-)"
-    // clang-format: on
+)"};
+  enum
+  {
+    BAD_INTEGRATOR = 0,
+    BAD_SCALE,
+    BAD_ACCEPTANCE_RATIO,
+    UNIFORM_GRID_SAMPLES
+  };
 };
-
-constexpr int invalid_obdm_input_bad_integrator       = 0;
-constexpr int invalid_obdm_input_bad_scale            = 1;
-constexpr int invalid_obdm_input_bad_acceptance_ratio = 2;
-constexpr int invalid_obdm_input_uniform_grid_samples = 3;
 } // namespace testing
 } // namespace qmcplusplus
 

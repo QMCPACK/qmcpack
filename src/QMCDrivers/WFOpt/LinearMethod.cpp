@@ -17,44 +17,64 @@
 
 
 #include "LinearMethod.h"
+#include "Eigensolver.h"
 #include <vector>
 #include "QMCCostFunctionBase.h"
 #include <CPU/BLAS.hpp>
+#include "Numerics/MatrixOperators.h"
+#include "Numerics/DeterminantOperators.h"
+
 
 namespace qmcplusplus
 {
-LinearMethod::Real LinearMethod::getLowestEigenvector(Matrix<Real>& A, Matrix<Real>& B, std::vector<Real>& ev) const
+
+LinearMethod::Real LinearMethod::getLowestEigenvector_Inv(Matrix<Real>& A, Matrix<Real>& B, std::vector<Real>& ev)
 {
   int Nl(ev.size());
-  //   Getting the optimal worksize
-  char jl('N');
-  char jr('V');
-  std::vector<Real> alphar(Nl), alphai(Nl), beta(Nl);
+  std::vector<Real> alphar(Nl);
   Matrix<Real> eigenT(Nl, Nl);
-  int info;
-  int lwork(-1);
-  std::vector<Real> work(1);
-  Real tt(0);
-  int t(1);
-  LAPACK::ggev(&jl, &jr, &Nl, A.data(), &Nl, B.data(), &Nl, &alphar[0], &alphai[0], &beta[0], &tt, &t, eigenT.data(),
-               &Nl, &work[0], &lwork, &info);
-  lwork = int(work[0]);
-  work.resize(lwork);
+  Real zerozero = A(0, 0);
+  Eigensolver::solveGeneralizedEigenvalues_Inv(A, B, alphar, eigenT);
+  return selectEigenvalue(alphar, eigenT, zerozero, ev);
+}
 
-  LAPACK::ggev(&jl, &jr, &Nl, A.data(), &Nl, B.data(), &Nl, &alphar[0], &alphai[0], &beta[0], &tt, &t, eigenT.data(),
-               &Nl, &work[0], &lwork, &info);
-  if (info != 0)
-  {
-    APP_ABORT("Invalid Matrix Diagonalization Function!");
-  }
+LinearMethod::Real LinearMethod::getLowestEigenvector_Gen(Matrix<Real>& A, Matrix<Real>& B, std::vector<Real>& ev)
+{
+  int Nl(ev.size());
+  std::vector<Real> alphar(Nl);
+  Matrix<Real> eigenT(Nl, Nl);
+  Real zerozero = A(0, 0);
+  Eigensolver::solveGeneralizedEigenvalues(A, B, alphar, eigenT);
+  return selectEigenvalue(alphar, eigenT, zerozero, ev);
+}
+
+// Input
+//  -eigenvals
+//  -eigenvectors
+//  Returns selected eigenvalue
+//   - ev - scaled eigenvector corresponding to selected eigenvalue
+
+LinearMethod::Real LinearMethod::selectEigenvalue(std::vector<Real>& eigenvals,
+                                                  Matrix<Real>& eigenvectors,
+                                                  Real zerozero,
+                                                  std::vector<Real>& ev)
+{
+  // Filter and sort to find desired eigenvalue.
+  // Filter accepts eigenvalues between E_0 and E_0 - 100.0,
+  // where E_0 is H(0,0), the current estimate for the VMC energy.
+  // Sort searches for eigenvalue closest to E_0 - 2.0
+  int Nl = eigenvals.size();
+
+  bool found_any_eigenvalue = false;
   std::vector<std::pair<Real, int>> mappedEigenvalues(Nl);
   for (int i = 0; i < Nl; i++)
   {
-    Real evi(alphar[i] / beta[i]);
-    if (std::abs(evi) < 1e10)
+    Real evi(eigenvals[i]);
+    if ((evi < zerozero) && (evi > (zerozero - 1e2)))
     {
-      mappedEigenvalues[i].first  = evi;
+      mappedEigenvalues[i].first  = (evi - zerozero + 2.0) * (evi - zerozero + 2.0);
       mappedEigenvalues[i].second = i;
+      found_any_eigenvalue        = true;
     }
     else
     {
@@ -62,11 +82,43 @@ LinearMethod::Real LinearMethod::getLowestEigenvector(Matrix<Real>& A, Matrix<Re
       mappedEigenvalues[i].second = i;
     }
   }
+
+  // Sometimes there is no eigenvalue less than E_0, but there is one slightly higher.
+  // Run filter and sort again, except this time accept eigenvalues between E_0 + 100.0 and E_0 - 100.0.
+  // Since it's already been determined there are no eigenvalues below E_0, the sort
+  // finds the eigenvalue closest to E_0.
+  if (!found_any_eigenvalue)
+  {
+    app_log() << "No eigenvalues passed initial filter. Trying broader 100 a.u. filter" << std::endl;
+
+    bool found_higher_eigenvalue;
+    for (int i = 0; i < Nl; i++)
+    {
+      Real evi(eigenvals[i]);
+      if ((evi < zerozero + 1e2) && (evi > (zerozero - 1e2)))
+      {
+        mappedEigenvalues[i].first  = (evi - zerozero + 2.0) * (evi - zerozero + 2.0);
+        mappedEigenvalues[i].second = i;
+        found_higher_eigenvalue     = true;
+      }
+      else
+      {
+        mappedEigenvalues[i].first  = std::numeric_limits<Real>::max();
+        mappedEigenvalues[i].second = i;
+      }
+    }
+    if (!found_higher_eigenvalue)
+    {
+      app_log() << "No eigenvalues passed second filter. Optimization is likely to fail." << std::endl;
+    }
+  }
   std::sort(mappedEigenvalues.begin(), mappedEigenvalues.end());
+  //         for (int i=0; i<4; i++) app_log()<<i<<": "<<alphar[mappedEigenvalues[i].second]<< std::endl;
   for (int i = 0; i < Nl; i++)
-    ev[i] = eigenT(mappedEigenvalues[0].second, i) / eigenT(mappedEigenvalues[0].second, 0);
-  return mappedEigenvalues[0].first;
+    ev[i] = eigenvectors(mappedEigenvalues[0].second, i) / eigenvectors(mappedEigenvalues[0].second, 0);
+  return eigenvals[mappedEigenvalues[0].second];
 }
+
 
 LinearMethod::Real LinearMethod::getLowestEigenvector(Matrix<Real>& A, std::vector<Real>& ev) const
 {
@@ -92,6 +144,13 @@ LinearMethod::Real LinearMethod::getLowestEigenvector(Matrix<Real>& A, std::vect
   {
     APP_ABORT("Invalid Matrix Diagonalization Function!");
   }
+
+  // Filter and sort to find desired eigenvalue.
+  // Filter accepts eigenvalues between E_0 and E_0 - 100.0,
+  // where E_0 is H(0,0), the current estimate for the VMC energy.
+  // Sort searches for eigenvalue closest to E_0 - 2.0
+
+  bool found_any_eigenvalue = false;
   std::vector<std::pair<Real, int>> mappedEigenvalues(Nl);
   for (int i = 0; i < Nl; i++)
   {
@@ -100,11 +159,42 @@ LinearMethod::Real LinearMethod::getLowestEigenvector(Matrix<Real>& A, std::vect
     {
       mappedEigenvalues[i].first  = (evi - zerozero + 2.0) * (evi - zerozero + 2.0);
       mappedEigenvalues[i].second = i;
+      found_any_eigenvalue        = true;
     }
     else
     {
       mappedEigenvalues[i].first  = std::numeric_limits<Real>::max();
       mappedEigenvalues[i].second = i;
+    }
+  }
+
+  // Sometimes there is no eigenvalue less than E_0, but there is one slightly higher.
+  // Run filter and sort again, except this time accept eigenvalues between E_0 + 100.0 and E_0 - 100.0.
+  // Since it's already been determined there are no eigenvalues below E_0, the sort
+  // finds the eigenvalue closest to E_0.
+  if (!found_any_eigenvalue)
+  {
+    app_log() << "No eigenvalues passed initial filter. Trying broader 100 a.u. filter" << std::endl;
+
+    bool found_higher_eigenvalue;
+    for (int i = 0; i < Nl; i++)
+    {
+      Real evi(alphar[i]);
+      if ((evi < zerozero + 1e2) && (evi > (zerozero - 1e2)))
+      {
+        mappedEigenvalues[i].first  = (evi - zerozero + 2.0) * (evi - zerozero + 2.0);
+        mappedEigenvalues[i].second = i;
+        found_higher_eigenvalue     = true;
+      }
+      else
+      {
+        mappedEigenvalues[i].first  = std::numeric_limits<Real>::max();
+        mappedEigenvalues[i].second = i;
+      }
+    }
+    if (!found_higher_eigenvalue)
+    {
+      app_log() << "No eigenvalues passed second filter. Optimization is likely to fail." << std::endl;
     }
   }
   std::sort(mappedEigenvalues.begin(), mappedEigenvalues.end());
@@ -166,6 +256,7 @@ LinearMethod::Real LinearMethod::getNonLinearRescale(std::vector<Real>& dP,
   //     app_log()<<"rescale: "<<rescale<< std::endl;
   return rescale;
 }
+
 
 
 } // namespace qmcplusplus

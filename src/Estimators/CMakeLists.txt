@@ -18,9 +18,12 @@ set(QMCEST_SRC
     RMCLocalEnergyEstimator.cpp
     EstimatorInput.cpp
     EstimatorManagerInput.cpp
+    ParseGridInput.cpp
+    SpaceGridInput.cpp
     ScalarEstimatorInputs.cpp
     SpinDensityInput.cpp
     MomentumDistributionInput.cpp
+    EnergyDensityInput.cpp
     EstimatorManagerBase.cpp
     EstimatorManagerNew.cpp
     EstimatorManagerCrowd.cpp
@@ -32,10 +35,14 @@ set(QMCEST_SRC
     OneBodyDensityMatrices.cpp
     MagnetizationDensity.cpp
     MagnetizationDensityInput.cpp
+    SelfHealingOverlap.cpp
     PerParticleHamiltonianLoggerInput.cpp
     PerParticleHamiltonianLogger.cpp
     ReferencePointsInput.cpp
-    NEReferencePoints.cpp)
+    NEReferencePoints.cpp
+    NESpaceGrid.cpp
+    EnergyDensityEstimator.cpp
+    StructureFactorInput.cpp)
 
 ####################################
 # create libqmcestimators

@@ -39,13 +39,13 @@ struct shared_window : window<T> {
 
 	~shared_window() = default;
 
-	group get_group() const{group r; MPI_(Win_get_group)(this->impl_, &(r.get())); return r;}
-	struct query_t{
+	group get_group() const {group r; MPI_(Win_get_group)(this->impl_, &(r.get())); return r;}  // cppcheck-suppress duplInheritedMember ;
+	struct query_t {
 		mpi3::size_t size;
 		int disp_unit;
 		void* base;
 	};
-	struct query_t query(int rank = MPI_PROC_NULL) const{
+	struct query_t query(int rank = MPI_PROC_NULL) const {
 		query_t r;  // NOLINT(cppcoreguidelines-pro-type-member-init,hicpp-member-init) delayed init
 		MPI3_CALL(MPI_Win_shared_query)(this->impl_, rank, &r.size, &r.disp_unit, &r.base);
 		return r;

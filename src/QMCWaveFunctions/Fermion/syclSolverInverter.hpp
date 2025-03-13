@@ -18,6 +18,7 @@
 #include "SYCL/syclBLAS.hpp"
 #include "SYCL/syclSolver.hpp"
 #include "QMCWaveFunctions/detail/SYCL/sycl_determinant_helper.hpp"
+#include "CPU/math.hpp"
 
 namespace qmcplusplus
 {

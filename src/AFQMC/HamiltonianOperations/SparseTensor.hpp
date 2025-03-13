@@ -188,25 +188,27 @@ public:
               bool addEJ  = true,
               bool addEXX = true)
   {
-    assert(std::get<1>(E.sizes()) >= 3);
+    using std::get;
+    assert(get<1>(E.sizes()) >= 3);
     assert(k >= 0 && k < haj.size());
     assert(k >= 0 && k < Vakbl_view.size());
-    if (Gcloc.num_elements() < std::get<1>(Gc.sizes()) * std::get<0>(Vakbl_view[k].sizes()))
-      Gcloc.reextent(iextensions<1u>(std::get<0>(Vakbl_view[k].sizes()) * std::get<1>(Gc.sizes())));
-    boost::multi::array_ref<SPComplexType, 2> buff(Gcloc.data(), {long(std::get<0>(Vakbl_view[k].sizes())), long(std::get<1>(Gc.sizes()))});
+    using std::get;
+    if (Gcloc.num_elements() < get<1>(Gc.sizes()) * get<0>(Vakbl_view[k].sizes()))
+      Gcloc.reextent(iextensions<1u>(get<0>(Vakbl_view[k].sizes()) * get<1>(Gc.sizes())));
+    boost::multi::array_ref<SPComplexType, 2> buff(Gcloc.data(), {long(get<0>(Vakbl_view[k].sizes())), long(get<1>(Gc.sizes()))});
 
-    int nwalk = std::get<1>(Gc.sizes());
+    int nwalk = get<1>(Gc.sizes());
     int getKr = Kr != nullptr;
     int getKl = Kl != nullptr;
-    if (std::get<0>(E.sizes()) != nwalk || std::get<1>(E.sizes()) < 3)
+    if (get<0>(E.sizes()) != nwalk || get<1>(E.sizes()) < 3)
       APP_ABORT(" Error in AFQMC/HamiltonianOperations/sparse_matrix_energy::calculate_energy(). Incorrect matrix "
                 "dimensions \n");
     for (int n = 0; n < nwalk; n++)
       std::fill_n(E[n].origin(), 3, ComplexType(0.));
     if (addEJ and getKl)
-      assert(std::get<0>(Kl->sizes()) == nwalk && std::get<1>(Kl->sizes()) == std::get<0>(SpvnT[k].sizes()));
+      assert(get<0>(Kl->sizes()) == nwalk && get<1>(Kl->sizes()) == get<0>(SpvnT[k].sizes()));
     if (addEJ and getKr)
-      assert(std::get<0>(Kr->sizes()) == nwalk && std::get<1>(Kr->sizes()) == std::get<0>(SpvnT[k].sizes()));
+      assert(get<0>(Kr->sizes()) == nwalk && get<1>(Kr->sizes()) == get<0>(SpvnT[k].sizes()));
 
 #if defined(MIXED_PRECISION)
     size_t mem_needs = Gc.num_elements();
@@ -236,20 +238,23 @@ public:
       shm::calculate_energy(std::forward<Mat>(E), Gsp, buff, Vakbl_view[k]);
     }
 
+    using std::get;
     if (separateEJ && addEJ)
     {
       using ma::T;
-      if (Gcloc.num_elements() < std::get<0>(SpvnT[k].sizes()) * std::get<1>(Gc.sizes()))
-        Gcloc.reextent(iextensions<1u>(std::get<0>(SpvnT[k].sizes()) * std::get<1>(Gc.sizes())));
-      assert(std::get<1>(SpvnT_view[k].sizes()) == std::get<0>(Gc.sizes()));
+      if (Gcloc.num_elements() < get<0>(SpvnT[k].sizes()) * get<1>(Gc.sizes()))
+        Gcloc.reextent(iextensions<1u>(get<0>(SpvnT[k].sizes()) * get<1>(Gc.sizes())));
+      assert(get<1>(SpvnT_view[k].sizes()) == get<0>(Gc.sizes()));
       RealType scl = (walker_type == CLOSED ? 4.0 : 1.0);
+
+      using std::get;
       // SpvnT*G
-      boost::multi::array_ref<SPComplexType, 2> v_(Gcloc.origin() + SpvnT_view[k].local_origin()[0] * std::get<1>(Gc.sizes()),
-                                                   {long(std::get<0>(SpvnT_view[k].sizes())), long(std::get<1>(Gc.sizes()))});
+      boost::multi::array_ref<SPComplexType, 2> v_(Gcloc.origin() + SpvnT_view[k].local_origin()[0] * get<1>(Gc.sizes()),
+                                                   {long(get<0>(SpvnT_view[k].sizes())), long(get<1>(Gc.sizes()))});
       ma::product(SpvnT_view[k], Gsp, v_);
       if (getKl || getKr)
       {
-        for (int wi = 0; wi < std::get<1>(Gc.sizes()); wi++)
+        for (int wi = 0; wi < get<1>(Gc.sizes()); wi++)
         {
           auto _v_ = v_(v_.extension(0), wi);
           if (getKl)
@@ -266,7 +271,7 @@ public:
           }
         }
       }
-      for (int wi = 0; wi < std::get<1>(Gc.sizes()); wi++)
+      for (int wi = 0; wi < get<1>(Gc.sizes()); wi++)
         E[wi][2] = 0.5 * scl * static_cast<ComplexType>(ma::dot(v_(v_.extension(0), wi), v_(v_.extension(0), wi)));
     }
 #if defined(MIXED_PRECISION)
@@ -301,9 +306,11 @@ public:
   {
     using vType = typename std::decay<MatB>::type::element;
     using XType = typename std::decay_t<typename MatA::element>;
-    assert(std::get<1>(Spvn.sizes()) == std::get<0>(X.sizes()));
-    assert(std::get<0>(Spvn.sizes()) == std::get<0>(v.sizes()));
-    assert(std::get<1>(X.sizes()) == std::get<1>(v.sizes()));
+
+    using std::get;
+    assert(get<1>(Spvn.sizes()) == get<0>(X.sizes()));
+    assert(get<0>(Spvn.sizes()) == get<0>(v.sizes()));
+    assert(get<1>(X.sizes()) == get<1>(v.sizes()));
 
     // setup buffer space if changing precision in X or v
     size_t vmem(0), Xmem(0);
@@ -344,8 +351,9 @@ public:
     boost::multi::array_ref<SPComplexType, 2> vsp(vptr, v.extensions());
     comm->barrier();
 
+    using std::get;
     boost::multi::array_ref<SPComplexType, 2> v_(to_address(vsp[Spvn_view.local_origin()[0]].origin()),
-                                                 {long(std::get<0>(Spvn_view.sizes())), long(std::get<1>(vsp.sizes()))});
+                                                 {long(get<0>(Spvn_view.sizes())), long(get<1>(vsp.sizes()))});
     ma::product(SPValueType(a), Spvn_view, Xsp, SPValueType(c), v_);
 
     // copy data back if changing precision
@@ -363,10 +371,12 @@ public:
            typename = void>
   void vbias(const MatA& G, MatB&& v, double a = 1., double c = 0., int k = 0)
   {
+    using std::get;
+
     using BType = typename std::decay<MatB>::type::element;
     using AType = typename std::decay<MatA>::type::element;
-    boost::multi::array_ref<BType, 2, decltype(v.origin())> v_(v.origin(), {std::get<0>(v.sizes()), 1});
-    boost::multi::array_cref<AType, 2, decltype(G.origin())> G_(G.origin(), {std::get<0>(G.sizes()), 1});
+    boost::multi::array_ref<BType, 2, decltype(v.origin())> v_(v.origin(), {get<0>(v.sizes()), 1});
+    boost::multi::array_cref<AType, 2, decltype(G.origin())> G_(G.origin(), {get<0>(G.sizes()), 1});
     return vbias(G_, v_, a, c, k);
   }
 
@@ -382,9 +392,11 @@ public:
       k = 0;
     if (walker_type == CLOSED)
       a *= 2.0;
-    assert(std::get<1>(SpvnT[k].sizes()) == std::get<0>(G.sizes()));
-    assert(std::get<0>(SpvnT[k].sizes()) == std::get<0>(v.sizes()));
-    assert(std::get<1>(G.sizes()) == std::get<1>(v.sizes()));
+
+    using std::get;
+    assert(get<1>(SpvnT[k].sizes()) == get<0>(G.sizes()));
+    assert(get<0>(SpvnT[k].sizes()) == get<0>(v.sizes()));
+    assert(get<1>(G.sizes()) == get<1>(v.sizes()));
 
     // setup buffer space if changing precision in G or v
     size_t vmem(0), Gmem(0);
@@ -424,8 +436,10 @@ public:
     boost::multi::array_cref<SPComplexType, 2> Gsp(Gptr, G.extensions());
     boost::multi::array_ref<SPComplexType, 2> vsp(vptr, v.extensions());
     comm->barrier();
+
+    using std::get;
     boost::multi::array_ref<SPComplexType, 2> v_(to_address(vsp[SpvnT_view[k].local_origin()[0]].origin()),
-                                                 {long(std::get<0>(SpvnT_view[k].sizes())), long(std::get<1>(vsp.sizes()))});
+                                                 {long(get<0>(SpvnT_view[k].sizes())), long(get<1>(vsp.sizes()))});
     ma::product(SpT2(a), SpvnT_view[k], Gsp, SpT2(c), v_);
 
     // copy data back if changing precision

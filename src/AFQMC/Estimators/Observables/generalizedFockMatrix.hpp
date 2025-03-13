@@ -133,6 +133,7 @@ public:
     assert(G.extensions() == G_host.extensions());
     assert(G[0].num_elements() == dm_size);
 
+    using std::get;
     // check structure dimensions
     if (iref == 0)
     {
@@ -140,7 +141,7 @@ public:
       {
         denom = mpi3CVector(iextensions<1u>{nw}, shared_allocator<ComplexType>{TG.TG_local()});
       }
-      if (std::get<0>(DMWork.sizes()) != 3 || std::get<1>(DMWork.sizes()) != nw || std::get<2>(DMWork.sizes()) != dm_size)
+      if (get<0>(DMWork.sizes()) != 3 || get<1>(DMWork.sizes()) != nw || get<2>(DMWork.sizes()) != dm_size)
       {
         DMWork = mpi3CTensor({3, nw, dm_size}, shared_allocator<ComplexType>{TG.TG_local()});
       }
@@ -149,8 +150,8 @@ public:
     }
     else
     {
-      if (std::get<0>(denom.sizes()) != nw || std::get<0>(DMWork.sizes()) != 2 || std::get<1>(DMWork.sizes()) != nw || std::get<2>(DMWork.sizes()) != dm_size ||
-          std::get<0>(DMAverage.sizes()) != 2 || std::get<1>(DMAverage.sizes()) != nave || std::get<2>(DMAverage.sizes()) != dm_size)
+      if (get<0>(denom.sizes()) != nw || get<0>(DMWork.sizes()) != 2 || get<1>(DMWork.sizes()) != nw || get<2>(DMWork.sizes()) != dm_size ||
+          get<0>(DMAverage.sizes()) != 2 || get<1>(DMAverage.sizes()) != nave || get<2>(DMAverage.sizes()) != dm_size)
         APP_ABORT(" Error: Invalid state in accumulate_reference. \n\n\n");
     }
 

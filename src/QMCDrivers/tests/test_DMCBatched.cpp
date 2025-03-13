@@ -20,6 +20,7 @@
 #include "Concurrency/Info.hpp"
 #include "Concurrency/UtilityFunctions.hpp"
 #include "Platforms/Host/OutputManager.h"
+#include "SetupPools.h"
 
 namespace qmcplusplus
 {
@@ -51,6 +52,7 @@ TEST_CASE("DMCDriver+QMCDriverNew integration", "[drivers]")
 {
   using namespace testing;
   Concurrency::OverrideMaxCapacity<> override(8);
+  RandomNumberGeneratorPool rng_pool(8);
   ProjectData test_project;
   Communicate* comm;
   comm = OHMMS::Controller;
@@ -72,10 +74,10 @@ TEST_CASE("DMCDriver+QMCDriverNew integration", "[drivers]")
   SampleStack samples;
   WalkerConfigurations walker_confs;
 
-  DMCBatched dmcdriver(test_project, std::move(qmcdriver_input), std::nullopt, std::move(dmcdriver_input), walker_confs,
+  DMCBatched dmcdriver(test_project, std::move(qmcdriver_input), nullptr, std::move(dmcdriver_input), walker_confs,
                        MCPopulation(comm->size(), comm->rank(), particle_pool.getParticleSet("e"),
                                     wavefunction_pool.getPrimary(), hamiltonian_pool.getPrimary()),
-                       comm);
+                       rng_pool.getRngRefs(), comm);
 
   // setStatus must be called before process
   std::string root_name{"Test"};

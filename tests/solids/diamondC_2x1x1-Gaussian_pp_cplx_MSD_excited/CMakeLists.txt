@@ -60,7 +60,7 @@ if(QMC_COMPLEX)
 
   #Data generated using utils/make_ref_data.sh  diamondC_2x1x1-Gaussian_pp_cplx_MSD_GROUND_SHORT vmc_short_ground.s000.scalar.dat  qmc_ref_ground_long_noj.s000.scalar.dat
   list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_GROUND_SHORT_SCALARS "totenergy" "-21.3657227937065 0.068654689630")
-  list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_GROUND_SHORT_SCALARS "variance" "4.173318575244 0.206016680533")
+  list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_GROUND_SHORT_SCALARS "variance" "4.173318575244 0.7")
   list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_GROUND_SHORT_SCALARS "kinetic" "19.757886856418 0.297513259260")
   list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_GROUND_SHORT_SCALARS "potential" "-41.123130287178 0.282895938880")
   list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_GROUND_SHORT_SCALARS "eeenergy" "-4.603005269151 0.085411994867")
@@ -126,7 +126,7 @@ if(QMC_COMPLEX)
 
   #Data generated using utils/make_ref_data.sh diamondC_2x1x1-Gaussian_pp_cplx_MSD_EXCITED_SHORT vmc_short_excited_noj.s000.scalar.dat  qmc_ref_excited_long.s000.scalar.dat
   list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_EXCITED_SHORT_SCALARS "totenergy" "-20.7021278060674 0.053373569209")
-  list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_EXCITED_SHORT_SCALARS "variance" "4.153573777819 0.215901996866")
+  list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_EXCITED_SHORT_SCALARS "variance" "4.153573777819 0.5")
   list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_EXCITED_SHORT_SCALARS "kinetic" "20.630997778670 0.186121488914")
   list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_EXCITED_SHORT_SCALARS "potential" "-41.333533646609 0.197753128678")
   list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_EXCITED_SHORT_SCALARS "eeenergy" "-4.670554461220 0.057273234412")

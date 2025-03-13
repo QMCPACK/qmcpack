@@ -11,11 +11,10 @@
 
 #include "catch.hpp"
 
-#include "PerParticleHamiltonianLogger.h"
-
 #include <filesystem>
-
+#include "PerParticleHamiltonianLogger.h"
 #include "Utilities/StdRandom.h"
+#include "OhmmsData/Libxml2Doc.h"
 
 namespace qmcplusplus
 {
@@ -82,7 +81,7 @@ TEST_CASE("PerParticleHamiltonianLogger_sum", "[estimators]")
     const SimulationCell simulation_cell;
     std::vector<OperatorEstBase::MCPWalker> walkers;
     for (int iw = 0; iw < nwalkers; ++iw)
-      walkers.emplace_back(2);
+      walkers.emplace_back(iw, iw, 2);
 
     std::vector<ParticleSet> psets;
     for (int iw = 0; iw < nwalkers; ++iw)
@@ -128,7 +127,7 @@ TEST_CASE("PerParticleHamiltonianLogger_sum", "[estimators]")
       // Mocking walker ids
       using Walker = typename decltype(ref_walkers)::value_type::type;
       for(Walker& walker : ref_walkers)
-	walker.ID = walker_id++;
+	walker.setWalkerID(walker_id++);
       crowd_oeb->accumulate(ref_walkers, ref_psets, ref_wfns, ref_hams, rng);
     }
 

@@ -34,7 +34,7 @@ TEST_CASE("Einspline SPO from HDF NiO a16 97 electrons", "[wavefunction]")
 {
   Communicate* c = OHMMS::Controller;
 
-  ParticleSet::ParticleLayout lattice;
+  Lattice lattice;
   lattice.R = {3.94055, 3.94055, 7.8811, 3.94055, 3.94055, -7.8811, -7.8811, 7.8811, 0};
 
   ParticleSetPool ptcl = ParticleSetPool(c);
@@ -89,9 +89,10 @@ TEST_CASE("Einspline SPO from HDF NiO a16 97 electrons", "[wavefunction]")
   tspecies(chargeIdx, upIdx) = -1;
 
   //diamondC_2x1x1
-  const char* particles = R"(<tmp>
-<determinantset type="einspline" href="NiO-fcc-supertwist111-supershift000-S4.h5" tilematrix="1 0 0 0 1 1 0 2 -2" twistnum="0" source="ion" meshfactor="1.0" precision="float" size="97" gpu="omptarget"/>
-</tmp>
+  const char* particles = R"(
+<sposet_collection type="einspline" href="NiO-fcc-supertwist111-supershift000-S4.h5" tilematrix="1 0 0 0 1 1 0 2 -2" twistnum="0" source="ion" meshfactor="1.0" precision="float" gpu="omptarget">
+  <sposet name="updet" size="97"/>
+</sposet_collection>
 )";
 
   Libxml2Document doc;
@@ -102,7 +103,7 @@ TEST_CASE("Einspline SPO from HDF NiO a16 97 electrons", "[wavefunction]")
 
   xmlNodePtr ein1 = xmlFirstElementChild(root);
 
-  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, ein1);
+  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, root);
   auto spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo);
 

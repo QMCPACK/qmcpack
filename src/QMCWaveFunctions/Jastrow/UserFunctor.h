@@ -65,7 +65,7 @@ struct UserFunctor : public OptimizableFunctorBase
   ///default constructor
   UserFunctor(const std::string& my_name) : OptimizableFunctorBase(my_name) { reset(); }
 
-  // void setCusp(real_type cusp)
+  constexpr static bool isOMPoffload() { return false; }
 
   void setCusp(real_type cusp) override
   {

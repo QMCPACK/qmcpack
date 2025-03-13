@@ -21,7 +21,7 @@ namespace cuBLAS_MFs
 {
 using namespace thrust::cuda_cub::core;
 }
-}
+} // namespace qmcplusplus
 
 #else
 #include <hip/hip_complex.h>
@@ -86,8 +86,7 @@ __global__ void gemvT_batched_kernel(const int m, // number of columns in row ma
   if (tid < row_max)
   {
     if (beta[blockIdx.x] == T(0))
-      y_iw[(row_begin + tid) * incy] =
-          alpha[blockIdx.x] * sum[tid * COLBS]; // protecting NaN from y_iw
+      y_iw[(row_begin + tid) * incy] = alpha[blockIdx.x] * sum[tid * COLBS]; // protecting NaN from y_iw
     else
       y_iw[(row_begin + tid) * incy] =
           alpha[blockIdx.x] * sum[tid * COLBS] + beta[blockIdx.x] * y_iw[(row_begin + tid) * incy];
@@ -126,19 +125,19 @@ __global__ void gemvN_batched_kernel(const int m, // number of columns in row ma
 }
 
 template<typename T>
-cuBLAS_MFs_status gemv_batched_impl(cuBLAS_MFs_handle& handle,
-                                    const char trans,
-                                    const int m,
-                                    const int n,
-                                    const T* alpha,
-                                    const T* const A[],
-                                    const int lda,
-                                    const T* const x[],
-                                    const int incx,
-                                    const T* beta,
-                                    T* const y[],
-                                    const int incy,
-                                    const int batch_count)
+cudaError_t gemv_batched_impl(cudaStream_t handle,
+                              const char trans,
+                              const int m,
+                              const int n,
+                              const T* alpha,
+                              const T* const A[],
+                              const int lda,
+                              const T* const x[],
+                              const int incx,
+                              const T* beta,
+                              T* const y[],
+                              const int incy,
+                              const int batch_count)
 {
   if (batch_count == 0 || m == 0 || n == 0)
     return cudaSuccess;
@@ -164,72 +163,76 @@ cuBLAS_MFs_status gemv_batched_impl(cuBLAS_MFs_handle& handle,
   return cudaPeekAtLastError();
 }
 
-cuBLAS_MFs_status gemv_batched(cuBLAS_MFs_handle& handle,
-                               const char trans,
-                               const int m,
-                               const int n,
-                               const float* alpha,
-                               const float* const A[],
-                               const int lda,
-                               const float* const x[],
-                               const int incx,
-                               const float* beta,
-                               float* const y[],
-                               const int incy,
-                               const int batch_count)
+cudaError_t gemv_batched(cudaStream_t handle,
+                         const char trans,
+                         const int m,
+                         const int n,
+                         const float* alpha,
+                         const float* const A[],
+                         const int lda,
+                         const float* const x[],
+                         const int incx,
+                         const float* beta,
+                         float* const y[],
+                         const int incy,
+                         const int batch_count)
 {
   return gemv_batched_impl(handle, trans, m, n, alpha, A, lda, x, incx, beta, y, incy, batch_count);
 }
 
-cuBLAS_MFs_status gemv_batched(cuBLAS_MFs_handle& handle,
-                               const char trans,
-                               const int m,
-                               const int n,
-                               const double* alpha,
-                               const double* const A[],
-                               const int lda,
-                               const double* const x[],
-                               const int incx,
-                               const double* beta,
-                               double* const y[],
-                               const int incy,
-                               const int batch_count)
+cudaError_t gemv_batched(cudaStream_t handle,
+                         const char trans,
+                         const int m,
+                         const int n,
+                         const double* alpha,
+                         const double* const A[],
+                         const int lda,
+                         const double* const x[],
+                         const int incx,
+                         const double* beta,
+                         double* const y[],
+                         const int incy,
+                         const int batch_count)
 {
   return gemv_batched_impl(handle, trans, m, n, alpha, A, lda, x, incx, beta, y, incy, batch_count);
 }
 
-cuBLAS_MFs_status gemv_batched(cuBLAS_MFs_handle& handle,
-                               const char trans,
-                               const int m,
-                               const int n,
-                               const std::complex<float>* alpha,
-                               const std::complex<float>* const A[],
-                               const int lda,
-                               const std::complex<float>* const x[],
-                               const int incx,
-                               const std::complex<float>* beta,
-                               std::complex<float>* const y[],
-                               const int incy,
-                               const int batch_count)
+cudaError_t gemv_batched(cudaStream_t handle,
+                         const char trans,
+                         const int m,
+                         const int n,
+                         const std::complex<float>* alpha,
+                         const std::complex<float>* const A[],
+                         const int lda,
+                         const std::complex<float>* const x[],
+                         const int incx,
+                         const std::complex<float>* beta,
+                         std::complex<float>* const y[],
+                         const int incy,
+                         const int batch_count)
 {
-  return gemv_batched_impl(handle, trans, m, n, (const thrust::complex<float>*)alpha, (const thrust::complex<float>**)A, lda, (const thrust::complex<float>**)x, incx, (const thrust::complex<float>*)beta, (thrust::complex<float>**)y, incy, batch_count);
+  return gemv_batched_impl(handle, trans, m, n, (const thrust::complex<float>*)alpha, (const thrust::complex<float>**)A,
+                           lda, (const thrust::complex<float>**)x, incx, (const thrust::complex<float>*)beta,
+                           (thrust::complex<float>**)y, incy, batch_count);
 }
 
-cuBLAS_MFs_status gemv_batched(cuBLAS_MFs_handle& handle,
-                               const char trans,
-                               const int m,
-                               const int n,
-                               const std::complex<double>* alpha,
-                               const std::complex<double>* const A[],
-                               const int lda,
-                               const std::complex<double>* const x[],
-                               const int incx,
-                               const std::complex<double>* beta,
-                               std::complex<double>* const y[],
-                               const int incy,
-                               const int batch_count)
+cudaError_t gemv_batched(cudaStream_t handle,
+                         const char trans,
+                         const int m,
+                         const int n,
+                         const std::complex<double>* alpha,
+                         const std::complex<double>* const A[],
+                         const int lda,
+                         const std::complex<double>* const x[],
+                         const int incx,
+                         const std::complex<double>* beta,
+                         std::complex<double>* const y[],
+                         const int incy,
+                         const int batch_count)
 {
-  return gemv_batched_impl(handle, trans, m, n, (const thrust::complex<double>*)alpha, (const thrust::complex<double>**)A, lda, (const thrust::complex<double>**)x, incx, (const thrust::complex<double>*)beta, (thrust::complex<double>**)y, incy, batch_count);
+  return gemv_batched_impl(handle, trans, m, n, (const thrust::complex<double>*)alpha,
+                           (const thrust::complex<double>**)A, lda, (const thrust::complex<double>**)x, incx,
+                           (const thrust::complex<double>*)beta, (thrust::complex<double>**)y, incy, batch_count);
 }
 
 
@@ -264,17 +267,17 @@ __global__ void ger_batched_kernel(const int m, // number of columns in row majo
 }
 
 template<typename T>
-cuBLAS_MFs_status ger_batched_impl(cuBLAS_MFs_handle& handle,
-                                   const int m,
-                                   const int n,
-                                   const T* alpha,
-                                   const T* const x[],
-                                   const int incx,
-                                   const T* const y[],
-                                   const int incy,
-                                   T* const A[],
-                                   const int lda,
-                                   const int batch_count)
+cudaError_t ger_batched_impl(cudaStream_t handle,
+                             const int m,
+                             const int n,
+                             const T* alpha,
+                             const T* const x[],
+                             const int incx,
+                             const T* const y[],
+                             const int incy,
+                             T* const A[],
+                             const int lda,
+                             const int batch_count)
 {
   if (batch_count == 0 || m == 0 || n == 0)
     return cudaSuccess;
@@ -289,64 +292,66 @@ cuBLAS_MFs_status ger_batched_impl(cuBLAS_MFs_handle& handle,
   return cudaPeekAtLastError();
 }
 
-cuBLAS_MFs_status ger_batched(cuBLAS_MFs_handle& handle,
-                              const int m,
-                              const int n,
-                              const float* alpha,
-                              const float* const x[],
-                              const int incx,
-                              const float* const y[],
-                              const int incy,
-                              float* const A[],
-                              const int lda,
-                              const int batch_count)
+cudaError_t ger_batched(cudaStream_t handle,
+                        const int m,
+                        const int n,
+                        const float* alpha,
+                        const float* const x[],
+                        const int incx,
+                        const float* const y[],
+                        const int incy,
+                        float* const A[],
+                        const int lda,
+                        const int batch_count)
 {
   return ger_batched_impl(handle, m, n, alpha, x, incx, y, incy, A, lda, batch_count);
 }
 
-cuBLAS_MFs_status ger_batched(cuBLAS_MFs_handle& handle,
-                              const int m,
-                              const int n,
-                              const double* alpha,
-                              const double* const x[],
-                              const int incx,
-                              const double* const y[],
-                              const int incy,
-                              double* const A[],
-                              const int lda,
-                              const int batch_count)
+cudaError_t ger_batched(cudaStream_t handle,
+                        const int m,
+                        const int n,
+                        const double* alpha,
+                        const double* const x[],
+                        const int incx,
+                        const double* const y[],
+                        const int incy,
+                        double* const A[],
+                        const int lda,
+                        const int batch_count)
 {
   return ger_batched_impl(handle, m, n, alpha, x, incx, y, incy, A, lda, batch_count);
 }
 
-cuBLAS_MFs_status ger_batched(cuBLAS_MFs_handle& handle,
-                              const int m,
-                              const int n,
-                              const std::complex<float>* alpha,
-                              const std::complex<float>* const x[],
-                              const int incx,
-                              const std::complex<float>* const y[],
-                              const int incy,
-                              std::complex<float>* const A[],
-                              const int lda,
-                              const int batch_count)
+cudaError_t ger_batched(cudaStream_t handle,
+                        const int m,
+                        const int n,
+                        const std::complex<float>* alpha,
+                        const std::complex<float>* const x[],
+                        const int incx,
+                        const std::complex<float>* const y[],
+                        const int incy,
+                        std::complex<float>* const A[],
+                        const int lda,
+                        const int batch_count)
 {
-  return ger_batched_impl(handle, m, n, (const thrust::complex<float>*)alpha, (const thrust::complex<float>**)x, incx, (const thrust::complex<float>**)y, incy, (thrust::complex<float>**)A, lda, batch_count);
+  return ger_batched_impl(handle, m, n, (const thrust::complex<float>*)alpha, (const thrust::complex<float>**)x, incx,
+                          (const thrust::complex<float>**)y, incy, (thrust::complex<float>**)A, lda, batch_count);
 }
 
-cuBLAS_MFs_status ger_batched(cuBLAS_MFs_handle& handle,
-                              const int m,
-                              const int n,
-                              const std::complex<double>* alpha,
-                              const std::complex<double>* const x[],
-                              const int incx,
-                              const std::complex<double>* const y[],
-                              const int incy,
-                              std::complex<double>* const A[],
-                              const int lda,
-                              const int batch_count)
+cudaError_t ger_batched(cudaStream_t handle,
+                        const int m,
+                        const int n,
+                        const std::complex<double>* alpha,
+                        const std::complex<double>* const x[],
+                        const int incx,
+                        const std::complex<double>* const y[],
+                        const int incy,
+                        std::complex<double>* const A[],
+                        const int lda,
+                        const int batch_count)
 {
-  return ger_batched_impl(handle, m, n, (const thrust::complex<double>*)alpha, (const thrust::complex<double>**)x, incx, (const thrust::complex<double>**)y, incy, (thrust::complex<double>**)A, lda, batch_count);
+  return ger_batched_impl(handle, m, n, (const thrust::complex<double>*)alpha, (const thrust::complex<double>**)x, incx,
+                          (const thrust::complex<double>**)y, incy, (thrust::complex<double>**)A, lda, batch_count);
 }
 
 template<typename T, int COLBS>
@@ -370,13 +375,13 @@ __global__ void copy_batched_kernel(const int n, const T* const in[], const int 
 }
 
 template<typename T>
-cuBLAS_MFs_status copy_batched_impl(cudaStream_t& hstream,
-                                    const int n,
-                                    const T* const in[],
-                                    const int incx,
-                                    T* const out[],
-                                    const int incy,
-                                    const int batch_count)
+cudaError_t copy_batched_impl(cudaStream_t hstream,
+                              const int n,
+                              const T* const in[],
+                              const int incx,
+                              T* const out[],
+                              const int incy,
+                              const int batch_count)
 {
   if (batch_count == 0 || n == 0)
     return cudaSuccess;
@@ -389,46 +394,46 @@ cuBLAS_MFs_status copy_batched_impl(cudaStream_t& hstream,
   return cudaPeekAtLastError();
 }
 
-cuBLAS_MFs_status copy_batched(cudaStream_t& hstream,
-                               const int n,
-                               const float* const in[],
-                               const int incx,
-                               float* const out[],
-                               const int incy,
-                               const int batch_count)
+cudaError_t copy_batched(cudaStream_t hstream,
+                         const int n,
+                         const float* const in[],
+                         const int incx,
+                         float* const out[],
+                         const int incy,
+                         const int batch_count)
 {
   return copy_batched_impl(hstream, n, in, incx, out, incy, batch_count);
 }
 
-cuBLAS_MFs_status copy_batched(cudaStream_t& hstream,
-                               const int n,
-                               const double* const in[],
-                               const int incx,
-                               double* const out[],
-                               const int incy,
-                               const int batch_count)
+cudaError_t copy_batched(cudaStream_t hstream,
+                         const int n,
+                         const double* const in[],
+                         const int incx,
+                         double* const out[],
+                         const int incy,
+                         const int batch_count)
 {
   return copy_batched_impl(hstream, n, in, incx, out, incy, batch_count);
 }
 
-cuBLAS_MFs_status copy_batched(cudaStream_t& hstream,
-                               const int n,
-                               const std::complex<float>* const in[],
-                               const int incx,
-                               std::complex<float>* const out[],
-                               const int incy,
-                               const int batch_count)
+cudaError_t copy_batched(cudaStream_t hstream,
+                         const int n,
+                         const std::complex<float>* const in[],
+                         const int incx,
+                         std::complex<float>* const out[],
+                         const int incy,
+                         const int batch_count)
 {
   return copy_batched_impl(hstream, n, (const cuComplex**)in, incx, (cuComplex**)out, incy, batch_count);
 }
 
-cuBLAS_MFs_status copy_batched(cudaStream_t& hstream,
-                               const int n,
-                               const std::complex<double>* const in[],
-                               const int incx,
-                               std::complex<double>* const out[],
-                               const int incy,
-                               const int batch_count)
+cudaError_t copy_batched(cudaStream_t hstream,
+                         const int n,
+                         const std::complex<double>* const in[],
+                         const int incx,
+                         std::complex<double>* const out[],
+                         const int incy,
+                         const int batch_count)
 {
   return copy_batched_impl(hstream, n, (const cuDoubleComplex**)in, incx, (cuDoubleComplex**)out, incy, batch_count);
 }

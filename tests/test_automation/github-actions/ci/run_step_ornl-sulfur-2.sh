@@ -58,7 +58,7 @@ case "$1" in
       *"V100-Clang16-MPI-CUDA-AFQMC-Offload"*)
         echo "Configure for building with CUDA and AFQMC using LLVM OpenMP offload"
 
-        LLVM_DIR=$HOME/opt/spack/linux-rhel9-cascadelake/gcc-9.4.0/llvm-16.0.2-ltjkfjdu6p2cfcyw3zalz4x5sz5do3cr
+        LLVM_DIR=$HOME/opt/llvm/18.1.2
         
         echo "Set PATHs to cuda-11.2"
         export PATH=$HOME/opt/cuda/11.2/bin:$PATH
@@ -77,13 +77,11 @@ case "$1" in
         cmake -GNinja \
               -DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \
               -DCMAKE_CXX_COMPILER=/usr/lib64/openmpi/bin/mpicxx \
-              -DCMAKE_EXE_LINKER_FLAGS="-L $LLVM_DIR/lib" \
               -DMPIEXEC_EXECUTABLE=/usr/lib64/openmpi/bin/mpirun \
               -DBOOST_ROOT=$BOOST_DIR \
               -DBUILD_AFQMC=ON \
-              -DENABLE_CUDA=ON \
+              -DQMC_GPU="cuda;openmp" \
               -DQMC_GPU_ARCHS=sm_70 \
-              -DENABLE_OFFLOAD=ON \
               -DQMC_COMPLEX=$IS_COMPLEX \
               -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
               -DCMAKE_BUILD_TYPE=RelWithDebInfo \
@@ -92,11 +90,11 @@ case "$1" in
       ;;
 
       *"V100-GCC11-MPI-CUDA"*)
-        echo "Configure for building with CUDA 12.1 and" \
-             "GCC11 system compiler" 
+        echo "Configure for building with CUDA and" \
+             "GCC11 system compiler"
 
-        echo "Set PATHs to cuda-12.1"
-        export PATH=/usr/local/cuda-12.1/bin:$PATH
+        echo "Set PATHs to CUDA"     
+        export PATH=/usr/local/cuda/bin:$PATH
 
         # Make current environment variables available to subsequent steps
         echo "PATH=$PATH" >> $GITHUB_ENV
@@ -107,7 +105,7 @@ case "$1" in
               -DCMAKE_CXX_COMPILER=/usr/lib64/openmpi/bin/mpicxx \
               -DMPIEXEC_EXECUTABLE=/usr/lib64/openmpi/bin/mpirun \
               -DBOOST_ROOT=$BOOST_DIR \
-              -DENABLE_CUDA=ON \
+              -DQMC_GPU=cuda \
               -DQMC_GPU_ARCHS=sm_70 \
               -DQMC_COMPLEX=$IS_COMPLEX \
               -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
@@ -141,9 +139,12 @@ case "$1" in
     export OMPI_MCA_btl=self
     # Clang helper threads used by target nowait is very broken. Disable this feature
     export LIBOMP_USE_HIDDEN_HELPER_TASK=0
+    export OMP_TARGET_OFFLOAD=mandatory
 
     echo "Running deterministic tests"
     cd ${GITHUB_WORKSPACE}/../qmcpack-build-2
+    if [ -f ./bin/qmcpack ]; then ldd ./bin/qmcpack; fi
+    if [ -f ./bin/qmcpack_complex ]; then ldd ./bin/qmcpack_complex; fi
     ctest --output-on-failure -E ppconvert -L deterministic -j 32
     ;;
     

@@ -50,10 +50,12 @@ inline void count_Qk_x_Rl(WALKER_TYPES walker_type,
                           MatTa&& Ta,
                           const SPRealType cut)
 {
+  using std::get;
+
   using Type = typename std::decay<MatTa>::type::element;
-  assert(std::get<0>(Qk.sizes()) == std::get<0>(Ta.sizes()));
-  assert(std::get<1>(Qk.sizes()) == std::get<0>(Rl.sizes()));
-  assert(std::get<1>(Rl.sizes()) == std::get<1>(Rl.sizes()));
+  assert(get<0>(Qk.sizes()) == get<0>(Ta.sizes()));
+  assert(get<1>(Qk.sizes()) == get<0>(Rl.sizes()));
+  assert(get<1>(Rl.sizes()) == get<1>(Rl.sizes()));
   int ncores = TG.getTotalCores(), coreid = TG.getCoreID();
 
   bool amIAlpha = true;
@@ -61,13 +63,13 @@ inline void count_Qk_x_Rl(WALKER_TYPES walker_type,
     amIAlpha = false;
 
   int bl0 = -1, blN = -1;
-  int nwork = std::min(int(std::get<1>(Rl.sizes())), ncores);
+  int nwork = std::min(int(get<1>(Rl.sizes())), ncores);
   if (coreid < nwork)
-    std::tie(bl0, blN) = FairDivideBoundary(coreid, int(std::get<1>(Rl.sizes())), nwork);
+    std::tie(bl0, blN) = FairDivideBoundary(coreid, int(get<1>(Rl.sizes())), nwork);
   int ka0 = -1, kaN = -1;
-  nwork = std::min(int(std::get<0>(Qk.sizes())), ncores);
+  nwork = std::min(int(get<0>(Qk.sizes())), ncores);
   if (coreid < nwork)
-    std::tie(ka0, kaN) = FairDivideBoundary(coreid, int(std::get<0>(Qk.sizes())), nwork);
+    std::tie(ka0, kaN) = FairDivideBoundary(coreid, int(get<0>(Qk.sizes())), nwork);
 
   Type four(4.0);
   Type two(2.0);
@@ -210,10 +212,12 @@ inline void Qk_x_Rl(WALKER_TYPES walker_type,
                     Container& Vijkl,
                     const SPRealType cut)
 {
+  using std::get;
+
   using Type = typename std::decay<MatTa>::type::element;
-  assert(std::get<0>(Qk.sizes()) == std::get<0>(Ta.sizes()));
-  assert(std::get<1>(Qk.sizes()) == std::get<0>(Rl.sizes()));
-  assert(std::get<1>(Rl.sizes()) == std::get<1>(Rl.sizes()));
+  assert(get<0>(Qk.sizes()) == get<0>(Ta.sizes()));
+  assert(get<1>(Qk.sizes()) == get<0>(Rl.sizes()));
+  assert(get<1>(Rl.sizes()) == get<1>(Rl.sizes()));
   int ncores = TG.getTotalCores(), coreid = TG.getCoreID();
 
   bool amIAlpha = true;
@@ -222,12 +226,12 @@ inline void Qk_x_Rl(WALKER_TYPES walker_type,
 
   int bl0 = -1, blN = -1;
   int ka0 = -1, kaN = -1;
-  int nwork = std::min(int(std::get<1>(Rl.sizes())), ncores);
+  int nwork = std::min(int(get<1>(Rl.sizes())), ncores);
   if (coreid < nwork)
-    std::tie(bl0, blN) = FairDivideBoundary(coreid, int(std::get<1>(Rl.sizes())), nwork);
-  nwork = std::min(int(std::get<0>(Qk.sizes())), ncores);
+    std::tie(bl0, blN) = FairDivideBoundary(coreid, int(get<1>(Rl.sizes())), nwork);
+  nwork = std::min(int(get<0>(Qk.sizes())), ncores);
   if (coreid < nwork)
-    std::tie(ka0, kaN) = FairDivideBoundary(coreid, int(std::get<0>(Qk.sizes())), nwork);
+    std::tie(ka0, kaN) = FairDivideBoundary(coreid, int(get<0>(Qk.sizes())), nwork);
 
   Type four(4.0);
   Type two(2.0);

@@ -297,7 +297,7 @@ TwoBodyJastrow<FT>::TwoBodyJastrow(const std::string& obj_name, ParticleSet& p, 
       lapfac(ndim - RealType(1)),
       use_offload_(use_offload),
       N_padded(getAlignedSize<valT>(N)),
-      my_table_ID_(p.addTable(p)),
+      my_table_ID_(p.addTable(p, use_offload && FT::isOMPoffload() ? DTModes::ALL_OFF : DTModes::NEED_TEMP_DATA_ON_HOST)),
       j2_ke_corr_helper(p, F)
 {
   if (my_name_.empty())

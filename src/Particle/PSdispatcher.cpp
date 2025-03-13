@@ -45,16 +45,17 @@ void PSdispatcher::flex_update(const RefVectorWithLeader<ParticleSet>& p_list, b
 template<CoordsType CT>
 void PSdispatcher::flex_makeMove(const RefVectorWithLeader<ParticleSet>& p_list,
                                  int iat,
-                                 const MCCoords<CT>& displs) const
+                                 const MCCoords<CT>& displs,
+                                 std::vector<bool>& are_valid) const
 {
   if (use_batch_)
-    ParticleSet::mw_makeMove(p_list, iat, displs);
+    ParticleSet::mw_makeMove(p_list, iat, displs, are_valid);
   else
     for (size_t iw = 0; iw < p_list.size(); iw++)
       if constexpr (CT == CoordsType::POS_SPIN)
-        p_list[iw].makeMoveWithSpin(iat, displs.positions[iw], displs.spins[iw]);
+        are_valid[iw] = p_list[iw].makeMoveAndCheckWithSpin(iat, displs.positions[iw], displs.spins[iw]);
       else
-        p_list[iw].makeMove(iat, displs.positions[iw]);
+        are_valid[iw] = p_list[iw].makeMoveAndCheck(iat, displs.positions[iw]);
 }
 
 template<CoordsType CT>
@@ -91,10 +92,12 @@ void PSdispatcher::flex_saveWalker(const RefVectorWithLeader<ParticleSet>& p_lis
 
 template void PSdispatcher::flex_makeMove<CoordsType::POS>(const RefVectorWithLeader<ParticleSet>& p_list,
                                                            int iat,
-                                                           const MCCoords<CoordsType::POS>& displs) const;
+                                                           const MCCoords<CoordsType::POS>& displs,
+                                                           std::vector<bool>& are_valid) const;
 template void PSdispatcher::flex_makeMove<CoordsType::POS_SPIN>(const RefVectorWithLeader<ParticleSet>& p_list,
                                                                 int iat,
-                                                                const MCCoords<CoordsType::POS_SPIN>& displs) const;
+                                                                const MCCoords<CoordsType::POS_SPIN>& displs,
+                                                                std::vector<bool>& are_valid) const;
 template void PSdispatcher::flex_accept_rejectMove<CoordsType::POS>(const RefVectorWithLeader<ParticleSet>& p_list,
                                                                     int iat,
                                                                     const std::vector<bool>& isAccepted,

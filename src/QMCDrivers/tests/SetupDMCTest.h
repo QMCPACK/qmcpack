@@ -28,7 +28,7 @@ namespace testing
 class SetupDMCTest : public SetupPools
 {
 public:
-  SetupDMCTest(int nranks = 4) : num_ranks(nranks), qmcdrv_input()
+  SetupDMCTest(int nranks = 4) : rng_pool(Concurrency::maxCapacity<>()), num_ranks(nranks), qmcdrv_input()
   {
     if (Concurrency::maxCapacity<>() < 8)
       num_crowds = Concurrency::maxCapacity<>();
@@ -47,16 +47,19 @@ public:
     DMCDriverInput dmc_input_copy(dmcdrv_input);
     return {test_project,
             std::move(qmc_input_copy),
-            std::nullopt,
+            nullptr,
             std::move(dmc_input_copy),
             walker_confs,
             MCPopulation(comm->size(), comm->rank(), particle_pool->getParticleSet("e"),
                          wavefunction_pool->getPrimary(), hamiltonian_pool->getPrimary()),
+            rng_pool.getRngRefs(),
             comm};
   }
 
 private:
   ProjectData test_project;
+
+  RandomNumberGeneratorPool rng_pool;
 
 public:
   WalkerConfigurations walker_confs;

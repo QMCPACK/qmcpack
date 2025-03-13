@@ -1,17 +1,22 @@
 codecov:
-  token: 999feb5b-a599-4d02-b9c5-46d977247f3a
   notify:
+    after_n_builds: 2
     require_ci_to_pass: yes
 
 coverage:
+  status:
+    project:
+      default:
+        threshold: 0.5%
+    patch: true
+    changes: false
   precision: 2
   round: down
-  range: 99..100
+  range: "99..100"
 
-  status:
-    project: yes
-    patch: yes
-    changes: no
+# Ignore testing directory itself
+ignore:
+  - "test/"
 
 parsers:
   gcov:
@@ -23,3 +28,36 @@ parsers:
 
 comment:
   layout: "header, diff"
+
+
+# Fixes report prefix paths from CI dynamic coverage action
+# from https://docs.codecov.io/docs/fixing-paths
+#fixes:
+#  - "/builds/correaa::"
+
+#codecov:
+#  disable_default_path_fixes: true
+#  token: 999feb5b-a599-4d02-b9c5-46d977247f3a
+#  notify:
+#    require_ci_to_pass: yes
+#
+#coverage:
+#  precision: 2
+#  round: down
+#  range: 99..100
+#
+#  status:
+#    project: yes
+#    patch: yes
+#    changes: no
+#
+#parsers:
+#  gcov:
+#    branch_detection:
+#      conditional: yes
+#      loop: yes
+#      method: no
+#      macro: no
+#
+#comment:
+#  layout: "header, diff"

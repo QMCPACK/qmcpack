@@ -1,23 +1,23 @@
 #!/bin/bash
 # This recipe is intended for ALCF Polaris https://www.alcf.anl.gov/polaris
 # It builds all the varaints of QMCPACK in the current directory
-# last revision: Sep 5th 2023
+# last revision: Jan 13th 2025
 #
 # How to invoke this script?
 # build_alcf_polaris_Clang.sh # build all the variants assuming the current directory is the source directory.
 # build_alcf_polaris_Clang.sh <source_dir> # build all the variants with a given source directory <source_dir>
 # build_alcf_polaris_Clang.sh <source_dir> <install_dir> # build all the variants with a given source directory <source_dir> and install to <install_dir>
 
-module load mpiwrappers/cray-mpich-llvm llvm/release-17.0.0
-module load cudatoolkit-standalone/11.2.2
-module load cray-fftw/3.3.8.13
-module load cray-hdf5-parallel/1.12.1.3
-module load cmake/3.23.2
+module use /soft/modulefiles
+module load spack-pe-base cmake
+module load mpiwrappers/cray-mpich-llvm llvm/release-18.1.6
+module load cudatoolkit-standalone/12.3.2
+module load craype-x86-milan cray-fftw cray-hdf5-parallel
 
-export BOOST_ROOT=/soft/applications/qmcpack/boost_1_79_0
+export BOOST_ROOT=/soft/applications/qmcpack/boost_1_86_0
 export CMAKE_PREFIX_PATH=/soft/libraries/openblas/0.3.20-omp:$CMAKE_PREFIX_PATH
 
-module list >& module_list.txt
+module list 2>&1 | tee module_list.txt
 
 echo "**********************************"
 echo '$ clang -v'
@@ -26,7 +26,7 @@ echo "**********************************"
 
 TYPE=Release
 Machine=polaris
-Compiler=Clang17
+Compiler=Clang18
 
 if [[ $# -eq 0 ]]; then
   source_folder=`pwd`
@@ -44,7 +44,7 @@ else
   exit
 fi
 
-for name in offload_cuda_real_MP offload_cuda_real offload_cuda_cplx_MP offload_cuda_cplx \
+for name in gpu_real_MP gpu_real gpu_cplx_MP gpu_cplx \
             cpu_real_MP cpu_real cpu_cplx_MP cpu_cplx
 do
 
@@ -58,16 +58,8 @@ if [[ $name == *"_MP"* ]]; then
   CMAKE_FLAGS="$CMAKE_FLAGS -DQMC_MIXED_PRECISION=ON"
 fi
 
-if [[ $name == *"offload"* || $name == *"cuda"* ]]; then
+if [[ $name == *"gpu"* ]]; then
   CMAKE_FLAGS="$CMAKE_FLAGS -DQMC_GPU_ARCHS=sm_80"
-fi
-
-if [[ $name == *"offload"* ]]; then
-  CMAKE_FLAGS="$CMAKE_FLAGS -DENABLE_OFFLOAD=ON"
-fi
-
-if [[ $name == *"cuda"* ]]; then
-  CMAKE_FLAGS="$CMAKE_FLAGS -DENABLE_CUDA=ON"
 fi
 
 folder=build_${Machine}_${Compiler}_${name}

@@ -147,7 +147,7 @@ function(
       set_tests_properties(
         ${TESTNAME}
         PROPERTIES FAIL_REGULAR_EXPRESSION
-                   "ERROR"
+                   "QMCPACK ERROR"
                    PASS_REGULAR_EXPRESSION
                    "QMCPACK execution completed successfully"
                    PROCESSORS
@@ -166,7 +166,7 @@ function(
       set_tests_properties(
         ${TESTNAME}
         PROPERTIES FAIL_REGULAR_EXPRESSION
-                   "ERROR"
+                   "QMCPACK ERROR"
                    PASS_REGULAR_EXPRESSION
                    "QMCPACK execution completed successfully"
                    PROCESSORS

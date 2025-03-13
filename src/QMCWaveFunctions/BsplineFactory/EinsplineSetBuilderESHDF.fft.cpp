@@ -40,37 +40,28 @@ bool sortByIndex(BandInfo leftB, BandInfo rightB)
     return (leftB.BandIndex < rightB.BandIndex);
 };
 
-bool EinsplineSetBuilder::ReadOrbitalInfo(bool skipChecks)
+void EinsplineSetBuilder::ReadOrbitalInfo(bool skipChecks)
 {
   if (!H5File.open(H5FileName, H5F_ACC_RDONLY))
-  {
-    app_error() << "Could not open HDF5 file \"" << H5FileName << "\" in EinsplineSetBuilder::ReadOrbitalInfo.\n";
-    return false;
-  }
+    throw std::runtime_error("Could not open HDF5 file \"" + std::string(H5FileName) +
+                             "\" in EinsplineSetBuilder::ReadOrbitalInfo.\n");
 
-  try
   {
     // Read format
     std::string format;
     H5File.read(format, "/format");
     if (format.find("ES") == std::string::npos)
-      throw std::runtime_error("Format string input \"" + format + "\" doesn't contain \"ES\" keyword.");
-    Format = ESHDF;
+      throw std::runtime_error(
+          "Format string input \"" + format +
+          "\" doesn't contain \"ES\" keyword. h5 file format is too old or it is not a bspline orbital file!");
     H5File.read(Version, "/version");
     app_log() << "  HDF5 orbital file version " << Version[0] << "." << Version[1] << "." << Version[2] << std::endl;
   }
-  catch (const std::exception& e)
-  {
-    app_error() << e.what() << std::endl
-                << "EinsplineSetBuilder::ReadOrbitalInfo h5 file format is too old or it is not a bspline orbital file!"
-                << std::endl;
-    return false;
-  }
 
-  return ReadOrbitalInfo_ESHDF(skipChecks);
+  ReadOrbitalInfo_ESHDF(skipChecks);
 }
 
-bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
+void EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
 {
   app_log() << "  Reading orbital file in ESHDF format.\n";
   H5File.read(Version, "/version");
@@ -301,8 +292,7 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
             density_G.assign(Density_G_DP.begin(), Density_G_DP.end());
             if (!density_G.size())
             {
-              app_error() << "  Density reduced G-vectors defined, but not the"
-                          << " density.\n";
+              app_error() << "  Density reduced G-vectors defined, but not the" << " density.\n";
               abort();
             }
             else
@@ -350,8 +340,7 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
             VHXC_G.assign(VHXC_G_DP.begin(), VHXC_G_DP.end());
             if (!VHXC_G.size())
             {
-              app_error() << "  VHXC reduced G-vectors defined, but not the"
-                          << " VHXC.\n";
+              app_error() << "  VHXC reduced G-vectors defined, but not the" << " VHXC.\n";
               abort();
             }
             else
@@ -362,10 +351,7 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
     }
   }
   else
-  {
     app_log() << "   Skip initialization of the density" << std::endl;
-  }
-  return true;
 }
 
 bool EinsplineSetBuilder::ReadGvectors_ESHDF()
@@ -490,12 +476,13 @@ bool EinsplineSetBuilder::ReadGvectors_ESHDF()
   return hasPsig;
 }
 
-void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs)
+int EinsplineSetBuilder::OccupyBands_ESHDF(hdf_archive& h5,
+                                           int spin,
+                                           int sortBands,
+                                           int numOrbs,
+                                           std::vector<BandInfo>& bandinfo_set) const
 {
-  if (myComm->rank() != 0)
-    return;
-
-  std::vector<BandInfo>& SortBands(*FullBands[spin]);
+  std::vector<BandInfo>& SortBands(bandinfo_set);
   SortBands.clear(); //??? can exit if SortBands is already made?
   int maxOrbs(0);
   for (int ti = 0; ti < DistinctTwists.size(); ti++)
@@ -505,7 +492,7 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
     std::ostringstream ePath;
     ePath << "/electrons/kpoint_" << tindex << "/spin_" << spin << "/eigenvalues";
     std::vector<double> eigvals;
-    H5File.read(eigvals, ePath.str());
+    h5.read(eigvals, ePath.str());
     for (int bi = 0; bi < NumBands; bi++)
     {
       BandInfo band;
@@ -524,9 +511,10 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
 
   app_log() << SortBands.size() << " complex-valued orbitals supplied by h5 can be expanded up to " << maxOrbs
             << " SPOs." << std::endl;
+
   if (maxOrbs < numOrbs)
-    myComm->barrier_and_abort("EinsplineSetBuilder::OccupyBands_ESHDF user input requests "
-                              "more orbitals than what the h5 file supplies.");
+    throw std::runtime_error("EinsplineSetBuilder::OccupyBands_ESHDF user input requests "
+                             "more orbitals than what the h5 file supplies.\n");
 
   // Now sort the bands by energy
   if (sortBands == 2)
@@ -697,8 +685,8 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
       numOrbs_counter++;
     orbIndex++;
   }
-  NumDistinctOrbitals = orbIndex;
-  app_log() << "We will read " << NumDistinctOrbitals << " distinct complex-valued orbitals from h5.\n";
+  app_log() << "We will read " << orbIndex << " distinct complex-valued orbitals from h5." << std::endl;
+  return orbIndex;
 }
 
 } // namespace qmcplusplus

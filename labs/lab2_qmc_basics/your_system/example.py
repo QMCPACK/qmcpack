@@ -107,6 +107,7 @@ sims.append(p2q)
 
 # vmc run with qmcpack
 qmc = generate_qmcpack(
+    driver       = 'legacy',
     identifier   = 'vmc',
     path         = my_project_name,
     job          = qmcjob,
@@ -168,6 +169,7 @@ run_project(sims)
 #linopt2.samples = 20480
 #
 #opt = generate_qmcpack(
+#    driver       = 'legacy',
 #    identifier   = 'opt',
 #    path         = my_project_name,
 #    job          = qmcjob,
@@ -184,6 +186,7 @@ run_project(sims)
 #sims.append(opt)
 #
 #qmc = generate_qmcpack(
+#    driver       = 'legacy',
 #    identifier   = 'qmc',
 #    path         = my_project_name,
 #    job          = qmcjob,

@@ -38,6 +38,7 @@
 #include "QMCHamiltonians/GridExternalPotential.h"
 #include "QMCHamiltonians/StaticStructureFactor.h"
 #include "QMCHamiltonians/SpinDensity.h"
+#include "QMCHamiltonians/SelfHealingOverlapLegacy.h"
 #include "QMCHamiltonians/OrbitalImages.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "QMCHamiltonians/EnergyDensityEstimator.h"
@@ -239,6 +240,13 @@ bool HamiltonianFactory::build(xmlNodePtr cur)
       {
         app_log() << "  Adding StaticStructureFactor" << std::endl;
         std::unique_ptr<StaticStructureFactor> apot = std::make_unique<StaticStructureFactor>(targetPtcl);
+        apot->put(element);
+        targetH->addOperator(std::move(apot), potName, false);
+      }
+      else if (potType == "selfhealingoverlap" || potType == "SelfHealingOverlap")
+      {
+        app_log() << "  Adding SelfHealingOverlap" << std::endl;
+        std::unique_ptr<SelfHealingOverlapLegacy> apot = std::make_unique<SelfHealingOverlapLegacy>(*targetPsi);
         apot->put(element);
         targetH->addOperator(std::move(apot), potName, false);
       }

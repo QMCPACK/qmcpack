@@ -36,8 +36,38 @@ class LinearMethod
   void getNonLinearRange(int& first, int& last, const QMCCostFunctionBase& optTarget) const;
 
 public:
-  //asymmetric generalized EV
-  Real getLowestEigenvector(Matrix<Real>& A, Matrix<Real>& B, std::vector<Real>& ev) const;
+  /** Select eigenvalue and return corresponding scaled eigenvector
+   *  @param[in] eigenvals Eigenvalues
+   *  @param[in] eigenvectors Eigenvectors
+   *  @param[in] zerozero The H(0,0) element, used to guide eigenvalue selection
+   *  @param[out] ev The eigenvector scaled by the reciprocal of the first element
+   *  @return The selected eigenvalue
+   */
+  static Real selectEigenvalue(std::vector<Real>& eigenvals,
+                               Matrix<Real>& eigenvectors,
+                               Real zerozero,
+                               std::vector<Real>& ev);
+
+  /** Solve the generalized eigenvalue problem and return a scaled eigenvector corresponding to the selected eigenvalue
+   * @param[in] A Hamiltonian matrix
+   * @param[in] B Overlap matrix
+   * @param[out] ev Scaled eigenvector
+   *
+   * This uses a regular eigenvalue solver for B^-1 A (LAPACK geev).
+   * In theory using the generalized eigenvalue solver is more numerically stable, but
+   * in practice this solver is sufficiently stable, and is faster than the generalized solver.
+   */
+  static Real getLowestEigenvector_Inv(Matrix<Real>& A, Matrix<Real>& B, std::vector<Real>& ev);
+
+  /** Solve the generalized eigenvalue problem and return a scaled eigenvector corresponding to the selected eigenvalue
+   * @param[in] A Hamiltonian matrix
+   * @param[in] B Overlap matrix
+   * @param[out] ev Scaled eigenvector
+   *
+   * This uses a generalized eigenvalue solver (LAPACK ggev).
+   */
+  static Real getLowestEigenvector_Gen(Matrix<Real>& A, Matrix<Real>& B, std::vector<Real>& ev);
+
   //asymmetric EV
   Real getLowestEigenvector(Matrix<Real>& A, std::vector<Real>& ev) const;
   // compute a rescale factor. Ye: Where is the method from?

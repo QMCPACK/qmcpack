@@ -20,11 +20,11 @@
 #include "QMCHamiltonian.h"
 #include "Particle/DistanceTable.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "QMCHamiltonians/NonLocalECPotential.h"
 #include "Utilities/TimerManager.h"
 #include "BareKineticEnergy.h"
 #include "Containers/MinimalContainers/RecordArray.hpp"
 #include "type_traits/ConvertToReal.h"
+#include "CPU/math.hpp"
 
 namespace qmcplusplus
 {
@@ -49,12 +49,12 @@ QMCHamiltonian::QMCHamiltonian(const std::string& aname)
     : myIndex(0),
       numCollectables(0),
       myName(aname),
-      nlpp_ptr(nullptr),
+      hasPhysicalNLPP_(false),
       l2_ptr(nullptr),
       ham_timer_(createGlobalTimer("Hamiltonian:" + aname + "::evaluate", timer_level_medium)),
       eval_vals_derivs_timer_(createGlobalTimer("Hamiltonian:" + aname + "::ValueParamDerivs", timer_level_medium)),
       eval_ion_derivs_fast_timer_(
-          createGlobalTimer("Hamiltonian:" + aname + ":::evaluateIonDerivsDeterministicFast", timer_level_medium))
+          createGlobalTimer("Hamiltonian:" + aname + ":::evaluateIonDerivsFast", timer_level_medium))
 #if !defined(REMOVE_TRACEMANAGER)
       ,
       streaming_position(false),
@@ -133,19 +133,8 @@ void QMCHamiltonian::addOperator(std::unique_ptr<OperatorBase>&& h, const std::s
 
   //assign save NLPP if found
   //  name is fixed in ECPotentialBuilder::put()
-  if (aname == "NonLocalECP")
-  {
-    if (nlpp_ptr == nullptr)
-    {
-      // original h arguments moved to either H or auxH
-      nlpp_ptr = physical ? dynamic_cast<NonLocalECPotential*>(H.back().get())
-                          : dynamic_cast<NonLocalECPotential*>(auxH.back().get());
-    }
-    else
-    {
-      APP_ABORT("QMCHamiltonian::addOperator nlpp_ptr is supposed to be null. Something went wrong!");
-    }
-  }
+  if (physical && (aname == "NonLocalECP" || aname == "SOECP"))
+    hasPhysicalNLPP_ = true;
 
   //save L2 potential if found
   //  name is fixed in ECPotentialBuilder::put()
@@ -491,8 +480,8 @@ void QMCHamiltonian::collect_walker_traces(Walker_t& walker, int step)
 {
   if (request.streaming_default_scalars)
   {
-    (*id_sample)(0)     = walker.ID;
-    (*pid_sample)(0)    = walker.ParentID;
+    (*id_sample)(0)     = walker.getWalkerID();
+    (*pid_sample)(0)    = walker.getParentID();
     (*step_sample)(0)   = step;
     (*gen_sample)(0)    = walker.Generation;
     (*age_sample)(0)    = walker.Age;
@@ -896,48 +885,25 @@ void QMCHamiltonian::evaluateElecGrad(ParticleSet& P,
     }
   }
 }
-QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivs(ParticleSet& P,
-                                                                   ParticleSet& ions,
-                                                                   TrialWaveFunction& psi,
-                                                                   ParticleSet::ParticlePos& hf_term,
-                                                                   ParticleSet::ParticlePos& pulay_terms,
-                                                                   ParticleSet::ParticlePos& wf_grad)
+
+void QMCHamiltonian::evaluateIonDerivs(ParticleSet& P,
+                                       ParticleSet& ions,
+                                       TrialWaveFunction& psi,
+                                       ParticleSet::ParticlePos& hf_term,
+                                       ParticleSet::ParticlePos& pulay_terms,
+                                       ParticleSet::ParticlePos& wf_grad)
 {
   ParticleSet::ParticleGradient wfgradraw_(ions.getTotalNum());
-  wfgradraw_           = 0.0;
-  RealType localEnergy = 0.0;
+  wfgradraw_ = 0.0;
 
   for (int i = 0; i < H.size(); ++i)
-    localEnergy += H[i]->evaluateWithIonDerivs(P, ions, psi, hf_term, pulay_terms);
+    H[i]->evaluateIonDerivs(P, ions, psi, hf_term, pulay_terms);
 
   for (int iat = 0; iat < ions.getTotalNum(); iat++)
   {
     wfgradraw_[iat] = psi.evalGradSource(P, ions, iat);
     convertToReal(wfgradraw_[iat], wf_grad[iat]);
   }
-  return localEnergy;
-}
-
-QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministic(ParticleSet& P,
-                                                                                ParticleSet& ions,
-                                                                                TrialWaveFunction& psi,
-                                                                                ParticleSet::ParticlePos& hf_term,
-                                                                                ParticleSet::ParticlePos& pulay_terms,
-                                                                                ParticleSet::ParticlePos& wf_grad)
-{
-  ParticleSet::ParticleGradient wfgradraw_(ions.getTotalNum());
-  wfgradraw_           = 0.0;
-  RealType localEnergy = 0.0;
-
-  for (int i = 0; i < H.size(); ++i)
-    localEnergy += H[i]->evaluateWithIonDerivsDeterministic(P, ions, psi, hf_term, pulay_terms);
-
-  for (int iat = 0; iat < ions.getTotalNum(); iat++)
-  {
-    wfgradraw_[iat] = psi.evalGradSource(P, ions, iat);
-    convertToReal(wfgradraw_[iat], wf_grad[iat]);
-  }
-  return localEnergy;
 }
 
 QMCHamiltonian::FullPrecRealType QMCHamiltonian::getEnsembleAverage()
@@ -988,46 +954,25 @@ void QMCHamiltonian::setRandomGenerator(RandomBase<FullPrecRealType>* rng)
     H[i]->setRandomGenerator(rng);
   for (int i = 0; i < auxH.size(); i++)
     auxH[i]->setRandomGenerator(rng);
-  if (nlpp_ptr)
-    nlpp_ptr->setRandomGenerator(rng);
 }
 
-void QMCHamiltonian::setNonLocalMoves(xmlNodePtr cur)
+int QMCHamiltonian::makeNonLocalMoves(ParticleSet& P, NonLocalTOperator& move_op)
 {
-  if (nlpp_ptr != nullptr)
-    nlpp_ptr->setNonLocalMoves(cur);
-}
-
-void QMCHamiltonian::setNonLocalMoves(const std::string& non_local_move_option,
-                                      const double tau,
-                                      const double alpha,
-                                      const double gamma)
-{
-  if (nlpp_ptr != nullptr)
-    nlpp_ptr->setNonLocalMoves(non_local_move_option, tau, alpha, gamma);
-}
-
-int QMCHamiltonian::makeNonLocalMoves(ParticleSet& P)
-{
-  if (nlpp_ptr == nullptr)
-    return 0;
-  else
-    return nlpp_ptr->makeNonLocalMovesPbyP(P);
+  int num_moves = 0;
+  for (int i = 0; i < H.size(); ++i)
+    num_moves += H[i]->makeNonLocalMovesPbyP(P, move_op);
+  return num_moves;
 }
 
 
 std::vector<int> QMCHamiltonian::mw_makeNonLocalMoves(const RefVectorWithLeader<QMCHamiltonian>& ham_list,
                                                       const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                                      const RefVectorWithLeader<ParticleSet>& p_list)
+                                                      const RefVectorWithLeader<ParticleSet>& p_list,
+                                                      NonLocalTOperator& move_op)
 {
-  auto& ham_leader = ham_list.getLeader();
-
   std::vector<int> num_accepts(ham_list.size(), 0);
-  if (ham_list.getLeader().nlpp_ptr)
-  {
-    for (int iw = 0; iw < ham_list.size(); ++iw)
-      num_accepts[iw] = ham_list[iw].nlpp_ptr->makeNonLocalMovesPbyP(p_list[iw]);
-  }
+  for (int iw = 0; iw < ham_list.size(); ++iw)
+    num_accepts[iw] = ham_list[iw].makeNonLocalMoves(p_list[iw], move_op);
   return num_accepts;
 }
 
@@ -1093,12 +1038,12 @@ RefVectorWithLeader<OperatorBase> QMCHamiltonian::extract_HC_list(const RefVecto
   return HC_list;
 }
 
-QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministicFast(ParticleSet& P,
-                                                                                    ParticleSet& ions,
-                                                                                    TrialWaveFunction& psi_in,
-                                                                                    TWFFastDerivWrapper& psi_wrapper_in,
-                                                                                    ParticleSet::ParticlePos& dEdR,
-                                                                                    ParticleSet::ParticlePos& wf_grad)
+void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
+                                           ParticleSet& ions,
+                                           TrialWaveFunction& psi_in,
+                                           TWFFastDerivWrapper& psi_wrapper_in,
+                                           ParticleSet::ParticlePos& dEdR,
+                                           ParticleSet::ParticlePos& wf_grad)
 {
   ScopedTimer local_timer(eval_ion_derivs_fast_timer_);
   P.update();
@@ -1189,38 +1134,24 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministicF
   ParticleSet::ParticleGradient dedr_complex(ions.getTotalNum());
   ParticleSet::ParticlePos pulayterms_(ions.getTotalNum());
   ParticleSet::ParticlePos hfdiag_(ions.getTotalNum());
-  wfgradraw_           = 0.0;
-  RealType localEnergy = 0.0;
+  wfgradraw_ = 0.0;
 
   {
     psi_wrapper_in.getM(P, M_);
-  }
-  {
     psi_wrapper_in.getGSMatrices(M_, M_gs_);
     psi_wrapper_in.invertMatrices(M_gs_, Minv_);
   }
+
   //Build B-matrices.  Only for non-diagonal observables right now.
   for (int i = 0; i < H.size(); ++i)
-  {
     if (H[i]->dependsOnWaveFunction())
-    {
       H[i]->evaluateOneBodyOpMatrix(P, psi_wrapper_in, B_);
-    }
     else
-    {
-      localEnergy += H[i]->evaluateWithIonDerivsDeterministic(P, ions, psi_in, hfdiag_, pulayterms_);
-    }
-  }
+      H[i]->evaluateIonDerivs(P, ions, psi_in, hfdiag_, pulayterms_);
 
-  ValueType nondiag_cont   = 0.0;
-  RealType nondiag_cont_re = 0.0;
-
-  psi_wrapper_in.getGSMatrices(B_, B_gs_);
-  nondiag_cont = psi_wrapper_in.trAB(Minv_, B_gs_);
-  convertToReal(nondiag_cont, nondiag_cont_re);
-  localEnergy += nondiag_cont_re;
 
   {
+    psi_wrapper_in.getGSMatrices(B_, B_gs_);
     psi_wrapper_in.buildX(Minv_, B_gs_, X_);
   }
   //And now we compute the 3N force derivatives.  3 at a time for each atom.
@@ -1243,13 +1174,10 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministicF
       //ion derivative of slater matrix.
       psi_wrapper_in.getIonGradM(P, ions, iat, dM_);
     }
+
     for (int i = 0; i < H.size(); ++i)
-    {
       if (H[i]->dependsOnWaveFunction())
-      {
         H[i]->evaluateOneBodyOpMatrixForceDeriv(P, ions, psi_wrapper_in, iat, dB_);
-      }
-    }
 
     for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
@@ -1268,6 +1196,5 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministicF
     convertToReal(wfgradraw_[iat], wf_grad[iat]);
   }
   dEdR += hfdiag_;
-  return localEnergy;
 }
 } // namespace qmcplusplus

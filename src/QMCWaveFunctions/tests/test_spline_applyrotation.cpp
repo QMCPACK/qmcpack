@@ -35,7 +35,7 @@ TEST_CASE("Spline applyRotation zero rotation", "[wavefunction]")
   Communicate* c = OHMMS::Controller;
 
   // diamondC_1x1x1
-  ParticleSet::ParticleLayout lattice;
+  Lattice lattice;
   lattice.R = {3.37316115, 3.37316115, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
 
   ParticleSetPool ptcl = ParticleSetPool(c);
@@ -64,16 +64,17 @@ TEST_CASE("Spline applyRotation zero rotation", "[wavefunction]")
 
   // Load diamondC_1x1x1 wfn and explicitly construct a SplineC2C object with 7 orbitals
   // This results in padding of the spline coefs table and thus is a more stringent test.
-  const char* particles = R"(<tmp>
-<determinantset type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" gpu="no" precision="double" size="7"/>
-</tmp>)";
+  const char* particles = R"(
+<sposet_collection type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" gpu="no" precision="double">
+  <sposet name="updet" size="7"/>
+</sposet_collection>)";
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);
   REQUIRE(okay);
   xmlNodePtr root = doc.getRoot();
   xmlNodePtr ein1 = xmlFirstElementChild(root);
-  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, ein1);
+  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, root);
   auto spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo);
 
@@ -170,7 +171,7 @@ TEST_CASE("Spline applyRotation one rotation", "[wavefunction]")
   Communicate* c = OHMMS::Controller;
 
   // diamondC_1x1x1
-  ParticleSet::ParticleLayout lattice;
+  Lattice lattice;
   lattice.R = {3.37316115, 3.37316115, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
 
   ParticleSetPool ptcl = ParticleSetPool(c);
@@ -199,16 +200,17 @@ TEST_CASE("Spline applyRotation one rotation", "[wavefunction]")
 
   // Load diamondC_1x1x1 wfn and explicitly construct a SplineC2C object with 7 orbitals
   // This results in padding of the spline coefs table and thus is a more stringent test.
-  const char* particles = R"(<tmp>
-<determinantset type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" gpu="no" precision="double" size="7"/>
-</tmp>)";
+  const char* particles = R"(
+<sposet_collection type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" gpu="no" precision="double">
+  <sposet name="updet" size="7"/>
+</sposet_collection>)";
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);
   REQUIRE(okay);
   xmlNodePtr root = doc.getRoot();
   xmlNodePtr ein1 = xmlFirstElementChild(root);
-  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, ein1);
+  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, root);
   auto spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo);
 
@@ -378,7 +380,7 @@ TEST_CASE("Spline applyRotation two rotations", "[wavefunction]")
   Communicate* c = OHMMS::Controller;
 
   // diamondC_1x1x1
-  ParticleSet::ParticleLayout lattice;
+  Lattice lattice;
   lattice.R = {3.37316115, 3.37316115, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
 
   ParticleSetPool ptcl = ParticleSetPool(c);
@@ -407,16 +409,17 @@ TEST_CASE("Spline applyRotation two rotations", "[wavefunction]")
 
   // Load diamondC_1x1x1 wfn and explicitly construct a SplineC2C object with 7 orbitals
   // This results in padding of the spline coefs table and thus is a more stringent test.
-  const char* particles = R"(<tmp>
-<determinantset type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" gpu="no" precision="double" size="7"/>
-</tmp>)";
+  const char* particles = R"(
+<sposet_collection type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" gpu="no" precision="double">
+  <sposet name="updet" size="7"/>
+</sposet_collection>)";
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);
   REQUIRE(okay);
   xmlNodePtr root = doc.getRoot();
   xmlNodePtr ein1 = xmlFirstElementChild(root);
-  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, ein1);
+  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, root);
   auto spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo);
 
@@ -681,7 +684,7 @@ TEST_CASE("Spline applyRotation complex rotation", "[wavefunction]")
   Communicate* c = OHMMS::Controller;
 
   // diamondC_1x1x1
-  ParticleSet::ParticleLayout lattice;
+  Lattice lattice;
   lattice.R = {3.37316115, 3.37316115, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
 
   ParticleSetPool ptcl = ParticleSetPool(c);
@@ -710,16 +713,17 @@ TEST_CASE("Spline applyRotation complex rotation", "[wavefunction]")
 
   // Load diamondC_1x1x1 wfn and explicitly construct a SplineC2C object with 7 orbitals
   // This results in padding of the spline coefs table and thus is a more stringent test.
-  const char* particles = R"(<tmp>
-<determinantset type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" gpu="no" precision="double" size="7"/>
-</tmp>)";
+  const char* particles = R"(
+<sposet_collection type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" gpu="no" precision="double">
+  <sposet name="updet" size="7"/>
+</sposet_collection>)";
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);
   REQUIRE(okay);
   xmlNodePtr root = doc.getRoot();
   xmlNodePtr ein1 = xmlFirstElementChild(root);
-  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, ein1);
+  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, root);
   auto spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo);
 

@@ -499,9 +499,9 @@ class QMCDensityRadialProcessor(QDRBase):
                     r = opt.radii[0]
                 #end if
                 if not show_error:
-                    self.log('{} Value of {} Species at Cutoff {} is: {}\n'.format(cstr,at,r,rdens.tot[at].density[-1]))
+                    self.log('{} Value of {} Species at Cutoff {} is: {:.8f}\n'.format(cstr,at,r,rdens.tot[at].density[-1]))
                 else:
-                    self.log('{} Value of {} Species at Cutoff {} is: {}+/-{}\n'.format(cstr,at,r,rdens.tot[at].density[-1],std_dict[at]))
+                    self.log('{} Value of {} Species at Cutoff {} is: {:.8f} +/- {:.8f}\n'.format(cstr,at,r,rdens.tot[at].density[-1],std_dict[at]))
                 #end if
             #end for
         else:
@@ -514,9 +514,9 @@ class QMCDensityRadialProcessor(QDRBase):
                     r = opt.radii[0]
                 #end if
                 if not show_error:
-                    self.log('{} Value of {} Species at Cutoff {} is: {}\n'.format(cstr,at,r,rdens.tot[at].density[-1]))
+                    self.log('{} Value of {} Species at Cutoff {} is: {:.8f}\n'.format(cstr,at,r,rdens.tot[at].density[-1]))
                 else:
-                    self.log('{} Value of {} Species at Cutoff {} is: {}+/-{}\n'.format(cstr,at,r,rdens.tot[at].density[-1],std_dict[at]))
+                    self.log('{} Value of {} Species at Cutoff {} is: {:.8f} +/- {:.8f}\n'.format(cstr,at,r,rdens.tot[at].density[-1],std_dict[at]))
                 #end if
             #end for
         #end if

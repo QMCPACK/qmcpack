@@ -48,6 +48,7 @@ class MCWalkerConfiguration;
 class TrialWaveFunction;
 class QMCHamiltonian;
 class ResourceCollection;
+class NonLocalTOperator;
 struct NonLocalData;
 
 /** @ingroup hamiltonian
@@ -343,24 +344,8 @@ public:
                                                Vector<ValueType>& dhpsioverpsi);
 
   /** 
-   * @brief Evaluate contribution to local energy  and derivatives w.r.t ionic coordinates from OperatorBase.  
-
-   * @param P target particle set (electrons)
-   * @param ions source particle set (ions)
-   * @param psi Trial wave function
-   * @param hf_terms  Adds OperatorBase's contribution to Re [(dH)Psi]/Psi
-   * @param pulay_terms Adds OperatorBase's contribution to Re [(H-E_L)dPsi]/Psi 
-   * @return Contribution of OperatorBase to Local Energy.
-   */
-  virtual Return_t evaluateWithIonDerivs(ParticleSet& P,
-                                         ParticleSet& ions,
-                                         TrialWaveFunction& psi,
-                                         ParticleSet::ParticlePos& hf_term,
-                                         ParticleSet::ParticlePos& pulay_term);
-
-  /** 
    * @brief Evaluate contribution to local energy  and derivatives w.r.t ionic coordinates from OperatorBase.
-   * If there's no stochastic component, defaults to evaluateWithIonDerivs.
+   * If there's no stochastic component, defaults to evaluateIonDerivs.
    * If not otherwise specified, this defaults to evaluate().
 
    * @param P target particle set (electrons)
@@ -368,13 +353,12 @@ public:
    * @param psi Trial wave function
    * @param hf_terms  Adds OperatorBase's contribution to Re [(dH)Psi]/Psi
    * @param pulay_terms Adds OperatorBase's contribution to Re [(H-E_L)dPsi]/Psi 
-   * @return Contribution of OperatorBase to Local Energy.
    */
-  virtual Return_t evaluateWithIonDerivsDeterministic(ParticleSet& P,
-                                                      ParticleSet& ions,
-                                                      TrialWaveFunction& psi,
-                                                      ParticleSet::ParticlePos& hf_term,
-                                                      ParticleSet::ParticlePos& pulay_term);
+  virtual void evaluateIonDerivs(ParticleSet& P,
+                                 ParticleSet& ions,
+                                 TrialWaveFunction& psi,
+                                 ParticleSet::ParticlePos& hf_term,
+                                 ParticleSet::ParticlePos& pulay_term);
 
   /** 
    * @brief Evaluate "B" matrix for observable.  Filippi scheme for computing fast derivatives.
@@ -405,6 +389,13 @@ public:
                                                         const int iat,
                                                         std::vector<std::vector<ValueMatrix>>& Bforce)
   {}
+
+  /** make non local moves with particle-by-particle moves
+   * @param P particle set
+   * @return the number of accepted moves
+   */
+  virtual int makeNonLocalMovesPbyP(ParticleSet& P, NonLocalTOperator& move_op) { return 0; }
+
   /** 
    * @brief Update data associated with a particleset.
    * Default implementation does nothing. Only A-A interactions for s needs to implement its own method.
@@ -568,8 +559,6 @@ protected:
   virtual void checkoutParticleQuantities(TraceManager& tm);
   virtual void deleteParticleQuantities();
 #endif
-
-  virtual void setComputeForces(bool compute);
 
   /**
    * @brief Set the Energy Domain

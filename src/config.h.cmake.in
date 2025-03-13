@@ -18,7 +18,7 @@
 #define QMCPACK_VERSION_PATCH  @qmcpack_VERSION_PATCH@
 
 /* define the release version */
-#cmakedefine QMCPACK_RELEASE  @QMCAPCK_RELEASE@
+#cmakedefine QMCPACK_RELEASE  @QMCPACK_RELEASE@
 
 /* define the git last commit date */
 // #cmakedefine QMCPLUSPLUS_LAST_CHANGED_DATE  "@QMCPLUSPLUS_LAST_CHANGED_DATE@"
@@ -32,7 +32,7 @@
 /* define PRINT_DEBUG */
 #cmakedefine PRINT_DEBUG @PRINT_DEBUG@
 
-/* Enable OpenMP offload. */
+/* build OpenMP target offload source code acceleration */
 #cmakedefine ENABLE_OFFLOAD @ENABLE_OFFLOAD@
 
 #ifdef ENABLE_OFFLOAD
@@ -105,10 +105,10 @@
 /* Disable hipHostRegister/hipHostUnregister */
 #cmakedefine QMC_DISABLE_HIP_HOST_REGISTER @QMC_DISABLE_HIP_HOST_REGISTER@
 
-/* Using CUDA for GPU execution, next generation */
+/* build CUDA source code or call libraries from CUDA toolkit for GPU acceleration */
 #cmakedefine ENABLE_CUDA @ENABLE_CUDA@
 
-/* Using SYCL for GPU execution */
+/* build SYCL source code for GPU acceleration */
 #cmakedefine ENABLE_SYCL @ENABLE_SYCL@
 
 /* Using boost::stacktrace */
@@ -119,9 +119,6 @@
 
 /* For AFQMC compilation  */
 #cmakedefine BUILD_AFQMC_WITH_NCCL @BUILD_AFQMC_WITH_NCCL@
-
-/* For FCIQMC compilation  */
-#cmakedefine BUILD_FCIQMC @BUILD_FCIQMC@
 
 #cmakedefine DEBUG_PSIBUFFER_ON @DEBUG_PSIBUFFER_ON@
 

@@ -132,7 +132,12 @@ set(FERMION_SRCS
     TWFFastDerivWrapper.cpp
     TWFGrads.cpp
     WaveFunctionFactory.cpp)
-set(FERMION_OMPTARGET_SRCS ${FERMION_OMPTARGET_SRCS} Fermion/MultiSlaterDetTableMethod.cpp)
+
+set(FERMION_OMPTARGET_SRCS ${FERMION_OMPTARGET_SRCS} Fermion/MultiSlaterDetTableMethod.cpp Fermion/DiracMatrixInverterOMPTarget.cpp)
+
+if(ENABLE_CUDA)
+  set(FERMION_SRCS ${FERMION_SRCS} Fermion/DiracMatrixInverterCUDA.cpp)
+endif()
 
 ####################################
 # create libqmcwfs
@@ -151,8 +156,6 @@ add_library(qmcwfs_omptarget OBJECT ${JASTROW_OMPTARGET_SRCS} ${FERMION_OMPTARGE
 
 target_include_directories(qmcwfs_omptarget PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(qmcwfs_omptarget PUBLIC qmcutil qmcparticle containers platform_LA)
-
-target_compile_options(qmcwfs_omptarget PRIVATE "$<$<BOOL:${ENABLE_OFFLOAD_CLANG_DEBUG_O3}>:$<$<CONFIG:DEBUG>:-O3>>")
 
 target_link_libraries(qmcwfs PUBLIC qmcwfs_omptarget)
 

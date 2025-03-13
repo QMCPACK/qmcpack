@@ -54,10 +54,23 @@ from developer import DevBase,to_str
 from nexus_base import NexusCore,nexus_core
 from execute import execute
 from debug import *
-from imp import load_source
-
 
 import re,subprocess
+
+import importlib.util
+import importlib.machinery
+
+def our_load_source(modname, filename):
+    """" Replacement for the deprecated imp.load_source function"""
+    loader = importlib.machinery.SourceFileLoader(modname, filename)
+    spec = importlib.util.spec_from_file_location(modname, filename, loader=loader)
+    module = importlib.util.module_from_spec(spec)
+    # The module is always executed and not cached in sys.modules.
+    # Uncomment the following line to cache the module.
+    # sys.modules[module.__name__] = module
+    loader.exec_module(module)
+    return module
+
 def cpu_count():
     """ Number of virtual or physical CPUs on this system, i.e.
     user/real as output by time(1) when called with an optimally scaling
@@ -1306,7 +1319,12 @@ class Supercomputer(Machine):
                                  S = 'suspended',
                                  T = 'transferring',
                                  W = 'waiting',
-                                 C = 'complete'
+                                 C = 'complete', 
+                                 F = 'complete',
+                                 B = 'has_subjob',
+                                 M = 'moved_to_another_server',
+                                 U = 'user_suspended',
+                                 X = 'subjob_completed',
                                  )
         elif self.queue_querier=='qstata':
             #already gives status as queued, running, etc.
@@ -1533,6 +1551,8 @@ class Supercomputer(Machine):
 	        )
         elif launcher=='jsrun': # Summit
             None # Summit class takes care of this in post_process_job
+        elif launcher=='lrun': # Lassen
+            None # Lassen class takes care of this in post_process_job
         else:
             self.error(launcher+' is not yet implemented as an application launcher')
         #end if
@@ -1818,7 +1838,7 @@ class Supercomputer(Machine):
 
     def setup_environment(self,job):
         env = ''
-        if job.env!=None:
+        if job.env is not None:
             for name,val in job.env.items():
                 env +='export {0}={1}\n'.format(name,val)
             #end for
@@ -1932,13 +1952,12 @@ class Clustername(Supercomputer):
 Clustername(      4,   1,    16,   24,    4, 'mpirun',     'qsub',   'qstat',    'qdel')
 '''
 try:
-    load_source('*',os.path.expanduser('~/.nexus/local_machines.py'))
+    our_load_source('*',os.path.expanduser('~/.nexus/local_machines.py'))
 except IOError:
     pass
 except:
     raise
 #end try
-
 
 class Kraken(Supercomputer):
 
@@ -2009,9 +2028,7 @@ export MPI_MSGS_PER_PROC=32768
 
 
 class Golub(Supercomputer):
-
     name = 'golub'
-
     def write_job_header(self,job):
         if job.queue is None:
             job.queue='secondary'
@@ -2032,8 +2049,7 @@ cd ${PBS_O_WORKDIR}
 '''
         return c
     #end def write_job_header
-
-#end class Taub
+#end class Golub
 
 
 
@@ -2775,7 +2791,7 @@ class SnlMachine(Supercomputer):
 
     #for mpiexec
     def post_process_job(self,job):
-        job.run_options.add(bindto="--bind-to core",npernode="--npernode {}".format(job.processes_per_node))
+        job.run_options.add(bindto="--bind-to none",npernode="--npernode {}".format(job.processes_per_node))
 
     def write_job_header(self,job):
         if job.queue is None:
@@ -2857,6 +2873,8 @@ class Uno(SnlMachine):
 class Solo(SnlMachine):
     name = 'solo'
 #end class Solo
+
+
 
 # machines at LRZ  https://www.lrz.de/english/
 class SuperMUC(Supercomputer):
@@ -3078,7 +3096,7 @@ class Stampede2(Supercomputer):
 #end class Stampede2
 
 
-
+# CADES at ORNL
 class CadesMoab(Supercomputer):
     name = 'cades_moab'
     requires_account = True
@@ -3156,6 +3174,73 @@ class CadesSlurm(Supercomputer):
 
 
 
+# Inti at ORNL
+class Inti(Supercomputer):
+    name = 'inti'
+    requires_account = False
+    batch_capable    = True
+
+    def write_job_header(self,job):
+        if job.queue is None:
+            job.queue = 'QMCREGULAR'
+        #end if
+
+        c  = '#!/bin/bash\n'
+        # c += '#SBATCH -A {}\n'.format(job.account)
+        c += '#SBATCH -p {}\n'.format(job.queue)
+        c += '#SBATCH -J {}\n'.format(job.name)
+        c += '#SBATCH -t {}\n'.format(job.sbatch_walltime())
+        c += '#SBATCH -N {}\n'.format(job.nodes)
+        c += '#SBATCH --ntasks-per-node={0}\n'.format(job.processes_per_node)
+        c += '#SBATCH --cpus-per-task={0}\n'.format(job.threads)
+        c += '#SBATCH --mem=0\n' # required on Cades
+        c += '#SBATCH -o '+job.outfile+'\n'
+        c += '#SBATCH -e '+job.errfile+'\n'
+        c += '#SBATCH --exclusive\n'
+        if job.user_env:
+            c += '#SBATCH --export=ALL\n'   # equiv to PBS -V
+        else:
+            c += '#SBATCH --export=NONE\n'
+        #end if
+
+        return c
+    #end def write_job_header
+#end class Inti
+
+
+# Baseline at ORNL https://docs.cades.olcf.ornl.gov/baseline_user_guide/baseline_user_guide.html
+class Baseline(Supercomputer):
+    name = 'baseline'
+    requires_account = True
+    batch_capable    = True
+
+    def write_job_header(self,job):
+        if job.queue is None:
+            job.queue = 'batch_cnms'
+        #end if
+
+        c  = '#!/bin/bash\n'
+        c += '#SBATCH -A {}\n'.format(job.account)
+        c += '#SBATCH -p {}\n'.format(job.queue)
+        c += '#SBATCH -J {}\n'.format(job.name)
+        c += '#SBATCH -t {}\n'.format(job.sbatch_walltime())
+        c += '#SBATCH -N {}\n'.format(job.nodes)
+        c += '#SBATCH --ntasks-per-node={0}\n'.format(job.processes_per_node)
+        c += '#SBATCH --cpus-per-task={0}\n'.format(job.threads)
+        c += '#SBATCH -o '+job.outfile+'\n'
+        c += '#SBATCH -e '+job.errfile+'\n'
+        if job.user_env:
+            c += '#SBATCH --export=ALL\n'   # equiv to PBS -V
+        else:
+            c += '#SBATCH --export=NONE\n'
+        #end if
+
+        return c
+    #end def write_job_header
+#end class Baseline
+
+
+# Summit at ORNL
 class Summit(Supercomputer):
 
     name = 'summit'
@@ -3322,6 +3407,7 @@ class Rhea(Supercomputer):
 #end class Rhea
 
 
+# Andes at ORNL
 ## Added 19/03/2021 by A Zen
 class Andes(Supercomputer):
 
@@ -3520,6 +3606,7 @@ class Tomcat3(Supercomputer):
 
 
 
+# Polaris at ANL
 class Polaris(Supercomputer):
     name = 'polaris'
     requires_account = True
@@ -3581,6 +3668,57 @@ class Polaris(Supercomputer):
     #end def specialized_bundle_commands
 #end class Polaris
 
+
+
+# Improv at ANL (LCRC)
+class Improv(Supercomputer):
+    name = 'improv'
+    requires_account = True
+    batch_capable    = True
+
+    def post_process_job(self,job):
+        if len(job.run_options)==0: 
+            opt = obj(
+                mapby   = '--map-by ppr:{}:package'.format(job.processes_per_proc),
+                bindto = '--bind-to socket',
+                )
+            job.run_options.add(**opt)
+        #end if
+        if job.threads>1 and job.env is None:
+            job.set_environment(
+                OMP_PLACES    = 'cores',
+                OMP_PROC_BIND = 'close',
+                )
+        #end if
+
+    #end def post_process_job
+
+    def write_job_header(self,job):
+        if job.queue is None:
+            job.queue = 'compute'
+        #end if
+        c= '#!/bin/bash -l\n'
+        if job.threads>1:
+            c+='#PBS -l select={}:ncpus=128:mpiprocs={}:ompthreads={}\n'.format(job.nodes,job.processes_per_node,job.threads)
+        else:
+            c+='#PBS -l select={}:ncpus=128:mpiprocs={}\n'.format(job.nodes,job.processes)
+        #end if
+        c+='#PBS -l walltime={}\n'.format(job.pbs_walltime())
+        c+='#PBS -A {}\n'.format(job.account)
+        c+='#PBS -q {}\n'.format(job.queue)
+        c+='#PBS -N {0}\n'.format(job.name)
+        c+='#PBS -k doe\n'
+        c+='#PBS -o {0}\n'.format(job.outfile)
+        c+='#PBS -e {0}\n'.format(job.errfile)
+        c+='\n'
+        c+='cd ${PBS_O_WORKDIR}\n'
+        return c
+    #end def write_job_header
+#end class Improv
+
+
+
+# Kagayaki at JAIST
 ## Added 05/04/2023 by Tom Ichibha
 class Kagayaki(Supercomputer):
     name = 'kagayaki'
@@ -3611,7 +3749,146 @@ class Kagayaki(Supercomputer):
         c+='export OMP_NUM_THREADS=' + str(job.threads) + '\n'
         return c
     #end def write_job_header                                                                       
-#end class CadesMoab
+#end class Kagayaki
+
+
+
+# Kestrel at NREL
+class Kestrel(Supercomputer):
+    name = 'kestrel'
+    requires_account = True
+    batch_capable    = True
+
+    def write_job_header(self,job):
+        if job.queue is None:
+            job.queue = 'regular'
+        #end if
+        c='#!/bin/bash\n'
+        c+='#SBATCH -A '+job.account+'\n'
+        c+='#SBATCH -p '+job.queue+'\n'
+        c+='#SBATCH -J '+str(job.name)+'\n'
+        c+='#SBATCH -t '+job.sbatch_walltime()+'\n'
+        c+='#SBATCH -N '+str(job.nodes)+'\n'
+        c+='#SBATCH --ntasks-per-node={0}\n'.format(job.processes_per_node)
+        c+='#SBATCH --cpus-per-task={0}\n'.format(job.threads)
+        c+='#SBATCH -o '+job.outfile+'\n'
+        c+='#SBATCH -e '+job.errfile+'\n'
+        if job.user_env:
+            c+='#SBATCH --export=ALL\n'   # equiv to PBS -V
+        else:
+            c+='#SBATCH --export=NONE\n'
+        #end if
+        c+='''
+echo $SLURM_SUBMIT_DIR
+cd $SLURM_SUBMIT_DIR
+'''
+        return c
+    #end def write_job_header
+#end class Kestrel
+
+
+
+# Lassen at LLNL
+class Lassen(Supercomputer):
+
+    name = 'lassen'
+    requires_account = True
+    batch_capable    = True
+
+    def post_process_job(self,job):
+        # add the options only if the user has not supplied options
+        if len(job.run_options)==0:
+            opt = obj(
+                nodes = '-N {}'.format(job.nodes),
+                tasks = '-T {}'.format(job.processes_per_node),
+                )
+            if job.threads>1:
+                opt.threads = '--threads={}'.format(job.threads)
+            #end if
+            if job.gpus is None:
+                job.gpus = 4# gpus to use per node
+            #end if
+            #if job.alloc_flags is None:
+            #    job.alloc_flags = 'smt1'
+            ##end if
+            if job.gpus==0:
+                None
+            else:
+                opt.mgpu = '-M "-gpu"'
+            #end if
+            job.run_options.add(**opt)
+        #end if
+    #end def post_process_job
+
+    def write_job_header(self,job):
+        c ='#!/bin/bash\n'
+        c+='#BSUB -G {0}\n'.format(job.account)
+        if job.queue is not None:
+            c+='#BSUB -q {0}\n'.format(job.queue)
+        #end if
+        c+='#BSUB -J {0}\n'.format(job.name)
+        c+='#BSUB -o {0}\n'.format(job.outfile)
+        c+='#BSUB -e {0}\n'.format(job.errfile)
+        c+='#BSUB -W {0}\n'.format(job.lsf_walltime())
+        c+='#BSUB -nnodes {0}\n'.format(job.nodes)
+        #if job.alloc_flags is not None:
+        #    c+='#BSUB -alloc_flags "{0}"\n'.format(job.alloc_flags)
+        ##end if
+        return c
+    #end def write_job_header
+
+    def read_process_id(self,output):
+        pid = None
+        tokens = output.split()
+        for t in tokens:
+            if t.startswith('<'):
+                spid = t.strip('<>').strip()
+                if spid.isdigit():
+                    pid = int(spid)
+                    break
+                #end if
+            #end if
+        #end for
+        return pid
+    #end def read_process_id
+#end class Lassen
+
+
+# Ruby at LLNL
+class Ruby(Supercomputer):
+    name = 'ruby'
+    requires_account = True
+    batch_capable    = True
+
+    def write_job_header(self,job):
+        if job.queue is None:
+            job.queue = 'regular'
+        #end if
+        c='#!/bin/bash\n'
+        c+='#SBATCH -A '+job.account+'\n'
+        c+='#SBATCH -p '+job.queue+'\n'
+        c+='#SBATCH -J '+str(job.name)+'\n'
+        c+='#SBATCH -t '+job.sbatch_walltime()+'\n'
+        c+='#SBATCH -N '+str(job.nodes)+'\n'
+        c+='#SBATCH --ntasks-per-node={0}\n'.format(job.processes_per_node)
+        c+='#SBATCH --cpus-per-task={0}\n'.format(job.threads)
+        c+='#SBATCH -o '+job.outfile+'\n'
+        c+='#SBATCH -e '+job.errfile+'\n'
+        if job.user_env:
+            c+='#SBATCH --export=ALL\n' 
+        else:
+            c+='#SBATCH --export=NONE\n'
+        #end if
+        c+='''
+echo $SLURM_SUBMIT_DIR
+cd $SLURM_SUBMIT_DIR
+'''
+        return c
+    #end def write_job_header
+#end class Ruby
+
+
+
 
 
 #Known machines
@@ -3621,7 +3898,6 @@ for cores in range(1,128+1):
 #end for
 #  supercomputers and clusters
 #            nodes sockets cores ram qslots  qlaunch  qsubmit     qstatus    qdelete
-Kagayaki(      240,   2,    64,  512,   20, 'mpirun',     'qsub',   'qstat',    'qdel')
 Jaguar(      18688,   2,     8,   32,  100,  'aprun',     'qsub',   'qstat',    'qdel')
 Kraken(       9408,   2,     6,   16,  100,  'aprun',     'qsub',   'qstat',    'qdel')
 Golub(          512,  2,     6,   32, 1000, 'mpirun',     'qsub',   'qstat',    'qdel')
@@ -3640,15 +3916,15 @@ Lonestar(    22656,   2,     6,   12,  128,  'ibrun',     'qsub',   'qstat',    
 Matisse(        20,   2,     8,   64,    2, 'mpirun',   'sbatch',   'sacct', 'scancel')
 Komodo(         24,   2,     6,   48,    2, 'mpirun',   'sbatch',   'sacct', 'scancel')
 Amos(         5120,   1,    16,   16,  128,   'srun',   'sbatch',   'sacct', 'scancel')
-Chama(        1232,   2,     8,   64, 1000,   'mpiexec',   'sbatch',  'squeue', 'scancel')
-Uno(           168,   2,     8,  128, 1000,   'mpiexec',   'sbatch',  'squeue', 'scancel')
-Eclipse(      1488,   2,    18,  128, 1000,   'mpiexec',   'sbatch',  'squeue', 'scancel')
-Attaway(      1488,   2,    18,  192, 1000,   'mpiexec',   'sbatch',  'squeue', 'scancel')
-Manzano(      1488,   2,    24,  192, 1000,   'mpiexec',   'sbatch',  'squeue', 'scancel')
-Ghost(         740,   2,    18,  128, 1000,   'mpiexec',   'sbatch',  'squeue', 'scancel')
-Amber(        1496,   2,    56,  256, 1000,   'mpiexec',   'sbatch',  'squeue', 'scancel')
-Skybridge(    1848,   2,     8,   64, 1000,   'mpiexec',   'sbatch',  'squeue', 'scancel')
-Solo(          374,   2,    18,  128, 1000,   'mpiexec',   'sbatch',  'squeue', 'scancel')
+Chama(        1232,   2,     8,   64, 1000,'mpiexec',   'sbatch',  'squeue', 'scancel')
+Uno(           168,   2,     8,  128, 1000,'mpiexec',   'sbatch',  'squeue', 'scancel')
+Eclipse(      1488,   2,    18,  128, 1000,'mpiexec',   'sbatch',  'squeue', 'scancel')
+Attaway(      1488,   2,    18,  192, 1000,'mpiexec',   'sbatch',  'squeue', 'scancel')
+Manzano(      1488,   2,    24,  192, 1000,'mpiexec',   'sbatch',  'squeue', 'scancel')
+Ghost(         740,   2,    18,  128, 1000,'mpiexec',   'sbatch',  'squeue', 'scancel')
+Amber(        1496,   2,    56,  256, 1000,'mpiexec',   'sbatch',  'squeue', 'scancel')
+Skybridge(    1848,   2,     8,   64, 1000,'mpiexec',   'sbatch',  'squeue', 'scancel')
+Solo(          374,   2,    18,  128, 1000,'mpiexec',   'sbatch',  'squeue', 'scancel')
 SuperMUC(      512,   1,    28,  256,    8,'mpiexec', 'llsubmit',     'llq','llcancel')
 Stampede2(    4200,   1,    68,   96,   50,  'ibrun',   'sbatch',  'squeue', 'scancel')
 CadesMoab(     156,   2,    18,  128,  100, 'mpirun',     'qsub',   'qstat',    'qdel')
@@ -3660,7 +3936,14 @@ Tomcat3(         8,   1,    64,  192, 1000, 'mpirun',   'sbatch',   'sacct', 'sc
 SuperMUC_NG(  6336,   1,    48,   96, 1000,'mpiexec',   'sbatch',   'sacct', 'scancel')
 Archer2(      5860,   2,    64,  512, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
 Polaris(       560,   1,    32,  512,    8,'mpiexec',     'qsub',   'qstat',    'qdel')
+Kagayaki(      240,   2,    64,  512,   20, 'mpirun',     'qsub',   'qstat',    'qdel')
 Perlmutter(   3072,   2,   128,  512, 5000,   'srun',   'sbatch',  'squeue', 'scancel')
+Improv(        825,   2,    64,  256,  100, 'mpirun',     'qsub',   'qstat',    'qdel')
+Lassen(        756,   2,    21,  512,  100,   'lrun',     'bsub',   'bjobs',   'bkill')
+Ruby(         1480,   2,    28,  192,  100,   'srun',   'sbatch',  'squeue', 'scancel')
+Kestrel(      2144,   2,    52,  256,  100,   'srun',   'sbatch',  'squeue', 'scancel')
+Inti(           13,   2,    64,  256,  100,   'srun',   'sbatch',  'squeue', 'scancel')
+Baseline(       20,   2,    64,  512,  100,   'srun',   'sbatch',  'squeue', 'scancel')
 
 
 #machine accessor functions

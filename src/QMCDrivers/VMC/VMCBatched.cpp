@@ -20,7 +20,11 @@
 #include "Particle/MCSample.h"
 #include "MemoryUsage.h"
 #include "QMCWaveFunctions/TWFGrads.hpp"
+#include <PSdispatcher.h>
+#include <TWFdispatcher.h>
+#include <Hdispatcher.h>
 #include "TauParams.hpp"
+#include "WalkerLogManager.h"
 
 namespace qmcplusplus
 {
@@ -28,17 +32,19 @@ namespace qmcplusplus
    */
 VMCBatched::VMCBatched(const ProjectData& project_data,
                        QMCDriverInput&& qmcdriver_input,
-                       const std::optional<EstimatorManagerInput>& global_emi,
+                       UPtr<EstimatorManagerNew>&& estimator_manager,
                        VMCDriverInput&& input,
                        WalkerConfigurations& wc,
                        MCPopulation&& pop,
+                       const RefVector<RandomBase<FullPrecRealType>>& rng_refs,
                        SampleStack& samples,
                        Communicate* comm)
     : QMCDriverNew(project_data,
                    std::move(qmcdriver_input),
-                   global_emi,
+                   std::move(estimator_manager),
                    wc,
                    std::move(pop),
+                   rng_refs,
                    "VMCBatched::",
                    comm,
                    "VMCBatched"),
@@ -57,10 +63,10 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
 {
   if (crowd.size() == 0)
     return;
-  auto& ps_dispatcher  = crowd.dispatchers_.ps_dispatcher_;
-  auto& twf_dispatcher = crowd.dispatchers_.twf_dispatcher_;
-  auto& ham_dispatcher = crowd.dispatchers_.ham_dispatcher_;
-  auto& walkers        = crowd.get_walkers();
+  const PSdispatcher ps_dispatcher(!sft.serializing_crowd_walkers);
+  const TWFdispatcher twf_dispatcher(!sft.serializing_crowd_walkers);
+  const Hdispatcher ham_dispatcher(!sft.serializing_crowd_walkers);
+  auto& walkers = crowd.get_walkers();
   const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());
   const RefVectorWithLeader<TrialWaveFunction> walker_twfs(crowd.get_walker_twfs()[0], crowd.get_walker_twfs());
 
@@ -72,18 +78,16 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   ResourceCollectionTeamLock<TrialWaveFunction> twfs_res_lock(crowd.getSharedResource().twf_res, walker_twfs);
   timers.resource_timer.stop();
   if (sft.qmcdrv_input.get_debug_checks() & DriverDebugChecks::CHECKGL_AFTER_LOAD)
-    checkLogAndGL(crowd, "checkGL_after_load");
+    checkLogAndGL(crowd, "checkGL_after_load", sft.serializing_crowd_walkers);
 
   {
     ScopedTimer pbyp_local_timer(timers.movepbyp_timer);
     const int num_walkers   = crowd.size();
     auto& walker_leader     = walker_elecs.getLeader();
     const int num_particles = walker_leader.getTotalNum();
-    // Note std::vector<bool> is not like the rest of stl.
-    std::vector<bool> moved(num_walkers, false);
-    constexpr RealType mhalf(-0.5);
-    const bool use_drift = sft.vmcdrv_input.get_use_drift();
+    const bool use_drift    = sft.vmcdrv_input.get_use_drift();
 
+    std::vector<bool> are_valid(num_walkers);
     std::vector<TrialWaveFunction::PsiValue> ratios(num_walkers);
     std::vector<RealType> log_gf(num_walkers);
     std::vector<RealType> log_gb(num_walkers);
@@ -126,7 +130,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
           else
             drifts = deltas;
 
-          ps_dispatcher.flex_makeMove(walker_elecs, iat, drifts);
+          ps_dispatcher.flex_makeMove(walker_elecs, iat, drifts, are_valid);
 
           // This is inelegant
           if (use_drift)
@@ -149,7 +153,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
           isAccepted.clear();
 
           for (int i_accept = 0; i_accept < num_walkers; ++i_accept)
-            if (prob[i_accept] >= std::numeric_limits<RealType>::epsilon() &&
+            if (are_valid[i_accept] && prob[i_accept] >= std::numeric_limits<RealType>::epsilon() &&
                 step_context.get_random_gen()() < prob[i_accept] * std::exp(log_gb[i_accept] - log_gf[i_accept]))
             {
               crowd.incAccept();
@@ -176,7 +180,8 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
     ScopedTimer buffer_local_timer(timers.buffer_timer);
     twf_dispatcher.flex_evaluateGL(walker_twfs, walker_elecs, recompute);
     if (sft.qmcdrv_input.get_debug_checks() & DriverDebugChecks::CHECKGL_AFTER_MOVES)
-      checkLogAndGL(crowd, "checkGL_after_moves");
+      checkLogAndGL(crowd, "checkGL_after_moves", sft.serializing_crowd_walkers);
+    ps_dispatcher.flex_saveWalker(walker_elecs, walkers);
   }
 
   const RefVectorWithLeader<QMCHamiltonian> walker_hamiltonians(crowd.get_walker_hamiltonians()[0],
@@ -214,6 +219,10 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
     ScopedTimer est_timer(timers.estimators_timer);
     crowd.accumulate(step_context.get_random_gen());
   }
+
+  // collect walker logs
+  crowd.collectStepWalkerLog(sft.global_step);
+
   // TODO:
   //  check if all moves failed
 }
@@ -243,10 +252,9 @@ void VMCBatched::runVMCStep(int crowd_id,
 {
   Crowd& crowd = *(crowds[crowd_id]);
   crowd.setRNGForHamiltonian(context_for_steps[crowd_id]->get_random_gen());
-  const int max_steps  = sft.qmcdrv_input.get_max_steps();
   const IndexType step = sft.step;
   // Are we entering the the last step of a block to recompute at?
-  const bool recompute_this_step = (sft.is_recomputing_block && (step + 1) == max_steps);
+  const bool recompute_this_step = (sft.is_recomputing_block && (step + 1) == sft.steps_per_block);
   // For VMC we don't call this method for warmup steps.
   const bool accumulate_this_step = true;
   const bool spin_move            = sft.population.get_golden_electrons().isSpinor();
@@ -260,27 +268,37 @@ void VMCBatched::runVMCStep(int crowd_id,
 
 void VMCBatched::process(xmlNodePtr node)
 {
+  ScopedTimer local_timer(timers_.startup_timer);
   print_mem("VMCBatched before initialization", app_log());
-  // \todo get total walkers should be coming from VMCDriverInpu
+
   try
   {
     QMCDriverNew::AdjustedWalkerCounts awc =
         adjustGlobalWalkerCount(*myComm, walker_configs_ref_.getActiveWalkers(), qmcdriver_input_.get_total_walkers(),
-                                qmcdriver_input_.get_walkers_per_rank(), 1.0, qmcdriver_input_.get_num_crowds());
+                                qmcdriver_input_.get_walkers_per_rank(), 1.0,
+                                determineNumCrowds(qmcdriver_input_.get_num_crowds(), rngs_.size()));
 
-    Base::initializeQMC(awc);
+    steps_per_block_ =
+        determineStepsPerBlock(awc.global_walkers, qmcdriver_input_.get_requested_samples(),
+                               qmcdriver_input_.get_requested_steps(), qmcdriver_input_.get_max_blocks());
+
+    initPopulationAndCrowds(awc);
+    createStepContexts(crowds_.size());
   }
   catch (const UniformCommunicateError& ue)
   {
     myComm->barrier_and_abort(ue.what());
   }
+
+  if (qmcdriver_input_.get_measure_imbalance())
+    measureImbalance("Startup");
 }
 
-int VMCBatched::compute_samples_per_rank(const QMCDriverInput& qmcdriver_input, const IndexType local_walkers)
+size_t VMCBatched::compute_samples_per_rank(const size_t num_blocks,
+                                            const size_t samples_per_block,
+                                            const size_t local_walkers)
 {
-  int nblocks = qmcdriver_input.get_max_blocks();
-  int nsteps  = qmcdriver_input.get_max_steps();
-  return nblocks * nsteps * local_walkers;
+  return num_blocks * samples_per_block * local_walkers;
 }
 
 
@@ -302,7 +320,15 @@ bool VMCBatched::run()
   //start the main estimator
   estimator_manager_->startDriverRun();
 
-  StateForThread vmc_state(qmcdriver_input_, vmcdriver_input_, *drift_modifier_, population_);
+  //initialize WalkerLogManager and collectors
+  WalkerLogManager wlog_manager(walker_logs_input, allow_walker_logs, get_root_name(), myComm);
+  for (auto& crowd : crowds_)
+    crowd->setWalkerLogCollector(wlog_manager.makeCollector());
+  //register walker log collectors into the manager
+  wlog_manager.startRun(Crowd::getWalkerLogCollectorRefs(crowds_));
+
+  StateForThread vmc_state(qmcdriver_input_, vmcdriver_input_, *drift_modifier_, population_, steps_per_block_,
+                           serializing_crowd_walkers_);
 
   LoopTimer<> vmc_loop;
   RunTimeControl<> runtimeControl(run_time_manager, project_data_.getMaxCPUSeconds(), project_data_.getTitle(),
@@ -311,7 +337,8 @@ bool VMCBatched::run()
   { // walker initialization
     ScopedTimer local_timer(timers_.init_walkers_timer);
     ParallelExecutor<> section_start_task;
-    section_start_task(crowds_.size(), initialLogEvaluation, std::ref(crowds_), std::ref(step_contexts_));
+    auto step_contexts_refs = getContextForStepsRefs();
+    section_start_task(crowds_.size(), initialLogEvaluation, crowds_, step_contexts_refs, serializing_crowd_walkers_);
     print_mem("VMCBatched after initialLogEvaluation", app_summary());
     if (qmcdriver_input_.get_measure_imbalance())
       measureImbalance("InitialLogEvaluation");
@@ -323,6 +350,7 @@ bool VMCBatched::run()
   if (qmcdriver_input_.get_warmup_steps() > 0)
   {
     // Run warm-up steps
+    Timer warmup_timer;
     auto runWarmupStep = [](int crowd_id, StateForThread& sft, DriverTimers& timers,
                             UPtrVector<ContextForSteps>& context_for_steps, UPtrVector<Crowd>& crowds) {
       Crowd& crowd                    = *(crowds[crowd_id]);
@@ -340,19 +368,20 @@ bool VMCBatched::run()
     for (int step = 0; step < qmcdriver_input_.get_warmup_steps(); ++step)
     {
       ScopedTimer local_timer(timers_.run_steps_timer);
-      crowd_task(crowds_.size(), runWarmupStep, vmc_state, std::ref(timers_), std::ref(step_contexts_),
-                 std::ref(crowds_));
+      crowd_task(crowds_.size(), runWarmupStep, vmc_state, timers_, step_contexts_, crowds_);
     }
 
-    app_log() << "Warm-up is completed!" << std::endl;
     print_mem("VMCBatched after Warmup", app_log());
     if (qmcdriver_input_.get_measure_imbalance())
       measureImbalance("Warmup");
+
+    app_log() << "VMC Warmup completed in " << std::setprecision(4) << warmup_timer.elapsed() << " secs" << std::endl;
   }
 
   // this barrier fences all previous load imbalance. Avoid block 0 timing pollution.
   myComm->barrier();
 
+  int global_step = 0;
   for (int block = 0; block < num_blocks; ++block)
   {
     {
@@ -363,15 +392,17 @@ bool VMCBatched::run()
           ? (1 + block) % qmcdriver_input_.get_blocks_between_recompute() == 0
           : false;
 
-      estimator_manager_->startBlock(qmcdriver_input_.get_max_steps());
+      estimator_manager_->startBlock(steps_per_block_);
 
       for (auto& crowd : crowds_)
-        crowd->startBlock(qmcdriver_input_.get_max_steps());
-      for (int step = 0; step < qmcdriver_input_.get_max_steps(); ++step)
+        crowd->startBlock(steps_per_block_);
+
+      for (int step = 0; step < steps_per_block_; ++step, ++global_step)
       {
         ScopedTimer local_timer(timers_.run_steps_timer);
-        vmc_state.step = step;
-        crowd_task(crowds_.size(), runVMCStep, vmc_state, timers_, std::ref(step_contexts_), std::ref(crowds_));
+        vmc_state.step        = step;
+        vmc_state.global_step = global_step;
+        crowd_task(crowds_.size(), runVMCStep, vmc_state, timers_, step_contexts_, crowds_);
 
         if (collect_samples_)
         {
@@ -382,10 +413,12 @@ bool VMCBatched::run()
           }
         }
       }
+
       print_mem("VMCBatched after a block", app_debug_stream());
       if (qmcdriver_input_.get_measure_imbalance())
         measureImbalance("Block " + std::to_string(block));
       endBlock();
+      wlog_manager.writeBuffers();
       recordBlock(block);
     }
 
@@ -394,7 +427,9 @@ bool VMCBatched::run()
     if (!myComm->rank())
       stop_requested = runtimeControl.checkStop(vmc_loop);
     myComm->bcast(stop_requested);
-
+    // Progress messages before possibly stopping
+    if (!myComm->rank())
+      app_log() << runtimeControl.generateProgressMessage("VMCBatched", block, num_blocks);
     if (stop_requested)
     {
       if (!myComm->rank())
@@ -420,7 +455,7 @@ bool VMCBatched::run()
     FullPrecRealType ene, var;
     estimator_manager_->getApproximateEnergyVariance(ene, var);
     o << "====================================================";
-    o << "\n  End of a VMC block";
+    o << "\n  End of a VMC section";
     o << "\n    QMC counter        = " << project_data_.getSeriesIndex();
     o << "\n    time step          = " << qmcdriver_input_.get_tau();
     o << "\n    reference energy   = " << ene;
@@ -431,20 +466,41 @@ bool VMCBatched::run()
 
   print_mem("VMCBatched ends", app_log());
 
+  wlog_manager.stopRun();
   estimator_manager_->stopDriverRun();
 
   return finalize(num_blocks, true);
 }
 
+RefVector<QMCDriverNew::ContextForSteps> VMCBatched::getContextForStepsRefs() const
+{
+  RefVector<ContextForSteps> refs;
+  refs.reserve(step_contexts_.size());
+  for (auto& one_context : step_contexts_)
+    refs.push_back(*one_context);
+  return refs;
+}
+
+void VMCBatched::createStepContexts(int num_crowds)
+{
+  assert(num_crowds <= rngs_.size());
+  step_contexts_.resize(num_crowds);
+  for (int i = 0; i < num_crowds; ++i)
+    step_contexts_[i] = std::make_unique<ContextForSteps>(rngs_[i]);
+}
+
 void VMCBatched::enable_sample_collection()
 {
-  int samples = compute_samples_per_rank(qmcdriver_input_, population_.get_num_local_walkers());
+  assert(steps_per_block_ > 0 && "VMCBatched::enable_sample_collection steps_per_block_ must be positive!");
+  auto samples = compute_samples_per_rank(qmcdriver_input_.get_max_blocks(), steps_per_block_,
+                                          population_.get_num_local_walkers());
   samples_.setMaxSamples(samples, population_.get_num_ranks());
   collect_samples_ = true;
 
-  int total_samples = samples * population_.get_num_ranks();
-  app_log() << "VMCBatched Driver collecting samples, samples per rank = " << samples << '\n';
-  app_log() << "                                      total samples    = " << total_samples << '\n';
+  auto total_samples = samples * population_.get_num_ranks();
+  app_log() << "VMCBatched Driver collecting samples, samples per rank = " << samples << std::endl
+            << "                                      total samples    = " << total_samples << std::endl
+            << std::endl;
 }
 
 } // namespace qmcplusplus

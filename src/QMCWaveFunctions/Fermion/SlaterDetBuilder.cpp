@@ -296,8 +296,12 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
 #else
   sdAttrib.add(use_batch, "batch", {"no", "yes"});
 #endif
-#if defined(ENABLE_CUDA) || defined(ENABLE_OFFLOAD)
-  sdAttrib.add(useGPU, "gpu", {"yes", "no"});
+#if defined(ENABLE_OFFLOAD)
+#if defined(ENABLE_CUDA) || defined(ENABLE_SYCL)
+  sdAttrib.add(useGPU, "gpu", CPUOMPTargetVendorSelector::candidate_values);
+#else
+  sdAttrib.add(useGPU, "gpu", PlatformSelector<SelectorKind::CPU_OMPTARGET>::candidate_values);
+#endif
 #endif
   sdAttrib.put(cur->parent);
 
@@ -342,6 +346,14 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
   std::unique_ptr<SPOSet> psi_clone(psi->makeClone());
   psi_clone->checkObject();
 
+  if (const auto nptcl_group = targetPtcl.groupsize(spin_group); psi_clone->getOrbitalSetSize() < nptcl_group)
+  {
+    std::ostringstream err_msg;
+    err_msg << "The SPOSet " << psi_clone->getName() << " only has " << psi_clone->getOrbitalSetSize() << " orbitals "
+            << "but this determinant needs at least " << nptcl_group << std::endl;
+    myComm->barrier_and_abort(err_msg.str());
+  }
+
   const int firstIndex = targetPtcl.first(spin_group);
   const int lastIndex  = targetPtcl.last(spin_group);
 
@@ -352,7 +364,7 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
             << "and no larger than the electron count within a determinant!\n"
             << "Acceptable value [1," << lastIndex - firstIndex << "], "
             << "user input " + std::to_string(delay_rank);
-    APP_ABORT(err_msg.str());
+    myComm->barrier_and_abort(err_msg.str());
   }
   else if (delay_rank == 0)
   {
@@ -389,12 +401,22 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
 #if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
       if (CPUOMPTargetVendorSelector::selectPlatform(useGPU) == PlatformKind::CUDA)
       {
-        app_summary() << "      Running on an NVIDIA GPU via CUDA acceleration and OpenMP offload." << std::endl;
-        adet = std::make_unique<DiracDeterminantBatched<
-            MatrixDelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>>(std::move(psi_clone),
-                                                                                          firstIndex, lastIndex,
-                                                                                          delay_rank,
-                                                                                          matrix_inverter_kind);
+        app_summary() << "      Running on a GPU via CUDA/HIP acceleration and OpenMP offload." << std::endl;
+        adet = std::make_unique<DiracDeterminantBatched<PlatformKind::CUDA, QMCTraits::ValueType,
+                                                        QMCTraits::QTFull::ValueType>>(std::move(psi_clone), firstIndex,
+                                                                                       lastIndex, delay_rank,
+                                                                                       matrix_inverter_kind);
+      }
+      else
+#endif
+#if defined(ENABLE_SYCL) && defined(ENABLE_OFFLOAD)
+          if (CPUOMPTargetVendorSelector::selectPlatform(useGPU) == PlatformKind::SYCL)
+      {
+        app_summary() << "      Running on a GPU via SYCL acceleration and OpenMP offload." << std::endl;
+        adet = std::make_unique<DiracDeterminantBatched<PlatformKind::SYCL, QMCTraits::ValueType,
+                                                        QMCTraits::QTFull::ValueType>>(std::move(psi_clone), firstIndex,
+                                                                                       lastIndex, delay_rank,
+                                                                                       matrix_inverter_kind);
       }
       else
 #endif
@@ -402,13 +424,14 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
 #if defined(ENABLE_OFFLOAD)
         if (CPUOMPTargetVendorSelector::selectPlatform(useGPU) == PlatformKind::CPU)
           throw std::runtime_error("No pure CPU implementation of walker-batched Slater determinant.");
-        app_summary() << "      Running OpenMP offload code path on GPU. "
+        app_summary() << "      Running OpenMP offload code path on a GPU. " << std::endl;
 #else
-        app_summary() << "      Running OpenMP offload code path on CPU. "
+        app_summary() << "      Running OpenMP offload code path on a CPU. " << std::endl;
 #endif
-                      << "Only SM1 update is supported. delay_rank is ignored." << std::endl;
-        adet = std::make_unique<DiracDeterminantBatched<>>(std::move(psi_clone), firstIndex, lastIndex, delay_rank,
-                                                           matrix_inverter_kind);
+        adet = std::make_unique<DiracDeterminantBatched<PlatformKind::OMPTARGET, QMCTraits::ValueType,
+                                                        QMCTraits::QTFull::ValueType>>(std::move(psi_clone), firstIndex,
+                                                                                       lastIndex, delay_rank,
+                                                                                       matrix_inverter_kind);
       }
     }
     else
@@ -418,11 +441,7 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
 #if defined(ENABLE_CUDA)
       else if (CPUOMPTargetVendorSelector::selectPlatform(useGPU) == PlatformKind::CUDA)
       {
-#ifdef QMC_CUDA2HIP
-        app_summary() << "      Running on an AMD GPU via HIP acceleration." << std::endl;
-#else
-        app_summary() << "      Running on an NVIDIA GPU via CUDA acceleration." << std::endl;
-#endif
+        app_summary() << "      Running on a GPU via CUDA/HIP acceleration." << std::endl;
         adet = std::make_unique<
             DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>>(std::move(psi_clone),
                                                                                           firstIndex, lastIndex,
@@ -478,10 +497,6 @@ std::unique_ptr<MultiSlaterDetTableMethod> SlaterDetBuilder::createMSDFast(
 
   bool optimizeCI;
 
-  std::vector<int> nptcls(nGroups);
-  for (int grp = 0; grp < nGroups; grp++)
-    nptcls[grp] = targetPtcl.groupsize(grp);
-
   std::vector<std::vector<ci_configuration>> uniqueConfgs(nGroups);
   std::vector<std::string> CItags;
 
@@ -499,14 +514,20 @@ std::unique_ptr<MultiSlaterDetTableMethod> SlaterDetBuilder::createMSDFast(
 
   std::unique_ptr<CSFData> csf_data_ptr;
 
-  std::string HDF5Path(getXMLAttributeValue(DetListNode, "href"));
-  if (!HDF5Path.empty())
   {
-    app_log() << "Found Multideterminants in H5 File" << std::endl;
-    readDetListH5(cur, uniqueConfgs, C2nodes, CItags, C, optimizeCI, nptcls);
+    std::vector<int> nptcls(nGroups);
+    for (int grp = 0; grp < nGroups; grp++)
+      nptcls[grp] = targetPtcl.groupsize(grp);
+
+    std::string HDF5Path(getXMLAttributeValue(DetListNode, "href"));
+    if (!HDF5Path.empty())
+    {
+      app_log() << "Found Multideterminants in H5 File" << std::endl;
+      readDetListH5(cur, uniqueConfgs, C2nodes, CItags, C, optimizeCI, nptcls);
+    }
+    else
+      readDetList(cur, uniqueConfgs, C2nodes, CItags, C, optimizeCI, nptcls, csf_data_ptr);
   }
-  else
-    readDetList(cur, uniqueConfgs, C2nodes, CItags, C, optimizeCI, nptcls, csf_data_ptr);
 
   const auto maxloc   = std::max_element(C.begin(), C.end(), [](ValueType const& lhs, ValueType const& rhs) {
     return std::norm(lhs) < std::norm(rhs);
@@ -518,22 +539,35 @@ std::unique_ptr<MultiSlaterDetTableMethod> SlaterDetBuilder::createMSDFast(
   std::vector<std::unique_ptr<MultiDiracDeterminant>> dets;
   for (int grp = 0; grp < nGroups; grp++)
   {
-    dets.emplace_back(std::make_unique<MultiDiracDeterminant>(std::move(spo_clones[grp]), spinor, targetPtcl.first(grp),
-                                                              nptcls[grp]));
+    const auto nptcl_group = targetPtcl.groupsize(grp);
+    // convert ci_configuration to ci_configuration2
     std::vector<ci_configuration2> list(uniqueConfgs[grp].size());
     for (int i = 0; i < list.size(); i++)
     {
-      list[i].occup.resize(nptcls[grp]);
-      int cnt = 0;
-      for (int k = 0; k < uniqueConfgs[grp][i].occup.size(); k++)
-        if (uniqueConfgs[grp][i].occup[k])
-          list[i].occup[cnt++] = k;
-      if (cnt != nptcls[grp])
+      std::ostringstream err_msg;
+      if (const auto orb_space_size = uniqueConfgs[grp][i].occup.size();
+          orb_space_size > spo_clones[grp]->getOrbitalSetSize())
+        err_msg << "The unique determinant " << i << " needs at least " << orb_space_size
+                << " occupied and unoccupied single particle orbitals but SPOSet '" << spo_clones[grp]->getName()
+                << "' only contains " << spo_clones[grp]->getOrbitalSetSize() << "." << std::endl;
+      else
       {
-        APP_ABORT("Error in SlaterDetBuilder::createMSDFast for ptcl group "
-                  << grp << ", problems with ci configuration list. \n");
+        list[i].occup.resize(nptcl_group);
+        int cnt = 0;
+        for (int k = 0; k < orb_space_size; k++)
+          if (uniqueConfgs[grp][i].occup[k])
+            list[i].occup[cnt++] = k;
+        if (cnt != nptcl_group)
+          err_msg << "The unique determinant configuration " << i << " contains " << cnt
+                  << " occupied orbitals not matching " << nptcl_group << " particles." << std::endl;
       }
+      if (const std::string msg = err_msg.str(); msg.length())
+        myComm->barrier_and_abort("SlaterDetBuilder::createMSDFast Issues found in the particle group " + std::to_string(grp) + " :\n" + msg);
     }
+
+    dets.emplace_back(std::make_unique<MultiDiracDeterminant>(std::move(spo_clones[grp]), spinor, targetPtcl.first(grp),
+                                                              nptcl_group));
+
     // reorder unique determinants for a given spin based on the selected reference determinant
     dets[grp]->createDetData(C2nodes[grp][refdet_id], list, C2nodes[grp], C2nodes_sorted[grp]);
   }
@@ -592,14 +626,12 @@ std::unique_ptr<MultiSlaterDetTableMethod> SlaterDetBuilder::createMSDFast(
       APP_ABORT("Currently, Using CSF is not available with MSJ Orbital Optimization!\n");
 
     for (int grp = 0; grp < nGroups; grp++)
-    {
-      for (int i = 0; i < nptcls[grp]; i++)
+      for (int i = 0; i < targetPtcl.groupsize(grp); i++)
       {
         if (uniqueConfgs[grp][0].occup[i] != true)
           APP_ABORT(
               "The Hartee Fock Reference Determinant must be the first in the Multi-Slater expansion for the input!\n");
       }
-    }
     app_warning() << "Unrestricted Orbital Optimization will be performed. Spin symmetry is not guaranteed to be "
                      "preserved!\n";
 
@@ -619,7 +651,7 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
                                    std::vector<std::string>& CItags,
                                    std::vector<ValueType>& coeff,
                                    bool& optimizeCI,
-                                   std::vector<int>& nptcls,
+                                   const std::vector<int>& nptcls,
                                    std::unique_ptr<CSFData>& csf_data_ptr) const
 {
   bool success = true;
@@ -967,13 +999,18 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
     }
 
     app_log() << "Found " << coeff.size() << " terms in the MSD expansion.\n";
+
+    if (coeff.size() == 0)
+      throw std::runtime_error(
+          "MSD expansion is empty with either zero determinants input or remaining after cutoff applied.");
+
     app_log() << "Norm of ci vector (sum of ci^2): " << sumsq << std::endl;
     app_log() << "Norm of qchem ci vector (sum of qchem_ci^2): " << sumsq_qc << std::endl;
 
   } //usingCSF
 
-  for (int grp = 0; grp < nGroups; grp++)
-    app_log() << "Found " << uniqueConfgs[grp].size() << " unique group" << grp << " determinants.\n";
+  for (auto grp = 0; grp < nGroups; grp++)
+    app_log() << "Found " << uniqueConfgs[grp].size() << " unique group " << grp << " determinants.\n";
 
   return success;
 }
@@ -984,7 +1021,7 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
                                      std::vector<std::string>& CItags,
                                      std::vector<ValueType>& coeff,
                                      bool& optimizeCI,
-                                     std::vector<int>& nptcls) const
+                                     const std::vector<int>& nptcls) const
 {
   bool success = true;
   int extlevel(0);
@@ -1219,10 +1256,14 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
 
   app_log() << " Done Sorting unique CIs" << std::endl;
   app_log() << "Found " << coeff.size() << " terms in the MSD expansion.\n";
+  if (coeff.size() == 0)
+    throw std::runtime_error(
+        "MSD expansion is empty with either zero determinants input or remaining after cutoff applied.");
+
   app_log() << "Norm of ci vector (sum of ci^2): " << sumsq << std::endl;
 
-  for (int grp = 0; grp < nGroups; grp++)
-    app_log() << "Found " << uniqueConfgs[grp].size() << " unique group" << grp << " determinants.\n";
+  for (auto grp = 0; grp < nGroups; grp++)
+    app_log() << "Found " << uniqueConfgs[grp].size() << " unique group " << grp << " determinants.\n";
 
   return success;
 }

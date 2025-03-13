@@ -295,8 +295,9 @@ inline void writeTHCOps(hdf_archive& dump,
                         shmCMatrix& vn0,
                         ValueType E0)
 {
-  size_t gnmu(std::get<1>(Luv.sizes()));
-  size_t grotnmu(std::get<1>(rotMuv.sizes()));
+  using std::get;
+  size_t gnmu(get<1>(Luv.sizes()));
+  size_t grotnmu(get<1>(rotMuv.sizes()));
   if (TGwfn.Global().root())
   {
     dump.push("HamiltonianOperations");

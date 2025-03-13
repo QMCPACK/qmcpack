@@ -16,6 +16,7 @@
 
 
 #include "LCAOrbitalBuilder.h"
+#include <PlatformSelector.hpp>
 #include "OhmmsData/AttributeSet.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #include "MultiQuinticSpline1D.h"
@@ -133,6 +134,7 @@ LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Commun
   aAttrib.add(h5_path, "href");
   aAttrib.add(PBCImages, "PBCimages");
   aAttrib.add(SuperTwist, "twist");
+  aAttrib.add(useGPU, "gpu", CPUOMPTargetSelector::candidate_values);
   aAttrib.put(cur);
 
   if (cuspC == "yes")
@@ -163,8 +165,8 @@ LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Commun
   if (basisset_map_.size() == 0 && h5_path != "")
   {
     app_warning() << "!!!!!!! Deprecated input style: missing basisset element. "
-                  << "LCAO needs an explicit basisset XML element. " << "Fallback on loading an implicit one."
-                  << std::endl;
+                  << "LCAO needs an explicit basisset XML element. "
+                  << "Fallback on loading an implicit one." << std::endl;
     basisset_map_["LCAOBSet"] = loadBasisSetFromH5(cur);
   }
 
@@ -481,6 +483,8 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
   spoAttrib.add(norbs, "orbitals", {}, TagStatus::DELETED);
   spoAttrib.put(cur);
 
+  const bool useOffload = CPUOMPTargetSelector::selectPlatform(useGPU) == PlatformKind::OMPTARGET;
+
   // look for coefficients element. If found the MO coefficients matrix is not identity
   bool identity = true;
   processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
@@ -505,6 +509,8 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
         "LCAOrbitalBuilder::createSPOSetFromXML cusp correction is not supported on complex LCAO.");
 #else
     app_summary() << "        Using cusp correction." << std::endl;
+    if (useOffload)
+      app_warning() << "    LCAO with cusp correction doesn't support OpenMP offload. Running on CPU." << std::endl;
     auto lcwc = std::make_unique<LCAOrbitalSetWithCorrection>(spo_name, std::move(myBasisSet), norbs, identity,
                                                               sourcePtcl, targetPtcl);
     if (!identity)
@@ -514,7 +520,11 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
   }
   else
   {
-    auto lcos = std::make_unique<LCAOrbitalSet>(spo_name, std::move(myBasisSet), norbs, identity);
+    if (useOffload)
+      app_summary() << "    Running OpenMP offload code path." << std::endl;
+    else
+      app_summary() << "    Running on CPU." << std::endl;
+    auto lcos = std::make_unique<LCAOrbitalSet>(spo_name, std::move(myBasisSet), norbs, identity, useOffload);
     if (!identity)
       loadMO(*lcos, cur);
     sposet = std::move(lcos);
@@ -572,6 +582,7 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
   }
 #endif
 
+  sposet->finalizeConstruction();
   return sposet;
 }
 
@@ -776,7 +787,7 @@ bool LCAOrbitalBuilder::putFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
 bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
 {
   ReportEngine PRE("LCAOrbitalBuilder", "LCAOrbitalBuilder::putPBCFromH5");
-  int setVal     = -1;
+  int setVal = -1;
   int neig;
   bool IsComplex = false;
   bool MultiDet  = false;

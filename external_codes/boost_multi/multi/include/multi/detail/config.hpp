@@ -1,9 +1,0 @@
-// Copyright 2019-2021 Alfredo A. Correa
-
-#ifndef MULTI_ADAPTORS_BLAS_TEST_CONFIG_HPP
-#define MULTI_ADAPTORS_BLAS_TEST_CONFIG_HPP
-
-#define CUDA_FOUND 1
-
-#endif
-

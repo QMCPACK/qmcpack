@@ -18,12 +18,14 @@
 #ifndef QMCPLUSPLUS_NONLOCAL_ECPOTENTIAL_H
 #define QMCPLUSPLUS_NONLOCAL_ECPOTENTIAL_H
 #include "Configuration.h"
-#include "QMCHamiltonians/NonLocalTOperator.h"
 #include "QMCHamiltonians/ForceBase.h"
-#include "QMCHamiltonians/NonLocalECPComponent.h"
+#include "QMCHamiltonians/OperatorBase.h"
 #include "Particle/NeighborLists.h"
+#include "type_traits/OptionalRef.hpp"
+
 namespace qmcplusplus
 {
+class NonLocalECPComponent;
 template<typename T>
 struct NLPPJob;
 
@@ -42,7 +44,7 @@ class NonLocalECPotential : public OperatorBase, public ForceBase
   struct NonLocalECPotentialMultiWalkerResource;
 
 public:
-  NonLocalECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi, bool computeForces, bool enable_DLA);
+  NonLocalECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi, bool enable_DLA);
   ~NonLocalECPotential() override;
 
   bool dependsOnWaveFunction() const override { return true; }
@@ -79,17 +81,11 @@ public:
                                            const std::vector<ListenerVector<Real>>& listeners,
                                            const std::vector<ListenerVector<Real>>& listeners_ions) const override;
 
-  Return_t evaluateWithIonDerivs(ParticleSet& P,
-                                 ParticleSet& ions,
-                                 TrialWaveFunction& psi,
-                                 ParticleSet::ParticlePos& hf_terms,
-                                 ParticleSet::ParticlePos& pulay_terms) override;
-
-  Return_t evaluateWithIonDerivsDeterministic(ParticleSet& P,
-                                              ParticleSet& ions,
-                                              TrialWaveFunction& psi,
-                                              ParticleSet::ParticlePos& hf_terms,
-                                              ParticleSet::ParticlePos& pulay_terms) override;
+  void evaluateIonDerivs(ParticleSet& P,
+                         ParticleSet& ions,
+                         TrialWaveFunction& psi,
+                         ParticleSet::ParticlePos& hf_terms,
+                         ParticleSet::ParticlePos& pulay_terms) override;
 
   void evaluateOneBodyOpMatrix(ParticleSet& P, const TWFFastDerivWrapper& psi, std::vector<ValueMatrix>& B) override;
 
@@ -100,23 +96,11 @@ public:
                                          std::vector<std::vector<ValueMatrix>>& Bforce) override;
 
 
-  /** set non local moves options
-   * @param cur the xml input
-   */
-  void setNonLocalMoves(xmlNodePtr cur) { UseTMove = nonLocalOps.put(cur); }
-
-  void setNonLocalMoves(const std::string& non_local_move_option,
-                        const double tau,
-                        const double alpha,
-                        const double gamma)
-  {
-    UseTMove = nonLocalOps.thingsThatShouldBeInMyConstructor(non_local_move_option, tau, alpha, gamma);
-  }
   /** make non local moves with particle-by-particle moves
    * @param P particle set
    * @return the number of accepted moves
    */
-  int makeNonLocalMovesPbyP(ParticleSet& P);
+  int makeNonLocalMovesPbyP(ParticleSet& P, NonLocalTOperator& move_op) override;
 
   Return_t evaluateValueAndDerivatives(ParticleSet& P,
                                        const opt_variables_type& optvars,
@@ -153,32 +137,19 @@ public:
    */
   void setRandomGenerator(RandomBase<FullPrecRealType>* rng) override { myRNG = rng; }
 
-  void addObservables(PropertySetType& plist, BufferType& collectables) override;
-
-  void setObservables(PropertySetType& plist) override;
-
-  void setParticlePropertyList(PropertySetType& plist, int offset) override;
-
-  void registerObservables(std::vector<ObservableHelper>& h5list, hdf_archive& file) const override;
-
-  /** Set the flag whether to compute forces or not.
-   * @param val The boolean value for computing forces
-   */
-  inline void setComputeForces(bool val) override { ComputeForces = val; }
-
 protected:
   /** the actual implementation for batched walkers, used by mw_evaluate, mw_evaluateWithToperator
    *  mw_evaluatePerPaticleWithToperator
    * @param o_list     the list of NonLocalECPotential in a walker batch
    * @param wf_list    the list of TrialWaveFunction in a walker batch
    * @param p_list     the list of ParticleSet in a walker batch
-   * @param Tmove      whether Txy for Tmove is updated
+   * @param compute_txy_all whether to compute Txy for all the electrons affected by NLPP
    * @param listeners  optional listeners which allow per particle and reduced to share impl
    */
   static void mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& o_list,
                               const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                               const RefVectorWithLeader<ParticleSet>& p_list,
-                              bool Tmove,
+                              bool compute_txy_all,
                               std::optional<ListenerOption<Real>> listeners,
                               bool keepGrid = false);
 
@@ -192,8 +163,6 @@ protected:
   ParticleSet& IonConfig;
   ///target TrialWaveFunction
   TrialWaveFunction& Psi;
-  ///true if we should compute forces
-  bool ComputeForces;
   ///true, determinant localization approximation(DLA) is enabled
   bool use_DLA;
 
@@ -208,16 +177,12 @@ private:
   NeighborLists ElecNeighborIons;
   ///neighborlist of ions
   NeighborLists IonNeighborElecs;
-  ///use T-moves
-  int UseTMove;
   ///ture if an electron is affected by other electrons moved by T-moves
   std::vector<bool> elecTMAffected;
-  ///non local operator
-  NonLocalTOperator nonLocalOps;
   ///Pulay force vector
   ParticleSet::ParticlePos PulayTerm;
-  // Tmove data
-  std::vector<NonLocalData> tmove_xy_;
+  /// Tmove data collected for all the electrons
+  std::vector<NonLocalData> tmove_xy_all_;
 #if !defined(REMOVE_TRACEMANAGER)
   ///single particle trace samples
 
@@ -231,23 +196,18 @@ private:
 
   /** the actual implementation, used by evaluate and evaluateWithToperator
    * @param P particle set
-   * @param Tmove whether Txy for Tmove is updated
+   * @param compute_txy_all whether to compute Txy for all the electrons affected by NLPP
    * @param keepGrid.  If true, does not randomize the quadrature grid before evaluation.  
    */
-  void evaluateImpl(ParticleSet& P, bool Tmove, bool keepGrid = false);
+  void evaluateImpl(ParticleSet& P, bool compute_txy_all, bool keepGrid = false);
 
-  void evalIonDerivsImpl(ParticleSet& P,
-                         ParticleSet& ions,
-                         TrialWaveFunction& psi,
-                         ParticleSet::ParticlePos& hf_terms,
-                         ParticleSet::ParticlePos& pulay_terms,
-                         bool keepGrid = false);
   /** compute the T move transition probability for a given electron
    * member variable nonLocalOps.Txy is updated
    * @param P particle set
    * @param ref_elec reference electron id
+   * @param tmove_xy off-diagonal terms for one electron.
    */
-  void computeOneElectronTxy(ParticleSet& P, const int ref_elec);
+  void computeOneElectronTxy(ParticleSet& P, const int ref_elec, std::vector<NonLocalData>& tmove_xy);
 
   /** mark all the electrons affected by Tmoves and update ElecNeighborIons and IonNeighborElecs
    * @param myTable electron ion distance table

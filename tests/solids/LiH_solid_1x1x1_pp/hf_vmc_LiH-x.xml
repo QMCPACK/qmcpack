@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
 <simulation>
   <project id="hf_vmc_LiH-x" series="0">
+    <parameter name="driver_version">legacy</parameter>
   </project>
   <!--random seed="195901"/-->
   <qmcsystem>

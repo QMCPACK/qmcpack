@@ -74,7 +74,7 @@ TEST_CASE("OutputManager output", "[utilities]")
   REQUIRE(summary_out.str() == "test1");
   REQUIRE(app_out.str() == "");
   REQUIRE(debug_out.str() == "");
-  REQUIRE(err_out.str() == "ERROR test4");
+  REQUIRE(err_out.str() == "QMCPACK ERROR test4");
 
   reset_string_output();
 
@@ -88,7 +88,7 @@ TEST_CASE("OutputManager output", "[utilities]")
   REQUIRE(summary_out.str() == "test5");
   REQUIRE(app_out.str() == "test6");
   REQUIRE(debug_out.str() == "");
-  REQUIRE(err_out.str() == "ERROR test8");
+  REQUIRE(err_out.str() == "QMCPACK ERROR test8");
 
   reset_string_output();
 
@@ -102,7 +102,7 @@ TEST_CASE("OutputManager output", "[utilities]")
   REQUIRE(summary_out.str() == "test9");
   REQUIRE(app_out.str() == "testA");
   REQUIRE(debug_out.str() == "testB");
-  REQUIRE(err_out.str() == "ERROR testC");
+  REQUIRE(err_out.str() == "QMCPACK ERROR testC");
 }
 
 TEST_CASE("OutputManager pause", "[utilities]")

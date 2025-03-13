@@ -84,8 +84,7 @@ void EinsplineSetBuilder::set_metadata(int numOrbs,
   /////////////////////////////////////////////////////////////////
   orb_info_timer.restart();
   if (myComm->rank() == 0)
-    if (!ReadOrbitalInfo(skipChecks))
-      throw std::runtime_error("EinsplineSetBuilder::set_metadata Error reading orbital info from HDF5 file.");
+    ReadOrbitalInfo(skipChecks);
   app_log() << "TIMER  EinsplineSetBuilder::ReadOrbitalInfo " << orb_info_timer.elapsed() << std::endl;
   myComm->barrier();
 
@@ -253,9 +252,8 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 #if !defined(QMC_COMPLEX)
   if (use_real_splines_)
   {
-    //if(TargetPtcl.Lattice.SuperCellEnum != SUPERCELL_BULK && truncate=="yes")
     if (MixedSplineReader == 0)
-      MixedSplineReader = createBsplineReal(this, use_single, hybrid_rep == "yes", useGPU);
+      MixedSplineReader = createBsplineReal(this, use_single, hybrid_rep == "yes");
   }
   else
 #endif
@@ -265,9 +263,6 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   }
 
   MixedSplineReader->setCommon(XMLRoot);
-  // temporary disable the following function call, Ye Luo
-  // RotateBands_ESHDF(spinSet, dynamic_cast<EinsplineSetExtended<std::complex<double> >*>(OrbitalSet));
-  bcastSortBands(spinSet, NumDistinctOrbitals, myComm->rank() == 0);
   auto OrbitalSet = MixedSplineReader->create_spline_set(spinSet, spo_cur);
   if (!OrbitalSet)
     myComm->barrier_and_abort("Failed to create SPOSet*");

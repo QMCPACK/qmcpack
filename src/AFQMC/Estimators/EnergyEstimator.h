@@ -12,6 +12,7 @@
 #include "hdf/hdf_multi.h"
 #include "hdf/hdf_archive.h"
 #include "OhmmsData/libxmldefs.h"
+#include "CPU/math.hpp"
 
 #include "AFQMC/Wavefunctions/Wavefunction.hpp"
 #include "AFQMC/Walkers/WalkerSet.hpp"
@@ -58,11 +59,13 @@ public:
   {
     ScopedTimer local_timer(AFQMCTimers[energy_timer]);
     size_t nwalk = wset.size();
-    if (std::get<0>(eloc.sizes()) != nwalk || std::get<1>(eloc.sizes()) != 3)
+
+    using std::get;
+    if (get<0>(eloc.sizes()) != nwalk || get<1>(eloc.sizes()) != 3)
       eloc.reextent({static_cast<boost::multi::size_t>(nwalk), 3});
-    if (std::get<0>(ovlp.sizes()) != nwalk)
+    if (get<0>(ovlp.sizes()) != nwalk)
       ovlp.reextent(iextensions<1u>(nwalk));
-    if (std::get<0>(wprop.sizes()) != 4 || std::get<1>(wprop.sizes()) != nwalk)
+    if (get<0>(wprop.sizes()) != 4 || get<1>(wprop.sizes()) != nwalk)
       wprop.reextent({4, static_cast<boost::multi::size_t>(nwalk)});
 
     ComplexType dum, et;
@@ -89,7 +92,7 @@ public:
           dum = (wprop[0][i]) * ovlp_[i] * (wprop[2][i]);
         }
         et = eloc_[i][0] + eloc_[i][1] + eloc_[i][2];
-        if ((!std::isfinite(real(dum))) || (!std::isfinite(real(et * dum))))
+        if ((!qmcplusplus::isfinite(real(dum))) || (!qmcplusplus::isfinite(real(et * dum))))
           continue;
         data[1] += dum;
         data[0] += et * dum;

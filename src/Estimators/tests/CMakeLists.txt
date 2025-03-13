@@ -2,7 +2,7 @@
 #// This file is distributed under the University of Illinois/NCSA Open Source License.
 #// See LICENSE file in top directory for details.
 #//
-#// Copyright (c) 2021 QMCPACK developers.
+#// Copyright (c) 2024 QMCPACK developers.
 #//
 #// File developed by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 #//                    Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
@@ -11,6 +11,23 @@
 #//////////////////////////////////////////////////////////////////////////////////////
 
 set(SRC_DIR estimators)
+
+set(TEST_ESTIMATORS_HELP
+    EstimatorManagerNewTest.cpp
+    EstimatorManagerInputTest.cpp
+    GenerateRandomParticleSets.cpp
+    EnergyDensityTest.cpp
+    MockGoldWalkerElements.cpp
+    EstimatorTesting.cpp)
+
+if(USE_OBJECT_TARGET)
+  add_library(test_estimators_help OBJECT ${TEST_ESTIMATORS_HELP})
+else()
+  add_library(test_estimators_help ${TEST_ESTIMATORS_HELP})
+endif()
+
+target_link_libraries(test_estimators_help catch_main qmcestimators)
+
 set(UTEST_EXE test_${SRC_DIR})
 set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 set(UTEST_HDF_INPUT ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp/pwscf.pwscf.h5)
@@ -24,12 +41,9 @@ set(SRCS
     test_local_energy_est.cpp
     FakeOperatorEstimator.cpp
     EstimatorManagerBaseTest.cpp
-    EstimatorManagerNewTest.cpp
-    EstimatorManagerInputTest.cpp
     test_manager.cpp
     test_EstimatorManagerNew.cpp
     test_trace_manager.cpp
-    EstimatorTesting.cpp
     test_SpinDensityInput.cpp
     test_SpinDensityNew.cpp
     test_InputSection.cpp
@@ -42,6 +56,7 @@ set(SRCS
     test_EstimatorManagerCrowd.cpp
     test_MagnetizationDensityInput.cpp
     test_MagnetizationDensity.cpp
+    test_ParseGridInput.cpp
     test_PerParticleHamiltonianLogger.cpp
     test_ReferencePointsInput.cpp
     test_ReferencePoints.cpp
@@ -50,15 +65,21 @@ set(SRCS
     test_OneBodyDensityMatrices.cpp
     test_PerParticleHamiltonianLogger.cpp
     test_EstimatorManagerCrowd.cpp
+    test_SpaceGridInput.cpp
+    test_NESpaceGrid.cpp
+    test_EnergyDensityInput.cpp
+    test_EnergyDensityEstimator.cpp
+    test_StructureFactorInput.cpp
     )
 
 add_executable(${UTEST_EXE} ${SRCS})
-target_link_libraries(${UTEST_EXE} catch_main qmcutil qmcestimators utilities_for_test sposets_for_testing)
+target_link_libraries(${UTEST_EXE} catch_main qmcutil qmcestimators test_estimators_help utilities_for_test sposets_for_testing)
 if(USE_OBJECT_TARGET)
   target_link_libraries(
     ${UTEST_EXE}
     qmcutil
     qmcestimators
+    test_estimators_help
     qmcham
     qmcwfs
     qmcparticle
@@ -76,13 +97,14 @@ if(HAVE_MPI)
   set(UTEST_NAME deterministic-unit_test_${SRC_DIR}_mpi)
 
   #this is dependent on the directory creation and sym linking of earlier driver tests
-  set(SRCS FakeOperatorEstimator.cpp EstimatorManagerNewTest.cpp test_manager_mpi.cpp)
+  set(SRCS FakeOperatorEstimator.cpp test_manager_mpi.cpp test_EnergyDensityEstimatorIntegration.cpp)
   add_executable(${UTEST_EXE} ${SRCS})
   if(USE_OBJECT_TARGET)
     target_link_libraries(
       ${UTEST_EXE}
       qmcutil
       qmcestimators
+      test_estimators_help
       qmcham
       qmcdriver
       qmcwfs
@@ -93,7 +115,7 @@ if(HAVE_MPI)
       platform_omptarget_LA
       utilities_for_test)
   endif()
-  target_link_libraries(${UTEST_EXE} catch_main qmcestimators)
+  target_link_libraries(${UTEST_EXE} catch_main qmcestimators test_estimators_help)
   # Right now the unified driver mpi tests are hard coded for 3 MPI ranks
   add_unit_test(${UTEST_NAME} 3 1 $<TARGET_FILE:${UTEST_EXE}>)
 endif()

@@ -39,11 +39,11 @@ class OEBAccessor;
 class OperatorEstBase
 {
 public:
-  using QMCT      = QMCTraits;
+  using QMCT             = QMCTraits;
   using FullPrecRealType = QMCT::FullPrecRealType;
-  using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
-
-  using Data = std::vector<QMCT::RealType>;
+  using MCPWalker        = Walker<QMCTraits, PtclOnLatticeTraits>;
+  using Real             = QMCT::RealType;
+  using Data             = std::vector<Real>;
 
   ///constructor
   OperatorEstBase(DataLocality dl);
@@ -91,7 +91,32 @@ public:
 
   virtual void startBlock(int steps) = 0;
 
+  const std::vector<QMCT::RealType>& get_data() const { return data_; }
   std::vector<QMCT::RealType>& get_data() { return data_; }
+
+  virtual std::size_t getFullDataSize() const { return data_.size(); }
+
+  /** @ingroup Functions to add or remove estimator data from PooledData<Real>
+   *  @brief   used for MPI reduction.
+   *           These are only used on the rank estimator owned by EstimatorManagerNew.
+   *           The rank EstimatorManagerNew owns the buffer.
+   *           It is not intended to store the state of the estimator.
+   *           The packing and unpacking functions must follow the same sequence of adds or gets
+   *           as PooledData is a stateful sequence of bytes with an internal position cursor.
+   *  @{
+   */
+
+  /** Packs data from native container types in a subtype of Operator est base
+   *  to buffer of type Real for reduction over MPI.
+   *  I.e. writes to pooled data.
+   */
+  virtual void packData(PooledData<Real>& buffer) const;
+  /** Unpacks data from mpi buffer of type Real into native container types
+   *  after a reduction over MPI.
+   *  i.e. reads from pooled data.
+   */
+  virtual void unpackData(PooledData<Real>& buffer);
+  ///@}
 
   /*** create and tie OperatorEstimator's observable_helper hdf5 wrapper to stat.h5 file
    * @param gid hdf5 group to which the observables belong
@@ -108,7 +133,7 @@ public:
    *  if you haven't registered Operator Estimator 
    *  this will do nothing.
    */
-  void write(hdf_archive& file);
+  virtual void write(hdf_archive& file);
 
   /** zero data appropriately for the DataLocality
    */
@@ -127,7 +152,7 @@ public:
    *
    *  Many estimators don't need per particle values so the default implementation is no op.
    */
-  virtual void registerListeners(QMCHamiltonian& ham_leader){};
+  virtual void registerListeners(QMCHamiltonian& ham_leader) {};
 
   bool isListenerRequired() { return requires_listener_; }
 

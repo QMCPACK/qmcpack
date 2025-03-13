@@ -62,24 +62,26 @@ Tp MixedDensityMatrix(const MatA& hermA,
                       bool compact = true,
                       bool herm    = true)
 {
+  using std::get;
   // check dimensions are consistent
-  int NMO = (herm ? std::get<1>(hermA.sizes()) : std::get<0>(hermA.sizes()));
-  int NEL = (herm ? std::get<0>(hermA.sizes()) : std::get<1>(hermA.sizes()));
-  assert(NMO == std::get<0>(B.sizes()));
-  assert(NEL == std::get<1>(B.sizes()));
+  int NMO = (herm ? get<1>(hermA.sizes()) : get<0>(hermA.sizes()));
+  int NEL = (herm ? get<0>(hermA.sizes()) : get<1>(hermA.sizes()));
+
+  assert(NMO == get<0>(B.sizes()));
+  assert(NEL == get<1>(B.sizes()));
   assert(NEL == T1.size());
-  assert(std::get<1>(B.sizes()) == std::get<1>(T1.sizes()));
+  assert(get<1>(B.sizes()) == get<1>(T1.sizes()));
   if (compact)
   {
-    assert(std::get<0>(C.sizes()) == std::get<1>(T1.sizes()));
-    assert(std::get<1>(C.sizes()) == std::get<0>(B.sizes()));
+    assert(get<0>(C.sizes()) == get<1>(T1.sizes()));
+    assert(get<1>(C.sizes()) == get<0>(B.sizes()));
   }
   else
   {
-    assert(std::get<1>(T2.sizes()) == B.size());
-    assert(T2.size() == std::get<1>(T1.sizes()));
+    assert(get<1>(T2.sizes()) == B.size());
+    assert(T2.size() == get<1>(T1.sizes()));
     assert(C.size() == NMO);
-    assert(std::get<1>(C.sizes()) == std::get<1>(T2.sizes()));
+    assert(get<1>(C.sizes()) == get<1>(T2.sizes()));
   }
 
   using ma::H;
@@ -152,26 +154,28 @@ Tp MixedDensityMatrixForWoodbury(const MatA& hermA,
                                  TBuffer& WORK,
                                  bool compact = true)
 {
+  using std::get;
+
   // check dimensions are consistent
-  int NEL = std::get<1>(B.sizes());
-  assert(std::get<1>(hermA.sizes()) == std::get<0>(B.sizes()));
-  assert(std::get<0>(hermA.sizes()) == std::get<0>(TAB.sizes()));
-  assert(std::get<1>(B.sizes()) == std::get<1>(TAB.sizes()));
-  assert(std::get<1>(B.sizes()) == std::get<0>(TNN.sizes()));
-  assert(std::get<1>(B.sizes()) == std::get<1>(TNN.sizes()));
-  assert(std::get<0>(hermA.sizes()) == std::get<0>(QQ0.sizes()));
-  assert(std::get<1>(B.sizes()) == std::get<1>(QQ0.sizes()));
+  int NEL = get<1>(B.sizes());
+  assert(get<1>(hermA.sizes()) == get<0>(B.sizes()));
+  assert(get<0>(hermA.sizes()) == get<0>(TAB.sizes()));
+  assert(get<1>(B.sizes()) == get<1>(TAB.sizes()));
+  assert(get<1>(B.sizes()) == get<0>(TNN.sizes()));
+  assert(get<1>(B.sizes()) == get<1>(TNN.sizes()));
+  assert(get<0>(hermA.sizes()) == get<0>(QQ0.sizes()));
+  assert(get<1>(B.sizes()) == get<1>(QQ0.sizes()));
   if (compact)
   {
-    assert(std::get<0>(C.sizes()) == std::get<1>(TNN.sizes()));
-    assert(std::get<1>(C.sizes()) == std::get<0>(B.sizes()));
+    assert(get<0>(C.sizes()) == get<1>(TNN.sizes()));
+    assert(get<1>(C.sizes()) == get<0>(B.sizes()));
   }
   else
   {
-    assert(std::get<1>(TNM.sizes()) == std::get<0>(B.sizes()));
-    assert(std::get<0>(TNM.sizes()) == std::get<1>(TNN.sizes()));
-    assert(std::get<0>(C.sizes()) == std::get<1>(hermA.sizes()));
-    assert(std::get<1>(C.sizes()) == std::get<1>(TNM.sizes()));
+    assert(get<1>(TNM.sizes()) == get<0>(B.sizes()));
+    assert(get<0>(TNM.sizes()) == get<1>(TNN.sizes()));
+    assert(get<0>(C.sizes()) == get<1>(hermA.sizes()));
+    assert(get<1>(C.sizes()) == get<1>(TNM.sizes()));
   }
 
   using ma::T;
@@ -233,24 +237,26 @@ Tp MixedDensityMatrixFromConfiguration(const MatA& hermA,
                                        TBuffer& WORK,
                                        bool compact = true)
 {
+  using std::get;
+
   // check dimensions are consistent
-  int NEL = std::get<1>(B.sizes());
-  assert(std::get<1>(hermA.sizes()) == std::get<0>(B.sizes()));
-  assert(std::get<0>(hermA.sizes()) == std::get<0>(TAB.sizes()));
-  assert(std::get<1>(B.sizes()) == std::get<1>(TAB.sizes()));
-  assert(std::get<1>(B.sizes()) == std::get<0>(TNN.sizes()));
-  assert(std::get<1>(B.sizes()) == std::get<1>(TNN.sizes()));
+  int NEL = get<1>(B.sizes());
+  assert(get<1>(hermA.sizes()) == get<0>(B.sizes()));
+  assert(get<0>(hermA.sizes()) == get<0>(TAB.sizes()));
+  assert(get<1>(B.sizes()) == get<1>(TAB.sizes()));
+  assert(get<1>(B.sizes()) == get<0>(TNN.sizes()));
+  assert(get<1>(B.sizes()) == get<1>(TNN.sizes()));
   if (compact)
   {
-    assert(std::get<0>(C.sizes()) == std::get<1>(TNN.sizes()));
-    assert(std::get<1>(C.sizes()) == std::get<0>(B.sizes()));
+    assert(get<0>(C.sizes()) == get<1>(TNN.sizes()));
+    assert(get<1>(C.sizes()) == get<0>(B.sizes()));
   }
   else
   {
-    assert(std::get<1>(TNM.sizes()) == std::get<0>(B.sizes()));
-    assert(std::get<0>(TNM.sizes()) == std::get<1>(TNN.sizes()));
-    assert(std::get<0>(C.sizes()) == std::get<1>(hermA.sizes()));
-    assert(std::get<1>(C.sizes()) == std::get<1>(TNM.sizes()));
+    assert(get<1>(TNM.sizes()) == get<0>(B.sizes()));
+    assert(get<0>(TNM.sizes()) == get<1>(TNN.sizes()));
+    assert(get<0>(C.sizes()) == get<1>(hermA.sizes()));
+    assert(get<1>(C.sizes()) == get<1>(TNM.sizes()));
   }
 
   using ma::T;
@@ -316,22 +322,24 @@ Tp MixedDensityMatrix_noHerm(const MatA& A,
                              TBuffer& WORK,
                              bool compact = true)
 {
+  using std::get;
+
   // check dimensions are consistent
-  assert(std::get<0>(A.sizes()) == std::get<0>(B.sizes()));
-  assert(std::get<1>(A.sizes()) == std::get<1>(B.sizes()));
-  assert(std::get<1>(A.sizes()) == std::get<0>(T1.sizes()));
-  assert(std::get<1>(B.sizes()) == std::get<1>(T1.sizes()));
+  assert(get<0>(A.sizes()) == get<0>(B.sizes()));
+  assert(get<1>(A.sizes()) == get<1>(B.sizes()));
+  assert(get<1>(A.sizes()) == get<0>(T1.sizes()));
+  assert(get<1>(B.sizes()) == get<1>(T1.sizes()));
   if (compact)
   {
-    assert(std::get<0>(C.sizes()) == std::get<1>(T1.sizes()));
-    assert(std::get<1>(C.sizes()) == std::get<0>(B.sizes()));
+    assert(get<0>(C.sizes()) == get<1>(T1.sizes()));
+    assert(get<1>(C.sizes()) == get<0>(B.sizes()));
   }
   else
   {
-    assert(std::get<1>(T2.sizes()) == std::get<0>(B.sizes()));
-    assert(std::get<0>(T2.sizes()) == std::get<1>(T1.sizes()));
-    assert(std::get<0>(C.sizes()) == std::get<0>(A.sizes()));
-    assert(std::get<1>(C.sizes()) == std::get<1>(T2.sizes()));
+    assert(get<1>(T2.sizes()) == get<0>(B.sizes()));
+    assert(get<0>(T2.sizes()) == get<1>(T1.sizes()));
+    assert(get<0>(C.sizes()) == get<0>(A.sizes()));
+    assert(get<1>(C.sizes()) == get<1>(T2.sizes()));
   }
 
   using ma::H;
@@ -380,32 +388,34 @@ Tp MixedDensityMatrix_noHerm_wSVD(const MatA& A,
                                   TBuffer& WORK,
                                   bool compact = true)
 {
+  using std::get;
+
   // check dimensions are consistent
-  assert(std::get<0>(A.sizes()) == std::get<0>(B.sizes()));
-  assert(std::get<1>(A.sizes()) == std::get<1>(B.sizes()));
-  assert(std::get<1>(A.sizes()) == std::get<0>(U.sizes())); // [U] = [NxN]
-  assert(std::get<1>(A.sizes()) == std::get<1>(U.sizes()));
-  assert(std::get<1>(A.sizes()) == std::get<0>(VT.sizes())); // [V] = [NxN]
-  assert(std::get<1>(A.sizes()) == std::get<1>(VT.sizes()));
-  assert(std::get<1>(A.sizes()) <= (6 * S.size() + 1)); // [S] = [N+1]
-  assert(std::get<1>(A.sizes()) == std::get<0>(UA.sizes()));          // [UA] = [NxM]
-  assert(std::get<0>(A.sizes()) == std::get<1>(UA.sizes()));
+  assert(get<0>(A.sizes()) == get<0>(B.sizes()));
+  assert(get<1>(A.sizes()) == get<1>(B.sizes()));
+  assert(get<1>(A.sizes()) == get<0>(U.sizes())); // [U] = [NxN]
+  assert(get<1>(A.sizes()) == get<1>(U.sizes()));
+  assert(get<1>(A.sizes()) == get<0>(VT.sizes())); // [V] = [NxN]
+  assert(get<1>(A.sizes()) == get<1>(VT.sizes()));
+  assert(get<1>(A.sizes()) <= (6 * S.size() + 1)); // [S] = [N+1]
+  assert(get<1>(A.sizes()) == get<0>(UA.sizes()));          // [UA] = [NxM]
+  assert(get<0>(A.sizes()) == get<1>(UA.sizes()));
   if (compact)
   {
-    assert(std::get<0>(C.sizes()) == std::get<1>(B.sizes()));
-    assert(std::get<1>(C.sizes()) == std::get<0>(B.sizes()));
+    assert(get<0>(C.sizes()) == get<1>(B.sizes()));
+    assert(get<1>(C.sizes()) == get<0>(B.sizes()));
   }
   else
   {
-    assert( std::get<0>(A.sizes()) == std::get<0>(BV.sizes()) ); // [BV] = [MxN]
-    assert( std::get<1>(A.sizes()) == std::get<1>(BV.sizes()) );
-    assert( std::get<0>(C.sizes()) == std::get<0>(A.sizes()) );
-    assert( std::get<1>(C.sizes()) == std::get<0>(A.sizes()) );
+    assert( get<0>(A.sizes()) == get<0>(BV.sizes()) ); // [BV] = [MxN]
+    assert( get<1>(A.sizes()) == get<1>(BV.sizes()) );
+    assert( get<0>(C.sizes()) == get<0>(A.sizes()) );
+    assert( get<1>(C.sizes()) == get<0>(A.sizes()) );
   }
 
+  using std::real;
   using ma::determinant_from_geqrf;
   using ma::H;
-  using ma::real;
   using ma::T;
   using ma::term_by_term_matrix_vector;
 
@@ -453,7 +463,7 @@ Tp MixedDensityMatrix_noHerm_wSVD(const MatA& A,
 
 
     // VT = VT * inv(S), which works since S is diagonal and real
-    term_by_term_matrix_vector(ma::TOp_DIV, 0, std::get<0>(VT.sizes()), std::get<1>(VT.sizes()), ma::pointer_dispatch(VT.origin()), VT.stride(0),
+    term_by_term_matrix_vector(ma::TOp_DIV, 0, get<0>(VT.sizes()), get<1>(VT.sizes()), ma::pointer_dispatch(VT.origin()), VT.stride(0),
                                ma::pointer_dispatch(S.origin()), 1);
 
     // BV = H(VT) * H(U)
@@ -473,7 +483,7 @@ Tp MixedDensityMatrix_noHerm_wSVD(const MatA& A,
     ma::product(B, H(VT), BV);
 
     // BV = BV * inv(S), which works since S is diagonal and real
-    term_by_term_matrix_vector(ma::TOp_DIV, 1, std::get<0>(BV.sizes()), std::get<1>(BV.sizes()), ma::pointer_dispatch(BV.origin()), BV.stride(0),
+    term_by_term_matrix_vector(ma::TOp_DIV, 1, get<0>(BV.sizes()), get<1>(BV.sizes()), ma::pointer_dispatch(BV.origin()), BV.stride(0),
                                ma::pointer_dispatch(S.origin()), 1);
 
     // UA = H(U) * H(A)
@@ -505,13 +515,14 @@ Tp Overlap(const MatA& hermA,
            Buffer&& WORK,
            bool herm = true)
 {
-  int NMO = (herm ? std::get<1>(hermA.sizes()) : std::get<0>(hermA.sizes()));
-  int NEL = (herm ? std::get<0>(hermA.sizes()) : std::get<1>(hermA.sizes()));
+  using std::get;
+  int NMO = (herm ? get<1>(hermA.sizes()) : get<0>(hermA.sizes()));
+  int NEL = (herm ? get<0>(hermA.sizes()) : get<1>(hermA.sizes()));
   // check dimensions are consistent
-  assert(NMO == std::get<0>(B.sizes()));
-  assert(NEL == std::get<1>(B.sizes()));
-  assert(NEL == std::get<0>(T1.sizes()));
-  assert(std::get<1>(B.sizes()) == std::get<1>(T1.sizes()));
+  assert(NMO == get<0>(B.sizes()));
+  assert(NEL == get<1>(B.sizes()));
+  assert(NEL == get<0>(T1.sizes()));
+  assert(get<1>(B.sizes()) == get<1>(T1.sizes()));
 
   using ma::H;
   using ma::T;
@@ -544,15 +555,17 @@ Tp OverlapForWoodbury(const MatA& hermA,
                       IBuffer& IWORK,
                       TBuffer& WORK)
 {
+  using std::get;
+
   // check dimensions are consistent
-  int NEL = std::get<1>(B.sizes());
-  assert(std::get<1>(hermA.sizes()) == std::get<0>(B.sizes()));
-  assert(std::get<0>(hermA.sizes()) == std::get<0>(TMN.sizes()));
-  assert(std::get<1>(B.sizes()) == std::get<1>(TMN.sizes()));
-  assert(std::get<1>(B.sizes()) == std::get<0>(TNN.sizes()));
-  assert(std::get<1>(B.sizes()) == std::get<1>(TNN.sizes()));
-  assert(std::get<0>(hermA.sizes()) == std::get<0>(QQ0.sizes()));
-  assert(std::get<1>(B.sizes()) == std::get<1>(QQ0.sizes()));
+  int NEL = get<1>(B.sizes());
+  assert(get<1>(hermA.sizes()) == get<0>(B.sizes()));
+  assert(get<0>(hermA.sizes()) == get<0>(TMN.sizes()));
+  assert(get<1>(B.sizes()) == get<1>(TMN.sizes()));
+  assert(get<1>(B.sizes()) == get<0>(TNN.sizes()));
+  assert(get<1>(B.sizes()) == get<1>(TNN.sizes()));
+  assert(get<0>(hermA.sizes()) == get<0>(QQ0.sizes()));
+  assert(get<1>(B.sizes()) == get<1>(QQ0.sizes()));
 
   using ma::T;
 
@@ -592,11 +605,12 @@ Tp OverlapForWoodbury(const MatA& hermA,
 template<class Tp, class MatA, class MatB, class Mat, class Buffer, class IBuffer>
 Tp Overlap_noHerm(const MatA& A, const MatB& B, Tp LogOverlapFactor, Mat&& T1, IBuffer& IWORK, Buffer& WORK)
 {
+  using std::get;
   // check dimensions are consistent
-  assert(std::get<0>(A.sizes()) == std::get<0>(B.sizes()));
-  assert(std::get<1>(A.sizes()) == std::get<1>(B.sizes()));
-  assert(std::get<1>(A.sizes()) == std::get<0>(T1.sizes()));
-  assert(std::get<1>(B.sizes()) == std::get<1>(T1.sizes()));
+  assert(get<0>(A.sizes()) == get<0>(B.sizes()));
+  assert(get<1>(A.sizes()) == get<1>(B.sizes()));
+  assert(get<1>(A.sizes()) == get<0>(T1.sizes()));
+  assert(get<1>(B.sizes()) == get<1>(T1.sizes()));
 
   using ma::H;
   using ma::T;
@@ -642,30 +656,32 @@ Tp MixedDensityMatrix(const MatA& hermA,
                       bool compact = true,
                       bool herm    = true)
 {
-  int NMO = (herm ? std::get<1>(hermA.sizes()) : std::get<0>(hermA.sizes()));
-  int NEL = (herm ? std::get<0>(hermA.sizes()) : std::get<1>(hermA.sizes()));
+  using std::get;
+  int NMO = (herm ? get<1>(hermA.sizes()) : get<0>(hermA.sizes()));
+  int NEL = (herm ? get<0>(hermA.sizes()) : get<1>(hermA.sizes()));
   // check dimensions are consistent
-  assert(NMO == std::get<0>(B.sizes()));
-  assert(NEL == std::get<1>(B.sizes()));
-  assert(NEL == std::get<0>(T1.sizes()));
-  assert(std::get<1>(B.sizes()) == std::get<1>(T1.sizes()));
+  using std::get;
+  assert(NMO == get<0>(B.sizes()));
+  assert(NEL == get<1>(B.sizes()));
+  assert(NEL == get<0>(T1.sizes()));
+  assert(get<1>(B.sizes()) == get<1>(T1.sizes()));
   if (compact)
   {
-    assert(std::get<0>(C.sizes()) == std::get<1>(T1.sizes()));
-    assert(std::get<1>(C.sizes()) == std::get<0>(B.sizes()));
+    assert(get<0>(C.sizes()) == get<1>(T1.sizes()));
+    assert(get<1>(C.sizes()) == get<0>(B.sizes()));
   }
   else
   {
-    assert(std::get<1>(T2.sizes()) == std::get<0>(B.sizes()));
-    assert(std::get<0>(T2.sizes()) == std::get<1>(T1.sizes()));
-    assert(std::get<0>(C.sizes()) == NMO);
-    assert(std::get<1>(C.sizes()) == std::get<1>(T2.sizes()));
+    assert(get<1>(T2.sizes()) == get<0>(B.sizes()));
+    assert(get<0>(T2.sizes()) == get<1>(T1.sizes()));
+    assert(get<0>(C.sizes()) == NMO);
+    assert(get<1>(C.sizes()) == get<1>(T2.sizes()));
   }
 
   using ma::H;
   using ma::T;
 
-  int N0, Nn, sz = std::get<1>(B.sizes());
+  int N0, Nn, sz = get<1>(B.sizes());
   std::tie(N0, Nn) = FairDivideBoundary(comm.rank(), sz, comm.size());
 
   // T(B)*conj(A)
@@ -718,7 +734,7 @@ Tp MixedDensityMatrix(const MatA& hermA,
 
       comm.barrier();
 
-      sz               = std::get<1>(T2.sizes());
+      sz               = get<1>(T2.sizes());
       std::tie(N0, Nn) = FairDivideBoundary(comm.rank(), sz, comm.size());
 
       // C = conj(A) * T2
@@ -734,7 +750,7 @@ Tp MixedDensityMatrix(const MatA& hermA,
 
       comm.barrier();
 
-      sz               = std::get<1>(T2.sizes());
+      sz               = get<1>(T2.sizes());
       std::tie(N0, Nn) = FairDivideBoundary(comm.rank(), sz, comm.size());
 
       // C = T( B * T2) = T(T2) * T(B)
@@ -768,18 +784,20 @@ Tp Overlap(const MatA& hermA,
            communicator& comm,
            bool herm = true)
 {
-  int NMO = (herm ? std::get<1>(hermA.sizes()) : std::get<0>(hermA.sizes()));
-  int NEL = (herm ? std::get<0>(hermA.sizes()) : std::get<1>(hermA.sizes()));
+  using std::get;
+
+  int NMO = (herm ? get<1>(hermA.sizes()) : get<0>(hermA.sizes()));
+  int NEL = (herm ? get<0>(hermA.sizes()) : get<1>(hermA.sizes()));
   // check dimensions are consistent
-  assert(NMO == std::get<0>(B.sizes()));
-  assert(NEL == std::get<1>(B.sizes()));
-  assert(NEL == std::get<0>(T1.sizes()));
-  assert(std::get<1>(B.sizes()) == std::get<1>(T1.sizes()));
+  assert(NMO == get<0>(B.sizes()));
+  assert(NEL == get<1>(B.sizes()));
+  assert(NEL == get<0>(T1.sizes()));
+  assert(get<1>(B.sizes()) == get<1>(T1.sizes()));
 
   using ma::H;
   using ma::T;
 
-  int N0, Nn, sz = std::get<1>(B.sizes());
+  int N0, Nn, sz = get<1>(B.sizes());
   std::tie(N0, Nn) = FairDivideBoundary(comm.rank(), sz, comm.size());
 
   // T(B)*conj(A)
@@ -822,19 +840,20 @@ Tp OverlapForWoodbury(const MatA& hermA,
                       TBuffer& WORK,
                       communicator& comm)
 {
+  using std::get;
   // check dimensions are consistent
-  int NEL = std::get<1>(B.sizes());
-  assert(std::get<1>(hermA.sizes()) == std::get<0>(B.sizes()));
-  assert(std::get<0>(hermA.sizes()) == std::get<0>(TMN.sizes()));
-  assert(std::get<1>(B.sizes()) == std::get<1>(TMN.sizes()));
-  assert(std::get<1>(B.sizes()) == std::get<0>(TNN.sizes()));
-  assert(std::get<1>(B.sizes()) == std::get<1>(TNN.sizes()));
-  assert(std::get<0>(hermA.sizes()) == std::get<0>(QQ0.sizes()));
-  assert(std::get<1>(B.sizes()) == std::get<1>(QQ0.sizes()));
+  int NEL = get<1>(B.sizes());
+  assert(get<1>(hermA.sizes()) == get<0>(B.sizes()));
+  assert(get<0>(hermA.sizes()) == get<0>(TMN.sizes()));
+  assert(get<1>(B.sizes()) == get<1>(TMN.sizes()));
+  assert(get<1>(B.sizes()) == get<0>(TNN.sizes()));
+  assert(get<1>(B.sizes()) == get<1>(TNN.sizes()));
+  assert(get<0>(hermA.sizes()) == get<0>(QQ0.sizes()));
+  assert(get<1>(B.sizes()) == get<1>(QQ0.sizes()));
 
   using ma::T;
 
-  int N0, Nn, sz = std::get<1>(B.sizes());
+  int N0, Nn, sz = get<1>(B.sizes());
   std::tie(N0, Nn) = FairDivideBoundary(comm.rank(), sz, comm.size());
 
   Tp ovlp;
@@ -887,26 +906,28 @@ Tp MixedDensityMatrixForWoodbury(const MatA& hermA,
                                  communicator& comm,
                                  bool compact = true)
 {
-  // check dimensions are consistent
-  int NEL = std::get<1>(B.sizes());
-  assert(std::get<1>(hermA.sizes()) == std::get<0>(B.sizes()));
-  assert(std::get<0>(hermA.sizes()) == std::get<0>(TAB.sizes()));
-  assert(std::get<1>(B.sizes()) == std::get<1>(TAB.sizes()));
-  assert(std::get<1>(B.sizes()) == std::get<0>(TNN.sizes()));
-  assert(std::get<1>(B.sizes()) == std::get<1>(TNN.sizes()));
-  assert(std::get<0>(hermA.sizes()) == std::get<0>(QQ0.sizes()));
-  assert(std::get<1>(B.sizes()) == std::get<1>(QQ0.sizes()));
+  using std::get;
+
+  // check dimensions are consistent  
+  int NEL = get<1>(B.sizes());
+  assert(get<1>(hermA.sizes()) == get<0>(B.sizes()));
+  assert(get<0>(hermA.sizes()) == get<0>(TAB.sizes()));
+  assert(get<1>(B.sizes()) == get<1>(TAB.sizes()));
+  assert(get<1>(B.sizes()) == get<0>(TNN.sizes()));
+  assert(get<1>(B.sizes()) == get<1>(TNN.sizes()));
+  assert(get<0>(hermA.sizes()) == get<0>(QQ0.sizes()));
+  assert(get<1>(B.sizes()) == get<1>(QQ0.sizes()));
   if (compact)
   {
-    assert(std::get<0>(C.sizes()) == std::get<1>(TNN.sizes()));
-    assert(std::get<1>(C.sizes()) == std::get<0>(B.sizes()));
+    assert(get<0>(C.sizes()) == get<1>(TNN.sizes()));
+    assert(get<1>(C.sizes()) == get<0>(B.sizes()));
   }
   else
   {
-    assert(std::get<1>(TNM.sizes()) == std::get<0>(B.sizes()));
-    assert(std::get<0>(TNM.sizes()) == std::get<1>(TNN.sizes()));
-    assert(std::get<0>(C.sizes()) == std::get<1>(hermA.sizes()));
-    assert(std::get<1>(C.sizes()) == std::get<1>(TNM.sizes()));
+    assert(get<1>(TNM.sizes()) == get<0>(B.sizes()));
+    assert(get<0>(TNM.sizes()) == get<1>(TNN.sizes()));
+    assert(get<0>(C.sizes()) == get<1>(hermA.sizes()));
+    assert(get<1>(C.sizes()) == get<1>(TNM.sizes()));
   }
 
   using ma::T;
@@ -933,7 +954,7 @@ Tp MixedDensityMatrixForWoodbury(const MatA& hermA,
   comm.broadcast_n(&ovlp, 1, 0);
 
   int P0, Pn;
-  std::tie(P0, Pn) = FairDivideBoundary(comm.rank(), int(std::get<0>(TAB.sizes())), comm.size());
+  std::tie(P0, Pn) = FairDivideBoundary(comm.rank(), int(get<0>(TAB.sizes())), comm.size());
 
   // QQ0 = TAB * inv(TNN)
   if (P0 != Pn)
@@ -951,7 +972,7 @@ Tp MixedDensityMatrixForWoodbury(const MatA& hermA,
     if (N0 != Nn)
       ma::product(T(TNN(TNN.extension(0), {N0, Nn})), T(B), TNM.sliced(N0, Nn));
 
-    int sz           = std::get<1>(TNM.sizes());
+    int sz           = get<1>(TNM.sizes());
     std::tie(N0, Nn) = FairDivideBoundary(comm.rank(), sz, comm.size());
     comm.barrier();
 
@@ -992,26 +1013,27 @@ void MixedDensityMatrix(std::vector<MatA>& hermA,
   using ma::H;
   using ma::T;
 
+  using std::get;
   int nbatch = Bi.size();
-  int NMO    = (herm ? std::get<1>((*hermA[0]).sizes()) : std::get<0>((*hermA[0]).sizes()));
-  int NEL    = (herm ? std::get<0>((*hermA[0]).sizes()) : std::get<1>((*hermA[0]).sizes()));
+  int NMO    = (herm ? get<1>((*hermA[0]).sizes()) : get<0>((*hermA[0]).sizes()));
+  int NEL    = (herm ? get<0>((*hermA[0]).sizes()) : get<1>((*hermA[0]).sizes()));
 
-  assert(std::get<0>((*Bi[0]).sizes()) == NMO);
-  assert(std::get<1>((*Bi[0]).sizes()) == NEL);
+  assert(get<0>((*Bi[0]).sizes()) == NMO);
+  assert(get<1>((*Bi[0]).sizes()) == NEL);
   assert(C.size() == nbatch);
-  assert(std::get<2>(C.sizes()) == NMO);
+  assert(get<2>(C.sizes()) == NMO);
   if (compact)
-    assert(std::get<1>(C.sizes()) == NEL);
+    assert(get<1>(C.sizes()) == NEL);
   else
-    assert(std::get<1>(C.sizes()) == NMO);
+    assert(get<1>(C.sizes()) == NMO);
   assert(ovlp.size() == nbatch);
-  assert(std::get<1>(TNN3D.sizes()) == NEL);
-  assert(std::get<2>(TNN3D.sizes()) == NEL);
+  assert(get<1>(TNN3D.sizes()) == NEL);
+  assert(get<2>(TNN3D.sizes()) == NEL);
   if (not compact)
   {
-    assert(std::get<0>(TNM3D.sizes()) == nbatch);
-    assert(std::get<1>(TNM3D.sizes()) == NEL);
-    assert(std::get<2>(TNM3D.sizes()) == NMO);
+    assert(get<0>(TNM3D.sizes()) == nbatch);
+    assert(get<1>(TNM3D.sizes()) == NEL);
+    assert(get<2>(TNM3D.sizes()) == NMO);
   }
   assert(IWORK.num_elements() >= nbatch * (NEL + 1));
   assert(TNN3D.stride(1) == NEL); // needed by getriBatched
@@ -1148,26 +1170,27 @@ void DensityMatrices(std::vector<MatA> const& Left,
   using ma::H;
   using ma::T;
 
+  using std::get;
   int nbatch = Right.size();
-  int NMO    = (herm ? std::get<1>((*Left[0]).sizes()) : std::get<0>((*Left[0]).sizes()));
-  int NEL    = (herm ? std::get<0>((*Left[0]).sizes()) : std::get<1>((*Left[0]).sizes()));
+  int NMO    = (herm ? get<1>((*Left[0]).sizes()) : get<0>((*Left[0]).sizes()));
+  int NEL    = (herm ? get<0>((*Left[0]).sizes()) : get<1>((*Left[0]).sizes()));
 
-  assert(std::get<0>((*Right[0]).sizes()) == NMO);
-  assert(std::get<1>((*Right[0]).sizes()) == NEL);
+  assert(get<0>((*Right[0]).sizes()) == NMO);
+  assert(get<1>((*Right[0]).sizes()) == NEL);
   assert(G.size() == nbatch);
-  assert(std::get<1>((*G[0]).sizes()) == NMO);
+  assert(get<1>((*G[0]).sizes()) == NMO);
   if (compact)
     assert((*G[0]).size() == NEL);
   else
     assert((*G[0]).size() == NMO);
   assert(ovlp.size() == nbatch);
-  assert(std::get<1>(TNN3D.sizes()) == NEL);
-  assert(std::get<2>(TNN3D.sizes()) == NEL);
+  assert(get<1>(TNN3D.sizes()) == NEL);
+  assert(get<2>(TNN3D.sizes()) == NEL);
   if (not compact)
   {
-    assert(std::get<0>(TNM3D.sizes()) == nbatch);
-    assert(std::get<1>(TNM3D.sizes()) == NEL);
-    assert(std::get<2>(TNM3D.sizes()) == NMO);
+    assert(get<0>(TNM3D.sizes()) == nbatch);
+    assert(get<1>(TNM3D.sizes()) == NEL);
+    assert(get<2>(TNM3D.sizes()) == NMO);
   }
   assert(IWORK.num_elements() >= nbatch * (NEL + 1));
 
@@ -1273,16 +1296,18 @@ void Overlap(std::vector<MatA>& hermA,
   using ma::H;
   using ma::T;
 
+  using std::get;
+
   int nbatch = Bi.size();
   assert(hermA.size() >= nbatch);
-  int NMO = (herm ? std::get<1>((*hermA[0]).sizes()) : std::get<0>((*hermA[0]).sizes()));
-  int NEL = (herm ? std::get<0>((*hermA[0]).sizes()) : std::get<1>((*hermA[0]).sizes()));
+  int NMO = (herm ? get<1>((*hermA[0]).sizes()) : get<0>((*hermA[0]).sizes()));
+  int NEL = (herm ? get<0>((*hermA[0]).sizes()) : get<1>((*hermA[0]).sizes()));
 
-  assert(std::get<0>((*Bi[0]).sizes()) == NMO);
-  assert(std::get<1>((*Bi[0]).sizes()) == NEL);
+  assert(get<0>((*Bi[0]).sizes()) == NMO);
+  assert(get<1>((*Bi[0]).sizes()) == NEL);
   assert(ovlp.size() == nbatch);
-  assert(std::get<1>(TNN3D.sizes()) == NEL);
-  assert(std::get<2>(TNN3D.sizes()) == NEL);
+  assert(get<1>(TNN3D.sizes()) == NEL);
+  assert(get<2>(TNN3D.sizes()) == NEL);
   assert(IWORK.num_elements() >= nbatch * (NEL + 1));
 
   using pointer = typename std::decay<Mat>::type::element_ptr;

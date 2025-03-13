@@ -558,19 +558,27 @@ void RotatedSPOs::log_antisym_matrix(const ValueMatrix& mat, ValueMatrix& output
   char JOBR('N'); //Don't compute right eigenvectors.
   int N(n);
   int LDA(n);
-  int LWORK(4 * n);
+  int LWORK(-1);
   int info = 0;
 
 #ifndef QMC_COMPLEX
   std::vector<RealType> eval_r(n, 0);
   std::vector<RealType> eval_i(n, 0);
-  std::vector<RealType> work(4 * n, 0);
+  std::vector<RealType> work(1, 0);
+  LAPACK::geev(&JOBL, &JOBR, &N, &mat_h.at(0), &LDA, &eval_r.at(0), &eval_i.at(0), &mat_l.at(0), &LDA, nullptr, &LDA,
+               &work.at(0), &LWORK, &info);
+  LWORK = int(work[0]);
+  work.resize(LWORK);
   LAPACK::geev(&JOBL, &JOBR, &N, &mat_h.at(0), &LDA, &eval_r.at(0), &eval_i.at(0), &mat_l.at(0), &LDA, nullptr, &LDA,
                &work.at(0), &LWORK, &info);
 #else
   std::vector<ValueType> eval(n, 0);
-  std::vector<ValueType> work(2 * n, 0);
+  std::vector<ValueType> work(1, 0);
   std::vector<RealType> rwork(2 * n, 0);
+  LAPACK::geev(&JOBL, &JOBR, &N, &mat_h.at(0), &LDA, &eval.at(0), &mat_cl.at(0), &LDA, nullptr, &LDA, &work.at(0),
+               &LWORK, &rwork.at(0), &info);
+  LWORK = int(work[0].real());
+  work.resize(LWORK);
   LAPACK::geev(&JOBL, &JOBR, &N, &mat_h.at(0), &LDA, &eval.at(0), &mat_cl.at(0), &LDA, nullptr, &LDA, &work.at(0),
                &LWORK, &rwork.at(0), &info);
 #endif
@@ -981,7 +989,7 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
 void RotatedSPOs::evaluateDerivativesWF(ParticleSet& P,
                                         const opt_variables_type& optvars,
                                         Vector<ValueType>& dlogpsi,
-                                        const QTFull::ValueType& psiCurrent,
+                                        const FullPrecValue& psiCurrent,
                                         const std::vector<ValueType>& Coeff,
                                         const std::vector<size_t>& C2node_up,
                                         const std::vector<size_t>& C2node_dn,

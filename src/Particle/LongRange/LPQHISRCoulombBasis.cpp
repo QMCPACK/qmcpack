@@ -13,6 +13,7 @@
 
 #include "LPQHISRCoulombBasis.h"
 #include <cassert>
+#include "CPU/math.hpp"
 
 namespace qmcplusplus
 {

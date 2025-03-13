@@ -46,9 +46,6 @@ int main(int argc, char* argv[])
   MPI_Comm_size(MPI_COMM_WORLD, &world_size);
 #endif
 
-  // Suppress HDF5 warning and error messages.
-  qmcplusplus::hdf_error_suppression hide_hdf_errors;
-
   vector<string> vecParams;
   convertToVecStrings(argc, argv, vecParams);
   string fname;
@@ -112,5 +109,6 @@ int main(int argc, char* argv[])
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
+  cout << "convertpw4qmc execution completed successfully" << endl;
   return 0;
 }

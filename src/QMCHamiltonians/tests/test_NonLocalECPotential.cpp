@@ -16,6 +16,7 @@
 #include "Particle/ParticleSet.h"
 #include "QMCHamiltonians/ECPComponentBuilder.h"
 #include "QMCHamiltonians/NonLocalECPotential.h"
+#include "QMCHamiltonians/NonLocalECPComponent.h"
 #include "TestListenerFunction.h"
 #include "Utilities/StlPrettyPrint.hpp"
 #include "Utilities/RuntimeOptions.h"
@@ -36,19 +37,26 @@ public:
   {
     nl_ecp.PPset[0]->rrotsgrid_m = nl_ecp.PPset[0]->sgridxyz_m;
   }
+
   static bool didGridChange(NonLocalECPotential& nl_ecp)
   {
     return nl_ecp.PPset[0]->rrotsgrid_m != nl_ecp.PPset[0]->sgridxyz_m;
   }
+
+  static void evaluateImpl(NonLocalECPotential& nl_ecp, ParticleSet& P, bool compute_txy_all, bool keep_grid)
+  {
+    nl_ecp.evaluateImpl(P, compute_txy_all, keep_grid);
+  }
+
   static void mw_evaluateImpl(NonLocalECPotential& nl_ecp,
                               const RefVectorWithLeader<OperatorBase>& o_list,
                               const RefVectorWithLeader<TrialWaveFunction>& twf_list,
                               const RefVectorWithLeader<ParticleSet>& p_list,
-                              bool Tmove,
+                              bool compute_txy_all,
                               const std::optional<ListenerOption<Real>> listener_opt,
                               bool keep_grid)
   {
-    nl_ecp.mw_evaluateImpl(o_list, twf_list, p_list, Tmove, listener_opt, keep_grid);
+    nl_ecp.mw_evaluateImpl(o_list, twf_list, p_list, compute_txy_all, listener_opt, keep_grid);
   }
 };
 
@@ -61,7 +69,7 @@ TEST_CASE("NonLocalECPotential", "[hamiltonian]")
   using Position     = QMCTraits::PosType;
   using testing::getParticularListener;
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  Lattice lattice;
   lattice.BoxBConds = true; // periodic
   lattice.R.diagonal(20.0);
   lattice.LR_dim_cutoff = 15;
@@ -116,18 +124,14 @@ TEST_CASE("NonLocalECPotential", "[hamiltonian]")
   ParticleSet elec2(elec);
   elec2.update();
 
-  RefVector<ParticleSet> ptcls{elec, elec2};
-  RefVectorWithLeader<ParticleSet> p_list(elec, ptcls);
+  RefVectorWithLeader<ParticleSet> p_list(elec, {elec, elec2});
 
   RuntimeOptions runtime_options;
   TrialWaveFunction psi(runtime_options);
   TrialWaveFunction psi2(runtime_options);
   RefVectorWithLeader<TrialWaveFunction> twf_list(psi, {psi, psi2});
 
-  bool doForces = false;
-  bool use_DLA  = false;
-
-  NonLocalECPotential nl_ecp(ions, elec, psi, doForces, use_DLA);
+  NonLocalECPotential nl_ecp(ions, elec, psi, false /*use_DLA*/);
 
   int num_walkers = 2;
   int max_values  = 10;
@@ -167,8 +171,7 @@ TEST_CASE("NonLocalECPotential", "[hamiltonian]")
   nl_ecp.setRandomGenerator(&rng);
   nl_ecp2.setRandomGenerator(&rng2);
 
-  RefVector<OperatorBase> nl_ecps{nl_ecp, nl_ecp2};
-  RefVectorWithLeader<OperatorBase> o_list(nl_ecp, nl_ecps);
+  RefVectorWithLeader<OperatorBase> o_list(nl_ecp, {nl_ecp, nl_ecp2});
   ResourceCollection nl_ecp_res("test_nl_ecp_res");
   nl_ecp.createResource(nl_ecp_res);
   ResourceCollectionTeamLock<OperatorBase> nl_ecp_lock(nl_ecp_res, o_list);
@@ -183,9 +186,9 @@ TEST_CASE("NonLocalECPotential", "[hamiltonian]")
   ListenerOption<Real> listener_opt{listeners, ion_listeners};
   testing::TestNonLocalECPotential::mw_evaluateImpl(nl_ecp, o_list, twf_list, p_list, false, listener_opt, true);
 
-  // I'd like to see this gone when legacy drivers are dropped but for now we'll check against
-  // the single particle API
-  auto value = o_list[0].evaluateDeterministic(p_list[0]);
+  // for now we'll check against the single particle API
+  testing::TestNonLocalECPotential::evaluateImpl(nl_ecp, elec, false, true);
+  const auto value = nl_ecp.getValue();
 
   CHECK(std::accumulate(local_pots.begin(), local_pots.begin() + local_pots.cols(), 0.0) == Approx(value));
   CHECK(std::accumulate(local_pots2.begin(), local_pots2.begin() + local_pots2.cols(), 0.0) == Approx(value));

@@ -46,7 +46,7 @@ struct cartesian_communicator<dynamic_extent> : communicator {
 	: cartesian_communicator(comm_old, std::vector<int>(shape), std::vector<int>(period)) {}
 
 
-#if not defined(EXAMPI)
+#if !defined(EXAMPI)
 	[[deprecated("use dimensionality() instead of dimension")]]
 	int dimension() const {
 		int ret;  // NOLINT(cppcoreguidelines-init-variables) delayed init  // TODO(correaa)
@@ -56,7 +56,7 @@ struct cartesian_communicator<dynamic_extent> : communicator {
 #endif
 
 	cartesian_communicator& operator=(cartesian_communicator const&) = delete;
-	cartesian_communicator& operator=(cartesian_communicator&&)      = default;
+	cartesian_communicator& operator=(cartesian_communicator&&)      = default;  // NOLINT(clang-diagnostic-deprecated-declarations) TODO(correaa)
 	// vvv nvcc 11 workaround, needs explicit definition of duplicate assigment
 	[[deprecated]] cartesian_communicator& operator=(cartesian_communicator& other) {  // NOLINT(cppcoreguidelines-c-copy-assignment-signature,misc-unconventional-assign-operator) "duplicate" assignment
 		if(this == std::addressof(other)) {
@@ -214,7 +214,7 @@ struct cartesian_communicator : cartesian_communicator<> {
 	constexpr auto dimensions() const { return topology().dimensions; }
 
 	cartesian_communicator& operator=(cartesian_communicator const&)     = delete;
-	cartesian_communicator& operator=(cartesian_communicator&&) noexcept = default;
+	cartesian_communicator& operator=(cartesian_communicator&&) noexcept = default;  // NOLINT(clang-diagnostic-deprecated-declarations) TODO(correaa)
 	// vvv  nvcc 11 workaround, needs explicit definition of duplicate assigment
 	[[deprecated]] cartesian_communicator& operator=(cartesian_communicator& other) {  // NOLINT(cppcoreguidelines-c-copy-assignment-signature,misc-unconventional-assign-operator) duplicate assignment
 		if(this == std::addressof(other)) {

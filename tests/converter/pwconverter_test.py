@@ -25,15 +25,8 @@ def run_test(cpw4q_exe, h5diff_exe, gold_file, conv_inp):
         okay = False
     
     if len(stderr.strip()) != 0:
-        print ("Stderr not empty ")
+        print ("Stderr not empty:")
         print (stderr)
-        san = stderr.decode("utf-8").find("Sanitizer")
-        sup = stderr.decode("utf-8").find("Suppressions")
-        if sup >= 0 or san >= 0 :
-            print("Ignoring sanitizer suppressions")
-            okay = True
-        else:
-            okay = False
         
     if not os.path.exists(gold_file):
         print ("Gold file missing")

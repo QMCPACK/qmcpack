@@ -53,16 +53,13 @@ int main(int argc, char** argv)
   {
     //qmc_common  and MPI is initialized
     qmcplusplus::qmc_common.initialize(argc, argv);
-    int clones = 1;
-    std::vector<std::string> fgroup1, fgroup2;
+    std::vector<std::string> fgroup_names_cmd, fgroup_names_txt;
     int i = 1;
     while (i < argc)
     {
       std::string c(argv[i]);
       if (c[0] == '-')
       {
-        if (c.find("clones") < c.size())
-          clones = atoi(argv[++i]);
         if (c == "-debug")
           ReportEngine::enableOutput();
 
@@ -109,8 +106,8 @@ int main(int argc, char** argv)
       }
       else
       {
-        if (c.find("xml") < c.size())
-          fgroup1.push_back(argv[i]);
+        if (c.find(".xml") == c.size() - 4)
+          fgroup_names_cmd.push_back(argv[i]);
         else
         {
           std::ifstream fin(argv[i], std::ifstream::in);
@@ -121,17 +118,8 @@ int main(int argc, char** argv)
             getwords(words, fin);
             if (words.size())
             {
-              if (words[0].find("xml") < words[0].size())
-              {
-                int nc = 1;
-                if (words.size() > 1)
-                  nc = atoi(words[1].c_str());
-                while (nc)
-                {
-                  fgroup2.push_back(words[0]);
-                  --nc;
-                }
-              }
+              if (words[0].find(".xml") == words[0].size() - 4)
+                  fgroup_names_txt.push_back(words[0]);
             }
             else
               valid = false;
@@ -140,19 +128,20 @@ int main(int argc, char** argv)
       }
       ++i;
     }
-    int in_files = fgroup1.size();
-    std::vector<std::string> inputs(in_files * clones + fgroup2.size());
-    copy(fgroup2.begin(), fgroup2.end(), inputs.begin());
-    i = fgroup2.size();
-    for (int k = 0; k < in_files; ++k)
-      for (int c = 0; c < clones; ++c)
-        inputs[i++] = fgroup1[k];
+    std::vector<std::string> inputs(fgroup_names_cmd.size() + fgroup_names_txt.size());
+    copy(fgroup_names_txt.begin(), fgroup_names_txt.end(), inputs.begin());
+    i = fgroup_names_txt.size();
+    for (int k = 0; k < fgroup_names_cmd.size(); ++k)
+      inputs[i++] = fgroup_names_cmd[k];
     if (inputs.empty())
     {
       if (OHMMS::Controller->rank() == 0)
       {
-        std::cerr << "No input file is given." << std::endl;
-        std::cerr << "Usage: qmcpack <input-files> " << std::endl;
+        std::cerr << "No valid input file is given." << std::endl;
+        std::cerr << "Usage: qmcpack [options] <input-files.xml> " << std::endl;
+        std::cerr << "Ensemble runs may be initialized by specifying either multiple .xml files or text files "
+                     "containing lists of .xml input files."
+                  << std::endl;
       }
       OHMMS::Controller->finalize();
       return 1;
@@ -192,11 +181,6 @@ int main(int argc, char** argv)
       infoLog.redirectToSameStream(infoSummary);
       infoError.redirectToSameStream(infoSummary);
     }
-
-    //#if defined(MPIRUN_EXTRA_ARGUMENTS)
-    //  //broadcast the input file name to other nodes
-    //  MPI_Bcast(fname.c_str(),fname.size(),MPI_CHAR,0,OHMMS::Controller->getID());
-    //#endif
 
     bool validInput = false;
     app_log() << "  Input file(s): ";

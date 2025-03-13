@@ -708,7 +708,7 @@ public:
    * The batched algorthm forces the evaluation on the reference center and introduce some error.
    * In this case, the non-batched algorithm should be used.
    */
-  bool is_batched_safe(const VirtualParticleSet& VP) const
+  bool is_VP_batching_safe(const VirtualParticleSet& VP) const
   {
     const int center_idx = VP.refSourcePtcl;
     auto& myCenter       = AtomicCenters[Super2Prim[center_idx]];

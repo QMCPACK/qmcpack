@@ -33,7 +33,7 @@
 #      Base class for other formatted section classes.               #
 #      See atomic_species, atomic_positions, k_points,               #
 #        cell_parameters, climbing_images, constraints,              #
-#        collective_vars, and occupations.                           #
+#        collective_vars, occupations and hubbard.                   #
 #                                                                    #
 #    QEXML                                                           #
 #      Class to represent an xml element.                            #
@@ -48,7 +48,7 @@ import os
 import inspect
 from copy import deepcopy
 from superstring import string2val
-from numpy import fromstring,empty,array,float64,ones,pi,dot,ceil,ndarray
+from numpy import fromstring,empty,array,float64,ones,pi,dot,ceil,ndarray, where, append, unique
 from numpy.linalg import inv
 from unit_converter import convert
 from generic import obj
@@ -59,7 +59,7 @@ from developer import DevBase,log,warn,error
 from pseudopotential import pp_elem_label
 from simulation import SimulationInput
 from debug import *
-
+from itertools import combinations
 
 def read_str(sv):
     return sv.strip('"').strip("'")
@@ -1362,7 +1362,135 @@ class occupations(Card):
 #end class occupations
 
 
+class hubbard(Card):
+    name = 'hubbard'
+    available_specifiers = ['atomic', 'ortho-atomic', 'norm-atomic', 'wf', 'pseudo']
+    default_specifier = 'atomic'
+    system = None
+    def read_text(self, lines):        
+        contents = ''
+        self.hubbard = {}
+        for line in lines:
+            line = line.strip().split()
+            if line:
+                intrxn = line[0]
+                if len(line) == 3:
+                    specie = line[1]
+                    val = float(line[2])
+                    self.hubbard[intrxn] = {specie:val}
+                elif len(line) == 6:
+                    specie1 = line[1]
+                    specie2 = line[2]
+                    ind1 = int(line[3])
+                    ind2 = int(line[4])
+                    val = float(line[5])
+                    if intrxn not in self.hubbard.keys():
+                        self.hubbard[intrxn] = {(specie1, specie2):[{'indices':(ind1, ind2), 'value':val}]}
+                    else:
+                        if (specie1, specie2) not in self.hubbard[intrxn].keys():
+                            self.hubbard[intrxn][(specie1, specie2)]=[{'indices':(ind1, ind2), 'value':val}]
+                        else:
+                            self.hubbard[intrxn][(specie1, specie2)].append({'indices':(ind1, ind2), 'value':val})
+                        #end if 
+                    #end if
+            #end for
+        #end for
+    #end def read_text
 
+    def write_text(self):
+        manifold_dict = {} 
+        contents = ''
+        for param, interaction in self.hubbard.items():
+            valid_format = True
+            assert(param in ['U', 'J', 'V'])
+            assert(isinstance(interaction, dict))
+            for label_manifold, value in interaction.items():
+                if isinstance(label_manifold, str):
+                    # Ex: {'U':{'C-2p': 1.0}}
+                    assert(isinstance(value, (int, float)))
+                    contents += f"{param} {label_manifold} {value} \n"
+                elif isinstance(label_manifold, tuple):
+                    assert(len(label_manifold) == 2)
+                    assert(all([isinstance(_, str) for _ in label_manifold]))
+                    if isinstance(value, (int, float)):
+                        # Ex: {'V' : {('C-2p', 'C-2p'): 1e-8}}
+                        atom1, manifold1 = label_manifold[0].split('-')
+                        atom2, manifold2 = label_manifold[1].split('-')
+                        if atom1 not in manifold_dict.keys():
+                            manifold_dict[atom1] = [manifold1]
+                        elif manifold1 not in manifold_dict[atom1]:
+                            manifold_dict[atom1].append(manifold1)
+                        #end if
+                        if atom2 not in manifold_dict.keys():
+                            manifold_dict[atom2] = manifold2
+                        elif manifold2 not in manifold_dict[atom2]:
+                            manifold_dict[atom2].append(manifold2)
+                        #end if
+                        elem = self.system.structure.elem
+                        index1 = where(elem == atom1)[0] + 1
+                        index2 = where(elem == atom2)[0] + 1
+                        combs = []
+                        for in1 in index1:
+                            for in2 in index2:
+                                combs.append([in1, in2])
+                            #end for
+                        #end for
+                        for ind1, ind2 in combs:
+                            contents += f"{param} {label_manifold[0]} {label_manifold[1]} {ind1} {ind2} {value}\n"
+                        #end for
+                    elif isinstance(value, list):
+                        for val in value:
+                            if 'indices' in val.keys() and 'value' in val.keys():
+                                # Ex: {'V' : {('C-2p', 'C-2p'): [{'indices':(1,2), 'value':1e-8}]}
+                                ind1 = val['indices'][0]
+                                ind2 = val['indices'][1]
+                                val = val['value']
+                                contents += f"{param} {label_manifold[0]} {label_manifold[1]} {ind1} {ind2} {val}\n"
+                            elif 'radius' in val.keys() and 'value' in val.keys():
+                                # Ex: {'V' : {('C-2p', 'C-2p'): [{'radius':4.5, 'value':1e-8}]} radius is in Bohr
+                                atom1, manifold1 = label_manifold[0].split('-')
+                                atom2, manifold2 = label_manifold[1].split('-')
+                                elem = self.system.structure.elem
+                                index1 = where(elem == atom1)[0]
+                                index2 = where(elem == atom2)[0]
+                                nn = self.system.structure.nearest_neighbors(rmax = val['radius'])
+                                combs = []
+                                for in1 in index1:
+                                    for in2 in index2:
+                                        if in2 in nn[in1]:
+                                            combs.append([in1+1, in2+1])
+                                        #end if
+                                    #end for
+                                #end for
+                                # import pdb
+                                # pdb.set_trace()
+                                for ind1, ind2 in combs:
+                                    contents += f"{param} {label_manifold[0]} {label_manifold[1]} {ind1} {ind2} {val['value']}\n"
+                                #end for
+                            else:
+                                valid_format = False
+                            #end if 
+                        #end for
+                    else:
+                        valid_format = False
+                    #end if 
+                else:
+                    valid_format = False
+                #end for
+                if not valid_format:
+                    self.error('Hubbard card unknown input format')
+            #end for
+        #end for
+        for key, value in manifold_dict.items():
+            if len(value) > 2:
+                self.error('Element "{}" has more than 2 Hubbard manifolds "{}". Up to 3 manifolds are allowed in QE 7.1, but in that case \
+                2nd and 3rd manifolds must be defined as one effective manifold, e.g. "U Mn-3d 5.0" and "U Mn-3p-3s 3.0"'.format(key, value))
+            #end if
+        #end for
+        contents += '\n'
+        return contents
+    #end def write_text
+#end class hubbard
 
 
 
@@ -1375,7 +1503,7 @@ class PwscfInput(SimulationInput):
     sections = ['control','system','electrons','ions','cell','phonon','ee']
     cards    = ['atomic_species','atomic_positions','atomic_forces',
                 'k_points','cell_parameters','climbing_images','constraints',
-                'collective_vars','occupations']
+                'collective_vars','occupations', 'hubbard']
 
     section_types = obj(
         control   = control  ,     
@@ -1395,7 +1523,8 @@ class PwscfInput(SimulationInput):
         climbing_images  = climbing_images ,    
         constraints      = constraints     ,    
         collective_vars  = collective_vars ,    
-        occupations      = occupations         
+        occupations      = occupations     ,
+        hubbard          = hubbard         ,         
         )
 
     element_types = obj()
@@ -1403,8 +1532,6 @@ class PwscfInput(SimulationInput):
     element_types.transfer_from(card_types)
 
     required_elements = ['control','system','electrons','atomic_species','atomic_positions','k_points']
-        
-
     def __init__(self,*elements):
         elements = list(elements)
         if len(elements)==1 and os.path.exists(elements[0]):
@@ -1538,6 +1665,13 @@ class PwscfInput(SimulationInput):
         return vals
     #end def get_common_vars
 
+    def incorporate_hubbard(self, hubbard_result):
+        hub_obj = hubbard()
+        hubbard_result = hubbard_result.split('\n')
+        hub_obj.specifier = hubbard_result[1].split()[-1]
+        hub_obj.read_text(hubbard_result[2:])
+        self.hubbard = hub_obj
+    #end def incorporate_hubbard
 
     def incorporate_system(self,system,elem_order=None):
         system.check_folded_system()
@@ -1974,6 +2108,15 @@ def generate_any_pwscf_input(**kwargs):
     nspin             = kwargs.get_optional('nspin',None)
     nbnd              = kwargs.get_optional('nbnd',None)
     hubbard_u         = kwargs.get_optional('hubbard_u',None)
+    # Pre 7.2 Hubbard tags
+    hub_keys_pre72 = 'hubbard_u hubbard_j0 hubbard_j U_projection_type'.lower().split()
+    has_pre72_keys = any(([_ in kwargs.keys() for _ in hub_keys_pre72]))
+    # QE >=7.2 Hubbard tags
+    hub_keys_v72 = 'hubbard hubbard_proj'.lower().split()
+    has_v72_keys = any(([_ in kwargs.keys() for _ in hub_keys_v72]))
+    if has_pre72_keys + has_v72_keys > 1:
+        PwscfInput.class_error('Please use {} for QE version <7.2 and {} for QE version >=7.2'.format(hub_keys_pre72, hub_keys_v72))
+    #end if     
     occ               = kwargs.get_optional('occupations',None)
     
     #make an empty input file
@@ -2021,7 +2164,9 @@ def generate_any_pwscf_input(**kwargs):
     if cell_option is None:
         cell_option      = kwargs.delete_optional('cell_parameters_option',None)
     #end if
-
+    hubbard_input     = kwargs.delete_optional('hubbard', None)
+    hubbard_option    = kwargs.delete_optional('hubbard_proj',None)
+    
     #  pseudopotentials
     pseudopotentials = obj()
     atom_species = []
@@ -2194,6 +2339,22 @@ def generate_any_pwscf_input(**kwargs):
         pw.occupations = occ_card
     #end if
     
+    # hubbard card
+    if hubbard_input is not None:
+        hubbard_card = hubbard()
+        hubbard_card.system  = system
+        hubbard_card.hubbard = hubbard_input
+        pw.hubbard = hubbard_card
+        if hubbard_option is None:
+            hubbard_option = hubbard_card.default_specifier
+        else:
+            if not hubbard_option in hubbard_card.available_specifiers:
+                PwscfInput.class_error('HUBBARD card specifier "{}" is not valid. Available specifiers: {}'.format(hubbard_option, hubbard_card.available_specifiers))                
+            #end if
+        #end if
+        pw.hubbard.specifier = hubbard_option
+    #end if 
+
     # adjust card options, if requested
     options = obj(
         atomic_positions = positions_option,
@@ -2266,7 +2427,6 @@ def generate_scf_input(prefix       = 'pwscf',
     if pseudos is None:
         pseudos = []
     #end if
-    
     pseudopotentials = obj()
     atoms = []
     for ppname in pseudos:

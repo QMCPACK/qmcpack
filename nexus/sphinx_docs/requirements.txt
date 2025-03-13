@@ -8,7 +8,7 @@ alabaster==0.7.13
     # via sphinx
 babel==2.13.0
     # via sphinx
-certifi==2023.7.22
+certifi==2024.7.4
     # via requests
 charset-normalizer==3.3.0
     # via requests
@@ -18,11 +18,11 @@ docutils==0.17.1
     #   sphinx
     #   sphinx-rtd-theme
     #   sphinxcontrib-bibtex
-idna==3.4
+idna==3.7
     # via requests
 imagesize==1.4.1
     # via sphinx
-jinja2==3.1.2
+jinja2==3.1.6
     # via sphinx
 latexcodec==2.0.1
     # via pybtex
@@ -40,7 +40,7 @@ pygments==2.16.1
     # via sphinx
 pyyaml==6.0.1
     # via pybtex
-requests==2.31.0
+requests==2.32.0
     # via sphinx
 six==1.16.0
     # via
@@ -69,7 +69,7 @@ sphinxcontrib-qthelp==1.0.3
     # via sphinx
 sphinxcontrib-serializinghtml==1.1.5
     # via sphinx
-urllib3==2.0.7
+urllib3==2.2.2
     # via requests
 
 # The following packages are considered to be unsafe in a requirements file:

@@ -62,6 +62,7 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
   int MemberAttribIndx;
   int NumCenters;
   Return_t myConst;
+  ///cutoff radius of the short-range part
   RealType myRcut;
   std::string PtclRefName;
 
@@ -112,12 +113,17 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
                               const std::vector<ListenerVector<RealType>>& listeners,
                               const std::vector<ListenerVector<RealType>>& ion_listeners) const override;
 
+  void mw_evaluatePerParticleWithToperator(const RefVectorWithLeader<OperatorBase>& o_list,
+                                           const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                           const RefVectorWithLeader<ParticleSet>& p_list,
+                                           const std::vector<ListenerVector<RealType>>& listeners,
+                                           const std::vector<ListenerVector<RealType>>& ion_listeners) const override;
 
-  Return_t evaluateWithIonDerivs(ParticleSet& P,
-                                 ParticleSet& ions,
-                                 TrialWaveFunction& psi,
-                                 ParticleSet::ParticlePos& hf_terms,
-                                 ParticleSet::ParticlePos& pulay_terms) override;
+  void evaluateIonDerivs(ParticleSet& P,
+                         ParticleSet& ions,
+                         TrialWaveFunction& psi,
+                         ParticleSet::ParticlePos& hf_terms,
+                         ParticleSet::ParticlePos& pulay_terms) override;
   void updateSource(ParticleSet& s) override;
 
   /** Do nothing */
@@ -143,12 +149,12 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
   void deleteParticleQuantities() override;
 #endif
 
-  Return_t evalSR(ParticleSet& P);
+  Return_t evalSR(const ParticleSet& P) const;
 
   static std::vector<Return_t> mw_evalSR_offload(const RefVectorWithLeader<OperatorBase>& o_list,
                                                  const RefVectorWithLeader<ParticleSet>& p_list);
 
-  Return_t evalLR(ParticleSet& P);
+  Return_t evalLR(const ParticleSet& P) const;
   Return_t evalSRwithForces(ParticleSet& P);
   Return_t evalLRwithForces(ParticleSet& P);
   Return_t evalConsts(bool report = true);

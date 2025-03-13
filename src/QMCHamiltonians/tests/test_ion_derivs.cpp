@@ -256,9 +256,12 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
   CHECK(wf_grad[1][2] == Approx(0.1440176276013005));
 
   //Kinetic Force
-  hf_term    = 0.0;
-  pulay_term = 0.0;
-  (ham.getHamiltonian(KINETIC))->evaluateWithIonDerivsDeterministic(elec, ions, *psi, hf_term, pulay_term);
+  hf_term       = 0.0;
+  pulay_term    = 0.0;
+  auto& ham_ke  = *ham.getHamiltonian(KINETIC);
+  auto ke_saved = ham_ke.getValue();
+  ham_ke.evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
+  CHECK(ke_saved == Approx(ham_ke.getValue()));
 #if defined(MIXED_PRECISION)
   CHECK(hf_term[0][0] + pulay_term[0][0] == Approx(1.0852823603357820).epsilon(1e-4));
   CHECK(hf_term[0][1] + pulay_term[0][1] == Approx(24.2154119471038562).epsilon(1e-4));
@@ -275,10 +278,12 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
   CHECK(hf_term[1][2] + pulay_term[1][2] == Approx(7.5625192454964454));
 #endif
   //NLPP Force
-  hf_term    = 0.0;
-  pulay_term = 0.0;
-  double val =
-      (ham.getHamiltonian(NONLOCALECP))->evaluateWithIonDerivsDeterministic(elec, ions, *psi, hf_term, pulay_term);
+  hf_term               = 0.0;
+  pulay_term            = 0.0;
+  auto& ham_nonlocalpp  = *ham.getHamiltonian(NONLOCALECP);
+  auto nonlocalpp_saved = ham_nonlocalpp.getValue();
+  ham_nonlocalpp.evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
+  CHECK(nonlocalpp_saved == Approx(ham_nonlocalpp.getValue()));
 
 //MP fails the first REQUIRE with 24.22544.  Just bypass the checks in those builds.
 #if defined(MIXED_PRECISION)
@@ -297,27 +302,12 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
   CHECK(hf_term[1][2] + pulay_term[1][2] == Approx(-5.2293234395150989));
 #endif
 
-  //End of deterministic tests.  Let's call evaluateIonDerivs and evaluateIonDerivsDeterministic at the
+  //End of deterministic tests.  Let's call evaluateIonDerivs and evaluateIonDerivs at the
   //QMCHamiltonian level to make sure there are no crashes.
 
   hf_term    = 0.0;
   pulay_term = 0.0;
   wf_grad    = 0.0;
-  ham.evaluateIonDerivsDeterministic(elec, ions, *psi, hf_term, pulay_term, wf_grad);
-
-  CHECK(dot(hf_term[0], hf_term[0]) != Approx(0));
-  CHECK(dot(pulay_term[0], pulay_term[0]) != Approx(0));
-  CHECK(dot(wf_grad[0], wf_grad[0]) != Approx(0));
-
-  CHECK(dot(hf_term[1], hf_term[1]) != Approx(0));
-  CHECK(dot(pulay_term[1], pulay_term[1]) != Approx(0));
-  CHECK(dot(wf_grad[1], wf_grad[1]) != Approx(0));
-
-  hf_term    = 0.0;
-  pulay_term = 0.0;
-  wf_grad    = 0.0;
-  RandomGenerator myrng;
-  ham.setRandomGenerator(&myrng);
   ham.evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term, wf_grad);
 
   CHECK(dot(hf_term[0], hf_term[0]) != Approx(0));
@@ -425,9 +415,12 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
   CHECK(wf_grad[1][2] == Approx(-1.5197874544625731));
 
   //Kinetic Force
-  hf_term    = 0.0;
-  pulay_term = 0.0;
-  (ham.getHamiltonian(KINETIC))->evaluateWithIonDerivsDeterministic(elec, ions, *psi, hf_term, pulay_term);
+  hf_term       = 0.0;
+  pulay_term    = 0.0;
+  auto& ham_ke  = *ham.getHamiltonian(KINETIC);
+  auto ke_saved = ham_ke.getValue();
+  ham_ke.evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
+  CHECK(ke_saved == Approx(ham_ke.getValue()));
 #if defined(MIXED_PRECISION)
   CHECK(hf_term[0][0] + pulay_term[0][0] == Approx(-3.3359153349010735).epsilon(1e-4));
   CHECK(hf_term[0][1] + pulay_term[0][1] == Approx(30.0487085581835309).epsilon(1e-4));
@@ -443,11 +436,20 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
   CHECK(hf_term[1][1] + pulay_term[1][1] == Approx(-3.5321234918228579));
   CHECK(hf_term[1][2] + pulay_term[1][2] == Approx(5.8844148870917925));
 #endif
+
+  //Local PP Force
+  auto& ham_localpp  = *ham.getHamiltonian(LOCALECP);
+  auto localpp_saved = ham_localpp.getValue();
+  ham_localpp.evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
+  CHECK(localpp_saved == Approx(ham_localpp.getValue()));
+
   //NLPP Force
-  hf_term    = 0.0;
-  pulay_term = 0.0;
-  double val =
-      (ham.getHamiltonian(NONLOCALECP))->evaluateWithIonDerivsDeterministic(elec, ions, *psi, hf_term, pulay_term);
+  hf_term               = 0.0;
+  pulay_term            = 0.0;
+  auto& ham_nonlocalpp  = *ham.getHamiltonian(NONLOCALECP);
+  auto nonlocalpp_saved = ham_nonlocalpp.getValue();
+  ham_nonlocalpp.evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
+  CHECK(nonlocalpp_saved == Approx(ham_nonlocalpp.getValue()));
 //MP fails the first REQUIRE with 27.15313.  Just bypass the checks in those builds.
 #if defined(MIXED_PRECISION)
   CHECK(hf_term[0][0] + pulay_term[0][0] == Approx(27.1517161490208956).epsilon(2e-4));
@@ -465,27 +467,12 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
   CHECK(hf_term[1][2] + pulay_term[1][2] == Approx(-4.5825638607333019));
 #endif
 
-  //End of deterministic tests.  Let's call evaluateIonDerivs and evaluateIonDerivsDeterministic at the
+  //End of deterministic tests.  Let's call evaluateIonDerivs and evaluateIonDerivs at the
   //QMCHamiltonian level to make sure there are no crashes.
 
   hf_term    = 0.0;
   pulay_term = 0.0;
   wf_grad    = 0.0;
-  ham.evaluateIonDerivsDeterministic(elec, ions, *psi, hf_term, pulay_term, wf_grad);
-
-  CHECK(dot(hf_term[0], hf_term[0]) != Approx(0));
-  CHECK(dot(pulay_term[0], pulay_term[0]) != Approx(0));
-  CHECK(dot(wf_grad[0], wf_grad[0]) != Approx(0));
-
-  CHECK(dot(hf_term[1], hf_term[1]) != Approx(0));
-  CHECK(dot(pulay_term[1], pulay_term[1]) != Approx(0));
-  CHECK(dot(wf_grad[1], wf_grad[1]) != Approx(0));
-
-  hf_term    = 0.0;
-  pulay_term = 0.0;
-  wf_grad    = 0.0;
-  RandomGenerator myrng;
-  ham.setRandomGenerator(&myrng);
   ham.evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term, wf_grad);
 
   CHECK(dot(hf_term[0], hf_term[0]) != Approx(0));
@@ -598,7 +585,7 @@ TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
   //Kinetic Force
   /*  hf_term=0.0;
   pulay_term=0.0;
-  (ham.getHamiltonian(KINETIC))->evaluateWithIonDerivsDeterministic(elec, ions, *psi, hf_term, pulay_term);
+  (ham.getHamiltonian(KINETIC))->evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
 #if defined(MIXED_PRECISION) 
   CHECK( hf_term[0][0]+pulay_term[0][0] == Approx( 7.4631825180304636).epsilon(1e-4));
   CHECK( hf_term[0][1]+pulay_term[0][1] == Approx( 26.0975954772035799).epsilon(1e-4));
@@ -618,7 +605,7 @@ TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
   //NLPP Force
   /*  hf_term=0.0;
   pulay_term=0.0;
-  double val=(ham.getHamiltonian(NONLOCALECP))->evaluateWithIonDerivsDeterministic(elec, ions, *psi, hf_term, pulay_term);
+  double val=(ham.getHamiltonian(NONLOCALECP))->evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
 #if defined(MIXED_PRECISION)
   CHECK( hf_term[0][0]+pulay_term[0][0] == Approx( 18.9414437404167302).epsilon(2e-4));
   CHECK( hf_term[0][1]+pulay_term[0][1] == Approx(-42.9017371899931277).epsilon(2e-4));
@@ -737,7 +724,7 @@ TEST_CASE("Eloc_Derivatives:multislater_wj", "[hamiltonian]")
   //Kinetic Force
   /*  hf_term=0.0;
   pulay_term=0.0;
-  (ham.getHamiltonian(KINETIC))->evaluateWithIonDerivsDeterministic(elec, ions, *psi, hf_term, pulay_term);
+  (ham.getHamiltonian(KINETIC))->evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
 #if defined(MIXED_PRECISION)
   CHECK( hf_term[0][0]+pulay_term[0][0] == Approx(  4.1783687883878429).epsilon(1e-4));
   CHECK( hf_term[0][1]+pulay_term[0][1] == Approx( 32.2193450745800192).epsilon(1e-4));
@@ -757,7 +744,7 @@ TEST_CASE("Eloc_Derivatives:multislater_wj", "[hamiltonian]")
   //NLPP Force
   /*  hf_term=0.0;
   pulay_term=0.0;
-  double val=(ham.getHamiltonian(NONLOCALECP))->evaluateWithIonDerivsDeterministic(elec, ions, *psi, hf_term, pulay_term);
+  double val=(ham.getHamiltonian(NONLOCALECP))->evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
 #if defined(MIXED_PRECISION)
   CHECK( hf_term[0][0]+pulay_term[0][0] == Approx( 21.6829856774403140).epsilon(2e-4));
   CHECK( hf_term[0][1]+pulay_term[0][1] == Approx(-43.4432406419382673).epsilon(2e-4));
@@ -1296,7 +1283,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj", "[hamiltonian]")
   //This is to test the fast force API in QMCHamiltonian.
   ParticleSet::ParticlePos dedr(ions.getTotalNum());
   ParticleSet::ParticlePos dpsidr(ions.getTotalNum());
-  ham.evaluateIonDerivsDeterministicFast(elec, ions, *psi, twf, dedr, dpsidr);
+  ham.evaluateIonDerivsFast(elec, ions, *psi, twf, dedr, dpsidr);
 }
 
 //This will be very similar to the previous tests, but we will check its behavior
@@ -1312,7 +1299,7 @@ TEST_CASE("Eloc_Derivatives:slater_fastderiv_complex_pbc", "[hamiltonian]")
 
   Communicate* c = OHMMS::Controller;
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  Lattice lattice;
   lattice.BoxBConds[0]             = 1; // periodic
   lattice.BoxBConds[1]             = 1; // periodic
   lattice.BoxBConds[2]             = 1; // periodic
@@ -1606,7 +1593,7 @@ TEST_CASE("Eloc_Derivatives:slater_fastderiv_complex_pbc", "[hamiltonian]")
   CHECK(fnlpp[1][2] == Approx(0.0252567500));
 #endif
 
-  //  ham.evaluateIonDerivsDeterministicFast(elec, ions, *psi, twf,hf_term, wf_grad);*/
+  //  ham.evaluateIonDerivsFast(elec, ions, *psi, twf,hf_term, wf_grad);*/
 }
 #endif
 /*TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
@@ -1723,7 +1710,7 @@ TEST_CASE("Eloc_Derivatives:slater_fastderiv_complex_pbc", "[hamiltonian]")
   //Kinetic Force
   hf_term    = 0.0;
   pulay_term = 0.0;
-  (ham.getHamiltonian(KINETIC))->evaluateWithIonDerivsDeterministic(elec, ions, *psi, hf_term, pulay_term);
+  (ham.getHamiltonian(KINETIC))->evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
 #if defined(MIXED_PRECISION)
   CHECK(hf_term[0][0] + pulay_term[0][0] == Approx(-3.3359153349010735).epsilon(1e-4));
   CHECK(hf_term[0][1] + pulay_term[0][1] == Approx(30.0487085581835309).epsilon(1e-4));
@@ -1743,7 +1730,7 @@ TEST_CASE("Eloc_Derivatives:slater_fastderiv_complex_pbc", "[hamiltonian]")
   hf_term    = 0.0;
   pulay_term = 0.0;
   double val =
-      (ham.getHamiltonian(NONLOCALECP))->evaluateWithIonDerivsDeterministic(elec, ions, *psi, hf_term, pulay_term);
+      (ham.getHamiltonian(NONLOCALECP))->evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
 //MP fails the first CHECK with 27.15313.  Just bypass the checks in those builds.
 #if defined(MIXED_PRECISION)
   CHECK(hf_term[0][0] + pulay_term[0][0] == Approx(27.1517161490208956).epsilon(2e-4));
@@ -1761,29 +1748,14 @@ TEST_CASE("Eloc_Derivatives:slater_fastderiv_complex_pbc", "[hamiltonian]")
   CHECK(hf_term[1][2] + pulay_term[1][2] == Approx(-4.5825638607333019));
 #endif
 
- //End of deterministic tests.  Let's call evaluateIonDerivs and evaluateIonDerivsDeterministic at the
+ //End of deterministic tests.  Let's call evaluateIonDerivs and evaluateIonDerivs at the
  //QMCHamiltonian level to make sure there are no crashes.  
  
   hf_term    = 0.0;
   pulay_term = 0.0;
   wf_grad    = 0.0;
-  ham.evaluateIonDerivsDeterministic(elec,ions,*psi,hf_term,pulay_term,wf_grad);
- 
-  CHECK(dot(hf_term[0],hf_term[0]) != Approx(0));
-  CHECK(dot(pulay_term[0],pulay_term[0]) != Approx(0));
-  CHECK(dot(wf_grad[0],wf_grad[0]) != Approx(0));
- 
-  CHECK(dot(hf_term[1],hf_term[1]) != Approx(0));
-  CHECK(dot(pulay_term[1],pulay_term[1]) != Approx(0));
-  CHECK(dot(wf_grad[1],wf_grad[1]) != Approx(0));
- 
-  hf_term    = 0.0;
-  pulay_term = 0.0;
-  wf_grad    = 0.0;
-  RandomGenerator myrng;
-  ham.setRandomGenerator(&myrng);
   ham.evaluateIonDerivs(elec,ions,*psi,hf_term,pulay_term,wf_grad);
-  
+ 
   CHECK(dot(hf_term[0],hf_term[0]) != Approx(0));
   CHECK(dot(pulay_term[0],pulay_term[0]) != Approx(0));
   CHECK(dot(wf_grad[0],wf_grad[0]) != Approx(0));
@@ -1791,7 +1763,6 @@ TEST_CASE("Eloc_Derivatives:slater_fastderiv_complex_pbc", "[hamiltonian]")
   CHECK(dot(hf_term[1],hf_term[1]) != Approx(0));
   CHECK(dot(pulay_term[1],pulay_term[1]) != Approx(0));
   CHECK(dot(wf_grad[1],wf_grad[1]) != Approx(0));
- 
 }*/
 
 /*TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
@@ -1911,7 +1882,7 @@ TEST_CASE("Eloc_Derivatives:slater_fastderiv_complex_pbc", "[hamiltonian]")
   //Kinetic Force
   //hf_term=0.0;
   //pulay_term=0.0;
-  //(ham.getHamiltonian(KINETIC))->evaluateWithIonDerivsDeterministic(elec, ions, *psi, hf_term, pulay_term);
+  //(ham.getHamiltonian(KINETIC))->evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
 //#if defined(MIXED_PRECISION) 
   //CHECK( hf_term[0][0]+pulay_term[0][0] == Approx( 7.4631825180304636).epsilon(1e-4));
   //CHECK( hf_term[0][1]+pulay_term[0][1] == Approx( 26.0975954772035799).epsilon(1e-4));
@@ -1931,7 +1902,7 @@ TEST_CASE("Eloc_Derivatives:slater_fastderiv_complex_pbc", "[hamiltonian]")
   //NLPP Force
  // hf_term=0.0;
 //  pulay_term=0.0;
-//  double val=(ham.getHamiltonian(NONLOCALECP))->evaluateWithIonDerivsDeterministic(elec, ions, *psi, hf_term, pulay_term);
+//  double val=(ham.getHamiltonian(NONLOCALECP))->evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
 //#if defined(MIXED_PRECISION)
 //  CHECK( hf_term[0][0]+pulay_term[0][0] == Approx( 18.9414437404167302).epsilon(2e-4));
 //  CHECK( hf_term[0][1]+pulay_term[0][1] == Approx(-42.9017371899931277).epsilon(2e-4));
@@ -2066,7 +2037,7 @@ TEST_CASE("Eloc_Derivatives:slater_fastderiv_complex_pbc", "[hamiltonian]")
   //Kinetic Force
 //  hf_term=0.0;
 //  pulay_term=0.0;
-//  (ham.getHamiltonian(KINETIC))->evaluateWithIonDerivsDeterministic(elec, ions, *psi, hf_term, pulay_term);
+//  (ham.getHamiltonian(KINETIC))->evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
 //#if defined(MIXED_PRECISION)
 //  CHECK( hf_term[0][0]+pulay_term[0][0] == Approx(  4.1783687883878429).epsilon(1e-4));
 //  CHECK( hf_term[0][1]+pulay_term[0][1] == Approx( 32.2193450745800192).epsilon(1e-4));
@@ -2086,7 +2057,7 @@ TEST_CASE("Eloc_Derivatives:slater_fastderiv_complex_pbc", "[hamiltonian]")
   //NLPP Force
 //  hf_term=0.0;
 //  pulay_term=0.0;
-//  double val=(ham.getHamiltonian(NONLOCALECP))->evaluateWithIonDerivsDeterministic(elec, ions, *psi, hf_term, pulay_term);
+//  double val=(ham.getHamiltonian(NONLOCALECP))->evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
 //#if defined(MIXED_PRECISION)
 //  CHECK( hf_term[0][0]+pulay_term[0][0] == Approx( 21.6829856774403140).epsilon(2e-4));
 //  CHECK( hf_term[0][1]+pulay_term[0][1] == Approx(-43.4432406419382673).epsilon(2e-4));

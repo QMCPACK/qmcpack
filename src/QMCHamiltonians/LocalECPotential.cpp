@@ -2,25 +2,42 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2024 QMCPACK developers.
 //
 // File developed by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Peter W. Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Particle/ParticleSet.h"
-#include "Particle/DistanceTable.h"
-#include "QMCHamiltonians/OperatorBase.h"
+#include "Listener.hpp"
+#include <ParticleSet.h>
+#include <DistanceTable.h>
+#include <ResourceCollection.h>
 #include "LocalECPotential.h"
 #include "Utilities/IteratorUtility.h"
 
 namespace qmcplusplus
 {
+
+struct LocalECPotential::LocalECPotentialMultiWalkerResource : public Resource
+{
+  LocalECPotentialMultiWalkerResource() : Resource("LocalECPotential") {}
+
+  std::unique_ptr<Resource> makeClone() const override
+  {
+    return std::make_unique<LocalECPotentialMultiWalkerResource>(*this);
+  }
+
+  /// a crowds worth of per particle local ecp potential values
+  Vector<RealType> ve_samples;
+  Vector<RealType> vi_samples;
+};
+
 LocalECPotential::LocalECPotential(const ParticleSet& ions, ParticleSet& els) : IonConfig(ions), Peln(els), Pion(ions)
 {
   setEnergyDomain(POTENTIAL);
@@ -32,6 +49,26 @@ LocalECPotential::LocalECPotential(const ParticleSet& ions, ParticleSet& els) : 
   PP.resize(NumIons, nullptr);
   Zeff.resize(NumIons, 0.0);
   gZeff.resize(ions.getSpeciesSet().getTotalNum(), 0);
+}
+
+void LocalECPotential::createResource(ResourceCollection& collection) const
+{
+  auto new_res        = std::make_unique<LocalECPotentialMultiWalkerResource>();
+  auto resource_index = collection.addResource(std::move(new_res));
+}
+
+void LocalECPotential::acquireResource(ResourceCollection& collection,
+                                       const RefVectorWithLeader<OperatorBase>& o_list) const
+{
+  auto& O_leader          = o_list.getCastedLeader<LocalECPotential>();
+  O_leader.mw_res_handle_ = collection.lendResource<LocalECPotentialMultiWalkerResource>();
+}
+
+void LocalECPotential::releaseResource(ResourceCollection& collection,
+                                       const RefVectorWithLeader<OperatorBase>& o_list) const
+{
+  auto& O_leader = o_list.getCastedLeader<LocalECPotential>();
+  collection.takebackResource(O_leader.mw_res_handle_);
 }
 
 void LocalECPotential::resetTargetParticleSet(ParticleSet& P)
@@ -105,11 +142,80 @@ LocalECPotential::Return_t LocalECPotential::evaluate(ParticleSet& P)
   return value_;
 }
 
-LocalECPotential::Return_t LocalECPotential::evaluateWithIonDerivs(ParticleSet& P,
-                                                                   ParticleSet& ions,
-                                                                   TrialWaveFunction& psi,
-                                                                   ParticleSet::ParticlePos& hf_terms,
-                                                                   ParticleSet::ParticlePos& pulay_terms)
+void LocalECPotential::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase>& o_list,
+                                              const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                              const RefVectorWithLeader<ParticleSet>& p_list,
+                                              const std::vector<ListenerVector<RealType>>& listeners,
+                                              const std::vector<ListenerVector<RealType>>& ion_listeners) const
+{
+  auto& o_leader = o_list.getCastedLeader<LocalECPotential>();
+  auto& p_leader = p_list.getLeader();
+  assert(this == &o_list.getLeader());
+
+  auto num_electrons          = p_leader.getTotalNum();
+  auto& name                  = o_leader.name_;
+  auto& mw_res                = o_leader.mw_res_handle_.getResource();
+  Vector<RealType>& ve_sample = mw_res.ve_samples;
+  Vector<RealType>& vi_sample = mw_res.vi_samples;
+  ve_sample.resize(num_electrons);
+  vi_sample.resize(NumIons);
+  auto myTableIndex    = o_leader.myTableIndex;
+  auto NumIons         = o_leader.NumIons;
+  auto& Zeff           = o_leader.Zeff;
+  auto evaluate_walker = [name, &ve_sample, &vi_sample, myTableIndex, NumIons,
+                          Zeff](int walker_index, const ParticleSet& pset, const auto& PP,
+                                const std::vector<ListenerVector<RealType>>& listeners,
+                                const std::vector<ListenerVector<RealType>>& ion_listeners) -> Return_t {
+    const auto& d_table(pset.getDistTableAB(myTableIndex));
+    Return_t value = 0.0;
+    std::fill(ve_sample.begin(), ve_sample.end(), 0.0);
+    std::fill(vi_sample.begin(), vi_sample.end(), 0.0);
+
+    for (int iel = 0; iel < pset.getTotalNum(); ++iel)
+    {
+      const auto& dist = d_table.getDistRow(iel);
+      Return_t esum(0), pairpot;
+      for (int iat = 0; iat < NumIons; ++iat)
+        if (PP[iat] != nullptr)
+        {
+          pairpot = -0.5 * PP[iat]->splint(dist[iat]) * Zeff[iat] / dist[iat];
+          vi_sample[iat] += pairpot;
+          ve_sample[iel] += pairpot;
+          esum += pairpot;
+        }
+      value += esum;
+    }
+    value *= 2.0;
+
+    for (const ListenerVector<RealType>& listener : listeners)
+      listener.report(walker_index, name, ve_sample);
+    for (const ListenerVector<RealType>& ion_listener : ion_listeners)
+      ion_listener.report(walker_index, name, vi_sample);
+
+    return value;
+  };
+  for (int iw = 0; iw < o_list.size(); ++iw)
+  {
+    auto& local_ecp  = o_list.getCastedElement<LocalECPotential>(iw);
+    local_ecp.value_ = evaluate_walker(iw, p_list[iw], PP, listeners, ion_listeners);
+  }
+}
+
+void LocalECPotential::mw_evaluatePerParticleWithToperator(
+    const RefVectorWithLeader<OperatorBase>& o_list,
+    const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+    const RefVectorWithLeader<ParticleSet>& p_list,
+    const std::vector<ListenerVector<RealType>>& listeners,
+    const std::vector<ListenerVector<RealType>>& ion_listeners) const
+{
+  mw_evaluatePerParticle(o_list, wf_list, p_list, listeners, ion_listeners);
+}
+
+void LocalECPotential::evaluateIonDerivs(ParticleSet& P,
+                                         ParticleSet& ions,
+                                         TrialWaveFunction& psi,
+                                         ParticleSet::ParticlePos& hf_terms,
+                                         ParticleSet::ParticlePos& pulay_terms)
 {
   const auto& d_table(P.getDistTableAB(myTableIndex));
   value_             = 0.0;
@@ -137,7 +243,6 @@ LocalECPotential::Return_t LocalECPotential::evaluateWithIonDerivs(ParticleSet& 
     }
     value_ += esum;
   }
-  return value_;
 }
 
 #if !defined(REMOVE_TRACEMANAGER)

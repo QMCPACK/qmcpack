@@ -13,6 +13,7 @@
 #include "SpinorSet.h"
 #include "Utilities/ResourceCollection.h"
 #include "Platforms/OMPTarget/OMPTargetMath.hpp"
+#include "CPU/SIMD/inner_product.hpp"
 
 namespace qmcplusplus
 {
@@ -55,15 +56,6 @@ void SpinorSet::set_spos(std::unique_ptr<SPOSet>&& up, std::unique_ptr<SPOSet>&&
 
   spo_up = std::move(up);
   spo_dn = std::move(dn);
-
-  psi_work_up.resize(OrbitalSetSize);
-  psi_work_down.resize(OrbitalSetSize);
-
-  dpsi_work_up.resize(OrbitalSetSize);
-  dpsi_work_down.resize(OrbitalSetSize);
-
-  d2psi_work_up.resize(OrbitalSetSize);
-  d2psi_work_down.resize(OrbitalSetSize);
 }
 
 void SpinorSet::setOrbitalSetSize(int norbs) { OrbitalSetSize = norbs; };
@@ -71,6 +63,9 @@ void SpinorSet::setOrbitalSetSize(int norbs) { OrbitalSetSize = norbs; };
 
 void SpinorSet::evaluateValue(const ParticleSet& P, int iat, ValueVector& psi)
 {
+  const size_t norb_requested = psi.size();
+  psi_work_up.resize(norb_requested);
+  psi_work_down.resize(norb_requested);
   psi_work_up   = 0.0;
   psi_work_down = 0.0;
 
@@ -91,8 +86,45 @@ void SpinorSet::evaluateValue(const ParticleSet& P, int iat, ValueVector& psi)
   psi = eis * psi_work_up + emis * psi_work_down;
 }
 
+void SpinorSet::evaluateDetSpinorRatios(const VirtualParticleSet& VP,
+                                        ValueVector& psi,
+                                        const std::pair<ValueVector, ValueVector>& spinor_multiplier,
+                                        const ValueVector& psiinv,
+                                        std::vector<ValueType>& ratios)
+{
+  assert(psi.size() == psiinv.size());
+  const size_t norb_requested = psi.size();
+  psi_work_up.resize(norb_requested);
+  psi_work_down.resize(norb_requested);
+
+  for (size_t iat = 0.0; iat < VP.getTotalNum(); iat++)
+  {
+    psi_work_up   = 0.0;
+    psi_work_down = 0.0;
+    spo_up->evaluateValue(VP, iat, psi_work_up);
+    spo_dn->evaluateValue(VP, iat, psi_work_down);
+
+    ParticleSet::Scalar_t s = VP.activeSpin(iat);
+    RealType coss           = std::cos(s);
+    RealType sins           = std::sin(s);
+
+    ValueType eis(coss, sins);
+    ValueType emis(coss, -sins);
+
+    psi = spinor_multiplier.first[iat] * eis * psi_work_up + spinor_multiplier.second[iat] * emis * psi_work_down;
+    ratios[iat] = simd::dot(psi.data(), psiinv.data(), psi.size());
+  }
+}
+
 void SpinorSet::evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi)
 {
+  const size_t norb_requested = psi.size();
+  psi_work_up.resize(norb_requested);
+  psi_work_down.resize(norb_requested);
+  dpsi_work_up.resize(norb_requested);
+  dpsi_work_down.resize(norb_requested);
+  d2psi_work_up.resize(norb_requested);
+  d2psi_work_down.resize(norb_requested);
   psi_work_up     = 0.0;
   psi_work_down   = 0.0;
   dpsi_work_up    = 0.0;
@@ -125,6 +157,13 @@ void SpinorSet::evaluateVGL_spin(const ParticleSet& P,
                                  ValueVector& d2psi,
                                  ValueVector& dspin)
 {
+  const size_t norb_requested = psi.size();
+  psi_work_up.resize(norb_requested);
+  psi_work_down.resize(norb_requested);
+  dpsi_work_up.resize(norb_requested);
+  dpsi_work_down.resize(norb_requested);
+  d2psi_work_up.resize(norb_requested);
+  d2psi_work_down.resize(norb_requested);
   psi_work_up     = 0.0;
   psi_work_down   = 0.0;
   dpsi_work_up    = 0.0;
@@ -174,7 +213,17 @@ void SpinorSet::mw_evaluateVGLWithSpin(const RefVectorWithLeader<SPOSet>& spo_li
   RefVector<ValueVector> up_d2psi_v_list, dn_d2psi_v_list;
   for (int iw = 0; iw < nw; iw++)
   {
-    auto& spo = spo_list.getCastedElement<SpinorSet>(iw);
+    auto& spo                   = spo_list.getCastedElement<SpinorSet>(iw);
+    auto& psi                   = psi_v_list[iw].get();
+    const size_t norb_requested = psi.size();
+
+    spo.psi_work_up.resize(norb_requested);
+    spo.psi_work_down.resize(norb_requested);
+    spo.dpsi_work_up.resize(norb_requested);
+    spo.dpsi_work_down.resize(norb_requested);
+    spo.d2psi_work_up.resize(norb_requested);
+    spo.d2psi_work_down.resize(norb_requested);
+
     up_psi_v_list.push_back(spo.psi_work_up);
     dn_psi_v_list.push_back(spo.psi_work_down);
     up_dpsi_v_list.push_back(spo.dpsi_work_up);
@@ -199,7 +248,7 @@ void SpinorSet::mw_evaluateVGLWithSpin(const RefVectorWithLeader<SPOSet>& spo_li
     psi_v_list[iw].get()   = eis * up_psi_v_list[iw].get() + emis * dn_psi_v_list[iw].get();
     dpsi_v_list[iw].get()  = eis * up_dpsi_v_list[iw].get() + emis * dn_dpsi_v_list[iw].get();
     d2psi_v_list[iw].get() = eis * up_d2psi_v_list[iw].get() + emis * dn_d2psi_v_list[iw].get();
-    for (int iorb = 0; iorb < OrbitalSetSize; iorb++)
+    for (int iorb = 0; iorb < mw_dspin.cols(); iorb++)
       mw_dspin(iw, iorb) = eye * (eis * (up_psi_v_list[iw].get())[iorb] - emis * (dn_psi_v_list[iw].get())[iorb]);
   }
   //Data above is all on host, but since mw_dspin is DualMatrix we need to sync the host and device
@@ -294,20 +343,22 @@ void SpinorSet::evaluate_notranspose(const ParticleSet& P,
 {
   IndexType nelec = P.getTotalNum();
 
-  logpsi_work_up.resize(nelec, OrbitalSetSize);
-  logpsi_work_down.resize(nelec, OrbitalSetSize);
+  const size_t norb_requested = logdet.cols();
 
-  dlogpsi_work_up.resize(nelec, OrbitalSetSize);
-  dlogpsi_work_down.resize(nelec, OrbitalSetSize);
+  logpsi_work_up.resize(nelec, norb_requested);
+  logpsi_work_down.resize(nelec, norb_requested);
 
-  d2logpsi_work_up.resize(nelec, OrbitalSetSize);
-  d2logpsi_work_down.resize(nelec, OrbitalSetSize);
+  dlogpsi_work_up.resize(nelec, norb_requested);
+  dlogpsi_work_down.resize(nelec, norb_requested);
+
+  d2logpsi_work_up.resize(nelec, norb_requested);
+  d2logpsi_work_down.resize(nelec, norb_requested);
 
   spo_up->evaluate_notranspose(P, first, last, logpsi_work_up, dlogpsi_work_up, d2logpsi_work_up);
   spo_dn->evaluate_notranspose(P, first, last, logpsi_work_down, dlogpsi_work_down, d2logpsi_work_down);
 
 
-  for (int iat = 0; iat < nelec; iat++)
+  for (int iat = first; iat < last; iat++)
   {
     ParticleSet::Scalar_t s = P.activeSpin(iat);
 
@@ -319,7 +370,7 @@ void SpinorSet::evaluate_notranspose(const ParticleSet& P,
     ValueType eis(coss, sins);
     ValueType emis(coss, -sins);
 
-    for (int no = 0; no < OrbitalSetSize; no++)
+    for (int no = 0; no < norb_requested; no++)
     {
       logdet(iat, no)   = eis * logpsi_work_up(iat, no) + emis * logpsi_work_down(iat, no);
       dlogdet(iat, no)  = eis * dlogpsi_work_up(iat, no) + emis * dlogpsi_work_down(iat, no);
@@ -367,8 +418,9 @@ void SpinorSet::mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo_l
   up_d2logdet_list.reserve(nw);
   dn_d2logdet_list.reserve(nw);
 
-  ValueMatrix tmp_val_mat(nelec, OrbitalSetSize);
-  GradMatrix tmp_grad_mat(nelec, OrbitalSetSize);
+  const size_t norb_requested = logdet_list.front().get().cols();
+  ValueMatrix tmp_val_mat(nelec, norb_requested);
+  GradMatrix tmp_grad_mat(nelec, norb_requested);
   for (int iw = 0; iw < nw; iw++)
   {
     mw_up_logdet.emplace_back(tmp_val_mat);
@@ -393,7 +445,7 @@ void SpinorSet::mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo_l
                                         dn_d2logdet_list);
 
   for (int iw = 0; iw < nw; iw++)
-    for (int iat = 0; iat < nelec; iat++)
+    for (int iat = first; iat < last; iat++)
     {
       ParticleSet::Scalar_t s = P_list[iw].activeSpin(iat);
       RealType coss           = std::cos(s);
@@ -401,7 +453,7 @@ void SpinorSet::mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo_l
       ValueType eis(coss, sins);
       ValueType emis(coss, -sins);
 
-      for (int no = 0; no < OrbitalSetSize; no++)
+      for (int no = 0; no < norb_requested; no++)
       {
         logdet_list[iw].get()(iat, no) =
             eis * up_logdet_list[iw].get()(iat, no) + emis * dn_logdet_list[iw].get()(iat, no);
@@ -423,14 +475,15 @@ void SpinorSet::evaluate_notranspose_spin(const ParticleSet& P,
 {
   IndexType nelec = P.getTotalNum();
 
-  logpsi_work_up.resize(nelec, OrbitalSetSize);
-  logpsi_work_down.resize(nelec, OrbitalSetSize);
+  const size_t norb_requested = logdet.cols();
+  logpsi_work_up.resize(nelec, norb_requested);
+  logpsi_work_down.resize(nelec, norb_requested);
 
-  dlogpsi_work_up.resize(nelec, OrbitalSetSize);
-  dlogpsi_work_down.resize(nelec, OrbitalSetSize);
+  dlogpsi_work_up.resize(nelec, norb_requested);
+  dlogpsi_work_down.resize(nelec, norb_requested);
 
-  d2logpsi_work_up.resize(nelec, OrbitalSetSize);
-  d2logpsi_work_down.resize(nelec, OrbitalSetSize);
+  d2logpsi_work_up.resize(nelec, norb_requested);
+  d2logpsi_work_down.resize(nelec, norb_requested);
 
   spo_up->evaluate_notranspose(P, first, last, logpsi_work_up, dlogpsi_work_up, d2logpsi_work_up);
   spo_dn->evaluate_notranspose(P, first, last, logpsi_work_down, dlogpsi_work_down, d2logpsi_work_down);
@@ -449,7 +502,7 @@ void SpinorSet::evaluate_notranspose_spin(const ParticleSet& P,
     ValueType emis(coss, -sins);
     ValueType eye(0, 1.0);
 
-    for (int no = 0; no < OrbitalSetSize; no++)
+    for (int no = 0; no < norb_requested; no++)
     {
       logdet(iat, no)      = eis * logpsi_work_up(iat, no) + emis * logpsi_work_down(iat, no);
       dlogdet(iat, no)     = eis * dlogpsi_work_up(iat, no) + emis * dlogpsi_work_down(iat, no);
@@ -462,6 +515,9 @@ void SpinorSet::evaluate_notranspose_spin(const ParticleSet& P,
 
 void SpinorSet::evaluate_spin(const ParticleSet& P, int iat, ValueVector& psi, ValueVector& dpsi)
 {
+  const size_t norb_requested = psi.size();
+  psi_work_up.resize(norb_requested);
+  psi_work_down.resize(norb_requested);
   psi_work_up   = 0.0;
   psi_work_down = 0.0;
 
@@ -492,19 +548,20 @@ void SpinorSet::evaluateGradSource(const ParticleSet& P,
 {
   IndexType nelec = P.getTotalNum();
 
-  GradMatrix gradphi_up(nelec, OrbitalSetSize);
-  GradMatrix gradphi_dn(nelec, OrbitalSetSize);
+  const size_t norb_requested = gradphi.size();
+  GradMatrix gradphi_up(nelec, norb_requested);
+  GradMatrix gradphi_dn(nelec, norb_requested);
   spo_up->evaluateGradSource(P, first, last, source, iat_src, gradphi_up);
   spo_dn->evaluateGradSource(P, first, last, source, iat_src, gradphi_dn);
 
-  for (int iat = 0; iat < nelec; iat++)
+  for (int iat = first; iat < last; iat++)
   {
     ParticleSet::Scalar_t s = P.activeSpin(iat);
     RealType coss           = std::cos(s);
     RealType sins           = std::sin(s);
     ValueType eis(coss, sins);
     ValueType emis(coss, -sins);
-    for (int imo = 0; imo < OrbitalSetSize; imo++)
+    for (int imo = 0; imo < norb_requested; imo++)
       gradphi(iat, imo) = gradphi_up(iat, imo) * eis + gradphi_dn(iat, imo) * emis;
   }
 }

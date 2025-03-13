@@ -56,12 +56,14 @@ CSR construct_csr_matrix_single_input(MultiArray2D&& M, double cutoff, char TA, 
   std::vector<std::size_t> counts;
   using int_type = typename CSR::index_type;
   int_type nr, nc;
+
+  using std::get;
   if (comm.rank() == 0)
   {
     if (TA == 'N')
     {
-      nr = std::get<0>(M.sizes());
-      nc = std::get<1>(M.sizes());
+      nr = get<0>(M.sizes());
+      nc = get<1>(M.sizes());
       counts.resize(nr);
       for (int_type i = 0; i < nr; i++)
         for (int_type j = 0; j < nc; j++)
@@ -70,11 +72,11 @@ CSR construct_csr_matrix_single_input(MultiArray2D&& M, double cutoff, char TA, 
     }
     else
     {
-      nr = std::get<1>(M.sizes());
-      nc = std::get<0>(M.sizes());
+      nr = get<1>(M.sizes());
+      nc = get<0>(M.sizes());
       counts.resize(nr);
-      for (int_type i = 0; i < std::get<0>(M.sizes()); i++)
-        for (int_type j = 0; j < std::get<1>(M.sizes()); j++)
+      for (int_type i = 0; i < get<0>(M.sizes()); i++)
+        for (int_type j = 0; j < get<1>(M.sizes()); j++)
           if (std::abs(M[i][j]) > cutoff)
             ++counts[j];
     }
@@ -88,6 +90,7 @@ CSR construct_csr_matrix_single_input(MultiArray2D&& M, double cutoff, char TA, 
   CSR csr_mat(std::tuple<std::size_t, std::size_t>{nr, nc}, std::tuple<std::size_t, std::size_t>{0, 0}, counts,
               qmcplusplus::afqmc::shared_allocator<typename CSR::value_type>(comm));
 
+  using std::get;
   if (comm.rank() == 0)
   {
     if (TA == 'N')
@@ -99,15 +102,15 @@ CSR construct_csr_matrix_single_input(MultiArray2D&& M, double cutoff, char TA, 
     }
     else if (TA == 'T')
     {
-      for (int_type i = 0; i < std::get<1>(M.sizes()); i++)
-        for (int_type j = 0; j < std::get<0>(M.sizes()); j++)
+      for (int_type i = 0; i < get<1>(M.sizes()); i++)
+        for (int_type j = 0; j < get<0>(M.sizes()); j++)
           if (std::abs(M[j][i]) > cutoff)
             csr_mat.emplace_back({i, j}, static_cast<typename CSR::value_type>(M[j][i]));
     }
     else if (TA == 'H')
     {
-      for (int_type i = 0; i < std::get<1>(M.sizes()); i++)
-        for (int_type j = 0; j < std::get<0>(M.sizes()); j++)
+      for (int_type i = 0; i < get<1>(M.sizes()); i++)
+        for (int_type j = 0; j < get<0>(M.sizes()); j++)
           if (std::abs(M[j][i]) > cutoff)
             csr_mat.emplace_back({i, j}, static_cast<typename CSR::value_type>(ma::conj(M[j][i])));
     }

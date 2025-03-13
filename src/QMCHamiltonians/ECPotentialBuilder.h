@@ -33,6 +33,7 @@ struct ECPotentialBuilder : public MPIObjectBase, public QMCTraits
   bool hasNonLocalPot;
   bool hasSOPot;
   bool hasL2Pot;
+  bool use_exact_spin;
 
   QMCHamiltonian& targetH;
   ParticleSet& IonConfig;
@@ -46,6 +47,7 @@ struct ECPotentialBuilder : public MPIObjectBase, public QMCTraits
   std::vector<std::unique_ptr<L2RadialPotential>> L2Pot;
 
   ECPotentialBuilder(QMCHamiltonian& h, ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi, Communicate* c);
+  ~ECPotentialBuilder();
 
   bool put(xmlNodePtr cur);
 

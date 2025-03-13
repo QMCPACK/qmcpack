@@ -8,7 +8,7 @@ Trial wavefunction specification
 Introduction
 ------------
 
-This section describes the input blocks associated with the specification of the trial wavefunction in a QMCPACK calculation. These sections are contained within the ``<wavefunction>`` :math:`...`  ``</wavefunction>`` xml blocks. **Users are expected to rely on converters to generate the input blocks described in this section.** The converters and the workflows are designed such that input blocks require minimum modifications from users. Unless the workflow requires modification of wavefunction blocks (e.g., setting the cutoff in a multideterminant calculation), only expert users should directly alter them.
+This section describes the input blocks associated with the specification of the trial wavefunction in a QMCPACK calculation. These sections are contained within the ``<wavefunction>`` :math:`...`  ``</wavefunction>`` XML blocks. **Users are expected to rely on converters to generate the input blocks described in this section.** The converters and the workflows are designed such that input blocks require minimum modifications from users. Unless the workflow requires modification of wavefunction blocks (e.g., setting the cutoff in a multideterminant calculation), only expert users should directly alter them.
 
 The trial wavefunction in QMCPACK has a general product form:
 
@@ -25,7 +25,7 @@ so at least one of the functions in the product must be
 antisymmetric. Notice that, although QMCPACK allows for the
 construction of arbitrary trial wavefunctions based on the
 functions implemented in the code
-(e.g., slater determinants, jastrow functions),
+(e.g., Slater determinants, Jastrow functions),
 the user must make sure that a correct wavefunction is
 used for the problem at hand. From here on, we assume a
 standard trial wavefunction for an electronic structure problem
@@ -36,7 +36,7 @@ standard trial wavefunction for an electronic structure problem
   Psi_T(\vec{r}) =  \textit{A}(\vec{r}) \prod_k \textit{J}_k(\vec{r}),
 
 where :math:`\textit{A}(\vec{r})`
-is one of the antisymmetric functions: (1) slater determinant, (2) multislater determinant, or (3) pfaffian and :math:`\textit{J}_k`
+is one of the antisymmetric functions: (1) Slater determinant, (2) multislater determinant, or (3) pfaffian and :math:`\textit{J}_k`
 is any of the Jastrow functions (described in :ref:`jastrow`).  The antisymmetric functions are built from a set of single particle orbitals (SPO) ``(sposet)``. QMCPACK implements four different types of ``sposet``, described in the following section. Each ``sposet`` is designed for a different type of calculation, so their definition and generation varies accordingly.
 
 .. code-block::
@@ -67,7 +67,7 @@ Single-particle orbitals
 ------------------------
 
 A single particle orbital set (SPOSet) is a set of orbitals evaluated at a single electron real-space position.
-A typical Slater determinant is calculated from a N-by-N matrix constructed from N orbitals at the positions of N electrons.
+A typical Slater determinant is calculated from an N-by-N matrix constructed from N orbitals at the positions of N electrons.
 QMCPACK supports a range of SPOSet types:
 * :ref:`spo-spline`
 * :ref:`spo-lcao`
@@ -159,7 +159,7 @@ After updating the input style.
 
 
 In the case of multi-determinants, all the attributes of ``determinantset`` need to be moved to ``sposet_collection``
-and existing ``sposet`` xml nodes need to be moved under ``sposet_collection``. If there is a ``basisset`` node,
+and existing ``sposet`` XML nodes need to be moved under ``sposet_collection``. If there is a ``basisset`` node,
 it needs to be moved under ``sposet_collection`` as well.
 
 .. _spo-spline:
@@ -213,7 +213,7 @@ efficiency comes at the expense of increased memory use, which is easily
 overcome, however, by the large aggregate memory available per node through
 OpenMP/MPI hybrid QMC.
 
-The input xml block for the spline SPOs is given in :ref:`spline.spo.xml`. A list of options is given in
+The input XML block for the spline SPOs is given in :ref:`spline.spo.xml`. A list of options is given in
 :numref:`table3`.
 
 .. code-block::
@@ -274,13 +274,13 @@ attribute:
 | ``skip_checks``             | Text       | Yes/no                   | No      | skips checks for ion information in h5    |
 +-----------------------------+------------+--------------------------+---------+-------------------------------------------+
 
-.. centered:: Table 3 Options for the ``sposet_collection`` xml-block associated with B-spline single particle orbital sets.
+.. centered:: Table 3 Options for the ``sposet_collection`` XML-block associated with B-spline single particle orbital sets.
 
 Additional information:
 
 - precision
     Only effective on CPU versions without mixed
-    precision, “single" is always imposed with mixed precision. Using
+    precision, "single" is always imposed with mixed precision. Using
     single precision not only saves memory use but also speeds up the
     B-spline evaluation. We recommend using single precision since we saw
     little chance of really compromising the accuracy of calculation.
@@ -313,7 +313,7 @@ Additional information:
 - skip_checks
     When converting the wave function from convertpw4qmc instead
     of pw2qmcpack, there is missing ionic information. This flag bypasses the requirement
-    that the ionic information in the eshdf.h5 file match the input xml. 
+    that the ionic information in the eshdf.h5 file match the input XML. 
 
 .. _spo-lcao:
 
@@ -424,7 +424,7 @@ Attribute:
 | ``cuspCorrection`` | Text         | Yes/no        | No          | Apply cusp correction scheme to ``sposet``?    |
 +--------------------+--------------+---------------+-------------+------------------------------------------------+
 
-.. centered:: Table 4 Options for the ``sposet_collection`` xml-block associated with atom-centered single particle orbital sets.
+.. centered:: Table 4 Options for the ``sposet_collection`` XML-block associated with atom-centered single particle orbital sets.
 
 
 - type
@@ -477,7 +477,7 @@ Attribute:
 | ``name`` / ``id`` | Text         | *Any*      | " "         | Name of atom-centered basis set  |
 +-------------------+--------------+------------+-------------+----------------------------------+
 
-.. centered:: Table 5 Options for the ``basisset`` xml-block associated with atom-centered single particle orbital sets.
+.. centered:: Table 5 Options for the ``basisset`` XML-block associated with atom-centered single particle orbital sets.
 
 ``AtomicBasisSet`` element:
 
@@ -508,7 +508,7 @@ Attribute:
 | ``normalized``          | Text         | Yes/no     | Yes         | Are single particle functions normalized?   |
 +-------------------------+--------------+------------+-------------+---------------------------------------------+
 
-.. centered:: Table 6 Options for the ``atomicBasisSet`` xml-block.
+.. centered:: Table 6 Options for the ``atomicBasisSet`` XML-block.
 
 - name/id
     Name of the basis set. Names should be unique.
@@ -556,10 +556,10 @@ Attribute:
 | ``n/l/m/s`` | Integer      | *Any*      | 0           | Quantum numbers of basisGroup |
 +-------------+--------------+------------+-------------+-------------------------------+
 
-.. centered:: :numref:`table7` Options for the ``basisGroup`` xml-block.
+.. centered:: :numref:`table7` Options for the ``basisGroup`` XML-block.
 
 - type
-    Type of input basis radial function. Note that this refers to the type of radial function in the input xml-block, which might not match the radial function generated internally and used in the calculation (if ``transform`` is set to "yes"). Also note that different ``basisGroup`` blocks within a given ``atomicBasisSet`` can have different ``types``.
+    Type of input basis radial function. Note that this refers to the type of radial function in the input XML-block, which might not match the radial function generated internally and used in the calculation (if ``transform`` is set to "yes"). Also note that different ``basisGroup`` blocks within a given ``atomicBasisSet`` can have different ``types``.
 
 - n/l/m/s
     Quantum numbers of the basis function. Note that if
@@ -604,7 +604,7 @@ Orbitals in region C are computed as the regular B-spline basis described in :re
 .. math::
   :label: eq7
 
-  (S(r) = \frac{1}{2}-\frac{1}{2} tanh \left[\alpha\left(\frac{r-r_{\rm A/B}}{r_{\rm B/C}-r_{\rm A/B}}-\frac{1}{2}\right)\right]
+  S(r) = \frac{1}{2}-\frac{1}{2} tanh \left[\alpha\left(\frac{r-r_{\rm A/B}}{r_{\rm B/C}-r_{\rm A/B}}-\frac{1}{2}\right)\right]
 
 To enable hybrid orbital representation, the input XML needs to see the tag ``hybridrep="yes"`` shown in :ref:`Listing 6 <Listing 6>`.
 
@@ -662,7 +662,7 @@ Attribute:
 - ``inner_cutoff`` is optional and set as ``cutoff_radius`` :math:`-0.3` by default, which is fine in most cases.
 
 - ``spline_radius`` and ``spline_npoints`` are optional. By default, they are calculated based on ``cutoff_radius`` and a grid displacement 0.02 bohr.
-  If users prefer inputing them, it is required that ``cutoff_radius`` <=  ``spline_radius`` :math:`-` 2 :math:`\times` ``spline_radius``/(``spline_npoints`` :math:`-` 1).
+  If users prefer to input them, it is required that ``cutoff_radius`` <=  ``spline_radius`` :math:`-` 2 :math:`\times` ``spline_radius``/(``spline_npoints`` :math:`-` 1).
 
 In addition, the hybrid orbital representation allows extra optimization to speed up the nonlocal pseudopotential evaluation using the batched algorithm listed in :ref:`nlpp`.
 
@@ -732,7 +732,7 @@ Single determinant wavefunctions
 --------------------------------
 
 Placing a single determinant for each spin is the most used ansatz for the antisymmetric part of a trial wavefunction.
-The input xml block for ``slaterdeterminant`` is given in :ref:`Listing 1 <Listing 1>`. A list of options is given in
+The input XML block for ``slaterdeterminant`` is given in :ref:`Listing 1 <Listing 1>`. A list of options is given in
 :numref:`Table2`.
 
 ``slaterdeterminant`` element:
@@ -764,7 +764,7 @@ Attribute:
 +-----------------------+----------+----------+---------+-------------------------------------------+
 
 
-.. centered:: Table 2 Options for the ``slaterdeterminant`` xml-block.
+.. centered:: Table 2 Options for the ``slaterdeterminant`` XML-block.
 
 .. code-block::
    :caption: Slaterdeterminant set XML element.
@@ -796,9 +796,9 @@ Additional information:
   Usually the larger ``delay_rank`` corresponds to a larger problem size.
   On CPUs, ``delay_rank`` must be chosen as a multiple of SIMD vector length for good performance of BLAS libraries.
   The best ``delay_rank`` depends on the processor microarchitecture.
-  GPU support is under development.
+  All options are supported on both CPUs and GPUs.
 
-- ``gpu`` This option is only effective when GPU features are built. Use the implementation with GPU acceleration if ``yes``.
+- ``gpu`` This option is only effective when GPU features are built. Default to using GPU. "omptarget", "cuda", "sycl", "cpu" can be set to target a specific implementation, "yes", "no" can be used to toggle on or off GPU acceleration.
 
 - ``batch`` The default value is ``yes`` if ``gpu=yes`` and ``no`` otherwise.
 
@@ -845,7 +845,7 @@ Attribute:
 | ``algorithm``         | Text     |          | precomputed_table_method | Slater matrix inversion scheme.           |
 +-----------------------+----------+----------+--------------------------+-------------------------------------------+
 
-.. centered:: Table 3 Options for the ``multideterminant`` xml-block.
+.. centered:: Table 3 Options for the ``multideterminant`` XML-block.
 
 Additional information:
 
@@ -923,13 +923,13 @@ can change the nodal structure, and can potentially improve the fixed-node DMC e
 Combining orbitals is complicated by the need to maintain the normalization of the
 orbitals.
 A rotation matrix will preserve the normalization of the vectors in linear combinations.
-However the entries in a rotation matrix are not independent.
+However, the entries in a rotation matrix are not independent.
 A rotation matrix can alternatively be expressed as the matrix exponential of a skew-symmetric matrix: :math:`R = \exp(\kappa)`.
 The entries in that skew-symmetric matrix are independent and can form an independent set of optimizable parameters.
 
 
 Optimizable orbitals are given in the input file by enclosing an SPO
-in an `rotated_sposet` element.  The `determinant` element `id` attribute should reference the name of the rotated sposet.
+in a `rotated_sposet` element.  The `determinant` element `id` attribute should reference the name of the rotated sposet.
 
 The `rotated_sposet` element requires use of the updated `sposet_collection` style.
 
@@ -1075,7 +1075,7 @@ Transformation element:
   | source   | Text         |            |             | "e" if two body, ion particle set if one body.           |
   +----------+--------------+------------+-------------+----------------------------------------------------------+
 
-Just like one- and two-body jastrows, parameterization of the backflow transformations are specified within the ``<transformation>`` blocks by  ``<correlation>`` blocks.  Please refer to :ref:`onebodyjastrowspline` for more information.
+Just like the one and two-body Jastrow functions, parameterization of the backflow transformations are specified within the ``<transformation>`` blocks by ``<correlation>`` blocks.  Please refer to :ref:`onebodyjastrowspline` for more information.
 
 Example Use Case
 ~~~~~~~~~~~~~~~~
@@ -1247,7 +1247,7 @@ Jastrow element:
     | function | text         | Bspline    | (required)   | BSpline        |
     |          |              |            |              | Jastrow        |
     +----------+--------------+------------+--------------+----------------+
-    |          | text         | pade2      |              | Pade form      |
+    |          | text         | pade2      |              | Padé form      |
     +----------+--------------+------------+--------------+----------------+
     |          | text         | …          |              | …              |
     +----------+--------------+------------+--------------+----------------+
@@ -1281,7 +1281,7 @@ between electrons and ions take the form below:
 
   J1=\sum_I^{ion0}\sum_i^e u_{ab}(|r_i-R_I|)
 
-where I runs over all of the ions in the calculation, i runs over the
+where I runs over all the ions in the calculation, i runs over the
 electrons and :math:`u_{ab}` describes the functional form of the
 correlation between them. Many different forms of :math:`u_{ab}` are
 implemented in QMCPACK. We will detail two of the most common ones
@@ -1451,14 +1451,14 @@ setting cusp="d."
 
 .. _onebodyjastrowpade:
 
-Pade form
+Padé form
 .........
 
 Although the spline Jastrow factor is the most flexible and most commonly used form implemented in QMCPACK,
 there are times where its flexibility can make it difficult to optimize.  As an example, a spline Jastrow
 with a very large cutoff can be difficult to optimize for isolated systems such as molecules because of the small
 number of samples present in the tail of the function.  In such cases, a simpler functional
-form might be advantageous.  The second-order Pade Jastrow factor, given in :eq:`eq11`, is a good choice
+form might be advantageous.  The second-order Padé Jastrow factor, given in :eq:`eq11`, is a good choice
 in such cases.
 
 .. math::

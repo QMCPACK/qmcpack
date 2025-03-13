@@ -37,7 +37,7 @@ bool LatticeParser::put(xmlNodePtr cur)
   int nptcl                 = 0;
   int nsh                   = 0; //for backwards compatibility w/ odd heg initialization style
   int pol                   = 0;
-  using SingleParticleIndex = ParticleLayout::SingleParticleIndex;
+
   TinyVector<std::string, DIM> bconds("p");
 
   Tensor<OHMMS_PRECISION_FULL, DIM> lattice_in;
@@ -115,6 +115,10 @@ bool LatticeParser::put(xmlNodePtr cur)
       else if (aname == "LR_dim_cutoff")
       {
         putContent(ref_.LR_dim_cutoff, cur);
+      }
+      else if (aname == "ewald_grid")
+      {
+        putContent(ref_.num_ewald_grid_points, cur);
       }
       else if (aname == "LR_handler")
       {

@@ -17,7 +17,7 @@
 #include "Numerics/MatrixOperators.h"
 #include "Utilities/IteratorUtility.h"
 #include "Utilities/string_utils.h"
-
+#include "CPU/math.hpp"
 
 namespace qmcplusplus
 {
@@ -664,10 +664,10 @@ DensityMatrices1B::Return_t DensityMatrices1B::evaluate_matrix(ParticleSet& P)
       for (int n = 0; n < basis_size2; ++n)
       {
         Value_t val = NDM(n);
-        P.Collectables[ij] += real(val);
+        P.Collectables[ij] += std::real(val);
         ij++;
 #if defined(QMC_COMPLEX)
-        P.Collectables[ij] += imag(val);
+        P.Collectables[ij] += std::imag(val);
         ij++;
 #endif
       }
@@ -682,10 +682,10 @@ DensityMatrices1B::Return_t DensityMatrices1B::evaluate_matrix(ParticleSet& P)
         for (int n = 0; n < basis_size2; ++n)
         {
           Value_t val = EDM(n);
-          P.Collectables[ij] += real(val);
+          P.Collectables[ij] += std::real(val);
           ij++;
 #if defined(QMC_COMPLEX)
-          P.Collectables[ij] += imag(val);
+          P.Collectables[ij] += std::imag(val);
           ij++;
 #endif
         }
@@ -867,10 +867,10 @@ DensityMatrices1B::Return_t DensityMatrices1B::evaluate_loop(ParticleSet& P)
         for (int j = 0; j < basis_size; ++j)
         {
           Value_t val = phi_i * integrated_values[j];
-          P.Collectables[ij] += real(val);
+          P.Collectables[ij] += std::real(val);
           ij++;
 #if defined(QMC_COMPLEX)
-          P.Collectables[ij] += imag(val);
+          P.Collectables[ij] += std::imag(val);
           ij++;
 #endif
         }
@@ -885,10 +885,10 @@ DensityMatrices1B::Return_t DensityMatrices1B::evaluate_loop(ParticleSet& P)
           for (int j = 0; j < basis_size; ++j)
           {
             Value_t val = ephi_i * integrated_values[j];
-            P.Collectables[ij] += real(val);
+            P.Collectables[ij] += std::real(val);
             ij++;
 #if defined(QMC_COMPLEX)
-            P.Collectables[ij] += imag(val);
+            P.Collectables[ij] += std::imag(val);
             ij++;
 #endif
           }
@@ -1121,7 +1121,7 @@ inline void accum_sample(std::vector<Value_t>& E_samp, TraceSample<T>* etrace, R
 #else
   if (etrace)
     for (int p = 0; p < etrace->sample.size(); ++p)
-      E_samp[p] += weight * real(etrace->sample[p]);
+      E_samp[p] += weight * std::real(etrace->sample[p]);
 #endif
 }
 
@@ -1281,7 +1281,7 @@ inline void DensityMatrices1B::normalize()
       bnorms[i] += qmcplusplus::conj(basis_values[i]) * basis_values[i] * dV;
   }
   for (int i = 0; i < basis_size; ++i)
-    basis_norms[i] = 1.0 / std::sqrt(real(bnorms[i]));
+    basis_norms[i] = 1.0 / std::sqrt(std::real(bnorms[i]));
   normalized = true;
 }
 
@@ -1430,8 +1430,8 @@ void DensityMatrices1B::compare(const std::string& name, Vector_t& v1, Vector_t&
   app_log() << name << " " << result << std::endl;
   if (write && !sm)
     for (int i = 0; i < v1.size(); ++i)
-      app_log() << "      " << i << " " << real(v1[i]) << " " << real(v2[i]) << " " << real(v1[i] / v2[i]) << " "
-                << real(v2[i] / v1[i]) << std::endl;
+      app_log() << "      " << i << " " << std::real(v1[i]) << " " << std::real(v2[i]) << " " << std::real(v1[i] / v2[i]) << " "
+                << std::real(v2[i] / v1[i]) << std::endl;
 }
 
 void DensityMatrices1B::compare(const std::string& name, Matrix_t& m1, Matrix_t& m2, bool write, bool diff_only)
@@ -1445,8 +1445,8 @@ void DensityMatrices1B::compare(const std::string& name, Matrix_t& m1, Matrix_t&
     for (int i = 0; i < m1.rows(); ++i)
       for (int j = 0; j < m1.cols(); ++j)
         if (!diff_only || !match(m1(i, j), m2(i, j)))
-          app_log() << "      " << i << " " << j << " " << real(m1(i, j)) << " " << real(m2(i, j)) << " "
-                    << real(m1(i, j) / m2(i, j)) << std::endl;
+          app_log() << "      " << i << " " << j << " " << std::real(m1(i, j)) << " " << std::real(m2(i, j)) << " "
+                    << std::real(m1(i, j) / m2(i, j)) << std::endl;
 }
 
 

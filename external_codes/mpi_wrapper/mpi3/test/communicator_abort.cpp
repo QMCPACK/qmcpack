@@ -1,5 +1,4 @@
 #include "../main.hpp"
-#include "../communicator.hpp"
 
 namespace mpi3 = boost::mpi3;
 

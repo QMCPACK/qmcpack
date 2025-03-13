@@ -61,11 +61,12 @@ feature that you are interested in, check the remainder of this manual or ask if
 
 -  MPI parallelism, with scaling to millions of cores.
 
--  Fully threaded using OpenMP.
+-  Fully threaded on CPUs using OpenMP.
 
 -  Highly efficient vectorized CPU code tailored for modern architectures. :cite:`IPCC_SC17`
 
--  OpenMP-offload-based performance portable GPU implementation, see :ref:`gpufeatures`.
+-  OpenMP-offload-based performance portable GPU implementation. Fully supports NVIDIA, AMD, and Intel GPUs.
+   GPU and CPU execution can be mixed and matched.
 
 -  Analysis tools for minimal environments (Perl only) through to
    Python-based environments with graphs produced via matplotlib (included with Nexus).
@@ -108,58 +109,3 @@ description of the available features, see  :ref:`afqmc`.
 
 -  Specialized implementation for solids with k-point symmetry (e.g.
    primitive unit cells with k-points).
-
-
-.. _gpufeatures:
-
-Supported GPU features for real space QMC
------------------------------------------
-
-The **Performance portable implementation** implements real space QMC methods
-using OpenMP offload programming model and accelerated linear algebra libraries.
-Runs with good performance on NVIDIA and AMD GPUs, and the Intel GPU support is under development.
-Unlike the "legacy" implementation, it is feature complete
-and users may mix and match CPU-only and GPU-accelerated features.
-Using batched QMC drivers is required.
-
-The **Legacy implementation** fully based on NVIDIA CUDA has been removed.
-
-QMCPACK supports running on multi-GPU node architectures via MPI.
-
-Supported GPU features:
-
-  +--------------------------------+---------------------------+------------------+
-  | **Feature**                    | **Performance portable**  | **Legacy CUDA**  |
-  +================================+===========================+==================+
-  | QMC methods                    | VMC, WFOpt, DMC           | VMC, DMC         |
-  +--------------------------------+---------------------------+------------------+
-  | boundary conditions            | periodic, mixed, open     | periodic, open   |
-  +--------------------------------+---------------------------+------------------+
-  | Complex-valued wavefunction    | supported                 | supported        |
-  +--------------------------------+---------------------------+------------------+
-  | Single-Slater determinants     | accelerated               | accelerated      |
-  +--------------------------------+---------------------------+------------------+
-  | Multi-Slater determinants      | on host now, being ported | not supported    |
-  +--------------------------------+---------------------------+------------------+
-  | 3D B-spline orbitals           | accelerated               | accelerated      |
-  +--------------------------------+---------------------------+------------------+
-  | LCAO orbitals                  | on host now, being ported | not supported    |
-  +--------------------------------+---------------------------+------------------+
-  | One-body Jastrow factors       | accelerated               | accelerated      |
-  +--------------------------------+---------------------------+------------------+
-  | Two-body Jastrow factors       | accelerated               | accelerated      |
-  +--------------------------------+---------------------------+------------------+
-  | Other Jastrow factors          | on host                   | not supported    |
-  +--------------------------------+---------------------------+------------------+
-  | Nonlocal pseudopotentials      | accelerated               | accelerated      |
-  +--------------------------------+---------------------------+------------------+
-  | Coulomb interaction PBC e-i    | on host                   | accelerated      |
-  +--------------------------------+---------------------------+------------------+
-  | Coulomb interaction PBC e-e    | accelerated               | accelerated      |
-  +--------------------------------+---------------------------+------------------+
-  | Coulomb interaction OpenBC     | on host                   | accelerated      |
-  +--------------------------------+---------------------------+------------------+
-  | Model periodic Coulomb (MPC)   | on host                   | accelerated      |
-  +--------------------------------+---------------------------+------------------+
-
-.. bibliography:: /bibs/features.bib

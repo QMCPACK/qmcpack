@@ -47,7 +47,7 @@ private:
   Vector<int, OffloadPinnedAllocator<int>>& getMultiWalkerRefPctls();
 
   /// ParticleSet this object refers to after makeMoves
-  std::optional<std::reference_wrapper<const ParticleSet>> refPS;
+  OptionalRef<const ParticleSet> refPS;
 
 public:
   /// Reference particle

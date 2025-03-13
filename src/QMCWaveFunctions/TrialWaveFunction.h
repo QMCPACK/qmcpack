@@ -38,6 +38,7 @@
 
 namespace qmcplusplus
 {
+class SlaterDet;
 class MultiSlaterDetTableMethod;
 
 /** @ingroup MBWfs
@@ -69,6 +70,7 @@ public:
 #endif
 
   using ValueType    = WaveFunctionComponent::ValueType;
+  using ValueVector  = WaveFunctionComponent::ValueVector;
   using GradType     = WaveFunctionComponent::GradType;
   using BufferType   = WaveFunctionComponent::BufferType;
   using WFBufferType = WaveFunctionComponent::WFBufferType;
@@ -298,6 +300,13 @@ public:
   /** compulte multiple ratios to handle non-local moves and other virtual moves
    */
   void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios, ComputeType ct = ComputeType::ALL);
+
+  /** Used by SOECPComponent to do faster SOC evaluation
+   */
+  void evaluateSpinorRatios(const VirtualParticleSet& VP,
+                            const std::pair<ValueVector, ValueVector>& spinor_multiplier,
+                            std::vector<ValueType>& ratios) const;
+
   /** batched version of evaluateRatios
    * Note: unlike other mw_ static functions, *this is the batch leader instead of wf_list[0].
    */
@@ -306,11 +315,27 @@ public:
                                 const RefVector<std::vector<ValueType>>& ratios_list,
                                 ComputeType ct = ComputeType::ALL);
 
+  // batched version of evaluateSpinorRatios
+  static void mw_evaluateSpinorRatios(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                      const RefVectorWithLeader<const VirtualParticleSet>& Vp_list,
+                                      const RefVector<std::pair<ValueVector, ValueVector>>& spinor_multiplier_list,
+                                      const RefVector<std::vector<ValueType>>& ratios_list);
+
   /** compute both ratios and deriatives of ratio with respect to the optimizables*/
   void evaluateDerivRatios(const VirtualParticleSet& VP,
                            const opt_variables_type& optvars,
                            std::vector<ValueType>& ratios,
                            Matrix<ValueType>& dratio);
+
+  /** compute both ratios and deriatives of ratio with respect to the optimizables
+   * Used by SOECP for exact spin integration. spinor_multiplier contains the contribution of the SOECP
+   * for the up/down components that needs to be multiplied by up/down components of spinor orbital. 
+   */
+  void evaluateSpinorDerivRatios(const VirtualParticleSet& VP,
+                                 const std::pair<ValueVector, ValueVector>& spinor_multiplier,
+                                 const opt_variables_type& optvars,
+                                 std::vector<ValueType>& ratios,
+                                 Matrix<ValueType>& dratio);
 
   void printGL(ParticleSet::ParticleGradient& G, ParticleSet::ParticleLaplacian& L, std::string tag = "GL");
 
@@ -457,9 +482,20 @@ public:
                                               RecordArray<ValueType>& dlogpsi,
                                               RecordArray<ValueType>& dhpsioverpsi);
 
+  /** Compute the derivatives of the log of the wavefunction with respect to optimizable parameters.
+   *  parameters
+   *  @param P particle set
+   *  @param optvars optimizable parameters
+   *  @param dlogpsi array of derivatives of the log of the wavefunction.
+   *  Note: this function differs from the evaluateDerivatives function in the way that it only computes
+   *        the derivative of the log of the wavefunction.
+  */
   void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& optvars, Vector<ValueType>& dlogpsi);
-
-  void evaluateGradDerivatives(const ParticleSet::ParticleGradient& G_in, std::vector<ValueType>& dgradlogpsi);
+  /// batched version of evaluateDerivativesWF
+  static void mw_evaluateParameterDerivativesWF(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                                const RefVectorWithLeader<ParticleSet>& p_list,
+                                                const opt_variables_type& optvars,
+                                                RecordArray<ValueType>& dlogpsi);
 
   /** evaluate the hessian w.r.t. electronic coordinates of particle iat **/
   // void evaluateHessian(ParticleSet & P, int iat, HessType& grad_grad_psi);
@@ -503,6 +539,9 @@ public:
 
   /// spomap_ reference accessor
   const SPOMap& getSPOMap() const { return *spomap_; }
+
+  /// find SD WFCs if exist
+  RefVector<SlaterDet> findSD() const;
 
   /// find MSD WFCs if exist
   RefVector<MultiSlaterDetTableMethod> findMSD() const;

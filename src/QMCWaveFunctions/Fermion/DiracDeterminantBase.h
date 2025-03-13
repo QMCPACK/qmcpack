@@ -19,6 +19,7 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #include "Utilities/TimerManager.h"
+#include "CPU/math.hpp"
 
 namespace qmcplusplus
 {
@@ -127,7 +128,17 @@ public:
   using WaveFunctionComponent::evaluateHessian;
   using WaveFunctionComponent::evaluateRatios;
   using WaveFunctionComponent::evaluateRatiosAlltoOne;
+  using WaveFunctionComponent::evaluateSpinorRatios;
   using WaveFunctionComponent::mw_evaluateRatios;
+
+  inline virtual void mw_evaluateSpinorRatios(
+      const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+      const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+      const RefVector<std::pair<ValueVector, ValueVector>>& spinor_multiplier_list,
+      std::vector<std::vector<ValueType>>& ratios) const override
+  {
+    mw_evaluateSpinorRatios_serialized(wfc_list, vp_list, spinor_multiplier_list, ratios);
+  }
 
   // used by DiracDeterminantWithBackflow
   virtual void evaluateDerivatives(ParticleSet& P,
@@ -186,23 +197,6 @@ protected:
   // it is frequently Dual and its consistency not guaranteed.
   ValueMatrix dummy_vmt;
 #endif
-
-  static bool checkG(const GradType& g)
-  {
-#if !defined(NDEBUG)
-    auto g_mag = std::abs(dot(g, g));
-    if (qmcplusplus::isnan(g_mag))
-      throw std::runtime_error("gradient of NaN");
-    if (std::isinf(g_mag))
-      throw std::runtime_error("gradient of inf");
-    if (g_mag < std::abs(std::numeric_limits<RealType>::epsilon()))
-    {
-      std::cerr << "evalGrad gradient is " << g[0] << ' ' << g[1] << ' ' << g[2] << '\n';
-      throw std::runtime_error("gradient of zero");
-    }
-#endif
-    return true;
-  }
 };
 
 } // namespace qmcplusplus

@@ -221,14 +221,14 @@ public:
 
   // Abstract Dual Space Transfers
   template<typename Allocator = ALLOC, typename = qmcplusplus::IsDualSpace<Allocator>>
-  void updateTo()
+  void updateTo(size_t size = 0, std::ptrdiff_t offset = 0)
   {
-    X.updateTo();
+    X.updateTo(size, offset);
   }
   template<typename Allocator = ALLOC, typename = qmcplusplus::IsDualSpace<Allocator>>
-  void updateFrom()
+  void updateFrom(size_t size = 0, std::ptrdiff_t offset = 0)
   {
-    X.updateFrom();
+    X.updateFrom(size, offset);
   }
 
 private:

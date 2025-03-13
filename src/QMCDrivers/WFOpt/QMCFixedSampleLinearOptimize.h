@@ -32,6 +32,7 @@ namespace qmcplusplus
 {
 
 class GradientTest;
+class VMC;
 
 /** @ingroup QMCDrivers
  * @brief Implements wave-function optimization
@@ -136,7 +137,7 @@ private:
 
   int nstabilizers;
   RealType stabilizerScale, bigChange, exp0, exp1, stepsize, savedQuadstep;
-  std::string GEVtype, StabilizerMethod, GEVSplit;
+  std::string StabilizerMethod;
   RealType w_beta;
   /// number of previous steps to orthogonalize to.
   int eigCG;
@@ -223,7 +224,7 @@ private:
   ///target cost function to optimize
   std::unique_ptr<QMCCostFunctionBase> optTarget;
   ///vmc engine
-  std::unique_ptr<QMCDriver> vmcEngine;
+  std::unique_ptr<VMC> vmcEngine;
   ///xml node to be dumped
   xmlNodePtr wfNode;
 

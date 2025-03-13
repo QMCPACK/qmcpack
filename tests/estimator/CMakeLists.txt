@@ -21,29 +21,29 @@ if(NOT ${QMCAPP_ERR} STREQUAL "")
   message("${QMCAPP_ERR}  skipping tests")
 endif()
 
-check_python_reqs("numpy;h5py" estimator-skinetic add_test)
+check_python_reqs("numpy;h5py" estimator-skinetic add_tests)
 
-if(add_test)
+if(add_tests)
   simple_run_and_check(estimator-skinetic "${qmcpack_SOURCE_DIR}/tests/estimator/skinetic" vmc.xml 1 16
                        skinetic_check.py)
 endif()
 
-check_python_reqs("numpy;pandas;h5py" estimator-latdev add_test)
+check_python_reqs("numpy;pandas;h5py" estimator-latdev add_tests)
 
-if(add_test)
+if(add_tests)
   simple_run_and_check(estimator-latdev "${qmcpack_SOURCE_DIR}/tests/estimator/latdev" vmc.xml 1 16 latdev_check.py)
 endif()
 
-check_python_reqs("numpy;h5py" estimator-latdev-free add_test)
+check_python_reqs("numpy;h5py" estimator-latdev-free add_tests)
 
-if(add_test)
+if(add_tests)
   simple_run_and_check(estimator-latdev-free "${qmcpack_SOURCE_DIR}/tests/estimator/latdev/free" two.xml 1 16
                        flatdev.py)
 endif()
 
-check_python_reqs("numpy;pandas;h5py" estimator-sofk add_test)
+check_python_reqs("numpy;pandas;h5py" estimator-sofk add_tests)
 
-if(add_test)
+if(add_tests)
   simple_run_and_check(
     estimator-sofk_pbyp-properties
     "${qmcpack_SOURCE_DIR}/tests/estimator/sofk"

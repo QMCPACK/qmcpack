@@ -43,7 +43,6 @@ EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, const PSetMap& psets, C
       ParticleSets(psets),
       TargetPtcl(p),
       XMLRoot(cur),
-      Format(QMCPACK),
       NumBands(0),
       NumElectrons(0),
       NumSpins(0),
@@ -103,8 +102,7 @@ bool EinsplineSetBuilder::CheckLattice()
     std::ostringstream o;
     o.setf(std::ios::scientific, std::ios::floatfield);
     o.precision(6);
-    o << "EinsplineSetBuilder::ReadOrbitalInfo_ESHDF \n"
-      << "Mismatched supercell lattices.\n";
+    o << "EinsplineSetBuilder::ReadOrbitalInfo_ESHDF \n" << "Mismatched supercell lattices.\n";
     o << " Lattice in ESHDF5 " << std::endl;
     o << SuperLattice << std::endl;
     o << " Lattice in xml" << std::endl;
@@ -127,8 +125,7 @@ void EinsplineSetBuilder::BroadcastOrbitalInfo()
   int numDensityGvecs = TargetPtcl.DensityReducedGvecs.size();
   PooledData<double> abuffer;
   PooledData<int> aibuffer;
-  aibuffer.add(Version.begin(), Version.end()); //myComm->bcast(Version);
-  aibuffer.add(Format);
+  aibuffer.add(Version.begin(), Version.end());          //myComm->bcast(Version);
   abuffer.add(Lattice.begin(), Lattice.end());           //myComm->bcast(Lattice);
   abuffer.add(RecipLattice.begin(), RecipLattice.end()); //myComm->bcast(RecipLattice);
   abuffer.add(SuperLattice.begin(), SuperLattice.end()); //myComm->bcast(SuperLattice);
@@ -147,7 +144,6 @@ void EinsplineSetBuilder::BroadcastOrbitalInfo()
     abuffer.rewind();
     aibuffer.rewind();
     aibuffer.get(Version.begin(), Version.end());
-    aibuffer.get(Format);
     abuffer.get(Lattice.begin(), Lattice.end());
     abuffer.get(RecipLattice.begin(), RecipLattice.end());
     abuffer.get(SuperLattice.begin(), SuperLattice.end());
@@ -617,139 +613,70 @@ void EinsplineSetBuilder::AnalyzeTwists2(const int twist_num_inp, const TinyVect
 
 void EinsplineSetBuilder::OccupyBands(int spin, int sortBands, int numOrbs, bool skipChecks)
 {
-  if (myComm->rank() != 0)
-    return;
   if (spin >= NumSpins && !skipChecks)
   {
-    app_error() << "To developer: User is requesting for orbitals in an invalid spin group " << spin
-                << ". Current h5 file only contains spin groups "
-                << "[0.." << NumSpins - 1 << "]." << std::endl;
-    app_error() << "To user: Orbital H5 file contains no spin down data and is appropriate only for spin unpolarized "
-                   "calculations. "
-                << "If this is your intent, please replace 'spindataset=1' with 'spindataset=0' in the input file."
-                << std::endl;
-    abort();
-  }
-  if (Format == ESHDF)
-  {
-    OccupyBands_ESHDF(spin, sortBands, numOrbs);
-    return;
-  }
-  std::string eigenstatesGroup;
-  if (Version[0] == 0 && Version[1] == 11)
-    eigenstatesGroup = "/eigenstates_3";
-  else if (Version[0] == 0 && Version[1] == 20)
-    eigenstatesGroup = "/eigenstates";
-
-  if (FullBands[spin]->size())
-  {
-    app_log() << "  FullBand[" << spin << "] exists. Reuse it. " << std::endl;
-    return;
+    std::ostringstream msg;
+    msg << "To developer: User is requesting for orbitals in an invalid spin group " << spin
+        << ". Current h5 file only contains spin groups " << "[0.." << NumSpins - 1 << "]." << std::endl;
+    msg << "To user: Orbital H5 file contains no spin down data and is appropriate only for spin unpolarized "
+           "calculations. "
+        << "If this is your intent, please replace 'spindataset=1' with 'spindataset=0' in the input file."
+        << std::endl;
+    myComm->barrier_and_abort(msg.str());
   }
 
-  std::vector<BandInfo>& SortBands(*FullBands[spin]);
+  std::string exception_msg;
+  try
+  {
+    if (myComm->rank() == 0)
+      NumDistinctOrbitals = OccupyBands_ESHDF(H5File, spin, sortBands, numOrbs, *FullBands[spin]);
+  }
+  catch (std::exception& e)
+  {
+    NumDistinctOrbitals = 0;
+    exception_msg       = e.what();
+  }
 
-  SortBands.clear();
-  for (int ti = 0; ti < DistinctTwists.size(); ti++)
-  {
-    int tindex = DistinctTwists[ti];
-    // First, read valence states
-    for (int bi = 0; bi < NumBands; bi++)
-    {
-      BandInfo band;
-      band.TwistIndex    = tindex;
-      band.BandIndex     = bi;
-      band.MakeTwoCopies = MakeTwoCopies[ti];
-      // Read eigenenergy from file
-      std::ostringstream ePath, sPath;
-      if ((Version[0] == 0 && Version[1] == 11) || NumTwists > 1)
-      {
-        ePath << eigenstatesGroup << "/twist_" << tindex << "/band_" << bi << "/eigenvalue";
-        sPath << eigenstatesGroup << "/twist_" << tindex << "/band_" << bi << "/spin";
-      }
-      else if (NumBands > 1)
-      {
-        ePath << eigenstatesGroup << "/twist/band_" << bi << "/eigenvalue";
-        sPath << eigenstatesGroup << "/twist/band_" << bi << "/spin";
-      }
-      else
-      {
-        ePath << eigenstatesGroup << "/twist/band/eigenvalue";
-        sPath << eigenstatesGroup << "/twist/band/spin";
-      }
-      band.Energy = -1.01e100;
-      H5File.read(band.Energy, ePath.str());
-      if (band.Energy > -1.0e100)
-      {
-        H5File.read(band.Spin, sPath.str());
-        if (band.Spin == spin)
-          SortBands.push_back(band);
-      }
-    }
-  }
-  int orbIndex        = 0;
-  int numOrbs_counter = 0;
-  while (numOrbs_counter < numOrbs)
-  {
-    if (SortBands[orbIndex].MakeTwoCopies)
-      numOrbs_counter += 2;
-    else
-      numOrbs_counter++;
-    orbIndex++;
-  }
-  NumDistinctOrbitals = orbIndex;
-  app_log() << "We will read " << NumDistinctOrbitals << " distinct orbitals.\n";
+  myComm->bcast(NumDistinctOrbitals);
+  if (NumDistinctOrbitals == 0)
+    myComm->barrier_and_abort(exception_msg);
+
+  bcastBandInfoSet(*FullBands[spin]);
 }
 
-void EinsplineSetBuilder::bcastSortBands(int spin, int n, bool root)
+void EinsplineSetBuilder::bcastBandInfoSet(std::vector<BandInfo>& sorted_bands) const
 {
-  std::vector<BandInfo>& SortBands(*FullBands[spin]);
-
-  TinyVector<int, 2> nbands(int(SortBands.size()), n);
-  mpi::bcast(*myComm, nbands);
+  const bool root = myComm->rank() == 0;
+  int nbands      = sorted_bands.size();
+  myComm->bcast(nbands);
 
   //buffer to serialize BandInfo
-  PooledData<OHMMS_PRECISION_FULL> misc(nbands[0] * 4);
-  n = NumDistinctOrbitals = nbands[1];
+  PooledData<OHMMS_PRECISION_FULL> misc(nbands * 4);
 
   if (root)
   {
     misc.rewind();
-    for (int i = 0; i < n; ++i)
+    for (int i = 0; i < sorted_bands.size(); ++i)
     {
-      misc.put(SortBands[i].TwistIndex);
-      misc.put(SortBands[i].BandIndex);
-      misc.put(SortBands[i].Energy);
-      misc.put(SortBands[i].MakeTwoCopies);
-    }
-
-    for (int i = n; i < SortBands.size(); ++i)
-    {
-      misc.put(SortBands[i].TwistIndex);
-      misc.put(SortBands[i].BandIndex);
-      misc.put(SortBands[i].Energy);
-      misc.put(SortBands[i].MakeTwoCopies);
+      misc.put(sorted_bands[i].TwistIndex);
+      misc.put(sorted_bands[i].BandIndex);
+      misc.put(sorted_bands[i].Energy);
+      misc.put(sorted_bands[i].MakeTwoCopies);
     }
   }
+
   myComm->bcast(misc);
 
   if (!root)
   {
-    SortBands.resize(nbands[0]);
+    sorted_bands.resize(nbands);
     misc.rewind();
-    for (int i = 0; i < n; ++i)
+    for (int i = 0; i < sorted_bands.size(); ++i)
     {
-      misc.get(SortBands[i].TwistIndex);
-      misc.get(SortBands[i].BandIndex);
-      misc.get(SortBands[i].Energy);
-      misc.get(SortBands[i].MakeTwoCopies);
-    }
-    for (int i = n; i < SortBands.size(); ++i)
-    {
-      misc.get(SortBands[i].TwistIndex);
-      misc.get(SortBands[i].BandIndex);
-      misc.get(SortBands[i].Energy);
-      misc.get(SortBands[i].MakeTwoCopies);
+      misc.get(sorted_bands[i].TwistIndex);
+      misc.get(sorted_bands[i].BandIndex);
+      misc.get(sorted_bands[i].Energy);
+      misc.get(sorted_bands[i].MakeTwoCopies);
     }
   }
 }

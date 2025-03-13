@@ -22,7 +22,7 @@ TEST_CASE("Coulomb PBC A-A Ewald2D square", "[hamiltonian]")
   LRCoulombSingleton::CoulombHandler = 0;
   LRCoulombSingleton::this_lr_type = LRCoulombSingleton::STRICT2D;
   const double vmad_sq = -1.95013246;
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  Lattice lattice;
   lattice.BoxBConds = true; // periodic
   lattice.ndim = 2;
   lattice.R.diagonal(1.0);
@@ -57,7 +57,7 @@ TEST_CASE("Coulomb PBC A-A Ewald2D body center", "[hamiltonian]")
   LRCoulombSingleton::this_lr_type = LRCoulombSingleton::STRICT2D;
   const double vmad_bc = -2.7579038;
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  Lattice lattice;
   lattice.BoxBConds = true; // periodic
   lattice.ndim = 2;
   lattice.R = 0.0;
@@ -101,7 +101,7 @@ TEST_CASE("Coulomb PBC A-A Ewald2D triangular", "[hamiltonian]")
   const double vmad_tri = -1.1061025865191676;
   const double alat = std::sqrt(2.0*M_PI/std::sqrt(3));
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  Lattice lattice;
   lattice.BoxBConds = true; // periodic
   lattice.ndim = 2;
   lattice.R = 0.0;
@@ -141,7 +141,7 @@ TEST_CASE("Coulomb PBC A-A Ewald2D honeycomb", "[hamiltonian]")
   const double vmad_hon = -1.510964233;
   const double alat = std::sqrt(2.0*M_PI/std::sqrt(3));
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  Lattice lattice;
   lattice.BoxBConds = true; // periodic
   lattice.ndim = 2;
   lattice.R = 0.0;
@@ -183,12 +183,13 @@ TEST_CASE("Coulomb PBC A-A Ewald2D honeycomb", "[hamiltonian]")
 
 TEST_CASE("Coulomb PBC A-A Ewald2D tri. in rect.", "[hamiltonian]")
 {
+  using RealType = QMCTraits::RealType;
   LRCoulombSingleton::CoulombHandler = 0; // !!!! crucial if not first test
   LRCoulombSingleton::this_lr_type = LRCoulombSingleton::STRICT2D;
   const double vmad_tri = -1.1061025865191676;
-  const double alat = std::sqrt(2.0*M_PI/std::sqrt(3));
+  const RealType alat = std::sqrt(2.0*M_PI/std::sqrt(3));
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  Lattice lattice;
   lattice.BoxBConds = true; // periodic
   lattice.ndim = 2;
   lattice.R = 0.0;
@@ -204,7 +205,7 @@ TEST_CASE("Coulomb PBC A-A Ewald2D tri. in rect.", "[hamiltonian]")
   elec.setName("e");
   elec.create({2});
   elec.R[0] = {0.0, 0.0, 0.0};
-  elec.R[1] = {alat/2, std::sqrt(3.0)*alat/2, 0.0};
+  elec.R[1] = {alat/2, static_cast<RealType>(std::sqrt(3))*alat/2, 0.0};
 
   SpeciesSet& tspecies       = elec.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");

@@ -87,7 +87,7 @@ void QMCState::print_options(std::ostream& os)
 {
   os << "  Global options " << std::endl;
   if (dryrun)
-    os << "  dryrun : qmc sections will be ignored." << std::endl;
+    os << "  dryrun : All QMC and loop sections will be skipped." << std::endl;
 }
 
 void QMCState::print_memory_change(const std::string& who, size_t before)

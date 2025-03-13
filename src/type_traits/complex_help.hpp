@@ -82,16 +82,6 @@ struct ValueAlias_impl<TREAL, TREF, IsComplex<TREF>>
 template<typename TREAL, typename TREF, typename = std::enable_if_t<std::is_floating_point<TREAL>::value>>
 using ValueAlias = typename ValueAlias_impl<TREAL, TREF>::value_type;
 
-///real part of a scalar. Cannot be replaced by std::real due to AFQMC specific needs.
-inline float real(const float& c) { return c; }
-inline double real(const double& c) { return c; }
-inline float real(const std::complex<float>& c) { return c.real(); }
-inline double real(const std::complex<double>& c) { return c.real(); }
-///imaginary part of a scalar. Cannot be replaced by std::imag due to AFQMC specific needs.
-inline float imag(const float& c) { return 0; }
-inline double imag(const double& c) { return 0; }
-inline float imag(const std::complex<float>& c) { return c.imag(); }
-inline double imag(const std::complex<double>& c) { return c.imag(); }
 ///Workaround to allow conj on scalar to return real instead of complex
 inline float conj(const float& c) { return c; }
 inline double conj(const double& c) { return c; }

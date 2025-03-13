@@ -31,7 +31,7 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
   Communicate* c = OHMMS::Controller;
 
   // BCC H
-  PtclOnLatticeTraits::ParticleLayout lattice;
+  Lattice lattice;
   lattice.R = {3.77945227, 0.0, 0.0, 0.0, 3.77945227, 0.0, 0.0, 0.0, 3.77945227};
   lattice.reset();
 
@@ -47,19 +47,17 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
   ions.create({2});
   ions.R[0] = {0.0, 0.0, 0.0};
   ions.R[1] = {1.88972614, 1.88972614, 1.88972614};
-  std::vector<int> agroup(2);
-  agroup[0] = 1;
-  agroup[1] = 1;
-  elec.create(agroup);
 
+  elec.create({1, 1});
   elec.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
-  elec.R[0]                    = {0.0, 0.0, 0.0};
-  elec.R[1]                    = {0.0, 1.0, 0.0};
+  elec.R[0] = {0.0, 0.0, 0.0};
+  elec.R[1] = {0.0, 1.0, 0.0};
+
   SpeciesSet& tspecies         = elec.getSpeciesSet();
-  int upIdx                    = tspecies.addSpecies("u");
-  int downIdx                  = tspecies.addSpecies("d");
-  int chargeIdx                = tspecies.addAttribute("charge");
+  const int upIdx              = tspecies.addSpecies("u");
+  const int downIdx            = tspecies.addSpecies("d");
+  const int chargeIdx          = tspecies.addAttribute("charge");
   tspecies(chargeIdx, upIdx)   = -1;
   tspecies(chargeIdx, downIdx) = -1;
 
@@ -135,7 +133,7 @@ TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
   Communicate* c = OHMMS::Controller;
 
   // LiH
-  PtclOnLatticeTraits::ParticleLayout lattice;
+  Lattice lattice;
   lattice.R = {-3.55, 0.0, 3.55, 0.0, 3.55, 3.55, -3.55, 3.55, 0.0};
   lattice.reset();
 
@@ -148,24 +146,22 @@ TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
 
   ions.setName("ion");
   ptcl.addParticleSet(std::move(ions_uptr));
-  ions.create({2});
+  ions.create({1, 1});
   ions.R[0] = {0.0, 0.0, 0.0};
   ions.R[1] = {3.55, 3.55, 3.55};
-  std::vector<int> agroup(2);
-  agroup[0] = 2;
-  agroup[1] = 2;
-  elec.create(agroup);
 
+  elec.create({2, 2});
   elec.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
-  elec.R[0]                    = {0.0, 0.0, 0.0};
-  elec.R[1]                    = {0.0, 1.0, 0.0};
-  elec.R[2]                    = {0.0, 0.0, 1.0};
-  elec.R[3]                    = {0.0, 1.0, 1.0};
+  elec.R[0] = {0.0, 0.0, 0.0};
+  elec.R[1] = {0.0, 1.0, 0.0};
+  elec.R[2] = {0.0, 0.0, 1.0};
+  elec.R[3] = {0.0, 1.0, 1.0};
+
   SpeciesSet& tspecies         = elec.getSpeciesSet();
-  int upIdx                    = tspecies.addSpecies("u");
-  int downIdx                  = tspecies.addSpecies("d");
-  int chargeIdx                = tspecies.addAttribute("charge");
+  const int upIdx              = tspecies.addSpecies("u");
+  const int downIdx            = tspecies.addSpecies("d");
+  const int chargeIdx          = tspecies.addAttribute("charge");
   tspecies(chargeIdx, upIdx)   = -1;
   tspecies(chargeIdx, downIdx) = -1;
 

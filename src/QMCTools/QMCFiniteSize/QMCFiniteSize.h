@@ -59,7 +59,6 @@ private:
   ParticleSet* P;
   RealType h; //this is for finite differencing.
   std::vector<PosType> sphericalgrid;
-  GridType* myGrid;
   std::unique_ptr<LRHandlerType> AA;
   std::unique_ptr<RadFunctorType> rVs;
   bool processPWH(xmlNodePtr cur);

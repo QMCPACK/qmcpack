@@ -104,6 +104,8 @@ public:
    */
   bool checkStop(LoopTimer<CLOCK>& loop_timer);
 
+  /// generate terse progress messages
+  std::string generateProgressMessage(const std::string& driverName, int block, int num_blocks) const;
   /// generate stop message explaining why
   std::string generateStopMessage(const std::string& driverName, int block) const;
 

@@ -84,7 +84,7 @@ protected:
   ghContainer_type mygH;
 
 public:
-  SplineC2R(const std::string& my_name) : BsplineSet(my_name), nComplexBands(0) {}
+  SplineC2R(const std::string& my_name, bool use_offload = false) : BsplineSet(my_name), nComplexBands(0) {}
 
   SplineC2R(const SplineC2R& in);
   virtual std::string getClassName() const override { return "SplineC2R"; }
@@ -120,8 +120,8 @@ public:
     gatherv(comm, SplineInst->getSplinePtr(), SplineInst->getSplinePtr()->z_stride, offset);
   }
 
-  template<typename GT, typename BCT>
-  void create_spline(GT& xyz_g, BCT& xyz_bc)
+  template<typename BCT>
+  void create_spline(const Ugrid xyz_g[3], const BCT& xyz_bc)
   {
     resize_kpoints();
     SplineInst = std::make_shared<MultiBspline<ST>>();

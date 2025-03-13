@@ -14,16 +14,14 @@
 #include "catch.hpp"
 
 #include "Configuration.h"
-
 #include "Message/Communicate.h"
 #include "Numerics/OneDimGridBase.h"
 #include "ParticleIO/XMLParticleIO.h"
 #include "Numerics/GaussianBasisSet.h"
-
 #include "QMCWaveFunctions/LCAO/LCAOrbitalSet.h"
 #include "QMCWaveFunctions/LCAO/CuspCorrectionConstruction.h"
-
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
+#include "OhmmsData/Libxml2Doc.h"
 
 namespace qmcplusplus
 {
@@ -121,10 +119,10 @@ TEST_CASE("applyCuspInfo", "[wavefunction]")
   LCAOrbitalSet& lcob = dynamic_cast<LCAOrbitalSet&>(*sposet);
 
   LCAOrbitalSet phi("phi", std::unique_ptr<LCAOrbitalSet::basis_type>(lcob.myBasisSet->makeClone()),
-                    lcob.getOrbitalSetSize(), lcob.isIdentity());
+                    lcob.getOrbitalSetSize(), lcob.isIdentity(), lcob.isOMPoffload());
 
   LCAOrbitalSet eta("eta", std::unique_ptr<LCAOrbitalSet::basis_type>(lcob.myBasisSet->makeClone()),
-                    lcob.getOrbitalSetSize(), lcob.isIdentity());
+                    lcob.getOrbitalSetSize(), lcob.isIdentity(), lcob.isOMPoffload());
 
   *(eta.C) = *(lcob.C);
   *(phi.C) = *(lcob.C);

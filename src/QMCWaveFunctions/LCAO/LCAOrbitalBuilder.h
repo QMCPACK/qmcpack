@@ -69,6 +69,8 @@ protected:
 
   /// Enable cusp correction
   bool doCuspCorrection;
+  /// Captured gpu input string
+  std::string useGPU;
 
   /** create basis set
      *

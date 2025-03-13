@@ -14,7 +14,7 @@
 #include "CUDADeviceManager.h"
 #include <stdexcept>
 #include "OutputManager.h"
-#include "CUDAruntime.hpp" // Positioned here to avoid conflict between CUDA and GCC >= 12 headers. https://github.com/QMCPACK/qmcpack/pull/4814 
+#include "CUDAruntime.hpp" // Positioned here to avoid conflict between CUDA and GCC >= 12 headers. https://github.com/QMCPACK/qmcpack/pull/4814
 #include "determineDefaultDeviceNum.h"
 
 namespace qmcplusplus
@@ -47,4 +47,17 @@ CUDADeviceManager::CUDADeviceManager(int& default_device_num, int& num_devices, 
     }
   }
 }
+
+void CUDADeviceManager::printInfo() const
+{
+#if defined(QMC_CUDA2HIP)
+  app_summary() << "  HIP acceleration with CUDA source code build option is enabled" << std::endl;
+#else
+  app_summary() << "  CUDA acceleration build option is enabled" << std::endl;
+#endif
+#if defined(QMC_CUDA2HIP) && defined(QMC_DISABLE_HIP_HOST_REGISTER)
+  app_log() << "    Use of hipHostRegister for pinning host memory is disabled" << std::endl;
+#endif
+}
+
 } // namespace qmcplusplus

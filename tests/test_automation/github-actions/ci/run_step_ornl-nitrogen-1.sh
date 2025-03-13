@@ -49,14 +49,17 @@ case "$1" in
       ;;
     esac
        
-    echo 'Configure for building CUDA2HIP with ROCM clang compilers'
+    # check the GPU architecture in use
+    whoami
+    groups
+    /opt/rocm/llvm/bin/amdgpu-arch
 
+    echo 'Configure for building CUDA2HIP with ROCM clang compilers'
     cmake -GNinja \
           -DCMAKE_C_COMPILER=/opt/rocm/llvm/bin/clang \
           -DCMAKE_CXX_COMPILER=/opt/rocm/llvm/bin/clang++ \
           -DQMC_MPI=0 \
-          -DENABLE_CUDA=ON \
-          -DQMC_CUDA2HIP=ON \
+          -DQMC_GPU=hip \
           -DQMC_GPU_ARCHS=gfx906 \
           -DQMC_COMPLEX=$IS_COMPLEX \
           -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
@@ -73,8 +76,9 @@ case "$1" in
    
   test)
     echo "Running deterministic tests"
+    rocm-smi --showdriverversion
     cd ${GITHUB_WORKSPACE}/../qmcpack-build
-    ctest --output-on-failure -L deterministic -j 32
+    ctest --output-on-failure -L deterministic -j 32 --timeout 120 --repeat after-timeout:4
     ;;
     
 esac

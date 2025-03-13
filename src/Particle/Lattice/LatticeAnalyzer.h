@@ -16,6 +16,8 @@
 #ifndef QMCPLUSPLUS_LATTICE_ANALYZER_H
 #define QMCPLUSPLUS_LATTICE_ANALYZER_H
 #include "OhmmsPETE/TinyVector.h"
+#include "CrystalLattice.h"
+
 namespace qmcplusplus
 {
 /** enumeration for DTD_BConds specialization
@@ -38,7 +40,10 @@ enum
 };
 
 
-///generic class to analyze a Lattice
+/** generic class to analyze a Lattice
+ *  NOTE: There is no constructor but operator() should be considered one in most
+ *        cases as the "class" is invalid until it is called since mySC is not intialized.
+ */
 template<typename T, unsigned D>
 struct LatticeAnalyzer
 {};
@@ -221,7 +226,7 @@ inline bool found_shorter_base(TinyVector<TinyVector<T, 3>, 3>& rb)
   }
 
   T rmax = std::sqrt(r2max);
-  T tol  = 2.0 * rmax * eps; //Error propagation for x^2
+  T tol  = 4.0 * rmax * eps; // Error propagation for x^2
 
   TinyVector<TinyVector<T, 3>, 4> rb_new;
   rb_new[0] = rb[0] + rb[1] - rb[2];

@@ -58,12 +58,14 @@ class SYCLDeviceManager
 public:
   SYCLDeviceManager(int& default_device_num, int& num_devices, int local_rank, int local_size);
 
+  // print device information
+  void printInfo() const;
+
   /** access the the DeviceManager owned default queue.
    * Restrict the use of it to performance non-critical operations.
    * Note: CUDA has a default queue but all the SYCL queues are explicit.
    */
   static sycl::queue& getDefaultDeviceDefaultQueue();
-  sycl::queue createQueueDefaultDevice() const;
 };
 } // namespace qmcplusplus
 

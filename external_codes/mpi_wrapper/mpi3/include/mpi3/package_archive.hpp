@@ -132,7 +132,7 @@ class package_iarchive_impl  // NOLINT(fuchsia-multiple-inheritance) follow Boos
 , public basic_package_iarchive<Archive> {
  public:
 	template<class T>
-	void load(T& t) { basic_package_iprimitive::load(t); }
+	void load(T& t) { basic_package_iprimitive::load(t); }  // cppcheck-suppress duplInheritedMember ;
 	//  empty functions follow, so that metadata is communicated
 	void load(boost::archive::version_type& /*version*/) {}
 	//  void save(const boost::serialization::item_version_type&){/*save(static_cast<const unsigned int>(t));*/}

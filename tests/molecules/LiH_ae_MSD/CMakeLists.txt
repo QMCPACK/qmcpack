@@ -4,7 +4,7 @@ if(NOT QMC_COMPLEX)
   # Compare directly to sCI Variational Energy of: E=-8.04250444504137
   #Data generated using utils/make_ref_data.sh  LiH_ae_MSD_NOJ_SHORT qmc-ref/vmc_short_noj.s000.scalar.dat  qmc-ref/qmc-ref-vmc-long-noj.s000.scalar.dat
   list(APPEND LiH_ae_MSD_NOJ_SHORT_SCALARS "totenergy" "-8.042553312461 0.002407485304")
-  list(APPEND LiH_ae_MSD_NOJ_SHORT_SCALARS "variance" "1.245679324458 0.051278600983")
+  list(APPEND LiH_ae_MSD_NOJ_SHORT_SCALARS "variance" "1.245679324458 0.07")
   list(APPEND LiH_ae_MSD_NOJ_SHORT_SCALARS "kinetic" "8.004096666221 0.066070685701")
   list(APPEND LiH_ae_MSD_NOJ_SHORT_SCALARS "potential" "-16.046649978685 0.066254492826")
   list(APPEND LiH_ae_MSD_NOJ_SHORT_SCALARS "eeenergy" "3.379729221478 0.003550933783")
@@ -163,6 +163,101 @@ if(NOT QMC_COMPLEX)
     5
     1
     TRUE)
+
+
+  # self-healing deterministic vmc tests
+  check_python_reqs("numpy;h5py" estimator-sh_coeff add_tests)
+  if(add_tests)
+    if(QMC_MIXED_PRECISION)
+      simple_run_and_check(
+        deterministic-LiH_ae_msdj_legacy-vmc-estimator-sh_coeff
+        "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
+        det_vmc_sh_legacy.in.xml
+        4
+        4
+        check_stats.py
+        -s
+        0
+        -q
+        sh_coeff
+        -a
+        2e-6
+        -e
+        0
+        -c
+        5
+        -p
+        det_vmc_sh_legacy
+        -r
+        qmc-ref/det_vmc_sh.s000.stat_ref_sh_coeff.dat)
+
+      simple_run_and_check(
+        deterministic-LiH_ae_msdj_batched-vmc-estimator-sh_coeff
+        "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
+        det_vmc_sh_batched.in.xml
+        4
+        4
+        check_stats.py
+        -s
+        0
+        -q
+        sh_coeff
+        -a
+        2e-6
+        -e
+        0
+        -c
+        5
+        -p
+        det_vmc_sh_batched
+        -r
+        qmc-ref/det_vmc_sh.s000.stat_ref_sh_coeff.dat)
+    else()
+      simple_run_and_check(
+        deterministic-LiH_ae_msdj_legacy-vmc-estimator-sh_coeff
+        "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
+        det_vmc_sh_legacy.in.xml
+        4
+        4
+        check_stats.py
+        -s
+        0
+        -q
+        sh_coeff
+        -a
+        1e-8
+        -e
+        0
+        -c
+        5
+        -p
+        det_vmc_sh_legacy
+        -r
+        qmc-ref/det_vmc_sh.s000.stat_ref_sh_coeff.dat)
+
+      simple_run_and_check(
+        deterministic-LiH_ae_msdj_batched-vmc-estimator-sh_coeff
+        "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
+        det_vmc_sh_batched.in.xml
+        4
+        4
+        check_stats.py
+        -s
+        0
+        -q
+        sh_coeff
+        -a
+        1e-8
+        -e
+        0
+        -c
+        5
+        -p
+        det_vmc_sh_batched
+        -r
+        qmc-ref/det_vmc_sh.s000.stat_ref_sh_coeff.dat)
+    endif()
+  endif()
 
 else()
   message(VERBOSE

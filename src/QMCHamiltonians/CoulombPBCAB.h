@@ -61,8 +61,6 @@ public:
   Return_t myConst;
   ///cutoff radius of the short-range part
   RealType myRcut;
-  ///radial grid
-  std::shared_ptr<GridType> myGrid;
   ///Always mave a radial functor for the bare coulomb
   std::shared_ptr<const RadFunctorType> V0;
   ///Radial functor for bare coulomb, optimized for forces
@@ -71,7 +69,6 @@ public:
   std::shared_ptr<const RadFunctorType> dfV0;
   /// Flag for whether to compute forces or not
   bool ComputeForces;
-  int MaxGridPoints;
 
   ///number of particles per species of A
   std::vector<int> NofSpeciesA;
@@ -156,11 +153,17 @@ public:
                               const std::vector<ListenerVector<RealType>>& ion_listeners) const override;
 
 
-  Return_t evaluateWithIonDerivs(ParticleSet& P,
-                                 ParticleSet& ions,
-                                 TrialWaveFunction& psi,
-                                 ParticleSet::ParticlePos& hf_terms,
-                                 ParticleSet::ParticlePos& pulay_terms) override;
+  void mw_evaluatePerParticleWithToperator(const RefVectorWithLeader<OperatorBase>& o_list,
+                                           const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                           const RefVectorWithLeader<ParticleSet>& p_list,
+                                           const std::vector<ListenerVector<RealType>>& listeners,
+                                           const std::vector<ListenerVector<RealType>>& ion_listeners) const override;
+
+  void evaluateIonDerivs(ParticleSet& P,
+                         ParticleSet& ions,
+                         TrialWaveFunction& psi,
+                         ParticleSet::ParticlePos& hf_terms,
+                         ParticleSet::ParticlePos& pulay_terms) override;
 
   /** Do nothing */
   bool put(xmlNodePtr cur) override { return true; }

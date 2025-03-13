@@ -26,6 +26,7 @@
 #include "Concurrency/OpenMP.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
+#include "OhmmsData/Libxml2Doc.h"
 
 #include <array>
 #include <string_view>

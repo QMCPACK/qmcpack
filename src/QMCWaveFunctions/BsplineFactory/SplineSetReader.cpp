@@ -39,7 +39,7 @@ std::unique_ptr<SPOSet> SplineSetReader<SA>::create_spline_set(const std::string
                                                                int spin,
                                                                const BandInfoGroup& bandgroup)
 {
-  auto bspline = std::make_unique<SA>(my_name);
+  auto bspline = std::make_unique<SA>(my_name, use_offload);
   app_log() << "  ClassName = " << bspline->getClassName() << std::endl;
   bool foundspline = createSplineDataSpaceLookforDumpFile(bandgroup, *bspline);
   if (foundspline)
@@ -140,8 +140,8 @@ void SplineSetReader<SA>::readOneOrbitalCoefs(const std::string& s,
   if (!h5f.readEntry(cG, s))
   {
     std::ostringstream msg;
-    msg << "SplineSetReader Failed to read band(s) from h5 file. "
-        << "Attempted dataset " << s << " with " << cG.size() << " complex numbers." << std::endl;
+    msg << "SplineSetReader Failed to read band(s) from h5 file. " << "Attempted dataset " << s << " with " << cG.size()
+        << " complex numbers." << std::endl;
     throw std::runtime_error(msg.str());
   }
   double total_norm = compute_norm(cG);

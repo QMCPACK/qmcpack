@@ -280,4 +280,12 @@ CloneManager::RealType CloneManager::acceptRatio() const
   return static_cast<RealType>(nAcceptTot) / static_cast<RealType>(nAcceptTot + nRejectTot);
 }
 
+RefVector<WalkerLogCollector> CloneManager::getWalkerLogCollectorRefs()
+{
+  RefVector<WalkerLogCollector> refs;
+  for(int i = 0; i < wlog_collectors.size(); i++)
+    refs.push_back(*wlog_collectors[i]);
+  return refs;
+}
+
 } // namespace qmcplusplus

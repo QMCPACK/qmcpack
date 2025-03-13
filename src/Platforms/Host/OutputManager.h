@@ -64,9 +64,9 @@ inline std::ostream& app_summary() { return infoSummary.getStream(); }
 
 inline std::ostream& app_log() { return infoLog.getStream(); }
 
-inline std::ostream& app_error() { return infoError.getStream() << "ERROR "; }
+inline std::ostream& app_error() { return infoError.getStream() << "QMCPACK ERROR "; }
 
-inline std::ostream& app_warning() { return infoLog.getStream() << "WARNING "; }
+inline std::ostream& app_warning() { return infoLog.getStream() << "QMCPACK WARNING "; }
 
 inline std::ostream& app_debug_stream() { return infoDebug.getStream(); }
 

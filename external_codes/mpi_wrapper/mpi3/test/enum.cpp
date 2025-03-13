@@ -29,11 +29,11 @@ auto mpi3::main(int /*argc*/, char** /*argv*/, mpi3::communicator world) -> int 
 	assert(world.size() > 1);
 
 	switch(world.rank()) {
-	break; case 0: {
+	case 0: {
 		error_ns::code const ec = error_ns::SUCCESS;
 		world.send_n(&reinterpret_cast<int const&>(ec), 1, 1);  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast) testing not recommended brute force method
-	};
-	break; case 1: {
+	}; break;
+	case 1: {
 		error_ns::code ec{};
 		world.receive_n(&reinterpret_cast<int&>(ec), 1, 0);  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast) testing not recommended brute force method
 		assert(ec == error_ns::SUCCESS);
@@ -41,7 +41,7 @@ auto mpi3::main(int /*argc*/, char** /*argv*/, mpi3::communicator world) -> int 
 	}
 
 	switch(world.rank()) {
-	break; case 0: {
+	case 0: {
 		error_ns::code const ec = error_ns::SUCCESS;
 		world.send_n(&ec, 1, 1);
 	};
@@ -53,7 +53,7 @@ auto mpi3::main(int /*argc*/, char** /*argv*/, mpi3::communicator world) -> int 
 	}
 
 	switch(world.rank()) {
-	break; case 0: {
+	case 0: {
 		error_ns::code const ec = error_ns::SUCCESS;
 		world.send_n(&ec, 1, 1);
 	};
@@ -65,7 +65,7 @@ auto mpi3::main(int /*argc*/, char** /*argv*/, mpi3::communicator world) -> int 
 	}
 
 	switch(world.rank()) {
-	break; case 0: {
+	case 0: {
 		error_ns::code const ec = error_ns::SUCCESS;
 		world[1] << ec;
 	};
@@ -77,7 +77,7 @@ auto mpi3::main(int /*argc*/, char** /*argv*/, mpi3::communicator world) -> int 
 	}
 
 	switch(world.rank()) {
-	break; case 0: {
+	case 0: {
 		error_ns::code const ec = error_ns::SUCCESS;
 		world[1] << ec;
 	};
@@ -89,7 +89,7 @@ auto mpi3::main(int /*argc*/, char** /*argv*/, mpi3::communicator world) -> int 
 	}
 
 	switch(world.rank()) {
-	break; case 0: {
+	case 0: {
 		error_long_ns::code const ec = error_long_ns::SUCCESS;
 		world[1] << ec;
 	};
@@ -101,7 +101,7 @@ auto mpi3::main(int /*argc*/, char** /*argv*/, mpi3::communicator world) -> int 
 	}
 
 	switch(world.rank()) {
-	break; case 0: {
+	case 0: {
 		error_class_ns::code const ec = error_class_ns::code::SUCCESS;
 		world[1] << ec;
 	};

@@ -336,6 +336,7 @@ struct device_pointer : base_device_pointer
   auto operator+(std::ptrdiff_t n) const { return device_pointer{impl_ + n}; }
   auto operator-(std::ptrdiff_t n) const { return device_pointer{impl_ - n}; }
   std::ptrdiff_t operator-(device_pointer other) const { return std::ptrdiff_t(impl_ - other.impl_); }
+  bool operator<(device_pointer const& other) const { return impl_ < other.impl_; }
   operator device_pointer<T const>() const { return device_pointer<T const>{impl_}; }
   operator device_pointer<void const>() const { return device_pointer<void const>{impl_}; }
   device_pointer& operator++()
@@ -526,7 +527,11 @@ device_pointer<T> copy_n(device_pointer<T const> const A, Size n, device_pointer
 */
 
 template<typename T, typename ForwardIt, typename Size>
-device_pointer<T> copy_n(ForwardIt A, Size n, device_pointer<T> B)
+auto copy_n(ForwardIt A, Size n, device_pointer<T> B)
+// AAC: only use this overload if it is semantically correct 
+// (e.g., A is not a fancy pointer -- in continuous memory);
+// and if not, there will be other candidates, possibly provided by Multi itself (e.g. through ADL priority)
+-> decltype(arch::memcopy(to_address(B), to_address(A), n * sizeof(T)), B + n) 
 {
   arch::memcopy(to_address(B), to_address(A), n * sizeof(T));
   return B + n;

@@ -44,7 +44,7 @@ PWSCF: pw.x, pw2qmcpack.x, pw2casino.x
   http://qmcpack.org/downloads/
 | Installation instructions: See the ``README`` file in
   ``qmcpack/external_codes/quantum_espresso`` for instructions on
-  patching Quantum Espresso version 5.1.
+  patching Quantum ESPRESSO version 5.1.
 
 QMCPACK: qmcpack, qmcpack_complex, convert4qmc, ppconvert, sqd
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

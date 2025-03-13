@@ -76,9 +76,9 @@
 #       coefficient, hamiltonian, coulomb, constant, pseudopotential,# 
 #       pseudo, mpc, localenergy, energydensity, reference_points,   #
 #       spacegrid, origin, axis, chiesa, density, nearestneighbors,  #
-#       neighbor_trace, dm1b, spindensity, structurefactor, init,    #
-#       scalar_traces, array_traces, particle_traces, traces, loop,  #
-#       linear, cslinear, vmc, dmc.                                  #
+#       neighbor_trace, dm1b, spindensity, magnetizationdensity,     #
+#       structurefactor, init, scalar_traces, array_traces,          #
+#       particle_traces, traces, loop, linear, cslinear, vmc, dmc.   #
 #                                                                    #
 #   QIxmlFactory                                                     #
 #     Class supports comprehension of XML elements that share the    #
@@ -2225,6 +2225,14 @@ class spindensity(QIxml):
     identifier  = 'name'
 #end class spindensity
 
+class magnetizationdensity(QIxml):
+    tag = 'estimator'
+    attributes  = ['type','name','report']
+    parameters  = ['dr','grid','center','corner','integrator','samples']
+    write_types = obj(report=yesno)
+    identifier  = 'name'
+#end class magnetizationdensity
+
 class structurefactor(QIxml):
     tag = 'estimator'
     attributes  = ['type','name','report']
@@ -2349,6 +2357,7 @@ estimator = QIxmlFactory(
                  nearestneighbors       = nearestneighbors,
                  dm1b                   = dm1b,
                  spindensity            = spindensity,
+                 magnetizationdensity   = magnetizationdensity,
                  structurefactor        = structurefactor,
                  force                  = force,
                  forwardwalking         = forwardwalking,
@@ -2709,7 +2718,7 @@ classes = [   #standard classes
     correlation,coefficients,loop,linear,cslinear,vmc,dmc,vmc_batch,dmc_batch,linear_batch,
     atomicbasisset,basisgroup,init,var,traces,scalar_traces,particle_traces,array_traces,
     reference_points,nearestneighbors,neighbor_trace,dm1b,
-    coefficient,radfunc,spindensity,structurefactor,
+    coefficient,radfunc,spindensity,structurefactor,magnetizationdensity,
     sposet,bspline_builder,composite_builder,heg_builder,include,
     multideterminant,detlist,ci,mcwalkerset,csf,det,
     optimize,cg_optimizer,flex_optimizer,optimize_qmc,wftest,kspace_jastrow,
@@ -2914,6 +2923,9 @@ density.defaults.set(
     )
 spindensity.defaults.set(
     type='spindensity',name='SpinDensity'
+    )
+magnetizationdensity.defaults.set(
+    type='magnetizationdensity',name='MagnetizationDensity'
     )
 skall.defaults.set(
     type='skall',name='skall',source='ion0',target='e',hdf5=True
@@ -4295,7 +4307,7 @@ class TracedQmcpackInput(BundledQmcpackInput):
         self.variables = obj()
         self.inputs = obj()
         self.filenames = None
-        if quantity!=None and values!=None and input!=None:
+        if quantity is not None and values is not None and input is not None:
             self.bundle_inputs(quantity,values,input)
         #end if
     #end def __init__
@@ -4306,9 +4318,15 @@ class TracedQmcpackInput(BundledQmcpackInput):
         for value in values:
             inp = input.copy()
             qhost = inp.get_host(quantity)                               
-            print(qhost)
-            if qhost!=None:
-                qhost[quantity] = value
+            #print(qhost)
+            if qhost is not None:
+                if not isinstance(value,obj):
+                    qhost[quantity] = value
+                else:
+                    for k,v in value.items():
+                        qhost[k] = v
+                    #end for
+                #end if
             else:
                 self.error('quantity '+quantity+' was not found in '+input.__class__.__name__)
             #end if
@@ -4328,6 +4346,9 @@ class TracedQmcpackInput(BundledQmcpackInput):
             var = self.variables[i]
             q = var.quantity
             v = var.value
+            if isinstance(v,obj):
+                v = i
+            #end if
             bfile = prefix+'.g'+str(i).zfill(3)+'.'+q+'_'+str(v)+'.'+ext
             self.filenames.append(bfile)
         #end if
@@ -5482,6 +5503,7 @@ def process_dm1b_estimator(dm,wfname,wf_elem):
     basis = []
     builder = None
     maxed = False
+    wf = wf_elem
     if reuse and 'basis' in dm and isinstance(dm.basis,sposet):
         spo = dm.basis
         # get sposet size
@@ -5496,7 +5518,6 @@ def process_dm1b_estimator(dm,wfname,wf_elem):
         #end if
         try:
             # get sposet from wavefunction
-            wf = wf_elem
             dets = wf.get('determinant')
             det  = dets.get_single()
             if 'sposet' in det:
@@ -6533,19 +6554,19 @@ opt_batched_defaults = obj(
     cost            = 'variance',
     cycles          = 12,
     var_cycles      = 0,
-    #var_samples     = None,
+    var_samples     = None,
     init_cycles     = 0,
-    #init_samples    = None,
+    init_samples    = None,
     init_minwalkers = 1e-4,
     )
 
 shared_opt_batched_defaults = obj(
-    #samples              = 204800,
-    nonlocalpp           = True,
-    use_nonlocalpp_deriv = True,
+    samples              = 204800,
+    #nonlocalpp           = True,
+    #use_nonlocalpp_deriv = True,
     warmupsteps          = 300,                
     blocks               = 100,                
-    steps                = 1,                  
+    #steps                = 1,                 
     substeps             = 10,                 
     timestep             = 0.3,
     usedrift             = False,
@@ -7012,9 +7033,9 @@ def generate_batched_opt_calculations(
         cost       ,
         cycles     ,
         var_cycles ,
-        #var_samples,
+        var_samples,
         init_cycles,
-        #init_samples,
+        init_samples,
         init_minwalkers,
         loc        = 'generate_opt_calculations',
         **opt_inputs
@@ -7062,16 +7083,16 @@ def generate_batched_opt_calculations(
             reweightedvariance   = 0.0,
             **opt_inputs
             )
-        #if var_samples is not None:
-        #    vmin_opt.samples = var_samples
-        ##end if
+        if var_samples is not None:
+            vmin_opt.samples = var_samples
+        #end if
         opt_calcs.append(loop(max=var_cycles,qmc=vmin_opt))
     #end if
     if init_cycles>0:
         init_opt = opt(**opt_inputs)
-        #if init_samples is not None:
-        #    init_opt.samples = init_samples
-        ##end if
+        if init_samples is not None:
+            init_opt.samples = init_samples
+        #end if
         init_opt.minwalkers = init_minwalkers
         if not oneshift:
             init_opt.energy               = cost[0]
@@ -7315,6 +7336,7 @@ gen_basic_input_defaults = obj(
     precision      = 'float',          
     twistnum       = None,             
     twist          = None,             
+    gcta           = None,
     spin_polarized = None,             
     partition      = None,             
     partition_mf   = None,             
@@ -7354,7 +7376,7 @@ gen_basic_input_defaults = obj(
     J3_rcut        = 5.0,              
     J1_rcut_open   = 5.0,              
     J2_rcut_open   = 10.0,
-    driver         = 'legacy', # legacy,batched
+    driver         = 'batched', # legacy,batched
     # batched driver inputs
     orbitals_cpu   = None,     # place/evaluate orbitals on cpu if on gpu
     matrix_inv_cpu = None,     # evaluate matrix inverse on cpu if on gpu
@@ -7617,6 +7639,22 @@ def generate_basic_input(**kwargs):
           del corr.ud
         if 'uu' in corr:
           corr.uu.cusp = -0.5
+      #end if
+      J3 = wfn.jastrows.get('J3')
+      if J3 is not None:
+        corr = J3.get('correlation')
+        j3_ids = []
+        for j3_term in corr:
+          j3_id = j3_term.coefficients.id
+          j3_ids.append(j3_id)
+        #end for
+        for j3_id in j3_ids:
+          if 'ud' in j3_id:
+            delattr(corr, j3_id)
+          #end if
+        #end for
+      #end if
+    #end if
 
     h_estimators = kw.estimators
     d_estimators = None
@@ -7700,7 +7738,7 @@ def generate_basic_input(**kwargs):
         if isinstance(calc,loop):
             calc = calc.qmc
         #end if
-        if isinstance(calc,(linear,cslinear,linear_batch)) and 'nonlocalpp' not in calc:
+        if isinstance(calc,(linear,cslinear,linear_batch)) and 'nonlocalpp' not in calc and not batched:
             calc.nonlocalpp           = True
             calc.use_nonlocalpp_deriv = True
         #end if

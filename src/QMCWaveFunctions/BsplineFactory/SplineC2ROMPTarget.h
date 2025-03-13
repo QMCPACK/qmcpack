@@ -21,7 +21,7 @@
 #include <memory>
 #include "QMCWaveFunctions/BsplineFactory/BsplineSet.h"
 #include "OhmmsSoA/VectorSoaContainer.h"
-#include "spline2/MultiBspline.hpp"
+#include "spline2/MultiBsplineOffload.hpp"
 #include "OMPTarget/OffloadAlignedAllocators.hpp"
 #include "Utilities/FairDivide.h"
 #include "Utilities/TimerManager.h"
@@ -35,6 +35,7 @@ namespace qmcplusplus
  *
  * Requires temporage storage and multiplication of phase vectors
  * The internal storage of complex spline coefficients uses double sized real arrays of ST type, aligned and padded.
+ * Calling assign_v assign_vgl should be restricted to the actual number of complex splines (kPoints.size()).
  * The first nComplexBands complex splines produce 2 real orbitals.
  * The rest complex splines produce 1 real orbital.
  * All the output orbitals are real (C2R). The maximal number of output orbitals is OrbitalSetSize.
@@ -75,7 +76,7 @@ private:
   ///number of complex bands
   int nComplexBands;
   ///multi bspline set
-  std::shared_ptr<MultiBspline<ST, OffloadAllocator<ST>, OffloadAllocator<SplineType>>> SplineInst;
+  std::shared_ptr<MultiBsplineBase<ST>> SplineInst;
 
   std::shared_ptr<OffloadVector<ST>> mKK;
   std::shared_ptr<OffloadPosVector<ST>> myKcart;
@@ -111,7 +112,7 @@ protected:
   ghContainer_type mygH;
 
 public:
-  SplineC2ROMPTarget(const std::string& my_name)
+  SplineC2ROMPTarget(const std::string& my_name, bool use_offload = true)
       : BsplineSet(my_name),
         offload_timer_(createGlobalTimer("SplineC2ROMPTarget::offload", timer_level_fine)),
         nComplexBands(0),
@@ -174,11 +175,11 @@ public:
     gatherv(comm, SplineInst->getSplinePtr(), SplineInst->getSplinePtr()->z_stride, offset);
   }
 
-  template<typename GT, typename BCT>
-  void create_spline(GT& xyz_g, BCT& xyz_bc)
+  template<typename BCT>
+  void create_spline(const Ugrid xyz_g[3], const BCT& xyz_bc)
   {
     resize_kpoints();
-    SplineInst = std::make_shared<MultiBspline<ST, OffloadAllocator<ST>, OffloadAllocator<SplineType>>>();
+    SplineInst = std::make_shared<MultiBsplineOffload<ST>>();
     SplineInst->create(xyz_g, xyz_bc, myV.size());
 
     app_log() << "MEMORY " << SplineInst->sizeInByte() / (1 << 20) << " MB allocated "
@@ -188,29 +189,17 @@ public:
   /// this routine can not be called from threaded region
   void finalizeConstruction() override
   {
-    // map the SplineInst->getSplinePtr() structure to GPU
-    auto* MultiSpline    = SplineInst->getSplinePtr();
-    auto* restrict coefs = MultiSpline->coefs;
-    // attach pointers on the device to achieve deep copy
-    PRAGMA_OFFLOAD("omp target map(always, to: MultiSpline[0:1], coefs[0:MultiSpline->coefs_size])")
-    {
-      MultiSpline->coefs = coefs;
-    }
-
+    SplineInst->finalize();
     // transfer static data to GPU
-    auto* mKK_ptr = mKK->data();
-    PRAGMA_OFFLOAD("omp target update to(mKK_ptr[0:mKK->size()])")
-    auto* myKcart_ptr = myKcart->data();
-    PRAGMA_OFFLOAD("omp target update to(myKcart_ptr[0:myKcart->capacity()*3])")
+    mKK->updateTo();
+    myKcart->updateTo();
     for (uint32_t i = 0; i < 9; i++)
     {
       (*GGt_offload)[i]           = GGt[i];
       (*PrimLattice_G_offload)[i] = PrimLattice.G[i];
     }
-    auto* PrimLattice_G_ptr = PrimLattice_G_offload->data();
-    PRAGMA_OFFLOAD("omp target update to(PrimLattice_G_ptr[0:9])")
-    auto* GGt_ptr = GGt_offload->data();
-    PRAGMA_OFFLOAD("omp target update to(GGt_ptr[0:9])")
+    PrimLattice_G_offload->updateTo();
+    GGt_offload->updateTo();
   }
 
   inline void flush_zero() { SplineInst->flush_zero(); }

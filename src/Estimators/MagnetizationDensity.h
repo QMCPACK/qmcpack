@@ -47,7 +47,6 @@ public:
   using Real               = RealAlias<Value>;
   using FullPrecReal       = RealAlias<FullPrecValue>;
   using Grad               = TinyVector<Value, OHMMS_DIM>;
-  using Lattice            = PtclOnLatticeTraits::ParticleLayout;
   using Position           = QMCTraits::PosType;
   using Integrator         = MagnetizationDensityInput::Integrator;
   static constexpr int DIM = QMCTraits::DIM;
@@ -70,7 +69,7 @@ public:
   *
   * @return Size of data.
   */
-  size_t getFullDataSize();
+  size_t getFullDataSize() const override;
   std::unique_ptr<OperatorEstBase> spawnCrowdClone() const override;
   void registerOperatorEstimator(hdf_archive& file) override;
 

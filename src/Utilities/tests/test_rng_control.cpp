@@ -27,9 +27,8 @@ namespace qmcplusplus
 {
 TEST_CASE("RandomNumberControl make_seeds", "[ohmmsapp]")
 {
-  RandomNumberControl::make_seeds();
-
-  REQUIRE(RandomNumberControl::Children.size() > 0);
+  auto& rng_children = RandomNumberControl::getChildren();
+  REQUIRE(rng_children.size() > 0);
 }
 
 TEST_CASE("RandomNumberControl no random in xml", "[ohmmsapp]")

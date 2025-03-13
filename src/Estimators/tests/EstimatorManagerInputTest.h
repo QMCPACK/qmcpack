@@ -22,7 +22,8 @@ namespace testing
 Libxml2Document createEstimatorManagerNewGlobalInputXML();
 Libxml2Document createEstimatorManagerNewInputXML();
 Libxml2Document createEstimatorManagerNewVMCInputXML();
-  
+Libxml2Document createEstimatorManagerEnergyDenistyInputXML();
+
 } // namespace testing
 } // namespace qmcplusplus
 #endif

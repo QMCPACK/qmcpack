@@ -16,6 +16,8 @@
 
 #ifndef QMCPLUSPLUS_NONLOCAL_ECPOTENTIAL_COMPONENT_H
 #define QMCPLUSPLUS_NONLOCAL_ECPOTENTIAL_COMPONENT_H
+
+#include "type_traits/OptionalRef.hpp"
 #include "QMCHamiltonians/OperatorBase.h"
 #include "QMCHamiltonians/RandomRotationMatrix.h"
 #include <ResourceCollection.h>
@@ -86,6 +88,8 @@ private:
   std::vector<RealType> dvrad;
   //$\Psi(...q...)/\Psi(...r...)$ for all quadrature points q.
   std::vector<ValueType> psiratio;
+  //$\Psi(...q...)/\Psi(...r...)$ for all quadrature points q. Using the determinant part of Psi.
+  std::vector<ValueType> psiratio_det;
   //$\nabla \Psi(...q...)/\Psi(...r...)$ for all quadrature points q.
   //  $\nabla$ is w.r.t. the electron coordinates involved in the quadrature.
   std::vector<PosType> gradpsiratio;
@@ -114,15 +118,23 @@ private:
   ///virtual particle set: delayed initialization
   VirtualParticleSet* VP;
 
+  /// Can disable grid randomization for testing
+  bool do_randomize_grid_;
+
   /// build QP position deltas from the reference electron using internally stored random grid points
   void buildQuadraturePointDeltaPositions(RealType r, const PosType& dr, std::vector<PosType>& deltaV) const;
 
+  void calculateKnotPartialProduct(RealType r, const PosType& dr, std::vector<RealType>& knot_prods);
+
   /** finalize the calculation of $\frac{V\Psi_T}{\Psi_T}$
    */
-  RealType calculateProjector(RealType r, const PosType& dr);
+  RealType calculatePotential(RealType r, const PosType& dr, bool use_TMDLA);
 
-  /// Can disable grid randomization for testing
-  bool do_randomize_grid_;
+  /** contribute local non-local move data
+   * @param iel reference electron id.
+   * @param Txy nonlocal move data.
+   */
+  void contributeTxy(int iel, std::vector<NonLocalData>& Txy) const;
 
 public:
   NonLocalECPComponent();
@@ -150,12 +162,6 @@ public:
   template<typename T>
   void rotateQuadratureGrid(std::vector<T>& sphere, const TensorType& rmat);
 
-  /** contribute local non-local move data
-   * @param iel reference electron id.
-   * @param Txy nonlocal move data.
-   */
-  void contributeTxy(int iel, std::vector<NonLocalData>& Txy) const;
-
   /** @brief Evaluate the nonlocal pp contribution via randomized quadrature grid
    * to total energy from ion "iat" and electron "iel".
    *
@@ -165,6 +171,7 @@ public:
    * @param iel index of electron
    * @param r the distance between ion iat and electron iel.
    * @param dr displacement from ion iat to electron iel.
+   * @param tmove_xy when has_value, compute and collect Txy for the given electron ion pair.
    * @param use_DLA if ture, use determinant localization approximation (DLA).
    *
    * @return RealType Contribution to $\frac{V\Psi_T}{\Psi_T}$ from ion iat and electron iel.
@@ -175,6 +182,7 @@ public:
                        int iel,
                        RealType r,
                        const PosType& dr,
+                       const OptionalRef<std::vector<NonLocalData>> tmove_xy,
                        bool use_DLA);
 
   /** @brief Evaluate the nonlocal pp contribution via randomized quadrature grid
@@ -185,6 +193,7 @@ public:
    * @param psi_list a list of trial wave function object
    * @param joblist a list of ion-electron pairs
    * @param pairpots a list of contribution to $\frac{V\Psi_T}{\Psi_T}$ from ion iat and electron iel.
+   * @param tmove_xy_all_list if not empty, calculate and accumulate Txy.
    * @param use_DLA if ture, use determinant localization approximation (DLA).
    *
    * Note: ecp_component_list allows including different NLPP component for different walkers.
@@ -195,6 +204,7 @@ public:
                              const RefVectorWithLeader<TrialWaveFunction>& psi_list,
                              const RefVector<const NLPPJob<RealType>>& joblist,
                              std::vector<RealType>& pairpots,
+                             const RefVector<std::vector<NonLocalData>>& tmove_xy_all_list,
                              ResourceCollection& collection,
                              bool use_DLA);
 

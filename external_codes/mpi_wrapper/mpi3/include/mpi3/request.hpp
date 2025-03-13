@@ -54,7 +54,7 @@ struct [[nodiscard]] request {
 	~request() noexcept {  // TODO(correaa) check it can be no noexcept and cancellable
 		try {
 			wait();
-			if(impl_ != MPI_REQUEST_NULL) {MPI_Request_free(&impl_);}
+			if(impl_ != MPI_REQUEST_NULL) { MPI_(Request_free)(&impl_); }
 		} catch(...) {
 			std::terminate();
 		}
@@ -82,35 +82,33 @@ inline std::vector<status> test_some(std::vector<request> const& requests) {
 	int outcount = -1;
 	std::vector<int> ignore(requests.size());
 	std::vector<status> ret(requests.size());
-	int const s = MPI_Testsome(  // TODO(correaa) modernize calls
+	MPI_(Testsome)(
 		static_cast<int>(requests.size()),
 		const_cast<MPI_Request*>(&(requests.data()->impl_)),  // NOLINT(cppcoreguidelines-pro-type-const-cast) TODO(correaa)
 		&outcount,
 		ignore.data(),
 		&(ret.data()->impl_)
 	);
-	if(s != MPI_SUCCESS) {throw std::runtime_error{"cannot test some"};}
 	return ret;
 }
 
 inline std::vector<int> completed_some(std::vector<request> const& requests) {
 	int outcount = -1;
 	std::vector<int> ret(requests.size());
-	int const s = MPI_Testsome(  // TODO(correaa) modernize calls
+	MPI_(Testsome)(  // TODO(correaa) modernize calls
 		static_cast<int>(requests.size()),
 		const_cast<MPI_Request*>(&(requests.data()->impl_)),  // NOLINT(cppcoreguidelines-pro-type-const-cast) TODO(correaa)
 		&outcount,
 		ret.data(),
 		MPI_STATUSES_IGNORE  // NOLINT(cppcoreguidelines-pro-type-cstyle-cast) for macro
 	);
-	if(s != MPI_SUCCESS) {throw std::runtime_error("cannot completed some");}
 	ret.resize(static_cast<std::size_t>(outcount));
 	return ret;
 }
 
 template<class ContRequestIterator, class Size>
 void wait_all_n(ContRequestIterator it, Size n){
-	MPI_Waitall(n, &detail::data(it)->impl_, MPI_STATUSES_IGNORE);  // NOLINT(cppcoreguidelines-pro-type-cstyle-cast) for macro
+	MPI_(Waitall)(n, &detail::data(it)->impl_, MPI_STATUSES_IGNORE);  // NOLINT(cppcoreguidelines-pro-type-cstyle-cast) for macro
 }
 
 template<class ContRequestIterator>
@@ -120,19 +118,18 @@ void wait_all(ContRequestIterator it1, ContRequestIterator it2){
 
 template<class... Args>
 void wait(Args&&... args){
-	auto move_impl = [](request&& r)->MPI_Request{	MPI_Request const ret = r.impl_;  // NOLINT(misc-misplaced-const) MPI_Request is a pointer itself in some MPI
+	auto move_impl = [](request&& r)->MPI_Request{  MPI_Request const ret = r.impl_;  // NOLINT(misc-misplaced-const) MPI_Request is a pointer itself in some MPI
 		r.impl_ = MPI_REQUEST_NULL;
 		return ret;
 	};
 	std::vector<MPI_Request> v{move_impl(std::move(args))...};
-	MPI_Waitall(static_cast<int>(v.size()), v.data(), MPI_STATUSES_IGNORE);  // NOLINT(cppcoreguidelines-pro-type-cstyle-cast) for macro
+	MPI_(Waitall)(static_cast<int>(v.size()), v.data(), MPI_STATUSES_IGNORE);  // NOLINT(cppcoreguidelines-pro-type-cstyle-cast) for macro
 }
 
 template<class ContiguousIterator, class Size>
 ContiguousIterator wait_any_n(ContiguousIterator it, Size n){
 	int index = -1;
-	int s = MPI_Waitany(n, &detail::data(it)->impl_, &index, MPI_STATUS_IGNORE);  // NOLINT(cppcoreguidelines-pro-type-cstyle-cast) for macro
-	if(s != MPI_SUCCESS) {throw std::runtime_error("cannot wait any");}
+	MPI_(Waitany)(n, &detail::data(it)->impl_, &index, MPI_STATUS_IGNORE);  // NOLINT(cppcoreguidelines-pro-type-cstyle-cast) for macro
 	return it + index;
 }
 
@@ -160,10 +157,10 @@ namespace detail {
 // this doesn't work in general because MPI_Request == int in mpich
 //template<class FT, FT* F, class... Args, decltype(static_cast<enum error>((*F)(std::declval<Args>()..., std::declval<MPI_Request*>())))* = nullptr>
 //BMPI3_NODISCARD("") mpi3::request call(Args... args) {
-//	mpi3::request ret;  // NOLINT(cppcoreguidelines-pro-type-member-init,hicpp-member-init) delayed initialization
-//	auto const e = static_cast<enum error>((*F)(args..., &ret.impl_));  // NOLINT(clang-analyzer-optin.mpi.MPI-Checker) // non-blocking calls have wait in request destructor
-//	if(e != mpi3::error::success) {throw std::system_error{e, "cannot call function " + std::string{__PRETTY_FUNCTION__}};}
-//	return ret;
+//  mpi3::request ret;  // NOLINT(cppcoreguidelines-pro-type-member-init,hicpp-member-init) delayed initialization
+//  auto const e = static_cast<enum error>((*F)(args..., &ret.impl_));  // NOLINT(clang-analyzer-optin.mpi.MPI-Checker) // non-blocking calls have wait in request destructor
+//  if(e != mpi3::error::success) {throw std::system_error{e, "cannot call function " + std::string{__PRETTY_FUNCTION__}};}
+//  return ret;
 //}
 
 template<class FT, FT* F, class... Args, decltype(static_cast<enum error>((*F)(std::declval<Args>()..., std::declval<MPI_Request*>())))* = nullptr>

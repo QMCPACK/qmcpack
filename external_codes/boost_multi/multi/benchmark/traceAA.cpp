@@ -170,10 +170,10 @@ int main(int, char*[]){
 //		cerr<<" test N ni nj\n";
 //		exit(1);
 //	}
-	int const N = 32768;// atoi(argv[1]);
+	std::ptrdiff_t const N = 32768;  // atoi(argv[1]);
 	cout << "N = " << N << '\n';
-	int const ni = 64; // atoi(argv[2]);
-	int const nj = 64; //atoi(argv[3]);
+	int const ni = 64;  // atoi(argv[2]);
+	int const nj = 64;  //atoi(argv[3]);
 	{
 		cout << "Miguel traceAA\n";
 		double* A = new double[N*N];

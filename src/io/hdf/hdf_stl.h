@@ -2,9 +2,10 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2024 QMCPACK developers.
 //
 // File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
+//                    Peter W. Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -52,6 +53,50 @@ struct h5data_proxy<std::vector<T>> : public h5_space_type<T, 1>
                     hid_t xfer_plist) const
   {
     return h5d_write(grp, aname.c_str(), dvec.size(), dvec.data(), get_address(&ref[0]), xfer_plist);
+  }
+};
+
+/** specialization for std::vector<bool>
+ *
+ * Used with bool which doesn't have a h5 datatype we can use.
+ */
+template<>
+struct h5data_proxy<std::vector<bool>> : public h5_space_type<char, 1>
+{
+  using FileSpace = h5_space_type<char, 1>;
+  using FileSpace::dims;
+  using FileSpace::get_address;
+  using data_type = std::vector<bool>;
+
+  inline h5data_proxy(const data_type& a) { dims[0] = a.size(); }
+
+  inline bool read(data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+  {
+    std::vector<char> temp_char_vec;
+    if (!checkShapeConsistency<char>(grp, aname, FileSpace::rank, dims))
+      temp_char_vec.resize(dims[0]);
+    h5d_read(grp, aname, get_address(temp_char_vec.data()), xfer_plist);
+    ref.resize(dims[0]);
+    std::transform(temp_char_vec.begin(), temp_char_vec.end(), ref.begin(), [](auto& cval) { return cval > 0; });
+    return true;
+  }
+
+  inline bool write(const data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT) const
+  {
+    std::vector<char> temp_char_vec(ref.size());
+    std::transform(ref.begin(), ref.end(), temp_char_vec.begin(), [](bool bval) { return bval ? 1 : 0; });
+    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(temp_char_vec.data()), xfer_plist);
+  }
+
+  inline bool write(const data_type& ref,
+                    hid_t grp,
+                    const std::string& aname,
+                    const std::vector<hsize_t>& dvec,
+                    hid_t xfer_plist) const
+  {
+    std::vector<char> temp_char_vec(ref.size());
+    std::transform(ref.begin(), ref.end(), temp_char_vec.begin(), [](bool bval) { return bval ? 1 : 0; });
+    return h5d_write(grp, aname.c_str(), dvec.size(), dvec.data(), get_address(temp_char_vec.data()), xfer_plist);
   }
 };
 

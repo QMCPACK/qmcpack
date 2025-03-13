@@ -202,6 +202,8 @@ public:
                            Vector<ValueType>& dlogpsi,
                            Vector<ValueType>& dhpsioverpsi) override;
 
+  void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& active, Vector<ValueType>& dlogpsi) override;
+
   /** evaluate the ratio
   */
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override;

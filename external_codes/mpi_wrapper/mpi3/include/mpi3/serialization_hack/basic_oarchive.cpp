@@ -232,7 +232,7 @@ basic_oarchive_impl::find(const basic_oserializer & bos)
 {
     std::pair<cobject_info_set_type::iterator, bool> cresult = 
         cobject_info_set.insert(cobject_type(cobject_info_set.size(), bos));
-    return *(cresult.first);
+    return *(cresult.first);  // cppcheck-suppress returnReference ; external code, false positive in cppcheck 2.11
 }
 
 inline const basic_oarchive_impl::cobject_type &
@@ -242,7 +242,7 @@ basic_oarchive_impl::register_type(
     cobject_type co(cobject_info_set.size(), bos);
     std::pair<cobject_info_set_type::const_iterator, bool>
         result = cobject_info_set.insert(co);
-    return *(result.first);
+    return *(result.first);  // cppcheck-suppress returnReference ; external code, false positive in cppcheck 2.11
 }
 
 inline void

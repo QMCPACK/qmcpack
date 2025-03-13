@@ -701,7 +701,7 @@ int SpaceGrid::allocate_buffer_space(BufferType& buf)
 }
 
 
-void SpaceGrid::registerCollectables(std::vector<ObservableHelper>& h5desc, hdf_archive& file, int grid_index) const
+void SpaceGrid::registerCollectables(std::vector<ObservableHelper>& h5desc, hdf_archive& file, const hdf_path& enclosing_path, int grid_index) const
 {
   using iMatrix = Matrix<int>;
   iMatrix imat;
@@ -710,7 +710,7 @@ void SpaceGrid::registerCollectables(std::vector<ObservableHelper>& h5desc, hdf_
   std::stringstream ss;
   ss << grid_index + cshift;
   std::string name = "spacegrid" + ss.str();
-  h5desc.push_back({{name}});
+  h5desc.push_back(enclosing_path / name);
   auto& oh = h5desc.back();
   if (!chempot)
     ng[0] = nvalues_per_domain * ndomains;

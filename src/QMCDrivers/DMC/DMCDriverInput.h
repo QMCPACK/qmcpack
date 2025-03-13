@@ -15,6 +15,7 @@
 #include "Configuration.h"
 #include "OhmmsData/ParameterSet.h"
 #include "DMC/DMCRefEnergyScheme.h"
+#include "TmoveKind.h"
 
 namespace qmcplusplus
 {
@@ -35,7 +36,7 @@ public:
   IndexType get_branch_interval() const { return branch_interval_; }
   double get_feedback() const { return feedback_; }
   DMCRefEnergyScheme get_refenergy_update_scheme() const { return refenergy_update_scheme_; }
-  const std::string& get_non_local_move() const { return NonLocalMove; }
+  TmoveKind get_non_local_move() const { return tmove_kind_; }
   double get_alpha() const { return alpha_; }
   double get_gamma() const { return gamma_; }
   RealType get_reserve() const { return reserve_; }
@@ -59,8 +60,8 @@ private:
   std::string SwapWalkers;
   /// reconfiguration flag
   bool reconfiguration_ = true;
-  ///input std::string to determine to use nonlocal move
-  std::string NonLocalMove;
+  ///input to control Tmove
+  TmoveKind tmove_kind_ = TmoveKind::OFF;
   ///input to control maximum age allowed for walkers.
   IndexType max_age_ = 10;
   /// reserved walkers for population growth

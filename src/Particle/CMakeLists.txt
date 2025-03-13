@@ -29,6 +29,7 @@ set(PARTICLE
     createDistanceTableAA.cpp
     createDistanceTableAB.cpp
     HDFWalkerInputManager.cpp
+    Lattice/CrystalLattice.cpp
     LongRange/KContainer.cpp
     LongRange/StructFact.cpp
     LongRange/LPQHIBasis.cpp
@@ -58,8 +59,6 @@ add_library(qmcparticle_omptarget OBJECT ${PARTICLE_OMPTARGET_SRCS})
 
 target_include_directories(qmcparticle_omptarget PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(qmcparticle_omptarget PUBLIC qmcutil containers)
-
-target_compile_options(qmcparticle_omptarget PRIVATE "$<$<BOOL:${ENABLE_OFFLOAD_CLANG_DEBUG_O3}>:$<$<CONFIG:DEBUG>:-O3>>")
 
 target_link_libraries(qmcparticle PUBLIC qmcparticle_omptarget)
 

@@ -75,6 +75,8 @@ protected:
   std::vector<EstimatorManagerBase*> estimatorClones;
   ///trace managers
   std::vector<TraceManager*> traceClones;
+  ///trace collectors
+  UPtrVector<WalkerLogCollector> wlog_collectors;
 
   //for correlated sampling.
   static std::vector<UPtrVector<MCWalkerConfiguration>> WPoolClones_uptr;
@@ -87,6 +89,8 @@ protected:
 
   ///Walkers per MPI rank
   std::vector<int> wPerRank;
+
+  RefVector<WalkerLogCollector> getWalkerLogCollectorRefs();
 };
 } // namespace qmcplusplus
 #endif

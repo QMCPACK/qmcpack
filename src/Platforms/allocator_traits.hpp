@@ -27,17 +27,19 @@ struct qmc_allocator_traits
 {
   using value_type = typename Allocator::value_type;
 
-  static const bool is_host_accessible = true;
-  static const bool is_dual_space      = false;
+  static constexpr bool is_host_accessible = true;
+  static constexpr bool is_dual_space      = false;
 
-  static void fill_n(value_type* ptr, size_t n, const value_type& value) { std::fill_n(ptr, n, value); }
+  static void fill_n(value_type* ptr, size_t n, const value_type& value) { std::fill_n(ptr, n, value); };
 
-  // So we can write generic tests that work with all QMCPACK allocators
-  static void attachReference(Allocator& from, Allocator& to, value_type* from_data, value_type* ref) {}
+  /** So we can write generic tests that work with all QMCPACK allocators
+   * @param ptr_offset pointer offset between to and from
+   */
+  static void attachReference(Allocator& from, Allocator& to, std::ptrdiff_t ptr_offset);
   // These abstract synchronous transfers, async semantics are vender specific
-  static void updateTo(Allocator& a, value_type* host_ptr, size_t n) {}
-  static void updateFrom(Allocator& a, value_type* host_ptr, size_t n) {}
-  static void deviceSideCopyN(Allocator& a, size_t to, size_t n, size_t from) {}
+  static void updateTo(Allocator& a, value_type* host_ptr, size_t n, size_t offset = 0);
+  static void updateFrom(Allocator& a, value_type* host_ptr, size_t n, size_t offset = 0);
+  static void deviceSideCopyN(Allocator& a, size_t to, size_t n, size_t from);
 };
 
 template<class Allocator>

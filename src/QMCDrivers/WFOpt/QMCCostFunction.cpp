@@ -110,7 +110,7 @@ void QMCCostFunction::GradCost(std::vector<Return_rt>& PGradient,
           ltz = false;
         Return_rt delE           = std::pow(std::abs(eloc_new - EtargetEff), PowerE);
         Return_rt ddelE          = PowerE * std::pow(std::abs(eloc_new - EtargetEff), PowerE - 1);
-        const Return_t* Dsaved  = (*DerivRecords[ip])[iw];
+        const Return_t* Dsaved   = (*DerivRecords[ip])[iw];
         const Return_rt* HDsaved = (*HDerivRecords[ip])[iw];
         for (int pm = 0; pm < NumOptimizables; pm++)
         {
@@ -137,7 +137,7 @@ void QMCCostFunction::GradCost(std::vector<Return_rt>& PGradient,
         Return_rt eloc_new              = saved[ENERGY_NEW];
         Return_rt delta_l               = (eloc_new - curAvg_w);
         Return_rt sigma_l               = delta_l * delta_l;
-        const Return_t* Dsaved         =  (*DerivRecords[ip])[iw];
+        const Return_t* Dsaved          = (*DerivRecords[ip])[iw];
         const Return_rt* HDsaved        = (*HDerivRecords[ip])[iw];
         for (int pm = 0; pm < NumOptimizables; pm++)
         {
@@ -643,17 +643,7 @@ QMCCostFunction::Return_rt QMCCostFunction::fillOverlapHamiltonianMatrices(Matri
 {
   ScopedTimer tmp_timer(fill_timer_);
 
-  RealType b1, b2;
-  if (GEVType == "H2")
-  {
-    b1 = w_beta;
-    b2 = 0;
-  }
-  else
-  {
-    b2 = w_beta;
-    b1 = 0;
-  }
+  RealType b2(w_beta);
 
   Right = 0.0;
   Left  = 0.0;
@@ -661,10 +651,7 @@ QMCCostFunction::Return_rt QMCCostFunction::fillOverlapHamiltonianMatrices(Matri
   //     resetPsi();
   curAvg_w            = SumValue[SUM_E_WGT] / SumValue[SUM_WGT];
   Return_rt curAvg2_w = SumValue[SUM_ESQ_WGT] / SumValue[SUM_WGT];
-  //    RealType H2_avg = 1.0/curAvg2_w;
-  RealType H2_avg = 1.0 / (curAvg_w * curAvg_w);
-  //    RealType H2_avg = 1.0/std::sqrt(curAvg_w*curAvg_w*curAvg2_w);
-  RealType V_avg = curAvg2_w - curAvg_w * curAvg_w;
+  RealType V_avg      = curAvg2_w - curAvg_w * curAvg_w;
   std::vector<Return_t> D_avg(getNumParams(), 0.0);
   Return_rt wgtinv = 1.0 / SumValue[SUM_WGT];
   for (int ip = 0; ip < NumThreads; ip++)
@@ -674,7 +661,7 @@ QMCCostFunction::Return_rt QMCCostFunction::fillOverlapHamiltonianMatrices(Matri
     {
       const Return_rt* restrict saved = (*RecordsOnNode[ip])[iw];
       Return_rt weight                = saved[REWEIGHT] * wgtinv;
-      const Return_t* Dsaved         = (*DerivRecords[ip])[iw];
+      const Return_t* Dsaved          = (*DerivRecords[ip])[iw];
       for (int pm = 0; pm < getNumParams(); pm++)
       {
         D_avg[pm] += Dsaved[pm] * weight;
@@ -692,19 +679,16 @@ QMCCostFunction::Return_rt QMCCostFunction::fillOverlapHamiltonianMatrices(Matri
       const Return_rt* restrict saved = (*RecordsOnNode[ip])[iw];
       Return_rt weight                = saved[REWEIGHT] * wgtinv;
       Return_rt eloc_new              = saved[ENERGY_NEW];
-      const Return_t* Dsaved         = (*DerivRecords[ip])[iw];
+      const Return_t* Dsaved          = (*DerivRecords[ip])[iw];
       const Return_rt* HDsaved        = (*HDerivRecords[ip])[iw];
 #pragma omp parallel for
       for (int pm = 0; pm < getNumParams(); pm++)
       {
-        Return_t wfe = (HDsaved[pm] + (Dsaved[pm] - D_avg[pm]) * eloc_new) * weight;
-        Return_t wfd = (Dsaved[pm] - D_avg[pm]) * weight;
-        Return_t vterm =
-            HDsaved[pm] * (eloc_new - curAvg_w) + (Dsaved[pm] - D_avg[pm]) * eloc_new * (eloc_new - RealType(2.0) * curAvg_w);
+        Return_t wfe   = (HDsaved[pm] + (Dsaved[pm] - D_avg[pm]) * eloc_new) * weight;
+        Return_t wfd   = (Dsaved[pm] - D_avg[pm]) * weight;
+        Return_t vterm = HDsaved[pm] * (eloc_new - curAvg_w) +
+            (Dsaved[pm] - D_avg[pm]) * eloc_new * (eloc_new - RealType(2.0) * curAvg_w);
         //                Return_t vterm = (HDsaved[pm]+(Dsaved[pm]-D_avg[pm])*eloc_new -curAvg_w)*(eloc_new-curAvg_w);
-        //                 H2
-        Right(0, pm + 1) += b1 * H2_avg * std::real(vterm) * weight;
-        Right(pm + 1, 0) += b1 * H2_avg * std::real(vterm) * weight;
         //                 Variance
         Left(0, pm + 1) += b2 * std::real(vterm) * weight;
         Left(pm + 1, 0) += b2 * std::real(vterm) * weight;
@@ -714,18 +698,18 @@ QMCCostFunction::Return_rt QMCCostFunction::fillOverlapHamiltonianMatrices(Matri
         for (int pm2 = 0; pm2 < getNumParams(); pm2++)
         {
           //                Hamiltonian
-          Left(pm + 1, pm2 + 1) += std::real((1 - b2) * std::conj(wfd) * (HDsaved[pm2] + (Dsaved[pm2] - D_avg[pm2]) * eloc_new));
+          Left(pm + 1, pm2 + 1) +=
+              std::real((1 - b2) * std::conj(wfd) * (HDsaved[pm2] + (Dsaved[pm2] - D_avg[pm2]) * eloc_new));
           //                Overlap
           RealType ovlij = std::real(std::conj(wfd) * (Dsaved[pm2] - D_avg[pm2]));
           Right(pm + 1, pm2 + 1) += ovlij;
           //                Variance
-          RealType varij = weight * std::real((HDsaved[pm] - RealType(2.0) * std::conj(Dsaved[pm] - D_avg[pm]) * eloc_new) *
-              (HDsaved[pm2] - RealType(2.0) * (Dsaved[pm2] - D_avg[pm2]) * eloc_new));
+          RealType varij = weight *
+              std::real((HDsaved[pm] - RealType(2.0) * std::conj(Dsaved[pm] - D_avg[pm]) * eloc_new) *
+                        (HDsaved[pm2] - RealType(2.0) * (Dsaved[pm2] - D_avg[pm2]) * eloc_new));
           //                  RealType varij=weight*(HDsaved[pm] +(Dsaved[pm]-D_avg[pm])*eloc_new-curAvg_w)*
           //                                      (HDsaved[pm2] + (Dsaved[pm2]-D_avg[pm2])*eloc_new-curAvg_w);
           Left(pm + 1, pm2 + 1) += b2 * (varij + V_avg * ovlij);
-          //                H2
-          Right(pm + 1, pm2 + 1) += b1 * H2_avg * varij;
         }
       }
     }
@@ -733,9 +717,7 @@ QMCCostFunction::Return_rt QMCCostFunction::fillOverlapHamiltonianMatrices(Matri
   myComm->allreduce(Right);
   myComm->allreduce(Left);
   Left(0, 0)  = (1 - b2) * curAvg_w + b2 * V_avg;
-  Right(0, 0) = 1.0 + b1 * H2_avg * V_avg;
-  if (GEVType == "H2")
-    return H2_avg;
+  Right(0, 0) = 1.0;
 
   return 1.0;
 }

@@ -58,7 +58,7 @@ struct SYCLSharedAllocator
   template<class U>
   struct rebind
   {
-    typedef SYCLSharedAllocator<U> other;
+    typedef SYCLSharedAllocator<U, ALIGN> other;
   };
 
   T* allocate(std::size_t n)
@@ -112,7 +112,7 @@ public:
   template<class U>
   struct rebind
   {
-    typedef SYCLAllocator<U> other;
+    typedef SYCLAllocator<U, ALIGN> other;
   };
 
   T* allocate(std::size_t n)
@@ -228,7 +228,7 @@ struct SYCLHostAllocator
   template<class U>
   struct rebind
   {
-    typedef SYCLHostAllocator<U> other;
+    typedef SYCLHostAllocator<U, ALIGN> other;
   };
 
   T* allocate(std::size_t n) { return sycl::aligned_alloc_host<T>(ALIGN, n, getSYCLDefaultDeviceDefaultQueue()); }

@@ -87,13 +87,13 @@ int mpi3::main(int /*argc*/, char** /*argv*/, mpi3::communicator world) try {
 	assert(b == 1);
 
 	// if(world.root()) {
-	// 	B b1(4);
-	// 	b1.data[2] = 4.5;
-	// 	world[1] << b1;
+	//  B b1(4);
+	//  b1.data[2] = 4.5;
+	//  world[1] << b1;
 	// } else {
-	// 	B b2;
-	// 	world[0] >> b2;
-	// 	assert(b2.data[2] == 4.5);
+	//  B b2;
+	//  world[0] >> b2;
+	//  assert(b2.data[2] == 4.5);
 	// }
 
 	{
@@ -141,16 +141,16 @@ int mpi3::main(int /*argc*/, char** /*argv*/, mpi3::communicator world) try {
 		}
 
 		{
-			std::vector<bool> v = {false, true, false};
+			std::vector<bool> const v_send = {false, true, false};
 			switch(world.rank()) {
 			case 0: {
-				world[1] << v;
+				world[1] << v_send;
 				break;
 			}
 			case 1: {
-				std::vector<bool> v;
-				world >> v;
-				assert((v == std::vector<bool>{false, true, false}));
+				std::vector<bool> v_recv;
+				world >> v_recv;
+				assert(v_recv == v_send);
 			}
 			}
 		}

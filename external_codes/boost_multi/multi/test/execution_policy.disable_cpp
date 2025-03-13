@@ -1,0 +1,323 @@
+// Copyright 2024 Alfredo A. Correa
+// Copyright 2024 Matt Borland
+// Distributed under the Boost Software License, Version 1.0.
+// https://www.boost.org/LICENSE_1_0.txt
+
+#include <boost/multi/array.hpp>
+
+#include <chrono>  // NOLINT(build/c++11)
+#include <complex>
+#include <iostream>
+#include <random>
+#include <thread>  // NOLINT(build/c++11)
+
+#if defined(TBB_FOUND) || (defined(__GNUC__) && !defined(__clang__) && !defined(__NVCOMPILER) && (__GLIBCXX__ >= 20190502))
+#if !defined(__NVCC__) && !(defined(__clang__) && defined(__CUDA__))
+#if !defined(PSTL_USE_PARALLEL_POLICIES) || !(PSTL_USE_PARALLEL_POLICIES == 0)
+#include <execution>
+#endif
+#endif
+#endif
+
+// Suppress warnings from boost.test
+#if defined(__clang__)
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wold-style-cast"
+#  pragma clang diagnostic ignored "-Wundef"
+#  pragma clang diagnostic ignored "-Wconversion"
+#  pragma clang diagnostic ignored "-Wsign-conversion"
+#  pragma clang diagnostic ignored "-Wfloat-equal"
+#elif defined(__GNUC__)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wold-style-cast"
+#  pragma GCC diagnostic ignored "-Wundef"
+#  pragma GCC diagnostic ignored "-Wconversion"
+#  pragma GCC diagnostic ignored "-Wsign-conversion"
+#  pragma GCC diagnostic ignored "-Wfloat-equal"
+#endif
+
+#ifndef BOOST_TEST_MODULE
+#  define BOOST_TEST_MAIN
+#endif
+
+#include <boost/test/unit_test.hpp>
+
+namespace multi = boost::multi;
+
+BOOST_AUTO_TEST_CASE(dummy_test) {
+	multi::static_array<double, 1> const arr(multi::extensions_t<1>{multi::iextension{10}}, 1.0);
+	BOOST_REQUIRE( arr[0] == 1.0 );
+}
+
+// BOOST_AUTO_TEST_CASE(multi_par_construct_1d) {
+//  multi::static_array<double, 1> const arr(multi::extensions_t<1>{multi::iextension{10}}, 1.0);
+//  //  multi::static_array<double, 1> arr(multi::array<double, 1>::extensions_type{10}, 1.0);
+//  BOOST_REQUIRE( size(arr) == 10 );
+//  BOOST_REQUIRE( arr[1] == 1.0 );
+
+// #if defined(TBB_FOUND) || (defined(__GNUC__) && !defined(__clang__) && !defined(__NVCOMPILER) && (__GLIBCXX__ >= 20190502))
+// #if !defined(__NVCC__) && !(defined(__clang__) && defined(__CUDA__))
+// #if !defined(PSTL_USE_PARALLEL_POLICIES) || !(PSTL_USE_PARALLEL_POLICIES == 0)
+//  multi::static_array<double, 1> const arr2(std::execution::par, arr);
+
+//  BOOST_REQUIRE( arr2 == arr );
+// #endif
+// #endif
+// #endif
+// }
+
+// BOOST_AUTO_TEST_CASE(copy_par_1d) {
+//  multi::array<double, 1> const arr(1000000, 1.0);
+//  BOOST_REQUIRE( size(arr) == 1000000 );
+//  BOOST_REQUIRE( arr[1] == 1.0 );
+
+// #if defined(TBB_FOUND) || (defined(__GNUC__) && !defined(__clang__) && !defined(__NVCOMPILER) && (__GLIBCXX__ >= 20190502))
+// #if !defined(__NVCC__) && !(defined(__clang__) && defined(__CUDA__))
+// #if !defined(PSTL_USE_PARALLEL_POLICIES) || !(PSTL_USE_PARALLEL_POLICIES == 0)
+// #if defined(__cpp_lib_execution) && (__cpp_lib_execution >= 201603L)
+//  multi::array<double, 1> arr2(arr.extensions());
+
+//  std::copy(std::execution::par, arr.begin(), arr.end(), arr2.begin());
+
+//  BOOST_REQUIRE( arr2 == arr );
+// #endif
+// #endif
+// #endif
+// #endif
+// }
+
+// class watch  // NOLINT(cppcoreguidelines-special-member-functions,hicpp-special-member-functions)  // NOSONAR
+// : private std::chrono::high_resolution_clock {
+//  std::string label_;
+//  time_point  start_ = now();
+
+//  public:
+//  explicit watch(std::string label) : label_{std::move(label)} {}
+
+//  ~watch() {
+//      std::cerr << label_ << ": " << std::chrono::duration<double>(now() - start_).count() << " sec" << std::endl;
+//  }
+// };
+
+class slow_assign {
+	double val_;
+
+ public:
+	constexpr explicit slow_assign(double const& vv) noexcept : val_{vv} {}
+	~slow_assign() = default;
+
+	slow_assign(slow_assign&& other) noexcept = default;
+
+	slow_assign(slow_assign const& other) : val_{other.val_} {
+		using namespace std::chrono_literals;  // NOLINT(build/namespaces)
+		std::this_thread::sleep_for(10ms);
+	}
+	auto operator=(slow_assign const& other) -> slow_assign& {
+		if(this == &other) {
+			return *this;
+		}
+		val_ = other.val_;
+		using namespace std::chrono_literals;  // NOLINT(build/namespaces)
+		std::this_thread::sleep_for(10ms);
+		return *this;
+	}
+	auto operator=(slow_assign&& other) noexcept -> slow_assign& = default;
+
+	auto operator==(slow_assign const& other) const noexcept { return val_ == other.val_; }
+	auto operator!=(slow_assign const& other) const noexcept { return val_ != other.val_; }
+};
+
+#if defined(TBB_FOUND) || (defined(__GNUC__) && !defined(__clang__) && !defined(__NVCOMPILER) && (__GLIBCXX__ >= 20190502))
+#if !defined(__NVCC__) && !(defined(__clang__) && defined(__CUDA__))
+#if !defined(PSTL_USE_PARALLEL_POLICIES) || !(PSTL_USE_PARALLEL_POLICIES == 0)
+#if defined(__cpp_lib_execution) && (__cpp_lib_execution >= 201603L)
+
+// BOOST_AUTO_TEST_CASE(reduce_row_random) {
+//  std::random_device r;
+
+//  std::seed_seq              seed2{r(), r(), r(), r(), r(), r(), r(), r()};
+//  std::mt19937               e2(seed2);  // NOLINT(cpp:S2245)
+//  std::normal_distribution<> normal_dist{};
+
+//  multi::array<double, 2> arr({10000, 10000});
+//  std::generate(arr.elements().begin(), arr.elements().end(), [&]() { return normal_dist(e2); });
+
+//  {
+//      multi::array<double, 1> vec(size(arr));
+//      watch const _("reduce");  // NOLINT(fuchsia-default-arguments-calls)
+//      std::transform(arr.begin(), arr.end(), vec.begin(), [](auto const& row) {return std::reduce(row.begin(), row.end());} );
+//  }
+
+//  {
+//      multi::array<double, 1> vec(size(arr));
+//      watch const _("par reduce");  // NOLINT(fuchsia-default-arguments-calls)
+//      std::transform(std::execution::par, arr.begin(), arr.end(), vec.begin(), [](auto const& row) {return std::reduce(row.begin(), row.end());} );
+//  }
+
+//  {
+//      multi::array<double, 1> vec(size(arr));
+//      watch const _("par reduce");  // NOLINT(fuchsia-default-arguments-calls)
+//      std::transform(arr.begin(), arr.end(), vec.begin(), [](auto const& row) {return std::reduce(std::execution::par_unseq, row.begin(), row.end());} );
+//  }
+// }
+
+// BOOST_AUTO_TEST_CASE(sort_random) {
+//  std::random_device r;
+
+//  std::seed_seq              seed2{r(), r(), r(), r(), r(), r(), r(), r()};
+//  std::mt19937               e2(seed2);  // NOLINT(cpp:S2245)
+//  std::normal_distribution<> normal_dist{};
+
+//  multi::array<double, 2> arr({10000, 10000}, 0.0);
+//  std::generate(arr.elements().begin(), arr.elements().end(), [&]() { return normal_dist(e2); });
+
+//  auto arr_seq = arr;
+//  {
+//      watch const _("sort");  // NOLINT(fuchsia-default-arguments-calls)
+//      std::sort(arr_seq.begin(), arr_seq.end());
+//  }
+
+//  auto arr_par = arr;
+//  {
+//      watch const _("par sort");  // NOLINT(fuchsia-default-arguments-calls)
+//      std::sort(std::execution::par, arr_par.begin(), arr_par.end());
+//  }
+
+//  BOOST_REQUIRE( arr_seq == arr_par );
+// }
+
+// using T          = slow_assign;
+// auto const nelem = 8;
+
+// BOOST_AUTO_TEST_CASE(timing_copy_par_1d) {
+//  T const val{1.0};
+//  T const val2{99.9};
+
+//  multi::array<T, 1> const arr(nelem, val);
+//  BOOST_REQUIRE( size(arr) == nelem );
+//  BOOST_REQUIRE( arr[1] == val );
+
+//  {
+//      multi::array<T, 1> arr2(arr.extensions(), val2);
+//      BOOST_REQUIRE( arr2.num_elements() == arr.num_elements() );
+//      {
+//          watch const _("normal copy");  // NOLINT(fuchsia-default-arguments-calls)
+//          std::copy(arr.begin(), arr.end(), arr2.begin());
+//      }
+//      BOOST_REQUIRE( arr2 == arr );
+//  }
+//  {
+//      multi::array<T, 1> arr2(arr.extensions(), val2);
+//      BOOST_REQUIRE( arr2.num_elements() == arr.num_elements() );
+//      {
+//          watch const _("par copy");  // NOLINT(fuchsia-default-arguments-calls)
+//          std::copy(std::execution::par, arr.begin(), arr.end(), arr2.begin());
+//      }
+//      BOOST_REQUIRE( arr2 == arr );
+//  }
+// }
+
+// BOOST_AUTO_TEST_CASE(timing_copy_par_2d_warm) {
+//  T const val{1.0};
+
+//  multi::array<T, 2> const arr({8, nelem / 8}, val);
+//  BOOST_REQUIRE( arr.num_elements() == nelem );
+//  BOOST_REQUIRE( arr[1][1] == val );
+// }
+
+// BOOST_AUTO_TEST_CASE(timing_copy_par_2d) {
+//  for(auto factor : {8, 4, 2}) {
+//      T const val{1.0};
+//      T const val2{99.9};
+
+//      multi::array<T, 2> const arr({factor, nelem / factor}, val);
+//      BOOST_REQUIRE( arr.num_elements() == nelem );
+//      BOOST_REQUIRE( arr[1][1] == val );
+
+//      {
+//          multi::array<T, 2> arr2(arr.extensions(), val2);
+//          BOOST_REQUIRE( arr2.num_elements() == arr.num_elements() );
+//          {
+//              watch const _("normal copy");  // NOLINT(fuchsia-default-arguments-calls)
+//              std::copy(arr.begin(), arr.end(), arr2.begin());
+//          }
+//          BOOST_REQUIRE( arr2 == arr );
+//      }
+//      {
+//          multi::array<T, 2> arr2(arr.extensions(), val2);
+//          BOOST_REQUIRE( arr2.num_elements() == arr.num_elements() );
+//          {
+//              watch const _("par copy");  // NOLINT(fuchsia-default-arguments-calls)
+//              std::copy(std::execution::par, arr.begin(), arr.end(), arr2.begin());
+//          }
+//          BOOST_REQUIRE( arr2 == arr );
+//      }
+//  }
+// }
+
+// BOOST_AUTO_TEST_CASE(timing_copy_par_2d_ultra_skinny) {
+//  T const val{1.0};
+//  T const val2{99.9};
+
+//  multi::array<T, 2> const arr({2, nelem / 2}, val);
+//  BOOST_REQUIRE( arr.num_elements() == nelem );
+//  BOOST_REQUIRE( arr[1][1] == val );
+
+//  {
+//      multi::array<T, 2> arr2(arr.extensions(), val2);
+//      BOOST_REQUIRE( arr2.num_elements() == arr.num_elements() );
+//      {
+//          watch const _("~copy");  // NOLINT(fuchsia-default-arguments-calls)
+//          std::copy((~arr).begin(), (~arr).end(), (~arr2).begin());
+//      }
+//      BOOST_REQUIRE( arr2 == arr );
+//  }
+//  {
+//      multi::array<T, 2> arr2(arr.extensions(), val2);
+//      BOOST_REQUIRE( arr2.num_elements() == arr.num_elements() );
+//      {
+//          watch const _("~par copy");  // NOLINT(fuchsia-default-arguments-calls)
+//          std::copy(std::execution::par, (~arr).begin(), (~arr).end(), (~arr2).begin());
+//      }
+//      BOOST_REQUIRE( arr2 == arr );
+//  }
+//  {
+//      multi::array<T, 2> arr2(arr.extensions(), val2);
+//      BOOST_REQUIRE( arr2.num_elements() == arr.num_elements() );
+//      {
+//          watch const _("elements copy");  // NOLINT(fuchsia-default-arguments-calls)
+//          std::copy(arr.elements().begin(), arr.elements().end(), arr2.elements().begin());
+//      }
+//      BOOST_REQUIRE( arr2 == arr );
+//  }
+//  {
+//      multi::array<T, 2> arr2(arr.extensions(), val2);
+//      BOOST_REQUIRE( arr2.num_elements() == arr.num_elements() );
+//      {
+//          watch const _("par elements copy");  // NOLINT(fuchsia-default-arguments-calls)
+//          std::copy(std::execution::par, arr.elements().begin(), arr.elements().end(), arr2.elements().begin());
+//      }
+//      BOOST_REQUIRE( arr2 == arr );
+//  }
+//  {
+//      {
+//          watch const _("constructor");  // NOLINT(fuchsia-default-arguments-calls)
+//      multi::array<T, 2> arr2(arr);  // same as  ...= arr;
+//      BOOST_REQUIRE( arr2.num_elements() == arr.num_elements() );
+//      BOOST_REQUIRE( arr2 == arr );
+//      arr2.clear();
+//      }
+// }
+// {
+//  {
+//      watch const              _("par constructor");  // NOLINT(fuchsia-default-arguments-calls)
+//      multi::array<T, 2> const arr2(std::execution::par, arr);
+//      BOOST_REQUIRE( arr2.num_elements() == arr.num_elements() );
+//      BOOST_REQUIRE( arr2 == arr );
+//  }
+// }
+// }
+#endif
+#endif
+#endif
+#endif

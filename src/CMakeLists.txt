@@ -140,10 +140,6 @@ else() #{{{
     add_subdirectory(AFQMC)
   endif(BUILD_AFQMC)
 
-  if(BUILD_FCIQMC)
-    add_subdirectory(FCIQMC)
-  endif(BUILD_FCIQMC)
-
   add_subdirectory(QMCApp)
   add_subdirectory(QMCTools)
 

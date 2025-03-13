@@ -16,8 +16,13 @@
 
 namespace qmcplusplus
 {
+/// return a reference to the per-device default queue
 sycl::queue& getSYCLDefaultDeviceDefaultQueue();
-
+/// create an in-order queue using the default device
+sycl::queue createSYCLInOrderQueueOnDefaultDevice();
+/// create a out-of-order queue using the default device
+sycl::queue createSYCLQueueOnDefaultDevice();
+/// query free memory on the default device
 size_t getSYCLdeviceFreeMem();
 
 } // namespace qmcplusplus

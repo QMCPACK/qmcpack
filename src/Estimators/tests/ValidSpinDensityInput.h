@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2022 QMCPACK developers.
+// Copyright (c) 2024 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //
@@ -18,9 +18,11 @@ namespace qmcplusplus
 {
 namespace testing
 {
-// clang-format: off
-  constexpr std::array<std::string_view, 3> valid_spin_density_input_sections{
-    R"XML(
+
+struct ValidSpinDensityInput
+{
+  static constexpr std::array<std::string_view, 3> xml{
+      R"XML(
 <estimator name="spindensity_new" type="spindensity" report="yes">
   <parameter name="grid">
     10 10 10
@@ -35,7 +37,7 @@ namespace testing
   </parameter>
 </estimator>
 )XML",
-    R"XML(
+      R"XML(
 <estimator name="spindensity_new" type="spindensity" report="yes">
   <parameter name="dr">
     .4777 .4777 .4777
@@ -50,7 +52,7 @@ namespace testing
   </parameter>
 </estimator>
 )XML",
-    R"XML(
+      R"XML(
 <estimator name="spindensity_new" type="spindensity" report="yes">
   <parameter name="dr">
     .4777 .4777 .4777
@@ -61,10 +63,13 @@ namespace testing
 </estimator>
 )XML"};
 
-// clang-format: on
-constexpr int valid_spindensity_input_grid    = 0;
-constexpr int valid_spindensity_input_dr      = 1;
-constexpr int valid_spindensity_input_no_cell = 2;
+  enum valid
+  {
+    GRID = 0,
+    DR,
+    NOCELL
+  };
+};
 
 } // namespace testing
 } // namespace qmcplusplus

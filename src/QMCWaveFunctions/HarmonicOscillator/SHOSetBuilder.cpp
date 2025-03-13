@@ -16,7 +16,7 @@
 #include "OhmmsData/AttributeSet.h"
 #include "Utilities/IteratorUtility.h"
 #include "Utilities/string_utils.h"
-
+#include "CPU/math.hpp"
 
 namespace qmcplusplus
 {

@@ -24,14 +24,13 @@ int main(int argc, char* argv[])
 #ifdef HAVE_MPI
   mpi3::environment env(argc, argv);
 #endif
+
   using namespace qmcplusplus;
   if (argc != 2)
   {
     std::cout << "Program must take as an argument a single input eshdf file to parse" << std::endl;
     return 1;
   }
-  // Suppress HDF5 warning and error messages.
-  qmcplusplus::hdf_error_suppression hide_hdf_errors;
   std::string fname(argv[1]);
   //cout << "Input file is: " << fname << std::endl;
   hdf_archive hin;

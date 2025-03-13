@@ -18,6 +18,7 @@
 // cuBLAS to hipBLAS
 #define CUBLAS_OP_N                     HIPBLAS_OP_N
 #define CUBLAS_OP_T                     HIPBLAS_OP_T
+#define CUBLAS_OP_C                     HIPBLAS_OP_C
 #define CUBLAS_STATUS_ALLOC_FAILED      HIPBLAS_STATUS_ALLOC_FAILED
 #define CUBLAS_STATUS_ARCH_MISMATCH     HIPBLAS_STATUS_ARCH_MISMATCH
 #define CUBLAS_STATUS_EXECUTION_FAILED  HIPBLAS_STATUS_EXECUTION_FAILED
@@ -39,21 +40,29 @@
 #define cublasGetStream         hipblasGetStream
 #define cublasOperation_t       hipblasOperation_t
 #define cublasCgeam             hipblasCgeam
+#define cublasCgemv             hipblasCgemv
+#define cublasCgeru             hipblasCgeru
 #define cublasCgemm             hipblasCgemm
 #define cublasCgemmBatched      hipblasCgemmBatched
 #define cublasCgetrfBatched     hipblasCgetrfBatched_
 #define cublasCgetriBatched     hipblasCgetriBatched_
 #define cublasDgeam             hipblasDgeam
+#define cublasDgemv             hipblasDgemv
+#define cublasDger              hipblasDger
 #define cublasDgemm             hipblasDgemm
 #define cublasDgemmBatched      hipblasDgemmBatched
 #define cublasDgetrfBatched     hipblasDgetrfBatched_
 #define cublasDgetriBatched     hipblasDgetriBatched_
 #define cublasSgeam             hipblasSgeam
+#define cublasSgemv             hipblasSgemv
+#define cublasSger              hipblasSger
 #define cublasSgemm             hipblasSgemm
 #define cublasSgemmBatched      hipblasSgemmBatched
 #define cublasSgetrfBatched     hipblasSgetrfBatched_
 #define cublasSgetriBatched     hipblasSgetriBatched_
 #define cublasZgeam             hipblasZgeam
+#define cublasZgemv             hipblasZgemv
+#define cublasZgeru             hipblasZgeru
 #define cublasZgemm             hipblasZgemm
 #define cublasZgemmBatched      hipblasZgemmBatched
 #define cublasZgetrfBatched     hipblasZgetrfBatched_
@@ -145,5 +154,8 @@
 #define cudaSuccess                     hipSuccess
 
 #define cudaDeviceSetLimit(limit, value) ;
+
+#define nvtxRangePop                    roctxRangePop
+#define nvtxRangePushA                  roctxRangePushA
 
 #endif /* CUDA2HIP_H */

@@ -27,6 +27,8 @@ For example, the tests in ``src/QMCWavefunctions/tests`` are compiled into ``bui
 All the unit test executables are collected under ctest with the ``unit`` label.
 When checking the whole code, it is useful to run through CMake (``cmake -L unit``).
 When working on an individual directory, it is useful to run the individual executable.
+One can work from one of the `tests` directories beneath the build directory for a faster build and test cycle.
+
 
 Some of the tests reference input files. The unit test CMake setup places those input files in particular locations under the ``tests`` directory (e.g., ``tests/xml_test``).  The individual test needs to be run from that directory to find the expected input files.
 
@@ -109,7 +111,7 @@ A test with failures will look like
 Adding tests
 ------------
 
-Three scenarios are covered here: adding a new test in an existing file, adding a new test file, and adding a new ``test`` directory.
+Three scenarios are covered here: adding a new test in an existing file, adding a new test file, and adding a new ``tests`` directory.
 
 Adding a test to existing file
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -121,6 +123,7 @@ Adding a test file
 
 When adding a new test file,
 create a file in the test directory, or copy from an existing file.  Add the file name to the ``ADD_EXECUTABLE`` in the ``CMakeLists.txt`` file in that directory.
+The pattern for the test file name is ``test_<ClassName>.cpp``.  Many older tests do not follow this pattern, but new tests should.
 
 One (and only one) file must define the ``main`` function for the test executable by defining ``CATCH_CONFIG_MAIN`` before including the Catch header.  If more than one file defines this value, there will be linking errors about multiply defined values.
 
@@ -144,3 +147,39 @@ This approach is valuable at some levels of testing, but is unsatisfying at the 
 The ``Utilities`` directory contains a "fake" random number generator that can be used for deterministic tests of these parts of the code.
 Currently it outputs a single, fixed value every time it is called, but it could be expanded to produce more varied, but still deterministic, sequences.
 See ``src/QMCDrivers/test_vmc.cpp`` for an example of using the fake random number generator.
+
+Setting up objects
+------------------
+One of the more difficult parts of writing tests is constructing the object, and prerequisite objects.
+There are three routes to building an object:
+
+1. Construct the object directly.
+2. Use an XML fragment and use the XML parsing paths to construct an object
+3. For updated classes, construct the Input object and use that in the construction path.
+
+
+Constructing the object directly can be the most difficult in terms of building all the prerequisite objects.
+Building an object from an XML fragment has an advantage of being similar to input files.
+
+Building from XML
+-----------------
+
+Use C++ raw string literals (strings delimited with ``R"(`` and ``)"``) to use XML fragments in the code.
+The ``Libxml2Document`` class has a ``parseFromString`` function to parse XML input for testing.
+
+The following code fragment to read the xml is common
+
+.. code-block::
+
+  const char* xml_str = R"(<tmp><wavefunction></wavefunction></tmp>)";
+  Libxml2Document doc;
+  bool okay = doc.parseFromString(xml_str);
+  REQUIRE(okay);
+
+After parsing, the ``Libxml2Document`` class has a ``getRoot`` function to the the root XML node.
+The QMCPACK parsing functions often expect the tags they are parsing to be a child of the node
+that is passed to the function.
+For this case, put an additional tag as a parent of the target elements (The reason for ``<tmp>...</tmp>`` in the example above.
+
+The ``Libxml2Document`` class can also read XML from a file with the ``parse`` function
+Reading from a file can make the test code smaller, at the expense of maintaining an extra file.

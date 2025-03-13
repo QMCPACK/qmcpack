@@ -15,6 +15,8 @@
 #include "Message/Communicate.h"
 #include "type_traits/template_types.hpp"
 #include "OhmmsData/Libxml2Doc.h"
+#include "FakeRandom.h"
+#include "Configuration.h"
 
 namespace qmcplusplus
 {
@@ -29,6 +31,7 @@ class SetupPools
 {
 public:
   SetupPools();
+  ~SetupPools();
 
   UPtr<ParticleSetPool> particle_pool;
   UPtr<WaveFunctionPool> wavefunction_pool;
@@ -38,6 +41,20 @@ public:
   xmlNodePtr node;
 
   Communicate* comm;
+};
+
+class RandomNumberGeneratorPool
+{
+public:
+  using FullPrecRealType = QMCTraits::FullPrecRealType;
+
+  RandomNumberGeneratorPool(const size_t num);
+  ~RandomNumberGeneratorPool();
+
+  RefVector<RandomBase<FullPrecRealType>> getRngRefs();
+
+private:
+  std::vector<FakeRandom<FullPrecRealType>> rng_pool;
 };
 
 } // namespace testing

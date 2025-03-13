@@ -19,6 +19,7 @@
 #include "Utilities/string_utils.h"
 #include "type_traits/complex_help.hpp"
 #include "Concurrency/OpenMP.h"
+#include "CPU/math.hpp"
 
 namespace qmcplusplus
 {
@@ -84,6 +85,11 @@ OneBodyDensityMatrices::OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obd
   rsamples_.resize(samples_);
   if (is_spinor_)
     ssamples_.resize(samples_);
+
+  if (is_spinor_ && sampling_ != Sampling::METROPOLIS)
+    throw UniformCommunicateError("OneBodyDensityMatrices::OneBodyDensityMatrices only density sampling implemented "
+                                  "for calculations using spinors");
+
 
   // get the sposets that form the basis
   auto& sposets = input_.get_basis_sets();
@@ -385,35 +391,34 @@ inline void OneBodyDensityMatrices::generateDensitySamplesWithSpin(bool save,
 
     //now do spin variables
     Real spinp;                         // trial spin
-    Real dspinp;                        // trial spindrifty
-    Real spin_ds;                       // spin drift sum
+    Real dspinp = 0;                    // trial spindrifty
     Real sdiff = diffuseSpin(sqt, rng); //spin diffusion
     if (input_.get_use_drift())
     {
       rp    = r + diff + d;                                               //update trial position
-      spinp = spcur_ + sdiff + dspcur_;                                       //update trial spin
+      spinp = spcur_ + sdiff + dspcur_;                                   //update trial spin
       calcDensityDriftWithSpin(rp, spinp, rhop, dp, dspinp, pset_target); //get trial drift and density
       ratio   = rhop / rho;                                               //density ratio
       ds      = dp + d;                                                   //drift sum
-      spin_ds = dspinp + dspcur_;                                           //spin drift sum
+      auto spin_ds = dspinp + dspcur_;                                    //spin drift sum
       Pacc    = ratio * std::exp(-ot * (dot(diff, ds) + .5 * dot(ds, ds))) *
           std::exp(-ot * (sdiff * spin_ds) + 0.5 * spin_ds * spin_ds); //acceptance probability
     }
     else
     {
       rp    = r + diff;                                  //update trial position
-      spinp = spcur_ + sdiff;                              //update trial spin
+      spinp = spcur_ + sdiff;                            //update trial spin
       calcDensityWithSpin(rp, spinp, rhop, pset_target); //get trial density
       ratio = rhop / rho;                                //density ratio
       Pacc  = ratio;                                     //acceptance probability
     }
     if (rng() < Pacc)
     { //accept move
-      r     = rp;
-      d     = dp;
+      r       = rp;
+      d       = dp;
       spcur_  = spinp;
       dspcur_ = dspinp;
-      rho   = rhop;
+      rho     = rhop;
       naccepted_++;
     }
     if (save)
@@ -585,10 +590,10 @@ void OneBodyDensityMatrices::evaluateMatrix(ParticleSet& pset_target,
       for (int n = 0; n < basis_size_sq; ++n)
       {
         Value val = NDM(n);
-        data_[ij] += real(val);
+        data_[ij] += std::real(val);
         ij++;
 #if defined(QMC_COMPLEX)
-        data_[ij] += imag(val);
+        data_[ij] += std::imag(val);
         ij++;
 #endif
       }
@@ -775,7 +780,7 @@ inline void OneBodyDensityMatrices::normalizeBasis(ParticleSet& pset_target)
       bnorms[i] += qmcplusplus::conj(basis_values_[i]) * basis_values_[i] * dV;
   }
   for (int i = 0; i < basis_size_; ++i)
-    basis_norms_[i] = 1.0 / std::sqrt(real(bnorms[i]));
+    basis_norms_[i] = 1.0 / std::sqrt(std::real(bnorms[i]));
 }
 
 void OneBodyDensityMatrices::registerOperatorEstimator(hdf_archive& file)

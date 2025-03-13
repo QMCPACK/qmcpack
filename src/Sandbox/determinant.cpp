@@ -28,7 +28,7 @@ int main(int argc, char** argv)
 {
 #ifdef HAVE_MPI
   mpi3::environment env(argc, argv);
-  OHMMS::Controller->initialize(env);
+  OHMMS::Controller = new Communicate(env.world());
 #endif
   Communicate* myComm = OHMMS::Controller;
 

@@ -129,7 +129,7 @@ void check_force_copy(ForceChiesaPBCAA& force, ForceChiesaPBCAA& force2)
 // PBC case
 TEST_CASE("Chiesa Force", "[hamiltonian]")
 {
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  Lattice lattice;
   lattice.BoxBConds = true; // periodic
   lattice.R.diagonal(5.0);
   lattice.LR_dim_cutoff = 25;
@@ -220,7 +220,7 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   ions3.createSK();
   ions3.resetGroups();
 
-  // Namely, sending in incompatible force arrays to evaluateWithIonDerivs is not
+  // Namely, sending in incompatible force arrays to evaluateIonDerivs is not
   // supposed to do harm, IF
   // 1) forces are not enabled
   CoulombPBCAA noIonForce(ions3, false, false, false);
@@ -234,9 +234,9 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   // Probably fine for a test but if this type of behavior was needed in
   // production code in the future, a different solution would be needed.
   auto noElecForces = noElecForce.getForces();
-  noIonForce.evaluateWithIonDerivs(ions3, ions3, psi, noElecForces, noElecForces);
+  noIonForce.evaluateIonDerivs(ions3, ions3, psi, noElecForces, noElecForces);
   auto noIonForces = noIonForce.getForces();
-  noElecForce.evaluateWithIonDerivs(elec, ions3, psi, noIonForces, noIonForces);
+  noElecForce.evaluateIonDerivs(elec, ions3, psi, noIonForces, noIonForces);
 
   // It seems a bit silly to test the makeClone method
   // but this class does not use the compiler's copy constructor and
@@ -352,9 +352,9 @@ TEST_CASE("Ion-ion Force", "[hamiltonian]")
   elecSpecies(massIdx, upIdx)    = 1.0;
   elec.resetGroups();
 
-  CoulombPotential<OperatorBase::Return_t> ionForce(ions, false, true);
-  CoulombPotential<OperatorBase::Return_t> elecIonForce(elec, ions, true); // Should be zero
-  CoulombPotential<OperatorBase::Return_t> elecForce(elec, true, true);    // Should be zero
+  CoulombPotential ionForce(ions, false, true);
+  CoulombPotential elecIonForce(elec, ions, true); // Should be zero
+  CoulombPotential elecForce(elec, true, true);    // Should be zero
 
   double coeff0[3] = {-0.60355339059, -0.35355339059, 0.0};
   double coeff1[3] = {0.60355339059, -0.35355339059, 0.0};

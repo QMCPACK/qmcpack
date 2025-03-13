@@ -1,0 +1,16 @@
+{
+    "key": "multi",
+    "name": "Multi",
+    "authors": [
+        "Alfredo Correa"
+    ],
+    "maintainers": [
+        "Alfredo Correa <alfredo.correa+work -at- gmail.com>"
+    ],
+    "description": "Multi is a modern C++ library that provides access and manipulation of data in multidimensional arrays, for both CPU and GPU memory.",
+    "category": [
+        "Containers",
+        "Math"
+    ],
+    "cxxstd": "17"
+}

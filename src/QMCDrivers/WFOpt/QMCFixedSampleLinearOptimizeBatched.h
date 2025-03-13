@@ -21,7 +21,6 @@
 #include "QMCDrivers/QMCDriverNew.h"
 #include "QMCDrivers/QMCDriverInput.h"
 #include "QMCDrivers/VMC/VMCDriverInput.h"
-#include "QMCDrivers/VMC/VMCBatched.h"
 #include "Optimize/NRCOptimization.h"
 #include "Optimize/NRCOptimizationFunctionWrapper.h"
 #ifdef HAVE_LMY_ENGINE
@@ -45,7 +44,7 @@ namespace qmcplusplus
 
 ///forward declaration of a cost function
 class QMCCostFunctionBase;
-
+class VMCBatched;
 class GradientTest;
 
 
@@ -55,10 +54,10 @@ public:
   ///Constructor.
   QMCFixedSampleLinearOptimizeBatched(const ProjectData& project_data,
                                       QMCDriverInput&& qmcdriver_input,
-                                      const std::optional<EstimatorManagerInput>& global_emi,
                                       VMCDriverInput&& vmcdriver_input,
                                       WalkerConfigurations& wc,
                                       MCPopulation&& population,
+                                      const RefVector<RandomBase<FullPrecRealType>>& rng_refs,
                                       SampleStack& samples,
                                       Communicate* comm);
 
@@ -118,6 +117,9 @@ private:
 
   // perform the single-shift update, no sample regeneration
   bool one_shift_run();
+
+  // simple stochastic reconfig
+  bool stochastic_reconfiguration_conjugate_gradient();
 
   // perform optimization using a gradient descent algorithm
   bool descent_run();
@@ -180,6 +182,8 @@ private:
   RealType param_tol;
   //-------------------------------------
 
+  /// Choice of eigenvalue solver
+  std::string eigensolver_;
 
   ///Number of iterations maximum before generating new configurations.
   int nstabilizers;
@@ -194,6 +198,12 @@ private:
   std::bitset<2> accept_history;
   /// Shift_s adjustment base
   RealType shift_s_base;
+  /// SR projection timestep
+  RealType sr_tau;
+  /// SR regularization parameter
+  RealType sr_regularization;
+  /// tolerance for CG solution in SR
+  RealType sr_tolerance;
 
   // ------------------------------------
   // Parameters in this struct are used by one or more of the adaptive LM, descent, or hybrid optimizers
@@ -274,13 +284,16 @@ private:
   // Freeze variational parameters.  Do not update them during each step.
   bool freeze_parameters_;
 
-  NewTimer& generate_samples_timer_;
+  bool use_line_search_;
+
   NewTimer& initialize_timer_;
+  NewTimer& generate_samples_timer_;
+  NewTimer& build_olv_ham_timer_;
+  NewTimer& invert_olvmat_timer_;
   NewTimer& eigenvalue_timer_;
-  NewTimer& involvmat_timer_;
   NewTimer& line_min_timer_;
   NewTimer& cost_function_timer_;
-  Timer t1;
+  NewTimer& sr_solver_timer_;
 
   ///xml node to be dumped
   xmlNodePtr wfNode;

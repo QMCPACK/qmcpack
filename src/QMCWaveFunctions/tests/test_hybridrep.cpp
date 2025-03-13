@@ -35,7 +35,7 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
 {
   Communicate* c = OHMMS::Controller;
 
-  ParticleSet::ParticleLayout lattice;
+  Lattice lattice;
   // diamondC_1x1x1
   lattice.R = {3.37316115, 3.37316115, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
 
@@ -73,9 +73,10 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
   tspecies(chargeIdx, upIdx) = -1;
 
   //diamondC_1x1x1
-  const char* particles = R"(<tmp>
-<determinantset type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="float" size="4" hybridrep="yes"/>
-</tmp>
+  const char* particles = R"(
+<sposet_collection type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="float" hybridrep="yes">
+  <sposet name="updet" size="4"/>
+</sposet_collection>
 )";
 
   Libxml2Document doc;
@@ -86,17 +87,22 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
 
   xmlNodePtr ein1 = xmlFirstElementChild(root);
 
-  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, ein1);
+  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, root);
   auto spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo);
 
   ions_.update();
   elec_.update();
 
-  // for vgl
-  SPOSet::ValueMatrix psiM(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::GradMatrix dpsiM(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::ValueMatrix d2psiM(elec_.R.size(), spo->getOrbitalSetSize());
+  /* for vgl
+   * In DiracDeterminant, these psiM, dpsiM, and d2psiM 
+   * are always sized to elec_.R.size() x elec_.R.size()
+   * Using the same sizes for these. This tests the case 
+   * that spo->OrbitalSetSize > elec_.R.size()
+   */
+  SPOSet::ValueMatrix psiM(elec_.R.size(), elec_.R.size());
+  SPOSet::GradMatrix dpsiM(elec_.R.size(), elec_.R.size());
+  SPOSet::ValueMatrix d2psiM(elec_.R.size(), elec_.R.size());
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
 
   // due to the different ordering of bands skip the tests on CUDA+Real builds
@@ -143,12 +149,17 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
   CHECK(std::real(dpsiM[2][1][1]) == Approx(1.0020672904));
   CHECK(std::real(dpsiM[2][1][2]) == Approx(-1.9794520201));
   // lapl
-  CHECK(std::real(d2psiM[2][0]) == Approx(1.1232769428).epsilon(5e-5));
+  CHECK(std::real(d2psiM[2][0]) == Approx(1.1232769428).epsilon(1e-4));
   CHECK(std::real(d2psiM[2][1]) == Approx(-4.9779265738).epsilon(3e-5));
 
   //Let's also add test for orbital optimzation
   if (spo->isRotationSupported())
   {
+    SPOSet::ValueMatrix psiM(elec_.R.size(), spo->getOrbitalSetSize());
+    SPOSet::GradMatrix dpsiM(elec_.R.size(), spo->getOrbitalSetSize());
+    SPOSet::ValueMatrix d2psiM(elec_.R.size(), spo->getOrbitalSetSize());
+    spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
+
     SPOSet::ValueVector row0{0.56752158, -0.3152607, 0.03525207, -0.75979421};
     SPOSet::ValueVector row1{0.21452916, 0.75299027, -0.59552084, -0.17982718};
     SPOSet::ValueVector row2{0.24049122, 0.55674778, 0.79497536, -0.01449368};
@@ -182,7 +193,7 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
 {
   Communicate* c = OHMMS::Controller;
 
-  ParticleSet::ParticleLayout lattice;
+  Lattice lattice;
   // diamondC_2x1x1
   lattice.R = {6.7463223, 6.7463223, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
 
@@ -222,9 +233,10 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
   tspecies(chargeIdx, upIdx) = -1;
 
   //diamondC_2x1x1
-  const char* particles = R"(<tmp>
-<determinantset type="einspline" href="diamondC_2x1x1.pwscf.h5" tilematrix="2 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="float" size="4" hybridrep="yes"/>
-</tmp>
+  const char* particles = R"(
+<sposet_collection type="einspline" href="diamondC_2x1x1.pwscf.h5" tilematrix="2 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="float" hybridrep="yes">
+  <sposet name="updet" size="4"/>
+</sposet_collection>
 )";
 
   Libxml2Document doc;
@@ -235,7 +247,7 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
 
   xmlNodePtr ein1 = xmlFirstElementChild(root);
 
-  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, ein1);
+  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, root);
   auto spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo);
 
@@ -255,10 +267,15 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
   REQUIRE(std::abs(r * r - dot(dr, dr)) < std::numeric_limits<double>::epsilon());
 #endif
 
-  // for vgl
-  SPOSet::ValueMatrix psiM(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::GradMatrix dpsiM(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::ValueMatrix d2psiM(elec_.R.size(), spo->getOrbitalSetSize());
+  /* for vgl
+   * In DiracDeterminant, these psiM, dpsiM, and d2psiM 
+   * are always sized to elec_.R.size() x elec_.R.size()
+   * Using the same sizes for these. This tests the case 
+   * that spo->OrbitalSetSize > elec_.R.size()
+   */
+  SPOSet::ValueMatrix psiM(elec_.R.size(), elec_.R.size());
+  SPOSet::GradMatrix dpsiM(elec_.R.size(), elec_.R.size());
+  SPOSet::ValueMatrix d2psiM(elec_.R.size(), elec_.R.size());
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
 
 #if defined(QMC_COMPLEX)

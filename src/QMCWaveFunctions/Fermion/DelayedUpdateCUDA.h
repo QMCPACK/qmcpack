@@ -16,7 +16,7 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "CUDA/CUDAruntime.hpp"
 #include "CUDA/CUDAallocator.hpp"
-#include "CUDA/cuBLAS.hpp"
+#include "CUDA/AccelBLAS_CUDA.hpp"
 #include "QMCWaveFunctions/detail/CUDA/delayed_update_helper.h"
 #include "PrefetchedRange.h"
 #if defined(QMC_CUDA2HIP)
@@ -64,8 +64,8 @@ class DelayedUpdateCUDA
   Matrix<T, CUDAHostAllocator<T>> Ainv_buffer;
 
   // CUDA specific variables
-  cublasHandle_t h_cublas;
-  cudaStream_t hstream;
+  compute::Queue<PlatformKind::CUDA> queue_;
+  compute::BLASHandle<PlatformKind::CUDA> blas_handle_;
 
   /// reset delay count to 0
   inline void clearDelayCount()
@@ -76,18 +76,7 @@ class DelayedUpdateCUDA
 
 public:
   /// default constructor
-  DelayedUpdateCUDA() : delay_count(0)
-  {
-    cudaErrorCheck(cudaStreamCreate(&hstream), "cudaStreamCreate failed!");
-    cublasErrorCheck(cublasCreate(&h_cublas), "cublasCreate failed!");
-    cublasErrorCheck(cublasSetStream(h_cublas, hstream), "cublasSetStream failed!");
-  }
-
-  ~DelayedUpdateCUDA()
-  {
-    cublasErrorCheck(cublasDestroy(h_cublas), "cublasDestroy failed!");
-    cudaErrorCheck(cudaStreamDestroy(hstream), "cudaStreamDestroy failed!");
-  }
+  DelayedUpdateCUDA() : delay_count(0), blas_handle_(queue_) {}
 
   /** resize the internal storage
    * @param norb number of electrons/orbitals
@@ -132,11 +121,11 @@ public:
   inline void initializeInv(const Matrix<T>& Ainv)
   {
     cudaErrorCheck(cudaMemcpyAsync(Ainv_gpu.data(), Ainv.data(), Ainv.size() * sizeof(T), cudaMemcpyHostToDevice,
-                                   hstream),
+                                   queue_.getNative()),
                    "cudaMemcpyAsync failed!");
     clearDelayCount();
     // H2D transfer must be synchronized regardless of host memory being pinned or not.
-    cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!");
+    queue_.sync();
   }
 
   inline int getDelayCount() const { return delay_count; }
@@ -153,10 +142,10 @@ public:
       int last_row = std::min(rowchanged + Ainv_buffer.rows(), Ainv.rows());
       cudaErrorCheck(cudaMemcpyAsync(Ainv_buffer.data(), Ainv_gpu[rowchanged],
                                      invRow.size() * (last_row - rowchanged) * sizeof(T), cudaMemcpyDeviceToHost,
-                                     hstream),
+                                     queue_.getNative()),
                      "cudaMemcpyAsync failed!");
       prefetched_range.setRange(rowchanged, last_row);
-      cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!");
+      queue_.sync();
     }
     // save AinvRow to new_AinvRow
     std::copy_n(Ainv_buffer[prefetched_range.getOffset(rowchanged)], invRow.size(), invRow.data());
@@ -219,31 +208,25 @@ public:
     // update the inverse matrix
     if (delay_count > 0)
     {
-      constexpr T cone(1);
-      constexpr T czero(0);
-      constexpr T cminusone(-1);
       const int norb     = Ainv.rows();
       const int lda_Binv = Binv.cols();
       cudaErrorCheck(cudaMemcpyAsync(U_gpu.data(), U.data(), norb * delay_count * sizeof(T), cudaMemcpyHostToDevice,
-                                     hstream),
+                                     queue_.getNative()),
                      "cudaMemcpyAsync failed!");
-      cublasErrorCheck(cuBLAS::gemm(h_cublas, CUBLAS_OP_T, CUBLAS_OP_N, delay_count, norb, norb, &cone, U_gpu.data(),
-                                    norb, Ainv_gpu.data(), norb, &czero, temp_gpu.data(), lda_Binv),
-                       "cuBLAS::gemm failed!");
+      compute::BLAS::gemm(blas_handle_, 'T', 'N', delay_count, norb, norb, T(1), U_gpu.data(), norb, Ainv_gpu.data(),
+                          norb, T(0), temp_gpu.data(), lda_Binv);
       cudaErrorCheck(cudaMemcpyAsync(delay_list_gpu.data(), delay_list.data(), delay_count * sizeof(int),
-                                     cudaMemcpyHostToDevice, hstream),
+                                     cudaMemcpyHostToDevice, queue_.getNative()),
                      "cudaMemcpyAsync failed!");
       applyW_stageV_cuda(delay_list_gpu.data(), delay_count, temp_gpu.data(), norb, temp_gpu.cols(), V_gpu.data(),
-                         Ainv_gpu.data(), hstream);
+                         Ainv_gpu.data(), queue_.getNative());
       cudaErrorCheck(cudaMemcpyAsync(Binv_gpu.data(), Binv.data(), lda_Binv * delay_count * sizeof(T),
-                                     cudaMemcpyHostToDevice, hstream),
+                                     cudaMemcpyHostToDevice, queue_.getNative()),
                      "cudaMemcpyAsync failed!");
-      cublasErrorCheck(cuBLAS::gemm(h_cublas, CUBLAS_OP_N, CUBLAS_OP_N, norb, delay_count, delay_count, &cone,
-                                    V_gpu.data(), norb, Binv_gpu.data(), lda_Binv, &czero, U_gpu.data(), norb),
-                       "cuBLAS::gemm failed!");
-      cublasErrorCheck(cuBLAS::gemm(h_cublas, CUBLAS_OP_N, CUBLAS_OP_N, norb, norb, delay_count, &cminusone,
-                                    U_gpu.data(), norb, temp_gpu.data(), lda_Binv, &cone, Ainv_gpu.data(), norb),
-                       "cuBLAS::gemm failed!");
+      compute::BLAS::gemm(blas_handle_, 'N', 'N', norb, delay_count, delay_count, T(1), V_gpu.data(), norb,
+                          Binv_gpu.data(), lda_Binv, T(0), U_gpu.data(), norb);
+      compute::BLAS::gemm(blas_handle_, 'N', 'N', norb, norb, delay_count, T(-1), U_gpu.data(), norb, temp_gpu.data(),
+                          lda_Binv, T(1), Ainv_gpu.data(), norb);
       clearDelayCount();
     }
 
@@ -251,9 +234,9 @@ public:
     if (transfer_to_host)
     {
       cudaErrorCheck(cudaMemcpyAsync(Ainv.data(), Ainv_gpu.data(), Ainv.size() * sizeof(T), cudaMemcpyDeviceToHost,
-                                     hstream),
+                                     queue_.getNative()),
                      "cudaMemcpyAsync failed!");
-      cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!");
+      queue_.sync();
     }
   }
 };

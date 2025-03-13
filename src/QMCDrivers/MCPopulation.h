@@ -2,9 +2,10 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2020 QMCPACK developers.
+// Copyright (c) 2024 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
+//                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
 // File refactored from VMC.h
 //////////////////////////////////////////////////////////////////////////////////////
@@ -83,10 +84,17 @@ private:
   UPtrVector<TrialWaveFunction> dead_walker_trial_wavefunctions_;
   UPtrVector<QMCHamiltonian> dead_walker_hamiltonians_;
 
-  // MCPopulation immutables
-  // would be nice if they were const but we'd lose the default move assignment
-  int num_ranks_;
-  int rank_;
+  /** @name immutables
+   *  MCPopulation state immutables
+   *  This immutable state is a tradoff, it violates the single source of truth "priniciple"
+   *  but removes coupling that would otherwise exist between MCPopulation and Communicator.
+   *  @{
+   */
+  const int num_ranks_;
+  const int rank_;
+  /// @}
+  /// state for producing unique walker ids
+  int num_walkers_created_ = 0;
 
 public:
   /** Temporary constructor to deal with MCWalkerConfiguration be the only source of some information
@@ -103,7 +111,7 @@ public:
   MCPopulation& operator=(MCPopulation&) = delete;
   MCPopulation(MCPopulation&&)           = default;
 
-  /** @ingroup PopulationControl
+  /** @name PopulationControl
    *
    *  State Requirement:
    *   * createWalkers must have been called
@@ -116,8 +124,10 @@ public:
 
   /** Creates walkers with a clone of the golden electron particle set and golden trial wavefunction
    *
-   *  \param[in] num_walkers number of living walkers in initial population
-   *  \param[in] reserve multiple above that to reserve >=1.0
+   *  \param[in] num_walkers       number of living walkers in initial population
+   *  \param[in] walker_configs    0 or more walker configurations will be assigned
+   *                               cyclically if num_walkers > walker_configs.getActiveWalkers()
+   *  \param[in] reserve           multiple above num_walker to reserve >=1.0
    */
   void createWalkers(IndexType num_walkers, const WalkerConfigurations& walker_configs, RealType reserve = 1.0);
 
@@ -147,22 +157,25 @@ public:
     }
   }
 
+  /** turn walkers with multiplicity n >= 2 into n walkers of multiplicity 1
+   *  name analogous to protozoan fission but here multiple.
+   *  For each walker A in population
+   *      A  ------> A
+   *      |----> B
+   *      |----> ...
+   *      |----> N = multiplicity
+   *  After return A,B...N have multiplicity of 1.
+   *  Walkers B...N have new walker_id_ and parent_id_ = A.walker_id_
+   */
+  void fissionHighMultiplicityWalkers();
+
   void syncWalkersPerRank(Communicate* comm);
   void measureGlobalEnergyVariance(Communicate& comm, FullPrecRealType& ener, FullPrecRealType& variance) const;
 
-  /**@ingroup Accessors
+  /**@name accessors
    * @{
    */
 
-  /** The number of cases in which this and get_num_local_walkers is so few that
-   *  I strongly suspect it is a design issue.
-   *
-   *  get_active_walkers is onlyh useful between the setting of num_local_walkers_ and
-   *  creation of walkers.  I would reason this is actually a time over which the MCPopulation object
-   *  is invalid. Ideally MCPopulation not process any calls in this state, next best would be to only
-   *  process calls to become valid.
-   */
-  //IndexType get_active_walkers() const { return walkers_.size(); }
   int get_num_ranks() const { return num_ranks_; }
   int get_rank() const { return rank_; }
   IndexType get_num_global_walkers() const { return num_global_walkers_; }
@@ -223,14 +236,30 @@ public:
   const std::vector<RealType>& get_ptclgrp_mass() const { return ptclgrp_mass_; }
   const std::vector<RealType>& get_ptclgrp_inv_mass() const { return ptclgrp_inv_mass_; }
   const std::vector<RealType>& get_ptcl_inv_mass() const { return ptcl_inv_mass_; }
+  /// @}
 
-  /** }@ */
 
   /// check if all the internal vector contain consistent sizes;
   void checkIntegrity() const;
 
-  /// save walker configurations to walker_configs_ref_
+  /** save walker configurations to walker_configs_ref_
+   *  this is is just `R` and `spins` + possibly G, L
+   */
   void saveWalkerConfigurations(WalkerConfigurations& walker_configs);
+
+private:
+  /** Generator for walker_ids of this MCPopulation
+   *  The single source for `walker_id`'s on this rank.
+   *  These are unique across MCPopulations as long as each MCPopulation is on its own rank.
+   *  Defined as
+   *  \f$ walker_id = num_walkers_created_++ * num_ranks_ + rank_ + 1 \f$
+   *
+   *  So starting from 1, 0 is the value of a default constructed walker.
+   *  A negative value must have been set by an outside entity and indicates
+   *  an invalid walker ID.
+   *  These are not indexes.
+   */
+  long nextWalkerID();
 };
 
 } // namespace qmcplusplus

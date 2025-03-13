@@ -348,7 +348,8 @@ inline void IOVarASCII<T, RANK>::Resize(int n)
 {
   //  TinyVector<int, RANK>
   auto dims         = ArrayValue.shape();
-  std::get<0>(dims) = n;
+  using std::get;
+  get<0>(dims) = n;
   //  dims[0]                    = n;
   ArrayValue.resizeAndPreserve(dims);
 }

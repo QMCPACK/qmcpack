@@ -106,6 +106,10 @@ public:
    */
   void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios) override;
 
+  void evaluateSpinorRatios(const VirtualParticleSet& VP,
+                            const std::pair<ValueVector, ValueVector>& spinor_multipler,
+                            std::vector<ValueType>& ratios) override;
+
   void mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                          const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                          std::vector<std::vector<ValueType>>& ratios) const override;
@@ -114,6 +118,12 @@ public:
                            const opt_variables_type& optvars,
                            std::vector<ValueType>& ratios,
                            Matrix<ValueType>& dratios) override;
+
+  void evaluateSpinorDerivRatios(const VirtualParticleSet& VP,
+                                 const std::pair<ValueVector, ValueVector>& spinor_multipler,
+                                 const opt_variables_type& optvars,
+                                 std::vector<ValueType>& ratios,
+                                 Matrix<ValueType>& dratios) override;
 
   PsiValue ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
 
@@ -125,9 +135,28 @@ public:
                     std::vector<PsiValue>& ratios,
                     std::vector<GradType>& grad_new) const override;
 
+  void mw_ratioGradWithSpin(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                            const RefVectorWithLeader<ParticleSet>& p_list,
+                            int iat,
+                            std::vector<PsiValue>& ratios,
+                            std::vector<GradType>& grad_new,
+                            std::vector<ComplexType>& spingrad_new) const override
+  {
+    mw_ratioGradWithSpin_serialized(wfc_list, p_list, iat, ratios, grad_new, spingrad_new);
+  }
+
   GradType evalGrad(ParticleSet& P, int iat) override;
 
   GradType evalGradWithSpin(ParticleSet& P, int iat, ComplexType& spingrad) final;
+
+  void mw_evalGradWithSpin(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                           const RefVectorWithLeader<ParticleSet>& p_list,
+                           int iat,
+                           std::vector<GradType>& grad_now,
+                           std::vector<ComplexType>& spingrad_now) const override
+  {
+    mw_evalGradWithSpin_serialized(wfc_list, p_list, iat, grad_now, spingrad_now);
+  }
 
   GradType evalGradSource(ParticleSet& P, ParticleSet& source, int iat) override;
 

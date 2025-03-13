@@ -257,18 +257,15 @@ void DiracParser::getGeometry(std::istream& is)
   //now overwrite charge for pseudsized atoms
   is.clear();
   is.seekg(pivot_begin);
-  while (lookFor(is, "Nuclear Gaussian exponent for atom", aline))
+  while (lookFor(is, "This atomic center has RECP with", aline))
   {
     parsewords(aline.c_str(), currentWords);
-    int z = std::stoi(currentWords[7]);
-    std::getline(is, aline);
-    if (aline.size() == 0)
-      break;
+    int zcore = std::stoi(currentWords[7]);
     //found an ECP to replace
     ECP = true;
     getwords(currentWords, is);
     int zeff                         = std::stoi(currentWords[6]);
-    zeffMap.find(IonName[z])->second = zeff;
+    zeffMap.find(IonName[zcore + zeff])->second = zeff;
   }
   is.clear();
   is.seekg(pivot_begin);
@@ -476,7 +473,8 @@ void DiracParser::getSpinors(std::istream& is)
     std::cout << "  irrep " << irreps[i].get_label() << " with " << irreps[i].get_num_spinors() << " spinors and "
               << irreps[i].get_num_ao() << " AO coefficients." << std::endl;
 
-  search(is, "Coefficients from DFCOEF", aline);
+  std::string searchstr = (version > 22) ? "Coefficients from CHECKPOINT" : "Coefficients from DFCOEF"; 
+  search(is, searchstr, aline);
   std::streampos startspinors = is.tellg();
 
   for (int i = 0; i < nirrep; i++)

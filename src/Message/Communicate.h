@@ -89,12 +89,6 @@ public:
   ///disable constructor
   Communicate(const Communicate&) = delete;
 
-  // Only for unit tests
-  void initialize(int argc, char** argv);
-
-#ifdef HAVE_MPI
-  void initialize(const mpi3::environment& env);
-#endif
   /// provide a node/shared-memory communicator from current (parent) communicator
   Communicate NodeComm() const;
 

@@ -79,9 +79,6 @@ Communicate::Communicate(const Communicate& in_comm, int nparts)
     GroupLeaderComm.reset();
 }
 
-// For unit tests until they can be changed and this will be removed.
-void Communicate::initialize(int argc, char** argv) {}
-
 Communicate Communicate::NodeComm() const {
   // comm is mutable member
   return Communicate{comm.split_shared()};
@@ -103,8 +100,6 @@ void Communicate::abort() const { comm.abort(1); }
 
 void Communicate::barrier() const { comm.barrier(); }
 #else
-
-void Communicate::initialize(int argc, char** argv) {}
 
 Communicate Communicate::NodeComm() const {return Communicate{};}
 

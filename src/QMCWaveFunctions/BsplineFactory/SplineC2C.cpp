@@ -32,8 +32,8 @@ inline void SplineC2C<ST>::set_spline(SingleSplineType* spline_r,
                                       int ispline,
                                       int level)
 {
-  SplineInst->copy_spline(spline_r, 2 * ispline);
-  SplineInst->copy_spline(spline_i, 2 * ispline + 1);
+  copy_spline<double, ST>(*spline_r, *SplineInst->getSplinePtr(), 2 * ispline);
+  copy_spline<double, ST>(*spline_i, *SplineInst->getSplinePtr(), 2 * ispline + 1);
 }
 
 template<typename ST>
@@ -128,8 +128,8 @@ void SplineC2C<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_co
     //Note that Nsplines needs to be divided by 2 since spl_coefs and coef_copy_ are stored as reals.
     //Also casting them as ValueType so they are complex to do the correct gemm
     BLAS::gemm('N', 'N', OrbitalSetSize, basis_set_size, OrbitalSetSize, ValueType(1.0, 0.0), rot_mat.data(),
-               OrbitalSetSize, (ValueType*)coef_copy_->data(), Nsplines / 2, ValueType(0.0, 0.0),
-               (ValueType*)spl_coefs, Nsplines / 2);
+               OrbitalSetSize, (ValueType*)coef_copy_->data(), Nsplines / 2, ValueType(0.0, 0.0), (ValueType*)spl_coefs,
+               Nsplines / 2);
   }
   else
   {
@@ -141,15 +141,15 @@ void SplineC2C<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_co
         // cur_elem points to the real componend of the coefficient.
         // Imag component is adjacent in memory.
         const auto cur_elem = Nsplines * i + 2 * j;
-        ST newval_r{0.};
-        ST newval_i{0.};
+        RealType newval_r{0.};
+        RealType newval_i{0.};
         for (IndexType k = 0; k < OrbitalSetSize; k++)
         {
           const auto index = Nsplines * i + 2 * k;
           ST zr            = (*coef_copy_)[index];
           ST zi            = (*coef_copy_)[index + 1];
-          ST wr            = rot_mat[k][j].real();
-          ST wi            = rot_mat[k][j].imag();
+          auto wr          = rot_mat[k][j].real();
+          auto wi          = rot_mat[k][j].imag();
           newval_r += zr * wr - zi * wi;
           newval_i += zr * wi + zi * wr;
         }
@@ -167,7 +167,8 @@ inline void SplineC2C<ST>::assign_v(const PointType& r,
                                     int last) const
 {
   // protect last
-  last = last > kPoints.size() ? kPoints.size() : last;
+  const size_t last_cplx = std::min(kPoints.size(), psi.size());
+  last                   = last > last_cplx ? last_cplx : last;
 
   const ST x = r[0], y = r[1], z = r[2];
   const ST* restrict kx = myKcart.data(0);
@@ -256,7 +257,8 @@ inline void SplineC2C<ST>::assign_vgl(const PointType& r,
                                       int last) const
 {
   // protect last
-  last = last > kPoints.size() ? kPoints.size() : last;
+  const int last_cplx = std::min(kPoints.size(), psi.size());
+  last                = last > last_cplx ? last_cplx : last;
 
   constexpr ST zero(0);
   constexpr ST two(2);
@@ -342,7 +344,8 @@ inline void SplineC2C<ST>::assign_vgl_from_l(const PointType& r, ValueVector& ps
   const ST* restrict g1 = myG.data(1);
   const ST* restrict g2 = myG.data(2);
 
-  const size_t N = last_spo - first_spo;
+  const size_t last_cplx = last_spo > psi.size() ? psi.size() : last_spo;
+  const size_t N         = last_cplx - first_spo;
 #pragma omp simd
   for (size_t j = 0; j < N; ++j)
   {
@@ -418,7 +421,8 @@ void SplineC2C<ST>::assign_vgh(const PointType& r,
                                int last) const
 {
   // protect last
-  last = last > kPoints.size() ? kPoints.size() : last;
+  const size_t last_cplx = std::min(kPoints.size(), psi.size());
+  last                   = last > last_cplx ? last_cplx : last;
 
   const ST g00 = PrimLattice.G(0), g01 = PrimLattice.G(1), g02 = PrimLattice.G(2), g10 = PrimLattice.G(3),
            g11 = PrimLattice.G(4), g12 = PrimLattice.G(5), g20 = PrimLattice.G(6), g21 = PrimLattice.G(7),
@@ -559,7 +563,8 @@ void SplineC2C<ST>::assign_vghgh(const PointType& r,
                                  int last) const
 {
   // protect last
-  last = last < 0 ? kPoints.size() : (last > kPoints.size() ? kPoints.size() : last);
+  const size_t last_cplx = std::min(kPoints.size(), psi.size());
+  last                   = last < 0 ? last_cplx : (last > last_cplx ? last_cplx : last);
 
   const ST g00 = PrimLattice.G(0), g01 = PrimLattice.G(1), g02 = PrimLattice.G(2), g10 = PrimLattice.G(3),
            g11 = PrimLattice.G(4), g12 = PrimLattice.G(5), g20 = PrimLattice.G(6), g21 = PrimLattice.G(7),

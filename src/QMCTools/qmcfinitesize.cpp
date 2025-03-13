@@ -50,14 +50,14 @@ using Grid_t   = SkParserBase::Grid_t;
 
 int main(int argc, char** argv)
 {
-  OHMMS::Controller->initialize(argc, argv);
+#ifdef HAVE_MPI
+  mpi3::environment env(argc, argv);
+  OHMMS::Controller = new Communicate(env.world());
+#endif
   Random.init(-1);
   std::cout.setf(std::ios::scientific, std::ios::floatfield);
   std::cout.setf(std::ios::right, std::ios::adjustfield);
   std::cout.precision(12);
-
-  // Suppress HDF5 warning and error messages.
-  qmcplusplus::hdf_error_suppression hide_hdf_errors;
 
   std::unique_ptr<SkParserBase> skparser(nullptr);
 

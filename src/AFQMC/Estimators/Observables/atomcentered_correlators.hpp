@@ -253,6 +253,7 @@ public:
     else
       nsp = 2;
 
+    using std::get;
     // check structure dimensions
     if (iref == 0)
     {
@@ -260,19 +261,19 @@ public:
       {
         denom = mpi3CVector(iextensions<1u>{nw}, shared_allocator<ComplexType>{TG.TG_local()});
       }
-      if (std::get<0>(DMWork1D.sizes()) != nw || std::get<1>(DMWork1D.sizes()) != 3 || std::get<2>(DMWork1D.sizes()) != nsites)
+      if (get<0>(DMWork1D.sizes()) != nw || get<1>(DMWork1D.sizes()) != 3 || get<2>(DMWork1D.sizes()) != nsites)
       {
         DMWork1D = mpi3CTensor({nw, 3, nsites}, shared_allocator<ComplexType>{TG.TG_local()});
       }
-      if (std::get<0>(DMWork2D.sizes()) != nw || std::get<1>(DMWork2D.sizes()) != 3 || std::get<2>(DMWork2D.sizes()) != ns2)
+      if (get<0>(DMWork2D.sizes()) != nw || get<1>(DMWork2D.sizes()) != 3 || get<2>(DMWork2D.sizes()) != ns2)
       {
         DMWork2D = mpi3CTensor({nw, 3, ns2}, shared_allocator<ComplexType>{TG.TG_local()});
       }
-      if (std::get<0>(NwIJ.sizes()) != nsp || std::get<1>(NwIJ.sizes()) != nw || std::get<2>(NwIJ.sizes()) != nsites || std::get<3>(NwIJ.sizes()) != nsites)
+      if (get<0>(NwIJ.sizes()) != nsp || get<1>(NwIJ.sizes()) != nw || get<2>(NwIJ.sizes()) != nsites || get<3>(NwIJ.sizes()) != nsites)
       {
         NwIJ = mpi3C4Tensor({nsp, nw, nsites, nsites}, shared_allocator<ComplexType>{TG.TG_local()});
       }
-      if (std::get<0>(NwI.sizes()) != nsp || std::get<1>(NwI.sizes()) != nw || std::get<2>(NwI.sizes()) != nsites)
+      if (get<0>(NwI.sizes()) != nsp || get<1>(NwI.sizes()) != nw || get<2>(NwI.sizes()) != nsites)
       {
         NwI = mpi3CTensor({nsp, nw, nsites}, shared_allocator<ComplexType>{TG.TG_local()});
       }
@@ -284,12 +285,12 @@ public:
     }
     else
     {
-      if (std::get<0>(denom.sizes()) != nw || std::get<0>(DMWork1D.sizes()) != nw || std::get<1>(DMWork1D.sizes()) != 3 || std::get<2>(DMWork1D.sizes()) != nsites ||
-          std::get<0>(DMWork2D.sizes()) != nw || std::get<1>(DMWork2D.sizes()) != 3 || std::get<2>(DMWork2D.sizes()) != ns2 || std::get<0>(NwI.sizes()) != nsp ||
-          std::get<1>(NwI.sizes()) != nw || std::get<2>(NwI.sizes()) != nsites || std::get<0>(NwIJ.sizes()) != nsp || std::get<1>(NwIJ.sizes()) != nw ||
-          std::get<2>(NwIJ.sizes()) != nsites || std::get<3>(NwIJ.sizes()) != nsites || std::get<0>(DMAverage1D.sizes()) != nave || std::get<1>(DMAverage1D.sizes()) != 3 ||
-          std::get<2>(DMAverage1D.sizes()) != nsites || std::get<0>(DMAverage2D.sizes()) != nave || std::get<1>(DMAverage2D.sizes()) != 3 ||
-          std::get<2>(DMAverage2D.sizes()) != ns2)
+      if (get<0>(denom.sizes()) != nw || get<0>(DMWork1D.sizes()) != nw || get<1>(DMWork1D.sizes()) != 3 || get<2>(DMWork1D.sizes()) != nsites ||
+          get<0>(DMWork2D.sizes()) != nw || get<1>(DMWork2D.sizes()) != 3 || get<2>(DMWork2D.sizes()) != ns2 || get<0>(NwI.sizes()) != nsp ||
+          get<1>(NwI.sizes()) != nw || get<2>(NwI.sizes()) != nsites || get<0>(NwIJ.sizes()) != nsp || get<1>(NwIJ.sizes()) != nw ||
+          get<2>(NwIJ.sizes()) != nsites || get<3>(NwIJ.sizes()) != nsites || get<0>(DMAverage1D.sizes()) != nave || get<1>(DMAverage1D.sizes()) != 3 ||
+          get<2>(DMAverage1D.sizes()) != nsites || get<0>(DMAverage2D.sizes()) != nave || get<1>(DMAverage2D.sizes()) != 3 ||
+          get<2>(DMAverage2D.sizes()) != ns2)
         APP_ABORT(" Error: Invalid state in accumulate_reference. \n\n\n");
     }
 

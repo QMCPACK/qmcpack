@@ -42,6 +42,10 @@ class Communicate;
 
 namespace qmcplusplus
 {
+
+/// Suppress HDF5 warning and error messages.
+extern hdf_error_suppression hide_hdf_errors;
+
 /** class to handle hdf file
  */
 class hdf_archive

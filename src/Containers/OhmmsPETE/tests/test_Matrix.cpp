@@ -2,9 +2,10 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2024 QMCPACK developers.
 //
 // File developed by:  Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
+//                     Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //
 // File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -109,6 +110,20 @@ TEST_CASE("matrix converting assignment", "[OhmmsPETE]")
   mat_A.assignUpperLeft(mat_D);
   CHECK(mat_A(1,0) == Approx(2.3));
   CHECK(mat_A(1,2) == Approx(6.9));
+
+  Matrix<float> mat_too_small(2,2);
+  CHECK_THROWS(mat_too_small = mat_A);
+  
+  Matrix<double> mat_too_small_but_larger_value_type(2,2);
+  mat_too_small_but_larger_value_type = mat_B;
+  CHECK(mat_too_small_but_larger_value_type.rows() == 3);
+  CHECK(mat_too_small_but_larger_value_type.cols() == 3);
+  CHECK(mat_too_small_but_larger_value_type(1,1) == Approx(mat_B(1,1)));
+  Matrix<double> too_small_but_same(2,2);
+  too_small_but_same = mat_A;
+  CHECK(too_small_but_same.rows() == 3);
+  CHECK(too_small_but_same.cols() == 3);
+  CHECK(too_small_but_same(1,1) == Approx(mat_A(1,1)));  
 }
 
 } // namespace qmcplusplus

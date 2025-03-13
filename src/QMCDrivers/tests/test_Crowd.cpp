@@ -40,13 +40,13 @@ public:
   UPtrVector<QMCHamiltonian> hams;
   std::vector<TinyVector<double, 3>> tpos;
   DriverWalkerResourceCollection driverwalker_resource_collection_;
-  const MultiWalkerDispatchers dispatchers_;
 
 public:
-  CrowdWithWalkers(SetupPools& pools) : em(*pools.hamiltonian_pool->getPrimary(), pools.comm), dispatchers_(true)
+  CrowdWithWalkers(SetupPools& pools) : em(*pools.hamiltonian_pool->getPrimary(), pools.comm)
   {
-    crowd_ptr    = std::make_unique<Crowd>(em, driverwalker_resource_collection_, *pools.particle_pool->getParticleSet("e"),
-					   *pools.wavefunction_pool->getPrimary(), *pools.hamiltonian_pool->getPrimary(),  dispatchers_);
+    crowd_ptr =
+        std::make_unique<Crowd>(em, driverwalker_resource_collection_, *pools.particle_pool->getParticleSet("e"),
+                                *pools.wavefunction_pool->getPrimary(), *pools.hamiltonian_pool->getPrimary());
     Crowd& crowd = *crowd_ptr;
     // To match the minimal particle set
     int num_particles = 2;
@@ -81,14 +81,13 @@ TEST_CASE("Crowd integration", "[drivers]")
   Communicate* comm = OHMMS::Controller;
   using namespace testing;
   SetupPools pools;
-  
+
   EstimatorManagerNew em(*pools.hamiltonian_pool->getPrimary(), comm);
 
-  const MultiWalkerDispatchers dispatchers(true);
   DriverWalkerResourceCollection driverwalker_resource_collection_;
 
   Crowd crowd(em, driverwalker_resource_collection_, *pools.particle_pool->getParticleSet("e"),
-              *pools.wavefunction_pool->getPrimary(), *pools.hamiltonian_pool->getPrimary(), dispatchers);
+              *pools.wavefunction_pool->getPrimary(), *pools.hamiltonian_pool->getPrimary());
 }
 
 TEST_CASE("Crowd redistribute walkers")

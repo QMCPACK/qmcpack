@@ -26,6 +26,7 @@
 #else
 using TraceManager = int;
 #endif
+#include "WalkerLogCollector.h"
 
 namespace qmcplusplus
 {
@@ -37,6 +38,7 @@ QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w,
                              RandomBase<FullPrecRealType>& rg)
     : csoffset(0),
       Traces(0),
+      wlog_collector(0),
       W(w),
       Psi(psi),
       Guide(guide),
@@ -57,6 +59,7 @@ QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w,
                              RandomBase<FullPrecRealType>& rg)
     : csoffset(0),
       Traces(0),
+      wlog_collector(0),
       W(w),
       Psi(psi),
       Guide(psi),
@@ -98,7 +101,8 @@ void QMCUpdateBase::setDefaults()
 
 bool QMCUpdateBase::put(xmlNodePtr cur)
 {
-  H.setNonLocalMoves(cur);
+  if (H.hasPhysicalNLPP())
+    non_local_ops_.put(cur);
   bool s = myParams.put(cur);
   if (debug_checks_str_ == "no")
     debug_checks_ = DriverDebugChecks::ALL_OFF;
@@ -112,6 +116,16 @@ bool QMCUpdateBase::put(xmlNodePtr cur)
       debug_checks_ |= DriverDebugChecks::CHECKGL_AFTER_TMOVE;
   }
   return s;
+}
+
+void QMCUpdateBase::resetRun2(BranchEngineType* brancher,
+                              EstimatorManagerBase* est,
+                              TraceManager* traces,
+                              WalkerLogCollector* wlog_collector_,
+                              const DriftModifierBase* driftmodifer)
+{
+  wlog_collector = wlog_collector_;
+  resetRun(brancher, est, traces, driftmodifer);
 }
 
 void QMCUpdateBase::resetRun(BranchEngineType* brancher,
@@ -184,6 +198,8 @@ void QMCUpdateBase::startBlock(int steps)
 #if !defined(REMOVE_TRACEMANAGER)
   Traces->startBlock(steps);
 #endif
+  if (wlog_collector)
+    wlog_collector->startBlock();
   nAccept              = 0;
   nReject              = 0;
   nAllRejected         = 0;

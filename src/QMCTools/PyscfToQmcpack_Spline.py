@@ -252,9 +252,9 @@ def generate_pwscf_h5(cell,gvecs,eig_df,h5_fname):
   ref.create_electrons_group(new,gvecs,eig_df,nelecs)
 
   # transfer version info. !!!! hard code for now
-  new.create_dataset('application/code',data=[np.string_('PySCF')])
-  new.create_dataset('application/version',data=[np.string_('1.7.5')])
-  new.create_dataset('format',data=[np.string_('ES-HDF')])
+  new.create_dataset('application/code',data=[np.bytes_('PySCF')])
+  new.create_dataset('application/version',data=[np.bytes_('1.7.5')])
+  new.create_dataset('format',data=[np.bytes_('ES-HDF')])
   new.create_dataset('version',data=[2,1,0])
   new.close()
 # end def generate_pwscf_h5
@@ -517,7 +517,7 @@ class PwscfH5:
       if name not in species_map.keys():
         raise NotImplementedError('unknown element %s' % name)
       # end if
-      spec_grp.create_dataset('name',data=[np.string_(name)])
+      spec_grp.create_dataset('name',data=[np.bytes_(name)])
 
       # write atomic number and valence
       Zn   = atomic_number[name]

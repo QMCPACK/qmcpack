@@ -19,16 +19,45 @@ namespace qmcplusplus
 {
 namespace testing
 {
-/** Once there is only one driver type rename
+/** This class is friends with WalkerControl
+ *  It allows the test_WalkerControl.cpp program to be called with variable numbers of ranks and simplifies
+ *  writing additional test cases, while maintain ecapsulation of WalkerControls internals.
+ *
+ *  Since the public of WalkerControl are massive multi object state transformations most/all unit tests
+ *  are of private methods.
+ *
+ *  There is one per rank.
+ *  \Todo Once there is only one driver type rename
  */
 class UnifiedDriverWalkerControlMPITest
 {
 public:
+  /** Initially this test class creates a population with 1 walker.
+   */
   UnifiedDriverWalkerControlMPITest();
-  void testMultiplicity(std::vector<int>& rank_counts_expanded, std::vector<int>& rank_counts_after);
-  void testPopulationDiff(std::vector<int>& rank_counts_before, std::vector<int>& rank_counts_after);
-  void makeValidWalkers();
-  static void testNewDistribution(std::vector<int>& minus, std::vector<int>& plus);
+
+  /** Wrapper to unit test determineNewWalkerPopulation
+   */
+  void testNewDistribution(std::vector<int>& initial_num_per_rank, std::vector<int>& minus, std::vector<int>& plus);
+
+  /** This test function manipulates walker multiplicity and then checks that after "population control"
+   *  that the number of walkers per rank is correct. Multiplicity in normal branching steps is a set
+   *  walker->Weight + rng() before swapping and amplification of walker's with multiplicity >= 2
+   *
+   *  \param[in]  walker_multiplicity_before   walker multiplicity by rank
+   *  \param[in]  rank_counts_after            walker count by rank
+   */
+  void testPopulationDiff(std::vector<int>& walker_multiplicity_total, std::vector<int>& rank_counts_after);
+
+  /** This function is intended to be called after a call to testPopulationDiff to test that correct walker_ids and
+   *  parent_ids are set.
+   *  \param[in] walker_ids   the expected set of walker ids on each rank
+   *  \param[in] parent_ids   the expected set of parent ids on each rank.
+   */
+  void testWalkerIDs(std::vector<std::vector<int>> walker_ids_after, std::vector<std::vector<int>> parent_ids_after);
+
+  int getRank() const { return dpools_.comm->rank(); }
+  int getNumRanks() const { return dpools_.comm->size(); }
 
 private:
   void reportWalkersPerRank(Communicate* c, MCPopulation& pop);

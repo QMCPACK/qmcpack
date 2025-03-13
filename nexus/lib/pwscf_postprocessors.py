@@ -883,6 +883,170 @@ def generate_pwexport(**kwargs):
 
 
 
+class HpNamelist(Namelist):
+    namelist = 'inputhp'
+    names = ['prefix', 'outdir', 'max_seconds', 'nq1', 'nq2', 'nq3', 'skip_equivalence_q', 
+             'determine_num_pert_only', 'find_atpert', 'docc_thr', 'skip_type', 'equiv_type', 
+             'perturb_only_atom', 'start_q', 'last_q', 'sum_pertq', 'compute_hp', 'conv_thr_chi', 
+             'thresh_init', 'ethr_nscf', 'niter_max', 'alpha_mix(i)', 'nmix', 'num_neigh', 'lmin', 
+             'rmax', 'dist_thr']
+#end class HpNamelist
+
+
+class HpInput(NamelistInput):
+    namelists = ['inputhp']
+    namelist_classes = obj(
+        inputhp = HpNamelist,
+        )
+#end class HpInput
+
+
+class HpAnalyzer(SimulationAnalyzer):
+    def __init__(self,arg0=None,outfile=None,analyze=False,warn=False,strict=False):
+        self.info = obj(
+            outfile     = outfile,
+            warn        = warn,
+            strict      = strict,
+            initialized = False,
+            )
+
+        if isinstance(arg0,Simulation):
+            sim = arg0
+            path    = sim.locdir
+            infile  = sim.infile
+            outfile = sim.outfile
+            infile_path = os.path.join(path,infile)
+        elif arg0!=None:
+            infile_path = arg0
+            path,infile = os.path.split(infile_path)
+            if outfile is None:
+                outfile = infile.rsplit('.',1)[0]+'.out'
+            #end if
+        else:
+            return
+        #end if
+
+        self.input = HpInput(infile_path)
+
+        self.info.set(
+            path        = path,
+            infile      = infile,
+            outfile     = outfile,
+            initialized = True,
+            )
+
+        if analyze:
+            self.analyze()
+        #end if
+    #end def __init__ 
+
+
+    def analyze(self):
+        operations = [
+            ('open_hubbard_dat'   ,HpAnalyzer.open_hubbard_dat),
+            ('read_hubbard_dat'   ,HpAnalyzer.read_hubbard_dat),
+            ('close_hubbard_dat'  ,HpAnalyzer.close_hubbard_dat),
+            ]
+        if self.info.strict:
+            for name,op in operations:
+                op(self)
+            #end for
+        else:
+            failures = []
+            for name,op in operations:
+                try:
+                    op(self)
+                except:
+                    failures.append(name)
+                #end try
+            #end for
+            if len(failures)>0 and self.info.warn:
+                self.warn('analysis failed, some data will not be available\noperations failed: {0}'.format(failures))
+            #end if
+        #end if
+    #end def analyze
+
+
+    def open_hubbard_dat(self):
+        logfile = os.path.join(self.info.path,"HUBBARD.dat")
+        self.hubbard_dat = TextFile(logfile)
+    #end def open_hubbard_dat
+
+    def read_hubbard_dat(self):
+        log = self.hubbard_dat
+        log.seek('# Copy this data in the pw.x input file for DFT+Hubbard calculations')
+        result = ''
+        while True:
+            line = log.readline()
+            result += line
+            if not (len(line)>0):
+                break
+            #end if 
+        #end while
+        self.hubbard_parameters = result
+    #end def read_hubbard_dat
+
+    def close_hubbard_dat(self):
+        if 'hubbard_dat' in self:
+            del self.hubbard_dat
+        #end if
+    #end def close_hubbard_dat
+        
+#end class ProjwfcAnalyzer
+
+
+class Hp(PostProcessSimulation):
+    input_type         = HpInput
+    analyzer_type      = HpAnalyzer
+    generic_identifier = 'hp'
+    application        = 'hp.x'
+    application_results = set(['hubbard_parameters'])
+
+    def check_result(self,result_name,sim):
+        calculating_result = False
+        if result_name=='hubbard_parameters':
+            calculating_result = True
+        #end if 
+        return calculating_result
+    #end def check_result    
+
+    def get_result(self,result_name,sim):
+        result = obj()        
+        prefix = 'pwscf'
+        outdir = './'
+        if result_name == 'hubbard_parameters':
+            pa = self.load_analyzer_image()
+            result = pa.hubbard_parameters
+        else:
+            self.error('ability to get result '+result_name+' has not been implemented')
+        #end if
+        return result
+    #end def get_result
+
+
+
+#end class Projwfc
+
+
+def generate_hp_input(prefix='pwscf',outdir='pwscf_output',**vals):
+    pp = HpInput(
+        prefix = prefix,
+        outdir = outdir,
+        **vals
+        )
+    return pp
+#end def generate_projwfc_input
+
+
+def generate_hp(**kwargs):
+    return generate_ppsim(generate_hp_input,Hp,**kwargs)
+#end def generate_projwfc
+
+
+
+
+
+
 namelist_classes = [
     Namelist               , NamelistInput,
     ProjwfcNamelist        , ProjwfcInput,
@@ -891,6 +1055,7 @@ namelist_classes = [
     BandsNamelist          , BandsInput,
     CpppInputppNamelist    , CpppInput,
     PwexportInputppNamelist, PwexportInput,
+    HpNamelist             , HpInput,
     ]
 for cls in namelist_classes:
     cls.class_init()

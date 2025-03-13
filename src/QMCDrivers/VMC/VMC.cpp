@@ -32,6 +32,7 @@
 #else
 using TraceManager = int;
 #endif
+#include "WalkerLogManager.h"
 
 namespace qmcplusplus
 {
@@ -40,7 +41,7 @@ VMC::VMC(const ProjectData& project_data,
          MCWalkerConfiguration& w,
          TrialWaveFunction& psi,
          QMCHamiltonian& h,
-         UPtrVector<RandomBase<QMCTraits::FullPrecRealType>>& rngs,
+         const UPtrVector<RandomBase<QMCTraits::FullPrecRealType>>& rngs,
          Communicate* comm,
          bool enable_profiling)
     : QMCDriver(project_data, w, psi, h, comm, "VMC", enable_profiling), UseDrift("yes"), rngs_(rngs)
@@ -66,6 +67,7 @@ bool VMC::run()
 #if !defined(REMOVE_TRACEMANAGER)
   Traces->startRun(nBlocks, traceClones);
 #endif
+  wlog_manager_->startRun(getWalkerLogCollectorRefs());
 
   LoopTimer<> vmc_loop;
   RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs, myComm->getName(), myComm->rank() == 0);
@@ -109,6 +111,7 @@ bool VMC::run()
 #if !defined(REMOVE_TRACEMANAGER)
     Traces->write_buffers(traceClones, block);
 #endif
+    wlog_manager_->writeBuffers();
     recordBlock(block);
     vmc_loop.stop();
 
@@ -131,9 +134,7 @@ bool VMC::run()
 #if !defined(REMOVE_TRACEMANAGER)
   Traces->stopRun();
 #endif
-  //copy back the random states
-  for (int ip = 0; ip < NumThreads; ++ip)
-    rngs_[ip] = Rng[ip]->makeClone();
+  wlog_manager_->stopRun();
   ///write samples to a file
   bool wrotesamples = DumpConfig;
   if (DumpConfig)
@@ -165,7 +166,7 @@ void VMC::resetRun()
     Movers.resize(NumThreads, nullptr);
     estimatorClones.resize(NumThreads, nullptr);
     traceClones.resize(NumThreads, nullptr);
-    Rng.resize(NumThreads);
+    wlog_collectors.resize(NumThreads);
 
     // hdf_archive::hdf_archive() is not thread-safe
     for (int ip = 0; ip < NumThreads; ++ip)
@@ -180,29 +181,29 @@ void VMC::resetRun()
 #if !defined(REMOVE_TRACEMANAGER)
       traceClones[ip] = Traces->makeClone();
 #endif
-      Rng[ip] = rngs_[ip]->makeClone();
-      hClones[ip]->setRandomGenerator(Rng[ip].get());
+      wlog_collectors[ip] = wlog_manager_->makeCollector();
+      hClones[ip]->setRandomGenerator(rngs_[ip].get());
       if (W.isSpinor())
       {
         spinors = true;
         if (qmc_driver_mode[QMC_UPDATE_MODE])
         {
-          Movers[ip] = new SOVMCUpdatePbyP(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
+          Movers[ip] = new SOVMCUpdatePbyP(*wClones[ip], *psiClones[ip], *hClones[ip], *rngs_[ip]);
         }
         else
         {
-          Movers[ip] = new SOVMCUpdateAll(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
+          Movers[ip] = new SOVMCUpdateAll(*wClones[ip], *psiClones[ip], *hClones[ip], *rngs_[ip]);
         }
       }
       else
       {
         if (qmc_driver_mode[QMC_UPDATE_MODE])
         {
-          Movers[ip] = new VMCUpdatePbyP(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
+          Movers[ip] = new VMCUpdatePbyP(*wClones[ip], *psiClones[ip], *hClones[ip], *rngs_[ip]);
         }
         else
         {
-          Movers[ip] = new VMCUpdateAll(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
+          Movers[ip] = new VMCUpdateAll(*wClones[ip], *psiClones[ip], *hClones[ip], *rngs_[ip]);
         }
       }
       Movers[ip]->nSubSteps = nSubSteps;
@@ -215,9 +216,7 @@ void VMC::resetRun()
   {
 #pragma omp parallel for
     for (int ip = 0; ip < NumThreads; ++ip)
-    {
       traceClones[ip]->transfer_state_from(*Traces);
-    }
   }
 #endif
   if (qmc_driver_mode[QMC_UPDATE_MODE])
@@ -262,7 +261,8 @@ void VMC::resetRun()
   {
     //int ip=omp_get_thread_num();
     Movers[ip]->put(qmcNode);
-    Movers[ip]->resetRun(branchEngine.get(), estimatorClones[ip], traceClones[ip], DriftModifier);
+    //Movers[ip]->resetRun(branchEngine.get(), estimatorClones[ip], traceClones[ip], DriftModifier);
+    Movers[ip]->resetRun2(branchEngine.get(), estimatorClones[ip], traceClones[ip],  wlog_collectors[ip].get(), DriftModifier);
     if (qmc_driver_mode[QMC_UPDATE_MODE])
       Movers[ip]->initWalkersForPbyP(W.begin() + wPerRank[ip], W.begin() + wPerRank[ip + 1]);
     else

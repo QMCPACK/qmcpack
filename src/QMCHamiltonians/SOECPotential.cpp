@@ -41,8 +41,14 @@ struct SOECPotential::SOECPotentialMultiWalkerResource : public Resource
  *\param els electronic poitions
  *\param psi Trial wave function
 */
-SOECPotential::SOECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi)
-    : my_rng_(nullptr), ion_config_(ions), psi_(psi), peln_(els), elec_neighbor_ions_(els), ion_neighbor_elecs_(ions)
+SOECPotential::SOECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi, bool use_exact_spin)
+    : my_rng_(nullptr),
+      ion_config_(ions),
+      psi_(psi),
+      peln_(els),
+      elec_neighbor_ions_(els),
+      ion_neighbor_elecs_(ions),
+      use_exact_spin_(use_exact_spin)
 {
   setEnergyDomain(POTENTIAL);
   twoBodyQuantumDomain(ions, els);
@@ -93,7 +99,11 @@ void SOECPotential::evaluateImpl(ParticleSet& P, bool keep_grid)
     for (int iat = 0; iat < num_ions_; iat++)
       if (pp_[iat] != nullptr && dist[iat] < pp_[iat]->getRmax())
       {
-        RealType pairpot = pp_[iat]->evaluateOne(P, iat, psi_, jel, dist[iat], -displ[iat]);
+        RealType pairpot = 0;
+        if (use_exact_spin_)
+          pairpot = pp_[iat]->evaluateOneExactSpinIntegration(P, iat, psi_, jel, dist[iat], -displ[iat]);
+        else
+          pairpot = pp_[iat]->evaluateOne(P, iat, psi_, jel, dist[iat], -displ[iat]);
         value_ += pairpot;
         NeighborIons.push_back(iat);
         ion_neighbor_elecs_.getNeighborList(iat).push_back(jel);
@@ -118,8 +128,15 @@ SOECPotential::Return_t SOECPotential::evaluateValueAndDerivatives(ParticleSet& 
     const auto& displ = ble.getDisplRow(jel);
     for (int iat = 0; iat < num_ions_; iat++)
       if (pp_[iat] != nullptr && dist[iat] < pp_[iat]->getRmax())
-        value_ += pp_[iat]->evaluateValueAndDerivatives(P, iat, psi_, jel, dist[iat], -displ[iat], optvars, dlogpsi,
-                                                        dhpsioverpsi);
+      {
+        if (use_exact_spin_)
+          value_ += pp_[iat]->evaluateValueAndDerivativesExactSpinIntegration(P, iat, psi_, jel, dist[iat], -displ[iat],
+                                                                              optvars, dlogpsi, dhpsioverpsi);
+
+        else
+          value_ += pp_[iat]->evaluateValueAndDerivatives(P, iat, psi_, jel, dist[iat], -displ[iat], optvars, dlogpsi,
+                                                          dhpsioverpsi);
+      }
   }
   return value_;
 }
@@ -128,7 +145,7 @@ void SOECPotential::mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
                                 const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                 const RefVectorWithLeader<ParticleSet>& p_list) const
 {
-  mw_evaluateImpl(o_list, wf_list, p_list, std::nullopt);
+  mw_evaluateImpl(o_list, wf_list, p_list, std::nullopt, false);
 }
 
 void SOECPotential::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase>& o_list,
@@ -138,7 +155,7 @@ void SOECPotential::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBas
                                            const std::vector<ListenerVector<Real>>& listeners_ions) const
 {
   std::optional<ListenerOption<Real>> l_opt(std::in_place, listeners, listeners_ions);
-  mw_evaluateImpl(o_list, wf_list, p_list, l_opt);
+  mw_evaluateImpl(o_list, wf_list, p_list, l_opt, false);
 }
 
 void SOECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& o_list,
@@ -251,8 +268,12 @@ void SOECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& o_l
         }
       }
 
-      SOECPComponent::mw_evaluateOne(soecp_component_list, pset_list, psi_list, batch_list, pairpots,
-                                     O_leader.mw_res_handle_.getResource().collection);
+      if (O_leader.use_exact_spin_)
+        SOECPComponent::mw_evaluateOneExactSpinIntegration(soecp_component_list, pset_list, psi_list, batch_list,
+                                                           pairpots, O_leader.mw_res_handle_.getResource().collection);
+      else
+        SOECPComponent::mw_evaluateOne(soecp_component_list, pset_list, psi_list, batch_list, pairpots,
+                                       O_leader.mw_res_handle_.getResource().collection);
 
       for (size_t j = 0; j < soecp_potential_list.size(); j++)
       {
@@ -291,7 +312,7 @@ void SOECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& o_l
 
 std::unique_ptr<OperatorBase> SOECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  std::unique_ptr<SOECPotential> myclone = std::make_unique<SOECPotential>(ion_config_, qp, psi);
+  std::unique_ptr<SOECPotential> myclone = std::make_unique<SOECPotential>(ion_config_, qp, psi, use_exact_spin_);
   for (int ig = 0; ig < ppset_.size(); ++ig)
     if (ppset_[ig])
       myclone->addComponent(ig, std::unique_ptr<SOECPComponent>(ppset_[ig]->makeClone(qp)));

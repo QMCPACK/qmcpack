@@ -136,30 +136,23 @@ std::unique_ptr<LRCoulombSingleton::LRHandlerType> LRCoulombSingleton::getDerivH
 template<typename T>
 std::unique_ptr<OneDimCubicSpline<T>> createSpline4RbyVs_temp(const LRHandlerBase* aLR,
                                                               T rcut,
-                                                              const LinearGrid<T>* agrid)
+                                                              const LinearGrid<T>& agrid)
 {
   using func_type = OneDimCubicSpline<T>;
-  std::unique_ptr<LinearGrid<T>> agrid_local;
-  if (agrid == nullptr)
-  {
-    agrid_local = std::make_unique<LinearGrid<T>>();
-    agrid_local->set(0.0, rcut, 1001);
-    agrid = agrid_local.get();
-  }
-  const int ng = agrid->size();
+  const int ng = agrid.size();
   std::vector<T> v(ng);
-  T r = (*agrid)[0];
+  T r = agrid[0];
   //check if the first point is not zero
   v[0] = (r > std::numeric_limits<T>::epsilon()) ? r * aLR->evaluate(r, 1.0 / r) : 0.0;
   for (int ig = 1; ig < ng - 1; ig++)
   {
-    r     = (*agrid)[ig];
+    r     = agrid[ig];
     v[ig] = r * aLR->evaluate(r, 1.0 / r);
   }
   v[0]      = 2.0 * v[1] - v[2];
   v[ng - 1] = 0.0;
-  auto V0   = std::make_unique<func_type>(agrid->makeClone(), v);
-  T deriv   = (v[1] - v[0]) / ((*agrid)[1] - (*agrid)[0]);
+  auto V0   = std::make_unique<func_type>(agrid.makeClone(), v);
+  T deriv   = (v[1] - v[0]) / (agrid[1] - agrid[0]);
   V0->spline(0, deriv, ng - 1, 0.0);
   return V0;
 }
@@ -167,19 +160,12 @@ std::unique_ptr<OneDimCubicSpline<T>> createSpline4RbyVs_temp(const LRHandlerBas
 template<typename T>
 std::unique_ptr<OneDimCubicSpline<T>> createSpline4RbyVsDeriv_temp(const LRHandlerBase* aLR,
                                                                    T rcut,
-                                                                   const LinearGrid<T>* agrid)
+                                                                   const LinearGrid<T>& agrid)
 {
   using func_type = OneDimCubicSpline<T>;
-  std::unique_ptr<LinearGrid<T>> agrid_local;
-  if (agrid == nullptr)
-  {
-    agrid_local = std::make_unique<LinearGrid<T>>();
-    agrid_local->set(0.0, rcut, 1001);
-    agrid = agrid_local.get();
-  }
-  int ng = agrid->size();
+  int ng = agrid.size();
   std::vector<T> v(ng);
-  T r = (*agrid)[0];
+  T r = agrid[0];
   //check if the first point is not zero
   v[0] = (r > std::numeric_limits<T>::epsilon()) ? r * aLR->evaluate(r, 1.0 / r) : 0.0;
   T v_val(0.0);
@@ -187,7 +173,7 @@ std::unique_ptr<OneDimCubicSpline<T>> createSpline4RbyVsDeriv_temp(const LRHandl
 
   for (int ig = 1; ig < ng - 1; ig++)
   {
-    r       = (*agrid)[ig];
+    r       = agrid[ig];
     v_val   = aLR->evaluate(r, 1.0 / r);
     v_deriv = aLR->srDf(r, 1 / r);
 
@@ -195,8 +181,8 @@ std::unique_ptr<OneDimCubicSpline<T>> createSpline4RbyVsDeriv_temp(const LRHandl
   }
   v[0]      = 2.0 * v[1] - v[2];
   v[ng - 1] = 0.0;
-  auto dV0  = std::make_unique<func_type>(agrid->makeClone(), v);
-  T deriv   = (v[1] - v[0]) / ((*agrid)[1] - (*agrid)[0]);
+  auto dV0  = std::make_unique<func_type>(agrid.makeClone(), v);
+  T deriv   = (v[1] - v[0]) / (agrid[1] - agrid[0]);
   dV0->spline(0, deriv, ng - 1, 0.0);
   return dV0;
 }
@@ -204,7 +190,7 @@ std::unique_ptr<OneDimCubicSpline<T>> createSpline4RbyVsDeriv_temp(const LRHandl
 
 std::unique_ptr<LRCoulombSingleton::RadFunctorType> LRCoulombSingleton::createSpline4RbyVs(const LRHandlerType* aLR,
                                                                                            mRealType rcut,
-                                                                                           const GridType* agrid)
+                                                                                           const GridType& agrid)
 {
   return createSpline4RbyVs_temp(aLR, static_cast<pRealType>(rcut), agrid);
 }
@@ -212,7 +198,7 @@ std::unique_ptr<LRCoulombSingleton::RadFunctorType> LRCoulombSingleton::createSp
 std::unique_ptr<LRCoulombSingleton::RadFunctorType> LRCoulombSingleton::createSpline4RbyVsDeriv(
     const LRHandlerType* aLR,
     mRealType rcut,
-    const GridType* agrid)
+    const GridType& agrid)
 {
   return createSpline4RbyVsDeriv_temp(aLR, static_cast<pRealType>(rcut), agrid);
 }
