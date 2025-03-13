@@ -145,6 +145,8 @@ public:
 
 TEST_CASE("SlaterDet mw_ APIs", "[wavefunction]")
 {
+  using Value = typename QMCTraits::ValueType;
+
   Communicate* comm = OHMMS::Controller;
 
   auto particle_pool = MinimalParticlePool::make_O2_spinor(comm);
@@ -152,8 +154,8 @@ TEST_CASE("SlaterDet mw_ APIs", "[wavefunction]")
   auto& elec1        = *(particle_pool).getParticleSet("e");
   RefVectorWithLeader<ParticleSet> p_list(elec0, {elec0, elec1});
 
-  std::unique_ptr<ConstantSPOSet> spo_ptr0 = std::make_unique<ConstantSPOSet>("dummySPO", 3, 3);
-  std::unique_ptr<ConstantSPOSet> spo_ptr1 = std::make_unique<ConstantSPOSet>("dummySPO", 3, 3);
+  std::unique_ptr<ConstantSPOSet<Value>> spo_ptr0 = std::make_unique<ConstantSPOSet<Value>>("dummySPO", 3, 3);
+  std::unique_ptr<ConstantSPOSet<Value>> spo_ptr1 = std::make_unique<ConstantSPOSet<Value>>("dummySPO", 3, 3);
   //Right now, DiracDeterminantBatched has mw_ WithSpin APIs but DiracDeterminant does not.
   //We want to add a test to make sure Slater determinant chooses the mw_ implementation if it has it.
 
