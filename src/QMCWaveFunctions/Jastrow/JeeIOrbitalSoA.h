@@ -1176,6 +1176,95 @@ public:
                                  TinyVector<ParticleSet::ParticleGradient, OHMMS_DIM>& grad_grad,
                                  TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM>& lapl_grad) override
   {
+    GradType return_val(0);
+    constexpr valT czero(0);
+    constexpr valT cone(1);
+    constexpr valT cminus(-1);
+    constexpr valT ctwo(2);
+    constexpr valT lapfac = OHMMS_DIM - cone;
+
+    const auto& ee_table  = P.getDistTableAA(ee_Table_ID_);
+    const auto& ee_dists  = ee_table.getDistances();
+    const auto& ee_displs = ee_table.getDisplacements();
+
+    build_compact_list(P);
+
+    ParticleSet::ParticleGradient G;
+    ParticleSet::ParticleLaplacian L;
+    G.resize(4);
+    L.resize(4);
+
+    TinyVector<RealType, 3> grad;
+    Tensor<RealType, 3> hess;
+    TinyVector<Tensor<RealType, 3>, 3> d3;
+
+    TinyVector<RealType, 3> e1(1,0,0);
+    TinyVector<RealType, 3> e2(0,1,0);
+    TinyVector<RealType, 3> e3(0,0,1);
+
+    TinyVector<TinyVector<RealType, 3>, 3> identmat(e1,e2,e3);
+
+    int iat=isrc;
+
+    posT ion_deriv(0);
+    const int ig = Ions.GroupID[iat];
+    for (int jg = 0; jg < eGroups; ++jg)
+      for (int jind = 0; jind < elecs_inside(jg, iat).size(); jind++)
+      {
+        const int jel       = elecs_inside(jg, iat)[jind];
+        const valT r_Ij     = elecs_inside_dist(jg, iat)[jind];
+        const posT disp_Ij  = cminus * elecs_inside_displ(jg, iat)[jind];
+        const valT r_Ij_inv = cone / r_Ij;
+        const posT disp_Ij_unit = disp_Ij*r_Ij_inv;
+
+        for (int kg = 0; kg < eGroups; ++kg)
+          for (int kind = 0; kind < elecs_inside(kg, iat).size(); kind++)
+          {
+            const FT& feeI(*F(ig, jg, kg));
+            const int kel = elecs_inside(kg, iat)[kind];
+            if (kel < jel)
+            {
+              const valT r_Ik     = elecs_inside_dist(kg, iat)[kind];
+              const posT disp_Ik  = cminus * elecs_inside_displ(kg, iat)[kind];
+              const valT r_Ik_inv = cone / r_Ik;
+	      const posT disp_Ik_unit = disp_Ik*r_Ik_inv;
+
+              const valT r_jk     = ee_dists[jel][kel];
+              const posT disp_jk  = ee_displs[jel][kel];
+              const valT r_jk_inv = cone / r_jk;
+              const posT disp_jk_unit = disp_jk*r_jk_inv;
+
+	      //egrad j  -gy*rIj + gx*rjk
+	      //egrad k  -gz*rIk - gx*rjk
+	      grad=0.0;
+	      hess=0.0;
+	      d3=0.0;
+              feeI.evaluate(r_jk, r_Ij, r_Ik, grad, hess, d3);
+              ion_deriv+=grad[1]*disp_Ij*r_Ij_inv + grad[2]*disp_Ik*r_Ik_inv;
+	      for(int idim1=0; idim1 < OHMMS_DIM; idim1++)
+	      {
+		const posT igrad_r_Ij_unit = identmat[idim1]*r_Ij_inv -disp_Ij*disp_Ij[idim1]*r_Ij_inv*r_Ij_inv*r_Ij_inv;
+		const posT igrad_r_Ik_unit = identmat[idim1]*r_Ik_inv -disp_Ik*disp_Ik[idim1]*r_Ik_inv*r_Ik_inv*r_Ik_inv;
+		const posT igrad_g0 = (hess(0,1)*disp_Ij_unit[idim1] + hess(0,2)*disp_Ik_unit[idim1]);
+		const posT igrad_g1 = (hess(1,1)*disp_Ij_unit[idim1] + hess(1,2)*disp_Ik_unit[idim1]);
+		const posT igrad_g2 = (hess(1,2)*disp_Ij_unit[idim1] + hess(2,2)*disp_Ik_unit[idim1]);
+	        grad_grad[idim1][jel] += igrad_g1*disp_Ij_unit + grad[1]*igrad_r_Ij_unit - igrad_g0*disp_jk_unit;
+	        grad_grad[idim1][kel] += igrad_g2*disp_Ik_unit + grad[2]*igrad_r_Ik_unit + igrad_g0*disp_jk_unit;
+              }
+	    }
+          }
+      }
+
+    return_val = ion_deriv;
+    return return_val;
+  }
+/*
+  inline GradType evalGradSource(ParticleSet& P,
+                                 ParticleSet& source,
+                                 int isrc,
+                                 TinyVector<ParticleSet::ParticleGradient, OHMMS_DIM>& grad_grad,
+                                 TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM>& lapl_grad) override
+  {
     ParticleSet::ParticleGradient Gp, Gm, dG;
     ParticleSet::ParticleLaplacian Lp, Lm, dL;
     Gp.resize(P.getTotalNum());
@@ -1225,7 +1314,7 @@ public:
     P.update();
     build_compact_list(P);
     return g_return;
-  }
+  }*/
 };
 
 } // namespace qmcplusplus
