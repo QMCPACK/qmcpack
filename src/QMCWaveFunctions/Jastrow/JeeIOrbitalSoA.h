@@ -1133,9 +1133,9 @@ public:
     const auto& ee_displs = ee_table.getDisplacements();
 
     build_compact_list(P);
-    TinyVector<RealType,3> u3grad;
-    Tensor<RealType,3> u3hess;
-    int iat=isrc;
+    TinyVector<RealType, 3> u3grad;
+    Tensor<RealType, 3> u3hess;
+    int iat = isrc;
 
     posT ion_deriv(0);
     const int ig = Ions.GroupID[iat];
@@ -1162,7 +1162,7 @@ public:
               const posT disp_jk  = ee_displs[jel][kel];
               const valT r_jk_inv = cone / r_jk;
               feeI.evaluate(r_jk, r_Ij, r_Ik, u3grad, u3hess);
-              ion_deriv+=u3grad[1]*disp_Ij*r_Ij_inv + u3grad[2]*disp_Ik*r_Ik_inv;
+              ion_deriv += u3grad[1] * disp_Ij * r_Ij_inv + u3grad[2] * disp_Ik * r_Ik_inv;
             }
           }
       }
@@ -1198,24 +1198,24 @@ public:
     Tensor<RealType, 3> hess;
     TinyVector<Tensor<RealType, 3>, 3> d3;
 
-    TinyVector<RealType, 3> e1(1,0,0);
-    TinyVector<RealType, 3> e2(0,1,0);
-    TinyVector<RealType, 3> e3(0,0,1);
+    TinyVector<RealType, 3> e1(1, 0, 0);
+    TinyVector<RealType, 3> e2(0, 1, 0);
+    TinyVector<RealType, 3> e3(0, 0, 1);
 
-    TinyVector<TinyVector<RealType, 3>, 3> identmat(e1,e2,e3);
+    TinyVector<TinyVector<RealType, 3>, 3> identmat(e1, e2, e3);
 
-    int iat=isrc;
+    int iat = isrc;
 
     posT ion_deriv(0);
     const int ig = Ions.GroupID[iat];
     for (int jg = 0; jg < eGroups; ++jg)
       for (int jind = 0; jind < elecs_inside(jg, iat).size(); jind++)
       {
-        const int jel       = elecs_inside(jg, iat)[jind];
-        const valT r_Ij     = elecs_inside_dist(jg, iat)[jind];
-        const posT disp_Ij  = cminus * elecs_inside_displ(jg, iat)[jind];
-        const valT r_Ij_inv = cone / r_Ij;
-        const posT disp_Ij_unit = disp_Ij*r_Ij_inv;
+        const int jel           = elecs_inside(jg, iat)[jind];
+        const valT r_Ij         = elecs_inside_dist(jg, iat)[jind];
+        const posT disp_Ij      = cminus * elecs_inside_displ(jg, iat)[jind];
+        const valT r_Ij_inv     = cone / r_Ij;
+        const posT disp_Ij_unit = disp_Ij * r_Ij_inv;
 
         for (int kg = 0; kg < eGroups; ++kg)
           for (int kind = 0; kind < elecs_inside(kg, iat).size(); kind++)
@@ -1224,48 +1224,58 @@ public:
             const int kel = elecs_inside(kg, iat)[kind];
             if (kel < jel)
             {
-              const valT r_Ik     = elecs_inside_dist(kg, iat)[kind];
-              const posT disp_Ik  = cminus * elecs_inside_displ(kg, iat)[kind];
-              const valT r_Ik_inv = cone / r_Ik;
-	      const posT disp_Ik_unit = disp_Ik*r_Ik_inv;
+              const valT r_Ik         = elecs_inside_dist(kg, iat)[kind];
+              const posT disp_Ik      = cminus * elecs_inside_displ(kg, iat)[kind];
+              const valT r_Ik_inv     = cone / r_Ik;
+              const posT disp_Ik_unit = disp_Ik * r_Ik_inv;
 
-              const valT r_jk     = ee_dists[jel][kel];
-              const posT disp_jk  = ee_displs[jel][kel];
-              const valT r_jk_inv = cone / r_jk;
-              const posT disp_jk_unit = disp_jk*r_jk_inv;
+              const valT r_jk         = ee_dists[jel][kel];
+              const posT disp_jk      = ee_displs[jel][kel];
+              const valT r_jk_inv     = cone / r_jk;
+              const posT disp_jk_unit = disp_jk * r_jk_inv;
 
-	      const valT dot_ujk_uIj = dot(disp_jk_unit,disp_Ij_unit);
-	      const valT dot_ujk_uIk = dot(disp_jk_unit,disp_Ik_unit);
-	      grad=0.0;
-	      hess=0.0;
-	      d3=0.0;
+              const valT dot_ujk_uIj = dot(disp_jk_unit, disp_Ij_unit);
+              const valT dot_ujk_uIk = dot(disp_jk_unit, disp_Ik_unit);
+              grad                   = 0.0;
+              hess                   = 0.0;
+              d3                     = 0.0;
               feeI.evaluate(r_jk, r_Ij, r_Ik, grad, hess, d3);
-              ion_deriv+=grad[1]*disp_Ij*r_Ij_inv + grad[2]*disp_Ik*r_Ik_inv;
-	      
-	      for(int idim=0; idim < OHMMS_DIM; idim++)
-	      {
-                const posT igrad_r_Ij_unit = -(identmat[idim]*r_Ij_inv -disp_Ij*disp_Ij[idim]*r_Ij_inv*r_Ij_inv*r_Ij_inv);
-	        const posT igrad_r_Ik_unit = -(identmat[idim]*r_Ik_inv -disp_Ik*disp_Ik[idim]*r_Ik_inv*r_Ik_inv*r_Ik_inv);
-	        const posT igrad_g0 = -(hess(0,1)*disp_Ij_unit[idim] + hess(0,2)*disp_Ik_unit[idim]);
-	        const posT igrad_g1 = -(hess(1,1)*disp_Ij_unit[idim] + hess(1,2)*disp_Ik_unit[idim]);
-	        const posT igrad_g2 = -(hess(1,2)*disp_Ij_unit[idim] + hess(2,2)*disp_Ik_unit[idim]);
-	      
-	        const posT igrad_h00 = -(d3[0](0,1)*disp_Ij[idim]*r_Ij_inv + d3[0](0,2)*disp_Ik[idim]*r_Ik_inv);
-	        const posT igrad_h11 = -(d3[1](1,1)*disp_Ij[idim]*r_Ij_inv + d3[1](1,2)*disp_Ik[idim]*r_Ik_inv);
-	        const posT igrad_h22 = -(d3[1](2,2)*disp_Ij[idim]*r_Ij_inv + d3[2](2,2)*disp_Ik[idim]*r_Ik_inv);
-	        const posT igrad_h01 = -(d3[0](1,1)*disp_Ij[idim]*r_Ij_inv + d3[0](1,2)*disp_Ik[idim]*r_Ik_inv);
-	        const posT igrad_h02 = -(d3[0](1,2)*disp_Ij[idim]*r_Ij_inv + d3[0](2,2)*disp_Ik[idim]*r_Ik_inv);
-                const posT igrad_dot_ujk_uIj = -(disp_jk_unit[idim] - dot_ujk_uIj*disp_Ij_unit)*r_Ij_inv;
-	        const posT igrad_dot_ujk_uIk = -(disp_jk_unit[idim] - dot_ujk_uIk*disp_Ik_unit)*r_Ik_inv;
-	        
-		grad_grad[idim][jel] -= igrad_g1*disp_Ij_unit + grad[1]*igrad_r_Ij_unit - igrad_g0*disp_jk_unit;
-	        grad_grad[idim][kel] -= igrad_g2*disp_Ik_unit + grad[2]*igrad_r_Ik_unit + igrad_g0*disp_jk_unit;
-		
-		lapl_grad[idim][jel] -= igrad_h00[idim]+lapfac*igrad_g0[idim]*r_jk_inv-ctwo*(igrad_h01[idim]*dot_ujk_uIj+hess(0,1)*igrad_dot_ujk_uIj[idim])+igrad_h11[idim]+lapfac*(igrad_g1[idim]*r_Ij_inv - grad[1]*r_Ij_inv*r_Ij_inv*(-disp_Ij_unit[idim]));
-		lapl_grad[idim][kel] -= igrad_h00[idim]+lapfac*igrad_g0[idim]*r_jk_inv+ctwo*(igrad_h02[idim]*dot_ujk_uIk+hess(0,2)*igrad_dot_ujk_uIk[idim])+igrad_h22[idim]+lapfac*(igrad_g2[idim]*r_Ik_inv - grad[2]*r_Ik_inv*r_Ik_inv*(-disp_Ik_unit[idim]));
-             
+              ion_deriv += grad[1] * disp_Ij * r_Ij_inv + grad[2] * disp_Ik * r_Ik_inv;
+
+              for (int idim = 0; idim < OHMMS_DIM; idim++)
+              {
+                const posT igrad_r_Ij_unit =
+                    -(identmat[idim] * r_Ij_inv - disp_Ij * disp_Ij[idim] * r_Ij_inv * r_Ij_inv * r_Ij_inv);
+                const posT igrad_r_Ik_unit =
+                    -(identmat[idim] * r_Ik_inv - disp_Ik * disp_Ik[idim] * r_Ik_inv * r_Ik_inv * r_Ik_inv);
+                const posT igrad_g0 = -(hess(0, 1) * disp_Ij_unit[idim] + hess(0, 2) * disp_Ik_unit[idim]);
+                const posT igrad_g1 = -(hess(1, 1) * disp_Ij_unit[idim] + hess(1, 2) * disp_Ik_unit[idim]);
+                const posT igrad_g2 = -(hess(1, 2) * disp_Ij_unit[idim] + hess(2, 2) * disp_Ik_unit[idim]);
+
+                const posT igrad_h00 =
+                    -(d3[0](0, 1) * disp_Ij[idim] * r_Ij_inv + d3[0](0, 2) * disp_Ik[idim] * r_Ik_inv);
+                const posT igrad_h11 =
+                    -(d3[1](1, 1) * disp_Ij[idim] * r_Ij_inv + d3[1](1, 2) * disp_Ik[idim] * r_Ik_inv);
+                const posT igrad_h22 =
+                    -(d3[1](2, 2) * disp_Ij[idim] * r_Ij_inv + d3[2](2, 2) * disp_Ik[idim] * r_Ik_inv);
+                const posT igrad_h01 =
+                    -(d3[0](1, 1) * disp_Ij[idim] * r_Ij_inv + d3[0](1, 2) * disp_Ik[idim] * r_Ik_inv);
+                const posT igrad_h02 =
+                    -(d3[0](1, 2) * disp_Ij[idim] * r_Ij_inv + d3[0](2, 2) * disp_Ik[idim] * r_Ik_inv);
+                const posT igrad_dot_ujk_uIj = -(disp_jk_unit[idim] - dot_ujk_uIj * disp_Ij_unit) * r_Ij_inv;
+                const posT igrad_dot_ujk_uIk = -(disp_jk_unit[idim] - dot_ujk_uIk * disp_Ik_unit) * r_Ik_inv;
+
+                grad_grad[idim][jel] -= igrad_g1 * disp_Ij_unit + grad[1] * igrad_r_Ij_unit - igrad_g0 * disp_jk_unit;
+                grad_grad[idim][kel] -= igrad_g2 * disp_Ik_unit + grad[2] * igrad_r_Ik_unit + igrad_g0 * disp_jk_unit;
+
+                lapl_grad[idim][jel] -= igrad_h00[idim] + lapfac * igrad_g0[idim] * r_jk_inv -
+                    ctwo * (igrad_h01[idim] * dot_ujk_uIj + hess(0, 1) * igrad_dot_ujk_uIj[idim]) + igrad_h11[idim] +
+                    lapfac * (igrad_g1[idim] * r_Ij_inv - grad[1] * r_Ij_inv * r_Ij_inv * (-disp_Ij_unit[idim]));
+                lapl_grad[idim][kel] -= igrad_h00[idim] + lapfac * igrad_g0[idim] * r_jk_inv +
+                    ctwo * (igrad_h02[idim] * dot_ujk_uIk + hess(0, 2) * igrad_dot_ujk_uIk[idim]) + igrad_h22[idim] +
+                    lapfac * (igrad_g2[idim] * r_Ik_inv - grad[2] * r_Ik_inv * r_Ik_inv * (-disp_Ik_unit[idim]));
               }
-	    }
+            }
           }
       }
     return_val = ion_deriv;
