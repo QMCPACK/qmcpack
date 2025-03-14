@@ -1930,6 +1930,28 @@ class Supercomputer(Machine):
         """
         Validate job against queue configuration constraints
         Returns True if valid, raises an error with detailed message if invalid
+
+        Queue config format:
+        queue_configs = {
+            'default': 'queue_name',
+            'queue_name': {
+                'min_nodes'     : minimum number of nodes,
+                'max_nodes'     : maximum number of nodes,
+                'max_time'      : maximum walltime in hours,
+                'cores_per_node': cores per node,
+                'ram_per_node'  : RAM per node in GB,
+                'constraints'   : {
+                    'knl': {
+                        'max_nodes': knl specific max nodes,
+                        'max_time': knl specific max time,
+                        ...
+                    },
+                    'haswell': {...},
+                    'gpu': {...},
+                    'cpu': {...}
+                }
+            }
+        }
         """
         if self.queue_configs is None:
             return True
@@ -1937,13 +1959,18 @@ class Supercomputer(Machine):
 
         # Check if queue is specified
         if job.queue is None:
-            self.error('Queue must be specified. Available queues: {}'.format(list(self.queue_configs.keys())))
-            return False
+            self.warn('Queue must be specified. Default queue is {}. Available queues: {}'.format(self.queue_configs['default'], list(self.queue_configs.keys())))
+            if self.queue_configs['default'] is not None:
+                job.queue = self.queue_configs['default']
+            else:
+                self.error('No default queue is specified. Please specify a queue in the job configuration.')
+                return False
+            #end if
         #end if
 
         # Check if queue exists
         if job.queue not in self.queue_configs:
-            self.error('Queue "{}" is not available. Available queues: {}'.format(
+            self.warn('Queue "{}" is not available. Available queues: {}'.format(
                 job.queue, list(self.queue_configs.keys())))
             return False
         #end if
@@ -1951,30 +1978,69 @@ class Supercomputer(Machine):
         config = self.queue_configs[job.queue]
         errors = []
 
-        # Validate nodes
-        assert isinstance(config['max_nodes'], int), 'max_nodes in the queue config must be an integer for queue "{}"'.format(job.queue)
-        if 'max_nodes' in config and job.nodes > config['max_nodes']:
-            errors.append('Number of nodes requested ({}) exceeds the maximum allowed ({})'.format(
-                job.nodes, config['max_nodes']))
-        #end if
-
-        # Validate walltime if specified
-        if 'max_walltime' in config:
-            try:
-                max_seconds = self.walltime_to_seconds(config['max_walltime'])
-                job_seconds = job.total_seconds()
-                if job_seconds > max_seconds:
-                    errors.append('Walltime requested ({}) exceeds the maximum allowed ({})'.format(
-                        self.seconds_to_walltime(job_seconds), self.seconds_to_walltime(max_seconds)))
+        # Get constraint-specific config if applicable
+        constraint_config = None
+        if hasattr(job, 'constraint') and job.constraint is not None:
+            if 'constraints' in config and job.constraint in config['constraints']:
+                constraint_config = config['constraints'][job.constraint]
+            else:
+                valid_constraints = list(config.get('constraints', {}).keys())
+                if valid_constraints:
+                    errors.append('Invalid constraint "{}". Valid constraints for queue {}: {}'.format(
+                        job.constraint, job.queue, valid_constraints))
                 #end if
-            except ValueError as e:
-                errors.append(str(e))
-            #end try
+            #end if
         #end if
 
-        # Report all validation errors at once
+        # Use constraint specific config if available, otherwise use base config
+        active_config = constraint_config if constraint_config is not None else config
+
+        # Validate nodes
+        if 'min_nodes' in active_config and job.nodes < active_config['min_nodes']:
+            errors.append('Number of nodes ({}) is below minimum ({}) for queue {}'.format(
+                job.nodes, active_config['min_nodes'], job.queue))
+        #end if
+        if 'max_nodes' in active_config and job.nodes > active_config['max_nodes']:
+            errors.append('Number of nodes ({}) exceeds maximum ({}) for queue {}'.format(
+                job.nodes, active_config['max_nodes'], job.queue))
+        #end if
+
+        # Validate cores per node
+        if 'cores_per_node' in active_config and hasattr(job, 'processes_per_node'):
+            if job.processes_per_node > active_config['cores_per_node']:
+                errors.append('Processes per node ({}) exceeds cores per node ({}) for queue {}'.format(
+                    job.processes_per_node, active_config['cores_per_node'], job.queue))
+            #end if
+        #end if
+
+        # Validate memory
+        if 'ram_per_node' in active_config and hasattr(job, 'ram_per_node'):
+            if job.ram_per_node > active_config['ram_per_node']:
+                errors.append('RAM per node ({} GB) exceeds maximum ({} GB) for queue {}'.format(
+                    job.ram_per_node, active_config['ram_per_node'], job.queue))
+            #end if
+        #end if
+
+        # Validate walltime
+        if 'max_time' in active_config:
+            job.total_hours = job.days*24 + job.hours + job.minutes/60.0 + job.seconds/3600.0
+            if job.total_hours > active_config['max_time']:
+                errors.append('Walltime ({} hours) exceeds maximum ({} hours) for queue {}'.format(
+                    job.total_hours, active_config['max_time'], job.queue))
+            #end if
+        #end if
+
+        # Validate GPU requirements if specified
+        if 'gpus_per_node' in active_config and hasattr(job, 'gpus_per_node'):
+            if job.gpus_per_node > active_config['gpus_per_node']:
+                errors.append('GPUs per node ({}) exceeds maximum ({}) for queue {}'.format(
+                    job.gpus_per_node, active_config['gpus_per_node'], job.queue))
+            #end if
+        #end if
+
+        # Report all validation errors
         if errors:
-            self.error('Job validation failed for queue "{}":\n  {}'.format(
+            self.error('Queue validation failed for queue {}:\n  {}'.format(
                 job.queue, '\n  '.join(errors)))
             return False
         #end if
@@ -2058,6 +2124,7 @@ except:
     raise
 #end try
 
+#Decommissioned
 class Kraken(Supercomputer):
 
     name = 'kraken'
@@ -2088,7 +2155,7 @@ export MPI_MSGS_PER_PROC=32768
 #end class Kraken
 
 
-
+#Decommissioned
 class Jaguar(Supercomputer):
     name = 'jaguar'
 
@@ -2125,7 +2192,7 @@ export MPI_MSGS_PER_PROC=32768
 
 
 
-
+#Unknown
 class Golub(Supercomputer):
     name = 'golub'
     def write_job_header(self,job):
@@ -2152,7 +2219,7 @@ cd ${PBS_O_WORKDIR}
 
 
 
-
+# Decommissioned
 class OIC5(Supercomputer):
 
     name = 'oic5'
@@ -2235,7 +2302,7 @@ cd $SLURM_SUBMIT_DIR
     #end def write_job_header
 #end class NerscMachine
 
-
+#Decommissioned
 class Cori(NerscMachine):
     name = 'cori'
 
@@ -2316,7 +2383,7 @@ export OMP_PLACES=threads
 
 
 
-
+# Active
 class Perlmutter(NerscMachine):
     name = 'perlmutter'
 
@@ -2446,7 +2513,7 @@ export SLURM_CPU_BIND="cores"
 
 
 
-
+# Active
 class BlueWatersXK(Supercomputer):
 
     name = 'bluewaters_xk'
@@ -2473,7 +2540,7 @@ cd $PBS_O_WORKDIR
 
 
 
-
+# Active
 class BlueWatersXE(Supercomputer):
 
     name = 'bluewaters_xe'
@@ -2500,7 +2567,7 @@ cd $PBS_O_WORKDIR
 
 
 
-
+#Decommissioned
 class Titan(Supercomputer):
 
     name = 'titan'
@@ -2533,7 +2600,7 @@ cd $PBS_O_WORKDIR
 #end class Titan
 
 
-
+# Active
 class EOS(Supercomputer):
 
     name = 'eos'
@@ -2627,24 +2694,26 @@ class ALCF_Machine(Supercomputer):
     #end def write_job_header
 #end class ALCF_Machine
 
-
+# Decommissioned
 class Vesta(ALCF_Machine):
     name = 'vesta'
     base_partition = 32
 #end class Vesta
 
+# Decommissioned
 class Cetus(ALCF_Machine):
     name = 'cetus'
     base_partition = 128
 #end class Cetus
 
+# Decommissioned
 class Mira(ALCF_Machine):
     name = 'mira'
     base_partition = 512
 #end class Mira
 
 
-
+# Active
 class Cooley(Supercomputer):
     name = 'cooley'
     requires_account   = True
@@ -2681,7 +2750,7 @@ class Cooley(Supercomputer):
     #end def write_job_header
 #end class Cooley
 
-
+# Active
 class Theta(Supercomputer):
     name = 'theta'
     requires_account   = True
@@ -2721,7 +2790,7 @@ class Theta(Supercomputer):
 #end class Theta
 
 
-
+# Active
 class Lonestar(Supercomputer):  # Lonestar contribution from Paul Young
 
     name = 'lonestar' # will be converted to lowercase anyway
@@ -2792,17 +2861,17 @@ class ICMP_Machine(Supercomputer): # ICMP and Amos contributions from Ryan McAvo
     #end def write_job_header
 #end class ICMP_Machine
 
-
+# Unknown
 class Komodo(ICMP_Machine):
     name = 'komodo'
 #end class Komodo
-
+# Unknown
 class Matisse(ICMP_Machine):
     name = 'matisse'
 #end class Matisse
 
 
-
+# Active
 class Amos(Supercomputer):
     name = 'amos'
 
@@ -2936,45 +3005,45 @@ class SnlMachine(Supercomputer):
         return c
     #end def write_job_header
 #end class SnlMachine
-
+#Unknown
 class Chama(SnlMachine):
     name = 'chama'
 #end class Chama
-
+#Unknown
 class Skybridge(SnlMachine):
     name = 'skybridge'
 #end class Skybridge
-
+#Unknown
 class Eclipse(SnlMachine):
     name = 'eclipse'
 #end class Eclipse
-
+#Unknown
 class Attaway(SnlMachine):
     name = 'attaway'
 #end class Attaway
-
+#Unknown
 class Manzano(SnlMachine):
     name = 'manzano'
 #end class Manzano
-
+#Unknown
 class Ghost(SnlMachine):
     name = 'ghost'
 #end class Ghost
-
+#Unknown
 class Amber(SnlMachine):
     name = 'amber'
 #end class Amber
-
+#Unknown
 class Uno(SnlMachine):
     name = 'uno'
 #end class Uno
-
+#Unknown
 class Solo(SnlMachine):
     name = 'solo'
 #end class Solo
 
 
-
+# Active
 # machines at LRZ  https://www.lrz.de/english/
 class SuperMUC(Supercomputer):
     name = 'supermuc'
@@ -3051,7 +3120,7 @@ class SuperMUC(Supercomputer):
 #end class SuperMUC
 
 
-
+# Active
 class SuperMUC_NG(Supercomputer):
     name                = 'supermucng'
     requires_account    = True
@@ -3113,7 +3182,7 @@ class SuperMUC_NG(Supercomputer):
 #end class SuperMUC_NG
 
 
-
+# Decommissioned
 class Stampede2(Supercomputer):
     name = 'stampede2'
 
@@ -3195,6 +3264,7 @@ class Stampede2(Supercomputer):
 #end class Stampede2
 
 
+# Decommissioned
 # CADES at ORNL
 class CadesMoab(Supercomputer):
     name = 'cades_moab'
@@ -3238,7 +3308,7 @@ cd $PBS_O_WORKDIR
 #end class CadesMoab
 
 
-
+# Active
 class CadesSlurm(Supercomputer):
     name = 'cades'
     requires_account = True
@@ -3272,7 +3342,7 @@ class CadesSlurm(Supercomputer):
 #end class CadesSlurm
 
 
-
+# Active
 # Inti at ORNL
 class Inti(Supercomputer):
     name = 'inti'
@@ -3307,6 +3377,7 @@ class Inti(Supercomputer):
 #end class Inti
 
 
+# Active
 # Baseline at ORNL https://docs.cades.olcf.ornl.gov/baseline_user_guide/baseline_user_guide.html
 class Baseline(Supercomputer):
     name = 'baseline'
@@ -3364,7 +3435,7 @@ class Baseline(Supercomputer):
     #end def write_job_header
 #end class Baseline
 
-
+# Decommissioned
 # Summit at ORNL
 class Summit(Supercomputer):
 
@@ -3454,7 +3525,7 @@ class Summit(Supercomputer):
     #end def read_process_id
 #end class Summit
 
-
+# Unknown
 ## Added 28/11/2019 by A Zen
 class Rhea(Supercomputer):
 
@@ -3531,7 +3602,7 @@ class Rhea(Supercomputer):
     #end def write_job_header
 #end class Rhea
 
-
+# Active
 # Andes at ORNL
 ## Added 19/03/2021 by A Zen
 class Andes(Supercomputer):
@@ -3609,7 +3680,7 @@ class Andes(Supercomputer):
     #end def write_job_header
 #end class Andes
 
-
+# Active
 ## Added 05/04/2022 by A Zen
 class Archer2(Supercomputer):
     # https://docs.archer2.ac.uk/user-guide/hardware/
@@ -3700,7 +3771,7 @@ class Archer2(Supercomputer):
     #end def write_job_header
 #end class Archer2
 
-
+# Unknown
 class Tomcat3(Supercomputer):
     name             = 'tomcat3'
     requires_account = False
@@ -3730,7 +3801,7 @@ class Tomcat3(Supercomputer):
 #end class Tomcat3
 
 
-
+# Active 
 # Polaris at ANL
 class Polaris(Supercomputer):
     name = 'polaris'
@@ -3794,7 +3865,7 @@ class Polaris(Supercomputer):
 #end class Polaris
 
 
-
+# Active 
 # Improv at ANL (LCRC)
 class Improv(Supercomputer):
     name = 'improv'
@@ -3842,7 +3913,7 @@ class Improv(Supercomputer):
 #end class Improv
 
 
-
+# Active
 # Kagayaki at JAIST
 ## Added 05/04/2023 by Tom Ichibha
 class Kagayaki(Supercomputer):
@@ -3877,7 +3948,7 @@ class Kagayaki(Supercomputer):
 #end class Kagayaki
 
 
-
+# Active
 # Kestrel at NREL
 class Kestrel(Supercomputer):
     name = 'kestrel'
@@ -3912,7 +3983,7 @@ cd $SLURM_SUBMIT_DIR
 #end class Kestrel
 
 
-
+# Active
 # Lassen at LLNL
 class Lassen(Supercomputer):
 
