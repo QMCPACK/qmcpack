@@ -1121,7 +1121,6 @@ public:
 
   inline GradType evalGradSource(ParticleSet& P, ParticleSet& source, int isrc) override
   {
-    GradType return_val(0);
     constexpr valT czero(0);
     constexpr valT cone(1);
     constexpr valT cminus(-1);
@@ -1132,10 +1131,9 @@ public:
     const auto& ee_dists  = ee_table.getDistances();
     const auto& ee_displs = ee_table.getDisplacements();
 
-    build_compact_list(P);
     TinyVector<RealType, 3> u3grad;
     Tensor<RealType, 3> u3hess;
-    int iat = isrc;
+    const int iat = isrc;
 
     posT ion_deriv(0);
     const int ig = Ions.GroupID[iat];
@@ -1166,8 +1164,7 @@ public:
             }
           }
       }
-    return_val = ion_deriv;
-    return return_val;
+    return ion_deriv;;
   }
 
   inline GradType evalGradSource(ParticleSet& P,
@@ -1176,7 +1173,6 @@ public:
                                  TinyVector<ParticleSet::ParticleGradient, OHMMS_DIM>& grad_grad,
                                  TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM>& lapl_grad) override
   {
-    GradType return_val(0);
     constexpr valT czero(0);
     constexpr valT cone(1);
     constexpr valT cminus(-1);
@@ -1186,8 +1182,6 @@ public:
     const auto& ee_table  = P.getDistTableAA(ee_Table_ID_);
     const auto& ee_dists  = ee_table.getDistances();
     const auto& ee_displs = ee_table.getDisplacements();
-
-    build_compact_list(P);
 
     ParticleSet::ParticleGradient G;
     ParticleSet::ParticleLaplacian L;
@@ -1204,7 +1198,7 @@ public:
 
     TinyVector<TinyVector<RealType, 3>, 3> identmat(e1, e2, e3);
 
-    int iat = isrc;
+    const int iat = isrc;
 
     posT ion_deriv(0);
     const int ig = Ions.GroupID[iat];
@@ -1278,8 +1272,7 @@ public:
             }
           }
       }
-    return_val = ion_deriv;
-    return return_val;
+    return ion_deriv;;
   }
 };
 
