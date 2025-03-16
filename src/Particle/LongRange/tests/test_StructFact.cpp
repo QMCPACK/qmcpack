@@ -61,9 +61,9 @@ TEST_CASE("StructFact", "[lrhandler]")
 
   for (int i = 0; i < ref.groups(); i++)
   {
-    std::complex<QMCTraits::RealType> rhok_sum, rhok_even_sum;
+    std::complex<double> rhok_sum, rhok_even_sum;
     for (int ik = 0; ik < simulation_cell.getKLists().numk; ik++)
-      rhok_sum += std::complex<QMCTraits::RealType>(sk.rhok_r[i][ik], sk.rhok_i[i][ik]);
+      rhok_sum += std::complex<double>(sk.rhok_r[i][ik], sk.rhok_i[i][ik]);
 
     //std::cout << std::setprecision(14) << rhok_sum << std::endl;
     CHECK(ComplexApprox(rhok_sum).epsilon(5e-5) == rhok_sum_ref[i]);
