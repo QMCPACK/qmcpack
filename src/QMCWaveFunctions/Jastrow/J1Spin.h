@@ -43,8 +43,8 @@ struct J1Spin : public WaveFunctionComponent
   using DistRow  = DistanceTable::DistRow;
   using DisplRow = DistanceTable::DisplRow;
 
-  using GradDerivVec  = ParticleAttrib<QTFull::GradType>;
-  using ValueDerivVec = ParticleAttrib<QTFull::ValueType>;
+  using GradDerivVec  = Vector<QTFull::GradType>;
+  using ValueDerivVec = Vector<QTFull::ValueType>;
 
   ///table index
   const int myTableID;

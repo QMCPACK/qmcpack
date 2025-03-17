@@ -50,7 +50,7 @@ struct QMCTraits
 {
   enum
   {
-    DIM = OHMMS_DIM,
+    DIM     = OHMMS_DIM,
     DIM_VGL = OHMMS_DIM + 2 // Value(1) + Gradients(OHMMS_DIM) + Laplacian(1)
   };
   using QTBase      = QMCTypes<OHMMS_PRECISION, DIM>;
@@ -78,22 +78,22 @@ using Lattice = CrystalLattice<OHMMS_PRECISION_FULL, OHMMS_DIM>;
  */
 struct PtclOnLatticeTraits
 {
-  using QTFull         = QMCTraits::QTFull;
+  using QTFull = QMCTraits::QTFull;
 
   using Index_t   = int;
   using Scalar_t  = QTFull::RealType;
   using Complex_t = QTFull::ComplexType;
 
-  using SingleParticlePos   = QMCTraits::QTBase::PosType;
-  using Tensor_t            = QMCTraits::QTBase::TensorType;
+  using SingleParticlePos = QMCTraits::QTBase::PosType;
+  using Tensor_t          = QMCTraits::QTBase::TensorType;
 
   using ParticleIndex  = ParticleAttrib<Index_t>;
   using ParticleScalar = ParticleAttrib<Scalar_t>;
   using ParticlePos    = ParticleAttrib<SingleParticlePos>;
   using ParticleTensor = ParticleAttrib<Tensor_t>;
 
-  using ParticleGradient    = ParticleAttrib<QTFull::GradType>;
-  using ParticleLaplacian   = ParticleAttrib<QTFull::ValueType>;
+  using ParticleGradient    = Vector<QTFull::GradType>;
+  using ParticleLaplacian   = Vector<QTFull::ValueType>;
   using SingleParticleValue = QTFull::ValueType;
 };
 
