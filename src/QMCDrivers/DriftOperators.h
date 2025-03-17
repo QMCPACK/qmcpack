@@ -16,7 +16,7 @@
 #ifndef QMCPLUSPLUS_QMCDRIFTOPERATORS_H
 #define QMCPLUSPLUS_QMCDRIFTOPERATORS_H
 #include "type_traits/ConvertToReal.h"
-#include "ParticleBase/ParticleAttribOps.h"
+#include "CPU/VectorOps.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 namespace qmcplusplus
 {

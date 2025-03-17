@@ -14,7 +14,7 @@
 
 #include "ForwardWalking.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
-#include "ParticleBase/ParticleAttribOps.h"
+#include "CPU/VectorOps.h"
 #include "OhmmsData/ParameterSet.h"
 #include "OhmmsData/AttributeSet.h"
 #include "QMCDrivers/WalkerProperties.h"

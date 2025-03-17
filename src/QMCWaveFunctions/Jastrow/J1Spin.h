@@ -16,7 +16,7 @@
 #define QMCPLUSPLUS_ONEBODYSPINJASTROW_OPTIMIZED_SOA_H
 #include "Configuration.h"
 #include "Particle/DistanceTable.h"
-#include "ParticleBase/ParticleAttribOps.h"
+#include "CPU/VectorOps.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "Utilities/qmc_common.h"
 #include "Utilities/IteratorUtility.h"
