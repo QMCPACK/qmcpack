@@ -551,15 +551,6 @@ public:
     AttribList.add(spins);
     AttribList.add(GroupID);
 
-    G.setTypeName(ParticleTags::gradtype_tag);
-    L.setTypeName(ParticleTags::laptype_tag);
-
-    G.setObjName("grad");
-    L.setObjName("lap");
-
-    AttribList.add(G);
-    AttribList.add(L);
-
     //more particle attributes
     Mass.setTypeName(ParticleTags::scalartype_tag);
     Mass.setObjName("mass");

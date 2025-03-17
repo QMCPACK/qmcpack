@@ -17,7 +17,7 @@
 #include "Particle/ParticleSet.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/Jastrow/RPAJastrow.h"
-#include "ParticleBase/ParticleAttribOps.h"
+#include "CPU/VectorOps.h"
 #include "ParticleIO/LatticeIO.h"
 
 

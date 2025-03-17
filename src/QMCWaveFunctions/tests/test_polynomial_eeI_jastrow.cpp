@@ -19,7 +19,7 @@
 #include "QMCWaveFunctions/Jastrow/PolynomialFunctor3D.h"
 #include "QMCWaveFunctions/Jastrow/JeeIOrbitalSoA.h"
 #include "QMCWaveFunctions/Jastrow/eeI_JastrowBuilder.h"
-#include "ParticleBase/ParticleAttribOps.h"
+#include "CPU/VectorOps.h"
 #include <ResourceCollection.h>
 #include "QMCHamiltonians/NLPPJob.h"
 

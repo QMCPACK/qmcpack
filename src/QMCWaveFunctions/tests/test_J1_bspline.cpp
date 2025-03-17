@@ -17,7 +17,7 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
-#include "ParticleBase/ParticleAttribOps.h"
+#include "CPU/VectorOps.h"
 #include "QMCWaveFunctions/Jastrow/J1OrbitalSoA.h"
 #include <ResourceCollection.h>
 #include "QMCHamiltonians/NLPPJob.h"
