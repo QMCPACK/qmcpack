@@ -1937,7 +1937,7 @@ class Supercomputer(Machine):
             'queue_name': {
                 'min_nodes'     : minimum number of nodes,
                 'max_nodes'     : maximum number of nodes,
-                'max_time'      : maximum walltime in hours,
+                'max_walltime'      : maximum walltime in hours,
                 'cores_per_node': cores per node,
                 'ram_per_node'  : RAM per node in GB,
                 'constraints'   : {
@@ -1956,26 +1956,31 @@ class Supercomputer(Machine):
         if self.queue_configs is None:
             return True
         #end if
-
-        # Check if queue is specified
+        
+        # Use only warnings here, as smaller computers may not have a queue
         if job.queue is None:
-            self.warn('Queue must be specified. Default queue is {}. Available queues: {}'.format(self.queue_configs['default'], list(self.queue_configs.keys())))
-            if self.queue_configs['default'] is not None:
+            if 'default' in self.queue_configs:
                 job.queue = self.queue_configs['default']
+                self.warn('No default queue is specified. Using default queue {}'.format(job.queue))
             else:
-                self.error('No default queue is specified. Please specify a queue in the job configuration.')
-                return False
+                # No queue or default queue is specified
+                self.warn('No queue or default queue is specified.')
+                return True
             #end if
         #end if
 
         # Check if queue exists
         if job.queue not in self.queue_configs:
+            # Queue is defined but config is not available
             self.warn('Queue "{}" is not available. Available queues: {}'.format(
                 job.queue, list(self.queue_configs.keys())))
             return False
+        else:
+            # Queue is defined and config is available
+            config = self.queue_configs[job.queue]
         #end if
 
-        config = self.queue_configs[job.queue]
+        
         errors = []
 
         # Get constraint-specific config if applicable
@@ -3384,6 +3389,7 @@ class Baseline(Supercomputer):
     requires_account = True
     batch_capable    = True
     queue_configs={
+        'default': 'batch_cnms',
         'batch': {
             'max_nodes': 138,
             'max_walltime': '24:00:00',
@@ -3411,9 +3417,6 @@ class Baseline(Supercomputer):
     }
     def write_job_header(self,job):
         self.validate_queue_config(job)
-        if job.queue is None:
-            job.queue = 'batch_cnms'
-        #end if
 
         c  = '#!/bin/bash\n'
         c += '#SBATCH -A {}\n'.format(job.account)
