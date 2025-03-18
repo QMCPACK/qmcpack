@@ -2,11 +2,12 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2025 QMCPACK developers.
 //
 // File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Peter W. Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -21,11 +22,39 @@
 
 namespace qmcplusplus
 {
-void KContainer::updateKLists(const ParticleLayout& lattice,
-                              RealType kc,
-                              unsigned ndim,
-                              const PosType& twist,
-                              bool useSphere)
+
+template<typename REAL>
+const std::vector<typename KContainerT<REAL>::AppPosition>& KContainerT<REAL>::getKptsCartWorking() const
+{
+  if constexpr (std::is_same_v<decltype(kpts_cart_), decltype(kpts_cart_working_)>)
+    return kpts_cart_;
+  else
+    return kpts_cart_working_;
+}
+
+template<typename REAL>
+const std::vector<REAL>& KContainerT<REAL>::getKSQWorking() const
+{
+  if constexpr (std::is_same<decltype(ksq_), decltype(ksq_working_)>::value)
+    return ksq_;
+  else
+    return ksq_working_;
+}
+
+template<typename REAL>
+int KContainerT<REAL>::getMinusK(int k) const
+{
+  assert(k < minusk.size());
+  return minusk[k];
+}
+
+template<typename REAL>
+template<typename LATTICE_REAL>
+void KContainerT<REAL>::updateKLists(const CrystalLattice<LATTICE_REAL, OHMMS_DIM>& lattice,
+                                     FullPrecReal kc,
+                                     unsigned ndim,
+                                     const Position& twist,
+                                     bool useSphere)
 {
   kcutoff = kc;
   if (kcutoff <= 0.0)
@@ -37,11 +66,13 @@ void KContainer::updateKLists(const ParticleLayout& lattice,
 
   app_log() << "  KContainer initialised with cutoff " << kcutoff << std::endl;
   app_log() << "   # of K-shell  = " << kshell.size() << std::endl;
-  app_log() << "   # of K points = " << kpts.size() << std::endl;
+  app_log() << "   # of K points = " << kpts_.size() << std::endl;
   app_log() << std::endl;
 }
 
-void KContainer::findApproxMMax(const ParticleLayout& lattice, unsigned ndim)
+template<typename REAL>
+template<typename LATTICE_REAL>
+void KContainerT<REAL>::findApproxMMax(const CrystalLattice<LATTICE_REAL, OHMMS_DIM>& lattice, unsigned ndim)
 {
   //Estimate the size of the parallelpiped that encompasses a sphere of kcutoff.
   //mmax is stored as integer translations of the reciprocal cell vectors.
@@ -102,19 +133,23 @@ void KContainer::findApproxMMax(const ParticleLayout& lattice, unsigned ndim)
     mmax[1] = 0;
 }
 
-void KContainer::BuildKLists(const ParticleLayout& lattice, const PosType& twist, bool useSphere)
+template<typename REAL>
+template<typename LATTICE_REAL>
+void KContainerT<REAL>::BuildKLists(const CrystalLattice<LATTICE_REAL, OHMMS_DIM>& lattice,
+                                    const Position& twist,
+                                    bool useSphere)
 {
   TinyVector<int, DIM + 1> TempActualMax;
   TinyVector<int, DIM> kvec;
-  TinyVector<RealType, DIM> kvec_cart;
-  RealType modk2;
+  TinyVector<FullPrecReal, DIM> kvec_cart;
+  FullPrecReal modk2;
   std::vector<TinyVector<int, DIM>> kpts_tmp;
-  std::vector<PosType> kpts_cart_tmp;
-  std::vector<RealType> ksq_tmp;
+  std::vector<PositionFull> kpts_cart_tmp;
+  std::vector<FullPrecReal> ksq_tmp;
   // reserve the space for memory efficiency
   if (useSphere)
   {
-    const RealType kcut2 = kcutoff * kcutoff;
+    const FullPrecReal kcut2 = kcutoff * kcutoff;
     //Loop over guesses for valid k-points.
     for (int i = -mmax[0]; i <= mmax[0]; i++)
     {
@@ -208,10 +243,10 @@ void KContainer::BuildKLists(const ParticleLayout& lattice, const PosType& twist
     }
   }
   std::map<int64_t, std::vector<int>*>::iterator it(kpts_sorted.begin());
-  kpts.resize(numk);
-  kpts_cart.resize(numk);
+  kpts_.resize(numk);
+  kpts_cart_.resize(numk);
   kpts_cart_soa_.resize(numk);
-  ksq.resize(numk);
+  ksq_.resize(numk);
   kshell.resize(kpts_sorted.size() + 1, 0);
   int ok = 0, ish = 0;
   while (it != kpts_sorted.end())
@@ -220,10 +255,10 @@ void KContainer::BuildKLists(const ParticleLayout& lattice, const PosType& twist
     while (vit != (*it).second->end())
     {
       int ik             = (*vit);
-      kpts[ok]           = kpts_tmp[ik];
-      kpts_cart[ok]      = kpts_cart_tmp[ik];
+      kpts_[ok]          = kpts_tmp[ik];
+      kpts_cart_[ok]     = kpts_cart_tmp[ik];
       kpts_cart_soa_(ok) = kpts_cart_tmp[ik];
-      ksq[ok]            = ksq_tmp[ik];
+      ksq_[ok]           = ksq_tmp[ik];
       ++vit;
       ++ok;
     }
@@ -232,6 +267,11 @@ void KContainer::BuildKLists(const ParticleLayout& lattice, const PosType& twist
     ++ish;
   }
   kpts_cart_soa_.updateTo();
+  if constexpr (!std::is_same<Real, FullPrecReal>::value)
+  {
+    std::copy(kpts_cart_.begin(), kpts_cart_.end(), std::back_inserter(kpts_cart_working_));
+    std::copy(ksq_.begin(), ksq_.end(), std::back_inserter(ksq_working_));
+  }
   it = kpts_sorted.begin();
   std::map<int64_t, std::vector<int>*>::iterator e_it(kpts_sorted.end());
   while (it != e_it)
@@ -262,13 +302,63 @@ void KContainer::BuildKLists(const ParticleLayout& lattice, const PosType& twist
   std::map<int64_t, int> hashToIndex;
   for (int ki = 0; ki < numk; ki++)
   {
-    hashToIndex[getHashOfVec(kpts[ki], numk)] = ki;
+    hashToIndex[getHashOfVec(kpts_[ki], numk)] = ki;
   }
   // Use the map to find the index of -k from the index of k
   for (int ki = 0; ki < numk; ki++)
   {
-    minusk[ki] = hashToIndex[getHashOfVec(-1 * kpts[ki], numk)];
+    minusk[ki] = hashToIndex[getHashOfVec(-1 * kpts_[ki], numk)];
   }
 }
 
+#ifdef MIXED_PRECISION
+template class KContainerT<float>;
+template void KContainerT<float>::updateKLists<float>(const CrystalLattice<float, OHMMS_DIM>& lattice,
+                                                      FullPrecReal kc,
+                                                      unsigned ndim,
+                                                      const Position& twist = Position(),
+                                                      bool useSphere        = true);
+template void KContainerT<float>::updateKLists<double>(const CrystalLattice<double, OHMMS_DIM>& lattice,
+                                                       FullPrecReal kc,
+                                                       unsigned ndim,
+                                                       const Position& twist = Position(),
+                                                       bool useSphere        = true);
+template void KContainerT<float>::findApproxMMax<float>(const CrystalLattice<float, OHMMS_DIM>& lattice, unsigned ndim);
+template void KContainerT<float>::findApproxMMax<double>(const CrystalLattice<double, OHMMS_DIM>& lattice,
+                                                         unsigned ndim);
+
+
+template class KContainerT<double>;
+template void KContainerT<double>::updateKLists<float>(const CrystalLattice<float, OHMMS_DIM>& lattice,
+                                                       FullPrecReal kc,
+                                                       unsigned ndim,
+                                                       const Position& twist = Position(),
+                                                       bool useSphere        = true);
+template void KContainerT<double>::updateKLists<double>(const CrystalLattice<double, OHMMS_DIM>& lattice,
+                                                        FullPrecReal kc,
+                                                        unsigned ndim,
+                                                        const Position& twist = Position(),
+                                                        bool useSphere        = true);
+template void KContainerT<double>::findApproxMMax<float>(const CrystalLattice<float, OHMMS_DIM>& lattice,
+                                                         unsigned ndim);
+template void KContainerT<double>::findApproxMMax<double>(const CrystalLattice<double, OHMMS_DIM>& lattice,
+                                                          unsigned ndim);
+#else
+template class KContainerT<double>;
+template void KContainerT<double>::updateKLists<float>(const CrystalLattice<float, OHMMS_DIM>& lattice,
+                                                       FullPrecReal kc,
+                                                       unsigned ndim,
+                                                       const Position& twist = Position(),
+                                                       bool useSphere        = true);
+template void KContainerT<double>::updateKLists<double>(const CrystalLattice<double, OHMMS_DIM>& lattice,
+                                                        FullPrecReal kc,
+                                                        unsigned ndim,
+                                                        const Position& twist = Position(),
+                                                        bool useSphere        = true);
+template void KContainerT<double>::findApproxMMax<float>(const CrystalLattice<float, OHMMS_DIM>& lattice,
+                                                         unsigned ndim);
+template void KContainerT<double>::findApproxMMax<double>(const CrystalLattice<double, OHMMS_DIM>& lattice,
+                                                          unsigned ndim);
+
+#endif
 } // namespace qmcplusplus
