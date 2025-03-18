@@ -27,7 +27,7 @@
 #include "Sandbox/common.hpp"
 #include <getopt.h>
 #include "mpi/collectives.h"
-#include "ParticleBase/ParticleAttribOps.h"
+#include "CPU/VectorOps.h"
 #include "Concurrency/OpenMP.h"
 #include "OhmmsData/Libxml2Doc.h"
 

@@ -14,7 +14,7 @@
 
 #include "RMCUpdateAll.h"
 #include "QMCDrivers/DriftOperators.h"
-#include "ParticleBase/ParticleAttribOps.h"
+#include "CPU/VectorOps.h"
 #include "Concurrency/OpenMP.h"
 #include "Configuration.h"
 #include "Particle/Reptile.h"

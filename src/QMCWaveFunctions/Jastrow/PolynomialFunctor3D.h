@@ -591,7 +591,7 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
                             const real_type r_2I,
                             TinyVector<real_type, 3>& grad,
                             Tensor<real_type, 3>& hess,
-                            TinyVector<Tensor<real_type, 3>, 3>& d3)
+                            TinyVector<Tensor<real_type, 3>, 3>& d3) const
   {
     grad              = 0.0;
     hess              = 0.0;

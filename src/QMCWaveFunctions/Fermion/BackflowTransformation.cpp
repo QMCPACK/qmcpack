@@ -15,7 +15,7 @@
 
 #include "Fermion/BackflowTransformation.h"
 #include "DistanceTable.h"
-#include "Particle/ParticleBase/ParticleAttribOps.h"
+#include "CPU/VectorOps.h"
 #include "QMCWaveFunctions/Fermion/BackflowFunctionBase.h"
 
 namespace qmcplusplus

@@ -16,12 +16,12 @@
 #ifndef QMCPLUSPLUS_QMCDRIFTOPERATORS_H
 #define QMCPLUSPLUS_QMCDRIFTOPERATORS_H
 #include "type_traits/ConvertToReal.h"
-#include "ParticleBase/ParticleAttribOps.h"
+#include "CPU/VectorOps.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 namespace qmcplusplus
 {
 template<class T, class TG, unsigned D>
-inline T getDriftScale(T tau, const ParticleAttrib<TinyVector<TG, D>>& ga)
+inline T getDriftScale(T tau, const Vector<TinyVector<TG, D>>& ga)
 {
   T vsq = Dot(ga, ga);
   return (vsq < std::numeric_limits<T>::epsilon()) ? tau : ((-1.0 + std::sqrt(1.0 + 2.0 * tau * vsq)) / vsq);
@@ -49,7 +49,11 @@ inline void getScaledDrift(Tt tau, const TinyVector<TG, D>& qf, TinyVector<T, D>
  * @param drift
  */
 template<class Tt, class TG, class T, unsigned D>
-inline void getScaledDriftL2(Tt tau, const TinyVector<TG, D>& qf, const Tensor<T, D>& Dmat, TinyVector<T, D>& Kvec, TinyVector<T, D>& drift)
+inline void getScaledDriftL2(Tt tau,
+                             const TinyVector<TG, D>& qf,
+                             const Tensor<T, D>& Dmat,
+                             TinyVector<T, D>& Kvec,
+                             TinyVector<T, D>& drift)
 {
   //We convert the complex gradient to real and temporarily store in drift.
   convertToReal(qf, drift);
@@ -83,9 +87,7 @@ inline void getUnscaledDrift(Tt tau, const TinyVector<TG, D>& qf, TinyVector<T, 
  * Assume, mass=1
  */
 template<class T, class T1, unsigned D>
-inline T setScaledDriftPbyPandNodeCorr(T tau,
-                                       const ParticleAttrib<TinyVector<T1, D>>& qf,
-                                       ParticleAttrib<TinyVector<T, D>>& drift)
+inline T setScaledDriftPbyPandNodeCorr(T tau, const Vector<TinyVector<T1, D>>& qf, Vector<TinyVector<T, D>>& drift)
 {
   T norm = 0.0, norm_scaled = 0.0, tau2 = tau * tau;
   for (int iat = 0; iat < qf.size(); ++iat)
@@ -130,8 +132,8 @@ inline T setScaledDriftPbyPandNodeCorr(T tau,
 template<class T, class T1, unsigned D>
 inline T setScaledDriftPbyPandNodeCorr(T tau_au,
                                        const std::vector<T>& massinv,
-                                       const ParticleAttrib<TinyVector<T1, D>>& qf,
-                                       ParticleAttrib<TinyVector<T, D>>& drift)
+                                       const Vector<TinyVector<T1, D>>& qf,
+                                       Vector<TinyVector<T, D>>& drift)
 {
   // Umrigar eq. (34) "a" parameter is set to 1.0
   T norm = 0.0, norm_scaled = 0.0; // variables to be accumulated
@@ -163,7 +165,7 @@ inline T setScaledDriftPbyPandNodeCorr(T tau_au,
  * @param drift drift
  */
 template<class T, class TG, unsigned D>
-inline void setScaledDrift(T tau, const ParticleAttrib<TinyVector<TG, D>>& qf, ParticleAttrib<TinyVector<T, D>>& drift)
+inline void setScaledDrift(T tau, const Vector<TinyVector<TG, D>>& qf, Vector<TinyVector<T, D>>& drift)
 {
   T s = getDriftScale(tau, qf);
   PAOps<T, D, TG>::scale(s, qf, drift);
@@ -175,7 +177,7 @@ inline void setScaledDrift(T tau, const ParticleAttrib<TinyVector<TG, D>>& qf, P
  * @param drift drift
  */
 template<class T, unsigned D>
-inline void setScaledDrift(T tau, ParticleAttrib<TinyVector<T, D>>& drift)
+inline void setScaledDrift(T tau, Vector<TinyVector<T, D>>& drift)
 {
   T s = getDriftScale(tau, drift);
   drift *= s;
@@ -188,9 +190,7 @@ inline void setScaledDrift(T tau, ParticleAttrib<TinyVector<T, D>>& drift)
  * @param drift drift
  */
 template<class T, class TG, unsigned D>
-inline void setScaledDrift(T tau,
-                           const ParticleAttrib<TinyVector<std::complex<TG>, D>>& qf,
-                           ParticleAttrib<TinyVector<T, D>>& drift)
+inline void setScaledDrift(T tau, const Vector<TinyVector<std::complex<TG>, D>>& qf, Vector<TinyVector<T, D>>& drift)
 {
   for (int iat = 0; iat < qf.size(); ++iat)
     convertToReal(qf[iat], drift[iat]);
@@ -200,15 +200,13 @@ inline void setScaledDrift(T tau,
 }
 
 template<class T, class TG, unsigned D>
-inline void assignDrift(T s, const ParticleAttrib<TinyVector<TG, D>>& ga, ParticleAttrib<TinyVector<T, D>>& da)
+inline void assignDrift(T s, const Vector<TinyVector<TG, D>>& ga, Vector<TinyVector<T, D>>& da)
 {
   PAOps<T, D, TG>::scale(s, ga, da);
 }
 
 template<class T, class TG, unsigned D>
-inline void assignDrift(T s,
-                        const ParticleAttrib<TinyVector<std::complex<TG>, D>>& ga,
-                        ParticleAttrib<TinyVector<T, D>>& da)
+inline void assignDrift(T s, const Vector<TinyVector<std::complex<TG>, D>>& ga, Vector<TinyVector<T, D>>& da)
 {
   //This operation does s*ga, and takes the real part.
   PAOps<T, D, TG>::scale(s, ga, da);
@@ -218,8 +216,8 @@ inline void assignDrift(T s,
 template<class T, class T1, unsigned D>
 inline void assignDrift(T tau_au,
                         const std::vector<T>& massinv,
-                        const ParticleAttrib<TinyVector<T1, D>>& qf,
-                        ParticleAttrib<TinyVector<T, D>>& drift)
+                        const Vector<TinyVector<T1, D>>& qf,
+                        Vector<TinyVector<T, D>>& drift)
 {
   for (int iat = 0; iat < massinv.size(); ++iat)
   {

@@ -25,7 +25,6 @@
 #ifndef QMCPLUSPLUS_REPTILE_H
 #define QMCPLUSPLUS_REPTILE_H
 
-#include "QMCDrivers/DriftOperators.h"
 #include "QMCDrivers/WalkerProperties.h"
 #include "Configuration.h"
 #include "Walker.h"
