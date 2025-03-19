@@ -702,7 +702,7 @@ class QIxml(Names):
                     #end for
                 #end if
             #end for
-            if self.text!=None:
+            if self.text is not None:
                 c = c.rstrip('\n')
                 c+=param.write(self[self.text],mode='elem',pad=ip,tag=None,normal_elem=True)
             #end if
@@ -1834,7 +1834,8 @@ class sposet(QIxml):
                   'source','version','precision','tilematrix',
                   'meshfactor']
     elements   = ['occupation','coefficient','coefficients']
-    text       = 'spos'
+    #text       = 'spos'  # why was this set this way??
+    text       = None
     identifier = 'name'
 #end class sposet
 
@@ -1858,7 +1859,7 @@ class heg_builder(QIxml):
 class molecular_orbital_builder(QIxml):
     tag = 'sposet_builder'
     identifier = 'type'
-    attributes = ['name','type','transform','source','cuspcorrection']
+    attributes = ['name','type','transform','source','cuspcorrection','href']
     elements   = ['basisset','sposet'] 
 #end class molecular_orbital_builder
 
