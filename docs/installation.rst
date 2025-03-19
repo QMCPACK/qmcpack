@@ -29,7 +29,7 @@ are given in the referenced sections.
 
 #. Run the cmake configure step and build with make
    (:ref:`cmake` and :ref:`cmakequick`). Examples for common systems are given in :ref:`installexamples`. To activate workflow
-   tests for Quantum ESPRESSO, RMG, or PYSCF, be sure to specify QE_BIN, RMG_BIN, or ensure that the python modules are
+   tests for Quantum ESPRESSO, RMG, or PySCF, be sure to specify QE_BIN, RMG_BIN, or ensure that the python modules are
    available when cmake is run.
 
 #. Run the tests to verify QMCPACK
@@ -1308,7 +1308,7 @@ facility. Additionally, Spack packages compiled by the facility can be
 reused by chaining Spack installations
 https://spack.readthedocs.io/en/latest/chain.html.
 
-Installing Quantum-ESPRESSO with Spack
+Installing Quantum ESPRESSO with Spack
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 More information about the QE Spack package can be obtained directly
@@ -1679,23 +1679,39 @@ for the creation of projectors in UPF can introduce severe errors and inaccuraci
 Installing Quantum ESPRESSO and pw2qmcpack
 ------------------------------------------
 
-For trial wavefunctions obtained in a plane-wave basis, we mainly
-support QE. Note that ABINIT and QBox were supported historically
-and could be reactivated.
+For trial wavefunctions obtained in a plane-wave basis, we mainly support Quantum ESPRESSO (QE). QBox support is also available, and
+support was ABINIT was available historically and could be reactivated.
 
-QE stores wavefunctions in a nonstandard internal
-"save" format. To convert these to a conventional HDF5 format file
-we have developed a converter---pw2qmcpack---which is an add-on to the
-QE distribution.
+We recommend using the latest version of Quantum ESPRESSO.
+
+To convert the QE wavefunctions to the HDF5 format used by QMCPACK file we have developed a converter -- pw2qmcpack -- which is an
+add-on to the QE distribution.
+
+Quantum ESPRESSO (>7.0)
+~~~~~~~~~~~~~~~~~~~~~~~
+
+pw2qmcpack is configured via a plugin as part of the Quantum ESPRESSO installation. Simply specify
+``-DQE_ENABLE_PLUGINS=pw2qmcpack`` as part of the CMake configure step. Full QE CMake documentation can be found at
+https://gitlab.com/QEF/q-e/-/wikis/Developers/CMake-build-system . Excepting for a very large change to QE, the converter is
+expected to work with any recent version.
+
+  ::
+
+    mkdir build_mpi
+    cd build_mpi
+    cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_Fortran_COMPILER=mpif90 -DQE_ENABLE_PLUGINS=pw2qmcpack ..
+    make -j 16
 
 
-Quantum ESPRESSO (<=6.8)
-~~~~~~~~~~~~~~~~~~~~~~~~
+Quantum ESPRESSO converter support for old versions via source code patches
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To simplify the process of patching QE we have developed
-a script that will automatically download and patch the source
-code. The patches are specific to each version. For example, to download and
-patch QE v6.3:
+For QE 6.3-7.0, the pw2qmcpack converter can be addded via a source code patch specific to the specific version of QE. **Note that
+this route is no longer recommended. Unless a specific old version of QE is required, users should use the latest version of QE and
+the cmake route described above.**
+
+To simplify the process of patching QE we developed to script to automatically download and patch the source code. For example, to
+download and patch QE v6.3:
 
 ::
 
@@ -1724,31 +1740,15 @@ the HDF5 capability enabled in either way:
 
 The complete process is described in external\_codes/quantum\_espresso/README.
 
-Quantum ESPRESSO (6.7, 6.8 and 7.0)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-After patching the QE source code like above, users may use CMake instead of configure to build QE with pw2qmcpack.
-Options needed to enable pw2qmcpack have been set ON by default.
-A HDF5 library installation with Fortran support is required.
+- Note that for QE 6.7, 6.8 and 7.0, after patching the QE source code like above, users may use CMake instead of configure to build
+  QE with pw2qmcpack. These are the earliest versions for which the cmake support was mature enough. Options needed to enable
+  pw2qmcpack have been set ON by default. A HDF5 library installation with Fortran support is required.
 
   ::
 
     mkdir build_mpi
     cd build_mpi
     cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_Fortran_COMPILER=mpif90 ..
-    make -j 16
-
-Quantum ESPRESSO (>7.0)
-~~~~~~~~~~~~~~~~~~~~~~~
-Due to incorporation of pw2qmcpack as a plugin, there is no longer any need to patch QE.
-Users may use upstream QE and activate the plugin by specifying ``-DQE_ENABLE_PLUGINS=pw2qmcpack`` at the CMake configure step.
-Full QE CMake documentation can be found at
-https://gitlab.com/QEF/q-e/-/wikis/Developers/CMake-build-system .
-
-  ::
-
-    mkdir build_mpi
-    cd build_mpi
-    cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_Fortran_COMPILER=mpif90 -DQE_ENABLE_PLUGINS=pw2qmcpack ..
     make -j 16
 
 Testing QE after installation

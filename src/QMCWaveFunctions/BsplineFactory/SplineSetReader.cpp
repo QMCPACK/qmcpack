@@ -42,7 +42,7 @@ std::unique_ptr<SPOSet> SplineSetReader<SA>::create_spline_set(const std::string
   auto bspline = std::make_unique<SA>(my_name, use_offload);
   app_log() << "  ClassName = " << bspline->getClassName() << std::endl;
   bool foundspline = createSplineDataSpaceLookforDumpFile(bandgroup, *bspline);
-  if (foundspline)
+  if (foundspline && myComm->rank() == 0)
   {
     Timer now;
     hdf_archive h5f(myComm);
@@ -80,6 +80,7 @@ std::unique_ptr<SPOSet> SplineSetReader<SA>::create_spline_set(const std::string
   }
 
   {
+    myComm->barrier();
     Timer now;
     bspline->bcast_tables(myComm);
     app_log() << "  Time to bcast the table = " << now.elapsed() << std::endl;

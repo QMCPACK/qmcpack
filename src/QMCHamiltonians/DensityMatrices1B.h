@@ -65,7 +65,7 @@ public:
 
   //data members
   bool energy_mat;
-  CompositeSPOSet basis_functions;
+  CompositeSPOSet<Value_t> basis_functions;
   ValueVector basis_values;
   ValueVector basis_norms;
   GradVector basis_gradients;

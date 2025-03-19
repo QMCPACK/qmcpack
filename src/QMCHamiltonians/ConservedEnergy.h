@@ -18,7 +18,7 @@
 
 #include "Particle/ParticleSet.h"
 #include "QMCHamiltonians/OperatorBase.h"
-#include "ParticleBase/ParticleAttribOps.h"
+#include "CPU/VectorOps.h"
 
 namespace qmcplusplus
 {

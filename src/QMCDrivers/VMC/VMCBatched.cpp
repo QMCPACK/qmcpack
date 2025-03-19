@@ -371,10 +371,11 @@ bool VMCBatched::run()
       crowd_task(crowds_.size(), runWarmupStep, vmc_state, timers_, step_contexts_, crowds_);
     }
 
-    app_log() << "VMC Warmup completed in " << std::setprecision(4) << warmup_timer.elapsed() << " secs" << std::endl;
     print_mem("VMCBatched after Warmup", app_log());
     if (qmcdriver_input_.get_measure_imbalance())
       measureImbalance("Warmup");
+
+    app_log() << "VMC Warmup completed in " << std::setprecision(4) << warmup_timer.elapsed() << " secs" << std::endl;
   }
 
   // this barrier fences all previous load imbalance. Avoid block 0 timing pollution.

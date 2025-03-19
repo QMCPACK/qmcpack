@@ -148,7 +148,7 @@ std::unique_ptr<SPOSet> HybridRepSetReader<SA>::create_spline_set(const std::str
   bool foundspline = spline_reader_.createSplineDataSpaceLookforDumpFile(bandgroup, *bspline);
   typename SA::HYBRIDBASE& hybrid_center_orbs = *bspline;
   hybrid_center_orbs.resizeStorage(bspline->myV.size());
-  if (foundspline)
+  if (foundspline && myComm->rank() == 0)
   {
     Timer now;
     hdf_archive h5f(myComm);

@@ -22,9 +22,20 @@
 
 namespace qmcplusplus
 {
-class CompositeSPOSet : public SPOSet
+
+template<typename T>
+class CompositeSPOSet : public SPOSetT<T>
 {
 public:
+  using SPOSet = SPOSetT<T>;
+
+  using ValueVector = typename SPOSet::ValueVector;
+  using ValueMatrix = typename SPOSet::ValueMatrix;
+  using GradVector  = typename SPOSet::GradVector;
+  using GradMatrix  = typename SPOSet::GradMatrix;
+  using HessMatrix  = typename SPOSet::HessMatrix;
+  using GGGMatrix   = typename SPOSet::GGGMatrix;
+
   ///component SPOSets
   std::vector<std::unique_ptr<SPOSet>> components;
   ///temporary storage for values
