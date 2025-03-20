@@ -2243,10 +2243,11 @@ class structurefactor(QIxml):
 
 class force(QIxml):
     tag = 'estimator'
-    attributes = ['type','name','mode','source','species','target','addionion']
+    attributes = ['type','name','mode','source','species','target','addionion',
+                  'fast_derivatives','spacewarp','epsilon']
     parameters = ['rcut','nbasis','weightexp']
     identifier = 'name'
-    write_types= obj(addionion=yesno)
+    write_types= obj(addionion=yesno,fast_derivatives=yesno,spacewarp=yesno)
 #end class force
 
 class forwardwalking(QIxml):
