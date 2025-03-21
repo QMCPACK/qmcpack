@@ -40,7 +40,7 @@ TEST_CASE("kcontainer at gamma in 3D", "[longrange]")
   for (int ik = 0; ik < kcs.size(); ik++)
   {
     const double kc = kcs[ik] + 1e-6;
-    klists.updateKLists<typename std::remove_cv_t<std::remove_reference_t<decltype(lattice)>>::Scalar_t>(lattice, kc,
+    klists.updateKLists(lattice, kc,
                                                                                                          ndim);
     CHECK(klists.getKpts().size() == nks[ik]);
   }
@@ -77,13 +77,13 @@ TEST_CASE("kcontainer at twist in 3D", "[longrange]")
 
   PosType twist;
   twist[0] = 0.1;
-  klists.updateKLists<typename std::remove_cv_t<std::remove_reference_t<decltype(lattice)>>::Scalar_t>(lattice, kc,
+  klists.updateKLists(lattice, kc,
                                                                                                        ndim, twist);
   CHECK(klists.getKpts().size() == 1);
   CHECK(klists.getKptsCartWorking()[0][0] == Approx(blat * (twist[0] - 1)));
 
   twist = {-0.5, 0, 0.5};
-  klists.updateKLists<typename std::remove_cv_t<std::remove_reference_t<decltype(lattice)>>::Scalar_t>(lattice, kc,
+  klists.updateKLists(lattice, kc,
                                                                                                        ndim, twist);
   int gvecs[3][3] = {{0, 0, -1}, {1, 0, -1}, {1, 0, 0}};
   CHECK(klists.getKpts().size() == 3);
@@ -110,7 +110,7 @@ TEST_CASE("kcontainer at gamma in 2D", "[longrange]")
   for (int ik = 0; ik < kcs.size(); ik++)
   {
     const double kc = kcs[ik] + 1e-6;
-    klists.updateKLists<typename std::remove_cv_t<std::remove_reference_t<decltype(lattice)>>::Scalar_t>(lattice, kc,
+    klists.updateKLists(lattice, kc,
                                                                                                          ndim);
     CHECK(klists.getKpts().size() == nks[ik]);
   }
@@ -147,13 +147,13 @@ TEST_CASE("kcontainer at twist in 2D", "[longrange]")
 
   PosType twist;
   twist[0] = 0.1;
-  klists.updateKLists<typename std::remove_cv_t<std::remove_reference_t<decltype(lattice)>>::Scalar_t>(lattice, kc,
+  klists.updateKLists(lattice, kc,
                                                                                                        ndim, twist);
   CHECK(klists.getKpts().size() == 1);
   CHECK(klists.getKptsCartWorking()[0][0] == Approx(blat * (twist[0] - 1)));
 
   twist[1] = 0.1;
-  klists.updateKLists<typename std::remove_cv_t<std::remove_reference_t<decltype(lattice)>>::Scalar_t>(lattice, kc,
+  klists.updateKLists(lattice, kc,
                                                                                                        ndim, twist);
   CHECK(klists.getKpts().size() == 2);
   CHECK(klists.getKptsCartWorking()[0][0] == Approx(blat * (twist[0] - 1)));
@@ -162,7 +162,7 @@ TEST_CASE("kcontainer at twist in 2D", "[longrange]")
   CHECK(klists.getKptsCartWorking()[1][1] == Approx(blat * (twist[1] - 1)));
 
   twist = {-0.5, 0.5, 0};
-  klists.updateKLists<typename std::remove_cv_t<std::remove_reference_t<decltype(lattice)>>::Scalar_t>(lattice, kc,
+  klists.updateKLists(lattice, kc,
                                                                                                        ndim, twist);
   CHECK(klists.getKpts().size() == 3);
   //for (int ik=0;ik<3;ik++)
@@ -190,8 +190,7 @@ TEST_CASE("kcontainer for diamond", "[longrange]")
   lattice.LR_dim_cutoff = 15;
   SimulationCell cell(lattice);
 
-  // In this test we check that both full and reduced precision KContainers agree
-  const KContainerT<Real>& klists                                                          = cell.getKLists();
+  const KContainer& klists = cell.getKLists();
   std::remove_cv_t<std::remove_reference_t<decltype(KContainer().getKpts())>> kpoint_lists = {
       {-1, -1, -1}, {-1, 0, 0},   {0, -1, 0},   {0, 0, -1},   {0, 0, 1},    {0, 1, 0},    {1, 0, 0},    {1, 1, 1},
       {-1, -1, 0},  {-1, 0, -1},  {0, -1, -1},  {0, 1, 1},    {1, 0, 1},    {1, 1, 0},    {-2, -1, -1}, {-1, -2, -1},
@@ -273,13 +272,6 @@ TEST_CASE("kcontainer for diamond", "[longrange]")
   {
     INFO("Checking kpoint_lists");
     auto check = checkVector(klists.getKpts(), kpoint_lists, true);
-    CHECKED_ELSE(check.result) { FAIL(check.result_message); }
-  }
-
-  const KContainerT<FullPrecReal>& klists_full = cell.getKLists();
-  {
-    INFO("Checking kpoint_lists");
-    auto check = checkVector(klists_full.getKpts(), kpoint_lists, true);
     CHECKED_ELSE(check.result) { FAIL(check.result_message); }
   }
 }

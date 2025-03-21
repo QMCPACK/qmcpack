@@ -335,7 +335,7 @@ int LRBreakup<BreakupBasis>::SetupKVecs(mRealType kc, mRealType kcont, mRealType
   //Add low |k| ( < kcont) k-points with exact degeneracy
   KContainer kexact;
   const auto& basis_lattice = Basis.get_Lattice();
-  kexact.updateKLists<typename std::remove_cv_t<std::remove_reference_t<decltype(basis_lattice)>>::Real>(basis_lattice, kcont, basis_lattice.ndim);
+  kexact.updateKLists(basis_lattice, kcont, basis_lattice.ndim);
   bool findK    = true;
   mRealType kc2 = kc * kc;
   //use at least one shell

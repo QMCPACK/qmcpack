@@ -43,9 +43,6 @@ private:
   FullPrecReal kcutoff;
 
 public:
-  //Typedef for the lattice-type
-  using ParticleLayout = CrystalLattice<Real, OHMMS_DIM>;
-
   const auto& get_kpts_cart_soa() const { return kpts_cart_soa_; }
   const std::vector<TinyVector<int, DIM>>& getKpts() const { return kpts_; }
 
@@ -74,8 +71,7 @@ public:
    * @param twist shifts the center of the grid of k-vectors
    * @param useSphere if true, use the |K|
    */
-  template<typename TT>
-  void updateKLists(const CrystalLattice<TT, OHMMS_DIM>& lattice,
+  void updateKLists(const Lattice& lattice,
                     FullPrecReal kc,
                     unsigned ndim,
                     const Position& twist = Position(),
@@ -115,11 +111,9 @@ private:
   /** compute approximate parallelpiped that surrounds kc
    * @param lattice supercell
    */
-  template<typename TT>
-  void findApproxMMax(const CrystalLattice<TT, OHMMS_DIM>& lattice, unsigned ndim);
+  void findApproxMMax(const Lattice& lattice, unsigned ndim);
   /** construct the container for k-vectors */
-  template<typename TT>
-  void BuildKLists(const CrystalLattice<TT, OHMMS_DIM>& lattice, const Position& twist, bool useSphere);
+  void BuildKLists(const Lattice& lattice, const Position& twist, bool useSphere);
 
   /** K-vector in Cartesian coordinates in SoA layout
    */
@@ -130,52 +124,9 @@ using KContainer = KContainerT<QMCTraits::RealType>;
 
 #ifdef MIXED_PRECISION
 extern template class KContainerT<float>;
-extern template void KContainerT<float>::updateKLists<float>(const CrystalLattice<float, OHMMS_DIM>& lattice,
-                                                             FullPrecReal kc,
-                                                             unsigned ndim,
-                                                             const Position& twist = Position(),
-                                                             bool useSphere        = true);
-extern template void KContainerT<float>::updateKLists<double>(const CrystalLattice<double, OHMMS_DIM>& lattice,
-                                                              FullPrecReal kc,
-                                                              unsigned ndim,
-                                                              const Position& twist = Position(),
-                                                              bool useSphere        = true);
-extern template void KContainerT<float>::findApproxMMax<float>(const CrystalLattice<float, OHMMS_DIM>& lattice,
-                                                               unsigned ndim);
-extern template void KContainerT<float>::findApproxMMax<double>(const CrystalLattice<double, OHMMS_DIM>& lattice,
-                                                                unsigned ndim);
-
 extern template class KContainerT<double>;
-extern template void KContainerT<double>::updateKLists<float>(const CrystalLattice<float, OHMMS_DIM>& lattice,
-                                                              FullPrecReal kc,
-                                                              unsigned ndim,
-                                                              const Position& twist = Position(),
-                                                              bool useSphere        = true);
-extern template void KContainerT<double>::updateKLists<double>(const CrystalLattice<double, OHMMS_DIM>& lattice,
-                                                               FullPrecReal kc,
-                                                               unsigned ndim,
-                                                               const Position& twist = Position(),
-                                                               bool useSphere        = true);
-extern template void KContainerT<double>::findApproxMMax<float>(const CrystalLattice<float, OHMMS_DIM>& lattice,
-                                                                unsigned ndim);
-extern template void KContainerT<double>::findApproxMMax<double>(const CrystalLattice<double, OHMMS_DIM>& lattice,
-                                                                 unsigned ndim);
 #else
 extern template class KContainerT<double>;
-extern template void KContainerT<double>::updateKLists<float>(const CrystalLattice<float, OHMMS_DIM>& lattice,
-                                                              FullPrecReal kc,
-                                                              unsigned ndim,
-                                                              const Position& twist = Position(),
-                                                              bool useSphere        = true);
-extern template void KContainerT<double>::updateKLists<double>(const CrystalLattice<double, OHMMS_DIM>& lattice,
-                                                               FullPrecReal kc,
-                                                               unsigned ndim,
-                                                               const Position& twist = Position(),
-                                                               bool useSphere        = true);
-extern template void KContainerT<double>::findApproxMMax<float>(const CrystalLattice<float, OHMMS_DIM>& lattice,
-                                                                unsigned ndim);
-extern template void KContainerT<double>::findApproxMMax<double>(const CrystalLattice<double, OHMMS_DIM>& lattice,
-                                                                 unsigned ndim);
 #endif
 
 } // namespace qmcplusplus
