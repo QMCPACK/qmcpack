@@ -335,7 +335,7 @@ void NEEnergyDensityEstimator::collect(const RefVector<OperatorEstBase>& type_er
   int num_crowds = type_erased_operator_estimators.size();
   for (int ig = 0; ig < spacegrids_.size(); ++ig)
   {
-    RefVector<const NESpaceGrid<Real>> crowd_grids;
+    RefVector<NESpaceGrid<Real>> crowd_grids;
     crowd_grids.reserve(num_crowds);
     for (OperatorEstBase& crowd_oeb : type_erased_operator_estimators)
     {
