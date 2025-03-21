@@ -717,14 +717,14 @@ void NESpaceGrid<REAL>::sum(const BufferType& buf, Real* vals)
 }
 
 template<typename REAL>
-void NESpaceGrid<REAL>::collect(NESpaceGrid& reduction_grid, const RefVector<const NESpaceGrid> grid_for_each_crowd)
+void NESpaceGrid<REAL>::collect(NESpaceGrid& reduction_grid, const RefVector<NESpaceGrid> grid_for_each_crowd)
 {
   assert(!grid_for_each_crowd.empty());
 #ifndef NDEBUG
   const NESpaceGrid& filled_grid = grid_for_each_crowd.front();
   assert(reduction_grid.getDataVector().size() == filled_grid.getDataVector().size());
 #endif
-  for (const NESpaceGrid& crowd_grid : grid_for_each_crowd)
+  for (NESpaceGrid& crowd_grid : grid_for_each_crowd)
   {
     std::transform(reduction_grid.data_.begin(), reduction_grid.data_.end(), crowd_grid.data_.begin(),
                    reduction_grid.data_.begin(), std::plus<>{});
