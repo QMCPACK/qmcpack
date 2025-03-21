@@ -637,7 +637,7 @@ TEST_CASE("SpaceGrid::collect", "[estimators]")
   doAccumulate(0.0);
   // emphasize this is a static call.
   decltype(collection_space_grid)::collect(collection_space_grid,
-                                           convertUPtrToRefVector<const NESpaceGrid<Real>>(accumulating_space_grids));
+                                           convertUPtrToRefVector(accumulating_space_grids));
   for (auto& accumulating_space_grid : accumulating_space_grids)
     accumulating_space_grid->zero();
   // here we check our expected grid that is trivially acumulated
@@ -648,7 +648,7 @@ TEST_CASE("SpaceGrid::collect", "[estimators]")
   doAccumulate(0.2);
   // emphasize this is a static call.
   decltype(collection_space_grid)::collect(collection_space_grid,
-                                           convertUPtrToRefVector<const NESpaceGrid<Real>>(accumulating_space_grids));
+                                           convertUPtrToRefVector(accumulating_space_grids));
   for (auto& accumulating_space_grid : accumulating_space_grids)
     accumulating_space_grid->zero();
 
