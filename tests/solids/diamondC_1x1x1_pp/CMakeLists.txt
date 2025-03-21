@@ -849,7 +849,7 @@ if(add_estimator_tests)
     qmc-ref/qmc_edens_cell_dmc_short.s001.stat_ref_energydensity.dat)
 
   simple_run_and_check(
-    short-diamondC_1x1x1_pp-dmc-estimator-energydensity-cell
+    short-diamondC_1x1x1_pp-dmc-estimator-energydensity-cell-batched
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
     qmc_edens_cell_dmc_short_batched${IFEXT}.in.xml
     ${NMPI}
