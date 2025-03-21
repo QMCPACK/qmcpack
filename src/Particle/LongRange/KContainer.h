@@ -47,13 +47,22 @@ public:
   using ParticleLayout = CrystalLattice<Real, OHMMS_DIM>;
 
   const auto& get_kpts_cart_soa() const { return kpts_cart_soa_; }
-
   const std::vector<TinyVector<int, DIM>>& getKpts() const { return kpts_; }
+
+  /** @ingroup Working Precision accessors
+   *  @brief   return reference kpt values in the working precision of build
+   *           these encapsulate the cached reduced precision or pass through of the
+   *           full precision values.
+   *  @{
+   */
+  ///get cartesian kpt representation in the working precision of the application.
   const std::vector<AppPosition>& getKptsCartWorking() const;
+  ///get ksqr in the working precision of the application.
+  const std::vector<Real>& getKSQWorking() const;
+  /// @}
 
   const std::vector<int>& getKShell() const { return kshell; };
 
-  const std::vector<Real>& getKSQWorking() const;
 
   int getMinusK(int k) const;
 
@@ -82,17 +91,20 @@ private:
    */
   TinyVector<int, DIM + 1> mmax;
 
-  /** K-vector in reduced coordinates
+  /** k-vector in reduced coordinates
    */
   std::vector<TinyVector<int, DIM>> kpts_;
-  /** K-vector in Cartesian coordinates
-   */
+  /// k-vectors in Cartesian coordinates
   std::vector<Position> kpts_cart_;
-  std::vector<AppPosition> kpts_cart_working_;
-  /** squre of kpts in Cartesian coordniates
-   */
+  /// k squared at full precision
   std::vector<FullPrecReal> ksq_;
+  /** @ingroup Cached Working Precision values
+   *  @brief   only used or initialized for mixed precision
+   *  @{
+   */
+  std::vector<AppPosition> kpts_cart_working_;
   std::vector<Real> ksq_working_;
+  /// @}
 
   /** Given a k index, return index to -k
    */
@@ -100,14 +112,6 @@ private:
   /** kpts which belong to the ith-shell [kshell[i], kshell[i+1]) */
   std::vector<int> kshell;
 
-  /** k points sorted by the |k|  excluding |k|=0
-   *
-   * The first for |k|
-   * The second for a map to the full index. The size of the second is the degeneracy.
-   */
-  //std::map<int,std::vector<int>*>  kpts_sorted;
-
-private:
   /** compute approximate parallelpiped that surrounds kc
    * @param lattice supercell
    */
