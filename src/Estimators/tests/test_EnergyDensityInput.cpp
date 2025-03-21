@@ -16,6 +16,7 @@
 #include "EstimatorTesting.h"
 #include "ValidEnergyDensityInput.h"
 #include <iostream>
+#include "OhmmsData/Libxml2Doc.h"
 
 namespace qmcplusplus
 {
