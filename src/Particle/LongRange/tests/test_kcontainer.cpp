@@ -32,7 +32,7 @@ TEST_CASE("kcontainer at gamma in 3D", "[longrange]")
   const std::vector<double> kcs = {blat, std::sqrt(2) * blat, std::sqrt(3) * blat};
   const std::vector<int> nks    = {6, 18, 26};
 
-  CrystalLattice<OHMMS_PRECISION_FULL, OHMMS_DIM> lattice;
+  Lattice lattice;
   lattice.R.diagonal(1.0);
   lattice.set(lattice.R); // compute Rv and Gv from R
 
@@ -40,7 +40,8 @@ TEST_CASE("kcontainer at gamma in 3D", "[longrange]")
   for (int ik = 0; ik < kcs.size(); ik++)
   {
     const double kc = kcs[ik] + 1e-6;
-    klists.updateKLists<typename std::remove_cv_t<std::remove_reference_t<decltype(lattice)>>::Scalar_t>(lattice, kc, ndim);
+    klists.updateKLists<typename std::remove_cv_t<std::remove_reference_t<decltype(lattice)>>::Scalar_t>(lattice, kc,
+                                                                                                         ndim);
     CHECK(klists.getKpts().size() == nks[ik]);
   }
   const int mxk    = klists.getKpts().size();
@@ -68,7 +69,7 @@ TEST_CASE("kcontainer at twist in 3D", "[longrange]")
   // twist one shell of kvectors
   const double kc = blat + 1e-6;
 
-  CrystalLattice<OHMMS_PRECISION_FULL, OHMMS_DIM> lattice;
+  Lattice lattice;
   lattice.R.diagonal(1.0);
   lattice.set(lattice.R); // compute Rv and Gv from R
 
@@ -76,12 +77,14 @@ TEST_CASE("kcontainer at twist in 3D", "[longrange]")
 
   PosType twist;
   twist[0] = 0.1;
-  klists.updateKLists<typename std::remove_cv_t<std::remove_reference_t<decltype(lattice)>>::Scalar_t>(lattice, kc, ndim, twist);
+  klists.updateKLists<typename std::remove_cv_t<std::remove_reference_t<decltype(lattice)>>::Scalar_t>(lattice, kc,
+                                                                                                       ndim, twist);
   CHECK(klists.getKpts().size() == 1);
   CHECK(klists.getKptsCartWorking()[0][0] == Approx(blat * (twist[0] - 1)));
 
   twist = {-0.5, 0, 0.5};
-  klists.updateKLists<typename std::remove_cv_t<std::remove_reference_t<decltype(lattice)>>::Scalar_t>(lattice, kc, ndim, twist);
+  klists.updateKLists<typename std::remove_cv_t<std::remove_reference_t<decltype(lattice)>>::Scalar_t>(lattice, kc,
+                                                                                                       ndim, twist);
   int gvecs[3][3] = {{0, 0, -1}, {1, 0, -1}, {1, 0, 0}};
   CHECK(klists.getKpts().size() == 3);
   for (int ik = 0; ik < klists.getKpts().size(); ik++)
@@ -99,7 +102,7 @@ TEST_CASE("kcontainer at gamma in 2D", "[longrange]")
   const std::vector<double> kcs = {blat, std::sqrt(2) * blat, 2 * blat};
   const std::vector<int> nks    = {4, 8, 12};
 
-  CrystalLattice<OHMMS_PRECISION_FULL, OHMMS_DIM> lattice;
+  Lattice lattice;
   lattice.R.diagonal(1.0);
   lattice.set(lattice.R); // compute Rv and Gv from R
 
@@ -107,7 +110,8 @@ TEST_CASE("kcontainer at gamma in 2D", "[longrange]")
   for (int ik = 0; ik < kcs.size(); ik++)
   {
     const double kc = kcs[ik] + 1e-6;
-    klists.updateKLists<typename std::remove_cv_t<std::remove_reference_t<decltype(lattice)>>::Scalar_t>(lattice, kc, ndim);
+    klists.updateKLists<typename std::remove_cv_t<std::remove_reference_t<decltype(lattice)>>::Scalar_t>(lattice, kc,
+                                                                                                         ndim);
     CHECK(klists.getKpts().size() == nks[ik]);
   }
   const int mxk    = klists.getKpts().size();
@@ -135,7 +139,7 @@ TEST_CASE("kcontainer at twist in 2D", "[longrange]")
   // twist one shell of kvectors
   const double kc = blat + 1e-6;
 
-  CrystalLattice<OHMMS_PRECISION_FULL, OHMMS_DIM> lattice;
+  Lattice lattice;
   lattice.R.diagonal(1.0);
   lattice.set(lattice.R); // compute Rv and Gv from R
 
@@ -143,12 +147,14 @@ TEST_CASE("kcontainer at twist in 2D", "[longrange]")
 
   PosType twist;
   twist[0] = 0.1;
-  klists.updateKLists<typename std::remove_cv_t<std::remove_reference_t<decltype(lattice)>>::Scalar_t>(lattice, kc, ndim, twist);
+  klists.updateKLists<typename std::remove_cv_t<std::remove_reference_t<decltype(lattice)>>::Scalar_t>(lattice, kc,
+                                                                                                       ndim, twist);
   CHECK(klists.getKpts().size() == 1);
   CHECK(klists.getKptsCartWorking()[0][0] == Approx(blat * (twist[0] - 1)));
 
   twist[1] = 0.1;
-  klists.updateKLists<typename std::remove_cv_t<std::remove_reference_t<decltype(lattice)>>::Scalar_t>(lattice, kc, ndim, twist);
+  klists.updateKLists<typename std::remove_cv_t<std::remove_reference_t<decltype(lattice)>>::Scalar_t>(lattice, kc,
+                                                                                                       ndim, twist);
   CHECK(klists.getKpts().size() == 2);
   CHECK(klists.getKptsCartWorking()[0][0] == Approx(blat * (twist[0] - 1)));
   CHECK(klists.getKptsCartWorking()[0][1] == Approx(blat * twist[1]));
@@ -156,7 +162,8 @@ TEST_CASE("kcontainer at twist in 2D", "[longrange]")
   CHECK(klists.getKptsCartWorking()[1][1] == Approx(blat * (twist[1] - 1)));
 
   twist = {-0.5, 0.5, 0};
-  klists.updateKLists<typename std::remove_cv_t<std::remove_reference_t<decltype(lattice)>>::Scalar_t>(lattice, kc, ndim, twist);
+  klists.updateKLists<typename std::remove_cv_t<std::remove_reference_t<decltype(lattice)>>::Scalar_t>(lattice, kc,
+                                                                                                       ndim, twist);
   CHECK(klists.getKpts().size() == 3);
   //for (int ik=0;ik<3;ik++)
   //  app_log() << klists.getKptsCartWorking()[ik] << std::endl;
@@ -170,19 +177,12 @@ TEST_CASE("kcontainer at twist in 2D", "[longrange]")
 
 TEST_CASE("kcontainer for diamond", "[longrange]")
 {
-  // Communicate* comm = OHMMS::Controller;
-  // ParticleSetPool particle_pool{MinimalParticlePool::make_diamondC_1x1x1(comm)};
-  // ParticleSet pset_ions{*(particle_pool.getParticleSet("ion"))};
-
   int ndim = 3;
 
-  // auto kcs = pset_ions.getSimulationCell().getKLists().numk;
-  // std::cout << "kcs:" << kcs << '\n';
-
-  using Real = QMCTraits::RealType;
+  using Real         = QMCTraits::RealType;
   using FullPrecReal = QMCTraits::FullPrecRealType;
-  
-  CrystalLattice<FullPrecReal, OHMMS_DIM> lattice;
+
+  Lattice lattice;
   lattice.BoxBConds = {true, true, true};
   Tensor<double, 3> lattice_mat{3.37316115, 3.37316115, 0.00000000, 0.00000000, 3.37316115,
                                 3.37316115, 3.37316115, 0.00000000, 3.37316115};
@@ -190,7 +190,8 @@ TEST_CASE("kcontainer for diamond", "[longrange]")
   lattice.LR_dim_cutoff = 15;
   SimulationCell cell(lattice);
 
-  const KContainerT<Real>& klists = cell.getKLists();
+  // In this test we check that both full and reduced precision KContainers agree
+  const KContainerT<Real>& klists                                                          = cell.getKLists();
   std::remove_cv_t<std::remove_reference_t<decltype(KContainer().getKpts())>> kpoint_lists = {
       {-1, -1, -1}, {-1, 0, 0},   {0, -1, 0},   {0, 0, -1},   {0, 0, 1},    {0, 1, 0},    {1, 0, 0},    {1, 1, 1},
       {-1, -1, 0},  {-1, 0, -1},  {0, -1, -1},  {0, 1, 1},    {1, 0, 1},    {1, 1, 0},    {-2, -1, -1}, {-1, -2, -1},
@@ -269,10 +270,16 @@ TEST_CASE("kcontainer for diamond", "[longrange]")
       {1, 5, 0},    {1, 5, 4},    {3, -1, 4},   {3, 4, -1},   {4, -1, -1},  {4, -1, 3},   {4, 1, 5},    {4, 3, -1},
       {4, 5, 1},    {4, 5, 5},    {5, 0, 1},    {5, 1, 0},    {5, 1, 4},    {5, 4, 1},    {5, 4, 5},    {5, 5, 4},
   };
-  double tolerance = 0.1;
   {
     INFO("Checking kpoint_lists");
     auto check = checkVector(klists.getKpts(), kpoint_lists, true);
+    CHECKED_ELSE(check.result) { FAIL(check.result_message); }
+  }
+
+  const KContainerT<FullPrecReal>& klists_full = cell.getKLists();
+  {
+    INFO("Checking kpoint_lists");
+    auto check = checkVector(klists_full.getKpts(), kpoint_lists, true);
     CHECKED_ELSE(check.result) { FAIL(check.result_message); }
   }
 }
