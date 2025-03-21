@@ -131,7 +131,7 @@ public:
   /** collect to the rank level space grid.
    *  This is intended to occur each block. accumulated state is of the crowd grids is not changed.
    */
-  void static collect(NESpaceGrid& reduction_grid, const RefVector<const NESpaceGrid> grid_for_each_crowd);
+  void static collect(NESpaceGrid& reduction_grid, const RefVector<NESpaceGrid> grid_for_each_crowd);
 
   void zero();
 
