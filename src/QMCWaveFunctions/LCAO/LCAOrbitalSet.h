@@ -151,10 +151,16 @@ public:
     return sliced;
   }
 
+  // accessor for owned CSR data
+  std::shared_ptr<void> get_csr() const { return csr_owned_; }
+  bool owns_csr() const { return static_cast<bool>(csr_owned_); }
+
 private:
   std::shared_ptr<sparse_matrix> handle_;
   matrix_descr descr_;
   std::shared_ptr<void> csr_owned_; // type-erased ownership
+
+  friend std::ostream& operator<<(std::ostream& os, const MklSparseHandle& h);
 };
 
 
@@ -479,5 +485,64 @@ private:
   /// timer for MO
   NewTimer& mo_timer_;
 };
+
+inline std::ostream& operator<<(std::ostream& os, const CSRMatrix<double, MKL_INT>& csr)
+{
+  os << "\nCSRMatrix:\n";
+  size_t idx = 0;
+  for (size_t i = 0; i < csr.rows; i++)
+  {
+    idx = csr.rowIndex[i];
+    for (size_t j = 0; j < csr.cols; j++)
+    {
+      if (csr.columns[idx] == j && idx < csr.rowIndex[i + 1])
+      {
+        os << csr.values[idx++] << " ";
+      }
+      else
+      {
+        os << double(0.0) << " ";
+      }
+    }
+    os << "\n";
+  }
+  os << std::endl;
+  return os;
+}
+
+inline std::ostream& operator<<(std::ostream& os, const MklSparseHandle& h)
+{
+  os << "MklSparseHandle:\n";
+  /// FIXME: print more descriptive enum names instead of just the associated ints
+  os << "  Description: [type = " << h.descr().type << ", mode = " << h.descr().mode << ", diag = " << h.descr().diag
+     << "]\n";
+
+  if (h.owns_csr())
+  {
+    // assuming that csr_owned_ was created via from_csr and holds a CSRMatrix<double, MKL_INT>
+    auto csr = std::static_pointer_cast<CSRMatrix<double, MKL_INT>>(h.csr_owned_);
+    os << "Printing Matrix (CSR):\n" << std::endl;
+    os << *csr << std::endl; // print full CSR mat (including zeros, one matrix row per row)
+    os << "  CSRMatrix details:\n";
+    os << "    rows: " << csr->rows << ", cols: " << csr->cols << ", nnz: " << csr->nnz << "\n";
+    // print internal CSR data (rowidx, columns, values), one array per row
+    os << "    rowIndex: ";
+    for (auto v : csr->rowIndex)
+      os << v << " ";
+    os << "\n    columns:  ";
+    for (auto v : csr->columns)
+      os << v << " ";
+    os << "\n    values:   ";
+    for (auto v : csr->values)
+      os << v << " ";
+    os << "\n";
+  }
+  else
+  {
+    os << "  No underlying CSRMatrix retained.\n";
+  }
+  return os;
+}
+
 } // namespace qmcplusplus
 #endif

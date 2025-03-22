@@ -74,7 +74,8 @@ LCAOrbitalSet::LCAOrbitalSet(const std::string& my_name,
     Tempv.resize(OrbitalSetSize);
     Temphv.resize(OrbitalSetSize);
     Tempghv.resize(OrbitalSetSize);
-    C                = std::make_shared<OffloadValueMatrix>(OrbitalSetSize, BasisSetSize);
+    C = std::make_shared<OffloadValueMatrix>(OrbitalSetSize, BasisSetSize);
+    /// FIXME: add better control somewhere (can automatically set based on sparsity, or allow as input option)
     use_sparse_coefs = true;
     if (use_sparse_coefs)
       C_csr = from_dense(C->data(), OrbitalSetSize, BasisSetSize);
@@ -195,13 +196,9 @@ void LCAOrbitalSet::evaluateValue(const ParticleSet& P, int iat, ValueVector& ps
     assert(psi.size() <= OrbitalSetSize);
     if (use_sparse_coefs)
     {
-      app_log() << "DEBUG: sparse_d_mv evaluateValue start" << std::endl;
       auto C_csr_partial = C_csr.view_first_n_rows<double, MKL_INT>(psi.size());
-
-      mkl_sparse_d_mv(SPARSE_OPERATION_TRANSPOSE, 1.0, C_csr_partial.get(), C_csr_partial.descr(), vTemp.data(), 0.0,
-                      psi.data());
-      // mkl_sparse_d_mv(SPARSE_OPERATION_TRANSPOSE, 1.0, C_csr.get(), C_csr.descr(), vTemp.data(), 0.0, psi.data());
-      app_log() << "DEBUG: sparse_d_mv evaluateValue end" << std::endl;
+      mkl_sparse_d_mv(SPARSE_OPERATION_NON_TRANSPOSE, 1.0, C_csr_partial.get(), C_csr_partial.descr(), vTemp.data(),
+                      0.0, psi.data());
     }
     else
     {
@@ -232,10 +229,8 @@ inline void Product_ABt_sparse(const VectorSoaContainer<T, D>& A,
   constexpr char transb = 'n';
   constexpr T zone(1);
   constexpr T zero(0);
-  app_log() << "DEBUG: product_ABt_sparse start" << std::endl;
-  mkl_sparse_d_mm(SPARSE_OPERATION_TRANSPOSE, zone, Bcsr.get(), Bcsr.descr(), SPARSE_LAYOUT_ROW_MAJOR, A.data(), D,
-                  A.capacity(), zero, C.data(), C.capacity());
-  app_log() << "DEBUG: product_ABt_sparse end" << std::endl;
+  mkl_sparse_d_mm(SPARSE_OPERATION_NON_TRANSPOSE, zone, Bcsr.get(), Bcsr.descr(), SPARSE_LAYOUT_COLUMN_MAJOR, A.data(),
+                  D, A.capacity(), zero, C.data(), C.capacity());
 }
 
 
@@ -473,10 +468,8 @@ void LCAOrbitalSet::evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi,
       ScopedTimer local(mo_timer_);
       if (use_sparse_coefs)
       {
-        app_log() << "DEBUG: abt evaluateVGL start" << std::endl;
         auto C_csr_partial = C_csr.view_first_n_rows<double, MKL_INT>(psi.size());
         Product_ABt_sparse(Temp, C_csr_partial, Tempv);
-        // Product_ABt_sparse(Temp, C_csr, Tempv);
       }
       else
       {
@@ -579,15 +572,13 @@ void LCAOrbitalSet::mw_evaluateVGLImplGEMM(const RefVectorWithLeader<SPOSet>& sp
       {
         if (use_sparse_coefs)
         {
-          app_log() << "DEBUG: mkl_sparse_d_mm in mw_evaluateVGLImplGEMM start" << std::endl;
           auto C_csr_partial = C_csr.view_first_n_rows<double, MKL_INT>(requested_orb_size);
-          mkl_sparse_d_mm(SPARSE_OPERATION_TRANSPOSE, 1, C_csr_partial.get(), C_csr_partial.descr(),
-                          SPARSE_LAYOUT_ROW_MAJOR, basis_vgl_mw.data(),
-                          BasisSetSize,              // AOs
+          mkl_sparse_d_mm(SPARSE_OPERATION_NON_TRANSPOSE, 1, C_csr_partial.get(), C_csr_partial.descr(),
+                          SPARSE_LAYOUT_COLUMN_MAJOR, basis_vgl_mw.data(),
                           spo_list.size() * DIM_VGL, // walkers * DIM_VGL
+                          BasisSetSize,              // AOs
                           0, phi_vgl_v.data(),
                           requested_orb_size); // MOs
-          app_log() << "DEBUG: mkl_sparse_d_mm in mw_evaluateVGLImplGEMM end" << std::endl;
         }
         else
         {
@@ -657,15 +648,13 @@ void LCAOrbitalSet::mw_evaluateValueVPsImplGEMM(const RefVectorWithLeader<SPOSet
     {
       if (use_sparse_coefs)
       {
-        app_log() << "DEBUG: mkl_sparse_d_mm in mw_evaluateValueVPsImplGEMM start" << std::endl;
         auto C_csr_partial = C_csr.view_first_n_rows<double, MKL_INT>(requested_orb_size);
-        mkl_sparse_d_mm(SPARSE_OPERATION_TRANSPOSE, 1, C_csr_partial.get(), C_csr_partial.descr(),
-                        SPARSE_LAYOUT_ROW_MAJOR, vp_basis_v_mw.data(),
-                        BasisSetSize, // AOs
+        mkl_sparse_d_mm(SPARSE_OPERATION_NON_TRANSPOSE, 1, C_csr_partial.get(), C_csr_partial.descr(),
+                        SPARSE_LAYOUT_COLUMN_MAJOR, vp_basis_v_mw.data(),
                         nVPs,         // walkers * Virtual Particles
+                        BasisSetSize, // AOs
                         0, vp_phi_v.data(),
                         requested_orb_size); // MOs
-        app_log() << "DEBUG: mkl_sparse_d_mm in mw_evaluateValueVPsImplGEMM end" << std::endl;
       }
       else
       {
@@ -755,15 +744,13 @@ void LCAOrbitalSet::mw_evaluateValueImplGEMM(const RefVectorWithLeader<SPOSet>& 
     {
       if (use_sparse_coefs)
       {
-        app_log() << "DEBUG: mkl_sparse_d_mm in mw_evaluateValueImplGEMM start" << std::endl;
         auto C_csr_partial = C_csr.view_first_n_rows<double, MKL_INT>(requested_orb_size);
-        mkl_sparse_d_mm(SPARSE_OPERATION_TRANSPOSE, 1, C_csr_partial.get(), C_csr_partial.descr(),
-                        SPARSE_LAYOUT_ROW_MAJOR, basis_v_mw.data(),
-                        BasisSetSize,    // AOs
+        mkl_sparse_d_mm(SPARSE_OPERATION_NON_TRANSPOSE, 1, C_csr_partial.get(), C_csr_partial.descr(),
+                        SPARSE_LAYOUT_COLUMN_MAJOR, basis_v_mw.data(),
                         spo_list.size(), // walkers
+                        BasisSetSize,    // AOs
                         0, phi_v.data(),
                         requested_orb_size); // MOs
-        app_log() << "DEBUG: mkl_sparse_d_mm in mw_evaluateValueImplGEMM end" << std::endl;
       }
       else
       {
@@ -853,10 +840,19 @@ void LCAOrbitalSet::evaluateDetRatios(const VirtualParticleSet& VP,
   else
   {
     ScopedTimer local(mo_timer_);
-    // when only a subset of orbitals is used, extract limited rows of C.
-    Matrix<ValueType> C_occupied(C->data(), psiinv.size(), BasisSetSize);
-    MatrixOperators::product_Atx(C_occupied, psiinv, invTemp);
-    /// TODO: sparse gemv here
+    if (use_sparse_coefs)
+    {
+      // when only a subset of orbitals is used, extract limited rows of C.
+      auto C_csr_partial = C_csr.view_first_n_rows<double, MKL_INT>(psiinv.size());
+      mkl_sparse_d_mv(SPARSE_OPERATION_TRANSPOSE, 1.0, C_csr_partial.get(), C_csr_partial.descr(), psiinv.data(), 0.0,
+                      invTemp.data());
+    }
+    else
+    {
+      // when only a subset of orbitals is used, extract limited rows of C.
+      Matrix<ValueType> C_occupied(C->data(), psiinv.size(), BasisSetSize);
+      MatrixOperators::product_Atx(C_occupied, psiinv, invTemp);
+    }
   }
 
   for (size_t j = 0; j < VP.getTotalNum(); j++)
@@ -966,7 +962,6 @@ void LCAOrbitalSet::evaluateVGH(const ParticleSet& P, int iat, ValueVector& psi,
     assert(psi.size() <= OrbitalSetSize);
     if (use_sparse_coefs)
     {
-      app_log() << "DEBUG: abt evaluateVGH start" << std::endl;
       auto C_csr_partial = C_csr.view_first_n_rows<double, MKL_INT>(psi.size());
       Product_ABt_sparse(Temph, C_csr_partial, Temphv);
     }
@@ -997,7 +992,6 @@ void LCAOrbitalSet::evaluateVGHGH(const ParticleSet& P,
     assert(psi.size() <= OrbitalSetSize);
     if (use_sparse_coefs)
     {
-      app_log() << "DEBUG: abt evaluateVGHGH start" << std::endl;
       auto C_csr_partial = C_csr.view_first_n_rows<double, MKL_INT>(psi.size());
       Product_ABt_sparse(Tempgh, C_csr_partial, Tempghv);
     }
@@ -1157,27 +1151,15 @@ void LCAOrbitalSet::evaluate_notranspose(const ParticleSet& P,
       myBasisSet->evaluateVGL(P, iat, Temp);
       if (use_sparse_coefs)
       {
+        /// TODO: move this outside of loop (need more logic to cleanly handle cases where we don't have C_csr)
         auto C_csr_partial = C_csr.view_first_n_rows<double, MKL_INT>(logdet.cols());
-        app_log() << "DEBUG: abt evaluate_notranspose1 start" << std::endl;
         Product_ABt_sparse(Temp, C_csr_partial, Tempv);
-        app_log() << "DEBUG: TEMP" << std::endl;
-        app_log() << Temp << std::endl;
-        app_log() << "DEBUG: TEMPV" << std::endl;
-        app_log() << Tempv << std::endl;
       }
       else
       {
         Product_ABt(Temp, C_partial_view, Tempv);
-        app_log() << "DEBUG: TEMP" << std::endl;
-        app_log() << Temp << std::endl;
-        app_log() << "DEBUG: TEMPV" << std::endl;
-        app_log() << Tempv << std::endl;
       }
-      app_log() << "DEBUG: evaluate_vgl_impl evaluate_notranspose1 start" << std::endl;
-      std::cout << "DEBUG: evaluate_vgl_impl evaluate_notranspose1 start" << std::endl;
       evaluate_vgl_impl(Tempv, i, logdet, dlogdet, d2logdet);
-      app_log() << "DEBUG: evaluate_vgl_impl evaluate_notranspose1 end" << std::endl;
-      std::cout << "DEBUG: evaluate_vgl_impl evaluate_notranspose1 end" << std::endl;
     }
   }
 }
@@ -1207,7 +1189,6 @@ void LCAOrbitalSet::evaluate_notranspose(const ParticleSet& P,
       if (use_sparse_coefs)
       {
         auto C_csr_partial = C_csr.view_first_n_rows<double, MKL_INT>(logdet.cols());
-        app_log() << "DEBUG: abt evaluate_notranspose2 start" << std::endl;
         Product_ABt_sparse(Temph, C_csr_partial, Temphv);
       }
       else
@@ -1243,7 +1224,6 @@ void LCAOrbitalSet::evaluate_notranspose(const ParticleSet& P,
       if (use_sparse_coefs)
       {
         auto C_csr_partial = C_csr.view_first_n_rows<double, MKL_INT>(logdet.cols());
-        app_log() << "DEBUG: abt evaluate_notranspose3 start" << std::endl;
         Product_ABt_sparse(Tempgh, C_csr_partial, Tempghv);
       }
       else
@@ -1274,10 +1254,7 @@ void LCAOrbitalSet::evaluateGradSource(const ParticleSet& P,
     {
       myBasisSet->evaluateGradSourceV(P, iat, source, iat_src, Temp);
       if (use_sparse_coefs)
-      {
-        app_log() << "DEBUG: abt evaluateGradSource1 start" << std::endl;
         Product_ABt_sparse(Temp, C_csr, Tempv);
-      }
       else
         Product_ABt(Temp, *C, Tempv);
       evaluate_ionderiv_v_impl(Tempv, i, gradphi);
@@ -1308,10 +1285,7 @@ void LCAOrbitalSet::evaluateGradSource(const ParticleSet& P,
     {
       myBasisSet->evaluateGradSourceVGL(P, iat, source, iat_src, Tempgh);
       if (use_sparse_coefs)
-      {
-        app_log() << "DEBUG: abt evaluateGradSource2 start" << std::endl;
         Product_ABt_sparse(Tempgh, C_csr, Tempghv);
-      }
       else
         Product_ABt(Tempgh, *C, Tempghv);
       evaluate_ionderiv_vgl_impl(Tempghv, i, grad_phi, grad_grad_phi, grad_lapl_phi);
@@ -1335,10 +1309,7 @@ void LCAOrbitalSet::evaluateGradSourceRow(const ParticleSet& P,
   {
     myBasisSet->evaluateGradSourceV(P, iel, source, iat_src, Temp);
     if (use_sparse_coefs)
-    {
-      app_log() << "DEBUG: abt evaluateGradSourceRow start" << std::endl;
       Product_ABt_sparse(Temp, C_csr, Tempv);
-    }
     else
       Product_ABt(Temp, *C, Tempv);
     evaluate_ionderiv_v_row_impl(Tempv, gradphi);
