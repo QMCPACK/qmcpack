@@ -19,9 +19,151 @@
 
 #include "Numerics/MatrixOperators.h"
 #include "Numerics/DeterminantOperators.h"
+#include <mkl_spblas.h>
 
 namespace qmcplusplus
 {
+// ---- CSRMatrix struct ----
+template<typename T = double, typename I = MKL_INT>
+struct CSRMatrix
+{
+  std::vector<T> values;   // nonzero values
+  std::vector<I> rowIndex; // row start idx
+  std::vector<I> columns;  // column indices
+  int rows, cols, nnz;
+
+  CSRMatrix(int r, int c) : rows(r), cols(c), nnz(0) {}
+
+  void reserve(int nnz_capacity)
+  {
+    values.reserve(nnz_capacity);
+    columns.reserve(nnz_capacity);
+    rowIndex.resize(rows + 1, 0);
+  }
+};
+
+// ---- Conversion functions ----
+template<typename T = double, typename I = MKL_INT>
+CSRMatrix<T, I> dense_to_sparse(T* A, size_t nrows, size_t ncols, double tol = 1e-12)
+{
+  CSRMatrix<T, I> Acsr(nrows, ncols);
+  Acsr.rowIndex.resize(nrows + 1, 0);
+  Acsr.rowIndex[0] = 0;
+
+  for (size_t i = 0; i < nrows; ++i)
+  {
+    for (size_t j = 0; j < ncols; ++j)
+    {
+      T Aij = A[i * ncols + j]; // row-major
+      // T Aij = A[i + j * nrows]; // col-major
+      if (std::abs(Aij) > tol)
+      {
+        Acsr.values.push_back(Aij);
+        Acsr.columns.push_back(static_cast<I>(j));
+        Acsr.nnz++;
+      }
+    }
+    Acsr.rowIndex[i + 1] = static_cast<I>(Acsr.nnz);
+  }
+  app_log() << "converted dense " << nrows << " x " << ncols << " = " << (nrows * ncols) << std::endl;
+  app_log() << "to sparse with nnz =  " << Acsr.nnz << std::endl;
+
+  return Acsr;
+}
+
+
+template<typename T = double, typename I = MKL_INT>
+sparse_matrix_t make_mkl_sparse(const CSRMatrix<T, I>& A)
+{
+  sparse_matrix_t A_mkl;
+  /// TODO: could just pass by reference, but modifications to A_mkl would change CSRMatrix
+  /// (make input non-const)
+  std::vector<I> rowIndex = A.rowIndex;
+  std::vector<I> columns  = A.columns;
+  std::vector<T> values   = A.values;
+
+  mkl_sparse_d_create_csr(&A_mkl, SPARSE_INDEX_BASE_ZERO, A.rows, A.cols, rowIndex.data(), rowIndex.data() + 1,
+                          columns.data(), values.data());
+
+  return A_mkl;
+}
+
+
+template<typename T = double, typename I = MKL_INT>
+sparse_matrix_t dense_to_mkl(T* A, size_t nrows, size_t ncols, double tol = 1e-12)
+{
+  CSRMatrix<T, I> Acsr = dense_to_sparse<T, I>(A, nrows, ncols, tol);
+  return make_mkl_sparse<T, I>(Acsr);
+}
+
+class MklSparseHandle
+{
+public:
+  using default_value_type = double;
+  using default_index_type = MKL_INT;
+
+  MklSparseHandle() : descr_({SPARSE_MATRIX_TYPE_GENERAL, SPARSE_FILL_MODE_FULL, SPARSE_DIAG_NON_UNIT}) {}
+
+  MklSparseHandle(sparse_matrix_t handle, matrix_descr descr)
+      : handle_(handle,
+                [](sparse_matrix_t h) {
+                  if (h)
+                    mkl_sparse_destroy(h);
+                }),
+        descr_(descr)
+  {}
+
+  template<typename T = default_value_type, typename I = default_index_type>
+  static MklSparseHandle from_csr(const CSRMatrix<T, I>& csr,
+                                  matrix_descr descr = {SPARSE_MATRIX_TYPE_GENERAL, SPARSE_FILL_MODE_FULL,
+                                                        SPARSE_DIAG_NON_UNIT})
+  {
+    auto owned_csr = std::make_shared<CSRMatrix<T, I>>(csr);
+
+    sparse_matrix_t raw;
+    mkl_sparse_d_create_csr(&raw, SPARSE_INDEX_BASE_ZERO, csr.rows, csr.cols,
+                            const_cast<I*>(owned_csr->rowIndex.data()), const_cast<I*>(owned_csr->rowIndex.data()) + 1,
+                            const_cast<I*>(owned_csr->columns.data()), const_cast<T*>(owned_csr->values.data()));
+
+    MklSparseHandle handle(raw, descr);
+    handle.csr_owned_ = owned_csr;
+    return handle;
+  }
+
+  sparse_matrix_t get() const { return handle_.get(); }
+  const matrix_descr& descr() const { return descr_; }
+  explicit operator bool() const { return static_cast<bool>(handle_); }
+
+  template<typename T = default_value_type, typename I = default_index_type>
+  MklSparseHandle view_first_n_rows(I m) const
+  {
+    auto owned = std::static_pointer_cast<CSRMatrix<T, I>>(csr_owned_);
+    assert(owned && "MklSparseHandle does not own CSR data");
+    assert(m <= owned->rows);
+
+    sparse_matrix_t view;
+    mkl_sparse_d_create_csr(&view, SPARSE_INDEX_BASE_ZERO, m, owned->cols, const_cast<I*>(owned->rowIndex.data()),
+                            const_cast<I*>(owned->rowIndex.data()) + 1, const_cast<I*>(owned->columns.data()),
+                            const_cast<T*>(owned->values.data()));
+
+    MklSparseHandle sliced(view, descr_);
+    sliced.csr_owned_ = owned; // share ownership
+    return sliced;
+  }
+
+private:
+  std::shared_ptr<sparse_matrix> handle_;
+  matrix_descr descr_;
+  std::shared_ptr<void> csr_owned_; // type-erased ownership
+};
+
+
+template<typename T = double, typename I = MKL_INT>
+MklSparseHandle from_dense(T* A, size_t nrows, size_t ncols, double tol = 1e-12)
+{
+  return MklSparseHandle::from_csr<T, I>(dense_to_sparse<T, I>(A, nrows, ncols, tol));
+}
+
 /** class to handle linear combinations of basis orbitals used to evaluate the Dirac determinants.
    *
    * SoA verson of LCOrtbitalSet
@@ -40,6 +182,8 @@ public:
   std::unique_ptr<basis_type> myBasisSet;
   /// pointer to matrix containing the coefficients
   std::shared_ptr<OffloadValueMatrix> C;
+  MklSparseHandle C_csr;
+  bool use_sparse_coefs;
 
   /** constructor
      * @param my_name name of the SPOSet object
