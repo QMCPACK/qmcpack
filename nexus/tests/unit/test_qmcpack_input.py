@@ -1399,12 +1399,17 @@ def test_read():
     assert(not qi_read.is_afqmc_input())
 
     # remove extraneous data members for purpose of comparison
-    del qi_read._metadata.spo_u
-    del qi_read._metadata.spo_d
+    m = qi_read._metadata
+    if 'spo_u' in m:
+        del m.spo_u
+    if 'spo_d' in m:
+        del m.spo_d
     spob = qi_read.simulation.qmcsystem.wavefunctions.psi0.sposet_builders
     sposets = spob.bspline.sposets
-    del sposets.spo_u.spos
-    del sposets.spo_d.spos
+    if 'spos' in sposets.spo_u:
+        del sposets.spo_u.spos
+    if 'spos' in sposets.spo_d:
+        del sposets.spo_d.spos
 
     check_vs_serial_reference(qi_read,'VO2_M1_afm.in.xml')
 
@@ -1465,12 +1470,17 @@ def test_write():
     qi_write.pluralize()
 
     # remove extraneous data members for purpose of comparison
-    del qi_write._metadata.spo_u
-    del qi_write._metadata.spo_d
+    m = qi_write._metadata
+    if 'spo_u' in m:
+        del m.spo_u
+    if 'spo_d' in m:
+        del m.spo_d
     spob = qi_write.simulation.qmcsystem.wavefunctions.psi0.sposet_builders
     sposets = spob.bspline.sposets
-    del sposets.spo_u.spos
-    del sposets.spo_d.spos
+    if 'spos' in sposets.spo_u:
+        del sposets.spo_u.spos
+    if 'spos' in sposets.spo_d:
+        del sposets.spo_d.spos
 
     check_vs_serial_reference(qi_write,ref_file)
 

@@ -1648,21 +1648,23 @@ Automated testing of QMCPACK
 
 The QMCPACK developers run automatic tests of QMCPACK on several
 different computer systems,  many on a continuous basis. See the reports at
-https://cdash.qmcpack.org/CDash/index.php?project=QMCPACK.
+https://cdash.qmcpack.org/index.php?project=QMCPACK.
 The combinations that are currently tested can be seen on CDash and are also listed in
-https://github.com/QMCPACK/qmcpack/blob/develop/README.md. They include GCC, Clang, Intel, and PGI compilers in combinations
-with various library versions and different MPI implementations. NVIDIA GPUs are also tested.
+https://github.com/QMCPACK/qmcpack/blob/develop/README.md. They include GCC, Clang, and Intel compilers in combinations
+with various library versions and different MPI implementations. NVIDIA, AMD, and Intel GPUs are also tested.
 
 .. _buildppconvert:
 
 Building ppconvert, a pseudopotential format converter
 ------------------------------------------------------
 
+Note: Use of ppconvert is an expert feature and discouraged for casual use. A poor choice of orbitals
+for the creation of projectors in UPF can introduce severe errors and inaccuracies.
+
 QMCPACK includes a utility---ppconvert---to convert between different pseudopotential formats. Examples include effective core
 potential formats (in Gaussians), the UPF format used by QE, and the XML format used by QMCPACK itself. The utility also enables
 the atomic orbitals to be recomputed via a numerical density functional calculation if they need to be reconstructed for use in an
-electronic structure calculation. Use of ppconvert is an expert feature and discouraged for casual use: a poor choice of orbitals
-for the creation of projectors in UPF can introduce severe errors and inaccuracies.
+electronic structure calculation. 
 
 .. _fig2:
 .. figure:: /figs/QMCPACK_CDash_CTest_Results_20160129.png
