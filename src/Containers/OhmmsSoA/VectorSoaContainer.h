@@ -345,6 +345,17 @@ private:
   friend struct VectorSoaContainer;
 };
 
+template<class T, unsigned D, typename Alloc>
+std::ostream& operator<<(std::ostream& out, const VectorSoaContainer<T, D, Alloc>& rhs)
+{
+  using size_type = typename VectorSoaContainer<T, D, Alloc>::size_type;
+  for (size_type i = 0; i < rhs.size(); i++)
+  {
+    out << rhs[i] << "\n";
+  }
+  return out;
+}
+
 } // namespace qmcplusplus
 
 #endif
