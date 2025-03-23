@@ -42,6 +42,12 @@ to run examples without having to install QMCPACK yourself, and slides and recor
 Please cite J. Kim _et al._ J. Phys. Cond. Mat. **30** 195901 (2018), https://doi.org/10.1088/1361-648X/aab9c3, and if space allows,
 P. Kent _et al._ J. Chem. Phys. **152** 174105 (2020), https://doi.org/10.1063/5.0004860 . These papers are both open access.
 
+# Installing QMCPACK
+
+[Complete instructions for downloading, compiling, and installing QMCPACK are given in the manual](https://qmcpack.readthedocs.io/en/develop/installation.html).
+Guides are provided for [installing QMCPACK on common workstations and supercomputers](https://qmcpack.readthedocs.io/en/develop/installation.html). We also provide build
+scripts are for many systems in the config directory. The following sectionsparts of this README give a brief overview. 
+
 # Installation Prerequisites
 
  * C++ 17 and C99 capable compilers. 
