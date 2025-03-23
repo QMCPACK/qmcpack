@@ -45,7 +45,7 @@ P. Kent _et al._ J. Chem. Phys. **152** 174105 (2020), https://doi.org/10.1063/5
 # Installing QMCPACK
 
 [Complete instructions for downloading, compiling, and installing QMCPACK are given in the manual](https://qmcpack.readthedocs.io/en/develop/installation.html).
-Guides are provided for [installing QMCPACK on common workstations and supercomputers](https://qmcpack.readthedocs.io/en/develop/installation.html). We also provide build
+Guides are provided for [installing QMCPACK on common workstations and supercomputers](https://qmcpack.readthedocs.io/en/develop/installation.html#installation-instructions-for-common-workstations-and-supercomputers). We also provide build
 scripts are for many systems in the config directory. The following sections of this README give a brief overview. 
 
 # Installation Prerequisites
