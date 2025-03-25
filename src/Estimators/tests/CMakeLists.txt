@@ -70,6 +70,7 @@ set(SRCS
     test_EnergyDensityInput.cpp
     test_EnergyDensityEstimator.cpp
     test_StructureFactorInput.cpp
+    test_StructureFactorEstimator.cpp
     )
 
 add_executable(${UTEST_EXE} ${SRCS})
