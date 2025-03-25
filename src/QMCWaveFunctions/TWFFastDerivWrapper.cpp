@@ -261,18 +261,22 @@ void TWFFastDerivWrapper::computeMDDerivative(const std::vector<ValueMatrix>& Mi
   // B      [elec, virt]
   // Mvirt  [elec, virt]
 
+  // O is all occ orbs; o is occ orbs that appear as holes in exc. list; e is all elecs; v is virt orbs that appear as particles in exc. list
+
   // dvals[idet] = dval_ref + tr(
   //     - inv({Minv[o,e].M[e,v]}).{Minv[o,e].dM[e,v] - Minv[o,e].dM[e,O].Minv[O,e].M[e,v]}.inv({Minv[o,e].M[e,v]}).{S} ...
   //     + inv({Minv[o,e].M[e,v]}).{Minv[o,e].dB[e,v] - X[o,e].dM[e,v] - (Minv[o,e].dB[e.O] - X[o,e].dM[e,O]).Minv[O,e].M[e,v] - Minv[o,e].dM[e,O].S[O,v]}
   //   )
-  //
+  
   // S = (Minv[O,e].B[e,v] - X[O,e].M[e,v]) ("M" from paper)
-  //
+  
+  // X = Minv[O,e].B[e,O].Minv[O,e]
+
   // a = Minv[O,e].M[e,v] (slice this for alpha from paper)
-  //
+  
   // mat1b  = Minv[o,e].dM[e,O].Minv[O,e].M[e,v]
   // mat1   = Minv[o,e].dM[e,v] - mat1b[o,v]
-  //
+  
   // mat2ba = Minv[o,e].dB[e.O] - X[o,e].dM[e,O]
   // mat2b  = mat2ba[o,O].a[O,v]
   // mat2c  = Minv[o,e].dM[e,O].S[O,v]
@@ -280,9 +284,11 @@ void TWFFastDerivWrapper::computeMDDerivative(const std::vector<ValueMatrix>& Mi
 
   //  dvals[idet] = dval_ref + tr(-inv({a}).{mat1}.inv({a}).{S} + inv({a}).{mat2})
 
+  // dval_ref = tr(Minv[O,e].dB[e,O] - X[O,e].dM[e,O])
+
 
   /// FIXME: only keep relevant row/col subsets
-  
+
   // store this and update as single-elec moves are made
   // Minv[occ,elec].M[elec,virt]
   ValueMatrix Minv_Mvirt_ov(nocc, nvirt);
