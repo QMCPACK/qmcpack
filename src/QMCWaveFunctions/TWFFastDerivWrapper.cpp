@@ -242,7 +242,6 @@ void TWFFastDerivWrapper::computeMDDerivative(const std::vector<ValueMatrix>& Mi
                                               const std::vector<ValueMatrix>& B,
                                               const std::vector<ValueMatrix>& Mvirt,
                                               IndexType id;
-                                              const IndexPairVector& excpairs,
                                               const std::vector<int>& excdata,
                                               const std::vector<ValueType>& excsign,
                                               std::vector<ValueType>& dvals) const
@@ -266,41 +265,144 @@ void TWFFastDerivWrapper::computeMDDerivative(const std::vector<ValueMatrix>& Mi
   // Minv[occ,elec].M[elec,virt]
   ValueMatrix Minv_Mvirt_ov(nocc, nvirt);
 
+  // Minv,Mvirt are row-major, but gemm assumes col-major layout, so reorder args
+  // Minv_Mvirt_ov.T = (Mvirt.T) . (Minv.T)
+  BLAS::gemm('n', 'n', nvirt, nocc, nelec, 1.0, Mvirt[id].data(), Mvirt[id].cols(), Minv[id].data(), Minv[id].cols(),
+             0.0, Minv_Mvirt_ov.data(), Minv_Mvirt_ov.cols());
 
   // combine these two, just offset correctly later
   // Minv[occ,elec].dM[elec,occ]
-  ValueMatrix Minv_dM_oo(nocc, nocc);
+  // ValueMatrix Minv_dM_oo(nocc, nocc);
   // Minv[occ,elec].dM[elec,virt]
-  ValueMatrix Minv_dM_ov(nocc, nvirt);
+  // ValueMatrix Minv_dM_ov(nocc, nvirt);
+
+  ValueMatrix Minv_dM_on(nocc, nocc + nvirt);
+  BLAS::gemm('n', 'n', nocc + nvirt, nocc, nelec, 1.0, dM[id].data(), dM[id].cols(), Minv[id].data(), Minv[id].cols(),
+             0.0, Minv_dM_on.data(), Minv_dM_on.cols());
 
 
   // Minv[occ,elec].B[elec,virt]
   ValueMatrix Minv_B_ov(nocc, nvirt);
+  BLAS::gemm('n', 'n', nvirt, nocc, nelec, 1.0, B[id].data(), B[id].cols(), Minv[id].data(), Minv[id].cols(), 0.0,
+             Minv_B_ov.data(), Minv_B_ov.cols());
 
   // X[occ,elec].M[elec,virt]
-  ValueMatrix X_M_ov(nocc, nvirt);
+  ValueMatrix X_Mvirt_ov(nocc, nvirt);
+  BLAS::gemm('n', 'n', nvirt, nocc, nelec, 1.0, Mvirt[id].data(), Mvirt[id].cols(), X[id].data(), X[id].cols(), 0.0,
+             X_Mvirt_ov.data(), X_Mvirt_ov.cols());
 
 
   // combine these two
   // X[occ,elec].dM[elec,occ]
-  ValueMatrix X_dM_oo(nocc, nocc);
+  // ValueMatrix X_dM_oo(nocc, nocc);
   // X[occ,elec].dM[elec,virt]
-  ValueMatrix X_dM_ov(nocc, nvirt);
+  // ValueMatrix X_dM_ov(nocc, nvirt);
 
+  ValueMatrix X_dM_on(nocc, nocc + nvirt);
+  BLAS::gemm('n', 'n', nocc + nvirt, nocc, nelec, 1.0, dM[id].data(), dM[id].cols(), X[id].data(), X[id].cols(), 0.0,
+             X_dM_on.data(), X_dM_on.cols());
 
   // combine these two
   // Minv[occ,elec].dB[elec,occ]
-  ValueMatrix Minv_dB_oo(nocc, nocc);
+  // ValueMatrix Minv_dB_oo(nocc, nocc);
   // Minv[occ,elec].dB[elec,virt]
-  ValueMatrix Minv_dB_ov(nocc, nvirt);
+  // ValueMatrix Minv_dB_ov(nocc, nvirt);
+
+  ValueMatrix Minv_dB_on(nocc, nocc + nvirt);
+  BLAS::gemm('n', 'n', nocc + nvirt, nocc, nelec, 1.0, dB[id].data(), dB[id].cols(), Minv[id].data(), Minv[id].cols(),
+             0.0, Minv_dB_on.data(), Minv_dB_on.cols());
 
 
-  for (int idet = 0; idet < ndet; idet++)
+  // S = (Minv_B[v] - X_Mvirt[v]) ("M" from paper)
+  ValueMatrix S(nocc, nvirt);
+  for (size_t i = 0; i < S.rows(); i++)
+    for (size_t j = 0; j < S.cols(); j++)
+      S(i, j) = Minv_B_ov(i, j) - X_Mvirt_ov(i, j);
+
+  // Minv_dM[o,o].Minv_Mv[o,v]
+  ValueMatrix mat1b(nocc, nvirt);
+  // mat1b.T = Minv_Mv.T @ Minv_dM.T
+  BLAS::gemm('n', 'n', nvirt, nocc, nocc, 1.0, Minv_Mvirt_ov.data(), Minv_Mvirt_ov.cols(), Minv_dM_on.data(),
+             Minv_dM_on.cols(), 0.0, mat1b.data(), mat1b.cols());
+
+  // Minv_dM[o,v] - Minv_dM[o,o].Minv_Mv[o,v]
+  ValueMatrix mat1(nocc, nvirt);
+  for (size_t i = 0; i < mat1.rows(); i++)
+    for (size_t j = 0; j < mat1.cols(); j++)
+      mat1(i, j) = Minv_dM_on(i, j) - mat1b(i, j);
+
+
+  // Minv_dB[o,o]-X_dM[o,o]
+  ValueMatrix mat2ba(nocc, nocc);
+  for (size_t i = 0; i < mat2ba.rows(); i++)
+    for (size_t j = 0; j < mat2ba.cols(); j++)
+      mat2ba(i, j) = Minv_dB_on(i, j) - X_dM_on(i, j);
+
+  // mat2ba[o,o].Minv_Mv[o,v]
+  ValueMatrix mat2b(nocc, nvirt);
+  BLAS::gemm('n', 'n', nvirt, nocc, nocc, 1.0, Minv_Mvirt_ov.data(), Minv_Mvirt_ov.cols(), mat2ba.data(), mat2ba.cols(),
+             0.0, mat2b.data(), mat2b.cols());
+
+
+  // Minv_dM[o,o].S[o,v]
+  ValueMatrix mat2c(nocc, nvirt);
+  BLAS::gemm('n', 'n', nvirt, nocc, nocc, 1.0, S.data(), S.cols(), Minv_dM_on.data(), Minv_dM_on.cols(), 0.0,
+             mat2c.data(), mat2c.cols());
+
+
+  // Minv_dB - X_dM - mat2b - mat2c
+  ValueMatrix mat2(nocc, nvirt);
+  for (size_t i = 0; i < mat2.rows(); i++)
+    for (size_t j = 0; j < mat2.cols(); j++)
+      mat2(i, j) = Minv_dB_on(i, j) - X_dM_on(i, j) - mat2b(i, j) - mat2c(i, j);
+
+
+  // tr(Minv_dB - X_dM)
+  ValueType dval_refdet = 0.0;
+  for (size_t i = 0; i < mat2ba.rows(); i++)
   {
-    // TODO: Eq. 43
-    // compute intermediates for all pairs
-    // use exc index data to map into full arrays and create [k,k] tables
+    dval_refdet += mat2ba(i, i);
   }
+
+
+  // TODO: Eq. 43
+  // dvals[idet] = dval_refdet + tr(-inv(Minv_M[P,Q]).mat1[P,Q].inv(Minv_M[P,Q]).S[P,Q] + inv(Minv_M[P,Q]).mat2[P,Q])
+  // build full mats for all required pairs, then select submatrices for each excited det
+  // use exc index data to map into full arrays and create [k,k] tables
+
+
+  size_t det_offset  = 1;
+  size_t data_offset = 1;
+
+  auto update_offsets = [&](size_t ext_level) {
+    det_offset += (*ndets_per_excitation_level_)[ext_level];
+    data_offset += (*ndets_per_excitation_level_)[ext_level] * (3 * ext_level + 1);
+  };
+
+  for (size_t iexc_level = 1; iexc_level <= max_ext_level; iexc_level++)
+  {
+    // calc vals
+    
+    // see MultiDiracDeterminant::mw_updateRatios, MultiDiracDeterminant::mw_buildTableMatrix_calculateRatios_impl
+    // for examples of excited det idx layout
+
+    // get hole/particle idx
+    // take corresponding rows cols of Minv_M, S, mat1, mat2
+    // a = inv(Minv_M[P,Q])
+    // dvals[idet] = dval_refdet + tr(-a.mat1[P,Q].a.S[P,Q] + a.S[P,Q])
+    // dvals[idet] = dval_refdet + tr(a.(I - mat1[P,Q].a).S[P,Q])
+    // dvals[idet] = dval_refdet + tr((I - a.mat1[P,Q]).a.S[P,Q])
+
+    // a.S[P,Q] also needed for Eq. 29
+
+
+    // update offsets
+    update_offsets(iexc_level);
+  }
+
+
+  mw_updateRatios_det0(det0_list, ratios_deviceptr_list);
+
 
   return;
 }
