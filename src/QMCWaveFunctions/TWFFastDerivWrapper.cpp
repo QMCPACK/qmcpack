@@ -234,6 +234,77 @@ TWFFastDerivWrapper::ValueType TWFFastDerivWrapper::computeGSDerivative(const st
   return dval;
 }
 
+// only doing single species here
+void TWFFastDerivWrapper::computeMDDerivative(const std::vector<ValueMatrix>& Minv,
+                                              const std::vector<ValueMatrix>& X,
+                                              const std::vector<ValueMatrix>& dM,
+                                              const std::vector<ValueMatrix>& dB,
+                                              const std::vector<ValueMatrix>& B,
+                                              const std::vector<ValueMatrix>& Mvirt,
+                                              IndexType id;
+                                              const IndexPairVector& excpairs,
+                                              const std::vector<int>& excdata,
+                                              const std::vector<ValueType>& excsign,
+                                              std::vector<ValueType>& dvals) const
+{
+  IndexType ndet = excsign.size();
+
+  for (int idet = 0; idet < ndet; idet++)
+  {
+    dvals[idet] = 0.0;
+  }
+
+  // input mats:
+  // Minv   [occ, elec]
+  // X      [occ, elec]
+  // dM     [elec, occ+virt]
+  // dB     [elec, occ+virt]
+  // B      [elec, virt]
+  // Mvirt  [elec, virt]
+
+  // store this and update as single-elec moves are made
+  // Minv[occ,elec].M[elec,virt]
+  ValueMatrix Minv_Mvirt_ov(nocc, nvirt);
+
+
+  // combine these two, just offset correctly later
+  // Minv[occ,elec].dM[elec,occ]
+  ValueMatrix Minv_dM_oo(nocc, nocc);
+  // Minv[occ,elec].dM[elec,virt]
+  ValueMatrix Minv_dM_ov(nocc, nvirt);
+
+
+  // Minv[occ,elec].B[elec,virt]
+  ValueMatrix Minv_B_ov(nocc, nvirt);
+
+  // X[occ,elec].M[elec,virt]
+  ValueMatrix X_M_ov(nocc, nvirt);
+
+
+  // combine these two
+  // X[occ,elec].dM[elec,occ]
+  ValueMatrix X_dM_oo(nocc, nocc);
+  // X[occ,elec].dM[elec,virt]
+  ValueMatrix X_dM_ov(nocc, nvirt);
+
+
+  // combine these two
+  // Minv[occ,elec].dB[elec,occ]
+  ValueMatrix Minv_dB_oo(nocc, nocc);
+  // Minv[occ,elec].dB[elec,virt]
+  ValueMatrix Minv_dB_ov(nocc, nvirt);
+
+
+  for (int idet = 0; idet < ndet; idet++)
+  {
+    // TODO: Eq. 43
+    // compute intermediates for all pairs
+    // use exc index data to map into full arrays and create [k,k] tables
+  }
+
+  return;
+}
+
 void TWFFastDerivWrapper::invertMatrices(const std::vector<ValueMatrix>& M, std::vector<ValueMatrix>& Minv)
 {
   IndexType nspecies = M.size();
