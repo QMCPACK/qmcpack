@@ -10,6 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "QMCWaveFunctions/TWFFastDerivWrapper.h"
+#include "QMCWaveFunctions/Fermion/MultiSlaterDetTableMethod.h"
 #include "Numerics/DeterminantOperators.h"
 #include "type_traits/ConvertToReal.h"
 #include <iostream>
@@ -35,12 +36,11 @@ void TWFFastDerivWrapper::addGroup(const ParticleSet& P, const IndexType gid, SP
     spos_.push_back(spo);
   }
 }
-void TWFFastDerivWrapper::addMultiSlaterDet(const ParticleSet& P, MultiSlaterDetTableMethod* msd)
+
+void TWFFastDerivWrapper::addMultiSlaterDet(const ParticleSet& P, const WaveFunctionComponent* msd)
 {
   // add msd to slaterdet list
   slaterdets_.push_back(msd);
-  std::vector<IndexType> groupids(msd->Dets.size(), 0);
-
   /// NOTE: we could call `addGroup` for the msd->Dets here. The singledet version does that by
   /// registering the diracdets when registerTWFFastDerivWrapper is called, so this is consistent with that behavior
 }
@@ -250,8 +250,8 @@ void TWFFastDerivWrapper::computeMDDerivative(const std::vector<ValueMatrix>& Mi
                                               const std::vector<ValueMatrix>& B,
                                               const std::vector<ValueMatrix>& M,
                                               const std::vector<IndexType>& mdd_spo_ids,
-                                              const std::vector<MultiDiracDeterminant*>& mdds,
-                                              std::vector<ValueType>& dvals) const
+                                              const std::vector<const WaveFunctionComponent*>& mdds,
+                                              std::vector<ValueVector>& dvals) const
 {
   // mdd_id is multidiracdet id
   // sid is sposet id (index into first dim of M, X, B, etc.)
@@ -259,8 +259,7 @@ void TWFFastDerivWrapper::computeMDDerivative(const std::vector<ValueMatrix>& Mi
   {
     IndexType sid = mdd_spo_ids[mdd_id];
 
-    // MultiDiracDeterminant* multidiracdet_i = mdds[mdd_id];
-    const MultiDiracDeterminant& multidiracdet_i = *mdds[mdd_id];
+    const auto& multidiracdet_i = static_cast<const MultiDiracDeterminant&>(*mdds[mdd_id]);
 
     // number of DiracDets in this MultiDiracDet
     // IndexType ndet = multidiracdet_i->getNumDets();
@@ -271,6 +270,22 @@ void TWFFastDerivWrapper::computeMDDerivative(const std::vector<ValueMatrix>& Mi
     {
       dvals[mdd_id][idet] = 0.0;
     }
+
+
+    /// FIXME: set these correctly; decide how to index into nocc if not contiguous within nOcc
+    size_t nelec = multidiracdet_i.getNumPtcls(); // total occ orbs in refdet (should be same as n_elec)
+
+    /// should be same as spos.getOrbitalSetSize
+    size_t nOcc = nelec; // total occ orbs in refdet (should be same as n_elec)
+
+    /// TODO: can change this to only handle holes (i.e. orbs that we excite from in excited dets)
+    ///       would need to be careful about ordering
+    size_t nocc = nelec; // number of orbs that appear as holes in exc. list
+
+    size_t norb_tot = multidiracdet_i.getNumOrbitals();
+
+    size_t nvirt       = norb_tot - nOcc; // should be number of virtuals that appear as particles in exc. list
+    size_t virt_offset = nOcc;            // first col of virt orbs in M
 
     // input mats:
     // Minv   [occ, elec]
@@ -332,12 +347,6 @@ void TWFFastDerivWrapper::computeMDDerivative(const std::vector<ValueMatrix>& Mi
     // dval_ref = tr(Minv[O,e].dB[e,O] - X[O,e].dM[e,O])
     //          = tr(c[O,O] - d[O,O])
 
-
-    /// FIXME: set these correctly; decide how to index into nocc if not contiguous within nOcc
-    size_t nOcc;               // total occ orbs in refdet (should be same as n_elec)
-    size_t nocc;               // number of orbs that appear as holes in exc. list
-    size_t nvirt;              // should be number of virtuals that appear as particles in exc. list
-    size_t virt_offset = nOcc; // first col of virt orbs in M
 
     /// NOTE: gemms below are reversed from what is written in comments
     // a_Ov = Minv.Mvirt
@@ -454,14 +463,15 @@ void TWFFastDerivWrapper::computeMDDerivative(const std::vector<ValueMatrix>& Mi
 
     size_t det_offset  = 1;
     size_t data_offset = 1;
+    int max_exc_level  = multidiracdet_i.getMaxExcLevel();
 
-    const std::vector<int>& ndets_per_exc_lvl = *multidiracdet_i->ndets_per_excitation_level_;
-    const OffloadVector<int>& excdata         = *multidiracdet_i->detData;
-    const OffloadVector<RealType>& det_signs  = *multidiracdet_i->DetSigns;
+    // const std::vector<int>& ndets_per_exc_lvl = *multidiracdet_i.ndets_per_excitation_level_;
+    const OffloadVector<int>& excdata        = *multidiracdet_i.getDetData();
+    const OffloadVector<RealType>& det_signs = *multidiracdet_i.getDetSigns();
 
     auto update_offsets = [&](size_t ext_level) {
-      det_offset += ndets_per_exc_lvl[ext_level];
-      data_offset += ndets_per_exc_lvl[ext_level] * (3 * ext_level + 1);
+      det_offset += multidiracdet_i.getNdetPerExcLevel(ext_level);
+      data_offset += multidiracdet_i.getNdetPerExcLevel(ext_level) * (3 * ext_level + 1);
     };
 
     // dets ordered as ref, all singles, all doubles, all triples, etc.
@@ -473,9 +483,9 @@ void TWFFastDerivWrapper::computeMDDerivative(const std::vector<ValueMatrix>& Mi
     //      ocp : MO idx of holes
     //      uno : MO idx of particles
 
-    for (size_t k = 1; k <= max_ext_level; k++)
+    for (size_t k = 1; k <= max_exc_level; k++)
     {
-      size_t ndet_exc = ndets_per_exc_lvl[k];
+      size_t ndet_exc = multidiracdet_i.getNdetPerExcLevel(k);
       // calc vals
 
       // see MultiDiracDeterminant::mw_updateRatios, MultiDiracDeterminant::mw_buildTableMatrix_calculateRatios_impl
@@ -490,14 +500,23 @@ void TWFFastDerivWrapper::computeMDDerivative(const std::vector<ValueMatrix>& Mi
 
       // a'.{S} also needed for Eq. 29
 
+      /// TODO: do we need to zero these out at each iter?
+      ///       should be assigning to all elements for each exc_det, so should be fine
+      std::vector<IndexType> hlist(k, 0);
+      std::vector<IndexType> plist(k, 0);
+
+      // also ainv (invert in place)
+      ValueMatrix a(k, k);
+      ValueMatrix m1(k, k);
+      // also (m2 - m1.ainv.s) (update in place)
+      ValueMatrix m2(k, k);
+      ValueMatrix s(k, k);
+
+      ValueMatrix ainv_s(k, k);
+
+
       for (size_t idet = 0; idet < ndet_exc; idet++)
       {
-        std::vector<IndexType> hlist(k, 0);
-        std::vector<IndexType> plist(k, 0);
-        ValueMatrix a(k, k);
-        ValueMatrix m1(k, k);
-        ValueMatrix m2(k, k);
-        ValueMatrix s(k, k);
         size_t excdata_offset = data_offset + idet * (3 * k + 1);
         for (size_t i = 0; i < k; i++)
         {
@@ -515,10 +534,28 @@ void TWFFastDerivWrapper::computeMDDerivative(const std::vector<ValueMatrix>& Mi
             s(i, j)  = S_Ov(hlist[i], plist[j]);
           }
 
-        ValueType dval;
-        /// TODO: compute dval = tr(-ainv.m1.ainv.s + ainv.m2)
+        // invert a in place
+        invert_matrix(a, false);
 
-        dvals[mdd_id][det_offset + idet] = dval_refdet + dval;
+        // ainv_s = ainv.s
+        BLAS::gemm('n', 'n', k, k, k, 1.0, s.data(), s.cols(), a.data(), a.cols(), 0.0, ainv_s.data(), ainv_s.cols());
+
+        // m2 = -m1.ainv.s + m2
+        BLAS::gemm('n', 'n', k, k, k, -1.0, ainv_s.data(), ainv_s.cols(), m1.data(), m1.cols(), 1.0, m2.data(),
+                   m2.cols());
+
+        // compute dval = dval_refdet + tr(-ainv.m1.ainv.s + ainv.m2)
+        //              = dval_refdet + tr(ainv.(m2 - m1.ainv.s))
+        ValueType dval = dval_refdet;
+
+
+        for (size_t i = 0; i < k; i++)
+          for (size_t j = 0; j < k; j++)
+          {
+            dval += m2(i, j) * a(j, i);
+          }
+
+        dvals[mdd_id][det_offset + idet] = dval;
       }
 
 

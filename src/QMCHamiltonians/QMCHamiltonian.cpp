@@ -20,6 +20,7 @@
 #include "QMCHamiltonian.h"
 #include "Particle/DistanceTable.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
+#include "QMCWaveFunctions/Fermion/MultiSlaterDetTableMethod.h"
 #include "Utilities/TimerManager.h"
 #include "BareKineticEnergy.h"
 #include "Containers/MinimalContainers/RecordArray.hpp"
@@ -1188,7 +1189,7 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
 
       /// TODO: put more thought into where this should go and what the lifetime needs to be
       ///       could put in outermost scope and just resize once for multidets, then clear data as needed between iterations
-      std::vector<ValueVector> fvals;
+      std::vector<Vector<ValueType>> fvals;
 
       if (psi_wrapper_in.hasMultiSlaterDet())
       {
@@ -1196,26 +1197,31 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
         {
           APP_ABORT("ERROR: QMCHamiltonian::evaluateIonDerivsFast does not support multiple MultiSlaterDetTableMethod");
         }
-        MultiSlaterDetTableMethod* msd = psi_wrapper_in.getMultiSlaterDet(0);
+
+        const auto& msd = static_cast<const MultiSlaterDetTableMethod&>(*psi_wrapper_in.getMultiSlaterDet(0));
 
         /// FIXME: just do this earlier?
-        auto n_mdd = msd->Dets.size();
+        auto n_mdd = msd.getDetSize();
         fvals.resize(n_mdd);
 
+        /// FIXME: construct some of this stuff earlier
         // same order as Dets in msd; index of associated SPOset in psi_wrapper_in.sposets_
-        std::vector<IndexType> mdd_spo_ids();
+        std::vector<int> mdd_spo_ids;
+        std::vector<const WaveFunctionComponent*> mdd_list;
 
-        for (size_t i_mdd = 0; i_mdd < msd->Dets.size(); i_mdd++)
+        for (size_t i_mdd = 0; i_mdd < n_mdd; i_mdd++)
         {
+          const MultiDiracDeterminant* multidiracdet_i = msd.getDet(i_mdd);
+          mdd_list.push_back(static_cast<const WaveFunctionComponent*>(multidiracdet_i));
           // particle group id for this multidiracdet
-          const int gid = P.getGroupID(msd->Dets[i_mdd]->getFirstIndex());
+          const int gid = P.getGroupID(multidiracdet_i->getFirstIndex());
           // SPOSet location in psi_wrapper_in.sposets_ for this particle group
           const int sid = psi_wrapper_in.getTWFGroupIndex(gid);
           mdd_spo_ids.push_back(sid);
-          fvals[i_mdd].resize(msd->Dets[i_mdd]->getNumDets());
+          fvals[i_mdd].resize(multidiracdet_i->getNumDets());
         }
 
-        psi_wrapper_in.computeMDDerivative(Minv_, X_, dM_[idim], dB_[idim], B_, M_, mdd_spo_ids, msd->Dets, fvals);
+        psi_wrapper_in.computeMDDerivative(Minv_, X_, dM_[idim], dB_[idim], B_, M_, mdd_spo_ids, mdd_list, fvals);
 
         /// TODO: contract fvals with CI coefs from msd to get fval
       }

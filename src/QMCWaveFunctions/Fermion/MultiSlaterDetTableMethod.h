@@ -107,6 +107,9 @@ public:
   //builds orbital rotation parameters using MultiSlater member variables
   void buildOptVariables();
 
+  inline const MultiDiracDeterminant* getDet(int i) const { return Dets[i].get(); };
+  inline int getDetSize() const { return Dets.size(); };
+
   LogValue evaluate_vgl_impl(const ParticleSet& P,
                              ParticleSet::ParticleGradient& g_tmp,
                              ParticleSet::ParticleLaplacian& l_tmp);

@@ -15,7 +15,6 @@
 
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/SPOSet.h"
-#include "QMCWaveFunctions/Fermion/MultiSlaterDetTableMethod.h"
 #include "Configuration.h"
 #include "Particle/ParticleSet.h"
 namespace qmcplusplus
@@ -44,6 +43,9 @@ public:
   using IndexPairType   = TinyVector<IndexType, 2>;
   using IndexPairVector = Vector<IndexPairType>;
 
+  template<typename DT>
+  using OffloadVector = Vector<DT, OffloadPinnedAllocator<DT>>;
+
   TWFFastDerivWrapper() = default;
   /** @brief Add a particle group.
    *
@@ -70,7 +72,7 @@ public:
    * @param P. ParticleSet 
    * @param msd. Pointer to MultiSlaterDetTableMethod
    */
-  void addMultiSlaterDet(const ParticleSet& P, const MultiSlaterDetTableMethod* msd);
+  void addMultiSlaterDet(const ParticleSet& P, const WaveFunctionComponent* msd);
   inline IndexType numMultiSlaterDets() const { return slaterdets_.size(); }
   inline bool hasMultiSlaterDet() const
   {
@@ -80,7 +82,7 @@ public:
     }
     return (numMultiSlaterDets() > 0);
   }
-  MultiSlaterDetTableMethod* getMultiSlaterDet(const IndexType id) const { return slaterdets_[id]; };
+  const WaveFunctionComponent* getMultiSlaterDet(const IndexType id) const { return slaterdets_[id]; };
 
 
   /** @brief Takes particle set groupID and returns the TWF internal index for it.  
@@ -274,8 +276,8 @@ public:
                            const std::vector<ValueMatrix>& B,
                            const std::vector<ValueMatrix>& M,
                            const std::vector<IndexType>& mdd_spo_ids,
-                           const std::vector<MultiDiracDeterminant*>& mdds,
-                           std::vector<ValueType>& dvals) const
+                           const std::vector<const WaveFunctionComponent*>& mdds,
+                           std::vector<ValueVector>& dvals) const;
 
   //////////////////////////////////////////////////////////////////////////////////////////////
   //And now we just have some helper functions for doing useful math on our lists of matrices.//
@@ -321,7 +323,7 @@ private:
   std::vector<ValueMatrix> psi_M_;
   std::vector<ValueMatrix> psi_M_inv_;
   std::vector<WaveFunctionComponent*> jastrow_list_;
-  std::vector<const MultiSlaterDetTableMethod*> slaterdets_;
+  std::vector<const WaveFunctionComponent*> slaterdets_;
 };
 
 /**@}*/
