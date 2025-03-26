@@ -215,6 +215,7 @@ public:
                        const RefVectorWithLeader<MultiDiracDeterminant>& wfc_list) const;
   void releaseResource(ResourceCollection& collection,
                        const RefVectorWithLeader<MultiDiracDeterminant>& wfc_list) const;
+  void registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const override;
 
   std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
 

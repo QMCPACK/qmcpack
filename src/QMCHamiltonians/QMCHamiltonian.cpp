@@ -1184,8 +1184,45 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
       psi_wrapper_in.getGSMatrices(dB_[idim], dB_gs_[idim]);
       psi_wrapper_in.getGSMatrices(dM_[idim], dM_gs_[idim]);
 
-      ValueType fval          = 0.0;
-      fval                    = psi_wrapper_in.computeGSDerivative(Minv_, X_, dM_gs_[idim], dB_gs_[idim]);
+      ValueType fval = 0.0;
+
+      /// TODO: put more thought into where this should go and what the lifetime needs to be
+      ///       could put in outermost scope and just resize once for multidets, then clear data as needed between iterations
+      std::vector<ValueVector> fvals;
+
+      if (psi_wrapper_in.hasMultiSlaterDet())
+      {
+        if (psi_wrapper_in.numMultiSlaterDets() > 1)
+        {
+          APP_ABORT("ERROR: QMCHamiltonian::evaluateIonDerivsFast does not support multiple MultiSlaterDetTableMethod");
+        }
+        MultiSlaterDetTableMethod* msd = psi_wrapper_in.getMultiSlaterDet(0);
+
+        /// FIXME: just do this earlier?
+        auto n_mdd = msd->Dets.size();
+        fvals.resize(n_mdd);
+
+        // same order as Dets in msd; index of associated SPOset in psi_wrapper_in.sposets_
+        std::vector<IndexType> mdd_spo_ids();
+
+        for (size_t i_mdd = 0; i_mdd < msd->Dets.size(); i_mdd++)
+        {
+          // particle group id for this multidiracdet
+          const int gid = P.getGroupID(msd->Dets[i_mdd]->getFirstIndex());
+          // SPOSet location in psi_wrapper_in.sposets_ for this particle group
+          const int sid = psi_wrapper_in.getTWFGroupIndex(gid);
+          mdd_spo_ids.push_back(sid);
+          fvals[i_mdd].resize(msd->Dets[i_mdd]->getNumDets());
+        }
+
+        psi_wrapper_in.computeMDDerivative(Minv_, X_, dM_[idim], dB_[idim], B_, M_, mdd_spo_ids, msd->Dets, fvals);
+
+        /// TODO: contract fvals with CI coefs from msd to get fval
+      }
+      else
+      {
+        fval = psi_wrapper_in.computeGSDerivative(Minv_, X_, dM_gs_[idim], dB_gs_[idim]);
+      }
       dedr_complex[iat][idim] = fval;
 
       ValueType wfcomp = 0.0;

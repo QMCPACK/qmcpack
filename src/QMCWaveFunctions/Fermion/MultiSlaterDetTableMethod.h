@@ -227,6 +227,8 @@ public:
                            std::vector<ValueType>& ratios,
                            Matrix<ValueType>& dratios) override;
 
+  void registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const override;
+
   /** initialize a few objects and states by the builder
    * YL: it should be part of the constructor. It cannot be added to the constructor
    * because the constructor is used by makeClone. The right way of fix needs:

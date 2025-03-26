@@ -15,6 +15,7 @@
 
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/SPOSet.h"
+#include "QMCWaveFunctions/Fermion/MultiSlaterDetTableMethod.h"
 #include "Configuration.h"
 #include "Particle/ParticleSet.h"
 namespace qmcplusplus
@@ -59,6 +60,28 @@ public:
    */
   void addGroup(const ParticleSet& P, const IndexType groupid, SPOSet* spo);
   inline void addJastrow(WaveFunctionComponent* j) { jastrow_list_.push_back(j); };
+
+  /**
+   * @brief add a MultiSlaterDet
+   * 
+   * this is called when registering a MSD
+   * the caller should also iterate over MultiDiracDeterminants in the MSD and register the associated SPOSets
+   * 
+   * @param P. ParticleSet 
+   * @param msd. Pointer to MultiSlaterDetTableMethod
+   */
+  void addMultiSlaterDet(const ParticleSet& P, const MultiSlaterDetTableMethod* msd);
+  inline IndexType numMultiSlaterDets() const { return slaterdets_.size(); }
+  inline bool hasMultiSlaterDet() const
+  {
+    if (numMultiSlaterDets() > 1)
+    {
+      APP_ABORT("ERROR: TWFFastDerivWrapper does not support multiple MultiSlaterDetTableMethod");
+    }
+    return (numMultiSlaterDets() > 0);
+  }
+  MultiSlaterDetTableMethod* getMultiSlaterDet(const IndexType id) const { return slaterdets_[id]; };
+
 
   /** @brief Takes particle set groupID and returns the TWF internal index for it.  
    *
@@ -231,6 +254,29 @@ public:
                                 const std::vector<ValueMatrix>& dM,
                                 const std::vector<ValueMatrix>& dB) const;
 
+  /** @brief Calculates derivative of observable for several MultiDiracDeterminant objects
+   *
+   *  @param[in] Minv. inverse of slater matrices for ground state occupations. 
+   *  @param[in] X.  X=M^-1 B M^-1.  
+   *  @param[in] dM. Target derivative of M
+   *  @param[in] dB. Target derivative of B
+   *  @param[in] B. observable matrix
+   *  @param[in] M. slater matrix (only need virtual cols)
+   *  @param[in] mdd_spo_ids. mapping from index in mdds into SPOSets (i.e. into first dim of vec of matrices Minv, X, dM, dB, etc.)
+   *  @param[in] mdds. vector of MultiDiracDeterminants; evaluate derivative of observable for all determinants
+   *  @param[out] dvals. Derivative of O D[i][j]/D[i][j] for MultiDiracDet i, excited det j (also includes GS det at j==0)
+   *  @return 
+   */
+  void computeMDDerivative(const std::vector<ValueMatrix>& Minv,
+                           const std::vector<ValueMatrix>& X,
+                           const std::vector<ValueMatrix>& dM,
+                           const std::vector<ValueMatrix>& dB,
+                           const std::vector<ValueMatrix>& B,
+                           const std::vector<ValueMatrix>& M,
+                           const std::vector<IndexType>& mdd_spo_ids,
+                           const std::vector<MultiDiracDeterminant*>& mdds,
+                           std::vector<ValueType>& dvals) const
+
   //////////////////////////////////////////////////////////////////////////////////////////////
   //And now we just have some helper functions for doing useful math on our lists of matrices.//
   //////////////////////////////////////////////////////////////////////////////////////////////
@@ -275,6 +321,7 @@ private:
   std::vector<ValueMatrix> psi_M_;
   std::vector<ValueMatrix> psi_M_inv_;
   std::vector<WaveFunctionComponent*> jastrow_list_;
+  std::vector<const MultiSlaterDetTableMethod*> slaterdets_;
 };
 
 /**@}*/
