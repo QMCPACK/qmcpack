@@ -872,7 +872,7 @@ For ease of reproducibility we provide build scripts for Frontier.
 Running QMCPACK
 ^^^^^^^^^^^^^^^
 Job script example with one MPI rank per GPU. Frontier is configured in low operating system noise mode and therefore all 64 CPU
-cores are not available on each node by default. i.e. We use 7 OpenMP CPU threads per MPI rankß. The part of the job script that
+cores are not available on each node by default. i.e. We use 7 OpenMP CPU threads per MPI rank. The part of the job script that
 makes specific modules available is copied directly from the build script used above.
 
 ::
