@@ -1189,7 +1189,11 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
 
       /// TODO: put more thought into where this should go and what the lifetime needs to be
       ///       could put in outermost scope and just resize once for multidets, then clear data as needed between iterations
-      std::vector<Vector<ValueType>> fvals;
+
+      // values for MultiDiracDet i, excited det j (also include GS det at j==0)
+      std::vector<Vector<ValueType>> fvals_dmu;     // d/dmu(O D[i][j]/D[i][j])
+      std::vector<Vector<ValueType>> fvals_Od;      // (O D[i][j]/D[i][j])
+      std::vector<Vector<ValueType>> fvals_dmu_log; // d/dmu(log(D[i][j])
 
       if (psi_wrapper_in.hasMultiSlaterDet())
       {
@@ -1202,7 +1206,9 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
 
         /// FIXME: just do this earlier?
         auto n_mdd = msd.getDetSize();
-        fvals.resize(n_mdd);
+        fvals_dmu.resize(n_mdd);
+        fvals_Od.resize(n_mdd);
+        fvals_dmu_log.resize(n_mdd);
 
         /// FIXME: construct some of this stuff earlier
         // same order as Dets in msd; index of associated SPOset in psi_wrapper_in.sposets_
@@ -1218,10 +1224,13 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
           // SPOSet location in psi_wrapper_in.sposets_ for this particle group
           const int sid = psi_wrapper_in.getTWFGroupIndex(gid);
           mdd_spo_ids.push_back(sid);
-          fvals[i_mdd].resize(multidiracdet_i->getNumDets());
+          fvals_dmu[i_mdd].resize(multidiracdet_i->getNumDets());
+          fvals_Od[i_mdd].resize(multidiracdet_i->getNumDets());
+          fvals_dmu_log[i_mdd].resize(multidiracdet_i->getNumDets());
         }
 
-        psi_wrapper_in.computeMDDerivative(Minv_, X_, dM_[idim], dB_[idim], B_, M_, mdd_spo_ids, mdd_list, fvals);
+        psi_wrapper_in.computeMDDerivative(Minv_, X_, dM_[idim], dB_[idim], B_, M_, mdd_spo_ids, mdd_list, fvals_dmu,
+                                           fvals_Od, fvals_dmu_log);
 
         /// TODO: contract fvals with CI coefs from msd to get fval
       }

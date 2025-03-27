@@ -266,7 +266,9 @@ public:
    *  @param[in] M. slater matrix (only need virtual cols)
    *  @param[in] mdd_spo_ids. mapping from index in mdds into SPOSets (i.e. into first dim of vec of matrices Minv, X, dM, dB, etc.)
    *  @param[in] mdds. vector of MultiDiracDeterminants; evaluate derivative of observable for all determinants
-   *  @param[out] dvals. Derivative of O D[i][j]/D[i][j] for MultiDiracDet i, excited det j (also includes GS det at j==0)
+   *  @param[out] dvals_dmu. d/dmu(O D[i][j]/D[i][j]) for MultiDiracDet i, excited det j (also includes GS det at j==0)
+   *  @param[out] dvals_Od. (O D[i][j]/D[i][j]) for MultiDiracDet i, excited det j (also includes GS det at j==0)
+   *  @param[out] dvals_dmu_log. d/dmu(log(D[i][j]) for MultiDiracDet i, excited det j (also includes GS det at j==0)
    *  @return 
    */
   void computeMDDerivative(const std::vector<ValueMatrix>& Minv,
@@ -277,7 +279,9 @@ public:
                            const std::vector<ValueMatrix>& M,
                            const std::vector<IndexType>& mdd_spo_ids,
                            const std::vector<const WaveFunctionComponent*>& mdds,
-                           std::vector<ValueVector>& dvals) const;
+                           std::vector<ValueVector>& dvals_dmu,
+                           std::vector<ValueVector>& dvals_Od,
+                           std::vector<ValueVector>& dvals_dmu_log) const;
 
   //////////////////////////////////////////////////////////////////////////////////////////////
   //And now we just have some helper functions for doing useful math on our lists of matrices.//
