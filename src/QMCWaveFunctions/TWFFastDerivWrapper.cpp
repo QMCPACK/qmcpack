@@ -541,7 +541,7 @@ void TWFFastDerivWrapper::computeMDDerivatives_ExcDets(const std::vector<ValueMa
       for (size_t idet = 0; idet < ndet_exc; idet++)
       {
         size_t excdata_offset = data_offset + idet * (3 * k + 1);
-        assert(excdata[excdata_offset ] == k);
+        assert(excdata[excdata_offset] == k);
         for (size_t i = 0; i < k; i++)
         {
           plist[i] = excdata[excdata_offset + k + 1 + i];
@@ -608,12 +608,12 @@ void TWFFastDerivWrapper::computeMDDerivatives_ExcDets(const std::vector<ValueMa
   return;
 }
 
-TWFFastDerivWrapper::ValueType TWFFastDerivWrapper::computeMDDerivatives_total(
-    int msd_idx,
-    const std::vector<const WaveFunctionComponent*>& mdds,
-    const std::vector<ValueVector>& dvals_dmu,
-    const std::vector<ValueVector>& dvals_Od,
-    const std::vector<ValueVector>& dvals_dmu_log) const
+std::pair<TWFFastDerivWrapper::ValueType, TWFFastDerivWrapper::ValueType> TWFFastDerivWrapper::
+    computeMDDerivatives_total(int msd_idx,
+                               const std::vector<const WaveFunctionComponent*>& mdds,
+                               const std::vector<ValueVector>& dvals_dmu,
+                               const std::vector<ValueVector>& dvals_Od,
+                               const std::vector<ValueVector>& dvals_dmu_log) const
 {
   /**
    * \f[
@@ -708,7 +708,12 @@ TWFFastDerivWrapper::ValueType TWFFastDerivWrapper::computeMDDerivatives_total(
   }
 
   // d_mu(OPsi/Psi)
-  return (total_x + total_yz + total_y * total_z / total_psi) / total_psi;
+  ValueType dmu_O_psi = (total_x + total_yz + total_y * total_z / total_psi) / total_psi;
+
+  // d_mu(log(Psi))
+  ValueType dmu_log_psi = (total_z / total_psi);
+
+  return {dmu_O_psi, dmu_log_psi};
 }
 
 void TWFFastDerivWrapper::invertMatrices(const std::vector<ValueMatrix>& M, std::vector<ValueMatrix>& Minv)

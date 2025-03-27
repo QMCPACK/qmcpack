@@ -1185,7 +1185,8 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
       psi_wrapper_in.getGSMatrices(dB_[idim], dB_gs_[idim]);
       psi_wrapper_in.getGSMatrices(dM_[idim], dM_gs_[idim]);
 
-      ValueType fval = 0.0;
+      ValueType fval   = 0.0;
+      ValueType wfcomp = 0.0;
 
       /// TODO: put more thought into where this should go and what the lifetime needs to be
       ///       could put in outermost scope and just resize once for multidets, then clear data as needed between iterations
@@ -1236,17 +1237,21 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
         psi_wrapper_in.computeMDDerivatives_ExcDets(Minv_, X_, dM_[idim], dB_[idim], B_, M_, mdd_spo_ids, mdd_list,
                                                     fvals_dmu, fvals_Od, fvals_dmu_log);
 
-        /// TODO: contract fvals with CI coefs from msd to get fval
-        fval = psi_wrapper_in.computeMDDerivatives_total(msd_idx, mdd_list, fvals_dmu, fvals_Od, fvals_dmu_log);
+        /// TODO: check that these are correct quantities to calculate
+        // with B = OM
+        //      dA = d_mu(A) for A in {M,B}
+        // fval is d_mu(OPsi/Psi)
+        // wfcomp is d_mu(log(Psi))
+        std::tie(fval, wfcomp) =
+            psi_wrapper_in.computeMDDerivatives_total(msd_idx, mdd_list, fvals_dmu, fvals_Od, fvals_dmu_log);
       }
       else
       {
-        fval = psi_wrapper_in.computeGSDerivative(Minv_, X_, dM_gs_[idim], dB_gs_[idim]);
+        fval   = psi_wrapper_in.computeGSDerivative(Minv_, X_, dM_gs_[idim], dB_gs_[idim]);
+        wfcomp = psi_wrapper_in.trAB(Minv_, dM_gs_[idim]);
       }
-      dedr_complex[iat][idim] = fval;
 
-      ValueType wfcomp = 0.0;
-      wfcomp           = psi_wrapper_in.trAB(Minv_, dM_gs_[idim]);
+      dedr_complex[iat][idim] = fval;
       wfgradraw_[iat][idim] += wfcomp; //The determinantal piece of the WF grad.
     }
     convertToReal(dedr_complex[iat], dEdR[iat]);

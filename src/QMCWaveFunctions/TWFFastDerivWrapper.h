@@ -290,13 +290,13 @@ public:
    *  @param[in] dvals_dmu. d/dmu(O D[i][j]/D[i][j]) for MultiDiracDet i, excited det j (also includes GS det at j==0)
    *  @param[in] dvals_Od. (O D[i][j]/D[i][j]) for MultiDiracDet i, excited det j (also includes GS det at j==0)
    *  @param[in] dvals_dmu_log. d/dmu(log(D[i][j]) for MultiDiracDet i, excited det j (also includes GS det at j==0)
-   *  @return 
+   *  @return  {d_mu(OPsi/Psi), d_mu(log(Psi))}
    */
-  ValueType computeMDDerivatives_total(int msd_idx,
-                                       const std::vector<const WaveFunctionComponent*>& mdds,
-                                       const std::vector<ValueVector>& dvals_dmu,
-                                       const std::vector<ValueVector>& dvals_Od,
-                                       const std::vector<ValueVector>& dvals_dmu_log) const;
+  std::pair<ValueType, ValueType> computeMDDerivatives_total(int msd_idx,
+                                                             const std::vector<const WaveFunctionComponent*>& mdds,
+                                                             const std::vector<ValueVector>& dvals_dmu,
+                                                             const std::vector<ValueVector>& dvals_Od,
+                                                             const std::vector<ValueVector>& dvals_dmu_log) const;
 
   //////////////////////////////////////////////////////////////////////////////////////////////
   //And now we just have some helper functions for doing useful math on our lists of matrices.//
