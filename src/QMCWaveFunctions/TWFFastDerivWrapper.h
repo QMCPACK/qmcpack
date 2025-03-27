@@ -82,7 +82,7 @@ public:
     }
     return (numMultiSlaterDets() > 0);
   }
-  const WaveFunctionComponent* getMultiSlaterDet(const IndexType id) const { return slaterdets_[id]; };
+  const WaveFunctionComponent& getMultiSlaterDet(const IndexType id) const { return *slaterdets_[id]; }
 
 
   /** @brief Takes particle set groupID and returns the TWF internal index for it.  

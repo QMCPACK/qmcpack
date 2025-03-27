@@ -1206,7 +1206,7 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
         // also useful to pass to some functions below to avoid some casting
         int msd_idx = 0;
 
-        const auto& msd = static_cast<const MultiSlaterDetTableMethod&>(*psi_wrapper_in.getMultiSlaterDet(msd_idx));
+        const auto& msd = static_cast<const MultiSlaterDetTableMethod&>(psi_wrapper_in.getMultiSlaterDet(msd_idx));
 
         /// FIXME: just do this earlier?
         auto n_mdd = msd.getDetSize();
@@ -1221,16 +1221,16 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
 
         for (size_t i_mdd = 0; i_mdd < n_mdd; i_mdd++)
         {
-          const MultiDiracDeterminant* multidiracdet_i = msd.getDet(i_mdd);
-          mdd_list.push_back(static_cast<const WaveFunctionComponent*>(multidiracdet_i));
+          const MultiDiracDeterminant& multidiracdet_i = msd.getDet(i_mdd);
+          mdd_list.push_back(static_cast<const WaveFunctionComponent*>(&multidiracdet_i));
           // particle group id for this multidiracdet
-          const int gid = P.getGroupID(multidiracdet_i->getFirstIndex());
+          const int gid = P.getGroupID(multidiracdet_i.getFirstIndex());
           // SPOSet location in psi_wrapper_in.sposets_ for this particle group
           const int sid = psi_wrapper_in.getTWFGroupIndex(gid);
           mdd_spo_ids.push_back(sid);
-          fvals_dmu[i_mdd].resize(multidiracdet_i->getNumDets());
-          fvals_Od[i_mdd].resize(multidiracdet_i->getNumDets());
-          fvals_dmu_log[i_mdd].resize(multidiracdet_i->getNumDets());
+          fvals_dmu[i_mdd].resize(multidiracdet_i.getNumDets());
+          fvals_Od[i_mdd].resize(multidiracdet_i.getNumDets());
+          fvals_dmu_log[i_mdd].resize(multidiracdet_i.getNumDets());
         }
 
         psi_wrapper_in.computeMDDerivatives_ExcDets(Minv_, X_, dM_[idim], dB_[idim], B_, M_, mdd_spo_ids, mdd_list,

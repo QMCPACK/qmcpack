@@ -484,12 +484,12 @@ void TWFFastDerivWrapper::computeMDDerivatives_ExcDets(const std::vector<ValueMa
     int max_exc_level  = multidiracdet_i.getMaxExcLevel();
 
     // const std::vector<int>& ndets_per_exc_lvl = *multidiracdet_i.ndets_per_excitation_level_;
-    const OffloadVector<int>& excdata = *multidiracdet_i.getDetData();
+    const OffloadVector<int>& excdata = multidiracdet_i.getDetData();
 
     /// FIXME: do we need signs (parity of perm to normal-order after excitation)?
     ///        everything is a ratio, so signs cancel?
     ///        dmu(OD/D), OD/D, dmu(logD) == (dmu D)/D
-    const OffloadVector<RealType>& det_signs = *multidiracdet_i.getDetSigns();
+    const OffloadVector<RealType>& det_signs = multidiracdet_i.getDetSigns();
 
     auto update_offsets = [&](size_t ext_level) {
       det_offset += multidiracdet_i.getNdetPerExcLevel(ext_level);
@@ -649,7 +649,7 @@ TWFFastDerivWrapper::ValueType TWFFastDerivWrapper::computeMDDerivatives_total(
    * 
    */
 
-  const auto& msd = static_cast<const MultiSlaterDetTableMethod&>(*getMultiSlaterDet(msd_idx));
+  const auto& msd = static_cast<const MultiSlaterDetTableMethod&>(getMultiSlaterDet(msd_idx));
 }
 
 void TWFFastDerivWrapper::invertMatrices(const std::vector<ValueMatrix>& M, std::vector<ValueMatrix>& Minv)

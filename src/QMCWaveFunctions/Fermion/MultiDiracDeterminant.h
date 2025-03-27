@@ -320,8 +320,8 @@ public:
   inline int getNdetPerExcLevel(int i) const { return (*ndets_per_excitation_level_)[i]; }
   inline int getMaxExcLevel() const { return ndets_per_excitation_level_->size() - 1; }
 
-  const OffloadVector<RealType>* getDetSigns() const { return DetSigns.get(); }
-  const OffloadVector<int>* getDetData() const { return detData.get(); }
+  const OffloadVector<RealType>& getDetSigns() const { return *DetSigns; }
+  const OffloadVector<int>& getDetData() const { return *detData; }
 
 
   const OffloadVector<ValueType>& getRatiosToRefDet() const { return ratios_to_ref_; }
