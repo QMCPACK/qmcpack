@@ -109,6 +109,10 @@ public:
 
   inline const MultiDiracDeterminant& getDet(int i) const { return *Dets[i]; }
   inline int getDetSize() const { return Dets.size(); };
+  inline int getNumSlaterDets() const { return C->size(); };
+
+  const std::vector<ValueType>& get_C() const { return *C; }
+  const std::vector<std::vector<size_t>>& get_C2node() const { return *C2node; }
 
   LogValue evaluate_vgl_impl(const ParticleSet& P,
                              ParticleSet::ParticleGradient& g_tmp,

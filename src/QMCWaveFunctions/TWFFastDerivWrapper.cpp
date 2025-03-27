@@ -649,7 +649,66 @@ TWFFastDerivWrapper::ValueType TWFFastDerivWrapper::computeMDDerivatives_total(
    * 
    */
 
+  // multislaterdet
   const auto& msd = static_cast<const MultiSlaterDetTableMethod&>(getMultiSlaterDet(msd_idx));
+
+  // total slaterdets
+  const int num_slaterdets = msd.getNumSlaterDets();
+
+  // Coefs for slaterdets
+  const std::vector<ValueType>& C = msd.get_C();
+
+  // mapping from [group_idx][slater_idx] to diracdet_idx
+  const std::vector<std::vector<size_t>>& C2node = msd.get_C2node();
+
+  // number of unique diracdets of each group
+  std::vector<IndexType> num_diracdets;
+
+  std::vector<const OffloadVector<ValueType>*> diracdet_ratios_to_ref;
+
+  for (size_t i = 0; i < msd.getDetSize(); i++)
+  {
+    num_diracdets.push_back(msd.getDet(i).getNumDets());
+    diracdet_ratios_to_ref.push_back(&msd.getDet(i).getRatiosToRefDet());
+  }
+
+  const int num_groups = num_diracdets.size();
+
+  ValueType total_psi = 0.0; // sum_i c_i D_i
+  ValueType total_x   = 0.0; // d_mu(OD/D)
+  ValueType total_y   = 0.0; // OD/D
+  ValueType total_z   = 0.0; // d_mu(log(D))
+  ValueType total_yz  = 0.0; // (OD/D) * d_mu(log(D))
+
+  for (size_t i_sd = 0; i_sd < num_slaterdets; i_sd++)
+  {
+    ValueType tmp_psi = C[i_sd]; // C[i_sd] * prod_i ratio[i][i_sd]
+    ValueType tmp_x   = 0.0;     // d_mu(OD/D)
+    ValueType tmp_y   = 0.0;     // OD/D
+    ValueType tmp_z   = 0.0;     // d_mu(log(D))
+    ValueType tmp_yz  = 0.0;     // (OD/D) * d_mu(log(D))
+
+    const std::vector<size_t>& dd_idx = C2node[i_sd];
+
+    for (size_t i_group = 0; i_group < num_groups; i_group++)
+    {
+      size_t i_dd = dd_idx[i_group];
+      tmp_x += dvals_dmu[i_group][i_dd];
+      tmp_y += dvals_Od[i_group][i_dd];
+      tmp_z += dvals_dmu_log[i_group][i_dd];
+      tmp_x += dvals_dmu_log[i_group][i_dd] * dvals_Od[i_group][i_dd];
+      tmp_psi *= (*diracdet_ratios_to_ref[i_group])[i_dd];
+    }
+
+    total_psi += tmp_psi;
+    total_x += tmp_x * tmp_psi;
+    total_y += tmp_y * tmp_psi;
+    total_z += tmp_z * tmp_psi;
+    total_yz += tmp_yz * tmp_psi;
+  }
+
+  // d_mu(OPsi/Psi)
+  return (total_x + total_yz + total_y * total_z / total_psi) / total_psi;
 }
 
 void TWFFastDerivWrapper::invertMatrices(const std::vector<ValueMatrix>& M, std::vector<ValueMatrix>& Minv)

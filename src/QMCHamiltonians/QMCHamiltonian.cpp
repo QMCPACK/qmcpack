@@ -1237,7 +1237,7 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
                                                     fvals_dmu, fvals_Od, fvals_dmu_log);
 
         /// TODO: contract fvals with CI coefs from msd to get fval
-        psi_wrapper_in.computeMDDerivatives_total(msd_idx, mdd_list, fvals_dmu, fvals_Od, fvals_dmu_log);
+        fval = psi_wrapper_in.computeMDDerivatives_total(msd_idx, mdd_list, fvals_dmu, fvals_Od, fvals_dmu_log);
       }
       else
       {
