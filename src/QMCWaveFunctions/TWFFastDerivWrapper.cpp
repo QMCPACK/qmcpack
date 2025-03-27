@@ -499,11 +499,11 @@ void TWFFastDerivWrapper::computeMDDerivatives_ExcDets(const std::vector<ValueMa
     // dets ordered as ref, all singles, all doubles, all triples, etc.
     //      shift by ndet_per_exc_level after each exc_level
     // data is ordered in same way, but each det has several contiguous elements
-    //      each det of exc_level k has (3*k+1) elements: [k, {pos}, {ocp}, {uno}]
+    //      each det of exc_level k has (3*k+1) elements: [k, {pos}, {uno}, {ocp}]
     //      k: exc level
     //      pos : positions of holes in refdet
-    //      ocp : MO idx of holes
     //      uno : MO idx of particles
+    //      ocp : MO idx of holes
 
     for (size_t k = 1; k <= max_exc_level; k++)
     {
@@ -541,10 +541,11 @@ void TWFFastDerivWrapper::computeMDDerivatives_ExcDets(const std::vector<ValueMa
       for (size_t idet = 0; idet < ndet_exc; idet++)
       {
         size_t excdata_offset = data_offset + idet * (3 * k + 1);
+        assert(excdata[excdata_offset ] == k);
         for (size_t i = 0; i < k; i++)
         {
-          hlist[i] = excdata[excdata_offset + k + 1 + i];
-          plist[i] = excdata[excdata_offset + 2 * k + 1 + i];
+          plist[i] = excdata[excdata_offset + k + 1 + i];
+          hlist[i] = excdata[excdata_offset + 2 * k + 1 + i];
         }
 
         // construct submatrices
@@ -688,11 +689,10 @@ TWFFastDerivWrapper::ValueType TWFFastDerivWrapper::computeMDDerivatives_total(
     ValueType tmp_z   = 0.0;     // d_mu(log(D))
     ValueType tmp_yz  = 0.0;     // (OD/D) * d_mu(log(D))
 
-    const std::vector<size_t>& dd_idx = C2node[i_sd];
 
     for (size_t i_group = 0; i_group < num_groups; i_group++)
     {
-      size_t i_dd = dd_idx[i_group];
+      size_t i_dd = C2node[i_group][i_sd];
       tmp_x += dvals_dmu[i_group][i_dd];
       tmp_y += dvals_Od[i_group][i_dd];
       tmp_z += dvals_dmu_log[i_group][i_dd];
