@@ -271,17 +271,32 @@ public:
    *  @param[out] dvals_dmu_log. d/dmu(log(D[i][j]) for MultiDiracDet i, excited det j (also includes GS det at j==0)
    *  @return 
    */
-  void computeMDDerivative(const std::vector<ValueMatrix>& Minv,
-                           const std::vector<ValueMatrix>& X,
-                           const std::vector<ValueMatrix>& dM,
-                           const std::vector<ValueMatrix>& dB,
-                           const std::vector<ValueMatrix>& B,
-                           const std::vector<ValueMatrix>& M,
-                           const std::vector<IndexType>& mdd_spo_ids,
-                           const std::vector<const WaveFunctionComponent*>& mdds,
-                           std::vector<ValueVector>& dvals_dmu,
-                           std::vector<ValueVector>& dvals_Od,
-                           std::vector<ValueVector>& dvals_dmu_log) const;
+  void computeMDDerivatives_ExcDets(const std::vector<ValueMatrix>& Minv,
+                                    const std::vector<ValueMatrix>& X,
+                                    const std::vector<ValueMatrix>& dM,
+                                    const std::vector<ValueMatrix>& dB,
+                                    const std::vector<ValueMatrix>& B,
+                                    const std::vector<ValueMatrix>& M,
+                                    const std::vector<IndexType>& mdd_spo_ids,
+                                    const std::vector<const WaveFunctionComponent*>& mdds,
+                                    std::vector<ValueVector>& dvals_dmu,
+                                    std::vector<ValueVector>& dvals_Od,
+                                    std::vector<ValueVector>& dvals_dmu_log) const;
+
+  /** @brief Uses per-det lists of derivatives to calculate total
+   *
+   *  @param[in] msd_idx. index of MultiSlaterDetTableMethod in this slaterdets_
+   *  @param[in] mdds. vector of MultiDiracDeterminants; evaluate derivative of observable for all determinants
+   *  @param[in] dvals_dmu. d/dmu(O D[i][j]/D[i][j]) for MultiDiracDet i, excited det j (also includes GS det at j==0)
+   *  @param[in] dvals_Od. (O D[i][j]/D[i][j]) for MultiDiracDet i, excited det j (also includes GS det at j==0)
+   *  @param[in] dvals_dmu_log. d/dmu(log(D[i][j]) for MultiDiracDet i, excited det j (also includes GS det at j==0)
+   *  @return 
+   */
+  ValueType computeMDDerivatives_total(int msd_idx,
+                                       const std::vector<const WaveFunctionComponent*>& mdds,
+                                       const std::vector<ValueVector>& dvals_dmu,
+                                       const std::vector<ValueVector>& dvals_Od,
+                                       const std::vector<ValueVector>& dvals_dmu_log) const;
 
   //////////////////////////////////////////////////////////////////////////////////////////////
   //And now we just have some helper functions for doing useful math on our lists of matrices.//

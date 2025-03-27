@@ -1202,7 +1202,11 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
           APP_ABORT("ERROR: QMCHamiltonian::evaluateIonDerivsFast does not support multiple MultiSlaterDetTableMethod");
         }
 
-        const auto& msd = static_cast<const MultiSlaterDetTableMethod&>(*psi_wrapper_in.getMultiSlaterDet(0));
+        // if we ever want to support more later, idx is useful
+        // also useful to pass to some functions below to avoid some casting
+        int msd_idx = 0;
+
+        const auto& msd = static_cast<const MultiSlaterDetTableMethod&>(*psi_wrapper_in.getMultiSlaterDet(msd_idx));
 
         /// FIXME: just do this earlier?
         auto n_mdd = msd.getDetSize();
@@ -1229,10 +1233,11 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
           fvals_dmu_log[i_mdd].resize(multidiracdet_i->getNumDets());
         }
 
-        psi_wrapper_in.computeMDDerivative(Minv_, X_, dM_[idim], dB_[idim], B_, M_, mdd_spo_ids, mdd_list, fvals_dmu,
-                                           fvals_Od, fvals_dmu_log);
+        psi_wrapper_in.computeMDDerivatives_ExcDets(Minv_, X_, dM_[idim], dB_[idim], B_, M_, mdd_spo_ids, mdd_list,
+                                                    fvals_dmu, fvals_Od, fvals_dmu_log);
 
         /// TODO: contract fvals with CI coefs from msd to get fval
+        psi_wrapper_in.computeMDDerivatives_total(msd_idx, mdd_list, fvals_dmu, fvals_Od, fvals_dmu_log);
       }
       else
       {

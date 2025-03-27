@@ -243,17 +243,17 @@ TWFFastDerivWrapper::ValueType TWFFastDerivWrapper::computeGSDerivative(const st
   return dval;
 }
 
-void TWFFastDerivWrapper::computeMDDerivative(const std::vector<ValueMatrix>& Minv,
-                                              const std::vector<ValueMatrix>& X,
-                                              const std::vector<ValueMatrix>& dM,
-                                              const std::vector<ValueMatrix>& dB,
-                                              const std::vector<ValueMatrix>& B,
-                                              const std::vector<ValueMatrix>& M,
-                                              const std::vector<IndexType>& mdd_spo_ids,
-                                              const std::vector<const WaveFunctionComponent*>& mdds,
-                                              std::vector<ValueVector>& dvals_dmu,
-                                              std::vector<ValueVector>& dvals_Od,
-                                              std::vector<ValueVector>& dvals_dmu_log) const
+void TWFFastDerivWrapper::computeMDDerivatives_ExcDets(const std::vector<ValueMatrix>& Minv,
+                                                       const std::vector<ValueMatrix>& X,
+                                                       const std::vector<ValueMatrix>& dM,
+                                                       const std::vector<ValueMatrix>& dB,
+                                                       const std::vector<ValueMatrix>& B,
+                                                       const std::vector<ValueMatrix>& M,
+                                                       const std::vector<IndexType>& mdd_spo_ids,
+                                                       const std::vector<const WaveFunctionComponent*>& mdds,
+                                                       std::vector<ValueVector>& dvals_dmu,
+                                                       std::vector<ValueVector>& dvals_Od,
+                                                       std::vector<ValueVector>& dvals_dmu_log) const
 {
   // mdd_id is multidiracdet id
   // sid is sposet id (index into first dim of M, X, B, etc.)
@@ -484,7 +484,11 @@ void TWFFastDerivWrapper::computeMDDerivative(const std::vector<ValueMatrix>& Mi
     int max_exc_level  = multidiracdet_i.getMaxExcLevel();
 
     // const std::vector<int>& ndets_per_exc_lvl = *multidiracdet_i.ndets_per_excitation_level_;
-    const OffloadVector<int>& excdata        = *multidiracdet_i.getDetData();
+    const OffloadVector<int>& excdata = *multidiracdet_i.getDetData();
+
+    /// FIXME: do we need signs (parity of perm to normal-order after excitation)?
+    ///        everything is a ratio, so signs cancel?
+    ///        dmu(OD/D), OD/D, dmu(logD) == (dmu D)/D
     const OffloadVector<RealType>& det_signs = *multidiracdet_i.getDetSigns();
 
     auto update_offsets = [&](size_t ext_level) {
@@ -601,6 +605,51 @@ void TWFFastDerivWrapper::computeMDDerivative(const std::vector<ValueMatrix>& Mi
   }
 
   return;
+}
+
+TWFFastDerivWrapper::ValueType TWFFastDerivWrapper::computeMDDerivatives_total(
+    int msd_idx,
+    const std::vector<const WaveFunctionComponent*>& mdds,
+    const std::vector<ValueVector>& dvals_dmu,
+    const std::vector<ValueVector>& dvals_Od,
+    const std::vector<ValueVector>& dvals_dmu_log) const
+{
+  /**
+   * \f[
+   *   \partial_\mu\frac{\hat{O} \Psi}{\Psi} =
+   *       \frac{\sum_i c_i D_i \left(\partial_\mu\frac{\hat{O}D_i}{D_i}\right)}{\Psi} 
+   *     + \frac{\sum_i c_i D_i \left(\frac{\hat{O}D_i}{D_i}\right)\partial_\mu\log(D_i)}{\Psi} 
+   *     - \left(\frac{\sum_i c_i D_i \left(\frac{\hat{O}D_i}{D_i}\right)}{\Psi}\right)
+   *     * \left(\frac{\sum_i c_i D_i \partial_\mu \log(D_i)}{\Psi}\right)
+   * \f]
+   * 
+   * with:
+   *  w_i = c_i D_i
+   *  x_i = d_mu(O D_i/D_i)
+   *  y_i = O D_i/D_i
+   *  z_i = d_mu(log(D_i))
+   * 
+   * \f[
+   *   \partial_\mu\frac{\hat{O} \Psi}{\Psi} =
+   *       \frac{\sum_i w_i * x_i}{\Psi} 
+   *     + \frac{\sum_i w_i * y_i * z_i}{\Psi} 
+   *     - \left(\frac{\sum_i w_i * y_i}{\Psi}\right)
+   *     * \left(\frac{\sum_i w_i * z_i}{\Psi}\right)
+   * \f]
+   *
+   * D is slaterdet composed of spindets
+   * D_i = A_{a_i}*B_{b_i} 
+   * A and B are alpha/beta spindets
+   * a and b map from slaterdet list into unique alpha/beta lists
+   * 
+   * with D = AB
+   *   OD/D = O(AB)/(AB) = ((OA)B + A(OB))/(AB) = OA/A + OB/B
+   *   d(OD/D) = d(OA/A + OB/B) = d(OA/A) + d(OB/B)
+   *   d(log(D)) = d(AB)/(AB) = ((dA)B + A(dB))/(AB) = dA/A + dB/B = d(log(A)) + d(log(B))
+   * 
+   */
+
+  const auto& msd = static_cast<const MultiSlaterDetTableMethod&>(*getMultiSlaterDet(msd_idx));
 }
 
 void TWFFastDerivWrapper::invertMatrices(const std::vector<ValueMatrix>& M, std::vector<ValueMatrix>& Minv)
