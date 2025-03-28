@@ -25,7 +25,7 @@ hdf5_vold=${hdf5_vnew}
 
 # CMake 
 # Dates at https://cmake.org/files/
-cmake_vnew=3.31.5
+cmake_vnew=3.31.6
 cmake_vold=${cmake_vnew}
 
 # OpenMPI
@@ -48,9 +48,9 @@ boost_vold=1.79.0 # Released 2022-04-13
 
 # Python
 # Use a single version to reduce dependencies. Ideally the spack prefered version.
-python_version=3.13.1
+python_version=3.13.2
 
-numpy_vnew=2.2.2
-numpy_vold=2.2.2
+numpy_vnew=2.2.4
+numpy_vold=2.2.4
 #numpy_vold=1.26.4
 
