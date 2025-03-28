@@ -568,17 +568,38 @@ TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
   wfgradraw[0] = psi->evalGradSource(elec, ions, 0); //On the C atom.
   wfgradraw[1] = psi->evalGradSource(elec, ions, 1); //On the N atom.
 
+  TWFFastDerivWrapper twf;
+  psi->initializeTWFFastDerivWrapper(elec, twf);
+
+  ParticleSet::ParticlePos dedr;
+  dedr.resize(Nions);
+  
+  ham.evaluateIonDerivsFast(elec, ions, *psi, twf, dedr, wf_grad);
+
+  for (size_t i = 0; i < 2; i++)
+    for (size_t j = 0; j < 3; j++)
+      app_log() << "dedr[" << i << "][" << j << "] = " << dedr[i][j] << std::endl;
+
+  for (size_t i = 0; i < 2; i++)
+    for (size_t j = 0; j < 3; j++)
+      app_log() << "wf_grad[" << i << "][" << j << "] = " << wf_grad[i][j] << std::endl;
+
+  for (size_t i = 0; i < 2; i++)
+    for (size_t j = 0; j < 3; j++)
+      app_log() << "wfgradraw[" << i << "][" << j << "] = " << wfgradraw[i][j] << std::endl;
+
+
   convertToReal(wfgradraw[0], wf_grad[0]);
   convertToReal(wfgradraw[1], wf_grad[1]);
 
   //This is not implemented yet.  Uncomment to perform check after implementation.
   //Reference from finite differences on this configuration.
-  /*  CHECK( wf_grad[0][0] == Approx(-1.7045200053189544));
-  CHECK( wf_grad[0][1] == Approx( 2.6980932676501368)); 
-  CHECK( wf_grad[0][2] == Approx( 6.5358393587011667)); 
-  CHECK( wf_grad[1][0] == Approx( 1.6322817486980055)); 
-  CHECK( wf_grad[1][1] == Approx( 0.0091648450606385));
-  CHECK( wf_grad[1][2] == Approx( 0.1031883398283639)); */
+  CHECK(wf_grad[0][0] == Approx(-1.7045200053189544));
+  CHECK(wf_grad[0][1] == Approx(2.6980932676501368));
+  CHECK(wf_grad[0][2] == Approx(6.5358393587011667));
+  CHECK(wf_grad[1][0] == Approx(1.6322817486980055));
+  CHECK(wf_grad[1][1] == Approx(0.0091648450606385));
+  CHECK(wf_grad[1][2] == Approx(0.1031883398283639));
 
 
   //This is not implemented yet.  Uncomment to perform check after implementation.
