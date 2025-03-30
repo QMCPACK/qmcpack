@@ -251,9 +251,9 @@ void TWFFastDerivWrapper::computeMDDerivatives_ExcDets(const std::vector<ValueMa
                                                        const std::vector<ValueMatrix>& M,
                                                        const std::vector<IndexType>& mdd_spo_ids,
                                                        const std::vector<const WaveFunctionComponent*>& mdds,
-                                                       std::vector<ValueVector>& dvals_dmu,
-                                                       std::vector<ValueVector>& dvals_Od,
-                                                       std::vector<ValueVector>& dvals_dmu_log) const
+                                                       std::vector<ValueVector>& dvals_dmu_O,
+                                                       std::vector<ValueVector>& dvals_O,
+                                                       std::vector<ValueVector>& dvals_dmu) const
 {
   // mdd_id is multidiracdet id
   // sid is sposet id (index into first dim of M, X, B, etc.)
@@ -270,9 +270,9 @@ void TWFFastDerivWrapper::computeMDDerivatives_ExcDets(const std::vector<ValueMa
     /// TODO: just do this before calling
     for (int idet = 0; idet < ndet; idet++)
     {
-      dvals_dmu[mdd_id][idet]     = 0.0;
-      dvals_Od[mdd_id][idet]      = 0.0;
-      dvals_dmu_log[mdd_id][idet] = 0.0;
+      dvals_dmu_O[mdd_id][idet] = 0.0;
+      dvals_O[mdd_id][idet]     = 0.0;
+      dvals_dmu[mdd_id][idet]   = 0.0;
     }
 
 
@@ -303,7 +303,7 @@ void TWFFastDerivWrapper::computeMDDerivatives_ExcDets(const std::vector<ValueMa
 
     // O is all occ orbs; o is occ orbs that appear as holes in exc. list; e is all elecs; v is virt orbs that appear as particles in exc. list
 
-    // dvals_dmu[idet] = dval_ref + tr(
+    // dvals_dmu_O[idet] = dval_ref + tr(
     //     - inv({Minv[o,e].M[e,v]}).{Minv[o,e].dM[e,v] - Minv[o,e].dM[e,O].Minv[O,e].M[e,v]}.inv({Minv[o,e].M[e,v]}).{S} ...
     //     + inv({Minv[o,e].M[e,v]}).{Minv[o,e].dB[e,v] - X[o,e].dM[e,v] - (Minv[o,e].dB[e.O] - X[o,e].dM[e,O]).Minv[O,e].M[e,v] - Minv[o,e].dM[e,O].S[O,v]}
     //   )
@@ -347,7 +347,7 @@ void TWFFastDerivWrapper::computeMDDerivatives_ExcDets(const std::vector<ValueMa
     //        = (c-d)[o,v] - (c-d)[o,O].a[O,v] - mat2c[o,v]
     //        = h[o,v] - h[o,O].a[O,v] - mat2c[o,v]
 
-    //  dvals_dmu[idet] = dval_dmu_ref + tr(-inv({a}).{mat1}.inv({a}).{S} + inv({a}).{mat2})
+    //  dvals_dmu_O[idet] = dval_dmu_ref + tr(-inv({a}).{mat1}.inv({a}).{S} + inv({a}).{mat2})
 
     // dval_ref = tr(Minv[O,e].dB[e,O] - X[O,e].dM[e,O])
     //          = tr(c[O,O] - d[O,O])
@@ -455,26 +455,26 @@ void TWFFastDerivWrapper::computeMDDerivatives_ExcDets(const std::vector<ValueMa
         mat2(i, j) = h_On(i, j + virt_offset) - mat2b(i, j) - mat2c(i, j);
 
     // tr(Minv_dB - X_dM)
-    ValueType dval_dmu_refdet     = 0.0;
-    ValueType dval_Od_refdet      = 0.0;
-    ValueType dval_dmu_log_refdet = 0.0;
+    ValueType dval_dmu_O_refdet = 0.0;
+    ValueType dval_O_refdet     = 0.0;
+    ValueType dval_dmu_refdet   = 0.0;
 
     for (size_t i = 0; i < h_On.rows(); i++)
     {
-      dval_dmu_refdet += h_On(i, i);
-      dval_Od_refdet += f_OO(i, i);
-      dval_dmu_log_refdet += b_On(i, i);
+      dval_dmu_O_refdet += h_On(i, i);
+      dval_O_refdet += f_OO(i, i);
+      dval_dmu_refdet += b_On(i, i);
     }
 
-    dvals_dmu[mdd_id][0]     = dval_dmu_refdet;
-    dvals_Od[mdd_id][0]      = dval_Od_refdet;
-    dvals_dmu_log[mdd_id][0] = dval_dmu_log_refdet;
+    dvals_dmu_O[mdd_id][0] = dval_dmu_O_refdet;
+    dvals_O[mdd_id][0]     = dval_O_refdet;
+    dvals_dmu[mdd_id][0]   = dval_dmu_refdet;
 
 
     // TODO: Eq. 43
     // {} signify submatrix corresponding to holes/particles rows/cols
     //
-    // dvals_dmu[idet] = dval_refdet + tr(-inv({a}).{mat1}.inv({a}).{S} + inv({a}).{mat2})
+    // dvals_dmu_O[idet] = dval_refdet + tr(-inv({a}).{mat1}.inv({a}).{S} + inv({a}).{mat2})
     // build full mats for all required pairs, then select submatrices for each excited det
     // use exc index data to map into full arrays and create [k,k] tables
 
@@ -517,8 +517,8 @@ void TWFFastDerivWrapper::computeMDDerivatives_ExcDets(const std::vector<ValueMa
       // take corresponding rows/cols of a, S, mat1, mat2
 
       // a' = inv({a})
-      // dvals_dmu[idet] = dval_refdet + tr(-a'.{mat1}.a'.{S} + a'.{mat2})
-      // dvals_dmu[idet] = dval_refdet + tr(-a'.({mat1}.a'.{S} - {mat2}))
+      // dvals_dmu_O[idet] = dval_refdet + tr(-a'.{mat1}.a'.{S} + a'.{mat2})
+      // dvals_dmu_O[idet] = dval_refdet + tr(-a'.({mat1}.a'.{S} - {mat2}))
 
       // a'.{S} also needed for Eq. 29
 
@@ -572,16 +572,16 @@ void TWFFastDerivWrapper::computeMDDerivatives_ExcDets(const std::vector<ValueMa
         BLAS::gemm('n', 'n', k, k, k, -1.0, ainv_s.data(), ainv_s.cols(), m1.data(), m1.cols(), 1.0, m2.data(),
                    m2.cols());
 
-        // dval_dmu = dval_dmu_refdet + tr(-ainv.m1.ainv.s + ainv.m2)
-        //          = dval_dmu_refdet + tr(ainv.(m2 - m1.ainv.s))
+        // dval_dmu = dval_dmu_O_refdet + tr(-ainv.m1.ainv.s + ainv.m2)
+        //          = dval_dmu_O_refdet + tr(ainv.(m2 - m1.ainv.s))
 
-        // dval_Od = dval_Od_refdet + tr(ainv.s)
+        // dval_Od = dval_O_refdet + tr(ainv.s)
 
-        // dval_dmu_log = dval_dmu_log_refdet + tr(ainv.m1)
+        // dval_dmu_log = dval_dmu_refdet + tr(ainv.m1)
 
-        ValueType dval_dmu     = dval_dmu_refdet;
-        ValueType dval_Od      = dval_Od_refdet;
-        ValueType dval_dmu_log = dval_dmu_log_refdet;
+        ValueType dval_dmu     = dval_dmu_O_refdet;
+        ValueType dval_Od      = dval_O_refdet;
+        ValueType dval_dmu_log = dval_dmu_refdet;
 
 
         for (size_t i = 0; i < k; i++)
@@ -594,9 +594,9 @@ void TWFFastDerivWrapper::computeMDDerivatives_ExcDets(const std::vector<ValueMa
           }
         }
 
-        dvals_dmu[mdd_id][det_offset + idet]     = dval_dmu;
-        dvals_Od[mdd_id][det_offset + idet]      = dval_Od;
-        dvals_dmu_log[mdd_id][det_offset + idet] = dval_dmu_log;
+        dvals_dmu_O[mdd_id][det_offset + idet] = dval_dmu;
+        dvals_O[mdd_id][det_offset + idet]     = dval_Od;
+        dvals_dmu[mdd_id][det_offset + idet]   = dval_dmu_log;
       }
 
 
@@ -608,12 +608,12 @@ void TWFFastDerivWrapper::computeMDDerivatives_ExcDets(const std::vector<ValueMa
   return;
 }
 
-std::pair<TWFFastDerivWrapper::ValueType, TWFFastDerivWrapper::ValueType> TWFFastDerivWrapper::
-    computeMDDerivatives_total(int msd_idx,
-                               const std::vector<const WaveFunctionComponent*>& mdds,
-                               const std::vector<ValueVector>& dvals_dmu,
-                               const std::vector<ValueVector>& dvals_Od,
-                               const std::vector<ValueVector>& dvals_dmu_log) const
+std::tuple<TWFFastDerivWrapper::ValueType, TWFFastDerivWrapper::ValueType, TWFFastDerivWrapper::ValueType>
+    TWFFastDerivWrapper::computeMDDerivatives_total(int msd_idx,
+                                                    const std::vector<const WaveFunctionComponent*>& mdds,
+                                                    const std::vector<ValueVector>& dvals_dmu_O,
+                                                    const std::vector<ValueVector>& dvals_O,
+                                                    const std::vector<ValueVector>& dvals_dmu) const
 {
   /**
    * \f[
@@ -674,46 +674,75 @@ std::pair<TWFFastDerivWrapper::ValueType, TWFFastDerivWrapper::ValueType> TWFFas
   }
 
   const int num_groups = num_diracdets.size();
+  // app_log() << "DEBUG: num_groups = " << num_groups << std::endl;
 
   ValueType total_psi = 0.0; // sum_i c_i D_i
-  ValueType total_x   = 0.0; // d_mu(OD/D)
-  ValueType total_y   = 0.0; // OD/D
-  ValueType total_z   = 0.0; // d_mu(log(D))
-  ValueType total_yz  = 0.0; // (OD/D) * d_mu(log(D))
+  ValueType total_dmu_O   = 0.0; // d_mu(OD/D)
+  ValueType total_O   = 0.0; // OD/D
+  ValueType total_dmu   = 0.0; // d_mu(log(D))
+  ValueType total_Odmu  = 0.0; // (OD/D) * d_mu(log(D))
 
   for (size_t i_sd = 0; i_sd < num_slaterdets; i_sd++)
   {
     ValueType tmp_psi = C[i_sd]; // C[i_sd] * prod_i ratio[i][i_sd]
-    ValueType tmp_x   = 0.0;     // d_mu(OD/D)
-    ValueType tmp_y   = 0.0;     // OD/D
-    ValueType tmp_z   = 0.0;     // d_mu(log(D))
-    ValueType tmp_yz  = 0.0;     // (OD/D) * d_mu(log(D))
+    ValueType tmp_dmu_O   = 0.0;     // d_mu(OD/D)
+    ValueType tmp_O   = 0.0;     // OD/D
+    ValueType tmp_dmu   = 0.0;     // d_mu(log(D))
+    ValueType tmp_Odmu  = 0.0;     // (OD/D) * d_mu(log(D))
+
+    // app_log() << "msd::C[" << i_sd << "] = " << tmp_psi << std::endl;
 
 
     for (size_t i_group = 0; i_group < num_groups; i_group++)
     {
       size_t i_dd = C2node[i_group][i_sd];
-      tmp_x += dvals_dmu[i_group][i_dd];
-      tmp_y += dvals_Od[i_group][i_dd];
-      tmp_z += dvals_dmu_log[i_group][i_dd];
-      tmp_x += dvals_dmu_log[i_group][i_dd] * dvals_Od[i_group][i_dd];
+      // std::cout << "DEBUG: local det id " << i_dd << std::endl;
+
+
+      // app_log() << "tmp_dmu_O  [" << i_group << "][" << i_dd << "]" << dvals_dmu_O[i_group][i_dd] << std::endl;
+      // app_log() << "tmp_O  [" << i_group << "][" << i_dd << "]" << dvals_O[i_group][i_dd] << std::endl;
+      // app_log() << "tmp_dmu  [" << i_group << "][" << i_dd << "]" << dvals_dmu[i_group][i_dd] << std::endl;
+      // app_log() << "tmp_Odmu [" << i_group << "][" << i_dd << "]"
+      //           << dvals_dmu[i_group][i_dd] * dvals_O[i_group][i_dd] << std::endl;
+      // app_log() << "tmp_psi [" << i_group << "][" << i_dd << "]" << (*diracdet_ratios_to_ref[i_group])[i_dd]
+      //           << std::endl;
+
+      tmp_dmu_O += dvals_dmu_O[i_group][i_dd];
+      tmp_O += dvals_O[i_group][i_dd];
+      tmp_dmu += dvals_dmu[i_group][i_dd];
+      tmp_Odmu += dvals_dmu[i_group][i_dd] * dvals_O[i_group][i_dd];
       tmp_psi *= (*diracdet_ratios_to_ref[i_group])[i_dd];
     }
 
     total_psi += tmp_psi;
-    total_x += tmp_x * tmp_psi;
-    total_y += tmp_y * tmp_psi;
-    total_z += tmp_z * tmp_psi;
-    total_yz += tmp_yz * tmp_psi;
+    total_dmu_O += tmp_dmu_O * tmp_psi;
+    total_O += tmp_O * tmp_psi;
+    total_dmu += tmp_dmu * tmp_psi;
+    // total_Odmu += tmp_Odmu * tmp_psi;
+    total_Odmu += tmp_O * tmp_dmu * tmp_psi;
   }
 
-  // d_mu(OPsi/Psi)
-  ValueType dmu_O_psi = (total_x + total_yz + total_y * total_z / total_psi) / total_psi;
+  app_log() << "total_dmu_O " << total_dmu_O << std::endl;
+  app_log() << "total_O     " << total_O << std::endl;
+  app_log() << "total_dmu   " << total_dmu << std::endl;
+  app_log() << "total_Odmu  " << total_Odmu << std::endl;
+  app_log() << "total_psi   " << total_psi << std::endl;
 
   // d_mu(log(Psi))
-  ValueType dmu_log_psi = (total_z / total_psi);
+  ValueType dmu_psi = (total_dmu / total_psi);
 
-  return {dmu_O_psi, dmu_log_psi};
+  // (OPsi/Psi) (this is the same for all spatial derivs, but we get it for free here)
+  ValueType Opsi = (total_O / total_psi);
+
+  // d_mu(OPsi/Psi)
+  ValueType dmu_O_psi = (total_dmu_O + total_Odmu) / total_psi + dmu_psi * Opsi;
+
+  ValueType norm_x  = total_dmu_O / total_psi;
+  ValueType norm_y  = total_O / total_psi;
+  ValueType norm_z  = total_dmu / total_psi;
+  ValueType norm_yz = total_Odmu / total_psi;
+
+  return {dmu_O_psi, dmu_psi, Opsi};
 }
 
 void TWFFastDerivWrapper::invertMatrices(const std::vector<ValueMatrix>& M, std::vector<ValueMatrix>& Minv)

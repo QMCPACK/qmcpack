@@ -1188,13 +1188,17 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
       ValueType fval   = 0.0;
       ValueType wfcomp = 0.0;
 
+      // this is OD/D terms, so should compute outside of this loop, but we get it for free-ish here
+      /// FIXME: compute some MD quantities outside of the idim loop
+      ValueType wfobs = 0.0;
+
       /// TODO: put more thought into where this should go and what the lifetime needs to be
       ///       could put in outermost scope and just resize once for multidets, then clear data as needed between iterations
 
       // values for MultiDiracDet i, excited det j (also include GS det at j==0)
-      std::vector<Vector<ValueType>> fvals_dmu;     // d/dmu(O D[i][j]/D[i][j])
-      std::vector<Vector<ValueType>> fvals_Od;      // (O D[i][j]/D[i][j])
-      std::vector<Vector<ValueType>> fvals_dmu_log; // d/dmu(log(D[i][j])
+      std::vector<Vector<ValueType>> fvals_dmu_O; // d/dmu(O D[i][j]/D[i][j])
+      std::vector<Vector<ValueType>> fvals_O;     // (O D[i][j]/D[i][j])
+      std::vector<Vector<ValueType>> fvals_dmu;   // d/dmu(log(D[i][j])
 
       if (psi_wrapper_in.hasMultiSlaterDet())
       {
@@ -1211,9 +1215,9 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
 
         /// FIXME: just do this earlier?
         auto n_mdd = msd.getDetSize();
+        fvals_dmu_O.resize(n_mdd);
+        fvals_O.resize(n_mdd);
         fvals_dmu.resize(n_mdd);
-        fvals_Od.resize(n_mdd);
-        fvals_dmu_log.resize(n_mdd);
 
         /// FIXME: construct some of this stuff earlier
         // same order as Dets in msd; index of associated SPOset in psi_wrapper_in.sposets_
@@ -1229,21 +1233,22 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
           // SPOSet location in psi_wrapper_in.sposets_ for this particle group
           const int sid = psi_wrapper_in.getTWFGroupIndex(gid);
           mdd_spo_ids.push_back(sid);
+          fvals_dmu_O[i_mdd].resize(multidiracdet_i.getNumDets());
+          fvals_O[i_mdd].resize(multidiracdet_i.getNumDets());
           fvals_dmu[i_mdd].resize(multidiracdet_i.getNumDets());
-          fvals_Od[i_mdd].resize(multidiracdet_i.getNumDets());
-          fvals_dmu_log[i_mdd].resize(multidiracdet_i.getNumDets());
         }
 
         psi_wrapper_in.computeMDDerivatives_ExcDets(Minv_, X_, dM_[idim], dB_[idim], B_, M_, mdd_spo_ids, mdd_list,
-                                                    fvals_dmu, fvals_Od, fvals_dmu_log);
+                                                    fvals_dmu_O, fvals_O, fvals_dmu);
 
         /// TODO: check that these are correct quantities to calculate
         // with B = OM
         //      dA = d_mu(A) for A in {M,B}
         // fval is d_mu(OPsi/Psi)
         // wfcomp is d_mu(log(Psi))
-        std::tie(fval, wfcomp) =
-            psi_wrapper_in.computeMDDerivatives_total(msd_idx, mdd_list, fvals_dmu, fvals_Od, fvals_dmu_log);
+        /// FIXME: wfobs mainly for debugging for now
+        std::tie(fval, wfcomp, wfobs) =
+            psi_wrapper_in.computeMDDerivatives_total(msd_idx, mdd_list, fvals_dmu_O, fvals_O, fvals_dmu);
       }
       else
       {

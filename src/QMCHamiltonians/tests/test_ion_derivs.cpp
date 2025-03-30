@@ -22,6 +22,7 @@
 #include "Utilities/RandomGenerator.h"
 #include "Utilities/RuntimeOptions.h"
 #include "QMCWaveFunctions/TWFFastDerivWrapper.h"
+#include "QMCWaveFunctions/Fermion/MultiSlaterDetTableMethod.h"
 #include "QMCHamiltonians/CoulombPBCAB.h"
 #include "LongRange/EwaldHandler3D.h"
 
@@ -158,6 +159,467 @@ QMCHamiltonian& create_CN_Hamiltonian(HamiltonianFactory& hf)
   hf.put(root);
 
   return *hf.getH();
+}
+
+void test_msd_wrapper(const std::string& wffile,
+                      const QMCTraits::RealType ref_logpsi,
+                      const std::map<std::string, QMCTraits::RealType>& ref_observables,
+                      const ParticleSet::ParticlePos& ref_wf_grad,
+                      const ParticleSet::ParticlePos& ref_kin,
+                      const ParticleSet::ParticlePos& ref_nlpp)
+{
+  app_log() << "========================================================================================\n";
+  app_log() << "========================================================================================\n";
+  app_log() << "==Ion Derivative Test:  loading wf from " << wffile << "\n";
+  app_log() << "========================================================================================\n";
+  app_log() << "========================================================================================\n";
+  app_log() << "DEBUG: STARTING_TEST " << wffile << std::endl;
+  using RealType  = QMCTraits::RealType;
+  using ValueType = QMCTraits::ValueType;
+
+  Communicate* c = OHMMS::Controller;
+
+  const SimulationCell simulation_cell;
+  auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto elec_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto &ions(*ions_ptr), elec(*elec_ptr);
+
+  //Build a CN test molecule.
+  create_CN_particlesets(elec, ions);
+
+  int Nions = ions.getTotalNum();
+  int Nelec = elec.getTotalNum();
+  app_log() << "DEBUG: Nions " << Nions << std::endl;
+  app_log() << "DEBUG: Nelec " << Nelec << std::endl;
+
+  //////////////////////////////////
+  /////////////////////////////////
+  //Incantation to read and build a TWF from cn.wfnoj//
+  Libxml2Document doc2;
+  bool okay = doc2.parse(wffile);
+  REQUIRE(okay);
+  xmlNodePtr root2 = doc2.getRoot();
+
+  WaveFunctionComponentBuilder::PSetMap particle_set_map;
+  particle_set_map.emplace("e", std::move(elec_ptr));
+  particle_set_map.emplace("ion0", std::move(ions_ptr));
+
+  RuntimeOptions runtime_options;
+  WaveFunctionFactory wff(elec, particle_set_map, c);
+  HamiltonianFactory::PsiPoolType psi_map;
+  psi_map.emplace("psi0", wff.buildTWF(root2, runtime_options));
+
+  TrialWaveFunction* psi = psi_map["psi0"].get();
+  REQUIRE(psi != nullptr);
+  //end incantation
+
+  TWFFastDerivWrapper twf;
+
+  psi->initializeTWFFastDerivWrapper(elec, twf);
+
+  /// NOTE: don't remove this; I think this is what initialized the det ratios that we need later
+  RealType logpsi = psi->evaluateLog(elec);
+  CHECK(logpsi == Approx(ref_logpsi));
+
+  app_log() << "DEBUG: twf logpsi " << psi->getLogPsi() << std::endl;
+  app_log() << "DEBUG: twf logpsi " << logpsi << std::endl;
+
+  HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
+
+  QMCHamiltonian& ham = create_CN_Hamiltonian(hf);
+
+  RealType eloc = ham.evaluateDeterministic(elec);
+
+  //Enum to give human readable indexing into QMCHamiltonian.
+  enum observ_id
+  {
+    KINETIC = 0,
+    LOCALECP,
+    NONLOCALECP,
+    ELECELEC,
+    IONION
+  };
+
+  CHECK(ham.getObservable(ELECELEC) == Approx(ref_observables.at("ELECELEC")));
+  CHECK(ham.getObservable(IONION) == Approx(ref_observables.at("IONION")));
+  CHECK(ham.getObservable(LOCALECP) == Approx(ref_observables.at("LOCALECP")));
+  CHECK(ham.getObservable(KINETIC) == Approx(ref_observables.at("KINETIC")));
+  CHECK(ham.getObservable(NONLOCALECP) == Approx(ref_observables.at("NONLOCALECP")));
+
+  SPOSet::ValueVector values;
+  SPOSet::GradVector dpsi;
+  SPOSet::ValueVector d2psi;
+  values.resize(9);
+  dpsi.resize(9);
+  d2psi.resize(9);
+
+  using ValueMatrix = SPOSet::ValueMatrix;
+
+  //This builds and initializes all the auxiliary matrices needed to do fast derivative evaluation.
+  //These matrices are not necessarily square to accomodate orb opt and multidets.
+
+  ValueMatrix upmat; //Up slater matrix.
+  ValueMatrix dnmat; //Down slater matrix.
+  int Nup  = 5;      //These are hard coded until the interface calls get implemented/cleaned up.
+  int Ndn  = 4;
+  int Norb = 14;
+  upmat.resize(Nup, Norb);
+  dnmat.resize(Ndn, Norb);
+  //The first two lines consist of vectors of matrices.  The vector index corresponds to the species ID.
+  //For example, matlist[0] will be the slater matrix for up electrons, matlist[1] will be for down electrons.
+  std::vector<ValueMatrix> matlist; //Vector of slater matrices.
+  std::vector<ValueMatrix> B, X;    //Vector of B matrix, and auxiliary X matrix.
+
+  //The first index corresponds to the x,y,z force derivative.  Current interface assumes that the ion index is fixed,
+  // so these vectors of vectors of matrices store the derivatives of the M and B matrices.
+  // dB[0][0] is the x component of the iat force derivative of the up B matrix, dB[0][1] is for the down B matrix.
+
+  std::vector<std::vector<ValueMatrix>> dM; //Derivative of slater matrix.
+  std::vector<std::vector<ValueMatrix>> dB; //Derivative of B matrices.
+  matlist.push_back(upmat);
+  matlist.push_back(dnmat);
+
+  dM.push_back(matlist);
+  dM.push_back(matlist);
+  dM.push_back(matlist);
+
+  dB.push_back(matlist);
+  dB.push_back(matlist);
+  dB.push_back(matlist);
+
+  B.push_back(upmat);
+  B.push_back(dnmat);
+
+  X.push_back(upmat);
+  X.push_back(dnmat);
+
+  twf.getM(elec, matlist);
+
+  OperatorBase* kinop = ham.getHamiltonian(KINETIC);
+
+  kinop->evaluateOneBodyOpMatrix(elec, twf, B);
+
+
+  std::vector<ValueMatrix> minv;
+  std::vector<ValueMatrix> B_gs, M_gs; //We are creating B and M matrices for assumed ground-state occupations.
+                                       //These are N_s x N_s square matrices (N_s is number of particles for species s).
+  B_gs.push_back(upmat);
+  B_gs.push_back(dnmat);
+  M_gs.push_back(upmat);
+  M_gs.push_back(dnmat);
+  minv.push_back(upmat);
+  minv.push_back(dnmat);
+
+
+  //  twf.getM(elec, matlist);
+  std::vector<std::vector<ValueMatrix>> dB_gs;
+  std::vector<std::vector<ValueMatrix>> dM_gs;
+  std::vector<ValueMatrix> tmp_gs;
+  twf.getGSMatrices(B, B_gs);
+  twf.getGSMatrices(matlist, M_gs);
+  twf.invertMatrices(M_gs, minv);
+  twf.buildX(minv, B_gs, X);
+  for (int id = 0; id < matlist.size(); id++)
+  {
+    //    int ptclnum = twf.numParticles(id);
+    int ptclnum = (id == 0 ? Nup : Ndn); //hard coded until twf interface comes online.
+    ValueMatrix gs_m;
+    gs_m.resize(ptclnum, ptclnum);
+    tmp_gs.push_back(gs_m);
+  }
+
+
+  dB_gs.push_back(tmp_gs);
+  dB_gs.push_back(tmp_gs);
+  dB_gs.push_back(tmp_gs);
+
+  dM_gs.push_back(tmp_gs);
+  dM_gs.push_back(tmp_gs);
+  dM_gs.push_back(tmp_gs);
+
+  //Finally, we have all the data structures with the right dimensions.  Continue.
+  ParticleSet::ParticleGradient tmpwfgrad_complex(Nions);
+  ParticleSet::ParticlePos tmpwfgrad(Nions);
+  ParticleSet::ParticleGradient fkin_complex_gs(Nions);
+  ParticleSet::ParticleGradient fkin_complex(Nions);
+  ParticleSet::ParticleGradient fnlpp_complex_gs(Nions);
+  ParticleSet::ParticleGradient fnlpp_complex(Nions);
+  ParticleSet::ParticlePos fkin_gs(Nions);
+  ParticleSet::ParticlePos fkin(Nions);
+  ParticleSet::ParticlePos fnlpp_gs(Nions);
+  ParticleSet::ParticlePos fnlpp(Nions);
+  ParticleSet::ParticleGradient obsval_complex(Nions);
+  ParticleSet::ParticlePos obsval(Nions);
+
+  std::vector<Vector<ValueType>> fvals_dmu;     // d/dmu(O D[i][j]/D[i][j])
+  std::vector<Vector<ValueType>> fvals_Od;      // (O D[i][j]/D[i][j])
+  std::vector<Vector<ValueType>> fvals_dmu_log; // d/dmu(log(D[i][j])
+  CHECK(twf.hasMultiSlaterDet());
+  CHECK(twf.numMultiSlaterDets() == 1);
+  int msd_idx = 0;
+
+  const auto& msd = static_cast<const MultiSlaterDetTableMethod&>(twf.getMultiSlaterDet(msd_idx));
+
+
+  auto n_mdd = msd.getDetSize();
+  fvals_dmu.resize(n_mdd);
+  fvals_Od.resize(n_mdd);
+  fvals_dmu_log.resize(n_mdd);
+
+  // same order as Dets in msd; index of associated SPOset in twf.sposets_
+  std::vector<int> mdd_spo_ids;
+  std::vector<const WaveFunctionComponent*> mdd_list;
+
+  for (size_t i_mdd = 0; i_mdd < n_mdd; i_mdd++)
+  {
+    const MultiDiracDeterminant& multidiracdet_i = msd.getDet(i_mdd);
+    mdd_list.push_back(static_cast<const WaveFunctionComponent*>(&multidiracdet_i));
+    // particle group id for this multidiracdet
+    const int gid = elec.getGroupID(multidiracdet_i.getFirstIndex());
+    // SPOSet location in twf.sposets_ for this particle group
+    const int sid = twf.getTWFGroupIndex(gid);
+    mdd_spo_ids.push_back(sid);
+    fvals_dmu[i_mdd].resize(multidiracdet_i.getNumDets());
+    fvals_Od[i_mdd].resize(multidiracdet_i.getNumDets());
+    fvals_dmu_log[i_mdd].resize(multidiracdet_i.getNumDets());
+  }
+
+  ValueType fval   = 0.0;
+  ValueType wfcomp = 0.0;
+  ValueType wfobs  = 0.0;
+
+  app_log() << "DEBUG: STARTING_DERIVS " << wffile << std::endl;
+  for (int ionid = 0; ionid < Nions; ionid++)
+  {
+    for (int idim = 0; idim < OHMMS_DIM; idim++)
+    {
+      twf.wipeMatrices(dB[idim]);
+      twf.wipeMatrices(dM[idim]);
+    }
+
+    twf.getIonGradM(elec, ions, ionid, dM);
+    kinop->evaluateOneBodyOpMatrixForceDeriv(elec, ions, twf, ionid, dB);
+
+    for (int idim = 0; idim < OHMMS_DIM; idim++)
+    {
+      app_log() << "dB_kin[" << idim << "][0]" << std::endl;
+      app_log() << dB[idim][0] << std::endl;
+      app_log() << "dB_kin[" << idim << "][1]" << std::endl;
+      app_log() << dB[idim][1] << std::endl;
+      twf.getGSMatrices(dB[idim], dB_gs[idim]);
+      twf.getGSMatrices(dM[idim], dM_gs[idim]);
+
+      twf.computeMDDerivatives_ExcDets(minv, X, dM[idim], dB[idim], B, matlist, mdd_spo_ids, mdd_list, fvals_dmu,
+                                       fvals_Od, fvals_dmu_log);
+      for (size_t i_mdd = 0; i_mdd < n_mdd; i_mdd++)
+      {
+        const MultiDiracDeterminant& multidiracdet_i = msd.getDet(i_mdd);
+        for (size_t i_spindet = 0; i_spindet < multidiracdet_i.getNumDets(); i_spindet++)
+        {
+          app_log() << "fvals[" << i_mdd << "][" << i_spindet << "]" << fvals_dmu[i_mdd][i_spindet] << ", "
+                    << fvals_Od[i_mdd][i_spindet] << ", " << fvals_dmu_log[i_mdd][i_spindet] << std::endl;
+        }
+      }
+
+
+      // fval: d_mu(OPsi/Psi)
+      // wfcomp: d_mu(log(Psi))
+      // oval: OPsi/Psi (decide how to handle this; should be same at each iteration over ion dims?)
+      std::tie(fval, wfcomp, wfobs) =
+          twf.computeMDDerivatives_total(msd_idx, mdd_list, fvals_dmu, fvals_Od, fvals_dmu_log);
+
+      app_log() << fval << ", " << wfcomp << ", " << wfobs << std::endl;
+      fkin_complex[ionid][idim]      = fval;
+      tmpwfgrad_complex[ionid][idim] = wfcomp;
+      obsval_complex[ionid][idim]    = wfobs;
+
+      /// NOTE: for comparison with GS singledet
+      fkin_complex_gs[ionid][idim] = twf.computeGSDerivative(minv, X, dM_gs[idim], dB_gs[idim]);
+    }
+    convertToReal(fkin_complex_gs[ionid], fkin_gs[ionid]);
+    convertToReal(fkin_complex[ionid], fkin[ionid]);
+    convertToReal(tmpwfgrad_complex[ionid], tmpwfgrad[ionid]);
+    convertToReal(obsval_complex[ionid], obsval[ionid]);
+  }
+
+  app_log() << "\nresults from " << wffile << std::endl;
+  for (size_t i = 0; i < 2; i++)
+    for (size_t j = 0; j < 3; j++)
+      app_log() << "fkin[" << i << "][" << j << "] = " << fkin[i][j] << std::endl;
+
+  app_log() << "\n GS results from " << wffile << std::endl;
+  for (size_t i = 0; i < 2; i++)
+    for (size_t j = 0; j < 3; j++)
+      app_log() << "fkin_gs[" << i << "][" << j << "] = " << fkin_gs[i][j] << std::endl;
+
+  for (size_t i = 0; i < 2; i++)
+    for (size_t j = 0; j < 3; j++)
+      app_log() << "tmpwfgrad[" << i << "][" << j << "] = " << tmpwfgrad[i][j] << std::endl;
+
+  app_log() << "\nresults from " << wffile << std::endl;
+  for (size_t i = 0; i < 2; i++)
+    for (size_t j = 0; j < 3; j++)
+      app_log() << "obsval[" << i << "][" << j << "] = " << obsval[i][j] << std::endl;
+
+  for (size_t ionid = 0; ionid < Nions; ionid++)
+  {
+    for (int idim = 0; idim < OHMMS_DIM; idim++)
+    {
+#if defined(MIXED_PRECISION)
+      CHECK(tmpwfgrad[ionid][idim] == Approx(ref_wf_grad[ionid][idim]).epsilon(1e-4));
+#else
+      CHECK(tmpwfgrad[ionid][idim] == Approx(ref_wf_grad[ionid][idim]));
+#endif
+    }
+  }
+
+  /// TODO: pass in ref vals to check, or return them and check outside
+
+  ValueType keval = 0.0;
+  RealType keobs  = 0.0;
+  keval           = twf.trAB(minv, B_gs);
+  convertToReal(keval, keobs);
+
+
+  CHECK(keobs == Approx(ref_observables.at("KINETIC")));
+  app_log() << "gs ref kinetic: " << keobs << std::endl;
+
+  for (size_t ionid = 0; ionid < Nions; ionid++)
+  {
+    for (int idim = 0; idim < OHMMS_DIM; idim++)
+    {
+#if defined(MIXED_PRECISION)
+      CHECK(fkin[ionid][idim] == Approx(ref_kin[ionid][idim]).epsilon(1e-4));
+#else
+      CHECK(fkin[ionid][idim] == Approx(ref_kin[ionid][idim]));
+#endif
+    }
+  }
+
+
+  app_log() << " KEVal = " << keval << std::endl;
+
+  app_log() << " Now evaluating nonlocalecp\n";
+  OperatorBase* nlppop = ham.getHamiltonian(NONLOCALECP);
+  app_log() << "nlppop = " << nlppop << std::endl;
+  app_log() << "  Evaluated.  Calling evaluteOneBodyOpMatrix\n";
+
+
+  twf.wipeMatrices(B);
+  twf.wipeMatrices(B_gs);
+  twf.wipeMatrices(X);
+  nlppop->evaluateOneBodyOpMatrix(elec, twf, B);
+  twf.getGSMatrices(B, B_gs);
+  twf.buildX(minv, B_gs, X);
+
+  ValueType nlpp    = 0.0;
+  RealType nlpp_obs = 0.0;
+  nlpp              = twf.trAB(minv, B_gs);
+  convertToReal(nlpp, nlpp_obs);
+
+  app_log() << "NLPP = " << nlpp << std::endl;
+
+  CHECK(nlpp_obs == Approx(ref_observables.at("NONLOCALECP")));
+
+  // ParticleSet::ParticleGradient fnlpp_complex(ions.getTotalNum());
+  // ParticleSet::ParticlePos fnlpp(ions.getTotalNum());
+  for (int ionid = 0; ionid < ions.getTotalNum(); ionid++)
+  {
+    for (int idim = 0; idim < OHMMS_DIM; idim++)
+    {
+      twf.wipeMatrices(dB[idim]);
+      twf.wipeMatrices(dM[idim]);
+    }
+
+    twf.getIonGradM(elec, ions, ionid, dM);
+    nlppop->evaluateOneBodyOpMatrixForceDeriv(elec, ions, twf, ionid, dB);
+
+    for (int idim = 0; idim < OHMMS_DIM; idim++)
+    {
+      app_log() << "dB_nlpp[" << idim << "][0]" << std::endl;
+      app_log() << dB[idim][0] << std::endl;
+      app_log() << "dB_nlpp[" << idim << "][1]" << std::endl;
+      app_log() << dB[idim][1] << std::endl;
+      twf.getGSMatrices(dB[idim], dB_gs[idim]);
+      twf.getGSMatrices(dM[idim], dM_gs[idim]);
+      twf.computeMDDerivatives_ExcDets(minv, X, dM[idim], dB[idim], B, matlist, mdd_spo_ids, mdd_list, fvals_dmu,
+                                       fvals_Od, fvals_dmu_log);
+      for (size_t i_mdd = 0; i_mdd < n_mdd; i_mdd++)
+      {
+        const MultiDiracDeterminant& multidiracdet_i = msd.getDet(i_mdd);
+        for (size_t i_spindet = 0; i_spindet < multidiracdet_i.getNumDets(); i_spindet++)
+        {
+          app_log() << "fvals[" << i_mdd << "][" << i_spindet << "]" << fvals_dmu[i_mdd][i_spindet] << ", "
+                    << fvals_Od[i_mdd][i_spindet] << ", " << fvals_dmu_log[i_mdd][i_spindet] << std::endl;
+        }
+      }
+
+
+      // fval: d_mu(OPsi/Psi)
+      // wfcomp: d_mu(log(Psi))
+      // oval: OPsi/Psi (decide how to handle this; should be same at each iteration over ion dims?)
+      std::tie(fval, wfcomp, wfobs) =
+          twf.computeMDDerivatives_total(msd_idx, mdd_list, fvals_dmu, fvals_Od, fvals_dmu_log);
+
+      app_log() << fval << ", " << wfcomp << ", " << wfobs << std::endl;
+      fnlpp_complex[ionid][idim]     = fval;
+      tmpwfgrad_complex[ionid][idim] = wfcomp;
+      obsval_complex[ionid][idim]    = wfobs;
+
+      /// NOTE: for comparison with GS singledet
+      fnlpp_complex_gs[ionid][idim] = twf.computeGSDerivative(minv, X, dM_gs[idim], dB_gs[idim]);
+    }
+    convertToReal(fnlpp_complex[ionid], fnlpp[ionid]);
+
+    convertToReal(fnlpp_complex_gs[ionid], fnlpp_gs[ionid]);
+    convertToReal(fnlpp_complex[ionid], fnlpp[ionid]);
+    convertToReal(tmpwfgrad_complex[ionid], tmpwfgrad[ionid]);
+    convertToReal(obsval_complex[ionid], obsval[ionid]);
+  }
+
+  app_log() << "\nresults from " << wffile << std::endl;
+  for (size_t i = 0; i < 2; i++)
+    for (size_t j = 0; j < 3; j++)
+      app_log() << "fnlpp[" << i << "][" << j << "] = " << fnlpp[i][j] << std::endl;
+
+  app_log() << "\n GS results from " << wffile << std::endl;
+  for (size_t i = 0; i < 2; i++)
+    for (size_t j = 0; j < 3; j++)
+      app_log() << "fnlpp_gs[" << i << "][" << j << "] = " << fnlpp_gs[i][j] << std::endl;
+
+  for (size_t i = 0; i < 2; i++)
+    for (size_t j = 0; j < 3; j++)
+      app_log() << "tmpwfgrad[" << i << "][" << j << "] = " << tmpwfgrad[i][j] << std::endl;
+
+  app_log() << "\nresults from " << wffile << std::endl;
+  for (size_t i = 0; i < 2; i++)
+    for (size_t j = 0; j < 3; j++)
+      app_log() << "obsval[" << i << "][" << j << "] = " << obsval[i][j] << std::endl;
+
+  for (size_t ionid = 0; ionid < Nions; ionid++)
+  {
+    for (int idim = 0; idim < OHMMS_DIM; idim++)
+    {
+#if defined(MIXED_PRECISION)
+      CHECK(tmpwfgrad[ionid][idim] == Approx(ref_wf_grad[ionid][idim]).epsilon(1e-4));
+#else
+      CHECK(tmpwfgrad[ionid][idim] == Approx(ref_wf_grad[ionid][idim]));
+#endif
+    }
+  }
+
+
+  for (size_t ionid = 0; ionid < Nions; ionid++)
+  {
+    for (int idim = 0; idim < OHMMS_DIM; idim++)
+    {
+#if defined(MIXED_PRECISION)
+      CHECK(fnlpp[ionid][idim] == Approx(ref_nlpp[ionid][idim]).epsilon(1e-4));
+#else
+      CHECK(fnlpp[ionid][idim] == Approx(ref_nlpp[ionid][idim]));
+#endif
+    }
+  }
 }
 
 TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
@@ -1617,6 +2079,192 @@ TEST_CASE("Eloc_Derivatives:slater_fastderiv_complex_pbc", "[hamiltonian]")
   //  ham.evaluateIonDerivsFast(elec, ions, *psi, twf,hf_term, wf_grad);*/
 }
 #endif
+
+TEST_CASE("Eloc_Derivatives:proto_md1_noj", "[hamiltonian]")
+{
+  // single-det sd-nojastrow ref vals
+  ParticleSet::ParticlePos ref_wf_grad;
+  ParticleSet::ParticlePos ref_kin;
+  ParticleSet::ParticlePos ref_nlpp;
+  ref_wf_grad.resize(2);
+  ref_kin.resize(2);
+  ref_nlpp.resize(2);
+
+  ref_wf_grad[0][0] = -1.9044650674260308;
+  ref_wf_grad[0][1] = 2.1257764985627148;
+  ref_wf_grad[0][2] = 7.0556319963444016;
+  ref_wf_grad[1][0] = 1.4233346821157509;
+  ref_wf_grad[1][1] = -0.1446706081154048;
+  ref_wf_grad[1][2] = 0.1440176276013005;
+
+  ref_kin[0][0] = 1.0852823603357820;
+  ref_kin[0][1] = 24.2154119471038562;
+  ref_kin[0][2] = 111.8849364775797852;
+  ref_kin[1][0] = 2.1572063443997536;
+  ref_kin[1][1] = -3.3743242489947529;
+  ref_kin[1][2] = 7.5625192454964454;
+
+  ref_nlpp[0][0] = 24.2239540340527491;
+  ref_nlpp[0][1] = -41.9981344310649263;
+  ref_nlpp[0][2] = -98.9123955744908159;
+  ref_nlpp[1][0] = 2.5105943834091704;
+  ref_nlpp[1][1] = 1.1345766918857692;
+  ref_nlpp[1][2] = -5.2293234395150989;
+
+  //Output of WFTester Eloc test for this ion/electron configuration.
+  //Logpsi: (-1.4233853149e+01,0.0000000000e+00)
+  //HamTest   Total -1.617071104264908143e+01
+  //HamTest Kinetic 9.182193792758450712e+00
+  //HamTest ElecElec 1.901556057075800865e+01
+  //HamTest IonIon 9.621404531608845900e+00
+  //HamTest LocalECP -6.783942829945100073e+01
+  //HamTest NonLocalECP 1.384955836167661225e+01
+
+  // updated wftest output
+  // Logpsi: -1.4233851881e+01
+  // HamTest   Total -1.6169889914e+01
+  // HamTest Kinetic 9.1821882589e+00
+  // HamTest LocalECP -6.7839428299e+01
+  // HamTest NonLocalECP 1.3850385025e+01
+  // HamTest ElecElec 1.9015560571e+01
+  // HamTest IonIon 9.6214045316e+00
+
+  QMCTraits::RealType ref_logpsi = -14.233853149;
+  std::map<std::string, QMCTraits::RealType> ref_observables{{"ELECELEC", 1.9015560571e+01},
+                                                             {"IONION", 9.6214045316e+00},
+                                                             {"LOCALECP", -6.7839428299e+01},
+                                                             {"KINETIC", 9.1821937928e+00},
+                                                             {"NONLOCALECP", 1.3849558361e+01}};
+
+
+  // single-det wavefunction masquerading as a multidet (with a single det)
+  test_msd_wrapper("cn.msd-1det-wfnoj.xml", ref_logpsi, ref_observables, ref_wf_grad, ref_kin, ref_nlpp);
+
+  // wftest central finite diff with delta=1E-4
+  // System: msd-1det-wfnoj
+  // Component: Total
+  // Total[0][0] =    -7.422055392503069E+00
+  // Total[0][1] =     2.960108339600254E+00
+  // Total[0][2] =     2.677556112598012E+00
+  // Total[1][0] =    -1.835815521449291E+00
+  // Total[1][1] =     8.029824214084158E-01
+  // Total[1][2] =     6.320946297559971E+00
+  // Component: Kinetic
+  // Kinetic[0][0] =     1.085259566373509E+00
+  // Kinetic[0][1] =     2.421542835971735E+01
+  // Kinetic[0][2] =     1.118850356610679E+02
+  // Kinetic[1][0] =     2.157223348770998E+00
+  // Kinetic[1][1] =    -3.374332309640238E+00
+  // Kinetic[1][2] =     7.562546381159052E+00
+  // Component: NonLocalECP
+  // NonLocalECP[0][0] =     2.422213250575567E+01
+  // NonLocalECP[0][1] =    -4.199825948995262E+01
+  // NonLocalECP[0][2] =    -9.890954709179667E+01
+  // NonLocalECP[1][0] =     2.512087444754840E+00
+  // NonLocalECP[1][1] =     1.135316575551215E+00
+  // NonLocalECP[1][2] =    -5.231039990549746E+00
+  // Component: Logpsi
+  // Logpsi[0][0] =    -1.904466926800907E+00
+  // Logpsi[0][1] =     2.125775401751184E+00
+  // Logpsi[0][2] =     7.055632136045986E+00
+  // Logpsi[1][0] =     1.423336102153172E+00
+  // Logpsi[1][1] =    -1.446704427010559E-01
+  // Logpsi[1][2] =     1.440195712998360E-01
+}
+
+TEST_CASE("Eloc_Derivatives:proto_md_noj", "[hamiltonian]")
+{
+  // multi-det sd-nojastrow ref vals
+  ParticleSet::ParticlePos ref_wf_grad;
+  ParticleSet::ParticlePos ref_kin;
+  ParticleSet::ParticlePos ref_nlpp;
+  ref_wf_grad.resize(2);
+  ref_kin.resize(2);
+  ref_nlpp.resize(2);
+
+  ref_wf_grad[0][0] = -1.704520108445351E+00;
+  ref_wf_grad[0][1] = 2.698093270252500E+00;
+  ref_wf_grad[0][2] = 6.535839898500484E+00;
+  ref_wf_grad[1][0] = 1.632281747907527E+00;
+  ref_wf_grad[1][1] = 9.164844749776080E-03;
+  ref_wf_grad[1][2] = 1.031883479551965E-01;
+
+  ref_kin[0][0] = 7.463178994395747E+00;
+  ref_kin[0][1] = 2.609759822240321E+01;
+  ref_kin[0][2] = 9.016467011699447E+01;
+  ref_kin[1][0] = 3.841415285954497E+00;
+  ref_kin[1][1] = -2.350439296145979E+00;
+  ref_kin[1][2] = 4.745404936050690E+00;
+
+  ref_nlpp[0][0] = 1.894008783210666E+01;
+  ref_nlpp[0][1] = -4.290217280010111E+01;
+  ref_nlpp[0][2] = -7.832794463395132E+01;
+  ref_nlpp[1][0] = 1.213451488100148E+00;
+  ref_nlpp[1][1] = -6.154734663521566E-01;
+  ref_nlpp[1][2] = -3.301254866396874E+00;
+
+
+  //Output of WFTester Eloc test for this ion/electron configuration.
+  //Logpsi: (-1.411499619826623686e+01,0.000000000000000000e+00)
+  //HamTest   Total -1.597690575658561407e+01
+  //HamTest Kinetic 1.053500867576629574e+01
+  //HamTest ElecElec 1.901556057075800865e+01
+  //HamTest IonIon 9.621404531608845900e+00
+  //HamTest LocalECP -6.783942829945100073e+01
+  //HamTest NonLocalECP 1.269054876473223636e+01
+
+  // updated wftest output
+  // Logpsi: -1.4114996198e+01
+  // HamTest   Total -1.5976155989e+01
+  // HamTest Kinetic 1.0535008676e+01
+  // HamTest LocalECP -6.7839428299e+01
+  // HamTest NonLocalECP 1.2691298533e+01
+  // HamTest ElecElec 1.9015560571e+01
+  // HamTest IonIon 9.6214045316e+00
+
+  QMCTraits::RealType ref_logpsi = -1.41149961982e+01;
+
+
+  std::map<std::string, QMCTraits::RealType> ref_observables{{"ELECELEC", 1.901556057075800865e+01},
+                                                             {"IONION", 9.621404531608845900e+00},
+                                                             {"LOCALECP", -6.783942829945100073e+01},
+                                                             {"KINETIC", 1.053500867576629574e+01},
+                                                             {"NONLOCALECP", 1.269054876473223636e+01}};
+
+  // 10 dets, no jastrow
+  test_msd_wrapper("cn.msd-wfnoj.xml", ref_logpsi, ref_observables, ref_wf_grad, ref_kin, ref_nlpp);
+
+  // wftest central finite diff with delta=1E-4
+  // System: msd-wfnoj
+  // Component: Total
+  // Total[0][0] =    -6.326180638156487E+00
+  // Total[0][1] =     3.938364892199786E+00
+  // Total[0][2] =     1.538793026298890E+00
+  // Total[1][0] =    -1.450259540947130E+00
+  // Total[1][1] =     7.608539310588469E-02
+  // Total[1][2] =     5.433589976702180E+00
+  // Component: Kinetic
+  // Kinetic[0][0] =     7.463178994395747E+00
+  // Kinetic[0][1] =     2.609759822240321E+01
+  // Kinetic[0][2] =     9.016467011699447E+01
+  // Kinetic[1][0] =     3.841415285954497E+00
+  // Kinetic[1][1] =    -2.350439296145979E+00
+  // Kinetic[1][2] =     4.745404936050690E+00
+  // Component: NonLocalECP
+  // NonLocalECP[0][0] =     1.894008783210666E+01
+  // NonLocalECP[0][1] =    -4.290217280010111E+01
+  // NonLocalECP[0][2] =    -7.832794463395132E+01
+  // NonLocalECP[1][0] =     1.213451488100148E+00
+  // NonLocalECP[1][1] =    -6.154734663521566E-01
+  // NonLocalECP[1][2] =    -3.301254866396874E+00
+  // Component: Logpsi
+  // Logpsi[0][0] =    -1.704520108445351E+00
+  // Logpsi[0][1] =     2.698093270252500E+00
+  // Logpsi[0][2] =     6.535839898500484E+00
+  // Logpsi[1][0] =     1.632281747907527E+00
+  // Logpsi[1][1] =     9.164844749776080E-03
+  // Logpsi[1][2] =     1.031883479551965E-01
+}
 /*TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
 {
   app_log() << "====Ion Derivative Test: Single Slater+Jastrow====\n";
