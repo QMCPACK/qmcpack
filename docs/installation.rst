@@ -858,8 +858,8 @@ Crusher is the test and development system of Frontier with exactly the same nod
 Building QMCPACK
 ^^^^^^^^^^^^^^^^
 
-As of April 2023, ROCm Clang (>= 5.3.0) is the only compiler, validated by QMCPACK developers,
-on Frontier for OpenMP offloading computation to AMD GPUs.
+As of March 2025, ROCm's amdclang is the only compiler, validated by QMCPACK developers, for reliable and efficient GPU acceleration
+on Frontier via OpenMP offloading. It is recommended to always use the latest available version of ROCm.
 
 For ease of reproducibility we provide build scripts for Frontier.
 
@@ -871,7 +871,9 @@ For ease of reproducibility we provide build scripts for Frontier.
 
 Running QMCPACK
 ^^^^^^^^^^^^^^^
-Job script example with one MPI rank per GPU.
+Job script example with one MPI rank per GPU. Frontier is configured in low operating system noise mode and therefore all 64 CPU
+cores are not available on each node by default. i.e. We use 7 OpenMP CPU threads per MPI rank. The part of the job script that
+makes specific modules available is copied directly from the build script used above.
 
 ::
 
@@ -882,16 +884,23 @@ Job script example with one MPI rank per GPU.
   #SBATCH -t 01:30:00
   #SBATCH -N 1
 
-  echo "Loading QMCPACK dependency modules for crusher"
-  module unload PrgEnv-gnu PrgEnv-cray PrgEnv-amd PrgEnv-gnu-amd PrgEnv-cray-amd
-  module unload amd amd-mixed gcc gcc-mixed cce cce-mixed
-  module load PrgEnv-amd amd/5.4.3
+  echo "Loading QMCPACK dependency modules for frontier"
+  for module_name in PrgEnv-gnu PrgEnv-cray PrgEnv-amd PrgEnv-gnu-amd PrgEnv-cray-amd \
+                     amd amd-mixed gcc gcc-mixed gcc-native cce cce-mixed rocm
+  do
+    if module is-loaded $module_name ; then module unload $module_name; fi
+  done
+  
+  module load PrgEnv-amd amd/6.3.1
+  module unload darshan-runtime
+  unset HIP_PATH
   module unload cray-libsci
-  module load cmake/3.22.2
+  module load cmake/3.27.9
   module load cray-fftw
-  module load openblas/0.3.17-omp
+  module load openblas/0.3.26-omp
   module load cray-hdf5-parallel
 
+  #Update exe_path to point to your executable directory
   exe_path=/lustre/orion/mat151/world-shared/opt/qmcpack/develop-20230411/build_crusher_rocm543_offload_cuda2hip_real/bin
 
   prefix=NiO-fcc-S128-dmc
@@ -903,8 +912,15 @@ Job script example with one MPI rank per GPU.
   TOTAL_RANKS=$((SLURM_JOB_NUM_NODES * RANKS_PER_NODE))
   THREAD_SLOTS=7
   export OMP_NUM_THREADS=7 # change this to 1 if running with only 1 thread is intended.
+  export LIBOMPTARGET_AMDGPU_MAX_ASYNC_COPY_BYTES=0
   srun -n $TOTAL_RANKS --ntasks-per-node=$RANKS_PER_NODE --gpus-per-task=1 -c $THREAD_SLOTS --gpu-bind=closest \
        $exe_path/qmcpack --enable-timers=fine $prefix.xml >& $prefix.out
+
+Recommended environment variables on ORNL OLCF Frontier
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+As indicated in the example job above, we recommend users set ``export LIBOMPTARGET_AMDGPU_MAX_ASYNC_COPY_BYTES=0``. As of March 2025,
+this setting results in increased performance for NiO performance tests.
 
 Installing on systems with ARMv8-based processors
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
