@@ -257,6 +257,7 @@ public:
                                 const std::vector<ValueMatrix>& dB) const;
 
   /** @brief Calculates derivative of observable for several MultiDiracDeterminant objects
+   *         calculated quantities are relative to refdet (first element is 0 in output arrays)
    *
    *  @param[in] Minv. inverse of slater matrices for ground state occupations. 
    *  @param[in] X.  X=M^-1 B M^-1.  
@@ -283,7 +284,7 @@ public:
                                     std::vector<ValueVector>& dvals_O,
                                     std::vector<ValueVector>& dvals_dmu) const;
 
-  /** @brief Uses per-det lists of derivatives to calculate total
+  /** @brief Uses per-det lists of derivatives to calculate total excited det contributions
    *
    *  @param[in] msd_idx. index of MultiSlaterDetTableMethod in this slaterdets_
    *  @param[in] mdds. vector of MultiDiracDeterminants; evaluate derivative of observable for all determinants
@@ -326,6 +327,13 @@ public:
    *  @return Void.
    */
   void wipeMatrices(std::vector<ValueMatrix>& A);
+
+  /** @brief Goes through a list of vectors and zeros them out.  Does this in place.
+   *
+   *  @param[in,out] A. The list of vectors to be zeroed out.  After call, A is all zeros.
+   *  @return Void.
+   */
+  void wipeVectors(std::vector<ValueVector>& A);
 
   /** @brief Returns Tr(A*B).  Actually, we assume a block diagonal structure, so this is 
    *    really Sum_i Tr(A_i*B_i), where i is the species index.

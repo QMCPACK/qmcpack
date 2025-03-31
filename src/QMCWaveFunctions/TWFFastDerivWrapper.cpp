@@ -466,9 +466,13 @@ void TWFFastDerivWrapper::computeMDDerivatives_ExcDets(const std::vector<ValueMa
       dval_dmu_refdet += b_On(i, i);
     }
 
-    dvals_dmu_O[mdd_id][0] = dval_dmu_O_refdet;
-    dvals_O[mdd_id][0]     = dval_O_refdet;
-    dvals_dmu[mdd_id][0]   = dval_dmu_refdet;
+    // dvals_dmu_O[mdd_id][0] = dval_dmu_O_refdet;
+    // dvals_O[mdd_id][0]     = dval_O_refdet;
+    // dvals_dmu[mdd_id][0]   = dval_dmu_refdet;
+    // debugging: compute difference from ref here and add that term back later
+    dvals_dmu_O[mdd_id][0] = 0.0;
+    dvals_O[mdd_id][0]     = 0.0;
+    dvals_dmu[mdd_id][0]   = 0.0;
 
 
     // TODO: Eq. 43
@@ -572,31 +576,35 @@ void TWFFastDerivWrapper::computeMDDerivatives_ExcDets(const std::vector<ValueMa
         BLAS::gemm('n', 'n', k, k, k, -1.0, ainv_s.data(), ainv_s.cols(), m1.data(), m1.cols(), 1.0, m2.data(),
                    m2.cols());
 
-        // dval_dmu = dval_dmu_O_refdet + tr(-ainv.m1.ainv.s + ainv.m2)
-        //          = dval_dmu_O_refdet + tr(ainv.(m2 - m1.ainv.s))
+        // dval_dmu_O = dval_dmu_O_refdet + tr(-ainv.m1.ainv.s + ainv.m2)
+        //            = dval_dmu_O_refdet + tr(ainv.(m2 - m1.ainv.s))
 
-        // dval_Od = dval_O_refdet + tr(ainv.s)
+        // dval_O = dval_O_refdet + tr(ainv.s)
 
-        // dval_dmu_log = dval_dmu_refdet + tr(ainv.m1)
+        // dval_dmu = dval_dmu_refdet + tr(ainv.m1)
 
-        ValueType dval_dmu     = dval_dmu_O_refdet;
-        ValueType dval_Od      = dval_O_refdet;
-        ValueType dval_dmu_log = dval_dmu_refdet;
+        // ValueType dval_dmu_O = dval_dmu_O_refdet;
+        // ValueType dval_O     = dval_O_refdet;
+        // ValueType dval_dmu   = dval_dmu_refdet;
+        // debugging: use diff instead of total
+        ValueType dval_dmu_O = 0.0;
+        ValueType dval_O     = 0.0;
+        ValueType dval_dmu   = 0.0;
 
 
         for (size_t i = 0; i < k; i++)
         {
-          dval_Od += ainv_s(i, i);
-          dval_dmu_log += ainv_m1(i, i);
+          dval_O += ainv_s(i, i);
+          dval_dmu += ainv_m1(i, i);
           for (size_t j = 0; j < k; j++)
           {
-            dval_dmu += m2(i, j) * a(j, i);
+            dval_dmu_O += m2(i, j) * a(j, i);
           }
         }
 
-        dvals_dmu_O[mdd_id][det_offset + idet] = dval_dmu;
-        dvals_O[mdd_id][det_offset + idet]     = dval_Od;
-        dvals_dmu[mdd_id][det_offset + idet]   = dval_dmu_log;
+        dvals_dmu_O[mdd_id][det_offset + idet] = dval_dmu_O;
+        dvals_O[mdd_id][det_offset + idet]     = dval_O;
+        dvals_dmu[mdd_id][det_offset + idet]   = dval_dmu;
       }
 
 
@@ -676,17 +684,19 @@ std::tuple<TWFFastDerivWrapper::ValueType, TWFFastDerivWrapper::ValueType, TWFFa
   const int num_groups = num_diracdets.size();
   // app_log() << "DEBUG: num_groups = " << num_groups << std::endl;
 
-  ValueType total_psi = 0.0; // sum_i c_i D_i
-  ValueType total_dmu_O   = 0.0; // d_mu(OD/D)
-  ValueType total_O   = 0.0; // OD/D
-  ValueType total_dmu   = 0.0; // d_mu(log(D))
-  ValueType total_Odmu  = 0.0; // (OD/D) * d_mu(log(D))
+  ValueType total_psi   = C[0]; // sum_i c_i D_i
+  ValueType total_dmu_O = 0.0;  // d_mu(OD/D)
+  ValueType total_O     = 0.0;  // OD/D
+  ValueType total_dmu   = 0.0;  // d_mu(log(D))
+  ValueType total_Odmu  = 0.0;  // (OD/D) * d_mu(log(D))
 
-  for (size_t i_sd = 0; i_sd < num_slaterdets; i_sd++)
+  /// NOTE: sum doesn't include refdet
+  /// total terms are added later; psi C0 term is added above
+  for (size_t i_sd = 1; i_sd < num_slaterdets; i_sd++)
   {
-    ValueType tmp_psi = C[i_sd]; // C[i_sd] * prod_i ratio[i][i_sd]
-    ValueType tmp_dmu_O   = 0.0;     // d_mu(OD/D)
-    ValueType tmp_O   = 0.0;     // OD/D
+    ValueType tmp_psi   = C[i_sd]; // C[i_sd] * prod_i ratio[i][i_sd]
+    ValueType tmp_dmu_O = 0.0;     // d_mu(OD/D)
+    ValueType tmp_O     = 0.0;     // OD/D
     ValueType tmp_dmu   = 0.0;     // d_mu(log(D))
     ValueType tmp_Odmu  = 0.0;     // (OD/D) * d_mu(log(D))
 
@@ -722,25 +732,19 @@ std::tuple<TWFFastDerivWrapper::ValueType, TWFFastDerivWrapper::ValueType, TWFFa
     total_Odmu += tmp_O * tmp_dmu * tmp_psi;
   }
 
-  app_log() << "total_dmu_O " << total_dmu_O << std::endl;
-  app_log() << "total_O     " << total_O << std::endl;
-  app_log() << "total_dmu   " << total_dmu << std::endl;
-  app_log() << "total_Odmu  " << total_Odmu << std::endl;
-  app_log() << "total_psi   " << total_psi << std::endl;
+  ValueType norm_dmu_O = total_dmu_O / total_psi;
+  ValueType norm_O     = total_O / total_psi;
+  ValueType norm_dmu   = total_dmu / total_psi;
+  ValueType norm_Odmu  = total_Odmu / total_psi;
 
   // d_mu(log(Psi))
-  ValueType dmu_psi = (total_dmu / total_psi);
+  ValueType dmu_psi = norm_dmu;
 
   // (OPsi/Psi) (this is the same for all spatial derivs, but we get it for free here)
-  ValueType Opsi = (total_O / total_psi);
+  ValueType Opsi = norm_O;
 
   // d_mu(OPsi/Psi)
-  ValueType dmu_O_psi = (total_dmu_O + total_Odmu) / total_psi + dmu_psi * Opsi;
-
-  ValueType norm_x  = total_dmu_O / total_psi;
-  ValueType norm_y  = total_O / total_psi;
-  ValueType norm_z  = total_dmu / total_psi;
-  ValueType norm_yz = total_Odmu / total_psi;
+  ValueType dmu_O_psi = norm_Odmu + norm_dmu_O - norm_O * norm_dmu;
 
   return {dmu_O_psi, dmu_psi, Opsi};
 }
@@ -787,6 +791,14 @@ void TWFFastDerivWrapper::buildX(const std::vector<ValueMatrix>& Minv,
 }
 
 void TWFFastDerivWrapper::wipeMatrices(std::vector<ValueMatrix>& A)
+{
+  for (IndexType id = 0; id < A.size(); id++)
+  {
+    A[id] = 0.0;
+  }
+}
+
+void TWFFastDerivWrapper::wipeVectors(std::vector<ValueVector>& A)
 {
   for (IndexType id = 0; id < A.size(); id++)
   {

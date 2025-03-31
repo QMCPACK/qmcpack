@@ -1200,6 +1200,13 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
       std::vector<Vector<ValueType>> fvals_O;     // (O D[i][j]/D[i][j])
       std::vector<Vector<ValueType>> fvals_dmu;   // d/dmu(log(D[i][j])
 
+
+      fval   = psi_wrapper_in.computeGSDerivative(Minv_, X_, dM_gs_[idim], dB_gs_[idim]);
+      wfcomp = psi_wrapper_in.trAB(Minv_, dM_gs_[idim]);
+
+      dedr_complex[iat][idim] = fval;
+      wfgradraw_[iat][idim] += wfcomp;
+
       if (psi_wrapper_in.hasMultiSlaterDet())
       {
         if (psi_wrapper_in.numMultiSlaterDets() > 1)
@@ -1249,15 +1256,10 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
         /// FIXME: wfobs mainly for debugging for now
         std::tie(fval, wfcomp, wfobs) =
             psi_wrapper_in.computeMDDerivatives_total(msd_idx, mdd_list, fvals_dmu_O, fvals_O, fvals_dmu);
-      }
-      else
-      {
-        fval   = psi_wrapper_in.computeGSDerivative(Minv_, X_, dM_gs_[idim], dB_gs_[idim]);
-        wfcomp = psi_wrapper_in.trAB(Minv_, dM_gs_[idim]);
-      }
 
-      dedr_complex[iat][idim] = fval;
-      wfgradraw_[iat][idim] += wfcomp; //The determinantal piece of the WF grad.
+        dedr_complex[iat][idim] += fval; // multidet part of d_mu(OPsi/Psi)
+        wfgradraw_[iat][idim] += wfcomp; // multidet part of d_mu(log(Psi))
+      }
     }
     convertToReal(dedr_complex[iat], dEdR[iat]);
     convertToReal(wfgradraw_[iat], wf_grad[iat]);

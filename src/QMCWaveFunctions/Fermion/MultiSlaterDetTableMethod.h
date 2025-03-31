@@ -108,6 +108,7 @@ public:
   void buildOptVariables();
 
   inline const MultiDiracDeterminant& getDet(int i) const { return *Dets[i]; }
+  // number of MultiDiracDet sets in this MultiSlaterDet
   inline int getDetSize() const { return Dets.size(); };
   inline int getNumSlaterDets() const { return C->size(); };
 

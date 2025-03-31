@@ -258,113 +258,150 @@ void test_msd_wrapper(const std::string& wffile,
   //This builds and initializes all the auxiliary matrices needed to do fast derivative evaluation.
   //These matrices are not necessarily square to accomodate orb opt and multidets.
 
-  ValueMatrix upmat; //Up slater matrix.
-  ValueMatrix dnmat; //Down slater matrix.
-  int Nup  = 5;      //These are hard coded until the interface calls get implemented/cleaned up.
-  int Ndn  = 4;
-  int Norb = 14;
-  upmat.resize(Nup, Norb);
-  dnmat.resize(Ndn, Norb);
+  const int ngroups = twf.numGroups();
   //The first two lines consist of vectors of matrices.  The vector index corresponds to the species ID.
-  //For example, matlist[0] will be the slater matrix for up electrons, matlist[1] will be for down electrons.
-  std::vector<ValueMatrix> matlist; //Vector of slater matrices.
-  std::vector<ValueMatrix> B, X;    //Vector of B matrix, and auxiliary X matrix.
 
-  //The first index corresponds to the x,y,z force derivative.  Current interface assumes that the ion index is fixed,
+  // vectors of size Ngroups (particle groups; alpha/beta here)
+  // vector idx corresponds to species ID (e.g. M[0] is slater matrix for up electrons, M[1] is for down electrons)
+  std::vector<ValueMatrix> X;    // [Norb, Nptcl] auxiliary X matrix (Minv.B.Minv)
+  std::vector<ValueMatrix> Minv; // [Norb, Nptcl] inverse slater matrix over GS orbs
+  std::vector<ValueMatrix> B;    // [Nptcl, Norb] B matrix (Op(M)) over all orbs
+  std::vector<ValueMatrix> B_gs; // [Nptcl, Nocc] subset of B over GS orbs
+  std::vector<ValueMatrix> M;    // [Nptcl, Norb] slater matrix over all orbs
+  std::vector<ValueMatrix> M_gs; // [Nptcl, Nocc] subset of M over GS orbs
+
+
+  // The first index corresponds to the x,y,z force derivative.  Current interface assumes that the ion index is fixed,
   // so these vectors of vectors of matrices store the derivatives of the M and B matrices.
   // dB[0][0] is the x component of the iat force derivative of the up B matrix, dB[0][1] is for the down B matrix.
 
-  std::vector<std::vector<ValueMatrix>> dM; //Derivative of slater matrix.
-  std::vector<std::vector<ValueMatrix>> dB; //Derivative of B matrices.
-  matlist.push_back(upmat);
-  matlist.push_back(dnmat);
+  std::vector<std::vector<ValueMatrix>> dM;    //Derivative of slater matrix
+  std::vector<std::vector<ValueMatrix>> dM_gs; // subset of dM over GS orbs
+  std::vector<std::vector<ValueMatrix>> dB;    //Derivative of B matrix
+  std::vector<std::vector<ValueMatrix>> dB_gs; // subset of dB over GS orbs
 
-  dM.push_back(matlist);
-  dM.push_back(matlist);
-  dM.push_back(matlist);
+  M.resize(ngroups);
+  M_gs.resize(ngroups);
+  X.resize(ngroups);
+  B.resize(ngroups);
+  B_gs.resize(ngroups);
+  Minv.resize(ngroups);
 
-  dB.push_back(matlist);
-  dB.push_back(matlist);
-  dB.push_back(matlist);
-
-  B.push_back(upmat);
-  B.push_back(dnmat);
-
-  X.push_back(upmat);
-  X.push_back(dnmat);
-
-  twf.getM(elec, matlist);
-
-  OperatorBase* kinop = ham.getHamiltonian(KINETIC);
-
-  kinop->evaluateOneBodyOpMatrix(elec, twf, B);
-
-
-  std::vector<ValueMatrix> minv;
-  std::vector<ValueMatrix> B_gs, M_gs; //We are creating B and M matrices for assumed ground-state occupations.
-                                       //These are N_s x N_s square matrices (N_s is number of particles for species s).
-  B_gs.push_back(upmat);
-  B_gs.push_back(dnmat);
-  M_gs.push_back(upmat);
-  M_gs.push_back(dnmat);
-  minv.push_back(upmat);
-  minv.push_back(dnmat);
-
-
-  //  twf.getM(elec, matlist);
-  std::vector<std::vector<ValueMatrix>> dB_gs;
-  std::vector<std::vector<ValueMatrix>> dM_gs;
-  std::vector<ValueMatrix> tmp_gs;
-  twf.getGSMatrices(B, B_gs);
-  twf.getGSMatrices(matlist, M_gs);
-  twf.invertMatrices(M_gs, minv);
-  twf.buildX(minv, B_gs, X);
-  for (int id = 0; id < matlist.size(); id++)
+  for (int gid = 0; gid < ngroups; gid++)
   {
-    //    int ptclnum = twf.numParticles(id);
-    int ptclnum = (id == 0 ? Nup : Ndn); //hard coded until twf interface comes online.
-    ValueMatrix gs_m;
-    gs_m.resize(ptclnum, ptclnum);
-    tmp_gs.push_back(gs_m);
+    const int sid    = twf.getTWFGroupIndex(gid);
+    const int norbs  = twf.numOrbitals(sid);
+    const int first  = elec.first(gid);
+    const int last   = elec.last(gid);
+    const int nptcls = last - first;
+    M[sid].resize(nptcls, norbs);
+    B[sid].resize(nptcls, norbs);
+
+    M_gs[sid].resize(nptcls, nptcls);
+    Minv[sid].resize(nptcls, nptcls);
+    B_gs[sid].resize(nptcls, nptcls);
+    X[sid].resize(nptcls, nptcls);
   }
 
+  dM.resize(OHMMS_DIM);
+  dM_gs.resize(OHMMS_DIM);
+  dB.resize(OHMMS_DIM);
+  dB_gs.resize(OHMMS_DIM);
 
-  dB_gs.push_back(tmp_gs);
-  dB_gs.push_back(tmp_gs);
-  dB_gs.push_back(tmp_gs);
+  for (int idim = 0; idim < OHMMS_DIM; idim++)
+  {
+    dM[idim].resize(ngroups);
+    dB[idim].resize(ngroups);
+    dM_gs[idim].resize(ngroups);
+    dB_gs[idim].resize(ngroups);
 
-  dM_gs.push_back(tmp_gs);
-  dM_gs.push_back(tmp_gs);
-  dM_gs.push_back(tmp_gs);
+    for (int gid = 0; gid < ngroups; gid++)
+    {
+      const int sid    = twf.getTWFGroupIndex(gid);
+      const int norbs  = twf.numOrbitals(sid);
+      const int first  = elec.first(gid);
+      const int last   = elec.last(gid);
+      const int nptcls = last - first;
+
+      dM[idim][sid].resize(nptcls, norbs);
+      dB[idim][sid].resize(nptcls, norbs);
+      dM_gs[idim][sid].resize(nptcls, nptcls);
+      dB_gs[idim][sid].resize(nptcls, nptcls);
+    }
+  }
+  twf.wipeMatrices(M);
+  twf.wipeMatrices(M_gs);
+  twf.wipeMatrices(X);
+  twf.wipeMatrices(B);
+  twf.wipeMatrices(Minv);
+  twf.wipeMatrices(B_gs);
+
+  for (int idim = 0; idim < OHMMS_DIM; idim++)
+  {
+    twf.wipeMatrices(dM[idim]);
+    twf.wipeMatrices(dM_gs[idim]);
+    twf.wipeMatrices(dB[idim]);
+    twf.wipeMatrices(dB_gs[idim]);
+  }
+
+  twf.getM(elec, M);
+  twf.getGSMatrices(M, M_gs);
+  twf.invertMatrices(M_gs, Minv);
+
+
+  /// evaluate for kinetic energy only for this test
+  OperatorBase* kinop = ham.getHamiltonian(KINETIC);
+  kinop->evaluateOneBodyOpMatrix(elec, twf, B);
+  twf.getGSMatrices(B, B_gs);
+  twf.buildX(Minv, B_gs, X);
+
 
   //Finally, we have all the data structures with the right dimensions.  Continue.
-  ParticleSet::ParticleGradient tmpwfgrad_complex(Nions);
-  ParticleSet::ParticlePos tmpwfgrad(Nions);
+
+  // d_mu(log(psi))
+  ParticleSet::ParticleGradient wfgrad_complex_gs(Nions);
+  ParticleSet::ParticleGradient wfgrad_complex_md(Nions);
+  ParticleSet::ParticlePos wfgrad_gs(Nions);
+  ParticleSet::ParticlePos wfgrad_md(Nions);
+  ParticleSet::ParticlePos wfgrad(Nions);
+
+  // d_mu(T Psi/Psi)
   ParticleSet::ParticleGradient fkin_complex_gs(Nions);
-  ParticleSet::ParticleGradient fkin_complex(Nions);
-  ParticleSet::ParticleGradient fnlpp_complex_gs(Nions);
-  ParticleSet::ParticleGradient fnlpp_complex(Nions);
+  ParticleSet::ParticleGradient fkin_complex_md(Nions);
   ParticleSet::ParticlePos fkin_gs(Nions);
+  ParticleSet::ParticlePos fkin_md(Nions);
   ParticleSet::ParticlePos fkin(Nions);
+
+  // d_mu(V Psi/Psi)
+  ParticleSet::ParticleGradient fnlpp_complex_gs(Nions);
+  ParticleSet::ParticleGradient fnlpp_complex_md(Nions);
   ParticleSet::ParticlePos fnlpp_gs(Nions);
+  ParticleSet::ParticlePos fnlpp_md(Nions);
   ParticleSet::ParticlePos fnlpp(Nions);
-  ParticleSet::ParticleGradient obsval_complex(Nions);
+
+  // O Psi/Psi
+  ParticleSet::ParticleGradient obsval_complex_gs(Nions);
+  ParticleSet::ParticleGradient obsval_complex_md(Nions);
+  ParticleSet::ParticlePos obsval_gs(Nions);
+  ParticleSet::ParticlePos obsval_md(Nions);
   ParticleSet::ParticlePos obsval(Nions);
 
-  std::vector<Vector<ValueType>> fvals_dmu;     // d/dmu(O D[i][j]/D[i][j])
-  std::vector<Vector<ValueType>> fvals_Od;      // (O D[i][j]/D[i][j])
-  std::vector<Vector<ValueType>> fvals_dmu_log; // d/dmu(log(D[i][j])
+  std::vector<Vector<ValueType>> fvals_dmu_O; // d/dmu(O D[i][j]/D[i][j])
+  std::vector<Vector<ValueType>> fvals_O;     // (O D[i][j]/D[i][j])
+  std::vector<Vector<ValueType>> fvals_dmu;   // d/dmu(log(D[i][j])
+
+
   CHECK(twf.hasMultiSlaterDet());
   CHECK(twf.numMultiSlaterDets() == 1);
   int msd_idx = 0;
 
   const auto& msd = static_cast<const MultiSlaterDetTableMethod&>(twf.getMultiSlaterDet(msd_idx));
 
-
   auto n_mdd = msd.getDetSize();
+
+  fvals_dmu_O.resize(n_mdd);
+  fvals_O.resize(n_mdd);
   fvals_dmu.resize(n_mdd);
-  fvals_Od.resize(n_mdd);
-  fvals_dmu_log.resize(n_mdd);
 
   // same order as Dets in msd; index of associated SPOset in twf.sposets_
   std::vector<int> mdd_spo_ids;
@@ -379,9 +416,9 @@ void test_msd_wrapper(const std::string& wffile,
     // SPOSet location in twf.sposets_ for this particle group
     const int sid = twf.getTWFGroupIndex(gid);
     mdd_spo_ids.push_back(sid);
+    fvals_dmu_O[i_mdd].resize(multidiracdet_i.getNumDets());
+    fvals_O[i_mdd].resize(multidiracdet_i.getNumDets());
     fvals_dmu[i_mdd].resize(multidiracdet_i.getNumDets());
-    fvals_Od[i_mdd].resize(multidiracdet_i.getNumDets());
-    fvals_dmu_log[i_mdd].resize(multidiracdet_i.getNumDets());
   }
 
   ValueType fval   = 0.0;
@@ -393,96 +430,87 @@ void test_msd_wrapper(const std::string& wffile,
   {
     for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
-      twf.wipeMatrices(dB[idim]);
       twf.wipeMatrices(dM[idim]);
+      twf.wipeMatrices(dM_gs[idim]);
+      twf.wipeMatrices(dB[idim]);
+      twf.wipeMatrices(dB_gs[idim]);
     }
 
+    // ion deriv of M
     twf.getIonGradM(elec, ions, ionid, dM);
+    // ion deriv of B
     kinop->evaluateOneBodyOpMatrixForceDeriv(elec, ions, twf, ionid, dB);
 
     for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
-      app_log() << "dB_kin[" << idim << "][0]" << std::endl;
-      app_log() << dB[idim][0] << std::endl;
-      app_log() << "dB_kin[" << idim << "][1]" << std::endl;
-      app_log() << dB[idim][1] << std::endl;
+      twf.wipeVectors(fvals_dmu_O);
+      twf.wipeVectors(fvals_O);
+      twf.wipeVectors(fvals_dmu);
+
       twf.getGSMatrices(dB[idim], dB_gs[idim]);
       twf.getGSMatrices(dM[idim], dM_gs[idim]);
 
-      twf.computeMDDerivatives_ExcDets(minv, X, dM[idim], dB[idim], B, matlist, mdd_spo_ids, mdd_list, fvals_dmu,
-                                       fvals_Od, fvals_dmu_log);
-      for (size_t i_mdd = 0; i_mdd < n_mdd; i_mdd++)
-      {
-        const MultiDiracDeterminant& multidiracdet_i = msd.getDet(i_mdd);
-        for (size_t i_spindet = 0; i_spindet < multidiracdet_i.getNumDets(); i_spindet++)
-        {
-          app_log() << "fvals[" << i_mdd << "][" << i_spindet << "]" << fvals_dmu[i_mdd][i_spindet] << ", "
-                    << fvals_Od[i_mdd][i_spindet] << ", " << fvals_dmu_log[i_mdd][i_spindet] << std::endl;
-        }
-      }
+      fval                           = twf.computeGSDerivative(Minv, X, dM_gs[idim], dB_gs[idim]);
+      wfcomp                         = twf.trAB(Minv, dM_gs[idim]);
+      wfobs                          = twf.trAB(Minv, B_gs);
+      fkin_complex_gs[ionid][idim]   = fval;
+      wfgrad_complex_gs[ionid][idim] = wfcomp;
+      obsval_complex_gs[ionid][idim] = wfobs; // does not change over ions/dims; restructure MD stuff and move outside
+
+      // calculate quantities for spindets
+      twf.computeMDDerivatives_ExcDets(Minv, X, dM[idim], dB[idim], B, M, mdd_spo_ids, mdd_list, fvals_dmu_O, fvals_O,
+                                       fvals_dmu);
 
 
       // fval: d_mu(OPsi/Psi)
       // wfcomp: d_mu(log(Psi))
       // oval: OPsi/Psi (decide how to handle this; should be same at each iteration over ion dims?)
       std::tie(fval, wfcomp, wfobs) =
-          twf.computeMDDerivatives_total(msd_idx, mdd_list, fvals_dmu, fvals_Od, fvals_dmu_log);
+          twf.computeMDDerivatives_total(msd_idx, mdd_list, fvals_dmu_O, fvals_O, fvals_dmu);
 
-      app_log() << fval << ", " << wfcomp << ", " << wfobs << std::endl;
-      fkin_complex[ionid][idim]      = fval;
-      tmpwfgrad_complex[ionid][idim] = wfcomp;
-      obsval_complex[ionid][idim]    = wfobs;
 
-      /// NOTE: for comparison with GS singledet
-      fkin_complex_gs[ionid][idim] = twf.computeGSDerivative(minv, X, dM_gs[idim], dB_gs[idim]);
+      fkin_complex_md[ionid][idim]   = fval;
+      wfgrad_complex_md[ionid][idim] = wfcomp;
+      obsval_complex_md[ionid][idim] = wfobs;
     }
     convertToReal(fkin_complex_gs[ionid], fkin_gs[ionid]);
-    convertToReal(fkin_complex[ionid], fkin[ionid]);
-    convertToReal(tmpwfgrad_complex[ionid], tmpwfgrad[ionid]);
-    convertToReal(obsval_complex[ionid], obsval[ionid]);
+    convertToReal(fkin_complex_md[ionid], fkin_md[ionid]);
+    convertToReal(wfgrad_complex_md[ionid], wfgrad_md[ionid]);
+    convertToReal(wfgrad_complex_gs[ionid], wfgrad_gs[ionid]);
+    convertToReal(obsval_complex_md[ionid], obsval_md[ionid]);
+    convertToReal(obsval_complex_gs[ionid], obsval_gs[ionid]);
   }
 
-  app_log() << "\nresults from " << wffile << std::endl;
-  for (size_t i = 0; i < 2; i++)
-    for (size_t j = 0; j < 3; j++)
-      app_log() << "fkin[" << i << "][" << j << "] = " << fkin[i][j] << std::endl;
-
-  app_log() << "\n GS results from " << wffile << std::endl;
-  for (size_t i = 0; i < 2; i++)
-    for (size_t j = 0; j < 3; j++)
-      app_log() << "fkin_gs[" << i << "][" << j << "] = " << fkin_gs[i][j] << std::endl;
-
-  for (size_t i = 0; i < 2; i++)
-    for (size_t j = 0; j < 3; j++)
-      app_log() << "tmpwfgrad[" << i << "][" << j << "] = " << tmpwfgrad[i][j] << std::endl;
-
-  app_log() << "\nresults from " << wffile << std::endl;
-  for (size_t i = 0; i < 2; i++)
-    for (size_t j = 0; j < 3; j++)
-      app_log() << "obsval[" << i << "][" << j << "] = " << obsval[i][j] << std::endl;
+  // combine GS and MD contributions to get total
+  for (int ionid = 0; ionid < Nions; ionid++)
+  {
+    fkin[ionid]   = fkin_gs[ionid] + fkin_md[ionid];
+    wfgrad[ionid] = wfgrad_gs[ionid] + wfgrad_md[ionid];
+    obsval[ionid] = obsval_gs[ionid] + obsval_md[ionid];
+  }
 
   for (size_t ionid = 0; ionid < Nions; ionid++)
   {
     for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
 #if defined(MIXED_PRECISION)
-      CHECK(tmpwfgrad[ionid][idim] == Approx(ref_wf_grad[ionid][idim]).epsilon(1e-4));
+      CHECK(wfgrad[ionid][idim] == Approx(ref_wf_grad[ionid][idim]).epsilon(1e-4));
 #else
-      CHECK(tmpwfgrad[ionid][idim] == Approx(ref_wf_grad[ionid][idim]));
+      CHECK(wfgrad[ionid][idim] == Approx(ref_wf_grad[ionid][idim]));
 #endif
     }
   }
 
-  /// TODO: pass in ref vals to check, or return them and check outside
-
+  /// TODO: restructure code to get MD observable outside of ion dim loop
   ValueType keval = 0.0;
   RealType keobs  = 0.0;
-  keval           = twf.trAB(minv, B_gs);
+  keval += twf.trAB(Minv, B_gs);
+  keval += obsval_md[0][0];
   convertToReal(keval, keobs);
 
 
   CHECK(keobs == Approx(ref_observables.at("KINETIC")));
-  app_log() << "gs ref kinetic: " << keobs << std::endl;
+  app_log() << "ref kinetic: " << keobs << std::endl;
 
   for (size_t ionid = 0; ionid < Nions; ionid++)
   {
@@ -510,16 +538,8 @@ void test_msd_wrapper(const std::string& wffile,
   twf.wipeMatrices(X);
   nlppop->evaluateOneBodyOpMatrix(elec, twf, B);
   twf.getGSMatrices(B, B_gs);
-  twf.buildX(minv, B_gs, X);
+  twf.buildX(Minv, B_gs, X);
 
-  ValueType nlpp    = 0.0;
-  RealType nlpp_obs = 0.0;
-  nlpp              = twf.trAB(minv, B_gs);
-  convertToReal(nlpp, nlpp_obs);
-
-  app_log() << "NLPP = " << nlpp << std::endl;
-
-  CHECK(nlpp_obs == Approx(ref_observables.at("NONLOCALECP")));
 
   // ParticleSet::ParticleGradient fnlpp_complex(ions.getTotalNum());
   // ParticleSet::ParticlePos fnlpp(ions.getTotalNum());
@@ -527,83 +547,84 @@ void test_msd_wrapper(const std::string& wffile,
   {
     for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
-      twf.wipeMatrices(dB[idim]);
       twf.wipeMatrices(dM[idim]);
+      twf.wipeMatrices(dM_gs[idim]);
+      twf.wipeMatrices(dB[idim]);
+      twf.wipeMatrices(dB_gs[idim]);
     }
 
+    // ion deriv of M
     twf.getIonGradM(elec, ions, ionid, dM);
+
+    // ion deriv of B
     nlppop->evaluateOneBodyOpMatrixForceDeriv(elec, ions, twf, ionid, dB);
 
     for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
-      app_log() << "dB_nlpp[" << idim << "][0]" << std::endl;
-      app_log() << dB[idim][0] << std::endl;
-      app_log() << "dB_nlpp[" << idim << "][1]" << std::endl;
-      app_log() << dB[idim][1] << std::endl;
+      twf.wipeVectors(fvals_dmu_O);
+      twf.wipeVectors(fvals_O);
+      twf.wipeVectors(fvals_dmu);
+
       twf.getGSMatrices(dB[idim], dB_gs[idim]);
       twf.getGSMatrices(dM[idim], dM_gs[idim]);
-      twf.computeMDDerivatives_ExcDets(minv, X, dM[idim], dB[idim], B, matlist, mdd_spo_ids, mdd_list, fvals_dmu,
-                                       fvals_Od, fvals_dmu_log);
-      for (size_t i_mdd = 0; i_mdd < n_mdd; i_mdd++)
-      {
-        const MultiDiracDeterminant& multidiracdet_i = msd.getDet(i_mdd);
-        for (size_t i_spindet = 0; i_spindet < multidiracdet_i.getNumDets(); i_spindet++)
-        {
-          app_log() << "fvals[" << i_mdd << "][" << i_spindet << "]" << fvals_dmu[i_mdd][i_spindet] << ", "
-                    << fvals_Od[i_mdd][i_spindet] << ", " << fvals_dmu_log[i_mdd][i_spindet] << std::endl;
-        }
-      }
+
+      fval                           = twf.computeGSDerivative(Minv, X, dM_gs[idim], dB_gs[idim]);
+      wfcomp                         = twf.trAB(Minv, dM_gs[idim]);
+      wfobs                          = twf.trAB(Minv, B_gs);
+      fnlpp_complex_gs[ionid][idim]  = fval;
+      wfgrad_complex_gs[ionid][idim] = wfcomp;
+      obsval_complex_gs[ionid][idim] = wfobs; // should not change over ions/dims
+
+      // calculate quantities for spindets
+      twf.computeMDDerivatives_ExcDets(Minv, X, dM[idim], dB[idim], B, M, mdd_spo_ids, mdd_list, fvals_dmu_O, fvals_O,
+                                       fvals_dmu);
 
 
       // fval: d_mu(OPsi/Psi)
       // wfcomp: d_mu(log(Psi))
       // oval: OPsi/Psi (decide how to handle this; should be same at each iteration over ion dims?)
       std::tie(fval, wfcomp, wfobs) =
-          twf.computeMDDerivatives_total(msd_idx, mdd_list, fvals_dmu, fvals_Od, fvals_dmu_log);
+          twf.computeMDDerivatives_total(msd_idx, mdd_list, fvals_dmu_O, fvals_O, fvals_dmu);
 
-      app_log() << fval << ", " << wfcomp << ", " << wfobs << std::endl;
-      fnlpp_complex[ionid][idim]     = fval;
-      tmpwfgrad_complex[ionid][idim] = wfcomp;
-      obsval_complex[ionid][idim]    = wfobs;
 
-      /// NOTE: for comparison with GS singledet
-      fnlpp_complex_gs[ionid][idim] = twf.computeGSDerivative(minv, X, dM_gs[idim], dB_gs[idim]);
+      fnlpp_complex_md[ionid][idim]  = fval;
+      wfgrad_complex_md[ionid][idim] = wfcomp;
+      obsval_complex_md[ionid][idim] = wfobs;
     }
-    convertToReal(fnlpp_complex[ionid], fnlpp[ionid]);
 
     convertToReal(fnlpp_complex_gs[ionid], fnlpp_gs[ionid]);
-    convertToReal(fnlpp_complex[ionid], fnlpp[ionid]);
-    convertToReal(tmpwfgrad_complex[ionid], tmpwfgrad[ionid]);
-    convertToReal(obsval_complex[ionid], obsval[ionid]);
+    convertToReal(fnlpp_complex_md[ionid], fnlpp_md[ionid]);
+    convertToReal(wfgrad_complex_md[ionid], wfgrad_md[ionid]);
+    convertToReal(wfgrad_complex_gs[ionid], wfgrad_gs[ionid]);
+    convertToReal(obsval_complex_md[ionid], obsval_md[ionid]);
+    convertToReal(obsval_complex_gs[ionid], obsval_gs[ionid]);
   }
 
-  app_log() << "\nresults from " << wffile << std::endl;
-  for (size_t i = 0; i < 2; i++)
-    for (size_t j = 0; j < 3; j++)
-      app_log() << "fnlpp[" << i << "][" << j << "] = " << fnlpp[i][j] << std::endl;
+  for (int ionid = 0; ionid < Nions; ionid++)
+  {
+    fnlpp[ionid]  = fnlpp_gs[ionid] + fnlpp_md[ionid];
+    wfgrad[ionid] = wfgrad_gs[ionid] + wfgrad_md[ionid];
+    obsval[ionid] = obsval_gs[ionid] + obsval_md[ionid];
+  }
 
-  app_log() << "\n GS results from " << wffile << std::endl;
-  for (size_t i = 0; i < 2; i++)
-    for (size_t j = 0; j < 3; j++)
-      app_log() << "fnlpp_gs[" << i << "][" << j << "] = " << fnlpp_gs[i][j] << std::endl;
+  ValueType nlpp    = 0.0;
+  RealType nlpp_obs = 0.0;
+  nlpp += twf.trAB(Minv, B_gs);
+  nlpp += obsval_md[0][0];
+  convertToReal(nlpp, nlpp_obs);
 
-  for (size_t i = 0; i < 2; i++)
-    for (size_t j = 0; j < 3; j++)
-      app_log() << "tmpwfgrad[" << i << "][" << j << "] = " << tmpwfgrad[i][j] << std::endl;
+  app_log() << "NLPP = " << nlpp_obs << std::endl;
 
-  app_log() << "\nresults from " << wffile << std::endl;
-  for (size_t i = 0; i < 2; i++)
-    for (size_t j = 0; j < 3; j++)
-      app_log() << "obsval[" << i << "][" << j << "] = " << obsval[i][j] << std::endl;
+  CHECK(nlpp_obs == Approx(ref_observables.at("NONLOCALECP")));
 
   for (size_t ionid = 0; ionid < Nions; ionid++)
   {
     for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
 #if defined(MIXED_PRECISION)
-      CHECK(tmpwfgrad[ionid][idim] == Approx(ref_wf_grad[ionid][idim]).epsilon(1e-4));
+      CHECK(wfgrad[ionid][idim] == Approx(ref_wf_grad[ionid][idim]).epsilon(1e-4));
 #else
-      CHECK(tmpwfgrad[ionid][idim] == Approx(ref_wf_grad[ionid][idim]));
+      CHECK(wfgrad[ionid][idim] == Approx(ref_wf_grad[ionid][idim]));
 #endif
     }
   }
