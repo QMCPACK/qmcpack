@@ -1057,9 +1057,13 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
   std::vector<ValueMatrix> B_gs_;
   std::vector<ValueMatrix> M_;
   std::vector<ValueMatrix> M_gs_;
+  std::vector<ValueMatrix> Minv_B_;
+  std::vector<ValueMatrix> Minv_Mv_;
 
   std::vector<std::vector<ValueMatrix>> dM_;
   std::vector<std::vector<ValueMatrix>> dM_gs_;
+  std::vector<std::vector<ValueMatrix>> Minv_dM_;
+  std::vector<std::vector<ValueMatrix>> Minv_dB_;
   std::vector<std::vector<ValueMatrix>> dB_;
   std::vector<std::vector<ValueMatrix>> dB_gs_;
 
@@ -1070,6 +1074,8 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
     B_.resize(ngroups);
     B_gs_.resize(ngroups);
     Minv_.resize(ngroups);
+    Minv_B_.resize(ngroups);
+    Minv_Mv_.resize(ngroups);
 
     for (int gid = 0; gid < ngroups; gid++)
     {
@@ -1078,9 +1084,12 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
       const int first  = P.first(gid);
       const int last   = P.last(gid);
       const int nptcls = last - first;
+      const int nvirt  = norbs - nptcls;
 
       M_[sid].resize(nptcls, norbs);
       B_[sid].resize(nptcls, norbs);
+      Minv_B_[sid].resize(nptcls, norbs);
+      Minv_Mv_[sid].resize(nptcls, nvirt);
 
       M_gs_[sid].resize(nptcls, nptcls);
       Minv_[sid].resize(nptcls, nptcls);
@@ -1090,6 +1099,8 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
 
     dM_.resize(OHMMS_DIM);
     dM_gs_.resize(OHMMS_DIM);
+    Minv_dM_.resize(OHMMS_DIM);
+    Minv_dB_.resize(OHMMS_DIM);
     dB_.resize(OHMMS_DIM);
     dB_gs_.resize(OHMMS_DIM);
 
@@ -1097,6 +1108,8 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
     {
       dM_[idim].resize(ngroups);
       dB_[idim].resize(ngroups);
+      Minv_dM_[idim].resize(ngroups);
+      Minv_dB_[idim].resize(ngroups);
       dM_gs_[idim].resize(ngroups);
       dB_gs_[idim].resize(ngroups);
 
@@ -1110,6 +1123,8 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
 
         dM_[idim][sid].resize(nptcls, norbs);
         dB_[idim][sid].resize(nptcls, norbs);
+        Minv_dM_[idim][sid].resize(nptcls, norbs);
+        Minv_dB_[idim][sid].resize(nptcls, norbs);
         dM_gs_[idim][sid].resize(nptcls, nptcls);
         dB_gs_[idim][sid].resize(nptcls, nptcls);
       }
@@ -1120,11 +1135,15 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
     psi_wrapper_in.wipeMatrices(B_);
     psi_wrapper_in.wipeMatrices(Minv_);
     psi_wrapper_in.wipeMatrices(B_gs_);
+    psi_wrapper_in.wipeMatrices(Minv_B_);
+    psi_wrapper_in.wipeMatrices(Minv_Mv_);
 
     for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
       psi_wrapper_in.wipeMatrices(dM_[idim]);
       psi_wrapper_in.wipeMatrices(dM_gs_[idim]);
+      psi_wrapper_in.wipeMatrices(Minv_dM_[idim]);
+      psi_wrapper_in.wipeMatrices(Minv_dB_[idim]);
       psi_wrapper_in.wipeMatrices(dB_[idim]);
       psi_wrapper_in.wipeMatrices(dB_gs_[idim]);
     }
@@ -1153,8 +1172,60 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
 
   {
     psi_wrapper_in.getGSMatrices(B_, B_gs_);
-    psi_wrapper_in.buildX(Minv_, B_gs_, X_);
+    // psi_wrapper_in.buildX(Minv_, B_gs_, X_);
+    psi_wrapper_in.buildIntermediates(Minv_, B_, M_, X_, Minv_B_, Minv_Mv_);
   }
+
+
+  // ===== Initialize some multidet quantities =====
+
+  // if we ever want to support more later, idx is useful
+  // also useful to pass to some functions below to avoid some casting
+  int msd_idx = 0;
+
+  // values for MultiDiracDet i, excited det j (also include GS det at j==0)
+  std::vector<Vector<ValueType>> fvals_dmu_O; // d/dmu(O D[i][j]/D[i][j])
+  std::vector<Vector<ValueType>> fvals_O;     // (O D[i][j]/D[i][j])
+  std::vector<Vector<ValueType>> fvals_dmu;   // d/dmu(log(D[i][j])
+
+  // same order as Dets in msd; index of associated SPOset in psi_wrapper_in.sposets_
+  std::vector<int> mdd_spo_ids;
+  std::vector<const WaveFunctionComponent*> mdd_list;
+
+
+  if (psi_wrapper_in.hasMultiSlaterDet())
+  {
+    if (psi_wrapper_in.numMultiSlaterDets() > 1)
+    {
+      APP_ABORT("ERROR: QMCHamiltonian::evaluateIonDerivsFast does not support multiple MultiSlaterDetTableMethod");
+    }
+
+    const auto& msd = static_cast<const MultiSlaterDetTableMethod&>(psi_wrapper_in.getMultiSlaterDet(msd_idx));
+
+    /// FIXME: just do this earlier?
+    auto n_mdd = msd.getDetSize();
+    fvals_dmu_O.resize(n_mdd);
+    fvals_O.resize(n_mdd);
+    fvals_dmu.resize(n_mdd);
+
+    for (size_t i_mdd = 0; i_mdd < n_mdd; i_mdd++)
+    {
+      const MultiDiracDeterminant& multidiracdet_i = msd.getDet(i_mdd);
+      mdd_list.push_back(static_cast<const WaveFunctionComponent*>(&multidiracdet_i));
+      // particle group id for this multidiracdet
+      const int gid = P.getGroupID(multidiracdet_i.getFirstIndex());
+      // SPOSet location in psi_wrapper_in.sposets_ for this particle group
+      const int sid = psi_wrapper_in.getTWFGroupIndex(gid);
+      mdd_spo_ids.push_back(sid);
+      fvals_dmu_O[i_mdd].resize(multidiracdet_i.getNumDets());
+      fvals_O[i_mdd].resize(multidiracdet_i.getNumDets());
+      fvals_dmu[i_mdd].resize(multidiracdet_i.getNumDets());
+    }
+    psi_wrapper_in.wipeVectors(fvals_O);
+  }
+
+  psi_wrapper_in.computeMDDerivatives_Obs(Minv_Mv_, Minv_B_, mdd_spo_ids, mdd_list, fvals_O);
+
   //And now we compute the 3N force derivatives.  3 at a time for each atom.
   for (int iat = 0; iat < ions.getTotalNum(); iat++)
   {
@@ -1180,85 +1251,51 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
       if (H[i]->dependsOnWaveFunction())
         H[i]->evaluateOneBodyOpMatrixForceDeriv(P, ions, psi_wrapper_in, iat, dB_);
 
+
+    psi_wrapper_in.buildIntermediates_dmu(Minv_, dB_, dM_, Minv_dB_, Minv_dM_);
+
     for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
       psi_wrapper_in.getGSMatrices(dB_[idim], dB_gs_[idim]);
       psi_wrapper_in.getGSMatrices(dM_[idim], dM_gs_[idim]);
 
-      ValueType fval   = 0.0;
-      ValueType wfcomp = 0.0;
+      psi_wrapper_in.wipeVectors(fvals_dmu);
+      psi_wrapper_in.wipeVectors(fvals_dmu_O);
+
+      // d_mu(OPsi/Psi)
+      ValueType fval_dmu_O = 0.0;
+      // d_mu(log Psi)
+      ValueType fval_dmu = 0.0;
 
       // this is OD/D terms, so should compute outside of this loop, but we get it for free-ish here
       /// FIXME: compute some MD quantities outside of the idim loop
-      ValueType wfobs = 0.0;
-
-      /// TODO: put more thought into where this should go and what the lifetime needs to be
-      ///       could put in outermost scope and just resize once for multidets, then clear data as needed between iterations
-
-      // values for MultiDiracDet i, excited det j (also include GS det at j==0)
-      std::vector<Vector<ValueType>> fvals_dmu_O; // d/dmu(O D[i][j]/D[i][j])
-      std::vector<Vector<ValueType>> fvals_O;     // (O D[i][j]/D[i][j])
-      std::vector<Vector<ValueType>> fvals_dmu;   // d/dmu(log(D[i][j])
+      ValueType fval_O = 0.0;
 
 
-      fval   = psi_wrapper_in.computeGSDerivative(Minv_, X_, dM_gs_[idim], dB_gs_[idim]);
-      wfcomp = psi_wrapper_in.trAB(Minv_, dM_gs_[idim]);
+      fval_dmu_O = psi_wrapper_in.computeGSDerivative(Minv_, X_, dM_gs_[idim], dB_gs_[idim]);
+      fval_dmu   = psi_wrapper_in.trAB(Minv_, dM_gs_[idim]);
 
-      dedr_complex[iat][idim] = fval;
-      wfgradraw_[iat][idim] += wfcomp;
+      dedr_complex[iat][idim] = fval_dmu_O;
+      wfgradraw_[iat][idim] += fval_dmu;
 
       if (psi_wrapper_in.hasMultiSlaterDet())
       {
-        if (psi_wrapper_in.numMultiSlaterDets() > 1)
-        {
-          APP_ABORT("ERROR: QMCHamiltonian::evaluateIonDerivsFast does not support multiple MultiSlaterDetTableMethod");
-        }
-
-        // if we ever want to support more later, idx is useful
-        // also useful to pass to some functions below to avoid some casting
-        int msd_idx = 0;
-
         const auto& msd = static_cast<const MultiSlaterDetTableMethod&>(psi_wrapper_in.getMultiSlaterDet(msd_idx));
 
-        /// FIXME: just do this earlier?
-        auto n_mdd = msd.getDetSize();
-        fvals_dmu_O.resize(n_mdd);
-        fvals_O.resize(n_mdd);
-        fvals_dmu.resize(n_mdd);
 
-        /// FIXME: construct some of this stuff earlier
-        // same order as Dets in msd; index of associated SPOset in psi_wrapper_in.sposets_
-        std::vector<int> mdd_spo_ids;
-        std::vector<const WaveFunctionComponent*> mdd_list;
+        psi_wrapper_in.computeMDDerivatives_dmu(Minv_Mv_, Minv_B_, Minv_dM_[idim], Minv_dB_[idim], mdd_spo_ids,
+                                                mdd_list, fvals_dmu_O, fvals_dmu);
+        // psi_wrapper_in.computeMDDerivatives_ExcDets(Minv_, X_, dM_[idim], dB_[idim], B_, M_, mdd_spo_ids, mdd_list,
+        //                                             fvals_dmu_O, fvals_O, fvals_dmu);
 
-        for (size_t i_mdd = 0; i_mdd < n_mdd; i_mdd++)
-        {
-          const MultiDiracDeterminant& multidiracdet_i = msd.getDet(i_mdd);
-          mdd_list.push_back(static_cast<const WaveFunctionComponent*>(&multidiracdet_i));
-          // particle group id for this multidiracdet
-          const int gid = P.getGroupID(multidiracdet_i.getFirstIndex());
-          // SPOSet location in psi_wrapper_in.sposets_ for this particle group
-          const int sid = psi_wrapper_in.getTWFGroupIndex(gid);
-          mdd_spo_ids.push_back(sid);
-          fvals_dmu_O[i_mdd].resize(multidiracdet_i.getNumDets());
-          fvals_O[i_mdd].resize(multidiracdet_i.getNumDets());
-          fvals_dmu[i_mdd].resize(multidiracdet_i.getNumDets());
-        }
 
-        psi_wrapper_in.computeMDDerivatives_ExcDets(Minv_, X_, dM_[idim], dB_[idim], B_, M_, mdd_spo_ids, mdd_list,
-                                                    fvals_dmu_O, fvals_O, fvals_dmu);
-
-        /// TODO: check that these are correct quantities to calculate
-        // with B = OM
-        //      dA = d_mu(A) for A in {M,B}
-        // fval is d_mu(OPsi/Psi)
-        // wfcomp is d_mu(log(Psi))
-        /// FIXME: wfobs mainly for debugging for now
-        std::tie(fval, wfcomp, wfobs) =
+        std::tie(fval_dmu_O, fval_dmu, fval_O) =
             psi_wrapper_in.computeMDDerivatives_total(msd_idx, mdd_list, fvals_dmu_O, fvals_O, fvals_dmu);
 
-        dedr_complex[iat][idim] += fval; // multidet part of d_mu(OPsi/Psi)
-        wfgradraw_[iat][idim] += wfcomp; // multidet part of d_mu(log(Psi))
+        std::cout << "DEBUG: fval_dmu " << fval_dmu << std::endl;
+        std::cout << "DEBUG: fval_dmu_O " << fval_dmu_O << std::endl;
+        dedr_complex[iat][idim] += fval_dmu_O; // multidet part of d_mu(OPsi/Psi)
+        wfgradraw_[iat][idim] += fval_dmu;     // multidet part of d_mu(log(Psi))
       }
     }
     convertToReal(dedr_complex[iat], dEdR[iat]);
