@@ -373,6 +373,7 @@ void test_msd_wrapper(const std::string& wffile,
   twf.invertMatrices(M_gs, Minv);
 
 
+  app_log() << "STARTING KINETIC TEST: " << wffile << std::endl;
   /// evaluate for kinetic energy only for this test
   OperatorBase* kinop = ham.getHamiltonian(KINETIC);
   kinop->evaluateOneBodyOpMatrix(elec, twf, B);
@@ -387,7 +388,7 @@ void test_msd_wrapper(const std::string& wffile,
     {
       for (size_t j = 0; j < X[sid].cols(); j++)
       {
-        CHECK(X[sid](i, j) == Approx(X2[sid](i, j)));
+        CHECK(X[sid](i, j) == Approx(X2[sid](i, j))); // kin
       }
     }
   }
@@ -490,6 +491,8 @@ void test_msd_wrapper(const std::string& wffile,
     {
       twf.wipeMatrices(dM[idim]);
       twf.wipeMatrices(dM_gs[idim]);
+      twf.wipeMatrices(Minv_dM[idim]);
+      twf.wipeMatrices(Minv_dB[idim]);
       twf.wipeMatrices(dB[idim]);
       twf.wipeMatrices(dB_gs[idim]);
     }
@@ -516,10 +519,10 @@ void test_msd_wrapper(const std::string& wffile,
       fval   = twf.computeGSDerivative(Minv, X, dM_gs[idim], dB_gs[idim]);
       wfcomp = twf.trAB(Minv, dM_gs[idim]);
       wfobs  = twf.trAB(Minv, B_gs);
-      CHECK(wfobs == Approx(wfobs_gs));
+      CHECK(wfobs == Approx(wfobs_gs)); // kin
       fkin_complex_gs[ionid][idim]   = fval;
       wfgrad_complex_gs[ionid][idim] = wfcomp;
-      obsval_complex_gs[ionid][idim] = wfobs_gs;
+      obsval_complex_gs[ionid][idim] = wfobs;
       // does not change over ions/dims; restructure MD stuff and move outside
 
       // calculate quantities for spindets
@@ -531,27 +534,12 @@ void test_msd_wrapper(const std::string& wffile,
 
       for (size_t i = 0; i < n_mdd; i++)
       {
-        app_log() << "(" << ionid << "," << idim << ")" << "fvals_O[" << i << "]" << std::endl;
         for (size_t j = 0; j < fvals_O[i].size(); j++)
-        {
-          app_log() << fvals_O[i][j] << ", " << fvals_O_2[i][j] << std::endl;
-        }
-      }
-      for (size_t i = 0; i < n_mdd; i++)
-      {
-        app_log() << "(" << ionid << "," << idim << ")" << "fvals_dmu_O[" << i << "]" << std::endl;
+          CHECK(fvals_O[i][j] == Approx(fvals_O_2[i][j]));
         for (size_t j = 0; j < fvals_dmu_O[i].size(); j++)
-        {
-          app_log() << fvals_dmu_O[i][j] << ", " << fvals_dmu_O_2[i][j] << std::endl;
-        }
-      }
-      for (size_t i = 0; i < n_mdd; i++)
-      {
-        app_log() << "(" << ionid << "," << idim << ")" << "fvals_dmu[" << i << "]" << std::endl;
+          CHECK(fvals_dmu_O[i][j] == Approx(fvals_dmu_O_2[i][j]));
         for (size_t j = 0; j < fvals_dmu[i].size(); j++)
-        {
-          app_log() << fvals_dmu[i][j] << ", " << fvals_dmu_2[i][j] << std::endl;
-        }
+          CHECK(fvals_dmu[i][j] == Approx(fvals_dmu_2[i][j]));
       }
 
 
@@ -636,10 +624,30 @@ void test_msd_wrapper(const std::string& wffile,
   twf.wipeMatrices(B);
   twf.wipeMatrices(B_gs);
   twf.wipeMatrices(X);
+  twf.wipeMatrices(X2);
+  twf.wipeMatrices(Minv_B);
+  twf.wipeMatrices(Minv_Mv);
   nlppop->evaluateOneBodyOpMatrix(elec, twf, B);
   twf.getGSMatrices(B, B_gs);
   twf.buildX(Minv, B_gs, X);
+  twf.buildIntermediates(Minv, B, M, X2, Minv_B, Minv_Mv);
 
+
+  for (int gid = 0; gid < ngroups; gid++)
+  {
+    const int sid = twf.getTWFGroupIndex(gid);
+    for (size_t i = 0; i < X[sid].rows(); i++)
+    {
+      for (size_t j = 0; j < X[sid].cols(); j++)
+      {
+        CHECK(X[sid](i, j) == Approx(X2[sid](i, j))); // nlpp
+      }
+    }
+  }
+  twf.wipeVectors(fvals_O_2);
+  twf.computeMDDerivatives_Obs(Minv_Mv, Minv_B, mdd_spo_ids, mdd_list, fvals_O_2);
+
+  wfobs_gs = twf.trAB(Minv, B_gs);
 
   // ParticleSet::ParticleGradient fnlpp_complex(ions.getTotalNum());
   // ParticleSet::ParticlePos fnlpp(ions.getTotalNum());
@@ -649,6 +657,8 @@ void test_msd_wrapper(const std::string& wffile,
     {
       twf.wipeMatrices(dM[idim]);
       twf.wipeMatrices(dM_gs[idim]);
+      twf.wipeMatrices(Minv_dM[idim]);
+      twf.wipeMatrices(Minv_dB[idim]);
       twf.wipeMatrices(dB[idim]);
       twf.wipeMatrices(dB_gs[idim]);
     }
@@ -659,18 +669,24 @@ void test_msd_wrapper(const std::string& wffile,
     // ion deriv of B
     nlppop->evaluateOneBodyOpMatrixForceDeriv(elec, ions, twf, ionid, dB);
 
+    twf.buildIntermediates_dmu(Minv, dB, dM, Minv_dB, Minv_dM);
+
     for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
       twf.wipeVectors(fvals_dmu_O);
       twf.wipeVectors(fvals_O);
       twf.wipeVectors(fvals_dmu);
 
+      twf.wipeVectors(fvals_dmu_O_2);
+      twf.wipeVectors(fvals_dmu_2);
+
       twf.getGSMatrices(dB[idim], dB_gs[idim]);
       twf.getGSMatrices(dM[idim], dM_gs[idim]);
 
-      fval                           = twf.computeGSDerivative(Minv, X, dM_gs[idim], dB_gs[idim]);
-      wfcomp                         = twf.trAB(Minv, dM_gs[idim]);
-      wfobs                          = twf.trAB(Minv, B_gs);
+      fval   = twf.computeGSDerivative(Minv, X, dM_gs[idim], dB_gs[idim]);
+      wfcomp = twf.trAB(Minv, dM_gs[idim]);
+      wfobs  = twf.trAB(Minv, B_gs);
+      CHECK(wfobs == Approx(wfobs_gs)); // nlpp
       fnlpp_complex_gs[ionid][idim]  = fval;
       wfgrad_complex_gs[ionid][idim] = wfcomp;
       obsval_complex_gs[ionid][idim] = wfobs; // should not change over ions/dims
@@ -679,6 +695,18 @@ void test_msd_wrapper(const std::string& wffile,
       twf.computeMDDerivatives_ExcDets(Minv, X, dM[idim], dB[idim], B, M, mdd_spo_ids, mdd_list, fvals_dmu_O, fvals_O,
                                        fvals_dmu);
 
+      twf.computeMDDerivatives_dmu(Minv_Mv, Minv_B, Minv_dM[idim], Minv_dB[idim], mdd_spo_ids, mdd_list, fvals_dmu_O_2,
+                                   fvals_dmu_2);
+
+      for (size_t i = 0; i < n_mdd; i++)
+      {
+        for (size_t j = 0; j < fvals_O[i].size(); j++)
+          CHECK(fvals_O[i][j] == Approx(fvals_O_2[i][j]));
+        for (size_t j = 0; j < fvals_dmu_O[i].size(); j++)
+          CHECK(fvals_dmu_O[i][j] == Approx(fvals_dmu_O_2[i][j]));
+        for (size_t j = 0; j < fvals_dmu[i].size(); j++)
+          CHECK(fvals_dmu[i][j] == Approx(fvals_dmu_2[i][j]));
+      }
 
       // fval: d_mu(OPsi/Psi)
       // wfcomp: d_mu(log(Psi))
@@ -686,6 +714,14 @@ void test_msd_wrapper(const std::string& wffile,
       std::tie(fval, wfcomp, wfobs) =
           twf.computeMDDerivatives_total(msd_idx, mdd_list, fvals_dmu_O, fvals_O, fvals_dmu);
 
+
+      std::tie(fval_2, wfcomp_2, wfobs_2) =
+          twf.computeMDDerivatives_total(msd_idx, mdd_list, fvals_dmu_O_2, fvals_O_2, fvals_dmu_2);
+
+
+      CHECK(fval == Approx(fval_2));     // nlpp
+      CHECK(wfobs == Approx(wfobs_2));   // nlpp
+      CHECK(wfcomp == Approx(wfcomp_2)); // nlpp
 
       fnlpp_complex_md[ionid][idim]  = fval;
       wfgrad_complex_md[ionid][idim] = wfcomp;
