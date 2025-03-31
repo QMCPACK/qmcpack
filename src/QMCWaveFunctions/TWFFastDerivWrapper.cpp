@@ -410,7 +410,7 @@ void TWFFastDerivWrapper::transform_Av_AoBv(const ValueMatrix& A, const ValueMat
       X(i, j) = A(i, j + nocc);
 
   // X = X - A[o,o].B[o,v]
-  BLAS::gemm('n', 'n', nvirt, nocc, nocc, -1.0, A.data(), A.cols(), B.data(), B.cols(), 1.0, X.data(), X.cols());
+  BLAS::gemm('n', 'n', nvirt, nocc, nocc, -1.0, B.data(), B.cols(), A.data(), A.cols(), 1.0, X.data(), X.cols());
   return;
 }
 
