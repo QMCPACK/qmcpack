@@ -264,7 +264,6 @@ void test_msd_wrapper(const std::string& wffile,
   // vectors of size Ngroups (particle groups; alpha/beta here)
   // vector idx corresponds to species ID (e.g. M[0] is slater matrix for up electrons, M[1] is for down electrons)
   std::vector<ValueMatrix> X;       // [Nptcl, Nptcl] auxiliary X matrix (Minv.B.Minv)
-  std::vector<ValueMatrix> X2;      // testing
   std::vector<ValueMatrix> Minv;    // [Nptcl, Nptcl] inverse slater matrix over GS orbs
   std::vector<ValueMatrix> B;       // [Nptcl, Norb] B matrix (Op(M)) over all orbs
   std::vector<ValueMatrix> B_gs;    // [Nptcl, Nocc] subset of B over GS orbs
@@ -288,7 +287,6 @@ void test_msd_wrapper(const std::string& wffile,
   M.resize(ngroups);
   M_gs.resize(ngroups);
   X.resize(ngroups);
-  X2.resize(ngroups);
   B.resize(ngroups);
   B_gs.resize(ngroups);
   Minv.resize(ngroups);
@@ -313,7 +311,6 @@ void test_msd_wrapper(const std::string& wffile,
     Minv[sid].resize(nptcls, nptcls);
     B_gs[sid].resize(nptcls, nptcls);
     X[sid].resize(nptcls, nptcls);
-    X2[sid].resize(nptcls, nptcls);
   }
 
   dM.resize(OHMMS_DIM);
@@ -351,7 +348,6 @@ void test_msd_wrapper(const std::string& wffile,
   twf.wipeMatrices(M);
   twf.wipeMatrices(M_gs);
   twf.wipeMatrices(X);
-  twf.wipeMatrices(X2);
   twf.wipeMatrices(B);
   twf.wipeMatrices(Minv);
   twf.wipeMatrices(B_gs);
@@ -378,21 +374,7 @@ void test_msd_wrapper(const std::string& wffile,
   OperatorBase* kinop = ham.getHamiltonian(KINETIC);
   kinop->evaluateOneBodyOpMatrix(elec, twf, B);
   twf.getGSMatrices(B, B_gs);
-  twf.buildX(Minv, B_gs, X);
-  twf.buildIntermediates(Minv, B, M, X2, Minv_B, Minv_Mv);
-
-  for (int gid = 0; gid < ngroups; gid++)
-  {
-    const int sid = twf.getTWFGroupIndex(gid);
-    for (size_t i = 0; i < X[sid].rows(); i++)
-    {
-      for (size_t j = 0; j < X[sid].cols(); j++)
-      {
-        CHECK(X[sid](i, j) == Approx(X2[sid](i, j))); // kin
-      }
-    }
-  }
-
+  twf.buildIntermediates(Minv, B, M, X, Minv_B, Minv_Mv);
 
   //Finally, we have all the data structures with the right dimensions.  Continue.
 
@@ -428,10 +410,6 @@ void test_msd_wrapper(const std::string& wffile,
   std::vector<Vector<ValueType>> fvals_O;     // (O D[i][j]/D[i][j])
   std::vector<Vector<ValueType>> fvals_dmu;   // d/dmu(log(D[i][j])
 
-  std::vector<Vector<ValueType>> fvals_dmu_O_2; // testing
-  std::vector<Vector<ValueType>> fvals_O_2;     // testing
-  std::vector<Vector<ValueType>> fvals_dmu_2;   // testing
-
 
   CHECK(twf.hasMultiSlaterDet());
   CHECK(twf.numMultiSlaterDets() == 1);
@@ -444,9 +422,6 @@ void test_msd_wrapper(const std::string& wffile,
   fvals_dmu_O.resize(n_mdd);
   fvals_O.resize(n_mdd);
   fvals_dmu.resize(n_mdd);
-  fvals_dmu_O_2.resize(n_mdd);
-  fvals_O_2.resize(n_mdd);
-  fvals_dmu_2.resize(n_mdd);
 
   // same order as Dets in msd; index of associated SPOset in twf.sposets_
   std::vector<int> mdd_spo_ids;
@@ -464,22 +439,14 @@ void test_msd_wrapper(const std::string& wffile,
     fvals_dmu_O[i_mdd].resize(multidiracdet_i.getNumDets());
     fvals_O[i_mdd].resize(multidiracdet_i.getNumDets());
     fvals_dmu[i_mdd].resize(multidiracdet_i.getNumDets());
-    fvals_dmu_O_2[i_mdd].resize(multidiracdet_i.getNumDets());
-    fvals_O_2[i_mdd].resize(multidiracdet_i.getNumDets());
-    fvals_dmu_2[i_mdd].resize(multidiracdet_i.getNumDets());
   }
 
   ValueType fval   = 0.0;
   ValueType wfcomp = 0.0;
   ValueType wfobs  = 0.0;
 
-  ValueType fval_2   = 0.0;
-  ValueType wfcomp_2 = 0.0;
-  ValueType wfobs_2  = 0.0;
-
-  twf.wipeVectors(fvals_O_2);
-  twf.computeMDDerivatives_Obs(Minv_Mv, Minv_B, mdd_spo_ids, mdd_list, fvals_O_2);
-
+  twf.wipeVectors(fvals_O);
+  twf.computeMDDerivatives_Obs(Minv_Mv, Minv_B, mdd_spo_ids, mdd_list, fvals_O);
 
   ValueType wfobs_gs = twf.trAB(Minv, B_gs);
 
@@ -507,54 +474,27 @@ void test_msd_wrapper(const std::string& wffile,
     for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
       twf.wipeVectors(fvals_dmu_O);
-      twf.wipeVectors(fvals_O);
       twf.wipeVectors(fvals_dmu);
-
-      twf.wipeVectors(fvals_dmu_O_2);
-      twf.wipeVectors(fvals_dmu_2);
 
       twf.getGSMatrices(dB[idim], dB_gs[idim]);
       twf.getGSMatrices(dM[idim], dM_gs[idim]);
 
-      fval   = twf.computeGSDerivative(Minv, X, dM_gs[idim], dB_gs[idim]);
-      wfcomp = twf.trAB(Minv, dM_gs[idim]);
-      wfobs  = twf.trAB(Minv, B_gs);
-      CHECK(wfobs == Approx(wfobs_gs)); // kin
+      fval                           = twf.computeGSDerivative(Minv, X, dM_gs[idim], dB_gs[idim]);
+      wfcomp                         = twf.trAB(Minv, dM_gs[idim]);
       fkin_complex_gs[ionid][idim]   = fval;
       wfgrad_complex_gs[ionid][idim] = wfcomp;
-      obsval_complex_gs[ionid][idim] = wfobs;
+      obsval_complex_gs[ionid][idim] = wfobs_gs;
       // does not change over ions/dims; restructure MD stuff and move outside
 
       // calculate quantities for spindets
-      twf.computeMDDerivatives_ExcDets(Minv, X, dM[idim], dB[idim], B, M, mdd_spo_ids, mdd_list, fvals_dmu_O, fvals_O,
-                                       fvals_dmu);
-
-      twf.computeMDDerivatives_dmu(Minv_Mv, Minv_B, Minv_dM[idim], Minv_dB[idim], mdd_spo_ids, mdd_list, fvals_dmu_O_2,
-                                   fvals_dmu_2);
-
-      for (size_t i = 0; i < n_mdd; i++)
-      {
-        for (size_t j = 0; j < fvals_O[i].size(); j++)
-          CHECK(fvals_O[i][j] == Approx(fvals_O_2[i][j]));
-        for (size_t j = 0; j < fvals_dmu_O[i].size(); j++)
-          CHECK(fvals_dmu_O[i][j] == Approx(fvals_dmu_O_2[i][j]));
-        for (size_t j = 0; j < fvals_dmu[i].size(); j++)
-          CHECK(fvals_dmu[i][j] == Approx(fvals_dmu_2[i][j]));
-      }
-
+      twf.computeMDDerivatives_dmu(Minv_Mv, Minv_B, Minv_dM[idim], Minv_dB[idim], mdd_spo_ids, mdd_list, fvals_dmu_O,
+                                   fvals_dmu);
 
       // fval: d_mu(OPsi/Psi)
       // wfcomp: d_mu(log(Psi))
       // oval: OPsi/Psi (decide how to handle this; should be same at each iteration over ion dims?)
       std::tie(fval, wfcomp, wfobs) =
           twf.computeMDDerivatives_total(msd_idx, mdd_list, fvals_dmu_O, fvals_O, fvals_dmu);
-
-      std::tie(fval_2, wfcomp_2, wfobs_2) =
-          twf.computeMDDerivatives_total(msd_idx, mdd_list, fvals_dmu_O_2, fvals_O_2, fvals_dmu_2);
-
-      CHECK(fval == Approx(fval_2));
-      CHECK(wfobs == Approx(wfobs_2));
-      CHECK(wfcomp == Approx(wfcomp_2));
 
 
       fkin_complex_md[ionid][idim]   = fval;
@@ -624,28 +564,15 @@ void test_msd_wrapper(const std::string& wffile,
   twf.wipeMatrices(B);
   twf.wipeMatrices(B_gs);
   twf.wipeMatrices(X);
-  twf.wipeMatrices(X2);
   twf.wipeMatrices(Minv_B);
   twf.wipeMatrices(Minv_Mv);
   nlppop->evaluateOneBodyOpMatrix(elec, twf, B);
   twf.getGSMatrices(B, B_gs);
-  twf.buildX(Minv, B_gs, X);
-  twf.buildIntermediates(Minv, B, M, X2, Minv_B, Minv_Mv);
+  twf.buildIntermediates(Minv, B, M, X, Minv_B, Minv_Mv);
 
 
-  for (int gid = 0; gid < ngroups; gid++)
-  {
-    const int sid = twf.getTWFGroupIndex(gid);
-    for (size_t i = 0; i < X[sid].rows(); i++)
-    {
-      for (size_t j = 0; j < X[sid].cols(); j++)
-      {
-        CHECK(X[sid](i, j) == Approx(X2[sid](i, j))); // nlpp
-      }
-    }
-  }
-  twf.wipeVectors(fvals_O_2);
-  twf.computeMDDerivatives_Obs(Minv_Mv, Minv_B, mdd_spo_ids, mdd_list, fvals_O_2);
+  twf.wipeVectors(fvals_O);
+  twf.computeMDDerivatives_Obs(Minv_Mv, Minv_B, mdd_spo_ids, mdd_list, fvals_O);
 
   wfobs_gs = twf.trAB(Minv, B_gs);
 
@@ -674,54 +601,26 @@ void test_msd_wrapper(const std::string& wffile,
     for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
       twf.wipeVectors(fvals_dmu_O);
-      twf.wipeVectors(fvals_O);
       twf.wipeVectors(fvals_dmu);
-
-      twf.wipeVectors(fvals_dmu_O_2);
-      twf.wipeVectors(fvals_dmu_2);
 
       twf.getGSMatrices(dB[idim], dB_gs[idim]);
       twf.getGSMatrices(dM[idim], dM_gs[idim]);
 
-      fval   = twf.computeGSDerivative(Minv, X, dM_gs[idim], dB_gs[idim]);
-      wfcomp = twf.trAB(Minv, dM_gs[idim]);
-      wfobs  = twf.trAB(Minv, B_gs);
-      CHECK(wfobs == Approx(wfobs_gs)); // nlpp
+      fval                           = twf.computeGSDerivative(Minv, X, dM_gs[idim], dB_gs[idim]);
+      wfcomp                         = twf.trAB(Minv, dM_gs[idim]);
       fnlpp_complex_gs[ionid][idim]  = fval;
       wfgrad_complex_gs[ionid][idim] = wfcomp;
-      obsval_complex_gs[ionid][idim] = wfobs; // should not change over ions/dims
+      obsval_complex_gs[ionid][idim] = wfobs_gs; // should not change over ions/dims
 
       // calculate quantities for spindets
-      twf.computeMDDerivatives_ExcDets(Minv, X, dM[idim], dB[idim], B, M, mdd_spo_ids, mdd_list, fvals_dmu_O, fvals_O,
-                                       fvals_dmu);
-
-      twf.computeMDDerivatives_dmu(Minv_Mv, Minv_B, Minv_dM[idim], Minv_dB[idim], mdd_spo_ids, mdd_list, fvals_dmu_O_2,
-                                   fvals_dmu_2);
-
-      for (size_t i = 0; i < n_mdd; i++)
-      {
-        for (size_t j = 0; j < fvals_O[i].size(); j++)
-          CHECK(fvals_O[i][j] == Approx(fvals_O_2[i][j]));
-        for (size_t j = 0; j < fvals_dmu_O[i].size(); j++)
-          CHECK(fvals_dmu_O[i][j] == Approx(fvals_dmu_O_2[i][j]));
-        for (size_t j = 0; j < fvals_dmu[i].size(); j++)
-          CHECK(fvals_dmu[i][j] == Approx(fvals_dmu_2[i][j]));
-      }
+      twf.computeMDDerivatives_dmu(Minv_Mv, Minv_B, Minv_dM[idim], Minv_dB[idim], mdd_spo_ids, mdd_list, fvals_dmu_O,
+                                   fvals_dmu);
 
       // fval: d_mu(OPsi/Psi)
       // wfcomp: d_mu(log(Psi))
       // oval: OPsi/Psi (decide how to handle this; should be same at each iteration over ion dims?)
       std::tie(fval, wfcomp, wfobs) =
           twf.computeMDDerivatives_total(msd_idx, mdd_list, fvals_dmu_O, fvals_O, fvals_dmu);
-
-
-      std::tie(fval_2, wfcomp_2, wfobs_2) =
-          twf.computeMDDerivatives_total(msd_idx, mdd_list, fvals_dmu_O_2, fvals_O_2, fvals_dmu_2);
-
-
-      CHECK(fval == Approx(fval_2));     // nlpp
-      CHECK(wfobs == Approx(wfobs_2));   // nlpp
-      CHECK(wfcomp == Approx(wfcomp_2)); // nlpp
 
       fnlpp_complex_md[ionid][idim]  = fval;
       wfgrad_complex_md[ionid][idim] = wfcomp;
