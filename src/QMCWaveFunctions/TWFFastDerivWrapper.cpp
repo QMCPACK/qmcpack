@@ -243,6 +243,382 @@ TWFFastDerivWrapper::ValueType TWFFastDerivWrapper::computeGSDerivative(const st
   return dval;
 }
 
+void TWFFastDerivWrapper::computeMDDerivatives_Obs(const std::vector<ValueMatrix>& Minv_Mv,
+                                                   const std::vector<ValueMatrix>& Minv_B,
+                                                   const std::vector<IndexType>& mdd_spo_ids,
+                                                   const std::vector<const WaveFunctionComponent*>& mdds,
+                                                   std::vector<ValueVector>& dvals_O) const
+{
+  // mdd_id is multidiracdet id
+  // sid is sposet id (index into first dim of M, X, B, etc.)
+  for (size_t mdd_id = 0; mdd_id < mdd_spo_ids.size(); mdd_id++)
+  {
+    IndexType sid = mdd_spo_ids[mdd_id];
+
+    const auto& multidiracdet_i = static_cast<const MultiDiracDeterminant&>(*mdds[mdd_id]);
+
+    // number of DiracDets in this MultiDiracDet
+    // IndexType ndet = multidiracdet_i->getNumDets();
+    IndexType ndet = multidiracdet_i.getNumDets();
+
+    /// FIXME: set these correctly; decide how to index into nocc if not contiguous within nOcc
+    size_t nelec = multidiracdet_i.getNumPtcls(); // total occ orbs in refdet (should be same as n_elec)
+
+    /// should be same as spos.getOrbitalSetSize
+    size_t nOcc = nelec; // total occ orbs in refdet (should be same as n_elec)
+
+    /// TODO: can change this to only handle holes (i.e. orbs that we excite from in excited dets)
+    ///       would need to be careful about ordering
+    size_t nocc = nelec; // number of orbs that appear as holes in exc. list
+
+    size_t norb_tot = multidiracdet_i.getNumOrbitals();
+
+    size_t nvirt       = norb_tot - nOcc; // should be number of virtuals that appear as particles in exc. list
+    size_t virt_offset = nOcc;            // first col of virt orbs in M
+
+    // S = Minv[o,e].B[e,v] - Minv[o,e].B[e,o].Minv[o,e].Mv[e,v] ("M" from paper)
+
+
+    // input mats:
+    // Minv_Mv   [occ, virt]
+    // Minv_B    [occ, occ]
+
+    // O is all occ orbs; o is occ orbs that appear as holes in exc. list; e is all elecs; v is virt orbs that appear as particles in exc. list
+
+
+    /// NOTE: gemms below are reversed from what is written in comments
+    // a_Ov = Minv.Mvirt
+    // a_Ov.T = (Mvirt.T) . (Minv.T)
+    // Minv,M are row-major, but gemm assumes col-major layout, so reorder args
+    // if we want output to be col-major, we can reverse inputs and use 't','t'
+
+    /// FIXME: only keep relevant row/col subsets
+
+    /// TODO: store this and update as single-elec moves are made
+    // s[O,v] = -Minv_B[O,O].Minv_Mv[O,v]
+    ValueMatrix s_Ov(nOcc, nvirt);
+    BLAS::gemm('n', 'n', nvirt, nOcc, nOcc, -1.0, Minv_Mv[sid].data(), Minv_Mv[sid].cols(), Minv_B[sid].data(),
+               Minv_B[sid].cols(), 0.0, s_Ov.data(), s_Ov.cols());
+
+    // a1[O,v] = Minv_B[O,v] - Minv_B[O,O].Minv_Mv[O,v]
+    for (size_t i = 0; i < s_Ov.rows(); i++)
+      for (size_t j = 0; j < s_Ov.cols(); j++)
+        s_Ov(i, j) += Minv_B[sid](i, j + virt_offset);
+
+
+    // compute difference from ref here and add that term back later
+    dvals_O[mdd_id][0] = 0.0;
+
+    // TODO: Eq. 43
+    // {} signify submatrix corresponding to holes/particles rows/cols
+    //
+    // dvals_O[idet] = tr(inv({Minv_Mv}).{a1})
+    // build full mats for all required pairs, then select submatrices for each excited det
+    // use exc index data to map into full arrays and create [k,k] tables
+
+
+    size_t det_offset  = 1;
+    size_t data_offset = 1;
+    int max_exc_level  = multidiracdet_i.getMaxExcLevel();
+
+    // const std::vector<int>& ndets_per_exc_lvl = *multidiracdet_i.ndets_per_excitation_level_;
+    const OffloadVector<int>& excdata = multidiracdet_i.getDetData();
+
+    auto update_offsets = [&](size_t ext_level) {
+      det_offset += multidiracdet_i.getNdetPerExcLevel(ext_level);
+      data_offset += multidiracdet_i.getNdetPerExcLevel(ext_level) * (3 * ext_level + 1);
+    };
+
+    // dets ordered as ref, all singles, all doubles, all triples, etc.
+    //      shift by ndet_per_exc_level after each exc_level
+    // data is ordered in same way, but each det has several contiguous elements
+    //      each det of exc_level k has (3*k+1) elements: [k, {pos}, {uno}, {ocp}]
+    //      k: exc level
+    //      pos : positions of holes in refdet
+    //      uno : MO idx of particles
+    //      ocp : MO idx of holes
+
+    for (size_t k = 1; k <= max_exc_level; k++)
+    {
+      size_t ndet_exc = multidiracdet_i.getNdetPerExcLevel(k);
+      // calc vals
+      // get hole/particle idx
+      // take corresponding rows/cols
+
+      /// TODO: do we need to zero these out at each iter?
+      ///       should be assigning to all elements for each exc_det, so should be fine
+      std::vector<IndexType> hlist(k, 0);
+      std::vector<IndexType> plist(k, 0);
+
+      // also ainv (invert in place)
+      ValueMatrix a(k, k); // Minv_Mv
+      ValueMatrix s(k, k); // s_Ov
+
+      for (size_t idet = 0; idet < ndet_exc; idet++)
+      {
+        size_t excdata_offset = data_offset + idet * (3 * k + 1);
+        assert(excdata[excdata_offset] == k);
+        for (size_t i = 0; i < k; i++)
+        {
+          plist[i] = excdata[excdata_offset + k + 1 + i];
+          hlist[i] = excdata[excdata_offset + 2 * k + 1 + i];
+        }
+
+        // construct submatrices
+        for (size_t i = 0; i < k; i++)
+          for (size_t j = 0; j < k; j++)
+          {
+            a(i, j) = Minv_Mv[sid](hlist[i], plist[j] - virt_offset);
+            s(i, j) = s_Ov(hlist[i], plist[j] - virt_offset);
+          }
+
+        // invert a in place
+        invert_matrix(a, false);
+
+        // dval_O = dval_O_refdet + tr(ainv.s)
+
+        ValueType dval_O = 0.0;
+
+        // tr(ainv.s)
+        for (size_t i = 0; i < k; i++)
+          for (size_t j = 0; j < k; j++)
+            dval_O += a(i, j) * s(j, i);
+
+        dvals_O[mdd_id][det_offset + idet] = dval_O;
+      }
+
+      // update offsets
+      update_offsets(k);
+    }
+  }
+
+  return;
+}
+
+void TWFFastDerivWrapper::transform_Av_AoBv(const ValueMatrix& A, const ValueMatrix& B, ValueMatrix& X) const
+{
+  // A [nocc,nocc+nvirt]
+  // B [nocc,nvirt]
+
+  // return A[o,v] - A[o,o].B[o,v]
+
+  const int nocc  = A.rows();
+  const int nvirt = B.cols();
+
+  for (size_t i = 0; i < nocc; i++)
+    for (size_t j = 0; j < nvirt; j++)
+      X(i, j) = A(i, j + nocc);
+
+  // X = X - A[o,o].B[o,v]
+  BLAS::gemm('n', 'n', nvirt, nocc, nocc, -1.0, B.data(), B.cols(), A.data(), A.cols(), 1.0, X.data(), X.cols());
+  return;
+}
+
+void TWFFastDerivWrapper::computeMDDerivatives_dmu(const std::vector<ValueMatrix>& Minv_Mv,
+                                                   const std::vector<ValueMatrix>& Minv_B,
+                                                   const std::vector<ValueMatrix>& Minv_dM,
+                                                   const std::vector<ValueMatrix>& Minv_dB,
+                                                   const std::vector<IndexType>& mdd_spo_ids,
+                                                   const std::vector<const WaveFunctionComponent*>& mdds,
+                                                   std::vector<ValueVector>& dvals_dmu_O,
+                                                   std::vector<ValueVector>& dvals_dmu) const
+{
+  // mdd_id is multidiracdet id
+  // sid is sposet id (index into first dim of M, X, B, etc.)
+  for (size_t mdd_id = 0; mdd_id < mdd_spo_ids.size(); mdd_id++)
+  {
+    IndexType sid = mdd_spo_ids[mdd_id];
+
+    const auto& multidiracdet_i = static_cast<const MultiDiracDeterminant&>(*mdds[mdd_id]);
+
+    // number of DiracDets in this MultiDiracDet
+    // IndexType ndet = multidiracdet_i->getNumDets();
+    IndexType ndet = multidiracdet_i.getNumDets();
+
+
+    /// FIXME: set these correctly; decide how to index into nocc if not contiguous within nOcc
+    size_t nelec = multidiracdet_i.getNumPtcls(); // total occ orbs in refdet (should be same as n_elec)
+
+    /// should be same as spos.getOrbitalSetSize
+    size_t nOcc = nelec; // total occ orbs in refdet (should be same as n_elec)
+
+    /// TODO: can change this to only handle holes (i.e. orbs that we excite from in excited dets)
+    ///       would need to be careful about ordering
+    size_t nocc = nelec; // number of orbs that appear as holes in exc. list
+
+    size_t norb_tot = multidiracdet_i.getNumOrbitals();
+
+    size_t nvirt       = norb_tot - nOcc; // should be number of virtuals that appear as particles in exc. list
+    size_t virt_offset = nOcc;            // first col of virt orbs in M
+
+    // input mats:
+    // a = Minv_Mv  [occ, virt]
+    // X2 = Minv_dM  [occ, occ+virt]
+    // X3 = Minv_B   [occ, occ+virt]
+    // X4 = Minv_dB  [occ, occ+virt]
+
+    // O is all occ orbs; o is occ orbs that appear as holes in exc. list; e is all elecs; v is virt orbs that appear as particles in exc. list
+
+    // dvals_dmu_O[idet] = tr(
+    //     - inv({a}).{X2[o,v] - X2[o,o].a[o,v]}.inv({a}).{X3[o,v] - X3[o,o].a[o,v]} ...
+    //     + inv({a}).{(X4[o,v] - X3[o,o].X2[o,v]) - (X4[o,o] - X3[o,o].X2[o,o]).a[o,v] - X2[o,o].(X3[o,v] - X3[o,o].a)}
+    //   )
+
+    // X32[o,o+v] = X3[o,o].X2[o,o+v]
+    // X32[o,o+v] = Minv_B[o,o].Minv_dM[o,o+v]
+    ValueMatrix X32_On(nOcc, nOcc + nvirt);
+    BLAS::gemm('n', 'n', nOcc + nvirt, nOcc, nOcc, 1.0, Minv_dM[sid].data(), Minv_dM[sid].cols(), Minv_B[sid].data(),
+               Minv_B[sid].cols(), 0.0, X32_On.data(), X32_On.cols());
+
+
+    // Minv_dB - X32
+    // Minv_dB - Minv_B[o,o].Minv_dM[o,o+v]
+    ValueMatrix X432_On(nOcc, nOcc + nvirt);
+    X432_On = Minv_dB[sid] - X32_On;
+
+    ValueMatrix X432b_Ov(nOcc, nvirt);
+    transform_Av_AoBv(X432_On, Minv_Mv[sid], X432b_Ov);
+
+    ValueMatrix X2b_Ov(nOcc, nvirt);
+    transform_Av_AoBv(Minv_dM[sid], Minv_Mv[sid], X2b_Ov);
+
+    ValueMatrix X3b_Ov(nOcc, nvirt);
+    transform_Av_AoBv(Minv_B[sid], Minv_Mv[sid], X3b_Ov);
+
+    // X432b = X432b - Minv_dM[o,o].X3b[o,v]
+    BLAS::gemm('n', 'n', nvirt, nOcc, nOcc, -1.0, X3b_Ov.data(), X3b_Ov.cols(), Minv_dM[sid].data(),
+               Minv_dM[sid].cols(), 1.0, X432b_Ov.data(), X432b_Ov.cols());
+
+
+    // compute difference from ref here and add that term back later
+    dvals_dmu_O[mdd_id][0] = 0.0;
+    dvals_dmu[mdd_id][0]   = 0.0;
+
+
+    // TODO: Eq. 43
+    // {} signify submatrix corresponding to holes/particles rows/cols
+    //
+    // dvals_dmu_O[idet] = tr(-inv({a}).{X2b}.inv({a}).{X3b} + inv({a}).{X432b})
+    // build full mats for all required pairs, then select submatrices for each excited det
+    // use exc index data to map into full arrays and create [k,k] tables
+
+
+    size_t det_offset  = 1;
+    size_t data_offset = 1;
+    int max_exc_level  = multidiracdet_i.getMaxExcLevel();
+
+    // const std::vector<int>& ndets_per_exc_lvl = *multidiracdet_i.ndets_per_excitation_level_;
+    const OffloadVector<int>& excdata = multidiracdet_i.getDetData();
+
+    auto update_offsets = [&](size_t ext_level) {
+      det_offset += multidiracdet_i.getNdetPerExcLevel(ext_level);
+      data_offset += multidiracdet_i.getNdetPerExcLevel(ext_level) * (3 * ext_level + 1);
+    };
+
+    // dets ordered as ref, all singles, all doubles, all triples, etc.
+    //      shift by ndet_per_exc_level after each exc_level
+    // data is ordered in same way, but each det has several contiguous elements
+    //      each det of exc_level k has (3*k+1) elements: [k, {pos}, {uno}, {ocp}]
+    //      k: exc level
+    //      pos : positions of holes in refdet
+    //      uno : MO idx of particles
+    //      ocp : MO idx of holes
+
+    for (size_t k = 1; k <= max_exc_level; k++)
+    {
+      size_t ndet_exc = multidiracdet_i.getNdetPerExcLevel(k);
+
+      // get hole/particle idx
+      // take corresponding rows/cols
+
+      // a' = inv({a})
+      // dvals_dmu_O[idet] = tr(-a'.{X2b}.a'.{X3b} + a'.{X432b})
+      // dvals_dmu[idet]   = tr(a'.{X2b})
+
+      // a'.{S} also needed for Eq. 29
+
+      /// TODO: do we need to zero these out at each iter?
+      ///       should be assigning to all elements for each exc_det, so should be fine
+      std::vector<IndexType> hlist(k, 0);
+      std::vector<IndexType> plist(k, 0);
+
+      // also ainv (invert in place)
+      ValueMatrix a(k, k);
+      ValueMatrix x2(k, k);
+      // also (m2 - m1.ainv.s) (update in place)
+      ValueMatrix x3(k, k);
+      ValueMatrix x4(k, k);
+
+      ValueMatrix ainv_x2(k, k); // tr -> d(logD)
+      ValueMatrix ainv_x3(k, k);
+      ValueMatrix ainv_x4(k, k);
+
+
+      for (size_t idet = 0; idet < ndet_exc; idet++)
+      {
+        size_t excdata_offset = data_offset + idet * (3 * k + 1);
+        assert(excdata[excdata_offset] == k);
+        for (size_t i = 0; i < k; i++)
+        {
+          plist[i] = excdata[excdata_offset + k + 1 + i];
+          hlist[i] = excdata[excdata_offset + 2 * k + 1 + i];
+        }
+
+        // construct submatrices
+        for (size_t i = 0; i < k; i++)
+          for (size_t j = 0; j < k; j++)
+          {
+            a(i, j)  = Minv_Mv[sid](hlist[i], plist[j] - virt_offset);
+            x2(i, j) = X2b_Ov(hlist[i], plist[j] - virt_offset);
+            x3(i, j) = X3b_Ov(hlist[i], plist[j] - virt_offset);
+            x4(i, j) = X432b_Ov(hlist[i], plist[j] - virt_offset);
+          }
+
+        // invert a in place
+        invert_matrix(a, false);
+
+        // ainv_x4 = ainv.x4
+        BLAS::gemm('n', 'n', k, k, k, 1.0, x4.data(), x4.cols(), a.data(), a.cols(), 0.0, ainv_x4.data(),
+                   ainv_x4.cols());
+
+        // ainv_x3 = ainv.x3
+        BLAS::gemm('n', 'n', k, k, k, 1.0, x3.data(), x3.cols(), a.data(), a.cols(), 0.0, ainv_x3.data(),
+                   ainv_x3.cols());
+
+        // ainv_x2 = ainv.x2
+        BLAS::gemm('n', 'n', k, k, k, 1.0, x2.data(), x2.cols(), a.data(), a.cols(), 0.0, ainv_x2.data(),
+                   ainv_x2.cols());
+
+        // ainv_x4 = ainv_x4 - ainv_x2.ainv_x3
+        BLAS::gemm('n', 'n', k, k, k, -1.0, ainv_x3.data(), ainv_x3.cols(), ainv_x2.data(), ainv_x2.cols(), 1.0,
+                   ainv_x4.data(), ainv_x4.cols());
+
+
+        // dval_dmu_O = tr(ainv_x4 - ainv_x2.ainv_x3)
+        // dval_dmu = tr(ainv_x2)
+
+        ValueType dval_dmu_O = 0.0;
+        ValueType dval_dmu   = 0.0;
+
+
+        for (size_t i = 0; i < k; i++)
+        {
+          dval_dmu += ainv_x2(i, i);
+          dval_dmu_O += ainv_x4(i, i);
+        }
+
+        dvals_dmu_O[mdd_id][det_offset + idet] = dval_dmu_O;
+        dvals_dmu[mdd_id][det_offset + idet]   = dval_dmu;
+      }
+
+      // update offsets
+      update_offsets(k);
+    }
+  }
+
+  return;
+}
+
 void TWFFastDerivWrapper::computeMDDerivatives_ExcDets(const std::vector<ValueMatrix>& Minv,
                                                        const std::vector<ValueMatrix>& X,
                                                        const std::vector<ValueMatrix>& dM,
@@ -251,9 +627,9 @@ void TWFFastDerivWrapper::computeMDDerivatives_ExcDets(const std::vector<ValueMa
                                                        const std::vector<ValueMatrix>& M,
                                                        const std::vector<IndexType>& mdd_spo_ids,
                                                        const std::vector<const WaveFunctionComponent*>& mdds,
-                                                       std::vector<ValueVector>& dvals_dmu,
-                                                       std::vector<ValueVector>& dvals_Od,
-                                                       std::vector<ValueVector>& dvals_dmu_log) const
+                                                       std::vector<ValueVector>& dvals_dmu_O,
+                                                       std::vector<ValueVector>& dvals_O,
+                                                       std::vector<ValueVector>& dvals_dmu) const
 {
   // mdd_id is multidiracdet id
   // sid is sposet id (index into first dim of M, X, B, etc.)
@@ -270,9 +646,9 @@ void TWFFastDerivWrapper::computeMDDerivatives_ExcDets(const std::vector<ValueMa
     /// TODO: just do this before calling
     for (int idet = 0; idet < ndet; idet++)
     {
-      dvals_dmu[mdd_id][idet]     = 0.0;
-      dvals_Od[mdd_id][idet]      = 0.0;
-      dvals_dmu_log[mdd_id][idet] = 0.0;
+      dvals_dmu_O[mdd_id][idet] = 0.0;
+      dvals_O[mdd_id][idet]     = 0.0;
+      dvals_dmu[mdd_id][idet]   = 0.0;
     }
 
 
@@ -303,7 +679,7 @@ void TWFFastDerivWrapper::computeMDDerivatives_ExcDets(const std::vector<ValueMa
 
     // O is all occ orbs; o is occ orbs that appear as holes in exc. list; e is all elecs; v is virt orbs that appear as particles in exc. list
 
-    // dvals_dmu[idet] = dval_ref + tr(
+    // dvals_dmu_O[idet] = dval_ref + tr(
     //     - inv({Minv[o,e].M[e,v]}).{Minv[o,e].dM[e,v] - Minv[o,e].dM[e,O].Minv[O,e].M[e,v]}.inv({Minv[o,e].M[e,v]}).{S} ...
     //     + inv({Minv[o,e].M[e,v]}).{Minv[o,e].dB[e,v] - X[o,e].dM[e,v] - (Minv[o,e].dB[e.O] - X[o,e].dM[e,O]).Minv[O,e].M[e,v] - Minv[o,e].dM[e,O].S[O,v]}
     //   )
@@ -347,7 +723,7 @@ void TWFFastDerivWrapper::computeMDDerivatives_ExcDets(const std::vector<ValueMa
     //        = (c-d)[o,v] - (c-d)[o,O].a[O,v] - mat2c[o,v]
     //        = h[o,v] - h[o,O].a[O,v] - mat2c[o,v]
 
-    //  dvals_dmu[idet] = dval_dmu_ref + tr(-inv({a}).{mat1}.inv({a}).{S} + inv({a}).{mat2})
+    //  dvals_dmu_O[idet] = dval_dmu_ref + tr(-inv({a}).{mat1}.inv({a}).{S} + inv({a}).{mat2})
 
     // dval_ref = tr(Minv[O,e].dB[e,O] - X[O,e].dM[e,O])
     //          = tr(c[O,O] - d[O,O])
@@ -455,26 +831,30 @@ void TWFFastDerivWrapper::computeMDDerivatives_ExcDets(const std::vector<ValueMa
         mat2(i, j) = h_On(i, j + virt_offset) - mat2b(i, j) - mat2c(i, j);
 
     // tr(Minv_dB - X_dM)
-    ValueType dval_dmu_refdet     = 0.0;
-    ValueType dval_Od_refdet      = 0.0;
-    ValueType dval_dmu_log_refdet = 0.0;
+    ValueType dval_dmu_O_refdet = 0.0;
+    ValueType dval_O_refdet     = 0.0;
+    ValueType dval_dmu_refdet   = 0.0;
 
     for (size_t i = 0; i < h_On.rows(); i++)
     {
-      dval_dmu_refdet += h_On(i, i);
-      dval_Od_refdet += f_OO(i, i);
-      dval_dmu_log_refdet += b_On(i, i);
+      dval_dmu_O_refdet += h_On(i, i);
+      dval_O_refdet += f_OO(i, i);
+      dval_dmu_refdet += b_On(i, i);
     }
 
-    dvals_dmu[mdd_id][0]     = dval_dmu_refdet;
-    dvals_Od[mdd_id][0]      = dval_Od_refdet;
-    dvals_dmu_log[mdd_id][0] = dval_dmu_log_refdet;
+    // dvals_dmu_O[mdd_id][0] = dval_dmu_O_refdet;
+    // dvals_O[mdd_id][0]     = dval_O_refdet;
+    // dvals_dmu[mdd_id][0]   = dval_dmu_refdet;
+    // debugging: compute difference from ref here and add that term back later
+    dvals_dmu_O[mdd_id][0] = 0.0;
+    dvals_O[mdd_id][0]     = 0.0;
+    dvals_dmu[mdd_id][0]   = 0.0;
 
 
     // TODO: Eq. 43
     // {} signify submatrix corresponding to holes/particles rows/cols
     //
-    // dvals_dmu[idet] = dval_refdet + tr(-inv({a}).{mat1}.inv({a}).{S} + inv({a}).{mat2})
+    // dvals_dmu_O[idet] = dval_refdet + tr(-inv({a}).{mat1}.inv({a}).{S} + inv({a}).{mat2})
     // build full mats for all required pairs, then select submatrices for each excited det
     // use exc index data to map into full arrays and create [k,k] tables
 
@@ -517,8 +897,8 @@ void TWFFastDerivWrapper::computeMDDerivatives_ExcDets(const std::vector<ValueMa
       // take corresponding rows/cols of a, S, mat1, mat2
 
       // a' = inv({a})
-      // dvals_dmu[idet] = dval_refdet + tr(-a'.{mat1}.a'.{S} + a'.{mat2})
-      // dvals_dmu[idet] = dval_refdet + tr(-a'.({mat1}.a'.{S} - {mat2}))
+      // dvals_dmu_O[idet] = dval_refdet + tr(-a'.{mat1}.a'.{S} + a'.{mat2})
+      // dvals_dmu_O[idet] = dval_refdet + tr(-a'.({mat1}.a'.{S} - {mat2}))
 
       // a'.{S} also needed for Eq. 29
 
@@ -552,10 +932,10 @@ void TWFFastDerivWrapper::computeMDDerivatives_ExcDets(const std::vector<ValueMa
         for (size_t i = 0; i < k; i++)
           for (size_t j = 0; j < k; j++)
           {
-            a(i, j)  = a_Ov(hlist[i], plist[j]);
-            m1(i, j) = mat1(hlist[i], plist[j]);
-            m2(i, j) = mat2(hlist[i], plist[j]);
-            s(i, j)  = S_Ov(hlist[i], plist[j]);
+            a(i, j)  = a_Ov(hlist[i], plist[j] - virt_offset);
+            m1(i, j) = mat1(hlist[i], plist[j] - virt_offset);
+            m2(i, j) = mat2(hlist[i], plist[j] - virt_offset);
+            s(i, j)  = S_Ov(hlist[i], plist[j] - virt_offset);
           }
 
         // invert a in place
@@ -565,38 +945,42 @@ void TWFFastDerivWrapper::computeMDDerivatives_ExcDets(const std::vector<ValueMa
         BLAS::gemm('n', 'n', k, k, k, 1.0, s.data(), s.cols(), a.data(), a.cols(), 0.0, ainv_s.data(), ainv_s.cols());
 
         // ainv_m1 = ainv.m1
-        BLAS::gemm('n', 'n', k, k, k, 1.0, m1.data(), m1.cols(), a.data(), a.cols(), 0.0, ainv_s.data(),
+        BLAS::gemm('n', 'n', k, k, k, 1.0, m1.data(), m1.cols(), a.data(), a.cols(), 0.0, ainv_m1.data(),
                    ainv_m1.cols());
 
         // m2 = -m1.ainv.s + m2
         BLAS::gemm('n', 'n', k, k, k, -1.0, ainv_s.data(), ainv_s.cols(), m1.data(), m1.cols(), 1.0, m2.data(),
                    m2.cols());
 
-        // dval_dmu = dval_dmu_refdet + tr(-ainv.m1.ainv.s + ainv.m2)
-        //          = dval_dmu_refdet + tr(ainv.(m2 - m1.ainv.s))
+        // dval_dmu_O = dval_dmu_O_refdet + tr(-ainv.m1.ainv.s + ainv.m2)
+        //            = dval_dmu_O_refdet + tr(ainv.(m2 - m1.ainv.s))
 
-        // dval_Od = dval_Od_refdet + tr(ainv.s)
+        // dval_O = dval_O_refdet + tr(ainv.s)
 
-        // dval_dmu_log = dval_dmu_log_refdet + tr(ainv.m1)
+        // dval_dmu = dval_dmu_refdet + tr(ainv.m1)
 
-        ValueType dval_dmu     = dval_dmu_refdet;
-        ValueType dval_Od      = dval_Od_refdet;
-        ValueType dval_dmu_log = dval_dmu_log_refdet;
+        // ValueType dval_dmu_O = dval_dmu_O_refdet;
+        // ValueType dval_O     = dval_O_refdet;
+        // ValueType dval_dmu   = dval_dmu_refdet;
+        // debugging: use diff instead of total
+        ValueType dval_dmu_O = 0.0;
+        ValueType dval_O     = 0.0;
+        ValueType dval_dmu   = 0.0;
 
 
         for (size_t i = 0; i < k; i++)
         {
-          dval_Od += ainv_s(i, i);
-          dval_dmu_log += ainv_m1(i, i);
+          dval_O += ainv_s(i, i);
+          dval_dmu += ainv_m1(i, i);
           for (size_t j = 0; j < k; j++)
           {
-            dval_dmu += m2(i, j) * a(j, i);
+            dval_dmu_O += m2(i, j) * a(j, i);
           }
         }
 
-        dvals_dmu[mdd_id][det_offset + idet]     = dval_dmu;
-        dvals_Od[mdd_id][det_offset + idet]      = dval_Od;
-        dvals_dmu_log[mdd_id][det_offset + idet] = dval_dmu_log;
+        dvals_dmu_O[mdd_id][det_offset + idet] = dval_dmu_O;
+        dvals_O[mdd_id][det_offset + idet]     = dval_O;
+        dvals_dmu[mdd_id][det_offset + idet]   = dval_dmu;
       }
 
 
@@ -608,12 +992,12 @@ void TWFFastDerivWrapper::computeMDDerivatives_ExcDets(const std::vector<ValueMa
   return;
 }
 
-std::pair<TWFFastDerivWrapper::ValueType, TWFFastDerivWrapper::ValueType> TWFFastDerivWrapper::
-    computeMDDerivatives_total(int msd_idx,
-                               const std::vector<const WaveFunctionComponent*>& mdds,
-                               const std::vector<ValueVector>& dvals_dmu,
-                               const std::vector<ValueVector>& dvals_Od,
-                               const std::vector<ValueVector>& dvals_dmu_log) const
+std::tuple<TWFFastDerivWrapper::ValueType, TWFFastDerivWrapper::ValueType, TWFFastDerivWrapper::ValueType>
+    TWFFastDerivWrapper::computeMDDerivatives_total(int msd_idx,
+                                                    const std::vector<const WaveFunctionComponent*>& mdds,
+                                                    const std::vector<ValueVector>& dvals_dmu_O,
+                                                    const std::vector<ValueVector>& dvals_O,
+                                                    const std::vector<ValueVector>& dvals_dmu) const
 {
   /**
    * \f[
@@ -675,45 +1059,56 @@ std::pair<TWFFastDerivWrapper::ValueType, TWFFastDerivWrapper::ValueType> TWFFas
 
   const int num_groups = num_diracdets.size();
 
-  ValueType total_psi = 0.0; // sum_i c_i D_i
-  ValueType total_x   = 0.0; // d_mu(OD/D)
-  ValueType total_y   = 0.0; // OD/D
-  ValueType total_z   = 0.0; // d_mu(log(D))
-  ValueType total_yz  = 0.0; // (OD/D) * d_mu(log(D))
+  ValueType total_psi   = C[0]; // sum_i c_i D_i
+  ValueType total_dmu_O = 0.0;  // d_mu(OD/D)
+  ValueType total_O     = 0.0;  // OD/D
+  ValueType total_dmu   = 0.0;  // d_mu(log(D))
+  ValueType total_Odmu  = 0.0;  // (OD/D) * d_mu(log(D))
 
-  for (size_t i_sd = 0; i_sd < num_slaterdets; i_sd++)
+  /// NOTE: sum doesn't include refdet
+  /// total terms are added later; psi C0 term is added above
+  for (size_t i_sd = 1; i_sd < num_slaterdets; i_sd++)
   {
-    ValueType tmp_psi = C[i_sd]; // C[i_sd] * prod_i ratio[i][i_sd]
-    ValueType tmp_x   = 0.0;     // d_mu(OD/D)
-    ValueType tmp_y   = 0.0;     // OD/D
-    ValueType tmp_z   = 0.0;     // d_mu(log(D))
-    ValueType tmp_yz  = 0.0;     // (OD/D) * d_mu(log(D))
-
+    ValueType tmp_psi   = C[i_sd]; // C[i_sd] * prod_i ratio[i][i_sd]
+    ValueType tmp_dmu_O = 0.0;     // d_mu(OD/D)
+    ValueType tmp_O     = 0.0;     // OD/D
+    ValueType tmp_dmu   = 0.0;     // d_mu(log(D))
+    ValueType tmp_Odmu  = 0.0;     // (OD/D) * d_mu(log(D))
 
     for (size_t i_group = 0; i_group < num_groups; i_group++)
     {
       size_t i_dd = C2node[i_group][i_sd];
-      tmp_x += dvals_dmu[i_group][i_dd];
-      tmp_y += dvals_Od[i_group][i_dd];
-      tmp_z += dvals_dmu_log[i_group][i_dd];
-      tmp_x += dvals_dmu_log[i_group][i_dd] * dvals_Od[i_group][i_dd];
+
+      tmp_dmu_O += dvals_dmu_O[i_group][i_dd];
+      tmp_O += dvals_O[i_group][i_dd];
+      tmp_dmu += dvals_dmu[i_group][i_dd];
+      tmp_Odmu += dvals_dmu[i_group][i_dd] * dvals_O[i_group][i_dd];
       tmp_psi *= (*diracdet_ratios_to_ref[i_group])[i_dd];
     }
 
     total_psi += tmp_psi;
-    total_x += tmp_x * tmp_psi;
-    total_y += tmp_y * tmp_psi;
-    total_z += tmp_z * tmp_psi;
-    total_yz += tmp_yz * tmp_psi;
+    total_dmu_O += tmp_dmu_O * tmp_psi;
+    total_O += tmp_O * tmp_psi;
+    total_dmu += tmp_dmu * tmp_psi;
+    // total_Odmu += tmp_Odmu * tmp_psi;
+    total_Odmu += tmp_O * tmp_dmu * tmp_psi;
   }
 
-  // d_mu(OPsi/Psi)
-  ValueType dmu_O_psi = (total_x + total_yz + total_y * total_z / total_psi) / total_psi;
+  ValueType norm_dmu_O = total_dmu_O / total_psi;
+  ValueType norm_O     = total_O / total_psi;
+  ValueType norm_dmu   = total_dmu / total_psi;
+  ValueType norm_Odmu  = total_Odmu / total_psi;
 
   // d_mu(log(Psi))
-  ValueType dmu_log_psi = (total_z / total_psi);
+  ValueType dmu_psi = norm_dmu;
 
-  return {dmu_O_psi, dmu_log_psi};
+  // (OPsi/Psi) (this is the same for all spatial derivs, but we get it for free here)
+  ValueType Opsi = norm_O;
+
+  // d_mu(OPsi/Psi)
+  ValueType dmu_O_psi = norm_Odmu + norm_dmu_O - norm_O * norm_dmu;
+
+  return {dmu_O_psi, dmu_psi, Opsi};
 }
 
 void TWFFastDerivWrapper::invertMatrices(const std::vector<ValueMatrix>& M, std::vector<ValueMatrix>& Minv)
@@ -756,8 +1151,77 @@ void TWFFastDerivWrapper::buildX(const std::vector<ValueMatrix>& Minv,
         }
   }
 }
+void TWFFastDerivWrapper::buildIntermediates(const std::vector<ValueMatrix>& Minv,
+                                             const std::vector<ValueMatrix>& B,
+                                             const std::vector<ValueMatrix>& M,
+                                             std::vector<ValueMatrix>& X,
+                                             std::vector<ValueMatrix>& Minv_B,
+                                             std::vector<ValueMatrix>& Minv_Mv)
+{
+  IndexType nspecies = Minv.size();
+
+  for (IndexType id = 0; id < nspecies; id++)
+  {
+    int ptclnum = Minv[id].rows();
+    assert(Minv[id].rows() == Minv[id].cols());
+    assert(X[id].rows() == ptclnum);
+    assert(X[id].cols() == ptclnum);
+    int norb  = M[id].cols();
+    int nvirt = norb - ptclnum;
+
+    // Minv_Mv = Minv[e,e].M[e,v]
+    BLAS::gemm('n', 'n', nvirt, ptclnum, ptclnum, 1.0, M[id].data() + ptclnum, M[id].cols(), Minv[id].data(),
+               Minv[id].cols(), 0.0, Minv_Mv[id].data(), Minv_Mv[id].cols());
+
+    // Minv_B = Minv[e,e].B[e,O]
+    BLAS::gemm('n', 'n', norb, ptclnum, ptclnum, 1.0, B[id].data(), B[id].cols(), Minv[id].data(), Minv[id].cols(), 0.0,
+               Minv_B[id].data(), Minv_B[id].cols());
+
+
+    // X = Minv_B[e,e].Minv[e,e]
+    BLAS::gemm('n', 'n', ptclnum, ptclnum, ptclnum, 1.0, Minv[id].data(), Minv[id].cols(), Minv_B[id].data(),
+               Minv_B[id].cols(), 0.0, X[id].data(), X[id].cols());
+  }
+}
+
+
+void TWFFastDerivWrapper::buildIntermediates_dmu(const std::vector<ValueMatrix>& Minv,
+                                                 const std::vector<std::vector<ValueMatrix>>& dB,
+                                                 const std::vector<std::vector<ValueMatrix>>& dM,
+                                                 std::vector<std::vector<ValueMatrix>>& Minv_dB,
+                                                 std::vector<std::vector<ValueMatrix>>& Minv_dM)
+{
+  IndexType nspecies = Minv.size();
+  IndexType ndim     = dB.size();
+
+  for (IndexType id = 0; id < nspecies; id++)
+  {
+    int ptclnum = Minv[id].rows();
+    assert(Minv[id].rows() == Minv[id].cols());
+
+    for (IndexType idim = 0; idim < ndim; idim++)
+    {
+      int norb = dM[idim][id].cols();
+      // Minv_dM = Minv[e,e].dM[e,O]
+      BLAS::gemm('n', 'n', norb, ptclnum, ptclnum, 1.0, dM[idim][id].data(), dM[idim][id].cols(), Minv[id].data(),
+                 Minv[id].cols(), 0.0, Minv_dM[idim][id].data(), Minv_dM[idim][id].cols());
+      // Minv_dB = Minv[e,e].dB[e,O]
+      BLAS::gemm('n', 'n', norb, ptclnum, ptclnum, 1.0, dB[idim][id].data(), dB[idim][id].cols(), Minv[id].data(),
+                 Minv[id].cols(), 0.0, Minv_dB[idim][id].data(), Minv_dB[idim][id].cols());
+    }
+  }
+}
+
 
 void TWFFastDerivWrapper::wipeMatrices(std::vector<ValueMatrix>& A)
+{
+  for (IndexType id = 0; id < A.size(); id++)
+  {
+    A[id] = 0.0;
+  }
+}
+
+void TWFFastDerivWrapper::wipeVectors(std::vector<ValueVector>& A)
 {
   for (IndexType id = 0; id < A.size(); id++)
   {
