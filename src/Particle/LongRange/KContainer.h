@@ -37,11 +37,12 @@ public:
   static constexpr int DIM = OHMMS_DIM;
   using AppPosition        = typename QMCTraits::PosType;
   using Position           = typename QMCTypes<Real, DIM>::PosType;
+  using Kpts               = std::vector<TinyVector<int, DIM>>;
 
 private:
   /// The cutoff up to which k-vectors are generated.
   FullPrecReal kcutoff;
-
+  FullPrecReal full_m_pi_{M_PI};
 public:
   const auto& get_kpts_cart_soa() const { return kpts_cart_soa_; }
   const std::vector<TinyVector<int, DIM>>& getKpts() const { return kpts_; }
@@ -89,7 +90,7 @@ private:
 
   /** k-vector in reduced coordinates
    */
-  std::vector<TinyVector<int, DIM>> kpts_;
+  Kpts kpts_;
   /// k-vectors in Cartesian coordinates
   std::vector<Position> kpts_cart_;
   /// k squared at full precision

@@ -30,8 +30,8 @@ StructureFactorEstimator::StructureFactorEstimator(const StructureFactorInput& s
 {
   my_name_ = "StructureFactorEstimator";
 
-  num_kpoints_    = pset_ions.getSimulationCell().getKLists().numk;
-  kshell_offsets_ = pset_ions.getSimulationCell().getKLists().kshell;
+  num_kpoints_    = pset_ions.getSimulationCell().getKLists().getNumK();
+  kshell_offsets_ = pset_ions.getSimulationCell().getKLists().getKShell();
   int max_kshell  = kshell_offsets_.size() - 1;
 
   rhok_tot_r_.resize(num_kpoints_);
@@ -48,7 +48,7 @@ StructureFactorEstimator::StructureFactorEstimator(const StructureFactorInput& s
   one_over_degeneracy_kshell_.resize(max_kshell);
   for (int ks = 0; ks < max_kshell; ks++)
   {
-    kmags_[ks]                      = std::sqrt(pset_elec.getSimulationCell().getKLists().ksq[kshell_offsets_[ks]]);
+    kmags_[ks]                      = std::sqrt(pset_elec.getSimulationCell().getKLists().getKSQWorking()[kshell_offsets_[ks]]);
     one_over_degeneracy_kshell_[ks] = 1.0 / static_cast<Real>(kshell_offsets_[ks + 1] - kshell_offsets_[ks]);
   };
 }
@@ -92,7 +92,7 @@ void StructureFactorEstimator::registerOperatorEstimator(hdf_archive& file)
   hdf_path hdf_name{my_name_};
   hdf_path path_variables = hdf_name / std::string_view("kpoints");
   file.push(path_variables, true);
-  file.write(const_cast<std::vector<KPt>&>(ions_.getSimulationCell().getKLists().kpts_cart), "value");
+  file.write(const_cast<std::vector<KPt>&>(ions_.getSimulationCell().getKLists().getKptsCartWorking()), "value");
   file.pop();
 }
 

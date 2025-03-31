@@ -95,7 +95,10 @@ inline std::ostream& operator<<(std::ostream& out, const NativePrint<Vector<T>>&
   out << "{ ";
   auto vec = np_vec.get_obj();
   for (T& t : vec)
-    out << std::setprecision(10) << t << ", ";
+    if constexpr (IsComplex_t<T>::value)
+      out << std::setprecision(10) << '{' << t.real() << ", " << t.imag() << "}, ";
+    else
+      out << std::setprecision(10) << t << ", ";
   out << " }";
   return out;
 }
