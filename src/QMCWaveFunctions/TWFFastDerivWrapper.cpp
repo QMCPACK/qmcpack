@@ -552,10 +552,10 @@ void TWFFastDerivWrapper::computeMDDerivatives_ExcDets(const std::vector<ValueMa
         for (size_t i = 0; i < k; i++)
           for (size_t j = 0; j < k; j++)
           {
-            a(i, j)  = a_Ov(hlist[i], plist[j]);
-            m1(i, j) = mat1(hlist[i], plist[j]);
-            m2(i, j) = mat2(hlist[i], plist[j]);
-            s(i, j)  = S_Ov(hlist[i], plist[j]);
+            a(i, j)  = a_Ov(hlist[i], plist[j] - virt_offset);
+            m1(i, j) = mat1(hlist[i], plist[j] - virt_offset);
+            m2(i, j) = mat2(hlist[i], plist[j] - virt_offset);
+            s(i, j)  = S_Ov(hlist[i], plist[j] - virt_offset);
           }
 
         // invert a in place
@@ -565,7 +565,7 @@ void TWFFastDerivWrapper::computeMDDerivatives_ExcDets(const std::vector<ValueMa
         BLAS::gemm('n', 'n', k, k, k, 1.0, s.data(), s.cols(), a.data(), a.cols(), 0.0, ainv_s.data(), ainv_s.cols());
 
         // ainv_m1 = ainv.m1
-        BLAS::gemm('n', 'n', k, k, k, 1.0, m1.data(), m1.cols(), a.data(), a.cols(), 0.0, ainv_s.data(),
+        BLAS::gemm('n', 'n', k, k, k, 1.0, m1.data(), m1.cols(), a.data(), a.cols(), 0.0, ainv_m1.data(),
                    ainv_m1.cols());
 
         // m2 = -m1.ainv.s + m2
