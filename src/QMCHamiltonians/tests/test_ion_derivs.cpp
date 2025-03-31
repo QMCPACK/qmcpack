@@ -263,29 +263,37 @@ void test_msd_wrapper(const std::string& wffile,
 
   // vectors of size Ngroups (particle groups; alpha/beta here)
   // vector idx corresponds to species ID (e.g. M[0] is slater matrix for up electrons, M[1] is for down electrons)
-  std::vector<ValueMatrix> X;    // [Norb, Nptcl] auxiliary X matrix (Minv.B.Minv)
-  std::vector<ValueMatrix> Minv; // [Norb, Nptcl] inverse slater matrix over GS orbs
-  std::vector<ValueMatrix> B;    // [Nptcl, Norb] B matrix (Op(M)) over all orbs
-  std::vector<ValueMatrix> B_gs; // [Nptcl, Nocc] subset of B over GS orbs
-  std::vector<ValueMatrix> M;    // [Nptcl, Norb] slater matrix over all orbs
-  std::vector<ValueMatrix> M_gs; // [Nptcl, Nocc] subset of M over GS orbs
+  std::vector<ValueMatrix> X;       // [Nptcl, Nptcl] auxiliary X matrix (Minv.B.Minv)
+  std::vector<ValueMatrix> X2;      // testing
+  std::vector<ValueMatrix> Minv;    // [Nptcl, Nptcl] inverse slater matrix over GS orbs
+  std::vector<ValueMatrix> B;       // [Nptcl, Norb] B matrix (Op(M)) over all orbs
+  std::vector<ValueMatrix> B_gs;    // [Nptcl, Nocc] subset of B over GS orbs
+  std::vector<ValueMatrix> M;       // [Nptcl, Norb] slater matrix over all orbs
+  std::vector<ValueMatrix> M_gs;    // [Nptcl, Nocc] subset of M over GS orbs
+  std::vector<ValueMatrix> Minv_B;  // [Nptcl, Norb] Minv.B
+  std::vector<ValueMatrix> Minv_Mv; // [Nptcl, Nvirt] Minv.M over virtual orbs
 
 
   // The first index corresponds to the x,y,z force derivative.  Current interface assumes that the ion index is fixed,
   // so these vectors of vectors of matrices store the derivatives of the M and B matrices.
   // dB[0][0] is the x component of the iat force derivative of the up B matrix, dB[0][1] is for the down B matrix.
 
-  std::vector<std::vector<ValueMatrix>> dM;    //Derivative of slater matrix
-  std::vector<std::vector<ValueMatrix>> dM_gs; // subset of dM over GS orbs
-  std::vector<std::vector<ValueMatrix>> dB;    //Derivative of B matrix
-  std::vector<std::vector<ValueMatrix>> dB_gs; // subset of dB over GS orbs
+  std::vector<std::vector<ValueMatrix>> dM;      // Derivative of slater matrix
+  std::vector<std::vector<ValueMatrix>> dM_gs;   // subset of dM over GS orbs
+  std::vector<std::vector<ValueMatrix>> Minv_dM; // Minv.dM
+  std::vector<std::vector<ValueMatrix>> dB;      // Derivative of B matrix
+  std::vector<std::vector<ValueMatrix>> dB_gs;   // subset of dB over GS orbs
+  std::vector<std::vector<ValueMatrix>> Minv_dB; // Minv.dB
 
   M.resize(ngroups);
   M_gs.resize(ngroups);
   X.resize(ngroups);
+  X2.resize(ngroups);
   B.resize(ngroups);
   B_gs.resize(ngroups);
   Minv.resize(ngroups);
+  Minv_B.resize(ngroups);
+  Minv_Mv.resize(ngroups);
 
   for (int gid = 0; gid < ngroups; gid++)
   {
@@ -294,24 +302,33 @@ void test_msd_wrapper(const std::string& wffile,
     const int first  = elec.first(gid);
     const int last   = elec.last(gid);
     const int nptcls = last - first;
+    const int nvirt  = norbs - nptcls;
+
     M[sid].resize(nptcls, norbs);
     B[sid].resize(nptcls, norbs);
+    Minv_B[sid].resize(nptcls, norbs);
+    Minv_Mv[sid].resize(nptcls, nvirt);
 
     M_gs[sid].resize(nptcls, nptcls);
     Minv[sid].resize(nptcls, nptcls);
     B_gs[sid].resize(nptcls, nptcls);
     X[sid].resize(nptcls, nptcls);
+    X2[sid].resize(nptcls, nptcls);
   }
 
   dM.resize(OHMMS_DIM);
   dM_gs.resize(OHMMS_DIM);
+  Minv_dM.resize(OHMMS_DIM);
   dB.resize(OHMMS_DIM);
   dB_gs.resize(OHMMS_DIM);
+  Minv_dB.resize(OHMMS_DIM);
 
   for (int idim = 0; idim < OHMMS_DIM; idim++)
   {
     dM[idim].resize(ngroups);
     dB[idim].resize(ngroups);
+    Minv_dM[idim].resize(ngroups);
+    Minv_dB[idim].resize(ngroups);
     dM_gs[idim].resize(ngroups);
     dB_gs[idim].resize(ngroups);
 
@@ -325,6 +342,8 @@ void test_msd_wrapper(const std::string& wffile,
 
       dM[idim][sid].resize(nptcls, norbs);
       dB[idim][sid].resize(nptcls, norbs);
+      Minv_dM[idim][sid].resize(nptcls, norbs);
+      Minv_dB[idim][sid].resize(nptcls, norbs);
       dM_gs[idim][sid].resize(nptcls, nptcls);
       dB_gs[idim][sid].resize(nptcls, nptcls);
     }
@@ -332,14 +351,19 @@ void test_msd_wrapper(const std::string& wffile,
   twf.wipeMatrices(M);
   twf.wipeMatrices(M_gs);
   twf.wipeMatrices(X);
+  twf.wipeMatrices(X2);
   twf.wipeMatrices(B);
   twf.wipeMatrices(Minv);
   twf.wipeMatrices(B_gs);
+  twf.wipeMatrices(Minv_B);
+  twf.wipeMatrices(Minv_Mv);
 
   for (int idim = 0; idim < OHMMS_DIM; idim++)
   {
     twf.wipeMatrices(dM[idim]);
     twf.wipeMatrices(dM_gs[idim]);
+    twf.wipeMatrices(Minv_dM[idim]);
+    twf.wipeMatrices(Minv_dB[idim]);
     twf.wipeMatrices(dB[idim]);
     twf.wipeMatrices(dB_gs[idim]);
   }
@@ -354,6 +378,19 @@ void test_msd_wrapper(const std::string& wffile,
   kinop->evaluateOneBodyOpMatrix(elec, twf, B);
   twf.getGSMatrices(B, B_gs);
   twf.buildX(Minv, B_gs, X);
+  twf.buildIntermediates(Minv, B, M, X2, Minv_B, Minv_Mv);
+
+  for (int gid = 0; gid < ngroups; gid++)
+  {
+    const int sid = twf.getTWFGroupIndex(gid);
+    for (size_t i = 0; i < X[sid].rows(); i++)
+    {
+      for (size_t j = 0; j < X[sid].cols(); j++)
+      {
+        CHECK(X[sid](i, j) == Approx(X2[sid](i, j)));
+      }
+    }
+  }
 
 
   //Finally, we have all the data structures with the right dimensions.  Continue.
@@ -390,6 +427,10 @@ void test_msd_wrapper(const std::string& wffile,
   std::vector<Vector<ValueType>> fvals_O;     // (O D[i][j]/D[i][j])
   std::vector<Vector<ValueType>> fvals_dmu;   // d/dmu(log(D[i][j])
 
+  std::vector<Vector<ValueType>> fvals_dmu_O_2; // testing
+  std::vector<Vector<ValueType>> fvals_O_2;     // testing
+  std::vector<Vector<ValueType>> fvals_dmu_2;   // testing
+
 
   CHECK(twf.hasMultiSlaterDet());
   CHECK(twf.numMultiSlaterDets() == 1);
@@ -402,6 +443,9 @@ void test_msd_wrapper(const std::string& wffile,
   fvals_dmu_O.resize(n_mdd);
   fvals_O.resize(n_mdd);
   fvals_dmu.resize(n_mdd);
+  fvals_dmu_O_2.resize(n_mdd);
+  fvals_O_2.resize(n_mdd);
+  fvals_dmu_2.resize(n_mdd);
 
   // same order as Dets in msd; index of associated SPOset in twf.sposets_
   std::vector<int> mdd_spo_ids;
@@ -419,11 +463,25 @@ void test_msd_wrapper(const std::string& wffile,
     fvals_dmu_O[i_mdd].resize(multidiracdet_i.getNumDets());
     fvals_O[i_mdd].resize(multidiracdet_i.getNumDets());
     fvals_dmu[i_mdd].resize(multidiracdet_i.getNumDets());
+    fvals_dmu_O_2[i_mdd].resize(multidiracdet_i.getNumDets());
+    fvals_O_2[i_mdd].resize(multidiracdet_i.getNumDets());
+    fvals_dmu_2[i_mdd].resize(multidiracdet_i.getNumDets());
   }
 
   ValueType fval   = 0.0;
   ValueType wfcomp = 0.0;
   ValueType wfobs  = 0.0;
+
+  ValueType fval_2   = 0.0;
+  ValueType wfcomp_2 = 0.0;
+  ValueType wfobs_2  = 0.0;
+
+  twf.wipeVectors(fvals_O_2);
+  twf.computeMDDerivatives_Obs(Minv_Mv, Minv_B, mdd_spo_ids, mdd_list, fvals_O_2);
+
+
+  ValueType wfobs_gs = twf.trAB(Minv, B_gs);
+
 
   app_log() << "DEBUG: STARTING_DERIVS " << wffile << std::endl;
   for (int ionid = 0; ionid < Nions; ionid++)
@@ -441,25 +499,60 @@ void test_msd_wrapper(const std::string& wffile,
     // ion deriv of B
     kinop->evaluateOneBodyOpMatrixForceDeriv(elec, ions, twf, ionid, dB);
 
+    twf.buildIntermediates_dmu(Minv, dB, dM, Minv_dB, Minv_dM);
+
     for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
       twf.wipeVectors(fvals_dmu_O);
       twf.wipeVectors(fvals_O);
       twf.wipeVectors(fvals_dmu);
 
+      twf.wipeVectors(fvals_dmu_O_2);
+      twf.wipeVectors(fvals_dmu_2);
+
       twf.getGSMatrices(dB[idim], dB_gs[idim]);
       twf.getGSMatrices(dM[idim], dM_gs[idim]);
 
-      fval                           = twf.computeGSDerivative(Minv, X, dM_gs[idim], dB_gs[idim]);
-      wfcomp                         = twf.trAB(Minv, dM_gs[idim]);
-      wfobs                          = twf.trAB(Minv, B_gs);
+      fval   = twf.computeGSDerivative(Minv, X, dM_gs[idim], dB_gs[idim]);
+      wfcomp = twf.trAB(Minv, dM_gs[idim]);
+      wfobs  = twf.trAB(Minv, B_gs);
+      CHECK(wfobs == Approx(wfobs_gs));
       fkin_complex_gs[ionid][idim]   = fval;
       wfgrad_complex_gs[ionid][idim] = wfcomp;
-      obsval_complex_gs[ionid][idim] = wfobs; // does not change over ions/dims; restructure MD stuff and move outside
+      obsval_complex_gs[ionid][idim] = wfobs_gs;
+      // does not change over ions/dims; restructure MD stuff and move outside
 
       // calculate quantities for spindets
       twf.computeMDDerivatives_ExcDets(Minv, X, dM[idim], dB[idim], B, M, mdd_spo_ids, mdd_list, fvals_dmu_O, fvals_O,
                                        fvals_dmu);
+
+      twf.computeMDDerivatives_dmu(Minv_Mv, Minv_B, Minv_dM[idim], Minv_dB[idim], mdd_spo_ids, mdd_list, fvals_dmu_O_2,
+                                   fvals_dmu_2);
+
+      for (size_t i = 0; i < n_mdd; i++)
+      {
+        app_log() << "(" << ionid << "," << idim << ")" << "fvals_O[" << i << "]" << std::endl;
+        for (size_t j = 0; j < fvals_O[i].size(); j++)
+        {
+          app_log() << fvals_O[i][j] << ", " << fvals_O_2[i][j] << std::endl;
+        }
+      }
+      for (size_t i = 0; i < n_mdd; i++)
+      {
+        app_log() << "(" << ionid << "," << idim << ")" << "fvals_dmu_O[" << i << "]" << std::endl;
+        for (size_t j = 0; j < fvals_dmu_O[i].size(); j++)
+        {
+          app_log() << fvals_dmu_O[i][j] << ", " << fvals_dmu_O_2[i][j] << std::endl;
+        }
+      }
+      for (size_t i = 0; i < n_mdd; i++)
+      {
+        app_log() << "(" << ionid << "," << idim << ")" << "fvals_dmu[" << i << "]" << std::endl;
+        for (size_t j = 0; j < fvals_dmu[i].size(); j++)
+        {
+          app_log() << fvals_dmu[i][j] << ", " << fvals_dmu_2[i][j] << std::endl;
+        }
+      }
 
 
       // fval: d_mu(OPsi/Psi)
@@ -467,6 +560,13 @@ void test_msd_wrapper(const std::string& wffile,
       // oval: OPsi/Psi (decide how to handle this; should be same at each iteration over ion dims?)
       std::tie(fval, wfcomp, wfobs) =
           twf.computeMDDerivatives_total(msd_idx, mdd_list, fvals_dmu_O, fvals_O, fvals_dmu);
+
+      std::tie(fval_2, wfcomp_2, wfobs_2) =
+          twf.computeMDDerivatives_total(msd_idx, mdd_list, fvals_dmu_O_2, fvals_O_2, fvals_dmu_2);
+
+      CHECK(fval == Approx(fval_2));
+      CHECK(wfobs == Approx(wfobs_2));
+      CHECK(wfcomp == Approx(wfcomp_2));
 
 
       fkin_complex_md[ionid][idim]   = fval;
