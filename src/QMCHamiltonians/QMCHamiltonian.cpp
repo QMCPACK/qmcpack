@@ -1051,21 +1051,21 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
   //resize everything;
   const int ngroups = psi_wrapper_in.numGroups();
 
-  std::vector<ValueMatrix> X_;    //Working arrays for derivatives
-  std::vector<ValueMatrix> Minv_; //Working array for derivatives.
-  std::vector<ValueMatrix> B_;
-  std::vector<ValueMatrix> B_gs_;
-  std::vector<ValueMatrix> M_;
-  std::vector<ValueMatrix> M_gs_;
-  std::vector<ValueMatrix> Minv_B_;
-  std::vector<ValueMatrix> Minv_Mv_;
+  std::vector<ValueMatrix> X_;       // [Nptcl, Nptcl] auxiliary X matrix (Minv.B.Minv)
+  std::vector<ValueMatrix> Minv_;    // [Nptcl, Nptcl] inverse slater matrix over GS orbs
+  std::vector<ValueMatrix> B_;       // [Nptcl, Norb] B matrix (Op(M)) over all orbs
+  std::vector<ValueMatrix> B_gs_;    // [Nptcl, Nocc] subset of B over GS orbs
+  std::vector<ValueMatrix> M_;       // [Nptcl, Norb] slater matrix over all orbs
+  std::vector<ValueMatrix> M_gs_;    // [Nptcl, Nocc] subset of M over GS orbs
+  std::vector<ValueMatrix> Minv_B_;  // [Nptcl, Norb] Minv.B
+  std::vector<ValueMatrix> Minv_Mv_; // [Nptcl, Nvirt] Minv.M over virtual orbs
 
-  std::vector<std::vector<ValueMatrix>> dM_;
-  std::vector<std::vector<ValueMatrix>> dM_gs_;
-  std::vector<std::vector<ValueMatrix>> Minv_dM_;
-  std::vector<std::vector<ValueMatrix>> Minv_dB_;
-  std::vector<std::vector<ValueMatrix>> dB_;
-  std::vector<std::vector<ValueMatrix>> dB_gs_;
+  std::vector<std::vector<ValueMatrix>> dM_;      // Derivative of slater matrix
+  std::vector<std::vector<ValueMatrix>> dB_;      // Derivative of B matrix
+  std::vector<std::vector<ValueMatrix>> dM_gs_;   // subset of dM over GS orbs
+  std::vector<std::vector<ValueMatrix>> dB_gs_;   // subset of dB over GS orbs
+  std::vector<std::vector<ValueMatrix>> Minv_dM_; // Minv.dM
+  std::vector<std::vector<ValueMatrix>> Minv_dB_; // Minv.dB
 
   {
     M_.resize(ngroups);
@@ -1098,20 +1098,20 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
     }
 
     dM_.resize(OHMMS_DIM);
+    dB_.resize(OHMMS_DIM);
     dM_gs_.resize(OHMMS_DIM);
+    dB_gs_.resize(OHMMS_DIM);
     Minv_dM_.resize(OHMMS_DIM);
     Minv_dB_.resize(OHMMS_DIM);
-    dB_.resize(OHMMS_DIM);
-    dB_gs_.resize(OHMMS_DIM);
 
     for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
       dM_[idim].resize(ngroups);
       dB_[idim].resize(ngroups);
-      Minv_dM_[idim].resize(ngroups);
-      Minv_dB_[idim].resize(ngroups);
       dM_gs_[idim].resize(ngroups);
       dB_gs_[idim].resize(ngroups);
+      Minv_dM_[idim].resize(ngroups);
+      Minv_dB_[idim].resize(ngroups);
 
       for (int gid = 0; gid < ngroups; gid++)
       {
@@ -1123,10 +1123,10 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
 
         dM_[idim][sid].resize(nptcls, norbs);
         dB_[idim][sid].resize(nptcls, norbs);
-        Minv_dM_[idim][sid].resize(nptcls, norbs);
-        Minv_dB_[idim][sid].resize(nptcls, norbs);
         dM_gs_[idim][sid].resize(nptcls, nptcls);
         dB_gs_[idim][sid].resize(nptcls, nptcls);
+        Minv_dM_[idim][sid].resize(nptcls, norbs);
+        Minv_dB_[idim][sid].resize(nptcls, norbs);
       }
     }
     psi_wrapper_in.wipeMatrices(M_);
@@ -1141,11 +1141,11 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
     for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
       psi_wrapper_in.wipeMatrices(dM_[idim]);
+      psi_wrapper_in.wipeMatrices(dB_[idim]);
       psi_wrapper_in.wipeMatrices(dM_gs_[idim]);
+      psi_wrapper_in.wipeMatrices(dB_gs_[idim]);
       psi_wrapper_in.wipeMatrices(Minv_dM_[idim]);
       psi_wrapper_in.wipeMatrices(Minv_dB_[idim]);
-      psi_wrapper_in.wipeMatrices(dB_[idim]);
-      psi_wrapper_in.wipeMatrices(dB_gs_[idim]);
     }
   }
   ParticleSet::ParticleGradient wfgradraw_(ions.getTotalNum());
@@ -1184,9 +1184,9 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
   int msd_idx = 0;
 
   // values for MultiDiracDet i, excited det j (also include GS det at j==0)
-  std::vector<Vector<ValueType>> fvals_dmu_O; // d/dmu(O D[i][j]/D[i][j])
   std::vector<Vector<ValueType>> fvals_O;     // (O D[i][j]/D[i][j])
   std::vector<Vector<ValueType>> fvals_dmu;   // d/dmu(log(D[i][j])
+  std::vector<Vector<ValueType>> fvals_dmu_O; // d/dmu(O D[i][j]/D[i][j])
 
   // same order as Dets in msd; index of associated SPOset in psi_wrapper_in.sposets_
   std::vector<int> mdd_spo_ids;
@@ -1202,11 +1202,10 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
 
     const auto& msd = static_cast<const MultiSlaterDetTableMethod&>(psi_wrapper_in.getMultiSlaterDet(msd_idx));
 
-    /// FIXME: just do this earlier?
     auto n_mdd = msd.getDetSize();
-    fvals_dmu_O.resize(n_mdd);
     fvals_O.resize(n_mdd);
     fvals_dmu.resize(n_mdd);
+    fvals_dmu_O.resize(n_mdd);
 
     for (size_t i_mdd = 0; i_mdd < n_mdd; i_mdd++)
     {
@@ -1217,14 +1216,16 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
       // SPOSet location in psi_wrapper_in.sposets_ for this particle group
       const int sid = psi_wrapper_in.getTWFGroupIndex(gid);
       mdd_spo_ids.push_back(sid);
-      fvals_dmu_O[i_mdd].resize(multidiracdet_i.getNumDets());
       fvals_O[i_mdd].resize(multidiracdet_i.getNumDets());
       fvals_dmu[i_mdd].resize(multidiracdet_i.getNumDets());
+      fvals_dmu_O[i_mdd].resize(multidiracdet_i.getNumDets());
     }
     psi_wrapper_in.wipeVectors(fvals_O);
+
+    // compute (OD/D) for all excited DiracDets D
+    psi_wrapper_in.computeMDDerivatives_Obs(Minv_Mv_, Minv_B_, mdd_spo_ids, mdd_list, fvals_O);
   }
 
-  psi_wrapper_in.computeMDDerivatives_Obs(Minv_Mv_, Minv_B_, mdd_spo_ids, mdd_list, fvals_O);
 
   //And now we compute the 3N force derivatives.  3 at a time for each atom.
   for (int iat = 0; iat < ions.getTotalNum(); iat++)
@@ -1237,9 +1238,11 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
     for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
       psi_wrapper_in.wipeMatrices(dM_[idim]);
-      psi_wrapper_in.wipeMatrices(dM_gs_[idim]);
       psi_wrapper_in.wipeMatrices(dB_[idim]);
+      psi_wrapper_in.wipeMatrices(dM_gs_[idim]);
       psi_wrapper_in.wipeMatrices(dB_gs_[idim]);
+      psi_wrapper_in.wipeMatrices(Minv_dM_[idim]);
+      psi_wrapper_in.wipeMatrices(Minv_dB_[idim]);
     }
 
     {
@@ -1267,13 +1270,15 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
       // d_mu(log Psi)
       ValueType fval_dmu = 0.0;
 
-      // this is OD/D terms, so should compute outside of this loop, but we get it for free-ish here
-      /// FIXME: compute some MD quantities outside of the idim loop
+      // this is OD/D terms, which does not depend on d_mu, so will be same for every ionid/dim
+      // we don't use it here, but computeMDDerivatives_total returns it (and needs it internally anyway, so it adds no additional cost)
       ValueType fval_O = 0.0;
 
 
+      /// TODO: fix this: (Minv.dB - X.dM) == (Minv_dB - Minv_B.Minv_dM)
       fval_dmu_O = psi_wrapper_in.computeGSDerivative(Minv_, X_, dM_gs_[idim], dB_gs_[idim]);
-      fval_dmu   = psi_wrapper_in.trAB(Minv_, dM_gs_[idim]);
+      /// TODO: fix this: already have Minv.dM as Minv_dM_
+      fval_dmu = psi_wrapper_in.trAB(Minv_, dM_gs_[idim]);
 
       dedr_complex[iat][idim] = fval_dmu_O;
       wfgradraw_[iat][idim] += fval_dmu;
@@ -1283,12 +1288,14 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
         const auto& msd = static_cast<const MultiSlaterDetTableMethod&>(psi_wrapper_in.getMultiSlaterDet(msd_idx));
 
 
+        // compute d_mu(OD/D) and d_mu(logD) for all excited DiracDets D
         psi_wrapper_in.computeMDDerivatives_dmu(Minv_Mv_, Minv_B_, Minv_dM_[idim], Minv_dB_[idim], mdd_spo_ids,
                                                 mdd_list, fvals_dmu_O, fvals_dmu);
+        /// TODO: remove old interface
         // psi_wrapper_in.computeMDDerivatives_ExcDets(Minv_, X_, dM_[idim], dB_[idim], B_, M_, mdd_spo_ids, mdd_list,
         //                                             fvals_dmu_O, fvals_O, fvals_dmu);
 
-
+        // compute {d_mu(O Psi/Psi), d_mu(log Psi), (O Psi/Psi)} (don't need (O Psi/Psi) here, but we get it for free)
         std::tie(fval_dmu_O, fval_dmu, fval_O) =
             psi_wrapper_in.computeMDDerivatives_total(msd_idx, mdd_list, fvals_dmu_O, fvals_O, fvals_dmu);
 
