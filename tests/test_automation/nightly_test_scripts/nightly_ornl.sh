@@ -498,6 +498,16 @@ else
     ctestscriptarg=release
 fi
 
+if [[ $sys == *"tsan"* ]]; then
+    export QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-TSan
+    export QMC_OPTIONS="${QMC_OPTIONS};-DENABLE_SANITIZER=tsan"
+fi
+
+if [[ $sys == *"typesan"* ]]; then
+    export QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-TypeSan
+    export QMC_OPTIONS="${QMC_OPTIONS};-DENABLE_SANITIZER=typesan"
+fi
+
 echo TEST SUBMIT NAME: $QMCPACK_TEST_SUBMIT_NAME
 echo CMCFG: $CMCFG
 echo PARALLELCFG: $PARALLELCFG
