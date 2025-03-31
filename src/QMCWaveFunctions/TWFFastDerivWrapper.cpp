@@ -451,15 +451,6 @@ void TWFFastDerivWrapper::computeMDDerivatives_dmu(const std::vector<ValueMatrix
     size_t nvirt       = norb_tot - nOcc; // should be number of virtuals that appear as particles in exc. list
     size_t virt_offset = nOcc;            // first col of virt orbs in M
 
-    app_log() << "DEBUGMAT: Minv_B/f_OO/Ov new: " << sid << std::endl;
-    for (size_t i = 0; i < Minv_B[sid].rows(); i++)
-    {
-      for (size_t j = 0; j < Minv_B[sid].cols(); j++)
-      {
-        app_log() << "     Minv_B[" << i << "][" << j << "] = " << Minv_B[sid](i, j) << std::endl;
-      }
- 
-    }
     // input mats:
     // a = Minv_Mv  [occ, virt]
     // X2 = Minv_dM  [occ, occ+virt]
@@ -478,15 +469,6 @@ void TWFFastDerivWrapper::computeMDDerivatives_dmu(const std::vector<ValueMatrix
     ValueMatrix X32_On(nOcc, nOcc + nvirt);
     BLAS::gemm('n', 'n', nOcc + nvirt, nOcc, nOcc, 1.0, Minv_dM[sid].data(), Minv_dM[sid].cols(), Minv_B[sid].data(),
                Minv_B[sid].cols(), 0.0, X32_On.data(), X32_On.cols());
-    app_log() << "DEBUGMAT: X32/mat1b new: " << sid << std::endl;
-    for (size_t i = 0; i < X32_On.rows(); i++)
-    {
-      for (size_t j = 0; j < X32_On.cols(); j++)
-      {
-        app_log() << "X32/mat1b[" << i << "][" << j << "] = " << X32_On(i, j) << std::endl;
-      }
-    }
-    
 
 
     // Minv_dB - X32
@@ -792,18 +774,6 @@ void TWFFastDerivWrapper::computeMDDerivatives_ExcDets(const std::vector<ValueMa
     BLAS::gemm('n', 'n', nOcc, nOcc, nelec, 1.0, B[sid].data(), B[sid].cols(), Minv[sid].data(), Minv[sid].cols(), 0.0,
                f_OO.data(), f_OO.cols());
 
-    app_log() << "DEBUGMAT: Minv_B/f_OO/Ov old: " << sid << std::endl;
-    for (size_t i = 0; i < f_Ov.rows(); i++)
-    {
-      for (size_t j = 0; j < f_OO.cols(); j++)
-      {
-        app_log() << "Minv_B/f_OO[" << i << "][" << j << "] = " << f_OO(i, j) << std::endl;
-      }
-      for (size_t j = 0; j < f_Ov.cols(); j++)
-      {
-        app_log() << "Minv_B/f_Ov[" << i << "][" << j << "] = " << f_Ov(i, j) << std::endl;
-      }
-    }
     // g[O,v] = X[O,e].M[e,v]
     ValueMatrix g_Ov(nOcc, nvirt);
     BLAS::gemm('n', 'n', nvirt, nOcc, nelec, 1.0, M[sid].data() + virt_offset, M[sid].cols(), X[sid].data(),
@@ -830,14 +800,6 @@ void TWFFastDerivWrapper::computeMDDerivatives_ExcDets(const std::vector<ValueMa
     ValueMatrix mat1b(nocc, nvirt);
     BLAS::gemm('n', 'n', nvirt, nOcc, nOcc, 1.0, a_Ov.data(), a_Ov.cols(), b_On.data(), b_On.cols(), 0.0, mat1b.data(),
                mat1b.cols());
-    app_log() << "DEBUGMAT: X32/mat1b old: " << sid << std::endl;
-    for (size_t i = 0; i < mat1b.rows(); i++)
-    {
-      for (size_t j = 0; j < mat1b.cols(); j++)
-      {
-        app_log() << "X32/mat1b[" << i << "][" << j << "] = " << mat1b(i, j) << std::endl;
-      }
-    }
 
     /// FIXME: only need o for first dim
     /// NOTE: second dim of b is Ov
@@ -1096,7 +1058,6 @@ std::tuple<TWFFastDerivWrapper::ValueType, TWFFastDerivWrapper::ValueType, TWFFa
   }
 
   const int num_groups = num_diracdets.size();
-  // app_log() << "DEBUG: num_groups = " << num_groups << std::endl;
 
   ValueType total_psi   = C[0]; // sum_i c_i D_i
   ValueType total_dmu_O = 0.0;  // d_mu(OD/D)
@@ -1114,22 +1075,9 @@ std::tuple<TWFFastDerivWrapper::ValueType, TWFFastDerivWrapper::ValueType, TWFFa
     ValueType tmp_dmu   = 0.0;     // d_mu(log(D))
     ValueType tmp_Odmu  = 0.0;     // (OD/D) * d_mu(log(D))
 
-    // app_log() << "msd::C[" << i_sd << "] = " << tmp_psi << std::endl;
-
-
     for (size_t i_group = 0; i_group < num_groups; i_group++)
     {
       size_t i_dd = C2node[i_group][i_sd];
-      // std::cout << "DEBUG: local det id " << i_dd << std::endl;
-
-
-      // app_log() << "tmp_dmu_O  [" << i_group << "][" << i_dd << "]" << dvals_dmu_O[i_group][i_dd] << std::endl;
-      // app_log() << "tmp_O  [" << i_group << "][" << i_dd << "]" << dvals_O[i_group][i_dd] << std::endl;
-      // app_log() << "tmp_dmu  [" << i_group << "][" << i_dd << "]" << dvals_dmu[i_group][i_dd] << std::endl;
-      // app_log() << "tmp_Odmu [" << i_group << "][" << i_dd << "]"
-      //           << dvals_dmu[i_group][i_dd] * dvals_O[i_group][i_dd] << std::endl;
-      // app_log() << "tmp_psi [" << i_group << "][" << i_dd << "]" << (*diracdet_ratios_to_ref[i_group])[i_dd]
-      //           << std::endl;
 
       tmp_dmu_O += dvals_dmu_O[i_group][i_dd];
       tmp_O += dvals_O[i_group][i_dd];

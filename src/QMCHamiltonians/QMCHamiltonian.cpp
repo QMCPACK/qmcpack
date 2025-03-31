@@ -1292,8 +1292,6 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
         std::tie(fval_dmu_O, fval_dmu, fval_O) =
             psi_wrapper_in.computeMDDerivatives_total(msd_idx, mdd_list, fvals_dmu_O, fvals_O, fvals_dmu);
 
-        std::cout << "DEBUG: fval_dmu " << fval_dmu << std::endl;
-        std::cout << "DEBUG: fval_dmu_O " << fval_dmu_O << std::endl;
         dedr_complex[iat][idim] += fval_dmu_O; // multidet part of d_mu(OPsi/Psi)
         wfgradraw_[iat][idim] += fval_dmu;     // multidet part of d_mu(log(Psi))
       }
