@@ -1184,6 +1184,7 @@ TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
   hf_term.resize(Nions);
   pulay_term.resize(Nions);
 
+  /// TODO: remove these?
   wfgradraw[0] = psi->evalGradSource(elec, ions, 0); //On the C atom.
   wfgradraw[1] = psi->evalGradSource(elec, ions, 1); //On the N atom.
 
@@ -1192,24 +1193,12 @@ TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
 
   ParticleSet::ParticlePos dedr;
   dedr.resize(Nions);
-  
+
   ham.evaluateIonDerivsFast(elec, ions, *psi, twf, dedr, wf_grad);
 
-  for (size_t i = 0; i < 2; i++)
-    for (size_t j = 0; j < 3; j++)
-      app_log() << "dedr[" << i << "][" << j << "] = " << dedr[i][j] << std::endl;
 
-  for (size_t i = 0; i < 2; i++)
-    for (size_t j = 0; j < 3; j++)
-      app_log() << "wf_grad[" << i << "][" << j << "] = " << wf_grad[i][j] << std::endl;
-
-  for (size_t i = 0; i < 2; i++)
-    for (size_t j = 0; j < 3; j++)
-      app_log() << "wfgradraw[" << i << "][" << j << "] = " << wfgradraw[i][j] << std::endl;
-
-
-  convertToReal(wfgradraw[0], wf_grad[0]);
-  convertToReal(wfgradraw[1], wf_grad[1]);
+  // convertToReal(wfgradraw[0], wf_grad[0]);
+  // convertToReal(wfgradraw[1], wf_grad[1]);
 
   //This is not implemented yet.  Uncomment to perform check after implementation.
   //Reference from finite differences on this configuration.
@@ -1220,7 +1209,8 @@ TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
   CHECK(wf_grad[1][1] == Approx(0.0091648450606385));
   CHECK(wf_grad[1][2] == Approx(0.1031883398283639));
 
-
+  /// NOTE: this is implemented in test_msd_wrapper above
+  //  no interface yet for single operator evaluateIonDerivsFast
   //This is not implemented yet.  Uncomment to perform check after implementation.
   //Kinetic Force
   /*  hf_term=0.0;
@@ -2339,26 +2329,45 @@ TEST_CASE("Eloc_Derivatives:proto_md_noj", "[hamiltonian]")
   ref_kin.resize(2);
   ref_nlpp.resize(2);
 
-  ref_wf_grad[0][0] = -1.704520108445351E+00;
-  ref_wf_grad[0][1] = 2.698093270252500E+00;
-  ref_wf_grad[0][2] = 6.535839898500484E+00;
-  ref_wf_grad[1][0] = 1.632281747907527E+00;
-  ref_wf_grad[1][1] = 9.164844749776080E-03;
-  ref_wf_grad[1][2] = 1.031883479551965E-01;
+  // Values from wftester with delta = +/- 1e-4 (central diff)
+  // ref_wf_grad[0][0] = -1.704520108445351E+00;
+  // ref_wf_grad[0][1] = 2.698093270252500E+00;
+  // ref_wf_grad[0][2] = 6.535839898500484E+00;
+  // ref_wf_grad[1][0] = 1.632281747907527E+00;
+  // ref_wf_grad[1][1] = 9.164844749776080E-03;
+  // ref_wf_grad[1][2] = 1.031883479551965E-01;
+  // ref_kin[0][0] = 7.463178994395747E+00;
+  // ref_kin[0][1] = 2.609759822240321E+01;
+  // ref_kin[0][2] = 9.016467011699447E+01;
+  // ref_kin[1][0] = 3.841415285954497E+00;
+  // ref_kin[1][1] = -2.350439296145979E+00;
+  // ref_kin[1][2] = 4.745404936050690E+00;
+  // ref_nlpp[0][0] = 1.894008783210666E+01;
+  // ref_nlpp[0][1] = -4.290217280010111E+01;
+  // ref_nlpp[0][2] = -7.832794463395132E+01;
+  // ref_nlpp[1][0] = 1.213451488100148E+00;
+  // ref_nlpp[1][1] = -6.154734663521566E-01;
+  // ref_nlpp[1][2] = -3.301254866396874E+00;
 
-  ref_kin[0][0] = 7.463178994395747E+00;
-  ref_kin[0][1] = 2.609759822240321E+01;
-  ref_kin[0][2] = 9.016467011699447E+01;
-  ref_kin[1][0] = 3.841415285954497E+00;
-  ref_kin[1][1] = -2.350439296145979E+00;
-  ref_kin[1][2] = 4.745404936050690E+00;
-
-  ref_nlpp[0][0] = 1.894008783210666E+01;
-  ref_nlpp[0][1] = -4.290217280010111E+01;
-  ref_nlpp[0][2] = -7.832794463395132E+01;
-  ref_nlpp[1][0] = 1.213451488100148E+00;
-  ref_nlpp[1][1] = -6.154734663521566E-01;
-  ref_nlpp[1][2] = -3.301254866396874E+00;
+  // Values from old test
+  ref_wf_grad[0][0] = -1.7045200053189544;
+  ref_wf_grad[0][1] = 2.6980932676501368;
+  ref_wf_grad[0][2] = 6.5358393587011667;
+  ref_wf_grad[1][0] = 1.6322817486980055;
+  ref_wf_grad[1][1] = 0.0091648450606385;
+  ref_wf_grad[1][2] = 0.1031883398283639;
+  ref_kin[0][0]     = 7.4631825180304636;
+  ref_kin[0][1]     = 26.0975954772035799;
+  ref_kin[0][2]     = 90.1646424427582218;
+  ref_kin[1][0]     = 3.8414153131327562;
+  ref_kin[1][1]     = -2.3504392874684754;
+  ref_kin[1][2]     = 4.7454048248241065;
+  ref_nlpp[0][0]    = 18.9414437404167302;
+  ref_nlpp[0][1]    = -42.9017371899931277;
+  ref_nlpp[0][2]    = -78.3304792483008328;
+  ref_nlpp[1][0]    = 1.2122162598160457;
+  ref_nlpp[1][1]    = -0.6163169101291999;
+  ref_nlpp[1][2]    = -3.2996553033015625;
 
 
   //Output of WFTester Eloc test for this ion/electron configuration.
