@@ -4,7 +4,7 @@
 //
 // Copyright (c) 2021 QMCPACK developers.
 //
-// Filef developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
+// File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //////////////////////////////////////////////////////////////////////////////////////
@@ -31,8 +31,6 @@ namespace qmcplusplus
   using UnpinnedDualAllocator = DualAllocator<T, CUDAAllocator<T>, aligned_allocator<T>>;
   template<typename T>
   using PinnedDualAllocator = DualAllocator<T, CUDAAllocator<T>, PinnedAlignedAllocator<T>>;
-  template<typename T>
-  using DeviceAllocator = CUDAAllocator<T>;
 }
 #elif defined(ENABLE_SYCL)
 namespace qmcplusplus
@@ -41,8 +39,6 @@ namespace qmcplusplus
   using UnpinnedDualAllocator = DualAllocator<T, SYCLAllocator<T>, aligned_allocator<T>>;
   template<typename T>
   using PinnedDualAllocator = DualAllocator<T, SYCLAllocator<T>, PinnedAlignedAllocator<T>>;
-  template<typename T>
-  using DeviceAllocator = SYCLAllocator<T>;
 }
 #else
 #error unhandled platform
@@ -56,8 +52,6 @@ namespace qmcplusplus
   using UnpinnedDualAllocator = OffloadAllocator<T>;
   template<typename T>
   using PinnedDualAllocator = OffloadPinnedAllocator<T>;
-  template<typename T>
-  using DeviceAllocator = OffloadDeviceAllocator<T>;
 }
 #endif
 
