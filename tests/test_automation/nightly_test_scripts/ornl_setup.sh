@@ -182,12 +182,24 @@ cd $HOME/apps/spack
 
 # For reproducibility, use a specific version of Spack
 # Prefer to use tagged releases https://github.com/spack/spack/releases
-git checkout 75c3d0a053c9705e1c1f88a94c47ffd36f4be1dd
+
+git checkout a3abc1c492f2431f477a63bbccb48aa3a2d34199
+#commit a3abc1c492f2431f477a63bbccb48aa3a2d34199 (HEAD -> develop, tag: develop-2025-03-23, origin/develop, origin/HEAD)
+#Author: Alec Scott <hi@alecbcs.com>
+#Date:   Fri Mar 21 23:17:56 2025 -0400
+#
+#    Fix ci failures after merge of mock tests created before license transition (#49638)
+
+# Previously used:
+
 #commit 75c3d0a053c9705e1c1f88a94c47ffd36f4be1dd (HEAD -> develop, origin/develop, origin/HEAD)
 #Author: Lehman Garrison <lgarrison@flatironinstitute.org>
 #Date:   Wed Feb 19 10:14:35 2025 -0500
 #
 #    py-yt: add 4.4.0 and dependencies (#47571)
+
+# Limit overly strong rmg boost dependency to allow concretizer:unify:true
+sed -ibak 's/boost@1.61.0:1.82.0/boost@1.61.0:1.82.0", when="@:5/g' var/spack/repos/builtin/packages/rmgdft/package.py
 
 echo --- Git version and last log entry
 git log -1
