@@ -112,7 +112,7 @@ spack add quantum-espresso +mpi +qmcpack
 export CMAKE_BUILD_PARALLEL_LEVEL=8 # For PySCF
 spack add py-pyscf
 spack add dftd4
-#spack add rmgdft #Fails to compile with GCC14 due to bug in vendored SCALAPACK 
+spack add rmgdft@develop # Use develop version to avoid vendored SCALPACK compilation bugs (20250324)
 
 #Luxury options for actual science use:
 spack add py-requests # for pseudo helper
@@ -232,7 +232,7 @@ spack add py-h5py ^hdf5@${hdf5_vnew}%gcc@${gcc_vold} +fortran +hl +mpi
 #spack add quantum-espresso +mpi +qmcpack
 #export CMAKE_BUILD_PARALLEL_LEVEL=8 # For PySCF
 #spack add py-pyscf
-spack add rmgdft
+spack add rmgdft@develop # Use develop version to avoid vendored SCALPACK compilation bugs (20250324)
 
 #Luxury options for actual science use:
 spack add py-requests # for pseudo helper
@@ -395,7 +395,7 @@ spack add py-numpy@${numpy_vold}
 spack add py-scipy
 spack add py-h5py ^hdf5@${hdf5_vold}%gcc@${gcc_vold} +fortran +hl +mpi
 spack add quantum-espresso +mpi +qmcpack
-#spack add rmgdft
+spack add rmgdft@develop # Use develop version to avoid vendored SCALPACK compilation bugs (20250324)
 install_environment
 spack env deactivate
 
