@@ -123,11 +123,11 @@ TEST_CASE("readLine", "[utilities]")
         REQUIRE(buf == tc.output[i]);
         if (i == tc.output.size() - 1)
         {
-          REQUIRE(out == NULL);
+          REQUIRE(out == nullptr);
         }
         else
         {
-          REQUIRE(out != NULL);
+          REQUIRE(out != nullptr);
         }
       }
     }
