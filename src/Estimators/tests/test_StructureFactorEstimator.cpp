@@ -13,8 +13,9 @@
 #include "test_StructureFactorEstimator.h"
 #include "StructureFactorInput.h"
 #include "ValidStructureFactorInput.h"
-#include "Particle/tests/MinimalParticlePool.h"
-#include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
+#include <MinimalParticlePool.h>
+#include <MinimalWaveFunctionPool.h>
+#include <MinimalHamiltonianPool.h>
 #include "RandomForTest.h"
 #include "GenerateRandomParticleSets.h"
 #include "Utilities/ProjectData.h"
@@ -130,11 +131,17 @@ TEST_CASE("StructureFactorEstimator::Accumulate", "[estimators]")
   for (int iw = 0; iw < nwalkers; ++iw)
     twfcs[iw] = trial_wavefunction.makeClone(psets[iw]);
 
-  // These are just empty arguments to hang the accumulation test, StructureFactorEstimator never accesses into them.
-  // In the application the estimator manager calls accumulate and all these vectors are really populated.
-  std::vector<QMCHamiltonian> hams;
   auto ref_wfns = convertUPtrToRefVector(twfcs);
-  auto ref_hams = makeRefVector<QMCHamiltonian>(hams);
+
+  // These hamiltomians are just pro forma arguments needed to hold off UBSan,
+  // StructureFactorEstimator never accesses into them.
+  auto hamiltonian_pool  = MinimalHamiltonianPool::makeHamWithEEEI(comm, particle_pool, wavefunction_pool);
+  auto& gold_hamiltonian = *(hamiltonian_pool.getPrimary());
+  std::vector<UPtr<QMCHamiltonian>> hams(nwalkers);
+  for (int iw = 0; iw < nwalkers; ++iw)
+    hams[iw] = gold_hamiltonian.makeClone(psets[iw], ref_wfns[iw]);
+
+  auto ref_hams = convertUPtrToRefVector(hams);
   RefVectorWithLeader<QMCHamiltonian> rvwl_hams(ref_hams[0], ref_hams);
 
   auto updateWalker = [](auto& walker, auto& pset_target, auto& trial_wavefunction) {
