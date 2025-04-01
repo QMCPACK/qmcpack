@@ -15,8 +15,8 @@
  *  that can be used with different accelerator backends (CUDA, SYCL, OMPTarget).
  */
 
-#ifndef QMCPLUSPLUS_DEVICE_ALLOCATOR_ALIASES_HPP
-#define QMCPLUSPLUS_DEVICE_ALLOCATOR_ALIASES_HPP
+#ifndef QMCPLUSPLUS_DEVICEALLOCATOR_HPP
+#define QMCPLUSPLUS_DEVICEALLOCATOR_HPP
 
 #if (defined(ENABLE_CUDA) || defined(ENABLE_SYCL)) && !defined(ENABLE_OFFLOAD)
 
