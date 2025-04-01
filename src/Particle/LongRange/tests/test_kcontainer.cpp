@@ -12,7 +12,6 @@
 #include "catch.hpp"
 
 #include "Particle/LongRange/KContainer.h"
-#include "OhmmsPETE/TinyVector.h"
 #include "Particle/Lattice/CrystalLattice.h"
 #include "Particle/tests/MinimalParticlePool.h"
 #include "Utilities/for_testing/checkVector.hpp"
