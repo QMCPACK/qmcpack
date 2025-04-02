@@ -173,7 +173,6 @@ void test_msd_wrapper(const std::string& wffile,
   app_log() << "==Ion Derivative Test:  loading wf from " << wffile << "\n";
   app_log() << "========================================================================================\n";
   app_log() << "========================================================================================\n";
-  app_log() << "DEBUG: STARTING_TEST " << wffile << std::endl;
   using RealType  = QMCTraits::RealType;
   using ValueType = QMCTraits::ValueType;
 
@@ -189,8 +188,6 @@ void test_msd_wrapper(const std::string& wffile,
 
   int Nions = ions.getTotalNum();
   int Nelec = elec.getTotalNum();
-  app_log() << "DEBUG: Nions " << Nions << std::endl;
-  app_log() << "DEBUG: Nelec " << Nelec << std::endl;
 
   //////////////////////////////////
   /////////////////////////////////
@@ -220,9 +217,6 @@ void test_msd_wrapper(const std::string& wffile,
   /// NOTE: don't remove this; I think this is what initialized the det ratios that we need later
   RealType logpsi = psi->evaluateLog(elec);
   CHECK(logpsi == Approx(ref_logpsi));
-
-  app_log() << "DEBUG: twf logpsi " << psi->getLogPsi() << std::endl;
-  app_log() << "DEBUG: twf logpsi " << logpsi << std::endl;
 
   HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
 
@@ -381,8 +375,10 @@ void test_msd_wrapper(const std::string& wffile,
   // d_mu(log(psi))
   ParticleSet::ParticleGradient wfgrad_complex_gs(Nions);
   ParticleSet::ParticleGradient wfgrad_complex_md(Nions);
+  ParticleSet::ParticleGradient wfgrad_complex_js(Nions);
   ParticleSet::ParticlePos wfgrad_gs(Nions);
   ParticleSet::ParticlePos wfgrad_md(Nions);
+  ParticleSet::ParticlePos wfgrad_js(Nions);
   ParticleSet::ParticlePos wfgrad(Nions);
 
   // d_mu(T Psi/Psi)
@@ -451,9 +447,10 @@ void test_msd_wrapper(const std::string& wffile,
   ValueType wfobs_gs = twf.trAB(Minv, B_gs);
 
 
-  app_log() << "DEBUG: STARTING_DERIVS " << wffile << std::endl;
+  app_log() << "STARTING DERIVS " << wffile << std::endl;
   for (int ionid = 0; ionid < Nions; ionid++)
   {
+    wfgrad_complex_js[ionid] = twf.evaluateJastrowGradSource(elec, ions, ionid);
     for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
       twf.wipeMatrices(dM[idim]);
@@ -505,6 +502,7 @@ void test_msd_wrapper(const std::string& wffile,
     convertToReal(fkin_complex_md[ionid], fkin_md[ionid]);
     convertToReal(wfgrad_complex_md[ionid], wfgrad_md[ionid]);
     convertToReal(wfgrad_complex_gs[ionid], wfgrad_gs[ionid]);
+    convertToReal(wfgrad_complex_js[ionid], wfgrad_js[ionid]);
     convertToReal(obsval_complex_md[ionid], obsval_md[ionid]);
     convertToReal(obsval_complex_gs[ionid], obsval_gs[ionid]);
   }
@@ -513,7 +511,7 @@ void test_msd_wrapper(const std::string& wffile,
   for (int ionid = 0; ionid < Nions; ionid++)
   {
     fkin[ionid]   = fkin_gs[ionid] + fkin_md[ionid];
-    wfgrad[ionid] = wfgrad_gs[ionid] + wfgrad_md[ionid];
+    wfgrad[ionid] = wfgrad_gs[ionid] + wfgrad_md[ionid] + wfgrad_js[ionid];
     obsval[ionid] = obsval_gs[ionid] + obsval_md[ionid];
   }
 
@@ -580,6 +578,7 @@ void test_msd_wrapper(const std::string& wffile,
   // ParticleSet::ParticlePos fnlpp(ions.getTotalNum());
   for (int ionid = 0; ionid < ions.getTotalNum(); ionid++)
   {
+    wfgrad_complex_js[ionid] = twf.evaluateJastrowGradSource(elec, ions, ionid);
     for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
       twf.wipeMatrices(dM[idim]);
@@ -631,6 +630,7 @@ void test_msd_wrapper(const std::string& wffile,
     convertToReal(fnlpp_complex_md[ionid], fnlpp_md[ionid]);
     convertToReal(wfgrad_complex_md[ionid], wfgrad_md[ionid]);
     convertToReal(wfgrad_complex_gs[ionid], wfgrad_gs[ionid]);
+    convertToReal(wfgrad_complex_js[ionid], wfgrad_js[ionid]);
     convertToReal(obsval_complex_md[ionid], obsval_md[ionid]);
     convertToReal(obsval_complex_gs[ionid], obsval_gs[ionid]);
   }
@@ -638,7 +638,7 @@ void test_msd_wrapper(const std::string& wffile,
   for (int ionid = 0; ionid < Nions; ionid++)
   {
     fnlpp[ionid]  = fnlpp_gs[ionid] + fnlpp_md[ionid];
-    wfgrad[ionid] = wfgrad_gs[ionid] + wfgrad_md[ionid];
+    wfgrad[ionid] = wfgrad_gs[ionid] + wfgrad_md[ionid] + wfgrad_js[ionid];
     obsval[ionid] = obsval_gs[ionid] + obsval_md[ionid];
   }
 
@@ -2166,15 +2166,6 @@ TEST_CASE("Eloc_Derivatives:proto_md1_noj", "[hamiltonian]")
   //HamTest LocalECP -6.783942829945100073e+01
   //HamTest NonLocalECP 1.384955836167661225e+01
 
-  // updated wftest output
-  // Logpsi: -1.4233851881e+01
-  // HamTest   Total -1.6169889914e+01
-  // HamTest Kinetic 9.1821882589e+00
-  // HamTest LocalECP -6.7839428299e+01
-  // HamTest NonLocalECP 1.3850385025e+01
-  // HamTest ElecElec 1.9015560571e+01
-  // HamTest IonIon 9.6214045316e+00
-
   QMCTraits::RealType ref_logpsi = -14.233853149;
   std::map<std::string, QMCTraits::RealType> ref_observables{{"ELECELEC", 1.9015560571e+01},
                                                              {"IONION", 9.6214045316e+00},
@@ -2185,37 +2176,6 @@ TEST_CASE("Eloc_Derivatives:proto_md1_noj", "[hamiltonian]")
 
   // single-det wavefunction masquerading as a multidet (with a single det)
   test_msd_wrapper("cn.msd-1det-wfnoj.xml", ref_logpsi, ref_observables, ref_wf_grad, ref_kin, ref_nlpp);
-
-  // wftest central finite diff with delta=1E-4
-  // System: msd-1det-wfnoj
-  // Component: Total
-  // Total[0][0] =    -7.422055392503069E+00
-  // Total[0][1] =     2.960108339600254E+00
-  // Total[0][2] =     2.677556112598012E+00
-  // Total[1][0] =    -1.835815521449291E+00
-  // Total[1][1] =     8.029824214084158E-01
-  // Total[1][2] =     6.320946297559971E+00
-  // Component: Kinetic
-  // Kinetic[0][0] =     1.085259566373509E+00
-  // Kinetic[0][1] =     2.421542835971735E+01
-  // Kinetic[0][2] =     1.118850356610679E+02
-  // Kinetic[1][0] =     2.157223348770998E+00
-  // Kinetic[1][1] =    -3.374332309640238E+00
-  // Kinetic[1][2] =     7.562546381159052E+00
-  // Component: NonLocalECP
-  // NonLocalECP[0][0] =     2.422213250575567E+01
-  // NonLocalECP[0][1] =    -4.199825948995262E+01
-  // NonLocalECP[0][2] =    -9.890954709179667E+01
-  // NonLocalECP[1][0] =     2.512087444754840E+00
-  // NonLocalECP[1][1] =     1.135316575551215E+00
-  // NonLocalECP[1][2] =    -5.231039990549746E+00
-  // Component: Logpsi
-  // Logpsi[0][0] =    -1.904466926800907E+00
-  // Logpsi[0][1] =     2.125775401751184E+00
-  // Logpsi[0][2] =     7.055632136045986E+00
-  // Logpsi[1][0] =     1.423336102153172E+00
-  // Logpsi[1][1] =    -1.446704427010559E-01
-  // Logpsi[1][2] =     1.440195712998360E-01
 }
 
 TEST_CASE("Eloc_Derivatives:proto_md_noj", "[hamiltonian]")
@@ -2228,27 +2188,7 @@ TEST_CASE("Eloc_Derivatives:proto_md_noj", "[hamiltonian]")
   ref_kin.resize(2);
   ref_nlpp.resize(2);
 
-  // Values from wftester with delta = +/- 1e-4 (central diff)
-  // ref_wf_grad[0][0] = -1.704520108445351E+00;
-  // ref_wf_grad[0][1] = 2.698093270252500E+00;
-  // ref_wf_grad[0][2] = 6.535839898500484E+00;
-  // ref_wf_grad[1][0] = 1.632281747907527E+00;
-  // ref_wf_grad[1][1] = 9.164844749776080E-03;
-  // ref_wf_grad[1][2] = 1.031883479551965E-01;
-  // ref_kin[0][0] = 7.463178994395747E+00;
-  // ref_kin[0][1] = 2.609759822240321E+01;
-  // ref_kin[0][2] = 9.016467011699447E+01;
-  // ref_kin[1][0] = 3.841415285954497E+00;
-  // ref_kin[1][1] = -2.350439296145979E+00;
-  // ref_kin[1][2] = 4.745404936050690E+00;
-  // ref_nlpp[0][0] = 1.894008783210666E+01;
-  // ref_nlpp[0][1] = -4.290217280010111E+01;
-  // ref_nlpp[0][2] = -7.832794463395132E+01;
-  // ref_nlpp[1][0] = 1.213451488100148E+00;
-  // ref_nlpp[1][1] = -6.154734663521566E-01;
-  // ref_nlpp[1][2] = -3.301254866396874E+00;
-
-  // Values from old test
+  // Values from other test
   ref_wf_grad[0][0] = -1.7045200053189544;
   ref_wf_grad[0][1] = 2.6980932676501368;
   ref_wf_grad[0][2] = 6.5358393587011667;
@@ -2278,15 +2218,6 @@ TEST_CASE("Eloc_Derivatives:proto_md_noj", "[hamiltonian]")
   //HamTest LocalECP -6.783942829945100073e+01
   //HamTest NonLocalECP 1.269054876473223636e+01
 
-  // updated wftest output
-  // Logpsi: -1.4114996198e+01
-  // HamTest   Total -1.5976155989e+01
-  // HamTest Kinetic 1.0535008676e+01
-  // HamTest LocalECP -6.7839428299e+01
-  // HamTest NonLocalECP 1.2691298533e+01
-  // HamTest ElecElec 1.9015560571e+01
-  // HamTest IonIon 9.6214045316e+00
-
   QMCTraits::RealType ref_logpsi = -1.41149961982e+01;
 
 
@@ -2298,38 +2229,120 @@ TEST_CASE("Eloc_Derivatives:proto_md_noj", "[hamiltonian]")
 
   // 10 dets, no jastrow
   test_msd_wrapper("cn.msd-wfnoj.xml", ref_logpsi, ref_observables, ref_wf_grad, ref_kin, ref_nlpp);
-
-  // wftest central finite diff with delta=1E-4
-  // System: msd-wfnoj
-  // Component: Total
-  // Total[0][0] =    -6.326180638156487E+00
-  // Total[0][1] =     3.938364892199786E+00
-  // Total[0][2] =     1.538793026298890E+00
-  // Total[1][0] =    -1.450259540947130E+00
-  // Total[1][1] =     7.608539310588469E-02
-  // Total[1][2] =     5.433589976702180E+00
-  // Component: Kinetic
-  // Kinetic[0][0] =     7.463178994395747E+00
-  // Kinetic[0][1] =     2.609759822240321E+01
-  // Kinetic[0][2] =     9.016467011699447E+01
-  // Kinetic[1][0] =     3.841415285954497E+00
-  // Kinetic[1][1] =    -2.350439296145979E+00
-  // Kinetic[1][2] =     4.745404936050690E+00
-  // Component: NonLocalECP
-  // NonLocalECP[0][0] =     1.894008783210666E+01
-  // NonLocalECP[0][1] =    -4.290217280010111E+01
-  // NonLocalECP[0][2] =    -7.832794463395132E+01
-  // NonLocalECP[1][0] =     1.213451488100148E+00
-  // NonLocalECP[1][1] =    -6.154734663521566E-01
-  // NonLocalECP[1][2] =    -3.301254866396874E+00
-  // Component: Logpsi
-  // Logpsi[0][0] =    -1.704520108445351E+00
-  // Logpsi[0][1] =     2.698093270252500E+00
-  // Logpsi[0][2] =     6.535839898500484E+00
-  // Logpsi[1][0] =     1.632281747907527E+00
-  // Logpsi[1][1] =     9.164844749776080E-03
-  // Logpsi[1][2] =     1.031883479551965E-01
 }
+
+
+TEST_CASE("Eloc_Derivatives:proto_md1_wj", "[hamiltonian]")
+{
+  // multi-det sd-nojastrow ref vals
+  ParticleSet::ParticlePos ref_wf_grad;
+  ParticleSet::ParticlePos ref_kin;
+  ParticleSet::ParticlePos ref_nlpp;
+  ref_wf_grad.resize(2);
+  ref_kin.resize(2);
+  ref_nlpp.resize(2);
+
+  // Values from old test
+  ref_wf_grad[0][0] = -1.8996878390353797;
+  ref_wf_grad[0][1] = 2.3247646590007776;
+  ref_wf_grad[0][2] = 7.9587196049502031;
+  ref_wf_grad[1][0] = 1.8093817104158914;
+  ref_wf_grad[1][1] = -0.0966225639942308;
+  ref_wf_grad[1][2] = -1.5197874544625731;
+
+  ref_kin[0][0] = -3.3359153349010735;
+  ref_kin[0][1] = 30.0487085581835309;
+  ref_kin[0][2] = 126.5885230360197369;
+  ref_kin[1][0] = 2.7271604366774223;
+  ref_kin[1][1] = -3.5321234918228579;
+  ref_kin[1][2] = 5.8844148870917925;
+
+  ref_nlpp[0][0] = 27.1517161490208956;
+  ref_nlpp[0][1] = -42.8268964286715459;
+  ref_nlpp[0][2] = -101.5046844660360961;
+  ref_nlpp[1][0] = 2.2255825024686260;
+  ref_nlpp[1][1] = 1.1362118534918864;
+  ref_nlpp[1][2] = -4.5825638607333019;
+
+
+  //Output of WFTester Eloc test for this ion/electron configuration.
+  //  Logpsi: (-8.945509461103977600e+00,0.000000000000000000e+00)
+  //  HamTest   Total -1.779268125690864721e+01
+  //  HamTest Kinetic 7.673240415372170276e+00
+  //  HamTest ElecElec 1.901556057075800865e+01
+  //  HamTest IonIon 9.621404531608845900e+00
+  //  HamTest LocalECP -6.783942829945100073e+01
+  //  HamTest NonLocalECP 1.373654152480333224e+01
+
+
+  QMCTraits::RealType ref_logpsi = -8.9455094611e+00;
+
+  std::map<std::string, QMCTraits::RealType> ref_observables{{"ELECELEC", 1.901556057075800865e+01},
+                                                             {"IONION", 9.621404531608845900e+00},
+                                                             {"LOCALECP", -6.783942829945100073e+01},
+                                                             {"KINETIC", 7.6732404154e+00},
+                                                             {"NONLOCALECP", 1.37365415248e+01}};
+
+  // single-det wavefunction masquerading as a multidet (with a single det) + jastrow
+  test_msd_wrapper("cn.msd-1det-wfj.xml", ref_logpsi, ref_observables, ref_wf_grad, ref_kin, ref_nlpp);
+}
+
+TEST_CASE("Eloc_Derivatives:proto_md_wj", "[hamiltonian]")
+{
+  // multi-det sd-nojastrow ref vals
+  ParticleSet::ParticlePos ref_wf_grad;
+  ParticleSet::ParticlePos ref_kin;
+  ParticleSet::ParticlePos ref_nlpp;
+  ref_wf_grad.resize(2);
+  ref_kin.resize(2);
+  ref_nlpp.resize(2);
+
+  // Values from old test
+  ref_wf_grad[0][0] = -1.7052805961093040;
+  ref_wf_grad[0][1] = 2.8914116872336133;
+  ref_wf_grad[0][2] = 7.3963610874194776;
+  ref_wf_grad[1][0] = 2.0450537814298286;
+  ref_wf_grad[1][1] = 0.0742023428479399;
+  ref_wf_grad[1][2] = -1.6411356565271260;
+
+  ref_kin[0][0] = 4.1783687883878429;
+  ref_kin[0][1] = 32.2193450745800192;
+  ref_kin[0][2] = 102.0214857307521896;
+  ref_kin[1][0] = 4.5063296809644271;
+  ref_kin[1][1] = -2.3360060461996568;
+  ref_kin[1][2] = 2.9502526588842666;
+
+  ref_nlpp[0][0] = 21.6829856774403140;
+  ref_nlpp[0][1] = -43.4432406419382673;
+  ref_nlpp[0][2] = -80.1356331911584618;
+  ref_nlpp[1][0] = 0.9915030925178313;
+  ref_nlpp[1][1] = -0.6012127592214256;
+  ref_nlpp[1][2] = -2.7937129314814508;
+
+
+  //Output of WFTester Eloc test for this ion/electron configuration.
+  //Logpsi: (-8.693299948465634586e+00,0.000000000000000000e+00)
+  //HamTest   Total -1.752111246795173116e+01
+  //HamTest Kinetic 9.187721666379577101e+00
+  //HamTest ElecElec 1.901556057075800865e+01
+  //HamTest IonIon 9.621404531608845900e+00
+  //HamTest LocalECP -6.783942829945100073e+01
+  //HamTest NonLocalECP 1.249362906275283969e+01
+
+
+  QMCTraits::RealType ref_logpsi = -8.69329994846e+00;
+
+  std::map<std::string, QMCTraits::RealType> ref_observables{{"ELECELEC", 1.901556057075800865e+01},
+                                                             {"IONION", 9.621404531608845900e+00},
+                                                             {"LOCALECP", -6.783942829945100073e+01},
+                                                             {"KINETIC", 9.187721666379577101e+00},
+                                                             {"NONLOCALECP", 1.249362906275283969e+01}};
+
+  // 10 dets, jastrow
+  test_msd_wrapper("cn.msd-wfj.xml", ref_logpsi, ref_observables, ref_wf_grad, ref_kin, ref_nlpp);
+}
+
+
 /*TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
 {
   app_log() << "====Ion Derivative Test: Single Slater+Jastrow====\n";
