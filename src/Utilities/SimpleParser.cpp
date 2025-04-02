@@ -27,7 +27,9 @@
 
 char* readLine(char* s, int max, std::istream& fp)
 {
-  char ch;
+  // not initializing this risks in undefined behavior in the case of empty input since
+  // anything including \n or ; could be in this.
+  char ch = '\0';
   int i = 0;
   while (fp.get(ch) && !(ch == '\n' || ch == ';'))
   {
