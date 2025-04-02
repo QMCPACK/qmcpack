@@ -18,22 +18,26 @@
 #ifndef QMCPLUSPLUS_DEVICEALLOCATOR_HPP
 #define QMCPLUSPLUS_DEVICEALLOCATOR_HPP
 
+#include <config.h>
+
 #if (defined(ENABLE_CUDA) || defined(ENABLE_SYCL)) && !defined(ENABLE_OFFLOAD)
 
 #if defined(ENABLE_CUDA)
 #include "CUDA/CUDAallocator.hpp"
 namespace qmcplusplus
 {
-  template<typename T>
-  using DeviceAllocator = CUDAAllocator<T>;
+template<typename T>
+using DeviceAllocator = CUDAAllocator<T>;
 }
+
 #elif defined(ENABLE_SYCL)
 #include "SYCL/SYCLallocator.hpp"
 namespace qmcplusplus
 {
-  template<typename T>
-  using DeviceAllocator = SYCLAllocator<T>;
+template<typename T>
+using DeviceAllocator = SYCLAllocator<T>;
 }
+
 #else
 #error unhandled platform
 #endif
@@ -43,8 +47,8 @@ namespace qmcplusplus
 #include "OMPTarget/OffloadAlignedAllocators.hpp"
 namespace qmcplusplus
 {
-  template<typename T>
-  using DeviceAllocator = OffloadDeviceAllocator<T>;
+template<typename T>
+using DeviceAllocator = OffloadDeviceAllocator<T>;
 }
 #endif
 

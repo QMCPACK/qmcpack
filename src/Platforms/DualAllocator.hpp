@@ -15,13 +15,9 @@
 #define QMCPLUSPLUS_DUAL_ALLOCATOR_H
 
 #include <memory>
-#include <type_traits>
 #include <atomic>
 #include <exception>
-#include "config.h"
 #include "allocator_traits.hpp"
-#include "PinnedAllocator.h"
-#include "DeviceAllocator.hpp"
 
 namespace qmcplusplus
 {
