@@ -256,7 +256,7 @@ public:
                                 const std::vector<ValueMatrix>& dM,
                                 const std::vector<ValueMatrix>& dB) const;
 
-  /** @brief Calculates derivative of observable for several MultiDiracDeterminant objects
+  /** @brief Calculates derivative of observable and wavefunction for several MultiDiracDeterminant objects
    *         calculated quantities are relative to refdet (first element is 0 in output arrays)
    *
    *  @param[in] Minv_Mv. M^-1.M(virt)
@@ -293,34 +293,6 @@ public:
                                 const std::vector<IndexType>& mdd_spo_ids,
                                 const std::vector<const WaveFunctionComponent*>& mdds,
                                 std::vector<ValueVector>& dvals_O) const;
-
-  /** @brief Calculates derivative of observable for several MultiDiracDeterminant objects
-   *         calculated quantities are relative to refdet (first element is 0 in output arrays)
-   *
-   *  @param[in] Minv. inverse of slater matrices for ground state occupations. 
-   *  @param[in] X.  X=M^-1 B M^-1.  
-   *  @param[in] dM. Target derivative of M
-   *  @param[in] dB. Target derivative of B
-   *  @param[in] B. observable matrix
-   *  @param[in] M. slater matrix (only need virtual cols)
-   *  @param[in] mdd_spo_ids. mapping from index in mdds into SPOSets (i.e. into first dim of vec of matrices Minv, X, dM, dB, etc.)
-   *  @param[in] mdds. vector of MultiDiracDeterminants; evaluate derivative of observable for all determinants
-   *  @param[out] dvals_dmu_O. d/dmu(O D[i][j]/D[i][j]) for MultiDiracDet i, excited det j (also includes GS det at j==0)
-   *  @param[out] dvals_O. (O D[i][j]/D[i][j]) for MultiDiracDet i, excited det j (also includes GS det at j==0)
-   *  @param[out] dvals_dmu. d/dmu(log(D[i][j]) for MultiDiracDet i, excited det j (also includes GS det at j==0)
-   *  @return 
-   */
-  void computeMDDerivatives_ExcDets(const std::vector<ValueMatrix>& Minv,
-                                    const std::vector<ValueMatrix>& X,
-                                    const std::vector<ValueMatrix>& dM,
-                                    const std::vector<ValueMatrix>& dB,
-                                    const std::vector<ValueMatrix>& B,
-                                    const std::vector<ValueMatrix>& M,
-                                    const std::vector<IndexType>& mdd_spo_ids,
-                                    const std::vector<const WaveFunctionComponent*>& mdds,
-                                    std::vector<ValueVector>& dvals_dmu_O,
-                                    std::vector<ValueVector>& dvals_O,
-                                    std::vector<ValueVector>& dvals_dmu) const;
 
   /** @brief Uses per-det lists of derivatives to calculate total excited det contributions
    *

@@ -1275,9 +1275,13 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
       ValueType fval_O = 0.0;
 
 
-      /// TODO: fix this: (Minv.dB - X.dM) == (Minv_dB - Minv_B.Minv_dM)
+      /// NOTE: depending on which matrix products we are precomputing, we may be able to save a factor of Nptcl here
+      ///       (Minv.dB - X.dM) == (Minv_dB - Minv_B.Minv_dM)
+      ///       not worth doing the extra gemm if we only need the trace here,
+      ///       but if we're already doing the gemm for the multidet terms, then we can use that here
       fval_dmu_O = psi_wrapper_in.computeGSDerivative(Minv_, X_, dM_gs_[idim], dB_gs_[idim]);
-      /// TODO: fix this: already have Minv.dM as Minv_dM_
+
+      /// TODO: can save a factor of nptcl here because we already have Minv_dM
       fval_dmu = psi_wrapper_in.trAB(Minv_, dM_gs_[idim]);
 
       dedr_complex[iat][idim] = fval_dmu_O;
@@ -1291,9 +1295,6 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
         // compute d_mu(OD/D) and d_mu(logD) for all excited DiracDets D
         psi_wrapper_in.computeMDDerivatives_dmu(Minv_Mv_, Minv_B_, Minv_dM_[idim], Minv_dB_[idim], mdd_spo_ids,
                                                 mdd_list, fvals_dmu_O, fvals_dmu);
-        /// TODO: remove old interface
-        // psi_wrapper_in.computeMDDerivatives_ExcDets(Minv_, X_, dM_[idim], dB_[idim], B_, M_, mdd_spo_ids, mdd_list,
-        //                                             fvals_dmu_O, fvals_O, fvals_dmu);
 
         // compute {d_mu(O Psi/Psi), d_mu(log Psi), (O Psi/Psi)} (don't need (O Psi/Psi) here, but we get it for free)
         std::tie(fval_dmu_O, fval_dmu, fval_O) =
