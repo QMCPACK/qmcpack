@@ -71,16 +71,15 @@ public:
    * @param msd. Pointer to MultiSlaterDetTableMethod
    */
   void addMultiSlaterDet(const ParticleSet& P, const WaveFunctionComponent* msd);
-  inline IndexType numMultiSlaterDets() const { return slaterdets_.size(); }
-  inline bool hasMultiSlaterDet() const
+  inline bool hasMultiSlaterDet() const { return slaterdet_; }
+  inline const WaveFunctionComponent& getMultiSlaterDet() const
   {
-    if (numMultiSlaterDets() > 1)
+    if (!slaterdet_)
     {
-      APP_ABORT("ERROR: TWFFastDerivWrapper does not support multiple MultiSlaterDetTableMethod");
+      throw std::runtime_error("Error: No MultiSlaterDet registered for this TWFFastDerivWrapper");
     }
-    return (numMultiSlaterDets() > 0);
+    return *slaterdet_;
   }
-  const WaveFunctionComponent& getMultiSlaterDet(const IndexType id) const { return *slaterdets_[id]; }
 
 
   /** @brief Takes particle set groupID and returns the TWF internal index for it.  
@@ -294,7 +293,6 @@ public:
 
   /** @brief Uses per-det lists of derivatives to calculate total excited det contributions
    *
-   *  @param[in] msd_idx. index of MultiSlaterDetTableMethod in this slaterdets_
    *  @param[in] mdds. vector of MultiDiracDeterminants; evaluate derivative of observable for all determinants
    *  @param[in] dvals_dmu_O. d/dmu(O D[i][j]/D[i][j]) for MultiDiracDet i, excited det j (also includes GS det at j==0)
    *  @param[in] dvals_O. (O D[i][j]/D[i][j]) for MultiDiracDet i, excited det j (also includes GS det at j==0)
@@ -302,8 +300,7 @@ public:
    *  @return  {d_mu(OPsi/Psi), d_mu(log(Psi)), OPsi/Psi}
    */
   std::tuple<TWFFastDerivWrapper::ValueType, TWFFastDerivWrapper::ValueType, TWFFastDerivWrapper::ValueType>
-      computeMDDerivatives_total(int msd_idx,
-                                 const std::vector<const WaveFunctionComponent*>& mdds,
+      computeMDDerivatives_total(const std::vector<const WaveFunctionComponent*>& mdds,
                                  const std::vector<ValueVector>& dvals_dmu_O,
                                  const std::vector<ValueVector>& dvals_O,
                                  const std::vector<ValueVector>& dvals_dmu) const;
@@ -400,7 +397,9 @@ private:
   std::vector<ValueMatrix> psi_M_;
   std::vector<ValueMatrix> psi_M_inv_;
   std::vector<WaveFunctionComponent*> jastrow_list_;
-  std::vector<const WaveFunctionComponent*> slaterdets_;
+  // pointer to MultiSlaterDetTableMethod if one has been registered, otherwise nullptr
+  // access constituent MultiDiracDets and SPOsets through this slaterdet (associate with this.spos_ via group ID)
+  const WaveFunctionComponent* slaterdet_ = nullptr;
 };
 
 /**@}*/

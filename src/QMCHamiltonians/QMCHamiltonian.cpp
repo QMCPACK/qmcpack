@@ -1180,10 +1180,6 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
 
   // ===== Initialize some multidet quantities =====
 
-  // if we ever want to support more later, idx is useful
-  // also useful to pass to some functions below to avoid some casting
-  int msd_idx = 0;
-
   // values for MultiDiracDet i, excited det j (also include GS det at j==0)
   std::vector<Vector<ValueType>> fvals_O;     // (O D[i][j]/D[i][j])
   std::vector<Vector<ValueType>> fvals_dmu;   // d/dmu(log(D[i][j])
@@ -1193,15 +1189,9 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
   std::vector<int> mdd_spo_ids;
   std::vector<const WaveFunctionComponent*> mdd_list;
 
-
   if (psi_wrapper_in.hasMultiSlaterDet())
   {
-    if (psi_wrapper_in.numMultiSlaterDets() > 1)
-    {
-      APP_ABORT("ERROR: QMCHamiltonian::evaluateIonDerivsFast does not support multiple MultiSlaterDetTableMethod");
-    }
-
-    const auto& msd = static_cast<const MultiSlaterDetTableMethod&>(psi_wrapper_in.getMultiSlaterDet(msd_idx));
+    const auto& msd = static_cast<const MultiSlaterDetTableMethod&>(psi_wrapper_in.getMultiSlaterDet());
 
     auto n_mdd = msd.getDetSize();
     fvals_O.resize(n_mdd);
@@ -1290,16 +1280,14 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
 
       if (psi_wrapper_in.hasMultiSlaterDet())
       {
-        const auto& msd = static_cast<const MultiSlaterDetTableMethod&>(psi_wrapper_in.getMultiSlaterDet(msd_idx));
-
-
+        const auto& msd = static_cast<const MultiSlaterDetTableMethod&>(psi_wrapper_in.getMultiSlaterDet());
         // compute d_mu(OD/D) and d_mu(logD) for all excited DiracDets D
         psi_wrapper_in.computeMDDerivatives_dmu(Minv_Mv_, Minv_B_, Minv_dM_[idim], Minv_dB_[idim], mdd_spo_ids,
                                                 mdd_list, fvals_dmu_O, fvals_dmu);
 
         // compute {d_mu(O Psi/Psi), d_mu(log Psi), (O Psi/Psi)} (don't need (O Psi/Psi) here, but we get it for free)
         std::tie(fval_dmu_O, fval_dmu, fval_O) =
-            psi_wrapper_in.computeMDDerivatives_total(msd_idx, mdd_list, fvals_dmu_O, fvals_O, fvals_dmu);
+            psi_wrapper_in.computeMDDerivatives_total(mdd_list, fvals_dmu_O, fvals_O, fvals_dmu);
 
         dedr_complex[iat][idim] += fval_dmu_O; // multidet part of d_mu(OPsi/Psi)
         wfgradraw_[iat][idim] += fval_dmu;     // multidet part of d_mu(log(Psi))

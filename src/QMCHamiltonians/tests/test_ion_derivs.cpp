@@ -408,10 +408,8 @@ void test_msd_wrapper(const std::string& wffile,
 
 
   CHECK(twf.hasMultiSlaterDet());
-  CHECK(twf.numMultiSlaterDets() == 1);
-  int msd_idx = 0;
 
-  const auto& msd = static_cast<const MultiSlaterDetTableMethod&>(twf.getMultiSlaterDet(msd_idx));
+  const auto& msd = static_cast<const MultiSlaterDetTableMethod&>(twf.getMultiSlaterDet());
 
   auto n_mdd = msd.getDetSize();
 
@@ -490,8 +488,7 @@ void test_msd_wrapper(const std::string& wffile,
       // fval: d_mu(OPsi/Psi)
       // wfcomp: d_mu(log(Psi))
       // oval: OPsi/Psi (decide how to handle this; should be same at each iteration over ion dims?)
-      std::tie(fval, wfcomp, wfobs) =
-          twf.computeMDDerivatives_total(msd_idx, mdd_list, fvals_dmu_O, fvals_O, fvals_dmu);
+      std::tie(fval, wfcomp, wfobs) = twf.computeMDDerivatives_total(mdd_list, fvals_dmu_O, fvals_O, fvals_dmu);
 
 
       fkin_complex_md[ionid][idim]   = fval;
@@ -618,8 +615,7 @@ void test_msd_wrapper(const std::string& wffile,
       // fval: d_mu(OPsi/Psi)
       // wfcomp: d_mu(log(Psi))
       // oval: OPsi/Psi (decide how to handle this; should be same at each iteration over ion dims?)
-      std::tie(fval, wfcomp, wfobs) =
-          twf.computeMDDerivatives_total(msd_idx, mdd_list, fvals_dmu_O, fvals_O, fvals_dmu);
+      std::tie(fval, wfcomp, wfobs) = twf.computeMDDerivatives_total(mdd_list, fvals_dmu_O, fvals_O, fvals_dmu);
 
       fnlpp_complex_md[ionid][idim]  = fval;
       wfgrad_complex_md[ionid][idim] = wfcomp;

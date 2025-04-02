@@ -39,8 +39,13 @@ void TWFFastDerivWrapper::addGroup(const ParticleSet& P, const IndexType gid, SP
 
 void TWFFastDerivWrapper::addMultiSlaterDet(const ParticleSet& P, const WaveFunctionComponent* msd)
 {
-  // add msd to slaterdet list
-  slaterdets_.push_back(msd);
+  if (slaterdet_)
+  {
+    // only one MSD is allowed to be registered
+    throw std::runtime_error("Error: This TWFFastDerivWrapper already has a MultiSlaterDet");
+  }
+  // register msd and add pointer to wrapper
+  slaterdet_ = msd;
   /// NOTE: we could call `addGroup` for the msd->Dets here. The singledet version does that by
   /// registering the diracdets when registerTWFFastDerivWrapper is called, so this is consistent with that behavior
 }
@@ -618,8 +623,7 @@ void TWFFastDerivWrapper::computeMDDerivatives_dmu(const std::vector<ValueMatrix
 }
 
 std::tuple<TWFFastDerivWrapper::ValueType, TWFFastDerivWrapper::ValueType, TWFFastDerivWrapper::ValueType>
-    TWFFastDerivWrapper::computeMDDerivatives_total(int msd_idx,
-                                                    const std::vector<const WaveFunctionComponent*>& mdds,
+    TWFFastDerivWrapper::computeMDDerivatives_total(const std::vector<const WaveFunctionComponent*>& mdds,
                                                     const std::vector<ValueVector>& dvals_dmu_O,
                                                     const std::vector<ValueVector>& dvals_O,
                                                     const std::vector<ValueVector>& dvals_dmu) const
@@ -660,7 +664,7 @@ std::tuple<TWFFastDerivWrapper::ValueType, TWFFastDerivWrapper::ValueType, TWFFa
    */
 
   // multislaterdet
-  const auto& msd = static_cast<const MultiSlaterDetTableMethod&>(getMultiSlaterDet(msd_idx));
+  const auto& msd = static_cast<const MultiSlaterDetTableMethod&>(getMultiSlaterDet());
 
   // total slaterdets
   const int num_slaterdets = msd.getNumSlaterDets();
