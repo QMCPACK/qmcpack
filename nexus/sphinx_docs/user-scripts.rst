@@ -585,6 +585,7 @@ The options passed to the executable can also be modified. For example, to give 
 The following gives an example of modifying both the run and application options based on the machine the workflow is executing on:
 
 ::
+
   settings(
     pseudo_dir = './pseudopotentials',
     results    = '',
