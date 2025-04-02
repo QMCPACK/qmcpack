@@ -54,9 +54,8 @@ TEST_CASE("temp3d", "[lrhandler]")
 
   handler.initBreakup(ref);
 
-  std::cout << "handler.MaxKshell is " << handler.MaxKshell << std::endl;
-  CHECK( (std::is_same<OHMMS_PRECISION, OHMMS_PRECISION_FULL>::value ?
-     handler.MaxKshell == 78 : handler.MaxKshell >= 117 && handler.MaxKshell <= 128 ));
+  app_log() << "handler.MaxKshell is " << handler.MaxKshell << std::endl;
+  CHECK(handler.MaxKshell == 78);
   CHECK(Approx(handler.LR_rc) == 2.5);
   CHECK(Approx(handler.LR_kc) == 12);
 
