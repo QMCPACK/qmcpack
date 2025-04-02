@@ -1172,6 +1172,7 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
 
   {
     psi_wrapper_in.getGSMatrices(B_, B_gs_);
+    // X_ is now built by buildIntermediates; could go back to buildX depending on future refactoring
     // psi_wrapper_in.buildX(Minv_, B_gs_, X_);
     psi_wrapper_in.buildIntermediates(Minv_, B_, M_, X_, Minv_B_, Minv_Mv_);
   }

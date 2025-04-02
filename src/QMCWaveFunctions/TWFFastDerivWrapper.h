@@ -40,9 +40,7 @@ public:
   using ValueVector = SPOSet::ValueVector;
   using GradVector  = SPOSet::GradVector;
 
-  using IndexPairType   = TinyVector<IndexType, 2>;
-  using IndexPairVector = Vector<IndexPairType>;
-
+  // used when we get const reference to *MultiDiracDeterminants::detData
   template<typename DT>
   using OffloadVector = Vector<DT, OffloadPinnedAllocator<DT>>;
 
