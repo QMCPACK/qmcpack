@@ -545,6 +545,91 @@ the resources.
 In this case, Nexus will never submit more than 10 jobs at a time, even if more jobs are ready to be submitted, or resources on the local machine are available.
 Having the option of limiting the number of jobs running at the same time can be useful even on local workstations (to avoid taking over all the available resources). In such a case, a simpler strategy is possible by claiming fewer available cores in ``settings``, e.g. machine='ws8' vs 'ws4' vs 'ws2' etc.
 
+
+.. _custom-job-options:
+
+Customizing job options
+-----------------------
+The commands used to launch run jobs can be customized from those specified by the default machine definitions. Uses include
+customizing the options passed to MPI and customizing settings based on details of the runs.
+
+For example, we can modify the MPI thread binding as follows:
+
+::
+
+  settings(
+    pseudo_dir = './pseudopotentials',
+    results    = '',
+    sleep      = 3,
+    machine    = 'ws16',
+    )
+
+  ...
+
+  scf = generate_pwscf(
+    job = job(cores=16,app='pw.x',run_options=dict(bind_to='--bind-to none')),
+    ...
+    )
+
+which will result in output
+
+::
+
+   Executing:  
+   export OMP_NUM_THREADS=1
+   mpirun --bind-to none -np 16 pw.x -input scf.in 
+
+
+The options passed to the executable can also be modified. For example, to give different parallelization settings. 
+
+The following gives an example of modifying both the run and application options based on the machine the workflow is executing on:
+
+::
+  settings(
+    pseudo_dir = './pseudopotentials',
+    results    = '',
+    sleep      = 3,
+    machine    = 'ws128',
+    )
+
+  if settings.machine=='ws128':
+      # jobs for 128 core workstation
+      scf_opts1 = obj(app         = 'pw.x',
+                      run_options = '--bind-to none')
+      scf_opts2 = obj(app         = 'pw.x',
+                      run_options = '--bind-to none',
+                      app_options = '-nk 8')
+      scf_job1 = job(cores= 64,**scf_opts1)
+      scf_job2 = job(cores= 64,**scf_opts2)
+      scf_job3 = job(cores=128,**scf_opts2)
+  
+  elif settings.machine=='inti':
+      # jobs for "Inti" cluster
+      qe_presub = '''
+  module purge
+  module load mpi/openmpi-x86_64  
+  module load qe/quantum-espresso 
+  '''
+      scf_opts1 = obj(nodes       = 1,
+                      hours       = 1,
+                      app         = 'pw.x',
+                      run_options = '--bind-to none',
+                      presub      = qe_presub)
+      scf_opts2 = obj(nodes       = 1,
+                      hours       = 1,
+                      app         = 'pw.x',
+                      run_options = '--bind-to none',
+                      app_options = '-nk 8',
+                      presub      = qe_presub)
+      scf_job1 = job(processes_per_node=64,**scf_opts1)
+      scf_job2 = job(processes_per_node=64,**scf_opts2)
+      scf_job3 = job(**scf_opts2)
+  
+  else:
+      print('machine unknown!')
+      exit()
+  #end if
+
 .. _user-data-analysis:
 
 Data analysis
