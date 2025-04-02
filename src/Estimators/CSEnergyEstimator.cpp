@@ -17,7 +17,7 @@
 #include "CSEnergyEstimator.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "ParticleBase/ParticleAttribOps.h"
+#include "CPU/VectorOps.h"
 #include "Message/CommOperators.h"
 #include "QMCDrivers/DriftOperators.h"
 

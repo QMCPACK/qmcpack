@@ -17,7 +17,7 @@
 #include "CPU/SIMD/algorithm.hpp"
 #include "SoaDistanceTableABOMPTarget.h"
 #include "ResourceCollection.h"
-#include "ParticleBase/ParticleAttribOps.h"
+#include "CPU/VectorOps.h"
 
 namespace qmcplusplus
 {

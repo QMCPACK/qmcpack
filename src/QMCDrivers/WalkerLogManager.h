@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2024 QMCPACK developers.
+// Copyright (c) 2025 QMCPACK developers.
 //
 // File developed by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //
@@ -15,6 +15,7 @@
 
 #include "WalkerLogCollector.h"
 #include "type_traits/template_types.hpp"
+#include "Utilities/TimerManager.h"
 
 namespace qmcplusplus
 {
@@ -88,6 +89,18 @@ private:
   WalkerLogBuffer<WLog::Real> wmed_particle_real_buffer;
 
   RefVector<WalkerLogCollector> collectors_in_run_;
+
+  /// medium granularity timers
+  TimerList_t walker_log_timers_;
+  static constexpr std::string_view my_name_{"WalkerLogManager"};
+  enum Timer
+  {
+    START = 0,
+    STOP,
+    WRITE,
+  };
+  static constexpr std::array<std::string_view, 3> suffixes_{"start", "stop", "write"};
+  static TimerNameList_t<Timer> create_names(const std::string_view& my_name);
 
 public:
   WalkerLogManager(WalkerLogInput& inp, bool allow_logs, std::string series_root, Communicate* comm = 0);

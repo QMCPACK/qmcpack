@@ -50,7 +50,6 @@ public:
   using Real          = RealAlias<Value>;
   using FullPrecReal  = RealAlias<FullPrecValue>;
   using Grad          = TinyVector<Value, OHMMS_DIM>;
-  using Lattice       = PtclOnLatticeTraits::ParticleLayout;
   using Position      = QMCTraits::PosType;
 
   using Evaluator  = OneBodyDensityMatricesInput::Evaluator;
@@ -85,7 +84,7 @@ private:
   /** @} */
 
   //data members \todo analyze lifecycles allocation optimization or state?
-  CompositeSPOSet basis_functions_;
+  CompositeSPOSet<Value> basis_functions_;
   Vector<Value> basis_values_;
   Vector<Value> basis_norms_;
   Vector<Grad> basis_gradients_;

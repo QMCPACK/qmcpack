@@ -383,7 +383,7 @@ class Versions(object):
     for Nexus dependencies as well as versions supported by the current 
     age policy.  Also used to print summarized information about versions 
     of dependencies detected on the current machine and recommendations 
-    for Nexus users regarding the state of the their installation.
+    for Nexus users regarding the state of their installation.
 
     The main data items for consumption by this class are 
     `support_cutoff_date`, `required_dependencies`, `currently_supported`, 

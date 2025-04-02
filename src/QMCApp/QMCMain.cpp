@@ -98,7 +98,7 @@ QMCMain::QMCMain(Communicate* c)
       << "\n  MPI group ID              = " << myComm->getGroupID()
       << "\n  Number of ranks in group  = " << myComm->size()
       << "\n  MPI ranks per node        = " << node_comm.size()
-#if defined(ENABLE_OFFLOAD) || defined(ENABLE_CUDA) || defined(ENABLE_HIP) || defined(ENABLE_SYCL)
+#if defined(ENABLE_OFFLOAD) || defined(ENABLE_CUDA) || defined(ENABLE_ROCM) || defined(ENABLE_SYCL)
       << "\n  Accelerators per node     = " << DeviceManager::getGlobal().getNumDevices()
 #endif
       << std::endl;
@@ -127,25 +127,7 @@ QMCMain::QMCMain(Communicate* c)
                 << "\n  Full precision      = " << GET_MACRO_VAL(OHMMS_PRECISION_FULL) << std::endl;
 
   // Record features configured in cmake or selected via command-line arguments to the printout
-  app_summary() << std::endl;
-#if !defined(ENABLE_OFFLOAD) && !defined(ENABLE_CUDA) && !defined(ENABLE_HIP) && !defined(ENABLE_SYCL)
-  app_summary() << "  CPU only build" << std::endl;
-#else // GPU case
-#if defined(ENABLE_OFFLOAD)
-  app_summary() << "  OpenMP target offload to accelerators build option is enabled" << std::endl;
-#endif
-#if defined(ENABLE_HIP)
-  app_summary() << "  HIP acceleration with direct HIP source code build option is enabled" << std::endl;
-#endif
-
-#if defined(QMC_CUDA2HIP) && defined(ENABLE_CUDA)
-  app_summary() << "  HIP acceleration with CUDA source code build option is enabled" << std::endl;
-#elif defined(ENABLE_CUDA)
-  app_summary() << "  CUDA acceleration build option is enabled" << std::endl;
-#elif defined(ENABLE_SYCL)
-  app_summary() << "  SYCL acceleration build option is enabled" << std::endl;
-#endif
-#endif // GPU case end
+  DeviceManager::getGlobal().printInfo();
 
   if (my_project_.isComplex())
     app_summary() << "  Complex build. QMC_COMPLEX=ON" << std::endl;

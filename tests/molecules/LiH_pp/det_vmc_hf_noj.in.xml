@@ -27,6 +27,7 @@ GAMESS numerical results:
 <simulation>
    <project id="det_vmc_hf_noj" series="0">
       <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
+    <parameter name="driver_version">legacy</parameter>
    </project>
    <random seed="624"/>
    <qmcsystem>

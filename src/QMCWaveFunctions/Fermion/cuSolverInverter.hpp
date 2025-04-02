@@ -42,7 +42,7 @@ class cuSolverInverter
   Vector<T_FP, CUDAAllocator<T_FP>> work_gpu;
 
   // CUDA specific variables
-  cusolverDnHandle_t h_cusolver_;
+  cusolverDnHandle_t h_cusolver_ = nullptr;
   cudaStream_t hstream_;
 
   /** resize the internal storage
@@ -51,6 +51,11 @@ class cuSolverInverter
    */
   inline void resize(int norb)
   {
+    if (!h_cusolver_)
+    {
+      cusolverErrorCheck(cusolverDnCreate(&h_cusolver_), "cusolverCreate failed!");
+      cusolverErrorCheck(cusolverDnSetStream(h_cusolver_, hstream_), "cusolverSetStream failed!");
+    }
     if (Mat1_gpu.rows() != norb)
     {
       Mat1_gpu.resize(norb, norb);
@@ -68,16 +73,12 @@ class cuSolverInverter
 
 public:
   /// default constructor
-  cuSolverInverter()
-  {
-    cudaErrorCheck(cudaStreamCreate(&hstream_), "cudaStreamCreate failed!");
-    cusolverErrorCheck(cusolverDnCreate(&h_cusolver_), "cusolverCreate failed!");
-    cusolverErrorCheck(cusolverDnSetStream(h_cusolver_, hstream_), "cusolverSetStream failed!");
-  }
+  cuSolverInverter() { cudaErrorCheck(cudaStreamCreate(&hstream_), "cudaStreamCreate failed!"); }
 
   ~cuSolverInverter()
   {
-    cusolverErrorCheck(cusolverDnDestroy(h_cusolver_), "cusolverDestroy failed!");
+    if (h_cusolver_)
+      cusolverErrorCheck(cusolverDnDestroy(h_cusolver_), "cusolverDestroy failed!");
     cudaErrorCheck(cudaStreamDestroy(hstream_), "cudaStreamDestroy failed!");
   }
 
@@ -192,9 +193,9 @@ public:
     }
 
     std::ostringstream nan_msg;
-    for(int i = 0; i < norb; i++)
+    for (int i = 0; i < norb; i++)
       if (qmcplusplus::isnan(std::norm(Ainv[i][i])))
-        nan_msg << "  Ainv["<< i << "][" << i << "] has bad value " << Ainv[i][i] << std::endl;
+        nan_msg << "  Ainv[" << i << "][" << i << "] has bad value " << Ainv[i][i] << std::endl;
     if (const std::string str = nan_msg.str(); !str.empty())
       throw std::runtime_error("Inverse matrix diagonal check found:\n" + str);
   }

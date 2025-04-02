@@ -130,9 +130,11 @@ void ReferencePoints::write_description(std::ostream& os, std::string& indent)
   return;
 }
 
-void ReferencePoints::save(std::vector<ObservableHelper>& h5desc, hdf_archive& file) const
+void ReferencePoints::save(std::vector<ObservableHelper>& h5desc,
+                           const hdf_path& enclosing_path,
+                           hdf_archive& file) const
 {
-  h5desc.emplace_back(hdf_path{"reference_points"});
+  h5desc.emplace_back(enclosing_path / "reference_points");
   auto& oh = h5desc.back();
   for (auto it = points.cbegin(); it != points.cend(); ++it)
   {

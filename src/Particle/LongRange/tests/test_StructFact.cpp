@@ -23,19 +23,19 @@ namespace qmcplusplus
  */
 TEST_CASE("StructFact", "[lrhandler]")
 {
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
-  Lattice.BoxBConds     = true;
-  Lattice.LR_dim_cutoff = 30.;
-  Lattice.R.diagonal(5.0);
-  Lattice.reset();
-  CHECK(Approx(Lattice.Volume) == 125);
-  Lattice.SetLRCutoffs(Lattice.Rv);
-  Lattice.printCutoffs(app_log());
-  CHECK(Approx(Lattice.LR_rc) == 2.5);
-  CHECK(Approx(Lattice.LR_kc) == 12);
+  Lattice lattice;
+  lattice.BoxBConds     = true;
+  lattice.LR_dim_cutoff = 30.;
+  lattice.R.diagonal(5.0);
+  lattice.reset();
+  CHECK(Approx(lattice.Volume) == 125);
+  lattice.SetLRCutoffs(lattice.Rv);
+  lattice.printCutoffs(app_log());
+  CHECK(Approx(lattice.LR_rc) == 2.5);
+  CHECK(Approx(lattice.LR_kc) == 12);
 
-  Lattice.LR_dim_cutoff = 125;
-  const SimulationCell simulation_cell(Lattice);
+  lattice.LR_dim_cutoff = 125;
+  const SimulationCell simulation_cell(lattice);
   ParticleSet ref(simulation_cell);       // handler needs ref.getSimulationCell().getKLists()
 
   SpeciesSet& tspecies = ref.getSpeciesSet();
@@ -61,9 +61,9 @@ TEST_CASE("StructFact", "[lrhandler]")
 
   for (int i = 0; i < ref.groups(); i++)
   {
-    std::complex<QMCTraits::RealType> rhok_sum, rhok_even_sum;
+    std::complex<double> rhok_sum, rhok_even_sum;
     for (int ik = 0; ik < simulation_cell.getKLists().numk; ik++)
-      rhok_sum += std::complex<QMCTraits::RealType>(sk.rhok_r[i][ik], sk.rhok_i[i][ik]);
+      rhok_sum += std::complex<double>(sk.rhok_r[i][ik], sk.rhok_i[i][ik]);
 
     //std::cout << std::setprecision(14) << rhok_sum << std::endl;
     CHECK(ComplexApprox(rhok_sum).epsilon(5e-5) == rhok_sum_ref[i]);

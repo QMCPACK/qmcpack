@@ -15,7 +15,7 @@
 
 #include "MultiSlaterDetTableMethod.h"
 #include "QMCWaveFunctions/Fermion/MultiDiracDeterminant.h"
-#include "ParticleBase/ParticleAttribOps.h"
+#include "CPU/VectorOps.h"
 #include "Platforms/OMPTarget/ompReductionComplex.hpp"
 
 namespace qmcplusplus
@@ -432,7 +432,6 @@ void MultiSlaterDetTableMethod::mw_evalGrad(const RefVectorWithLeader<WaveFuncti
   std::vector<PsiValue> psi_list(nw, 0);
   mw_evalGrad_impl(WFC_list, P_list, iat, false, grad_now, psi_list);
 }
-
 
 WaveFunctionComponent::PsiValue MultiSlaterDetTableMethod::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {

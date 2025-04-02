@@ -27,7 +27,7 @@ namespace qmcplusplus
 {
 TEST_CASE("Coulomb PBC A-A Ewald3D", "[hamiltonian]")
 {
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  Lattice lattice;
   lattice.BoxBConds = true; // periodic
   lattice.R.diagonal(1.0);
   lattice.reset();
@@ -61,7 +61,7 @@ TEST_CASE("Coulomb PBC A-A Ewald3D", "[hamiltonian]")
 
 TEST_CASE("Coulomb PBC A-A BCC H Ewald3D", "[hamiltonian]")
 {
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  Lattice lattice;
   lattice.BoxBConds = true; // periodic
   lattice.R.diagonal(3.77945227);
   lattice.reset();
@@ -97,7 +97,7 @@ TEST_CASE("Coulomb PBC A-A BCC H Ewald3D", "[hamiltonian]")
 
 TEST_CASE("Coulomb PBC A-A elec Ewald3D", "[hamiltonian]")
 {
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  Lattice lattice;
   lattice.BoxBConds = true; // periodic
   lattice.R.diagonal(1.0);
   lattice.reset();

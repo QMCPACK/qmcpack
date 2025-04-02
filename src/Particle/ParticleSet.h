@@ -249,7 +249,7 @@ public:
 
   const auto& getSimulationCell() const { return simulation_cell_; }
   const auto& getLattice() const { return simulation_cell_.getLattice(); }
-  auto& getPrimitiveLattice() const { return const_cast<ParticleLayout&>(simulation_cell_.getPrimLattice()); }
+  auto& getPrimitiveLattice() const { return const_cast<Lattice&>(simulation_cell_.getPrimLattice()); }
   const auto& getLRBox() const { return simulation_cell_.getLRBox(); }
 
   inline bool isSameMass() const { return same_mass_; }
@@ -550,15 +550,6 @@ public:
     AttribList.add(R);
     AttribList.add(spins);
     AttribList.add(GroupID);
-
-    G.setTypeName(ParticleTags::gradtype_tag);
-    L.setTypeName(ParticleTags::laptype_tag);
-
-    G.setObjName("grad");
-    L.setObjName("lap");
-
-    AttribList.add(G);
-    AttribList.add(L);
 
     //more particle attributes
     Mass.setTypeName(ParticleTags::scalartype_tag);

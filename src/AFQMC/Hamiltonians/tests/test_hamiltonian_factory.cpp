@@ -140,7 +140,7 @@ TEST_CASE("ham_factory", "[hamiltonian_factory]")
   if (not world.root())
     infoLog.pause();
 
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
   auto node = world.split_shared(world.rank());
 
   arch::INIT(node);
@@ -159,7 +159,7 @@ TEST_CASE("ham_generation_timing_hdf", "[hamiltonian_factory]")
   if (not world.root())
     infoLog.pause();
 
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
   auto node = world.split_shared(world.rank());
 
   arch::INIT(node);

@@ -22,17 +22,19 @@
 #include <string>
 #include <mutex>
 #include <map>
+#include <stdexcept>
 #include <memory>
 #include <type_traits>
 #include "NewTimer.h"
 #include "config.h"
-#include "OhmmsData/Libxml2Doc.h"
+#include "libxml/tree.h"
 
 #ifdef USE_VTUNE_TASKS
 #include <ittnotify.h>
 #endif
 
 class Communicate;
+struct Libxml2Document;
 
 namespace qmcplusplus
 {

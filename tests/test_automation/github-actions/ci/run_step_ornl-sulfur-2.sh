@@ -80,9 +80,8 @@ case "$1" in
               -DMPIEXEC_EXECUTABLE=/usr/lib64/openmpi/bin/mpirun \
               -DBOOST_ROOT=$BOOST_DIR \
               -DBUILD_AFQMC=ON \
-              -DENABLE_CUDA=ON \
+              -DQMC_GPU="cuda;openmp" \
               -DQMC_GPU_ARCHS=sm_70 \
-              -DENABLE_OFFLOAD=ON \
               -DQMC_COMPLEX=$IS_COMPLEX \
               -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
               -DCMAKE_BUILD_TYPE=RelWithDebInfo \
@@ -106,7 +105,7 @@ case "$1" in
               -DCMAKE_CXX_COMPILER=/usr/lib64/openmpi/bin/mpicxx \
               -DMPIEXEC_EXECUTABLE=/usr/lib64/openmpi/bin/mpirun \
               -DBOOST_ROOT=$BOOST_DIR \
-              -DENABLE_CUDA=ON \
+              -DQMC_GPU=cuda \
               -DQMC_GPU_ARCHS=sm_70 \
               -DQMC_COMPLEX=$IS_COMPLEX \
               -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \

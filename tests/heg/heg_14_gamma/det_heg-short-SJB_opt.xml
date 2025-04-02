@@ -4,6 +4,7 @@
 <application name="qmcapp" class="serial">
 Sample qmc run for Slater-Jastrow-Backflow HEG.
 </application>
+    <parameter name="driver_version">legacy</parameter>
 </project>
 <random seed="153"/>
 <include href="heg.ptcl.xml"/>

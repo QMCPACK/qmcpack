@@ -44,7 +44,7 @@ class LRHandlerSRCoulomb : public LRHandlerBase
 {
 public:
   //Typedef for the lattice-type.
-  using ParticleLayout   = ParticleSet::ParticleLayout;
+  using ParticleLayout   = Lattice;
   using BreakupBasisType = BreakupBasis;
   using GridType         = LinearGrid<mRealType>;
 

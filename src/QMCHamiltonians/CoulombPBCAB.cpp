@@ -379,6 +379,16 @@ void CoulombPBCAB::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
   }
 }
 
+void CoulombPBCAB::mw_evaluatePerParticleWithToperator(const RefVectorWithLeader<OperatorBase>& o_list,
+                                                       const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                                       const RefVectorWithLeader<ParticleSet>& p_list,
+                                                       const std::vector<ListenerVector<RealType>>& listeners,
+                                                       const std::vector<ListenerVector<RealType>>& ion_listeners) const
+
+{
+  mw_evaluatePerParticle(o_list, wf_list, p_list, listeners, ion_listeners);
+}
+
 /** Evaluate the background term. Other constants are handled by AA potentials.
  *
  * \f$V_{bg}^{AB}=-\sum_{\alpha}\sum_{\beta} N^{\alpha} N^{\beta} q^{\alpha} q^{\beta} v_s(k=0) \f$

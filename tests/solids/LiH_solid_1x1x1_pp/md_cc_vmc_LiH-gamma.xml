@@ -4,6 +4,7 @@
     <application name="qmcapp" role="molecu" class="serial" version="0.2">
       Simple Example of solid LiH
     </application>
+    <parameter name="driver_version">legacy</parameter>
   </project>
 
   <!--random seed="666999"/-->

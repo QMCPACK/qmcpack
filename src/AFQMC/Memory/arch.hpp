@@ -17,7 +17,7 @@
 
 #if defined(ENABLE_CUDA)
 #include "AFQMC/Memory/CUDA/cuda_arch.h"
-#elif defined(ENABLE_HIP)
+#elif defined(BUILD_AFQMC_HIP)
 #include "AFQMC/Memory/HIP/hip_arch.h"
 #endif
 

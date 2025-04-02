@@ -1,6 +1,8 @@
 <?xml version="1.0"?>
 <simulation>
-  <project id="C2_TZ_PP_SHORT_XML_MSDJ" series="1"/>
+<project id="C2_TZ_PP_SHORT_XML_MSDJ" series="1">
+  <parameter name="driver_version">legacy</parameter>
+</project>
 
 
   <!-- input from gaussian converter -->

@@ -36,8 +36,6 @@ public:
                               {"integrator-montecarlo", Integrator::MONTECARLO}};
   // clang-format on
   using Real               = QMCTraits::FullPrecRealType;
-  using POLT               = PtclOnLatticeTraits;
-  using Lattice            = POLT::ParticleLayout;
   using PosType            = TinyVector<Real, OHMMS_DIM>;
   using Consumer           = MagnetizationDensity;
   static constexpr int DIM = QMCTraits::DIM;

@@ -261,7 +261,6 @@ void DiracDeterminant<DU_TYPE>::mw_ratioGrad(const RefVectorWithLeader<WaveFunct
     ratios[iw] = wfc_list.getCastedElement<DiracDeterminant<DU_TYPE>>(iw).ratioGrad_compute(iat, grad_new[iw]);
 }
 
-
 /** move was accepted, update the real container
 */
 template<typename DU_TYPE>

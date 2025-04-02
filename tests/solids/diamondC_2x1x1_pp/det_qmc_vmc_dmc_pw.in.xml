@@ -2,6 +2,7 @@
 <simulation>
    <project id="det_qmc_vmc_dmc_pw" series="0">
       <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
+    <parameter name="driver_version">legacy</parameter>
    </project>
   <random seed="583"/>
    <qmcsystem>

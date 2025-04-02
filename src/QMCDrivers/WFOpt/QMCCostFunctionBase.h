@@ -22,6 +22,7 @@
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "Message/MPIObjectBase.h"
+#include "libxml/xpath.h"
 
 #ifdef HAVE_LMY_ENGINE
 #include "formic/utils/matrix.h"

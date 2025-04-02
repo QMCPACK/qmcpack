@@ -59,9 +59,6 @@ SYCLDeviceManager::SYCLDeviceManager(int& default_device_num, int& num_devices, 
       throw std::runtime_error("Interop between OpenMP and SYCL is only supported when both implementations are built "
                                "on top of Level Zero API.");
 
-    auto hPlatform = omp_get_interop_ptr(interop, omp_ipr_platform, &err);
-    if (err != omp_irc_success)
-      throw std::runtime_error("omp_get_interop_ptr(omp_ipr_platform) failed!");
     auto hContext = omp_get_interop_ptr(interop, omp_ipr_device_context, &err);
     if (err != omp_irc_success)
       throw std::runtime_error("omp_get_interop_ptr(omp_ipr_device_context) failed!");
@@ -69,17 +66,15 @@ SYCLDeviceManager::SYCLDeviceManager(int& default_device_num, int& num_devices, 
     if (err != omp_irc_success)
       throw std::runtime_error("omp_get_interop_ptr(omp_ipr_device) failed!");
 
-    const sycl::platform sycl_platform =
-        sycl::ext::oneapi::level_zero::make_platform(reinterpret_cast<pi_native_handle>(hPlatform));
+    const sycl::device sycl_device = sycl::make_device<sycl::backend::ext_oneapi_level_zero>(
+        reinterpret_cast<const sycl::backend_input_t<sycl::backend::ext_oneapi_level_zero, sycl::device>>(hDevice));
 
-    const sycl::device sycl_device =
-        sycl::ext::oneapi::level_zero::make_device(sycl_platform, reinterpret_cast<pi_native_handle>(hDevice));
-
-    visible_devices
-        .emplace_back(sycl::ext::oneapi::level_zero::make_context({sycl_device},
-                                                                  reinterpret_cast<pi_native_handle>(hContext),
-                                                                  true /* keep the ownership, no transfer */),
-                      sycl_device, interop);
+    visible_devices.emplace_back(sycl::make_context<sycl::backend::ext_oneapi_level_zero>(
+                                     {reinterpret_cast<const sycl::detail::interop<sycl::backend::ext_oneapi_level_zero,
+                                                                                   sycl::context>::type>(hContext),
+                                      {sycl_device},
+                                      sycl::ext::oneapi::level_zero::ownership::keep}),
+                                 sycl_device, interop);
   }
 
 #else
@@ -135,6 +130,11 @@ SYCLDeviceManager::SYCLDeviceManager(int& default_device_num, int& num_devices, 
           << "Free memory queries always return 0 due to inactive 'oneAPI' System Resource Management (sysman). "
           << "Set environment variable ZES_ENABLE_SYSMAN to 1 to activate the query feature." << std::endl;
   }
+}
+
+void SYCLDeviceManager::printInfo() const
+{
+  app_summary() << "  SYCL acceleration build option is enabled" << std::endl;
 }
 
 sycl::queue& SYCLDeviceManager::getDefaultDeviceDefaultQueue()
