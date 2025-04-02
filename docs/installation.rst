@@ -29,7 +29,7 @@ are given in the referenced sections.
 
 #. Run the cmake configure step and build with make
    (:ref:`cmake` and :ref:`cmakequick`). Examples for common systems are given in :ref:`installexamples`. To activate workflow
-   tests for Quantum ESPRESSO, RMG, or PYSCF, be sure to specify QE_BIN, RMG_BIN, or ensure that the python modules are
+   tests for Quantum ESPRESSO, RMG, or PySCF, be sure to specify QE_BIN, RMG_BIN, or ensure that the python modules are
    available when cmake is run.
 
 #. Run the tests to verify QMCPACK
@@ -858,8 +858,8 @@ Crusher is the test and development system of Frontier with exactly the same nod
 Building QMCPACK
 ^^^^^^^^^^^^^^^^
 
-As of April 2023, ROCm Clang (>= 5.3.0) is the only compiler, validated by QMCPACK developers,
-on Frontier for OpenMP offloading computation to AMD GPUs.
+As of March 2025, ROCm's amdclang is the only compiler, validated by QMCPACK developers, for reliable and efficient GPU acceleration
+on Frontier via OpenMP offloading. It is recommended to always use the latest available version of ROCm.
 
 For ease of reproducibility we provide build scripts for Frontier.
 
@@ -871,7 +871,9 @@ For ease of reproducibility we provide build scripts for Frontier.
 
 Running QMCPACK
 ^^^^^^^^^^^^^^^
-Job script example with one MPI rank per GPU.
+Job script example with one MPI rank per GPU. Frontier is configured in low operating system noise mode and therefore all 64 CPU
+cores are not available on each node by default. i.e. We use 7 OpenMP CPU threads per MPI rank. The part of the job script that
+makes specific modules available is copied directly from the build script used above.
 
 ::
 
@@ -882,16 +884,23 @@ Job script example with one MPI rank per GPU.
   #SBATCH -t 01:30:00
   #SBATCH -N 1
 
-  echo "Loading QMCPACK dependency modules for crusher"
-  module unload PrgEnv-gnu PrgEnv-cray PrgEnv-amd PrgEnv-gnu-amd PrgEnv-cray-amd
-  module unload amd amd-mixed gcc gcc-mixed cce cce-mixed
-  module load PrgEnv-amd amd/5.4.3
+  echo "Loading QMCPACK dependency modules for frontier"
+  for module_name in PrgEnv-gnu PrgEnv-cray PrgEnv-amd PrgEnv-gnu-amd PrgEnv-cray-amd \
+                     amd amd-mixed gcc gcc-mixed gcc-native cce cce-mixed rocm
+  do
+    if module is-loaded $module_name ; then module unload $module_name; fi
+  done
+  
+  module load PrgEnv-amd amd/6.3.1
+  module unload darshan-runtime
+  unset HIP_PATH
   module unload cray-libsci
-  module load cmake/3.22.2
+  module load cmake/3.27.9
   module load cray-fftw
-  module load openblas/0.3.17-omp
+  module load openblas/0.3.26-omp
   module load cray-hdf5-parallel
 
+  #Update exe_path to point to your executable directory
   exe_path=/lustre/orion/mat151/world-shared/opt/qmcpack/develop-20230411/build_crusher_rocm543_offload_cuda2hip_real/bin
 
   prefix=NiO-fcc-S128-dmc
@@ -903,8 +912,15 @@ Job script example with one MPI rank per GPU.
   TOTAL_RANKS=$((SLURM_JOB_NUM_NODES * RANKS_PER_NODE))
   THREAD_SLOTS=7
   export OMP_NUM_THREADS=7 # change this to 1 if running with only 1 thread is intended.
+  export LIBOMPTARGET_AMDGPU_MAX_ASYNC_COPY_BYTES=0
   srun -n $TOTAL_RANKS --ntasks-per-node=$RANKS_PER_NODE --gpus-per-task=1 -c $THREAD_SLOTS --gpu-bind=closest \
        $exe_path/qmcpack --enable-timers=fine $prefix.xml >& $prefix.out
+
+Recommended environment variables on ORNL OLCF Frontier
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+As indicated in the example job above, we recommend users set ``export LIBOMPTARGET_AMDGPU_MAX_ASYNC_COPY_BYTES=0``. As of March 2025,
+this setting results in increased performance for NiO performance tests.
 
 Installing on systems with ARMv8-based processors
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1308,7 +1324,7 @@ facility. Additionally, Spack packages compiled by the facility can be
 reused by chaining Spack installations
 https://spack.readthedocs.io/en/latest/chain.html.
 
-Installing Quantum-ESPRESSO with Spack
+Installing Quantum ESPRESSO with Spack
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 More information about the QE Spack package can be obtained directly
@@ -1648,21 +1664,23 @@ Automated testing of QMCPACK
 
 The QMCPACK developers run automatic tests of QMCPACK on several
 different computer systems,  many on a continuous basis. See the reports at
-https://cdash.qmcpack.org/CDash/index.php?project=QMCPACK.
+https://cdash.qmcpack.org/index.php?project=QMCPACK.
 The combinations that are currently tested can be seen on CDash and are also listed in
-https://github.com/QMCPACK/qmcpack/blob/develop/README.md. They include GCC, Clang, Intel, and PGI compilers in combinations
-with various library versions and different MPI implementations. NVIDIA GPUs are also tested.
+https://github.com/QMCPACK/qmcpack/blob/develop/README.md. They include GCC, Clang, and Intel compilers in combinations
+with various library versions and different MPI implementations. NVIDIA, AMD, and Intel GPUs are also tested.
 
 .. _buildppconvert:
 
 Building ppconvert, a pseudopotential format converter
 ------------------------------------------------------
 
+Note: Use of ppconvert is an expert feature and discouraged for casual use. A poor choice of orbitals
+for the creation of projectors in UPF can introduce severe errors and inaccuracies.
+
 QMCPACK includes a utility---ppconvert---to convert between different pseudopotential formats. Examples include effective core
 potential formats (in Gaussians), the UPF format used by QE, and the XML format used by QMCPACK itself. The utility also enables
 the atomic orbitals to be recomputed via a numerical density functional calculation if they need to be reconstructed for use in an
-electronic structure calculation. Use of ppconvert is an expert feature and discouraged for casual use: a poor choice of orbitals
-for the creation of projectors in UPF can introduce severe errors and inaccuracies.
+electronic structure calculation. 
 
 .. _fig2:
 .. figure:: /figs/QMCPACK_CDash_CTest_Results_20160129.png
@@ -1679,23 +1697,39 @@ for the creation of projectors in UPF can introduce severe errors and inaccuraci
 Installing Quantum ESPRESSO and pw2qmcpack
 ------------------------------------------
 
-For trial wavefunctions obtained in a plane-wave basis, we mainly
-support QE. Note that ABINIT and QBox were supported historically
-and could be reactivated.
+For trial wavefunctions obtained in a plane-wave basis, we mainly support Quantum ESPRESSO (QE). QBox support is also available, and
+support was ABINIT was available historically and could be reactivated.
 
-QE stores wavefunctions in a nonstandard internal
-"save" format. To convert these to a conventional HDF5 format file
-we have developed a converter---pw2qmcpack---which is an add-on to the
-QE distribution.
+We recommend using the latest version of Quantum ESPRESSO.
+
+To convert the QE wavefunctions to the HDF5 format used by QMCPACK file we have developed a converter -- pw2qmcpack -- which is an
+add-on to the QE distribution.
+
+Quantum ESPRESSO (>7.0)
+~~~~~~~~~~~~~~~~~~~~~~~
+
+pw2qmcpack is configured via a plugin as part of the Quantum ESPRESSO installation. Simply specify
+``-DQE_ENABLE_PLUGINS=pw2qmcpack`` as part of the CMake configure step. Full QE CMake documentation can be found at
+https://gitlab.com/QEF/q-e/-/wikis/Developers/CMake-build-system . Excepting for a very large change to QE, the converter is
+expected to work with any recent version.
+
+  ::
+
+    mkdir build_mpi
+    cd build_mpi
+    cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_Fortran_COMPILER=mpif90 -DQE_ENABLE_PLUGINS=pw2qmcpack ..
+    make -j 16
 
 
-Quantum ESPRESSO (<=6.8)
-~~~~~~~~~~~~~~~~~~~~~~~~
+Quantum ESPRESSO converter support for old versions via source code patches
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To simplify the process of patching QE we have developed
-a script that will automatically download and patch the source
-code. The patches are specific to each version. For example, to download and
-patch QE v6.3:
+For QE 6.3-7.0, the pw2qmcpack converter can be addded via a source code patch specific to the specific version of QE. **Note that
+this route is no longer recommended. Unless a specific old version of QE is required, users should use the latest version of QE and
+the cmake route described above.**
+
+To simplify the process of patching QE we developed to script to automatically download and patch the source code. For example, to
+download and patch QE v6.3:
 
 ::
 
@@ -1724,31 +1758,15 @@ the HDF5 capability enabled in either way:
 
 The complete process is described in external\_codes/quantum\_espresso/README.
 
-Quantum ESPRESSO (6.7, 6.8 and 7.0)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-After patching the QE source code like above, users may use CMake instead of configure to build QE with pw2qmcpack.
-Options needed to enable pw2qmcpack have been set ON by default.
-A HDF5 library installation with Fortran support is required.
+- Note that for QE 6.7, 6.8 and 7.0, after patching the QE source code like above, users may use CMake instead of configure to build
+  QE with pw2qmcpack. These are the earliest versions for which the cmake support was mature enough. Options needed to enable
+  pw2qmcpack have been set ON by default. A HDF5 library installation with Fortran support is required.
 
   ::
 
     mkdir build_mpi
     cd build_mpi
     cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_Fortran_COMPILER=mpif90 ..
-    make -j 16
-
-Quantum ESPRESSO (>7.0)
-~~~~~~~~~~~~~~~~~~~~~~~
-Due to incorporation of pw2qmcpack as a plugin, there is no longer any need to patch QE.
-Users may use upstream QE and activate the plugin by specifying ``-DQE_ENABLE_PLUGINS=pw2qmcpack`` at the CMake configure step.
-Full QE CMake documentation can be found at
-https://gitlab.com/QEF/q-e/-/wikis/Developers/CMake-build-system .
-
-  ::
-
-    mkdir build_mpi
-    cd build_mpi
-    cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_Fortran_COMPILER=mpif90 -DQE_ENABLE_PLUGINS=pw2qmcpack ..
     make -j 16
 
 Testing QE after installation

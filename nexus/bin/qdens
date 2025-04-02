@@ -835,8 +835,8 @@ class StatFile(QDBase):
                 r = dr/2+dr*np.arange(len(lmean),dtype=float)
                 lmean/=dr
                 lerror/=dr
-                xlab = sdim+' ($\AA$)'.format(dim)
-                ylab = '$N_e/\AA$'
+                xlab = sdim+' ($\\AA$)'.format(dim)
+                ylab = '$N_e/\\AA$'
             #end if
             plt.figure(tight_layout=True)
             plt.errorbar(r,lmean,lerror,fmt='b.-')

@@ -40,7 +40,7 @@ class StructFact : public QMCTraits
 {
 public:
   //Typedef for the lattice-type
-  using ParticleLayout = PtclOnLatticeTraits::ParticleLayout;
+  using ParticleLayout = Lattice;
 
   /** enumeration for the methods to handle mixed bconds
    *

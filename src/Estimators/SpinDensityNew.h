@@ -35,8 +35,6 @@ class SpinDensityNewTests;
 class SpinDensityNew : public OperatorEstBase
 {
 public:
-  using POLT    = PtclOnLatticeTraits;
-  using Lattice = POLT::ParticleLayout;
   using QMCT    = QMCTraits;
   using FullPrecRealType = QMCT::FullPrecRealType;
 

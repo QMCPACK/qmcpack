@@ -22,7 +22,7 @@ namespace qmcplusplus
 class SpinDensity : public OperatorBase
 {
 public:
-  using Lattice_t = ParticleSet::ParticleLayout;
+  using Lattice_t = Lattice;
   using dens_t    = std::vector<RealType>;
   using pts_t     = std::vector<PosType>;
 

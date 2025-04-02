@@ -48,7 +48,7 @@ TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
   Communicate* c = OHMMS::Controller;
 
   // We get a "Mismatched supercell lattices" error due to default ctor?
-  ParticleSet::ParticleLayout lattice;
+  Lattice lattice;
 
   // diamondC_1x1x1
   lattice.R = {3.37316115, 3.37316115, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
@@ -566,7 +566,7 @@ TEST_CASE("RotatedSPOs hcpBe", "[wavefunction]")
   using RealType = QMCTraits::RealType;
   Communicate* c = OHMMS::Controller;
 
-  ParticleSet::ParticleLayout lattice;
+  Lattice lattice;
   lattice.R = {4.32747284, 0.00000000, 0.00000000, -2.16373642, 3.74770142,
                0.00000000, 0.00000000, 0.00000000, 6.78114995};
 
@@ -836,12 +836,22 @@ TEST_CASE("RotatedSPOs read and write parameters history", "[wavefunction]")
   REQUIRE(hist[0].size() == 4);
 }
 
-class DummySPOSetWithoutMW : public SPOSet
+template<typename T>
+class DummySPOSetWithoutMW : public SPOSetT<T>
 {
 public:
+  using SPOSet = SPOSetT<T>;
+  using ValueVector   = typename SPOSet::ValueVector;
+  using ValueMatrix   = typename SPOSet::ValueMatrix;
+  using GradVector    = typename SPOSet::GradVector;
+  using GradMatrix    = typename SPOSet::GradMatrix;
+  using ComplexType   = typename SPOSet::ComplexType;
+  template<typename DT>
+  using OffloadMatrix = typename SPOSet::template OffloadMatrix<DT>;
+
   DummySPOSetWithoutMW(const std::string& my_name) : SPOSet(my_name) {}
   void setOrbitalSetSize(int norbs) override {}
-  void evaluateValue(const ParticleSet& P, int iat, SPOSet::ValueVector& psi) override
+  void evaluateValue(const ParticleSet& P, int iat, ValueVector& psi) override
   {
     assert(psi.size() == 3);
     psi[0] = 123;
@@ -896,13 +906,19 @@ public:
                             GradMatrix& dlogdet,
                             ValueMatrix& d2logdet) override
   {}
-  std::string getClassName() const override { return my_name_; }
+  std::string getClassName() const override { return SPOSet::my_name_; }
 };
 
-class DummySPOSetWithMW : public DummySPOSetWithoutMW
+template<typename T>
+class DummySPOSetWithMW : public DummySPOSetWithoutMW<T>
 {
 public:
-  DummySPOSetWithMW(const std::string& my_name) : DummySPOSetWithoutMW(my_name) {}
+  using ValueVector   = typename DummySPOSetWithoutMW<T>::ValueVector;
+  using GradVector    = typename DummySPOSetWithoutMW<T>::GradVector;
+  using ComplexType   = typename DummySPOSetWithoutMW<T>::ComplexType;
+  template<typename DT>
+  using OffloadMatrix = typename DummySPOSetWithoutMW<T>::template OffloadMatrix<DT>;
+  DummySPOSetWithMW(const std::string& my_name) : DummySPOSetWithoutMW<T>(my_name) {}
   void mw_evaluateValue(const RefVectorWithLeader<SPOSet>& spo_list,
                         const RefVectorWithLeader<ParticleSet>& P_list,
                         int iat,
@@ -947,8 +963,10 @@ TEST_CASE("RotatedSPOs mw_ APIs", "[wavefunction]")
     //In the case that the underlying SPOSet doesn't specialize the mw_ API,
     //the underlying SPOSet will fall back to the default SPOSet mw_, which is
     //just a loop over the single walker API.
-    RotatedSPOs rot_spo0("rotated0", std::make_unique<DummySPOSetWithoutMW>("no mw 0"));
-    RotatedSPOs rot_spo1("rotated1", std::make_unique<DummySPOSetWithoutMW>("no mw 1"));
+    using Value = SPOSet::ValueType;
+
+    RotatedSPOs rot_spo0("rotated0", std::make_unique<DummySPOSetWithoutMW<Value>>("no mw 0"));
+    RotatedSPOs rot_spo1("rotated1", std::make_unique<DummySPOSetWithoutMW<Value>>("no mw 1"));
     RefVectorWithLeader<SPOSet> spo_list(rot_spo0, {rot_spo0, rot_spo1});
 
     ResourceCollection spo_res("test_rot_res");
@@ -1005,9 +1023,10 @@ TEST_CASE("RotatedSPOs mw_ APIs", "[wavefunction]")
     //in the underlying SPO and not using the default SPOSet implementation which
     //loops over single walker APIs (which have different values enforced in
     // DummySPOSetWithoutMW
+    using Value = SPOSet::ValueType;
 
-    RotatedSPOs rot_spo0("rotated0", std::make_unique<DummySPOSetWithMW>("mw 0"));
-    RotatedSPOs rot_spo1("rotated1", std::make_unique<DummySPOSetWithMW>("mw 1"));
+    RotatedSPOs rot_spo0("rotated0", std::make_unique<DummySPOSetWithMW<Value>>("mw 0"));
+    RotatedSPOs rot_spo1("rotated1", std::make_unique<DummySPOSetWithMW<Value>>("mw 1"));
     RefVectorWithLeader<SPOSet> spo_list(rot_spo0, {rot_spo0, rot_spo1});
 
     ResourceCollection spo_res("test_rot_res");

@@ -27,7 +27,7 @@
 #include "Sandbox/common.hpp"
 #include <getopt.h>
 #include "mpi/collectives.h"
-#include "ParticleBase/ParticleAttribOps.h"
+#include "CPU/VectorOps.h"
 #include "Concurrency/OpenMP.h"
 #include "OhmmsData/Libxml2Doc.h"
 
@@ -56,7 +56,6 @@ int main(int argc, char** argv)
   using RealType         = QMCTraits::RealType;
   using FullPrecRealType = QMCTraits::FullPrecRealType;
   using ParticlePos      = ParticleSet::ParticlePos;
-  using LatticeType      = ParticleSet::ParticleLayout;
   using TensorType       = ParticleSet::TensorType;
   using PosType          = ParticleSet::PosType;
   using uint_type        = RandomGenerator::uint_type;

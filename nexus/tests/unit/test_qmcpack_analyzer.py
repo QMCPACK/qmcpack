@@ -2,7 +2,7 @@
 import versions
 import testing
 from testing import divert_nexus_log,restore_nexus_log
-from testing import value_eq,object_eq,text_eq
+from testing import value_eq,object_eq,text_eq,print_diff
 
 
 def test_import():
@@ -316,7 +316,7 @@ def test_optimization_analysis():
     opt_wf_text_ref = '''
 <wavefunction name="psi0" target="e">
    <sposet_builder type="bspline" href="../scf/pwscf_output/pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" version="0.1" meshfactor="1.0" precision="float" truncate="no">
-      <sposet type="bspline" name="spo_ud" size="4" spindataset="0">                             </sposet>
+      <sposet type="bspline" name="spo_ud" size="4" spindataset="0"/>
    </sposet_builder>
    <determinantset>
       <slaterdeterminant>
@@ -341,8 +341,8 @@ def test_optimization_analysis():
 </wavefunction>
 '''
 
-    opt_wf_text_ref = opt_wf_text_ref.replace('"',' " ')
-    opt_wf_text     = opt_wf_text.replace('"',' " ')
+    opt_wf_text_ref = opt_wf_text_ref.replace('"',' " ').strip()
+    opt_wf_text     = opt_wf_text.replace('"',' " ').strip()
 
     assert(text_eq(opt_wf_text,opt_wf_text_ref))
 

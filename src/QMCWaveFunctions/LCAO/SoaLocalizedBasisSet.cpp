@@ -243,9 +243,11 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateVGL(const RefVectorWithLeader<S
         displ_list_tr[idim + 3 * (iw + c * Nw)] = displ[c][idim];
       }
   }
+
 #if defined(QMC_COMPLEX)
   Tv_list.updateTo();
 #endif
+
   displ_list_tr.updateTo();
 
   for (int c = 0; c < NumCenters; c++)

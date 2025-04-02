@@ -17,7 +17,7 @@
 #include "Particle/ParticleSet.h"
 #include "QMCDrivers/WalkerProperties.h"
 #include "QMCHamiltonians/OperatorBase.h"
-#include "ParticleBase/ParticleAttribOps.h"
+#include "CPU/VectorOps.h"
 #include "OhmmsData/ParameterSet.h"
 
 

@@ -14,7 +14,7 @@
       0   0   31.993061563
     </parameter>
     <parameter name="bconds">p p n </parameter>
-    <parameter name="LR_dim_cutoff">30</parameter>
+    <parameter name="LR_dim_cutoff">40</parameter>
     <parameter name="LR_handler"> opt_breakup </parameter>
   </simulationcell>
   </qmcsystem>

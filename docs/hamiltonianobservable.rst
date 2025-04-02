@@ -5,7 +5,7 @@ Hamiltonian and Observables
 
 QMCPACK is capable of the simultaneous measurement of the Hamiltonian and many other quantum operators.  The Hamiltonian attains a special status among the available operators (also referred to as observables) because it ultimately generates all available information regarding the quantum system.  This is evident from an algorithmic standpoint as well since the Hamiltonian (embodied in the projector) generates the imaginary time dynamics of the walkers in DMC and reptation Monte Carlo (RMC).
 
-This section covers how the Hamiltonian can be specified, component by component, by the user in the XML format native to \qmcpack. It also covers the input structure of statistical estimators corresponding to quantum observables such as the density, static structure factor, and forces.
+This section covers how the Hamiltonian can be specified, component by component, by the user in the XML format native to QMCPACK. It also covers the input structure of statistical estimators corresponding to quantum observables such as the density, static structure factor, and forces.
 
 The Hamiltonian
 ---------------
@@ -901,7 +901,7 @@ Additional information:
    cause QMCPACK to abort.
 
 -  ``integrator``: How the spin-integral is performed.  By default, 
-   this is done determinstically with Simpson's rule.  However, 
+   this is done deterministically with Simpson's rule.  However, 
    one can also Monte-Carlo sample this integral.  Simpson's is preferred,
    but Monte-Carlo sampling might be more efficient for large systems.  
 
@@ -2000,7 +2000,7 @@ Additional information:
    contribution to the forces. As a quick test, increase the
    ``LR_dim_cutoff`` parameter until ion-ion forces are converged. The
    Ewald method converges more slowly than optimized method, but the
-   optimized method can break down in edge cases, eg. too large
+   optimized method can break down in edge cases, e.g., too large
    ``LR_dim_cutoff``.
 
 -  **Miscellaneous**: Usually, the default choice of ``weightexp`` is
@@ -2038,7 +2038,7 @@ QMCPACK has an implementation of force estimation using the Assaraf-Caffarel
 Zero-Variance Zero-Bias method :cite:`Tiihonen2021`.  This has the desirable 
 property that as the trial wave function and trial wave function derivative 
 become exact, the estimator itself becomes an exact estimate of the force 
-and the variance of the estimator goes to  ero--much like the local energy.  
+and the variance of the estimator goes to zero -- much like the local energy.  
 In practice, the estimator is usually significantly more accurate and has much 
 lower variance than the bare Hellman-Feynman estimator.  
 
@@ -2112,7 +2112,7 @@ Finally, the estimator provides two methods to evaluate the necessary derivative
 The first is a straightforward analytic differentiation of all required terms.  While mathematically transparent,
 this algorithm has poor scaling with system size.  The second utilizes the fast-derivative algorithm of Assaraf, Moroni, 
 and Filippi :cite:`Filippi2016`, which has a smaller computational prefactor and at least an O(N) speed-up over the legacy implementation.
-Both of these methods are accessible with appropraite flags.  
+Both of these methods are accessible with appropriate flags.  
 
 ``estimator type=Force`` element:
 
