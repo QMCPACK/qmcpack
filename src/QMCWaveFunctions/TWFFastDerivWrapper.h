@@ -71,14 +71,14 @@ public:
    * @param msd. Pointer to MultiSlaterDetTableMethod
    */
   void addMultiSlaterDet(const ParticleSet& P, const WaveFunctionComponent* msd);
-  inline bool hasMultiSlaterDet() const { return slaterdet_; }
+  inline bool hasMultiSlaterDet() const { return multislaterdet_; }
   inline const WaveFunctionComponent& getMultiSlaterDet() const
   {
-    if (!slaterdet_)
+    if (!multislaterdet_)
     {
       throw std::runtime_error("Error: No MultiSlaterDet registered for this TWFFastDerivWrapper");
     }
-    return *slaterdet_;
+    return *multislaterdet_;
   }
 
 
@@ -398,8 +398,8 @@ private:
   std::vector<ValueMatrix> psi_M_inv_;
   std::vector<WaveFunctionComponent*> jastrow_list_;
   // pointer to MultiSlaterDetTableMethod if one has been registered, otherwise nullptr
-  // access constituent MultiDiracDets and SPOsets through this slaterdet (associate with this.spos_ via group ID)
-  const WaveFunctionComponent* slaterdet_ = nullptr;
+  // access constituent MultiDiracDets and SPOsets through this slaterdet (associate with spos_ via group ID)
+  const WaveFunctionComponent* multislaterdet_ = nullptr;
 };
 
 /**@}*/
