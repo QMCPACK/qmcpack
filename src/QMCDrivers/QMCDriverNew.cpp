@@ -405,7 +405,8 @@ QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(Communi
                   << num_crowds << "). This will result in a loss of efficiency.\n";
 
   if (awc.global_walkers % num_ranks || awc.walkers_per_rank[rank_id] % num_crowds)
-    app_warning() << "Using " << int ( std::max(  awc.global_walkers / ( num_ranks * num_crowds ),1) ) * ( num_ranks * num_crowds ) 
+    app_warning() << "Using "
+                  << int(std::max(awc.global_walkers / (num_ranks * num_crowds), 1)) * (num_ranks * num_crowds)
                   << " total walkers will divide evenly over both ranks and crowds.\n";
 
   // \todo some warning if unreasonable number of threads are being used.
