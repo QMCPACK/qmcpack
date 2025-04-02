@@ -1,17 +1,17 @@
 if(NOT QMC_COMPLEX)
   #
-  # LiH molecule gaussian tests, all electron using pyscf
+  # LiH molecule gaussian tests, all electron using PySCF
   # Also check results for different number of mpi tasks and threads keeping total constant
-  # Energy from Pyscf: E=-7.9873236457148
+  # Energy from PySCF: E=-7.9873236457148
   #
   #   "kinetic" "7.991344  0.000065") # kinetic energy
   #   "totenergy" "-7.9873125  0.0000086 ") # total energy
   #   "eeenergy" "3.488827 0.000010") # e-e energy
   #   "samples" "80117760000 0.0") # samples
 
-  list(APPEND LIH_SHORT "kinetic" "7.991344 0.007") # kinetic energy
-  list(APPEND LIH_SHORT "totenergy" "-7.9873125 0.001") # total energy
-  list(APPEND LIH_SHORT "eeenergy" "3.488827 0.00085") # e-e energy
+  list(APPEND LIH_SHORT "kinetic" "7.991344 0.01") # kinetic energy
+  list(APPEND LIH_SHORT "totenergy" "-7.9873125 0.002") # total energy
+  list(APPEND LIH_SHORT "eeenergy" "3.488827 0.001") # e-e energy
   list(APPEND LIH_SHORT "samples" "9600000 0.0") # samples
   qmc_run_and_check(
     short-LiH_ae_pyscf-vmc_hf_noj

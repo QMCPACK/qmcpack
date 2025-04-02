@@ -23,7 +23,7 @@ else()
   set(RMG_TEST_NAME "NONE")
 
   set(RMG_SYSTEM "Diamond2-1x1x1-gamma-ccECP")
-  run_rmg_test(rmg-${RMG_SYSTEM} ${qmcpack_SOURCE_DIR}/examples/solids/rmg-inputs/${RMG_SYSTEM} 1 12 RMG_TEST_NAME)
+  run_rmg_test(rmg-${RMG_SYSTEM} ${qmcpack_SOURCE_DIR}/examples/solids/rmg-inputs/${RMG_SYSTEM} 1 1 RMG_TEST_NAME)
 
   # RMG_TEST_NAME is now rmg-Diamond2-1x1x1-gamma-ccECP-np-1
   # workdir is CMAKE_CURRENT_BINARY_DIR/RMG_TEST_NAME

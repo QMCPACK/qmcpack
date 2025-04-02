@@ -23,6 +23,7 @@
 #include <complex>
 #include <type_traits>
 #include <optional>
+#include "OhmmsPETE/TinyVector.h"
 #include "type_traits/complex_help.hpp"
 #include "ApproximateEquality.hpp"
 namespace qmcplusplus
