@@ -3427,6 +3427,54 @@ class Baseline(Supercomputer):
     #end def write_job_header
 #end class Baseline
 
+# Active 
+# BESMS is at ORNL 
+class Besms(Supercomputer):
+    name = 'besms'
+    requires_account = True
+    batch_capable    = True
+    # Using sinfo to get the queue configs
+    queue_configs={
+        'default': 't92',
+        't92': {
+            'max_nodes': 10,
+            'max_walltime': '672:00:00',
+        },
+        't92-burst': {
+            'max_nodes': 25,
+            'max_walltime': '672:00:00',
+        },
+        'burst': {
+            'max_nodes': 166,
+            'max_walltime': '48:00:00',
+        },
+    }
+    def write_job_header(self,job):
+        self.validate_queue_config(job)
+
+        c  = '#!/bin/bash\n'
+        c += '#SBATCH -A {}\n'.format(job.account)
+        c += '#SBATCH -p {}\n'.format(job.queue)
+        c += '#SBATCH -J {}\n'.format(job.name)
+        c += '#SBATCH -t {}\n'.format(job.sbatch_walltime())
+        c += '#SBATCH -N {}\n'.format(job.nodes)
+        c += '#SBATCH --ntasks-per-node={0}\n'.format(job.processes_per_node)
+        c += '#SBATCH --cpus-per-task={0}\n'.format(job.threads)
+        c += '#SBATCH -o '+job.outfile+'\n'
+        c += '#SBATCH -e '+job.errfile+'\n'
+        c += '#SBATCH --mem=350G\n'
+        c += '#SBATCH --exclusive\n'
+
+        if job.user_env:
+            c += '#SBATCH --export=ALL\n'   # equiv to PBS -V
+        else:
+            c += '#SBATCH --export=NONE\n'
+        #end if
+
+        return c
+    #end def write_job_header
+#end class Baseline
+
 # Decommissioned
 # Summit at ORNL
 class Summit(Supercomputer):
@@ -4132,6 +4180,7 @@ Ruby(         1480,   2,    28,  192,  100,   'srun',   'sbatch',  'squeue', 'sc
 Kestrel(      2144,   2,    52,  256,  100,   'srun',   'sbatch',  'squeue', 'scancel')
 Inti(           13,   2,    64,  256,  100,   'srun',   'sbatch',  'squeue', 'scancel')
 Baseline(      128,   2,    64,  512,  100,   'srun',   'sbatch',  'squeue', 'scancel')
+Besms(          10,   1,    96,  768, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
 
 
 #machine accessor functions
