@@ -33,8 +33,7 @@ export MKLROOT=/sw/cades-besms/oneapi/2024.1.0/mkl/2024.1/
 module list
 
 CMAKE_FLAGS="-DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpiCC \
-             -DENABLE_TIMERS=1 -DBUILD_AFQMC=0 \
-             -DMPIEXEC_EXECUTABLE=/usr/bin/srun -DMPIEXEC_NUMPROC_FLAG='-n' -DMPIEXEC_PREFLAGS='-c;16;--distribution=block:cyclic'"
+             -DENABLE_TIMERS=1 -DBUILD_AFQMC=0 "             
 # If QMC_DATA is available, consider adding e.g.
 #             -DQMC_DATA=/gpfs/wolf2/cades/mat269/world-shared/pk7/QMC_DATA_FULL -DQMC_PERFORMANCE_NIO_MAX_ATOMS=128 -DQMC_PERFORMANCE_C_MOLECULE_MAX_ATOMS=16 -DQMC_PERFORMANCE_C_GRAPHITE_MAX_ATOMS=16
 
