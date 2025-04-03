@@ -951,8 +951,6 @@ Attribute:
 +=================+==========+================+=========+====================================+
 | ``name``        | Text     |                |         | Name of rotated SPOSet             |
 +-----------------+----------+----------------+---------+------------------------------------+
-| ``method``      | Text     | global/history | global  | Rotation matrix composition method |
-+-----------------+----------+----------------+---------+------------------------------------+
 
 .. code-block::
    :caption: Orbital Rotation XML element.
@@ -989,14 +987,7 @@ These parameters are a subset of the full number of parameters in the kappa matr
 When rotations are combined, the entries corresponding to zero parameter derivatives can
 take on a non-zero value (i.e. the kappa matrix gets 'filled-in').
 
-There are two ways to handle this.
-One way is to store a list of applied rotations.
-This method applies a new rotation to the coefficient matrix, and updates the coefficient matrix at each optimization step.
-This is the "history" method.
-
-.. math:: C' = \exp(\kappa_n) \dots \exp(\kappa_1) \exp(\kappa_0) C
-
-The other way is to track the full set of kappa values separately.
+QMCPACK handles this problem by tracking the full set of kappa values separately.
 After the matrix multiplication to compose the rotations, the matrix log recovers the new kappa matrix entries.
 This is the "global" method.
 This method keeps a separate copy of the coefficient matrix and updates it using the global rotation matrix at each optimization step.

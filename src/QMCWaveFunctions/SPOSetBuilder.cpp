@@ -130,7 +130,6 @@ std::unique_ptr<SPOSet> SPOSetBuilder::createRotatedSPOSet(xmlNodePtr cur)
   std::string method;
   OhmmsAttributeSet attrib;
   attrib.add(spo_object_name, "name");
-  attrib.add(method, "method", {"global", "history"});
   attrib.put(cur);
 
   std::unique_ptr<SPOSet> sposet;
@@ -150,9 +149,6 @@ std::unique_ptr<SPOSet> SPOSetBuilder::createRotatedSPOSet(xmlNodePtr cur)
 
   sposet->storeParamsBeforeRotation();
   auto rot_spo = std::make_unique<RotatedSPOs>(spo_object_name, std::move(sposet));
-
-  if (method == "history")
-    rot_spo->set_use_global_rotation(false);
 
   processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
     if (cname == "opt_vars")

@@ -732,7 +732,6 @@ namespace testing
 {
 const opt_variables_type& getMyVars(RotatedSPOs& rot) { return rot.myVars; }
 const std::vector<QMCTraits::ValueType>& getMyVarsFull(RotatedSPOs& rot) { return rot.myVarsFull_; }
-const std::vector<std::vector<QMCTraits::ValueType>>& getHistoryParams(RotatedSPOs& rot) { return rot.history_params_; }
 } // namespace testing
 
 // Test using global rotation
@@ -785,55 +784,6 @@ TEST_CASE("RotatedSPOs read and write parameters", "[wavefunction]")
   auto& full_var = testing::getMyVarsFull(rot2);
   for (size_t i = 0; i < full_var.size(); i++)
     CHECK(full_var[i] == ValueApprox(vs_values[i]));
-}
-
-// Test using history list.
-TEST_CASE("RotatedSPOs read and write parameters history", "[wavefunction]")
-{
-  //Problem with h5 parameter parsing for complex build.  To be fixed in future PR.
-  auto fake_spo = std::make_unique<FakeSPO<QMCTraits::ValueType>>();
-  fake_spo->setOrbitalSetSize(4);
-  RotatedSPOs rot("fake_rot", std::move(fake_spo));
-  rot.set_use_global_rotation(false);
-  int nel = 2;
-  rot.buildOptVariables(nel);
-
-  std::vector<SPOSet::ValueType> vs_values{0.1, 0.15, 0.2, 0.25};
-
-  optimize::VariableSet vs;
-  rot.checkInVariablesExclusive(vs);
-  auto* vs_values_data_real = (SPOSet::RealType*)vs_values.data();
-  for (size_t i = 0; i < vs.size(); i++)
-    vs[i] = vs_values_data_real[i];
-  rot.resetParametersExclusive(vs);
-
-  {
-    hdf_archive hout;
-    vs.writeToHDF("rot_vp_hist.h5", hout);
-
-    rot.writeVariationalParameters(hout);
-  }
-
-  auto fake_spo2 = std::make_unique<FakeSPO<QMCTraits::ValueType>>();
-  fake_spo2->setOrbitalSetSize(4);
-
-  RotatedSPOs rot2("fake_rot", std::move(fake_spo2));
-  rot2.buildOptVariables(nel);
-
-  optimize::VariableSet vs2;
-  rot2.checkInVariablesExclusive(vs2);
-
-  hdf_archive hin;
-  vs2.readFromHDF("rot_vp_hist.h5", hin);
-  rot2.readVariationalParameters(hin);
-
-  auto& var = testing::getMyVars(rot2);
-  for (size_t i = 0; i < var.size(); i++)
-    CHECK(var[i] == Approx(vs[i]));
-
-  const auto hist = testing::getHistoryParams(rot2);
-  REQUIRE(hist.size() == 1);
-  REQUIRE(hist[0].size() == 4);
 }
 
 template<typename T>
