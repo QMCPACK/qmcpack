@@ -1257,4 +1257,13 @@ void MultiSlaterDetTableMethod::releaseResource(ResourceCollection& collection,
     Dets[idet]->releaseResource(collection, det_list);
   }
 }
+
+void MultiSlaterDetTableMethod::registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const
+{
+  for (int i = 0; i < Dets.size(); ++i)
+  {
+    Dets[i]->registerTWFFastDerivWrapper(P, twf);
+  }
+  twf.addMultiSlaterDet(P, this);
+}
 } // namespace qmcplusplus
