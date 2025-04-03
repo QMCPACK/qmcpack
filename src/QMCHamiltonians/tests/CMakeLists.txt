@@ -54,7 +54,7 @@ foreach(fname Na2.structure.xml simple.txt)
   maybe_symlink(${CMAKE_CURRENT_SOURCE_DIR}/${fname} ${UTEST_DIR}/${fname})
 endforeach()
 
-foreach(fname cn.wfnoj.xml cn.wfj.xml cn.msd-wfnoj.xml cn.msd-wfj.xml C_diamond-twist-third-cart.wfj.xml)
+foreach(fname cn.wfnoj.xml cn.wfj.xml cn.msd-wfnoj.xml cn.msd-1det-wfnoj.xml cn.msd-1det-wfj.xml cn.msd-wfj.xml C_diamond-twist-third-cart.wfj.xml)
   maybe_symlink(${qmcpack_SOURCE_DIR}/src/QMCWaveFunctions/tests/${fname} ${UTEST_DIR}/${fname})
 endforeach()
 

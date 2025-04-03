@@ -107,6 +107,14 @@ public:
   //builds orbital rotation parameters using MultiSlater member variables
   void buildOptVariables();
 
+  inline const MultiDiracDeterminant& getDet(int i) const { return *Dets[i]; }
+  // number of MultiDiracDet sets in this MultiSlaterDet
+  inline int getDetSize() const { return Dets.size(); };
+  inline int getNumSlaterDets() const { return C->size(); };
+
+  const std::vector<ValueType>& get_C() const { return *C; }
+  const std::vector<std::vector<size_t>>& get_C2node() const { return *C2node; }
+
   LogValue evaluate_vgl_impl(const ParticleSet& P,
                              ParticleSet::ParticleGradient& g_tmp,
                              ParticleSet::ParticleLaplacian& l_tmp);
@@ -226,6 +234,8 @@ public:
                            const opt_variables_type& optvars,
                            std::vector<ValueType>& ratios,
                            Matrix<ValueType>& dratios) override;
+
+  void registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const override;
 
   /** initialize a few objects and states by the builder
    * YL: it should be part of the constructor. It cannot be added to the constructor
