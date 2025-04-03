@@ -545,6 +545,92 @@ the resources.
 In this case, Nexus will never submit more than 10 jobs at a time, even if more jobs are ready to be submitted, or resources on the local machine are available.
 Having the option of limiting the number of jobs running at the same time can be useful even on local workstations (to avoid taking over all the available resources). In such a case, a simpler strategy is possible by claiming fewer available cores in ``settings``, e.g. machine='ws8' vs 'ws4' vs 'ws2' etc.
 
+
+.. _custom-job-options:
+
+Customizing job options
+-----------------------
+The commands used to launch run jobs can be customized from those specified by the default machine definitions. Uses include
+customizing the options passed to MPI and customizing settings based on details of the runs.
+
+For example, we can modify the MPI thread binding as follows:
+
+::
+
+  settings(
+    pseudo_dir = './pseudopotentials',
+    results    = '',
+    sleep      = 3,
+    machine    = 'ws16',
+    )
+
+  ...
+
+  scf = generate_pwscf(
+    job = job(cores=16,app='pw.x',run_options=dict(bind_to='--bind-to none')),
+    ...
+    )
+
+which will result in output
+
+::
+
+   Executing:  
+   export OMP_NUM_THREADS=1
+   mpirun --bind-to none -np 16 pw.x -input scf.in 
+
+
+The options passed to the executable can also be modified. For example, to give different parallelization settings. 
+
+The following gives an example of modifying both the run and application options based on the machine the workflow is executing on:
+
+::
+
+  settings(
+    pseudo_dir = './pseudopotentials',
+    results    = '',
+    sleep      = 3,
+    machine    = 'ws128',
+    )
+
+  if settings.machine=='ws128':
+      # jobs for 128 core workstation
+      scf_opts1 = obj(app         = 'pw.x',
+                      run_options = '--bind-to none')
+      scf_opts2 = obj(app         = 'pw.x',
+                      run_options = '--bind-to none',
+                      app_options = '-nk 8')
+      scf_job1 = job(cores= 64,**scf_opts1)
+      scf_job2 = job(cores= 64,**scf_opts2)
+      scf_job3 = job(cores=128,**scf_opts2)
+  
+  elif settings.machine=='inti':
+      # jobs for "Inti" cluster
+      qe_presub = '''
+  module purge
+  module load mpi/openmpi-x86_64  
+  module load qe/quantum-espresso 
+  '''
+      scf_opts1 = obj(nodes       = 1,
+                      hours       = 1,
+                      app         = 'pw.x',
+                      run_options = '--bind-to none',
+                      presub      = qe_presub)
+      scf_opts2 = obj(nodes       = 1,
+                      hours       = 1,
+                      app         = 'pw.x',
+                      run_options = '--bind-to none',
+                      app_options = '-nk 8',
+                      presub      = qe_presub)
+      scf_job1 = job(processes_per_node=64,**scf_opts1)
+      scf_job2 = job(processes_per_node=64,**scf_opts2)
+      scf_job3 = job(**scf_opts2)
+  
+  else:
+      print('machine unknown!')
+      exit()
+  #end if
+
 .. _user-data-analysis:
 
 Data analysis
@@ -674,6 +760,30 @@ Currently, only workflows that use Quantum ESPRESSO (PWSCF) are supported by ``g
 
 Please contact the developers if any of these issues are critical for research.
 
+.. _command-line-options:
 
+Nexus command line options
+--------------------------
+
+Nexus user scripts process a number of command line options. These override settings in the script.  They are most commonly used to check the status of workflows (``--status_only``) and to check
+the generated workflows during development (``--generate_only``).
+
+- ``--status_only`` : Report status of all simulations and then exit.
+- ``--status`` : Controls displayed simulation status information.  May be set to one of 'standard', 'active', 'failed', or 'ready'.
+- ``--generate_only`` : Write inputs to all simulations and then exit.  Note that no dependencies are processed, e.g., if one simulation depends on another for an orbital file location or for a relaxed structure, this information will not be present in the generated input file for that simulation since no simulations are actually run with this option.
+- ``--graph_sims`` : Display a graph of simulation workflows, then exit.
+- ``--progress_tty`` : Print abbreviated polling messages. The polling message normally written to a newline every polling period will instead be overwritten in place, greatly shortening the output.
+- ``--sleep`` : Number of seconds between polls.  At each poll, new simulations are run once all simulations they depend on have successfully completed. A status line is printed every poll.
+- ``--machine`` : Name of the machine the simulations will be run on.  Workstations with between 1 and 128 cores may be specified by 'ws1' to 'ws128' (works for any machine where only mpirun is used).
+- ``--account`` : Account name required to submit jobs at some HPC centers.
+- ``--runs`` : Directory name to perform all runs in.  Simulation paths are appended to this directory.
+- ``--results`` : Directory to copy out lightweight results data.  If set to '', results will not be stored outside of the runs directory.
+- ``--local_directory`` : Base path where runs and results directories will be created
+- ``--pseudo_dir`` : Path to directory containing pseudopotential files.
+- ``--basis_dir`` : Path to directory containing basis set files (useful if running Gaussian-basis based QMC workflows).'
+- ``--ericfmt`` : Path to the ericfmt file used with GAMESS (required by GAMESS).
+- ``--mcppath`` : Path to the mcpdata file used with GAMESS (optional for most workflows).
+- ``--vdw_table`` : Path to the vdw_table file used with Quantum ESPRESSO (required only if running Quantum ESPRESSO with van der Waals functionals).
+- ``--qprc`` : Path to the quantum_package.rc file used with Quantum Package.
 
 .. bibliography:: bibs/methods.bib
