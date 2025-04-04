@@ -4,7 +4,7 @@
 Development Guide
 =================
 
-The section gives guidance on how to extend the functionality of QMCPACK. Future examples will likely include topics such as the
+The chapter gives guidance on how to extend the functionality of QMCPACK. Future examples will likely include topics such as the
 addition of a Jastrow function or a new QMC method.
 
 .. admonition:: Definitions
@@ -16,7 +16,7 @@ addition of a Jastrow function or a new QMC method.
 QMCPACK coding standards
 ------------------------
 
-This chapter presents what we collectively have agreed are best practices for the code. This includes formatting style, naming
+This section presents what we collectively have agreed are best practices for the code. This includes formatting style, naming
 conventions, documentation conventions, and certain prescriptions for C++ language use. At the moment only the formatting can be
 enforced in an objective fashion.
 
@@ -41,7 +41,7 @@ would take a reviewer no more than an hour. In this way we can maintain a good c
 .. _current workflow conventions: https://github.com/QMCPACK/qmcpack/wiki/Development-workflow
 
 Files
------
+^^^^^
 
 Each file should start with the header.
 
@@ -97,7 +97,7 @@ We are now using a new header file inclusion style following the modern CMake tr
 still use the legacy style. Newly written code and refactored code should be transitioned to the new style.
 
 New style for modern CMake
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+""""""""""""""""""""""""""
 
 In QMCPACK, include paths are handled by modern CMake target dependency. Every top level folder is at least one target. For
 example, ``src/Particle/CMakeLists.txt`` defines `qmcparticle` target. It propagates include path ``qmcpack/src/Particle`` to
@@ -122,7 +122,7 @@ the following additional CMake setting
   TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcparticle)
 
 Legacy style
-^^^^^^^^^^^^
+""""""""""""
 
 Header files should be included with the full path based on the ``src`` directory. For example, the file
 ``qmcpack/src/QMCWaveFunctions/SPOSet.h`` should be included as
@@ -134,7 +134,7 @@ Header files should be included with the full path based on the ``src`` director
 Even if the included file is located in the same directory as the including file, this rule should be obeyed.
 
 Ordering
-^^^^^^^^
+""""""""
 
 For readability, we suggest using the following standard order of includes:
 
@@ -151,7 +151,7 @@ For readability, we suggest using the following standard order of includes:
 In each section the included files should be sorted in alphabetical order.
 
 Naming
-------
+^^^^^^
 
 The balance between description and ease of implementation should be balanced such that the code remains self-documenting within a
 single terminal window.  If an extremely short variable name is used, its scope must be shorter than :math:`\sim 40` lines. An
@@ -225,7 +225,7 @@ Test code files should be named as follows:
 where the test case covers the ``updateRow`` and  ``[wavefunction][fermion]`` indicates the test belongs to the fermion wavefunction functionality.
 
 Comments
---------
+^^^^^^^^
 
 Comment style
 ~~~~~~~~~~~~~
@@ -256,7 +256,7 @@ Documentation
 Doxygen will be used for source documentation. Doxygen commands should be used when appropriate guidance on this has been decided.
 
 File docs
-^^^^^^^^^
+"""""""""
 
 Do not put the file name after the ``\file`` Doxygen command. Doxygen will fill it in for the file the tag appears in.
 
@@ -267,14 +267,14 @@ Do not put the file name after the ``\file`` Doxygen command. Doxygen will fill 
    */
 
 Class docs
-^^^^^^^^^^
+""""""""""
 
 Every class should have a short description (in the header of the file) of what it is and what is does. Comments for public class
 member functions follow the same rules as general function comments. Comments for private members are allowed but are not
 mandatory.
 
 Function docs
-^^^^^^^^^^^^^
+"""""""""""""
 
 For function parameters whose type is non-const reference or pointer to non-const memory, it should be specified if they are input
 (In:), output (Out:) or input-output parameters (InOut:).
@@ -296,7 +296,7 @@ Example:
                      Type& bar);
 
 Variable documentation
-^^^^^^^^^^^^^^^^^^^^^^
+""""""""""""""""""""""
 
 Name should be self-descriptive.  If you need documentation consider renaming first.
 
@@ -306,7 +306,7 @@ Golden rule of comments
 If you modify a piece of code, also adapt the comments that belong to it if necessary.
 
 Formatting and "style"
-----------------------
+^^^^^^^^^^^^^^^^^^^^^^
 
 Use the provided clang-format style in ``src/.clang-format`` to format ``.h``, ``.hpp``, ``.cu``, and ``.cpp`` files. Many of the following rules will be applied to the code by clang-format, which should allow you to ignore most of them if you always run it on your modified code.
 
@@ -565,7 +565,7 @@ Example:
   };
 
 Constructor initializer lists
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+"""""""""""""""""""""""""""""
 
 Examples:
 
@@ -654,7 +654,7 @@ contain the state of a logical object, and might allow access to object data thr
 while preserving maximally ability to change internal implementation of the class.
 
 Do not...
-^^^^^^^^^
+"""""""""
 
 - use ``struct`` as a way to avoid controlling access to the class. Only when the instantiated objects are public data structure is ``struct`` appropriate.
 
@@ -753,7 +753,7 @@ memory leaks if pointers are not managed properly. Since C++11, smart pointers w
 it demands developers to think about the ownership and lifetime of declared pointer objects.
 
 std::unique_ptr
-^^^^^^^^^^^^^^^
+"""""""""""""""
 
 A unique pointer is the unique owner of a piece of allocated memory. Pointers in per-walker data structure with distinct contents
 should be unique pointers. For example, every walker has a trial wavefunction object which contains an SPO object pointer. Because
@@ -764,7 +764,7 @@ In QMCPACK, most raw pointers can be directly replaced with ``std::unique_ptr``.
 Corresponding use of ``new`` operator can be replaced with ``std:make_unique``.
 
 std::shared_ptr
-^^^^^^^^^^^^^^^
+"""""""""""""""
 
 A shared pointer is the shared owner of a piece of allocated memory. Moving a pointer ownership from one place to another should
 not use shared pointers but C++ move semantics. Shared contents between walkers may be candidates for shared pointers. For example,
