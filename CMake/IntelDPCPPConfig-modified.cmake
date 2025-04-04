@@ -207,7 +207,7 @@ if(SYCL_COMPILER)
   # Find Include path from binary
   find_path(SYCL_INCLUDE_DIR
     NAMES
-      CL/sycl.hpp
+      sycl.hpp
     HINTS
       ${SYCL_PACKAGE_DIR}/include/sycl
     NO_DEFAULT_PATH
