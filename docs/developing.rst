@@ -28,11 +28,11 @@ whenever possible. Work on the code with continuous improvement in mind rather t
 The `current workflow conventions`_ for the project are described in the wiki on the GitHub repository. It will save you and all
 the maintainers considerable time if you read these and ask questions up front.
 
-A PR should follow these standards before inclusion in the mainline. You can be sure of properly following the formatting
+A pull request (PR) should follow these standards before inclusion in the mainline. You can be sure of properly following the formatting
 conventions if you use clang-format.  The mechanics of clang-format setup and use can be found at
 https://github.com/QMCPACK/qmcpack/wiki/Source-formatting.
 
-The clang-format file found at ``qmcpack/src/.clang-format`` should be run over all code touched in a PR before a pull request is
+The clang-format file found at ``qmcpack/src/.clang-format`` should be run over all code touched in a PR before it is
 prepared. We also encourage developers to run clang-tidy with the ``qmcpack/src/.clang-tidy`` configuration over all new code.
 
 As much as possible, try to break up refactoring, reformatting, feature, and bugs into separate, small PRs. Aim for something that
