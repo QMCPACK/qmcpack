@@ -10,6 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "catch.hpp"
+#include "OhmmsPETE/TinyVector.h"
 #include "checkVector.hpp"
 #include <iostream>
 #include <string>
