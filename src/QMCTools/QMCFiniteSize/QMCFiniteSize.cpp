@@ -144,11 +144,11 @@ void QMCFiniteSize::initBreakup()
   app_log() << "=========================================================\n";
   app_log() << " Initializing Long Range Breakup (Esler) \n";
   app_log() << "=========================================================\n";
-  P      = ptclPool.getParticleSet("e");
-  AA     = LRCoulombSingleton::getHandler(*P);
-  myRcut = AA->get_rc();
+  P           = ptclPool.getParticleSet("e");
+  AA          = LRCoulombSingleton::getHandler(*P);
+  myRcut      = AA->get_rc();
   auto myGrid = LinearGrid<RealType>();
-  int ng = P->getLattice().num_ewald_grid_points;
+  int ng      = P->getLattice().num_ewald_grid_points;
   myGrid.set(0, myRcut, ng);
   if (rVs == nullptr)
   {
@@ -362,9 +362,9 @@ void QMCFiniteSize::initialize()
   rs    = std::pow(3.0 / (4 * M_PI) * Vol / RealType(Ne), 1.0 / 3.0);
   rho   = RealType(Ne) / Vol;
   Klist = P->getSimulationCell().getKLists();
-  kpts  = Klist.kpts; //These are in reduced coordinates.
-                      //Easier to spline, but will have to convert
-                      //for real space integration.
+  kpts  = Klist.getKpts(); //These are in reduced coordinates.
+                           //Easier to spline, but will have to convert
+                           //for real space integration.
 
   if (!skparser->has_grid())
     skparser->set_grid(kpts);
@@ -375,14 +375,14 @@ void QMCFiniteSize::initialize()
 
 void QMCFiniteSize::printSkRawSphAvg(const std::vector<RealType>& sk)
 {
-  std::vector<RealType> vsk_1d(Klist.kshell.size());
+  std::vector<RealType> vsk_1d(Klist.getKShell().size());
 
   // Average within each shell
-  for (int ks = 0; ks < Klist.kshell.size() - 1; ks++)
+  for (int ks = 0; ks < Klist.getKShell().size() - 1; ks++)
   {
     RealType u = 0;
     RealType n = 0;
-    for (int ki = Klist.kshell[ks]; ki < Klist.kshell[ks + 1]; ki++)
+    for (int ki = Klist.getKShell()[ks]; ki < Klist.getKShell()[ks + 1]; ki++)
     {
       u += sk[ki];
       n++;
@@ -401,13 +401,14 @@ void QMCFiniteSize::printSkRawSphAvg(const std::vector<RealType>& sk)
   app_log() << "\nSpherically averaged raw S(k):\n";
   app_log() << std::setw(12) << "k" << std::setw(12) << "S(k)" << std::setw(12) << "vk"
             << "\n";
-  for (int ks = 0; ks < Klist.kshell.size() - 1; ks++)
+  for (int ks = 0; ks < Klist.getKShell().size() - 1; ks++)
   {
-    app_log() << std::setw(12) << std::setprecision(8) << std::sqrt(Klist.ksq[Klist.kshell[ks]]) << std::setw(12)
-              << std::setprecision(8) << vsk_1d[ks] << std::setw(12) << std::setprecision(8) << AA->Fk_symm[ks] << '\n';
+    app_log() << std::setw(12) << std::setprecision(8) << std::sqrt(Klist.getKSQWorking()[Klist.getKShell()[ks]])
+              << std::setw(12) << std::setprecision(8) << vsk_1d[ks] << std::setw(12) << std::setprecision(8)
+              << AA->Fk_symm[ks] << '\n';
   }
 
-  if (vsk_1d[Klist.kshell.size() - 2] < 0.99)
+  if (vsk_1d[Klist.getKShell().size() - 2] < 0.99)
   {
     app_log() << "####################################################################\n";
     app_log() << "WARNING: The S(k) in the largest kshell is less than 0.99\n";
@@ -460,7 +461,7 @@ void QMCFiniteSize::printSkSplineSphAvg(UBspline_3d_d* spline)
 QMCFiniteSize::RealType QMCFiniteSize::calcPotentialDiscrete(std::vector<RealType> sk)
 {
   //This is the \frac{1}{Omega} \sum_{\mathbf{k}} \frac{v_k}{2} S(\mathbf{k}) term.
-  return 0.5 * AA->evaluate_w_sk(Klist.kshell, sk.data());
+  return 0.5 * AA->evaluate_w_sk(Klist.getKShell(), sk.data());
 }
 
 QMCFiniteSize::RealType QMCFiniteSize::calcPotentialInt(std::vector<RealType> sk)
@@ -468,7 +469,7 @@ QMCFiniteSize::RealType QMCFiniteSize::calcPotentialInt(std::vector<RealType> sk
   auto spline = std::unique_ptr<UBspline_3d_d, void (*)(void*)>{getSkSpline(sk), destroy_Bspline};
 
   RealType kmax   = AA->get_kc();
-  IndexType ngrid = 2 * Klist.kshell.size() - 1; //make a lager kmesh
+  IndexType ngrid = 2 * Klist.getKShell().size() - 1; //make a lager kmesh
 
   std::vector<RealType> unigrid1d, k2vksk;
   RealType dk = kmax / ngrid;

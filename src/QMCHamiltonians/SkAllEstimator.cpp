@@ -31,9 +31,9 @@ SkAllEstimator::SkAllEstimator(ParticleSet& source, ParticleSet& target)
   NumIonSpecies = ions->getSpeciesSet().getTotalNum();
   update_mode_.set(COLLECTABLE, 1);
 
-  NumK      = source.getSimulationCell().getKLists().numk;
+  NumK      = source.getSimulationCell().getKLists().getNumK();
   OneOverN  = 1.0 / static_cast<RealType>(source.getTotalNum());
-  Kshell    = source.getSimulationCell().getKLists().kshell;
+  Kshell    = source.getSimulationCell().getKLists().getKShell();
   MaxKshell = Kshell.size() - 1;
 
   RhokTot_r.resize(NumK);
@@ -46,7 +46,7 @@ SkAllEstimator::SkAllEstimator(ParticleSet& source, ParticleSet& target)
   OneOverDnk.resize(MaxKshell);
   for (int ks = 0; ks < MaxKshell; ks++)
   {
-    Kmag[ks]       = std::sqrt(source.getSimulationCell().getKLists().ksq[Kshell[ks]]);
+    Kmag[ks]       = std::sqrt(source.getSimulationCell().getKLists().getKSQWorking()[Kshell[ks]]);
     OneOverDnk[ks] = 1.0 / static_cast<RealType>(Kshell[ks + 1] - Kshell[ks]);
   }
   hdf5_out = false;
@@ -71,7 +71,7 @@ void SkAllEstimator::evaluateIonIon()
 
   for (int k = 0; k < NumK; k++)
   {
-    PosType kvec = ions->getSimulationCell().getKLists().kpts_cart[k];
+    PosType kvec = ions->getSimulationCell().getKLists().getKptsCartWorking()[k];
 
     filebuffer << kvec;
     for (int i = 0; i < NumIonSpecies; i++)
@@ -230,7 +230,7 @@ void SkAllEstimator::registerCollectables(std::vector<ObservableHelper>& h5desc,
   hdf_path hdf_name{name_};
   h5desc.emplace_back(hdf_name / "kpoints");
   auto& ohKPoints = h5desc.back();
-  ohKPoints.addProperty(const_cast<std::vector<PosType>&>(ions->getSimulationCell().getKLists().kpts_cart), "value",
+  ohKPoints.addProperty(const_cast<std::vector<PosType>&>(ions->getSimulationCell().getKLists().getKptsCartWorking()), "value",
                         file);
 
   // Add electron-electron S(k)

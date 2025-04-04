@@ -109,7 +109,6 @@ TEST_CASE("readLine", "[utilities]")
       {"12345678901234567890extra", {"1234567890123456789"}}, // assuming bufLen=20 below
   };
 
-
   for (auto& tc : tlist)
   {
     SECTION(string("Parsing string: ") + tc.input)
@@ -123,14 +122,62 @@ TEST_CASE("readLine", "[utilities]")
         REQUIRE(buf == tc.output[i]);
         if (i == tc.output.size() - 1)
         {
-          REQUIRE(out == NULL);
+          REQUIRE(out == nullptr);
         }
         else
         {
-          REQUIRE(out != NULL);
+          REQUIRE(out != nullptr);
         }
       }
     }
+  }
+
+  SECTION("empty input legacy side effect")
+  {
+    char buf[1];
+    buf[0] = '\n';
+    std::istringstream input;
+    char* out = readLine(buf, 1, input);
+    CHECK(out == nullptr);
+    CHECK(buf[0] == '\0');
+  }
+
+  SECTION("line continuation character corner cases")
+  {
+    {
+      char buf[1];
+      buf[0] = '\n';
+      std::istringstream input{"\\"};
+      char* out = readLine(buf, 1, input);
+      CHECK(out == nullptr);
+      CHECK(buf[0] == '\0');
+    }
+    {
+      char buf[2];
+      buf[0] = '\n';
+      std::istringstream input{"\\\n"};
+      char* out = readLine(buf, 2, input);
+      CHECK(out == buf);
+      CHECK(buf[0] == '\0');
+    }
+    {
+      char buf[2];
+      buf[0] = '\n';
+      std::istringstream input{"\\;"};
+      char* out = readLine(buf, 2, input);
+      CHECK(out == buf);
+      CHECK(buf[0] == '\\');
+      CHECK(buf[1] == '\0');
+    }
+  }
+  SECTION("semicolon corner case")
+  {
+    char buf[2];
+    buf[0] = '\n';
+    std::istringstream input{";"};
+    char* out = readLine(buf, 2, input);
+    CHECK(out == buf);
+    CHECK(buf[0] == '\0');
   }
 }
 

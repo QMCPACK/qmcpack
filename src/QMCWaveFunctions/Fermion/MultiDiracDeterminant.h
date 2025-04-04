@@ -21,6 +21,7 @@
 #define QMCPLUSPLUS_MULTIDIRACDETERMINANT_H
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/SPOSet.h"
+#include "QMCWaveFunctions/TWFFastDerivWrapper.h"
 #include "QMCWaveFunctions/Fermion/ci_configuration2.h"
 #include "QMCWaveFunctions/Fermion/SmallMatrixDetCalculator.h"
 #include "Message/Communicate.h"
@@ -215,6 +216,7 @@ public:
                        const RefVectorWithLeader<MultiDiracDeterminant>& wfc_list) const;
   void releaseResource(ResourceCollection& collection,
                        const RefVectorWithLeader<MultiDiracDeterminant>& wfc_list) const;
+  void registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const override;
 
   std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
 
@@ -314,6 +316,13 @@ public:
   inline int getNumDets() const { return ciConfigList->size(); }
   inline int getNumPtcls() const { return NumPtcls; }
   inline int getFirstIndex() const { return FirstIndex; }
+  inline int getNumOrbitals() const { return NumOrbitals; }
+  inline int getNdetPerExcLevel(int i) const { return (*ndets_per_excitation_level_)[i]; }
+  inline int getMaxExcLevel() const { return ndets_per_excitation_level_->size() - 1; }
+
+  const OffloadVector<RealType>& getDetSigns() const { return *DetSigns; }
+  const OffloadVector<int>& getDetData() const { return *detData; }
+
 
   const OffloadVector<ValueType>& getRatiosToRefDet() const { return ratios_to_ref_; }
   const OffloadVector<ValueType>& getNewRatiosToRefDet() const { return new_ratios_to_ref_; }
