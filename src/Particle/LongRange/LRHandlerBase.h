@@ -136,7 +136,7 @@ struct LRHandlerBase
     const Matrix<pRealType>& e2ikrA_i = A.getSK().eikr_i;
     const pRealType* rhokB_r          = B.getSK().rhok_r[specB];
     const pRealType* rhokB_i          = B.getSK().rhok_i[specB];
-    const std::vector<PosType>& kpts  = A.getSimulationCell().getKLists().kpts_cart;
+    const std::vector<PosType>& kpts  = A.getSimulationCell().getKLists().getKptsCartWorking();
     for (int ki = 0; ki < Fk.size(); ki++)
     {
       PosType k = kpts[ki];
@@ -224,23 +224,23 @@ struct DummyLRHandler : public LRHandlerBase
     mRealType norm = 4.0 * M_PI / ref.getLattice().Volume;
     mRealType kcsq = LR_kc * LR_kc;
     auto& KList(ref.getSimulationCell().getKLists());
-    int maxshell = KList.kshell.size() - 1;
-    const auto& kk(KList.ksq);
+    int maxshell = KList.getKShell().size() - 1;
+    const auto& kk(KList.getKSQWorking());
     int ksh = 0, ik = 0;
     while (ksh < maxshell)
     {
       if (kk[ik] > kcsq)
         break; //exit
-      ik = KList.kshell[++ksh];
+      ik = KList.getKShell()[++ksh];
     }
     MaxKshell = ksh;
     Fk_symm.resize(MaxKshell);
-    Fk.resize(KList.kpts_cart.size());
+    Fk.resize(KList.getKptsCartWorking().size());
     for (ksh = 0, ik = 0; ksh < MaxKshell; ksh++, ik++)
     {
-      mRealType v  = norm * myFunc(kk[KList.kshell[ksh]]); //rpa=u0/kk[ik];
+      mRealType v  = norm * myFunc(kk[KList.getKShell()[ksh]]); //rpa=u0/kk[ik];
       Fk_symm[ksh] = v;
-      for (; ik < KList.kshell[ksh + 1]; ik++)
+      for (; ik < KList.getKShell()[ksh + 1]; ik++)
         Fk[ik] = v;
     }
   }

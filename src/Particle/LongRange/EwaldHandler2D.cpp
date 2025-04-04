@@ -34,16 +34,18 @@ void EwaldHandler2D::fillFk(const KContainer& KList)
   const mRealType kalpha = 1.0 / (2.0*alpha);
   mRealType kmag, uk;
 
-  Fk.resize(KList.kpts_cart.size());
-  MaxKshell = KList.kshell.size() - 1;
+  Fk.resize(KList.getKptsCartWorking().size());
+  const auto& kshell = KList.getKShell();
+  MaxKshell = kshell.size() - 1;
   Fk_symm.resize(MaxKshell);
 
+  const auto& ksq = KList.getKSQWorking();
   for (int ks = 0, ki = 0; ks < Fk_symm.size(); ks++)
   {
-    kmag = std::sqrt(KList.ksq[ki]);
+    kmag = std::sqrt(ksq[ki]);
     uk = knorm * erfc(kalpha*kmag)/kmag;
     Fk_symm[ks] = uk;
-    while (ki < KList.kshell[ks + 1] && ki < Fk.size())
+    while (ki < kshell[ks + 1] && ki < Fk.size())
       Fk[ki++] = uk;
   }
 }
