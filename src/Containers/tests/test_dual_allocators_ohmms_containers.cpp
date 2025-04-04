@@ -13,8 +13,7 @@
 
 #include <algorithm>
 #include "config.h"
-#include "PinnedAllocator.h"
-#include "OMPTarget/OMPallocator.hpp"
+#include "OMPTarget/OffloadAlignedAllocators.hpp"
 #if defined(ENABLE_CUDA) || defined(ENABLE_SYCL)
 #include <DualAllocatorAliases.hpp>
 #endif
@@ -27,10 +26,6 @@
 
 namespace qmcplusplus
 {
-// This naming is pretty bad but consistent with the naming over much of the code
-// its defined locally all over the place.
-template<typename T>
-using OffloadPinnedAllocator = OMPallocator<T, PinnedAlignedAllocator<T>>;
 #if defined(ENABLE_CUDA) || defined(ENABLE_SYCL)
 template<typename T>
 using VendorDualPinnedAllocator = PinnedDualAllocator<T>;

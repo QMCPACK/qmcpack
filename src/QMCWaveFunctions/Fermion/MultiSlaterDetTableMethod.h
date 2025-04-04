@@ -19,7 +19,6 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/Fermion/MultiDiracDeterminant.h"
 #include "Utilities/TimerManager.h"
-#include "Platforms/PinnedAllocator.h"
 #include "OMPTarget/OffloadAlignedAllocators.hpp"
 #include "ResourceCollection.h"
 
