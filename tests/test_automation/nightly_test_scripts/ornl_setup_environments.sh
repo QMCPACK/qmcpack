@@ -16,7 +16,7 @@ case "$parallelmode" in
 	spack install
 	;;
     par48 )
-	echo --- spack install -j 48
+	echo --- spack install -j $(nproc)
 	spack install -j 48
 	;;
     8up )

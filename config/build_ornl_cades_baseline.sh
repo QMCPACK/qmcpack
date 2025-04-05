@@ -42,7 +42,7 @@ echo "building QMCPACK for cpu real for Baseline"
 mkdir -p build_baseline_cpu_real
 cd build_baseline_cpu_real
 cmake $CMAKE_FLAGS ..
-nice make -j 32
+nice make -j $(nproc)
 cd ..
 ln -sf ./build_baseline_cpu_real/bin/qmcpack ./qmcpack_baseline_cpu_real
 
@@ -53,7 +53,7 @@ echo "building QMCPACK for cpu complex for Baseline"
 mkdir -p build_baseline_cpu_complex
 cd build_baseline_cpu_complex
 cmake -DQMC_COMPLEX=1 $CMAKE_FLAGS ..
-nice make -j 32
+nice make -j $(nproc)
 cd ..
 ln -sf ./build_baseline_cpu_complex/bin/qmcpack_complex ./qmcpack_baseline_cpu_complex
 

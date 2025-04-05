@@ -81,9 +81,9 @@ cmake $CMAKE_FLAGS -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=CC -DCMAKE_SYSTEM_
 fi
 
 if [[ -v install_folder ]]; then
-  make -j16 install && chmod -R -w $install_folder/$folder
+  make -j $(nproc) install && chmod -R -w $install_folder/$folder
 else
-  make -j16
+  make -j $(nproc)
 fi
 
 cd ..

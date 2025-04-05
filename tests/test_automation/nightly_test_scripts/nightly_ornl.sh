@@ -113,7 +113,7 @@ esac
 
 case "$jobtype" in
     weekly )
-	export PARALLELCFG="-j 48"
+	export PARALLELCFG="-j $(nproc)"
 	export QMC_OPTIONS="-DQMC_PERFORMANCE_NIO_MAX_ATOMS=256;-DQMC_PERFORMANCE_C_GRAPHITE_MAX_ATOMS=64"
 	if [[ $sys == *"complex"* ]]; then
 	    export QMC_OPTIONS="${QMC_OPTIONS};-DQMC_PERFORMANCE_C_MOLECULE_MAX_ATOMS=64"
@@ -122,7 +122,7 @@ case "$jobtype" in
 	export LESSLIMITEDTESTS=""
 	;;
     nightly )
-	export PARALLELCFG="-j 48"
+	export PARALLELCFG="-j $(nproc)"
 	export QMC_OPTIONS="-DQMC_PERFORMANCE_NIO_MAX_ATOMS=16;-DQMC_PERFORMANCE_C_GRAPHITE_MAX_ATOMS=16"
 	if [[ $sys == *"complex"* ]]; then
 	    export QMC_OPTIONS="${QMC_OPTIONS};-DQMC_PERFORMANCE_C_MOLECULE_MAX_ATOMS=12"

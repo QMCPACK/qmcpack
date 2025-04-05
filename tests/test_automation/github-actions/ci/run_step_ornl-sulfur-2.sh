@@ -145,7 +145,7 @@ case "$1" in
     cd ${GITHUB_WORKSPACE}/../qmcpack-build-2
     if [ -f ./bin/qmcpack ]; then ldd ./bin/qmcpack; fi
     if [ -f ./bin/qmcpack_complex ]; then ldd ./bin/qmcpack_complex; fi
-    ctest --output-on-failure -E ppconvert -L deterministic -j 32
+    ctest --output-on-failure -E ppconvert -L deterministic -j $(nproc)
     ;;
     
 esac

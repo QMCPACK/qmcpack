@@ -79,7 +79,7 @@ case "$1" in
     source /opt/intel/oneapi/setvars.sh
     echo "Running deterministic tests"
     cd ${GITHUB_WORKSPACE}/../qmcpack-build-1
-    ctest --output-on-failure -L deterministic -j 32
+    ctest --output-on-failure -L deterministic -j $(nproc)
     ;;
     
 esac

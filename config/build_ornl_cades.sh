@@ -44,7 +44,7 @@ echo "building QMCPACK for cpu real for CADES SHPC Condo -- Using AVX512 for Sky
 mkdir -p build_cades_cpu_real_skylake
 cd build_cades_cpu_real_skylake
 cmake $CMAKE_FLAGS ..
-make -j 16
+make -j $(nproc)
 cd ..
 ln -sf ./build_cades_cpu_real_skylake/bin/qmcpack ./qmcpack_cades_cpu_real_skylake
 
@@ -55,7 +55,7 @@ echo "building QMCPACK for cpu complex for CADES SHPC Condo -- Using AVX512 for 
 mkdir -p build_cades_cpu_comp_skylake
 cd build_cades_cpu_comp_skylake
 cmake -DQMC_COMPLEX=1 $CMAKE_FLAGS ..
-make -j 16
+make -j $(nproc)
 cd ..
 ln -sf ./build_cades_cpu_comp_skylake/bin/qmcpack_complex ./qmcpack_cades_cpu_comp_skylake
 
@@ -69,7 +69,7 @@ echo "building QMCPACK for cpu real for CADES SHPC Condo"
 mkdir -p build_cades_cpu_real
 cd build_cades_cpu_real
 cmake $CMAKE_FLAGS ..
-make -j 16
+make -j $(nproc)
 cd ..
 ln -sf ./build_cades_cpu_real/bin/qmcpack ./qmcpack_cades_cpu_real
 
@@ -80,6 +80,6 @@ echo "building QMCPACK for cpu complex for CADES SHPC Condo"
 mkdir -p build_cades_cpu_comp
 cd build_cades_cpu_comp
 cmake -DQMC_COMPLEX=1 $CMAKE_FLAGS ..
-make -j 16
+make -j $(nproc)
 cd ..
 ln -sf ./build_cades_cpu_comp/bin/qmcpack_complex ./qmcpack_cades_cpu_comp

@@ -362,7 +362,7 @@ case "$1" in
 
     # Add ctest concurrent parallel jobs 
     # 4 for Linux and macOS GitHub Actions free runners
-    ctest --output-on-failure $TEST_LABEL -j 4
+    ctest --output-on-failure $TEST_LABEL -j $(nproc)
     ;;
   
   # Generate coverage reports

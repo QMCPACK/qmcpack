@@ -40,7 +40,7 @@ echo "building QMCPACK for cpu real for Kestrel"
 mkdir -p build_cpu_real
 cd build_cpu_real
 cmake $CMAKE_FLAGS ..
-make -j 32
+make -j $(nproc)
 cd ..
 ln -sf ./build_cpu_real/bin/qmcpack ./qmcpack_cpu_real
 
@@ -51,7 +51,7 @@ echo "building QMCPACK for cpu complex for Kestrel"
 mkdir -p build_cpu_complex
 cd build_cpu_complex
 cmake -DQMC_COMPLEX=1 $CMAKE_FLAGS ..
-make -j 32
+make -j $(nproc)
 cd ..
 ln -sf ./build_cpu_complex/bin/qmcpack_complex ./qmcpack_cpu_complex
 

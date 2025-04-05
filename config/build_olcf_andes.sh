@@ -30,7 +30,7 @@ do
           -DBUILD_LMYENGINE_INTERFACE=0 \
           ${builds[$build]} \
           ..
-    make -j 20
+    make -j $(nproc)
     if [ $? -eq 0 ]; then
       build_dir=$(pwd)
       if [ -e ${build_dir}/bin/qmcpack_complex ]; then

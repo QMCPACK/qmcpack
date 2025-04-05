@@ -82,9 +82,9 @@ cmake $CMAKE_FLAGS -DCMAKE_CXX_FLAGS="$CMAKE_CXX_FLAGS" \
 fi
 
 if [[ -v install_folder ]]; then
-  make -j16 install && chmod -R -w $install_folder/$folder
+  make -j $(nproc) install && chmod -R -w $install_folder/$folder
 else
-  make -j16
+  make -j $(nproc)
 fi
 
 cd ..

@@ -81,9 +81,9 @@ cmake $CMAKE_FLAGS -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx $source_
 fi
 
 if [[ -v install_folder ]]; then
-  make -j16 install && chmod -R -w $install_folder/$folder
+  make -j $(nproc) install && chmod -R -w $install_folder/$folder
 else
-  make -j16
+  make -j $(nproc)
 fi
 
 cd ..
