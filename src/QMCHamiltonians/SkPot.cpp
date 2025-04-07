@@ -22,9 +22,9 @@ SkPot::SkPot(ParticleSet& source)
 {
   sourcePtcl = &source;
   NumSpecies = source.getSpeciesSet().getTotalNum();
-  NumK       = source.getSimulationCell().getKLists().numk;
+  NumK       = source.getSimulationCell().getKLists().getNumK();
   OneOverN   = 1.0 / static_cast<RealType>(source.getTotalNum());
-  Kshell     = source.getSimulationCell().getKLists().kshell;
+  Kshell     = source.getSimulationCell().getKLists().getKShell();
   MaxKshell  = Kshell.size() - 1;
   RhokTot.resize(NumK);
   Fk.resize(NumK);
@@ -32,7 +32,7 @@ SkPot::SkPot(ParticleSet& source)
   OneOverDnk.resize(MaxKshell);
   for (int ks = 0; ks < MaxKshell; ks++)
   {
-    Kmag[ks]       = std::sqrt(source.getSimulationCell().getKLists().ksq[Kshell[ks]]);
+    Kmag[ks]       = std::sqrt(source.getSimulationCell().getKLists().getKSQWorking()[Kshell[ks]]);
     OneOverDnk[ks] = 1.0 / static_cast<RealType>(Kshell[ks + 1] - Kshell[ks]);
   }
 }

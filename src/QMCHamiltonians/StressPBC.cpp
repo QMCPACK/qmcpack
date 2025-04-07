@@ -102,7 +102,7 @@ SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evaluateLR_AB(ParticleSet& 
     esum = 0.0;
     for (int j = 0; j < NumSpeciesB; j++)
       esum += Qspec[j] *
-          AA->evaluateStress(P.getSimulationCell().getKLists().kshell, RhoKA.rhok_r[i], RhoKA.rhok_i[i],
+          AA->evaluateStress(P.getSimulationCell().getKLists().getKShell(), RhoKA.rhok_r[i], RhoKA.rhok_i[i],
                              RhoKB.rhok_r[j], RhoKB.rhok_i[j]);
     res += Zspec[i] * esum;
   }
@@ -173,7 +173,7 @@ SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evaluateLR_AA(ParticleSet& 
     for (int spec2 = spec1; spec2 < NumSpecies; spec2++)
     {
       SymTensor<RealType, OHMMS_DIM> temp =
-          AA->evaluateStress(P.getSimulationCell().getKLists().kshell, PtclRhoK.rhok_r[spec1], PtclRhoK.rhok_i[spec1],
+          AA->evaluateStress(P.getSimulationCell().getKLists().getKShell(), PtclRhoK.rhok_r[spec1], PtclRhoK.rhok_i[spec1],
                              PtclRhoK.rhok_r[spec2], PtclRhoK.rhok_i[spec2]);
       if (spec2 == spec1)
         temp *= 0.5;
