@@ -702,8 +702,7 @@ std::tuple<TWFFastDerivWrapper::ValueType, TWFFastDerivWrapper::ValueType, TWFFa
     ValueType tmp_dmu_O = 0.0;     // d_mu(OD/D)
     ValueType tmp_O     = 0.0;     // OD/D
     ValueType tmp_dmu   = 0.0;     // d_mu(log(D))
-    ValueType tmp_Odmu  = 0.0;     // (OD/D) * d_mu(log(D))
-
+  
     for (size_t i_group = 0; i_group < num_groups; i_group++)
     {
       size_t i_dd = C2node[i_group][i_sd];
@@ -711,7 +710,6 @@ std::tuple<TWFFastDerivWrapper::ValueType, TWFFastDerivWrapper::ValueType, TWFFa
       tmp_dmu_O += dvals_dmu_O[i_group][i_dd];
       tmp_O += dvals_O[i_group][i_dd];
       tmp_dmu += dvals_dmu[i_group][i_dd];
-      tmp_Odmu += dvals_dmu[i_group][i_dd] * dvals_O[i_group][i_dd];
       tmp_psi *= (*diracdet_ratios_to_ref[i_group])[i_dd];
     }
 
@@ -719,7 +717,6 @@ std::tuple<TWFFastDerivWrapper::ValueType, TWFFastDerivWrapper::ValueType, TWFFa
     total_dmu_O += tmp_dmu_O * tmp_psi;
     total_O += tmp_O * tmp_psi;
     total_dmu += tmp_dmu * tmp_psi;
-    // total_Odmu += tmp_Odmu * tmp_psi;
     total_Odmu += tmp_O * tmp_dmu * tmp_psi;
   }
 
