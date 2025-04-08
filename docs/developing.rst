@@ -827,12 +827,11 @@ Don't
 ~~~~~
 
 * Do not mix functional changes with non-functional ones. Mixing them dramatically increases the review challenge of non-functional
-  changes. If non-functional changes touching many files, make sure upstream them before the functional changes using orthogonal PRs
+  changes. If non-functional changes touch many files, make sure to upstream them before the functional changes using orthogonal PRs
   if possible or dependent PRs.
-* Do not mix bug fixes with feature development. If a bug got surfaced during feature development, make a fix directly to the
-  develop branch.
-* Do not delay potential early mergeable changes until the full completion of a feature. We are happy to merge code the has not been
-  fully polished and for the polishing to occur in subsequent PRs. It is not necessary and harder to adjust if they end up
+* Do not mix bug fixes with feature development. If a bug was surfaced during feature development, make a PR including the fix to the develop branch.
+* Do not delay potential early mergeable changes until the full completion of a feature. We are happy to merge code that has not been
+  fully polished and for the polishing to occur in subsequent PRs. It is not necessary and they are harder to adjust if they end up
   conflicting with the rest of the code, plus you will be able to get suggestions in a more time timely manner. 
 
 As much as possible, try to avoid the "Don't"s. Aim for something that would take a reviewer no more than an hour to read,
