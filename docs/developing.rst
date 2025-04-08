@@ -783,8 +783,8 @@ GitHub Pull Request guidance
 
 In the following we provide guidance on creating Pull Requests (PRs) on GitHub that will be rapidly and easily merged into the development
 branch. The guidance is similar to those of many other open source projects. Most importantly, to the extent possible, we encourage
-the creation of small PRs focused on individual topics instead of one of a few larger PRs. Large PRs
-(many hundreds of lines, mixtures of bug fixes, features, and refactoring) have our time proven significantly more challenging to
+the creation of small PRs focused on individual topics instead of one or a few larger PRs. Large PRs
+(many hundreds of lines, mixtures of bug fixes, features, and refactoring) have over time proven significantly more challenging to
 review, to update, and to keep current with other developmental activities. In contrast, small PRs that are focused on
 achieving a single well-defined task are straightforward to review and merge promptly. It will save you and the maintainers
 considerable time if you follow this principle, the guidelines below, and ask questions in advance! We aim to be flexible and
