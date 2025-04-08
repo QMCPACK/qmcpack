@@ -420,7 +420,9 @@ the path to the source directory.
 
 `Clang thread sanitizer library tsan <https://clang.llvm.org/docs/ThreadSanitizer.html>`_
 
-`Clang thread sanitizer library msan <https://clang.llvm.org/docs/MemorySanitizer.html>`_
+`Clang memory sanitizer library msan <https://clang.llvm.org/docs/MemorySanitizer.html>`_
+
+`Clang type sanitizer library typesan <https://clang.llvm.org/docs/TypeSanitizer.html>`_
 
 See :ref:`Sanitizer-Libraries` for more information.
 
