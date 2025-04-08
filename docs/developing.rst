@@ -4,7 +4,7 @@
 Development Guide
 =================
 
-The section gives guidance on how to extend the functionality of QMCPACK. Future examples will likely include topics such as the
+The chapter gives guidance on how to extend the functionality of QMCPACK. Future examples will likely include topics such as the
 addition of a Jastrow function or a new QMC method.
 
 .. admonition:: Definitions
@@ -16,7 +16,7 @@ addition of a Jastrow function or a new QMC method.
 QMCPACK coding standards
 ------------------------
 
-This chapter presents what we collectively have agreed are best practices for the code. This includes formatting style, naming
+This section presents what we collectively have agreed are best practices for the code. This includes formatting style, naming
 conventions, documentation conventions, and certain prescriptions for C++ language use. At the moment only the formatting can be
 enforced in an objective fashion.
 
@@ -26,7 +26,7 @@ live up to these ideas, new code, even in old files, should follow the new conve
 whenever possible. Work on the code with continuous improvement in mind rather than a commitment to stasis.
 
 Files
------
+~~~~~
 
 Each file should start with the header.
 
@@ -46,13 +46,13 @@ Each file should start with the header.
 If you make significant changes to an existing file, add yourself to the list of "developed by" authors.
 
 File organization
-~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^
 
 Header files should be placed in the same directory as their implementations. Unit tests should be written for all new
 functionality. These tests should be placed in a ``tests`` subdirectory below the implementations.
 
 File names
-~~~~~~~~~~
+^^^^^^^^^^
 
 Each class should be defined in a separate file with the same name as the class name. Use separate ``.cpp`` implementation files
 whenever possible to aid in incremental compilation.
@@ -62,7 +62,7 @@ The filenames of tests are composed by the filename of the object tested and the
 that is imitated.
 
 Header files
-~~~~~~~~~~~~
+^^^^^^^^^^^^
 
 All header files should be self-contained (i.e., not dependent on following any other header when it is included). Nor should they
 include files that are not necessary for their use (i.e., headers needed only by the implementation). Implementation files should
@@ -72,7 +72,7 @@ There are many header files that currently violate this. Each header must use ``
 The symbol name of the ``#define`` guards should be ``NAMESPACE(s)_CLASSNAME_H``.
 
 Includes
-~~~~~~~~
+^^^^^^^^
 
 Related header files should be included without any path. Header files from external projects and standard libraries should be
 includes using the ``<iostream>`` convention, while headers that are part of the QMCPACK project should be included using the
@@ -82,7 +82,7 @@ We are now using a new header file inclusion style following the modern CMake tr
 still use the legacy style. Newly written code and refactored code should be transitioned to the new style.
 
 New style for modern CMake
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+""""""""""""""""""""""""""
 
 In QMCPACK, include paths are handled by modern CMake target dependency. Every top level folder is at least one target. For
 example, ``src/Particle/CMakeLists.txt`` defines `qmcparticle` target. It propagates include path ``qmcpack/src/Particle`` to
@@ -107,7 +107,7 @@ the following additional CMake setting
   TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcparticle)
 
 Legacy style
-^^^^^^^^^^^^
+""""""""""""
 
 Header files should be included with the full path based on the ``src`` directory. For example, the file
 ``qmcpack/src/QMCWaveFunctions/SPOSet.h`` should be included as
@@ -119,7 +119,7 @@ Header files should be included with the full path based on the ``src`` director
 Even if the included file is located in the same directory as the including file, this rule should be obeyed.
 
 Ordering
-^^^^^^^^
+""""""""
 
 For readability, we suggest using the following standard order of includes:
 
@@ -136,7 +136,7 @@ For readability, we suggest using the following standard order of includes:
 In each section the included files should be sorted in alphabetical order.
 
 Naming
-------
+~~~~~~
 
 The balance between description and ease of implementation should be balanced such that the code remains self-documenting within a
 single terminal window.  If an extremely short variable name is used, its scope must be shorter than :math:`\sim 40` lines. An
@@ -144,12 +144,12 @@ exception is made for template parameters, which must be in all CAPS. Legacy cod
 style, read this section and do not imitate existing code that violates it.
 
 Namespace names
-~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^
 
 Namespace names should be one word, lowercase.
 
 Type and class names
-~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^
 
 Type and class names should start with a capital letter and have a capital letter for each new word. Underscores (``_``) are not
 allowed. It's redundant to end these names with ``Type`` or ``_t``.
@@ -160,28 +160,28 @@ allowed. It's redundant to end these names with ``Type`` or ``_t``.
    using RealType = double;
 
 Variable names
-~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^
 
 Variable names should not begin with a capital letter, which is reserved for type and class names. Underscores (``_``) should be
 used to separate words.
 
 Class data members
-~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^
 
 Class private/protected data members names should follow the convention of variable names with a trailing underscore (``_``). The use of public member functions is discourage, rethink the need for it in the first place. Instead ``get`` and ``set`` functions are the preferred access method.
 
 (Member) function names
-~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^
 
 Function names should start with a lowercase character and have a capital letter for each new word. The exception are the special cases for prefixed multiwalker (``mw_``) and flex (``flex_``) batched API functions. Coding convention should follow after those prefixes.
 
 Template Parameters
-~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^
 
 Template parameters names should be in all caps with (``_``) separating words.  It's redundant to end these names with ``_TYPE``,
 
 Lambda expressions
-~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^
 
 Named lambda expressions follow the naming convention for functions:
 
@@ -190,12 +190,12 @@ Named lambda expressions follow the naming convention for functions:
   auto myWhatever = [](int i) { return i + 4; };
 
 Macro names
-~~~~~~~~~~~
+^^^^^^^^^^^
 
 Macro names should be all uppercase and can include underscores (``_``). The underscore is not allowed as first or last character.
 
 Test case and test names
-~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 Test code files should be named as follows:
 
@@ -210,10 +210,10 @@ Test code files should be named as follows:
 where the test case covers the ``updateRow`` and  ``[wavefunction][fermion]`` indicates the test belongs to the fermion wavefunction functionality.
 
 Comments
---------
+~~~~~~~~
 
 Comment style
-~~~~~~~~~~~~~
+^^^^^^^^^^^^^
 
 Use the ``// Comment`` syntax for actual comments.
 
@@ -236,12 +236,12 @@ or
   int builder_index;
 
 Documentation
-~~~~~~~~~~~~~
+^^^^^^^^^^^^^
 
 Doxygen will be used for source documentation. Doxygen commands should be used when appropriate guidance on this has been decided.
 
 File docs
-^^^^^^^^^
+"""""""""
 
 Do not put the file name after the ``\file`` Doxygen command. Doxygen will fill it in for the file the tag appears in.
 
@@ -252,14 +252,14 @@ Do not put the file name after the ``\file`` Doxygen command. Doxygen will fill 
    */
 
 Class docs
-^^^^^^^^^^
+""""""""""
 
 Every class should have a short description (in the header of the file) of what it is and what is does. Comments for public class
 member functions follow the same rules as general function comments. Comments for private members are allowed but are not
 mandatory.
 
 Function docs
-^^^^^^^^^^^^^
+"""""""""""""
 
 For function parameters whose type is non-const reference or pointer to non-const memory, it should be specified if they are input
 (In:), output (Out:) or input-output parameters (InOut:).
@@ -281,17 +281,17 @@ Example:
                      Type& bar);
 
 Variable documentation
-^^^^^^^^^^^^^^^^^^^^^^
+""""""""""""""""""""""
 
 Name should be self-descriptive.  If you need documentation consider renaming first.
 
 Golden rule of comments
-~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^
 
 If you modify a piece of code, also adapt the comments that belong to it if necessary.
 
 Formatting and "style"
-----------------------
+~~~~~~~~~~~~~~~~~~~~~~
 
 Use the provided clang-format style in ``src/.clang-format`` to format ``.h``, ``.hpp``, ``.cu``, and ``.cpp`` files. Many of the following rules will be applied to the code by clang-format, which should allow you to ignore most of them if you always run it on your modified code.
 
@@ -300,45 +300,45 @@ or run clang-format manually on every file you modify.  However, if you see nume
 have modified, first commit the formatting changes in a separate PR.
 
 Indentation
-~~~~~~~~~~~
+^^^^^^^^^^^
 
 Indentation consists of two spaces. Do not use tabs in the code.
 
 Line length
-~~~~~~~~~~~
+^^^^^^^^^^^
 
 The length of each line of your code should be at most *120* characters.
 
 Horizontal spacing
-~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^
 
 No trailing white spaces should be added to any line. Use no space before a comma (``,``) and a semicolon (``;``), and add a space
 after them if they are not at the end of a line.
 
 Preprocessor directives
-~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^
 
 The preprocessor directives are not indented.
 The hash is the first character of the line.
 
 Binary operators
-~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^
 
 The assignment operators should always have spaces around them.
 
 Unary operators
-~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^
 
 Do not put any space between an unary operator and its argument.
 
 Types
-~~~~~
+^^^^^
 
 The ``using`` syntax is preferred to ``typedef`` for type aliases. If the actual type is not excessively long or complex, simply
 use it; renaming simple types makes code less understandable.
 
 Pointers and references
-~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^
 
 Pointer or reference operators should go with the type. But understand the compiler reads them from right to left.
 
@@ -351,7 +351,7 @@ Pointer or reference operators should go with the type. But understand the compi
   Type* var1, var2; // var1 is a pointer to Type but var2 is a Type.
 
 Templates
-~~~~~~~~~
+^^^^^^^^^
 
 The angle brackets of templates should not have any external or internal padding.
 
@@ -363,14 +363,14 @@ The angle brackets of templates should not have any external or internal padding
   Class1<Class2<type1>> object;
 
 Vertical spacing
-~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^
 
 Use empty lines when it helps to improve the readability of the code, but do not use too many. Do not use empty lines after a
 brace that opens a scope or before a brace that closes a scope. Each file should contain an empty line at the end of the file.
 Some editors add an empty line automatically, some do not.
 
 Variable declarations and definitions
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - Avoid declaring multiple variables in the same declaration, especially if they are not fundamental types:
 
@@ -407,7 +407,7 @@ Variable declarations and definitions
     constexpr unsigned long l(42);
 
 Function declarations and definitions
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The return type should be on the same line as the function name. Parameters should also be on the same line unless they do not fit
 on it, in which case one parameter per line aligned with the first parameter should be used.
@@ -432,7 +432,7 @@ Also include the parameter names in the declaration of a function, that is,
                   BigTemplatedSomething<double> c);
 
 Conditionals
-~~~~~~~~~~~~
+^^^^^^^^^^^^
 
 Examples:
 
@@ -457,7 +457,7 @@ Examples:
   }
 
 Switch statement
-~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^
 
 Switch statements should always have a default case.
 
@@ -483,7 +483,7 @@ Example:
   }
 
 Loops
-~~~~~
+^^^^^
 
 Examples:
 
@@ -516,7 +516,7 @@ Examples:
 .. _class-format:
 
 Class format
-~~~~~~~~~~~~
+^^^^^^^^^^^^
 
 ``public``, ``protected``, and ``private`` keywords are not indented.
 
@@ -550,7 +550,7 @@ Example:
   };
 
 Constructor initializer lists
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+"""""""""""""""""""""""""""""
 
 Examples:
 
@@ -585,7 +585,7 @@ Examples:
 
 
 Namespace formatting
-~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^
 
 The content of namespaces is not indented. A comment should indicate when a namespace is closed. (clang-format will add these if
 absent). If nested namespaces are used, a comment with the full namespace is required after opening a set of namespaces or an
@@ -639,7 +639,7 @@ contain the state of a logical object, and might allow access to object data thr
 while preserving maximally ability to change internal implementation of the class.
 
 Do not...
-^^^^^^^^^
+"""""""""
 
 - use ``struct`` as a way to avoid controlling access to the class. Only when the instantiated objects are public data structure is ``struct`` appropriate.
 
@@ -738,7 +738,7 @@ memory leaks if pointers are not managed properly. Since C++11, smart pointers w
 it demands developers to think about the ownership and lifetime of declared pointer objects.
 
 std::unique_ptr
-^^^^^^^^^^^^^^^
+"""""""""""""""
 
 A unique pointer is the unique owner of a piece of allocated memory. Pointers in per-walker data structure with distinct contents
 should be unique pointers. For example, every walker has a trial wavefunction object which contains an SPO object pointer. Because
@@ -749,7 +749,7 @@ In QMCPACK, most raw pointers can be directly replaced with ``std::unique_ptr``.
 Corresponding use of ``new`` operator can be replaced with ``std:make_unique``.
 
 std::shared_ptr
-^^^^^^^^^^^^^^^
+"""""""""""""""
 
 A shared pointer is the shared owner of a piece of allocated memory. Moving a pointer ownership from one place to another should
 not use shared pointers but C++ move semantics. Shared contents between walkers may be candidates for shared pointers. For example,
