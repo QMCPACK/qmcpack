@@ -17,7 +17,7 @@
 #include "Host/sysutil.h"
 #include "OMPTarget/OMPallocator.hpp"
 #ifdef ENABLE_CUDA
-#include "CUDA/CUDAallocator.hpp"
+#include "MemManageAlias.hpp"
 #include "CUDA/CUDAruntime.hpp"
 #endif
 #ifdef ENABLE_SYCL

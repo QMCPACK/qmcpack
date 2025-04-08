@@ -16,7 +16,7 @@
 #include <memory>
 #include "CPU/SIMD/aligned_allocator.hpp"
 #if defined(ENABLE_CUDA)
-#include "CUDA/CUDAallocator.hpp"
+#include "MemManageAlias.hpp"
 #elif defined(ENABLE_SYCL)
 #include "SYCL/SYCLallocator.hpp"
 #endif

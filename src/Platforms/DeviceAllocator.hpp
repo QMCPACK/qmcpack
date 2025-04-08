@@ -23,7 +23,7 @@
 #if (defined(ENABLE_CUDA) || defined(ENABLE_SYCL)) && !defined(ENABLE_OFFLOAD)
 
 #if defined(ENABLE_CUDA)
-#include "CUDA/CUDAallocator.hpp"
+#include "MemManageAlias.hpp"
 namespace qmcplusplus
 {
 template<typename T>

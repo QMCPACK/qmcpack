@@ -2,14 +2,14 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2019 QMCPACK developers.
+// Copyright (c) 2025 QMCPACK developers.
 //
 // File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-/** @file CUDAallocator.hpp
+/** @file MemManageCUDA.hpp
  * this file provides three C++ memory allocators using CUDA specific memory allocation functions.
  *
  * CUDAManagedAllocator allocates CUDA unified memory
@@ -24,6 +24,8 @@
 #include <stdexcept>
 #include <atomic>
 #include <limits>
+#include <Common/MemManage.hpp>
+#include "QueueCUDA.hpp"
 #include "CUDAruntime.hpp"
 #include "allocator_traits.hpp"
 #include "CUDAfill.hpp"
@@ -37,7 +39,11 @@ namespace compute
 template<>
 class MemManage<PlatformKind::CUDA>
 {
-  static copyAyncH2D(Queue<PlatformKind::CUDA>& queue)
+  static void copyH2DAync(Queue<PlatformKind::CUDA>& queue)
+  {
+  }
+
+  static void copyD2HAync(Queue<PlatformKind::CUDA>& queue)
   {
   }
 };

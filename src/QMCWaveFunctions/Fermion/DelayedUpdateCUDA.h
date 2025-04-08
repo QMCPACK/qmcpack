@@ -15,7 +15,7 @@
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "CUDA/CUDAruntime.hpp"
-#include "CUDA/CUDAallocator.hpp"
+#include "MemManageAlias.hpp"
 #include "CUDA/AccelBLAS_CUDA.hpp"
 #include "QMCWaveFunctions/detail/CUDA/delayed_update_helper.h"
 #include "PrefetchedRange.h"

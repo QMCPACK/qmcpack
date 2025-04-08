@@ -17,7 +17,7 @@
 #include "CUDA/CUDAruntime.hpp"
 #include "CUDA/cuBLAS.hpp"
 #include "CUDA/CUDAfill.hpp"
-#include "CUDA/CUDAallocator.hpp"
+#include "MemManageAlias.hpp"
 #include "Utilities/for_testing/MatrixAccessor.hpp"
 #include "Utilities/for_testing/checkMatrix.hpp"
 #include "detail/CUDA/cuBLAS_LU.hpp"
