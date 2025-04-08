@@ -9,7 +9,7 @@
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
-set(CUDA_RT_SRCS CUDAfill.cpp CUDAallocator.cpp CUDAruntime.cpp CUDADeviceManager.cpp)
+set(CUDA_RT_SRCS CUDAfill.cpp MemManageCUDA.cpp CUDAruntime.cpp CUDADeviceManager.cpp)
 set(CUDA_LA_SRCS cuBLAS_missing_functions.cu)
 
 add_library(platform_cuda_runtime ${CUDA_RT_SRCS})
