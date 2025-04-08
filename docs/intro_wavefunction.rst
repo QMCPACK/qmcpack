@@ -914,22 +914,21 @@ the associated CSF, and the excitation degree relative to the first determinant.
 
 .. _orbitalrotation:
 
-Orbital Rotation
-----------------
-Orbital rotation mixes orbitals between those occupied by electrons and those unoccupied by electrons.
-Because it changes the orbitals, a well-chosen optimized orbital rotation can improve the trial wavefunction for VMC,
-can change the nodal structure, and can potentially improve the fixed-node DMC energy.
+Orbital Rotation / Orbital Optimization
+---------------------------------------
+Orbital rotation mixes orbitals between those occupied by electrons and those unoccupied by electrons. Because it changes the
+orbitals, a well-chosen optimized orbital rotation can improve the trial wavefunction for VMC, can change the nodal structure, and
+can potentially improve the fixed-node DMC energy. This rotation or transformation procedure achieves a similar effect to what is
+commonly called orbital optimization, except that a rotation/transformation is found within a provided set of orbitals, rather than
+directly optimizing orbital coefficients.
 
-Combining orbitals is complicated by the need to maintain the normalization of the
-orbitals.
-A rotation matrix will preserve the normalization of the vectors in linear combinations.
-However, the entries in a rotation matrix are not independent.
-A rotation matrix can alternatively be expressed as the matrix exponential of a skew-symmetric matrix: :math:`R = \exp(\kappa)`.
-The entries in that skew-symmetric matrix are independent and can form an independent set of optimizable parameters.
+Combining or mixing orbitals is complicated by the need to maintain their normalization and orthogonality. A rotation matrix will
+preserve the normalization of the vectors in linear combinations. Because the entries in a rotation matrix are not independent, the
+rotations are instead equivalently expressed as the matrix exponential of a skew-symmetric matrix: :math:`R = \exp(\kappa)`. The
+entries in that skew-symmetric matrix are independent and can form an independent set of optimizable parameters.
 
-
-Optimizable orbitals are given in the input file by enclosing an SPO
-in a `rotated_sposet` element.  The `determinant` element `id` attribute should reference the name of the rotated sposet.
+Optimizable orbitals are given in the input file by enclosing an SPO in a `rotated_sposet` element.  The `determinant` element `id`
+attribute should reference the name of the rotated sposet.
 
 The `rotated_sposet` element requires use of the updated `sposet_collection` style.
 
@@ -950,8 +949,6 @@ Attribute:
 | Name            | Datatype | Values         | Default | Description                        |
 +=================+==========+================+=========+====================================+
 | ``name``        | Text     |                |         | Name of rotated SPOSet             |
-+-----------------+----------+----------------+---------+------------------------------------+
-| ``method``      | Text     | global/history | global  | Rotation matrix composition method |
 +-----------------+----------+----------------+---------+------------------------------------+
 
 .. code-block::
@@ -989,14 +986,7 @@ These parameters are a subset of the full number of parameters in the kappa matr
 When rotations are combined, the entries corresponding to zero parameter derivatives can
 take on a non-zero value (i.e. the kappa matrix gets 'filled-in').
 
-There are two ways to handle this.
-One way is to store a list of applied rotations.
-This method applies a new rotation to the coefficient matrix, and updates the coefficient matrix at each optimization step.
-This is the "history" method.
-
-.. math:: C' = \exp(\kappa_n) \dots \exp(\kappa_1) \exp(\kappa_0) C
-
-The other way is to track the full set of kappa values separately.
+QMCPACK handles this problem by tracking the full set of kappa values separately.
 After the matrix multiplication to compose the rotations, the matrix log recovers the new kappa matrix entries.
 This is the "global" method.
 This method keeps a separate copy of the coefficient matrix and updates it using the global rotation matrix at each optimization step.

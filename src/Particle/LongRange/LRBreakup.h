@@ -334,23 +334,24 @@ int LRBreakup<BreakupBasis>::SetupKVecs(mRealType kc, mRealType kcont, mRealType
 {
   //Add low |k| ( < kcont) k-points with exact degeneracy
   KContainer kexact;
-  kexact.updateKLists(Basis.get_Lattice(), kcont, Basis.get_Lattice().ndim);
+  const auto& basis_lattice = Basis.get_Lattice();
+  kexact.updateKLists(basis_lattice, kcont, basis_lattice.ndim);
   bool findK    = true;
   mRealType kc2 = kc * kc;
   //use at least one shell
   size_t ks = 0;
-  kc2       = std::max(kc2, static_cast<mRealType>(kexact.ksq[kexact.kshell[ks]]));
+  kc2       = std::max(kc2, static_cast<mRealType>(kexact.getKSQWorking()[kexact.getKShell()[ks]]));
   while (findK)
   {
-    if (kexact.ksq[kexact.kshell[ks]] > kc2)
+    if (kexact.getKSQWorking()[kexact.getKShell()[ks]] > kc2)
       findK = false;
     else
       ks++;
   }
   size_t maxkshell = ks;
-  size_t numk      = kexact.numk - kexact.kshell[ks];
-  for (; ks < kexact.kshell.size() - 1; ks++)
-    AddKToList(std::sqrt(kexact.ksq[kexact.kshell[ks]]), kexact.kshell[ks + 1] - kexact.kshell[ks]);
+  size_t numk      = kexact.getNumK() - kexact.getKShell()[ks];
+  for (; ks < kexact.getKShell().size() - 1; ks++)
+    AddKToList(std::sqrt(kexact.getKSQWorking()[kexact.getKShell()[ks]]), kexact.getKShell()[ks + 1] - kexact.getKShell()[ks]);
     ////Add these vectors to the internal list
     //int numk=0;
     //mRealType modk2;

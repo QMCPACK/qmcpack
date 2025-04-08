@@ -71,7 +71,7 @@ echo --- Host is $ourhostname
 case "$ourhostname" in
     sulfur )
 	if [[ $jobtype == "nightly" ]]; then
-	    buildsys="gccnewmpi_mkl clangnewmpi gccnewnompi gccnewmpi gccoldmpi clangnewmpi_complex gccnewnompi_complex gccnewmpi_complex clangnewmpi_mixed gccnewnompi_mixed gccnewmpi_mixed clangnewmpi_mixed_complex gccnewnompi_mixed_complex gccnewmpi_mixed_complex \
+	    buildsys="gccnewnompi_debug_asan gccnewmpi_mkl clangnewmpi gccnewnompi gccnewmpi gccoldmpi clangnewmpi_complex gccnewnompi_complex gccnewmpi_complex clangnewmpi_mixed gccnewnompi_mixed gccnewmpi_mixed clangnewmpi_mixed_complex gccnewnompi_mixed_complex gccnewmpi_mixed_complex \
 		clangoffloadmpi_offloadcuda \
 		clangoffloadnompi_offloadcuda clangoffloadnompi_offloadcuda_debug \
 		clangoffloadnompi_offloadcuda_complex clangoffloadnompi_offloadcuda_complex_debug \
@@ -498,11 +498,14 @@ else
     ctestscriptarg=release
 fi
 
+if [[ $sys == *"asan"* ]]; then
+    export QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-Asan
+    export QMC_OPTIONS="${QMC_OPTIONS};-DENABLE_SANITIZER=asan"
+fi
 if [[ $sys == *"tsan"* ]]; then
     export QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-TSan
     export QMC_OPTIONS="${QMC_OPTIONS};-DENABLE_SANITIZER=tsan"
 fi
-
 if [[ $sys == *"typesan"* ]]; then
     export QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-TypeSan
     export QMC_OPTIONS="${QMC_OPTIONS};-DENABLE_SANITIZER=typesan"

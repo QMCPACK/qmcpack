@@ -17,8 +17,7 @@
 
 #include "Particle/DynamicCoordinates.h"
 #include "OhmmsSoA/VectorSoaContainer.h"
-#include "OMPTarget/OMPallocator.hpp"
-#include "Platforms/PinnedAllocator.h"
+#include "OMPTarget/OffloadAlignedAllocators.hpp"
 #include "ParticleSet.h"
 #include "ResourceCollection.h"
 
@@ -213,19 +212,19 @@ public:
 
 private:
   ///particle positions in SoA layout
-  VectorSoaContainer<RealType, QMCTraits::DIM, OMPallocator<RealType, PinnedAlignedAllocator<RealType>>> RSoA;
+  VectorSoaContainer<RealType, QMCTraits::DIM, OffloadPinnedAllocator<RealType>> RSoA;
 
   ///multi walker shared memory buffer
   struct MultiWalkerMem : public Resource
   {
     ///one particle new/old positions in SoA layout
-    VectorSoaContainer<RealType, QMCTraits::DIM, OMPallocator<RealType, PinnedAlignedAllocator<RealType>>> mw_new_pos;
+    VectorSoaContainer<RealType, QMCTraits::DIM, OffloadPinnedAllocator<RealType>> mw_new_pos;
 
     /// accept list
-    Vector<int, OMPallocator<int, PinnedAlignedAllocator<int>>> mw_accept_indices;
+    Vector<int, OffloadPinnedAllocator<int>> mw_accept_indices;
 
     /// RSoA device ptr list
-    Vector<RealType*, OMPallocator<RealType*, PinnedAlignedAllocator<RealType*>>> mw_rsoa_ptrs;
+    Vector<RealType*, OffloadPinnedAllocator<RealType*>> mw_rsoa_ptrs;
 
     MultiWalkerMem() : Resource("MultiWalkerMem") {}
 
