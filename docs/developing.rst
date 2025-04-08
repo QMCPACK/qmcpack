@@ -762,7 +762,7 @@ Log and error output
 ~~~~~~~~~~~~~~~~~~~~
 
 ``app_log``, ``app_warning``, ``app_err`` and ``app_debug`` print out messages only on rank 0 to avoid repetitive messages from
-every MPI rank. For this reason, they are only suitable for outputing messages identical to all MPI ranks. ``app_debug`` prints only
+every MPI rank. For this reason, they are only suitable for printing messages identical to all MPI ranks. ``app_debug`` prints only
 when ``--verbosity=debug`` command line option is used. Messages that come from only one or a few MPI ranks should use ``std::cout``
 and ``std::cerr``.
 
@@ -775,7 +775,7 @@ uniform error, improper use may cause QMCPACK hanging.
 
 In addition, avoid directly calling C function ``abort()``, ``exit()`` and ``MPI_Abort()`` for stopping the code.
 
-Github pull request guidance
+GitHub pull request guidance
 ----------------------------
 
 The `current workflow conventions`_ for the project are described in the wiki on the GitHub repository. It will save you and all
@@ -788,17 +788,17 @@ https://github.com/QMCPACK/qmcpack/wiki/Source-formatting.
 The clang-format file found at ``qmcpack/src/.clang-format`` should be run over all code touched in a PR before it is
 prepared. We also encourage developers to run clang-tidy with the ``qmcpack/src/.clang-tidy`` configuration over all new code.
 
-Github Docs provides some suggestions for `helping others review your changes`_. Here we'd like to hightly a few practices
+GitHub Docs provides some suggestions for `helping others review your changes`_. Here we'd like to highlight a few practices:
 
 Do
 ~~
 
 * Make simple PRs. 'Simple' doesn't necessarily refer to the lines of code or the number of files being touched. It is more about restricting the PR in a focused topic.
-  Non-functional changes may affect many lines and files but they are conceptually simple and easy to review.
+  Non-functional changes may affect many lines and files, but they are conceptually simple and easy to review.
   This category includes refactoring changes like renaming files, classes, functions, variables or code formatting.
   Marking class member variables private and accessing them via accessor functions are also considered in this category.
 * Make orthogonal PRs. Dependent PRs slow down reviewing and merging. When large PRs can be broken into simple PRs, the amount of dependency usually can be reduced.
-* Use a series of depentdent PRs. If orthogonality is not achievable, a series of simple depentdent PRs are still better than a single large PR.
+* Use a series of dependent PRs. If orthogonality is not achievable, a series of simple dependent PRs are still better than a single large PR.
 * Review your own PR first. Clean up unnecessary change. Make sure proper documentations and unit tests are included.
 * When changes are getting too big on a feature branch, please consider upstreaming certain changes to the develop branch.
   Once they are accepted, merging the develop branch to the feature branch effectively reduces the size of changes in the feature branch.
@@ -809,9 +809,9 @@ Don't
 ~~~~~
 
 * Do not mix functional changes with non-functional ones. Mixing them dramatically increases the review challenge of non-functional changes.
-  If non-functional changes touching many files, make sure upstream them before the functional changes using orthogonal PRs if possible or depentdent PRs.
-* Do not mix bug fixes with feature developtment. If a bug got surfaced during feature developtment, make a fix directly to the develop branch.
-* Do not delay potential early mergible changes till the full completion of a feature. It is not necessary and harder to adjust if they end up causing issues with the rest of the code. 
+  If non-functional changes touching many files, make sure upstream them before the functional changes using orthogonal PRs if possible or dependent PRs.
+* Do not mix bug fixes with feature development. If a bug got surfaced during feature development, make a fix directly to the develop branch.
+* Do not delay potential early mergeable changes until the full completion of a feature. It is not necessary and harder to adjust if they end up causing issues with the rest of the code. 
 
 As much as possible, try to avoid "Don't". Aim for something that would take a reviewer no more than an hour. In this way we can maintain a good collective development velocity.
 
