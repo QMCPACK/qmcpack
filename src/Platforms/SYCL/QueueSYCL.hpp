@@ -12,7 +12,7 @@
 #ifndef QMCPLUSPLUS_QUEUE_SYCL_H
 #define QMCPLUSPLUS_QUEUE_SYCL_H
 
-#include "Queue.hpp"
+#include "Common/Queue.hpp"
 #include "SYCLruntime.hpp"
 
 namespace qmcplusplus

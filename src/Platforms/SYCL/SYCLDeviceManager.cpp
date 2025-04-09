@@ -17,7 +17,7 @@
 #include <string>
 #include <algorithm>
 #include "OutputManager.h"
-#include "determineDefaultDeviceNum.h"
+#include "Common/determineDefaultDeviceNum.h"
 
 namespace qmcplusplus
 {
