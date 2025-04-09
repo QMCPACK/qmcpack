@@ -23,23 +23,17 @@
 #if (defined(ENABLE_CUDA) || defined(ENABLE_SYCL)) && !defined(ENABLE_OFFLOAD)
 #include "MemManageAlias.hpp"
 
+namespace qmcplusplus
+{
+template<typename T>
 #if defined(ENABLE_CUDA)
-namespace qmcplusplus
-{
-template<typename T>
 using DeviceAllocator = CUDAAllocator<T>;
-}
-
 #elif defined(ENABLE_SYCL)
-namespace qmcplusplus
-{
-template<typename T>
 using DeviceAllocator = SYCLAllocator<T>;
-}
-
 #else
 #error unhandled platform
 #endif
+}
 
 #else // ENABLE_OFFLOAD or no CUDA or SYCL
 
