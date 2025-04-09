@@ -61,6 +61,10 @@ public:
 
   static void unregisterHost(void* ptr) { cudaErrorCheck(cudaHostUnregister(ptr), "cudaHostUnregister failed!"); }
 
+  static void memcpy(void* dst, const void* src, size_t size)
+  {
+    cudaErrorCheck(cudaMemcpy(dst, src, size, cudaMemcpyDefault), "cudaMemcpy failed");
+  }
   /** allocator for CUDA device memory
    * @tparam T data type
    *
@@ -135,22 +139,9 @@ public:
     static void destroy(U* p)
     {}
 
-    void copyToDevice(T* device_ptr, T* host_ptr, size_t n)
+    static void memcpy(T* dst, const T* src, size_t size)
     {
-      cudaErrorCheck(cudaMemcpy(device_ptr, host_ptr, sizeof(T) * n, cudaMemcpyHostToDevice),
-                     "cudaMemcpy failed in copyToDevice");
-    }
-
-    void copyFromDevice(T* host_ptr, T* device_ptr, size_t n)
-    {
-      cudaErrorCheck(cudaMemcpy(host_ptr, device_ptr, sizeof(T) * n, cudaMemcpyDeviceToHost),
-                     "cudaMemcpy failed in copyFromDevice");
-    }
-
-    void copyDeviceToDevice(T* to_ptr, size_t n, T* from_ptr)
-    {
-      cudaErrorCheck(cudaMemcpy(to_ptr, from_ptr, sizeof(T) * n, cudaMemcpyDeviceToDevice),
-                     "cudaMemcpy failed in copyDeviceToDevice");
+      MemManage<PlatformKind::CUDA>::memcpy(dst, src, sizeof(T) * size);
     }
   };
 

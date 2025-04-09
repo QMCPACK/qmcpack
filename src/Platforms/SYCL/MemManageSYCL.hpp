@@ -70,6 +70,11 @@ public:
     sycl::ext::oneapi::experimental::release_from_device_copy(ptr, getSYCLDefaultDeviceDefaultQueue());
   }
 
+  static void memcpy(void* dst, const void* src, size_t size)
+  {
+    getSYCLDefaultDeviceDefaultQueue().memcpy(dst, src, size).wait();
+  }
+
   /** allocator for SYCL device memory
    * @tparm T data type
    * @tparm ALIGN alignment in bytes
@@ -145,19 +150,9 @@ public:
     static void destroy(U* p)
     {}
 
-    void copyToDevice(T* device_ptr, T* host_ptr, size_t n)
+    void memcpy(T* dst, const T* src, size_t size)
     {
-      getSYCLDefaultDeviceDefaultQueue().memcpy(device_ptr, host_ptr, n * sizeof(T)).wait();
-    }
-
-    void copyFromDevice(T* host_ptr, T* device_ptr, size_t n)
-    {
-      getSYCLDefaultDeviceDefaultQueue().memcpy(host_ptr, device_ptr, n * sizeof(T)).wait();
-    }
-
-    void copyDeviceToDevice(T* to_ptr, size_t n, T* from_ptr)
-    {
-      getSYCLDefaultDeviceDefaultQueue().memcpy(to_ptr, from_ptr, n * sizeof(T)).wait();
+      MemManage<PlatformKind::SYCL>::memcpy(dst, src, sizeof(T) * size);
     }
   };
 
