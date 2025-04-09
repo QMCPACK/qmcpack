@@ -11,8 +11,6 @@
 
 
 #include "MemManageCUDA.hpp"
-#include <cstddef>
-#include <atomic>
 
 namespace qmcplusplus
 {

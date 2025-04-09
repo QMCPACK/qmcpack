@@ -15,7 +15,7 @@
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "CUDA/CUDAruntime.hpp"
-#include "MemManageAlias.hpp"
+#include "CUDA/MemManageCUDA.hpp"
 #include "CUDA/cusolver.hpp"
 #include "QMCWaveFunctions/detail/CUDA/delayed_update_helper.h"
 #include "CPU/math.hpp"

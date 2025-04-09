@@ -11,8 +11,6 @@
 
 
 #include "MemManageSYCL.hpp"
-#include <cstddef>
-#include <atomic>
 
 namespace qmcplusplus
 {

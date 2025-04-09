@@ -21,7 +21,7 @@
 #endif
 // This file assumes that QMC_CUDA2HIP is defined and that creates HIP versions of these functions (despite being labeled with "CUDA")
 #include "CUDA/CUDAruntime.hpp"
-#include "MemManageAlias.hpp"
+#include "CUDA/MemManageCUDA.hpp"
 #include "ROCm/rocsolver.hpp"
 #include "QMCWaveFunctions/detail/CUDA/delayed_update_helper.h"
 #include "CPU/math.hpp"
