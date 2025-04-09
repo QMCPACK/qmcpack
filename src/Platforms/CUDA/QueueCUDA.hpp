@@ -30,17 +30,10 @@ public:
   ~Queue() { cudaErrorCheck(cudaStreamDestroy(hstream_), "cudaStreamDestroy failed!"); }
 
   template<class T>
-  inline void memcpyH2D(T* dst, const T* src, size_t size)
+  inline void memcpy(T* dst, const T* src, size_t size)
   {
-    cudaErrorCheck(cudaMemcpyAsync(dst, src, sizeof(T) * size, cudaMemcpyHostToDevice, hstream_),
-                   "cudaMemcpyAsync Host-To-Device failed!");
-  }
-
-  template<class T>
-  inline void memcpyD2H(T* dst, const T* src, size_t size)
-  {
-    cudaErrorCheck(cudaMemcpyAsync(dst, src, sizeof(T) * size, cudaMemcpyDeviceToHost, hstream_),
-                   "cudaMemcpyAsync Device-To-Host failed!");
+    cudaErrorCheck(cudaMemcpyAsync(dst, src, sizeof(T) * size, cudaMemcpyDefault, hstream_),
+                   "cudaMemcpyAsync failed!");
   }
 
   // dualspace container
@@ -50,7 +43,7 @@ public:
     if (dataset.data() == dataset.device_data())
       return;
 
-    memcpyH2D(dataset.device_data() + offset, dataset.data() + offset, size ? size : dataset.size());
+    memcpy(dataset.device_data() + offset, dataset.data() + offset, size ? size : dataset.size());
   }
 
   template<class DSC>
@@ -59,7 +52,7 @@ public:
     if (dataset.data() == dataset.device_data())
       return;
 
-    memcpyH2D(dataset.data() + offset, dataset.device_data() + offset, size ? size : dataset.size());
+    memcpy(dataset.data() + offset, dataset.device_data() + offset, size ? size : dataset.size());
   }
 
   void sync() { cudaErrorCheck(cudaStreamSynchronize(hstream_), "cudaStreamSynchronize failed!"); }
