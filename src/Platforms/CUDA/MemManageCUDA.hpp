@@ -47,6 +47,27 @@ class MemManage<PlatformKind::CUDA>
 
   static void copyD2HAync(Queue<PlatformKind::CUDA>& queue) {}
 
+  static void mallocDevice(void **ptr, size_t size)
+  {
+    cudaErrorCheck(cudaMalloc(ptr, size), "cudaMalloc failed!");
+  }
+
+  static void freeDevice(void *ptr)
+  {
+    cudaErrorCheck(cudaFree(ptr), "cudaFree failed!");
+  }
+
+  static void registerHost(void *ptr, size_t size)
+  {
+    cudaErrorCheck(cudaHostRegister(ptr, size, cudaHostRegisterDefault),
+                     "cudaHostRegister failed!");
+  }
+
+  static void unregisterHost(void *ptr)
+  {
+    cudaErrorCheck(cudaHostUnregister(ptr), "cudaHostUnregister failed!");
+  }
+
   /** allocator for CUDA device memory
  * @tparam T data type
  *
@@ -82,40 +103,40 @@ class MemManage<PlatformKind::CUDA>
     T* allocate(std::size_t n)
     {
       void* pt;
-      cudaErrorCheck(cudaMalloc(&pt, n * sizeof(T)), "Allocation failed in DeviceAllocator!");
+      MemManage<PlatformKind::CUDA>::mallocDevice(&pt, n * sizeof(T));
       CUDAallocator_device_mem_allocated += n * sizeof(T);
       return static_cast<T*>(pt);
     }
     void deallocate(T* p, std::size_t n)
     {
-      cudaErrorCheck(cudaFree(p), "Deallocation failed in DeviceAllocator!");
+      MemManage<PlatformKind::CUDA>::freeDevice(p);
       CUDAallocator_device_mem_allocated -= n * sizeof(T);
     }
 
     /** Provide a construct for std::allocator_traits::contruct to call.
-   *  Don't do anything on construct, pointer p is on the device!
-   *
-   *  For example std::vector calls this to default initialize each element. You'll segfault
-   *  if std::allocator_traits::construct tries doing that at p.
-   *
-   *  The standard is a bit confusing on this point. Implementing this is an optional requirement
-   *  of Allocator from C++11 on, its not slated to be removed.
-   *
-   *  Its deprecated for the std::allocator in c++17 and will be removed in c++20.  But we are not implementing
-   *  std::allocator.
-   *
-   *  STL containers only use Allocators through allocator_traits and std::allocator_traits handles the case
-   *  where no construct method is present in the Allocator.
-   *  But std::allocator_traits will call the Allocators construct method if present.
-   */
+     *  Don't do anything on construct, pointer p is on the device!
+     *
+     *  For example std::vector calls this to default initialize each element. You'll segfault
+     *  if std::allocator_traits::construct tries doing that at p.
+     *
+     *  The standard is a bit confusing on this point. Implementing this is an optional requirement
+     *  of Allocator from C++11 on, its not slated to be removed.
+     *
+     *  Its deprecated for the std::allocator in c++17 and will be removed in c++20.  But we are not implementing
+     *  std::allocator.
+     *
+     *  STL containers only use Allocators through allocator_traits and std::allocator_traits handles the case
+     *  where no construct method is present in the Allocator.
+     *  But std::allocator_traits will call the Allocators construct method if present.
+     */
     template<class U, class... Args>
     static void construct(U* p, Args&&... args)
     {}
 
     /** Give std::allocator_traits something to call.
-   *  The default if this isn't present is to call p->~T() which
-   *  we can't do on device memory.
-   */
+     *  The default if this isn't present is to call p->~T() which
+     *  we can't do on device memory.
+     */
     template<class U>
     static void destroy(U* p)
     {}
@@ -140,11 +161,11 @@ class MemManage<PlatformKind::CUDA>
   };
 
   /** allocator locks memory pages allocated by ULPHA
- * @tparam T data type
- * @tparam ULPHA host memory allocator using unlocked page
- *
- * ULPHA cannot be CUDAHostAllocator
- */
+   * @tparam T data type
+   * @tparam ULPHA host memory allocator using unlocked page
+   *
+   * ULPHA cannot be CUDAHostAllocator
+   */
   template<typename T, class ULPHA = std::allocator<T>>
   struct PinnedAllocator : public ULPHA
   {
@@ -168,14 +189,13 @@ class MemManage<PlatformKind::CUDA>
     {
       static_assert(std::is_same<T, value_type>::value, "PinnedAllocator and ULPHA data types must agree!");
       value_type* pt = ULPHA::allocate(n);
-      cudaErrorCheck(cudaHostRegister(pt, n * sizeof(T), cudaHostRegisterDefault),
-                     "cudaHostRegister failed in PinnedAllocator!");
+      MemManage<PlatformKind::CUDA>::registerHost(pt, n * sizeof(T));
       return pt;
     }
 
     void deallocate(value_type* pt, std::size_t n)
     {
-      cudaErrorCheck(cudaHostUnregister(pt), "cudaHostUnregister failed in PinnedAllocator!");
+      MemManage<PlatformKind::CUDA>::unregisterHost(pt);
       ULPHA::deallocate(pt, n);
     }
   };
