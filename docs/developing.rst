@@ -25,21 +25,6 @@ of our effort to continue QMCPACK as a world-class, sustainable QMC code. Althou
 live up to these ideas, new code, even in old files, should follow the new conventions not the local conventions of the file
 whenever possible. Work on the code with continuous improvement in mind rather than a commitment to stasis.
 
-The `current workflow conventions`_ for the project are described in the wiki on the GitHub repository. It will save you and all
-the maintainers considerable time if you read these and ask questions up front.
-
-A PR should follow these standards before inclusion in the mainline. You can be sure of properly following the formatting
-conventions if you use clang-format.  The mechanics of clang-format setup and use can be found at
-https://github.com/QMCPACK/qmcpack/wiki/Source-formatting.
-
-The clang-format file found at ``qmcpack/src/.clang-format`` should be run over all code touched in a PR before a pull request is
-prepared. We also encourage developers to run clang-tidy with the ``qmcpack/src/.clang-tidy`` configuration over all new code.
-
-As much as possible, try to break up refactoring, reformatting, feature, and bugs into separate, small PRs. Aim for something that
-would take a reviewer no more than an hour. In this way we can maintain a good collective development velocity.
-
-.. _current workflow conventions: https://github.com/QMCPACK/qmcpack/wiki/Development-workflow
-
 Files
 ~~~~~
 
@@ -776,10 +761,13 @@ memory shared by an SPOSet and all of its clones.
 Log and error output
 ~~~~~~~~~~~~~~~~~~~~
 
-``app_log``, ``app_warning``, ``app_err`` and ``app_debug`` print out messages only on rank 0 to avoid repetitive messages from
-every MPI rank. For this reason, they are only suitable for outputing messages identical to all MPI ranks. ``app_debug`` prints only
-when ``--verbosity=debug`` command line option is used. Messages that come from only one or a few MPI ranks should use ``std::cout``
-and ``std::cerr``.
+Take care to consider the volume of output and avoid unneeded output from all MPI ranks. ``app_log``, ``app_warning``, ``app_err``
+and ``app_debug`` print out messages only on rank 0 to avoid repetitive messages from every MPI rank. For this reason, they are only
+suitable for printing messages identical to all MPI ranks. ``app_debug`` prints only when ``--verbosity=debug`` command line option
+is used. Messages that come from only one or a few MPI ranks should use ``std::cout`` and ``std::cerr``.
+
+Stopping or Aborting QMCPACK
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If the code needs to be stopped after an unrecoverable error that happens uniformly on all the MPI ranks, a bad input for example,
 avoid using ``app_err`` together with ``Communicate::abort(msg)`` or ``APP_ABORT(msg)`` because any MPI rank other than rank 0 may
@@ -789,6 +777,68 @@ and capture it where ``Communicate::barrier_and_abort()`` can be used. Note that
 uniform error, improper use may cause QMCPACK hanging.
 
 In addition, avoid directly calling C function ``abort()``, ``exit()`` and ``MPI_Abort()`` for stopping the code.
+
+GitHub Pull Request guidance
+----------------------------
+
+In the following we provide guidance on creating Pull Requests (PRs) on GitHub that will be rapidly and easily merged into the development
+branch. The guidance is similar to those of many other open source projects. Most importantly, to the extent possible, we encourage
+the creation of small PRs focused on individual topics instead of one or a few larger PRs. Large PRs
+(many hundreds of lines, mixtures of bug fixes, features, and refactoring) have over time proven significantly more challenging to
+review, to update, and to keep current with other developmental activities. In contrast, small PRs that are focused on
+achieving a single well-defined task are straightforward to review and merge promptly. It will save you and the maintainers
+considerable time if you follow this principle, the guidelines below, and ask questions in advance! We aim to be flexible and
+reasonable but maintainer resources are limited.
+
+The `current workflow conventions`_ for the project are currently described in the wiki on the GitHub repository.
+
+As a general principle, we aim to keep the mainline development branch QMCPACK in a fully working and deployable/shippable state at
+all times. Therefore, all PRs must pass the existing tests. If this is not possible, a plan to simultaneously update the existing
+tests will need to be devised. Please discuss this in advance if possible.
+
+The GitHub documentation provides some suggestions for `helping others review your changes`_. Here we'd like to highlight a few practices:
+
+Do
+~~
+
+* Make simple PRs. 'Simple' doesn't refer to the lines of code or the number of files being touched. It is more about restricting
+  the PR to a focused topic. For example, non-functional changes may affect many lines and files, but they are conceptually simple
+  and easy to review. This category includes refactoring changes like renaming files, classes, functions, variables or code
+  formatting. Marking class member variables private and accessing them via accessor functions are also considered in this category.
+* Make orthogonal PRs. PRs that mix multiple topics slow down reviewing and merging. When large PRs can be broken into simple PRs,
+  the amount of dependency usually can be reduced.
+* To achieve large changes, such as the addition of a new major feature, devise a series of PRs and indicate your plan in the first
+  PR. If orthogonality is not achievable, a series of simple dependent PRs are still better than a single large PR. For example, you
+  could add initial input handling, some initial tests, the initial implementation of your feature, and then an integration test.
+* If you, e.g., spot and fix a bug or improve unrelated documentation while working on your feature, make a separate PR with these
+  improvements. This helps keep the PRs focused on distinct and unrelated topics, making the reviews considerably easier. It will
+  likely also make your improvements available in mainline sooner.
+* When changes are getting too big on a feature branch, please consider upstreaming certain changes to the develop branch.
+  Once they are accepted, merging the develop branch to the feature branch effectively reduces the size of changes in the feature branch.
+  For example, you are working on a feature and introduced new classes and files. They can be merged to develop even they are just preliminary.
+  You don't need to make them waiting for the full completion of your feature.
+* Follow the instructions in this section for formatting. You can follow the formatting conventions automatically using
+  clang-format.  The mechanics of clang-format setup and use can be found at
+  https://github.com/QMCPACK/qmcpack/wiki/Source-formatting. All modern editors support easy invocation of this tool. The
+  clang-format file found at ``qmcpack/src/.clang-format`` should be run over all code touched in a PR. We also encourage developers
+  to run clang-tidy with the ``qmcpack/src/.clang-tidy`` configuration over all new code.
+
+Don't
+~~~~~
+
+* Do not mix functional changes with non-functional ones. Mixing them dramatically increases the review challenge of non-functional
+  changes. If non-functional changes touch many files, make sure to upstream them before the functional changes using orthogonal PRs
+  if possible or dependent PRs.
+* Do not mix bug fixes with feature development. If a bug was surfaced during feature development, make a PR including the fix to the develop branch.
+* Do not delay potential early mergeable changes until the full completion of a feature. We are happy to merge code that has not been
+  fully polished and for the polishing to occur in subsequent PRs. It is not necessary and they are harder to adjust if they end up
+  conflicting with the rest of the code, plus you will be able to get suggestions in a more time timely manner. 
+
+As much as possible, try to avoid the "Don't"s. Aim for something that would take a reviewer no more than an hour to read,
+understand, and review. In this way we can maintain a good collective development velocity.
+
+.. _current workflow conventions: https://github.com/QMCPACK/qmcpack/wiki/Development-workflow
+.. _helping others review your changes: https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/getting-started/helping-others-review-your-changes
 
 .. include:: input_code.txt
 
