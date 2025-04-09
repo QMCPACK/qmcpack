@@ -158,17 +158,6 @@ struct qmc_allocator_traits<qmcplusplus::SYCLAllocator<T>>
     //THINK
     //qmcplusplus::SYCLfill_n(ptr, n, value);
   }
-  static void updateTo(SYCLAllocator<T>& alloc, T* host_ptr, size_t n)
-  {
-    T* device_ptr = alloc.getDevicePtr(host_ptr);
-    alloc.copyToDevice(device_ptr, host_ptr, n);
-  }
-
-  static void updateFrom(SYCLAllocator<T>& alloc, T* host_ptr, size_t n)
-  {
-    T* device_ptr = alloc.getDevicePtr(host_ptr);
-    alloc.copyFromDevice(host_ptr, device_ptr, n);
-  }
 };
 
 template<typename T, size_t ALIGN = QMC_SIMD_ALIGNMENT>
