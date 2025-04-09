@@ -1,5 +1,6 @@
 Please review the [developer documentation](https://github.com/QMCPACK/qmcpack/wiki/Development-workflow)
 on the wiki of this project that contains help and requirements.
+Please also follow the [GitHub Pull Request guidance](https://qmcpack.readthedocs.io/en/develop/developing.html#github-pull-request-guidance). As much as possible, try to avoid the ["Don't"s](https://qmcpack.readthedocs.io/en/develop/developing.html#don-t) for maintaining a good collective development velocity.
 
 ## Proposed changes
 
