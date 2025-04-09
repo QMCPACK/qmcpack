@@ -164,9 +164,9 @@ mark_as_advanced(QMC_EXP_THREADING)
 # Sanitizer options
 #--------------------------------------------------------------------
 
-# Add optional sanitizers ASAN, UBSAN, MSAN
-set(VALID_SANITIZERS "asan" "ubsan" "tsan" "msan")
-set(ENABLE_SANITIZER "" CACHE STRING "asan,ubsan,tsan,msan")
+# Add optional sanitizers ASAN, UBSAN, MSAN, TYPESAN
+set(VALID_SANITIZERS "asan" "ubsan" "tsan" "msan" "typesan")
+set(ENABLE_SANITIZER "" CACHE STRING "asan,ubsan,tsan,msan,typesan")
 set_property(CACHE ENABLE_SANITIZER PROPERTY STRINGS ${VALID_SANITIZERS})
 
 if(ENABLE_SANITIZER)
@@ -309,6 +309,10 @@ if(ENABLE_SANITIZER)
     set(CMAKE_CXX_FLAGS_SAN
         "-fsanitize=thread"
         CACHE STRING "ThreadSanitizer C++ compiler builds." FORCE)
+  elseif("${ENABLE_SANITIZER}" STREQUAL "typesan")
+    set(CMAKE_CXX_FLAGS_SAN
+        "-fsanitize=type"
+        CACHE STRING "TypeSanitizer C++ compiler builds." FORCE)
   endif()
 
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_SAN}")
