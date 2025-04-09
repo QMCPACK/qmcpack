@@ -33,17 +33,26 @@
 
 namespace qmcplusplus
 {
-extern std::atomic<size_t> SYCLallocator_device_mem_allocated;
-
-inline size_t getSYCLdeviceMemAllocated() { return SYCLallocator_device_mem_allocated; }
-
 namespace compute
 {
 
 template<>
 class MemManage<PlatformKind::SYCL>
 {
+  static std::atomic<size_t> device_mem_allocated_;
+
 public:
+  static size_t getDeviceMemAllocated() { return device_mem_allocated_; }
+
+  static size_t getDeviceFreeMem()
+  {
+    auto device = getSYCLDefaultDeviceDefaultQueue().get_device();
+    if (device.has(sycl::aspect::ext_intel_free_memory))
+      return getSYCLDefaultDeviceDefaultQueue().get_device().get_info<sycl::ext::intel::info::device::free_memory>();
+    else
+      return 0;
+  }
+
   static void mallocDevice(void** ptr, size_t size)
   {
     *ptr = sycl::malloc_device(size, getSYCLDefaultDeviceDefaultQueue());
@@ -98,14 +107,14 @@ public:
     {
       void* pt;
       MemManage<PlatformKind::SYCL>::mallocDevice(&pt, n * sizeof(T));
-      SYCLallocator_device_mem_allocated += n * sizeof(T);
+      device_mem_allocated_ += n * sizeof(T);
       return static_cast<T*>(pt);
     }
 
     void deallocate(T* p, std::size_t n)
     {
       MemManage<PlatformKind::SYCL>::freeDevice(p);
-      SYCLallocator_device_mem_allocated -= n * sizeof(T);
+      device_mem_allocated_ -= n * sizeof(T);
     }
 
     /** Provide a construct for std::allocator_traits::contruct to call.

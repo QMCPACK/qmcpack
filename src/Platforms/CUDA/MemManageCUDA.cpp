@@ -14,9 +14,10 @@
 
 namespace qmcplusplus
 {
-std::atomic<size_t> CUDAallocator_device_mem_allocated(0);
 namespace compute
 {
+std::atomic<size_t> MemManage<PlatformKind::CUDA>::device_mem_allocated_ = 0;
+
 template class MemManage<PlatformKind::CUDA>;
 } // namespace compute
 } // namespace qmcplusplus

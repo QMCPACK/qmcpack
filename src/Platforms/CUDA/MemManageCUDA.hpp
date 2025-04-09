@@ -33,17 +33,23 @@
 namespace qmcplusplus
 {
 
-extern std::atomic<size_t> CUDAallocator_device_mem_allocated;
-
-inline size_t getCUDAdeviceMemAllocated() { return CUDAallocator_device_mem_allocated; }
-
 namespace compute
 {
 
 template<>
 class MemManage<PlatformKind::CUDA>
 {
+  static std::atomic<size_t> device_mem_allocated_;
+
 public:
+  static size_t getDeviceMemAllocated() { return device_mem_allocated_; }
+
+  static size_t getDeviceFreeMem()
+  {
+    size_t free, total;
+    cudaErrorCheck(cudaMemGetInfo(&free, &total), "cudaMemGetInfo failed!");
+    return free;
+  }
   static void mallocDevice(void** ptr, size_t size) { cudaErrorCheck(cudaMalloc(ptr, size), "cudaMalloc failed!"); }
 
   static void freeDevice(void* ptr) { cudaErrorCheck(cudaFree(ptr), "cudaFree failed!"); }
@@ -91,14 +97,14 @@ public:
     {
       void* pt;
       MemManage<PlatformKind::CUDA>::mallocDevice(&pt, n * sizeof(T));
-      CUDAallocator_device_mem_allocated += n * sizeof(T);
+      device_mem_allocated_ += n * sizeof(T);
       return static_cast<T*>(pt);
     }
 
     void deallocate(T* p, std::size_t n)
     {
       MemManage<PlatformKind::CUDA>::freeDevice(p);
-      CUDAallocator_device_mem_allocated -= n * sizeof(T);
+      device_mem_allocated_ -= n * sizeof(T);
     }
 
     /** Provide a construct for std::allocator_traits::contruct to call.
