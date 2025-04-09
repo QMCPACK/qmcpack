@@ -44,10 +44,6 @@ template<>
 class MemManage<PlatformKind::CUDA>
 {
 public:
-  static void copyH2DAync(Queue<PlatformKind::CUDA>& queue) {}
-
-  static void copyD2HAync(Queue<PlatformKind::CUDA>& queue) {}
-
   static void mallocDevice(void** ptr, size_t size) { cudaErrorCheck(cudaMalloc(ptr, size), "cudaMalloc failed!"); }
 
   static void freeDevice(void* ptr) { cudaErrorCheck(cudaFree(ptr), "cudaFree failed!"); }
@@ -60,17 +56,17 @@ public:
   static void unregisterHost(void* ptr) { cudaErrorCheck(cudaHostUnregister(ptr), "cudaHostUnregister failed!"); }
 
   /** allocator for CUDA device memory
- * @tparam T data type
- *
- * using this with something other than Ohmms containers?
- *  -- use caution, write unit tests! --
- * It's not tested beyond use in some unit tests using std::vector with constant size.
- * DeviceAllocator appears to meet all the nonoptional requirements of a c++ Allocator.
- *
- * Some of the default implementations in std::allocator_traits
- * of optional Allocator requirements may cause runtime or compilation failures.
- * They assume there is only one memory space and that the host has access to it.
- */
+   * @tparam T data type
+   *
+   * using this with something other than Ohmms containers?
+   *  -- use caution, write unit tests! --
+   * It's not tested beyond use in some unit tests using std::vector with constant size.
+   * DeviceAllocator appears to meet all the nonoptional requirements of a c++ Allocator.
+   *
+   * Some of the default implementations in std::allocator_traits
+   * of optional Allocator requirements may cause runtime or compilation failures.
+   * They assume there is only one memory space and that the host has access to it.
+   */
   template<typename T>
   class DeviceAllocator
   {

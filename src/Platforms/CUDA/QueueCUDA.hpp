@@ -29,43 +29,37 @@ public:
 
   ~Queue() { cudaErrorCheck(cudaStreamDestroy(hstream_), "cudaStreamDestroy failed!"); }
 
+  template<class T>
+  inline void memcpyH2D(T* dst, const T* src, size_t size)
+  {
+    cudaErrorCheck(cudaMemcpyAsync(dst, src, sizeof(T) * size, cudaMemcpyHostToDevice, hstream_),
+                   "cudaMemcpyAsync Host-To-Device failed!");
+  }
+
+  template<class T>
+  inline void memcpyD2H(T* dst, const T* src, size_t size)
+  {
+    cudaErrorCheck(cudaMemcpyAsync(dst, src, sizeof(T) * size, cudaMemcpyDeviceToHost, hstream_),
+                   "cudaMemcpyAsync Device-To-Host failed!");
+  }
+
   // dualspace container
   template<class DSC>
   void enqueueH2D(DSC& dataset, typename DSC::size_type size = 0, typename DSC::size_type offset = 0)
   {
-    if (dataset.data() == dataset.device_data()) return;
+    if (dataset.data() == dataset.device_data())
+      return;
 
-    if (size == 0)
-    {
-      cudaErrorCheck(cudaMemcpyAsync(dataset.device_data() + offset, dataset.data() + offset,
-                                     dataset.size() * sizeof(typename DSC::value_type), cudaMemcpyHostToDevice, hstream_),
-                     "Queue<PlatformKind::CUDA>::enqueueH2D cudaMemcpyAsync failed!");
-    }
-    else
-    {
-      cudaErrorCheck(cudaMemcpyAsync(dataset.device_data() + offset, dataset.data() + offset,
-                                     size * sizeof(typename DSC::value_type), cudaMemcpyHostToDevice, hstream_),
-                     "Queue<PlatformKind::CUDA>::enqueueH2D cudaMemcpyAsync failed!");
-    }
+    memcpyH2D(dataset.device_data() + offset, dataset.data() + offset, size ? size : dataset.size());
   }
 
   template<class DSC>
   void enqueueD2H(DSC& dataset, typename DSC::size_type size = 0, typename DSC::size_type offset = 0)
   {
-    if (dataset.data() == dataset.device_data()) return;
+    if (dataset.data() == dataset.device_data())
+      return;
 
-    if (size == 0)
-    {
-      cudaErrorCheck(cudaMemcpyAsync(dataset.data() + offset, dataset.device_data() + offset,
-                                     dataset.size() * sizeof(typename DSC::value_type), cudaMemcpyDeviceToHost, hstream_),
-                     "Queue<PlatformKind::CUDA>::enqueueD2H cudaMemcpyAsync failed!");
-    }
-    else
-    {
-      cudaErrorCheck(cudaMemcpyAsync(dataset.data() + offset, dataset.device_data() + offset,
-                                     size * sizeof(typename DSC::value_type), cudaMemcpyDeviceToHost, hstream_),
-                     "Queue<PlatformKind::CUDA>::enqueueD2H cudaMemcpyAsync failed!");
-    }
+    memcpyH2D(dataset.data() + offset, dataset.device_data() + offset, size ? size : dataset.size());
   }
 
   void sync() { cudaErrorCheck(cudaStreamSynchronize(hstream_), "cudaStreamSynchronize failed!"); }
