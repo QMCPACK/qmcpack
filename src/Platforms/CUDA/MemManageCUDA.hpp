@@ -43,30 +43,21 @@ namespace compute
 template<>
 class MemManage<PlatformKind::CUDA>
 {
+public:
   static void copyH2DAync(Queue<PlatformKind::CUDA>& queue) {}
 
   static void copyD2HAync(Queue<PlatformKind::CUDA>& queue) {}
 
-  static void mallocDevice(void **ptr, size_t size)
+  static void mallocDevice(void** ptr, size_t size) { cudaErrorCheck(cudaMalloc(ptr, size), "cudaMalloc failed!"); }
+
+  static void freeDevice(void* ptr) { cudaErrorCheck(cudaFree(ptr), "cudaFree failed!"); }
+
+  static void registerHost(void* ptr, size_t size)
   {
-    cudaErrorCheck(cudaMalloc(ptr, size), "cudaMalloc failed!");
+    cudaErrorCheck(cudaHostRegister(ptr, size, cudaHostRegisterDefault), "cudaHostRegister failed!");
   }
 
-  static void freeDevice(void *ptr)
-  {
-    cudaErrorCheck(cudaFree(ptr), "cudaFree failed!");
-  }
-
-  static void registerHost(void *ptr, size_t size)
-  {
-    cudaErrorCheck(cudaHostRegister(ptr, size, cudaHostRegisterDefault),
-                     "cudaHostRegister failed!");
-  }
-
-  static void unregisterHost(void *ptr)
-  {
-    cudaErrorCheck(cudaHostUnregister(ptr), "cudaHostUnregister failed!");
-  }
+  static void unregisterHost(void* ptr) { cudaErrorCheck(cudaHostUnregister(ptr), "cudaHostUnregister failed!"); }
 
   /** allocator for CUDA device memory
  * @tparam T data type
@@ -200,6 +191,8 @@ class MemManage<PlatformKind::CUDA>
     }
   };
 };
+
+extern template class MemManage<PlatformKind::CUDA>;
 
 } // namespace compute
 

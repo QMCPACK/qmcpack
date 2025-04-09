@@ -16,6 +16,7 @@ add_library(platform_cuda_runtime ${CUDA_RT_SRCS})
 add_library(platform_cuda_LA ${CUDA_LA_SRCS})
 
 target_link_libraries(platform_cuda_runtime PRIVATE platform_host_runtime)
+target_include_directories(platform_cuda_runtime PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/..")
 
 if(NOT QMC_CUDA2HIP)
   target_link_libraries(platform_cuda_runtime PUBLIC CUDA::cudart)
