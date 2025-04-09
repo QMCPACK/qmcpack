@@ -216,30 +216,8 @@ struct CUDAManagedAllocator
   void deallocate(T* p, std::size_t) { cudaErrorCheck(cudaFree(p), "Deallocation failed in CUDAManagedAllocator!"); }
 };
 
-template<class T1, class T2>
-bool operator==(const CUDAManagedAllocator<T1>&, const CUDAManagedAllocator<T2>&)
-{
-  return true;
-}
-template<class T1, class T2>
-bool operator!=(const CUDAManagedAllocator<T1>&, const CUDAManagedAllocator<T2>&)
-{
-  return false;
-}
-
 template<class T>
 using CUDAAllocator = compute::MemManage<PlatformKind::CUDA>::DeviceAllocator<T>;
-
-template<class T1, class T2>
-bool operator==(const CUDAAllocator<T1>&, const CUDAAllocator<T2>&)
-{
-  return true;
-}
-template<class T1, class T2>
-bool operator!=(const CUDAAllocator<T1>&, const CUDAAllocator<T2>&)
-{
-  return false;
-}
 
 template<typename T>
 struct qmc_allocator_traits<qmcplusplus::CUDAAllocator<T>>
@@ -251,17 +229,6 @@ struct qmc_allocator_traits<qmcplusplus::CUDAAllocator<T>>
 
 template<typename T>
 using CUDAHostAllocator = compute::MemManage<PlatformKind::CUDA>::PinnedAllocator<T>;
-
-template<class T1, class T2>
-bool operator==(const CUDAHostAllocator<T1>&, const CUDAHostAllocator<T2>&)
-{
-  return true;
-}
-template<class T1, class T2>
-bool operator!=(const CUDAHostAllocator<T1>&, const CUDAHostAllocator<T2>&)
-{
-  return false;
-}
 
 template<typename T, class ULPHA = std::allocator<T>>
 using CUDALockedPageAllocator = compute::MemManage<PlatformKind::CUDA>::PinnedAllocator<T, ULPHA>;
