@@ -16,8 +16,8 @@
 #if defined(ENABLE_CUDA)
 #include "CUDA/MemManageCUDA.hpp"
 #endif
-//#if defined(ENABLE_SYCL)
-//#include "SYCL/MemManageSYCL.hpp"
-//#endif
+#if defined(ENABLE_SYCL)
+#include "SYCL/MemManageSYCL.hpp"
+#endif
 
 #endif

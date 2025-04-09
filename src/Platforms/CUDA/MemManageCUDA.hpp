@@ -16,8 +16,8 @@
  * DeviceAllocator allocates CUDA device memory
  * CUDAHostAllocator allocates CUDA host pinned memory
  */
-#ifndef QMCPLUSPLUS_CUDA_ALLOCATOR_H
-#define QMCPLUSPLUS_CUDA_ALLOCATOR_H
+#ifndef QMCPLUSPLUS_MEMMANAGE_CUDA_H
+#define QMCPLUSPLUS_MEMMANAGE_CUDA_H
 
 #include <memory>
 #include <cstdlib>
@@ -94,6 +94,7 @@ public:
       CUDAallocator_device_mem_allocated += n * sizeof(T);
       return static_cast<T*>(pt);
     }
+
     void deallocate(T* p, std::size_t n)
     {
       MemManage<PlatformKind::CUDA>::freeDevice(p);

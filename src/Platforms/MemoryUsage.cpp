@@ -16,14 +16,7 @@
 #include <iomanip>
 #include "Host/sysutil.h"
 #include "OMPTarget/OMPallocator.hpp"
-#ifdef ENABLE_CUDA
 #include "MemManageAlias.hpp"
-#include "CUDA/CUDAruntime.hpp"
-#endif
-#ifdef ENABLE_SYCL
-#include "SYCL/SYCLallocator.hpp"
-#include "SYCL/SYCLruntime.hpp"
-#endif
 
 namespace qmcplusplus
 {

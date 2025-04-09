@@ -15,11 +15,7 @@
 
 #include <memory>
 #include "CPU/SIMD/aligned_allocator.hpp"
-#if defined(ENABLE_CUDA)
 #include "MemManageAlias.hpp"
-#elif defined(ENABLE_SYCL)
-#include "SYCL/SYCLallocator.hpp"
-#endif
 
 namespace qmcplusplus
 {

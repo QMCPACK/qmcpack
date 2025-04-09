@@ -15,7 +15,7 @@
 
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "SYCL/SYCLallocator.hpp"
+#include "SYCL/MemManageSYCL.hpp"
 #include "SYCL/syclBLAS.hpp"
 #include "QMCWaveFunctions/detail/SYCL/sycl_determinant_helper.hpp"
 #include "DiracMatrix.h"
