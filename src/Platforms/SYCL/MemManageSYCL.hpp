@@ -15,7 +15,6 @@
  * SYCLManagedAllocator allocates SYCL shared memory
  * DeviceAllocator allocates SYCL device memory
  * SYCLHostAllocator allocates SYCL host memory
- * They are based on CUDA*Allocator implementation
  */
 #ifndef QMCPLUSPLUS_MEMMANAGE_SYCL_H
 #define QMCPLUSPLUS_MEMMANAGE_SYCL_H
@@ -25,7 +24,6 @@
 #include <stdexcept>
 #include <atomic>
 #include <limits>
-#include "config.h"
 #include <Common/MemManage.hpp>
 #include "QueueSYCL.hpp"
 #include "allocator_traits.hpp"
@@ -60,6 +58,13 @@ public:
 
   static void freeDevice(void* ptr) { sycl::free(ptr, getSYCLDefaultDeviceDefaultQueue()); }
 
+  static void mallocHost(void** ptr, size_t size)
+  {
+    *ptr = sycl::malloc_host(size, getSYCLDefaultDeviceDefaultQueue());
+  }
+
+  static void freeHost(void* ptr) { sycl::free(ptr, getSYCLDefaultDeviceDefaultQueue()); }
+
   static void registerHost(void* ptr, size_t size)
   {
     sycl::ext::oneapi::experimental::prepare_for_device_copy(ptr, size, getSYCLDefaultDeviceDefaultQueue());
@@ -79,34 +84,13 @@ public:
   template<typename T>
   using DeviceAllocator = DeviceAllocatorImpl<T, PlatformKind::SYCL>;
 
-  /** allocator for SYCL host pinned memory
- * @tparm T data type
- * @tparm ALIGN alignment in bytes
- */
-  template<typename T, size_t ALIGN = QMC_SIMD_ALIGNMENT>
-  struct PinnedAllocator
-  {
-    using value_type    = T;
-    using size_type     = size_t;
-    using pointer       = T*;
-    using const_pointer = const T*;
+  /// allocator for SYCL host memory
+  template<typename T>
+  using HostAllocator = HostAllocatorImpl<T, PlatformKind::SYCL>;
 
-    static constexpr size_t alignment = ALIGN;
-
-    PinnedAllocator() = default;
-    template<class U>
-    PinnedAllocator(const PinnedAllocator<U>&)
-    {}
-
-    template<class U>
-    struct rebind
-    {
-      typedef PinnedAllocator<U, ALIGN> other;
-    };
-
-    T* allocate(std::size_t n) { return sycl::aligned_alloc_host<T>(ALIGN, n, getSYCLDefaultDeviceDefaultQueue()); }
-    void deallocate(T* p, std::size_t) { sycl::free(p, getSYCLDefaultDeviceDefaultQueue()); }
-  };
+  /// allocator for SYCL page locked memory
+  template<typename T, class ULPHA = std::allocator<T>>
+  using PageLockedAllocator = PageLockedAllocatorImpl<T, PlatformKind::SYCL, ULPHA>;
 };
 
 extern template class MemManage<PlatformKind::SYCL>;
@@ -115,7 +99,6 @@ extern template class MemManage<PlatformKind::SYCL>;
 
 /** allocator for SYCL shared memory
  * @tparm T data type
- * @tparm ALIGN alignment in bytes
  */
 template<typename T>
 struct SYCLSharedAllocator
@@ -160,8 +143,12 @@ struct qmc_allocator_traits<qmcplusplus::SYCLAllocator<T>>
   }
 };
 
-template<typename T, size_t ALIGN = QMC_SIMD_ALIGNMENT>
-using SYCLHostAllocator = compute::MemManage<PlatformKind::SYCL>::PinnedAllocator<T, ALIGN>;
+template<typename T>
+using SYCLHostAllocator = compute::MemManage<PlatformKind::SYCL>::HostAllocator<T>;
+
+template<typename T, class ULPHA = std::allocator<T>>
+using SYCLLockedPageAllocator = compute::MemManage<PlatformKind::SYCL>::PageLockedAllocator<T, ULPHA>;
+
 } // namespace qmcplusplus
 
 #endif

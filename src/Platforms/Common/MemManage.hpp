@@ -23,7 +23,7 @@ namespace compute
 template<PlatformKind PL>
 class MemManage;
 
-/** allocator for CUDA device memory
+/** allocator for device memory
  * @tparam T data type
  *
  * using this with something other than Ohmms containers?
@@ -98,6 +98,78 @@ public:
   {}
 
   static void memcpy(T* dst, const T* src, size_t size) { MemManage<PL>::memcpy(dst, src, sizeof(T) * size); }
+};
+
+/** allocator for host memory
+ * @tparam T data type
+ */
+template<typename T, PlatformKind PL>
+struct HostAllocatorImpl
+{
+  using value_type    = T;
+  using size_type     = size_t;
+  using pointer       = T*;
+  using const_pointer = const T*;
+
+  HostAllocatorImpl() = default;
+  template<class U>
+  HostAllocatorImpl(const HostAllocatorImpl<U, PL>&)
+  {}
+
+  template<class U>
+  struct rebind
+  {
+    using other = HostAllocatorImpl<U, PL>;
+  };
+
+  T* allocate(std::size_t n)
+  {
+    void* pt;
+    MemManage<PL>::mallocHost(&pt, n * sizeof(T));
+    return static_cast<T*>(pt);
+  }
+
+  void deallocate(T* p, std::size_t) { MemManage<PL>::freeHost(p); }
+};
+
+/** allocator locks memory pages allocated by ULPHA
+ * @tparam T data type
+ * @tparam ULPHA host memory allocator using unlocked page
+ *
+ * ULPHA cannot be HostAllocator
+ */
+template<typename T, PlatformKind PL, class ULPHA = std::allocator<T>>
+struct PageLockedAllocatorImpl : public ULPHA
+{
+  using value_type    = typename ULPHA::value_type;
+  using size_type     = typename ULPHA::size_type;
+  using pointer       = typename ULPHA::pointer;
+  using const_pointer = typename ULPHA::const_pointer;
+
+  PageLockedAllocatorImpl() = default;
+  template<class U, class V>
+  PageLockedAllocatorImpl(const PageLockedAllocatorImpl<U, PL, V>&)
+  {}
+
+  template<class U>
+  struct rebind
+  {
+    using other = PageLockedAllocatorImpl<U, PL, typename std::allocator_traits<ULPHA>::template rebind_alloc<U>>;
+  };
+
+  value_type* allocate(std::size_t n)
+  {
+    static_assert(std::is_same<T, value_type>::value, "PageLockedAllocatorImpl and ULPHA data types must agree!");
+    value_type* pt = ULPHA::allocate(n);
+    MemManage<PL>::registerHost(pt, n * sizeof(T));
+    return pt;
+  }
+
+  void deallocate(value_type* pt, std::size_t n)
+  {
+    MemManage<PL>::unregisterHost(pt);
+    ULPHA::deallocate(pt, n);
+  }
 };
 } // namespace compute
 

@@ -50,9 +50,17 @@ public:
     cudaErrorCheck(cudaMemGetInfo(&free, &total), "cudaMemGetInfo failed!");
     return free;
   }
+
   static void mallocDevice(void** ptr, size_t size) { cudaErrorCheck(cudaMalloc(ptr, size), "cudaMalloc failed!"); }
 
   static void freeDevice(void* ptr) { cudaErrorCheck(cudaFree(ptr), "cudaFree failed!"); }
+
+  static void mallocHost(void** ptr, size_t size)
+  {
+    cudaErrorCheck(cudaMallocHost(ptr, size), "cudaMallocHost failed!");
+  }
+
+  static void freeHost(void* ptr) { cudaErrorCheck(cudaFreeHost(ptr), "cudaFreeHost failed!"); }
 
   static void registerHost(void* ptr, size_t size)
   {
@@ -70,45 +78,13 @@ public:
   template<typename T>
   using DeviceAllocator = DeviceAllocatorImpl<T, PlatformKind::CUDA>;
 
-  /** allocator locks memory pages allocated by ULPHA
-   * @tparam T data type
-   * @tparam ULPHA host memory allocator using unlocked page
-   *
-   * ULPHA cannot be CUDAHostAllocator
-   */
+  /// allocator for CUDA host memory
+  template<typename T>
+  using HostAllocator = HostAllocatorImpl<T, PlatformKind::CUDA>;
+
+  /// allocator for CUDA page locked memory
   template<typename T, class ULPHA = std::allocator<T>>
-  struct PinnedAllocator : public ULPHA
-  {
-    using value_type    = typename ULPHA::value_type;
-    using size_type     = typename ULPHA::size_type;
-    using pointer       = typename ULPHA::pointer;
-    using const_pointer = typename ULPHA::const_pointer;
-
-    PinnedAllocator() = default;
-    template<class U, class V>
-    PinnedAllocator(const PinnedAllocator<U, V>&)
-    {}
-
-    template<class U>
-    struct rebind
-    {
-      using other = PinnedAllocator<U, typename std::allocator_traits<ULPHA>::template rebind_alloc<U>>;
-    };
-
-    value_type* allocate(std::size_t n)
-    {
-      static_assert(std::is_same<T, value_type>::value, "PinnedAllocator and ULPHA data types must agree!");
-      value_type* pt = ULPHA::allocate(n);
-      MemManage<PlatformKind::CUDA>::registerHost(pt, n * sizeof(T));
-      return pt;
-    }
-
-    void deallocate(value_type* pt, std::size_t n)
-    {
-      MemManage<PlatformKind::CUDA>::unregisterHost(pt);
-      ULPHA::deallocate(pt, n);
-    }
-  };
+  using PageLockedAllocator = PageLockedAllocatorImpl<T, PlatformKind::CUDA, ULPHA>;
 };
 
 extern template class MemManage<PlatformKind::CUDA>;
@@ -160,10 +136,10 @@ struct qmc_allocator_traits<qmcplusplus::CUDAAllocator<T>>
 };
 
 template<typename T>
-using CUDAHostAllocator = compute::MemManage<PlatformKind::CUDA>::PinnedAllocator<T>;
+using CUDAHostAllocator = compute::MemManage<PlatformKind::CUDA>::HostAllocator<T>;
 
 template<typename T, class ULPHA = std::allocator<T>>
-using CUDALockedPageAllocator = compute::MemManage<PlatformKind::CUDA>::PinnedAllocator<T, ULPHA>;
+using CUDALockedPageAllocator = compute::MemManage<PlatformKind::CUDA>::PageLockedAllocator<T, ULPHA>;
 
 } // namespace qmcplusplus
 
