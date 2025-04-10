@@ -303,7 +303,7 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateVGL(const RefVectorWithLeader<S
 
       const auto& basis_offsets   = species_basis_offsets[species_id];
       auto one_species_basis_list = extractOneSpeciesBasisRefList(basis_list, species_id);
-      LOBasisSet[species_id]->mw_evaluateVGL_batch(one_species_basis_list, pset_leader.getLattice(), vgl_v,
+      LOBasisSet[species_id]->mw_evaluateVGL_multiCenter(one_species_basis_list, pset_leader.getLattice(), vgl_v,
                                                    displ_list_tr, Tv_list, Nw, BasisSetSize, c_list, basis_offsets,
                                                    NumCenters);
     }
@@ -424,15 +424,16 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValueVPs(const RefVectorWithLea
     local_offsets[s_id].push_back(BasisOffset[c]);
   }
 
+  ///Should be done only once at Begining of simulation and made available. 
   using PinnedVecSizeT = Vector<size_t, OffloadPinnedAllocator<size_t>>;
   std::vector<PinnedVecSizeT> species_centers(num_species_);
-  std::vector<PinnedVecSizeT> species_offsets(num_species_);
+  std::vector<PinnedVecSizeT> species_center_coffsets(num_species_);
 
   // Fill pinned vectors
   for (int s = 0; s < num_species_; s++)
   {
     auto& c_list_s    = species_centers[s];
-    auto& offs_list_s = species_offsets[s];
+    auto& offs_list_s = species_center_coffsets[s];
     c_list_s.resize(local_centers[s].size());
     offs_list_s.resize(local_offsets[s].size());
 
@@ -448,7 +449,7 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValueVPs(const RefVectorWithLea
   for (int s = 0; s < num_species_; s++)
   {
     auto& c_list_s    = species_centers[s];
-    auto& offs_list_s = species_offsets[s];
+    auto& offs_list_s = species_center_coffsets[s];
     if (c_list_s.size() == 0)
       continue;
 

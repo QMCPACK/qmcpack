@@ -738,7 +738,7 @@ public:
   * @param[in] NumCenters       Total number of centers in the system (for bounds checking)
  */
   template<typename LAT, typename VT>
-  inline void mw_evaluateVGL_batch(const RefVectorWithLeader<SoaAtomicBasisSet>& atom_bs_list,
+  inline void mw_evaluateVGL_multiCenter(const RefVectorWithLeader<SoaAtomicBasisSet>& atom_bs_list,
                                    const LAT& lattice,
                                    Array<VT, 3, OffloadPinnedAllocator<VT>>& psi_vgl,
                                    const Vector<RealType, OffloadPinnedAllocator<RealType>>& displ_list,
