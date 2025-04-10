@@ -484,12 +484,8 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
 
 void QMCCostFunction::resetPsi(bool final_reset)
 {
-  if (OptVariables.size() < OptVariablesForPsi.size())
-    for (int i = 0; i < equalVarMap.size(); ++i)
-      OptVariablesForPsi[equalVarMap[i][0]] = OptVariables[equalVarMap[i][1]];
-  else
-    for (int i = 0; i < OptVariables.size(); ++i)
-      OptVariablesForPsi[i] = OptVariables[i];
+  for (int i = 0; i < OptVariables.size(); ++i)
+    OptVariablesForPsi[i] = OptVariables[i];
   //cout << "######### QMCCostFunction::resetPsi " << std::endl;
   //OptVariablesForPsi.print(std::cout);
   //cout << "-------------------------------------- " << std::endl;

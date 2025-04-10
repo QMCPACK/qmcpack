@@ -212,55 +212,6 @@ public:
    */
   void insertFrom(const VariableSet& input);
 
-  /** activate variables for optimization
-   * @param first iterator of the first name
-   * @param last iterator of the last name
-   * @param reindex if true, Index is updated
-   *
-   * The status of a variable that is not included in the [first,last)
-   * remains the same.
-   */
-  template<typename ForwardIterator>
-  void activate(ForwardIterator first, ForwardIterator last, bool reindex)
-  {
-    while (first != last)
-    {
-      iterator loc = find(*first++);
-      if (loc != NameAndValue.end())
-      {
-        int i = loc - NameAndValue.begin();
-        if (Index[i] < 0)
-          Index[i] = num_active_vars++;
-      }
-    }
-    if (reindex)
-    {
-      removeInactive();
-      resetIndex();
-    }
-  }
-
-  /** deactivate variables for optimization
-   * @param first iterator of the first name
-   * @param last iterator of the last name
-   * @param reindex if true, the variales are removed and Index is updated
-   */
-  template<typename ForwardIterator>
-  void disable(ForwardIterator first, ForwardIterator last, bool reindex)
-  {
-    while (first != last)
-    {
-      int loc = find(*first++) - NameAndValue.begin();
-      if (loc < NameAndValue.size())
-        Index[loc] = -1;
-    }
-    if (reindex)
-    {
-      removeInactive();
-      resetIndex();
-    }
-  }
-
   /** reset Index
    */
   void resetIndex();
