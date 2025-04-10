@@ -118,15 +118,15 @@ void VariableSet::print(std::ostream& os, int leftPadSpaces, bool printHeader) c
           return e1.first.length() < e2.first.length();
         })->first.length();
 
-  int max_value_len     = 28; // 6 for the precision and 7 for minus sign, leading value, period, and exponent.
-  int max_type_len      = 1;
-  int max_use_len       = 3;
-  int max_index_len     = 1;
+  int max_value_len = 28; // 6 for the precision and 7 for minus sign, leading value, period, and exponent.
+  int max_type_len  = 1;
+  int max_use_len   = 3;
+  int max_index_len = 1;
   if (printHeader)
   {
-    max_name_len      = std::max(max_name_len, 4); // size of "Name" header
-    max_type_len      = 4;
-    max_index_len     = 5;
+    max_name_len  = std::max(max_name_len, 4); // size of "Name" header
+    max_type_len  = 4;
+    max_index_len = 5;
     os << pad_str << setw(max_name_len) << "Name"
        << " " << setw(max_value_len) << "Value"
        << " " << setw(max_type_len) << "Type"

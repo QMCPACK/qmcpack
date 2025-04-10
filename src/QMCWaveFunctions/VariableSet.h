@@ -48,7 +48,7 @@ enum
  */
 struct VariableSet
 {
-  using real_type = qmcplusplus::QMCTraits::RealType;
+  using real_type       = qmcplusplus::QMCTraits::RealType;
   using pair_type       = std::pair<std::string, real_type>;
   using index_pair_type = std::pair<std::string, int>;
   using iterator        = std::vector<pair_type>::iterator;
