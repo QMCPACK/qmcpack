@@ -37,8 +37,7 @@ TEST_CASE("VariableSet one", "[optimize]")
   VariableSet vs;
   VariableSet::real_type first_val(1.123456789);
   vs.insert("first", first_val);
-  std::vector<std::string> names{"first"};
-  vs.activate(names.begin(), names.end(), true);
+  vs.resetIndex();
 
   REQUIRE(vs.is_optimizable() == true);
   REQUIRE(vs.size_of_active() == 1);
@@ -50,15 +49,15 @@ TEST_CASE("VariableSet one", "[optimize]")
   std::ostringstream o;
   vs.print(o, 0, false);
   //std::cout << o.str() << std::endl;
-  REQUIRE(o.str() == "first                 1.123457e+00 0 1  ON 0\n");
+  REQUIRE(o.str() == "first                 1.123457e+00 0  ON 0\n");
 
   std::ostringstream o2;
   vs.print(o2, 1, true);
   //std::cout << o2.str() << std::endl;
 
-  char formatted_output[] = "  Name                        Value Type Recompute Use Index\n"
-                            " ----- ---------------------------- ---- --------- --- -----\n"
-                            " first                 1.123457e+00    0         1  ON     0\n";
+  char formatted_output[] = "  Name                        Value Type Use Index\n"
+                            " ----- ---------------------------- ---- --- -----\n"
+                            " first                 1.123457e+00    0  ON     0\n";
 
 
   REQUIRE(o2.str() == formatted_output);
@@ -73,18 +72,17 @@ TEST_CASE("VariableSet output", "[optimize]")
   vs.insert("s", first_val);
   vs.insert("second", second_val);
   vs.insert("really_long_name", third_val);
-  std::vector<std::string> names{"s", "second", "really_long_name"};
-  vs.activate(names.begin(), names.end(), true);
+  vs.resetIndex();
 
   std::ostringstream o;
   vs.print(o, 0, true);
   //std::cout << o.str() << std::endl;
 
-  char formatted_output[] = "            Name                        Value Type Recompute Use Index\n"
-                            "---------------- ---------------------------- ---- --------- --- -----\n"
-                            "               s                 1.123457e+04    0         1  ON     0\n"
-                            "          second                 2.567890e-04    0         1  ON     1\n"
-                            "really_long_name                -1.200000e+00    0         1  ON     2\n";
+  char formatted_output[] = "            Name                        Value Type Use Index\n"
+                            "---------------- ---------------------------- ---- --- -----\n"
+                            "               s                 1.123457e+04    0  ON     0\n"
+                            "          second                 2.567890e-04    0  ON     1\n"
+                            "really_long_name                -1.200000e+00    0  ON     2\n";
 
   REQUIRE(o.str() == formatted_output);
 }

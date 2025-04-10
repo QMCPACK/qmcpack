@@ -393,7 +393,6 @@ void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
     e2_tot += opt_eval[i]->get_e2();
   }
 
-  OptVariablesForPsi.setComputed();
   //     app_log() << "  VMC Efavg = " << eft_tot/static_cast<Return_t>(wPerNode[NumThreads]) << std::endl;
   //Need to sum over the processors
   std::vector<Return_rt> etemp(3);
@@ -588,7 +587,6 @@ void QMCCostFunctionBatched::checkConfigurationsSR(EngineHandle& handle)
     e2_tot += opt_eval[i]->get_e2();
   }
 
-  OptVariablesForPsi.setComputed();
   //     app_log() << "  VMC Efavg = " << eft_tot/static_cast<Return_t>(wPerNode[NumThreads]) << std::endl;
   //Need to sum over the processors
   std::vector<Return_rt> etemp(3);
@@ -779,13 +777,10 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
               RecordsOnNode[is][ENERGY_NEW] = etmp + RecordsOnNode[is][ENERGY_FIXED];
               for (int j = 0; j < nparams; j++)
               {
-                if (optVars.recompute(j))
-                {
-                  //In general, dlogpsi is complex.
-                  DerivRecords[is][j] = dlogpsi_array[ib][j];
-                  //However, E_L is always real, and so d E_L/dc is real, provided c is real.
-                  HDerivRecords[is][j] = std::real(dhpsioverpsi_array[ib][j]);
-                }
+                //In general, dlogpsi is complex.
+                DerivRecords[is][j] = dlogpsi_array[ib][j];
+                //However, E_L is always real, and so d E_L/dc is real, provided c is real.
+                HDerivRecords[is][j] = std::real(dhpsioverpsi_array[ib][j]);
               }
             }
           }

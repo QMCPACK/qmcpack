@@ -60,7 +60,6 @@ private:
   int num_active_vars;
   std::vector<pair_type> NameAndValue;
   std::vector<index_pair_type> ParameterType;
-  std::vector<index_pair_type> Recompute;
 
 public:
   /** store locator of the named variable
@@ -140,7 +139,6 @@ public:
       Index.push_back(ind_loc);
       NameAndValue.push_back(pair_type(vname, v));
       ParameterType.push_back(index_pair_type(vname, type));
-      Recompute.push_back(index_pair_type(vname, 1));
     }
     //disable it if enable == false
     if (!enable)
@@ -177,7 +175,6 @@ public:
       Index.push_back(-1);
       NameAndValue.push_back(pair_type(vname, 0));
       ParameterType.push_back(index_pair_type(vname, 0));
-      Recompute.push_back(index_pair_type(vname, 1));
       return NameAndValue.back().second;
     }
     return (*loc).second;
@@ -204,29 +201,6 @@ public:
   */
   inline int getType(int i) const { return ParameterType[i].second; }
 
-  inline bool recompute(int i) const { return (Recompute[i].second == 1); }
-
-  inline int& recompute(int i) { return Recompute[i].second; }
-
-  inline void setComputed()
-  {
-    for (int i = 0; i < Recompute.size(); i++)
-    {
-      if (ParameterType[i].second == LOGLINEAR_P)
-        Recompute[i].second = 0;
-      else if (ParameterType[i].second == LOGLINEAR_K)
-        Recompute[i].second = 0;
-      else
-        Recompute[i].second = 1;
-    }
-  }
-
-  inline void setRecompute()
-  {
-    for (int i = 0; i < Recompute.size(); i++)
-      Recompute[i].second = 1;
-  }
-
   /** clear the variable set
    *
    * Remove all the data.
@@ -237,21 +211,6 @@ public:
    * @param input variables
    */
   void insertFrom(const VariableSet& input);
-
-  /** sum together the values of the optimizable parameter values in
-   *  two VariableSet objects, and set this object's values to equal them.
-   *  @param first set of input variables
-   *  @param second set of input variables
-   */
-  void insertFromSum(const VariableSet& input_1, const VariableSet& input_2);
-
-  /** take the difference (input_1-input_2) of values of the optimizable
-   *  parameter values in two VariableSet objects, and set this object's
-   *  values to equal them.
-   *  @param first set of input variables
-   *  @param second set of input variables
-   */
-  void insertFromDiff(const VariableSet& input_1, const VariableSet& input_2);
 
   /** activate variables for optimization
    * @param first iterator of the first name

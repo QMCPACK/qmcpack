@@ -860,8 +860,7 @@ void TwoBodyJastrow<FT>::evaluateDerivatives(ParticleSet& P,
     int kk = myVars.where(k);
     if (kk < 0)
       continue;
-    if (active.recompute(kk))
-      recalculate = true;
+    recalculate = true;
     rcsingles[k] = true;
   }
   if (recalculate)
@@ -896,8 +895,7 @@ void TwoBodyJastrow<FT>::evaluateDerivativesWF(ParticleSet& P,
     int kk = myVars.where(k);
     if (kk < 0)
       continue;
-    if (active.recompute(kk))
-      recalculate = true;
+    recalculate = true;
     rcsingles[k] = true;
   }
   if (recalculate)
@@ -994,8 +992,7 @@ void TwoBodyJastrow<FT>::evaluateDerivRatios(const VirtualParticleSet& VP,
     int kk = myVars.where(k);
     if (kk < 0)
       continue;
-    if (optvars.recompute(kk))
-      recalculate = true;
+    recalculate = true;
     rcsingles[k] = true;
   }
 

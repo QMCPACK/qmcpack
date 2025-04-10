@@ -307,7 +307,6 @@ void QMCCostFunction::checkConfigurations(EngineHandle& handle)
     // #pragma omp atomic
     //       eft_tot+=ef;
   }
-  OptVariablesForPsi.setComputed();
   //     app_log() << "  VMC Efavg = " << eft_tot/static_cast<Return_t>(wPerRank[NumThreads]) << std::endl;
   //Need to sum over the processors
   std::vector<Return_rt> etemp(3);
@@ -344,8 +343,6 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
 {
   if (MinMethod == "descent")
   {
-    //Seem to need this line to get non-zero derivatives for traditional Jastrow parameters when using descent.
-    OptVariablesForPsi.setRecompute();
     //Reset vectors and scalars from any previous iteration
     descentEngineObj.prepareStorage(omp_get_max_threads(), NumOptimizables);
   }
@@ -472,19 +469,9 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
 #ifdef HAVE_LMY_ENGINE
   // engine finish taking samples
   if (MinMethod == "adaptive")
-  {
     EngineObj->sample_finish();
-
-    if (EngineObj->block_first())
-    {
-      OptVariablesForPsi.setComputed();
-      app_log() << "calling setComputed function" << std::endl;
-    }
-  }
   else if (MinMethod == "descent")
-  {
     descentEngineObj.sample_finish();
-  }
 #endif
 
   app_log().flush();
@@ -558,14 +545,9 @@ QMCCostFunction::EffectiveWeight QMCCostFunction::correlatedSampling(bool needGr
         {
           rDsaved[i]  = std::real(Dsaved[i]);
           rHDsaved[i] = std::real(HDsaved[i]);
+          (*DerivRecords[ip])(iw, i)  = rDsaved[i];
+          (*HDerivRecords[ip])(iw, i) = rHDsaved[i];
         }
-
-        for (int i = 0; i < NumOptimizables; i++)
-          if (OptVariablesForPsi.recompute(i))
-          {
-            (*DerivRecords[ip])(iw, i)  = rDsaved[i];
-            (*HDerivRecords[ip])(iw, i) = rHDsaved[i];
-          }
       }
       else
         saved[ENERGY_NEW] = H_KE_Node[ip]->evaluate(wRef) + saved[ENERGY_FIXED];
