@@ -1291,7 +1291,14 @@ def test_job_run_command():
         ('baseline'       , 'n2_t2'         ) : 'srun test.x',
         ('baseline'       , 'n2_t2_e'       ) : 'srun test.x',
         ('baseline'       , 'n2_t2_p2'      ) : 'srun test.x',
+        ('besms'          , 'n1'            ) : 'srun test.x',
+        ('besms'          , 'n1_p1'         ) : 'srun test.x',
+        ('besms'          , 'n2'            ) : 'srun test.x',
+        ('besms'          , 'n2_t2'         ) : 'srun test.x',
+        ('besms'          , 'n2_t2_e'       ) : 'srun test.x',
+        ('besms'          , 'n2_t2_p2'      ) : 'srun test.x',
         })
+
 
     if testing.global_data['job_ref_table']:
         print('\n\n')
@@ -2102,6 +2109,24 @@ srun test.x''',
 #SBATCH --cpus-per-task=1
 #SBATCH -o test.out
 #SBATCH -e test.err
+#SBATCH --export=ALL
+
+export ENV_VAR=1
+export OMP_NUM_THREADS=1
+srun test.x''',
+
+        besms = '''#!/bin/bash
+#SBATCH -A ABC123
+#SBATCH -p t92
+#SBATCH -J jobname
+#SBATCH -t 06:30:00
+#SBATCH -N 2
+#SBATCH --ntasks-per-node=96
+#SBATCH --cpus-per-task=1
+#SBATCH -o test.out
+#SBATCH -e test.err
+#SBATCH --mem=350G
+#SBATCH --exclusive
 #SBATCH --export=ALL
 
 export ENV_VAR=1

@@ -4,7 +4,7 @@
 Development Guide
 =================
 
-The section gives guidance on how to extend the functionality of QMCPACK. Future examples will likely include topics such as the
+The chapter gives guidance on how to extend the functionality of QMCPACK. Future examples will likely include topics such as the
 addition of a Jastrow function or a new QMC method.
 
 .. admonition:: Definitions
@@ -16,7 +16,7 @@ addition of a Jastrow function or a new QMC method.
 QMCPACK coding standards
 ------------------------
 
-This chapter presents what we collectively have agreed are best practices for the code. This includes formatting style, naming
+This section presents what we collectively have agreed are best practices for the code. This includes formatting style, naming
 conventions, documentation conventions, and certain prescriptions for C++ language use. At the moment only the formatting can be
 enforced in an objective fashion.
 
@@ -25,23 +25,8 @@ of our effort to continue QMCPACK as a world-class, sustainable QMC code. Althou
 live up to these ideas, new code, even in old files, should follow the new conventions not the local conventions of the file
 whenever possible. Work on the code with continuous improvement in mind rather than a commitment to stasis.
 
-The `current workflow conventions`_ for the project are described in the wiki on the GitHub repository. It will save you and all
-the maintainers considerable time if you read these and ask questions up front.
-
-A PR should follow these standards before inclusion in the mainline. You can be sure of properly following the formatting
-conventions if you use clang-format.  The mechanics of clang-format setup and use can be found at
-https://github.com/QMCPACK/qmcpack/wiki/Source-formatting.
-
-The clang-format file found at ``qmcpack/src/.clang-format`` should be run over all code touched in a PR before a pull request is
-prepared. We also encourage developers to run clang-tidy with the ``qmcpack/src/.clang-tidy`` configuration over all new code.
-
-As much as possible, try to break up refactoring, reformatting, feature, and bugs into separate, small PRs. Aim for something that
-would take a reviewer no more than an hour. In this way we can maintain a good collective development velocity.
-
-.. _current workflow conventions: https://github.com/QMCPACK/qmcpack/wiki/Development-workflow
-
 Files
------
+~~~~~
 
 Each file should start with the header.
 
@@ -61,13 +46,13 @@ Each file should start with the header.
 If you make significant changes to an existing file, add yourself to the list of "developed by" authors.
 
 File organization
-~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^
 
 Header files should be placed in the same directory as their implementations. Unit tests should be written for all new
 functionality. These tests should be placed in a ``tests`` subdirectory below the implementations.
 
 File names
-~~~~~~~~~~
+^^^^^^^^^^
 
 Each class should be defined in a separate file with the same name as the class name. Use separate ``.cpp`` implementation files
 whenever possible to aid in incremental compilation.
@@ -77,7 +62,7 @@ The filenames of tests are composed by the filename of the object tested and the
 that is imitated.
 
 Header files
-~~~~~~~~~~~~
+^^^^^^^^^^^^
 
 All header files should be self-contained (i.e., not dependent on following any other header when it is included). Nor should they
 include files that are not necessary for their use (i.e., headers needed only by the implementation). Implementation files should
@@ -87,7 +72,7 @@ There are many header files that currently violate this. Each header must use ``
 The symbol name of the ``#define`` guards should be ``NAMESPACE(s)_CLASSNAME_H``.
 
 Includes
-~~~~~~~~
+^^^^^^^^
 
 Related header files should be included without any path. Header files from external projects and standard libraries should be
 includes using the ``<iostream>`` convention, while headers that are part of the QMCPACK project should be included using the
@@ -97,7 +82,7 @@ We are now using a new header file inclusion style following the modern CMake tr
 still use the legacy style. Newly written code and refactored code should be transitioned to the new style.
 
 New style for modern CMake
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+""""""""""""""""""""""""""
 
 In QMCPACK, include paths are handled by modern CMake target dependency. Every top level folder is at least one target. For
 example, ``src/Particle/CMakeLists.txt`` defines `qmcparticle` target. It propagates include path ``qmcpack/src/Particle`` to
@@ -122,7 +107,7 @@ the following additional CMake setting
   TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcparticle)
 
 Legacy style
-^^^^^^^^^^^^
+""""""""""""
 
 Header files should be included with the full path based on the ``src`` directory. For example, the file
 ``qmcpack/src/QMCWaveFunctions/SPOSet.h`` should be included as
@@ -134,7 +119,7 @@ Header files should be included with the full path based on the ``src`` director
 Even if the included file is located in the same directory as the including file, this rule should be obeyed.
 
 Ordering
-^^^^^^^^
+""""""""
 
 For readability, we suggest using the following standard order of includes:
 
@@ -151,7 +136,7 @@ For readability, we suggest using the following standard order of includes:
 In each section the included files should be sorted in alphabetical order.
 
 Naming
-------
+~~~~~~
 
 The balance between description and ease of implementation should be balanced such that the code remains self-documenting within a
 single terminal window.  If an extremely short variable name is used, its scope must be shorter than :math:`\sim 40` lines. An
@@ -159,12 +144,12 @@ exception is made for template parameters, which must be in all CAPS. Legacy cod
 style, read this section and do not imitate existing code that violates it.
 
 Namespace names
-~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^
 
 Namespace names should be one word, lowercase.
 
 Type and class names
-~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^
 
 Type and class names should start with a capital letter and have a capital letter for each new word. Underscores (``_``) are not
 allowed. It's redundant to end these names with ``Type`` or ``_t``.
@@ -175,28 +160,28 @@ allowed. It's redundant to end these names with ``Type`` or ``_t``.
    using RealType = double;
 
 Variable names
-~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^
 
 Variable names should not begin with a capital letter, which is reserved for type and class names. Underscores (``_``) should be
 used to separate words.
 
 Class data members
-~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^
 
 Class private/protected data members names should follow the convention of variable names with a trailing underscore (``_``). The use of public member functions is discourage, rethink the need for it in the first place. Instead ``get`` and ``set`` functions are the preferred access method.
 
 (Member) function names
-~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^
 
 Function names should start with a lowercase character and have a capital letter for each new word. The exception are the special cases for prefixed multiwalker (``mw_``) and flex (``flex_``) batched API functions. Coding convention should follow after those prefixes.
 
 Template Parameters
-~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^
 
 Template parameters names should be in all caps with (``_``) separating words.  It's redundant to end these names with ``_TYPE``,
 
 Lambda expressions
-~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^
 
 Named lambda expressions follow the naming convention for functions:
 
@@ -205,12 +190,12 @@ Named lambda expressions follow the naming convention for functions:
   auto myWhatever = [](int i) { return i + 4; };
 
 Macro names
-~~~~~~~~~~~
+^^^^^^^^^^^
 
 Macro names should be all uppercase and can include underscores (``_``). The underscore is not allowed as first or last character.
 
 Test case and test names
-~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 Test code files should be named as follows:
 
@@ -225,10 +210,10 @@ Test code files should be named as follows:
 where the test case covers the ``updateRow`` and  ``[wavefunction][fermion]`` indicates the test belongs to the fermion wavefunction functionality.
 
 Comments
---------
+~~~~~~~~
 
 Comment style
-~~~~~~~~~~~~~
+^^^^^^^^^^^^^
 
 Use the ``// Comment`` syntax for actual comments.
 
@@ -251,12 +236,12 @@ or
   int builder_index;
 
 Documentation
-~~~~~~~~~~~~~
+^^^^^^^^^^^^^
 
 Doxygen will be used for source documentation. Doxygen commands should be used when appropriate guidance on this has been decided.
 
 File docs
-^^^^^^^^^
+"""""""""
 
 Do not put the file name after the ``\file`` Doxygen command. Doxygen will fill it in for the file the tag appears in.
 
@@ -267,14 +252,14 @@ Do not put the file name after the ``\file`` Doxygen command. Doxygen will fill 
    */
 
 Class docs
-^^^^^^^^^^
+""""""""""
 
 Every class should have a short description (in the header of the file) of what it is and what is does. Comments for public class
 member functions follow the same rules as general function comments. Comments for private members are allowed but are not
 mandatory.
 
 Function docs
-^^^^^^^^^^^^^
+"""""""""""""
 
 For function parameters whose type is non-const reference or pointer to non-const memory, it should be specified if they are input
 (In:), output (Out:) or input-output parameters (InOut:).
@@ -296,17 +281,17 @@ Example:
                      Type& bar);
 
 Variable documentation
-^^^^^^^^^^^^^^^^^^^^^^
+""""""""""""""""""""""
 
 Name should be self-descriptive.  If you need documentation consider renaming first.
 
 Golden rule of comments
-~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^
 
 If you modify a piece of code, also adapt the comments that belong to it if necessary.
 
 Formatting and "style"
-----------------------
+~~~~~~~~~~~~~~~~~~~~~~
 
 Use the provided clang-format style in ``src/.clang-format`` to format ``.h``, ``.hpp``, ``.cu``, and ``.cpp`` files. Many of the following rules will be applied to the code by clang-format, which should allow you to ignore most of them if you always run it on your modified code.
 
@@ -315,45 +300,45 @@ or run clang-format manually on every file you modify.  However, if you see nume
 have modified, first commit the formatting changes in a separate PR.
 
 Indentation
-~~~~~~~~~~~
+^^^^^^^^^^^
 
 Indentation consists of two spaces. Do not use tabs in the code.
 
 Line length
-~~~~~~~~~~~
+^^^^^^^^^^^
 
 The length of each line of your code should be at most *120* characters.
 
 Horizontal spacing
-~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^
 
 No trailing white spaces should be added to any line. Use no space before a comma (``,``) and a semicolon (``;``), and add a space
 after them if they are not at the end of a line.
 
 Preprocessor directives
-~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^
 
 The preprocessor directives are not indented.
 The hash is the first character of the line.
 
 Binary operators
-~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^
 
 The assignment operators should always have spaces around them.
 
 Unary operators
-~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^
 
 Do not put any space between an unary operator and its argument.
 
 Types
-~~~~~
+^^^^^
 
 The ``using`` syntax is preferred to ``typedef`` for type aliases. If the actual type is not excessively long or complex, simply
 use it; renaming simple types makes code less understandable.
 
 Pointers and references
-~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^
 
 Pointer or reference operators should go with the type. But understand the compiler reads them from right to left.
 
@@ -366,7 +351,7 @@ Pointer or reference operators should go with the type. But understand the compi
   Type* var1, var2; // var1 is a pointer to Type but var2 is a Type.
 
 Templates
-~~~~~~~~~
+^^^^^^^^^
 
 The angle brackets of templates should not have any external or internal padding.
 
@@ -378,14 +363,14 @@ The angle brackets of templates should not have any external or internal padding
   Class1<Class2<type1>> object;
 
 Vertical spacing
-~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^
 
 Use empty lines when it helps to improve the readability of the code, but do not use too many. Do not use empty lines after a
 brace that opens a scope or before a brace that closes a scope. Each file should contain an empty line at the end of the file.
 Some editors add an empty line automatically, some do not.
 
 Variable declarations and definitions
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - Avoid declaring multiple variables in the same declaration, especially if they are not fundamental types:
 
@@ -422,7 +407,7 @@ Variable declarations and definitions
     constexpr unsigned long l(42);
 
 Function declarations and definitions
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The return type should be on the same line as the function name. Parameters should also be on the same line unless they do not fit
 on it, in which case one parameter per line aligned with the first parameter should be used.
@@ -447,7 +432,7 @@ Also include the parameter names in the declaration of a function, that is,
                   BigTemplatedSomething<double> c);
 
 Conditionals
-~~~~~~~~~~~~
+^^^^^^^^^^^^
 
 Examples:
 
@@ -472,7 +457,7 @@ Examples:
   }
 
 Switch statement
-~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^
 
 Switch statements should always have a default case.
 
@@ -498,7 +483,7 @@ Example:
   }
 
 Loops
-~~~~~
+^^^^^
 
 Examples:
 
@@ -531,7 +516,7 @@ Examples:
 .. _class-format:
 
 Class format
-~~~~~~~~~~~~
+^^^^^^^^^^^^
 
 ``public``, ``protected``, and ``private`` keywords are not indented.
 
@@ -565,7 +550,7 @@ Example:
   };
 
 Constructor initializer lists
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+"""""""""""""""""""""""""""""
 
 Examples:
 
@@ -600,7 +585,7 @@ Examples:
 
 
 Namespace formatting
-~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^
 
 The content of namespaces is not indented. A comment should indicate when a namespace is closed. (clang-format will add these if
 absent). If nested namespaces are used, a comment with the full namespace is required after opening a set of namespaces or an
@@ -654,7 +639,7 @@ contain the state of a logical object, and might allow access to object data thr
 while preserving maximally ability to change internal implementation of the class.
 
 Do not...
-^^^^^^^^^
+"""""""""
 
 - use ``struct`` as a way to avoid controlling access to the class. Only when the instantiated objects are public data structure is ``struct`` appropriate.
 
@@ -753,7 +738,7 @@ memory leaks if pointers are not managed properly. Since C++11, smart pointers w
 it demands developers to think about the ownership and lifetime of declared pointer objects.
 
 std::unique_ptr
-^^^^^^^^^^^^^^^
+"""""""""""""""
 
 A unique pointer is the unique owner of a piece of allocated memory. Pointers in per-walker data structure with distinct contents
 should be unique pointers. For example, every walker has a trial wavefunction object which contains an SPO object pointer. Because
@@ -764,7 +749,7 @@ In QMCPACK, most raw pointers can be directly replaced with ``std::unique_ptr``.
 Corresponding use of ``new`` operator can be replaced with ``std:make_unique``.
 
 std::shared_ptr
-^^^^^^^^^^^^^^^
+"""""""""""""""
 
 A shared pointer is the shared owner of a piece of allocated memory. Moving a pointer ownership from one place to another should
 not use shared pointers but C++ move semantics. Shared contents between walkers may be candidates for shared pointers. For example,
@@ -776,10 +761,13 @@ memory shared by an SPOSet and all of its clones.
 Log and error output
 ~~~~~~~~~~~~~~~~~~~~
 
-``app_log``, ``app_warning``, ``app_err`` and ``app_debug`` print out messages only on rank 0 to avoid repetitive messages from
-every MPI rank. For this reason, they are only suitable for outputing messages identical to all MPI ranks. ``app_debug`` prints only
-when ``--verbosity=debug`` command line option is used. Messages that come from only one or a few MPI ranks should use ``std::cout``
-and ``std::cerr``.
+Take care to consider the volume of output and avoid unneeded output from all MPI ranks. ``app_log``, ``app_warning``, ``app_err``
+and ``app_debug`` print out messages only on rank 0 to avoid repetitive messages from every MPI rank. For this reason, they are only
+suitable for printing messages identical to all MPI ranks. ``app_debug`` prints only when ``--verbosity=debug`` command line option
+is used. Messages that come from only one or a few MPI ranks should use ``std::cout`` and ``std::cerr``.
+
+Stopping or Aborting QMCPACK
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If the code needs to be stopped after an unrecoverable error that happens uniformly on all the MPI ranks, a bad input for example,
 avoid using ``app_err`` together with ``Communicate::abort(msg)`` or ``APP_ABORT(msg)`` because any MPI rank other than rank 0 may
@@ -789,6 +777,68 @@ and capture it where ``Communicate::barrier_and_abort()`` can be used. Note that
 uniform error, improper use may cause QMCPACK hanging.
 
 In addition, avoid directly calling C function ``abort()``, ``exit()`` and ``MPI_Abort()`` for stopping the code.
+
+GitHub Pull Request guidance
+----------------------------
+
+In the following we provide guidance on creating Pull Requests (PRs) on GitHub that will be rapidly and easily merged into the development
+branch. The guidance is similar to those of many other open source projects. Most importantly, to the extent possible, we encourage
+the creation of small PRs focused on individual topics instead of one or a few larger PRs. Large PRs
+(many hundreds of lines, mixtures of bug fixes, features, and refactoring) have over time proven significantly more challenging to
+review, to update, and to keep current with other developmental activities. In contrast, small PRs that are focused on
+achieving a single well-defined task are straightforward to review and merge promptly. It will save you and the maintainers
+considerable time if you follow this principle, the guidelines below, and ask questions in advance! We aim to be flexible and
+reasonable but maintainer resources are limited.
+
+The `current workflow conventions`_ for the project are currently described in the wiki on the GitHub repository.
+
+As a general principle, we aim to keep the mainline development branch QMCPACK in a fully working and deployable/shippable state at
+all times. Therefore, all PRs must pass the existing tests. If this is not possible, a plan to simultaneously update the existing
+tests will need to be devised. Please discuss this in advance if possible.
+
+The GitHub documentation provides some suggestions for `helping others review your changes`_. Here we'd like to highlight a few practices:
+
+Do
+~~
+
+* Make simple PRs. 'Simple' doesn't refer to the lines of code or the number of files being touched. It is more about restricting
+  the PR to a focused topic. For example, non-functional changes may affect many lines and files, but they are conceptually simple
+  and easy to review. This category includes refactoring changes like renaming files, classes, functions, variables or code
+  formatting. Marking class member variables private and accessing them via accessor functions are also considered in this category.
+* Make orthogonal PRs. PRs that mix multiple topics slow down reviewing and merging. When large PRs can be broken into simple PRs,
+  the amount of dependency usually can be reduced.
+* To achieve large changes, such as the addition of a new major feature, devise a series of PRs and indicate your plan in the first
+  PR. If orthogonality is not achievable, a series of simple dependent PRs are still better than a single large PR. For example, you
+  could add initial input handling, some initial tests, the initial implementation of your feature, and then an integration test.
+* If you, e.g., spot and fix a bug or improve unrelated documentation while working on your feature, make a separate PR with these
+  improvements. This helps keep the PRs focused on distinct and unrelated topics, making the reviews considerably easier. It will
+  likely also make your improvements available in mainline sooner.
+* When changes are getting too big on a feature branch, please consider upstreaming certain changes to the develop branch.
+  Once they are accepted, merging the develop branch to the feature branch effectively reduces the size of changes in the feature branch.
+  For example, you are working on a feature and introduced new classes and files. They can be merged to develop even they are just preliminary.
+  You don't need to make them waiting for the full completion of your feature.
+* Follow the instructions in this section for formatting. You can follow the formatting conventions automatically using
+  clang-format.  The mechanics of clang-format setup and use can be found at
+  https://github.com/QMCPACK/qmcpack/wiki/Source-formatting. All modern editors support easy invocation of this tool. The
+  clang-format file found at ``qmcpack/src/.clang-format`` should be run over all code touched in a PR. We also encourage developers
+  to run clang-tidy with the ``qmcpack/src/.clang-tidy`` configuration over all new code.
+
+Don't
+~~~~~
+
+* Do not mix functional changes with non-functional ones. Mixing them dramatically increases the review challenge of non-functional
+  changes. If non-functional changes touch many files, make sure to upstream them before the functional changes using orthogonal PRs
+  if possible or dependent PRs.
+* Do not mix bug fixes with feature development. If a bug was surfaced during feature development, make a PR including the fix to the develop branch.
+* Do not delay potential early mergeable changes until the full completion of a feature. We are happy to merge code that has not been
+  fully polished and for the polishing to occur in subsequent PRs. It is not necessary and they are harder to adjust if they end up
+  conflicting with the rest of the code, plus you will be able to get suggestions in a more time timely manner. 
+
+As much as possible, try to avoid the "Don't"s. Aim for something that would take a reviewer no more than an hour to read,
+understand, and review. In this way we can maintain a good collective development velocity.
+
+.. _current workflow conventions: https://github.com/QMCPACK/qmcpack/wiki/Development-workflow
+.. _helping others review your changes: https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/getting-started/helping-others-review-your-changes
 
 .. include:: input_code.txt
 

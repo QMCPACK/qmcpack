@@ -21,7 +21,7 @@
 #include "Utilities/Resource.h"
 #include "Utilities/for_testing/checkMatrix.hpp"
 #include "Utilities/for_testing/RandomForTest.h"
-#include "Platforms/PinnedAllocator.h"
+#include "OMPTarget/OffloadAlignedAllocators.hpp"
 
 // Legacy CPU inversion for temporary testing
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
@@ -29,9 +29,6 @@
 
 namespace qmcplusplus
 {
-template<typename T>
-using OffloadPinnedAllocator = OMPallocator<T, PinnedAlignedAllocator<T>>;
-
 template<typename T>
 using OffloadPinnedMatrix = Matrix<T, OffloadPinnedAllocator<T>>;
 template<typename T>
