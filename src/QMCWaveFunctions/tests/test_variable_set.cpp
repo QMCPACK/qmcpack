@@ -28,7 +28,7 @@ TEST_CASE("VariableSet empty", "[optimize]")
 
   REQUIRE(vs.is_optimizable() == false);
   REQUIRE(vs.size_of_active() == 0);
-  REQUIRE(vs.find("something") == vs.NameAndValue.end());
+  REQUIRE(vs.find("something") == vs.end());
   REQUIRE(vs.getIndex("something") == -1);
 }
 

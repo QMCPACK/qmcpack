@@ -49,24 +49,25 @@ enum
 struct VariableSet
 {
   using real_type = qmcplusplus::QMCTraits::RealType;
-
   using pair_type       = std::pair<std::string, real_type>;
   using index_pair_type = std::pair<std::string, int>;
   using iterator        = std::vector<pair_type>::iterator;
   using const_iterator  = std::vector<pair_type>::const_iterator;
   using size_type       = std::vector<pair_type>::size_type;
 
+private:
   ///number of active variables
   int num_active_vars;
+  std::vector<pair_type> NameAndValue;
+  std::vector<index_pair_type> ParameterType;
+  std::vector<index_pair_type> Recompute;
+
+public:
   /** store locator of the named variable
    *
    * if(Index[i]  == -1), the named variable is not active
    */
   std::vector<int> Index;
-  std::vector<pair_type> NameAndValue;
-  std::vector<index_pair_type> ParameterType;
-  std::vector<index_pair_type> Recompute;
-
   ///default constructor
   inline VariableSet() : num_active_vars(0) {}
   ///viturval destructor for safety

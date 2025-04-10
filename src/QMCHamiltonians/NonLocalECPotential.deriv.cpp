@@ -68,7 +68,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
                                                                                  const Vector<ValueType>& dlogpsi,
                                                                                  Vector<ValueType>& dhpsioverpsi)
 {
-  const size_t num_vars = optvars.num_active_vars;
+  const size_t num_vars = optvars.size_of_active();
   dratio.resize(nknot, num_vars);
   dlogpsi_vp.resize(dlogpsi.size());
 
