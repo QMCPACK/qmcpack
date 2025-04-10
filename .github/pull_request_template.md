@@ -29,7 +29,7 @@ _Delete the items that do not apply_
 
 ## Checklist
 
-_Update the following with a yes where the items apply. If you're unsure about any of them, don't hesitate to ask.  This is
+_Update the following with an [x] where the items apply. If you're unsure about any of them, don't hesitate to ask.  This is
 simply a reminder of what we are going to look for before merging your code._
 
 - [ ] I have read the pull request guidance and develop docs
