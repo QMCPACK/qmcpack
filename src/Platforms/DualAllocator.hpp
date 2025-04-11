@@ -122,14 +122,14 @@ struct qmc_allocator_traits<DualAllocator<T, DeviceAllocator, HostAllocator>>
    */
   static void updateTo(DualAlloc& alloc, T* host_ptr, size_t n, size_t offset = 0)
   {
-    alloc.get_device_allocator().copyToDevice(alloc.get_device_ptr() + offset, host_ptr + offset, n);
+    DeviceAllocator::memcpy(alloc.get_device_ptr() + offset, host_ptr + offset, n);
   }
 
   /** update from the device, assumes you are copying starting with the device_ptr to the implicit host_ptr.
    */
   static void updateFrom(DualAlloc& alloc, T* host_ptr, size_t n, size_t offset = 0)
   {
-    alloc.get_device_allocator().copyFromDevice(host_ptr + offset, alloc.get_device_ptr() + offset, n);
+    DeviceAllocator::memcpy(host_ptr + offset, alloc.get_device_ptr() + offset, n);
   }
 
   static void deviceSideCopyN(DualAlloc& alloc, size_t to, size_t n, size_t from)
@@ -137,7 +137,7 @@ struct qmc_allocator_traits<DualAllocator<T, DeviceAllocator, HostAllocator>>
     T* device_ptr = alloc.get_device_ptr();
     T* to_ptr     = device_ptr + to;
     T* from_ptr   = device_ptr + from;
-    alloc.get_device_allocator().copyDeviceToDevice(to_ptr, n, from_ptr);
+    DeviceAllocator::memcpy(to_ptr, from_ptr, n);
   }
 };
 

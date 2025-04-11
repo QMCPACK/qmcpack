@@ -14,7 +14,7 @@
 
 #include <memory>
 #include <iostream>
-#include "SYCL/SYCLallocator.hpp"
+#include "SYCL/MemManageSYCL.hpp"
 #include "OhmmsPETE/OhmmsVector.h"
 
 namespace qmcplusplus
