@@ -31,7 +31,7 @@ namespace qmcplusplus
  * @tparam T base precision for most computation
  * @tparam T_FP high precision for matrix inversion, T_FP >= T
  */
-template<typename T, typename T_FP>
+template<PlatformKind PL, typename T, typename T_FP>
 class DelayedUpdateCUDA
 {
   // Data staged during for delayed acceptRows
@@ -64,8 +64,8 @@ class DelayedUpdateCUDA
   Matrix<T, CUDAHostAllocator<T>> Ainv_buffer;
 
   // CUDA specific variables
-  compute::Queue<PlatformKind::CUDA> queue_;
-  compute::BLASHandle<PlatformKind::CUDA> blas_handle_;
+  compute::Queue<PL> queue_;
+  compute::BLASHandle<PL> blas_handle_;
 
   /// reset delay count to 0
   inline void clearDelayCount()

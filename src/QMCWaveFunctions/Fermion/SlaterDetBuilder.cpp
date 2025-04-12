@@ -443,7 +443,7 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
       {
         app_summary() << "      Running on a GPU via CUDA/HIP acceleration." << std::endl;
         adet = std::make_unique<
-            DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>>(std::move(psi_clone),
+            DiracDeterminant<DelayedUpdateCUDA<PlatformKind::CUDA, ValueType, QMCTraits::QTFull::ValueType>>>(std::move(psi_clone),
                                                                                           firstIndex, lastIndex,
                                                                                           delay_rank,
                                                                                           matrix_inverter_kind);
@@ -453,7 +453,7 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
       {
         app_summary() << "      Running on a GPU via SYCL acceleration." << std::endl;
         adet = std::make_unique<
-            DiracDeterminant<DelayedUpdateSYCL<ValueType, QMCTraits::QTFull::ValueType>>>(std::move(psi_clone),
+            DiracDeterminant<DelayedUpdateSYCL<PlatformKind::SYCL, ValueType, QMCTraits::QTFull::ValueType>>>(std::move(psi_clone),
                                                                                           firstIndex, lastIndex,
                                                                                           delay_rank,
                                                                                           matrix_inverter_kind);
