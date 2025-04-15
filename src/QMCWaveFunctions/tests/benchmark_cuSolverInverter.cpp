@@ -12,7 +12,7 @@
 #include "catch.hpp"
 
 #include "Configuration.h"
-#include <Queue.hpp>
+#include "Common/Queue.hpp"
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
 #include "QMCWaveFunctions/Fermion/cuSolverInverter.hpp"
 #include "Utilities/for_testing/checkMatrix.hpp"
