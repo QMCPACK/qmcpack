@@ -37,8 +37,8 @@ TEST_CASE("StdRandom save and load", "[utilities]")
 
   rng.init(111);
 
-  std::vector<double> rng_doubles(100,0.0);
-  for(auto& elem : rng_doubles)
+  std::vector<double> rng_doubles(100, 0.0);
+  for (auto& elem : rng_doubles)
     elem = rng();
 
   std::vector<DoubleRNG::uint_type> state;
@@ -84,6 +84,17 @@ TEST_CASE("StdRandom clone", "[utilities]")
 
   CHECK((*rng2)() == rng());
   CHECK((*rng2)() == rng());
+
+  DoubleRNG rng3;
+  RandomBase<double>& a3 = rng3;
+  RandomBase<double>& a  = rng;
+
+  a3 = a;
+
+  rng.write(stream1);
+  rng3.write(stream2);
+  CHECK(stream1.str() == stream2.str());
+  CHECK(rng3() == rng());
 }
 
 } // namespace qmcplusplus

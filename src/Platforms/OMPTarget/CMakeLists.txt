@@ -21,7 +21,10 @@ if(USE_OBJECT_TARGET)
 else()
   add_library(platform_omptarget_LA ${OMP_LA_SRCS})
 endif()
+
 target_link_libraries(platform_omptarget_runtime PRIVATE platform_host_runtime)
+target_include_directories(platform_omptarget_runtime PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/..")
+
 target_link_libraries(platform_omptarget_LA PUBLIC platform_omptarget_runtime)
 
 if(ENABLE_CUDA AND QMC_OFFLOAD_MEM_ASSOCIATED)

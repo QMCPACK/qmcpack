@@ -19,7 +19,7 @@
 #include <type_traits>
 #include <atomic>
 #include "config.h"
-#include "allocator_traits.hpp"
+#include "Common/allocator_traits.hpp"
 #if defined(ENABLE_OFFLOAD)
 #include <omp.h>
 #endif

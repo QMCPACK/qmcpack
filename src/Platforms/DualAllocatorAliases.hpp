@@ -25,7 +25,7 @@
 #include "DeviceAllocator.hpp"
 #include "PinnedAllocator.h"
 #if (defined(ENABLE_CUDA) || defined(ENABLE_SYCL)) && !defined(ENABLE_OFFLOAD)
-#include "DualAllocator.hpp"
+#include "Common/DualAllocator.hpp"
 #if defined(ENABLE_CUDA)
 namespace qmcplusplus
 {

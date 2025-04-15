@@ -24,9 +24,9 @@
 #include <stdexcept>
 #include <atomic>
 #include <limits>
-#include <Common/MemManage.hpp>
+#include "Common/MemManage.hpp"
+#include "Common/allocator_traits.hpp"
 #include "QueueSYCL.hpp"
-#include "allocator_traits.hpp"
 #include "SYCLruntime.hpp"
 
 namespace qmcplusplus

@@ -12,7 +12,7 @@
 #ifndef QMCPLUSPLUS_QUEUE_CUDA_H
 #define QMCPLUSPLUS_QUEUE_CUDA_H
 
-#include "Queue.hpp"
+#include "Common/Queue.hpp"
 #include "CUDAruntime.hpp"
 
 namespace qmcplusplus
