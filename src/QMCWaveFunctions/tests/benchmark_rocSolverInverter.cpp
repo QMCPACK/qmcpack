@@ -12,7 +12,7 @@
 #include "catch.hpp"
 
 #include "Configuration.h"
-#include "Platforms/CPU/SIMD/aligned_allocator.hpp"
+#include <Queue.hpp>
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
 #include "QMCWaveFunctions/Fermion/rocSolverInverter.hpp"
 #include "Utilities/for_testing/checkMatrix.hpp"
@@ -32,6 +32,7 @@ TEST_CASE("rocSolverInverter_bench", "[wavefunction][benchmark]")
 #endif
 
   rocSolverInverter<FullPrecValue> solver;
+  compute::Queue<PlatformKind::CUDA> queue;
 
   const int N = 1024;
 
@@ -48,7 +49,7 @@ TEST_CASE("rocSolverInverter_bench", "[wavefunction][benchmark]")
   testing::MakeRngSpdMatrix<FullPrecValue> makeRngSpdMatrix{};
   makeRngSpdMatrix(m);
 
-  BENCHMARK("rocSolverInverter") { solver.invert_transpose(m, m_invT, m_invGPU, log_value); };
+  BENCHMARK("rocSolverInverter") { solver.invert_transpose(m, m_invT, m_invGPU, log_value, queue.getNative()); };
 
   DiracMatrix<FullPrecValue> dmat;
   BENCHMARK("CPU") { dmat.invert_transpose(m, m_invT_CPU, log_value); };

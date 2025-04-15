@@ -19,10 +19,15 @@
 #include "AccelBLAS.hpp"
 #include "detail/AccelMatrixUpdate.hpp"
 #include "PrefetchedRange.h"
+#if defined(ENABLE_CUDA)
 #if defined(QMC_CUDA2HIP)
 #include "rocSolverInverter.hpp"
 #else
 #include "cuSolverInverter.hpp"
+#endif
+#endif
+#if defined(ENABLE_SYCL)
+#include "syclSolverInverter.hpp"
 #endif
 
 namespace qmcplusplus
@@ -53,10 +58,15 @@ class DelayedUpdateCUDA
   /// current number of delays, increase one for each acceptance, reset to 0 after updating Ainv
   int delay_count;
 
+#if defined(ENABLE_CUDA)
 #if defined(QMC_CUDA2HIP)
-  rocSolverInverter<T_FP> rocsolver_inverter;
+  rocSolverInverter<T_FP> solver_inverter_;
 #else
-  cuSolverInverter<T_FP> cusolver_inverter;
+  cuSolverInverter<T_FP> solver_inverter_;
+#endif
+#endif
+#if defined(ENABLE_SYCL)
+  syclSolverInverter<T_FP> solver_inverter_;
 #endif
 
   // the range of prefetched_Ainv_rows
@@ -105,11 +115,7 @@ public:
   void invert_transpose(const Matrix<T>& logdetT, Matrix<T>& Ainv, std::complex<TREAL>& log_value)
   {
     clearDelayCount();
-#if defined(QMC_CUDA2HIP)
-    rocsolver_inverter.invert_transpose(logdetT, Ainv, Ainv_gpu, log_value);
-#else
-    cusolver_inverter.invert_transpose(logdetT, Ainv, Ainv_gpu, log_value);
-#endif
+    solver_inverter_.invert_transpose(logdetT, Ainv, Ainv_gpu, log_value, queue_.getNative());
   }
 
   /** initialize internal objects when Ainv is refreshed
