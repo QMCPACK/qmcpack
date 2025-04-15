@@ -212,13 +212,13 @@ public:
       compute::BLAS::gemm(blas_handle_, 'T', 'N', delay_count, norb, norb, T(1), U.device_data(), norb, Ainv_gpu.data(),
                           norb, T(0), temp_gpu.data(), lda_Binv);
       queue_.enqueueH2D(delay_list, delay_count);
-      compute::applyW_stageV(queue_, delay_list.device_data(), delay_count, temp_gpu.data(), norb, temp_gpu.cols(), V.device_data(),
-                         Ainv_gpu.data());
+      compute::applyW_stageV(queue_, delay_list.device_data(), delay_count, temp_gpu.data(), norb, temp_gpu.cols(),
+                             V.device_data(), Ainv_gpu.data());
       queue_.enqueueH2D(Binv, lda_Binv * delay_count);
       compute::BLAS::gemm(blas_handle_, 'N', 'N', norb, delay_count, delay_count, T(1), V.device_data(), norb,
                           Binv.device_data(), lda_Binv, T(0), U.device_data(), norb);
-      compute::BLAS::gemm(blas_handle_, 'N', 'N', norb, norb, delay_count, T(-1), U.device_data(), norb, temp_gpu.data(),
-                          lda_Binv, T(1), Ainv_gpu.data(), norb);
+      compute::BLAS::gemm(blas_handle_, 'N', 'N', norb, norb, delay_count, T(-1), U.device_data(), norb,
+                          temp_gpu.data(), lda_Binv, T(1), Ainv_gpu.data(), norb);
       clearDelayCount();
     }
 

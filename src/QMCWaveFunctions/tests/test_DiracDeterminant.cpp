@@ -144,9 +144,11 @@ TEST_CASE("DiracDeterminant_first", "[wavefunction][fermion]")
   test_DiracDeterminant_first<DiracDeterminant<>>(DetMatInvertor::HOST);
   test_DiracDeterminant_first<DiracDeterminant<>>(DetMatInvertor::ACCEL);
 #if defined(ENABLE_CUDA)
-  test_DiracDeterminant_first<DiracDeterminant<DelayedUpdateCUDA<PlatformKind::CUDA, Value, QMCTraits::QTFull::ValueType>>>(
+  test_DiracDeterminant_first<
+      DiracDeterminant<DelayedUpdateCUDA<PlatformKind::CUDA, Value, QMCTraits::QTFull::ValueType>>>(
       DetMatInvertor::HOST);
-  test_DiracDeterminant_first<DiracDeterminant<DelayedUpdateCUDA<PlatformKind::CUDA, Value, QMCTraits::QTFull::ValueType>>>(
+  test_DiracDeterminant_first<
+      DiracDeterminant<DelayedUpdateCUDA<PlatformKind::CUDA, Value, QMCTraits::QTFull::ValueType>>>(
       DetMatInvertor::ACCEL);
 #elif defined(ENABLE_SYCL)
   test_DiracDeterminant_first<DiracDeterminant<DelayedUpdateSYCL<Value, QMCTraits::QTFull::ValueType>>>(
@@ -287,9 +289,11 @@ TEST_CASE("DiracDeterminant_second", "[wavefunction][fermion]")
   test_DiracDeterminant_second<DiracDeterminant<>>(DetMatInvertor::HOST);
   test_DiracDeterminant_second<DiracDeterminant<>>(DetMatInvertor::ACCEL);
 #if defined(ENABLE_CUDA)
-  test_DiracDeterminant_second<DiracDeterminant<DelayedUpdateCUDA<PlatformKind::CUDA, Value, QMCTraits::QTFull::ValueType>>>(
+  test_DiracDeterminant_second<
+      DiracDeterminant<DelayedUpdateCUDA<PlatformKind::CUDA, Value, QMCTraits::QTFull::ValueType>>>(
       DetMatInvertor::HOST);
-  test_DiracDeterminant_second<DiracDeterminant<DelayedUpdateCUDA<PlatformKind::CUDA, Value, QMCTraits::QTFull::ValueType>>>(
+  test_DiracDeterminant_second<
+      DiracDeterminant<DelayedUpdateCUDA<PlatformKind::CUDA, Value, QMCTraits::QTFull::ValueType>>>(
       DetMatInvertor::ACCEL);
 #elif defined(ENABLE_SYCL)
   test_DiracDeterminant_second<DiracDeterminant<DelayedUpdateSYCL<Value, QMCTraits::QTFull::ValueType>>>(

@@ -304,7 +304,8 @@ private:
 
 extern template class DiracDeterminant<>;
 #if defined(ENABLE_CUDA)
-extern template class DiracDeterminant<DelayedUpdateCUDA<PlatformKind::CUDA, QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
+extern template class DiracDeterminant<
+    DelayedUpdateCUDA<PlatformKind::CUDA, QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 #endif
 #if defined(ENABLE_SYCL)
 extern template class DiracDeterminant<DelayedUpdateCUDA<PlatformKind::SYCL, QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
