@@ -452,12 +452,15 @@ TEST_CASE("DiracDeterminant_delayed_update", "[wavefunction][fermion]")
   test_DiracDeterminant_delayed_update<DiracDeterminant<>>(DetMatInvertor::HOST);
   test_DiracDeterminant_delayed_update<DiracDeterminant<>>(DetMatInvertor::ACCEL);
 #if defined(ENABLE_CUDA)
-  test_DiracDeterminant_delayed_update<DiracDeterminant<DelayedUpdateAccel<PlatformKind::CUDA, Value, QMCTraits::QTFull::ValueType>>>(
+  test_DiracDeterminant_delayed_update<
+      DiracDeterminant<DelayedUpdateAccel<PlatformKind::CUDA, Value, QMCTraits::QTFull::ValueType>>>(
       DetMatInvertor::HOST);
-  test_DiracDeterminant_delayed_update<DiracDeterminant<DelayedUpdateAccel<PlatformKind::CUDA, Value, QMCTraits::QTFull::ValueType>>>(
+  test_DiracDeterminant_delayed_update<
+      DiracDeterminant<DelayedUpdateAccel<PlatformKind::CUDA, Value, QMCTraits::QTFull::ValueType>>>(
       DetMatInvertor::ACCEL);
 #elif defined(ENABLE_SYCL)
-  test_DiracDeterminant_delayed_update<DiracDeterminant<DelayedUpdateAccel<PlatformKind::SYCL, Value, QMCTraits::QTFull::ValueType>>>(
+  test_DiracDeterminant_delayed_update<
+      DiracDeterminant<DelayedUpdateAccel<PlatformKind::SYCL, Value, QMCTraits::QTFull::ValueType>>>(
       DetMatInvertor::HOST);
 #endif
 }
@@ -665,9 +668,11 @@ TEST_CASE("DiracDeterminant_spinor_update", "[wavefunction][fermion]")
   test_DiracDeterminant_spinor_update<DiracDeterminant<>>(DetMatInvertor::HOST);
   test_DiracDeterminant_spinor_update<DiracDeterminant<>>(DetMatInvertor::ACCEL);
 #ifdef ENABLE_CUDA
-  test_DiracDeterminant_spinor_update<DiracDeterminant<DelayedUpdateAccel<PlatformKind::CUDA, Value, QMCTraits::QTFull::ValueType>>>(
+  test_DiracDeterminant_spinor_update<
+      DiracDeterminant<DelayedUpdateAccel<PlatformKind::CUDA, Value, QMCTraits::QTFull::ValueType>>>(
       DetMatInvertor::HOST);
-  test_DiracDeterminant_spinor_update<DiracDeterminant<DelayedUpdateAccel<PlatformKind::CUDA, Value, QMCTraits::QTFull::ValueType>>>(
+  test_DiracDeterminant_spinor_update<
+      DiracDeterminant<DelayedUpdateAccel<PlatformKind::CUDA, Value, QMCTraits::QTFull::ValueType>>>(
       DetMatInvertor::ACCEL);
 #endif
 }
