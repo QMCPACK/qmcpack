@@ -28,9 +28,6 @@
 #if defined(ENABLE_CUDA) || defined(ENABLE_SYCL)
 #include "QMCWaveFunctions/Fermion/DelayedUpdateCUDA.h"
 #endif
-#if defined(ENABLE_SYCL)
-#include "QMCWaveFunctions/Fermion/DelayedUpdateSYCL.h"
-#endif
 
 namespace qmcplusplus
 {
@@ -77,7 +74,7 @@ public:
   {
     static constexpr bool solver_supported = true;
 
-    DelayedUpdateSYCL<VT, FPVT> update_eng_;
+    DelayedUpdateCUDA<PlatformKind::SYCL, VT, FPVT> update_eng_;
     //syclSolverInverter<T_FP> solver_inverter_;
   };
 #endif
