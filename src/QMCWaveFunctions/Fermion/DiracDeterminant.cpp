@@ -808,7 +808,6 @@ template class DiracDeterminant<
 #if defined(ENABLE_SYCL)
 template class DiracDeterminant<
     DelayedUpdateAccel<PlatformKind::SYCL, QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
-template class DiracDeterminant<DelayedUpdateSYCL<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 #endif
 
 } // namespace qmcplusplus

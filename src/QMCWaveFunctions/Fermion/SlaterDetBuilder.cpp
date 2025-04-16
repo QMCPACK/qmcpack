@@ -444,19 +444,19 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
         app_summary() << "      Running on a GPU via CUDA/HIP acceleration." << std::endl;
         adet = std::make_unique<DiracDeterminant<
             DelayedUpdateAccel<PlatformKind::CUDA, ValueType, QMCTraits::QTFull::ValueType>>>(std::move(psi_clone),
-                                                                                             firstIndex, lastIndex,
-                                                                                             delay_rank,
-                                                                                             matrix_inverter_kind);
+                                                                                              firstIndex, lastIndex,
+                                                                                              delay_rank,
+                                                                                              matrix_inverter_kind);
       }
 #elif defined(ENABLE_SYCL)
       else if (CPUOMPTargetVendorSelector::selectPlatform(useGPU) == PlatformKind::SYCL)
       {
         app_summary() << "      Running on a GPU via SYCL acceleration." << std::endl;
-        adet = std::make_unique<
-            DiracDeterminant<DelayedUpdateSYCL<ValueType, QMCTraits::QTFull::ValueType>>>(std::move(psi_clone),
-                                                                                          firstIndex, lastIndex,
-                                                                                          delay_rank,
-                                                                                          matrix_inverter_kind);
+        adet = std::make_unique<DiracDeterminant<
+          DelayedUpdateAccel<PlatformKind::SYCL, ValueType, QMCTraits::QTFull::ValueType>>>(std::move(psi_clone),
+                                                                                            firstIndex, lastIndex,
+                                                                                            delay_rank,
+                                                                                            matrix_inverter_kind);
       }
 #endif
       else
