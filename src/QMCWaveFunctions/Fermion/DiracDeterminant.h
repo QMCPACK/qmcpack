@@ -24,9 +24,20 @@
 
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
 #include <PlatformSelector.hpp>
+#include "DiracMatrix.h"
 #include "QMCWaveFunctions/Fermion/DelayedUpdate.h"
 #if defined(ENABLE_CUDA) || defined(ENABLE_SYCL)
 #include "QMCWaveFunctions/Fermion/DelayedUpdateCUDA.h"
+#if defined(ENABLE_CUDA)
+#if defined(QMC_CUDA2HIP)
+#include "rocSolverInverter.hpp"
+#else
+#include "cuSolverInverter.hpp"
+#endif
+#endif
+#if defined(ENABLE_SYCL)
+#include "syclSolverInverter.hpp"
+#endif
 #endif
 
 namespace qmcplusplus
@@ -49,21 +60,20 @@ public:
   template<>
   struct AccelEngine<PlatformKind::CPU>
   {
-    static constexpr bool solver_supported = false;
-    DelayedUpdate<VT, FPVT> update_eng_;
+    static constexpr bool inverter_supported = false;
+    DelayedUpdate<VT> update_eng_;
   };
 
 #if defined(ENABLE_CUDA)
   template<>
   struct AccelEngine<PlatformKind::CUDA>
   {
-    static constexpr bool solver_supported = true;
-
-    DelayedUpdateCUDA<PlatformKind::CUDA, VT, FPVT> update_eng_;
+    static constexpr bool inverter_supported = true;
+    DelayedUpdateCUDA<PlatformKind::CUDA, VT> update_eng_;
 #if defined(QMC_CUDA2HIP)
-    //rocSolverInverter<T_FP> solver_inverter_;
+    rocSolverInverter<FPVT> inverter_;
 #else
-    //cuSolverInverter<T_FP> solver_inverter_;
+    cuSolverInverter<FPVT> inverter_;
 #endif
   };
 #endif
@@ -72,10 +82,9 @@ public:
   template<>
   struct AccelEngine<PlatformKind::SYCL>
   {
-    static constexpr bool solver_supported = true;
-
-    DelayedUpdateCUDA<PlatformKind::SYCL, VT, FPVT> update_eng_;
-    //syclSolverInverter<T_FP> solver_inverter_;
+    static constexpr bool inverter_supported = true;
+    DelayedUpdateCUDA<PlatformKind::SYCL, VT> update_eng_;
+    syclSolverInverter<FPVT> inverter_;
   };
 #endif
 
