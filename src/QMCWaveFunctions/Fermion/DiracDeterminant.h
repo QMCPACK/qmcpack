@@ -23,6 +23,7 @@
 #define QMCPLUSPLUS_DIRACDETERMINANT_H
 
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
+#include <PlatformSelector.hpp>
 #include "QMCWaveFunctions/Fermion/DelayedUpdate.h"
 #if defined(ENABLE_CUDA) || defined(ENABLE_SYCL)
 #include "QMCWaveFunctions/Fermion/DelayedUpdateCUDA.h"
@@ -33,7 +34,9 @@
 
 namespace qmcplusplus
 {
-template<typename DU_TYPE = DelayedUpdate<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>
+template<PlatformKind PL = PlatformKind::CPU,
+         typename VT     = QMCTraits::ValueType,
+         typename FPVT   = QMCTraits::QTFull::ValueType>
 class DiracDeterminant : public DiracDeterminantBase
 {
 protected:
@@ -43,6 +46,42 @@ protected:
   void resize(int nel, int morb);
 
 public:
+  template<PlatformKind P>
+  struct AccelEngine;
+
+  template<>
+  struct AccelEngine<PlatformKind::CPU>
+  {
+    static constexpr bool solver_supported = false;
+    DelayedUpdate<VT, FPVT> update_eng_;
+  };
+
+#if defined(ENABLE_CUDA)
+  template<>
+  struct AccelEngine<PlatformKind::CUDA>
+  {
+    static constexpr bool solver_supported = true;
+
+    DelayedUpdateCUDA<PlatformKind::CUDA, VT, FPVT> update_eng_;
+#if defined(QMC_CUDA2HIP)
+    //rocSolverInverter<T_FP> solver_inverter_;
+#else
+    //cuSolverInverter<T_FP> solver_inverter_;
+#endif
+  };
+#endif
+
+#if defined(ENABLE_SYCL)
+  template<>
+  struct AccelEngine<PlatformKind::SYCL>
+  {
+    static constexpr bool solver_supported = true;
+
+    DelayedUpdateSYCL<VT, FPVT> update_eng_;
+    //syclSolverInverter<T_FP> solver_inverter_;
+  };
+#endif
+
   using ValueVector = SPOSet::ValueVector;
   using ValueMatrix = SPOSet::ValueMatrix;
   using GradVector  = SPOSet::GradVector;
@@ -268,9 +307,6 @@ public:
   GradVector dpsiV;
   ValueVector d2psiV;
 
-  /// delayed update engine
-  DU_TYPE updateEng;
-
   /// the row of up-to-date inverse matrix
   ValueVector invRow;
 
@@ -286,6 +322,9 @@ public:
   ValueType* LastAddressOfdV;
 
 private:
+  /// accelerator (delayed update + solver) engine
+  AccelEngine<PL> accel_engine_;
+
   /// slow but doesn't consume device memory
   DiracMatrix<QMCTraits::QTFull::ValueType> host_inverter_;
 
@@ -304,12 +343,10 @@ private:
 
 extern template class DiracDeterminant<>;
 #if defined(ENABLE_CUDA)
-extern template class DiracDeterminant<
-    DelayedUpdateCUDA<PlatformKind::CUDA, QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
+extern template class DiracDeterminant<PlatformKind::CUDA, QMCTraits::ValueType, QMCTraits::QTFull::ValueType>;
 #endif
 #if defined(ENABLE_SYCL)
-extern template class DiracDeterminant<DelayedUpdateCUDA<PlatformKind::SYCL, QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
-extern template class DiracDeterminant<DelayedUpdateSYCL<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
+extern template class DiracDeterminant<PlatformKind::SYCL, QMCTraits::ValueType, QMCTraits::QTFull::ValueType>;
 #endif
 
 } // namespace qmcplusplus
