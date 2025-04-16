@@ -101,7 +101,7 @@ void DiracDeterminant<PL, VT, FPVT>::invertPsiM(const ValueMatrix& logdetT, Valu
   else
   {
     host_inverter_.invert_transpose(logdetT, invMat, log_value_);
-    accel_engine_.update_eng_.initializeInv(psiM);
+    accel_engine_.update_eng_.initializeInv(invMat);
   }
 }
 
