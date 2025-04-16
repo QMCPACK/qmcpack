@@ -13,7 +13,7 @@
 #include "catch.hpp"
 
 #include "Configuration.h"
-#include "Platforms/CPU/SIMD/aligned_allocator.hpp"
+#include "Common/Queue.hpp"
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
 #include "QMCWaveFunctions/Fermion/cuSolverInverter.hpp"
 #include "checkMatrix.hpp"
@@ -35,6 +35,8 @@ TEMPLATE_TEST_CASE("cuSolverInverter", "[wavefunction][fermion]", double, float)
   using Value         = TestType;
 #endif
   cuSolverInverter<FullPrecValue> solver;
+  compute::Queue<PlatformKind::CUDA> queue;
+
   const int N = 3;
 
   Matrix<Value> m(N, N);
@@ -46,7 +48,7 @@ TEMPLATE_TEST_CASE("cuSolverInverter", "[wavefunction][fermion]", double, float)
   {
     fillIdentityMatrix(m);
 
-    solver.invert_transpose(m, m_invT, m_invGPU, log_value);
+    solver.invert_transpose(m, m_invT, m_invGPU, log_value, queue.getNative());
     CHECK(log_value == LogComplexApprox(0.0));
 
     Matrix<Value> eye;
@@ -64,7 +66,7 @@ TEMPLATE_TEST_CASE("cuSolverInverter", "[wavefunction][fermion]", double, float)
     TestMatrix1::fillInput(a);
 
     simd::transpose(a.data(), a.rows(), a.cols(), a_T.data(), a_T.rows(), a_T.cols());
-    solver.invert_transpose(a_T, m_invT, m_invGPU, log_value);
+    solver.invert_transpose(a_T, m_invT, m_invGPU, log_value, queue.getNative());
     CHECK(log_value == LogComplexApprox(TestMatrix1::logDet()));
 
     Matrix<Value> b(3, 3);

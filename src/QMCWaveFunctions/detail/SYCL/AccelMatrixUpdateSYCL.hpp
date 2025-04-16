@@ -15,6 +15,7 @@
 
 #include <QueueAliases.hpp>
 #include "matrix_update_helper.hpp"
+#include "sycl_determinant_helper.hpp"
 
 namespace qmcplusplus
 {
@@ -113,6 +114,25 @@ void applyW_batched(Queue<PlatformKind::SYCL>& queue,
   }
 }
 
+template<typename T>
+void applyW_stageV(Queue<PlatformKind::SYCL>& queue,
+                   const int* delay_list_gpu,
+                   const int delay_count,
+                   T* temp_gpu,
+                   const int numorbs,
+                   const int ndelay,
+                   T* V_gpu,
+                   const T* Ainv)
+{
+  try
+  {
+    applyW_stageV_sycl(queue.getNative(), delay_list_gpu, delay_count, temp_gpu, numorbs, ndelay, V_gpu, Ainv);
+  }
+  catch (sycl::exception& e)
+  {
+    throw std::runtime_error(std::string("SYCL::applyW_stageV exception: ") + e.what());
+  }
+}
 
 } // namespace compute
 } // namespace qmcplusplus

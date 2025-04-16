@@ -802,9 +802,11 @@ void DiracDeterminant<DU_TYPE>::releaseResource(ResourceCollection& collection,
 
 template class DiracDeterminant<>;
 #if defined(ENABLE_CUDA)
-template class DiracDeterminant<DelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
+template class DiracDeterminant<
+    DelayedUpdateCUDA<PlatformKind::CUDA, QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 #endif
 #if defined(ENABLE_SYCL)
+template class DiracDeterminant<DelayedUpdateCUDA<PlatformKind::SYCL, QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 template class DiracDeterminant<DelayedUpdateSYCL<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 #endif
 
