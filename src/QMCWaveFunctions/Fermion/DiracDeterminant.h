@@ -42,6 +42,10 @@
 
 namespace qmcplusplus
 {
+/** implements delayed update on CPU using BLAS
+ * @tparam VT base precision value type of the delayed update engine
+ * @tparam FPVT high precision value type for matrix inversion, FPVT >= VT
+ */
 template<PlatformKind PL = PlatformKind::CPU,
          typename VT     = QMCTraits::ValueType,
          typename FPVT   = QMCTraits::QTFull::ValueType>
