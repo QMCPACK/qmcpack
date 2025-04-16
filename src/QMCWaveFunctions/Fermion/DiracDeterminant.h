@@ -25,7 +25,7 @@
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
 #include "QMCWaveFunctions/Fermion/DelayedUpdate.h"
 #if defined(ENABLE_CUDA) || defined(ENABLE_SYCL)
-#include "QMCWaveFunctions/Fermion/DelayedUpdateCUDA.h"
+#include "QMCWaveFunctions/Fermion/DelayedUpdateAccel.h"
 #endif
 #if defined(ENABLE_SYCL)
 #include "QMCWaveFunctions/Fermion/DelayedUpdateSYCL.h"
@@ -305,10 +305,11 @@ private:
 extern template class DiracDeterminant<>;
 #if defined(ENABLE_CUDA)
 extern template class DiracDeterminant<
-    DelayedUpdateCUDA<PlatformKind::CUDA, QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
+    DelayedUpdateAccel<PlatformKind::CUDA, QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 #endif
 #if defined(ENABLE_SYCL)
-extern template class DiracDeterminant<DelayedUpdateCUDA<PlatformKind::SYCL, QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
+extern template class DiracDeterminant<
+    DelayedUpdateAccel<PlatformKind::SYCL, QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 extern template class DiracDeterminant<DelayedUpdateSYCL<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 #endif
 

@@ -9,8 +9,8 @@
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef QMCPLUSPLUS_DELAYED_UPDATE_CUDA_H
-#define QMCPLUSPLUS_DELAYED_UPDATE_CUDA_H
+#ifndef QMCPLUSPLUS_DELAYED_UPDATE_ACCEL_H
+#define QMCPLUSPLUS_DELAYED_UPDATE_ACCEL_H
 
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
@@ -37,7 +37,7 @@ namespace qmcplusplus
  * @tparam T_FP high precision for matrix inversion, T_FP >= T
  */
 template<PlatformKind PL, typename T, typename T_FP>
-class DelayedUpdateCUDA
+class DelayedUpdateAccel
 {
   template<typename VALUE>
   using DeviceAllocator = typename compute::MemManage<PL>::template DeviceAllocator<VALUE>;
@@ -74,7 +74,7 @@ class DelayedUpdateCUDA
   // Ainv prefetch buffer
   Matrix<T, HostAllocator<T>> Ainv_buffer;
 
-  // CUDA specific variables
+  // Accelerator specific variables
   compute::Queue<PL> queue_;
   compute::BLASHandle<PL> blas_handle_;
 
@@ -87,7 +87,7 @@ class DelayedUpdateCUDA
 
 public:
   /// default constructor
-  DelayedUpdateCUDA() : delay_count(0), blas_handle_(queue_) {}
+  DelayedUpdateAccel() : delay_count(0), blas_handle_(queue_) {}
 
   /** resize the internal storage
    * @param norb number of electrons/orbitals
@@ -232,4 +232,4 @@ public:
 };
 } // namespace qmcplusplus
 
-#endif // QMCPLUSPLUS_DELAYED_UPDATE_CUDA_H
+#endif // QMCPLUSPLUS_DELAYED_UPDATE_ACCEL_H

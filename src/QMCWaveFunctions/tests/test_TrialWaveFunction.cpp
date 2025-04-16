@@ -32,7 +32,7 @@ namespace qmcplusplus
 {
 #if defined(ENABLE_CUDA) && !defined(QMC_CUDA2HIP)
 using DiracDet =
-    DiracDeterminant<DelayedUpdateCUDA<PlatformKind::CUDA, QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
+    DiracDeterminant<DelayedUpdateAccel<PlatformKind::CUDA, QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 #else
 using DiracDet = DiracDeterminant<DelayedUpdate<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 #endif
