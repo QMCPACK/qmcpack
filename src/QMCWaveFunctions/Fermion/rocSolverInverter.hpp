@@ -21,7 +21,7 @@
 #endif
 // This file assumes that QMC_CUDA2HIP is defined and that creates HIP versions of these functions (despite being labeled with "CUDA")
 #include "CUDA/CUDAruntime.hpp"
-#include "CUDA/CUDAallocator.hpp"
+#include "CUDA/MemManageCUDA.hpp"
 #include "ROCm/rocsolver.hpp"
 #include "QMCWaveFunctions/detail/CUDA/delayed_update_helper.h"
 #include "CPU/math.hpp"
@@ -48,7 +48,7 @@ class rocSolverInverter
   Vector<T_FP, CUDAAllocator<T_FP>> work_gpu;
 
   // CUDA specific variables
-  rocblas_handle h_rocsolver_;
+  rocblas_handle h_rocsolver_ = nullptr;
   hipStream_t hstream_;
 
   /** resize the internal storage
@@ -57,6 +57,12 @@ class rocSolverInverter
    */
   inline void resize(int norb)
   {
+    if (!h_rocsolver_)
+    {
+      rocsolverErrorCheck(rocblas_create_handle(&h_rocsolver_), "rocblas_create_handle failed!");
+      rocsolverErrorCheck(rocblas_set_stream(h_rocsolver_, hstream_), "rocblas_set_stream failed!");
+    }
+
     if (Mat1_gpu.rows() != norb)
     {
       Mat1_gpu.resize(norb, norb);
@@ -81,16 +87,12 @@ class rocSolverInverter
 
 public:
   /// default constructor
-  rocSolverInverter()
-  {
-    cudaErrorCheck(hipStreamCreate(&hstream_), "hipStreamCreate failed!");
-    rocsolverErrorCheck(rocblas_create_handle(&h_rocsolver_), "rocblas_create_handle failed!");
-    rocsolverErrorCheck(rocblas_set_stream(h_rocsolver_, hstream_), "rocblas_set_stream failed!");
-  }
+  rocSolverInverter() { cudaErrorCheck(hipStreamCreate(&hstream_), "hipStreamCreate failed!"); }
 
   ~rocSolverInverter()
   {
-    rocsolverErrorCheck(rocblas_destroy_handle(h_rocsolver_), "rocblas_destroy_handle failed!");
+    if (h_rocsolver_)
+      rocsolverErrorCheck(rocblas_destroy_handle(h_rocsolver_), "rocblas_destroy_handle failed!");
     cudaErrorCheck(hipStreamDestroy(hstream_), "hipStreamDestroy failed!");
   }
 
@@ -102,7 +104,8 @@ public:
   std::enable_if_t<std::is_same<TMAT, T_FP>::value> invert_transpose(const Matrix<TMAT>& logdetT,
                                                                      Matrix<TMAT>& Ainv,
                                                                      Matrix<TMAT, CUDAAllocator<TMAT>>& Ainv_gpu,
-                                                                     std::complex<TREAL>& log_value)
+                                                                     std::complex<TREAL>& log_value,
+                                                                     hipStream_t stream)
   {
     const int norb = logdetT.rows();
     resize(norb);
@@ -156,7 +159,8 @@ public:
   std::enable_if_t<!std::is_same<TMAT, T_FP>::value> invert_transpose(const Matrix<TMAT>& logdetT,
                                                                       Matrix<TMAT>& Ainv,
                                                                       Matrix<TMAT, CUDAAllocator<TMAT>>& Ainv_gpu,
-                                                                      std::complex<TREAL>& log_value)
+                                                                      std::complex<TREAL>& log_value,
+                                                                      hipStream_t stream)
   {
     const int norb = logdetT.rows();
     resize(norb);
@@ -206,9 +210,9 @@ public:
     }
 
     std::ostringstream nan_msg;
-    for(int i = 0; i < norb; i++)
+    for (int i = 0; i < norb; i++)
       if (qmcplusplus::isnan(std::norm(Ainv[i][i])))
-        nan_msg << "  Ainv["<< i << "][" << i << "] has bad value " << Ainv[i][i] << std::endl;
+        nan_msg << "  Ainv[" << i << "][" << i << "] has bad value " << Ainv[i][i] << std::endl;
     if (const std::string str = nan_msg.str(); !str.empty())
       throw std::runtime_error("Inverse matrix diagonal check found:\n" + str);
   }

@@ -381,7 +381,7 @@ TEST_CASE("Rotated LCAO WF2 with jastrow", "[qmcapp]")
         </atomicBasisSet>
       </basisset>
       <rotated_sposet name="rot-spo-up">
-        <sposet basisset="LCAOBSet" name="spo-up" method="history">
+        <sposet basisset="LCAOBSet" name="spo-up">
           <coefficient id="updetC" type="Array" size="2">
             1.0 0.0
             0.0 1.0
@@ -389,7 +389,7 @@ TEST_CASE("Rotated LCAO WF2 with jastrow", "[qmcapp]")
         </sposet>
       </rotated_sposet>
       <rotated_sposet name="rot-spo-down">
-        <sposet basisset="LCAOBSet" name="spo-down" method="history">
+        <sposet basisset="LCAOBSet" name="spo-down">
           <coefficient id="updetC" type="Array" size="2">
             1.0 0.0
             0.0 1.0

@@ -1,20 +1,34 @@
-The files in this directory support making a modified version of
-quantum espresso that includes the pw2qmcpack converter.
+Quantum ESPRESSO v7.0+
+~~~~~~~~~~~~~~~~~~~~~~
+
+To configure Quantum ESPRESSO with the pw2qmcpack converter, use the CMake
+configuration option when building Quantum ESPRESSO, as described in the
+manual. i.e. Add ``-DQE_ENABLE_PLUGINS=pw2qmcpack``.
+
+Quantum ESPRESSO v6.3-v7.0
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+NOTE: Users are advised to only use the latest version of Quantum
+ESPRESSO via the route described above.
+
+The files in this directory support making a modified version of Quantum
+ESPRESSO that includes the pw2qmcpack converter and are provided for
+backwards compatibility.
 
 The download_and_patch_qe6.4.1.sh script will automatically download
-and patch quantum espresso. Similarly named scripts are provided for
+and patch Quantum ESPRESSO. Similarly named scripts are provided for
 earlier versions. After patching you can move the espresso directory
 anywhere convenient. There is no need to keep it within the QMCPACK
 source tree. However, if you are using NEXUS you should update your
 PATH so that the correct executables are found.
 
-If you have already downloaded quantum espresso you can, e.g.,
+If you have already downloaded Quantum ESPRESSO you can, e.g.,
 
 patch -p1 -i ../add_pw2qmcpack_to_qe-6.4.1.diff
 
-from within the top level quantum espresso directory.
+from within the top level Quantum ESPRESSO directory.
 
-Due to internal changes in quantum espresso, generally the patch and
+Due to internal changes in Quantum ESPRESSO, generally the patch and
 pw2qmcpack files only work for one specific version.
 
 Notes for maintainers:

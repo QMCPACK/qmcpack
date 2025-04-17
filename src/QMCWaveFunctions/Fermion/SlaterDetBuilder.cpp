@@ -443,20 +443,20 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
       {
         app_summary() << "      Running on a GPU via CUDA/HIP acceleration." << std::endl;
         adet = std::make_unique<
-            DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>>(std::move(psi_clone),
-                                                                                          firstIndex, lastIndex,
-                                                                                          delay_rank,
-                                                                                          matrix_inverter_kind);
+            DiracDeterminant<PlatformKind::CUDA, ValueType, QMCTraits::QTFull::ValueType>>(std::move(psi_clone),
+                                                                                           firstIndex, lastIndex,
+                                                                                           delay_rank,
+                                                                                           matrix_inverter_kind);
       }
 #elif defined(ENABLE_SYCL)
       else if (CPUOMPTargetVendorSelector::selectPlatform(useGPU) == PlatformKind::SYCL)
       {
         app_summary() << "      Running on a GPU via SYCL acceleration." << std::endl;
         adet = std::make_unique<
-            DiracDeterminant<DelayedUpdateSYCL<ValueType, QMCTraits::QTFull::ValueType>>>(std::move(psi_clone),
-                                                                                          firstIndex, lastIndex,
-                                                                                          delay_rank,
-                                                                                          matrix_inverter_kind);
+            DiracDeterminant<PlatformKind::SYCL, ValueType, QMCTraits::QTFull::ValueType>>(std::move(psi_clone),
+                                                                                           firstIndex, lastIndex,
+                                                                                           delay_rank,
+                                                                                           matrix_inverter_kind);
       }
 #endif
       else
@@ -562,7 +562,8 @@ std::unique_ptr<MultiSlaterDetTableMethod> SlaterDetBuilder::createMSDFast(
                   << " occupied orbitals not matching " << nptcl_group << " particles." << std::endl;
       }
       if (const std::string msg = err_msg.str(); msg.length())
-        myComm->barrier_and_abort("SlaterDetBuilder::createMSDFast Issues found in the particle group " + std::to_string(grp) + " :\n" + msg);
+        myComm->barrier_and_abort("SlaterDetBuilder::createMSDFast Issues found in the particle group " +
+                                  std::to_string(grp) + " :\n" + msg);
     }
 
     dets.emplace_back(std::make_unique<MultiDiracDeterminant>(std::move(spo_clones[grp]), spinor, targetPtcl.first(grp),

@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2024 QMCPACK developers.
+// Copyright (c) 2025 QMCPACK developers.
 //
 // File developed by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //
@@ -17,8 +17,18 @@
 namespace qmcplusplus
 {
 
+TimerNameList_t<WalkerLogManager::Timer> WalkerLogManager::create_names(const std::string_view& my_name)
+{
+  TimerNameList_t<Timer> timer_names;
+  using namespace std::string_literals;
+  std::string prefix{"WalkerLog:"s + std::string{my_name} + "::"s};
+  for (std::size_t i = 0; i < suffixes_.size(); ++i)
+    timer_names.push_back({static_cast<Timer>(i), prefix + std::string{suffixes_[i]}});
+  return timer_names;
+}
 
 WalkerLogManager::WalkerLogManager(WalkerLogInput& inp, bool allow_logs, std::string series_root, Communicate* comm)
+    : walker_log_timers_(getGlobalTimerManager(), create_names(my_name_), timer_level_medium)
 {
   communicator            = comm;
   file_root               = series_root;
@@ -78,9 +88,12 @@ std::unique_ptr<WalkerLogCollector> WalkerLogManager::makeCollector() const
 
 void WalkerLogManager::startRun(RefVector<WalkerLogCollector>&& collectors)
 {
-  collectors_in_run_ = std::move(collectors);
   if (!state.logs_active)
     return; // no-op for driver if logs are inactive
+
+  ScopedTimer timer(walker_log_timers_[Timer::START]);
+
+  collectors_in_run_ = std::move(collectors);
   if (collectors_in_run_.empty())
     throw std::runtime_error("BUG collectors are empty but walker logs are active");
   if (state.verbose)
@@ -96,6 +109,9 @@ void WalkerLogManager::stopRun()
 {
   if (!state.logs_active)
     return; // no-op for driver if logs are inactive
+
+  ScopedTimer timer(walker_log_timers_[Timer::STOP]);
+
   if (state.verbose)
     app_log() << "WalkerLogManager::stopRun " << std::endl;
   collectors_in_run_.clear();
@@ -106,9 +122,11 @@ void WalkerLogManager::stopRun()
 
 void WalkerLogManager::writeBuffers()
 {
-  const RefVector<WalkerLogCollector>& collectors = collectors_in_run_;
   if (!state.logs_active)
     return; // no-op for driver if logs are inactive
+
+  ScopedTimer timer(walker_log_timers_[Timer::WRITE]);
+
   if (state.verbose)
     app_log() << "WalkerLogManager::writeBuffers " << std::endl;
 
@@ -131,6 +149,7 @@ void WalkerLogManager::writeBuffers()
     wmed_particle_real_buffer.resetBuffer();
   }
 
+  const RefVector<WalkerLogCollector>& collectors = collectors_in_run_;
   // collect energy information and extract info from min/max/median energy walkers
   if (write_min_data || write_max_data || write_med_data)
   {

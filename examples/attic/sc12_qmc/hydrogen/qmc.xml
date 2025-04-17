@@ -1,6 +1,8 @@
 <?xml version="1.0"?>
 <simulation>
-  <project id="bench" series="0"/>
+<project id="bench" series="0">
+  <parameter name="driver_version">legacy</parameter>
+</project>
   <random seed="-1"/>
   <include href="h.4x4x4.wfs.xml"/>
   <hamiltonian name="h0" type="generic" target="e">

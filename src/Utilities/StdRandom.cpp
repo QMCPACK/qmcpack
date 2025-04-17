@@ -51,6 +51,12 @@ typename StdRandom<T>::result_type StdRandom<T>::operator()()
   return distribution(engine);
 }
 
+template<typename T>
+RandomBase<T>& StdRandom<T>::operator=(const RandomBase<T>& other)
+{
+  return *this = dynamic_cast<const StdRandom<T>&>(other);
+}
+
 template class StdRandom<double>;
 template class StdRandom<float>;
 } // namespace qmcplusplus

@@ -92,6 +92,17 @@ TEST_CASE("FakeRandom clone", "[utilities]")
 
   for (auto i = 0; i < 3; ++i)
     CHECK((*rng2)() == rng());
+
+  DoubleRNG rng3;
+  RandomBase<double>& a3 = rng3;
+  RandomBase<double>& a  = rng;
+
+  a3 = a;
+
+  rng.write(stream1);
+  rng3.write(stream2);
+  CHECK(stream1.str() == stream2.str());
+  CHECK(rng3() == rng());
 }
 
 } // namespace qmcplusplus

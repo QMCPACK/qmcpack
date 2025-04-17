@@ -20,9 +20,9 @@ if(QMC_OMP)
       message(FATAL_ERROR "Requires Clang 16.0 or higher for OpenMP offload")
     endif()
 
-    if(DEFINED OFFLOAD_TARGET)
+    if(OFFLOAD_TARGET)
       set(OPENMP_OFFLOAD_COMPILE_OPTIONS "-fopenmp-targets=${OFFLOAD_TARGET}")
-      if(DEFINED OFFLOAD_ARCH)
+      if(OFFLOAD_ARCH)
         set(OPENMP_OFFLOAD_COMPILE_OPTIONS
             "${OPENMP_OFFLOAD_COMPILE_OPTIONS} -Xopenmp-target=${OFFLOAD_TARGET} -march=${OFFLOAD_ARCH}")
       endif()

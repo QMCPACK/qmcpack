@@ -23,6 +23,7 @@
 #include "LCAO/SoaLocalizedBasisSet.h"
 #include "LCAO/AOBasisBuilder.h"
 #include "LCAO/MultiFunctorAdapter.h"
+#include "OhmmsData/Libxml2Doc.h"
 
 
 namespace qmcplusplus

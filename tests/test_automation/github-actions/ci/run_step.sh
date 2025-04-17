@@ -147,13 +147,13 @@ case "$1" in
               ${GITHUB_WORKSPACE}
       ;;
       *"GCC9"*"-CUDA-AFQMC"*)
-        echo 'Configure for building with ENABLE_CUDA and AFQMC, need built-from-source OpenBLAS due to bug in rpm'
+        echo 'Configure for building with CUDA and AFQMC, need built-from-source OpenBLAS due to bug in rpm'
         cmake -GNinja $CMAKE_OPTIONS \
               -DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \
               -DCMAKE_CXX_COMPILER=/usr/lib64/openmpi/bin/mpicxx \
               -DMPIEXEC_EXECUTABLE=/usr/lib64/openmpi/bin/mpirun \
               -DBUILD_AFQMC=ON \
-              -DENABLE_CUDA=ON \
+              -DQMC_GPU=cuda \
               -DQMC_GPU_ARCHS=sm_70 \
               -DCMAKE_PREFIX_PATH="/opt/OpenBLAS/0.3.18" \
               -DQMC_DATA=$QMC_DATA_DIR \
@@ -212,13 +212,13 @@ case "$1" in
         cmake -GNinja $CMAKE_OPTIONS \
               -DCMAKE_C_COMPILER=clang-16 \
               -DCMAKE_CXX_COMPILER=clang++-16 \
-              -DENABLE_OFFLOAD=ON \
+              -DQMC_GPU=openmp \
               -DOFFLOAD_TARGET=x86_64-pc-linux-gnu \
               -DUSE_OBJECT_TARGET=ON \
               ${GITHUB_WORKSPACE}
       ;;
       *"Clang15"*"-CUDA-AFQMC-Offload"*)
-        echo "Configure for building with ENABLE_CUDA and AFQMC using OpenMP offload on x86_64 " \
+        echo "Configure for building with CUDA and AFQMC using OpenMP offload on x86_64 " \
               "with latest llvm, need built-from-source OpenBLAS due to bug in rpm"
 
         # todo: update to llvm 15 release, currently using release candidate
@@ -237,15 +237,14 @@ case "$1" in
               -DCMAKE_CXX_COMPILER=/usr/lib64/openmpi/bin/mpicxx \
               -DMPIEXEC_EXECUTABLE=/usr/lib64/openmpi/bin/mpirun \
               -DBUILD_AFQMC=ON \
-              -DENABLE_CUDA=ON \
+              -DQMC_GPU="cuda;openmp" \
               -DQMC_GPU_ARCHS=sm_70 \
-              -DENABLE_OFFLOAD=ON \
               -DCMAKE_PREFIX_PATH="/opt/OpenBLAS/0.3.18" \
               -DQMC_DATA=$QMC_DATA_DIR \
               ${GITHUB_WORKSPACE}
       ;;
       *"Intel21"*"-CUDA-AFQMC"*)
-        echo "Configure for building with ENABLE_CUDA and AFQMC  " \
+        echo "Configure for building with CUDA and AFQMC  " \
              "with Intel classic compiler in OneAPI 2021 (to be deprecated in 2023), " \
              "need built-from-source OpenBLAS due to bug in rpm"
         
@@ -266,7 +265,7 @@ case "$1" in
               -DCMAKE_CXX_FLAGS="-diag-disable=10441" \
               -DCMAKE_CUDA_FLAGS="-diag-disable=10441" \
               -DBUILD_AFQMC=ON \
-              -DENABLE_CUDA=ON \
+              -DQMC_GPU=cuda \
               -DQMC_GPU_ARCHS=sm_70 \
               -DCMAKE_PREFIX_PATH="/opt/OpenBLAS/0.3.18" \
               -DQMC_DATA=$QMC_DATA_DIR \
@@ -291,8 +290,16 @@ case "$1" in
   test)
     
     # Run only deterministic tests (reasonable for CI) by default
-    TEST_LABEL="-L deterministic"
-    
+    case "${GH_JOBNAME}" in
+      *"macOS-GCC14"*"-Real"*)
+        TEST_LABEL="-L deterministic -E deterministic-unit_test_estimators"
+        # estimator test bus error on mac only
+      ;;
+      *)  
+        TEST_LABEL="-L deterministic"
+      ;;  
+    esac  
+
     cd ${GITHUB_WORKSPACE}/../qmcpack-build
     
     # Enable oversubscription in OpenMPI

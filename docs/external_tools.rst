@@ -22,6 +22,7 @@ In general:
 - undefined behavior sanitizer (ubsan): low-overhead, catches undefined behavior accessing misaligned memory or signed or float to integer overflows.
 - undefined behavior sanitizer (tsan): catches potential race conditions in threaded code.
 - memory sanitizer (msan): catches using uninitialized memory errors, but is difficult to use without a full set of msan-instrumented libraries.
+- type sanitizer (typesan): catches aliasing violations, such as pointers of one type accessing objects of another type.
 
 These set the basic flags required to build with either of these sanitizer libraries which are mutually exclusive. Depending on your system and linker, these may be incompatible with the "Release" build, so set ``-DCMAKE_BUILD_TYPE=Debug`` or ``-DCMAKE_BUILD_TYPE=RelWithDebInfo``. They are tested on GitHub Actions CI using deterministic tests ``ctest -L deterministic`` (currently ubsan). See the following links for additional information on use, run time, and build options of the sanitizers: https://clang.llvm.org/docs/AddressSanitizer.html & https://clang.llvm.org/docs/MemorySanitizer.html.
 
@@ -50,6 +51,20 @@ An example of options to be passed to CMake:
 
   -DUSE_VTUNE_API=ON \
   -DVTUNE_ROOT=/opt/intel/vtune_amplifier_xe
+
+HPCToolkit API
+~~~~~~~~~
+
+If the variable ``USE_HPCTOOLKIT_API`` is set, QMCPACK will check that the
+include file (``hpctoolkit.h``) and the library (``hpctoolkit.so``) can be found.
+To provide CMake with the HPCToolkit search paths, add ``HPCTOOLKIT_ROOT`` which contains ``include`` and ``lib`` sub-directories.
+
+An example of options to be passed to CMake:
+
+::
+
+  -DUSE_HPCTOOLKIT_API=ON \
+  -DHPCTOOLKIT_ROOT=/opt/hpctoolkit
 
 Timers as Tasks
 ~~~~~~~~~~~~~~~

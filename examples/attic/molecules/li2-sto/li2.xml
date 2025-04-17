@@ -5,6 +5,7 @@
       QMC of Li2 molecule using Slater-type Orbitals by Clementi-Rottie, see
       JCP 99, 2865 (1993).  The spin configuration is (3,3).
     </application>
+    <parameter name="driver_version">legacy</parameter>
   </project>
   <random parallel="true" seed="-1"/>
   <particleset name="e">

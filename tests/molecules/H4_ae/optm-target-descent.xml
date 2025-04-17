@@ -1,6 +1,8 @@
 <?xml version="1.0"?>
 <simulation>
-    <project id="H4-target-descent" series="0"/>
+<project id="H4-target-descent" series="0">
+  <parameter name="driver_version">legacy</parameter>
+</project>
   <!--random seed="7819"/-->
   <!-- input from gaussian converter -->
  <include href="H4.ptcl.xml"/>

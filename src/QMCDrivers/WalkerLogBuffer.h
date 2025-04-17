@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2024 QMCPACK developers.
+// Copyright (c) 2025 QMCPACK developers.
 //
 // File developed by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //
@@ -15,15 +15,13 @@
 
 
 #include <Configuration.h>
+#include <unordered_set>
 #include "OhmmsPETE/OhmmsArray.h"
 #include "hdf/hdf_archive.h"
-
-#include <unordered_set>
-
+#include "Utilities/TimerManager.h"
 
 namespace qmcplusplus
 {
-
 
 /// Basic data types for walker log data
 struct WLog
@@ -119,6 +117,27 @@ public:
   hsize_t hdf_file_pointer;
 
 private:
+  static constexpr std::string_view my_name_{"WalkerLogBuffer"};
+  enum Timer
+  {
+    COLLECT = 0,
+    ADD_ROW,
+    WRITE,
+    RESET,
+    MAKE_NEW_ROW
+  };
+  static constexpr std::array<std::string_view, 5> suffixes_{"collect", "add_row", "write", "reset", "make_new_row"};
+  static TimerNameList_t<Timer> create_names(const std::string_view& my_name)
+  {
+    TimerNameList_t<Timer> timer_names;
+    using namespace std::string_literals;
+    std::string prefix{"WalkerLog:"s + std::string{my_name} + "::"s};
+    for (std::size_t i = 0; i < suffixes_.size(); ++i)
+      timer_names.push_back({static_cast<Timer>(i), prefix + std::string{suffixes_[i]}});
+    return timer_names;
+  }
+  TimerList_t walker_log_buffer_timers_;
+
   /// index of current quantity during WalkerLogCollector::collect()
   size_t quantity_index;
   /** buffer row location data for each walker quantity
@@ -131,14 +150,7 @@ private:
   Array<T, 2> buffer;
 
 public:
-  WalkerLogBuffer()
-  {
-    label            = "?";
-    first_collect    = true;
-    walker_data_size = 0;
-    quantity_index   = 0;
-    resetBuffer();
-  }
+  WalkerLogBuffer();
 
   /// current number of rows in the data buffer
   inline size_t nrows() { return buffer.size(0); }
@@ -163,235 +175,54 @@ public:
   inline bool sameAs(const WalkerLogBuffer<T>& ref) { return buffer.size(1) == ref.buffer.size(1); }
 
   /// collect data for a single walker quantity of scalar type into the current buffer row
-  inline void collect(const std::string& name, const T& value)
-  {
-    size_t irow = 0;
-    if (first_collect)
-    { // cache walker quantity info on first collect
-      WalkerQuantityInfo wqi_(name, 1, walker_data_size);
-      quantity_info.push_back(wqi_);
-      walker_data_size = wqi_.buffer_end;
-      resetRowSize(walker_data_size);
-    }
-    else
-    { // make a new buffer row if needed
-      if (quantity_index == 0)
-        makeNewRow();
-      irow = buffer.size(0) - 1;
-    }
-    // place the scalar walker quantity into the current buffer row
-    auto& wqi                      = quantity_info[quantity_index];
-    buffer(irow, wqi.buffer_start) = value;
-    quantity_index++;
-  }
+  void collect(const std::string& name, const T& value);
 
-
-  /// collect data for a single walker quantity of array type into the current buffer row
+  /** collect data for a single walker quantity of array type into the current buffer row
+   *  Only D = 1,2 are actually used by any dependent code so only those D's are explicit instantiated
+   */
   template<unsigned D>
-  inline void collect(const std::string& name, Array<T, D> arr)
-  {
-    size_t n1 = arr.size(0);
-    size_t n2, n3, n4;
-    n2 = n3 = n4 = 0;
-    if (D > 4)
-      throw std::runtime_error("WalkerLogBuffer::collect  Only arrays up to dimension 4 are currently supported.");
-    if (D > 1)
-      n2 = arr.size(1);
-    if (D > 2)
-      n3 = arr.size(2);
-    if (D > 3)
-      n4 = arr.size(3);
-    size_t irow = 0;
-    if (first_collect)
-    { // cache walker quantity info on first collect
-      WalkerQuantityInfo wqi_(name, 1, walker_data_size, n1, n2, n3, n4);
-      quantity_info.push_back(wqi_);
-      walker_data_size = wqi_.buffer_end;
-      resetRowSize(walker_data_size);
-    }
-    else
-    { // make a new buffer row if needed
-      if (quantity_index == 0)
-        makeNewRow();
-      irow = buffer.size(0) - 1;
-    }
-    // place the array walker quantity into the current buffer row
-    auto& wqi   = quantity_info[quantity_index];
-    auto& arr1d = arr.storage();
-    for (size_t n = 0; n < arr1d.size(); ++n)
-      buffer(irow, wqi.buffer_start + n) = arr1d[n];
-    quantity_index++;
-  }
+  void collect(const std::string& name, Array<T, D> arr);
 
-
-  /// collect data for a single walker quantity of complex array type into the current buffer row
+  /** collect data for a single walker quantity of complex array type into the current buffer row
+   *  Only D = 1,2 are actually used by any dependent code so only those D's are explicit instantiated
+   */
   template<unsigned D>
-  inline void collect(const std::string& name, Array<std::complex<T>, D> arr)
-  {
-    size_t n1 = arr.size(0);
-    size_t n2, n3, n4;
-    n2 = n3 = n4 = 0;
-    if (D > 4)
-      throw std::runtime_error("WalkerLogBuffer::collect  Only arrays up to dimension 4 are currently supported.");
-    if (D > 1)
-      n2 = arr.size(1);
-    if (D > 2)
-      n3 = arr.size(2);
-    if (D > 3)
-      n4 = arr.size(3);
-    size_t irow = 0;
-    if (first_collect)
-    { // cache walker quantity info on first collect
-      WalkerQuantityInfo wqi_(name, 2, walker_data_size, n1, n2, n3, n4);
-      quantity_info.push_back(wqi_);
-      walker_data_size = wqi_.buffer_end;
-      resetRowSize(walker_data_size);
-    }
-    else
-    { // make a new buffer row if needed
-      if (quantity_index == 0)
-        makeNewRow();
-      irow = buffer.size(0) - 1;
-    }
-    // place the complex array walker quantity into the current buffer row
-    auto& wqi   = quantity_info[quantity_index];
-    auto& arr1d = arr.storage();
-    size_t n    = 0;
-    for (size_t i = 0; i < arr1d.size(); ++i)
-    {
-      buffer(irow, wqi.buffer_start + n) = std::real(arr1d[i]);
-      ++n;
-      buffer(irow, wqi.buffer_start + n) = std::imag(arr1d[i]);
-      ++n;
-    }
-    quantity_index++;
-  }
-
+  void collect(const std::string& name, Array<std::complex<T>, D> arr);
 
   /// add a data row from another buffer to this one
-  inline void addRow(WalkerLogBuffer<T> other, size_t i)
-  {
-    auto& other_buffer = other.buffer;
-    if (first_collect)
-    {
-      resetRowSize(other_buffer.size(1));
-      quantity_info = other.quantity_info;
-      first_collect = false;
-    }
-    else
-    {
-      if (buffer.size(1) != other_buffer.size(1))
-        throw std::runtime_error("WalkerLogBuffer::add_row  Row sizes must match.");
-      makeNewRow();
-    }
-    size_t ib = buffer.size(0) - 1;
-    for (size_t j = 0; j < buffer.size(1); ++j)
-      buffer(ib, j) = other_buffer(i, j);
-  }
-
+  void addRow(WalkerLogBuffer<T> other, size_t i);
 
   /// write a summary of quantities in the buffer
-  inline void writeSummary(std::string pad = "  ")
-  {
-    std::string pad2 = pad + "  ";
-    std::string pad3 = pad2 + "  ";
-    app_log() << std::endl;
-    app_log() << pad << "WalkerLogBuffer(" << label << ")" << std::endl;
-    app_log() << pad2 << "nrows       = " << buffer.size(0) << std::endl;
-    app_log() << pad2 << "row_size    = " << buffer.size(1) << std::endl;
-    for (size_t n = 0; n < quantity_info.size(); ++n)
-    {
-      auto& wqi = quantity_info[n];
-      app_log() << pad2 << "quantity " << n << ":  " << wqi.dimension << "  " << wqi.size << "  " << wqi.unit_size
-                << "  " << wqi.buffer_start << "  " << wqi.buffer_end << " (" << wqi.name << ")" << std::endl;
-    }
-    app_log() << pad << "end WalkerLogBuffer(" << label << ")" << std::endl;
-  }
+  void writeSummary(std::string pad = "  ");
 
   /// write the data_layout for all walker quantities in the HDF file
-  inline void registerHDFData(hdf_archive& f)
-  {
-    auto& top = label;
-    f.push(top);
-    f.push("data_layout");
-    for (auto& wqi : quantity_info)
-    {
-      f.push(wqi.name);
-      f.write(wqi.dimension, "dimension");
-      f.write(wqi.shape, "shape");
-      f.write(wqi.size, "size");
-      f.write(wqi.unit_size, "unit_size");
-      f.write(wqi.buffer_start, "index_start");
-      f.write(wqi.buffer_end, "index_end");
-      f.pop();
-    }
-    f.pop();
-    f.pop();
-    if (!f.open_groups())
-      throw std::runtime_error("WalkerLogBuffer(" + label +
-                               ")::register_hdf_data() some hdf groups are still open at the end of registration");
-    hdf_file_pointer = 0;
-  }
-
+  void registerHDFData(hdf_archive& f);
 
   /// write the buffer data into the HDF file
-  inline void writeHDF(hdf_archive& f) { writeHDF(f, hdf_file_pointer); }
-
+  void writeHDF(hdf_archive& f);
 
   /// write the buffer data into the HDF file
-  inline void writeHDF(hdf_archive& f, hsize_t& file_pointer)
-  {
-    auto& top = label;
-    hsize_t dims[2];
-    dims[0] = buffer.size(0);
-    dims[1] = buffer.size(1);
-    if (dims[0] > 0)
-    {
-      f.push(top);
-      h5d_append(f.top(), "data", file_pointer, buffer.dim(), dims, buffer.data());
-      f.pop();
-    }
-    f.flush();
-  }
+  void writeHDF(hdf_archive& f, hsize_t& file_pointer);
 
 private:
   /// make space as quantities are added to the buffer for the first time
-  inline void resetRowSize(size_t row_size)
-  {
-    auto nrows = buffer.size(0);
-    if (nrows == 0)
-      nrows++;
-    if (nrows != 1)
-      throw std::runtime_error("WalkerLogBuffer::reset_rowsize  row_size (number of columns) should only be changed "
-                               "during growth of the first row.");
-    auto buffer_old(buffer);
-    buffer.resize(nrows, row_size);
-    std::copy_n(buffer_old.data(), buffer_old.size(), buffer.data());
-    if (buffer.size(0) != 1)
-      throw std::runtime_error(
-          "WalkerLogBuffer::reset_rowsize  buffer should contain only a single row upon completion.");
-    if (buffer.size(1) != row_size)
-      throw std::runtime_error("WalkerLogBuffer::reset_rowsize  length of buffer row should match the requested "
-                               "row_size following the reset/udpate.");
-  }
+  void resetRowSize(size_t row_size);
 
   /// allocate a full new row at the end of the buffer
-  inline void makeNewRow()
-  {
-    size_t nrows    = buffer.size(0);
-    size_t row_size = buffer.size(1);
-    if (row_size == 0)
-      throw std::runtime_error("WalkerLogBuffer::makeNewRow  Cannot make a new row of size zero.");
-    nrows++;
-    // resizing buffer(type Array) doesn't preserve data. Thus keep old data and copy over
-    auto buffer_old(buffer);
-    buffer.resize(nrows, row_size);
-    std::copy_n(buffer_old.data(), buffer_old.size(), buffer.data());
-  }
+  void makeNewRow();
 };
 
+// explicit instantiations
 extern template class WalkerLogBuffer<WLog::Int>;
 extern template class WalkerLogBuffer<WLog::Real>;
+// and for templated member functions.
+extern template void WalkerLogBuffer<WLog::Int>::collect<2>(const std::string& name, Array<WLog::Int, 2>);
+extern template void WalkerLogBuffer<WLog::Real>::collect<2>(const std::string& name, Array<WLog::Real, 2>);
+extern template void WalkerLogBuffer<WLog::Real>::collect<1>(const std::string& name, Array<WLog::Real, 1>);
+extern template void WalkerLogBuffer<WLog::Real>::collect<2>(const std::string& name,
+                                                             Array<std::complex<WLog::Real>, 2>);
+extern template void WalkerLogBuffer<WLog::Real>::collect<1>(const std::string& name,
+                                                             Array<std::complex<WLog::Real>, 1>);
 
 } // namespace qmcplusplus
 

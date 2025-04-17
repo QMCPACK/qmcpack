@@ -16,7 +16,7 @@
 #include "type_traits/complex_help.hpp"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "Queue.hpp"
+#include "QueueAliases.hpp"
 #include "OMPTarget/OffloadAlignedAllocators.hpp"
 #include "ResourceCollection.h"
 

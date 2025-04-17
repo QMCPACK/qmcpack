@@ -23,6 +23,7 @@
 #include "QMCHamiltonians/NonLocalECPComponent.h"
 #include "TestListenerFunction.h"
 #include "Utilities/RuntimeOptions.h"
+#include "OhmmsData/Libxml2Doc.h"
 
 namespace qmcplusplus
 {
@@ -82,7 +83,7 @@ void doSOECPotentialTest(bool use_VPs)
 
   //Cell definition:
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  Lattice lattice;
   lattice.BoxBConds = false; // periodic
   lattice.R.diagonal(20);
   lattice.LR_dim_cutoff = 15;

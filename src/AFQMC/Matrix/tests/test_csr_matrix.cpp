@@ -23,7 +23,7 @@
 #include "AFQMC/Memory/SharedMemory/shm_ptr_with_raw_ptr_dispatch.hpp"
 
 #include "AFQMC/Matrix/csr_matrix.hpp"
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
 #include "AFQMC/Memory/custom_pointers.hpp"
 #endif
 
@@ -300,7 +300,7 @@ void test_csr_matrix_shm_allocator(Alloc A, bool serial)
       }
     }
 
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
     {
       using dev_csr_matrix = ma::sparse::csr_matrix<Type, IndxType, IntType, device::device_allocator<Type>>;
       dev_csr_matrix small11(small4);

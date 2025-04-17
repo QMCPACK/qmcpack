@@ -23,6 +23,7 @@
 #include <ResourceCollection.h>
 #include <Message/UniformCommunicateError.h>
 #include "Numerics/OneDimCubicSplineLinearGrid.h"
+#include <numeric>
 
 namespace qmcplusplus
 {
@@ -123,6 +124,7 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces, bo
     {
       app_log() << "  Check passed." << std::endl;
     }
+
   }
   prefix_ = "F_AA";
   app_log() << "  Maximum K shell " << AA->MaxKshell << std::endl;
@@ -304,7 +306,7 @@ void CoulombPBCAA::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
           v1 = 0.0;
           for (int s = 0; s < num_species; ++s)
             v1 += z * cpbcaa.Zspec[s] *
-                cpbcaa.AA->evaluate(pset.getSimulationCell().getKLists().kshell, PtclRhoK.rhok_r[s], PtclRhoK.rhok_i[s],
+	      cpbcaa.AA->evaluate(pset.getSimulationCell().getKLists().getKShell(), PtclRhoK.rhok_r[s], PtclRhoK.rhok_i[s],
                                     PtclRhoK.eikr_r[i], PtclRhoK.eikr_i[i]);
           v_sample[i] += v1;
           Vlr += v1;
@@ -317,6 +319,30 @@ void CoulombPBCAA::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
 
     for (const ListenerVector<RealType>& listener : listeners)
       listener.report(walker_index, name, v_sample);
+
+#ifndef NDEBUG
+    RealType Vlrnow = cpbcaa.evalLR(pset);
+    RealType Vsrnow = cpbcaa.evalSR(pset);
+    RealType Vcnow  = cpbcaa.myConst;
+    RealType Vcsum = std::accumulate(pp_consts.begin(), pp_consts.end(), 0.0);
+    RealType Vnow   = Vlrnow + Vsrnow + Vcnow;
+    RealType Vsum   = std::accumulate(v_sample.begin(), v_sample.end(), 0.0);
+    if (std::abs(Vsum - Vnow) > TraceManager::trace_tol)
+    {
+      app_log() << "accumtest: CoulombPBCAA::evaluate()" << std::endl;
+      app_log() << "accumtest:   tot:" << Vnow << std::endl;
+      app_log() << "accumtest:   sum:" << Vsum << std::endl;
+      throw std::runtime_error("Trace check failed");
+    }
+    if (std::abs(Vcsum - Vcnow) > TraceManager::trace_tol)
+    {
+      app_log() << "accumtest: CoulombPBCAA::evalConsts()" << std::endl;
+      app_log() << "accumtest:   tot:" << Vcnow << std::endl;
+      app_log() << "accumtest:   sum:" << Vcsum << std::endl;
+      throw std::runtime_error("Trace check failed");
+    }
+#endif
+
     return value;
   };
 
@@ -326,6 +352,17 @@ void CoulombPBCAA::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
     coulomb_aa.value_ = evaluate_walker(iw, coulomb_aa, p_list[iw], listeners);
   }
 }
+
+void CoulombPBCAA::mw_evaluatePerParticleWithToperator(const RefVectorWithLeader<OperatorBase>& o_list,
+                                                       const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                                       const RefVectorWithLeader<ParticleSet>& p_list,
+                                                       const std::vector<ListenerVector<RealType>>& listeners,
+                                                       const std::vector<ListenerVector<RealType>>& ion_listeners) const
+
+{
+  mw_evaluatePerParticle(o_list, wf_list, p_list, listeners, ion_listeners);
+}
+
 
 void CoulombPBCAA::evaluateIonDerivs(ParticleSet& P,
                                      ParticleSet& ions,
@@ -383,7 +420,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluate_sp(ParticleSet& P)
         v1 = 0.0;
         for (int s = 0; s < NumSpecies; ++s)
           v1 += z * Zspec[s] *
-              AA->evaluate(P.getSimulationCell().getKLists().kshell, PtclRhoK.rhok_r[s], PtclRhoK.rhok_i[s],
+	    AA->evaluate(P.getSimulationCell().getKLists().getKShell(), PtclRhoK.rhok_r[s], PtclRhoK.rhok_i[s],
                            PtclRhoK.eikr_r[i], PtclRhoK.eikr_i[i]);
         V_samp(i) += v1;
         Vlr += v1;
@@ -586,7 +623,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalConsts(bool report)
     }
     // perform long-range Madelung sum
     const StructFact& PtclRhoK(Ps.getSK());
-    v1 = AA->evaluate_slab(0, Ps.getSimulationCell().getKLists().kshell, PtclRhoK.eikr_r[0], PtclRhoK.eikr_i[0],
+    v1 = AA->evaluate_slab(0, Ps.getSimulationCell().getKLists().getKShell(), PtclRhoK.eikr_r[0], PtclRhoK.eikr_i[0],
                            PtclRhoK.eikr_r[0], PtclRhoK.eikr_i[0]);
     if (report)
       app_log() << "   LR Madelung = " << v1 << std::endl;
@@ -631,7 +668,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalConsts(bool report)
 }
 
 
-CoulombPBCAA::Return_t CoulombPBCAA::evalSR(ParticleSet& P)
+CoulombPBCAA::Return_t CoulombPBCAA::evalSR(const ParticleSet& P) const
 {
   ScopedTimer local_timer(evalSR_timer_);
   const auto& d_aa(P.getDistTableAA(d_aa_ID));
@@ -738,7 +775,7 @@ std::vector<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSR_offload(const RefVec
   return values;
 }
 
-CoulombPBCAA::Return_t CoulombPBCAA::evalLR(ParticleSet& P)
+CoulombPBCAA::Return_t CoulombPBCAA::evalLR(const ParticleSet& P) const
 {
   ScopedTimer local_timer(evalLR_timer_);
   mRealType res = 0.0;
@@ -757,7 +794,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalLR(ParticleSet& P)
       {
         const RealType z = std::abs(dr[jat][slab_dir]);
         u += Zat[jat] *
-            AA->evaluate_slab(z, P.getSimulationCell().getKLists().kshell, PtclRhoK.eikr_r[iat], PtclRhoK.eikr_i[iat],
+	  AA->evaluate_slab(z, P.getSimulationCell().getKLists().getKShell(), PtclRhoK.eikr_r[iat], PtclRhoK.eikr_i[iat],
                               PtclRhoK.eikr_r[jat], PtclRhoK.eikr_i[jat]);
       }
       res += Zat[iat] * u;
@@ -770,7 +807,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalLR(ParticleSet& P)
       mRealType Z1 = Zspec[spec1];
       for (int spec2 = spec1; spec2 < NumSpecies; spec2++)
       {
-        mRealType temp = AA->evaluate(P.getSimulationCell().getKLists().kshell, PtclRhoK.rhok_r[spec1],
+        mRealType temp = AA->evaluate(P.getSimulationCell().getKLists().getKShell(), PtclRhoK.rhok_r[spec1],
                                       PtclRhoK.rhok_i[spec1], PtclRhoK.rhok_r[spec2], PtclRhoK.rhok_i[spec2]);
         if (spec2 == spec1)
           temp *= 0.5;

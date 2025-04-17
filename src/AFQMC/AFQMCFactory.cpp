@@ -72,7 +72,7 @@ AFQMCFactory::AFQMCFactory(boost::mpi3::communicator& comm_)
       PropFac(InfoMap),
       DriverFac(gTG, TGHandler, InfoMap, WSetFac, PropFac, WfnFac, HamFac)
 {
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
   // taken from src/OhmmsApp/RandomNumberControl.cpp
   int rank   = gTG.Global().rank();
   int nprocs = gTG.Global().size();

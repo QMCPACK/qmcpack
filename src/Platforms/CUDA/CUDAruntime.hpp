@@ -40,6 +40,4 @@
 /// prints CUDA error messages. Always use cudaErrorCheck macro.
 void cudaAssert(cudaError_t code, const std::string& cause, const char* filename, int line, bool abort = true);
 
-size_t getCUDAdeviceFreeMem();
-
 #endif

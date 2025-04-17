@@ -14,58 +14,46 @@
 
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "CUDA/CUDAruntime.hpp"
-#include "CUDA/CUDAallocator.hpp"
-#include "CUDA/AccelBLAS_CUDA.hpp"
-#include "QMCWaveFunctions/detail/CUDA/delayed_update_helper.h"
+#include "MemManageAlias.hpp"
+#include "DualAllocatorAliases.hpp"
+#include "AccelBLAS.hpp"
+#include "detail/AccelMatrixUpdate.hpp"
 #include "PrefetchedRange.h"
-#if defined(QMC_CUDA2HIP)
-#include "rocSolverInverter.hpp"
-#else
-#include "cuSolverInverter.hpp"
-#endif
 
 namespace qmcplusplus
 {
 /** implements delayed update on NVIDIA GPU using cuBLAS and cusolverDN
  * @tparam T base precision for most computation
- * @tparam T_FP high precision for matrix inversion, T_FP >= T
  */
-template<typename T, typename T_FP>
+template<PlatformKind PL, typename T>
 class DelayedUpdateCUDA
 {
+  template<typename VALUE>
+  using DeviceAllocator = typename compute::MemManage<PL>::template DeviceAllocator<VALUE>;
+  template<typename VALUE>
+  using HostAllocator = typename compute::MemManage<PL>::template HostAllocator<VALUE>;
+
   // Data staged during for delayed acceptRows
-  Matrix<T, CUDAHostAllocator<T>> U;
-  Matrix<T, CUDAHostAllocator<T>> Binv;
-  Matrix<T> V;
+  Matrix<T, PinnedDualAllocator<T>> U;
+  Matrix<T, PinnedDualAllocator<T>> Binv;
+  Matrix<T, PinnedDualAllocator<T>> V;
   //Matrix<T> tempMat; // for debugging only
-  Matrix<T, CUDAAllocator<T>> temp_gpu;
-  /// GPU copy of U, V, Binv, Ainv
-  Matrix<T, CUDAAllocator<T>> U_gpu;
-  Matrix<T, CUDAAllocator<T>> V_gpu;
-  Matrix<T, CUDAAllocator<T>> Binv_gpu;
-  Matrix<T, CUDAAllocator<T>> Ainv_gpu;
+  Matrix<T, DeviceAllocator<T>> temp_gpu;
+  /// GPU copy of Ainv
+  Matrix<T, DeviceAllocator<T>> Ainv_gpu;
   // auxiliary arrays for B
   Vector<T> p;
-  Vector<int, CUDAHostAllocator<int>> delay_list;
-  Vector<int, CUDAAllocator<int>> delay_list_gpu;
+  Vector<int, PinnedDualAllocator<int>> delay_list;
   /// current number of delays, increase one for each acceptance, reset to 0 after updating Ainv
   int delay_count;
-
-#if defined(QMC_CUDA2HIP)
-  rocSolverInverter<T_FP> rocsolver_inverter;
-#else
-  cuSolverInverter<T_FP> cusolver_inverter;
-#endif
-
   // the range of prefetched_Ainv_rows
   PrefetchedRange prefetched_range;
   // Ainv prefetch buffer
-  Matrix<T, CUDAHostAllocator<T>> Ainv_buffer;
+  Matrix<T, HostAllocator<T>> Ainv_buffer;
 
   // CUDA specific variables
-  compute::Queue<PlatformKind::CUDA> queue_;
-  compute::BLASHandle<PlatformKind::CUDA> blas_handle_;
+  compute::Queue<PL> queue_;
+  compute::BLASHandle<PL> blas_handle_;
 
   /// reset delay count to 0
   inline void clearDelayCount()
@@ -94,25 +82,17 @@ public:
 
     temp_gpu.resize(norb, delay);
     delay_list.resize(delay);
-    U_gpu.resize(delay, norb);
-    V_gpu.resize(delay, norb);
-    Binv_gpu.resize(delay, delay);
-    delay_list_gpu.resize(delay);
     Ainv_gpu.resize(norb, norb);
   }
 
   /** compute the inverse of the transpose of matrix A and its determinant value in log
    * @tparam TREAL real type
    */
-  template<typename TREAL>
-  void invert_transpose(const Matrix<T>& logdetT, Matrix<T>& Ainv, std::complex<TREAL>& log_value)
+  template<typename INVERTER, typename TREAL>
+  void invert_transpose(INVERTER& inverter, const Matrix<T>& logdetT, Matrix<T>& Ainv, std::complex<TREAL>& log_value)
   {
     clearDelayCount();
-#if defined(QMC_CUDA2HIP)
-    rocsolver_inverter.invert_transpose(logdetT, Ainv, Ainv_gpu, log_value);
-#else
-    cusolver_inverter.invert_transpose(logdetT, Ainv, Ainv_gpu, log_value);
-#endif
+    inverter.invert_transpose(logdetT, Ainv, Ainv_gpu, log_value, queue_.getNative());
   }
 
   /** initialize internal objects when Ainv is refreshed
@@ -120,9 +100,7 @@ public:
    */
   inline void initializeInv(const Matrix<T>& Ainv)
   {
-    cudaErrorCheck(cudaMemcpyAsync(Ainv_gpu.data(), Ainv.data(), Ainv.size() * sizeof(T), cudaMemcpyHostToDevice,
-                                   queue_.getNative()),
-                   "cudaMemcpyAsync failed!");
+    queue_.memcpy(Ainv_gpu.data(), Ainv.data(), Ainv.size());
     clearDelayCount();
     // H2D transfer must be synchronized regardless of host memory being pinned or not.
     queue_.sync();
@@ -140,10 +118,7 @@ public:
     if (!prefetched_range.checkRange(rowchanged))
     {
       int last_row = std::min(rowchanged + Ainv_buffer.rows(), Ainv.rows());
-      cudaErrorCheck(cudaMemcpyAsync(Ainv_buffer.data(), Ainv_gpu[rowchanged],
-                                     invRow.size() * (last_row - rowchanged) * sizeof(T), cudaMemcpyDeviceToHost,
-                                     queue_.getNative()),
-                     "cudaMemcpyAsync failed!");
+      queue_.memcpy(Ainv_buffer.data(), Ainv_gpu[rowchanged], invRow.size() * (last_row - rowchanged));
       prefetched_range.setRange(rowchanged, last_row);
       queue_.sync();
     }
@@ -210,32 +185,24 @@ public:
     {
       const int norb     = Ainv.rows();
       const int lda_Binv = Binv.cols();
-      cudaErrorCheck(cudaMemcpyAsync(U_gpu.data(), U.data(), norb * delay_count * sizeof(T), cudaMemcpyHostToDevice,
-                                     queue_.getNative()),
-                     "cudaMemcpyAsync failed!");
-      compute::BLAS::gemm(blas_handle_, 'T', 'N', delay_count, norb, norb, T(1), U_gpu.data(), norb, Ainv_gpu.data(),
+      queue_.enqueueH2D(U, norb * delay_count);
+      compute::BLAS::gemm(blas_handle_, 'T', 'N', delay_count, norb, norb, T(1), U.device_data(), norb, Ainv_gpu.data(),
                           norb, T(0), temp_gpu.data(), lda_Binv);
-      cudaErrorCheck(cudaMemcpyAsync(delay_list_gpu.data(), delay_list.data(), delay_count * sizeof(int),
-                                     cudaMemcpyHostToDevice, queue_.getNative()),
-                     "cudaMemcpyAsync failed!");
-      applyW_stageV_cuda(delay_list_gpu.data(), delay_count, temp_gpu.data(), norb, temp_gpu.cols(), V_gpu.data(),
-                         Ainv_gpu.data(), queue_.getNative());
-      cudaErrorCheck(cudaMemcpyAsync(Binv_gpu.data(), Binv.data(), lda_Binv * delay_count * sizeof(T),
-                                     cudaMemcpyHostToDevice, queue_.getNative()),
-                     "cudaMemcpyAsync failed!");
-      compute::BLAS::gemm(blas_handle_, 'N', 'N', norb, delay_count, delay_count, T(1), V_gpu.data(), norb,
-                          Binv_gpu.data(), lda_Binv, T(0), U_gpu.data(), norb);
-      compute::BLAS::gemm(blas_handle_, 'N', 'N', norb, norb, delay_count, T(-1), U_gpu.data(), norb, temp_gpu.data(),
-                          lda_Binv, T(1), Ainv_gpu.data(), norb);
+      queue_.enqueueH2D(delay_list, delay_count);
+      compute::applyW_stageV(queue_, delay_list.device_data(), delay_count, temp_gpu.data(), norb, temp_gpu.cols(),
+                             V.device_data(), Ainv_gpu.data());
+      queue_.enqueueH2D(Binv, lda_Binv * delay_count);
+      compute::BLAS::gemm(blas_handle_, 'N', 'N', norb, delay_count, delay_count, T(1), V.device_data(), norb,
+                          Binv.device_data(), lda_Binv, T(0), U.device_data(), norb);
+      compute::BLAS::gemm(blas_handle_, 'N', 'N', norb, norb, delay_count, T(-1), U.device_data(), norb,
+                          temp_gpu.data(), lda_Binv, T(1), Ainv_gpu.data(), norb);
       clearDelayCount();
     }
 
     // transfer Ainv_gpu to Ainv and wait till completion
     if (transfer_to_host)
     {
-      cudaErrorCheck(cudaMemcpyAsync(Ainv.data(), Ainv_gpu.data(), Ainv.size() * sizeof(T), cudaMemcpyDeviceToHost,
-                                     queue_.getNative()),
-                     "cudaMemcpyAsync failed!");
+      queue_.memcpy(Ainv.data(), Ainv_gpu.data(), Ainv.size());
       queue_.sync();
     }
   }

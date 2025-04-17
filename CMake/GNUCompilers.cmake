@@ -24,7 +24,7 @@ if(QMC_OMP)
         CACHE STRING "Offload target architecture")
     set(OPENMP_OFFLOAD_COMPILE_OPTIONS "-foffload=${OFFLOAD_TARGET} -foffload-options=\"-lm -latomic\"")
 
-    if(NOT DEFINED OFFLOAD_ARCH AND DEFINED QMC_GPU_ARCHS)
+    if(NOT OFFLOAD_ARCH AND QMC_GPU_ARCHS)
       list(LENGTH QMC_GPU_ARCHS QMC_GPU_ARCH_COUNT)
       if(QMC_GPU_ARCH_COUNT EQUAL "1")
         set(OFFLOAD_ARCH ${QMC_GPU_ARCHS})
@@ -37,7 +37,7 @@ if(QMC_OMP)
       endif()
     endif()
 
-    if(DEFINED OFFLOAD_ARCH)
+    if(OFFLOAD_ARCH)
       if(OFFLOAD_TARGET MATCHES "amdgcn-amdhsa")
         set(OPENMP_OFFLOAD_COMPILE_OPTIONS
             "${OPENMP_OFFLOAD_COMPILE_OPTIONS} -foffload-options=${OFFLOAD_TARGET}=\"-march=${OFFLOAD_ARCH}\"")

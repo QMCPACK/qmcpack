@@ -125,50 +125,22 @@ void RotatedSPOs::resetParametersExclusive(const opt_variables_type& active)
     myVars[i]                 = active[loc];
   }
 
-  if (use_global_rot_)
-  {
-    std::vector<ValueType> old_param(m_full_rot_inds_.size());
-    std::copy_n(myVarsFull_.data(), myVarsFull_.size(), old_param.data());
+  std::vector<ValueType> old_param(m_full_rot_inds_.size());
+  std::copy_n(myVarsFull_.data(), myVarsFull_.size(), old_param.data());
 
-    applyDeltaRotation(delta_param, old_param, myVarsFull_);
-  }
-  else
-  {
-    apply_rotation(delta_param, false);
-
-    // Save the parameters in the history list
-    history_params_.push_back(delta_param);
-  }
+  applyDeltaRotation(delta_param, old_param, myVarsFull_);
 }
 
 void RotatedSPOs::writeVariationalParameters(hdf_archive& hout)
 {
   hout.push("RotatedSPOs");
-  if (use_global_rot_)
-  {
-    hout.push("rotation_global");
-    const std::string rot_global_name = std::string("rotation_global_") + SPOSet::getName();
 
-    hout.write(myVarsFull_, rot_global_name);
-    hout.pop();
-  }
-  else
-  {
-    hout.push("rotation_history");
-    size_t rows = history_params_.size();
-    size_t cols = 0;
-    if (rows > 0)
-      cols = history_params_[0].size();
+  hout.push("rotation_global");
+  const std::string rot_global_name = std::string("rotation_global_") + SPOSet::getName();
 
-    Matrix<ValueType> tmp(rows, cols);
-    for (size_t i = 0; i < rows; i++)
-      for (size_t j = 0; j < cols; j++)
-        tmp[i][j] = history_params_[i][j];
-    std::string rot_hist_name = std::string("rotation_history_") + SPOSet::getName();
-    hout.write(tmp, rot_hist_name);
-    hout.pop();
-  }
-
+  hout.write(myVarsFull_, rot_global_name);
+  hout.pop();
+  
   // Save myVars in order to restore object state exactly
   //  The values aren't meaningful, but they need to match those saved in VariableSet
   hout.push("rotation_params");
@@ -189,11 +161,7 @@ void RotatedSPOs::readVariationalParameters(hdf_archive& hin)
 {
   hin.push("RotatedSPOs", false);
 
-  bool grp_hist_exists   = hin.is_group("rotation_history");
   bool grp_global_exists = hin.is_group("rotation_global");
-  if (!grp_hist_exists && !grp_global_exists)
-    app_warning() << "Rotation parameters not found in VP file";
-
 
   if (grp_global_exists)
   {
@@ -217,29 +185,9 @@ void RotatedSPOs::readVariationalParameters(hdf_archive& hin)
 
     applyFullRotation(myVarsFull_, true);
   }
-  else if (grp_hist_exists)
+  else 
   {
-    hin.push("rotation_history", false);
-    std::string rot_hist_name = std::string("rotation_history_") + SPOSet::getName();
-    std::vector<int> sizes(2);
-    if (!hin.getShape<ValueType>(rot_hist_name, sizes))
-      throw std::runtime_error("Failed to read rotation history in VP file");
-
-    int rows = sizes[0];
-    int cols = sizes[1];
-    history_params_.resize(rows);
-    Matrix<ValueType> tmp(rows, cols);
-    hin.read(tmp, rot_hist_name);
-    for (size_t i = 0; i < rows; i++)
-    {
-      history_params_[i].resize(cols);
-      for (size_t j = 0; j < cols; j++)
-        history_params_[i][j] = tmp(i, j);
-    }
-
-    hin.pop();
-
-    applyRotationHistory();
+    throw std::runtime_error("Error.  No global rotation group in h5.  Abort.");
   }
 
   hin.push("rotation_params", false);
@@ -290,8 +238,8 @@ void RotatedSPOs::buildOptVariables(const size_t nel)
     RotationIndices created_m_act_rot_inds;
 
     RotationIndices created_full_rot_inds;
-    if (use_global_rot_)
-      createRotationIndicesFull(nel, nmo, created_full_rot_inds);
+
+    createRotationIndicesFull(nel, nmo, created_full_rot_inds);
 
     createRotationIndices(nel, nmo, created_m_act_rot_inds);
 
@@ -306,13 +254,9 @@ void RotatedSPOs::buildOptVariables(const RotationIndices& rotations, const Rota
   // create active rotations
   m_act_rot_inds_ = rotations;
 
-  if (use_global_rot_)
-    m_full_rot_inds_ = full_rotations;
+  m_full_rot_inds_ = full_rotations;
 
-  if (use_global_rot_)
-    app_log() << "Orbital rotation using global rotation" << std::endl;
-  else
-    app_log() << "Orbital rotation using history" << std::endl;
+  app_log() << "Orbital rotation using global rotation" << std::endl;
 
   // This will add the orbital rotation parameters to myVars
   // and will also read in initial parameter values supplied in input file
@@ -349,13 +293,10 @@ void RotatedSPOs::buildOptVariables(const RotationIndices& rotations, const Rota
       registerParameter(i, p, q, myVars, params_, false);
   }
 
-  if (use_global_rot_)
-  {
-    const size_t nfull_rot = m_full_rot_inds_.size();
-    myVarsFull_.resize(nfull_rot);
-    for (int i = 0; i < nfull_rot; i++)
-      myVarsFull_[i] = (params_supplied_ && i < m_act_rot_inds_.size()) ? params_[i] : 0.0;
-  }
+  const size_t nfull_rot = m_full_rot_inds_.size();
+  myVarsFull_.resize(nfull_rot);
+  for (int i = 0; i < nfull_rot; i++)
+    myVarsFull_[i] = (params_supplied_ && i < m_act_rot_inds_.size()) ? params_[i] : 0.0;
 
   //Printing the parameters
   if (true)
@@ -462,14 +403,6 @@ void RotatedSPOs::applyFullRotation(const std::vector<ValueType>& full_param, bo
   */
   exponentiate_antisym_matrix(rot_mat);
   Phi_->applyRotation(rot_mat, use_stored_copy);
-}
-
-void RotatedSPOs::applyRotationHistory()
-{
-  for (auto delta_param : history_params_)
-  {
-    apply_rotation(delta_param, false);
-  }
 }
 
 // compute exponential of a real, antisymmetric matrix by diagonalizing and exponentiating eigenvalues
@@ -989,7 +922,7 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
 void RotatedSPOs::evaluateDerivativesWF(ParticleSet& P,
                                         const opt_variables_type& optvars,
                                         Vector<ValueType>& dlogpsi,
-                                        const QTFull::ValueType& psiCurrent,
+                                        const FullPrecValue& psiCurrent,
                                         const std::vector<ValueType>& Coeff,
                                         const std::vector<size_t>& C2node_up,
                                         const std::vector<size_t>& C2node_dn,
@@ -1640,8 +1573,6 @@ std::unique_ptr<SPOSet> RotatedSPOs::makeClone() const
   myclone->m_full_rot_inds_ = this->m_full_rot_inds_;
   myclone->myVars           = this->myVars;
   myclone->myVarsFull_      = this->myVarsFull_;
-  myclone->history_params_  = this->history_params_;
-  myclone->use_global_rot_  = this->use_global_rot_;
   return myclone;
 }
 

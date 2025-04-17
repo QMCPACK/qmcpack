@@ -335,7 +335,7 @@ void DiracDeterminantBatched<PL, VT, FPVT>::mw_ratioGrad(const RefVectorWithLead
         UpdateEngine::mw_getInvRow(engine_list, wfc_leader.mw_res_handle_.getResource().engine_rsc, mw_res.psiMinv_refs,
                                    WorkingIndex, !Phi->isOMPoffload());
 
-    phi_vgl_v.resize(DIM_VGL, wfc_list.size(), NumOrbitals);
+    phi_vgl_v.resize(SPOSet::DIM_VGL, wfc_list.size(), NumOrbitals);
     ratios_local.resize(wfc_list.size());
     grad_new_local.resize(wfc_list.size());
 
@@ -387,7 +387,7 @@ void DiracDeterminantBatched<PL, VT, FPVT>::mw_ratioGradWithSpin(
         UpdateEngine::mw_getInvRow(engine_list, wfc_leader.mw_res_handle_.getResource().engine_rsc, mw_res.psiMinv_refs,
                                    WorkingIndex, !Phi->isOMPoffload());
 
-    phi_vgl_v.resize(DIM_VGL, wfc_list.size(), NumOrbitals);
+    phi_vgl_v.resize(SPOSet::DIM_VGL, wfc_list.size(), NumOrbitals);
     ratios_local.resize(wfc_list.size());
     grad_new_local.resize(wfc_list.size());
     spingrad_new_local.resize(wfc_list.size());
@@ -770,7 +770,7 @@ void DiracDeterminantBatched<PL, VT, FPVT>::mw_calcRatio(const RefVectorWithLead
         UpdateEngine::mw_getInvRow(engine_list, wfc_leader.mw_res_handle_.getResource().engine_rsc, mw_res.psiMinv_refs,
                                    WorkingIndex, !Phi->isOMPoffload());
 
-    phi_vgl_v.resize(DIM_VGL, wfc_list.size(), NumOrbitals);
+    phi_vgl_v.resize(SPOSet::DIM_VGL, wfc_list.size(), NumOrbitals);
     ratios_local.resize(wfc_list.size());
     grad_new_local.resize(wfc_list.size());
 

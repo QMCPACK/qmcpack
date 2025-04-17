@@ -1111,7 +1111,7 @@ TEST_CASE("wfn_fac_sdet", "[wavefunction_factory]")
     infoLog.pause();
   auto node = world.split_shared(world.rank());
 
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
 
   arch::INIT(node);
   using Alloc = device::device_allocator<ComplexType>;
@@ -1130,7 +1130,7 @@ TEST_CASE("wfn_fac_distributed", "[wavefunction_factory]")
   if (not world.root())
     infoLog.pause();
 
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
   auto node = world.split_shared(world.rank());
   int ngrp(world.size());
 

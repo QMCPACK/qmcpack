@@ -183,7 +183,7 @@ TEST_CASE("MagnetizationDensity::gridAssignment", "[estimators]")
                                     {6.03341616, 0, 1.77067004},           //bin 6
                                     {2.78496304, 0, 5.31201011}};          //bin 7
 
-  ParticleSet::ParticleLayout lattice;
+  Lattice lattice;
   lattice.R(0, 0) = 5.10509515;
   lattice.R(0, 1) = -3.23993545;
   lattice.R(0, 2) = 0.00000000;
@@ -295,7 +295,7 @@ TEST_CASE("MagnetizationDensity::IntegrationTest", "[estimators]")
   using namespace testing;
 
   // O2 test example from pwscf non-collinear calculation.
-  ParticleSet::ParticleLayout lattice;
+  Lattice lattice;
   lattice.R(0, 0) = 5.10509515;
   lattice.R(0, 1) = -3.23993545;
   lattice.R(0, 2) = 0.00000000;
@@ -368,8 +368,8 @@ TEST_CASE("MagnetizationDensity::IntegrationTest", "[estimators]")
     mup(1, iorb) = uprow1[iorb];
     mdn(1, iorb) = dnrow1[iorb];
   }
-  auto spo_up = std::make_unique<ConstantSPOSet>("ConstantUpSet", nelec, norb);
-  auto spo_dn = std::make_unique<ConstantSPOSet>("ConstantDnSet", nelec, norb);
+  auto spo_up = std::make_unique<ConstantSPOSet<Value>>("ConstantUpSet", nelec, norb);
+  auto spo_dn = std::make_unique<ConstantSPOSet<Value>>("ConstantDnSet", nelec, norb);
 
   spo_up->setRefVals(mup);
   spo_dn->setRefVals(mdn);

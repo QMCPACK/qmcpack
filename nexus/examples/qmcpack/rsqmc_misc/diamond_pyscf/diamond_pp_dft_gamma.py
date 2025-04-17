@@ -51,6 +51,7 @@ c4q = generate_convert4qmc(
     )
 
 qmc = generate_qmcpack(
+    driver       = 'legacy',
     identifier   = 'vmc',
     path         = 'diamond_pp_dft_gamma',
     job          = job(cores=16),

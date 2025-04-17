@@ -422,7 +422,7 @@ TEST_CASE("propg_fac_shared", "[propagator_factory]")
     infoLog.pause();
   auto node = world.split_shared(world.rank());
 
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
   arch::INIT(node);
 #endif
   setup_memory_managers(node, 10uL * 1024uL * 1024uL);
@@ -438,7 +438,7 @@ TEST_CASE("propg_fac_distributed", "[propagator_factory]")
     infoLog.pause();
   auto node = world.split_shared(world.rank());
 
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
   int ngrp(world.size());
   arch::INIT(node);
 #else

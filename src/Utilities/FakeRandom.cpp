@@ -29,6 +29,12 @@ T FakeRandom<T>::operator()()
   return m_val;
 }
 
+template<typename T>
+RandomBase<T>& FakeRandom<T>::operator=(const RandomBase<T>& other)
+{
+  return *this = dynamic_cast<const FakeRandom<T>&>(other);
+}
+
 template class FakeRandom<float>;
 template class FakeRandom<double>;
 

@@ -90,16 +90,8 @@ def test_options():
 
     # read
     opts = '-a -b 1 -c=2 --dname="0 1 2" --evar -fval -gval other --hval'
-    ref = obj(
-        a     = '-a',
-        b     = '-b 1',
-        c     = '-c=2',
-        dname = '--dname="0 1 2"',
-        evar  = '--evar',
-        fval  = '-fval',
-        gval  = '-gval other',
-        hval  = '--hval',
-        )
+    ref = obj()
+    ref['0'] = opts
     o = Options()
     o.read(opts)
     assert(object_eq(o.to_obj(),ref))
@@ -107,7 +99,7 @@ def test_options():
     # write
     opts_write = o.write()
     o2 = Options()
-    o2.read(opts_write)
+    o2.read(opts_write.strip())
     assert(object_eq(o2.to_obj(),ref))
 #end def test_options
 
@@ -1293,7 +1285,20 @@ def test_job_run_command():
         ('inti'           , 'n2_t2'         ) : 'srun test.x',
         ('inti'           , 'n2_t2_e'       ) : 'srun test.x',
         ('inti'           , 'n2_t2_p2'      ) : 'srun test.x',
+        ('baseline'       , 'n1'            ) : 'srun test.x',
+        ('baseline'       , 'n1_p1'         ) : 'srun test.x',
+        ('baseline'       , 'n2'            ) : 'srun test.x',
+        ('baseline'       , 'n2_t2'         ) : 'srun test.x',
+        ('baseline'       , 'n2_t2_e'       ) : 'srun test.x',
+        ('baseline'       , 'n2_t2_p2'      ) : 'srun test.x',
+        ('besms'          , 'n1'            ) : 'srun test.x',
+        ('besms'          , 'n1_p1'         ) : 'srun test.x',
+        ('besms'          , 'n2'            ) : 'srun test.x',
+        ('besms'          , 'n2_t2'         ) : 'srun test.x',
+        ('besms'          , 'n2_t2_e'       ) : 'srun test.x',
+        ('besms'          , 'n2_t2_p2'      ) : 'srun test.x',
         })
+
 
     if testing.global_data['job_ref_table']:
         print('\n\n')
@@ -2094,7 +2099,39 @@ srun test.x''',
 export ENV_VAR=1
 export OMP_NUM_THREADS=1
 srun test.x''',
+        baseline = '''#!/bin/bash
+#SBATCH -A ABC123
+#SBATCH -p batch_cnms
+#SBATCH -J jobname
+#SBATCH -t 06:30:00
+#SBATCH -N 2
+#SBATCH --ntasks-per-node=128
+#SBATCH --cpus-per-task=1
+#SBATCH -o test.out
+#SBATCH -e test.err
+#SBATCH --export=ALL
 
+export ENV_VAR=1
+export OMP_NUM_THREADS=1
+srun test.x''',
+
+        besms = '''#!/bin/bash
+#SBATCH -A ABC123
+#SBATCH -p t92
+#SBATCH -J jobname
+#SBATCH -t 06:30:00
+#SBATCH -N 2
+#SBATCH --ntasks-per-node=96
+#SBATCH --cpus-per-task=1
+#SBATCH -o test.out
+#SBATCH -e test.err
+#SBATCH --mem=350G
+#SBATCH --exclusive
+#SBATCH --export=ALL
+
+export ENV_VAR=1
+export OMP_NUM_THREADS=1
+srun test.x''',
         )
 
     def process_job_file(jf):

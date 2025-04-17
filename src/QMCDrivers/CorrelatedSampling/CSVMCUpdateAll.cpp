@@ -20,7 +20,7 @@
 //#include "Particle/HDFWalkerIO.h"
 //#include "ParticleBase/ParticleUtility.h"
 //#include "ParticleBase/RandomSeqGenerator.h"
-//#include "ParticleBase/ParticleAttribOps.h"
+//#include "CPU/VectorOps.h"
 //#include "Message/Communicate.h"
 //#include "Estimators/MultipleEnergyEstimator.h"
 #include "QMCDrivers/DriftOperators.h"

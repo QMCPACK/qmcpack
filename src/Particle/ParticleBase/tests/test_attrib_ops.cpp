@@ -17,7 +17,7 @@
 #include "OhmmsPETE/TinyVector.h"
 #include "Lattice/CrystalLattice.h"
 #include "ParticleBase/ParticleAttrib.h"
-#include "ParticleBase/ParticleAttribOps.h"
+#include "CPU/VectorOps.h"
 #include "ParticleBase/ParticleUtility.h"
 
 #include <stdio.h>

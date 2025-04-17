@@ -25,8 +25,6 @@ namespace qmcplusplus
 {
 TEST_CASE("SpinDensityInput::readXML", "[estimators]")
 {
-  using POLT    = PtclOnLatticeTraits;
-  using Lattice = POLT::ParticleLayout;
   using input = testing::ValidSpinDensityInput;
   for (auto input_xml : input::xml)
   {

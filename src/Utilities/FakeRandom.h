@@ -37,6 +37,7 @@ public:
   void save(std::vector<uint_type>& curstate) const override{};
   size_t state_size() const override { return 0; };
   std::unique_ptr<RandomBase<T>> makeClone() const override { return std::make_unique<FakeRandom<T>>(*this); }
+  RandomBase<T>& operator=(const RandomBase<T>& other) override;
 
   void set_value(double val);
 

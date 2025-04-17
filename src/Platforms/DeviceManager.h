@@ -79,6 +79,9 @@ public:
   /// global instance accessor
   static const DeviceManager& getGlobal();
 
+  // print device information
+  void printInfo() const;
+
 private:
   /// the global singleton which can be used to query default devices and all the captured devices.
   static std::unique_ptr<DeviceManager> global;
@@ -98,6 +101,8 @@ private:
   /// SYCL device manager object
   SYCLDeviceManager sycl_dm_;
 #endif
+  /// introduced to make the member initializer list more readable
+  int dummy;
 };
 
 } // namespace qmcplusplus

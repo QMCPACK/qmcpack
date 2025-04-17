@@ -18,15 +18,25 @@
 namespace qmcplusplus
 {
 
-class FakeSPO : public SPOSet
+template<typename T>
+class FakeSPO : public SPOSetT<T>
 {
 public:
-  Matrix<ValueType> a;
-  Matrix<ValueType> a2;
-  Vector<ValueType> v;
-  Matrix<ValueType> v2;
+  using SPOSet = SPOSetT<T>;
+  using SPOSet::DIM;
+  using Value       = typename SPOSet::ValueType;
+  using ValueVector = typename SPOSet::ValueVector;
+  using ValueMatrix = typename SPOSet::ValueMatrix;
+  using Grad        = typename SPOSet::GradType;
+  using GradVector  = typename SPOSet::GradVector;
+  using GradMatrix  = typename SPOSet::GradMatrix;
 
-  SPOSet::GradVector gv;
+  Matrix<Value> a;
+  Matrix<Value> a2;
+  Vector<Value> v;
+  Matrix<Value> v2;
+
+  GradVector gv;
 
   FakeSPO();
   ~FakeSPO() override {}
@@ -47,6 +57,8 @@ public:
                             ValueMatrix& logdet,
                             GradMatrix& dlogdet,
                             ValueMatrix& d2logdet) override;
+private:
+  using SPOSet::OrbitalSetSize;
 };
 
 } // namespace qmcplusplus
