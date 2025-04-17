@@ -16,16 +16,14 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "CPU/BLAS.hpp"
 #include "CPU/BlasThreadingEnv.h"
-#include "DiracMatrix.h"
 #include "Concurrency/OpenMP.h"
 
 namespace qmcplusplus
 {
 /** implements delayed update on CPU using BLAS
  * @tparam T base precision for most computation
- * @tparam T_FP high precision for matrix inversion, T_FP >= T
  */
-template<typename T, typename T_FP>
+template<typename T>
 class DelayedUpdate
 {
   /// orbital values of delayed electrons
@@ -44,8 +42,6 @@ class DelayedUpdate
   std::vector<int> delay_list;
   /// current number of delays, increase one for each acceptance, reset to 0 after updating Ainv
   int delay_count;
-  /// matrix inversion engine
-  DiracMatrix<T_FP> detEng;
 
 public:
   /// default constructor
@@ -64,18 +60,6 @@ public:
     tempMat.resize(norb, delay);
     Binv.resize(delay, delay);
     delay_list.resize(delay);
-  }
-
-  /** compute the inverse of the transpose of matrix A
-   * @param logdetT orbital value matrix
-   * @param Ainv inverse matrix
-   */
-  template<typename TREAL>
-  inline void invert_transpose(const Matrix<T>& logdetT, Matrix<T>& Ainv, std::complex<TREAL>& log_value)
-  {
-    detEng.invert_transpose(logdetT, Ainv, log_value);
-    // safe mechanism
-    delay_count = 0;
   }
 
   /** initialize internal objects when Ainv is refreshed

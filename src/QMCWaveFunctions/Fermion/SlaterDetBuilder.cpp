@@ -442,21 +442,21 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
       else if (CPUOMPTargetVendorSelector::selectPlatform(useGPU) == PlatformKind::CUDA)
       {
         app_summary() << "      Running on a GPU via CUDA/HIP acceleration." << std::endl;
-        adet = std::make_unique<DiracDeterminant<
-            DelayedUpdateCUDA<PlatformKind::CUDA, ValueType, QMCTraits::QTFull::ValueType>>>(std::move(psi_clone),
-                                                                                             firstIndex, lastIndex,
-                                                                                             delay_rank,
-                                                                                             matrix_inverter_kind);
+        adet = std::make_unique<
+            DiracDeterminant<PlatformKind::CUDA, ValueType, QMCTraits::QTFull::ValueType>>(std::move(psi_clone),
+                                                                                           firstIndex, lastIndex,
+                                                                                           delay_rank,
+                                                                                           matrix_inverter_kind);
       }
 #elif defined(ENABLE_SYCL)
       else if (CPUOMPTargetVendorSelector::selectPlatform(useGPU) == PlatformKind::SYCL)
       {
         app_summary() << "      Running on a GPU via SYCL acceleration." << std::endl;
         adet = std::make_unique<
-            DiracDeterminant<DelayedUpdateSYCL<ValueType, QMCTraits::QTFull::ValueType>>>(std::move(psi_clone),
-                                                                                          firstIndex, lastIndex,
-                                                                                          delay_rank,
-                                                                                          matrix_inverter_kind);
+            DiracDeterminant<PlatformKind::SYCL, ValueType, QMCTraits::QTFull::ValueType>>(std::move(psi_clone),
+                                                                                           firstIndex, lastIndex,
+                                                                                           delay_rank,
+                                                                                           matrix_inverter_kind);
       }
 #endif
       else
