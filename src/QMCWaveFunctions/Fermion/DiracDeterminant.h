@@ -42,6 +42,40 @@
 
 namespace qmcplusplus
 {
+template<PlatformKind P, typename T, typename FP_T>
+struct AccelEngine;
+
+template<typename T, typename FP_T>
+struct AccelEngine<PlatformKind::CPU, T, FP_T>
+{
+  static constexpr bool inverter_supported = false;
+  DelayedUpdate<T> update_eng_;
+};
+
+#if defined(ENABLE_CUDA)
+template<typename T, typename FP_T>
+struct AccelEngine<PlatformKind::CUDA, T, FP_T>
+{
+  static constexpr bool inverter_supported = true;
+  DelayedUpdateCUDA<PlatformKind::CUDA, T> update_eng_;
+#if defined(QMC_CUDA2HIP)
+  rocSolverInverter<FP_T> inverter_;
+#else
+  cuSolverInverter<FP_T> inverter_;
+#endif
+};
+#endif
+
+#if defined(ENABLE_SYCL)
+template<typename T, typename FP_T>
+struct AccelEngine<PlatformKind::SYCL, T, FP_T>
+{
+  static constexpr bool inverter_supported = true;
+  DelayedUpdateCUDA<PlatformKind::SYCL, T> update_eng_;
+  syclSolverInverter<FP_T> inverter_;
+};
+#endif
+
 /** implements delayed update on CPU using BLAS
  * @tparam VT base precision value type of the delayed update engine
  * @tparam FPVT high precision value type for matrix inversion, FPVT >= VT
@@ -58,40 +92,6 @@ protected:
   void resize(int nel, int morb);
 
 public:
-  template<PlatformKind P>
-  struct AccelEngine;
-
-  template<>
-  struct AccelEngine<PlatformKind::CPU>
-  {
-    static constexpr bool inverter_supported = false;
-    DelayedUpdate<VT> update_eng_;
-  };
-
-#if defined(ENABLE_CUDA)
-  template<>
-  struct AccelEngine<PlatformKind::CUDA>
-  {
-    static constexpr bool inverter_supported = true;
-    DelayedUpdateCUDA<PlatformKind::CUDA, VT> update_eng_;
-#if defined(QMC_CUDA2HIP)
-    rocSolverInverter<FPVT> inverter_;
-#else
-    cuSolverInverter<FPVT> inverter_;
-#endif
-  };
-#endif
-
-#if defined(ENABLE_SYCL)
-  template<>
-  struct AccelEngine<PlatformKind::SYCL>
-  {
-    static constexpr bool inverter_supported = true;
-    DelayedUpdateCUDA<PlatformKind::SYCL, VT> update_eng_;
-    syclSolverInverter<FPVT> inverter_;
-  };
-#endif
-
   using ValueVector = SPOSet::ValueVector;
   using ValueMatrix = SPOSet::ValueMatrix;
   using GradVector  = SPOSet::GradVector;
@@ -333,7 +333,7 @@ public:
 
 private:
   /// accelerator (delayed update + solver) engine
-  AccelEngine<PL> accel_engine_;
+  AccelEngine<PL, VT, FPVT> accel_engine_;
 
   /// slow but doesn't consume device memory
   DiracMatrix<QMCTraits::QTFull::ValueType> host_inverter_;

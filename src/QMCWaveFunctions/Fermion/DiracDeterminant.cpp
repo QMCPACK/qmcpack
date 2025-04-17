@@ -51,7 +51,7 @@ template<PlatformKind PL, typename VT, typename FPVT>
 void DiracDeterminant<PL, VT, FPVT>::invertPsiM(const ValueMatrix& logdetT, ValueMatrix& invMat)
 {
   ScopedTimer local_timer(InverseTimer);
-  if (matrix_inverter_kind_ == DetMatInvertor::ACCEL && AccelEngine<PL>::inverter_supported)
+  if (matrix_inverter_kind_ == DetMatInvertor::ACCEL && AccelEngine<PL, VT, FPVT>::inverter_supported)
   {
     bool success        = false;
     int failure_counter = 0;
@@ -59,7 +59,7 @@ void DiracDeterminant<PL, VT, FPVT>::invertPsiM(const ValueMatrix& logdetT, Valu
     {
       try
       {
-        if constexpr (AccelEngine<PL>::inverter_supported)
+        if constexpr (AccelEngine<PL, VT, FPVT>::inverter_supported)
           accel_engine_.update_eng_.invert_transpose(accel_engine_.inverter_, logdetT, invMat, log_value_);
         else
           throw std::runtime_error("DiracDeterminan::invertPsiM report bug invalid code path!");
