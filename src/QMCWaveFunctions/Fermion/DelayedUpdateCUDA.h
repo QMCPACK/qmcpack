@@ -19,24 +19,13 @@
 #include "AccelBLAS.hpp"
 #include "detail/AccelMatrixUpdate.hpp"
 #include "PrefetchedRange.h"
-#if defined(ENABLE_CUDA)
-#if defined(QMC_CUDA2HIP)
-#include "rocSolverInverter.hpp"
-#else
-#include "cuSolverInverter.hpp"
-#endif
-#endif
-#if defined(ENABLE_SYCL)
-#include "syclSolverInverter.hpp"
-#endif
 
 namespace qmcplusplus
 {
 /** implements delayed update on NVIDIA GPU using cuBLAS and cusolverDN
  * @tparam T base precision for most computation
- * @tparam T_FP high precision for matrix inversion, T_FP >= T
  */
-template<PlatformKind PL, typename T, typename T_FP>
+template<PlatformKind PL, typename T>
 class DelayedUpdateCUDA
 {
   template<typename VALUE>
@@ -57,18 +46,6 @@ class DelayedUpdateCUDA
   Vector<int, PinnedDualAllocator<int>> delay_list;
   /// current number of delays, increase one for each acceptance, reset to 0 after updating Ainv
   int delay_count;
-
-#if defined(ENABLE_CUDA)
-#if defined(QMC_CUDA2HIP)
-  rocSolverInverter<T_FP> solver_inverter_;
-#else
-  cuSolverInverter<T_FP> solver_inverter_;
-#endif
-#endif
-#if defined(ENABLE_SYCL)
-  syclSolverInverter<T_FP> solver_inverter_;
-#endif
-
   // the range of prefetched_Ainv_rows
   PrefetchedRange prefetched_range;
   // Ainv prefetch buffer
@@ -111,11 +88,11 @@ public:
   /** compute the inverse of the transpose of matrix A and its determinant value in log
    * @tparam TREAL real type
    */
-  template<typename TREAL>
-  void invert_transpose(const Matrix<T>& logdetT, Matrix<T>& Ainv, std::complex<TREAL>& log_value)
+  template<typename INVERTER, typename TREAL>
+  void invert_transpose(INVERTER& inverter, const Matrix<T>& logdetT, Matrix<T>& Ainv, std::complex<TREAL>& log_value)
   {
     clearDelayCount();
-    solver_inverter_.invert_transpose(logdetT, Ainv, Ainv_gpu, log_value, queue_.getNative());
+    inverter.invert_transpose(logdetT, Ainv, Ainv_gpu, log_value, queue_.getNative());
   }
 
   /** initialize internal objects when Ainv is refreshed

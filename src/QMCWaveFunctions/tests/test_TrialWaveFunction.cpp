@@ -30,11 +30,12 @@
 
 namespace qmcplusplus
 {
-#if defined(ENABLE_CUDA) && !defined(QMC_CUDA2HIP)
-using DiracDet =
-    DiracDeterminant<DelayedUpdateCUDA<PlatformKind::CUDA, QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
+#if defined(ENABLE_CUDA)
+using DiracDet = DiracDeterminant<PlatformKind::CUDA, QMCTraits::ValueType, QMCTraits::QTFull::ValueType>;
+#elif defined(ENABLE_SYCL)
+using DiracDet = DiracDeterminant<PlatformKind::SYCL, QMCTraits::ValueType, QMCTraits::QTFull::ValueType>;
 #else
-using DiracDet = DiracDeterminant<DelayedUpdate<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
+using DiracDet = DiracDeterminant<>;
 #endif
 
 using LogValue  = TrialWaveFunction::LogValue;
