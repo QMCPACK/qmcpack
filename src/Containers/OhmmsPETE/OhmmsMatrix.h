@@ -107,7 +107,11 @@ public:
   }
 
   // free the matrix storage
-  inline void free() { X.free(); }
+  inline void free()
+  {
+    D1 = D2 = 0;
+    X.free();
+  }
 
   // Attach to pre-allocated memory
   inline void attachReference(T* ref, size_type n, size_type m)
