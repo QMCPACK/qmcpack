@@ -37,7 +37,7 @@ public:
   using This_t        = Matrix<T, Alloc>;
   using Alloc_t       = Alloc;
 
-  Matrix() : D1(0), D2(0), TotSize(0) {} // Default Constructor initializes to zero.
+  Matrix() : D1(0), D2(0) {} // Default Constructor initializes to zero.
 
   Matrix(size_type n)
   {
@@ -52,7 +52,7 @@ public:
   }
 
   /** constructor with an initialized ref */
-  inline Matrix(T* ref, size_type n, size_type m) : D1(n), D2(m), TotSize(n * m), X(ref, n * m) {}
+  inline Matrix(T* ref, size_type n, size_type m) : D1(n), D2(m), X(ref, n * m) {}
 
   /** This allows construction of a Matrix on another containers owned memory that is using a dualspace allocator.
    *  It can be any span of that memory.
@@ -60,7 +60,7 @@ public:
    *  realspace dualspace allocator "interface"
    */
   template<typename CONTAINER>
-  Matrix(const CONTAINER& other, T* ref, size_type n, size_type m) : D1(n), D2(m), TotSize(n * m), X(other, ref, n * m)
+  Matrix(const CONTAINER& other, T* ref, size_type n, size_type m) : D1(n), D2(m), X(other, ref, n * m)
   {}
 
   // Copy Constructor
@@ -74,7 +74,7 @@ public:
   // Destructor
   ~Matrix() {}
 
-  inline size_type size() const { return TotSize; }
+  inline size_type size() const { return X.size(); }
   inline size_type rows() const { return D1; }
   inline size_type cols() const { return D2; }
   inline size_type size1() const { return D1; }
@@ -101,9 +101,8 @@ public:
   {
     static_assert(std::is_same<value_type, typename Alloc::value_type>::value,
                   "Matrix and Alloc data types must agree!");
-    D1      = n;
-    D2      = m;
-    TotSize = n * m;
+    D1 = n;
+    D2 = m;
     X.resize(n * m);
   }
 
@@ -113,10 +112,9 @@ public:
   // Attach to pre-allocated memory
   inline void attachReference(T* ref, size_type n, size_type m)
   {
-    D1      = n;
-    D2      = m;
-    TotSize = n * m;
-    X.attachReference(ref, TotSize);
+    D1 = n;
+    D2 = m;
+    X.attachReference(ref, n * m);
   }
 
   /** Attach to pre-allocated memory and propagate the allocator of the owning container.
@@ -125,10 +123,9 @@ public:
   template<typename CONTAINER>
   inline void attachReference(const CONTAINER& other, T* ref, size_type n, size_type m)
   {
-    D1      = n;
-    D2      = m;
-    TotSize = n * m;
-    X.attachReference(other, ref, TotSize);
+    D1 = n;
+    D2 = m;
+    X.attachReference(other, ref, n * m);
   }
 
   template<typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
@@ -227,10 +224,10 @@ public:
   // returns a pointer of i-th row
   inline const_pointer first_address() const { return X.data(); }
 
-  inline pointer last_address() { return X.data() + TotSize; }
+  inline pointer last_address() { return X.data() + X.size(); }
 
   // returns a pointer of i-th row
-  inline const Type_t* last_address() const { return X.data() + TotSize; }
+  inline const Type_t* last_address() const { return X.data() + X.size(); }
 
 
   // returns a const pointer of i-th row
@@ -401,7 +398,6 @@ public:
 
 protected:
   size_type D1, D2;
-  size_type TotSize;
   Container_t X;
 };
 
