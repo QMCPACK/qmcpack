@@ -111,8 +111,6 @@ public:
   inline void free() { X.free(); }
 
   // Attach to pre-allocated memory
-  inline void attachReference(T* ref) { X.attachReference(ref, TotSize); }
-
   inline void attachReference(T* ref, size_type n, size_type m)
   {
     D1      = n;
