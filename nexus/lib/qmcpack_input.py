@@ -2317,6 +2317,14 @@ class flux(QIxml):
     identifier = 'name'
 #end class flux
 
+class orbitalimages(QIxml):
+    tag = 'estimator'
+    attributes  = ['type','name','ions']
+    parameters  = ['sposets','grid','center_grid','value','corner','cell','center','batch_size']
+    write_types = obj(center_grid=yesno)
+    identifier  = 'name'
+#end class orbitalimages
+
 class momentum(QIxml): # legacy
     tag = 'estimator'
     attributes = ['type','name','grid','samples','hdf5','wavefunction','kmax','kmax0','kmax1','kmax2']
@@ -2378,6 +2386,7 @@ estimator = QIxmlFactory(
                  skall                  = skall,
                  gofr                   = gofr,
                  flux                   = flux,
+                 orbitalimages          = orbitalimages,
                  momentum               = momentum,
                  momentumdistribution   = momentumdistribution,
                  onebodydensitymatrices = onebodydensitymatrices,
@@ -2735,7 +2744,7 @@ classes = [   #standard classes
     multideterminant,detlist,ci,mcwalkerset,csf,det,
     optimize,cg_optimizer,flex_optimizer,optimize_qmc,wftest,kspace_jastrow,
     header,local,force,forwardwalking,observable,record,rmc,pressure,dmccorrection,
-    nofk,mpc_est,flux,distancetable,cpp,element,spline,setparams,
+    nofk,mpc_est,flux,orbitalimages,distancetable,cpp,element,spline,setparams,
     backflow,transformation,cubicgrid,molecular_orbital_builder,cmc,sk,skall,gofr,
     host,date,user,rpa_jastrow,momentum,override_variational_parameters,
     momentumdistribution,onebodydensitymatrices,estimators,rotated_sposet,

@@ -124,8 +124,8 @@ int main(int argc, char** argv)
     Vector<ValueType> psiV(nels), invRow(nels);
 
     DiracMatrix<ValueType> detEng;
-    DelayedUpdate<ValueType, QMCTraits::QTFull::ValueType> FahyEng;
-    DelayedUpdate<ValueType, QMCTraits::QTFull::ValueType> delayedEng;
+    DelayedUpdate<ValueType> FahyEng;
+    DelayedUpdate<ValueType> delayedEng;
 
     FahyEng.resize(nels, 1);
     delayedEng.resize(nels, delay);

@@ -46,24 +46,30 @@ void QMCCostFunction::GradCost(std::vector<Return_rt>& PGradient,
                                const std::vector<Return_rt>& PM,
                                Return_rt FiniteDiff)
 {
+  for (int j = 0; j < NumOptimizables; j++)
+    OptVariables[j] = PM[j];
   if (FiniteDiff > 0)
   {
     QMCTraits::RealType dh = 1.0 / (2.0 * FiniteDiff);
     for (int i = 0; i < NumOptimizables; i++)
     {
-      for (int j = 0; j < NumOptimizables; j++)
-        OptVariables[j] = PM[j];
-      OptVariables[i]               = PM[i] + FiniteDiff;
-      QMCTraits::RealType CostPlus  = this->Cost();
-      OptVariables[i]               = PM[i] - FiniteDiff;
-      QMCTraits::RealType CostMinus = this->Cost();
-      PGradient[i]                  = (CostPlus - CostMinus) * dh;
+      // + FiniteDiff
+      OptVariables[i] = PM[i] + FiniteDiff;
+      resetPsi();
+      correlatedSampling(false);
+      auto CostPlus = computedCost();
+      // - FiniteDiff
+      OptVariables[i] = PM[i] - FiniteDiff;
+      resetPsi();
+      correlatedSampling(false);
+      auto CostMinus = computedCost();
+      // calculate gradient
+      PGradient[i]    = (CostPlus - CostMinus) * dh;
+      OptVariables[i] = PM[i]; // revert parameter change
     }
   }
   else
   {
-    for (int j = 0; j < NumOptimizables; j++)
-      OptVariables[j] = PM[j];
     resetPsi();
     //evaluate new local energies and derivatives
     EffectiveWeight effective_weight = correlatedSampling(true);

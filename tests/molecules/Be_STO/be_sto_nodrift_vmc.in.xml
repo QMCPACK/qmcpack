@@ -12,7 +12,7 @@
   </hamiltonian>
       <qmc method="vmc" move="pbyp" checkpoint="-1" gpu="no">
       <parameter name="blocks">     100  </parameter>
-      <parameter name="warmupsteps"> 25 </parameter>
+      <parameter name="warmupsteps"> 250 </parameter>
       <parameter name="steps"> 100 </parameter>
       <parameter name="substeps"> 10 </parameter>
       <parameter name="timestep"> 0.5 </parameter>
