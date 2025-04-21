@@ -65,12 +65,12 @@ jobs:
               image: ghcr.io/qmcpack/ubuntu22-serial:latest
               options: -u 1001
 
-          - jobname: GCC9-MPI-Gcov-Real
+          - jobname: GCC9-MPI-Debug-Gcov-Real
             container:
               image: ghcr.io/qmcpack/ubuntu22-openmpi:latest
               options: -u 1001
 
-          - jobname: GCC9-MPI-Gcov-Complex
+          - jobname: GCC9-MPI-Debug-Gcov-Complex
             container:
               image: ghcr.io/qmcpack/ubuntu22-openmpi:latest
               options: -u 1001
