@@ -842,8 +842,7 @@ public:
       int kk = myVars.where(k);
       if (kk < 0)
         continue;
-      if (optvars.recompute(kk))
-        recalculate = true;
+      recalculate = true;
     }
 
     if (recalculate)
@@ -959,8 +958,7 @@ public:
       int kk = myVars.where(k);
       if (kk < 0)
         continue;
-      if (optvars.recompute(kk))
-        recalculate = true;
+      recalculate = true;
     }
 
     if (recalculate)
@@ -1047,8 +1045,7 @@ public:
       int kk = myVars.where(k);
       if (kk < 0)
         continue;
-      if (optvars.recompute(kk))
-        recalculate = true;
+      recalculate = true;
     }
 
     if (recalculate)

@@ -394,9 +394,9 @@ template<PlatformKind PL, typename VT, typename FPVT>
 void DiracDeterminant<PL, VT, FPVT>::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   ScopedTimer local_timer(BufferTimer);
-  psiM.attachReference(buf.lendReference<ValueType>(psiM.size()));
-  dpsiM.attachReference(buf.lendReference<GradType>(dpsiM.size()));
-  d2psiM.attachReference(buf.lendReference<ValueType>(d2psiM.size()));
+  psiM.attachReference(buf.lendReference<ValueType>(NumPtcls * NumPtcls), NumPtcls, NumPtcls);
+  dpsiM.attachReference(buf.lendReference<GradType>(NumPtcls * NumPtcls), NumPtcls, NumPtcls);
+  d2psiM.attachReference(buf.lendReference<ValueType>(NumPtcls * NumPtcls), NumPtcls, NumPtcls);
   buf.get(log_value_);
   // start with invRow labelled invalid
   invRow_id = -1;
