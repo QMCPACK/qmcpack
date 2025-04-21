@@ -28,9 +28,10 @@ public:
   Queue() : queue_(createSYCLInOrderQueueOnDefaultDevice()) {}
 
   template<class T>
-  inline void memcpy(T* dst, const T* src, size_t size)
+  inline Queue& memcpy(T* dst, const T* src, size_t size)
   {
     queue_.memcpy(dst, src, sizeof(T) * size);
+    return *this;
   }
 
   // dualspace container
