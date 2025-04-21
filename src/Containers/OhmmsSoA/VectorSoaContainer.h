@@ -200,6 +200,9 @@ struct VectorSoaContainer
     qmc_allocator_traits<Alloc>::attachReference(other.mAllocator, mAllocator, other.data(), ptr);
   }
 
+  /// return true if this container is attached to another container
+  inline bool isAttaching() { return nLocal > 0 && nAllocated == 0; }
+
   ///return the physical size
   inline size_type size() const { return nLocal; }
   ///return the physical size
