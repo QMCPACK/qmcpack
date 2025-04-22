@@ -50,7 +50,7 @@ DiracDeterminant<PL, VT, FPVT>::DiracDeterminant(std::unique_ptr<SPOSet>&& spos,
 template<PlatformKind PL, typename VT, typename FPVT>
 DiracDeterminant<PL, VT, FPVT>::~DiracDeterminant()
 {
-  if(!psiM.isAttaching())
+  if(!psiM.isAttached())
     accel_engine_.update_eng_.releaseFromDeviceCopy(psiM);
   accel_engine_.update_eng_.releaseFromDeviceCopy(psiM_temp);
 }

@@ -133,7 +133,7 @@ public:
   }
 
   /// return true if this container is attached to another container
-  inline bool isAttaching() const { return X.isAttaching(); }
+  inline bool isAttached() const { return X.isAttached(); }
 
   template<typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline void add(size_type n) // you can add rows: adding columns are forbidden

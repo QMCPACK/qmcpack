@@ -152,7 +152,7 @@ public:
   }
 
   /// return true if this container is attached to another
-  inline bool isAttaching() const { return nLocal > 0 && nAllocated == 0; }
+  inline bool isAttached() const { return nLocal > 0 && nAllocated == 0; }
 
   //! return the current size
   inline size_type size() const { return nLocal; }

@@ -201,7 +201,7 @@ struct VectorSoaContainer
   }
 
   /// return true if this container is attached to another container
-  inline bool isAttaching() { return nLocal > 0 && nAllocated == 0; }
+  inline bool isAttached() { return nLocal > 0 && nAllocated == 0; }
 
   ///return the physical size
   inline size_type size() const { return nLocal; }
