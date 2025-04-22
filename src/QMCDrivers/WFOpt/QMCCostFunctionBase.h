@@ -249,12 +249,6 @@ protected:
   opt_variables_type OptVariablesForPsi;
   // unchanged initial checked-in variables
   opt_variables_type InitVariables;
-  /** index mapping for <equal> constraints
-   *
-   * - equalVarMap[i][0] : index in OptVariablesForPsi
-   * - equalVarMap[i][1] : index in OptVariables
-   */
-  std::vector<TinyVector<int, 2>> equalVarMap;
   /** index mapping for <negate> constraints
    *
    * - negateVarMap[i][0] : index in OptVariablesForPsi

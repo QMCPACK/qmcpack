@@ -112,10 +112,8 @@ public:
    */
   inline void initializeInv(const Matrix<T>& Ainv)
   {
-    queue_.memcpy(Ainv_gpu.data(), Ainv.data(), Ainv.size());
+    queue_.memcpy(Ainv_gpu.data(), Ainv.data(), Ainv.size()).sync();
     clearDelayCount();
-    // H2D transfer must be synchronized regardless of host memory being pinned or not.
-    queue_.sync();
   }
 
   inline int getDelayCount() const { return delay_count; }
@@ -130,9 +128,8 @@ public:
     if (!prefetched_range.checkRange(rowchanged))
     {
       int last_row = std::min(rowchanged + Ainv_buffer.rows(), Ainv.rows());
-      queue_.memcpy(Ainv_buffer.data(), Ainv_gpu[rowchanged], invRow.size() * (last_row - rowchanged));
+      queue_.memcpy(Ainv_buffer.data(), Ainv_gpu[rowchanged], invRow.size() * (last_row - rowchanged)).sync();
       prefetched_range.setRange(rowchanged, last_row);
-      queue_.sync();
     }
     // save AinvRow to new_AinvRow
     std::copy_n(Ainv_buffer[prefetched_range.getOffset(rowchanged)], invRow.size(), invRow.data());
@@ -213,10 +210,7 @@ public:
 
     // transfer Ainv_gpu to Ainv and wait till completion
     if (transfer_to_host)
-    {
-      queue_.memcpy(Ainv.data(), Ainv_gpu.data(), Ainv.size());
-      queue_.sync();
-    }
+      queue_.memcpy(Ainv.data(), Ainv_gpu.data(), Ainv.size()).sync();
   }
 };
 } // namespace qmcplusplus

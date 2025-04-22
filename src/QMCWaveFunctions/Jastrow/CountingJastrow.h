@@ -588,10 +588,10 @@ public:
           app_log() << "  Indices: ";
           std::copy(I_vars.Index.begin(), I_vars.Index.end(), std::ostream_iterator<int>(app_log(), ", "));
           app_log() << std::endl << "  Names: ";
-          for (auto it = I_vars.NameAndValue.begin(); it != I_vars.NameAndValue.end(); ++it)
+          for (auto it = I_vars.begin(); it != I_vars.end(); ++it)
             app_log() << (*it).first << ", ";
           app_log() << std::endl << "  Values: ";
-          for (auto it = I_vars.NameAndValue.begin(); it != I_vars.NameAndValue.end(); ++it)
+          for (auto it = I_vars.begin(); it != I_vars.end(); ++it)
             app_log() << (*it).second << ", ";
           // print out values from evaluate derivatives
           app_log() << std::endl << "  dCsum: ";

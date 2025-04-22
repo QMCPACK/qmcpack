@@ -30,10 +30,11 @@ public:
   ~Queue() { cudaErrorCheck(cudaStreamDestroy(hstream_), "cudaStreamDestroy failed!"); }
 
   template<class T>
-  inline void memcpy(T* dst, const T* src, size_t size)
+  inline Queue& memcpy(T* dst, const T* src, size_t size)
   {
     cudaErrorCheck(cudaMemcpyAsync(dst, src, sizeof(T) * size, cudaMemcpyDefault, hstream_),
                    "cudaMemcpyAsync failed!");
+    return *this;
   }
 
   // dualspace container
