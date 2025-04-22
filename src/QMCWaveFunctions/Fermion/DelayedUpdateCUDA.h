@@ -85,6 +85,18 @@ public:
     Ainv_gpu.resize(norb, norb);
   }
 
+  inline void prepareForDeviceCopy(Matrix<T>& mat) const
+  {
+    if(mat.size())
+      compute::MemManage<PL>::registerHost(mat.data(), mat.size() * sizeof(T));
+  }
+
+  inline void releaseFromDeviceCopy(Matrix<T>& mat) const
+  {
+    if(mat.size())
+      compute::MemManage<PL>::unregisterHost(mat.data());
+  }
+
   /** compute the inverse of the transpose of matrix A and its determinant value in log
    * @tparam TREAL real type
    */

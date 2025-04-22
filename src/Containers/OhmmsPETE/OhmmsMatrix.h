@@ -132,6 +132,9 @@ public:
     X.attachReference(other, ref, n * m);
   }
 
+  /// return true if this container is attached to another container
+  inline bool isAttached() const { return X.isAttached(); }
+
   template<typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline void add(size_type n) // you can add rows: adding columns are forbidden
   {

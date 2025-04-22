@@ -114,6 +114,8 @@ public:
                    int ndelay                          = 1,
                    DetMatInvertor matrix_inverter_kind = DetMatInvertor::ACCEL);
 
+  ~DiracDeterminant() override;
+
   // copy constructor and assign operator disabled
   DiracDeterminant(const DiracDeterminant& s)            = delete;
   DiracDeterminant& operator=(const DiracDeterminant& s) = delete;

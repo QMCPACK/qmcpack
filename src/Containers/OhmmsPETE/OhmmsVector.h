@@ -151,6 +151,9 @@ public:
     qmc_allocator_traits<Alloc>::attachReference(other.mAllocator, mAllocator, ref - other.data());
   }
 
+  /// return true if this container is attached to another
+  inline bool isAttached() const { return nLocal > 0 && nAllocated == 0; }
+
   //! return the current size
   inline size_type size() const { return nLocal; }
 

@@ -48,6 +48,14 @@ DiracDeterminant<PL, VT, FPVT>::DiracDeterminant(std::unique_ptr<SPOSet>&& spos,
 }
 
 template<PlatformKind PL, typename VT, typename FPVT>
+DiracDeterminant<PL, VT, FPVT>::~DiracDeterminant()
+{
+  if(!psiM.isAttached())
+    accel_engine_.update_eng_.releaseFromDeviceCopy(psiM);
+  accel_engine_.update_eng_.releaseFromDeviceCopy(psiM_temp);
+}
+
+template<PlatformKind PL, typename VT, typename FPVT>
 void DiracDeterminant<PL, VT, FPVT>::invertPsiM(const ValueMatrix& logdetT, ValueMatrix& invMat)
 {
   ScopedTimer local_timer(InverseTimer);
@@ -115,6 +123,10 @@ void DiracDeterminant<PL, VT, FPVT>::resize(int nel, int morb)
   int norb = morb;
   if (norb <= 0)
     norb = nel; // for morb == -1 (default)
+
+  accel_engine_.update_eng_.releaseFromDeviceCopy(psiM);
+  accel_engine_.update_eng_.releaseFromDeviceCopy(psiM_temp);
+
   accel_engine_.update_eng_.resize(norb, ndelay_);
   psiM.resize(nel, norb);
   dpsiM.resize(nel, norb);
@@ -122,6 +134,9 @@ void DiracDeterminant<PL, VT, FPVT>::resize(int nel, int morb)
   psiV.resize(norb);
   invRow.resize(norb);
   psiM_temp.resize(nel, norb);
+
+  accel_engine_.update_eng_.prepareForDeviceCopy(psiM);
+  accel_engine_.update_eng_.prepareForDeviceCopy(psiM_temp);
 
   dpsiV.resize(NumOrbitals);
   dspin_psiV.resize(NumOrbitals);
@@ -345,6 +360,7 @@ void DiracDeterminant<PL, VT, FPVT>::registerData(ParticleSet& P, WFBufferType& 
     buf.add(d2psiM.first_address(), d2psiM.last_address());
     Bytes_in_WFBuffer = buf.current() - Bytes_in_WFBuffer;
     // free local space
+    accel_engine_.update_eng_.releaseFromDeviceCopy(psiM);
     psiM.free();
     dpsiM.free();
     d2psiM.free();

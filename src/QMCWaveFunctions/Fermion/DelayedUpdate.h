@@ -62,6 +62,10 @@ public:
     delay_list.resize(delay);
   }
 
+  inline void prepareForDeviceCopy(const Matrix<T>& mat) const {}
+
+  inline void releaseFromDeviceCopy(const Matrix<T>& mat) const {}
+
   /** initialize internal objects when Ainv is refreshed
    * @param Ainv inverse matrix
    */
