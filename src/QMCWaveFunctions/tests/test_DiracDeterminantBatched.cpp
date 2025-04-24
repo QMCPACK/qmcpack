@@ -17,6 +17,7 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBatched.h"
+#include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "QMCWaveFunctions/tests/FakeSPO.h"
 #include "QMCWaveFunctions/SpinorSet.h"
 #include "QMCWaveFunctions/ElectronGas/FreeOrbital.h"
@@ -561,8 +562,16 @@ void test_DiracDeterminantBatched_spinor_update(const int delay_rank, DetMatInve
   spinor_set->set_spos(std::move(spo_up), std::move(spo_dn));
 
   using Det = DiracDeterminantBatched<PL, Value, QMCTraits::QTFull::ValueType>;
-  Det dd(std::move(spinor_set), 0, nelec, delay_rank, matrix_inverter_kind);
+  auto dd_ptr = std::make_unique<Det>(*spinor_set, 0, nelec, delay_rank, matrix_inverter_kind);
   app_log() << " nelec=" << nelec << std::endl;
+
+  std::vector<std::unique_ptr<SPOSet>> sposets;
+  sposets.emplace_back(std::move(spinor_set));
+  std::vector<std::unique_ptr<DiracDeterminantBase>> dds;
+  dds.emplace_back(std::move(dd_ptr));
+  SlaterDet sd(elec_, std::move(sposets), std::move(dds));
+
+  auto& dd = sd.getDet(0);
 
   ParticleGradient G;
   ParticleLaplacian L;
@@ -697,17 +706,16 @@ void test_DiracDeterminantBatched_spinor_update(const int delay_rank, DetMatInve
   ResourceCollection wfc_res("test_wfc_res");
 
   elec_.createResource(pset_res);
-  dd.createResource(wfc_res);
+  sd.createResource(wfc_res);
 
   ParticleSet elec_clone(elec_);
-  std::unique_ptr<WaveFunctionComponent> dd_clone(dd.makeCopy(dd.getPhi()->makeClone()));
-  auto& dd_clone_ref = dynamic_cast<Det&>(*dd_clone);
+  std::unique_ptr<WaveFunctionComponent> sd_clone(sd.makeClone(elec_clone));
 
   RefVectorWithLeader<ParticleSet> p_ref_list(elec_, {elec_, elec_clone});
-  RefVectorWithLeader<WaveFunctionComponent> dd_ref_list(dd, {dd, *dd_clone});
+  RefVectorWithLeader<WaveFunctionComponent> sd_ref_list(sd, {sd, *sd_clone});
 
   ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_ref_list);
-  ResourceCollectionTeamLock<WaveFunctionComponent> mw_wfc_lock(wfc_res, dd_ref_list);
+  ResourceCollectionTeamLock<WaveFunctionComponent> mw_wfc_lock(wfc_res, sd_ref_list);
 
   G = 0;
   L = 0;
@@ -719,10 +727,10 @@ void test_DiracDeterminantBatched_spinor_update(const int delay_rank, DetMatInve
   //Check initial values for both walkers
   RefVector<ParticleGradient> G_list  = {G, G2};
   RefVector<ParticleLaplacian> L_list = {L, L2};
-  dd.mw_evaluateLog(dd_ref_list, p_ref_list, G_list, L_list);
-  for (int iw = 0; iw < dd_ref_list.size(); iw++)
+  sd.mw_evaluateLog(sd_ref_list, p_ref_list, G_list, L_list);
+  for (int iw = 0; iw < sd_ref_list.size(); iw++)
   {
-    PsiValue ref = dd_ref_list[iw].getValue();
+    PsiValue ref = sd_ref_list[iw].getValue();
     CHECK(std::log(ref) == ComplexApprox(Value(-1.1619939279564413, 0.8794794652468605)));
     CHECK(G_list[iw].get()[0][0] == ComplexApprox(Value(0.13416635, 0.2468612)));
     CHECK(G_list[iw].get()[0][1] == ComplexApprox(Value(-1.1165475, 0.71497753)));
@@ -748,7 +756,7 @@ void test_DiracDeterminantBatched_spinor_update(const int delay_rank, DetMatInve
   std::vector<PsiValue> ratios(2);
   std::vector<Grad> grads(2);
   std::vector<Complex> spingrads(2);
-  dd.mw_ratioGrad(dd_ref_list, p_ref_list, 1, ratios, grads);
+  sd.mw_ratioGrad(sd_ref_list, p_ref_list, 1, ratios, grads);
   for (int iw = 0; iw < grads.size(); iw++)
   {
     CHECK(ratios[iw] == ComplexApprox(Value(1.7472917722050971, 1.1900872950904169)));
@@ -759,7 +767,7 @@ void test_DiracDeterminantBatched_spinor_update(const int delay_rank, DetMatInve
 
   std::fill(ratios.begin(), ratios.end(), 0);
   std::fill(grads.begin(), grads.end(), 0);
-  dd.mw_ratioGradWithSpin(dd_ref_list, p_ref_list, 1, ratios, grads, spingrads);
+  sd.mw_ratioGradWithSpin(sd_ref_list, p_ref_list, 1, ratios, grads, spingrads);
   for (int iw = 0; iw < grads.size(); iw++)
   {
     CHECK(ratios[iw] == ComplexApprox(Value(1.7472917722050971, 1.1900872950904169)));
@@ -772,7 +780,7 @@ void test_DiracDeterminantBatched_spinor_update(const int delay_rank, DetMatInve
   //reject move and check for initial values for mw_evalGrad
   std::fill(grads.begin(), grads.end(), 0);
   elec_.mw_accept_rejectMove<CoordsType::POS_SPIN>(p_ref_list, 1, {false, false});
-  dd.mw_evalGrad(dd_ref_list, p_ref_list, 1, grads);
+  sd.mw_evalGrad(sd_ref_list, p_ref_list, 1, grads);
   for (int iw = 0; iw < grads.size(); iw++)
   {
     CHECK(grads[iw][0] == ComplexApprox(G_list[iw].get()[1][0]));
@@ -782,7 +790,7 @@ void test_DiracDeterminantBatched_spinor_update(const int delay_rank, DetMatInve
 
   std::fill(grads.begin(), grads.end(), 0);
   std::fill(spingrads.begin(), spingrads.end(), 0);
-  dd.mw_evalGradWithSpin(dd_ref_list, p_ref_list, 1, grads, spingrads);
+  sd.mw_evalGradWithSpin(sd_ref_list, p_ref_list, 1, grads, spingrads);
   for (int iw = 0; iw < grads.size(); iw++)
   {
     CHECK(grads[iw][0] == ComplexApprox(G_list[iw].get()[1][0]));
@@ -799,17 +807,17 @@ void test_DiracDeterminantBatched_spinor_update(const int delay_rank, DetMatInve
   L  = 0;
   G2 = 0;
   L2 = 0;
-  dd.mw_evaluateLog(dd_ref_list, p_ref_list, G_list, L_list);
-  for (int iw = 0; iw < dd_ref_list.size(); iw++)
+  sd.mw_evaluateLog(sd_ref_list, p_ref_list, G_list, L_list);
+  for (int iw = 0; iw < sd_ref_list.size(); iw++)
   {
-    PsiValue ref = dd_ref_list[iw].getValue();
+    PsiValue ref = sd_ref_list[iw].getValue();
     CHECK(std::log(ref) == ComplexApprox(Value(-0.41337396772929913, 1.4774106123071726)));
     CHECK(G_list[iw].get()[1][0] == ComplexApprox(Value(0.5496675534224996, -0.07968022499097227)));
     CHECK(G_list[iw].get()[1][1] == ComplexApprox(Value(0.4927399293808675, -0.29971549854643653)));
     CHECK(G_list[iw].get()[1][2] == ComplexApprox(Value(1.2792642963632226, 0.12110307514989149)));
   }
 
-  dd.mw_evalGradWithSpin(dd_ref_list, p_ref_list, 1, grads, spingrads);
+  sd.mw_evalGradWithSpin(sd_ref_list, p_ref_list, 1, grads, spingrads);
   for (int iw = 0; iw < grads.size(); iw++)
     CHECK(spingrads[iw] == ComplexApprox(Value(1.164708841479661, 0.9576425115390172)));
 }

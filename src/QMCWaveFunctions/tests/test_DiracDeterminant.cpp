@@ -527,7 +527,7 @@ void test_DiracDeterminant_spinor_update(const DetMatInvertor inverter_kind)
   auto spinor_set = std::make_unique<SpinorSet>("free_orb_spinor");
   spinor_set->set_spos(std::move(spo_up), std::move(spo_dn));
 
-  DET dd(std::move(spinor_set), 0, nelec, 1, inverter_kind);
+  DET dd(*spinor_set, 0, nelec, 1, inverter_kind);
   app_log() << " nelec=" << nelec << std::endl;
 
   ParticleGradient G;
