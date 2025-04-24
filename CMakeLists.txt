@@ -882,7 +882,7 @@ endif(ENABLE_SYCL)
 #-----------------------------------------------------
 # Some OpenMP offload runtime libraries have composibility issue with vendor native ones.
 # A workaround is making the vendor native runtime responsible for memory allocations and OpenMP associate/disassocate them.
-# CUDA/HIP supported, not SYCL
+# CUDA/HIP/SYCL supported
 if(${COMPILER} MATCHES "Clang" AND QMC_CUDA2HIP AND ENABLE_OFFLOAD)
   # Known issue HIP<5.5 https://github.com/ROCm/aomp/issues/253
   # Known performance issue remains in 6.3.3
@@ -891,7 +891,7 @@ else()
   set(QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT OFF)
 endif()
 cmake_dependent_option(QMC_OFFLOAD_MEM_ASSOCIATED "Use omp_target_associate_ptr instead of direct OpenMP offload maps in dual-space allocators"
-  ${QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT} "ENABLE_OFFLOAD;ENABLE_CUDA;NOT ENABLE_SYCL" OFF)
+                       ${QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT} "ENABLE_OFFLOAD;ENABLE_CUDA OR ENABLE_SYCL" OFF)
 if(QMC_OFFLOAD_MEM_ASSOCIATED)
   message(STATUS "Use omp_target_associate_ptr instead of direct OpenMP offload maps in dual-space allocators")
 endif()
