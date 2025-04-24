@@ -42,6 +42,6 @@ void breakableAppAbort(const std::string& str_msg)
   __gcov_dump();
 #endif
 #endif
-exit(1);
+  exit(1);
 }
 #endif
