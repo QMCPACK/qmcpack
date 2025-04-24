@@ -24,6 +24,7 @@
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
 #include "PlatformSelector.hpp"
+#include <Message/UniformCommunicateError.h>
 
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "QMCWaveFunctions/Fermion/MultiSlaterDetTableMethod.h"
@@ -62,7 +63,7 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
 {
   ReportEngine PRE(ClassName, "put(xmlNodePtr)");
   ///save the current node
-  bool multiDet      = false;
+  bool multiDet = false;
   std::string msd_algorithm;
 
   std::unique_ptr<WaveFunctionComponent> built_singledet_or_multidets;
@@ -77,7 +78,7 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
     legacy_input_sposet_builder = sposet_builder_factory_.createSPOSetBuilder(cur);
   }
 
-  //check the basis set and backflow transformation
+  //check the basisset and backflow transformation
   std::unique_ptr<BackflowTransformation> BFTrans;
   processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
     if (cname == sposet_tag)
@@ -104,6 +105,35 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
     }
   });
 
+  if (sposet_builder_factory_.empty())
+  {
+    processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
+      if (cname == sd_tag)
+      {
+        // look for sposet inside slaterdeterminant and nested determinant tag
+        processChildren(element, [&](const std::string& cname, const xmlNodePtr element) {
+          if (cname == det_tag)
+          {
+            app_warning() << "!!!!!!! Deprecated input style: creating SPO set inside slaterdeterminant and nested "
+                             "determinant tags. Support for this usage "
+                             "will soon be removed. SPO sets should be built outside using sposet_collection."
+                          << std::endl;
+            auto sposet_name = getXMLAttributeValue(element, "sposet");
+            if (sposet_name.empty())
+              sposet_name = getXMLAttributeValue(element, "id");
+            if (sposet_name.empty())
+              sposet_name = "0";
+
+            app_log() << "      Create a new SPOSet " << sposet_name << std::endl;
+            assert(legacy_input_sposet_builder);
+            auto sposet = legacy_input_sposet_builder->createSPOSet(element);
+            sposet_builder_factory_.addSPOSet(std::move(sposet));
+          }
+        });
+      }
+    });
+  }
+
   processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
     if (cname == sd_tag)
     {
@@ -125,7 +155,7 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
             err_msg << "Need only " << targetPtcl.groups() << " determinant input elements. Found more." << std::endl;
             throw std::runtime_error(err_msg.str());
           }
-          dirac_dets.push_back(putDeterminant(element, spin_group, legacy_input_sposet_builder, BFTrans));
+          dirac_dets.push_back(putDeterminant(element, spin_group, BFTrans));
           spin_group++;
         }
       });
@@ -236,7 +266,6 @@ magnetic system
 std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
     xmlNodePtr cur,
     int spin_group,
-    const std::unique_ptr<SPOSetBuilder>& legacy_input_sposet_builder,
     const std::unique_ptr<BackflowTransformation>& BFTrans)
 {
   ReportEngine PRE(ClassName, "putDeterminant(xmlNodePtr,int)");
@@ -319,16 +348,13 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
 
   const SPOSet* psi = sposet_builder_factory_.getSPOSet(sposet_name);
   //check if the named sposet exists
-  if (psi == 0)
+  if (psi == nullptr)
   {
-    app_warning() << "!!!!!!! Deprecated input style: creating SPO set inside determinantset. Support for this usage "
-                     "will soon be removed. SPO sets should be built outside using sposet_collection."
-                  << std::endl;
-    app_log() << "      Create a new SPO set " << sposet_name << std::endl;
-    assert(legacy_input_sposet_builder);
-    auto sposet = legacy_input_sposet_builder->createSPOSet(cur);
-    psi         = sposet.get();
-    sposet_builder_factory_.addSPOSet(std::move(sposet));
+    std::ostringstream err_msg;
+    err_msg << "A sposet named \"" << sposet_name
+            << "\" cannot be found for constructing a Slater determinant! Please check the xml input file!"
+            << std::endl;
+    throw UniformCommunicateError(err_msg.str());
   }
 
   std::unique_ptr<SPOSet> psi_clone(psi->makeClone());

@@ -147,7 +147,7 @@ TEST_CASE("SPO input spline from HDF diamond_2x1x1", "[wavefunction]")
   const char* spo_xml_string3 = R"(<wavefunction name="psi0" target="elec">
 <determinantset type="einspline" href="diamondC_2x1x1.pwscf.h5" tilematrix="2 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="float">
   <slaterdeterminant>
-    <determinant name="spo" size="4" spindataset="0"/>
+    <determinant id="spo" size="4" spindataset="0"/>
   </slaterdeterminant>
 </determinantset>
 </wavefunction>
