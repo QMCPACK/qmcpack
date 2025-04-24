@@ -42,20 +42,20 @@ SlaterDet::~SlaterDet() = default;
 
 bool SlaterDet::isOptimizable() const
 {
-  return std::any_of(Dets.begin(), Dets.end(), [](const auto& det) { return det->isOptimizable(); });
+  return std::any_of(sposets_.begin(), sposets_.end(), [](const auto& phi) { return phi->isOptimizable(); });
 }
 
 void SlaterDet::extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs)
 {
-  for (int i = 0; i < Dets.size(); i++)
-    Dets[i]->extractOptimizableObjectRefs(opt_obj_refs);
+  for (const auto& sposet : sposets_)
+    sposet->extractOptimizableObjectRefs(opt_obj_refs);
 }
 
 void SlaterDet::checkOutVariables(const opt_variables_type& active)
 {
-  if (isOptimizable())
-    for (int i = 0; i < Dets.size(); i++)
-      Dets[i]->checkOutVariables(active);
+  for (const auto& sposet : sposets_)
+    if (sposet->isOptimizable())
+      sposet->checkOutVariables(active);
 }
 
 PsiValue SlaterDet::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)

@@ -19,8 +19,6 @@
 #define QMCPLUSPLUS_SLATERDETERMINANT_WITHBASE_H
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
 
-#include <map>
-
 namespace qmcplusplus
 {
 class TWFFastDerivWrapper;

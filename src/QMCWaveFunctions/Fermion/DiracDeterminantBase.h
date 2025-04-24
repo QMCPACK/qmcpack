@@ -73,17 +73,6 @@ public:
   bool isFermionic() const final { return true; }
   inline bool isOptimizable() const final { return phi_.isOptimizable(); }
 
-  void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) final
-  {
-    phi_.extractOptimizableObjectRefs(opt_obj_refs);
-  }
-
-  inline void checkOutVariables(const opt_variables_type& active) final
-  {
-    if (phi_.isOptimizable())
-      phi_.checkOutVariables(active);
-  }
-
   virtual void registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const override
   {
     throw std::runtime_error("DiracDeterminantBase::registerTWFFastDerivWrapper must be overridden\n");

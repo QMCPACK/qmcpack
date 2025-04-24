@@ -447,7 +447,7 @@ public:
    */
   virtual RealType KECorrection();
 
-  /** if true, this contains optimizable components
+  /** if true, *this contains optimizable components. It is inclusive.
    */
   virtual bool isOptimizable() const { return false; }
 
