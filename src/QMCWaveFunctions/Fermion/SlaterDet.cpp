@@ -219,6 +219,8 @@ void SlaterDet::evaluateHessian(ParticleSet& P, HessVector& grad_grad_psi)
 
 void SlaterDet::createResource(ResourceCollection& collection) const
 {
+  for (const auto& sposet : sposets_)
+    sposet->createResource(collection);
   for (int i = 0; i < Dets.size(); ++i)
     Dets[i]->createResource(collection);
 }
@@ -226,6 +228,20 @@ void SlaterDet::createResource(ResourceCollection& collection) const
 void SlaterDet::acquireResource(ResourceCollection& collection,
                                 const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
 {
+  auto& sd_leader = wfc_list.getCastedLeader<SlaterDet>();
+
+  for (int i = 0; i < sposets_.size(); i++)
+  {
+    auto& phi_leader = *sd_leader.sposets_[i];
+    RefVectorWithLeader<SPOSet> phi_list(phi_leader);
+    for (WaveFunctionComponent& wfc : wfc_list)
+    {
+      auto& sd = static_cast<SlaterDet&>(wfc);
+      phi_list.push_back(*sd.sposets_[i]);
+    }
+    phi_leader.acquireResource(collection, phi_list);
+  }
+
   for (int i = 0; i < Dets.size(); ++i)
   {
     const auto det_list(extract_DetRef_list(wfc_list, i));
@@ -236,6 +252,21 @@ void SlaterDet::acquireResource(ResourceCollection& collection,
 void SlaterDet::releaseResource(ResourceCollection& collection,
                                 const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
 {
+  auto& sd_leader = wfc_list.getCastedLeader<SlaterDet>();
+
+  for (int i = 0; i < sposets_.size(); i++)
+  {
+    auto& phi_leader = *sd_leader.sposets_[i];
+    RefVectorWithLeader<SPOSet> phi_list(phi_leader);
+    for (WaveFunctionComponent& wfc : wfc_list)
+    {
+      auto& sd = static_cast<SlaterDet&>(wfc);
+      phi_list.push_back(*sd.sposets_[i]);
+    }
+
+    phi_leader.releaseResource(collection, phi_list);
+  }
+
   for (int i = 0; i < Dets.size(); ++i)
   {
     const auto det_list(extract_DetRef_list(wfc_list, i));

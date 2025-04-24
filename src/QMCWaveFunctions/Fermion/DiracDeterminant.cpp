@@ -790,40 +790,6 @@ std::unique_ptr<DiracDeterminantBase> DiracDeterminant<PL, VT, FPVT>::makeCopy(S
   return std::make_unique<DiracDeterminant<PL, VT, FPVT>>(phi, FirstIndex, LastIndex, ndelay_, matrix_inverter_kind_);
 }
 
-template<PlatformKind PL, typename VT, typename FPVT>
-void DiracDeterminant<PL, VT, FPVT>::createResource(ResourceCollection& collection) const
-{
-  phi_.createResource(collection);
-}
-
-template<PlatformKind PL, typename VT, typename FPVT>
-void DiracDeterminant<PL, VT, FPVT>::acquireResource(ResourceCollection& collection,
-                                                     const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
-{
-  auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminant<PL, VT, FPVT>>();
-  RefVectorWithLeader<SPOSet> phi_list(wfc_leader.phi_);
-  for (WaveFunctionComponent& wfc : wfc_list)
-  {
-    auto& det = static_cast<DiracDeterminant<PL, VT, FPVT>&>(wfc);
-    phi_list.push_back(det.phi_);
-  }
-  wfc_leader.phi_.acquireResource(collection, phi_list);
-}
-
-template<PlatformKind PL, typename VT, typename FPVT>
-void DiracDeterminant<PL, VT, FPVT>::releaseResource(ResourceCollection& collection,
-                                                     const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
-{
-  auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminant<PL, VT, FPVT>>();
-  RefVectorWithLeader<SPOSet> phi_list(wfc_leader.phi_);
-  for (WaveFunctionComponent& wfc : wfc_list)
-  {
-    auto& det = static_cast<DiracDeterminant<PL, VT, FPVT>&>(wfc);
-    phi_list.push_back(det.phi_);
-  }
-  wfc_leader.phi_.releaseResource(collection, phi_list);
-}
-
 template class DiracDeterminant<>;
 #if defined(ENABLE_CUDA)
 template class DiracDeterminant<PlatformKind::CUDA, QMCTraits::ValueType, QMCTraits::QTFull::ValueType>;

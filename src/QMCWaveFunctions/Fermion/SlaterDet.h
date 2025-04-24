@@ -317,7 +317,7 @@ private:
   ///the last particle of each group
   std::vector<int> Last;
 
-  ///container for the SPOSets
+  ///container for the unique SPOSets
   const std::vector<std::unique_ptr<SPOSet>> sposets_;
 };
 } // namespace qmcplusplus

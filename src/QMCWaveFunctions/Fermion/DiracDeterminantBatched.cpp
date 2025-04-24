@@ -1204,7 +1204,6 @@ template<PlatformKind PL, typename VT, typename FPVT>
 void DiracDeterminantBatched<PL, VT, FPVT>::createResource(ResourceCollection& collection) const
 {
   collection.addResource(std::make_unique<DiracDeterminantBatchedMultiWalkerResource>());
-  phi_.createResource(collection);
   if (matrix_inverter_kind_ == DetMatInvertor::ACCEL)
     collection.addResource(std::make_unique<typename DetInverterSelector<PL, FPVT, VT>::Inverter>());
   else
@@ -1220,15 +1219,11 @@ void DiracDeterminantBatched<PL, VT, FPVT>::acquireResource(
   wfc_leader.mw_res_handle_ = collection.lendResource<DiracDeterminantBatchedMultiWalkerResource>();
   auto& mw_res              = wfc_leader.mw_res_handle_.getResource();
   mw_res.psiMinv_refs.reserve(wfc_list.size());
-
-  RefVectorWithLeader<SPOSet> phi_list(wfc_leader.phi_);
   for (WaveFunctionComponent& wfc : wfc_list)
   {
     auto& det = static_cast<DiracDeterminantBatched<PL, VT, FPVT>&>(wfc);
-    phi_list.push_back(det.phi_);
     mw_res.psiMinv_refs.push_back(det.psiMinv_);
   }
-  wfc_leader.phi_.acquireResource(collection, phi_list);
   wfc_leader.accel_inverter_ = collection.lendResource<DiracMatrixInverter<FPVT, VT>>();
 }
 
@@ -1240,13 +1235,6 @@ void DiracDeterminantBatched<PL, VT, FPVT>::releaseResource(
   auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<PL, VT, FPVT>>();
   wfc_leader.mw_res_handle_.getResource().psiMinv_refs.clear();
   collection.takebackResource(wfc_leader.mw_res_handle_);
-  RefVectorWithLeader<SPOSet> phi_list(wfc_leader.phi_);
-  for (WaveFunctionComponent& wfc : wfc_list)
-  {
-    auto& det = static_cast<DiracDeterminantBatched<PL, VT, FPVT>&>(wfc);
-    phi_list.push_back(det.phi_);
-  }
-  wfc_leader.phi_.releaseResource(collection, phi_list);
   collection.takebackResource(wfc_leader.accel_inverter_);
 }
 

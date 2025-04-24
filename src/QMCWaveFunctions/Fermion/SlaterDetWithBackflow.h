@@ -136,7 +136,7 @@ public:
   void testDerivGL(ParticleSet& P);
 
 private:
-  ///container for the SPOSets
+  ///container for the unique SPOSets
   const std::vector<std::unique_ptr<SPOSet>> sposets_;
 
   /// backflow transformation
