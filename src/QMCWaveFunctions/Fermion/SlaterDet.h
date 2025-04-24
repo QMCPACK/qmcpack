@@ -27,8 +27,6 @@ class SlaterDet : public WaveFunctionComponent
 {
 public:
   using Determinant_t = DiracDeterminantBase;
-  ///container for the DiracDeterminants
-  const std::vector<std::unique_ptr<Determinant_t>> Dets;
 
   /**  constructor
    * @param targetPtcl target Particleset
@@ -79,9 +77,6 @@ public:
                     const std::vector<bool>& recompute) const override;
 
   void evaluateHessian(ParticleSet& P, HessVector& grad_grad_psi) override;
-
-  ///return the total number of Dirac determinants
-  inline int size() const { return Dets.size(); }
 
   void registerData(ParticleSet& P, WFBufferType& buf) override;
 
@@ -188,7 +183,7 @@ public:
   GradType evalGradSource(ParticleSet& P, ParticleSet& src, int iat) override
   {
     GradType G = GradType();
-    for (int iz = 0; iz < size(); iz++)
+    for (int iz = 0; iz < Dets.size(); iz++)
       G += Dets[iz]->evalGradSource(P, src, iat);
     return G;
   }
@@ -200,7 +195,7 @@ public:
                           TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM>& lapl_grad) override
   {
     GradType G = GradType();
-    for (int iz = 0; iz < size(); iz++)
+    for (int iz = 0; iz < Dets.size(); iz++)
       G += Dets[iz]->evalGradSource(P, src, iat, grad_grad, lapl_grad);
     return G;
   }
@@ -269,8 +264,6 @@ public:
 
   std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
 
-  SPOSet& getPhi(int i = 0) { return Dets[i]->getPhi(); }
-
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override;
 
   void evaluateDerivatives(ParticleSet& P,
@@ -289,6 +282,13 @@ public:
     for (int i = 0; i < Dets.size(); i++)
       Dets[i]->evaluateDerivativesWF(P, active, dlogpsi);
   }
+
+  ///return the total number of Dirac determinants
+  inline int getNumDets() const { return Dets.size(); }
+  ///return the i-th determinant
+  inline auto& getDet(const int i) { return *Dets[i]; }
+  ///return the sposet of the i-th determinant
+  SPOSet& getPhi(int i = 0) { return Dets[i]->getPhi(); }
 
 private:
   //get Det ID
@@ -317,6 +317,9 @@ private:
 
   ///container for the unique SPOSets
   const std::vector<std::unique_ptr<SPOSet>> sposets_;
+
+  ///container for the DiracDeterminants
+  const std::vector<std::unique_ptr<Determinant_t>> Dets;
 };
 } // namespace qmcplusplus
 #endif

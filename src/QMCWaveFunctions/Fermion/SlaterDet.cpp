@@ -28,7 +28,7 @@ SlaterDet::SlaterDet(ParticleSet& targetPtcl,
                      std::vector<std::unique_ptr<SPOSet>>&& sposets,
                      std::vector<std::unique_ptr<Determinant_t>>&& dets,
                      const std::string& class_name)
-    : Dets(std::move(dets)), sposets_(std::move(sposets))
+    : sposets_(std::move(sposets)), Dets(std::move(dets))
 {
   assert(Dets.size() == targetPtcl.groups());
 
