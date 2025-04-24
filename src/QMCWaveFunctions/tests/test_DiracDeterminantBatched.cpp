@@ -40,8 +40,8 @@ void test_DiracDeterminantBatched_first()
   auto spo_init  = std::make_unique<FakeSPO<Value>>();
   const int norb = 3;
   spo_init->setOrbitalSetSize(norb);
-  Det ddb(std::move(spo_init), 0, norb);
-  auto spo = dynamic_cast<FakeSPO<Value>*>(ddb.getPhi());
+  Det ddb(*spo_init, 0, norb);
+  auto spo = dynamic_cast<FakeSPO<Value>&>(ddb.getPhi());
 
   const SimulationCell simulation_cell;
   ParticleSet elec(simulation_cell);
@@ -143,8 +143,8 @@ void test_DiracDeterminantBatched_second()
   auto spo_init  = std::make_unique<FakeSPO<Value>>();
   const int norb = 4;
   spo_init->setOrbitalSetSize(norb);
-  Det ddb(std::move(spo_init), 0, norb);
-  auto spo = dynamic_cast<FakeSPO<Value>*>(ddb.getPhi());
+  Det ddb(*spo_init, 0, norb);
+  auto spo = dynamic_cast<FakeSPO<Value>&>(ddb.getPhi());
 
   const SimulationCell simulation_cell;
   ParticleSet elec(simulation_cell);
@@ -154,13 +154,13 @@ void test_DiracDeterminantBatched_second()
 
   Matrix<Value> orig_a;
   orig_a.resize(4, 4);
-  orig_a = spo->a2;
+  orig_a = spo.a2;
 
   for (int i = 0; i < 3; i++)
   {
     for (int j = 0; j < norb; j++)
     {
-      orig_a(j, i) = spo->v2(i, j);
+      orig_a(j, i) = spo.v2(i, j);
     }
   }
 
@@ -170,29 +170,29 @@ void test_DiracDeterminantBatched_second()
   Matrix<Value> a_update1, scratchT;
   a_update1.resize(4, 4);
   scratchT.resize(4, 4);
-  a_update1 = spo->a2;
+  a_update1 = spo.a2;
   for (int j = 0; j < norb; j++)
   {
-    a_update1(j, 0) = spo->v2(0, j);
+    a_update1(j, 0) = spo.v2(0, j);
   }
 
   Matrix<Value> a_update2;
   a_update2.resize(4, 4);
-  a_update2 = spo->a2;
+  a_update2 = spo.a2;
   for (int j = 0; j < norb; j++)
   {
-    a_update2(j, 0) = spo->v2(0, j);
-    a_update2(j, 1) = spo->v2(1, j);
+    a_update2(j, 0) = spo.v2(0, j);
+    a_update2(j, 1) = spo.v2(1, j);
   }
 
   Matrix<Value> a_update3;
   a_update3.resize(4, 4);
-  a_update3 = spo->a2;
+  a_update3 = spo.a2;
   for (int j = 0; j < norb; j++)
   {
-    a_update3(j, 0) = spo->v2(0, j);
-    a_update3(j, 1) = spo->v2(1, j);
-    a_update3(j, 2) = spo->v2(2, j);
+    a_update3(j, 0) = spo.v2(0, j);
+    a_update3(j, 1) = spo.v2(1, j);
+    a_update3(j, 2) = spo.v2(2, j);
   }
 
   ParticleSet::GradType grad;
@@ -278,8 +278,8 @@ void test_DiracDeterminantBatched_delayed_update(int delay_rank, DetMatInvertor 
   auto spo_init  = std::make_unique<FakeSPO<Value>>();
   const int norb = 4;
   spo_init->setOrbitalSetSize(norb);
-  Det ddc(std::move(spo_init), 0, norb, delay_rank, matrix_inverter_kind);
-  auto spo = dynamic_cast<FakeSPO<Value>*>(ddc.getPhi());
+  Det ddc(*spo_init, 0, norb, delay_rank, matrix_inverter_kind);
+  auto spo = dynamic_cast<FakeSPO<Value>&>(ddc.getPhi());
 
   const SimulationCell simulation_cell;
   ParticleSet elec(simulation_cell);
@@ -289,13 +289,13 @@ void test_DiracDeterminantBatched_delayed_update(int delay_rank, DetMatInvertor 
 
   Matrix<Value> orig_a;
   orig_a.resize(4, 4);
-  orig_a = spo->a2;
+  orig_a = spo.a2;
 
   for (int i = 0; i < 3; i++)
   {
     for (int j = 0; j < norb; j++)
     {
-      orig_a(j, i) = spo->v2(i, j);
+      orig_a(j, i) = spo.v2(i, j);
     }
   }
 
@@ -305,29 +305,29 @@ void test_DiracDeterminantBatched_delayed_update(int delay_rank, DetMatInvertor 
   Matrix<Value> a_update1, scratchT;
   scratchT.resize(4, 4);
   a_update1.resize(4, 4);
-  a_update1 = spo->a2;
+  a_update1 = spo.a2;
   for (int j = 0; j < norb; j++)
   {
-    a_update1(j, 0) = spo->v2(0, j);
+    a_update1(j, 0) = spo.v2(0, j);
   }
 
   Matrix<Value> a_update2;
   a_update2.resize(4, 4);
-  a_update2 = spo->a2;
+  a_update2 = spo.a2;
   for (int j = 0; j < norb; j++)
   {
-    a_update2(j, 0) = spo->v2(0, j);
-    a_update2(j, 1) = spo->v2(1, j);
+    a_update2(j, 0) = spo.v2(0, j);
+    a_update2(j, 1) = spo.v2(1, j);
   }
 
   Matrix<Value> a_update3;
   a_update3.resize(4, 4);
-  a_update3 = spo->a2;
+  a_update3 = spo.a2;
   for (int j = 0; j < norb; j++)
   {
-    a_update3(j, 0) = spo->v2(0, j);
-    a_update3(j, 1) = spo->v2(1, j);
-    a_update3(j, 2) = spo->v2(2, j);
+    a_update3(j, 0) = spo.v2(0, j);
+    a_update3(j, 1) = spo.v2(1, j);
+    a_update3(j, 2) = spo.v2(2, j);
   }
 
 
@@ -421,7 +421,8 @@ void test_DiracDeterminantBatched_delayed_update(int delay_rank, DetMatInvertor 
 
   // make a clones
   ParticleSet elec_clone(elec);
-  std::unique_ptr<WaveFunctionComponent> ddc_clone(ddc.makeCopy(ddc.getPhi()->makeClone()));
+  auto spo_clone = ddc.getPhi().makeClone();
+  std::unique_ptr<WaveFunctionComponent> ddc_clone(ddc.makeCopy(*spo_clone));
   auto& ddc_clone_ref = dynamic_cast<Det&>(*ddc_clone);
 
   // testing batched interfaces
