@@ -36,7 +36,8 @@ public:
    * @param targetPtcl target Particleset
    */
   SlaterDet(ParticleSet& targetPtcl,
-            std::vector<std::unique_ptr<Determinant_t>> dets,
+            std::vector<std::unique_ptr<SPOSet>>&& sposets,
+            std::vector<std::unique_ptr<Determinant_t>>&& dets,
             const std::string& class_name = "SlaterDet");
 
   ///destructor
@@ -270,7 +271,7 @@ public:
 
   std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
 
-  SPOSetPtr getPhi(int i = 0) { return Dets[i]->getPhi(); }
+  SPOSet& getPhi(int i = 0) { return Dets[i]->getPhi(); }
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override;
 
@@ -315,6 +316,9 @@ private:
 
   ///the last particle of each group
   std::vector<int> Last;
+
+  ///container for the SPOSets
+  const std::vector<std::unique_ptr<SPOSet>> sposets_;
 };
 } // namespace qmcplusplus
 #endif

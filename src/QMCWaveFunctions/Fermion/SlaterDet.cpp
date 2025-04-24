@@ -25,9 +25,10 @@ namespace qmcplusplus
 using PsiValue = WaveFunctionComponent::PsiValue;
 
 SlaterDet::SlaterDet(ParticleSet& targetPtcl,
-                     std::vector<std::unique_ptr<Determinant_t>> dets,
+                     std::vector<std::unique_ptr<SPOSet>>&& sposets,
+                     std::vector<std::unique_ptr<Determinant_t>>&& dets,
                      const std::string& class_name)
-    : Dets(std::move(dets))
+    : Dets(std::move(dets)), sposets_(std::move(sposets))
 {
   assert(Dets.size() == targetPtcl.groups());
 
@@ -270,10 +271,21 @@ void SlaterDet::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 
 std::unique_ptr<WaveFunctionComponent> SlaterDet::makeClone(ParticleSet& tqp) const
 {
+  std::vector<std::unique_ptr<SPOSet>> sposet_clones;
+  for (const auto& phi : sposets_)
+    sposet_clones.emplace_back(phi->makeClone());
+
   std::vector<std::unique_ptr<Determinant_t>> dets;
   for (const auto& det : Dets)
-    dets.emplace_back(det->makeCopy(det->getPhi()->makeClone()));
-  auto myclone = std::make_unique<SlaterDet>(tqp, std::move(dets));
+  {
+    auto it = std::find_if(sposets_.begin(), sposets_.end(),
+                           [&](const std::unique_ptr<SPOSet>& sposet) { return sposet.get() == &det->getPhi(); });
+    if (it == sposets_.end())
+      throw std::runtime_error("Bug! The sposet of a determinant doesn't reference sposets owned by SlaterDet.");
+    else
+      dets.emplace_back(det->makeCopy(**(sposet_clones.begin() + std::distance(sposets_.begin(), it))));
+  }
+  auto myclone = std::make_unique<SlaterDet>(tqp, std::move(sposet_clones), std::move(dets));
   assert(myclone->isOptimizable() == isOptimizable());
   return myclone;
 }
