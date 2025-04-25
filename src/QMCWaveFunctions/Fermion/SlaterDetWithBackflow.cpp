@@ -20,9 +20,10 @@ namespace qmcplusplus
 {
 
 SlaterDetWithBackflow::SlaterDetWithBackflow(ParticleSet& targetPtcl,
-                                             std::vector<std::unique_ptr<Determinant_t>> dets,
-                                             std::unique_ptr<BackflowTransformation> BF)
-    : Dets(std::move(dets)), BFTrans(std::move(BF))
+                                             std::vector<std::unique_ptr<SPOSet>>&& sposets,
+                                             std::unique_ptr<BackflowTransformation> BF,
+                                             std::vector<std::unique_ptr<Determinant_t>>&& dets)
+    : sposets_(std::move(sposets)), BFTrans(std::move(BF)), Dets(std::move(dets))
 {
   assert(BFTrans);
   assert(Dets.size() == targetPtcl.groups());
@@ -87,10 +88,23 @@ void SlaterDetWithBackflow::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 std::unique_ptr<WaveFunctionComponent> SlaterDetWithBackflow::makeClone(ParticleSet& tqp) const
 {
   auto bf = BFTrans->makeClone(tqp);
+
+  std::vector<std::unique_ptr<SPOSet>> sposet_clones;
+  for (const auto& phi : sposets_)
+    sposet_clones.emplace_back(phi->makeClone());
+
   std::vector<std::unique_ptr<Determinant_t>> dets;
   for (const auto& det : Dets)
-    dets.push_back(det->makeCopyWithBF(det->getPhi()->makeClone(), *bf));
-  auto myclone = std::make_unique<SlaterDetWithBackflow>(tqp, std::move(dets), std::move(bf));
+  {
+    auto it = std::find_if(sposets_.begin(), sposets_.end(),
+                           [&](const std::unique_ptr<SPOSet>& sposet) { return sposet.get() == &det->getPhi(); });
+    if (it == sposets_.end())
+      throw std::runtime_error("Bug! The sposet of a determinant doesn't reference sposets owned by SlaterDet.");
+    else
+      dets.emplace_back(det->makeCopyWithBF(**(sposet_clones.begin() + std::distance(sposets_.begin(), it)), *bf));
+  }
+
+  auto myclone = std::make_unique<SlaterDetWithBackflow>(tqp, std::move(sposet_clones), std::move(bf), std::move(dets));
   assert(myclone->isOptimizable() == isOptimizable());
   return myclone;
 }

@@ -72,10 +72,10 @@ private:
    * @param spin_group the spin group of the created determinant
    * @return BFTrans backflow transformations
    */
-  std::unique_ptr<DiracDeterminantBase> putDeterminant(
-      xmlNodePtr cur,
-      int spin_group,
-      const std::unique_ptr<BackflowTransformation>& BFTrans);
+  std::unique_ptr<DiracDeterminantBase> putDeterminant(xmlNodePtr cur,
+                                                       int spin_group,
+                                                       std::vector<std::unique_ptr<SPOSet>>& unique_sposets,
+                                                       const std::unique_ptr<BackflowTransformation>& BFTrans);
 
   std::unique_ptr<MultiSlaterDetTableMethod> createMSDFast(xmlNodePtr cur,
                                                            ParticleSet& target_ptcl,

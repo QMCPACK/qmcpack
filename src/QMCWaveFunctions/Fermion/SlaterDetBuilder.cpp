@@ -134,6 +134,8 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
     });
   }
 
+  // unique sposets used by determinants. unique doesn't refer to unique_ptr. For example, there is only one SPOSet in restricted HF.
+  std::vector<std::unique_ptr<SPOSet>> unique_sposets;
   processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
     if (cname == sd_tag)
     {
@@ -155,7 +157,7 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
             err_msg << "Need only " << targetPtcl.groups() << " determinant input elements. Found more." << std::endl;
             throw std::runtime_error(err_msg.str());
           }
-          dirac_dets.push_back(putDeterminant(element, spin_group, BFTrans));
+          dirac_dets.push_back(putDeterminant(element, spin_group, unique_sposets, BFTrans));
           spin_group++;
         }
       });
@@ -174,12 +176,13 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
         std::vector<std::unique_ptr<DiracDeterminantWithBackflow>> dirac_dets_bf;
         for (auto& det : dirac_dets)
           dirac_dets_bf.emplace_back(dynamic_cast<DiracDeterminantWithBackflow*>(det.release()));
-        auto single_det =
-            std::make_unique<SlaterDetWithBackflow>(targetPtcl, std::move(dirac_dets_bf), std::move(BFTrans));
+        auto single_det              = std::make_unique<SlaterDetWithBackflow>(targetPtcl, std::move(unique_sposets),
+                                                                               std::move(BFTrans), std::move(dirac_dets_bf));
         built_singledet_or_multidets = std::move(single_det);
       }
       else
-        built_singledet_or_multidets = std::make_unique<SlaterDet>(targetPtcl, std::move(dirac_dets));
+        built_singledet_or_multidets =
+            std::make_unique<SlaterDet>(targetPtcl, std::move(unique_sposets), std::move(dirac_dets));
     }
     else if (cname == multisd_tag)
     {
@@ -266,6 +269,7 @@ magnetic system
 std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
     xmlNodePtr cur,
     int spin_group,
+    std::vector<std::unique_ptr<SPOSet>>& unique_sposets,
     const std::unique_ptr<BackflowTransformation>& BFTrans)
 {
   ReportEngine PRE(ClassName, "putDeterminant(xmlNodePtr,int)");
@@ -346,24 +350,37 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
                 << std::endl;
   app_summary() << std::endl;
 
-  const SPOSet* psi = sposet_builder_factory_.getSPOSet(sposet_name);
-  //check if the named sposet exists
-  if (psi == nullptr)
+  auto add_sposet_if_unique = [&](std::vector<std::unique_ptr<SPOSet>>& unique_sposets,
+                                  const std::string& name) -> SPOSet& {
+    auto it = std::find_if(unique_sposets.begin(), unique_sposets.end(),
+                           [&](const std::unique_ptr<SPOSet>& sposet) { return sposet->getName() == name; });
+    if (it == unique_sposets.end())
+    {
+      if (const SPOSet* psi = sposet_builder_factory_.getSPOSet(name); psi == nullptr)
+      {
+        //check if the named sposet exists
+        std::ostringstream err_msg;
+        err_msg << "A sposet named \"" << name
+                << "\" cannot be found for constructing a Slater determinant! Please check the xml input file!"
+                << std::endl;
+        throw UniformCommunicateError(err_msg.str());
+      }
+      else
+      {
+        unique_sposets.emplace_back(psi->makeClone());
+        unique_sposets.back()->checkObject();
+        return *unique_sposets.back();
+      }
+    }
+    return **it;
+  };
+
+  SPOSet& psi_ref = add_sposet_if_unique(unique_sposets, sposet_name);
+
+  if (const auto nptcl_group = targetPtcl.groupsize(spin_group); psi_ref.getOrbitalSetSize() < nptcl_group)
   {
     std::ostringstream err_msg;
-    err_msg << "A sposet named \"" << sposet_name
-            << "\" cannot be found for constructing a Slater determinant! Please check the xml input file!"
-            << std::endl;
-    throw UniformCommunicateError(err_msg.str());
-  }
-
-  std::unique_ptr<SPOSet> psi_clone(psi->makeClone());
-  psi_clone->checkObject();
-
-  if (const auto nptcl_group = targetPtcl.groupsize(spin_group); psi_clone->getOrbitalSetSize() < nptcl_group)
-  {
-    std::ostringstream err_msg;
-    err_msg << "The SPOSet " << psi_clone->getName() << " only has " << psi_clone->getOrbitalSetSize() << " orbitals "
+    err_msg << "The SPOSet " << psi_ref.getName() << " only has " << psi_ref.getOrbitalSetSize() << " orbitals "
             << "but this determinant needs at least " << nptcl_group << std::endl;
     myComm->barrier_and_abort(err_msg.str());
   }
@@ -399,7 +416,7 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
   if (BFTrans)
   {
     app_summary() << "      Using backflow transformation." << std::endl;
-    adet = std::make_unique<DiracDeterminantWithBackflow>(std::move(psi_clone), *BFTrans, firstIndex, lastIndex);
+    adet = std::make_unique<DiracDeterminantWithBackflow>(psi_ref, *BFTrans, firstIndex, lastIndex);
   }
   else
   {
@@ -416,10 +433,10 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
       if (CPUOMPTargetVendorSelector::selectPlatform(useGPU) == PlatformKind::CUDA)
       {
         app_summary() << "      Running on a GPU via CUDA/HIP acceleration and OpenMP offload." << std::endl;
-        adet = std::make_unique<DiracDeterminantBatched<PlatformKind::CUDA, QMCTraits::ValueType,
-                                                        QMCTraits::QTFull::ValueType>>(std::move(psi_clone), firstIndex,
-                                                                                       lastIndex, delay_rank,
-                                                                                       matrix_inverter_kind);
+        adet =
+            std::make_unique<DiracDeterminantBatched<PlatformKind::CUDA, QMCTraits::ValueType,
+                                                     QMCTraits::QTFull::ValueType>>(psi_ref, firstIndex, lastIndex,
+                                                                                    delay_rank, matrix_inverter_kind);
       }
       else
 #endif
@@ -427,10 +444,10 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
           if (CPUOMPTargetVendorSelector::selectPlatform(useGPU) == PlatformKind::SYCL)
       {
         app_summary() << "      Running on a GPU via SYCL acceleration and OpenMP offload." << std::endl;
-        adet = std::make_unique<DiracDeterminantBatched<PlatformKind::SYCL, QMCTraits::ValueType,
-                                                        QMCTraits::QTFull::ValueType>>(std::move(psi_clone), firstIndex,
-                                                                                       lastIndex, delay_rank,
-                                                                                       matrix_inverter_kind);
+        adet =
+            std::make_unique<DiracDeterminantBatched<PlatformKind::SYCL, QMCTraits::ValueType,
+                                                     QMCTraits::QTFull::ValueType>>(psi_ref, firstIndex, lastIndex,
+                                                                                    delay_rank, matrix_inverter_kind);
       }
       else
 #endif
@@ -442,10 +459,10 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
 #else
         app_summary() << "      Running OpenMP offload code path on a CPU. " << std::endl;
 #endif
-        adet = std::make_unique<DiracDeterminantBatched<PlatformKind::OMPTARGET, QMCTraits::ValueType,
-                                                        QMCTraits::QTFull::ValueType>>(std::move(psi_clone), firstIndex,
-                                                                                       lastIndex, delay_rank,
-                                                                                       matrix_inverter_kind);
+        adet =
+            std::make_unique<DiracDeterminantBatched<PlatformKind::OMPTARGET, QMCTraits::ValueType,
+                                                     QMCTraits::QTFull::ValueType>>(psi_ref, firstIndex, lastIndex,
+                                                                                    delay_rank, matrix_inverter_kind);
       }
     }
     else
@@ -457,9 +474,8 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
       {
         app_summary() << "      Running on a GPU via CUDA/HIP acceleration." << std::endl;
         adet = std::make_unique<
-            DiracDeterminant<PlatformKind::CUDA, ValueType, QMCTraits::QTFull::ValueType>>(std::move(psi_clone),
-                                                                                           firstIndex, lastIndex,
-                                                                                           delay_rank,
+            DiracDeterminant<PlatformKind::CUDA, ValueType, QMCTraits::QTFull::ValueType>>(psi_ref, firstIndex,
+                                                                                           lastIndex, delay_rank,
                                                                                            matrix_inverter_kind);
       }
 #elif defined(ENABLE_SYCL)
@@ -467,17 +483,15 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
       {
         app_summary() << "      Running on a GPU via SYCL acceleration." << std::endl;
         adet = std::make_unique<
-            DiracDeterminant<PlatformKind::SYCL, ValueType, QMCTraits::QTFull::ValueType>>(std::move(psi_clone),
-                                                                                           firstIndex, lastIndex,
-                                                                                           delay_rank,
+            DiracDeterminant<PlatformKind::SYCL, ValueType, QMCTraits::QTFull::ValueType>>(psi_ref, firstIndex,
+                                                                                           lastIndex, delay_rank,
                                                                                            matrix_inverter_kind);
       }
 #endif
       else
       {
         app_summary() << "      Running on CPU." << std::endl;
-        adet = std::make_unique<DiracDeterminant<>>(std::move(psi_clone), firstIndex, lastIndex, delay_rank,
-                                                    matrix_inverter_kind);
+        adet = std::make_unique<DiracDeterminant<>>(psi_ref, firstIndex, lastIndex, delay_rank, matrix_inverter_kind);
       }
     }
   }

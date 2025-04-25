@@ -831,11 +831,11 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
     SlaterDet* sd = dynamic_cast<SlaterDet*>(orb.get());
     if (sd)
     {
-      for (int isd = 0; isd < sd->Dets.size(); isd++)
+      for (int isd = 0; isd < sd->getNumDets(); isd++)
       {
         ParticleSet::ParticleGradient G(nat), tmpG(nat), G1(nat);
         ParticleSet::ParticleLaplacian L(nat), tmpL(nat), L1(nat);
-        DiracDeterminantBase& det = *sd->Dets[isd];
+        DiracDeterminantBase& det = sd->getDet(isd);
         LogValue logpsi2          = det.evaluateLog(W, G, L); // this won't work with backflow
         fail_log << "  Slater Determiant " << isd << " (for particles " << det.getFirstIndex() << " to "
                  << det.getLastIndex() << ") log psi = " << logpsi2 << std::endl;
