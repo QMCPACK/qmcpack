@@ -1,7 +1,7 @@
 #!/bin/bash
 # This recipe is intended for NERSC Perlmutter https://docs.nersc.gov/systems/perlmutter
 # It builds all the varaints of QMCPACK in the current directory
-# last revision: Jan 14th 2025
+# last revision: Apr 24th 2025
 #
 # How to invoke this script?
 # build_nersc_perlmutter_Clang.sh # build all the variants assuming the current directory is the source directory.
@@ -10,7 +10,7 @@
 
 module load PrgEnv-gnu
 module load cray-libsci
-CRAY_LIBSCI_LIB=$CRAY_PE_LIBSCI_PREFIX_DIR/lib/libsci_gnu_mp.so
+CRAY_LIBSCI_LIB=$CRAY_LIBSCI_PREFIX_DIR/lib/libsci_gnu_mp.so
 module unload PrgEnv-gnu
 module load craype cray-mpich
 module load cray-fftw
