@@ -135,12 +135,14 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay, const OffloadSwitche
   REQUIRE(spo != nullptr);
 
   std::vector<std::unique_ptr<DiracDeterminantBase>> dets;
-  auto det_up_ptr = std::make_unique<DiracDet>(spo->makeClone(), 0, 2, ndelay);
+  auto det_up_ptr = std::make_unique<DiracDet>(*spo, 0, 2, ndelay);
   auto det_up     = det_up_ptr.get();
   dets.push_back(std::move(det_up_ptr));
-  dets.push_back(std::make_unique<DiracDet>(spo->makeClone(), 2, 4, ndelay));
+  dets.push_back(std::make_unique<DiracDet>(*spo, 2, 4, ndelay));
 
-  auto slater_det = std::make_unique<SlaterDet>(elec_, std::move(dets));
+  std::vector<std::unique_ptr<SPOSet>> unique_sposets;
+  unique_sposets.emplace_back(std::move(spo));
+  auto slater_det = std::make_unique<SlaterDet>(elec_, std::move(unique_sposets), std::move(dets));
 
   RuntimeOptions runtime_options;
   TrialWaveFunction psi(runtime_options);

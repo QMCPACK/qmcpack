@@ -674,11 +674,11 @@ TEST_CASE("Rotated LCAO rotation consistency", "[qmcapp]")
   // Use the SPOs from different spins to separately track rotation applied using the stored coefficients
   // versus the regular coefficients.
   // The coefficient matrices should match after the same rotations are applied to each.
-  SPOSetPtr spoptr     = sdet->getPhi(0);
+  SPOSetPtr spoptr     = &sdet->getPhi(0);
   RotatedSPOs* rot_spo = dynamic_cast<RotatedSPOs*>(spoptr);
   REQUIRE(rot_spo != nullptr);
 
-  SPOSetPtr spoptr1           = sdet->getPhi(1);
+  SPOSetPtr spoptr1           = &sdet->getPhi(1);
   RotatedSPOs* global_rot_spo = dynamic_cast<RotatedSPOs*>(spoptr1);
   REQUIRE(global_rot_spo != nullptr);
 

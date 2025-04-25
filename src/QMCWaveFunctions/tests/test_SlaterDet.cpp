@@ -24,8 +24,8 @@ namespace qmcplusplus
 class DummyDiracDetWithMW : public DiracDeterminantBase
 {
 public:
-  DummyDiracDetWithMW(const std::string& class_name, std::unique_ptr<SPOSet>&& spos, int first, int last)
-      : DiracDeterminantBase(getClassName(), std::move(spos), first, last)
+  DummyDiracDetWithMW(const std::string& class_name, SPOSet& spos, int first, int last)
+      : DiracDeterminantBase(getClassName(), spos, first, last)
   {}
   std::string getClassName() const override { return "DummyDiracDetWithMW"; }
   LogValue evaluateLog(const ParticleSet& P,
@@ -137,9 +137,9 @@ public:
                            Vector<ValueType>& dlogpsi,
                            Vector<ValueType>& dhpsioverpsi) override
   {}
-  std::unique_ptr<DiracDeterminantBase> makeCopy(std::unique_ptr<SPOSet>&& spo) const override
+  std::unique_ptr<DiracDeterminantBase> makeCopy(SPOSet& spo) const override
   {
-    return std::make_unique<DummyDiracDetWithMW>(getClassName(), std::move(spo), FirstIndex, LastIndex);
+    return std::make_unique<DummyDiracDetWithMW>(getClassName(), spo, FirstIndex, LastIndex);
   }
 };
 
@@ -161,18 +161,20 @@ TEST_CASE("SlaterDet mw_ APIs", "[wavefunction]")
 
   //Now do with MW
   {
-    std::unique_ptr<DiracDeterminantBase> det_ptr0 =
-        std::make_unique<DummyDiracDetWithMW>("dummy", std::move(spo_ptr0), 0, 12);
-    std::unique_ptr<DiracDeterminantBase> det_ptr1 =
-        std::make_unique<DummyDiracDetWithMW>("dummy", std::move(spo_ptr1), 0, 12);
+    std::unique_ptr<DiracDeterminantBase> det_ptr0 = std::make_unique<DummyDiracDetWithMW>("dummy", *spo_ptr0, 0, 12);
+    std::unique_ptr<DiracDeterminantBase> det_ptr1 = std::make_unique<DummyDiracDetWithMW>("dummy", *spo_ptr1, 0, 12);
 
     std::vector<std::unique_ptr<DiracDeterminantBase>> dirac_dets0;
     dirac_dets0.push_back(std::move(det_ptr0));
     std::vector<std::unique_ptr<DiracDeterminantBase>> dirac_dets1;
     dirac_dets1.push_back(std::move(det_ptr1));
 
-    SlaterDet slaterdet0(elec0, std::move(dirac_dets0));
-    SlaterDet slaterdet1(elec1, std::move(dirac_dets1));
+    std::vector<std::unique_ptr<SPOSet>> unique_sposets0, unique_sposets1;
+    unique_sposets0.emplace_back(std::move(spo_ptr0));
+    unique_sposets1.emplace_back(std::move(spo_ptr1));
+
+    SlaterDet slaterdet0(elec0, std::move(unique_sposets0), std::move(dirac_dets0));
+    SlaterDet slaterdet1(elec1, std::move(unique_sposets1), std::move(dirac_dets1));
 
     RefVectorWithLeader<WaveFunctionComponent> sd_list(slaterdet0, {slaterdet0, slaterdet1});
 
