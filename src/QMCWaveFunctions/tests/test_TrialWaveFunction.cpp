@@ -116,10 +116,12 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   REQUIRE(spo != nullptr);
 
   std::vector<std::unique_ptr<DiracDeterminantBase>> dets;
-  dets.push_back(std::make_unique<DiracDet>(spo->makeClone(), 0, 2));
-  dets.push_back(std::make_unique<DiracDet>(spo->makeClone(), 2, 4));
+  dets.push_back(std::make_unique<DiracDet>(*spo, 0, 2));
+  dets.push_back(std::make_unique<DiracDet>(*spo, 2, 4));
 
-  auto slater_det = std::make_unique<SlaterDet>(elec_, std::move(dets));
+  std::vector<std::unique_ptr<SPOSet>> unique_sposets;
+  unique_sposets.emplace_back(std::move(spo));
+  auto slater_det = std::make_unique<SlaterDet>(elec_, std::move(unique_sposets), std::move(dets));
 
   RuntimeOptions runtime_options;
   TrialWaveFunction psi(runtime_options);
