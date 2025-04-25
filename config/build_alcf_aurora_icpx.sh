@@ -1,6 +1,6 @@
 #!/bin/bash
 # This recipe is intended for ALCF Aurora https://www.alcf.anl.gov/support-center/aurora-sunspot
-# last revision: Jan 13th 2025
+# last revision: Apr 25th 2025
 #
 # How to invoke this script?
 # build_alcf_aurora_icpx.sh # build all the variants assuming the current directory is the source directory.
@@ -12,9 +12,15 @@ do
   if module is-loaded $module_name ; then module unload $module_name; fi
 done
 
-module load oneapi/eng-compiler/2024.07.30.002
-module load cmake hdf5/1.14.3 boost/1.84.0
+module load oneapi/release/2025.0.5
+module load cmake hdf5 boost
 module list >& module_list.txt
+
+# unset the following to desensitize CMake to modules/environment variables.
+unset CPATH
+unset LIBRARY_PATH
+unset C_INCLUDE_PATH
+unset CPLUS_INCLUDE_PATH
 
 echo "**********************************"
 echo '$ icpx -v'
@@ -23,7 +29,7 @@ echo "**********************************"
 
 TYPE=Release
 Machine=aurora
-Compiler=icpx20240629
+Compiler=oneapi2025.0.5
 
 if [[ $# -eq 0 ]]; then
   source_folder=`pwd`
