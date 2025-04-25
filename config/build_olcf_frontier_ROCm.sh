@@ -15,10 +15,8 @@ module load PrgEnv-amd amd/6.3.1
 module unload darshan-runtime
 unset HIP_PATH # it messed up clang as a HIP compiler.
 module unload cray-libsci
-module load cmake
-module load cray-fftw
-module load openblas/0.3.28-omp
-module load cray-hdf5-parallel
+module load cray-fftw cray-hdf5-parallel
+module load Core/25.03 cmake openblas/0.3.28-omp
 
 # edit this line if you are not a member of mat151
 export BOOST_ROOT=/ccs/proj/mat151/opt/boost/1_81_0
@@ -75,7 +73,7 @@ echo "**********************************"
 mkdir $folder
 cd $folder
 if [ ! -f CMakeCache.txt ] ; then
-cmake $CMAKE_FLAGS -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=CC -DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment \
+cmake $CMAKE_FLAGS -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=CC \
       -DCMAKE_CXX_FLAGS="-add-runpath" \
       $source_folder
 fi
