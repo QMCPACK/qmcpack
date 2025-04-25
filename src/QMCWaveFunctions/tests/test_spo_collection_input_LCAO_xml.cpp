@@ -230,13 +230,13 @@ TEST_CASE("SPO input spline from xml He_sto3g", "[wavefunction]")
         </atomicBasisSet>
       </basisset>
       <slaterdeterminant>
-        <determinant name="spo" size="1">
+        <determinant id="spo" size="1">
           <occupation mode="ground"/>
           <coefficient size="1" id="updetC">
             1.00000000000000e+00
           </coefficient>
         </determinant>
-        <determinant name="spo-down" size="1">
+        <determinant id="downdet" size="1">
           <occupation mode="ground"/>
           <coefficient size="1" id="downdetC">
             1.00000000000000e+00

@@ -70,13 +70,11 @@ private:
   /** process a determinant element
    * @param cur xml node
    * @param spin_group the spin group of the created determinant
-   * @return legacy_input_sposet_builder an sposet builder to handle legacy input
    * @return BFTrans backflow transformations
    */
   std::unique_ptr<DiracDeterminantBase> putDeterminant(
       xmlNodePtr cur,
       int spin_group,
-      const std::unique_ptr<SPOSetBuilder>& legacy_input_sposet_builder,
       const std::unique_ptr<BackflowTransformation>& BFTrans);
 
   std::unique_ptr<MultiSlaterDetTableMethod> createMSDFast(xmlNodePtr cur,
