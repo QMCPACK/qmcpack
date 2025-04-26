@@ -54,8 +54,8 @@ void test_DiracDeterminant_first(const DetMatInvertor inverter_kind)
   auto spo_init  = std::make_unique<FakeSPO<Value>>();
   const int norb = 3;
   spo_init->setOrbitalSetSize(norb);
-  DET ddb(std::move(spo_init), 0, norb, 1, inverter_kind);
-  auto spo = dynamic_cast<FakeSPO<Value>*>(ddb.getPhi());
+  DET ddb(*spo_init, 0, norb, 1, inverter_kind);
+  auto spo = dynamic_cast<FakeSPO<Value>&>(ddb.getPhi());
 
   // occurs in call to registerData
   ddb.dpsiV.resize(norb);
@@ -162,8 +162,8 @@ void test_DiracDeterminant_second(const DetMatInvertor inverter_kind)
   auto spo_init  = std::make_unique<FakeSPO<Value>>();
   const int norb = 4;
   spo_init->setOrbitalSetSize(norb);
-  DET ddb(std::move(spo_init), 0, norb, 1, inverter_kind);
-  auto spo = dynamic_cast<FakeSPO<Value>*>(ddb.getPhi());
+  DET ddb(*spo_init, 0, norb, 1, inverter_kind);
+  auto spo = dynamic_cast<FakeSPO<Value>&>(ddb.getPhi());
 
   // occurs in call to registerData
   ddb.dpsiV.resize(norb);
@@ -177,13 +177,13 @@ void test_DiracDeterminant_second(const DetMatInvertor inverter_kind)
 
   Matrix<Value> orig_a;
   orig_a.resize(4, 4);
-  orig_a = spo->a2;
+  orig_a = spo.a2;
 
   for (int i = 0; i < 3; i++)
   {
     for (int j = 0; j < norb; j++)
     {
-      orig_a(j, i) = spo->v2(i, j);
+      orig_a(j, i) = spo.v2(i, j);
     }
   }
 
@@ -193,29 +193,29 @@ void test_DiracDeterminant_second(const DetMatInvertor inverter_kind)
   Matrix<Value> a_update1, scratchT;
   a_update1.resize(4, 4);
   scratchT.resize(4, 4);
-  a_update1 = spo->a2;
+  a_update1 = spo.a2;
   for (int j = 0; j < norb; j++)
   {
-    a_update1(j, 0) = spo->v2(0, j);
+    a_update1(j, 0) = spo.v2(0, j);
   }
 
   Matrix<Value> a_update2;
   a_update2.resize(4, 4);
-  a_update2 = spo->a2;
+  a_update2 = spo.a2;
   for (int j = 0; j < norb; j++)
   {
-    a_update2(j, 0) = spo->v2(0, j);
-    a_update2(j, 1) = spo->v2(1, j);
+    a_update2(j, 0) = spo.v2(0, j);
+    a_update2(j, 1) = spo.v2(1, j);
   }
 
   Matrix<Value> a_update3;
   a_update3.resize(4, 4);
-  a_update3 = spo->a2;
+  a_update3 = spo.a2;
   for (int j = 0; j < norb; j++)
   {
-    a_update3(j, 0) = spo->v2(0, j);
-    a_update3(j, 1) = spo->v2(1, j);
-    a_update3(j, 2) = spo->v2(2, j);
+    a_update3(j, 0) = spo.v2(0, j);
+    a_update3(j, 1) = spo.v2(1, j);
+    a_update3(j, 2) = spo.v2(2, j);
   }
 
   ParticleSet::GradType grad;
@@ -304,8 +304,8 @@ void test_DiracDeterminant_delayed_update(const DetMatInvertor inverter_kind)
   const int norb = 4;
   spo_init->setOrbitalSetSize(norb);
   // maximum delay 2
-  DET ddc(std::move(spo_init), 0, norb, 2, inverter_kind);
-  auto spo = dynamic_cast<FakeSPO<Value>*>(ddc.getPhi());
+  DET ddc(*spo_init, 0, norb, 2, inverter_kind);
+  auto spo = dynamic_cast<FakeSPO<Value>&>(ddc.getPhi());
 
   // occurs in call to registerData
   ddc.dpsiV.resize(norb);
@@ -319,13 +319,13 @@ void test_DiracDeterminant_delayed_update(const DetMatInvertor inverter_kind)
 
   Matrix<Value> orig_a;
   orig_a.resize(4, 4);
-  orig_a = spo->a2;
+  orig_a = spo.a2;
 
   for (int i = 0; i < 3; i++)
   {
     for (int j = 0; j < norb; j++)
     {
-      orig_a(j, i) = spo->v2(i, j);
+      orig_a(j, i) = spo.v2(i, j);
     }
   }
 
@@ -335,29 +335,29 @@ void test_DiracDeterminant_delayed_update(const DetMatInvertor inverter_kind)
   Matrix<Value> a_update1, scratchT;
   scratchT.resize(4, 4);
   a_update1.resize(4, 4);
-  a_update1 = spo->a2;
+  a_update1 = spo.a2;
   for (int j = 0; j < norb; j++)
   {
-    a_update1(j, 0) = spo->v2(0, j);
+    a_update1(j, 0) = spo.v2(0, j);
   }
 
   Matrix<Value> a_update2;
   a_update2.resize(4, 4);
-  a_update2 = spo->a2;
+  a_update2 = spo.a2;
   for (int j = 0; j < norb; j++)
   {
-    a_update2(j, 0) = spo->v2(0, j);
-    a_update2(j, 1) = spo->v2(1, j);
+    a_update2(j, 0) = spo.v2(0, j);
+    a_update2(j, 1) = spo.v2(1, j);
   }
 
   Matrix<Value> a_update3;
   a_update3.resize(4, 4);
-  a_update3 = spo->a2;
+  a_update3 = spo.a2;
   for (int j = 0; j < norb; j++)
   {
-    a_update3(j, 0) = spo->v2(0, j);
-    a_update3(j, 1) = spo->v2(1, j);
-    a_update3(j, 2) = spo->v2(2, j);
+    a_update3(j, 0) = spo.v2(0, j);
+    a_update3(j, 1) = spo.v2(1, j);
+    a_update3(j, 2) = spo.v2(2, j);
   }
 
 
@@ -527,7 +527,7 @@ void test_DiracDeterminant_spinor_update(const DetMatInvertor inverter_kind)
   auto spinor_set = std::make_unique<SpinorSet>("free_orb_spinor");
   spinor_set->set_spos(std::move(spo_up), std::move(spo_dn));
 
-  DET dd(std::move(spinor_set), 0, nelec, 1, inverter_kind);
+  DET dd(*spinor_set, 0, nelec, 1, inverter_kind);
   app_log() << " nelec=" << nelec << std::endl;
 
   ParticleGradient G;

@@ -230,30 +230,6 @@ else(CMAKE_TOOLCHAIN_FILE)
                     "Please use cc/CC as the C/C++ compiler to ensure correct cross-compiling for the compute nodes "
                     "unless you understand cross-compiling and intend not to use Cray compiler wrappers.")
   endif()
-  if(CMAKE_SYSTEM_NAME STREQUAL "CrayLinuxEnvironment")
-    message(STATUS "Running on a Cray machine.")
-
-    if(NOT $ENV{CRAYPE_LINK_TYPE} STREQUAL "dynamic")
-      message(WARNING "Cray Programming Environment uses static linking by default. "
-                      "We prefer dynamic linking which makes library searching easier. "
-                      "Setting environment variable CRAYPE_LINK_TYPE to \"dynamic\" enables dynamic linking.\n")
-    endif()
-
-    if(NOT DEFINED MPIEXEC_EXECUTABLE)
-      find_program(MPIEXEC_EXECUTABLE aprun)
-      if(NOT MPIEXEC_EXECUTABLE)
-        # For slurm use srun
-        find_program(MPIEXEC_EXECUTABLE srun)
-      endif(NOT MPIEXEC_EXECUTABLE)
-    endif()
-  else()
-    if($ENV{CRAYPE_VERSION} MATCHES "." AND BASE_CXX_COMPILER_NAME STREQUAL "CC")
-      message(
-        FATAL_ERROR
-          "Cray compiler wrapper detected. Empty the build folder and rerun cmake with -DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment added."
-      )
-    endif()
-  endif()
 
   include(inspectCompiler)
   TestCXXMainCompiles("After_Customization")
