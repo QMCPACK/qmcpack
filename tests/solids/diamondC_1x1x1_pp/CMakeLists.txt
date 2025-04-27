@@ -2301,3 +2301,52 @@ add_test_check_file_existence(deterministic-diamondC_1x1x1_pp-orbital_images-1-1
 add_test_check_file_existence(deterministic-diamondC_1x1x1_pp-orbital_images-1-1 spo_ud_orbital_0003_abs.xsf TRUE)
 add_test_check_file_existence(deterministic-diamondC_1x1x1_pp-orbital_images-1-1 spo_ud_orbital_0003_abs2.xsf TRUE)
 add_test_check_file_existence(deterministic-diamondC_1x1x1_pp-orbital_images-1-1 spo_ud_orbital_0004.xsf FALSE)
+
+# Energy density estimator initial tests
+qmc_run_and_check(
+  deterministic-diamondC_1x1x1_pp-vmc_sdj-estimator-energydensity-cell
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+  det_qmc_short_edens_cell
+  det_qmc_short_edens_cell.in.xml
+  1
+  1
+  TRUE
+  0
+  DET_DIAMOND_SCALARS # VMC
+)
+
+qmc_run_and_check(
+  deterministic-diamondC_1x1x1_pp-vmc_sdj-estimator-energydensity-voronoi
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+  det_qmc_short_edens_voronoi
+  det_qmc_short_edens_voronoi.in.xml
+  1
+  1
+  TRUE
+  0
+  DET_DIAMOND_SCALARS # VMC
+)
+
+qmc_run_and_check(
+  deterministic-diamondC_1x1x1_pp-vmcbatch_sdj-estimator-energydensity-cell
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+  det_qmc_short_vmcbatch_edens_cell
+  det_qmc_short_vmcbatch_edens_cell.in.xml
+  1
+  1
+  TRUE
+#  0
+#  DET_DIAMOND_SCALARS # VMC
+)
+
+qmc_run_and_check(
+  deterministic-diamondC_1x1x1_pp-vmcbatch_sdj-estimator-energydensity-voronoi
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+  det_qmc_short_vmcbatch_edens_voronoi
+  det_qmc_short_vmcbatch_edens_voronoi.in.xml
+  1
+  1
+  TRUE
+#  0
+#  DET_DIAMOND_SCALARS # VMC
+)
