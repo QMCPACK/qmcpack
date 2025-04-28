@@ -212,12 +212,9 @@ public:
    */
   void insertFrom(const VariableSet& input);
 
-  /** reset Index
+  /** reset Index of active parameters
    */
   void resetIndex();
-  /** remove inactive variables and trim the internal data
-   */
-  void removeInactive();
 
   /** set the index table of this VariableSet
    * @param selected input variables

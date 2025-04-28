@@ -133,15 +133,12 @@ void TwoBodyJastrow<FT>::checkOutVariables(const opt_variables_type& active)
   for (auto& [key, functor] : J2Unique)
   {
     functor->myVars.getIndex(active);
-    myVars.insertFrom(functor->myVars);
+    if (functor->myVars.size_of_active())
+      myVars.insertFrom(functor->myVars);
   }
-  // Remove inactive variables so the mappings are correct
-  myVars.removeInactive();
-
   myVars.getIndex(active);
 
-  const size_t NumVars = myVars.size();
-  if (NumVars)
+  if (myVars.size())
   {
     OffSet.resize(F.size());
 
