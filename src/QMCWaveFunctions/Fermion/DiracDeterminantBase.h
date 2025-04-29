@@ -38,14 +38,14 @@ public:
    *@param first index of the first particle
    *@param last index of last particle
    */
-  DiracDeterminantBase(const std::string& class_name, std::unique_ptr<SPOSet>&& spos, int first, int last)
+  DiracDeterminantBase(const std::string& class_name, SPOSet& phi, int first, int last)
       : UpdateTimer(createGlobalTimer(class_name + "::update", timer_level_fine)),
         RatioTimer(createGlobalTimer(class_name + "::ratio", timer_level_fine)),
         InverseTimer(createGlobalTimer(class_name + "::inverse", timer_level_fine)),
         BufferTimer(createGlobalTimer(class_name + "::buffer", timer_level_fine)),
         SPOVTimer(createGlobalTimer(class_name + "::spoval", timer_level_fine)),
         SPOVGLTimer(createGlobalTimer(class_name + "::spovgl", timer_level_fine)),
-        Phi(std::move(spos)),
+        phi_(phi),
         FirstIndex(first),
         LastIndex(last),
         NumOrbitals(last - first),
@@ -60,7 +60,7 @@ public:
   DiracDeterminantBase& operator=(const DiracDeterminantBase& s) = delete;
 
   // get the SPO pointer
-  inline SPOSetPtr getPhi() const { return Phi.get(); }
+  inline SPOSet& getPhi() { return phi_; }
 
   // get FirstIndex, Last Index
   inline int getFirstIndex() const { return FirstIndex; }
@@ -71,18 +71,7 @@ public:
 #endif
 
   bool isFermionic() const final { return true; }
-  inline bool isOptimizable() const final { return Phi->isOptimizable(); }
-
-  void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) final
-  {
-    Phi->extractOptimizableObjectRefs(opt_obj_refs);
-  }
-
-  inline void checkOutVariables(const opt_variables_type& active) final
-  {
-    if (Phi->isOptimizable())
-      Phi->checkOutVariables(active);
-  }
+  inline bool isOptimizable() const final { return phi_.isOptimizable(); }
 
   virtual void registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const override
   {
@@ -175,13 +164,13 @@ public:
    * This interface is exposed only to SlaterDet and its derived classes
    * can overwrite to clone itself correctly.
    */
-  virtual std::unique_ptr<DiracDeterminantBase> makeCopy(std::unique_ptr<SPOSet>&& spo) const = 0;
+  virtual std::unique_ptr<DiracDeterminantBase> makeCopy(SPOSet& phi) const = 0;
 
 protected:
   /// Timers
   NewTimer &UpdateTimer, &RatioTimer, &InverseTimer, &BufferTimer, &SPOVTimer, &SPOVGLTimer;
   /// a set of single-particle orbitals used to fill in the  values of the matrix
-  const std::unique_ptr<SPOSet> Phi;
+  SPOSet& phi_;
   ///index of the first particle with respect to the particle set
   const int FirstIndex;
   ///index of the last particle with respect to the particle set

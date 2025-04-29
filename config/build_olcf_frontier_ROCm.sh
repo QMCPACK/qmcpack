@@ -2,7 +2,7 @@
 
 # Build script for Frontier
 # It builds all the varaints of QMCPACK in the current directory
-# last revision: Jan 13th 2025
+# last revision: Apr 22nd 2025
 
 echo "Loading QMCPACK dependency modules for frontier"
 for module_name in PrgEnv-gnu PrgEnv-cray PrgEnv-amd PrgEnv-gnu-amd PrgEnv-cray-amd \
@@ -15,13 +15,11 @@ module load PrgEnv-amd amd/6.3.1
 module unload darshan-runtime
 unset HIP_PATH # it messed up clang as a HIP compiler.
 module unload cray-libsci
-module load cmake/3.27.9
-module load cray-fftw
-module load openblas/0.3.26-omp
-module load cray-hdf5-parallel
+module load cray-fftw cray-hdf5-parallel
+module load Core/25.03 cmake openblas/0.3.28-omp
 
 # edit this line if you are not a member of mat151
-export BOOST_ROOT=/ccs/proj/mat151/opt/boost/boost_1_81_0
+export BOOST_ROOT=/ccs/proj/mat151/opt/boost/1_81_0
 
 module list >& module_list.txt
 
@@ -75,7 +73,7 @@ echo "**********************************"
 mkdir $folder
 cd $folder
 if [ ! -f CMakeCache.txt ] ; then
-cmake $CMAKE_FLAGS -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=CC -DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment \
+cmake $CMAKE_FLAGS -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=CC \
       -DCMAKE_CXX_FLAGS="-add-runpath" \
       $source_folder
 fi

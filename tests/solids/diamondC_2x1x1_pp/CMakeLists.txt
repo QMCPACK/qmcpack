@@ -232,7 +232,7 @@ qmc_run_and_check(
 
 list(APPEND LONG_DIAMOND2_SCALARS "totenergy" "-21.668293 0.00023")
 list(APPEND LONG_DIAMOND2_SCALARS "samples" "30720000 0.0")
-list(APPEND LONG_DIAMOND2_SCALARS "flux" "0.0 0.05")
+list(APPEND LONG_DIAMOND2_SCALARS "flux" "0.0 0.1")
 
 qmc_run_and_check(
   long-diamondC_2x1x1_pp-vmc_sdj

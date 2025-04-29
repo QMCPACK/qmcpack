@@ -212,12 +212,9 @@ public:
    */
   void insertFrom(const VariableSet& input);
 
-  /** reset Index
+  /** reset Index of active parameters
    */
   void resetIndex();
-  /** remove inactive variables and trim the internal data
-   */
-  void removeInactive();
 
   /** set the index table of this VariableSet
    * @param selected input variables
@@ -225,6 +222,11 @@ public:
    * This VariableSet is a subset of selected.
    */
   void getIndex(const VariableSet& selected);
+
+  /** find the index of the first parameter of *this set in the selection
+   * return -1 if not found.
+   */
+  int findIndexOfFirstParam(const VariableSet& selected) const;
 
   /** set default Indices, namely all the variables are active
    */

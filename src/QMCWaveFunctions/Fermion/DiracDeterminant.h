@@ -108,7 +108,7 @@ public:
    *@param last index of last particle
    *@param ndelay delayed update rank
    */
-  DiracDeterminant(std::unique_ptr<SPOSet>&& spos,
+  DiracDeterminant(SPOSet& phi,
                    int first,
                    int last,
                    int ndelay                          = 1,
@@ -266,12 +266,6 @@ public:
 
   void evaluateHessian(ParticleSet& P, HessVector& grad_grad_psi) override;
 
-  void createResource(ResourceCollection& collection) const override;
-  void acquireResource(ResourceCollection& collection,
-                       const RefVectorWithLeader<WaveFunctionComponent>& wf_list) const override;
-  void releaseResource(ResourceCollection& collection,
-                       const RefVectorWithLeader<WaveFunctionComponent>& wf_list) const override;
-
   /** cloning function
    * @param tqp target particleset
    * @param spo spo set
@@ -279,7 +273,7 @@ public:
    * This interface is exposed only to SlaterDet and its derived classes
    * can overwrite to clone itself correctly.
    */
-  std::unique_ptr<DiracDeterminantBase> makeCopy(std::unique_ptr<SPOSet>&& spo) const override;
+  std::unique_ptr<DiracDeterminantBase> makeCopy(SPOSet& phi) const override;
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override;
 
