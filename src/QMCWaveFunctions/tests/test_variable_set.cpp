@@ -70,6 +70,9 @@ TEST_CASE("VariableSet one", "[optimize]")
   REQUIRE(vs.size_of_active() == 2);
   CHECK(vs.name(1) == "second");
   CHECK(vs2.findIndexOfFirstParam(vs) == 1);
+
+  VariableSet vs3;
+  CHECK(vs3.findIndexOfFirstParam(vs) == -1);
 }
 
 TEST_CASE("VariableSet output", "[optimize]")
