@@ -231,26 +231,21 @@ void QMCCostFunctionBase::reportParameters()
   if (!myComm->rank())
   {
     // Pretty print the wave function parameters.
-    app_log() << "Current wave function parameters:\n";
-    std::ostringstream oss;
-    OptVariables.print(oss, 0, true);
-    app_log() << std::endl;
-    app_log() << oss.str() << std::endl;
-    app_log() << std::endl;
+    *msg_stream << "  Updated wave function parameters:\n";
+    OptVariables.print(*msg_stream, 4 /* left padding spaces */, true);
+    *msg_stream << std::endl;
 
-    std::ostringstream vp_filename;
-    vp_filename << RootName << ".vp.h5";
+    std::string vp_fname(RootName + ".vp.h5");
+    *msg_stream << "  Updated wavefunction vp file " << vp_fname << std::endl;
     hdf_archive hout;
-    OptVariables.writeToHDF(vp_filename.str(), hout);
+    OptVariables.writeToHDF(vp_fname, hout);
 
     UniqueOptObjRefs opt_obj_refs = Psi.extractOptimizableObjectRefs();
     for (auto opt_obj : opt_obj_refs)
       opt_obj.get().writeVariationalParameters(hout);
 
     std::string newxml = RootName + ".opt.xml";
-    *msg_stream << "  <optVariables href=\"" << newxml << "\">" << std::endl;
-    OptVariables.print(*msg_stream);
-    *msg_stream << "  </optVariables>" << std::endl;
+    *msg_stream << "  Updated wavefunction xml file " << newxml << std::endl;
     updateXmlNodes();
     xmlSaveFormatFile(newxml.c_str(), m_doc_out, 1);
   }
