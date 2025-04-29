@@ -33,7 +33,7 @@ _Update the following with an [x] where the items apply. If you're unsure about 
 simply a reminder of what we are going to look for before merging your code._
 
 * * [ ] I have read the pull request guidance and develop docs
-* * [ ] This PR is up to date with current the current state of 'develop'
+* * [ ] This PR is up to date with the current state of 'develop'
 * * [ ] Code added or changed in the PR has been clang-formatted
 * * [ ] This PR adds tests to cover any new code, or to catch a bug that is being fixed
 * * [ ] Documentation has been added (if appropriate)
