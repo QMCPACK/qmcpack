@@ -28,7 +28,6 @@
 
 //#define QMCCOSTFUNCTION_DEBUG
 
-
 namespace qmcplusplus
 {
 QMCCostFunctionBase::QMCCostFunctionBase(ParticleSet& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm)
@@ -131,7 +130,7 @@ QMCCostFunctionBase::Return_rt QMCCostFunctionBase::Cost(bool needGrad)
   return computedCost();
 }
 
-QMCCostFunctionBase::Return_rt QMCCostFunctionBase::fillHamVec(std::vector<Return_rt>& ham) 
+QMCCostFunctionBase::Return_rt QMCCostFunctionBase::fillHamVec(std::vector<Return_rt>& ham)
 {
   throw std::runtime_error("Need to implement fillHamVec");
 }
@@ -231,19 +230,22 @@ void QMCCostFunctionBase::reportParameters()
   resetPsi(true);
   if (!myComm->rank())
   {
-    std::ostringstream vp_filename;
-    vp_filename << RootName << ".vp.h5";
+    // Pretty print the wave function parameters.
+    *msg_stream << "  Updated wave function parameters:\n";
+    OptVariables.print(*msg_stream, 4 /* left padding spaces */, true);
+    *msg_stream << std::endl;
+
+    std::string vp_fname(RootName + ".vp.h5");
+    *msg_stream << "  Updated wavefunction vp file " << vp_fname << std::endl;
     hdf_archive hout;
-    OptVariables.writeToHDF(vp_filename.str(), hout);
+    OptVariables.writeToHDF(vp_fname, hout);
 
     UniqueOptObjRefs opt_obj_refs = Psi.extractOptimizableObjectRefs();
     for (auto opt_obj : opt_obj_refs)
       opt_obj.get().writeVariationalParameters(hout);
 
     std::string newxml = RootName + ".opt.xml";
-    *msg_stream << "  <optVariables href=\"" << newxml << "\">" << std::endl;
-    OptVariables.print(*msg_stream);
-    *msg_stream << "  </optVariables>" << std::endl;
+    *msg_stream << "  Updated wavefunction xml file " << newxml << std::endl;
     updateXmlNodes();
     xmlSaveFormatFile(newxml.c_str(), m_doc_out, 1);
   }
@@ -364,7 +366,7 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
 
   // app_log() << "  QMCCostFunctionBase::put " << std::endl;
   // m_param.get(app_log());
-  Write2OneXml     = (writeXmlPerStep == "no");
+  Write2OneXml = (writeXmlPerStep == "no");
 
   // parse "cost"
   std::vector<xmlNodePtr> cset;
