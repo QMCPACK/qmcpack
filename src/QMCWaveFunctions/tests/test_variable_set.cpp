@@ -41,8 +41,8 @@ TEST_CASE("VariableSet one", "[optimize]")
 
   REQUIRE(vs.is_optimizable() == true);
   REQUIRE(vs.size_of_active() == 1);
-  REQUIRE(vs.getIndex("first") == 0);
-  REQUIRE(vs.name(0) == "first");
+  CHECK(vs.getIndex("first") == 0);
+  CHECK(vs.name(0) == "first");
   double first_val_real = 1.123456789;
   CHECK(vs[0] == Approx(first_val_real));
 
@@ -61,6 +61,15 @@ TEST_CASE("VariableSet one", "[optimize]")
 
 
   REQUIRE(o2.str() == formatted_output);
+
+  VariableSet vs2;
+  VariableSet::real_type second_val(2.23);
+  vs2.insert("second", second_val);
+  vs.insertFrom(vs2);
+  vs.resetIndex();
+  REQUIRE(vs.size_of_active() == 2);
+  CHECK(vs.name(1) == "second");
+  CHECK(vs2.findIndexOfFirstParam(vs) == 1);
 }
 
 TEST_CASE("VariableSet output", "[optimize]")

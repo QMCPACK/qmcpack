@@ -223,6 +223,11 @@ public:
    */
   void getIndex(const VariableSet& selected);
 
+  /** find the index of the first parameter of *this set in the selection
+   * return -1 if not found.
+   */
+  int findIndexOfFirstParam(const VariableSet& selected) const;
+
   /** set default Indices, namely all the variables are active
    */
   void setIndexDefault();
