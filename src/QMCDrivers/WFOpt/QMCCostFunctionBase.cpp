@@ -28,7 +28,6 @@
 
 //#define QMCCOSTFUNCTION_DEBUG
 
-
 namespace qmcplusplus
 {
 QMCCostFunctionBase::QMCCostFunctionBase(ParticleSet& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm)
@@ -131,7 +130,7 @@ QMCCostFunctionBase::Return_rt QMCCostFunctionBase::Cost(bool needGrad)
   return computedCost();
 }
 
-QMCCostFunctionBase::Return_rt QMCCostFunctionBase::fillHamVec(std::vector<Return_rt>& ham) 
+QMCCostFunctionBase::Return_rt QMCCostFunctionBase::fillHamVec(std::vector<Return_rt>& ham)
 {
   throw std::runtime_error("Need to implement fillHamVec");
 }
@@ -231,6 +230,14 @@ void QMCCostFunctionBase::reportParameters()
   resetPsi(true);
   if (!myComm->rank())
   {
+    // Pretty print the wave function parameters.
+    app_log() << "Current wave function parameters:\n";
+    std::ostringstream oss;
+    OptVariables.print(oss, 0, true);
+    app_log() << std::endl;
+    app_log() << oss.str() << std::endl;
+    app_log() << std::endl;
+
     std::ostringstream vp_filename;
     vp_filename << RootName << ".vp.h5";
     hdf_archive hout;
@@ -364,7 +371,7 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
 
   // app_log() << "  QMCCostFunctionBase::put " << std::endl;
   // m_param.get(app_log());
-  Write2OneXml     = (writeXmlPerStep == "no");
+  Write2OneXml = (writeXmlPerStep == "no");
 
   // parse "cost"
   std::vector<xmlNodePtr> cset;

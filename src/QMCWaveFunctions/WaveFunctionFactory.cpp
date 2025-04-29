@@ -165,6 +165,12 @@ std::unique_ptr<TrialWaveFunction> WaveFunctionFactory::buildTWF(xmlNodePtr cur,
   }
 
   targetPsi->resetParameters(dummy);
+  app_log() << "Current wave function parameters:\n";
+  std::ostringstream oss;
+  dummy.print(oss, 0, true);
+  app_log() << std::endl;
+  app_log() << oss.str() << std::endl;
+  app_log() << std::endl;
   targetPsi->storeSPOMap(sposet_builder_factory.exportSPOSets());
   return targetPsi;
 }
