@@ -50,26 +50,6 @@ void VariableSet::insertFrom(const VariableSet& input)
   num_active_vars = input.num_active_vars;
 }
 
-void VariableSet::removeInactive()
-{
-  std::vector<int> valid(Index);
-  std::vector<pair_type> acopy(NameAndValue);
-  std::vector<index_pair_type> ccopy(ParameterType);
-  num_active_vars = 0;
-  Index.clear();
-  NameAndValue.clear();
-  ParameterType.clear();
-  for (int i = 0; i < valid.size(); ++i)
-  {
-    if (valid[i] > -1)
-    {
-      Index.push_back(num_active_vars++);
-      NameAndValue.push_back(acopy[i]);
-      ParameterType.push_back(ccopy[i]);
-    }
-  }
-}
-
 void VariableSet::resetIndex()
 {
   num_active_vars = 0;
@@ -88,6 +68,14 @@ void VariableSet::getIndex(const VariableSet& selected)
     if (Index[i] >= 0)
       num_active_vars++;
   }
+}
+
+/// find the index of the first parameter of *this set in the selection
+int VariableSet::findIndexOfFirstParam(const VariableSet& selected) const
+{
+  if(NameAndValue.size())
+    return selected.getIndex(NameAndValue[0].first);
+  return -1;
 }
 
 int VariableSet::getIndex(const std::string& vname) const
