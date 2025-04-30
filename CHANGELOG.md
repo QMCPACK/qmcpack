@@ -2,7 +2,7 @@
 
 Notable changes to QMCPACK are documented in this file.
 
-## [4.1.0] - 20250-04-30
+## [4.1.0] - 2025-04-30
 
 This release is recommended for all users and includes improved support for calculating forces, better GPU support, updated build
 recipes and documentation for many machines, and a broad range of other useful improvements.
