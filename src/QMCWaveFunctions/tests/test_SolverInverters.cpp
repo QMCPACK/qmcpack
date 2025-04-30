@@ -15,7 +15,7 @@
 #include "Configuration.h"
 #include "Common/Queue.hpp"
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
-#include "QMCWaveFunctions/Fermion/AccelEngine.hpp"
+#include "QMCWaveFunctions/Fermion/InverterAccel.hpp"
 #include "checkMatrix.hpp"
 #include "createTestMatrix.h"
 
@@ -26,15 +26,12 @@ template<PlatformKind PL, typename T>
 using DeviceAllocator = typename compute::MemManage<PL>::template DeviceAllocator<T>;
 
 template<PlatformKind PL, typename T, typename FP_T>
-using SolverInverter = typename AccelEngine<PL, T, FP_T>::Inverter;
-
-template<PlatformKind PL, typename T, typename FP_T>
 void test_solver(const size_t N)
 {
   using Value    = T;
   using LogValue = std::complex<double>;
 
-  SolverInverter<PL, T, FP_T> solver;
+  typename InverterAccel<PL, FP_T>::Inverter solver;
   compute::Queue<PL> queue;
 
   Matrix<Value> m(N, N);

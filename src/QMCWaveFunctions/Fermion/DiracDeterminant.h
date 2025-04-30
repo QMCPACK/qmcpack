@@ -25,10 +25,34 @@
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
 #include <PlatformSelector.hpp>
 #include "DiracMatrix.h"
-#include "AccelEngine.hpp"
+#include "Fermion/DelayedUpdate.h"
+#if defined(ENABLE_CUDA) || defined(ENABLE_SYCL)
+#include "InverterAccel.hpp"
+#include "Fermion/DelayedUpdateAccel.h"
+#endif
 
 namespace qmcplusplus
 {
+template<PlatformKind P, typename T, typename FP_T>
+struct AccelEngine;
+
+template<typename T, typename FP_T>
+struct AccelEngine<PlatformKind::CPU, T, FP_T>
+{
+  static constexpr bool inverter_supported = false;
+  DelayedUpdate<T> update_eng_;
+};
+
+#if defined(ENABLE_CUDA) || defined(ENABLE_SYCL)
+template<PlatformKind P, typename T, typename FP_T>
+struct AccelEngine
+{
+  static constexpr bool inverter_supported = true;
+  DelayedUpdateAccel<P, T> update_eng_;
+  typename InverterAccel<P, FP_T>::Inverter inverter_;
+};
+#endif
+
 /** implements delayed update on CPU using BLAS
  * @tparam VT base precision value type of the delayed update engine
  * @tparam FPVT high precision value type for matrix inversion, FPVT >= VT
