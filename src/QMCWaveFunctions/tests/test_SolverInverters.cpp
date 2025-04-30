@@ -31,7 +31,7 @@ using SolverInverter = typename AccelEngine<PL, T, FP_T>::Inverter;
 template<PlatformKind PL, typename T, typename FP_T>
 void test_solver(const size_t N)
 {
-  using Value = T;
+  using Value    = T;
   using LogValue = std::complex<double>;
 
   SolverInverter<PL, T, FP_T> solver;
