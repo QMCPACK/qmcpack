@@ -27,7 +27,7 @@
 #include "DiracMatrix.h"
 #include "QMCWaveFunctions/Fermion/DelayedUpdate.h"
 #if defined(ENABLE_CUDA) || defined(ENABLE_SYCL)
-#include "QMCWaveFunctions/Fermion/DelayedUpdateCUDA.h"
+#include "QMCWaveFunctions/Fermion/DelayedUpdateAccel.h"
 #if defined(ENABLE_CUDA)
 #if defined(QMC_CUDA2HIP)
 #include "rocSolverInverter.hpp"
@@ -57,7 +57,7 @@ template<typename T, typename FP_T>
 struct AccelEngine<PlatformKind::CUDA, T, FP_T>
 {
   static constexpr bool inverter_supported = true;
-  DelayedUpdateCUDA<PlatformKind::CUDA, T> update_eng_;
+  DelayedUpdateAccel<PlatformKind::CUDA, T> update_eng_;
 #if defined(QMC_CUDA2HIP)
   rocSolverInverter<FP_T> inverter_;
 #else
@@ -71,7 +71,7 @@ template<typename T, typename FP_T>
 struct AccelEngine<PlatformKind::SYCL, T, FP_T>
 {
   static constexpr bool inverter_supported = true;
-  DelayedUpdateCUDA<PlatformKind::SYCL, T> update_eng_;
+  DelayedUpdateAccel<PlatformKind::SYCL, T> update_eng_;
   syclSolverInverter<FP_T> inverter_;
 };
 #endif
