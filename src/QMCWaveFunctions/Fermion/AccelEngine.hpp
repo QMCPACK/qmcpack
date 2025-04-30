@@ -47,10 +47,11 @@ struct AccelEngine<PlatformKind::CUDA, T, FP_T>
   static constexpr bool inverter_supported = true;
   DelayedUpdateAccel<PlatformKind::CUDA, T> update_eng_;
 #if defined(QMC_CUDA2HIP)
-  rocSolverInverter<FP_T> inverter_;
+  using Inverter = rocSolverInverter<FP_T>;
 #else
-  cuSolverInverter<FP_T> inverter_;
+  using Inverter = cuSolverInverter<FP_T>;
 #endif
+  Inverter inverter_;
 };
 #endif
 
@@ -60,7 +61,8 @@ struct AccelEngine<PlatformKind::SYCL, T, FP_T>
 {
   static constexpr bool inverter_supported = true;
   DelayedUpdateAccel<PlatformKind::SYCL, T> update_eng_;
-  syclSolverInverter<FP_T> inverter_;
+  using Inverter = syclSolverInverter<FP_T>;
+  Inverter inverter_;
 };
 #endif
 
