@@ -15,33 +15,28 @@
 #include "Configuration.h"
 #include "Common/Queue.hpp"
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
-#include "QMCWaveFunctions/Fermion/cuSolverInverter.hpp"
+#include "QMCWaveFunctions/Fermion/InverterAccel.hpp"
 #include "checkMatrix.hpp"
 #include "createTestMatrix.h"
 
 namespace qmcplusplus
 {
 
-using LogValue = std::complex<double>;
+template<PlatformKind PL, typename T>
+using DeviceAllocator = typename compute::MemManage<PL>::template DeviceAllocator<T>;
 
-TEMPLATE_TEST_CASE("cuSolverInverter", "[wavefunction][fermion]", double, float)
+template<PlatformKind PL, typename T, typename FP_T>
+void test_solver(const size_t N)
 {
-  // TestType is defined by Catch. It is the type in each instantiation of the templated test case.
-#ifdef QMC_COMPLEX
-  using FullPrecValue = std::complex<double>;
-  using Value         = std::complex<TestType>;
-#else
-  using FullPrecValue = double;
-  using Value         = TestType;
-#endif
-  cuSolverInverter<FullPrecValue> solver;
-  compute::Queue<PlatformKind::CUDA> queue;
+  using Value    = T;
+  using LogValue = std::complex<double>;
 
-  const int N = 3;
+  typename InverterAccel<PL, FP_T>::Inverter solver;
+  compute::Queue<PL> queue;
 
   Matrix<Value> m(N, N);
   Matrix<Value> m_invT(N, N);
-  Matrix<Value, CUDAAllocator<Value>> m_invGPU(N, N);
+  Matrix<Value, DeviceAllocator<PL, Value>> m_invGPU(N, N);
   LogValue log_value;
 
   SECTION("identity")
@@ -76,6 +71,24 @@ TEMPLATE_TEST_CASE("cuSolverInverter", "[wavefunction][fermion]", double, float)
     auto check_matrix_result = checkMatrix(m_invT, b);
     CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
   }
+}
+
+TEMPLATE_TEST_CASE("cuSolverInverter", "[wavefunction][fermion]", double, float)
+{
+  // TestType is defined by Catch. It is the type in each instantiation of the templated test case.
+#ifdef QMC_COMPLEX
+  using FullPrecValue = std::complex<double>;
+  using Value         = std::complex<TestType>;
+#else
+  using FullPrecValue = double;
+  using Value         = TestType;
+#endif
+#if defined(ENABLE_CUDA)
+  test_solver<PlatformKind::CUDA, Value, FullPrecValue>(3);
+#endif
+#if defined(ENABLE_SYCL)
+  test_solver<PlatformKind::SYCL, Value, FullPrecValue>(3);
+#endif
 }
 
 } // namespace qmcplusplus
