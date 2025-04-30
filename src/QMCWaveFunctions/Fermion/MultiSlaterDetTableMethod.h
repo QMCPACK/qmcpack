@@ -19,7 +19,6 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/Fermion/MultiDiracDeterminant.h"
 #include "Utilities/TimerManager.h"
-#include "Platforms/PinnedAllocator.h"
 #include "OMPTarget/OffloadAlignedAllocators.hpp"
 #include "ResourceCollection.h"
 
@@ -107,6 +106,14 @@ public:
   //builds orbital rotation parameters using MultiSlater member variables
   void buildOptVariables();
 
+  inline const MultiDiracDeterminant& getDet(int i) const { return *Dets[i]; }
+  // number of MultiDiracDet sets in this MultiSlaterDet
+  inline int getDetSize() const { return Dets.size(); };
+  inline int getNumSlaterDets() const { return C->size(); };
+
+  const std::vector<ValueType>& get_C() const { return *C; }
+  const std::vector<std::vector<size_t>>& get_C2node() const { return *C2node; }
+
   LogValue evaluate_vgl_impl(const ParticleSet& P,
                              ParticleSet::ParticleGradient& g_tmp,
                              ParticleSet::ParticleLaplacian& l_tmp);
@@ -139,11 +146,30 @@ public:
                    int iat,
                    std::vector<GradType>& grad_now) const override;
 
+  void mw_evalGradWithSpin(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                           const RefVectorWithLeader<ParticleSet>& p_list,
+                           int iat,
+                           std::vector<GradType>& grad_now,
+                           std::vector<ComplexType>& spingrad_now) const override
+  {
+    mw_evalGradWithSpin_serialized(wfc_list, p_list, iat, grad_now, spingrad_now);
+  }
+
   void mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& WFC_list,
                     const RefVectorWithLeader<ParticleSet>& P_list,
                     int iat,
                     std::vector<PsiValue>& ratios,
                     std::vector<GradType>& grad_new) const override;
+
+  void mw_ratioGradWithSpin(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                            const RefVectorWithLeader<ParticleSet>& p_list,
+                            int iat,
+                            std::vector<PsiValue>& ratios,
+                            std::vector<GradType>& grad_new,
+                            std::vector<ComplexType>& spingrad_new) const override
+  {
+    mw_ratioGradWithSpin_serialized(wfc_list, p_list, iat, ratios, grad_new, spingrad_new);
+  }
 
   void mw_calcRatio(const RefVectorWithLeader<WaveFunctionComponent>& WFC_list,
                     const RefVectorWithLeader<ParticleSet>& P_list,
@@ -157,8 +183,17 @@ public:
 
   void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios) override;
 
-  void evaluateSpinorRatios(const VirtualParticleSet& VP, const std::pair<ValueVector, ValueVector>& spinor_multiplier, std::vector<ValueType>& ratios) override;
+  void evaluateSpinorRatios(const VirtualParticleSet& VP,
+                            const std::pair<ValueVector, ValueVector>& spinor_multiplier,
+                            std::vector<ValueType>& ratios) override;
 
+  inline void mw_evaluateSpinorRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                      const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                                      const RefVector<std::pair<ValueVector, ValueVector>>& spinor_multiplier_list,
+                                      std::vector<std::vector<ValueType>>& ratios) const override
+  {
+    mw_evaluateSpinorRatios_serialized(wfc_list, vp_list, spinor_multiplier_list, ratios);
+  }
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override
   {
@@ -198,6 +233,8 @@ public:
                            const opt_variables_type& optvars,
                            std::vector<ValueType>& ratios,
                            Matrix<ValueType>& dratios) override;
+
+  void registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const override;
 
   /** initialize a few objects and states by the builder
    * YL: it should be part of the constructor. It cannot be added to the constructor

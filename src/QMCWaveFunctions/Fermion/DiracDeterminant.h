@@ -23,17 +23,66 @@
 #define QMCPLUSPLUS_DIRACDETERMINANT_H
 
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
+#include <PlatformSelector.hpp>
+#include "DiracMatrix.h"
 #include "QMCWaveFunctions/Fermion/DelayedUpdate.h"
+#if defined(ENABLE_CUDA) || defined(ENABLE_SYCL)
+#include "QMCWaveFunctions/Fermion/DelayedUpdateAccel.h"
 #if defined(ENABLE_CUDA)
-#include "QMCWaveFunctions/Fermion/DelayedUpdateCUDA.h"
+#if defined(QMC_CUDA2HIP)
+#include "rocSolverInverter.hpp"
+#else
+#include "cuSolverInverter.hpp"
+#endif
 #endif
 #if defined(ENABLE_SYCL)
-#include "QMCWaveFunctions/Fermion/DelayedUpdateSYCL.h"
+#include "syclSolverInverter.hpp"
+#endif
 #endif
 
 namespace qmcplusplus
 {
-template<typename DU_TYPE = DelayedUpdate<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>
+template<PlatformKind P, typename T, typename FP_T>
+struct AccelEngine;
+
+template<typename T, typename FP_T>
+struct AccelEngine<PlatformKind::CPU, T, FP_T>
+{
+  static constexpr bool inverter_supported = false;
+  DelayedUpdate<T> update_eng_;
+};
+
+#if defined(ENABLE_CUDA)
+template<typename T, typename FP_T>
+struct AccelEngine<PlatformKind::CUDA, T, FP_T>
+{
+  static constexpr bool inverter_supported = true;
+  DelayedUpdateAccel<PlatformKind::CUDA, T> update_eng_;
+#if defined(QMC_CUDA2HIP)
+  rocSolverInverter<FP_T> inverter_;
+#else
+  cuSolverInverter<FP_T> inverter_;
+#endif
+};
+#endif
+
+#if defined(ENABLE_SYCL)
+template<typename T, typename FP_T>
+struct AccelEngine<PlatformKind::SYCL, T, FP_T>
+{
+  static constexpr bool inverter_supported = true;
+  DelayedUpdateAccel<PlatformKind::SYCL, T> update_eng_;
+  syclSolverInverter<FP_T> inverter_;
+};
+#endif
+
+/** implements delayed update on CPU using BLAS
+ * @tparam VT base precision value type of the delayed update engine
+ * @tparam FPVT high precision value type for matrix inversion, FPVT >= VT
+ */
+template<PlatformKind PL = PlatformKind::CPU,
+         typename VT     = QMCTraits::ValueType,
+         typename FPVT   = QMCTraits::QTFull::ValueType>
 class DiracDeterminant : public DiracDeterminantBase
 {
 protected:
@@ -59,11 +108,13 @@ public:
    *@param last index of last particle
    *@param ndelay delayed update rank
    */
-  DiracDeterminant(std::unique_ptr<SPOSet>&& spos,
+  DiracDeterminant(SPOSet& phi,
                    int first,
                    int last,
                    int ndelay                          = 1,
                    DetMatInvertor matrix_inverter_kind = DetMatInvertor::ACCEL);
+
+  ~DiracDeterminant() override;
 
   // copy constructor and assign operator disabled
   DiracDeterminant(const DiracDeterminant& s)            = delete;
@@ -135,9 +186,28 @@ public:
                     std::vector<PsiValue>& ratios,
                     std::vector<GradType>& grad_new) const override;
 
+  void mw_ratioGradWithSpin(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                            const RefVectorWithLeader<ParticleSet>& p_list,
+                            int iat,
+                            std::vector<PsiValue>& ratios,
+                            std::vector<GradType>& grad_new,
+                            std::vector<ComplexType>& spingrad_new) const override
+  {
+    mw_ratioGradWithSpin_serialized(wfc_list, p_list, iat, ratios, grad_new, spingrad_new);
+  }
+
   GradType evalGrad(ParticleSet& P, int iat) override;
 
   GradType evalGradWithSpin(ParticleSet& P, int iat, ComplexType& spingrad) final;
+
+  void mw_evalGradWithSpin(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                           const RefVectorWithLeader<ParticleSet>& p_list,
+                           int iat,
+                           std::vector<GradType>& grad_now,
+                           std::vector<ComplexType>& spingrad_now) const override
+  {
+    mw_evalGradWithSpin_serialized(wfc_list, p_list, iat, grad_now, spingrad_now);
+  }
 
   GradType evalGradSource(ParticleSet& P, ParticleSet& source, int iat) override;
 
@@ -196,12 +266,6 @@ public:
 
   void evaluateHessian(ParticleSet& P, HessVector& grad_grad_psi) override;
 
-  void createResource(ResourceCollection& collection) const override;
-  void acquireResource(ResourceCollection& collection,
-                       const RefVectorWithLeader<WaveFunctionComponent>& wf_list) const override;
-  void releaseResource(ResourceCollection& collection,
-                       const RefVectorWithLeader<WaveFunctionComponent>& wf_list) const override;
-
   /** cloning function
    * @param tqp target particleset
    * @param spo spo set
@@ -209,7 +273,7 @@ public:
    * This interface is exposed only to SlaterDet and its derived classes
    * can overwrite to clone itself correctly.
    */
-  std::unique_ptr<DiracDeterminantBase> makeCopy(std::unique_ptr<SPOSet>&& spo) const override;
+  std::unique_ptr<DiracDeterminantBase> makeCopy(SPOSet& phi) const override;
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override;
 
@@ -249,9 +313,6 @@ public:
   GradVector dpsiV;
   ValueVector d2psiV;
 
-  /// delayed update engine
-  DU_TYPE updateEng;
-
   /// the row of up-to-date inverse matrix
   ValueVector invRow;
 
@@ -267,6 +328,9 @@ public:
   ValueType* LastAddressOfdV;
 
 private:
+  /// accelerator (delayed update + solver) engine
+  AccelEngine<PL, VT, FPVT> accel_engine_;
+
   /// slow but doesn't consume device memory
   DiracMatrix<QMCTraits::QTFull::ValueType> host_inverter_;
 
@@ -285,10 +349,10 @@ private:
 
 extern template class DiracDeterminant<>;
 #if defined(ENABLE_CUDA)
-extern template class DiracDeterminant<DelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
+extern template class DiracDeterminant<PlatformKind::CUDA, QMCTraits::ValueType, QMCTraits::QTFull::ValueType>;
 #endif
 #if defined(ENABLE_SYCL)
-extern template class DiracDeterminant<DelayedUpdateSYCL<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
+extern template class DiracDeterminant<PlatformKind::SYCL, QMCTraits::ValueType, QMCTraits::QTFull::ValueType>;
 #endif
 
 } // namespace qmcplusplus

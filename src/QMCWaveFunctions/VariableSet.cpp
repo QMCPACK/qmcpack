@@ -30,7 +30,6 @@ void VariableSet::clear()
   num_active_vars = 0;
   Index.clear();
   NameAndValue.clear();
-  Recompute.clear();
   ParameterType.clear();
 }
 
@@ -44,114 +43,11 @@ void VariableSet::insertFrom(const VariableSet& input)
       Index.push_back(input.Index[i]);
       NameAndValue.push_back(input.NameAndValue[i]);
       ParameterType.push_back(input.ParameterType[i]);
-      Recompute.push_back(input.Recompute[i]);
     }
     else
       (*loc).second = input.NameAndValue[i].second;
   }
   num_active_vars = input.num_active_vars;
-}
-
-void VariableSet::insertFromSum(const VariableSet& input_1, const VariableSet& input_2)
-{
-  real_type sum_val;
-  std::string vname;
-
-  // Check that objects to be summed together have the same number of active
-  // variables.
-  if (input_1.num_active_vars != input_2.num_active_vars)
-    throw std::runtime_error("Inconsistent number of parameters in two provided "
-                             "variable sets.");
-
-  for (int i = 0; i < input_1.size(); ++i)
-  {
-    // Check that each of the equivalent variables in both VariableSet objects
-    // have the same name - otherwise we certainly shouldn't be adding them.
-    if (input_1.NameAndValue[i].first != input_2.NameAndValue[i].first)
-      throw std::runtime_error("Inconsistent parameters exist in the two provided "
-                               "variable sets.");
-
-    sum_val = input_1.NameAndValue[i].second + input_2.NameAndValue[i].second;
-
-    iterator loc = find(input_1.name(i));
-    if (loc == NameAndValue.end())
-    {
-      Index.push_back(input_1.Index[i]);
-      ParameterType.push_back(input_1.ParameterType[i]);
-      Recompute.push_back(input_1.Recompute[i]);
-
-      // We can reuse the above values, which aren't summed between the
-      // objects, but the parameter values themselves need to use the summed
-      // values.
-      vname = input_1.NameAndValue[i].first;
-      NameAndValue.push_back(pair_type(vname, sum_val));
-    }
-    else
-      (*loc).second = sum_val;
-  }
-  num_active_vars = input_1.num_active_vars;
-}
-
-void VariableSet::insertFromDiff(const VariableSet& input_1, const VariableSet& input_2)
-{
-  real_type diff_val;
-  std::string vname;
-
-  // Check that objects to be subtracted have the same number of active
-  // variables.
-  if (input_1.num_active_vars != input_2.num_active_vars)
-    throw std::runtime_error("Inconsistent number of parameters in two provided "
-                             "variable sets.");
-
-  for (int i = 0; i < input_1.size(); ++i)
-  {
-    // Check that each of the equivalent variables in both VariableSet objects
-    // have the same name - otherwise we certainly shouldn't be subtracting them.
-    if (input_1.NameAndValue[i].first != input_2.NameAndValue[i].first)
-      throw std::runtime_error("Inconsistent parameters exist in the two provided "
-                               "variable sets.");
-
-    diff_val = input_1.NameAndValue[i].second - input_2.NameAndValue[i].second;
-
-    iterator loc = find(input_1.name(i));
-    if (loc == NameAndValue.end())
-    {
-      Index.push_back(input_1.Index[i]);
-      ParameterType.push_back(input_1.ParameterType[i]);
-      Recompute.push_back(input_1.Recompute[i]);
-
-      // We can reuse the above values, which aren't subtracted between the
-      // objects, but the parameter values themselves need to use the
-      // subtracted values.
-      vname = input_1.NameAndValue[i].first;
-      NameAndValue.push_back(pair_type(vname, diff_val));
-    }
-    else
-      (*loc).second = diff_val;
-  }
-  num_active_vars = input_1.num_active_vars;
-}
-
-void VariableSet::removeInactive()
-{
-  std::vector<int> valid(Index);
-  std::vector<pair_type> acopy(NameAndValue);
-  std::vector<index_pair_type> bcopy(Recompute), ccopy(ParameterType);
-  num_active_vars = 0;
-  Index.clear();
-  NameAndValue.clear();
-  Recompute.clear();
-  ParameterType.clear();
-  for (int i = 0; i < valid.size(); ++i)
-  {
-    if (valid[i] > -1)
-    {
-      Index.push_back(num_active_vars++);
-      NameAndValue.push_back(acopy[i]);
-      Recompute.push_back(bcopy[i]);
-      ParameterType.push_back(ccopy[i]);
-    }
-  }
 }
 
 void VariableSet::resetIndex()
@@ -172,6 +68,14 @@ void VariableSet::getIndex(const VariableSet& selected)
     if (Index[i] >= 0)
       num_active_vars++;
   }
+}
+
+/// find the index of the first parameter of *this set in the selection
+int VariableSet::findIndexOfFirstParam(const VariableSet& selected) const
+{
+  if(NameAndValue.size())
+    return selected.getIndex(NameAndValue[0].first);
+  return -1;
 }
 
 int VariableSet::getIndex(const std::string& vname) const
@@ -202,27 +106,23 @@ void VariableSet::print(std::ostream& os, int leftPadSpaces, bool printHeader) c
           return e1.first.length() < e2.first.length();
         })->first.length();
 
-  int max_value_len     = 28; // 6 for the precision and 7 for minus sign, leading value, period, and exponent.
-  int max_type_len      = 1;
-  int max_recompute_len = 1;
-  int max_use_len       = 3;
-  int max_index_len     = 1;
+  int max_value_len = 28; // 6 for the precision and 7 for minus sign, leading value, period, and exponent.
+  int max_type_len  = 1;
+  int max_use_len   = 3;
+  int max_index_len = 1;
   if (printHeader)
   {
-    max_name_len      = std::max(max_name_len, 4); // size of "Name" header
-    max_type_len      = 4;
-    max_recompute_len = 9;
-    max_index_len     = 5;
+    max_name_len  = std::max(max_name_len, 4); // size of "Name" header
+    max_type_len  = 4;
+    max_index_len = 5;
     os << pad_str << setw(max_name_len) << "Name"
        << " " << setw(max_value_len) << "Value"
        << " " << setw(max_type_len) << "Type"
-       << " " << setw(max_recompute_len) << "Recompute"
        << " " << setw(max_use_len) << "Use"
        << " " << setw(max_index_len) << "Index" << std::endl;
     os << pad_str << std::setfill('-') << setw(max_name_len) << ""
        << " " << setw(max_value_len) << ""
        << " " << setw(max_type_len) << ""
-       << " " << setw(max_recompute_len) << ""
        << " " << setw(max_use_len) << ""
        << " " << setw(max_index_len) << "" << std::endl;
     os << std::setfill(' ');
@@ -232,9 +132,7 @@ void VariableSet::print(std::ostream& os, int leftPadSpaces, bool printHeader) c
   {
     os << pad_str << setw(max_name_len) << NameAndValue[i].first << " " << std::setprecision(6) << std::scientific
        << setw(max_value_len) << NameAndValue[i].second << " " << setw(max_type_len) << ParameterType[i].second << " "
-       << setw(max_recompute_len) << Recompute[i].second << " ";
-
-    os << std::defaultfloat;
+       << std::defaultfloat;
 
     if (Index[i] < 0)
       os << setw(max_use_len) << "OFF" << std::endl;

@@ -842,8 +842,7 @@ public:
       int kk = myVars.where(k);
       if (kk < 0)
         continue;
-      if (optvars.recompute(kk))
-        recalculate = true;
+      recalculate = true;
     }
 
     if (recalculate)
@@ -959,8 +958,7 @@ public:
       int kk = myVars.where(k);
       if (kk < 0)
         continue;
-      if (optvars.recompute(kk))
-        recalculate = true;
+      recalculate = true;
     }
 
     if (recalculate)
@@ -1047,8 +1045,7 @@ public:
       int kk = myVars.where(k);
       if (kk < 0)
         continue;
-      if (optvars.recompute(kk))
-        recalculate = true;
+      recalculate = true;
     }
 
     if (recalculate)
@@ -1121,45 +1118,50 @@ public:
 
   inline GradType evalGradSource(ParticleSet& P, ParticleSet& source, int isrc) override
   {
-    ParticleSet::ParticleGradient tempG;
-    ParticleSet::ParticleLaplacian tempL;
-    tempG.resize(P.getTotalNum());
-    tempL.resize(P.getTotalNum());
-    QTFull::RealType delta = 0.00001;
-    QTFull::RealType c1    = 1.0 / delta / 2.0;
-    QTFull::RealType c2    = 1.0 / delta / delta;
+    constexpr valT czero(0);
+    constexpr valT cone(1);
+    constexpr valT cminus(-1);
+    constexpr valT ctwo(2);
+    constexpr valT lapfac = OHMMS_DIM - cone;
 
-    GradType g_return(0.0);
-    // GRAD TEST COMPUTATION
-    PosType rI = source.R[isrc];
-    for (int iondim = 0; iondim < 3; iondim++)
-    {
-      source.R[isrc][iondim] = rI[iondim] + delta;
-      source.update();
-      P.update();
+    const auto& ee_table  = P.getDistTableAA(ee_Table_ID_);
+    const auto& ee_dists  = ee_table.getDistances();
+    const auto& ee_displs = ee_table.getDisplacements();
 
-      LogValue log_p = evaluateLog(P, tempG, tempL);
+    TinyVector<RealType, 3> u3grad;
+    Tensor<RealType, 3> u3hess;
+    const int iat = isrc;
 
-      source.R[isrc][iondim] = rI[iondim] - delta;
-      source.update();
-      P.update();
-      LogValue log_m = evaluateLog(P, tempG, tempL);
+    posT ion_deriv(0);
+    const int ig = Ions.GroupID[iat];
+    for (int jg = 0; jg < eGroups; ++jg)
+      for (int jind = 0; jind < elecs_inside(jg, iat).size(); jind++)
+      {
+        const int jel       = elecs_inside(jg, iat)[jind];
+        const valT r_Ij     = elecs_inside_dist(jg, iat)[jind];
+        const posT disp_Ij  = cminus * elecs_inside_displ(jg, iat)[jind];
+        const valT r_Ij_inv = cone / r_Ij;
 
-      QTFull::RealType log_p_r(0.0), log_m_r(0.0);
+        for (int kg = 0; kg < eGroups; ++kg)
+          for (int kind = 0; kind < elecs_inside(kg, iat).size(); kind++)
+          {
+            const FT& feeI(*F(ig, jg, kg));
+            const int kel = elecs_inside(kg, iat)[kind];
+            if (kel < jel)
+            {
+              const valT r_Ik     = elecs_inside_dist(kg, iat)[kind];
+              const posT disp_Ik  = cminus * elecs_inside_displ(kg, iat)[kind];
+              const valT r_Ik_inv = cone / r_Ik;
 
-      log_p_r = log_p.real();
-      log_m_r = log_m.real();
-      //symmetric finite difference formula for gradient.
-      g_return[iondim] = c1 * (log_p_r - log_m_r);
-
-      //reset everything to how it was.
-      source.R[isrc][iondim] = rI[iondim];
-    }
-    // this last one makes sure the distance tables and internal neighbourlist correspond to unperturbed source.
-    source.update();
-    P.update();
-    build_compact_list(P);
-    return g_return;
+              const valT r_jk     = ee_dists[jel][kel];
+              const posT disp_jk  = ee_displs[jel][kel];
+              const valT r_jk_inv = cone / r_jk;
+              feeI.evaluate(r_jk, r_Ij, r_Ik, u3grad, u3hess);
+              ion_deriv += u3grad[1] * disp_Ij * r_Ij_inv + u3grad[2] * disp_Ik * r_Ik_inv;
+            }
+          }
+      }
+    return ion_deriv;;
   }
 
   inline GradType evalGradSource(ParticleSet& P,
@@ -1168,55 +1170,106 @@ public:
                                  TinyVector<ParticleSet::ParticleGradient, OHMMS_DIM>& grad_grad,
                                  TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM>& lapl_grad) override
   {
-    ParticleSet::ParticleGradient Gp, Gm, dG;
-    ParticleSet::ParticleLaplacian Lp, Lm, dL;
-    Gp.resize(P.getTotalNum());
-    Gm.resize(P.getTotalNum());
-    dG.resize(P.getTotalNum());
-    Lp.resize(P.getTotalNum());
-    Lm.resize(P.getTotalNum());
-    dL.resize(P.getTotalNum());
+    constexpr valT czero(0);
+    constexpr valT cone(1);
+    constexpr valT cminus(-1);
+    constexpr valT ctwo(2);
+    constexpr valT lapfac = OHMMS_DIM - cone;
 
-    QTFull::RealType delta = 0.00001;
-    QTFull::RealType c1    = 1.0 / delta / 2.0;
-    QTFull::RealType c2    = 1.0 / delta / delta;
-    GradType g_return(0.0);
-    // GRAD TEST COMPUTATION
-    PosType rI = source.R[isrc];
-    for (int iondim = 0; iondim < 3; iondim++)
-    {
-      Lp                     = 0;
-      Gp                     = 0;
-      Lm                     = 0;
-      Gm                     = 0;
-      source.R[isrc][iondim] = rI[iondim] + delta;
-      source.update();
-      P.update();
+    const auto& ee_table  = P.getDistTableAA(ee_Table_ID_);
+    const auto& ee_dists  = ee_table.getDistances();
+    const auto& ee_displs = ee_table.getDisplacements();
 
-      LogValue log_p = evaluateLog(P, Gp, Lp);
+    ParticleSet::ParticleGradient G;
+    ParticleSet::ParticleLaplacian L;
+    G.resize(4);
+    L.resize(4);
 
-      source.R[isrc][iondim] = rI[iondim] - delta;
-      source.update();
-      P.update();
-      LogValue log_m = evaluateLog(P, Gm, Lm);
-      QTFull::RealType log_p_r(0.0), log_m_r(0.0);
+    TinyVector<RealType, 3> grad;
+    Tensor<RealType, 3> hess;
+    TinyVector<Tensor<RealType, 3>, 3> d3;
 
-      log_p_r = log_p.real();
-      log_m_r = log_m.real();
-      dG      = Gp - Gm;
-      dL      = Lp - Lm;
-      //symmetric finite difference formula for gradient.
-      g_return[iondim] = c1 * (log_p_r - log_m_r);
-      grad_grad[iondim] += c1 * dG;
-      lapl_grad[iondim] += c1 * dL;
-      //reset everything to how it was.
-      source.R[isrc][iondim] = rI[iondim];
-    }
-    // this last one makes sure the distance tables and internal neighbourlist correspond to unperturbed source.
-    source.update();
-    P.update();
-    build_compact_list(P);
-    return g_return;
+    TinyVector<RealType, 3> e1(1, 0, 0);
+    TinyVector<RealType, 3> e2(0, 1, 0);
+    TinyVector<RealType, 3> e3(0, 0, 1);
+
+    TinyVector<TinyVector<RealType, 3>, 3> identmat(e1, e2, e3);
+
+    const int iat = isrc;
+
+    posT ion_deriv(0);
+    const int ig = Ions.GroupID[iat];
+    for (int jg = 0; jg < eGroups; ++jg)
+      for (int jind = 0; jind < elecs_inside(jg, iat).size(); jind++)
+      {
+        const int jel           = elecs_inside(jg, iat)[jind];
+        const valT r_Ij         = elecs_inside_dist(jg, iat)[jind];
+        const posT disp_Ij      = cminus * elecs_inside_displ(jg, iat)[jind];
+        const valT r_Ij_inv     = cone / r_Ij;
+        const posT disp_Ij_unit = disp_Ij * r_Ij_inv;
+
+        for (int kg = 0; kg < eGroups; ++kg)
+          for (int kind = 0; kind < elecs_inside(kg, iat).size(); kind++)
+          {
+            const FT& feeI(*F(ig, jg, kg));
+            const int kel = elecs_inside(kg, iat)[kind];
+            if (kel < jel)
+            {
+              const valT r_Ik         = elecs_inside_dist(kg, iat)[kind];
+              const posT disp_Ik      = cminus * elecs_inside_displ(kg, iat)[kind];
+              const valT r_Ik_inv     = cone / r_Ik;
+              const posT disp_Ik_unit = disp_Ik * r_Ik_inv;
+
+              const valT r_jk         = ee_dists[jel][kel];
+              const posT disp_jk      = ee_displs[jel][kel];
+              const valT r_jk_inv     = cone / r_jk;
+              const posT disp_jk_unit = disp_jk * r_jk_inv;
+
+              const valT dot_ujk_uIj = dot(disp_jk_unit, disp_Ij_unit);
+              const valT dot_ujk_uIk = dot(disp_jk_unit, disp_Ik_unit);
+              grad                   = 0.0;
+              hess                   = 0.0;
+              d3                     = 0.0;
+              feeI.evaluate(r_jk, r_Ij, r_Ik, grad, hess, d3);
+              ion_deriv += grad[1] * disp_Ij * r_Ij_inv + grad[2] * disp_Ik * r_Ik_inv;
+
+              for (int idim = 0; idim < OHMMS_DIM; idim++)
+              {
+                const posT igrad_r_Ij_unit =
+                    -(identmat[idim] * r_Ij_inv - disp_Ij * disp_Ij[idim] * r_Ij_inv * r_Ij_inv * r_Ij_inv);
+                const posT igrad_r_Ik_unit =
+                    -(identmat[idim] * r_Ik_inv - disp_Ik * disp_Ik[idim] * r_Ik_inv * r_Ik_inv * r_Ik_inv);
+                const posT igrad_g0 = -(hess(0, 1) * disp_Ij_unit[idim] + hess(0, 2) * disp_Ik_unit[idim]);
+                const posT igrad_g1 = -(hess(1, 1) * disp_Ij_unit[idim] + hess(1, 2) * disp_Ik_unit[idim]);
+                const posT igrad_g2 = -(hess(1, 2) * disp_Ij_unit[idim] + hess(2, 2) * disp_Ik_unit[idim]);
+
+                const posT igrad_h00 =
+                    -(d3[0](0, 1) * disp_Ij[idim] * r_Ij_inv + d3[0](0, 2) * disp_Ik[idim] * r_Ik_inv);
+                const posT igrad_h11 =
+                    -(d3[1](1, 1) * disp_Ij[idim] * r_Ij_inv + d3[1](1, 2) * disp_Ik[idim] * r_Ik_inv);
+                const posT igrad_h22 =
+                    -(d3[1](2, 2) * disp_Ij[idim] * r_Ij_inv + d3[2](2, 2) * disp_Ik[idim] * r_Ik_inv);
+                const posT igrad_h01 =
+                    -(d3[0](1, 1) * disp_Ij[idim] * r_Ij_inv + d3[0](1, 2) * disp_Ik[idim] * r_Ik_inv);
+                const posT igrad_h02 =
+                    -(d3[0](1, 2) * disp_Ij[idim] * r_Ij_inv + d3[0](2, 2) * disp_Ik[idim] * r_Ik_inv);
+                const posT igrad_dot_ujk_uIj = -(disp_jk_unit[idim] - dot_ujk_uIj * disp_Ij_unit) * r_Ij_inv;
+                const posT igrad_dot_ujk_uIk = -(disp_jk_unit[idim] - dot_ujk_uIk * disp_Ik_unit) * r_Ik_inv;
+
+                grad_grad[idim][jel] -= igrad_g1 * disp_Ij_unit + grad[1] * igrad_r_Ij_unit - igrad_g0 * disp_jk_unit;
+                grad_grad[idim][kel] -= igrad_g2 * disp_Ik_unit + grad[2] * igrad_r_Ik_unit + igrad_g0 * disp_jk_unit;
+
+                lapl_grad[idim][jel] -= igrad_h00[idim] + lapfac * igrad_g0[idim] * r_jk_inv -
+                    ctwo * (igrad_h01[idim] * dot_ujk_uIj + hess(0, 1) * igrad_dot_ujk_uIj[idim]) + igrad_h11[idim] +
+                    lapfac * (igrad_g1[idim] * r_Ij_inv - grad[1] * r_Ij_inv * r_Ij_inv * (-disp_Ij_unit[idim]));
+                lapl_grad[idim][kel] -= igrad_h00[idim] + lapfac * igrad_g0[idim] * r_jk_inv +
+                    ctwo * (igrad_h02[idim] * dot_ujk_uIk + hess(0, 2) * igrad_dot_ujk_uIk[idim]) + igrad_h22[idim] +
+                    lapfac * (igrad_g2[idim] * r_Ik_inv - grad[2] * r_Ik_inv * r_Ik_inv * (-disp_Ik_unit[idim]));
+              }
+            }
+          }
+      }
+    return ion_deriv;;
   }
 };
 

@@ -4,7 +4,7 @@
 //
 // Copyright (c) 2021 QMCPACK developers.
 //
-// Filef developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
+// File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //////////////////////////////////////////////////////////////////////////////////////
@@ -21,44 +21,30 @@
 #ifndef QMCPLUSPLUS_DUAL_ALLOCATOR_ALIASES_HPP
 #define QMCPLUSPLUS_DUAL_ALLOCATOR_ALIASES_HPP
 
+#include <config.h>
 #include "PinnedAllocator.h"
 #if (defined(ENABLE_CUDA) || defined(ENABLE_SYCL)) && !defined(ENABLE_OFFLOAD)
-#include "DualAllocator.hpp"
-#if defined(ENABLE_CUDA)
+#include "VendorKind.hpp"
+#include "MemManageAlias.hpp"
+#include "Common/DualAllocator.hpp"
+
 namespace qmcplusplus
 {
-  template<typename T>
-  using UnpinnedDualAllocator = DualAllocator<T, CUDAAllocator<T>, aligned_allocator<T>>;
-  template<typename T>
-  using PinnedDualAllocator = DualAllocator<T, CUDAAllocator<T>, PinnedAlignedAllocator<T>>;
-  template<typename T>
-  using DeviceAllocator = CUDAAllocator<T>;
-}
-#elif defined(ENABLE_SYCL)
-namespace qmcplusplus
-{
-  template<typename T>
-  using UnpinnedDualAllocator = DualAllocator<T, SYCLAllocator<T>, aligned_allocator<T>>;
-  template<typename T>
-  using PinnedDualAllocator = DualAllocator<T, SYCLAllocator<T>, PinnedAlignedAllocator<T>>;
-  template<typename T>
-  using DeviceAllocator = SYCLAllocator<T>;
-}
-#else
-#error unhandled platform
-#endif
+template<typename T>
+using UnpinnedDualAllocator = DualAllocator<T, compute::MemManage<VendorKind>::DeviceAllocator<T>, aligned_allocator<T>>;
+template<typename T>
+using PinnedDualAllocator = DualAllocator<T, compute::MemManage<VendorKind>::DeviceAllocator<T>, PinnedAlignedAllocator<T>>;
+} // namespace qmcplusplus
 
 #else // ENABLE_OFFLOAD or no CUDA or SYCL
 #include "OMPTarget/OffloadAlignedAllocators.hpp"
 namespace qmcplusplus
 {
-  template<typename T>
-  using UnpinnedDualAllocator = OffloadAllocator<T>;
-  template<typename T>
-  using PinnedDualAllocator = OffloadPinnedAllocator<T>;
-  template<typename T>
-  using DeviceAllocator = OffloadDeviceAllocator<T>;
-}
+template<typename T>
+using UnpinnedDualAllocator = OffloadAllocator<T>;
+template<typename T>
+using PinnedDualAllocator = OffloadPinnedAllocator<T>;
+} // namespace qmcplusplus
 #endif
 
 #endif

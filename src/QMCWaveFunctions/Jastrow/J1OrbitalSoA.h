@@ -20,7 +20,7 @@
 #include "Configuration.h"
 #include <ResourceHandle.h>
 #include "Particle/DistanceTable.h"
-#include "ParticleBase/ParticleAttribOps.h"
+#include "CPU/VectorOps.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "Utilities/qmc_common.h"
 #include "Utilities/IteratorUtility.h"
@@ -55,8 +55,8 @@ class J1OrbitalSoA : public WaveFunctionComponent
   using DistRow  = DistanceTable::DistRow;
   using DisplRow = DistanceTable::DisplRow;
 
-  using GradDerivVec  = ParticleAttrib<QTFull::GradType>;
-  using ValueDerivVec = ParticleAttrib<QTFull::ValueType>;
+  using GradDerivVec  = Vector<QTFull::GradType>;
+  using ValueDerivVec = Vector<QTFull::ValueType>;
 
   /// if true use offload
   const bool use_offload_;
@@ -315,8 +315,7 @@ public:
       int kk = myVars.where(k);
       if (kk < 0)
         continue;
-      if (active.recompute(kk))
-        recalculate = true;
+      recalculate = true;
       rcsingles[k] = true;
     }
     if (recalculate)
@@ -344,8 +343,7 @@ public:
       int kk = myVars.where(k);
       if (kk < 0)
         continue;
-      if (active.recompute(kk))
-        recalculate = true;
+      recalculate = true;
       rcsingles[k] = true;
     }
     if (recalculate)
@@ -576,8 +574,7 @@ public:
       const int kk = myVars.where(k);
       if (kk < 0)
         continue;
-      if (optvars.recompute(kk))
-        recalculate = true;
+      recalculate = true;
       rcsingles[k] = true;
     }
 

@@ -263,7 +263,7 @@ atomic/electronic structure to simulate:
 
 The simulation objects created in this way are just data.  They represent requests for particular simulations to be carried out at a later time.  No simulation runs are actually performed during the creation of these objects. A basic example of generation input for each of the four major codes currently supported by Nexus is given below.
 
-Quantum Espresso (PWSCF) generation:
+Quantum ESPRESSO (PWSCF) generation:
 ************************************
 
 ::
@@ -533,7 +533,7 @@ Limiting the number of submitted jobs
 -------------------------------------
 Nexus will submit all eligible jobs at the same time unless told otherwise. This can be a large number when many calculations are present within the
 same project, e.g. various geometries or twists.  While this is fine on local resources, it might break the rules at computing centers such as ALCF
-where only 20 jobs can be submitted at the same time. In such cases, it is possible to specify the the size of the queue in Nexus to avoid monopolizing
+where only 20 jobs can be submitted at the same time. In such cases, it is possible to specify the size of the queue in Nexus to avoid monopolizing
 the resources.
 
 ::
@@ -544,6 +544,92 @@ the resources.
 
 In this case, Nexus will never submit more than 10 jobs at a time, even if more jobs are ready to be submitted, or resources on the local machine are available.
 Having the option of limiting the number of jobs running at the same time can be useful even on local workstations (to avoid taking over all the available resources). In such a case, a simpler strategy is possible by claiming fewer available cores in ``settings``, e.g. machine='ws8' vs 'ws4' vs 'ws2' etc.
+
+
+.. _custom-job-options:
+
+Customizing job options
+-----------------------
+The commands used to launch run jobs can be customized from those specified by the default machine definitions. Uses include
+customizing the options passed to MPI and customizing settings based on details of the runs.
+
+For example, we can modify the MPI thread binding as follows:
+
+::
+
+  settings(
+    pseudo_dir = './pseudopotentials',
+    results    = '',
+    sleep      = 3,
+    machine    = 'ws16',
+    )
+
+  ...
+
+  scf = generate_pwscf(
+    job = job(cores=16,app='pw.x',run_options=dict(bind_to='--bind-to none')),
+    ...
+    )
+
+which will result in output
+
+::
+
+   Executing:  
+   export OMP_NUM_THREADS=1
+   mpirun --bind-to none -np 16 pw.x -input scf.in 
+
+
+The options passed to the executable can also be modified. For example, to give different parallelization settings. 
+
+The following gives an example of modifying both the run and application options based on the machine the workflow is executing on:
+
+::
+
+  settings(
+    pseudo_dir = './pseudopotentials',
+    results    = '',
+    sleep      = 3,
+    machine    = 'ws128',
+    )
+
+  if settings.machine=='ws128':
+      # jobs for 128 core workstation
+      scf_opts1 = obj(app         = 'pw.x',
+                      run_options = '--bind-to none')
+      scf_opts2 = obj(app         = 'pw.x',
+                      run_options = '--bind-to none',
+                      app_options = '-nk 8')
+      scf_job1 = job(cores= 64,**scf_opts1)
+      scf_job2 = job(cores= 64,**scf_opts2)
+      scf_job3 = job(cores=128,**scf_opts2)
+  
+  elif settings.machine=='inti':
+      # jobs for "Inti" cluster
+      qe_presub = '''
+  module purge
+  module load mpi/openmpi-x86_64  
+  module load qe/quantum-espresso 
+  '''
+      scf_opts1 = obj(nodes       = 1,
+                      hours       = 1,
+                      app         = 'pw.x',
+                      run_options = '--bind-to none',
+                      presub      = qe_presub)
+      scf_opts2 = obj(nodes       = 1,
+                      hours       = 1,
+                      app         = 'pw.x',
+                      run_options = '--bind-to none',
+                      app_options = '-nk 8',
+                      presub      = qe_presub)
+      scf_job1 = job(processes_per_node=64,**scf_opts1)
+      scf_job2 = job(processes_per_node=64,**scf_opts2)
+      scf_job3 = job(**scf_opts2)
+  
+  else:
+      print('machine unknown!')
+      exit()
+  #end if
 
 .. _user-data-analysis:
 
@@ -588,3 +674,116 @@ manner.
     mean            = -75.0484800012
     sample_variance = 0.00645881103012
     variance        = 0.850521272106
+
+
+
+.. _user-occupations:
+
+Twist occupation specification
+------------------------------
+
+Gapped systems
+^^^^^^^^^^^^^^
+
+For QMC calculations involving twist-averaging, Nexus can set the desired twist occupations for the spin up and down electron channels.
+By default, the spin up and down occupations for each twist will be equal (non-magnetic phase) and each twist will be charge neutral.
+If a ferromagnetic type phase is required in gapped systems, ``net_spin`` argument can be specified in the ``generate_physical_system()`` function.
+This will result in each twist having magnetization equal to ``net_spin`` while still preserving charge neutrality in each twist.
+Specifying ``net_spin`` is sufficient for gapped systems since the charge and the net spin should not vary from twist to twist.
+
+Metallic systems
+^^^^^^^^^^^^^^^^
+
+The charge and the net spin are expected to vary from twist to twist in metallic systems in general.
+In Nexus, this can be handled via grand-canonical twist-averaging (GCTA), by specifying the ``gcta`` argument in the ``generate_qmcpack()`` function.
+The ``gcta`` argument can take the values given in :ref:`Table 2 <table2>`.
+Currently, only workflows that use Quantum ESPRESSO (PWSCF) are supported by ``gcta``.
+
+.. _table2:
+
+.. table:: Available GCTA flavors in Nexus and their descriptions. The "charge-neutrality" indicates if the GCTA flavor guarantees :math:`\sum_{i}^{N} q_i = 0` where :math:`i` is the twist index.
+
+   +------------+-----------------------+----------------------+---------------+--------------------------+
+   | **gcta**   | **charge-neutrality** | **k-point symmetry** | **spinors**   | **description**          |
+   +============+=======================+======================+===============+==========================+
+   | ``'nscf'`` |          No           | Supported            | Supported     | NSCF Fermi level         |
+   +------------+-----------------------+----------------------+---------------+--------------------------+
+   | ``'scf'``  |          No           | Supported            | Supported     | SCF Fermi level          |
+   +------------+-----------------------+----------------------+---------------+--------------------------+
+   | ``'afl'``  |          Yes          | Not supported        | Supported     | Adapted Fermi level      |
+   +------------+-----------------------+----------------------+---------------+--------------------------+
+   | ``'safl'`` |          Yes          | Not supported        | Not supported | Spin-adapted Fermi level |
+   +------------+-----------------------+----------------------+---------------+--------------------------+
+
+**Additional information**:
+
+- ``'nscf'``: Use the non-self-consistent-filed (NSCF) Fermi level to determine the twist occupations.
+  Nexus will attempt to traceback one level in PWSCF dependencies to read the NSCF Fermi level from the ``pwscf_output/pwscf.xml`` file.
+- ``'scf'``: Use the self-consistent-filed (SCF) Fermi level to determine the twist occupations.
+  Nexus will attempt to traceback two levels in PWSCF dependencies to read the SCF Fermi level from the ``pwscf_output/pwscf.xml`` file.
+  Due to this, the NSCF simulation should be in a separate path from the SCF simulation to avoid overwriting.
+- ``'afl'``: Use an adapted Fermi level determined from the available sorted eigenvalues that will give a net charge-neutral system :cite:`annaberdiyev_enhanced_2024`.
+  The Fermi level is determined solely from the eigenvalues in ``pwscf.pwscf.h5``.
+  Therefore, Nexus will not attempt to traceback anything in dependencies in this case.
+- ``'safl'``: Use a spin-adapted Fermi level determined by sorting each spin channel separately and using the SCF magnetization as target magnetization, while achieving net charge-neutrality :cite:`annaberdiyev_enhanced_2024`.
+  Since it requires the SCF magnetization, Nexus will attempt to traceback two levels in PWSCF dependencies to read the total magnetization from the ``pwscf_output/pwscf.xml`` file.
+  Due to this, the NSCF simulation should be in a separate path from the SCF simulation to avoid overwriting.
+
+**Caution**:
+
+- Note that the ``net_spin`` will be overwritten by the ``gcta`` for the specified QMC simulation object.
+  This is because the net magnetization of the system is now defined by the Fermi level.
+  For example, in ``'afl'``, the net magnetization is uniquely determined by the single-particle eigenvalues.
+  In ``'safl'``, the net magnetization is chosen as close as possible to the SCF magnetization.
+- Note that ``gcta`` flavors ``'scf'`` and ``'nscf'`` do not guarantee a net charge-neutrality.
+  They were implemented for comparison and research purposes only.
+  Therefore, these are not likely to be useful in production runs.
+
+**Current limitations**:
+
+- The ``'afl'`` and ``'safl'`` options require a twist-averaging without k-point symmetry, i.e., using the full **k**-points with equal weights instead of the reduced **k**-points with varying weights.
+  The reason is that the existence of weights in **k**-points can prevent determining a Fermi level that will result in a charge-neutral system.
+  Effectively, it requires fractional charges in twists, which is not nominally possible in QMCPACK.
+  However, it could be possible to achieve net charge-neutrality by adding extra **k**-points with certain required charges.
+  This is currently not implemented.
+- Currently, the twist occupations are calculated by first determining the Fermi level requested by ``gcta`` flavor and then occupying all single-particle eigenvalues below this energy (:math:`e_i < E_F`).
+  Some initial uses of ``gcta`` showed issues with eigenvalue degeneracies near the Fermi level, leading to a net non-zero charge.
+  In most cases, this is not an issue due to the residual convergence error in NSCF, which effectively acts as a small randomizer of eigenvalues.
+  However, it is possible to avoid this issue altogether, which requires re-implementation of ``gcta``.
+  In this new potential version, a table of sorted eigenvalues and the **k**-points they folded from are kept together.
+  Then, since the number of electrons that needs to be occupied is known, the occupations can be set for each **k**-point and their folded twists.
+  It avoids the (:math:`e_i < E_F`) comparison which is numerically problematic if there are eigenvalue degeneracies.
+- Due to the hard-coded nature of the limited dependency traceback capability implemented in ``gcta``, hybrid functionals in PWSCF will currently not work with ``safl`` and ``scf``.
+  This is because NSCF calculations are not possible with the hybrid functionals, requiring a direct (``scf`` -> ``pw2qmcpack``) instead of (``scf`` -> ``nscf`` -> ``pw2qmcpack``).
+- ``gcta`` argument will currently not work if there is a single twist in the system (it only activates when there are multiple twists).
+- ``gcta`` currently supports only Quantum ESPRESSO (PWSCF).
+
+Please contact the developers if any of these issues are critical for research.
+
+.. _command-line-options:
+
+Nexus command line options
+--------------------------
+
+Nexus user scripts process a number of command line options. These override settings in the script.  They are most commonly used to check the status of workflows (``--status_only``) and to check
+the generated workflows during development (``--generate_only``).
+
+- ``--status_only`` : Report status of all simulations and then exit.
+- ``--status`` : Controls displayed simulation status information.  May be set to one of 'standard', 'active', 'failed', or 'ready'.
+- ``--generate_only`` : Write inputs to all simulations and then exit.  Note that no dependencies are processed, e.g., if one simulation depends on another for an orbital file location or for a relaxed structure, this information will not be present in the generated input file for that simulation since no simulations are actually run with this option.
+- ``--graph_sims`` : Display a graph of simulation workflows, then exit.
+- ``--progress_tty`` : Print abbreviated polling messages. The polling message normally written to a newline every polling period will instead be overwritten in place, greatly shortening the output.
+- ``--sleep`` : Number of seconds between polls.  At each poll, new simulations are run once all simulations they depend on have successfully completed. A status line is printed every poll.
+- ``--machine`` : Name of the machine the simulations will be run on.  Workstations with between 1 and 128 cores may be specified by 'ws1' to 'ws128' (works for any machine where only mpirun is used).
+- ``--account`` : Account name required to submit jobs at some HPC centers.
+- ``--runs`` : Directory name to perform all runs in.  Simulation paths are appended to this directory.
+- ``--results`` : Directory to copy out lightweight results data.  If set to '', results will not be stored outside of the runs directory.
+- ``--local_directory`` : Base path where runs and results directories will be created
+- ``--pseudo_dir`` : Path to directory containing pseudopotential files.
+- ``--basis_dir`` : Path to directory containing basis set files (useful if running Gaussian-basis based QMC workflows).'
+- ``--ericfmt`` : Path to the ericfmt file used with GAMESS (required by GAMESS).
+- ``--mcppath`` : Path to the mcpdata file used with GAMESS (optional for most workflows).
+- ``--vdw_table`` : Path to the vdw_table file used with Quantum ESPRESSO (required only if running Quantum ESPRESSO with van der Waals functionals).
+- ``--qprc`` : Path to the quantum_package.rc file used with Quantum Package.
+
+.. bibliography:: bibs/methods.bib

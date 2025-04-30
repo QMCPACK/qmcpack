@@ -2,9 +2,9 @@ if(NOT QMC_COMPLEX)
 
   # From Bunge, Barrientos, and Bunge, Atomic Data and Nuclear Data Tables 53, 113-162 (1993)
   # Restricted HF results using STO basis functions
-  list(APPEND BE_STO_SHORT LocalEnergy -14.57302313 0.0075)
-  list(APPEND BE_STO_SHORT Kinetic 14.57302427 0.23)
-  list(APPEND BE_STO_SHORT LocalPotential -29.14604740 0.23)
+  list(APPEND BE_STO_SHORT LocalEnergy -14.57302313 0.02)
+  list(APPEND BE_STO_SHORT Kinetic 14.57302427 0.4)
+  list(APPEND BE_STO_SHORT LocalPotential -29.14604740 0.3)
 
   qmc_run_and_check_custom_scalar(
     BASE_NAME

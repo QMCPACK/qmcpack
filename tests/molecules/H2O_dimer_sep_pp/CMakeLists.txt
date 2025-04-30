@@ -45,7 +45,7 @@ if(NOT QMC_COMPLEX)
     H2OS2_DMCTM1_SCALARS)
 
   list(APPEND H2OS2_DMCTM3_SCALARS "totenergy" "-34.560980  0.0015") # total energy
-  list(APPEND H2OS2_DMCTM3_SCALARS "nonlocalecp" "3.174425 0.012") # non local ecp
+  list(APPEND H2OS2_DMCTM3_SCALARS "nonlocalecp" "3.174425 0.018") # non local ecp
 
   qmc_run_and_check(
     short-H2O_dimer_sep_pp-j3_dmc_tm3

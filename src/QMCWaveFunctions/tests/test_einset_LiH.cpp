@@ -39,7 +39,7 @@ void test_einset_LiH_x(bool use_offload)
 {
   Communicate* c = OHMMS::Controller;
 
-  ParticleSet::ParticleLayout lattice;
+  Lattice lattice;
   lattice.R = {-3.55, 0.0, 3.55, 0.0, 3.55, 3.55, -3.55, 3.55, 0.0};
 
   ParticleSetPool ptcl = ParticleSetPool(c);

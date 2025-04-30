@@ -86,7 +86,7 @@ public:
    *@param last index of last particle
    *@param ndelay delayed update rank
    */
-  DiracDeterminantBatched(std::unique_ptr<SPOSet>&& spos,
+  DiracDeterminantBatched(SPOSet& phi,
                           int first,
                           int last,
                           int ndelay                          = 1,
@@ -140,10 +140,10 @@ public:
                            Matrix<ValueType>& dratios) override;
 
   void evaluateSpinorDerivRatios(const VirtualParticleSet& VP,
-                            const std::pair<ValueVector, ValueVector>& spinor_multiplier,
-                           const opt_variables_type& optvars,
-                           std::vector<ValueType>& ratios,
-                           Matrix<ValueType>& dratios) override;
+                                 const std::pair<ValueVector, ValueVector>& spinor_multiplier,
+                                 const opt_variables_type& optvars,
+                                 std::vector<ValueType>& ratios,
+                                 Matrix<ValueType>& dratios) override;
 
   PsiValue ratioGrad(ParticleSet& P, int iat, Grad& grad_iat) override;
 
@@ -229,7 +229,7 @@ public:
 
   void recompute(const ParticleSet& P) override;
 
-  /** Does a Phi->mw_evaluate_notranspose then mw_invertPsiM over a set of
+  /** Does a phi_.mw_evaluate_notranspose then mw_invertPsiM over a set of
    *  elements filtered based on the recompute mask.
    *
    */
@@ -264,7 +264,7 @@ public:
    * This interface is exposed only to SlaterDet and its derived classes
    * can overwrite to clone itself correctly.
    */
-  std::unique_ptr<DiracDeterminantBase> makeCopy(std::unique_ptr<SPOSet>&& spo) const override;
+  std::unique_ptr<DiracDeterminantBase> makeCopy(SPOSet& phi) const override;
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<Value>& ratios) override;
 

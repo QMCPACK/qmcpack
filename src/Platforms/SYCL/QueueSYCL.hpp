@@ -12,7 +12,7 @@
 #ifndef QMCPLUSPLUS_QUEUE_SYCL_H
 #define QMCPLUSPLUS_QUEUE_SYCL_H
 
-#include "Queue.hpp"
+#include "Common/Queue.hpp"
 #include "SYCLruntime.hpp"
 
 namespace qmcplusplus
@@ -27,18 +27,20 @@ class Queue<PlatformKind::SYCL> : public QueueBase
 public:
   Queue() : queue_(createSYCLInOrderQueueOnDefaultDevice()) {}
 
+  template<class T>
+  inline Queue& memcpy(T* dst, const T* src, size_t size)
+  {
+    queue_.memcpy(dst, src, sizeof(T) * size);
+    return *this;
+  }
+
   // dualspace container
   template<class DSC>
   void enqueueH2D(DSC& dataset, typename DSC::size_type size = 0, typename DSC::size_type offset = 0)
   {
     if (dataset.data() == dataset.device_data())
       return;
-
-    if (size == 0)
-      queue_.memcpy(dataset.device_data() + offset, dataset.data() + offset,
-                    dataset.size() * sizeof(typename DSC::value_type));
-    else
-      queue_.memcpy(dataset.device_data() + offset, dataset.data() + offset, size * sizeof(typename DSC::value_type));
+    memcpy(dataset.device_data() + offset, dataset.data() + offset, size ? size : dataset.size());
   }
 
   template<class DSC>
@@ -47,11 +49,7 @@ public:
     if (dataset.data() == dataset.device_data())
       return;
 
-    if (size == 0)
-      queue_.memcpy(dataset.data() + offset, dataset.device_data() + offset,
-                    dataset.size() * sizeof(typename DSC::value_type));
-    else
-      queue_.memcpy(dataset.data() + offset, dataset.device_data() + offset, size * sizeof(typename DSC::value_type));
+    memcpy(dataset.data() + offset, dataset.device_data() + offset, size ? size : dataset.size());
   }
 
   void sync() { queue_.wait(); }

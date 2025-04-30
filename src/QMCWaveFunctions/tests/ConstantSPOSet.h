@@ -22,9 +22,17 @@ namespace qmcplusplus
    *  Exists to provide deterministic and known output to objects requiring SPOSet evaluations.      
    *
    */
-class ConstantSPOSet : public SPOSet
+template<typename T>
+class ConstantSPOSet : public SPOSetT<T>
 {
 public:
+  using SPOSet = SPOSetT<T>;
+
+  using ValueVector = typename SPOSet::ValueVector;
+  using ValueMatrix = typename SPOSet::ValueMatrix;
+  using GradVector  = typename SPOSet::GradVector;
+  using GradMatrix  = typename SPOSet::GradMatrix;
+
   ConstantSPOSet(const std::string& my_name) = delete;
 
   //Constructor needs number of particles and number of orbitals.  This is the minimum

@@ -18,7 +18,7 @@
 #include "QMCDrivers/RMC/RMCUpdatePbyP.h"
 #include "QMCDrivers/RMC/RMCUpdateAll.h"
 #include "QMCDrivers/DriftOperators.h"
-#include "ParticleBase/ParticleAttribOps.h"
+#include "CPU/VectorOps.h"
 #include "RandomNumberControl.h"
 #include "Concurrency/OpenMP.h"
 #include "Message/CommOperators.h"

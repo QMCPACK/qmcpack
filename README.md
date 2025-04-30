@@ -42,6 +42,12 @@ to run examples without having to install QMCPACK yourself, and slides and recor
 Please cite J. Kim _et al._ J. Phys. Cond. Mat. **30** 195901 (2018), https://doi.org/10.1088/1361-648X/aab9c3, and if space allows,
 P. Kent _et al._ J. Chem. Phys. **152** 174105 (2020), https://doi.org/10.1063/5.0004860 . These papers are both open access.
 
+# Installing QMCPACK
+
+[Complete instructions for downloading, compiling, and installing QMCPACK are given in the manual](https://qmcpack.readthedocs.io/en/develop/installation.html).
+Guides are provided for [installing QMCPACK on common workstations and supercomputers](https://qmcpack.readthedocs.io/en/develop/installation.html#installation-instructions-for-common-workstations-and-supercomputers). We also provide build
+scripts are for many systems in the config directory. The following sections of this README give a brief overview. 
+
 # Installation Prerequisites
 
  * C++ 17 and C99 capable compilers. 
@@ -66,23 +72,25 @@ Nightly testing currently includes at least the following software versions:
 
 * Compilers
   * GCC 14.2.0, 12.4.0
-  * Clang/LLVM 19.1.4
-* Boost 1.86.0, 1.79.0
+  * Clang/LLVM 19.1.7
+* Boost 1.87.0, 1.79.0
 * HDF5 1.14.5
 * FFTW 3.3.10
 * CMake 3.30.5
 * MPI
-  * OpenMPI 5.0.5
-* CUDA 12.4
-* ROCm 6.3.0
+  * OpenMPI 5.0.6
+* CUDA 12.8
+* ROCm 6.3.2
+* Python 3.13.1
+* NumPy 2.2.2
 
 For GPU acceleration on NVIDIA GPUs we test LLVM with CUDA using the above versions. On AMD GPUs we support using the latest ROCm
 version and its matching amdclang compiler, as listed above. On a developmental basis we also check the latest Clang and GCC
 development versions, and Intel OneAPI compilers.
 
-GitHub Actions-based tests include additional version combinations from within our two year support window.
+GitHub Actions-based tests include additional version combinations from within our two-year support window.
 
-Workflow tests are currently performed with Quantum ESPRESSO v7.4.0 and PySCF v2.7.0. These check trial wavefunction generation and
+Workflow tests are currently performed with Quantum ESPRESSO v7.4.1 and PySCF v2.8.0. These check trial wavefunction generation and
 conversion through to actual QMC runs.
 
 # Building with CMake
