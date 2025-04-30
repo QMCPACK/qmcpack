@@ -680,10 +680,7 @@ bool QMCMain::executeQMCSection(xmlNodePtr cur, bool reuse)
   std::string random_test("no");
   OhmmsAttributeSet a;
   a.add(target, "target");
-  a.add(random_test, "testrng");
   a.put(cur);
-  if (random_test == "yes")
-    RandomNumberControl::test();
   if (qmc_system_ == nullptr)
     qmc_system_ = particle_set_pool_->getWalkerSet(target);
   bool success = runQMC(cur, reuse);
