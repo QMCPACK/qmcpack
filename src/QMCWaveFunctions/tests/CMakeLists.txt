@@ -200,11 +200,7 @@ if(ENABLE_CUDA AND BUILD_MICRO_BENCHMARKS)
   set(UTEST_EXE benchmark_diracmatrixcompute)
   set(UTEST_NAME deterministic-unit_${UTEST_EXE})
   set(BENCHMARK_SRC benchmark_DiracMatrixInverterCUDA.cpp)
-  if(QMC_CUDA2HIP)
-    set(BENCHMARK_SRC ${BENCHMARK_SRC} benchmark_rocSolverInverter.cpp)
-  else()
-    set(BENCHMARK_SRC ${BENCHMARK_SRC} benchmark_cuSolverInverter.cpp)
-  endif()
+  set(BENCHMARK_SRC ${BENCHMARK_SRC} benchmark_SolverInverters.cpp)
   add_executable(${UTEST_EXE} ${BENCHMARK_SRC})
   target_link_libraries(
     ${UTEST_EXE}
