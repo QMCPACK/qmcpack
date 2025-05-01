@@ -43,7 +43,7 @@ void benchmark_solver(const size_t N)
   testing::MakeRngSpdMatrix<FP_T> makeRngSpdMatrix{};
   makeRngSpdMatrix(m);
 
-  BENCHMARK("cuSolverInverter") { solver.invert_transpose(m, m_invT, m_invGPU, log_value, queue.getNative()); };
+  BENCHMARK("SolverInverter") { solver.invert_transpose(m, m_invT, m_invGPU, log_value, queue.getNative()); };
 
   DiracMatrix<FP_T> dmat;
   BENCHMARK("CPU") { dmat.invert_transpose(m, m_invT_CPU, log_value); };
@@ -52,7 +52,7 @@ void benchmark_solver(const size_t N)
   CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
 }
 
-TEST_CASE("cuSolverInverter_bench", "[wavefunction][benchmark]")
+TEST_CASE("SolverInverter_bench", "[wavefunction][benchmark]")
 {
 #ifdef QMC_COMPLEX
   using FullPrecValue = std::complex<double>;
