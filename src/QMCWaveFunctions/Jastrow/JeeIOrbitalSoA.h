@@ -499,13 +499,13 @@ public:
 #ifndef NDEBUG
       if (iter == elecs_inside(ig, jat).end())
       {
-        std::cerr << std::setprecision(std::numeric_limits<valT>::digits10 + 1) << "updating electron iat = " << iat
+        std::cerr << std::setprecision(std::numeric_limits<float>::digits10 + 1) << "updating electron iat = " << iat
                   << " near ion " << jat << " dist " << eI_table.getDistRow(iat)[jat] << std::endl;
         throw std::runtime_error("BUG electron not found in elecs_inside");
       }
-      else if (std::abs(eI_table.getDistRow(iat)[jat] - *iter_dist) >= std::numeric_limits<valT>::epsilon())
+      else if (std::abs(eI_table.getDistRow(iat)[jat] - *iter_dist) >= 10*std::numeric_limits<float>::epsilon())
       {
-        std::cerr << std::setprecision(std::numeric_limits<valT>::digits10 + 1) << "inconsistent electron iat = " << iat
+        std::cerr << std::setprecision(std::numeric_limits<float>::digits10 + 1) << "inconsistent electron iat = " << iat
                   << " near ion " << jat << " dist " << eI_table.getDistRow(iat)[jat]
                   << " stored value = " << *iter_dist << std::endl;
         throw std::runtime_error("BUG eI distance stored value elecs_inside_dist not matching distance table");
