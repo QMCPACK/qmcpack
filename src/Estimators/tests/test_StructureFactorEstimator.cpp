@@ -173,8 +173,12 @@ TEST_CASE("StructureFactorEstimator::Accumulate", "[estimators]")
 
   for (ParticleSet& pset : psets)
   {
-    pset.R[0] = ParticleSet::PosType(*it_rng_reals++, *it_rng_reals++, *it_rng_reals++);
-    pset.R[1] = ParticleSet::PosType(*it_rng_reals++, *it_rng_reals++, *it_rng_reals++);
+    // gcc will evaluate these iterators in the opposite of the order explicitly imposed if we naively
+    // increment the iterators after each value.
+    pset.R[0] = ParticleSet::PosType(*it_rng_reals, *(it_rng_reals+1), *(it_rng_reals+2));
+    it_rng_reals += 3;
+    pset.R[1] = ParticleSet::PosType(*it_rng_reals, *(it_rng_reals+1), *(it_rng_reals+2));
+    it_rng_reals += 3;
   }
 
 
@@ -280,7 +284,7 @@ TEST_CASE("StructureFactorEstimator::Accumulate", "[estimators]")
   auto& sfk_e_e = sfa.getSKElecElec(sfe);
   auto& rhok_e  = sfa.getRhoKElec(sfe);
 
-  if constexpr (true) //generate_test_data)
+  if constexpr (generate_test_data)
   {
     std::cout << "sfk_e_e_expected = ";
     std::cout << NativePrint(sfk_e_e) << '\n';
