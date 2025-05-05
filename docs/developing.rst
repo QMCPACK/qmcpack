@@ -780,8 +780,8 @@ In addition, avoid directly calling C function ``abort()``, ``exit()`` and ``MPI
 
 Adding and using timers
 ~~~~~~~~~~~~~~~~~~~~~~~
-In your class header file, add ```#include <Utilities/NewTimer.h>``` and add a timer enumeration and define the timer names in the
-header file. For example, put the following under "protected/private"
+In your class header file, add ```#include <NewTimer.h>```. Add a timer enumeration and define the timer names in the
+header file or preferably cpp file. For example, put the following under "protected/private"
 
 ::
 
