@@ -126,6 +126,10 @@ if(QMC_BUILD_SANDBOX_ONLY)
 
 else() #{{{
 
+  add_library(minimal_testing_pools INTERFACE)
+  target_sources(minimal_testing_pools INTERFACE Particle/tests/MinimalParticlePool.h QMCHamiltonians/tests/MinimalHamiltonianPool.h QMCWaveFunctions/tests/MinimalWaveFunctionPool.h)
+  target_include_directories(minimal_testing_pools INTERFACE Particle/tests QMCHamiltonians/tests QMCWaveFunctions/tests)
+
   add_subdirectory(QMCWaveFunctions)
   add_subdirectory(QMCHamiltonians)
   add_subdirectory(Estimators)
