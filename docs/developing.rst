@@ -778,6 +778,51 @@ uniform error, improper use may cause QMCPACK hanging.
 
 In addition, avoid directly calling C function ``abort()``, ``exit()`` and ``MPI_Abort()`` for stopping the code.
 
+Adding and using timers
+~~~~~~~~~~~~~~~~~~~~~~~
+In your class header file, add ```#include <NewTimer.h>```. Add a timer enumeration and define the timer names in the
+header file or preferably cpp file. For example, put the following under "protected/private"
+
+::
+
+  enum PSTimers
+  {
+    PS_newpos,
+    PS_donePbyP,
+    PS_setActive,
+    PS_update
+  };
+  
+  TimerList_t myTimers;
+
+Initialize timers in the constructor:
+
+::
+  # if you have many timers;
+  const TimerNameList_t<PSTimers>
+  PSTimerNames = {{PS_newpos, "ParticleSet::computeNewPosDTandSK"},
+                  {PS_donePbyP, "ParticleSet::donePbyP"},
+                  {PS_setActive, "ParticleSet::setActive"},
+                  {PS_update, "ParticleSet::update"}};
+  setup_timers(myTimers, PSTimerNames, timer_level_fine);
+  
+  # if you have just one timer to be registered in the manager.
+  myTimers[PS_update] = TimerManager.createTimer("ParticleSet::update", timer_level_fine);
+
+Finally, there are two ways of using the timers. Using the ScopedTimer is required when possible.
+
+::
+  // RAII pattern
+  {
+    ScopedTimer update_scope(myTimers[PS_update]);
+    //timed body
+  }
+  
+  // explicit controlling
+  myTimers[PS_update]->start();
+  //timed body
+  myTimers[PS_update]->stop();
+
 GitHub Pull Request guidance
 ----------------------------
 
