@@ -2,7 +2,7 @@
 #// This file is distributed under the University of Illinois/NCSA Open Source License.
 #// See LICENSE file in top directory for details.
 #//
-#// Copyright (c) 2024 QMCPACK developers.
+#// Copyright (c) 2025 QMCPACK developers.
 #//
 #// File developed by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 #//                    Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
@@ -26,7 +26,7 @@ else()
   add_library(test_estimators_help ${TEST_ESTIMATORS_HELP})
 endif()
 
-target_link_libraries(test_estimators_help catch_main qmcestimators)
+target_link_libraries(test_estimators_help catch_main qmcestimators minimal_testing_pools)
 
 set(UTEST_EXE test_${SRC_DIR})
 set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
@@ -73,7 +73,8 @@ set(SRCS
     )
 
 add_executable(${UTEST_EXE} ${SRCS})
-target_link_libraries(${UTEST_EXE} catch_main qmcutil qmcestimators test_estimators_help utilities_for_test sposets_for_testing)
+target_link_libraries(${UTEST_EXE} catch_main qmcutil qmcestimators
+test_estimators_help utilities_for_test sposets_for_testing minimal_testing_pools)
 if(USE_OBJECT_TARGET)
   target_link_libraries(
     ${UTEST_EXE}
@@ -115,7 +116,8 @@ if(HAVE_MPI)
       platform_omptarget_LA
       utilities_for_test)
   endif()
-  target_link_libraries(${UTEST_EXE} catch_main qmcestimators test_estimators_help)
+  target_link_libraries(${UTEST_EXE} catch_main qmcestimators
+  test_estimators_help minimal_testing_pools)
   # Right now the unified driver mpi tests are hard coded for 3 MPI ranks
   add_unit_test(${UTEST_NAME} 3 1 $<TARGET_FILE:${UTEST_EXE}>)
 endif()

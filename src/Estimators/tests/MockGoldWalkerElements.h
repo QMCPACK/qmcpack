@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2023 QMCPACK developers.
+// Copyright (c) 2025 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //
@@ -17,9 +17,9 @@
 #ifndef QMCPLUSPLUS_MOCK_WALKER_ELEMENTS_FOR_ESTIMATOR_TEST_H
 #define QMCPLUSPLUS_MOCK_WALKER_ELEMENTS_FOR_ESTIMATOR_TEST_H
 
-#include "Particle/tests/MinimalParticlePool.h"
-#include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
-#include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
+#include <MinimalParticlePool.h>
+#include <MinimalWaveFunctionPool.h>
+#include <MinimalHamiltonianPool.h>
 #include "Utilities/RuntimeOptions.h"
 #include "Message/Communicate.h"
 #include <functional>
