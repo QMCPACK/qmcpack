@@ -60,7 +60,12 @@ TEST_CASE("SolverInverter_bench", "[wavefunction][benchmark]")
 #else
   using FullPrecValue = double;
 #endif
+#if defined(ENABLE_CUDA)
   benchmark_solver<PlatformKind::CUDA, Value, FullPrecValue>(1024);
+#endif
+#if defined(ENABLE_SYCL)
+  benchmark_solver<PlatformKind::SYCL, Value, FullPrecValue>(1024);
+#endif
 }
 
 } // namespace qmcplusplus
