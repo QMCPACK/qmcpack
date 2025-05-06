@@ -20,9 +20,9 @@
 #include "Estimators/tests/EstimatorManagerNewTest.h"
 #include "Estimators/EstimatorInputDelegates.h"
 #include "EstimatorManagerInputTest.h"
-#include "Particle/tests/MinimalParticlePool.h"
-#include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
-#include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
+#include <MinimalParticlePool.h>
+#include <MinimalHamiltonianPool.h>
+#include <MinimalWaveFunctionPool.h>
 #include "Utilities/ProjectData.h"
 #include <stdio.h>
 #include <sstream>
