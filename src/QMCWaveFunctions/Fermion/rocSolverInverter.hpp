@@ -21,7 +21,7 @@
 #endif
 // This file assumes that QMC_CUDA2HIP is defined and that creates HIP versions of these functions (despite being labeled with "CUDA")
 #include "CUDA/CUDAruntime.hpp"
-#include "CUDA/CUDAallocator.hpp"
+#include "CUDA/MemManageCUDA.hpp"
 #include "ROCm/rocsolver.hpp"
 #include "QMCWaveFunctions/detail/CUDA/delayed_update_helper.h"
 #include "CPU/math.hpp"
@@ -104,7 +104,8 @@ public:
   std::enable_if_t<std::is_same<TMAT, T_FP>::value> invert_transpose(const Matrix<TMAT>& logdetT,
                                                                      Matrix<TMAT>& Ainv,
                                                                      Matrix<TMAT, CUDAAllocator<TMAT>>& Ainv_gpu,
-                                                                     std::complex<TREAL>& log_value)
+                                                                     std::complex<TREAL>& log_value,
+                                                                     hipStream_t stream)
   {
     const int norb = logdetT.rows();
     resize(norb);
@@ -158,7 +159,8 @@ public:
   std::enable_if_t<!std::is_same<TMAT, T_FP>::value> invert_transpose(const Matrix<TMAT>& logdetT,
                                                                       Matrix<TMAT>& Ainv,
                                                                       Matrix<TMAT, CUDAAllocator<TMAT>>& Ainv_gpu,
-                                                                      std::complex<TREAL>& log_value)
+                                                                      std::complex<TREAL>& log_value,
+                                                                      hipStream_t stream)
   {
     const int norb = logdetT.rows();
     resize(norb);

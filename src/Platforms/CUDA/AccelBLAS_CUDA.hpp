@@ -10,7 +10,7 @@
 #ifndef QMCPLUSPLUS_CUDA_ACCELBLAS_CUDA_H
 #define QMCPLUSPLUS_CUDA_ACCELBLAS_CUDA_H
 
-#include "AccelBLASHandle.hpp"
+#include "Common/AccelBLASHandle.hpp"
 #include "CUDA/CUDAruntime.hpp"
 #include "CUDA/QueueCUDA.hpp"
 #include "CUDA/cuBLAS.hpp"

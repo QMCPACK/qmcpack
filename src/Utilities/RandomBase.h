@@ -36,6 +36,11 @@ public:
   virtual void save(std::vector<uint_type>& curstate) const = 0;
   virtual size_t state_size() const                         = 0;
   virtual std::unique_ptr<RandomBase<T>> makeClone() const  = 0;
+  virtual RandomBase& operator=(const RandomBase& other) { return *this; }
+
+protected:
+  RandomBase() = default;
+  RandomBase(const RandomBase&) = default;
 };
 
 } // namespace qmcplusplus

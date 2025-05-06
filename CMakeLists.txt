@@ -18,12 +18,8 @@ endif()
 ######################################################################
 project(
   qmcpack
-  VERSION 4.0.9 
+  VERSION 4.1.9 
   LANGUAGES C CXX)
-
-# add the automatically determined parts of the RPATH
-# which point to directories outside the build tree to the install RPATH
-set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 #--------------------------------------------------------------------
 # Directory where customize cmake files reside
@@ -31,6 +27,11 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 set(PROJECT_CMAKE ${qmcpack_SOURCE_DIR}/CMake)
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_CMAKE})
 include(macros)
+
+# add the automatically determined parts of the RPATH
+# which point to directories outside the build tree to the install RPATH
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+include(AddRPATH)
 
 ######################################################################
 # Build and install options
@@ -134,8 +135,10 @@ option(BUILD_UNIT_TESTS "Build unit tests" ON)
 option(BUILD_MICRO_BENCHMARKS "Build micro benchmarks" ON)
 option(BUILD_LMYENGINE_INTERFACE "Build LMY engine" ON)
 if(MIXED_PRECISION AND BUILD_LMYENGINE_INTERFACE)
-  message(STATUS "LMY engine is not compatible with CPU mixed precision build! Disabling LMY engine")
+  message(STATUS "LMY engine is not compatible with mixed precision build! Disabling LMY engine. Some optimizers will not be available.")
   set(BUILD_LMYENGINE_INTERFACE OFF)
+else()
+  message(STATUS "LMY engine enabled for widest range of wavefunction optimization methods.")
 endif()
 option(BUILD_AFQMC "Build with AFQMC" OFF)
 # explicit HIP source codes only exist in AFQMC.
@@ -164,9 +167,9 @@ mark_as_advanced(QMC_EXP_THREADING)
 # Sanitizer options
 #--------------------------------------------------------------------
 
-# Add optional sanitizers ASAN, UBSAN, MSAN
-set(VALID_SANITIZERS "asan" "ubsan" "tsan" "msan")
-set(ENABLE_SANITIZER "" CACHE STRING "asan,ubsan,tsan,msan")
+# Add optional sanitizers ASAN, UBSAN, MSAN, TYPESAN
+set(VALID_SANITIZERS "asan" "ubsan" "tsan" "msan" "typesan")
+set(ENABLE_SANITIZER "" CACHE STRING "asan,ubsan,tsan,msan,typesan")
 set_property(CACHE ENABLE_SANITIZER PROPERTY STRINGS ${VALID_SANITIZERS})
 
 if(ENABLE_SANITIZER)
@@ -207,16 +210,7 @@ if(QMC_OMP)
   endif()
 
   # explicitly set OpenMP runtime library rpath like other normal libraries.
-  list(GET OpenMP_CXX_LIBRARIES 0 OpenMP_LIBRARY_FILE)
-  if(OpenMP_LIBRARY_FILE)
-    cmake_path(GET OpenMP_LIBRARY_FILE PARENT_PATH OpenMP_LIBRARY_DIR)
-    list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES ${OpenMP_LIBRARY_DIR} isSystemDir)
-    if("${isSystemDir}" STREQUAL "-1")
-      message(STATUS "Append OpenMP runtime library path ${OpenMP_LIBRARY_DIR}")
-      list(APPEND CMAKE_BUILD_RPATH ${OpenMP_LIBRARY_DIR})
-      list(APPEND CMAKE_INSTALL_RPATH ${OpenMP_LIBRARY_DIR})
-    endif("${isSystemDir}" STREQUAL "-1")
-  endif()
+  AddRPATH("OpenMP" ${OpenMP_CXX_LIBRARIES})
 endif(QMC_OMP)
 
 #-------------------------------------------------------------------------------
@@ -237,30 +231,6 @@ else(CMAKE_TOOLCHAIN_FILE)
     message(WARNING "Cray Programming Environment has been detected but C++ compiler wrapper CC is not used! "
                     "Please use cc/CC as the C/C++ compiler to ensure correct cross-compiling for the compute nodes "
                     "unless you understand cross-compiling and intend not to use Cray compiler wrappers.")
-  endif()
-  if(CMAKE_SYSTEM_NAME STREQUAL "CrayLinuxEnvironment")
-    message(STATUS "Running on a Cray machine.")
-
-    if(NOT $ENV{CRAYPE_LINK_TYPE} STREQUAL "dynamic")
-      message(WARNING "Cray Programming Environment uses static linking by default. "
-                      "We prefer dynamic linking which makes library searching easier. "
-                      "Setting environment variable CRAYPE_LINK_TYPE to \"dynamic\" enables dynamic linking.\n")
-    endif()
-
-    if(NOT DEFINED MPIEXEC_EXECUTABLE)
-      find_program(MPIEXEC_EXECUTABLE aprun)
-      if(NOT MPIEXEC_EXECUTABLE)
-        # For slurm use srun
-        find_program(MPIEXEC_EXECUTABLE srun)
-      endif(NOT MPIEXEC_EXECUTABLE)
-    endif()
-  else()
-    if($ENV{CRAYPE_VERSION} MATCHES "." AND BASE_CXX_COMPILER_NAME STREQUAL "CC")
-      message(
-        FATAL_ERROR
-          "Cray compiler wrapper detected. Empty the build folder and rerun cmake with -DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment added."
-      )
-    endif()
   endif()
 
   include(inspectCompiler)
@@ -309,6 +279,10 @@ if(ENABLE_SANITIZER)
     set(CMAKE_CXX_FLAGS_SAN
         "-fsanitize=thread"
         CACHE STRING "ThreadSanitizer C++ compiler builds." FORCE)
+  elseif("${ENABLE_SANITIZER}" STREQUAL "typesan")
+    set(CMAKE_CXX_FLAGS_SAN
+        "-fsanitize=type"
+        CACHE STRING "TypeSanitizer C++ compiler builds." FORCE)
   endif()
 
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_SAN}")
@@ -878,7 +852,7 @@ endif(ENABLE_SYCL)
 #-----------------------------------------------------
 # Some OpenMP offload runtime libraries have composibility issue with vendor native ones.
 # A workaround is making the vendor native runtime responsible for memory allocations and OpenMP associate/disassocate them.
-# CUDA/HIP supported, not SYCL
+# CUDA/HIP/SYCL supported
 if(${COMPILER} MATCHES "Clang" AND QMC_CUDA2HIP AND ENABLE_OFFLOAD)
   # Known issue HIP<5.5 https://github.com/ROCm/aomp/issues/253
   # Known performance issue remains in 6.3.3
@@ -887,7 +861,7 @@ else()
   set(QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT OFF)
 endif()
 cmake_dependent_option(QMC_OFFLOAD_MEM_ASSOCIATED "Use omp_target_associate_ptr instead of direct OpenMP offload maps in dual-space allocators"
-  ${QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT} "ENABLE_OFFLOAD;ENABLE_CUDA;NOT ENABLE_SYCL" OFF)
+                       ${QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT} "ENABLE_OFFLOAD;ENABLE_CUDA OR ENABLE_SYCL" OFF)
 if(QMC_OFFLOAD_MEM_ASSOCIATED)
   message(STATUS "Use omp_target_associate_ptr instead of direct OpenMP offload maps in dual-space allocators")
 endif()

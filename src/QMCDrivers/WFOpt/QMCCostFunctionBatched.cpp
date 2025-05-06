@@ -52,24 +52,30 @@ void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
                                       const std::vector<Return_rt>& PM,
                                       Return_rt FiniteDiff)
 {
+  for (int j = 0; j < NumOptimizables; j++)
+    OptVariables[j] = PM[j];
   if (FiniteDiff > 0)
   {
     QMCTraits::RealType dh = 1.0 / (2.0 * FiniteDiff);
     for (int i = 0; i < NumOptimizables; i++)
     {
-      for (int j = 0; j < NumOptimizables; j++)
-        OptVariables[j] = PM[j];
-      OptVariables[i]               = PM[i] + FiniteDiff;
-      QMCTraits::RealType CostPlus  = this->Cost();
-      OptVariables[i]               = PM[i] - FiniteDiff;
-      QMCTraits::RealType CostMinus = this->Cost();
-      PGradient[i]                  = (CostPlus - CostMinus) * dh;
+      // + FiniteDiff
+      OptVariables[i] = PM[i] + FiniteDiff;
+      resetPsi();
+      correlatedSampling(false);
+      auto CostPlus = computedCost();
+      // - FiniteDiff
+      OptVariables[i] = PM[i] - FiniteDiff;
+      resetPsi();
+      correlatedSampling(false);
+      auto CostMinus = computedCost();
+      // calculate gradient
+      PGradient[i]    = (CostPlus - CostMinus) * dh;
+      OptVariables[i] = PM[i]; // revert parameter change
     }
   }
   else
   {
-    for (int j = 0; j < NumOptimizables; j++)
-      OptVariables[j] = PM[j];
     resetPsi();
     //evaluate new local energies and derivatives
     EffectiveWeight effective_weight = correlatedSampling(true);
@@ -393,7 +399,6 @@ void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
     e2_tot += opt_eval[i]->get_e2();
   }
 
-  OptVariablesForPsi.setComputed();
   //     app_log() << "  VMC Efavg = " << eft_tot/static_cast<Return_t>(wPerNode[NumThreads]) << std::endl;
   //Need to sum over the processors
   std::vector<Return_rt> etemp(3);
@@ -588,7 +593,6 @@ void QMCCostFunctionBatched::checkConfigurationsSR(EngineHandle& handle)
     e2_tot += opt_eval[i]->get_e2();
   }
 
-  OptVariablesForPsi.setComputed();
   //     app_log() << "  VMC Efavg = " << eft_tot/static_cast<Return_t>(wPerNode[NumThreads]) << std::endl;
   //Need to sum over the processors
   std::vector<Return_rt> etemp(3);
@@ -632,12 +636,8 @@ void QMCCostFunctionBatched::engine_checkConfigurations(cqmc::engine::LMYEngine<
 
 void QMCCostFunctionBatched::resetPsi(bool final_reset)
 {
-  if (OptVariables.size() < OptVariablesForPsi.size())
-    for (int i = 0; i < equalVarMap.size(); ++i)
-      OptVariablesForPsi[equalVarMap[i][0]] = OptVariables[equalVarMap[i][1]];
-  else
-    for (int i = 0; i < OptVariables.size(); ++i)
-      OptVariablesForPsi[i] = OptVariables[i];
+  for (int i = 0; i < OptVariables.size(); ++i)
+    OptVariablesForPsi[i] = OptVariables[i];
 
   //cout << "######### QMCCostFunctionBatched::resetPsi " << std::endl;
   //OptVariablesForPsi.print(std::cout);
@@ -779,13 +779,10 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
               RecordsOnNode[is][ENERGY_NEW] = etmp + RecordsOnNode[is][ENERGY_FIXED];
               for (int j = 0; j < nparams; j++)
               {
-                if (optVars.recompute(j))
-                {
-                  //In general, dlogpsi is complex.
-                  DerivRecords[is][j] = dlogpsi_array[ib][j];
-                  //However, E_L is always real, and so d E_L/dc is real, provided c is real.
-                  HDerivRecords[is][j] = std::real(dhpsioverpsi_array[ib][j]);
-                }
+                //In general, dlogpsi is complex.
+                DerivRecords[is][j] = dlogpsi_array[ib][j];
+                //However, E_L is always real, and so d E_L/dc is real, provided c is real.
+                HDerivRecords[is][j] = std::real(dhpsioverpsi_array[ib][j]);
               }
             }
           }

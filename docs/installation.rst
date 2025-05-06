@@ -311,7 +311,6 @@ the path to the source directory.
                          Release (create a release/optimized build)
                          RelWithDebInfo (create a release/optimized build with debug info)
                          MinSizeRel (create an executable optimized for size)
-    CMAKE_SYSTEM_NAME    Set value to CrayLinuxEnvironment when cross-compiling in Cray Programming Environment.
     CMAKE_C_COMPILER     Set the C compiler
     CMAKE_CXX_COMPILER   Set the C++ compiler
     CMAKE_C_FLAGS        Set the C flags.  Note: to prevent default
@@ -420,7 +419,9 @@ the path to the source directory.
 
 `Clang thread sanitizer library tsan <https://clang.llvm.org/docs/ThreadSanitizer.html>`_
 
-`Clang thread sanitizer library msan <https://clang.llvm.org/docs/MemorySanitizer.html>`_
+`Clang memory sanitizer library msan <https://clang.llvm.org/docs/MemorySanitizer.html>`_
+
+`Clang type sanitizer library typesan <https://clang.llvm.org/docs/TypeSanitizer.html>`_
 
 See :ref:`Sanitizer-Libraries` for more information.
 
@@ -610,8 +611,7 @@ QMCPACK tried to do its best with CMake to facilitate cross compiling.
 
 - On a machine using a Cray programming environment, we rely on
   compiler wrappers provided by Cray to correctly set architecture-specific
-  flags. Please also add ``-DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment`` to cmake.
-  The CMake configure log should indicate that a Cray machine was detected.
+  flags.
 
 - If not on a Cray machine, by default we assume building for
   the host architecture (e.g., -xHost is added for the Intel compiler

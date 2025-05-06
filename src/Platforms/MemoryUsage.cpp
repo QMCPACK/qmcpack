@@ -16,14 +16,7 @@
 #include <iomanip>
 #include "Host/sysutil.h"
 #include "OMPTarget/OMPallocator.hpp"
-#ifdef ENABLE_CUDA
-#include "CUDA/CUDAallocator.hpp"
-#include "CUDA/CUDAruntime.hpp"
-#endif
-#ifdef ENABLE_SYCL
-#include "SYCL/SYCLallocator.hpp"
-#include "SYCL/SYCLruntime.hpp"
-#endif
+#include "MemManageAlias.hpp"
 
 namespace qmcplusplus
 {
@@ -43,16 +36,16 @@ void print_mem(const std::string& title, std::ostream& log)
       << std::endl;
 #endif
 #ifdef ENABLE_CUDA
-  log << "Device memory allocated via CUDA allocator : " << std::setw(7) << (getCUDAdeviceMemAllocated() >> 20)
-      << " MiB" << std::endl;
-  log << "Free memory on the default device          : " << std::setw(7) << (getCUDAdeviceFreeMem() >> 20) << " MiB"
-      << std::endl;
+  log << "Device memory allocated via CUDA allocator : " << std::setw(7)
+      << (compute::MemManage<PlatformKind::CUDA>::getDeviceMemAllocated() >> 20) << " MiB" << std::endl;
+  log << "Free memory on the default device          : " << std::setw(7)
+      << (compute::MemManage<PlatformKind::CUDA>::getDeviceFreeMem() >> 20) << " MiB" << std::endl;
 #endif
 #ifdef ENABLE_SYCL
-  log << "Device memory allocated via SYCL allocator : " << std::setw(7) << (getSYCLdeviceMemAllocated() >> 20)
-      << " MiB" << std::endl;
-  log << "Free memory on the default device          : " << std::setw(7) << (getSYCLdeviceFreeMem() >> 20) << " MiB"
-      << std::endl;
+  log << "Device memory allocated via SYCL allocator : " << std::setw(7)
+      << (compute::MemManage<PlatformKind::SYCL>::getDeviceMemAllocated() >> 20) << " MiB" << std::endl;
+  log << "Free memory on the default device          : " << std::setw(7)
+      << (compute::MemManage<PlatformKind::SYCL>::getDeviceFreeMem() >> 20) << " MiB" << std::endl;
 #endif
   log << line_separator << std::endl;
 }

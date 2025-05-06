@@ -499,8 +499,16 @@ else
 fi
 
 if [[ $sys == *"asan"* ]]; then
-    export QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-Asan
+    export QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-ASan
     export QMC_OPTIONS="${QMC_OPTIONS};-DENABLE_SANITIZER=asan"
+fi
+if [[ $sys == *"tsan"* ]]; then
+    export QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-TSan
+    export QMC_OPTIONS="${QMC_OPTIONS};-DENABLE_SANITIZER=tsan"
+fi
+if [[ $sys == *"typesan"* ]]; then
+    export QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-TypeSan
+    export QMC_OPTIONS="${QMC_OPTIONS};-DENABLE_SANITIZER=typesan"
 fi
 
 echo TEST SUBMIT NAME: $QMCPACK_TEST_SUBMIT_NAME

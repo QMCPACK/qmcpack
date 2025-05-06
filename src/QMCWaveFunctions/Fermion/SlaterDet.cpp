@@ -25,9 +25,10 @@ namespace qmcplusplus
 using PsiValue = WaveFunctionComponent::PsiValue;
 
 SlaterDet::SlaterDet(ParticleSet& targetPtcl,
-                     std::vector<std::unique_ptr<Determinant_t>> dets,
+                     std::vector<std::unique_ptr<SPOSet>>&& sposets,
+                     std::vector<std::unique_ptr<Determinant_t>>&& dets,
                      const std::string& class_name)
-    : Dets(std::move(dets))
+    : sposets_(std::move(sposets)), Dets(std::move(dets))
 {
   assert(Dets.size() == targetPtcl.groups());
 
@@ -41,20 +42,20 @@ SlaterDet::~SlaterDet() = default;
 
 bool SlaterDet::isOptimizable() const
 {
-  return std::any_of(Dets.begin(), Dets.end(), [](const auto& det) { return det->isOptimizable(); });
+  return std::any_of(sposets_.begin(), sposets_.end(), [](const auto& phi) { return phi->isOptimizable(); });
 }
 
 void SlaterDet::extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs)
 {
-  for (int i = 0; i < Dets.size(); i++)
-    Dets[i]->extractOptimizableObjectRefs(opt_obj_refs);
+  for (const auto& sposet : sposets_)
+    sposet->extractOptimizableObjectRefs(opt_obj_refs);
 }
 
 void SlaterDet::checkOutVariables(const opt_variables_type& active)
 {
-  if (isOptimizable())
-    for (int i = 0; i < Dets.size(); i++)
-      Dets[i]->checkOutVariables(active);
+  for (const auto& sposet : sposets_)
+    if (sposet->isOptimizable())
+      sposet->checkOutVariables(active);
 }
 
 PsiValue SlaterDet::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
@@ -218,6 +219,8 @@ void SlaterDet::evaluateHessian(ParticleSet& P, HessVector& grad_grad_psi)
 
 void SlaterDet::createResource(ResourceCollection& collection) const
 {
+  for (const auto& sposet : sposets_)
+    sposet->createResource(collection);
   for (int i = 0; i < Dets.size(); ++i)
     Dets[i]->createResource(collection);
 }
@@ -225,6 +228,20 @@ void SlaterDet::createResource(ResourceCollection& collection) const
 void SlaterDet::acquireResource(ResourceCollection& collection,
                                 const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
 {
+  auto& sd_leader = wfc_list.getCastedLeader<SlaterDet>();
+
+  for (int i = 0; i < sposets_.size(); i++)
+  {
+    auto& phi_leader = *sd_leader.sposets_[i];
+    RefVectorWithLeader<SPOSet> phi_list(phi_leader);
+    for (WaveFunctionComponent& wfc : wfc_list)
+    {
+      auto& sd = static_cast<SlaterDet&>(wfc);
+      phi_list.push_back(*sd.sposets_[i]);
+    }
+    phi_leader.acquireResource(collection, phi_list);
+  }
+
   for (int i = 0; i < Dets.size(); ++i)
   {
     const auto det_list(extract_DetRef_list(wfc_list, i));
@@ -235,6 +252,21 @@ void SlaterDet::acquireResource(ResourceCollection& collection,
 void SlaterDet::releaseResource(ResourceCollection& collection,
                                 const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
 {
+  auto& sd_leader = wfc_list.getCastedLeader<SlaterDet>();
+
+  for (int i = 0; i < sposets_.size(); i++)
+  {
+    auto& phi_leader = *sd_leader.sposets_[i];
+    RefVectorWithLeader<SPOSet> phi_list(phi_leader);
+    for (WaveFunctionComponent& wfc : wfc_list)
+    {
+      auto& sd = static_cast<SlaterDet&>(wfc);
+      phi_list.push_back(*sd.sposets_[i]);
+    }
+
+    phi_leader.releaseResource(collection, phi_list);
+  }
+
   for (int i = 0; i < Dets.size(); ++i)
   {
     const auto det_list(extract_DetRef_list(wfc_list, i));
@@ -270,10 +302,21 @@ void SlaterDet::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 
 std::unique_ptr<WaveFunctionComponent> SlaterDet::makeClone(ParticleSet& tqp) const
 {
+  std::vector<std::unique_ptr<SPOSet>> sposet_clones;
+  for (const auto& phi : sposets_)
+    sposet_clones.emplace_back(phi->makeClone());
+
   std::vector<std::unique_ptr<Determinant_t>> dets;
   for (const auto& det : Dets)
-    dets.emplace_back(det->makeCopy(det->getPhi()->makeClone()));
-  auto myclone = std::make_unique<SlaterDet>(tqp, std::move(dets));
+  {
+    auto it = std::find_if(sposets_.begin(), sposets_.end(),
+                           [&](const std::unique_ptr<SPOSet>& sposet) { return sposet.get() == &det->getPhi(); });
+    if (it == sposets_.end())
+      throw std::runtime_error("Bug! The sposet of a determinant doesn't reference sposets owned by SlaterDet.");
+    else
+      dets.emplace_back(det->makeCopy(**(sposet_clones.begin() + std::distance(sposets_.begin(), it))));
+  }
+  auto myclone = std::make_unique<SlaterDet>(tqp, std::move(sposet_clones), std::move(dets));
   assert(myclone->isOptimizable() == isOptimizable());
   return myclone;
 }

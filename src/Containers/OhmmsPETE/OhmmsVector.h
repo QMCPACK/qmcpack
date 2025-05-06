@@ -25,7 +25,7 @@
 #include <type_traits>
 #include <stdexcept>
 #include "PETE/PETE.h"
-#include "allocator_traits.hpp"
+#include "Common/allocator_traits.hpp"
 
 namespace qmcplusplus
 {
@@ -131,12 +131,7 @@ public:
   inline void attachReference(T* ref, size_type n)
   {
     if (nAllocated)
-    {
-      free();
-      // std::cerr << "Allocated OhmmsVector attachReference called.\n" << std::endl;
-      // Nice idea but "default" constructed WFC elements in the batched driver make this a mess.
-      //throw std::runtime_error("Pointer attaching is not allowed on Vector with allocated memory.");
-    }
+      throw std::runtime_error("Pointer attaching is not allowed on Vector with allocated memory.");
     nLocal     = n;
     nAllocated = 0;
     X          = ref;
@@ -149,14 +144,15 @@ public:
   inline void attachReference(const CONTAINER& other, T* ref, size_type n)
   {
     if (nAllocated)
-    {
-      free();
-    }
+      throw std::runtime_error("Pointer attaching is not allowed on Vector with allocated memory.");
     nLocal     = n;
     nAllocated = 0;
     X          = ref;
     qmc_allocator_traits<Alloc>::attachReference(other.mAllocator, mAllocator, ref - other.data());
   }
+
+  /// return true if this container is attached to another
+  inline bool isAttached() const { return nLocal > 0 && nAllocated == 0; }
 
   //! return the current size
   inline size_type size() const { return nLocal; }
@@ -291,9 +287,7 @@ private:
   inline void resize_impl(size_type n)
   {
     if (nAllocated)
-    {
       mAllocator.deallocate(X, nAllocated);
-    }
     X          = mAllocator.allocate(n);
     nLocal     = n;
     nAllocated = n;

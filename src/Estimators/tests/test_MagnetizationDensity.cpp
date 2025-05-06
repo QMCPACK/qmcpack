@@ -376,11 +376,13 @@ TEST_CASE("MagnetizationDensity::IntegrationTest", "[estimators]")
   auto spinor_set = std::make_unique<SpinorSet>("ConstSpinorSet");
   spinor_set->set_spos(std::move(spo_up), std::move(spo_dn));
 
-  auto dd = std::make_unique<DiracDeterminant<>>(std::move(spinor_set), 0, nelec);
+  auto dd = std::make_unique<DiracDeterminant<>>(*spinor_set, 0, nelec);
 
+  std::vector<std::unique_ptr<SPOSet>> sposets;
+  sposets.push_back(std::move(spinor_set));
   std::vector<std::unique_ptr<DiracDeterminantBase>> dirac_dets;
   dirac_dets.push_back(std::move(dd));
-  auto sd = std::make_unique<SlaterDet>(elec_, std::move(dirac_dets));
+  auto sd = std::make_unique<SlaterDet>(elec_, std::move(sposets), std::move(dirac_dets));
 
   RuntimeOptions runtime_options;
   TrialWaveFunction psi(runtime_options);

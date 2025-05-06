@@ -143,5 +143,8 @@
 /* Enable NVTX regions in CUDA code. */
 #cmakedefine USE_NVTX_API @USE_NVTX_API@
 
+/* For coverage builds  */
+#cmakedefine ENABLE_GCOV @ENABLE_GCOV@
+
 #endif // QMCPLUSPLUS_CONFIGURATION_H
 

@@ -30,10 +30,12 @@
 
 namespace qmcplusplus
 {
-#if defined(ENABLE_CUDA) && !defined(QMC_CUDA2HIP)
-using DiracDet = DiracDeterminant<DelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
+#if defined(ENABLE_CUDA)
+using DiracDet = DiracDeterminant<PlatformKind::CUDA, QMCTraits::ValueType, QMCTraits::QTFull::ValueType>;
+#elif defined(ENABLE_SYCL)
+using DiracDet = DiracDeterminant<PlatformKind::SYCL, QMCTraits::ValueType, QMCTraits::QTFull::ValueType>;
 #else
-using DiracDet = DiracDeterminant<DelayedUpdate<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
+using DiracDet = DiracDeterminant<>;
 #endif
 
 using LogValue  = TrialWaveFunction::LogValue;
@@ -114,10 +116,12 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   REQUIRE(spo != nullptr);
 
   std::vector<std::unique_ptr<DiracDeterminantBase>> dets;
-  dets.push_back(std::make_unique<DiracDet>(spo->makeClone(), 0, 2));
-  dets.push_back(std::make_unique<DiracDet>(spo->makeClone(), 2, 4));
+  dets.push_back(std::make_unique<DiracDet>(*spo, 0, 2));
+  dets.push_back(std::make_unique<DiracDet>(*spo, 2, 4));
 
-  auto slater_det = std::make_unique<SlaterDet>(elec_, std::move(dets));
+  std::vector<std::unique_ptr<SPOSet>> unique_sposets;
+  unique_sposets.emplace_back(std::move(spo));
+  auto slater_det = std::make_unique<SlaterDet>(elec_, std::move(unique_sposets), std::move(dets));
 
   RuntimeOptions runtime_options;
   TrialWaveFunction psi(runtime_options);

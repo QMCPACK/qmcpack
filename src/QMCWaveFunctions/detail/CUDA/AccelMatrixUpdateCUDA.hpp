@@ -15,6 +15,7 @@
 
 #include <QueueAliases.hpp>
 #include "matrix_update_helper.hpp"
+#include "delayed_update_helper.h"
 
 namespace qmcplusplus
 {
@@ -90,6 +91,18 @@ void applyW_batched(Queue<PlatformKind::CUDA>& queue,
                  "CUDA::applyW_batched failed!");
 }
 
+template<typename T>
+void applyW_stageV(Queue<PlatformKind::CUDA>& queue,
+                   const int* delay_list_gpu,
+                   const int delay_count,
+                   T* temp_gpu,
+                   const int numorbs,
+                   const int ndelay,
+                   T* V_gpu,
+                   const T* Ainv)
+{
+  applyW_stageV_cuda(delay_list_gpu, delay_count, temp_gpu, numorbs, ndelay, V_gpu, Ainv, queue.getNative());
+}
 
 } // namespace compute
 } // namespace qmcplusplus

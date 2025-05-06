@@ -135,12 +135,14 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay, const OffloadSwitche
   REQUIRE(spo != nullptr);
 
   std::vector<std::unique_ptr<DiracDeterminantBase>> dets;
-  auto det_up_ptr = std::make_unique<DiracDet>(spo->makeClone(), 0, 2, ndelay);
+  auto det_up_ptr = std::make_unique<DiracDet>(*spo, 0, 2, ndelay);
   auto det_up     = det_up_ptr.get();
   dets.push_back(std::move(det_up_ptr));
-  dets.push_back(std::make_unique<DiracDet>(spo->makeClone(), 2, 4, ndelay));
+  dets.push_back(std::make_unique<DiracDet>(*spo, 2, 4, ndelay));
 
-  auto slater_det = std::make_unique<SlaterDet>(elec_, std::move(dets));
+  std::vector<std::unique_ptr<SPOSet>> unique_sposets;
+  unique_sposets.emplace_back(std::move(spo));
+  auto slater_det = std::make_unique<SlaterDet>(elec_, std::move(unique_sposets), std::move(dets));
 
   RuntimeOptions runtime_options;
   TrialWaveFunction psi(runtime_options);
@@ -640,7 +642,7 @@ TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")
   // DiracDeterminant<DelayedUpdate>
   SECTION("DiracDeterminant<DelayedUpdate>")
   {
-    using Det = DiracDeterminant<DelayedUpdate<VT, FPVT>>;
+    using Det = DiracDeterminant<PlatformKind::CPU, VT, FPVT>;
     testTrialWaveFunction_diamondC_2x1x1<Det, float_tag>(1, OffloadSwitches{false, false});
     testTrialWaveFunction_diamondC_2x1x1<Det, float_tag>(2, OffloadSwitches{false, false});
     testTrialWaveFunction_diamondC_2x1x1<Det, double_tag>(1, OffloadSwitches{false, false});
@@ -648,7 +650,7 @@ TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")
   }
   SECTION("DiracDeterminant<DelayedUpdate>_offload_spo")
   {
-    using Det = DiracDeterminant<DelayedUpdate<VT, FPVT>>;
+    using Det = DiracDeterminant<PlatformKind::CPU, VT, FPVT>;
     testTrialWaveFunction_diamondC_2x1x1<Det, float_tag>(1, OffloadSwitches{true, false});
     testTrialWaveFunction_diamondC_2x1x1<Det, float_tag>(2, OffloadSwitches{true, false});
     testTrialWaveFunction_diamondC_2x1x1<Det, double_tag>(1, OffloadSwitches{true, false});
@@ -656,7 +658,7 @@ TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")
   }
   SECTION("DiracDeterminant<DelayedUpdate>_offload_Jas")
   {
-    using Det = DiracDeterminant<DelayedUpdate<VT, FPVT>>;
+    using Det = DiracDeterminant<PlatformKind::CPU, VT, FPVT>;
     testTrialWaveFunction_diamondC_2x1x1<Det, float_tag>(1, OffloadSwitches{false, true});
     testTrialWaveFunction_diamondC_2x1x1<Det, float_tag>(2, OffloadSwitches{false, true});
     testTrialWaveFunction_diamondC_2x1x1<Det, double_tag>(1, OffloadSwitches{false, true});
@@ -664,7 +666,7 @@ TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")
   }
   SECTION("DiracDeterminant<DelayedUpdate>_offload_spo_jas")
   {
-    using Det = DiracDeterminant<DelayedUpdate<VT, FPVT>>;
+    using Det = DiracDeterminant<PlatformKind::CPU, VT, FPVT>;
     testTrialWaveFunction_diamondC_2x1x1<Det, float_tag>(1, OffloadSwitches{true, true});
     testTrialWaveFunction_diamondC_2x1x1<Det, float_tag>(2, OffloadSwitches{true, true});
     testTrialWaveFunction_diamondC_2x1x1<Det, double_tag>(1, OffloadSwitches{true, true});

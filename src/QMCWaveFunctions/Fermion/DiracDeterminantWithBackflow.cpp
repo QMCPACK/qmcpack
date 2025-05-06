@@ -25,14 +25,11 @@
 namespace qmcplusplus
 {
 /** constructor
- *@param spos the single-particle orbital set
+ *@param phi the single-particle orbital set
  *@param first index of the first particle
  */
-DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(std::unique_ptr<SPOSet>&& spos,
-                                                           BackflowTransformation& BF,
-                                                           int first,
-                                                           int last)
-    : DiracDeterminantBase(getClassName(), std::move(spos), first, last), BFTrans_(BF)
+DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(SPOSet& phi, BackflowTransformation& BF, int first, int last)
+    : DiracDeterminantBase(getClassName(), phi, first, last), BFTrans_(BF)
 {
   NumParticles = BFTrans_.QP.getTotalNum();
   NP           = 0;
@@ -81,7 +78,7 @@ void DiracDeterminantWithBackflow::resize(int nel, int morb)
 /** replace of SPOSet::evaluate function with the removal of t_logpsi */
 void DiracDeterminantWithBackflow::evaluate_SPO(ValueMatrix& logdet, GradMatrix& dlogdet, HessMatrix& grad_grad_logdet)
 {
-  Phi->evaluate_notranspose(BFTrans_.QP, FirstIndex, LastIndex, psiM_temp, dlogdet, grad_grad_logdet);
+  phi_.evaluate_notranspose(BFTrans_.QP, FirstIndex, LastIndex, psiM_temp, dlogdet, grad_grad_logdet);
   simd::transpose(psiM_temp.data(), NumOrbitals, psiM_temp.cols(), logdet.data(), NumOrbitals, logdet.cols());
 }
 
@@ -90,7 +87,7 @@ void DiracDeterminantWithBackflow::evaluate_SPO(ValueMatrix& logdet,
                                                 HessMatrix& grad_grad_logdet,
                                                 GGGMatrix& grad_grad_grad_logdet)
 {
-  Phi->evaluate_notranspose(BFTrans_.QP, FirstIndex, LastIndex, psiM_temp, dlogdet, grad_grad_logdet,
+  phi_.evaluate_notranspose(BFTrans_.QP, FirstIndex, LastIndex, psiM_temp, dlogdet, grad_grad_logdet,
                             grad_grad_grad_logdet);
   simd::transpose(psiM_temp.data(), NumOrbitals, psiM_temp.cols(), logdet.data(), NumOrbitals, logdet.cols());
 }
@@ -175,7 +172,7 @@ void DiracDeterminantWithBackflow::copyFromBuffer(ParticleSet& P, WFBufferType& 
   buf.get(psiMinv.first_address(), psiMinv.last_address());
   buf.get(log_value_);
   //re-evaluate it for testing
-  //Phi.evaluate(P, FirstIndex, LastIndex, psiM, dpsiM, d2psiM);
+  //phi_.evaluate(P, FirstIndex, LastIndex, psiM, dpsiM, d2psiM);
   //CurrentDet = Invert(psiM.data(),NumPtcls,NumOrbitals);
   //need extra copy for gradient/laplacian calculations without updating it
   //psiM_temp = psiM;
@@ -205,7 +202,7 @@ DiracDeterminantWithBackflow::PsiValue DiracDeterminantWithBackflow::ratio(Parti
     int jat    = *it - FirstIndex;
     PosType dr = BFTrans_.newQP[*it] - BFTrans_.QP.R[*it];
     BFTrans_.QP.makeMove(*it, dr);
-    Phi->evaluateValue(BFTrans_.QP, *it, psiV);
+    phi_.evaluateValue(BFTrans_.QP, *it, psiV);
     for (int orb = 0; orb < psiV.size(); orb++)
       psiM_temp(orb, jat) = psiV[orb];
     BFTrans_.QP.rejectMove(*it);
@@ -277,7 +274,7 @@ DiracDeterminantWithBackflow::PsiValue DiracDeterminantWithBackflow::ratioGrad(P
     int jat    = *it - FirstIndex;
     PosType dr = BFTrans_.newQP[*it] - BFTrans_.QP.R[*it];
     BFTrans_.QP.makeMove(*it, dr);
-    Phi->evaluateVGL(BFTrans_.QP, *it, psiV, dpsiV, d2psiV);
+    phi_.evaluateVGL(BFTrans_.QP, *it, psiV, dpsiV, d2psiV);
     for (int orb = 0; orb < psiV.size(); orb++)
       psiM_temp(orb, jat) = psiV[orb];
     std::copy(dpsiV.begin(), dpsiV.end(), dpsiM_temp.begin(jat));
@@ -719,7 +716,7 @@ void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
         dLa -= (traceAtB(a_jk_prime, outerProduct(Fmat(k, j), Fmat(j, k))) +
                 traceAtB(Ajk_sum(j, k), outerProduct(dFa(k, j), Fmat(j, k)) + outerProduct(Fmat(k, j), dFa(j, k))));
       } // k
-    }   // j
+    } // j
     //int kk = pa; //BFTrans_.optIndexMap[pa];
     int kk = BFTrans_.optIndexMap[pa];
 #if defined(QMC_COMPLEX)
@@ -855,7 +852,7 @@ void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
         dLa -= (traceAtB(a_jk_prime, outerProduct(Fmat(k, j), Fmat(j, k))) +
                 traceAtB(Ajk_sum(j, k), outerProduct(dFa(k, j), Fmat(j, k)) + outerProduct(Fmat(k, j), dFa(j, k))));
       } // k
-    }   // j
+    } // j
 #if defined(QMC_COMPLEX)
     convertToReal(dpsia, dlogpsi(offset, pa));
     convertToReal(dLa + sumL * dpsia + dotG * dpsia + static_cast<ValueType>(2.0 * Dot(myG, Gtemp)), dL(offset, pa));
@@ -975,8 +972,8 @@ void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
                          dot(transpose(BFTrans_.Amat(i, FirstIndex + j)), BFTrans_.Xmat(pa, i, FirstIndex + k)));
         La3 -= (traceAtB(a_jk_prime, outerProduct(Fmat(k, j), Fmat(j, k))) +
                 traceAtB(a_jk, outerProduct(dFa(k, j), Fmat(j, k)) + outerProduct(Fmat(k, j), dFa(j, k))));
-      }          // k
-    }            // j
+      } // k
+    } // j
     int kk = pa; //BFTrans_.optIndexMap[pa];
 #if defined(QMC_COMPLEX)
     dlogpsi[kk] += real(dpsia);
@@ -991,10 +988,10 @@ void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
 }
 
 std::unique_ptr<DiracDeterminantWithBackflow> DiracDeterminantWithBackflow::makeCopyWithBF(
-    std::unique_ptr<SPOSet>&& spo,
+    SPOSet& phi,
     BackflowTransformation& BF) const
 {
-  return std::make_unique<DiracDeterminantWithBackflow>(std::move(spo), BF, FirstIndex, LastIndex);
+  return std::make_unique<DiracDeterminantWithBackflow>(phi, BF, FirstIndex, LastIndex);
 }
 
 void DiracDeterminantWithBackflow::testGG(ParticleSet& P)
@@ -1016,7 +1013,7 @@ void DiracDeterminantWithBackflow::testGG(ParticleSet& P)
   const RealType dh = 0.0000000001; //PREC_WARNING
   for (int i = 0; i < BFTrans_.QP.getTotalNum(); i++)
     qp_0[i] = BFTrans_.QP.R[i];
-  Phi->evaluate_notranspose(BFTrans_.QP, FirstIndex, LastIndex, psiM, dpsiM, ggM);
+  phi_.evaluate_notranspose(BFTrans_.QP, FirstIndex, LastIndex, psiM, dpsiM, ggM);
   app_log() << "Testing GGType calculation: " << std::endl;
   for (int lx = 0; lx < 3; lx++)
   {

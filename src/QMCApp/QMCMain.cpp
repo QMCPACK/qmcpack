@@ -77,7 +77,7 @@ QMCMain::QMCMain(Communicate* c)
                 << "                        QMCPACK " << QMCPACK_VERSION_MAJOR << "." << QMCPACK_VERSION_MINOR << "."
                 << QMCPACK_VERSION_PATCH << "\n"
                 << "\n"
-                << "          (c) Copyright 2003-2023 QMCPACK developers\n"
+                << "          (c) Copyright 2003-2025 QMCPACK developers\n"
                 << "\n"
                 << "                         Please cite:\n"
                 << "      J. Kim et al. J. Phys. Cond. Mat. 30 195901 (2018)\n"
@@ -680,10 +680,7 @@ bool QMCMain::executeQMCSection(xmlNodePtr cur, bool reuse)
   std::string random_test("no");
   OhmmsAttributeSet a;
   a.add(target, "target");
-  a.add(random_test, "testrng");
   a.put(cur);
-  if (random_test == "yes")
-    RandomNumberControl::test();
   if (qmc_system_ == nullptr)
     qmc_system_ = particle_set_pool_->getWalkerSet(target);
   bool success = runQMC(cur, reuse);

@@ -22,29 +22,19 @@
 #define QMCPLUSPLUS_DUAL_ALLOCATOR_ALIASES_HPP
 
 #include <config.h>
-#include "DeviceAllocator.hpp"
 #include "PinnedAllocator.h"
 #if (defined(ENABLE_CUDA) || defined(ENABLE_SYCL)) && !defined(ENABLE_OFFLOAD)
-#include "DualAllocator.hpp"
-#if defined(ENABLE_CUDA)
+#include "VendorKind.hpp"
+#include "MemManageAlias.hpp"
+#include "Common/DualAllocator.hpp"
+
 namespace qmcplusplus
 {
 template<typename T>
-using UnpinnedDualAllocator = DualAllocator<T, CUDAAllocator<T>, aligned_allocator<T>>;
+using UnpinnedDualAllocator = DualAllocator<T, compute::MemManage<VendorKind>::DeviceAllocator<T>, aligned_allocator<T>>;
 template<typename T>
-using PinnedDualAllocator = DualAllocator<T, CUDAAllocator<T>, PinnedAlignedAllocator<T>>;
+using PinnedDualAllocator = DualAllocator<T, compute::MemManage<VendorKind>::DeviceAllocator<T>, PinnedAlignedAllocator<T>>;
 } // namespace qmcplusplus
-#elif defined(ENABLE_SYCL)
-namespace qmcplusplus
-{
-template<typename T>
-using UnpinnedDualAllocator = DualAllocator<T, SYCLAllocator<T>, aligned_allocator<T>>;
-template<typename T>
-using PinnedDualAllocator = DualAllocator<T, SYCLAllocator<T>, PinnedAlignedAllocator<T>>;
-} // namespace qmcplusplus
-#else
-#error unhandled platform
-#endif
 
 #else // ENABLE_OFFLOAD or no CUDA or SYCL
 #include "OMPTarget/OffloadAlignedAllocators.hpp"
