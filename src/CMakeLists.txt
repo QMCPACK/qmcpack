@@ -138,6 +138,11 @@ else() #{{{
   # Provide linkage to the parent modules i.e. Particle, QMCHamiltonians,
   # QMCWaveFunction.
   #
+  # It may be used faciliate transition to single compilation of the
+  # minimal pools without a great deal of mess in the various test
+  # program builds however it is useful as is. Consult with PD before
+  # reverting this.
+  #
 
   add_library(minimal_testing_pools INTERFACE)
   target_sources(minimal_testing_pools INTERFACE Particle/tests/MinimalParticlePool.h QMCHamiltonians/tests/MinimalHamiltonianPool.h QMCWaveFunctions/tests/MinimalWaveFunctionPool.h)
