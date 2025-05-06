@@ -54,7 +54,7 @@ void benchmark_solver(const size_t N)
 
 TEST_CASE("SolverInverter_bench", "[wavefunction][benchmark]")
 {
-  using Value         = typename QMCTraits::ValueType;
+  using Value = typename QMCTraits::ValueType;
 #ifdef QMC_COMPLEX
   using FullPrecValue = std::complex<double>;
 #else
