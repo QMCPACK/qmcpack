@@ -24,28 +24,28 @@ namespace qmcplusplus
 template<PlatformKind PL, typename T>
 using DeviceAllocator = typename compute::MemManage<PL>::template DeviceAllocator<T>;
 
-template<PlatformKind PL, typename FP_T>
+template<PlatformKind PL, typename T, typename FP_T>
 void benchmark_solver(const size_t N)
 {
   typename InverterAccel<PL, FP_T>::Inverter solver;
   compute::Queue<PL> queue;
 
-  Matrix<FP_T> m(N, N);
-  Matrix<FP_T> m_invT(N, N);
-  Matrix<FP_T> m_invT_CPU(N, N);
-  Matrix<FP_T, DeviceAllocator<PL, FP_T>> m_invGPU;
+  Matrix<T> m(N, N);
+  Matrix<T> m_invT(N, N);
+  Matrix<T> m_invT_CPU(N, N);
+  Matrix<T, DeviceAllocator<PL, T>> m_invGPU;
   std::complex<double> log_value;
   m.resize(N, N);
   m_invT.resize(N, N);
   m_invT_CPU.resize(N, N);
   m_invGPU.resize(N, N);
 
-  testing::MakeRngSpdMatrix<FP_T> makeRngSpdMatrix{};
+  testing::MakeRngSpdMatrix<T> makeRngSpdMatrix{};
   makeRngSpdMatrix(m);
 
   BENCHMARK("SolverInverter") { solver.invert_transpose(m, m_invT, m_invGPU, log_value, queue.getNative()); };
 
-  DiracMatrix<FP_T> dmat;
+  DiracMatrix<T> dmat;
   BENCHMARK("CPU") { dmat.invert_transpose(m, m_invT_CPU, log_value); };
 
   auto check_matrix_result = checkMatrix(m_invT, m_invT_CPU);
@@ -54,12 +54,13 @@ void benchmark_solver(const size_t N)
 
 TEST_CASE("SolverInverter_bench", "[wavefunction][benchmark]")
 {
+  using Value         = typename QMCTraits::ValueType;
 #ifdef QMC_COMPLEX
   using FullPrecValue = std::complex<double>;
 #else
   using FullPrecValue = double;
 #endif
-  benchmark_solver<PlatformKind::CUDA, FullPrecValue>(1024);
+  benchmark_solver<PlatformKind::CUDA, Value, FullPrecValue>(1024);
 }
 
 } // namespace qmcplusplus
