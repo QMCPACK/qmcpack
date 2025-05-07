@@ -196,11 +196,13 @@ foreach(CATEGORY common trialwf sposet jastrow determinant)
   set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
 endforeach()
 
-if(ENABLE_CUDA AND BUILD_MICRO_BENCHMARKS)
+if((ENABLE_CUDA OR ENABLE_SYCL) AND BUILD_MICRO_BENCHMARKS)
   set(UTEST_EXE benchmark_diracmatrixcompute)
   set(UTEST_NAME deterministic-unit_${UTEST_EXE})
-  set(BENCHMARK_SRC benchmark_DiracMatrixInverterCUDA.cpp)
-  set(BENCHMARK_SRC ${BENCHMARK_SRC} benchmark_SolverInverters.cpp)
+  set(BENCHMARK_SRC benchmark_SolverInverters.cpp)
+  if(ENABLE_CUDA)
+    set(BENCHMARK_SRC ${BENCHMARK_SRC} benchmark_DiracMatrixInverterCUDA.cpp)
+  endif()
   add_executable(${UTEST_EXE} ${BENCHMARK_SRC})
   target_link_libraries(
     ${UTEST_EXE}
