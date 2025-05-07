@@ -190,12 +190,12 @@ void ParticleSet::resetGroups()
     assert(GroupID[iat] < nspecies);
 }
 
-void ParticleSet::randomizeFromSource(ParticleSet& src)
+void ParticleSet::randomizeFromSource(const ParticleSet& src)
 {
-  SpeciesSet& srcSpSet(src.getSpeciesSet());
+  const SpeciesSet& srcSpSet(src.getSpeciesSet());
   SpeciesSet& spSet(getSpeciesSet());
-  int srcChargeIndx = srcSpSet.addAttribute("charge");
-  int srcMemberIndx = srcSpSet.addAttribute("membersize");
+  int srcChargeIndx = srcSpSet.getAttribute("charge");
+  int srcMemberIndx = srcSpSet.getAttribute("membersize");
   int ChargeIndex   = spSet.addAttribute("charge");
   int MemberIndx    = spSet.addAttribute("membersize");
   int Nsrc          = src.getTotalNum();

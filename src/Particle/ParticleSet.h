@@ -494,7 +494,7 @@ public:
   /** Initialize particles around another ParticleSet
    * Used to initialize an electron ParticleSet by an ion ParticleSet
    */
-  void randomizeFromSource(ParticleSet& src);
+  void randomizeFromSource(const ParticleSet& src);
 
   /** get species name of particle i
    */
