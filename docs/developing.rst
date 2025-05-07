@@ -307,6 +307,7 @@ Disable the use of clang-format for sections of code that would be more readable
 for code blocks where a particular alignment would clearly help readability.
 
 ::
+
   // clang-format off
   Matrix my_matrix = { {1, 2, 3},
                        {4, 5, 6},
