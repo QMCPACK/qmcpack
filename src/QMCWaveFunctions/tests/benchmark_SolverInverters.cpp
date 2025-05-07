@@ -45,7 +45,7 @@ void benchmark_solver(const size_t N)
 
   BENCHMARK("SolverInverter") { solver.invert_transpose(m, m_invT, m_invGPU, log_value, queue.getNative()); };
 
-  DiracMatrix<T> dmat;
+  DiracMatrix<FP_T> dmat;
   BENCHMARK("CPU") { dmat.invert_transpose(m, m_invT_CPU, log_value); };
 
   auto check_matrix_result = checkMatrix(m_invT, m_invT_CPU);
