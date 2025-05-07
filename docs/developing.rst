@@ -290,14 +290,28 @@ Golden rule of comments
 
 If you modify a piece of code, also adapt the comments that belong to it if necessary.
 
-Formatting and "style"
-~~~~~~~~~~~~~~~~~~~~~~
+Formatting and "style" (clang-format)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Use the provided clang-format style in ``src/.clang-format`` to format ``.h``, ``.hpp``, ``.cu``, and ``.cpp`` files. Many of the following rules will be applied to the code by clang-format, which should allow you to ignore most of them if you always run it on your modified code.
+We make use of clang-format for automatic source code formatting. It is widely available, including in all standard package
+managers. clang-format removes the burden of formatting source code by hand. We provide a clang-format style in
+``src/.clang-format``. Use this to format ``.h``, ``.hpp``, ``.cu``, and ``.cpp`` files. Many of the following rules will be applied
+to the code by clang-format, which should allow you to ignore most of them if you always run it on your modified code.
 
-You should use clang-format support and the ``.clangformat`` file with your editor, use a Git precommit hook to run clang-format
-or run clang-format manually on every file you modify.  However, if you see numerous formatting updates outside of the code you
-have modified, first commit the formatting changes in a separate PR.
+Use of clang-format can be fully automated: there are many guides to the use of clang-format with different editors online, as well
+as using it manually. In addition to running the formatting in your editor, you can use a Git precommit hook to run clang-format
+automatically, or you can run clang-format manually. If working on old code, please clang-format the file, and if you see
+particularly large changes, commit the formatting changes in a separate pull request.
+
+Disable the use of clang-format for sections of code that would be more readable when formatted differently, e.g., for matrices or
+for code blocks where a particular alignment would clearly help readability.
+
+::
+  // clang-format off
+  Matrix my_matrix = { {1, 2, 3},
+                       {4, 5, 6},
+                       {7, 8 ,9} };
+  // clang-format on
 
 Indentation
 ^^^^^^^^^^^
