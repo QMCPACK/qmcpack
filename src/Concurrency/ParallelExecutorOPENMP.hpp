@@ -48,7 +48,7 @@ void ParallelExecutor<Executor::OPENMP>::operator()(int num_tasks, F&& f, Args&&
     {
       f(task_id, std::forward<Args>(args)...);
     }
-    catch (const std::runtime_error& re)
+    catch (const std::exception& re)
     {
       if (nesting_error == re.what())
         ++nested_throw_count;
