@@ -82,9 +82,9 @@ public:
     F.resize(n);
   }
 
-  OneDimQuinticSpline<Td, Tg, CTd, CTg>* makeClone() const { return new OneDimQuinticSpline<Td, Tg, CTd, CTg>(*this); }
+  OneDimQuinticSpline* makeClone() const { return new OneDimQuinticSpline<Td, Tg, CTd, CTg>(*this); }
 
-  OneDimQuinticSpline<Td, Tg, CTd, CTg>(const OneDimQuinticSpline<Td, Tg, CTd, CTg>& a)
+  OneDimQuinticSpline(const OneDimQuinticSpline<Td, Tg, CTd, CTg>& a)
       : OneDimGridFunctor<Td, Tg, CTd, CTg>(a)
   {
     m_Y2.resize(a.m_Y2.size());

@@ -72,17 +72,17 @@ Nightly testing currently includes at least the following software versions:
 
 * Compilers
   * GCC 14.2.0, 12.4.0
-  * Clang/LLVM 19.1.7
-* Boost 1.87.0, 1.79.0
+  * Clang/LLVM 20.1.4
+* Boost 1.88.0, 1.82.0
 * HDF5 1.14.5
 * FFTW 3.3.10
-* CMake 3.30.5
+* CMake 3.31.6
 * MPI
   * OpenMPI 5.0.6
 * CUDA 12.8
-* ROCm 6.3.2
-* Python 3.13.1
-* NumPy 2.2.2
+* ROCm 6.4.0
+* Python 3.13.2
+* NumPy 2.2.5
 
 For GPU acceleration on NVIDIA GPUs we test LLVM with CUDA using the above versions. On AMD GPUs we support using the latest ROCm
 version and its matching amdclang compiler, as listed above. On a developmental basis we also check the latest Clang and GCC
