@@ -214,7 +214,7 @@ struct h5data_proxy<std::vector<std::string>>
       char_list.resize(dim_out);
       ret = H5Dread(dataset, datatype, H5S_ALL, H5S_ALL, xfer_plist, char_list.data());
 
-      for (int i = 0; i < dim_out; i++)
+      for (std::size_t i = 0; i < dim_out; i++)
         ref.push_back(char_list[i]);
 
       H5Dvlen_reclaim(datatype, dataspace, xfer_plist, char_list.data());
@@ -240,7 +240,7 @@ struct h5data_proxy<std::vector<std::string>>
 
     // Create vector of pointers to the actual string data
     std::vector<const char*> char_list;
-    for (int i = 0; i < ref.size(); i++)
+    for (std::size_t i = 0; i < ref.size(); i++)
       char_list.push_back(ref[i].data());
 
     hid_t h1   = H5Dopen(grp, aname.c_str(), H5P_DEFAULT);
