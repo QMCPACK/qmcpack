@@ -25,9 +25,9 @@ namespace qmcplusplus
 {
 inline std::string strip(const std::string& s)
 {
-  int start = s.length();
-  int end   = 0;
-  int i;
+  std::string::size_type start = s.length();
+  std::string::size_type end   = 0;
+  std::string::size_type i;
   for (i = 0; i < s.length(); i++)
   {
     if (s[i] != ' ' && s[i] != '\n' && s[i] != '\t')
@@ -44,9 +44,6 @@ inline std::string strip(const std::string& s)
       break;
     }
   }
-  //app_log()<<"strip got '"<<s<<"'"<< std::endl;
-  //app_log()<<"start,end "<<start<<","<<end<<" "<<s[start]<<" "<<s[end]<< std::endl;
-  //app_log()<<"returning '"<<s.substr(start,end-start+1)<<"'"<< std::endl;
   return s.substr(start, end - start + 1);
 }
 
@@ -57,16 +54,16 @@ inline bool whitespace(char c) { return (c == ' ' || c == '\n' || c == '\t'); }
 inline std::vector<std::string> split(const std::string& s)
 {
   std::vector<std::string> tokens;
-  int i = 0;
+  std::string::size_type i = 0;
   while (i < s.length())
   {
     while (i < s.length() && whitespace(s[i]))
       i++;
-    int start = i;
+    std::string::size_type start = i;
     while (i < s.length() && !whitespace(s[i]))
       i++;
-    int end = i;
-    int len = end - start;
+    std::string::size_type end = i;
+    std::string::size_type len = end - start;
     if (len > 0)
       tokens.push_back(s.substr(start, len));
   }
@@ -76,12 +73,11 @@ inline std::vector<std::string> split(const std::string& s)
 
 inline std::vector<std::string> split(const std::string& s, const std::string& pattern)
 {
-  int sloc = 0;
-  int eloc;
-  int plen = pattern.length();
+  std::string::size_type sloc = 0;
+  std::string::size_type eloc;
+  std::string::size_type plen = pattern.length();
   std::string ss;
   std::vector<std::string> tokens;
-  //app_log() << "split got string:" << std::endl<<"'"<<s<<"'"<< std::endl;
   while (true)
   {
     eloc = s.find(pattern, sloc);
@@ -90,8 +86,6 @@ inline std::vector<std::string> split(const std::string& s, const std::string& p
       ss = s.substr(sloc, eloc - sloc);
       if (ss != "")
       {
-        //app_log()<<"  adding token: "<< std::endl;
-        //app_log()<<"    '"<< ss <<"'" << std::endl;
         tokens.push_back(ss);
       }
       sloc = eloc + plen;
@@ -102,8 +96,6 @@ inline std::vector<std::string> split(const std::string& s, const std::string& p
       ss   = s.substr(sloc, eloc - sloc);
       if (ss != "")
       {
-        //app_log()<<"  adding token: "<< std::endl;
-        //app_log()<<"    '"<< ss <<"'" << std::endl;
         tokens.push_back(ss);
       }
       break;
