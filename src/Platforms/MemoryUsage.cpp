@@ -23,7 +23,7 @@ namespace qmcplusplus
 void print_mem(const std::string& title, std::ostream& log)
 {
   std::string line_separator;
-  for (int i = 0; i < title.size() + 30; i++)
+  for (std::string::size_type i = 0; i < title.size() + 30; i++)
     line_separator += "=";
   log << line_separator << std::endl;
   log << "--- Memory usage report : " << title << " ---" << std::endl;

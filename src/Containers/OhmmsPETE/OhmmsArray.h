@@ -64,7 +64,7 @@ public:
   template<typename SIZET = size_t, typename = std::is_integral<SIZET>>
   void resize(const std::array<SIZET, D>& dims)
   {
-    for (int i = 0; i < dims.size(); i++)
+    for (size_t i = 0; i < dims.size(); i++)
       Length[i] = dims[i];
     X.resize(full_size(Length));
   }
@@ -214,7 +214,7 @@ public:
   inline Type_t sum() const
   {
     Type_t s = 0;
-    for (int i = 0; i < X.size(); ++i)
+    for (size_t i = 0; i < X.size(); ++i)
       s += X[i];
     return s;
   }
@@ -238,7 +238,7 @@ private:
   size_t full_size(const std::array<size_t, D>& dims) const
   {
     size_t total = dims[0];
-    for (int i = 1; i < dims.size(); i++)
+    for (size_t i = 1; i < dims.size(); i++)
       total *= dims[i];
     return total;
   }
@@ -247,7 +247,7 @@ private:
   SIZET compute_offset(const std::array<SIZET, D>& indices) const
   {
     SIZET offset = indices[0];
-    for (int i = 1; i < indices.size(); i++)
+    for (size_t i = 1; i < indices.size(); i++)
       offset = offset * Length[i] + indices[i];
     return offset;
   }
@@ -260,7 +260,7 @@ bool operator==(const Array<T, D, Alloc>& lhs, const Array<T, D, Alloc>& rhs)
                 "operator== requires host accessible Vector.");
   if (lhs.size() == rhs.size())
   {
-    for (int i = 0; i < rhs.size(); i++)
+    for (size_t i = 0; i < rhs.size(); i++)
       if (lhs(i) != rhs(i))
         return false;
     return true;
