@@ -155,7 +155,7 @@ target_link_libraries(qmcwfs PRIVATE einspline Math::FFTW3)
 add_library(qmcwfs_omptarget OBJECT ${JASTROW_OMPTARGET_SRCS} ${FERMION_OMPTARGET_SRCS})
 
 target_include_directories(qmcwfs_omptarget PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-target_link_libraries(qmcwfs_omptarget PUBLIC qmcutil qmcparticle containers platform_LA)
+target_link_libraries(qmcwfs_omptarget PUBLIC spline2 qmcutil qmcparticle containers platform_LA)
 
 target_link_libraries(qmcwfs PUBLIC qmcwfs_omptarget)
 

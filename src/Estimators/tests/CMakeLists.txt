@@ -83,8 +83,10 @@ if(USE_OBJECT_TARGET)
     test_estimators_help
     qmcham
     qmcwfs
-    qmcparticle
     qmcwfs_omptarget
+    spline2
+    spline2_omptarget
+    qmcparticle
     qmcparticle_omptarget
     qmcutil
     platform_omptarget_LA
