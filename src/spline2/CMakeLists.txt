@@ -9,6 +9,10 @@
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
+
+add_library(spline2 MultiBspline.cpp)
+target_link_libraries(spline2 PUBLIC platform_runtime)
+
 if(BUILD_UNIT_TESTS)
   add_subdirectory(tests)
 endif()
