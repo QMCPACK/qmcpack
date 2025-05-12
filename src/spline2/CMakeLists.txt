@@ -10,8 +10,15 @@
 #//////////////////////////////////////////////////////////////////////////////////////
 
 
-add_library(spline2 MultiBspline.cpp)
-target_link_libraries(spline2 PUBLIC platform_runtime)
+add_library(spline2_omptarget OBJECT MultiBsplineOffload.cpp)
+target_link_libraries(spline2_omptarget PUBLIC platform_runtime)
+
+if(USE_OBJECT_TARGET)
+  add_library(spline2 OBJECT MultiBspline.cpp)
+else()
+  add_library(spline2 MultiBspline.cpp)
+endif()
+target_link_libraries(spline2 PUBLIC spline2_omptarget)
 
 if(BUILD_UNIT_TESTS)
   add_subdirectory(tests)
