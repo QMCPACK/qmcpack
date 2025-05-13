@@ -42,7 +42,7 @@ public:
 private:
   /// The cutoff up to which k-vectors are generated.
   FullPrecReal kcutoff;
-  FullPrecReal full_m_pi_{M_PI};
+
 public:
   const auto& get_kpts_cart_soa() const { return kpts_cart_soa_; }
   const std::vector<TinyVector<int, DIM>>& getKpts() const { return kpts_; }
@@ -66,7 +66,7 @@ public:
 
   int getNumK() const { return numk; }
 
-  /** update k-vectors 
+  /** update k-vectors
    * @param sc supercell
    * @param kc cutoff radius in the K
    * @param twist shifts the center of the grid of k-vectors

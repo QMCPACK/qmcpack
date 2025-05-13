@@ -113,7 +113,7 @@ void KContainerT<REAL>::findApproxMMax(const Lattice& lattice, unsigned ndim)
   */
   // see rmm, Electronic Structure, p. 85 for details
   for (int i = 0; i < DIM; i++)
-    mmax[i] = static_cast<int>(std::floor(std::sqrt(dot(lattice.a(i), lattice.a(i))) * kcutoff / (2 * full_m_pi_))) + 1;
+    mmax[i] = static_cast<int>(std::floor(std::sqrt(dot(lattice.a(i), lattice.a(i))) * kcutoff / (2 * M_PI))) + 1;
 
   mmax[DIM] = mmax[0];
   for (int i = 1; i < DIM; ++i)
