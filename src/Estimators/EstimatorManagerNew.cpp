@@ -30,6 +30,7 @@
 #include "Message/CommOperators.h"
 #include "Message/CommUtilities.h"
 #include <Pools/PooledData.h>
+#include "Estimators/StructureFactorEstimator.h"
 #include "Estimators/LocalEnergyEstimator.h"
 #include "Estimators/LocalEnergyOnlyEstimator.h"
 #include "Estimators/RMCLocalEnergyEstimator.h"
@@ -109,7 +110,8 @@ void EstimatorManagerNew::constructEstimators(EstimatorManagerInput&& emi,
                                                        twf.getSPOMap(), pset) ||
           createEstimator<MagnetizationDensityInput>(est_input, pset.getLattice()) ||
           createEstimator<PerParticleHamiltonianLoggerInput>(est_input, my_comm_->rank()) ||
-          createEstimator<EnergyDensityInput>(est_input, pset_pool)))
+          createEstimator<EnergyDensityInput>(est_input, pset_pool) ||
+          createEstimator<StructureFactorInput>(est_input, pset_pool)))
       throw UniformCommunicateError(std::string(error_tag_) +
                                     "cannot construct an estimator from estimator input object.");
 

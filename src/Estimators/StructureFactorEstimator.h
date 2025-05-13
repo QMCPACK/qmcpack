@@ -13,6 +13,7 @@
 #define QMCPLUSPLUS_STRUCTUREFACTORESTIMATOR_H
 
 #include "OperatorEstBase.h"
+#include <ParticleSetPool.h>
 
 namespace qmcplusplus
 {
@@ -31,10 +32,15 @@ public:
   using Real         = QMCT::RealType;
   using FullPrecReal = QMCT::FullPrecRealType;
   using KPt          = TinyVector<Real, QMCTraits::DIM>;
+  using PSPool       = typename ParticleSetPool::PoolType;
 
   StructureFactorEstimator(const StructureFactorInput& sfi,
                            const ParticleSet& pset_ions,
                            const ParticleSet& pset_elec,
+                           DataLocality data_locality = DataLocality::crowd);
+
+  StructureFactorEstimator(const StructureFactorInput& sfi,
+                           const PSPool& PSP,
                            DataLocality data_locality = DataLocality::crowd);
 
   StructureFactorEstimator(const StructureFactorEstimator& sfe, DataLocality dl);
@@ -57,8 +63,10 @@ public:
   void write(hdf_archive& file) override;
   void collect(const RefVector<OperatorEstBase>& type_erased_operator_estimators) override;
 
-  long long getNumKPoints() const { return num_kpoints_; }
+  long long getNumKPoints() { return num_kpoints_; }
   const auto& getKLists() const { return ions_.getSimulationCell().getKLists(); };
+  const ParticleSet& getParticleSet(const PSPool& psetpool, const std::string& psname) const;
+
 protected:
   // Testing functions
   const Vector<Real>& getSKElecElec() const { return sfk_e_e_; }

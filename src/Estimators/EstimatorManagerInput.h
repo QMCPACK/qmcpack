@@ -41,14 +41,17 @@ class OneBodyDensityMatricesInput;
 class SelfHealingOverlapInput;
 class MagnetizationDensityInput;
 class PerParticleHamiltonianLoggerInput;
-using EstimatorInput  = std::variant<std::monostate,
-                                     MomentumDistributionInput,
-                                     SpinDensityInput,
-                                     OneBodyDensityMatricesInput,
-                                     SelfHealingOverlapInput,
-                                     MagnetizationDensityInput,
-                                     PerParticleHamiltonianLoggerInput,
-                                     EnergyDensityInput>;
+class StructureFactorInput;
+using EstimatorInput = std::variant<std::monostate,
+                                    MomentumDistributionInput,
+                                    SpinDensityInput,
+                                    OneBodyDensityMatricesInput,
+                                    SelfHealingOverlapInput,
+                                    MagnetizationDensityInput,
+                                    PerParticleHamiltonianLoggerInput,
+                                    EnergyDensityInput,
+                                    StructureFactorInput>;
+
 using EstimatorInputs = std::vector<EstimatorInput>;
 
 /** The scalar esimtator inputs

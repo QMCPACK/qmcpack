@@ -18,6 +18,15 @@ namespace qmcplusplus
 {
 
 StructureFactorEstimator::StructureFactorEstimator(const StructureFactorInput& sfi,
+                                                   const PSPool& pset_pool,
+                                                   DataLocality data_locality)
+    : StructureFactorEstimator(sfi,
+                               getParticleSet(pset_pool, sfi.get_source()),
+                               getParticleSet(pset_pool, sfi.get_target()),
+                               data_locality)
+{}
+
+StructureFactorEstimator::StructureFactorEstimator(const StructureFactorInput& sfi,
                                                    const ParticleSet& pset_ions,
                                                    const ParticleSet& pset_elec,
                                                    DataLocality data_locality)
@@ -86,6 +95,18 @@ void StructureFactorEstimator::accumulate(const RefVector<MCPWalker>& walkers,
     }
   }
 }
+
+const ParticleSet& StructureFactorEstimator::getParticleSet(const PSPool& psetpool, const std::string& psname) const
+{
+  auto pset_iter(psetpool.find(psname));
+  if (pset_iter == psetpool.end())
+  {
+    throw UniformCommunicateError("Particle set pool does not contain \"" + psname +
+                                  "\" so StructureFactorEstimator::get_particleset fails!");
+  }
+  return *(pset_iter->second.get());
+}
+
 
 void StructureFactorEstimator::registerOperatorEstimator(hdf_archive& file)
 {
