@@ -360,7 +360,7 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
 
     set(TEST_ADDED FALSE)
     set(TEST_LABELS "")
-    set(FULL_NAME "${BASE_NAME}-${PROCS}-${THREADS}")
+    set(FULL_NAME "${BASE_NAME}-r${PROCS}-t${THREADS}")
     message(VERBOSE "Adding test ${FULL_NAME}")
     run_qmc_app(
       ${FULL_NAME}
@@ -404,7 +404,7 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
               if(IDX0 LESS 2)
                 set(TEST_NAME "${FULL_NAME}-${SCALAR_CHECK}")
               else()
-                set(TEST_NAME "${FULL_NAME}-${SERIES}-${SCALAR_CHECK}")
+                set(TEST_NAME "${FULL_NAME}-s${SERIES}-${SCALAR_CHECK}")
               endif()
               #MESSAGE("Adding scalar check ${TEST_NAME}")
               set(CHECK_CMD
@@ -492,7 +492,7 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
 
     set(TEST_ADDED FALSE)
     set(TEST_LABELS "")
-    set(FULL_NAME "${BASE_NAME}-${PROCS}-${THREADS}")
+    set(FULL_NAME "${BASE_NAME}-r${PROCS}-t${THREADS}")
     message(VERBOSE "Adding test ${FULL_NAME}")
     run_qmc_app(
       ${FULL_NAME}
@@ -528,7 +528,7 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
         set(SERIES 0)
         if(QRC_SERIES)
           set(SERIES ${QRC_SERIES})
-          set(TEST_NAME "${FULL_NAME}-${SERIES}-${SCALAR_NAME}")
+          set(TEST_NAME "${FULL_NAME}-s${SERIES}-${SCALAR_NAME}")
         else()
           set(TEST_NAME "${FULL_NAME}-${SCALAR_NAME}")
         endif()
