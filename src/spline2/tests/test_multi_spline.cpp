@@ -14,6 +14,7 @@
 
 #include "OhmmsSoA/VectorSoaContainer.h"
 #include "spline2/MultiBspline.hpp"
+#include "spline2/SingleBsplineAllocator.hpp"
 #include "spline2/MultiBsplineEval.hpp"
 #include "QMCWaveFunctions/BsplineFactory/contraction_helper.hpp"
 #include "config/stdlib/Constants.h"
@@ -162,7 +163,7 @@ struct test_splines : public test_splines_base<T, GRID_SIZE, NUM_SPLINES>
 
     REQUIRE(bs.num_splines() == npad);
 
-    BsplineAllocator<double> mAllocator;
+    SingleBsplineAllocator<double> mAllocator;
     UBspline_3d_d* aspline = mAllocator.allocateUBspline(grid[0], grid[1], grid[2], bc[0], bc[1], bc[2], data.data());
 
     for (int i = 0; i < num_splines; i++)
@@ -219,7 +220,7 @@ struct test_splines<T, 5, 1> : public test_splines_base<T, 5, 1>
 
     REQUIRE(bs.num_splines() == npad);
 
-    BsplineAllocator<double> mAllocator;
+    SingleBsplineAllocator<double> mAllocator;
     UBspline_3d_d* aspline = mAllocator.allocateUBspline(grid[0], grid[1], grid[2], bc[0], bc[1], bc[2], data.data());
 
     for (int i = 0; i < num_splines; i++)
