@@ -40,7 +40,7 @@ if(NOT QMC_COMPLEX)
       COMMAND ${Python3_EXECUTABLE} ${qmcpack_SOURCE_DIR}/tests/performance/adjust_qmcpack_input.py ${ADJUST_INPUT}
               ${TEST_DIR}/${INPUT_FILE} WORKING_DIRECTORY "${qmcpack_BINARY_DIR}/tests/performance/C-molecule")
 
-    set(TEST_NAME ${TEST_NAME}-${PROCS}-${THREADS})
+    set(TEST_NAME ${TEST_NAME}-r${PROCS}-t${THREADS})
     math(EXPR TOT_PROCS "${PROCS} * ${THREADS}")
     if(HAVE_MPI)
       add_test(NAME ${TEST_NAME} COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${PROCS} ${MPIEXEC_PREFLAGS}
