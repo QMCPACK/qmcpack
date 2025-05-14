@@ -106,9 +106,7 @@ bool SplineSetReader<SA>::createSplineDataSpaceLookforDumpFile(const BandInfoGro
   Ugrid xyz_grid[3];
 
   typename SA::BCType xyz_bc[3];
-  bool havePsig = set_grid(bspline.HalfG, xyz_grid, xyz_bc);
-  if (!havePsig)
-    myComm->barrier_and_abort("SplineSetReader needs psi_g. Set precision=\"double\".");
+  set_grid(bspline.HalfG, xyz_grid, xyz_bc);
   bspline.create_spline(xyz_grid, xyz_bc);
 
   int foundspline = 0;

@@ -70,11 +70,8 @@ struct BsplineReader
   /** read gvectors and set the mesh, and prepare for einspline
    */
   template<typename GT, typename BCT>
-  inline bool set_grid(const TinyVector<int, 3>& halfg, GT* xyz_grid, BCT* xyz_bc) const
+  inline void set_grid(const TinyVector<int, 3>& halfg, GT* xyz_grid, BCT* xyz_bc) const
   {
-    //This sets MeshSize from the input file
-    bool havePsig = mybuilder->ReadGvectors_ESHDF();
-
     for (int j = 0; j < 3; ++j)
     {
       xyz_grid[j].start = 0.0;
@@ -95,7 +92,6 @@ struct BsplineReader
       xyz_bc[j].lVal = 0.0;
       xyz_bc[j].rVal = 0.0;
     }
-    return havePsig;
   }
 
   /** initialize twist-related data for N orbitals
