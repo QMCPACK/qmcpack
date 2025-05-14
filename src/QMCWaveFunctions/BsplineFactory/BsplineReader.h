@@ -102,7 +102,6 @@ struct BsplineReader
   template<typename SPE>
   inline void check_twists(SPE& bspline, const BandInfoGroup& bandgroup) const
   {
-    //init(orbitalSet,bspline);
     bspline.PrimLattice = mybuilder->PrimCell;
     bspline.GGt         = dot(transpose(bspline.PrimLattice.G), bspline.PrimLattice.G);
 
@@ -110,7 +109,7 @@ struct BsplineReader
     int numOrbs = bandgroup.getNumSPOs();
 
     bspline.setOrbitalSetSize(numOrbs);
-    bspline.resizeStorage(N, N);
+    bspline.resizeStorage(N);
 
     bspline.first_spo = bandgroup.getFirstSPO();
     bspline.last_spo  = bandgroup.getLastSPO();
