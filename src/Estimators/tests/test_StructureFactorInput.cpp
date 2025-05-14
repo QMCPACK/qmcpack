@@ -25,7 +25,6 @@ TEST_CASE("StructureFactorInput::parseXML::valid", "[estimators]")
   int test_num = 0;
   for (auto input_xml : input::xml)
   {
-    std::cout << "input number: " << test_num++ << '\n';
     Libxml2Document doc;
     bool okay       = doc.parseFromString(input_xml);
     xmlNodePtr node = doc.getRoot();

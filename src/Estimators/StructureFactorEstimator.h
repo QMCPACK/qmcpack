@@ -23,7 +23,7 @@ class StructureFactorAccess;
 }
 
 class StructureFactorInput;
-  
+
 class StructureFactorEstimator : public OperatorEstBase
 {
 public:
@@ -57,8 +57,8 @@ public:
   void write(hdf_archive& file) override;
   void collect(const RefVector<OperatorEstBase>& type_erased_operator_estimators) override;
 
-  long long getNumKPoints() { return num_kpoints_; }
-  auto getKLists() { return ions_.getSimulationCell().getKLists(); };
+  long long getNumKPoints() const { return num_kpoints_; }
+  const auto& getKLists() const { return ions_.getSimulationCell().getKLists(); };
 protected:
   // Testing functions
   const Vector<Real>& getSKElecElec() const { return sfk_e_e_; }
@@ -72,7 +72,7 @@ private:
   const int elec_num_species_;
   const ParticleSet& ions_;
   const int ion_num_species_;
-  
+
   /// number of k points
   long long num_kpoints_;
 
