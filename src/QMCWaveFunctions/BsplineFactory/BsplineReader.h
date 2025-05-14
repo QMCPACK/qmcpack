@@ -24,6 +24,7 @@
 #include <einspline/bspline_base.h>
 #include <BandInfo.h>
 #include "EinsplineSetBuilder.h"
+#include "BsplineSet.h"
 
 namespace qmcplusplus
 {
@@ -99,14 +100,10 @@ struct BsplineReader
 
   /** initialize twist-related data for N orbitals
    */
-  template<typename SPE>
-  inline void check_twists(SPE& bspline, const BandInfoGroup& bandgroup) const
+  inline void check_twists(BsplineSet& bspline, const BandInfoGroup& bandgroup) const
   {
-    bspline.PrimLattice = mybuilder->PrimCell;
-    bspline.GGt         = dot(transpose(bspline.PrimLattice.G), bspline.PrimLattice.G);
-
-    int N       = bandgroup.getNumDistinctOrbitals();
-    int numOrbs = bandgroup.getNumSPOs();
+    const int N       = bandgroup.getNumDistinctOrbitals();
+    const int numOrbs = bandgroup.getNumSPOs();
 
     bspline.setOrbitalSetSize(numOrbs);
     bspline.resizeStorage(N);
@@ -114,9 +111,8 @@ struct BsplineReader
     bspline.first_spo = bandgroup.getFirstSPO();
     bspline.last_spo  = bandgroup.getLastSPO();
 
-    int num                                = 0;
     const std::vector<BandInfo>& cur_bands = bandgroup.myBands;
-    for (int iorb = 0; iorb < N; iorb++)
+    for (int iorb = 0, num = 0; iorb < N; iorb++)
     {
       int ti                      = cur_bands[iorb].TwistIndex;
       bspline.kPoints[iorb]       = mybuilder->PrimCell.k_cart(-mybuilder->primcell_kpoints[ti]);

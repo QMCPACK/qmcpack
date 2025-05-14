@@ -97,6 +97,9 @@ bool SplineSetReader<SA>::createSplineDataSpaceLookforDumpFile(const BandInfoGro
   else
     app_log() << "  Using real einspline table" << std::endl;
 
+  bspline.PrimLattice = mybuilder->PrimCell;
+  bspline.GGt         = dot(transpose(bspline.PrimLattice.G), bspline.PrimLattice.G);
+
   //baseclass handles twists
   check_twists(bspline, bandgroup);
 
