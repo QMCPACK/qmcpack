@@ -45,6 +45,24 @@ check_python_reqs("numpy;pandas;h5py" estimator-sofk add_tests)
 
 if(add_tests)
   simple_run_and_check(
+    estimator-batched_sofk_pbyp-properties
+    "${qmcpack_SOURCE_DIR}/tests/estimator/sofk"
+    batched_pbyp_dat-h5.xml
+    1
+    16
+    check_properties_h5dat.py
+    dat-h5_pbyp)
+  simple_run_and_check(
+    estimator-batched_sofk_pbyp-collectables
+    "${qmcpack_SOURCE_DIR}/tests/estimator/sofk"
+    batched_pbyp_dat-h5.xml
+    1
+    16
+    check_collectables_h5dat.py
+    dat-h5_pbyp)
+
+# \todo remove with legacy single particle
+simple_run_and_check(
     estimator-sofk_pbyp-properties
     "${qmcpack_SOURCE_DIR}/tests/estimator/sofk"
     pbyp_dat-h5.xml
