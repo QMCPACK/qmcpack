@@ -20,7 +20,7 @@
 #define QMCPLUSPLUS_MULTIEINSPLINE_HPP
 
 #include "MultiBsplineBase.hpp"
-#include "spline2/BsplineAllocator.hpp"
+#include "MultiBsplineAllocator.hpp"
 #include "CPU/SIMD/aligned_allocator.hpp"
 
 namespace qmcplusplus
@@ -35,7 +35,7 @@ private:
   using Base  = MultiBsplineBase<T>;
   using Alloc = aligned_allocator<T>;
   ///use allocator
-  BsplineAllocator<T, Alloc> myAllocator;
+  MultiBsplineAllocator<T, Alloc> myAllocator;
 
   typename Base::SplineType* createImpl(const Ugrid grid[3],
                                         const typename Base::BoundaryCondition bc[3],
