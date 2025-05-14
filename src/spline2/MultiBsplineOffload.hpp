@@ -18,7 +18,7 @@
 #define QMCPLUSPLUS_MULTIEINSPLINEOFFLOAD_HPP
 
 #include "MultiBsplineBase.hpp"
-#include "spline2/BsplineAllocator.hpp"
+#include "MultiBsplineAllocator.hpp"
 #include "OMPTarget/OffloadAlignedAllocators.hpp"
 
 namespace qmcplusplus
@@ -33,7 +33,7 @@ private:
   using Base  = MultiBsplineBase<T>;
   using Alloc = OffloadAllocator<T>;
   ///use allocator
-  BsplineAllocator<T, Alloc> myAllocator;
+  MultiBsplineAllocator<T, Alloc> myAllocator;
 
   typename Base::SplineType* createImpl(const Ugrid grid[3],
                                         const typename Base::BoundaryCondition bc[3],
