@@ -3,7 +3,7 @@ message("Adding tests for afqmctools and QMCPACK workflow")
 include("${qmcpack_SOURCE_DIR}/CMake/test_labels.cmake")
 
 function(ADD_AFQMC_PYSCF_WORKFLOW_TEST test_name input_dir TEST_SCALARS TEST_OBS NPROC_INT)
-  set(TESTDIR "${CMAKE_CURRENT_BINARY_DIR}/converter_test_qmcpack_${test_name}-16-1")
+  set(TESTDIR "${CMAKE_CURRENT_BINARY_DIR}/converter_test_qmcpack_${test_name}-r16-t1")
   execute_process(COMMAND ${CMAKE_COMMAND} -E copy_directory "${input_dir}" "${TESTDIR}")
 
   # 1. Run scf.
@@ -58,15 +58,15 @@ function(ADD_AFQMC_PYSCF_WORKFLOW_TEST test_name input_dir TEST_SCALARS TEST_OBS
     TRUE
     0
     TEST_SCALARS)
-  set_tests_properties(${TESTNAME}-16-1 PROPERTIES DEPENDS "converter_test_pyscf_to_afqmc_${test_name}")
-  set_property(TEST ${TESTNAME}-16-1 APPEND PROPERTY LABELS "converter;afqmc")
+  set_tests_properties(${TESTNAME}-r16-t1 PROPERTIES DEPENDS "converter_test_pyscf_to_afqmc_${test_name}")
+  set_property(TEST ${TESTNAME}-r16-t1 APPEND PROPERTY LABELS "converter;afqmc")
   if(TEST_OBS)
     set(TESTNAME "converter_test_qmcpack_obs_${test_name}")
     add_test(
       NAME ${TESTNAME}
       COMMAND ${Python3_EXECUTABLE} ${TESTDIR}/reference/test_obs.py
       WORKING_DIRECTORY ${TESTDIR})
-    set_tests_properties(${TESTNAME} PROPERTIES DEPENDS "converter_test_qmcpack_${test_name}-16-1")
+    set_tests_properties(${TESTNAME} PROPERTIES DEPENDS "converter_test_qmcpack_${test_name}-r16-t1")
     set_property(TEST ${TESTNAME} APPEND PROPERTY LABELS "converter;afqmc")
   endif()
 endfunction()
