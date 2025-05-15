@@ -2,7 +2,6 @@
 Checks: "bugprone-*,readability-identifier-*"
 WarningsAsErrors: ""
 HeaderFilterRegex: ""
-AnalyzeTemporaryDtors: false
 FormatStyle: none
 CheckOptions:
   [
