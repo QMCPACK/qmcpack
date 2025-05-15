@@ -3469,16 +3469,16 @@ class Frontier(Supercomputer):
     
 
     def post_process_job(self, job):
-        if job.gpus is None:
+        if 'cpu' in job.constraint:
             job.run_options.add(
                 cpu_bind='--cpu-bind=threads',
                 threads_per_core='--threads-per-core={0}'.format(job.threads)
             )            
-        else:
+        elif 'gpu' in job.constraint:
             gpus_per_task = int(floor(float(self.gpus_per_node)/job.processes_per_node))
             job.run_options.add(
                 gpu_bind='--gpu-bind=closest',
-                gpus_per_task='--gpus-per-task=1'
+                gpus_per_task='--gpus-per-task={0}'.format(gpus_per_task)
             )
         #end if
         job.run_options.add(
