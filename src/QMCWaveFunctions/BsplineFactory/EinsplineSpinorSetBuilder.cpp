@@ -165,6 +165,10 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
   if (spinSet == 0)
     TileIons();
 
+  //read g-vectors and set MeshSize based on g-vectors and meshfactor
+  if(!ReadGvectors_ESHDF())
+    myComm->barrier_and_abort("Failed to load g-vectors.");
+
   bool use_single = (spo_prec == "single" || spo_prec == "float");
 
   // safeguard for a removed feature
