@@ -62,6 +62,9 @@ public:
 
   UPtr<OperatorEstBase> spawnCrowdClone() const override;
 
+  void packData(PooledData<Real>& buffer) const override;
+  void unpackData(PooledData<Real>& buffer) override;
+
   void registerOperatorEstimator(hdf_archive& file) override;
   void write(hdf_archive& file) override;
   void collect(const RefVector<OperatorEstBase>& type_erased_operator_estimators) override;

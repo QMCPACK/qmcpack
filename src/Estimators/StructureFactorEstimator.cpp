@@ -142,6 +142,18 @@ void StructureFactorEstimator::collect(const RefVector<OperatorEstBase>& type_er
   }
 }
 
+void StructureFactorEstimator::packData(PooledData<Real>& buffer) const
+{
+  buffer.add(sfk_e_e_);
+  buffer.add(rhok_e_);
+}
+
+void StructureFactorEstimator::unpackData(PooledData<Real>& buffer)
+{
+  buffer.get(sfk_e_e_);
+  buffer.get(rhok_e_);
+}
+
 void StructureFactorEstimator::startBlock(int steps) {}
 
 void StructureFactorEstimator::normalize(Real invTotWgt)
