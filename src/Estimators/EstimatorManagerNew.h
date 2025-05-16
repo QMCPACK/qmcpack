@@ -185,9 +185,13 @@ private:
   // ///return a pointer to the estimator aname
   // ScalarEstimatorBase* getEstimator(const std::string& a);
 
-  /// collect data and write
+  /** reduce accepts and rejects across all ranks
+   *  call reduceBlockData
+   *  add block averages to the energy and var accumulators
+   */
   void makeBlockAverages(unsigned long accept, unsigned long reject);
 
+  /** Does the mpi reduction over the Property and Average caches */
   void reduceBlockData();
 
   /// write scalars to scalar.dat and h5

@@ -83,13 +83,22 @@ public:
    *  reduction. Implied is this is during a global sync or there is a guarantee
    *  that the crowd operator estimators accumulation data is not
    *  being written to.
+   *
+   *  It is assumed by derived classes and it is necessary to support
+   *  derived type data locality schemes that the OperatorEstBase
+   *  derived types in the refvector match.
+   *
    *  The input operators are not zeroed after collect is called,
    *  the owner of the operators must handle the accumulated state explicitly.
+   *
+   *  A side effect is walker_weights_ are collected
+   *  as well, so if this is not called from an override the
+   *  walker_weights_ must be collected there.  If it is called they
+   *  must not be collected there.
    *
    *  There could be concurrent operations inside the scope of the collect call.
    */
   virtual void collect(const RefVector<OperatorEstBase>& oebs);
-  virtual void zero(RefVector<OperatorEstBase>& oebs);
 
   virtual void normalize(QMCT::RealType invToWgt);
 
@@ -139,7 +148,18 @@ public:
    */
   virtual void write(hdf_archive& file);
 
+  /** Calls zero on every OperatorEstBase in refvector
+   *
+   *  like collect this is intended to be called with a refvector
+   *  where the OperatorEstBase derived types are all the same.
+   *  Derived types overriding this can assume this.
+   */
+  virtual void zero(RefVector<OperatorEstBase>& oebs);
+
   /** zero data appropriately for the DataLocality
+   *
+   *  Derived classes that don't solely rely on data_ for
+   *  their accumulated data must override this function.
    */
   virtual void zero();
 

@@ -34,12 +34,6 @@ void OperatorEstBase::collect(const RefVector<OperatorEstBase>& type_erased_oper
   }
 }
 
-void OperatorEstBase::zero(RefVector<OperatorEstBase>& type_erased_operator_estimators)
-{
-  for (OperatorEstBase& crowd_oeb : type_erased_operator_estimators)
-    crowd_oeb.zero();
-}
-
 void OperatorEstBase::normalize(QMCT::RealType invTotWgt)
 {
   for (QMCT::RealType& elem : data_)
@@ -71,6 +65,12 @@ void OperatorEstBase::write(hdf_archive& file)
 void OperatorEstBase::packData(PooledData<Real>& buffer) const { buffer.add(data_.begin(), data_.end()); }
 
 void OperatorEstBase::unpackData(PooledData<Real>& buffer) { buffer.get(data_.begin(), data_.end()); }
+
+void OperatorEstBase::zero(RefVector<OperatorEstBase>& type_erased_operator_estimators)
+{
+  for (OperatorEstBase& crowd_oeb : type_erased_operator_estimators)
+    crowd_oeb.zero();
+}
 
 void OperatorEstBase::zero()
 {
