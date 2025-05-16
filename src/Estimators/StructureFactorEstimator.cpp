@@ -94,7 +94,7 @@ void StructureFactorEstimator::registerOperatorEstimator(hdf_archive& file)
   file.push(path_variables, true);
   // hdf_archive wants non const references, if that code was better
   // this would be unecessary
-  file.write(const_cast<std::vector<KPt>&>(ions_.getSimulationCell().getKLists().getKptsCartWorking()), "value");
+  file.write(ions_.getSimulationCell().getKLists().getKptsCartWorking(), "value");
   file.pop();
 }
 
