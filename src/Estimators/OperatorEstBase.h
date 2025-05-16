@@ -154,7 +154,7 @@ public:
    *  where the OperatorEstBase derived types are all the same.
    *  Derived types overriding this can assume this.
    */
-  virtual void zero(RefVector<OperatorEstBase>& oebs);
+  virtual void zero(RefVector<OperatorEstBase>& oebs) const;
 
   /** zero data appropriately for the DataLocality
    *
