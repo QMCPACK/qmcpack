@@ -137,7 +137,6 @@ void StructureFactorEstimator::collect(const RefVector<OperatorEstBase>& type_er
     this->sfk_e_e_ += crowd_sfe.sfk_e_e_;
     this->rhok_e_ += crowd_sfe.rhok_e_;
   }
-  OperatorEstBase::collect(type_erased_operator_estimators);
 }
 
 void StructureFactorEstimator::startBlock(int steps) {}
