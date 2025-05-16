@@ -3946,11 +3946,11 @@ class Aurora(Supercomputer):
             elif 'gpu' in job.constraint:
                 threads = '--env OMP_NUM_THREADS={}'.format(job.threads)
                 cpubind = '--cpu-bind=list'
-                ind = 0
+                ind = 1
                 for _ in range(job.processes_per_node):
                     cpubind += ':{}-{}'.format(ind, ind + job.threads - 1)
-                    if ind + 2*(job.threads - 1) > 52 and ind < 52:
-                        ind = 52
+                    if ind + 2*(job.threads - 1) > 53 and ind < 53:
+                        ind = 53
                     else:
                         ind += job.threads
                 # end for
