@@ -128,6 +128,7 @@ void StructureFactorEstimator::write(hdf_archive& file)
   // this is call rhok_e_e in the output of the legacy, but that is just wrong it is |rhok_e_e_|^2
   file.write(sfk_e_e_, "sfk_e_e");
   file.write(rhok_e_, "rhok_e_");
+  file.pop();
 }
 
 void StructureFactorEstimator::collect(const RefVector<OperatorEstBase>& type_erased_operator_estimators)
