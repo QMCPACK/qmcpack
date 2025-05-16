@@ -3926,11 +3926,11 @@ class Aurora(Supercomputer):
         # Account for dual nature of Perlmutter
         if 'cpu' in job.constraint:
             self.procs_per_node = 2
-            self.cores_per_node = 104
+            self.cores_per_node = 102
             self.ram_per_node   = 1024
         elif 'gpu' in job.constraint:
             self.procs_per_node = 1
-            self.cores_per_node = 104
+            self.cores_per_node = 102
             self.ram_per_node   = 768
             self.gpus_per_node  = 6
         else:
@@ -4284,7 +4284,7 @@ Kestrel(      2144,   2,    52,  256,  100,   'srun',   'sbatch',  'squeue', 'sc
 Inti(           13,   2,    64,  256,  100,   'srun',   'sbatch',  'squeue', 'scancel')
 Baseline(      128,   2,    64,  512,  100,   'srun',   'sbatch',  'squeue', 'scancel')
 Besms(         166,   1,    96,  768, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
-Aurora(      10624,   2,   104,  512, 1000,'mpiexec',     'qsub',   'qstat',    'qdel')
+Aurora(      10624,   2,   102,  512, 1000,'mpiexec',     'qsub',   'qstat',    'qdel')
 
 #machine accessor functions
 get_machine_name = Machine.get_hostname
