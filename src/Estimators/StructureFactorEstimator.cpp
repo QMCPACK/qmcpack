@@ -93,6 +93,8 @@ void StructureFactorEstimator::accumulate(const RefVector<MCPWalker>& walkers,
       sfk_e_e_[k] += weight * (rhok_tot_r_[k] * rhok_tot_r_[k] + rhok_tot_i_[k] * rhok_tot_i_[k]);
       rhok_e_[k] += weight * std::complex<Real>{rhok_tot_r_[k], rhok_tot_i_[k]};
     }
+
+    walkers_weight_ += weight;
   }
 }
 
@@ -136,6 +138,7 @@ void StructureFactorEstimator::collect(const RefVector<OperatorEstBase>& type_er
     StructureFactorEstimator& crowd_sfe = dynamic_cast<StructureFactorEstimator&>(crowd_oeb);
     this->sfk_e_e_ += crowd_sfe.sfk_e_e_;
     this->rhok_e_ += crowd_sfe.rhok_e_;
+    walkers_weight_ += crowd_sfe.walkers_weight_;
   }
 }
 
@@ -145,12 +148,19 @@ void StructureFactorEstimator::normalize(Real invTotWgt)
 {
   sfk_e_e_ *= invTotWgt;
   rhok_e_ *= invTotWgt;
+  walkers_weight_ = 0;
 }
 
 UPtr<OperatorEstBase> StructureFactorEstimator::spawnCrowdClone() const
 {
   UPtr<StructureFactorEstimator> spawn(std::make_unique<StructureFactorEstimator>(*this, data_locality_));
   return spawn;
+}
+
+void StructureFactorEstimator::zero()
+{
+  sfk_e_e_ = 0;
+  rhok_e_  = 0;
 }
 
 } // namespace qmcplusplus

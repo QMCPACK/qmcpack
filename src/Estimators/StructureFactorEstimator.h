@@ -13,6 +13,7 @@
 #define QMCPLUSPLUS_STRUCTUREFACTORESTIMATOR_H
 
 #include "OperatorEstBase.h"
+#include "type_traits/template_types.hpp"
 #include <ParticleSetPool.h>
 
 namespace qmcplusplus
@@ -68,6 +69,7 @@ public:
   long long getNumKPoints() { return num_kpoints_; }
   const auto& getKLists() const { return ions_.getSimulationCell().getKLists(); };
   const ParticleSet& getParticleSet(const PSPool& psetpool, const std::string& psname) const;
+  void zero() override;
 
 protected:
   // Testing functions
