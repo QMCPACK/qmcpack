@@ -141,6 +141,12 @@ void StructureFactorEstimator::collect(const RefVector<OperatorEstBase>& type_er
 
 void StructureFactorEstimator::startBlock(int steps) {}
 
+void StructureFactorEstimator::normalize(Real invTotWgt)
+{
+  sfk_e_e_ *= invTotWgt;
+  rhok_e_ *= invTotWgt;
+}
+
 UPtr<OperatorEstBase> StructureFactorEstimator::spawnCrowdClone() const
 {
   UPtr<StructureFactorEstimator> spawn(std::make_unique<StructureFactorEstimator>(*this, data_locality_));

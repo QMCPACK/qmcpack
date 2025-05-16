@@ -53,6 +53,8 @@ public:
                   const RefVector<QMCHamiltonian>& hams,
                   RandomBase<FullPrecReal>& rng) override;
 
+  void normalize(Real invToWgt) override;
+
   /** start block entry point
    */
   void startBlock(int steps) override;
