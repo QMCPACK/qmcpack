@@ -14,6 +14,7 @@
 #ifndef QMCPLUSPLUS_HDF5_ARCHIVE_H
 #define QMCPLUSPLUS_HDF5_ARCHIVE_H
 
+#include <H5Ipublic.h>
 #include <config.h>
 #include "hdf_datatype.h"
 #include "hdf_dataspace.h"
@@ -47,6 +48,8 @@ namespace qmcplusplus
 extern hdf_error_suppression hide_hdf_errors;
 
 /** class to handle hdf file
+ *
+ *  Wrapper functions necessary because hdf5 c interface h5d_xxx semantics.
  */
 class hdf_archive
 {
@@ -64,6 +67,10 @@ private:
    * Mode[NOIO] : true, if I/O is not performed
    */
   std::bitset<4> Mode;
+  /// file creation property list
+  hid_t file_cpl_{H5I_INVALID_HID};
+  /// file access property list
+  hid_t file_apl_{H5I_INVALID_HID};
   ///file id
   hid_t file_id;
   ///access id
@@ -130,14 +137,14 @@ public:
    * @param flags i/o mode
    * @return true, if creation is successful
    */
-  bool create(const std::filesystem::path& fname, unsigned flags = H5F_ACC_TRUNC);
+  bool create(const std::filesystem::path& fname, unsigned mode_flags = H5F_ACC_TRUNC);
 
   /** open a file
    * @param fname name of hdf5 file
    * @param flags i/o mode
    * @return file_id, if open is successful
    */
-  bool open(const std::filesystem::path& fname, unsigned flags = H5F_ACC_RDWR);
+  bool open(const std::filesystem::path& fname, unsigned mode_flags = H5F_ACC_RDWR);
 
   ///close all the open groups and file
   void close();
@@ -262,6 +269,45 @@ public:
     {
       throw std::runtime_error("HDF5 write failure in hdf_archive::write " + aname);
     }
+  }
+
+  /** Append data to a dynamically sized dataspace.
+   *
+   *  \param[in]     data                    reference to actual data object, hdf5_proxy, hdf_stl, hdf_pete provide proxies for most.
+   *  \param[in]     aname                   hdf5 path from the current file group on.
+   *  \param[in]     append_index            In a dynamic dataseries which entry will this be, updated to next entry.
+   *
+   *  This has no legacy usage and exceptions are thrown in case of error.
+   *
+   *  This is pointless unless you do something with the current_append_index
+   *  which is the necessary state to determine where in the data series you
+   *  are writing.
+   */
+  template<typename T>
+  hsize_t append(T& data, const std::string& aname, const hsize_t current_append_index)
+  {
+    auto local_append_index = current_append_index;
+    if (!appendEntry(data, aname, local_append_index))
+    {
+      throw std::runtime_error("HDF5 write failure in hdf_archive::write " + aname);
+    }
+    return local_append_index;
+  }
+
+  /** write the data to the group aname and return status
+   * use write() for inbuilt error checking
+   * @return true if successful
+   */
+  template<typename T>
+  bool appendEntry(T& data, const std::string& aname, hsize_t& current_append_index)
+  {
+    if (Mode[NOIO])
+      return true;
+    if (!(Mode[IS_PARALLEL] || Mode[IS_MASTER]))
+      throw std::runtime_error("Only write data in parallel or by master but not every rank!");
+    hid_t p = group_id.empty() ? file_id : group_id.top();
+    h5data_proxy<typename std::remove_const<T>::type> e(data);
+    return e.append(data, p, aname, current_append_index, xfer_plist);
   }
 
   /** write the container data with a specific shape and check status

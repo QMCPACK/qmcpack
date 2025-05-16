@@ -12,6 +12,8 @@
 
 
 #include "hdf_archive.h"
+#include <H5Ipublic.h>
+#include <stdexcept>
 #ifdef HAVE_MPI
 #include "mpi3/communicator.hpp"
 #endif
@@ -47,6 +49,16 @@ void hdf_archive::close()
   if (file_id != is_closed)
     H5Fclose(file_id);
   file_id = is_closed;
+  if (file_apl_ != H5I_INVALID_HID)
+  {
+    H5Pclose(file_apl_);
+    file_apl_ = H5I_INVALID_HID;
+  }
+  if (file_cpl_ != H5I_INVALID_HID)
+  {
+    H5Pclose(file_cpl_);
+    file_cpl_ = H5I_INVALID_HID;
+  }
 }
 
 void hdf_archive::set_access_plist()
@@ -140,7 +152,7 @@ void hdf_archive::set_access_plist(boost::mpi3::communicator& comm, bool request
 #endif
 
 
-bool hdf_archive::create(const std::filesystem::path& fname, unsigned flags)
+bool hdf_archive::create(const std::filesystem::path& fname, unsigned mode_flags)
 {
   possible_filename_ = fname;
   if (Mode[NOIO])
@@ -148,17 +160,29 @@ bool hdf_archive::create(const std::filesystem::path& fname, unsigned flags)
   if (!(Mode[IS_PARALLEL] || Mode[IS_MASTER]))
     throw std::runtime_error("Only create file in parallel or by master but not every rank!");
   close();
-  file_id = H5Fcreate(fname.c_str(), flags, H5P_DEFAULT, access_id);
+  file_cpl_ = H5Pcreate(H5P_FILE_CREATE);
+  if (file_cpl_ == H5I_INVALID_HID)
+    throw std::runtime_error("hdf_archive failed to create file create properties!");
+  file_apl_ = H5Pcreate(H5P_FILE_ACCESS);
+  if (file_apl_ == H5I_INVALID_HID)
+  {
+    H5Pclose(file_cpl_);
+    throw std::runtime_error("hdr_archive failed to create file access properties!");
+  }
+  file_id = H5Fcreate(fname.c_str(), mode_flags, file_cpl_, file_apl_);
   return file_id != is_closed;
 }
 
-bool hdf_archive::open(const std::filesystem::path& fname, unsigned flags)
+bool hdf_archive::open(const std::filesystem::path& fname, unsigned mode_flags)
 {
   possible_filename_ = fname;
   if (Mode[NOIO])
     return true;
   close();
-  file_id = H5Fopen(fname.c_str(), flags, access_id);
+  file_apl_ = H5Pcreate(H5P_FILE_ACCESS);
+  if (file_apl_ == H5I_INVALID_HID)
+    throw std::runtime_error("hdf_archive failed to create file access properties list!");
+  file_id = H5Fopen(fname.c_str(), mode_flags, access_id);
   return file_id != is_closed;
 }
 
