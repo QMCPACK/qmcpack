@@ -50,7 +50,7 @@ public:
   /** Shallow copy constructor!
    *  This alows us to keep the default copy constructors for derived classes which
    *  is quite useful to the spawnCrowdClone design.
-   *  Data is likely to be quite large and since the OperatorEstBase design is that the children 
+   *  Data is likely to be quite large and since the OperatorEstBase design is that the children
    *  reduce to the parent it is infact undesirable for them to copy the data the parent has.
    *  Initialization of Data (i.e. call to resize) if any is the responsibility of the derived class.
    */
@@ -59,7 +59,7 @@ public:
   virtual ~OperatorEstBase() = default;
 
   /** Accumulate whatever it is you are accumulating with respect to walkers
-   * 
+   *
    *  This method is assumed to be called from the crowd context
    *  It provides parallelism with respect to computational effort of the estimator
    *  without causing a global sync.
@@ -81,7 +81,20 @@ public:
    *
    *  This is assumed to be called from only from one thread per crowds->rank
    *  reduction. Implied is this is during a global sync or there is a guarantee
-   *  that the crowd operator estimators accumulation data is not being written to.
+   *  that the crowd operator estimators accumulation data is not
+   *  being written to.
+   *
+   *  It is assumed by derived classes and it is necessary to support
+   *  derived type data locality schemes that the OperatorEstBase
+   *  derived types in the refvector match.
+   *
+   *  The input operators are not zeroed after collect is called,
+   *  the owner of the operators must handle the accumulated state explicitly.
+   *
+   *  A side effect is walker_weights_ are collected
+   *  as well, so if this is not called from an override the
+   *  walker_weights_ must be collected there.  If it is called they
+   *  must not be collected there.
    *
    *  There could be concurrent operations inside the scope of the collect call.
    */
@@ -130,14 +143,25 @@ public:
 
   /** Write to previously registered observable_helper hdf5 wrapper.
    *
-   *  if you haven't registered Operator Estimator 
+   *  if you haven't registered Operator Estimator
    *  this will do nothing.
    */
   virtual void write(hdf_archive& file);
 
-  /** zero data appropriately for the DataLocality
+  /** Calls zero on every OperatorEstBase in refvector
+   *
+   *  like collect this is intended to be called with a refvector
+   *  where the OperatorEstBase derived types are all the same.
+   *  Derived types overriding this can assume this.
    */
-  void zero();
+  virtual void zero(RefVector<OperatorEstBase>& oebs) const;
+
+  /** zero data appropriately for the DataLocality
+   *
+   *  Derived classes that don't solely rely on data_ for
+   *  their accumulated data must override this function.
+   */
+  virtual void zero();
 
   /** Return the total walker weight for this block
    */
