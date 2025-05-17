@@ -348,15 +348,15 @@ void NEEnergyDensityEstimator::registerOperatorEstimator(hdf_archive& file)
 
   hdf_path path_variables = hdf_name / std::string_view("variables");
   file.push(path_variables, true);
-  file.write(const_cast<int&>(n_particles_), "nparticles");
+  file.write(n_particles_, "nparticles");
   auto nspacegrids = input_.get_space_grid_inputs().size();
   file.write(nspacegrids, "nspacegrids");
-  file.write(const_cast<int&>(nsamples_), "nsamples");
+  file.write(nsamples_, "nsamples");
 
   if (input_.get_ion_points())
   {
-    file.write(const_cast<int&>(n_ions_), "nions");
-    file.write(const_cast<Matrix<Real>&>(r_ion_work_), "ion_positions");
+    file.write(n_ions_, "nions");
+    file.write(r_ion_work_, "ion_positions");
   }
   file.pop();
 
