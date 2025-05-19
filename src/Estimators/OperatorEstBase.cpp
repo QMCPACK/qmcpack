@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2022 QMCPACK developers.
+// Copyright (c) 2025 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -17,6 +17,8 @@
 
 namespace qmcplusplus
 {
+using Real = OperatorEstBase::Real;
+
 OperatorEstBase::OperatorEstBase(DataLocality dl) : data_locality_(dl), walkers_weight_(0) {}
 
 OperatorEstBase::OperatorEstBase(const OperatorEstBase& oth)
@@ -29,7 +31,6 @@ void OperatorEstBase::collect(const RefVector<OperatorEstBase>& type_erased_oper
   {
     std::transform(data_.begin(), data_.end(), crowd_oeb.get_data().begin(), data_.begin(), std::plus<>{});
     walkers_weight_ += crowd_oeb.walkers_weight_;
-    crowd_oeb.zero();
   }
 }
 
@@ -43,9 +44,9 @@ void OperatorEstBase::write(hdf_archive& file)
 {
   if (h5desc_.empty())
     return;
-    // We have to do this to deal with the legacy design that Observables using
-    // collectables in mixed precision were accumulated in float but always written
-    // to hdf5 in double.
+  // We have to do this to deal with the legacy design that Observables using
+  // collectables in mixed precision were accumulated in float but always written
+  // to hdf5 in double.
 #ifdef MIXED_PRECISION
   std::vector<QMCT::FullPrecRealType> expanded_data(data_.size(), 0.0);
   std::copy_n(data_.begin(), data_.size(), expanded_data.begin());
@@ -64,6 +65,12 @@ void OperatorEstBase::write(hdf_archive& file)
 void OperatorEstBase::packData(PooledData<Real>& buffer) const { buffer.add(data_.begin(), data_.end()); }
 
 void OperatorEstBase::unpackData(PooledData<Real>& buffer) { buffer.get(data_.begin(), data_.end()); }
+
+void OperatorEstBase::zero(RefVector<OperatorEstBase>& type_erased_operator_estimators) const
+{
+  for (OperatorEstBase& crowd_oeb : type_erased_operator_estimators)
+    crowd_oeb.zero();
+}
 
 void OperatorEstBase::zero()
 {
