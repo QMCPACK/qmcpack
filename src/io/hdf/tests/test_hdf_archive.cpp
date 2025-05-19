@@ -205,7 +205,7 @@ TEST_CASE("hdf_archive_append_pete", "[hdf]")
 {
   using qmcplusplus::Vector;
   hdf_archive hd;
-  bool okay = hd.create("test_append_pete.hdf", H5F_ACC_TRUNC);
+  bool okay = hd.create("test_append_pete.hdf");
   REQUIRE(okay);
 
   Vector<double> v1{2.3, 3.4, 5.6};
@@ -219,7 +219,8 @@ TEST_CASE("hdf_archive_append_pete", "[hdf]")
   append_index = hd.append(v2, name, append_index);
   hd.close();
   hdf_archive read_hd;
-  okay = read_hd.open("test_append_pete.hdf", H5F_ACC_RDONLY);
+  // For hdf5@1.14.6+cxx+mpi api=v114
+  okay = read_hd.open("test_append_pete.hdf");
   REQUIRE(okay);
 
   Vector<double> v_read;
@@ -229,6 +230,7 @@ TEST_CASE("hdf_archive_append_pete", "[hdf]")
   CHECK(v_read.size() == 3);
   CHECK(v1 == v_read);
 
+  // Select the second row in the hyperslab
   select_one_vector = {1, -1};
   read_hd.readSlabSelection(v_read, select_one_vector, name);
 
