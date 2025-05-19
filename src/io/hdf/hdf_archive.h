@@ -10,7 +10,6 @@
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
-
 #ifndef QMCPLUSPLUS_HDF5_ARCHIVE_H
 #define QMCPLUSPLUS_HDF5_ARCHIVE_H
 
@@ -273,30 +272,33 @@ public:
 
   /** Append data to a dynamically sized dataspace.
    *
-   *  \param[in]     data                    reference to actual data object, hdf5_proxy, hdf_stl, hdf_pete provide proxies for most.
-   *  \param[in]     aname                   hdf5 path from the current file group on.
-   *  \param[in]     append_index            In a dynamic dataseries which entry will this be, updated to next entry.
+   *  @param[in]     data                    reference to actual data object, hdf5_proxy, hdf_stl, hdf_pete provide proxies for most.
+   *  @param[in]     aname                   hdf5 path from the current file group on.
+   *  @param[in]     append_index            In a dynamic dataseries which entry will this be
+   *  @return                                the next index after data
+   *                                         is appended
    *
-   *  This has no legacy usage and exceptions are thrown in case of error.
+   *  This has no legacy usage and exceptions are thrown in case of
+   *  error since there is a useful return value
    *
-   *  This is pointless unless you do something with the current_append_index
-   *  which is the necessary state to determine where in the data series you
-   *  are writing.
+   *  I can't think of any good reason to discard the return value,
+   *  but it does seem like it will generally make a nice bug hence
+   *  [[nodiscard]]
    */
   template<typename T>
-  hsize_t append(T& data, const std::string& aname, const hsize_t current_append_index)
+  [[nodiscard]] hsize_t append(T& data, const std::string& aname, const hsize_t current_append_index)
   {
     auto local_append_index = current_append_index;
     if (!appendEntry(data, aname, local_append_index))
     {
-      throw std::runtime_error("HDF5 write failure in hdf_archive::write " + aname);
+      throw std::runtime_error("HDF5 append failure in hdf_archive::appendEntry!" + aname);
     }
     return local_append_index;
   }
 
-  /** write the data to the group aname and return status
-   * use write() for inbuilt error checking
-   * @return true if successful
+  /** append the data to aname at the current_append_index and return status
+   *  use write() for inbuilt error checking
+   *  @return true if successful
    */
   template<typename T>
   bool appendEntry(T& data, const std::string& aname, hsize_t& current_append_index)
