@@ -9,6 +9,7 @@
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Peter W. Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -25,6 +26,7 @@
 #include <complex>
 #include <limits>
 #include <iterator>
+#include "type_traits/complex_help.hpp"
 
 template<class T>
 struct PooledData
@@ -87,6 +89,7 @@ struct PooledData
 
   inline void add(T& x)
   {
+    static_assert(!qmcplusplus::IsComplex_t<T>::value);
     Current++;
     myData.push_back(x);
   }
@@ -101,6 +104,7 @@ struct PooledData
   template<class T1>
   inline void add(T1& x)
   {
+    static_assert(!qmcplusplus::IsComplex_t<T1>::value);
     Current++;
     myData.push_back(static_cast<T>(x));
   }
@@ -112,21 +116,16 @@ struct PooledData
     myData.insert(myData.end(), first, last);
   }
 
-  template<typename T1>
-  inline void add(T1* first, T1* last)
-  {
-    Current += last - first;
-    myData.insert(myData.end(), first, last);
-  }
-
-  template<typename T1>
-  inline void add(std::complex<T1>* first, std::complex<T1>* last)
+  //  template<typename T1>
+  inline void add(std::complex<T>* first, std::complex<T>* last)
   {
     size_type dn = 2 * (last - first);
-    T1* t        = reinterpret_cast<T1*>(first);
+    T* t         = reinterpret_cast<T*>(first);
     myData.insert(myData.end(), t, t + dn);
     Current += dn;
   }
+
+  inline void add(const std::complex<T>* first, const std::complex<T>* last);
 
   inline void get(T& x) { x = myData[Current++]; }
 
@@ -150,23 +149,14 @@ struct PooledData
     copy(myData.begin() + now, myData.begin() + Current, first);
   }
 
+  void get(std::complex<T>* first, std::complex<T>* last);
+
   template<typename T1>
   inline void get(T1* first, T1* last)
   {
     size_type now = Current;
     Current += last - first;
     std::copy(myData.begin() + now, myData.begin() + Current, first);
-  }
-
-  template<typename T1>
-  inline void get(std::complex<T1>* first, std::complex<T1>* last)
-  {
-    while (first != last)
-    {
-      (*first) = std::complex<T1>(myData[Current], myData[Current + 1]);
-      ++first;
-      Current += 2;
-    }
   }
 
   inline void put(T& x) { myData[Current++] = x; }
@@ -270,4 +260,8 @@ bool operator!=(const PooledData<T>& a, const PooledData<T>& b)
   }
   return false;
 }
+
+extern template struct PooledData<float>;
+extern template struct PooledData<double>;
+
 #endif
