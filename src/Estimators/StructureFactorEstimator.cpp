@@ -145,8 +145,8 @@ void StructureFactorEstimator::collect(const RefVector<OperatorEstBase>& type_er
 
 void StructureFactorEstimator::packData(PooledData<Real>& buffer) const
 {
-  buffer.add(sfk_e_e_);
-  buffer.add(rhok_e_);
+  buffer.add(sfk_e_e_.first_address(), sfk_e_e_.last_address());
+  buffer.add(rhok_e_.first_address(), rhok_e_.last_address());
 }
 
 void StructureFactorEstimator::unpackData(PooledData<Real>& buffer)
