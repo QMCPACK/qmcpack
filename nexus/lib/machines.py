@@ -3455,14 +3455,14 @@ class Frontier(Supercomputer):
         if job.constraint is None:
             job.constraint = 'cpu'
         #end if
-        # Account for dual nature of Perlmutter
+        # Account for dual nature of Frontier
         if 'cpu' in job.constraint:
             self.cores_per_node = 56
         elif 'gpu' in job.constraint:
             self.cores_per_node = 56
             self.gpus_per_node  = 4
         else:
-            self.error('SLURM input "constraint" must contain either "cpu" or "gpu" on Perlmutter\nyou provided: {0}'.format(job.constraint))
+            self.error('SLURM input "constraint" must contain either "cpu" or "gpu" on Frontier\nyou provided: {0}'.format(job.constraint))
         #end if
     #end def pre_process_job
     
