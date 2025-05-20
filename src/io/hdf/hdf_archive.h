@@ -241,7 +241,7 @@ public:
    * @return true if successful
    */
   template<typename T>
-  bool writeEntry(T& data, const std::string& aname)
+  bool writeEntry(const T& data, const std::string& aname)
   {
     if (Mode[NOIO])
       return true;
@@ -256,7 +256,7 @@ public:
    * runtime error is issued on I/O error
    */
   template<typename T>
-  void write(T& data, const std::string& aname)
+  void write(const T& data, const std::string& aname)
   {
     if (!writeEntry(data, aname))
     {

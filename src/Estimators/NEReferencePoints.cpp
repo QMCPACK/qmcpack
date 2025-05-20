@@ -103,7 +103,7 @@ void NEReferencePoints::write(hdf_archive& file) const
 {
   file.push(std::string_view("reference_points"));
   for (auto it = points_.cbegin(); it != points_.cend(); ++it)
-    file.write(const_cast<Point&>(it->second), it->first);
+    file.write(it->second, it->first);
   file.pop();
 }
 

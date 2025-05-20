@@ -1303,6 +1303,12 @@ def test_job_run_command():
         ('frontier'       , 'n2_t2'         ) : 'srun -N 2 -c 2 --cpu-bind=threads -n 56 --threads-per-core=2 test.x',
         ('frontier'       , 'n2_t2_e'       ) : 'srun -N 2 -c 2 --cpu-bind=threads -n 56 --threads-per-core=2 test.x',
         ('frontier'       , 'n2_t2_p2'      ) : 'srun -N 2 -c 2 --cpu-bind=threads -n 4 --threads-per-core=2 test.x',
+        ('aurora'         , 'n1'            ) : 'mpiexec --cpu-bind depth --depth=1 -n 102 --ppn 102 --env OMP_NUM_THREADS=1 --env OMP_PLACES=cores test.x',
+        ('aurora'         , 'n1_p1'         ) : 'mpiexec --cpu-bind depth --depth=1 -n 1 --ppn 1 --env OMP_NUM_THREADS=1 --env OMP_PLACES=cores test.x',
+        ('aurora'         , 'n2'            ) : 'mpiexec --cpu-bind depth --depth=1 -n 204 --ppn 102 --env OMP_NUM_THREADS=1 --env OMP_PLACES=cores test.x',
+        ('aurora'         , 'n2_t2'         ) : 'mpiexec --cpu-bind depth --depth=2 -n 102 --ppn 51 --env OMP_NUM_THREADS=2 --env OMP_PLACES=cores test.x',
+        ('aurora'         , 'n2_t2_e'       ) : 'mpiexec --cpu-bind depth --depth=2 -n 102 --ppn 51 --env OMP_NUM_THREADS=2 --env OMP_PLACES=cores test.x',
+        ('aurora'         , 'n2_t2_p2'      ) : 'mpiexec --cpu-bind depth --depth=2 -n 4 --ppn 2 --env OMP_NUM_THREADS=2 --env OMP_PLACES=cores test.x'
         })
 
 
@@ -2138,6 +2144,7 @@ srun test.x''',
 export ENV_VAR=1
 export OMP_NUM_THREADS=1
 srun test.x''',
+      
         frontier = '''#!/bin/sh
 #SBATCH -A ABC123
 #SBATCH -p batch
@@ -2151,6 +2158,24 @@ srun test.x''',
 export ENV_VAR=1
 export OMP_NUM_THREADS=1
 srun -N 2 -c 1 --cpu-bind=threads -n 112 --threads-per-core=1 test.x''',
+
+        aurora = '''#!/bin/sh
+#PBS -l select=2
+#PBS -l place=scatter
+#PBS -l filesystems=flare
+#PBS -l walltime=06:30:00
+#PBS -A ABC123
+#PBS -q prod
+#PBS -N jobname
+#PBS -k doe
+#PBS -o test.out
+#PBS -e test.err
+
+cd ${PBS_O_WORKDIR}
+
+export ENV_VAR=1
+export OMP_NUM_THREADS=1
+mpiexec --cpu-bind depth --depth=1 -n 204 --ppn 102 --env OMP_NUM_THREADS=1 --env OMP_PLACES=cores test.x''',
         )
 
     def process_job_file(jf):
