@@ -1484,7 +1484,6 @@ class Supercomputer(Machine):
                 self.error('account not specified for job on '+self.name)
             #end if
         #end if
-
         self.post_process_job(job)
 
         job.set_environment(OMP_NUM_THREADS=job.threads)
@@ -3454,7 +3453,7 @@ class Frontier(Supercomputer):
             job.queue = 'batch'
         #end if
         if job.constraint is None:
-            job.constraint = 'gpu'
+            job.constraint = 'cpu'
         #end if
         # Account for dual nature of Perlmutter
         if 'cpu' in job.constraint:
