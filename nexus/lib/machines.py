@@ -1484,7 +1484,6 @@ class Supercomputer(Machine):
                 self.error('account not specified for job on '+self.name)
             #end if
         #end if
-
         self.post_process_job(job)
 
         job.set_environment(OMP_NUM_THREADS=job.threads)
@@ -3427,6 +3426,91 @@ class Baseline(Supercomputer):
     #end def write_job_header
 #end class Baseline
 
+class Frontier(Supercomputer):
+    name = 'frontier'
+    requires_account = True
+    batch_capable    = True
+
+    queue_configs = {
+        'default': 'batch',
+        'batch': {
+            'max_nodes': 9664,
+            'max_walltime': '12:00:00',
+        },
+        'extended': {
+            'max_nodes': 1894,
+            'max_walltime': '24:00:00',
+        },
+        'debug': {
+            'max_nodes': 1,
+            'max_walltime': '01:00:00',
+        }
+    }
+
+    def pre_process_job(self,job):
+        # Set default queue and node type
+        if job.queue is None:
+            job.queue = 'batch'
+        #end if
+        if job.constraint is None:
+            job.constraint = 'cpu'
+        #end if
+        # Account for dual nature of Frontier
+        if 'cpu' in job.constraint:
+            self.cores_per_node = 56
+        elif 'gpu' in job.constraint:
+            self.cores_per_node = 56
+            self.gpus_per_node  = 4
+        else:
+            self.error('SLURM input "constraint" must contain either "cpu" or "gpu" on Frontier\nyou provided: {0}'.format(job.constraint))
+        #end if
+    #end def pre_process_job
+    
+
+    def post_process_job(self, job):
+        if 'cpu' in job.constraint:
+            job.run_options.add(
+                cpu_bind='--cpu-bind=threads',
+                threads_per_core='--threads-per-core={0}'.format(job.threads)
+            )            
+        elif 'gpu' in job.constraint:
+            gpus_per_task = int(floor(float(self.gpus_per_node)/job.processes_per_node))
+            job.run_options.add(
+                gpu_bind='--gpu-bind=closest',
+                gpus_per_task='--gpus-per-task={0}'.format(gpus_per_task)
+            )
+        #end if
+        job.run_options.add(
+            N='-N {}'.format(job.nodes),
+            n='-n {}'.format(job.processes),
+            c='-c {}'.format(job.threads),
+
+        )
+
+    def write_job_header(self, job):
+        self.validate_queue_config(job)
+        if job.queue is None:
+            job.queue = 'batch'
+        elif job.queue == 'debug':
+            job.qos = 'debug'
+            job.queue = 'batch'
+        #end if
+
+        c = '#!/bin/sh\n'
+        c += '#SBATCH -A {account}\n'.format(account=job.account)
+        c += '#SBATCH -p {queue}\n'.format(queue=job.queue)
+        c += '#SBATCH -J {name}\n'.format(name=job.name)
+        c += '#SBATCH -t {time}\n'.format(time=job.lsf_walltime())
+        c += '#SBATCH -N {nodes}\n'.format(nodes=job.nodes)
+        c += '#SBATCH -S 8\n' # Uses default low-noise mode layout(default), reduces number of cores from 64 to 56. 
+        c += '#SBATCH -o {name}.out\n'.format(name=job.name)
+        c += '#SBATCH -e {name}.err\n'.format(name=job.name)
+        return c
+
+
+#end class Frontier
+
+
 # Active 
 # BESMS is at ORNL 
 class Besms(Supercomputer):
@@ -4284,6 +4368,7 @@ Kestrel(      2144,   2,    52,  256,  100,   'srun',   'sbatch',  'squeue', 'sc
 Inti(           13,   2,    64,  256,  100,   'srun',   'sbatch',  'squeue', 'scancel')
 Baseline(      128,   2,    64,  512,  100,   'srun',   'sbatch',  'squeue', 'scancel')
 Besms(         166,   1,    96,  768, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
+Frontier(     9856,   4,    14,   64, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
 Aurora(      10624,   2,   102,  512, 1000,'mpiexec',     'qsub',   'qstat',    'qdel')
 
 #machine accessor functions
@@ -4292,6 +4377,8 @@ get_machine      = Machine.get
 
 #rename Job with lowercase
 job=Job
+
+
 
 
 
