@@ -14,11 +14,10 @@
 #include "catch.hpp"
 
 #include "hdf/hdf_archive.h"
-#include <H5Fpublic.h>
 #include <vector>
 #include <string>
 #include <sstream>
-
+#include "type_traits/container_traits_ohmms.h"
 
 using std::string;
 using std::vector;
