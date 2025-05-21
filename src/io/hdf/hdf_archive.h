@@ -10,10 +10,10 @@
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
-
 #ifndef QMCPLUSPLUS_HDF5_ARCHIVE_H
 #define QMCPLUSPLUS_HDF5_ARCHIVE_H
 
+#include <H5Ipublic.h>
 #include <config.h>
 #include "hdf_datatype.h"
 #include "hdf_dataspace.h"
@@ -47,6 +47,8 @@ namespace qmcplusplus
 extern hdf_error_suppression hide_hdf_errors;
 
 /** class to handle hdf file
+ *
+ *  Wrapper functions necessary because hdf5 c interface h5d_xxx semantics.
  */
 class hdf_archive
 {
@@ -64,14 +66,18 @@ private:
    * Mode[NOIO] : true, if I/O is not performed
    */
   std::bitset<4> Mode;
+  /// file creation property list
+  hid_t file_cpl_{H5I_INVALID_HID};
+  /// file access property list
+  hid_t file_apl_{H5I_INVALID_HID};
   ///file id
-  hid_t file_id;
+  hid_t file_id{is_closed};
   ///access id
-  hid_t access_id;
+  hid_t access_id{H5I_INVALID_HID};
   ///transfer property
-  hid_t xfer_plist;
+  hid_t xfer_plist{H5I_INVALID_HID};
   /// Link creation property list identifier
-  hid_t lcpl_id;
+  hid_t lcpl_id{H5I_INVALID_HID};
   ///FILO to handle H5Group
   std::stack<hid_t> group_id;
   ///Track group names corresponding to group_id
@@ -83,7 +89,11 @@ private:
    */
   std::string possible_filename_;
 
-  ///set the access property
+  /** set the access property
+   *  these are exclusively called from the constructor.
+   *  this is a simplifying assumption for other code
+   */
+  void create_basic_plist();
   void set_access_plist(Communicate* comm, bool request_pio);
 #ifdef HAVE_MPI
   void set_access_plist(boost::mpi3::communicator& comm, bool request_pio);
@@ -99,15 +109,14 @@ public:
    *        if false, hdf_archive is in independent IO mode
    */
   template<class Comm = Communicate*>
-  hdf_archive(Comm c, bool request_pio = false)
-      : file_id(is_closed), access_id(H5P_DEFAULT), xfer_plist(H5P_DEFAULT), lcpl_id(H5P_DEFAULT)
+  hdf_archive(Comm c, bool request_pio = false) : file_id(is_closed)
   {
     if (!hdf_error_suppression::enabled)
       throw std::runtime_error("HDF5 library warnings and errors not suppressed from output.\n");
     set_access_plist(c, request_pio);
   }
 
-  hdf_archive() : file_id(is_closed), access_id(H5P_DEFAULT), xfer_plist(H5P_DEFAULT), lcpl_id(H5P_DEFAULT)
+  hdf_archive() : file_id(is_closed)
   {
     if (!hdf_error_suppression::enabled)
       throw std::runtime_error("HDF5 library warnings and errors not suppressed from output.\n");
@@ -130,14 +139,14 @@ public:
    * @param flags i/o mode
    * @return true, if creation is successful
    */
-  bool create(const std::filesystem::path& fname, unsigned flags = H5F_ACC_TRUNC);
+  bool create(const std::filesystem::path& fname, unsigned mode_flags = H5F_ACC_TRUNC);
 
   /** open a file
    * @param fname name of hdf5 file
    * @param flags i/o mode
    * @return file_id, if open is successful
    */
-  bool open(const std::filesystem::path& fname, unsigned flags = H5F_ACC_RDWR);
+  bool open(const std::filesystem::path& fname, unsigned mode_flags = H5F_ACC_RDWR);
 
   ///close all the open groups and file
   void close();
@@ -262,6 +271,48 @@ public:
     {
       throw std::runtime_error("HDF5 write failure in hdf_archive::write " + aname);
     }
+  }
+
+  /** Append data to a dynamically sized dataspace.
+   *
+   *  @param[in]     data                    reference to actual data object, hdf5_proxy, hdf_stl, hdf_pete provide proxies for most.
+   *  @param[in]     aname                   hdf5 path from the current file group on.
+   *  @param[in]     append_index            In a dynamic dataseries which entry will this be
+   *  @return                                the next index after data
+   *                                         is appended
+   *
+   *  This has no legacy usage and exceptions are thrown in case of
+   *  error since there is a useful return value
+   *
+   *  I can't think of any good reason to discard the return value,
+   *  but it does seem like it will generally make a nice bug hence
+   *  [[nodiscard]]
+   */
+  template<typename T>
+  [[nodiscard]] hsize_t append(T& data, const std::string& aname, const hsize_t current_append_index)
+  {
+    auto local_append_index = current_append_index;
+    if (!appendEntry(data, aname, local_append_index))
+    {
+      throw std::runtime_error("HDF5 append failure in hdf_archive::appendEntry!" + aname);
+    }
+    return local_append_index;
+  }
+
+  /** append the data to aname at the current_append_index and return status
+   *  use write() for inbuilt error checking
+   *  @return true if successful
+   */
+  template<typename T>
+  bool appendEntry(T& data, const std::string& aname, hsize_t& current_append_index)
+  {
+    if (Mode[NOIO])
+      return true;
+    if (!(Mode[IS_PARALLEL] || Mode[IS_MASTER]))
+      throw std::runtime_error("Only write data in parallel or by master but not every rank!");
+    hid_t p = group_id.empty() ? file_id : group_id.top();
+    h5data_proxy<typename std::remove_const<T>::type> e(data);
+    return e.append(data, p, aname, current_append_index, xfer_plist);
   }
 
   /** write the container data with a specific shape and check status

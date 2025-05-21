@@ -17,7 +17,7 @@
 #include <vector>
 #include <string>
 #include <sstream>
-
+#include "type_traits/container_traits_ohmms.h"
 
 using std::string;
 using std::vector;
@@ -200,13 +200,51 @@ TEST_CASE("hdf_archive_vector", "[hdf]")
     CHECK(v_const[i] == v2_for_const[i]);
 }
 
+TEST_CASE("hdf_archive_append_pete", "[hdf]")
+{
+  using qmcplusplus::Vector;
+  hdf_archive hd;
+  bool okay = hd.create("test_append_pete.hdf");
+  REQUIRE(okay);
+
+  Vector<double> v1{2.3, 3.4, 5.6};
+  hsize_t append_index = 0;
+
+  std::string name = "pete_vector_series";
+  append_index     = hd.append(v1, name, append_index);
+
+  Vector<double> v2{4.0, 5.0, 6.0};
+
+  append_index = hd.append(v2, name, append_index);
+  hd.close();
+  hdf_archive read_hd;
+  // For hdf5@1.14.6+cxx+mpi api=v114
+  okay = read_hd.open("test_append_pete.hdf");
+  REQUIRE(okay);
+
+  Vector<double> v_read;
+  std::array<int, 2> select_one_vector{0, -1};
+  read_hd.readSlabSelection(v_read, select_one_vector, name);
+
+  CHECK(v_read.size() == 3);
+  CHECK(v1 == v_read);
+
+  // Select the second row in the hyperslab
+  select_one_vector = {1, -1};
+  read_hd.readSlabSelection(v_read, select_one_vector, name);
+
+  CHECK(v_read.size() == 3);
+  CHECK(v2 == v_read);
+}
+
 TEST_CASE("hdf_archive_group", "[hdf]")
 {
   hdf_archive hd;
-  hd.create("test_group.hdf");
+  bool okay = hd.create("test_group.hdf");
+  REQUIRE(okay);
 
-  int i     = 3;
-  bool okay = hd.writeEntry(i, "int");
+  int i = 3;
+  okay  = hd.writeEntry(i, "int");
   REQUIRE(okay);
 
   CHECK(hd.group_path_as_string() == "");
@@ -486,5 +524,4 @@ TEST_CASE("hdf_std_vec_bool", "[hdf]")
   REQUIRE(v2_for_const.size() == 3);
   for (int i = 0; i < v_const.size(); i++)
     CHECK(v_const[i] == v2_for_const[i]);
-
 }
