@@ -71,13 +71,13 @@ private:
   /// file access property list
   hid_t file_apl_{H5I_INVALID_HID};
   ///file id
-  hid_t file_id;
+  hid_t file_id{is_closed};
   ///access id
-  hid_t access_id;
+  hid_t access_id{H5I_INVALID_HID};
   ///transfer property
-  hid_t xfer_plist;
+  hid_t xfer_plist{H5I_INVALID_HID};
   /// Link creation property list identifier
-  hid_t lcpl_id;
+  hid_t lcpl_id{H5I_INVALID_HID};
   ///FILO to handle H5Group
   std::stack<hid_t> group_id;
   ///Track group names corresponding to group_id
@@ -89,7 +89,11 @@ private:
    */
   std::string possible_filename_;
 
-  ///set the access property
+  /** set the access property
+   *  these are exclusively called from the constructor.
+   *  this is a simplifying assumption for other code
+   */
+  void create_basic_plist();
   void set_access_plist(Communicate* comm, bool request_pio);
 #ifdef HAVE_MPI
   void set_access_plist(boost::mpi3::communicator& comm, bool request_pio);
@@ -105,15 +109,14 @@ public:
    *        if false, hdf_archive is in independent IO mode
    */
   template<class Comm = Communicate*>
-  hdf_archive(Comm c, bool request_pio = false)
-      : file_id(is_closed), access_id(H5P_DEFAULT), xfer_plist(H5P_DEFAULT), lcpl_id(H5P_DEFAULT)
+  hdf_archive(Comm c, bool request_pio = false) : file_id(is_closed)
   {
     if (!hdf_error_suppression::enabled)
       throw std::runtime_error("HDF5 library warnings and errors not suppressed from output.\n");
     set_access_plist(c, request_pio);
   }
 
-  hdf_archive() : file_id(is_closed), access_id(H5P_DEFAULT), xfer_plist(H5P_DEFAULT), lcpl_id(H5P_DEFAULT)
+  hdf_archive() : file_id(is_closed)
   {
     if (!hdf_error_suppression::enabled)
       throw std::runtime_error("HDF5 library warnings and errors not suppressed from output.\n");
