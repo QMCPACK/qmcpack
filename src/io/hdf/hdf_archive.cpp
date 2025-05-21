@@ -177,7 +177,6 @@ bool hdf_archive::open(const std::filesystem::path& fname, unsigned mode_flags)
   possible_filename_ = fname;
   if (Mode[NOIO])
     return true;
-  close();
   file_id = H5Fopen(fname.c_str(), mode_flags, file_apl_);
   return file_id != is_closed;
 }
