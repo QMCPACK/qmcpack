@@ -116,14 +116,7 @@ struct PooledData
     myData.insert(myData.end(), first, last);
   }
 
-  //  template<typename T1>
-  inline void add(std::complex<T>* first, std::complex<T>* last)
-  {
-    size_type dn = 2 * (last - first);
-    T* t         = reinterpret_cast<T*>(first);
-    myData.insert(myData.end(), t, t + dn);
-    Current += dn;
-  }
+  inline void add(std::complex<T>* first, std::complex<T>* last);
 
   inline void add(const std::complex<T>* first, const std::complex<T>* last);
 
