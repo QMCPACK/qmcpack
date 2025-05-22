@@ -18,7 +18,6 @@
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "OhmmsPETE/OhmmsArray.h"
-#include "type_traits/container_traits_ohmms.h"
 #include "hdf/hdf_archive.h"
 
 using namespace qmcplusplus;

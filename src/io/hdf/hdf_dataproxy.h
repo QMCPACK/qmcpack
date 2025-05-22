@@ -18,6 +18,7 @@
 
 #include "hdf_wrapper_functions.h"
 #include "hdf_dataspace.h"
+#include "container_traits.h"
 
 namespace qmcplusplus
 {
