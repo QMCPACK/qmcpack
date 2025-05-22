@@ -9,16 +9,11 @@
 // File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
-
 #include "catch.hpp"
 
 #include "Pools/PooledData.h"
-#include "Utilities/Timer.h"
-#include <iostream>
-#include <stdio.h>
 #include <string>
 #include <vector>
-#include <random>
 #include <complex>
 #include <OhmmsPETE/OhmmsVector.h>
 

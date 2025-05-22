@@ -12,6 +12,13 @@
 #include "PooledData.h"
 #include <cassert>
 
+/** @file Pools/PooledData.cpp
+ * @brief Explicitly instantiate some PooledData's and some templated
+ * member functions.
+ *
+ * JK: Remove iterator version on 2016-01-04
+ */
+
 template<typename T>
 void PooledData<T>::add(const std::complex<T>* first, const std::complex<T>* last)
 {

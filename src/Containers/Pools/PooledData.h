@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2025 QMCPACK developers.
 //
 // File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
@@ -15,7 +15,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/** @file PooledData.h
+/** @file Pools/PooledData.h
  * @brief Define a serialized buffer to store anonymous data
  *
  * JK: Remove iterator version on 2016-01-04
@@ -26,8 +26,14 @@
 #include <complex>
 #include <limits>
 #include <iterator>
+#include <cassert>
 #include "type_traits/complex_help.hpp"
 
+/** Dynamically pack data into a buffer of type T.
+
+    Somehow callers must ensure that the order of add and get commands
+    is the same or
+    This class is defined to allow dynamically */
 template<class T>
 struct PooledData
 {
@@ -198,30 +204,34 @@ struct PooledData
   }
 
   /** return the address of the first element **/
-  inline T* data() { return &(myData[0]); }
+  inline T* data() { return myData.data(); }
 
   inline void print(std::ostream& os) { copy(myData.begin(), myData.end(), std::ostream_iterator<T>(os, " ")); }
 
   template<class Msg>
   inline Msg& putMessage(Msg& m)
   {
-    m.Pack(&(myData[0]), myData.size());
+    m.Pack(myData.data(), myData.size());
     return m;
   }
 
   template<class Msg>
   inline Msg& getMessage(Msg& m)
   {
-    m.Unpack(&(myData[0]), myData.size());
+    m.Unpack(myData.data(), myData.size());
     return m;
   }
 
-  inline PooledData<T>& operator+=(const PooledData<T>& s)
+  /** Accumulate element wise values into this from other
+   */
+  inline PooledData<T>& operator+=(const PooledData<T>& other)
   {
+    assert(myData.size() >= other.size());
     for (int i = 0; i < myData.size(); ++i)
-      myData[i] += s[i];
+      myData[i] += other[i];
     return *this;
   }
+
   inline PooledData<T>& operator*=(T scale)
   {
     for (int i = 0; i < myData.size(); ++i)
