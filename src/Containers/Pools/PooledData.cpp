@@ -48,7 +48,7 @@ void PooledData<T>::add(std::complex<T1>* first, std::complex<T1>* last)
 {
   static_assert(!(qmcplusplus::IsComplex_t<T>::value));
   // only widening coversions are ok.
-  static_assert(!std::is_same<T, T1>::value);
+  static_assert(!std::is_same_v<T, T1>);
   static_assert(sizeof(T) > sizeof(T1));
 
   long long t_n = 2 * (last - first);
@@ -81,7 +81,7 @@ void PooledData<T>::get(std::complex<T1>* first, std::complex<T1>* last)
 {
   auto getptr = first;
   static_assert(!qmcplusplus::IsComplex_t<T>::value);
-  static_assert(!std::is_same<T, T1>::value);
+  static_assert(!std::is_same_v<T, T1>);
   while (getptr != last)
   {
     // Generally this is going to be a narrowing conversion.
@@ -93,7 +93,6 @@ void PooledData<T>::get(std::complex<T1>* first, std::complex<T1>* last)
     ++getptr;
   }
 }
-
 
 template struct PooledData<float>;
 template struct PooledData<double>;
