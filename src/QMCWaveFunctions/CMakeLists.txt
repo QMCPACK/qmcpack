@@ -149,7 +149,8 @@ else(USE_OBJECT_TARGET)
 endif(USE_OBJECT_TARGET)
 
 target_include_directories(qmcwfs PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-target_link_libraries(qmcwfs PUBLIC spline2 qmcutil qmcparticle platform_runtime platform_LA)
+target_link_libraries(qmcwfs PUBLIC spline2 qmcutil qmcparticle
+platform_runtime platform_LA containers)
 target_link_libraries(qmcwfs PRIVATE einspline Math::FFTW3)
 
 add_library(qmcwfs_omptarget OBJECT ${JASTROW_OMPTARGET_SRCS} ${FERMION_OMPTARGET_SRCS})

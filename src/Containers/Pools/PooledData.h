@@ -116,9 +116,12 @@ struct PooledData
     myData.insert(myData.end(), first, last);
   }
 
-  inline void add(std::complex<T>* first, std::complex<T>* last);
+  void add(std::complex<T>* first, std::complex<T>* last);
 
-  inline void add(const std::complex<T>* first, const std::complex<T>* last);
+  void add(const std::complex<T>* first, const std::complex<T>* last);
+
+  template<typename T1>
+  void add(std::complex<T1>* first, std::complex<T1>* last);
 
   inline void get(T& x) { x = myData[Current++]; }
 
@@ -143,6 +146,9 @@ struct PooledData
   }
 
   void get(std::complex<T>* first, std::complex<T>* last);
+
+  template<typename T1>
+  void get(std::complex<T1>* first, std::complex<T1>* last);
 
   template<typename T1>
   inline void get(T1* first, T1* last)
@@ -256,5 +262,7 @@ bool operator!=(const PooledData<T>& a, const PooledData<T>& b)
 
 extern template struct PooledData<float>;
 extern template struct PooledData<double>;
+extern template void PooledData<double>::add<float>(std::complex<float>* first, std::complex<float>* last);
+extern template void PooledData<double>::get<float>(std::complex<float>* first, std::complex<float>* last);
 
 #endif
