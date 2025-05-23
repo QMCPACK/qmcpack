@@ -23,9 +23,9 @@ template<typename T>
 void PooledData<T>::add(const std::complex<T>* first, const std::complex<T>* last)
 {
   static_assert(!(qmcplusplus::IsComplex_t<T>::value));
-  long long dn = 2 * (last - first);
-  assert(dn > 0);
-  myData.insert(myData.end(), dn, T{});
+  long long d_n = 2 * (last - first);
+  assert(d_n >= 0);
+  myData.insert(myData.end(), d_n, T{});
   while (first != last)
   {
     myData[Current++] = (*first).real();
@@ -38,9 +38,9 @@ template<typename T>
 void PooledData<T>::add(std::complex<T>* first, std::complex<T>* last)
 {
   static_assert(!(qmcplusplus::IsComplex_t<T>::value));
-  long long dn = 2 * (last - first);
-  assert(dn > 0);
-  myData.insert(myData.end(), dn, T{});
+  long long d_n = 2 * (last - first);
+  assert(d_n >= 0);
+  myData.insert(myData.end(), d_n, T{});
   while (first != last)
   {
     myData[Current++] = (*first).real();
