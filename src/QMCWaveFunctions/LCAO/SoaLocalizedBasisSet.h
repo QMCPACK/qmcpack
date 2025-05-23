@@ -220,7 +220,15 @@ private:
   /// multi walker resource handle
   ResourceHandle<SoaLocalizedBSetMultiWalkerMem> mw_mem_handle_;
   NewTimer& NumCenter_timer_;
+
+  /**
+  * @brief Initialize and upload per‐species ion center indices and basis‐function offsets.
+  *
+  * Groups all ions and their basis offsets by species into pinned host/device vectors
+  * and performs the one‐time upload. Called only once from Constructor
+  */
   void initializeSpeciesOffsets();
+
 };
 } // namespace qmcplusplus
 #endif
