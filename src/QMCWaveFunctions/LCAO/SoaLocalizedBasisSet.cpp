@@ -103,6 +103,7 @@ SoaLocalizedBasisSet<COT, ORBT>::SoaLocalizedBasisSet(ParticleSet& ions, Particl
   LOBasisSet.resize(ions.getSpeciesSet().getTotalNum());
   BasisOffset.resize(NumCenters + 1);
   BasisSetSize = 0;
+  initializeSpeciesOffsets();
 }
 
 template<class COT, typename ORBT>
@@ -119,6 +120,8 @@ SoaLocalizedBasisSet<COT, ORBT>::SoaLocalizedBasisSet(const SoaLocalizedBasisSet
   LOBasisSet.reserve(a.LOBasisSet.size());
   for (auto& elem : a.LOBasisSet)
     LOBasisSet.push_back(std::make_unique<COT>(*elem));
+   initializeSpeciesOffsets();
+
 }
 
 template<class COT, typename ORBT>
@@ -425,10 +428,10 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValueVPs(const RefVectorWithLea
   }
 
   ///Should be done only once at Begining of simulation and made available. 
-  using PinnedVecSizeT = Vector<size_t, OffloadPinnedAllocator<size_t>>;
-  std::vector<PinnedVecSizeT> species_centers(num_species_);
-  std::vector<PinnedVecSizeT> species_center_coffsets(num_species_);
-
+  //using PinnedVecSizeT = Vector<size_t, OffloadPinnedAllocator<size_t>>;
+  //std::vector<PinnedVecSizeT> species_centers(num_species_);
+  //std::vector<PinnedVecSizeT> species_center_coffsets(num_species_);
+/*
   // Fill pinned vectors
   for (int s = 0; s < num_species_; s++)
   {
@@ -445,11 +448,11 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValueVPs(const RefVectorWithLea
     c_list_s.updateTo();
     offs_list_s.updateTo();
   }
-
+*/
   for (int s = 0; s < num_species_; s++)
   {
-    auto& c_list_s    = species_centers[s];
-    auto& offs_list_s = species_center_coffsets[s];
+    auto& c_list_s    = species_centers_[s];
+    auto& offs_list_s = species_center_coffsets_[s];
     if (c_list_s.size() == 0)
       continue;
 
@@ -665,4 +668,41 @@ template class SoaLocalizedBasisSet<
 template class SoaLocalizedBasisSet<
     SoaAtomicBasisSet<MultiFunctorAdapter<SlaterCombo<QMCTraits::RealType>>, SoaSphericalTensor<QMCTraits::RealType>>,
     QMCTraits::ValueType>;
+
+
+
+  template<class COT, typename ORBT>
+  void SoaLocalizedBasisSet<COT,ORBT>::initializeSpeciesOffsets()
+{
+  const auto& species_names = ions_.getSpeciesSet().speciesName;
+  int num_species = species_names.size();
+  const auto& IonID(ions_.GroupID);
+
+  // 1) gather host‐side
+  std::vector<std::vector<size_t>> local_centers (num_species);
+  std::vector<std::vector<size_t>> local_offsets (num_species);
+  for (int c = 0; c < NumCenters; ++c)
+  {
+    int s = IonID[c];
+    local_centers[s].push_back(c);
+    local_offsets[s].push_back(BasisOffset[c]);
+  }
+
+  // 2) allocate member vectors
+  species_centers_.resize(num_species);
+  species_center_coffsets_.resize(num_species);
+
+  // 3) copy + upload
+  for (int s = 0; s < num_species; ++s)
+  {
+    auto& c_list = species_centers_[s];
+    auto& o_list = species_center_coffsets_[s];
+    c_list.resize(local_centers[s].size());
+    o_list.resize(local_offsets[s].size());
+    for (size_t i = 0; i < c_list.size(); ++i)  c_list[i] = local_centers[s][i];
+    for (size_t i = 0; i < o_list.size(); ++i)  o_list[i] = local_offsets[s][i];
+    c_list.updateTo();
+    o_list.updateTo();
+  }
+}
 } // namespace qmcplusplus
