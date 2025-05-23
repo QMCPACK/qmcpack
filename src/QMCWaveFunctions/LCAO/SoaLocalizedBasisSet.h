@@ -213,17 +213,13 @@ public:
       const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basisset_list,
       int id);
 
-
-
- 
-
 private:
   /// multi walker shared memory buffer
   struct SoaLocalizedBSetMultiWalkerMem;
+  void initializeSpeciesOffsets();
   /// multi walker resource handle
   ResourceHandle<SoaLocalizedBSetMultiWalkerMem> mw_mem_handle_;
   NewTimer& NumCenter_timer_;
-  void initializeSpeciesOffsets();
 };
 } // namespace qmcplusplus
 #endif
