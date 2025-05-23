@@ -151,8 +151,8 @@ void StructureFactorEstimator::packData(PooledData<Real>& buffer) const
 
 void StructureFactorEstimator::unpackData(PooledData<Real>& buffer)
 {
-  buffer.get(sfk_e_e_);
-  buffer.get(rhok_e_);
+  buffer.get(sfk_e_e_.first_address(), sfk_e_e_.last_address());
+  buffer.get(rhok_e_.first_address(), rhok_e_.last_address());
 }
 
 void StructureFactorEstimator::startBlock(int steps) {}

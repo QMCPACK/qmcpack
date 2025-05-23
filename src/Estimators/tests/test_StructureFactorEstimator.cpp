@@ -320,6 +320,38 @@ TEST_CASE("StructureFactorEstimator::Accumulate", "[estimators]")
     auto check = checkVector(rhok_e_expected, rhok_e, true, tolerance);
     CHECKED_ELSE(check.result) { FAIL_CHECK(check.result_message); }
   }
+
+  PooledData<double> buffer;
+  auto bsize = buffer.size();
+  std::cout << "Pooled Data before structure factor pack buffer size = " << bsize << '\n';
+  sfe.packData(buffer);
+  bsize = buffer.size();
+  std::cout << "Pooled Data buffer size = " << bsize << '\n';
+
+  buffer.rewind();
+  double scale_by = 2.0;
+  buffer *= decltype(buffer)::value_type{scale_by};
+  sfe.unpackData(buffer);
+
+  auto& sfk_e_e2 = sfa.getSKElecElec(sfe);
+  auto& rhok_e2  = sfa.getRhoKElec(sfe);
+
+  Vector<double> sfk_e_e_expected_scaled{sfk_e_e_expected};
+  CHECK(sfk_e_e2.size() == sfk_e_e_expected.size());
+  sfk_e_e_expected_scaled *= scale_by;
+  Vector<std::complex<double>> rhok_e_expected_scaled{rhok_e_expected};
+  CHECK(rhok_e2.size() == rhok_e_expected.size());
+  rhok_e_expected_scaled *= scale_by;
+  {
+    INFO("In sfk_e_e pack unpack test");
+    auto check = checkVector(sfk_e_e_expected_scaled, sfk_e_e, true, tolerance);
+    CHECKED_ELSE(check.result) { FAIL_CHECK(check.result_message); }
+  }
+  {
+    INFO("In rhok_e pack unpack test");
+    auto check = checkVector(rhok_e_expected_scaled, rhok_e, true, tolerance);
+    CHECKED_ELSE(check.result) { FAIL_CHECK(check.result_message); }
+  }
 }
 
 
