@@ -45,7 +45,6 @@ public:
   using vgh_type          = typename BaseType::vgh_type;
   using vghgh_type        = typename BaseType::vghgh_type;
   using PosType           = typename ParticleSet::PosType;
-  using PinnedVecSizeT    = Vector<size_t, OffloadPinnedAllocator<size_t>>;
   using OffloadMWVGLArray = Array<ValueType, 3, OffloadPinnedAllocator<ValueType>>; // [VGL, walker, Orbs]
   using OffloadMWVArray   = Array<ValueType, 2, OffloadPinnedAllocator<ValueType>>; // [walker, Orbs]
 
@@ -61,10 +60,6 @@ public:
   const int myTableIndex;
   ///Global Coordinate of Supertwist read from HDF5
   PosType SuperTwist;
-
-  std::vector<PinnedVecSizeT> species_centers_;
-  std::vector<PinnedVecSizeT> species_center_coffsets_;
-
 
 
   /** container to store the offsets of the basis functions for each center
@@ -214,12 +209,18 @@ public:
       int id);
 
 private:
+  using PinnedVecSizeT    = Vector<size_t, OffloadPinnedAllocator<size_t>>;
+
   /// multi walker shared memory buffer
   struct SoaLocalizedBSetMultiWalkerMem;
-  void initializeSpeciesOffsets();
+  /// Pinned per-species list of ion indices for batched multi-center evaluation
+  std::vector<PinnedVecSizeT> species_centers_;
+  /// Pinned per-species list of basis-function offsets matching species_centers_
+  std::vector<PinnedVecSizeT> species_center_coffsets_;
   /// multi walker resource handle
   ResourceHandle<SoaLocalizedBSetMultiWalkerMem> mw_mem_handle_;
   NewTimer& NumCenter_timer_;
+  void initializeSpeciesOffsets();
 };
 } // namespace qmcplusplus
 #endif

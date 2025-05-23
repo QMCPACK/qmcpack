@@ -620,24 +620,21 @@ template class SoaLocalizedBasisSet<
   void SoaLocalizedBasisSet<COT,ORBT>::initializeSpeciesOffsets()
 {
   const auto& species_names = ions_.getSpeciesSet().speciesName;
-  int num_species = species_names.size();
+  const size_t num_species = species_names.size();
   const auto& IonID(ions_.GroupID);
 
-  // 1) gather host‐side
   std::vector<std::vector<size_t>> local_centers (num_species);
   std::vector<std::vector<size_t>> local_offsets (num_species);
   for (int c = 0; c < NumCenters; ++c)
   {
-    int s = IonID[c];
+    const int s = IonID[c];
     local_centers[s].push_back(c);
     local_offsets[s].push_back(BasisOffset[c]);
   }
 
-  // 2) allocate member vectors
   species_centers_.resize(num_species);
   species_center_coffsets_.resize(num_species);
 
-  // 3) copy + upload
   for (int s = 0; s < num_species; ++s)
   {
     auto& c_list = species_centers_[s];
