@@ -903,7 +903,7 @@ understand, and review. In this way we can maintain a good collective developmen
 Release Process
 ---------------
 
-This section documents the steps to follow to make a new release of QMCPACK. The examples are given for the 3.12.0 release. This
+This section documents the steps to follow to make a new release of QMCPACK. The examples are given for the 4.1.0 release. This
 simple process should be followed step-by-step to ensure accuracy and avoid need for a rerelease.
 
 1. Make a fresh clone of the repo and create a release candidate branch labeled rc_Mmp where Mmp are digits following semantic versioning.
@@ -912,17 +912,21 @@ simple process should be followed step-by-step to ensure accuracy and avoid need
 
  git clone https://github.com/QMCPACK/qmcpack.git
  cd qmcpack
- git branch rc_3120
- git checkout rc_3120
+ git branch rc_410
+ git checkout rc_410
 
-2. Update the VERSION numbers in the project section of qmcpack/CMakeLists.txt for the new release, e.g. 3.12.0
-3. Update qmcpack/CHANGELOG.md by replacing the unreleased section with the new version and release date. Update the notes section to recommend the update to all users (if appropriate) and note any major headline items such as backwards incompatibility. Use `github_changelog_generator -u QMCPACK -p qmcpack -o AUTOCHANGELOG.md -t YOUR_GITHUB_TOKEN --since-tag v3.11.0` to automatically generate a starting point. It will need substantial editing.
+2. Update the VERSION numbers in the project section of qmcpack/CMakeLists.txt for the new release, e.g. 4.1.0
+3. Update qmcpack/CHANGELOG.md by replacing the unreleased section with the new version and release date. Update the notes section
+   to recommend the update to all users (if appropriate) and note any major headline items such as backwards incompatibility. The
+   preferred way to get a list of all merged PRs is via the gh cli tool. Use
+   `gh search prs --merged-at 2025-02-05..2025-04-29 -R QMCPACK/qmcpack  --json title,url,repository,number -L 1000 --jq '.[]|("* " + .title + " [#" + (.number|tostring) +"]("+ .url + ")\n")'`
+   to generate a starting point, after adjusting the dates to include the day of the previous release. Edit the list to include only "significant" changes.
 
 ::
 
  git add qmcpack/CMakeLists.txt qmcpack/CHANGELOG.md
  git commit -m "Increase version number, update release notes"
- git push origin rc_3120
+ git push origin rc_410
 
 4. On GitHub, make a pull request into the main branch from the rc.
 5. Ensure CI tests run and pass.
@@ -938,8 +942,8 @@ simple process should be followed step-by-step to ensure accuracy and avoid need
 15. Once the PR is merged to develop, update the QMCPACK_VERSION_PATCH version to 9 in CMakeLists.txt in the develop branch to indicate it is the development version.
 16. Delete the rc branch.
 17. Verify readthedocs is seeing the new release and update readthedocs configuration if needed.
-18. Announce the release on qmcpack.org. Create a new page of type "Release" with title similar to "QMCPACK Release v3.5.0 -
-    2018-08-02" via https://qmcpack.org/user. The page type is required for https://www.qmcpack.org/releases to update
+18. Announce the release on qmcpack.org. Create a new page of type "Release" with title similar to "QMCPACK Release v4.1.0 -
+    2025-04-30" via https://qmcpack.org/user. The page type is required for https://www.qmcpack.org/releases to update
     automatically. Also check the documentation pages.
 19. Announce the release on Google Groups.
 20. Update the spack package https://packages.spack.io/package.html?name=qmcpack
