@@ -70,11 +70,11 @@ set(SRCS
     test_EnergyDensityInput.cpp
     test_EnergyDensityEstimator.cpp
     test_StructureFactorInput.cpp
+    test_StructureFactorEstimator.cpp
     )
 
 add_executable(${UTEST_EXE} ${SRCS})
-target_link_libraries(${UTEST_EXE} catch_main qmcutil qmcestimators
-test_estimators_help utilities_for_test sposets_for_testing minimal_testing_pools)
+target_link_libraries(${UTEST_EXE} catch_main qmcutil qmcestimators test_estimators_help utilities_for_test sposets_for_testing minimal_testing_pools)
 if(USE_OBJECT_TARGET)
   target_link_libraries(
     ${UTEST_EXE}
@@ -83,8 +83,10 @@ if(USE_OBJECT_TARGET)
     test_estimators_help
     qmcham
     qmcwfs
-    qmcparticle
     qmcwfs_omptarget
+    spline2
+    spline2_omptarget
+    qmcparticle
     qmcparticle_omptarget
     qmcutil
     platform_omptarget_LA

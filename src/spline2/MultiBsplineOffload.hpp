@@ -18,7 +18,7 @@
 #define QMCPLUSPLUS_MULTIEINSPLINEOFFLOAD_HPP
 
 #include "MultiBsplineBase.hpp"
-#include "spline2/BsplineAllocator.hpp"
+#include "MultiBsplineAllocator.hpp"
 #include "OMPTarget/OffloadAlignedAllocators.hpp"
 
 namespace qmcplusplus
@@ -33,42 +33,20 @@ private:
   using Base  = MultiBsplineBase<T>;
   using Alloc = OffloadAllocator<T>;
   ///use allocator
-  BsplineAllocator<T, Alloc> myAllocator;
+  MultiBsplineAllocator<T, Alloc> myAllocator;
 
   typename Base::SplineType* createImpl(const Ugrid grid[3],
                                         const typename Base::BoundaryCondition bc[3],
-                                        int num_splines) override
-  {
-    static_assert(std::is_same<T, typename Alloc::value_type>::value,
-                  "MultiBsplineOffload and Alloc data types must agree!");
-    if (getAlignedSize<T, Alloc::alignment>(num_splines) != num_splines)
-      throw std::runtime_error("When creating the data space of MultiBsplineOffload, num_splines must be padded!\n");
-    return myAllocator.allocateMultiBspline(grid[0], grid[1], grid[2], bc[0], bc[1], bc[2], num_splines);
-  }
+                                        int num_splines) override;
 
 public:
-  MultiBsplineOffload() = default;
-
-  ~MultiBsplineOffload() override
-  {
-    if (Base::spline_m != nullptr)
-      myAllocator.destroy(Base::spline_m);
-  }
-
-  void finalize() override
-  {
-    if (auto* spline_m = Base::spline_m; spline_m != nullptr)
-    {
-      auto* coefs = spline_m->coefs;
-      // attach pointers on the device to achieve deep copy
-      PRAGMA_OFFLOAD("omp target map(always, to: spline_m[:1], coefs[:spline_m->coefs_size])")
-      {
-        spline_m->coefs = coefs;
-      }
-    }
-  }
+  MultiBsplineOffload();
+  ~MultiBsplineOffload() override;
+  void finalize() override;
 };
 
+extern template class MultiBsplineOffload<float>;
+extern template class MultiBsplineOffload<double>;
 } // namespace qmcplusplus
 
 #endif

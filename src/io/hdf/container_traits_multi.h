@@ -17,7 +17,7 @@
 
 #include <multi/array.hpp>
 #include <multi/array_ref.hpp>
-#include "type_traits/container_traits.h"
+#include "container_traits.h"
 
 namespace qmcplusplus
 {

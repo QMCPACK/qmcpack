@@ -134,14 +134,37 @@ unsupported and untested by the developers although they may still work.
 
 -  FFTW, FFT library (http://www.fftw.org/).
 
-To build the GPU accelerated version of QMCPACK, an installation of
-NVIDIA CUDA development tools is required. Ensure that this is
-compatible with the C and C++ compiler versions you plan to use.
-Supported versions are included in the NVIDIA release notes.
+To build the GPU accelerated version of QMCPACK, an installation of NVIDIA CUDA, AMD ROCm, or Intel OneAPI is required. Ensure that
+this is compatible with the installed GPU drivers and the C and C++ compiler versions you plan to use. 
 
-Many of the utilities provided with QMCPACK require Python (v3). The numpy
-and matplotlib libraries are required for full functionality.
+Many of the utilities provided with QMCPACK require Python (v3). The numpy and matplotlib libraries are required for full
+functionality.
 
+Nightly testing currently includes at least the following software versions:
+
+* Compilers
+  
+  * Clang/LLVM 20.1.4
+  * GCC 14.2.0, 12.4.0
+
+* Boost 1.88.0, 1.82.0
+* HDF5 1.14.5
+* FFTW 3.3.10
+* CMake 3.31.6
+* OpenMPI 5.0.6
+* CUDA 12.6
+* ROCm 6.4.0
+* Python 3.13.2
+* NumPy 2.2.5
+
+For GPU acceleration on NVIDIA GPUs we test LLVM with CUDA using the above versions. On AMD GPUs we support using the latest ROCm
+version and its matching amdclang compiler, as listed above. On a developmental basis we also check the latest Clang and GCC
+development versions, and Intel OneAPI compilers.
+
+GitHub Actions-based tests include additional version combinations from within our two-year support window.
+
+Workflow tests are currently performed with Quantum ESPRESSO v7.4.1 and PySCF v2.9.0. These check trial wavefunction generation and
+conversion through to actual QMC runs.
 
 C++ 17 standard library
 -----------------------
@@ -251,9 +274,10 @@ give examples for a number of common systems in :ref:`installexamples`.
 Environment variables
 ~~~~~~~~~~~~~~~~~~~~~
 
-A number of environment variables affect the build.  In particular
-they can control the default paths for libraries, the default
-compilers, etc.  The list of environment variables is given below:
+A number of environment variables affect the build.  In particular, they can control the default paths for libraries, the default
+compilers, etc. Where possible, we recommend making maximum full use of the CMake configuration options and configuring the
+locations of libraries using cmake arguments. However, e.g., on some supercomputer sites, libraries are made available via modules
+which in turn set environment variables. The list of supported environment variables is given below:
 
 ::
 
@@ -412,16 +436,6 @@ the path to the source directory.
 
     ENABLE_SANITIZER  link with the GNU or Clang sanitizer library for asan, ubsan, tsan or msan (default=none)
     
-
-`Clang address sanitizer library asan <https://clang.llvm.org/docs/AddressSanitizer.html>`_
-
-`Clang address sanitizer library ubsan <https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html>`_
-
-`Clang thread sanitizer library tsan <https://clang.llvm.org/docs/ThreadSanitizer.html>`_
-
-`Clang memory sanitizer library msan <https://clang.llvm.org/docs/MemorySanitizer.html>`_
-
-`Clang type sanitizer library typesan <https://clang.llvm.org/docs/TypeSanitizer.html>`_
 
 See :ref:`Sanitizer-Libraries` for more information.
 

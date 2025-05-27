@@ -2,14 +2,16 @@
 #// This file is distributed under the University of Illinois/NCSA Open Source License.
 #// See LICENSE file in top directory for details.
 #//
-#// Copyright (c) 2020 QMCPACK developers.
+#// Copyright (c) 2025 QMCPACK developers.
 #//
 #// File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+#//                    Peter W. Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 #//
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
-set(CONTAINER_SRCS MinimalContainers/ConstantSizeMatrix.cpp)
+set(CONTAINER_SRCS MinimalContainers/ConstantSizeMatrix.cpp
+                   Pools/PooledData.cpp)
 add_library(containers ${CONTAINER_SRCS})
 
 target_include_directories(containers PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")

@@ -1,9 +1,8 @@
 ---
-Checks: "bugprone-*,readability-identifier-*"
+Checks: "bugprone-*,readability-*,-readability-function-size*,-readability-braces-around-statements*,cppcoreguidelines-*,modernize-*,-modernize-use-trailing*,-modernize-use-nodiscard"
 WarningsAsErrors: ""
 HeaderFilterRegex: ""
-AnalyzeTemporaryDtors: false
-FormatStyle: none
+FormatStyle: file
 CheckOptions:
   [
     { key: readability-identifier-naming.NamespaceCase, value: lower_case },
@@ -12,6 +11,4 @@ CheckOptions:
     { key: readability-identifier-naming.ClassMethodCase, value: camelBack },
     { key: readability-identifier-naming.PrivateMemberPostfix, value: _ },
   ]
-
 ---
-

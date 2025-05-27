@@ -226,16 +226,16 @@ bool h5d_read(hid_t grp,
   hid_t dataspace = H5Dget_space(h1);
   hid_t memspace  = H5Screate_simple(ndims, counts, NULL);
   // According to the HDF5 manual (https://support.hdfgroup.org/HDF5/doc/RM/H5S/H5Sselect_hyperslab.htm)
-  // , the fifth argument (count) means the number of hyper-slabs to select along each dimensions 
+  // , the fifth argument (count) means the number of hyper-slabs to select along each dimensions
   // while the sixth argument (block) is the size of each hyper-slab.
   // To write a single hyper-slab of size counts in a dataset, we call
   // H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offsets, NULL, ones.data(), counts);
   // The vector "ones" means we want to write one hyper-slab (block) along each dimensions.
-  // The result is equivalent to calling 
+  // The result is equivalent to calling
   // H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offsets, NULL, counts, NULL);
   // , but it implies writing count hyper-slabs along each dimension and each hyper-slab is of size one.
   const std::vector<hsize_t> ones(ndims, 1);
-  herr_t ret      = H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offsets, NULL, ones.data(), counts);
+  herr_t ret = H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offsets, NULL, ones.data(), counts);
 
   hid_t h5d_type_id = get_h5_datatype(*first);
   ret               = H5Dread(h1, h5d_type_id, memspace, dataspace, xfer_plist, first);
@@ -395,6 +395,20 @@ inline bool h5d_write(hid_t grp,
   return ret != -1;
 }
 
+/** Append to a hdf5 dataset
+ *  @param[in]      grp         an invalid grp id will result in
+ *                              a noop returning true
+ *  @param[in]      aname       string identifier of dataset
+ *  @param[in,out]  current     position in dataset, input is ignored if
+ *                              dataset at aname doesn't exist
+ *  @param[in]      ndims       number of dimensions
+ *  @param[in]      dims        ptr to dims
+ *  @param[in]      first       ptr to start of data
+ *  @param[in]      chunk_size  chunk size
+ *  @param[in]      xfer_plist  hid to hd5 plist
+ *
+ *  Assumption: we are appending slices in the first index.
+ */
 template<typename T>
 inline bool h5d_append(hid_t grp,
                        const std::string& aname,

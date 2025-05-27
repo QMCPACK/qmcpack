@@ -37,6 +37,7 @@ public:
   static constexpr int DIM = OHMMS_DIM;
   using AppPosition        = typename QMCTraits::PosType;
   using Position           = typename QMCTypes<Real, DIM>::PosType;
+  using Kpts               = std::vector<TinyVector<int, DIM>>;
 
 private:
   /// The cutoff up to which k-vectors are generated.
@@ -65,7 +66,7 @@ public:
 
   int getNumK() const { return numk; }
 
-  /** update k-vectors 
+  /** update k-vectors
    * @param sc supercell
    * @param kc cutoff radius in the K
    * @param twist shifts the center of the grid of k-vectors
@@ -89,7 +90,7 @@ private:
 
   /** k-vector in reduced coordinates
    */
-  std::vector<TinyVector<int, DIM>> kpts_;
+  Kpts kpts_;
   /// k-vectors in Cartesian coordinates
   std::vector<Position> kpts_cart_;
   /// k squared at full precision
