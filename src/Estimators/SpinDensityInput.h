@@ -49,6 +49,9 @@ public:
   int get_npoints() const { return npoints_; }
   bool get_write_report() const { return write_report_; }
   bool get_save_memory() const { return save_memory_; }
+  const std::string& get_name() const { return name_; }
+  const std::string& get_type() const { return type_; }
+
 
   struct DerivedParameters
   {
@@ -71,7 +74,8 @@ private:
   void readXML(xmlNodePtr cur);
 
   ///name of this Estimator
-  std::string myName_;
+  std::string name_{"SpinDensity"};
+  std::string type_{"SpinDensity"};
 
   Lattice cell_;
   PosType corner_;
@@ -82,7 +86,7 @@ private:
   bool write_report_;
   bool save_memory_;
   /** these are necessary for calculateDerivedParameters
-   *  
+   *
    *  If we are going to later write out a canonical input for
    *  this input then they are needed as well.
    */

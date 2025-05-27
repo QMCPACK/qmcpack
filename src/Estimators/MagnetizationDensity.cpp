@@ -14,9 +14,8 @@
 namespace qmcplusplus
 {
 MagnetizationDensity::MagnetizationDensity(MagnetizationDensityInput&& minput, const Lattice& lat)
-    : OperatorEstBase(DataLocality::crowd), input_(minput), lattice_(lat)
+    : OperatorEstBase(DataLocality::crowd, minput.get_name(), minput.get_type()), input_(minput), lattice_(lat)
 {
-  my_name_ = "MagnetizationDensity";
   //Pull consistent corner, grids, etc., from already inititalized input.
   //DerivedParameters does the sanity checks and consistent initialization of these variables.
   MagnetizationDensityInput::DerivedParameters derived = minput.calculateDerivedParameters(lat);
@@ -39,10 +38,9 @@ MagnetizationDensity::MagnetizationDensity(MagnetizationDensityInput&& minput, c
 MagnetizationDensity::MagnetizationDensity(const MagnetizationDensity& magdens, DataLocality dl)
     : MagnetizationDensity(magdens)
 {
-  my_name_       = "MagnetizationDensity";
   data_locality_ = dl;
 }
-void MagnetizationDensity::startBlock(int steps){};
+void MagnetizationDensity::startBlock(int steps) {};
 
 size_t MagnetizationDensity::getFullDataSize() const { return npoints_ * DIM; }
 

@@ -46,15 +46,7 @@ public:
   using Data             = std::vector<Real>;
 
   ///constructor
-  OperatorEstBase(DataLocality dl);
-  /** Shallow copy constructor!
-   *  This alows us to keep the default copy constructors for derived classes which
-   *  is quite useful to the spawnCrowdClone design.
-   *  Data is likely to be quite large and since the OperatorEstBase design is that the children
-   *  reduce to the parent it is infact undesirable for them to copy the data the parent has.
-   *  Initialization of Data (i.e. call to resize) if any is the responsibility of the derived class.
-   */
-  OperatorEstBase(const OperatorEstBase& oth);
+  OperatorEstBase(DataLocality data_locality, const std::string& name, const std::string& type);
   ///virtual destructor
   virtual ~OperatorEstBase() = default;
 
@@ -167,7 +159,8 @@ public:
    */
   QMCT::FullPrecRealType get_walkers_weight() const { return walkers_weight_; }
 
-  const std::string& get_my_name() const { return my_name_; }
+  const std::string& getMyName() const { return my_name_; }
+  const std::string& getMyType() const { return my_type_; }
 
   /** Register 0-many listeners with a leading QMCHamiltonian instance i.e. a QMCHamiltonian
    *  that has acquired the crowd scope QMCHamiltonianMultiWalkerResource.
@@ -183,6 +176,17 @@ public:
   DataLocality get_data_locality() const { return data_locality_; }
 
 protected:
+  /** Shallow copy constructor!
+   *  This alows us to keep the default copy constructors for derived classes which
+   *  is quite useful to the spawnCrowdClone design. But this is a
+   *  code smell for sure.
+   *
+   *  Data is likely to be quite large and since the OperatorEstBase design is that the children
+   *  reduce to the parent it is infact undesirable for them to copy the data the parent has.
+   *  Initialization of Data (i.e. call to resize) if any is the responsibility of the derived class.
+   */
+  OperatorEstBase(const OperatorEstBase& oth);
+
   /** locality for accumulation of estimator data.
    *  This designates the memory scheme used for the estimator
    *  The default is:
@@ -198,6 +202,7 @@ protected:
 
   ///name of this object -- only used for debugging and h5 output
   std::string my_name_;
+  std::string my_type_;
 
   QMCT::FullPrecRealType walkers_weight_;
 

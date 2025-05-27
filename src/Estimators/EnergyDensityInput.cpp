@@ -22,12 +22,11 @@ EnergyDensityInput::EnergyDensityInput(xmlNodePtr cur)
   input_section_.readXML(cur);
   auto setIfInInput = LAMBDA_setIfInInput;
   setIfInInput(name_, "name");
-  // setIfInInput(type_, "type");
+  setIfInInput(type_, "type");
   setIfInInput(dynamic_, "dynamic");
   setIfInInput(static_, "static");
   setIfInInput(ion_points_, "ion_points");
   setIfInInput(ref_points_input_, "reference_points");
-	     
 }
 
 std::vector<SpaceGridInput> EnergyDensityInput::get_space_grid_inputs() const

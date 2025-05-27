@@ -19,10 +19,12 @@ namespace qmcplusplus
 {
 using Real = OperatorEstBase::Real;
 
-OperatorEstBase::OperatorEstBase(DataLocality dl) : data_locality_(dl), walkers_weight_(0) {}
+OperatorEstBase::OperatorEstBase(DataLocality data_locality, const std::string& name, const std::string& type)
+    : data_locality_(data_locality), my_name_(name), my_type_(type), walkers_weight_(0)
+{}
 
 OperatorEstBase::OperatorEstBase(const OperatorEstBase& oth)
-    : data_locality_(oth.data_locality_), my_name_(oth.my_name_), walkers_weight_(0)
+    : data_locality_(oth.data_locality_), my_name_(oth.my_name_), my_type_(oth.my_type_), walkers_weight_(0)
 {}
 
 void OperatorEstBase::collect(const RefVector<OperatorEstBase>& type_erased_operator_estimators)

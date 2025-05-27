@@ -21,7 +21,7 @@ StructureFactorEstimator::StructureFactorEstimator(const StructureFactorInput& s
                                                    const ParticleSet& pset_ions,
                                                    const ParticleSet& pset_elec,
                                                    DataLocality data_locality)
-    : OperatorEstBase(data_locality),
+    : OperatorEstBase(data_locality, sfi.get_name(), sfi.get_type()),
       input_(sfi),
       elns_(pset_elec),
       elec_num_species_(elns_.getSpeciesSet().getTotalNum()),
@@ -48,7 +48,7 @@ StructureFactorEstimator::StructureFactorEstimator(const StructureFactorInput& s
   one_over_degeneracy_kshell_.resize(max_kshell);
   for (int ks = 0; ks < max_kshell; ks++)
   {
-    kmags_[ks]                      = std::sqrt(pset_elec.getSimulationCell().getKLists().getKSQWorking()[kshell_offsets_[ks]]);
+    kmags_[ks] = std::sqrt(pset_elec.getSimulationCell().getKLists().getKSQWorking()[kshell_offsets_[ks]]);
     one_over_degeneracy_kshell_[ks] = 1.0 / static_cast<Real>(kshell_offsets_[ks + 1] - kshell_offsets_[ks]);
   };
 }

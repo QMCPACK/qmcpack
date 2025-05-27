@@ -46,6 +46,8 @@ public:
    *  This is required due to SDI being part of a variant used as a vector element.
    */
   MagnetizationDensityInput(const MagnetizationDensityInput&) = default;
+  const std::string& get_name() const { return name_; }
+  const std::string& get_type() const { return type_; }
   PosType get_corner() const { return corner_; }
   PosType get_center() const { return center_; }
   PosType get_grid() const { return grid_real_; }
@@ -83,7 +85,7 @@ public:
       // clang-format off
       section_name  = "MagnetizationDensity";
       attributes    = {"name", "type"};
-      parameters    = {"integrator", 
+      parameters    = {"integrator",
                        "corner", "center", "samples", "grid", "dr"
                       };
       bools         = {};
@@ -104,7 +106,8 @@ public:
 private:
   MagnetizationDensityInputSection input_section_;
   //Default Values
-  std::string myName_    = "MagnetizationDensityInput";
+  std::string name_{"MagnetizationDensity"};
+  std::string type_{"MagnetizationDensity"};
   Integrator integrator_ = Integrator::SIMPSONS;
   int nsamples_          = 9; //Number of grid points for spin quadrature, or samples for Monte Carlo.
 
@@ -116,7 +119,7 @@ private:
   bool write_report_ = false;
   bool save_memory_  = false;
   /** these are necessary for calculateDerivedParameters
-   *  
+   *
    *  If we are going to later write out a canonical input for
    *  this input then they are needed as well.
    */

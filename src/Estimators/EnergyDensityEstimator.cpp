@@ -49,7 +49,9 @@ auto NEEnergyDensityEstimator::extractIonPositionsAndCharge(const ParticleSet& p
 NEEnergyDensityEstimator::NEEnergyDensityEstimator(const EnergyDensityInput& input,
                                                    const PSPool& pset_pool,
                                                    DataLocality data_locality)
-    : OperatorEstBase(data_locality), input_(input), pset_dynamic_(getParticleSet(pset_pool, input.get_dynamic()))
+    : OperatorEstBase(data_locality, input.get_name(), input.get_type()),
+      input_(input),
+      pset_dynamic_(getParticleSet(pset_pool, input.get_dynamic()))
 {
   requires_listener_ = true;
   my_name_           = "NEEnergyDensityEstimator";
@@ -83,7 +85,7 @@ NEEnergyDensityEstimator::NEEnergyDensityEstimator(const EnergyDensityInput& inp
 }
 
 NEEnergyDensityEstimator::NEEnergyDensityEstimator(const NEEnergyDensityEstimator& ede, const DataLocality dl)
-    : OperatorEstBase(dl),
+    : OperatorEstBase(dl, ede.input_.get_name(), ede.input_.get_type()),
       input_(ede.input_),
       pset_dynamic_(ede.pset_dynamic_),
       pset_static_(ede.pset_static_),

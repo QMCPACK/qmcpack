@@ -30,12 +30,12 @@ class SpinDensityNewTests;
 /** Class that collects density per species of particle
  *
  *  commonly used for spin up and down electrons
- *  
+ *
  */
 class SpinDensityNew : public OperatorEstBase
 {
 public:
-  using QMCT    = QMCTraits;
+  using QMCT             = QMCTraits;
   using FullPrecRealType = QMCT::FullPrecRealType;
 
   /** Constructor for SpinDensityNew that contains an explicitly defined cell
@@ -54,13 +54,13 @@ public:
    *  Ideally when validating input is built up enough there would be only one constructor with
    *  signature
    *
-   *  SpinDensityNew(SpinDensityInput&& sdi, 
-   *                 SpinDensityInput::DerivedParameters&& dev_par, 
+   *  SpinDensityNew(SpinDensityInput&& sdi,
+   *                 SpinDensityInput::DerivedParameters&& dev_par,
    *                 SpeciesSet species,
    *                 DataLocality dl);
    */
   SpinDensityNew(SpinDensityInput&& sdi,
-                 const Lattice&,
+                 Lattice lattice,
                  const SpeciesSet& species,
                  const DataLocality dl = DataLocality::crowd);
 
@@ -70,7 +70,7 @@ public:
    */
   SpinDensityNew(const SpinDensityNew& sdn, DataLocality dl);
 
-  /** This allows us to allocate the necessary data for the DataLocality::queue 
+  /** This allows us to allocate the necessary data for the DataLocality::queue
    */
   void startBlock(int steps) override;
 
@@ -104,7 +104,7 @@ public:
   /** this gets us into the hdf5 file
    *
    *  Just parroting for now don't fully understand.
-   *, needs to be unraveled and simplified the hdf5 output is another 
+   *, needs to be unraveled and simplified the hdf5 output is another
    *  big state big coupling design.
    */
   void registerOperatorEstimator(hdf_archive& file) override;

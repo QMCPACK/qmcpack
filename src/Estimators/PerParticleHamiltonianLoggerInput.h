@@ -43,14 +43,16 @@ public:
   /** For this input class its valid with just its defaults
    */
   PerParticleHamiltonianLoggerInput() = default;
-  
+
   const std::string& get_name() const { return name_; }
+  const std::string& get_type() const { return type_; }
   bool get_to_stdout() const { return to_stdout_; }
 
 private:
   PerParticleHamiltonianLoggerInputSection input_section_;
-  std::string name_               = "per_particle_log";
-  bool to_stdout_                 = false;
+  std::string name_{"per_particle_log"};
+  std::string type_{"per_particle_log"};
+  bool to_stdout_ = false;
 };
 } // namespace qmcplusplus
 #endif

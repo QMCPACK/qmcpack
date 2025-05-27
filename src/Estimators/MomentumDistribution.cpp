@@ -22,17 +22,15 @@ namespace qmcplusplus
 MomentumDistribution::MomentumDistribution(MomentumDistributionInput&& mdi,
                                            size_t np,
                                            const PosType& twist_in,
-                                           const Lattice& lattice_in,
+                                           Lattice lattice_in,
                                            DataLocality dl)
-    : OperatorEstBase(dl),
+    : OperatorEstBase(dl, mdi.get_name(), mdi.get_type()),
       input_(std::move(mdi)),
       twist(twist_in),
-      lattice(lattice_in),
+      lattice(std::move(lattice_in)),
       norm_nofK(1.0 / RealType(mdi.get_samples()))
 {
   psi_ratios.resize(np);
-
-  my_name_ = input_.get_name();
 
   //dims of a grid for generating k points (obtained below)
   int kgrid = 0;

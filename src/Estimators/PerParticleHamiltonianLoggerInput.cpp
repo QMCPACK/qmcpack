@@ -12,12 +12,14 @@
 #include "PerParticleHamiltonianLoggerInput.h"
 #include "EstimatorInput.h"
 
-namespace qmcplusplus {
-  PerParticleHamiltonianLoggerInput::PerParticleHamiltonianLoggerInput(xmlNodePtr cur)
-  {
-    input_section_.readXML(cur);
-    auto setIfInInput = LAMBDA_setIfInInput;
-    setIfInInput(to_stdout_, "to_stdout");
-    setIfInInput(name_, "name");
-  }
+namespace qmcplusplus
+{
+PerParticleHamiltonianLoggerInput::PerParticleHamiltonianLoggerInput(xmlNodePtr cur)
+{
+  input_section_.readXML(cur);
+  auto setIfInInput = LAMBDA_setIfInInput;
+  setIfInInput(to_stdout_, "to_stdout");
+  setIfInInput(name_, "name");
+  setIfInInput(name_, "type");
 }
+} // namespace qmcplusplus

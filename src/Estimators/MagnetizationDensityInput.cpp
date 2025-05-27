@@ -26,13 +26,14 @@ MagnetizationDensityInput::MagnetizationDensityInput(xmlNodePtr cur)
   input_section_.readXML(cur);
   auto setIfInInput = LAMBDA_setIfInInput;
   setIfInInput(nsamples_, "samples");
+  setIfInInput(name_, "name");
+  setIfInInput(type_, "type");
   setIfInInput(integrator_, "integrator");
   have_center_ = setIfInInput(center_, "center");
   have_corner_ = setIfInInput(corner_, "corner");
   have_grid_   = setIfInInput(grid_real_, "grid");
   have_dr_     = setIfInInput(dr_, "dr");
 }
-
 
 MagnetizationDensityInput::DerivedParameters MagnetizationDensityInput::calculateDerivedParameters(
     const Lattice& lattice) const

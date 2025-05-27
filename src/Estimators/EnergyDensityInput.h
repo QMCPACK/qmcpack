@@ -64,13 +64,16 @@ public:
   EnergyDensityInput(xmlNodePtr cur);
 
   const std::string& get_name() const { return name_; }
+  const std::string& get_type() const { return type_; }
   const std::string& get_dynamic() const { return dynamic_; }
   const std::string& get_static() const { return static_; }
   ReferencePointsInput get_ref_points_input() const { return ref_points_input_; }
   std::vector<SpaceGridInput> get_space_grid_inputs() const;
   const bool& get_ion_points() const { return ion_points_; }
+
 private:
-  std::string name_;
+  std::string name_{"EnergyDensity"};
+  std::string type_{"EnergyDensity"};
   std::string dynamic_;
   std::string static_;
   bool ion_points_{false};

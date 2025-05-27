@@ -42,6 +42,9 @@ public:
     // clang-format: on
   };
 
+  std::string get_name() const { return input_section_.get<std::string>("name"); }
+  std::string get_type() const { return input_section_.get<std::string>("type"); }
+
   SelfHealingOverlapInput(xmlNodePtr cur) { input_section_.readXML(cur); }
   /** default copy constructor
    *  This is required due to MDI being part of a variant used as a vector element.

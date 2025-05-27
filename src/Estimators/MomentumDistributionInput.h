@@ -24,7 +24,7 @@ class MomentumDistributionInput
 {
 public:
   using Consumer = MomentumDistribution;
-  using Real = QMCTraits::FullPrecRealType;
+  using Real     = QMCTraits::FullPrecRealType;
 
   class MomentumDistributionInputSection : public InputSection
   {
@@ -32,11 +32,11 @@ public:
     // clang-format: off
     MomentumDistributionInputSection()
     {
-      section_name   = "MomentumDistribution";
-      attributes     = {"type", "name", "samples", "kmax", "kmax0", "kmax1", "kmax2"};
-      strings        = {"type", "name"};
-      integers       = {"samples"};
-      reals          = {"kmax", "kmax0", "kmax1", "kmax2"};
+      section_name = "MomentumDistribution";
+      attributes   = {"type", "name", "samples", "kmax", "kmax0", "kmax1", "kmax2"};
+      strings      = {"type", "name"};
+      integers     = {"samples"};
+      reals        = {"kmax", "kmax0", "kmax1", "kmax2"};
       // default_values = {{"name", std::string("nofk")}, {"samples", int(40)}, {"kmax", Real(0.0)},
       //                   {"kmax0", Real(0.0)},          {"kmax1", Real(0.0)}, {"kmax2", Real(0.0)}};
     }
@@ -48,11 +48,12 @@ public:
    *  This is required due to MDI being part of a variant used as a vector element.
    */
   MomentumDistributionInput(const MomentumDistributionInput&) = default;
+
 private:
   MomentumDistributionInputSection input_section_;
 
   std::string name_{"nofk"};
-  std::string type_;
+  std::string type_{"nofk"};
   ///number of samples
   int samples_ = 40;
   //maximum k-value in the k-grid in cartesian coordinates
@@ -69,7 +70,7 @@ public:
   const Real& get_kmax() const { return kmax_; }
   const Real& get_kmax0() const { return kmax0_; }
   const Real& get_kmax1() const { return kmax1_; }
-  const Real& get_kmax2() const { return kmax2_; }  
+  const Real& get_kmax2() const { return kmax2_; }
 };
 
 } // namespace qmcplusplus

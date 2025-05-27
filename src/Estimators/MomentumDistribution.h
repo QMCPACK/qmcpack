@@ -28,7 +28,7 @@ namespace testing
 class MomentumDistributionTests;
 }
 /** Class that collects momentum distribution of electrons
- *  
+ *
  */
 class MomentumDistribution : public OperatorEstBase
 {
@@ -70,12 +70,12 @@ public:
   aligned_vector<RealType> nofK;
 
 public:
-  /** Constructor for MomentumDistributionInput 
+  /** Constructor for MomentumDistributionInput
    */
   MomentumDistribution(MomentumDistributionInput&& mdi,
                        size_t np,
                        const PosType& twist,
-                       const Lattice& lattice,
+                       Lattice lattice,
                        DataLocality dl = DataLocality::crowd);
 
   /** Constructor used when spawing crowd clones
@@ -84,7 +84,7 @@ public:
    */
   MomentumDistribution(const MomentumDistribution& md, DataLocality dl);
 
-  /** This allows us to allocate the necessary data for the DataLocality::queue 
+  /** This allows us to allocate the necessary data for the DataLocality::queue
    */
   void startBlock(int steps) override;
 
@@ -118,7 +118,7 @@ public:
   /** this gets us into the hdf5 file
    *
    *  Just parroting for now don't fully understand.
-   *, needs to be unraveled and simplified the hdf5 output is another 
+   *, needs to be unraveled and simplified the hdf5 output is another
    *  big state big coupling design.
    */
   void registerOperatorEstimator(hdf_archive& file) override;
