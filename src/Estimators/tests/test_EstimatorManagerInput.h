@@ -12,7 +12,6 @@
 #ifndef QMCPLUSPLUS_TEST_ESTIMATOR_MANAGER_INPUT
 #define QMCPLUSPLUS_TEST_ESTIMATOR_MANAGER_INPUT
 
-#include "OhmmsData/Libxml2Doc.h"
 #include "EstimatorInputDelegates.h"
 
 namespace qmcplusplus::testing

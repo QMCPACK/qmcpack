@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2022 QMCPACK developers.
+// Copyright (c) 2025 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -16,9 +16,6 @@
 #ifndef QMCPLUSPLUS_ESIMATORMANAGERINPUT_H
 #define QMCPLUSPLUS_ESIMATORMANAGERINPUT_H
 
-
-#include "type_traits/template_types.hpp"
-#include <functional>
 #include <vector>
 #include <variant>
 #include <libxml/tree.h>

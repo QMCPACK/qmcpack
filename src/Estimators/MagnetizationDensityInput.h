@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2023 QMCPACK developers.
+// Copyright (c) 2025 QMCPACK developers.
 //
 // File developed by: Raymond Clay, rclay@sandia.gov, Sandia National Laboratories
 //
@@ -14,7 +14,6 @@
 #define QMCPLUSPLUS_MAGNETIZATION_DENSITY_INPUT_H
 
 #include "Configuration.h"
-#include "OhmmsData/ParameterSet.h"
 #include "Containers/OhmmsPETE/TinyVector.h"
 #include "Estimators/InputSection.h"
 namespace qmcplusplus
