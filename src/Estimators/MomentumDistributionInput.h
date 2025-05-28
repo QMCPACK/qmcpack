@@ -52,8 +52,8 @@ public:
 private:
   MomentumDistributionInputSection input_section_;
 
-  std::string name_{"nofk"};
-  std::string type_{"nofk"};
+  std::string name_{"MomentumDistribution"};
+  std::string type_{"MomentumDistribution"};
   ///number of samples
   int samples_ = 40;
   //maximum k-value in the k-grid in cartesian coordinates

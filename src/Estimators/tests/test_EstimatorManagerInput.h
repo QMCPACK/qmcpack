@@ -13,14 +13,38 @@
 #define QMCPLUSPLUS_TEST_ESTIMATOR_MANAGER_INPUT
 
 #include "OhmmsData/Libxml2Doc.h"
+#include "EstimatorInputDelegates.h"
 
-namespace qmcplusplus
+namespace qmcplusplus::testing
 {
-namespace testing
+
+template<typename T>
+struct ExpectedEstimatorInputNameType;
+
+template<>
+struct ExpectedEstimatorInputNameType<EnergyDensityInput>
 {
+  using Type = EnergyDensityInput;
+  std::string name{"EDcell"};
+  std::string type{"EnergyDensity"};
+};
 
-Libxml2Document createEstimatorManagerNewInputXML();
+template<>
+struct ExpectedEstimatorInputNameType<OneBodyDensityMatricesInput>
+{
+  using Type = OneBodyDensityMatricesInput;
+  std::string name{"OneBodyDensityMatrices"};
+  std::string type{"OneBodyDensityMatrices"};
+};
 
-} // namespace testing
-} // namespace qmcplusplus
+template<>
+struct ExpectedEstimatorInputNameType<MomentumDistributionInput>
+{
+  using Type = MomentumDistributionInput;
+  std::string name{"nofk"};
+  std::string type{"MomentumDistribution"};
+};
+
+} // namespace qmcplusplus::testing
+
 #endif

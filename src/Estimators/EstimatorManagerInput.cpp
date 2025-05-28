@@ -12,6 +12,7 @@
 #include "EstimatorManagerInput.h"
 #include "EstimatorInputDelegates.h"
 #include <algorithm>
+#include <variant>
 #include "ModernStringUtils.hpp"
 
 namespace qmcplusplus
@@ -112,8 +113,29 @@ void EstimatorManagerInput::readXML(xmlNodePtr cur)
   }
 }
 
+template<typename T>
+std::vector<int> EstimatorManagerInput::getEstimatorTypeIndexes() const
+{
+  std::vector<int> type_indexes;
+  for (int i = 0; i < estimator_inputs_.size(); ++i)
+  {
+    if (std::holds_alternative<T>(estimator_inputs_[i]))
+      type_indexes.push_back(i);
+  }
+  return type_indexes;
+}
+
+
 void EstimatorManagerInput::append(const EstimatorInput& ei) { estimator_inputs_.emplace_back(ei); }
 void EstimatorManagerInput::append(const ScalarEstimatorInput& sei) { scalar_estimator_inputs_.emplace_back(sei); }
+
+template std::vector<int> EstimatorManagerInput::getEstimatorTypeIndexes<EnergyDensityInput>() const;
+template std::vector<int> EstimatorManagerInput::getEstimatorTypeIndexes<SpinDensityInput>() const;
+template std::vector<int> EstimatorManagerInput::getEstimatorTypeIndexes<MomentumDistributionInput>() const;
+template std::vector<int> EstimatorManagerInput::getEstimatorTypeIndexes<OneBodyDensityMatricesInput>() const;
+template std::vector<int> EstimatorManagerInput::getEstimatorTypeIndexes<SelfHealingOverlapInput>() const;
+template std::vector<int> EstimatorManagerInput::getEstimatorTypeIndexes<MagnetizationDensityInput>() const;
+template std::vector<int> EstimatorManagerInput::getEstimatorTypeIndexes<PerParticleHamiltonianLoggerInput>() const;
 
 
 } // namespace qmcplusplus
