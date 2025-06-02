@@ -23,6 +23,8 @@ class MomentumDistribution;
 class MomentumDistributionInput
 {
 public:
+  static constexpr std::string_view type_tag{"MomentumDistribution"};
+
   using Consumer = MomentumDistribution;
   using Real     = QMCTraits::FullPrecRealType;
 
@@ -32,7 +34,7 @@ public:
     // clang-format: off
     MomentumDistributionInputSection()
     {
-      section_name = "MomentumDistribution";
+      section_name = type_tag;
       attributes   = {"type", "name", "samples", "kmax", "kmax0", "kmax1", "kmax2"};
       strings      = {"type", "name"};
       integers     = {"samples"};
@@ -52,8 +54,8 @@ public:
 private:
   MomentumDistributionInputSection input_section_;
 
-  std::string name_{"MomentumDistribution"};
-  std::string type_{"MomentumDistribution"};
+  std::string name_{type_tag};
+  std::string type_{type_tag};
   ///number of samples
   int samples_ = 40;
   //maximum k-value in the k-grid in cartesian coordinates

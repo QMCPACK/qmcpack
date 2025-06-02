@@ -29,13 +29,14 @@ public:
   using Consumer = StructureFactorEstimator;
   using Real     = QMCTraits::FullPrecRealType;
 
+  static constexpr std::string_view type_tag{"StructureFactor"};
   class StructureFactorInputSection : public InputSection
   {
   public:
     // clang-format: off
     StructureFactorInputSection()
     {
-      section_name = "StructureFactor";
+      section_name = type_tag;
       attributes   = {"type", "name", "source", "target", "hdf5", "writerho", "writeionion"};
       strings      = {"type", "name", "source", "target"};
       bools        = {"hdf5", "writerho", "writeionion"};
@@ -53,8 +54,8 @@ public:
 private:
   StructureFactorInputSection input_section_;
 
-  std::string name_{"sk"};
-  std::string type_{"sk"};
+  std::string name_{type_tag};
+  std::string type_{type_tag};
   std::string source_;
   std::string target_;
   bool write_hdf5_{false};

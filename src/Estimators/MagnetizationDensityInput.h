@@ -23,11 +23,14 @@ class MagnetizationDensity;
 class MagnetizationDensityInput
 {
 public:
+  static constexpr std::string_view type_tag{"MagnetizationDensity"};
+
   enum class Integrator
   {
     SIMPSONS,
     MONTECARLO
   };
+
   // Weird clang format issues with the following.  Disable clang-format for now.
   // clang-format off
   inline static const std::unordered_map<std::string, std::any>
@@ -82,7 +85,7 @@ public:
     MagnetizationDensityInputSection()
     {
       // clang-format off
-      section_name  = "MagnetizationDensity";
+      section_name  = type_tag;
       attributes    = {"name", "type"};
       parameters    = {"integrator",
                        "corner", "center", "samples", "grid", "dr"
@@ -105,8 +108,8 @@ public:
 private:
   MagnetizationDensityInputSection input_section_;
   //Default Values
-  std::string name_{"MagnetizationDensity"};
-  std::string type_{"MagnetizationDensity"};
+  std::string name_{type_tag};
+  std::string type_{type_tag};
   Integrator integrator_ = Integrator::SIMPSONS;
   int nsamples_          = 9; //Number of grid points for spin quadrature, or samples for Monte Carlo.
 

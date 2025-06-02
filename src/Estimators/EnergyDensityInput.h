@@ -37,12 +37,13 @@ class EnergyDensityInput
 public:
   using Consumer = NEEnergyDensityEstimator;
 
+  static constexpr std::string_view type_tag{"EnergyDensity"};
   class EnergyDensityInputSection : public InputSection
   {
   public:
     EnergyDensityInputSection()
     {
-      section_name = "EnergyDensity";
+      section_name = type_tag;
       attributes   = {"name", "dynamic", "static", "ion_points", "type"};
       parameters   = {"reference_points", "spacegrid"};
       strings      = {"name", "type", "dynamic", "static"};
@@ -71,8 +72,8 @@ public:
   const bool& get_ion_points() const { return ion_points_; }
 
 private:
-  std::string name_{"EnergyDensity"};
-  std::string type_{"EnergyDensity"};
+  std::string name_{type_tag};
+  std::string type_{type_tag};
   std::string dynamic_;
   std::string static_;
   bool ion_points_{false};

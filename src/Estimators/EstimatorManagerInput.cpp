@@ -13,6 +13,7 @@
 #include "EstimatorInputDelegates.h"
 #include <algorithm>
 #include <variant>
+#include "MagnetizationDensityInput.h"
 #include "ModernStringUtils.hpp"
 
 namespace qmcplusplus
@@ -77,19 +78,19 @@ void EstimatorManagerInput::readXML(xmlNodePtr cur)
         appendScalarEstimatorInput<RMCLocalEnergyInput>(child);
         app_warning() << "RMCLocalEnergyEstimator support is at best experimental with batch drivers" << std::endl;
       }
-      else if (atype == "onebodydensitymatrices")
+      else if (atype == lowerCase(OneBodyDensityMatricesInput::type_tag))
         appendEstimatorInput<OneBodyDensityMatricesInput>(child);
-      else if (atype == "spindensity")
+      else if (atype == lowerCase(SpinDensityInput::type_tag))
         appendEstimatorInput<SpinDensityInput>(child);
-      else if (atype == "momentumdistribution")
+      else if (atype == lowerCase(MomentumDistributionInput::type_tag))
         appendEstimatorInput<MomentumDistributionInput>(child);
-      else if (atype == "selfhealingoverlap")
+      else if (atype == lowerCase(SelfHealingOverlapInput::type_tag))
         appendEstimatorInput<SelfHealingOverlapInput>(child);
-      else if (atype == "perparticlehamiltonianlogger")
+      else if (atype == lowerCase(PerParticleHamiltonianLoggerInput::type_tag))
         appendEstimatorInput<PerParticleHamiltonianLoggerInput>(child);
-      else if (atype == "magnetizationdensity")
+      else if (atype == lowerCase(MagnetizationDensityInput::type_tag))
         appendEstimatorInput<MagnetizationDensityInput>(child);
-      else if (atype == "energydensity")
+      else if (atype == lowerCase(EnergyDensityInput::type_tag))
         appendEstimatorInput<EnergyDensityInput>(child);
       else
         throw UniformCommunicateError(error_tag + "unparsable <estimator> node, name: " + aname + " type: " + atype +
