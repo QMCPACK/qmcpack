@@ -45,14 +45,14 @@ SpinDensityNew::SpinDensityNew(SpinDensityInput&& input, const SpeciesSet& speci
 }
 
 SpinDensityNew::SpinDensityNew(SpinDensityInput&& input,
-                               Lattice lattice,
+                               const Lattice& lattice,
                                const SpeciesSet& species,
                                const DataLocality dl)
     : OperatorEstBase(dl, input.get_name(), input.get_type()),
       input_(std::move(input)),
       species_(species),
       species_size_(getSpeciesSize(species)),
-      lattice_(std::move(lattice))
+      lattice_(lattice)
 {
   data_locality_ = dl;
   if (input_.get_cell().explicitly_defined == true)

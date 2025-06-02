@@ -75,7 +75,7 @@ public:
   MomentumDistribution(MomentumDistributionInput&& mdi,
                        size_t np,
                        const PosType& twist,
-                       Lattice lattice,
+                       const Lattice& lattice,
                        DataLocality dl = DataLocality::crowd);
 
   /** Constructor used when spawing crowd clones

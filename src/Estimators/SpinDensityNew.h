@@ -60,7 +60,7 @@ public:
    *                 DataLocality dl);
    */
   SpinDensityNew(SpinDensityInput&& sdi,
-                 Lattice lattice,
+                 const Lattice&,
                  const SpeciesSet& species,
                  const DataLocality dl = DataLocality::crowd);
 
