@@ -55,7 +55,7 @@ SpinDensityNew::SpinDensityNew(SpinDensityInput&& input,
       lattice_(lattice)
 {
   data_locality_ = dl;
-  if (input_.get_cell().explicitly_defined == true)
+  if (input_.get_cell().explicitly_defined)
     lattice_ = input_.get_cell();
   derived_parameters_ = input_.calculateDerivedParameters(lattice_);
   data_.resize(getFullDataSize());

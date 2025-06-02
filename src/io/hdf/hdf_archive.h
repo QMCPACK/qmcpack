@@ -289,7 +289,7 @@ public:
    *  [[nodiscard]]
    */
   template<typename T>
-  [[nodiscard]] hsize_t append(T& data, const std::string& aname, const hsize_t current_append_index)
+  [[nodiscard]] std::size_t append(T& data, const std::string& aname, const hsize_t current_append_index)
   {
     auto local_append_index = current_append_index;
     if (!appendEntry(data, aname, local_append_index))

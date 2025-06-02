@@ -64,8 +64,26 @@ public:
 
   void packData(PooledData<Real>& buffer) const override;
   void unpackData(PooledData<Real>& buffer) override;
-
+  /** Write the one time datasets for Estimator
+   *  Its calls to `file` create the root node for the estimator
+   *  if it doesn't yet exist.
+   *  this estimator does not use ObservableHelper this does not
+   *  update any other state. and `file` is returned to whatever node
+   *  position it had before calling this function.
+   */
   void registerOperatorEstimator(hdf_archive& file) override;
+
+  /** Write node to hdf5 file output
+   *  The written node has the following structure
+   *
+   *  `file` current hdf node
+   *    |
+   *    + --name(from input)
+   *         |
+   *         +-- kpoints
+   *         +-- sfk_e_e
+   *         +-- rhok_e
+   */
   void write(hdf_archive& file) override;
   void collect(const RefVector<OperatorEstBase>& type_erased_operator_estimators) override;
 
@@ -89,7 +107,7 @@ private:
   const int ion_num_species_;
 
   /// number of k points
-  long long num_kpoints_;
+  const long long num_kpoints_;
 
   // std::vector<int> kshell_degeneracy_;
   /// kpts which belong to the ith-shell [kshell[i], kshell[i+1])
@@ -112,6 +130,9 @@ private:
   Vector<Real> rhok_tot_r_;
   Vector<Real> rhok_tot_i_;
   /*@}*/
+
+  std::size_t append_rhok_e_position_{0};
+  std::size_t append_sfk_e_e_position_{0};
 
 public:
   friend class testing::StructureFactorAccess;

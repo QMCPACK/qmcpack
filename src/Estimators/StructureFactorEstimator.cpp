@@ -35,13 +35,11 @@ StructureFactorEstimator::StructureFactorEstimator(const StructureFactorInput& s
       elns_(pset_elec),
       elec_num_species_(elns_.getSpeciesSet().getTotalNum()),
       ions_(pset_ions),
-      ion_num_species_(ions_.getSpeciesSet().getTotalNum())
+      ion_num_species_(ions_.getSpeciesSet().getTotalNum()),
+      num_kpoints_(pset_ions.getSimulationCell().getKLists().getNumK()),
+      kshell_offsets_(pset_ions.getSimulationCell().getKLists().getKShell())
 {
-  my_name_ = "StructureFactorEstimator";
-
-  num_kpoints_    = pset_ions.getSimulationCell().getKLists().getNumK();
-  kshell_offsets_ = pset_ions.getSimulationCell().getKLists().getKShell();
-  int max_kshell  = kshell_offsets_.size() - 1;
+  int max_kshell = kshell_offsets_.size() - 1;
 
   rhok_tot_r_.resize(num_kpoints_);
   rhok_tot_i_.resize(num_kpoints_);
@@ -126,8 +124,8 @@ void StructureFactorEstimator::write(hdf_archive& file)
   hdf_path hdf_name{my_name_};
   file.push(hdf_name);
   // this is call rhok_e_e in the output of the legacy, but that is just wrong it is |rhok_e_e_|^2
-  file.write(sfk_e_e_, "sfk_e_e");
-  file.write(rhok_e_, "rhok_e_");
+  append_sfk_e_e_position_ = file.append(sfk_e_e_, "sfk_e_e", append_sfk_e_e_position_);
+  append_rhok_e_position_  = file.append(rhok_e_, "rhok_e", append_rhok_e_position_);
   file.pop();
 }
 
@@ -136,7 +134,7 @@ void StructureFactorEstimator::collect(const RefVector<OperatorEstBase>& type_er
   int num_crowds = type_erased_operator_estimators.size();
   for (OperatorEstBase& crowd_oeb : type_erased_operator_estimators)
   {
-    StructureFactorEstimator& crowd_sfe = dynamic_cast<StructureFactorEstimator&>(crowd_oeb);
+    auto& crowd_sfe = dynamic_cast<StructureFactorEstimator&>(crowd_oeb);
     this->sfk_e_e_ += crowd_sfe.sfk_e_e_;
     this->rhok_e_ += crowd_sfe.rhok_e_;
     walkers_weight_ += crowd_sfe.walkers_weight_;

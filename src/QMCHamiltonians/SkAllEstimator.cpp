@@ -119,7 +119,9 @@ SkAllEstimator::Return_t SkAllEstimator::evaluate(ParticleSet& P)
 
   if (hdf5_out)
   {
+    using namespace std::string_literals;
     int kc = my_index_;
+    app_log() << "Writing skAll for " << NumK << " kpoints.\n";
     for (int k = 0; k < NumK; k++, kc++)
       P.Collectables[kc] += values[k];
     for (int k = 0; k < NumK; k++, kc++)
@@ -230,8 +232,8 @@ void SkAllEstimator::registerCollectables(std::vector<ObservableHelper>& h5desc,
   hdf_path hdf_name{name_};
   h5desc.emplace_back(hdf_name / "kpoints");
   auto& ohKPoints = h5desc.back();
-  ohKPoints.addProperty(const_cast<std::vector<PosType>&>(ions->getSimulationCell().getKLists().getKptsCartWorking()), "value",
-                        file);
+  ohKPoints.addProperty(const_cast<std::vector<PosType>&>(ions->getSimulationCell().getKLists().getKptsCartWorking()),
+                        "value", file);
 
   // Add electron-electron S(k)
   std::vector<int> ng(1);
