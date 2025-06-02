@@ -51,9 +51,10 @@ public:
    */
   SelfHealingOverlapInput(const SelfHealingOverlapInput&) = default;
 
-private:
+  // SelfHealingOverlap violates the encapsulation of SelfHealingOverlapInput
   SelfHealingOverlapInputSection input_section_;
 
+private:
   std::string name_{type_tag};
   std::string type_{type_tag};
 };
