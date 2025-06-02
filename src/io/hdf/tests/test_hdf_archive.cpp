@@ -328,6 +328,14 @@ TEST_CASE("hdf_archive_real_append_pete", "[hdf]")
 
   CHECK(v_read.size() == 3);
   CHECK(v2 == v_read);
+
+  Vector<std::complex<double>> vc_read;
+  select_one_vector = {0, -1};
+  read_hd.readSlabSelection(vc_read, select_one_vector, name_complex);
+  CHECK(vc1 == vc_read);
+  select_one_vector = {1, -1};
+  read_hd.readSlabSelection(vc_read, select_one_vector, name_complex);
+  CHECK(vc2 == vc_read);
 }
 
 TEST_CASE("hdf_archive_complex_append_pete", "[hdf]")
