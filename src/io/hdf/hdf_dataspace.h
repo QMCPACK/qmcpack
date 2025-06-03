@@ -43,6 +43,7 @@ namespace qmcplusplus
 template<typename T, hsize_t RANK>
 struct h5_space_type
 {
+  using UnderlyingType = T;
   ///shape of the dataspace, protected for zero size array, hdf5 support scalar as rank = 0
   hsize_t dims[RANK > 0 ? RANK : 1];
   ///rank of the multidimensional dataspace
@@ -64,6 +65,7 @@ struct h5_space_type<std::complex<T>, RANK> : public h5_space_type<T, RANK + 1>
   using Base = h5_space_type<T, RANK + 1>;
   using Base::dims;
   using Base::rank;
+  using UnderlyingType = typename Base::UnderlyingType;
   static constexpr int added_rank() { return Base::added_rank() + 1; }
   inline h5_space_type() { dims[RANK] = 2; }
   inline static auto get_address(std::complex<T>* a) { return Base::get_address(reinterpret_cast<T*>(a)); }
@@ -78,6 +80,7 @@ struct h5_space_type<std::array<T, D>, RANK> : public h5_space_type<T, RANK + 1>
   using Base = h5_space_type<T, RANK + 1>;
   using Base::dims;
   using Base::rank;
+  using UnderlyingType = typename Base::UnderlyingType;
   inline h5_space_type() { dims[RANK] = D; }
   static constexpr int added_rank() { return Base::added_rank() + 1; }
   inline static auto get_address(std::array<T, D>* a) { return Base::get_address(a->data()); }
@@ -92,6 +95,7 @@ struct h5_space_type<TinyVector<T, D>, RANK> : public h5_space_type<T, RANK + 1>
   using Base = h5_space_type<T, RANK + 1>;
   using Base::dims;
   using Base::rank;
+  using UnderlyingType = typename Base::UnderlyingType;
   inline h5_space_type() { dims[RANK] = D; }
   static constexpr int added_rank() { return Base::added_rank() + 1; }
   inline static auto get_address(TinyVector<T, D>* a) { return Base::get_address(a->data()); }
@@ -106,6 +110,7 @@ struct h5_space_type<Tensor<T, D>, RANK> : public h5_space_type<T, RANK + 2>
   using Base = h5_space_type<T, RANK + 2>;
   using Base::dims;
   using Base::rank;
+  using UnderlyingType = typename Base::UnderlyingType;
   inline h5_space_type()
   {
     dims[RANK]     = D;

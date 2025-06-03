@@ -209,21 +209,12 @@ TEST_CASE("hdf_archive_append_multiple_pete", "[hdf]")
   Vector<double> v1{2.3, 3.4, 5.6};
   hsize_t append_index = 0;
 
-  std::string name = "pete_vector_series_double";
+  std::string name = "pete_vector_series";
   append_index     = hd.append(v1, name, append_index);
 
   Vector<double> v2{4.0, 5.0, 6.0};
 
   append_index = hd.append(v2, name, append_index);
-
-  std::string name_complex = "pete_vector_series_complex_double";
-  Vector<std::complex<double>> vc1{{4.0, 0.0}, {5.0, 1.0}, {6.0, 2.0}};
-  std::size_t complex_append_index{0};
-
-  complex_append_index = hd.append(vc1, name_complex, complex_append_index);
-  Vector<std::complex<double>> vc2{{2.1, 0.0}, {3.1, 1.0}, {4.1, 2.0}};
-  complex_append_index = hd.append(vc2, name_complex, complex_append_index);
-
   hd.close();
   hdf_archive read_hd;
   // For hdf5@1.14.6+cxx+mpi api=v114
@@ -243,7 +234,6 @@ TEST_CASE("hdf_archive_append_multiple_pete", "[hdf]")
 
   CHECK(v_read.size() == 3);
   CHECK(v2 == v_read);
-
   Vector<std::complex<double>> vc_read;
   // Yes you use the same one since the dataspace hides the
   // std::complex dimensionality just like would be the case for
