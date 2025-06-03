@@ -176,7 +176,7 @@ void EstimatorManagerNew::makeConfigReport(std::ostream& os) const
   {
     os << "  General Estimators:\n";
     for (auto& est : operator_ests_)
-      os << "    " << est->getMyType() << "  (" << est->getMyName() << ")\n";
+      os << "    " << est->get_type() << "  (" << est->get_name() << ")\n";
   }
 }
 

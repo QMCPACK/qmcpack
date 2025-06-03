@@ -114,6 +114,14 @@ public:
 
   RefVector<std::vector<QMCT::RealType>>& getExtraData();
 
+  // the input is an incomplete type, which is good for
+  // disentanglement but means these calls most go in implementation
+  // file.
+  // Also this prevents extra copies of the name and type values
+  // outside of the input and constexpr type tag.
+  std::string get_name() const override;
+  std::string get_type() const override;
+
 private:
   auto extractIonPositionsAndCharge(const ParticleSet& pset);
 

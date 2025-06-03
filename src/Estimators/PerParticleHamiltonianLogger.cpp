@@ -17,7 +17,7 @@
 namespace qmcplusplus
 {
 PerParticleHamiltonianLogger::PerParticleHamiltonianLogger(PerParticleHamiltonianLoggerInput&& input, int rank)
-    : OperatorEstBase(DataLocality::crowd, input.get_name(), input.get_type()), input_(input), rank_(rank)
+    : OperatorEstBase(DataLocality::crowd), input_(input), rank_(rank)
 {
   requires_listener_ = true;
 
@@ -26,9 +26,7 @@ PerParticleHamiltonianLogger::PerParticleHamiltonianLogger(PerParticleHamiltonia
 }
 
 PerParticleHamiltonianLogger::PerParticleHamiltonianLogger(PerParticleHamiltonianLogger& pphl, DataLocality dl)
-    : OperatorEstBase(dl, pphl.getMyName(), pphl.getMyType()),
-      rank_estimator_(makeOptionalRef(pphl)),
-      input_(pphl.input_)
+    : OperatorEstBase(dl), rank_estimator_(makeOptionalRef(pphl)), input_(pphl.input_)
 {
   requires_listener_ = true;
   data_locality_     = dl;
@@ -74,6 +72,9 @@ void PerParticleHamiltonianLogger::accumulate(const RefVector<MCPWalker>& walker
   // \todo some per crowd reduction.
   //       clear log values
 }
+
+std::string PerParticleHamiltonianLogger::get_name() const { return input_.get_name(); }
+std::string PerParticleHamiltonianLogger::get_type() const { return std::string(input_.get_type()); }
 
 PerParticleHamiltonianLogger::Real PerParticleHamiltonianLogger::sumOverAll() const
 {

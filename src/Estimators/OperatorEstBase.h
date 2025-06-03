@@ -24,6 +24,7 @@
 #include "type_traits/DataLocality.h"
 #include "hdf/hdf_archive.h"
 #include <bitset>
+#include <string_view>
 
 namespace qmcplusplus
 {
@@ -46,7 +47,7 @@ public:
   using Data             = std::vector<Real>;
 
   ///constructor
-  OperatorEstBase(DataLocality data_locality, const std::string& name, const std::string& type);
+  OperatorEstBase(DataLocality data_locality);
   ///virtual destructor
   virtual ~OperatorEstBase() = default;
 
@@ -159,9 +160,6 @@ public:
    */
   QMCT::FullPrecRealType get_walkers_weight() const { return walkers_weight_; }
 
-  const std::string& getMyName() const { return my_name_; }
-  const std::string& getMyType() const { return my_type_; }
-
   /** Register 0-many listeners with a leading QMCHamiltonian instance i.e. a QMCHamiltonian
    *  that has acquired the crowd scope QMCHamiltonianMultiWalkerResource.
    *  This must be called for each crowd scope estimator that listens to register listeners into
@@ -170,6 +168,8 @@ public:
    *  Many estimators don't need per particle values so the default implementation is no op.
    */
   virtual void registerListeners(QMCHamiltonian& ham_leader) {};
+  virtual std::string get_name() const = 0;
+  virtual std::string get_type() const = 0;
 
   bool isListenerRequired() { return requires_listener_; }
 
@@ -199,10 +199,6 @@ protected:
    *  DataLocality::?      Another way to reduce memory use on thread/crowd local estimators.
    */
   DataLocality data_locality_;
-
-  ///name of this object -- only used for debugging and h5 output
-  std::string my_name_;
-  std::string my_type_;
 
   QMCT::FullPrecRealType walkers_weight_;
 

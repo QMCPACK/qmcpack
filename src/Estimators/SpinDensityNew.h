@@ -109,6 +109,9 @@ public:
    */
   void registerOperatorEstimator(hdf_archive& file) override;
 
+  std::string get_name() const override;
+  std::string get_type() const override;
+
 private:
   SpinDensityNew(const SpinDensityNew& sdn) = default;
 

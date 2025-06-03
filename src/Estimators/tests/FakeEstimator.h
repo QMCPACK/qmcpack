@@ -30,7 +30,7 @@ public:
   void registerObservables(std::vector<ObservableHelper>& h5dec, hdf_archive& file) override {}
 
   FakeEstimator* clone() override { return new FakeEstimator; }
-  
+
   std::string type_{"fake"};
   const std::string& getSubTypeStr() const override { return type_; }
 };

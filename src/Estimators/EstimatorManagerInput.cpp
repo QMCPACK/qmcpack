@@ -55,7 +55,7 @@ void EstimatorManagerInput::readXML(xmlNodePtr cur)
     child = cur->xmlChildrenNode;
   else
     child = cur; // the case when 'estimator's are not encapsulated by a 'estimators' node
-  while (child != NULL)
+  while (child != nullptr)
   {
     std::string cname{lowerCase(castXMLCharToChar(child->name))};
     if (cname == "estimator")

@@ -67,7 +67,7 @@ private:
 
 public:
   const std::string& get_name() const { return name_; }
-  const std::string& get_type() const { return type_; }
+  std::string_view get_type() const { return type_tag; }
   const int& get_samples() const { return samples_; }
   const Real& get_kmax() const { return kmax_; }
   const Real& get_kmax0() const { return kmax0_; }

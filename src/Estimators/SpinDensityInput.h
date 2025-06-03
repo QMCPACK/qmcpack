@@ -50,7 +50,7 @@ public:
   bool get_write_report() const { return write_report_; }
   bool get_save_memory() const { return save_memory_; }
   const std::string& get_name() const { return name_; }
-  const std::string& get_type() const { return type_; }
+  std::string_view get_type() const { return type_; }
 
   struct DerivedParameters
   {

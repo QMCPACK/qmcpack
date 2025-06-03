@@ -20,7 +20,7 @@
 namespace qmcplusplus
 {
 SelfHealingOverlap::SelfHealingOverlap(SelfHealingOverlapInput&& inp_, const TrialWaveFunction& wfn, DataLocality dl)
-    : OperatorEstBase(dl, inp_.get_name(), inp_.get_type()),
+    : OperatorEstBase(dl),
       input_(std::move(inp_)),
       wf_type(no_wf),
       use_param_deriv(input_.input_section_.get<bool>("param_deriv"))
@@ -69,6 +69,9 @@ SelfHealingOverlap::SelfHealingOverlap(const SelfHealingOverlap& sh, DataLocalit
 {
   data_locality_ = dl;
 }
+
+std::string SelfHealingOverlap::get_name() const { return input_.get_name(); }
+std::string SelfHealingOverlap::get_type() const { return std::string(input_.get_type()); }
 
 std::unique_ptr<OperatorEstBase> SelfHealingOverlap::spawnCrowdClone() const
 {

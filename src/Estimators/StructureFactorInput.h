@@ -57,7 +57,6 @@ private:
   StructureFactorInputSection input_section_;
 
   std::string name_{type_tag};
-  std::string type_{type_tag};
   std::string source_{"ion0"};
   std::string target_{"e"};
   bool write_hdf5_{false};
@@ -65,8 +64,8 @@ private:
   bool write_ion_ion_{false};
 
 public:
-  std::string get_name() const { return name_; }
-  std::string get_type() const { return type_; }
+  const std::string& get_name() const { return name_; }
+  std::string_view get_type() const { return type_tag; }
   std::string get_source() const { return source_; }
   std::string get_target() const { return target_; }
   bool get_write_hdf5() const { return write_hdf5_; }

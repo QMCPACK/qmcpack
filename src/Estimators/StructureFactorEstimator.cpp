@@ -30,7 +30,7 @@ StructureFactorEstimator::StructureFactorEstimator(const StructureFactorInput& s
                                                    const ParticleSet& pset_ions,
                                                    const ParticleSet& pset_elec,
                                                    DataLocality data_locality)
-    : OperatorEstBase(data_locality, sfi.get_name(), sfi.get_type()),
+    : OperatorEstBase(data_locality),
       input_(sfi),
       elns_(pset_elec),
       elec_num_species_(elns_.getSpeciesSet().getTotalNum()),
@@ -107,10 +107,12 @@ const ParticleSet& StructureFactorEstimator::getParticleSet(const PSPool& psetpo
   return *(pset_iter->second.get());
 }
 
+std::string StructureFactorEstimator::get_name() const { return input_.get_name(); }
+std::string StructureFactorEstimator::get_type() const { return std::string{input_.get_type()}; }
 
 void StructureFactorEstimator::registerOperatorEstimator(hdf_archive& file)
 {
-  hdf_path hdf_name{my_name_};
+  hdf_path hdf_name{get_name()};
   hdf_path path_variables = hdf_name / std::string_view("kpoints");
   file.push(path_variables, true);
   // hdf_archive wants non const references, if that code was better
@@ -121,7 +123,7 @@ void StructureFactorEstimator::registerOperatorEstimator(hdf_archive& file)
 
 void StructureFactorEstimator::write(hdf_archive& file)
 {
-  hdf_path hdf_name{my_name_};
+  hdf_path hdf_name{get_name()};
   file.push(hdf_name);
   // this is call rhok_e_e in the output of the legacy, but that is just wrong it is |rhok_e_e_|^2
   append_sfk_e_e_position_ = file.append(sfk_e_e_, "sfk_e_e", append_sfk_e_e_position_);

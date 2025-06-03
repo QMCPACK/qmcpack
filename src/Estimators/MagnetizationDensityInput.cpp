@@ -27,7 +27,6 @@ MagnetizationDensityInput::MagnetizationDensityInput(xmlNodePtr cur)
   auto setIfInInput = LAMBDA_setIfInInput;
   setIfInInput(nsamples_, "samples");
   setIfInInput(name_, "name");
-  setIfInInput(type_, "type");
   setIfInInput(integrator_, "integrator");
   have_center_ = setIfInInput(center_, "center");
   have_corner_ = setIfInInput(corner_, "corner");

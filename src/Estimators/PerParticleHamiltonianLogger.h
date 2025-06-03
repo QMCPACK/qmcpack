@@ -61,6 +61,10 @@ public:
   Real sumOverAll() const;
 
   int get_block() { return block_; }
+
+  std::string get_name() const override;
+  std::string get_type() const override;
+
 private:
   bool crowd_clone = false;
   const OptionalRef<PerParticleHamiltonianLogger> rank_estimator_;

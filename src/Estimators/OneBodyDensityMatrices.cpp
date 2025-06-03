@@ -32,7 +32,7 @@ OneBodyDensityMatrices::OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obd
                                                const SpeciesSet& species,
                                                const SPOMap& spomap,
                                                const ParticleSet& pset_target)
-    : OperatorEstBase(DataLocality::crowd, obdmi.get_name(), obdmi.get_type()),
+    : OperatorEstBase(DataLocality::crowd),
       input_(obdmi),
       lattice_(std::move(lattice)),
       species_(species),
@@ -175,6 +175,9 @@ OneBodyDensityMatrices::OneBodyDensityMatrices(const OneBodyDensityMatrices& obd
 {
   data_locality_ = dl;
 }
+
+std::string OneBodyDensityMatrices::get_name() const { return input_.get_name(); }
+std::string OneBodyDensityMatrices::get_type() const { return std::string(input_.get_type()); }
 
 std::unique_ptr<OperatorEstBase> OneBodyDensityMatrices::spawnCrowdClone() const
 {
@@ -797,7 +800,7 @@ void OneBodyDensityMatrices::registerOperatorEstimator(hdf_archive& file)
   else
     spin_data_size = basis_size_ * basis_size_;
 
-  hdf_path hdf_name{my_name_};
+  hdf_path hdf_name{get_name()};
   hdf_name /= "number_matrix";
   for (int s = 0; s < species_.size(); ++s)
   {

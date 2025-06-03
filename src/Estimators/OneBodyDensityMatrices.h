@@ -185,6 +185,9 @@ public:
    */
   void registerOperatorEstimator(hdf_archive& file) override;
 
+  std::string get_name() const override;
+  std::string get_type() const override;
+
 private:
   /** Default copy constructor.
    *  Instances of this estimator is assume to be thread scope, i.e. never

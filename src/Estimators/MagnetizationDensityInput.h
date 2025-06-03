@@ -49,7 +49,7 @@ public:
    */
   MagnetizationDensityInput(const MagnetizationDensityInput&) = default;
   const std::string& get_name() const { return name_; }
-  const std::string& get_type() const { return type_; }
+  std::string_view get_type() const { return type_tag; }
   PosType get_corner() const { return corner_; }
   PosType get_center() const { return center_; }
   PosType get_grid() const { return grid_real_; }
@@ -109,7 +109,6 @@ private:
   MagnetizationDensityInputSection input_section_;
   //Default Values
   std::string name_{type_tag};
-  std::string type_{type_tag};
   Integrator integrator_ = Integrator::SIMPSONS;
   int nsamples_          = 9; //Number of grid points for spin quadrature, or samples for Monte Carlo.
 

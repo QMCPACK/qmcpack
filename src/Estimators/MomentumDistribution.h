@@ -123,6 +123,9 @@ public:
    */
   void registerOperatorEstimator(hdf_archive& file) override;
 
+  std::string get_name() const override;
+  std::string get_type() const override;
+
 private:
   MomentumDistribution(const MomentumDistribution& md) = default;
 

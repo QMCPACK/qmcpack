@@ -27,7 +27,7 @@ public:
 
   FakeOperatorEstimator(const FakeOperatorEstimator& foe);
 
-  ~FakeOperatorEstimator() override{};
+  ~FakeOperatorEstimator() override {};
 
   void accumulate(const RefVector<MCPWalker>& walkers,
                   const RefVector<ParticleSet>& psets,
@@ -35,6 +35,9 @@ public:
                   const RefVector<QMCHamiltonian>& hams,
                   RandomBase<FullPrecRealType>& rng) override
   {}
+
+  std::string get_name() const override;
+  std::string get_type() const override;
 
   void registerOperatorEstimator(hdf_archive& file) override {}
 

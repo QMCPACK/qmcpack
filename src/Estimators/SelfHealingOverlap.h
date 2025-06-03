@@ -22,7 +22,7 @@
 namespace qmcplusplus
 {
 /** Class that collects MSD coefficient values via the Self-Healing overlap
- *  
+ *
  */
 class SelfHealingOverlap : public OperatorEstBase
 {
@@ -55,7 +55,7 @@ public:
 
 
 public:
-  /** Constructor for SelfHealingOverlapInput 
+  /** Constructor for SelfHealingOverlapInput
    */
   SelfHealingOverlap(SelfHealingOverlapInput&& inp,
                      const TrialWaveFunction& wfn,
@@ -67,7 +67,7 @@ public:
    */
   SelfHealingOverlap(const SelfHealingOverlap& sh, DataLocality dl);
 
-  /** This allows us to allocate the necessary data for the DataLocality::queue 
+  /** This allows us to allocate the necessary data for the DataLocality::queue
    */
   void startBlock(int steps) override;
 
@@ -98,10 +98,13 @@ public:
    */
   //void collect(const OperatorEstBase&  oeb);
 
+  std::string get_name() const override;
+  std::string get_type() const override;
+
   /** this gets us into the hdf5 file
    *
    *  Just parroting for now don't fully understand.
-   *, needs to be unraveled and simplified the hdf5 output is another 
+   *, needs to be unraveled and simplified the hdf5 output is another
    *  big state big coupling design.
    */
   void registerOperatorEstimator(hdf_archive& file) override;

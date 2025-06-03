@@ -21,7 +21,6 @@ StructureFactorInput::StructureFactorInput(xmlNodePtr cur)
 
   auto setIfInInput = [&](auto& var, const std::string& tag) -> bool { return input_section_.setIfInInput(var, tag); };
   setIfInInput(name_, "name");
-  setIfInInput(type_, "type");
   setIfInInput(write_hdf5_, "writehdf5");
   setIfInInput(write_rho_, "writerho");
   setIfInInput(write_ion_ion_, "writeionion");
@@ -32,15 +31,15 @@ StructureFactorInput::StructureFactorInput(xmlNodePtr cur)
 void StructureFactorInput::StructureFactorInputSection::checkParticularValidity()
 {
   const std::string error_tag{"StructureFactor input: "};
-  if(has("writerho"))
-    if(get<bool>("writerho"))
-      if(!(has("source") && has("target")))
-	throw UniformCommunicateError(error_tag + " writerho requires explicit source and target definition!");
+  if (has("writerho"))
+    if (get<bool>("writerho"))
+      if (!(has("source") && has("target")))
+        throw UniformCommunicateError(error_tag + " writerho requires explicit source and target definition!");
 
-  if(has("writeionion"))
-    if(get<bool>("writeionion"))
-      if(!(has("source") && has("target")))
-	throw UniformCommunicateError(error_tag + " writerionion requires explicit source and target definition!");
+  if (has("writeionion"))
+    if (get<bool>("writeionion"))
+      if (!(has("source") && has("target")))
+        throw UniformCommunicateError(error_tag + " writerionion requires explicit source and target definition!");
 }
 
-}
+} // namespace qmcplusplus

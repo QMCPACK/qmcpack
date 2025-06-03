@@ -47,7 +47,7 @@ public:
   PerParticleHamiltonianLoggerInput() = default;
 
   const std::string& get_name() const { return name_; }
-  const std::string& get_type() const { return type_; }
+  std::string_view get_type() const { return type_tag; }
   bool get_to_stdout() const { return to_stdout_; }
 
 private:

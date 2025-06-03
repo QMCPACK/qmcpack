@@ -24,7 +24,7 @@ MomentumDistribution::MomentumDistribution(MomentumDistributionInput&& mdi,
                                            const PosType& twist_in,
                                            const Lattice& lattice_in,
                                            DataLocality dl)
-    : OperatorEstBase(dl, mdi.get_name(), mdi.get_type()),
+    : OperatorEstBase(dl),
       input_(std::move(mdi)),
       twist(twist_in),
       lattice(lattice_in),
@@ -103,7 +103,7 @@ MomentumDistribution::MomentumDistribution(MomentumDistributionInput&& mdi,
       }
     }
   }
-  app_log() << "\n  MomentumDistribution named " << my_name_ << "\n";
+  app_log() << "\n  MomentumDistribution named " << get_name() << "\n";
   if (sphere && !directional)
   {
     app_log() << "    Using all k-space points with (kx^2+ky^2+kz^2)^0.5 < " << sphere_kmax
@@ -173,6 +173,9 @@ MomentumDistribution::MomentumDistribution(const MomentumDistribution& md, DataL
 {
   data_locality_ = dl;
 }
+
+std::string MomentumDistribution::get_name() const { return input_.get_name(); }
+std::string MomentumDistribution::get_type() const { return std::string(input_.get_type()); }
 
 std::unique_ptr<OperatorEstBase> MomentumDistribution::spawnCrowdClone() const
 {

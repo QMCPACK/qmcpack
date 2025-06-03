@@ -21,10 +21,7 @@
 namespace qmcplusplus
 {
 SpinDensityNew::SpinDensityNew(SpinDensityInput&& input, const SpeciesSet& species, DataLocality dl)
-    : OperatorEstBase(dl, input.get_name(), input.get_type()),
-      input_(std::move(input)),
-      species_(species),
-      species_size_(getSpeciesSize(species))
+    : OperatorEstBase(dl), input_(std::move(input)), species_(species), species_size_(getSpeciesSize(species))
 {
   data_locality_ = DataLocality::crowd;
   if (input_.get_save_memory())
@@ -48,7 +45,7 @@ SpinDensityNew::SpinDensityNew(SpinDensityInput&& input,
                                const Lattice& lattice,
                                const SpeciesSet& species,
                                const DataLocality dl)
-    : OperatorEstBase(dl, input.get_name(), input.get_type()),
+    : OperatorEstBase(dl),
       input_(std::move(input)),
       species_(species),
       species_size_(getSpeciesSize(species)),
@@ -67,6 +64,9 @@ SpinDensityNew::SpinDensityNew(const SpinDensityNew& sdn, DataLocality dl) : Spi
 {
   data_locality_ = dl;
 }
+
+std::string SpinDensityNew::get_name() const { return input_.get_name(); }
+std::string SpinDensityNew::get_type() const { return std::string(input_.get_type()); }
 
 std::vector<int> SpinDensityNew::getSpeciesSize(const SpeciesSet& species)
 {
@@ -223,7 +223,7 @@ void SpinDensityNew::registerOperatorEstimator(hdf_archive& file)
 
   std::vector<int> ng(1, derived_parameters_.npoints);
 
-  hdf_path hdf_name{my_name_};
+  hdf_path hdf_name{get_name()};
   for (int s = 0; s < species_.size(); ++s)
   {
     h5desc_.emplace_back(hdf_name / species_.speciesName[s]);

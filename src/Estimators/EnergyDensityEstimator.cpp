@@ -49,12 +49,9 @@ auto NEEnergyDensityEstimator::extractIonPositionsAndCharge(const ParticleSet& p
 NEEnergyDensityEstimator::NEEnergyDensityEstimator(const EnergyDensityInput& input,
                                                    const PSPool& pset_pool,
                                                    DataLocality data_locality)
-    : OperatorEstBase(data_locality, input.get_name(), input.get_type()),
-      input_(input),
-      pset_dynamic_(getParticleSet(pset_pool, input.get_dynamic()))
+    : OperatorEstBase(data_locality), input_(input), pset_dynamic_(getParticleSet(pset_pool, input.get_dynamic()))
 {
   requires_listener_ = true;
-  my_name_           = "NEEnergyDensityEstimator";
   n_particles_       = pset_dynamic_.getTotalNum();
   if (!(input_.get_static().empty()))
   {
@@ -85,7 +82,7 @@ NEEnergyDensityEstimator::NEEnergyDensityEstimator(const EnergyDensityInput& inp
 }
 
 NEEnergyDensityEstimator::NEEnergyDensityEstimator(const NEEnergyDensityEstimator& ede, const DataLocality dl)
-    : OperatorEstBase(dl, ede.input_.get_name(), ede.input_.get_type()),
+    : OperatorEstBase(dl),
       input_(ede.input_),
       pset_dynamic_(ede.pset_dynamic_),
       pset_static_(ede.pset_static_),
@@ -173,6 +170,9 @@ const ParticleSet& NEEnergyDensityEstimator::getParticleSet(const PSPool& psetpo
   return *(pset_iter->second.get());
 }
 
+std::string NEEnergyDensityEstimator::get_name() const { return input_.get_name(); }
+std::string NEEnergyDensityEstimator::get_type() const { return input_.get_type(); }
+
 std::size_t NEEnergyDensityEstimator::getFullDataSize() const
 {
   std::size_t size = OperatorEstBase::get_data().size();
@@ -197,11 +197,6 @@ void NEEnergyDensityEstimator::unpackData(PooledData<Real>& buffer)
     buffer.get(grid->getDataVector().begin(), grid->getDataVector().end());
   buffer.get(nsamples_);
 }
-
-// void NEEnergyDensityEstimator::unpackData(std::vector<Real>& operator_receive_buffer)
-// {
-
-// }
 
 void NEEnergyDensityEstimator::accumulate(const RefVector<MCPWalker>& walkers,
                                           const RefVector<ParticleSet>& psets,
@@ -346,7 +341,7 @@ void NEEnergyDensityEstimator::collect(const RefVector<OperatorEstBase>& type_er
 
 void NEEnergyDensityEstimator::registerOperatorEstimator(hdf_archive& file)
 {
-  hdf_path hdf_name{my_name_};
+  hdf_path hdf_name{get_name()};
 
   hdf_path path_variables = hdf_name / std::string_view("variables");
   file.push(path_variables, true);
@@ -379,7 +374,7 @@ void NEEnergyDensityEstimator::registerOperatorEstimator(hdf_archive& file)
 
 void NEEnergyDensityEstimator::write(hdf_archive& file)
 {
-  hdf_path hdf_name{my_name_};
+  hdf_path hdf_name{get_name()};
   file.push(hdf_name);
   file.write(particles_outside_, "outside");
   for (int i = 0; i < spacegrids_.size(); i++)

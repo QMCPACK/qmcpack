@@ -92,7 +92,12 @@ public:
   const ParticleSet& getParticleSet(const PSPool& psetpool, const std::string& psname) const;
   void zero() override;
 
-protected:
+  // the input is an incomplete type, which is good for
+  // disentanglement but means these calls most go in implementation
+  // file.
+  std::string get_name() const override;
+  std::string get_type() const override;
+
   // Testing functions
   const Vector<Real>& getSKElecElec() const { return sfk_e_e_; }
   const Vector<std::complex<Real>>& getRhoKElec() const { return rhok_e_; }

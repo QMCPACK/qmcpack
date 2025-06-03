@@ -14,7 +14,7 @@
 namespace qmcplusplus
 {
 MagnetizationDensity::MagnetizationDensity(MagnetizationDensityInput&& minput, const Lattice& lat)
-    : OperatorEstBase(DataLocality::crowd, minput.get_name(), minput.get_type()), input_(minput), lattice_(lat)
+    : OperatorEstBase(DataLocality::crowd), input_(minput), lattice_(lat)
 {
   //Pull consistent corner, grids, etc., from already inititalized input.
   //DerivedParameters does the sanity checks and consistent initialization of these variables.
@@ -111,6 +111,9 @@ size_t MagnetizationDensity::computeBin(const QMCT::PosType& r, const unsigned i
   return DIM * point + component;
 }
 
+std::string MagnetizationDensity::get_name() const { return input_.get_name(); }
+std::string MagnetizationDensity::get_type() const { return std::string(input_.get_type()); }
+
 std::unique_ptr<OperatorEstBase> MagnetizationDensity::spawnCrowdClone() const
 {
   std::size_t data_size    = data_.size();
@@ -192,7 +195,7 @@ void MagnetizationDensity::registerOperatorEstimator(hdf_archive& file)
 
   std::vector<int> ng(1, getFullDataSize());
 
-  hdf_path hdf_name{my_name_};
+  hdf_path hdf_name{get_name()};
   h5desc_.emplace_back(hdf_name);
   auto& oh = h5desc_.back();
   oh.set_dimensions(ng, 0);
