@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2024 QMCPACK developers.
+// Copyright (c) 2025 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -174,7 +174,7 @@ void EstimatorManagerNew::makeConfigReport(std::ostream& os) const
   {
     os << "  General Estimators:\n";
     for (auto& est : operator_ests_)
-      os << "    " << est->get_my_name() << '\n';
+      os << "    " << est->getMyType() << "  (" << est->getMyName() << ")\n";
   }
 }
 

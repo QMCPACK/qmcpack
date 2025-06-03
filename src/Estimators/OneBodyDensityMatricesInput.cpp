@@ -16,14 +16,18 @@
 namespace qmcplusplus
 {
 
-template bool InputSection::setIfInInput<qmcplusplus::OneBodyDensityMatricesInput::Integrator>(qmcplusplus::OneBodyDensityMatricesInput::Integrator& var, const std::string& tag);
+template bool InputSection::setIfInInput<qmcplusplus::OneBodyDensityMatricesInput::Integrator>(
+    qmcplusplus::OneBodyDensityMatricesInput::Integrator& var,
+    const std::string& tag);
 
-  
+
 OneBodyDensityMatricesInput::OneBodyDensityMatricesInput(xmlNodePtr cur)
 {
   // This results in checkParticularValidity being called on OneBodyDensityMatrixInputSection
   input_section_.readXML(cur);
   auto setIfInInput = LAMBDA_setIfInInput;
+  setIfInInput(name_, "name");
+  setIfInInput(name_, "type");
   setIfInInput(energy_matrix_, "energy_matrix");
   setIfInInput(use_drift_, "use_drift");
   setIfInInput(normalized_, "normalized");

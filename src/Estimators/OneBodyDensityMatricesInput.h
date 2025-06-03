@@ -30,6 +30,7 @@ class OneBodyDensityMatrices;
 class OneBodyDensityMatricesInput
 {
 public:
+  static constexpr std::string_view type_tag{"OneBodyDensityMatrices"};
   using Consumer = OneBodyDensityMatrices;
 
   enum class Integrator
@@ -129,8 +130,12 @@ private:
   int samples_        = 10;
   int warmup_samples_ = 30;
   std::vector<std::string> basis_sets_;
+  std::string name_{type_tag};
+  std::string type_{type_tag};
 
 public:
+  const std::string& get_name() const { return name_; }
+  const std::string& get_type() const { return type_; }
   bool get_energy_matrix() const { return energy_matrix_; }
   bool get_use_drift() const { return use_drift_; }
   bool get_normalized() const { return normalized_; }

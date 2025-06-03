@@ -12,9 +12,9 @@
 #include "catch.hpp"
 #include "EstimatorManagerInput.h"
 #include "EstimatorManagerInputTest.h"
-#include "EstimatorInputDelegates.h"
 #include "ValidOneBodyDensityMatricesInput.h"
 #include "ValidSpinDensityInput.h"
+#include "test_EstimatorManagerInput.h"
 
 namespace qmcplusplus
 {
@@ -151,6 +151,52 @@ TEST_CASE("EstimatorManagerInput::MergeConstructor", "[estimators]")
 
   CHECK(emi_merged.get_estimator_inputs().size() == 3);
   CHECK(emi_merged.get_scalar_estimator_inputs().size() == 5);
+}
+
+TEST_CASE("EstimatorManagerInput::Name")
+{
+  // This test case covers the logic of name and type initialization when
+  // they are missing input as well as there proper handling within
+  // the various estimator input classes.
+  //
+  // This seems better to test at the integration level than at
+  // individual input since the emni and the est inputs must work
+  // together to have these always have the semantics expected.
+  //
+  // It should also cover breakage in the canned estimator manager
+  // input mocking.
+  using namespace testing;
+  Libxml2Document estimators_doc = createEstimatorManagerNewInputXML();
+  EstimatorManagerInput emi_local(estimators_doc.getRoot());
+
+  auto checkNameType = [](EstimatorManagerInput& emi, auto ent) {
+    using EstimatorInput = typename decltype(ent)::Type;
+    auto indexes         = emi.getEstimatorTypeIndexes<EstimatorInput>();
+    for (auto index : indexes)
+    {
+      auto& eden_input = std::get<EstimatorInput>(emi.get_estimator_inputs()[index]);
+      CHECK(eden_input.get_name() == ent.name);
+      CHECK(eden_input.get_type() == ent.type);
+    }
+  };
+  checkNameType(emi_local, ExpectedEstimatorInputNameType<EnergyDensityInput>{});
+  checkNameType(emi_local, ExpectedEstimatorInputNameType<OneBodyDensityMatricesInput>{});
+  checkNameType(emi_local, ExpectedEstimatorInputNameType<MomentumDistributionInput>{});
+  // auto& estimator_inputs = emi_merged.get_estimator_inputs();
+  // auto eden_indexes      = emi_merged.getEstimatorTypeIndexes<EnergyDensityInput>();
+  // for (auto eden_index : eden_indexes)
+  // {
+  //   auto& eden_input = std::get<EnergyDensityInput>(estimator_inputs[eden_index]);
+  //   CHECK(eden_input.get_name() == "EDcell");
+  //   CHECK(eden_input.get_type() == "EnergyDensity");
+  // }
+  // auto one_body_indexes = emi_merged.getEstimatorTypeIndexes<EnergyDensityInput>();
+  // for (auto one_body_index : one_body_indexes)
+  // {
+  //   auto& one_body_input = std::get<OneBodyDensityMatricesInput>(estimator_inputs[one_body_index]);
+  //   CHECK(one_body_input.get_name() == "OneBodyDensityMatrices");
+  //   CHECK(one_body_input.get_type() == "OneBodyDensityMatrices");
+  // }
 }
 
 } // namespace qmcplusplus
