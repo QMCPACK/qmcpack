@@ -156,7 +156,7 @@ public:
    *  Call this to make a new OBDM this is what you should be calling
    */
   OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obdmi,
-                         Lattice lattice,
+                         const Lattice& lattice,
                          const SpeciesSet& species,
                          const SPOMap& spomap,
                          const ParticleSet& pset_target);

@@ -28,7 +28,7 @@ using MatrixOperators::product;
 using MatrixOperators::product_AtB;
 
 OneBodyDensityMatrices::OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obdmi,
-                                               Lattice lattice,
+                                               const Lattice& lattice,
                                                const SpeciesSet& species,
                                                const SPOMap& spomap,
                                                const ParticleSet& pset_target)
