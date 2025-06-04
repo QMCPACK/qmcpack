@@ -41,6 +41,7 @@ public:
   static DataC getRhoKElec();
 };
 
+// NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers)
 template<>
 typename StructureFactorTests::Data StructureFactorTests::getSKElecElec<double>()
 {
@@ -642,6 +643,7 @@ typename StructureFactorTests::DataC StructureFactorTests::getRhoKElec<std::comp
   };
   return rhok_e_expected;
 }
+// NOLINTEND(cppcoreguidelines-avoid-magic-numbers)
 
 template<>
 typename StructureFactorTests::Data StructureFactorTests::getSKElecElec<std::complex<float>>()

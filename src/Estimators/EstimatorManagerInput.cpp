@@ -55,7 +55,7 @@ void EstimatorManagerInput::readXML(xmlNodePtr cur)
     child = cur->xmlChildrenNode;
   else
     child = cur; // the case when 'estimator's are not encapsulated by a 'estimators' node
-  while (child != NULL)
+  while (child != nullptr)
   {
     std::string cname{lowerCase(castXMLCharToChar(child->name))};
     if (cname == "estimator")
@@ -92,6 +92,8 @@ void EstimatorManagerInput::readXML(xmlNodePtr cur)
         appendEstimatorInput<MagnetizationDensityInput>(child);
       else if (atype == lowerCase(EnergyDensityInput::type_tag))
         appendEstimatorInput<EnergyDensityInput>(child);
+      else if (atype == "structurefactor")
+        appendEstimatorInput<StructureFactorInput>(child);
       else
         throw UniformCommunicateError(error_tag + "unparsable <estimator> node, name: " + aname + " type: " + atype +
                                       " in Estimators input.");
@@ -137,6 +139,7 @@ template std::vector<int> EstimatorManagerInput::getEstimatorTypeIndexes<OneBody
 template std::vector<int> EstimatorManagerInput::getEstimatorTypeIndexes<SelfHealingOverlapInput>() const;
 template std::vector<int> EstimatorManagerInput::getEstimatorTypeIndexes<MagnetizationDensityInput>() const;
 template std::vector<int> EstimatorManagerInput::getEstimatorTypeIndexes<PerParticleHamiltonianLoggerInput>() const;
+template std::vector<int> EstimatorManagerInput::getEstimatorTypeIndexes<StructureFactorInput>() const;
 
 
 } // namespace qmcplusplus

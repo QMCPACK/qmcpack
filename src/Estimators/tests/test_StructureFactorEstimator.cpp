@@ -41,18 +41,21 @@ TEST_CASE("StructureFactorEstimator::StructureFactorEstimator", "[estimators]")
   ParticleSet pset_elec{*(particle_pool.getParticleSet("e"))};
   ParticleSet pset_ions{*(particle_pool.getParticleSet("ion"))};
 
+  // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers)
   pset_elec.R =
       ParticleSet::ParticlePos{{1.451870349, 1.381521229, 1.165202269}, {1.244515371, 1.382273176, 1.21105285},
                                {0.000459944, 1.329603408, 1.265030556}, {0.748660329, 1.63420622, 1.393637791},
                                {0.033228526, 1.391869137, 0.654413566}, {1.114198787, 1.654334594, 0.231075822},
                                {1.657151589, 0.883870516, 1.201243939}, {0.97317591, 1.245644974, 0.284564732}};
+  // NOLINTEND(cppcoreguidelines-avoid-magic-numbers)
 
   Libxml2Document doc;
-  bool okay       = doc.parseFromString(Input::xml[Input::valid::SKALL]);
+  bool okay       = doc.parseFromString(Input::getXml(Input::valid::SKALL));
   xmlNodePtr node = doc.getRoot();
   UPtr<StructureFactorInput> sf_in;
   sf_in = std::make_unique<StructureFactorInput>(node);
   StructureFactorEstimator sfe(*sf_in, pset_ions, pset_elec);
+  CHECK(sfe.getMyName() == "sk1");
 }
 
 TEST_CASE("StructureFactorEstimator::Accumulate", "[estimators]")
@@ -62,7 +65,7 @@ TEST_CASE("StructureFactorEstimator::Accumulate", "[estimators]")
   comm = OHMMS::Controller;
 
   Libxml2Document doc;
-  bool okay       = doc.parseFromString(Input::xml[Input::valid::SKALL]);
+  bool okay       = doc.parseFromString(Input::getXml(Input::valid::SKALL));
   xmlNodePtr node = doc.getRoot();
   UPtr<StructureFactorInput> sf_in;
   sf_in = std::make_unique<StructureFactorInput>(node);
@@ -79,6 +82,7 @@ TEST_CASE("StructureFactorEstimator::Accumulate", "[estimators]")
   for (int iw = 0; iw < nwalkers; ++iw)
     walkers.emplace_back(8);
 
+  // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers)
   std::vector<ParticleSet::ParticlePos> deterministic_rs = {
       {
           {-0.5864843726, 0.7036851048, -0.3468246162},
@@ -111,6 +115,7 @@ TEST_CASE("StructureFactorEstimator::Accumulate", "[estimators]")
           {3.036986828, 1.300868988, 1.215788841},
       },
   };
+  // NOLINTEND(cppcoreguidelines-avoid-magic-numbers)
 
   std::vector<ParticleSet> psets =
       testing::generateRandomParticleSets(pset_elec, pset_ions, deterministic_rs, nwalkers, generate_test_data);
@@ -162,12 +167,14 @@ TEST_CASE("StructureFactorEstimator::Accumulate", "[estimators]")
   }
   else
   {
+    // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers)
     rng_reals = {
         0.6121701598,  0.120757781,  0.1690697521, 0.3017894626, 0.4360590279, 0.8539064527,
         0.7692624927,  0.2977159917, 0.295325309,  0.3778624535, 0.149162963,  0.2090236992,
         0.02247832529, 0.6495640278, 0.4202244878, 0.6017025113, 0.2386821359, 0.7122730613,
     };
   }
+  // NOLINTEND(cppcoreguidelines-avoid-magic-numbers)
 
   auto it_rng_reals = rng_reals.begin();
 
@@ -175,9 +182,9 @@ TEST_CASE("StructureFactorEstimator::Accumulate", "[estimators]")
   {
     // gcc will evaluate these iterators in the opposite of the order explicitly imposed if we naively
     // increment the iterators after each value.
-    pset.R[0] = ParticleSet::PosType(*it_rng_reals, *(it_rng_reals+1), *(it_rng_reals+2));
+    pset.R[0] = ParticleSet::PosType(*it_rng_reals, *(it_rng_reals + 1), *(it_rng_reals + 2));
     it_rng_reals += 3;
-    pset.R[1] = ParticleSet::PosType(*it_rng_reals, *(it_rng_reals+1), *(it_rng_reals+2));
+    pset.R[1] = ParticleSet::PosType(*it_rng_reals, *(it_rng_reals + 1), *(it_rng_reals + 2));
     it_rng_reals += 3;
   }
 
@@ -188,6 +195,8 @@ TEST_CASE("StructureFactorEstimator::Accumulate", "[estimators]")
 
   CHECK(sfe.getNumKPoints() == 608);
 
+
+  // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers)
   std::remove_cv_t<std::remove_reference_t<decltype(KContainer().getKpts())>> kpoint_lists = {
       {-1, -1, -1}, {-1, 0, 0},   {0, -1, 0},   {0, 0, -1},   {0, 0, 1},    {0, 1, 0},    {1, 0, 0},    {1, 1, 1},
       {-1, -1, 0},  {-1, 0, -1},  {0, -1, -1},  {0, 1, 1},    {1, 0, 1},    {1, 1, 0},    {-2, -1, -1}, {-1, -2, -1},
@@ -266,6 +275,7 @@ TEST_CASE("StructureFactorEstimator::Accumulate", "[estimators]")
       {1, 5, 0},    {1, 5, 4},    {3, -1, 4},   {3, 4, -1},   {4, -1, -1},  {4, -1, 3},   {4, 1, 5},    {4, 3, -1},
       {4, 5, 1},    {4, 5, 5},    {5, 0, 1},    {5, 1, 0},    {5, 1, 4},    {5, 4, 1},    {5, 4, 5},    {5, 5, 4},
   };
+  // NOLINTEND(cppcoreguidelines-avoid-magic-numbers)
 
   //std::cout << "kpoint_lists = " << NativePrint(sfe.getKLists().kpts) << '\n';
 
@@ -309,6 +319,38 @@ TEST_CASE("StructureFactorEstimator::Accumulate", "[estimators]")
   {
     INFO("In rhok_e test");
     auto check = checkVector(rhok_e_expected, rhok_e, true, tolerance);
+    CHECKED_ELSE(check.result) { FAIL_CHECK(check.result_message); }
+  }
+
+  PooledData<double> buffer;
+  auto bsize = buffer.size();
+  std::cout << "Pooled Data before structure factor pack buffer size = " << bsize << '\n';
+  sfe.packData(buffer);
+  bsize = buffer.size();
+  std::cout << "Pooled Data buffer size = " << bsize << '\n';
+
+  buffer.rewind();
+  double scale_by = 2.0;
+  buffer *= decltype(buffer)::value_type{scale_by};
+  sfe.unpackData(buffer);
+
+  auto& sfk_e_e2 = sfa.getSKElecElec(sfe);
+  auto& rhok_e2  = sfa.getRhoKElec(sfe);
+
+  Vector<double> sfk_e_e_expected_scaled{sfk_e_e_expected};
+  CHECK(sfk_e_e2.size() == sfk_e_e_expected.size());
+  sfk_e_e_expected_scaled *= scale_by;
+  Vector<std::complex<double>> rhok_e_expected_scaled{rhok_e_expected};
+  CHECK(rhok_e2.size() == rhok_e_expected.size());
+  rhok_e_expected_scaled *= scale_by;
+  {
+    INFO("In sfk_e_e pack unpack test");
+    auto check = checkVector(sfk_e_e_expected_scaled, sfk_e_e, true, tolerance);
+    CHECKED_ELSE(check.result) { FAIL_CHECK(check.result_message); }
+  }
+  {
+    INFO("In rhok_e pack unpack test");
+    auto check = checkVector(rhok_e_expected_scaled, rhok_e, true, tolerance);
     CHECKED_ELSE(check.result) { FAIL_CHECK(check.result_message); }
   }
 }

@@ -76,6 +76,8 @@ public:
    *  \param[in]  pset     The electron or equiv. pset
    *  \param[in]  twf      The fully constructed TrialWaveFunction.
    *  \param[in]  ps_pool  Global particle set pool since some estimators expect to be able to get arbitrary psets by string mapping
+   *                       THIS is not a ParticleSetPool, but just the map from string to pset from it to avoid the
+   *                       dependency.
    */
   void constructEstimators(EstimatorManagerInput&& emi,
                            const ParticleSet& pset_primary,
