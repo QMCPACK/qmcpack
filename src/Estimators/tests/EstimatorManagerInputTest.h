@@ -20,9 +20,12 @@ namespace testing
 {
 
 Libxml2Document createEstimatorManagerNewGlobalInputXML();
+Libxml2Document createEstimatorNewGlobalOperatorEstInputXML();
+constexpr int n_opest_new_global_input_xml{1};
 Libxml2Document createEstimatorManagerNewInputXML();
 constexpr int n_opest_new_input_xml{4};
 Libxml2Document createEstimatorManagerNewVMCInputXML();
+constexpr int n_opest_new_vmc_xml{3};
 Libxml2Document createEstimatorManagerEnergyDenistyInputXML();
 
 } // namespace testing

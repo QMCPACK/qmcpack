@@ -41,6 +41,22 @@ Libxml2Document createEstimatorManagerNewGlobalInputXML()
   return estimators_doc;
 }
 
+Libxml2Document createEstimatorNewGlobalOperatorEstInputXML()
+{
+  const int max_node_recurse = 3;
+  Libxml2Document estimators_doc;
+  estimators_doc.newDoc("Estimators");
+  {
+    using Input = testing::ValidStructureFactorInput;
+    Libxml2Document doc;
+    bool okay = doc.parseFromString(Input::getXml(Input::valid::SKALL));
+    REQUIRE(okay);
+    xmlNodePtr node = doc.getRoot();
+    estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
+  }
+  return estimators_doc;
+}
+
 Libxml2Document createEstimatorManagerNewInputXML()
 {
   const int max_node_recurse = 3;

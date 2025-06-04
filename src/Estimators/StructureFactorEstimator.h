@@ -15,16 +15,14 @@
 #include "OperatorEstBase.h"
 #include "type_traits/template_types.hpp"
 #include <ParticleSetPool.h>
+#include "StructureFactorInput.h"
 
 namespace qmcplusplus
 {
-
 namespace testing
 {
 class StructureFactorAccess;
 }
-
-class StructureFactorInput;
 
 class StructureFactorEstimator : public OperatorEstBase
 {
@@ -105,7 +103,7 @@ public:
 private:
   StructureFactorEstimator(const StructureFactorEstimator& obdm) = default;
 
-  const StructureFactorInput& input_;
+  StructureFactorInput input_;
   const ParticleSet& elns_;
   const int elec_num_species_;
   const ParticleSet& ions_;
