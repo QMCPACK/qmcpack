@@ -55,7 +55,9 @@ struct h5data_proxy<Vector<T>> : public h5_space_type<T, 1>
                      hsize_t& current_append_index,
                      hid_t xfer_plist = H5P_DEFAULT)
   {
+    constexpr hsize_t rank = FileSpace::rank + 1;
     std::array<hsize_t, FileSpace::rank + 1> my_dims;
+    // this is the dimension we are appending.
     my_dims[0]    = 1;
     int dim_index = 1;
     for (auto dim : dims)
@@ -63,9 +65,8 @@ struct h5data_proxy<Vector<T>> : public h5_space_type<T, 1>
       my_dims[dim_index] = dim;
       ++dim_index;
     }
-    int index{1};
-    return h5d_append(grp, aname.c_str(), current_append_index, FileSpace::rank + 1, my_dims.data(),
-                      get_address(ref.data()), 1, xfer_plist);
+    return h5d_append(grp, aname.c_str(), current_append_index, rank, my_dims.data(), get_address(ref.data()), 1,
+                      xfer_plist);
   }
 };
 

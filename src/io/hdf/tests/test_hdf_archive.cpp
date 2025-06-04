@@ -256,6 +256,43 @@ TEST_CASE("hdf_archive_append_multiple_pete", "[hdf]")
   CHECK(vc2 == vc_read);
 }
 
+TEST_CASE("hdf_archive_real_append_std_vec", "[hdf]")
+{
+  hdf_archive hd;
+  bool okay = hd.create("test_append_std_vec.hdf");
+  REQUIRE(okay);
+
+  std::vector<double> v1{2.3, 3.4, 5.6};
+  hsize_t append_index = 0;
+
+  std::string name = "std_vector_series_double";
+  append_index     = hd.append(v1, name, append_index);
+
+  std::vector<double> v2{4.0, 5.0, 6.0};
+
+  append_index = hd.append(v2, name, append_index);
+
+  hd.close();
+  hdf_archive read_hd;
+  // For hdf5@1.14.6+cxx+mpi api=v114
+  okay = read_hd.open("test_append_std_vec.hdf");
+  REQUIRE(okay);
+
+  std::vector<double> v_read;
+  std::array<int, 2> select_one_vector{0, -1};
+  read_hd.readSlabSelection(v_read, select_one_vector, name);
+
+  CHECK(v_read.size() == 3);
+  CHECK(v1 == v_read);
+
+  // Select the second row in the hyperslab
+  select_one_vector = {1, -1};
+  read_hd.readSlabSelection(v_read, select_one_vector, name);
+
+  CHECK(v_read.size() == 3);
+  CHECK(v2 == v_read);
+}
+
 TEST_CASE("hdf_archive_real_append_pete", "[hdf]")
 {
   hdf_archive hd;

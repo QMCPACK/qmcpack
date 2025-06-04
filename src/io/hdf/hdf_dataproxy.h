@@ -56,11 +56,12 @@ struct h5data_proxy : public h5_space_type<T, 0>
                      hsize_t& current_leading_index,
                      hid_t xfer_plist = H5P_DEFAULT) const
   {
-    std::vector<hsize_t> my_dims;
-    hsize_t rank = dims.size() + 1;
-    my_dims.resize(rank, 1);
+    constexpr hsize_t rank = FileSpace::rank + 1;
+    std::array<hsize_t, rank> my_dims;
+    // this is the dimension we are appending.
+    my_dims[0] = 1;
     std::copy(dims.begin(), dims.end(), my_dims.begin() + 1);
-    return h5d_append(grp, aname.c_str(), current_leading_index, FileSpace::rank, my_dims.data(), get_address(&ref),
+    return h5d_append(grp, aname.c_str(), current_leading_index, rank, my_dims.data(), get_address(&ref), 1,
                       xfer_plist);
   }
 };
