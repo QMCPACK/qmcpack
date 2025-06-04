@@ -49,6 +49,7 @@ extern hdf_error_suppression hide_hdf_errors;
 /** class to handle hdf file
  *
  *  Wrapper functions necessary because hdf5 c interface h5d_xxx semantics.
+ *  historically the official hdf5 cxx API was not sufficiently supported
  */
 class hdf_archive
 {
@@ -294,7 +295,7 @@ public:
     auto local_append_index = current_append_index;
     if (!appendEntry(data, aname, local_append_index))
     {
-      throw std::runtime_error("HDF5 append failure in hdf_archive::appendEntry!" + aname);
+      throw std::runtime_error("HDF5 append failure in hdf_archive::appendEntry! " + aname);
     }
     return local_append_index;
   }
@@ -391,10 +392,14 @@ public:
    * which value to hold and a -1 to grab all elements from that dimension
    * for example, if the dataset was [5,2,6] and the vector contained (2,1,-1),
    * this would grab 6 elements corresponding to [2,1,:]
+   *
+   * -1 isn't a valid value for an unsigned type. So IT can only be a
+   * signed type
    */
-  template<typename T, typename IT, std::size_t RANK, typename = std::enable_if_t<!std::is_const<T>::value>>
+  template<typename T, typename IT, std::size_t RANK, typename = std::enable_if_t<!std::is_const_v<T>>>
   void readSlabSelection(T& data, const std::array<IT, RANK>& readSpec, const std::string& aname)
   {
+    static_assert(std::is_signed_v<IT>);
     std::array<hsize_t, RANK> globals, counts, offsets;
     for (int dim = 0; dim < RANK; dim++)
     {
