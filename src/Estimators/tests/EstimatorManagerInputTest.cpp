@@ -17,6 +17,7 @@
 #include "ValidSpinDensityInput.h"
 #include "ValidMomentumDistributionInput.h"
 #include "ValidScalarEstimatorInput.h"
+#include "tests/ValidStructureFactorInput.h"
 
 namespace qmcplusplus
 {
@@ -64,6 +65,14 @@ Libxml2Document createEstimatorManagerNewInputXML()
     using Input = testing::EnergyDensityInputs;
     Libxml2Document doc;
     bool okay = doc.parseFromString(Input::getXml(Input::valid::CELL));
+    REQUIRE(okay);
+    xmlNodePtr node = doc.getRoot();
+    estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
+  }
+  {
+    using Input = testing::ValidStructureFactorInput;
+    Libxml2Document doc;
+    bool okay = doc.parseFromString(Input::getXml(Input::valid::SKALL));
     REQUIRE(okay);
     xmlNodePtr node = doc.getRoot();
     estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));

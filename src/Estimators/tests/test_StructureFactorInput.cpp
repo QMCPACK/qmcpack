@@ -18,12 +18,13 @@
 
 namespace qmcplusplus
 {
+using Input = testing::ValidStructureFactorInput;
 
 TEST_CASE("StructureFactorInput::parseXML::valid", "[estimators]")
 {
-  using input  = qmcplusplus::testing::ValidStructureFactorInput;
+  Input input;
   int test_num = 0;
-  for (auto input_xml : input::xml)
+  for (auto input_xml : input)
   {
     Libxml2Document doc;
     bool okay       = doc.parseFromString(input_xml);
@@ -32,10 +33,12 @@ TEST_CASE("StructureFactorInput::parseXML::valid", "[estimators]")
   }
 }
 
+using InvalidInput = testing::InvalidStructureFactorInput;
+
 TEST_CASE("StructureFactorInput::parseXML::invalid", "[estimators]")
 {
-  using input = qmcplusplus::testing::InvalidStructureFactorInput;
-  for (auto input_xml : input::xml)
+  InvalidInput input;
+  for (auto input_xml : input)
   {
     Libxml2Document doc;
     bool okay                             = doc.parseFromString(input_xml);

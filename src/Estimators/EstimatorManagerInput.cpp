@@ -139,6 +139,7 @@ template std::vector<int> EstimatorManagerInput::getEstimatorTypeIndexes<OneBody
 template std::vector<int> EstimatorManagerInput::getEstimatorTypeIndexes<SelfHealingOverlapInput>() const;
 template std::vector<int> EstimatorManagerInput::getEstimatorTypeIndexes<MagnetizationDensityInput>() const;
 template std::vector<int> EstimatorManagerInput::getEstimatorTypeIndexes<PerParticleHamiltonianLoggerInput>() const;
+template std::vector<int> EstimatorManagerInput::getEstimatorTypeIndexes<StructureFactorInput>() const;
 
 
 } // namespace qmcplusplus

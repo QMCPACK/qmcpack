@@ -21,6 +21,7 @@ namespace testing
 
 Libxml2Document createEstimatorManagerNewGlobalInputXML();
 Libxml2Document createEstimatorManagerNewInputXML();
+constexpr int n_opest_new_input_xml{4};
 Libxml2Document createEstimatorManagerNewVMCInputXML();
 Libxml2Document createEstimatorManagerEnergyDenistyInputXML();
 

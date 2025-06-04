@@ -50,7 +50,7 @@ TEST_CASE("EstimatorManagerCrowd::EstimatorManagerCrowd", "[estimators]")
   EstimatorManagerNew emn(ham, comm);
   emn.constructEstimators(std::move(emi), pset, twf, ham, particle_pool.getPool());
 
-  CHECK(emn.getNumEstimators() == 3);
+  CHECK(emn.getNumEstimators() == n_opest_new_input_xml);
   CHECK(emn.getNumScalarEstimators() == 0);
 
   EstimatorManagerCrowd emc(emn);

@@ -78,12 +78,12 @@ TEST_CASE("EstimatorManagerNew::EstimatorManagerNew(EstimatorManagerInput,...)",
   Libxml2Document estimators_doc2 = createEstimatorManagerNewInputXML();
   EstimatorManagerInput emi2(estimators_doc2.getRoot());
 
-  CHECK(emi2.get_estimator_inputs().size() == 3);
+  CHECK(emi2.get_estimator_inputs().size() == n_opest_new_input_xml);
   CHECK(emi2.get_scalar_estimator_inputs().size() == 4);
 
   EstimatorManagerNew emn2(ham, comm);
   emn2.constructEstimators(std::move(emi2), pset, twf, ham, particle_pool.getPool());
-  CHECK(emn2.getNumEstimators() == 3);
+  CHECK(emn2.getNumEstimators() == n_opest_new_input_xml);
   // Because the only scalar estimator becomes the main estimator.
   CHECK(emn2.getNumScalarEstimators() == 0);
   EstimatorManagerNewTestAccess emnta2(emn2);

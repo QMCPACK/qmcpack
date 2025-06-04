@@ -135,6 +135,7 @@ extern template std::vector<int> EstimatorManagerInput::getEstimatorTypeIndexes<
 extern template std::vector<int> EstimatorManagerInput::getEstimatorTypeIndexes<MagnetizationDensityInput>() const;
 extern template std::vector<int> EstimatorManagerInput::getEstimatorTypeIndexes<PerParticleHamiltonianLoggerInput>()
     const;
+extern template std::vector<int> EstimatorManagerInput::getEstimatorTypeIndexes<StructureFactorInput>() const;
 
 } // namespace qmcplusplus
 
