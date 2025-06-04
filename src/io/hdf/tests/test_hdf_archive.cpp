@@ -1,8 +1,8 @@
-//////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2024 QMCPACK developers.
+// Copyright (c) 2025 QMCPACK developers.
 //
 // File developed by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //                    Peter W. Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
@@ -21,7 +21,8 @@
 using std::string;
 using std::vector;
 
-using namespace qmcplusplus;
+namespace qmcplusplus
+{
 
 TEST_CASE("hdf_archive_empty_file", "[hdf]")
 {
@@ -199,9 +200,8 @@ TEST_CASE("hdf_archive_vector", "[hdf]")
     CHECK(v_const[i] == v2_for_const[i]);
 }
 
-TEST_CASE("hdf_archive_append_pete", "[hdf]")
+TEST_CASE("hdf_archive_append_multiple_pete", "[hdf]")
 {
-  using qmcplusplus::Vector;
   hdf_archive hd;
   bool okay = hd.create("test_append_pete.hdf");
   REQUIRE(okay);
@@ -209,12 +209,106 @@ TEST_CASE("hdf_archive_append_pete", "[hdf]")
   Vector<double> v1{2.3, 3.4, 5.6};
   hsize_t append_index = 0;
 
-  std::string name = "pete_vector_series";
+  std::string name = "pete_vector_series_double";
   append_index     = hd.append(v1, name, append_index);
 
   Vector<double> v2{4.0, 5.0, 6.0};
 
   append_index = hd.append(v2, name, append_index);
+
+  std::string name_complex = "pete_vector_series_complex_double";
+  Vector<std::complex<double>> vc1{{4.0, 0.0}, {5.0, 1.0}, {6.0, 2.0}};
+  std::size_t complex_append_index{0};
+
+  complex_append_index = hd.append(vc1, name_complex, complex_append_index);
+  Vector<std::complex<double>> vc2{{2.1, 0.0}, {3.1, 1.0}, {4.1, 2.0}};
+  complex_append_index = hd.append(vc2, name_complex, complex_append_index);
+
+  hd.close();
+  hdf_archive read_hd;
+  // For hdf5@1.14.6+cxx+mpi api=v114
+  okay = read_hd.open("test_append_pete.hdf");
+  REQUIRE(okay);
+
+  Vector<double> v_read;
+  std::array<int, 2> select_one_vector{0, -1};
+  read_hd.readSlabSelection(v_read, select_one_vector, name);
+
+  CHECK(v_read.size() == 3);
+  CHECK(v1 == v_read);
+
+  // Select the second row in the hyperslab
+  select_one_vector = {1, -1};
+  read_hd.readSlabSelection(v_read, select_one_vector, name);
+
+  CHECK(v_read.size() == 3);
+  CHECK(v2 == v_read);
+
+  Vector<std::complex<double>> vc_read;
+  // Yes you use the same one since the dataspace hides the
+  // std::complex dimensionality just like would be the case for
+  // tiny vector.
+  select_one_vector = {0, -1};
+  read_hd.readSlabSelection(vc_read, select_one_vector, name_complex);
+  CHECK(vc1 == vc_read);
+  select_one_vector = {1, -1};
+  read_hd.readSlabSelection(vc_read, select_one_vector, name_complex);
+  CHECK(vc2 == vc_read);
+}
+
+TEST_CASE("hdf_archive_real_append_std_vec", "[hdf]")
+{
+  hdf_archive hd;
+  bool okay = hd.create("test_append_std_vec.hdf");
+  REQUIRE(okay);
+
+  std::vector<double> v1{2.3, 3.4, 5.6};
+  hsize_t append_index = 0;
+
+  std::string name = "std_vector_series_double";
+  append_index     = hd.append(v1, name, append_index);
+
+  std::vector<double> v2{4.0, 5.0, 6.0};
+
+  append_index = hd.append(v2, name, append_index);
+
+  hd.close();
+  hdf_archive read_hd;
+  // For hdf5@1.14.6+cxx+mpi api=v114
+  okay = read_hd.open("test_append_std_vec.hdf");
+  REQUIRE(okay);
+
+  std::vector<double> v_read;
+  std::array<int, 2> select_one_vector{0, -1};
+  read_hd.readSlabSelection(v_read, select_one_vector, name);
+
+  CHECK(v_read.size() == 3);
+  CHECK(v1 == v_read);
+
+  // Select the second row in the hyperslab
+  select_one_vector = {1, -1};
+  read_hd.readSlabSelection(v_read, select_one_vector, name);
+
+  CHECK(v_read.size() == 3);
+  CHECK(v2 == v_read);
+}
+
+TEST_CASE("hdf_archive_real_append_pete", "[hdf]")
+{
+  hdf_archive hd;
+  bool okay = hd.create("test_append_pete.hdf");
+  REQUIRE(okay);
+
+  Vector<double> v1{2.3, 3.4, 5.6};
+  hsize_t append_index = 0;
+
+  std::string name = "pete_vector_series_double";
+  append_index     = hd.append(v1, name, append_index);
+
+  Vector<double> v2{4.0, 5.0, 6.0};
+
+  append_index = hd.append(v2, name, append_index);
+
   hd.close();
   hdf_archive read_hd;
   // For hdf5@1.14.6+cxx+mpi api=v114
@@ -235,6 +329,76 @@ TEST_CASE("hdf_archive_append_pete", "[hdf]")
   CHECK(v_read.size() == 3);
   CHECK(v2 == v_read);
 }
+
+TEST_CASE("hdf_archive_complex_append_pete", "[hdf]")
+{
+  using qmcplusplus::Vector;
+  hdf_archive hd;
+  bool okay = hd.create("test_complex_append_pete.hdf");
+  REQUIRE(okay);
+
+  std::string name_complex = "pete_vector_series_complex_double";
+  Vector<std::complex<double>> vc1{{4.0, 0.0}, {5.0, 1.0}, {6.0, 2.0}};
+  std::size_t complex_append_index{0};
+
+  complex_append_index = hd.append(vc1, name_complex, complex_append_index);
+  Vector<std::complex<double>> vc2{{2.1, 0.0}, {3.1, 1.0}, {4.1, 2.0}};
+  complex_append_index = hd.append(vc2, name_complex, complex_append_index);
+
+  hd.close();
+  hdf_archive read_hd;
+  // For hdf5@1.14.6+cxx+mpi api=v114
+  okay = read_hd.open("test_complex_append_pete.hdf");
+  REQUIRE(okay);
+  //this is key, you don't specify the std::complex dimension of the
+  //slab, since hdf_dataspace.h can handle the std::complex.
+  std::array<int, 2> select_one_complex_vector{0, -1};
+
+  Vector<std::complex<double>> vc_read;
+  read_hd.readSlabSelection(vc_read, select_one_complex_vector, name_complex);
+  CHECK(vc1 == vc_read);
+  select_one_complex_vector = {1, -1};
+  read_hd.readSlabSelection(vc_read, select_one_complex_vector, name_complex);
+  CHECK(vc2 == vc_read);
+}
+
+TEST_CASE("hdf_archive_TinyVec_append_pete", "[hdf]")
+{
+  hdf_archive hd;
+  bool okay = hd.create("test_append_TinyVec_pete.hdf");
+  REQUIRE(okay);
+
+  Vector<TinyVector<double, 3>> v1{{2.3, 1.0, 2.0}, {3.4, 2.0, 3.0}, {5.6, 3.0, 4.0}};
+  hsize_t append_index = 0;
+
+  std::string name = "pete_vector_series_TinyVec";
+  append_index     = hd.append(v1, name, append_index);
+
+  Vector<TinyVector<double, 3>> v2{{4.0, 1.1, 2.2}, {5.0, 3.3, 4.4}, {6.0, 5.5, 6.6}};
+
+  append_index = hd.append(v2, name, append_index);
+
+  hd.close();
+  hdf_archive read_hd;
+  // For hdf5@1.14.6+cxx+mpi api=v114
+  okay = read_hd.open("test_append_TinyVec_pete.hdf");
+  REQUIRE(okay);
+
+  Vector<TinyVector<double, 3>> v_read;
+  std::array<int, 2> select_one_vector{0, -1};
+  read_hd.readSlabSelection(v_read, select_one_vector, name);
+
+  CHECK(v_read.size() == 3);
+  CHECK(v1 == v_read);
+
+  // Select the second row in the hyperslab
+  select_one_vector = {1, -1};
+  read_hd.readSlabSelection(v_read, select_one_vector, name);
+
+  CHECK(v_read.size() == 3);
+  CHECK(v2 == v_read);
+}
+
 
 TEST_CASE("hdf_archive_group", "[hdf]")
 {
@@ -524,3 +688,4 @@ TEST_CASE("hdf_std_vec_bool", "[hdf]")
   for (int i = 0; i < v_const.size(); i++)
     CHECK(v_const[i] == v2_for_const[i]);
 }
+} // namespace qmcplusplus
