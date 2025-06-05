@@ -21,6 +21,7 @@
 #include "Utilities/ProjectData.h"
 #include "Utilities/for_testing/NativeInitializerPrint.hpp"
 #include "Utilities/for_testing/checkVector.hpp"
+#include "type_traits/complex_help.hpp"
 #include <iostream>
 
 namespace qmcplusplus
@@ -29,6 +30,7 @@ namespace qmcplusplus
 constexpr bool generate_test_data = false;
 
 using Value = QMCTraits::ValueType;
+using Real  = RealAlias<Value>;
 
 TEST_CASE("StructureFactorEstimator::StructureFactorEstimator", "[estimators]")
 {
@@ -322,7 +324,7 @@ TEST_CASE("StructureFactorEstimator::Accumulate", "[estimators]")
     CHECKED_ELSE(check.result) { FAIL_CHECK(check.result_message); }
   }
 
-  PooledData<double> buffer;
+  PooledData<Real> buffer;
   auto bsize = buffer.size();
   std::cout << "Pooled Data before structure factor pack buffer size = " << bsize << '\n';
   sfe.packData(buffer);
@@ -330,17 +332,17 @@ TEST_CASE("StructureFactorEstimator::Accumulate", "[estimators]")
   std::cout << "Pooled Data buffer size = " << bsize << '\n';
 
   buffer.rewind();
-  double scale_by = 2.0;
+  Real scale_by = 2.0;
   buffer *= decltype(buffer)::value_type{scale_by};
   sfe.unpackData(buffer);
 
   auto& sfk_e_e2 = sfa.getSKElecElec(sfe);
   auto& rhok_e2  = sfa.getRhoKElec(sfe);
 
-  Vector<double> sfk_e_e_expected_scaled{sfk_e_e_expected};
+  Vector<Real> sfk_e_e_expected_scaled{sfk_e_e_expected};
   CHECK(sfk_e_e2.size() == sfk_e_e_expected.size());
   sfk_e_e_expected_scaled *= scale_by;
-  Vector<std::complex<double>> rhok_e_expected_scaled{rhok_e_expected};
+  Vector<std::complex<Real>> rhok_e_expected_scaled{rhok_e_expected};
   CHECK(rhok_e2.size() == rhok_e_expected.size());
   rhok_e_expected_scaled *= scale_by;
   {

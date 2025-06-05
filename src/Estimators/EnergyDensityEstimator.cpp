@@ -54,7 +54,6 @@ NEEnergyDensityEstimator::NEEnergyDensityEstimator(const EnergyDensityInput& inp
       pset_dynamic_(getParticleSet(pset_pool, input.get_dynamic()))
 {
   requires_listener_ = true;
-  my_name_           = "NEEnergyDensityEstimator";
   n_particles_       = pset_dynamic_.getTotalNum();
   if (!(input_.get_static().empty()))
   {
