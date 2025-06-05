@@ -22,6 +22,14 @@ class StructureFactorAccess
   using Real = StructureFactorEstimator::Real;
 
 public:
+  static auto makeStructureFactorEstimator(const StructureFactorInput& sfi,
+                                           const ParticleSet& pset_ions,
+                                           const ParticleSet& pset_elec,
+                                           DataLocality data_locality = DataLocality::crowd)
+  {
+    return StructureFactorEstimator(sfi, pset_ions, pset_elec, data_locality);
+  }
+
   const Vector<Real>& getSKElecElec(const StructureFactorEstimator& sfe) const { return sfe.getSKElecElec(); }
   const Vector<std::complex<Real>>& getRhoKElec(const StructureFactorEstimator& sfe) const { return sfe.getRhoKElec(); }
 };

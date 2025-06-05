@@ -4,7 +4,7 @@
 //
 // Copyright (c) 2025 QMCPACK developers.
 //
-// File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
+// File developed by: Peter W. Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
 // File refactored from: EstimatorManagerBase.cpp
 //////////////////////////////////////////////////////////////////////////////////////

@@ -56,7 +56,8 @@ TEST_CASE("StructureFactorEstimator::StructureFactorEstimator", "[estimators]")
   xmlNodePtr node = doc.getRoot();
   UPtr<StructureFactorInput> sf_in;
   sf_in = std::make_unique<StructureFactorInput>(node);
-  StructureFactorEstimator sfe(*sf_in, pset_ions, pset_elec);
+  StructureFactorEstimator sfe{
+      testing::StructureFactorAccess::makeStructureFactorEstimator(*sf_in, pset_ions, pset_elec)};
   CHECK(sfe.getMyName() == "sk1");
 }
 
@@ -77,7 +78,8 @@ TEST_CASE("StructureFactorEstimator::Accumulate", "[estimators]")
   ParticleSet pset_elec{*(particle_pool.getParticleSet("e"))};
   ParticleSet pset_ions{*(particle_pool.getParticleSet("ion"))};
 
-  StructureFactorEstimator sfe(*sf_in, pset_ions, pset_elec);
+  StructureFactorEstimator sfe{
+      testing::StructureFactorAccess::makeStructureFactorEstimator(*sf_in, pset_ions, pset_elec)};
 
   std::vector<OperatorEstBase::MCPWalker> walkers;
   int nwalkers = 3;

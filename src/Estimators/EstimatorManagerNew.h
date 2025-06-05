@@ -2,9 +2,9 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2024 QMCPACK developers.
+// Copyright (c) 2025 QMCPACK developers.
 //
-// File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
+// File developed by: Peter W. Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //
 // File refactored from: EstimatorManagerBase.h
 //////////////////////////////////////////////////////////////////////////////////////
@@ -71,13 +71,13 @@ public:
 
   /** construct estimators from already parsed input.
    *
-   *  \param[in]  emi      EstimatorManagerInput consisting of merged global and local estimator definitions. Moved from!
+   *  \param[in]  emi      EstimatorManagerInput consisting of merged global and local estimator
+   *                       definitions. Moved from!
    *  \param[in]  H        Fully Constructed Golden Hamiltonian.
    *  \param[in]  pset     The electron or equiv. pset
    *  \param[in]  twf      The fully constructed TrialWaveFunction.
-   *  \param[in]  ps_pool  Global particle set pool since some estimators expect to be able to get arbitrary psets by string mapping
-   *                       THIS is not a ParticleSetPool, but just the map from string to pset from it to avoid the
-   *                       dependency.
+   *  \param[in]  ps_pool  Global particle set map since some estimators expect to be able to get
+   *                       arbitrary psets by string
    */
   void constructEstimators(EstimatorManagerInput&& emi,
                            const ParticleSet& pset_primary,

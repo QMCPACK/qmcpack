@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2024 QMCPACK developers.
+// Copyright (c) 2025 QMCPACK developers.
 //
 // File developed by: Peter W. Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -33,11 +33,12 @@ public:
   using KPt          = TinyVector<Real, QMCTraits::DIM>;
   using PSPool       = typename ParticleSetPool::PoolType;
 
-  StructureFactorEstimator(const StructureFactorInput& sfi,
-                           const ParticleSet& pset_ions,
-                           const ParticleSet& pset_elec,
-                           DataLocality data_locality = DataLocality::crowd);
-
+  /** This is the Constructor called by the application
+   *  the structure factor estimator can specify arbitrary source and
+   *  target particle set names.
+   *  Using the source and target particleset names it delegates to
+   *  the explicit ions and elec particle set constructor.
+   */
   StructureFactorEstimator(const StructureFactorInput& sfi,
                            const PSPool& PSP,
                            DataLocality data_locality = DataLocality::crowd);
@@ -84,7 +85,6 @@ public:
    */
   void write(hdf_archive& file) override;
   void collect(const RefVector<OperatorEstBase>& type_erased_operator_estimators) override;
-
   long long getNumKPoints() { return num_kpoints_; }
   const auto& getKLists() const { return ions_.getSimulationCell().getKLists(); };
   const ParticleSet& getParticleSet(const PSPool& psetpool, const std::string& psname) const;
@@ -95,6 +95,15 @@ public:
   const Vector<std::complex<Real>>& getRhoKElec() const { return rhok_e_; }
 
 private:
+  /** This constructor ignores the source and target input
+   *  and is intended for direct use only by testing code and
+   *  as the delegate constructor for the PSPool argument constructor.
+   */
+  StructureFactorEstimator(const StructureFactorInput& sfi,
+                           const ParticleSet& pset_ions,
+                           const ParticleSet& pset_elec,
+                           DataLocality data_locality = DataLocality::crowd);
+
   StructureFactorEstimator(const StructureFactorEstimator& obdm) = default;
 
   StructureFactorInput input_;
