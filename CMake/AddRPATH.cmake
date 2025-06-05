@@ -1,6 +1,7 @@
 # Add the directory of the first library file to RPATH/RUNPATH if that directory is not part of OS default locations.
-function(AddRPATH LIBRARY_NAME LIBRARY_FILE)
-  if(LIBRARY_FILE)
+function(AddRPATH LIBRARY_NAME)
+  if(ARGC GREATER 1)
+    list(GET ARGV 1 LIBRARY_FILE)
     cmake_path(GET LIBRARY_FILE PARENT_PATH LIBRARY_DIR)
     list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES ${LIBRARY_DIR} isSystemDir)
     if("${isSystemDir}" STREQUAL "-1")
