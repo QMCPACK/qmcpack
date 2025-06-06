@@ -157,14 +157,6 @@ TEST_CASE("EnergyDensityEstimatorIntegration::operator_reporting", "[estimators]
   for (int iw = 0; iw < num_walkers; ++iw)
     savePropertiesIntoWalker(ham_list[iw], walker_list[iw]);
 
-#ifndef NDEBUG
-  {
-    std::vector<RefVector<OperatorEstBase>> crowd_operator_ests = {emc.get_operator_estimators()};
-    auto& e_den_est_crowd = dynamic_cast<NEEnergyDensityEstimator&>((crowd_operator_ests[0])[0].get());
-    e_den_est_crowd.openDebugFile({"eden_values_" + std::to_string(comm->rank()) + "_particle.dat"});
-  }
-#endif
-
   emc.accumulate(walker_list, pset_list, twf_list, ham_list, rng);
 
   std::vector<RefVector<OperatorEstBase>> crowd_operator_ests = {emc.get_operator_estimators()};
@@ -257,7 +249,7 @@ TEST_CASE("EnergyDensityEstimatorIntegration::normalization", "[estimators]")
   std::cout << "summed grid: " << summed_grid << '\n';
 
   int num_steps = 4;
-  
+
   double expected_sum2 = 0.0;
   for (int step = 1; step < num_steps; ++step)
   {
@@ -281,7 +273,7 @@ TEST_CASE("EnergyDensityEstimatorIntegration::normalization", "[estimators]")
 
     CHECK(summed_grid == Approx(expected_sum + expected_sum2));
   }
-  
+
   auto block_weight = emc.get_block_weight();
   std::cout << "block weight: " << block_weight << '\n';
   auto accept = num_walkers * pset_list[0].getTotalNum();
