@@ -79,15 +79,9 @@ public:
   ParticleAttrib<AT>* getAttribute(const std::string& tname, const std::string& oname)
   {
     using attrib_type = ParticleAttrib<AT>;
-    const auto it     = AttribList.find(oname);
-    if (it != AttribList.end())
-    {
-      OhmmsObject* o = (*it).second;
-      return dynamic_cast<attrib_type*>(o);
-    }
-    else
-      throw std::runtime_error("AttribListType::getAttribute Unknown attribute " + oname + "\n");
-    return nullptr;
+    if (const auto it = AttribList.find(oname); it != AttribList.end())
+      return dynamic_cast<attrib_type*>(it->second);
+    throw std::runtime_error("AttribListType::getAttribute Unknown attribute " + oname + "\n");
   }
 };
 
