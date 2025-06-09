@@ -13,6 +13,7 @@
 #define QMCPLUSPLUS_TEST_ESTIMATOR_MANAGER_INPUT
 
 #include "EstimatorInputDelegates.h"
+#include "StructureFactorInput.h"
 
 namespace qmcplusplus::testing
 {
@@ -42,6 +43,14 @@ struct ExpectedEstimatorInputNameType<MomentumDistributionInput>
   using Type = MomentumDistributionInput;
   std::string name{"nofk"};
   std::string type{"MomentumDistribution"};
+};
+
+template<>
+struct ExpectedEstimatorInputNameType<StructureFactorInput>
+{
+  using Type = StructureFactorInput;
+  std::string name{"sk1"};
+  std::string type{"StructureFactor"};
 };
 
 } // namespace qmcplusplus::testing

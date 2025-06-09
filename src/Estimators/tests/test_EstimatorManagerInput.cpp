@@ -14,6 +14,7 @@
 #include "EstimatorManagerInputTest.h"
 #include "ValidOneBodyDensityMatricesInput.h"
 #include "ValidSpinDensityInput.h"
+#include "ValidStructureFactorInput.h"
 #include "test_EstimatorManagerInput.h"
 
 namespace qmcplusplus
@@ -69,7 +70,7 @@ TEST_CASE("EstimatorManagerInput::readXML", "[estimators]")
   Libxml2Document estimators_doc = createEstimatorManagerNewInputXML();
   EstimatorManagerInput emi(estimators_doc.getRoot());
 
-  CHECK(emi.get_estimator_inputs().size() == 3);
+  CHECK(emi.get_estimator_inputs().size() == n_opest_new_input_xml);
   CHECK(emi.get_scalar_estimator_inputs().size() == 4);
 
   // CHECK EMI throws if unparsable estimators are in input.
@@ -131,12 +132,12 @@ TEST_CASE("EstimatorManagerInput::moveConstructor", "[estimators]")
   Libxml2Document estimators_doc = createEstimatorManagerNewInputXML();
   EstimatorManagerInput emi(estimators_doc.getRoot());
 
-  CHECK(emi.get_estimator_inputs().size() == 3);
+  CHECK(emi.get_estimator_inputs().size() == n_opest_new_input_xml);
   CHECK(emi.get_scalar_estimator_inputs().size() == 4);
 
   EstimatorManagerInput emi_moved_to(std::move(emi));
 
-  CHECK(emi_moved_to.get_estimator_inputs().size() == 3);
+  CHECK(emi_moved_to.get_estimator_inputs().size() == n_opest_new_input_xml);
   CHECK(emi_moved_to.get_scalar_estimator_inputs().size() == 4);
 }
 
@@ -149,7 +150,7 @@ TEST_CASE("EstimatorManagerInput::MergeConstructor", "[estimators]")
   EstimatorManagerInput emi_local(estimators_doc.getRoot());
   EstimatorManagerInput emi_merged{emi_global, emi_local};
 
-  CHECK(emi_merged.get_estimator_inputs().size() == 3);
+  CHECK(emi_merged.get_estimator_inputs().size() == n_opest_new_input_xml);
   CHECK(emi_merged.get_scalar_estimator_inputs().size() == 5);
 }
 
@@ -182,6 +183,8 @@ TEST_CASE("EstimatorManagerInput::Name")
   checkNameType(emi_local, ExpectedEstimatorInputNameType<EnergyDensityInput>{});
   checkNameType(emi_local, ExpectedEstimatorInputNameType<OneBodyDensityMatricesInput>{});
   checkNameType(emi_local, ExpectedEstimatorInputNameType<MomentumDistributionInput>{});
+  checkNameType(emi_local, ExpectedEstimatorInputNameType<StructureFactorInput>{});
+
   // auto& estimator_inputs = emi_merged.get_estimator_inputs();
   // auto eden_indexes      = emi_merged.getEstimatorTypeIndexes<EnergyDensityInput>();
   // for (auto eden_index : eden_indexes)

@@ -71,6 +71,5 @@ public:
   bool get_write_rho() const { return write_rho_; }
   bool get_write_ion_ion() const { return write_ion_ion_; }
 };
-
 } // namespace qmcplusplus
 #endif /* QMCPLUSPLUS_STRUCTUREFACTORINPUT_H */
