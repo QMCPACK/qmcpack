@@ -167,6 +167,9 @@ TEST_CASE("StructureFactorEstimator::Accumulate", "[estimators]")
   {
     testing::RandomForTest<QMCT::RealType> rft;
     rft.fillVecRng(rng_reals);
+    // this is not an app_log() because generate_test_data should
+    // never be true for merged production code. It is only for
+    // developer use when the test data must be regenerated.
     std::cout << "rng_reals = " << NativePrint(rng_reals) << '\n';
   }
   else
@@ -328,10 +331,9 @@ TEST_CASE("StructureFactorEstimator::Accumulate", "[estimators]")
 
   PooledData<Real> buffer;
   auto bsize = buffer.size();
-  std::cout << "Pooled Data before structure factor pack buffer size = " << bsize << '\n';
+
   sfe.packData(buffer);
   bsize = buffer.size();
-  std::cout << "Pooled Data buffer size = " << bsize << '\n';
 
   buffer.rewind();
   Real scale_by = 2.0;
