@@ -112,6 +112,7 @@ void free(void* p, const std::string& message)
       std::cerr << " Error from: " << message << std::endl;
     }
     std::cerr << " Error from calling cudaFree: " << cudaGetErrorString(status) << std::endl;
+    throw std::runtime_error("Error: cudaFree returned error code.");
   }
 }
 
