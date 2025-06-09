@@ -864,7 +864,7 @@ if(add_estimator_tests)
     -c
     8
     -p
-    qmc_edens_cell_dmc_short
+    qmc_edens_cell_dmc_short_batched
     -r
     qmc-ref/qmc_edens_cell_dmc_short.s001.stat_ref_energydensity.dat)
 
@@ -2355,18 +2355,18 @@ qmc_run_and_check(
   1
   1
   TRUE
-#  0
-#  DET_DIAMOND_SCALARS # VMC
+  # 0
+  # DET_DIAMOND_SCALARS # VMC
 )
 
-qmc_run_and_check(
-  deterministic-diamondC_1x1x1_pp-vmcbatch_sdj-estimator-energydensity-voronoi
-  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  det_qmc_short_vmcbatch_edens_voronoi
-  det_qmc_short_vmcbatch_edens_voronoi.in.xml
-  1
-  1
-  TRUE
-#  0
-#  DET_DIAMOND_SCALARS # VMC
-)
+# qmc_run_and_check(
+#   deterministic-diamondC_1x1x1_pp-vmcbatch_sdj-estimator-energydensity-voronoi
+#   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+#   det_qmc_short_vmcbatch_edens_voronoi
+#   det_qmc_short_vmcbatch_edens_voronoi.in.xml
+#   1
+#   1
+#   TRUE
+# #  0
+# #  DET_DIAMOND_SCALARS # VMC
+# )

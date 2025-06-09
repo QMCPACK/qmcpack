@@ -118,7 +118,7 @@ void NEEnergyDensityEstimator::constructToReferencePoints(ParticleSet& pset_dyna
   if (pset_static_)
   {
     dtable_index_ = pset_dynamic_.addTable(pset_static_.value());
-    pset_refs.push_back(pset_static_.value());
+    pset_refs.emplace_back(pset_static_.value());
   }
 
   r_work_.resize(n_particles_);
@@ -245,7 +245,7 @@ void NEEnergyDensityEstimator::evaluate(ParticleSet& pset, const MCPWalker& walk
     for (int i = 0; i < Rs.size(); i++)
     {
       r_work_[p_count] = Rs[i];
-      p_count++;
+      ++p_count;
     }
   }
   if (pset_static_ && !input_.get_ion_points())
@@ -254,7 +254,7 @@ void NEEnergyDensityEstimator::evaluate(ParticleSet& pset, const MCPWalker& walk
     for (int i = 0; i < Rs.size(); i++)
     {
       r_work_[p_count] = Rs[i];
-      p_count++;
+      ++p_count;
     }
   }
 
@@ -271,14 +271,14 @@ void NEEnergyDensityEstimator::evaluate(ParticleSet& pset, const MCPWalker& walk
       ed_values_(p_count, W) = weight;
       ed_values_(p_count, T) = weight * Ts[i];
       ed_values_(p_count, V) = weight * Vd[i];
-      p_count++;
+      ++p_count;
     }
   }
   if (pset_static_)
   {
     const ParticleSet& Ps = *pset_static_;
     auto& Vs              = reduced_local_ion_pot_values_[walker_index];
-    Vs.resize(Ps.getTotalNum());
+
     if (!input_.get_ion_points())
     {
       for (int i = 0; i < Ps.getTotalNum(); i++)
@@ -286,7 +286,7 @@ void NEEnergyDensityEstimator::evaluate(ParticleSet& pset, const MCPWalker& walk
         ed_values_(p_count, W) = weight;
         ed_values_(p_count, T) = 0.0;
         ed_values_(p_count, V) = weight * Vs[i];
-        p_count++;
+        ++p_count;
       }
     }
     else
@@ -329,7 +329,7 @@ void NEEnergyDensityEstimator::evaluate(ParticleSet& pset, const MCPWalker& walk
         data_[bi] += ed_ion_values_(i, v);
       }
   }
-  nsamples_++;
+  ++nsamples_;
 }
 
 void NEEnergyDensityEstimator::collect(const RefVector<OperatorEstBase>& type_erased_operator_estimators)
