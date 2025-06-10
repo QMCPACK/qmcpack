@@ -54,6 +54,11 @@ public:
    */
   void evaluateValue(const ParticleSet& P, int iat, ValueVector& psi) override;
 
+  void evaluateDetRatios(const VirtualParticleSet& VP,
+                         ValueVector& psi,
+                         const ValueVector& invrow,
+                         std::vector<ValueType>& ratios) override;
+
   void evaluateDetSpinorRatios(const VirtualParticleSet& VP,
                                ValueVector& psi,
                                const std::pair<ValueVector, ValueVector>& spinor_multipler,

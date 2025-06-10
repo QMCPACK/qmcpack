@@ -396,6 +396,14 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
           (eis * static_cast<ValueType>(5.2) * psiM_up[iat][iorb] +
            emis * static_cast<ValueType>(-0.3) * psiM_down[iat][iorb]);
     CHECK(ratios[0] == ComplexApprox(refVal));
+
+    //now just check evaluateDetRatios
+    refVal = 0.0;
+    for (int iorb = 0; iorb < OrbitalSetSize; iorb++)
+      refVal += static_cast<ValueType>(2.1) * (eis * psiM_up[iat][iorb] + emis * psiM_down[iat][iorb]);
+    spo->evaluateDetRatios(vp, psi, psiinv, ratios);
+    CHECK(ratios[0] == ComplexApprox(refVal));
+
     elec_.rejectMove(iat);
   }
 

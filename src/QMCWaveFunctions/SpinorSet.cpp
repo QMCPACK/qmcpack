@@ -86,6 +86,35 @@ void SpinorSet::evaluateValue(const ParticleSet& P, int iat, ValueVector& psi)
   psi = eis * psi_work_up + emis * psi_work_down;
 }
 
+void SpinorSet::evaluateDetRatios(const VirtualParticleSet& VP,
+                                        ValueVector& psi,
+                                        const ValueVector& psiinv,
+                                        std::vector<ValueType>& ratios)
+{
+  assert(psi.size() == psiinv.size());
+  const size_t norb_requested = psi.size();
+  psi_work_up.resize(norb_requested);
+  psi_work_down.resize(norb_requested);
+
+  for (size_t iat = 0.0; iat < VP.getTotalNum(); iat++)
+  {
+    psi_work_up   = 0.0;
+    psi_work_down = 0.0;
+    spo_up->evaluateValue(VP, iat, psi_work_up);
+    spo_dn->evaluateValue(VP, iat, psi_work_down);
+
+    ParticleSet::Scalar_t s = VP.activeSpin(iat);
+    RealType coss           = std::cos(s);
+    RealType sins           = std::sin(s);
+
+    ValueType eis(coss, sins);
+    ValueType emis(coss, -sins);
+
+    psi = eis * psi_work_up + emis * psi_work_down;
+    ratios[iat] = simd::dot(psi.data(), psiinv.data(), psi.size());
+  }
+}
+
 void SpinorSet::evaluateDetSpinorRatios(const VirtualParticleSet& VP,
                                         ValueVector& psi,
                                         const std::pair<ValueVector, ValueVector>& spinor_multiplier,
