@@ -121,6 +121,7 @@ void SpinorSet::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list
 {
   auto& spo_leader = spo_list.getCastedLeader<SpinorSet>();
   auto& vp_leader  = vp_list.getLeader();
+  IndexType nat = vp_leader.getTotalNum();
   assert(this == &spo_leader);
 
   IndexType nw                    = spo_list.size();
@@ -143,7 +144,7 @@ void SpinorSet::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list
     up_psi_v_list.push_back(spo.psi_work_up);
     dn_psi_v_list.push_back(spo.psi_work_down);
 
-    std::vector<ValueType> tmp(norb_requested);
+    std::vector<ValueType> tmp(nat);
     upratios_list.push_back(tmp);
     dnratios_list.push_back(tmp);
   }
@@ -156,10 +157,9 @@ void SpinorSet::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list
   //up/dn ratios_list is on host, so just do it here on host
   for (int iw = 0; iw < nw; iw++)
   {
-    auto& vp = vp_list[iw];
-    for (size_t iat = 0.0; iat < vp.getTotalNum(); iat++)
+    for (size_t iat = 0.0; iat < nat; iat++)
     {
-      ParticleSet::Scalar_t s = vp.activeSpin(iat);
+      ParticleSet::Scalar_t s = vp_list[iw].activeSpin(iat);
       RealType coss           = std::cos(s);
       RealType sins           = std::sin(s);
 
