@@ -59,6 +59,12 @@ public:
                          const ValueVector& invrow,
                          std::vector<ValueType>& ratios) override;
 
+  void mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list,
+                            const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                            const RefVector<ValueVector>& psi_list,
+                            const std::vector<const ValueType*>& invRow_ptr_list,
+                            std::vector<std::vector<ValueType>>& ratios_list) const override;
+
   void evaluateDetSpinorRatios(const VirtualParticleSet& VP,
                                ValueVector& psi,
                                const std::pair<ValueVector, ValueVector>& spinor_multipler,
