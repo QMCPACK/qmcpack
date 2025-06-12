@@ -710,30 +710,38 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
     CHECK(ratios_list[0][0] == ComplexApprox(refRatio1));
     CHECK(ratios_list[1][0] == ComplexApprox(refRatio2));
 
-    refRatio1 = 0.0;
-    refRatio2 = 0.0;
-    for (int iorb = 0; iorb < OrbitalSetSize; iorb++)
-    {
-      refRatio1 += inv_row[iorb] * (eis1 * 5.6 * psiM_up[iat][iorb] + emis1 * 8.9 * psiM_down[iat][iorb]);
-      refRatio2 +=
-          inv_row[iorb] * (eis2 * 2.1 * psiM_up[(iat + 1) % 3][iorb] + emis2 * (-3.4) * psiM_down[(iat + 1) % 3][iorb]);
-    }
-
     std::pair<SPOSet::ValueVector, SPOSet::ValueVector> multiplier1;
-    auto& up_factor1= multiplier1.first;
-    auto& dn_factor1= multiplier1.second;
+    auto& up_factor1 = multiplier1.first;
+    auto& dn_factor1 = multiplier1.second;
     up_factor1.resize(OrbitalSetSize);
     dn_factor1.resize(OrbitalSetSize);
     up_factor1 = 5.6;
     dn_factor1 = 8.9;
     std::pair<SPOSet::ValueVector, SPOSet::ValueVector> multiplier2;
-    auto& up_factor2= multiplier2.first;
-    auto& dn_factor2= multiplier2.second;
+    auto& up_factor2 = multiplier2.first;
+    auto& dn_factor2 = multiplier2.second;
     up_factor2.resize(OrbitalSetSize);
     dn_factor2.resize(OrbitalSetSize);
     up_factor2 = 2.1;
     dn_factor2 = -3.4;
-    spo->mw_evaluateDetSpinorRatios(spo_list, RefVectorWithLeader<const VirtualParticleSet>(vp1, {vp1, vp2}), psi_v_list, RefVector<std::pair<SPOSet::ValueVector, SPOSet::ValueVector>>({multiplier1, multiplier2}), inv_row_ptr, ratios_list);
+
+    refRatio1 = 0.0;
+    refRatio2 = 0.0;
+    for (int iorb = 0; iorb < OrbitalSetSize; iorb++)
+    {
+      refRatio1 += inv_row[iorb] *
+          (eis1 * multiplier1.first[iorb] * psiM_up[iat][iorb] +
+           emis1 * multiplier1.second[iorb] * psiM_down[iat][iorb]);
+      refRatio2 += inv_row[iorb] *
+          (eis2 * multiplier2.first[iorb] * psiM_up[(iat + 1) % 3][iorb] +
+           emis2 * multiplier2.second[iorb] * psiM_down[(iat + 1) % 3][iorb]);
+    }
+
+    spo->mw_evaluateDetSpinorRatios(spo_list, RefVectorWithLeader<const VirtualParticleSet>(vp1, {vp1, vp2}),
+                                    psi_v_list,
+                                    RefVector<std::pair<SPOSet::ValueVector, SPOSet::ValueVector>>(
+                                        {multiplier1, multiplier2}),
+                                    inv_row_ptr, ratios_list);
     CHECK(ratios_list[0][0] == ComplexApprox(refRatio1));
     CHECK(ratios_list[1][0] == ComplexApprox(refRatio2));
   }
