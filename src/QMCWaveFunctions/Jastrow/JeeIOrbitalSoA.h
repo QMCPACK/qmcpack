@@ -495,20 +495,24 @@ public:
       auto iter       = std::find(elecs_inside(ig, jat).begin(), elecs_inside(ig, jat).end(), iat);
       auto iter_dist  = elecs_inside_dist(ig, jat).begin() + std::distance(elecs_inside(ig, jat).begin(), iter);
       auto iter_displ = elecs_inside_displ(ig, jat).begin() + std::distance(elecs_inside(ig, jat).begin(), iter);
-#ifndef NDEBUG
-      // sentinel code
+      // If not found, segfault can happen later. Stop here.
       if (iter == elecs_inside(ig, jat).end())
       {
-        std::cerr << std::setprecision(std::numeric_limits<float>::digits10 + 1) << "updating electron iat = " << iat
-                  << " near ion " << jat << " dist " << eI_table.getDistRow(iat)[jat] << std::endl;
-        throw std::runtime_error("BUG electron not found in elecs_inside");
+        std::ostringstream msg;
+        msg << "Report bug! Updating electron iat = " << iat << " near ion " << jat
+            << " distance = " << std::setprecision(std::numeric_limits<float>::digits10 + 1)
+            << eI_table.getDistRow(iat)[jat] << ". Faild to find it in elecs_inside!" << std::endl;
+        throw std::runtime_error(msg.str());
       }
+#ifndef NDEBUG
       else if (std::abs(eI_table.getDistRow(iat)[jat] - *iter_dist) >= 10 * std::numeric_limits<float>::epsilon())
       {
-        std::cerr << std::setprecision(std::numeric_limits<float>::digits10 + 1)
-                  << "inconsistent electron iat = " << iat << " near ion " << jat << " dist "
-                  << eI_table.getDistRow(iat)[jat] << " stored value = " << *iter_dist << std::endl;
-        throw std::runtime_error("BUG eI distance stored value elecs_inside_dist not matching distance table");
+        std::ostringstream msg;
+        msg << "Report bug! Inconsistent electron iat = " << iat << " near ion " << jat << " dist "
+            << std::setprecision(std::numeric_limits<float>::digits10 + 1) << eI_table.getDistRow(iat)[jat]
+            << " stored value = " << *iter_dist
+            << ". eI distance stored value elecs_inside_dist not matching distance table!" << std::endl;
+        throw std::runtime_error(msg.str());
       }
 #endif
 
