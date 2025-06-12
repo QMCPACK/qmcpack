@@ -88,6 +88,22 @@ void SPOSetT<T>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSetT>& spo_li
 }
 
 template<typename T>
+void SPOSetT<T>::mw_evaluateDetSpinorRatios(const RefVectorWithLeader<SPOSetT>& spo_list,
+                                            const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                                            const RefVector<ValueVector>& psi_list,
+                                            const RefVector<std::pair<ValueVector, ValueVector>>& spinor_multiplier_list,
+                                            const std::vector<const ValueType*>& invRow_ptr_list,
+                                            std::vector<std::vector<ValueType>>& ratios_list) const
+{
+  assert(this == &spo_list.getLeader());
+  for (int iw = 0; iw < spo_list.size(); iw++)
+  {
+    Vector<ValueType> invRow(const_cast<ValueType*>(invRow_ptr_list[iw]), psi_list[iw].get().size());
+    spo_list[iw].evaluateDetSpinorRatios(vp_list[iw], psi_list[iw], spinor_multiplier_list[iw], invRow, ratios_list[iw]);
+  }
+}
+
+template<typename T>
 void SPOSetT<T>::evaluateVGL_spin(const ParticleSet& P,
                                   int iat,
                                   ValueVector& psi,

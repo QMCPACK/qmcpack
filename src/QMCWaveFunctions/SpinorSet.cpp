@@ -121,7 +121,7 @@ void SpinorSet::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list
 {
   auto& spo_leader = spo_list.getCastedLeader<SpinorSet>();
   auto& vp_leader  = vp_list.getLeader();
-  IndexType nat = vp_leader.getTotalNum();
+  IndexType nat    = vp_leader.getTotalNum();
   assert(this == &spo_leader);
 
   IndexType nw                    = spo_list.size();
@@ -197,6 +197,65 @@ void SpinorSet::evaluateDetSpinorRatios(const VirtualParticleSet& VP,
 
     ratios[iat] =
         eis * spinor_multiplier.first[iat] * upratios[iat] + emis * spinor_multiplier.second[iat] * dnratios[iat];
+  }
+}
+
+void SpinorSet::mw_evaluateDetSpinorRatios(const RefVectorWithLeader<SPOSet>& spo_list,
+                                           const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                                           const RefVector<ValueVector>& psi_list,
+                                           const RefVector<std::pair<ValueVector, ValueVector>>& spinor_multiplier_list,
+                                           const std::vector<const ValueType*>& invRow_ptr_list,
+                                           std::vector<std::vector<ValueType>>& ratios_list) const
+{
+  auto& spo_leader = spo_list.getCastedLeader<SpinorSet>();
+  auto& vp_leader  = vp_list.getLeader();
+  IndexType nat    = vp_leader.getTotalNum();
+  assert(this == &spo_leader);
+
+  IndexType nw                    = spo_list.size();
+  auto [up_spo_list, dn_spo_list] = extractSpinComponentRefList(spo_list);
+  auto& up_spo_leader             = up_spo_list.getLeader();
+  auto& dn_spo_leader             = dn_spo_list.getLeader();
+
+  RefVector<ValueVector> up_psi_v_list, dn_psi_v_list;
+  std::vector<std::vector<ValueType>> upratios_list;
+  std::vector<std::vector<ValueType>> dnratios_list;
+  for (int iw = 0; iw < nw; iw++)
+  {
+    auto& spo                   = spo_list.getCastedElement<SpinorSet>(iw);
+    auto& psi                   = psi_list[iw].get();
+    const size_t norb_requested = psi.size();
+
+    spo.psi_work_up.resize(norb_requested);
+    spo.psi_work_down.resize(norb_requested);
+
+    up_psi_v_list.push_back(spo.psi_work_up);
+    dn_psi_v_list.push_back(spo.psi_work_down);
+
+    std::vector<ValueType> tmp(nat);
+    upratios_list.push_back(tmp);
+    dnratios_list.push_back(tmp);
+  }
+
+
+  //offload is happening on the device within each up/dn spo.
+  up_spo_leader.mw_evaluateDetRatios(up_spo_list, vp_list, up_psi_v_list, invRow_ptr_list, upratios_list);
+  dn_spo_leader.mw_evaluateDetRatios(dn_spo_list, vp_list, dn_psi_v_list, invRow_ptr_list, dnratios_list);
+
+  //up/dn ratios_list is on host, so just do it here on host
+  for (int iw = 0; iw < nw; iw++)
+  {
+    for (size_t iat = 0.0; iat < nat; iat++)
+    {
+      ParticleSet::Scalar_t s = vp_list[iw].activeSpin(iat);
+      RealType coss           = std::cos(s);
+      RealType sins           = std::sin(s);
+
+      ValueType eis(coss, sins);
+      ValueType emis(coss, -sins);
+
+      ratios_list[iw][iat] = eis * spinor_multiplier_list[iw].get().first[iat] * upratios_list[iw][iat] + emis * spinor_multiplier_list[iw].get().second[iat] * dnratios_list[iw][iat];
+    }
   }
 }
 
