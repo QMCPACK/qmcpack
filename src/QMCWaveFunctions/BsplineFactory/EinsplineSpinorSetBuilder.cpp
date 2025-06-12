@@ -18,6 +18,7 @@
 
 
 #include "EinsplineSpinorSetBuilder.h"
+#include <PlatformSelector.hpp>
 #include "QMCWaveFunctions/SpinorSet.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
@@ -50,6 +51,7 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
   std::string truncate("no");
   std::string hybrid_rep("no");
   std::string spo_object_name;
+  std::string useGPU;
 
   ScopedTimer spo_timer_scope(createGlobalTimer("einspline::CreateSpinorSetFromXML", timer_level_medium));
 
@@ -68,6 +70,7 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
     a.add(spo_prec, "precision");
     a.add(truncate, "truncate");
     a.add(myName, "tag");
+    a.add(useGPU, "gpu", CPUOMPTargetSelector::candidate_values);
 
     a.put(XMLRoot);
     a.add(numOrbs, "size");
@@ -176,7 +179,6 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
     myComm->barrier_and_abort(
         "The 'truncate' feature of spline SPO has been removed. Please use hybrid orbital representation.");
 
-  std::string useGPU("no");
 #if !defined(QMC_COMPLEX)
   if (use_real_splines_)
   {
