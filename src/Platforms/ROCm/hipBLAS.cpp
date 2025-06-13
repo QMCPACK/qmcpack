@@ -33,9 +33,9 @@ hipblasStatus_t hipblasCgemmBatched(hipblasHandle_t handle,
                                     int ldc,
                                     int batchCount)
 {
-  return hipblasCgemmBatched(handle, transa, transb, m, n, k, (const hipblasComplex*)alpha,
-                             (const hipblasComplex* const*)Aarray, lda, (const hipblasComplex* const*)Barray, ldb,
-                             (const hipblasComplex*)beta, (hipblasComplex* const*)Carray, ldc, batchCount);
+  return hipblasCgemmBatched(handle, transa, transb, m, n, k, (const hipFloatComplex*)alpha,
+                             (const hipFloatComplex* const*)Aarray, lda, (const hipFloatComplex* const*)Barray, ldb,
+                             (const hipFloatComplex*)beta, (hipFloatComplex* const*)Carray, ldc, batchCount);
 }
 
 hipblasStatus_t hipblasZgemmBatched(hipblasHandle_t handle,
@@ -54,10 +54,10 @@ hipblasStatus_t hipblasZgemmBatched(hipblasHandle_t handle,
                                     int ldc,
                                     int batchCount)
 {
-  return hipblasZgemmBatched(handle, transa, transb, m, n, k, (const hipblasDoubleComplex*)alpha,
-                             (const hipblasDoubleComplex* const*)Aarray, lda,
-                             (const hipblasDoubleComplex* const*)Barray, ldb, (const hipblasDoubleComplex*)beta,
-                             (hipblasDoubleComplex* const*)Carray, ldc, batchCount);
+  return hipblasZgemmBatched(handle, transa, transb, m, n, k, (const hipDoubleComplex*)alpha,
+                             (const hipDoubleComplex* const*)Aarray, lda,
+                             (const hipDoubleComplex* const*)Barray, ldb, (const hipDoubleComplex*)beta,
+                             (hipDoubleComplex* const*)Carray, ldc, batchCount);
 }
 
 //------------------------------------------------------------------------------
@@ -168,7 +168,7 @@ hipblasStatus_t hipblasCgetriBatched_(hipblasHandle_t handle,
 {
   if (!P)
     throw std::runtime_error("hipblasXgetriBatched_ pivot array cannot be a null pointer!");
-  return hipblasCgetriBatched(handle, n, (hipblasComplex* const*)A, lda, (int*)P, (hipblasComplex* const*)C, ldc, info,
+  return hipblasCgetriBatched(handle, n, (hipFloatComplex* const*)A, lda, (int*)P, (hipFloatComplex* const*)C, ldc, info,
                               batchSize);
 }
 
@@ -184,6 +184,6 @@ hipblasStatus_t hipblasZgetriBatched_(hipblasHandle_t handle,
 {
   if (!P)
     throw std::runtime_error("hipblasXgetriBatched_ pivot array cannot be a null pointer!");
-  return hipblasZgetriBatched(handle, n, (hipblasDoubleComplex* const*)A, lda, (int*)P, (hipblasDoubleComplex* const*)C,
+  return hipblasZgetriBatched(handle, n, (hipDoubleComplex* const*)A, lda, (int*)P, (hipDoubleComplex* const*)C,
                               ldc, info, batchSize);
 }

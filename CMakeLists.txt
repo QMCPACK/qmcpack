@@ -744,6 +744,37 @@ if(ENABLE_ROCM)
         "This happens when the ROCm installation cannot be found by CMake. "
         "Rerun cmake with -DROCM_ROOT=<your ROCm installation root directory> added.")
   endif()
+
+  # Detect ROCm version detected via hipconfig
+  execute_process(
+    COMMAND hipconfig --version
+    OUTPUT_VARIABLE HIPCONFIG_VERSION_OUTPUT
+    RESULT_VARIABLE HIPCONFIG_RESULT
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET
+  )
+  if(HIPCONFIG_RESULT EQUAL 0)
+    string(REGEX MATCH "^[0-9]+\\.[0-9]+\\.[0-9]+" ROCM_VERSION "${HIPCONFIG_VERSION_OUTPUT}")
+    if(ROCM_VERSION)
+      message(STATUS "ROCm version detected via hipconfig: ${ROCM_VERSION}")
+    else()
+      message(FATAL_ERROR "Could not parse ROCm version from hipconfig output:\n${HIPCONFIG_VERSION_OUTPUT}")
+    endif()
+  else()
+    message(FATAL_ERROR "Failed to execute hipconfig to get ROCm version.")
+  endif()
+
+  # Check for minimum required ROCm version
+  if(ROCM_VERSION VERSION_LESS "6.0.0")
+    message(FATAL_ERROR "QMCPACK requires ROCm 6.0.0 or newer. Detected ${ROCM_VERSION}")
+  endif()
+
+  # Add HIPBLAS_V2 for ROCm < 7.0
+  if(ROCM_VERSION VERSION_LESS "7.0.0")
+    add_definitions(-DHIPBLAS_V2)
+    message(STATUS "Defining HIPBLAS_V2 for compatibility with ROCm < 7.0 (Detected ${ROCM_VERSION})")
+  endif()
+
   find_package(hipblas CONFIG REQUIRED)
   find_package(rocsolver CONFIG REQUIRED)
   find_package(rocthrust CONFIG REQUIRED)
