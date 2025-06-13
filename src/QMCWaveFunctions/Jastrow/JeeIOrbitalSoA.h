@@ -501,7 +501,7 @@ public:
         std::ostringstream msg;
         msg << "Report bug! Updating electron iat = " << iat << " near ion " << jat
             << " distance = " << std::setprecision(std::numeric_limits<float>::digits10 + 1)
-            << eI_table.getDistRow(iat)[jat] << ". Faild to find it in elecs_inside!" << std::endl;
+            << eI_table.getDistRow(iat)[jat] << ". Failed to find it in elecs_inside!" << std::endl;
         throw std::runtime_error(msg.str());
       }
 #ifndef NDEBUG
@@ -511,7 +511,7 @@ public:
         msg << "Report bug! Inconsistent electron iat = " << iat << " near ion " << jat << " dist "
             << std::setprecision(std::numeric_limits<float>::digits10 + 1) << eI_table.getDistRow(iat)[jat]
             << " stored value = " << *iter_dist
-            << ". eI distance stored value elecs_inside_dist not matching distance table!" << std::endl;
+            << ". eI distance stored value elecs_inside_dist does not match distance table!" << std::endl;
         throw std::runtime_error(msg.str());
       }
 #endif
