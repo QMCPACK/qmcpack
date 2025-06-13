@@ -14,7 +14,6 @@
 #define QMCPLUSPLUS_SPINORSET_H
 
 #include "QMCWaveFunctions/SPOSet.h"
-#include "VirtualParticleSet.h"
 #include <ResourceHandle.h>
 
 namespace qmcplusplus

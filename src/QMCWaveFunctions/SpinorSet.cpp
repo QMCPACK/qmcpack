@@ -121,10 +121,10 @@ void SpinorSet::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list
 {
   auto& spo_leader = spo_list.getCastedLeader<SpinorSet>();
   auto& vp_leader  = vp_list.getLeader();
-  IndexType nat    = vp_leader.getTotalNum();
+  const size_t nat = vp_leader.getTotalNum();
   assert(this == &spo_leader);
 
-  IndexType nw                    = spo_list.size();
+  const size_t nw                 = spo_list.size();
   auto [up_spo_list, dn_spo_list] = extractSpinComponentRefList(spo_list);
   auto& up_spo_leader             = up_spo_list.getLeader();
   auto& dn_spo_leader             = dn_spo_list.getLeader();
@@ -209,10 +209,10 @@ void SpinorSet::mw_evaluateDetSpinorRatios(const RefVectorWithLeader<SPOSet>& sp
 {
   auto& spo_leader = spo_list.getCastedLeader<SpinorSet>();
   auto& vp_leader  = vp_list.getLeader();
-  IndexType nat    = vp_leader.getTotalNum();
+  const size_t nat = vp_leader.getTotalNum();
   assert(this == &spo_leader);
 
-  IndexType nw                    = spo_list.size();
+  const size_t nw                 = spo_list.size();
   auto [up_spo_list, dn_spo_list] = extractSpinComponentRefList(spo_list);
   auto& up_spo_leader             = up_spo_list.getLeader();
   auto& dn_spo_leader             = dn_spo_list.getLeader();
@@ -254,7 +254,8 @@ void SpinorSet::mw_evaluateDetSpinorRatios(const RefVectorWithLeader<SPOSet>& sp
       ValueType eis(coss, sins);
       ValueType emis(coss, -sins);
 
-      ratios_list[iw][iat] = eis * spinor_multiplier_list[iw].get().first[iat] * upratios_list[iw][iat] + emis * spinor_multiplier_list[iw].get().second[iat] * dnratios_list[iw][iat];
+      ratios_list[iw][iat] = eis * spinor_multiplier_list[iw].get().first[iat] * upratios_list[iw][iat] +
+          emis * spinor_multiplier_list[iw].get().second[iat] * dnratios_list[iw][iat];
     }
   }
 }
