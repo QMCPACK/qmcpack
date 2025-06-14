@@ -860,6 +860,46 @@ void DiracDeterminantBatched<PL, VT, FPVT>::mw_evaluateRatios(
 }
 
 template<PlatformKind PL, typename VT, typename FPVT>
+void DiracDeterminantBatched<PL, VT, FPVT>::mw_evaluateSpinorRatios(
+    const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+    const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+    const RefVector<std::pair<ValueVector, ValueVector>>& spinor_multiplier_list,
+    std::vector<std::vector<Value>>& ratios) const
+{
+  assert(this == &wfc_list.getLeader());
+  const size_t nw = wfc_list.size();
+
+  RefVectorWithLeader<SPOSet> phi_list(phi_);
+  RefVector<Vector<Value>> psiV_list;
+  std::vector<const Value*> invRow_ptr_list;
+  phi_list.reserve(nw);
+  psiV_list.reserve(nw);
+  invRow_ptr_list.reserve(nw);
+
+  {
+    ScopedTimer local_timer(RatioTimer);
+    for (size_t iw = 0; iw < nw; iw++)
+    {
+      auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<PL, VT, FPVT>>(iw);
+      const VirtualParticleSet& vp(vp_list[iw]);
+      const int WorkingIndex = vp.refPtcl - FirstIndex;
+      // build lists
+      phi_list.push_back(det.phi_);
+      psiV_list.push_back(det.psiV_host_view);
+      if (phi_.isOMPoffload())
+        invRow_ptr_list.push_back(det.psiMinv_.device_data() + WorkingIndex * psiMinv_.cols());
+      else
+        invRow_ptr_list.push_back(det.psiMinv_[WorkingIndex]);
+    }
+  }
+
+  {
+    ScopedTimer local_timer(SPOVTimer);
+    phi_.mw_evaluateDetSpinorRatios(phi_list, vp_list, psiV_list, spinor_multiplier_list, invRow_ptr_list, ratios);
+  }
+}
+
+template<PlatformKind PL, typename VT, typename FPVT>
 void DiracDeterminantBatched<PL, VT, FPVT>::evaluateDerivRatios(const VirtualParticleSet& VP,
                                                                 const opt_variables_type& optvars,
                                                                 std::vector<ValueType>& ratios,
