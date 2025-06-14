@@ -267,6 +267,13 @@ public:
                                     const std::vector<const ValueType*>& invRow_ptr_list,
                                     std::vector<std::vector<ValueType>>& ratios_list) const;
 
+  virtual void mw_evaluateDetSpinorRatios(const RefVectorWithLeader<SPOSetT>& spo_list,
+                                          const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                                          const RefVector<ValueVector>& psi_list,
+                                          const RefVector<std::pair<ValueVector, ValueVector>>& spinor_multiplier_list,
+                                          const std::vector<const ValueType*>& invRow_ptr_list,
+                                          std::vector<std::vector<ValueType>>& ratios_list) const;
+
   /** evaluate the values, gradients and laplacians of this single-particle orbital set
    * @param P current ParticleSet
    * @param iat active particle

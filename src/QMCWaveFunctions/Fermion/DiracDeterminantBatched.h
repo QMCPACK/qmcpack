@@ -134,6 +134,11 @@ public:
                          const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                          std::vector<std::vector<Value>>& ratios) const override;
 
+  void mw_evaluateSpinorRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                               const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                               const RefVector<std::pair<ValueVector, ValueVector>>& spinor_multiplier_list,
+                               std::vector<std::vector<Value>>& ratios) const override;
+
   void evaluateDerivRatios(const VirtualParticleSet& VP,
                            const opt_variables_type& optvars,
                            std::vector<ValueType>& ratios,

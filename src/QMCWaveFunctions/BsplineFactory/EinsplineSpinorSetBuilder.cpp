@@ -51,7 +51,7 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
   std::string truncate("no");
   std::string hybrid_rep("no");
   std::string spo_object_name;
-  std::string useGPU;
+  std::string useGPU; 
 
   ScopedTimer spo_timer_scope(createGlobalTimer("einspline::CreateSpinorSetFromXML", timer_level_medium));
 
