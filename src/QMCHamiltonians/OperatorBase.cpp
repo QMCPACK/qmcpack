@@ -85,17 +85,17 @@ void OperatorBase::mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
   assert(this == &o_list.getLeader());
 /**  Temporary raw omp pragma for simple thread parallelism
    *   ignoring the driver level concurrency
-   *   
+   *
    *  TODO: replace this with a proper abstraction. It should adequately describe the behavior
    *  and strictly limit the activation of this level concurrency to when it is intended.
    *  It is unlikely to belong in this function.
-   *  
+   *
    *  This implicitly depends on openmp work division logic. Essentially adhoc runtime
    *  crowds over which we have given up control of thread/global scope.
    *  How many walkers per thread? How to handle their data movement if any of these
    *  hamiltonians should be accelerated? We can neither reason about or describe it in C++
    *
-   *  As I understand it it should only be required for as long as the AMD openmp offload 
+   *  As I understand it it should only be required for as long as the AMD openmp offload
    *  compliler is incapable of running multiple threads. They should/must fix their compiler
    *  before delivery of frontier and it should be removed at that point at latest
    *

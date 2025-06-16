@@ -24,6 +24,7 @@
 #include <ResourceCollection.h>
 #include <Message/UniformCommunicateError.h>
 #include "Numerics/OneDimCubicSplineLinearGrid.h"
+#include "type_traits/RefVectorWithLeader.h"
 #include <numeric>
 
 namespace qmcplusplus
@@ -293,7 +294,6 @@ void CoulombPBCAA::informOfPerParticleListener()
   OperatorBase::informOfPerParticleListener();
 }
 
-
 CoulombPBCAA::Return_t CoulombPBCAA::evaluate(ParticleSet& P)
 {
   if (is_active)
@@ -430,7 +430,6 @@ void CoulombPBCAA::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
       throw std::runtime_error("Trace check failed");
     }
 #endif
-
     return value;
   };
 
@@ -439,6 +438,8 @@ void CoulombPBCAA::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
                                           const std::vector<ListenerVector<RealType>>& listeners) -> RealType {
     auto& o_leader = o_list.getCastedLeader<CoulombPBCAA>();
     assert(!o_leader.is_active);
+    for (auto& samp : v_sample)
+      samp = 0.5 * o_leader.value_;
     for (int iw = 0; iw < o_list.size(); iw++)
     {
       for (const ListenerVector<RealType>& listener : listeners)
@@ -461,11 +462,6 @@ void CoulombPBCAA::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
   }
   else
   {
-    if (o_leader.FirstTime)
-    {
-      o_leader.value_    = evaluate_walker(0, o_leader, Ps);
-      o_leader.FirstTime = false;
-    }
     for (int iw = 0; iw < o_list.size(); iw++)
     {
       auto& coulomb_aa = o_list.getCastedElement<CoulombPBCAA>(iw);
