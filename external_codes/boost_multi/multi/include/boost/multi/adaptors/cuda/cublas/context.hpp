@@ -111,8 +111,8 @@ using std::is_convertible_v;
 // }
 
 #if defined(__HIP_PLATFORM_NVIDIA__) || defined(__HIP_PLATFORM_AMD__) || defined(__HIPCC__)
-	using Complex = hipFloatComplex;
-	using DoubleComplex = hipDoubleComplex;
+	using Complex = hipblasComplex;
+	using DoubleComplex = hipblasDoubleComplex;
 #else  //  __CUDA__  __NVCC__  or clang cuda
 	using Complex = cuComplex;
 	using DoubleComplex = cuDoubleComplex;
