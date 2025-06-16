@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2022 QMCPACK developers.
+// Copyright (c) 2025 QMCPACK developers.
 //
 // File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
@@ -32,8 +32,6 @@ class OneDimCubicSplineLinearGrid;
 /** @ingroup hamiltonian
  *\brief Calculates the AA Coulomb potential using PBCs
  *
- * Functionally identical to CoulombPBCAA but uses a templated version of
- * LRHandler.
  */
 struct CoulombPBCAA : public OperatorBase, public ForceBase
 {
@@ -44,7 +42,7 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
   using OffloadSpline  = OneDimCubicSplineLinearGrid<LRCoulombSingleton::pRealType>;
 
   /// energy-optimized long range handle. Should be const LRHandlerType eventually
-  std::shared_ptr<LRHandlerType> AA;
+  std::shared_ptr<LRHandlerType> lr_aa_;
   /// energy-optimized short range pair potential
   std::shared_ptr<const RadFunctorType> rVs;
   /// the same as rVs but can be used inside OpenMP offload regions
@@ -85,10 +83,25 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
   Array<TraceReal, 1>* V_sample;
   Array<TraceReal, 1> V_const;
 #endif
-  ParticleSet& Ps;
+  ParticleSet Ps;
 
-
-  /** constructor */
+  /** constructor
+   *  Sadly there is significant conditional behavior here
+   *  the constructor does the operator calculation for the static
+   *  and only for active==true are most of the methods other than
+   *  nops.
+   *
+   *  Consistent side effects
+   *  * local copies of most of of pset refs basic properties
+   *    input psets will not be checked for consistency later!
+   *  *
+   *  Conditional side effects include
+   *  When ComputeForces == true
+   *  * turnOnPerParticleSK for ref
+   *  * updateSource(ref)
+   *  When is_activate == false
+   *
+   */
   CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces, bool use_offload);
 
   ~CoulombPBCAA() override;
@@ -124,6 +137,11 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
                          TrialWaveFunction& psi,
                          ParticleSet::ParticlePos& hf_terms,
                          ParticleSet::ParticlePos& pulay_terms) override;
+
+  /**
+   *  calls  eval(LR|SR){withForces} and updates eS and eL updates new_value_
+   *  new_value_ doesn't seem to ever be used anywhere
+   */
   void updateSource(ParticleSet& s) override;
 
   /** Do nothing */
@@ -209,10 +227,17 @@ private:
 
   /** constructor code factored out
    */
-  void initBreakup(ParticleSet& P);
+  void initBreakup(ParticleSet& ref_pset);
+
+  /** initialize everything for a static particle set
+   *  for static particle set hamiltonians no significant calculation
+   *  is done after this.
+   */
+  void inactiveInitialization(ParticleSet& ref);
 
   /** Compute the const part of the per particle coulomb self interaction potential.
    *  \param[out]  pp_consts   constant values for the particles self interaction
+
    */
   void evalPerParticleConsts(Vector<RealType>& pp_consts) const;
 };

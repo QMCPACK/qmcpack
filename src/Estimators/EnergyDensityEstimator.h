@@ -135,8 +135,8 @@ private:
   std::optional<ParticleSet> pset_static_;
   int dtable_index_ = -1;
 
-  int n_particles_;
-  int n_ions_;
+  int n_particles_{0};
+  int n_ions_{0};
 
   UPtr<NEReferencePoints> ref_points_;
 
@@ -165,7 +165,7 @@ private:
    */
   int outside_buffer_offset{0};
   std::vector<bool> particles_outside_;
-
+  std::vector<bool> particles_outside_ions_;
   /// @}
 
   /// spacegrids are used to find which cell domain contains the Energy information of particles
@@ -178,7 +178,7 @@ private:
   /// particle positions includes ion positions if pset_stat_ and !input_.get_ion_points()
   ParticlePos r_work_;
   /// ion positions if pset_static_ && input.get_ion_points_ are true
-  Matrix<Real> r_ion_work_;
+  ParticlePos r_ion_work_;
 
   /** preallocated value matrices
    *  It seems like these should be local variables in evaluate,
@@ -201,6 +201,7 @@ private:
   // std::vector<Real> Zptcl;
   // ParticlePos Rptcl;
 };
+
 } // namespace qmcplusplus
 
 #endif

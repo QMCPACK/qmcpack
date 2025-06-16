@@ -74,7 +74,6 @@ void HamiltonianFactory::addMPCPotential(xmlNodePtr cur, bool isphysical)
 #endif // defined(HAVE_LIBFFTW)
 }
 
-
 void HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
 {
   using Return_t = QMCHamiltonian::FullPrecRealType;

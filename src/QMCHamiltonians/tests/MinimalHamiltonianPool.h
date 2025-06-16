@@ -23,15 +23,23 @@ class MinimalHamiltonianPool
 {
   // See src/QMCHamiltonians/tests/test_hamiltonian_factory for parsing tests
   static constexpr const char* const hamiltonian_xml = R"(
-<hamiltonian name="h0" type="generic" target="e"> 
-  <pairpot type="coulomb" name="ElecElec" source="e" target="e"/> 
+<hamiltonian name="h0" type="generic" target="e">
+  <pairpot type="coulomb" name="ElecElec" source="e" target="e"/>
 </hamiltonian>
   )";
 
   static constexpr const char* const hamiltonian_eeei_xml = R"(
-<hamiltonian name="h0" type="generic" target="e"> 
+<hamiltonian name="h0" type="generic" target="e">
   <pairpot type="coulomb" name="ElecElec" source="e" target="e"/>
-  <pairpot type="coulomb" name="ElecIon" source="ion" target="e"/> 
+  <pairpot type="coulomb" name="ElecIon" source="ion" target="e"/>
+</hamiltonian>
+  )";
+
+  static constexpr const char* const hamiltonian_eeeiii_xml = R"(
+<hamiltonian name="h0" type="generic" target="e">
+  <pairpot type="coulomb" name="ElecElec" source="e" target="e"/>
+  <pairpot type="coulomb" name="ElecIon" source="ion" target="e"/>
+  <pairpot type="coulomb" name="IonIon" source="ion" target="ion"/>
 </hamiltonian>
   )";
 
@@ -68,6 +76,20 @@ public:
     HamiltonianPool hpool(particle_pool, wavefunction_pool, comm);
     Libxml2Document doc;
     doc.parseFromString(hamiltonian_eeei_xml);
+
+    xmlNodePtr root = doc.getRoot();
+    hpool.put(root);
+
+    return hpool;
+  }
+
+  static HamiltonianPool makeHamWithEEEIII(Communicate* comm,
+                                           ParticleSetPool& particle_pool,
+                                           WaveFunctionPool& wavefunction_pool)
+  {
+    HamiltonianPool hpool(particle_pool, wavefunction_pool, comm);
+    Libxml2Document doc;
+    doc.parseFromString(hamiltonian_eeeiii_xml);
 
     xmlNodePtr root = doc.getRoot();
     hpool.put(root);

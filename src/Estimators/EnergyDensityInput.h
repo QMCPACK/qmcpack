@@ -75,7 +75,7 @@ private:
   std::string name_{type_tag};
   std::string type_{type_tag};
   std::string dynamic_{"e"};
-  std::string static_{"ion0"};
+  std::string static_{"ion"};
   bool ion_points_{false};
   EnergyDensityInputSection input_section_;
   ReferencePointsInput ref_points_input_;
