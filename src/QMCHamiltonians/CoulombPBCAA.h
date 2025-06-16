@@ -83,6 +83,7 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
   Array<TraceReal, 1>* V_sample;
   Array<TraceReal, 1> V_const;
 #endif
+
   ParticleSet Ps;
 
   /** constructor
@@ -110,6 +111,13 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
 
   void resetTargetParticleSet(ParticleSet& P) override;
 
+  /** evaluate just one walker
+   *
+   *  This is still called for batch AA IonIon
+   *  we later need to make sure for Ions that we assign from value_
+   *  to the v_samples in multi walker reference.
+   *  AA IonIon evaluation.
+   */
   Return_t evaluate(ParticleSet& P) override;
 
   void mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,

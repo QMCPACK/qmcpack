@@ -128,21 +128,21 @@ public:
 
   /**
    * @brief get update_mode_ reference
-   * 
+   *
    * @return std::bitset<8>& reference of get_update_mode_
    */
   std::bitset<8>& getUpdateMode() noexcept;
 
   /**
    * @brief get a copy of value_
-   * 
+   *
    * @return Return_t copy of value_
    */
   Return_t getValue() const noexcept;
 
   /**
    * @brief getter a copy of my_name_, rvalue small string optimization
-   * 
+   *
    * @return std::string copy of my_name_ member
    */
   std::string getName() const noexcept;
@@ -152,7 +152,7 @@ public:
 
   /**
    * @brief Set my_name member, uses small string optimization (pass by value)
-   * 
+   *
    * @param name input
    */
   void setName(const std::string name) noexcept;
@@ -160,20 +160,20 @@ public:
 #if !defined(REMOVE_TRACEMANAGER)
   /**
    * @brief Get request_ member
-   * 
+   *
    * @return TraceRequest& reference to request_
    */
   TraceRequest& getRequest() noexcept;
 #endif
 
   //////// PURELY VIRTUAL FUNCTIONS ////////////////
-  /** 
+  /**
    * @brief Reset the data with the target ParticleSet
    * @param P new target ParticleSet
    */
   virtual void resetTargetParticleSet(ParticleSet& P) = 0;
 
-  /** 
+  /**
    * @brief Evaluate the local energy contribution of this component
    * @param P input configuration containing N particles
    * @return the value of the Hamiltonian component
@@ -188,35 +188,35 @@ public:
 
   //////// VIRTUAL FUNCTIONS ////////////////
 
-  /** 
+  /**
    * @brief named values to  the property list
    * Default implementaton uses addValue(plist_)
-   * 
+   *
    * @param plist RecordNameProperty
    * @param collectables Observables that are accumulated by evaluate
    */
   virtual void addObservables(PropertySetType& plist, BufferType& collectables);
 
-  /** 
+  /**
    * @brief add to observable descriptor for hdf5
    * The default implementation is to register a scalar for this->value_
-   * 
+   *
    * @param h5desc contains a set of hdf5 descriptors for a scalar observable
    * @param gid hdf5 group to which the observables belong
    */
   virtual void registerObservables(std::vector<ObservableHelper>& h5desc, hdf_archive& file) const;
 
-  /*** 
+  /***
    * @brief add to collectables descriptor for hdf5
    * The default implementation does nothing. The derived classes which compute
    * big data, e.g. density, should overwrite this function.
-   * 
+   *
    * @param h5desc contains a set of hdf5 descriptors for a scalar observable
    * @param gid hdf5 group to which the observables belong
    */
   virtual void registerCollectables(std::vector<ObservableHelper>& h5desc, hdf_archive& file) const;
 
-  /** 
+  /**
    * @brief Set the values evaluated by this object to plist
    * Default implementation is to assign Value which is updated
    * by evaluate function using my_index_.
@@ -231,7 +231,7 @@ public:
   // TODO: add docs
   virtual void setHistories(Walker_t& ThisWalker);
 
-  /** 
+  /**
    * @brief Evaluate the local energy contribution of this component, deterministically based on current state.
    * The correct behavior of this routine requires estimators with non-deterministic components
    * in their evaluate() function to override this function.
@@ -247,9 +247,9 @@ public:
    * really should reduce vector of local_energies. matching the ordering and size of o list
    * the this can be call for 1 or more QMCHamiltonians
 
-   * @param o_list 
-   * @param wf_list 
-   * @param p_list 
+   * @param o_list
+   * @param wf_list
+   * @param p_list
    */
   virtual void mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
                            const RefVectorWithLeader<TrialWaveFunction>& wf_list,
@@ -263,7 +263,7 @@ public:
    * hear from this operator.
    *
    * specialized versions of this should take advantage of multiwalker resources
-   * to reduce the resource cost of collecting these values. 
+   * to reduce the resource cost of collecting these values.
    */
   virtual void mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase>& o_list,
                                       const RefVectorWithLeader<TrialWaveFunction>& wf_list,
@@ -274,11 +274,11 @@ public:
   /**
    * @brief TODO: add docs
 
-   * @param o_list 
-   * @param p_list 
-   * @param optvars 
-   * @param dlogpsi 
-   * @param dhpsioverpsi 
+   * @param o_list
+   * @param p_list
+   * @param optvars
+   * @param dlogpsi
+   * @param dhpsioverpsi
    */
   virtual void mw_evaluateWithParameterDerivatives(const RefVectorWithLeader<OperatorBase>& o_list,
                                                    const RefVectorWithLeader<ParticleSet>& p_list,
@@ -288,13 +288,13 @@ public:
 
   /**
    * @brief TODO: add docs
-   * 
-   * @param P 
-   * @return Return_t 
+   *
+   * @param P
+   * @return Return_t
    */
   virtual Return_t rejectedMove(ParticleSet& P);
 
-  /** 
+  /**
    * @brief Evaluate the local energy contribution of this component with Toperators updated if requested
 
    * @param P input configuration containing N particles
@@ -305,9 +305,9 @@ public:
   /**
    * @brief Evaluate the contribution of this component of multiple walkers
 
-   * @param o_list 
-   * @param wf_list 
-   * @param p_list 
+   * @param o_list
+   * @param wf_list
+   * @param p_list
    */
   virtual void mw_evaluateWithToperator(const RefVectorWithLeader<OperatorBase>& o_list,
                                         const RefVectorWithLeader<TrialWaveFunction>& wf_list,
@@ -320,7 +320,7 @@ public:
    * default implementation decays to the mw_evaluatePerParticle.
    *
    * specialized versions of this should take advantage of multiwalker resources
-   * to reduce the resource cost of collecting these values. 
+   * to reduce the resource cost of collecting these values.
    */
   virtual void mw_evaluatePerParticleWithToperator(const RefVectorWithLeader<OperatorBase>& o_list,
                                                    const RefVectorWithLeader<TrialWaveFunction>& wf_list,
@@ -332,18 +332,18 @@ public:
   /**
    * @brief Evaluate value and derivatives wrt the optimizables. Default uses evaluate.
 
-   * @param P 
-   * @param optvars 
-   * @param dlogpsi 
-   * @param dhpsioverpsi 
-   * @return Return_t 
+   * @param P
+   * @param optvars
+   * @param dlogpsi
+   * @param dhpsioverpsi
+   * @return Return_t
    */
   virtual Return_t evaluateValueAndDerivatives(ParticleSet& P,
                                                const opt_variables_type& optvars,
                                                const Vector<ValueType>& dlogpsi,
                                                Vector<ValueType>& dhpsioverpsi);
 
-  /** 
+  /**
    * @brief Evaluate contribution to local energy  and derivatives w.r.t ionic coordinates from OperatorBase.
    * If there's no stochastic component, defaults to evaluateIonDerivs.
    * If not otherwise specified, this defaults to evaluate().
@@ -352,7 +352,7 @@ public:
    * @param ions source particle set (ions)
    * @param psi Trial wave function
    * @param hf_terms  Adds OperatorBase's contribution to Re [(dH)Psi]/Psi
-   * @param pulay_terms Adds OperatorBase's contribution to Re [(H-E_L)dPsi]/Psi 
+   * @param pulay_terms Adds OperatorBase's contribution to Re [(H-E_L)dPsi]/Psi
    */
   virtual void evaluateIonDerivs(ParticleSet& P,
                                  ParticleSet& ions,
@@ -360,12 +360,12 @@ public:
                                  ParticleSet::ParticlePos& hf_term,
                                  ParticleSet::ParticlePos& pulay_term);
 
-  /** 
+  /**
    * @brief Evaluate "B" matrix for observable.  Filippi scheme for computing fast derivatives.
 
    * @param[in] P target particle set (electrons)
    * @param[in] psi, Trial Wavefunction wrapper for fast derivatives.
-   * @param[in,out] B.  List of B matrices for each species.  
+   * @param[in,out] B.  List of B matrices for each species.
    * @return Void
    */
   inline virtual void evaluateOneBodyOpMatrix(ParticleSet& P,
@@ -373,13 +373,13 @@ public:
                                               std::vector<ValueMatrix>& B)
   {}
 
-  /** 
+  /**
    * @brief Evaluate "dB/dR" matrices for observable.  Filippi scheme for computing fast derivatives.
 
    * @param[in] P, target particle set (electrons)
-   * @param[in] source, ion particle set 
+   * @param[in] source, ion particle set
    * @param[in] psi, Trial Wavefunction wrapper for fast derivatives.
-   * @param[in] iat, 
+   * @param[in] iat,
    * @param[in,out] dB/dR. Specifically, [ dB/dx_iat, dB/dy_iat, dB/dz_iat ], B is defined above.
    * @return Void
    */
@@ -396,7 +396,7 @@ public:
    */
   virtual int makeNonLocalMovesPbyP(ParticleSet& P, NonLocalTOperator& move_op) { return 0; }
 
-  /** 
+  /**
    * @brief Update data associated with a particleset.
    * Default implementation does nothing. Only A-A interactions for s needs to implement its own method.
 
@@ -404,7 +404,7 @@ public:
    */
   virtual void updateSource(ParticleSet& s);
 
-  /** 
+  /**
    * @brief Return an average value by collective operation
    */
   virtual Return_t getEnsembleAverage();
@@ -412,47 +412,47 @@ public:
   /**
    * @brief Initialize a shared resource and hand it to a collection
 
-   * @param collection 
+   * @param collection
    */
   virtual void createResource(ResourceCollection& collection) const;
 
   /**
    * @brief Acquire a shared resource from a collection
 
-   * @param collection 
-   * @param o_list 
+   * @param collection
+   * @param o_list
    */
   virtual void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<OperatorBase>& o_list) const;
 
   /**
    * @brief Return a shared resource to a collection
-   * 
-   * @param collection 
-   * @param o_list 
+   *
+   * @param collection
+   * @param o_list
    */
   virtual void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<OperatorBase>& o_list) const;
 
   /**
    * @brief Set the Random Generator object
    * TODO: add docs
-   * @param rng 
+   * @param rng
    */
   virtual void setRandomGenerator(RandomBase<FullPrecRealType>* rng);
 
   /**
    * @brief TODO: add docs
-   * 
-   * @param qp 
-   * @param psi 
-   * @param targetH 
+   *
+   * @param qp
+   * @param psi
+   * @param targetH
    */
   virtual void add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& targetH);
 
 #if !defined(REMOVE_TRACEMANAGER)
   /**
    * @brief TODO: add docs
-   * 
-   * @param tm 
+   *
+   * @param tm
    */
   virtual void getRequiredTraces(TraceManager& tm);
 #endif
@@ -467,7 +467,7 @@ public:
   bool isQuantumClassical() const noexcept;
   bool isQuantumQuantum() const noexcept;
 
-  /** 
+  /**
    * @brief Return the mode i
    * @param i index among PRIMARY, OPTIMIZABLE, RATIOUPDATE, PHYSICAL
    */
@@ -475,9 +475,9 @@ public:
 
   /**
    * @brief TODO: add docs
-   * 
-   * @return true 
-   * @return false 
+   *
+   * @return true
+   * @return false
    */
   bool isNonLocal() const noexcept;
 
@@ -490,9 +490,9 @@ public:
   void contributeTraceQuantities();
 
   /**
-   * @brief Checkout trace arrays 
-   * Derived classes must guard individual checkouts using request info 
-   * @param tm 
+   * @brief Checkout trace arrays
+   * Derived classes must guard individual checkouts using request info
+   * @param tm
    */
   void checkoutTraceQuantities(TraceManager& tm);
 
@@ -562,8 +562,8 @@ protected:
 
   /**
    * @brief Set the Energy Domain
-   * 
-   * @param edomain 
+   *
+   * @param edomain
    */
   void setEnergyDomain(EnergyDomains edomain);
 
