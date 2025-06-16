@@ -116,12 +116,8 @@ void SplineC2COMPTarget<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_
         spl_coefs[cur_elem + 1] = newval_i;
       }
   }
-
-  PRAGMA_OFFLOAD("omp target update to (spl_coefs[0:spline_ptr->coefs_size])")
-  {
-    spline_ptr->coefs = spl_coefs;
-  }
-
+  // update coefficients on GPU from host
+  SplineInst->finalize();
 }
 
 template<typename ST>
