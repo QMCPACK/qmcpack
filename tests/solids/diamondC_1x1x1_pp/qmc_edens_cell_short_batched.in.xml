@@ -41,7 +41,7 @@
     <wavefunction name="psi0" target="e">
       <sposet_collection type="bspline" href="pwscf.pwscf.h5"
         tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0"
-        meshfactor="1.0" precision="double">
+        meshfactor="1.0" precision="float">
         <sposet type="bspline" name="spo_ud" size="4" spindataset="0" />
       </sposet_collection>
       <determinantset>
