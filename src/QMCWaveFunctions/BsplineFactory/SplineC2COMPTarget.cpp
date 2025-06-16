@@ -117,7 +117,7 @@ void SplineC2COMPTarget<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_
       }
   }
 
-  PRAGMA_OFFLOAD("omp target update to (spline_ptr[0:1], spl_coefs[0:spline_ptr->coefs_size])")
+  PRAGMA_OFFLOAD("omp target update to (spl_coefs[0:spline_ptr->coefs_size])")
   {
     spline_ptr->coefs = spl_coefs;
   }
