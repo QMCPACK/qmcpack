@@ -45,7 +45,7 @@ inline hipblasStatus_t hipblas_copy(hipblasHandle_t handle,
                                     int incy)
 {
   hipblasStatus_t success =
-      hipblasCcopy(handle, n, reinterpret_cast<hipblasComplex*>(x), incx, reinterpret_cast<hipblasComplex*>(y), incy);
+      hipblasCcopy(handle, n, reinterpret_cast<hipFloatComplex*>(x), incx, reinterpret_cast<hipFloatComplex*>(y), incy);
   hipDeviceSynchronize();
   return success;
 }
@@ -57,8 +57,8 @@ inline hipblasStatus_t hipblas_copy(hipblasHandle_t handle,
                                     std::complex<double>* y,
                                     int incy)
 {
-  hipblasStatus_t success = hipblasZcopy(handle, n, reinterpret_cast<hipblasDoubleComplex*>(x), incx,
-                                         reinterpret_cast<hipblasDoubleComplex*>(y), incy);
+  hipblasStatus_t success = hipblasZcopy(handle, n, reinterpret_cast<hipDoubleComplex*>(x), incx,
+                                         reinterpret_cast<hipDoubleComplex*>(y), incy);
   hipDeviceSynchronize();
   return success;
 }
@@ -83,8 +83,8 @@ inline hipblasStatus_t hipblas_scal(hipblasHandle_t handle,
                                     std::complex<float>* x,
                                     int incx)
 {
-  hipblasStatus_t success = hipblasCscal(handle, n, reinterpret_cast<hipblasComplex const*>(&alpha),
-                                         reinterpret_cast<hipblasComplex*>(x), incx);
+  hipblasStatus_t success = hipblasCscal(handle, n, reinterpret_cast<hipFloatComplex const*>(&alpha),
+                                         reinterpret_cast<hipFloatComplex*>(x), incx);
   hipDeviceSynchronize();
   return success;
 }
@@ -95,8 +95,8 @@ inline hipblasStatus_t hipblas_scal(hipblasHandle_t handle,
                                     std::complex<double>* x,
                                     int incx)
 {
-  hipblasStatus_t success = hipblasZscal(handle, n, reinterpret_cast<hipblasDoubleComplex const*>(&alpha),
-                                         reinterpret_cast<hipblasDoubleComplex*>(x), incx);
+  hipblasStatus_t success = hipblasZscal(handle, n, reinterpret_cast<hipDoubleComplex const*>(&alpha),
+                                         reinterpret_cast<hipDoubleComplex*>(x), incx);
   hipDeviceSynchronize();
   return success;
 }
@@ -130,8 +130,8 @@ inline std::complex<float> hipblas_dot(hipblasHandle_t handle,
 {
   std::complex<float> result;
   hipblasStatus_t success =
-      hipblasCdotu(handle, n, reinterpret_cast<hipblasComplex const*>(x), incx,
-                   reinterpret_cast<hipblasComplex const*>(y), incy, reinterpret_cast<hipblasComplex*>(&result));
+      hipblasCdotu(handle, n, reinterpret_cast<hipFloatComplex const*>(x), incx,
+                   reinterpret_cast<hipFloatComplex const*>(y), incy, reinterpret_cast<hipFloatComplex*>(&result));
   hipDeviceSynchronize();
   if (HIPBLAS_STATUS_SUCCESS != success)
     throw std::runtime_error("Error: hipblas_dot returned error code.");
@@ -146,9 +146,9 @@ inline std::complex<double> hipblas_dot(hipblasHandle_t handle,
                                         int incy)
 {
   std::complex<double> result;
-  hipblasStatus_t success = hipblasZdotu(handle, n, reinterpret_cast<hipblasDoubleComplex const*>(x), incx,
-                                         reinterpret_cast<hipblasDoubleComplex const*>(y), incy,
-                                         reinterpret_cast<hipblasDoubleComplex*>(&result));
+  hipblasStatus_t success = hipblasZdotu(handle, n, reinterpret_cast<hipDoubleComplex const*>(x), incx,
+                                         reinterpret_cast<hipDoubleComplex const*>(y), incy,
+                                         reinterpret_cast<hipDoubleComplex*>(&result));
   hipDeviceSynchronize();
   if (HIPBLAS_STATUS_SUCCESS != success)
     throw std::runtime_error("Error: hipblas_dot returned error code.");
@@ -234,8 +234,8 @@ inline hipblasStatus_t hipblas_axpy(hipblasHandle_t handle,
                                     int incy)
 {
   hipblasStatus_t success =
-      hipblasCaxpy(handle, n, reinterpret_cast<hipblasComplex const*>(&alpha),
-                   reinterpret_cast<hipblasComplex const*>(x), incx, reinterpret_cast<hipblasComplex*>(y), incy);
+      hipblasCaxpy(handle, n, reinterpret_cast<hipFloatComplex const*>(&alpha),
+                   reinterpret_cast<hipFloatComplex const*>(x), incx, reinterpret_cast<hipFloatComplex*>(y), incy);
   hipDeviceSynchronize();
   return success;
 }
@@ -248,9 +248,9 @@ inline hipblasStatus_t hipblas_axpy(hipblasHandle_t handle,
                                     std::complex<double>* y,
                                     int incy)
 {
-  hipblasStatus_t success = hipblasZaxpy(handle, n, reinterpret_cast<hipblasDoubleComplex const*>(&alpha),
-                                         reinterpret_cast<hipblasDoubleComplex const*>(x), incx,
-                                         reinterpret_cast<hipblasDoubleComplex*>(y), incy);
+  hipblasStatus_t success = hipblasZaxpy(handle, n, reinterpret_cast<hipDoubleComplex const*>(&alpha),
+                                         reinterpret_cast<hipDoubleComplex const*>(x), incx,
+                                         reinterpret_cast<hipDoubleComplex*>(y), incy);
   hipDeviceSynchronize();
   return success;
 }
@@ -308,9 +308,9 @@ inline hipblasStatus_t hipblas_gemv(hipblasHandle_t handle,
                                     int incy)
 {
   hipblasStatus_t success =
-      hipblasCgemv(handle, hipblasOperation(Atrans), M, N, reinterpret_cast<hipblasComplex const*>(&alpha),
-                   reinterpret_cast<hipblasComplex const*>(A), lda, reinterpret_cast<hipblasComplex const*>(x), incx,
-                   reinterpret_cast<hipblasComplex const*>(&beta), reinterpret_cast<hipblasComplex*>(y), incy);
+      hipblasCgemv(handle, hipblasOperation(Atrans), M, N, reinterpret_cast<hipFloatComplex const*>(&alpha),
+                   reinterpret_cast<hipFloatComplex const*>(A), lda, reinterpret_cast<hipFloatComplex const*>(x), incx,
+                   reinterpret_cast<hipFloatComplex const*>(&beta), reinterpret_cast<hipFloatComplex*>(y), incy);
   hipDeviceSynchronize();
   return success;
 }
@@ -329,10 +329,10 @@ inline hipblasStatus_t hipblas_gemv(hipblasHandle_t handle,
                                     int incy)
 {
   hipblasStatus_t success =
-      hipblasZgemv(handle, hipblasOperation(Atrans), M, N, reinterpret_cast<hipblasDoubleComplex const*>(&alpha),
-                   reinterpret_cast<hipblasDoubleComplex const*>(A), lda,
-                   reinterpret_cast<hipblasDoubleComplex const*>(x), incx,
-                   reinterpret_cast<hipblasDoubleComplex const*>(&beta), reinterpret_cast<hipblasDoubleComplex*>(y),
+      hipblasZgemv(handle, hipblasOperation(Atrans), M, N, reinterpret_cast<hipDoubleComplex const*>(&alpha),
+                   reinterpret_cast<hipDoubleComplex const*>(A), lda,
+                   reinterpret_cast<hipDoubleComplex const*>(x), incx,
+                   reinterpret_cast<hipDoubleComplex const*>(&beta), reinterpret_cast<hipDoubleComplex*>(y),
                    incy);
   hipDeviceSynchronize();
   return success;
@@ -459,9 +459,9 @@ inline hipblasStatus_t hipblas_gemm(hipblasHandle_t handle,
 {
   hipblasStatus_t success =
       hipblasCgemm(handle, hipblasOperation(Atrans), hipblasOperation(Btrans), M, N, K,
-                   reinterpret_cast<hipblasComplex const*>(&alpha), reinterpret_cast<hipblasComplex const*>(A), lda,
-                   reinterpret_cast<hipblasComplex const*>(B), ldb, reinterpret_cast<hipblasComplex const*>(&beta),
-                   reinterpret_cast<hipblasComplex*>(C), ldc);
+                   reinterpret_cast<hipFloatComplex const*>(&alpha), reinterpret_cast<hipFloatComplex const*>(A), lda,
+                   reinterpret_cast<hipFloatComplex const*>(B), ldb, reinterpret_cast<hipFloatComplex const*>(&beta),
+                   reinterpret_cast<hipFloatComplex*>(C), ldc);
   hipDeviceSynchronize();
   return success;
 }
@@ -482,11 +482,11 @@ inline hipblasStatus_t hipblas_gemm(hipblasHandle_t handle,
                                     int ldc)
 {
   hipblasStatus_t success = hipblasZgemm(handle, hipblasOperation(Atrans), hipblasOperation(Btrans), M, N, K,
-                                         reinterpret_cast<hipblasDoubleComplex const*>(&alpha),
-                                         reinterpret_cast<hipblasDoubleComplex const*>(A), lda,
-                                         reinterpret_cast<hipblasDoubleComplex const*>(B), ldb,
-                                         reinterpret_cast<hipblasDoubleComplex const*>(&beta),
-                                         reinterpret_cast<hipblasDoubleComplex*>(C), ldc);
+                                         reinterpret_cast<hipDoubleComplex const*>(&alpha),
+                                         reinterpret_cast<hipDoubleComplex const*>(A), lda,
+                                         reinterpret_cast<hipDoubleComplex const*>(B), ldb,
+                                         reinterpret_cast<hipDoubleComplex const*>(&beta),
+                                         reinterpret_cast<hipDoubleComplex*>(C), ldc);
   hipDeviceSynchronize();
   return success;
 }
@@ -543,13 +543,13 @@ inline hipblasStatus_t hipblas_gemm(hipblasHandle_t handle,
                                     int M,
                                     int N,
                                     int K,
-                                    const hipblasDoubleComplex alpha,
-                                    const hipblasDoubleComplex* A,
+                                    const hipDoubleComplex alpha,
+                                    const hipDoubleComplex* A,
                                     int lda,
-                                    const hipblasDoubleComplex* B,
+                                    const hipDoubleComplex* B,
                                     int ldb,
-                                    const hipblasDoubleComplex beta,
-                                    hipblasDoubleComplex* C,
+                                    const hipDoubleComplex beta,
+                                    hipDoubleComplex* C,
                                     int ldc)
 {
   hipblasStatus_t success = hipblasZgemm(handle, hipblasOperation(Atrans), hipblasOperation(Btrans), M, N, K, &alpha, A,
@@ -596,7 +596,7 @@ inline hipblasStatus_t hipblas_getrfBatched(hipblasHandle_t handle,
                                             int* infoArray,
                                             int batchSize)
 {
-  hipblasStatus_t success = hipblasZgetrfBatched(handle, n, reinterpret_cast<hipblasDoubleComplex* const*>(Aarray), lda,
+  hipblasStatus_t success = hipblasZgetrfBatched(handle, n, reinterpret_cast<hipDoubleComplex* const*>(Aarray), lda,
                                                  PivotArray, infoArray, batchSize);
   hipDeviceSynchronize();
   return success;
@@ -610,7 +610,7 @@ inline hipblasStatus_t hipblas_getrfBatched(hipblasHandle_t handle,
                                             int* infoArray,
                                             int batchSize)
 {
-  hipblasStatus_t success = hipblasCgetrfBatched(handle, n, reinterpret_cast<hipblasComplex* const*>(Aarray), lda,
+  hipblasStatus_t success = hipblasCgetrfBatched(handle, n, reinterpret_cast<hipFloatComplex* const*>(Aarray), lda,
                                                  PivotArray, infoArray, batchSize);
   hipDeviceSynchronize();
   return success;
@@ -665,8 +665,8 @@ inline hipblasStatus_t hipblas_getriBatched(hipblasHandle_t handle,
                                             int batchSize)
 {
   hipblasStatus_t success =
-      hipblasZgetrsBatched(handle, op, n, n, reinterpret_cast<hipblasDoubleComplex* const*>(Aarray), lda, PivotArray,
-                           reinterpret_cast<hipblasDoubleComplex* const*>(Carray), ldc, infoArray, batchSize);
+      hipblasZgetrsBatched(handle, op, n, n, reinterpret_cast<hipDoubleComplex* const*>(Aarray), lda, PivotArray,
+                           reinterpret_cast<hipDoubleComplex* const*>(Carray), ldc, infoArray, batchSize);
   hipDeviceSynchronize();
   return success;
 }
@@ -684,8 +684,8 @@ inline hipblasStatus_t hipblas_getriBatched(hipblasHandle_t handle,
                                             int batchSize)
 {
   hipblasStatus_t success =
-      hipblasCgetrsBatched(handle, op, n, n, reinterpret_cast<hipblasComplex* const*>(Aarray), lda, PivotArray,
-                           reinterpret_cast<hipblasComplex* const*>(Carray), ldc, infoArray, batchSize);
+      hipblasCgetrsBatched(handle, op, n, n, reinterpret_cast<hipFloatComplex* const*>(Aarray), lda, PivotArray,
+                           reinterpret_cast<hipFloatComplex* const*>(Carray), ldc, infoArray, batchSize);
   hipDeviceSynchronize();
   return success;
 }
@@ -736,8 +736,8 @@ inline hipblasStatus_t hipblas_matinvBatched(hipblasHandle_t handle,
 {
   //hipblasStatus_t success =
   //hipblasCmatinvBatched(handle,n,
-  //reinterpret_cast<const hipblasComplex * const*>(Aarray),lda,
-  //reinterpret_cast<hipblasComplex **>(Carray),ldc,
+  //reinterpret_cast<const hipFloatComplex * const*>(Aarray),lda,
+  //reinterpret_cast<hipFloatComplex **>(Carray),ldc,
   //infoArray,batchSize);
   throw std::runtime_error("Error: matinvBatched doesn't exist.");
   hipDeviceSynchronize();
@@ -756,8 +756,8 @@ inline hipblasStatus_t hipblas_matinvBatched(hipblasHandle_t handle,
 {
   //hipblasStatus_t success =
   //hipblasZmatinvBatched(handle,n,
-  //reinterpret_cast<const hipblasDoubleComplex *const*>(Aarray),lda,
-  //reinterpret_cast<hipblasDoubleComplex **>(Carray),ldc,
+  //reinterpret_cast<const hipDoubleComplex *const*>(Aarray),lda,
+  //reinterpret_cast<hipDoubleComplex **>(Carray),ldc,
   //infoArray,batchSize);
   throw std::runtime_error("Error: matinvBatched doesn't exist.");
   hipDeviceSynchronize();
@@ -821,9 +821,9 @@ inline hipblasStatus_t hipblas_geam(hipblasHandle_t handle,
 {
   hipblasStatus_t success =
       hipblasCgeam(handle, hipblasOperation(Atrans), hipblasOperation(Btrans), M, N,
-                   reinterpret_cast<hipblasComplex const*>(&alpha), reinterpret_cast<hipblasComplex const*>(A), lda,
-                   reinterpret_cast<hipblasComplex const*>(&beta), reinterpret_cast<hipblasComplex const*>(B), ldb,
-                   reinterpret_cast<hipblasComplex*>(C), ldc);
+                   reinterpret_cast<hipFloatComplex const*>(&alpha), reinterpret_cast<hipFloatComplex const*>(A), lda,
+                   reinterpret_cast<hipFloatComplex const*>(&beta), reinterpret_cast<hipFloatComplex const*>(B), ldb,
+                   reinterpret_cast<hipFloatComplex*>(C), ldc);
   hipDeviceSynchronize();
   return success;
 }
@@ -843,11 +843,11 @@ inline hipblasStatus_t hipblas_geam(hipblasHandle_t handle,
                                     int ldc)
 {
   hipblasStatus_t success = hipblasZgeam(handle, hipblasOperation(Atrans), hipblasOperation(Btrans), M, N,
-                                         reinterpret_cast<hipblasDoubleComplex const*>(&alpha),
-                                         reinterpret_cast<hipblasDoubleComplex const*>(A), lda,
-                                         reinterpret_cast<hipblasDoubleComplex const*>(&beta),
-                                         reinterpret_cast<hipblasDoubleComplex const*>(B), ldb,
-                                         reinterpret_cast<hipblasDoubleComplex*>(C), ldc);
+                                         reinterpret_cast<hipDoubleComplex const*>(&alpha),
+                                         reinterpret_cast<hipDoubleComplex const*>(A), lda,
+                                         reinterpret_cast<hipDoubleComplex const*>(&beta),
+                                         reinterpret_cast<hipDoubleComplex const*>(B), ldb,
+                                         reinterpret_cast<hipDoubleComplex*>(C), ldc);
   hipDeviceSynchronize();
   return success;
 }
@@ -924,11 +924,11 @@ inline hipblasStatus_t hipblas_gemmStridedBatched(hipblasHandle_t handle,
                                                   int batchSize)
 {
   hipblasStatus_t success = hipblasCgemmStridedBatched(handle, hipblasOperation(Atrans), hipblasOperation(Btrans), M, N,
-                                                       K, reinterpret_cast<hipblasComplex const*>(&alpha),
-                                                       reinterpret_cast<hipblasComplex const*>(A), lda, strideA,
-                                                       reinterpret_cast<hipblasComplex const*>(B), ldb, strideB,
-                                                       reinterpret_cast<hipblasComplex const*>(&beta),
-                                                       reinterpret_cast<hipblasComplex*>(C), ldc, strideC, batchSize);
+                                                       K, reinterpret_cast<hipFloatComplex const*>(&alpha),
+                                                       reinterpret_cast<hipFloatComplex const*>(A), lda, strideA,
+                                                       reinterpret_cast<hipFloatComplex const*>(B), ldb, strideB,
+                                                       reinterpret_cast<hipFloatComplex const*>(&beta),
+                                                       reinterpret_cast<hipFloatComplex*>(C), ldc, strideC, batchSize);
   hipDeviceSynchronize();
   return success;
 }
@@ -954,11 +954,11 @@ inline hipblasStatus_t hipblas_gemmStridedBatched(hipblasHandle_t handle,
 {
   hipblasStatus_t success =
       hipblasZgemmStridedBatched(handle, hipblasOperation(Atrans), hipblasOperation(Btrans), M, N, K,
-                                 reinterpret_cast<hipblasDoubleComplex const*>(&alpha),
-                                 reinterpret_cast<hipblasDoubleComplex const*>(A), lda, strideA,
-                                 reinterpret_cast<hipblasDoubleComplex const*>(B), ldb, strideB,
-                                 reinterpret_cast<hipblasDoubleComplex const*>(&beta),
-                                 reinterpret_cast<hipblasDoubleComplex*>(C), ldc, strideC, batchSize);
+                                 reinterpret_cast<hipDoubleComplex const*>(&alpha),
+                                 reinterpret_cast<hipDoubleComplex const*>(A), lda, strideA,
+                                 reinterpret_cast<hipDoubleComplex const*>(B), ldb, strideB,
+                                 reinterpret_cast<hipDoubleComplex const*>(&beta),
+                                 reinterpret_cast<hipDoubleComplex*>(C), ldc, strideC, batchSize);
   hipDeviceSynchronize();
   return success;
 }
@@ -1025,9 +1025,9 @@ inline hipblasStatus_t hipblas_gemmBatched(hipblasHandle_t handle,
 {
   hipblasStatus_t success =
       hipblasCgemmBatched(handle, hipblasOperation(Atrans), hipblasOperation(Btrans), M, N, K,
-                          reinterpret_cast<hipblasComplex*>(&alpha), reinterpret_cast<hipblasComplex**>(A), lda,
-                          reinterpret_cast<hipblasComplex**>(B), ldb, reinterpret_cast<hipblasComplex*>(&beta),
-                          reinterpret_cast<hipblasComplex**>(C), ldc, batchSize);
+                          reinterpret_cast<hipFloatComplex*>(&alpha), reinterpret_cast<hipFloatComplex**>(A), lda,
+                          reinterpret_cast<hipFloatComplex**>(B), ldb, reinterpret_cast<hipFloatComplex*>(&beta),
+                          reinterpret_cast<hipFloatComplex**>(C), ldc, batchSize);
   hipDeviceSynchronize();
   return success;
 }
@@ -1050,9 +1050,9 @@ inline hipblasStatus_t hipblas_gemmBatched(hipblasHandle_t handle,
 {
   hipblasStatus_t success =
       hipblasZgemmBatched(handle, hipblasOperation(Atrans), hipblasOperation(Btrans), M, N, K,
-                          reinterpret_cast<hipblasDoubleComplex*>(&alpha), reinterpret_cast<hipblasDoubleComplex**>(A),
-                          lda, reinterpret_cast<hipblasDoubleComplex**>(B), ldb,
-                          reinterpret_cast<hipblasDoubleComplex*>(&beta), reinterpret_cast<hipblasDoubleComplex**>(C),
+                          reinterpret_cast<hipDoubleComplex*>(&alpha), reinterpret_cast<hipDoubleComplex**>(A),
+                          lda, reinterpret_cast<hipDoubleComplex**>(B), ldb,
+                          reinterpret_cast<hipDoubleComplex*>(&beta), reinterpret_cast<hipDoubleComplex**>(C),
                           ldc, batchSize);
   hipDeviceSynchronize();
   return success;

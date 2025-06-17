@@ -744,7 +744,13 @@ if(ENABLE_ROCM)
         "This happens when the ROCm installation cannot be found by CMake. "
         "Rerun cmake with -DROCM_ROOT=<your ROCm installation root directory> added.")
   endif()
+
   find_package(hipblas CONFIG REQUIRED)
+  # Check for minimum required rocBLAS version
+  if(hipblas_VERSION VERSION_LESS "2.0.0")
+    message(FATAL_ERROR "QMCPACK requires hipBLAS minimum version 2.0.0 from ROCm 6.0. Detected ${hipblas_VERSION}.")
+  endif()
+
   find_package(rocsolver CONFIG REQUIRED)
   find_package(rocthrust CONFIG REQUIRED)
 
