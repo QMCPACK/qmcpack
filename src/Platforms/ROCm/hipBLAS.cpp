@@ -17,50 +17,6 @@
 #include <rocsolver/rocsolver.h>
 
 //------------------------------------------------------------------------------
-hipblasStatus_t hipblasCgemmBatched(hipblasHandle_t handle,
-                                    hipblasOperation_t transa,
-                                    hipblasOperation_t transb,
-                                    int m,
-                                    int n,
-                                    int k,
-                                    const hipComplex* alpha,
-                                    const hipComplex* const Aarray[],
-                                    int lda,
-                                    const hipComplex* const Barray[],
-                                    int ldb,
-                                    const hipComplex* beta,
-                                    hipComplex* const Carray[],
-                                    int ldc,
-                                    int batchCount)
-{
-  return hipblasCgemmBatched(handle, transa, transb, m, n, k, (const hipFloatComplex*)alpha,
-                             (const hipFloatComplex* const*)Aarray, lda, (const hipFloatComplex* const*)Barray, ldb,
-                             (const hipFloatComplex*)beta, (hipFloatComplex* const*)Carray, ldc, batchCount);
-}
-
-hipblasStatus_t hipblasZgemmBatched(hipblasHandle_t handle,
-                                    hipblasOperation_t transa,
-                                    hipblasOperation_t transb,
-                                    int m,
-                                    int n,
-                                    int k,
-                                    const hipDoubleComplex* alpha,
-                                    const hipDoubleComplex* const Aarray[],
-                                    int lda,
-                                    const hipDoubleComplex* const Barray[],
-                                    int ldb,
-                                    const hipDoubleComplex* beta,
-                                    hipDoubleComplex* const Carray[],
-                                    int ldc,
-                                    int batchCount)
-{
-  return hipblasZgemmBatched(handle, transa, transb, m, n, k, (const hipDoubleComplex*)alpha,
-                             (const hipDoubleComplex* const*)Aarray, lda,
-                             (const hipDoubleComplex* const*)Barray, ldb, (const hipDoubleComplex*)beta,
-                             (hipDoubleComplex* const*)Carray, ldc, batchCount);
-}
-
-//------------------------------------------------------------------------------
 hipblasStatus_t hipblasSgetrfBatched_(hipblasHandle_t handle,
                                       int n,
                                       float* const A[],
