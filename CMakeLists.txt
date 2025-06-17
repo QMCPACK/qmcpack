@@ -746,20 +746,13 @@ if(ENABLE_ROCM)
   endif()
 
   find_package(hipblas CONFIG REQUIRED)
-  find_package(rocblas CONFIG REQUIRED)
+  # Check for minimum required rocBLAS version
+  if(hipblas_VERSION VERSION_LESS "2.0.0")
+    message(FATAL_ERROR "QMCPACK requires hipBLAS minimum version 2.0.0 from ROCm 6.0. Detected ${hipblas_VERSION}.")
+  endif()
+
   find_package(rocsolver CONFIG REQUIRED)
   find_package(rocthrust CONFIG REQUIRED)
-
-  # Check for minimum required rocBLAS version
-  if(rocblas_VERSION VERSION_LESS "4.0.0")
-    message(FATAL_ERROR "QMCPACK requires rocBLAS 4.0.0 or newer. Detected ${rocblas_VERSION}")
-  endif()
-
-  # Add HIPBLAS_V2 for rocBLAS < 5.0.0
-  if(rocblas_VERSION VERSION_LESS "5.0.0")
-    add_definitions(-DHIPBLAS_V2)
-    message(STATUS "Defining HIPBLAS_V2 for compatibility with rocBLAS < 5.0.0 (Detected ${rocblas_VERSION})")
-  endif()
 
   # architecture flags
   if(DEFINED HIP_ARCH)
