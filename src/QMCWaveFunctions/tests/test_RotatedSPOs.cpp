@@ -596,7 +596,7 @@ TEST_CASE("RotatedSPOs hcpBe", "[wavefunction]")
   // spline file for use in eval_bspline_spo.py
 
   const char* particles = R"(<tmp>
-<sposet_builder type="bspline" href="hcpBe.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="double" gpu="no">
+<sposet_builder type="bspline" href="hcpBe.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="double">
       <sposet type="bspline" name="spo_ud" spindataset="0" size="2"/>
 </sposet_builder>
 </tmp>)";
