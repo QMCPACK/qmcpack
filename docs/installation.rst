@@ -669,7 +669,7 @@ convenience we use a generic BLAS. A vendor-optimized BLAS is usually faster.
 ::
 
   sudo apt-get install cmake g++ openmpi-bin libopenmpi-dev libboost-dev
-  sudo apt-get install libopenblas-dev libhdf5-dev libxml2-dev libfftw3-dev
+  sudo apt-get install libopenblas-openmp-dev libhdf5-dev libxml2-dev libfftw3-dev
   # For qmca and other python-based analysis tools tools:
   sudo apt-get install python3-numpy python3-scipy python3-h5py python3-matplotlib
   cd build
