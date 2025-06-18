@@ -54,11 +54,29 @@ public:
    */
   void evaluateValue(const ParticleSet& P, int iat, ValueVector& psi) override;
 
+  void evaluateDetRatios(const VirtualParticleSet& VP,
+                         ValueVector& psi,
+                         const ValueVector& invrow,
+                         std::vector<ValueType>& ratios) override;
+
+  void mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list,
+                            const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                            const RefVector<ValueVector>& psi_list,
+                            const std::vector<const ValueType*>& invRow_ptr_list,
+                            std::vector<std::vector<ValueType>>& ratios_list) const override;
+
   void evaluateDetSpinorRatios(const VirtualParticleSet& VP,
                                ValueVector& psi,
                                const std::pair<ValueVector, ValueVector>& spinor_multipler,
                                const ValueVector& invrow,
                                std::vector<ValueType>& ratios) override;
+
+  void mw_evaluateDetSpinorRatios(const RefVectorWithLeader<SPOSet>& spo_list, 
+                                  const RefVectorWithLeader<const VirtualParticleSet>& vp_list, 
+                                  const RefVector<ValueVector>& psi_list, 
+                                  const RefVector<std::pair<ValueVector, ValueVector>>& spinor_multiplier_list, 
+                                  const std::vector<const ValueType*>& invRow_ptr_list, 
+                                  std::vector<std::vector<ValueType>>& ratios_list) const override;
 
   /** evaluate the values, gradients and laplacians of this single-particle orbital set
    * @param P current ParticleSet
