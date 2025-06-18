@@ -661,28 +661,29 @@ Installing on Ubuntu Linux or other apt-get--based distributions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The following is designed to obtain a working QMCPACK build on, for example, a
-student laptop, starting from a basic Linux installation with none of
-the developer tools installed. Fortunately, all the required packages
-are available in the default repositories making for a quick
-installation. Note that for convenience we use a generic BLAS. For
-production, a platform-optimized BLAS should be used.
-
+student laptop, starting from a basic Linux installation with none of the
+developer tools installed. Fortunately, all the required packages are available
+in the default repositories making for a quick installation. Note that for
+convenience we use a generic BLAS. A vendor-optimized BLAS is usually faster.
 
 ::
 
   sudo apt-get install cmake g++ openmpi-bin libopenmpi-dev libboost-dev
-  sudo apt-get install libatlas-base-dev liblapack-dev libhdf5-dev libxml2-dev fftw3-dev
-  export CXX=mpiCC
+  sudo apt-get install libopenblas-dev libhdf5-dev libxml2-dev libfftw3-dev
+  # For qmca and other python-based analysis tools tools:
+  sudo apt-get install python3-numpy python3-scipy python3-h5py python3-matplotlib
   cd build
-  cmake ..
-  make -j 8
+  cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpiCC ..
+  make -j 8 # Adjust to available core count
   ls -l bin/qmcpack
 
-For qmca and other tools to function, we install some Python libraries:
+We recommend running the deterministic test set. Since by default OpenMPI will not
+allow processes to use more than the available number of cores, set `export OMPI_MCA_rmaps_base_oversubscribe=true`:
 
 ::
-
-  sudo apt-get install python-numpy python-matplotlib
+  export OMPI_MCA_rmaps_base_oversubscribe=true
+  time ctest -j 16 -L deterministic --output-on-failure
+ 
 
 Installing on CentOS Linux or other yum-based distributions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
