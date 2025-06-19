@@ -84,7 +84,12 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
   Array<TraceReal, 1> V_const;
 #endif
 
-  ParticleSet Ps;
+  /** Needs to be a mutable reference and not a copy since ParticleSet
+   *  copy misses important state which causes later access
+   *  violations.
+   *  This is a bad bad smell.
+   */
+  ParticleSet& Ps;
 
   /** constructor
    *  Sadly there is significant conditional behavior here
