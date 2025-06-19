@@ -238,10 +238,10 @@ public:
 
 
   // returns a const pointer of i-th row
-  inline const Type_t* operator[](size_type i) const { return X.data() + i * D2; }
+  inline typename Container_t::const_iterator operator[](size_type i) const { return X.begin() + i * D2; }
 
   /// returns a pointer of i-th row, g++ iterator problem
-  inline Type_t* operator[](size_type i) { return X.data() + i * D2; }
+  inline typename Container_t::iterator operator[](size_type i) { return X.begin() + i * D2; }
 
   template<typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline Type_t& operator()(size_type i)
