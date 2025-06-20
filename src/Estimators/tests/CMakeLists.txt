@@ -73,7 +73,7 @@ set(SRCS
     )
 
 add_executable(${UTEST_EXE} ${SRCS})
-target_link_libraries(${UTEST_EXE} catch_main qmcutil qmcestimators test_estimators_help utilities_for_test sposets_for_testing integration_testing)
+target_link_libraries(${UTEST_EXE} catch_main qmcutil qmcestimators test_estimators_help utilities_for_test sposets_for_testing minimal_testing_pools minimal_particle_pool)
 if(USE_OBJECT_TARGET)
   target_link_libraries(
     ${UTEST_EXE}

@@ -19,7 +19,7 @@
 # elements needed for many integration tests in the future
 add_library(mock_walker_elements MockGoldWalkerElements.cpp)
 target_include_directories(mock_walker_elements PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-target_link_libraries(mock_walker_elements PUBLIC minimal_testing_pools qmcparticle qmcwfs qmcham message)
+target_link_libraries(mock_walker_elements PUBLIC minimal_testing_pools qmcparticle qmcwfs qmcham message minimal_particle_pool)
 target_link_libraries(mock_walker_elements PRIVATE catch_main)
 
   # a target for the minimal testing pools.
@@ -43,3 +43,7 @@ target_link_libraries(mock_walker_elements PRIVATE catch_main)
 add_library(minimal_testing_pools INTERFACE)
 target_sources(minimal_testing_pools INTERFACE MinimalParticlePool.h MinimalHamiltonianPool.h MinimalWaveFunctionPool.h)
 target_include_directories(minimal_testing_pools INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
+
+add_library(minimal_particle_pool MinimalParticlePool.cpp)
+target_include_directories(minimal_particle_pool PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+target_link_libraries(minimal_particle_pool PUBLIC qmcparticle)

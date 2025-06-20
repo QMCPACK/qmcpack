@@ -9,28 +9,19 @@
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef QMCPLUSPLUS_MINIMALPARTICLEPOOL_H
-#define QMCPLUSPLUS_MINIMALPARTICLEPOOL_H
-
-#include "Message/Communicate.h"
-#include "OhmmsData/Libxml2Doc.h"
-#include "Particle/ParticleSetPool.h"
+#include <MinimalParticlePool.h>
 
 namespace qmcplusplus
 {
 /** This should be the minimal ParticleSetPool for integration tests
  *
  */
-class MinimalParticlePool
+
+ParticleSetPool MinimalParticlePool::make_diamondC_1x1x1(Communicate* c)
 {
-public:
-  static void parseParticleSetXML(const char* xml_string, ParticleSetPool& pp);
-  static ParticleSetPool make_diamondC_1x1x1(Communicate* comm);
-  static ParticleSetPool make_O2_spinor(Communicate* comm);
-  static ParticleSetPool make_NiO_a4(Communicate* comm);
-  static ParticleSetPool make_H2(Communicate* comm);
-};
+  ParticleSetPool pp(c);
+  parseParticleSetXML(particles_xml, pp);
+  return pp;
+}
 
 } // namespace qmcplusplus
-
-#endif
