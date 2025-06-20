@@ -16,9 +16,9 @@
 #include "QMCDrivers/Crowd.h"
 #include "type_traits/template_types.hpp"
 #include "Estimators/EstimatorManagerNew.h"
-#include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
-#include "Particle/tests/MinimalParticlePool.h"
-#include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
+#include <MinimalWaveFunctionPool.h>
+#include <MinimalParticlePool.h>
+#include <MinimalHamiltonianPool.h>
 
 #include "QMCDrivers/tests/SetupPools.h"
 

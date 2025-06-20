@@ -15,9 +15,9 @@
 #include "type_traits/template_types.hpp"
 #include "type_traits/ConvertToReal.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
-#include "Particle/tests/MinimalParticlePool.h"
-#include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
-#include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
+#include <MinimalParticlePool.h>
+#include <MinimalWaveFunctionPool.h>
+#include <MinimalHamiltonianPool.h>
 #include "ParticleIO/XMLParticleIO.h"
 #include "Utilities/RandomGenerator.h"
 #include "Utilities/RuntimeOptions.h"

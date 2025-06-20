@@ -22,7 +22,7 @@ add_executable(
   test_sample_stack.cpp
   test_DTModes.cpp
   test_MCCoords.cpp)
-target_link_libraries(${UTEST_EXE} catch_main qmcparticle)
+target_link_libraries(${UTEST_EXE} catch_main qmcparticle minimal_testing_pools)
 if(USE_OBJECT_TARGET)
   target_link_libraries(${UTEST_EXE} qmcutil qmcparticle_omptarget)
 endif()
@@ -36,7 +36,7 @@ add_executable(
   ${UTEST_EXE}
   test_distance_table.cpp
   test_SoaDistanceTableAA.cpp)
-target_link_libraries(${UTEST_EXE} catch_main qmcparticle)
+target_link_libraries(${UTEST_EXE} catch_main qmcparticle minimal_testing_pools)
 if(USE_OBJECT_TARGET)
   target_link_libraries(${UTEST_EXE} qmcutil qmcparticle_omptarget)
 endif()

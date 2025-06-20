@@ -24,8 +24,8 @@
 #include "TWFGrads.hpp"
 #include "Utilities/RuntimeOptions.h"
 #include <ResourceCollection.h>
-#include "Particle/tests/MinimalParticlePool.h"
-#include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
+#include <MinimalParticlePool.h>
+#include <MinimalWaveFunctionPool.h>
 #include "Utilities/ProjectData.h"
 
 namespace qmcplusplus
@@ -376,15 +376,15 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 }
 
 #if defined(QMC_COMPLEX) && !defined(ENABLE_CUDA)
-/** This test is intended to catch a bug that was found in the batched code 
-  * when using spinors and jastrows. The issue came about because WFCs that don't 
+/** This test is intended to catch a bug that was found in the batched code
+  * when using spinors and jastrows. The issue came about because WFCs that don't
   * contribute to the spin gradient end up going back to the normal mw_evalGrad
   * In the TWF::mw_evalGrad, it uses TWFGrads to accumulate the spin gradient and normal gradients
-  * using a returned variable grads. The individual components are stored in grads_z and the update over the 
-  * component loop is grads += grads_z. Internally to the WFCs, the position gradients get zeroed and computed. 
-  * However, for the spins, if they weren't being touched then the spin part is left untouched. But that means that if 
-  * grads += grads_z didn't account for zeroing out the spin part for that component, then it acctually accumulates the previous ones. 
-  * This test fails with the buggy code, and now makes sure TWF has the right behavior. 
+  * using a returned variable grads. The individual components are stored in grads_z and the update over the
+  * component loop is grads += grads_z. Internally to the WFCs, the position gradients get zeroed and computed.
+  * However, for the spins, if they weren't being touched then the spin part is left untouched. But that means that if
+  * grads += grads_z didn't account for zeroing out the spin part for that component, then it acctually accumulates the previous ones.
+  * This test fails with the buggy code, and now makes sure TWF has the right behavior.
   }
   */
 TEST_CASE("TrialWaveFunction::mw_evalGrad for spinors", "[wavefunction]")

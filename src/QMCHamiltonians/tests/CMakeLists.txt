@@ -68,7 +68,7 @@ foreach(CATEGORY coulomb force ham ewald2d)
   string(TOUPPER "${CATEGORY}_SRCS" SOURCE_FILE_VAR_NAME)
   add_executable(${UTEST_EXE} ${${SOURCE_FILE_VAR_NAME}})
 
-  target_link_libraries(${UTEST_EXE} catch_main qmcham utilities_for_test)
+  target_link_libraries(${UTEST_EXE} catch_main qmcham utilities_for_test minimal_testing_pools)
   if(USE_OBJECT_TARGET)
     target_link_libraries(${UTEST_EXE} qmcwfs qmcwfs_omptarget qmcparticle qmcparticle_omptarget spline2 spline2_omptarget qmcutil platform_omptarget_LA)
   endif()

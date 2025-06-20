@@ -12,9 +12,9 @@
 #include "SetupPools.h"
 #include <iostream>
 #include "Concurrency/UtilityFunctions.hpp"
-#include "Particle/tests/MinimalParticlePool.h"
-#include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
-#include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
+#include <MinimalParticlePool.h>
+#include <MinimalWaveFunctionPool.h>
+#include <MinimalHamiltonianPool.h>
 #include "Utilities/ProjectData.h"
 
 namespace qmcplusplus

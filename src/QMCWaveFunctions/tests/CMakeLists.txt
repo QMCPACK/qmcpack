@@ -185,7 +185,8 @@ foreach(CATEGORY common trialwf sposet jastrow determinant)
     platform_runtime
     sposets_for_testing
     utilities_for_test
-    container_testing)
+    container_testing
+    minimal_testing_pools)
   if(USE_OBJECT_TARGET)
     target_link_libraries(${UTEST_EXE} qmcparticle qmcparticle_omptarget qmcwfs_omptarget spline2 spline2_omptarget qmcutil platform_omptarget_LA)
   endif()

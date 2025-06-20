@@ -22,9 +22,9 @@
 #include "QMCDrivers/QMCDriverFactory.h"
 #include "QMCDrivers/QMCDriverInterface.h"
 #include "QMCDrivers/tests/ValidQMCInputSections.h"
-#include "Particle/tests/MinimalParticlePool.h"
-#include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
-#include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
+#include <MinimalParticlePool.h>
+#include <MinimalWaveFunctionPool.h>
+#include <MinimalHamiltonianPool.h>
 #include "ProjectData.h"
 #include "Message/Communicate.h"
 #include "QMCDrivers/VMC/VMC.h"
