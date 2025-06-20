@@ -37,6 +37,7 @@ target_link_libraries(qmcutil PUBLIC cxx_helpers message qmcio qmcrng)
 target_link_libraries(qmcutil PUBLIC LibXml2::LibXml2 ${QMC_UTIL_LIBS})
 
 subdirs(for_testing)
+subdirs(for_integration_testing)
 
 if(BUILD_UNIT_TESTS)
   add_subdirectory(tests)

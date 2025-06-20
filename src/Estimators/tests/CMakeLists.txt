@@ -17,7 +17,6 @@ set(TEST_ESTIMATORS_HELP
     EstimatorManagerInputTest.cpp
     GenerateRandomParticleSets.cpp
     EnergyDensityTest.cpp
-    MockGoldWalkerElements.cpp
     EstimatorTesting.cpp)
 
 if(USE_OBJECT_TARGET)
@@ -26,7 +25,7 @@ else()
   add_library(test_estimators_help ${TEST_ESTIMATORS_HELP})
 endif()
 
-target_link_libraries(test_estimators_help catch_main qmcestimators minimal_testing_pools)
+target_link_libraries(test_estimators_help catch_main qmcestimators minimal_testing_pools integration_testing)
 
 set(UTEST_EXE test_${SRC_DIR})
 set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
@@ -119,7 +118,7 @@ if(HAVE_MPI)
       utilities_for_test)
   endif()
   target_link_libraries(${UTEST_EXE} catch_main qmcestimators
-  test_estimators_help minimal_testing_pools)
+  test_estimators_help minimal_testing_pools integration_testing)
   # Right now the unified driver mpi tests are hard coded for 3 MPI ranks
   add_unit_test(${UTEST_NAME} 3 1 $<TARGET_FILE:${UTEST_EXE}>)
 endif()
