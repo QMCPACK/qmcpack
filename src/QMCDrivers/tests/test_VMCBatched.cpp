@@ -42,7 +42,8 @@ public:
     Concurrency::OverrideMaxCapacity<> override(8);
 
     Libxml2Document doc;
-    doc.parseFromString(valid_vmc_input_sections[valid_vmc_input_vmc_batch_index]);
+    using VMCInput = testing::VmcInputs;
+    doc.parseFromString(VMCInput::getXml(VMCInput::valid::CROWDS));
     xmlNodePtr node = doc.getRoot();
     QMCDriverInput qmcdriver_input;
     qmcdriver_input.readXML(node);

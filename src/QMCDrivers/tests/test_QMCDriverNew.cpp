@@ -35,7 +35,8 @@ TEST_CASE("QMCDriverNew tiny case", "[drivers]")
   outputManager.pause();
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(valid_vmc_input_sections[valid_vmc_input_vmc_tiny_index]);
+  using VMCInput = testing::VmcInputs;
+  bool okay      = doc.parseFromString(VMCInput::getXml(VMCInput::valid::TINY));
   REQUIRE(okay);
   xmlNodePtr node = doc.getRoot();
   QMCDriverInput qmcdriver_input;
@@ -77,7 +78,8 @@ TEST_CASE("QMCDriverNew walker counts", "[drivers]")
   outputManager.pause();
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(valid_dmc_input_sections[valid_dmc_input_dmc_batch_index]);
+  using VMCInput = testing::VmcInputs;
+  bool okay      = doc.parseFromString(VMCInput::getXml(VMCInput::valid::CROWDS));
   REQUIRE(okay);
   xmlNodePtr node = doc.getRoot();
   QMCDriverInput qmcdriver_input;
@@ -108,7 +110,8 @@ TEST_CASE("QMCDriverNew test driver operations", "[drivers]")
   outputManager.pause();
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(valid_vmc_input_sections[valid_vmc_input_vmc_tiny_index]);
+  using VMCInput = testing::VmcInputs;
+  bool okay      = doc.parseFromString(VMCInput::getXml(VMCInput::valid::TINY));
   REQUIRE(okay);
   xmlNodePtr node = doc.getRoot();
 

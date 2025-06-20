@@ -20,7 +20,7 @@ namespace qmcplusplus
 {
 TEST_CASE("VMCDriverInput readXML", "[drivers]")
 {
-  auto xml_test = [](const char* driver_xml) {
+  auto xml_test = [](std::string_view driver_xml) {
     Libxml2Document doc;
     bool okay = doc.parseFromString(driver_xml);
     REQUIRE(okay);
@@ -29,9 +29,8 @@ TEST_CASE("VMCDriverInput readXML", "[drivers]")
     vmcdriver_input.readXML(node);
     REQUIRE(vmcdriver_input.get_use_drift() == false);
   };
-
-  std::for_each(testing::valid_vmc_input_sections.begin() + testing::valid_vmc_input_vmc_batch_index,
-                testing::valid_vmc_input_sections.end(), xml_test);
+  using VMCInputs = testing::VmcInputs;
+  std::for_each(VMCInputs::begin(), VMCInputs::end(), xml_test);
 }
 
 

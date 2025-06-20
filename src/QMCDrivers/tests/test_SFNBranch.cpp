@@ -51,7 +51,7 @@ public:
 
     auto sfnb = std::make_unique<SFNBranch>(tau_, 1.0, DMCRefEnergyScheme::LIMITED_HISTORY);
 
-    createMyNode(*sfnb, valid_dmc_input_sections[valid_dmc_input_dmc_batch_index]);
+    createMyNode(*sfnb, DmcInputs::getXml(DmcInputs::valid::CROWDS));
 
     sfnb->initParam(*pop_, 0, 0, false, false);
 
@@ -59,7 +59,7 @@ public:
   }
 
 private:
-  void createMyNode(SFNBranch& sfnb, const char* xml)
+  void createMyNode(SFNBranch& sfnb, std::string_view xml)
   {
     doc_ = std::make_unique<Libxml2Document>();
     doc_->parseFromString(xml);

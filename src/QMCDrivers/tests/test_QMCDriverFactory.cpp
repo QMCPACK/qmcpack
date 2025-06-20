@@ -76,7 +76,8 @@ TEST_CASE("QMCDriverFactory create VMC Driver", "[qmcapp]")
   QMCDriverFactory driver_factory(test_project);
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(valid_vmc_input_sections[valid_vmc_input_vmc_index]);
+  using VMCInput = testing::VmcLegacyInput;
+  bool okay      = doc.parseFromString(VMCInput::getXml());
   REQUIRE(okay);
   xmlNodePtr node                           = doc.getRoot();
   QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(node);
@@ -96,13 +97,14 @@ TEST_CASE("QMCDriverFactory create VMCBatched driver", "[qmcapp]")
   comm = OHMMS::Controller;
   using namespace testing;
 
+  using VMCInput = testing::VmcInputs;
   SECTION("driver version behavior")
   {
     ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
     QMCDriverFactory driver_factory(test_project);
 
     Libxml2Document doc;
-    bool okay = doc.parseFromString(valid_vmc_input_sections[valid_vmc_input_vmc_batch_index]);
+    bool okay = doc.parseFromString(VMCInput::getXml(VMCInput::valid::CROWDS));
     REQUIRE(okay);
     xmlNodePtr node                           = doc.getRoot();
     QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(node);
@@ -121,7 +123,7 @@ TEST_CASE("QMCDriverFactory create VMCBatched driver", "[qmcapp]")
     QMCDriverFactory driver_factory(test_project);
 
     Libxml2Document doc;
-    bool okay = doc.parseFromString(valid_vmc_input_sections[valid_vmc_batch_input_vmc_batch_index]);
+    bool okay = doc.parseFromString(VMCInput::getXml(VMCInput::valid::DEP_BATCH));
     REQUIRE(okay);
     xmlNodePtr node                           = doc.getRoot();
     QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(node);
@@ -147,7 +149,8 @@ TEST_CASE("QMCDriverFactory create DMC driver", "[qmcapp]")
   QMCDriverFactory driver_factory(test_project);
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(valid_dmc_input_sections[valid_dmc_input_dmc_index]);
+  using DMCInput = testing::DmcInputs;
+  bool okay      = doc.parseFromString(DMCInput::getXml(DMCInput::valid::CROWDS));
   REQUIRE(okay);
   xmlNodePtr node                           = doc.getRoot();
   QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(node);
@@ -173,7 +176,8 @@ TEST_CASE("QMCDriverFactory create DMCBatched driver", "[qmcapp]")
     QMCDriverFactory driver_factory(test_project);
 
     Libxml2Document doc;
-    bool okay = doc.parseFromString(valid_dmc_input_sections[valid_dmc_input_dmc_batch_index]);
+    using DMCInput = testing::DmcInputs;
+    bool okay      = doc.parseFromString(DMCInput::getXml(DMCInput::valid::CROWDS));
     REQUIRE(okay);
     xmlNodePtr node                           = doc.getRoot();
     QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(node);
@@ -191,7 +195,8 @@ TEST_CASE("QMCDriverFactory create DMCBatched driver", "[qmcapp]")
     QMCDriverFactory driver_factory(test_project);
 
     Libxml2Document doc;
-    bool okay = doc.parseFromString(valid_dmc_input_sections[valid_dmc_batch_input_dmc_batch_index]);
+    using DMCInput = testing::DmcInputs;
+    bool okay      = doc.parseFromString(DMCInput::getXml(DMCInput::valid::DEP_BATCH));
     REQUIRE(okay);
     xmlNodePtr node                           = doc.getRoot();
     QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(node);

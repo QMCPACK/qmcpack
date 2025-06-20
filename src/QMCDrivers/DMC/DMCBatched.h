@@ -27,7 +27,9 @@ class SFNBranch;
 namespace testing
 {
 class DMCBatchedTest;
-}
+class DMCBatchedTestAccessor;
+} // namespace testing
+
 /** @ingroup QMCDrivers  ParticleByParticle
  * @brief Implements a DMC using particle-by-particle threaded and batched moves.
  */
@@ -105,8 +107,8 @@ public:
    *
    *  This is the shared entry point
    *  from QMCMain so cannot be updated yet
-   *  
-   *  Contains logic that sets walkers_per_rank_ 
+   *
+   *  Contains logic that sets walkers_per_rank_
    *  TargetWalkers trump walkers, if it is not set
    *  walkers which is by default per rank for the batched drivers
    *  from this or the previous section wins.
@@ -159,7 +161,15 @@ private:
                              bool recompute,
                              bool accumulate_this_step);
 
+  /** @ingroup testing helper functions
+   * @brief integration testing requires an ability to do just some of
+   * what the application functions demand
+   * @{
+   */
+  void mockRunStart();
+  /// @}
   friend class qmcplusplus::testing::DMCBatchedTest;
+  friend class qmcplusplus::testing::DMCBatchedTestAccessor;
 };
 
 } // namespace qmcplusplus

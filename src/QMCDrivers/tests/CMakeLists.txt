@@ -110,7 +110,7 @@ set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
 if(HAVE_MPI)
   set(UTEST_EXE test_new_${SRC_DIR}_mpi)
   #this is dependent on the directory creation and sym linking of earlier driver tests
-  set(DRIVER_TEST_SRC SetupPools.cpp test_WalkerControl.cpp test_QMCDriverNew.cpp)
+  set(DRIVER_TEST_SRC SetupPools.cpp test_WalkerControl.cpp test_QMCDriverNew.cpp test_DMCBatched_integration.cpp)
   add_executable(${UTEST_EXE} ${DRIVER_TEST_SRC})
   target_link_libraries(${UTEST_EXE} catch_main qmcdriver minimal_test_pools)
   if(USE_OBJECT_TARGET)

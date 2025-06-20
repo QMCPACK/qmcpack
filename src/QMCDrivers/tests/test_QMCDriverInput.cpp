@@ -23,7 +23,7 @@ TEST_CASE("QMCDriverInput Instantiation", "[drivers]") { QMCDriverInput driver_i
 
 TEST_CASE("QMCDriverInput readXML", "[drivers]")
 {
-  auto xml_test = [](const char* driver_xml) {
+  auto xml_test = [](std::string_view driver_xml) {
     Libxml2Document doc;
     bool okay = doc.parseFromString(driver_xml);
     REQUIRE(okay);
@@ -33,10 +33,9 @@ TEST_CASE("QMCDriverInput readXML", "[drivers]")
     REQUIRE(qmcdriver_input.get_qmc_method().size() > 0);
   };
 
-  std::for_each(testing::valid_vmc_input_sections.begin() + testing::valid_vmc_input_vmc_batch_index,
-                testing::valid_vmc_input_sections.end(), xml_test);
-
-  std::for_each(testing::valid_dmc_input_sections.begin() + testing::valid_dmc_input_dmc_batch_index,
-                testing::valid_dmc_input_sections.end(), xml_test);
+  using VMCInputs = testing::VmcInputs;
+  std::for_each(VMCInputs::begin(), VMCInputs::end(), xml_test);
+  using DMCInputs = testing::DmcInputs;
+  std::for_each(DMCInputs::begin(), DMCInputs::end(), xml_test);
 }
 } // namespace qmcplusplus

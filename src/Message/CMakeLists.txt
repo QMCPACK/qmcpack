@@ -19,6 +19,8 @@ if(HAVE_MPI)
   target_link_libraries(message PUBLIC qmc_external_mpi_wrapper)
 endif()
 
+target_include_directories(message PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
 add_library(catch_main catch_main.cpp)
 target_compile_definitions(catch_main PUBLIC "CATCH_CONFIG_ENABLE_BENCHMARKING")
 target_link_libraries(catch_main PUBLIC qmc_external_catch2)

@@ -377,7 +377,7 @@ void DMCBatched::runDMCStep(int crowd_id,
   const IndexType step = sft.step;
   // Are we entering the the last step of a block to recompute at?
   const bool recompute_this_step  = (sft.is_recomputing_block && (step + 1) == sft.steps_per_block);
-  const bool accumulate_this_step = true;
+  const bool accumulate_this_step = (step % sft.qmcdrv_input.get_estimator_measurement_period() == 0);
   const bool spin_move            = sft.population.get_golden_electrons().isSpinor();
   if (spin_move)
     advanceWalkers<CoordsType::POS_SPIN>(sft, crowd, timers, dmc_timers, *context_for_steps[crowd_id],
@@ -585,5 +585,12 @@ void DMCBatched::createStepContexts(int num_crowds)
                                                                qmcdriver_input_.get_tau(), dmcdriver_input_.get_alpha(),
                                                                dmcdriver_input_.get_gamma()));
 }
+
+void DMCBatched::mockRunStart()
+{
+  estimator_manager_->startDriverRun();
+  StateForThread dmc_state(qmcdriver_input_, *drift_modifier_, *branch_engine_, population_, steps_per_block_,
+                           serializing_crowd_walkers_);
+
 
 } // namespace qmcplusplus

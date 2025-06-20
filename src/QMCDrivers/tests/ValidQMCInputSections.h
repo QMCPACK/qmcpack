@@ -18,14 +18,21 @@
  */
 
 #include <array>
+#include <string_view>
 
 namespace qmcplusplus
 {
 namespace testing
 {
-// clang-format: off
-constexpr std::array<const char*, 4> valid_vmc_input_sections{
-    R"(
+
+class VmcLegacyInput
+{
+public:
+  static std::string_view getXml() { return xml; }
+
+private:
+  static constexpr std::string_view xml{
+      R"(
   <qmc method="vmc" move="pbyp">
     <estimator name="LocalEnergy" hdf5="no" />
     <parameter name="walkers">                1 </parameter>
@@ -37,8 +44,25 @@ constexpr std::array<const char*, 4> valid_vmc_input_sections{
     <parameter name="timestep">             1.0 </parameter>
     <parameter name="usedrift">              no </parameter>
   </qmc>
-)",
-    R"(
+)"};
+};
+
+class VmcInputs
+{
+public:
+  enum class valid
+  {
+    CROWDS = 0,
+    TINY,
+    DEP_BATCH
+  };
+  static std::string_view getXml(valid val) { return xml[static_cast<std::size_t>(val)]; }
+  static auto begin() { return xml.begin(); }
+  static auto end() { return xml.end(); }
+
+  // clang-format: off
+  static constexpr std::array<std::string_view, 3> xml{
+      R"(
   <qmc method="vmc" move="pbyp">
     <parameter name="crowds">                 8 </parameter>
     <estimators>
@@ -53,7 +77,7 @@ constexpr std::array<const char*, 4> valid_vmc_input_sections{
     <parameter name="usedrift">              no </parameter>
   </qmc>
 )",
-    R"(
+      R"(
   <qmc method="vmc" move="pbyp">
     <parameter name="crowds">                 1 </parameter>
     <estimator name="LocalEnergy" hdf5="no" />
@@ -66,7 +90,7 @@ constexpr std::array<const char*, 4> valid_vmc_input_sections{
     <parameter name="usedrift">              no </parameter>
   </qmc>
 )",
-    R"(
+      R"(
   <qmc method="vmc_batch" move="pbyp">
     <parameter name="crowds">                 8 </parameter>
     <estimator name="LocalEnergy" hdf5="no" />
@@ -79,28 +103,25 @@ constexpr std::array<const char*, 4> valid_vmc_input_sections{
     <parameter name="usedrift">              no </parameter>
   </qmc>
 )"};
+};
 
+class DmcInputs
+{
+public:
+  enum class valid
+  {
+    CROWDS = 0,
+    DEP_BATCH,
+    EMPERIOD
+  };
 
-// to avoid creating a situation where section test xml is in two places
-constexpr int valid_vmc_input_vmc_index             = 0;
-constexpr int valid_vmc_input_vmc_batch_index       = 1;
-constexpr int valid_vmc_input_vmc_tiny_index        = 2;
-constexpr int valid_vmc_batch_input_vmc_batch_index = 3;
+  static std::string_view getXml(valid val) { return xml[static_cast<std::size_t>(val)]; }
+  static auto begin() { return xml.begin(); }
+  static auto end() { return xml.end(); }
 
-constexpr std::array<const char*, 3> valid_dmc_input_sections{
-    R"(
-  <qmc method="dmc" move="pbyp" gpu="yes">
-    <estimator name="LocalEnergy" hdf5="no" />
-    <parameter name="targetwalkers">        256 </parameter>
-    <parameter name="warmupSteps">          100 </parameter>
-    <parameter name="steps">                 10 </parameter>
-    <parameter name="blocks">               100 </parameter>
-    <parameter name="timestep">            0.01 </parameter>
-    <parameter name="reconfiguration">       no </parameter>
-    <parameter name="nonlocalmoves">         no </parameter>
-  </qmc>
-)",
-    R"(
+private:
+  static constexpr std::array<std::string_view, 3> xml{
+      R"XML(
   <qmc method="dmc" move="pbyp">
     <parameter name="crowds">                 4 </parameter>
     <estimators>
@@ -115,10 +136,10 @@ constexpr std::array<const char*, 3> valid_dmc_input_sections{
     <parameter name="timestep">             1.0 </parameter>
     <parameter name="usedrift">              no </parameter>
   </qmc>
-)",
-    R"(
+)XML",
+      R"XML(
   <qmc method="dmc_batch" move="pbyp">
-    <parameter name="crowds">                 4 </parameter>
+<parameter name="crowds">                 4 </parameter>
     <estimator name="LocalEnergy" hdf5="no" />
     <parameter name="total_walkers">          8 </parameter>
     <parameter name="reserve">             1.25 </parameter>
@@ -129,12 +150,27 @@ constexpr std::array<const char*, 3> valid_dmc_input_sections{
     <parameter name="timestep">             1.0 </parameter>
     <parameter name="usedrift">              no </parameter>
   </qmc>
-)"};
+)XML",
+      R"XML(
+  <qmc method="dmc" move="pbyp">
+    <estimators>
+      <estimator type="PerParticleHamiltonianLogger" to_stdout="false" />
+    </estimators>
+    <parameter name="crowds">                 4 </parameter>
+    <estimator name="LocalEnergy" hdf5="no" />
+    <parameter name="total_walkers">          8 </parameter>
+    <parameter name="reserve">             1.25 </parameter>
+    <parameter name="warmupSteps">            10 </parameter>
+    <parameter name="substeps">               1 </parameter>
+    <parameter name="steps">                  16 </parameter>
+    <parameter name="blocks">                 2 </parameter>
+    <parameter name="timestep">             1.0 </parameter>
+    <parameter name="usedrift">              no </parameter>
+    <parameter name="estimator_measurement_period">  4 </parameter>
+  </qmc>
+)XML"};
+};
 
-// to avoid creating a situation where section test xml is in two places
-constexpr int valid_dmc_input_dmc_index             = 0;
-constexpr int valid_dmc_input_dmc_batch_index       = 1;
-constexpr int valid_dmc_batch_input_dmc_batch_index = 2;
 
 /** As far as I can tell these are no longer valid */
 constexpr std::array<const char*, 2> valid_opt_input_sections{

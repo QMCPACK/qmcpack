@@ -42,8 +42,9 @@
 #include "QMCDrivers/WaveFunctionTester.h"
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
-#include "Estimators/EstimatorInputDelegates.h"
-#include "Estimators/EstimatorManagerNew.h"
+#include <MakeEstimatorManager.h>
+#include <EstimatorInputDelegates.h>
+#include <EstimatorManagerNew.h>
 #include "Message/UniformCommunicateError.h"
 #include "RandomNumberControl.h"
 
@@ -203,27 +204,6 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
   //set primaryH->Primary
   primaryH->setPrimary(true);
 
-
-  auto makeEstimatorManager = [&](const std::optional<EstimatorManagerInput>& global_emi,
-                                  const std::optional<EstimatorManagerInput>& driver_emi) -> UPtr<EstimatorManagerNew> {
-    // This is done so that the application level input structures reflect the actual input to the code.
-    // While the actual simulation objects still take singular input structures at construction.
-    auto makeEstimatorManagerInput = [](auto& global_emi, auto& local_emi) -> EstimatorManagerInput {
-      if (global_emi.has_value() && local_emi.has_value())
-        return {global_emi.value(), local_emi.value()};
-      else if (global_emi.has_value())
-        return {global_emi.value()};
-      else if (local_emi.has_value())
-        return {local_emi.value()};
-      else
-        return {};
-    };
-
-    auto estimator_manager = std::make_unique<EstimatorManagerNew>(*primaryH, comm);
-    estimator_manager->constructEstimators(makeEstimatorManagerInput(global_emi, driver_emi), qmc_system, *primaryPsi,
-                                           *primaryH, particle_pool.getPool());
-    return estimator_manager;
-  };
   ////flux is evaluated only with single-configuration VMC
   //if(curRunType ==QMCRunType::VMC && !curQmcModeBits[MULTIPLE_MODE])
   //{
@@ -271,7 +251,9 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
     // known at this level PSPool down.
     new_driver =
         std::make_unique<VMCBatched>(project_data_, std::move(qmcdriver_input),
-                                     makeEstimatorManager(emi, qmcdriver_input.get_estimator_manager_input()),
+                                     makeEstimatorManager(emi, qmcdriver_input.get_estimator_manager_input(),
+                                                          qmc_system, *primaryPsi, *primaryH, particle_pool.getPool(),
+                                                          comm),
                                      std::move(vmcdriver_input), qmc_system,
                                      MCPopulation(comm->size(), comm->rank(), &qmc_system, primaryPsi, primaryH),
                                      RandomNumberControl::getChildrenRefs(), qmc_system.getSampleStack(), comm);
@@ -304,7 +286,9 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
 
     new_driver =
         std::make_unique<DMCBatched>(project_data_, std::move(qmcdriver_input),
-                                     makeEstimatorManager(emi, qmcdriver_input.get_estimator_manager_input()),
+                                     makeEstimatorManager(emi, qmcdriver_input.get_estimator_manager_input(),
+                                                          qmc_system, *primaryPsi, *primaryH, particle_pool.getPool(),
+                                                          comm),
                                      std::move(dmcdriver_input), qmc_system,
                                      MCPopulation(comm->size(), comm->rank(), &qmc_system, primaryPsi, primaryH),
                                      RandomNumberControl::getChildrenRefs(), comm);

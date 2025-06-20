@@ -37,14 +37,14 @@ public:
   SetupSimpleFixedNodeBranch(Communicate* comm)
   {
     comm_ = comm;
-    emb_ = std::make_unique<EstimatorManagerBase>(comm_);
+    emb_  = std::make_unique<EstimatorManagerBase>(comm_);
     emb_->add(std::make_unique<FakeEstimator>(), "fake");
   }
 
   SetupSimpleFixedNodeBranch()
   {
     comm_ = OHMMS::Controller;
-    emb_ = std::make_unique<EstimatorManagerBase>(comm_);
+    emb_  = std::make_unique<EstimatorManagerBase>(comm_);
     emb_->add(std::make_unique<FakeEstimator>(), "fake");
   }
 
@@ -72,7 +72,8 @@ public:
 
     sfnb.setEstimatorManager(std::move(emb_));
 
-    createMyNode(sfnb, valid_dmc_input_sections[valid_dmc_input_dmc_index]);
+    using DMCInput = testing::DmcInputs;
+    createMyNode(sfnb, DMCInput::getXml(DMCInput::valid::CROWDS));
 
     // WalkerController is created as a side effect.
     sfnb.initWalkerController(*mcwc_, false, false);
@@ -84,21 +85,20 @@ public:
     return sfnb;
   }
 
-  
-private:
 
-  void createMyNode(SimpleFixedNodeBranch& sfnb, const char* xml)
+private:
+  void createMyNode(SimpleFixedNodeBranch& sfnb, std::string_view xml)
   {
     doc_ = std::make_unique<Libxml2Document>();
     doc_->parseFromString(xml);
     sfnb.myNode = doc_->getRoot();
   }
-  
+
   Communicate* comm_;
   UPtr<EstimatorManagerBase> emb_;
   UPtr<MCPopulation> pop_;
   UPtr<Libxml2Document> doc_;
-  
+
   RealType tau_           = 1.0;
   int num_global_walkers_ = 16;
 
@@ -106,16 +106,15 @@ private:
   UPtr<MCWalkerConfiguration> mcwc_;
 };
 
-}
+} // namespace testing
 
 TEST_CASE("SimpleFixedNodeBranch::branch(MCWC...)", "[drivers][legacy]")
 {
   using namespace testing;
   SetupSimpleFixedNodeBranch setup_sfnb;
-  SimpleFixedNodeBranch sfnb = setup_sfnb();  
-  
-  // \todo: check walker ID's here. might need more walkers to make this significant.
+  SimpleFixedNodeBranch sfnb = setup_sfnb();
 
+  // \todo: check walker ID's here. might need more walkers to make this significant.
 }
 
 } // namespace qmcplusplus

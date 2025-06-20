@@ -56,7 +56,16 @@ public:
    *  It provides parallelism with respect to computational effort of the estimator
    *  without causing a global sync.
    *  Depending on data locality the accumlation of the result may be different from
-   *  the single thread write directly into the OperatorEstimator data.
+   *  the single thread write directly into the OperatorEstimator
+   *  data.
+   *
+   *  Assumptions:
+   *  * when accumulate is not called for a step, the estimator still
+   *  receives reports to its listener's from Hamiltonian operators.
+   *  Existing estimators deal with this by using reporting functions
+   *  that maintain only the last step per walker per operator
+   *  (sometimes per particle)
+   *
    *  \param[in]      walkers
    *  \param[inout]   pset_target   crowd scope target pset (should be returned to starting state after call)
    *  \param[in]      psets         per walker psets
@@ -167,7 +176,13 @@ public:
    *  This must be called for each crowd scope estimator that listens to register listeners into
    *  the crowd scope QMCHamiltonianMultiWalkerResource.
    *
-   *  Many estimators don't need per particle values so the default implementation is no op.
+   *  Many estimators don't need per particle values so the default
+   *  implementation is no op.
+   *
+   *  Assumption:
+   *  The form of the listener function registered with the
+   *  QMCHamiltonian deals with reporting being per step while
+   *  accumulation may be step % measurement period.
    */
   virtual void registerListeners(QMCHamiltonian& ham_leader) {};
 

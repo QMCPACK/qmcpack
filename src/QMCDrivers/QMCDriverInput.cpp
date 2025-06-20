@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 /** \file
- *  
+ *
  */
 
 #include "OhmmsData/AttributeSet.h"
@@ -61,6 +61,7 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
   parameter_set.add(total_walkers_, "total_walkers");
   parameter_set.add(dummy_int, "stepsbetweensamples", {}, TagStatus::UNSUPPORTED);
   parameter_set.add(dummy_int, "samplesperthread", {}, TagStatus::UNSUPPORTED);
+  parameter_set.add(estimator_measurement_period_, "estimator_measurement_period");
   parameter_set.add(requested_samples_, "samples");
   parameter_set.add(tau_, "timestep");
   parameter_set.add(tau_, "time_step");

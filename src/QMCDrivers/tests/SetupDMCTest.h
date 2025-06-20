@@ -20,6 +20,7 @@
 #include "QMCDrivers/DMC/DMCBatched.h"
 #include "QMCDrivers/tests/SetupPools.h"
 #include "ProjectData.h"
+#include "tests/ValidQMCInputSections.h"
 
 namespace qmcplusplus
 {
@@ -37,7 +38,7 @@ public:
   DMCBatched operator()()
   {
     Libxml2Document doc;
-    doc.parseFromString(valid_dmc_input_sections[valid_dmc_input_dmc_batch_index]);
+    doc.parseFromString(DmcInputs::getXml(DmcInputs::valid::CROWDS));
     node = doc.getRoot();
 
     qmcdrv_input.readXML(node);

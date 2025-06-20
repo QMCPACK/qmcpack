@@ -30,8 +30,8 @@ public:
   };
 
   static std::string_view getXml(valid val) { return xml[static_cast<std::size_t>(val)]; }
-  auto begin() { return xml.begin(); }
-  auto end() {return xml.end(); }
+  static auto begin() { return xml.begin(); }
+  static auto end() { return xml.end(); }
 
 private:
   static constexpr std::array<std::string_view, 2> xml{
@@ -78,7 +78,7 @@ public:
 
   static std::string_view getXml(invalid val) { return xml[static_cast<std::size_t>(val)]; }
   auto begin() { return xml.begin(); }
-  auto end() {return xml.end(); }
+  auto end() { return xml.end(); }
 
 private:
   static constexpr std::array<std::string_view, 1> xml{

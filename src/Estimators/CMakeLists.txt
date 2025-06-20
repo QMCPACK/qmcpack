@@ -33,6 +33,7 @@ set(QMCEST_SRC
     MomentumDistribution.cpp
     OneBodyDensityMatricesInput.cpp
     OneBodyDensityMatrices.cpp
+    MakeEstimatorManager.cpp
     MagnetizationDensity.cpp
     MagnetizationDensityInput.cpp
     SelfHealingOverlapInput.cpp
