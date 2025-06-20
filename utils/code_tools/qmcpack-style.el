@@ -1,4 +1,4 @@
-;;; qmpack-style.el -- defines a c-style for QMCPACK
+;;; qmpack-style.el -- defines a c-style for QMCPACK  -*- lexical-binding: t; -*-
 
 ;;; License:
 ;; //////////////////////////////////////////////////////////////////////////////////////
