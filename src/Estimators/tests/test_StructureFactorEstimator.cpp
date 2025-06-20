@@ -330,10 +330,8 @@ TEST_CASE("StructureFactorEstimator::Accumulate", "[estimators]")
   }
 
   PooledData<Real> buffer;
-  auto bsize = buffer.size();
 
   sfe.packData(buffer);
-  bsize = buffer.size();
 
   buffer.rewind();
   Real scale_by = 2.0;
