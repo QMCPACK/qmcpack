@@ -10,8 +10,10 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 /** \file
- *  Some ParticleSet functions use the global Random so we need some helper functions to
- *  avoid interminant test state when multiple tests are run from a single test program.
+ *  For many integration tests we need a set of
+ *  golden walker elements, in order to reduce the amount of boiler
+ *  plate using all three minimal pools to set up tests use this
+ *  integration testing helper class
  */
 
 #ifndef QMCPLUSPLUS_MOCK_WALKER_ELEMENTS_FOR_ESTIMATOR_TEST_H

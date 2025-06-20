@@ -150,6 +150,9 @@ else() #{{{
 
   add_subdirectory(QMCWaveFunctions)
   add_subdirectory(QMCHamiltonians)
+
+  subdirs(integration_testing)
+
   add_subdirectory(Estimators)
   add_subdirectory(QMCDrivers)
 
