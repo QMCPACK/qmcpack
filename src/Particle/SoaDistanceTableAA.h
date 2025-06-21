@@ -27,7 +27,7 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableAA
   /// actual memory for dist and displacements_
   aligned_vector<RealType> memory_pool_;
 
-  SoaDistanceTableAA(ParticleSet& target)
+  SoaDistanceTableAA(const ParticleSet& target)
       : DTD_BConds<T, D, SC>(target.getLattice()),
         DistanceTableAA(target, DTModes::ALL_OFF),
         num_targets_padded_(getAlignedSize<T>(num_targets_)),

@@ -25,7 +25,7 @@ namespace qmcplusplus
  *\return index of the distance table with the name
  */
 std::unique_ptr<DistanceTable> createDistanceTableABOMPTarget(const ParticleSet& s,
-                                                              ParticleSet& t,
+                                                              const ParticleSet& t,
                                                               std::ostream& description)
 {
   using RealType = ParticleSet::RealType;

@@ -24,7 +24,7 @@ namespace qmcplusplus
  *\param s source/target particle set
  *\return index of the distance table with the name
  */
-std::unique_ptr<DistanceTable> createDistanceTableAAOMPTarget(ParticleSet& s, std::ostream& description)
+std::unique_ptr<DistanceTable> createDistanceTableAAOMPTarget(const ParticleSet& s, std::ostream& description)
 {
   using RealType = OHMMS_PRECISION;
   enum
