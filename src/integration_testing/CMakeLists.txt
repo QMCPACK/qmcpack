@@ -7,6 +7,27 @@
 #// File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
+# a targets for the individual minimal testing pools.
+#
+# They may be used to minimize dependency in tests when possible.
+#
+
+add_library(minimal_particle_pool MinimalParticlePool.cpp)
+target_include_directories(minimal_particle_pool PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+target_link_libraries(minimal_particle_pool PUBLIC qmcparticle)
+
+add_library(minimal_wavefunction_pool MinimalWaveFunctionPool.cpp)
+target_include_directories(minimal_wavefunction_pool PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+target_link_libraries(minimal_wavefunction_pool PUBLIC qmcwfs)
+
+add_library(minimal_hamiltonian_pool MinimalHamiltonianPool.cpp)
+target_include_directories(minimal_hamiltonian_pool PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+target_link_libraries(minimal_hamiltonian_pool PUBLIC qmcham)
+
+# use this target if using all three minimal pools
+add_library(minimal_test_pools INTERFACE)
+target_link_libraries(minimal_test_pools INTERFACE minimal_particle_pool minimal_wavefunction_pool minimal_hamiltonian_pool)
+
 # at the crowd thread scope of the API's each walker is associated
 # with one object of ParticleSet, QMCWavefunction, and
 # QMCHamiltonian i.e. walker elements
@@ -19,31 +40,5 @@
 # elements needed for many integration tests in the future
 add_library(mock_walker_elements MockGoldWalkerElements.cpp)
 target_include_directories(mock_walker_elements PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-target_link_libraries(mock_walker_elements PUBLIC minimal_testing_pools qmcparticle qmcwfs qmcham message minimal_particle_pool)
+target_link_libraries(mock_walker_elements PUBLIC qmcparticle qmcwfs qmcham minimal_test_pools message)
 target_link_libraries(mock_walker_elements PRIVATE catch_main)
-
-  # a target for the minimal testing pools.
-  # This should be used by test programs using any of the minimal
-  # pools
-  #
-  # What it does:
-  # It removes the need to include a relative
-  # path into another modules testing directory to use a minimal pools
-  #
-  # What it doesn't do:
-  # Provide linkage to the parent modules i.e. Particle, QMCHamiltonians,
-  # QMCWaveFunction.
-  #
-  # It may be used faciliate transition to single compilation of the
-  # minimal pools without a great deal of mess in the various test
-  # program builds however it is useful as is. Consult with PD before
-  # reverting this.
-  #
-
-add_library(minimal_testing_pools INTERFACE)
-target_sources(minimal_testing_pools INTERFACE MinimalParticlePool.h MinimalHamiltonianPool.h MinimalWaveFunctionPool.h)
-target_include_directories(minimal_testing_pools INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
-
-add_library(minimal_particle_pool MinimalParticlePool.cpp)
-target_include_directories(minimal_particle_pool PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-target_link_libraries(minimal_particle_pool PUBLIC qmcparticle)

@@ -25,7 +25,7 @@ else()
   add_library(test_estimators_help ${TEST_ESTIMATORS_HELP})
 endif()
 
-target_link_libraries(test_estimators_help catch_main qmcestimators minimal_testing_pools mock_walker_elements)
+target_link_libraries(test_estimators_help catch_main qmcestimators mock_walker_elements)
 
 set(UTEST_EXE test_${SRC_DIR})
 set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
@@ -73,7 +73,7 @@ set(SRCS
     )
 
 add_executable(${UTEST_EXE} ${SRCS})
-target_link_libraries(${UTEST_EXE} catch_main qmcutil qmcestimators test_estimators_help utilities_for_test sposets_for_testing minimal_testing_pools minimal_particle_pool)
+target_link_libraries(${UTEST_EXE} catch_main qmcutil qmcestimators test_estimators_help utilities_for_test sposets_for_testing minimal_test_pools)
 if(USE_OBJECT_TARGET)
   target_link_libraries(
     ${UTEST_EXE}
@@ -118,7 +118,7 @@ if(HAVE_MPI)
       utilities_for_test)
   endif()
   target_link_libraries(${UTEST_EXE} catch_main qmcestimators
-  test_estimators_help minimal_testing_pools mock_walker_elements)
+  test_estimators_help minimal_test_pools mock_walker_elements)
   # Right now the unified driver mpi tests are hard coded for 3 MPI ranks
   add_unit_test(${UTEST_NAME} 3 1 $<TARGET_FILE:${UTEST_EXE}>)
 endif()
