@@ -16,7 +16,7 @@
  *
  * This will replace QMCDriver once unified drivers are finished
  * the general documentation from QMCDriver.h must be moved before then
- *  
+ *
  * This driver base class should be generic with respect to precision,
  * value type, device execution, and ...
  * It should contain no typdefs not related to compiler bugs or platform workarounds
@@ -77,7 +77,7 @@ public:
   using IndexType        = QMCTraits::IndexType;
   using FullPrecRealType = QMCTraits::FullPrecRealType;
   /** separate but similar to QMCModeEnum
-   *  
+   *
    *  a code smell
    */
   enum
@@ -219,7 +219,7 @@ public:
    */
   void setStatus(const std::string& aname, const std::string& h5name, bool append) override;
 
-  void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi) override{};
+  void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi) override {};
 
   void putWalkers(std::vector<xmlNodePtr>& wset) override;
 
@@ -310,7 +310,7 @@ protected:
    */
   static int determineNumCrowds(const int requested_num_crowds, const int rng_count);
 
-  /** pure function returning AdjustedWalkerCounts data structure 
+  /** pure function returning AdjustedWalkerCounts data structure
    *
    *  The logic is now walker counts is fairly simple.
    *  TotalWalkers trumps all other walker parameters
@@ -353,7 +353,7 @@ protected:
 
   /** The timers for the driver.
    *
-   * This cleans up the driver constructor, and a reference to this structure 
+   * This cleans up the driver constructor, and a reference to this structure
    * Takes the timers into thread scope. We assume the timers are threadsafe.
    */
   struct DriverTimers

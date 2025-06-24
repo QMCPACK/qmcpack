@@ -17,6 +17,8 @@
 #include "QMCDrivers/DMC/DMCDriverInput.h"
 #include "QMCDrivers/MCPopulation.h"
 #include "Particle/MCCoords.hpp"
+#include "WalkerLogManager.h"
+#include "RunTimeManager.h"
 
 namespace qmcplusplus
 {
@@ -143,6 +145,16 @@ private:
   // create Rngs and StepContests
   void createStepContexts(int num_crowds);
 
+  struct RunContext
+  {
+    WalkerLogManager wlog_manager;
+    LoopTimer<> dmc_loop;
+    RunTimeControl<> runtimeControl;
+    StateForThread dmc_state;
+  };
+
+  RunContext startRun();
+
   // This is the task body executed at crowd scope
   // it does not have access to object members by design
   static void runDMCStep(int crowd_id,
@@ -166,7 +178,8 @@ private:
    * what the application functions demand
    * @{
    */
-  void mockRunStart();
+  StateForThread mockRunStart();
+  auto getCrowds() -> decltype(crowds_)& { return crowds_; }
   /// @}
   friend class qmcplusplus::testing::DMCBatchedTest;
   friend class qmcplusplus::testing::DMCBatchedTestAccessor;

@@ -33,24 +33,13 @@
 #include "TauParams.hpp"
 #include "WalkerLogManager.h"
 #include "CPU/math.hpp"
-#include "QMCHamiltonians/NonLocalTOperator.h"
+#include "DMCContextForSteps.h"
 
 namespace qmcplusplus
 {
 using std::placeholders::_1;
 using WP       = WalkerProperties::Indexes;
 using PsiValue = TrialWaveFunction::PsiValue;
-
-class DMCBatched::DMCContextForSteps : public ContextForSteps
-{
-public:
-  DMCContextForSteps(RandomBase<FullPrecRealType>& random_gen, NonLocalTOperator&& non_local_ops)
-      : ContextForSteps(random_gen), non_local_ops(non_local_ops)
-  {}
-
-  ///non local operator
-  NonLocalTOperator non_local_ops;
-};
 
 /** Constructor maintains proper ownership of input parameters
  *
@@ -378,7 +367,8 @@ void DMCBatched::runDMCStep(int crowd_id,
   // Are we entering the the last step of a block to recompute at?
   const bool recompute_this_step  = (sft.is_recomputing_block && (step + 1) == sft.steps_per_block);
   const bool accumulate_this_step = (step % sft.qmcdrv_input.get_estimator_measurement_period() == 0);
-  const bool spin_move            = sft.population.get_golden_electrons().isSpinor();
+  std::cerr << "accumulate: " << accumulate_this_step << '\n';
+  const bool spin_move = sft.population.get_golden_electrons().isSpinor();
   if (spin_move)
     advanceWalkers<CoordsType::POS_SPIN>(sft, crowd, timers, dmc_timers, *context_for_steps[crowd_id],
                                          recompute_this_step, accumulate_this_step);
@@ -450,10 +440,8 @@ void DMCBatched::process(xmlNodePtr node)
     measureImbalance("Startup");
 }
 
-bool DMCBatched::run()
+auto DMCBatched::startRun() -> RunContext
 {
-  IndexType num_blocks = qmcdriver_input_.get_max_blocks();
-
   estimator_manager_->startDriverRun();
 
   //initialize WalkerLogManager and collectors
@@ -467,8 +455,8 @@ bool DMCBatched::run()
                            serializing_crowd_walkers_);
 
   LoopTimer<> dmc_loop;
-  RunTimeControl<> runtimeControl(run_time_manager, project_data_.getMaxCPUSeconds(), project_data_.getTitle(),
-                                  myComm->rank() == 0);
+  RunTimeControl<> runtime_control(run_time_manager, project_data_.getMaxCPUSeconds(), project_data_.getTitle(),
+                                   myComm->rank() == 0);
 
   { // walker initialization
     ScopedTimer local_timer(timers_.init_walkers_timer);
@@ -489,21 +477,28 @@ bool DMCBatched::run()
 
   // this barrier fences all previous load imbalance. Avoid block 0 timing pollution.
   myComm->barrier();
+  return {std::move(wlog_manager), std::move(dmc_loop), std::move(runtime_control), std::move(dmc_state)};
+}
+
+bool DMCBatched::run()
+{
+  auto run_context = startRun();
 
   ScopedTimer local_timer(timers_.production_timer);
   ParallelExecutor<> crowd_task;
 
-  int global_step = 0;
+  int global_step      = 0;
+  IndexType num_blocks = qmcdriver_input_.get_max_blocks();
   for (int block = 0; block < num_blocks; ++block)
   {
     {
-      ScopeGuard<LoopTimer<>> dmc_local_timer(dmc_loop);
+      ScopeGuard<LoopTimer<>> dmc_local_timer(run_context.dmc_loop);
       estimator_manager_->startBlock(steps_per_block_);
 
-      dmc_state.recalculate_properties_period = (qmc_driver_mode_[QMC_UPDATE_MODE])
+      run_context.dmc_state.recalculate_properties_period = (qmc_driver_mode_[QMC_UPDATE_MODE])
           ? qmcdriver_input_.get_recalculate_properties_period()
           : (qmcdriver_input_.get_max_blocks() + 1) * steps_per_block_;
-      dmc_state.is_recomputing_block          = qmcdriver_input_.get_blocks_between_recompute()
+      run_context.dmc_state.is_recomputing_block          = qmcdriver_input_.get_blocks_between_recompute()
                    ? (1 + block) % qmcdriver_input_.get_blocks_between_recompute() == 0
                    : false;
 
@@ -514,9 +509,9 @@ bool DMCBatched::run()
       {
         ScopedTimer local_timer(timers_.run_steps_timer);
 
-        dmc_state.step        = step;
-        dmc_state.global_step = global_step;
-        crowd_task(crowds_.size(), runDMCStep, dmc_state, timers_, dmc_timers_, step_contexts_, crowds_);
+        run_context.dmc_state.step        = step;
+        run_context.dmc_state.global_step = global_step;
+        crowd_task(crowds_.size(), runDMCStep, run_context.dmc_state, timers_, dmc_timers_, step_contexts_, crowds_);
 
         {
           const int iter = block * steps_per_block_ + step;
@@ -532,22 +527,22 @@ bool DMCBatched::run()
       if (qmcdriver_input_.get_measure_imbalance())
         measureImbalance("Block " + std::to_string(block));
       endBlock();
-      wlog_manager.writeBuffers();
+      run_context.wlog_manager.writeBuffers();
       recordBlock(block);
     }
 
     bool stop_requested = false;
     // Rank 0 decides whether the time limit was reached
     if (!myComm->rank())
-      stop_requested = runtimeControl.checkStop(dmc_loop);
+      stop_requested = run_context.runtimeControl.checkStop(run_context.dmc_loop);
     myComm->bcast(stop_requested);
     // Progress messages before possibly stopping
     if (!myComm->rank())
-      app_log() << runtimeControl.generateProgressMessage("DMCBatched", block, num_blocks);
+      app_log() << run_context.runtimeControl.generateProgressMessage("DMCBatched", block, num_blocks);
     if (stop_requested)
     {
       if (!myComm->rank())
-        app_log() << runtimeControl.generateStopMessage("DMCBatched", block);
+        app_log() << run_context.runtimeControl.generateStopMessage("DMCBatched", block);
       run_time_manager.markStop();
       break;
     }
@@ -557,7 +552,7 @@ bool DMCBatched::run()
 
   print_mem("DMCBatched ends", app_log());
 
-  wlog_manager.stopRun();
+  run_context.wlog_manager.stopRun();
   estimator_manager_->stopDriverRun();
 
   return finalize(num_blocks, true);
@@ -586,11 +581,11 @@ void DMCBatched::createStepContexts(int num_crowds)
                                                                dmcdriver_input_.get_gamma()));
 }
 
-void DMCBatched::mockRunStart()
+auto DMCBatched::mockRunStart() -> StateForThread
 {
   estimator_manager_->startDriverRun();
-  StateForThread dmc_state(qmcdriver_input_, *drift_modifier_, *branch_engine_, population_, steps_per_block_,
-                           serializing_crowd_walkers_);
-
+  return {qmcdriver_input_, *drift_modifier_, *branch_engine_,
+          population_,      steps_per_block_, serializing_crowd_walkers_};
+}
 
 } // namespace qmcplusplus

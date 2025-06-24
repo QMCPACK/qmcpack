@@ -112,7 +112,7 @@ if(HAVE_MPI)
   #this is dependent on the directory creation and sym linking of earlier driver tests
   set(DRIVER_TEST_SRC SetupPools.cpp test_WalkerControl.cpp test_QMCDriverNew.cpp test_DMCBatched_integration.cpp)
   add_executable(${UTEST_EXE} ${DRIVER_TEST_SRC})
-  target_link_libraries(${UTEST_EXE} catch_main qmcdriver minimal_test_pools)
+  target_link_libraries(${UTEST_EXE} catch_main qmcdriver mock_walker_elements)
   if(USE_OBJECT_TARGET)
     target_link_libraries(
       ${UTEST_EXE}

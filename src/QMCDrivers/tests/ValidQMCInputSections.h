@@ -158,7 +158,7 @@ private:
     </estimators>
     <parameter name="crowds">                 4 </parameter>
     <estimator name="LocalEnergy" hdf5="no" />
-    <parameter name="total_walkers">          8 </parameter>
+    <parameter name="total_walkers">          16 </parameter>
     <parameter name="reserve">             1.25 </parameter>
     <parameter name="warmupSteps">            10 </parameter>
     <parameter name="substeps">               1 </parameter>
