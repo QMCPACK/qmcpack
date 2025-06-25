@@ -99,7 +99,7 @@ QMCMain::QMCMain(Communicate* c)
       << "\n  Number of ranks in group  = " << myComm->size()
       << "\n  MPI ranks per node        = " << node_comm.size()
 #if defined(ENABLE_OFFLOAD) || defined(ENABLE_CUDA) || defined(ENABLE_ROCM) || defined(ENABLE_SYCL)
-      << "\n  Accelerators per node     = " << DeviceManager::getGlobal().getNumDevices()
+      << "\n  Accelerators per rank     = " << DeviceManager::getGlobal().getNumDevices()
 #endif
       << std::endl;
   // clang-format on
