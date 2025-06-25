@@ -12,18 +12,6 @@
 # They may be used to minimize dependency in tests when possible.
 #
 
-add_library(minimal_particle_pool MinimalParticlePool.cpp)
-target_include_directories(minimal_particle_pool PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-target_link_libraries(minimal_particle_pool PUBLIC qmcparticle)
-
-add_library(minimal_wavefunction_pool MinimalWaveFunctionPool.cpp)
-target_include_directories(minimal_wavefunction_pool PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-target_link_libraries(minimal_wavefunction_pool PUBLIC qmcwfs)
-
-add_library(minimal_hamiltonian_pool MinimalHamiltonianPool.cpp)
-target_include_directories(minimal_hamiltonian_pool PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-target_link_libraries(minimal_hamiltonian_pool PUBLIC qmcham)
-
 # use this target if using all three minimal pools
 add_library(minimal_test_pools INTERFACE)
 target_link_libraries(minimal_test_pools INTERFACE minimal_particle_pool minimal_wavefunction_pool minimal_hamiltonian_pool)
