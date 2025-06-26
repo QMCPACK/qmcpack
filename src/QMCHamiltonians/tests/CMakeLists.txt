@@ -2,13 +2,18 @@
 #// This file is distributed under the University of Illinois/NCSA Open Source License.
 #// See LICENSE file in top directory for details.
 #//
-#// Copyright (c) 2022 Jeongnim Kim and QMCPACK developers.
+#// Copyright (c) 2025 QMCPACK developers.
 #//
 #// File developed by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 #//                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+#//                    Peter W. Doak, doakpw@ornl.gov, Oak Ridge National Lab
 #//
 #// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 #//////////////////////////////////////////////////////////////////////////////////////
+
+add_library(minimal_hamiltonian_pool MinimalHamiltonianPool.cpp)
+target_include_directories(minimal_hamiltonian_pool PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+target_link_libraries(minimal_hamiltonian_pool PUBLIC qmcham)
 
 set(SRC_DIR hamiltonian)
 set(UTEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
@@ -68,7 +73,7 @@ foreach(CATEGORY coulomb force ham ewald2d)
   string(TOUPPER "${CATEGORY}_SRCS" SOURCE_FILE_VAR_NAME)
   add_executable(${UTEST_EXE} ${${SOURCE_FILE_VAR_NAME}})
 
-  target_link_libraries(${UTEST_EXE} catch_main qmcham utilities_for_test)
+  target_link_libraries(${UTEST_EXE} catch_main qmcham utilities_for_test minimal_test_pools)
   if(USE_OBJECT_TARGET)
     target_link_libraries(${UTEST_EXE} qmcwfs qmcwfs_omptarget qmcparticle qmcparticle_omptarget spline2 spline2_omptarget qmcutil platform_omptarget_LA)
   endif()

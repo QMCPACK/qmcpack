@@ -20,8 +20,8 @@
 #include "TrialWaveFunction.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "Message/UniformCommunicateError.h"
-#include "Particle/tests/MinimalParticlePool.h"
-#include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
+#include <MinimalParticlePool.h>
+#include <MinimalWaveFunctionPool.h>
 #include "Utilities/StdRandom.h"
 #include "Utilities/StlPrettyPrint.hpp"
 #include "Utilities/ProjectData.h"

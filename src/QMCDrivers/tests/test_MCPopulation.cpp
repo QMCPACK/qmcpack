@@ -18,9 +18,9 @@
 #include "OhmmsPETE/TinyVector.h"
 #include "QMCDrivers/MCPopulation.h"
 #include "QMCDrivers/tests/WalkerConsumer.h"
-#include "Particle/tests/MinimalParticlePool.h"
-#include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
-#include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
+#include <MinimalParticlePool.h>
+#include <MinimalWaveFunctionPool.h>
+#include <MinimalHamiltonianPool.h>
 #include "Utilities/for_testing/NativeInitializerPrint.hpp"
 
 namespace qmcplusplus

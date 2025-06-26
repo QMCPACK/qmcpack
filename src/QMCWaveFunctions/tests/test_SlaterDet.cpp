@@ -14,7 +14,7 @@
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "QMCWaveFunctions/tests/ConstantSPOSet.h"
-#include "Particle/tests/MinimalParticlePool.h"
+#include <MinimalParticlePool.h>
 #include <ResourceCollection.h>
 #include <algorithm>
 

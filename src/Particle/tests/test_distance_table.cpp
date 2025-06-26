@@ -21,7 +21,7 @@
 #include "ParticleIO/LatticeIO.h"
 #include "Particle/DistanceTable.h"
 #include <ResourceCollection.h>
-#include "MinimalParticlePool.h"
+#include <MinimalParticlePool.h>
 
 using std::string;
 

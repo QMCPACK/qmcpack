@@ -126,28 +126,6 @@ if(QMC_BUILD_SANDBOX_ONLY)
 
 else() #{{{
 
-  # a target for the minimal testing pools.
-  # This should be used by test programs using any of the minimal
-  # pools
-  #
-  # What it does:
-  # It removes the need to include a relative
-  # path into another modules testing directory to use a minimal pools
-  #
-  # What it doesn't do:
-  # Provide linkage to the parent modules i.e. Particle, QMCHamiltonians,
-  # QMCWaveFunction.
-  #
-  # It may be used faciliate transition to single compilation of the
-  # minimal pools without a great deal of mess in the various test
-  # program builds however it is useful as is. Consult with PD before
-  # reverting this.
-  #
-
-  add_library(minimal_testing_pools INTERFACE)
-  target_sources(minimal_testing_pools INTERFACE Particle/tests/MinimalParticlePool.h QMCHamiltonians/tests/MinimalHamiltonianPool.h QMCWaveFunctions/tests/MinimalWaveFunctionPool.h)
-  target_include_directories(minimal_testing_pools INTERFACE Particle/tests QMCHamiltonians/tests QMCWaveFunctions/tests)
-
   add_subdirectory(QMCWaveFunctions)
   add_subdirectory(QMCHamiltonians)
 

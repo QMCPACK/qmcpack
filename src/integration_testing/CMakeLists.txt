@@ -7,6 +7,15 @@
 #// File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
+# a targets for the individual minimal testing pools.
+#
+# They may be used to minimize dependency in tests when possible.
+#
+
+# use this target if using all three minimal pools
+add_library(minimal_test_pools INTERFACE)
+target_link_libraries(minimal_test_pools INTERFACE minimal_particle_pool minimal_wavefunction_pool minimal_hamiltonian_pool)
+
 # at the crowd thread scope of the API's each walker is associated
 # with one object of ParticleSet, QMCWavefunction, and
 # QMCHamiltonian i.e. walker elements
@@ -19,5 +28,5 @@
 # elements needed for many integration tests in the future
 add_library(mock_walker_elements MockGoldWalkerElements.cpp)
 target_include_directories(mock_walker_elements PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-target_link_libraries(mock_walker_elements PUBLIC minimal_testing_pools qmcparticle qmcwfs qmcham message)
+target_link_libraries(mock_walker_elements PUBLIC qmcparticle qmcwfs qmcham minimal_test_pools message)
 target_link_libraries(mock_walker_elements PRIVATE catch_main)

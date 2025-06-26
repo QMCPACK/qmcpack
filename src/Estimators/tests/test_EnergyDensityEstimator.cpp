@@ -19,9 +19,9 @@
 #include "PerParticleHamiltonianLogger.h"
 #include "ValidEnergyDensityInput.h"
 #include "Particle/Walker.h"
-#include "Particle/tests/MinimalParticlePool.h"
-#include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
-#include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
+#include <MinimalParticlePool.h>
+#include <MinimalWaveFunctionPool.h>
+#include <MinimalHamiltonianPool.h>
 #include "Utilities/for_testing/NativeInitializerPrint.hpp"
 
 constexpr bool generate_test_data = false;
@@ -46,7 +46,7 @@ TEST_CASE("NEEnergyDensityEstimator::Constructor", "[estimators]")
                                {1.657151589, 0.883870516, 1.201243939}, {0.97317591, 1.245644974, 0.284564732}};
 
   Libxml2Document doc;
-  using Input = testing::EnergyDensityInputs;
+  using Input     = testing::EnergyDensityInputs;
   bool okay       = doc.parseFromString(Input::getXml(Input::valid::CELL));
   xmlNodePtr node = doc.getRoot();
   EnergyDensityInput edein{node};
@@ -72,7 +72,7 @@ TEST_CASE("NEEnergyDensityEstimator::spawnCrowdClone", "[estimators]")
                                {1.657151589, 0.883870516, 1.201243939}, {0.97317591, 1.245644974, 0.284564732}};
 
   Libxml2Document doc;
-  using Input = testing::EnergyDensityInputs;
+  using Input     = testing::EnergyDensityInputs;
   bool okay       = doc.parseFromString(Input::getXml(Input::valid::CELL));
   xmlNodePtr node = doc.getRoot();
   EnergyDensityInput edein{node};
@@ -92,9 +92,9 @@ TEST_CASE("NEEnergyDensityEstimator::AccumulateIntegration", "[estimators]")
 
   testing::EnergyDensityTest eden_test(comm, 4 /*num_walkers*/, generate_test_data);
 
-  auto ham_list = eden_test.getHamList();
+  auto ham_list    = eden_test.getHamList();
   auto& ham_leader = ham_list.getLeader();
-  auto ham_lock = ResourceCollectionTeamLock(eden_test.getHamRes(), ham_list);
+  auto ham_lock    = ResourceCollectionTeamLock(eden_test.getHamRes(), ham_list);
   eden_test.getEnergyDensityEstimator().registerListeners(ham_leader);
 
   PerParticleHamiltonianLogger pph_logger({}, 0);
