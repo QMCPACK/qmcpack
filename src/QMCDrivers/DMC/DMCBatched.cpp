@@ -367,8 +367,7 @@ void DMCBatched::runDMCStep(int crowd_id,
   // Are we entering the the last step of a block to recompute at?
   const bool recompute_this_step  = (sft.is_recomputing_block && (step + 1) == sft.steps_per_block);
   const bool accumulate_this_step = (step % sft.qmcdrv_input.get_estimator_measurement_period() == 0);
-  std::cerr << "accumulate: " << accumulate_this_step << '\n';
-  const bool spin_move = sft.population.get_golden_electrons().isSpinor();
+  const bool spin_move            = sft.population.get_golden_electrons().isSpinor();
   if (spin_move)
     advanceWalkers<CoordsType::POS_SPIN>(sft, crowd, timers, dmc_timers, *context_for_steps[crowd_id],
                                          recompute_this_step, accumulate_this_step);

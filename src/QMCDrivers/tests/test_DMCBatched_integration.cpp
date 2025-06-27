@@ -66,12 +66,13 @@ TEST_CASE("DMCBatched::estimator_measurement_period", "[drivers]")
     RandomNumberControl::read("seeds_for_DMCBatched", comm);
   }
 
+  auto random_child_refs = RandomNumberControl::getChildrenRefs();
   DMCBatched dmc_batched(test_project, std::move(qmcdriver_input),
                          makeEstimatorManager(std::nullopt, qmcdriver_input.get_estimator_manager_input(),
                                               mgwe.pset_elec, mgwe.twf, mgwe.ham, mgwe.particle_pool.getPool(), comm),
                          std::move(dmcdriver_input), *qmc_system,
                          MCPopulation(comm->size(), comm->rank(), &mgwe.pset_elec, &mgwe.twf, &mgwe.ham),
-                         RandomNumberControl::getChildrenRefs(), comm);
+                         random_child_refs, comm);
 
   dmc_batched.process(node);
   dmc_batched.setStatus(test_project.currentMainRoot(), "", false);
@@ -95,7 +96,7 @@ TEST_CASE("DMCBatched::estimator_measurement_period", "[drivers]")
   int block = 0;
   while (block < num_blocks)
   {
-    auto num_crowds = qmcdriver_input.get_num_crowds();
+    auto num_crowds = QMCDriverNew::determineNumCrowds(qmcdriver_input.get_num_crowds(), random_child_refs.size());
 
     for (int step = 0; step < steps_per_block; ++step, ++global_step)
     {
