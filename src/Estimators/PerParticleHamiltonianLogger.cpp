@@ -13,11 +13,12 @@
 #include <algorithm>
 #include <functional>
 #include "Utilities/for_testing/NativeInitializerPrint.hpp"
+#include "type_traits/DataLocality.h"
 
 namespace qmcplusplus
 {
 PerParticleHamiltonianLogger::PerParticleHamiltonianLogger(PerParticleHamiltonianLoggerInput&& input, int rank)
-    : OperatorEstBase(DataLocality::crowd, input.get_name(), input.get_type()), input_(input), rank_(rank)
+    : OperatorEstBase(DataLocality::rank, input.get_name(), input.get_type()), input_(input), rank_(rank)
 {
   requires_listener_ = true;
 
@@ -87,7 +88,7 @@ PerParticleHamiltonianLogger::Real PerParticleHamiltonianLogger::sumOverAll() co
 std::unique_ptr<OperatorEstBase> PerParticleHamiltonianLogger::spawnCrowdClone() const
 {
   std::size_t data_size    = data_.size();
-  auto spawn_data_locality = data_locality_;
+  auto spawn_data_locality = DataLocality::crowd;
 
   auto spawn = std::make_unique<PerParticleHamiltonianLogger>(const_cast<PerParticleHamiltonianLogger&>(*this),
                                                               spawn_data_locality);
@@ -121,6 +122,14 @@ void PerParticleHamiltonianLogger::startBlock(int steps)
 {
   ++block_;
   rank_fstream_ << "starting block:  " << block_ << " steps: " << steps << "\n";
+}
+
+void PerParticleHamiltonianLogger::stopBlock()
+{
+  if (data_locality_ == DataLocality::rank)
+  {
+    rank_fstream_.flush();
+  }
 }
 
 } // namespace qmcplusplus

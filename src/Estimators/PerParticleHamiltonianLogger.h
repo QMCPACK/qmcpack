@@ -61,6 +61,11 @@ public:
   Real sumOverAll() const;
 
   int get_block() { return block_; }
+
+  /** At rank scope this flushes the file.
+   */
+  void stopBlock() override;
+
 private:
   bool crowd_clone = false;
   const OptionalRef<PerParticleHamiltonianLogger> rank_estimator_;

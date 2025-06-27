@@ -12,6 +12,7 @@
 
 #include "RuntimeOptions.h"
 #include "catch.hpp"
+#include <filesystem>
 
 #include "QMCDrivers/QMCDriverFactory.h"
 #include "DMC/DMCBatched.h"
@@ -27,6 +28,11 @@ namespace qmcplusplus
 {
 
 constexpr bool generate_test_data = false;
+
+void copyRefFile(std::string_view ref_file, std::string_view ref_dest)
+{
+  std::filesystem::copy_file(ref_file, ref_dest, std::filesystem::copy_options::overwrite_existing);
+}
 
 TEST_CASE("DMCBatched::estimator_measurement_period", "[drivers]")
 {
@@ -119,6 +125,22 @@ TEST_CASE("DMCBatched::estimator_measurement_period", "[drivers]")
   }
   Dmcbta::endRun(dmc_batched, block);
   outputManager.resume();
+
+  if constexpr (generate_test_data)
+  {
+    // would be better to dig this out of the input but for expediency
+    std::string log_name("rank_" + std::to_string(comm->rank()) + "_dmc_vem_test.dat");
+    std::string log_dest_name("rank_" + std::to_string(comm->rank()) + "of" + std::to_string(comm->size()) +
+                              "_dmc_vem_test.dat");
+
+    copyRefFile(log_name, log_dest_name);
+    if (comm->rank() == 0)
+    {
+      std::string rand_file{"seeds_for_DMCBatched.random.h5"};
+      std::string random_dest_file{"rank_count_" + std::to_string(comm->size()) + "_" + rand_file};
+      copyRefFile(rand_file, random_dest_file);
+    }
+  }
 }
 
 } // namespace qmcplusplus

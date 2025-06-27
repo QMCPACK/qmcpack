@@ -105,6 +105,13 @@ public:
 
   virtual void startBlock(int steps) = 0;
 
+  /** One more entry point incase an estimator has something it needs
+   *  to do at the end of each block.
+   *
+   *  Only called on rank scope estimator from EstimatorManagerNew::stopBlock())
+   */
+  virtual void stopBlock() {};
+
   const std::vector<QMCT::RealType>& get_data() const { return data_; }
   std::vector<QMCT::RealType>& get_data() { return data_; }
 

@@ -154,7 +154,7 @@ private:
       R"XML(
   <qmc method="dmc" move="pbyp">
     <estimators>
-      <estimator type="PerParticleHamiltonianLogger" to_stdout="false" />
+      <estimator type="PerParticleHamiltonianLogger" name="dmc_vem_test" to_stdout="false" />
     </estimators>
     <parameter name="crowds">                 4 </parameter>
     <estimator name="LocalEnergy" hdf5="no" />
