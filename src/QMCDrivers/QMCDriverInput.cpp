@@ -18,6 +18,7 @@
 #include "EstimatorInputDelegates.h"
 #include "Concurrency/Info.hpp"
 #include "ModernStringUtils.hpp"
+#include "Message/UniformCommunicateError.h"
 
 namespace qmcplusplus
 {
@@ -156,6 +157,14 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
 
   if (check_point_period_.period < 1)
     check_point_period_.period = max_blocks_;
+
+  // \todo this should be moved to a checkParticularValidity override
+  // when QMCDriverInput is modernized.
+  const std::string error_tag{"QMCDriverInput: "};
+  if (requested_steps_ % estimator_measurement_period_ != 0)
+  {
+    throw UniformCommunicateError(error_tag + " steps must be a multiple of estimator measurement period!");
+  }
 
   dump_config_ = (Period4CheckPoint >= 0);
 }
