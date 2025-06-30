@@ -110,7 +110,7 @@ set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
 if(HAVE_MPI)
   set(UTEST_EXE test_new_${SRC_DIR}_mpi)
   #this is dependent on the directory creation and sym linking of earlier driver tests
-  set(DRIVER_TEST_SRC SetupPools.cpp test_WalkerControl.cpp test_QMCDriverNew.cpp test_DMCBatched_integration.cpp)
+  set(DRIVER_TEST_SRC SetupPools.cpp test_WalkerControl.cpp test_QMCDriverNew.cpp)
   add_executable(${UTEST_EXE} ${DRIVER_TEST_SRC})
   target_link_libraries(${UTEST_EXE} catch_main qmcdriver mock_walker_elements)
   if(USE_OBJECT_TARGET)
@@ -129,14 +129,40 @@ if(HAVE_MPI)
     set(UTEST_NAME deterministic-unit_${UTEST_EXE}-r${NUM_RANKS})
     add_unit_test(${UTEST_NAME} ${NUM_RANKS} 1 $<TARGET_FILE:${UTEST_EXE}>)
     set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
+  endforeach()
+
+  set(UTEST_EXE test_new_${SRC_DIR}_integration)
+  #this is dependent on the directory creation and sym linking of earlier driver tests
+  set(DRIVER_TEST_SRC test_DMCBatched_integration.cpp)
+  add_executable(${UTEST_EXE} ${DRIVER_TEST_SRC})
+  target_link_libraries(${UTEST_EXE} catch_main qmcdriver mock_walker_elements)
+  if(USE_OBJECT_TARGET)
+    target_link_libraries(
+      ${UTEST_EXE}
+      qmcestimators
+      qmcham
+      qmcwfs
+      qmcparticle
+      qmcwfs_omptarget
+      qmcparticle_omptarget
+      qmcutil
+      platform_omptarget_LA)
+  endif()
+  foreach(NUM_RANKS 3)
+    set(UTEST_NAME deterministic-unit_${UTEST_EXE}-r${NUM_RANKS}-c4)
+    add_unit_test(${UTEST_NAME} ${NUM_RANKS} 4 $<TARGET_FILE:${UTEST_EXE}>)
+    set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
     set(UTEST_HDF_RANDOM_SEED_FILE rank_count_${NUM_RANKS}_seeds_for_DMCBatched.random.h5)
-    set(UTEST_HDF_RANDOM_SEED ${CMAKE_SOURCE_DIR}/reference/${UTEST_HDF_RANDOM_SEED_FILE})
+    set(UTEST_HDF_RANDOM_SEED ${CMAKE_SOURCE_DIR}/src/QMCDrivers/tests/reference/${UTEST_HDF_RANDOM_SEED_FILE})
     maybe_symlink(${UTEST_HDF_RANDOM_SEED} ${UTEST_DIR}/${UTEST_HDF_RANDOM_SEED_FILE})
+    #yes the cmake devs never read https://www.cs.utexas.edu/~EWD/ewd08xx/EWD831.PDF
     math(EXPR RANK_LIMIT "${NUM_RANKS} - 1" OUTPUT_FORMAT DECIMAL)
+    maybe_symlink(${UTEST_HDF_INPUT} ${UTEST_DIR}/diamondC_1x1x1.pwscf.h5)
     foreach(REF_RANK RANGE ${RANK_LIMIT})
       set(UTEST_PPHL_FILE rank_${REF_RANK}of${NUM_RANKS}_dmc_vem_test.dat)
-      set(UTEST_PPHL_REF ${CMAKE_SOURCE_DIR}/reference/${UTEST_PPHL_FILE})
+      set(UTEST_PPHL_REF ${CMAKE_SOURCE_DIR}/src/QMCDrivers/tests/reference/${UTEST_PPHL_FILE})
       maybe_symlink(${UTEST_PPHL_REF} ${UTEST_DIR}/${UTEST_PPHL_FILE})
     endforeach()
   endforeach()
+
 endif(HAVE_MPI)

@@ -68,8 +68,10 @@ TEST_CASE("DMCBatched::estimator_measurement_period", "[drivers]")
   }
   else
   {
+    std::string rand_file{"seeds_for_DMCBatched"};
+    std::string random_dest_file{"rank_count_" + std::to_string(comm->size()) + "_" + rand_file};
     RandomNumberControl::getChildrenRefs();
-    RandomNumberControl::read("seeds_for_DMCBatched", comm);
+    RandomNumberControl::read(random_dest_file, comm);
   }
 
   auto random_child_refs = RandomNumberControl::getChildrenRefs();
@@ -126,13 +128,13 @@ TEST_CASE("DMCBatched::estimator_measurement_period", "[drivers]")
   Dmcbta::endRun(dmc_batched, block);
   outputManager.resume();
 
+  // would be better to dig this out of the input but for expediency
+  std::string log_name("rank_" + std::to_string(comm->rank()) + "_dmc_vem_test.dat");
+  std::string log_dest_name("rank_" + std::to_string(comm->rank()) + "of" + std::to_string(comm->size()) +
+                            "_dmc_vem_test.dat");
+
   if constexpr (generate_test_data)
   {
-    // would be better to dig this out of the input but for expediency
-    std::string log_name("rank_" + std::to_string(comm->rank()) + "_dmc_vem_test.dat");
-    std::string log_dest_name("rank_" + std::to_string(comm->rank()) + "of" + std::to_string(comm->size()) +
-                              "_dmc_vem_test.dat");
-
     copyRefFile(log_name, log_dest_name);
     if (comm->rank() == 0)
     {
@@ -140,6 +142,18 @@ TEST_CASE("DMCBatched::estimator_measurement_period", "[drivers]")
       std::string random_dest_file{"rank_count_" + std::to_string(comm->size()) + "_" + rand_file};
       copyRefFile(rand_file, random_dest_file);
     }
+  }
+  else
+  {
+    std::ifstream tf_stream(log_name.c_str());
+    std::vector<std::string> tf_lines;
+    for (std::string line; getline(tf_stream, line);)
+      tf_lines.push_back(line);
+    std::ifstream ref_stream(log_dest_name.c_str());
+    std::vector<std::string> ref_lines;
+    for (std::string line; getline(ref_stream, line);)
+      ref_lines.push_back(line);
+    CHECK(tf_lines == ref_lines);
   }
 }
 
