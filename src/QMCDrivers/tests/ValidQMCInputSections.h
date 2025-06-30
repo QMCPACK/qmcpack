@@ -115,12 +115,20 @@ public:
     EMPERIOD
   };
 
-  static std::string_view getXml(valid val) { return xml[static_cast<std::size_t>(val)]; }
-  static auto begin() { return xml.begin(); }
-  static auto end() { return xml.end(); }
+  enum class invalid
+  {
+    VEM_BAD = 0
+  };
+
+  static std::string_view getXml(valid val) { return xml_[static_cast<std::size_t>(val)]; }
+  static std::string_view getInvalidXml(invalid val) { return invalid_xml_[static_cast<std::size_t>(val)]; }
+  static auto begin() { return xml_.begin(); }
+  static auto end() { return xml_.end(); }
+  static auto invalid_begin() { return invalid_xml_.begin(); }
+  static auto invalid_end() { return invalid_xml_.end(); }
 
 private:
-  static constexpr std::array<std::string_view, 3> xml{
+  static constexpr std::array<std::string_view, 3> xml_{
       R"XML(
   <qmc method="dmc" move="pbyp">
     <parameter name="crowds">                 4 </parameter>
@@ -167,6 +175,26 @@ private:
     <parameter name="timestep">             1.0 </parameter>
     <parameter name="usedrift">              no </parameter>
     <parameter name="estimator_measurement_period">  4 </parameter>
+  </qmc>
+)XML"};
+
+  static constexpr std::array<std::string_view, 1> invalid_xml_{
+      R"XML(
+  <qmc method="dmc" move="pbyp">
+    <estimators>
+      <estimator type="PerParticleHamiltonianLogger" name="dmc_vem_test" to_stdout="false" />
+    </estimators>
+    <parameter name="crowds">                 4 </parameter>
+    <estimator name="LocalEnergy" hdf5="no" />
+    <parameter name="total_walkers">          16 </parameter>
+    <parameter name="reserve">             1.25 </parameter>
+    <parameter name="warmupSteps">            10 </parameter>
+    <parameter name="substeps">               1 </parameter>
+    <parameter name="steps">                  16 </parameter>
+    <parameter name="blocks">                 2 </parameter>
+    <parameter name="timestep">             1.0 </parameter>
+    <parameter name="usedrift">              no </parameter>
+    <parameter name="estimator_measurement_period">  3 </parameter>
   </qmc>
 )XML"};
 };

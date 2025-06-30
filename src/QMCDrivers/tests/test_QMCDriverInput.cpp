@@ -37,5 +37,18 @@ TEST_CASE("QMCDriverInput readXML", "[drivers]")
   std::for_each(VMCInputs::begin(), VMCInputs::end(), xml_test);
   using DMCInputs = testing::DmcInputs;
   std::for_each(DMCInputs::begin(), DMCInputs::end(), xml_test);
+
+  auto invalid_xml_test = [](std::string_view driver_xml) {
+    Libxml2Document doc;
+    bool okay = doc.parseFromString(driver_xml);
+    REQUIRE(okay);
+    xmlNodePtr node = doc.getRoot();
+    QMCDriverInput qmcdriver_input;
+    CHECK_THROWS_AS(qmcdriver_input.readXML(node), UniformCommunicateError);
+  };
+  std::for_each(DMCInputs::invalid_begin(), DMCInputs::invalid_end(), invalid_xml_test);
 }
+
+TEST_CASE("") {}
+
 } // namespace qmcplusplus
