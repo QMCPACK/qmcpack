@@ -49,6 +49,4 @@ TEST_CASE("QMCDriverInput readXML", "[drivers]")
   std::for_each(DMCInputs::invalid_begin(), DMCInputs::invalid_end(), invalid_xml_test);
 }
 
-TEST_CASE("") {}
-
 } // namespace qmcplusplus
