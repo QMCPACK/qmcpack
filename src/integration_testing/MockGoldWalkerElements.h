@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2023 QMCPACK developers.
+// Copyright (c) 2025 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //
@@ -10,16 +10,18 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 /** \file
- *  Some ParticleSet functions use the global Random so we need some helper functions to
- *  avoid interminant test state when multiple tests are run from a single test program.
+ *  For many integration tests we need a set of
+ *  golden walker elements, in order to reduce the amount of boiler
+ *  plate using all three minimal pools to set up tests use this
+ *  integration testing helper class
  */
 
 #ifndef QMCPLUSPLUS_MOCK_WALKER_ELEMENTS_FOR_ESTIMATOR_TEST_H
 #define QMCPLUSPLUS_MOCK_WALKER_ELEMENTS_FOR_ESTIMATOR_TEST_H
 
-#include "Particle/tests/MinimalParticlePool.h"
-#include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
-#include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
+#include <MinimalParticlePool.h>
+#include <MinimalWaveFunctionPool.h>
+#include <MinimalHamiltonianPool.h>
 #include "Utilities/RuntimeOptions.h"
 #include "Message/Communicate.h"
 #include <functional>

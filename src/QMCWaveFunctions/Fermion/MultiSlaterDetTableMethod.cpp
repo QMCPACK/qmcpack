@@ -820,8 +820,7 @@ void MultiSlaterDetTableMethod::evaluateDerivatives(ParticleSet& P,
       int kk = myVars->where(k);
       if (kk < 0)
         continue;
-      if (optvars.recompute(kk))
-        recalculate = true;
+      recalculate = true;
     }
     // need to modify for CSF later on, right now assume Slater Det basis
     if (recalculate)
@@ -985,8 +984,7 @@ void MultiSlaterDetTableMethod::evaluateDerivativesWF(ParticleSet& P,
       int kk = myVars->where(k);
       if (kk < 0)
         continue;
-      if (optvars.recompute(kk))
-        recalculate = true;
+      recalculate = true;
     }
 
     if (recalculate)
@@ -1092,8 +1090,7 @@ void MultiSlaterDetTableMethod::evaluateDerivRatios(const VirtualParticleSet& VP
       int kk = myVars->where(k);
       if (kk < 0)
         continue;
-      if (optvars.recompute(kk))
-        recalculate = true;
+      recalculate = true;
     }
 
   // calculate derivatives based on the reference electron position
@@ -1256,5 +1253,14 @@ void MultiSlaterDetTableMethod::releaseResource(ResourceCollection& collection,
     const auto det_list(extract_DetRef_list(wfc_list, idet));
     Dets[idet]->releaseResource(collection, det_list);
   }
+}
+
+void MultiSlaterDetTableMethod::registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const
+{
+  for (int i = 0; i < Dets.size(); ++i)
+  {
+    Dets[i]->registerTWFFastDerivWrapper(P, twf);
+  }
+  twf.addMultiSlaterDet(P, this);
 }
 } // namespace qmcplusplus

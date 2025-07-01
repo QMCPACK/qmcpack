@@ -48,25 +48,25 @@ enum
  */
 struct VariableSet
 {
-  using real_type = qmcplusplus::QMCTraits::RealType;
-
+  using real_type       = qmcplusplus::QMCTraits::RealType;
   using pair_type       = std::pair<std::string, real_type>;
   using index_pair_type = std::pair<std::string, int>;
   using iterator        = std::vector<pair_type>::iterator;
   using const_iterator  = std::vector<pair_type>::const_iterator;
   using size_type       = std::vector<pair_type>::size_type;
 
+private:
   ///number of active variables
   int num_active_vars;
+  std::vector<pair_type> NameAndValue;
+  std::vector<index_pair_type> ParameterType;
+
+public:
   /** store locator of the named variable
    *
    * if(Index[i]  == -1), the named variable is not active
    */
   std::vector<int> Index;
-  std::vector<pair_type> NameAndValue;
-  std::vector<index_pair_type> ParameterType;
-  std::vector<index_pair_type> Recompute;
-
   ///default constructor
   inline VariableSet() : num_active_vars(0) {}
   ///viturval destructor for safety
@@ -139,7 +139,6 @@ struct VariableSet
       Index.push_back(ind_loc);
       NameAndValue.push_back(pair_type(vname, v));
       ParameterType.push_back(index_pair_type(vname, type));
-      Recompute.push_back(index_pair_type(vname, 1));
     }
     //disable it if enable == false
     if (!enable)
@@ -176,7 +175,6 @@ struct VariableSet
       Index.push_back(-1);
       NameAndValue.push_back(pair_type(vname, 0));
       ParameterType.push_back(index_pair_type(vname, 0));
-      Recompute.push_back(index_pair_type(vname, 1));
       return NameAndValue.back().second;
     }
     return (*loc).second;
@@ -203,29 +201,6 @@ struct VariableSet
   */
   inline int getType(int i) const { return ParameterType[i].second; }
 
-  inline bool recompute(int i) const { return (Recompute[i].second == 1); }
-
-  inline int& recompute(int i) { return Recompute[i].second; }
-
-  inline void setComputed()
-  {
-    for (int i = 0; i < Recompute.size(); i++)
-    {
-      if (ParameterType[i].second == LOGLINEAR_P)
-        Recompute[i].second = 0;
-      else if (ParameterType[i].second == LOGLINEAR_K)
-        Recompute[i].second = 0;
-      else
-        Recompute[i].second = 1;
-    }
-  }
-
-  inline void setRecompute()
-  {
-    for (int i = 0; i < Recompute.size(); i++)
-      Recompute[i].second = 1;
-  }
-
   /** clear the variable set
    *
    * Remove all the data.
@@ -237,76 +212,9 @@ struct VariableSet
    */
   void insertFrom(const VariableSet& input);
 
-  /** sum together the values of the optimizable parameter values in
-   *  two VariableSet objects, and set this object's values to equal them.
-   *  @param first set of input variables
-   *  @param second set of input variables
-   */
-  void insertFromSum(const VariableSet& input_1, const VariableSet& input_2);
-
-  /** take the difference (input_1-input_2) of values of the optimizable
-   *  parameter values in two VariableSet objects, and set this object's
-   *  values to equal them.
-   *  @param first set of input variables
-   *  @param second set of input variables
-   */
-  void insertFromDiff(const VariableSet& input_1, const VariableSet& input_2);
-
-  /** activate variables for optimization
-   * @param first iterator of the first name
-   * @param last iterator of the last name
-   * @param reindex if true, Index is updated
-   *
-   * The status of a variable that is not included in the [first,last)
-   * remains the same.
-   */
-  template<typename ForwardIterator>
-  void activate(ForwardIterator first, ForwardIterator last, bool reindex)
-  {
-    while (first != last)
-    {
-      iterator loc = find(*first++);
-      if (loc != NameAndValue.end())
-      {
-        int i = loc - NameAndValue.begin();
-        if (Index[i] < 0)
-          Index[i] = num_active_vars++;
-      }
-    }
-    if (reindex)
-    {
-      removeInactive();
-      resetIndex();
-    }
-  }
-
-  /** deactivate variables for optimization
-   * @param first iterator of the first name
-   * @param last iterator of the last name
-   * @param reindex if true, the variales are removed and Index is updated
-   */
-  template<typename ForwardIterator>
-  void disable(ForwardIterator first, ForwardIterator last, bool reindex)
-  {
-    while (first != last)
-    {
-      int loc = find(*first++) - NameAndValue.begin();
-      if (loc < NameAndValue.size())
-        Index[loc] = -1;
-    }
-    if (reindex)
-    {
-      removeInactive();
-      resetIndex();
-    }
-  }
-
-  /** reset Index
+  /** reset Index of active parameters
    */
   void resetIndex();
-  /** remove inactive variables and trim the internal data
-   */
-  void removeInactive();
 
   /** set the index table of this VariableSet
    * @param selected input variables
@@ -314,6 +222,11 @@ struct VariableSet
    * This VariableSet is a subset of selected.
    */
   void getIndex(const VariableSet& selected);
+
+  /** find the index of the first parameter of *this set in the selection
+   * return -1 if not found.
+   */
+  int findIndexOfFirstParam(const VariableSet& selected) const;
 
   /** set default Indices, namely all the variables are active
    */

@@ -232,8 +232,7 @@ struct J1Spin : public WaveFunctionComponent
       int kk = myVars.where(k);
       if (kk < 0)
         continue;
-      if (active.recompute(kk))
-        recalculate = true;
+      recalculate = true;
       rcsingles[k] = true;
     }
     if (recalculate)
@@ -262,8 +261,7 @@ struct J1Spin : public WaveFunctionComponent
       int kk = myVars.where(k);
       if (kk < 0)
         continue;
-      if (active.recompute(kk))
-        recalculate = true;
+      recalculate = true;
       rcsingles[k] = true;
     }
     if (recalculate)

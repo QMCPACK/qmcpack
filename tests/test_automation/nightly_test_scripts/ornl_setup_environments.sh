@@ -73,6 +73,8 @@ esac
 echo --- Installing for $ourplatform architecture
 ourhostname=`hostname|sed 's/\..*//g'`
 echo --- Host is $ourhostname
+echo --- Using spack `which spack`
+echo --- SPACK_USER_CONFIG_PATH=$SPACK_USER_CONFIG_PATH
 
 theenv=envgccnewmpi
 echo --- Setting up $theenv `date`
@@ -85,14 +87,14 @@ spack add gcc@${gcc_vnew}
 spack add git
 spack add ninja
 spack add cmake@${cmake_vnew}
-spack add libxml2@${libxml2_v}%gcc@${gcc_vnew}
-spack add boost@${boost_vnew}%gcc@${gcc_vnew}
-spack add util-linux-uuid%gcc@${gcc_vnew}
-spack add python%gcc@${gcc_vnew}
-spack add openmpi@${ompi_vnew}%gcc@${gcc_vnew}
-spack add hdf5@${hdf5_vnew}%gcc@${gcc_vnew} +fortran +hl +mpi
-spack add fftw@${fftw_vnew}%gcc@${gcc_vnew} -mpi #Avoid MPI for simplicity
-spack add openblas%gcc@${gcc_vnew} threads=openmp
+spack add libxml2@${libxml2_v}^gcc@${gcc_vnew}
+spack add boost@${boost_vnew}^gcc@${gcc_vnew}
+spack add util-linux-uuid^gcc@${gcc_vnew}
+spack add python^gcc@${gcc_vnew}
+spack add openmpi@${ompi_vnew}^gcc@${gcc_vnew}
+spack add hdf5@${hdf5_vnew} +fortran +hl +mpi 
+spack add fftw@${fftw_vnew} -mpi #Avoid MPI for simplicity
+spack add openblas threads=openmp
 if [ "$ourplatform" == "AMD" ]; then
 spack add amdblis; spack add amdlibflame; #spack add amd-aocl
 fi
@@ -107,12 +109,12 @@ spack add py-pandas
 spack add py-mpi4py
 spack add py-numpy@${numpy_vnew}
 spack add py-scipy
-spack add py-h5py ^hdf5@${hdf5_vnew}%gcc@${gcc_vnew} +fortran +hl +mpi
+spack add py-h5py ^hdf5@${hdf5_vnew}
 spack add quantum-espresso +mpi +qmcpack
 export CMAKE_BUILD_PARALLEL_LEVEL=8 # For PySCF
 spack add py-pyscf
 spack add dftd4
-#spack add rmgdft #Fails to compile with GCC14 due to bug in vendored SCALAPACK 
+spack add rmgdft
 
 #Luxury options for actual science use:
 spack add py-requests # for pseudo helper
@@ -133,22 +135,21 @@ spack env deactivate
 theenv=envgccnewnompi
 echo --- Setting up $theenv `date`
 spack env create $theenv
-#spack -e $theenv config add "concretizer:unify:when_possible"
-spack -e $theenv config add "concretizer:unify:true"
+spack -e $theenv config add "concretizer:unify:when_possible"
+#spack -e $theenv config add "concretizer:unify:true"
 spack env activate $theenv
 
 spack add gcc@${gcc_vnew}
 spack add git
 spack add ninja
 spack add cmake@${cmake_vnew}
-spack add libxml2@${libxml2_v}%gcc@${gcc_vnew}
-spack add boost@${boost_vnew}%gcc@${gcc_vnew}
-spack add util-linux-uuid%gcc@${gcc_vnew}
-spack add python%gcc@${gcc_vnew}
-#spack add openmpi@${ompi_vnew}%gcc@${gcc_vnew}
-spack add hdf5@${hdf5_vnew}%gcc@${gcc_vnew} +fortran +hl ~mpi
-spack add fftw@${fftw_vnew}%gcc@${gcc_vnew} -mpi #Avoid MPI for simplicity
-spack add openblas%gcc@${gcc_vnew} threads=openmp
+spack add libxml2@${libxml2_v}^gcc@${gcc_vnew}
+spack add boost@${boost_vnew}^gcc@${gcc_vnew}
+spack add util-linux-uuid^gcc@${gcc_vnew}
+spack add python^gcc@${gcc_vnew}
+spack add hdf5@${hdf5_vnew} +fortran +hl ~mpi
+spack add fftw@${fftw_vnew} -mpi #Avoid MPI for simplicity
+spack add openblas threads=openmp
 if [ "$ourplatform" == "AMD" ]; then
 spack add amdblis; spack add amdlibflame; #spack add amd-aocl
 fi
@@ -160,10 +161,9 @@ fi
 spack add py-lxml
 spack add py-matplotlib
 spack add py-pandas
-#spack add py-mpi4py
 spack add py-numpy@${numpy_vnew}
 spack add py-scipy
-spack add py-h5py ^hdf5@${hdf5_vnew}%gcc@${gcc_vnew} +fortran +hl ~mpi
+spack add py-h5py ^hdf5@${hdf5_vnew}
 
 install_environment
 spack env deactivate
@@ -176,27 +176,23 @@ spack -e $theenv config add "concretizer:unify:true"
 spack env activate $theenv
 
 spack add gcc@${gcc_vold}
-spack add cmake@${cmake_vold}%gcc@${gcc_vold}
-spack add libxml2@${libxml2_v}%gcc@${gcc_vold}
-spack add boost@${boost_vold}%gcc@${gcc_vold}
-spack add util-linux-uuid%gcc@${gcc_vold}
-spack add python%gcc@${gcc_vold}
-#spack add openmpi@${ompi_vnew}%gcc@${gcc_vold}
-spack add hdf5@${hdf5_vold}%gcc@${gcc_vold} +fortran +hl ~mpi
-spack add fftw@${fftw_vold}%gcc@${gcc_vold} -mpi #Avoid MPI for simplicity
-spack add openblas%gcc@${gcc_vold} threads=openmp
-#spack add blis%gcc@${gcc_vold} threads=openmp
-#spack add libflame%gcc@${gcc_vold} threads=openmp
+spack add cmake@${cmake_vold}^gcc@${gcc_vold}
+spack add libxml2@${libxml2_v}^gcc@${gcc_vold}
+spack add boost@${boost_vold}^gcc@${gcc_vold}
+spack add util-linux-uuid^gcc@${gcc_vold}
+spack add python^gcc@${gcc_vold}
+spack add hdf5@${hdf5_vold} +fortran +hl ~mpi
+spack add fftw@${fftw_vold} -mpi #Avoid MPI for simplicity
+spack add openblas threads=openmp
 spack add git
 spack add ninja
 
 spack add py-lxml
 spack add py-matplotlib
 spack add py-pandas
-#spack add py-mpi4py
 spack add py-numpy@${numpy_vold}
 spack add py-scipy
-spack add py-h5py ^hdf5@${hdf5_vnew}%gcc@${gcc_vold} +fortran +hl ~mpi
+spack add py-h5py ^hdf5@${hdf5_vnew}
 install_environment
 spack env deactivate
 
@@ -208,17 +204,15 @@ spack -e $theenv config add "concretizer:unify:true"
 spack env activate $theenv
 
 spack add gcc@${gcc_vold}
-spack add cmake@${cmake_vold}%gcc@${gcc_vold}
-spack add libxml2@${libxml2_v}%gcc@${gcc_vold}
-spack add boost@${boost_vold}%gcc@${gcc_vold}
-spack add util-linux-uuid%gcc@${gcc_vold}
-spack add python%gcc@${gcc_vold}
-spack add openmpi@${ompi_vnew}%gcc@${gcc_vold}
-spack add hdf5@${hdf5_vold}%gcc@${gcc_vold} +fortran +hl +mpi
-spack add fftw@${fftw_vold}%gcc@${gcc_vold} -mpi #Avoid MPI for simplicity
-spack add openblas%gcc@${gcc_vold} threads=openmp
-#spack add blis%gcc@${gcc_vold} threads=openmp
-#spack add libflame%gcc@${gcc_vold} threads=openmp
+spack add cmake@${cmake_vold}^gcc@${gcc_vold}
+spack add libxml2@${libxml2_v}^gcc@${gcc_vold}
+spack add boost@${boost_vold}^gcc@${gcc_vold}
+spack add util-linux-uuid^gcc@${gcc_vold}
+spack add python^gcc@${gcc_vold}
+spack add openmpi@${ompi_vnew}^gcc@${gcc_vold}
+spack add hdf5@${hdf5_vold} +fortran +hl +mpi
+spack add fftw@${fftw_vold} -mpi #Avoid MPI for simplicity
+spack add openblas threads=openmp
 spack add git
 spack add ninja
 
@@ -228,10 +222,10 @@ spack add py-pandas
 spack add py-mpi4py
 spack add py-numpy@${numpy_vold}
 spack add py-scipy
-spack add py-h5py ^hdf5@${hdf5_vnew}%gcc@${gcc_vold} +fortran +hl +mpi
-#spack add quantum-espresso +mpi +qmcpack
-#export CMAKE_BUILD_PARALLEL_LEVEL=8 # For PySCF
-#spack add py-pyscf
+spack add py-h5py ^hdf5@${hdf5_vnew}
+#spack add quantum-espresso +mpi +qmcpack # Skip QE, will crash GCC 12.4.0
+export CMAKE_BUILD_PARALLEL_LEVEL=8 # For PySCF
+spack add py-pyscf
 spack add rmgdft
 
 #Luxury options for actual science use:
@@ -249,46 +243,79 @@ install_environment
 unset CMAKE_BUILD_PARALLEL_LEVEL
 spack env deactivate
 
-theenv=envclangnewmpi
-echo --- Setting up $theenv `date`
-spack env create $theenv
-#spack -e $theenv config add "concretizer:unify:when_possible"
-spack -e $theenv config add "concretizer:unify:true"
-spack env activate $theenv
-
-spack add gcc@${gcc_vnew}
-spack add llvm@${llvm_vnew}%gcc@${gcc_vnew}
-spack add git
-spack add ninja
-spack add cmake@${cmake_vnew}
-spack add libxml2@${libxml2_v}%gcc@${gcc_vnew}
-spack add boost@${boost_vnew}%gcc@${gcc_vnew}
-spack add util-linux-uuid%gcc@${gcc_vnew}
-spack add python%gcc@${gcc_vnew}
-spack add openmpi@${ompi_vnew}%gcc@${gcc_vnew}
-spack add hdf5@${hdf5_vnew}%gcc@${gcc_vnew} +fortran +hl +mpi
-spack add fftw@${fftw_vnew}%gcc@${gcc_vnew} -mpi #Avoid MPI for simplicity
-spack add openblas%gcc@${gcc_vnew} threads=openmp
-if [ "$ourplatform" == "AMD" ]; then
-spack add amdblis; spack add amdlibflame; #spack add amd-aocl
-fi
-if [ "$ourplatform" == "Intel" ]; then
-spack add intel-oneapi-mkl
-fi
-
-spack add py-lxml
-spack add py-matplotlib
-spack add py-pandas
-spack add py-mpi4py
-spack add py-numpy@${numpy_vold}
-spack add py-scipy
-spack add py-h5py ^hdf5@${hdf5_vnew}%gcc@${gcc_vnew} +fortran +hl +mpi
-install_environment
-spack env deactivate
-
-
-# Build LLVM offload with preferred GCC since CUDA may not support new GCC
-# Build with new CMake
+ theenv=envclangnewmpi
+ echo --- Setting up $theenv `date`
+ spack env create $theenv
+ #spack -e $theenv config add "concretizer:unify:when_possible"
+ spack -e $theenv config add "concretizer:unify:true"
+ spack env activate $theenv
+ 
+ spack add llvm@${llvm_vnew}
+ spack add gcc@${gcc_vnew}
+ spack add git
+ spack add ninja
+ spack add cmake@${cmake_vnew}
+ spack add libxml2@${libxml2_v}^gcc@${gcc_vnew}
+ spack add boost@${boost_vnew}^gcc@${gcc_vnew}
+ spack add util-linux-uuid^gcc@${gcc_vnew}
+ spack add python^gcc@${gcc_vnew}
+ spack add openmpi@${ompi_vnew}^gcc@${gcc_vnew}
+ spack add hdf5@${hdf5_vnew} +fortran +hl +mpi
+ spack add fftw@${fftw_vnew} -mpi #Avoid MPI for simplicity
+ spack add openblas threads=openmp
+ if [ "$ourplatform" == "AMD" ]; then
+ spack add amdblis; spack add amdlibflame; #spack add amd-aocl
+ fi
+ if [ "$ourplatform" == "Intel" ]; then
+ spack add intel-oneapi-mkl
+ fi
+ 
+ spack add py-lxml
+ spack add py-matplotlib
+ spack add py-pandas
+ spack add py-mpi4py
+ spack add py-numpy@${numpy_vold}
+ spack add py-scipy
+ spack add py-h5py ^hdf5@${hdf5_vnew}
+ install_environment
+ spack env deactivate
+ 
+ theenv=envclangnewnompi
+ echo --- Setting up $theenv `date`
+ spack env create $theenv
+ #spack -e $theenv config add "concretizer:unify:when_possible"
+ spack -e $theenv config add "concretizer:unify:true"
+ spack env activate $theenv
+ 
+ spack add llvm@${llvm_vnew}^gcc@${gcc_vnew}
+ spack add gcc@${gcc_vnew}
+ spack add git
+ spack add ninja
+ spack add cmake@${cmake_vnew}
+ spack add libxml2@${libxml2_v}^gcc@${gcc_vnew}
+ spack add boost@${boost_vnew}^gcc@${gcc_vnew}
+ spack add util-linux-uuid^gcc@${gcc_vnew}
+ spack add python^gcc@${gcc_vnew}
+ spack add hdf5@${hdf5_vnew} +fortran +hl ~mpi
+ spack add fftw@${fftw_vnew} -mpi #Avoid MPI for simplicity
+ spack add openblas threads=openmp
+ if [ "$ourplatform" == "AMD" ]; then
+ spack add amdblis; spack add amdlibflame; #spack add amd-aocl
+ fi
+ if [ "$ourplatform" == "Intel" ]; then
+ spack add intel-oneapi-mkl
+ fi
+ 
+ spack add py-lxml
+ spack add py-matplotlib
+ spack add py-pandas
+ spack add py-numpy@${numpy_vold}
+ spack add py-scipy
+ spack add py-h5py ^hdf5@${hdf5_vnew}
+ install_environment
+ spack env deactivate
+ 
+ 
 # TO DO: Match chosen cuda with version installed on system
 theenv=envclangoffloadmpi
 echo --- Setting up $theenv `date`
@@ -299,23 +326,19 @@ spack env activate $theenv
 
 spack add gcc@${gcc_vllvmoffload}
 spack add cuda@${cuda_voffload} +allow-unsupported-compilers
-spack add llvm@${llvm_voffload}%gcc@${gcc_vllvmoffload} targets=all
-#spack add llvm@${llvm_voffload}%gcc@${gcc_vllvmoffload} targets=all cuda_arch=70
+spack add llvm@${llvm_voffload}
 
-spack add hwloc
 spack add git
 spack add ninja
 spack add cmake@${cmake_vnew}
-spack add libxml2@${libxml2_v}%gcc@${gcc_vllvmoffload}
-spack add boost@${boost_vold}%gcc@${gcc_vllvmoffload}
-spack add util-linux-uuid%gcc@${gcc_vllvmoffload}
-spack add python%gcc@${gcc_vllvmoffload}
-spack add openmpi@${ompi_vnew}%gcc@${gcc_vllvmoffload}
-spack add hdf5@${hdf5_vold}%gcc@${gcc_vllvmoffload} +fortran +hl +mpi
-spack add fftw@${fftw_vold}%gcc@${gcc_vllvmoffload} -mpi #Avoid MPI for simplicity
-spack add openblas%gcc@${gcc_vllvmoffload} threads=openmp
-#spack add blis%gcc@${gcc_vllvmoffload} threads=openmp
-#spack add libflame%gcc@${gcc_vllvmoffload} threads=openmp
+spack add libxml2@${libxml2_v}^gcc@${gcc_vllvmoffload}
+spack add boost@${boost_vold}^gcc@${gcc_vllvmoffload}
+spack add util-linux-uuid^gcc@${gcc_vllvmoffload}
+spack add python^gcc@${gcc_vllvmoffload}
+spack add openmpi@${ompi_vnew}^gcc@${gcc_vllvmoffload}
+spack add hdf5@${hdf5_vold} +fortran +hl +mpi
+spack add fftw@${fftw_vold} -mpi #Avoid MPI for simplicity
+spack add openblas threads=openmp
 
 spack add py-lxml
 spack add py-matplotlib
@@ -323,7 +346,7 @@ spack add py-pandas
 spack add py-mpi4py
 spack add py-numpy@${numpy_vold}
 spack add py-scipy
-spack add py-h5py ^hdf5@${hdf5_vold}%gcc@${gcc_vllvmoffload} +fortran +hl +mpi
+spack add py-h5py ^hdf5@${hdf5_vold}
 install_environment
 spack env deactivate
 
@@ -336,30 +359,25 @@ spack env activate $theenv
 
 spack add gcc@${gcc_vllvmoffload}
 spack add cuda@${cuda_voffload} +allow-unsupported-compilers
-spack add llvm@${llvm_voffload}%gcc@${gcc_vllvmoffload} targets=all
+spack add llvm@${llvm_voffload} targets=all
 
-spack add hwloc
 spack add git
 spack add ninja
 spack add cmake@${cmake_vnew}
-spack add libxml2@${libxml2_v}%gcc@${gcc_vllvmoffload}
-spack add boost@${boost_vold}%gcc@${gcc_vllvmoffload}
-spack add util-linux-uuid%gcc@${gcc_vllvmoffload}
-spack add python%gcc@${gcc_vllvmoffload}
-#spack add openmpi@${ompi_vnew}%gcc@${gcc_vllvmoffload}
-spack add hdf5@${hdf5_vold}%gcc@${gcc_vllvmoffload} +fortran +hl ~mpi
-spack add fftw@${fftw_vold}%gcc@${gcc_vllvmoffload} -mpi #Avoid MPI for simplicity
-spack add openblas%gcc@${gcc_vllvmoffload} threads=openmp
-#spack add blis%gcc@${gcc_vllvmoffload} threads=openmp
-#spack add libflame%gcc@${gcc_vllvmoffload} threads=openmp
+spack add libxml2@${libxml2_v}^gcc@${gcc_vllvmoffload}
+spack add boost@${boost_vold}^gcc@${gcc_vllvmoffload}
+spack add util-linux-uuid^gcc@${gcc_vllvmoffload}
+spack add python^gcc@${gcc_vllvmoffload}
+spack add hdf5@${hdf5_vold} +fortran +hl ~mpi
+spack add fftw@${fftw_vold} -mpi #Avoid MPI for simplicity
+spack add openblas threads=openmp
 
 spack add py-lxml
 spack add py-matplotlib
 spack add py-pandas
-#spack add py-mpi4py
 spack add py-numpy@${numpy_vold}
 spack add py-scipy
-spack add py-h5py ^hdf5@${hdf5_vold}%gcc@${gcc_vllvmoffload} +fortran +hl ~mpi
+spack add py-h5py ^hdf5@${hdf5_vold}
 install_environment
 spack env deactivate
 
@@ -377,14 +395,14 @@ spack add gcc@${gcc_vllvmoffload}
 spack add git
 spack add ninja
 spack add cmake@${cmake_vnew}
-spack add libxml2@${libxml2_v}%gcc@${gcc_vllvmoffload}
-spack add boost@${boost_vold}%gcc@${gcc_vllvmoffload}
-spack add util-linux-uuid%gcc@${gcc_vllvmoffload}
-spack add python%gcc@${gcc_vllvmoffload}
-spack add openmpi@${ompi_vnew}%gcc@${gcc_vllvmoffload}
-spack add hdf5@${hdf5_vold}%gcc@${gcc_vllvmoffload} +fortran +hl +mpi
-spack add fftw@${fftw_vold}%gcc@${gcc_vllvmoffload} -mpi #Avoid MPI for simplicity
-spack add openblas%gcc@${gcc_vllvmoffload} threads=openmp
+spack add libxml2@${libxml2_v}^gcc@${gcc_vllvmoffload}
+spack add boost@${boost_vold}^gcc@${gcc_vllvmoffload}
+spack add util-linux-uuid^gcc@${gcc_vllvmoffload}
+spack add python^gcc@${gcc_vllvmoffload}
+spack add openmpi@${ompi_vnew}^gcc@${gcc_vllvmoffload}
+spack add hdf5@${hdf5_vold} +fortran +hl +mpi
+spack add fftw@${fftw_vold} -mpi #Avoid MPI for simplicity
+spack add openblas threads=openmp
 spack add amdblis; spack add amdlibflame; #spack add amd-aocl
 
 spack add py-lxml
@@ -393,9 +411,9 @@ spack add py-pandas
 spack add py-mpi4py
 spack add py-numpy@${numpy_vold}
 spack add py-scipy
-spack add py-h5py ^hdf5@${hdf5_vold}%gcc@${gcc_vold} +fortran +hl +mpi
+spack add py-h5py ^hdf5@${hdf5_vold}
 spack add quantum-espresso +mpi +qmcpack
-#spack add rmgdft
+spack add rmgdft@develop # Use develop version to avoid vendored SCALPACK compilation bugs (20250324)
 install_environment
 spack env deactivate
 
@@ -410,23 +428,21 @@ spack add gcc@${gcc_vllvmoffload}
 spack add git
 spack add ninja
 spack add cmake@${cmake_vnew}
-spack add libxml2@${libxml2_v}%gcc@${gcc_vllvmoffload}
-spack add boost@${boost_vold}%gcc@${gcc_vllvmoffload}
-spack add util-linux-uuid%gcc@${gcc_vllvmoffload}
-spack add python%gcc@${gcc_vllvmoffload}
-#spack add openmpi@${ompi_vnew}%gcc@${gcc_vllvmoffload}
-spack add hdf5@${hdf5_vold}%gcc@${gcc_vllvmoffload} +fortran +hl ~mpi
-spack add fftw@${fftw_vold}%gcc@${gcc_vllvmoffload} -mpi #Avoid MPI for simplicity
-spack add openblas%gcc@${gcc_vllvmoffload} threads=openmp
+spack add libxml2@${libxml2_v}^gcc@${gcc_vllvmoffload}
+spack add boost@${boost_vold}^gcc@${gcc_vllvmoffload}
+spack add util-linux-uuid^gcc@${gcc_vllvmoffload}
+spack add python^gcc@${gcc_vllvmoffload}
+spack add hdf5@${hdf5_vold} +fortran +hl ~mpi
+spack add fftw@${fftw_vold} -mpi #Avoid MPI for simplicity
+spack add openblas threads=openmp
 spack add amdblis; spack add amdlibflame; #spack add amd-aocl
 
 spack add py-lxml
 spack add py-matplotlib
 spack add py-pandas
-#spack add py-mpi4py
 spack add py-numpy@${numpy_vold}
 spack add py-scipy
-spack add py-h5py ^hdf5@${hdf5_vold}%gcc@${gcc_vllvmoffload} +fortran +hl ~mpi
+spack add py-h5py ^hdf5@${hdf5_vold}
 install_environment
 spack env deactivate
 fi

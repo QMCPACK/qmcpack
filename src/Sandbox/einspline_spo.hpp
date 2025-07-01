@@ -17,6 +17,7 @@
 #include <Configuration.h>
 #include "Particle/ParticleSet.h"
 #include "spline2/MultiBspline.hpp"
+#include "spline2/SingleBsplineAllocator.hpp"
 #include "spline2/MultiBsplineEval.hpp"
 #include "CPU/SIMD/aligned_allocator.hpp"
 #include <iostream>
@@ -165,7 +166,7 @@ struct einspline_spo
       BC[1].lCode = BC[1].rCode = PERIODIC;
       BC[2].lCode = BC[2].rCode = PERIODIC;
 
-      BsplineAllocator<double> mAllocator;
+      SingleBsplineAllocator<double> mAllocator;
       UBspline_3d_d* aspline = mAllocator.allocateUBspline(grid[0], grid[1], grid[2], BC[0], BC[1], BC[2], data.data());
       for (int i = 0; i < nBlocks; ++i)
       {

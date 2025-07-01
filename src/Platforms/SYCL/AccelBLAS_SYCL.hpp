@@ -10,7 +10,7 @@
 #ifndef QMCPLUSPLUS_SYCL_ACCELBLAS_SYCL_H
 #define QMCPLUSPLUS_SYCL_ACCELBLAS_SYCL_H
 
-#include "AccelBLASHandle.hpp"
+#include "Common/AccelBLASHandle.hpp"
 #include "SYCL/QueueSYCL.hpp"
 #include "SYCL/syclBLAS.hpp"
 

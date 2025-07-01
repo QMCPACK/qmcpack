@@ -25,7 +25,7 @@ namespace qmcplusplus
 template<typename T, unsigned D, int SC>
 struct SoaDistanceTableAB : public DTD_BConds<T, D, SC>, public DistanceTableAB
 {
-  SoaDistanceTableAB(const ParticleSet& source, ParticleSet& target)
+  SoaDistanceTableAB(const ParticleSet& source, const ParticleSet& target)
       : DTD_BConds<T, D, SC>(source.getLattice()),
         DistanceTableAB(source, target, DTModes::ALL_OFF),
         evaluate_timer_(createGlobalTimer(std::string("DTAB::evaluate_") + target.getName() + "_" + source.getName(),

@@ -2,9 +2,9 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2024 QMCPACK developers.
+// Copyright (c) 2025 QMCPACK developers.
 //
-// File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
+// File developed by: Peter W. Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //
 // File refactored from: EstimatorManagerBase.h
 //////////////////////////////////////////////////////////////////////////////////////
@@ -59,7 +59,7 @@ public:
   ///destructor
   ~EstimatorManagerNew();
 
-  /** add a "non" physical operator estimator 
+  /** add a "non" physical operator estimator
    *
    *  this is a dratically reduced version of OperatorBase right now it just supports
    *  what the SpinDensityNew estimator needs
@@ -71,11 +71,13 @@ public:
 
   /** construct estimators from already parsed input.
    *
-   *  \param[in]  emi      EstimatorManagerInput consisting of merged global and local estimator definitions. Moved from!
+   *  \param[in]  emi      EstimatorManagerInput consisting of merged global and local estimator
+   *                       definitions. Moved from!
    *  \param[in]  H        Fully Constructed Golden Hamiltonian.
    *  \param[in]  pset     The electron or equiv. pset
    *  \param[in]  twf      The fully constructed TrialWaveFunction.
-   *  \param[in]  ps_pool  Global particle set pool since some estimators expect to be able to get arbitrary psets by string mapping
+   *  \param[in]  ps_pool  Global particle set map since some estimators expect to be able to get
+   *                       arbitrary psets by string
    */
   void constructEstimators(EstimatorManagerInput&& emi,
                            const ParticleSet& pset_primary,
@@ -131,8 +133,9 @@ public:
    *  if the crowd context OperatorEstimator holds a copy of the estimator data structure
    *  or more complex if it just collects for instance a list of writes to locations
    *  in the data structure.
+   *  As a side effect of the method all op_ests passed have there accumulated data zeroed.
    */
-  void collectOperatorEstimators(const std::vector<RefVector<OperatorEstBase>>& op_ests);
+  void collectOperatorEstimators(std::vector<RefVector<OperatorEstBase>>& op_ests);
 
   /** get the average of per-block energy and variance of all the blocks
    * Note: this is not weighted average. It can be the same as weighted average only when block weights are identical.
@@ -184,8 +187,14 @@ private:
   // ///return a pointer to the estimator aname
   // ScalarEstimatorBase* getEstimator(const std::string& a);
 
-  /// collect data and write
+  /** reduce accepts and rejects across all ranks
+   *  call reduceBlockData
+   *  add block averages to the energy and var accumulators
+   */
   void makeBlockAverages(unsigned long accept, unsigned long reject);
+
+  /** Does the mpi reduction over the Property and Average caches */
+  void reduceBlockData();
 
   /// write scalars to scalar.dat and h5
   void writeScalarH5();
@@ -255,7 +264,7 @@ private:
   std::vector<ObservableHelper> h5desc;
   /** OperatorEst Observables
    *
-   * since the operator estimators are also a close set at compile time
+   * since the operator estimators are also a closed set at compile time
    * they could be treated just like the inputs.
    * However the idea of a shared interface is much more straight forward for
    * them.

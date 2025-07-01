@@ -39,7 +39,7 @@ struct ci_configuration2
     if (occup.size() != c.occup.size())
       throw std::runtime_error("ci_configuration2::operator==() - ci_configuration2s are not compatible.");
 
-    for (int i = 0; i < occup.size(); i++)
+    for (size_t i = 0; i < occup.size(); i++)
       if (occup[i] != c.occup[i])
         return false;
     return true;

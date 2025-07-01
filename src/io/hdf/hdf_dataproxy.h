@@ -18,6 +18,7 @@
 
 #include "hdf_wrapper_functions.h"
 #include "hdf_dataspace.h"
+#include "container_traits.h"
 
 namespace qmcplusplus
 {
@@ -47,6 +48,21 @@ struct h5data_proxy : public h5_space_type<T, 0>
   inline bool write(const data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT) const
   {
     return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(&ref), xfer_plist);
+  }
+
+  inline bool append(const data_type& ref,
+                     hid_t grp,
+                     const std::string& aname,
+                     hsize_t& current_leading_index,
+                     hid_t xfer_plist = H5P_DEFAULT) const
+  {
+    constexpr hsize_t rank = FileSpace::rank + 1;
+    std::array<hsize_t, rank> my_dims;
+    // this is the dimension we are appending.
+    my_dims[0] = 1;
+    std::copy(dims.begin(), dims.end(), my_dims.begin() + 1);
+    return h5d_append(grp, aname.c_str(), current_leading_index, rank, my_dims.data(), get_address(&ref), 1,
+                      xfer_plist);
   }
 };
 

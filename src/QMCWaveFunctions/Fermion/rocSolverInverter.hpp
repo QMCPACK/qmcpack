@@ -21,7 +21,7 @@
 #endif
 // This file assumes that QMC_CUDA2HIP is defined and that creates HIP versions of these functions (despite being labeled with "CUDA")
 #include "CUDA/CUDAruntime.hpp"
-#include "CUDA/CUDAallocator.hpp"
+#include "CUDA/MemManageCUDA.hpp"
 #include "ROCm/rocsolver.hpp"
 #include "QMCWaveFunctions/detail/CUDA/delayed_update_helper.h"
 #include "CPU/math.hpp"
@@ -49,7 +49,6 @@ class rocSolverInverter
 
   // CUDA specific variables
   rocblas_handle h_rocsolver_ = nullptr;
-  hipStream_t hstream_;
 
   /** resize the internal storage
    * @param norb number of electrons/orbitals
@@ -60,7 +59,6 @@ class rocSolverInverter
     if (!h_rocsolver_)
     {
       rocsolverErrorCheck(rocblas_create_handle(&h_rocsolver_), "rocblas_create_handle failed!");
-      rocsolverErrorCheck(rocblas_set_stream(h_rocsolver_, hstream_), "rocblas_set_stream failed!");
     }
 
     if (Mat1_gpu.rows() != norb)
@@ -87,13 +85,12 @@ class rocSolverInverter
 
 public:
   /// default constructor
-  rocSolverInverter() { cudaErrorCheck(hipStreamCreate(&hstream_), "hipStreamCreate failed!"); }
+  rocSolverInverter() = default;
 
   ~rocSolverInverter()
   {
     if (h_rocsolver_)
       rocsolverErrorCheck(rocblas_destroy_handle(h_rocsolver_), "rocblas_destroy_handle failed!");
-    cudaErrorCheck(hipStreamDestroy(hstream_), "hipStreamDestroy failed!");
   }
 
   /** compute the inverse of the transpose of matrix A and its determinant value in log
@@ -104,25 +101,27 @@ public:
   std::enable_if_t<std::is_same<TMAT, T_FP>::value> invert_transpose(const Matrix<TMAT>& logdetT,
                                                                      Matrix<TMAT>& Ainv,
                                                                      Matrix<TMAT, CUDAAllocator<TMAT>>& Ainv_gpu,
-                                                                     std::complex<TREAL>& log_value)
+                                                                     std::complex<TREAL>& log_value,
+                                                                     hipStream_t stream)
   {
     const int norb = logdetT.rows();
     resize(norb);
+    rocsolverErrorCheck(rocblas_set_stream(h_rocsolver_, stream), "rocblas_set_stream failed!");
     cudaErrorCheck(hipMemcpyAsync(Mat1_gpu.data(), logdetT.data(), logdetT.size() * sizeof(TMAT), hipMemcpyHostToDevice,
-                                  hstream_),
+                                  stream),
                    "hipMemcpyAsync for logdetT to Mat1_gpu failed!");
     rocsolverErrorCheck(rocsolver::getrf(h_rocsolver_, norb, norb, Mat1_gpu.data(), norb, ipiv_gpu.data() + 1,
                                          ipiv_gpu.data()),
                         "rocsolver::getrf failed!");
     cudaErrorCheck(hipMemcpyAsync(ipiv.data(), ipiv_gpu.data(), ipiv_gpu.size() * sizeof(int), hipMemcpyDeviceToHost,
-                                  hstream_),
+                                  stream),
                    "hipMemcpyAsync for ipiv failed!");
-    extract_matrix_diagonal_cuda(norb, Mat1_gpu.data(), norb, LU_diag_gpu.data(), hstream_);
+    extract_matrix_diagonal_cuda(norb, Mat1_gpu.data(), norb, LU_diag_gpu.data(), stream);
     cudaErrorCheck(hipMemcpyAsync(LU_diag.data(), LU_diag_gpu.data(), LU_diag.size() * sizeof(T_FP),
-                                  hipMemcpyDeviceToHost, hstream_),
+                                  hipMemcpyDeviceToHost, stream),
                    "hipMemcpyAsync for LU_diag failed!");
     // check LU success
-    cudaErrorCheck(hipStreamSynchronize(hstream_), "hipStreamSynchronize after getrf failed!");
+    cudaErrorCheck(hipStreamSynchronize(stream), "hipStreamSynchronize after getrf failed!");
     if (ipiv[0] != 0)
     {
       std::ostringstream err;
@@ -130,17 +129,17 @@ public:
       std::cerr << err.str();
       throw std::runtime_error(err.str());
     }
-    make_identity_matrix_cuda(norb, Ainv_gpu.data(), norb, hstream_);
+    make_identity_matrix_cuda(norb, Ainv_gpu.data(), norb, stream);
     rocsolverErrorCheck(rocsolver::getrs(h_rocsolver_, rocblas_operation_transpose, norb, norb, Mat1_gpu.data(), norb,
                                          ipiv_gpu.data() + 1, Ainv_gpu.data(), norb),
                         "rocsolver::getrs failed!");
-    cudaErrorCheck(hipMemcpyAsync(ipiv.data(), ipiv_gpu.data(), sizeof(int), hipMemcpyDeviceToHost, hstream_),
+    cudaErrorCheck(hipMemcpyAsync(ipiv.data(), ipiv_gpu.data(), sizeof(int), hipMemcpyDeviceToHost, stream),
                    "hipMemcpyAsync for ipiv failed!");
     computeLogDet(LU_diag.data(), norb, ipiv.data() + 1, log_value);
     cudaErrorCheck(hipMemcpyAsync(Ainv.data(), Ainv_gpu.data(), Ainv.size() * sizeof(TMAT), hipMemcpyDeviceToHost,
-                                  hstream_),
+                                  stream),
                    "hipMemcpyAsync for Ainv failed!");
-    cudaErrorCheck(hipStreamSynchronize(hstream_), "hipStreamSynchronize after getrs failed!");
+    cudaErrorCheck(hipStreamSynchronize(stream), "hipStreamSynchronize after getrs failed!");
     if (ipiv[0] != 0)
     {
       std::ostringstream err;
@@ -158,27 +157,29 @@ public:
   std::enable_if_t<!std::is_same<TMAT, T_FP>::value> invert_transpose(const Matrix<TMAT>& logdetT,
                                                                       Matrix<TMAT>& Ainv,
                                                                       Matrix<TMAT, CUDAAllocator<TMAT>>& Ainv_gpu,
-                                                                      std::complex<TREAL>& log_value)
+                                                                      std::complex<TREAL>& log_value,
+                                                                      hipStream_t stream)
   {
     const int norb = logdetT.rows();
     resize(norb);
+    rocsolverErrorCheck(rocblas_set_stream(h_rocsolver_, stream), "rocblas_set_stream failed!");
     Mat2_gpu.resize(norb, norb);
     cudaErrorCheck(hipMemcpyAsync(Mat2_gpu.data(), logdetT.data(), logdetT.size() * sizeof(TMAT), hipMemcpyHostToDevice,
-                                  hstream_),
+                                  stream),
                    "hipMemcpyAsync failed!");
-    copy_matrix_cuda(norb, norb, (TMAT*)Mat2_gpu.data(), norb, Mat1_gpu.data(), norb, hstream_);
+    copy_matrix_cuda(norb, norb, (TMAT*)Mat2_gpu.data(), norb, Mat1_gpu.data(), norb, stream);
     rocsolverErrorCheck(rocsolver::getrf(h_rocsolver_, norb, norb, Mat1_gpu.data(), norb, ipiv_gpu.data() + 1,
                                          ipiv_gpu.data()),
                         "rocsolver::getrf failed!");
     cudaErrorCheck(hipMemcpyAsync(ipiv.data(), ipiv_gpu.data(), ipiv_gpu.size() * sizeof(int), hipMemcpyDeviceToHost,
-                                  hstream_),
+                                  stream),
                    "hipMemcpyAsync failed!");
-    extract_matrix_diagonal_cuda(norb, Mat1_gpu.data(), norb, LU_diag_gpu.data(), hstream_);
+    extract_matrix_diagonal_cuda(norb, Mat1_gpu.data(), norb, LU_diag_gpu.data(), stream);
     cudaErrorCheck(hipMemcpyAsync(LU_diag.data(), LU_diag_gpu.data(), LU_diag.size() * sizeof(T_FP),
-                                  hipMemcpyDeviceToHost, hstream_),
+                                  hipMemcpyDeviceToHost, stream),
                    "hipMemcpyAsync failed!");
     // check LU success
-    cudaErrorCheck(hipStreamSynchronize(hstream_), "hipStreamSynchronize after getrf failed!");
+    cudaErrorCheck(hipStreamSynchronize(stream), "hipStreamSynchronize after getrf failed!");
     if (ipiv[0] != 0)
     {
       std::ostringstream err;
@@ -186,19 +187,19 @@ public:
       std::cerr << err.str();
       throw std::runtime_error(err.str());
     }
-    make_identity_matrix_cuda(norb, Mat2_gpu.data(), norb, hstream_);
+    make_identity_matrix_cuda(norb, Mat2_gpu.data(), norb, stream);
     rocsolverErrorCheck(rocsolver::getrs(h_rocsolver_, rocblas_operation_transpose, norb, norb, Mat1_gpu.data(), norb,
                                          ipiv_gpu.data() + 1, Mat2_gpu.data(), norb),
                         "rocsolver::getrs failed!");
-    copy_matrix_cuda(norb, norb, Mat2_gpu.data(), norb, Ainv_gpu.data(), norb, hstream_);
-    cudaErrorCheck(hipMemcpyAsync(ipiv.data(), ipiv_gpu.data(), sizeof(int), hipMemcpyDeviceToHost, hstream_),
+    copy_matrix_cuda(norb, norb, Mat2_gpu.data(), norb, Ainv_gpu.data(), norb, stream);
+    cudaErrorCheck(hipMemcpyAsync(ipiv.data(), ipiv_gpu.data(), sizeof(int), hipMemcpyDeviceToHost, stream),
                    "hipMemcpyAsync failed!");
     computeLogDet(LU_diag.data(), norb, ipiv.data() + 1, log_value);
     cudaErrorCheck(hipMemcpyAsync(Ainv.data(), Ainv_gpu.data(), Ainv.size() * sizeof(TMAT), hipMemcpyDeviceToHost,
-                                  hstream_),
+                                  stream),
                    "hipMemcpyAsync failed!");
     // check solve success
-    cudaErrorCheck(hipStreamSynchronize(hstream_), "hipStreamSynchronize after getrs failed!");
+    cudaErrorCheck(hipStreamSynchronize(stream), "hipStreamSynchronize after getrs failed!");
     if (ipiv[0] != 0)
     {
       std::ostringstream err;

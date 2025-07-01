@@ -16,8 +16,7 @@
 
 #include "Lattice/ParticleBConds3DSoa.h"
 #include "DistanceTable.h"
-#include "OMPTarget/OMPallocator.hpp"
-#include "Platforms/PinnedAllocator.h"
+#include "OMPTarget/OffloadAlignedAllocators.hpp"
 #include "Particle/RealSpacePositionsOMPTarget.h"
 #include "ResourceCollection.h"
 #include "OMPTarget/OMPTargetMath.hpp"
@@ -32,7 +31,7 @@ class SoaDistanceTableABOMPTarget : public DTD_BConds<T, D, SC>, public Distance
 {
 private:
   template<typename DT>
-  using OffloadPinnedVector = Vector<DT, OMPallocator<DT, PinnedAlignedAllocator<DT>>>;
+  using OffloadPinnedVector = Vector<DT, OffloadPinnedAllocator<DT>>;
 
   ///accelerator output buffer for r and dr
   OffloadPinnedVector<RealType> r_dr_memorypool_;
@@ -118,7 +117,7 @@ private:
   }
 
 public:
-  SoaDistanceTableABOMPTarget(const ParticleSet& source, ParticleSet& target)
+  SoaDistanceTableABOMPTarget(const ParticleSet& source, const ParticleSet& target)
       : DTD_BConds<T, D, SC>(source.getLattice()),
         DistanceTableAB(source, target, DTModes::ALL_OFF),
         offload_timer_(createGlobalTimer(std::string("DTABOMPTarget::offload_") + name_, timer_level_fine)),

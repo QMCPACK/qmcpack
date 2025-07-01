@@ -21,9 +21,9 @@
 #include "Estimators/tests/EstimatorManagerNewTest.h"
 #include "Estimators/EstimatorInputDelegates.h"
 #include "EstimatorManagerInputTest.h"
-#include "Particle/tests/MinimalParticlePool.h"
-#include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
-#include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
+#include <MinimalParticlePool.h>
+#include <MinimalHamiltonianPool.h>
+#include <MinimalWaveFunctionPool.h>
 #include "Utilities/ResourceCollection.h"
 #include "Utilities/ProjectData.h"
 
@@ -50,7 +50,7 @@ TEST_CASE("EstimatorManagerCrowd::EstimatorManagerCrowd", "[estimators]")
   EstimatorManagerNew emn(ham, comm);
   emn.constructEstimators(std::move(emi), pset, twf, ham, particle_pool.getPool());
 
-  CHECK(emn.getNumEstimators() == 3);
+  CHECK(emn.getNumEstimators() == n_opest_new_input_xml);
   CHECK(emn.getNumScalarEstimators() == 0);
 
   EstimatorManagerCrowd emc(emn);

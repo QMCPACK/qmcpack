@@ -25,7 +25,7 @@
 #include <type_traits>
 #include <stdexcept>
 #include "PETE/PETE.h"
-#include "allocator_traits.hpp"
+#include "Common/allocator_traits.hpp"
 
 namespace qmcplusplus
 {
@@ -131,12 +131,7 @@ public:
   inline void attachReference(T* ref, size_type n)
   {
     if (nAllocated)
-    {
-      free();
-      // std::cerr << "Allocated OhmmsVector attachReference called.\n" << std::endl;
-      // Nice idea but "default" constructed WFC elements in the batched driver make this a mess.
-      //throw std::runtime_error("Pointer attaching is not allowed on Vector with allocated memory.");
-    }
+      throw std::runtime_error("Pointer attaching is not allowed on Vector with allocated memory.");
     nLocal     = n;
     nAllocated = 0;
     X          = ref;
@@ -149,14 +144,15 @@ public:
   inline void attachReference(const CONTAINER& other, T* ref, size_type n)
   {
     if (nAllocated)
-    {
-      free();
-    }
+      throw std::runtime_error("Pointer attaching is not allowed on Vector with allocated memory.");
     nLocal     = n;
     nAllocated = 0;
     X          = ref;
     qmc_allocator_traits<Alloc>::attachReference(other.mAllocator, mAllocator, ref - other.data());
   }
+
+  /// return true if this container is attached to another
+  inline bool isAttached() const { return nLocal > 0 && nAllocated == 0; }
 
   //! return the current size
   inline size_type size() const { return nLocal; }
@@ -291,9 +287,7 @@ private:
   inline void resize_impl(size_type n)
   {
     if (nAllocated)
-    {
       mAllocator.deallocate(X, nAllocated);
-    }
     X          = mAllocator.allocate(n);
     nLocal     = n;
     nAllocated = n;
@@ -401,7 +395,7 @@ inline void evaluate(Vector<T, C>& lhs, const Op& op, const Expression<RHS>& rhs
   {
     // We get here if the vectors on the RHS are the same size as those on
     // the LHS.
-    for (int i = 0; i < lhs.size(); ++i)
+    for (size_t i = 0; i < lhs.size(); ++i)
     {
       // The actual assignment operation is performed here.
       // PETE operator tags all define operator() to perform the operation.
@@ -425,7 +419,7 @@ bool operator==(const Vector<T, Alloc>& lhs, const Vector<T, Alloc>& rhs)
   static_assert(qmc_allocator_traits<Alloc>::is_host_accessible, "operator== requires host accessible Vector.");
   if (lhs.size() == rhs.size())
   {
-    for (int i = 0; i < rhs.size(); i++)
+    for (size_t i = 0; i < rhs.size(); i++)
       if (lhs[i] != rhs[i])
         return false;
     return true;
@@ -446,7 +440,7 @@ template<class T, class Alloc>
 std::ostream& operator<<(std::ostream& out, const Vector<T, Alloc>& rhs)
 {
   static_assert(qmc_allocator_traits<Alloc>::is_host_accessible, "operator<< requires host accessible Vector.");
-  for (int i = 0; i < rhs.size(); i++)
+  for (size_t i = 0; i < rhs.size(); i++)
     out << rhs[i] << std::endl;
   return out;
 }
@@ -456,7 +450,7 @@ std::istream& operator>>(std::istream& is, Vector<T, Alloc>& rhs)
 {
   static_assert(qmc_allocator_traits<Alloc>::is_host_accessible, "operator>> requires host accessible Vector.");
   //printTinyVector<TinyVector<T,D> >::print(out,rhs);
-  for (int i = 0; i < rhs.size(); i++)
+  for (size_t i = 0; i < rhs.size(); i++)
     is >> rhs[i];
   return is;
 }

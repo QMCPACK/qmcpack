@@ -12,49 +12,60 @@
 #include "catch.hpp"
 
 #include "Configuration.h"
-#include "Platforms/CPU/SIMD/aligned_allocator.hpp"
+#include "Common/Queue.hpp"
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
-#include "QMCWaveFunctions/Fermion/rocSolverInverter.hpp"
+#include "QMCWaveFunctions/Fermion/InverterAccel.hpp"
 #include "Utilities/for_testing/checkMatrix.hpp"
 #include "Containers/tests/makeRngSpdMatrix.hpp"
-
-// Copied and slightly modified from benchmark_cuSolverInverter.cpp
 
 namespace qmcplusplus
 {
 
-TEST_CASE("rocSolverInverter_bench", "[wavefunction][benchmark]")
+template<PlatformKind PL, typename T>
+using DeviceAllocator = typename compute::MemManage<PL>::template DeviceAllocator<T>;
+
+template<PlatformKind PL, typename T, typename FP_T>
+void benchmark_solver(const size_t N)
 {
-#ifdef QMC_COMPLEX
-  using FullPrecValue = std::complex<double>;
-#else
-  using FullPrecValue = double;
-#endif
+  typename InverterAccel<PL, FP_T>::Inverter solver;
+  compute::Queue<PL> queue;
 
-  rocSolverInverter<FullPrecValue> solver;
-
-  const int N = 1024;
-
-  Matrix<FullPrecValue> m(N, N);
-  Matrix<FullPrecValue> m_invT(N, N);
-  Matrix<FullPrecValue> m_invT_CPU(N, N);
-  Matrix<FullPrecValue, CUDAAllocator<FullPrecValue>> m_invGPU;
+  Matrix<T> m(N, N);
+  Matrix<T> m_invT(N, N);
+  Matrix<T> m_invT_CPU(N, N);
+  Matrix<T, DeviceAllocator<PL, T>> m_invGPU;
   std::complex<double> log_value;
   m.resize(N, N);
   m_invT.resize(N, N);
   m_invT_CPU.resize(N, N);
   m_invGPU.resize(N, N);
 
-  testing::MakeRngSpdMatrix<FullPrecValue> makeRngSpdMatrix{};
+  testing::MakeRngSpdMatrix<T> makeRngSpdMatrix{};
   makeRngSpdMatrix(m);
 
-  BENCHMARK("rocSolverInverter") { solver.invert_transpose(m, m_invT, m_invGPU, log_value); };
+  BENCHMARK("SolverInverter") { solver.invert_transpose(m, m_invT, m_invGPU, log_value, queue.getNative()); };
 
-  DiracMatrix<FullPrecValue> dmat;
+  DiracMatrix<FP_T> dmat;
   BENCHMARK("CPU") { dmat.invert_transpose(m, m_invT_CPU, log_value); };
 
   auto check_matrix_result = checkMatrix(m_invT, m_invT_CPU);
   CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
+}
+
+TEST_CASE("SolverInverter_bench", "[wavefunction][benchmark]")
+{
+  using Value = typename QMCTraits::ValueType;
+#ifdef QMC_COMPLEX
+  using FullPrecValue = std::complex<double>;
+#else
+  using FullPrecValue = double;
+#endif
+#if defined(ENABLE_CUDA)
+  benchmark_solver<PlatformKind::CUDA, Value, FullPrecValue>(1024);
+#endif
+#if defined(ENABLE_SYCL)
+  benchmark_solver<PlatformKind::SYCL, Value, FullPrecValue>(1024);
+#endif
 }
 
 } // namespace qmcplusplus

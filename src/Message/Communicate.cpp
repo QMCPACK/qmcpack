@@ -26,10 +26,16 @@
 #include "config.h"
 #include "Utilities/FairDivide.h"
 
+#ifdef ENABLE_GCOV
+#ifdef __GNUC__
+extern "C" void __gcov_dump();
+#endif
+#else
+#endif
+
 #ifdef HAVE_MPI
 #include "mpi3/shared_communicator.hpp"
 #endif
-
 
 //Global Communicator is created without initialization
 Communicate* OHMMS::Controller = new Communicate;
@@ -123,5 +129,10 @@ void Communicate::barrier_and_abort(const std::string& msg) const
   if (!rank())
     std::cerr << "Fatal Error. Aborting at " << msg << std::endl;
   Communicate::barrier();
+#ifdef ENABLE_GCOV
+#ifdef __GNUC__
+  __gcov_dump();
+#endif
+#endif
   Communicate::abort();
 }

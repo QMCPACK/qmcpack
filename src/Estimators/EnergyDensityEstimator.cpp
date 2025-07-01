@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2023 QMCPACK developers.
+// Copyright (c) 2025 QMCPACK developers.
 //
 // File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //                    Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
@@ -49,10 +49,11 @@ auto NEEnergyDensityEstimator::extractIonPositionsAndCharge(const ParticleSet& p
 NEEnergyDensityEstimator::NEEnergyDensityEstimator(const EnergyDensityInput& input,
                                                    const PSPool& pset_pool,
                                                    DataLocality data_locality)
-    : OperatorEstBase(data_locality), input_(input), pset_dynamic_(getParticleSet(pset_pool, input.get_dynamic()))
+    : OperatorEstBase(data_locality, input.get_name(), input.get_type()),
+      input_(input),
+      pset_dynamic_(getParticleSet(pset_pool, input.get_dynamic()))
 {
   requires_listener_ = true;
-  my_name_           = "NEEnergyDensityEstimator";
   n_particles_       = pset_dynamic_.getTotalNum();
   if (!(input_.get_static().empty()))
   {
@@ -83,7 +84,7 @@ NEEnergyDensityEstimator::NEEnergyDensityEstimator(const EnergyDensityInput& inp
 }
 
 NEEnergyDensityEstimator::NEEnergyDensityEstimator(const NEEnergyDensityEstimator& ede, const DataLocality dl)
-    : OperatorEstBase(dl),
+    : OperatorEstBase(dl, ede.input_.get_name(), ede.input_.get_type()),
       input_(ede.input_),
       pset_dynamic_(ede.pset_dynamic_),
       pset_static_(ede.pset_static_),
@@ -348,15 +349,15 @@ void NEEnergyDensityEstimator::registerOperatorEstimator(hdf_archive& file)
 
   hdf_path path_variables = hdf_name / std::string_view("variables");
   file.push(path_variables, true);
-  file.write(const_cast<int&>(n_particles_), "nparticles");
+  file.write(n_particles_, "nparticles");
   auto nspacegrids = input_.get_space_grid_inputs().size();
   file.write(nspacegrids, "nspacegrids");
-  file.write(const_cast<int&>(nsamples_), "nsamples");
+  file.write(nsamples_, "nsamples");
 
   if (input_.get_ion_points())
   {
-    file.write(const_cast<int&>(n_ions_), "nions");
-    file.write(const_cast<Matrix<Real>&>(r_ion_work_), "ion_positions");
+    file.write(n_ions_, "nions");
+    file.write(r_ion_work_, "ion_positions");
   }
   file.pop();
 

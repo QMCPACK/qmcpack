@@ -14,7 +14,7 @@
 #define QMCPLUSPLUS_CONTAINER_TRAITS_OHMMS_H
 
 #include <sstream>
-#include "type_traits/container_traits.h"
+#include "container_traits.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "OhmmsPETE/OhmmsArray.h"

@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2021 QMCPACK developers.
+// Copyright (c) 2025 QMCPACK developers.
 //
 // File developed by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //
@@ -24,15 +24,13 @@ MomentumDistribution::MomentumDistribution(MomentumDistributionInput&& mdi,
                                            const PosType& twist_in,
                                            const Lattice& lattice_in,
                                            DataLocality dl)
-    : OperatorEstBase(dl),
+    : OperatorEstBase(dl, mdi.get_name(), mdi.get_type()),
       input_(std::move(mdi)),
       twist(twist_in),
       lattice(lattice_in),
       norm_nofK(1.0 / RealType(mdi.get_samples()))
 {
   psi_ratios.resize(np);
-
-  my_name_ = input_.get_name();
 
   //dims of a grid for generating k points (obtained below)
   int kgrid = 0;

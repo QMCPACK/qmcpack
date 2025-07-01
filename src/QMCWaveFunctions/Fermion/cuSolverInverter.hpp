@@ -15,7 +15,7 @@
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "CUDA/CUDAruntime.hpp"
-#include "CUDA/CUDAallocator.hpp"
+#include "CUDA/MemManageCUDA.hpp"
 #include "CUDA/cusolver.hpp"
 #include "QMCWaveFunctions/detail/CUDA/delayed_update_helper.h"
 #include "CPU/math.hpp"
@@ -43,7 +43,6 @@ class cuSolverInverter
 
   // CUDA specific variables
   cusolverDnHandle_t h_cusolver_ = nullptr;
-  cudaStream_t hstream_;
 
   /** resize the internal storage
    * @param norb number of electrons/orbitals
@@ -54,7 +53,6 @@ class cuSolverInverter
     if (!h_cusolver_)
     {
       cusolverErrorCheck(cusolverDnCreate(&h_cusolver_), "cusolverCreate failed!");
-      cusolverErrorCheck(cusolverDnSetStream(h_cusolver_, hstream_), "cusolverSetStream failed!");
     }
     if (Mat1_gpu.rows() != norb)
     {
@@ -73,13 +71,12 @@ class cuSolverInverter
 
 public:
   /// default constructor
-  cuSolverInverter() { cudaErrorCheck(cudaStreamCreate(&hstream_), "cudaStreamCreate failed!"); }
+  cuSolverInverter() = default;
 
   ~cuSolverInverter()
   {
     if (h_cusolver_)
       cusolverErrorCheck(cusolverDnDestroy(h_cusolver_), "cusolverDestroy failed!");
-    cudaErrorCheck(cudaStreamDestroy(hstream_), "cudaStreamDestroy failed!");
   }
 
   /** compute the inverse of the transpose of matrix A and its determinant value in log
@@ -90,25 +87,27 @@ public:
   std::enable_if_t<std::is_same<TMAT, T_FP>::value> invert_transpose(const Matrix<TMAT>& logdetT,
                                                                      Matrix<TMAT>& Ainv,
                                                                      Matrix<TMAT, CUDAAllocator<TMAT>>& Ainv_gpu,
-                                                                     std::complex<TREAL>& log_value)
+                                                                     std::complex<TREAL>& log_value,
+                                                                     cudaStream_t stream)
   {
     const int norb = logdetT.rows();
     resize(norb);
+    cusolverErrorCheck(cusolverDnSetStream(h_cusolver_, stream), "cusolverSetStream failed!");
     cudaErrorCheck(cudaMemcpyAsync(Mat1_gpu.data(), logdetT.data(), logdetT.size() * sizeof(TMAT),
-                                   cudaMemcpyHostToDevice, hstream_),
+                                   cudaMemcpyHostToDevice, stream),
                    "cudaMemcpyAsync failed!");
     cusolverErrorCheck(cusolver::getrf(h_cusolver_, norb, norb, Mat1_gpu.data(), norb, work_gpu.data(),
                                        ipiv_gpu.data() + 1, ipiv_gpu.data()),
                        "cusolver::getrf failed!");
     cudaErrorCheck(cudaMemcpyAsync(ipiv.data(), ipiv_gpu.data(), ipiv_gpu.size() * sizeof(int), cudaMemcpyDeviceToHost,
-                                   hstream_),
+                                   stream),
                    "cudaMemcpyAsync failed!");
-    extract_matrix_diagonal_cuda(norb, Mat1_gpu.data(), norb, LU_diag_gpu.data(), hstream_);
+    extract_matrix_diagonal_cuda(norb, Mat1_gpu.data(), norb, LU_diag_gpu.data(), stream);
     cudaErrorCheck(cudaMemcpyAsync(LU_diag.data(), LU_diag_gpu.data(), LU_diag.size() * sizeof(T_FP),
-                                   cudaMemcpyDeviceToHost, hstream_),
+                                   cudaMemcpyDeviceToHost, stream),
                    "cudaMemcpyAsync failed!");
     // check LU success
-    cudaErrorCheck(cudaStreamSynchronize(hstream_), "cudaStreamSynchronize after getrf failed!");
+    cudaErrorCheck(cudaStreamSynchronize(stream), "cudaStreamSynchronize after getrf failed!");
     if (ipiv[0] != 0)
     {
       std::ostringstream err;
@@ -116,18 +115,18 @@ public:
       std::cerr << err.str();
       throw std::runtime_error(err.str());
     }
-    make_identity_matrix_cuda(norb, Ainv_gpu.data(), norb, hstream_);
+    make_identity_matrix_cuda(norb, Ainv_gpu.data(), norb, stream);
     cusolverErrorCheck(cusolver::getrs(h_cusolver_, CUBLAS_OP_T, norb, norb, Mat1_gpu.data(), norb, ipiv_gpu.data() + 1,
                                        Ainv_gpu.data(), norb, ipiv_gpu.data()),
                        "cusolver::getrs failed!");
-    cudaErrorCheck(cudaMemcpyAsync(ipiv.data(), ipiv_gpu.data(), sizeof(int), cudaMemcpyDeviceToHost, hstream_),
+    cudaErrorCheck(cudaMemcpyAsync(ipiv.data(), ipiv_gpu.data(), sizeof(int), cudaMemcpyDeviceToHost, stream),
                    "cudaMemcpyAsync failed!");
     computeLogDet(LU_diag.data(), norb, ipiv.data() + 1, log_value);
     cudaErrorCheck(cudaMemcpyAsync(Ainv.data(), Ainv_gpu.data(), Ainv.size() * sizeof(TMAT), cudaMemcpyDeviceToHost,
-                                   hstream_),
+                                   stream),
                    "cudaMemcpyAsync failed!");
     // check solve success
-    cudaErrorCheck(cudaStreamSynchronize(hstream_), "cudaStreamSynchronize after getrs failed!");
+    cudaErrorCheck(cudaStreamSynchronize(stream), "cudaStreamSynchronize after getrs failed!");
     if (ipiv[0] != 0)
     {
       std::ostringstream err;
@@ -145,46 +144,48 @@ public:
   std::enable_if_t<!std::is_same<TMAT, T_FP>::value> invert_transpose(const Matrix<TMAT>& logdetT,
                                                                       Matrix<TMAT>& Ainv,
                                                                       Matrix<TMAT, CUDAAllocator<TMAT>>& Ainv_gpu,
-                                                                      std::complex<TREAL>& log_value)
+                                                                      std::complex<TREAL>& log_value,
+                                                                      cudaStream_t stream)
   {
     const int norb = logdetT.rows();
     resize(norb);
+    cusolverErrorCheck(cusolverDnSetStream(h_cusolver_, stream), "cusolverSetStream failed!");
     Mat2_gpu.resize(norb, norb);
     cudaErrorCheck(cudaMemcpyAsync(Mat2_gpu.data(), logdetT.data(), logdetT.size() * sizeof(TMAT),
-                                   cudaMemcpyHostToDevice, hstream_),
+                                   cudaMemcpyHostToDevice, stream),
                    "cudaMemcpyAsync failed!");
-    copy_matrix_cuda(norb, norb, (TMAT*)Mat2_gpu.data(), norb, Mat1_gpu.data(), norb, hstream_);
+    copy_matrix_cuda(norb, norb, (TMAT*)Mat2_gpu.data(), norb, Mat1_gpu.data(), norb, stream);
     cusolverErrorCheck(cusolver::getrf(h_cusolver_, norb, norb, Mat1_gpu.data(), norb, work_gpu.data(),
                                        ipiv_gpu.data() + 1, ipiv_gpu.data()),
                        "cusolver::getrf failed!");
     cudaErrorCheck(cudaMemcpyAsync(ipiv.data(), ipiv_gpu.data(), ipiv_gpu.size() * sizeof(int), cudaMemcpyDeviceToHost,
-                                   hstream_),
+                                   stream),
                    "cudaMemcpyAsync failed!");
-    extract_matrix_diagonal_cuda(norb, Mat1_gpu.data(), norb, LU_diag_gpu.data(), hstream_);
+    extract_matrix_diagonal_cuda(norb, Mat1_gpu.data(), norb, LU_diag_gpu.data(), stream);
     cudaErrorCheck(cudaMemcpyAsync(LU_diag.data(), LU_diag_gpu.data(), LU_diag.size() * sizeof(T_FP),
-                                   cudaMemcpyDeviceToHost, hstream_),
+                                   cudaMemcpyDeviceToHost, stream),
                    "cudaMemcpyAsync failed!");
     // check LU success
-    cudaErrorCheck(cudaStreamSynchronize(hstream_), "cudaStreamSynchronize after getrf failed!");
+    cudaErrorCheck(cudaStreamSynchronize(stream), "cudaStreamSynchronize after getrf failed!");
     if (ipiv[0] != 0)
     {
       std::ostringstream err;
       err << "cusolver::getrf calculation failed with devInfo = " << ipiv[0] << std::endl;
       throw std::runtime_error(err.str());
     }
-    make_identity_matrix_cuda(norb, Mat2_gpu.data(), norb, hstream_);
+    make_identity_matrix_cuda(norb, Mat2_gpu.data(), norb, stream);
     cusolverErrorCheck(cusolver::getrs(h_cusolver_, CUBLAS_OP_T, norb, norb, Mat1_gpu.data(), norb, ipiv_gpu.data() + 1,
                                        Mat2_gpu.data(), norb, ipiv_gpu.data()),
                        "cusolver::getrs failed!");
-    copy_matrix_cuda(norb, norb, Mat2_gpu.data(), norb, Ainv_gpu.data(), norb, hstream_);
-    cudaErrorCheck(cudaMemcpyAsync(ipiv.data(), ipiv_gpu.data(), sizeof(int), cudaMemcpyDeviceToHost, hstream_),
+    copy_matrix_cuda(norb, norb, Mat2_gpu.data(), norb, Ainv_gpu.data(), norb, stream);
+    cudaErrorCheck(cudaMemcpyAsync(ipiv.data(), ipiv_gpu.data(), sizeof(int), cudaMemcpyDeviceToHost, stream),
                    "cudaMemcpyAsync failed!");
     computeLogDet(LU_diag.data(), norb, ipiv.data() + 1, log_value);
     cudaErrorCheck(cudaMemcpyAsync(Ainv.data(), Ainv_gpu.data(), Ainv.size() * sizeof(TMAT), cudaMemcpyDeviceToHost,
-                                   hstream_),
+                                   stream),
                    "cudaMemcpyAsync failed!");
     // check solve success
-    cudaErrorCheck(cudaStreamSynchronize(hstream_), "cudaStreamSynchronize after getrs failed!");
+    cudaErrorCheck(cudaStreamSynchronize(stream), "cudaStreamSynchronize after getrs failed!");
     if (ipiv[0] != 0)
     {
       std::ostringstream err;

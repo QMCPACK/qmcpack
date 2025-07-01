@@ -35,6 +35,7 @@ set(QMCEST_SRC
     OneBodyDensityMatrices.cpp
     MagnetizationDensity.cpp
     MagnetizationDensityInput.cpp
+    SelfHealingOverlapInput.cpp
     SelfHealingOverlap.cpp
     PerParticleHamiltonianLoggerInput.cpp
     PerParticleHamiltonianLogger.cpp
@@ -42,7 +43,8 @@ set(QMCEST_SRC
     NEReferencePoints.cpp
     NESpaceGrid.cpp
     EnergyDensityEstimator.cpp
-    StructureFactorInput.cpp)
+    StructureFactorInput.cpp
+    StructureFactorEstimator.cpp)
 
 ####################################
 # create libqmcestimators

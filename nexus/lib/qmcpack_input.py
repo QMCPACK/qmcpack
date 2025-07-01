@@ -702,7 +702,7 @@ class QIxml(Names):
                     #end for
                 #end if
             #end for
-            if self.text!=None:
+            if self.text is not None:
                 c = c.rstrip('\n')
                 c+=param.write(self[self.text],mode='elem',pad=ip,tag=None,normal_elem=True)
             #end if
@@ -1834,7 +1834,7 @@ class sposet(QIxml):
                   'source','version','precision','tilematrix',
                   'meshfactor']
     elements   = ['occupation','coefficient','coefficients']
-    #text       = 'spos'
+    text       = None
     identifier = 'name'
 #end class sposet
 
@@ -1863,9 +1863,11 @@ class heg_builder(QIxml):
 
 class molecular_orbital_builder(QIxml):
     tag = 'sposet_builder'
-    identifier = 'type'
-    attributes = ['name','type','transform','source','cuspcorrection']
-    elements   = ['basisset','sposet','rotated_sposet'] 
+    identifier  = 'type'
+    attributes  = ['name','type','transform','source','cuspcorrection','href']
+    elements    = ['basisset','sposet']
+    elements    = ['basisset','sposet','rotated_sposet'] 
+    write_types = obj(transform=yesno,cuspcorrection=yesno)
 #end class molecular_orbital_builder
 
 class composite_builder(QIxml):
@@ -2248,10 +2250,11 @@ class structurefactor(QIxml):
 
 class force(QIxml):
     tag = 'estimator'
-    attributes = ['type','name','mode','source','species','target','addionion']
+    attributes = ['type','name','mode','source','species','target','addionion',
+                  'fast_derivatives','spacewarp','epsilon']
     parameters = ['rcut','nbasis','weightexp']
     identifier = 'name'
-    write_types= obj(addionion=yesno)
+    write_types= obj(addionion=yesno,fast_derivatives=yesno,spacewarp=yesno)
 #end class force
 
 class forwardwalking(QIxml):
@@ -2314,6 +2317,14 @@ class flux(QIxml):
     identifier = 'name'
 #end class flux
 
+class orbitalimages(QIxml):
+    tag = 'estimator'
+    attributes  = ['type','name','ions']
+    parameters  = ['sposets','grid','center_grid','value','corner','cell','center','batch_size']
+    write_types = obj(center_grid=yesno)
+    identifier  = 'name'
+#end class orbitalimages
+
 class momentum(QIxml): # legacy
     tag = 'estimator'
     attributes = ['type','name','grid','samples','hdf5','wavefunction','kmax','kmax0','kmax1','kmax2']
@@ -2375,6 +2386,7 @@ estimator = QIxmlFactory(
                  skall                  = skall,
                  gofr                   = gofr,
                  flux                   = flux,
+                 orbitalimages          = orbitalimages,
                  momentum               = momentum,
                  momentumdistribution   = momentumdistribution,
                  onebodydensitymatrices = onebodydensitymatrices,
@@ -2732,7 +2744,7 @@ classes = [   #standard classes
     multideterminant,detlist,ci,mcwalkerset,csf,det,
     optimize,cg_optimizer,flex_optimizer,optimize_qmc,wftest,kspace_jastrow,
     header,local,force,forwardwalking,observable,record,rmc,pressure,dmccorrection,
-    nofk,mpc_est,flux,distancetable,cpp,element,spline,setparams,
+    nofk,mpc_est,flux,orbitalimages,distancetable,cpp,element,spline,setparams,
     backflow,transformation,cubicgrid,molecular_orbital_builder,cmc,sk,skall,gofr,
     host,date,user,rpa_jastrow,momentum,override_variational_parameters,
     momentumdistribution,onebodydensitymatrices,estimators,rotated_sposet,

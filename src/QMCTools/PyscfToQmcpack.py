@@ -608,7 +608,7 @@ def make_multidet(cell, mf, title, h5_handle):
         dets_b.append(chunks_b)
         coeffs.append(i[0])
     H5_qmcpack_multidet = h5py.File(title+'_multidet.h5','w')
-    groupApp=h5_handle.create_group("MultiDet")
+    groupApp=H5_qmcpack_multidet.create_group("MultiDet")
     dets_a = numpy.array(dets_a)
     dets_b = numpy.array(dets_b)
 

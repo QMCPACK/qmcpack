@@ -78,12 +78,12 @@ struct DiracDeterminantBatched<PL, VT, FPVT>::DiracDeterminantBatchedMultiWalker
  *@param first index of the first particle
  */
 template<PlatformKind PL, typename VT, typename FPVT>
-DiracDeterminantBatched<PL, VT, FPVT>::DiracDeterminantBatched(std::unique_ptr<SPOSet>&& spos,
+DiracDeterminantBatched<PL, VT, FPVT>::DiracDeterminantBatched(SPOSet& phi,
                                                                int first,
                                                                int last,
                                                                int ndelay,
                                                                DetMatInvertor matrix_inverter_kind)
-    : DiracDeterminantBase("DiracDeterminantBatched", std::move(spos), first, last),
+    : DiracDeterminantBase("DiracDeterminantBatched", phi, first, last),
       det_engine_(NumOrbitals, ndelay),
       ndelay_(ndelay),
       matrix_inverter_kind_(matrix_inverter_kind),
@@ -94,7 +94,7 @@ DiracDeterminantBatched<PL, VT, FPVT>::DiracDeterminantBatched(std::unique_ptr<S
   resize(NumPtcls, NumPtcls);
 
 #ifndef QMC_COMPLEX
-  RotatedSPOs* rot_spo = dynamic_cast<RotatedSPOs*>(Phi.get());
+  RotatedSPOs* rot_spo = dynamic_cast<RotatedSPOs*>(&phi_);
   if (rot_spo)
     rot_spo->buildOptVariables(NumPtcls);
 #endif
@@ -216,7 +216,7 @@ typename DiracDeterminantBatched<PL, VT, FPVT>::Grad DiracDeterminantBatched<PL,
     int iat,
     ComplexType& spingrad)
 {
-  Phi->evaluate_spin(P, iat, psiV_host_view, dspin_psiV_host_view);
+  phi_.evaluate_spin(P, iat, psiV_host_view, dspin_psiV_host_view);
   ScopedTimer local_timer(RatioTimer);
   const int WorkingIndex = iat - FirstIndex;
   Grad g                 = simd::dot(psiMinv_[WorkingIndex], dpsiM[WorkingIndex], NumOrbitals);
@@ -240,20 +240,20 @@ void DiracDeterminantBatched<PL, VT, FPVT>::mw_evalGradWithSpin(
   ScopedTimer local_timer(RatioTimer);
 
   const int nw           = wfc_list.size();
-  const int num_orbitals = wfc_leader.Phi->size();
+  const int num_orbitals = wfc_leader.phi_.size();
   mw_dspin.resize(nw, num_orbitals);
 
   //Here, we are just always recomputing the spin gradients from the SPOSet for simplicity.
   //If we stored and modified the accept/reject to include updating stored spin gradients, we could the
   //mw_evaluateVGLWithSpin call below and just use the stored spin gradients.
   //May revisit this in the future.
-  RefVectorWithLeader<SPOSet> phi_list(*Phi);
+  RefVectorWithLeader<SPOSet> phi_list(phi_);
   RefVector<SPOSet::ValueVector> psi_v_list, lap_v_list;
   RefVector<SPOSet::GradVector> grad_v_list;
   for (int iw = 0; iw < wfc_list.size(); iw++)
   {
     auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<PL, VT, FPVT>>(iw);
-    phi_list.push_back(*det.Phi);
+    phi_list.push_back(det.phi_);
     psi_v_list.push_back(det.psiV_host_view);
     grad_v_list.push_back(det.dpsiV_host_view);
     lap_v_list.push_back(det.d2psiV_host_view);
@@ -291,7 +291,7 @@ typename DiracDeterminantBatched<PL, VT, FPVT>::PsiValue DiracDeterminantBatched
 
   {
     ScopedTimer local_timer(SPOVGLTimer);
-    Phi->evaluateVGL(P, iat, psiV_host_view, dpsiV_host_view, d2psiV_host_view);
+    phi_.evaluateVGL(P, iat, psiV_host_view, dpsiV_host_view, d2psiV_host_view);
   }
 
   {
@@ -319,7 +319,7 @@ void DiracDeterminantBatched<PL, VT, FPVT>::mw_ratioGrad(const RefVectorWithLead
   auto& grad_new_local = mw_res.grad_new_local;
   {
     ScopedTimer local_timer(SPOVGLTimer);
-    RefVectorWithLeader<SPOSet> phi_list(*Phi);
+    RefVectorWithLeader<SPOSet> phi_list(phi_);
     phi_list.reserve(wfc_list.size());
     RefVectorWithLeader<UpdateEngine> engine_list(wfc_leader.det_engine_);
     engine_list.reserve(wfc_list.size());
@@ -327,19 +327,19 @@ void DiracDeterminantBatched<PL, VT, FPVT>::mw_ratioGrad(const RefVectorWithLead
     for (int iw = 0; iw < wfc_list.size(); iw++)
     {
       auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<PL, VT, FPVT>>(iw);
-      phi_list.push_back(*det.Phi);
+      phi_list.push_back(det.phi_);
       engine_list.push_back(det.det_engine_);
     }
 
     auto psiMinv_row_dev_ptr_list =
         UpdateEngine::mw_getInvRow(engine_list, wfc_leader.mw_res_handle_.getResource().engine_rsc, mw_res.psiMinv_refs,
-                                   WorkingIndex, !Phi->isOMPoffload());
+                                   WorkingIndex, !phi_.isOMPoffload());
 
     phi_vgl_v.resize(SPOSet::DIM_VGL, wfc_list.size(), NumOrbitals);
     ratios_local.resize(wfc_list.size());
     grad_new_local.resize(wfc_list.size());
 
-    wfc_leader.Phi->mw_evaluateVGLandDetRatioGrads(phi_list, p_list, iat, psiMinv_row_dev_ptr_list, phi_vgl_v,
+    wfc_leader.phi_.mw_evaluateVGLandDetRatioGrads(phi_list, p_list, iat, psiMinv_row_dev_ptr_list, phi_vgl_v,
                                                    ratios_local, grad_new_local);
   }
 
@@ -371,7 +371,7 @@ void DiracDeterminantBatched<PL, VT, FPVT>::mw_ratioGradWithSpin(
   auto& spingrad_new_local = mw_res.spingrad_new_local;
   {
     ScopedTimer local_timer(SPOVGLTimer);
-    RefVectorWithLeader<SPOSet> phi_list(*Phi);
+    RefVectorWithLeader<SPOSet> phi_list(phi_);
     phi_list.reserve(wfc_list.size());
     RefVectorWithLeader<UpdateEngine> engine_list(wfc_leader.det_engine_);
     engine_list.reserve(wfc_list.size());
@@ -379,20 +379,20 @@ void DiracDeterminantBatched<PL, VT, FPVT>::mw_ratioGradWithSpin(
     for (int iw = 0; iw < wfc_list.size(); iw++)
     {
       auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<PL, VT, FPVT>>(iw);
-      phi_list.push_back(*det.Phi);
+      phi_list.push_back(det.phi_);
       engine_list.push_back(det.det_engine_);
     }
 
     auto psiMinv_row_dev_ptr_list =
         UpdateEngine::mw_getInvRow(engine_list, wfc_leader.mw_res_handle_.getResource().engine_rsc, mw_res.psiMinv_refs,
-                                   WorkingIndex, !Phi->isOMPoffload());
+                                   WorkingIndex, !phi_.isOMPoffload());
 
     phi_vgl_v.resize(SPOSet::DIM_VGL, wfc_list.size(), NumOrbitals);
     ratios_local.resize(wfc_list.size());
     grad_new_local.resize(wfc_list.size());
     spingrad_new_local.resize(wfc_list.size());
 
-    wfc_leader.Phi->mw_evaluateVGLandDetRatioGradsWithSpin(phi_list, p_list, iat, psiMinv_row_dev_ptr_list, phi_vgl_v,
+    wfc_leader.phi_.mw_evaluateVGLandDetRatioGradsWithSpin(phi_list, p_list, iat, psiMinv_row_dev_ptr_list, phi_vgl_v,
                                                            ratios_local, grad_new_local, spingrad_new_local);
   }
 
@@ -418,7 +418,7 @@ typename DiracDeterminantBatched<PL, VT, FPVT>::PsiValue DiracDeterminantBatched
 
   {
     ScopedTimer local_timer(SPOVGLTimer);
-    Phi->evaluateVGL_spin(P, iat, psiV_host_view, dpsiV_host_view, d2psiV_host_view, dspin_psiV_host_view);
+    phi_.evaluateVGL_spin(P, iat, psiV_host_view, dpsiV_host_view, d2psiV_host_view, dspin_psiV_host_view);
   }
 
   {
@@ -618,7 +618,7 @@ typename DiracDeterminantBatched<PL, VT, FPVT>::LogValue DiracDeterminantBatched
     if (UpdateMode == ORB_PBYP_RATIO)
     { //need to compute dpsiM and d2psiM. Do not touch psiM!
       ScopedTimer spo_timer(SPOVGLTimer);
-      Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_host, dpsiM, d2psiM);
+      phi_.evaluate_notranspose(P, FirstIndex, LastIndex, psiM_host, dpsiM, d2psiM);
     }
     UpdateMode = ORB_WALKER;
     computeGL(G, L);
@@ -647,7 +647,7 @@ void DiracDeterminantBatched<PL, VT, FPVT>::mw_evaluateGL(const RefVectorWithLea
     { //need to compute dpsiM and d2psiM. psiMinv is not touched!
       ScopedTimer spo_timer(SPOVGLTimer);
 
-      RefVectorWithLeader<SPOSet> phi_list(*Phi);
+      RefVectorWithLeader<SPOSet> phi_list(phi_);
       RefVector<Matrix<Value>> psiM_temp_list;
       RefVector<Matrix<Grad>> dpsiM_list;
       RefVector<Matrix<Value>> d2psiM_list;
@@ -660,13 +660,13 @@ void DiracDeterminantBatched<PL, VT, FPVT>::mw_evaluateGL(const RefVectorWithLea
       {
         auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<PL, VT, FPVT>>(iw);
         engine_list.push_back(det.det_engine_);
-        phi_list.push_back(*det.Phi);
+        phi_list.push_back(det.phi_);
         psiM_temp_list.push_back(det.psiM_host);
         dpsiM_list.push_back(det.dpsiM);
         d2psiM_list.push_back(det.d2psiM);
       }
 
-      Phi->mw_evaluate_notranspose(phi_list, p_list, FirstIndex, LastIndex, psiM_temp_list, dpsiM_list, d2psiM_list);
+      phi_.mw_evaluate_notranspose(phi_list, p_list, FirstIndex, LastIndex, psiM_temp_list, dpsiM_list, d2psiM_list);
     }
 
     for (int iw = 0; iw < nw; iw++)
@@ -729,7 +729,7 @@ typename DiracDeterminantBatched<PL, VT, FPVT>::PsiValue DiracDeterminantBatched
   const int WorkingIndex = iat - FirstIndex;
   {
     ScopedTimer local_timer(SPOVTimer);
-    Phi->evaluateValue(P, iat, psiV_host_view);
+    phi_.evaluateValue(P, iat, psiV_host_view);
   }
   {
     ScopedTimer local_timer(RatioTimer);
@@ -753,7 +753,7 @@ void DiracDeterminantBatched<PL, VT, FPVT>::mw_calcRatio(const RefVectorWithLead
 
   {
     ScopedTimer local_timer(SPOVTimer);
-    RefVectorWithLeader<SPOSet> phi_list(*Phi);
+    RefVectorWithLeader<SPOSet> phi_list(phi_);
     phi_list.reserve(wfc_list.size());
     RefVectorWithLeader<UpdateEngine> engine_list(wfc_leader.det_engine_);
     engine_list.reserve(wfc_list.size());
@@ -762,21 +762,21 @@ void DiracDeterminantBatched<PL, VT, FPVT>::mw_calcRatio(const RefVectorWithLead
     for (int iw = 0; iw < wfc_list.size(); iw++)
     {
       auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<PL, VT, FPVT>>(iw);
-      phi_list.push_back(*det.Phi);
+      phi_list.push_back(det.phi_);
       engine_list.push_back(det.det_engine_);
     }
 
     auto psiMinv_row_dev_ptr_list =
         UpdateEngine::mw_getInvRow(engine_list, wfc_leader.mw_res_handle_.getResource().engine_rsc, mw_res.psiMinv_refs,
-                                   WorkingIndex, !Phi->isOMPoffload());
+                                   WorkingIndex, !phi_.isOMPoffload());
 
     phi_vgl_v.resize(SPOSet::DIM_VGL, wfc_list.size(), NumOrbitals);
     ratios_local.resize(wfc_list.size());
     grad_new_local.resize(wfc_list.size());
 
-    // calling Phi->mw_evaluateVGLandDetRatioGrads is a temporary workaround.
+    // calling phi_.mw_evaluateVGLandDetRatioGrads is a temporary workaround.
     // We may implement mw_evaluateVandDetRatio in the future.
-    wfc_leader.Phi->mw_evaluateVGLandDetRatioGrads(phi_list, p_list, iat, psiMinv_row_dev_ptr_list, phi_vgl_v,
+    wfc_leader.phi_.mw_evaluateVGLandDetRatioGrads(phi_list, p_list, iat, psiMinv_row_dev_ptr_list, phi_vgl_v,
                                                    ratios_local, grad_new_local);
   }
 
@@ -799,7 +799,7 @@ void DiracDeterminantBatched<PL, VT, FPVT>::evaluateRatios(const VirtualParticle
   }
   {
     ScopedTimer local_timer(SPOVTimer);
-    Phi->evaluateDetRatios(VP, psiV_host_view, d2psiV_host_view, ratios);
+    phi_.evaluateDetRatios(VP, psiV_host_view, d2psiV_host_view, ratios);
   }
 }
 
@@ -816,7 +816,7 @@ void DiracDeterminantBatched<PL, VT, FPVT>::evaluateSpinorRatios(
   }
   {
     ScopedTimer local_timer(SPOVTimer);
-    Phi->evaluateDetSpinorRatios(VP, psiV_host_view, spinor_multiplier, d2psiV_host_view, ratios);
+    phi_.evaluateDetSpinorRatios(VP, psiV_host_view, spinor_multiplier, d2psiV_host_view, ratios);
   }
 }
 
@@ -829,7 +829,7 @@ void DiracDeterminantBatched<PL, VT, FPVT>::mw_evaluateRatios(
   assert(this == &wfc_list.getLeader());
   const size_t nw = wfc_list.size();
 
-  RefVectorWithLeader<SPOSet> phi_list(*Phi);
+  RefVectorWithLeader<SPOSet> phi_list(phi_);
   RefVector<Vector<Value>> psiV_list;
   std::vector<const Value*> invRow_ptr_list;
   phi_list.reserve(nw);
@@ -844,9 +844,9 @@ void DiracDeterminantBatched<PL, VT, FPVT>::mw_evaluateRatios(
       const VirtualParticleSet& vp(vp_list[iw]);
       const int WorkingIndex = vp.refPtcl - FirstIndex;
       // build lists
-      phi_list.push_back(*det.Phi);
+      phi_list.push_back(det.phi_);
       psiV_list.push_back(det.psiV_host_view);
-      if (Phi->isOMPoffload())
+      if (phi_.isOMPoffload())
         invRow_ptr_list.push_back(det.psiMinv_.device_data() + WorkingIndex * psiMinv_.cols());
       else
         invRow_ptr_list.push_back(det.psiMinv_[WorkingIndex]);
@@ -855,7 +855,47 @@ void DiracDeterminantBatched<PL, VT, FPVT>::mw_evaluateRatios(
 
   {
     ScopedTimer local_timer(SPOVTimer);
-    Phi->mw_evaluateDetRatios(phi_list, vp_list, psiV_list, invRow_ptr_list, ratios);
+    phi_.mw_evaluateDetRatios(phi_list, vp_list, psiV_list, invRow_ptr_list, ratios);
+  }
+}
+
+template<PlatformKind PL, typename VT, typename FPVT>
+void DiracDeterminantBatched<PL, VT, FPVT>::mw_evaluateSpinorRatios(
+    const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+    const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+    const RefVector<std::pair<ValueVector, ValueVector>>& spinor_multiplier_list,
+    std::vector<std::vector<Value>>& ratios) const
+{
+  assert(this == &wfc_list.getLeader());
+  const size_t nw = wfc_list.size();
+
+  RefVectorWithLeader<SPOSet> phi_list(phi_);
+  RefVector<Vector<Value>> psiV_list;
+  std::vector<const Value*> invRow_ptr_list;
+  phi_list.reserve(nw);
+  psiV_list.reserve(nw);
+  invRow_ptr_list.reserve(nw);
+
+  {
+    ScopedTimer local_timer(RatioTimer);
+    for (size_t iw = 0; iw < nw; iw++)
+    {
+      auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<PL, VT, FPVT>>(iw);
+      const VirtualParticleSet& vp(vp_list[iw]);
+      const int WorkingIndex = vp.refPtcl - FirstIndex;
+      // build lists
+      phi_list.push_back(det.phi_);
+      psiV_list.push_back(det.psiV_host_view);
+      if (phi_.isOMPoffload())
+        invRow_ptr_list.push_back(det.psiMinv_.device_data() + WorkingIndex * psiMinv_.cols());
+      else
+        invRow_ptr_list.push_back(det.psiMinv_[WorkingIndex]);
+    }
+  }
+
+  {
+    ScopedTimer local_timer(SPOVTimer);
+    phi_.mw_evaluateDetSpinorRatios(phi_list, vp_list, psiV_list, spinor_multiplier_list, invRow_ptr_list, ratios);
   }
 }
 
@@ -868,7 +908,7 @@ void DiracDeterminantBatched<PL, VT, FPVT>::evaluateDerivRatios(const VirtualPar
   const int WorkingIndex = VP.refPtcl - FirstIndex;
   assert(WorkingIndex >= 0);
   std::copy_n(psiMinv_[WorkingIndex], d2psiV.size(), d2psiV.data());
-  Phi->evaluateDerivRatios(VP, optvars, psiV_host_view, d2psiV_host_view, ratios, dratios, FirstIndex, LastIndex);
+  phi_.evaluateDerivRatios(VP, optvars, psiV_host_view, d2psiV_host_view, ratios, dratios, FirstIndex, LastIndex);
 }
 
 template<PlatformKind PL, typename VT, typename FPVT>
@@ -882,7 +922,7 @@ void DiracDeterminantBatched<PL, VT, FPVT>::evaluateSpinorDerivRatios(
   const int WorkingIndex = VP.refPtcl - FirstIndex;
   assert(WorkingIndex >= 0);
   std::copy_n(psiMinv_[WorkingIndex], d2psiV.size(), d2psiV.data());
-  Phi->evaluateSpinorDerivRatios(VP, spinor_multiplier, optvars, psiV_host_view, d2psiV_host_view, ratios, dratios,
+  phi_.evaluateSpinorDerivRatios(VP, spinor_multiplier, optvars, psiV_host_view, d2psiV_host_view, ratios, dratios,
                                  FirstIndex, LastIndex);
 }
 
@@ -891,7 +931,7 @@ void DiracDeterminantBatched<PL, VT, FPVT>::evaluateRatiosAlltoOne(ParticleSet& 
 {
   {
     ScopedTimer local_timer(SPOVTimer);
-    Phi->evaluateValue(P, -1, psiV_host_view);
+    phi_.evaluateValue(P, -1, psiV_host_view);
   }
   for (int i = 0; i < psiMinv_.rows(); i++)
     ratios[FirstIndex + i] = simd::dot(psiMinv_[i], psiV.data(), NumOrbitals);
@@ -916,10 +956,10 @@ typename DiracDeterminantBatched<PL, VT, FPVT>::Grad DiracDeterminantBatched<PL,
     int iat)
 {
   Grad g(0.0);
-  if (Phi->hasIonDerivs())
+  if (phi_.hasIonDerivs())
   {
     resizeScratchObjectsForIonDerivs();
-    Phi->evaluateGradSource(P, FirstIndex, LastIndex, source, iat, grad_source_psiM);
+    phi_.evaluateGradSource(P, FirstIndex, LastIndex, source, iat, grad_source_psiM);
     // psiMinv columns have padding but grad_source_psiM ones don't
     for (int i = 0; i < psiMinv_.rows(); i++)
       g += simd::dot(psiMinv_[i], grad_source_psiM[i], NumOrbitals);
@@ -935,7 +975,7 @@ void DiracDeterminantBatched<PL, VT, FPVT>::evaluateHessian(ParticleSet& P, Hess
   grad_grad_source_psiM.resize(psiMinv_.rows(), NumOrbitals);
   //IM A HACK.  Assumes evaluateLog has already been executed.
   Matrix<Value> psiM_temp_host(psiM_temp.data(), psiM_temp.rows(), psiM_temp.cols());
-  Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp_host, dpsiM, grad_grad_source_psiM);
+  phi_.evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp_host, dpsiM, grad_grad_source_psiM);
   invertPsiM(psiM_temp, psiMinv_);
 
   phi_alpha_Minv      = 0.0;
@@ -964,10 +1004,10 @@ typename DiracDeterminantBatched<PL, VT, FPVT>::Grad DiracDeterminantBatched<PL,
     TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM>& lapl_grad)
 {
   Grad gradPsi(0.0);
-  if (Phi->hasIonDerivs())
+  if (phi_.hasIonDerivs())
   {
     resizeScratchObjectsForIonDerivs();
-    Phi->evaluateGradSource(P, FirstIndex, LastIndex, source, iat, grad_source_psiM, grad_grad_source_psiM,
+    phi_.evaluateGradSource(P, FirstIndex, LastIndex, source, iat, grad_source_psiM, grad_grad_source_psiM,
                             grad_lapl_source_psiM);
 
     // Compute matrices
@@ -1082,7 +1122,7 @@ void DiracDeterminantBatched<PL, VT, FPVT>::recompute(const ParticleSet& P)
     ScopedTimer spo_timer(SPOVGLTimer);
 
     UpdateMode = ORB_WALKER;
-    Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_host, dpsiM, d2psiM);
+    phi_.evaluate_notranspose(P, FirstIndex, LastIndex, psiM_host, dpsiM, d2psiM);
     auto* psiM_vgl_ptr = psiM_vgl.data();
     // transfer host to device, total size 4, g(3) + l(1)
     PRAGMA_OFFLOAD("omp target update to(psiM_vgl_ptr[psiM_vgl.capacity():psiM_vgl.capacity()*4])")
@@ -1100,7 +1140,7 @@ void DiracDeterminantBatched<PL, VT, FPVT>::mw_recompute(const RefVectorWithLead
 
   RefVectorWithLeader<WaveFunctionComponent> wfc_filtered_list(wfc_list.getLeader());
   RefVectorWithLeader<ParticleSet> p_filtered_list(p_list.getLeader());
-  RefVectorWithLeader<SPOSet> phi_list(*wfc_leader.Phi);
+  RefVectorWithLeader<SPOSet> phi_list(wfc_leader.phi_);
   std::vector<Matrix<Value>> psiM_host_views;
   RefVector<const DualMatrix<Value>> psiM_temp_list;
   RefVector<Matrix<Value>> psiM_host_list;
@@ -1124,7 +1164,7 @@ void DiracDeterminantBatched<PL, VT, FPVT>::mw_recompute(const RefVectorWithLead
       p_filtered_list.push_back(p_list[iw]);
 
       auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<PL, VT, FPVT>>(iw);
-      phi_list.push_back(*det.Phi);
+      phi_list.push_back(det.phi_);
       psiM_temp_list.push_back(det.psiM_temp);
       psiM_host_list.push_back(det.psiM_host);
       dpsiM_list.push_back(det.dpsiM);
@@ -1140,7 +1180,7 @@ void DiracDeterminantBatched<PL, VT, FPVT>::mw_recompute(const RefVectorWithLead
     // I think through the magic of OMPtarget psiM_host_list actually results in psiM_temp being updated
     // on the device. For dspiM_list, d2psiM_list I think they are calculated on CPU and this is not true
     // This is the reason for the strange look omp target update to below.
-    wfc_leader.Phi->mw_evaluate_notranspose(phi_list, p_filtered_list, wfc_leader.FirstIndex, wfc_leader.LastIndex,
+    wfc_leader.phi_.mw_evaluate_notranspose(phi_list, p_filtered_list, wfc_leader.FirstIndex, wfc_leader.LastIndex,
                                             psiM_host_list, dpsiM_list, d2psiM_list);
   }
 
@@ -1175,7 +1215,7 @@ void DiracDeterminantBatched<PL, VT, FPVT>::evaluateDerivatives(ParticleSet& P,
                                                                 Vector<Value>& dlogpsi,
                                                                 Vector<Value>& dhpsioverpsi)
 {
-  Phi->evaluateDerivatives(P, active, dlogpsi, dhpsioverpsi, FirstIndex, LastIndex);
+  phi_.evaluateDerivatives(P, active, dlogpsi, dhpsioverpsi, FirstIndex, LastIndex);
 }
 
 template<PlatformKind PL, typename VT, typename FPVT>
@@ -1183,21 +1223,20 @@ void DiracDeterminantBatched<PL, VT, FPVT>::evaluateDerivativesWF(ParticleSet& P
                                                                   const opt_variables_type& active,
                                                                   Vector<ValueType>& dlogpsi)
 {
-  Phi->evaluateDerivativesWF(P, active, dlogpsi, FirstIndex, LastIndex);
+  phi_.evaluateDerivativesWF(P, active, dlogpsi, FirstIndex, LastIndex);
 }
 
 template<PlatformKind PL, typename VT, typename FPVT>
 void DiracDeterminantBatched<PL, VT, FPVT>::registerTWFFastDerivWrapper(const ParticleSet& P,
                                                                         TWFFastDerivWrapper& twf) const
 {
-  twf.addGroup(P, P.getGroupID(FirstIndex), Phi.get());
+  twf.addGroup(P, P.getGroupID(FirstIndex), &phi_);
 }
 
 template<PlatformKind PL, typename VT, typename FPVT>
-std::unique_ptr<DiracDeterminantBase> DiracDeterminantBatched<PL, VT, FPVT>::makeCopy(
-    std::unique_ptr<SPOSet>&& spo) const
+std::unique_ptr<DiracDeterminantBase> DiracDeterminantBatched<PL, VT, FPVT>::makeCopy(SPOSet& phi) const
 {
-  return std::make_unique<DiracDeterminantBatched<PL, VT, FPVT>>(std::move(spo), FirstIndex, LastIndex, ndelay_,
+  return std::make_unique<DiracDeterminantBatched<PL, VT, FPVT>>(phi, FirstIndex, LastIndex, ndelay_,
                                                                  matrix_inverter_kind_);
 }
 
@@ -1205,7 +1244,6 @@ template<PlatformKind PL, typename VT, typename FPVT>
 void DiracDeterminantBatched<PL, VT, FPVT>::createResource(ResourceCollection& collection) const
 {
   collection.addResource(std::make_unique<DiracDeterminantBatchedMultiWalkerResource>());
-  Phi->createResource(collection);
   if (matrix_inverter_kind_ == DetMatInvertor::ACCEL)
     collection.addResource(std::make_unique<typename DetInverterSelector<PL, FPVT, VT>::Inverter>());
   else
@@ -1221,15 +1259,11 @@ void DiracDeterminantBatched<PL, VT, FPVT>::acquireResource(
   wfc_leader.mw_res_handle_ = collection.lendResource<DiracDeterminantBatchedMultiWalkerResource>();
   auto& mw_res              = wfc_leader.mw_res_handle_.getResource();
   mw_res.psiMinv_refs.reserve(wfc_list.size());
-
-  RefVectorWithLeader<SPOSet> phi_list(*wfc_leader.Phi);
   for (WaveFunctionComponent& wfc : wfc_list)
   {
     auto& det = static_cast<DiracDeterminantBatched<PL, VT, FPVT>&>(wfc);
-    phi_list.push_back(*det.Phi);
     mw_res.psiMinv_refs.push_back(det.psiMinv_);
   }
-  wfc_leader.Phi->acquireResource(collection, phi_list);
   wfc_leader.accel_inverter_ = collection.lendResource<DiracMatrixInverter<FPVT, VT>>();
 }
 
@@ -1241,13 +1275,6 @@ void DiracDeterminantBatched<PL, VT, FPVT>::releaseResource(
   auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<PL, VT, FPVT>>();
   wfc_leader.mw_res_handle_.getResource().psiMinv_refs.clear();
   collection.takebackResource(wfc_leader.mw_res_handle_);
-  RefVectorWithLeader<SPOSet> phi_list(*wfc_leader.Phi);
-  for (WaveFunctionComponent& wfc : wfc_list)
-  {
-    auto& det = static_cast<DiracDeterminantBatched<PL, VT, FPVT>&>(wfc);
-    phi_list.push_back(*det.Phi);
-  }
-  wfc_leader.Phi->releaseResource(collection, phi_list);
   collection.takebackResource(wfc_leader.accel_inverter_);
 }
 

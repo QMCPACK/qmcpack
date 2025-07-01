@@ -34,6 +34,7 @@ if(NOT MIXED_PRECISION)
   list(APPEND SHORT_BCCH_SCALARS "potential" "-17.99436173 0.017268")
   list(APPEND SHORT_BCCH_SCALARS "eeenergy" "-6.20440454 0.0094955")
   list(APPEND SHORT_BCCH_SCALARS "ionion" "-10.94265693 0.000001")
+  list(APPEND SHORT_BCCH_SCALARS "samples" "64000 0.000000")
 
   qmc_run_and_check(
     short-bccH_2x2x2_ae-vmc_bf
@@ -46,6 +47,19 @@ if(NOT MIXED_PRECISION)
     0
     SHORT_BCCH_SCALARS # VMC
   )
+
+  qmc_run_and_check(
+    short-bccH_2x2x2_ae-vmcbatch_bf
+    "${qmcpack_SOURCE_DIR}/tests/solids/bccH_2x2x2_ae"
+    qmc-short-bf-batch
+    qmc-short-bf-batch.in.xml
+    1
+    16
+    TRUE
+    0
+    SHORT_BCCH_SCALARS # VMC
+  )
+
 
   if(QMC_COMPLEX)
     list(APPEND DET_BCCH_SCALARS "totenergy" "-9.57376312 0.000005")

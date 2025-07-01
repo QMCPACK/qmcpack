@@ -16,7 +16,7 @@
 #include <omp.h>
 #include "config.h"
 #include "OutputManager.h"
-#include "determineDefaultDeviceNum.h"
+#include "Common/determineDefaultDeviceNum.h"
 
 namespace qmcplusplus
 {

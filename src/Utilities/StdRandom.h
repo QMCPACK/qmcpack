@@ -43,7 +43,8 @@ public:
   result_type operator()(RNG& eng)
   {
     return static_cast<result_type>(eng() - eng.min()) / (static_cast<result_type>(eng.max() - eng.min()) + 1) *
-        (max_ - min_) + min_;
+        (max_ - min_) +
+        min_;
   }
 
 private:
@@ -76,6 +77,7 @@ public:
   void load(const std::vector<uint_type>& newstate) override;
   void save(std::vector<uint_type>& curstate) const override;
   std::unique_ptr<RandomBase<T>> makeClone() const override { return std::make_unique<StdRandom<T>>(*this); }
+  RandomBase<T>& operator=(const RandomBase<T>& other) override;
 
   // Non const allows use of default copy constructor
   std::string ClassName{"StdRand"};

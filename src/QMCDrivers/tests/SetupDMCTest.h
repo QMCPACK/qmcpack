@@ -12,9 +12,9 @@
 #ifndef QMCPLUSPLUS_SETUP_DMCTEST_H
 #define QMCPLUSPLUS_SETUP_DMCTEST_H
 
-#include "Particle/tests/MinimalParticlePool.h"
-#include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
-#include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
+#include <MinimalParticlePool.h>
+#include <MinimalWaveFunctionPool.h>
+#include <MinimalHamiltonianPool.h>
 #include "Concurrency/Info.hpp"
 #include "Concurrency/UtilityFunctions.hpp"
 #include "QMCDrivers/DMC/DMCBatched.h"

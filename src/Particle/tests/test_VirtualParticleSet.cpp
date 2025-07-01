@@ -12,7 +12,7 @@
 
 #include "catch.hpp"
 
-#include "MinimalParticlePool.h"
+#include <MinimalParticlePool.h>
 #include "Particle/VirtualParticleSet.h"
 #include "ResourceCollection.h"
 #include "DistanceTable.h"

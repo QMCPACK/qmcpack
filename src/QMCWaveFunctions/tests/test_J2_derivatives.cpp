@@ -220,7 +220,7 @@ TEST_CASE("TwoBodyJastrow other variables", "[wavefunction]")
   TwoBodyJastrow<FakeJasFunctor> jorb("J2_fake", elec, false);
 
   auto j2a_uptr = std::make_unique<FakeJasFunctor>("test_fake_a");
-  auto j2a      = *j2a_uptr;
+  auto& j2a     = *j2a_uptr;
   j2a.myVars.insert("opt1", 1.0);
   // update num_active_vars
   j2a.myVars.resetIndex();
@@ -319,7 +319,7 @@ TEST_CASE("TwoBodyJastrow Jastrow three particles of three types", "[wavefunctio
   jorb.addFunc(0, 1, std::move(j2a_uptr));
 
   auto j2b_uptr = std::make_unique<FakeJasFunctor>("test_fake_b");
-  auto j2b      = *j2b_uptr;
+  auto& j2b     = *j2b_uptr;
   j2b.myVars.insert("opt2", 2.0);
   // update num_active_vars
   j2b.myVars.resetIndex();

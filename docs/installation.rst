@@ -134,14 +134,37 @@ unsupported and untested by the developers although they may still work.
 
 -  FFTW, FFT library (http://www.fftw.org/).
 
-To build the GPU accelerated version of QMCPACK, an installation of
-NVIDIA CUDA development tools is required. Ensure that this is
-compatible with the C and C++ compiler versions you plan to use.
-Supported versions are included in the NVIDIA release notes.
+To build the GPU accelerated version of QMCPACK, an installation of NVIDIA CUDA, AMD ROCm, or Intel OneAPI is required. Ensure that
+this is compatible with the installed GPU drivers and the C and C++ compiler versions you plan to use. 
 
-Many of the utilities provided with QMCPACK require Python (v3). The numpy
-and matplotlib libraries are required for full functionality.
+Many of the utilities provided with QMCPACK require Python (v3). The numpy and matplotlib libraries are required for full
+functionality.
 
+Nightly testing currently includes at least the following software versions:
+
+* Compilers
+  
+  * Clang/LLVM 20.1.4
+  * GCC 14.2.0, 12.4.0
+
+* Boost 1.88.0, 1.82.0
+* HDF5 1.14.5
+* FFTW 3.3.10
+* CMake 3.31.6
+* OpenMPI 5.0.6
+* CUDA 12.6
+* ROCm 6.4.0
+* Python 3.13.2
+* NumPy 2.2.5
+
+For GPU acceleration on NVIDIA GPUs we test LLVM with CUDA using the above versions. On AMD GPUs we support using the latest ROCm
+version and its matching amdclang compiler, as listed above. On a developmental basis we also check the latest Clang and GCC
+development versions, and Intel OneAPI compilers.
+
+GitHub Actions-based tests include additional version combinations from within our two-year support window.
+
+Workflow tests are currently performed with Quantum ESPRESSO v7.4.1 and PySCF v2.9.0. These check trial wavefunction generation and
+conversion through to actual QMC runs.
 
 C++ 17 standard library
 -----------------------
@@ -251,9 +274,10 @@ give examples for a number of common systems in :ref:`installexamples`.
 Environment variables
 ~~~~~~~~~~~~~~~~~~~~~
 
-A number of environment variables affect the build.  In particular
-they can control the default paths for libraries, the default
-compilers, etc.  The list of environment variables is given below:
+A number of environment variables affect the build.  In particular, they can control the default paths for libraries, the default
+compilers, etc. Where possible, we recommend making maximum full use of the CMake configuration options and configuring the
+locations of libraries using cmake arguments. However, e.g., on some supercomputer sites, libraries are made available via modules
+which in turn set environment variables. The list of supported environment variables is given below:
 
 ::
 
@@ -311,7 +335,6 @@ the path to the source directory.
                          Release (create a release/optimized build)
                          RelWithDebInfo (create a release/optimized build with debug info)
                          MinSizeRel (create an executable optimized for size)
-    CMAKE_SYSTEM_NAME    Set value to CrayLinuxEnvironment when cross-compiling in Cray Programming Environment.
     CMAKE_C_COMPILER     Set the C compiler
     CMAKE_CXX_COMPILER   Set the C++ compiler
     CMAKE_C_FLAGS        Set the C flags.  Note: to prevent default
@@ -413,14 +436,6 @@ the path to the source directory.
 
     ENABLE_SANITIZER  link with the GNU or Clang sanitizer library for asan, ubsan, tsan or msan (default=none)
     
-
-`Clang address sanitizer library asan <https://clang.llvm.org/docs/AddressSanitizer.html>`_
-
-`Clang address sanitizer library ubsan <https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html>`_
-
-`Clang thread sanitizer library tsan <https://clang.llvm.org/docs/ThreadSanitizer.html>`_
-
-`Clang thread sanitizer library msan <https://clang.llvm.org/docs/MemorySanitizer.html>`_
 
 See :ref:`Sanitizer-Libraries` for more information.
 
@@ -610,8 +625,7 @@ QMCPACK tried to do its best with CMake to facilitate cross compiling.
 
 - On a machine using a Cray programming environment, we rely on
   compiler wrappers provided by Cray to correctly set architecture-specific
-  flags. Please also add ``-DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment`` to cmake.
-  The CMake configure log should indicate that a Cray machine was detected.
+  flags.
 
 - If not on a Cray machine, by default we assume building for
   the host architecture (e.g., -xHost is added for the Intel compiler
@@ -647,28 +661,29 @@ Installing on Ubuntu Linux or other apt-get--based distributions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The following is designed to obtain a working QMCPACK build on, for example, a
-student laptop, starting from a basic Linux installation with none of
-the developer tools installed. Fortunately, all the required packages
-are available in the default repositories making for a quick
-installation. Note that for convenience we use a generic BLAS. For
-production, a platform-optimized BLAS should be used.
-
+student laptop, starting from a basic Linux installation with none of the
+developer tools installed. Fortunately, all the required packages are available
+in the default repositories making for a quick installation. Note that for
+convenience we use a generic BLAS. A vendor-optimized BLAS is usually faster.
 
 ::
 
   sudo apt-get install cmake g++ openmpi-bin libopenmpi-dev libboost-dev
-  sudo apt-get install libatlas-base-dev liblapack-dev libhdf5-dev libxml2-dev fftw3-dev
-  export CXX=mpiCC
+  sudo apt-get install libopenblas-openmp-dev libhdf5-dev libxml2-dev libfftw3-dev
+  # For qmca and other python-based analysis tools tools:
+  sudo apt-get install python3-numpy python3-scipy python3-h5py python3-matplotlib
   cd build
-  cmake ..
-  make -j 8
+  cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpiCC ..
+  make -j 8 # Adjust to available core count
   ls -l bin/qmcpack
 
-For qmca and other tools to function, we install some Python libraries:
+We recommend running the deterministic test set. Since by default OpenMPI will not
+allow processes to use more than the available number of cores, set `export OMPI_MCA_rmaps_base_oversubscribe=true`:
 
 ::
-
-  sudo apt-get install python-numpy python-matplotlib
+  export OMPI_MCA_rmaps_base_oversubscribe=true
+  time ctest -j 16 -L deterministic --output-on-failure
+ 
 
 Installing on CentOS Linux or other yum-based distributions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -858,8 +873,8 @@ Crusher is the test and development system of Frontier with exactly the same nod
 Building QMCPACK
 ^^^^^^^^^^^^^^^^
 
-As of April 2023, ROCm Clang (>= 5.3.0) is the only compiler, validated by QMCPACK developers,
-on Frontier for OpenMP offloading computation to AMD GPUs.
+As of March 2025, ROCm's amdclang is the only compiler, validated by QMCPACK developers, for reliable and efficient GPU acceleration
+on Frontier via OpenMP offloading. It is recommended to always use the latest available version of ROCm.
 
 For ease of reproducibility we provide build scripts for Frontier.
 
@@ -871,7 +886,9 @@ For ease of reproducibility we provide build scripts for Frontier.
 
 Running QMCPACK
 ^^^^^^^^^^^^^^^
-Job script example with one MPI rank per GPU.
+Job script example with one MPI rank per GPU. Frontier is configured in low operating system noise mode and therefore all 64 CPU
+cores are not available on each node by default. i.e. We use 7 OpenMP CPU threads per MPI rank. The part of the job script that
+makes specific modules available is copied directly from the build script used above.
 
 ::
 
@@ -882,16 +899,23 @@ Job script example with one MPI rank per GPU.
   #SBATCH -t 01:30:00
   #SBATCH -N 1
 
-  echo "Loading QMCPACK dependency modules for crusher"
-  module unload PrgEnv-gnu PrgEnv-cray PrgEnv-amd PrgEnv-gnu-amd PrgEnv-cray-amd
-  module unload amd amd-mixed gcc gcc-mixed cce cce-mixed
-  module load PrgEnv-amd amd/5.4.3
+  echo "Loading QMCPACK dependency modules for frontier"
+  for module_name in PrgEnv-gnu PrgEnv-cray PrgEnv-amd PrgEnv-gnu-amd PrgEnv-cray-amd \
+                     amd amd-mixed gcc gcc-mixed gcc-native cce cce-mixed rocm
+  do
+    if module is-loaded $module_name ; then module unload $module_name; fi
+  done
+  
+  module load PrgEnv-amd amd/6.3.1
+  module unload darshan-runtime
+  unset HIP_PATH
   module unload cray-libsci
-  module load cmake/3.22.2
+  module load cmake/3.27.9
   module load cray-fftw
-  module load openblas/0.3.17-omp
+  module load openblas/0.3.26-omp
   module load cray-hdf5-parallel
 
+  #Update exe_path to point to your executable directory
   exe_path=/lustre/orion/mat151/world-shared/opt/qmcpack/develop-20230411/build_crusher_rocm543_offload_cuda2hip_real/bin
 
   prefix=NiO-fcc-S128-dmc
@@ -903,8 +927,15 @@ Job script example with one MPI rank per GPU.
   TOTAL_RANKS=$((SLURM_JOB_NUM_NODES * RANKS_PER_NODE))
   THREAD_SLOTS=7
   export OMP_NUM_THREADS=7 # change this to 1 if running with only 1 thread is intended.
+  export LIBOMPTARGET_AMDGPU_MAX_ASYNC_COPY_BYTES=0
   srun -n $TOTAL_RANKS --ntasks-per-node=$RANKS_PER_NODE --gpus-per-task=1 -c $THREAD_SLOTS --gpu-bind=closest \
        $exe_path/qmcpack --enable-timers=fine $prefix.xml >& $prefix.out
+
+Recommended environment variables on ORNL OLCF Frontier
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+As indicated in the example job above, we recommend users set ``export LIBOMPTARGET_AMDGPU_MAX_ASYNC_COPY_BYTES=0``. As of March 2025,
+this setting results in increased performance for NiO performance tests.
 
 Installing on systems with ARMv8-based processors
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
