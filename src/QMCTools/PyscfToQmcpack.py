@@ -570,26 +570,28 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[],sp_twist=[],weight=1.
     #Unsorted Mo_coeffs for Multideterminants order matching QP
     eigenset_unsorted=GroupDet.create_dataset("eigenset_unsorted_0",(NbMO,NbAO),dtype="f8",data=mo_coeff_unsorted) 
     eigenvalue_unsorted=GroupDet.create_dataset("eigenval_unsorted_0",(1,NbMO),dtype="f8",data=E_g_unsorted)
- 
     
 
   GroupParameter.create_dataset("numMO",(1,),dtype="i4",data=NbMO)
   GroupParameter.create_dataset("numAO",(1,),dtype="i4",data=NbAO)
-  
-  make_multidet(cell,mf,title, H5_qmcpack)
+
+  is_multidet = isinstance(mf, (mcscf.casci.CASCI, mcscf.mc1step.CASSCF))
+  if is_multidet:
+    make_multidet(cell, mf, title, H5_qmcpack)
+
+  # Close the file before exiting
   H5_qmcpack.close()
 
   print ('Wavefunction successfully saved to QMCPACK HDF5 Format')
   print ('Use: "convert4qmc -orbitals  {}.h5" to generate QMCPACK input files'.format(title))
-  # Close the file before exiting
 
+  if is_multidet:
+    print(f'Multideterminant wavefunction saved to {title}_multidet.h5')
 
 def make_multidet(cell, mf, title, h5_handle):
   from pyscf import mcscf
   import numpy
   import h5py, re, sys
-  possible_determinant_source =[mcscf.casci.CASCI, mcscf.mc1step.CASSCF]
-  if type(mf) in possible_determinant_source:
     a = mf.fcisolver.large_ci(mf.ci, mf.ncas, mf.nelecas, tol=0.0, return_strs=True)
     dets_a = []
     dets_b = []
