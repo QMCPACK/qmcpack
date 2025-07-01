@@ -96,13 +96,20 @@ private:
   Array<WLog::PsiVal, 2> Gtmp;
   /// tmp storage for walker wavefunciton laplacians
   Array<WLog::PsiVal, 1> Ltmp;
-  /// state data set by WalkerLogManager
-  const WalkerLogState& state_;
+  /** This is just a bundle of constructor arguments, if the intention
+   * was dynamic manipulation of object state through a reference
+   * back door. Since it wasn't used this way I turned it to the by
+   * value.
+   * If you want to do a state transform write a function to do it
+   * and document it.
+   */
+  WalkerLogState state_;
 
 public:
   /// constructor. The state should be given by the manager.
   WalkerLogCollector(const WalkerLogState& state);
-
+  WalkerLogCollector(WalkerLogCollector&& other)            = default;
+  WalkerLogCollector& operator=(WalkerLogCollector&& other) = default;
   /// resize buffers to zero rows at beginning of each MC block
   void startBlock();
 

@@ -77,6 +77,8 @@ WalkerLogManager::WalkerLogManager(WalkerLogInput& inp, bool allow_logs, std::st
   registered_hdf = false;
 }
 
+// WalkerLogManager::WalkerLogManager(WalkerLogManager&& other) :
+// {}
 
 std::unique_ptr<WalkerLogCollector> WalkerLogManager::makeCollector() const
 {
