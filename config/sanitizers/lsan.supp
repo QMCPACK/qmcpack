@@ -5,3 +5,5 @@ leak:malloc
 leak:opal_hash_table_init2
 leak:strdup
 leak:calloc
+leak:ompi*
+leak:pmix*
