@@ -591,7 +591,7 @@ try:
   print ('Use: "convert4qmc -orbitals  {}.h5" to generate QMCPACK input files'.format(title))
 
   if is_multidet:
-    print(f'Multideterminant wavefunction saved to {title}_multidet.h5')
+    print(f'Multideterminant part saved to {title}_multidet.h5')
 
 def make_multidet(cell, mf, title, h5_handle):
   from pyscf import mcscf
