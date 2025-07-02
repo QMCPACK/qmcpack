@@ -13,8 +13,6 @@
 #include "catch.hpp"
 
 #include "Message/Communicate.h"
-#include <MockGoldWalkerElements.h>
-
 #include "ValidWalkerLogInput.h"
 #include "WalkerLogInput.h"
 
@@ -39,9 +37,7 @@ struct LogAndStuff
 TEST_CASE("WalkerLogManager::move", "[drivers]")
 {
   Communicate* comm = OHMMS::Controller;
-  RuntimeOptions run_time_options;
 
-  auto mgwe     = testing::makeGoldWalkerElementsWithEEEI(comm, run_time_options);
   using WLInput = testing::WalkerLogInputSections;
   Libxml2Document doc;
   bool okay = doc.parseFromString(WLInput::getXml(WLInput::valid::DEFAULT));
