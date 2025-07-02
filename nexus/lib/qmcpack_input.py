@@ -6627,24 +6627,27 @@ dmc_noJ_legacy_defaults = obj(
 # batched driver defaults
 
 opt_batched_defaults = obj(
-    method          = 'linear',
-    minmethod       = 'quartic',
-    cost            = 'variance',
-    cycles          = 12,
-    var_cycles      = 0,
-    var_samples     = None,
-    init_cycles     = 0,
-    init_samples    = None,
-    init_minwalkers = 1e-4,
+    method           = 'linear',
+    minmethod        = 'quartic',
+    cost             = None, # default: energy if sr_cg else variance
+    cycles           = 12,
+    var_cycles       = 0,
+    var_samples      = None,
+    init_cycles      = 0,
+    init_samples     = None,
+    init_steps       = None,
+    init_minwalkers  = 1e-4,
+    init_line_search = True,
+    init_sr_tau      = 0.1,
     )
 
 shared_opt_batched_defaults = obj(
-    samples              = 204800,
+    samples              = None, # 204800 if steps is None
     #nonlocalpp           = True,
     #use_nonlocalpp_deriv = True,
     warmupsteps          = 300,                
     blocks               = 100,                
-    #steps                = 1,                 
+    steps                = None,                 
     substeps             = 10,                 
     timestep             = 0.3,
     usedrift             = False,
@@ -6677,6 +6680,13 @@ linear_adaptive_batched_defaults = obj(
     shift_s             = 1.00,
     **shared_opt_batched_defaults
     )
+linear_sr_cg_batched_defaults = obj(
+    sr_tau            = None,  # projector: 1-tau*H  (0.01/0.1 if line_search=no/yes)
+    sr_tolerance      = 0.001, # conjugate gradient convergence tolerance
+    sr_regularization = 0.01,  # ~diagonal shift to overlap matrix
+    line_search       = False, # corr samp line search on cost along sr param direction 
+    **shared_opt_batched_defaults
+    )
 
 opt_method_batched_defaults = obj({
     ('linear'  ,'quartic' ) : linear_quartic_batched_defaults,
@@ -6688,11 +6698,13 @@ opt_method_batched_defaults = obj({
     ('linear'  ,'adaptive') : linear_adaptive_batched_defaults,
     ('linear'  ,'oneshift') : linear_oneshift_batched_defaults,
     ('linear'  ,'oneshiftonly') : linear_oneshift_batched_defaults,
+    ('linear'  ,'sr_cg')    : linear_sr_cg_batched_defaults,
     })
 del shared_opt_batched_defaults
 del linear_quartic_batched_defaults
 del linear_oneshift_batched_defaults
 del linear_adaptive_batched_defaults
+del linear_sr_cg_batched_defaults
 
 allowed_opt_method_batched_inputs = set(linear.attributes+linear.parameters
                                        +cslinear.attributes+cslinear.parameters)
@@ -7114,11 +7126,45 @@ def generate_batched_opt_calculations(
         var_samples,
         init_cycles,
         init_samples,
+        init_steps,
         init_minwalkers,
+        init_line_search,
+        init_sr_tau,
         loc        = 'generate_opt_calculations',
         **opt_inputs
         ):
 
+    opt_inputs = obj(opt_inputs)
+    has = obj(
+        minmethod  = 'minmethod' in opt_inputs,
+        samples    = 'samples' in opt_inputs,
+        steps      = 'steps' in opt_inputs,
+        sr_tau     = 'sr_tau' in opt_inputs,
+        linesearch = 'linesearch' in opt_inputs,
+        )
+    for k,v in has.items():
+        has[k] = v and opt_inputs[k] is not None
+    #end for
+    if cost is None:
+        if  has.minmethod and opt_inputs.minmethod=='sr_cg':
+            cost = 'energy'
+        else:
+            cost = 'variance'
+        #end if
+    #end if
+    if  not has.samples and not has.steps:
+        opt_inputs.samples = 204800
+    #end if
+    if init_samples is None and init_steps is None and not has.steps:
+        init_samples = 204800
+    #end if
+    if not has.sr_tau:
+        if has.linesearch and opt_inputs.line_search:
+            opt_inputs.sr_tau = 0.1
+        else:
+            opt_inputs.sr_tau = 0.01
+        #end if
+    #end if
     for k in list(opt_inputs.keys()):
         if opt_inputs[k] is None:
             del opt_inputs[k]
@@ -7134,12 +7180,17 @@ def generate_batched_opt_calculations(
     opt_inputs = obj(opt_inputs)
     invalid = set(opt_inputs.keys())-allowed_opt_method_batched_inputs
     oneshift = False
+    sr_cg    = False
     if len(invalid)>0:
         error('invalid optimization inputs provided\ninvalid inputs: {}\nvalid options are: {}'.format(sorted(invalid),sorted(allowed_opt_method_batched_inputs)))
     #end if
-    if 'minmethod' in opt_inputs and opt_inputs.minmethod.lower().startswith('oneshift'):
-        opt_inputs.minmethod = 'OneShiftOnly'
-        oneshift = True
+    if has.minmethod:
+        if opt_inputs.minmethod.lower().startswith('oneshift'):
+            opt_inputs.minmethod = 'OneShiftOnly'
+            oneshift = True
+        elif opt_inputs.minmethod=='sr_cg':
+            sr_cg = True
+        #end if
     #end if
 
     if cost=='variance':
@@ -7171,7 +7222,17 @@ def generate_batched_opt_calculations(
         if init_samples is not None:
             init_opt.samples = init_samples
         #end if
-        init_opt.minwalkers = init_minwalkers
+        if init_steps is not None:
+            init_opt.steps = steps
+        #end if
+        if init_sr_tau is not None:
+            init_opt.sr_tau = init_sr_tau
+        #end if
+        if init_line_search is not None:
+            init_opt.line_search = init_line_search
+        if not sr_cg:
+            init_opt.minwalkers = init_minwalkers
+        #end if
         if not oneshift:
             init_opt.energy               = cost[0]
             init_opt.unreweightedvariance = cost[1]
