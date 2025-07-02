@@ -159,6 +159,12 @@ function(
                    ENVIRONMENT
                    OMP_NUM_THREADS=${THREADS})
       set(TEST_ADDED_TEMP TRUE)
+      if("asan" IN_LIST ENABLE_SANITIZER)
+        set_property(
+          TEST ${TESTNAME}
+          APPEND
+          PROPERTY ENVIRONMENT LSAN_OPTIONS=${LSAN_OPTIONS})
+      endif()
     endif()
   else()
     if((${PROCS} STREQUAL "1"))

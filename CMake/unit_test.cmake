@@ -1,7 +1,5 @@
 include(test_labels)
 
-include(CMakePrintHelpers)
-
 # Runs unit tests
 function(ADD_UNIT_TEST TESTNAME PROCS THREADS TEST_BINARY)
   message(VERBOSE "Adding test ${TESTNAME}")
@@ -20,13 +18,14 @@ function(ADD_UNIT_TEST TESTNAME PROCS THREADS TEST_BINARY)
   endif()
 
   if(TEST_ADDED)
-    set(TEST_ADDITIONAL_ENV
-        $<$<STREQUAL:${ENABLE_SANITIZER},asan>:LSAN_OPTIONS=suppressions=${PROJECT_SOURCE_DIR}/config/sanitizers/lsan.supp>
-    )
-    set_tests_properties(
-      ${TESTNAME} PROPERTIES PROCESSORS ${TOT_PROCS} ENVIRONMENT "OMP_NUM_THREADS=${THREADS};${TEST_ADDITIONAL_ENV}"
-                             PROCESSOR_AFFINITY TRUE)
-    cmake_print_properties(TESTS ${TESTNAME} PROPERTIES ENVIRONMENT)
+    set_tests_properties(${TESTNAME} PROPERTIES PROCESSORS ${TOT_PROCS} ENVIRONMENT OMP_NUM_THREADS=${THREADS}
+                                                PROCESSOR_AFFINITY TRUE)
+    if("asan" IN_LIST ENABLE_SANITIZER)
+      set_property(
+        TEST ${TESTNAME}
+        APPEND
+        PROPERTY ENVIRONMENT LSAN_OPTIONS=${LSAN_OPTIONS})
+    endif()
 
     if(ENABLE_CUDA
        OR ENABLE_ROCM
