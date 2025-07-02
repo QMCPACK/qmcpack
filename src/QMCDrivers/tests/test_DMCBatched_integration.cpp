@@ -23,11 +23,13 @@
 #include <RandomNumberControl.h>
 #include <MakeEstimatorManager.h>
 #include "DMC/DMCContextForSteps.h"
+#include "reference_prefix.h"
 
 namespace qmcplusplus
 {
 
-constexpr bool generate_test_data = false;
+constexpr bool generate_new_seed  = false;
+constexpr bool generate_test_data = true;
 
 void copyRefFile(std::string_view ref_file, std::string_view ref_dest)
 {
@@ -62,9 +64,16 @@ TEST_CASE("DMCBatched::estimator_measurement_period", "[drivers]")
   qmcdriver_input.readXML(node);
   dmcdriver_input.readXML(node);
 
-  if constexpr (generate_test_data)
+  if constexpr (generate_new_seed)
   {
+    // This may not work for parallel hdf5
     RandomNumberControl::write(RandomNumberControl::getChildrenRefs(), "seeds_for_DMCBatched", comm);
+    if (comm->rank() == 0)
+    {
+      std::string rand_file{"seeds_for_DMCBatched.random.h5"};
+      std::string random_dest_file{"rank_count_" + std::to_string(comm->size()) + "_" + rand_file};
+      copyRefFile(rand_file, random_dest_file);
+    }
   }
   else
   {
@@ -128,20 +137,18 @@ TEST_CASE("DMCBatched::estimator_measurement_period", "[drivers]")
   Dmcbta::endRun(dmc_batched, block);
   outputManager.resume();
 
+  // This gets a prefix based on the platform, the random numbers are
+  // used in a sequence that is not "deterministic" between the
+  // different platforms. So unless that can be fixed we need this
+  std::string prefix{PLATFORM_PREFIX};
   // would be better to dig this out of the input but for expediency
   std::string log_name("rank_" + std::to_string(comm->rank()) + "_dmc_vem_test.dat");
-  std::string log_dest_name("rank_" + std::to_string(comm->rank()) + "of" + std::to_string(comm->size()) +
+  std::string log_dest_name(prefix + "_rank_" + std::to_string(comm->rank()) + "of" + std::to_string(comm->size()) +
                             "_dmc_vem_test.dat");
 
   if constexpr (generate_test_data)
   {
     copyRefFile(log_name, log_dest_name);
-    if (comm->rank() == 0)
-    {
-      std::string rand_file{"seeds_for_DMCBatched.random.h5"};
-      std::string random_dest_file{"rank_count_" + std::to_string(comm->size()) + "_" + rand_file};
-      copyRefFile(rand_file, random_dest_file);
-    }
   }
   else
   {
