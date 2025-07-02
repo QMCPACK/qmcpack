@@ -7223,7 +7223,7 @@ def generate_batched_opt_calculations(
             init_opt.samples = init_samples
         #end if
         if init_steps is not None:
-            init_opt.steps = steps
+            init_opt.steps = init_steps
         #end if
         if init_sr_tau is not None:
             init_opt.sr_tau = init_sr_tau
