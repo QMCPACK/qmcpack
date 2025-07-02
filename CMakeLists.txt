@@ -172,7 +172,7 @@ set(VALID_SANITIZERS "asan" "ubsan" "tsan" "msan" "typesan")
 set(ENABLE_SANITIZER "" CACHE STRING "asan,ubsan,tsan,msan,typesan")
 set_property(CACHE ENABLE_SANITIZER PROPERTY STRINGS ${VALID_SANITIZERS})
 
-set(LSAN_OPTIONS "suppressions=${PROJECT_SOURCE_DIR}/config/sanitizers/lsan.supp" CACHE string "cached value of environment variable LSAN_OPTIONS used by ctest")
+set(LSAN_OPTIONS "suppressions=${PROJECT_SOURCE_DIR}/config/sanitizers/lsan.supp" CACHE STRING "cached value of environment variable LSAN_OPTIONS used by ctest")
 
 if(ENABLE_SANITIZER)
   # Perform sanitizer option check, only works in debug mode
