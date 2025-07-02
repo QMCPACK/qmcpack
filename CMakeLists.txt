@@ -168,7 +168,7 @@ mark_as_advanced(QMC_EXP_THREADING)
 #--------------------------------------------------------------------
 
 # Add optional sanitizers ASAN, UBSAN, MSAN, TYPESAN
-set(VALID_SANITIZERS "" "asan" "ubsan" "tsan" "msan" "typesan")
+set(VALID_SANITIZERS "asan" "ubsan" "tsan" "msan" "typesan")
 set(ENABLE_SANITIZER "" CACHE STRING "asan,ubsan,tsan,msan,typesan")
 set_property(CACHE ENABLE_SANITIZER PROPERTY STRINGS ${VALID_SANITIZERS})
 
