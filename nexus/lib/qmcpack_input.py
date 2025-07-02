@@ -7494,7 +7494,8 @@ gen_basic_input_defaults = obj(
     dla              = None,
     delay_rank       = None,
     det_batch        = None,
-    jastrows         = 'generateJ12',    
+    jastrows         = 'generateJ12',
+    opt_params       = None,
     interactions     = 'all',            
     corrections      = 'default',        
     observables      = None,             
@@ -7813,6 +7814,26 @@ def generate_basic_input(**kwargs):
         #end if
     #end if
 
+    if spobuilders is not None:
+        wfn.sposet_builders = make_collection(spobuilders)
+    #end if
+
+    if kw.opt_params is not None:
+        if not isinstance(kw.opt_params,str):
+            QmcpackInput.class_error('opt_params must be a file path.\nYou provided: {}'.format(kw.opt_params),'generate_qmcpack_input')
+        #end if
+        if not kw.opt_params.endswith('vp.h5'):
+            QmcpackInput.class_error('opt_params must a vp.h5 file.\nYou provided: {}'.format(kw.opt_params),'generate_qmcpack_input')
+        #end if
+        if kw.check_paths and not os.path.exists(kw.opt_params):
+            QmcpackInput.class_error('opt_params file does not exist.\nFile path provided: {}\nTo disable this check, set check_paths=False'.format(kw.opt_params),'generate_qmcpack_input')
+        #end if
+        wfn.override_variational_parameters = override_variational_parameters(
+            href = os.path.abspath(kw.opt_params)
+            )
+    #end if
+
+
     h_estimators = kw.estimators
     d_estimators = None
     if batched:
@@ -7827,10 +7848,6 @@ def generate_basic_input(**kwargs):
                 #end if
             #end for
         #end if
-    #end if
-
-    if spobuilders is not None:
-        wfn.sposet_builders = make_collection(spobuilders)
     #end if
 
     hmltn = generate_hamiltonian(

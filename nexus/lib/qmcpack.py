@@ -1061,7 +1061,7 @@ class Qmcpack(Simulation):
         elif result_name=='gc_occupation':
             from qmcpack_converters import gcta_occupation
             if not isinstance(sim,Pw2qmcpack):
-                msg = 'grand-canonical occupation require Pw2qmcpack'
+                msg = 'grand-canonical occupation requires Pw2qmcpack'
                 self.error(msg)
             #endif
             # step 1: extract Fermi energy for each spin from nscf
@@ -1078,7 +1078,7 @@ class Qmcpack(Simulation):
             #end if
             na = nscf.load_analyzer_image()
             Ef_list = na.fermi_energies
-            # step 2: analyze ESH5 file for states below Fermi energy
+            # step 2: analyze ESHDF file for states below Fermi energy
             pa = sim.load_analyzer_image()
             if 'wfh5' not in pa:
               pa.analyze(Ef_list=Ef_list)
