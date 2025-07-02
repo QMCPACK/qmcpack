@@ -172,8 +172,6 @@ set(VALID_SANITIZERS "asan" "ubsan" "tsan" "msan" "typesan")
 set(ENABLE_SANITIZER "" CACHE STRING "asan,ubsan,tsan,msan,typesan")
 set_property(CACHE ENABLE_SANITIZER PROPERTY STRINGS ${VALID_SANITIZERS})
 
-set(LSAN_OPTIONS "suppressions=${PROJECT_SOURCE_DIR}/config/sanitizers/lsan.supp" CACHE STRING "cached value of environment variable LSAN_OPTIONS used by ctest")
-
 if(ENABLE_SANITIZER)
   # Perform sanitizer option check, only works in debug mode
   if(NOT ENABLE_SANITIZER IN_LIST VALID_SANITIZERS)
@@ -269,6 +267,13 @@ if(ENABLE_SANITIZER)
     set(CMAKE_CXX_FLAGS_SAN
         "-fsanitize=address -fno-optimize-sibling-calls -fsanitize-address-use-after-scope -fno-omit-frame-pointer"
         CACHE STRING "AddressSanitizer C++ compiler builds." FORCE)
+    if(NOT DEFINED LSAN_OPTIONS)
+      if(QMC_MPI)
+        set(LSAN_OPTIONS "suppressions=${PROJECT_SOURCE_DIR}/config/sanitizers/lsan_mpi.supp")
+      else()
+        set(LSAN_OPTIONS "")
+      endif()
+    endif()
   elseif("${ENABLE_SANITIZER}" STREQUAL "ubsan")
     set(CMAKE_CXX_FLAGS_SAN
         "-fsanitize=undefined"
