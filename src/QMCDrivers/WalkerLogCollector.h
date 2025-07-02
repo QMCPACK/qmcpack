@@ -96,12 +96,14 @@ private:
   Array<WLog::PsiVal, 2> Gtmp;
   /// tmp storage for walker wavefunciton laplacians
   Array<WLog::PsiVal, 1> Ltmp;
-  /** This is just a bundle of constructor arguments, if the intention
-   * was dynamic manipulation of object state through a reference
-   * back door. Since it wasn't used this way I turned it to the by
-   * value.
-   * If you want to do a state transform write a function to do it
-   * and document it.
+  /** Hopefully This is just a bundle of constructor arguments.
+   *  It was a reference, so perhaps, the intention was dynamic
+   *  manipulation of a group of objects state from afar.
+   *  Since it hadn't yet been used this way its just a private member
+   *  now. _reviewers_ do not allow it to be made a reference again.
+   *
+   *  If you want to do a state transform write a function, document
+   *  it, call it from a sensible and obvious scope.
    */
   WalkerLogState state_;
 
