@@ -163,25 +163,9 @@ set(HAVE_EINSPLINE 1) # to be removed
 option(QMC_EXP_THREADING "Experimental non openmp threading models" OFF)
 mark_as_advanced(QMC_EXP_THREADING)
 
-#--------------------------------------------------------------------
-# Sanitizer options
-#--------------------------------------------------------------------
-
 # Add optional sanitizers ASAN, UBSAN, MSAN, TYPESAN
 set(VALID_SANITIZERS "asan" "ubsan" "tsan" "msan" "typesan")
-set(ENABLE_SANITIZER "" CACHE STRING "asan,ubsan,tsan,msan,typesan")
-set_property(CACHE ENABLE_SANITIZER PROPERTY STRINGS ${VALID_SANITIZERS})
-
-set(LSAN_OPTIONS "suppressions=${PROJECT_SOURCE_DIR}/config/sanitizers/lsan.supp" CACHE STRING "cached value of environment variable LSAN_OPTIONS used by ctest")
-
-if(ENABLE_SANITIZER)
-  # Perform sanitizer option check, only works in debug mode
-  if(NOT ENABLE_SANITIZER IN_LIST VALID_SANITIZERS)
-    message(FATAL_ERROR "Invalid -DENABLE_SANITIZER=${ENABLE_SANITIZER}, value must be one of ${VALID_SANITIZERS}")
-  else()
-    message(STATUS "Enable sanitizer ENABLE_SANITIZER=${ENABLE_SANITIZER}")
-  endif()
-endif()
+set(ENABLE_SANITIZER "" CACHE STRING "Valid input: ${VALID_SANITIZERS} or left empty")
 
 #--------------------------------------------------------------------
 # INSTALL_NEXUS install Nexus alongside QMCPACK
@@ -261,6 +245,12 @@ include(TestCxx17Library)
 # SETUP SANITIZERS FLAGS
 #-----------------------------------------------------------------------
 if(ENABLE_SANITIZER)
+  message(STATUS "Enable sanitizer ENABLE_SANITIZER=${ENABLE_SANITIZER}")
+  # Perform sanitizer option check
+  if(NOT ENABLE_SANITIZER IN_LIST VALID_SANITIZERS)
+    message(FATAL_ERROR "Invalid ENABLE_SANITIZER input, value must be one of ${VALID_SANITIZERS}")
+  endif()
+
   if(NOT ${COMPILER} MATCHES "GNU" AND NOT ${COMPILER} MATCHES "Clang")
     message(FATAL_ERROR "-DENABLE_SANITIZER=${ENABLE_SANITIZER} only works with GNU or Clang compilers")
   endif()
@@ -269,6 +259,16 @@ if(ENABLE_SANITIZER)
     set(CMAKE_CXX_FLAGS_SAN
         "-fsanitize=address -fno-optimize-sibling-calls -fsanitize-address-use-after-scope -fno-omit-frame-pointer"
         CACHE STRING "AddressSanitizer C++ compiler builds." FORCE)
+    if(NOT DEFINED LSAN_OPTIONS)
+      if(QMC_MPI)
+        set(LSAN_OPTIONS "suppressions=${PROJECT_SOURCE_DIR}/config/sanitizers/lsan_mpi.supp")
+      else()
+        set(LSAN_OPTIONS "")
+      endif()
+    endif()
+    if(LSAN_OPTIONS)
+      message(STATUS "Set environment variable LSAN_OPTIONS for CTest: ${LSAN_OPTIONS}")
+    endif()
   elseif("${ENABLE_SANITIZER}" STREQUAL "ubsan")
     set(CMAKE_CXX_FLAGS_SAN
         "-fsanitize=undefined"
