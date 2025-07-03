@@ -29,7 +29,7 @@ namespace qmcplusplus
 {
 
 constexpr bool generate_new_seed  = false;
-constexpr bool generate_test_data = true;
+constexpr bool generate_test_data = false;
 
 void copyRefFile(std::string_view ref_file, std::string_view ref_dest)
 {
