@@ -580,15 +580,13 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[],sp_twist=[],weight=1.
 
   if is_multidet:
     make_multidet(cell, mf, title, H5_qmcpack)
+    print(f'Multideterminant wavefunction saved to {title}_multidet.h5')
 
   # Close the file before exiting
   H5_qmcpack.close()
 
   print ('Wavefunction successfully saved to QMCPACK HDF5 Format')
   print ('Use: "convert4qmc -orbitals  {}.h5" to generate QMCPACK input files'.format(title))
-
-  if is_multidet:
-    print(f'Multideterminant wavefunction saved to {title}_multidet.h5')
 
 
 def make_multidet(cell, mf, title, h5_handle):
