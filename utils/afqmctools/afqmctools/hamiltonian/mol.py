@@ -196,7 +196,7 @@ def chunked_cholesky(mol, max_error=1e-6, verbose=False, cmax=10):
     nu = numpy.argmax(diag)
     delta_max = diag[nu]
     if verbose:
-        print(" # Generating Cholesky decomposition of ERIs."%nchol_max)
+        print(" # Generating Cholesky decomposition of ERIs. nchol_max = %d "%nchol_max)
         print(" # max number of cholesky vectors = %d"%nchol_max)
         header = ['iteration', 'max_residual', 'time']
         print(format_fixed_width_strings(header))
