@@ -12,11 +12,7 @@
 
 set(PLATFORM_PREFIX "")
 if(ENABLE_CUDA)
-  if(QMC_CUDA2HIP)
-    set(PLATFORM_PREFIX "amd_gpu")
-  else()
     set(PLATFORM_PREFIX "nv_gpu")
-  endif()
 else()
   set(PLATFORM_PREFIX "cpu")
 endif()
