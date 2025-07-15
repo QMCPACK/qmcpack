@@ -258,6 +258,10 @@ void EstimatorManagerNew::stopBlock(unsigned long accept, unsigned long reject, 
   makeBlockAverages(accept, reject);
   reduceOperatorEstimators();
   writeOperatorEstimators();
+  // This is an entry point for rank level estimators to do one last
+  // thing before being zerod
+  for (auto& op_est : operator_ests_)
+    op_est->stopBlock();
   zeroOperatorEstimators();
   // intentionally put after all the estimator I/O
   PropertyCache[cpuInd] = block_timer_.elapsed();
