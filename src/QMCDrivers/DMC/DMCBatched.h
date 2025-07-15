@@ -17,6 +17,8 @@
 #include "QMCDrivers/DMC/DMCDriverInput.h"
 #include "QMCDrivers/MCPopulation.h"
 #include "Particle/MCCoords.hpp"
+#include "WalkerLogManager.h"
+#include "RunTimeManager.h"
 
 namespace qmcplusplus
 {
@@ -105,8 +107,8 @@ public:
    *
    *  This is the shared entry point
    *  from QMCMain so cannot be updated yet
-   *  
-   *  Contains logic that sets walkers_per_rank_ 
+   *
+   *  Contains logic that sets walkers_per_rank_
    *  TargetWalkers trump walkers, if it is not set
    *  walkers which is by default per rank for the batched drivers
    *  from this or the previous section wins.
