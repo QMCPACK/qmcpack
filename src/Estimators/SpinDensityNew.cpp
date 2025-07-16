@@ -100,7 +100,7 @@ std::unique_ptr<OperatorEstBase> SpinDensityNew::spawnCrowdClone() const
 
 void SpinDensityNew::startBlock(int steps)
 {
-  if (data_locality_ == DataLocality::rank)
+  if (data_locality_ == DataLocality::queue)
   {
     int num_particles = std::accumulate(species_size_.begin(), species_size_.end(), 0);
     size_t data_size  = num_particles * steps * 2;

@@ -57,7 +57,7 @@ void EstimatorManagerCrowd::startBlock(int steps)
 void EstimatorManagerCrowd::stopBlock()
 {
   for (auto& uope : operator_ests_)
-    uope->startBlock(steps);
+    uope->stopBlock();
 }
 
 
