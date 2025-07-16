@@ -103,12 +103,21 @@ public:
 
   virtual void normalize(QMCT::RealType invToWgt);
 
+  /** Entry point for an estimator  to do something at the start of each block.
+   *
+   *  Called on rank scope estimator from
+   *  EstimatorManagerNew::startBlock()
+   *  Called on crowd scope estimators from
+   *  Crowd::startBlock())
+   */
   virtual void startBlock(int steps) = 0;
 
-  /** One more entry point incase an estimator has something it needs
-   *  to do at the end of each block.
+  /** Entry point for estimator to do something at the end of each block.
    *
-   *  Only called on rank scope estimator from EstimatorManagerNew::stopBlock())
+   *  Called on rank scope estimator from
+   *  EstimatorManagerNew::stopBlock()
+   *  Called on crowd scope estimators from
+   *  Crowd::stopBlock())
    */
   virtual void stopBlock() {};
 

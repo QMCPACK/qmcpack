@@ -8,7 +8,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include <NonLocalTOperator.h>
-#include <QMCDriverNew.h>
+
 namespace qmcplusplus
 {
 class DMCBatched::DMCContextForSteps : public ContextForSteps

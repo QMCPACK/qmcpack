@@ -245,7 +245,12 @@ void EstimatorManagerNew::startDriverRun()
 
 void EstimatorManagerNew::stopDriverRun() { h_file.reset(); }
 
-void EstimatorManagerNew::startBlock(int steps) { block_timer_.restart(); }
+void EstimatorManagerNew::startBlock(int steps)
+{
+  block_timer_.restart();
+  for (auto& op_est : operator_ests_)
+    op_est->startBlock(steps);
+}
 
 void EstimatorManagerNew::stopBlock(unsigned long accept, unsigned long reject, FullPrecRealType block_weight)
 {
