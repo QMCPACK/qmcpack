@@ -2565,7 +2565,7 @@ class vmc(QIxml):
                   'blocks','steps','substeps','timestep','maxcpusecs','rewind',
                   'storeconfigs','checkproperties','recordconfigs','current',
                   'stepsbetweensamples','samplesperthread','samples','usedrift',
-                  'spin_mass',
+                  'spin_mass','estimator_period',
                   'walkers','nonlocalpp','tau','walkersperthread','reconfiguration', # legacy - batched
                   'dmcwalkersperthread','current','ratio','firststep',
                   'minimumtargetwalkers','max_seconds']
@@ -2588,7 +2588,7 @@ class dmc(QIxml):
                   'stepsbetweensamples','samplesperthread','samples','reconfiguration',
                   'nonlocalmoves','maxage','alpha','gamma','reserve','use_nonblocking',
                   'branching_cutoff_scheme','feedback','sigmabound',
-                  'spin_mass',
+                  'spin_mass','estimator_period',
                   'walkers','nonlocalmove','pop_control','targetwalkers',               # legacy - batched
                   'minimumtargetwalkers','energybound','feedback','recordwalkers',
                   'fastgrad','popcontrol','branchinterval','usedrift','storeconfigs',
@@ -7437,7 +7437,8 @@ gen_basic_input_defaults = obj(
     interactions     = 'all',            
     corrections      = 'default',        
     observables      = None,             
-    estimators       = None,             
+    estimators       = None,
+    estimator_period = None,
     traces           = None,             
     calculations     = None,             
     det_format       = 'new',            
@@ -7820,6 +7821,13 @@ def generate_basic_input(**kwargs):
         ests_elem = estimators()
         ests_elem.estimators = ests
         sim.qmcsystem.estimators = ests_elem
+    #end if
+    if kw.estimator_period is not None:
+        for c in kw.calculations:
+            if isinstance(c,(vmc,dmc)):
+                c.estimator_period = kw.estimator_period
+            #end if
+        #end for
     #end if
     sim.calculations = make_collection(kw.calculations).copy()
 
