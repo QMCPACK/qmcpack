@@ -245,7 +245,12 @@ void EstimatorManagerNew::startDriverRun()
 
 void EstimatorManagerNew::stopDriverRun() { h_file.reset(); }
 
-void EstimatorManagerNew::startBlock(int steps) { block_timer_.restart(); }
+void EstimatorManagerNew::startBlock(int steps)
+{
+  block_timer_.restart();
+  for (auto& op_est : operator_ests_)
+    op_est->startBlock(steps);
+}
 
 void EstimatorManagerNew::stopBlock(unsigned long accept, unsigned long reject, FullPrecRealType block_weight)
 {
@@ -258,6 +263,10 @@ void EstimatorManagerNew::stopBlock(unsigned long accept, unsigned long reject, 
   makeBlockAverages(accept, reject);
   reduceOperatorEstimators();
   writeOperatorEstimators();
+  // This is an entry point for rank level estimators to do one last
+  // thing before being zerod
+  for (auto& op_est : operator_ests_)
+    op_est->stopBlock();
   zeroOperatorEstimators();
   // intentionally put after all the estimator I/O
   PropertyCache[cpuInd] = block_timer_.elapsed();

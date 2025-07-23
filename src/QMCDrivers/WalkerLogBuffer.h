@@ -151,6 +151,9 @@ private:
 
 public:
   WalkerLogBuffer();
+  WalkerLogBuffer(const WalkerLogBuffer& other)       = default;
+  WalkerLogBuffer(WalkerLogBuffer&& other)            = default;
+  WalkerLogBuffer& operator=(WalkerLogBuffer&& other) = default;
 
   /// current number of rows in the data buffer
   inline size_t nrows() { return buffer.size(0); }

@@ -2,6 +2,16 @@
 
 Notable changes to QMCPACK are documented in this file.
 
+## [Unreleased]
+
+### Known issues:
+
+* Multireference/multideterminant wavefunctions from PySCF are not correctly converted [#5563](https://github.com/QMCPACK/qmcpack/issues/5563)
+* Backflow wavefunctions are not working for ab initio (vs model) Hamiltonians in the batched drivers
+  [#5459](https://github.com/QMCPACK/qmcpack/issues/5459)
+* The energy density estimator is incorrect [#5468](https://github.com/QMCPACK/qmcpack/issues/5468)
+* AFQMC utilities and converters are not compatible with modern PySCF [#4653](https://github.com/QMCPACK/qmcpack/issues/4653)
+
 ## [4.1.0] - 2025-04-30
 
 This release is recommended for all users and includes improved support for calculating forces, better GPU support, updated build

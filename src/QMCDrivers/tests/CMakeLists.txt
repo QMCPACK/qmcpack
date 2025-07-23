@@ -34,7 +34,8 @@ set(DRIVER_TEST_SRC
     test_vmc_driver.cpp
     test_dmc_driver.cpp
     test_SimpleFixedNodeBranch.cpp
-    test_QMCDriverFactory.cpp)
+    test_QMCDriverFactory.cpp
+    test_WalkerLogManager.cpp)
 
 # legacy driver mpi, not tested in a meaningful way since the standard unit test is
 # just one rank with mpi.

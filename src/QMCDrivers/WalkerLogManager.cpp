@@ -77,7 +77,6 @@ WalkerLogManager::WalkerLogManager(WalkerLogInput& inp, bool allow_logs, std::st
   registered_hdf = false;
 }
 
-
 std::unique_ptr<WalkerLogCollector> WalkerLogManager::makeCollector() const
 {
   if (state.verbose)

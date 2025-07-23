@@ -2475,6 +2475,10 @@ class Perlmutter(NerscMachine):
         c+='#SBATCH -o '+job.outfile+'\n'
         c+='#SBATCH -e '+job.errfile+'\n'
 
+        if job.email is not None:
+            c+='#SBATCH --mail-type=ALL\n'
+            c+='#SBATCH --mail-user={0}\n'.format(job.email)
+
         if 'gpu' in job.constraint:
             gpus_per_task = int(floor(float(self.gpus_per_node)/job.processes_per_node))
             c+='#SBATCH --gpus-per-task={0}\n'.format(gpus_per_task)
