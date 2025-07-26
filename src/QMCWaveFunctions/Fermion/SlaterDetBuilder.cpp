@@ -523,7 +523,9 @@ std::unique_ptr<MultiSlaterDetTableMethod> SlaterDetBuilder::createMSDFast(
   auto& myVars(*myVars_ptr);
 
   bool Optimizable    = false;
+
   bool CI_Optimizable = false;
+  bool CI_Degenerated = false;
 
   bool optimizeCI;
   bool degeneratedCI;
@@ -557,7 +559,9 @@ std::unique_ptr<MultiSlaterDetTableMethod> SlaterDetBuilder::createMSDFast(
       readDetListH5(cur, uniqueConfgs, C2nodes, CItags, C, optimizeCI, degeneratedCI, nptcls);
     }
     else
+    {
       readDetList(cur, uniqueConfgs, C2nodes, CItags, C, optimizeCI, degeneratedCI, nptcls, csf_data_ptr);
+    }
   }
 
   const auto maxloc   = std::max_element(C.begin(), C.end(), [](ValueType const& lhs, ValueType const& rhs) {
@@ -632,13 +636,22 @@ std::unique_ptr<MultiSlaterDetTableMethod> SlaterDetBuilder::createMSDFast(
     else
       for (int i = 1; i < C.size(); i++)
         myVars.insert(CItags[i], std::real(C[i]), true, optimize::LINEAR_P);
-    if(degeneratedCI)
+    if (degeneratedCI) {
+        CI_Degenerated = true;
         app_log() << "CI coefficients will keep the degeneracy during optimization.\n";
+        for (int i = 1; i < csf_data_ptr->coeffs.size()- 1; i++) {
+            if (std::abs(csf_data_ptr->coeffs[i]) == std::abs(csf_data_ptr->coeffs[i + 1])) {
+                app_log() << "Coeff[" << i << "] and Coeff[" << (i + 1) << "] are degenerated (" <<
+                csf_data_ptr->coeffs[i] << ")\n";
+            }
+        }
+    }
   }
   else
   {
     app_log() << "CI coefficients are not optimizable. \n";
     CI_Optimizable = false;
+    CI_Degenerated = false;
   }
 
   bool any_optimizable = false;
@@ -675,7 +688,7 @@ std::unique_ptr<MultiSlaterDetTableMethod> SlaterDetBuilder::createMSDFast(
 
   auto msd_fast = std::make_unique<MultiSlaterDetTableMethod>(targetPtcl, std::move(dets), use_precompute);
   msd_fast->initialize(std::move(C2nodes_sorted_ptr), std::move(C_ptr), std::move(myVars_ptr), std::move(csf_data_ptr),
-                       Optimizable, CI_Optimizable);
+                       Optimizable, CI_Optimizable, CI_Degenerated);
 
   return msd_fast;
 }

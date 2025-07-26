@@ -247,7 +247,8 @@ public:
                   std::unique_ptr<opt_variables_type> myVars_in,
                   std::unique_ptr<CSFData> csf_data_in,
                   bool optimizable,
-                  bool CI_optimizable);
+                  bool CI_optimizable,
+                  bool CI_degenerated);
 
 private:
   //get Det ID. It should be consistent with particle group id within the particle set.
@@ -322,6 +323,8 @@ private:
   std::shared_ptr<std::vector<ValueType>> C;
   /// if true, the CI coefficients are optimized
   bool CI_Optimizable;
+  /// if true, the CI coefficients are kept degenerated
+  bool CI_Degenerated;
   //optimizable variable is shared with the clones
   std::shared_ptr<opt_variables_type> myVars;
 
