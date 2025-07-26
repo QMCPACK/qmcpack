@@ -14,7 +14,6 @@
 // File created by: Jordan E. Vincent, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include <iostream>
 
 #include "QMCGaussianParserBase.h"
 #include <iterator>
