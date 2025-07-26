@@ -487,6 +487,9 @@ The following options are specific to using MCSCF multideterminants from Gamess.
   +----------------------+-----------+-------------+----------------------------------------------+
   | ``-optDetCoeffs``    | -         | no          | Enables the optimization of CI coefficients  |
   +----------------------+-----------+-------------+----------------------------------------------+
+  | ``-degenerated ``    | -         | no          | Keep the degeneracy of the CI coefficients   |
+  |                      |           |             | during optimization                          | 
+  +----------------------+-----------+-------------+----------------------------------------------+
 
 -  keyword **-ci** Path/name of the file containing the CI expansion in
    a Gamess Format.
