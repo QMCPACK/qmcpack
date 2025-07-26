@@ -806,7 +806,10 @@ void MultiSlaterDetTableMethod::resetParametersExclusive(const opt_variables_typ
       for (int i = 0; i < csf_data_->dets_per_csf.size(); i++)
       {
         for (int k = 0; k < csf_data_->dets_per_csf[i]; k++)
+        {
           C_p[cnt] = CSFcoeff_p[i] * CSFexpansion_p[cnt];
+          cnt++;
+        }
       }
       //for(int i=0; i<Dets.size(); i++) Dets[i]->resetParameters(active);
     }
