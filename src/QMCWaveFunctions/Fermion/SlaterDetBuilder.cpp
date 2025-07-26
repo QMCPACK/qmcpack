@@ -639,12 +639,6 @@ std::unique_ptr<MultiSlaterDetTableMethod> SlaterDetBuilder::createMSDFast(
     if (degeneratedCI) {
         CI_Degenerated = true;
         app_log() << "CI coefficients will keep the degeneracy during optimization.\n";
-        for (int i = 1; i < csf_data_ptr->coeffs.size()- 1; i++) {
-            if (std::abs(csf_data_ptr->coeffs[i]) == std::abs(csf_data_ptr->coeffs[i + 1])) {
-                app_log() << "Coeff[" << i << "] and Coeff[" << (i + 1) << "] are degenerated (" <<
-                csf_data_ptr->coeffs[i] << ")\n";
-            }
-        }
     }
   }
   else

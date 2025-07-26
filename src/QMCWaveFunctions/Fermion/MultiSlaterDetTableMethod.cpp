@@ -782,6 +782,22 @@ void MultiSlaterDetTableMethod::resetParametersExclusive(const opt_variables_typ
         if (loc >= 0)
         {
           CSFcoeff_p[i + 1] = (*myVars)[i] = active[loc];
+          if (CI_Degenerated)
+          {
+            int next_loc = myVars->where(i + 1);
+            if (next_loc >= 0)
+            {
+              if (std::abs(csf_data_->coeffs[i]) == std::abs(csf_data_->coeffs[i + 1])) 
+              {
+                 (*myVars)[i] = active[loc];
+                 (*myVars)[i+1] = active[loc];
+                 std::cout << "Degenerate pair detected: i = " << i
+                        << " with j = " << i+1
+                        << " (" << std::abs(csf_data_->coeffs[i])
+                        << ")" << std::endl;
+              }
+            }
+          }
         }
       }
       int cnt                                 = 0;
@@ -790,10 +806,7 @@ void MultiSlaterDetTableMethod::resetParametersExclusive(const opt_variables_typ
       for (int i = 0; i < csf_data_->dets_per_csf.size(); i++)
       {
         for (int k = 0; k < csf_data_->dets_per_csf[i]; k++)
-        {
           C_p[cnt] = CSFcoeff_p[i] * CSFexpansion_p[cnt];
-          cnt++;
-        }
       }
       //for(int i=0; i<Dets.size(); i++) Dets[i]->resetParameters(active);
     }
