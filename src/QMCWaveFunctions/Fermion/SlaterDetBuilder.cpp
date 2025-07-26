@@ -633,7 +633,7 @@ std::unique_ptr<MultiSlaterDetTableMethod> SlaterDetBuilder::createMSDFast(
       for (int i = 1; i < C.size(); i++)
         myVars.insert(CItags[i], std::real(C[i]), true, optimize::LINEAR_P);
     if(degeneratedCI)
-        app_log() << "CI coefficients will keep the degeneracy during optimization.";
+        app_log() << "CI coefficients will keep the degeneracy during optimization.\n";
   }
   else
   {
