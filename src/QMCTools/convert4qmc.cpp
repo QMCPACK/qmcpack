@@ -82,7 +82,7 @@ int main(int argc, char** argv)
       bool debug      = false;
       bool prod       = false;
       bool ci = false, zeroCI = false, orderByExcitation = false, addCusp = false, multidet = false,
-           optDetCoeffs = false;
+           optDetCoeffs = false,degenerated = false;
       double thres      = 1e-20;
       int readNO        = 0; // if > 0, read Natural Orbitals from gamess output
       int readGuess     = 0; // if > 0, read Initial Guess from gamess output
@@ -173,6 +173,10 @@ int main(int argc, char** argv)
         else if (a == "-optDetCoeffs")
         {
           optDetCoeffs = true;
+        }
+        else if (a == "-degenerated")
+        {
+          degenerated = true;
         }
         else if (a == "-TargetState")
         {
@@ -286,6 +290,7 @@ int main(int argc, char** argv)
       parser->production        = prod;
       parser->ci_threshold      = thres;
       parser->optDetCoeffs      = optDetCoeffs;
+      parser->degenerated       = degenerated;
       parser->target_state      = TargetState;
       parser->readNO            = readNO;
       parser->orderByExcitation = orderByExcitation;

@@ -14,6 +14,7 @@
 // File created by: Jordan E. Vincent, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
+#include <iostream>
 
 #include "QMCGaussianParserBase.h"
 #include <iterator>
@@ -70,6 +71,7 @@ QMCGaussianParserBase::QMCGaussianParserBase()
       FixValence(false),
       singledetH5(false),
       optDetCoeffs(false),
+      degenerated(false),
       usingCSF(false),
       isSpinor(false),
       NumberOfAtoms(0),
@@ -135,6 +137,7 @@ QMCGaussianParserBase::QMCGaussianParserBase(int argc, char** argv)
       FixValence(false),
       singledetH5(false),
       optDetCoeffs(false),
+      degenerated(false),
       usingCSF(false),
       isSpinor(false),
       NumberOfAtoms(0),
@@ -1041,17 +1044,25 @@ void QMCGaussianParserBase::createSPOSetsH5(xmlNodePtr spoUP, xmlNodePtr spoDN)
 xmlNodePtr QMCGaussianParserBase::createMultiDeterminantSetCIHDF5()
 {
   xmlNodePtr multislaterdet = xmlNewNode(NULL, (const xmlChar*)"multideterminant");
-  if (optDetCoeffs)
+  if (optDetCoeffs) {
     xmlNewProp(multislaterdet, (const xmlChar*)"optimize", (const xmlChar*)"yes");
-  else
+  } else {
     xmlNewProp(multislaterdet, (const xmlChar*)"optimize", (const xmlChar*)"no");
-  if (isSpinor)
+  }
+
+  if (isSpinor) {
     xmlNewProp(multislaterdet, (const xmlChar*)"spo_0", (const xmlChar*)"spo-up");
-  else
-  {
+  } else {
     xmlNewProp(multislaterdet, (const xmlChar*)"spo_up", (const xmlChar*)"spo-up");
     xmlNewProp(multislaterdet, (const xmlChar*)"spo_dn", (const xmlChar*)"spo-dn");
   }
+
+  if (degenerated) {
+    xmlNewProp(multislaterdet, (const xmlChar*)"degenerated", (const xmlChar*)"yes");
+  } else {
+    xmlNewProp(multislaterdet, (const xmlChar*)"degenerated", (const xmlChar*)"no");
+  }
+
   xmlNodePtr detlist = xmlNewNode(NULL, (const xmlChar*)"detlist");
   std::ostringstream nstates, cisize, cinca, cincb, cinea, cineb, ci_thr;
   cisize << ci_size;
@@ -1170,10 +1181,19 @@ xmlNodePtr QMCGaussianParserBase::createMultiDeterminantSetCIHDF5()
 xmlNodePtr QMCGaussianParserBase::createMultiDeterminantSet()
 {
   xmlNodePtr multislaterdet = xmlNewNode(NULL, (const xmlChar*)"multideterminant");
-  if (optDetCoeffs)
+  if (optDetCoeffs) {
     xmlNewProp(multislaterdet, (const xmlChar*)"optimize", (const xmlChar*)"yes");
-  else
+  } else {
     xmlNewProp(multislaterdet, (const xmlChar*)"optimize", (const xmlChar*)"no");
+  }
+
+  if (degenerated) {
+    std::cout << "The degeneracy of the CI coefficients will be kept during optimization. " << std::endl;
+    xmlNewProp(multislaterdet, (const xmlChar*)"degenerated", (const xmlChar*)"yes");
+  } else {
+    xmlNewProp(multislaterdet, (const xmlChar*)"degenerated", (const xmlChar*)"no");
+  }
+
   xmlNewProp(multislaterdet, (const xmlChar*)"spo_up", (const xmlChar*)"spo-up");
   xmlNewProp(multislaterdet, (const xmlChar*)"spo_dn", (const xmlChar*)"spo-dn");
   if (usingCSF)
@@ -2603,10 +2623,18 @@ void QMCGaussianParserBase::PrepareSPOSetsFromH5(xmlNodePtr spoUP, xmlNodePtr sp
 xmlNodePtr QMCGaussianParserBase::createMultiDeterminantSetFromH5()
 {
   xmlNodePtr multislaterdet = xmlNewNode(NULL, (const xmlChar*)"multideterminant");
-  if (optDetCoeffs)
+  if (optDetCoeffs) {
     xmlNewProp(multislaterdet, (const xmlChar*)"optimize", (const xmlChar*)"yes");
-  else
+  } else {
     xmlNewProp(multislaterdet, (const xmlChar*)"optimize", (const xmlChar*)"no");
+  }
+
+  if (degenerated) {
+    xmlNewProp(multislaterdet, (const xmlChar*)"degenerated", (const xmlChar*)"yes");
+  } else {
+    xmlNewProp(multislaterdet, (const xmlChar*)"degenerated", (const xmlChar*)"no");
+  }
+  
   xmlNewProp(multislaterdet, (const xmlChar*)"spo_up", (const xmlChar*)"spo-up");
   xmlNewProp(multislaterdet, (const xmlChar*)"spo_dn", (const xmlChar*)"spo-dn");
   xmlNodePtr detlist = xmlNewNode(NULL, (const xmlChar*)"detlist");
