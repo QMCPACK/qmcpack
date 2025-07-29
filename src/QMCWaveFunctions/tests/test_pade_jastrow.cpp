@@ -187,7 +187,7 @@ TEST_CASE("Pade2 Jastrow", "[wavefunction]")
 
   opt_variables_type active;
   twf.checkInVariables(active);
-  active.removeInactive();
+  active.resetIndex();
   int nparam = active.size_of_active();
   REQUIRE(nparam == 3);
 

@@ -22,6 +22,8 @@
 #include "QMCWaveFunctions/SpinorSet.h"
 #include "Utilities/for_testing/checkMatrix.hpp"
 #include "Particle/VirtualParticleSet.h"
+#include "QMCHamiltonians/NLPPJob.h"
+#include "DistanceTable.h"
 
 #include <stdio.h>
 #include <string>
@@ -33,6 +35,9 @@ namespace qmcplusplus
 {
 //Now we test the spinor set with Einspline orbitals from HDF.
 #ifdef QMC_COMPLEX
+
+using OffloadVector = Vector<SPOSet::ValueType, OffloadPinnedAllocator<SPOSet::ValueType>>;
+
 TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
 {
   app_log() << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
@@ -43,7 +48,7 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   using RealType  = SPOSet::RealType;
   Communicate* c  = OHMMS::Controller;
 
-  ParticleSet::ParticleLayout lattice;
+  Lattice lattice;
   // O2 test example from pwscf non-collinear calculation.
   lattice.R = {5.10509515, -3.23993545, 0.00000000, 5.10509515, 3.23993545,
                0.00000000, -6.49690625, 0.00000000, 7.08268015};
@@ -396,6 +401,14 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
           (eis * static_cast<ValueType>(5.2) * psiM_up[iat][iorb] +
            emis * static_cast<ValueType>(-0.3) * psiM_down[iat][iorb]);
     CHECK(ratios[0] == ComplexApprox(refVal));
+
+    //now just check evaluateDetRatios
+    refVal = 0.0;
+    for (int iorb = 0; iorb < OrbitalSetSize; iorb++)
+      refVal += static_cast<ValueType>(2.1) * (eis * psiM_up[iat][iorb] + emis * psiM_down[iat][iorb]);
+    spo->evaluateDetRatios(vp, psi, psiinv, ratios);
+    CHECK(ratios[0] == ComplexApprox(refVal));
+
     elec_.rejectMove(iat);
   }
 
@@ -650,6 +663,87 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
 
     std::vector<bool> accept = {false, false};
     elec_.mw_accept_rejectMove<CoordsType::POS_SPIN>(p_list, iat, accept);
+  }
+
+  //test mw_evaluateDetRatios
+  VirtualParticleSet vp1(elec_, 1), vp2(elec_2, 1);
+  RefVectorWithLeader<VirtualParticleSet> vp_list(vp1, {vp1, vp2});
+  ResourceCollection vp_res("vp_res");
+  vp.createResource(vp_res);
+  ResourceCollectionTeamLock<VirtualParticleSet> mw_vp_lock(vp_res, vp_list);
+
+  OffloadVector inv_row(3);
+  inv_row = {0.1, 0.2, 0.3};
+  inv_row.updateTo();
+  std::vector<const SPOSet::ValueType*> inv_row_ptr(2, spo->isOMPoffload() ? inv_row.device_data() : inv_row.data());
+  for (int iat = 0; iat < 3; iat++)
+  {
+    const int ei_table_index = elec_.addTable(ions_);
+    const auto& ei_table1    = elec_.getDistTableAB(ei_table_index);
+    NLPPJob<RealType> job1(0, iat, ei_table1.getDistances()[iat][0], -ei_table1.getDisplacements()[iat][0]);
+    const int ei_table_index2 = elec_2.addTable(ions_);
+    const auto& ei_table2     = elec_2.getDistTableAB(ei_table_index2);
+    NLPPJob<RealType> job2(0, iat, ei_table2.getDistances()[iat][0], -ei_table2.getDisplacements()[iat][0]);
+
+    std::vector<ParticleSet::PosType> deltaV1{{-dR[iat][0], -dR[iat][1], -dR[iat][2]}};
+    std::vector<ParticleSet::PosType> deltaV2{{-dR[iat][0], -dR[iat][1], -dR[iat][2]}};
+
+    VirtualParticleSet::mw_makeMoves(vp_list, p_list, {deltaV1, deltaV2}, {job1, job2}, false);
+
+    RealType s1 = elec_.spins[iat];
+    RealType s2 = elec_2.spins[iat];
+    ValueType eis1(std::cos(s1), std::sin(s1));
+    ValueType emis1(std::cos(s1), -std::sin(s1));
+    ValueType eis2(std::cos(s2), std::sin(s2));
+    ValueType emis2(std::cos(s2), -std::sin(s2));
+
+    ValueType refRatio1, refRatio2;
+    for (int iorb = 0; iorb < OrbitalSetSize; iorb++)
+    {
+      refRatio1 += inv_row[iorb] * (eis1 * psiM_up[iat][iorb] + emis1 * psiM_down[iat][iorb]);
+      refRatio2 += inv_row[iorb] * (eis2 * psiM_up[(iat + 1) % 3][iorb] + emis2 * psiM_down[(iat + 1) % 3][iorb]);
+    }
+
+    std::vector<std::vector<ValueType>> ratios_list(2, std::vector<ValueType>(1));
+    spo->mw_evaluateDetRatios(spo_list, RefVectorWithLeader<const VirtualParticleSet>(vp1, {vp1, vp2}), psi_v_list,
+                              inv_row_ptr, ratios_list);
+    CHECK(ratios_list[0][0] == ComplexApprox(refRatio1));
+    CHECK(ratios_list[1][0] == ComplexApprox(refRatio2));
+
+    std::pair<SPOSet::ValueVector, SPOSet::ValueVector> multiplier1;
+    auto& up_factor1 = multiplier1.first;
+    auto& dn_factor1 = multiplier1.second;
+    up_factor1.resize(OrbitalSetSize);
+    dn_factor1.resize(OrbitalSetSize);
+    up_factor1 = 5.6;
+    dn_factor1 = 8.9;
+    std::pair<SPOSet::ValueVector, SPOSet::ValueVector> multiplier2;
+    auto& up_factor2 = multiplier2.first;
+    auto& dn_factor2 = multiplier2.second;
+    up_factor2.resize(OrbitalSetSize);
+    dn_factor2.resize(OrbitalSetSize);
+    up_factor2 = 2.1;
+    dn_factor2 = -3.4;
+
+    refRatio1 = 0.0;
+    refRatio2 = 0.0;
+    for (int iorb = 0; iorb < OrbitalSetSize; iorb++)
+    {
+      refRatio1 += inv_row[iorb] *
+          (eis1 * multiplier1.first[iorb] * psiM_up[iat][iorb] +
+           emis1 * multiplier1.second[iorb] * psiM_down[iat][iorb]);
+      refRatio2 += inv_row[iorb] *
+          (eis2 * multiplier2.first[iorb] * psiM_up[(iat + 1) % 3][iorb] +
+           emis2 * multiplier2.second[iorb] * psiM_down[(iat + 1) % 3][iorb]);
+    }
+
+    spo->mw_evaluateDetSpinorRatios(spo_list, RefVectorWithLeader<const VirtualParticleSet>(vp1, {vp1, vp2}),
+                                    psi_v_list,
+                                    RefVector<std::pair<SPOSet::ValueVector, SPOSet::ValueVector>>(
+                                        {multiplier1, multiplier2}),
+                                    inv_row_ptr, ratios_list);
+    CHECK(ratios_list[0][0] == ComplexApprox(refRatio1));
+    CHECK(ratios_list[1][0] == ComplexApprox(refRatio2));
   }
 
   //Need to remember that the electrons are distored from initial positions

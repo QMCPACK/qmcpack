@@ -826,6 +826,65 @@ void kSpaceJastrow::copyFrom(const kSpaceJastrow& old)
   //}
 }
 
+void kSpaceJastrow::evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& active, Vector<ValueType>& dlogpsi)
+{
+  bool recalculate(false);
+  for (int k = 0; k < myVars.size(); ++k)
+  {
+    int kk = myVars.where(k);
+    if (kk < 0)
+      continue;
+    recalculate = true;
+  }
+  if (recalculate)
+  {
+    int N = P.getTotalNum();
+    ComplexType eye(0.0, 1.0);
+    int nOne = OneBodyGvecs.size();
+    if (nOne)
+    {
+      for (int iat = 0; iat < N; iat++)
+      {
+        PosType r(P.R[iat]);
+        for (int i = 0; i < nOne; i++)
+          OneBodyPhase[i] = dot(OneBodyGvecs[i], r);
+        eval_e2iphi(OneBodyPhase, OneBody_e2iGr);
+        for (int i = 0; i < nOne; i++)
+        {
+          ComplexType z = qmcplusplus::conj(OneBody_e2iGr[i]);
+          int kk        = myVars.where(OneBodyVarMap[i]);
+          if (kk >= 0)
+          {
+            dlogpsi[kk] += ValueType(Prefactor * real(z));
+            dlogpsi[kk + 1] += ValueType(Prefactor * real(eye * z));
+          }
+        }
+      }
+    }
+    // Do two-body part
+    int nTwo = TwoBodyGvecs.size();
+    for (int i = 0; i < nTwo; i++)
+      TwoBody_rhoG[i] = ComplexType();
+    for (int iat = 0; iat < N; iat++)
+    {
+      PosType r(P.R[iat]);
+      for (int iG = 0; iG < nTwo; iG++)
+        TwoBodyPhase[iG] = dot(TwoBodyGvecs[iG], r);
+      eval_e2iphi(TwoBodyPhase, TwoBody_e2iGr_new);
+      for (int iG = 0; iG < nTwo; iG++)
+        TwoBody_rhoG[iG] += TwoBody_e2iGr_new[iG];
+    }
+    for (int i = 0; i < nTwo; i++)
+    {
+      int kk = myVars.where(TwoBodyVarMap[i]);
+      if (kk >= 0)
+      {
+        dlogpsi[kk] += ValueType(Prefactor * norm(TwoBody_rhoG[i]));
+      }
+    }
+  }
+}
+
 void kSpaceJastrow::evaluateDerivatives(ParticleSet& P,
                                         const opt_variables_type& active,
                                         Vector<ValueType>& dlogpsi,
@@ -837,8 +896,7 @@ void kSpaceJastrow::evaluateDerivatives(ParticleSet& P,
     int kk = myVars.where(k);
     if (kk < 0)
       continue;
-    if (active.recompute(kk))
-      recalculate = true;
+    recalculate = true;
   }
   if (recalculate)
   {
@@ -909,7 +967,7 @@ void kSpaceJastrow::evaluateDerivatives(ParticleSet& P,
         PosType Gvec(TwoBodyGvecs[i]);
         ComplexType z = TwoBody_e2iGr_new[i];
         int kk        = myVars.where(TwoBodyVarMap[i]);
-        if (kk > 0)
+        if (kk >= 0)
         {
           convertToReal(dot(P.G[iat], Gvec), tmp_dot);
           //dhpsioverpsi[kk] -= Prefactor*dot(Gvec,Gvec)*(-real(z*qmcplusplus::conj(TwoBody_rhoG[i])) + 1.0) - Prefactor*2.0*real(dot(P.G[iat],Gvec))*imag(qmcplusplus::conj(TwoBody_rhoG[i])*z);

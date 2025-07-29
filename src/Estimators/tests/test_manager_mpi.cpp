@@ -23,7 +23,7 @@ namespace testing
 {
 bool EstimatorManagerNewTest::testMakeBlockAverages()
 {
-  if (em.my_comm_->rank() == 1)
+  if (em.my_comm_->rank() == 0)
   {
     estimators_[1].scalars[0](3.0);
     estimators_[1].scalars[1](3.0);

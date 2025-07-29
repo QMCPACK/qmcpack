@@ -48,7 +48,7 @@ TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
   Communicate* c = OHMMS::Controller;
 
   // We get a "Mismatched supercell lattices" error due to default ctor?
-  ParticleSet::ParticleLayout lattice;
+  Lattice lattice;
 
   // diamondC_1x1x1
   lattice.R = {3.37316115, 3.37316115, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
@@ -566,7 +566,7 @@ TEST_CASE("RotatedSPOs hcpBe", "[wavefunction]")
   using RealType = QMCTraits::RealType;
   Communicate* c = OHMMS::Controller;
 
-  ParticleSet::ParticleLayout lattice;
+  Lattice lattice;
   lattice.R = {4.32747284, 0.00000000, 0.00000000, -2.16373642, 3.74770142,
                0.00000000, 0.00000000, 0.00000000, 6.78114995};
 
@@ -596,7 +596,7 @@ TEST_CASE("RotatedSPOs hcpBe", "[wavefunction]")
   // spline file for use in eval_bspline_spo.py
 
   const char* particles = R"(<tmp>
-<sposet_builder type="bspline" href="hcpBe.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="double" gpu="no">
+<sposet_builder type="bspline" href="hcpBe.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="double">
       <sposet type="bspline" name="spo_ud" spindataset="0" size="2"/>
 </sposet_builder>
 </tmp>)";
@@ -730,9 +730,8 @@ TEST_CASE("RotatedSPOs construct delta matrix", "[wavefunction]")
 
 namespace testing
 {
-opt_variables_type& getMyVars(SPOSet& rot) { return rot.myVars; }
-std::vector<QMCTraits::ValueType>& getMyVarsFull(RotatedSPOs& rot) { return rot.myVarsFull_; }
-std::vector<std::vector<QMCTraits::ValueType>>& getHistoryParams(RotatedSPOs& rot) { return rot.history_params_; }
+const opt_variables_type& getMyVars(RotatedSPOs& rot) { return rot.myVars; }
+const std::vector<QMCTraits::ValueType>& getMyVarsFull(RotatedSPOs& rot) { return rot.myVarsFull_; }
 } // namespace testing
 
 // Test using global rotation
@@ -740,7 +739,7 @@ TEST_CASE("RotatedSPOs read and write parameters", "[wavefunction]")
 {
   //There is an issue with the real<->complex parameter parsing to h5 in QMC_COMPLEX.
   //This needs to be fixed in a future PR.
-  auto fake_spo = std::make_unique<FakeSPO>();
+  auto fake_spo = std::make_unique<FakeSPO<QMCTraits::ValueType>>();
   fake_spo->setOrbitalSetSize(4);
   RotatedSPOs rot("fake_rot", std::move(fake_spo));
   int nel = 2;
@@ -762,7 +761,7 @@ TEST_CASE("RotatedSPOs read and write parameters", "[wavefunction]")
     rot.writeVariationalParameters(hout);
   }
 
-  auto fake_spo2 = std::make_unique<FakeSPO>();
+  auto fake_spo2 = std::make_unique<FakeSPO<QMCTraits::ValueType>>();
   fake_spo2->setOrbitalSetSize(4);
 
   RotatedSPOs rot2("fake_rot", std::move(fake_spo2));
@@ -775,73 +774,34 @@ TEST_CASE("RotatedSPOs read and write parameters", "[wavefunction]")
   vs2.readFromHDF("rot_vp.h5", hin);
   rot2.readVariationalParameters(hin);
 
-  opt_variables_type& var = testing::getMyVars(rot2);
+  auto& var = testing::getMyVars(rot2);
   for (size_t i = 0; i < vs.size(); i++)
     CHECK(var[i] == Approx(vs[i]));
 
   //add extra parameters for full set
   vs_values.push_back(0.0);
   vs_values.push_back(0.0);
-  std::vector<SPOSet::ValueType>& full_var = testing::getMyVarsFull(rot2);
+  auto& full_var = testing::getMyVarsFull(rot2);
   for (size_t i = 0; i < full_var.size(); i++)
     CHECK(full_var[i] == ValueApprox(vs_values[i]));
 }
 
-// Test using history list.
-TEST_CASE("RotatedSPOs read and write parameters history", "[wavefunction]")
-{
-  //Problem with h5 parameter parsing for complex build.  To be fixed in future PR.
-  auto fake_spo = std::make_unique<FakeSPO>();
-  fake_spo->setOrbitalSetSize(4);
-  RotatedSPOs rot("fake_rot", std::move(fake_spo));
-  rot.set_use_global_rotation(false);
-  int nel = 2;
-  rot.buildOptVariables(nel);
-
-  std::vector<SPOSet::ValueType> vs_values{0.1, 0.15, 0.2, 0.25};
-
-  optimize::VariableSet vs;
-  rot.checkInVariablesExclusive(vs);
-  auto* vs_values_data_real = (SPOSet::RealType*)vs_values.data();
-  for (size_t i = 0; i < vs.size(); i++)
-    vs[i] = vs_values_data_real[i];
-  rot.resetParametersExclusive(vs);
-
-  {
-    hdf_archive hout;
-    vs.writeToHDF("rot_vp_hist.h5", hout);
-
-    rot.writeVariationalParameters(hout);
-  }
-
-  auto fake_spo2 = std::make_unique<FakeSPO>();
-  fake_spo2->setOrbitalSetSize(4);
-
-  RotatedSPOs rot2("fake_rot", std::move(fake_spo2));
-  rot2.buildOptVariables(nel);
-
-  optimize::VariableSet vs2;
-  rot2.checkInVariablesExclusive(vs2);
-
-  hdf_archive hin;
-  vs2.readFromHDF("rot_vp_hist.h5", hin);
-  rot2.readVariationalParameters(hin);
-
-  opt_variables_type& var = testing::getMyVars(rot2);
-  for (size_t i = 0; i < var.size(); i++)
-    CHECK(var[i] == Approx(vs[i]));
-
-  auto hist = testing::getHistoryParams(rot2);
-  REQUIRE(hist.size() == 1);
-  REQUIRE(hist[0].size() == 4);
-}
-
-class DummySPOSetWithoutMW : public SPOSet
+template<typename T>
+class DummySPOSetWithoutMW : public SPOSetT<T>
 {
 public:
+  using SPOSet = SPOSetT<T>;
+  using ValueVector   = typename SPOSet::ValueVector;
+  using ValueMatrix   = typename SPOSet::ValueMatrix;
+  using GradVector    = typename SPOSet::GradVector;
+  using GradMatrix    = typename SPOSet::GradMatrix;
+  using ComplexType   = typename SPOSet::ComplexType;
+  template<typename DT>
+  using OffloadMatrix = typename SPOSet::template OffloadMatrix<DT>;
+
   DummySPOSetWithoutMW(const std::string& my_name) : SPOSet(my_name) {}
   void setOrbitalSetSize(int norbs) override {}
-  void evaluateValue(const ParticleSet& P, int iat, SPOSet::ValueVector& psi) override
+  void evaluateValue(const ParticleSet& P, int iat, ValueVector& psi) override
   {
     assert(psi.size() == 3);
     psi[0] = 123;
@@ -896,13 +856,19 @@ public:
                             GradMatrix& dlogdet,
                             ValueMatrix& d2logdet) override
   {}
-  std::string getClassName() const override { return my_name_; }
+  std::string getClassName() const override { return SPOSet::my_name_; }
 };
 
-class DummySPOSetWithMW : public DummySPOSetWithoutMW
+template<typename T>
+class DummySPOSetWithMW : public DummySPOSetWithoutMW<T>
 {
 public:
-  DummySPOSetWithMW(const std::string& my_name) : DummySPOSetWithoutMW(my_name) {}
+  using ValueVector   = typename DummySPOSetWithoutMW<T>::ValueVector;
+  using GradVector    = typename DummySPOSetWithoutMW<T>::GradVector;
+  using ComplexType   = typename DummySPOSetWithoutMW<T>::ComplexType;
+  template<typename DT>
+  using OffloadMatrix = typename DummySPOSetWithoutMW<T>::template OffloadMatrix<DT>;
+  DummySPOSetWithMW(const std::string& my_name) : DummySPOSetWithoutMW<T>(my_name) {}
   void mw_evaluateValue(const RefVectorWithLeader<SPOSet>& spo_list,
                         const RefVectorWithLeader<ParticleSet>& P_list,
                         int iat,
@@ -947,8 +913,10 @@ TEST_CASE("RotatedSPOs mw_ APIs", "[wavefunction]")
     //In the case that the underlying SPOSet doesn't specialize the mw_ API,
     //the underlying SPOSet will fall back to the default SPOSet mw_, which is
     //just a loop over the single walker API.
-    RotatedSPOs rot_spo0("rotated0", std::make_unique<DummySPOSetWithoutMW>("no mw 0"));
-    RotatedSPOs rot_spo1("rotated1", std::make_unique<DummySPOSetWithoutMW>("no mw 1"));
+    using Value = SPOSet::ValueType;
+
+    RotatedSPOs rot_spo0("rotated0", std::make_unique<DummySPOSetWithoutMW<Value>>("no mw 0"));
+    RotatedSPOs rot_spo1("rotated1", std::make_unique<DummySPOSetWithoutMW<Value>>("no mw 1"));
     RefVectorWithLeader<SPOSet> spo_list(rot_spo0, {rot_spo0, rot_spo1});
 
     ResourceCollection spo_res("test_rot_res");
@@ -1005,9 +973,10 @@ TEST_CASE("RotatedSPOs mw_ APIs", "[wavefunction]")
     //in the underlying SPO and not using the default SPOSet implementation which
     //loops over single walker APIs (which have different values enforced in
     // DummySPOSetWithoutMW
+    using Value = SPOSet::ValueType;
 
-    RotatedSPOs rot_spo0("rotated0", std::make_unique<DummySPOSetWithMW>("mw 0"));
-    RotatedSPOs rot_spo1("rotated1", std::make_unique<DummySPOSetWithMW>("mw 1"));
+    RotatedSPOs rot_spo0("rotated0", std::make_unique<DummySPOSetWithMW<Value>>("mw 0"));
+    RotatedSPOs rot_spo1("rotated1", std::make_unique<DummySPOSetWithMW<Value>>("mw 1"));
     RefVectorWithLeader<SPOSet> spo_list(rot_spo0, {rot_spo0, rot_spo1});
 
     ResourceCollection spo_res("test_rot_res");

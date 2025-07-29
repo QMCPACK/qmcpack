@@ -20,7 +20,7 @@ function(
   #  2. run $check_script located in the same folder
 
   # build test name
-  set(full_name "${base_name}-${procs}-${threads}")
+  set(full_name "${base_name}-r${procs}-t${threads}")
   message(VERBOSE "Adding test ${full_name}")
 
   # add run (task 1)
@@ -37,7 +37,7 @@ function(
   if(test_added)
 
     # add restart (task 2)
-    set(restart_name "${base_name}-${procs}-${threads}-restart")
+    set(restart_name "${base_name}-r${procs}-t${threads}-restart")
     #set (test_added false)
     set(test_labels "")
     run_qmc_app_no_copy(

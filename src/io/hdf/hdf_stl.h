@@ -54,6 +54,26 @@ struct h5data_proxy<std::vector<T>> : public h5_space_type<T, 1>
   {
     return h5d_write(grp, aname.c_str(), dvec.size(), dvec.data(), get_address(&ref[0]), xfer_plist);
   }
+
+  inline bool append(const data_type& ref,
+                     hid_t grp,
+                     const std::string& aname,
+                     hsize_t& current_append_index,
+                     hid_t xfer_plist = H5P_DEFAULT)
+  {
+    constexpr hsize_t rank = FileSpace::rank + 1;
+    std::array<hsize_t, FileSpace::rank + 1> my_dims;
+    // this is the dimension we are appending.
+    my_dims[0]    = 1;
+    int dim_index = 1;
+    for (auto dim : dims)
+    {
+      my_dims[dim_index] = dim;
+      ++dim_index;
+    }
+    return h5d_append(grp, aname.c_str(), current_append_index, rank, my_dims.data(), get_address(ref.data()), 1,
+                      xfer_plist);
+  }
 };
 
 /** specialization for std::vector<bool>
@@ -214,7 +234,7 @@ struct h5data_proxy<std::vector<std::string>>
       char_list.resize(dim_out);
       ret = H5Dread(dataset, datatype, H5S_ALL, H5S_ALL, xfer_plist, char_list.data());
 
-      for (int i = 0; i < dim_out; i++)
+      for (std::size_t i = 0; i < dim_out; i++)
         ref.push_back(char_list[i]);
 
       H5Dvlen_reclaim(datatype, dataspace, xfer_plist, char_list.data());
@@ -240,7 +260,7 @@ struct h5data_proxy<std::vector<std::string>>
 
     // Create vector of pointers to the actual string data
     std::vector<const char*> char_list;
-    for (int i = 0; i < ref.size(); i++)
+    for (std::size_t i = 0; i < ref.size(); i++)
       char_list.push_back(ref[i].data());
 
     hid_t h1   = H5Dopen(grp, aname.c_str(), H5P_DEFAULT);

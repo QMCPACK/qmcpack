@@ -24,21 +24,26 @@
 #include "TWFGrads.hpp"
 #include "Utilities/RuntimeOptions.h"
 #include <ResourceCollection.h>
-#include "Particle/tests/MinimalParticlePool.h"
-#include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
+#include <MinimalParticlePool.h>
+#include <MinimalWaveFunctionPool.h>
 #include "Utilities/ProjectData.h"
 
 namespace qmcplusplus
 {
-#if defined(ENABLE_CUDA) && !defined(QMC_CUDA2HIP)
-using DiracDet = DiracDeterminant<DelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
+#if defined(ENABLE_CUDA)
+using DiracDet = DiracDeterminant<PlatformKind::CUDA, QMCTraits::ValueType, QMCTraits::QTFull::ValueType>;
+#elif defined(ENABLE_SYCL)
+using DiracDet = DiracDeterminant<PlatformKind::SYCL, QMCTraits::ValueType, QMCTraits::QTFull::ValueType>;
 #else
-using DiracDet = DiracDeterminant<DelayedUpdate<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
+using DiracDet = DiracDeterminant<>;
 #endif
 
-using LogValue = TrialWaveFunction::LogValue;
-using PsiValue = TrialWaveFunction::PsiValue;
-using GradType = TrialWaveFunction::GradType;
+using LogValue  = TrialWaveFunction::LogValue;
+using PsiValue  = TrialWaveFunction::PsiValue;
+using GradType  = TrialWaveFunction::GradType;
+using PosType   = QMCTraits::PosType;
+using RealType  = QMCTraits::RealType;
+using ValueType = QMCTraits::ValueType;
 
 TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 {
@@ -50,7 +55,7 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   const DynamicCoordinateKind kind_selected = DynamicCoordinateKind::DC_POS;
 #endif
   // diamondC_1x1x1
-  ParticleSet::ParticleLayout lattice;
+  Lattice lattice;
   lattice.R         = {3.37316115, 3.37316115, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
   lattice.BoxBConds = {1, 1, 1};
   lattice.reset();
@@ -111,10 +116,12 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   REQUIRE(spo != nullptr);
 
   std::vector<std::unique_ptr<DiracDeterminantBase>> dets;
-  dets.push_back(std::make_unique<DiracDet>(spo->makeClone(), 0, 2));
-  dets.push_back(std::make_unique<DiracDet>(spo->makeClone(), 2, 4));
+  dets.push_back(std::make_unique<DiracDet>(*spo, 0, 2));
+  dets.push_back(std::make_unique<DiracDet>(*spo, 2, 4));
 
-  auto slater_det = std::make_unique<SlaterDet>(elec_, std::move(dets));
+  std::vector<std::unique_ptr<SPOSet>> unique_sposets;
+  unique_sposets.emplace_back(std::move(spo));
+  auto slater_det = std::make_unique<SlaterDet>(elec_, std::move(unique_sposets), std::move(dets));
 
   RuntimeOptions runtime_options;
   TrialWaveFunction psi(runtime_options);
@@ -164,10 +171,6 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 #endif
 
   const int moved_elec_id = 0;
-
-  using PosType   = QMCTraits::PosType;
-  using RealType  = QMCTraits::RealType;
-  using ValueType = QMCTraits::ValueType;
   PosType delta(0.1, 0.1, 0.2);
 
   elec_.makeMove(moved_elec_id, delta);
@@ -373,15 +376,15 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 }
 
 #if defined(QMC_COMPLEX) && !defined(ENABLE_CUDA)
-/** This test is intended to catch a bug that was found in the batched code 
-  * when using spinors and jastrows. The issue came about because WFCs that don't 
+/** This test is intended to catch a bug that was found in the batched code
+  * when using spinors and jastrows. The issue came about because WFCs that don't
   * contribute to the spin gradient end up going back to the normal mw_evalGrad
   * In the TWF::mw_evalGrad, it uses TWFGrads to accumulate the spin gradient and normal gradients
-  * using a returned variable grads. The individual components are stored in grads_z and the update over the 
-  * component loop is grads += grads_z. Internally to the WFCs, the position gradients get zeroed and computed. 
-  * However, for the spins, if they weren't being touched then the spin part is left untouched. But that means that if 
-  * grads += grads_z didn't account for zeroing out the spin part for that component, then it acctually accumulates the previous ones. 
-  * This test fails with the buggy code, and now makes sure TWF has the right behavior. 
+  * using a returned variable grads. The individual components are stored in grads_z and the update over the
+  * component loop is grads += grads_z. Internally to the WFCs, the position gradients get zeroed and computed.
+  * However, for the spins, if they weren't being touched then the spin part is left untouched. But that means that if
+  * grads += grads_z didn't account for zeroing out the spin part for that component, then it acctually accumulates the previous ones.
+  * This test fails with the buggy code, and now makes sure TWF has the right behavior.
   }
   */
 TEST_CASE("TrialWaveFunction::mw_evalGrad for spinors", "[wavefunction]")
@@ -398,8 +401,15 @@ TEST_CASE("TrialWaveFunction::mw_evalGrad for spinors", "[wavefunction]")
 
   elec.update();
   auto logpsi = psi_noJ.evaluateLog(elec);
-  WaveFunctionComponent::ComplexType spingrad_ref(0);
-  WaveFunctionComponent::GradType grad = psi_noJ.evalGradWithSpin(elec, 0, spingrad_ref);
+
+  const int moved_elec_id = 0;
+  WaveFunctionComponent::ComplexType spingrad_ref(0), spingrad_ref2(0);
+  WaveFunctionComponent::GradType grad = psi_noJ.evalGradWithSpin(elec, moved_elec_id, spingrad_ref);
+
+  PosType delta(0.1, 0.1, 0.2);
+  elec.makeMove(moved_elec_id, delta);
+  psi_noJ.calcRatioGradWithSpin(elec, moved_elec_id, grad, spingrad_ref2);
+  elec.rejectMove(moved_elec_id);
 
   // Now tack on a jastrow to make sure it is still the same since jastrows don't contribute
   auto wavefunction_pool2 =
@@ -423,10 +433,22 @@ TEST_CASE("TrialWaveFunction::mw_evalGrad for spinors", "[wavefunction]")
 
   ParticleSet::mw_update(elec_ref_list);
   TrialWaveFunction::mw_evaluateLog(psi_ref_list, elec_ref_list);
+
   TWFGrads<CoordsType::POS_SPIN> grads(2);
-  TrialWaveFunction::mw_evalGrad(psi_ref_list, elec_ref_list, 0, grads);
+  TrialWaveFunction::mw_evalGrad(psi_ref_list, elec_ref_list, moved_elec_id, grads);
   for (size_t iw = 0; iw < 2; iw++)
     CHECK(grads.grads_spins[iw] == ComplexApprox(spingrad_ref));
+
+  PosType delta_zero(0, 0, 0);
+  std::vector<PosType> displs{delta_zero, delta};
+  ParticleSet::mw_makeMove(elec_ref_list, moved_elec_id, displs);
+  std::vector<PsiValue> ratios(2);
+  TrialWaveFunction::mw_calcRatioGrad(psi_ref_list, elec_ref_list, moved_elec_id, ratios, grads);
+  CHECK(grads.grads_spins[0] == ComplexApprox(spingrad_ref));
+  CHECK(grads.grads_spins[1] == ComplexApprox(spingrad_ref2));
+
+  std::vector<bool> isAccepted{false, true};
+  TrialWaveFunction::mw_accept_rejectMove(psi_ref_list, elec_ref_list, moved_elec_id, isAccepted);
 }
 #endif
 

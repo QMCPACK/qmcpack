@@ -16,6 +16,7 @@
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
 #include "Utilities/RuntimeOptions.h"
+#include "OhmmsData/Libxml2Doc.h"
 
 namespace qmcplusplus
 {
@@ -92,7 +93,7 @@ TEST_CASE("J1 evaluate derivatives Jastrow", "[wavefunction]")
 
   opt_variables_type active;
   twf.checkInVariables(active);
-  active.removeInactive();
+  active.resetIndex();
   int nparam = active.size_of_active();
   REQUIRE(nparam == 2);
 
@@ -193,7 +194,7 @@ TEST_CASE("J1 evaluate derivatives Jastrow with two species", "[wavefunction]")
 
   opt_variables_type active;
   twf.checkInVariables(active);
-  active.removeInactive();
+  active.resetIndex();
   int nparam = active.size_of_active();
   REQUIRE(nparam == 4);
 
@@ -291,7 +292,7 @@ TEST_CASE("J1 evaluate derivatives Jastrow with two species one without Jastrow"
 
   opt_variables_type active;
   twf.checkInVariables(active);
-  active.removeInactive();
+  active.resetIndex();
   int nparam = active.size_of_active();
   REQUIRE(nparam == 2);
 

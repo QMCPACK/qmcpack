@@ -42,7 +42,7 @@ std::unique_ptr<SPOSet> SplineSetReader<SA>::create_spline_set(const std::string
   auto bspline = std::make_unique<SA>(my_name, use_offload);
   app_log() << "  ClassName = " << bspline->getClassName() << std::endl;
   bool foundspline = createSplineDataSpaceLookforDumpFile(bandgroup, *bspline);
-  if (foundspline)
+  if (foundspline && myComm->rank() == 0)
   {
     Timer now;
     hdf_archive h5f(myComm);
@@ -80,6 +80,7 @@ std::unique_ptr<SPOSet> SplineSetReader<SA>::create_spline_set(const std::string
   }
 
   {
+    myComm->barrier();
     Timer now;
     bspline->bcast_tables(myComm);
     app_log() << "  Time to bcast the table = " << now.elapsed() << std::endl;
@@ -96,15 +97,16 @@ bool SplineSetReader<SA>::createSplineDataSpaceLookforDumpFile(const BandInfoGro
   else
     app_log() << "  Using real einspline table" << std::endl;
 
+  bspline.PrimLattice = mybuilder->PrimCell;
+  bspline.GGt         = dot(transpose(bspline.PrimLattice.G), bspline.PrimLattice.G);
+
   //baseclass handles twists
   check_twists(bspline, bandgroup);
 
   Ugrid xyz_grid[3];
 
   typename SA::BCType xyz_bc[3];
-  bool havePsig = set_grid(bspline.HalfG, xyz_grid, xyz_bc);
-  if (!havePsig)
-    myComm->barrier_and_abort("SplineSetReader needs psi_g. Set precision=\"double\".");
+  set_grid(bspline.HalfG, xyz_grid, xyz_bc);
   bspline.create_spline(xyz_grid, xyz_bc);
 
   int foundspline = 0;

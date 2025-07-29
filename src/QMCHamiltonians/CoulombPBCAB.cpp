@@ -201,7 +201,7 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate_sp(ParticleSet& P)
         v1 = 0.0;
         for (int s = 0; s < NumSpeciesA; s++)
           v1 += Zspec[s] * q *
-              AB->evaluate(pset_ions_.getSimulationCell().getKLists().kshell, RhoKA.rhok_r[s], RhoKA.rhok_i[s],
+              AB->evaluate(pset_ions_.getSimulationCell().getKLists().getKShell(), RhoKA.rhok_r[s], RhoKA.rhok_i[s],
                            RhoKB.eikr_r[i], RhoKB.eikr_i[i]);
         Ve_samp(i) += v1;
         Vlr += v1;
@@ -212,7 +212,7 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate_sp(ParticleSet& P)
         v1 = 0.0;
         for (int s = 0; s < NumSpeciesB; s++)
           v1 += Qspec[s] * q *
-              AB->evaluate(P.getSimulationCell().getKLists().kshell, RhoKB.rhok_r[s], RhoKB.rhok_i[s], RhoKA.eikr_r[i],
+              AB->evaluate(P.getSimulationCell().getKLists().getKShell(), RhoKB.rhok_r[s], RhoKB.rhok_i[s], RhoKA.eikr_r[i],
                            RhoKA.eikr_i[i]);
         Vi_samp(i) += v1;
         Vlr += v1;
@@ -341,7 +341,7 @@ void CoulombPBCAB::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
           v1 = 0.0;
           for (int s = 0; s < num_species_source; s++)
             v1 += cpbcab.Zspec[s] * q *
-                cpbcab.AB->evaluate(pset_source.getSimulationCell().getKLists().kshell, RhoKA.rhok_r[s],
+                cpbcab.AB->evaluate(pset_source.getSimulationCell().getKLists().getKShell(), RhoKA.rhok_r[s],
                                     RhoKA.rhok_i[s], RhoKB.eikr_r[i], RhoKB.eikr_i[i]);
           ve_sample[i] += v1;
           Vlr += v1;
@@ -353,7 +353,7 @@ void CoulombPBCAB::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
           v1 = 0.0;
           for (int s = 0; s < num_species_target; s++)
             v1 += cpbcab.Qspec[s] * q *
-                cpbcab.AB->evaluate(pset.getSimulationCell().getKLists().kshell, RhoKB.rhok_r[s], RhoKB.rhok_i[s],
+                cpbcab.AB->evaluate(pset.getSimulationCell().getKLists().getKShell(), RhoKB.rhok_r[s], RhoKB.rhok_i[s],
                                     RhoKA.eikr_r[i], RhoKA.eikr_i[i]);
           vi_sample[i] += v1;
           Vlr += v1;
@@ -377,6 +377,16 @@ void CoulombPBCAB::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
     auto& coulomb_ab  = o_list.getCastedElement<CoulombPBCAB>(iw);
     coulomb_ab.value_ = evaluate_walker(iw, coulomb_ab, p_list[iw], listeners, ion_listeners);
   }
+}
+
+void CoulombPBCAB::mw_evaluatePerParticleWithToperator(const RefVectorWithLeader<OperatorBase>& o_list,
+                                                       const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                                       const RefVectorWithLeader<ParticleSet>& p_list,
+                                                       const std::vector<ListenerVector<RealType>>& listeners,
+                                                       const std::vector<ListenerVector<RealType>>& ion_listeners) const
+
+{
+  mw_evaluatePerParticle(o_list, wf_list, p_list, listeners, ion_listeners);
 }
 
 /** Evaluate the background term. Other constants are handled by AA potentials.
@@ -459,7 +469,7 @@ CoulombPBCAB::Return_t CoulombPBCAB::evalLR(ParticleSet& P)
       mRealType esum = 0.0;
       for (int j = 0; j < NumSpeciesB; j++)
         esum += Qspec[j] *
-            AB->evaluate(pset_ions_.getSimulationCell().getKLists().kshell, RhoKA.rhok_r[i], RhoKA.rhok_i[i],
+            AB->evaluate(pset_ions_.getSimulationCell().getKLists().getKShell(), RhoKA.rhok_r[i], RhoKA.rhok_i[i],
                          RhoKB.rhok_r[j], RhoKB.rhok_i[j]);
       res += Zspec[i] * esum;
     }

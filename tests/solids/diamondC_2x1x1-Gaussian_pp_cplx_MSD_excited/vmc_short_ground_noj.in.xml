@@ -1,6 +1,8 @@
 <?xml version="1.0"?>
 <simulation>
-  <project id="vmc_short_ground" series="0"/>
+<project id="vmc_short_ground" series="0">
+  <parameter name="driver_version">legacy</parameter>
+</project>
   <include href="C_diamond2x1x1-twist.structure.xml"/>
   <include href="C_diamond2x1x1-twist-Ground.wfnoj.xml"/>
   <hamiltonian name="h0" type="generic" target="e">

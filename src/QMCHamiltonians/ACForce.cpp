@@ -15,7 +15,7 @@
  */
 #include "ACForce.h"
 #include "OhmmsData/AttributeSet.h"
-#include "ParticleBase/ParticleAttribOps.h"
+#include "CPU/VectorOps.h"
 
 namespace qmcplusplus
 {

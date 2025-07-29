@@ -40,6 +40,10 @@ public:
   using ValueVector = SPOSet::ValueVector;
   using GradVector  = SPOSet::GradVector;
 
+  // used when we get const reference to *MultiDiracDeterminants::detData
+  template<typename DT>
+  using OffloadVector = Vector<DT, OffloadPinnedAllocator<DT>>;
+
   TWFFastDerivWrapper() = default;
   /** @brief Add a particle group.
    *
@@ -56,6 +60,27 @@ public:
    */
   void addGroup(const ParticleSet& P, const IndexType groupid, SPOSet* spo);
   inline void addJastrow(WaveFunctionComponent* j) { jastrow_list_.push_back(j); };
+
+  /**
+   * @brief add a MultiSlaterDet
+   * 
+   * this is called when registering a MSD
+   * the caller should also iterate over MultiDiracDeterminants in the MSD and register the associated SPOSets
+   * 
+   * @param P. ParticleSet 
+   * @param msd. Pointer to MultiSlaterDetTableMethod
+   */
+  void addMultiSlaterDet(const ParticleSet& P, const WaveFunctionComponent* msd);
+  inline bool hasMultiSlaterDet() const { return multislaterdet_; }
+  inline const WaveFunctionComponent& getMultiSlaterDet() const
+  {
+    if (!multislaterdet_)
+    {
+      throw std::runtime_error("Error: No MultiSlaterDet registered for this TWFFastDerivWrapper");
+    }
+    return *multislaterdet_;
+  }
+
 
   /** @brief Takes particle set groupID and returns the TWF internal index for it.  
    *
@@ -228,6 +253,58 @@ public:
                                 const std::vector<ValueMatrix>& dM,
                                 const std::vector<ValueMatrix>& dB) const;
 
+  /** @brief Calculates derivative of observable and wavefunction for several MultiDiracDeterminant objects
+   *         calculated quantities are relative to refdet (first element is 0 in output arrays)
+   *
+   *  @param[in] Minv_Mv. M^-1.M(virt)
+   *  @param[in] Minv_B.  M^-1.B
+   *  @param[in] Minv_dM.  M^-1.dM
+   *  @param[in] Minv_dB.  M^-1.dB
+   *  @param[in] mdd_spo_ids. mapping from index in mdds into SPOSets (i.e. into first dim of vec of matrices Minv, X, dM, dB, etc.)
+   *  @param[in] mdds. vector of MultiDiracDeterminants; evaluate derivative of observable for all determinants
+   *  @param[out] dvals_dmu_O. d/dmu(O D[i][j]/D[i][j]) for MultiDiracDet i, excited det j (also includes GS det at j==0)
+   *  @param[out] dvals_dmu. d/dmu(log(D[i][j]) for MultiDiracDet i, excited det j (also includes GS det at j==0)
+   *  @return 
+   */
+  void computeMDDerivatives_dmu(const std::vector<ValueMatrix>& Minv_Mv,
+                                const std::vector<ValueMatrix>& Minv_B,
+                                const std::vector<ValueMatrix>& Minv_dM,
+                                const std::vector<ValueMatrix>& Minv_dB,
+                                const std::vector<IndexType>& mdd_spo_ids,
+                                const std::vector<const WaveFunctionComponent*>& mdds,
+                                std::vector<ValueVector>& dvals_dmu_O,
+                                std::vector<ValueVector>& dvals_dmu) const;
+
+  /** @brief Calculates observable for several MultiDiracDeterminant objects
+   *         calculated quantities are relative to refdet (first element is 0 in output arrays)
+   *
+   *  @param[in] Minv_Mv. M^-1.M(virt)
+   *  @param[in] Minv_B.  M^-1.B
+   *  @param[in] mdd_spo_ids. mapping from index in mdds into SPOSets (i.e. into first dim of vec of matrices Minv, X, dM, dB, etc.)
+   *  @param[in] mdds. vector of MultiDiracDeterminants; evaluate derivative of observable for all determinants
+   *  @param[out] dvals_O. (O D[i][j]/D[i][j]) for MultiDiracDet i, excited det j (also includes GS det at j==0)
+   *  @return 
+   */
+  void computeMDDerivatives_Obs(const std::vector<ValueMatrix>& Minv_Mv,
+                                const std::vector<ValueMatrix>& Minv_B,
+                                const std::vector<IndexType>& mdd_spo_ids,
+                                const std::vector<const WaveFunctionComponent*>& mdds,
+                                std::vector<ValueVector>& dvals_O) const;
+
+  /** @brief Uses per-det lists of derivatives to calculate total excited det contributions
+   *
+   *  @param[in] mdds. vector of MultiDiracDeterminants; evaluate derivative of observable for all determinants
+   *  @param[in] dvals_dmu_O. d/dmu(O D[i][j]/D[i][j]) for MultiDiracDet i, excited det j (also includes GS det at j==0)
+   *  @param[in] dvals_O. (O D[i][j]/D[i][j]) for MultiDiracDet i, excited det j (also includes GS det at j==0)
+   *  @param[in] dvals_dmu. d/dmu(log(D[i][j]) for MultiDiracDet i, excited det j (also includes GS det at j==0)
+   *  @return  {d_mu(OPsi/Psi), d_mu(log(Psi)), OPsi/Psi}
+   */
+  std::tuple<TWFFastDerivWrapper::ValueType, TWFFastDerivWrapper::ValueType, TWFFastDerivWrapper::ValueType>
+      computeMDDerivatives_total(const std::vector<const WaveFunctionComponent*>& mdds,
+                                 const std::vector<ValueVector>& dvals_dmu_O,
+                                 const std::vector<ValueVector>& dvals_O,
+                                 const std::vector<ValueVector>& dvals_dmu) const;
+
   //////////////////////////////////////////////////////////////////////////////////////////////
   //And now we just have some helper functions for doing useful math on our lists of matrices.//
   //////////////////////////////////////////////////////////////////////////////////////////////
@@ -249,12 +326,52 @@ public:
    */
   void buildX(const std::vector<ValueMatrix>& Minv, const std::vector<ValueMatrix>& B, std::vector<ValueMatrix>& X);
 
+  /** @brief Build auxiliary matrices.
+   *
+   *  @param[in] Minv. List of slater matrix inverses M^-1 for a given occupation. 
+   *  @param[in] B. Observable auxiliary matrix for a given occupation.
+   *  @param[in] M. List of slater matrices (rectangular, including virtuals)
+   *  @param[out] X. M^-1*B*M^-1 is stored in this list of matrices.
+   *  @param[out] Minv_B. M^-1*B is stored in this list of matrices.
+   *  @param[out] Minv_Mv. M^-1*Mvirt is stored in this list of matrices.
+   *  @return Void. 
+   */
+  void buildIntermediates(const std::vector<ValueMatrix>& Minv,
+                          const std::vector<ValueMatrix>& B,
+                          const std::vector<ValueMatrix>& M,
+                          std::vector<ValueMatrix>& X,
+                          std::vector<ValueMatrix>& Minv_B,
+                          std::vector<ValueMatrix>& Minv_Mv);
+
+  /** @brief Build auxiliary matrices for ion derivs
+   * first dim is x/y/z for dB/dM/Minv_dB/Minv_dM
+   *
+   *  @param[in] Minv. List of slater matrix inverses M^-1 for a given occupation. 
+   *  @param[in] dB. list of derivative of observable auxiliary matrix for a given occupation.
+   *  @param[in] dM. List of derivative of slater matrices (rectangular, including virtuals)
+   *  @param[out] Minv_dB. M^-1*dB is stored in this list of matrices.
+   *  @param[out] Minv_dM. M^-1*dM is stored in this list of matrices.
+   *  @return Void. 
+   */
+  void buildIntermediates_dmu(const std::vector<ValueMatrix>& Minv,
+                              const std::vector<std::vector<ValueMatrix>>& dB,
+                              const std::vector<std::vector<ValueMatrix>>& dM,
+                              std::vector<std::vector<ValueMatrix>>& Minv_dB,
+                              std::vector<std::vector<ValueMatrix>>& Minv_dM);
+
   /** @brief Goes through a list of matrices and zeros them out.  Does this in place.
    *
    *  @param[in,out] A. The list of matrices to be zeroed out.  After call, A is all zeros.
    *  @return Void.
    */
   void wipeMatrices(std::vector<ValueMatrix>& A);
+
+  /** @brief Goes through a list of vectors and zeros them out.  Does this in place.
+   *
+   *  @param[in,out] A. The list of vectors to be zeroed out.  After call, A is all zeros.
+   *  @return Void.
+   */
+  void wipeVectors(std::vector<ValueVector>& A);
 
   /** @brief Returns Tr(A*B).  Actually, we assume a block diagonal structure, so this is 
    *    really Sum_i Tr(A_i*B_i), where i is the species index.
@@ -265,6 +382,14 @@ public:
    */
   ValueType trAB(const std::vector<ValueMatrix>& A, const std::vector<ValueMatrix>& B);
 
+  /**
+   * @brief transform X = A[o,v] - A[o,o].B[o,v]
+   * 
+   * @param[in] A matrix with dims [o,o+v]
+   * @param[in] B matrix with dims [o,v]
+   * @param[out] X matrix with dims [o,v]
+   */
+  void transform_Av_AoBv(const ValueMatrix& A, const ValueMatrix& B, ValueMatrix& X) const;
 
 private:
   std::vector<SPOSet*> spos_;
@@ -272,6 +397,9 @@ private:
   std::vector<ValueMatrix> psi_M_;
   std::vector<ValueMatrix> psi_M_inv_;
   std::vector<WaveFunctionComponent*> jastrow_list_;
+  // pointer to MultiSlaterDetTableMethod if one has been registered, otherwise nullptr
+  // access constituent MultiDiracDets and SPOsets through this slaterdet (associate with spos_ via group ID)
+  const WaveFunctionComponent* multislaterdet_ = nullptr;
 };
 
 /**@}*/

@@ -16,7 +16,7 @@
 #define QMCPLUSPLUS_ONEBODYSPINJASTROW_OPTIMIZED_SOA_H
 #include "Configuration.h"
 #include "Particle/DistanceTable.h"
-#include "ParticleBase/ParticleAttribOps.h"
+#include "CPU/VectorOps.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "Utilities/qmc_common.h"
 #include "Utilities/IteratorUtility.h"
@@ -43,8 +43,8 @@ struct J1Spin : public WaveFunctionComponent
   using DistRow  = DistanceTable::DistRow;
   using DisplRow = DistanceTable::DisplRow;
 
-  using GradDerivVec  = ParticleAttrib<QTFull::GradType>;
-  using ValueDerivVec = ParticleAttrib<QTFull::ValueType>;
+  using GradDerivVec  = Vector<QTFull::GradType>;
+  using ValueDerivVec = Vector<QTFull::ValueType>;
 
   ///table index
   const int myTableID;
@@ -232,8 +232,7 @@ struct J1Spin : public WaveFunctionComponent
       int kk = myVars.where(k);
       if (kk < 0)
         continue;
-      if (active.recompute(kk))
-        recalculate = true;
+      recalculate = true;
       rcsingles[k] = true;
     }
     if (recalculate)
@@ -262,8 +261,7 @@ struct J1Spin : public WaveFunctionComponent
       int kk = myVars.where(k);
       if (kk < 0)
         continue;
-      if (active.recompute(kk))
-        recalculate = true;
+      recalculate = true;
       rcsingles[k] = true;
     }
     if (recalculate)

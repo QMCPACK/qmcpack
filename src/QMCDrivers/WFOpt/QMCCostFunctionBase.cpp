@@ -23,11 +23,10 @@
 #include "OhmmsData/XMLParsingString.h"
 #include "Message/CommOperators.h"
 #include "Message/UniformCommunicateError.h"
-
+#include "OhmmsData/Libxml2Doc.h"
 #include <array>
 
 //#define QMCCOSTFUNCTION_DEBUG
-
 
 namespace qmcplusplus
 {
@@ -131,7 +130,7 @@ QMCCostFunctionBase::Return_rt QMCCostFunctionBase::Cost(bool needGrad)
   return computedCost();
 }
 
-QMCCostFunctionBase::Return_rt QMCCostFunctionBase::fillHamVec(std::vector<Return_rt>& ham) 
+QMCCostFunctionBase::Return_rt QMCCostFunctionBase::fillHamVec(std::vector<Return_rt>& ham)
 {
   throw std::runtime_error("Need to implement fillHamVec");
 }
@@ -231,19 +230,22 @@ void QMCCostFunctionBase::reportParameters()
   resetPsi(true);
   if (!myComm->rank())
   {
-    std::ostringstream vp_filename;
-    vp_filename << RootName << ".vp.h5";
+    // Pretty print the wave function parameters.
+    *msg_stream << "  Updated wave function parameters:\n";
+    OptVariables.print(*msg_stream, 4 /* left padding spaces */, true);
+    *msg_stream << std::endl;
+
+    std::string vp_fname(RootName + ".vp.h5");
+    *msg_stream << "  Updated wavefunction vp file " << vp_fname << std::endl;
     hdf_archive hout;
-    OptVariables.writeToHDF(vp_filename.str(), hout);
+    OptVariables.writeToHDF(vp_fname, hout);
 
     UniqueOptObjRefs opt_obj_refs = Psi.extractOptimizableObjectRefs();
     for (auto opt_obj : opt_obj_refs)
       opt_obj.get().writeVariationalParameters(hout);
 
     std::string newxml = RootName + ".opt.xml";
-    *msg_stream << "  <optVariables href=\"" << newxml << "\">" << std::endl;
-    OptVariables.print(*msg_stream);
-    *msg_stream << "  </optVariables>" << std::endl;
+    *msg_stream << "  Updated wavefunction xml file " << newxml << std::endl;
     updateXmlNodes();
     xmlSaveFormatFile(newxml.c_str(), m_doc_out, 1);
   }
@@ -364,61 +366,14 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
 
   // app_log() << "  QMCCostFunctionBase::put " << std::endl;
   // m_param.get(app_log());
-  Write2OneXml     = (writeXmlPerStep == "no");
-  xmlNodePtr qsave = q;
-  //Estimators.put(q);
+  Write2OneXml = (writeXmlPerStep == "no");
+
+  // parse "cost"
   std::vector<xmlNodePtr> cset;
-  std::vector<std::string> excluded;
-  std::map<std::string, std::vector<std::string>*> equalConstraints;
-  std::map<std::string, std::vector<std::string>*> negateConstraints;
-  std::vector<std::string> idtag;
-  xmlNodePtr cur = qsave->children;
-  int pid        = myComm->rank();
-  while (cur != NULL)
-  {
-    std::string cname((const char*)(cur->name));
-    if (cname == "optimize")
-    {
-      std::vector<std::string> tmpid;
-      putContent(tmpid, cur);
-      idtag.insert(idtag.end(), tmpid.begin(), tmpid.end());
-    }
-    else if (cname == "exclude")
-    {
-      std::vector<std::string> tmpid;
-      putContent(tmpid, cur);
-      excluded.insert(excluded.end(), tmpid.begin(), tmpid.end());
-    }
-    else if (cname == "cost")
-    {
-      cset.push_back(cur);
-    }
-    else if (cname == "set")
-    {
-      std::string ctype("equal");
-      std::string s("0");
-      OhmmsAttributeSet pAttrib;
-      pAttrib.add(ctype, "type");
-      pAttrib.add(s, "name");
-      pAttrib.put(cur);
-      if (ctype == "equal" || ctype == "=")
-      {
-        std::map<std::string, std::vector<std::string>*>::iterator eit(equalConstraints.find(s));
-        std::vector<std::string>* eqSet = 0;
-        if (eit == equalConstraints.end())
-        {
-          eqSet               = new std::vector<std::string>;
-          equalConstraints[s] = eqSet;
-        }
-        else
-          eqSet = (*eit).second;
-        std::vector<std::string> econt;
-        putContent(econt, cur);
-        eqSet->insert(eqSet->end(), econt.begin(), econt.end());
-      }
-    }
-    cur = cur->next;
-  }
+  processChildren(q, [&](const std::string& cname, const xmlNodePtr element) {
+    if (cname == "cost")
+      cset.push_back(element);
+  });
 
   UniqueOptObjRefs opt_obj_refs = extractOptimizableObjects(Psi);
   app_log() << " TrialWaveFunction \"" << Psi.getName() << "\" has " << opt_obj_refs.size()
@@ -437,62 +392,6 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
   //synchronize OptVariables and OptVariablesForPsi
   OptVariables  = OptVariablesForPsi;
   InitVariables = OptVariablesForPsi;
-  //first disable <exclude>.... </exclude> from the big list used by a TrialWaveFunction
-  OptVariablesForPsi.disable(excluded.begin(), excluded.end(), false);
-  //now, set up the real variable list for optimization
-  //check <equal>
-  int nc = 0;
-  if (equalConstraints.size())
-  {
-    std::map<std::string, std::vector<std::string>*>::iterator eit(equalConstraints.begin());
-    while (eit != equalConstraints.end())
-    {
-      nc += (*eit).second->size();
-      //actiave the active variable even though it is probably unnecessary
-      OptVariablesForPsi.activate((*eit).second->begin(), (*eit).second->end(), false);
-      excluded.insert(excluded.end(), (*eit).second->begin(), (*eit).second->end());
-      ++eit;
-    }
-  }
-  //build OptVariables which is equal to or identical to OptVariablesForPsi
-  //disable the variables that are equal to a variable
-  OptVariables.disable(excluded.begin(), excluded.end(), false);
-  //set up OptVariables and OptVariablesForPsi
-  OptVariables.activate(idtag.begin(), idtag.end(), true);
-  OptVariablesForPsi.activate(idtag.begin(), idtag.end(), true);
-  //found constraints build equalVarMap
-  if (nc > 0)
-  {
-    equalVarMap.reserve(nc + OptVariables.size());
-    //map the basic lists from the active list
-    for (int i = 0; i < OptVariables.size(); ++i)
-    {
-      int bigloc = OptVariablesForPsi.getIndex(OptVariables.name(i));
-      if (bigloc < 0)
-        continue;
-      equalVarMap.push_back(TinyVector<int, 2>(bigloc, i));
-    }
-    //add <equal/>
-    std::map<std::string, std::vector<std::string>*>::iterator eit(equalConstraints.begin());
-    while (eit != equalConstraints.end())
-    {
-      int loc = OptVariables.getIndex((*eit).first);
-      if (loc >= 0)
-      {
-        const std::vector<std::string>& elist(*((*eit).second));
-        for (int i = 0; i < elist.size(); ++i)
-        {
-          int bigloc = OptVariablesForPsi.getIndex(elist[i]);
-          if (bigloc < 0)
-            continue;
-          equalVarMap.push_back(TinyVector<int, 2>(bigloc, loc));
-        }
-      }
-      //remove std::vector<std::string>
-      delete (*eit).second;
-      ++eit;
-    }
-  }
   //get the indices
   Psi.checkOutVariables(OptVariablesForPsi);
   NumOptimizables = OptVariables.size();

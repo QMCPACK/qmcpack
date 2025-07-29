@@ -1,7 +1,7 @@
 #!/bin/bash
 # This recipe is intended for ALCF Polaris https://www.alcf.anl.gov/polaris
 # It builds all the varaints of QMCPACK in the current directory
-# last revision: Nov 18th 2024
+# last revision: Jan 13th 2025
 #
 # How to invoke this script?
 # build_alcf_polaris_Clang.sh # build all the variants assuming the current directory is the source directory.
@@ -44,7 +44,7 @@ else
   exit
 fi
 
-for name in offload_cuda_real_MP offload_cuda_real offload_cuda_cplx_MP offload_cuda_cplx \
+for name in gpu_real_MP gpu_real gpu_cplx_MP gpu_cplx \
             cpu_real_MP cpu_real cpu_cplx_MP cpu_cplx
 do
 
@@ -58,16 +58,8 @@ if [[ $name == *"_MP"* ]]; then
   CMAKE_FLAGS="$CMAKE_FLAGS -DQMC_MIXED_PRECISION=ON"
 fi
 
-if [[ $name == *"offload"* || $name == *"cuda"* ]]; then
+if [[ $name == *"gpu"* ]]; then
   CMAKE_FLAGS="$CMAKE_FLAGS -DQMC_GPU_ARCHS=sm_80"
-fi
-
-if [[ $name == *"offload"* ]]; then
-  CMAKE_FLAGS="$CMAKE_FLAGS -DENABLE_OFFLOAD=ON"
-fi
-
-if [[ $name == *"cuda"* ]]; then
-  CMAKE_FLAGS="$CMAKE_FLAGS -DENABLE_CUDA=ON"
 fi
 
 folder=build_${Machine}_${Compiler}_${name}

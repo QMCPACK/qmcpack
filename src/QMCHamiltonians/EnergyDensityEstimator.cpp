@@ -492,7 +492,7 @@ void EnergyDensityEstimator::registerCollectables(std::vector<ObservableHelper>&
     oh.addProperty(const_cast<Matrix<RealType>&>(Rion), "ion_positions", file);
   }
 
-  ref.save(h5desc, file);
+  ref.save(h5desc, hdf_name, file);
   h5desc.emplace_back(hdf_name / "outside");
   auto& ohOutside = h5desc.back();
   std::vector<int> ng(1);
@@ -501,7 +501,7 @@ void EnergyDensityEstimator::registerCollectables(std::vector<ObservableHelper>&
   for (int i = 0; i < spacegrids.size(); i++)
   {
     SpaceGrid& sg = *spacegrids[i];
-    sg.registerCollectables(h5desc, file, i);
+    sg.registerCollectables(h5desc, file, hdf_name, i);
   }
   if (ion_points)
   {

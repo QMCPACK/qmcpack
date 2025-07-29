@@ -86,8 +86,6 @@ public:
 
   /** current update mode */
   int UpdateMode;
-  ///list of variables this WaveFunctionComponent handles
-  opt_variables_type myVars;
   ///Bytes in WFBuffer
   size_t Bytes_in_WFBuffer;
 
@@ -449,7 +447,7 @@ public:
    */
   virtual RealType KECorrection();
 
-  /** if true, this contains optimizable components
+  /** if true, *this contains optimizable components. It is inclusive.
    */
   virtual bool isOptimizable() const { return false; }
 
@@ -570,6 +568,28 @@ public:
                                     std::vector<PsiValue>& ratios,
                                     std::vector<GradType>& grad_new,
                                     std::vector<ComplexType>& spingrad_new) const;
+
+protected:
+  // Batched version of evalGradWithSpin, serialize over walkers
+  void mw_evalGradWithSpin_serialized(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                      const RefVectorWithLeader<ParticleSet>& p_list,
+                                      int iat,
+                                      std::vector<GradType>& grad_now,
+                                      std::vector<ComplexType>& spingrad_now) const;
+
+  // Batched version of ratioGradWithSpin, serialize over walkers
+  void mw_ratioGradWithSpin_serialized(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                       const RefVectorWithLeader<ParticleSet>& p_list,
+                                       int iat,
+                                       std::vector<PsiValue>& ratios,
+                                       std::vector<GradType>& grad_new,
+                                       std::vector<ComplexType>& spingrad_new) const;
+
+  // Batched version of evaluateSpinorRatios, serialize over walkers
+  void mw_evaluateSpinorRatios_serialized(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                          const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                                          const RefVector<std::pair<ValueVector, ValueVector>>& spinor_multiplier_list,
+                                          std::vector<std::vector<ValueType>>& ratios) const;
 };
 } // namespace qmcplusplus
 #endif

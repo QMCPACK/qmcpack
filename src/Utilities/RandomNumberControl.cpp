@@ -122,49 +122,6 @@ xmlNodePtr RandomNumberControl::initialize(xmlXPathContextPtr acontext)
   return myCur;
 }
 
-void RandomNumberControl::test()
-{
-  /* Add random number generator tester
-  */
-  int nthreads = omp_get_max_threads();
-  std::vector<double> avg(nthreads), avg2(nthreads);
-#pragma omp parallel for
-  for (int ip = 0; ip < nthreads; ++ip)
-  {
-    const int n = 1000000;
-    double sum = 0.0, sum2 = 0.0;
-    auto& myrand(*Children[ip]);
-    for (int i = 0; i < n; ++i)
-    {
-      double r = myrand();
-      sum += r;
-      sum2 += r * r;
-    }
-    avg[ip]  = sum / static_cast<double>(n);
-    avg2[ip] = sum2 / static_cast<double>(n);
-  }
-  std::vector<double> avg_tot(nthreads * OHMMS::Controller->size()), avg2_tot(nthreads * OHMMS::Controller->size());
-  mpi::gather(*OHMMS::Controller, avg, avg_tot);
-  mpi::gather(*OHMMS::Controller, avg2, avg2_tot);
-  double avg_g  = 0.0;
-  double avg2_g = 0.0;
-  for (int i = 0, ii = 0; i < OHMMS::Controller->size(); ++i)
-  {
-    for (int ip = 0; ip < nthreads; ++ip, ++ii)
-    {
-      app_log() << "RNGTest " << std::setw(4) << i << std::setw(4) << ip << std::setw(20) << avg_tot[ii]
-                << std::setw(20) << avg2_tot[ii] - avg_tot[ii] * avg_tot[ii] << std::endl;
-      avg_g += avg_tot[ii];
-      avg2_g += avg2_tot[ii];
-    }
-  }
-  avg_g /= static_cast<double>(nthreads * OHMMS::Controller->size());
-  avg2_g /= static_cast<double>(nthreads * OHMMS::Controller->size());
-  app_log() << "RNGTest " << std::setw(4) << OHMMS::Controller->size() << std::setw(4) << nthreads << std::setw(20)
-            << avg_g << std::setw(20) << avg2_g - avg_g * avg_g << std::endl;
-  app_log().flush();
-}
-
 bool RandomNumberControl::put(xmlNodePtr cur)
 {
   if (NeverBeenInitialized)

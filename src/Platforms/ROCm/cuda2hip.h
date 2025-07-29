@@ -30,8 +30,8 @@
 #define CUBLAS_STATUS_NOT_SUPPORTED     HIPBLAS_STATUS_NOT_SUPPORTED
 #define CUBLAS_STATUS_SUCCESS           HIPBLAS_STATUS_SUCCESS
 
-#define cublasComplex           hipblasComplex
-#define cublasDoubleComplex     hipblasDoubleComplex
+#define cublasComplex           hipFloatComplex
+#define cublasDoubleComplex     hipDoubleComplex
 #define cublasHandle_t          hipblasHandle_t
 #define cublasStatus_t          hipblasStatus_t
 #define cublasCreate            hipblasCreate
@@ -134,6 +134,7 @@
 #define cudaMemAttachGlobal             hipMemAttachGlobal
 #define cudaMemcpy                      hipMemcpy
 #define cudaMemcpyAsync                 hipMemcpyAsync
+#define cudaMemcpyDefault               hipMemcpyDefault
 #define cudaMemcpyDeviceToDevice        hipMemcpyDeviceToDevice
 #define cudaMemcpyDeviceToHost          hipMemcpyDeviceToHost
 #define cudaMemcpyHostToDevice          hipMemcpyHostToDevice

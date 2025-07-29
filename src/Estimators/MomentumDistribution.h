@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2021 QMCPACK developers.
+// Copyright (c) 2025 QMCPACK developers.
 //
 // File developed by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //                    Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
@@ -28,12 +28,11 @@ namespace testing
 class MomentumDistributionTests;
 }
 /** Class that collects momentum distribution of electrons
- *  
+ *
  */
 class MomentumDistribution : public OperatorEstBase
 {
 public:
-  using LatticeType = PtclOnLatticeTraits::ParticleLayout;
   using RealType    = QMCTraits::RealType;
   using ComplexType = QMCTraits::ComplexType;
   using ValueType   = QMCTraits::ValueType;
@@ -45,7 +44,7 @@ public:
   ///twist angle
   const PosType twist;
   ///lattice vector
-  const LatticeType Lattice;
+  const Lattice lattice;
   ///normalization factor for n(k)
   const RealType norm_nofK;
   ///list of k-points in Cartesian Coordinates
@@ -71,12 +70,12 @@ public:
   aligned_vector<RealType> nofK;
 
 public:
-  /** Constructor for MomentumDistributionInput 
+  /** Constructor for MomentumDistributionInput
    */
   MomentumDistribution(MomentumDistributionInput&& mdi,
                        size_t np,
                        const PosType& twist,
-                       const LatticeType& lattice,
+                       const Lattice& lattice,
                        DataLocality dl = DataLocality::crowd);
 
   /** Constructor used when spawing crowd clones
@@ -85,7 +84,7 @@ public:
    */
   MomentumDistribution(const MomentumDistribution& md, DataLocality dl);
 
-  /** This allows us to allocate the necessary data for the DataLocality::queue 
+  /** This allows us to allocate the necessary data for the DataLocality::queue
    */
   void startBlock(int steps) override;
 
@@ -119,7 +118,7 @@ public:
   /** this gets us into the hdf5 file
    *
    *  Just parroting for now don't fully understand.
-   *, needs to be unraveled and simplified the hdf5 output is another 
+   *, needs to be unraveled and simplified the hdf5 output is another
    *  big state big coupling design.
    */
   void registerOperatorEstimator(hdf_archive& file) override;

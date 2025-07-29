@@ -89,6 +89,7 @@ conv = generate_pw2qmcpack(
     )
 
 opt = generate_qmcpack(
+    driver         = 'legacy',
     det_format     = 'old',
     identifier     = 'opt',
     path           = 'opt',
@@ -116,6 +117,7 @@ opt = generate_qmcpack(
     )
 
 qmc_ground = generate_qmcpack(
+    driver         = 'legacy',
     det_format     = 'old',
     identifier     = 'vmc',
     path           = 'vmc_ground',
@@ -139,6 +141,7 @@ qmc_ground = generate_qmcpack(
     )
 
 qmc_minus = generate_qmcpack(
+    driver       = 'legacy',
     det_format   = 'old',
     identifier   = 'vmc',
     path         = 'vmc_-e',
@@ -166,6 +169,7 @@ updet = qmc_minus.input.get('updet')
 updet.size-=1
 
 qmc_plus = generate_qmcpack(
+    driver       = 'legacy',
     det_format   = 'old',
     identifier   = 'vmc',
     path         = 'vmc_+e',

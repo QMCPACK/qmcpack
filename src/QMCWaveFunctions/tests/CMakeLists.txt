@@ -10,6 +10,10 @@
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
+add_library(minimal_wavefunction_pool MinimalWaveFunctionPool.cpp)
+target_include_directories(minimal_wavefunction_pool PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+target_link_libraries(minimal_wavefunction_pool PUBLIC qmcwfs)
+
 set(SRC_DIR wavefunction)
 set(UTEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
 #SET(UTEST_HDF_INPUT ${qmcpack_SOURCE_DIR}/tests/solids/monoO_1x1x1_pp/pwscf.pwscf.h5)
@@ -163,15 +167,9 @@ target_link_libraries(sposets_for_testing PUBLIC qmcwfs)
 
 if(ENABLE_CUDA)
   set(DETERMINANT_SRC ${DETERMINANT_SRC} test_DiracMatrixInverterCUDA.cpp test_cuBLAS_LU.cpp)
-  if(NOT QMC_CUDA2HIP)
-    set(DETERMINANT_SRC ${DETERMINANT_SRC} test_cuSolverInverter.cpp)
-  endif()
 endif(ENABLE_CUDA)
-if(ENABLE_CUDA AND QMC_CUDA2HIP)
-  set(DETERMINANT_SRC ${DETERMINANT_SRC} test_rocSolverInverter.cpp)
-endif()
-if(ENABLE_SYCL)
-  set(DETERMINANT_SRC ${DETERMINANT_SRC} test_syclSolverInverter.cpp)
+if(ENABLE_SYCL OR ENABLE_CUDA)
+  set(DETERMINANT_SRC ${DETERMINANT_SRC} test_SolverInverters.cpp)
 endif()
 if(ENABLE_OFFLOAD)
   set(DETERMINANT_SRC ${DETERMINANT_SRC} test_DiracMatrixInverterOMPTarget.cpp)
@@ -187,29 +185,27 @@ foreach(CATEGORY common trialwf sposet jastrow determinant)
     ${UTEST_EXE}
     catch_main
     qmcwfs
-    qmcwfs_omptarget
-    qmcparticle_omptarget
     platform_LA
     platform_runtime
     sposets_for_testing
     utilities_for_test
-    container_testing)
+    container_testing
+    minimal_particle_pool
+    minimal_wavefunction_pool)
   if(USE_OBJECT_TARGET)
-    target_link_libraries(${UTEST_EXE} qmcparticle qmcparticle_omptarget qmcwfs_omptarget qmcutil platform_omptarget_LA)
+    target_link_libraries(${UTEST_EXE} qmcparticle qmcparticle_omptarget qmcwfs_omptarget spline2 spline2_omptarget qmcutil platform_omptarget_LA)
   endif()
 
   add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
   set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
 endforeach()
 
-if(ENABLE_CUDA AND BUILD_MICRO_BENCHMARKS)
+if((ENABLE_CUDA OR ENABLE_SYCL) AND BUILD_MICRO_BENCHMARKS)
   set(UTEST_EXE benchmark_diracmatrixcompute)
   set(UTEST_NAME deterministic-unit_${UTEST_EXE})
-  set(BENCHMARK_SRC benchmark_DiracMatrixInverterCUDA.cpp)
-  if(QMC_CUDA2HIP)
-    set(BENCHMARK_SRC ${BENCHMARK_SRC} benchmark_rocSolverInverter.cpp)
-  else()
-    set(BENCHMARK_SRC ${BENCHMARK_SRC} benchmark_cuSolverInverter.cpp)
+  set(BENCHMARK_SRC benchmark_SolverInverters.cpp)
+  if(ENABLE_CUDA)
+    set(BENCHMARK_SRC ${BENCHMARK_SRC} benchmark_DiracMatrixInverterCUDA.cpp)
   endif()
   add_executable(${UTEST_EXE} ${BENCHMARK_SRC})
   target_link_libraries(

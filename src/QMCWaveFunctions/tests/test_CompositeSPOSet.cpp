@@ -13,8 +13,8 @@
 #include "catch.hpp"
 #include "QMCWaveFunctions/CompositeSPOSet.h"
 #include <exception>
-#include "Particle/tests/MinimalParticlePool.h"
-#include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
+#include <MinimalParticlePool.h>
+#include <MinimalWaveFunctionPool.h>
 #include "Utilities/ProjectData.h"
 
 namespace qmcplusplus
@@ -35,7 +35,7 @@ TEST_CASE("CompositeSPO::diamond_1x1x1", "[wavefunction")
   auto& pset = *particle_pool.getParticleSet("e");
   auto& twf  = *wavefunction_pool.getWaveFunction("wavefunction");
 
-  CompositeSPOSet comp_sposet("one_composite_set");
+  CompositeSPOSet<SPOSet::ValueType> comp_sposet("one_composite_set");
 
   std::vector<std::string> sposets{"spo_ud", "spo_dm"};
   for (auto sposet_str : sposets)

@@ -23,13 +23,13 @@ else()
   set(RMG_TEST_NAME "NONE")
 
   set(RMG_SYSTEM "Diamond2-1x1x1-gamma-ccECP")
-  run_rmg_test(rmg-${RMG_SYSTEM} ${qmcpack_SOURCE_DIR}/examples/solids/rmg-inputs/${RMG_SYSTEM} 1 12 RMG_TEST_NAME)
+  run_rmg_test(rmg-${RMG_SYSTEM} ${qmcpack_SOURCE_DIR}/examples/solids/rmg-inputs/${RMG_SYSTEM} 1 1 RMG_TEST_NAME)
 
   # RMG_TEST_NAME is now rmg-Diamond2-1x1x1-gamma-ccECP-np-1
   # workdir is CMAKE_CURRENT_BINARY_DIR/RMG_TEST_NAME
   message("${RMG_TEST_NAME}")
 
-  softlink_rmg_input(${RMG_TEST_NAME} 1-16 rmg-${RMG_SYSTEM} LAST_TEST_NAME)
+  softlink_rmg_input(${RMG_TEST_NAME} r1-t16 rmg-${RMG_SYSTEM} LAST_TEST_NAME)
   # TODO: do larger run to get better reference?
   # ref values:                                                        adjusted for 1.6E4 samples
   # TotalSamples          =         120000000 +/-          0
@@ -61,8 +61,8 @@ else()
     DIAMOND2_GAMMA_SCALARS # VMC
   )
 
-  if(TEST ${THIS_TEST_NAME}-1-16)
-    set_tests_properties(${THIS_TEST_NAME}-1-16 PROPERTIES DEPENDS ${LAST_TEST_NAME})
+  if(TEST ${THIS_TEST_NAME}-r1-t16)
+    set_tests_properties(${THIS_TEST_NAME}-r1-t16 PROPERTIES DEPENDS ${LAST_TEST_NAME})
   endif()
 
 endif()

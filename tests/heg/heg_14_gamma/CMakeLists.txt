@@ -116,9 +116,9 @@ qmc_run_and_check(
 
 # batch deterministic
 if(QMC_MIXED_PRECISION)
-  list(APPEND DET_HEG14GSSJ_SCALARS "totenergy" "-1.24699388 0.00002")
-  list(APPEND DET_HEG14GSSJ_SCALARS "kinetic" "0.77668380 0.000005")
-  list(APPEND DET_HEG14GSSJ_SCALARS "potential" "-2.02367769 0.00002")
+  list(APPEND DET_HEG14GSSJ_SCALARS "totenergy" "-1.24699382 0.00002")
+  list(APPEND DET_HEG14GSSJ_SCALARS "kinetic" "0.77668442 0.000005")
+  list(APPEND DET_HEG14GSSJ_SCALARS "potential" "-2.02367775 0.00002")
 else()
   list(APPEND DET_HEG14GSSJ_SCALARS "totenergy" "-1.24699388 0.000001")
   list(APPEND DET_HEG14GSSJ_SCALARS "kinetic" "0.77668380 0.000001")
@@ -271,7 +271,7 @@ qmc_run_and_check(
 #  HEG14G - Slater-Jastrow-Backflow VMC
 #           Run 16x1, 4x4, 1x16 to test SJB cloning
 #
-list(APPEND HEG14GSSJB_SCALARS "totenergy" "-1.084963  0.0004") # total energy
+list(APPEND HEG14GSSJB_SCALARS "totenergy" "-1.084963  0.0006") # total energy
 list(APPEND HEG14GSSJB_SCALARS "variance" " 0.022667  0.000764") # energy variance
 
 qmc_run_and_check(

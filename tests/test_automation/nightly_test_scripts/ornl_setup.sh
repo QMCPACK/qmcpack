@@ -44,19 +44,26 @@ echo --- Installing for $ourplatform architecture
 ourhostname=`hostname|sed 's/\..*//g'`
 echo --- Host is $ourhostname
 
-if [ -e $HOME/apps/spack ]; then
-    rm -r -f $HOME/apps/spack
+export SPACK_ROOT=$HOME/apps/spack
+if [ -e $SPACK_ROOT ]; then
+    rm -r -f $SPACK_ROOT
 fi
+export SPACK_USER_CONFIG_PATH=$HOME/apps/spack_user_config  # Avoid using $HOME/.spack
+if [ ! -e $SPACK_USER_CONFIG_PATH ]; then
+    mkdir $SPACK_USER_CONFIG_PATH
+else
+    rm -r -f $SPACK_USER_CONFIG_PATH/*
+fi
+
 if [ -e $HOME/.spack ]; then
-    rm -r -f $HOME/.spack
+    rm -r -f $HOME/.spack 
 fi
-mkdir $HOME/.spack
 
 # Setup build multiplicity and preferred directories for spack
 # Choose the fastest filesytem. Don't abuse shared nodes.
 case "$ourhostname" in
     nitrogen2 )
-	cat >$HOME/.spack/config.yaml<<EOF
+	cat >$SPACK_USER_CONFIG_PATH/config.yaml<<EOF
 config:
 
   build_stage:
@@ -72,22 +79,17 @@ EOF
 	mkdir /scratch/$USER/spack_build_stage
 
 	#Use system installed SSL. See https://spack.readthedocs.io/en/latest/getting_started.html#openssl
-	cat >>$HOME/.spack/packages.yaml<<EOF
+	cat >>$SPACK_USER_CONFIG_PATH/packages.yaml<<EOF
 packages:
     openssl:
         externals:
         - spec: openssl@1.1.1k
           prefix: /usr
           buildable: False
-    libffi:
-        externals:
-        - spec: libffi@3.4.2
-          prefix: /
-          buildable: False
 EOF
 ;;
     nitrogen )
-	cat >$HOME/.spack/config.yaml<<EOF
+	cat >$SPACK_USER_CONFIG_PATH/config.yaml<<EOF
 config:
 
   build_stage:
@@ -103,22 +105,17 @@ EOF
 	mkdir /scratch/$USER/spack_build_stage
 
 	#Use system installed SSL. See https://spack.readthedocs.io/en/latest/getting_started.html#openssl
-	cat >>$HOME/.spack/packages.yaml<<EOF
+	cat >>$SPACK_USER_CONFIG_PATH/packages.yaml<<EOF
 packages:
     openssl:
         externals:
         - spec: openssl@1.1.1k
           prefix: /usr
           buildable: False
-    libffi:
-        externals:
-        - spec: libffi@3.4.2
-          prefix: /
-          buildable: False
 EOF
 ;;
     sulfur )
-	cat >$HOME/.spack/config.yaml<<EOF
+	cat >$SPACK_USER_CONFIG_PATH/config.yaml<<EOF
 config:
 
   build_stage:
@@ -134,17 +131,12 @@ EOF
 	mkdir /scratch/$USER/spack_build_stage
 
 	#Use system installed SSL. See https://spack.readthedocs.io/en/latest/getting_started.html#openssl
-	cat >>$HOME/.spack/packages.yaml<<EOF
+	cat >>$SPACK_USER_CONFIG_PATH/packages.yaml<<EOF
 packages:
     openssl:
         externals:
         - spec: openssl@1.1.1k
           prefix: /usr
-          buildable: False
-    libffi:
-        externals:
-        - spec: libffi@3.4.2
-          prefix: /
           buildable: False
 EOF
 	;;
@@ -153,7 +145,7 @@ EOF
 	;;
 esac
 
-cat >$HOME/.spack/modules.yaml<<EOF
+cat >$SPACK_USER_CONFIG_PATH/modules.yaml<<EOF
 modules:
   prefix_inspections::
     bin:
@@ -174,15 +166,10 @@ modules:
     - CMAKE_PREFIX_PATH
 EOF
 
-#cat >$HOME/.spack/spack.yaml<<EOF
-#spack:
-#  concretization:
-#    unify:  true
-#EOF
-cat >$HOME/.spack/spack.yaml<<EOF
+cat >$SPACK_USER_CONFIG_PATH/spack.yaml<<EOF
 spack:
   concretization:
-    unify:  when_possible
+     unify:  true
 EOF
 
 if [ ! -e $HOME/apps ]; then
@@ -191,18 +178,30 @@ fi
 
 cd $HOME/apps
 
+if [ -e $HOME/apps/spack ]; then
+    rm -r -f $HOME/apps/spack
+fi
+
 git clone https://github.com/spack/spack.git
+
+if [ ! -e spack/CHANGELOG.md ]; then
+    echo "--- FAILED TO FIND spack/CHANGELOG.md . BAD CLONE or I/O PROBLEMS. ABORTING"
+    exit 1	 
+fi
 
 cd $HOME/apps/spack
 
 # For reproducibility, use a specific version of Spack
 # Prefer to use tagged releases https://github.com/spack/spack/releases
-git checkout eb9ff5d7a7d47f112ece5a4c70ef603a047a2fbc
-#commit eb9ff5d7a7d47f112ece5a4c70ef603a047a2fbc (HEAD -> develop, origin/develop, origin/HEAD)
+git checkout b8c31b22a5d1619d0137bc3fc69e24389ca436fb
+#commit b8c31b22a5d1619d0137bc3fc69e24389ca436fb (HEAD -> develop, origin/develop, origin/HEAD)
 #Author: Harmen Stoppels <me@harmenstoppels.nl>
-#Date:   Tue Nov 5 13:25:19 2024 +0100
+#Date:   Fri May 16 12:09:20 2025 +0200
 #
-#    paraview: add forward compat bound with cuda (#47430)
+#    builtin: crlf -> lf (#50505)
+
+# Limit overly strong rmg boost dependency to allow concretizer:unify:true
+sed -ibak 's/boost@1.61.0:1.82.0/boost@1.61.0:1.82.0", when="@:6.1.2/g' var/spack/repos/spack_repo/builtin/packages/rmgdft/package.py
 
 echo --- Git version and last log entry
 git log -1
@@ -213,14 +212,15 @@ cd bin
 
 # Consider using a GCC toolset on Red Hat systems to use
 # recent compilers with better architecture support.
-# e.g. dnf install gcc-toolset-11
-#if [ -e /opt/rh/gcc-toolset-12/enable ]; then
-#    echo --- Using gcc-toolset-12 for newer compilers
-#    source /opt/rh/gcc-toolset-12/enable 
-#fi
+# e.g. dnf install gcc-toolset-14
+if [ -e /opt/rh/gcc-toolset-14/enable ]; then
+    echo --- Using gcc-toolset-14 for newer compilers
+    source /opt/rh/gcc-toolset-14/enable 
+fi
 
 export DISPLAY="" 
 export SPACK_ROOT=$HOME/apps/spack
+export SPACK_USER_CONFIG_PATH=$HOME/apps/spack_user_config  # Avoid using $HOME/.spack
 export PATH=$SPACK_ROOT/bin:$PATH
 . $SPACK_ROOT/share/spack/setup-env.sh
 echo --- Bootstrap
@@ -228,12 +228,6 @@ spack bootstrap now
 
 echo --- Spack list
 spack find
-echo --- Spack compilers
-spack compilers
-echo --- Spack compiler add
-spack compiler find
-echo --- Spack compilers
-spack compilers
 echo --- Modules list
 module list
 echo --- End listings
@@ -252,18 +246,11 @@ spack load gcc@${gcc_vold}
 module list
 spack compiler find
 spack unload gcc@${gcc_vold}
-#echo --- gcc@master
-#spack install gcc@master
-#echo --- load gcc@master
-#spack load gcc@master
-#module list
-#spack compiler find
-#spack unload gcc@master
-#echo --- gcc@${gcc_vcuda}
-#spack install gcc@${gcc_vcuda}
-#spack load gcc@${gcc_vcuda}
-#spack compiler find
-#spack unload gcc@${gcc_vcuda}
+echo --- gcc@${gcc_vcuda}
+spack install gcc@${gcc_vcuda}
+spack load gcc@${gcc_vcuda}
+spack compiler find
+spack unload gcc@${gcc_vcuda}
 if [ "$ourplatform" == "Intel" ]; then
 echo --- gcc@${gcc_vintel}  `date`
 spack install gcc@${gcc_vintel}
@@ -281,28 +268,15 @@ spack install llvm@${llvm_vnew}
 spack load llvm@${llvm_vnew}
 spack compiler find
 spack unload llvm@${llvm_vnew}
-#echo --- llvm@main
-#spack install llvm@main +cuda cuda_arch=70
-#spack load llvm@main
-#spack compiler find
-#spack unload llvm@main
-#echo --- Cleanup
-#spack gc --yes-to-all
-echo --- gcc@${gcc_vllvmoffload} for offload  `date`
-spack install gcc@${gcc_vllvmoffload}
-spack load gcc@${gcc_vllvmoffload}
-spack compiler find
-spack unload gcc@${gcc_vllvmoffload}
-
 echo --- llvm@${llvm_voffload} for offload  `date`
 spack install gcc@${gcc_vllvmoffload}
 spack install cuda@${cuda_voffload} +allow-unsupported-compilers
-#spack install llvm@${llvm_voffload}%gcc@${gcc_vllvmoffload} ~libcxx +compiler-rt ~lldb ~gold ~omp_as_runtime targets=all
-spack install llvm@${llvm_voffload}%gcc@${gcc_vllvmoffload} targets=all
-spack load llvm@${llvm_voffload}%gcc@${gcc_vllvmoffload}  targets=all
+spack load cuda@${cuda_voffload} +allow-unsupported-compilers
+spack install llvm@${llvm_voffload} targets=all ^gcc@${gcc_vllvmoffload}
+spack load llvm@${llvm_voffload}  targets=all  ^gcc@${gcc_vllvmoffload}
 spack compiler find
-spack unload llvm@${llvm_voffload}%gcc@${gcc_vllvmoffload} targets=all
-
+spack unload llvm@${llvm_voffload}
+spack unload cuda@${cuda_voffload}
 echo --- Spack compilers  `date`
 spack compilers
 echo --- Modules list

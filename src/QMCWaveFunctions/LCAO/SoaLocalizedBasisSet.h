@@ -209,10 +209,26 @@ public:
       int id);
 
 private:
+  using PinnedVecSizeT    = Vector<size_t, OffloadPinnedAllocator<size_t>>;
+
   /// multi walker shared memory buffer
   struct SoaLocalizedBSetMultiWalkerMem;
+  /// Pinned per-species list of ion indices for batched multi-center evaluation
+  std::vector<PinnedVecSizeT> species_centers_;
+  /// Pinned per-species list of basis-function offsets matching species_centers_
+  std::vector<PinnedVecSizeT> species_center_coffsets_;
   /// multi walker resource handle
   ResourceHandle<SoaLocalizedBSetMultiWalkerMem> mw_mem_handle_;
+  NewTimer& NumCenter_timer_;
+
+  /**
+  * @brief Initialize and upload per‐species ion center indices and basis‐function offsets.
+  *
+  * Groups all ions and their basis offsets by species into pinned host/device vectors
+  * and performs the one‐time upload. Called only once from Constructor
+  */
+  void initializeSpeciesOffsets();
+
 };
 } // namespace qmcplusplus
 #endif

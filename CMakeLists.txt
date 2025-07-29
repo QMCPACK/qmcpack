@@ -18,12 +18,8 @@ endif()
 ######################################################################
 project(
   qmcpack
-  VERSION 3.17.9
+  VERSION 4.1.9
   LANGUAGES C CXX)
-
-# add the automatically determined parts of the RPATH
-# which point to directories outside the build tree to the install RPATH
-set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 #--------------------------------------------------------------------
 # Directory where customize cmake files reside
@@ -31,6 +27,11 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 set(PROJECT_CMAKE ${qmcpack_SOURCE_DIR}/CMake)
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_CMAKE})
 include(macros)
+
+# add the automatically determined parts of the RPATH
+# which point to directories outside the build tree to the install RPATH
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+include(AddRPATH)
 
 ######################################################################
 # Build and install options
@@ -55,57 +56,21 @@ include(CMakeDependentOption)
 option(QMC_MPI "Enable/disable MPI" ON)
 option(QMC_OMP "Enable/disable OpenMP" ON)
 option(QMC_COMPLEX "Build for complex binary" OFF)
-option(ENABLE_CUDA "Build with GPU support through CUDA" OFF)
-option(QMC_CUDA2HIP "Map all CUDA kernels and library calls to HIP" OFF)
-if(QMC_CUDA2HIP OR ENABLE_HIP)
-  set(ENABLE_ROCM ON) # option(ENABLE_ROCM) will be no-op
+if(DEFINED ENABLE_CUDA OR DEFINED ENABLE_ROCM OR DEFINED QMC_CUDA2HIP OR DEFINED ENABLE_SYCL OR DEFINED ENABLE_OFFLOAD)
+  message(
+    FATAL_ERROR "ENABLE_CUDA, ENABLE_ROCM, QMC_CUDA2HIP, ENABLE_SYCL and ENABLE_OFFLOAD CMake options are removed. "
+                "Use QMC_GPU instead. See details of this option explained in the user guide. "
+                "When not building from scratch, their cached entries in CMakeCache.txt needs to be removed.")
 endif()
-# explicit HIP source codes only exist in AFQMC.
-option(ENABLE_HIP "Build with with GPU support through explicit HIP source code" OFF)
-option(ENABLE_ROCM "Build with with GPU support through ROCM libraries" OFF)
-option(ENABLE_OFFLOAD "Enable OpenMP offload" OFF)
-option(ENABLE_SYCL "Enable SYCL offload" OFF)
+
+include(DetermineGPUFeatures)
 # Use CMake object library targets to workaround clang linker not being able to handle fat
 # binary archives which contain both host and device codes, for example OpenMP offload regions.
 # CMake does not propagate indirect object files by design.
 # So the dependency must be explicitly specified with USE_OBJECT_TARGET.
 cmake_dependent_option(USE_OBJECT_TARGET "Use CMake object library target" OFF "ENABLE_OFFLOAD" OFF)
 
-if(QMC_CUDA)
-  message(
-    FATAL_ERROR
-      "Legacy GPU implementation using CUDA has been removed! QMC_CUDA cannot be set ON. "
-      "For NVIDIA GPU support use ENABLE_OFFLOAD with ENABLE_CUDA. Use v3.16.0 or earlier if you need QMC_CUDA.")
-endif(QMC_CUDA)
-
-if(ENABLE_CUDA AND ENABLE_SYCL)
-  message(FATAL_ERROR "ENABLE_CUDA=ON and ENABLE_SYCL=ON can not be set together!")
-endif(ENABLE_CUDA AND ENABLE_SYCL)
-
-if(ENABLE_CUDA)
-  if(QMC_CUDA2HIP)
-    message(STATUS "ENABLE_CUDA enabled, QMC_CUDA2HIP enabled")
-  else(QMC_CUDA2HIP)
-    message(STATUS "ENABLE_CUDA enabled, QMC_CUDA2HIP disabled")
-  endif()
-else(ENABLE_CUDA)
-  if(QMC_CUDA2HIP)
-    message(FATAL_ERROR "QMC_CUDA2HIP requires ENABLE_CUDA=ON.")
-  endif()
-  message(STATUS "ENABLE_CUDA disabled")
-endif(ENABLE_CUDA)
-
-# stop CUDA_ARCH
-if(ENABLE_CUDA AND NOT QMC_CUDA2HIP)
-  if(DEFINED CUDA_ARCH)
-    unset(CUDA_ARCH CACHE)
-    message(
-      FATAL_ERROR "CUDA_ARCH option has been removed. Use -DCMAKE_CUDA_ARCHITECTURES=80 if -DCUDA_ARCH=sm_80 was used.")
-  endif()
-endif()
-
 include(DetermineDeviceArchitectures)
-message(STATUS "GPU device architectures: ${QMC_GPU_ARCHS}")
 
 #--------------------------------------------------------------------
 # Set compiler-time parameters
@@ -170,10 +135,17 @@ option(BUILD_UNIT_TESTS "Build unit tests" ON)
 option(BUILD_MICRO_BENCHMARKS "Build micro benchmarks" ON)
 option(BUILD_LMYENGINE_INTERFACE "Build LMY engine" ON)
 if(MIXED_PRECISION AND BUILD_LMYENGINE_INTERFACE)
-  message(STATUS "LMY engine is not compatible with CPU mixed precision build! Disabling LMY engine")
+  message(STATUS "LMY engine is not compatible with mixed precision build! Disabling LMY engine. Some optimizers will not be available.")
   set(BUILD_LMYENGINE_INTERFACE OFF)
+else()
+  message(STATUS "LMY engine enabled for widest range of wavefunction optimization methods.")
 endif()
 option(BUILD_AFQMC "Build with AFQMC" OFF)
+# explicit HIP source codes only exist in AFQMC.
+cmake_dependent_option(BUILD_AFQMC_HIP "Build with with GPU support in AFQMC through explicit HIP source code" OFF "BUILD_AFQMC" OFF)
+if(BUILD_AFQMC_HIP)
+  set(ENABLE_ROCM ON)
+endif()
 option(BUILD_AFQMC_WITH_NCCL "Build AFQMC with NCCL library." OFF)
 # AFQMC requires MPI.
 if(BUILD_AFQMC AND NOT QMC_MPI)
@@ -183,6 +155,7 @@ option(QMC_BUILD_STATIC "Link to static libraries" OFF)
 option(ENABLE_TIMERS "Enable internal timers" ON)
 option(ENABLE_STACKTRACE "Enable use of boost::stacktrace" OFF)
 option(USE_VTUNE_API "Enable use of VTune ittnotify APIs" OFF)
+option(USE_HPCTOOLKIT_API "Enable use of HPCToolkit start/stop APIs" OFF)
 cmake_dependent_option(USE_VTUNE_TASKS "USE VTune ittnotify task annotation" OFF "ENABLE_TIMERS AND USE_VTUNE_API" OFF)
 # CMake note - complex conditionals in cmake_dependent_option must have spaces around parentheses
 cmake_dependent_option(USE_NVTX_API "Enable/disable NVTX regions in CUDA code." OFF "ENABLE_TIMERS AND ENABLE_CUDA" OFF)
@@ -190,23 +163,9 @@ set(HAVE_EINSPLINE 1) # to be removed
 option(QMC_EXP_THREADING "Experimental non openmp threading models" OFF)
 mark_as_advanced(QMC_EXP_THREADING)
 
-#--------------------------------------------------------------------
-# Sanitizer options
-#--------------------------------------------------------------------
-
-# Add optional sanitizers ASAN, UBSAN, MSAN
-set(VALID_SANITIZERS "none" "asan" "ubsan" "tsan" "msan")
-set(ENABLE_SANITIZER
-    "none"
-    CACHE STRING "none,asan,ubsan,tsan,msan")
-set_property(CACHE ENABLE_SANITIZER PROPERTY STRINGS ${VALID_SANITIZERS})
-
-# Perform sanitizer option check, only works in debug mode
-if(NOT ENABLE_SANITIZER IN_LIST VALID_SANITIZERS)
-  message(FATAL_ERROR "Invalid -DENABLE_SANITIZER=${ENABLE_SANITIZER}, value must be one of ${VALID_SANITIZERS}")
-else()
-  message(STATUS "Enable sanitizer ENABLE_SANITIZER=${ENABLE_SANITIZER}")
-endif()
+# Add optional sanitizers ASAN, UBSAN, MSAN, TYPESAN
+set(VALID_SANITIZERS "asan" "ubsan" "tsan" "msan" "typesan")
+set(ENABLE_SANITIZER "" CACHE STRING "Valid input: ${VALID_SANITIZERS} or left empty")
 
 #--------------------------------------------------------------------
 # INSTALL_NEXUS install Nexus alongside QMCPACK
@@ -237,16 +196,7 @@ if(QMC_OMP)
   endif()
 
   # explicitly set OpenMP runtime library rpath like other normal libraries.
-  list(GET OpenMP_CXX_LIBRARIES 0 OpenMP_LIBRARY_FILE)
-  if(OpenMP_LIBRARY_FILE)
-    cmake_path(GET OpenMP_LIBRARY_FILE PARENT_PATH OpenMP_LIBRARY_DIR)
-    list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES ${OpenMP_LIBRARY_DIR} isSystemDir)
-    if("${isSystemDir}" STREQUAL "-1")
-      message(STATUS "Append OpenMP runtime library path ${OpenMP_LIBRARY_DIR}")
-      list(APPEND CMAKE_BUILD_RPATH ${OpenMP_LIBRARY_DIR})
-      list(APPEND CMAKE_INSTALL_RPATH ${OpenMP_LIBRARY_DIR})
-    endif("${isSystemDir}" STREQUAL "-1")
-  endif()
+  AddRPATH("OpenMP" ${OpenMP_CXX_LIBRARIES})
 endif(QMC_OMP)
 
 #-------------------------------------------------------------------------------
@@ -267,30 +217,6 @@ else(CMAKE_TOOLCHAIN_FILE)
     message(WARNING "Cray Programming Environment has been detected but C++ compiler wrapper CC is not used! "
                     "Please use cc/CC as the C/C++ compiler to ensure correct cross-compiling for the compute nodes "
                     "unless you understand cross-compiling and intend not to use Cray compiler wrappers.")
-  endif()
-  if(CMAKE_SYSTEM_NAME STREQUAL "CrayLinuxEnvironment")
-    message(STATUS "Running on a Cray machine.")
-
-    if(NOT $ENV{CRAYPE_LINK_TYPE} STREQUAL "dynamic")
-      message(WARNING "Cray Programming Environment uses static linking by default. "
-                      "We prefer dynamic linking which makes library searching easier. "
-                      "Setting environment variable CRAYPE_LINK_TYPE to \"dynamic\" enables dynamic linking.\n")
-    endif()
-
-    if(NOT DEFINED MPIEXEC_EXECUTABLE)
-      find_program(MPIEXEC_EXECUTABLE aprun)
-      if(NOT MPIEXEC_EXECUTABLE)
-        # For slurm use srun
-        find_program(MPIEXEC_EXECUTABLE srun)
-      endif(NOT MPIEXEC_EXECUTABLE)
-    endif()
-  else()
-    if($ENV{CRAYPE_VERSION} MATCHES "." AND BASE_CXX_COMPILER_NAME STREQUAL "CC")
-      message(
-        FATAL_ERROR
-          "Cray compiler wrapper detected. Empty the build folder and rerun cmake with -DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment added."
-      )
-    endif()
   endif()
 
   include(inspectCompiler)
@@ -318,7 +244,13 @@ include(TestCxx17Library)
 #-----------------------------------------------------------------------
 # SETUP SANITIZERS FLAGS
 #-----------------------------------------------------------------------
-if(NOT "${ENABLE_SANITIZER}" STREQUAL "none")
+if(ENABLE_SANITIZER)
+  message(STATUS "Enable sanitizer ENABLE_SANITIZER=${ENABLE_SANITIZER}")
+  # Perform sanitizer option check
+  if(NOT ENABLE_SANITIZER IN_LIST VALID_SANITIZERS)
+    message(FATAL_ERROR "Invalid ENABLE_SANITIZER input, value must be one of ${VALID_SANITIZERS}")
+  endif()
+
   if(NOT ${COMPILER} MATCHES "GNU" AND NOT ${COMPILER} MATCHES "Clang")
     message(FATAL_ERROR "-DENABLE_SANITIZER=${ENABLE_SANITIZER} only works with GNU or Clang compilers")
   endif()
@@ -327,6 +259,16 @@ if(NOT "${ENABLE_SANITIZER}" STREQUAL "none")
     set(CMAKE_CXX_FLAGS_SAN
         "-fsanitize=address -fno-optimize-sibling-calls -fsanitize-address-use-after-scope -fno-omit-frame-pointer"
         CACHE STRING "AddressSanitizer C++ compiler builds." FORCE)
+    if(NOT DEFINED LSAN_OPTIONS)
+      if(QMC_MPI)
+        set(LSAN_OPTIONS "suppressions=${PROJECT_SOURCE_DIR}/config/sanitizers/lsan_mpi.supp")
+      else()
+        set(LSAN_OPTIONS "")
+      endif()
+    endif()
+    if(LSAN_OPTIONS)
+      message(STATUS "Set environment variable LSAN_OPTIONS for CTest: ${LSAN_OPTIONS}")
+    endif()
   elseif("${ENABLE_SANITIZER}" STREQUAL "ubsan")
     set(CMAKE_CXX_FLAGS_SAN
         "-fsanitize=undefined"
@@ -339,6 +281,10 @@ if(NOT "${ENABLE_SANITIZER}" STREQUAL "none")
     set(CMAKE_CXX_FLAGS_SAN
         "-fsanitize=thread"
         CACHE STRING "ThreadSanitizer C++ compiler builds." FORCE)
+  elseif("${ENABLE_SANITIZER}" STREQUAL "typesan")
+    set(CMAKE_CXX_FLAGS_SAN
+        "-fsanitize=type"
+        CACHE STRING "TypeSanitizer C++ compiler builds." FORCE)
   endif()
 
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_SAN}")
@@ -800,7 +746,13 @@ if(ENABLE_ROCM)
         "This happens when the ROCm installation cannot be found by CMake. "
         "Rerun cmake with -DROCM_ROOT=<your ROCm installation root directory> added.")
   endif()
+
   find_package(hipblas CONFIG REQUIRED)
+  # Check for minimum required rocBLAS version
+  if(hipblas_VERSION VERSION_LESS "2.0.0")
+    message(FATAL_ERROR "QMCPACK requires hipBLAS minimum version 2.0.0 from ROCm 6.0. Detected ${hipblas_VERSION}.")
+  endif()
+
   find_package(rocsolver CONFIG REQUIRED)
   find_package(rocthrust CONFIG REQUIRED)
 
@@ -831,7 +783,10 @@ if(ENABLE_ROCM)
     target_link_libraries(ROCM::libraries INTERFACE roc::rocsolver roc::rocrand)
   endif()
   message("Project HIP_FLAGS: ${CMAKE_HIP_FLAGS}")
-  option(QMC_DISABLE_HIP_HOST_REGISTER "Disable hipHostRegister for pinning host memory" ON)
+  option(QMC_DISABLE_HIP_HOST_REGISTER "Disable hipHostRegister for pinning host memory" OFF)
+  if(QMC_DISABLE_HIP_HOST_REGISTER)
+    message(STATUS "Use of hipHostRegister disabled")
+  endif()
 endif(ENABLE_ROCM)
 
 if(USE_NVTX_API AND QMC_CUDA2HIP)
@@ -849,9 +804,9 @@ if(USE_NVTX_API AND QMC_CUDA2HIP)
 endif(USE_NVTX_API AND QMC_CUDA2HIP)
 
 #-------------------------------------------------------------------
-#  set up HIP compiler options
+#  set up AFQMC-specific HIP compiler options
 #-------------------------------------------------------------------
-if(ENABLE_HIP)
+if(BUILD_AFQMC_HIP)
   if(NOT ENABLE_ROCM)
     message(FATAL_ERROR "ROCM is required to use HIP. Please set ENABLE_ROCM=ON.")
   endif()
@@ -860,7 +815,7 @@ if(ENABLE_HIP)
   add_library(HIP::HIP INTERFACE IMPORTED)
   # temporarily put hipsparse hipblas here for convenience, should be moved to Platforms.
   target_link_libraries(HIP::HIP INTERFACE roc::hipsparse roc::hipblas)
-  target_compile_definitions(HIP::HIP INTERFACE "ENABLE_HIP")
+  target_compile_definitions(HIP::HIP INTERFACE "BUILD_AFQMC_HIP")
 
   # FindHIP sets HIP_PLATFORM to amd or nvcc
   message(STATUS "FindHIP determined HIP_PLATFORM is ${HIP_PLATFORM}.")
@@ -871,7 +826,7 @@ if(ENABLE_HIP)
   else()
     message(FATAL_ERROR "Unknown HIP platform ${HIP_PLATFORM} only support 'amd' or 'nvcc'")
   endif()
-endif(ENABLE_HIP)
+endif(BUILD_AFQMC_HIP)
 
 #-------------------------------------------------------------------
 #  set up SYCL compiler options and libraries
@@ -900,22 +855,24 @@ if(ENABLE_SYCL)
   endif()
 endif(ENABLE_SYCL)
 
-#--------------------------------------------------------------------
-#  Resolve Vendor(CUDA/HIP/SYCL) and OpenMP runtime incompatibilities
-#--------------------------------------------------------------------
+#-----------------------------------------------------
+#  Resolve Vendor and OpenMP runtime incompatibilities
+#-----------------------------------------------------
 # Some OpenMP offload runtime libraries have composibility issue with vendor native ones.
 # A workaround is making the vendor native runtime responsible for memory allocations and OpenMP associate/disassocate them.
-set(QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT OFF)
-if(ENABLE_OFFLOAD)
+# CUDA/HIP/SYCL supported
+if(${COMPILER} MATCHES "Clang" AND QMC_CUDA2HIP AND ENABLE_OFFLOAD)
   # Known issue HIP<5.5 https://github.com/ROCm/aomp/issues/253
-  message("check ${COMPILER} ${QMC_CUDA2HIP} ${hip_VERSION}")
-  if(${COMPILER} MATCHES "Clang" AND QMC_CUDA2HIP AND hip_VERSION VERSION_LESS "5.5")
-    set(QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT ON)
-  endif()
+  # Known performance issue remains in 6.3.3
+  set(QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT ON)
+else()
+  set(QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT OFF)
 endif()
-cmake_dependent_option(QMC_OFFLOAD_MEM_ASSOCIATED "Manage OpenMP memory allocations via the vendor runtime"
-  ${QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT} "ENABLE_OFFLOAD;ENABLE_CUDA" OFF)
-
+cmake_dependent_option(QMC_OFFLOAD_MEM_ASSOCIATED "Use omp_target_associate_ptr instead of direct OpenMP offload maps in dual-space allocators"
+                       ${QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT} "ENABLE_OFFLOAD;ENABLE_CUDA OR ENABLE_SYCL" OFF)
+if(QMC_OFFLOAD_MEM_ASSOCIATED)
+  message(STATUS "Use omp_target_associate_ptr instead of direct OpenMP offload maps in dual-space allocators")
+endif()
 
 #-------------------------------------------------------------------
 # set up VTune ittnotify library
@@ -941,6 +898,29 @@ if(USE_VTUNE_API)
   endif()
 else()
   message(STATUS "VTune ittnotify APIs disabled")
+endif()
+
+#-------------------------------------------------------------------
+# set up HPCToolkit library
+#-------------------------------------------------------------------
+
+if(USE_HPCTOOLKIT_API)
+  message(STATUS "Enabling use of HPCToolkit start/stop APIs")
+  find_path(
+    HPCTOOLKIT_INCLUDE_DIR hpctoolkit.h
+    HINTS ${HPCTOOLKIT_ROOT} $ENV{HPCTOOLKIT_ROOT}
+    PATH_SUFFIXES include REQUIRED)
+  message(STATUS "Found HPCTOOLKIT_INCLUDE_DIR ${HPCTOOLKIT_INCLUDE_DIR}")
+  find_library(
+    HPCTOOLKIT_LIBRARY hpctoolkit
+    HINTS ${HPCTOOLKIT_ROOT} $ENV{HPCTOOLKIT_ROOT}
+    PATH_SUFFIXES lib64 lib REQUIRED)
+  message(STATUS "Found HPCTOOLKIT_LIBRARY ${HPCTOOLKIT_LIBRARY}")
+
+  include_directories(${HPCTOOLKIT_INCLUDE_DIR})
+  link_libraries(${HPCTOOLKIT_LIBRARY})
+else()
+  message(STATUS "HPCToolkit start/stop APIs disabled")
 endif()
 
 #-------------------------------------------------------------------

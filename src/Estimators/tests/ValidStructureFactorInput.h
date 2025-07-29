@@ -17,7 +17,7 @@ namespace qmcplusplus
 namespace testing
 {
 
-struct ValidStructureFactorInput
+class ValidStructureFactorInput
 {
   /** The first will produce the legacy sk estimator behavior
    *  The second will produce the skall behavior
@@ -27,21 +27,25 @@ struct ValidStructureFactorInput
 <estimator type="StructureFactor" name="sk1" hdf5="yes"/>
 )XML",
       R"XML(
-<estimator type="StructureFactor" name="sk1" source="ion0" target="e" writerho="yes" hdf5="yes"/>
+<estimator type="StructureFactor" name="sk1" source="ion" target="e" writerho="yes" hdf5="yes"/>
 )XML",
       R"XML(
 <estimator type="StructureFactor" name="sk1" source="ion0" target="e" hdf5="yes" writerho="yes" writeionion="yes"/>
 )XML"};
 
-  enum valid
+public:
+  enum class valid
   {
-    SK,
+    SK = 0,
     SKALL,
     SKALL_IONION
   };
+  static std::string_view getXml(valid val) { return xml[static_cast<std::size_t>(val)]; }
+  auto begin() { return xml.begin(); }
+  auto end() { return xml.end(); }
 };
 
-struct InvalidStructureFactorInput
+class InvalidStructureFactorInput
 {
   /** Invalid input sections
    *  writerho without explicit source and target
@@ -54,6 +58,10 @@ struct InvalidStructureFactorInput
       R"XML(
 <estimator type="StructureFactor" name="sk1" hdf5="yes" writeionion="yes"/>
 )XML"};
+
+public:
+  auto begin() { return xml.begin(); }
+  auto end() { return xml.end(); }
 };
 
 } // namespace testing

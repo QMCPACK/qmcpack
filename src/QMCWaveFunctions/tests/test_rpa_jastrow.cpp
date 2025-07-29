@@ -17,7 +17,7 @@
 #include "Particle/ParticleSet.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/Jastrow/RPAJastrow.h"
-#include "ParticleBase/ParticleAttribOps.h"
+#include "CPU/VectorOps.h"
 #include "ParticleIO/LatticeIO.h"
 
 
@@ -52,7 +52,7 @@ TEST_CASE("RPA Jastrow", "[wavefunction]")
   xmlNodePtr part1 = xmlFirstElementChild(root);
 
   // read lattice
-  ParticleSet::ParticleLayout lattice;
+  Lattice lattice;
   LatticeParser lp(lattice);
   lp.put(part1);
   lattice.print(app_log(), 0);

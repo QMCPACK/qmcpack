@@ -35,7 +35,7 @@ TEST_CASE("Spline applyRotation zero rotation", "[wavefunction]")
   Communicate* c = OHMMS::Controller;
 
   // diamondC_1x1x1
-  ParticleSet::ParticleLayout lattice;
+  Lattice lattice;
   lattice.R = {3.37316115, 3.37316115, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
 
   ParticleSetPool ptcl = ParticleSetPool(c);
@@ -65,7 +65,7 @@ TEST_CASE("Spline applyRotation zero rotation", "[wavefunction]")
   // Load diamondC_1x1x1 wfn and explicitly construct a SplineC2C object with 7 orbitals
   // This results in padding of the spline coefs table and thus is a more stringent test.
   const char* particles = R"(
-<sposet_collection type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" gpu="no" precision="double">
+<sposet_collection type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" precision="double">
   <sposet name="updet" size="7"/>
 </sposet_collection>)";
 
@@ -171,7 +171,7 @@ TEST_CASE("Spline applyRotation one rotation", "[wavefunction]")
   Communicate* c = OHMMS::Controller;
 
   // diamondC_1x1x1
-  ParticleSet::ParticleLayout lattice;
+  Lattice lattice;
   lattice.R = {3.37316115, 3.37316115, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
 
   ParticleSetPool ptcl = ParticleSetPool(c);
@@ -201,7 +201,7 @@ TEST_CASE("Spline applyRotation one rotation", "[wavefunction]")
   // Load diamondC_1x1x1 wfn and explicitly construct a SplineC2C object with 7 orbitals
   // This results in padding of the spline coefs table and thus is a more stringent test.
   const char* particles = R"(
-<sposet_collection type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" gpu="no" precision="double">
+<sposet_collection type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" precision="double">
   <sposet name="updet" size="7"/>
 </sposet_collection>)";
 
@@ -380,7 +380,7 @@ TEST_CASE("Spline applyRotation two rotations", "[wavefunction]")
   Communicate* c = OHMMS::Controller;
 
   // diamondC_1x1x1
-  ParticleSet::ParticleLayout lattice;
+  Lattice lattice;
   lattice.R = {3.37316115, 3.37316115, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
 
   ParticleSetPool ptcl = ParticleSetPool(c);
@@ -410,7 +410,7 @@ TEST_CASE("Spline applyRotation two rotations", "[wavefunction]")
   // Load diamondC_1x1x1 wfn and explicitly construct a SplineC2C object with 7 orbitals
   // This results in padding of the spline coefs table and thus is a more stringent test.
   const char* particles = R"(
-<sposet_collection type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" gpu="no" precision="double">
+<sposet_collection type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" precision="double">
   <sposet name="updet" size="7"/>
 </sposet_collection>)";
 
@@ -684,7 +684,7 @@ TEST_CASE("Spline applyRotation complex rotation", "[wavefunction]")
   Communicate* c = OHMMS::Controller;
 
   // diamondC_1x1x1
-  ParticleSet::ParticleLayout lattice;
+  Lattice lattice;
   lattice.R = {3.37316115, 3.37316115, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
 
   ParticleSetPool ptcl = ParticleSetPool(c);
@@ -714,7 +714,7 @@ TEST_CASE("Spline applyRotation complex rotation", "[wavefunction]")
   // Load diamondC_1x1x1 wfn and explicitly construct a SplineC2C object with 7 orbitals
   // This results in padding of the spline coefs table and thus is a more stringent test.
   const char* particles = R"(
-<sposet_collection type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" gpu="no" precision="double">
+<sposet_collection type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" precision="double">
   <sposet name="updet" size="7"/>
 </sposet_collection>)";
 

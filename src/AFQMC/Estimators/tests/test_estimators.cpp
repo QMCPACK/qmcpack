@@ -249,7 +249,7 @@ TEST_CASE("reduced_density_matrix", "[estimators]")
     infoLog.pause();
   auto node = world.split_shared(world.rank());
 
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
   arch::INIT(node);
   using Alloc = device::device_allocator<ComplexType>;
 #else

@@ -132,7 +132,7 @@ public:
     }
     const std::string& get_p1() const { return p1_; }
     const std::string& get_p2() const { return p2_; }
-    const Real get_fraction() const { return fraction_; }
+    Real get_fraction() const { return fraction_; }
   private:
     SpaceGridOriginInputSection input_section_;
     std::string p1_{"zero"};

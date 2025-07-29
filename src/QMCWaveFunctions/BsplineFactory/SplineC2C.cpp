@@ -141,15 +141,15 @@ void SplineC2C<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_co
         // cur_elem points to the real componend of the coefficient.
         // Imag component is adjacent in memory.
         const auto cur_elem = Nsplines * i + 2 * j;
-        ST newval_r{0.};
-        ST newval_i{0.};
+        RealType newval_r{0.};
+        RealType newval_i{0.};
         for (IndexType k = 0; k < OrbitalSetSize; k++)
         {
           const auto index = Nsplines * i + 2 * k;
           ST zr            = (*coef_copy_)[index];
           ST zi            = (*coef_copy_)[index + 1];
-          ST wr            = rot_mat[k][j].real();
-          ST wi            = rot_mat[k][j].imag();
+          auto wr          = rot_mat[k][j].real();
+          auto wi          = rot_mat[k][j].imag();
           newval_r += zr * wr - zi * wi;
           newval_i += zr * wi + zi * wr;
         }
@@ -157,6 +157,8 @@ void SplineC2C<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_co
         spl_coefs[cur_elem + 1] = newval_i;
       }
   }
+  // update coefficients on GPU from host
+  SplineInst->finalize();
 }
 
 template<typename ST>

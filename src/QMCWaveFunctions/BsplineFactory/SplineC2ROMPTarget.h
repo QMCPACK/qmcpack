@@ -148,7 +148,7 @@ public:
 
   std::unique_ptr<SPOSet> makeClone() const override { return std::make_unique<SplineC2ROMPTarget>(*this); }
 
-  inline void resizeStorage(size_t n, size_t nvals)
+  inline void resizeStorage(size_t n) override
   {
     init_base(n);
     size_t npad = getAlignedSize<ST>(2 * n);

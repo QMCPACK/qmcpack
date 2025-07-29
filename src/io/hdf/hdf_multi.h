@@ -14,11 +14,12 @@
 
 #include <multi/array.hpp>
 #include <multi/array_ref.hpp>
+#include "container_traits_multi.h"
 #include "hdf_dataproxy.h"
 #include "hdf_hyperslab.h"
 
 #ifdef BUILD_AFQMC
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
 #include "AFQMC/Memory/device_pointers.hpp"
 #endif
 #endif
@@ -151,7 +152,7 @@ struct h5data_proxy<boost::multi::array_ref<T, 2, Ptr>> : public h5_space_type<T
 
 
 #ifdef BUILD_AFQMC
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
 // Specializations for cuda_gpu_allocator
 // Need buffered I/O and copies to gpu
 template<typename T>

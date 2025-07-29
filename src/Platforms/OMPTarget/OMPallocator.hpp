@@ -19,13 +19,14 @@
 #include <type_traits>
 #include <atomic>
 #include "config.h"
-#include "allocator_traits.hpp"
+#include "Common/allocator_traits.hpp"
 #if defined(ENABLE_OFFLOAD)
 #include <omp.h>
 #endif
 
 #if defined(QMC_OFFLOAD_MEM_ASSOCIATED)
-#include <CUDA/CUDAruntime.hpp>
+#include <VendorKind.hpp>
+#include <MemManageAlias.hpp>
 #endif
 
 namespace qmcplusplus
@@ -86,7 +87,7 @@ struct OMPallocator : public HostAllocator
     static_assert(std::is_same<T, value_type>::value, "OMPallocator and HostAllocator data types must agree!");
     value_type* pt = HostAllocator::allocate(n);
 #if defined(QMC_OFFLOAD_MEM_ASSOCIATED)
-    cudaErrorCheck(cudaMalloc(&device_ptr_, n * sizeof(T)), "cudaMalloc failed in OMPallocator!");
+    compute::MemManage<VendorKind>::mallocDevice((void **)&device_ptr_, n * sizeof(T));
     const int status = omp_target_associate_ptr(pt, device_ptr_, n * sizeof(T), 0, omp_get_default_device());
     if (status != 0)
       throw std::runtime_error("omp_target_associate_ptr failed in OMPallocator!");
@@ -106,7 +107,7 @@ struct OMPallocator : public HostAllocator
     const int status       = omp_target_disassociate_ptr(pt, omp_get_default_device());
     if (status != 0)
       throw std::runtime_error("omp_target_disassociate_ptr failed in OMPallocator!");
-    cudaErrorCheck(cudaFree(device_ptr_from_omp), "cudaFree failed in OMPallocator!");
+    compute::MemManage<VendorKind>::freeDevice(device_ptr_from_omp);
 #else
     PRAGMA_OFFLOAD("omp target exit data map(delete:pt[0:n])")
 #endif
@@ -243,26 +244,6 @@ public:
   template<class U>
   static void destroy(U* p)
   {}
-
-  void copyToDevice(T* device_ptr, T* host_ptr, size_t n)
-  {
-    const auto host_id = omp_get_initial_device();
-    if (omp_target_memcpy(device_ptr, host_ptr, n, 0, 0, omp_get_default_device(), host_id))
-      throw std::runtime_error("omp_target_memcpy failed in copyToDevice");
-  }
-
-  void copyFromDevice(T* host_ptr, T* device_ptr, size_t n)
-  {
-    const auto host_id = omp_get_initial_device();
-    if (omp_target_memcpy(host_ptr, device_ptr, n, 0, 0, host_id, omp_get_default_device()))
-      throw std::runtime_error("omp_target_memcpy failed in copyToDevice");
-  }
-
-  void copyDeviceToDevice(T* to_ptr, size_t n, T* from_ptr)
-  {
-    if (omp_target_memcpy(to_ptr, from_ptr, n, 0, 0, omp_get_default_device(), omp_get_default_device()))
-      throw std::runtime_error("omp_target_memcpy failed in copyToDevice");
-  }
 };
 
 template<class T1, class T2>

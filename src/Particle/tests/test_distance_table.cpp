@@ -21,7 +21,7 @@
 #include "ParticleIO/LatticeIO.h"
 #include "Particle/DistanceTable.h"
 #include <ResourceCollection.h>
-#include "MinimalParticlePool.h"
+#include <MinimalParticlePool.h>
 
 using std::string;
 
@@ -338,7 +338,7 @@ SimulationCell parse_pbc_fcc_lattice()
   xmlNodePtr part1 = xmlFirstElementChild(root);
 
   // read lattice
-  ParticleSet::ParticleLayout lattice;
+  Lattice lattice;
   LatticeParser lp(lattice);
   lp.put(part1);
   lattice.print(app_log(), 0);
@@ -371,7 +371,7 @@ SimulationCell parse_pbc_lattice()
   xmlNodePtr part1 = xmlFirstElementChild(root);
 
   // read lattice
-  ParticleSet::ParticleLayout lattice;
+  Lattice lattice;
   LatticeParser lp(lattice);
   lp.put(part1);
   lattice.print(app_log(), 0);

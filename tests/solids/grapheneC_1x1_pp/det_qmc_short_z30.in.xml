@@ -4,6 +4,7 @@
     <application name="qmcapp" role="molecu" class="serial" version="0.2">
       Optimization of jastrows for Gr-S1
     </application>
+    <parameter name="driver_version">legacy</parameter>
   </project>
 
   <random seed="285"/>

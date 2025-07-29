@@ -1,6 +1,6 @@
 #!/bin/bash
 # This recipe is intended for ALCF Aurora https://www.alcf.anl.gov/support-center/aurora-sunspot
-# last revision: Sep 23th 2024
+# last revision: Jul 11th 2025
 #
 # How to invoke this script?
 # build_alcf_aurora_icpx.sh # build all the variants assuming the current directory is the source directory.
@@ -12,9 +12,15 @@ do
   if module is-loaded $module_name ; then module unload $module_name; fi
 done
 
-module load oneapi/eng-compiler/2024.07.30.002
-module load cmake hdf5/1.14.3 boost/1.84.0
+module load oneapi/release/2025.0.5
+module load cmake hdf5 boost
 module list >& module_list.txt
+
+# unset the following to desensitize CMake to modules/environment variables.
+unset CPATH
+unset LIBRARY_PATH
+unset C_INCLUDE_PATH
+unset CPLUS_INCLUDE_PATH
 
 echo "**********************************"
 echo '$ icpx -v'
@@ -23,7 +29,7 @@ echo "**********************************"
 
 TYPE=Release
 Machine=aurora
-Compiler=icpx20240629
+Compiler=oneapi2025.0.5
 
 if [[ $# -eq 0 ]]; then
   source_folder=`pwd`
@@ -41,12 +47,11 @@ else
   exit
 fi
 
-for name in offload_sycl_real_MP offload_sycl_real offload_sycl_cplx_MP offload_sycl_cplx \
+for name in gpu_real_MP gpu_real gpu_cplx_MP gpu_cplx \
             cpu_real_MP cpu_real cpu_cplx_MP cpu_cplx
 do
 
 CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=$TYPE -DMPIEXEC_PREFLAGS='--cpu-bind;depth;-d;8'"
-unset CMAKE_CXX_FLAGS
 
 if [[ $name == *"cplx"* ]]; then
   CMAKE_FLAGS="$CMAKE_FLAGS -DQMC_COMPLEX=ON"
@@ -56,13 +61,8 @@ if [[ $name == *"_MP"* ]]; then
   CMAKE_FLAGS="$CMAKE_FLAGS -DQMC_MIXED_PRECISION=ON"
 fi
 
-if [[ $name == *"offload"* ]]; then
-  CMAKE_FLAGS="$CMAKE_FLAGS -DENABLE_OFFLOAD=ON -DQMC_GPU_ARCHS=pvc"
-  CMAKE_CXX_FLAGS="-mllvm -vpo-paropt-atomic-free-reduction-slm=true"
-fi
-
-if [[ $name == *"sycl"* ]]; then
-  CMAKE_FLAGS="$CMAKE_FLAGS -DENABLE_SYCL=ON"
+if [[ $name == *"gpu"* ]]; then
+  CMAKE_FLAGS="$CMAKE_FLAGS -DQMC_GPU_ARCHS=intel_gpu_pvc"
 fi
 
 folder=build_${Machine}_${Compiler}_${name}
@@ -74,15 +74,14 @@ fi
 echo "**********************************"
 echo "folder $folder"
 echo "CMAKE_FLAGS: $CMAKE_FLAGS"
-echo "CMAKE_CXX_FLAGS: $CMAKE_CXX_FLAGS"
 echo "**********************************"
 
 mkdir $folder
 cd $folder
 
 if [ ! -f CMakeCache.txt ] ; then
-cmake $CMAKE_FLAGS -DCMAKE_CXX_FLAGS="$CMAKE_CXX_FLAGS" \
-      -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx $source_folder
+cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx \
+      $CMAKE_FLAGS $source_folder
 fi
 
 if [[ -v install_folder ]]; then

@@ -125,7 +125,7 @@ public:
       }
       else if (cname == "n2r" || cname == "ontop2rdm")
       {
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
         std::string str("false");
         ParameterSet m_param;
         m_param.add(str, "use_host_memory");

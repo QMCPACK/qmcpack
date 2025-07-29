@@ -66,8 +66,8 @@ public:
   using DistRow  = DistanceTable::DistRow;
   using DisplRow = DistanceTable::DisplRow;
 
-  using GradDerivVec  = ParticleAttrib<QTFull::GradType>;
-  using ValueDerivVec = ParticleAttrib<QTFull::ValueType>;
+  using GradDerivVec  = Vector<QTFull::GradType>;
+  using ValueDerivVec = Vector<QTFull::ValueType>;
 
 protected:
   ///number of particles
@@ -109,6 +109,9 @@ private:
   std::map<std::string, std::unique_ptr<FT>> J2Unique;
   ///Container for \f$F[ig*NumGroups+jg]\f$. treat every pointer as a reference.
   std::vector<FT*> F;
+  ///optimizable variables extracted from functors
+  opt_variables_type myVars;
+
   /// e-e table ID
   const int my_table_ID_;
   // helper for compute J2 Chiesa KE correction

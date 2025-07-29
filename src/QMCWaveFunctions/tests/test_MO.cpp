@@ -20,6 +20,7 @@
 #include "QMCWaveFunctions/LCAO/LCAOrbitalBuilder.h"
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 #include <ResourceCollection.h>
+#include "OhmmsData/Libxml2Doc.h"
 
 namespace qmcplusplus
 {

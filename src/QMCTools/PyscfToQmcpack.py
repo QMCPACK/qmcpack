@@ -16,7 +16,7 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[],sp_twist=[],weight=1.
   import h5py, re, sys
   from collections import defaultdict
   from pyscf.pbc import gto, scf, df, dft
-  from pyscf import lib
+  from pyscf import lib, mcscf, fci
   from pyscf.pbc import tools
   from numpy import empty
   import numpy
@@ -576,49 +576,51 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[],sp_twist=[],weight=1.
   GroupParameter.create_dataset("numMO",(1,),dtype="i4",data=NbMO)
   GroupParameter.create_dataset("numAO",(1,),dtype="i4",data=NbAO)
   
-  make_multidet(cell,mf,title, H5_qmcpack)
+  is_multidet = isinstance(mf, (mcscf.casci.CASCI, mcscf.mc1step.CASSCF))
+
+  if is_multidet:
+    make_multidet(cell, mf, title, H5_qmcpack)
+    print(f'Multideterminant wavefunction saved to {title}_multidet.h5')
+
+  # Close the file before exiting
   H5_qmcpack.close()
 
   print ('Wavefunction successfully saved to QMCPACK HDF5 Format')
   print ('Use: "convert4qmc -orbitals  {}.h5" to generate QMCPACK input files'.format(title))
-  # Close the file before exiting
 
 
 def make_multidet(cell, mf, title, h5_handle):
-  from pyscf import mcscf
   import numpy
   import h5py, re, sys
-  possible_determinant_source =[mcscf.casci.CASCI, mcscf.mc1step.CASSCF]
-  if type(mf) in possible_determinant_source:
-    a = mf.fcisolver.large_ci(mf.ci, mf.ncas, mf.nelecas, tol=0.0, return_strs=True)
-    dets_a = []
-    dets_b = []
-    coeffs = []
-    cas_mo_start_a = cell.nelec[0]-mf.nelecas[0]
-    cas_mo_start_b = cell.nelec[1]-mf.nelecas[1]
-    n = 64 # chunk length
-    for idx,i in enumerate(a):
-        occ_a = numpy.array(list(i[1][2:]),dtype=int)
-        occ_b = numpy.array(list(i[2][2:]),dtype=int)
-        string_a = '0'*(len(mf.mo_coeff) - cas_mo_start_a - len(occ_a)) + i[1][2:] + '1'*cas_mo_start_a
-        string_b = '0'*(len(mf.mo_coeff) - cas_mo_start_b - len(occ_b)) + i[2][2:] + '1'*cas_mo_start_b
-        chunks_a = [int(string_a[j:j+n],2) for j in range(0, len(string_a), n)]
-        chunks_b = [int(string_b[j:j+n],2) for j in range(0, len(string_b), n)]
-        dets_a.append(chunks_a)
-        dets_b.append(chunks_b)
-        coeffs.append(i[0])
-    H5_qmcpack_multidet = h5py.File(title+'_multidet.h5','w')
-    groupApp=h5_handle.create_group("MultiDet")
-    dets_a = numpy.array(dets_a)
-    dets_b = numpy.array(dets_b)
+  a = mf.fcisolver.large_ci(mf.ci, mf.ncas, mf.nelecas, tol=0.0, return_strs=True)
+  dets_a = []
+  dets_b = []
+  coeffs = []
+  cas_mo_start_a = cell.nelec[0]-mf.nelecas[0]
+  cas_mo_start_b = cell.nelec[1]-mf.nelecas[1]
+  n = 64 # chunk length
+  for idx,i in enumerate(a):
+      occ_a = numpy.array(list(i[1][2:]),dtype=int)
+      occ_b = numpy.array(list(i[2][2:]),dtype=int)
+      string_a = '0'*(len(mf.mo_coeff) - cas_mo_start_a - len(occ_a)) + i[1][2:] + '1'*cas_mo_start_a
+      string_b = '0'*(len(mf.mo_coeff) - cas_mo_start_b - len(occ_b)) + i[2][2:] + '1'*cas_mo_start_b
+      chunks_a = [int(string_a[j:j+n],2) for j in range(0, len(string_a), n)]
+      chunks_b = [int(string_b[j:j+n],2) for j in range(0, len(string_b), n)]
+      dets_a.append(chunks_a)
+      dets_b.append(chunks_b)
+      coeffs.append(i[0])
+  H5_qmcpack_multidet = h5py.File(title+'_multidet.h5','w')
+  groupApp=H5_qmcpack_multidet.create_group("MultiDet")
+  dets_a = numpy.array(dets_a)
+  dets_b = numpy.array(dets_b)
 
-    dt = numpy.dtype(numpy.uint64)
-    groupApp.create_dataset('CI_Alpha',dets_a.shape,dtype=dt, data = dets_a)
-    groupApp.create_dataset('CI_Beta',dets_b.shape,dtype=dt, data = dets_b)
-    groupApp.create_dataset('Coeff', (len(coeffs),),dtype = float,data = coeffs)
-    groupApp.create_dataset('NbDet', (1,),dtype = "i4",data = len(coeffs))
-    groupApp.create_dataset('Nbits', (1,),dtype = "i4",data = len(dets_a[0]))
-    groupApp.create_dataset('nstate', (1,),dtype = "i4",data = mf.mo_coeff.shape[0])
-    groupApp.create_dataset('nexcitedstate', (1,),dtype = "i4",data = 2)
+  dt = numpy.dtype(numpy.uint64)
+  groupApp.create_dataset('CI_Alpha',dets_a.shape,dtype=dt, data = dets_a)
+  groupApp.create_dataset('CI_Beta',dets_b.shape,dtype=dt, data = dets_b)
+  groupApp.create_dataset('Coeff', (len(coeffs),),dtype = float,data = coeffs)
+  groupApp.create_dataset('NbDet', (1,),dtype = "i4",data = len(coeffs))
+  groupApp.create_dataset('Nbits', (1,),dtype = "i4",data = len(dets_a[0]))
+  groupApp.create_dataset('nstate', (1,),dtype = "i4",data = mf.mo_coeff.shape[0])
+  groupApp.create_dataset('nexcitedstate', (1,),dtype = "i4",data = 2)
 
-    H5_qmcpack_multidet.close()
+  H5_qmcpack_multidet.close()

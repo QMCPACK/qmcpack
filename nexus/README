@@ -77,7 +77,7 @@ Contents
    
    After adding this line, type "source $HOME/.bashrc".  Now check 
    that Nexus is available by typing "python" then "import nexus".
-   You should be able to use Nexus if the the import proceeds 
+   You should be able to use Nexus if the import proceeds 
    without incident (i.e. no messages displayed).
 
    The executables packaged with Nexus can be used once they are 

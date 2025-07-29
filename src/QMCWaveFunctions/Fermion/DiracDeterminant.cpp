@@ -29,29 +29,37 @@ namespace qmcplusplus
  *@param spos the single-particle orbital set
  *@param first index of the first particle
  */
-template<typename DU_TYPE>
-DiracDeterminant<DU_TYPE>::DiracDeterminant(std::unique_ptr<SPOSet>&& spos,
-                                            int first,
-                                            int last,
-                                            int ndelay,
-                                            DetMatInvertor matrix_inverter_kind)
-    : DiracDeterminantBase(getClassName(), std::move(spos), first, last),
+template<PlatformKind PL, typename VT, typename FPVT>
+DiracDeterminant<PL, VT, FPVT>::DiracDeterminant(SPOSet& phi,
+                                                 int first,
+                                                 int last,
+                                                 int ndelay,
+                                                 DetMatInvertor matrix_inverter_kind)
+    : DiracDeterminantBase(getClassName(), phi, first, last),
       ndelay_(ndelay),
       invRow_id(-1),
       matrix_inverter_kind_(matrix_inverter_kind)
 {
   resize(NumPtcls, NumPtcls);
 
-  RotatedSPOs* rot_spo = dynamic_cast<RotatedSPOs*>(Phi.get());
+  RotatedSPOs* rot_spo = dynamic_cast<RotatedSPOs*>(&phi_);
   if (rot_spo)
     rot_spo->buildOptVariables(NumPtcls);
 }
 
-template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::invertPsiM(const ValueMatrix& logdetT, ValueMatrix& invMat)
+template<PlatformKind PL, typename VT, typename FPVT>
+DiracDeterminant<PL, VT, FPVT>::~DiracDeterminant()
+{
+  if (!psiM.isAttached())
+    accel_engine_.update_eng_.releaseFromDeviceCopy(psiM);
+  accel_engine_.update_eng_.releaseFromDeviceCopy(psiM_temp);
+}
+
+template<PlatformKind PL, typename VT, typename FPVT>
+void DiracDeterminant<PL, VT, FPVT>::invertPsiM(const ValueMatrix& logdetT, ValueMatrix& invMat)
 {
   ScopedTimer local_timer(InverseTimer);
-  if (matrix_inverter_kind_ == DetMatInvertor::ACCEL)
+  if (matrix_inverter_kind_ == DetMatInvertor::ACCEL && AccelEngine<PL, VT, FPVT>::inverter_supported)
   {
     bool success        = false;
     int failure_counter = 0;
@@ -59,7 +67,10 @@ void DiracDeterminant<DU_TYPE>::invertPsiM(const ValueMatrix& logdetT, ValueMatr
     {
       try
       {
-        updateEng.invert_transpose(logdetT, invMat, log_value_);
+        if constexpr (AccelEngine<PL, VT, FPVT>::inverter_supported)
+          accel_engine_.update_eng_.invert_transpose(accel_engine_.inverter_, logdetT, invMat, log_value_);
+        else
+          throw std::runtime_error("DiracDeterminan::invertPsiM report bug invalid code path!");
         if (failure_counter > 0)
         {
           std::ostringstream success_msg;
@@ -98,27 +109,34 @@ void DiracDeterminant<DU_TYPE>::invertPsiM(const ValueMatrix& logdetT, ValueMatr
   else
   {
     host_inverter_.invert_transpose(logdetT, invMat, log_value_);
-    updateEng.initializeInv(psiM);
+    accel_engine_.update_eng_.initializeInv(invMat);
   }
 }
 
 
 ///reset the size: with the number of particles and number of orbtials
-template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::resize(int nel, int morb)
+template<PlatformKind PL, typename VT, typename FPVT>
+void DiracDeterminant<PL, VT, FPVT>::resize(int nel, int morb)
 {
   if (Bytes_in_WFBuffer > 0)
     throw std::runtime_error("DiracDeterimnant just went out of sync with buffer");
   int norb = morb;
   if (norb <= 0)
     norb = nel; // for morb == -1 (default)
-  updateEng.resize(norb, ndelay_);
+
+  accel_engine_.update_eng_.releaseFromDeviceCopy(psiM);
+  accel_engine_.update_eng_.releaseFromDeviceCopy(psiM_temp);
+
+  accel_engine_.update_eng_.resize(norb, ndelay_);
   psiM.resize(nel, norb);
   dpsiM.resize(nel, norb);
   d2psiM.resize(nel, norb);
   psiV.resize(norb);
   invRow.resize(norb);
   psiM_temp.resize(nel, norb);
+
+  accel_engine_.update_eng_.prepareForDeviceCopy(psiM);
+  accel_engine_.update_eng_.prepareForDeviceCopy(psiM_temp);
 
   dpsiV.resize(NumOrbitals);
   dspin_psiV.resize(NumOrbitals);
@@ -127,29 +145,30 @@ void DiracDeterminant<DU_TYPE>::resize(int nel, int morb)
   LastAddressOfdV  = FirstAddressOfdV + NumPtcls * NumOrbitals * DIM;
 }
 
-template<typename DU_TYPE>
-typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad(ParticleSet& P, int iat)
+template<PlatformKind PL, typename VT, typename FPVT>
+typename DiracDeterminant<PL, VT, FPVT>::GradType DiracDeterminant<PL, VT, FPVT>::evalGrad(ParticleSet& P, int iat)
 {
   ScopedTimer local_timer(RatioTimer);
   const int WorkingIndex = iat - FirstIndex;
   assert(WorkingIndex >= 0);
   invRow_id = WorkingIndex;
-  updateEng.getInvRow(psiM, WorkingIndex, invRow);
+  accel_engine_.update_eng_.getInvRow(psiM, WorkingIndex, invRow);
   GradType g = simd::dot(invRow.data(), dpsiM[WorkingIndex], invRow.size());
   return g;
 }
 
-template<typename DU_TYPE>
-typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGradWithSpin(ParticleSet& P,
-                                                                                         int iat,
-                                                                                         ComplexType& spingrad)
+template<PlatformKind PL, typename VT, typename FPVT>
+typename DiracDeterminant<PL, VT, FPVT>::GradType DiracDeterminant<PL, VT, FPVT>::evalGradWithSpin(
+    ParticleSet& P,
+    int iat,
+    ComplexType& spingrad)
 {
-  Phi->evaluate_spin(P, iat, psiV, dspin_psiV);
+  phi_.evaluate_spin(P, iat, psiV, dspin_psiV);
   ScopedTimer local_timer(RatioTimer);
   const int WorkingIndex = iat - FirstIndex;
   assert(WorkingIndex >= 0);
   invRow_id = WorkingIndex;
-  updateEng.getInvRow(psiM, WorkingIndex, invRow);
+  accel_engine_.update_eng_.getInvRow(psiM, WorkingIndex, invRow);
   GradType g         = simd::dot(invRow.data(), dpsiM[WorkingIndex], invRow.size());
   ComplexType spin_g = simd::dot(invRow.data(), dspin_psiV.data(), invRow.size());
   spingrad += spin_g;
@@ -157,20 +176,21 @@ typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad
   return g;
 }
 
-template<typename DU_TYPE>
-typename DiracDeterminant<DU_TYPE>::PsiValue DiracDeterminant<DU_TYPE>::ratioGrad(ParticleSet& P,
-                                                                                  int iat,
-                                                                                  GradType& grad_iat)
+template<PlatformKind PL, typename VT, typename FPVT>
+typename DiracDeterminant<PL, VT, FPVT>::PsiValue DiracDeterminant<PL, VT, FPVT>::ratioGrad(ParticleSet& P,
+                                                                                            int iat,
+                                                                                            GradType& grad_iat)
 {
   {
     ScopedTimer local_timer(SPOVGLTimer);
-    Phi->evaluateVGL(P, iat, psiV, dpsiV, d2psiV);
+    phi_.evaluateVGL(P, iat, psiV, dpsiV, d2psiV);
   }
   return ratioGrad_compute(iat, grad_iat);
 }
 
-template<typename DU_TYPE>
-typename DiracDeterminant<DU_TYPE>::PsiValue DiracDeterminant<DU_TYPE>::ratioGrad_compute(int iat, GradType& grad_iat)
+template<PlatformKind PL, typename VT, typename FPVT>
+typename DiracDeterminant<PL, VT, FPVT>::PsiValue DiracDeterminant<PL, VT, FPVT>::ratioGrad_compute(int iat,
+                                                                                                    GradType& grad_iat)
 {
   ScopedTimer local_timer(RatioTimer);
 
@@ -184,7 +204,7 @@ typename DiracDeterminant<DU_TYPE>::PsiValue DiracDeterminant<DU_TYPE>::ratioGra
   if (invRow_id != WorkingIndex)
   {
     invRow_id = WorkingIndex;
-    updateEng.getInvRow(psiM, WorkingIndex, invRow);
+    accel_engine_.update_eng_.getInvRow(psiM, WorkingIndex, invRow);
   }
   curRatio = simd::dot(invRow.data(), psiV.data(), invRow.size());
   grad_iat += static_cast<ValueType>(static_cast<PsiValue>(1.0) / curRatio) *
@@ -192,15 +212,16 @@ typename DiracDeterminant<DU_TYPE>::PsiValue DiracDeterminant<DU_TYPE>::ratioGra
   return curRatio;
 }
 
-template<typename DU_TYPE>
-typename DiracDeterminant<DU_TYPE>::PsiValue DiracDeterminant<DU_TYPE>::ratioGradWithSpin(ParticleSet& P,
-                                                                                          int iat,
-                                                                                          GradType& grad_iat,
-                                                                                          ComplexType& spingrad_iat)
+template<PlatformKind PL, typename VT, typename FPVT>
+typename DiracDeterminant<PL, VT, FPVT>::PsiValue DiracDeterminant<PL, VT, FPVT>::ratioGradWithSpin(
+    ParticleSet& P,
+    int iat,
+    GradType& grad_iat,
+    ComplexType& spingrad_iat)
 {
   {
     ScopedTimer local_timer(SPOVGLTimer);
-    Phi->evaluateVGL_spin(P, iat, psiV, dpsiV, d2psiV, dspin_psiV);
+    phi_.evaluateVGL_spin(P, iat, psiV, dpsiV, d2psiV, dspin_psiV);
   }
 
   {
@@ -214,7 +235,7 @@ typename DiracDeterminant<DU_TYPE>::PsiValue DiracDeterminant<DU_TYPE>::ratioGra
     if (invRow_id != WorkingIndex)
     {
       invRow_id = WorkingIndex;
-      updateEng.getInvRow(psiM, WorkingIndex, invRow);
+      accel_engine_.update_eng_.getInvRow(psiM, WorkingIndex, invRow);
     }
     curRatio = simd::dot(invRow.data(), psiV.data(), invRow.size());
     grad_iat += static_cast<ValueType>(static_cast<PsiValue>(1.0) / curRatio) *
@@ -227,16 +248,16 @@ typename DiracDeterminant<DU_TYPE>::PsiValue DiracDeterminant<DU_TYPE>::ratioGra
   return curRatio;
 }
 
-template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                             const RefVectorWithLeader<ParticleSet>& p_list,
-                                             int iat,
-                                             std::vector<PsiValue>& ratios,
-                                             std::vector<GradType>& grad_new) const
+template<PlatformKind PL, typename VT, typename FPVT>
+void DiracDeterminant<PL, VT, FPVT>::mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                                  const RefVectorWithLeader<ParticleSet>& p_list,
+                                                  int iat,
+                                                  std::vector<PsiValue>& ratios,
+                                                  std::vector<GradType>& grad_new) const
 {
   {
     ScopedTimer local_timer(SPOVGLTimer);
-    RefVectorWithLeader<SPOSet> phi_list(*Phi);
+    RefVectorWithLeader<SPOSet> phi_list(phi_);
     phi_list.reserve(wfc_list.size());
     RefVector<ValueVector> psi_v_list;
     psi_v_list.reserve(wfc_list.size());
@@ -247,25 +268,24 @@ void DiracDeterminant<DU_TYPE>::mw_ratioGrad(const RefVectorWithLeader<WaveFunct
 
     for (WaveFunctionComponent& wfc : wfc_list)
     {
-      auto& det = static_cast<DiracDeterminant<DU_TYPE>&>(wfc);
-      phi_list.push_back(*det.Phi);
+      auto& det = static_cast<DiracDeterminant<PL, VT, FPVT>&>(wfc);
+      phi_list.push_back(det.phi_);
       psi_v_list.push_back(det.psiV);
       dpsi_v_list.push_back(det.dpsiV);
       d2psi_v_list.push_back(det.d2psiV);
     }
 
-    Phi->mw_evaluateVGL(phi_list, p_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list);
+    phi_.mw_evaluateVGL(phi_list, p_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list);
   }
 
   for (int iw = 0; iw < wfc_list.size(); iw++)
-    ratios[iw] = wfc_list.getCastedElement<DiracDeterminant<DU_TYPE>>(iw).ratioGrad_compute(iat, grad_new[iw]);
+    ratios[iw] = wfc_list.getCastedElement<DiracDeterminant<PL, VT, FPVT>>(iw).ratioGrad_compute(iat, grad_new[iw]);
 }
-
 
 /** move was accepted, update the real container
 */
-template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
+template<PlatformKind PL, typename VT, typename FPVT>
+void DiracDeterminant<PL, VT, FPVT>::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 {
   if (curRatio == PsiValue(0))
   {
@@ -277,9 +297,9 @@ void DiracDeterminant<DU_TYPE>::acceptMove(ParticleSet& P, int iat, bool safe_to
   const int WorkingIndex = iat - FirstIndex;
   assert(WorkingIndex >= 0);
   log_value_ += convertValueToLog(curRatio);
-  updateEng.acceptRow(psiM, WorkingIndex, psiV, curRatio);
+  accel_engine_.update_eng_.acceptRow(psiM, WorkingIndex, psiV, curRatio);
   if (!safe_to_delay)
-    updateEng.updateInvMat(psiM);
+    accel_engine_.update_eng_.updateInvMat(psiM);
   // invRow becomes invalid after accepting a move
   invRow_id = -1;
   if (UpdateMode == ORB_PBYP_PARTIAL)
@@ -292,30 +312,30 @@ void DiracDeterminant<DU_TYPE>::acceptMove(ParticleSet& P, int iat, bool safe_to
 
 /** move was rejected. copy the real container to the temporary to move on
 */
-template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::restore(int iat)
+template<PlatformKind PL, typename VT, typename FPVT>
+void DiracDeterminant<PL, VT, FPVT>::restore(int iat)
 {
   curRatio = 1.0;
 }
 
-template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::completeUpdates()
+template<PlatformKind PL, typename VT, typename FPVT>
+void DiracDeterminant<PL, VT, FPVT>::completeUpdates()
 {
   ScopedTimer local_timer(UpdateTimer);
   // invRow becomes invalid after updating the inverse matrix
   invRow_id = -1;
-  updateEng.updateInvMat(psiM);
+  accel_engine_.update_eng_.updateInvMat(psiM);
 }
 
-template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::updateAfterSweep(const ParticleSet& P,
-                                                 ParticleSet::ParticleGradient& G,
-                                                 ParticleSet::ParticleLaplacian& L)
+template<PlatformKind PL, typename VT, typename FPVT>
+void DiracDeterminant<PL, VT, FPVT>::updateAfterSweep(const ParticleSet& P,
+                                                      ParticleSet::ParticleGradient& G,
+                                                      ParticleSet::ParticleLaplacian& L)
 {
   if (UpdateMode == ORB_PBYP_RATIO)
   { //need to compute dpsiM and d2psiM. Do not touch psiM!
     ScopedTimer local_timer(SPOVGLTimer);
-    Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp, dpsiM, d2psiM);
+    phi_.evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp, dpsiM, d2psiM);
     UpdateMode = ORB_WALKER;
   }
 
@@ -328,8 +348,8 @@ void DiracDeterminant<DU_TYPE>::updateAfterSweep(const ParticleSet& P,
   }
 }
 
-template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::registerData(ParticleSet& P, WFBufferType& buf)
+template<PlatformKind PL, typename VT, typename FPVT>
+void DiracDeterminant<PL, VT, FPVT>::registerData(ParticleSet& P, WFBufferType& buf)
 {
   if (Bytes_in_WFBuffer == 0)
   {
@@ -340,6 +360,7 @@ void DiracDeterminant<DU_TYPE>::registerData(ParticleSet& P, WFBufferType& buf)
     buf.add(d2psiM.first_address(), d2psiM.last_address());
     Bytes_in_WFBuffer = buf.current() - Bytes_in_WFBuffer;
     // free local space
+    accel_engine_.update_eng_.releaseFromDeviceCopy(psiM);
     psiM.free();
     dpsiM.free();
     d2psiM.free();
@@ -357,11 +378,12 @@ void DiracDeterminant<DU_TYPE>::registerData(ParticleSet& P, WFBufferType& buf)
   buf.add(log_value_);
 }
 
-template<typename DU_TYPE>
-typename DiracDeterminant<DU_TYPE>::LogValue DiracDeterminant<DU_TYPE>::evaluateGL(const ParticleSet& P,
-                                                                                   ParticleSet::ParticleGradient& G,
-                                                                                   ParticleSet::ParticleLaplacian& L,
-                                                                                   bool fromscratch)
+template<PlatformKind PL, typename VT, typename FPVT>
+typename DiracDeterminant<PL, VT, FPVT>::LogValue DiracDeterminant<PL, VT, FPVT>::evaluateGL(
+    const ParticleSet& P,
+    ParticleSet::ParticleGradient& G,
+    ParticleSet::ParticleLaplacian& L,
+    bool fromscratch)
 {
   if (fromscratch)
     evaluateLog(P, G, L);
@@ -370,10 +392,10 @@ typename DiracDeterminant<DU_TYPE>::LogValue DiracDeterminant<DU_TYPE>::evaluate
   return log_value_;
 }
 
-template<typename DU_TYPE>
-typename DiracDeterminant<DU_TYPE>::LogValue DiracDeterminant<DU_TYPE>::updateBuffer(ParticleSet& P,
-                                                                                     WFBufferType& buf,
-                                                                                     bool fromscratch)
+template<PlatformKind PL, typename VT, typename FPVT>
+typename DiracDeterminant<PL, VT, FPVT>::LogValue DiracDeterminant<PL, VT, FPVT>::updateBuffer(ParticleSet& P,
+                                                                                               WFBufferType& buf,
+                                                                                               bool fromscratch)
 {
   evaluateGL(P, P.G, P.L, fromscratch);
   {
@@ -384,38 +406,38 @@ typename DiracDeterminant<DU_TYPE>::LogValue DiracDeterminant<DU_TYPE>::updateBu
   return log_value_;
 }
 
-template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
+template<PlatformKind PL, typename VT, typename FPVT>
+void DiracDeterminant<PL, VT, FPVT>::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   ScopedTimer local_timer(BufferTimer);
-  psiM.attachReference(buf.lendReference<ValueType>(psiM.size()));
-  dpsiM.attachReference(buf.lendReference<GradType>(dpsiM.size()));
-  d2psiM.attachReference(buf.lendReference<ValueType>(d2psiM.size()));
+  psiM.attachReference(buf.lendReference<ValueType>(NumPtcls * NumPtcls), NumPtcls, NumPtcls);
+  dpsiM.attachReference(buf.lendReference<GradType>(NumPtcls * NumPtcls), NumPtcls, NumPtcls);
+  d2psiM.attachReference(buf.lendReference<ValueType>(NumPtcls * NumPtcls), NumPtcls, NumPtcls);
   buf.get(log_value_);
   // start with invRow labelled invalid
   invRow_id = -1;
-  updateEng.initializeInv(psiM);
+  accel_engine_.update_eng_.initializeInv(psiM);
 }
 
-template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const
+template<PlatformKind PL, typename VT, typename FPVT>
+void DiracDeterminant<PL, VT, FPVT>::registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const
 {
-  twf.addGroup(P, P.getGroupID(FirstIndex), Phi.get());
+  twf.addGroup(P, P.getGroupID(FirstIndex), &phi_);
 }
 
 /** return the ratio only for the  iat-th partcle move
  * @param P current configuration
  * @param iat the particle thas is being moved
  */
-template<typename DU_TYPE>
-typename DiracDeterminant<DU_TYPE>::PsiValue DiracDeterminant<DU_TYPE>::ratio(ParticleSet& P, int iat)
+template<PlatformKind PL, typename VT, typename FPVT>
+typename DiracDeterminant<PL, VT, FPVT>::PsiValue DiracDeterminant<PL, VT, FPVT>::ratio(ParticleSet& P, int iat)
 {
   UpdateMode             = ORB_PBYP_RATIO;
   const int WorkingIndex = iat - FirstIndex;
   assert(WorkingIndex >= 0);
   {
     ScopedTimer local_timer(SPOVTimer);
-    Phi->evaluateValue(P, iat, psiV);
+    phi_.evaluateValue(P, iat, psiV);
   }
   {
     ScopedTimer local_timer(RatioTimer);
@@ -425,15 +447,15 @@ typename DiracDeterminant<DU_TYPE>::PsiValue DiracDeterminant<DU_TYPE>::ratio(Pa
     if (invRow_id != WorkingIndex)
     {
       invRow_id = WorkingIndex;
-      updateEng.getInvRow(psiM, WorkingIndex, invRow);
+      accel_engine_.update_eng_.getInvRow(psiM, WorkingIndex, invRow);
     }
     curRatio = simd::dot(invRow.data(), psiV.data(), invRow.size());
   }
   return curRatio;
 }
 
-template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios)
+template<PlatformKind PL, typename VT, typename FPVT>
+void DiracDeterminant<PL, VT, FPVT>::evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios)
 {
   {
     ScopedTimer local_timer(RatioTimer);
@@ -443,14 +465,14 @@ void DiracDeterminant<DU_TYPE>::evaluateRatios(const VirtualParticleSet& VP, std
   }
   {
     ScopedTimer local_timer(SPOVTimer);
-    Phi->evaluateDetRatios(VP, psiV, invRow, ratios);
+    phi_.evaluateDetRatios(VP, psiV, invRow, ratios);
   }
 }
 
-template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::evaluateSpinorRatios(const VirtualParticleSet& VP,
-                                                     const std::pair<ValueVector, ValueVector>& spinor_multiplier,
-                                                     std::vector<ValueType>& ratios)
+template<PlatformKind PL, typename VT, typename FPVT>
+void DiracDeterminant<PL, VT, FPVT>::evaluateSpinorRatios(const VirtualParticleSet& VP,
+                                                          const std::pair<ValueVector, ValueVector>& spinor_multiplier,
+                                                          std::vector<ValueType>& ratios)
 {
   {
     ScopedTimer local_timer(RatioTimer);
@@ -460,18 +482,18 @@ void DiracDeterminant<DU_TYPE>::evaluateSpinorRatios(const VirtualParticleSet& V
   }
   {
     ScopedTimer local_timer(SPOVTimer);
-    Phi->evaluateDetSpinorRatios(VP, psiV, spinor_multiplier, invRow, ratios);
+    phi_.evaluateDetSpinorRatios(VP, psiV, spinor_multiplier, invRow, ratios);
   }
 }
 
-template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                                  const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
-                                                  std::vector<std::vector<ValueType>>& ratios) const
+template<PlatformKind PL, typename VT, typename FPVT>
+void DiracDeterminant<PL, VT, FPVT>::mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                                       const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                                                       std::vector<std::vector<ValueType>>& ratios) const
 {
   const size_t nw = wfc_list.size();
 
-  RefVectorWithLeader<SPOSet> phi_list(*Phi);
+  RefVectorWithLeader<SPOSet> phi_list(phi_);
   RefVector<ValueVector> psiV_list;
   std::vector<const ValueType*> invRow_ptr_list;
   phi_list.reserve(nw);
@@ -482,7 +504,7 @@ void DiracDeterminant<DU_TYPE>::mw_evaluateRatios(const RefVectorWithLeader<Wave
     ScopedTimer local_timer(RatioTimer);
     for (size_t iw = 0; iw < nw; iw++)
     {
-      auto& det = wfc_list.getCastedElement<DiracDeterminant<DU_TYPE>>(iw);
+      auto& det = wfc_list.getCastedElement<DiracDeterminant<PL, VT, FPVT>>(iw);
       const VirtualParticleSet& vp(vp_list[iw]);
       const int WorkingIndex = vp.refPtcl - FirstIndex;
       assert(WorkingIndex >= 0);
@@ -490,7 +512,7 @@ void DiracDeterminant<DU_TYPE>::mw_evaluateRatios(const RefVectorWithLeader<Wave
       // That is at minimum a call to evaluateLog and ...
       // std::copy_n(det.psiM[WorkingIndex], det.invRow.s.ize(), det.invRow.data());
       // build lists
-      phi_list.push_back(*det.Phi);
+      phi_list.push_back(det.phi_);
       psiV_list.push_back(det.psiV);
       invRow_ptr_list.push_back(det.psiM[WorkingIndex]);
     }
@@ -498,56 +520,57 @@ void DiracDeterminant<DU_TYPE>::mw_evaluateRatios(const RefVectorWithLeader<Wave
 
   {
     ScopedTimer local_timer(SPOVTimer);
-    // Phi->isOMPoffload() requires device invRow pointers for mw_evaluateDetRatios.
+    // phi_.isOMPoffload() requires device invRow pointers for mw_evaluateDetRatios.
     // evaluateDetRatios only requires host invRow pointers.
-    if (Phi->isOMPoffload())
+    if (phi_.isOMPoffload())
       for (int iw = 0; iw < phi_list.size(); iw++)
       {
         Vector<ValueType> invRow(const_cast<ValueType*>(invRow_ptr_list[iw]), psiV_list[iw].get().size());
         phi_list[iw].evaluateDetRatios(vp_list[iw], psiV_list[iw], invRow, ratios[iw]);
       }
     else
-      Phi->mw_evaluateDetRatios(phi_list, vp_list, psiV_list, invRow_ptr_list, ratios);
+      phi_.mw_evaluateDetRatios(phi_list, vp_list, psiV_list, invRow_ptr_list, ratios);
   }
 }
 
-template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::evaluateDerivRatios(const VirtualParticleSet& VP,
-                                                    const opt_variables_type& optvars,
-                                                    std::vector<ValueType>& ratios,
-                                                    Matrix<ValueType>& dratios)
+template<PlatformKind PL, typename VT, typename FPVT>
+void DiracDeterminant<PL, VT, FPVT>::evaluateDerivRatios(const VirtualParticleSet& VP,
+                                                         const opt_variables_type& optvars,
+                                                         std::vector<ValueType>& ratios,
+                                                         Matrix<ValueType>& dratios)
 {
   const int WorkingIndex = VP.refPtcl - FirstIndex;
   assert(WorkingIndex >= 0);
   std::copy_n(psiM[WorkingIndex], invRow.size(), invRow.data());
-  Phi->evaluateDerivRatios(VP, optvars, psiV, invRow, ratios, dratios, FirstIndex, LastIndex);
+  phi_.evaluateDerivRatios(VP, optvars, psiV, invRow, ratios, dratios, FirstIndex, LastIndex);
 }
 
-template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::evaluateSpinorDerivRatios(const VirtualParticleSet& VP,
-                                                          const std::pair<ValueVector, ValueVector>& spinor_multiplier,
-                                                          const opt_variables_type& optvars,
-                                                          std::vector<ValueType>& ratios,
-                                                          Matrix<ValueType>& dratios)
+template<PlatformKind PL, typename VT, typename FPVT>
+void DiracDeterminant<PL, VT, FPVT>::evaluateSpinorDerivRatios(
+    const VirtualParticleSet& VP,
+    const std::pair<ValueVector, ValueVector>& spinor_multiplier,
+    const opt_variables_type& optvars,
+    std::vector<ValueType>& ratios,
+    Matrix<ValueType>& dratios)
 {
   const int WorkingIndex = VP.refPtcl - FirstIndex;
   assert(WorkingIndex >= 0);
   std::copy_n(psiM[WorkingIndex], invRow.size(), invRow.data());
-  Phi->evaluateSpinorDerivRatios(VP, spinor_multiplier, optvars, psiV, invRow, ratios, dratios, FirstIndex, LastIndex);
+  phi_.evaluateSpinorDerivRatios(VP, spinor_multiplier, optvars, psiV, invRow, ratios, dratios, FirstIndex, LastIndex);
 }
 
-template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
+template<PlatformKind PL, typename VT, typename FPVT>
+void DiracDeterminant<PL, VT, FPVT>::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
 {
   ScopedTimer local_timer(SPOVTimer);
-  Phi->evaluateValue(P, -1, psiV);
+  phi_.evaluateValue(P, -1, psiV);
   Vector<ValueType> ratios_this_det(ratios.data() + FirstIndex, NumPtcls);
   MatrixOperators::product(psiM, psiV, ratios_this_det);
 }
 
 
-template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::resizeScratchObjectsForIonDerivs()
+template<PlatformKind PL, typename VT, typename FPVT>
+void DiracDeterminant<PL, VT, FPVT>::resizeScratchObjectsForIonDerivs()
 {
   grad_source_psiM.resize(NumPtcls, NumOrbitals);
   grad_lapl_source_psiM.resize(NumPtcls, NumOrbitals);
@@ -558,29 +581,29 @@ void DiracDeterminant<DU_TYPE>::resizeScratchObjectsForIonDerivs()
   grad_phi_alpha_Minv.resize(NumPtcls, NumOrbitals);
 }
 
-template<typename DU_TYPE>
-typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGradSource(ParticleSet& P,
-                                                                                       ParticleSet& source,
-                                                                                       int iat)
+template<PlatformKind PL, typename VT, typename FPVT>
+typename DiracDeterminant<PL, VT, FPVT>::GradType DiracDeterminant<PL, VT, FPVT>::evalGradSource(ParticleSet& P,
+                                                                                                 ParticleSet& source,
+                                                                                                 int iat)
 {
   GradType g(0.0);
-  if (Phi->hasIonDerivs())
+  if (phi_.hasIonDerivs())
   {
     resizeScratchObjectsForIonDerivs();
-    Phi->evaluateGradSource(P, FirstIndex, LastIndex, source, iat, grad_source_psiM);
+    phi_.evaluateGradSource(P, FirstIndex, LastIndex, source, iat, grad_source_psiM);
     g = simd::dot(psiM.data(), grad_source_psiM.data(), psiM.size());
   }
 
   return g;
 }
 
-template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::evaluateHessian(ParticleSet& P, HessVector& grad_grad_psi)
+template<PlatformKind PL, typename VT, typename FPVT>
+void DiracDeterminant<PL, VT, FPVT>::evaluateHessian(ParticleSet& P, HessVector& grad_grad_psi)
 {
   // Hessian is not often used, so only resize/allocate if used
   grad_grad_source_psiM.resize(psiM.rows(), psiM.cols());
   //IM A HACK.  Assumes evaluateLog has already been executed.
-  Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp, dpsiM, grad_grad_source_psiM);
+  phi_.evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp, dpsiM, grad_grad_source_psiM);
   invertPsiM(psiM_temp, psiM);
 
   phi_alpha_Minv      = 0.0;
@@ -600,8 +623,8 @@ void DiracDeterminant<DU_TYPE>::evaluateHessian(ParticleSet& P, HessVector& grad
   }
 }
 
-template<typename DU_TYPE>
-typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGradSource(
+template<PlatformKind PL, typename VT, typename FPVT>
+typename DiracDeterminant<PL, VT, FPVT>::GradType DiracDeterminant<PL, VT, FPVT>::evalGradSource(
     ParticleSet& P,
     ParticleSet& source,
     int iat,
@@ -609,13 +632,13 @@ typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad
     TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM>& lapl_grad)
 {
   GradType gradPsi(0.0);
-  if (Phi->hasIonDerivs())
+  if (phi_.hasIonDerivs())
   {
     resizeScratchObjectsForIonDerivs();
-    Phi->evaluateGradSource(P, FirstIndex, LastIndex, source, iat, grad_source_psiM, grad_grad_source_psiM,
+    phi_.evaluateGradSource(P, FirstIndex, LastIndex, source, iat, grad_source_psiM, grad_grad_source_psiM,
                             grad_lapl_source_psiM);
     // HACK HACK HACK
-    // Phi->evaluateVGL(P, FirstIndex, LastIndex, psiM, dpsiM, d2psiM);
+    // phi_.evaluateVGL(P, FirstIndex, LastIndex, psiM, dpsiM, d2psiM);
     // psiM_temp = psiM;
     // LogValue=InvertWithLog(psiM.data(),NumPtcls,NumOrbitals,
     // 			   WorkSpace.data(),Pivot.data(),PhaseValue);
@@ -711,10 +734,11 @@ typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad
  *contribution of the determinant to G(radient) and L(aplacian)
  *for local energy calculations.
  */
-template<typename DU_TYPE>
-typename DiracDeterminant<DU_TYPE>::LogValue DiracDeterminant<DU_TYPE>::evaluateLog(const ParticleSet& P,
-                                                                                    ParticleSet::ParticleGradient& G,
-                                                                                    ParticleSet::ParticleLaplacian& L)
+template<PlatformKind PL, typename VT, typename FPVT>
+typename DiracDeterminant<PL, VT, FPVT>::LogValue DiracDeterminant<PL, VT, FPVT>::evaluateLog(
+    const ParticleSet& P,
+    ParticleSet::ParticleGradient& G,
+    ParticleSet::ParticleLaplacian& L)
 {
   recompute(P);
 
@@ -728,13 +752,13 @@ typename DiracDeterminant<DU_TYPE>::LogValue DiracDeterminant<DU_TYPE>::evaluate
   return log_value_;
 }
 
-template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::recompute(const ParticleSet& P)
+template<PlatformKind PL, typename VT, typename FPVT>
+void DiracDeterminant<PL, VT, FPVT>::recompute(const ParticleSet& P)
 {
   {
     ScopedTimer local_timer(SPOVGLTimer);
     UpdateMode = ORB_WALKER;
-    Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp, dpsiM, d2psiM);
+    phi_.evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp, dpsiM, d2psiM);
   }
 
   invertPsiM(psiM_temp, psiM);
@@ -743,70 +767,35 @@ void DiracDeterminant<DU_TYPE>::recompute(const ParticleSet& P)
   invRow_id = -1;
 }
 
-template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::evaluateDerivatives(ParticleSet& P,
-                                                    const opt_variables_type& active,
-                                                    Vector<ValueType>& dlogpsi,
-                                                    Vector<ValueType>& dhpsioverpsi)
+template<PlatformKind PL, typename VT, typename FPVT>
+void DiracDeterminant<PL, VT, FPVT>::evaluateDerivatives(ParticleSet& P,
+                                                         const opt_variables_type& active,
+                                                         Vector<ValueType>& dlogpsi,
+                                                         Vector<ValueType>& dhpsioverpsi)
 {
-  Phi->evaluateDerivatives(P, active, dlogpsi, dhpsioverpsi, FirstIndex, LastIndex);
+  phi_.evaluateDerivatives(P, active, dlogpsi, dhpsioverpsi, FirstIndex, LastIndex);
 }
 
-template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::evaluateDerivativesWF(ParticleSet& P,
-                                                      const opt_variables_type& active,
-                                                      Vector<ValueType>& dlogpsi)
+template<PlatformKind PL, typename VT, typename FPVT>
+void DiracDeterminant<PL, VT, FPVT>::evaluateDerivativesWF(ParticleSet& P,
+                                                           const opt_variables_type& active,
+                                                           Vector<ValueType>& dlogpsi)
 {
-  Phi->evaluateDerivativesWF(P, active, dlogpsi, FirstIndex, LastIndex);
+  phi_.evaluateDerivativesWF(P, active, dlogpsi, FirstIndex, LastIndex);
 }
 
-template<typename DU_TYPE>
-std::unique_ptr<DiracDeterminantBase> DiracDeterminant<DU_TYPE>::makeCopy(std::unique_ptr<SPOSet>&& spo) const
+template<PlatformKind PL, typename VT, typename FPVT>
+std::unique_ptr<DiracDeterminantBase> DiracDeterminant<PL, VT, FPVT>::makeCopy(SPOSet& phi) const
 {
-  return std::make_unique<DiracDeterminant<DU_TYPE>>(std::move(spo), FirstIndex, LastIndex, ndelay_,
-                                                     matrix_inverter_kind_);
-}
-
-template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::createResource(ResourceCollection& collection) const
-{
-  Phi->createResource(collection);
-}
-
-template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::acquireResource(ResourceCollection& collection,
-                                                const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
-{
-  auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminant<DU_TYPE>>();
-  RefVectorWithLeader<SPOSet> phi_list(*wfc_leader.Phi);
-  for (WaveFunctionComponent& wfc : wfc_list)
-  {
-    auto& det = static_cast<DiracDeterminant<DU_TYPE>&>(wfc);
-    phi_list.push_back(*det.Phi);
-  }
-  wfc_leader.Phi->acquireResource(collection, phi_list);
-}
-
-template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::releaseResource(ResourceCollection& collection,
-                                                const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
-{
-  auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminant<DU_TYPE>>();
-  RefVectorWithLeader<SPOSet> phi_list(*wfc_leader.Phi);
-  for (WaveFunctionComponent& wfc : wfc_list)
-  {
-    auto& det = static_cast<DiracDeterminant<DU_TYPE>&>(wfc);
-    phi_list.push_back(*det.Phi);
-  }
-  wfc_leader.Phi->releaseResource(collection, phi_list);
+  return std::make_unique<DiracDeterminant<PL, VT, FPVT>>(phi, FirstIndex, LastIndex, ndelay_, matrix_inverter_kind_);
 }
 
 template class DiracDeterminant<>;
 #if defined(ENABLE_CUDA)
-template class DiracDeterminant<DelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
+template class DiracDeterminant<PlatformKind::CUDA, QMCTraits::ValueType, QMCTraits::QTFull::ValueType>;
 #endif
 #if defined(ENABLE_SYCL)
-template class DiracDeterminant<DelayedUpdateSYCL<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
+template class DiracDeterminant<PlatformKind::SYCL, QMCTraits::ValueType, QMCTraits::QTFull::ValueType>;
 #endif
 
 } // namespace qmcplusplus

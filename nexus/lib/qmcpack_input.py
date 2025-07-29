@@ -76,9 +76,9 @@
 #       coefficient, hamiltonian, coulomb, constant, pseudopotential,# 
 #       pseudo, mpc, localenergy, energydensity, reference_points,   #
 #       spacegrid, origin, axis, chiesa, density, nearestneighbors,  #
-#       neighbor_trace, dm1b, spindensity, structurefactor, init,    #
-#       scalar_traces, array_traces, particle_traces, traces, loop,  #
-#       linear, cslinear, vmc, dmc.                                  #
+#       neighbor_trace, dm1b, spindensity, magnetizationdensity,     #
+#       structurefactor, init, scalar_traces, array_traces,          #
+#       particle_traces, traces, loop, linear, cslinear, vmc, dmc.   #
 #                                                                    #
 #   QIxmlFactory                                                     #
 #     Class supports comprehension of XML elements that share the    #
@@ -702,7 +702,7 @@ class QIxml(Names):
                     #end for
                 #end if
             #end for
-            if self.text!=None:
+            if self.text is not None:
                 c = c.rstrip('\n')
                 c+=param.write(self[self.text],mode='elem',pad=ip,tag=None,normal_elem=True)
             #end if
@@ -1834,9 +1834,15 @@ class sposet(QIxml):
                   'source','version','precision','tilematrix',
                   'meshfactor']
     elements   = ['occupation','coefficient','coefficients']
-    text       = 'spos'
+    text       = None
     identifier = 'name'
 #end class sposet
+
+class rotated_sposet(QIxml):
+    attributes = ['name']
+    elements   = ['sposet']
+    identifier = 'name'
+#end class rotated_sposet
 
 class bspline_builder(QIxml):
     tag         = 'sposet_builder'
@@ -1844,7 +1850,7 @@ class bspline_builder(QIxml):
     attributes  = ['type','href','sort','tilematrix','twistnum','twist','source',
                    'version','meshfactor','gpu','transform','precision','truncate',
                    'lr_dim_cutoff','shell','randomize','key','buffer','rmax_core','dilation','tag','hybridrep','gpusharing']
-    elements    = ['sposet']
+    elements    = ['sposet','rotated_sposet']
     write_types = obj(gpu=yesno,sort=onezero,transform=yesno,truncate=yesno,randomize=truefalse,hybridrep=yesno,gpusharing=yesno)
 #end class bspline_builder
 
@@ -1857,9 +1863,11 @@ class heg_builder(QIxml):
 
 class molecular_orbital_builder(QIxml):
     tag = 'sposet_builder'
-    identifier = 'type'
-    attributes = ['name','type','transform','source','cuspcorrection']
-    elements   = ['basisset','sposet'] 
+    identifier  = 'type'
+    attributes  = ['name','type','transform','source','cuspcorrection','href']
+    elements    = ['basisset','sposet']
+    elements    = ['basisset','sposet','rotated_sposet'] 
+    write_types = obj(transform=yesno,cuspcorrection=yesno)
 #end class molecular_orbital_builder
 
 class composite_builder(QIxml):
@@ -1962,7 +1970,7 @@ class multideterminant(QIxml):
 #end class multideterminant
 
 class detlist(QIxml):
-    attributes = ['size','type','nca','ncb','nea','neb','nstates','cutoff','href']
+    attributes = ['size','type','nca','ncb','nea','neb','nstates','cutoff','ext_level','href']
     elements   = ['ci','csf']
 #end class detlist
 
@@ -2111,7 +2119,7 @@ class constant(QIxml):
 
 class pseudopotential(QIxml):
     tag = 'pairpot'
-    attributes = ['type','name','source','wavefunction','format','target','forces','dla']
+    attributes = ['type','name','source','wavefunction','format','target','forces','dla','algorithm']
     elements   = ['pseudo']
     write_types= obj(forces=yesno,dla=yesno)
     identifier = 'name'
@@ -2225,6 +2233,14 @@ class spindensity(QIxml):
     identifier  = 'name'
 #end class spindensity
 
+class magnetizationdensity(QIxml):
+    tag = 'estimator'
+    attributes  = ['type','name','report']
+    parameters  = ['dr','grid','center','corner','integrator','samples']
+    write_types = obj(report=yesno)
+    identifier  = 'name'
+#end class magnetizationdensity
+
 class structurefactor(QIxml):
     tag = 'estimator'
     attributes  = ['type','name','report']
@@ -2234,10 +2250,11 @@ class structurefactor(QIxml):
 
 class force(QIxml):
     tag = 'estimator'
-    attributes = ['type','name','mode','source','species','target','addionion']
+    attributes = ['type','name','mode','source','species','target','addionion',
+                  'fast_derivatives','spacewarp','epsilon']
     parameters = ['rcut','nbasis','weightexp']
     identifier = 'name'
-    write_types= obj(addionion=yesno)
+    write_types= obj(addionion=yesno,fast_derivatives=yesno,spacewarp=yesno)
 #end class force
 
 class forwardwalking(QIxml):
@@ -2300,6 +2317,14 @@ class flux(QIxml):
     identifier = 'name'
 #end class flux
 
+class orbitalimages(QIxml):
+    tag = 'estimator'
+    attributes  = ['type','name','ions']
+    parameters  = ['sposets','grid','center_grid','value','corner','cell','center','batch_size']
+    write_types = obj(center_grid=yesno)
+    identifier  = 'name'
+#end class orbitalimages
+
 class momentum(QIxml): # legacy
     tag = 'estimator'
     attributes = ['type','name','grid','samples','hdf5','wavefunction','kmax','kmax0','kmax1','kmax2']
@@ -2349,6 +2374,7 @@ estimator = QIxmlFactory(
                  nearestneighbors       = nearestneighbors,
                  dm1b                   = dm1b,
                  spindensity            = spindensity,
+                 magnetizationdensity   = magnetizationdensity,
                  structurefactor        = structurefactor,
                  force                  = force,
                  forwardwalking         = forwardwalking,
@@ -2360,6 +2386,7 @@ estimator = QIxmlFactory(
                  skall                  = skall,
                  gofr                   = gofr,
                  flux                   = flux,
+                 orbitalimages          = orbitalimages,
                  momentum               = momentum,
                  momentumdistribution   = momentumdistribution,
                  onebodydensitymatrices = onebodydensitymatrices,
@@ -2501,10 +2528,13 @@ class linear(QIxml):
                   'tries','min_walkers','samplesperthread',
                   'shift_i','shift_s','max_relative_change','max_param_change',
                   'chase_lowest','chase_closest','block_lm','nblocks','nolds',
-                  'nkept','max_seconds', 'spin_mass'
+                  'nkept','max_seconds','spin_mass',
+                  'sr_tau','sr_tolerance','sr_regularization','line_search',
                   ]
     costs      = ['energy','unreweightedvariance','reweightedvariance','variance','difference']
-    write_types = obj(gpu=yesno,usedrift=yesno,nonlocalpp=yesno,usebuffer=yesno,use_nonlocalpp_deriv=yesno,chase_lowest=yesno,chase_closest=yesno,block_lm=yesno)
+    write_types = obj(gpu=yesno,usedrift=yesno,nonlocalpp=yesno,usebuffer=yesno,
+                      use_nonlocalpp_deriv=yesno,chase_lowest=yesno,
+                      chase_closest=yesno,block_lm=yesno,line_search=yesno)
 #end class linear
 
 class cslinear(QIxml):
@@ -2535,7 +2565,7 @@ class vmc(QIxml):
                   'blocks','steps','substeps','timestep','maxcpusecs','rewind',
                   'storeconfigs','checkproperties','recordconfigs','current',
                   'stepsbetweensamples','samplesperthread','samples','usedrift',
-                  'spin_mass',
+                  'spin_mass','estimator_period',
                   'walkers','nonlocalpp','tau','walkersperthread','reconfiguration', # legacy - batched
                   'dmcwalkersperthread','current','ratio','firststep',
                   'minimumtargetwalkers','max_seconds']
@@ -2558,7 +2588,7 @@ class dmc(QIxml):
                   'stepsbetweensamples','samplesperthread','samples','reconfiguration',
                   'nonlocalmoves','maxage','alpha','gamma','reserve','use_nonblocking',
                   'branching_cutoff_scheme','feedback','sigmabound',
-                  'spin_mass',
+                  'spin_mass','estimator_period',
                   'walkers','nonlocalmove','pop_control','targetwalkers',               # legacy - batched
                   'minimumtargetwalkers','energybound','feedback','recordwalkers',
                   'fastgrad','popcontrol','branchinterval','usedrift','storeconfigs',
@@ -2709,15 +2739,15 @@ classes = [   #standard classes
     correlation,coefficients,loop,linear,cslinear,vmc,dmc,vmc_batch,dmc_batch,linear_batch,
     atomicbasisset,basisgroup,init,var,traces,scalar_traces,particle_traces,array_traces,
     reference_points,nearestneighbors,neighbor_trace,dm1b,
-    coefficient,radfunc,spindensity,structurefactor,
+    coefficient,radfunc,spindensity,structurefactor,magnetizationdensity,
     sposet,bspline_builder,composite_builder,heg_builder,include,
     multideterminant,detlist,ci,mcwalkerset,csf,det,
     optimize,cg_optimizer,flex_optimizer,optimize_qmc,wftest,kspace_jastrow,
     header,local,force,forwardwalking,observable,record,rmc,pressure,dmccorrection,
-    nofk,mpc_est,flux,distancetable,cpp,element,spline,setparams,
+    nofk,mpc_est,flux,orbitalimages,distancetable,cpp,element,spline,setparams,
     backflow,transformation,cubicgrid,molecular_orbital_builder,cmc,sk,skall,gofr,
     host,date,user,rpa_jastrow,momentum,override_variational_parameters,
-    momentumdistribution,onebodydensitymatrices,estimators,
+    momentumdistribution,onebodydensitymatrices,estimators,rotated_sposet,
     # afqmc classes
     afqmcinfo,walkerset,propagator,execute,back_propagation,onerdm
     ]
@@ -2764,6 +2794,7 @@ plurals = obj(
     constants       = 'constant',
     mcwalkersets    = 'mcwalkerset',
     transformations = 'transformation',
+    rotated_sposets = 'rotated_sposet',
     )
 plurals_inv = plurals.inverse()
 plural_names = set(plurals.keys())
@@ -2914,6 +2945,9 @@ density.defaults.set(
     )
 spindensity.defaults.set(
     type='spindensity',name='SpinDensity'
+    )
+magnetizationdensity.defaults.set(
+    type='magnetizationdensity',name='MagnetizationDensity'
     )
 skall.defaults.set(
     type='skall',name='skall',source='ion0',target='e',hdf5=True
@@ -4565,6 +4599,7 @@ def generate_sposets(type           = None,
                      sposets        = None,
                      spindatasets   = False,
                      spinor         = None,
+                     rotate         = False,
                      ):
     ndn = ndown
     if type is None:
@@ -4615,6 +4650,14 @@ def generate_sposets(type           = None,
     else:
         QmcpackInput.class_error('cannot generate sposets in occupation mode {0}\n  generate_sposets currently supports the following occupation modes:\n  slater_ground'.format(occupation))
     #end if
+    if rotate:
+        rotated_sposets = []
+        for spo in sposets:
+            rot_spo = rotated_sposet(name='rot_'+spo.name, sposet=spo)
+            rotated_sposets.append(rot_spo)
+        #end for
+        sposets = rotated_sposets
+    #end if
     return make_collection(sposets)
 #end def generate_sposets
 
@@ -4642,6 +4685,7 @@ def generate_bspline_builder(type           = 'bspline',
                              spin_polarized = False,
                              hybridrep      = None,
                              href           = 'MISSING.h5',
+                             rotate         = False,
                              ions           = 'ion0',
                              spo_up         = 'spo_u',
                              spo_down       = 'spo_d',
@@ -4664,16 +4708,22 @@ def generate_bspline_builder(type           = 'bspline',
         version    = version,
         truncate   = truncate,
         source     = ions,
-        sposets    = generate_sposets(
-            type           = type,
-            occupation     = 'slater_ground',
-            spin_polarized = spin_polarized,
-            system         = system,
-            sposets        = sposets,
-            spindatasets   = True,
-            spinor         = spinor,
-            )
         )
+    sposets    = generate_sposets(
+        type           = type,
+        occupation     = 'slater_ground',
+        spin_polarized = spin_polarized,
+        system         = system,
+        sposets        = sposets,
+        spindatasets   = True,
+        spinor         = spinor,
+        rotate         = rotate,
+        )
+    if not rotate:
+        bsb.sposets = sposets
+    else:
+        bsb.rotated_sposets = sposets
+    #end if
     if sort is not None:
         bsb.sort = sort
     #end if
@@ -4808,6 +4858,7 @@ def generate_determinantset(up             = 'u',
                             matrix_inv_cpu = None,
                             system         = None,
                             spinor         = None,
+                            rotate         = False,
                             ):
     if system is None:
         QmcpackInput.class_error('generate_determinantset argument system must not be None')
@@ -4822,6 +4873,10 @@ def generate_determinantset(up             = 'u',
     else:
         spo_u = spo_up
         spo_d = spo_down
+    #end if
+    if rotate:
+        spo_u = 'rot_'+spo_u
+        spo_d = 'rot_'+spo_d
     #end if
     determinants_list = []
     if not use_spinor:
@@ -5301,6 +5356,7 @@ def generate_hamiltonian(name         = 'h0',
                          ions         = 'ion0',
                          wavefunction = 'psi0',
                          pseudos      = None,
+                         algorithm    = None,
                          dla          = None,
                          format       = 'xml',
                          estimators   = None,
@@ -5368,6 +5424,9 @@ def generate_hamiltonian(name         = 'h0',
                     pseudos.add(pseudo(elementtype=label,href=ppfile))
                 #end for
                 pp = pseudopotential(name='PseudoPot',type='pseudo',source=iname,wavefunction=wfname,format=format,pseudos=pseudos)
+                if algorithm is not None:
+                    pp.algorithm = algorithm
+                #end if
                 if dla is not None:
                     pp.dla = dla
                 #end if
@@ -5659,6 +5718,12 @@ def generate_jastrows_alt(
     J3_rcut      = 5.0,
     J1_rcut_open = 5.0,
     J2_rcut_open = 10.0,
+    J1k          = False,
+    J1k_kcut     = 5.0,
+    J1k_symm     = 'crystal',
+    J2k          = False,
+    J2k_kcut     = 5.0,
+    J2k_symm     = 'crystal',
     system       = None,
     ):
     if system is None:
@@ -5734,7 +5799,19 @@ def generate_jastrows_alt(
         J = generate_jastrow('J3','polynomial',J3_esize,J3_isize,J3_rcut,system=system)
         jastrows.append(J)
     #end if
-
+    if J1k or J2k:
+        Jk_inp = obj()
+        if J1k:
+            Jk_inp.kc1   = J1k_kcut
+            Jk_inp.symm1 = J1k_symm
+        #end if
+        if J2k:
+            Jk_inp.kc2   = J2k_kcut
+            Jk_inp.symm2 = J2k_symm
+        #end if
+        J = generate_kspace_jastrow(**Jk_inp)
+        jastrows.append(J)
+    #end if
     return jastrows
 #end def generate_jastrows_alt
 
@@ -6074,8 +6151,16 @@ def generate_jastrow3(function='polynomial',esize=3,isize=3,rcut=4.,coeff=None,i
 #end def generate_jastrow3
 
 
-def generate_kspace_jastrow(kc1=0, kc2=0, nk1=0, nk2=0,
-  symm1='isotropic', symm2='isotropic', coeff1=None, coeff2=None):
+def generate_kspace_jastrow(
+        kc1    = None, 
+        kc2    = None, 
+        nk1    = 0, 
+        nk2    = 0,
+        symm1  = 'isotropic', 
+        symm2  = 'isotropic', 
+        coeff1 = None, 
+        coeff2 = None,
+        ):
   """Generate <jastrow type="kSpace">
 
   Parameters
@@ -6101,40 +6186,45 @@ def generate_kspace_jastrow(kc1=0, kc2=0, nk1=0, nk2=0,
     jk: QIxml
       kspace_jastrow qmcpack_input element
   """
-
+  J1k = kc1 is not None
+  J2k = kc2 is not None
+  if not J1k and not J2k:
+      QmcpackInput.class_error('must have at least one term', 'generate_kspace_jastrow')
+  #end if      
   if coeff1 is None: coeff1 = [0]*nk1
   if coeff2 is None: coeff2 = [0]*nk2
   if len(coeff1) != nk1:
-    QmcpackInput.class_error('coeff1 mismatch', 'generate_kspace_jastrow')
+      QmcpackInput.class_error('coeff1 mismatch', 'generate_kspace_jastrow')
   #end if
   if len(coeff2) != nk2:
-    QmcpackInput.class_error('coeff2 mismatch', 'generate_kspace_jastrow')
+      QmcpackInput.class_error('coeff2 mismatch', 'generate_kspace_jastrow')
   #end if
 
-  corr1 = correlation(
-    type = 'One-Body',
-    symmetry = symm1,
-    kc = kc1,
-    coefficients = section(
-      id = 'cG1', type = 'Array',
-      coeff = coeff1
-    )
-  )
-  corr2 = correlation(
-    type = 'Two-Body',
-    symmetry = symm2,
-    kc = kc2,
-    coefficients = section(
-      id = 'cG2', type = 'Array',
-      coeff = coeff2
-     )
-  )
+  corrs = []
+  if J1k:
+      corr1 = correlation(
+          type         = 'One-Body',
+          symmetry     = symm1,
+          kc           = kc1,
+          coefficients = section(id='cG1', type='Array', coeff=coeff1),
+          )
+      corrs.append(corr1)
+  #end if
+  if J2k:
+      corr2 = correlation(
+          type         = 'Two-Body',
+          symmetry     = symm2,
+          kc           = kc2,
+          coefficients = section(id='cG2', type='Array', coeff=coeff2),
+          )
+      corrs.append(corr2)
+  #end if
   jk = kspace_jastrow(
-    type = 'kSpace',
-    name = 'Jk',
-    source = 'ion0',
-    correlations = collection([corr1, corr2])
-  )
+      type         = 'kSpace',
+      name         = 'Jk',
+      source       = 'ion0',
+      correlations = collection(corrs),
+      )
   return jk
 # end def generate_kspace_jastrow
 
@@ -6537,24 +6627,27 @@ dmc_noJ_legacy_defaults = obj(
 # batched driver defaults
 
 opt_batched_defaults = obj(
-    method          = 'linear',
-    minmethod       = 'quartic',
-    cost            = 'variance',
-    cycles          = 12,
-    var_cycles      = 0,
-    var_samples     = None,
-    init_cycles     = 0,
-    init_samples    = None,
-    init_minwalkers = 1e-4,
+    method           = 'linear',
+    minmethod        = 'quartic',
+    cost             = None, # default: energy if sr_cg else variance
+    cycles           = 12,
+    var_cycles       = 0,
+    var_samples      = None,
+    init_cycles      = 0,
+    init_samples     = None,
+    init_steps       = None,
+    init_minwalkers  = 1e-4,
+    init_line_search = True,
+    init_sr_tau      = 0.1,
     )
 
 shared_opt_batched_defaults = obj(
-    samples              = 204800,
+    samples              = None, # 204800 if steps is None
     #nonlocalpp           = True,
     #use_nonlocalpp_deriv = True,
     warmupsteps          = 300,                
     blocks               = 100,                
-    #steps                = 1,                 
+    steps                = None,                 
     substeps             = 10,                 
     timestep             = 0.3,
     usedrift             = False,
@@ -6587,6 +6680,13 @@ linear_adaptive_batched_defaults = obj(
     shift_s             = 1.00,
     **shared_opt_batched_defaults
     )
+linear_sr_cg_batched_defaults = obj(
+    sr_tau            = None,  # projector: 1-tau*H  (0.01/0.1 if line_search=no/yes)
+    sr_tolerance      = 0.001, # conjugate gradient convergence tolerance
+    sr_regularization = 0.01,  # ~diagonal shift to overlap matrix
+    line_search       = False, # corr samp line search on cost along sr param direction 
+    **shared_opt_batched_defaults
+    )
 
 opt_method_batched_defaults = obj({
     ('linear'  ,'quartic' ) : linear_quartic_batched_defaults,
@@ -6598,11 +6698,13 @@ opt_method_batched_defaults = obj({
     ('linear'  ,'adaptive') : linear_adaptive_batched_defaults,
     ('linear'  ,'oneshift') : linear_oneshift_batched_defaults,
     ('linear'  ,'oneshiftonly') : linear_oneshift_batched_defaults,
+    ('linear'  ,'sr_cg')    : linear_sr_cg_batched_defaults,
     })
 del shared_opt_batched_defaults
 del linear_quartic_batched_defaults
 del linear_oneshift_batched_defaults
 del linear_adaptive_batched_defaults
+del linear_sr_cg_batched_defaults
 
 allowed_opt_method_batched_inputs = set(linear.attributes+linear.parameters
                                        +cslinear.attributes+cslinear.parameters)
@@ -7024,11 +7126,45 @@ def generate_batched_opt_calculations(
         var_samples,
         init_cycles,
         init_samples,
+        init_steps,
         init_minwalkers,
+        init_line_search,
+        init_sr_tau,
         loc        = 'generate_opt_calculations',
         **opt_inputs
         ):
 
+    opt_inputs = obj(opt_inputs)
+    has = obj(
+        minmethod  = 'minmethod' in opt_inputs,
+        samples    = 'samples' in opt_inputs,
+        steps      = 'steps' in opt_inputs,
+        sr_tau     = 'sr_tau' in opt_inputs,
+        linesearch = 'linesearch' in opt_inputs,
+        )
+    for k,v in has.items():
+        has[k] = v and opt_inputs[k] is not None
+    #end for
+    if cost is None:
+        if  has.minmethod and opt_inputs.minmethod=='sr_cg':
+            cost = 'energy'
+        else:
+            cost = 'variance'
+        #end if
+    #end if
+    if  not has.samples and not has.steps:
+        opt_inputs.samples = 204800
+    #end if
+    if init_samples is None and init_steps is None and not has.steps:
+        init_samples = 204800
+    #end if
+    if not has.sr_tau:
+        if has.linesearch and opt_inputs.line_search:
+            opt_inputs.sr_tau = 0.1
+        else:
+            opt_inputs.sr_tau = 0.01
+        #end if
+    #end if
     for k in list(opt_inputs.keys()):
         if opt_inputs[k] is None:
             del opt_inputs[k]
@@ -7044,12 +7180,17 @@ def generate_batched_opt_calculations(
     opt_inputs = obj(opt_inputs)
     invalid = set(opt_inputs.keys())-allowed_opt_method_batched_inputs
     oneshift = False
+    sr_cg    = False
     if len(invalid)>0:
         error('invalid optimization inputs provided\ninvalid inputs: {}\nvalid options are: {}'.format(sorted(invalid),sorted(allowed_opt_method_batched_inputs)))
     #end if
-    if 'minmethod' in opt_inputs and opt_inputs.minmethod.lower().startswith('oneshift'):
-        opt_inputs.minmethod = 'OneShiftOnly'
-        oneshift = True
+    if has.minmethod:
+        if opt_inputs.minmethod.lower().startswith('oneshift'):
+            opt_inputs.minmethod = 'OneShiftOnly'
+            oneshift = True
+        elif opt_inputs.minmethod=='sr_cg':
+            sr_cg = True
+        #end if
     #end if
 
     if cost=='variance':
@@ -7081,7 +7222,17 @@ def generate_batched_opt_calculations(
         if init_samples is not None:
             init_opt.samples = init_samples
         #end if
-        init_opt.minwalkers = init_minwalkers
+        if init_steps is not None:
+            init_opt.steps = init_steps
+        #end if
+        if init_sr_tau is not None:
+            init_opt.sr_tau = init_sr_tau
+        #end if
+        if init_line_search is not None:
+            init_opt.line_search = init_line_search
+        if not sr_cg:
+            init_opt.minwalkers = init_minwalkers
+        #end if
         if not oneshift:
             init_opt.energy               = cost[0]
             init_opt.unreweightedvariance = cost[1]
@@ -7305,72 +7456,82 @@ def read_jastrows(filepath):
 
 
 gen_basic_input_defaults = obj(
-    id             = 'qmc',            
-    series         = 0,                
-    purpose        = '',     
-    maxcpusecs     = None,
-    max_seconds    = None,
-    seed           = None,             
-    bconds         = None,             
-    truncate       = False,            
-    buffer         = None,             
-    lr_dim_cutoff  = 15,               
-    lr_tol         = None,               
-    lr_handler     = None,               
-    remove_cell    = False,            
-    randomsrc      = True,            
-    meshfactor     = 1.0,              
-    orbspline      = None,             
-    precision      = 'float',          
-    twistnum       = None,             
-    twist          = None,             
-    gcta           = None,
-    spin_polarized = None,             
-    partition      = None,             
-    partition_mf   = None,             
-    hybridrep      = None,             
-    hybrid_rcut    = None,             
-    hybrid_lmax    = None,             
-    orbitals_h5    = 'MISSING.h5',     
-    run_path       = None,
-    check_paths    = True,
-    excitation     = None,             
-    system         = 'missing',        
-    pseudos        = None,
-    spinor         = None,
-    dla            = None,
-    delay_rank     = None,
-    det_batch      = None,
-    jastrows       = 'generateJ12',    
-    interactions   = 'all',            
-    corrections    = 'default',        
-    observables    = None,             
-    estimators     = None,             
-    traces         = None,             
-    calculations   = None,             
-    det_format     = 'new',            
-    J1             = False,            
-    J2             = False,            
-    J3             = False,            
-    J1_size        = None,             
-    J1_rcut        = None,             
-    J1_dr          = 0.5,              
-    J2_size        = None,             
-    J2_rcut        = None,             
-    J2_dr          = 0.5,              
-    J2_init        = 'zero',           
-    J3_isize       = 3,                
-    J3_esize       = 3,                
-    J3_rcut        = 5.0,              
-    J1_rcut_open   = 5.0,              
-    J2_rcut_open   = 10.0,
-    driver         = 'legacy', # legacy,batched
+    id               = 'qmc',            
+    series           = 0,                
+    purpose          = '',     
+    maxcpusecs       = None,
+    max_seconds      = None,
+    seed             = None,             
+    bconds           = None,             
+    truncate         = False,            
+    buffer           = None,             
+    lr_dim_cutoff    = 15,               
+    lr_tol           = None,               
+    lr_handler       = None,               
+    remove_cell      = False,            
+    randomsrc        = True,            
+    meshfactor       = 1.0,              
+    orbspline        = None,             
+    precision        = 'float',          
+    twistnum         = None,             
+    twist            = None,             
+    gcta             = None,
+    spin_polarized   = None,             
+    partition        = None,             
+    partition_mf     = None,             
+    hybridrep        = None,             
+    hybrid_rcut      = None,             
+    hybrid_lmax      = None,             
+    orbitals_h5      = 'MISSING.h5',
+    rotated_orbitals = False,
+    run_path         = None,
+    check_paths      = True,
+    excitation       = None,             
+    system           = 'missing',        
+    pseudos          = None,
+    pseudo_algorithm = None,
+    spinor           = None,
+    dla              = None,
+    delay_rank       = None,
+    det_batch        = None,
+    jastrows         = 'generateJ12',
+    opt_params       = None,
+    interactions     = 'all',            
+    corrections      = 'default',        
+    observables      = None,             
+    estimators       = None,
+    estimator_period = None,
+    traces           = None,             
+    calculations     = None,             
+    det_format       = 'new',            
+    J1               = False,            
+    J2               = False,            
+    J3               = False,            
+    J1_size          = None,             
+    J1_rcut          = None,             
+    J1_dr            = 0.5,              
+    J2_size          = None,             
+    J2_rcut          = None,             
+    J2_dr            = 0.5,              
+    J2_init          = 'zero',           
+    J3_isize         = 3,                
+    J3_esize         = 3,                
+    J3_rcut          = 5.0,              
+    J1_rcut_open     = 5.0,              
+    J2_rcut_open     = 10.0,
+    J1k              = False,
+    J1k_kcut         = 5.0,
+    J1k_symm         = 'crystal',
+    J2k              = False,
+    J2k_kcut         = 5.0,
+    J2k_symm         = 'crystal',
+    driver           = 'batched', # legacy,batched
     # batched driver inputs
-    orbitals_cpu   = None,     # place/evaluate orbitals on cpu if on gpu
-    matrix_inv_cpu = None,     # evaluate matrix inverse on cpu if on gpu
+    orbitals_cpu     = None,     # place/evaluate orbitals on cpu if on gpu
+    matrix_inv_cpu   = None,     # evaluate matrix inverse on cpu if on gpu
     # legacy cuda inputs
-    gpusharing     = None,
-    qmc            = None,     # opt,vmc,vmc_test,dmc,dmc_test
+    gpusharing       = None,
+    qmc              = None,     # opt,vmc,vmc_test,dmc,dmc_test
     )
 
 def generate_basic_input(**kwargs):
@@ -7529,6 +7690,7 @@ def generate_basic_input(**kwargs):
                 buffer         = kw.buffer,
                 hybridrep      = kw.hybridrep,
                 href           = kw.orbitals_h5,
+                rotate         = kw.rotated_orbitals,
                 spin_polarized = kw.spin_polarized,
                 system         = kw.system,
                 orbitals_cpu   = kw.orbitals_cpu,
@@ -7553,6 +7715,7 @@ def generate_basic_input(**kwargs):
             matrix_inv_cpu = kw.matrix_inv_cpu,
             system         = kw.system,
             spinor         = kw.spinor,
+            rotate         = kw.rotated_orbitals,
             )
     elif kw.det_format=='old':
         spobuilders = None
@@ -7610,6 +7773,12 @@ def generate_basic_input(**kwargs):
             J3_rcut      = kw.J3_rcut     ,
             J1_rcut_open = kw.J1_rcut_open,
             J2_rcut_open = kw.J2_rcut_open,
+            J1k          = kw.J1k         ,
+            J1k_kcut     = kw.J1k_kcut    ,
+            J1k_symm     = kw.J1k_symm    ,
+            J2k          = kw.J2k         ,
+            J2k_kcut     = kw.J2k_kcut    ,
+            J2k_symm     = kw.J2k_symm    ,
             system       = kw.system      ,
             )
     #end if
@@ -7618,31 +7787,53 @@ def generate_basic_input(**kwargs):
     #end if
 
     if kw.spinor is not None and kw.spinor:
-      # remove u-d 
-      # also set correct cusp
-      J2 = wfn.jastrows.get('J2')
-      if J2 is not None:
-        corr = J2.get('correlation')
-        if 'ud' in corr:
-          del corr.ud
-        if 'uu' in corr:
-          corr.uu.cusp = -0.5
-      #end if
-      J3 = wfn.jastrows.get('J3')
-      if J3 is not None:
-        corr = J3.get('correlation')
-        j3_ids = []
-        for j3_term in corr:
-          j3_id = j3_term.coefficients.id
-          j3_ids.append(j3_id)
-        #end for
-        for j3_id in j3_ids:
-          if 'ud' in j3_id:
-            delattr(corr, j3_id)
-          #end if
-        #end for
-      #end if
+        # remove u-d 
+        # also set correct cusp
+        J2 = wfn.jastrows.get('J2')
+        if J2 is not None:
+            corr = J2.get('correlation')
+            if 'ud' in corr:
+                del corr.ud
+                if 'uu' in corr:
+                    corr.uu.cusp = -0.5
+                #end if
+            #end if
+        #end if
+        J3 = wfn.jastrows.get('J3')
+        if J3 is not None:
+            corr = J3.get('correlation')
+            j3_ids = []
+            for j3_term in corr:
+                j3_id = j3_term.coefficients.id
+                j3_ids.append(j3_id)
+            #end for
+            for j3_id in j3_ids:
+                if 'ud' in j3_id:
+                    delattr(corr, j3_id)
+                #end if
+            #end for
+        #end if
     #end if
+
+    if spobuilders is not None:
+        wfn.sposet_builders = make_collection(spobuilders)
+    #end if
+
+    if kw.opt_params is not None:
+        if not isinstance(kw.opt_params,str):
+            QmcpackInput.class_error('opt_params must be a file path.\nYou provided: {}'.format(kw.opt_params),'generate_qmcpack_input')
+        #end if
+        if not kw.opt_params.endswith('vp.h5'):
+            QmcpackInput.class_error('opt_params must a vp.h5 file.\nYou provided: {}'.format(kw.opt_params),'generate_qmcpack_input')
+        #end if
+        if kw.check_paths and not os.path.exists(kw.opt_params):
+            QmcpackInput.class_error('opt_params file does not exist.\nFile path provided: {}\nTo disable this check, set check_paths=False'.format(kw.opt_params),'generate_qmcpack_input')
+        #end if
+        wfn.override_variational_parameters = override_variational_parameters(
+            href = os.path.abspath(kw.opt_params)
+            )
+    #end if
+
 
     h_estimators = kw.estimators
     d_estimators = None
@@ -7660,13 +7851,10 @@ def generate_basic_input(**kwargs):
         #end if
     #end if
 
-    if spobuilders is not None:
-        wfn.sposet_builders = make_collection(spobuilders)
-    #end if
-
     hmltn = generate_hamiltonian(
         system       = kw.system,
         pseudos      = kw.pseudos,
+        algorithm    = kw.pseudo_algorithm,
         dla          = kw.dla,
         interactions = kw.interactions,
         estimators   = h_estimators,
@@ -7711,6 +7899,13 @@ def generate_basic_input(**kwargs):
         ests_elem = estimators()
         ests_elem.estimators = ests
         sim.qmcsystem.estimators = ests_elem
+    #end if
+    if kw.estimator_period is not None:
+        for c in kw.calculations:
+            if isinstance(c,(vmc,dmc)):
+                c.estimator_period = kw.estimator_period
+            #end if
+        #end for
     #end if
     sim.calculations = make_collection(kw.calculations).copy()
 

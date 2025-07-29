@@ -28,10 +28,3 @@ void cudaAssert(cudaError_t code, const std::string& cause, const char* filename
       throw std::runtime_error(cause);
   }
 }
-
-size_t getCUDAdeviceFreeMem()
-{
-  size_t free, total;
-  cudaErrorCheck(cudaMemGetInfo(&free, &total), "cudaMemGetInfo failed!");
-  return free;
-}

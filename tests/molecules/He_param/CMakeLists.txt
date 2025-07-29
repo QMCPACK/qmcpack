@@ -48,7 +48,7 @@ if(NOT QMC_MIXED_PRECISION)
     set(SDIR "${CMAKE_CURRENT_SOURCE_DIR}")
     # Normally the directory is created by qmc_run_and_check_custom_scalar,
     # but we need to write a file there before that runs
-    set(TDIR "${CMAKE_CURRENT_BINARY_DIR}/He_param_grad_load-1-16")
+    set(TDIR "${CMAKE_CURRENT_BINARY_DIR}/He_param_grad_load-r1-t16")
     file(MAKE_DIRECTORY ${TDIR})
     execute_process(COMMAND ${Python3_EXECUTABLE} ${qmcpack_SOURCE_DIR}/tests/molecules/He_param/convert_vp_format.py
                             ${SDIR}/he_vp_opt.txt -o ${TDIR}/he_vp_opt.h5)
@@ -84,8 +84,8 @@ if(NOT QMC_MIXED_PRECISION)
 
     # Two atomic orbitals, no jastrow
 
-    list(APPEND HE_ORB_ROT_PARAM rot-spo-up_orb_rot_0000_0001 -0.218 0.01) # scalar name, value, error
-    list(APPEND HE_ORB_ROT_PARAM rot-spo-down_orb_rot_0000_0001 -0.218 0.01) # scalar name, value, error
+    list(APPEND HE_ORB_ROT_PARAM rot-spo-up_orb_rot_0000_0001_r -0.218 0.01) # scalar name, value, error
+    list(APPEND HE_ORB_ROT_PARAM rot-spo-down_orb_rot_0000_0001_r -0.218 0.01) # scalar name, value, error
 
     qmc_run_and_check_custom_scalar(
       BASE_NAME
@@ -159,7 +159,7 @@ if(NOT QMC_MIXED_PRECISION)
       SCALAR_VALUES
       HE_ORB_ROT_PARAM)
 
-    list(APPEND HE_ORB_ROT_RHF_PARAM rot-spo-up_orb_rot_0000_0001 -0.766 0.01) # scalar name, value, error
+    list(APPEND HE_ORB_ROT_RHF_PARAM rot-spo-up_orb_rot_0000_0001_r -0.766 0.01) # scalar name, value, error
     qmc_run_and_check_custom_scalar(
       BASE_NAME
       short-He_orb_rot_param_grad_rhf
@@ -180,8 +180,8 @@ if(NOT QMC_MIXED_PRECISION)
 
     # Two atomic orbitals, with jastrow
 
-    list(APPEND HE_ORB_ROT_JASTROW_PARAM rot-spo-up_orb_rot_0000_0001 0.078 0.02) # scalar name, value, error
-    list(APPEND HE_ORB_ROT_JASTROW_PARAM rot-spo-down_orb_rot_0000_0001 0.078 0.02)
+    list(APPEND HE_ORB_ROT_JASTROW_PARAM rot-spo-up_orb_rot_0000_0001_r 0.078 0.02) # scalar name, value, error
+    list(APPEND HE_ORB_ROT_JASTROW_PARAM rot-spo-down_orb_rot_0000_0001_r 0.078 0.02)
     list(APPEND HE_ORB_ROT_JASTROW_PARAM jud_b -0.106 0.013)
 
     qmc_run_and_check_custom_scalar(

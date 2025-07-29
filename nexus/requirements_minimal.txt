@@ -1,0 +1,5 @@
+# While Nexus does not have strict version requirements, this requirements file
+# corresponds to versions that have been tested and are known to work.
+# Last updated: 2024/12/16
+
+numpy==2.2.0

@@ -23,6 +23,7 @@
 #include "QMCHamiltonians/NonLocalECPComponent.h"
 #include "TestListenerFunction.h"
 #include "Utilities/RuntimeOptions.h"
+#include "OhmmsData/Libxml2Doc.h"
 
 namespace qmcplusplus
 {
@@ -82,7 +83,7 @@ void doSOECPotentialTest(bool use_VPs)
 
   //Cell definition:
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  Lattice lattice;
   lattice.BoxBConds = false; // periodic
   lattice.R.diagonal(20);
   lattice.LR_dim_cutoff = 15;
@@ -151,16 +152,18 @@ void doSOECPotentialTest(bool use_VPs)
   auto spo_up = std::make_unique<FreeOrbital>("free_orb_up", kup);
   auto spo_dn = std::make_unique<FreeOrbital>("free_orb_dn", kdn);
 
-  auto spinor_set = std::make_unique<SpinorSet>("free_orb_spinor");
+  auto spinor_set = std::make_unique<SpinorSet>("free_orsposetsb_spinor");
   spinor_set->set_spos(std::move(spo_up), std::move(spo_dn));
   QMCTraits::IndexType norb = spinor_set->getOrbitalSetSize();
   REQUIRE(norb == 2);
 
   auto dd = std::make_unique<DiracDeterminantBatched<PlatformKind::OMPTARGET, QMCTraits::ValueType,
-                                                     QMCTraits::QTFull::ValueType>>(std::move(spinor_set), 0, nelec);
+                                                     QMCTraits::QTFull::ValueType>>(*spinor_set, 0, nelec);
+  std::vector<std::unique_ptr<SPOSet>> sposets;
+  sposets.push_back(std::move(spinor_set));
   std::vector<std::unique_ptr<DiracDeterminantBase>> dirac_dets;
   dirac_dets.push_back(std::move(dd));
-  auto sd = std::make_unique<SlaterDet>(elec, std::move(dirac_dets));
+  auto sd = std::make_unique<SlaterDet>(elec, std::move(sposets), std::move(dirac_dets));
   psi.addComponent(std::move(sd));
 
   //Add the two body jastrow, parameters from test_J2_bspline

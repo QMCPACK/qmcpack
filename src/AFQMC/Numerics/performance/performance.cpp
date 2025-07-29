@@ -34,7 +34,7 @@ using namespace afqmc;
 
 using std::copy_n;
 
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
 template<typename T>
 using Alloc = device::device_allocator<T>;
 #else
@@ -278,10 +278,10 @@ int main(int argc, char* argv[])
   boost::mpi3::environment env(argc, argv);
   auto world = boost::mpi3::environment::get_world_instance();
   auto node  = world.split_shared(world.rank());
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
   arch::INIT(node);
 #endif
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
 /*
   {
     std::ofstream out;
@@ -371,7 +371,7 @@ int main(int argc, char* argv[])
       timeExchangeKernel(out, alloc, buffer, b, nwalk, nocc, nchol);
     }
   }
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
   {
     std::ofstream out;
     out.open("time_batched_matrix_inverse.dat");

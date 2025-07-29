@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2021 QMCPACK developers.
+// Copyright (c) 2025 QMCPACK developers.
 //
 // File developed by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //
@@ -22,26 +22,24 @@ namespace qmcplusplus
 MomentumDistribution::MomentumDistribution(MomentumDistributionInput&& mdi,
                                            size_t np,
                                            const PosType& twist_in,
-                                           const LatticeType& lattice,
+                                           const Lattice& lattice_in,
                                            DataLocality dl)
-    : OperatorEstBase(dl),
+    : OperatorEstBase(dl, mdi.get_name(), mdi.get_type()),
       input_(std::move(mdi)),
       twist(twist_in),
-      Lattice(lattice),
+      lattice(lattice_in),
       norm_nofK(1.0 / RealType(mdi.get_samples()))
 {
   psi_ratios.resize(np);
 
-  my_name_ = input_.get_name();
-
   //dims of a grid for generating k points (obtained below)
   int kgrid = 0;
   // minimal length as 2 x WS radius.
-  RealType min_Length = Lattice.WignerSeitzRadius_G * 4.0 * M_PI;
+  RealType min_Length = lattice.WignerSeitzRadius_G * 4.0 * M_PI;
   PosType vec_length;
   //length of reciprocal lattice vector
   for (int i = 0; i < OHMMS_DIM; i++)
-    vec_length[i] = 2.0 * M_PI * std::sqrt(dot(Lattice.Gv[i], Lattice.Gv[i]));
+    vec_length[i] = 2.0 * M_PI * std::sqrt(dot(lattice.Gv[i], lattice.Gv[i]));
   RealType kmax      = input_.get_kmax();
   auto realCast      = [](auto& real) { return static_cast<RealType>(real); };
   PosType kmaxs      = {realCast(input_.get_kmax0()), realCast(input_.get_kmax1()), realCast(input_.get_kmax2())};
@@ -52,7 +50,7 @@ MomentumDistribution::MomentumDistribution(MomentumDistributionInput&& mdi,
   if (!sphere && !directional)
   {
     // default: kmax = 2 x k_F of polarized non-interacting electron system
-    kmax   = 2.0 * std::pow(6.0 * M_PI * M_PI * np / Lattice.Volume, 1.0 / 3);
+    kmax   = 2.0 * std::pow(6.0 * M_PI * M_PI * np / lattice.Volume, 1.0 / 3);
     sphere = true;
   }
   sphere_kmax = kmax;
@@ -83,7 +81,7 @@ MomentumDistribution::MomentumDistribution(MomentumDistributionInput&& mdi,
         ikpt[1] = j + twist[1];
         ikpt[2] = k + twist[2];
         //convert to Cartesian: note that 2Pi is multiplied
-        kpt               = Lattice.k_cart(ikpt);
+        kpt               = lattice.k_cart(ikpt);
         bool not_recorded = true;
         // This collects the k-points within the parallelepiped (if enabled)
         if (directional && ikpt[0] * ikpt[0] <= kgrid_squared[0] && ikpt[1] * ikpt[1] <= kgrid_squared[1] &&
@@ -260,7 +258,7 @@ void MomentumDistribution::accumulate(const RefVector<MCPWalker>& walkers,
       for (int i = 0; i < OHMMS_DIM; ++i)
         newpos[i] = rng();
       //make it cartesian
-      vPos[s] = Lattice.toCart(newpos);
+      vPos[s] = lattice.toCart(newpos);
       pset.makeVirtualMoves(vPos[s]);
       psi.evaluateRatiosAlltoOne(pset, psi_ratios);
       for (int i = 0; i < np; ++i)

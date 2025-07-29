@@ -17,20 +17,20 @@
 namespace qmcplusplus
 {
 PerParticleHamiltonianLogger::PerParticleHamiltonianLogger(PerParticleHamiltonianLoggerInput&& input, int rank)
-  : OperatorEstBase(DataLocality::crowd), input_(input), rank_(rank)
+    : OperatorEstBase(DataLocality::crowd, input.get_name(), input.get_type()), input_(input), rank_(rank)
 {
   requires_listener_ = true;
-  my_name_           = "PerParticleHamiltonianLogger";
 
   std::string filename("rank_" + std::to_string(rank_) + "_" + input_.get_name() + ".dat");
   rank_fstream_.open(filename, std::ios::out);
 }
 
 PerParticleHamiltonianLogger::PerParticleHamiltonianLogger(PerParticleHamiltonianLogger& pphl, DataLocality dl)
-  : OperatorEstBase(dl), rank_estimator_(makeOptionalRef(pphl)), input_(pphl.input_)
+    : OperatorEstBase(dl, pphl.getMyName(), pphl.getMyType()),
+      rank_estimator_(makeOptionalRef(pphl)),
+      input_(pphl.input_)
 {
   requires_listener_ = true;
-  my_name_           = pphl.name_;
   data_locality_     = dl;
 }
 
@@ -89,7 +89,8 @@ std::unique_ptr<OperatorEstBase> PerParticleHamiltonianLogger::spawnCrowdClone()
   std::size_t data_size    = data_.size();
   auto spawn_data_locality = data_locality_;
 
-  auto spawn = std::make_unique<PerParticleHamiltonianLogger>(const_cast<PerParticleHamiltonianLogger&>(*this), spawn_data_locality);
+  auto spawn = std::make_unique<PerParticleHamiltonianLogger>(const_cast<PerParticleHamiltonianLogger&>(*this),
+                                                              spawn_data_locality);
   spawn->get_data().resize(data_size, 0.0);
   return spawn;
 }

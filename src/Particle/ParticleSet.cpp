@@ -190,12 +190,12 @@ void ParticleSet::resetGroups()
     assert(GroupID[iat] < nspecies);
 }
 
-void ParticleSet::randomizeFromSource(ParticleSet& src)
+void ParticleSet::randomizeFromSource(const ParticleSet& src)
 {
-  SpeciesSet& srcSpSet(src.getSpeciesSet());
+  const SpeciesSet& srcSpSet(src.getSpeciesSet());
   SpeciesSet& spSet(getSpeciesSet());
-  int srcChargeIndx = srcSpSet.addAttribute("charge");
-  int srcMemberIndx = srcSpSet.addAttribute("membersize");
+  int srcChargeIndx = srcSpSet.getAttribute("charge");
+  int srcMemberIndx = srcSpSet.getAttribute("membersize");
   int ChargeIndex   = spSet.addAttribute("charge");
   int MemberIndx    = spSet.addAttribute("membersize");
   int Nsrc          = src.getTotalNum();
@@ -412,8 +412,9 @@ void ParticleSet::mw_makeMove(const RefVectorWithLeader<ParticleSet>& p_list,
 
   for (int iw = 0; iw < p_list.size(); iw++)
   {
-    auto& p           = p_list[iw];
-    p.active_ptcl_    = iat;
+    auto& p            = p_list[iw];
+    p.active_ptcl_     = iat;
+    p.active_spin_val_ = p.spins[iat];
     new_positions[iw] = p.active_pos_ = p.R[iat] + displs[iw];
   }
 

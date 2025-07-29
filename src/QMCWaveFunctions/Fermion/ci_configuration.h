@@ -47,16 +47,16 @@ struct ci_configuration
     if (count() != c.count())
     {
       app_log() << "c0: ";
-      for (int i = 0; i < occup.size(); i++)
+      for (size_t i = 0; i < occup.size(); i++)
         app_log() << occup[i];
       app_log() << std::endl << "c1: ";
-      for (int i = 0; i < c.occup.size(); i++)
+      for (size_t i = 0; i < c.occup.size(); i++)
         app_log() << c.occup[i];
       app_log() << std::endl;
       APP_ABORT(
           "ci_configuration::operator==() - ci_configurations are not compatible. Unequal number of occupied states. ");
     }
-    for (int i = 0; i < occup.size(); i++)
+    for (size_t i = 0; i < occup.size(); i++)
     {
       if (occup[i] ^ c.occup[i])
       {
@@ -81,7 +81,7 @@ struct ci_configuration
           "ci_configuration::isSingle() - ci_configurations are not compatible. Unequal number of occupied states. ");
     }
     int nr = 0, na = 0, r = -1, a = -1;
-    for (int i = 0; i < occup.size(); i++)
+    for (size_t i = 0; i < occup.size(); i++)
     {
       if (occup[i] ^ c.occup[i])
       {
@@ -110,7 +110,7 @@ struct ci_configuration
   int count() const
   {
     int res = 0;
-    for (int i = 0; i < occup.size(); i++)
+    for (size_t i = 0; i < occup.size(); i++)
       if (occup[i])
         res++;
     return res;
@@ -118,9 +118,9 @@ struct ci_configuration
 
   void add_occupation(std::string& str)
   {
-    int str_size = str.size();
+    std::string::size_type str_size = str.size();
     occup.resize(str_size);
-    for (int i = 0; i < str_size; i++)
+    for (size_t i = 0; i < str_size; i++)
       occup[i] = str[i] - '0';
   }
 };
@@ -128,7 +128,7 @@ struct ci_configuration
 inline std::ostream& operator<<(std::ostream& out, const ci_configuration& c)
 {
   out << "ci ci_configuration: ";
-  for (int i = 0; i < c.occup.size(); i++)
+  for (size_t i = 0; i < c.occup.size(); i++)
     out << c.occup[i];
   out << std::endl;
   return out;

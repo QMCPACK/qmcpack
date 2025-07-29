@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2023 QMCPACK developers.
+// Copyright (c) 2025 QMCPACK developers.
 //
 // File developed by: Raymond Clay, rclay@sandia.gov, Sandia National Laboratories
 //
@@ -14,7 +14,6 @@
 #define QMCPLUSPLUS_MAGNETIZATION_DENSITY_INPUT_H
 
 #include "Configuration.h"
-#include "OhmmsData/ParameterSet.h"
 #include "Containers/OhmmsPETE/TinyVector.h"
 #include "Estimators/InputSection.h"
 namespace qmcplusplus
@@ -24,11 +23,14 @@ class MagnetizationDensity;
 class MagnetizationDensityInput
 {
 public:
+  static constexpr std::string_view type_tag{"MagnetizationDensity"};
+
   enum class Integrator
   {
     SIMPSONS,
     MONTECARLO
   };
+
   // Weird clang format issues with the following.  Disable clang-format for now.
   // clang-format off
   inline static const std::unordered_map<std::string, std::any>
@@ -36,8 +38,6 @@ public:
                               {"integrator-montecarlo", Integrator::MONTECARLO}};
   // clang-format on
   using Real               = QMCTraits::FullPrecRealType;
-  using POLT               = PtclOnLatticeTraits;
-  using Lattice            = POLT::ParticleLayout;
   using PosType            = TinyVector<Real, OHMMS_DIM>;
   using Consumer           = MagnetizationDensity;
   static constexpr int DIM = QMCTraits::DIM;
@@ -48,6 +48,8 @@ public:
    *  This is required due to SDI being part of a variant used as a vector element.
    */
   MagnetizationDensityInput(const MagnetizationDensityInput&) = default;
+  const std::string& get_name() const { return name_; }
+  const std::string& get_type() const { return type_; }
   PosType get_corner() const { return corner_; }
   PosType get_center() const { return center_; }
   PosType get_grid() const { return grid_real_; }
@@ -83,9 +85,9 @@ public:
     MagnetizationDensityInputSection()
     {
       // clang-format off
-      section_name  = "MagnetizationDensity";
+      section_name  = type_tag;
       attributes    = {"name", "type"};
-      parameters    = {"integrator", 
+      parameters    = {"integrator",
                        "corner", "center", "samples", "grid", "dr"
                       };
       bools         = {};
@@ -106,7 +108,8 @@ public:
 private:
   MagnetizationDensityInputSection input_section_;
   //Default Values
-  std::string myName_    = "MagnetizationDensityInput";
+  std::string name_{type_tag};
+  std::string type_{type_tag};
   Integrator integrator_ = Integrator::SIMPSONS;
   int nsamples_          = 9; //Number of grid points for spin quadrature, or samples for Monte Carlo.
 
@@ -118,7 +121,7 @@ private:
   bool write_report_ = false;
   bool save_memory_  = false;
   /** these are necessary for calculateDerivedParameters
-   *  
+   *
    *  If we are going to later write out a canonical input for
    *  this input then they are needed as well.
    */

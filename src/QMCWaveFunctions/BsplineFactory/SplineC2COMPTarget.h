@@ -73,6 +73,9 @@ private:
   ///multi bspline set
   std::shared_ptr<MultiBsplineBase<ST>> SplineInst;
 
+  ///Copy of original splines for orbital rotation. Only need these on host
+  std::shared_ptr<std::vector<ST>> coef_copy_;
+
   std::shared_ptr<OffloadVector<ST>> mKK;
   std::shared_ptr<OffloadPosVector<ST>> myKcart;
   std::shared_ptr<OffloadVector<ST>> GGt_offload;
@@ -142,7 +145,14 @@ public:
 
   std::unique_ptr<SPOSet> makeClone() const override { return std::make_unique<SplineC2COMPTarget>(*this); }
 
-  inline void resizeStorage(size_t n, size_t nvals)
+  bool isRotationSupported() const override { return true; }
+
+  ///store copy of spline coefficients for obrital rotation
+  void storeParamsBeforeRotation() override;
+
+  void applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy) override;
+
+  inline void resizeStorage(size_t n) override
   {
     init_base(n);
     size_t npad = getAlignedSize<ST>(2 * n);

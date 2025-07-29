@@ -21,7 +21,7 @@
 #include <cmath>
 #include "Particle/ParticleSet.h"
 #include "DistanceTable.h"
-#include "Particle/ParticleBase/ParticleAttribOps.h"
+#include "CPU/VectorOps.h"
 #include "QMCWaveFunctions/Fermion/BackflowFunctionBase.h"
 #include "OhmmsPETE/OhmmsArray.h"
 #include "OptimizableObject.h"

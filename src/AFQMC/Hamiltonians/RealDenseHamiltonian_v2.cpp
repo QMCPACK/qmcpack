@@ -14,7 +14,6 @@
 #endif
 
 #include "Configuration.h"
-#include "type_traits/container_traits_multi.h"
 #include "hdf/hdf_multi.h"
 #include "hdf/hdf_archive.h"
 
@@ -71,7 +70,7 @@ HamiltonianOperations RealDenseHamiltonian_v2::getHamiltonianOperations(bool pur
 
   // distribute work over equivalent nodes in TGprop.TG() across TG.Global()
   auto Qcomm(TG.Global().split(TGprop.getLocalGroupNumber(), TG.Global().rank()));
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
   auto distNode(TG.Node().split(TGprop.getLocalGroupNumber(), TG.Node().rank()));
 #else
   auto distNode(TG.Node().split(0, TG.Node().rank()));

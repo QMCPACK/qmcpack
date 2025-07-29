@@ -22,6 +22,8 @@ class PerParticleHamiltonianLogger;
 class PerParticleHamiltonianLoggerInput
 {
 public:
+  static constexpr std::string_view type_tag{"PerParticleHamiltonianLogger"};
+
   using Consumer = PerParticleHamiltonianLogger;
   using Real     = QMCTraits::RealType;
 
@@ -30,7 +32,7 @@ public:
   public:
     PerParticleHamiltonianLoggerInputSection()
     {
-      section_name = "PerParticleHamiltonianLogger";
+      section_name = type_tag;
       attributes   = {"to_stdout", "validate_per_particle_sum", "type", "name"};
       bools        = {"to_stdout", "validate_per_particle_sum"};
       strings      = {"type", "name"};
@@ -43,14 +45,16 @@ public:
   /** For this input class its valid with just its defaults
    */
   PerParticleHamiltonianLoggerInput() = default;
-  
+
   const std::string& get_name() const { return name_; }
+  const std::string& get_type() const { return type_; }
   bool get_to_stdout() const { return to_stdout_; }
 
 private:
   PerParticleHamiltonianLoggerInputSection input_section_;
-  std::string name_               = "per_particle_log";
-  bool to_stdout_                 = false;
+  std::string name_{type_tag};
+  std::string type_{type_tag};
+  bool to_stdout_ = false;
 };
 } // namespace qmcplusplus
 #endif

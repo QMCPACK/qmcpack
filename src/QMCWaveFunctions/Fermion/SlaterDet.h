@@ -19,8 +19,6 @@
 #define QMCPLUSPLUS_SLATERDETERMINANT_WITHBASE_H
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
 
-#include <map>
-
 namespace qmcplusplus
 {
 class TWFFastDerivWrapper;
@@ -29,14 +27,13 @@ class SlaterDet : public WaveFunctionComponent
 {
 public:
   using Determinant_t = DiracDeterminantBase;
-  ///container for the DiracDeterminants
-  const std::vector<std::unique_ptr<Determinant_t>> Dets;
 
   /**  constructor
    * @param targetPtcl target Particleset
    */
   SlaterDet(ParticleSet& targetPtcl,
-            std::vector<std::unique_ptr<Determinant_t>> dets,
+            std::vector<std::unique_ptr<SPOSet>>&& sposets,
+            std::vector<std::unique_ptr<Determinant_t>>&& dets,
             const std::string& class_name = "SlaterDet");
 
   ///destructor
@@ -80,9 +77,6 @@ public:
                     const std::vector<bool>& recompute) const override;
 
   void evaluateHessian(ParticleSet& P, HessVector& grad_grad_psi) override;
-
-  ///return the total number of Dirac determinants
-  inline int size() const { return Dets.size(); }
 
   void registerData(ParticleSet& P, WFBufferType& buf) override;
 
@@ -133,6 +127,20 @@ public:
     }
   }
 
+  inline void mw_evaluateSpinorRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                      const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                                      const RefVector<std::pair<ValueVector, ValueVector>>& spinor_multiplier_list,
+                                      std::vector<std::vector<ValueType>>& ratios) const final
+  {
+    if (wfc_list.size())
+    {
+      // assuming all the VP.refPtcl are identical
+      const int det_id = getDetID(vp_list[0].refPtcl);
+      Dets[det_id]->mw_evaluateSpinorRatios(extract_DetRef_list(wfc_list, det_id), vp_list, spinor_multiplier_list,
+                                            ratios);
+    }
+  }
+
   PsiValue ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
 
   PsiValue ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad_iat) override;
@@ -175,7 +183,7 @@ public:
   GradType evalGradSource(ParticleSet& P, ParticleSet& src, int iat) override
   {
     GradType G = GradType();
-    for (int iz = 0; iz < size(); iz++)
+    for (int iz = 0; iz < Dets.size(); iz++)
       G += Dets[iz]->evalGradSource(P, src, iat);
     return G;
   }
@@ -187,7 +195,7 @@ public:
                           TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM>& lapl_grad) override
   {
     GradType G = GradType();
-    for (int iz = 0; iz < size(); iz++)
+    for (int iz = 0; iz < Dets.size(); iz++)
       G += Dets[iz]->evalGradSource(P, src, iat, grad_grad, lapl_grad);
     return G;
   }
@@ -256,8 +264,6 @@ public:
 
   std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
 
-  SPOSetPtr getPhi(int i = 0) { return Dets[i]->getPhi(); }
-
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override;
 
   void evaluateDerivatives(ParticleSet& P,
@@ -265,15 +271,6 @@ public:
                            Vector<ValueType>& dlogpsi,
                            Vector<ValueType>& dhpsioverpsi) override
   {
-    // First zero out values, since each determinant only adds on
-    // its contribution (i.e. +=) , rather than setting the value
-    // (i.e. =)
-    for (int k = 0; k < myVars.size(); ++k)
-    {
-      int kk = myVars.where(k);
-      if (kk >= 0)
-        dlogpsi[kk] = dhpsioverpsi[kk] = 0.0;
-    }
     // Now add on contribution from each determinant to the derivatives
     for (int i = 0; i < Dets.size(); i++)
       Dets[i]->evaluateDerivatives(P, active, dlogpsi, dhpsioverpsi);
@@ -281,19 +278,17 @@ public:
 
   void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& active, Vector<ValueType>& dlogpsi) override
   {
-    // First zero out values, since each determinant only adds on
-    // its contribution (i.e. +=) , rather than setting the value
-    // (i.e. =)
-    for (int k = 0; k < myVars.size(); ++k)
-    {
-      int kk = myVars.where(k);
-      if (kk >= 0)
-        dlogpsi[kk] = 0.0;
-    }
     // Now add on contribution from each determinant to the derivatives
     for (int i = 0; i < Dets.size(); i++)
       Dets[i]->evaluateDerivativesWF(P, active, dlogpsi);
   }
+
+  ///return the total number of Dirac determinants
+  inline int getNumDets() const { return Dets.size(); }
+  ///return the i-th determinant
+  inline auto& getDet(const int i) { return *Dets[i]; }
+  ///return the sposet of the i-th determinant
+  SPOSet& getPhi(int i = 0) { return Dets[i]->getPhi(); }
 
 private:
   //get Det ID
@@ -319,6 +314,12 @@ private:
 
   ///the last particle of each group
   std::vector<int> Last;
+
+  ///container for the unique SPOSets
+  const std::vector<std::unique_ptr<SPOSet>> sposets_;
+
+  ///container for the DiracDeterminants
+  const std::vector<std::unique_ptr<Determinant_t>> Dets;
 };
 } // namespace qmcplusplus
 #endif

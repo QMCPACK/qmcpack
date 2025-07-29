@@ -16,8 +16,7 @@
 
 #include "Lattice/ParticleBConds3DSoa.h"
 #include "DistanceTable.h"
-#include "OMPTarget/OMPallocator.hpp"
-#include "Platforms/PinnedAllocator.h"
+#include "OMPTarget/OffloadAlignedAllocators.hpp"
 #include "Particle/RealSpacePositionsOMPTarget.h"
 #include "ResourceCollection.h"
 #include "OMPTarget/OMPTargetMath.hpp"
@@ -30,9 +29,11 @@ namespace qmcplusplus
 template<typename T, unsigned D, int SC>
 struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public DistanceTableAA
 {
+  template<typename DT>
+  using OffloadPinnedVector = Vector<DT, OffloadPinnedAllocator<DT>>;
+
   /// actual memory for dist and displacements_
   aligned_vector<RealType> memory_pool_;
-
   /// actual memory for temp_r_
   DistRow temp_r_mem_;
   /// actual memory for temp_dr_
@@ -46,14 +47,14 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
   struct DTAAMultiWalkerMem : public Resource
   {
     ///dist displ for temporary and old pairs
-    Vector<RealType, OMPallocator<RealType, PinnedAlignedAllocator<RealType>>> mw_new_old_dist_displ;
+    OffloadPinnedVector<RealType> mw_new_old_dist_displ;
 
     /** distances from a range of indics to the source.
      * for original particle index i (row) and source particle id j (col)
      * j < i,  the element data is dist(r_i - r_j)
      * j > i,  the element data is dist(r_(n - 1 - i) - r_(n - 1 - j))
      */
-    Vector<RealType, OMPallocator<RealType, PinnedAlignedAllocator<RealType>>> mw_distances_subset;
+    OffloadPinnedVector<RealType> mw_distances_subset;
 
     DTAAMultiWalkerMem() : Resource("DTAAMultiWalkerMem") {}
 
@@ -64,7 +65,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
 
   ResourceHandle<DTAAMultiWalkerMem> mw_mem_handle_;
 
-  SoaDistanceTableAAOMPTarget(ParticleSet& target)
+  SoaDistanceTableAAOMPTarget(const ParticleSet& target)
       : DTD_BConds<T, D, SC>(target.getLattice()),
         DistanceTableAA(target, DTModes::ALL_OFF),
         num_targets_padded_(getAlignedSize<T>(num_targets_)),

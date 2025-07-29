@@ -42,6 +42,12 @@ to run examples without having to install QMCPACK yourself, and slides and recor
 Please cite J. Kim _et al._ J. Phys. Cond. Mat. **30** 195901 (2018), https://doi.org/10.1088/1361-648X/aab9c3, and if space allows,
 P. Kent _et al._ J. Chem. Phys. **152** 174105 (2020), https://doi.org/10.1063/5.0004860 . These papers are both open access.
 
+# Installing QMCPACK
+
+[Complete instructions for downloading, compiling, and installing QMCPACK are given in the manual](https://qmcpack.readthedocs.io/en/develop/installation.html).
+Guides are provided for [installing QMCPACK on common workstations and supercomputers](https://qmcpack.readthedocs.io/en/develop/installation.html#installation-instructions-for-common-workstations-and-supercomputers). We also provide build
+scripts are for many systems in the config directory. The following sections of this README give a brief overview. 
+
 # Installation Prerequisites
 
  * C++ 17 and C99 capable compilers. 
@@ -62,24 +68,8 @@ same period but may require use of an exact version. We also aim to support the 
 Frontier and Summit at OLCF, Aurora and Polaris at ALCF, and Perlmutter at NERSC. Use of the most recently released compilers and
 library versions is particularly encouraged for highest performance and easiest configuration.
 
-Nightly testing currently includes at least the following software versions:
-
-* Compilers
-  * GCC 13.2.0, 11.4.0
-  * Clang/LLVM 17.0.4
-* Boost 1.83.0, 1.77.0
-* HDF5 1.14.3
-* FFTW 3.3.10, 3.3.8
-* CMake 3.27.9, 3.21.4
-* MPI
-  * OpenMPI 4.1.6
-* CUDA 12.3
-
-GitHub Actions-based tests include additional version combinations from within our two year support window. On a developmental basis
-we also check the latest Clang and GCC development versions, AMD Clang and Intel OneAPI compilers. 
-
-Workflow tests are currently performed with Quantum Espresso v7.2.0 and PySCF v2.2.0. These check trial wavefunction generation and
-conversion through to actual QMC runs.
+Details of regularly tested versions are given in the [manual section on installation
+prerequisites](https://qmcpack.readthedocs.io/en/develop/installation.html#prerequisites).
 
 # Building with CMake
 
@@ -186,36 +176,41 @@ before doing significant production. i.e. Check the details below.
                           Mixed precision calculations can be signifiantly faster but should be
                           carefully checked validated against full double precision runs,
                           particularly for large electron counts.
-    ENABLE_OFFLOAD        ON/OFF(default). Enable OpenMP target offload for GPU acceleration.
-    ENABLE_CUDA           ON/OFF(default). Enable CUDA code path for NVIDIA GPU acceleration.
-                          Production quality for AFQMC and real-space performance portable implementation.
-    QMC_CUDA2HIP          ON/OFF(default). Map all CUDA kernels and library calls to HIP and use ROCm libraries.
-                          Set both ENABLE_CUDA and QMC_CUDA2HIP ON to target AMD GPUs.
-    ENABLE_SYCL           ON/OFF(default). Enable SYCL code path. Only support Intel GPUs and OneAPI compilers.
+    QMC_GPU               Semicolon-separated list of GPU features to build (openmp,cuda,hip,sycl).
+                          "openmp", "cuda", "hip" and "sycl" for GPU acceleration via OpenMP offload, CUDA, HIP and SYCL.
+                          Recommended values: "openmp;cuda" for NVIDIA, "openmp;hip" for AMD, "openmp;sycl" for Intel.
+                          Its default value is set to the recommended value if QMC_GPU_ARCHS indicates a specific vendor
+                          or left empty otherwise.
     QMC_GPU_ARCHS         Specify GPU architectures. For example, "gfx90a" targets AMD MI200 series GPUs.
+                          "intel_gpu_pvc" targets Intel Data Center GPU Max 1xxx.
                           "sm_80;sm_70" creates a single executable running on both NVIDIA A100 and V100 GPUs.
                           Mixing vendor "gfx90a;sm_70" is not supported. If not set, atempt to derive it
                           from CMAKE_CUDA_ARCHITECTURES or CMAKE_HIP_ARCHITECTURES if available and then
                           atempt to auto-detect existing GPUs.
-
 ```
 
  * Additional QMCPACK options
 
 ```
-     QE_BIN              Location of Quantum Espresso binaries including pw2qmcpack.x
-     RMG_BIN             Location of RMG binary
-     QMC_DATA            Specify data directory for QMCPACK performance and integration tests
-     QMC_INCLUDE         Add extra include paths
-     QMC_EXTRA_LIBS      Add extra link libraries
-     QMC_BUILD_STATIC    ON/OFF(default). Add -static flags to build
+     BUILD_AFQMC            ON/OFF(default). Build the Auxiliary-Field Quantum Monte Carlo (AFQMC) feature
+     BUILD_AFQMC_WITH_NCCL  ON/OFF(default). Enable the optimized code path using NVIDIA Collective Communications Library (NCCL) in AFQMC.
+                            AFQMC and CUDA features required to enable this feature.
+     BUILD_AFQMC_HIP        ON/OFF(default). Enable HIP accelerated code paths in AFQMC. AFQMC feature required to enable this feature.
+     QE_BIN                 Location of Quantum Espresso binaries including pw2qmcpack.x
+     RMG_BIN                Location of RMG binary
+     QMC_DATA               Specify data directory for QMCPACK performance and integration tests
+     QMC_INCLUDE            Add extra include paths
+     QMC_EXTRA_LIBS         Add extra link libraries
+     QMC_BUILD_STATIC       ON/OFF(default). Add -static flags to build
      QMC_SYMLINK_TEST_FILES Set to zero to require test files to be copied. Avoids space
                             saving default use of symbolic links for test files. Useful
                             if the build is on a separate filesystem from the source, as
                             required on some HPC systems.
-     ENABLE_TIMERS       ON(default)/OFF. Enable fine-grained timers. Timers are on by default but at level coarse
-                         to avoid potential slowdown in tiny systems.
-                         For systems beyond tiny sizes (100+ electrons) there is no risk.
+     ENABLE_TIMERS          ON(default)/OFF. Enable fine-grained timers. Timers are on by default but at level coarse
+                            to avoid potential slowdown in tiny systems.
+                            For systems beyond tiny sizes (100+ electrons) there is no risk.
+     USE_OBJECT_TARGET      ON/OFF(default). Use CMake object library targets to workaround linker not being able to handle hybrid
+                            binary archives which contain both host and device codes.
 ```
 
   * libxml2 related

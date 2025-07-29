@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2025 QMCPACK developers.
 //
 // File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //		      Ye Luo, yeluo@anl.gov, Argonne National Laboratory
@@ -12,6 +12,8 @@
 
 
 #include "hdf_archive.h"
+#include <H5Ipublic.h>
+#include <stdexcept>
 #ifdef HAVE_MPI
 #include "mpi3/communicator.hpp"
 #endif
@@ -24,15 +26,11 @@ hdf_error_suppression hide_hdf_errors;
 
 hdf_archive::~hdf_archive()
 {
-#if defined(ENABLE_PHDF5)
-  if (xfer_plist != H5P_DEFAULT)
-    H5Pclose(xfer_plist);
-  if (access_id != H5P_DEFAULT)
-    H5Pclose(access_id);
-#endif
-  if (lcpl_id != H5P_DEFAULT)
-    H5Pclose(lcpl_id);
   close();
+  H5Pclose(xfer_plist);
+  H5Pclose(file_apl_);
+  H5Pclose(file_cpl_);
+  H5Pclose(lcpl_id);
 }
 
 void hdf_archive::close()
@@ -51,19 +49,44 @@ void hdf_archive::close()
 
 void hdf_archive::set_access_plist()
 {
-  access_id = H5P_DEFAULT;
-  lcpl_id   = H5Pcreate(H5P_LINK_CREATE);
-  H5Pset_create_intermediate_group(lcpl_id, true);
+  create_basic_plist();
   Mode.set(IS_PARALLEL, false);
   Mode.set(IS_MASTER, true);
   Mode.set(NOIO, false);
 }
 
+void hdf_archive::create_basic_plist()
+{
+  file_apl_ = H5Pcreate(H5P_FILE_ACCESS);
+  if (file_apl_ == H5I_INVALID_HID)
+    throw std::runtime_error("hdf_archive failed to create file access properties!");
+  file_cpl_ = H5Pcreate(H5P_FILE_CREATE);
+  if (file_cpl_ == H5I_INVALID_HID)
+  {
+    H5Pclose(file_apl_);
+    throw std::runtime_error("hdf_archive failed to create file create properties!");
+  }
+  lcpl_id = H5Pcreate(H5P_LINK_CREATE);
+  if (lcpl_id == H5I_INVALID_HID)
+  {
+    H5Pclose(file_apl_);
+    H5Pclose(file_cpl_);
+    throw std::runtime_error("hdf_archive failed to create link create properties!");
+  }
+  H5Pset_create_intermediate_group(lcpl_id, true);
+  xfer_plist = H5Pcreate(H5P_DATASET_XFER);
+  if (xfer_plist == H5I_INVALID_HID)
+  {
+    H5Pclose(file_apl_);
+    H5Pclose(file_cpl_);
+    H5Pclose(lcpl_id);
+    throw std::runtime_error("hdf_archive failed to create dataset xfer properties!");
+  }
+}
+
 void hdf_archive::set_access_plist(Communicate* comm, bool request_pio)
 {
-  access_id = H5P_DEFAULT;
-  lcpl_id   = H5Pcreate(H5P_LINK_CREATE);
-  H5Pset_create_intermediate_group(lcpl_id, true);
+  create_basic_plist();
   if (comm && comm->size() > 1) //for parallel communicator
   {
     bool use_phdf5 = false;
@@ -72,11 +95,12 @@ void hdf_archive::set_access_plist(Communicate* comm, bool request_pio)
     {
       // enable parallel I/O
       MPI_Info info = MPI_INFO_NULL;
-      access_id     = H5Pcreate(H5P_FILE_ACCESS);
-      H5Pset_all_coll_metadata_ops(access_id, true);
-      H5Pset_coll_metadata_write(access_id, true);
-      H5Pset_fapl_mpio(access_id, comm->getMPI(), info);
-      xfer_plist = H5Pcreate(H5P_DATASET_XFER);
+      // This in needed as well other resulting logic to support the unlikely
+      // optimization of using the global H5P_DEFAULT instead of just
+      // having hdf_archive own its access plist.
+      H5Pset_all_coll_metadata_ops(file_apl_, true);
+      H5Pset_coll_metadata_write(file_apl_, true);
+      H5Pset_fapl_mpio(file_apl_, comm->getMPI(), info);
       // enable parallel collective I/O
       H5Pset_dxpl_mpio(xfer_plist, H5FD_MPIO_COLLECTIVE);
       use_phdf5 = true;
@@ -100,9 +124,7 @@ void hdf_archive::set_access_plist(Communicate* comm, bool request_pio)
 #ifdef HAVE_MPI
 void hdf_archive::set_access_plist(boost::mpi3::communicator& comm, bool request_pio)
 {
-  access_id = H5P_DEFAULT;
-  lcpl_id   = H5Pcreate(H5P_LINK_CREATE);
-  H5Pset_create_intermediate_group(lcpl_id, true);
+  create_basic_plist();
   if (comm.size() > 1) //for parallel communicator
   {
     bool use_phdf5 = false;
@@ -111,11 +133,9 @@ void hdf_archive::set_access_plist(boost::mpi3::communicator& comm, bool request
 #if defined(ENABLE_PHDF5)
       // enable parallel I/O
       MPI_Info info = MPI_INFO_NULL;
-      access_id     = H5Pcreate(H5P_FILE_ACCESS);
-      H5Pset_all_coll_metadata_ops(access_id, true);
-      H5Pset_coll_metadata_write(access_id, true);
-      H5Pset_fapl_mpio(access_id, comm.get(), info);
-      xfer_plist = H5Pcreate(H5P_DATASET_XFER);
+      H5Pset_all_coll_metadata_ops(file_apl_, true);
+      H5Pset_coll_metadata_write(file_apl_, true);
+      H5Pset_fapl_mpio(file_apl_, comm.get(), info);
       // enable parallel collective I/O
       H5Pset_dxpl_mpio(xfer_plist, H5FD_MPIO_COLLECTIVE);
       use_phdf5 = true;
@@ -139,26 +159,25 @@ void hdf_archive::set_access_plist(boost::mpi3::communicator& comm, bool request
 }
 #endif
 
-
-bool hdf_archive::create(const std::filesystem::path& fname, unsigned flags)
+bool hdf_archive::create(const std::filesystem::path& fname, unsigned mode_flags)
 {
+  close();
   possible_filename_ = fname;
   if (Mode[NOIO])
     return true;
   if (!(Mode[IS_PARALLEL] || Mode[IS_MASTER]))
     throw std::runtime_error("Only create file in parallel or by master but not every rank!");
-  close();
-  file_id = H5Fcreate(fname.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, access_id);
+  file_id = H5Fcreate(fname.c_str(), mode_flags, file_cpl_, file_apl_);
   return file_id != is_closed;
 }
 
-bool hdf_archive::open(const std::filesystem::path& fname, unsigned flags)
+bool hdf_archive::open(const std::filesystem::path& fname, unsigned mode_flags)
 {
+  close();
   possible_filename_ = fname;
   if (Mode[NOIO])
     return true;
-  close();
-  file_id = H5Fopen(fname.c_str(), flags, access_id);
+  file_id = H5Fopen(fname.c_str(), mode_flags, file_apl_);
   return file_id != is_closed;
 }
 

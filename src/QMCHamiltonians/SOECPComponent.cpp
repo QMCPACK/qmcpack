@@ -432,7 +432,7 @@ SOECPComponent::RealType SOECPComponent::evaluateValueAndDerivatives(ParticleSet
   throw std::runtime_error("SOECPComponent::evaluateValueAndDerivatives should not be called in real build\n");
 #else
 
-  const size_t num_vars = optvars.num_active_vars;
+  const size_t num_vars = optvars.size_of_active();
   dratio_.resize(total_knots_, num_vars);
   dlogpsi_vp_.resize(dlogpsi.size());
 
@@ -489,7 +489,7 @@ SOECPComponent::RealType SOECPComponent::evaluateValueAndDerivativesExactSpinInt
 #ifndef QMC_COMPLEX
   throw std::runtime_error("SOECPComponent::evaluateValueAndDerivatives should not be called in real build\n");
 #else
-  const size_t num_vars = optvars.num_active_vars;
+  const size_t num_vars = optvars.size_of_active();
   dratio_.resize(total_knots_, num_vars);
   dlogpsi_vp_.resize(dlogpsi.size());
 

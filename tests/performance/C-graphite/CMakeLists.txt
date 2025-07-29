@@ -33,7 +33,7 @@ function(
 
   maybe_symlink("${QMC_DATA}/C-graphite/${H5_FILE}" "${WDIR}/../${H5_FILE}")
 
-  set(TEST_NAME ${TEST_NAME}-${PROCS}-${THREADS})
+  set(TEST_NAME ${TEST_NAME}-r${PROCS}-t${THREADS})
   math(EXPR TOT_PROCS "${PROCS} * ${THREADS}")
   if(HAVE_MPI)
     add_test(NAME ${TEST_NAME} COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${PROCS} ${MPIEXEC_PREFLAGS}

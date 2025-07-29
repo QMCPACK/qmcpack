@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2024 QMCPACK developers.
+// Copyright (c) 2025 QMCPACK developers.
 //
 // File developed by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //
@@ -15,6 +15,7 @@
 
 #include "WalkerLogCollector.h"
 #include "type_traits/template_types.hpp"
+#include "Utilities/TimerManager.h"
 
 namespace qmcplusplus
 {
@@ -30,14 +31,14 @@ struct WalkerLogInput;
  *    to the HDF file at the end of each MC block.
  *
  *    Just prior to the write, this class examines the distribution of walker
- *    energies on its rank for each MC step in the MC block, identifies the 
- *    minimum/maximum/median energy walkers and buffers their full data 
+ *    energies on its rank for each MC step in the MC block, identifies the
+ *    minimum/maximum/median energy walkers and buffers their full data
  *    (including per-particle information) for the write.
- *    This data corresponds to walker information at specific quantiles of the 
+ *    This data corresponds to walker information at specific quantiles of the
  *    energy distribution.
  *    See WalkerLogManager::writeBuffers()
  *
- *    Writing per-particle information for all walkers is optional, as is 
+ *    Writing per-particle information for all walkers is optional, as is
  *    writing data for the minimum/maximum/median energy walkers.
  *    Scalar "property" data for each walker is always written.
  */
@@ -89,9 +90,22 @@ private:
 
   RefVector<WalkerLogCollector> collectors_in_run_;
 
+  /// medium granularity timers
+  TimerList_t walker_log_timers_;
+  static constexpr std::string_view my_name_{"WalkerLogManager"};
+  enum Timer
+  {
+    START = 0,
+    STOP,
+    WRITE,
+  };
+  static constexpr std::array<std::string_view, 3> suffixes_{"start", "stop", "write"};
+  static TimerNameList_t<Timer> create_names(const std::string_view& my_name);
+
 public:
   WalkerLogManager(WalkerLogInput& inp, bool allow_logs, std::string series_root, Communicate* comm = 0);
-
+  WalkerLogManager& operator=(WalkerLogManager&& other) = default;
+  WalkerLogManager(WalkerLogManager&& other)            = default;
   /// create a WalkerLogCollector
   std::unique_ptr<WalkerLogCollector> makeCollector() const;
 

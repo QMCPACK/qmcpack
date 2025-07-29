@@ -7,7 +7,7 @@ list(APPEND diamondC_2x1x1-Gaussian_pp_MSD_LONG_SCALARS "potential" "-41.3401986
 list(APPEND diamondC_2x1x1-Gaussian_pp_MSD_LONG_SCALARS "eeenergy" "-4.48998595 0.0218346836")
 list(APPEND diamondC_2x1x1-Gaussian_pp_MSD_LONG_SCALARS "localecp" "-13.06854246 0.0827662144")
 list(APPEND diamondC_2x1x1-Gaussian_pp_MSD_LONG_SCALARS "nonlocalecp" "2.05740964 0.0246666124")
-list(APPEND diamondC_2x1x1-Gaussian_pp_MSD_LONG_SCALARS "ionion" "-25.55132719 0.000001")
+list(APPEND diamondC_2x1x1-Gaussian_pp_MSD_LONG_SCALARS "ionion" "-25.55132719 0.000003")
 qmc_run_and_check(
   long-diamondC_2x1x1-Gaussian_pp_MSD
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp_MSD"
@@ -27,9 +27,9 @@ list(APPEND diamondC_2x1x1-Gaussian_pp_MSD_SHORT_SCALARS "totenergy" "-21.341584
 list(APPEND diamondC_2x1x1-Gaussian_pp_MSD_SHORT_SCALARS "kinetic" "19.99861447 0.207280984944")
 list(APPEND diamondC_2x1x1-Gaussian_pp_MSD_SHORT_SCALARS "potential" "-41.34019869 0.234973849712")
 list(APPEND diamondC_2x1x1-Gaussian_pp_MSD_SHORT_SCALARS "eeenergy" "-4.48998595 0.1")
-list(APPEND diamondC_2x1x1-Gaussian_pp_MSD_SHORT_SCALARS "localecp" "-13.06854246 0.15")
+list(APPEND diamondC_2x1x1-Gaussian_pp_MSD_SHORT_SCALARS "localecp" "-13.06854246 0.2")
 list(APPEND diamondC_2x1x1-Gaussian_pp_MSD_SHORT_SCALARS "nonlocalecp" "2.05740964 0.077946495184")
-list(APPEND diamondC_2x1x1-Gaussian_pp_MSD_SHORT_SCALARS "ionion" "-25.55132719 0.000002")
+list(APPEND diamondC_2x1x1-Gaussian_pp_MSD_SHORT_SCALARS "ionion" "-25.55132719 0.000003")
 qmc_run_and_check(
   short-diamondC_2x1x1-Gaussian_pp_MSD
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp_MSD"
@@ -52,7 +52,7 @@ if(QMC_MIXED_PRECISION)
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_VMC_SCALARS "eeenergy" "-4.77761915 0.00003")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_VMC_SCALARS "localecp" "-10.90122112 0.0002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_VMC_SCALARS "nonlocalecp" "1.10699937 0.0001")
-    list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_VMC_SCALARS "ionion" "-25.55133345 0.000002")
+    list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_VMC_SCALARS "ionion" "-25.55132413 0.000002")
     #DMC
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_DMC_SCALARS "totenergy" "-21.69556787 0.0005")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_DMC_SCALARS "kinetic" "18.36514441 0.0005")
@@ -60,7 +60,7 @@ if(QMC_MIXED_PRECISION)
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_DMC_SCALARS "eeenergy" "-5.32649930 0.00003")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_DMC_SCALARS "localecp" "-10.70569492 0.0002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_DMC_SCALARS "nonlocalecp" "1.52281538 0.0001")
-    list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_DMC_SCALARS "ionion" "-25.55133345 0.000002")
+    list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_DMC_SCALARS "ionion" "-25.55132413 0.000002")
   else()
     # VMC
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_VMC_SCALARS "totenergy" "-21.00670927 0.0005")
@@ -69,7 +69,7 @@ if(QMC_MIXED_PRECISION)
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_VMC_SCALARS "eeenergy" "-4.24910344 0.00003")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_VMC_SCALARS "localecp" "-13.65564795 0.0002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_VMC_SCALARS "nonlocalecp" "1.60484851 0.0001")
-    list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_VMC_SCALARS "ionion" "-25.55133345 0.000002")
+    list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_VMC_SCALARS "ionion" "-25.55132413 0.000002")
     #DMC
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_DMC_SCALARS "totenergy" "-21.62353122 0.0005")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_DMC_SCALARS "kinetic" "20.66684133 0.0005")
@@ -77,7 +77,7 @@ if(QMC_MIXED_PRECISION)
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_DMC_SCALARS "eeenergy" "-4.94421717 0.00003")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_DMC_SCALARS "localecp" "-13.24215237 0.0002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_DMC_SCALARS "nonlocalecp" "1.44733044 0.0001")
-    list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_DMC_SCALARS "ionion" "-25.55133345 0.000002")
+    list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_DMC_SCALARS "ionion" "-25.55132413 0.000002")
   endif()
 else()
   if(QMC_COMPLEX)
@@ -143,7 +143,7 @@ if(QMC_MIXED_PRECISION)
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "eeenergy"
          "-4.20408649 0.00003")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "ionion"
-         "-25.55133363 0.000002")
+         "-25.55132413 0.000002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "localecp"
          "-14.93105730 0.0002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "nonlocalecp"
@@ -159,7 +159,7 @@ if(QMC_MIXED_PRECISION)
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "eeenergy"
          "-4.99765058 0.00003")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "ionion"
-         "-25.55133363 0.000002")
+         "-25.55132413 0.000002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "localecp"
          "-14.00169909 0.0002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "nonlocalecp"
@@ -175,7 +175,7 @@ if(QMC_MIXED_PRECISION)
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "eeenergy"
          "-4.47590829 0.00003")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "ionion"
-         "-25.55133363 0.000002")
+         "-25.55132413 0.000002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "localecp"
          "-15.03973198 0.0002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "nonlocalecp"
@@ -191,7 +191,7 @@ if(QMC_MIXED_PRECISION)
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "eeenergy"
          "-4.43122622 0.00003")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "ionion"
-         "-25.55133363 0.000002")
+         "-25.55132413 0.000002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "localecp"
          "-12.89019745 0.0002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "nonlocalecp"
@@ -207,7 +207,7 @@ if(QMC_MIXED_PRECISION)
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "eeenergy"
          "-4.34588506 0.00003")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "ionion"
-         "-25.55133363 0.000002")
+         "-25.55132413 0.000002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "localecp"
          "-13.94038870 0.0002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "nonlocalecp"
@@ -223,7 +223,7 @@ if(QMC_MIXED_PRECISION)
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "eeenergy"
          "-4.03628785 0.00003")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "ionion"
-         "-25.55133363 0.000002")
+         "-25.55132413 0.000002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "localecp"
          "-14.32128624 0.0002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "nonlocalecp"
@@ -357,7 +357,7 @@ if(QMC_MIXED_PRECISION)
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "eeenergy"
          "-5.08527221 0.00003")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "ionion"
-         "-25.55133363 0.000002")
+         "-25.55132413 0.000002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "localecp"
          "-9.83228444 0.0002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "nonlocalecp"
@@ -373,7 +373,7 @@ if(QMC_MIXED_PRECISION)
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "eeenergy"
          "-4.68529565 0.00003")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "ionion"
-         "-25.55133363 0.000002")
+         "-25.55132413 0.000002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "localecp"
          "-15.31087459 0.0002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "nonlocalecp"
@@ -389,7 +389,7 @@ if(QMC_MIXED_PRECISION)
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "eeenergy"
          "-4.60729524 0.00003")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "ionion"
-         "-25.55133363 0.000002")
+         "-25.55132353 0.000002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "localecp"
          "-17.12262279 0.0002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "nonlocalecp"
@@ -405,7 +405,7 @@ if(QMC_MIXED_PRECISION)
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "eeenergy"
          "-5.04910503 0.00003")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "ionion"
-         "-25.55133363 0.000002")
+         "-25.55132413 0.000002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "localecp"
          "-10.87790041 0.0002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "nonlocalecp"
@@ -421,7 +421,7 @@ if(QMC_MIXED_PRECISION)
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "eeenergy"
          "-4.64881369 0.00003")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "ionion"
-         "-25.55133363 0.000002")
+         "-25.55132413 0.000002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "localecp"
          "-14.32409006 0.0002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "nonlocalecp"
@@ -437,7 +437,7 @@ if(QMC_MIXED_PRECISION)
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "eeenergy"
          "-4.62934502 0.00003")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "ionion"
-         "-25.55133363 0.000002")
+         "-25.55132413 0.000002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "localecp"
          "-14.42788710 0.0002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "nonlocalecp"
@@ -571,7 +571,7 @@ if(QMC_MIXED_PRECISION)
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "eeenergy"
          "-4.40762368 0.0002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "ionion"
-         "-25.55133363 0.000002")
+         "-25.55132413 0.000002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "localecp"
          "-13.87483391 0.0002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "nonlocalecp"
@@ -587,7 +587,7 @@ if(QMC_MIXED_PRECISION)
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "eeenergy"
          "-4.87340890 0.0002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "ionion"
-         "-25.55133363 0.000002")
+         "-25.55132413 0.000002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "localecp"
          "-13.00551457 0.0002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "nonlocalecp"
@@ -603,7 +603,7 @@ if(QMC_MIXED_PRECISION)
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "eeenergy"
          "-4.62211747 0.0002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "ionion"
-         "-25.55133363 0.000002")
+         "-25.55132413 0.000002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "localecp"
          "-14.01500084 0.0004")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "nonlocalecp"
@@ -619,7 +619,7 @@ if(QMC_MIXED_PRECISION)
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "eeenergy"
          "-4.44192720 0.0002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "ionion"
-         "-25.55133363 0.000002")
+         "-25.55132413 0.000002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "localecp"
          "-11.69255184 0.0002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "nonlocalecp"
@@ -635,7 +635,7 @@ if(QMC_MIXED_PRECISION)
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "eeenergy"
          "-4.23387512 0.0002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "ionion"
-         "-25.55133363 0.000002")
+         "-25.55132413 0.000002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "localecp"
          "-13.74506329 0.0002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "nonlocalecp"
@@ -651,7 +651,7 @@ if(QMC_MIXED_PRECISION)
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "eeenergy"
          "-3.69096631 0.0002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "ionion"
-         "-25.55133363 0.000002")
+         "-25.55132413 0.000002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "localecp"
          "-15.85799109  0.0005")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "nonlocalecp"
@@ -785,7 +785,7 @@ if(QMC_MIXED_PRECISION)
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "eeenergy"
          "-4.90724094 0.00003")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "ionion"
-         "-25.55133363 0.000002")
+         "-25.55132413 0.000002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "localecp"
          "-13.85965673 0.0002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "nonlocalecp"
@@ -801,7 +801,7 @@ if(QMC_MIXED_PRECISION)
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "eeenergy"
          "-4.45806315 0.00003")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "ionion"
-         "-25.55133363 0.000002")
+         "-25.55132413 0.000002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "localecp"
          "-14.75288075 0.0002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "nonlocalecp"
@@ -817,7 +817,7 @@ if(QMC_MIXED_PRECISION)
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "eeenergy"
          "-4.81842941 0.00003")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "ionion"
-         "-25.55133363 0.000002")
+         "-25.55132413 0.000002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "localecp"
          "-12.98244950 0.0002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "nonlocalecp"
@@ -833,7 +833,7 @@ if(QMC_MIXED_PRECISION)
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "eeenergy"
          "-4.45926415 0.00003")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "ionion"
-         "-25.55133363 0.000002")
+         "-25.55132413 0.000002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "localecp"
          "-13.74208188 0.0002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "nonlocalecp"
@@ -849,7 +849,7 @@ if(QMC_MIXED_PRECISION)
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "eeenergy"
          "-4.93674832 0.00003")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "ionion"
-         "-25.55133363 0.000002")
+         "-25.55132413 0.000002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "localecp"
          "-11.60307190 0.0002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "nonlocalecp"
@@ -865,7 +865,7 @@ if(QMC_MIXED_PRECISION)
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "eeenergy"
          "-5.59636306 0.00003")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "ionion"
-         "-25.55133363 0.000002")
+         "-25.55132413 0.000002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "localecp"
          "-10.52715232 0.0002")
     list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "nonlocalecp"

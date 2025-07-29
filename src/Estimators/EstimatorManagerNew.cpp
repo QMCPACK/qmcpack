@@ -2,9 +2,9 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2024 QMCPACK developers.
+// Copyright (c) 2025 QMCPACK developers.
 //
-// File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
+// File developed by: Peter W. Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
 // File refactored from: EstimatorManagerBase.cpp
 //////////////////////////////////////////////////////////////////////////////////////
@@ -30,6 +30,7 @@
 #include "Message/CommOperators.h"
 #include "Message/CommUtilities.h"
 #include <Pools/PooledData.h>
+#include "Estimators/StructureFactorEstimator.h"
 #include "Estimators/LocalEnergyEstimator.h"
 #include "Estimators/LocalEnergyOnlyEstimator.h"
 #include "Estimators/RMCLocalEnergyEstimator.h"
@@ -109,7 +110,8 @@ void EstimatorManagerNew::constructEstimators(EstimatorManagerInput&& emi,
                                                        twf.getSPOMap(), pset) ||
           createEstimator<MagnetizationDensityInput>(est_input, pset.getLattice()) ||
           createEstimator<PerParticleHamiltonianLoggerInput>(est_input, my_comm_->rank()) ||
-          createEstimator<EnergyDensityInput>(est_input, pset_pool)))
+          createEstimator<EnergyDensityInput>(est_input, pset_pool) ||
+          createEstimator<StructureFactorInput>(est_input, pset_pool)))
       throw UniformCommunicateError(std::string(error_tag_) +
                                     "cannot construct an estimator from estimator input object.");
 
@@ -136,7 +138,7 @@ EstimatorManagerNew::~EstimatorManagerNew() = default;
  *
  * \todo this should be in in constructor object shouldn't be reused
  * Warning this is different from some "resets" in the code, it does not clear the object
- * 
+ *
  * The number of estimators and their order can vary from the previous state.
  * reinitialized properties before setting up a new BlockAverage data list.
  *
@@ -174,7 +176,7 @@ void EstimatorManagerNew::makeConfigReport(std::ostream& os) const
   {
     os << "  General Estimators:\n";
     for (auto& est : operator_ests_)
-      os << "    " << est->get_my_name() << '\n';
+      os << "    " << est->getMyType() << "  (" << est->getMyName() << ")\n";
   }
 }
 
@@ -243,7 +245,12 @@ void EstimatorManagerNew::startDriverRun()
 
 void EstimatorManagerNew::stopDriverRun() { h_file.reset(); }
 
-void EstimatorManagerNew::startBlock(int steps) { block_timer_.restart(); }
+void EstimatorManagerNew::startBlock(int steps)
+{
+  block_timer_.restart();
+  for (auto& op_est : operator_ests_)
+    op_est->startBlock(steps);
+}
 
 void EstimatorManagerNew::stopBlock(unsigned long accept, unsigned long reject, FullPrecRealType block_weight)
 {
@@ -256,6 +263,10 @@ void EstimatorManagerNew::stopBlock(unsigned long accept, unsigned long reject, 
   makeBlockAverages(accept, reject);
   reduceOperatorEstimators();
   writeOperatorEstimators();
+  // This is an entry point for rank level estimators to do one last
+  // thing before being zerod
+  for (auto& op_est : operator_ests_)
+    op_est->stopBlock();
   zeroOperatorEstimators();
   // intentionally put after all the estimator I/O
   PropertyCache[cpuInd] = block_timer_.elapsed();
@@ -286,7 +297,7 @@ void EstimatorManagerNew::collectScalarEstimators(const std::vector<RefVector<Sc
   }
 }
 
-void EstimatorManagerNew::collectOperatorEstimators(const std::vector<RefVector<OperatorEstBase>>& crowd_op_ests)
+void EstimatorManagerNew::collectOperatorEstimators(std::vector<RefVector<OperatorEstBase>>& crowd_op_ests)
 {
   for (int iop = 0; iop < operator_ests_.size(); ++iop)
   {
@@ -294,25 +305,12 @@ void EstimatorManagerNew::collectOperatorEstimators(const std::vector<RefVector<
     for (int icrowd = 0; icrowd < crowd_op_ests.size(); ++icrowd)
       this_op_est_for_all_crowds.emplace_back(crowd_op_ests[icrowd][iop]);
     operator_ests_[iop]->collect(this_op_est_for_all_crowds);
+    operator_ests_[iop]->zero(this_op_est_for_all_crowds);
   }
 }
 
-void EstimatorManagerNew::makeBlockAverages(unsigned long accepts, unsigned long rejects)
+void EstimatorManagerNew::reduceBlockData()
 {
-  // accumulate unsigned long counters over ranks.
-  // Blocks ends are infrequent, two MPI transfers to preserve type
-  // these could be replaced with a singple call MPI_struct_type some packing scheme or even
-  // a pack into and out of an fp type that can be assured to hold the integral type exactly
-  // IMHO they should not be primarily stored in a vector with magic indexes
-  std::vector<unsigned long> accepts_and_rejects(my_comm_->size() * 2, 0);
-  accepts_and_rejects[my_comm_->rank()]                    = accepts;
-  accepts_and_rejects[my_comm_->size() + my_comm_->rank()] = rejects;
-  my_comm_->allreduce(accepts_and_rejects);
-  int64_t total_block_accept =
-      std::accumulate(accepts_and_rejects.begin(), accepts_and_rejects.begin() + my_comm_->size(), int64_t(0));
-  int64_t total_block_reject = std::accumulate(accepts_and_rejects.begin() + my_comm_->size(),
-                                               accepts_and_rejects.begin() + my_comm_->size() * 2, int64_t(0));
-
   //Transfer FullPrecisionRead data
   const size_t n1 = AverageCache.size();
   const size_t n2 = n1 + PropertyCache.size();
@@ -341,6 +339,25 @@ void EstimatorManagerNew::makeBlockAverages(unsigned long accepts, unsigned long
     for (int i = 1; i < PropertyCache.size(); i++)
       PropertyCache[i] *= invTotWgt;
   }
+}
+
+void EstimatorManagerNew::makeBlockAverages(unsigned long accepts, unsigned long rejects)
+{
+  // accumulate unsigned long counters over ranks.
+  // Blocks ends are infrequent, two MPI transfers to preserve type
+  // these could be replaced with a singple call MPI_struct_type some packing scheme or even
+  // a pack into and out of an fp type that can be assured to hold the integral type exactly
+  // IMHO they should not be primarily stored in a vector with magic indexes
+  std::vector<unsigned long> accepts_and_rejects(my_comm_->size() * 2, 0);
+  accepts_and_rejects[my_comm_->rank()]                    = accepts;
+  accepts_and_rejects[my_comm_->size() + my_comm_->rank()] = rejects;
+  my_comm_->allreduce(accepts_and_rejects);
+  int64_t total_block_accept =
+      std::accumulate(accepts_and_rejects.begin(), accepts_and_rejects.begin() + my_comm_->size(), int64_t(0));
+  int64_t total_block_reject = std::accumulate(accepts_and_rejects.begin() + my_comm_->size(),
+                                               accepts_and_rejects.begin() + my_comm_->size() * 2, int64_t(0));
+
+  reduceBlockData();
 
   // now we put the correct accept ratio in
   PropertyCache[acceptRatioInd] = static_cast<FullPrecRealType>(total_block_accept) /

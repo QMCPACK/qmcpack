@@ -22,9 +22,9 @@
 #include "QMCDrivers/QMCDriverFactory.h"
 #include "QMCDrivers/QMCDriverInterface.h"
 #include "QMCDrivers/tests/ValidQMCInputSections.h"
-#include "Particle/tests/MinimalParticlePool.h"
-#include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
-#include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
+#include <MinimalParticlePool.h>
+#include <MinimalWaveFunctionPool.h>
+#include <MinimalHamiltonianPool.h>
 #include "ProjectData.h"
 #include "Message/Communicate.h"
 #include "QMCDrivers/VMC/VMC.h"
@@ -71,7 +71,8 @@ TEST_CASE("QMCDriverFactory create VMC Driver", "[qmcapp]")
   Communicate* comm;
   comm = OHMMS::Controller;
 
-  ProjectData test_project;
+  using DV = ProjectData::DriverVersion;
+  ProjectData test_project("testing", DV::LEGACY);
   QMCDriverFactory driver_factory(test_project);
 
   Libxml2Document doc;
@@ -141,7 +142,8 @@ TEST_CASE("QMCDriverFactory create DMC driver", "[qmcapp]")
   Communicate* comm;
   comm = OHMMS::Controller;
 
-  ProjectData test_project;
+  using DV = ProjectData::DriverVersion;
+  ProjectData test_project("testing", DV::LEGACY);
   QMCDriverFactory driver_factory(test_project);
 
   Libxml2Document doc;

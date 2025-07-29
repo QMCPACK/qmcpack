@@ -1,6 +1,8 @@
 <?xml version="1.0"?>
 <simulation>
-  <project id="qmc_long" series="0"/>
+<project id="qmc_long" series="0">
+  <parameter name="driver_version">legacy</parameter>
+</project>
   <include href="C_Diamond.structure.xml"/>
   <include href="C_Diamond-Twist0.wfj.xml"/>
   <hamiltonian name="h0" type="generic" target="e">

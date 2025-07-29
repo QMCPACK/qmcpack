@@ -38,6 +38,7 @@
 
 namespace qmcplusplus
 {
+class SlaterDet;
 class MultiSlaterDetTableMethod;
 
 /** @ingroup MBWfs
@@ -538,6 +539,9 @@ public:
 
   /// spomap_ reference accessor
   const SPOMap& getSPOMap() const { return *spomap_; }
+
+  /// find SD WFCs if exist
+  RefVector<SlaterDet> findSD() const;
 
   /// find MSD WFCs if exist
   RefVector<MultiSlaterDetTableMethod> findMSD() const;

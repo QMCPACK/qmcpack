@@ -50,7 +50,6 @@ public:
   using Real          = RealAlias<Value>;
   using FullPrecReal  = RealAlias<FullPrecValue>;
   using Grad          = TinyVector<Value, OHMMS_DIM>;
-  using Lattice       = PtclOnLatticeTraits::ParticleLayout;
   using Position      = QMCTraits::PosType;
 
   using Evaluator  = OneBodyDensityMatricesInput::Evaluator;
@@ -85,7 +84,7 @@ private:
   /** @} */
 
   //data members \todo analyze lifecycles allocation optimization or state?
-  CompositeSPOSet basis_functions_;
+  CompositeSPOSet<Value> basis_functions_;
   Vector<Value> basis_values_;
   Vector<Value> basis_norms_;
   Vector<Grad> basis_gradients_;
@@ -105,7 +104,7 @@ private:
   std::vector<Value> psi_ratios_;
 
   /// row major per sample workspaces
-  /** conj(basis_values) for each particle 
+  /** conj(basis_values) for each particle
    *  size: samples * basis_size
    *  vector is over species
    *  each matrix row: particle column: basis_value
@@ -220,7 +219,7 @@ private:
    *  \param[in] rng          random generator. templated for testing without dependency on app level rng.
    *  \param[in] steps        If integrator_ = Integrator::DENSITY steps is a key parameter otherwise ignored.
    *                          when set to 0 it is reset to samples_ internally
-   *  
+   *
    *  sideeffects:
    *   * samples_weights_ are set.
    *   * rsamples_ are set.
