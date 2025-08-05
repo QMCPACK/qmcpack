@@ -710,15 +710,67 @@ endif()
 
 if(USE_NVTX_API AND NOT QMC_CUDA2HIP)
   message(STATUS "Enabling use of CUDA NVTX APIs")
-  find_library(
-    NVTX_API_LIB NAME nvToolsExt
-    HINTS ${CUDA_TOOLKIT_ROOT_DIR}
-    PATH_SUFFIXES lib lib64)
-  if(NOT NVTX_API_LIB)
-    message(FATAL_ERROR "USE_NVTX_API set but NVTX_API_LIB not found")
-  endif(NOT NVTX_API_LIB)
-  message("CUDA nvToolsExt library: ${NVTX_API_LIB}")
-  link_libraries(${NVTX_API_LIB})
+
+  set(_NVTX_FOUND FALSE)
+
+  # 1) trying to find NVTX v3 (header-only)
+  if(TARGET CUDA::nvtx3)
+    message(STATUS "Using CUDA::nvtx3 (header-only NVTX v3)")
+    link_libraries(CUDA::nvtx3)
+    set(_NVTX_FOUND TRUE)
+  endif()
+
+  # 2) if CUDA::nvtx3 fails, try to find the nvtx3 headers manually.
+  if(NOT _NVTX_FOUND)
+    find_path(NVTX3_INCLUDE_DIR
+      NAMES
+        nvtx3/nvtx3.hpp
+        nvtx3/nvToolsExt.h
+      HINTS
+        ${CUDA_TOOLKIT_ROOT_DIR}/include
+        $ENV{CUDA_PATH}/include
+    )
+    if(NVTX3_INCLUDE_DIR)
+      message(STATUS "Found NVTX v3 headers at: ${NVTX3_INCLUDE_DIR} (header-only)")
+      include_directories(${NVTX3_INCLUDE_DIR})
+      set(_NVTX_FOUND TRUE)
+    endif()
+  endif()
+
+  # generate shim header for NVTX v3, if found
+  if(TARGET CUDA::nvtx3 OR NVTX3_INCLUDE_DIR)
+    set(NVTX_SHIM_DIR "${CMAKE_BINARY_DIR}/nvtx_compat")
+    file(MAKE_DIRECTORY "${NVTX_SHIM_DIR}")
+    file(WRITE "${NVTX_SHIM_DIR}/nvToolsExt.h"
+"#pragma once
+#include <nvtx3/nvToolsExt.h>"
+    )
+    include_directories(BEFORE "${NVTX_SHIM_DIR}")
+    message(STATUS "NVTX: using v3 compat shim at ${NVTX_SHIM_DIR}/nvToolsExt.h")
+  endif()
+
+  # 3) fallback to legacy NVTX v2
+  if(NOT _NVTX_FOUND)
+    find_library(NVTX2_LIB
+      NAME nvToolsExt
+      HINTS
+        ${CUDA_TOOLKIT_ROOT_DIR}
+        $ENV{CUDA_PATH}
+      PATH_SUFFIXES
+        lib
+        lib64
+    )
+    if(NVTX2_LIB)
+      message(STATUS "Using legacy NVTX v2: ${NVTX2_LIB}")
+      include_directories(${NVTX2_INCLUDE_DIR})
+      link_libraries(${NVTX2_LIB})
+      set(_NVTX_FOUND TRUE)
+    endif()
+  endif()
+
+  if(NOT _NVTX_FOUND)
+    message(FATAL_ERROR "USE_NVTX_API set but NVTX not found")
+  endif(NOT _NVTX_FOUND)
 else()
   message(STATUS "CUDA NVTX APIs disabled")
 endif(USE_NVTX_API AND NOT QMC_CUDA2HIP)
