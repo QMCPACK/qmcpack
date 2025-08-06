@@ -90,7 +90,6 @@ private:
                    std::vector<std::string>& CItags,
                    std::vector<ValueType>& coeff,
                    bool& optimizeCI,
-                   bool& degeneratedCI,
                    const std::vector<int>& nptcls,
                    std::unique_ptr<CSFData>& csf_data_ptr) const;
 
@@ -100,7 +99,6 @@ private:
                      std::vector<std::string>& CItags,
                      std::vector<ValueType>& coeff,
                      bool& optimizeCI,
-                     bool& degeneratedCI,
                      const std::vector<int>& nptcls) const;
 
   template<typename VT,

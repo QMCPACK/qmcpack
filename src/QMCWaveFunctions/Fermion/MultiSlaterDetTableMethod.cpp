@@ -52,7 +52,6 @@ MultiSlaterDetTableMethod::MultiSlaterDetTableMethod(ParticleSet& targetPtcl,
       AccRejTimer(createGlobalTimer(getClassName() + "::Accept_Reject")),
       EvaluateTimer(createGlobalTimer(getClassName() + "::evaluate")),
       CI_Optimizable(false),
-      CI_Degenerated(false),
       use_pre_computing_(use_pre_computing)
 {
   Dets = std::move(dets);
@@ -73,15 +72,13 @@ void MultiSlaterDetTableMethod::initialize(std::unique_ptr<std::vector<std::vect
                                            std::unique_ptr<opt_variables_type> myVars_in,
                                            std::unique_ptr<CSFData> csf_data_in,
                                            bool optimizable,
-                                           bool CI_optimizable,
-                                           bool CI_degenerated)
+                                           bool CI_optimizable)
 {
   C2node         = std::move(C2node_in);
   C              = std::move(C_in);
   myVars         = std::move(myVars_in);
   csf_data_      = std::move(csf_data_in);
   CI_Optimizable = CI_optimizable;
-  CI_Degenerated = CI_degenerated;
 }
 
 MultiSlaterDetTableMethod::~MultiSlaterDetTableMethod() = default;
@@ -95,7 +92,6 @@ std::unique_ptr<WaveFunctionComponent> MultiSlaterDetTableMethod::makeClone(Part
   auto clone = std::make_unique<MultiSlaterDetTableMethod>(tqp, std::move(dets_clone), use_pre_computing_);
 
   clone->CI_Optimizable = CI_Optimizable;
-  clone->CI_Degenerated = CI_Degenerated;
   clone->C2node         = C2node;
   clone->C              = C;
   clone->myVars         = myVars;
@@ -769,9 +765,6 @@ void MultiSlaterDetTableMethod::checkOutVariables(const opt_variables_type& acti
 void MultiSlaterDetTableMethod::resetParametersExclusive(const opt_variables_type& active)
 {
   if (CI_Optimizable)
-  std::cout << std::boolalpha; // Enable printing bool as true/false
-  std::cout << "CI_Optimizable: " << CI_Optimizable << std::endl;
-  std::cout << "CI_Degenerated: " << CI_Degenerated << std::endl;
   {
     if (csf_data_)
     {
@@ -782,22 +775,6 @@ void MultiSlaterDetTableMethod::resetParametersExclusive(const opt_variables_typ
         if (loc >= 0)
         {
           CSFcoeff_p[i + 1] = (*myVars)[i] = active[loc];
-          if (CI_Degenerated)
-          {
-            int next_loc = myVars->where(i + 1);
-            if (next_loc >= 0)
-            {
-              if (std::abs(csf_data_->coeffs[i]) == std::abs(csf_data_->coeffs[i + 1])) 
-              {
-                 (*myVars)[i] = active[loc];
-                 (*myVars)[i+1] = active[loc];
-                 std::cout << "Degenerate pair detected: i = " << i
-                        << " with j = " << i+1
-                        << " (" << std::abs(csf_data_->coeffs[i])
-                        << ")" << std::endl;
-              }
-            }
-          }
         }
       }
       int cnt                                 = 0;

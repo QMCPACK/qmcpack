@@ -303,7 +303,6 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
 
   // whether to use an optimizable slater determinant
   std::string optimize;
-  std::string degenerated;
   std::string matrix_inverter;
   std::string use_batch;
   std::string useGPU;
@@ -312,7 +311,6 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
   OhmmsAttributeSet sdAttrib;
   sdAttrib.add(delay_rank, "delay_rank");
   sdAttrib.add(optimize, "optimize", {"no", "yes"});
-  sdAttrib.add(degenerated, "degenerated", {"no", "yes"});
   sdAttrib.add(matrix_inverter, "matrix_inverter", {"gpu", "host"});
 #if defined(ENABLE_OFFLOAD)
   sdAttrib.add(use_batch, "batch", {"yes", "no"});
@@ -523,12 +521,9 @@ std::unique_ptr<MultiSlaterDetTableMethod> SlaterDetBuilder::createMSDFast(
   auto& myVars(*myVars_ptr);
 
   bool Optimizable    = false;
-
   bool CI_Optimizable = false;
-  bool CI_Degenerated = false;
 
   bool optimizeCI;
-  bool degeneratedCI;
 
   std::vector<std::vector<ci_configuration>> uniqueConfgs(nGroups);
   std::vector<std::string> CItags;
@@ -556,12 +551,10 @@ std::unique_ptr<MultiSlaterDetTableMethod> SlaterDetBuilder::createMSDFast(
     if (!HDF5Path.empty())
     {
       app_log() << "Found Multideterminants in H5 File" << std::endl;
-      readDetListH5(cur, uniqueConfgs, C2nodes, CItags, C, optimizeCI, degeneratedCI, nptcls);
+      readDetListH5(cur, uniqueConfgs, C2nodes, CItags, C, optimizeCI, nptcls);
     }
     else
-    {
-      readDetList(cur, uniqueConfgs, C2nodes, CItags, C, optimizeCI, degeneratedCI, nptcls, csf_data_ptr);
-    }
+      readDetList(cur, uniqueConfgs, C2nodes, CItags, C, optimizeCI, nptcls, csf_data_ptr);
   }
 
   const auto maxloc   = std::max_element(C.begin(), C.end(), [](ValueType const& lhs, ValueType const& rhs) {
@@ -611,7 +604,6 @@ std::unique_ptr<MultiSlaterDetTableMethod> SlaterDetBuilder::createMSDFast(
   if (csf_data_ptr && csf_data_ptr->coeffs.size() == 1)
     optimizeCI = false;
 
-
   if (optimizeCI)
   {
     app_log() << "CI coefficients are optimizable. \n";
@@ -636,16 +628,11 @@ std::unique_ptr<MultiSlaterDetTableMethod> SlaterDetBuilder::createMSDFast(
     else
       for (int i = 1; i < C.size(); i++)
         myVars.insert(CItags[i], std::real(C[i]), true, optimize::LINEAR_P);
-    if (degeneratedCI) {
-        CI_Degenerated = true;
-        app_log() << "CI coefficients will keep the degeneracy during optimization.\n";
-    }
   }
   else
   {
     app_log() << "CI coefficients are not optimizable. \n";
     CI_Optimizable = false;
-    CI_Degenerated = false;
   }
 
   bool any_optimizable = false;
@@ -682,7 +669,7 @@ std::unique_ptr<MultiSlaterDetTableMethod> SlaterDetBuilder::createMSDFast(
 
   auto msd_fast = std::make_unique<MultiSlaterDetTableMethod>(targetPtcl, std::move(dets), use_precompute);
   msd_fast->initialize(std::move(C2nodes_sorted_ptr), std::move(C_ptr), std::move(myVars_ptr), std::move(csf_data_ptr),
-                       Optimizable, CI_Optimizable, CI_Degenerated);
+                       Optimizable, CI_Optimizable);
 
   return msd_fast;
 }
@@ -693,7 +680,6 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
                                    std::vector<std::string>& CItags,
                                    std::vector<ValueType>& coeff,
                                    bool& optimizeCI,
-                                   bool& degeneratedCI,
                                    const std::vector<int>& nptcls,
                                    std::unique_ptr<CSFData>& csf_data_ptr) const
 {
@@ -709,17 +695,13 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
   coeff.clear();
   std::vector<std::vector<ci_configuration>> confgLists(nGroups);
   std::string optCI    = "no";
-  std::string degCI    = "no";
   RealType cutoff      = 0.0;
   RealType zero_cutoff = 0.0;
   OhmmsAttributeSet ciAttrib;
   ciAttrib.add(optCI, "optimize");
   ciAttrib.add(optCI, "Optimize");
-  ciAttrib.add(degCI, "degenerated");
-  ciAttrib.add(degCI, "Degenerated");
   ciAttrib.put(cur);
   optimizeCI         = (optCI == "yes");
-  degeneratedCI      = (degCI == "yes");
   xmlNodePtr curRoot = cur, DetListNode = nullptr;
   cur = curRoot->children;
   while (cur != NULL) //check the basis set
@@ -1068,7 +1050,6 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
                                      std::vector<std::string>& CItags,
                                      std::vector<ValueType>& coeff,
                                      bool& optimizeCI,
-                                     bool& degeneratedCI,
                                      const std::vector<int>& nptcls) const
 {
   bool success = true;
@@ -1086,14 +1067,11 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
   std::vector<ValueType> CIcoeff;
   std::vector<std::string> ConfigTag;
   std::string optCI = "no";
-  std::string degCI    = "no";
   RealType cutoff   = 0.0;
   OhmmsAttributeSet ciAttrib;
   ciAttrib.add(optCI, "optimize");
-  ciAttrib.add(degCI, "degenerated");
   ciAttrib.put(cur);
   optimizeCI         = (optCI == "yes");
-  degeneratedCI      = (degCI == "yes");
   xmlNodePtr curRoot = cur, DetListNode = nullptr;
   std::string multidetH5path;
   cur = curRoot->children;
