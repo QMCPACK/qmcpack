@@ -164,6 +164,11 @@ struct shm_ptr_with_raw_ptr_dispatch
     ret -= d;
     return ret;
   }
+
+  friend shm_ptr_with_raw_ptr_dispatch operator+(std::ptrdiff_t d, shm_ptr_with_raw_ptr_dispatch self) {
+    return self + d;
+  }
+
   std::ptrdiff_t operator-(shm_ptr_with_raw_ptr_dispatch<T> other) const
   {
     std::ptrdiff_t pdiff(wSP_->base(0) + offset - (other.wSP_->base(0) + other.offset));
