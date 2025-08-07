@@ -1575,7 +1575,7 @@ double GamesAsciiParser::getCSFSign(std::vector<int>& occ)
     {
       if (occ[j] > occ[i])
       {
-        res *= 1.0;
+        res *= -1.0;
         double tmp = occ[i];
         occ[i]     = occ[j];
         occ[j]     = tmp;
