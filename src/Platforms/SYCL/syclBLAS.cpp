@@ -111,22 +111,68 @@ sycl::event gemvT_batched_impl(sycl::queue& handle,
   if (m == 0 || n == 0 || batch_count == 0)
     return sycl::event();
 
-  const int num_col_blocks = (n + COLBS - 1) / COLBS;
-  return handle.parallel_for(sycl::nd_range<2>{{batch_count, num_col_blocks * COLBS}, {1, COLBS}},
-                             [=](sycl::nd_item<2> item) {
-                               const unsigned batch = item.get_group(0);
-                               const int col        = item.get_global_id(1);
-                               if (col < n)
-                               {
-                                 T sum(0);
-                                 for (int row = 0; row < m; row++)
-                                   sum += A[batch][col * lda + row] * x[batch][row * incx];
-                                 if (beta[batch] == T(0))
-                                   y[batch][col * incy] = alpha[batch] * sum; // protecting NaN from y_iw
-                                 else
-                                   y[batch][col * incy] = alpha[batch] * sum + beta[batch] * y[batch][col * incy];
-                               }
-                             });
+  // TODO: templatize?
+  static constexpr int ROWBS = 4;
+
+  constexpr int SUM_SIZE = ROWBS * COLBS;
+  const int num_row_blocks = (n + ROWBS - 1) / ROWBS;
+
+  const size_t num_groups = static_cast<size_t>(batch_count) * static_cast<size_t>(num_row_blocks);
+  const sycl::nd_range<1> nd{num_groups * COLBS, COLBS};
+
+  return handle.submit([&](sycl::handler& h) {
+    if (!events.empty())
+      h.depends_on(events);
+
+    sycl::local_accessor<T, 1> sum(SUM_SIZE, h);
+
+    h.parallel_for(nd, [=](sycl::nd_item<1> item) {
+      const int tid     = item.get_local_id(0); // threadIdx.x
+      const size_t gid  = item.get_group(0);
+      const int by      = static_cast<int>(gid % num_row_blocks); // blockIdx.y
+      const int bx      = static_cast<int>(gid / num_row_blocks); // blockIdx.x
+
+      for (int i = 0; i < ROWBS; ++i)
+        sum[i * COLBS + tid] = T(0);
+
+      const T* __restrict__ A_iw = A[bx];
+      const T* __restrict__ x_iw = x[bx];
+
+      const int row_begin = by * ROWBS;
+      const int row_max   = (n - row_begin) < ROWBS ? (n - row_begin) : ROWBS;
+
+      const int num_col_blocks = (m + COLBS - 1) / COLBS;
+      for (int ib = 0; ib < num_col_blocks; ++ib)
+      {
+        if (const int col_id = ib * COLBS + tid; col_id < m)
+        {
+          const T xv = x_iw[col_id * incx];
+          for (int row_id = row_begin; row_id < row_begin + row_max; ++row_id)
+            sum[(row_id - row_begin) * COLBS + tid] += xv * A_iw[row_id * lda + col_id];
+        }
+      }
+
+      for (int iend = COLBS / 2; iend > 0; iend /= 2)
+      {
+        item.barrier(sycl::access::fence_space::local_space);
+        for (int irow = 0; irow < row_max; ++irow)
+          if (tid < iend)
+            sum[irow * COLBS + tid] += sum[irow * COLBS + tid + iend];
+      }
+
+      item.barrier(sycl::access::fence_space::local_space);
+      T* __restrict__ y_iw = y[bx];
+      if (tid < row_max)
+      {
+        const int yidx = (row_begin + tid) * incy;
+        const T s      = sum[tid * COLBS];
+        if (beta[bx] == T(0))
+          y_iw[yidx] = alpha[bx] * s; // protect NaN from y_iw
+        else
+          y_iw[yidx] = alpha[bx] * s + beta[bx] * y_iw[yidx];
+      }
+    });
+  });
 }
 
 /** gemv trans = 'N' case. ROW refers to rows of the m x n column-major Fortran matrix A.
