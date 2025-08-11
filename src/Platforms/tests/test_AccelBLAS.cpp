@@ -486,9 +486,9 @@ TEST_CASE("AccelBLAS", "[BLAS]")
 template<PlatformKind PL>
 void benchmark_gemm_cases()
 {
-  const int M_b = 29;
-  const int N_b = 31;
-  const int K_b = 23;
+  const int M_b   = 29;
+  const int N_b   = 31;
+  const int K_b   = 23;
   const int BATCH = 64;
 
   // Batched Test
@@ -515,8 +515,8 @@ void benchmark_gemm_cases()
 template<PlatformKind PL>
 void benchmark_gemv_cases()
 {
-  const int M_b = 137;
-  const int N_b = 79;
+  const int M_b   = 137;
+  const int N_b   = 79;
   const int BATCH = 64;
 
   // Batched Test
@@ -535,8 +535,8 @@ void benchmark_gemv_cases()
 template<PlatformKind PL>
 void benchmark_ger_cases()
 {
-  const int M_b = 137;
-  const int N_b = 79;
+  const int M_b   = 137;
+  const int N_b   = 79;
   const int BATCH = 64;
 
   // Batched Test
@@ -549,8 +549,8 @@ void benchmark_ger_cases()
 }
 
 
-TEST_CASE("AccelBLAS batched benchmark", "[BLAS][benchmark]") {
-
+TEST_CASE("AccelBLAS batched benchmark", "[BLAS][benchmark]")
+{
   SECTION("gemm_batched")
   {
 #if defined(ENABLE_CUDA)
