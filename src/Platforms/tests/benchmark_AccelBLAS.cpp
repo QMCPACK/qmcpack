@@ -61,7 +61,7 @@ std::string make_bench_name(std::string_view op,
     ss << '_' << transa;
   if (transb)
     ss << transb;
-  ss << " bs" << batch_size;
+  ss << "_bs" << batch_size;
   return ss.str();
 }
 
