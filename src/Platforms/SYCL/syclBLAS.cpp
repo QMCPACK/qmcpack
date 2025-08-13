@@ -219,6 +219,7 @@ sycl::event gemvN_batched_impl(sycl::queue& handle,
       {
         T sum = T(0);
 
+        #pragma unroll
         for (int col_id = 0; col_id < n; ++col_id)
           sum += A_iw[col_id * lda + row_begin + tid] * x_iw[col_id * incx];
 
