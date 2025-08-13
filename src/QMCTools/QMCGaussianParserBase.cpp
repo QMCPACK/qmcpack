@@ -1432,18 +1432,42 @@ xmlNodePtr QMCGaussianParserBase::createMultiDeterminantSet()
         {
           coeff << CIcoeff[i];
         }
-        std::ostringstream tag;
-        tag << "CIcoeff_" << iv++;
-        xmlNewProp(ci, (const xmlChar*)"id", (const xmlChar*)tag.str().c_str());
-        xmlNewProp(ci, (const xmlChar*)"coeff", (const xmlChar*)coeff.str().c_str());
-        xmlNewProp(ci, (const xmlChar*)"qc_coeff", (const xmlChar*)qc_coeff.str().c_str());
-        xmlNewProp(ci, (const xmlChar*)"alpha", (const xmlChar*)CIalpha[i].substr(0, ci_nstates).c_str());
-        xmlNewProp(ci, (const xmlChar*)"beta", (const xmlChar*)CIbeta[i].substr(0, ci_nstates).c_str());
-        xmlAddChild(detlist, ci);
-      }
-    }
+
+        static std::string last_written_value;
+        bool should_write = true;
+  
+        if(degenerated)
+        {
+          double current_val = std::stod(qc_coeff.str());
+          double last_val = last_written_value.empty() ? 0.0 : std::stod(last_written_value);
+          if (std::abs(current_val) == std::abs(last_val))
+          {
+            should_write = false;
+          }
+          else
+          {
+            should_write = true;
+          }
+        }
+  
+        if (should_write)
+        {
+          xmlNodePtr ci = xmlNewNode(NULL, (const xmlChar*)"ci");
+          std::ostringstream tag;
+          tag << "CIcoeff_" << iv++;
+          xmlNewProp(ci, (const xmlChar*)"id", (const xmlChar*)tag.str().c_str());
+          xmlNewProp(ci, (const xmlChar*)"coeff", (const xmlChar*)coeff.str().c_str());
+          xmlNewProp(ci, (const xmlChar*)"qc_coeff", (const xmlChar*)qc_coeff.str().c_str());
+          xmlNewProp(ci, (const xmlChar*)"alpha", (const xmlChar*)CIalpha[i].substr(0, ci_nstates).c_str());
+          xmlNewProp(ci, (const xmlChar*)"beta", (const xmlChar*)CIbeta[i].substr(0, ci_nstates).c_str());
+          xmlAddChild(detlist, ci);
+
+          last_written_value = qc_coeff.str();
+       }
+     }
     xmlAddChild(multislaterdet, detlist);
-  } //usingCSF
+    }
+  }
   return multislaterdet;
 }
 
