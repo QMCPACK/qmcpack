@@ -117,8 +117,10 @@ sycl::event gemvT_batched_impl(sycl::queue& handle,
   constexpr int SUM_SIZE = ROWBS * COLBS;
   const int num_row_blocks = (n + ROWBS - 1) / ROWBS;
 
-  const size_t num_groups = static_cast<size_t>(batch_count) * static_cast<size_t>(num_row_blocks);
-  const sycl::nd_range<1> nd{num_groups * COLBS, COLBS};
+  const sycl::range<3> local{static_cast<size_t>(COLBS), 1, 1};
+  const sycl::range<3> global{static_cast<size_t>(COLBS),
+                              static_cast<size_t>(num_row_blocks),
+                              static_cast<size_t>(batch_count)};
 
   return handle.submit([&](sycl::handler& h) {
     if (!events.empty())
@@ -126,11 +128,10 @@ sycl::event gemvT_batched_impl(sycl::queue& handle,
 
     sycl::local_accessor<T, 1> sum(SUM_SIZE, h);
 
-    h.parallel_for(nd, [=](sycl::nd_item<1> item) {
-      const int tid     = item.get_local_id(0); // threadIdx.x
-      const size_t gid  = item.get_group(0);
-      const int by      = static_cast<int>(gid % num_row_blocks); // blockIdx.y
-      const int bx      = static_cast<int>(gid / num_row_blocks); // blockIdx.x
+    h.parallel_for(sycl::nd_range<3>(global, local), [=](sycl::nd_item<3> item) {
+      const int bx  = static_cast<int>(item.get_group(2));  // blockIdx.x
+      const int by  = static_cast<int>(item.get_group(1));  // blockIdx.y
+      const int tid = item.get_local_id(0); // threadIdx.x
 
       for (int i = 0; i < ROWBS; ++i)
         sum[i * COLBS + tid] = T(0);
