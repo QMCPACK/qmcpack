@@ -197,21 +197,39 @@ sycl::event gemvN_batched_impl(sycl::queue& handle,
     return sycl::event();
 
   const int num_row_blocks = (m + ROWBS - 1) / ROWBS;
-  return handle.parallel_for(sycl::nd_range<2>{{batch_count, num_row_blocks * ROWBS}, {1, ROWBS}},
-                             [=](sycl::nd_item<2> item) {
-                               const unsigned batch = item.get_group(0);
-                               const int row        = item.get_global_id(1);
-                               if (row < m)
-                               {
-                                 T sum(0);
-                                 for (int col = 0; col < n; col++)
-                                   sum += A[batch][col * lda + row] * x[batch][col * incx];
-                                 if (beta[batch] == T(0))
-                                   y[batch][row * incy] = alpha[batch] * sum; // protecting NaN from y_iw
-                                 else
-                                   y[batch][row * incy] = alpha[batch] * sum + beta[batch] * y[batch][row * incy];
-                               }
-                             });
+
+  const sycl::range<3> local{static_cast<size_t>(ROWBS), 1, 1};
+  const sycl::range<3> global{static_cast<size_t>(ROWBS),
+                              static_cast<size_t>(num_row_blocks),
+                              static_cast<size_t>(batch_count)};
+
+  return handle.submit([&](sycl::handler& h) {
+    h.parallel_for(sycl::nd_range<3>(global, local), [=](sycl::nd_item<3> item) {
+      const int bx = static_cast<int>(item.get_group(2)); // blockIdx.x
+      const int by = static_cast<int>(item.get_group(1)); // blockIdx.y
+      const int tid = static_cast<int>(item.get_local_id(0));  // threadIdx.x
+
+      const T* __restrict__ A_iw = A[bx];
+      const T* __restrict__ x_iw = x[bx];
+      T* __restrict__ y_iw       = y[bx];
+
+      const int row_begin = by * ROWBS;
+
+      if (row_begin + tid < m)
+      {
+        T sum = T(0);
+
+        for (int col_id = 0; col_id < n; ++col_id)
+          sum += A_iw[col_id * lda + row_begin + tid] * x_iw[col_id * incx];
+
+        if (beta[bx] == T(0))
+          y_iw[(row_begin + tid) * incy] = alpha[bx] * sum; // protecting NaN from y_iw
+        else
+          y_iw[(row_begin + tid) * incy] =
+              alpha[bx] * sum + beta[bx] * y_iw[(row_begin + tid) * incy];
+      }
+    });
+  });
 }
 
 template<>
