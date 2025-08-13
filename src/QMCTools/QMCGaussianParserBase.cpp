@@ -1466,6 +1466,7 @@ xmlNodePtr QMCGaussianParserBase::createMultiDeterminantSet()
        }
      }
     xmlAddChild(multislaterdet, detlist);
+    xmlSetProp(detlist, BAD_CAST "size", BAD_CAST std::to_string(iv).c_str());
     }
   }
   return multislaterdet;
