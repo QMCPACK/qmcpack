@@ -154,11 +154,6 @@ endif()
 option(QMC_BUILD_STATIC "Link to static libraries" OFF)
 option(ENABLE_TIMERS "Enable internal timers" ON)
 option(ENABLE_STACKTRACE "Enable use of boost::stacktrace" OFF)
-option(USE_VTUNE_API "Enable use of VTune ittnotify APIs" OFF)
-option(USE_HPCTOOLKIT_API "Enable use of HPCToolkit start/stop APIs" OFF)
-cmake_dependent_option(USE_VTUNE_TASKS "USE VTune ittnotify task annotation" OFF "ENABLE_TIMERS AND USE_VTUNE_API" OFF)
-# CMake note - complex conditionals in cmake_dependent_option must have spaces around parentheses
-cmake_dependent_option(USE_NVTX_API "Enable/disable NVTX regions in CUDA code." OFF "ENABLE_TIMERS AND ENABLE_CUDA" OFF)
 set(HAVE_EINSPLINE 1) # to be removed
 option(QMC_EXP_THREADING "Experimental non openmp threading models" OFF)
 mark_as_advanced(QMC_EXP_THREADING)
@@ -708,21 +703,6 @@ if(ENABLE_CUDA AND NOT QMC_CUDA2HIP)
   message("Project CUDA_FLAGS: ${CMAKE_CUDA_FLAGS}")
 endif()
 
-if(USE_NVTX_API AND NOT QMC_CUDA2HIP)
-  message(STATUS "Enabling use of CUDA NVTX APIs")
-  find_library(
-    NVTX_API_LIB NAME nvToolsExt
-    HINTS ${CUDA_TOOLKIT_ROOT_DIR}
-    PATH_SUFFIXES lib lib64)
-  if(NOT NVTX_API_LIB)
-    message(FATAL_ERROR "USE_NVTX_API set but NVTX_API_LIB not found")
-  endif(NOT NVTX_API_LIB)
-  message("CUDA nvToolsExt library: ${NVTX_API_LIB}")
-  link_libraries(${NVTX_API_LIB})
-else()
-  message(STATUS "CUDA NVTX APIs disabled")
-endif(USE_NVTX_API AND NOT QMC_CUDA2HIP)
-
 #-------------------------------------------------------------------
 #  set up ROCM compiler options and libraries
 #-------------------------------------------------------------------
@@ -788,20 +768,6 @@ if(ENABLE_ROCM)
     message(STATUS "Use of hipHostRegister disabled")
   endif()
 endif(ENABLE_ROCM)
-
-if(USE_NVTX_API AND QMC_CUDA2HIP)
-  message(STATUS "Enabling use of ROCm rocTX APIs")
-  find_library(
-    ROCTX_API_LIB NAME libroctx64.so
-    PATH_SUFFIXES lib lib64)
-  if(NOT ROCTX_API_LIB)
-    message(FATAL_ERROR "USE_ROCTX_API set but ROCTX_API_LIB not found")
-  endif(NOT ROCTX_API_LIB)
-  message("ROCm rocTX library: ${ROCTX_API_LIB}")
-  link_libraries(${ROCTX_API_LIB})
-  else()
-    message(STATUS "ROCm rocTX APIs disabled")
-endif(USE_NVTX_API AND QMC_CUDA2HIP)
 
 #-------------------------------------------------------------------
 #  set up AFQMC-specific HIP compiler options
@@ -875,53 +841,9 @@ if(QMC_OFFLOAD_MEM_ASSOCIATED)
 endif()
 
 #-------------------------------------------------------------------
-# set up VTune ittnotify library
+# Link profiler runtime libraries (NVTX, Ittnotify, HPCToolkit)
 #-------------------------------------------------------------------
-
-if(USE_VTUNE_API)
-  message(STATUS "Enabling use of VTune ittnotify APIs")
-  find_path(
-    VTUNE_ITTNOTIFY_INCLUDE_DIR ittnotify.h
-    HINTS ${VTUNE_ROOT} $ENV{VTUNE_ROOT}
-    PATH_SUFFIXES include REQUIRED)
-  message(STATUS "Found VTUNE_ITTNOTIFY_INCLUDE_DIR ${VTUNE_ITTNOTIFY_INCLUDE_DIR}")
-  find_library(
-    VTUNE_ITTNOTIFY_LIBRARY ittnotify
-    HINTS ${VTUNE_ROOT} $ENV{VTUNE_ROOT}
-    PATH_SUFFIXES lib64 lib REQUIRED)
-  message(STATUS "Found VTUNE_ITTNOTIFY_LIBRARY ${VTUNE_ITTNOTIFY_LIBRARY}")
-
-  include_directories(${VTUNE_ITTNOTIFY_INCLUDE_DIR})
-  link_libraries(${VTUNE_ITTNOTIFY_LIBRARY})
-  if(USE_VTUNE_TASKS)
-    message(STATUS "VTune ittnotify tasks enabled")
-  endif()
-else()
-  message(STATUS "VTune ittnotify APIs disabled")
-endif()
-
-#-------------------------------------------------------------------
-# set up HPCToolkit library
-#-------------------------------------------------------------------
-
-if(USE_HPCTOOLKIT_API)
-  message(STATUS "Enabling use of HPCToolkit start/stop APIs")
-  find_path(
-    HPCTOOLKIT_INCLUDE_DIR hpctoolkit.h
-    HINTS ${HPCTOOLKIT_ROOT} $ENV{HPCTOOLKIT_ROOT}
-    PATH_SUFFIXES include REQUIRED)
-  message(STATUS "Found HPCTOOLKIT_INCLUDE_DIR ${HPCTOOLKIT_INCLUDE_DIR}")
-  find_library(
-    HPCTOOLKIT_LIBRARY hpctoolkit
-    HINTS ${HPCTOOLKIT_ROOT} $ENV{HPCTOOLKIT_ROOT}
-    PATH_SUFFIXES lib64 lib REQUIRED)
-  message(STATUS "Found HPCTOOLKIT_LIBRARY ${HPCTOOLKIT_LIBRARY}")
-
-  include_directories(${HPCTOOLKIT_INCLUDE_DIR})
-  link_libraries(${HPCTOOLKIT_LIBRARY})
-else()
-  message(STATUS "HPCToolkit start/stop APIs disabled")
-endif()
+include("CMake/FindProfilerLibs.cmake")
 
 #-------------------------------------------------------------------
 # Add user extra flags
