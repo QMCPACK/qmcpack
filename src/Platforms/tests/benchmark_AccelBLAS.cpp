@@ -385,7 +385,7 @@ void benchmark_ger_cases()
 }
 
 
-TEST_CASE("AccelBLAS gemm_batched benchmark", "[BLAS][benchmark]")
+TEST_CASE("AccelBLAS gemm_batched benchmark", "[BLAS][.benchmark]")
 {
 #if defined(ENABLE_CUDA)
   SECTION("gemm_batched<PlatformKind::CUDA>") { benchmark_gemm_cases<PlatformKind::CUDA>(); }
@@ -398,7 +398,7 @@ TEST_CASE("AccelBLAS gemm_batched benchmark", "[BLAS][benchmark]")
 #endif
 }
 
-TEST_CASE("AccelBLAS gemv_batched benchmark", "[BLAS][benchmark]")
+TEST_CASE("AccelBLAS gemv_batched benchmark", "[BLAS][.benchmark]")
 {
 #if defined(ENABLE_CUDA)
   SECTION("gemv_batched<PlatformKind::CUDA>") { benchmark_gemv_cases<PlatformKind::CUDA>(); }
@@ -411,7 +411,7 @@ TEST_CASE("AccelBLAS gemv_batched benchmark", "[BLAS][benchmark]")
 #endif
 }
 
-TEST_CASE("AccelBLAS ger_batched benchmark", "[BLAS][benchmark]")
+TEST_CASE("AccelBLAS ger_batched benchmark", "[BLAS][.benchmark]")
 {
 #if defined(ENABLE_CUDA)
   SECTION("ger_batched<PlatformKind::CUDA>") { benchmark_ger_cases<PlatformKind::CUDA>(); }
