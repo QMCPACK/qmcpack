@@ -282,7 +282,7 @@ use a specific identifying file extension; instead they are simply
 suffixed with “``.xml``.” The tabular data format of CASINO is also
 supported.
 
-In addition to the semilocal pseudopotential above, spin-orbit 
+In addition to the semilocal pseudopotential above, spin-orbit
 interactions can also be included through the use of spin-orbit
 pseudopotentials. The spin-orbit contribution can be written as
 
@@ -292,7 +292,7 @@ pseudopotentials. The spin-orbit contribution can be written as
   V^{\rm SO} = \sum_{ij} \left(\sum_{\ell = 1}^{\ell_{max}-1} \frac{2}{2\ell+1} V^{\rm SO}_\ell \left( \left|r_i - \tilde{r}_j \right| \right) \sum_{m,m'=-\ell}^{\ell} | Y_{\ell m} \rangle  \langle Y_{\ell m} | \vec{\ell} \cdot \vec{s} | Y_{\ell m'}\rangle\langle Y_{\ell m'}|\right)\:.
 
 Here, :math:`\vec{s}` is the spin operator. For each atom with a spin-orbit contribution,
-the radial functions :math:`V_{\ell}^{\rm SO}` can be included in the pseudopotential 
+the radial functions :math:`V_{\ell}^{\rm SO}` can be included in the pseudopotential
 “``.xml``” file.
 
 ``pairpot type=pseudo`` element:
@@ -372,14 +372,14 @@ Additional information:
    (DLA) :cite:`Zen2019DLA` uses only the fermionic part of
    the wavefunction when calculating NLPP.
 
--  **physicalSO** If the spin-orbit components are included in the 
+-  **physicalSO** If the spin-orbit components are included in the
    ``.xml`` file, this flag allows control over whether the SO contribution
-   is included in the local energy. 
+   is included in the local energy.
 
 -  **spin_integrator** Selects which spin integration technique to use.
    ``simpson`` uses a numerical integration scheme
-   which can be inefficient but was previously the default. The ``exact`` method exploits 
-   the structure of the Slater-Jastrow wave function in order to analytically 
+   which can be inefficient but was previously the default. The ``exact`` method exploits
+   the structure of the Slater-Jastrow wave function in order to analytically
    perform the spin integral.
 
 .. code-block::
@@ -400,7 +400,7 @@ Additional information:
 .. code-block::
   :caption: QMCPXML element for pseudopotential to accumulate the spin-orbit energy, but do not include in local energy
   :name: Listing 21
-  
+
     <pairpot name="PseudoPot" type="pseudo" source="i" wavefunction="psi0" format="xml" physicalSO="no">
       <pseudo elementType="Pb" href="Pb.xml"/>
     </pairpot>
@@ -817,10 +817,10 @@ Magnetization density estimator
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **NOTE: This is only compatible with Spin-Orbit QMC with the batched QMC drivers.  See "Spin-Orbit Calculations in QMC" for more information.**
 
-The magnetization density computes the vectorial spin per unit volume 
-on a grid in real space.  This is used with spinor-type wave functions 
-where the spin expectation value is not exclusively aligned along the 
-z-direction.  
+The magnetization density computes the vectorial spin per unit volume
+on a grid in real space.  This is used with spinor-type wave functions
+where the spin expectation value is not exclusively aligned along the
+z-direction.
 
 The formula that is implemented is the following:
 
@@ -900,21 +900,21 @@ Additional information:
    not specified. Simultaneous use of ``corner`` and ``center`` will
    cause QMCPACK to abort.
 
--  ``integrator``: How the spin-integral is performed.  By default, 
-   this is done deterministically with Simpson's rule.  However, 
+-  ``integrator``: How the spin-integral is performed.  By default,
+   this is done deterministically with Simpson's rule.  However,
    one can also Monte-Carlo sample this integral.  Simpson's is preferred,
-   but Monte-Carlo sampling might be more efficient for large systems.  
+   but Monte-Carlo sampling might be more efficient for large systems.
 
--  ``samples``: How many points are used to perform the spin integral.  
+-  ``samples``: How many points are used to perform the spin integral.
    For Simpson's integration, this is just the number of quadrature points.
-   For Monte-Carlo, this is literally the number of MC samples.  
- 
--  All information is dumped to hdf5.  Each grid point has 3 real 
-   numbers associated with it, one for 
+   For Monte-Carlo, this is literally the number of MC samples.
+
+-  All information is dumped to hdf5.  Each grid point has 3 real
+   numbers associated with it, one for
    :math:`\langle \hat{\sigma_x} \rangle`,
-   :math:`\langle \hat{\sigma_y} \rangle`, and 
-   :math:`\langle \hat{\sigma_z} \rangle` respectively. 
-   Post-processing tools are provided in Nexus.   
+   :math:`\langle \hat{\sigma_y} \rangle`, and
+   :math:`\langle \hat{\sigma_z} \rangle` respectively.
+   Post-processing tools are provided in Nexus.
 
 
 .. code-block::
@@ -1028,6 +1028,108 @@ Additional information:
   :name: Listing 29
 
   <estimator type="gofr" name="gofr" num_bin="200" rmax="3.0" source="ion0" />
+
+
+Batched Driver: Pair correlation function, :math:`g(r)`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The functional form of the species-resolved radial pair correlation function operator is
+
+.. math::
+  :label: eq35
+
+  g_{ss'}(r) = \frac{V}{4\pi r^2N_sN_{s'}}\sum_{i_s=1}^{N_s}\sum_{j_{s'}=1}^{N_{s'}}\delta(r-|r_{i_s}-r_{j_{s'}}|)\:,
+
+where :math:`N_s` is the number of particles of species :math:`s` and
+:math:`V` is the supercell volume. If :math:`s=s'`, then the sum is
+restricted so that :math:`i_s\ne j_s`.
+
+In QMCPACK, an estimate of :math:`g_{ss'}(r)` is obtained as a radial
+histogram with a set of :math:`N_b` uniform bins of width
+:math:`\delta r`. This can be expressed analytically as
+
+.. math::
+  :label: eq36
+
+  \tilde{g}_{ss'}(r) = \frac{V}{4\pi r^2N_sN_{s'}}\sum_{i=1}^{N_s}\sum_{j=1}^{N_{s'}}\frac{1}{\delta r}\int_{r-\delta r/2}^{r+\delta r/2}dr'\delta(r'-|r_{si}-r_{s'j}|)\:,
+
+where the radial coordinate :math:`r` is restricted to reside at the bin
+centers, :math:`\delta r/2, 3 \delta r/2, 5 \delta r/2, \ldots`.
+
+``estimator type=PairCorrelation`` element:
+
+  +------------------+----------------------+
+  | parent elements: | ``estimators``       |
+  +------------------+----------------------+
+  | child elements:  | *None*               |
+  +------------------+----------------------+
+
+attributes:
+
+  +-------------------------------+--------------+----------------------+------------------------+-------------------------+
+  | **Name**                      | **Datatype** | **Values**           | **Default**            | **Description**         |
+  +===============================+==============+======================+========================+=========================+
+  | ``type``:math:`^r`            | text         | ``PairCorrelation``  |                        | historicall ``gofr``    |
+  +-------------------------------+--------------+----------------------+------------------------+-------------------------+
+  | ``name``:math:`^o`            | text         | *anything*           | any                    | *No current function*   |
+  +-------------------------------+--------------+----------------------+------------------------+-------------------------+
+  | ``num_bin``:math:`^r`         | integer      | :math:`>1`           | 20                     | # of histogram bins     |
+  +-------------------------------+--------------+----------------------+------------------------+-------------------------+
+  | ``rmax``:math:`^o`            | real         | :math:`>0`           | 10                     | Histogram extent (Bohr) |
+  +-------------------------------+--------------+----------------------+------------------------+-------------------------+
+  | ``dr``:math:`^o`              | real         | :math:`0`            | 0.5                    | *No current function*   |
+  +-------------------------------+--------------+----------------------+------------------------+-------------------------+
+  | ``debug``:math:`^o`           | boolean      | yes/no               | no                     | *No current function*   |
+  +-------------------------------+--------------+----------------------+------------------------+-------------------------+
+  | ``target``:math:`^o`          | tex          | ``particleset.name`` |   ``"e"``              | Quantum particles       |
+  +-------------------------------+--------------+----------------------+------------------------+-------------------------+
+  | ``sources``:math:`^o`         | text array   | ``particleset.name`` |   ``"e"``              | Classical particles     |
+  +-------------------------------+--------------+----------------------+------------------------+-------------------------+
+
+Additional information:
+
+-  ``num_bin:`` This is the number of bins in each species pair radial
+   histogram.
+
+-  ``rmax:`` This is the maximum pair distance included in the
+   histogram. The uniform bin width is
+   :math:`\delta r=\texttt{rmax/num\_bin}`. If periodic boundary
+   conditions are used for any dimension of the simulation cell, then
+   the default value of ``rmax`` is the simulation cell radius instead
+   of 10 Bohr. For open boundary conditions, the volume (:math:`V`) used
+   is 1.0 Bohr\ :math:`^3`.
+
+-  ``sources:`` If unspecified, only pair correlations between
+   each species of quantum particle will be measured. For each classical
+   particleset specified by ``sources``, additional pair
+   correlations between each quantum and classical species will be
+   measured. Typically there is only one classical particleset (e.g.,
+   ``sources="ion0"``), but there can be several in principle (e.g.,
+   ``sources="ion0 ion1 ion2"``).
+
+-  ``target:`` The default value is the preferred usage (i.e.,
+   ``target`` does not need to be provided).
+
+-  Data is output to the ``stat.h5`` for each QMC subrun. Individual
+   histograms are named according to the quantum particleset and index
+   of the pair. For example, if the quantum particleset is named “e" and
+   there are two species (up and down electrons, say), then there will
+   be three sets of histogram data in each ``stat.h5`` file named
+   ``gofr_e_0_0``, ``gofr_e_0_1``, and ``gofr_e_1_1`` for up-up,
+   up-down, and down-down correlations, respectively.
+
+.. code-block::
+  :caption: Pair correlation function estimator element.
+  :name: Listing 28
+
+  <estimator type="PairCorrelation" name="gofr" num_bin="200" rmax="3.0" />
+
+.. code-block::
+  :caption: Pair correlation function estimator element with additional electron-ion correlations.
+  :name: Listing 29
+
+  <estimator type="PairCorrelation" name="gofr" num_bin="200" rmax="3.0" source="ion0" />
+
 
 Static structure factor, :math:`S(k)`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1915,7 +2017,7 @@ The ``mode`` determines the specific estimator to be used.  Currently,
 QMCPACK supports Chiesa-Ceperley-Zhang (CCZ) all-electron and
 Assaraf-Caffarel Zero-Variance Zero-Bias (AC) force estimators.  We'll discuss
 the CCZ estimator in this section, and the AC estimator in the following section.
- 
+
 Without loss of generality, the CCZ estimator for the z-component of the
 force on an ion centered at the origin is given by the following
 expression:
@@ -1940,7 +2042,7 @@ and the s-wave filtered estimator. Specifically,
 Here, :math:`m` is the weighting exponent, :math:`f_z(r)` is the
 unfiltered radial force density for the z force component, and
 :math:`\tilde{f}_z(r)` is the smoothed polynomial function for the same
-force density. 
+force density.
 
 Currently, open and periodic boundary conditions are
 supported but for all-electron calculations only.
@@ -2030,23 +2132,23 @@ The following is an example use case.
 
 Assaraf-Caffarel Force Estimators
 ---------------------------------
-***WARNING:  The following estimator formally has infinite variance.  You MUST do something 
+***WARNING:  The following estimator formally has infinite variance.  You MUST do something
 to mitigate this in postprocessing or during the run before publishing.***
 
- 
+
 QMCPACK has an implementation of force estimation using the Assaraf-Caffarel
-Zero-Variance Zero-Bias method :cite:`Tiihonen2021`.  This has the desirable 
-property that as the trial wave function and trial wave function derivative 
-become exact, the estimator itself becomes an exact estimate of the force 
-and the variance of the estimator goes to zero -- much like the local energy.  
-In practice, the estimator is usually significantly more accurate and has much 
-lower variance than the bare Hellman-Feynman estimator.  
+Zero-Variance Zero-Bias method :cite:`Tiihonen2021`.  This has the desirable
+property that as the trial wave function and trial wave function derivative
+become exact, the estimator itself becomes an exact estimate of the force
+and the variance of the estimator goes to zero -- much like the local energy.
+In practice, the estimator is usually significantly more accurate and has much
+lower variance than the bare Hellman-Feynman estimator.
 
 Currently, this is the only recommended way
-to estimate forces for systems with non-local pseudopotentials.  
+to estimate forces for systems with non-local pseudopotentials.
 
 
-The zero-variance, zero-bias force estimator is given by the following 
+The zero-variance, zero-bias force estimator is given by the following
 expression:
 
 .. math::
@@ -2061,12 +2163,12 @@ The first term is the zero-variance force estimator, given by the following.
 
   \mathbf{F}^{ZV}_I = -\nabla_I E_L(\mathbf{R}) = \frac{-\left(\nabla_I \hat{H}\right) \Psi_T}{\Psi_T} - \frac{\left(\hat{H} - E_L\right)\nabla_I \Psi_T}{\Psi_T}\:.
 
-The first term is the bare "Hellman-Feynman" term (denoted "hf" in output), and the second is 
-a fluctuation cancelling zero-variance term (called "pulay" in output).  This splitting allows the 
+The first term is the bare "Hellman-Feynman" term (denoted "hf" in output), and the second is
+a fluctuation cancelling zero-variance term (called "pulay" in output).  This splitting allows the
 user to investigate the individual contributions to the force estimator, but we recommend always
-adding "hf" and "pulay" terms unless there is a compelling reason to do otherwise.   
+adding "hf" and "pulay" terms unless there is a compelling reason to do otherwise.
 
- 
+
 The second term is the "zero-bias" term:
 
 .. math::
@@ -2074,12 +2176,12 @@ The second term is the "zero-bias" term:
 
   \mathbf{F}^{ZB}_I = - 2 \left( E_L(\mathbf{R})-\langle E_L \rangle \right) \nabla_I \ln \Psi_T \:.
 
-Because knowledge of :math:`\langle E_L \rangle` is needed to compute the zero-bias term, QMCPACK returns 
-:math:`E_L(\mathbf{R}) \ln \Psi_T` (called "Ewfngrad" in output), and :math:`\ln \Psi_T` 
-(called "wfngrad" in output), which in conjunction with the local energy, allows one to construct the 
-zero-bias term in post-processing.   
+Because knowledge of :math:`\langle E_L \rangle` is needed to compute the zero-bias term, QMCPACK returns
+:math:`E_L(\mathbf{R}) \ln \Psi_T` (called "Ewfngrad" in output), and :math:`\ln \Psi_T`
+(called "wfngrad" in output), which in conjunction with the local energy, allows one to construct the
+zero-bias term in post-processing.
 
-There is an initial implementation of space-warp variance reduction that is accessible to the 
+There is an initial implementation of space-warp variance reduction that is accessible to the
 end-user, subject to the caveat that evaluation of these terms is currently slow (derivatives of local
 energy are computed with finite differences, rather than analytically).  If the space-warp option
 is enabled, the following term is added to the zero-variance force estimator:
@@ -2089,8 +2191,8 @@ is enabled, the following term is added to the zero-variance force estimator:
 
   \mathbf{F}^{ZV-SW}_I = - \sum_{i=1}^{N_e} \omega_I(\mathbf{r}_i) \nabla_i E_L \:.
 
-The variance reduction with this term is observed to be rather large.  A faster, more efficient 
-implementation of this term will be available in a future QMCPACK release.  
+The variance reduction with this term is observed to be rather large.  A faster, more efficient
+implementation of this term will be available in a future QMCPACK release.
 
 The following term is added to the wave function gradient:
 
@@ -2103,16 +2205,16 @@ Currently, there is only one choice for damping function :math:`\omega_I(\mathbf
 
 .. math::
   :label: eq 52
-  
+
   \omega_I(\mathbf{r}) = \frac{F(|\mathbf{r}-\mathbf{R}_I|)}{\sum_I F(|\mathbf{r}-\mathbf{R}_I|)} \:.
 
-We use :math:`F(r)=r^{-4}` for the real space damping.  
+We use :math:`F(r)=r^{-4}` for the real space damping.
 
-Finally, the estimator provides two methods to evaluate the necessary derivatives of the wave function and Hamiltonian. 
+Finally, the estimator provides two methods to evaluate the necessary derivatives of the wave function and Hamiltonian.
 The first is a straightforward analytic differentiation of all required terms.  While mathematically transparent,
-this algorithm has poor scaling with system size.  The second utilizes the fast-derivative algorithm of Assaraf, Moroni, 
+this algorithm has poor scaling with system size.  The second utilizes the fast-derivative algorithm of Assaraf, Moroni,
 and Filippi :cite:`Filippi2016`, which has a smaller computational prefactor and at least an O(N) speed-up over the legacy implementation.
-Both of these methods are accessible with appropriate flags.  
+Both of these methods are accessible with appropriate flags.
 
 ``estimator type=Force`` element:
 
@@ -2144,18 +2246,18 @@ Both of these methods are accessible with appropriate flags.
 Additional information:
 
 -  **Naming Convention**: The unique identifier ``name`` is appended
-   with a term label ( ``hf``, ``pulay``, ``Ewfngrad``, or ``wfgrad``) 
-   ``name_term_X_Y`` in the ``scalar.dat`` file, where ``X`` is the ion 
+   with a term label ( ``hf``, ``pulay``, ``Ewfngrad``, or ``wfgrad``)
+   ``name_term_X_Y`` in the ``scalar.dat`` file, where ``X`` is the ion
    ID number and ``Y`` is the component ID (an integer with x=0, y=1,
    z=2). All force components for all ions are computed and dumped to
    the ``scalar.dat`` file.
 
 -  **Note**: The fast force algorithm returns the total derivative of the
-   local energy, and does not make the split between "Hellman-Feynman" and 
-   zero-variance terms like the legacy force implementation does.  As such, 
-   expect ``name_pulay_X_Y`` to be zero if ``fast_derivatives="yes"``.  
-   However, this will be identical to the sum of Hellman-Feynman and 
-   zero-variance terms in the legacy implementation.  
+   local energy, and does not make the split between "Hellman-Feynman" and
+   zero-variance terms like the legacy force implementation does.  As such,
+   expect ``name_pulay_X_Y`` to be zero if ``fast_derivatives="yes"``.
+   However, this will be identical to the sum of Hellman-Feynman and
+   zero-variance terms in the legacy implementation.
 
 
 The following is an example use case.
