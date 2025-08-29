@@ -27,6 +27,7 @@ public:
   using QMCT         = QMCTraits;
   using Real         = QMCT::RealType;
   using FullPrecReal = QMCT::FullPrecRealType;
+  using PSPool       = typename ParticleSetPool::PoolType;
 
   /** This is the Constructor called by the application
    *  the Pair correlation estimator can specify arbitrary source and
@@ -46,16 +47,12 @@ public:
                   const RefVector<QMCHamiltonian>& hams,
                   RandomBase<FullPrecReal>& rng) override;
 
-  void normalize(Real invToWgt) override;
-
   /** start block entry point
    */
   void startBlock(int steps) override;
 
   UPtr<OperatorEstBase> spawnCrowdClone() const override;
 
-  void packData(PooledData<Real>& buffer) const override;
-  void unpackData(PooledData<Real>& buffer) override;
   /** Write the one time datasets for Estimator
    *  Its calls to `file` create the root node for the estimator
    *  if it doesn't yet exist.
@@ -76,11 +73,8 @@ public:
    *         ...
    */
   void write(hdf_archive& file) override;
-  void collect(const RefVector<OperatorEstBase>& type_erased_operator_estimators) override;
 
 private:
-  void resetTargetParticleSet(ParticleSet& P) override;
-
   /// generate the unique pair id from the group ids of particle i and j and the number of species
   static int gen_pair_id(const int ig, const int jg, const int ns);
 
@@ -88,13 +82,15 @@ private:
 
   void set_norm_factor();
 
+  const ParticleSet& getParticleSet(const PSPool& psetpool, const std::string& psname) const;
+
 private:
-  PairCorrelationInput& input_;
+  const PairCorrelationInput& input_;
 
   // While these seem like they should be the same as in input there
   // is a bunch ways these can get updated.
   Real rmax_;
-  Real num_bins_;
+  int num_bins_;
   Real delta_;
 
   Real delta_inv_;
@@ -126,3 +122,5 @@ private:
 };
 
 } // namespace qmcplusplus
+
+#endif

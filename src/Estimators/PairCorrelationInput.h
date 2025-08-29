@@ -16,6 +16,8 @@
 namespace qmcplusplus
 {
 
+class PairCorrelationEstimator;
+
 class PairCorrelationInput
 {
 public:
@@ -39,6 +41,8 @@ public:
     }
   };
 
+  PairCorrelationInput(xmlNodePtr);
+
 private:
   PairCorrelationInputSection input_section_;
 
@@ -57,8 +61,8 @@ private:
 public:
   std::string get_name() const { return name_; }
   std::string get_type() const { return type_; }
-  std::vector<std::string> get_sources() const { return sources_; }
-  std::string get_target() const { return target_; }
+  const std::vector<std::string>& get_sources() const { return sources_; }
+  const std::string& get_target() const { return target_; }
   Real get_rmax() const { return rmax_; }
   Real get_delta() const { return delta_; }
   int get_nbins() const { return nbins_; }

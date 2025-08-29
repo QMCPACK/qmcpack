@@ -18,6 +18,7 @@
 
 #include "EstimatorManagerNew.h"
 #include "EstimatorInputDelegates.h"
+#include "PairCorrelationInput.h"
 #include "SpinDensityNew.h"
 #include "MomentumDistribution.h"
 #include "OneBodyDensityMatrices.h"
@@ -31,6 +32,7 @@
 #include "Message/CommUtilities.h"
 #include <Pools/PooledData.h>
 #include "Estimators/StructureFactorEstimator.h"
+#include "PairCorrelationEstimator.h"
 #include "Estimators/LocalEnergyEstimator.h"
 #include "Estimators/LocalEnergyOnlyEstimator.h"
 #include "Estimators/RMCLocalEnergyEstimator.h"
@@ -111,7 +113,8 @@ void EstimatorManagerNew::constructEstimators(EstimatorManagerInput&& emi,
           createEstimator<MagnetizationDensityInput>(est_input, pset.getLattice()) ||
           createEstimator<PerParticleHamiltonianLoggerInput>(est_input, my_comm_->rank()) ||
           createEstimator<EnergyDensityInput>(est_input, pset_pool) ||
-          createEstimator<StructureFactorInput>(est_input, pset_pool)))
+          createEstimator<StructureFactorInput>(est_input, pset_pool) ||
+          createEstimator<PairCorrelationInput>(est_input, pset_pool)))
       throw UniformCommunicateError(std::string(error_tag_) +
                                     "cannot construct an estimator from estimator input object.");
 

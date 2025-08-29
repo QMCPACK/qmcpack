@@ -10,22 +10,23 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "PairCorrelationEstimator.h"
+#include "OperatorEstBase.h"
+#include <DistanceTable.h>
 
 namespace qmcplusplus
 {
 
 PairCorrelationEstimator::PairCorrelationEstimator(const PairCorrelationInput& pci,
-                                                   const PSPool& psp,
+                                                   const PSPool& pset_pool,
                                                    DataLocality data_locality)
-    : input_(pci)
+    : OperatorEstBase(data_locality, pci.get_name(), pci.get_type()), input_(pci)
 {
-  update_mode_.set(COLLECTABLE, 1);
-  const auto& elecs = *(psp[input_.getTarget()]);
+  const auto& elecs = getParticleSet(pset_pool, pci.get_target());
   num_species_      = elecs.groups();
   n_vec_.resize(num_species_, 0);
   for (int i = 0; i < num_species_; i++)
     n_vec_[i] = elecs.last(i) - elecs.first(i);
-  n_e_ = elecs_.getTotalNum();
+  n_e_ = elecs.getTotalNum();
 
   // legacy behavior is that the input rmax wins these are overwritten by input tags for rmax
   if (elecs.getLattice().SuperCellEnum)
@@ -39,10 +40,12 @@ PairCorrelationEstimator::PairCorrelationEstimator(const PairCorrelationInput& p
     volume_ = 1.0;
   }
 
+  // This reproduces as well I as I could figure it out the behavior
+  // of the legacy gofr wrt different combinations of input atrributes
   if (input_.get_explicit_set_nbins() && !(input_.get_explicit_set_delta()))
   {
-    num_bins_ = input_.get_nbins();)
-    delta = rmax_ / static_cast<Real>(num_bins_);
+    num_bins_ = input_.get_nbins();
+    delta_    = rmax_ / static_cast<Real>(num_bins_);
   }
   else if (!(input_.get_explicit_set_nbins()) && input_.get_explicit_set_delta())
   {
@@ -52,9 +55,9 @@ PairCorrelationEstimator::PairCorrelationEstimator(const PairCorrelationInput& p
   else if (input_.get_explicit_set_nbins() && input_.get_explicit_set_delta())
   {
     // Here we must assume that certain checks were done in parsing.
-    delta     = input_.get_delta();
+    delta_    = input_.get_delta();
     num_bins_ = input_.get_nbins();
-    if (rmax_ != delta * num_bins_)
+    if (rmax_ != delta_ * num_bins_)
       throw UniformCommunicateError("Explicitly input PairCorrelation delta and num_bins inconsistent with rmax!");
   }
   else // neither nbins nor delta set use the default num_bins_ to determine delta
@@ -72,8 +75,8 @@ PairCorrelationEstimator::PairCorrelationEstimator(const PairCorrelationInput& p
     {
       std::ostringstream os;
       os << "gofr_" << elecs.getName() << "_" << i << "_" << j;
-      gof_r_prefix.push_back(os.str());
-      pair_map[i * num_species + j] = npairs;
+      gof_r_prefix_.push_back(os.str());
+      pair_map[i * num_species_ + j] = npairs;
       ++npairs;
     }
 
@@ -85,7 +88,8 @@ PairCorrelationEstimator::PairCorrelationEstimator(const PairCorrelationInput& p
       dlist.push_back(elecs.getDistTable(k).get_origin().getName());
 
   std::set<int> others_sorted;
-  for (int i = 0; i < sources_.size(); ++i)
+  auto& sources = input_.get_sources();
+  for (int i = 0; i < sources.size(); ++i)
   {
     int k = 0;
     while (k < dlist.size())
@@ -104,7 +108,7 @@ PairCorrelationEstimator::PairCorrelationEstimator(const PairCorrelationInput& p
   int toff = gof_r_prefix_.size();
   for (int k = 0; k < other_ids_.size(); ++k)
   {
-    const DistanceTable& t(elns.getDistTable(other_ids_[k]));
+    const DistanceTable& t(elecs.getDistTable(other_ids_[k]));
     app_log() << "  GOFR for " << t.getName() << " starts at " << toff << std::endl;
     other_offsets_[k] = toff;
     const SpeciesSet& species(t.get_origin().getSpeciesSet());
@@ -118,9 +122,16 @@ PairCorrelationEstimator::PairCorrelationEstimator(const PairCorrelationInput& p
     toff += ng;
   }
 
+  data_.resize(num_bins_ * toff);
   // Set normalization based on updated parameters & report status
   set_norm_factor();
   report();
+}
+
+PairCorrelationEstimator::PairCorrelationEstimator(const PairCorrelationEstimator& pce, DataLocality dl)
+    : qmcplusplus::PairCorrelationEstimator(pce)
+{
+  data_locality_ = dl;
 }
 
 // The value should match the index to norm_factor in set_norm_factor
@@ -138,83 +149,99 @@ void PairCorrelationEstimator::accumulate(const RefVector<MCPWalker>& walkers,
                                           const RefVector<QMCHamiltonian>& hams,
                                           RandomBase<FullPrecReal>& rng)
 {
-  BufferType& collectables(P.Collectables);
-  const auto& dii(P.getDistTableAA(d_aa_ID_));
-  for (int iat = 1; iat < dii.centers(); ++iat)
+  for (int iw = 0; iw < walkers.size(); ++iw)
   {
-    const auto& dist = dii.getDistRow(iat);
-    const int ig     = P.GroupID[iat];
-    for (int j = 0; j < iat; ++j)
+    Real weight       = walkers[iw].get().Weight;
+    ParticleSet& pset = psets[iw];
+    const auto& dii(pset.getDistTableAA(d_aa_id_));
+    for (int iat = 1; iat < dii.centers(); ++iat)
     {
-      const RealType r = dist[j];
-      if (r < Dmax)
+      const auto& dist = dii.getDistRow(iat);
+      const int ig     = pset.GroupID[iat];
+      for (int j = 0; j < iat; ++j)
       {
-        const int loc     = static_cast<int>(DeltaInv * r);
-        const int jg      = P.GroupID[j];
-        const int pair_id = gen_pair_id(ig, jg, num_species);
-        collectables[pair_id * NumBins + loc + my_index_] += norm_factor(pair_id + 1, loc);
-      }
-    }
-  }
-  for (int k = 0; k < other_ids.size(); ++k)
-  {
-    const auto& d1(P.getDistTableAB(other_ids[k]));
-    const ParticleSet::ParticleIndex& gid(d1.get_origin().GroupID);
-    int koff        = other_offsets[k];
-    RealType overNI = 1.0 / d1.centers();
-    for (int iat = 0; iat < d1.targets(); ++iat)
-    {
-      const auto& dist = d1.getDistRow(iat);
-      for (int j = 0; j < d1.centers(); ++j)
-      {
-        const RealType r = dist[j];
-        if (r < Dmax)
+        const Real r = dist[j];
+        if (r < rmax_)
         {
-          int toff = (gid[j] + koff) * NumBins;
-          int loc  = static_cast<int>(DeltaInv * r);
-          collectables[toff + loc + my_index_] += norm_factor(0, loc) * overNI;
+          const int loc     = static_cast<int>(delta_inv_ * r);
+          const int jg      = pset.GroupID[j];
+          const int pair_id = gen_pair_id(ig, jg, num_species_);
+          data_[pair_id * num_bins_ + loc] += norm_factor_(pair_id + 1, loc);
         }
       }
     }
+    for (int k = 0; k < other_ids_.size(); ++k)
+    {
+      const auto& d1(pset.getDistTableAB(other_ids_[k]));
+      const ParticleSet::ParticleIndex& gid(d1.get_origin().GroupID);
+      int koff    = other_offsets_[k];
+      Real overNI = 1.0 / d1.centers();
+      for (int iat = 0; iat < d1.targets(); ++iat)
+      {
+        const auto& dist = d1.getDistRow(iat);
+        for (int j = 0; j < d1.centers(); ++j)
+        {
+          const Real r = dist[j];
+          if (r < rmax_)
+          {
+            int toff = (gid[j] + koff) * num_bins_;
+            int loc  = static_cast<int>(delta_inv_ * r);
+            data_[toff + loc] += norm_factor_(0, loc) * overNI;
+          }
+        }
+      }
+    }
+    walkers_weight_ += weight;
   }
-  return 0.0;
 }
 
-void PairCorrEstimator::registerCollectables(std::vector<ObservableHelper>& h5list, hdf_archive& file) const
+const ParticleSet& PairCorrelationEstimator::getParticleSet(const PSPool& pset_pool, const std::string& psname) const
 {
-  std::vector<int> onedim(1, NumBins);
-  int offset = my_index_;
-  for (int i = 0; i < gof_r_prefix.size(); ++i)
+  auto pset_iter(pset_pool.find(psname));
+  if (pset_iter == pset_pool.end())
   {
-    h5list.emplace_back(hdf_path{gof_r_prefix[i]});
-    auto& h5o = h5list.back();
-    h5o.set_dimensions(onedim, offset);
-    h5o.addProperty(const_cast<RealType&>(Delta), "delta", file);
-    h5o.addProperty(const_cast<RealType&>(Dmax), "cutoff", file);
-    offset += NumBins;
+    throw UniformCommunicateError("Particle set pool does not contain \"" + psname +
+                                  "\" so StructureFactorEstimator::get_particleset fails!");
   }
+  return *(pset_iter->second.get());
 }
 
+void PairCorrelationEstimator::registerOperatorEstimator(hdf_archive& file) {}
 
-void PairCorrEstimator::addObservables(PropertySetType& plist, BufferType& collectables)
+void PairCorrelationEstimator::write(hdf_archive& file)
 {
-  my_index_ = collectables.size();
-  std::vector<RealType> g(gof_r_prefix.size() * NumBins, 0);
-  collectables.add(g.begin(), g.end());
-  ////only while debugging
-  //if(gof_r.size())
-  //{
-  //  myDebugIndex=plist.size();
-  //  for(int i=0; i<gof_r_prefix.size(); ++i)
-  //  {
-  //    for(int k=0; k<gof_r.cols(); ++k)
-  //    {
-  //      std::ostringstream h;
-  //      h << gof_r_prefix[i]<< "_" << k;
-  //      int dum=plist.add(h.str());
-  //    }
-  //  }
-  //}
+  hdf_path hdf_name{my_name_};
+  file.push(hdf_name);
+  std::vector<int> onedim(1, num_bins_);
+
+  for (int i = 0; i < gof_r_prefix_.size(); ++i)
+  {
+    hdf_path prefix_path{gof_r_prefix_[i]};
+    file.push(prefix_path);
+    file.write(delta_, "delta");
+    file.write(rmax_, "cutoff");
+    Vector prefix_vector(data_.data() + num_bins_ * i, num_bins_);
+    file.write(prefix_vector, "values");
+    file.pop();
+  }
+  file.pop();
+}
+
+void PairCorrelationEstimator::resize(int nbins)
+{
+  num_bins_ = nbins;
+  norm_factor_.resize((num_species_ * num_species_ - num_species_) / 2 + num_species_ + 1, num_bins_);
+  Real r  = delta_ * 0.5;
+  Real pf = volume_ * delta_inv_ / (4 * M_PI);
+  for (int i = 0; i < num_bins_; ++i, r += delta_)
+  {
+    Real rm2           = pf / r / r;
+    norm_factor_(0, i) = rm2 / n_e_;
+    int indx(1);
+    for (int m(0); m < num_species_; m++)
+      for (int n(m); n < num_species_; n++, indx++)
+        norm_factor_(indx, i) = rm2 * n_vec_[n] * n_vec_[m];
+  }
 }
 
 void PairCorrelationEstimator::set_norm_factor()
@@ -225,7 +252,7 @@ void PairCorrelationEstimator::set_norm_factor()
      Note the addition +1 bin, which is for the total gofr of the system
      (which seems not to get saved to h5 file. Why compute it then?)
   */
-  const RealType n_channels = num_species_ * (num_species_ - 1) / 2 + num_species_ + 1;
+  const Real n_channels = num_species_ * (num_species_ - 1) / 2 + num_species_ + 1;
   norm_factor_.resize(n_channels, num_bins_);
 
   /*
@@ -235,7 +262,7 @@ void PairCorrelationEstimator::set_norm_factor()
      Nid the number of particles expected for a uniformly random distribution
      with the same number density
   */
-  RealType r_bin_start   = 0.;
+  Real r_bin_start       = 0.;
   const Real ftpi        = 4. / 3 * M_PI;
   const Real n_tot_pairs = n_e_ * (n_e_ - 1) / 2;
   for (int i = 0; i < num_bins_; i++)
@@ -260,7 +287,7 @@ void PairCorrelationEstimator::set_norm_factor()
     for (int m = 0; m < num_species_; m++)
     {
       const Real nm = n_vec_[m];
-      for (int n = m; n < num_species; n++)
+      for (int n = m; n < num_species_; n++)
       {
         const Real nn         = n_vec_[n];
         const Real npairs     = (m == n ? (nn * (nn - 1) / 2.) : (nn * nm));
@@ -273,8 +300,9 @@ void PairCorrelationEstimator::set_norm_factor()
   }
 }
 
+void PairCorrelationEstimator::startBlock(int steps) {}
 
-void PairCorrEstimator::report()
+void PairCorrelationEstimator::report()
 {
   app_log() << "PairCorrEstimator report" << std::endl;
   app_log() << "  num_species = " << num_species_ << std::endl;
@@ -287,16 +315,11 @@ void PairCorrEstimator::report()
   app_log() << "end PairCorrEstimator report" << std::endl;
 }
 
-bool PairCorrEstimator::get(std::ostream& os) const
+UPtr<OperatorEstBase> PairCorrelationEstimator::spawnCrowdClone() const
 {
-  os << name_ << " dmax=" << rmax_ << std::endl;
-  return true;
-}
-
-std::unique_ptr<OperatorBase> PairCorrEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
-{
+  UPtr<PairCorrelationEstimator> spawn(std::make_unique<PairCorrelationEstimator>(*this, data_locality_));
   //default constructor is sufficient
-  return std::make_unique<PairCorrEstimator>(*this);
+  return spawn;
 }
 
 

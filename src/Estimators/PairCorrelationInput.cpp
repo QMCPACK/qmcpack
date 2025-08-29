@@ -22,7 +22,7 @@ PairCorrelationInput::PairCorrelationInput(xmlNodePtr cur)
   setIfInInput(name_, "name");
   setIfInInput(type_, "type");
   setIfInInput(nbins_, "num_bin");
-  setIfInInput(dmax_, "rmax");
+  setIfInInput(rmax_, "rmax");
   setIfInInput(delta_, "dr");
   setIfInInput(debug_, "debug");
   setIfInInput(sources_, "sources");
@@ -30,4 +30,3 @@ PairCorrelationInput::PairCorrelationInput(xmlNodePtr cur)
 }
 
 } // namespace qmcplusplus
-#endif
