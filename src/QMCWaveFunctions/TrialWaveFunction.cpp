@@ -26,6 +26,8 @@
 #include "NaNguard.h"
 #include "Fermion/SlaterDet.h"
 #include "Fermion/MultiSlaterDetTableMethod.h"
+#include "QMCWaveFunctions/TWFFastDerivWrapper.h"
+
 
 namespace qmcplusplus
 {
@@ -1359,6 +1361,23 @@ void TrialWaveFunction::initializeTWFFastDerivWrapper(const ParticleSet& P, TWFF
     else
       twf.addJastrow(Z[i].get());
   }
+}
+
+
+TWFFastDerivWrapper& TrialWaveFunction::getOrCreateTWFFastDerivWrapper(const ParticleSet& P)
+{
+  if (!twf_fastderiv_)
+    twf_fastderiv_ = std::make_unique<TWFFastDerivWrapper>();
+
+  const bool need_init = (twf_fastderiv_last_P_ != &P) || (twf_fastderiv_last_Zcount_ != Z.size());
+  if (need_init)
+  {
+    // twf_fastderiv_->reset(); // only if you’ve added this
+    initializeTWFFastDerivWrapper(P, *twf_fastderiv_);
+    twf_fastderiv_last_P_      = &P;
+    twf_fastderiv_last_Zcount_ = Z.size();
+  }
+  return *twf_fastderiv_;
 }
 
 //explicit instantiations
