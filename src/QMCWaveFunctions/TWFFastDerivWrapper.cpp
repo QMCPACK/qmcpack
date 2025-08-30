@@ -921,4 +921,43 @@ TWFFastDerivWrapper::IndexType TWFFastDerivWrapper::getRowM(const ParticleSet& P
   return sid;
 }
 
+
+
+void TWFFastDerivWrapper::createResource(ResourceCollection& collection) 
+{
+  // Make sure the pool knows how to clone this resource type
+  collection.addResource(std::make_unique<TWFFastDerivWrapperMultiWalkerMem>());
+}
+
+void TWFFastDerivWrapper::acquireResource(
+    ResourceCollection& collection,
+    const RefVectorWithLeader<TWFFastDerivWrapper>& wrappers) const
+{
+  auto& leader = wrappers.getLeader();
+  // loan a shared multi-walker buffer for the team
+  leader.mw_mem_handle_ = collection.lendResource<TWFFastDerivWrapperMultiWalkerMem>();
+}
+
+void TWFFastDerivWrapper::releaseResource(
+    ResourceCollection& /*collection*/,
+    const RefVectorWithLeader<TWFFastDerivWrapper>& wrappers) const
+{
+  // Under the team lock, nested components must NOT takeback.
+  // Just clear their handles.
+  for (auto& wref : wrappers)
+    wref.get().mw_mem_handle_ = {};
+}
+
+TWFFastDerivWrapperMultiWalkerMem::TWFFastDerivWrapperMultiWalkerMem() : Resource("TWFFastDerivWrapper") , queue(), blas_handle(queue)// give this resource a stable name
+{
+  // If needed, leave handles uninitialized and do lazy init on first use.
+};
+
+TWFFastDerivWrapperMultiWalkerMem::TWFFastDerivWrapperMultiWalkerMem(
+    const TWFFastDerivWrapperMultiWalkerMem& rhs)
+  : Resource("TWFFastDerivWrapper"), queue(), blas_handle(queue) 
+{
+  // For GPU/BLAS handles, prefer re-init later rather than copying here.
+  // Plain containers (Vectors, std::vector) will copy as usual if you want.
+}
 } // namespace qmcplusplus

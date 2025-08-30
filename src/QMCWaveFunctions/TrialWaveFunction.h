@@ -170,13 +170,18 @@ public:
 
   void attachTWFFastDerivWrapper(std::unique_ptr<TWFFastDerivWrapper> twf_fdw) noexcept;
 
-  TWFFastDerivWrapper* getTWFFastDerivWrapper() noexcept { return twf_fastderiv_.get(); }
-
-  const TWFFastDerivWrapper* getTWFFastDerivWrapper() const noexcept { return twf_fastderiv_.get(); }
 
   /** Initialize a TWF wrapper for fast derivative evaluation
    */
   void initializeTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const;
+
+
+   /** Non-owning view of the TWF-owned wrapper)
+    */
+  TWFFastDerivWrapper*       getTWFFastDerivWrapper()       noexcept { return twf_fastderiv_.get(); }
+  const TWFFastDerivWrapper* getTWFFastDerivWrapper() const noexcept { return twf_fastderiv_.get(); }
+  TWFFastDerivWrapper& getOrCreateTWFFastDerivWrapper(const ParticleSet& P);
+  
   /** evalaute the log (internally gradients and laplacian) of the trial wavefunction. gold reference */
   RealType evaluateLog(ParticleSet& P);
 
@@ -554,13 +559,9 @@ public:
   RefVector<MultiSlaterDetTableMethod> findMSD() const;
 
 
-  /// TWF owns an optional fast-derivative wrapper; created lazily when needed.
-  std::unique_ptr<TWFFastDerivWrapper> twf_fastderiv_;
-  // cache to avoid re-initializing the wrapper with the same config
-  mutable const ParticleSet* twf_fastderiv_last_P_ = nullptr;
-  mutable std::size_t        twf_fastderiv_last_Zcount_ = 0;
+
  
-  TWFFastDerivWrapper& getOrCreateTWFFastDerivWrapper(const ParticleSet& P);
+
 
 
 private:
@@ -605,8 +606,7 @@ private:
   ///a list of WaveFunctionComponents constituting many-body wave functions
   std::vector<std::unique_ptr<WaveFunctionComponent>> Z;
 
-  /// For now, TrialWaveFunction will own the wrapper.
-  TWFFastDerivWrapper twf_prototype;
+
   /// timers at TrialWaveFunction function call level
   TimerList_t TWF_timers_;
   /// timers at WaveFunctionComponent function call level
@@ -630,6 +630,15 @@ private:
   // helper function for extracting a list of laplacian from a list of TrialWaveFunction
   static RefVector<ParticleSet::ParticleLaplacian> extractLRefList(
       const RefVectorWithLeader<TrialWaveFunction>& wf_list);
+
+
+  /// TWF owns an optional fast-derivative wrapper; created lazily when needed.
+  std::unique_ptr<TWFFastDerivWrapper> twf_fastderiv_;
+  // cache to avoid re-initializing the wrapper with the same config
+  mutable const ParticleSet* twf_fastderiv_last_P_ = nullptr;
+  mutable std::size_t        twf_fastderiv_last_Zcount_ = 0;
+  /// For now, TrialWaveFunction will own the wrapper.
+  TWFFastDerivWrapper twf_prototype;
 };
 /**@}*/
 } // namespace qmcplusplus

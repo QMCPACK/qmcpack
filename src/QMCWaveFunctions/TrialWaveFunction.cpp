@@ -1280,33 +1280,73 @@ void TrialWaveFunction::createResource(ResourceCollection& collection) const
 {
   for (int i = 0; i < Z.size(); ++i)
     Z[i]->createResource(collection);
+
+  
+  if (twf_fastderiv_)
+    twf_fastderiv_->createResource(collection);
 }
 
 void TrialWaveFunction::acquireResource(ResourceCollection& collection,
                                         const RefVectorWithLeader<TrialWaveFunction>& wf_list)
 {
-  auto& wf_leader               = wf_list.getLeader();
-  auto& wavefunction_components = wf_leader.Z;
-  const int num_wfc             = wf_leader.Z.size();
-  for (int i = 0; i < num_wfc; ++i)
+  auto& wf_leader = wf_list.getLeader();
+
+  // existing WFC acquire…
+  for (int i = 0; i < wf_leader.Z.size(); ++i)
   {
     const auto wfc_list(extractWFCRefList(wf_list, i));
-    wavefunction_components[i]->acquireResource(collection, wfc_list);
+    wf_leader.Z[i]->acquireResource(collection, wfc_list);
+  }
+
+  // Use the leader’s member inside this static method
+  if (wf_leader.twf_fastderiv_)
+  {
+    RefVectorWithLeader<TWFFastDerivWrapper> wlist(*wf_leader.twf_fastderiv_);
+    for (int i = 1; i < wf_list.size(); ++i)
+    {
+      auto* w = wf_list[i].getTWFFastDerivWrapper();
+      if (!w) { wlist.clear(); break; }
+      wlist.push_back(*w);
+    }
+    if (!wlist.empty())
+      wf_leader.twf_fastderiv_->acquireResource(collection, wlist);
   }
 }
 
 void TrialWaveFunction::releaseResource(ResourceCollection& collection,
                                         const RefVectorWithLeader<TrialWaveFunction>& wf_list)
 {
-  auto& wf_leader               = wf_list.getLeader();
-  auto& wavefunction_components = wf_leader.Z;
-  const int num_wfc             = wf_leader.Z.size();
-  for (int i = 0; i < num_wfc; ++i)
+  auto& wf_leader = wf_list.getLeader();
+
+  if (wf_leader.twf_fastderiv_)
+  {
+    RefVectorWithLeader<TWFFastDerivWrapper> wlist(*wf_leader.twf_fastderiv_);
+    for (int i = 1; i < wf_list.size(); ++i)
+    {
+      auto* w = wf_list[i].getTWFFastDerivWrapper();
+      if (!w) { wlist.clear(); break; }
+      wlist.push_back(*w);
+    }
+    if (!wlist.empty())
+      wf_leader.twf_fastderiv_->releaseResource(collection, wlist); // wrapper clears its handle(s)
+  }
+
+  // existing WFC release…
+  for (int i = 0; i < wf_leader.Z.size(); ++i)
   {
     const auto wfc_list(extractWFCRefList(wf_list, i));
-    wavefunction_components[i]->releaseResource(collection, wfc_list);
+    wf_leader.Z[i]->releaseResource(collection, wfc_list);
   }
 }
+
+
+void TrialWaveFunction::attachTWFFastDerivWrapper(std::unique_ptr<TWFFastDerivWrapper> twf_fdw) noexcept
+{
+  twf_fastderiv_ = std::move(twf_fdw);
+  twf_fastderiv_last_P_ = nullptr;
+  twf_fastderiv_last_Zcount_ = 0;
+}
+
 
 RefVectorWithLeader<WaveFunctionComponent> TrialWaveFunction::extractWFCRefList(
     const RefVectorWithLeader<TrialWaveFunction>& wf_list,
