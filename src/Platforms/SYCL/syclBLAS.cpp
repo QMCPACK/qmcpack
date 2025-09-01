@@ -199,6 +199,9 @@ sycl::event gemvN_batched_impl(sycl::queue& handle,
   const sycl::range<2> global{batch_count, static_cast<size_t>(ROWBS * num_row_blocks)};
 
   return handle.submit([&](sycl::handler& h) {
+    if (!events.empty())
+      h.depends_on(events);
+
     h.parallel_for(sycl::nd_range<2>(global, local), [=](sycl::nd_item<2> item) {
       const int bx  = static_cast<int>(item.get_group(0));    // blockIdx.x
       const int by  = static_cast<int>(item.get_group(1));    // blockIdx.y
