@@ -5,6 +5,7 @@
 // Copyright (c) 2021 QMCPACK developers.
 //
 // File developed by:   Raymond Clay III, rclay@sandia.gov, Sandia National Laboratories
+//                      Anouar Benali, abenali.sci@gmail.com, Qubit Pharmaceuticals
 //
 // File created by:   Raymond Clay III, rclay@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
@@ -702,7 +703,7 @@ std::tuple<TWFFastDerivWrapper::ValueType, TWFFastDerivWrapper::ValueType, TWFFa
     ValueType tmp_dmu_O = 0.0;     // d_mu(OD/D)
     ValueType tmp_O     = 0.0;     // OD/D
     ValueType tmp_dmu   = 0.0;     // d_mu(log(D))
-  
+
     for (size_t i_group = 0; i_group < num_groups; i_group++)
     {
       size_t i_dd = C2node[i_group][i_sd];
@@ -921,43 +922,37 @@ TWFFastDerivWrapper::IndexType TWFFastDerivWrapper::getRowM(const ParticleSet& P
   return sid;
 }
 
-
-
-void TWFFastDerivWrapper::createResource(ResourceCollection& collection) 
+void TWFFastDerivWrapper::createResource(ResourceCollection& collection)
 {
-  // Make sure the pool knows how to clone this resource type
   collection.addResource(std::make_unique<TWFFastDerivWrapperMultiWalkerMem>());
 }
 
-void TWFFastDerivWrapper::acquireResource(
-    ResourceCollection& collection,
-    const RefVectorWithLeader<TWFFastDerivWrapper>& wrappers) const
+void TWFFastDerivWrapper::acquireResource(ResourceCollection& collection,
+                                          const RefVectorWithLeader<TWFFastDerivWrapper>& wrappers) const
 {
-  auto& leader = wrappers.getLeader();
-  // loan a shared multi-walker buffer for the team
+  auto& leader          = wrappers.getLeader();
   leader.mw_mem_handle_ = collection.lendResource<TWFFastDerivWrapperMultiWalkerMem>();
 }
 
-void TWFFastDerivWrapper::releaseResource(
-    ResourceCollection& /*collection*/,
-    const RefVectorWithLeader<TWFFastDerivWrapper>& wrappers) const
+void TWFFastDerivWrapper::releaseResource(ResourceCollection& collection,
+                                          const RefVectorWithLeader<TWFFastDerivWrapper>& wrappers) const
 {
-  // Under the team lock, nested components must NOT takeback.
-  // Just clear their handles.
+  auto& leader = wrappers.getLeader();
+
+  // If the leader has a valid handle, take back the resource.
+  if (leader.mw_mem_handle_)
+    collection.takebackResource(leader.mw_mem_handle_);
+
+  // Now, clear the handles for all wrappers to make the operation idempotent.
   for (auto& wref : wrappers)
-    wref.get().mw_mem_handle_ = {};
+    const_cast<TWFFastDerivWrapper&>(wref.get()).mw_mem_handle_ = {};
 }
 
-TWFFastDerivWrapperMultiWalkerMem::TWFFastDerivWrapperMultiWalkerMem() : Resource("TWFFastDerivWrapper") , queue(), blas_handle(queue)// give this resource a stable name
-{
-  // If needed, leave handles uninitialized and do lazy init on first use.
-};
+TWFFastDerivWrapperMultiWalkerMem::TWFFastDerivWrapperMultiWalkerMem()
+    : Resource("TWFFastDerivWrapper"), queue(), blas_handle(queue)
+{}
 
-TWFFastDerivWrapperMultiWalkerMem::TWFFastDerivWrapperMultiWalkerMem(
-    const TWFFastDerivWrapperMultiWalkerMem& rhs)
-  : Resource("TWFFastDerivWrapper"), queue(), blas_handle(queue) 
-{
-  // For GPU/BLAS handles, prefer re-init later rather than copying here.
-  // Plain containers (Vectors, std::vector) will copy as usual if you want.
-}
+TWFFastDerivWrapperMultiWalkerMem::TWFFastDerivWrapperMultiWalkerMem(const TWFFastDerivWrapperMultiWalkerMem& rhs)
+    : Resource("TWFFastDerivWrapper"), queue(), blas_handle(queue)
+{}
 } // namespace qmcplusplus

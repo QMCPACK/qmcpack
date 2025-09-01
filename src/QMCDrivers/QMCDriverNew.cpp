@@ -274,6 +274,11 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
   const RefVectorWithLeader<QMCHamiltonian> walker_hamiltonians(crowd.get_walker_hamiltonians()[0],
                                                                 crowd.get_walker_hamiltonians());
 
+  // Create wrappers BEFORE resource locks so TWF can manage them
+  if (walker_hamiltonians[0].hasAuxiliaryOperator("ACForce"))
+    for (int iw = 0; iw < crowd.size(); ++iw)
+      walker_twfs[iw].getOrCreateTWFFastDerivWrapper(walker_elecs[iw]);
+
   ResourceCollectionTeamLock<ParticleSet> pset_res_lock(crowd.getSharedResource().pset_res, walker_elecs);
   ResourceCollectionTeamLock<TrialWaveFunction> twfs_res_lock(crowd.getSharedResource().twf_res, walker_twfs);
   ResourceCollectionTeamLock<QMCHamiltonian> hams_res_lock(crowd.getSharedResource().ham_res, walker_hamiltonians);

@@ -11,6 +11,7 @@
 //                    Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //                    Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Anouar Benali, abenali.sci@gmail.com, Qubit Pharmaceuticals
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -41,6 +42,13 @@ namespace qmcplusplus
 class SlaterDet;
 class MultiSlaterDetTableMethod;
 class TWFFastDerivWrapper;
+
+struct TrialWaveFunctionMultiWalkerMem : public Resource
+{
+  TrialWaveFunctionMultiWalkerMem();
+  TrialWaveFunctionMultiWalkerMem(const TrialWaveFunctionMultiWalkerMem&);
+  std::unique_ptr<Resource> makeClone() const override;
+};
 
 /** @ingroup MBWfs
  * @brief Class to represent a many-body trial wave function
@@ -176,12 +184,12 @@ public:
   void initializeTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const;
 
 
-   /** Non-owning view of the TWF-owned wrapper)
+  /** Non-owning view of the TWF-owned wrapper)
     */
-  TWFFastDerivWrapper*       getTWFFastDerivWrapper()       noexcept { return twf_fastderiv_.get(); }
+  TWFFastDerivWrapper* getTWFFastDerivWrapper() noexcept { return twf_fastderiv_.get(); }
   const TWFFastDerivWrapper* getTWFFastDerivWrapper() const noexcept { return twf_fastderiv_.get(); }
   TWFFastDerivWrapper& getOrCreateTWFFastDerivWrapper(const ParticleSet& P);
-  
+
   /** evalaute the log (internally gradients and laplacian) of the trial wavefunction. gold reference */
   RealType evaluateLog(ParticleSet& P);
 
@@ -559,11 +567,6 @@ public:
   RefVector<MultiSlaterDetTableMethod> findMSD() const;
 
 
-
- 
-
-
-
 private:
   static void debugOnlyCheckBuffer(WFBufferType& buffer);
 
@@ -606,7 +609,7 @@ private:
   ///a list of WaveFunctionComponents constituting many-body wave functions
   std::vector<std::unique_ptr<WaveFunctionComponent>> Z;
 
-
+  //TWFFastDerivWrapper twf_prototype;
   /// timers at TrialWaveFunction function call level
   TimerList_t TWF_timers_;
   /// timers at WaveFunctionComponent function call level
@@ -631,15 +634,11 @@ private:
   static RefVector<ParticleSet::ParticleLaplacian> extractLRefList(
       const RefVectorWithLeader<TrialWaveFunction>& wf_list);
 
-
-  /// TWF owns an optional fast-derivative wrapper; created lazily when needed.
   std::unique_ptr<TWFFastDerivWrapper> twf_fastderiv_;
   // cache to avoid re-initializing the wrapper with the same config
   mutable const ParticleSet* twf_fastderiv_last_P_ = nullptr;
-  mutable std::size_t        twf_fastderiv_last_Zcount_ = 0;
-  /// For now, TrialWaveFunction will own the wrapper.
-  TWFFastDerivWrapper twf_prototype;
+  mutable std::size_t twf_fastderiv_last_Zcount_   = 0;
 };
-/**@}*/
+
 } // namespace qmcplusplus
 #endif

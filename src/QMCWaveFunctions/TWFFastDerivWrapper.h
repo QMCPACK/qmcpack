@@ -5,6 +5,7 @@
 // Copyright (c) 2021 QMCPACK developers.
 //
 // File developed by:   Raymond Clay III, rclay@sandia.gov, Sandia National Laboratories
+//                      Anouar Benali, abenali.sci@gmail.com, Qubit Pharmaceuticals
 //
 // File created by:   Raymond Clay III, rclay@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
@@ -35,14 +36,14 @@ namespace qmcplusplus
  */
 class TWFFastDerivWrapper;
 
-  
+
 struct TWFFastDerivWrapperMultiWalkerMem : public Resource
 {
-  using ValueType = QMCTraits::ValueType;
-  using PosType     = QMCTraits::PosType;
-  using OffloadPosVector   = Vector<PosType, OffloadAllocator<PosType>>;
+  using ValueType        = QMCTraits::ValueType;
+  using PosType          = QMCTraits::PosType;
+  using OffloadPosVector = Vector<PosType, OffloadAllocator<PosType>>;
 
-  TWFFastDerivWrapperMultiWalkerMem() ;
+  TWFFastDerivWrapperMultiWalkerMem();
   TWFFastDerivWrapperMultiWalkerMem(const TWFFastDerivWrapperMultiWalkerMem&);
 
   std::unique_ptr<Resource> makeClone() const override
@@ -58,7 +59,6 @@ struct TWFFastDerivWrapperMultiWalkerMem : public Resource
   compute::BLASHandle<PlatformKind::OMPTARGET> blas_handle;
 #endif
 };
-
 
 
 class TWFFastDerivWrapper
@@ -425,23 +425,12 @@ public:
    */
   void transform_Av_AoBv(const ValueMatrix& A, const ValueMatrix& B, ValueMatrix& X) const;
 
-   // Minimal resource interface so TWF can call it like other components
-  void createResource(ResourceCollection& collection) ;
+  // Minimal resource interface so TWF can call it like other components
+  void createResource(ResourceCollection& collection);
 
+  void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<TWFFastDerivWrapper>& wrappers) const;
 
-
-
-  void acquireResource(ResourceCollection& collection,
-                       const RefVectorWithLeader<TWFFastDerivWrapper>& wrappers) const;
-
-
-
-
-
-  void releaseResource(ResourceCollection&,
-                       const RefVectorWithLeader<TWFFastDerivWrapper>& wrappers) const;
-
-
+  void releaseResource(ResourceCollection&, const RefVectorWithLeader<TWFFastDerivWrapper>& wrappers) const;
 
 
 private:
@@ -454,9 +443,7 @@ private:
   // access constituent MultiDiracDets and SPOsets through this slaterdet (associate with spos_ via group ID)
   const WaveFunctionComponent* multislaterdet_ = nullptr;
 
-
   mutable ResourceHandle<TWFFastDerivWrapperMultiWalkerMem> mw_mem_handle_;
-
 };
 
 /**@}*/
