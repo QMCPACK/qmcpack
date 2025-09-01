@@ -116,9 +116,8 @@ sycl::event gemvT_batched_impl(sycl::queue& handle,
   constexpr int SUM_SIZE   = ROWBS * COLBS;
   const int num_row_blocks = (n + ROWBS - 1) / ROWBS;
 
-  const sycl::range<3> local{static_cast<size_t>(COLBS), 1, 1};
-  const sycl::range<3> global{static_cast<size_t>(COLBS), static_cast<size_t>(num_row_blocks),
-                              static_cast<size_t>(batch_count)};
+  const sycl::range<2> local{1, COLBS};
+  const sycl::range<2> global{batch_count, static_cast<size_t>(COLBS * num_row_blocks)};
 
   return handle.submit([&](sycl::handler& h) {
     if (!events.empty())
@@ -126,10 +125,10 @@ sycl::event gemvT_batched_impl(sycl::queue& handle,
 
     sycl::local_accessor<T, 1> sum(SUM_SIZE, h);
 
-    h.parallel_for(sycl::nd_range<3>(global, local), [=](sycl::nd_item<3> item) {
-      const int bx  = static_cast<int>(item.get_group(2)); // blockIdx.x
+    h.parallel_for(sycl::nd_range<2>(global, local), [=](sycl::nd_item<2> item) {
+      const int bx  = static_cast<int>(item.get_group(0)); // blockIdx.x
       const int by  = static_cast<int>(item.get_group(1)); // blockIdx.y
-      const int tid = item.get_local_id(0);                // threadIdx.x
+      const int tid = item.get_local_id(1);                // threadIdx.x
 
       for (int i = 0; i < ROWBS; ++i)
         sum[i * COLBS + tid] = T(0);
@@ -196,15 +195,14 @@ sycl::event gemvN_batched_impl(sycl::queue& handle,
 
   const int num_row_blocks = (m + ROWBS - 1) / ROWBS;
 
-  const sycl::range<3> local{static_cast<size_t>(ROWBS), 1, 1};
-  const sycl::range<3> global{static_cast<size_t>(ROWBS), static_cast<size_t>(num_row_blocks),
-                              static_cast<size_t>(batch_count)};
+  const sycl::range<2> local{1, ROWBS};
+  const sycl::range<2> global{batch_count, static_cast<size_t>(ROWBS * num_row_blocks)};
 
   return handle.submit([&](sycl::handler& h) {
-    h.parallel_for(sycl::nd_range<3>(global, local), [=](sycl::nd_item<3> item) {
-      const int bx  = static_cast<int>(item.get_group(2));    // blockIdx.x
+    h.parallel_for(sycl::nd_range<2>(global, local), [=](sycl::nd_item<2> item) {
+      const int bx  = static_cast<int>(item.get_group(0));    // blockIdx.x
       const int by  = static_cast<int>(item.get_group(1));    // blockIdx.y
-      const int tid = static_cast<int>(item.get_local_id(0)); // threadIdx.x
+      const int tid = static_cast<int>(item.get_local_id(1)); // threadIdx.x
 
       const T* __restrict__ A_iw = A[bx];
       const T* __restrict__ x_iw = x[bx];
