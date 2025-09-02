@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2025 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2025 QMCPACK developers.
 //
 // File developed by: Anouar Benali, abenali.sci@gmail.com, Qubit Pharmaceuticals
 //
@@ -138,7 +138,7 @@ ParticleSet createMinimalElectrons(SimulationCell& sim_cell, int num_elec = 2)
   elec.setName("e");
   elec.create({num_elec / 2, num_elec - num_elec / 2}); // up, down spins
   for (int i = 0; i < num_elec; ++i)
-    elec.R[i] = {0.1 * i, 0.0, 0.0};
+    elec.R[i] = {QMCTraits::RealType(0.1 * i), 0, 0};
   elec.update();
   return elec;
 }
