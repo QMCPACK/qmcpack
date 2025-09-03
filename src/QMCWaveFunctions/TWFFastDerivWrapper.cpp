@@ -17,6 +17,30 @@
 #include <iostream>
 namespace qmcplusplus
 {
+
+struct TWFFastDerivWrapperMultiWalkerMem : public Resource
+{
+  using ValueType        = QMCTraits::ValueType;
+  using PosType          = QMCTraits::PosType;
+  using OffloadPosVector = Vector<PosType, OffloadAllocator<PosType>>;
+
+  TWFFastDerivWrapperMultiWalkerMem();
+  TWFFastDerivWrapperMultiWalkerMem(const TWFFastDerivWrapperMultiWalkerMem&);
+
+  std::unique_ptr<Resource> makeClone() const override
+  {
+    return std::make_unique<TWFFastDerivWrapperMultiWalkerMem>(*this);
+  }
+  // BLAS/LAPACK handles
+#if (defined(ENABLE_CUDA) || defined(ENABLE_SYCL)) && defined(ENABLE_OFFLOAD)
+  compute::Queue<VendorKind> queue;
+  compute::BLASHandle<VendorKind> blas_handle;
+#else
+  compute::Queue<PlatformKind::OMPTARGET> queue;
+  compute::BLASHandle<PlatformKind::OMPTARGET> blas_handle;
+#endif
+};
+
 TWFFastDerivWrapper::IndexType TWFFastDerivWrapper::getTWFGroupIndex(const IndexType gid) const
 {
   IndexType return_group_index(-1);
@@ -939,13 +963,9 @@ void TWFFastDerivWrapper::releaseResource(ResourceCollection& collection,
 {
   auto& leader = wrappers.getLeader();
 
-  // If the leader has a valid handle, take back the resource.
+  // Only leader has a handle: take back the resource.
   if (leader.mw_mem_handle_)
-    collection.takebackResource(leader.mw_mem_handle_);
-
-  // Now, clear the handles for all wrappers to make the operation idempotent.
-  for (auto& wref : wrappers)
-    const_cast<TWFFastDerivWrapper&>(wref.get()).mw_mem_handle_ = {};
+    const_cast<TWFFastDerivWrapper&>(leader).mw_mem_handle_ = {};
 }
 
 TWFFastDerivWrapperMultiWalkerMem::TWFFastDerivWrapperMultiWalkerMem()

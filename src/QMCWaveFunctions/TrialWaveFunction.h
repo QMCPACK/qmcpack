@@ -183,11 +183,15 @@ public:
    */
   void initializeTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const;
 
-
-  /** Non-owning view of the TWF-owned wrapper)
-    */
-  TWFFastDerivWrapper* getTWFFastDerivWrapper() noexcept { return twf_fastderiv_.get(); }
-  const TWFFastDerivWrapper* getTWFFastDerivWrapper() const noexcept { return twf_fastderiv_.get(); }
+  /** Get or create the TWF wrapper for fast force evaluation
+ *  @param P particle set for initialization if wrapper doesn't exist
+ *  @return reference to the wrapper (created if necessary)
+ *  
+ *  Creates the wrapper on first call and initializes it with SPOSets/Jastrows.
+ *  Subsequent calls return the existing wrapper, re-initializing only if the 
+ *  particle set or wave function components have changed.
+ *  Used by ACForce to enable fast derivative computation for force evaluation.
+ */
   TWFFastDerivWrapper& getOrCreateTWFFastDerivWrapper(const ParticleSet& P);
 
   /** evalaute the log (internally gradients and laplacian) of the trial wavefunction. gold reference */

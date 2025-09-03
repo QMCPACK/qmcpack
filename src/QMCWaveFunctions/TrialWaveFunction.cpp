@@ -1281,7 +1281,9 @@ void TrialWaveFunction::createResource(ResourceCollection& collection) const
   for (int i = 0; i < Z.size(); ++i)
     Z[i]->createResource(collection);
 
-  collection.addResource(std::make_unique<TWFFastDerivWrapperMultiWalkerMem>());
+  // Delegate to TWFFastDerivWrapper where the definition is visible
+  if (twf_fastderiv_)
+    TWFFastDerivWrapper::createResource(collection);
 }
 
 void TrialWaveFunction::acquireResource(ResourceCollection& collection,
@@ -1296,18 +1298,17 @@ void TrialWaveFunction::acquireResource(ResourceCollection& collection,
     wf_leader.Z[i]->acquireResource(collection, wfc_list);
   }
 
-  // Now handle wrapper resources if wrappers exist
+  // Handle wrapper resources if they exist
   if (wf_leader.twf_fastderiv_)
   {
-    // Build wrapper list from all TWFs
     RefVectorWithLeader<TWFFastDerivWrapper> wrapper_list(*wf_leader.twf_fastderiv_);
     for (int iw = 1; iw < wf_list.size(); ++iw)
     {
-      if (wf_list[iw].twf_fastderiv_)
-        wrapper_list.push_back(*wf_list[iw].twf_fastderiv_);
+      // Could add assert or warning if wrapper missing
+      if (!wf_list[iw].twf_fastderiv_)
+        APP_ABORT("TWF wrapper missing on walker " + std::to_string(iw));
+      wrapper_list.push_back(*wf_list[iw].twf_fastderiv_);
     }
-
-    // Acquire wrapper resources
     wf_leader.twf_fastderiv_->acquireResource(collection, wrapper_list);
   }
 }

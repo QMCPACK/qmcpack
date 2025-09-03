@@ -403,14 +403,6 @@ public:
   /** return a clone */
   std::unique_ptr<QMCHamiltonian> makeClone(ParticleSet& qp, TrialWaveFunction& psi) const;
 
-  bool hasAuxiliaryOperator(const std::string& className) const
-  {
-    for (const auto& op : auxH)
-      if (op->getClassName() == className)
-        return true;
-    return false;
-  }
-
 private:
   static constexpr std::array<std::string_view, 8> available_quantities_{"weight", "LocalEnergy", "LocalPotential",
                                                                          "Vq",     "Vc",          "Vqq",

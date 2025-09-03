@@ -34,32 +34,7 @@ namespace qmcplusplus
  *
  *  Please see : J. Chem. Phys. 144, 194105 (2016) https://doi.org/10.1063/1.4948778 for implementation details and formalism.
  */
-class TWFFastDerivWrapper;
-
-
-struct TWFFastDerivWrapperMultiWalkerMem : public Resource
-{
-  using ValueType        = QMCTraits::ValueType;
-  using PosType          = QMCTraits::PosType;
-  using OffloadPosVector = Vector<PosType, OffloadAllocator<PosType>>;
-
-  TWFFastDerivWrapperMultiWalkerMem();
-  TWFFastDerivWrapperMultiWalkerMem(const TWFFastDerivWrapperMultiWalkerMem&);
-
-  std::unique_ptr<Resource> makeClone() const override
-  {
-    return std::make_unique<TWFFastDerivWrapperMultiWalkerMem>(*this);
-  }
-  // BLAS/LAPACK handles
-#if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
-  compute::Queue<PlatformKind::CUDA> queue;
-  compute::BLASHandle<PlatformKind::CUDA> blas_handle;
-#else
-  compute::Queue<PlatformKind::OMPTARGET> queue;
-  compute::BLASHandle<PlatformKind::OMPTARGET> blas_handle;
-#endif
-};
-
+struct TWFFastDerivWrapperMultiWalkerMem;
 
 class TWFFastDerivWrapper
 {
@@ -426,7 +401,7 @@ public:
   void transform_Av_AoBv(const ValueMatrix& A, const ValueMatrix& B, ValueMatrix& X) const;
 
   // Minimal resource interface so TWF can call it like other components
-  void createResource(ResourceCollection& collection);
+  static void createResource(ResourceCollection& collection);
 
   void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<TWFFastDerivWrapper>& wrappers) const;
 

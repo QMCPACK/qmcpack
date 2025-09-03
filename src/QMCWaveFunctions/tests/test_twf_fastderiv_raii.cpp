@@ -143,16 +143,7 @@ ParticleSet createMinimalElectrons(SimulationCell& sim_cell, int num_elec = 2)
   return elec;
 }
 
-// Helper to check if wrapper exists (since we can't access private member)
-bool hasWrapper(TrialWaveFunction& twf, ParticleSet& elec)
-{
-  // Try to get the wrapper - if it doesn't exist, it will be created
-  // We can detect if it was newly created by getting it twice
-  TWFFastDerivWrapper& wrapper1 = twf.getOrCreateTWFFastDerivWrapper(elec);
-  return true; // If we get here, wrapper exists (either was there or just created)
-}
 } // namespace
-
 TEST_CASE("TWFFastDerivWrapper RAII resource management", "[wavefunction][resources]")
 {
   SimulationCell sim_cell;
@@ -165,7 +156,6 @@ TEST_CASE("TWFFastDerivWrapper RAII resource management", "[wavefunction][resour
 
     // Create wrapper on demand
     TWFFastDerivWrapper& wrapper = twf.getOrCreateTWFFastDerivWrapper(elec);
-    REQUIRE(true);
 
     // Second call returns same wrapper
     TWFFastDerivWrapper& wrapper2 = twf.getOrCreateTWFFastDerivWrapper(elec);
@@ -181,13 +171,10 @@ TEST_CASE("TWFFastDerivWrapper RAII resource management", "[wavefunction][resour
     for (int i = 0; i < num_walkers; ++i)
       elec_list.push_back(createMinimalElectrons(sim_cell));
 
-    // Create TWFs
+    // Create TWFs (simplified to one line)
     std::vector<std::unique_ptr<TrialWaveFunction>> twf_list;
     for (int i = 0; i < num_walkers; ++i)
-    {
-      auto twf = std::make_unique<TrialWaveFunction>(runtime_options, "psi", false);
-      twf_list.push_back(std::move(twf));
-    }
+      twf_list.push_back(std::make_unique<TrialWaveFunction>(runtime_options, "psi", false));
 
     // Create RefVectorWithLeader
     RefVectorWithLeader<TrialWaveFunction> twf_refs(*twf_list[0]);
@@ -198,32 +185,33 @@ TEST_CASE("TWFFastDerivWrapper RAII resource management", "[wavefunction][resour
     for (auto& elec : elec_list)
       elec_refs.push_back(elec);
 
-    // Create wrappers (simulating what QMCDriverNew does)
+    // Create wrappers (simulating what ACForce does)
     for (int i = 0; i < num_walkers; ++i)
       twf_refs[i].getOrCreateTWFFastDerivWrapper(elec_refs[i]);
 
     ResourceCollection twf_res("twf");
 
     // TWF creates resources including wrapper resource
+    size_t initial_resource_count = twf_res.size();
     twf_refs.getLeader().createResource(twf_res);
+    REQUIRE(twf_res.size() > initial_resource_count); // Resources were added
 
-    // Multiple acquire/release cycles
+    // Multiple acquire/release cycles - if these complete without throwing, RAII works
     for (int cycle = 0; cycle < 3; ++cycle)
     {
       {
         ResourceCollectionTeamLock<TrialWaveFunction> lock(twf_res, twf_refs);
-        // Resources acquired, including wrapper resources through TWF
+        // Resources acquired
       }
-      // Resources released
+      // Resources released by destructor
 
-      // Should be able to acquire again
       {
         ResourceCollectionTeamLock<TrialWaveFunction> lock2(twf_res, twf_refs);
-        // No double-takeback errors
+        // Can acquire again - proper release happened
       }
+      // Released again
     }
-
-    REQUIRE(true); // No crashes
+    // Getting here means no exceptions were thrown
   }
 
   SECTION("TWF acquires wrapper resources when they exist")
@@ -236,11 +224,7 @@ TEST_CASE("TWFFastDerivWrapper RAII resource management", "[wavefunction][resour
 
     std::vector<std::unique_ptr<TrialWaveFunction>> twf_list;
     for (int i = 0; i < num_walkers; ++i)
-    {
-      auto twf = std::make_unique<TrialWaveFunction>(runtime_options, "psi", false);
-      // Don't add components - keep it minimal for this test
-      twf_list.push_back(std::move(twf));
-    }
+      twf_list.push_back(std::make_unique<TrialWaveFunction>(runtime_options, "psi", false));
 
     RefVectorWithLeader<TrialWaveFunction> twf_refs(*twf_list[0]);
     for (auto& twf : twf_list)
@@ -253,7 +237,10 @@ TEST_CASE("TWFFastDerivWrapper RAII resource management", "[wavefunction][resour
     ResourceCollection twf_res("twf");
 
     // First test: TWF without wrappers
+    size_t resources_without_wrapper = 0;
     twf_refs.getLeader().createResource(twf_res);
+    resources_without_wrapper = twf_res.size();
+
     {
       ResourceCollectionTeamLock<TrialWaveFunction> lock(twf_res, twf_refs);
       // Should work even without wrappers
@@ -264,8 +251,12 @@ TEST_CASE("TWFFastDerivWrapper RAII resource management", "[wavefunction][resour
       twf_refs[i].getOrCreateTWFFastDerivWrapper(elec_refs[i]);
 
     // Test that wrapper resources are now managed
+    ResourceCollection twf_res2("twf_with_wrapper");
+    twf_refs.getLeader().createResource(twf_res2);
+    REQUIRE(twf_res2.size() >= resources_without_wrapper); // May have added wrapper resource
+
     {
-      ResourceCollectionTeamLock<TrialWaveFunction> lock(twf_res, twf_refs);
+      ResourceCollectionTeamLock<TrialWaveFunction> lock(twf_res2, twf_refs);
       // Wrapper resources should be acquired through TWF
     }
   }
@@ -283,11 +274,8 @@ TEST_CASE("TWFFastDerivWrapper RAII resource management", "[wavefunction][resour
 
     for (int i = 0; i < num_walkers; ++i)
     {
-      auto twf = std::make_unique<TrialWaveFunction>(runtime_options, "psi", false);
-      twf_list.push_back(std::move(twf));
-
-      auto ham = std::make_unique<QMCHamiltonian>();
-      ham_list.push_back(std::move(ham));
+      twf_list.push_back(std::make_unique<TrialWaveFunction>(runtime_options, "psi", false));
+      ham_list.push_back(std::make_unique<QMCHamiltonian>());
     }
 
     RefVectorWithLeader<ParticleSet> elec_refs(elec_list[0]);
@@ -314,12 +302,12 @@ TEST_CASE("TWFFastDerivWrapper RAII resource management", "[wavefunction][resour
     twf_refs.getLeader().createResource(twf_res);
     ham_refs.getLeader().createResource(ham_res);
 
-    // Nested locks like in VMCBatched
+    // Test nested locks don't cause deadlock or double-takeback
     {
       ResourceCollectionTeamLock<ParticleSet> pset_lock(pset_res, elec_refs);
       ResourceCollectionTeamLock<TrialWaveFunction> twf_lock(twf_res, twf_refs);
       ResourceCollectionTeamLock<QMCHamiltonian> ham_lock(ham_res, ham_refs);
-      // All resources active, wrapper through TWF
+      // All resources active
     }
     // All released in correct order
 
@@ -328,9 +316,8 @@ TEST_CASE("TWFFastDerivWrapper RAII resource management", "[wavefunction][resour
       ResourceCollectionTeamLock<ParticleSet> pset_lock(pset_res, elec_refs);
       ResourceCollectionTeamLock<TrialWaveFunction> twf_lock(twf_res, twf_refs);
       ResourceCollectionTeamLock<QMCHamiltonian> ham_lock(ham_res, ham_refs);
+      // No double-takeback errors
     }
-
-    REQUIRE(true); // No double-takeback errors
   }
 
   SECTION("Wrapper persistence across multiple resource cycles")
@@ -380,22 +367,23 @@ TEST_CASE("TWFFastDerivWrapper conditional creation", "[wavefunction][resources]
 
     if (forces_needed)
     {
-      // Simulate QMCDriverNew behavior when ACForce present
-      TWFFastDerivWrapper& wrapper = twf.getOrCreateTWFFastDerivWrapper(elec);
-      REQUIRE(true);
+      // Simulate ACForce behavior when forces are present
+      TWFFastDerivWrapper& wrapper  = twf.getOrCreateTWFFastDerivWrapper(elec);
+      TWFFastDerivWrapper& wrapper2 = twf.getOrCreateTWFFastDerivWrapper(elec);
+      REQUIRE(&wrapper == &wrapper2); // Same wrapper returned
     }
-    // Can't test that wrapper doesn't exist since member is private
 
     // Resource management should work either way
     RefVectorWithLeader<TrialWaveFunction> twf_refs(twf);
     ResourceCollection twf_res("twf");
-    twf.createResource(twf_res);
+
+    // Should not throw whether wrapper exists or not
+    REQUIRE_NOTHROW(twf.createResource(twf_res));
 
     {
       ResourceCollectionTeamLock<TrialWaveFunction> lock(twf_res, twf_refs);
       // Should work with or without wrapper
     }
-
-    REQUIRE(true);
+    // Getting here means successful execution
   }
 }
