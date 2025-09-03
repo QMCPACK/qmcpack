@@ -183,24 +183,8 @@ public:
    * @param modes bitmask DistanceTable::DTModes
    *
    * if this->myName == psrc.getName(), AA type. Otherwise, AB type.
-   *
-   * This is most frequently just used to get the int id of an
-   * existing distance table, except when it isn't and then a
-   * Particle set ends up being updated as a side
-   * of a random object that might take a particle set as an argument.
-   * This essentially means that part of the initialization of golden
-   * and maybe other particle sets is dependent on some series of
-   * state transformations in other objects.
-   *
    */
   int addTable(const ParticleSet& psrc, DTModes modes = DTModes::ALL_OFF);
-
-  /** get the id of an existing distance table on the target table
-   *
-   *  modes must also match, this does not mutate the target or source
-   *  particleset.
-   */
-  int getDistanceTableId(const ParticleSet& psrc, DTModes modes = DTModes::ALL_OFF) const;
 
   ///get a distance table by table_ID
   inline auto& getDistTable(int table_ID) const { return *DistTables[table_ID]; }

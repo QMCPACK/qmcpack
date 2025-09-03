@@ -332,27 +332,6 @@ int ParticleSet::addTable(const ParticleSet& psrc, DTModes modes)
   return tid;
 }
 
-int ParticleSet::getDistanceTableId(const ParticleSet& psrc, DTModes modes) const
-{
-  if (myName == "none" || psrc.getName() == "none")
-    throw std::runtime_error(
-        "ParticleSet::getDistanceTableId needs proper names for both source and target particle sets.");
-
-  int tid;
-  const auto tit = myDistTableMap.find(psrc.getName());
-  if (tit == myDistTableMap.end())
-    throw std::runtime_error("ParticleSet distance table required by ParticleSet::getDistanceTableId does not exist");
-  else
-  {
-    tid = (*tit).second;
-  }
-
-  if (DistTables[tid]->getModes() & modes)
-    return tid;
-  else
-    throw std::runtime_error("ParticleSet distance table exists but required nodes are not enabled.");
-}
-
 const DistanceTableAA& ParticleSet::getDistTableAA(int table_ID) const
 {
   return dynamic_cast<DistanceTableAA&>(*DistTables[table_ID]);
