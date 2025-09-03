@@ -1036,7 +1036,7 @@ Batched Driver: Pair correlation function, :math:`g(r)`
 The functional form of the species-resolved radial pair correlation function operator is
 
 .. math::
-  :label: eq35
+  :label: eqPCorr1
 
   g_{ss'}(r) = \frac{V}{4\pi r^2N_sN_{s'}}\sum_{i_s=1}^{N_s}\sum_{j_{s'}=1}^{N_{s'}}\delta(r-|r_{i_s}-r_{j_{s'}}|)\:,
 
@@ -1049,7 +1049,7 @@ histogram with a set of :math:`N_b` uniform bins of width
 :math:`\delta r`. This can be expressed analytically as
 
 .. math::
-  :label: eq36
+  :label: eqPCorr2
 
   \tilde{g}_{ss'}(r) = \frac{V}{4\pi r^2N_sN_{s'}}\sum_{i=1}^{N_s}\sum_{j=1}^{N_{s'}}\frac{1}{\delta r}\int_{r-\delta r/2}^{r+\delta r/2}dr'\delta(r'-|r_{si}-r_{s'j}|)\:,
 
@@ -1069,19 +1069,19 @@ attributes:
   +-------------------------------+--------------+----------------------+------------------------+-------------------------+
   | **Name**                      | **Datatype** | **Values**           | **Default**            | **Description**         |
   +===============================+==============+======================+========================+=========================+
-  | ``type``:math:`^r`            | text         | ``PairCorrelation``  |                        | historicall ``gofr``    |
+  | ``type``:math:`^r`            | text         | ``PairCorrelation``  |                        | historically ``gofr``   |
   +-------------------------------+--------------+----------------------+------------------------+-------------------------+
-  | ``name``:math:`^o`            | text         | *anything*           | any                    | *No current function*   |
+  | ``name``:math:`^o`            | text         | *anything*           | any                    | provides group name in hdf5 output |
   +-------------------------------+--------------+----------------------+------------------------+-------------------------+
   | ``num_bin``:math:`^r`         | integer      | :math:`>1`           | 20                     | # of histogram bins     |
   +-------------------------------+--------------+----------------------+------------------------+-------------------------+
   | ``rmax``:math:`^o`            | real         | :math:`>0`           | 10                     | Histogram extent (Bohr) |
   +-------------------------------+--------------+----------------------+------------------------+-------------------------+
-  | ``dr``:math:`^o`              | real         | :math:`0`            | 0.5                    | *No current function*   |
+  | ``dr``:math:`^o`              | real         | :math:`0`            | 0.5                    | delta between bins      |
   +-------------------------------+--------------+----------------------+------------------------+-------------------------+
   | ``debug``:math:`^o`           | boolean      | yes/no               | no                     | *No current function*   |
   +-------------------------------+--------------+----------------------+------------------------+-------------------------+
-  | ``target``:math:`^o`          | tex          | ``particleset.name`` |   ``"e"``              | Quantum particles       |
+  | ``target``:math:`^o`          | text         | ``particleset.name`` |   ``"e"``              | Quantum particles       |
   +-------------------------------+--------------+----------------------+------------------------+-------------------------+
   | ``sources``:math:`^o`         | text array   | ``particleset.name`` |   ``"e"``              | Classical particles     |
   +-------------------------------+--------------+----------------------+------------------------+-------------------------+
@@ -1110,7 +1110,8 @@ Additional information:
 -  ``target:`` The default value is the preferred usage (i.e.,
    ``target`` does not need to be provided).
 
--  Data is output to the ``stat.h5`` for each QMC subrun. Individual
+-  Data is output to the ``stat.h5`` for each QMC subrun. It appears in an hdf group
+   determined by the name attribute.
    histograms are named according to the quantum particleset and index
    of the pair. For example, if the quantum particleset is named “e" and
    there are two species (up and down electrons, say), then there will
@@ -1120,15 +1121,15 @@ Additional information:
 
 .. code-block::
   :caption: Pair correlation function estimator element.
-  :name: Listing 28
+  :name: Listing PCorr 1
 
-  <estimator type="PairCorrelation" name="gofr" num_bin="200" rmax="3.0" />
+  <estimator type="PairCorrelation" name="gofr_ee" num_bin="200" rmax="3.0" />
 
 .. code-block::
   :caption: Pair correlation function estimator element with additional electron-ion correlations.
-  :name: Listing 29
+  :name: Listing PCorr 2
 
-  <estimator type="PairCorrelation" name="gofr" num_bin="200" rmax="3.0" source="ion0" />
+  <estimator type="PairCorrelation" name="gofr_ei" num_bin="200" rmax="3.0" sources="ion0" />
 
 
 Static structure factor, :math:`S(k)`
