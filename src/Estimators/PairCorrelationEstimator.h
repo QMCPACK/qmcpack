@@ -32,9 +32,18 @@ public:
   /** This is the Constructor called by the application
    *  the Pair correlation estimator can specify arbitrary source and
    *  target particle set names.
+   *
+   *  The target particle set must be non const since this constructor
+   *  could add new distance tables and/or update the mode of an
+   *  existing distance table of the target particle set.
+   *  I don't like this design at all I do not think estimators should
+   *  update golden elements of the job but for now there is not
+   *  another straightforward way to make sure the target particle set
+   *  can meet the distance table requirements of the estimator.
+   *
    */
   PairCorrelationEstimator(const PairCorrelationInput& pci,
-                           const PSPool& psp,
+                           PSPool& psp,
                            DataLocality data_locality = DataLocality::crowd);
 
   PairCorrelationEstimator(const PairCorrelationEstimator& pce, DataLocality dl);
@@ -82,7 +91,7 @@ private:
 
   void set_norm_factor();
 
-  const ParticleSet& getParticleSet(const PSPool& psetpool, const std::string& psname) const;
+  ParticleSet& getParticleSet(PSPool& psetpool, const std::string& psname) const;
 
 private:
   const PairCorrelationInput& input_;

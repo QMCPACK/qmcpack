@@ -33,7 +33,7 @@ public:
       section_name            = type_tag;
       section_name_alternates = {"gofr"};
       attributes              = {"type", "name", "num_bin", "rmax", "dr", "debug", "sources", "target"};
-      strings                 = {"type", "name", "sources", "target"};
+      strings                 = {"type", "name", "target"};
       multi_strings           = {"sources"};
       reals                   = {"dr", "rmax"};
       integers                = {"num_bin"};

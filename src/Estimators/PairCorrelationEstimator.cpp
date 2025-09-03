@@ -17,16 +17,18 @@ namespace qmcplusplus
 {
 
 PairCorrelationEstimator::PairCorrelationEstimator(const PairCorrelationInput& pci,
-                                                   const PSPool& pset_pool,
+                                                   PSPool& pset_pool,
                                                    DataLocality data_locality)
     : OperatorEstBase(data_locality, pci.get_name(), pci.get_type()), input_(pci)
 {
-  const auto& elecs = getParticleSet(pset_pool, pci.get_target());
-  num_species_      = elecs.groups();
+  ParticleSet& elecs = getParticleSet(pset_pool, pci.get_target());
+  num_species_       = elecs.groups();
   n_vec_.resize(num_species_, 0);
   for (int i = 0; i < num_species_; i++)
     n_vec_[i] = elecs.last(i) - elecs.first(i);
   n_e_ = elecs.getTotalNum();
+
+  d_aa_id_ = elecs.addTable(elecs, DTModes::NEED_FULL_TABLE_ON_HOST_AFTER_DONEPBYP);
 
   // legacy behavior is that the input rmax wins these are overwritten by input tags for rmax
   if (elecs.getLattice().SuperCellEnum)
@@ -132,6 +134,7 @@ PairCorrelationEstimator::PairCorrelationEstimator(const PairCorrelationEstimato
     : qmcplusplus::PairCorrelationEstimator(pce)
 {
   data_locality_ = dl;
+  data_.resize(pce.data_.size());
 }
 
 // The value should match the index to norm_factor in set_norm_factor
@@ -195,7 +198,7 @@ void PairCorrelationEstimator::accumulate(const RefVector<MCPWalker>& walkers,
   }
 }
 
-const ParticleSet& PairCorrelationEstimator::getParticleSet(const PSPool& pset_pool, const std::string& psname) const
+ParticleSet& PairCorrelationEstimator::getParticleSet(PSPool& pset_pool, const std::string& psname) const
 {
   auto pset_iter(pset_pool.find(psname));
   if (pset_iter == pset_pool.end())
