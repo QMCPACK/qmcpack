@@ -401,9 +401,9 @@ public:
   // Minimal resource interface so TWF can call it like other components
   static void createResource(ResourceCollection& collection);
 
-  static void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<TWFFastDerivWrapper>& wrappers) const;
+  static void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<TWFFastDerivWrapper>& wrappers);
 
-  static void releaseResource(ResourceCollection&, const RefVectorWithLeader<TWFFastDerivWrapper>& wrappers) const;
+  static void releaseResource(ResourceCollection&, const RefVectorWithLeader<TWFFastDerivWrapper>& wrappers);
 
 
 private:

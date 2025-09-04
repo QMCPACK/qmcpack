@@ -954,14 +954,14 @@ void TWFFastDerivWrapper::createResource(ResourceCollection& collection)
 }
 
 void TWFFastDerivWrapper::acquireResource(ResourceCollection& collection,
-                                          const RefVectorWithLeader<TWFFastDerivWrapper>& wrappers) const
+                                          const RefVectorWithLeader<TWFFastDerivWrapper>& wrappers)
 {
   auto& leader          = wrappers.getLeader();
   leader.mw_mem_handle_ = collection.lendResource<TWFFastDerivWrapperMultiWalkerMem>();
 }
 
 void TWFFastDerivWrapper::releaseResource(ResourceCollection& collection,
-                                          const RefVectorWithLeader<TWFFastDerivWrapper>& wrappers) const
+                                          const RefVectorWithLeader<TWFFastDerivWrapper>& wrappers)
 {
   auto& leader = wrappers.getLeader();
 
