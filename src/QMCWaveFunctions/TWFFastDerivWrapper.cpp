@@ -14,34 +14,12 @@
 #include "QMCWaveFunctions/Fermion/MultiSlaterDetTableMethod.h"
 #include "Numerics/DeterminantOperators.h"
 #include "type_traits/ConvertToReal.h"
-#include <AccelBLAS.hpp>
-#include "OMPTarget/ompBLAS.hpp"
 #include <iostream>
+#include "QMCWaveFunctions/SPOSet.h"
+#include "Numerics/MatrixOperators.h"
 namespace qmcplusplus
 {
 
-struct TWFFastDerivWrapperMultiWalkerMem : public Resource
-{
-  using ValueType        = QMCTraits::ValueType;
-  using PosType          = QMCTraits::PosType;
-  using OffloadPosVector = Vector<PosType, OffloadAllocator<PosType>>;
-
-  TWFFastDerivWrapperMultiWalkerMem();
-  TWFFastDerivWrapperMultiWalkerMem(const TWFFastDerivWrapperMultiWalkerMem&);
-
-  std::unique_ptr<Resource> makeClone() const override
-  {
-    return std::make_unique<TWFFastDerivWrapperMultiWalkerMem>(*this);
-  }
-  // BLAS/LAPACK handles
-#if (defined(ENABLE_CUDA) || defined(ENABLE_SYCL)) && defined(ENABLE_OFFLOAD)
-  compute::Queue<VendorKind> queue;
-  compute::BLASHandle<VendorKind> blas_handle;
-#else
-  compute::Queue<PlatformKind::OMPTARGET> queue;
-  compute::BLASHandle<PlatformKind::OMPTARGET> blas_handle;
-#endif
-};
 
 TWFFastDerivWrapper::IndexType TWFFastDerivWrapper::getTWFGroupIndex(const IndexType gid) const
 {
@@ -966,15 +944,14 @@ void TWFFastDerivWrapper::releaseResource(ResourceCollection& collection,
   auto& leader = wrappers.getLeader();
 
   // Only leader has a handle: take back the resource.
-  if (leader.mw_mem_handle_)
-    collection.takebackResource(leader.mw_mem_handle_);
+  collection.takebackResource(leader.mw_mem_handle_);
 }
 
-TWFFastDerivWrapperMultiWalkerMem::TWFFastDerivWrapperMultiWalkerMem()
+TWFFastDerivWrapper::TWFFastDerivWrapperMultiWalkerMem::TWFFastDerivWrapperMultiWalkerMem()
     : Resource("TWFFastDerivWrapper"), queue(), blas_handle(queue)
 {}
 
-TWFFastDerivWrapperMultiWalkerMem::TWFFastDerivWrapperMultiWalkerMem(const TWFFastDerivWrapperMultiWalkerMem& rhs)
+TWFFastDerivWrapper::TWFFastDerivWrapperMultiWalkerMem::TWFFastDerivWrapperMultiWalkerMem(const TWFFastDerivWrapperMultiWalkerMem& rhs)
     : Resource("TWFFastDerivWrapper"), queue(), blas_handle(queue)
 {}
 } // namespace qmcplusplus
