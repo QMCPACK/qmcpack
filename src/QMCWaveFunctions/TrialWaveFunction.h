@@ -43,13 +43,6 @@ class SlaterDet;
 class MultiSlaterDetTableMethod;
 class TWFFastDerivWrapper;
 
-struct TrialWaveFunctionMultiWalkerMem : public Resource
-{
-  TrialWaveFunctionMultiWalkerMem();
-  TrialWaveFunctionMultiWalkerMem(const TrialWaveFunctionMultiWalkerMem&);
-  std::unique_ptr<Resource> makeClone() const override;
-};
-
 /** @ingroup MBWfs
  * @brief Class to represent a many-body trial wave function
  *
@@ -175,9 +168,6 @@ public:
   /** print out state of the trial wavefunction
    */
   void reportStatus(std::ostream& os);
-
-  void attachTWFFastDerivWrapper(std::unique_ptr<TWFFastDerivWrapper> twf_fdw) noexcept;
-
 
   /** Initialize a TWF wrapper for fast derivative evaluation
    */
@@ -640,8 +630,8 @@ private:
 
   std::unique_ptr<TWFFastDerivWrapper> twf_fastderiv_;
   // cache to avoid re-initializing the wrapper with the same config
-  mutable const ParticleSet* twf_fastderiv_last_P_ = nullptr;
-  mutable std::size_t twf_fastderiv_last_Zcount_   = 0;
+  const ParticleSet* twf_fastderiv_last_P_ = nullptr;
+  std::size_t twf_fastderiv_last_Zcount_   = 0;
 };
 
 } // namespace qmcplusplus

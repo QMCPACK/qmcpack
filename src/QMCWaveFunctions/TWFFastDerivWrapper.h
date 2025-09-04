@@ -18,9 +18,7 @@
 #include "ResourceCollection.h"
 #include "Utilities/ResourceCollection.h"
 #include "QMCWaveFunctions/SPOSet.h"
-#include "OMPTarget/ompBLAS.hpp"
 #include "Numerics/MatrixOperators.h"
-#include <AccelBLAS.hpp>
 #include "QMCWaveFunctions/SPOSet.h"
 #include "Configuration.h"
 #include "Particle/ParticleSet.h"

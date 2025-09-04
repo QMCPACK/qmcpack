@@ -14,6 +14,8 @@
 #include "QMCWaveFunctions/Fermion/MultiSlaterDetTableMethod.h"
 #include "Numerics/DeterminantOperators.h"
 #include "type_traits/ConvertToReal.h"
+#include <AccelBLAS.hpp>
+#include "OMPTarget/ompBLAS.hpp"
 #include <iostream>
 namespace qmcplusplus
 {
@@ -965,7 +967,7 @@ void TWFFastDerivWrapper::releaseResource(ResourceCollection& collection,
 
   // Only leader has a handle: take back the resource.
   if (leader.mw_mem_handle_)
-    const_cast<TWFFastDerivWrapper&>(leader).mw_mem_handle_ = {};
+    collection.takebackResource(leader.mw_mem_handle_);
 }
 
 TWFFastDerivWrapperMultiWalkerMem::TWFFastDerivWrapperMultiWalkerMem()

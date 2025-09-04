@@ -1302,7 +1302,7 @@ void TrialWaveFunction::acquireResource(ResourceCollection& collection,
   if (wf_leader.twf_fastderiv_)
   {
     RefVectorWithLeader<TWFFastDerivWrapper> wrapper_list(*wf_leader.twf_fastderiv_);
-    for (int iw = 1; iw < wf_list.size(); ++iw)
+    for (int iw = 0; iw < wf_list.size(); ++iw)
     {
       // Could add assert or warning if wrapper missing
       if (!wf_list[iw].twf_fastderiv_)
