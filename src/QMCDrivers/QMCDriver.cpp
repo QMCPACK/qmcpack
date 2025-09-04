@@ -59,18 +59,18 @@ QMCDriver::QMCDriver(const ProjectData& project_data,
       checkpoint_timer_(createGlobalTimer("checkpoint::recordBlock", timer_level_medium)),
       driver_scope_profiler_(enable_profiling)
 {
-  ResetRandom  = false;
-  AppendRun    = false;
-  DumpConfig   = false;
-  IsQMCDriver  = true;
-  allow_traces = false;
+  ResetRandom       = false;
+  AppendRun         = false;
+  DumpConfig        = false;
+  IsQMCDriver       = true;
+  allow_traces      = false;
   allow_walker_logs = false;
   walker_logs_xml   = NULL;
-  MyCounter    = 0;
+  MyCounter         = 0;
   //<parameter name=" "> value </parameter>
   //accept multiple names for the same value
   //recommend using all lower cases for a new parameter
-  Period4CheckPoint = 0;
+  Period4CheckPoint      = 0;
   Period4CheckProperties = 100;
   m_param.add(Period4CheckProperties, "checkProperties");
   m_param.add(Period4CheckProperties, "checkproperties");
