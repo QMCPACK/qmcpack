@@ -1303,12 +1303,7 @@ void TrialWaveFunction::acquireResource(ResourceCollection& collection,
   {
     RefVectorWithLeader<TWFFastDerivWrapper> wrapper_list(*wf_leader.twf_fastderiv_);
     for (int iw = 0; iw < wf_list.size(); ++iw)
-    {
-      // Could add assert or warning if wrapper missing
-      if (!wf_list[iw].twf_fastderiv_)
-        APP_ABORT("TWF wrapper missing on walker " + std::to_string(iw));
       wrapper_list.push_back(*wf_list[iw].twf_fastderiv_);
-    }
     wf_leader.twf_fastderiv_->acquireResource(collection, wrapper_list);
   }
 }

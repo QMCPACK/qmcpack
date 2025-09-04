@@ -401,9 +401,9 @@ public:
   // Minimal resource interface so TWF can call it like other components
   static void createResource(ResourceCollection& collection);
 
-  void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<TWFFastDerivWrapper>& wrappers) const;
+  static void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<TWFFastDerivWrapper>& wrappers) const;
 
-  void releaseResource(ResourceCollection&, const RefVectorWithLeader<TWFFastDerivWrapper>& wrappers) const;
+  static void releaseResource(ResourceCollection&, const RefVectorWithLeader<TWFFastDerivWrapper>& wrappers) const;
 
 
 private:
@@ -416,7 +416,7 @@ private:
   // access constituent MultiDiracDets and SPOsets through this slaterdet (associate with spos_ via group ID)
   const WaveFunctionComponent* multislaterdet_ = nullptr;
 
-  mutable ResourceHandle<TWFFastDerivWrapperMultiWalkerMem> mw_mem_handle_;
+  ResourceHandle<TWFFastDerivWrapperMultiWalkerMem> mw_mem_handle_;
 };
 
 /**@}*/
