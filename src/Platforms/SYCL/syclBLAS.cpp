@@ -116,16 +116,12 @@ sycl::event gemvT_batched_impl(sycl::queue& handle,
   constexpr int SUM_SIZE   = ROWBS * COLBS;
   const int num_row_blocks = (n + ROWBS - 1) / ROWBS;
 
-  const sycl::range<2> local{1, COLBS};
-  const sycl::range<2> global{batch_count, static_cast<size_t>(COLBS * num_row_blocks)};
-
   return handle.submit([&](sycl::handler& h) {
-    if (!events.empty())
-      h.depends_on(events);
+    h.depends_on(events);
 
     sycl::local_accessor<T, 1> sum(SUM_SIZE, h);
 
-    h.parallel_for(sycl::nd_range<2>(global, local), [=](sycl::nd_item<2> item) {
+    h.parallel_for(sycl::nd_range<2>({batch_count, COLBS * num_row_blocks}, {1, COLBS}), [=](sycl::nd_item<2> item) {
       const int bx  = static_cast<int>(item.get_group(0)); // blockIdx.x
       const int by  = static_cast<int>(item.get_group(1)); // blockIdx.y
       const int tid = item.get_local_id(1);                // threadIdx.x
@@ -141,14 +137,12 @@ sycl::event gemvT_batched_impl(sycl::queue& handle,
 
       const int num_col_blocks = (m + COLBS - 1) / COLBS;
       for (int ib = 0; ib < num_col_blocks; ++ib)
-      {
         if (const int col_id = ib * COLBS + tid; col_id < m)
         {
           const T xv = x_iw[col_id * incx];
           for (int row_id = row_begin; row_id < row_begin + row_max; ++row_id)
             sum[(row_id - row_begin) * COLBS + tid] += xv * A_iw[row_id * lda + col_id];
         }
-      }
 
       for (int iend = COLBS / 2; iend > 0; iend /= 2)
       {
@@ -195,10 +189,7 @@ sycl::event gemvN_batched_impl(sycl::queue& handle,
 
   const int num_row_blocks = (m + ROWBS - 1) / ROWBS;
 
-  const sycl::range<2> local{1, ROWBS};
-  const sycl::range<2> global{batch_count, static_cast<size_t>(ROWBS * num_row_blocks)};
-
-  return handle.parallel_for(sycl::nd_range<2>(global, local), [=](sycl::nd_item<2> item) {
+  return handle.parallel_for(sycl::nd_range<2>({batch_count, ROWBS * num_row_blocks}, {1, ROWBS}), [=](sycl::nd_item<2> item) {
     const unsigned batch = item.get_group(0);
     const int row        = item.get_global_id(1);
     if (row < m)
