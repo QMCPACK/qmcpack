@@ -104,6 +104,7 @@ SoaLocalizedBasisSet<COT, ORBT>::SoaLocalizedBasisSet(ParticleSet& ions, Particl
   BasisOffset.resize(NumCenters + 1);
   BasisSetSize = 0;
   initializeSpeciesOffsets();
+  lcao_distance_table_ = std::make_unique<DistanceTableABLCAO>(ions_, els);
 }
 
 template<class COT, typename ORBT>
@@ -213,10 +214,41 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateVGL(const RefVectorWithLeader<S
 {
   assert(this == &basis_list.getLeader());
   auto& basis_leader = basis_list.template getCastedLeader<SoaLocalizedBasisSet<COT, ORBT>>();
+
+
+
+  // Lazy creation if needed
+  if (!basis_leader.lcao_distance_table_ && P_list.size() > 0) {
+    basis_leader.lcao_distance_table_ = 
+        std::make_unique<DistanceTableABLCAO>(basis_leader.ions_, P_list[0]);
+    app_log() << ">>> LCAO Distance Table created LAZILY in mw_evaluateVGL\n";
+  }
+  
   const auto& IonID(ions_.GroupID);
   auto& pset_leader = P_list.getLeader();
-
   size_t Nw = P_list.size();
+  
+  // TEST: Use LCAO distance table instead of regular one
+  if (basis_leader.lcao_distance_table_ && NumCenters > 0) {
+    // TODO: Change mw_evaluate to handle all centers at once
+    // For now, we computed center 0
+    
+    // Get GPU pointers - these stay on device
+    const RealType* gpu_distances = 
+        basis_leader.lcao_distance_table_->getDistancesDevice();
+    const RealType* gpu_displacements = 
+        basis_leader.lcao_distance_table_->getDisplacementsDevice();
+  }
+
+
+
+
+
+
+
+
+
+
   assert(vgl_v.size(0) == 5);
   assert(vgl_v.size(1) == Nw);
   assert(vgl_v.size(2) == BasisSetSize);
@@ -225,6 +257,33 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateVGL(const RefVectorWithLeader<S
   auto& displ_list_tr = basis_leader.mw_mem_handle_.getResource().displ_list_tr;
   Tv_list.resize(3 * NumCenters * Nw);
   displ_list_tr.resize(3 * NumCenters * Nw);
+
+
+
+  if (basis_leader.lcao_distance_table_ && NumCenters > 0) {
+    // First, upgrade mw_evaluate to compute all centers
+    basis_leader.lcao_distance_table_->mw_evaluate_all_centers(
+        P_list, basis_leader.ions_, iat, NumCenters);
+    
+    // Copy GPU displacements back to fill the expected arrays
+    // (Not ideal but works as a first step)
+    auto& gpu_displacements = basis_leader.lcao_distance_table_->getDisplacementsVector();
+    gpu_displacements.updateFrom(); // Transfer GPU->CPU
+    
+    // Fill Tv_list from GPU data
+    for (size_t iw = 0; iw < Nw; iw++) {
+      const auto& coordR = P_list[iw].activeR(iat);
+      for (int c = 0; c < NumCenters; c++) {
+        size_t gpu_idx = c * Nw + iw; // Your GPU layout
+        for (int d = 0; d < 3; d++) {
+          size_t out_idx = d + 3 * (iw + c * Nw);
+          displ_list_tr[out_idx] = gpu_displacements[3*gpu_idx + d];
+          Tv_list[out_idx] = (ions_.R[c][d] - coordR[d]) - displ_list_tr[out_idx];
+        }
+      }
+    }
+  } else {
+
 
   for (size_t iw = 0; iw < P_list.size(); iw++)
   {
@@ -239,6 +298,7 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateVGL(const RefVectorWithLeader<S
       }
   }
 
+  }
 #if defined(QMC_COMPLEX)
   Tv_list.updateTo();
 #endif
@@ -315,12 +375,15 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValueVPs(const RefVectorWithLea
 
   const size_t nVPs = vp_basis_v.size(0);
   assert(vp_basis_v.size(1) == BasisSetSize); // shape [nVPs, BasisSetSize]
+
   const auto& IonID(ions_.GroupID);
 
   auto& vps_leader = vp_list.getLeader();
 
   const auto dt_list(vps_leader.extractDTRefList(vp_list, myTableIndex));
   const auto coordR_list(vps_leader.extractVPCoords(vp_list));
+
+
 
   // GPU arrays [NumCenters * nVPs, 3]
   // Each center c, vp index iVP => c*nVPs + iVP
@@ -335,6 +398,9 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValueVPs(const RefVectorWithLea
   // "index" is loop over each virtual point
   // i.e. we do "for each (iw, iat) => iVP" in [0..nVPs-1]
   size_t indexVP = 0;
+
+   
+
   for (size_t iw = 0; iw < vp_list.size(); iw++)
   {
     // vp_list[iw].getTotalNum() = # of virtual points in this VPS

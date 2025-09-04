@@ -22,6 +22,8 @@
 #include <memory>
 #include "QMCWaveFunctions/BasisSetBase.h"
 #include "OMPTarget/OffloadAlignedAllocators.hpp"
+#include "LCAO/DistanceTableABLCAO.h"
+
 
 namespace qmcplusplus
 {
@@ -211,6 +213,7 @@ public:
 private:
   using PinnedVecSizeT    = Vector<size_t, OffloadPinnedAllocator<size_t>>;
 
+
   /// multi walker shared memory buffer
   struct SoaLocalizedBSetMultiWalkerMem;
   /// Pinned per-species list of ion indices for batched multi-center evaluation
@@ -221,6 +224,7 @@ private:
   ResourceHandle<SoaLocalizedBSetMultiWalkerMem> mw_mem_handle_;
   NewTimer& NumCenter_timer_;
 
+  std::unique_ptr<DistanceTableABLCAO> lcao_distance_table_;
   /**
   * @brief Initialize and upload per‐species ion center indices and basis‐function offsets.
   *
