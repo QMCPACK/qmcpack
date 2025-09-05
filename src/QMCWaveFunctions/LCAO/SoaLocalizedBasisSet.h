@@ -39,9 +39,9 @@ template<class COT, typename ORBT>
 class SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
 {
 public:
-  using RealType  = typename COT::RealType;
-  using BaseType  = SoaBasisSetBase<ORBT>;
-  using ValueType = QMCTraits::ValueType;
+  using RealType          = typename COT::RealType;
+  using BaseType          = SoaBasisSetBase<ORBT>;
+  using ValueType         = QMCTraits::ValueType;
   using vgl_type          = typename BaseType::vgl_type;
   using vgh_type          = typename BaseType::vgh_type;
   using vghgh_type        = typename BaseType::vghgh_type;
@@ -210,7 +210,7 @@ public:
       int id);
 
 private:
-  using PinnedVecSizeT    = Vector<size_t, OffloadPinnedAllocator<size_t>>;
+  using PinnedVecSizeT = Vector<size_t, OffloadPinnedAllocator<size_t>>;
 
 
   /// multi walker shared memory buffer
@@ -230,8 +230,6 @@ private:
   * and performs the one‐time upload. Called only once from Constructor
   */
   void initializeSpeciesOffsets();
-
-
 };
 } // namespace qmcplusplus
 #endif

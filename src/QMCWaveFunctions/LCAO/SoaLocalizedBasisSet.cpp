@@ -4,7 +4,8 @@
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by:
+// File developed by:Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
+//                   Anouar Benali, abenali@gmail.com, Qubit Pharmaceuticals
 //
 // File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //////////////////////////////////////////////////////////////////////////////////////
@@ -36,12 +37,11 @@ struct SoaLocalizedBasisSet<COT, ORBT>::SoaLocalizedBSetMultiWalkerMem : public 
   std::unique_ptr<DistanceTableABLCAO> lcao_distance_table;
   Vector<RealType, OffloadPinnedAllocator<RealType>> Tv_list;
   Vector<RealType, OffloadPinnedAllocator<RealType>> displ_list_tr;
-   Vector<size_t, OffloadPinnedAllocator<size_t>> walker_offsets;
+  Vector<size_t, OffloadPinnedAllocator<size_t>> walker_offsets;
   Vector<int, OffloadPinnedAllocator<int>> active_particles;
   Vector<int, OffloadPinnedAllocator<int>> target_counts;
   Vector<RealType, OffloadPinnedAllocator<RealType>> ion_positions;
   Vector<RealType, OffloadPinnedAllocator<RealType>> electron_positions;
-
 };
 
 template<class COT, typename ORBT>
@@ -51,7 +51,6 @@ void SoaLocalizedBasisSet<COT, ORBT>::createResource(ResourceCollection& collect
   collection.addResource(std::make_unique<SoaLocalizedBSetMultiWalkerMem>());
   for (int i = 0; i < LOBasisSet.size(); i++)
     LOBasisSet[i]->createResource(collection);
-
 }
 template<class COT, typename ORBT>
 void SoaLocalizedBasisSet<COT, ORBT>::acquireResource(
@@ -61,7 +60,7 @@ void SoaLocalizedBasisSet<COT, ORBT>::acquireResource(
   auto& loc_basis_leader = basisset_list.template getCastedLeader<SoaLocalizedBasisSet<COT, ORBT>>();
   assert(this == &loc_basis_leader);
   loc_basis_leader.mw_mem_handle_ = collection.lendResource<SoaLocalizedBSetMultiWalkerMem>();
-  
+
   auto& basisset_leader = loc_basis_leader.LOBasisSet;
   for (int i = 0; i < basisset_leader.size(); i++)
   {
@@ -79,7 +78,7 @@ void SoaLocalizedBasisSet<COT, ORBT>::releaseResource(
   assert(this == &loc_basis_leader);
 
   collection.takebackResource(loc_basis_leader.mw_mem_handle_);
-  
+
   auto& basisset_leader = loc_basis_leader.LOBasisSet;
   for (int i = 0; i < basisset_leader.size(); i++)
   {
@@ -217,57 +216,49 @@ void SoaLocalizedBasisSet<COT, ORBT>::evaluateVGL(const ParticleSet& P, int iat,
 }
 
 template<class COT, typename ORBT>
-void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateVGL(
-    const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basis_list,
-    const RefVectorWithLeader<ParticleSet>& P_list,
-    int iat,
-    OffloadMWVGLArray& vgl_v)
+void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateVGL(const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basis_list,
+                                                     const RefVectorWithLeader<ParticleSet>& P_list,
+                                                     int iat,
+                                                     OffloadMWVGLArray& vgl_v)
 {
   assert(this == &basis_list.getLeader());
   auto& basis_leader = basis_list.template getCastedLeader<SoaLocalizedBasisSet<COT, ORBT>>();
-  
-  const size_t Nw = P_list.size();
-  auto& Tv_list = basis_leader.mw_mem_handle_.getResource().Tv_list;
+
+  const size_t Nw     = P_list.size();
+  auto& Tv_list       = basis_leader.mw_mem_handle_.getResource().Tv_list;
   auto& displ_list_tr = basis_leader.mw_mem_handle_.getResource().displ_list_tr;
   Tv_list.resize(3 * NumCenters * Nw);
   displ_list_tr.resize(3 * NumCenters * Nw);
-  
+
   // Get or create LCAO distance table
   auto& lcao_dt = basis_leader.mw_mem_handle_.getResource().lcao_distance_table;
-  if (!lcao_dt) {
+  if (!lcao_dt)
+  {
     lcao_dt = std::make_unique<DistanceTableABLCAO>(ions_, P_list.getLeader());
   }
-  
+
   // Single call handles both cases
-  lcao_dt->mw_evaluate(P_list, ions_, iat, NumCenters,  
-                       displ_list_tr, Tv_list);
-  
+  lcao_dt->mw_evaluate(P_list, ions_, iat, NumCenters, displ_list_tr, Tv_list);
+
   // Species-batched atomic basis evaluation
   {
     ScopedTimer NumCenter_Wrapper(NumCenter_timer_);
     const auto& species_names = ions_.getSpeciesSet().speciesName;
-    const int num_species = species_names.size();
-    
+    const int num_species     = species_names.size();
+
     for (int species_id = 0; species_id < num_species; ++species_id)
       if (const auto& c_list = species_centers_[species_id]; c_list.size() > 0)
       {
-        const auto& basis_offsets = species_center_coffsets_[species_id];
+        const auto& basis_offsets   = species_center_coffsets_[species_id];
         auto one_species_basis_list = extractOneSpeciesBasisRefList(basis_list, species_id);
-        
-        LOBasisSet[species_id]->mw_evaluateVGL_multiCenter(
-            one_species_basis_list,
-            P_list.getLeader().getLattice(),
-            vgl_v,
-            displ_list_tr,
-            Tv_list,
-            Nw,
-            BasisSetSize,
-            c_list,
-            basis_offsets,
-            NumCenters);
+
+        LOBasisSet[species_id]->mw_evaluateVGL_multiCenter(one_species_basis_list, P_list.getLeader().getLattice(),
+                                                           vgl_v, displ_list_tr, Tv_list, Nw, BasisSetSize, c_list,
+                                                           basis_offsets, NumCenters);
       }
   }
 }
+
 template<class COT, typename ORBT>
 void SoaLocalizedBasisSet<COT, ORBT>::evaluateVGH(const ParticleSet& P, int iat, vgh_type& vgh)
 {
@@ -307,42 +298,40 @@ void SoaLocalizedBasisSet<COT, ORBT>::evaluateVGHGH(const ParticleSet& P, int ia
 }
 
 template<class COT, typename ORBT>
-void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValueVPs(
-    const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basis_list,
-    const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
-    OffloadMWVArray& vp_basis_v)
+void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValueVPs(const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basis_list,
+                                                          const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                                                          OffloadMWVArray& vp_basis_v)
 {
   assert(this == &basis_list.getLeader());
   auto& basis_leader = basis_list.template getCastedLeader<SoaLocalizedBasisSet<COT, ORBT>>();
-  
+
   const size_t nVPs = vp_basis_v.size(0);
   assert(vp_basis_v.size(1) == BasisSetSize);
-  
+
   auto& vps_leader = vp_list.getLeader();
-  
-  auto& Tv_list = basis_leader.mw_mem_handle_.getResource().Tv_list;
+
+  auto& Tv_list       = basis_leader.mw_mem_handle_.getResource().Tv_list;
   auto& displ_list_tr = basis_leader.mw_mem_handle_.getResource().displ_list_tr;
   Tv_list.resize(3ULL * NumCenters * nVPs);
   displ_list_tr.resize(3ULL * NumCenters * nVPs);
-  
+
   // Get VP distance table pointer
-  const auto& dt_leader = vps_leader.getDistTableAB(myTableIndex);
+  const auto& dt_leader          = vps_leader.getDistTableAB(myTableIndex);
   const RealType* vp_dist_device = dt_leader.getMultiWalkerDataDevicePtr();
-  const size_t stride_size = dt_leader.getPerTargetPctlStrideSize();
-  const size_t num_padded = getAlignedSize<RealType>(NumCenters);
-  
+  const size_t stride_size       = dt_leader.getPerTargetPctlStrideSize();
+  const size_t num_padded        = getAlignedSize<RealType>(NumCenters);
+
   if (!vp_dist_device)
     throw std::runtime_error("VP distance table pointer is null!");
-  
+
   // Device pointers for output
   RealType* displ_out = displ_list_tr.device_data();
-  RealType* tv_out = Tv_list.device_data();
-  
-  // The key: vp_dist_ptr is a host pointer that's been mapped to device
+  RealType* tv_out    = Tv_list.device_data();
+
+  // vp_dist_ptr is a host pointer that's been mapped to device
   // Don't use is_device_ptr for it - let the runtime handle the mapping
   const int ncenters = NumCenters;
-  const int nvps = static_cast<int>(nVPs);
-
+  const int nvps     = static_cast<int>(nVPs);
 
 
   PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(3) \
@@ -351,13 +340,12 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValueVPs(
     for (int c = 0; c < ncenters; ++c)
       for (int d = 0; d < 3; ++d)
       {
-        size_t vp_idx = ivp * stride_size + num_padded + d * num_padded + c;
+        size_t vp_idx  = ivp * stride_size + num_padded + d * num_padded + c;
         size_t out_idx = d + 3 * (ivp + c * nvps);
-        
+
         displ_out[out_idx] = vp_dist_device[vp_idx];
-        tv_out[out_idx] = 0.0; // TODO: PBC
+        tv_out[out_idx]    = 0.0; // TODO: PBC
       }
-  
 
 
   const auto& IonID(ions_.GroupID);

@@ -4,7 +4,7 @@
 //
 // Copyright (c) 2025 QMCPACK developers.
 //
-// File developed by: Anouar Benali, abenali.sci@hotmail.com, Qubit Pharmaceuticals. 
+// File developed by: Anouar Benali, abenali.sci@hotmail.com, Qubit Pharmaceuticals.
 //
 // File created by:  Anouar Benali, abenali.sci@hotmail.com, Qubit Pharmaceuticals.
 //////////////////////////////////////////////////////////////////////////////////////
@@ -29,17 +29,17 @@ namespace qmcplusplus
 class DistanceTableABLCAO : public DistanceTable
 {
 public:
-  using RealType = OHMMS_PRECISION;
-  using PosType = TinyVector<RealType, OHMMS_DIM>;
+  using RealType  = OHMMS_PRECISION;
+  using PosType   = TinyVector<RealType, OHMMS_DIM>;
   using IndexType = int;
-  
+
   template<typename DT>
   using OffloadPinnedVector = Vector<DT, OffloadPinnedAllocator<DT>>;
 
 private:
-  int num_ions_;      ///< Number of ion centers
-  int num_elec_;      ///< Number of electrons
-		      
+  int num_ions_; ///< Number of ion centers
+  int num_elec_; ///< Number of electrons
+
 
 public:
   /** Constructor
@@ -48,13 +48,13 @@ public:
    */
   DistanceTableABLCAO(const ParticleSet& ions, const ParticleSet& elecs);
   ~DistanceTableABLCAO() = default;
-  
+
   // Required pure virtual methods from DistanceTable (unused stubs for LCAO)
   void evaluate(ParticleSet& P) override;
   void move(const ParticleSet& P, const PosType& rnew, const IndexType iat, bool prepare_old = true) override;
   void update(IndexType jat) override;
   int get_first_neighbor(IndexType iat, RealType& r, PosType& dr, bool newpos) const override;
-  
+
   /** Multi-walker evaluation for LCAO basis
    * @param elec_list multi-walker electron particle sets
    * @param ions ion particle set
@@ -66,13 +66,12 @@ public:
    * Computes ion-electron displacements using fused new position buffer.
    * For PBC systems, applies minimum image convention and computes lattice translations.
    */
-  void mw_evaluate(
-      const RefVectorWithLeader<ParticleSet>& elec_list,
-      const ParticleSet& ions,
-      int iat,
-      int num_centers,
-      OffloadPinnedVector<RealType>& displ_list_tr,
-      OffloadPinnedVector<RealType>& Tv_list);
+  void mw_evaluate(const RefVectorWithLeader<ParticleSet>& elec_list,
+                   const ParticleSet& ions,
+                   int iat,
+                   int num_centers,
+                   OffloadPinnedVector<RealType>& displ_list_tr,
+                   OffloadPinnedVector<RealType>& Tv_list);
 };
 
 } // namespace qmcplusplus
