@@ -1392,16 +1392,7 @@ TWFFastDerivWrapper& TrialWaveFunction::getOrCreateTWFFastDerivWrapper(const Par
   if (!twf_fastderiv_)
   {
     twf_fastderiv_             = std::make_unique<TWFFastDerivWrapper>();
-    twf_fastderiv_last_P_      = nullptr;
-    twf_fastderiv_last_Zcount_ = 0;
-  }
-
-  const bool need_init = (twf_fastderiv_last_P_ != &P) || (twf_fastderiv_last_Zcount_ != Z.size());
-  if (need_init)
-  {
     initializeTWFFastDerivWrapper(P, *twf_fastderiv_);
-    twf_fastderiv_last_P_      = &P;
-    twf_fastderiv_last_Zcount_ = Z.size();
   }
   return *twf_fastderiv_;
 }
