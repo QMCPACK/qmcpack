@@ -57,10 +57,19 @@ PairCorrelationEstimator::PairCorrelationEstimator(const PairCorrelationInput& p
   else if (input_.get_explicit_set_nbins() && input_.get_explicit_set_delta())
   {
     // Here we must assume that certain checks were done in parsing.
-    delta_    = input_.get_delta();
-    num_bins_ = input_.get_nbins();
-    if (rmax_ != delta_ * num_bins_)
-      throw UniformCommunicateError("Explicitly input PairCorrelation delta and num_bins inconsistent with rmax!");
+    delta_               = input_.get_delta();
+    num_bins_            = input_.get_nbins();
+    Real calculated_rmax = delta_ * num_bins_;
+    if (!(input_.get_explicit_set_rmax()))
+      rmax_ = calculated_rmax;
+    else
+    {
+      Real rmax_out_by = std::abs(rmax_ - calculated_rmax);
+      if (rmax_out_by > delta_ / 2)
+        throw UniformCommunicateError("Explicitly input PairCorrelation delta and num_bins product(" +
+                                      std::to_string(calculated_rmax) + ") inconsistent with rmax (" +
+                                      std::to_string(rmax_) + ")!");
+    }
   }
   else // neither nbins nor delta set use the default num_bins_ to determine delta
   {
