@@ -428,8 +428,8 @@ void EstimatorManagerNew::reduceOperatorEstimators()
                               0);
 #else
       operator_recv_buffer = operator_send_buffer;
+      operator_recv_buffer.rewind();
 #endif
-
       // This is a crucial step where summed over weighted observable is normalized by the total weight.  For correctness this should be done
       // only after the full weighted sum is done.
       // i.e.  (1 / Sum(w_1 + ... + w_n)) * (w_1 * S_1 + ... + w_n * S_n) != (1/w_1) * w_1 * S_1 + ... + (1/w_n) * w_n * S_n
@@ -437,6 +437,8 @@ void EstimatorManagerNew::reduceOperatorEstimators()
       // Assumptions lead rank is 0, true for Ensembles?
       if (my_comm_->rank() == 0)
       {
+        assert(estimator.getFullDataSize() < operator_recv_buffer.size());
+        assert(operator_recv_buffer.current() == 0);
         estimator.unpackData(operator_recv_buffer);
         RealType reduced_walker_weights = 0.0;
         operator_recv_buffer.get(reduced_walker_weights);
