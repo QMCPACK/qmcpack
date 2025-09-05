@@ -629,9 +629,6 @@ private:
       const RefVectorWithLeader<TrialWaveFunction>& wf_list);
 
   std::unique_ptr<TWFFastDerivWrapper> twf_fastderiv_;
-  // cache to avoid re-initializing the wrapper with the same config
-  const ParticleSet* twf_fastderiv_last_P_ = nullptr;
-  std::size_t twf_fastderiv_last_Zcount_   = 0;
 };
 
 } // namespace qmcplusplus

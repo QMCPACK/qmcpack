@@ -20,8 +20,7 @@
 #include "QMCWaveFunctions/SPOSet.h"
 #include "Configuration.h"
 #include "Particle/ParticleSet.h"
-#include <AccelBLAS.hpp>
-#include "OMPTarget/ompBLAS.hpp"
+
 namespace qmcplusplus
 {
 /**
@@ -414,28 +413,7 @@ private:
   // access constituent MultiDiracDets and SPOsets through this slaterdet (associate with spos_ via group ID)
   const WaveFunctionComponent* multislaterdet_ = nullptr;
 
-  struct TWFFastDerivWrapperMultiWalkerMem : public Resource
-  {
-     using ValueType        = QMCTraits::ValueType;
-     using PosType          = QMCTraits::PosType;
-     using OffloadPosVector = Vector<PosType, OffloadAllocator<PosType>>;
-   
-     TWFFastDerivWrapperMultiWalkerMem();
-     TWFFastDerivWrapperMultiWalkerMem(const TWFFastDerivWrapperMultiWalkerMem&);
-   
-     std::unique_ptr<Resource> makeClone() const override
-     {
-       return std::make_unique<TWFFastDerivWrapperMultiWalkerMem>(*this);
-     }
-     // BLAS/LAPACK handles
-#if (defined(ENABLE_CUDA) || defined(ENABLE_SYCL)) && defined(ENABLE_OFFLOAD)
-     compute::Queue<VendorKind> queue;
-     compute::BLASHandle<VendorKind> blas_handle;
-#else
-     compute::Queue<PlatformKind::OMPTARGET> queue;
-     compute::BLASHandle<PlatformKind::OMPTARGET> blas_handle;
-#endif
-  };
+  struct TWFFastDerivWrapperMultiWalkerMem;
   ResourceHandle<TWFFastDerivWrapperMultiWalkerMem> mw_mem_handle_;
 };
 
