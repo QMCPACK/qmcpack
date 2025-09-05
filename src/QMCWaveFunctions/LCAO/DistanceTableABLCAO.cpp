@@ -21,11 +21,6 @@ DistanceTableABLCAO::DistanceTableABLCAO(const ParticleSet& ions, const Particle
     num_ions_(ions.getTotalNum()),
     num_elec_(elecs.getTotalNum())
 	{
-		ion_cached_.resize(3 * num_ions_);
-  for (int i = 0; i < num_ions_; ++i)
-    for (int d = 0; d < 3; ++d)
-      ion_cached_[3*i + d] = ions.R[i][d];
-  ion_cached_.updateTo();
 	}
 
 // Required pure virtual method implementations (stubs for LCAO usage)
@@ -46,7 +41,6 @@ int DistanceTableABLCAO::get_first_neighbor(IndexType iat, RealType& r, PosType&
  * fused new position buffer. For PBC systems, it patches the results with
  * minimum image convention and lattice translations.
  */
-
 void DistanceTableABLCAO::mw_evaluate(
     const RefVectorWithLeader<ParticleSet>& elec_list,
     const ParticleSet& ions,
@@ -55,25 +49,28 @@ void DistanceTableABLCAO::mw_evaluate(
     OffloadPinnedVector<RealType>& displ_list_tr,
     OffloadPinnedVector<RealType>& Tv_list)
 {
- const size_t nw = elec_list.size();
+  const size_t nw = elec_list.size();
   
-  const auto* coords_leader = dynamic_cast<const RealSpacePositionsOMPTarget*>(
-      &elec_list.getLeader().getCoordinates());
-  if (!coords_leader)
-    throw std::runtime_error("Electron coordinates not in OMPTarget format!");
+  // Get electron coordinates
+  const auto& coords_leader = dynamic_cast<const RealSpacePositionsOMPTarget&>(
+      elec_list.getLeader().getCoordinates());
   
-  const RealType* ion_ptr = ion_cached_.device_data();  // Use cached ions
+  // Get ion coordinates - they ARE on device if created properly!
+  const auto& ion_coords = dynamic_cast<const RealSpacePositionsOMPTarget&>(
+      ions.getCoordinates());
+  
+  const RealType* ion_ptr = ion_coords.getDevicePtr();
   RealType* disp_out = displ_list_tr.device_data();
   RealType* tv_out = Tv_list.device_data();
   
-  const auto& fused_new_pos = coords_leader->getFusedNewPosBuffer();
+  const auto& fused_new_pos = coords_leader.getFusedNewPosBuffer();
   const RealType* elec_device_ptr = fused_new_pos.device_data();
   const size_t elec_stride = fused_new_pos.capacity();
   
   const auto& lattice = ions.getLattice();
   const bool is_pbc = (lattice.SuperCellEnum != SUPERCELL_OPEN);
   
-  // GPU kernel for all cases
+  // GPU kernel - both ions and electrons on device!
   PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(3) \
                   is_device_ptr(elec_device_ptr, ion_ptr, disp_out, tv_out)")
   for (int iw = 0; iw < static_cast<int>(nw); ++iw)
@@ -81,12 +78,13 @@ void DistanceTableABLCAO::mw_evaluate(
       for (int d = 0; d < 3; ++d)
       {
         const RealType e_pos = elec_device_ptr[iw + d * elec_stride];
-        const RealType ion_pos = ion_ptr[c * 3 + d];
+        const RealType ion_pos = ion_ptr[c * 3 + d];  // Direct device access!
         
         size_t out_idx = d + 3 * (iw + c * nw);
         disp_out[out_idx] = ion_pos - e_pos;
         tv_out[out_idx] = 0.0;
-      } 
+      }
+  
   // Apply PBC corrections on host if needed
   if (is_pbc) {
   // Need to get data back to apply minimum image

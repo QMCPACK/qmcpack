@@ -39,7 +39,6 @@ public:
 private:
   int num_ions_;      ///< Number of ion centers
   int num_elec_;      ///< Number of electrons
-  OffloadPinnedVector<RealType> ion_cached_;  // Add this back
 		      
 
 public:
