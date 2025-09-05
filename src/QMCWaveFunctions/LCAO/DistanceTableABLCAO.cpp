@@ -1,156 +1,122 @@
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2025 QMCPACK developers.
+//
+// File developed by: Anouar Benali, abenali.sci@hotmail.com, Qubit Pharmaceuticals. 
+//
+// File created by:  Anouar Benali, abenali.sci@hotmail.com, Qubit Pharmaceuticals.
+//////////////////////////////////////////////////////////////////////////////////////
+
 #include "DistanceTableABLCAO.h"
 #include "Platforms/OMPTarget/OMPTargetMath.hpp"
+#include "Particle/RealSpacePositionsOMPTarget.h"
 
 namespace qmcplusplus
 {
 
-DistanceTableABLCAO::DistanceTableABLCAO(
-    const ParticleSet& ions, 
-    const ParticleSet& elecs)
-  : num_ions_(ions.getTotalNum()),
-    num_elec_(elecs.getTotalNum()),
-    num_centers_(0),
-    nwalkers_(0)
-{
-  app_log() << "\n==============================================\n";
-  app_log() << "LCAO Distance Table Created Successfully!\n";
-  app_log() << "  Number of ions: " << num_ions_ << "\n";
-  app_log() << "  Number of electrons: " << num_elec_ << "\n";
-  app_log() << "==============================================\n" << std::endl;
-}
+DistanceTableABLCAO::DistanceTableABLCAO(const ParticleSet& ions, const ParticleSet& elecs)
+  : DistanceTable(ions, elecs, DTModes::ALL_OFF),
+    num_ions_(ions.getTotalNum()),
+    num_elec_(elecs.getTotalNum())
+	{
+		ion_cached_.resize(3 * num_ions_);
+  for (int i = 0; i < num_ions_; ++i)
+    for (int d = 0; d < 3; ++d)
+      ion_cached_[3*i + d] = ions.R[i][d];
+  ion_cached_.updateTo();
+	}
+
+// Required pure virtual method implementations (stubs for LCAO usage)
+void DistanceTableABLCAO::evaluate(ParticleSet& P) {}
+void DistanceTableABLCAO::move(const ParticleSet& P, const PosType& rnew, const IndexType iat, bool prepare_old) {}
+void DistanceTableABLCAO::update(IndexType jat) {}
+int DistanceTableABLCAO::get_first_neighbor(IndexType iat, RealType& r, PosType& dr, bool newpos) const { return -1; }
+
+/** Compute displacements and lattice translation vectors for LCAO evaluation
+ * @param elec_list multi-walker electron particle sets
+ * @param ions ion particle set
+ * @param iat target electron index
+ * @param num_centers number of ion centers
+ * @param displ_list_tr output displacement vectors [dim + 3*(walker + center*nw)]
+ * @param Tv_list output lattice translation vectors (for PBC)
+ * 
+ * This function computes ion-electron displacements entirely on GPU using the
+ * fused new position buffer. For PBC systems, it patches the results with
+ * minimum image convention and lattice translations.
+ */
 
 void DistanceTableABLCAO::mw_evaluate(
     const RefVectorWithLeader<ParticleSet>& elec_list,
     const ParticleSet& ions,
     int iat,
-    int jion)
+    int num_centers,
+    OffloadPinnedVector<RealType>& displ_list_tr,
+    OffloadPinnedVector<RealType>& Tv_list)
 {
-  const size_t nw = elec_list.size();
-  nwalkers_ = nw;
-  num_centers_ = 1;
+ const size_t nw = elec_list.size();
   
-  // Resize storage
-  mw_resource_.mw_distances.resize(nw);
-  mw_resource_.mw_displacements.resize(3 * nw);
+  const auto* coords_leader = dynamic_cast<const RealSpacePositionsOMPTarget*>(
+      &elec_list.getLeader().getCoordinates());
+  if (!coords_leader)
+    throw std::runtime_error("Electron coordinates not in OMPTarget format!");
   
-  // References for cleaner code
-  auto& distances = mw_resource_.mw_distances;
-  auto& displacements = mw_resource_.mw_displacements;
+  const RealType* ion_ptr = ion_cached_.device_data();  // Use cached ions
+  RealType* disp_out = displ_list_tr.device_data();
+  RealType* tv_out = Tv_list.device_data();
   
-  // Prepare electron positions
-  OffloadPinnedVector<RealType> elec_positions(3 * nw);
-  for (size_t iw = 0; iw < nw; ++iw)
-  {
-    const auto& P = elec_list[iw];
-    PosType elec_pos = (P.getActivePtcl() == iat) ? P.activeR(iat) : P.R[iat];
-    for (int d = 0; d < 3; ++d)
-      elec_positions[3*iw + d] = elec_pos[d];
-  }
+  const auto& fused_new_pos = coords_leader->getFusedNewPosBuffer();
+  const RealType* elec_device_ptr = fused_new_pos.device_data();
+  const size_t elec_stride = fused_new_pos.capacity();
   
-  // Transfer to GPU
-  elec_positions.updateTo();
+  const auto& lattice = ions.getLattice();
+  const bool is_pbc = (lattice.SuperCellEnum != SUPERCELL_OPEN);
   
-  // GPU kernel
-  RealType* dist_ptr = distances.device_data();
-  RealType* disp_ptr = displacements.device_data(); 
-  const RealType* elec_ptr = elec_positions.device_data();
-  const RealType ion_x = ions.R[jion][0];
-  const RealType ion_y = ions.R[jion][1];
-  const RealType ion_z = ions.R[jion][2];
-  
-  PRAGMA_OFFLOAD("omp target teams distribute parallel for \
-                  is_device_ptr(dist_ptr, disp_ptr, elec_ptr)")
+  // GPU kernel for all cases
+  PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(3) \
+                  is_device_ptr(elec_device_ptr, ion_ptr, disp_out, tv_out)")
   for (int iw = 0; iw < static_cast<int>(nw); ++iw)
-  {
-    RealType dx = elec_ptr[3*iw + 0] - ion_x;
-    RealType dy = elec_ptr[3*iw + 1] - ion_y;
-    RealType dz = elec_ptr[3*iw + 2] - ion_z;
-    
-    dist_ptr[iw] = std::sqrt(dx*dx + dy*dy + dz*dz);
-    disp_ptr[3*iw + 0] = dx;
-    disp_ptr[3*iw + 1] = dy;
-    disp_ptr[3*iw + 2] = dz;
-  }
- static int call_count = 0;
-  if (++call_count <= 3) {
-    app_log() << ">>> GPU computed " << nw 
-              << " distances for ion " << jion << "\n";
-  }
-}  
-void DistanceTableABLCAO::mw_evaluate_all_centers(
-    const RefVectorWithLeader<ParticleSet>& elec_list,
-    const ParticleSet& ions,
-    int iat,
-    int num_centers)
-{
-  const size_t nw = elec_list.size();
-  nwalkers_ = nw;
-  num_centers_ = num_centers;
+    for (int c = 0; c < num_centers; ++c)
+      for (int d = 0; d < 3; ++d)
+      {
+        const RealType e_pos = elec_device_ptr[iw + d * elec_stride];
+        const RealType ion_pos = ion_ptr[c * 3 + d];
+        
+        size_t out_idx = d + 3 * (iw + c * nw);
+        disp_out[out_idx] = ion_pos - e_pos;
+        tv_out[out_idx] = 0.0;
+      } 
+  // Apply PBC corrections on host if needed
+  if (is_pbc) {
+  // Need to get data back to apply minimum image
+  displ_list_tr.updateFrom();
   
-  // Resize for all centers
-  mw_resource_.mw_distances.resize(num_centers * nw);
-  mw_resource_.mw_displacements.resize(3 * num_centers * nw);
-  
-  // Prepare electron AND ion positions
-  OffloadPinnedVector<RealType> elec_positions(3 * nw);
-  OffloadPinnedVector<RealType> ion_positions(3 * num_centers);
-  
-  // Fill electron positions
-  for (size_t iw = 0; iw < nw; ++iw)
-  {
-    const auto& P = elec_list[iw];
-    PosType elec_pos = (P.getActivePtcl() == iat) ? P.activeR(iat) : P.R[iat];
-    for (int d = 0; d < 3; ++d)
-      elec_positions[3*iw + d] = elec_pos[d];
-  }
-  
-  // Fill ion positions (FIX for the warning)
-  for (int ic = 0; ic < num_centers; ++ic)
-    for (int d = 0; d < 3; ++d)
-      ion_positions[3*ic + d] = ions.R[ic][d];
-  
-  // Transfer both to GPU
-  elec_positions.updateTo();
-  ion_positions.updateTo();
-  
-  // GPU kernel
-  RealType* dist_ptr = mw_resource_.mw_distances.device_data();
-  RealType* disp_ptr = mw_resource_.mw_displacements.device_data();
-  const RealType* elec_ptr = elec_positions.device_data();
-  const RealType* ion_ptr = ion_positions.device_data();
-  
-  PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) \
-                  is_device_ptr(dist_ptr, disp_ptr, elec_ptr, ion_ptr)")
-  for (int ic = 0; ic < num_centers; ++ic)
-    for (int iw = 0; iw < static_cast<int>(nw); ++iw)
-    {
-      // Now use the copied ion positions
-      RealType ion_x = ion_ptr[3*ic + 0];
-      RealType ion_y = ion_ptr[3*ic + 1];
-      RealType ion_z = ion_ptr[3*ic + 2];
+  for (size_t iw = 0; iw < nw; ++iw) {
+    for (int c = 0; c < num_centers; ++c) {
+      PosType disp;
+      for (int d = 0; d < 3; ++d) {
+        size_t idx = d + 3 * (iw + c * nw);
+        disp[d] = displ_list_tr[idx];
+      }
       
-      RealType elec_x = elec_ptr[3*iw + 0];
-      RealType elec_y = elec_ptr[3*iw + 1];
-      RealType elec_z = elec_ptr[3*iw + 2];
+      // applyMinimumImage modifies disp in-place
+      lattice.applyMinimumImage(disp);
       
-      // FIX: Use correct sign convention (ion - electron)
-      RealType dx = ion_x - elec_x;  // Changed sign!
-      RealType dy = ion_y - elec_y;  // Changed sign!
-      RealType dz = ion_z - elec_z;  // Changed sign!
-   
-      // Store in layout [center * nw + walker]
-      int idx = ic * nw + iw;
-      dist_ptr[idx] = std::sqrt(dx*dx + dy*dy + dz*dz);
-      disp_ptr[3*idx + 0] = dx;
-      disp_ptr[3*idx + 1] = dy;
-      disp_ptr[3*idx + 2] = dz;
+      for (int d = 0; d < 3; ++d) {
+        size_t idx = d + 3 * (iw + c * nw);
+        Tv_list[idx] = displ_list_tr[idx] - disp[d];  // Original - wrapped
+        displ_list_tr[idx] = disp[d];  // Store wrapped displacement
+      }
     }
+  }
   
-  static int call_count = 0;
-  if (++call_count <= 3) {
-    app_log() << ">>> GPU computed distances for " 
-              << num_centers << " centers, " 
-              << nw << " walkers\n";
+  // Send corrected values back
+  displ_list_tr.updateTo();
+#if defined(QMC_COMPLEX)
+  Tv_list.updateTo();
+#endif
   }
 }
+
 } // namespace qmcplusplus

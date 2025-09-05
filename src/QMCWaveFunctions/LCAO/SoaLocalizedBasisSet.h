@@ -42,7 +42,6 @@ public:
   using RealType  = typename COT::RealType;
   using BaseType  = SoaBasisSetBase<ORBT>;
   using ValueType = QMCTraits::ValueType;
-
   using vgl_type          = typename BaseType::vgl_type;
   using vgh_type          = typename BaseType::vgh_type;
   using vghgh_type        = typename BaseType::vghgh_type;
@@ -224,7 +223,6 @@ private:
   ResourceHandle<SoaLocalizedBSetMultiWalkerMem> mw_mem_handle_;
   NewTimer& NumCenter_timer_;
 
-  std::unique_ptr<DistanceTableABLCAO> lcao_distance_table_;
   /**
   * @brief Initialize and upload per‐species ion center indices and basis‐function offsets.
   *
@@ -232,6 +230,7 @@ private:
   * and performs the one‐time upload. Called only once from Constructor
   */
   void initializeSpeciesOffsets();
+
 
 };
 } // namespace qmcplusplus

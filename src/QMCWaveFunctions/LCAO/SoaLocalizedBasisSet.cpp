@@ -13,6 +13,7 @@
 #include <memory>
 #include "SoaLocalizedBasisSet.h"
 #include "Particle/DistanceTable.h"
+#include "Particle/RealSpacePositionsOMPTarget.h"
 #include "SoaAtomicBasisSet.h"
 #include "MultiQuinticSpline1D.h"
 #include "MultiFunctorAdapter.h"
@@ -32,17 +33,25 @@ struct SoaLocalizedBasisSet<COT, ORBT>::SoaLocalizedBSetMultiWalkerMem : public 
   {
     return std::make_unique<SoaLocalizedBSetMultiWalkerMem>(*this);
   }
-
+  std::unique_ptr<DistanceTableABLCAO> lcao_distance_table;
   Vector<RealType, OffloadPinnedAllocator<RealType>> Tv_list;
   Vector<RealType, OffloadPinnedAllocator<RealType>> displ_list_tr;
+   Vector<size_t, OffloadPinnedAllocator<size_t>> walker_offsets;
+  Vector<int, OffloadPinnedAllocator<int>> active_particles;
+  Vector<int, OffloadPinnedAllocator<int>> target_counts;
+  Vector<RealType, OffloadPinnedAllocator<RealType>> ion_positions;
+  Vector<RealType, OffloadPinnedAllocator<RealType>> electron_positions;
+
 };
 
 template<class COT, typename ORBT>
 void SoaLocalizedBasisSet<COT, ORBT>::createResource(ResourceCollection& collection) const
 {
+  auto resource = std::make_unique<SoaLocalizedBSetMultiWalkerMem>();
   collection.addResource(std::make_unique<SoaLocalizedBSetMultiWalkerMem>());
   for (int i = 0; i < LOBasisSet.size(); i++)
     LOBasisSet[i]->createResource(collection);
+
 }
 template<class COT, typename ORBT>
 void SoaLocalizedBasisSet<COT, ORBT>::acquireResource(
@@ -52,7 +61,7 @@ void SoaLocalizedBasisSet<COT, ORBT>::acquireResource(
   auto& loc_basis_leader = basisset_list.template getCastedLeader<SoaLocalizedBasisSet<COT, ORBT>>();
   assert(this == &loc_basis_leader);
   loc_basis_leader.mw_mem_handle_ = collection.lendResource<SoaLocalizedBSetMultiWalkerMem>();
-  // need to cast to SoaLocalizedBasisSet to access LOBasisSet (atomic basis)
+  
   auto& basisset_leader = loc_basis_leader.LOBasisSet;
   for (int i = 0; i < basisset_leader.size(); i++)
   {
@@ -60,6 +69,7 @@ void SoaLocalizedBasisSet<COT, ORBT>::acquireResource(
     basisset_leader[i]->acquireResource(collection, one_species_basis_list);
   }
 }
+
 template<class COT, typename ORBT>
 void SoaLocalizedBasisSet<COT, ORBT>::releaseResource(
     ResourceCollection& collection,
@@ -67,8 +77,9 @@ void SoaLocalizedBasisSet<COT, ORBT>::releaseResource(
 {
   auto& loc_basis_leader = basisset_list.template getCastedLeader<SoaLocalizedBasisSet<COT, ORBT>>();
   assert(this == &loc_basis_leader);
+
   collection.takebackResource(loc_basis_leader.mw_mem_handle_);
-  // need to cast to SoaLocalizedBasisSet to access LOBasisSet (atomic basis)
+  
   auto& basisset_leader = loc_basis_leader.LOBasisSet;
   for (int i = 0; i < basisset_leader.size(); i++)
   {
@@ -104,7 +115,6 @@ SoaLocalizedBasisSet<COT, ORBT>::SoaLocalizedBasisSet(ParticleSet& ions, Particl
   BasisOffset.resize(NumCenters + 1);
   BasisSetSize = 0;
   initializeSpeciesOffsets();
-  lcao_distance_table_ = std::make_unique<DistanceTableABLCAO>(ions_, els);
 }
 
 template<class COT, typename ORBT>
@@ -207,125 +217,57 @@ void SoaLocalizedBasisSet<COT, ORBT>::evaluateVGL(const ParticleSet& P, int iat,
 }
 
 template<class COT, typename ORBT>
-void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateVGL(const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basis_list,
-                                                     const RefVectorWithLeader<ParticleSet>& P_list,
-                                                     int iat,
-                                                     OffloadMWVGLArray& vgl_v)
+void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateVGL(
+    const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basis_list,
+    const RefVectorWithLeader<ParticleSet>& P_list,
+    int iat,
+    OffloadMWVGLArray& vgl_v)
 {
   assert(this == &basis_list.getLeader());
   auto& basis_leader = basis_list.template getCastedLeader<SoaLocalizedBasisSet<COT, ORBT>>();
-
-
-
-  // Lazy creation if needed
-  if (!basis_leader.lcao_distance_table_ && P_list.size() > 0) {
-    basis_leader.lcao_distance_table_ = 
-        std::make_unique<DistanceTableABLCAO>(basis_leader.ions_, P_list[0]);
-    app_log() << ">>> LCAO Distance Table created LAZILY in mw_evaluateVGL\n";
-  }
   
-  const auto& IonID(ions_.GroupID);
-  auto& pset_leader = P_list.getLeader();
-  size_t Nw = P_list.size();
-  
-  // TEST: Use LCAO distance table instead of regular one
-  if (basis_leader.lcao_distance_table_ && NumCenters > 0) {
-    // TODO: Change mw_evaluate to handle all centers at once
-    // For now, we computed center 0
-    
-    // Get GPU pointers - these stay on device
-    const RealType* gpu_distances = 
-        basis_leader.lcao_distance_table_->getDistancesDevice();
-    const RealType* gpu_displacements = 
-        basis_leader.lcao_distance_table_->getDisplacementsDevice();
-  }
-
-
-
-
-
-
-
-
-
-
-  assert(vgl_v.size(0) == 5);
-  assert(vgl_v.size(1) == Nw);
-  assert(vgl_v.size(2) == BasisSetSize);
-
-  auto& Tv_list       = basis_leader.mw_mem_handle_.getResource().Tv_list;
+  const size_t Nw = P_list.size();
+  auto& Tv_list = basis_leader.mw_mem_handle_.getResource().Tv_list;
   auto& displ_list_tr = basis_leader.mw_mem_handle_.getResource().displ_list_tr;
   Tv_list.resize(3 * NumCenters * Nw);
   displ_list_tr.resize(3 * NumCenters * Nw);
-
-
-
-  if (basis_leader.lcao_distance_table_ && NumCenters > 0) {
-    // First, upgrade mw_evaluate to compute all centers
-    basis_leader.lcao_distance_table_->mw_evaluate_all_centers(
-        P_list, basis_leader.ions_, iat, NumCenters);
-    
-    // Copy GPU displacements back to fill the expected arrays
-    // (Not ideal but works as a first step)
-    auto& gpu_displacements = basis_leader.lcao_distance_table_->getDisplacementsVector();
-    gpu_displacements.updateFrom(); // Transfer GPU->CPU
-    
-    // Fill Tv_list from GPU data
-    for (size_t iw = 0; iw < Nw; iw++) {
-      const auto& coordR = P_list[iw].activeR(iat);
-      for (int c = 0; c < NumCenters; c++) {
-        size_t gpu_idx = c * Nw + iw; // Your GPU layout
-        for (int d = 0; d < 3; d++) {
-          size_t out_idx = d + 3 * (iw + c * Nw);
-          displ_list_tr[out_idx] = gpu_displacements[3*gpu_idx + d];
-          Tv_list[out_idx] = (ions_.R[c][d] - coordR[d]) - displ_list_tr[out_idx];
-        }
-      }
-    }
-  } else {
-
-
-  for (size_t iw = 0; iw < P_list.size(); iw++)
-  {
-    const auto& coordR  = P_list[iw].activeR(iat);
-    const auto& d_table = P_list[iw].getDistTableAB(myTableIndex);
-    const auto& displ   = (P_list[iw].getActivePtcl() == iat) ? d_table.getTempDispls() : d_table.getDisplRow(iat);
-    for (int c = 0; c < NumCenters; c++)
-      for (size_t idim = 0; idim < 3; idim++)
-      {
-        Tv_list[idim + 3 * (iw + c * Nw)]       = (ions_.R[c][idim] - coordR[idim]) - displ[c][idim];
-        displ_list_tr[idim + 3 * (iw + c * Nw)] = displ[c][idim];
-      }
+  
+  // Get or create LCAO distance table
+  auto& lcao_dt = basis_leader.mw_mem_handle_.getResource().lcao_distance_table;
+  if (!lcao_dt) {
+    lcao_dt = std::make_unique<DistanceTableABLCAO>(ions_, P_list.getLeader());
   }
-
-  }
-#if defined(QMC_COMPLEX)
-  Tv_list.updateTo();
-#endif
-
-  displ_list_tr.updateTo();
-
+  
+  // Single call handles both cases
+  lcao_dt->mw_evaluate(P_list, ions_, iat, NumCenters,  
+                       displ_list_tr, Tv_list);
+  
+  // Species-batched atomic basis evaluation
   {
     ScopedTimer NumCenter_Wrapper(NumCenter_timer_);
-
-    // Group centers by species and collect basis offsets
     const auto& species_names = ions_.getSpeciesSet().speciesName;
-    const int num_species     = species_names.size();
-
-    // Process each species batch
+    const int num_species = species_names.size();
+    
     for (int species_id = 0; species_id < num_species; ++species_id)
       if (const auto& c_list = species_centers_[species_id]; c_list.size() > 0)
       {
-        const auto& basis_offsets   = species_center_coffsets_[species_id];
+        const auto& basis_offsets = species_center_coffsets_[species_id];
         auto one_species_basis_list = extractOneSpeciesBasisRefList(basis_list, species_id);
-        LOBasisSet[species_id]->mw_evaluateVGL_multiCenter(one_species_basis_list, pset_leader.getLattice(), vgl_v,
-                                                           displ_list_tr, Tv_list, Nw, BasisSetSize, c_list,
-                                                           basis_offsets, NumCenters);
+        
+        LOBasisSet[species_id]->mw_evaluateVGL_multiCenter(
+            one_species_basis_list,
+            P_list.getLeader().getLattice(),
+            vgl_v,
+            displ_list_tr,
+            Tv_list,
+            Nw,
+            BasisSetSize,
+            c_list,
+            basis_offsets,
+            NumCenters);
       }
   }
 }
-
-
 template<class COT, typename ORBT>
 void SoaLocalizedBasisSet<COT, ORBT>::evaluateVGH(const ParticleSet& P, int iat, vgh_type& vgh)
 {
@@ -364,74 +306,61 @@ void SoaLocalizedBasisSet<COT, ORBT>::evaluateVGHGH(const ParticleSet& P, int ia
   }
 }
 
-
 template<class COT, typename ORBT>
-void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValueVPs(const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basis_list,
-                                                          const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
-                                                          OffloadMWVArray& vp_basis_v)
+void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValueVPs(
+    const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basis_list,
+    const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+    OffloadMWVArray& vp_basis_v)
 {
   assert(this == &basis_list.getLeader());
   auto& basis_leader = basis_list.template getCastedLeader<SoaLocalizedBasisSet<COT, ORBT>>();
-
+  
   const size_t nVPs = vp_basis_v.size(0);
-  assert(vp_basis_v.size(1) == BasisSetSize); // shape [nVPs, BasisSetSize]
-
-  const auto& IonID(ions_.GroupID);
-
+  assert(vp_basis_v.size(1) == BasisSetSize);
+  
   auto& vps_leader = vp_list.getLeader();
-
-  const auto dt_list(vps_leader.extractDTRefList(vp_list, myTableIndex));
-  const auto coordR_list(vps_leader.extractVPCoords(vp_list));
-
-
-
-  // GPU arrays [NumCenters * nVPs, 3]
-  // Each center c, vp index iVP => c*nVPs + iVP
-  auto& Tv_list       = basis_leader.mw_mem_handle_.getResource().Tv_list;
+  
+  auto& Tv_list = basis_leader.mw_mem_handle_.getResource().Tv_list;
   auto& displ_list_tr = basis_leader.mw_mem_handle_.getResource().displ_list_tr;
   Tv_list.resize(3ULL * NumCenters * nVPs);
   displ_list_tr.resize(3ULL * NumCenters * nVPs);
+  
+  // Get VP distance table pointer
+  const auto& dt_leader = vps_leader.getDistTableAB(myTableIndex);
+  const RealType* vp_dist_device = dt_leader.getMultiWalkerDataDevicePtr();
+  const size_t stride_size = dt_leader.getPerTargetPctlStrideSize();
+  const size_t num_padded = getAlignedSize<RealType>(NumCenters);
+  
+  if (!vp_dist_device)
+    throw std::runtime_error("VP distance table pointer is null!");
+  
+  // Device pointers for output
+  RealType* displ_out = displ_list_tr.device_data();
+  RealType* tv_out = Tv_list.device_data();
+  
+  // The key: vp_dist_ptr is a host pointer that's been mapped to device
+  // Don't use is_device_ptr for it - let the runtime handle the mapping
+  const int ncenters = NumCenters;
+  const int nvps = static_cast<int>(nVPs);
 
-  auto* Tv_host    = Tv_list.data();
-  auto* displ_host = displ_list_tr.data();
 
-  // "index" is loop over each virtual point
-  // i.e. we do "for each (iw, iat) => iVP" in [0..nVPs-1]
-  size_t indexVP = 0;
 
-   
-
-  for (size_t iw = 0; iw < vp_list.size(); iw++)
-  {
-    // vp_list[iw].getTotalNum() = # of virtual points in this VPS
-    int nVP_local = vp_list[iw].getTotalNum();
-    for (int iat = 0; iat < nVP_local; iat++)
-    {
-      const auto& displ = dt_list[iw].getDisplRow(iat);
-      // coords for this virtual point = coordR_list[indexVP]
-      const auto& vpcoord = coordR_list[indexVP];
-
-      // fill for all centers c in [0..NumCenters-1]
-      for (int c = 0; c < NumCenters; c++)
+  PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(3) \
+                is_device_ptr(vp_dist_device, displ_out, tv_out)")
+  for (int ivp = 0; ivp < nvps; ++ivp)
+    for (int c = 0; c < ncenters; ++c)
+      for (int d = 0; d < 3; ++d)
       {
-        for (int dim = 0; dim < 3; dim++)
-        {
-          size_t idx = dim + 3ULL * (indexVP + c * (size_t)nVPs);
-          // Ion position is ions_.R[c]
-          RealType val    = ions_.R[c][dim] - vpcoord[dim] - displ[c][dim];
-          Tv_host[idx]    = val;
-          displ_host[idx] = displ[c][dim];
-        }
+        size_t vp_idx = ivp * stride_size + num_padded + d * num_padded + c;
+        size_t out_idx = d + 3 * (ivp + c * nvps);
+        
+        displ_out[out_idx] = vp_dist_device[vp_idx];
+        tv_out[out_idx] = 0.0; // TODO: PBC
       }
-      indexVP++;
-    }
-  }
+  
 
-#if defined(QMC_COMPLEX)
-  Tv_list.updateTo();
-#endif
-  displ_list_tr.updateTo();
 
+  const auto& IonID(ions_.GroupID);
   const auto& species_names = ions_.getSpeciesSet().speciesName;
   const int num_species_    = species_names.size();
   std::vector<std::vector<size_t>> local_centers(num_species_);

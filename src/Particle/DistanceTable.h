@@ -217,6 +217,9 @@ public:
   /// return a shared resource to a collection
   virtual void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<DistanceTable>& dt_list) const
   {}
+
+  // Add this virtual method
+  virtual const RealType* getMultiWalkerDataDevicePtr() const { return nullptr; }
 };
 
 /** AA type of DistanceTable containing storage */
