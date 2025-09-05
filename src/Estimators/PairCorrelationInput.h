@@ -51,11 +51,11 @@ private:
   std::string target_{"e"};
   std::vector<std::string> sources_{"e"};
   Real rmax_{10};
-  bool explicit_set_rmax_;
+  bool explicit_set_rmax_{false};
   Real delta_{0.5};
-  bool explicit_set_delta_;
+  bool explicit_set_delta_{false};
   int nbins_{20};
-  bool explicit_set_nbins_;
+  bool explicit_set_nbins_{false};
   bool debug_{false};
 
 public:
