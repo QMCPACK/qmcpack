@@ -331,8 +331,11 @@ protected:
 
 public:
   ///constructor using source and target ParticleSet
-  DistanceTableAB(const ParticleSet& source, const ParticleSet& target, DTModes modes)
-      : DistanceTable(source, target.getCoordinates(), target.getName(), modes)
+  DistanceTableAB(const ParticleSet& source,
+                  const DynamicCoordinates& target,
+                  const std::string& target_name,
+                  DTModes modes)
+      : DistanceTable(source, target, target_name, modes)
   {}
 
   /** return full table distances
