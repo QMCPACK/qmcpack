@@ -52,14 +52,11 @@
    </qmcsystem>
    <qmc method="vmc" move="pbyp">
      <estimators>
-       <estimator name="gofr" type="PairCorrelation" sources="e"
-                  target="e"/>
-       </estimators>
+       <estimator name="gofr" type="PairCorrelation" sources="e" target="e"/>
+     </estimators>
       <parameter name="warmupsteps"         >    2             </parameter>
       <parameter name="blocks"              >    3             </parameter>
-      <parameter name="steps"               >    3              </parameter>
-      <parameter name="tau"                 >    5.0
-      </parameter>
-
+      <parameter name="steps"               >    3             </parameter>
+      <parameter name="tau"                 >    5.0           </parameter>
    </qmc>
 </simulation>
