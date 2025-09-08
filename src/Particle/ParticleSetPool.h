@@ -89,7 +89,7 @@ public:
 
   /** get the Pool object
    */
-  inline const PoolType& getPool() const { return myPool; }
+  inline PoolType& getPool() { return myPool; }
 
   /// get simulation cell
   const auto& getSimulationCell() const { return *simulation_cell_; }

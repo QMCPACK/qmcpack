@@ -78,12 +78,19 @@ public:
    *  \param[in]  twf      The fully constructed TrialWaveFunction.
    *  \param[in]  ps_pool  Global particle set map since some estimators expect to be able to get
    *                       arbitrary psets by string
+   *
+   *                       ps_pool is non const due exclusively to
+   *                       PairCorrelationEstimator which can
+   *                       add distance tables and/or change distance
+   *                       table modes.  It expects this to propagate
+   *                       all the way to the walker particle sets it
+   *                       will receive during accumulation.
    */
   void constructEstimators(EstimatorManagerInput&& emi,
                            const ParticleSet& pset_primary,
                            const TrialWaveFunction& twf_primary,
                            const QMCHamiltonian& H,
-                           const PSPool& pset_pool);
+                           PSPool& pset_pool);
 
   /** Start the manager at the beginning of a driver run().
    * Open files. Setting zeros.
