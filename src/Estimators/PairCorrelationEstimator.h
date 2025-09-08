@@ -43,7 +43,8 @@ public:
    *
    */
   PairCorrelationEstimator(const PairCorrelationInput& pci,
-                           PSPool& psp,
+                           const PSPool& pset_pool,
+                           ParticleSet& elecs,
                            DataLocality data_locality = DataLocality::crowd);
 
   PairCorrelationEstimator(const PairCorrelationEstimator& pce, DataLocality dl);

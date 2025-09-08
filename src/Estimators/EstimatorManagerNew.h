@@ -90,7 +90,7 @@ public:
                            const ParticleSet& pset_primary,
                            const TrialWaveFunction& twf_primary,
                            const QMCHamiltonian& H,
-                           PSPool& pset_pool);
+                           const PSPool& pset_pool);
 
   /** Start the manager at the beginning of a driver run().
    * Open files. Setting zeros.

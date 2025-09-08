@@ -17,12 +17,12 @@ namespace qmcplusplus
 {
 
 PairCorrelationEstimator::PairCorrelationEstimator(const PairCorrelationInput& pci,
-                                                   PSPool& pset_pool,
+                                                   const PSPool& pset_pool,
+                                                   ParticleSet& elecs,
                                                    DataLocality data_locality)
     : OperatorEstBase(data_locality, pci.get_name(), pci.get_type()), input_(pci)
 {
-  ParticleSet& elecs = getParticleSet(pset_pool, pci.get_target());
-  num_species_       = elecs.groups();
+  num_species_ = elecs.groups();
   n_vec_.resize(num_species_, 0);
   for (int i = 0; i < num_species_; i++)
     n_vec_[i] = elecs.last(i) - elecs.first(i);

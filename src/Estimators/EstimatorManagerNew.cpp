@@ -101,7 +101,7 @@ void EstimatorManagerNew::constructEstimators(EstimatorManagerInput&& emi,
                                               const ParticleSet& pset,
                                               const TrialWaveFunction& twf,
                                               const QMCHamiltonian& H,
-                                              PSPool& pset_pool)
+                                              const PSPool& pset_pool)
 {
   for (auto& est_input : emi.get_estimator_inputs())
     if (!(createEstimator<SpinDensityInput>(est_input, pset.getLattice(), pset.getSpeciesSet()) ||
@@ -114,7 +114,13 @@ void EstimatorManagerNew::constructEstimators(EstimatorManagerInput&& emi,
           createEstimator<PerParticleHamiltonianLoggerInput>(est_input, my_comm_->rank()) ||
           createEstimator<EnergyDensityInput>(est_input, pset_pool) ||
           createEstimator<StructureFactorInput>(est_input, pset_pool) ||
-          createEstimator<PairCorrelationInput>(est_input, pset_pool)))
+          // Estimators are preferred not modifying pset, twf, H during the constructor call
+          // PairCorrelation ported from legacy adds a distance table (DT) in pset.
+          // Thus, we remove const, namely altering pset.
+          // A potential clean solution is to create the needed DT inside the estimator
+          // if pset doesn't have one already. In this way, there will be no side effect
+          // when PairCorrelation is not used in the next QMC driver section.
+          createEstimator<PairCorrelationInput>(est_input, pset_pool, const_cast<ParticleSet&>(pset))))
       throw UniformCommunicateError(std::string(error_tag_) +
                                     "cannot construct an estimator from estimator input object.");
 

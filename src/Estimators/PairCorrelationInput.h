@@ -32,8 +32,8 @@ public:
     {
       section_name            = type_tag;
       section_name_alternates = {"gofr"};
-      attributes              = {"type", "name", "num_bin", "rmax", "dr", "debug", "sources", "target"};
-      strings                 = {"type", "name", "target"};
+      attributes              = {"type", "name", "num_bin", "rmax", "dr", "debug", "sources"};
+      strings                 = {"type", "name"};
       multi_strings           = {"sources"};
       reals                   = {"dr", "rmax"};
       integers                = {"num_bin"};
@@ -48,7 +48,6 @@ private:
 
   std::string name_{type_tag};
   std::string type_{type_tag};
-  std::string target_{"e"};
   std::vector<std::string> sources_{"e"};
   Real rmax_{10};
   bool explicit_set_rmax_{false};
@@ -62,7 +61,6 @@ public:
   std::string get_name() const { return name_; }
   std::string get_type() const { return type_; }
   const std::vector<std::string>& get_sources() const { return sources_; }
-  const std::string& get_target() const { return target_; }
   Real get_rmax() const { return rmax_; }
   Real get_delta() const { return delta_; }
   int get_nbins() const { return nbins_; }
