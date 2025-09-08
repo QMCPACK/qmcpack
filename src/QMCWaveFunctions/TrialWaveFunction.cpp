@@ -12,6 +12,7 @@
 //                    Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //                    Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Anouar Benali, abenali.sci@gmail.com, Qubit Pharmaceuticals
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -26,6 +27,7 @@
 #include "NaNguard.h"
 #include "Fermion/SlaterDet.h"
 #include "Fermion/MultiSlaterDetTableMethod.h"
+#include "QMCWaveFunctions/TWFFastDerivWrapper.h"
 
 namespace qmcplusplus
 {
@@ -1278,33 +1280,59 @@ void TrialWaveFunction::createResource(ResourceCollection& collection) const
 {
   for (int i = 0; i < Z.size(); ++i)
     Z[i]->createResource(collection);
+
+  // Delegate to TWFFastDerivWrapper where the definition is visible
+  if (twf_fastderiv_)
+    TWFFastDerivWrapper::createResource(collection);
 }
 
 void TrialWaveFunction::acquireResource(ResourceCollection& collection,
                                         const RefVectorWithLeader<TrialWaveFunction>& wf_list)
 {
-  auto& wf_leader               = wf_list.getLeader();
-  auto& wavefunction_components = wf_leader.Z;
-  const int num_wfc             = wf_leader.Z.size();
-  for (int i = 0; i < num_wfc; ++i)
+  auto& wf_leader = wf_list.getLeader();
+
+  // First handle WFC resources
+  for (int i = 0; i < wf_leader.Z.size(); ++i)
   {
     const auto wfc_list(extractWFCRefList(wf_list, i));
-    wavefunction_components[i]->acquireResource(collection, wfc_list);
+    wf_leader.Z[i]->acquireResource(collection, wfc_list);
+  }
+
+  // Handle wrapper resources if they exist
+  if (wf_leader.twf_fastderiv_)
+  {
+    RefVectorWithLeader<TWFFastDerivWrapper> wrapper_list(*wf_leader.twf_fastderiv_);
+    for (int iw = 0; iw < wf_list.size(); ++iw)
+      wrapper_list.push_back(*wf_list[iw].twf_fastderiv_);
+    wf_leader.twf_fastderiv_->acquireResource(collection, wrapper_list);
   }
 }
 
 void TrialWaveFunction::releaseResource(ResourceCollection& collection,
                                         const RefVectorWithLeader<TrialWaveFunction>& wf_list)
 {
-  auto& wf_leader               = wf_list.getLeader();
-  auto& wavefunction_components = wf_leader.Z;
-  const int num_wfc             = wf_leader.Z.size();
-  for (int i = 0; i < num_wfc; ++i)
+  auto& wf_leader = wf_list.getLeader();
+
+  // Release WFC resources
+  for (int i = 0; i < wf_leader.Z.size(); ++i)
   {
     const auto wfc_list(extractWFCRefList(wf_list, i));
-    wavefunction_components[i]->releaseResource(collection, wfc_list);
+    wf_leader.Z[i]->releaseResource(collection, wfc_list);
+  }
+
+  // Release wrapper resources if they exist
+  if (wf_leader.twf_fastderiv_)
+  {
+    RefVectorWithLeader<TWFFastDerivWrapper> wrapper_list(*wf_leader.twf_fastderiv_);
+    for (int iw = 0; iw < wf_list.size(); ++iw)
+    {
+      if (wf_list[iw].twf_fastderiv_)
+        wrapper_list.push_back(*wf_list[iw].twf_fastderiv_);
+    }
+    wf_leader.twf_fastderiv_->releaseResource(collection, wrapper_list);
   }
 }
+
 
 RefVectorWithLeader<WaveFunctionComponent> TrialWaveFunction::extractWFCRefList(
     const RefVectorWithLeader<TrialWaveFunction>& wf_list,
@@ -1350,16 +1378,25 @@ void TrialWaveFunction::initializeTWFFastDerivWrapper(const ParticleSet& P, TWFF
   {
     if (Z[i]->isFermionic())
     {
-      //OK, so this is a hack only for SlaterDeterminant objects.
-      //Needs a bit of logic and protection before this reaches production.
-      //SlaterDet* det = dynamic_cast<SlaterDet*>(Z[i].get());
-      //det->registerTWFFastDerivWrapper(P, twf);
       Z[i]->registerTWFFastDerivWrapper(P, twf);
     }
     else
       twf.addJastrow(Z[i].get());
   }
 }
+
+
+// Add debug checks in getOrCreateTWFFastDerivWrapper
+TWFFastDerivWrapper& TrialWaveFunction::getOrCreateTWFFastDerivWrapper(const ParticleSet& P)
+{
+  if (!twf_fastderiv_)
+  {
+    twf_fastderiv_             = std::make_unique<TWFFastDerivWrapper>();
+    initializeTWFFastDerivWrapper(P, *twf_fastderiv_);
+  }
+  return *twf_fastderiv_;
+}
+
 
 //explicit instantiations
 template void TrialWaveFunction::mw_evalGrad<CoordsType::POS>(const RefVectorWithLeader<TrialWaveFunction>& wf_list,

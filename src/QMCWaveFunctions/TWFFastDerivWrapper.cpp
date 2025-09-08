@@ -5,17 +5,46 @@
 // Copyright (c) 2021 QMCPACK developers.
 //
 // File developed by:   Raymond Clay III, rclay@sandia.gov, Sandia National Laboratories
+//                      Anouar Benali, abenali.sci@gmail.com, Qubit Pharmaceuticals
 //
 // File created by:   Raymond Clay III, rclay@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "QMCWaveFunctions/TWFFastDerivWrapper.h"
+#include <iostream>
 #include "QMCWaveFunctions/Fermion/MultiSlaterDetTableMethod.h"
 #include "Numerics/DeterminantOperators.h"
 #include "type_traits/ConvertToReal.h"
-#include <iostream>
+#include "Numerics/MatrixOperators.h"
+#include <AccelBLAS.hpp>
+#include "OMPTarget/ompBLAS.hpp"
+
 namespace qmcplusplus
 {
+
+struct TWFFastDerivWrapper::TWFFastDerivWrapperMultiWalkerMem : public Resource
+{
+  using ValueType        = QMCTraits::ValueType;
+  using PosType          = QMCTraits::PosType;
+  using OffloadPosVector = Vector<PosType, OffloadAllocator<PosType>>;
+
+  TWFFastDerivWrapperMultiWalkerMem();
+  TWFFastDerivWrapperMultiWalkerMem(const TWFFastDerivWrapperMultiWalkerMem&);
+
+  std::unique_ptr<Resource> makeClone() const override
+  {
+    return std::make_unique<TWFFastDerivWrapperMultiWalkerMem>(*this);
+  }
+  // BLAS/LAPACK handles
+#if (defined(ENABLE_CUDA) || defined(ENABLE_SYCL)) && defined(ENABLE_OFFLOAD)
+  compute::Queue<VendorKind> queue;
+  compute::BLASHandle<VendorKind> blas_handle;
+#else
+  compute::Queue<PlatformKind::OMPTARGET> queue;
+  compute::BLASHandle<PlatformKind::OMPTARGET> blas_handle;
+#endif
+};
+
 TWFFastDerivWrapper::IndexType TWFFastDerivWrapper::getTWFGroupIndex(const IndexType gid) const
 {
   IndexType return_group_index(-1);
@@ -702,7 +731,7 @@ std::tuple<TWFFastDerivWrapper::ValueType, TWFFastDerivWrapper::ValueType, TWFFa
     ValueType tmp_dmu_O = 0.0;     // d_mu(OD/D)
     ValueType tmp_O     = 0.0;     // OD/D
     ValueType tmp_dmu   = 0.0;     // d_mu(log(D))
-  
+
     for (size_t i_group = 0; i_group < num_groups; i_group++)
     {
       size_t i_dd = C2node[i_group][i_sd];
@@ -921,4 +950,33 @@ TWFFastDerivWrapper::IndexType TWFFastDerivWrapper::getRowM(const ParticleSet& P
   return sid;
 }
 
+void TWFFastDerivWrapper::createResource(ResourceCollection& collection)
+{
+  collection.addResource(std::make_unique<TWFFastDerivWrapperMultiWalkerMem>());
+}
+
+void TWFFastDerivWrapper::acquireResource(ResourceCollection& collection,
+                                          const RefVectorWithLeader<TWFFastDerivWrapper>& wrappers)
+{
+  auto& leader          = wrappers.getLeader();
+  leader.mw_mem_handle_ = collection.lendResource<TWFFastDerivWrapperMultiWalkerMem>();
+}
+
+void TWFFastDerivWrapper::releaseResource(ResourceCollection& collection,
+                                          const RefVectorWithLeader<TWFFastDerivWrapper>& wrappers)
+{
+  auto& leader = wrappers.getLeader();
+
+  // Only leader has a handle: take back the resource.
+  collection.takebackResource(leader.mw_mem_handle_);
+}
+
+TWFFastDerivWrapper::TWFFastDerivWrapperMultiWalkerMem::TWFFastDerivWrapperMultiWalkerMem()
+    : Resource("TWFFastDerivWrapper"), queue(), blas_handle(queue)
+{}
+
+TWFFastDerivWrapper::TWFFastDerivWrapperMultiWalkerMem::TWFFastDerivWrapperMultiWalkerMem(
+    const TWFFastDerivWrapperMultiWalkerMem& rhs)
+    : Resource("TWFFastDerivWrapper"), queue(), blas_handle(queue)
+{}
 } // namespace qmcplusplus
