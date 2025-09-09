@@ -225,7 +225,7 @@ public:
   }
 
   inline void mw_evaluate(const RefVectorWithLeader<DistanceTable>& dt_list,
-                          const RefVectorWithLeader<ParticleSet>& p_list) const override
+                          const RefVectorWithLeader<const DynamicCoordinates>& coords_list) const override
   {
     assert(this == &dt_list.getLeader());
     auto& dt_leader = dt_list.getCastedLeader<SoaDistanceTableABOMPTarget>();
@@ -237,8 +237,8 @@ public:
     auto& mw_r_dr              = mw_mem.mw_r_dr;
 
     size_t count_targets = 0;
-    for (ParticleSet& p : p_list)
-      count_targets += p.getTotalNum();
+    for (const DynamicCoordinates& coords : coords_list)
+      count_targets += coords.size();
     const size_t total_targets = count_targets;
 
     const int num_padded = getAlignedSize<T>(num_sources_);
@@ -274,19 +274,20 @@ public:
     for (size_t iw = 0; iw < nw; iw++)
     {
       auto& dt = dt_list.getCastedElement<SoaDistanceTableABOMPTarget>(iw);
-      ParticleSet& pset(p_list[iw]);
+      auto& coords(coords_list[iw]);
 
-      assert(dt.targets() == pset.getTotalNum());
+      assert(dt.targets() == coords.size());
       assert(num_sources_ == dt.num_sources_);
 
-      auto& RSoA_OMPTarget = static_cast<const RealSpacePositionsOMPTarget&>(dt.origin_.getCoordinates());
+      auto& RSoA_OMPTarget = dynamic_cast<const RealSpacePositionsOMPTarget&>(dt.origin_.getCoordinates());
       source_ptrs[iw]      = const_cast<RealType*>(RSoA_OMPTarget.getDevicePtr());
 
-      for (size_t iat = 0; iat < pset.getTotalNum(); ++iat, ++count_targets)
+      auto& positions = coords.getAllParticlePos();
+      for (size_t iat = 0; iat < coords.size(); ++iat, ++count_targets)
       {
         walker_id_ptr[count_targets] = iw;
         for (size_t idim = 0; idim < D; idim++)
-          target_positions[count_targets * D + idim] = pset.R[iat][idim];
+          target_positions[count_targets * D + idim] = positions[iat][idim];
       }
     }
 
@@ -341,7 +342,7 @@ public:
                            const RefVectorWithLeader<ParticleSet>& p_list,
                            const std::vector<bool>& recompute) const override
   {
-    mw_evaluate(dt_list, p_list);
+    DistanceTable::mw_evaluate(dt_list, p_list);
   }
 
   ///evaluate the temporary pair relations

@@ -101,11 +101,20 @@ public:
    */
   void evaluate(ParticleSet& P) { evaluate(P.getCoordinates()); }
   virtual void evaluate(const DynamicCoordinates& P) = 0;
+  void mw_evaluate(const RefVectorWithLeader<DistanceTable>& dt_list,
+                   const RefVectorWithLeader<ParticleSet>& p_list) const
+  {
+    RefVectorWithLeader<const DynamicCoordinates> coords_list(p_list.getLeader().getCoordinates());
+    for (int iw = 0; iw < dt_list.size(); iw++)
+      coords_list.push_back(p_list[iw].getCoordinates());
+    mw_evaluate(dt_list, coords_list);
+  }
+
   virtual void mw_evaluate(const RefVectorWithLeader<DistanceTable>& dt_list,
-                           const RefVectorWithLeader<ParticleSet>& p_list) const
+                           const RefVectorWithLeader<const DynamicCoordinates>& coords_list) const
   {
     for (int iw = 0; iw < dt_list.size(); iw++)
-      dt_list[iw].evaluate(p_list[iw]);
+      dt_list[iw].evaluate(coords_list[iw]);
   }
 
   /** recompute multi walker internal data, recompute
