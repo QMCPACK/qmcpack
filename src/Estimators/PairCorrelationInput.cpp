@@ -26,7 +26,6 @@ PairCorrelationInput::PairCorrelationInput(xmlNodePtr cur)
   explicit_set_delta_ = setIfInInput(delta_, "dr");
   setIfInInput(debug_, "debug");
   setIfInInput(sources_, "sources");
-  setIfInInput(target_, "target");
 }
 
 } // namespace qmcplusplus

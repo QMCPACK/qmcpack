@@ -1081,8 +1081,6 @@ attributes:
   +-------------------------------+--------------+----------------------+------------------------+-------------------------+
   | ``debug``:math:`^o`           | boolean      | yes/no               | no                     | *No current function*   |
   +-------------------------------+--------------+----------------------+------------------------+-------------------------+
-  | ``target``:math:`^o`          | text         | ``particleset.name`` |   ``"e"``              | Quantum particles       |
-  +-------------------------------+--------------+----------------------+------------------------+-------------------------+
   | ``sources``:math:`^o`         | text array   | ``particleset.name`` |   ``"e"``              | Classical particles     |
   +-------------------------------+--------------+----------------------+------------------------+-------------------------+
 
@@ -1106,9 +1104,6 @@ Additional information:
    measured. Typically there is only one classical particleset (e.g.,
    ``sources="ion0"``), but there can be several in principle (e.g.,
    ``sources="ion0 ion1 ion2"``).
-
--  ``target:`` The default value is the preferred usage (i.e.,
-   ``target`` does not need to be provided).
 
 -  Data is output to the ``stat.h5`` for each QMC subrun. It appears in an hdf group
    determined by the name attribute.
