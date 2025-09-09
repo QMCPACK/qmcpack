@@ -99,7 +99,8 @@ public:
   /** evaluate the full Distance Table
    * @param P the target particle set
    */
-  virtual void evaluate(ParticleSet& P) = 0;
+  void evaluate(ParticleSet& P) { evaluate(P.getCoordinates()); }
+  virtual void evaluate(const DynamicCoordinates& P) = 0;
   virtual void mw_evaluate(const RefVectorWithLeader<DistanceTable>& dt_list,
                            const RefVectorWithLeader<ParticleSet>& p_list) const
   {

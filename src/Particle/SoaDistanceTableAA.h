@@ -71,13 +71,13 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableAA
     temp_dr_.resize(num_targets_);
   }
 
-  inline void evaluate(ParticleSet& P) override
+  inline void evaluate(const DynamicCoordinates& coords) override
   {
     ScopedTimer local_timer(evaluate_timer_);
     constexpr T BigR = std::numeric_limits<T>::max();
     for (int iat = 1; iat < num_targets_; ++iat)
-      DTD_BConds<T, D, SC>::computeDistances(P.R[iat], P.getCoordinates().getAllParticlePos(), distances_[iat].data(),
-                                             displacements_[iat], 0, iat, iat);
+      DTD_BConds<T, D, SC>::computeDistances(coords.getOneParticlePos(iat), coords.getAllParticlePos(),
+                                             distances_[iat].data(), displacements_[iat], 0, iat, iat);
   }
 
   ///evaluate the temporary pair relations

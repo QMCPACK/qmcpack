@@ -171,7 +171,7 @@ public:
   size_t getPerTargetPctlStrideSize() const override { return getAlignedSize<T>(num_sources_) * (D + 1); }
 
   /** evaluate the full table */
-  inline void evaluate(ParticleSet& P) override
+  inline void evaluate(const DynamicCoordinates& coords) override
   {
     resize();
 
@@ -181,10 +181,11 @@ public:
     const int num_sources_local = num_sources_;
     const int num_padded        = getAlignedSize<T>(num_sources_);
 
+    auto& positions = coords.getAllParticlePos();
     target_pos.resize(num_targets_ * D);
     for (size_t iat = 0; iat < num_targets_; iat++)
       for (size_t idim = 0; idim < D; idim++)
-        target_pos[iat * D + idim] = P.R[iat][idim];
+        target_pos[iat * D + idim] = positions[iat][idim];
 
     auto* target_pos_ptr = target_pos.data();
     auto* source_pos_ptr = origin_.getCoordinates().getAllParticlePos().data();
