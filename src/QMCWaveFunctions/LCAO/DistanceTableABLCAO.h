@@ -66,12 +66,20 @@ public:
    * Computes ion-electron displacements using fused new position buffer.
    * For PBC systems, applies minimum image convention and computes lattice translations.
    */
-  void mw_evaluate(const RefVectorWithLeader<ParticleSet>& elec_list,
+  void mw_evaluate_pbc(const RefVectorWithLeader<ParticleSet>& elec_list,
+                   const ParticleSet& ions,
+                   int iat,
+                   int num_centers,
+                   OffloadPinnedVector<RealType>& displ_list_tr,
+                   OffloadPinnedVector<RealType>& Tv_list, int table_index);
+
+   void mw_evaluate(const RefVectorWithLeader<ParticleSet>& elec_list,
                    const ParticleSet& ions,
                    int iat,
                    int num_centers,
                    OffloadPinnedVector<RealType>& displ_list_tr,
                    OffloadPinnedVector<RealType>& Tv_list);
+
 };
 
 } // namespace qmcplusplus

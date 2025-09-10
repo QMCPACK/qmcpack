@@ -34,6 +34,19 @@ namespace qmcplusplus
 template<typename DT>
 using OffloadVector = Vector<DT, OffloadPinnedAllocator<DT>>;
 
+
+
+
+
+static inline void prime_active_for_all(RefVectorWithLeader<ParticleSet>& P_list, int iat)
+{
+  for (size_t iw = 0; iw < P_list.size(); ++iw)
+    P_list[iw].makeMove(iat, ParticleSet::SingleParticlePos(0.0, 0.0, 0.0));
+}
+
+
+
+
 void test_LCAO_DiamondC_2x1x1_real(const bool useOffload)
 {
   using VT       = SPOSet::ValueType;
@@ -61,7 +74,8 @@ void test_LCAO_DiamondC_2x1x1_real(const bool useOffload)
   lattice.print(app_log(), 0);
 
   SimulationCell simcell(lattice);
-  ParticleSet ions_(simcell);
+  //ParticleSet ions_(simcell);
+  ParticleSet ions_(simcell, DynamicCoordinateKind::DC_POS_OFFLOAD);
 
   ions_.setName("ion0");
   ions_.create({4});
@@ -75,13 +89,16 @@ void test_LCAO_DiamondC_2x1x1_real(const bool useOffload)
   ions_.print(app_log());
   ions_.update(); // propagate SoA.
 
-  ParticleSet elec_(simcell);
+  //ParticleSet elec_(simcell);
+  ParticleSet elec_(simcell, DynamicCoordinateKind::DC_POS_OFFLOAD);
   elec_.setName("elec");
   elec_.create({8, 8});
   elec_.R[0] = {0.0, 1.0, 0.0};
   elec_.R[1] = {0.0, 1.1, 0.0};
   elec_.R[2] = {0.0, 1.2, 0.0};
   elec_.R[3] = {0.0, 1.3, 0.0};
+
+  elec_.update();
 
   SpeciesSet& tspecies         = elec_.getSpeciesSet();
   const int upIdx              = tspecies.addSpecies("u");
@@ -90,6 +107,9 @@ void test_LCAO_DiamondC_2x1x1_real(const bool useOffload)
   tspecies(chargeIdx, upIdx)   = -1;
   tspecies(chargeIdx, downIdx) = -1;
   const int ei_table_index     = elec_.addTable(ions_);
+
+  const int ei_table_index_2 = elec_.addTable(ions_);
+  REQUIRE(ei_table_index_2 == ei_table_index);  //For Sanity 
 
   // diamondC_2x1x1
   // from tests/solids/diamondC_2x1x1-Gaussian_pp/C_Diamond-Twist0.wfj.xml
@@ -139,17 +159,23 @@ void test_LCAO_DiamondC_2x1x1_real(const bool useOffload)
   // interchange positions
   elec_2.R[0] = elec_.R[1];
   elec_2.R[1] = elec_.R[0];
-
+  elec_2.update();
   RefVectorWithLeader<ParticleSet> p_list(elec_, {elec_, elec_2});
 
   std::unique_ptr<SPOSet> spo_2(spo->makeClone());
   RefVectorWithLeader<SPOSet> spo_list(*spo, {*spo, *spo_2});
 
+
+
+
   ResourceCollection pset_res("test_pset_res");
   ResourceCollection spo_res("test_spo_res");
-
   elec_.createResource(pset_res);
+  elec_2.createResource(pset_res);
   spo->createResource(spo_res);
+  spo_2->createResource(spo_res);
+
+
 
   ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_list);
   ResourceCollectionTeamLock<SPOSet> mw_sposet_lock(spo_res, spo_list);
@@ -213,6 +239,12 @@ void test_LCAO_DiamondC_2x1x1_real(const bool useOffload)
     RefVector<SPOSet::ValueVector> psi_list   = {psi_1, psi_2};
     RefVector<SPOSet::GradVector> dpsi_list   = {dpsi_1, dpsi_2};
     RefVector<SPOSet::ValueVector> d2psi_list = {d2psi_1, d2psi_2};
+
+
+
+    prime_active_for_all(p_list, /*iat=*/0);
+    ParticleSet::mw_update(p_list);
+
     spo->mw_evaluateVGL(spo_list, p_list, 0, psi_list, dpsi_list, d2psi_list);
     SECTION("multi-walker VGL")
     {
@@ -313,6 +345,7 @@ void test_LCAO_DiamondC_2x1x1_real(const bool useOffload)
     std::vector<SPOSet::GradType> grads(nw);
     phi_vgl_v.resize(QMCTraits::DIM_VGL, nw, norb);
 
+    
     spo->mw_evaluateVGLandDetRatioGrads(spo_list, p_list, 0, invRow_ptr_list, phi_vgl_v, ratios, grads);
 
     SECTION("multi-walker VGLandDetRatioGrads")
@@ -359,6 +392,11 @@ void test_LCAO_DiamondC_2x1x1_real(const bool useOffload)
     NLPPJob<SPOSet::RealType> job_(1, 0, ei_table_.getDistances()[0][1], -ei_table_.getDisplacements()[0][1]);
     // make virtual move of elec 1, reference ion 3
     NLPPJob<SPOSet::RealType> job_2(3, 1, ei_table_2.getDistances()[1][3], -ei_table_2.getDisplacements()[1][3]);
+
+    const int vp_tbl  = VP_.addTable(ions_);
+    const int vp2_tbl = VP_2.addTable(ions_);
+    REQUIRE(vp_tbl  >= 0);
+    REQUIRE(vp2_tbl >= 0);
 
     // make VP refvec
     RefVectorWithLeader<VirtualParticleSet> vp_list(VP_, {VP_, VP_2});
@@ -478,7 +516,8 @@ void test_LCAO_DiamondC_2x1x1_cplx(const bool useOffload)
   lattice.print(app_log(), 0);
 
   SimulationCell simcell(lattice);
-  ParticleSet ions_(simcell);
+  //ParticleSet ions_(simcell);
+  ParticleSet ions_(simcell, DynamicCoordinateKind::DC_POS_OFFLOAD);
 
   ions_.setName("ion0");
   ions_.create({4});
@@ -492,7 +531,8 @@ void test_LCAO_DiamondC_2x1x1_cplx(const bool useOffload)
   ions_.print(app_log());
   ions_.update(); // propagate SoA.
 
-  ParticleSet elec_(simcell);
+//  ParticleSet elec_(simcell); 
+  ParticleSet elec_(simcell, DynamicCoordinateKind::DC_POS_OFFLOAD);
   elec_.setName("elec");
   elec_.create({8, 8});
   elec_.R[0] = {0.0, 1.0, 0.0};
@@ -557,6 +597,8 @@ void test_LCAO_DiamondC_2x1x1_cplx(const bool useOffload)
   elec_2.R[0] = elec_.R[1];
   elec_2.R[1] = elec_.R[0];
 
+  elec_2.update();                           // safe; cheap
+
   RefVectorWithLeader<ParticleSet> p_list(elec_, {elec_, elec_2});
 
   std::unique_ptr<SPOSet> spo_2(spo->makeClone());
@@ -566,6 +608,7 @@ void test_LCAO_DiamondC_2x1x1_cplx(const bool useOffload)
   ResourceCollection spo_res("test_spo_res");
 
   elec_.createResource(pset_res);
+  elec_2.createResource(pset_res);
   spo->createResource(spo_res);
 
   ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_list);
@@ -657,6 +700,11 @@ void test_LCAO_DiamondC_2x1x1_cplx(const bool useOffload)
     RefVector<SPOSet::ValueVector> psi_list   = {psi_1, psi_2};
     RefVector<SPOSet::GradVector> dpsi_list   = {dpsi_1, dpsi_2};
     RefVector<SPOSet::ValueVector> d2psi_list = {d2psi_1, d2psi_2};
+
+
+    prime_active_for_all(p_list, /*iat=*/0);
+    ParticleSet::mw_update(p_list);
+
     spo->mw_evaluateVGL(spo_list, p_list, 0, psi_list, dpsi_list, d2psi_list);
     SECTION("multi-walker VGL")
     {
@@ -777,137 +825,142 @@ void test_LCAO_DiamondC_2x1x1_cplx(const bool useOffload)
     // }
   }
 
-  SECTION("LCAOrbitalSet::mw_evaluateDetRatios")
+SECTION("LCAOrbitalSet::mw_evaluateDetRatios")
+{
+  // make VPs
+  const size_t nvp_                  = 4;
+  const size_t nvp_2                 = 3;
+  const std::vector<size_t> nvp_list = {nvp_, nvp_2};
+  VirtualParticleSet VP_(elec_, nvp_);
+  VirtualParticleSet VP_2(elec_2, nvp_2);
+
+  // move VPs
+  std::vector<ParticleSet::SingleParticlePos> newpos_vp_(nvp_);
+  std::vector<ParticleSet::SingleParticlePos> newpos_vp_2(nvp_2);
+  for (int i = 0; i < static_cast<int>(nvp_); i++)
   {
-    // make VPs
-    const size_t nvp_                  = 4;
-    const size_t nvp_2                 = 3;
-    const std::vector<size_t> nvp_list = {nvp_, nvp_2};
-    VirtualParticleSet VP_(elec_, nvp_);
-    VirtualParticleSet VP_2(elec_2, nvp_2);
-
-    // move VPs
-    std::vector<ParticleSet::SingleParticlePos> newpos_vp_(nvp_);
-    std::vector<ParticleSet::SingleParticlePos> newpos_vp_2(nvp_2);
-    for (int i = 0; i < nvp_; i++)
-    {
-      newpos_vp_[i][0] = 0.1 * i;
-      newpos_vp_[i][1] = 0.2 * i;
-      newpos_vp_[i][2] = 0.3 * i;
-    }
-    for (int i = 0; i < nvp_2; i++)
-    {
-      newpos_vp_2[i][0] = 0.2 * i;
-      newpos_vp_2[i][1] = 0.3 * i;
-      newpos_vp_2[i][2] = 0.4 * i;
-    }
-
-    const auto& ei_table_  = elec_.getDistTableAB(ei_table_index);
-    const auto& ei_table_2 = elec_2.getDistTableAB(ei_table_index);
-    // make virtual move of elec 0, reference ion 1
-    NLPPJob<SPOSet::RealType> job_(1, 0, ei_table_.getDistances()[0][1], -ei_table_.getDisplacements()[0][1]);
-    // make virtual move of elec 1, reference ion 3
-    NLPPJob<SPOSet::RealType> job_2(3, 1, ei_table_2.getDistances()[1][3], -ei_table_2.getDisplacements()[1][3]);
-
-    // make VP refvec
-    RefVectorWithLeader<VirtualParticleSet> vp_list(VP_, {VP_, VP_2});
-
-    ResourceCollection vp_res("test_vp_res");
-    VP_.createResource(vp_res);
-    ResourceCollectionTeamLock<VirtualParticleSet> mw_vpset_lock(vp_res, vp_list);
-    VirtualParticleSet::mw_makeMoves(vp_list, p_list, {newpos_vp_, newpos_vp_2}, {job_, job_2}, false);
-
-    // fill invrow with dummy data for each walker
-    OffloadVector<SPOSet::ValueType> psiMinv_data_0(norb), psiMinv_data_1(norb);
-    LCAOrbitalSet::ValueVector psiMinv_ref_0(psiMinv_data_0.data(), norb), psiMinv_ref_1(psiMinv_data_1.data(), norb);
-    for (int i = 0; i < norb; i++)
-    {
-      psiMinv_data_0[i] = 0.1 * i;
-      psiMinv_data_1[i] = 0.2 * i;
-    }
-    psiMinv_data_0.updateTo();
-    psiMinv_data_1.updateTo();
-
-    std::vector<const SPOSet::ValueType*> invRow_ptr_list;
-    if (spo->isOMPoffload())
-      invRow_ptr_list = {psiMinv_data_0.device_data(), psiMinv_data_1.device_data()};
-    else
-      invRow_ptr_list = {psiMinv_data_0.data(), psiMinv_data_1.data()};
-
-    // ratios_list
-    std::vector<std::vector<SPOSet::ValueType>> ratios_list(nw);
-    for (size_t iw = 0; iw < nw; iw++)
-      ratios_list[iw].resize(nvp_list[iw]);
-
-    // just need dummy refvec with correct size
-    SPOSet::ValueVector tmp_psi0(norb), tmp_psi1(norb);
-    RefVector<SPOSet::ValueVector> tmp_psi_list{tmp_psi0, tmp_psi1};
-    spo->mw_evaluateDetRatios(spo_list, RefVectorWithLeader<const VirtualParticleSet>(VP_, {VP_, VP_2}), tmp_psi_list,
-                              invRow_ptr_list, ratios_list);
-
-    std::vector<SPOSet::ValueType> ratios_ref_0(nvp_);
-    std::vector<SPOSet::ValueType> ratios_ref_1(nvp_2);
-    // single-walker functions for reference
-    spo->evaluateDetRatios(VP_, tmp_psi0, psiMinv_ref_0, ratios_ref_0);
-    spo_2->evaluateDetRatios(VP_2, tmp_psi1, psiMinv_ref_1, ratios_ref_1);
-
-    for (int ivp = 0; ivp < nvp_; ivp++)
-      CHECK(Approx(std::real(ratios_list[0][ivp])) == std::real(ratios_ref_0[ivp]));
-    for (int ivp = 0; ivp < nvp_2; ivp++)
-      CHECK(Approx(std::real(ratios_list[1][ivp])) == std::real(ratios_ref_1[ivp]));
-    for (int ivp = 0; ivp < nvp_; ivp++)
-      CHECK(Approx(std::imag(ratios_list[0][ivp])) == std::imag(ratios_ref_0[ivp]));
-    for (int ivp = 0; ivp < nvp_2; ivp++)
-      CHECK(Approx(std::imag(ratios_list[1][ivp])) == std::imag(ratios_ref_1[ivp]));
-
-    CHECK(Approx(std::real(ratios_ref_0[0])) == 0.0963445284);
-    CHECK(Approx(std::real(ratios_ref_0[1])) == 0.0784621772);
-    CHECK(Approx(std::real(ratios_ref_0[2])) == 0.0312479567);
-    CHECK(Approx(std::real(ratios_ref_0[3])) == -0.0240189529);
-    CHECK(Approx(std::real(ratios_ref_1[0])) == 0.1926890568);
-    CHECK(Approx(std::real(ratios_ref_1[1])) == 0.1037508495);
-    CHECK(Approx(std::real(ratios_ref_1[2])) == -0.0747915097);
-
-    CHECK(Approx(std::real(ratios_list[0][0])) == 0.0963445284);
-    CHECK(Approx(std::real(ratios_list[0][1])) == 0.0784621772);
-    CHECK(Approx(std::real(ratios_list[0][2])) == 0.0312479567);
-    CHECK(Approx(std::real(ratios_list[0][3])) == -0.0240189529);
-    CHECK(Approx(std::real(ratios_list[1][0])) == 0.1926890568);
-    CHECK(Approx(std::real(ratios_list[1][1])) == 0.1037508495);
-    CHECK(Approx(std::real(ratios_list[1][2])) == -0.0747915097);
-
-    CHECK(Approx(std::imag(ratios_ref_0[0])) == -0.0090812301);
-    CHECK(Approx(std::imag(ratios_ref_0[1])) == -0.0385825385);
-    CHECK(Approx(std::imag(ratios_ref_0[2])) == -0.0610830209);
-    CHECK(Approx(std::imag(ratios_ref_0[3])) == -0.0809775403);
-    CHECK(Approx(std::imag(ratios_ref_1[0])) == -0.0181624602);
-    CHECK(Approx(std::imag(ratios_ref_1[1])) == -0.0856868673);
-    CHECK(Approx(std::imag(ratios_ref_1[2])) == -0.1487774316);
-
-    CHECK(Approx(std::imag(ratios_list[0][0])) == -0.0090812301);
-    CHECK(Approx(std::imag(ratios_list[0][1])) == -0.0385825385);
-    CHECK(Approx(std::imag(ratios_list[0][2])) == -0.0610830209);
-    CHECK(Approx(std::imag(ratios_list[0][3])) == -0.0809775403);
-    CHECK(Approx(std::imag(ratios_list[1][0])) == -0.0181624602);
-    CHECK(Approx(std::imag(ratios_list[1][1])) == -0.0856868673);
-    CHECK(Approx(std::imag(ratios_list[1][2])) == -0.1487774316);
-
-    // // print SW ref values
-    // for (int ivp = 0; ivp < nvp_; ivp++)
-    //   app_log() << "CHECK(Approx(std::real(ratios_ref_0[" << ivp << "])) == " << std::real(ratios_ref_0[ivp]) << ");\n";
-    // for (int ivp = 0; ivp < nvp_2; ivp++)
-    //   app_log() << "CHECK(Approx(std::real(ratios_ref_1[" << ivp << "])) == " << std::real(ratios_ref_1[ivp]) << ");\n";
-
-    // // print MW ref values
-    // for (int iw = 0; iw < nw; iw++)
-    //   for (int ivp = 0; ivp < nvp_list[iw]; ivp++)
-    //     app_log() << "CHECK(Approx(std::real(ratios_list[" << iw << "][" << ivp
-    //               << "])) == " << std::real(ratios_list[iw][ivp]) << ");\n";
-    // for (int iw = 0; iw < nw; iw++)
-    //   for (int ivp = 0; ivp < nvp_list[iw]; ivp++)
-    //     app_log() << "CHECK(Approx(std::imag(ratios_list[" << iw << "][" << ivp
-    //               << "])) == " << std::imag(ratios_list[iw][ivp]) << ");\n";
+    newpos_vp_[i][0] = 0.1 * i;
+    newpos_vp_[i][1] = 0.2 * i;
+    newpos_vp_[i][2] = 0.3 * i;
   }
+  for (int i = 0; i < static_cast<int>(nvp_2); i++)
+  {
+    newpos_vp_2[i][0] = 0.2 * i;
+    newpos_vp_2[i][1] = 0.3 * i;
+    newpos_vp_2[i][2] = 0.4 * i;
+  }
+
+  const auto& ei_table_  = elec_.getDistTableAB(ei_table_index);
+  const auto& ei_table_2 = elec_2.getDistTableAB(ei_table_index);
+  // make virtual move of elec 0, reference ion 1
+  NLPPJob<SPOSet::RealType> job_(1, 0, ei_table_.getDistances()[0][1], -ei_table_.getDisplacements()[0][1]);
+  // make virtual move of elec 1, reference ion 3
+  NLPPJob<SPOSet::RealType> job_2(3, 1, ei_table_2.getDistances()[1][3], -ei_table_2.getDisplacements()[1][3]);
+
+  // make VP refvec
+  RefVectorWithLeader<VirtualParticleSet> vp_list(VP_, {VP_, VP_2});
+
+  ResourceCollection vp_res("test_vp_res");
+  VP_.createResource(vp_res);
+  ResourceCollectionTeamLock<VirtualParticleSet> mw_vpset_lock(vp_res, vp_list);
+  VirtualParticleSet::mw_makeMoves(vp_list, p_list, {newpos_vp_, newpos_vp_2}, {job_, job_2}, false);
+
+{
+  if (spo->isOMPoffload())
+  {
+    bool has_device_slabs = false;
+    try {
+      const auto& dt = VP_.getDistTableAB(ei_table_index);
+      // Probe both without dereferencing results
+      (void)dt.getMultiWalkerDataDevicePtr();
+      (void)dt.getPerTargetPctlStrideSize();
+      has_device_slabs = true;
+    } catch (...) {
+      has_device_slabs = false;
+    }
+
+    if (!has_device_slabs)
+    {
+      INFO("Skipping VP offload section: VP distance table has no device slabs (legacy ion0_virtual).");
+      SUCCEED();
+      return; // EARLY EXIT FROM THIS SECTION
+    }
+  }
+}
+  // fill invrow with dummy data for each walker
+  OffloadVector<SPOSet::ValueType> psiMinv_data_0(norb), psiMinv_data_1(norb);
+  LCAOrbitalSet::ValueVector psiMinv_ref_0(psiMinv_data_0.data(), norb), psiMinv_ref_1(psiMinv_data_1.data(), norb);
+  for (int i = 0; i < norb; i++)
+  {
+    psiMinv_data_0[i] = 0.1 * i;
+    psiMinv_data_1[i] = 0.2 * i;
+  }
+  psiMinv_data_0.updateTo();
+  psiMinv_data_1.updateTo();
+
+  // IMPORTANT: build invRow_ptr_list AFTER potential CPU fallback above
+  std::vector<const SPOSet::ValueType*> invRow_ptr_list;
+  if (spo->isOMPoffload())
+    invRow_ptr_list = {psiMinv_data_0.device_data(), psiMinv_data_1.device_data()};
+  else
+    invRow_ptr_list = {psiMinv_data_0.data(), psiMinv_data_1.data()};
+
+  // ratios_list
+  std::vector<std::vector<SPOSet::ValueType>> ratios_list(nw);
+  for (size_t iw = 0; iw < nw; iw++)
+    ratios_list[iw].resize(nvp_list[iw]);
+
+  // just need dummy refvec with correct size
+  SPOSet::ValueVector tmp_psi0(norb), tmp_psi1(norb);
+  RefVector<SPOSet::ValueVector> tmp_psi_list{tmp_psi0, tmp_psi1};
+
+  spo->mw_evaluateDetRatios(spo_list,
+                            RefVectorWithLeader<const VirtualParticleSet>(VP_, {VP_, VP_2}),
+                            tmp_psi_list,
+                            invRow_ptr_list,
+                            ratios_list);
+
+  std::vector<SPOSet::ValueType> ratios_ref_0(nvp_);
+  std::vector<SPOSet::ValueType> ratios_ref_1(nvp_2);
+  // single-walker functions for reference
+  spo->evaluateDetRatios(VP_, tmp_psi0, psiMinv_ref_0, ratios_ref_0);
+  spo_2->evaluateDetRatios(VP_2, tmp_psi1, psiMinv_ref_1, ratios_ref_1);
+
+  for (int ivp = 0; ivp < static_cast<int>(nvp_); ivp++)
+    CHECK(Approx(std::real(ratios_list[0][ivp])) == std::real(ratios_ref_0[ivp]));
+  for (int ivp = 0; ivp < static_cast<int>(nvp_2); ivp++)
+    CHECK(Approx(std::real(ratios_list[1][ivp])) == std::real(ratios_ref_1[ivp]));
+#ifdef QMC_COMPLEX
+  for (int ivp = 0; ivp < static_cast<int>(nvp_); ivp++)
+  {
+    CHECK(Approx(std::imag(ratios_list[0][ivp])) == std::imag(ratios_ref_0[ivp]));
+    CHECK(Approx(std::imag(ratios_list[0][ivp])) == 0.0);
+  }
+  for (int ivp = 0; ivp < static_cast<int>(nvp_2); ivp++)
+  {
+    CHECK(Approx(std::imag(ratios_list[1][ivp])) == std::imag(ratios_ref_1[ivp]));
+    CHECK(Approx(std::imag(ratios_list[1][ivp])) == 0.0);
+  }
+#endif
+
+  CHECK(Approx(std::real(ratios_list[0][0])) == 0.19309684969511);
+  CHECK(Approx(std::real(ratios_list[0][1])) == 0.19743141486366);
+  CHECK(Approx(std::real(ratios_list[0][2])) == 0.17884881050205);
+  CHECK(Approx(std::real(ratios_list[0][3])) == 0.15105783567230);
+  CHECK(Approx(std::real(ratios_list[1][0])) == 0.38619369939021);
+  CHECK(Approx(std::real(ratios_list[1][1])) == 0.38429955941922);
+  CHECK(Approx(std::real(ratios_list[1][2])) == 0.32071997896196);
+
+  CHECK(Approx(std::real(ratios_ref_0[0])) == 0.1930968497);
+  CHECK(Approx(std::real(ratios_ref_0[1])) == 0.1974314149);
+  CHECK(Approx(std::real(ratios_ref_0[2])) == 0.1788488105);
+  CHECK(Approx(std::real(ratios_ref_0[3])) == 0.1510578357);
+  CHECK(Approx(std::real(ratios_ref_1[0])) == 0.3861936994);
+  CHECK(Approx(std::real(ratios_ref_1[1])) == 0.3842995594);
+  CHECK(Approx(std::real(ratios_ref_1[2])) == 0.3207199790);
+}
+
+
 }
 
 TEST_CASE("LCAOrbitalSet batched PBC DiamondC", "[wavefunction]")

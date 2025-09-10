@@ -21,6 +21,10 @@
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 #include <ResourceCollection.h>
 #include "OhmmsData/Libxml2Doc.h"
+#include "Particle/RealSpacePositionsOMPTarget.h"
+#include "ParticleIO/LatticeIO.h"     // for qmcplusplus::LatticeParser
+#include "OhmmsData/Libxml2Doc.h"     // you already have this in the file
+
 
 namespace qmcplusplus
 {
@@ -134,82 +138,93 @@ TEST_CASE("ReadMolecularOrbital GTO He", "[wavefunction]") { test_He(false); }
 
 TEST_CASE("ReadMolecularOrbital Numerical He", "[wavefunction]") { test_He(true); }
 
-void test_He_mw(bool transform)
+static void test_He_mw(bool transform)
 {
-  // set up ion particle set as normal
   Communicate* c = OHMMS::Controller;
 
-  const SimulationCell simulation_cell;
-  auto elec_ptr = std::make_unique<ParticleSet>(simulation_cell);
-  auto& elec(*elec_ptr);
-  std::vector<int> agroup(2);
-  agroup[0] = 1;
-  agroup[1] = 1;
-  elec.setName("e");
-  elec.create(agroup);
-  elec.R[0] = 0.0;
+  // Build PBC lattice via XML
+  const char* cell_xml = R"(
+<simulationcell>
+  <parameter name="lattice" units="bohr">
+    1000.0  0.0    0.0
+    0.0   1000.0   0.0
+    0.0     0.0  1000.0
+  </parameter>
+  <parameter name="bconds">
+    p p p
+  </parameter>
+</simulationcell>
+)";
 
-  SpeciesSet& tspecies       = elec.getSpeciesSet();
-  int upIdx                  = tspecies.addSpecies("u");
-  int downIdx                = tspecies.addSpecies("d");
-  int massIdx                = tspecies.addAttribute("mass");
-  tspecies(massIdx, upIdx)   = 1.0;
+  Libxml2Document doc_lattice;
+  REQUIRE(doc_lattice.parseFromString(cell_xml));
+
+  qmcplusplus::Lattice lattice;
+  qmcplusplus::LatticeParser lp(lattice);
+  lp.put(doc_lattice.getRoot());
+  lattice.print(app_log(), 0);
+
+  SimulationCell simulation_cell(lattice);
+
+  // Electrons (offload coords)
+  auto elec_ptr = std::make_unique<ParticleSet>(simulation_cell, DynamicCoordinateKind::DC_POS_OFFLOAD);
+  auto& elec = *elec_ptr;
+  elec.setName("e");
+  elec.create(std::vector<int>{1, 1}); // two electrons
+  elec.R[0] = {0.0, 0.0, 0.0};
+  elec.R[1] = {0.0, 0.0, 0.0};
+
+  SpeciesSet& tspecies = elec.getSpeciesSet();
+  int upIdx = tspecies.addSpecies("u");
+  int downIdx = tspecies.addSpecies("d");
+  int massIdx = tspecies.addAttribute("mass");
+  tspecies(massIdx, upIdx) = 1.0;
   tspecies(massIdx, downIdx) = 1.0;
 
-  auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
-  auto& ions(*ions_ptr);
+  // Ions (offload coords)
+  auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell, DynamicCoordinateKind::DC_POS_OFFLOAD);
+  auto& ions = *ions_ptr;
   ions.setName("ion0");
   ions.create({1});
-  ions.R[0]            = 0.0;
+  ions.R[0] = {0.0, 0.0, 0.0};
   SpeciesSet& ispecies = ions.getSpeciesSet();
-  int heIdx            = ispecies.addSpecies("He");
+  ispecies.addSpecies("He");
   ions.update();
 
+  // e-ion table for walker 0
   elec.addTable(ions);
   elec.update();
 
+  // Build SPOSet (He STO-3G)
   Libxml2Document doc;
-  bool okay = doc.parse("he_sto3g.wfj.xml");
-  REQUIRE(okay);
-  xmlNodePtr root = doc.getRoot();
+  REQUIRE(doc.parse("he_sto3g.wfj.xml"));
+  WaveFunctionComponentBuilder::PSetMap pmap;
+  pmap.emplace(elec_ptr->getName(), std::move(elec_ptr));
+  pmap.emplace(ions_ptr->getName(), std::move(ions_ptr));
 
-  WaveFunctionComponentBuilder::PSetMap particle_set_map;
-  particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
-  particle_set_map.emplace(ions_ptr->getName(), std::move(ions_ptr));
-
-  SPOSetBuilderFactory bf(c, elec, particle_set_map);
-
+  SPOSetBuilderFactory bf(c, elec, pmap);
   OhmmsXPathObject MO_base("//determinantset", doc.getXPathContext());
   REQUIRE(MO_base.size() == 1);
   if (!transform)
   {
-    // input file is set to transform GTO's to numerical orbitals by default
-    // use direct evaluation of GTO's
     xmlSetProp(MO_base[0], castCharToXMLChar("transform"), castCharToXMLChar("no"));
     xmlSetProp(MO_base[0], castCharToXMLChar("key"), castCharToXMLChar("GTO"));
   }
-
-  const auto bb_ptr = bf.createSPOSetBuilder(MO_base[0]);
+  auto bb_ptr = bf.createSPOSetBuilder(MO_base[0]);
   auto& bb(*bb_ptr);
-
   OhmmsXPathObject slater_base("//determinant", doc.getXPathContext());
   auto sposet = bb.createSPOSet(slater_base[0]);
 
-  //std::cout << "basis set size = " << sposet->getBasisSetSize() << std::endl;
-
-  SPOSet::ValueVector psi;
-  SPOSet::GradVector dpsi;
-  SPOSet::ValueVector d2psi;
-  psi.resize(1);
-  dpsi.resize(1);
-  d2psi.resize(1);
-
-  // Call makeMove to compute the distances
+  // Single-walker reference - move electron 0 to (0.0001, 0, 0)
+  SPOSet::ValueVector psi(1);
+  SPOSet::GradVector dpsi(1);
+  SPOSet::ValueVector d2psi(1);
+  
   ParticleSet::SingleParticlePos newpos(0.0001, 0.0, 0.0);
-  elec.makeMove(0, newpos);
-  // set up second walkers
-  // auto elec2 = elec.makeClone();
-
+  elec.makeMove(0, newpos - elec.R[0]);
+  elec.acceptMove(0);
+  elec.update();
+  
   sposet->evaluateVGL(elec, 0, psi, dpsi, d2psi);
   CHECK(std::real(psi[0]) == Approx(0.9996037001));
   CHECK(std::real(dpsi[0][0]) == Approx(-0.000667803579));
@@ -217,57 +232,84 @@ void test_He_mw(bool transform)
   CHECK(std::real(dpsi[0][2]) == Approx(0));
   CHECK(std::real(d2psi[0]) == Approx(-20.0342132));
 
-
-  // vectors of SPOSets, ParticleSets, V/G/L (leading dim of each == nwalkers)
+  // Multi-walker setup
   RefVectorWithLeader<SPOSet> spo_list(*sposet);
-  spo_list.push_back(*sposet);
-
   RefVectorWithLeader<ParticleSet> P_list(elec);
-  P_list.push_back(elec);
 
   RefVector<SPOSet::ValueVector> psi_list;
   RefVector<SPOSet::GradVector> dpsi_list;
   RefVector<SPOSet::ValueVector> d2psi_list;
 
-  // create V,G,L arrays for walker 1
+  // storage for walker 0
   SPOSet::ValueVector psi_1(sposet->getOrbitalSetSize());
   SPOSet::GradVector dpsi_1(sposet->getOrbitalSetSize());
   SPOSet::ValueVector d2psi_1(sposet->getOrbitalSetSize());
-
   psi_list.push_back(psi_1);
   dpsi_list.push_back(dpsi_1);
   d2psi_list.push_back(d2psi_1);
 
-  //second walker
-  // interchange positions and shift y instead of x
-  ParticleSet::SingleParticlePos dy(0.0, 0.0001, 0.0);
+  // walker 1: copy electrons and move electron 0 to (0, 0.0001, 0)
   ParticleSet elec_2(elec);
-  elec_2.R[0] = elec.R[1];
-  elec_2.R[1] = elec.R[0];
+  elec_2.addTable(ions);
+  
+  // Reset walker 1's electron 0 position and move to target
+  elec_2.R[0] = {0.0, 0.0, 0.0};
   elec_2.update();
-  elec_2.makeMove(0, dy);
+  ParticleSet::SingleParticlePos target_pos(0.0, 0.0001, 0.0);
+  elec_2.makeMove(0, target_pos - elec_2.R[0]);
+  elec_2.acceptMove(0);
+  elec_2.update();
 
+  // clone SPO and append
   std::unique_ptr<SPOSet> sposet_2(sposet->makeClone());
+  spo_list.push_back(*sposet_2);
+  P_list.push_back(elec_2);
+
+  // storage for walker 1
   SPOSet::ValueVector psi_2(sposet->getOrbitalSetSize());
   SPOSet::GradVector dpsi_2(sposet->getOrbitalSetSize());
   SPOSet::ValueVector d2psi_2(sposet->getOrbitalSetSize());
-  spo_list.push_back(*sposet_2);
-  P_list.push_back(elec_2);
   psi_list.push_back(psi_2);
   dpsi_list.push_back(dpsi_2);
   d2psi_list.push_back(d2psi_2);
 
+  // Create resources
   ResourceCollection pset_res("test_pset_res");
   ResourceCollection spo_res("test_spo_res");
-
   elec.createResource(pset_res);
+  elec_2.createResource(pset_res);
   sposet->createResource(spo_res);
+  sposet_2->createResource(spo_res);
+  ions.createResource(pset_res);
 
   ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, P_list);
   ResourceCollectionTeamLock<SPOSet> mw_sposet_lock(spo_res, spo_list);
 
+  // Ensure ions device coords exist
+  {
+    RefVectorWithLeader<ParticleSet> ions_list(ions);
+    ResourceCollectionTeamLock<ParticleSet> ions_lock(pset_res, ions_list);
+    ParticleSet::mw_update(ions_list);
+  }
+
+  // Set active particle for multi-walker evaluation
+  const int iat = 0;
+  
+  // Clear pending state and set active particle with proper moves
+  elec.donePbyP();
+  elec_2.donePbyP();
+  
+  // Re-trigger the moves to set up distance tables properly
+  elec.makeMove(iat, ParticleSet::SingleParticlePos(0.0, 0.0, 0.0));
+  elec_2.makeMove(iat, ParticleSet::SingleParticlePos(0.0, 0.0, 0.0));
+  
+  // Update to sync everything
+  ParticleSet::mw_update(P_list);
+
+  // Now evaluate
   sposet->mw_evaluateVGL(spo_list, P_list, 0, psi_list, dpsi_list, d2psi_list);
 
+  // Compare to reference
   CHECK(std::real(psi_list[0].get()[0]) == Approx(psi[0]));
   CHECK(std::real(dpsi_list[0].get()[0][0]) == Approx(dpsi[0][0]));
   CHECK(std::real(dpsi_list[0].get()[0][1]) == Approx(dpsi[0][1]));
@@ -275,13 +317,15 @@ void test_He_mw(bool transform)
   CHECK(std::real(d2psi_list[0].get()[0]) == Approx(d2psi[0]));
 
   CHECK(std::real(psi_list[1].get()[0]) == Approx(psi[0]));
-  CHECK(std::real(dpsi_list[1].get()[0][0]) == Approx(dpsi[0][1])); // x, y switched here
+  CHECK(std::real(dpsi_list[1].get()[0][0]) == Approx(dpsi[0][1])); // x,y swapped
   CHECK(std::real(dpsi_list[1].get()[0][1]) == Approx(dpsi[0][0]));
   CHECK(std::real(dpsi_list[1].get()[0][2]) == Approx(dpsi[0][2]));
   CHECK(std::real(d2psi_list[1].get()[0]) == Approx(d2psi[0]));
 }
-
-TEST_CASE("mw_evaluate Numerical He", "[wavefunction]") { test_He_mw(true); }
+TEST_CASE("mw_evaluate Numerical He", "[wavefunction]")
+{
+  test_He_mw(true);
+}
 
 void test_EtOH_mw(bool transform)
 {
@@ -294,7 +338,9 @@ void test_EtOH_mw(bool transform)
   xmlNodePtr root = doc.getRoot();
 
   const SimulationCell simulation_cell;
-  auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
+//  auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell, DynamicCoordinateKind::DC_POS_OFFLOAD);
+
   auto& ions(*ions_ptr);
   XMLParticleParser parse_ions(ions);
   OhmmsXPathObject particleset_ion("//particleset[@name='ion0']", doc.getXPathContext());
@@ -305,7 +351,8 @@ void test_EtOH_mw(bool transform)
   REQUIRE(ions.R.size() == 9);
   ions.update();
 
-  auto elec_ptr = std::make_unique<ParticleSet>(simulation_cell);
+ // auto elec_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto elec_ptr = std::make_unique<ParticleSet>(simulation_cell, DynamicCoordinateKind::DC_POS_OFFLOAD);
   auto& elec(*elec_ptr);
   XMLParticleParser parse_elec(elec);
   OhmmsXPathObject particleset_elec("//particleset[@name='e']", doc.getXPathContext());
@@ -359,7 +406,11 @@ void test_EtOH_mw(bool transform)
   //ParticleSet::SingleParticlePos newpos(0.0001, 0.0, 0.0);
   //elec.makeMove(0, newpos);
   //elec.update();
-  elec.R[0] = {0.0001, 0.0, 0.0};
+  //elec.R[0] = {0.0001, 0.0, 0.0};
+  //elec.update();
+  ParticleSet::SingleParticlePos newpos0(0.0001, 0.0, 0.0);
+  elec.makeMove(0, newpos0 - elec.R[0]);
+  elec.acceptMove(0);
   elec.update();
   // set up second walkers
   // auto elec2 = elec.makeClone();
@@ -378,7 +429,11 @@ void test_EtOH_mw(bool transform)
 
   //ParticleSet::SingleParticlePos newpos2(0.0, 0.04, 0.02);
   //elec.makeMove(1, newpos2);
-  elec.R[1] = {0.0, 0.04, 0.02};
+  //elec.R[1] = {0.0, 0.04, 0.02};
+  //elec.update();
+  ParticleSet::SingleParticlePos newpos1(0.0, 0.04, 0.02);
+  elec.makeMove(1, newpos1 - elec.R[1]);
+  elec.acceptMove(1);
   elec.update();
   SPOSet::ValueVector psiref_1(n_mo);
   SPOSet::GradVector dpsiref_1(n_mo);
@@ -398,7 +453,7 @@ void test_EtOH_mw(bool transform)
   CHECK(std::real(dpsiref_1[1][2]) == Approx(-0.0008320732335));
 
   // vectors of SPOSets, ParticleSets, V/G/L (leading dim of each == nwalkers)
-  RefVectorWithLeader<SPOSet> spo_list(*sposet);
+  /*RefVectorWithLeader<SPOSet> spo_list(*sposet);
   std::unique_ptr<SPOSet> sposet_2(sposet->makeClone());
   spo_list.push_back(*sposet_2);
   spo_list.push_back(*sposet);
@@ -408,6 +463,31 @@ void test_EtOH_mw(bool transform)
   elec_2.R[0] = elec.R[1];
   elec_2.R[1] = elec.R[0];
   elec_2.update();
+  RefVectorWithLeader<ParticleSet> P_list(elec);
+  P_list.push_back(elec);
+  P_list.push_back(elec_2);*/
+  RefVectorWithLeader<SPOSet> spo_list(*sposet);
+  std::unique_ptr<SPOSet> sposet_2(sposet->makeClone());
+  spo_list.push_back(*sposet_2);
+  spo_list.push_back(*sposet);
+
+  // second walker - exchange positions
+  ParticleSet elec_2(elec);
+
+  // Get the current positions
+  ParticleSet::SingleParticlePos pos0 = elec.R[0];
+  ParticleSet::SingleParticlePos pos1 = elec.R[1];
+
+  // Move particle 0 to position of particle 1
+  elec_2.makeMove(0, pos1 - elec_2.R[0]);
+  elec_2.acceptMove(0);
+
+  // Move particle 1 to position of particle 0
+  elec_2.makeMove(1, pos0 - elec_2.R[1]);
+  elec_2.acceptMove(1);
+
+  elec_2.update();
+
   RefVectorWithLeader<ParticleSet> P_list(elec);
   P_list.push_back(elec);
   P_list.push_back(elec_2);
@@ -436,6 +516,7 @@ void test_EtOH_mw(bool transform)
   ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, P_list);
   ResourceCollectionTeamLock<SPOSet> mw_sposet_lock(spo_res, spo_list);
 
+  ParticleSet::mw_update(P_list);
   sposet->mw_evaluateVGL(spo_list, P_list, 0, psi_list, dpsi_list, d2psi_list);
   sposet->mw_evaluateValue(spo_list, P_list, 0, psi_v_list);
 

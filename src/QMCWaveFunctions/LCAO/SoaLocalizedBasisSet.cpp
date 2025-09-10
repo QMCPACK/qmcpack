@@ -215,49 +215,59 @@ void SoaLocalizedBasisSet<COT, ORBT>::evaluateVGL(const ParticleSet& P, int iat,
   }
 }
 
+
 template<class COT, typename ORBT>
-void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateVGL(const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basis_list,
-                                                     const RefVectorWithLeader<ParticleSet>& P_list,
-                                                     int iat,
-                                                     OffloadMWVGLArray& vgl_v)
+void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateVGL(
+    const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basis_list,
+    const RefVectorWithLeader<ParticleSet>& P_list,
+    int iat,
+    OffloadMWVGLArray& vgl_v)
 {
   assert(this == &basis_list.getLeader());
   auto& basis_leader = basis_list.template getCastedLeader<SoaLocalizedBasisSet<COT, ORBT>>();
 
-  const size_t Nw     = P_list.size();
-  auto& Tv_list       = basis_leader.mw_mem_handle_.getResource().Tv_list;
-  auto& displ_list_tr = basis_leader.mw_mem_handle_.getResource().displ_list_tr;
-  Tv_list.resize(3 * NumCenters * Nw);
-  displ_list_tr.resize(3 * NumCenters * Nw);
+  const int Nw = static_cast<int>(P_list.size());
+  assert(vgl_v.size(0) == 5);
+  assert(vgl_v.size(1) == static_cast<size_t>(Nw));
+  assert(vgl_v.size(2) == BasisSetSize);
 
-  // Get or create LCAO distance table
+#ifndef NDEBUG
+  for (int iw = 0; iw < Nw; ++iw)
+    assert(P_list[iw].getActivePtcl() == iat);
+#endif
+
+  // Scratch buffers (same as before)
+  auto& Tv_list       = basis_leader.mw_mem_handle_.getResource().Tv_list;        // pinned host + device
+  auto& displ_list_tr = basis_leader.mw_mem_handle_.getResource().displ_list_tr;  // pinned host + device
+  Tv_list.resize(3ULL * NumCenters * Nw);
+  displ_list_tr.resize(3ULL * NumCenters * Nw);
+
   auto& lcao_dt = basis_leader.mw_mem_handle_.getResource().lcao_distance_table;
   if (!lcao_dt)
-  {
     lcao_dt = std::make_unique<DistanceTableABLCAO>(ions_, P_list.getLeader());
-  }
 
-  // Single call handles both cases
-  lcao_dt->mw_evaluate(P_list, ions_, iat, NumCenters, displ_list_tr, Tv_list);
+  const auto& lattice = ions_.getLattice();
+  if (lattice.SuperCellEnum != SUPERCELL_OPEN)
+	  lcao_dt->mw_evaluate_pbc(P_list, ions_, iat, NumCenters, displ_list_tr, Tv_list,myTableIndex);
+  else
+	  lcao_dt->mw_evaluate(P_list, ions_, iat, NumCenters, displ_list_tr, Tv_list);
 
-  // Species-batched atomic basis evaluation
-  {
-    ScopedTimer NumCenter_Wrapper(NumCenter_timer_);
-    const auto& species_names = ions_.getSpeciesSet().speciesName;
-    const int num_species     = species_names.size();
+  ScopedTimer NumCenter_Wrapper(NumCenter_timer_);
+  const auto& species_names = ions_.getSpeciesSet().speciesName;
+  const int num_species     = species_names.size();
 
-    for (int species_id = 0; species_id < num_species; ++species_id)
-      if (const auto& c_list = species_centers_[species_id]; c_list.size() > 0)
-      {
-        const auto& basis_offsets   = species_center_coffsets_[species_id];
-        auto one_species_basis_list = extractOneSpeciesBasisRefList(basis_list, species_id);
+  for (int s = 0; s < num_species; ++s)
+    if (const auto& c_list = species_centers_[s]; c_list.size() > 0)
+    {
+      const auto& offs = species_center_coffsets_[s];
+      auto basis_refs  = extractOneSpeciesBasisRefList(basis_list, s);
 
-        LOBasisSet[species_id]->mw_evaluateVGL_multiCenter(one_species_basis_list, P_list.getLeader().getLattice(),
-                                                           vgl_v, displ_list_tr, Tv_list, Nw, BasisSetSize, c_list,
-                                                           basis_offsets, NumCenters);
-      }
-  }
+      LOBasisSet[s]->mw_evaluateVGL_multiCenter(basis_refs, P_list.getLeader().getLattice(),
+                                                vgl_v, displ_list_tr, Tv_list,
+                                                Nw, BasisSetSize, c_list, offs, NumCenters);
+    }
 }
+
 
 template<class COT, typename ORBT>
 void SoaLocalizedBasisSet<COT, ORBT>::evaluateVGH(const ParticleSet& P, int iat, vgh_type& vgh)
@@ -297,10 +307,13 @@ void SoaLocalizedBasisSet<COT, ORBT>::evaluateVGHGH(const ParticleSet& P, int ia
   }
 }
 
+
+
 template<class COT, typename ORBT>
-void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValueVPs(const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basis_list,
-                                                          const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
-                                                          OffloadMWVArray& vp_basis_v)
+void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValueVPs(
+    const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basis_list,
+    const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+    OffloadMWVArray& vp_basis_v)
 {
   assert(this == &basis_list.getLeader());
   auto& basis_leader = basis_list.template getCastedLeader<SoaLocalizedBasisSet<COT, ORBT>>();
@@ -310,45 +323,180 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValueVPs(const RefVectorWithLea
 
   auto& vps_leader = vp_list.getLeader();
 
+  // Resource scratch
+  auto& Tv_list       = basis_leader.mw_mem_handle_.getResource().Tv_list;        // host/device pinned
+  auto& displ_list_tr = basis_leader.mw_mem_handle_.getResource().displ_list_tr;  // host/device pinned
+  Tv_list.resize(3ULL * NumCenters * nVPs);
+  displ_list_tr.resize(3ULL * NumCenters * nVPs);
+
+  RealType* __restrict__ disp_out = displ_list_tr.device_data();
+  RealType* __restrict__ tv_out   = Tv_list.device_data();
+
+  // VP DT device buffer: [slabs] with per-target stride
+  const auto& dt_leader  = vps_leader.getDistTableAB(myTableIndex);
+  const RealType* dt_dev = dt_leader.getMultiWalkerDataDevicePtr();
+  const size_t    stride = dt_leader.getPerTargetPctlStrideSize();
+  const size_t    padded = getAlignedSize<RealType>(NumCenters);
+  if (!dt_dev)
+    throw std::runtime_error("mw_evaluateValueVPs: VP DT device buffer is null.");
+
+  // --- 1) Pack displacements (device->device) ---
+  // slabs: 0=dist, 1=dx, 2=dy, 3=dz
+  PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) \
+                  is_device_ptr(dt_dev, disp_out)")
+  for (int ivp = 0; ivp < static_cast<int>(nVPs); ++ivp)
+    for (int c = 0; c < NumCenters; ++c)
+    {
+      const size_t baseDT = static_cast<size_t>(ivp) * stride;
+      const RealType dx   = dt_dev[baseDT + 1 * padded + c];
+      const RealType dy   = dt_dev[baseDT + 2 * padded + c];
+      const RealType dz   = dt_dev[baseDT + 3 * padded + c];
+
+      const size_t baseOut = 3ULL * (static_cast<size_t>(ivp) + static_cast<size_t>(c) * nVPs);
+      disp_out[baseOut + 0] = dx;
+      disp_out[baseOut + 1] = dy;
+      disp_out[baseOut + 2] = dz;
+    }
+
+  // --- 2) Tv handling ---
+  const auto& lat = vps_leader.getLattice();
+  if (lat.SuperCellEnum == SUPERCELL_OPEN)
+  {
+    // OPEN cell: Tv = 0 (device-only)
+    PRAGMA_OFFLOAD("omp target teams distribute parallel for \
+                    is_device_ptr(tv_out)")
+    for (size_t i = 0; i < 3ULL * NumCenters * nVPs; ++i)
+      tv_out[i] = RealType(0);
+  }
+  else
+  {
+    // PBC: compute Tv on host from host coords; one upload
+    // host VP coords flattened in countVPs order
+    const auto vp_host = vps_leader.extractVPCoords(vp_list); // size == nVPs
+    // lattice matrices on host
+    RealType G[9], Rm[9];
+    for (int i = 0; i < 3; ++i)
+      for (int j = 0; j < 3; ++j)
+      { G[3*i + j] = lat.G(i, j); Rm[3*i + j] = lat.R(i, j); }
+
+    for (size_t ivp = 0; ivp < nVPs; ++ivp)
+    {
+      const RealType vx = vp_host[ivp][0];
+      const RealType vy = vp_host[ivp][1];
+      const RealType vz = vp_host[ivp][2];
+
+      for (int c = 0; c < NumCenters; ++c)
+      {
+        const RealType ix = ions_.R[c][0];
+        const RealType iy = ions_.R[c][1];
+        const RealType iz = ions_.R[c][2];
+
+        const RealType drx = ix - vx;
+        const RealType dry = iy - vy;
+        const RealType drz = iz - vz;
+
+        const RealType sx = G[0]*drx + G[1]*dry + G[2]*drz;
+        const RealType sy = G[3]*drx + G[4]*dry + G[5]*drz;
+        const RealType sz = G[6]*drx + G[7]*dry + G[8]*drz;
+
+        const RealType nx = std::nearbyint(sx);
+        const RealType ny = std::nearbyint(sy);
+        const RealType nz = std::nearbyint(sz);
+
+        // Tv = R * n
+        const RealType tx = Rm[0]*nx + Rm[1]*ny + Rm[2]*nz;
+        const RealType ty = Rm[3]*nx + Rm[4]*ny + Rm[5]*nz;
+        const RealType tz = Rm[6]*nx + Rm[7]*ny + Rm[8]*nz;
+
+        const size_t baseOut = 3ULL * (ivp + static_cast<size_t>(c) * nVPs);
+        // write Tv into the pinned host view of Tv_list
+        Tv_list[baseOut + 0] = tx;
+        Tv_list[baseOut + 1] = ty;
+        Tv_list[baseOut + 2] = tz;
+      }
+    }
+
+    // single host->device upload for Tv_list
+    Tv_list.updateTo();
+  }
+
+  // --- 3) Species-batched AO evaluation (unchanged) ---
+  const auto& species_names = ions_.getSpeciesSet().speciesName;
+  const int num_species     = species_names.size();
+  for (int s = 0; s < num_species; ++s)
+    if (auto& c_list_s = species_centers_[s]; c_list_s.size() > 0)
+    {
+      auto& offs_list_s = species_center_coffsets_[s];
+      auto basis_refs   = extractOneSpeciesBasisRefList(basis_list, s);
+
+      LOBasisSet[s]->mw_evaluateV_multiCenter(basis_refs, vps_leader.getLattice(), vp_basis_v,
+                                              displ_list_tr, Tv_list,
+                                              nVPs, BasisSetSize, c_list_s, offs_list_s, NumCenters);
+    }
+}
+/*
+
+template<class COT, typename ORBT>
+void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValueVPs(const RefVectorWithLeader<SoaBasisSetBase<ORBT>>& basis_list,
+                                                          const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                                                          OffloadMWVArray& vp_basis_v)
+{
+  assert(this == &basis_list.getLeader());
+  auto& basis_leader = basis_list.template getCastedLeader<SoaLocalizedBasisSet<COT, ORBT>>();
+
+  const size_t nVPs = vp_basis_v.size(0);
+  assert(vp_basis_v.size(1) == BasisSetSize); // shape [nVPs, BasisSetSize]
+  const auto& IonID(ions_.GroupID);
+
+  auto& vps_leader = vp_list.getLeader();
+
+  const auto dt_list(vps_leader.extractDTRefList(vp_list, myTableIndex));
+  const auto coordR_list(vps_leader.extractVPCoords(vp_list));
+
+  // GPU arrays [NumCenters * nVPs, 3]
+  // Each center c, vp index iVP => c*nVPs + iVP
   auto& Tv_list       = basis_leader.mw_mem_handle_.getResource().Tv_list;
   auto& displ_list_tr = basis_leader.mw_mem_handle_.getResource().displ_list_tr;
   Tv_list.resize(3ULL * NumCenters * nVPs);
   displ_list_tr.resize(3ULL * NumCenters * nVPs);
 
-  // Get VP distance table pointer
-  const auto& dt_leader          = vps_leader.getDistTableAB(myTableIndex);
-  const RealType* vp_dist_device = dt_leader.getMultiWalkerDataDevicePtr();
-  const size_t stride_size       = dt_leader.getPerTargetPctlStrideSize();
-  const size_t num_padded        = getAlignedSize<RealType>(NumCenters);
+  auto* Tv_host    = Tv_list.data();
+  auto* displ_host = displ_list_tr.data();
 
-  if (!vp_dist_device)
-    throw std::runtime_error("VP distance table pointer is null!");
+  // "index" is loop over each virtual point
+  // i.e. we do "for each (iw, iat) => iVP" in [0..nVPs-1]
+  size_t indexVP = 0;
+  for (size_t iw = 0; iw < vp_list.size(); iw++)
+  {
+    // vp_list[iw].getTotalNum() = # of virtual points in this VPS
+    int nVP_local = vp_list[iw].getTotalNum();
+    for (int iat = 0; iat < nVP_local; iat++)
+    {
+      const auto& displ = dt_list[iw].getDisplRow(iat);
+      // coords for this virtual point = coordR_list[indexVP]
+      const auto& vpcoord = coordR_list[indexVP];
 
-  // Device pointers for output
-  RealType* displ_out = displ_list_tr.device_data();
-  RealType* tv_out    = Tv_list.device_data();
-
-  // vp_dist_ptr is a host pointer that's been mapped to device
-  // Don't use is_device_ptr for it - let the runtime handle the mapping
-  const int ncenters = NumCenters;
-  const int nvps     = static_cast<int>(nVPs);
-
-
-  PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(3) \
-                is_device_ptr(vp_dist_device, displ_out, tv_out)")
-  for (int ivp = 0; ivp < nvps; ++ivp)
-    for (int c = 0; c < ncenters; ++c)
-      for (int d = 0; d < 3; ++d)
+      // fill for all centers c in [0..NumCenters-1]
+      for (int c = 0; c < NumCenters; c++)
       {
-        size_t vp_idx  = ivp * stride_size + num_padded + d * num_padded + c;
-        size_t out_idx = d + 3 * (ivp + c * nvps);
-
-        displ_out[out_idx] = vp_dist_device[vp_idx];
-        tv_out[out_idx]    = 0.0; // TODO: PBC
+        for (int dim = 0; dim < 3; dim++)
+        {
+          size_t idx = dim + 3ULL * (indexVP + c * (size_t)nVPs);
+          // Ion position is ions_.R[c]
+          RealType val    = ions_.R[c][dim] - vpcoord[dim] - displ[c][dim];
+          Tv_host[idx]    = val;
+          displ_host[idx] = displ[c][dim];
+        }
       }
+      indexVP++;
+    }
+  }
 
+#if defined(QMC_COMPLEX)
+  Tv_list.updateTo();
+#endif
+  displ_list_tr.updateTo();
 
-  const auto& IonID(ions_.GroupID);
   const auto& species_names = ions_.getSpeciesSet().speciesName;
   const int num_species_    = species_names.size();
   std::vector<std::vector<size_t>> local_centers(num_species_);
@@ -370,6 +518,9 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValueVPs(const RefVectorWithLea
                                               nVPs, BasisSetSize, c_list_s, offs_list_s, NumCenters);
     }
 }
+*/
+
+
 
 
 template<class COT, typename ORBT>

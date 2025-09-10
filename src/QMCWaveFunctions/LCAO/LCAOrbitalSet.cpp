@@ -524,7 +524,7 @@ void LCAOrbitalSet::mw_evaluateVGLImplGEMM(const RefVectorWithLeader<SPOSet>& sp
                             BasisSetSize,              // AOs
                             ValueType(1), c_devptr, BasisSetSize, basis_vgl_mw.device_data(), BasisSetSize,
                             ValueType(0), phi_vgl_v.device_data(), requested_orb_size);
-//        mw_res.queue.sync();
+        mw_res.queue.sync();
       }
       else
       {
