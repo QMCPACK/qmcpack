@@ -245,7 +245,7 @@ void getBestTile(double* primcell, int target, int* tilemat, double& radius, int
 }
 
 
-void getBestTile2D(double* primcell, int target, int* tilemat, double& radius, int range = 7)
+void getBestTileXY2D(double* primcell, int target, int* tilemat, double& radius, int range = 7)
 {
   double largest          = 0.0;
   double bestScore        = 0.0;
@@ -354,7 +354,7 @@ int main(int argc, char* argv[])
 
   if (xy_2d == 1)
   {
-    getBestTile2D(prim, target, besttile, radius, maxentry);
+    getBestTileXY2D(prim, target, besttile, radius, maxentry);
   }
   else
   {
