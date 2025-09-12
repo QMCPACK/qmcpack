@@ -17,6 +17,9 @@
 #include "QMCWaveFunctions/Fermion/MultiDiracDeterminant.h"
 #include "CPU/VectorOps.h"
 #include "Platforms/OMPTarget/ompReductionComplex.hpp"
+#include <cstdint>
+
+using uint32_t = std::uint32_t;
 
 namespace qmcplusplus
 {
@@ -103,7 +106,7 @@ std::unique_ptr<WaveFunctionComponent> MultiSlaterDetTableMethod::makeClone(Part
 
 /** Compute VGL of this MultiSlaterDetTableMethod
  *
- * THis is introduced to remove redundant code in 
+ * THis is introduced to remove redundant code in
  * - evaluate(P,G,L)
  * - evaluateLog(P,G,L,buf,fillbuffer)
  * Miguel's note: can this change over time??? I don't know yet
