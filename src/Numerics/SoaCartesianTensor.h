@@ -21,6 +21,7 @@
 #ifndef QMCPLUSPLUS_SOA_CARTESIAN_TENSOR_H
 #define QMCPLUSPLUS_SOA_CARTESIAN_TENSOR_H
 
+#include <cstdint>
 #include <stdexcept>
 #include "OhmmsSoA/VectorSoaContainer.h"
 #include "OhmmsPETE/OhmmsArray.h"
@@ -103,7 +104,7 @@ public:
 
   /**
    * @brief evaluate for multiple electrons and multiple pbc images
-   * 
+   *
    * @param [in] xyz electron positions [Nelec, Npbc, 3(x,y,z)]
    * @param [out] XYZ Cartesian tensor elements [Nelec, Npbc, Nlm]
   */
@@ -125,20 +126,20 @@ public:
 
     PRAGMA_OFFLOAD("omp target teams distribute parallel for \
                     is_device_ptr(norm_factor__ptr, xyz_ptr, XYZ_ptr)")
-    for (uint32_t ir = 0; ir < nR; ir++)
+    for (std::uint32_t ir = 0; ir < nR; ir++)
     {
       evaluate_bare(xyz_ptr[0 + 3 * ir], xyz_ptr[1 + 3 * ir], xyz_ptr[2 + 3 * ir], XYZ_ptr + (ir * Nlm), Lmax);
-      for (uint32_t i = 0; i < Nlm; i++)
+      for (std::uint32_t i = 0; i < Nlm; i++)
         XYZ_ptr[ir * Nlm + i] *= norm_factor__ptr[i];
     }
   }
 
   /**
    * @brief evaluate VGL for multiple electrons and multiple pbc images
-   * 
+   *
    * when offload is enabled, xyz is assumed to be up to date on the device before entering the function
    * XYZ_vgl will be up to date on the device (but not host) when this function exits
-   * 
+   *
    * @param [in] xyz electron positions [Nelec, Npbc, 3(x,y,z)]
    * @param [out] XYZ_vgl Cartesian tensor elements [5(v, gx, gy, gz, lapl), Nelec, Npbc, Nlm]
   */
@@ -166,10 +167,10 @@ public:
 
     PRAGMA_OFFLOAD("omp target teams distribute parallel for \
                     is_device_ptr(norm_factor__ptr, xyz_ptr, XYZ_vgl_ptr)")
-    for (uint32_t ir = 0; ir < nR; ir++)
+    for (std::uint32_t ir = 0; ir < nR; ir++)
     {
       constexpr T czero(0);
-      for (uint32_t i = 0; i < Nlm; i++)
+      for (std::uint32_t i = 0; i < Nlm; i++)
       {
         XYZ_vgl_ptr[ir * Nlm + offset * 1 + i] = czero;
         XYZ_vgl_ptr[ir * Nlm + offset * 2 + i] = czero;

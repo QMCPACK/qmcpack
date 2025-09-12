@@ -17,7 +17,7 @@
  */
 #ifndef QMCPLUSPLUS_PRIME_NUMBER_SET_H
 #define QMCPLUSPLUS_PRIME_NUMBER_SET_H
-#include <vector>
+#include <cstdint>
 #include <limits>
 
 ///dummy declaration
@@ -27,7 +27,7 @@ struct PrimeConstants
 
 ///specialization for uint32_t
 template<>
-struct PrimeConstants<uint32_t>
+struct PrimeConstants<std::uint32_t>
 {
   enum
   {
@@ -39,7 +39,7 @@ struct PrimeConstants<uint32_t>
 
 ///specialization for uint64_t
 template<>
-struct PrimeConstants<uint64_t>
+struct PrimeConstants<std::uint64_t>
 {
   enum
   {

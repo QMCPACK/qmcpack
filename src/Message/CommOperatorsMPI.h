@@ -448,13 +448,13 @@ inline void Communicate::bcast(int& g)
 }
 
 template<>
-inline void Communicate::bcast(uint32_t& g)
+inline void Communicate::bcast(std::uint32_t& g)
 {
   MPI_Bcast(&g, 1, MPI_UNSIGNED, 0, myMPI);
 }
 
 template<>
-inline void Communicate::bcast(std::vector<uint32_t>& g)
+inline void Communicate::bcast(std::vector<std::uint32_t>& g)
 {
   MPI_Bcast(&(g[0]), g.size(), MPI_UNSIGNED, 0, myMPI);
 }
@@ -714,7 +714,7 @@ inline void Communicate::bcast(double* restrict x, int n)
 template<>
 inline void Communicate::bcast(std::complex<double>* restrict x, int n)
 {
-  MPI_Bcast(x, 2*n, MPI_DOUBLE, 0, myMPI);
+  MPI_Bcast(x, 2 * n, MPI_DOUBLE, 0, myMPI);
 }
 
 template<>
@@ -726,7 +726,7 @@ inline void Communicate::bcast(float* restrict x, int n)
 template<>
 inline void Communicate::bcast(std::complex<float>* restrict x, int n)
 {
-  MPI_Bcast(x, 2*n, MPI_FLOAT, 0, myMPI);
+  MPI_Bcast(x, 2 * n, MPI_FLOAT, 0, myMPI);
 }
 
 template<>
