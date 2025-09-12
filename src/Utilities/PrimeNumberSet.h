@@ -19,6 +19,7 @@
 #define QMCPLUSPLUS_PRIME_NUMBER_SET_H
 #include <cstdint>
 #include <limits>
+#include <vector>
 
 ///dummy declaration
 template<typename UIntType>
