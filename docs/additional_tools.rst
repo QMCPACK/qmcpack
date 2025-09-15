@@ -32,7 +32,7 @@ General use of the tool is as follows:
   +-----------------+-----------+-------------+-------------------------------------------------------------------------------+
   | ``--target``    | integer   | none        | Target supercell size to expand.                                              |
   +-----------------+-----------+-------------+-------------------------------------------------------------------------------+
-  | ``--maxentry``  | integer   | 4           | The search range(-maxentry, maxenetry) for each element of the tiling matrix. |
+  | ``--maxentry``  | integer   | 4           | The search range(-maxentry, maxentry) for each element of the tiling matrix. |
   +-----------------+-----------+-------------+-------------------------------------------------------------------------------+
   | ``--2dxy``      | flag      | off         | Expand only in xy component of the tiling matrix for 2D system.               | 
   +-----------------+-----------+-------------+-------------------------------------------------------------------------------+
