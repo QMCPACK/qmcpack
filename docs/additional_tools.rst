@@ -14,6 +14,31 @@ Initialization
 qmc-get-supercell
 ~~~~~~~~~~~~~~~~~
 
+``qmc-get-supercell`` tool determines the optimal tiling matrix that maximizes the Wigner-Seitz radius for a given supercell size.
+It is a C++ executable that is built alongside the QMCPACK executable. It can be found in ``build/bin``.
+
+General use of the tool is as follows:
+::
+
+  qmc-get-supercell --ptvs [lattice vectors] --target [supercell size]
+
+
+``qmc-get-supercell`` command line options:
+
+  +-----------------+-----------+-------------+-------------------------------------------------------------------------------+
+  | **Option Name** | **Value** | **default** | **description**                                                               |
+  +=================+===========+=============+===============================================================================+
+  | ``--ptvs``      | double    | none        | Unit cell lattce vectors as row order.                                        |
+  +-----------------+-----------+-------------+-------------------------------------------------------------------------------+
+  | ``--target``    | integer   | none        | Target supercell size to expand.                                              |
+  +-----------------+-----------+-------------+-------------------------------------------------------------------------------+
+  | ``--maxentry``  | integer   | 4           | The search range(-maxentry, maxenetry) for each element of the tiling matrix. |
+  +-----------------+-----------+-------------+-------------------------------------------------------------------------------+
+  | ``--2dxy``      | flag      | off         | Expand only in xy component of the tiling matrix for 2D system.               | 
+  +-----------------+-----------+-------------+-------------------------------------------------------------------------------+
+  | ``--verbose``   | flag      | off         | Print detailed information.                                                   |
+  +-----------------+-----------+-------------+-------------------------------------------------------------------------------+
+
 Postprocessing
 --------------
 
