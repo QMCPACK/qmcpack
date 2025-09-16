@@ -13,6 +13,7 @@
 #ifndef QMCPLUSPLUS_RANDOMBASE_H
 #define QMCPLUSPLUS_RANDOMBASE_H
 
+#include <cstdint>
 #include <istream>
 #include <memory>
 #include <ostream>
@@ -25,7 +26,7 @@ class RandomBase
 {
 public:
   using result_type                                         = T;
-  using uint_type                                           = uint_fast32_t;
+  using uint_type                                           = std::uint_fast32_t;
   virtual ~RandomBase()                                     = default;
   virtual void init(int iseed_in)                           = 0;
   virtual void seed(uint_type aseed)                        = 0;
@@ -39,7 +40,7 @@ public:
   virtual RandomBase& operator=(const RandomBase& other) { return *this; }
 
 protected:
-  RandomBase() = default;
+  RandomBase()                  = default;
   RandomBase(const RandomBase&) = default;
 };
 

@@ -34,7 +34,7 @@
 #include "FakeRandom.h"
 #include "StdRandom.h"
 
-uint32_t make_seed(int i, int n);
+std::uint32_t make_seed(int i, int n);
 
 namespace qmcplusplus
 {
