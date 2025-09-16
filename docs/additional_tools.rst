@@ -30,7 +30,7 @@ General use of the tool is as follows:
   +=================+===========+=============+===============================================================================+
   | ``--ptvs``      | double    | none        | Unit cell lattice vectors as row order.                                       |
   +-----------------+-----------+-------------+-------------------------------------------------------------------------------+
-  | ``--target``    | integer   | none        | Target supercell size to expand.                                              |
+  | ``--target``    | integer   | none        | The number of unit cells the supercell expands to.                            |
   +-----------------+-----------+-------------+-------------------------------------------------------------------------------+
   | ``--maxentry``  | integer   | 4           | The search range(-maxentry, maxentry) for each element of the tiling matrix.  |
   +-----------------+-----------+-------------+-------------------------------------------------------------------------------+
@@ -38,6 +38,16 @@ General use of the tool is as follows:
   +-----------------+-----------+-------------+-------------------------------------------------------------------------------+
   | ``--verbose``   | flag      | off         | Print detailed information.                                                   |
   +-----------------+-----------+-------------+-------------------------------------------------------------------------------+
+
+For example, if we suppose to expect the supercell consisting of 8 primitive cells of diamond with primitive lattice vectors (in units of lattice parameter a), **a1** = (0.5, 0.5, 0.0), **a2** = (0.0, 0.5, 0.5), **a3** = (0.5, 0.0, 0.5), we can run as follows:
+::
+
+  > qmc-get-supercell --ptvs 0.5 0.5 0.0 0.0 0.5 0.5 0.5 0.0 0.5 --target 8
+
+  0.57735   0   1   1   2   -1   -1   0   2   -2   0.5   0.5   1   0.5   0.5   -1   -1   1   0
+
+In the output, 0.57735, [0, 1, 1][2, -1, -1][0, 2, -2], and [0.5, 0.5, 1][0.5, 0.5, -1][-1, 1, 0] represent simulation cell radius, tiling matrix, and lattice vectors of the supercell, respectively.
+
 
 Postprocessing
 --------------
