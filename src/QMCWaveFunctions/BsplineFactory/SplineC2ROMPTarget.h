@@ -27,6 +27,7 @@
 #include "Utilities/TimerManager.h"
 #include <ResourceHandle.h>
 #include "SplineOMPTargetMultiWalkerMem.h"
+#include <cstdint>
 
 namespace qmcplusplus
 {
@@ -193,7 +194,7 @@ public:
     // transfer static data to GPU
     mKK->updateTo();
     myKcart->updateTo();
-    for (uint32_t i = 0; i < 9; i++)
+    for (std::uint32_t i = 0; i < 9; i++)
     {
       (*GGt_offload)[i]           = GGt[i];
       (*PrimLattice_G_offload)[i] = PrimLattice.G[i];
