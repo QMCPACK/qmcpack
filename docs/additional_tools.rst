@@ -15,7 +15,8 @@ qmc-get-supercell
 ~~~~~~~~~~~~~~~~~
 
 ``qmc-get-supercell`` tool determines the optimal tiling matrix that maximizes the Wigner-Seitz radius for a given supercell size.
-It is a C++ executable that is built alongside the QMCPACK executable. It can be found in ``build/bin``.
+It is a C++ executable that is built alongside the QMCPACK executable. The algorithm uses an exhaustive search over all possible
+tiling matrices within a specific range.
 
 General use of the tool is as follows:
 ::
@@ -39,7 +40,9 @@ General use of the tool is as follows:
   | ``--verbose``   | flag      | off         | Print detailed information.                                                   |
   +-----------------+-----------+-------------+-------------------------------------------------------------------------------+
 
-For example, if we suppose to expect the supercell consisting of 8 primitive cells of diamond with primitive lattice vectors (in units of lattice parameter a), **a1** = (0.5, 0.5, 0.0), **a2** = (0.0, 0.5, 0.5), **a3** = (0.5, 0.0, 0.5), we can run as follows:
+For example, if we aim to find the supercell consisting of 8 primitive cells of diamond with primitive lattice vectors (in units of
+lattice parameter a), **a1** = (0.5, 0.5, 0.0), **a2** = (0.0, 0.5, 0.5), **a3** = (0.5, 0.0, 0.5), we can run as follows:
+
 ::
 
   > qmc-get-supercell --ptvs 0.5 0.5 0.0 0.0 0.5 0.5 0.5 0.0 0.5 --target 8
@@ -47,6 +50,15 @@ For example, if we suppose to expect the supercell consisting of 8 primitive cel
   0.57735   0   1   1   2   -1   -1   0   2   -2   0.5   0.5   1   0.5   0.5   -1   -1   1   0
 
 In the output, 0.57735, [0, 1, 1][2, -1, -1][0, 2, -2], and [0.5, 0.5, 1][0.5, 0.5, -1][-1, 1, 0] represent simulation cell radius, tiling matrix, and lattice vectors of the supercell, respectively.
+
+If we search for a supercell consisting of 4 primitive cells, then in this case a conventional cubic cell is recovered:
+
+::
+
+   > qmc-get-supercell --ptvs 0.5 0.5 0.0 0.0 0.5 0.5 0.5 0.0 0.5 --target 4
+
+   0.5   1   -1   1   1   1   -1   -1   1   1   1   0   0   0   1   0   0   0   1   
+
 
 
 Postprocessing
