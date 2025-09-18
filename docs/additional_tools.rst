@@ -16,7 +16,8 @@ qmc-get-supercell
 
 ``qmc-get-supercell`` tool determines the optimal tiling matrix that maximizes the Wigner-Seitz radius for a given supercell size.
 It is a C++ executable that is built alongside the QMCPACK executable. The algorithm uses an exhaustive search over all possible
-tiling matrices within a specific range.
+tiling matrices up to a specific range. For QMC calculations on individual supercells, this choice is usually optimal in terms of
+finite-size error for a specific size.
 
 General use of the tool is as follows:
 ::
