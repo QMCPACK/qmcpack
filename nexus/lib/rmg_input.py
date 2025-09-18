@@ -2414,10 +2414,10 @@ def write_double_array(v):
 
 
 rmg_value_types = obj({
-    'string'        : (str  , np.string_),
+    'string'        : (str  , np.bytes_),
     'boolean'       : (bool , np.bool_  ),
     'integer'       : (int  , np.int_   ),
-    'double'        : (float, np.float_ ),
+    'double'        : (float, np.float64 ),
     'integer array' : (tuple,list,np.ndarray),
     'double array'  : (tuple,list,np.ndarray),
     })
@@ -3142,7 +3142,7 @@ class RmgInput(SimulationInput):
         unrecognized = []
         for k,v in values.items():
             if k in input_spec.keywords:
-                if isinstance(v,(str,np.string_)):
+                if isinstance(v,(str,np.bytes_)):
                     self[k] = input_spec.keywords[k].read(v)
                 else:
                     self[k] = input_spec.keywords[k].assign(v)
