@@ -1206,7 +1206,31 @@ class Structure(Sobj):
 
 
     def center_molecule(self):
-        self.slide(self.center-self.pos.mean(0),recenter=False)
+        """Center a molecule in a unit cell, ensuring equal padding on all sides
+        
+        Note
+        ----
+        Only works in orthorhombic, tetragonal, and cubic unit cells!
+        """
+
+        # Find smallest X, Y, and Z coordinate
+        min_xyz = np.min(self.pos, 0)
+
+        # Shift molecule to be in the corner of the +x, +y, +z octant (think first quadrant but in 3D)
+        for i in range(3):
+            self.pos[:, i] = self.pos[:, i] - min_xyz[i]
+
+        # Find the minimum distance between the molecule's new xyz coordinates 
+        # and the maximum xyz extent of the unit cell
+        max_xyz = [np.min(self.axes[i, i] - self.pos[:, i], 0) for i in range(3)]
+
+        # Divide each by two to ensure equal spacing on each side of new positions
+        translate_xyz = [i/2 for i in max_xyz]
+
+        # Shift the molecule by the translated amounts, placing it equally
+        # far away from the edges of the unit cell
+        for i in range(3):
+            self.pos[:, i] += translate_xyz[i]
     #end def center_molecule
 
 
