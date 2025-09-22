@@ -22,7 +22,7 @@ try:
             from matplotlib import pyplot
             success = True
             break
-        except (NameError, ImportError):
+        except (NameError, ImportError, ValueError):
             continue
         #end try
     #end for
