@@ -1220,6 +1220,15 @@ class Structure(Sobj):
         for i in range(3):
             self.pos[:, i] = self.pos[:, i] - min_xyz[i]
 
+        # Add all non-diagonal elements of cell matrix to atom positions
+        # ensuring that even in non-orthorhombic, non-cubic, and non-tetragonal
+        # cases the molecules is still properly centered with equal padding.
+        for atom in range(len(self.pos)):
+            for i in range(3):
+                for j in range(3):
+                    if i != j:
+                        self.pos[atom, i] = self.pos[atom, i] + self.axes[j, i]
+
         # Find the minimum distance between the molecule's new xyz coordinates 
         # and the maximum xyz extent of the unit cell
         max_xyz = [np.min(self.axes[i, i] - self.pos[:, i], 0) for i in range(3)]
