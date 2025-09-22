@@ -14,54 +14,6 @@ Initialization
 qmc-get-supercell
 ~~~~~~~~~~~~~~~~~
 
-``qmc-get-supercell`` tool determines the optimal tiling matrix that maximizes the Wigner-Seitz radius for a given supercell size.
-It is a C++ executable that is built alongside the QMCPACK executable. The algorithm uses an exhaustive search over all possible
-tiling matrices up to a specific range. For QMC calculations on individual supercells, this choice is usually optimal in terms of
-finite-size error for a specific size.
-
-General use of the tool is as follows:
-::
-
-  qmc-get-supercell --ptvs [lattice vectors] --target [supercell size]
-
-
-``qmc-get-supercell`` command line options:
-
-  +-----------------+-----------+-------------+-------------------------------------------------------------------------------+
-  | **Option Name** | **Value** | **default** | **description**                                                               |
-  +=================+===========+=============+===============================================================================+
-  | ``--ptvs``      | double    | none        | Unit cell lattice vectors as row order.                                       |
-  +-----------------+-----------+-------------+-------------------------------------------------------------------------------+
-  | ``--target``    | integer   | none        | The number of unit cells the supercell expands to.                            |
-  +-----------------+-----------+-------------+-------------------------------------------------------------------------------+
-  | ``--maxentry``  | integer   | 4           | The search range(-maxentry, maxentry) for each element of the tiling matrix.  |
-  +-----------------+-----------+-------------+-------------------------------------------------------------------------------+
-  | ``--2dxy``      | flag      | off         | Expand only in xy component of the tiling matrix for 2D system.               | 
-  +-----------------+-----------+-------------+-------------------------------------------------------------------------------+
-  | ``--verbose``   | flag      | off         | Print detailed information.                                                   |
-  +-----------------+-----------+-------------+-------------------------------------------------------------------------------+
-
-For example, if we aim to find the supercell consisting of 8 primitive cells of diamond with primitive lattice vectors (in units of
-lattice parameter a), **a1** = (0.5, 0.5, 0.0), **a2** = (0.0, 0.5, 0.5), **a3** = (0.5, 0.0, 0.5), we can run as follows:
-
-::
-
-  > qmc-get-supercell --ptvs 0.5 0.5 0.0 0.0 0.5 0.5 0.5 0.0 0.5 --target 8
-
-  0.57735   0   1   1   2   -1   -1   0   2   -2   0.5   0.5   1   0.5   0.5   -1   -1   1   0
-
-In the output, 0.57735, [0, 1, 1][2, -1, -1][0, 2, -2], and [0.5, 0.5, 1][0.5, 0.5, -1][-1, 1, 0] represent simulation cell radius, tiling matrix, and lattice vectors of the supercell, respectively.
-
-If we search for a supercell consisting of 4 primitive cells, then in this case a conventional cubic cell is recovered:
-
-::
-
-   > qmc-get-supercell --ptvs 0.5 0.5 0.0 0.0 0.5 0.5 0.5 0.0 0.5 --target 4
-
-   0.5   1   -1   1   1   1   -1   -1   1   1   1   0   0   0   1   0   0   0   1   
-
-
-
 Postprocessing
 --------------
 

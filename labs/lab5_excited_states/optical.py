@@ -74,16 +74,13 @@ nscf = generate_pwscf(
     )
 
 run_project()
-try:
-    p = nscf.load_analyzer_image()
-    print('band information')
-    print(p.bands.up)
-    print('twist 0 k-point:',p.bands.up[0].kpoint_rel)
-    print('twist 4 k-point:',p.bands.up[4].kpoint_rel)
-    print('twist 0 band 3 eigenvalue:',p.bands.up[0].eigs[3])
-    print('twist 4 band 4 eigenvalue:',p.bands.up[4].eigs[4])
-except:
-    print('band information not found')
+p = nscf.load_analyzer_image()
+print 'band information'
+print p.bands.up
+print 'twist 0 k-point:',p.bands.up[0].kpoint_rel
+print 'twist 4 k-point:',p.bands.up[4].kpoint_rel
+print 'twist 0 band 3 eigenvalue:',p.bands.up[0].eigs[3]
+print 'twist 4 band 4 eigenvalue:',p.bands.up[4].eigs[4]
 
 
 conv = generate_pw2qmcpack(
@@ -94,8 +91,6 @@ conv = generate_pw2qmcpack(
     dependencies = (nscf,'orbitals'),
     )
 
-# Jastrow optimization - no excitations needed, so we could use either 'old' or 'new' det_format
-# Using 'old' for consistency with other calculations in this script
 opt = generate_qmcpack(
     driver         = 'legacy',
     det_format     = 'old',
@@ -124,8 +119,6 @@ opt = generate_qmcpack(
     dependencies = (conv,'orbitals'),
     )
 
-# Ground state VMC - no excitations needed, so we could use either 'old' or 'new' det_format
-# Using 'old' for consistency with other calculations in this script
 qmc_ground = generate_qmcpack(
     driver         = 'legacy',
     det_format     = 'old',
@@ -150,18 +143,16 @@ qmc_ground = generate_qmcpack(
                     (opt,'jastrow')],
     )
 
-# Optical excited state VMC - REQUIRES 'old' det_format because excitations are not supported in 'new' format
-# The 'new' det_format does not support the excitation parameter needed for excited state calculations
 qmc_optical = generate_qmcpack(
     driver         = 'legacy',
-    det_format     = 'old',  # MUST be 'old' - 'new' format does not support excitations
+    det_format     = 'old',
     identifier     = 'vmc',
     path           = 'vmc_optical',
     job            = job(cores=16,threads=16,app='qmcpack_complex'),
     input_type     = 'basic',
     spin_polarized = True,
     system         = dia,
-    excitation     = ['up', '0 3 4 4'], # This requires 'old' det_format
+    excitation     = ['up', '0 3 4 4'], #
     pseudos        = ['C.BFD.xml'],
     jastrows       = [],
     calculations   = [
