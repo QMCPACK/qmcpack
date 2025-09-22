@@ -4688,7 +4688,7 @@ class Structure(Sobj):
                     p = array(tokens[1:],float)
                 #end if
             except:
-                None
+                pass
             #end try
             if p is not None:
                 elem.append(e)

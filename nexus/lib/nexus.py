@@ -182,7 +182,7 @@ class Settings(NexusCore):
                 self.log(s)
             #end if
         except Exception:
-            None
+            pass
         #end try
 
         self.log('Applying user settings')

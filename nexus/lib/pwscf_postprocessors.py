@@ -790,7 +790,7 @@ class Projwfc(PostProcessSimulation):
             analyzer.write_lowdin(filepath)
             analyzer.write_lowdin(filepath+'_long',long=True)
         except:
-            None
+            pass
         #end try
     #end def post_analyze
 #end class Projwfc

@@ -990,14 +990,14 @@ class Simulation(NexusCore):
             try:
                 self.system.structure.write(filebase+'.xyz')
             except:
-                None
+                pass
             #end try
             try:
                 if self.system.structure.has_axes():
                     self.system.structure.write(filebase+'.xsf')
                 #end if
             except:
-                None
+                pass
             #end try
         #end if
     #end def write_inputs

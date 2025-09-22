@@ -129,7 +129,7 @@ def read_text_value(s):
         try:
             v = float(s)
         except ValueError:
-            None
+            pass
         #end try
     #end try
     return v

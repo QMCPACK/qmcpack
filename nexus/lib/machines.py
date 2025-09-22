@@ -81,7 +81,7 @@ def cpu_count():
         import multiprocessing
         return multiprocessing.cpu_count()
     except (ImportError, NotImplementedError):
-        None
+        pass
     #end try
 
     # POSIX
@@ -92,7 +92,7 @@ def cpu_count():
             return res
         #end if
     except (AttributeError, ValueError):
-        None
+        pass
     #end try
 #end def cpu_count
 

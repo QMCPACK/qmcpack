@@ -742,7 +742,7 @@ class OutcarData(DevBase):
             try:
                 read_function(vlines,self)
             except:
-                None
+                pass
             #end try
         #end for
     #end def read
