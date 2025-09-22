@@ -1206,12 +1206,7 @@ class Structure(Sobj):
 
 
     def center_molecule(self):
-        """Center a molecule in a unit cell, ensuring equal padding on all sides
-        
-        Note
-        ----
-        Only works in orthorhombic, tetragonal, and cubic unit cells!
-        """
+        """Center a molecule in a unit cell, ensuring equal padding on all sides"""
 
         # Find smallest X, Y, and Z coordinate
         min_xyz = np.min(self.pos, 0)
