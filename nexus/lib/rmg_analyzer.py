@@ -153,10 +153,10 @@ class RmgAnalyzer(SimulationAnalyzer):
             units = None
             try:
                 v = int(v)
-            except:
+            except ValueError:
                 try:
                     v = float(v)
-                except:
+                except ValueError:
                     if ' ' in v or ',' in v:
                         vt = v.replace(',',' ')
                         if len(vt)>0:
@@ -171,7 +171,7 @@ class RmgAnalyzer(SimulationAnalyzer):
                                 else:
                                     v = [process_value(t,list=True)[0] for t in tokens]
                                 #end if
-                            except:
+                            except ValueError:
                                 units = None
                             #end try
                         #end if

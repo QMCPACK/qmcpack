@@ -741,7 +741,7 @@ class Versions(object):
             required = name in self.required_dependencies
             if self.available(name):
                 supported = self.supported(name)
-                unknown = supported == None
+                unknown = True if supported is None else False
                 if unknown:
                     if required:
                         req_unknown.append(name)

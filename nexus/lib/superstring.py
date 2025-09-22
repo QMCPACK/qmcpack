@@ -138,7 +138,7 @@ def sbool(var):
 #end def sbool
 
 def is_bool(var):
-    return var==True or var==False or var in ['True','False']
+    return True if type(var) is bool or var in ['True', 'False'] else False
 #end def is_bool
 
 def is_int(var):
@@ -201,7 +201,7 @@ def string2array(string):
 #end def string2array
 
 def is_string(var):
-    return type(var)==type("s")
+    return True if type(var) is type("s") else False
 #end def is_string
 
 
@@ -395,14 +395,16 @@ def remove_empty_lines(s):
 
 def contains_any(str, set):
     for c in set:
-        if c in str: return 1;
-    return 0;
+        if c in str:
+            return 1
+    return 0
 #end def contains_any
 
 def contains_all(str, set):
     for c in set:
-        if c not in str: return 0;
-    return 1;
+        if c not in str:
+            return 0
+    return 1
 #end def contains_all
 
 

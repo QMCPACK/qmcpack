@@ -88,22 +88,22 @@ from fileio import StandardFile,XsfFile
 
 try:
     import numpy as np
-except:
+except ImportError:
     np = unavailable('numpy','np')
 #end try
 try:
     import matplotlib.pyplot as plt
-except:
+except ImportError:
     plt = unavailable('matplotlib','plt')
 #end try
 try:
     from skimage import measure
-except:
+except ImportError:
     measure = unavailable('skimage','measure')
 #end try
 try:
     import scipy.ndimage as scipy_ndimage
-except:
+except ImportError:
     scipy_ndimage = unavailable('scipy','ndimage')
 #end try
 

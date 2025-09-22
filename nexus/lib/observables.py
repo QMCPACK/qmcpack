@@ -12,12 +12,12 @@ import numpy as np
 from developer import unavailable # Nexus unavailable module guard
 try:
     import matplotlib.pyplot as plt
-except:
+except ImportError:
     plt = unavailable('matplotlib','pyplot')
 #end try
 try:
     import h5py
-except:
+except ImportError:
     h5py = unavailable('h5py')
 #end try
 

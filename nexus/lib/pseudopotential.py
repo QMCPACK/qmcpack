@@ -57,7 +57,7 @@ from testing import object_eq
 
 try:
     import matplotlib.pyplot as plt
-except:
+except ImportError:
     plt = unavailable('matplotlib','pyplot')
 #end try
 
@@ -90,7 +90,7 @@ class PseudoFile(DevBase):
         self.element_label = None
         self.filename      = None
         self.location      = None
-        if filepath!=None:
+        if filepath is not None:
             self.filename = os.path.basename(filepath)
             self.location = os.path.abspath(filepath)
             elem_label,symbol,is_elem = pp_elem_label(self.filename)
@@ -376,7 +376,7 @@ class Pseudopotential(DevBase):
         self.core    = None
         self.Zval    = None
         self.Zcore   = None
-        if filepath!=None:
+        if filepath is not None:
             self.read(filepath,format)
         #end if
     #end def __init__
@@ -394,7 +394,7 @@ class Pseudopotential(DevBase):
         if self.requires_format:
             if format is None:
                 self.error('format keyword must be specified to read file {0}\nvalid options are: {1}'.format(filepath,self.formats))
-            elif not format in self.formats:
+            elif format not in self.formats:
                 self.error('incorrect format requested: {0}\nvalid options are: {1}'.format(format,self.formats))
             #end if
         #end if
@@ -411,12 +411,12 @@ class Pseudopotential(DevBase):
         if self.requires_format:
             if format is None:
                 self.error('format keyword must be specified to write file {0}\nvalid options are: {1}'.format(filepath,self.formats))
-            elif not format in self.formats:
+            elif format not in self.formats:
                 self.error('incorrect format requested: {0}\nvalid options are: {1}'.format(format,self.formats))
             #end if
         #end if
         text = self.write_text(format)
-        if filepath!=None:
+        if filepath is not None:
             open(filepath,'w').write(text)
         #end if
         return text
@@ -468,7 +468,7 @@ class SemilocalPP(Pseudopotential):
         self.rcut_L2 = None
         self.components = obj()
         Pseudopotential.__init__(self,filepath,format)
-        if src!=None:
+        if src is not None:
             self.transfer_core_from(src)
         #end if
     #end def __init__
@@ -1002,7 +1002,7 @@ class SemilocalPP(Pseudopotential):
                 if c==self.local:
                     lab = self.local+' loc'
                 #end if
-                if self.name!=None:
+                if self.name is not None:
                     lab = self.name+' '+lab
                 #end if
                 v = self.evaluate_channel(r,c,with_local=with_local,rmin=rmin-1e-12)
@@ -1013,7 +1013,7 @@ class SemilocalPP(Pseudopotential):
                     if c==self.local:
                         v += self.Zval*r
                     #end if
-                elif metric!=None:
+                elif metric is not None:
                     self.error('invalid metric for plotting: {0}\nvalid options are: r2'.format(metric))
                 #end if
                 plot(r,v,color+linestyle,label=lab)
@@ -1061,7 +1061,7 @@ class SemilocalPP(Pseudopotential):
                 elif c!='L2':
                     lab += '-'+self.local
                 #end if
-                if self.name!=None:
+                if self.name is not None:
                     lab = self.name+' '+lab
                 #end if
                 v = self.evaluate_component(r,c,rpow,rmin-1e-12)
@@ -1072,7 +1072,7 @@ class SemilocalPP(Pseudopotential):
                     if c==self.local:
                         v += self.Zval*r
                     #end if
-                elif metric!=None:
+                elif metric is not None:
                     self.error('invalid metric for plotting: {0}\nvalid options are: r2'.format(metric))
                 #end if
                 plt.plot(r,v,color+linestyle,label=lab)
@@ -1126,7 +1126,7 @@ class SemilocalPP(Pseudopotential):
                     if c==self.local:
                         lab = loc_label
                     #end if
-                    if self.name!=None:
+                    if self.name is not None:
                         lab = self.name+' '+lab
                     #end if
                     v = self.evaluate_channel(r,c,rpow,rmin-1e-12,False,with_local,with_L2)
@@ -1134,7 +1134,7 @@ class SemilocalPP(Pseudopotential):
                     r = r[rng]
                     if metric=='r2':
                         v = r**2*v
-                    elif metric!=None:
+                    elif metric is not None:
                         self.error('invalid metric for plotting: {0}\nvalid options are: r2'.format(metric))
                     #end if
                     plot(r,v,color+linestyle,label=lab)
@@ -1148,7 +1148,7 @@ class SemilocalPP(Pseudopotential):
                     color = self.channel_colors[c]
                 #end if
                 lab = c
-                if self.name!=None:
+                if self.name is not None:
                     lab = self.name+' '+lab
                 #end if
                 v = self.evaluate_channel(r,c,rpow,rmin-1e-12,False,with_local,with_L2)
@@ -1156,7 +1156,7 @@ class SemilocalPP(Pseudopotential):
                 r = r[rng]
                 if metric=='r2':
                     v = r**2*v
-                elif metric!=None:
+                elif metric is not None:
                     self.error('invalid metric for plotting: {0}\nvalid options are: r2'.format(metric))
                 #end if
                 plot(r,v,color+linestyle,label=lab)
@@ -1500,7 +1500,7 @@ class SemilocalPP(Pseudopotential):
 
         text = header+grid+L2+semilocal+footer
 
-        if filepath!=None:
+        if filepath is not None:
             open(filepath,'w').write(text)
         #end if
         return text
@@ -1566,7 +1566,7 @@ Number of grid points
         #end for
         text = header+grid+channels
 
-        if filepath!=None:
+        if filepath is not None:
             open(filepath,'w').write(text)
         #end if
         return text
@@ -1603,38 +1603,46 @@ class GaussianPP(SemilocalPP):
         # need lmax, element, and Zcore
         if format=='gamess':
             i=0
-            name,type,Zcore,lmax = lines[i].split(); i+=1
+            name,type,Zcore,lmax = lines[i].split()
+            i+=1
             Zcore = int(Zcore)
             lmax  = int(lmax)
             element = split_delims(name)[0]
             while i<len(lines):
-                n = int(lines[i]); i+=1
+                n = int(lines[i])
+                i+=1
                 terms = []
                 for j in range(n):
-                    coeff,rpow,expon = lines[i].split(); i+=1
+                    coeff,rpow,expon = lines[i].split()
+                    i+=1
                     terms.append((float(coeff),int(rpow),float(expon)))
                 #end for
                 channels.append(terms)
             #end while
         elif format=='gaussian':
             i=0
-            element,token = lines[i].split(); i+=1
-            label,lmax,Zcore = lines[i].split(); i+=1
+            element,token = lines[i].split()
+            i+=1
+            label,lmax,Zcore = lines[i].split()
+            i+=1
             lmax = int(lmax)
             Zcore = int(Zcore)
             while i<len(lines):
                 i+=1 # skip comment line
-                n = int(lines[i]); i+=1
+                n = int(lines[i])
+                i+=1
                 terms = []
                 for j in range(n):
-                    rpow,expon,coeff = lines[i].split(); i+=1
+                    rpow,expon,coeff = lines[i].split()
+                    i+=1
                     terms.append((float(coeff),int(rpow),float(expon)))
                 #end for
                 channels.append(terms)
             #end while
         elif format=='crystal':
             i = 0
-            conv_atomic_number,nshells = lines[i].split(); i+=1
+            conv_atomic_number,nshells = lines[i].split()
+            i+=1
             if len(conv_atomic_number)==1:
                 atomic_number = int(conv_atomic_number)
             else:
@@ -1646,7 +1654,8 @@ class GaussianPP(SemilocalPP):
             #end if
             i+=1
             tokens = lines[i].split()
-            Zval = int(float(tokens[0])); i+=1
+            Zval = int(float(tokens[0]))
+            i+=1
             Zcore = atomic_number-Zval
             nterms = array(tokens[1:],dtype=int)
             lmax = 0
@@ -1659,7 +1668,8 @@ class GaussianPP(SemilocalPP):
                 lmax += 1
                 terms = []
                 for n in range(nt):
-                    expon,coeff,rpow = lines[i].split(); i+=1
+                    expon,coeff,rpow = lines[i].split()
+                    i+=1
                     terms.append((float(coeff),int(rpow)+2,float(expon)))
                 #end for
                 channels.append(terms)
@@ -1667,16 +1677,20 @@ class GaussianPP(SemilocalPP):
             lmax-=1
         elif format=='atomscf':
             #i=0
-            #self.name = lines[i].strip(); i+=1
+            #self.name = lines[i].strip()
+            #i+=1
             i=1 # skip title line
             element = 'Rn' # text does not contain element (must be corrected downstream)
             lmax    = -1   
-            Zcore = int(lines[i].strip()); i+=1
+            Zcore = int(lines[i].strip())
+            i+=1
             while i<len(lines):
-                n = int(lines[i]); i+=1
+                n = int(lines[i])
+                i+=1
                 terms = []
                 for j in range(n):
-                    rpow,expon,coeff = lines[i].split(); i+=1
+                    rpow,expon,coeff = lines[i].split()
+                    i+=1
                     terms.append((float(coeff),int(rpow),float(expon)))
                 #end for
                 channels.append(terms)
@@ -1694,17 +1708,20 @@ class GaussianPP(SemilocalPP):
         elif format=='numhf':
             name = None
             i=0
-            Zval,lmax = lines[i].split(); i+=1;
+            Zval,lmax = lines[i].split()
+            i+=1
             Zval = int(Zval)
             lmax = int(lmax)-1
             element = self.element
             Zcore = int(pt[element].atomic_number)-Zval
-            ns =  [int(n) for n in lines[i].split()]; i+= 1;
+            ns =  [int(n) for n in lines[i].split()]
+            i+= 1
             while i<len(lines):
                 for n in ns:
                     terms = []
                     for j in range(n):
-                        rpow,expon,coeff = lines[i].split(); i+=1
+                        rpow,expon,coeff = lines[i].split()
+                        i+=1
                         terms.append((float(coeff),int(rpow),float(expon)))
                     #end for
                     channels.append(terms)
@@ -1716,14 +1733,14 @@ class GaussianPP(SemilocalPP):
             self.error('ability to read file format {0} has not been implemented'.format(format))
         #end if
 
-        if basis_lines!=None:
+        if basis_lines is not None:
             bs = GaussianBasisSet()
             bs.read_lines(basis_lines,format)
             basis = bs.basis
         #end if
 
-        if not element in pt:
-            if not self.element in pt:
+        if element not in pt:
+            if self.element not in pt:
                 self.error('cannot identify element for pseudopotential file '+filepath)
             #end if
         else:
@@ -1781,13 +1798,13 @@ class GaussianPP(SemilocalPP):
             #end if
         #end for
         basis = self.basis
-        if basis!=None:
+        if basis is not None:
             bs = GaussianBasisSet()
             bs.basis = basis
             basis = bs
         #end if
         if format=='gamess':
-            if basis!=None:
+            if basis is not None:
                 text += '{0} {1} 0. 0. 0.\n'.format(self.element,self.Zcore+self.Zval)
                 text += basis.write_text(format)
                 text += '\n'
@@ -1803,7 +1820,7 @@ class GaussianPP(SemilocalPP):
             #end for
             text += '\n'
         elif format=='gaussian':
-            if basis!=None:
+            if basis is not None:
                 text += '{0} 0\n'.format(self.element)
                 text += basis.write_text(format)
                 text += '\n'
@@ -1821,7 +1838,7 @@ class GaussianPP(SemilocalPP):
             #end for
             text += '\n'
         elif format=='crystal':
-            if basis!=None:
+            if basis is not None:
                 conv_atomic_number = 200 + pt[self.element].atomic_number
                 text+='{0} {1}\n'.format(conv_atomic_number,basis.size())
                 btext = basis.write_text(format,occ=occ)
@@ -1906,7 +1923,7 @@ class GaussianPP(SemilocalPP):
     # test needed
     def get_basis(self):
         bs = None
-        if self.basis!=None:
+        if self.basis is not None:
             bs = GaussianBasisSet()
             bs.basis = self.basis.copy()
         #end if
@@ -1921,7 +1938,7 @@ class GaussianPP(SemilocalPP):
 
     # test needed
     def uncontract(self):
-        if self.basis!=None:
+        if self.basis is not None:
             bs = GaussianBasisSet()
             bs.basis = self.basis.copy()
             bs.uncontract()
@@ -1934,7 +1951,7 @@ class GaussianPP(SemilocalPP):
     def write_basis(self,filepath=None,format=None):
         basis = self.get_basis()
         text = ''
-        if basis!=None:
+        if basis is not None:
             if format=='gamess':
                 text += '{0} {1} 0. 0. 0.\n'.format(self.element,self.Zcore+self.Zval)
                 text += basis.write_text(format)
@@ -1947,7 +1964,7 @@ class GaussianPP(SemilocalPP):
                 self.error('ability to write basis for file format {0} has not been implemented'.format(format))
             #end if
         #end if
-        if filepath!=None:
+        if filepath is not None:
             fobj = open(filepath,'w')
             fobj.write(text)
             fobj.close()
@@ -1959,7 +1976,7 @@ class GaussianPP(SemilocalPP):
     def evaluate_comp_rV(self,r,l,vcomp):
         r = array(r)
         v = zeros(r.shape)
-        if l==self.local or l==None:
+        if l==self.local or l is None:
             v += -self.Zval
         #end if
         for g in vcomp:
@@ -2106,7 +2123,7 @@ class GaussianPP(SemilocalPP):
                         continue
                     else:
                         for mlist in like_terms:
-                            if term_idx in mlist and not term_idx in added:
+                            if term_idx in mlist and term_idx not in added:
                                 coeff = 0.0
                                 mod_term = term.copy()
                                 for ti in mlist: 
@@ -2636,7 +2653,7 @@ class CasinoPP(SemilocalPP):
         #end if
         element = pt.simple_elements[Zatom].symbol
         units = file.readtokensf('Energy units',str)
-        if not units in self.unitmap:
+        if units not in self.unitmap:
             self.error('units {0} unrecognized from casino PP file {1}'.format(units,filepath))
         #end if
         lloc = file.readtokensf('Angular momentum of local component',int)

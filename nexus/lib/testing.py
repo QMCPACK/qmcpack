@@ -3,7 +3,7 @@ try:
     if np.lib.NumpyVersion(np.__version__) >= '2.0.0b1':
         np.set_printoptions(legacy="1.25")
     numpy_available = True
-except:
+except ImportError:
     numpy_available = False
 #end try
 
@@ -125,10 +125,10 @@ def read_text_value(s):
     v = s
     try:
         vi = int(s)
-    except:
+    except ValueError:
         try:
             v = float(s)
-        except:
+        except ValueError:
             None
         #end try
     #end try

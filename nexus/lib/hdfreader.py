@@ -29,7 +29,7 @@ from generic import obj
 from developer import DevBase,unavailable
 try:
     import h5py
-except:
+except ImportError:
     h5py = unavailable('h5py')
 #end try
 from debug import *
@@ -101,8 +101,8 @@ class HDFgroup(DevBase):
     def __init__(self):
         self._name=''
         self._parent=None
-        self._groups={};
-        self._datasets={};
+        self._groups={}
+        self._datasets={}
         self._group_counts={}
 
         self._escape_names=None

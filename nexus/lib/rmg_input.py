@@ -2876,7 +2876,7 @@ class AtomsKeyword(FormattedTableRmgKeyword):
                 try:
                     v.moments = np.array(d[:,4],dtype=float)
                     v.format  = 'moment'
-                except:
+                except ValueError:
                     invalid_format = True
                 #end try
             #end if
@@ -2885,7 +2885,7 @@ class AtomsKeyword(FormattedTableRmgKeyword):
                 v.movable = np.array(d[:,4],dtype=bool)
                 v.moments = np.array(d[:,5],dtype=float)
                 v.format  = 'movable_moment'
-            except:
+            except ValueError:
                 invalid_format = True
             #end try
         elif nvals==8:
@@ -2894,7 +2894,7 @@ class AtomsKeyword(FormattedTableRmgKeyword):
                 v.movable    = np.array(d[:,4:7],dtype=bool)
                 v.spin_ratio = np.array(d[:,7],dtype=float)
                 v.format     = 'spin_ratio'
-            except:
+            except (AssertionError, ValueError):
                 invalid_format = True
             #end try
         elif nvals==10:
@@ -2905,7 +2905,7 @@ class AtomsKeyword(FormattedTableRmgKeyword):
                 v.spin_theta = np.array(d[:,8],dtype=float)
                 v.spin_phi   = np.array(d[:,9],dtype=float)
                 v.format     = 'full_spin'
-            except:
+            except (AssertionError, ValueError):
                 invalid_format = True
             #end try
         #end if

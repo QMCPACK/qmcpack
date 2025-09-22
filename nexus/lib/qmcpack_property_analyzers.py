@@ -43,7 +43,7 @@ from developer import unavailable
 from debug import *
 try:
     from matplotlib.pyplot import plot,show,figure,xlabel,ylabel,title,legend
-except:
+except ImportError:
     plot,show,figure,xlabel,ylabel,title,legend = unavailable('matplotlib.pyplot','plot','show','figure','xlabel','ylabel','title','legend')
 #end try
 
@@ -243,7 +243,7 @@ class WavefunctionAnalyzer(PropertyAnalyzer):
 
         try:
             J1,J2,J3 = self.info.wfn_xml.get(['J1','J2','J3'])
-            if J1!=None:
+            if J1 is not None:
                 jname = 'J1'
                 func = J1.function.lower()
                 if func=='bspline':
@@ -258,7 +258,7 @@ class WavefunctionAnalyzer(PropertyAnalyzer):
                     #end for
                 #end if
             #end if
-            if J2!=None:
+            if J2 is not None:
                 jname = 'J2'
                 func = J2.function.lower()
                 if func=='bspline':

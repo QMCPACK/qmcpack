@@ -22,7 +22,7 @@ try:
             from matplotlib import pyplot
             success = True
             break
-        except:
+        except (NameError, ImportError):
             continue
         #end try
     #end for
@@ -31,7 +31,7 @@ try:
     params = {'legend.fontsize':14,'figure.facecolor':'white','figure.subplot.hspace':0.,
           'axes.labelsize':16,'xtick.labelsize':14,'ytick.labelsize':14}
     rcParams.update(params)
-except:
+except ImportError:
     success = False
 #end try
 if not success:

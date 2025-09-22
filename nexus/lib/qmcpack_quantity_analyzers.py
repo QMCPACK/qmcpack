@@ -92,7 +92,7 @@ class QuantityAnalyzer(QAanalyzer):
     def plot_trace(self,quantity,*args,**kwargs):
         from matplotlib.pyplot import plot,xlabel,ylabel,title,ylim
         if 'data' in self:
-            if not quantity in self.data:
+            if quantity not in self.data:
                 self.error('quantity '+quantity+' is not present in the data')
             #end if
             nbe = self.get_nblocks_exclude()
@@ -131,7 +131,7 @@ class DatAnalyzer(QuantityAnalyzer):
         QuantityAnalyzer.__init__(self,nindent=nindent)
         self.info.filepath = filepath
         nbe = self.method_info.nblocks_exclude
-        if equilibration!=None and nbe==-1:
+        if equilibration is not None and nbe==-1:
             self.load_data()
             nbe = equilibration_length(self.data[equilibration])
             assert nbe>=0, 'Number of equilibration blocks is negative.'
@@ -295,13 +295,13 @@ class ScalarsHDFAnalyzer(HDFAnalyzer):
 
 
     def load_data_local(self,data=None):
-        if data==None:
+        if data is None:
             self.error('attempted load without data')
         #end if
         exclude = self.info.exclude
         self.data = QAHDFdata()
         for var in list(data.keys()):
-            if not var in exclude and not str(var)[0]=='_' and not 'skall' in var.lower():
+            if var not in exclude and not str(var)[0]=='_' and 'skall' not in var.lower():
                 self.data[var] = data[var]
                 del data[var]
             #end if
@@ -359,7 +359,7 @@ class ScalarsHDFAnalyzer(HDFAnalyzer):
             self.warn('correction '+corrkey+' is unknown and cannot be applied')
             return
         #end if
-        if not 'data' in self:
+        if 'data' not in self:
             self.warn('correction '+corrkey+' cannot be applied because data is not present')
             return
         #end if
@@ -423,7 +423,7 @@ class EnergyDensityAnalyzer(HDFAnalyzer):
 
 
     def load_data_local(self,data=None):
-        if data==None:
+        if data is None:
             self.error('attempted load without data')
         #end if
         name = self.info.name
@@ -581,7 +581,7 @@ class EnergyDensityAnalyzer(HDFAnalyzer):
                         psx=pst
                     #end if
                 #end for
-                if psx==None:
+                if psx is None:
                     self.error('ion0 particleset not found in qmcpack xml file for atomic reordering of Voronoi energy density')
                 #end if
             #end if
@@ -859,9 +859,12 @@ class EnergyDensityAnalyzer(HDFAnalyzer):
                     set of points.  The default point array will be 1331x3.
             """
             # Default values for the annular grid.
-            if r is None: r = np.linspace(1.0, 2.0, 11)
-            if theta is None: theta = np.linspace(0, 2*pi, 11)
-            if z is None: z = np.linspace(0.0, 1.0, 11)
+            if r is None:
+                r = np.linspace(1.0, 2.0, 11)
+            if theta is None:
+                theta = np.linspace(0, 2*pi, 11)
+            if z is None:
+                z = np.linspace(0.0, 1.0, 11)
 
             # Find the x values and y values for each plane.
             x_plane = (cos(theta)*r[:,None]).ravel()
@@ -939,7 +942,7 @@ class TracesFileHDF(QAobject):
     #end def accumulated_scalars
 
     def checked_particle_sums(self):
-        return self.info.particle_sums_valid!=None
+        return True if self.info.particle_sums_valid is not None else False
     #end def checked_particle_sums
 
     def formed_diagnostic_data(self):
@@ -1202,7 +1205,7 @@ class TracesAnalyzer(QAanalyzer):
         if len(self.data)>0:
             scalar_names = set(self.data[0].scalars_by_block.keys())
             summed_scalars = obj()
-            if scalars!=None:
+            if scalars is not None:
                 qnames = set(scalars.keys()) & scalar_names
                 summed_scalars.clear()
                 for qname in qnames:
@@ -1223,7 +1226,7 @@ class TracesAnalyzer(QAanalyzer):
                     scalars_valid &= (abs(qb-qscalar)<tol).all()
                 #end for
             #end if
-            if scalars_hdf!=None:
+            if scalars_hdf is not None:
                 qnames = set(scalars_hdf.keys()) & scalar_names
                 summed_scalars.clear()
                 for qname in qnames:
@@ -1301,7 +1304,7 @@ class TracesAnalyzer(QAanalyzer):
         if 'steps' in method_input:
             steps_per_block = method_input.steps
         #end if
-        if blocks!=None and steps_per_block!=None:
+        if blocks is not None and steps_per_block is not None:
             steps = blocks*steps_per_block
         #end if
         if steps is None:
@@ -1486,9 +1489,9 @@ class DMSettings(QAobject):
         self.occ_tol   = 1e-3
         self.coup_tol  = 1e-4
         self.stat_tol  = 2.0
-        if ds!=None:
+        if ds is not None:
             for name,value in ds.items():
-                if not name in self:
+                if name not in self:
                     self.error('{0} is an invalid setting for DensityMatricesAnalyzer\n  valid options are: {1}'.format(name,sorted(self.keys())))
                 else:
                     self[name] = value
@@ -1510,7 +1513,7 @@ class DensityMatricesAnalyzer(HDFAnalyzer):
 
 
     def load_data_local(self,data=None):
-        if data==None:
+        if data is None:
             self.error('attempted load without data')
         #end if
         i = complex(0,1)
@@ -1580,7 +1583,7 @@ class DensityMatricesAnalyzer(HDFAnalyzer):
 
         for species_name in species:
             for matrix_name in mnames:
-                if not matrix_name in self:
+                if matrix_name not in self:
                     self[matrix_name] = obj()
                 #end if
                 mres = self[matrix_name]
@@ -1803,7 +1806,7 @@ class DensityMatricesAnalyzer(HDFAnalyzer):
 
                 try:
                     val,vec = eig(m)
-                except LinAlgError as e:
+                except LinAlgError:
                     self.warn(matrix_name+' diagonalization failed!')
                     val,vec = None,None
                 #end try
@@ -1941,7 +1944,7 @@ class DensityAnalyzerBase(HDFAnalyzer):
 
 class SpinDensityAnalyzer(DensityAnalyzerBase):
     def load_data_local(self,data=None):
-        if data==None:
+        if data is None:
             self.error('attempted load without data')
         #end if
         name = self.info.name
@@ -2031,7 +2034,7 @@ class StructureFactorAnalyzer(HDFAnalyzer):
 
 
     def load_data_local(self,data=None):
-        if data==None:
+        if data is None:
             self.error('attempted load without data')
         #end if
         name = self.info.name
@@ -2081,7 +2084,7 @@ class StructureFactorAnalyzer(HDFAnalyzer):
 class DensityAnalyzer(DensityAnalyzerBase):
 
     def load_data_local(self,data=None):
-        if data==None:
+        if data is None:
             self.error('attempted load without data')
         #end if
         name = self.info.name
@@ -2143,7 +2146,7 @@ class SpaceGridInitializer(QAobject):
     def check_complete(self,exit_on_fail=True):
         succeeded = True
         for k,v in self.items():
-            if v==None:
+            if v is None:
                 succeeded=False
                 if exit_on_fail:
                     self.error('  SpaceGridInitializer.'+k+' must be provided',exit=False)
@@ -2186,7 +2189,7 @@ class SpaceGridBase(QAobject):
     quantities=['D','T','V','E','P']
 
     def __init__(self,initobj,options):
-        if options==None:
+        if options is None:
             options = QAobject()
             options.wasNone = True
             options.points       = None
@@ -2223,7 +2226,7 @@ class SpaceGridBase(QAobject):
 
         self.init_special()
 
-        if initobj==None:
+        if initobj is None:
             return
         #end if
 
@@ -2287,7 +2290,7 @@ class SpaceGridBase(QAobject):
         array_type = type(array([]))
         exclude = set(['value','value_squared'])
         for k,v in self.items():
-            if k[0]!='_' and type(v)==array_type and k not in exclude:
+            if k[0]!='_' and type(v) is array_type and k not in exclude:
                 sh=v.shape
                 ndim = len(sh)
                 if ndim==1 and sh[0]==1:
@@ -2437,7 +2440,7 @@ class SpaceGridBase(QAobject):
             self.error(msg)
         #end if
         dv = self.domain_volumes
-        if domain==None:
+        if domain is None:
             mean = (self[quantity].mean*dv).sum()
             error = sqrt((self[quantity].error**2*dv).sum())
         else:
@@ -3280,7 +3283,7 @@ class RectilinearGrid(SpaceGridBase):
 
 
     def interpolate(self,points,quantities=None):
-        if quantities==None:
+        if quantities is None:
             quantities=SpaceGridBase.quantities
         #end if
         npoints,ndim = points.shape
@@ -3304,7 +3307,7 @@ class RectilinearGrid(SpaceGridBase):
             self.error()
         #end if
         dimensions = self.dimensions
-        if origin==None:
+        if origin is None:
             points     = self.domain_centers
         else:
             npoints,ndim = self.domain_centers.shape

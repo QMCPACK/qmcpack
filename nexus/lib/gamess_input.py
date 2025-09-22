@@ -71,7 +71,7 @@ class GIarray(GIbase):
 
 class Group(GIbase):
     def __init__(self,text=None,**kwargs):
-        if text!=None:
+        if text is not None:
             self.read(text)
         #end if
         self.set(**kwargs)
@@ -104,22 +104,22 @@ class KeywordGroup(Group):
         else:
             try:
                 v = int(val)
-            except:
+            except ValueError:
                 try:
                     v = float(val.replace('d','e'))
-                except:
+                except ValueError:
                     #val = val.replace(',',' ')
                     if ' ' in val:
                         val = val.split()
                         try:
                             v = array(val,dtype=int)
-                        except:
+                        except ValueError:
                             try:
                                 v = array(val,dtype=float)
-                            except:
+                            except ValueError:
                                 try:
                                     v = array(val,dtype=str)
-                                except:
+                                except ValueError:
                                     fail = True
                                 #end try
                             #end try
@@ -152,13 +152,13 @@ class KeywordGroup(Group):
         vars = list(self.keys())
         for var in vars:
             val = self.readval(self[var])
-            if not '(' in var:
+            if '(' not in var:
                 self[var] = val
             else:
                 del self[var]
                 var,index = var.replace('(',' ').replace(')','').split()
                 index = int(index)
-                if not var in self:
+                if var not in self:
                     arr = GIarray({index:val})
                     self[var] = arr
                 else:
@@ -241,10 +241,10 @@ class CardGroup(Group):
     def readval(self,val):
         try:
             v = int(val)
-        except:
+        except ValueError:
             try:
                 v = float(val.replace('d','e'))
-            except:
+            except ValueError:
                 v = val
             #end try
         #end try
@@ -806,7 +806,7 @@ class GamessInput(SimulationInput,GIbase):
         )
 
     def __init__(self,filepath=None):
-        if filepath!=None:
+        if filepath is not None:
             self.read(filepath)
         #end if
     #end def __init__
@@ -842,7 +842,7 @@ class GamessInput(SimulationInput,GIbase):
                 #end if
             elif len(line)>0 and line[0]==' ' and ls!='':
                 if len(line)>1 and line[1]=='$' and not ingroup:
-                    if not ' ' in ls:
+                    if ' ' not in ls:
                         group_name = ls.replace('$','').lower()
                         gname = group_name
                         ingroup = True
@@ -881,7 +881,7 @@ class GamessInput(SimulationInput,GIbase):
             #end if                    
             # specialized parsing for unknown card groups
             if ended:
-                if not '=' in groups[gname]:
+                if '=' not in groups[gname]:
                     groups[gname]=gtext
                 #end if
                 gtext = ''
@@ -1087,9 +1087,9 @@ def generate_any_gamess_input(**kwargs):
     # handle nexus specific input generation keywords
     #  ecp 287
     #  data 37
-    if pskw.system!=None and not 'data' in gi:
+    if pskw.system is not None and 'data' not in gi:
         system = pskw.system
-        if not 'contrl' in gi:
+        if 'contrl' not in gi:
             gi.contrl = ContrlGroup()
         #end if
         # allow user override of charge and multiplicity from physical system
@@ -1112,7 +1112,7 @@ def generate_any_gamess_input(**kwargs):
             data+='\n'
         #end if
         if pskw.pseudos is None:
-            if pskw.bases!=None:
+            if pskw.bases is not None:
                 bss = nexus_noncore.basissets.bases_by_atom(*pskw.bases)
             else:
                 bss = obj()

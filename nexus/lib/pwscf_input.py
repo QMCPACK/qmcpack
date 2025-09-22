@@ -369,10 +369,10 @@ class Section(Element):
                             index = tuple(array(index.split(','),dtype=int))
                         #end if
                     #end if
-                    if not varname in self.variables:
+                    if varname not in self.variables:
                         self.error('pwscf input section {0} does not have a variable named "{1}", please check your input\nif correct, please add a new variable ({1}) to the {0} PwscfInput class'.format(self.__class__.__name__,varname),trace=False)
                     #end if
-                    if not varname in self.var_types:
+                    if varname not in self.var_types:
                         self.error('a type has not been specified for variable "{0}"\nplease add it to PwscfInputBase'.format(varname),trace=False)
                     #end if
                     vtype = self.var_types[varname]
@@ -1576,7 +1576,7 @@ class PwscfInput(SimulationInput):
                     #end if
                 elif tokens[0].lower() in self.cards and '=' not in l:
                     if elem_type == 'card':
-                        if not elem_name in self:
+                        if elem_name not in self:
                             self[elem_name] = self.element_types[elem_name]()
                         #end if
                         self[elem_name].read(c)
@@ -1587,7 +1587,7 @@ class PwscfInput(SimulationInput):
                     c=[l]
                 elif l=='/':
                     in_element = False
-                    if not elem_name in self:
+                    if elem_name not in self:
                         self[elem_name] = self.element_types[elem_name]()
                     #end if
                     self[elem_name].read(c)
@@ -1599,7 +1599,7 @@ class PwscfInput(SimulationInput):
             #end if
         #end for
         if elem_type == 'card':
-            if not elem_name in self:
+            if elem_name not in self:
                 self[elem_name] = self.element_types[elem_name]()
             #end if
             self[elem_name].read(c)
@@ -1692,7 +1692,7 @@ class PwscfInput(SimulationInput):
         self.system.ntyp         = nspecies
         self.system.tot_charge   = nc
 
-        if not 'cell_parameters' in self:
+        if 'cell_parameters' not in self:
             self.cell_parameters = self.element_types['cell_parameters']()
         #end if
         self.cell_parameters.specifier = 'bohr' 
@@ -1740,7 +1740,7 @@ class PwscfInput(SimulationInput):
         # set pseudopotentials for renamed atoms (e.g. Cu3 is same as Cu)
         pp = self.atomic_species.pseudopotentials
         for atom in self.atomic_species.atoms:
-            if not atom in pp:
+            if atom not in pp:
                 iselem,symbol = p.is_element(atom,symbol=True)
                 if iselem and symbol in pp:
                     pp[atom] = str(pp[symbol])
@@ -1788,12 +1788,12 @@ class PwscfInput(SimulationInput):
         #self.system.nelec        = nup+ndn
         self.system.tot_charge   = nc
         mag = nup-ndn
-        if (mag!=0 and spin_polarized!=False) or spin_polarized==True:
+        if (mag!=0 and spin_polarized) or spin_polarized:
             self.system.nspin = 2
             self.system.tot_magnetization = mag
         #end if
 
-        if not 'cell_parameters' in self:
+        if 'cell_parameters' not in self:
             self.cell_parameters = self.element_types['cell_parameters']()
         #end if
         self.cell_parameters.specifier = 'bohr'
@@ -1831,7 +1831,7 @@ class PwscfInput(SimulationInput):
         # set pseudopotentials for renamed atoms (e.g. Cu3 is same as Cu)
         pp = self.atomic_species.pseudopotentials
         for atom in self.atomic_species.atoms:
-            if not atom in pp:
+            if atom not in pp:
                 iselem,symbol = p.is_element(atom,symbol=True)
                 if iselem and symbol in pp:
                     pp[atom] = str(pp[symbol])
@@ -1842,7 +1842,7 @@ class PwscfInput(SimulationInput):
         self.atomic_positions.specifier = 'bohr'
         self.atomic_positions.positions = s.pos.copy()
         self.atomic_positions.atoms     = list(s.elem)
-        if s.frozen!=None:
+        if s.frozen is not None:
             frozen = s.frozen
             if 'relax_directions' in self.atomic_positions:
                 relax_directions = self.atomic_positions.relax_directions
@@ -1897,7 +1897,7 @@ class PwscfInput(SimulationInput):
         ion_charge = 0
         atoms   = list(self.atomic_positions.atoms)
         for atom in self.atomic_species.atoms:
-            if not atom in valency:
+            if atom not in valency:
                 self.error('valence charge for atom {0} has not been defined\nplease provide the valence charge as an argument to return_system()'.format(atom))
             #end if
             ion_charge += atoms.count(atom)*valency[atom]
@@ -2089,7 +2089,7 @@ def generate_any_pwscf_input(**kwargs):
         defaults = generate_any_defaults.standard
     #end if
     for name,default in defaults.items():
-        if not name in kwargs:
+        if name not in kwargs:
             deftype = type(default)
             if inspect.isclass(default) or inspect.isfunction(default):
                 kwargs[name] = default()
@@ -2211,7 +2211,7 @@ def generate_any_pwscf_input(**kwargs):
             pw.atomic_species.masses = obj(mass)
             pp = pw.atomic_species.pseudopotentials
             for atom in pw.atomic_species.atoms:
-                if not atom in pp:
+                if atom not in pp:
                     iselem,symbol = is_element(atom,symbol=True)
                     if iselem and symbol in pp:
                         pp[atom] = str(pp[symbol])
@@ -2231,7 +2231,7 @@ def generate_any_pwscf_input(**kwargs):
         #setting the 'lattice' (cell axes) requires some delicate care
         #  qmcpack will fail if this is even 1e-10 off of what is in 
         #  the wavefunction hdf5 file from pwscf
-        if s.folded_structure!=None:
+        if s.folded_structure is not None:
             fs = s.folded_structure
             axes = array(array_to_string(fs.axes).split(),dtype=float)
             axes.shape = fs.axes.shape
@@ -2348,7 +2348,7 @@ def generate_any_pwscf_input(**kwargs):
         if hubbard_option is None:
             hubbard_option = hubbard_card.default_specifier
         else:
-            if not hubbard_option in hubbard_card.available_specifiers:
+            if hubbard_option not in hubbard_card.available_specifiers:
                 PwscfInput.class_error('HUBBARD card specifier "{}" is not valid. Available specifiers: {}'.format(hubbard_option, hubbard_card.available_specifiers))                
             #end if
         #end if
@@ -2464,10 +2464,10 @@ def generate_scf_input(prefix       = 'pwscf',
     if nbnd is not None:
         pw.system.nbnd = nbnd
     # end if
-    if assume_isolated!=None:
+    if assume_isolated is not None:
         pw.system.assume_isolated = assume_isolated
     #end if
-    if occupations!=None:
+    if occupations is not None:
         if occupations=='smearing':
             pw.system.set(
                 occupations = occupations,
@@ -2496,16 +2496,16 @@ def generate_scf_input(prefix       = 'pwscf',
             lspinorb = lspinorb
             )
     #end if
-    if input_dft!=None:
+    if input_dft is not None:
         pw.system.input_dft = input_dft
     #end if
-    if exx_fraction!=None:
+    if exx_fraction is not None:
         pw.system.exx_fraction = exx_fraction
     #end if
-    if exxdiv_treatment!=None:
+    if exxdiv_treatment is not None:
         pw.system.exxdiv_treatment = exxdiv_treatment
     #end if
-    if ecutfock!=None:
+    if ecutfock is not None:
         pw.system.ecutfock = ecutfock
     #end if
 
@@ -2515,7 +2515,7 @@ def generate_scf_input(prefix       = 'pwscf',
     #setting the 'lattice' (cell axes) requires some delicate care
     #  qmcpack will fail if this is even 1e-10 off of what is in 
     #  the wavefunction hdf5 file from pwscf
-    if s.folded_structure!=None:
+    if s.folded_structure is not None:
         fs = s.folded_structure
         axes = array(array_to_string(fs.axes).split(),dtype=float)
         axes.shape = fs.axes.shape
@@ -2533,22 +2533,22 @@ def generate_scf_input(prefix       = 'pwscf',
         system = system.get_smallest()
     #end if
         
-    if start_mag!=None:
+    if start_mag is not None:
         spin_polarized=True
     #end if
 
-    if system!=None:
+    if system is not None:
         pw.incorporate_system_old(system,spin_polarized=spin_polarized)
     #end if
 
-    if hubbard_u!=None:
+    if hubbard_u is not None:
         if not isinstance(hubbard_u,(dict,obj)):
             PwscfInput.class_error('input hubbard_u must be of type dict or obj')
         #end if
         pw.system.hubbard_u = deepcopy(hubbard_u)
         pw.system.lda_plus_u = True
     #end if
-    if start_mag!=None:
+    if start_mag is not None:
         if not isinstance(start_mag,(dict,obj)):
             PwscfInput.class_error('input start_mag must be of type dict or obj')
         #end if
@@ -2561,7 +2561,7 @@ def generate_scf_input(prefix       = 'pwscf',
         #end if
     #end if
 
-    if kshift==None:
+    if kshift is None:
         kshift = (1,1,1)
     #end if
 
@@ -2590,14 +2590,14 @@ def generate_scf_input(prefix       = 'pwscf',
         #end if
     #end if
 
-    if kgrid!=None:
+    if kgrid is not None:
         pw.k_points.clear()
         pw.k_points.set(
             specifier = 'automatic',
             grid     = kgrid,
             shift    = kshift
             )
-    elif system==None:
+    elif system is None:
         pw.k_points.clear()
         pw.k_points.set(
             specifier = 'automatic',
@@ -2693,10 +2693,10 @@ def generate_relax_input(prefix       = 'pwscf',
         ecutrho     = ecutrho,
         nosym       = nosym
         )
-    if assume_isolated!=None:
+    if assume_isolated is not None:
         pw.system.assume_isolated = assume_isolated
     #end if
-    if occupations!=None:
+    if occupations is not None:
         if occupations=='smearing':
             pw.system.set(
                 occupations = occupations,
@@ -2723,30 +2723,30 @@ def generate_relax_input(prefix       = 'pwscf',
         wfc_extrapolation = wfc_extrapolation
         )
 
-    if input_dft!=None:
+    if input_dft is not None:
         pw.system.input_dft = input_dft
     #end if
-    if exx_fraction!=None:
+    if exx_fraction is not None:
         pw.system.exx_fraction = exx_fraction
     #end if
-    if ecutfock!=None:
+    if ecutfock is not None:
         pw.system.ecutfock = ecutfock
     #end if
-    if system!=None:
+    if system is not None:
         if use_folded:
             system = system.get_smallest()
         #end if
         pw.incorporate_system_old(system,spin_polarized=spin_polarized)
     #end if
 
-    if hubbard_u!=None:
+    if hubbard_u is not None:
         if not isinstance(hubbard_u,(dict,obj)):
             PwscfInput.class_error('input hubbard_u must be of type dict or obj')
         #end if
         pw.system.hubbard_u = deepcopy(hubbard_u)
         pw.system.lda_plus_u = True
     #end if
-    if start_mag!=None:
+    if start_mag is not None:
         if not isinstance(start_mag,(dict,obj)):
             PwscfInput.class_error('input start_mag must be of type dict or obj')
         #end if
@@ -2759,7 +2759,7 @@ def generate_relax_input(prefix       = 'pwscf',
         #end if
     #end if
 
-    if kshift==None:
+    if kshift is None:
         kshift = (1,1,1)
     #end if
 
@@ -2789,14 +2789,14 @@ def generate_relax_input(prefix       = 'pwscf',
         #end if
     #end if
 
-    if kgrid!=None:
+    if kgrid is not None:
         pw.k_points.clear()
         pw.k_points.set(
             specifier = 'automatic',
             grid     = kgrid,
             shift    = kshift
             )
-    elif system==None:
+    elif system is None:
         pw.k_points.clear()
         pw.k_points.set(
             specifier = 'automatic',
@@ -2894,11 +2894,11 @@ def generate_vcrelax_input(
 #        pseudopotentials = pseudopotentials
 #        )
 #
-#    if system!=None:
+#    if system is not None:
 #        pw.incorporate_system(system)
 #    #end if
 #
-#    overwrite_kpoints = kpoints!=None or system==None
+#    overwrite_kpoints = kpoints is not None or system==None
 #    if kpoints==None:
 #        kpoints = array([[0.,0,0]])
 #    else:

@@ -39,7 +39,7 @@ class TextFile(DevBase):
     def __init__(self,filepath=None):
         self.mm = None
         self.f  = None
-        if filepath!=None:
+        if filepath is not None:
             self.open(filepath)
         #end if
     #end def __init__
@@ -78,7 +78,7 @@ class TextFile(DevBase):
     #end def readtokens
 
     def readtokensf(self,s=None,*formats):
-        if s!=None:
+        if s is not None:
             self.seek(s)
         #end if
         self.mm.readline()
@@ -128,13 +128,13 @@ class TextFile(DevBase):
                 #end if
             #end if
             if whence!=2:
-                if end!=None:
+                if end is not None:
                     pos = self.mm.find(pos,start,end)
                 else:
                     pos = self.mm.find(pos,start)
                 #end if
             else:
-                if end!=None:
+                if end is not None:
                     pos = self.mm.rfind(pos,start,end)
                 else:
                     pos = self.mm.rfind(pos,start)
@@ -151,7 +151,7 @@ class TextFile(DevBase):
     #end def seek
 
     def readline(self,s=None):
-        if s!=None:
+        if s is not None:
             self.seek(s)
         #end if
         return to_str(self.mm.readline())
@@ -253,7 +253,7 @@ class StandardFile(DevBase):
     def write(self,filepath=None):
         self.check_valid('write failed')
         text = self.write_text()
-        if filepath!=None:
+        if filepath is not None:
             open(filepath,'w').write(text)
         #end if
         return text
@@ -333,7 +333,7 @@ class XsfFile(StandardFile):
             if 'images' not in self:
                 self.images = obj()
             #end if
-            if not image in self.images:
+            if image not in self.images:
                 self.images[image] = obj()
             #end if
             self.images[image][name] = value
@@ -430,7 +430,7 @@ class XsfFile(StandardFile):
                     #end for
                     try:
                         elem = array(elem,dtype=int)
-                    except:
+                    except ValueError:
                         elem = array(elem,dtype=str)
                     #end try
                     pos  = array(pos,dtype=float)
@@ -453,13 +453,13 @@ class XsfFile(StandardFile):
                     #end if
                     i+=1
                     block_identifier = lines[i].strip().lower()
-                    if not 'data' in self:
+                    if 'data' not in self:
                         self.data = obj()
                     #end if
-                    if not d in self.data:
+                    if d not in self.data:
                         self.data[d] = obj()
                     #end if
-                    if not block_identifier in self.data[d]:
+                    if block_identifier not in self.data[d]:
                         self.data[d][block_identifier]=obj()
                     #end if
                     data = self.data[d][block_identifier]
@@ -521,13 +521,13 @@ class XsfFile(StandardFile):
                     #end if
                     i+=1
                     block_identifier = lines[i].strip().lower()
-                    if not 'band' in self:
+                    if 'band' not in self:
                         self.band = obj()
                     #end if
-                    if not d in self.band:
+                    if d not in self.band:
                         self.band[d] = obj()
                     #end if
-                    if not block_identifier in self.band[d]:
+                    if block_identifier not in self.band[d]:
                         self.band[d][block_identifier]=obj()
                     #end if
                     band = self.band[d][block_identifier]
@@ -644,7 +644,7 @@ class XsfFile(StandardFile):
         else:
             c += ' PRIMCOORD {0}\n'.format(index)
             c += '   {0} 1\n'.format(len(s.elem))
-        if not 'force' in s:
+        if 'force' not in s:
             for i in range(len(s.elem)):
                 r = s.pos[i]
                 c += '   {0:>3} {1:12.8f} {2:12.8f} {3:12.8f}\n'.format(s.elem[i],r[0],r[1],r[2])
@@ -762,7 +762,7 @@ class XsfFile(StandardFile):
 
 
     def initialized(self):
-        return self.filetype!=None
+        return self.filetype is not None
     #end def initialized
 
 
@@ -1192,7 +1192,7 @@ class PoscarFile(StandardFile):
             text += ' {0}'.format(ec)
         #end for
         text += '\n'
-        if self.dynamic!=None:
+        if self.dynamic is not None:
             text += 'selective dynamics\n'
         #end if
         text += self.coord+'\n'
@@ -1208,7 +1208,7 @@ class PoscarFile(StandardFile):
                 text += ' {0:20.14f} {1:20.14f} {2:20.14f}  {3}  {4}  {5}\n'.format(p[0],p[1],p[2],bm[d[0]],bm[d[1]],bm[d[2]])
             #end for
         #end if
-        if self.vel!=None:
+        if self.vel is not None:
             text += self.vel_coord+'\n'
             for v in self.vel:
                 text += ' {0:20.14f} {1:20.14f} {2:20.14f}\n'.format(*v)
@@ -1235,7 +1235,7 @@ class PoscarFile(StandardFile):
         spec_set = set()
         for i in range(len(elem)):
             e = elem[i]
-            if not e in spec_set:
+            if e not in spec_set:
                 spec_set.add(e)
                 species.append(e)
                 species_counts.append(0)
@@ -1528,9 +1528,9 @@ def read_poscar_chgcar(host,text):
             if len(density)>0:
                 def is_float(val):
                     try:
-                        v = float(val)
+                        _ = float(val)
                         return True
-                    except:
+                    except ValueError:
                         return False
                     #end try
                 #end def is_float

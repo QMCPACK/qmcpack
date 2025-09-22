@@ -30,7 +30,7 @@ from debug import *
 class MethodAnalyzer(QAanalyzer):
     def __init__(self,series=None,calc=None,input=None,nindent=0):
         QAanalyzer.__init__(self,nindent=nindent)
-        if series!=None and calc!=None and input!=None:
+        if series is not None and calc is not None and input is not None:
             self.init_sub_analyzers(series,calc,input)
         #end if
     #end def __init__
@@ -62,7 +62,7 @@ class MethodAnalyzer(QAanalyzer):
                 elif file.endswith('dmc.dat') and method=='dmc':
                     files.dmc    = file
                 elif '.traces.' in file:
-                    if not 'traces' in files:
+                    if 'traces' not in files:
                         files.traces = []
                     #end if
                     files.traces.append(file)
@@ -86,7 +86,7 @@ class MethodAnalyzer(QAanalyzer):
             if series in equil:
                 nblocks_exclude = equil[series]
             #end if
-        elif equil!=None:
+        elif equil is not None:
             self.error('invalid input for equilibration which must be an int, dict, or obj\n  you provided: {0}\n  with type {1}'.format(equil,equil.__class__.__name__))
         #end if
         data_sources     = request.data_sources & set(files.keys())
@@ -131,14 +131,14 @@ class MethodAnalyzer(QAanalyzer):
                 ham_est  = ham.get('estimator')
                 calc_est = calc.get('estimator')
                 estimators = obj()
-                if ham_est!=None:
+                if ham_est is not None:
                     estimators.transfer_from(ham_est)
                 #end if
-                if calc_est!=None:
+                if calc_est is not None:
                     estimators.transfer_from(calc_est)
                 #end if
                 for estname,est in estimators.items():
-                    if est==None:
+                    if est is None:
                         self.error('estimators have not been read properly by QmcpackInput',trace=False)
                     #end if
                     has_type = 'type' in est
@@ -242,7 +242,7 @@ class MethodAnalyzer(QAanalyzer):
 
 
     def check_traces(self,pad=None):
-        verbose = pad!=None
+        verbose = True if pad is not None else False
         method = self.info.method
         series = self.info.series
         if verbose:
