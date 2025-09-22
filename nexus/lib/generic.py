@@ -237,7 +237,7 @@ class object_interface(object):
             if stype!=otype:
                 return False
             #end if
-            eqval = True if svar == ovar else False
+            eqval = svar == ovar
             if isinstance(eqval, bool):
                 eq &= eqval
             else:
