@@ -1788,7 +1788,7 @@ class PwscfInput(SimulationInput):
         #self.system.nelec        = nup+ndn
         self.system.tot_charge   = nc
         mag = nup-ndn
-        if (mag!=0 and spin_polarized) or spin_polarized:
+        if (mag!=0 and spin_polarized!=False) or spin_polarized:
             self.system.nspin = 2
             self.system.tot_magnetization = mag
         #end if
