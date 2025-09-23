@@ -80,10 +80,10 @@ class SimulationBundle(Simulation):
         self.bundle_jobs(relative=relative_paths,serial=serial_exec)
         self.system = None
 
-        if not 'path' in kwargs:
+        if 'path' not in kwargs:
             kwargs['path'] = self.sims[0].path
         #end if
-        if not 'job' in kwargs:
+        if 'job' not in kwargs:
             kwargs['job'] = self.job
         #end if
         Simulation.__init__(self,**kwargs)

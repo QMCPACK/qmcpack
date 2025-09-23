@@ -892,7 +892,7 @@ class Kpoints(VFormattedFile):
     def read_text(self,text,filepath=''):
         lines = self.read_lines(text,remove_empty=True)
         if len(lines)>2:
-            if not ' ' in lines[1]:
+            if ' ' not in lines[1]:
                 iselect = int(lines[1])
             else: # erroneous case? (e.g. user supplies '0 0 0' instead of '0')
                 iselect = int(lines[1].split()[0])
@@ -1515,7 +1515,7 @@ class VaspInput(SimulationInput,Vobj):
                 self.error('coord must be either direct or cartesian\nyou provided: {0}'.format(coord))
             #end if
             if s.frozen is not None:
-                poscar.dynamic = s.frozen==False
+                poscar.dynamic = not s.frozen
             #end if
             self.poscar = poscar
         #end if
@@ -1585,7 +1585,7 @@ class VaspInput(SimulationInput,Vobj):
         ion_charge = 0
         atoms      = list(elem)
         for atom in atoms:
-            if not atom in valency:
+            if atom not in valency:
                 self.error('valence charge for atom {0} has not been defined\nplease provide the valence charge as an argument to return_system()'.format(atom))
             #end if
             ion_charge += atoms.count(atom)*valency[atom]
@@ -1620,7 +1620,7 @@ class VaspInput(SimulationInput,Vobj):
                 iselem,symbol = is_element(element,symbol=True)
                 if not iselem:
                     self.error('{0} is not an element'.format(element))
-                elif not symbol in pseudo_map:
+                elif symbol not in pseudo_map:
                     self.error('pseudopotential for element {0} not found\nelements present: {1}'.format(symbol,sorted(pseudo_map.keys())))
                 #end if
                 ordered_pseudos.append(pseudo_map[symbol])
@@ -1765,7 +1765,7 @@ def generate_any_vasp_input(**kwargs):
             vf[name] = default
         #end if
     #end for
-    gen_kpoints = not 'kspacing' in kwargs
+    gen_kpoints = 'kspacing' not in kwargs
 
     # create an empty input file
     vi = VaspInput()
@@ -1872,7 +1872,7 @@ def generate_poscar(structure,coord='cartesian'):
         error('coord must be either direct or cartesian\nyou provided: {0}'.format(coord),'generate_poscar')
     #end if
     if s.frozen is not None:
-        poscar.dynamic = s.frozen==False
+        poscar.dynamic = not s.frozen
     #end if
     return poscar
 #end def generate_poscar
