@@ -306,7 +306,7 @@ from periodic_table import pt as ptable
 ##end try
 try:
     import spglib
-except ImportError:
+except:
     spglib = unavailable('spglib')
 #end try
 
@@ -1944,7 +1944,7 @@ class Structure(Sobj):
             #end for
         else:
             for index in indices:
-                frozen[index] = not directions[i]
+                frozen[index] = directions[i]==False
                 i+=1
             #end for
         #end if

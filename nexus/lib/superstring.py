@@ -138,7 +138,7 @@ def sbool(var):
 #end def sbool
 
 def is_bool(var):
-    return type(var) is bool or var in ['True', 'False']
+    return var==True or var==False or var in ['True','False']
 #end def is_bool
 
 def is_int(var):
@@ -201,7 +201,7 @@ def string2array(string):
 #end def string2array
 
 def is_string(var):
-    return type(var) is type("s")
+    return type(var) == type("s")
 #end def is_string
 
 

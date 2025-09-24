@@ -1515,7 +1515,7 @@ class VaspInput(SimulationInput,Vobj):
                 self.error('coord must be either direct or cartesian\nyou provided: {0}'.format(coord))
             #end if
             if s.frozen is not None:
-                poscar.dynamic = not s.frozen
+                poscar.dynamic = s.frozen==False
             #end if
             self.poscar = poscar
         #end if
@@ -1872,7 +1872,7 @@ def generate_poscar(structure,coord='cartesian'):
         error('coord must be either direct or cartesian\nyou provided: {0}'.format(coord),'generate_poscar')
     #end if
     if s.frozen is not None:
-        poscar.dynamic = not s.frozen
+        poscar.dynamic = s.frozen==False
     #end if
     return poscar
 #end def generate_poscar

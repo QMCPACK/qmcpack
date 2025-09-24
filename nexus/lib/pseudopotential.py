@@ -1611,8 +1611,7 @@ class GaussianPP(SemilocalPP):
                 n = int(lines[i]); i+=1
                 terms = []
                 for j in range(n):
-                    coeff,rpow,expon = lines[i].split()
-                    i+=1
+                    coeff,rpow,expon = lines[i].split(); i+=1
                     terms.append((float(coeff),int(rpow),float(expon)))
                 #end for
                 channels.append(terms)
