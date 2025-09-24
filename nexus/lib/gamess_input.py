@@ -31,16 +31,11 @@
 #====================================================================#
 
 
-
-import os
-from numpy import array,ndarray,abs
-from generic import obj
+import numpy as np
 from periodic_table import pt
-from developer import DevBase
+from developer import DevBase, obj
 from nexus_base import nexus_noncore
 from simulation import SimulationInput
-from debug import *
-
 
 
 class GIbase(DevBase):
@@ -50,17 +45,16 @@ class GIbase(DevBase):
 #end class GIbase
 
 
-
 class GIarray(GIbase):
     def __init__(self,d):
         for n,v in d.items():
             if not isinstance(n,int):
                 self.error("keys must be integers\nattempted to initialize array from input provided: {0}\nnote that dict's are used only for arrays".format(d))
             #end if
-            if isinstance(v,(tuple,list,ndarray)):
-                nv = array(v,type(v[0]))
+            if isinstance(v,(tuple,list,np.ndarray)):
+                nv = np.array(v,type(v[0]))
             else:
-                nv = array([v],type[v])
+                nv = np.array([v],type[v])
             #end if
             self[n]=nv
         #end for
@@ -112,13 +106,13 @@ class KeywordGroup(Group):
                     if ' ' in val:
                         val = val.split()
                         try:
-                            v = array(val,dtype=int)
+                            v = np.array(val,dtype=int)
                         except:
                             try:
-                                v = array(val,dtype=float)
+                                v = np.array(val,dtype=float)
                             except:
                                 try:
-                                    v = array(val,dtype=str)
+                                    v = np.array(val,dtype=str)
                                 except:
                                     fail = True
                                 #end try
@@ -182,7 +176,7 @@ class KeywordGroup(Group):
             sval = str(val)
         elif isinstance(val,float):
             sval = str(val).replace('e','d')
-        elif isinstance(val,(ndarray,list)):
+        elif isinstance(val,(np.ndarray,list)):
             sval = ''
             for v in val:
                 vs = str(v)+','
@@ -297,7 +291,7 @@ class CardGroup(Group):
     def writeval(self,val):
         if isinstance(val,float):
             sval = str(val).replace('e','d')
-            if len(sval)>8 and abs(val)>=10.0:
+            if len(sval)>8 and np.abs(val)>=10.0:
                 sval = '{0:16.8e}'.format(val).replace('e','d')
             #end if
         else:
@@ -1245,7 +1239,7 @@ def check_keyspec_groups():
             reals    = float,
             bools    = bool,
             strings  = str,
-            arrays   = ndarray
+            arrays   = np.ndarray
             )
         for tname in sorted(go.keys()):
             type = to[tname]
