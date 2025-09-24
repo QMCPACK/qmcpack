@@ -1484,7 +1484,20 @@ class GenericSimulationInput: # marker class for generic user input
 
 
 class GenericSimulation(Simulation):
+    allowed_inputs = Simulation.allowed_inputs | set(['outfiles'])
+
     def __init__(self,**kwargs):
+        import os
+        self.outfiles = kwargs.pop('outfiles',[])
+        input = kwargs['input']
+        if isinstance(input,str):
+            if os.path.exists(input):
+                self.infile = input
+                kwargs['input'] = input_template(filepath=self.infile)
+            else:
+                text = input
+                kwargs['input'] = input_template(text=text)
+        #end if
         self.input_type    = NullSimulationInput
         self.analyzer_type = NullSimulationAnalyzer
         if 'input_type' in kwargs:
@@ -1505,12 +1518,29 @@ class GenericSimulation(Simulation):
     #end def __init__
 
     def check_sim_status(self):
-        self.finished = True
+        import os
+        outfiles = self.get_output_files()
+        files_exist = True
+        for f in outfiles:
+            fp = os.path.join(self.locdir,f)
+            fp_exists = os.path.exists(fp)
+            files_exist &= fp_exists
+        #end for
+        self.failed = not files_exist
+        self.finished = not self.failed
     #end def check_sim_status
 
     def get_output_files(self):
-        return []
+        return self.outfiles
     #end def get_output_files
+
+    def app_command(self):
+        if self.job.app_name is not None:
+            return self.job.app_name+' '+self.infile
+        else:
+            return self.job.app_command
+        #end if
+    #end def app_command
 #end class GenericSimulation
 
 

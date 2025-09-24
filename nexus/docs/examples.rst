@@ -1707,124 +1707,221 @@ k-point grid density in one dimension.
 
 .. _custom-simulations:
 
-Example 6: Custom Simulations
------------------------------
+
+Example 7: GenericSimulation Examples
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The files for this example are found in:
 
 .. code:: rest
 
-  /your_download_path/nexus/examples/custom
+  /your_download_path/nexus/examples/generic
 
-Custom simulations provide a flexible way to run arbitrary scripts and
-executables within the Nexus framework. This allows users to integrate
-their own analysis tools, data processing scripts, and custom workflows
-into existing Nexus simulation chains. The custom simulation system
-supports any script type (Python, Bash, etc.) and provides
-automatic dependency management and error handling.
-
-The custom simulation functionality is implemented through the
-``CustomSimulation`` class and the ``generate_custom_simulation``
-function. This system allows users to:
-
-- Run any type of script or executable
-- Chain simulations with automatic dependency management
-- Process data from other simulations using placeholder replacement
-- Integrate custom tools with existing Nexus workflows
-- Handle errors and completion status automatically
+GenericSimulation class provides support for executing custom scripts with Nexus.
+It uses template files for input generation and also provides output file tracking to determine simulation completion status.
+This makes it ideal for running Python scripts, bash commands, and any other executable within the Nexus framework.
+GenericSimulation can execute both serial and parallel jobs, making it suitable for a wide range of computational workflows.
 
 Key Features
 ~~~~~~~~~~~~
 
-**Script Flexibility**: Custom simulations can run any type of script
-or executable by specifying the appropriate interpreter in the job
-configuration:
+**Automatic Template Processing**: GenericSimulation automatically handles
+input templates for both file paths and text content, making it easy to
+pass parameters between simulations. Templates support variable substitution
+using Python's ``string.Template`` syntax.
+
+**Output File Tracking**: The system tracks specified output files to determine
+simulation completion status, eliminating the need for manual completion files.
+
+**Flexible Job Configuration**: Supports both serial and parallel execution
+through standard job configuration with automatic command generation.
+
+**Template Substitution**: Automatic replacement of template variables like
+``${output}`` with actual dependency paths.
+
+**Extensibility**: Any executable or script can be integrated into Nexus
+workflows using a template and dependency management system.
+
+Available Examples
+~~~~~~~~~~~~~~~~~~
+
+The generic examples directory contains several demonstration scripts:
+
+**bash_demo.py**: Demonstrates bash command execution using Python subprocess
+   - Shows how to run bash commands
+   - Uses template substitution for dependency handling
+   - Simple and easy to understand
+
+**python_demo.py**: Demonstrates pure Python data processing
+   - Uses numpy for data generation and analysis
+   - Shows template-based dependency management
+   
+Basic Usage
+~~~~~~~~~~~
+
+The simplest way to use GenericSimulation is to create a simulation with
+a script file. Here's a simplified version of the actual examples:
+
+**Python Data Generation Example** (from ``python_demo.py``):
 
 .. code:: python
 
-  # Python script
-  job(serial=True, app='python3')
-  
-  # Bash script
-  job(serial=True, app='bash')
-  
-  # Default (bash)
-  job(serial=True)
+  from nexus import generate_simulation, job, run_project
 
-Although python and bash examples are provided, custom simulations can be used with any executable.
-This is true as long as the executable is in the PATH and proper error handling is implemented.
-
-**Dependency Management**: The system automatically handles dependencies
-between simulations using placeholder replacement. Dependencies are
-specified as ``(simulation, placeholder_name)`` tuples, and placeholder names in
-scripts are automatically replaced with actual file paths for the simulation output directory.
-
-**Error Handling**: Custom simulations use a template-based error
-handling approach that ensures proper completion status reporting and
-error propagation.
-
-**Data Integration**: Simulations can access data from other simulations
-through automatic path replacement, making it easy to chain complex
-workflows.
-
-Basic Templates and Usage
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The simplest way to create a custom simulation is using the
-``generate_custom_simulation`` function. Here the simulation object will print "Hello world!" to the stdout and exit.
-
-.. code:: python
-
-  from nexus import generate_custom_simulation, job, run_project
-
-  # Create a simple Python simulation
-  python_sim = generate_custom_simulation(
-      identifier='my_python_sim',
-      path='./my_sim',
+  # Create a data generator simulation
+  data_generator = generate_simulation(
+      identifier='data_generator',
+      path='data_generator',
       job=job(serial=True, app='python3'),
-      script_content='''
-  #!/usr/bin/env python3
-  import sys
-  import os
-
-  try:
-      # Your Python code starts here
-      print("Hello world!")
-      # Your Python code ends here
-      
-      # REQUIRED: Create completion file
-      with open('completion_file.txt', 'w') as f:
-          f.write("Simulation completed successfully\\n")
-      print("Simulation completed successfully")
-      
-  except Exception as e:
-      # REQUIRED: Create error file
-      with open('error_file.txt', 'w') as f:
-          f.write(f"Simulation failed: {str(e)}\\n")
-      print(f"Simulation failed: {str(e)}")
-      sys.exit(1)
-  ''',
-      completion_file="completion_file.txt",
-      error_file="error_file.txt"
+      input='scripts/data_generator.py',  # Script file path
+      outfiles=['data_generation_complete.txt']  # Expected output files
   )
 
   # Run the simulation
-  run_project(python_sim)
+  run_project(data_generator)
 
-Template-Based Error Handling
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**Job Configuration Options**:
 
-Custom simulations must follow a specific template for error handling to
-ensure proper completion status reporting. The template includes:
+GenericSimulation supports both serial and parallel execution. 
+Assuming a suitable script is provided in ``generate_simulation`` function, following options are available:
 
-1. **Completion File Creation**: A file that indicates successful
-   completion
-2. **Error File Creation**: A file that indicates failure
-3. **Proper Exception Handling**: Wrapping all user code in try/except
-   blocks
-4. **Exit Codes**: Using appropriate exit codes for failures
+.. code:: python
 
-**Python Template**:
+  # Serial execution
+  job(serial=True, app='python3') # python3 my_script.py
+  
+  # Parallel execution (uses machine settings)
+  job(app='python3', cores=4) # mpirun -np 4 python3 my_script.py
+  
+  # Custom executable
+  job(serial=True, app='/path/to/custom/executable') # /path/to/custom/executable my_script
+  
+  # Bash script
+  job(serial=True, app='bash') # bash my_script.sh
+
+**Bash Command Example** (from ``bash_demo.py``):
+
+.. code:: python
+
+  from nexus import generate_simulation, input_template, job, run_project
+
+  # Create bash command simulation with template
+  input_template = input_template(filepath='scripts/list_directory.sh')
+  input_template.assign(output='/path/to/data/directory')
+
+  bash_executor = generate_simulation(
+      identifier='bash_executor',
+      path='bash_executor',
+      job=job(serial=True, app='bash'),
+      input=input_template,
+      outfiles=['list_directory_complete.txt']
+  )
+
+  run_project(bash_executor)
+
+**Input Types**:
+
+GenericSimulation accepts different types of input:
+
+.. code:: python
+
+  # 1. Script file path (recommended)
+  input='scripts/data_generator.py'
+  
+  # 2. Text content directly
+  input='''#!/usr/bin/env python3
+  print("Hello!")
+  '''
+  
+  # 3. Template with variables and file path
+  input_template = input_template(filepath='scripts/list_directory.sh')
+  input_template.assign(output='/path/to/data')
+  input=input_template
+
+  # 4. Template with variables and text content
+  input_template = input_template(text='''#!/usr/bin/env python3
+  print("Hello! ${variable1} ${variable2}")
+  ''')
+  input_template.assign(variable1='value1', variable2='value2')
+  input=input_template
+
+Template-Based Dependencies
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+GenericSimulation supports template substitution for dependencies, allowing
+simulations flexible options including accessing data from other simulations through automatic path
+replacement. 
+
+**What input_template does**:
+
+The ``input_template`` function creates a template object that can substitute
+variables in script files. It automatically replaces template variables with
+actual values at runtime.
+
+**Complete Workflow Example** (simplified from ``python_demo.py``):
+
+.. code:: python
+
+  from nexus import generate_simulation, input_template, job, run_project
+  import os
+
+  # First simulation - generates data
+  data_generator = generate_simulation(
+      identifier='data_generator',
+      path='data_generator',
+      job=job(serial=True, app='python3'),
+      input='scripts/data_generator.py',
+      outfiles=['data_generation_complete.txt']
+  )
+
+  # Second simulation - processes data from first simulation
+  input_template = input_template(filepath='scripts/data_processor.py')
+  input_template.assign(output=os.path.abspath(data_generator.locdir))
+
+  data_processor = generate_simulation(
+      identifier='data_processor',
+      path='data_processor',
+      job=job(serial=True, app='python3'),
+      input=input_template,
+      outfiles=['data_processing_complete.txt'],
+      dependencies=[(data_generator, 'other')]  # data_generator must complete first
+  )
+
+  run_project()
+
+**Template Variable Usage in Scripts**:
+
+In your script files, use template variables that will be replaced at runtime:
+
+**Python Script Example** (simplified from ``data_processor.py``):
+
+.. code:: python
+
+  # Template variable will be replaced with actual path
+  data_dir = '${output}'  # Replaced with data_generator's output directory path
+  
+  print(f"Processing data from: {data_dir}")
+  
+  # Use the variable in your code
+  with open(f"{data_dir}/data/matrix.txt", 'r') as f:
+      data = f.read()
+
+**Bash Script Example** (simplified from ``list_directory.sh``):
+
+.. code:: bash
+
+  # Template variable will be replaced with actual path
+  ls -alth ${output}  # Lists contents of the dependency directory
+  ls $$HOME           # Additional $: escaped $ for literal use in bash
+
+
+Script Templates
+~~~~~~~~~~~~~~~~
+
+GenericSimulation scripts should follow a simple template. The choice between
+Python and Bash depends on your specific needs:
+
+**Python Script Template** (simplified from ``data_generator.py``):
 
 .. code:: python
 
@@ -1833,532 +1930,86 @@ ensure proper completion status reporting. The template includes:
   import os
 
   try:
-      # Your python code goes here and should be wrapped in a try/except block
+      # Your code here
+      print("=== Data Generator Simulation ===")
       
-      # REQUIRED: Create completion file
-      with open('completion_file.txt', 'w') as f:
-          f.write("Simulation completed successfully\\n")
-      print("Simulation completed successfully")
+      # Process data, run calculations, etc.
+      # Template variables are automatically replaced
+      data_path = '${output}'  # If using templates
+      print(f"Processing data from: {data_path}")
+      
+      # Create output files
+      with open('data_generation_complete.txt', 'w') as f:
+          f.write("Data generation completed successfully\n")
+      
+      print("Simulation completed successfully!")
       
   except Exception as e:
-      # REQUIRED: Create error file
-      with open('error_file.txt', 'w') as f:
-          f.write(f"Simulation failed: {str(e)}\\n")
-      print(f"Simulation failed: {str(e)}")
+      # Error handling
+      print(f"Simulation failed: {e}")
       sys.exit(1)
 
-**Bash Template**:
+**Bash Script Template** (from ``list_directory.sh``):
 
 .. code:: bash
 
   #!/bin/bash
-  set -e  # Exit on any error
-
-  create_completion_file() {
-      echo "Simulation completed successfully" > completion_file.txt
-  }
-
-  create_error_file() {
-      echo "Simulation failed: $1" > error_file.txt
-  }
-
-  # Trap errors
-  trap 'create_error_file "Script failed at line $LINENO"' ERR
-
-  # Your bash code goes here #
-  # Error trap should be set before the command is executed.
+  # Template variables are automatically replaced
+  ls -alth ${output}  # Lists contents of dependency directory
+  ls $$HOME           # Escaped $ for literal use
   
-  create_completion_file
-  echo "Simulation completed successfully"
+  # Create output files
+  echo "List directory completed" > ./list_directory_complete.txt
 
-Dependency Management
-~~~~~~~~~~~~~~~~~~~~~
 
-Custom simulations can depend on other simulations using the
-``dependencies`` parameter, similar to other examples. Dependencies of a 
-simulation are specified as ``(simulation, result)`` tuples in other simulation objects. 
-Often specific result names mean that specific operations are made to transfer the results. 
-For example, in Labs 4 and 5, we can see that the ``orbitals`` result name for a ``pw2qmcpack`` simulation will 
-indicate how the converted orbitals in ``hdf5`` format are transferred to the dependent, typically QMCPACK, simulation. 
-Whereas for a ``pwscf`` simulation, ``orbitals`` result name means that how the DFT wavefunctions will be transferred to the dependent, typically ``pw2qmcpack`` simulation.
-In both, cases the operations are well defined that leaves little work to the user and handled in the background. 
-For the CustomSimulation objects however, to increase the flexibility, the placeholder names are used instead.
-We use ``(simulation, placeholder_name)`` tuples in the dependencies parameter.
-``placeholder_name`` in the ``script_content`` of the ``CustomSimulation`` object are automatically replaced with actual file 
-paths for the simulation output directory. Therefore, this requires that the user should know in advance what kind of files 
-or results will be used as dependency and the file structure of the dependecy calculations. 
-The ``CustomSimulation`` object automatically replaces placeholders in scripts with actual file paths from dependency simulations.
-If any data should be transferred from the dependency simulation for example, those transfers should be defined in the ``script_content``.
+**Important Note for Bash Scripts**: The template system uses Python's ``string.Template``
+class with ``$`` as the default delimiter. This can conflict with bash variable syntax
+where ``$`` is used for variable substitution. When writing bash scripts for use with
+GenericSimulation, be careful using ``$``. For example:
 
-**Single Dependency**:
+- Use ``${output}`` for template variables (will be replaced)
+- Avoid ``$HOME``, ``$PATH``, etc. in bash scripts, use ``$$`` to escape a literal ``$`` character if needed (e.g. ``$$HOME`` )
+
+This limitation exists because templating is based on the standard Python ``string.Template``
+class, and unless there is significant demand for a more flexible templating method,
+this approach will be maintained.
+
+**Extensibility and Custom Executables**:
+
+GenericSimulation can run any executable, not just Python and Bash scripts:
 
 .. code:: python
 
-  # Create a simulation that depends on another
-  dependent_sim = generate_custom_simulation(
-      identifier='dependent_sim',
-      path='./dependent',
-      job=job(serial=True, app='bash'),
-      script_content='''
-  #!/bin/bash
-  set -e
-
-  create_completion_file() {
-      echo "Simulation completed successfully" > completion_file.txt
-  }
-
-  create_error_file() {
-      echo "Simulation failed: $1" > error_file.txt
-  }
-
-  trap 'create_error_file "Script failed at line $LINENO"' ERR
-
-  # Access dependency data using placeholder
-  echo "Data from dependency: {output}"
-  ls -la "{output}"
+  # Custom executable
+  custom_sim = generate_simulation(
+      identifier='custom_tool',
+      path='./custom_tool',
+      job=job(serial=True, app='/path/to/your/executable'),
+      input='input_file.txt',
+      outfiles=['output.txt']
+  )
   
-  create_completion_file
-  echo "Simulation completed successfully"
-  ''',
-      completion_file="completion_file.txt",
-      error_file="error_file.txt",
-      dependencies=[(python_sim, 'output')]
+  # MATLAB script
+  matlab_sim = generate_simulation(
+      identifier='matlab_calc',
+      path='./matlab_calc',
+      job=job(serial=True, app='matlab'),
+      input="run_script.m",
+      outfiles=['results.mat']
+  )
+  
+  # R script
+  r_sim = generate_simulation(
+      identifier='r_analysis',
+      path='./r_analysis',
+      job=job(serial=True, app='Rscript'),
+      input='analysis.R',
+      outfiles=['plots.pdf', 'data.csv']
   )
 
-In your bash script:
-
-.. code:: bash
-
-  echo "Data from dependency: {output}"
-
-``output`` will be replaced with the absolute path of ``python_sim`` at runtime, e.g.:
-
-.. code:: bash
-  
-  echo "Data from dependency: /absolute/path/to/python_sim/directory"
-
-
-**Multiple Dependencies**: When multiple simulations provide the same
-result name, the system creates numbered placeholders:
-
-.. code:: python
-
-  # Two simulations both provide 'output'
-  sim1 = generate_custom_simulation(identifier='sim1', ...)
-  sim2 = generate_custom_simulation(identifier='sim2', ...)
-
-  # A third simulation depends on both
-  analysis_sim = generate_custom_simulation(
-      dependencies=[
-          (sim1, 'output'),  # First 'output' -> {output}
-          (sim2, 'output')   # Second 'output' -> {output_1}
-      ]
-  )
-
-Starting with python3.7 ordering in lists are always preserved, therefore this will work in the same order in the dependencies object. 
-However, using same result names is not particularly useful in practice. 
-A unique placeholder name could be used for each dependency simulation instead without loss of functionality. 
-Therefore, an example as below could be used with no loss of functionality as long as ``script_content`` is defined correctly.
-
-.. code:: python
-
-  # Two simulations both provide 'output'
-  sim1 = generate_custom_simulation(identifier='sim1', ...)
-  sim2 = generate_custom_simulation(identifier='sim2', ...)
-
-  # A third simulation depends on both
-  analysis_sim = generate_custom_simulation(
-      dependencies=[
-          (sim1, 'data_dft'),
-          (sim2, 'data_qmc')
-      ]
-  )
-
-Example: Numpy Data Processing
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-This example demonstrates a complete workflow using custom simulations
-for data processing with numpy arrays. It shows how to create a two-simulation
-chain where the first simulation generates sample data (1D arrays, 2D matrices,
-and statistics) and the second simulation processes that data (loads the files,
-performs analysis, and saves results). This illustrates dependency management,
-placeholder replacement, and real-world data processing workflows.
-
-In practice data_generation and data_procesing can be combined in a single run when python is used.
-However, this example is only instructional and shows the functionality of the custom simulations.
-
-.. code:: python
-
-  #! /usr/bin/env python3
-
-  from nexus import settings, job, run_project
-  from nexus import generate_custom_simulation
-
-  # Configure Nexus settings
-  settings(
-      results    = '',
-      runs       = 'runs/numpy',
-      sleep      = 1,
-      machine    = 'ws16',
-      )
-
-  # First simulation: Data generator
-  data_generator_script = """#!/usr/bin/env python3
-  import sys
-  import os
-
-  try:
-      import numpy as np
-
-      print("=== Data Generator Simulation ===")
-      print("Creating simple numpy arrays for other simulations to use")
-
-      # Create output directory
-      os.makedirs('data', exist_ok=True)
-
-      # Generate simple test data
-      print("Generating test data...")
-
-      # 1. Simple 1D array
-      x = np.linspace(0, 10, 100)
-      y = np.sin(x) + 0.1 * np.random.random(100)
-      np.savetxt('data/x_values.txt', x)
-      np.savetxt('data/y_values.txt', y)
-      print(f"Generated x_values.txt with {len(x)} points")
-      print(f"Generated y_values.txt with {len(y)} points")
-
-      # 2. Simple 2D array
-      matrix = np.random.random((10, 10))
-      np.savetxt('data/matrix.txt', matrix)
-      print(f"Generated matrix.txt with shape {matrix.shape}")
-
-      # 3. Simple statistics
-      stats = {
-          'x_min': x.min(),
-          'x_max': x.max(),
-          'y_min': y.min(),
-          'y_max': y.max(),
-          'matrix_mean': matrix.mean(),
-          'matrix_std': matrix.std()
-      }
-
-      # Save statistics
-      with open('data/statistics.txt', 'w') as f:
-          for key, value in stats.items():
-              f.write(f"{key}: {value:.6f}\\n")
-
-      print("Statistics saved to statistics.txt")
-      print("Data generation completed successfully")
-      
-      # REQUIRED: Create completion file
-      with open('data_generation_complete.txt', 'w') as f:
-          f.write("Data generation completed successfully\\n")
-      print("Simulation completed successfully")
-      
-  except Exception as e:
-      # REQUIRED: Create error file
-      error_msg = str(e)
-      with open('data_generation_error.txt', 'w') as f:
-          f.write(f"Data generation failed: {error_msg}\\n")
-      print(f"Simulation failed: {error_msg}")
-      sys.exit(1)
-  """
-
-  data_generator = generate_custom_simulation(
-      identifier = 'data_generator',
-      path       = 'demo/data_generator',
-      job        = job(serial=True, app='python3'),
-      script_content = data_generator_script,
-      completion_file = "data_generation_complete.txt",
-      error_file = "data_generation_error.txt",
-      )
-
-  # Second simulation: Data processor (depends on data_generator)
-  data_processor_script = """#!/usr/bin/env python3
-  import sys
-  import os
-
-  try:
-      # Your python code starts here #
-      import numpy as np
-
-      print("=== Data Processor Simulation ===")
-      print("Processing data from the data generator")
-      print("This simulation depends on data from: {output}")
-      print("The placeholder {output} has been replaced with the actual dependency path")
-
-      # Check if dependency data exists
-      if os.path.exists("{output}"):
-          print("Found dependency data at: {output}")
-          print("Contents of dependency directory:")
-          for item in os.listdir("{output}"):
-              print(f"  {item}")
-          
-          # Process the data from data_generator
-          data_dir = os.path.join("{output}", "data")
-          if os.path.exists(data_dir):
-              print("Found data directory, processing...")
-              
-              # Load the data
-              x = np.loadtxt(os.path.join(data_dir, "x_values.txt"))
-              y = np.loadtxt(os.path.join(data_dir, "y_values.txt"))
-              matrix = np.loadtxt(os.path.join(data_dir, "matrix.txt"))
-              
-              print(f"Loaded x: {x.shape}, y: {y.shape}, matrix: {matrix.shape}")
-              
-              # Perform some analysis
-              print("\\nPerforming analysis...")
-              
-              # 1. Basic statistics
-              x_stats = {
-                  'mean': np.mean(x),
-                  'std': np.std(x),
-                  'min': np.min(x),
-                  'max': np.max(x)
-              }
-              
-              y_stats = {
-                  'mean': np.mean(y),
-                  'std': np.std(y),
-                  'min': np.min(y),
-                  'max': np.max(y)
-              }
-              
-              matrix_stats = {
-                  'mean': np.mean(matrix),
-                  'std': np.std(matrix),
-                  'min': np.min(matrix),
-                  'max': np.max(matrix)
-              }
-              
-              # 2. Simple calculations
-              correlation = np.corrcoef(x, y)[0, 1]
-              matrix_det = np.linalg.det(matrix)
-              
-              # 3. Save results
-              print("Saving processed results...")
-              
-              # Save statistics
-              with open('processed_statistics.txt', 'w') as f:
-                  f.write("X Statistics:\\n")
-                  for key, value in x_stats.items():
-                      f.write(f"  {key}: {value:.6f}\\n")
-                  
-                  f.write("\\nY Statistics:\\n")
-                  for key, value in y_stats.items():
-                      f.write(f"  {key}: {value:.6f}\\n")
-                  
-                  f.write("\\nMatrix Statistics:\\n")
-                  for key, value in matrix_stats.items():
-                      f.write(f"  {key}: {value:.6f}\\n")
-                  
-                  f.write(f"\\nCorrelation (x,y): {correlation:.6f}\\n")
-                  f.write(f"Matrix determinant: {matrix_det:.6f}\\n")
-              
-              # Save processed arrays
-              np.savetxt('processed_x.txt', x)
-              np.savetxt('processed_y.txt', y)
-              np.savetxt('processed_matrix.txt', matrix)
-              
-              print("Data processing completed successfully!")
-              
-          else:
-              raise FileNotFoundError("Data directory not found in dependency")
-      else:
-          raise FileNotFoundError("Dependency directory not found")
-      
-      # Your python code ends here #
-      
-      # REQUIRED: Create completion file
-      with open('data_processing_complete.txt', 'w') as f:
-          f.write("Data processing completed successfully\\n")
-      print("Simulation completed successfully")
-      
-  except Exception as e:
-      # REQUIRED: Create error file
-      error_msg = str(e)
-      with open('data_processing_error.txt', 'w') as f:
-          f.write(f"Data processing failed: {error_msg}\\n")
-      print(f"Simulation failed: {error_msg}")
-      sys.exit(1)
-  """
-
-  data_processor = generate_custom_simulation(
-      identifier = 'data_processor',
-      path       = 'demo/data_processor',
-      job        = job(serial=True, app='python3'),
-      script_content = data_processor_script,
-      completion_file = "data_processing_complete.txt",
-      error_file = "data_processing_error.txt",
-      dependencies = [(data_generator, 'output')],
-      )
-
-  # Run the project
-  run_project()
-
-Example: Command Line Integration
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-This example demonstrates integration with command line tools and mixed
-script types. It shows a Python simulation that generates data files,
-followed by a Bash simulation that uses standard Unix commands (ls, file,
-wc) to analyze and report on the generated files. This illustrates how
-to combine different script types (Python and Bash) in a single workflow,
-use command line tools for file analysis, and access dependency data
-through placeholder replacement.
-
-
-.. code:: python
-
-  #! /usr/bin/env python3
-
-  from nexus import settings, job, run_project
-  from nexus import generate_custom_simulation
-
-  # Configure Nexus settings
-  settings(
-      runs       = 'runs/cmd_line',
-      results    = '',
-      sleep      = 1,
-      machine    = 'ws16',
-      )
-
-  # First simulation: Data generator (Python)
-  data_generator_script = """#!/usr/bin/env python3
-  import sys
-  import os
-  import numpy as np
-
-  def create_completion_file():
-      with open('data_generation_complete.txt', 'w') as f:
-          f.write('Data generation completed successfully')
-
-  def create_error_file(error_msg):
-      with open('data_generation_error.txt', 'w') as f:
-          f.write(f'Data generation failed: {error_msg}')
-      sys.exit(1)
-
-  try:
-      print("=== Data Generator Simulation ===")
-      print("Generating sample data using numpy")
-      
-      # Create output directory
-      os.makedirs('data', exist_ok=True)
-      
-      # Generate sample data
-      np.random.seed(42)  # For reproducible results
-      data = np.random.randn(100, 3)  # 100 points, 3 features
-      
-      # Save data to file
-      np.savetxt('data/sample_data.txt', data, header='x y z', comments='')
-      
-      # Generate some statistics
-      stats = {
-          'mean': np.mean(data, axis=0),
-          'std': np.std(data, axis=0),
-          'min': np.min(data, axis=0),
-          'max': np.max(data, axis=0)
-      }
-      
-      # Save statistics
-      with open('data/statistics.txt', 'w') as f:
-          f.write("Data Statistics:\\n")
-          f.write(f"Mean: {stats['mean']}\\n")
-          f.write(f"Std:  {stats['std']}\\n")
-          f.write(f"Min:  {stats['min']}\\n")
-          f.write(f"Max:  {stats['max']}\\n")
-      
-      print(f"Generated data with shape: {data.shape}")
-      print(f"Mean values: {stats['mean']}")
-      print("Data generation completed successfully!")
-      
-      create_completion_file()
-      print("Data generation completed successfully")
-      
-  except Exception as e:
-      create_error_file(str(e))
-  """
-
-  data_generator = generate_custom_simulation(
-      identifier = 'data_generator',
-      path       = 'demo/data_generator',
-      job        = job(serial=True, app='python3'),
-      script_content = data_generator_script,
-      completion_file = "data_generation_complete.txt",
-      error_file = "data_generation_error.txt",
-      )
-
-  # Second simulation: Directory lister (Bash)
-  directory_lister_script = """#!/bin/bash
-  set -e  # Exit on any error
-
-  create_completion_file() {
-      echo "Directory listing completed successfully" > cmd_line_complete.txt
-  }
-
-  create_error_file() {
-      echo "Directory listing failed: $1" > cmd_line_error.txt
-  }
-
-  # Trap errors
-  trap 'create_error_file "Script failed at line $LINENO"' ERR
- 
-  # Your bash code starts here #
-  echo "=== Directory Lister Simulation ==="
-  echo "This simulation lists files in the data generator directory"
-  echo "It depends on data from: {output}"
-  echo "The placeholder {output} has been replaced with the actual dependency path"
-
-  # Check if dependency data exists
-  if [ -d "{output}" ]; then
-      echo "Found dependency data at: {output}"
-      echo "Contents of dependency directory:"
-      ls -la "{output}"
-      
-      # List files in the data subdirectory
-      data_dir="{output}/data"
-      if [ -d "$data_dir" ]; then
-          echo "Found data directory, listing contents:"
-          ls -la "$data_dir"
-          
-          # Show file sizes and types
-          echo "File details:"
-          file "$data_dir"/*
-          
-          # Count lines in text files
-          echo "Line counts:"
-          for file in "$data_dir"/*.txt; do
-              if [ -f "$file" ]; then
-                  echo "$(basename "$file"): $(wc -l < "$file") lines"
-              fi
-          done
-          
-          echo "Directory listing completed successfully!"
-          
-      else
-          echo "Error: Data directory not found in dependency"
-          exit 1
-      fi
-  else
-      echo "Error: Dependency directory not found"
-      exit 1
-  fi
-  # Your bash code ends here #
-
-  create_completion_file
-  echo "Directory listing completed successfully"
-  """
-
-  directory_lister = generate_custom_simulation(
-      identifier = 'directory_lister',
-      path       = 'demo/directory_lister',
-      job        = job(serial=True, app='bash'),
-      script_content = directory_lister_script,
-      completion_file = "cmd_line_complete.txt",
-      error_file = "cmd_line_error.txt",
-      dependencies = [(data_generator, 'output')],
-      )
-
-  # Run the project
-  run_project()
-
+This makes GenericSimulation extremely flexible for integrating any computational
+tool into Nexus workflows, as long as the tool can read input files and produce
+output files that can be tracked for completion status. For templating input files, 
+``input_template`` function is based on the standard Python ``string.Template`` class, 
+hence uses ``$`` as the default delimiter. If users want to use a different delimiter, 
+that is more suitable for their code syntax, they can develop their own template class.
