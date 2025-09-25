@@ -15,9 +15,9 @@
 #      User-facing function to create arbitrary input.               #
 #====================================================================#
 
+
 import os
-from generic import obj
-from developer import DevBase,log,error
+from developer import DevBase,  obj, log, error
 from structure import Structure
 from physical_system import PhysicalSystem
 from simulation import SimulationInput
