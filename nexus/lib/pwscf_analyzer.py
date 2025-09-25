@@ -624,7 +624,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             
 
         try:
-            if pw2c_outfile_name!=None:
+            if pw2c_outfile_name is not None:
                 lines = open(os.path.join(path,pw2c_outfile_name),'r').readlines()
                 for l in lines:
                     if l.find('Kinetic')!=-1:
@@ -752,7 +752,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             #text+='  {0:>3}  {1: 8.6f}    {2: 3.2f}  {3: 3.2f}  {4: 3.2f}    {5}\n'.format(ik,kp.weight,kpt.up+kpt.down,kpt.up,kpt.down,kp.kpoint[0])
             text+='  {0:>3}  {1: 8.6f}    {2: 3.2f}  {3: 3.2f}  {4: 3.2f}  {5: 3.2f}\n'.format(ik,kp.weight,kpt.up+kpt.down,kpt.up-kpt.down,kpt.up,kpt.down)
         #end for
-        if filepath!=None:
+        if filepath is not None:
             open(filepath,'w').write(text)
         #end if
         if not return_flag:
@@ -821,7 +821,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
     def make_movie(self,filename,filepath=None):
         if 'structures' in self:
             from structure import Structure
-            if filepath==None:
+            if filepath is None:
                 filepath = os.path.join(self.abspath,filename)
             else:
                 filepath = os.path.join(filepath,filename)
@@ -847,9 +847,9 @@ class PwscfAnalyzer(SimulationAnalyzer):
         if 'bands' in self:
             success = True
             from structure import get_kpath
-            if filename==None:
+            if filename is None:
                 filename = 'band_structure.pdf'
-            if filepath==None:
+            if filepath is None:
                 filepath = os.path.join(self.abspath,filename)
             else:
                 filepath = os.path.join(filepath,filename)

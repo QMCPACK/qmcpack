@@ -510,7 +510,7 @@ class MaskFilter(DevBase):
         elif mask.shape!=(dim,dim):
             error('shape of mask array must be {0},{0}\nshape received: {1},{2}\nmask array received: {3}'.format(dim,mask.shape[0],mask.shape[1],omask),'optimal_tilematrix')
         #end if
-        self.mask = mask==False
+        self.mask = not mask
     #end def set
 
     def __call__(self,T):
@@ -4688,7 +4688,7 @@ class Structure(Sobj):
                     p = array(tokens[1:],float)
                 #end if
             except:
-                None
+                pass
             #end try
             if p is not None:
                 elem.append(e)
