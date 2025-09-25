@@ -17,11 +17,8 @@
 
 
 import numpy as np
-from numpy import ndarray,array
-from generic import obj
-from developer import error
+from developer import obj, error
 from simulation import SimulationInputTemplateDev
-
 
 
 def render_string(s_in,n):
@@ -60,7 +57,7 @@ class PyscfInput(SimulationInputTemplateDev):
 
     basic_types = bool,int,float,str,tuple,list,dict
 
-    allowed_types = basic_types+(ndarray,)
+    allowed_types = basic_types+(np.ndarray,)
 
     mole_order = '''
         dump_input
@@ -271,10 +268,10 @@ $calculation
                 C_ao_lo      = 'minao',
                 )
             if calc.u_val is not None:
-                calc.u_val = array(calc.u_val)
+                calc.u_val = np.array(calc.u_val)
             #end if
             if calc.u_idx is not None:
-                calc.u_idx = array(calc.u_idx)
+                calc.u_idx = np.array(calc.u_idx)
             #end if
 
             c = '\n### generated calculation text ###\n'
@@ -347,9 +344,9 @@ $calculation
                     self.error('{0} input "{1}" has an invalid type\ninvalid type: {2}\nallowed types are: {3}'.format(sys_name,k,v.__class__.__name__,tlist))
                 #end if
                 klen = max(klen,len(k))
-                has_array |= isinstance(v,ndarray)
+                has_array |= isinstance(v,np.ndarray)
             #end for
-            has_array |= isinstance(sys_kpoints,ndarray)
+            has_array |= isinstance(sys_kpoints,np.ndarray)
             c = '\n### generated system text ###\n'
             if has_array:
                 c += 'from numpy import array\n'
@@ -368,7 +365,7 @@ $calculation
                     v = sys_inputs[k]
                     if isinstance(v,str) and '\n' in v:
                         vs = render_string(v,nalign)
-                    elif isinstance(v,ndarray):
+                    elif isinstance(v,np.ndarray):
                         if len(v.shape)>2:
                             self.error('cannot write system input variable {0}\n{0} is an array with more than two dimensions\nonly two dimensions are currently supported for writing\narray contents: {1}'.format(k,v))
                         #end if
@@ -407,7 +404,7 @@ $calculation
                     self.error('inconsistency in written and saved k-points')
                 #end if
                 if tiled_structure is None:
-                    tiling  = array([1,1,1],dtype=int)
+                    tiling  = np.array([1,1,1],dtype=int)
                     ntwists = nkpoints
                 else:
                     if nkpoints==0:
@@ -431,7 +428,7 @@ $calculation
                         kmap_array.append(ifolded)
                         folded_indices.extend(ifolded)
                     #end for
-                    kmap_array = array(kmap_array,dtype=int)
+                    kmap_array = np.array(kmap_array,dtype=int)
                     if len(set(folded_indices))!=nkpoints:
                         self.error('inconsistency in mapping between supercell twists and folded cell k-points')
                     #end if
