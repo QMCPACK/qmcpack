@@ -1205,36 +1205,60 @@ class Structure(Sobj):
     #end def bounding_box
 
 
-    def center_molecule(self):
-        """Center a molecule in a unit cell, ensuring equal padding on all sides"""
+    def center_molecule(self, rmin_edge = 1e-8):
+        """Center a molecule in a unit cell, ensuring equal padding on all sides.
 
-        # Find smallest X, Y, and Z coordinate
-        min_xyz = np.min(self.pos, 0)
+        Parameters
+        ----------
+        rmin_edge : float-like or array-like, default=1e-8
+            Minimum acceptable distance from the cell edges to any atom in the molecule, potentially specified per-axis.
 
-        # Shift molecule to be in the corner of the +x, +y, +z octant (think first quadrant but in 3D)
-        for i in range(3):
-            self.pos[:, i] = self.pos[:, i] - min_xyz[i]
+        Note
+        ----
+        The default rmin_edge of 1e-8 is designed to just barely contain the molecule. It is
+        important to ensure that for larger, non-periodic molecular systems or atoms that the unit
+        cell size is sufficiently large to contain the charge density otherwise the molecular system
+        will interact with the neighboring periodic replica, resulting in unphysical electrostatic interactions
 
-        # Add all non-diagonal elements of cell matrix to atom positions
-        # ensuring that even in non-orthorhombic, non-cubic, and non-tetragonal
-        # cases the molecules is still properly centered with equal padding.
-        for atom in range(len(self.pos)):
-            for i in range(3):
-                for j in range(3):
-                    if i != j:
-                        self.pos[atom, i] = self.pos[atom, i] + self.axes[j, i]
+        For reference, 5 Bohr contains >99.3% of the charge density around a Hydrogen atom.
+        """
+        if hasattr(rmin_edge, '__len__'):
+            rmin_edge = np.abs(np.asarray(rmin_edge, dtype=float).flatten())
+            if rmin_edge.shape != (self.dim,):
+                self.error('rmin_edge must have length '+str(self.dim))
+        else:
+            rmin_edge = abs(float(rmin_edge))
 
-        # Find the minimum distance between the molecule's new xyz coordinates 
-        # and the maximum xyz extent of the unit cell
-        max_xyz = [np.min(self.axes[i, i] - self.pos[:, i], 0) for i in range(3)]
+        # Convert min distance to cell units
+        L = np.linalg.norm(self.axes, axis=0)
+        umin = rmin_edge / L
 
-        # Divide each by two to ensure equal spacing on each side of new positions
-        translate_xyz = [i/2 for i in max_xyz]
+        # Obtain current unit coordinates of the atoms
+        upos = np.dot(self.pos - self.center, np.linalg.inv(self.axes))
 
-        # Shift the molecule by the translated amounts, placing it equally
-        # far away from the edges of the unit cell
-        for i in range(3):
-            self.pos[:, i] += translate_xyz[i]
+        # Align the molecule to contact the cell facets
+        upos -= upos.min(0)
+
+        # Align the molecule to be halfway between each cell facet
+        upos += (1-upos.max(0)) / 2
+
+        # Check that the molecule fits inside the box
+        utol = 1e-8 / L # numerical tolerance, 10 nano Bohr/Angstrom
+        upos_min  = upos.min(0)
+        upos_max  = upos.max(0)
+        lower_out = (upos_min < utol).any()
+        upper_out = (upos_max > (1.-utol)).any()
+        if lower_out or upper_out:
+            self.error('molecule does not fit in the cell')
+
+        # Check that the molecule is far enough from the cell edges
+        lower_out = (upos_min < umin).any()
+        upper_out = (upos_max > (1.-umin)).any()
+        if lower_out or upper_out:
+            self.error('molecule is too close to the cell edges')
+
+        # Transform back into real space coordinates
+        self.pos = np.dot(upos, self.axes) + self.center
     #end def center_molecule
 
 
