@@ -20,11 +20,8 @@
 #====================================================================#
 
 
-import os
-from numpy import array
-from generic import obj
-from developer import DevBase
-from debug import *
+import numpy as np
+from developer import DevBase, obj
 
 
 class QEXML(DevBase):
@@ -50,7 +47,7 @@ class QEXML(DevBase):
             #end if
             if isinstance(v,QEXML):
                 if len(set(v.keys())-self.array_keys)==0:
-                    a = array(v._value)
+                    a = np.array(v._value)
                     if len(a)==1:
                         a = a[0]
                     elif 'columns' in v and v.size%v.columns==0:
@@ -72,14 +69,14 @@ class QEXML(DevBase):
             if len(self._value)==1:
                 self.value = self._value[0]
             else:
-                self.value = array(self._value)
+                self.value = np.array(self._value)
             #end if
             del self._value
         else:
             if len(self._value)==1:
                 self._value = self._value[0]
             else:
-                self._value = array(self._value)
+                self._value = np.array(self._value)
             #end if
         #end if
     #end def finalize
@@ -105,10 +102,10 @@ def readval(s):
                 else:
                     s = s.split()
                     try:
-                        v=list(array(s,dtype=int))
+                        v=list(np.array(s,dtype=int))
                     except:
                         try:
-                            v=list(array(s,dtype=float))
+                            v=list(np.array(s,dtype=float))
                         except:
                             v=s
                         #end try
