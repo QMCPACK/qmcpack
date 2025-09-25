@@ -19,22 +19,18 @@
 
 import os
 import numpy as np
-from numpy import array,fromstring,sqrt,dot,max,equal,zeros,min,where
-from generic import obj
+from developer import obj, unavailable
 from unit_converter import convert
 from periodic_table import PeriodicTable
-from simulation import SimulationAnalyzer,Simulation
+from numerics import simstats, simplestats
+from simulation import SimulationAnalyzer, Simulation
+from structure import Structure, get_kpath
 from pwscf_input import PwscfInput
 from pwscf_data_reader import read_qexml
 from fileio import TextFile
-from debug import *
-import code
-import pdb
 
 pt = PeriodicTable()
 elements = set(pt.elements.keys())
-
-
 
 
 def is_number(s):
@@ -160,7 +156,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 md_res.append((E,P,t,K,T))
                 n+=1
             #end while
-            md_res = array(md_res,dtype=float).T
+            md_res = np.array(md_res,dtype=float).T
             quantities = ('total_energy','pressure','time','kinetic_energy',
                           'temperature')
             md = obj()
@@ -211,7 +207,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             else:
                 self.Ef = fermi_energies[-1]
             #end if
-            self.fermi_energies = array(fermi_energies)
+            self.fermi_energies = np.array(fermi_energies)
         except:
             nx+=1
             if self.info.warn:
@@ -230,7 +226,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             else:
                 self.E = energies[-1]
             #end if
-            self.energies = array(energies)
+            self.energies = np.array(energies)
         except:
             nx+=1
             if self.info.warn:
@@ -280,8 +276,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
 
                     kpoints_2pi_alat = lines[i+2:i+2+num_kpoints]
                     kpoints_rel      = lines[i+4+num_kpoints:i+4+2*num_kpoints]
-                    kpoints_2pi_alat = array([k.strip().split()[4:6] + [k.strip().split()[6][0:-2]] for k in kpoints_2pi_alat], dtype=float)
-                    kpoints_rel      = array([k.strip().split()[4:6] + [k.strip().split()[6][0:-2]] for k in kpoints_rel], dtype=float)
+                    kpoints_2pi_alat = np.array([k.strip().split()[4:6] + [k.strip().split()[6][0:-2]] for k in kpoints_2pi_alat], dtype=float)
+                    kpoints_rel      = np.array([k.strip().split()[4:6] + [k.strip().split()[6][0:-2]] for k in kpoints_rel], dtype=float)
                 #end if
                 if 'bands (ev)' in l:
                     index+=1
@@ -300,13 +296,13 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     #end for
                     seigs = seigs.replace('-',' -') # For cases where the eigenvalues "touch", e.g. -144.9938-144.9938 -84.3023
                     seigs = seigs.strip()
-                    eigs = array(seigs.split(),dtype=float)
+                    eigs = np.array(seigs.split(),dtype=float)
 
                     soccs = ''
                     for j in range(i_occ+1,i_occ+1+(i_occ-i)-2):
                         soccs+= lines[j]
                     #end for
-                    occs   = array(soccs.split(),dtype=float)
+                    occs   = np.array(soccs.split(),dtype=float)
                     bk = obj(
                         index           = index,
                         kpoint_2pi_alat = kpoints_2pi_alat[index],
@@ -345,8 +341,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
             direct_gap = obj(energy=1.0e6)
             for band_channel in bands:
                 for b in band_channel:
-                    e_val  = max(b.eigs[b.occs > 0.5])
-                    e_cond = min(b.eigs[b.occs < 0.5])
+                    e_val  = np.max(b.eigs[b.occs > 0.5])
+                    e_cond = np.min(b.eigs[b.occs < 0.5])
 
                     if e_val > vbm.energy:
                         vbm.energy          = e_val
@@ -354,7 +350,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                         vbm.kpoint_2pi_alat = b.kpoint_2pi_alat
                         vbm.index           = b.index
                         vbm.pol             = b.pol
-                        vbm.band_number     = max(where(b.occs > 0.5))
+                        vbm.band_number     = np.max(np.where(b.occs > 0.5))
                     #end if
                     if e_cond < cbm.energy:
                         cbm.energy          = e_cond
@@ -362,7 +358,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                         cbm.kpoint_2pi_alat = b.kpoint_2pi_alat
                         cbm.index           = b.index
                         cbm.pol             = b.pol
-                        cbm.band_number     = min(where(b.occs < 0.5))
+                        cbm.band_number     = np.min(np.where(b.occs < 0.5))
                     #end if
                     if (e_cond - e_val) < direct_gap.energy:
                         direct_gap.energy          = e_cond - e_val
@@ -382,7 +378,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 #end if
             else:
                 electronic_structure = 'insulating'
-                if not equal(vbm.kpoint_rel, cbm.kpoint_rel).all():
+                if not np.equal(vbm.kpoint_rel, cbm.kpoint_rel).all():
                     indirect_gap = obj(energy=round(cbm.energy-vbm.energy, 3), kpoints=obj(vbm=vbm, cbm=cbm))
                     bands.indirect_gap = indirect_gap
             #end if
@@ -415,9 +411,9 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     cont = True
                     for d in (0,1,2):
                         i+=1
-                        axes.append(array(lines[i].split(),dtype=float))
+                        axes.append(np.array(lines[i].split(),dtype=float))
                     #end for
-                    conf.axes = array(axes)
+                    conf.axes = np.array(axes)
                 #end if
                 if l.find('ATOMIC_POSITIONS')!=-1:
                     found = True
@@ -431,14 +427,14 @@ class PwscfAnalyzer(SimulationAnalyzer):
 
                     while len(tokens)>0 and tokens[0].lower()!='end' and (len(tokens)==4 or (len(tokens)==7 and tokens[-1] in '01')):
                         atoms.append(tokens[0])
-                        positions.append(array(tokens[1:4],dtype=float))
+                        positions.append(np.array(tokens[1:4],dtype=float))
                         i+=1
                         tokens = lines[i].split()
                     #end while
                     conf.atoms = atoms
-                    conf.positions = array(positions)
+                    conf.positions = np.array(positions)
                     if 'crystal' in l.lower() and 'axes' in conf:
-                        conf.positions = dot(conf.positions,conf.axes)
+                        conf.positions = np.dot(conf.positions,conf.axes)
                     #end if
                     nconf = len(structures)
                     structures[nconf]=conf
@@ -544,15 +540,15 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 i+=1
             #end while
             if found:
-                self.forces = array(forces,dtype=float)
-                self.tot_forces = array(tot_forces)
+                self.forces = np.array(forces,dtype=float)
+                self.tot_forces = np.array(tot_forces)
                 max_forces = []
                 for f in self.forces:
                     if len(f.shape)==2:
-                        max_forces.append((sqrt((f**2).sum(1))).max())
+                        max_forces.append((np.sqrt((f**2).sum(1))).max())
                     #end if
                 #end for
-                self.max_forces = array(max_forces)
+                self.max_forces = np.array(max_forces)
             #end if
         except:
             nx+=1
@@ -611,9 +607,9 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     kpoints_unit.append(tokens[1].split())
                     kweights.append(tokens[2])
                 #end for
-                self.kpoints_cart = array(kpoints_cart,dtype=float)
-                self.kpoints_unit = array(kpoints_unit,dtype=float)
-                self.kweights     = array(kweights,dtype=float)
+                self.kpoints_cart = np.array(kpoints_cart,dtype=float)
+                self.kpoints_unit = np.array(kpoints_unit,dtype=float)
+                self.kweights     = np.array(kweights,dtype=float)
             #end if
         except:
             nx+=1
@@ -741,7 +737,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
         for kp in kpoints:
             weights.append(kp.weight)
         #end for
-        weights = array(weights,dtype=float)
+        weights = np.array(weights,dtype=float)
         mult = (weights/weights.min()).sum()
         for ik in sorted(kpoints.keys()):
             kp = kpoints[ik]
@@ -764,8 +760,6 @@ class PwscfAnalyzer(SimulationAnalyzer):
 
 
     def md_statistics(self,equil=None,autocorr=None):
-        import numpy as np
-        from numerics import simstats,simplestats
         mds = obj()
         for q,v in self.md_data.items():
             if equil is not None:
@@ -820,7 +814,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
 
     def make_movie(self,filename,filepath=None):
         if 'structures' in self:
-            from structure import Structure
+            
             if filepath==None:
                 filepath = os.path.join(self.abspath,filename)
             else:
@@ -846,7 +840,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
     def plot_bandstructure(self, filename=None, filepath=None, max_min_e = None, show=False, save=True, show_vbm_cbm=True,k_labels=None):
         if 'bands' in self:
             success = True
-            from structure import get_kpath
+
             if filename==None:
                 filename = 'band_structure.pdf'
             if filepath==None:
@@ -860,21 +854,20 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 for gui in gui_envs:
                     try:
                         matplotlib.use(gui,warn=False, force=True)
-                        from matplotlib import pyplot
                         success = True
                         break
                     except:
                         continue
                     #end try
                 #end for
-                from matplotlib.pyplot import figure,plot,xlabel,ylabel,title,show,ylim,legend,xlim,rcParams,rc,savefig,gca,xticks,axvline, scatter
+                from matplotlib.pyplot import figure,plot,ylabel,show,ylim,xlim,rcParams,savefig,gca,xticks,axvline, scatter
                 params = {'legend.fontsize':14,'figure.facecolor':'white','figure.subplot.hspace':0.,
                               'axes.labelsize':16,'xtick.labelsize':14,'ytick.labelsize':14}
                 rcParams.update(params)
             except(ImportError, RuntimeError):
                 success = False
             if not success:
-                figure,plot,xlabel,ylabel,title,show,ylim,legend,xlim,rcParams,savefig,bar,xticks,subplot,grid,setp,errorbar,loglog,semilogx,semilogy,text = unavailable('matplotlib.pyplot','figure','plot','xlabel','ylabel','title','show','ylim','legend','xlim','rcParams','savefig','bar','xticks','subplot','grid','setp','errorbar','loglog','semilogx','semilogy','text')
+                figure,plot,ylabel,show,ylim,xlim,rcParams,savefig,xticks = unavailable('matplotlib.pyplot','figure','plot','ylabel','show','ylim','xlim','rcParams','savefig','xticks')
             #end if
             fig    = figure()
             ax     = gca()
@@ -909,14 +902,14 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 for bi in self.bands.up:
                     y.append(bi['eigs'][nb])
                 #end for
-                y = array(y) - self.bands.vbm.energy
+                y = np.array(y) - self.bands.vbm.energy
                 plot(x, y, 'k')
                 if len(self.bands.down) > 0:
                     y = []
                     for bi in self.bands.down:
                         y.append(bi['eigs'][nb])
                     #end for
-                    y = array(y) - self.bands.vbm.energy
+                    y = np.array(y) - self.bands.vbm.energy
                     plot(x, y, 'r')
                 #end if              
             #end for
@@ -935,7 +928,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 #end if
             #end for
             
-            xlim([min(x), max(x)])
+            xlim([np.min(x), np.max(x)])
             if max_min_e is None:
                 ylim(-5, +5)
             else:
