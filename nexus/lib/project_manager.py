@@ -16,13 +16,11 @@
 #====================================================================#
 
 
-import os
 import time
 import memory
-from generic import obj
-from nexus_base import NexusCore,nexus_core
+from developer import obj
+from nexus_base import NexusCore, nexus_core
 from simulation import Simulation
-from debug import ci
 
 
 def trivial(sim,*args,**kwargs):
