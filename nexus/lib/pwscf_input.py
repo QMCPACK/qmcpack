@@ -47,19 +47,17 @@
 import os
 import inspect
 from copy import deepcopy
-from superstring import string2val
-from numpy import fromstring,empty,array,float64,ones,pi,dot,ceil,ndarray, where, append, unique
+import numpy as np
+from numpy import pi
 from numpy.linalg import inv
 from unit_converter import convert
-from generic import obj
 from periodic_table import is_element
-from structure import Structure,kmesh
+from structure import Structure, kmesh
 from physical_system import PhysicalSystem
-from developer import DevBase,log,warn,error
+from developer import DevBase, obj, log, warn, error
 from pseudopotential import pp_elem_label
 from simulation import SimulationInput
-from debug import *
-from itertools import combinations
+
 
 def read_str(sv):
     return sv.strip('"').strip("'")
@@ -137,7 +135,7 @@ def array_from_lines(lines):
     for l in lines:
         s+=l+' '
     #end for
-    a = fromstring(s,sep=' ')
+    a = np.fromstring(s,sep=' ')
     nelem = len(a)
     nlines = len(lines)
     dim = nelem//nlines
@@ -366,7 +364,7 @@ class Section(Element):
                         if ',' not in index:
                             index = int(index)
                         else:
-                            index = tuple(array(index.split(','),dtype=int))
+                            index = tuple(np.array(index.split(','),dtype=int))
                         #end if
                     #end if
                     if not varname in self.variables:
@@ -1014,17 +1012,17 @@ class atomic_positions(Card):
         npos = len(lines)
         dim = 3
         atoms = []
-        positions = empty((npos,dim))
-        relax_directions = empty((npos,dim),dtype=int)
+        positions = np.empty((npos,dim))
+        relax_directions = np.empty((npos,dim),dtype=int)
         i=0
         has_relax_directions = False
         for l in lines:
             tokens = l.split()
             atoms.append(tokens[0])
-            positions[i,:] = array(tokens[1:4],dtype=float64)
+            positions[i,:] = np.array(tokens[1:4],dtype=np.float64)
             has_relax_directions = len(tokens)==7
             if has_relax_directions:
-                relax_directions[i,:] = array(tokens[4:7],dtype=int)
+                relax_directions[i,:] = np.array(tokens[4:7],dtype=int)
             #end if
             i+=1
         #end for
@@ -1068,7 +1066,7 @@ class atomic_positions(Card):
             pos *= convert(1.,'A','B')
         elif spec=='crystal':
             axes = pwi.get_common_vars('axes')
-            pos = dot(pos,axes)
+            pos = np.dot(pos,axes)
         else:
             self.error('old specifier for atomic_positions is invalid\n  old specifier: '+spec+'\n  valid options: alat, bohr, angstrom, crystal')
         #end if
@@ -1082,7 +1080,7 @@ class atomic_positions(Card):
             pos /= convert(1.,'A','B')
         elif spec=='crystal':
             axes = pwi.get_common_vars('axes')
-            pos = dot(pos,inv(axes))
+            pos = np.dot(pos,inv(axes))
         else:
             self.error('new specifier for atomic_positions is invalid\n  new specifier: '+spec+'\n  valid options: alat, bohr, angstrom, crystal')
         #end if
@@ -1102,12 +1100,12 @@ class atomic_forces(Card):
         npos = len(lines)
         dim = 3
         atoms = []
-        forces = empty((npos,dim))
+        forces = np.empty((npos,dim))
         i=0
         for l in lines:
             tokens = l.split()
             atoms.append(tokens[0])
-            forces[i,:] = array(tokens[1:4],dtype=float64)
+            forces[i,:] = np.array(tokens[1:4],dtype=np.float64)
             i+=1
         #end for
         self.add(atoms=atoms,forces=forces)
@@ -1138,7 +1136,7 @@ class k_points(Card):
             self.weights = a[:,3]
             self.weights.shape = (self.nkpoints,)
         elif self.specifier == 'automatic':
-            a = fromstring(lines[0],sep=' ')
+            a = np.fromstring(lines[0],sep=' ')
             self.grid  = a[0:3]
             self.shift = a[3:]
         elif self.specifier == 'gamma':
@@ -1154,14 +1152,14 @@ class k_points(Card):
         if self.specifier in ('tpiba','crystal','tpiba_b','crystal_b',''):
             self.nkpoints = len(self.kpoints)
             c+='   '+str(self.nkpoints)+'\n'
-            a = empty((self.nkpoints,4))
+            a = np.empty((self.nkpoints,4))
             a[:,0:3] = self.kpoints
             a[:,3]   = self.weights[:]
             c+=array_to_string(a)
         elif self.specifier == 'automatic':
             c+='   '
-            c+=array_to_string(array(self.grid),pad='',format='{0}',converter=int,rowsep='')
-            c+=array_to_string(array(self.shift),pad=' ',format='{0}',converter=int)
+            c+=array_to_string(np.array(self.grid),pad='',format='{0}',converter=int,rowsep='')
+            c+=array_to_string(np.array(self.shift),pad=' ',format='{0}',converter=int)
         elif self.specifier == 'gamma':
             None
         else:
@@ -1178,12 +1176,12 @@ class k_points(Card):
         if spec=='tpiba' or spec=='':
             kpoints = self.kpoints*(2*pi)/scale
         elif spec=='gamma':
-            kpoints = array([[0,0,0]])
+            kpoints = np.array([[0,0,0]])
         elif spec=='crystal':
-            kpoints = dot(self.kpoints,kaxes)
+            kpoints = np.dot(self.kpoints,kaxes)
         elif spec=='automatic':
-            grid  = array(self.grid,dtype=int)
-            shift = .5*array(self.shift)
+            grid  = np.array(self.grid,dtype=int)
+            shift = .5*np.array(self.shift)
             kpoints = kmesh(kaxes,grid,shift)
         elif spec=='tpiba_b' or spec=='crystal_b':
             self.error('specifiers tpiba_b and crystal_b have not yet been implemented in change_specifier')
@@ -1195,9 +1193,9 @@ class k_points(Card):
         if spec=='tpiba' or spec=='':
             kpoints = kpoints/((2*pi)/scale)
         elif spec=='gamma':
-            kpoints = array([[0,0,0]])
+            kpoints = np.array([[0,0,0]])
         elif spec=='crystal':
-            kpoints = dot(kpoints,inv(kaxes))
+            kpoints = np.dot(kpoints,inv(kaxes))
         elif spec=='automatic':
             if self.specifier!='automatic':
                 self.error('cannot map arbitrary kpoints into a Monkhorst-Pack mesh')
@@ -1295,7 +1293,7 @@ class constraints(Card):
             tokens = lines[i+1].split()
             cons = obj()
             cons.type = tokens[0]
-            cons.parameters = array(tokens[1:],dtype=float64)
+            cons.parameters = np.array(tokens[1:],dtype=np.float64)
             self.constraints[i] = cons
         #end for
     #end def read_text
@@ -1329,7 +1327,7 @@ class collective_vars(Card):
             tokens = lines[i+1].split()
             collv = obj()
             collv.type = tokens[0]
-            collv.parameters = array(tokens[1:],dtype=float64)
+            collv.parameters = np.array(tokens[1:],dtype=np.float64)
             self.collective_vars[i] = collv
         #end for
     #end def read_text
@@ -1427,8 +1425,8 @@ class hubbard(Card):
                             manifold_dict[atom2].append(manifold2)
                         #end if
                         elem = self.system.structure.elem
-                        index1 = where(elem == atom1)[0] + 1
-                        index2 = where(elem == atom2)[0] + 1
+                        index1 = np.where(elem == atom1)[0] + 1
+                        index2 = np.where(elem == atom2)[0] + 1
                         combs = []
                         for in1 in index1:
                             for in2 in index2:
@@ -1451,8 +1449,8 @@ class hubbard(Card):
                                 atom1, manifold1 = label_manifold[0].split('-')
                                 atom2, manifold2 = label_manifold[1].split('-')
                                 elem = self.system.structure.elem
-                                index1 = where(elem == atom1)[0]
-                                index2 = where(elem == atom2)[0]
+                                index1 = np.where(elem == atom1)[0]
+                                index2 = np.where(elem == atom2)[0]
                                 nn = self.system.structure.nearest_neighbors(rmax = val['radius'])
                                 combs = []
                                 for in1 in index1:
@@ -1638,7 +1636,7 @@ class PwscfInput(SimulationInput):
             scale = self.system['celldm(1)']
         #end if
         if 'cell_parameters' in self:
-            axes = scale*array(self.cell_parameters.vectors)
+            axes = scale*np.array(self.cell_parameters.vectors)
             kaxes = 2*pi*inv(axes).T
         #end if
 
@@ -1756,7 +1754,7 @@ class PwscfInput(SimulationInput):
             if 'relax_directions' in self.atomic_positions:
                 relax_directions = self.atomic_positions.relax_directions
             else:
-                relax_directions = ones(s.pos.shape,dtype=int)
+                relax_directions = np.ones(s.pos.shape,dtype=int)
             #end if
             for i in range(len(s.pos)):
                 relax_directions[i,0] = int(not frozen[i,0] and relax_directions[i,0])
@@ -1847,7 +1845,7 @@ class PwscfInput(SimulationInput):
             if 'relax_directions' in self.atomic_positions:
                 relax_directions = self.atomic_positions.relax_directions
             else:
-                relax_directions = ones(s.pos.shape,dtype=int)
+                relax_directions = np.ones(s.pos.shape,dtype=int)
             #end if
             for i in range(len(s.pos)):
                 relax_directions[i,0] = int(not frozen[i,0] and relax_directions[i,0])
@@ -1945,7 +1943,7 @@ class PwscfInput(SimulationInput):
                     if ',' not in index:
                         index = int(index)
                     else:
-                        index = tuple(array(index.split(','),dtype=int))
+                        index = tuple(np.array(index.split(','),dtype=int))
                     #end if
                     if name not in s:
                         s[name] = obj()
@@ -2221,7 +2219,7 @@ def generate_any_pwscf_input(**kwargs):
 
             # fill in atomic_positions
             pw.atomic_positions.specifier = positions_option
-            pw.atomic_positions.positions = array(pos,dtype=float)
+            pw.atomic_positions.positions = np.array(pos,dtype=float)
             pw.atomic_positions.atoms     = list(elem)
         #end if
     else:
@@ -2233,14 +2231,14 @@ def generate_any_pwscf_input(**kwargs):
         #  the wavefunction hdf5 file from pwscf
         if s.folded_structure!=None:
             fs = s.folded_structure
-            axes = array(array_to_string(fs.axes).split(),dtype=float)
+            axes = np.array(array_to_string(fs.axes).split(),dtype=float)
             axes.shape = fs.axes.shape
-            axes = dot(s.tmatrix,axes)
+            axes = np.dot(s.tmatrix,axes)
             if abs(axes-s.axes).sum()>1e-5:
                 PwscfInput.class_error('supercell axes do not match tiled version of folded cell axes\nyou may have changed one set of axes (super/folded) and not the other\nfolded cell axes:\n'+str(fs.axes)+'\nsupercell axes:\n'+str(s.axes)+'\nfolded axes tiled:\n'+str(axes),'generate_pwscf_input')
             #end if
         else:
-            axes = array(array_to_string(s.axes).split(),dtype=float)
+            axes = np.array(array_to_string(s.axes).split(),dtype=float)
             axes.shape = s.axes.shape
         #end if
         s.adjust_axes(axes)
@@ -2268,7 +2266,7 @@ def generate_any_pwscf_input(**kwargs):
     # set nbnd using bandfac, if provided
     if nbnd is None and bandfac is not None:
         nocc = max(system.particles.electron_counts())
-        pw.system.nbnd = int(ceil(nocc*bandfac))
+        pw.system.nbnd = int(np.ceil(nocc*bandfac))
     #end if
 
     #  Hubbard U
@@ -2332,10 +2330,10 @@ def generate_any_pwscf_input(**kwargs):
     #end if
 
     # occupations card
-    if isinstance(occ,(list,ndarray)):
+    if isinstance(occ,(list,np.ndarray)):
         pw.system.occupations = 'from_input'
         occ_card = occupations()
-        occ_card.occupations = array(occ,dtype=float)
+        occ_card.occupations = np.array(occ,dtype=float)
         pw.occupations = occ_card
     #end if
     
@@ -2517,14 +2515,14 @@ def generate_scf_input(prefix       = 'pwscf',
     #  the wavefunction hdf5 file from pwscf
     if s.folded_structure!=None:
         fs = s.folded_structure
-        axes = array(array_to_string(fs.axes).split(),dtype=float)
+        axes = np.array(array_to_string(fs.axes).split(),dtype=float)
         axes.shape = fs.axes.shape
-        axes = dot(s.tmatrix,axes)
+        axes = np.dot(s.tmatrix,axes)
         if abs(axes-s.axes).sum()>1e-5:
             PwscfInput.class_error('supercell axes do not match tiled version of folded cell axes\n  you may have changed one set of axes (super/folded) and not the other\n  folded cell axes:\n'+str(fs.axes)+'\n  supercell axes:\n'+str(s.axes)+'\n  folded axes tiled:\n'+str(axes))
         #end if
     else:
-        axes = array(array_to_string(s.axes).split(),dtype=float)
+        axes = np.array(array_to_string(s.axes).split(),dtype=float)
         axes.shape = s.axes.shape
     #end if
     s.adjust_axes(axes)
@@ -2900,12 +2898,12 @@ def generate_vcrelax_input(
 #
 #    overwrite_kpoints = kpoints!=None or system==None
 #    if kpoints==None:
-#        kpoints = array([[0.,0,0]])
+#        kpoints = np.array([[0.,0,0]])
 #    else:
-#        kpoints = array(kpoints)
+#        kpoints = np.array(kpoints)
 #    #end if
 #    if weights==None:
-#        weights = ones((len(kpoints),),dtype=float)
+#        weights = np.ones((len(kpoints),),dtype=float)
 #    #end if
 #    if overwrite_kpoints:
 #        pw.k_points.clear()
