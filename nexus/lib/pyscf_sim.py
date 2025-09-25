@@ -17,13 +17,10 @@
 
 
 import os
-from generic import obj
-from execute import execute
+from developer import obj
 from simulation import Simulation
-from pyscf_input import PyscfInput,generate_pyscf_input
+from pyscf_input import PyscfInput, generate_pyscf_input
 from pyscf_analyzer import PyscfAnalyzer
-from developer import ci
-
 
 
 class Pyscf(Simulation):
