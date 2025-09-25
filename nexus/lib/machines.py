@@ -80,8 +80,8 @@ def cpu_count():
     try:
         import multiprocessing
         return multiprocessing.cpu_count()
-    except (ImportError,NotImplementedError):
-        None
+    except (ImportError, NotImplementedError):
+        pass
     #end try
 
     # POSIX
@@ -91,8 +91,8 @@ def cpu_count():
         if res > 0:
             return res
         #end if
-    except (AttributeError,ValueError):
-        None
+    except (AttributeError, ValueError):
+        pass
     #end try
 #end def cpu_count
 
@@ -388,7 +388,7 @@ class Job(NexusCore):
             self.abs_dir = os.path.abspath(self.directory)
         #end if
         if self.subdir is None:
-            if machine.local_directory!=None:
+            if machine.local_directory is not None:
                 self.subdir = os.path.join(machine.local_directory,nexus_core.runs,sim.path)
                 self.abs_subdir = self.subdir
             else:
@@ -401,16 +401,16 @@ class Job(NexusCore):
         else:
             app_name = self.app_name
         #end if
-        if app_name!=None and not '/' in app_name:
+        if app_name is not None and '/' not in app_name:
             ads = machine.app_directories
             ad  = machine.app_directory
             new_app_name = None
-            if ads!=None and self.app_name in ads:
+            if ads is not None and self.app_name in ads:
                 new_app_name = os.path.join(ads[self.app_name],app_name)
-            elif ad!=None:
+            elif ad is not None:
                 new_app_name = os.path.join(ad,app_name)
             #end if
-            if new_app_name!=None:
+            if new_app_name is not None:
                 self.app_name = new_app_name
             #end if
         #end if
@@ -424,7 +424,7 @@ class Job(NexusCore):
         if self.app_command is None:
             self.app_command = sim.app_command()
         #end if
-        if self.app_props==None:
+        if self.app_props is None:
             self.app_props   = list(sim.app_props)
         #end if
         # ensure job is processed properly by this initialization stage
@@ -764,11 +764,11 @@ class Machine(NexusCore):
         if not isinstance(machine,Machine):
             Machine.class_error('attempted to add non-machine instance')
         #end if
-        if not 'name' in machine:
+        if 'name' not in machine:
             Machine.class_error('attempted to add a machine without a name')
         #end if
         name = machine.name
-        if not name in Machine.machines:
+        if name not in Machine.machines:
             Machine.machines[name] = machine
         else:
             Machine.class_error('attempted to create machine {0}, but it already exists'.format(name))
@@ -935,7 +935,7 @@ class Workstation(Machine):
                  ):
         Machine.__init__(self,name)
         self.app_launcher = app_launcher
-        if cores==None:
+        if cores is None:
             self.cores = cpu_count()
         else:
             self.cores = cores
@@ -948,8 +948,8 @@ class Workstation(Machine):
     def process_job(self,job):
         if job.serial_only():
             job.cores=1
-        elif job.cores==None:
-            if job.processes!=None:
+        elif job.cores is None:
+            if job.processes is not None:
                 job.cores = job.processes*job.threads
             else:
                 job.cores = self.cores
@@ -1106,7 +1106,7 @@ class Workstation(Machine):
         if len(job.postsub)>0:
             command += job.postsub+'\n'
         #end if
-        if pad!=None:
+        if pad is not None:
             command = ('\n'+command).replace('\n','\n  '+pad)
         #end if
         return command
@@ -1735,7 +1735,7 @@ class Supercomputer(Machine):
         #end if
         done = []
         for pid,process in self.processes.items():
-            if not pid in self.system_queue or self.system_queue[pid]=='complete' or nexus_core.generate_only:
+            if pid not in self.system_queue or self.system_queue[pid]=='complete' or nexus_core.generate_only:
                 job = process.job
                 job.status = job.states.finished
                 job.finished = True
@@ -1775,7 +1775,7 @@ class Supercomputer(Machine):
 
     def submit_job(self,job):
         pad = self.enter(job.directory,msg=job.internal_id)
-        if job.subfile==None:
+        if job.subfile is None:
             self.error('submission file not specified for job')
         elif not os.path.exists(job.subfile):
             self.error('job submission file was not written prior to submission\n  submission file: '+os.path.join(job.directory,job.subfile))
@@ -2418,7 +2418,7 @@ class Perlmutter(NerscMachine):
                 self.error('processes_per_node can not be greater than GPUs per node (4)\nyou provided: {0}'.format(job.processes_per_node))
             #end if
             # Also check if the user forgot to include '_g' in the account name for GPU jobs
-            if ('_g' in job.account) == False:
+            if '_g' not in job.account:
                 job.account = job.account + '_g'
             #end if
         #end if

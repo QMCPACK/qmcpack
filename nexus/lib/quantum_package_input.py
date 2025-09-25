@@ -35,11 +35,11 @@ def read_qp_value_type(value_filepath):
         return 'bool'
     else:
         try:
-            v = int(svalue)
+            _ = int(svalue)
             return 'int'
         except:
             try:
-                v = float(svalue)
+                _ = float(svalue)
                 return 'float'
             except:
                 return 'str'
@@ -337,7 +337,7 @@ class QuantumPackageInput(SimulationInput):
     def __init__(self,filepath=None):
         self.structure   = None
         self.run_control = obj()
-        if filepath!=None:
+        if filepath is not None:
             self.read(filepath)
         #end if
     #end def __init__

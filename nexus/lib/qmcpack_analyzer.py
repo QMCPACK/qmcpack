@@ -173,7 +173,7 @@ class QmcpackAnalysisRequest(QAobject):
         if spath=='':
             self.source = os.path.join('./',self.source)
         #end if
-        if self.destination==None:
+        if self.destination is None:
             self.destination = os.path.split(self.source)[0]
         #end if
         return True
@@ -252,7 +252,7 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
 
         self.change_request(request)
 
-        if request!=None and os.path.exists(request.source):
+        if request is not None and os.path.exists(request.source):
             self.init_sub_analyzers(request)
         #end if
 
@@ -283,8 +283,8 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
 
 
     def init_sub_analyzers(self,request=None):        
-        own_request = request==None
-        if request==None:
+        own_request = request is None
+        if request is None:
             request = self.info.request
         #end if
         group_num = request.group_num
@@ -317,7 +317,7 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
 
         self.vlog('project id: '+project.id,n=1)
         file_prefix  = project.id
-        if group_num!=None:
+        if group_num is not None:
             group_ext = '.g'+str(group_num).zfill(3)
             if not file_prefix.endswith(group_ext):
                 file_prefix += group_ext
@@ -562,7 +562,7 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
             input = analyzer.info.input
             twistnum = input.get('twistnum')
             project = input.get('project')
-            if twistnum!=None:
+            if twistnum is not None:
                 twistnums.add(twistnum)
             #end if
             twist_ids = twist_ids and 'twist' in project.id
@@ -659,7 +659,7 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
 
 
     def save(self,filepath=None,overwrite=True):
-        if filepath==None:
+        if filepath is None:
             filepath = self.info.savefilepath
         #end if
         self.vlog('saving QmcpackAnalyzer in file {0}'.format(filepath),n=1)
@@ -674,7 +674,7 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
     #end def save
 
     def load(self,filepath=None):
-        if filepath==None:
+        if filepath is None:
             filepath = self.info.savefilepath
         #end if
         self.vlog('loading QmcpackAnalyzer from file {0}'.format(filepath),n=1)
