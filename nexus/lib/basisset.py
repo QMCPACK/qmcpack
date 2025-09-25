@@ -104,7 +104,7 @@ class BasisFile(DevBase):
         self.element_label = None
         self.filename      = None
         self.location      = None
-        if filepath!=None:
+        if filepath is not None:
             self.filename = os.path.basename(filepath)
             self.location = os.path.abspath(filepath)
             elem_label = self.filename.split('.')[0]
@@ -131,7 +131,7 @@ class gaussBasisFile(BasisFile):
     def __init__(self,filepath=None):
         BasisFile.__init__(self,filepath)
         self.text = None
-        if filepath!=None:
+        if filepath is not None:
             self.read(filepath)
         #end if
     #end def __init__
@@ -308,7 +308,7 @@ class GaussianBasisSet(DevBase):
     def __init__(self,filepath=None,format=None):
         self.name  = None
         self.basis = obj()
-        if filepath!=None:
+        if filepath is not None:
             self.read(filepath,format)
         #end if
     #end def __init__
@@ -317,7 +317,7 @@ class GaussianBasisSet(DevBase):
     def read(self,filepath,format=None):
         if format is None:
             self.error('format keyword must be specified to read file {0}\nvalid options are: {1}'.format(filepath,self.formats))
-        elif not format in self.formats:
+        elif format not in self.formats:
             self.error('incorrect format requested: {0}\nvalid options are: {1}'.format(format,self.formats))
         #end if
         if not os.path.exists(filepath):
@@ -333,11 +333,11 @@ class GaussianBasisSet(DevBase):
     def write(self,filepath=None,format=None):
         if format is None:
             self.error('format keyword must be specified to write file {0}\nvalid options are: {1}'.format(filepath,self.formats))
-        elif not format in self.formats:
+        elif format not in self.formats:
             self.error('incorrect format requested: {0}\nvalid options are: {1}'.format(format,self.formats))
         #end if
         text = self.write_text(format)
-        if filepath!=None:
+        if filepath is not None:
             open(filepath,'w').write(text)
         #end if
         return text
@@ -672,7 +672,7 @@ class GaussianBasisSet(DevBase):
     # test needed
     def remove_prims(self,comp=None,keep=None,**lselectors):
         lbasis = self.lbasis()
-        if comp!=None:
+        if comp is not None:
             gwidths = self.prim_widths()
         #end if
         for l,lsel in lselectors.items():
@@ -695,7 +695,7 @@ class GaussianBasisSet(DevBase):
                 gw = gwidths[l]
                 iw = arange(len(gw))
                 nkeep = 0
-                if keep!=None and l in keep:
+                if keep is not None and l in keep:
                     nkeep = keep[l]
                 #end if
                 if less:
@@ -886,7 +886,7 @@ class GaussianBasisSet(DevBase):
         #end if
         r2 = r**2
         lcount = self.lcount()
-        if nsub!=None:
+        if nsub is not None:
             lcount = max(lcount,nsub)
         #end if
         lbasis = self.lbasis()
@@ -902,10 +902,10 @@ class GaussianBasisSet(DevBase):
                     #end if
                 #end if
                 lstyle=self.lstyles[l]
-                if style!=None:
+                if style is not None:
                     lstyle = lstyle[0]+style
                 #end if
-                if fmt!=None:
+                if fmt is not None:
                     lstyle=fmt
                 #end if
                 lbas = lbasis[l]
@@ -931,7 +931,7 @@ class GaussianBasisSet(DevBase):
         #end for
         if fig:
             if not sep:
-                if self.name!=None:
+                if self.name is not None:
                     title(ptitle)
                 #end if
                 ylabel('basis functions')
@@ -960,7 +960,7 @@ class GaussianBasisSet(DevBase):
         #end if
         pwidths = self.prim_widths()
         lcount = self.lcount()
-        if nsub!=None:
+        if nsub is not None:
             lcount = max(lcount,nsub)
         #end if
         lbasis = self.lbasis()
@@ -977,10 +977,10 @@ class GaussianBasisSet(DevBase):
                     #end if
                 #end if
                 lstyle=self.lstyles[l]
-                if style!=None:
+                if style is not None:
                     lstyle = lstyle[0]+style
                 #end if
-                if fmt!=None:
+                if fmt is not None:
                     lstyle=fmt
                 #end if
                 if semilog:
@@ -993,7 +993,7 @@ class GaussianBasisSet(DevBase):
         #end for
         if label:
             if not sep:
-                if self.name!=None:
+                if self.name is not None:
                     title(ptitle)
                 #end if
                 ylabel('primitive widths')

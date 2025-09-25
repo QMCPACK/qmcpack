@@ -70,7 +70,7 @@ class VXML(DevBase):
 
     def _add(self,new):
         tag = new._tag
-        if not tag in self:
+        if tag not in self:
             self[tag] = new
         else:
             cur = self[tag]
@@ -165,7 +165,7 @@ class VXML(DevBase):
 
 
     def _parse_values(self,lines):
-        if len(lines)==1 and not '<' in lines[0]:
+        if len(lines)==1 and '<' not in lines[0]:
             self._value = readval(lines[0])
         else:
             arr = None
@@ -397,7 +397,7 @@ def read_vxml(filepath):
             ta,rest = ls[1:].split('>',1)
             tokens = ta.split(' ',1)
             tag = tokens[0]
-            if not tag in VXML.basic_types:
+            if tag not in VXML.basic_types:
                 if len(tokens)==1:
                     attr = None
                 else:
@@ -742,7 +742,7 @@ class OutcarData(DevBase):
             try:
                 read_function(vlines,self)
             except:
-                None
+                pass
             #end try
         #end for
     #end def read
@@ -869,7 +869,7 @@ class VaspAnalyzer(SimulationAnalyzer):
                 inum,enum = line.strip(' -Iteration)').split('(')
                 inum = int(inum)
                 enum = int(enum)
-                if not inum in ion_steps:
+                if inum not in ion_steps:
                     ion_steps[inum] = obj()
                 #end if
                 ion_steps[inum][enum] = OutcarData(lines=iteration)
