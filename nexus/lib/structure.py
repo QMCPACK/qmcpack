@@ -1229,12 +1229,15 @@ class Structure(Sobj):
         else:
             rmin_edge = abs(float(rmin_edge))
 
+        #cell origin
+        corner = self.center - self.axes.sum(0) / 2
+
         # Convert min distance to cell units
         L = np.linalg.norm(self.axes, axis=0)
         umin = rmin_edge / L
 
         # Obtain current unit coordinates of the atoms
-        upos = np.dot(self.pos - self.center, np.linalg.inv(self.axes))
+        upos = np.dot(self.pos - corner, np.linalg.inv(self.axes))
 
         # Align the molecule to contact the cell facets
         upos -= upos.min(0)
@@ -1258,7 +1261,7 @@ class Structure(Sobj):
             self.error('molecule is too close to the cell edges')
 
         # Transform back into real space coordinates
-        self.pos = np.dot(upos, self.axes) + self.center
+        self.pos = np.dot(upos, self.axes) + corner
     #end def center_molecule
 
 
