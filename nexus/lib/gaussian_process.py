@@ -82,11 +82,9 @@
 #====================================================================#
 
 import os
-from numpy import array,zeros,append
-from generic import obj
-from developer import unavailable,available,DevBase,log,warn,error,ci
-
 import numpy as np
+from developer import DevBase, obj, unavailable, error
+
 try:
     import matplotlib.pyplot as plt
 except:
@@ -460,8 +458,8 @@ def find_hyperparameters(mol_pos,E,dE):
     
     hyp_parm[0] = np.log(np.max(np.min(D+np.max(D)*np.eye(Nc),axis=1)))/2.0
     dhyp_parm = np.zeros(2)
-    dhyp_parm[:] = 1e-1*abs(hyp_parm[0])
-    tol = 1e-2*abs(hyp_parm[0])
+    dhyp_parm[:] = 1e-1*np.abs(hyp_parm[0])
+    tol = 1e-2*np.abs(hyp_parm[0])
     
     K = np.exp(2.0*hyp_parm[1])*cfgp(D,np.exp(-2.0*hyp_parm[0]))
     Kw_inv = np.linalg.pinv(K+W)
@@ -714,7 +712,7 @@ def find_min(Co_GP,mol_pos,E,dE,hyp_parm):
             
     ## Estimate Error
     K_res = np.exp(2.0*hyp_parm[1])*cmgp(best_pos,mol_pos,np.exp(-2.0*hyp_parm[0]))
-    best_dE = np.reshape(2*abs(np.exp(2.0*hyp_parm[1])-\
+    best_dE = np.reshape(2*np.abs(np.exp(2.0*hyp_parm[1])-\
         np.diag(np.matmul(K_res,np.matmul(Kw_inv,np.transpose(K_res))))),[best_pos.shape[0],1])
           
     return best_pos,best_E,best_dE,neig_data_ind
@@ -1265,9 +1263,9 @@ class GPState(DevBase):
         GP_info = None
         if param_lower is not None:
             dim = len(param_lower)
-            param_lower = array(param_lower)
-            param_upper = array(param_upper)
-            hyper_cube = zeros([dim,2],dtype=float)
+            param_lower = np.array(param_lower)
+            param_upper = np.array(param_upper)
+            hyper_cube = np.zeros([dim,2],dtype=float)
             hyper_cube[:,0] = param_lower
             hyper_cube[:,1] = param_upper
             Pdomain = hyper_cube.copy()
@@ -1345,9 +1343,9 @@ class GPState(DevBase):
             self.E  = energies.copy()
             self.dE = errors.copy()
         else:
-            self.P  = append(self.P ,self.Pnew,axis=0)
-            self.E  = append(self.E ,energies ,axis=0)
-            self.dE = append(self.dE,errors   ,axis=0)
+            self.P  = np.append(self.P ,self.Pnew,axis=0)
+            self.E  = np.append(self.E ,energies ,axis=0)
+            self.dE = np.append(self.dE,errors   ,axis=0)
         #end if
     #end def update_energies
 
@@ -1861,7 +1859,7 @@ class GPTestFunction(DevBase):
         verbose       : (Optional) same as GaussianProcessOptimizer.verbose.
         exit_on_save  : (Optional) same as GaussianProcessOptimizer.exit_on_save.
         """
-        Pmin = array(Pmin,dtype=float).ravel()
+        Pmin = np.array(Pmin,dtype=float).ravel()
         Pmin.shape = (1,len(Pmin))
         self.name          = name
         self.niterations   = niterations
@@ -1887,8 +1885,8 @@ class GPTestFunction(DevBase):
         will take this same approach.
         """
         npoints = len(P)
-        E  = zeros([npoints,1],dtype=float)
-        dE = zeros([npoints,1],dtype=float)
+        E  = np.zeros([npoints,1],dtype=float)
+        dE = np.zeros([npoints,1],dtype=float)
         if self.deterministic:
             for i in range(npoints):
                 Pi = P[i].ravel()
@@ -1980,8 +1978,6 @@ if __name__=='__main__':
     #   Goldstein-Price, and Lennard-Jones functions below.
     #
     
-    from numpy import abs,sin,cos,exp,sqrt,pi,log
-    from numpy.linalg import norm
 
     def ackleyf(x):
         """
@@ -2003,8 +1999,8 @@ if __name__=='__main__':
         """
         d = x.shape[1]
         x = 0.5*x
-        y = 20.0+exp(1.0)-20.0*exp(-0.2*sqrt((x**2).sum()/float(d)))- \
-            exp((cos(2.0*pi*x)).sum()/float(d))
+        y = 20.0+np.exp(1.0)-20.0*np.exp(-0.2*np.sqrt((x**2).sum()/float(d)))- \
+            np.exp((np.cos(2.0*np.pi*x)).sum()/float(d))
 
         return y
     #end def ackleyf
@@ -2042,7 +2038,7 @@ if __name__=='__main__':
 
     def holder_table(x):
         x,y = x.ravel()
-        return -abs(sin(x)*cos(y)*exp(abs(1.0-sqrt(x**2+y**2)/pi)))
+        return -np.abs(np.sin(x)*np.cos(y)*np.exp(np.abs(1.0-np.sqrt(x**2+y**2)/np.pi)))
     #end def holder_table
 
     
@@ -2065,14 +2061,14 @@ if __name__=='__main__':
                 i+=3
             #end while
         #end if
-        r = array(r,dtype=float)
+        r = np.array(r,dtype=float)
         npoints = len(r)
         E1 = 1.0
         rm = 1.0
         E = 0.0
         for i in range(npoints):
             for j in range(i+1,npoints):
-                d = norm(r[i]-r[j])
+                d = np.linalg.norm(r[i]-r[j])
                 ELJ = E1*((rm/d)**12-2*(rm/d)**6)
                 E += ELJ
             #end for
@@ -2091,7 +2087,7 @@ if __name__=='__main__':
     def trunc_log_lennard_jones(x):
         E = lennard_jones(x)
         if E>1:
-            E = log(E)+1
+            E = np.log(E)+1
         #end if
         return E
     #end def trunc_log_lennard_jones
@@ -2213,7 +2209,7 @@ if __name__=='__main__':
         param_upper   = [ 2, 2, 2],
         function      = lennard_jones,
         #function      = trunc_log_lennard_jones,
-        Pmin          = [1.0,0.5,sqrt(3.)/2],
+        Pmin          = [1.0,0.5,np.sqrt(3.)/2],
         deterministic = True,
         sigma         = 1e-6,
         #plot          = True,
@@ -2225,7 +2221,7 @@ if __name__=='__main__':
         param_lower   = [ 0, 0, 0, 0, 0, 0],
         param_upper   = [ 2, 2, 2, 2, 2, 2],
         function      = lennard_jones,
-        Pmin          = [1.0,0.5,sqrt(3.)/2,0.5,1./(2*sqrt(3.)),sqrt(2./3)],
+        Pmin          = [1.0,0.5,np.sqrt(3.)/2,0.5,1./(2*np.sqrt(3.)),np.sqrt(2./3)],
         deterministic = True,
         sigma         = 1e-6,
         )
