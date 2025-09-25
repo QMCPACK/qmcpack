@@ -104,9 +104,9 @@ except:
 
 
 # cost functions
-least_squares = lambda p,x,y,f: ((f(p,x)-y)**2).sum()
-absmin        = lambda p,x,y,f: np.abs(f(p,x)-y).sum()
-madmin        = lambda p,x,y,f: np.abs(f(p,x)-y).max()
+def least_squares(p, x, y, f):  return ((f(p,x)-y)**2).sum()
+def absmin(p, x, y, f):         return np.abs(f(p,x)-y).sum()
+def madmin(p, x, y, f):         return np.abs(f(p,x)-y).max()
 
 cost_functions = obj(
     least_squares = least_squares,
@@ -132,17 +132,16 @@ def curve_fit(x,y,f,p0,cost='least_squares',optimizer='fmin'):
 
 
 # morse potential
-#               V(r) =  De ( (1-e^-a(r-re))^2 - 1 ) + E_infinity
-morse = lambda p,r: p[2]*((1-exp(-(r-p[0])/p[1]))**2-1)+p[3]
-morse_re    = lambda p: p[0]         # equilibrium separation
-morse_a     = lambda p: 1./p[1]      # 'a' parameter, related to well width
-morse_De    = lambda p: p[2]         # 'De' parameter, related to well depth
-morse_Einf  = lambda p: p[3]         # potential energy at infinite separation
-morse_width = lambda p: p[1]         # well width
-morse_depth = lambda p: morse_De(p)  # well depth
-morse_Ee    = lambda p: morse_Einf(p)-morse_De(p)   # potential energy at equilibrium
-morse_k     = lambda p: 2*morse_De(p)*morse_a(p)**2 # force constant k = d2V/dr2(r=re), Vh=1/2 k r^2
-morse_params= lambda re,a,De,E_inf: (re,1./a,De,E_inf)  # return p given standard inputs
+def morse(p, r):                    return p[2]*((1-exp(-(r-p[0])/p[1]))**2-1)+p[3] # V(r) =  De ( (1-e^-a(r-re))^2 - 1 ) + E_infinity
+def morse_re(p):                    return p[0]                                     # equilibrium separation
+def morse_a(p):                     return 1./p[1]                                  # 'a' parameter, related to well width
+def morse_De(p):                    return p[2]                                     # 'De' parameter, related to well depth
+def morse_Einf(p):                  return p[3]                                     # potential energy at infinite separation
+def morse_width(p):                 return p[1]                                     # well width
+def morse_depth(p):                 return morse_De(p)                              # well depth
+def morse_Ee(p):                    return morse_Einf(p)-morse_De(p)                # potential energy at equilibrium
+def morse_k(p):                     return 2*morse_De(p)*morse_a(p)**2              # force constant k = d2V/dr2(r=re), Vh=1/2 k r^2
+def morse_params(re, a, De, E_inf): return re, 1./a, De, E_inf                      # return p given standard inputs
 
 # morse_reduced_mass gives the reduced mass in Hartree units
 #   m1 and m2 are masses or atomic symbols
@@ -276,8 +275,8 @@ def morse_fit(r,E,p0=None,jackknife=False,cost=least_squares,auxfuncs=None,auxre
         p0 = r0,sqrt(2*(Einf-E0)/d2E),Einf-E0,Einf
     #end if
     
-    calc_aux = auxfuncs!=None and auxres!=None
-    capture_results = capture!=None
+    calc_aux = auxfuncs is not None and auxres is not None
+    capture_results = capture is not None
     jcapture    = None
     jauxcapture = None
     if capture_results:
@@ -381,13 +380,41 @@ def morse_fit_fine(r,E,p0=None,rfine=None,both=False,jackknife=False,cost=least_
  
 
 # equation of state
-murnaghan  = lambda p,V: p[0] + p[2]/p[3]*V*((p[1]/V)**p[3]/(p[3]-1)+1)-p[1]*p[2]/(p[3]-1)
-birch      = lambda p,V: p[0] + 9*p[1]*p[2]/16*((p[1]/V)**(2./3)-1)**2*( 2 + (p[3]-4)*((p[1]/V)**(2./3)-1) )
-vinet      = lambda p,V: p[0] + 2*p[1]*p[2]/(p[3]-1)**2*( 2 - (2+3*(p[3]-1)*((V/p[1])**(1./3)-1))*exp(-1.5*(p[3]-1)*((V/p[1])**(1./3)-1)) ) 
+def murnaghan(p, V):
+    return p[0] + p[2] / p[3] * V * ((p[1] / V) ** p[3] / (p[3] - 1) + 1) - p[1] * p[2] / (p[3] - 1)
 
-murnaghan_pressure = lambda p,V: p[1]/p[2]*((p[0]/V)**p[2]-1)
-birch_pressure     = lambda p,V: 1.5*p[1]*(p[0]/V)**(5./3)*((p[0]/V)**(2./3)-1)*(1.+.75*(p[2]-1)*((p[0]/V)**(2./3)-1))
-vinet_pressure     = lambda p,V: 3.*p[1]*(1.-(V/p[0])**(1./3))*(p[0]/V)**(2./3)*exp(1.5*(p[2]-1)*(1.-(V/p[0])**(1./3)))
+def birch(p, V):
+    return p[0] + 9 * p[1] * p[2] / 16 * ((p[1] / V) ** (2.0 / 3) - 1) ** 2 * (
+        2 + (p[3] - 4) * ((p[1] / V) ** (2.0 / 3) - 1)
+    )
+
+def vinet(p, V):
+    return p[0] + 2 * p[1] * p[2] / (p[3] - 1) ** 2 * (
+        2
+        - (2 + 3 * (p[3] - 1) * ((V / p[1]) ** (1.0 / 3) - 1))
+        * exp(-1.5 * (p[3] - 1) * ((V / p[1]) ** (1.0 / 3) - 1))
+    )
+
+def murnaghan_pressure(p, V):
+    return p[1] / p[2] * ((p[0] / V) ** p[2] - 1)
+
+def birch_pressure(p, V):
+    return (
+        1.5
+        * p[1]
+        * (p[0] / V) ** (5.0 / 3)
+        * ((p[0] / V) ** (2.0 / 3) - 1)
+        * (1.0 + 0.75 * (p[2] - 1) * ((p[0] / V) ** (2.0 / 3) - 1))
+    )
+
+def vinet_pressure(p, V):
+    return (
+        3.0
+        * p[1]
+        * (1.0 - (V / p[0]) ** (1.0 / 3))
+        * (p[0] / V) ** (2.0 / 3)
+        * exp(1.5 * (p[2] - 1) * (1.0 - (V / p[0]) ** (1.0 / 3)))
+    )
 
 
 eos_funcs = obj(
@@ -396,11 +423,10 @@ eos_funcs = obj(
     vinet     = vinet,
     )
 
-
-eos_Einf = lambda p: p[0]  # energy at infinite separation
-eos_V    = lambda p: p[1]  # equilibrium volume
-eos_B    = lambda p: p[2]  # bulk modulus
-eos_Bp   = lambda p: p[3]  # B prime
+def eos_Einf(p):    return p[0] # energy at infinite separation
+def eos_V(p):       return p[1] # equilibrium volume
+def eos_B(p):       return p[2] # bulk modulus
+def eos_Bp(p):      return p[3] # B prime
 
 eos_param_tmp = obj(
     Einf = eos_Einf,
@@ -460,8 +486,8 @@ def eos_fit(V,E,type='vinet',p0=None,cost='least_squares',jackknife=False,auxfun
         p0 = Einf,V0,B0,Bp0
     #end if
 
-    calc_aux = auxfuncs!=None and auxres!=None
-    capture_results = capture!=None
+    calc_aux = auxfuncs is not None and auxres is not None
+    capture_results = capture is not None
     jcapture    = None
     jauxcapture = None
     if capture_results:
@@ -513,7 +539,7 @@ def eos_fit(V,E,type='vinet',p0=None,cost='least_squares',jackknife=False,auxfun
                 num_variables = len(inspect.getargspec(auxfunc).args)
                 if num_variables > 1:
                     # Assume that the second variable is volume for the pressure fits
-                    auxfunc_p = lambda p: auxfunc(p, eq_vol)
+                    def auxfunc_p(p): return auxfunc(p, eq_vol)
                 else:
                     auxfunc_p = auxfunc
                 #end if 
@@ -561,7 +587,7 @@ def eos_fit(V,E,type='vinet',p0=None,cost='least_squares',jackknife=False,auxfun
 #             if string , will be placed in kwargs: kwargs[position] = input_array
 #   capture: an object that will contain most jackknife info upon exit
 def jackknife(data,function,args=None,kwargs=None,position=None,capture=None):
-    capture_results = capture!=None
+    capture_results = capture is not None
     if capture_results:
         capture.data         = data
         capture.function     = function
@@ -673,7 +699,7 @@ def jackknife_aux(jsamples,auxfunc,args=None,kwargs=None,position=None,capture=N
     # check the requested argument position
     argpos,kwargpos,args,kwargs,position = check_jackknife_inputs(args,kwargs,position)
 
-    capture_results = capture!=None
+    capture_results = capture is not None
     if capture_results:
         capture.auxfunc  = auxfunc 
         capture.args     = args    
@@ -723,7 +749,7 @@ def jackknife_aux(jsamples,auxfunc,args=None,kwargs=None,position=None,capture=N
 def check_jackknife_inputs(args,kwargs,position):
     argpos   = False
     kwargpos = False
-    if position!=None:
+    if position is not None:
         if isinstance(position,int):
             argpos = True
         elif isinstance(position,str):
@@ -1046,7 +1072,7 @@ def equilibration_length(x,tail=.5,plot=False,xlim=None,bounces=2,random=True,se
         #end if
         plot([ix[eqlen],ix[eqlen]],[x.min(),x.max()],'g-')
         plot(ix[eqlen],x[eqlen],'go')
-        if xlims!=None:
+        if xlims is not None:
             xlim(xlims)
         #end if
         show()
@@ -1272,7 +1298,7 @@ def simple_surface(origin,axes,grid):
 
 
 # test needed
-#least_squares = lambda p,x,y,f: ((f(p,x)-y)**2).sum()
+#def least_squares(p, x, y, f): return ((f(p,x)-y)**2).sum()
 def func_fit(x,y,fitting_function,p0,cost=least_squares):
     f = fitting_function
     p = fmin(cost,p0,args=(x,y,f),maxiter=10000,maxfun=10000)
@@ -1376,7 +1402,7 @@ def convex_hull(points,dimension=None,tol=None):
     all_inds = np.empty((d1,),dtype=bool)
     all_inds[:] = True
     verts = []
-    have_tol = tol!=None
+    have_tol = tol is not None
     for ni in range(len(tri.neighbors)):
         n = tri.neighbors[ni]
         ns = list(n)

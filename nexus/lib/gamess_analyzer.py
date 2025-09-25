@@ -67,7 +67,7 @@ class GamessAnalyzer(SimulationAnalyzer):
         else:
             infile = arg0
         #end if
-        if infile!=None:
+        if infile is not None:
             info = self.info
             info.path = os.path.dirname(infile)
             info.input = GamessInput(infile)
@@ -198,7 +198,7 @@ class GamessAnalyzer(SimulationAnalyzer):
 
 
     def read_energy_components(self,log,energy):
-        if log!=None and log.seek('ENERGY COMPONENTS',0)!=-1:
+        if log is not None and log.seek('ENERGY COMPONENTS',0)!=-1:
             for n in range(18):
                 line = log.readline()
                 if '=' in line and 'ENERGY' in line:
@@ -216,7 +216,7 @@ class GamessAnalyzer(SimulationAnalyzer):
                 #end if
             #end for
         #end if
-        if log!=None and log.seek('COUPLED-CLUSTER ENERGY',0)!=-1:
+        if log is not None and log.seek('COUPLED-CLUSTER ENERGY',0)!=-1:
             line = log.readline()
             energy['ccsd(t)'] = float( line.split()[-1] )
         # end if
@@ -424,12 +424,12 @@ class GamessAnalyzer(SimulationAnalyzer):
         # read the punch file
         try:
             text = self.get_output('punch')
-            if text==None:
+            if text is None:
                 # Try to read .dat instead
                 self.info.files['punch'] = '{}.dat'.format(self.info.prefix)
                 text = self.get_output('punch')
             #end if
-            if text!=None:
+            if text is not None:
                 #text = text.read()
                 punch = obj(norbitals=0)
                 group_name = None
@@ -449,7 +449,7 @@ class GamessAnalyzer(SimulationAnalyzer):
                             new        = True
                         #end if
                     #end if
-                    if group_name!=None and not new:
+                    if group_name is not None and not new:
                         group_text += line#+'\n'
                     #end if
                     new = False

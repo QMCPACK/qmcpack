@@ -92,12 +92,12 @@ class RmgAnalyzer(SimulationAnalyzer):
             try:
                 self.read_setup_info(logfile)
             except:
-                None
+                pass
             #end try
             try:
                 self.read_results(logfile)
             except:
-                None
+                pass
             #end try
         else:
             self.read_setup_info(logfile)
@@ -268,7 +268,7 @@ class RmgAnalyzer(SimulationAnalyzer):
                                 ecut_units   = ecut_units,
                                 )
                         except:
-                            None
+                            pass
                         #end try
                     #end if
                     if 'lattice_setup' in setup_info:
@@ -276,7 +276,7 @@ class RmgAnalyzer(SimulationAnalyzer):
                         try:
                             b.axes = np.array([b.x_basis_vector,b.y_basis_vector,b.z_basis_vector],dtype=float)
                         except:
-                            None
+                            pass
                         #end try
                     #end if
                     if 'k_points' in other_blocks:
@@ -303,7 +303,7 @@ class RmgAnalyzer(SimulationAnalyzer):
                                 kweights        = np.array(kw,dtype=float),
                                 )
                         except:
-                            None
+                            pass
                         #end try
                     #end if
                     k = 'initial_ionic_positions_and_displacements'
@@ -339,7 +339,7 @@ class RmgAnalyzer(SimulationAnalyzer):
                                 positions = np.array(pos,dtype=float),
                                 )
                         except:
-                            None
+                            pass
                         #end try
                     #end if
                 #end if
@@ -378,7 +378,7 @@ class RmgAnalyzer(SimulationAnalyzer):
                 #end if
                 setup_info.structure = s
             except:
-                None
+                pass
             #end try
         #end if
         if 'files' in setup_info and 'control_input_file' in setup_info.files:
@@ -387,7 +387,7 @@ class RmgAnalyzer(SimulationAnalyzer):
                 try:
                     self.input = RmgInput(filepath)
                 except:
-                    None
+                    pass
                 #end try
             #end if
         #end if

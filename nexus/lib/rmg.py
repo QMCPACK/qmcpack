@@ -60,7 +60,7 @@ class Rmg(Simulation):
 def generate_rmg(**kwargs):
     sim_args,inp_args = Rmg.separate_inputs(kwargs)
 
-    if not 'input' in sim_args:
+    if 'input' not in sim_args:
         sim_args.input = generate_rmg_input(**inp_args)
     #end if
     rmg = Rmg(**sim_args)

@@ -166,7 +166,7 @@ class Namelist(DevBase):
 
         
     def __init__(self,text=None,**vals):
-        if text!=None:
+        if text is not None:
             self.read_text(text)
         #end if
         if len(vals)>0:
@@ -223,7 +223,7 @@ class Namelist(DevBase):
                 name  = name.strip()
                 value = value.strip()
                 v = readval(value)
-                if v!=None:
+                if v is not None:
                     vals[name] = v
                 else:
                     self.error('namelist read failed\nnamelist name: {0}\nvariable name: {1}\nvariable value: {2}'.format(self.namelist,name,value))
@@ -247,7 +247,7 @@ class Namelist(DevBase):
         text = '&'+namelist+'\n'
         for name,value in self.items():
             v = writeval(value)
-            if v!=None:
+            if v is not None:
                 text += '  {0} = {1}\n'.format(name,v)
             else:
                 self.error('namelist write failed\nnamelist name: {0}\nvariable name: {1}\nvariable value: {2}'.format(namelist,name,value))
@@ -281,7 +281,7 @@ class NamelistInput(SimulationInput):
 
 
     def __init__(self,filepath=None,**vals):
-        if filepath!=None:
+        if filepath is not None:
             self.read(filepath)
             return
         #end if
@@ -328,7 +328,7 @@ class NamelistInput(SimulationInput):
                     self[name] = cls.namelist_classes[name](nl_lines)
                 else:
                     msg = 'encountered invalid namelist during read\ninvalid namelist: {0}\nvalid namelists are: {1}'.format(name,cls.namelists)
-                    if filepath!=None:
+                    if filepath is not None:
                         msg += '\nfilepath: {0}'.format(filepath)
                     #end if
                     self.error(msg)
@@ -344,7 +344,7 @@ class NamelistInput(SimulationInput):
         for name,namelist in self.items():
             if name not in cls.namelist_set:
                 msg = 'encountered invalid namelist during write\ninvalid namelist: {0}\nvalid namelists are: {1}'.format(name,cls.namelists)
-                if filepath!=None:
+                if filepath is not None:
                     msg += '\nfilepath: {0}'.format(filepath)
                 #end if
                 self.error(msg)
@@ -386,7 +386,7 @@ class PostProcessSimulation(Simulation):
 
 def generate_ppsim(gen_input=None,Sim=None,**kwargs):
     sim_args,inp_args = Simulation.separate_inputs(kwargs)
-    if not 'input' in sim_args:
+    if 'input' not in sim_args:
         sim_args.input = gen_input(**inp_args)
     #end if
     sim = Sim(**sim_args)
@@ -538,7 +538,7 @@ class ProjwfcAnalyzer(SimulationAnalyzer):
             infile  = sim.infile
             outfile = sim.outfile
             infile_path = os.path.join(path,infile)
-        elif arg0!=None:
+        elif arg0 is not None:
             infile_path = arg0
             path,infile = os.path.split(infile_path)
             if outfile is None:
@@ -759,7 +759,7 @@ class ProjwfcAnalyzer(SimulationAnalyzer):
                 text+='\n'
             #end if
         #end for
-        if filepath!=None:
+        if filepath is not None:
             open(filepath,'w').write(text)
         #end if
         return text
@@ -788,7 +788,7 @@ class Projwfc(PostProcessSimulation):
             analyzer.write_lowdin(filepath)
             analyzer.write_lowdin(filepath+'_long',long=True)
         except:
-            None
+            pass
         #end try
     #end def post_analyze
 #end class Projwfc
@@ -914,7 +914,7 @@ class HpAnalyzer(SimulationAnalyzer):
             infile  = sim.infile
             outfile = sim.outfile
             infile_path = os.path.join(path,infile)
-        elif arg0!=None:
+        elif arg0 is not None:
             infile_path = arg0
             path,infile = os.path.split(infile_path)
             if outfile is None:

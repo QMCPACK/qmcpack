@@ -469,7 +469,7 @@ def find_hyperparameters(mol_pos,E,dE):
      
     while max(dhyp_parm)>tol:
         for jp in range(hyp_parm.shape[0]):
-            did_move = 0;
+            did_move = 0
             chyp_parm = np.copy(hyp_parm)
             chyp_parm[jp] = chyp_parm[jp]+dhyp_parm[jp]
             K = np.exp(2.0*chyp_parm[1])*cfgp(D,np.exp(-2.0*chyp_parm[0]))
@@ -1110,8 +1110,8 @@ def gp_opt_example():
     opt_fun = 4
 
     ## Parameters Used for Optimization Function Defining Range of Errors in Energy##
-    sigma_a = 1e-4;
-    sigma_b = 5e-2;
+    sigma_a = 1e-4
+    sigma_b = 5e-2
 
 
     ## Set Hypercube for each type of optimization function and check for proper dim ##

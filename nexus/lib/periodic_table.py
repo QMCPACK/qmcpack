@@ -78,7 +78,7 @@ class SimpleElement(DevBase):
     def replace_None(self):
         none_rep = -1.0
         for k,v in self.var_dict.items():
-            if(v==None):
+            if v is None:
                 self.var_dict[k] = none_rep
             #end if
         #end for

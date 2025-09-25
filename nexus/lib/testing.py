@@ -146,7 +146,7 @@ def read_text_value(s):
         try:
             v = float(s)
         except:
-            None
+            pass
         #end try
     #end try
     return v

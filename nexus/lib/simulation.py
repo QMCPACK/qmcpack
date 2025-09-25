@@ -113,7 +113,7 @@ class SimulationInput(NexusCore):
 
     def write(self,filepath=None):
         text = self.write_text(filepath)
-        if filepath!=None:
+        if filepath is not None:
             self.write_file_text(filepath,text)
         #end if
         return text
@@ -311,7 +311,7 @@ class Simulation(NexusCore):
                 cls.class_error('invalid input for variable "system"\nsystem object must be of type PhysicalSystem\nyou provided type: {0}'.format(system.__class__.__name__)+extra)
             #end if
         #end if
-        if 'pseudos' in inp_args and inp_args.pseudos!=None:
+        if 'pseudos' in inp_args and inp_args.pseudos is not None:
             pseudos = inp_args.pseudos
             # support ppset labels
             if isinstance(pseudos,str):
@@ -342,11 +342,11 @@ class Simulation(NexusCore):
                 species_labels,species = system.structure.species(symbol=True)
                 pseudopotentials = nexus_core.pseudopotentials
                 for ppfile in pseudos:
-                    if not ppfile in pseudopotentials:
+                    if ppfile not in pseudopotentials:
                         cls.class_error('pseudopotential file {0} cannot be found'.format(ppfile))
                     #end if
                     pp = pseudopotentials[ppfile]
-                    if not pp.element_label in species_labels and not pp.element in species:
+                    if pp.element_label not in species_labels and pp.element not in species:
                         cls.class_error('the element {0} for pseudopotential file {1} is not in the physical system provided'.format(pp.element,ppfile))
                     #end if
                 #end for
@@ -497,7 +497,7 @@ class Simulation(NexusCore):
                 locdir = os.path.join(nexus_core.local_directory,nexus_core.runs,self.path)
                 self.error('user provided physical system is not internally consistent\nsimulation identifier: {0}\nlocal directory: {1}\nmore details on the user error are given below\n\n{2}'.format(self.identifier,locdir,msg))
             #end if
-        elif self.system!=None:
+        elif self.system is not None:
             self.error('system must be a PhysicalSystem object\nyou provided an object of type: {0}'.format(self.system.__class__.__name__))
         #end if
         if self.restartable or self.force_restart:
@@ -516,11 +516,11 @@ class Simulation(NexusCore):
         if not self.fake():
             #print '  creating sim {0} in {1}'.format(self.simid,self.locdir)
 
-            if not self.locdir in self.sim_directories:
+            if self.locdir not in self.sim_directories:
                 self.sim_directories[self.locdir] = set([self.identifier])
             else:
                 idset = self.sim_directories[self.locdir]
-                if not self.identifier in idset:
+                if self.identifier not in idset:
                     idset.add(self.identifier)
                 else:
                     self.error('multiple simulations in a single directory have the same identifier\nplease assign unique identifiers to each simulation\nsimulation directory: {0}\nrepeated identifier: {1}\nother identifiers: {2}\nbetween the directory shown and the identifiers listed, it should be clear which simulations are involved\nmost likely, you described two simulations with identifier {3}'.format(self.locdir,self.identifier,sorted(idset),self.identifier))
@@ -733,7 +733,7 @@ class Simulation(NexusCore):
             #end if
             dep.result_names = rn
             dep.results = obj()
-            if not sim.simid in self.dependencies:
+            if sim.simid not in self.dependencies:
                 self.ordered_dependencies.append(dep)
                 self.dependencies[sim.simid]=dep
                 sim.dependents[self.simid]=self
@@ -900,7 +900,7 @@ class Simulation(NexusCore):
 
 
     def load_image(self,imagepath=None,all=False):
-        if imagepath==None:
+        if imagepath is None:
             imagepath=os.path.join(self.imlocdir,self.sim_image)
         #end if
         if not all:
@@ -917,7 +917,7 @@ class Simulation(NexusCore):
 
 
     def load_analyzer_image(self,imagepath=None):
-        if imagepath==None:
+        if imagepath is None:
             imagepath = os.path.join(self.imresdir,self.analyzer_image)
         #end if
         analyzer = self.analyzer_type(self)
@@ -989,14 +989,14 @@ class Simulation(NexusCore):
             try:
                 self.system.structure.write(filebase+'.xyz')
             except:
-                None
+                pass
             #end try
             try:
                 if self.system.structure.has_axes():
                     self.system.structure.write(filebase+'.xsf')
                 #end if
             except:
-                None
+                pass
             #end try
         #end if
     #end def write_inputs

@@ -240,7 +240,7 @@ class WavefunctionAnalyzer(PropertyAnalyzer):
 
         try:
             J1,J2,J3 = self.info.wfn_xml.get(['J1','J2','J3'])
-            if J1!=None:
+            if J1 is not None:
                 jname = 'J1'
                 func = J1.function.lower()
                 if func=='bspline':
@@ -255,7 +255,7 @@ class WavefunctionAnalyzer(PropertyAnalyzer):
                     #end for
                 #end if
             #end if
-            if J2!=None:
+            if J2 is not None:
                 jname = 'J2'
                 func = J2.function.lower()
                 if func=='bspline':

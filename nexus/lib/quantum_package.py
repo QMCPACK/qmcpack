@@ -396,7 +396,7 @@ class QuantumPackage(Simulation):
 def generate_quantum_package(**kwargs):
     sim_args,inp_args = QuantumPackage.separate_inputs(kwargs)
 
-    if not 'input' in sim_args:
+    if 'input' not in sim_args:
         if 'input_type' in inp_args:
             input_type = inp_args.input_type
             del inp_args.input_type

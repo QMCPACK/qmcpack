@@ -96,8 +96,8 @@ class HDFgroup(DevBase):
     def __init__(self):
         self._name=''
         self._parent=None
-        self._groups={};
-        self._datasets={};
+        self._groups={}
+        self._datasets={}
         self._group_counts={}
 
         self._escape_names=None

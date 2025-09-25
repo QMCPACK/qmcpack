@@ -90,7 +90,7 @@ class Plotter(DevBase):
     def surface_slice(self,x,y,z,scalars,options=None):
         scale = 1.0
         opacity= 1.0
-        if options!=None:
+        if options is not None:
             if 'norm_height' in options:
                 scale = options.norm_height/abs(scalars.max())
             if 'scale' in options:
@@ -198,7 +198,7 @@ class Checks(DevBase):
         valid = True
         for name,value in self.items():
             if not (isinstance(name,str) and name.startswith('_')):
-                if not value in self._exclusions:
+                if value not in self._exclusions:
                     valid = valid and value
                 #end if
             #end if
@@ -209,7 +209,7 @@ class Checks(DevBase):
 
     def write(self,pad=''):
         pad2 = pad+'  '
-        if not '_valid' in self:
+        if '_valid' not in self:
             self.valid()
         #end if
         valid = self._valid
@@ -371,13 +371,13 @@ class QAanalyzer(QAobject):
     #end def vlog
 
     def reset_indicators(self,initialized=None,data_loaded=None,analyzed=None):
-        if initialized!=None:
+        if initialized is not None:
             self.info.initialized = initialized
         #end if
-        if data_loaded!=None:
+        if data_loaded is not None:
             self.info.data_loaded = data_loaded
         #end if
-        if analyzed!=None:
+        if analyzed is not None:
             self.info.analyzed = analyzed
         #end if
     #end def reset_indicators
@@ -425,7 +425,7 @@ class QAanalyzer(QAobject):
     #            #end if
     #        #end for
     #    #end if
-    #    if block_name!=None:
+    #    if block_name is not None:
     #        self.info[block_name] = True
     #    #end if
     #    if callpost:

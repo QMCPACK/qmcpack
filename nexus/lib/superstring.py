@@ -201,7 +201,7 @@ def string2array(string):
 #end def string2array
 
 def is_string(var):
-    return type(var)==type("s")
+    return type(var) == type("s")
 #end def is_string
 
 
@@ -395,14 +395,16 @@ def remove_empty_lines(s):
 
 def contains_any(str, set):
     for c in set:
-        if c in str: return 1;
-    return 0;
+        if c in str:
+            return 1
+    return 0
 #end def contains_any
 
 def contains_all(str, set):
     for c in set:
-        if c not in str: return 0;
-    return 1;
+        if c not in str:
+            return 0
+    return 1
 #end def contains_all
 
 

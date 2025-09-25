@@ -237,8 +237,8 @@ class object_interface(object):
             if stype!=otype:
                 return False
             #end if
-            eqval = svar==ovar
-            if isinstance(eqval,bool):
+            eqval = svar == ovar
+            if isinstance(eqval, bool):
                 eq &= eqval
             else:
                 try: # accommodate numpy arrays implicitly
@@ -497,7 +497,7 @@ class object_interface(object):
     #end def warn
 
     def error(self,message,header=None,exit=True,trace=True):
-        if header==None:
+        if header is None:
             header = self.__class__.__name__
         #end if
         error(message,header,exit,trace,logfile=self._logfile)
@@ -510,7 +510,7 @@ class object_interface(object):
 
     @classmethod
     def class_warn(cls,message,header=None,post_header=' Warning:'):
-        if header==None:
+        if header is None:
             header=cls.__name__
         #end if
         warn(message,header,logfile=cls._logfile)
@@ -518,7 +518,7 @@ class object_interface(object):
 
     @classmethod
     def class_error(cls,message,header=None,exit=True,trace=True,post_header=' Error:'):
-        if header==None:
+        if header is None:
             header = cls.__name__
         #end if
         error(message,header,exit,trace,logfile=cls._logfile)
@@ -1029,7 +1029,7 @@ class obj(object_interface):
             path = path.split('/')
         #end if
         for p in path:
-            if not p in o:
+            if p not in o:
                 return False
             #end if
             o = o[p]
@@ -1044,7 +1044,7 @@ class obj(object_interface):
             path = path.split('/')
         #end if
         for p in path[0:-1]:
-            if not p in o:
+            if p not in o:
                 o[p] = cls()
             #end if
             o = o[p]
@@ -1058,7 +1058,7 @@ class obj(object_interface):
             path = path.split('/')
         #end if
         for p in path[0:-1]:
-            if not p in o:
+            if p not in o:
                 return value
             #end if
             o = o[p]

@@ -137,7 +137,7 @@ class Gamess(Simulation):
             if result.vec is None or result.norbitals<1:
                 self.error('could not obtain orbitals from previous GAMESS run')
             #end if
-            if not 'guess' in input:
+            if 'guess' not in input:
                 input.guess = GuessGroup()
             #end if
             if 'norb' in input.guess: # user provided norb
@@ -262,7 +262,7 @@ class Gamess(Simulation):
 def generate_gamess(**kwargs):
     sim_args,inp_args = Gamess.separate_inputs(kwargs,copy_pseudos=False,sim_kw=['mo_reorder'])
 
-    if not 'input' in sim_args:
+    if 'input' not in sim_args:
         sim_args.input = generate_gamess_input(**inp_args)
     #end if
     gamess = Gamess(**sim_args)

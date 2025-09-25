@@ -333,7 +333,7 @@ class XMLreader(DevBase):
         if self.contract_names:
             name = name.lower().replace('-','_')
         #end if
-        if self.strip_prefix!=None:
+        if self.strip_prefix is not None:
             if name.startswith(self.strip_prefix):
                 name = name.split(self.strip_prefix)[1]
             #end if

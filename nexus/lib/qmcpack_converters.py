@@ -164,7 +164,7 @@ class Pw2qmcpackInput(SimulationInput):
 
 
     def __init__(self,filepath=None,**vars):
-        if filepath!=None:
+        if filepath is not None:
             self.read(filepath)
         else:
             inputpp = obj()
@@ -445,7 +445,7 @@ class Pw2qmcpack(Simulation):
 def generate_pw2qmcpack(**kwargs):
     sim_args,inp_args = Simulation.separate_inputs(kwargs)
 
-    if not 'input' in sim_args:
+    if 'input' not in sim_args:
         sim_args.input = generate_pw2qmcpack_input(**inp_args)
     #end if
     pw2qmcpack = Pw2qmcpack(**sim_args)
@@ -694,7 +694,7 @@ class Convert4qmcInput(SimulationInput):
 
     def output_files(self):
         prefix = 'sample'
-        if self.prefix!=None:
+        if self.prefix is not None:
             prefix = self.prefix
         #end if
         wfn_file  = prefix+'.Gaussian-G2.xml'
@@ -903,11 +903,11 @@ class Convert4qmc(Simulation):
 
 def generate_convert4qmc(**kwargs):
     sim_args,inp_args = Simulation.separate_inputs(kwargs)
-    if 'identifier' in sim_args and not 'prefix' in inp_args:
+    if 'identifier' in sim_args and 'prefix' not in inp_args:
         inp_args.prefix = sim_args.identifier
     #end if
 
-    if not 'input' in sim_args:
+    if 'input' not in sim_args:
         sim_args.input = generate_convert4qmc_input(**inp_args)
     #end if
     convert4qmc = Convert4qmc(**sim_args)
@@ -1074,7 +1074,7 @@ class Convertpw4qmc(Simulation):
 def generate_convertpw4qmc(**kwargs):
     sim_args,inp_args = Simulation.separate_inputs(kwargs)
 
-    if not 'input' in sim_args:
+    if 'input' not in sim_args:
         sim_args.input = generate_convertpw4qmc_input(**inp_args)
     #end if
     sim = Convertpw4qmc(**sim_args)
@@ -1382,7 +1382,7 @@ def generate_pyscf_to_afqmc(**kwargs):
         #end if
     #end if
 
-    if not 'input' in sim_args:
+    if 'input' not in sim_args:
         sim_args.input = generate_pyscf_to_afqmc_input(**inp_args)
     #end if
     sim = PyscfToAfqmc(**sim_args)
