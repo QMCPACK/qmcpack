@@ -24,7 +24,6 @@ import sys
 import keyword
 from inspect import getmembers
 
-from superstring import valid_variable_name
 from generic import obj
 from developer import DevBase,unavailable
 try:
@@ -307,7 +306,7 @@ class HDFreader(DevBase):
             hcur  = self.hcur[self.ilevel]
             for kr,v in hcur.items():
                 k=cur._escape_name(kr)
-                if valid_variable_name(k):
+                if not any([i in ('!"#$%&\'()*+,-./:;<=>?@[\\]^`{|}-\n\t ') for i in k]):
                     if isinstance(v, h5py.Dataset):
                         self.add_dataset(cur,k,v)
                     elif isinstance(v, h5py.Group):
@@ -367,7 +366,7 @@ class HDFreader(DevBase):
         hcur  = self.hcur[self.ilevel]
         for kr,v in hcur.items():
             k=cur._escape_name(kr)
-            if valid_variable_name(k):
+            if not any([i in ('!"#$%&\'()*+,-./:;<=>?@[\\]^`{|}-\n\t ') for i in k]):
                 if isinstance(v, h5py.Dataset):
                     self.add_dataset(cur,k,v)
                 elif isinstance(v, h5py.Group):
