@@ -24,22 +24,109 @@
 
 
 from xml.parsers import expat
-from numpy import array
+import numpy as np
 import sys
 import keyword
 import re
 import os
 from inspect import getmembers
-
-from superstring import \
-    find_matching_pair, \
-    remove_pair_sections, \
-    remove_empty_lines, \
-    valid_variable_name,\
-    string2val
-
 from generic import obj
 from developer import DevBase
+
+
+def parse_string(s: str, delim: str | None = None):
+    if not isinstance(s, str):
+        raise TypeError("This function only parses strings!")
+
+    # Check if number
+    try:
+        if float(s).is_integer():
+            return int(float(s))
+        else:
+            return float(s)
+    except ValueError:
+        pass
+    #end try
+
+    # Check if bool
+    if s.lower() in ["true", "false"]:
+        return s.lower() == "true" # return True if s=="true" else False
+    #end if
+
+    # Check if number array
+    try:
+        split = s.split(delim)
+
+        # If it is ALL integers it will create an integer array
+        if not any([float(i).is_integer() for i in split]):
+            return np.array(split, int)
+        else:
+            # Try a float array
+            return np.array(split, float)
+        #end if
+    except ValueError:
+        return s
+    #end try
+#end def parse_string
+
+
+def find_matching_pair(s: str, pair: list[str, str], start: int = 0, end: int | None = None):
+    if end == -1:
+        end = len(s)
+    #end if
+
+    left = pair[0]
+    right = pair[1]
+
+    llen = len(left)
+    rlen = len(right)
+
+    ileft = s.find(left, start, end)
+    iright = -1
+    if ileft == -1:
+        return ileft, iright
+    else:
+        i = ileft + llen
+        left_scope = 0
+        right_scope = 0
+        found_match = False
+        failed = False
+        while not found_match and i < end:
+            nleft = s.find(left, i, end)
+            nright = s.find(right, i, end)
+            if nleft != -1 and nleft < nright:
+                right_scope += 1
+                i = nleft + llen
+            elif nright != -1:
+                found_match = right_scope == left_scope
+                right_scope -= 1
+                i = nright + rlen
+            elif nright == -1:
+                failed = True
+                break
+            #end if
+        #end while
+        if found_match:
+            iright = i
+        #end if
+        if failed:
+            ileft, iright = -1, -1
+        #end if
+    #end if
+    return ileft, iright
+#end def find_matching_pair
+
+
+def remove_pair_sections(s: str, pair: list[str, str]):
+    sc = s
+    ir = 0
+    n = 0
+    while ir != -1 and n < 10:
+        il, ir = find_matching_pair(sc, pair)
+        sc = sc.replace(sc[il:ir], "")
+    #end while
+    return sc
+#end def remove_pair_sections
 
 
 class XMLelement(DevBase):
@@ -163,17 +250,17 @@ class XMLelement(DevBase):
     # test needed
     def convert_numeric(self):
         for name,attr in self._attributes.items():
-            self[name] = string2val(attr)
+            self[name] = parse_string(attr)
         #end for
         if 'text' in self:
-            self.value = string2val(self.text)
+            self.value = parse_string(self.text)
             del self.text
         #end if
         texts = []
         for name,elem in self._elements.items():
             if isinstance(elem,XMLelement):
                 if 'text' in elem and len(elem._attributes)==0 and len(elem._elements)==0:
-                    self[name] = string2val(elem.text)
+                    self[name] = parse_string(elem.text)
                     texts.append(name)
                 else:
                     elem.convert_numeric()
@@ -261,7 +348,7 @@ class XMLreader(DevBase):
             self.xml = remove_pair_sections(self.xml,pair)
         #end while
         #remove empty lines
-        self.xml = remove_empty_lines(self.xml)
+        self.xml = "".join([i+"\n" for i in self.xml.splitlines() if i != ""])
         #print self.xml
 
         #parse the xml and build the dynamic object
@@ -285,12 +372,12 @@ class XMLreader(DevBase):
 
     # test needed
     def include_files(self):
-        pair = '<include','/>'
-        qpair = '<?','?>'
-        ir=0
-        while ir!=-1:
-            il,ir = find_matching_pair(self.xml,pair,ir)
-            if ir!=-1:
+        pair = ['<include', '/>']
+        qpair = ['<?', '?>']
+        ir = 0
+        while ir != -1:
+            il, ir = find_matching_pair(self.xml, pair, ir)
+            if ir != -1:
                 cont = self.xml[il:ir].strip(pair[0]).rstrip(pair[1])
                 fname = cont.split('=',1)[1].strip().strip('"')
                 fobj = open(os.path.join(self.base_path,fname),'r')
@@ -411,7 +498,9 @@ class XMLreader(DevBase):
             else:
                 k = kraw
             #end if
-            if valid_variable_name(k):
+            
+            # Check for variables containing invalid characters
+            if not any([i in ('!"#$%&\'()*+,-./:;<=>?@[\\]^`{|}-\n\t ') for i in k]):
                 kname = cur._escape_name(k)
                 cur[kname] = v
                 cur._add_xmlattribute(kname,cur[kname])
