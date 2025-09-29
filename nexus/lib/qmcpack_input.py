@@ -1578,10 +1578,7 @@ class Param(Names):
                 try: # Try to make int array
                     val = loadtxt(StringIO(xml.text),int)
                 except ValueError:
-                    try: # Try to make float array
-                        val = loadtxt(StringIO(xml.text),float)
-                    except ValueError:
-                        pass
+                    val = loadtxt(StringIO(xml.text),float)
                     #end try
                 #end try
             except:
