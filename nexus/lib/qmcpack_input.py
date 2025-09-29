@@ -157,56 +157,33 @@ truefalse_dict = {True:'true',False:'false'}
 onezero_dict   = {True:'1'   ,False:'0'}
 boolmap={'yes':True,'no':False,'true':True,'false':False,'1':True,'0':False}
 
-def is_int(var):
-    try:
-        int(var)
-        return True
-    except ValueError:
-        return False
-    #end try
-#end def is_int
-
-def is_float(var):
-    try:
-        float(var)
-        return True
-    except ValueError:
-        return False
-    #end try
-#end def is_float
-
-def is_array(var,type):
-    try:
-        if isinstance(var,str):
-            array(var.split(),type)
-        else:
-            array(var,type)
-        #end if
-        return True
-    except ValueError:
-        return False
-    #end try
-#end def is_float_array
-
 
 def attribute_to_value(attr):
-    if is_int(attr):
-        val = int(attr)
-    elif is_float(attr):
-        val = float(attr)
-    elif is_array(attr,int):
-        val = array(attr.split(),int)
+    try:
+        return int(attr)
+    except ValueError:
+        try:
+            return float(attr)
+        except ValueError:
+            pass
+        #end try
+    #end try
+
+    try:
+        val = np.array(attr.split(),int)
         if val.size==9:
             val.shape = 3,3
         #end if
-    elif is_array(attr,float):
-        val = array(attr.split(),float)
-    else:
-        val = attr
-    #end if
-    return val
-#end def attribute_to_value
+        return val
+    except ValueError:
+        try:
+            return np.array(attr.split(),float)
+        except ValueError:
+            return attr
+        #end try
+    #end try
 
+#end def attribute_to_value
 
 
 #local write types
@@ -1597,23 +1574,26 @@ class Param(Names):
             self.metadata[xml.name] = oa
         #end if
         if 'text' in xml:
-            token = xml.text.split('\n',1)[0].split(None,1)[0]
             try:
-                if is_int(token):
+                try: # Try to make int array
                     val = loadtxt(StringIO(xml.text),int)
-                elif is_float(token):
-                    val = loadtxt(StringIO(xml.text),float)
-                else:
-                    val = array(xml.text.split())
-                #end if
+                except ValueError:
+                    try: # Try to make float array
+                        val = loadtxt(StringIO(xml.text),float)
+                    except ValueError:
+                        pass
+                    #end try
+                #end try
             except:
-                if is_int(token):
+                try: # Try to make int array
                     val = array(xml.text.split(),dtype=int)
-                elif is_float(token):
-                    val = array(xml.text.split(),dtype=float)
-                else:
-                    val = array(xml.text.split())
-                #end if
+                except ValueError:
+                    try: # Try to make float array
+                        val = array(xml.text.split(),dtype=float)
+                    except ValueError:
+                        val = array(xml.text.split())
+                    #end try
+                #end try
             #end try
             if val.size==1:
                 val = val.ravel()[0]
