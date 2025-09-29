@@ -1576,7 +1576,7 @@ class Param(Names):
         if 'text' in xml:
             try:
                 try: # Try to make int array
-                    val = loadtxt(StringIO(xml.text),int)
+                    val = loadtxt(StringIO(xml.text),int,converters=int)
                 except ValueError:
                     val = loadtxt(StringIO(xml.text),float)
                     #end try
