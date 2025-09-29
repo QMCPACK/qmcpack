@@ -638,26 +638,6 @@ def plotting():
 
 
 
-def superstring():
-    nunit('imports')
-
-    nunit('string2val')
-
-    nunit('split_delims')
-
-    nunit('valid_variable_name')
-
-    nunit('find_matching_pair')
-
-    nunit('remove_pair_sections')
-
-    nunit('remove_empty_lines')
-
-    nunit_all()
-#end def superstring
-
-
-
 def generic_operation():
     nunit('logging')
 
@@ -1918,7 +1898,6 @@ NexusTest( nexus_imports                   )
 NexusTest( testing                         )
 NexusTest( execute                         )
 NexusTest( memory                          )
-NexusTest( superstring                     )
 NexusTest( generic_operation               , 'generic' )
 NexusTest( developer                       )
 NexusTest( plotting                        )
@@ -2026,7 +2005,6 @@ NexusTest( qdens_radial                    )
 #NexusTest( settings_operation              , 'settings' )
 #NexusTest( simulation                      , 'simulation_module' )
 #NexusTest( structure                       )
-#NexusTest( superstring                     )
 #NexusTest( testing                         )
 #NexusTest( unit_converter                  )
 #NexusTest( vasp_analyzer                   )

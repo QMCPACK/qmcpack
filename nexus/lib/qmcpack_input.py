@@ -141,7 +141,6 @@ from numpy import fromstring,empty,array,float64,\
     loadtxt,ndarray,dtype,sqrt,pi,arange,exp,eye,\
     ceil,mod,dot,abs,identity,floor,linalg,where,isclose
 from io import StringIO
-from superstring import string2val
 from generic import obj,hidden
 from xmlreader import XMLreader,XMLelement
 from developer import DevBase,error
