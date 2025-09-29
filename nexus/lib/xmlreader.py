@@ -65,59 +65,26 @@ def parse_string(s: str, delim: str | None = None):
 #end def parse_string
 
 
-def find_matching_pair(s: str, pair: list[str, str], start: int = 0, end: int | None = None):
-    if end == -1:
+def find_pair(s: str, pairs: list[str, str], start: int = 0, end: int | None = None):
+    if end is None:
         end = len(s)
-    #end if
 
-    left = pair[0]
-    right = pair[1]
+    left_pair = pairs[0]
+    right_pair  = pairs[1]
 
-    llen = len(left)
-    rlen = len(right)
+    start_loc = s.find(left_pair, start, end)
+    end_loc   = s.find(right_pair, start_loc + len(left_pair), end)
+    if start_loc == -1 or end_loc == -1:
+        return start_loc, end_loc
 
-    ileft = s.find(left, start, end)
-    iright = -1
-    if ileft == -1:
-        return ileft, iright
-    else:
-        i = ileft + llen
-        left_scope = 0
-        right_scope = 0
-        found_match = False
-        failed = False
-        while not found_match and i < end:
-            nleft = s.find(left, i, end)
-            nright = s.find(right, i, end)
-            if nleft != -1 and nleft < nright:
-                right_scope += 1
-                i = nleft + llen
-            elif nright != -1:
-                found_match = right_scope == left_scope
-                right_scope -= 1
-                i = nright + rlen
-            elif nright == -1:
-                failed = True
-                break
-            #end if
-        #end while
-        if found_match:
-            iright = i
-        #end if
-        if failed:
-            ileft, iright = -1, -1
-        #end if
-    #end if
-    return ileft, iright
-#end def find_matching_pair
+    return start_loc, end_loc+len(right_pair)
 
 
 def remove_pair_sections(s: str, pair: list[str, str]):
     sc = s
     ir = 0
-    n = 0
-    while ir != -1 and n < 10:
-        il, ir = find_matching_pair(sc, pair)
+    while ir != -1:
+        il, ir = find_pair(sc, pair)
         sc = sc.replace(sc[il:ir], "")
     #end while
     return sc
