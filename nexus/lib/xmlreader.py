@@ -310,7 +310,7 @@ class XMLreader(DevBase):
             self.xml = remove_pair_sections(self.xml,pair)
         #end while
         #remove empty lines
-        self.xml = "".join([i+"\n" for i in self.xml.splitlines() if i != ""])
+        self.xml = "".join([i+"\n" for i in self.xml.splitlines() if i.strip() != ""])
         #print self.xml
 
         #parse the xml and build the dynamic object
