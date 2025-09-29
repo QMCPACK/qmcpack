@@ -40,12 +40,12 @@ def parse_string(s: str, delim: str | None = None):
 
     # Check if number
     try:
-        if float(s).is_integer():
-            return int(float(s))
-        else:
-            return float(s)
+        return int(s)
     except ValueError:
-        pass
+        try:
+            return float(s)
+        except ValueError:
+            pass
     #end try
 
     # Check if bool
@@ -55,17 +55,12 @@ def parse_string(s: str, delim: str | None = None):
 
     # Check if number array
     try:
-        split = s.split(delim)
-
-        # If it is ALL integers it will create an integer array
-        if not any([float(i).is_integer() for i in split]):
-            return np.array(split, int)
-        else:
-            # Try a float array
-            return np.array(split, float)
-        #end if
+        return np.array(s.split(delim), int)
     except ValueError:
-        return s
+        try:
+            return np.array(s.split(delim), float)
+        except ValueError:
+            return s
     #end try
 #end def parse_string
 
