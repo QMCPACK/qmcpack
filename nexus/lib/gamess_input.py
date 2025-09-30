@@ -1165,7 +1165,7 @@ def generate_any_gamess_input(**kwargs):
 
 
 def check_keyspec_groups():
-    from generic import error,warn
+    from developer import error, warn
 
     groups      = GamessInput.keyspec_groups
     group_order = GamessInput.group_order

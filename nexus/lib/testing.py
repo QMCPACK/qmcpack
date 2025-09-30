@@ -1,8 +1,8 @@
 import os
 import shutil
 from subprocess import Popen,PIPE
-from generic import generic_settings,object_interface
-from developer import obj
+from generic import generic_settings
+from developer import obj, object_interface
 from execute import execute as nexus_execute
 from nexus_base import (
     nexus_core,

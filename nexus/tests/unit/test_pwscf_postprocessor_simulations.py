@@ -66,7 +66,7 @@ def test_check_result():
 
 
 def test_get_result():
-    from generic import NexusError
+    from developer import NexusError
     from machines import job
 
     for cls,gen in get_class_generators():
@@ -90,7 +90,7 @@ def test_get_result():
 
 
 def test_incorporate_result():
-    from generic import NexusError
+    from developer import NexusError
     from machines import job
 
     for cls,gen in get_class_generators():

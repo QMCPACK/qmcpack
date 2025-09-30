@@ -30,11 +30,8 @@ try:
     nexus_version = versions.nexus_version
     del versions
 
-    generic = import_nexus_module('generic')
-    obj = generic.obj
-    del generic
-
     developer = import_nexus_module('developer')
+    obj         = developer.obj
     DevBase     = developer.DevBase
     unavailable = developer.unavailable
     del developer
@@ -51,8 +48,7 @@ try:
 except:
     # Failing path-based imports, import installed Nexus modules.
     from versions import nexus_version
-    from generic import obj
-    from developer import DevBase,unavailable
+    from developer import DevBase,obj,unavailable
     from unit_converter import convert
     from numerics import simstats,simplestats,equilibration_length
 #end try

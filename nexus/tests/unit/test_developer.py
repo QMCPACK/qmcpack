@@ -12,9 +12,9 @@ def test_import():
 
 
 def test_unavailable():
-    from generic import generic_settings,NexusError
-    from developer import Void
-    from developer import unavailable,available
+    from generic import generic_settings
+    from developer import Void, NexusError
+    from developer import unavailable, available
 
     gre = generic_settings.raise_error
     generic_settings.raise_error = True
