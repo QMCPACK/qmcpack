@@ -1575,13 +1575,17 @@ class Param(Names):
         #end if
         if 'text' in xml:
             try:
-                #try: # Try to make int array
-                #    val = loadtxt(StringIO(xml.text),int,converters=int)
-                #except ValueError:
-                #    val = loadtxt(StringIO(xml.text),float)
-                #    #end try
-                ##end try
-                val = loadtxt(StringIO(xml.text),float)
+                try: # Try to make int array
+                    # NumPy >= 1.23.0 uses int(float(value)) here, must specify int converter
+                    if np.lib.NumpyVersion(np.__version__) >= '1.23.0':
+                        val = loadtxt(StringIO(xml.text),int,converters=int)
+                    else:
+                        # int converter however will break NumPy <1.23.0
+                        val = loadtxt(StringIO(xml.text),int)
+                except:
+                    val = loadtxt(StringIO(xml.text),float)
+                    #end try
+                #end try
             except:
                 try: # Try to make int array
                     val = array(xml.text.split(),dtype=int)
