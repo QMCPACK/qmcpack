@@ -6117,7 +6117,7 @@ def generate_jastrows_alt(
         J1_size      = None,
         J1_rcut      = None,
         J1_dr        = 0.5,
-        J1_opt       = True,
+        J1_opt       = None,
         J2_size      = None,
         J2_rcut      = None,
         J2_dr        = 0.5,
@@ -6126,7 +6126,7 @@ def generate_jastrows_alt(
         J3_isize     = 3,
         J3_esize     = 3,
         J3_rcut      = 5.0,
-        J3_opt       = True,
+        J3_opt       = None,
         J1_rcut_open = 5.0,
         J2_rcut_open = 10.0,
         J1k          = False,
@@ -6136,7 +6136,7 @@ def generate_jastrows_alt(
         J2k          = False,
         J2k_kcut     = 5.0,
         J2k_symm     = 'crystal',
-        J2k_opt      = True,
+        J2k_opt      = None,
         system       = None,
         ):
     if system is None:
@@ -6176,7 +6176,10 @@ def generate_jastrows_alt(
         if J1_size is None:
             J1_size = int(ceil(J1_rcut/J1_dr))
         #end if
-        J = generate_jastrow('J1','bspline',J1_size,J1_rcut,opt=J1_opt,system=system)
+        kw = obj(system=system)
+        if J1_opt is not None:
+            kw.opt = bool(J1_opt)
+        J = generate_jastrow('J1','bspline',J1_size,J1_rcut,**kw)
         jastrows.append(J)
     #end if
     if J2:
@@ -6196,7 +6199,10 @@ def generate_jastrows_alt(
         if J2_size is None:
             J2_size = int(ceil(J2_rcut/J2_dr))
         #end if
-        J = generate_jastrow('J2','bspline',J2_size,J2_rcut,init=J2_init,opt=J2_opt,system=system)
+        kw = obj(system=system)
+        if J2_opt is not None:
+            kw.opt = bool(J2_opt)
+        J = generate_jastrow('J2','bspline',J2_size,J2_rcut,init=J2_init,**kw)
         jastrows.append(J)
     #end if
     if J3:
@@ -6209,7 +6215,10 @@ def generate_jastrows_alt(
             #end if
             J3_rcut = min(J3_rcut,rwigner)
         #end if
-        J = generate_jastrow('J3','polynomial',J3_esize,J3_isize,J3_rcut,opt=J3_opt,system=system)
+        kw = obj(system=system)
+        if J3_opt is not None:
+            kw.opt = bool(J3_opt)
+        J = generate_jastrow('J3','polynomial',J3_esize,J3_isize,J3_rcut,**kw)
         jastrows.append(J)
     #end if
     if J1k or J2k:
@@ -6217,12 +6226,14 @@ def generate_jastrows_alt(
         if J1k:
             Jk_inp.kc1   = J1k_kcut
             Jk_inp.symm1 = J1k_symm
-            Jk_inp.opt1  = J1k_opt
+            if J1k_opt is not None:
+                Jk_inp.opt1  = bool(J1k_opt)
         #end if
         if J2k:
             Jk_inp.kc2   = J2k_kcut
             Jk_inp.symm2 = J2k_symm
-            Jk_inp.opt2  = J1k_opt
+            if J2k_opt is not None:
+                Jk_inp.opt2  = bool(J2k_opt)
         #end if
         J = generate_kspace_jastrow(**Jk_inp)
         jastrows.append(J)
@@ -6282,7 +6293,7 @@ def generate_jastrow(descriptor,*args,**kwargs):
 
 
 
-def generate_jastrow1(function='bspline',size=8,rcut=None,coeff=None,cusp=0.,ename='e',iname='ion0',elements=None,system=None,opt=True,**elemargs):
+def generate_jastrow1(function='bspline',size=8,rcut=None,coeff=None,cusp=0.,ename='e',iname='ion0',elements=None,system=None,opt=None,**elemargs):
     noelements = elements is None
     nosystem   = system is None
     noelemargs = len(elemargs)==0
@@ -6349,9 +6360,10 @@ def generate_jastrow1(function='bspline',size=8,rcut=None,coeff=None,cusp=0.,ena
                 id       = ename+element,
                 type     = 'Array',
                 coeff    = lcoeff,
-                optimize = opt,
-                )
-            )            
+                )         
+            )    
+        if opt is not None:
+            corr.coefficients.optimize = bool(opt)
         if lrcut!=None:
             if isperiodic and lrcut>rwigner:
                 QmcpackInput.class_error('rcut must not be greater than the simulation cell wigner radius\nyou provided: {0}\nwigner radius: {1}'.format(lrcut,rwigner),'generate_jastrow1')
@@ -6377,7 +6389,7 @@ def generate_jastrow1(function='bspline',size=8,rcut=None,coeff=None,cusp=0.,ena
 
 
 
-def generate_bspline_jastrow2(size=8,rcut=None,coeff=None,spins=('u','d'),density=None,system=None,opt=True,init='rpa'):
+def generate_bspline_jastrow2(size=8,rcut=None,coeff=None,spins=('u','d'),density=None,system=None,init='rpa',opt=None):
     if coeff is None and system is None and (init=='rpa' and density is None or rcut is None):
         QmcpackInput.class_error('rcut and density or system must be specified','generate_bspline_jastrow2')
     #end if
@@ -6435,10 +6447,13 @@ def generate_bspline_jastrow2(size=8,rcut=None,coeff=None,spins=('u','d'),densit
     udname = uname+dname
     corrs = [
         correlation(speciesA=uname,speciesB=uname,size=size,
-                    coefficients=section(id=uuname,type='Array',coeff=coeff[0],optimize=opt)),
+                    coefficients=section(id=uuname,type='Array',coeff=coeff[0])),
         correlation(speciesA=uname,speciesB=dname,size=size,
-                    coefficients=section(id=udname,type='Array',coeff=coeff[1],optimize=opt))
+                    coefficients=section(id=udname,type='Array',coeff=coeff[1]))
         ]
+    if opt is not None:
+        for corr in corrs:
+            corr.coefficients.optimize = bool(opt)
     if rcut!=None:
         if isperiodic and rcut>rwigner:
             QmcpackInput.class_error('rcut must not be greater than the simulation cell wigner radius\nyou provided: {0}\nwigner radius: {1}'.format(rcut,rwigner),'generate_jastrow2')
@@ -6520,7 +6535,7 @@ def generate_jastrow2(function='bspline',*args,**kwargs):
 
 
 
-def generate_jastrow3(function='polynomial',esize=3,isize=3,rcut=4.,coeff=None,iname='ion0',spins=('u','d'),elements=None,system=None,opt=True):
+def generate_jastrow3(function='polynomial',esize=3,isize=3,rcut=4.,coeff=None,iname='ion0',spins=('u','d'),elements=None,system=None,opt=None):
     if elements is None and system is None:
         QmcpackInput.class_error('must specify elements or system','generate_jastrow3')
     elif elements is None:
@@ -6545,18 +6560,21 @@ def generate_jastrow3(function='polynomial',esize=3,isize=3,rcut=4.,coeff=None,i
     uuname = uname+uname
     udname = uname+dname
     corrs=[]
+    kw = obj()
+    if opt is not None:
+        kw.opt = bool(opt)
     for element in elements:
         corrs.append(
             correlation(
                 especies1=uname,especies2=uname,ispecies=element,esize=esize,
                 isize=isize,rcut=rcut,
-                coefficients=section(id=uuname+element,type='Array',optimize=opt))
+                coefficients=section(id=uuname+element,type='Array',**kw))
             )
         corrs.append(
             correlation(
                 especies1=uname,especies2=dname,ispecies=element,esize=esize,
                 isize=isize,rcut=rcut,
-                coefficients=section(id=udname+element,type='Array',optimize=opt))
+                coefficients=section(id=udname+element,type='Array',**kw))
             )
     #end for
     jastrow = jastrow3(
@@ -6576,8 +6594,8 @@ def generate_kspace_jastrow(
         symm2  = 'isotropic', 
         coeff1 = None, 
         coeff2 = None,
-        opt1   = True,
-        opt2   = True,
+        opt1   = None,
+        opt2   = None,
         ):
   """Generate <jastrow type="kSpace">
 
@@ -6624,8 +6642,10 @@ def generate_kspace_jastrow(
           type         = 'One-Body',
           symmetry     = symm1,
           kc           = kc1,
-          coefficients = section(id='cG1', type='Array', coeff=coeff1, optimize=J1k_opt),
+          coefficients = section(id='cG1', type='Array', coeff=coeff1),
           )
+      if opt1 is not None:
+          corr1.coefficients.optimize = bool(opt1)
       corrs.append(corr1)
   #end if
   if J2k:
@@ -6633,8 +6653,10 @@ def generate_kspace_jastrow(
           type         = 'Two-Body',
           symmetry     = symm2,
           kc           = kc2,
-          coefficients = section(id='cG2', type='Array', coeff=coeff2, optimize=J2k_opt),
+          coefficients = section(id='cG2', type='Array', coeff=coeff2),
           )
+      if opt2 is not None:
+          corr2.coefficients.optimize = bool(opt2)
       corrs.append(corr2)
   #end if
   jk = kspace_jastrow(
@@ -7928,22 +7950,27 @@ gen_basic_input_defaults = obj(
     J3               = False,            
     J1_size          = None,             
     J1_rcut          = None,             
-    J1_dr            = 0.5,              
+    J1_dr            = 0.5,
+    J1_opt           = None,
     J2_size          = None,             
     J2_rcut          = None,             
-    J2_dr            = 0.5,              
-    J2_init          = 'zero',           
+    J2_dr            = 0.5, 
+    J2_init          = 'zero',
+    J2_opt           = None,
     J3_isize         = 3,                
     J3_esize         = 3,                
-    J3_rcut          = 5.0,              
+    J3_rcut          = 5.0, 
+    J3_opt           = None,
     J1_rcut_open     = 5.0,              
     J2_rcut_open     = 10.0,
     J1k              = False,
     J1k_kcut         = 5.0,
     J1k_symm         = 'crystal',
+    J1k_opt          = None,
     J2k              = False,
     J2k_kcut         = 5.0,
     J2k_symm         = 'crystal',
+    J2k_opt          = None,
     driver           = 'batched', # legacy,batched
     # batched driver inputs
     orbitals_cpu     = None,     # place/evaluate orbitals on cpu if on gpu
@@ -8183,21 +8210,26 @@ def generate_basic_input(**kwargs):
             J1_size      = kw.J1_size     ,
             J1_rcut      = kw.J1_rcut     ,
             J1_dr        = kw.J1_dr       ,
+            J1_opt       = kw.J1_opt      ,
             J2_size      = kw.J2_size     ,
             J2_rcut      = kw.J2_rcut     ,
             J2_dr        = kw.J2_dr       ,
             J2_init      = kw.J2_init     ,
+            J2_opt       = kw.J2_opt      ,
             J3_isize     = kw.J3_isize    ,
             J3_esize     = kw.J3_esize    ,
             J3_rcut      = kw.J3_rcut     ,
+            J3_opt       = kw.J3_opt      ,
             J1_rcut_open = kw.J1_rcut_open,
             J2_rcut_open = kw.J2_rcut_open,
             J1k          = kw.J1k         ,
             J1k_kcut     = kw.J1k_kcut    ,
             J1k_symm     = kw.J1k_symm    ,
+            J1k_opt      = kw.J1k_opt     ,
             J2k          = kw.J2k         ,
             J2k_kcut     = kw.J2k_kcut    ,
             J2k_symm     = kw.J2k_symm    ,
+            J2k_opt      = kw.J2k_opt     ,
             system       = kw.system      ,
             )
     #end if
