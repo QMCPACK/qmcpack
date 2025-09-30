@@ -46,7 +46,7 @@ public:
   {
     auto device = getSYCLDefaultDeviceDefaultQueue().get_device();
     if (device.has(sycl::aspect::ext_intel_free_memory))
-      return getSYCLDefaultDeviceDefaultQueue().get_device().get_info<sycl::ext::intel::info::device::free_memory>();
+      return device.get_info<sycl::ext::intel::info::device::free_memory>();
     else
       return 0;
   }
