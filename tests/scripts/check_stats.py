@@ -996,6 +996,16 @@ class DevBase(obj):
     #end def not_implemented
 #end class DevBase
 
+
+def valid_variable_name(s: str):
+    """Check if a variable name contains invalid characters"""
+    if not any([i in ('!"#$%&\'()*+,-./:;<=>?@[\\]^`{|}-\n\t ') for i in s]):
+        return True
+    else:
+        return False
+    #end if
+#end def valid_variable_name
+
 ######################################################################
 # end from developer.py
 ######################################################################
@@ -1171,7 +1181,7 @@ class HDFreader(DevBase):
             hcur  = self.hcur[self.ilevel]
             for kr,v in hcur.items():
                 k=cur._escape_name(kr)
-                if not any([i in ('!"#$%&\'()*+,-./:;<=>?@[\\]^`{|}-\n\t ') for i in k]):
+                if valid_variable_name(k):
                     vtype = str(type(v))
                     if vtype in HDFreader.datasets:
                         self.add_dataset(cur,k,v)
@@ -1232,7 +1242,7 @@ class HDFreader(DevBase):
         hcur  = self.hcur[self.ilevel]
         for kr,v in hcur.items():
             k=cur._escape_name(kr)
-            if not any([i in ('!"#$%&\'()*+,-./:;<=>?@[\\]^`{|}-\n\t ') for i in k]):
+            if valid_variable_name(k):
                 vtype = str(type(v))
                 if vtype in HDFreader.datasets:
                     self.add_dataset(cur,k,v)

@@ -31,7 +31,7 @@ import re
 import os
 from inspect import getmembers
 from generic import obj
-from developer import DevBase
+from developer import DevBase,valid_variable_name
 
 
 def parse_string(s: str, delim: str = None):
@@ -65,7 +65,7 @@ def parse_string(s: str, delim: str = None):
 #end def parse_string
 
 
-def find_pair(s: str, pairs: list[str, str], start: int = 0, end: int = None):
+def find_pair(s: str, pairs: tuple[str, str], start: int = 0, end: int = None):
     if end is None:
         end = len(s)
 
@@ -80,7 +80,7 @@ def find_pair(s: str, pairs: list[str, str], start: int = 0, end: int = None):
     return start_loc, end_loc+len(right_pair)
 
 
-def remove_pair_sections(s: str, pair: list[str, str]):
+def remove_pair_sections(s: str, pair: tuple[str, str]):
     sc = s
     ir = 0
     while ir != -1:
@@ -89,6 +89,19 @@ def remove_pair_sections(s: str, pair: list[str, str]):
     #end while
     return sc
 #end def remove_pair_sections
+
+
+def remove_empty_lines(s: str):
+    """Remove any lines with only whitespace present."""
+    sr = ""
+    lines = s.splitlines()
+    for line in lines:
+        if line.strip() != "":
+            sr += line+"\n"
+        #end if
+    #end for
+    return sr
+#end def remove_empty lines
 
 
 class XMLelement(DevBase):
@@ -302,7 +315,7 @@ class XMLreader(DevBase):
             self.xml = xml
         #end if
         #remove all comments
-        pair='<!--','-->'
+        pair = ('<!--', '-->')
         self.xml = remove_pair_sections(self.xml,pair)
         #process includes
         while self.xml.find('<include')!=-1:
@@ -334,11 +347,11 @@ class XMLreader(DevBase):
 
     # test needed
     def include_files(self):
-        pair = ['<include', '/>']
-        qpair = ['<?', '?>']
+        pair = ('<include', '/>')
+        qpair = ('<?', '?>')
         ir = 0
         while ir != -1:
-            il, ir = find_matching_pair(self.xml, pair, ir)
+            il, ir = find_pair(self.xml, pair, ir)
             if ir != -1:
                 cont = self.xml[il:ir].strip(pair[0]).rstrip(pair[1])
                 fname = cont.split('=',1)[1].strip().strip('"')
@@ -462,7 +475,7 @@ class XMLreader(DevBase):
             #end if
             
             # Check for variables containing invalid characters
-            if not any([i in ('!"#$%&\'()*+,-./:;<=>?@[\\]^`{|}-\n\t ') for i in k]):
+            if valid_variable_name(k):
                 kname = cur._escape_name(k)
                 cur[kname] = v
                 cur._add_xmlattribute(kname,cur[kname])

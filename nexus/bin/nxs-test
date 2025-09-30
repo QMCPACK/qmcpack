@@ -655,6 +655,8 @@ def developer():
 
     nunit('unavailable')
 
+    nunit('valid_variable_name')
+
     nunit_all()
 #end def developer
 
@@ -795,6 +797,14 @@ def xmlreader():
     nunit('import')
 
     nunit('read')
+
+    nunit('parse_string')
+
+    nunit('find_pair')
+
+    nunit('remove_pair_sections')
+
+    nunit('remove_empty_lines')
 
     nunit_all()
 #end def xmlreader

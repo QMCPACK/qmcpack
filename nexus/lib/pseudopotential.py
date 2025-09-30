@@ -400,9 +400,7 @@ class Pseudopotential(DevBase):
         if not os.path.exists(filepath):
             self.error('cannot read {0}, file does not exist'.format(filepath))
         #end if
-        self.element = os.path.split(filepath)[1]
-        for delim in (".", "-", "_"):
-            self.element = self.element.split(delim)[0]
+        self.element = pp_elem_label(os.path.split(filepath)[1])[0]
         text = open(filepath,'r').read()
         self.read_text(text,format,filepath=filepath)
     #end def read
@@ -1607,9 +1605,7 @@ class GaussianPP(SemilocalPP):
             name,type,Zcore,lmax = lines[i].split(); i+=1
             Zcore = int(Zcore)
             lmax  = int(lmax)
-            element = name
-            for delim in (".", "_", "-"):
-                element = element.split(delim)[0]
+            element = pp_elem_label(name)[0]
             while i<len(lines):
                 n = int(lines[i]); i+=1
                 terms = []

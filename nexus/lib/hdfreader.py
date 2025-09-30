@@ -25,7 +25,7 @@ import keyword
 from inspect import getmembers
 
 from generic import obj
-from developer import DevBase,unavailable
+from developer import DevBase,unavailable,valid_variable_name
 try:
     import h5py
 except:
@@ -306,7 +306,7 @@ class HDFreader(DevBase):
             hcur  = self.hcur[self.ilevel]
             for kr,v in hcur.items():
                 k=cur._escape_name(kr)
-                if not any([i in ('!"#$%&\'()*+,-./:;<=>?@[\\]^`{|}-\n\t ') for i in k]):
+                if valid_variable_name(k):
                     if isinstance(v, h5py.Dataset):
                         self.add_dataset(cur,k,v)
                     elif isinstance(v, h5py.Group):
