@@ -1970,7 +1970,7 @@ class multideterminant(QIxml):
 #end class multideterminant
 
 class detlist(QIxml):
-    attributes = ['size','type','nca','ncb','nea','neb','nstates','cutoff','ext_level','href']
+    attributes = ['size','type','nca','ncb','nea','neb','nstates','cutoff','ext_level','href','optimize']
     elements   = ['ci','csf']
 #end class detlist
 
@@ -3336,7 +3336,7 @@ class QmcpackInput(SimulationInput,Names):
     def get_host(self,names):
         base = self.get_base()
         return base.get_host(names)
-    #end if
+    #end def get_host
 
     def incorporate_defaults(self,elements=False,overwrite=False,propagate=False):
         base = self.get_base()
@@ -3956,13 +3956,13 @@ class QmcpackInput(SimulationInput,Names):
         #end if
     #end def incorporate_system
         
-    def get_electron_particle_set(self):
 
+    def get_electron_particle_set(self):
         input = self.copy()
         input.pluralize()
         return input.get('particlesets').e
-
     #end def get_electron_particle_set
+
 
     def return_system(self,structure_only=False):
         input = self.copy()
@@ -4202,21 +4202,429 @@ class QmcpackInput(SimulationInput,Names):
         #end if
         return cc
     #end def cusp_correction
+        
 
+    def get_driver(self):
+        driver = self.get('driver_version')
+        if driver is None or driver.startswith('batch'):
+            driver = 'batched'
+        assert driver in ('batched','legacy')
+        return driver
+    #end def get_driver()
+
+    def set_driver(self,driver):
+        if driver.startswith('batch'):
+            driver = 'batched'
+        assert driver in ('batched','legacy')
+        proj = self.get('project')
+        proj.driver_version = driver
+    #end set_driver
+
+
+    def has_jastrows(self):
+        return self.get_jastrows() is not None
+    #end def has_jastrows
+
+    def get_jastrows(self):
+        return self.get('jastrow')
+    #end def get_jastrows
+
+    def remove_jastrows(self):
+        self.remove('jastrow')
+    #end def remove_jastrows
+
+    def remove_J1(self):
+        J = self.get('jastrow')
+        if J is not None:
+            Jrem = []
+            for name,Jn in J.items():
+                if Jn.type=='One-Body':
+                    Jrem.append(name)
+            for name in Jrem:
+                del J[name]
+    #end def remove_J1
+
+    def remove_J2(self):
+        J = self.get('jastrow')
+        if J is not None:
+            Jrem = []
+            for name,Jn in J.items():
+                if Jn.type=='Two-Body':
+                    Jrem.append(name)
+            for name in Jrem:
+                del J[name]
+    #end def remove_J2
+
+    def remove_J3(self):
+        J = self.get('jastrow')
+        if J is not None:
+            Jrem = []
+            for name,Jn in J.items():
+                if Jn.type=='eeI':
+                    Jrem.append(name)
+            for name in Jrem:
+                del J[name]
+    #end def remove_J3
+
+    def gen_jastrows(self,**kwargs):
+        self.remove_jastrows()
+        system = kwargs.pop('system',None)
+        if system is None:
+            system = self.return_system()
+        else:
+            assert isinstance(system,PhysicalSystem)
+        jastrows = generate_jastrows_alt(system=system,**kwargs)
+        wfn = self.get('wavefunction')
+        if wfn is None:
+            self.error('cannot set jastrows.\nWavefunction is missing.')
+        wfn.jastrows = make_collection(jastrows)
+    #end def gen_jastrows
+
+    def optimize_jastrows(self,opt=True):
+        opt = bool(opt)
+        jastrows = self.get_jastrows()
+        if jastrows is not None:
+            jastrow_classes = tuple(jastrow.types.values())
+            for n,Jn in jastrows.items():
+                if not isinstance(Jn,QIxml):
+                    continue
+                assert isinstance(Jn,jastrow_classes)
+                for corr in Jn.correlations.values():
+                    corr.coefficients.optimize = opt
+    #end def optimize_jastrows
+
+
+    def set_orbitals_h5(self,orbitals_h5):
+        assert isinstance(orbitals_h5,str)
+        wfn = self.get('wavefunction')
+        assert wfn is not None
+        assert 'determinantset' in wfn
+        dset = wfn.determinantset
+        spob = self.get('sposet_builder')
+        if spob is None:
+            spob = self.get('sposet_collection')
+        if spob is None:
+            dset.href = orbitals_h5
+        elif 'bspline' in spob:
+            spob.bspline.href = orbitals_h5
+        else:
+            self.error('orbital file assignment is only supported for sposet_builder with B-spline orbitals')
+    #end def set_orbitals_h5
+
+    def has_lcao_orbitals(self):
+        dset = self.get('determinantset')
+        assert dset is not None
+        lcao = 'type' in dset and dset.type=='MolecularOrbital'
+        return lcao
+    #end def has_lcao_orbitals
+
+    def set_lcao_orbital_file(self,filepath):
+        assert filepath.endswith('.h5')
+        if not self.has_lcao_orbitals():
+            self.error('calculation type is not LCAO. Cannot assign LCAO orbital file.')
+        dset = self.get('determinantset')
+        assert dset is not None
+        dset.href = filepath
+    #end def set_lcao_orbital_file
+
+
+    def has_multidet(self):
+        return self.get_multidet() is not None
+    #end def has_multidet
+
+    def get_multidet(self):
+        return self.get('multideterminant')
+    #end def get_multidet
+
+    def optimize_multidet(self,opt=True):
+        opt = bool(opt)
+        md  = self.get_multidet()
+        if md is None:
+            self.error('input file has no multideterminant')
+        assert isinstance(md,multideterminant)
+        assert 'detlist' in md
+        md.detlist.optimize = opt
+    #end def optimize_multidet
+
+    def set_multidet_params(self,**kwargs):
+        md = self.get_multidet()
+        if md is None:
+            self.error('input file has no multideterminant')
+        dl = md.detlist
+        names = set(list(kwargs.keys()))
+        mdc = multideterminant
+        md_names = set(mdc.attributes)|set(mdc.parameters)
+        dl_names = set(detlist.attributes)|set(detlist.parameters)
+        allowed_names = md_names|dl_names
+        invalid = names - allowed_names
+        if len(invalid)>0:
+            self.error('unrecognized multideterminant parameters encountered.\n  Allowed params are: {}\nYou provided:{}'.format(list(sorted(allowed_names)),list(sorted(invalid))))
+        for name in md_names:
+            if name in kwargs:
+                md[name] = kwargs[name]
+        for name in dl_names:
+            if name in kwargs:
+                dl[name] = kwargs[name]
+    #end def set_mutidet_params
+
+    def set_multidet_h5(self,filepath):
+        assert filepath.endswith('.h5')
+        self.set_multidet_params(href=filepath)
+    #end def set_multidet_h5
+
+
+    def set_pseudo_files(self,**pseudo_files):
+        pps = self.get('pseudo')
+        assert pps is not None
+        species = list(pps.keys())
+        for spec1,filepath in pseudo_files.items():
+            for spec2 in species:
+                if spec1.lower()==spec2.lower():
+                    pp = pps[spec2]
+                    pp.href = filepath
+                    del pps[spec2]
+                    pps[spec1] = pp
+    #end def set_pseudo_files
+
+    def has_qmc(self,series):
+        return self.get_qmc(series) is not None
+    #end def has_qmc
 
     def get_qmc(self,series):
-        qmc = None
+        series = int(series)
+        qmc          = None
         calcs        = self.get('calculations')
         series_start = self.get('series')
-        if calcs!=None:
-            if series_start is None:
+        if calcs is not None:
+            if series_start is not None:
+                series -= series_start
+            if series in calcs:
                 qmc = calcs[series]
-            else:
-                qmc = calcs[series-series_start]
-            #end if
-        #end if
         return qmc
     #end def get_qmc
+
+    def remove_qmc(self,series):
+        series = int(series)
+        qmc          = None
+        calcs        = self.get('calculations')
+        series_start = self.get('series')
+        if calcs is not None:
+            if series_start is not None:
+                series -= series_start
+            if series in calcs:
+                qmc = calcs[series]
+                del calcs[series]
+                while series+1 in calcs:
+                    calcs[series] = calcs[series+1]
+                    del calcs[series+1]
+                    series += 1
+            else:
+                self.error('qmc method with series {} not found'.format(series))
+        #return qmc
+    #end def remove_qmc
+
+
+    def has_calculations(self):
+        return self.get_calculations() is not None
+    #end def has_calculations
+
+    def get_calculations(self):
+        return self.get('calculations')
+    #end def get_calculations
+
+    def remove_calculations(self):
+        self.remove('calculations')
+    #end def remove_calculations
+
+    def gen_calculations(self,qmc,**kw):
+        allowed_qmc = ('opt','vmc','vmc_test','dmc','dmc_test')
+        if qmc not in allowed_qmc:
+            self.error('calculation type "{}" is unrecognized.\nValid options are: {}'.format(qmc,allowed_qmc))
+        kw = obj(**kw)
+        driver = self.get_driver()
+        kw.set_optional(**qmc_defaults[driver][qmc])
+        kw.driver = driver
+        self.remove_calculations()
+        if qmc=='opt':
+            calcs = generate_opt_calculations(**kw)
+        elif 'vmc' in qmc:
+            calcs = generate_vmc_calculations(**kw)
+        elif 'dmc' in qmc:
+            calcs = generate_dmc_calculations(**kw)
+        assert isinstance(calcs,list)
+        for calc in calcs:
+            calc.incorporate_defaults(elements=False,overwrite=False,propagate=True)
+        calcs = make_collection(calcs)
+        self.simulation.calculations = calcs
+    #end def gen_calculations
+
+
+    def modify(self,
+               driver              = None,
+               remove_system       = False,
+               change_system       = False,
+               remove_jastrows     = False,
+               remove_J1           = False,
+               remove_J2           = False,
+               remove_J3           = False,
+               remove_determinants = False,
+               remove_multidet     = False,
+               remove_calculations = False,
+               # generate_jastrow_alt inputs
+               J1                  = False,
+               J2                  = False,
+               J3                  = False,
+               J1_size             = None,
+               J1_rcut             = None,
+               J1_dr               = 0.5,
+               J1_opt              = True,
+               J2_size             = None,
+               J2_rcut             = None,
+               J2_dr               = 0.5,
+               J2_init             = 'zero',
+               J2_opt              = True,
+               J3_isize            = 3,
+               J3_esize            = 3,
+               J3_rcut             = 5.0,
+               J3_opt              = True,
+               J1_rcut_open        = 5.0,
+               J2_rcut_open        = 10.0,
+               J1k                 = False,
+               J1k_kcut            = 5.0,
+               J1k_symm            = 'crystal',
+               J1k_opt             = True,
+               J2k                 = False,
+               J2k_kcut            = 5.0,
+               J2k_symm            = 'crystal',
+               J2k_opt             = True,
+               system              = None,
+               # other jastrow
+               jastrow_opt         = None,
+               # determinant inputs
+               orbitals_h5         = None,
+               # multidet inputs
+               multidet_h5         = None,
+               multidet_cutoff     = None,
+               multidet_opt        = None,
+               # other wavefunction
+               optimize            = None,
+               # hamiltonian
+               pseudo_files        = None,
+               # calculations input
+               calculations        = None,
+               qmc                 = None,
+               **gen_calcs
+               ):
+        if optimize is not None:
+            optimize = bool(optimize)
+            J1_opt       = optimize
+            J2_opt       = optimize
+            J3_opt       = optimize
+            J1k_opt      = optimize
+            J2k_opt      = optimize
+            jastrow_opt  = optimize
+            multidet_opt = optimize
+        if jastrow_opt is not None:
+            jastrow_opt = bool(jastrow_opt)
+        if multidet_opt is not None:
+            multidet_opt = bool(multidet_opt)
+        if calculations is not None and qmc is not None:
+            self.error('cannot both provide calculation list ("calculations keyword") and request calculation generation ("qmc" keyword)')
+
+        # set driver version
+        if driver is not None:
+            self.set_driver(driver)
+        # remove system
+        remove_system = bool(remove_system)
+        if remove_system:
+            self.remove_physical_system()
+        # change system
+        change_system = bool(change_system)
+        if change_system:
+            assert system is not None
+            self.remove_physical_system()
+            self.incorporate_system(system)
+        # remove jastrows
+        remove_jastrows = bool(remove_jastrows)
+        if remove_jastrows:
+            self.remove_jastrows()
+        remove_J1 = bool(remove_J1)
+        if remove_J1:
+            self.remove_J1()
+        remove_J2 = bool(remove_J2)
+        if remove_J2:
+            self.remove_J2()
+        remove_J3 = bool(remove_J3)
+        if remove_J3:
+            self.remove_J3()
+        # generate jastrows
+        if J1 or J2 or J3 or J1k or J2k:
+            self.gen_jastrows(
+                J1           = J1          , 
+                J2           = J2          , 
+                J3           = J3          , 
+                J1_size      = J1_size     , 
+                J1_rcut      = J1_rcut     , 
+                J1_dr        = J1_dr       , 
+                J1_opt       = J1_opt      , 
+                J2_size      = J2_size     , 
+                J2_rcut      = J2_rcut     , 
+                J2_dr        = J2_dr       , 
+                J2_init      = J2_init     , 
+                J2_opt       = J2_opt      , 
+                J3_isize     = J3_isize    , 
+                J3_esize     = J3_esize    , 
+                J3_rcut      = J3_rcut     , 
+                J3_opt       = J3_opt      , 
+                J1_rcut_open = J1_rcut_open, 
+                J2_rcut_open = J2_rcut_open, 
+                J1k          = J1k         , 
+                J1k_kcut     = J1k_kcut    , 
+                J1k_symm     = J1k_symm    , 
+                J1k_opt      = J1k_opt     , 
+                J2k          = J2k         , 
+                J2k_kcut     = J2k_kcut    , 
+                J2k_symm     = J2k_symm    , 
+                J2k_opt      = J2k_opt     , 
+                system       = system      ,
+                )
+        # remove deteriminants
+        remove_determinants = bool(remove_determinants)
+        if remove_determinants:
+            self.remove('determinantset')
+        # remove multidet
+        remove_multidet = bool(remove_multidet)
+        if remove_multidet:
+            self.remove('multideterminant')
+        # set orbital file
+        if orbitals_h5 is not None:
+            self.set_orbitals_h5(orbitals_h5)
+        # set jastrow params
+        if self.has_jastrows():
+            if jastrow_opt is not None:
+                self.optimize_jastrows(jastrow_opt)
+        # set multidet params
+        if self.has_multidet():
+            if multidet_h5 is not None:
+                self.set_multidet_h5(multidet_h5)
+            if multidet_cutoff is not None:
+                self.set_multidet_params(cutoff=multidet_cutoff)
+            if multidet_opt is not None:
+                self.optimize_multidet(multidet_opt)
+        # set hamiltonian params
+        if pseudo_files is not None:
+            assert isinstance(pseudo_files,(dict,obj))
+            self.set_pseudo_files(**pseudo_files)
+        # remove calculations
+        remove_calculations = bool(remove_calculations)
+        if remove_calculations:
+            self.remove('calculation')
+        # set calculations
+        if qmc is not None:
+            self.gen_calculations(qmc,**gen_calcs)
+        elif calculations is not None:
+            self.simulation.calculations = make_collection(calculations).copy()
+    #end def modify
 
 
     def bundle(self,inputs,filenames):
@@ -5703,29 +6111,34 @@ def generate_jastrows(jastrows,system=None,return_list=False,check_ions=False):
 
 
 def generate_jastrows_alt(
-    J1           = False,
-    J2           = False,
-    J3           = False,
-    J1_size      = None,
-    J1_rcut      = None,
-    J1_dr        = 0.5,
-    J2_size      = None,
-    J2_rcut      = None,
-    J2_dr        = 0.5,
-    J2_init      = 'zero',
-    J3_isize     = 3,
-    J3_esize     = 3,
-    J3_rcut      = 5.0,
-    J1_rcut_open = 5.0,
-    J2_rcut_open = 10.0,
-    J1k          = False,
-    J1k_kcut     = 5.0,
-    J1k_symm     = 'crystal',
-    J2k          = False,
-    J2k_kcut     = 5.0,
-    J2k_symm     = 'crystal',
-    system       = None,
-    ):
+        J1           = False,
+        J2           = False,
+        J3           = False,
+        J1_size      = None,
+        J1_rcut      = None,
+        J1_dr        = 0.5,
+        J1_opt       = True,
+        J2_size      = None,
+        J2_rcut      = None,
+        J2_dr        = 0.5,
+        J2_init      = 'zero',
+        J2_opt       = True,
+        J3_isize     = 3,
+        J3_esize     = 3,
+        J3_rcut      = 5.0,
+        J3_opt       = True,
+        J1_rcut_open = 5.0,
+        J2_rcut_open = 10.0,
+        J1k          = False,
+        J1k_kcut     = 5.0,
+        J1k_symm     = 'crystal',
+        J1k_opt      = True,
+        J2k          = False,
+        J2k_kcut     = 5.0,
+        J2k_symm     = 'crystal',
+        J2k_opt      = True,
+        system       = None,
+        ):
     if system is None:
         QmcpackInput.class_error('input variable "system" is required to generate jastrows','generate_jastrows_alt')
     elif system.structure.units!='B':
@@ -5763,7 +6176,7 @@ def generate_jastrows_alt(
         if J1_size is None:
             J1_size = int(ceil(J1_rcut/J1_dr))
         #end if
-        J = generate_jastrow('J1','bspline',J1_size,J1_rcut,system=system)
+        J = generate_jastrow('J1','bspline',J1_size,J1_rcut,opt=J1_opt,system=system)
         jastrows.append(J)
     #end if
     if J2:
@@ -5783,7 +6196,7 @@ def generate_jastrows_alt(
         if J2_size is None:
             J2_size = int(ceil(J2_rcut/J2_dr))
         #end if
-        J = generate_jastrow('J2','bspline',J2_size,J2_rcut,init=J2_init,system=system)
+        J = generate_jastrow('J2','bspline',J2_size,J2_rcut,init=J2_init,opt=J2_opt,system=system)
         jastrows.append(J)
     #end if
     if J3:
@@ -5796,7 +6209,7 @@ def generate_jastrows_alt(
             #end if
             J3_rcut = min(J3_rcut,rwigner)
         #end if
-        J = generate_jastrow('J3','polynomial',J3_esize,J3_isize,J3_rcut,system=system)
+        J = generate_jastrow('J3','polynomial',J3_esize,J3_isize,J3_rcut,opt=J3_opt,system=system)
         jastrows.append(J)
     #end if
     if J1k or J2k:
@@ -5804,10 +6217,12 @@ def generate_jastrows_alt(
         if J1k:
             Jk_inp.kc1   = J1k_kcut
             Jk_inp.symm1 = J1k_symm
+            Jk_inp.opt1  = J1k_opt
         #end if
         if J2k:
             Jk_inp.kc2   = J2k_kcut
             Jk_inp.symm2 = J2k_symm
+            Jk_inp.opt2  = J1k_opt
         #end if
         J = generate_kspace_jastrow(**Jk_inp)
         jastrows.append(J)
@@ -5818,7 +6233,7 @@ def generate_jastrows_alt(
 
 def generate_jastrow(descriptor,*args,**kwargs):
     keywords = set(['function','size','rcut','elements','coeff','cusp','ename',
-                    'iname','spins','density','Buu','Bud','system','isize','esize','init'])
+                    'iname','spins','density','Buu','Bud','opt','system','isize','esize','init'])
     if not 'system' in kwargs:
         kwargs['system'] = None
     #end if
@@ -5867,7 +6282,7 @@ def generate_jastrow(descriptor,*args,**kwargs):
 
 
 
-def generate_jastrow1(function='bspline',size=8,rcut=None,coeff=None,cusp=0.,ename='e',iname='ion0',elements=None,system=None,**elemargs):
+def generate_jastrow1(function='bspline',size=8,rcut=None,coeff=None,cusp=0.,ename='e',iname='ion0',elements=None,system=None,opt=True,**elemargs):
     noelements = elements is None
     nosystem   = system is None
     noelemargs = len(elemargs)==0
@@ -5931,9 +6346,10 @@ def generate_jastrow1(function='bspline',size=8,rcut=None,coeff=None,cusp=0.,ena
             size        = len(lcoeff),
             cusp        = cusp,
             coefficients=section(
-                id    = ename+element,
-                type  = 'Array',
-                coeff = lcoeff
+                id       = ename+element,
+                type     = 'Array',
+                coeff    = lcoeff,
+                optimize = opt,
                 )
             )            
         if lrcut!=None:
@@ -5953,7 +6369,7 @@ def generate_jastrow1(function='bspline',size=8,rcut=None,coeff=None,cusp=0.,ena
         type         = 'One-Body',
         function     = function,
         source       = iname,
-        print       = True,
+        print        = True,
         correlations = corrs
         )
     return j1
@@ -5961,7 +6377,7 @@ def generate_jastrow1(function='bspline',size=8,rcut=None,coeff=None,cusp=0.,ena
 
 
 
-def generate_bspline_jastrow2(size=8,rcut=None,coeff=None,spins=('u','d'),density=None,system=None,init='rpa'):
+def generate_bspline_jastrow2(size=8,rcut=None,coeff=None,spins=('u','d'),density=None,system=None,opt=True,init='rpa'):
     if coeff is None and system is None and (init=='rpa' and density is None or rcut is None):
         QmcpackInput.class_error('rcut and density or system must be specified','generate_bspline_jastrow2')
     #end if
@@ -6019,9 +6435,9 @@ def generate_bspline_jastrow2(size=8,rcut=None,coeff=None,spins=('u','d'),densit
     udname = uname+dname
     corrs = [
         correlation(speciesA=uname,speciesB=uname,size=size,
-                    coefficients=section(id=uuname,type='Array',coeff=coeff[0])),
+                    coefficients=section(id=uuname,type='Array',coeff=coeff[0],optimize=opt)),
         correlation(speciesA=uname,speciesB=dname,size=size,
-                    coefficients=section(id=udname,type='Array',coeff=coeff[1]))
+                    coefficients=section(id=udname,type='Array',coeff=coeff[1],optimize=opt))
         ]
     if rcut!=None:
         if isperiodic and rcut>rwigner:
@@ -6104,7 +6520,7 @@ def generate_jastrow2(function='bspline',*args,**kwargs):
 
 
 
-def generate_jastrow3(function='polynomial',esize=3,isize=3,rcut=4.,coeff=None,iname='ion0',spins=('u','d'),elements=None,system=None):
+def generate_jastrow3(function='polynomial',esize=3,isize=3,rcut=4.,coeff=None,iname='ion0',spins=('u','d'),elements=None,system=None,opt=True):
     if elements is None and system is None:
         QmcpackInput.class_error('must specify elements or system','generate_jastrow3')
     elif elements is None:
@@ -6134,13 +6550,13 @@ def generate_jastrow3(function='polynomial',esize=3,isize=3,rcut=4.,coeff=None,i
             correlation(
                 especies1=uname,especies2=uname,ispecies=element,esize=esize,
                 isize=isize,rcut=rcut,
-                coefficients=section(id=uuname+element,type='Array',optimize=True))
+                coefficients=section(id=uuname+element,type='Array',optimize=opt))
             )
         corrs.append(
             correlation(
                 especies1=uname,especies2=dname,ispecies=element,esize=esize,
                 isize=isize,rcut=rcut,
-                coefficients=section(id=udname+element,type='Array',optimize=True))
+                coefficients=section(id=udname+element,type='Array',optimize=opt))
             )
     #end for
     jastrow = jastrow3(
@@ -6160,6 +6576,8 @@ def generate_kspace_jastrow(
         symm2  = 'isotropic', 
         coeff1 = None, 
         coeff2 = None,
+        opt1   = True,
+        opt2   = True,
         ):
   """Generate <jastrow type="kSpace">
 
@@ -6206,7 +6624,7 @@ def generate_kspace_jastrow(
           type         = 'One-Body',
           symmetry     = symm1,
           kc           = kc1,
-          coefficients = section(id='cG1', type='Array', coeff=coeff1),
+          coefficients = section(id='cG1', type='Array', coeff=coeff1, optimize=J1k_opt),
           )
       corrs.append(corr1)
   #end if
@@ -6215,7 +6633,7 @@ def generate_kspace_jastrow(
           type         = 'Two-Body',
           symmetry     = symm2,
           kc           = kc2,
-          coefficients = section(id='cG2', type='Array', coeff=coeff2),
+          coefficients = section(id='cG2', type='Array', coeff=coeff2, optimize=J2k_opt),
           )
       corrs.append(corr2)
   #end if
@@ -7341,7 +7759,8 @@ def generate_batched_dmc_calculations(
         ):
 
     if total_walkers is None and walkers_per_rank is None:
-        error('DMC walker count not specified via "total_walkers" or "walkers_per_rank".\nPlease provide at least one of these.\n\nWarning: use care in the selection of these parameters.\nPerformance critically depends on the walker count and the batched QMCPACK \ndrivers make no effort to prevent substantial under-utilization.',loc)
+        total_walkers = 2048
+        #error('DMC walker count not specified via "total_walkers" or "walkers_per_rank".\nPlease provide at least one of these.\n\nWarning: use care in the selection of these parameters.\nPerformance critically depends on the walker count and the batched QMCPACK \ndrivers make no effort to prevent substantial under-utilization.',loc)
     elif total_walkers is not None and walkers_per_rank is not None:
         error('Only one of "total_walkers" and "walkers_per_rank" may be provided.',loc)
     #end if
