@@ -138,9 +138,8 @@ import inspect
 import keyword
 import numpy as np
 from io import StringIO
-from generic import hidden
 from xmlreader import XMLreader, XMLelement
-from developer import DevBase, obj, error
+from developer import DevBase, obj, hidden, error
 from periodic_table import is_element
 from structure import Structure, Jellium, get_kpath
 from physical_system import PhysicalSystem
