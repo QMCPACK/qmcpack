@@ -851,7 +851,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 gui_envs = ['GTKAgg','TKAgg','agg','Qt4Agg','WXAgg']
                 for gui in gui_envs:
                     try:
-                        matplotlib.use(gui,warn=False, force=True)
+                        matplotlib.use(gui, force=True)
+                        from matplotlib import pyplot
                         success = True
                         break
                     except:
