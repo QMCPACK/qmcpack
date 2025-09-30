@@ -34,7 +34,7 @@ from generic import obj
 from developer import DevBase
 
 
-def parse_string(s: str, delim: str | None = None):
+def parse_string(s: str, delim: str = None):
     if not isinstance(s, str):
         raise TypeError("This function only parses strings!")
 
@@ -65,7 +65,7 @@ def parse_string(s: str, delim: str | None = None):
 #end def parse_string
 
 
-def find_pair(s: str, pairs: list[str, str], start: int = 0, end: int | None = None):
+def find_pair(s: str, pairs: list[str, str], start: int = 0, end: int = None):
     if end is None:
         end = len(s)
 
