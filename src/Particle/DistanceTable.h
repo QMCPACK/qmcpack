@@ -29,9 +29,9 @@ namespace qmcplusplus
 class ResourceCollection;
 
 /** @ingroup nnlist
- * @brief Abstract class to manage operations on pair data between two ParticleSets.
- *
- * Each DistanceTable object is defined by Source and Target of ParticleSet types.
+ * @brief Abstract class to manage operations on pair data between two sets of particles
+ * 'target' always refers to the set of particles being moved during random walking.
+ * 'source' can be the same set of particles as 'target' or a different set of stationary particles.
  * This base class doesn't contain storage. It is intended for update/compute invoked by ParticleSet.
  * Derived AA/AB classes handle the actual storage and data access.
  */
@@ -47,7 +47,7 @@ public:
   using DisplRow  = VectorSoaContainer<RealType, DIM>;
 
 protected:
-  // FIXME. once DT takes only DynamicCoordinates, change this type as well.
+  /// source particleset
   const ParticleSet& origin_;
 
   const size_t num_sources_;
@@ -96,11 +96,10 @@ public:
   ///returns the number of source particles
   inline size_t sources() const { return num_sources_; }
 
-  /** evaluate the full Distance Table
+  /** evaluate the full Distance Table. Legacy API
    * @param P the target particle set
    */
   void evaluate(ParticleSet& P) { evaluate(P.getCoordinates()); }
-  virtual void evaluate(const DynamicCoordinates& P) = 0;
   void mw_evaluate(const RefVectorWithLeader<DistanceTable>& dt_list,
                    const RefVectorWithLeader<ParticleSet>& p_list) const
   {
@@ -110,6 +109,10 @@ public:
     mw_evaluate(dt_list, coords_list);
   }
 
+  /** evaluate the full Distance Table.
+   * @param coords the coordinates of target particles
+   */
+  virtual void evaluate(const DynamicCoordinates& coords) = 0;
   virtual void mw_evaluate(const RefVectorWithLeader<DistanceTable>& dt_list,
                            const RefVectorWithLeader<const DynamicCoordinates>& coords_list) const
   {
@@ -229,7 +232,7 @@ public:
   {}
 };
 
-/** AA type of DistanceTable containing storage */
+/** AA type of DistanceTable containing storage. 'source' and 'target' are the same set of particles.*/
 class DistanceTableAA : public DistanceTable
 {
 protected:
@@ -316,7 +319,7 @@ public:
   }
 };
 
-/** AB type of DistanceTable containing storage */
+/** AB type of DistanceTable containing storage. 'source' and 'target' are different sets of particles. */
 class DistanceTableAB : public DistanceTable
 {
 protected:
