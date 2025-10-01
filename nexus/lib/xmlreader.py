@@ -34,7 +34,7 @@ from generic import obj
 from developer import DevBase,valid_variable_name
 
 
-def parse_string(s: str, delim: str = None):
+def parse_string(s, delim = None):
     if not isinstance(s, str):
         raise TypeError("This function only parses strings!")
 
@@ -65,7 +65,7 @@ def parse_string(s: str, delim: str = None):
 #end def parse_string
 
 
-def find_pair(s: str, pairs: tuple[str, str], start: int = 0, end: int = None):
+def find_pair(s, pairs, start = 0, end = None):
     if end is None:
         end = len(s)
 
@@ -80,7 +80,7 @@ def find_pair(s: str, pairs: tuple[str, str], start: int = 0, end: int = None):
     return start_loc, end_loc+len(right_pair)
 
 
-def remove_pair_sections(s: str, pair: tuple[str, str]):
+def remove_pair_sections(s, pair):
     sc = s
     ir = 0
     while ir != -1:
@@ -91,7 +91,7 @@ def remove_pair_sections(s: str, pair: tuple[str, str]):
 #end def remove_pair_sections
 
 
-def remove_empty_lines(s: str):
+def remove_empty_lines(s):
     """Remove any lines with only whitespace present."""
     sr = ""
     lines = s.splitlines()

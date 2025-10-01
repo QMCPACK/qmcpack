@@ -997,7 +997,7 @@ class DevBase(obj):
 #end class DevBase
 
 
-def valid_variable_name(s: str):
+def valid_variable_name(s):
     """Check if a variable name contains invalid characters"""
     if not any([i in ('!"#$%&\'()*+,-./:;<=>?@[\\]^`{|}-\n\t ') for i in s]):
         return True
