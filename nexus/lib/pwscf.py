@@ -364,7 +364,7 @@ class Pwscf(Simulation):
 def generate_pwscf(**kwargs):
     sim_args,inp_args = Pwscf.separate_inputs(kwargs)
 
-    if not 'input' in sim_args:
+    if 'input' not in sim_args:
         input_type = inp_args.delete_optional('input_type','generic')
         sim_args.input = generate_pwscf_input(input_type,**inp_args)
     #end if

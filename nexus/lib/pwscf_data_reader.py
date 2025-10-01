@@ -41,7 +41,7 @@ class QEXML(DevBase):
             if isinstance(k,str) and '.' in k and k.split('.',1)[1].isdigit():
                 name,index = k.split('.',1)
                 index = int(index)
-                if not name in enums:
+                if name not in enums:
                     enums[name] = QEXML()
                 #end if
                 enums[name][index] = v
@@ -68,7 +68,7 @@ class QEXML(DevBase):
         #end for
         if len(self._value)==0:
             del self._value
-        elif not 'value' in self:
+        elif 'value' not in self:
             if len(self._value)==1:
                 self.value = self._value[0]
             else:
@@ -100,7 +100,7 @@ def readval(s):
             try:
                 v = float(s)
             except:
-                if not ' ' in s:
+                if ' ' not in s:
                     v=s
                 else:
                     s = s.split()
