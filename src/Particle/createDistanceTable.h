@@ -37,10 +37,10 @@ namespace qmcplusplus
  */
 
 ///free function to create a distable table of s-s
-std::unique_ptr<DistanceTable> createDistanceTableAA(const ParticleSet& s, std::ostream& description);
-std::unique_ptr<DistanceTable> createDistanceTableAAOMPTarget(const ParticleSet& s, std::ostream& description);
+std::unique_ptr<DistanceTableAA> createDistanceTableAA(const ParticleSet& s, std::ostream& description);
+std::unique_ptr<DistanceTableAA> createDistanceTableAAOMPTarget(const ParticleSet& s, std::ostream& description);
 
-inline std::unique_ptr<DistanceTable> createDistanceTable(const ParticleSet& s, std::ostream& description)
+inline std::unique_ptr<DistanceTableAA> createDistanceTable(const ParticleSet& s, std::ostream& description)
 {
   // during P-by-P move, the cost of single particle evaluation of distance tables
   // is determined by the number of source particles.
@@ -52,19 +52,19 @@ inline std::unique_ptr<DistanceTable> createDistanceTable(const ParticleSet& s, 
 }
 
 ///free function create a distable table of s-t
-std::unique_ptr<DistanceTable> createDistanceTableAB(const ParticleSet& s,
-                                                     const size_t t_size,
-                                                     const std::string& t_name,
-                                                     std::ostream& description);
-std::unique_ptr<DistanceTable> createDistanceTableABOMPTarget(const ParticleSet& s,
-                                                              const size_t t_size,
-                                                              const std::string& t_name,
-                                                              std::ostream& description);
+std::unique_ptr<DistanceTableAB> createDistanceTableAB(const ParticleSet& s,
+                                                       const size_t t_size,
+                                                       const std::string& t_name,
+                                                       std::ostream& description);
+std::unique_ptr<DistanceTableAB> createDistanceTableABOMPTarget(const ParticleSet& s,
+                                                                const size_t t_size,
+                                                                const std::string& t_name,
+                                                                std::ostream& description);
 
-inline std::unique_ptr<DistanceTable> createDistanceTable(const ParticleSet& s,
-                                                          const size_t t_size,
-                                                          const std::string& t_name,
-                                                          std::ostream& description)
+inline std::unique_ptr<DistanceTableAB> createDistanceTable(const ParticleSet& s,
+                                                            const size_t t_size,
+                                                            const std::string& t_name,
+                                                            std::ostream& description)
 {
   // during P-by-P move, the cost of single particle evaluation of distance tables
   // is determined by the number of source particles.

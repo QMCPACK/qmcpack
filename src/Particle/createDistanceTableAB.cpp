@@ -24,10 +24,10 @@ namespace qmcplusplus
  *\param s source/target particle set
  *\return index of the distance table with the name
  */
-std::unique_ptr<DistanceTable> createDistanceTableAB(const ParticleSet& s,
-                                                     const size_t t_size,
-                                                     const std::string& t_name,
-                                                     std::ostream& description)
+std::unique_ptr<DistanceTableAB> createDistanceTableAB(const ParticleSet& s,
+                                                       const size_t t_size,
+                                                       const std::string& t_name,
+                                                       std::ostream& description)
 {
   using RealType = ParticleSet::RealType;
   enum
@@ -35,7 +35,7 @@ std::unique_ptr<DistanceTable> createDistanceTableAB(const ParticleSet& s,
     DIM = OHMMS_DIM
   };
   const int sc = s.getLattice().SuperCellEnum;
-  std::unique_ptr<DistanceTable> dt;
+  std::unique_ptr<DistanceTableAB> dt;
   std::ostringstream o;
   o << "  Distance table for dissimilar particles (A-B):" << std::endl;
   o << "    source: " << s.getName() << "  target: " << t_name << std::endl;
