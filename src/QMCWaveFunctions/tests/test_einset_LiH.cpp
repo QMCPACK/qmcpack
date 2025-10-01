@@ -54,6 +54,7 @@ void test_einset_LiH_x(bool use_offload)
   ions_.create({1, 1});
   ions_.R[0] = {0.0, 0.0, 0.0};
   ions_.R[1] = {3.55, 3.55, 3.55};
+  ions_.update();
 
   elec_.create({1, 1});
   elec_.setName("elec");
@@ -62,6 +63,7 @@ void test_einset_LiH_x(bool use_offload)
   elec_.R[0]                = {0.0, 0.0, 0.0};
   elec_.R[1]                = {0.0, 1.0, 0.0};
   const auto ei_table_index = elec_.addTable(ions_);
+  elec_.update();
 
   SpeciesSet& tspecies       = elec_.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
