@@ -1205,8 +1205,63 @@ class Structure(Sobj):
     #end def bounding_box
 
 
-    def center_molecule(self):
-        self.slide(self.center-self.pos.mean(0),recenter=False)
+    def center_molecule(self, rmin_edge = 1e-8):
+        """Center a molecule in a unit cell, ensuring equal padding on all sides.
+
+        Parameters
+        ----------
+        rmin_edge : float-like or array-like, default=1e-8
+            Minimum acceptable distance from the cell edges to any atom in the molecule, potentially specified per-axis.
+
+        Note
+        ----
+        The default rmin_edge of 1e-8 is designed to just barely contain the molecule. It is
+        important to ensure that for larger, non-periodic molecular systems or atoms that the unit
+        cell size is sufficiently large to contain the charge density otherwise the molecular system
+        will interact with the neighboring periodic replica, resulting in unphysical electrostatic interactions
+
+        For reference, 5 Bohr contains >99.3% of the charge density around a Hydrogen atom.
+        """
+        if hasattr(rmin_edge, '__len__'):
+            rmin_edge = np.abs(np.asarray(rmin_edge, dtype=float).flatten())
+            if rmin_edge.shape != (self.dim,):
+                self.error('rmin_edge must have length '+str(self.dim))
+        else:
+            rmin_edge = abs(float(rmin_edge))
+
+        #cell origin
+        corner = self.center - self.axes.sum(0) / 2
+
+        # Convert min distance to cell units
+        L = np.linalg.norm(self.axes, axis=0)
+        umin = rmin_edge / L
+
+        # Obtain current unit coordinates of the atoms
+        upos = np.dot(self.pos - corner, np.linalg.inv(self.axes))
+
+        # Align the molecule to contact the cell facets
+        upos -= upos.min(0)
+
+        # Align the molecule to be halfway between each cell facet
+        upos += (1-upos.max(0)) / 2
+
+        # Check that the molecule fits inside the box
+        utol = 1e-8 / L # numerical tolerance, 10 nano Bohr/Angstrom
+        upos_min  = upos.min(0)
+        upos_max  = upos.max(0)
+        lower_out = (upos_min < utol).any()
+        upper_out = (upos_max > (1.-utol)).any()
+        if lower_out or upper_out:
+            self.error('molecule does not fit in the cell')
+
+        # Check that the molecule is far enough from the cell edges
+        lower_out = (upos_min < umin).any()
+        upper_out = (upos_max > (1.-umin)).any()
+        if lower_out or upper_out:
+            self.error('molecule is too close to the cell edges')
+
+        # Transform back into real space coordinates
+        self.pos = np.dot(upos, self.axes) + corner
     #end def center_molecule
 
 
