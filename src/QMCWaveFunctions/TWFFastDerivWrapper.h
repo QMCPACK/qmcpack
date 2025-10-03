@@ -5,6 +5,7 @@
 // Copyright (c) 2021 QMCPACK developers.
 //
 // File developed by:   Raymond Clay III, rclay@sandia.gov, Sandia National Laboratories
+//                      Anouar Benali, abenali.sci@gmail.com, Qubit Pharmaceuticals
 //
 // File created by:   Raymond Clay III, rclay@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
@@ -14,9 +15,12 @@
 #define QMCPLUSPLUS_TWFFASTDERIVWRAPPER_H
 
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
+#include "ResourceCollection.h"
+#include "Utilities/ResourceCollection.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #include "Configuration.h"
 #include "Particle/ParticleSet.h"
+
 namespace qmcplusplus
 {
 /**
@@ -391,6 +395,14 @@ public:
    */
   void transform_Av_AoBv(const ValueMatrix& A, const ValueMatrix& B, ValueMatrix& X) const;
 
+  // Minimal resource interface so TWF can call it like other components
+  static void createResource(ResourceCollection& collection);
+
+  static void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<TWFFastDerivWrapper>& wrappers);
+
+  static void releaseResource(ResourceCollection&, const RefVectorWithLeader<TWFFastDerivWrapper>& wrappers);
+
+
 private:
   std::vector<SPOSet*> spos_;
   std::vector<IndexType> groups_;
@@ -400,6 +412,9 @@ private:
   // pointer to MultiSlaterDetTableMethod if one has been registered, otherwise nullptr
   // access constituent MultiDiracDets and SPOsets through this slaterdet (associate with spos_ via group ID)
   const WaveFunctionComponent* multislaterdet_ = nullptr;
+
+  struct TWFFastDerivWrapperMultiWalkerMem;
+  ResourceHandle<TWFFastDerivWrapperMultiWalkerMem> mw_mem_handle_;
 };
 
 /**@}*/

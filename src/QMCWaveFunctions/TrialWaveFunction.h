@@ -11,6 +11,7 @@
 //                    Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //                    Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Anouar Benali, abenali.sci@gmail.com, Qubit Pharmaceuticals
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -40,6 +41,7 @@ namespace qmcplusplus
 {
 class SlaterDet;
 class MultiSlaterDetTableMethod;
+class TWFFastDerivWrapper;
 
 /** @ingroup MBWfs
  * @brief Class to represent a many-body trial wave function
@@ -170,6 +172,18 @@ public:
   /** Initialize a TWF wrapper for fast derivative evaluation
    */
   void initializeTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const;
+
+  /** Get or create the TWF wrapper for fast force evaluation
+ *  @param P particle set for initialization if wrapper doesn't exist
+ *  @return reference to the wrapper (created if necessary)
+ *  
+ *  Creates the wrapper on first call and initializes it with SPOSets/Jastrows.
+ *  Subsequent calls return the existing wrapper, re-initializing only if the 
+ *  particle set or wave function components have changed.
+ *  Used by ACForce to enable fast derivative computation for force evaluation.
+ */
+  TWFFastDerivWrapper& getOrCreateTWFFastDerivWrapper(const ParticleSet& P);
+
   /** evalaute the log (internally gradients and laplacian) of the trial wavefunction. gold reference */
   RealType evaluateLog(ParticleSet& P);
 
@@ -546,6 +560,7 @@ public:
   /// find MSD WFCs if exist
   RefVector<MultiSlaterDetTableMethod> findMSD() const;
 
+
 private:
   static void debugOnlyCheckBuffer(WFBufferType& buffer);
 
@@ -588,8 +603,7 @@ private:
   ///a list of WaveFunctionComponents constituting many-body wave functions
   std::vector<std::unique_ptr<WaveFunctionComponent>> Z;
 
-  /// For now, TrialWaveFunction will own the wrapper.
-  TWFFastDerivWrapper twf_prototype;
+  //TWFFastDerivWrapper twf_prototype;
   /// timers at TrialWaveFunction function call level
   TimerList_t TWF_timers_;
   /// timers at WaveFunctionComponent function call level
@@ -613,7 +627,9 @@ private:
   // helper function for extracting a list of laplacian from a list of TrialWaveFunction
   static RefVector<ParticleSet::ParticleLaplacian> extractLRefList(
       const RefVectorWithLeader<TrialWaveFunction>& wf_list);
+
+  std::unique_ptr<TWFFastDerivWrapper> twf_fastderiv_;
 };
-/**@}*/
+
 } // namespace qmcplusplus
 #endif

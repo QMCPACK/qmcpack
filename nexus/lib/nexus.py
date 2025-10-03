@@ -125,7 +125,7 @@ class Settings(NexusCore):
     @staticmethod
     def kw_set(vars,source=None):
         kw = obj()
-        if source!=None:
+        if source is not None:
             for n in vars:
                 if n in source:
                     kw[n]=source[n]
@@ -182,7 +182,7 @@ class Settings(NexusCore):
                 self.log(s)
             #end if
         except Exception:
-            None
+            pass
         #end try
 
         self.log('Applying user settings')
@@ -414,13 +414,13 @@ class Settings(NexusCore):
                     machine_mode = Machine.modes[machine_mode]
                 #end if
                 if machine_mode==Machine.modes.interactive:
-                    if ProjectManager.machine==None:
+                    if ProjectManager.machine is None:
                         ProjectManager.class_error('no machine specified for interactive mode')
                     #end if
                     if not isinstance(ProjectManager.machine,Supercomputer):
                         self.error('interactive mode is not supported for machine type '+ProjectManager.machine.__class__.__name__)
                     #end if
-                    if not 'interactive_cores' in mset:
+                    if 'interactive_cores' not in mset:
                         self.error('interactive mode requested, but interactive_cores not set')
                     #end if
                     ProjectManager.machine = ProjectManager.machine.interactive_representation(mset.interactive_cores)
@@ -498,7 +498,7 @@ class Settings(NexusCore):
                 nexus_core.file_locations.extend(list(fl))
             #end if
         #end if
-        if not 'pseudo_dir' in kw:
+        if 'pseudo_dir' not in kw:
             nexus_core.pseudopotentials = Pseudopotentials()
         else:
             pseudo_dir = kw.pseudo_dir
@@ -527,7 +527,7 @@ class Settings(NexusCore):
 
 
     def process_noncore_settings(self,kw):
-        if not 'basis_dir' in kw:
+        if 'basis_dir' not in kw:
             nexus_noncore.basissets = BasisSets()
         else:
             basis_dir = kw.basis_dir

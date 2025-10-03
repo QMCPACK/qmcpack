@@ -510,7 +510,7 @@ class MaskFilter(DevBase):
         elif mask.shape!=(dim,dim):
             error('shape of mask array must be {0},{0}\nshape received: {1},{2}\nmask array received: {3}'.format(dim,mask.shape[0],mask.shape[1],omask),'optimal_tilematrix')
         #end if
-        self.mask = mask==False
+        self.mask = not mask
     #end def set
 
     def __call__(self,T):
@@ -979,7 +979,7 @@ class Structure(Sobj):
 
     def operate(self,operations):
         for op in operations:
-            if not op in self.operations:
+            if op not in self.operations:
                 self.error('{0} is not a known operation\nvalid options are:\n  {1}'.format(op,list(self.operations.keys())))
             else:
                 self.operations[op](self)
@@ -1046,7 +1046,7 @@ class Structure(Sobj):
                 self.pos  = self.pos[order]
             #end if
         #end if
-        if self.folded_structure!=None and folded:
+        if self.folded_structure is not None and folded:
             self.folded_structure.group_atoms(folded)
         #end if
     #end def group_atoms
@@ -1062,7 +1062,7 @@ class Structure(Sobj):
                 #end if
             #end for
         #end for
-        if self.folded_structure!=None and folded:
+        if self.folded_structure is not None and folded:
             self.folded_structure.rename(folded=folded,**name_pairs)
         #end if
     #end def rename
@@ -1250,7 +1250,7 @@ class Structure(Sobj):
         if len(self.kpoints)>0:
             self.kpoints = dot(self.kpoints,P)
         #end if
-        if self.folded_structure!=None:
+        if self.folded_structure is not None:
             self.folded_structure.permute(permutation)
         #end if
     #end def permute
@@ -1547,7 +1547,7 @@ class Structure(Sobj):
         self.center *= scale
         self.kaxes  /= scale
         self.kpoints/= scale
-        if self.folded_structure!=None:
+        if self.folded_structure is not None:
             self.folded_structure.rescale(scale)
         #end if
     #end def rescale
@@ -1689,7 +1689,7 @@ class Structure(Sobj):
         self.kpoints = dot(dot(self.kpoints,kaxinv),kaxnew)
         self.axes  = axnew
         self.kaxes = kaxnew
-        if self.folded_structure!=None:
+        if self.folded_structure is not None:
             self.folded_structure.matrix_transform(A.T)
         #end if
     #end def matrix_transform
@@ -1723,7 +1723,7 @@ class Structure(Sobj):
             self.kpoints/= scale
             self.units  = units
         #end if
-        if self.folded_structure!=None and folded:
+        if self.folded_structure is not None and folded:
             self.folded_structure.change_units(units,folded=folded)
         #end if
     #end def change_units
@@ -1747,14 +1747,14 @@ class Structure(Sobj):
         #end if
         c = array(c)  # point on cleave plane
         v = array(v)  # normal vector to cleave plane, norm is cleave separation
-        if sep!=None:
+        if sep is not None:
             v = abs(sep)*v/norm(v)
         #end if
         if norm(v)<tol:
             return
         #end if
         vn = array(v/norm(v))
-        if sep!=None and sep<0:
+        if sep is not None and sep<0:
             v = -v # preserve the normal direction for atom identification, but reverse the shift direction
         #end if
         self.recorner()  # want box contents to be static
@@ -1805,7 +1805,7 @@ class Structure(Sobj):
             pos[i]+=v
         #end for
         self.center+=v
-        if self.folded_structure!=None:
+        if self.folded_structure is not None:
             self.folded_structure.translate(v)
         #end if
     #end def translate
@@ -1821,7 +1821,7 @@ class Structure(Sobj):
         if recenter:
             self.recenter()
         #end if
-        if self.folded_structure!=None:
+        if self.folded_structure is not None:
             self.folded_structure.slide(v,recenter)
         #end if
     #end def slide
@@ -1968,14 +1968,14 @@ class Structure(Sobj):
         elif isinstance(magnetization,obj):
             magsin = magnetization.copy()
         #endif
-        if magsin!=None:
+        if magsin is not None:
             magsin.transfer_from(mags)
             mags = magsin
             identifiers = None
             magnetization = ''
         #end if
         for e,m in mags.items():
-            if not e in self.elem:
+            if e not in self.elem:
                 self.error('cannot magnetize non-existent element {0}'.format(e))
             elif m is not None or not isinstance(m,int):
                 self.error('magnetizations provided must be either None or integer\n  you provided: {0}\n  full magnetization request provided:\n {1}'.format(m,mags))
@@ -2064,7 +2064,7 @@ class Structure(Sobj):
             cell = elem
             elem = cell.elem
             pos  = cell.pos
-        elif elem==None:
+        elif elem is None:
             elem = self.elem
         #end if
         indices=array(indices)
@@ -2145,11 +2145,11 @@ class Structure(Sobj):
     def point_defect(self,identifiers=None,elem=None,dr=None):
         if isinstance(elem,str):
             elem = [elem]
-            if dr!=None:
+            if dr is not None:
                 dr = [dr]
             #end if
         #end if
-        if not 'point_defects' in self:
+        if 'point_defects' not in self:
             self.point_defects = obj()
         #end if
         point_defects = self.point_defects
@@ -2170,7 +2170,7 @@ class Structure(Sobj):
             self.error('must supply substitutional elements comprising the point defect\n  expected a list or similar for input argument elem')
         elif len(elem)>1 and dr is None:
             self.error('must supply displacements (dr) since many atoms comprise the point defect')
-        elif dr!=None and len(elem)!=len(dr):
+        elif dr is not None and len(elem)!=len(dr):
             self.error('elem and dr must have the same length')
         #end if
         r = self.pos[index]
@@ -2281,7 +2281,7 @@ class Structure(Sobj):
         spec_set = set()
         for i in range(len(self.elem)):
             e = self.elem[i]
-            if not e in spec_set:
+            if e not in spec_set:
                 spec_set.add(e)
                 species.append(e)
                 species_counts.append(0)
@@ -2298,7 +2298,7 @@ class Structure(Sobj):
         #end for
         self.reorder(elem_order)
 
-        if folded and self.folded_structure!=None:
+        if folded and self.folded_structure is not None:
             self.folded_structure.order_by_species(folded)
         #end if
 
@@ -2354,7 +2354,7 @@ class Structure(Sobj):
         for d in dists:
             ibin = int(floor(d/dbin))
             hist[ibin]+=1
-            if not ibin in ihist:
+            if ibin not in ihist:
                 ihist[ibin] = []
             #end if
             ihist[ibin].append(index)
@@ -2365,7 +2365,7 @@ class Structure(Sobj):
                 n = hist[i%nbins]
                 if n>0:
                     boxhist[ib]+=n
-                    if not ib in iboxhist:
+                    if ib not in iboxhist:
                         iboxhist[ib] = []
                     #end if
                     iboxhist[ib].extend(ihist[i%nbins])
@@ -2440,7 +2440,7 @@ class Structure(Sobj):
         #   core is selected by identifiers, forms core for shells to be built around
         #   bulk is all atoms except for core
         if identifiers=='point_defects':
-            if not 'point_defects' in self:
+            if 'point_defects' not in self:
                 self.error('requested shells around point defects, but structure has no point defects')
             #end if
             core = []
@@ -2559,9 +2559,9 @@ class Structure(Sobj):
             actual_indices = False
             elem = set(self.elem[indices])
             spec = set(spec_max.keys())
-            if spec==elem or rmax!=None:
+            if spec==elem or rmax is not None:
                 None
-            elif spec<elem and nmax!=None:
+            elif spec<elem and nmax is not None:
                 for e in elem:
                     if e not in spec:
                         spec_max[e] = nmax
@@ -2674,11 +2674,11 @@ class Structure(Sobj):
                     dorder = di.argsort()
                     di = tuple(di[dorder])
                     gi = tuple(array(gi)[dorder])
-                    if not d in dgo:
+                    if d not in dgo:
                         dgo[d]=obj()
                     #end if
                     dgd = dgo[d]
-                    if not di in dgd:
+                    if di not in dgd:
                         dgd[di] = []
                     #end if
                     dgd[di].append(gi)
@@ -2702,7 +2702,7 @@ class Structure(Sobj):
                     cmap = obj()
                     for slist in og:
                         for s in slist:
-                            if not s in cmap:
+                            if s not in cmap:
                                 cmap[s] = obj()
                             #end if
                             cmap[s].append(slist)
@@ -2719,10 +2719,10 @@ class Structure(Sobj):
                                 n=0
                                 for s in slist:
                                     d = local_degree[n]
-                                    if not s in cmap:
+                                    if s not in cmap:
                                         cmap[s] = obj()
                                     #end if
-                                    if not d in cmap[s]:
+                                    if d not in cmap[s]:
                                         cmap[s][d] = obj()
                                     #end if
                                     cmap[s][d].append(slist)
@@ -2762,7 +2762,7 @@ class Structure(Sobj):
                     #end if
                 #end if
             #end if
-            if lg!=None:
+            if lg is not None:
                 lg_end = obj()
                 for gi in lg:
                     end_key = tuple(sorted(gi[0:2])) # end points
@@ -2781,7 +2781,7 @@ class Structure(Sobj):
             o2 = o1+o%2
             lg1 = lgraphs.get_optional(o1,None) # sets of half order lines
             lg2 = lgraphs.get_optional(o2,None)
-            if lg1!=None and lg2!=None:
+            if lg1 is not None and lg2 is not None:
                 rg = []
                 rset = set()
                 for end_key,llist1 in lg1.items(): # list of lines sharing endpoints
@@ -2808,7 +2808,7 @@ class Structure(Sobj):
     # test needed
     # find the centroid of a set of points/atoms in min image convention
     def min_image_centroid(self,points=None,indices=None):
-        if indices!=None:
+        if indices is not None:
             points = self.pos[indices]
         elif points is None:
             self.error('points or images must be provided to min_image_centroid')
@@ -2829,11 +2829,11 @@ class Structure(Sobj):
     # find min image centroids of multiple sets of points/atoms
     def min_image_centroids(self,points=None,indices=None):
         cents = []
-        if points!=None:
+        if points is not None:
             for p in points:
                 cents.append(self.min_image_centroid(p))
             #end for
-        elif indices!=None:
+        elif indices is not None:
             for ind in indices:
                 cents.append(self.min_image_centroid(indices=ind))
             #end for
@@ -2994,12 +2994,12 @@ class Structure(Sobj):
                 i = large_to_small[i]  # mapping to small cell indices
                 j = large_to_small[j]
                 if not restrict or (i in indices and j in indices): # restrict to orig index set
-                    if not i in neighbors:
+                    if i not in neighbors:
                         neighbors[i] = [j]
                     else:
                         neighbors[i].append(j)
                     #ned if
-                    if not j in neighbors:
+                    if j not in neighbors:
                         neighbors[j] = [i]
                     else:
                         neighbors[j].append(i)
@@ -3079,9 +3079,9 @@ class Structure(Sobj):
         #end if
         elem = set(self.elem[indices])
         spec = set(spec_max.keys())
-        if spec==elem or rmax!=None or voronoi:
+        if spec==elem or rmax is not None or voronoi:
             None
-        elif spec<elem and nmax!=None:
+        elif spec<elem and nmax is not None:
             for e in elem:
                 if e not in spec:
                     spec_max[e] = nmax
@@ -3163,7 +3163,7 @@ class Structure(Sobj):
         i=0
         for coord in chem_coord:
             coord = tuple(coord)
-            if not coord in chem_map:
+            if coord not in chem_map:
                 chem_map[coord] = [indices[i]]
             else:
                 chem_map[coord].append(indices[i])
@@ -3189,7 +3189,7 @@ class Structure(Sobj):
         nt,dt = self.neighbor_table(self.pos,distances=True)
         d = dt[:,1]
         rcm = d.min()/2
-        if units!=None:
+        if units is not None:
             rcm = convert(rcm,self.units,units)
         #end if
         return rcm
@@ -3318,10 +3318,10 @@ class Structure(Sobj):
 
     # test needed
     def inside(self,pos,axes=None,center=None,tol=1e-8,separate=False):
-        if axes==None:
+        if axes is None:
             axes=self.axes
         #end if
-        if center==None:
+        if center is None:
             center=self.center
         #end if
         axes = array(axes)
@@ -3829,7 +3829,7 @@ class Structure(Sobj):
     def clear_kpoints(self):
         self.kpoints  = empty((0,self.dim))
         self.kweights = empty((0,))
-        if self.folded_structure!=None:
+        if self.folded_structure is not None:
             self.folded_structure.clear_kpoints()
         #end if
     #end def clear_kpoints
@@ -3951,7 +3951,7 @@ class Structure(Sobj):
         #end for
         self.kpoints  = self.kpoints[keep]
         self.kweights = self.kweights[keep]
-        if folded and self.folded_structure!=None:
+        if folded and self.folded_structure is not None:
             self.folded_structure.inversion_symmetrize_kpoints(tol)
         #end if
     #end def inversion_symmetrize_kpoints
@@ -4059,7 +4059,7 @@ class Structure(Sobj):
         if len(pos)!=len(self.pos):
             self.pos = pos
         #end if
-        if folded and self.folded_structure!=None:
+        if folded and self.folded_structure is not None:
             self.folded_structure.unique_positions(tol)
         #end if
         return pmap
@@ -4103,7 +4103,7 @@ class Structure(Sobj):
                 #end if
             #end for
         #end if
-        if folded and self.folded_structure!=None:
+        if folded and self.folded_structure is not None:
             self.folded_structure.unique_kpoints(tol)
         #end if
         return kmap
@@ -4112,7 +4112,7 @@ class Structure(Sobj):
 
     def kmap(self):
         kmap = None
-        if self.folded_structure!=None:
+        if self.folded_structure is not None:
             fs = self.folded_structure
             self.kpoints  = array(fs.kpoints)
             self.kweights = array(fs.kweights)
@@ -4688,7 +4688,7 @@ class Structure(Sobj):
                     p = array(tokens[1:],float)
                 #end if
             except:
-                None
+                pass
             #end try
             if p is not None:
                 elem.append(e)
@@ -4948,7 +4948,7 @@ class Structure(Sobj):
             p = s.pos[i]
             c+=' {0:2} {1:12.8f} {2:12.8f} {3:12.8f}\n'.format(e,p[0],p[1],p[2])
         #end for
-        if filepath!=None:
+        if filepath is not None:
             open(filepath,'w').write(c)
         #end if
         return c
@@ -4986,7 +4986,7 @@ class Structure(Sobj):
             r = s.pos[i]
             c += '   {0:>3} {1:12.8f}  {2:12.8f}  {3:12.8f}\n'.format(enum,r[0],r[1],r[2])
         #end for
-        if filepath!=None:
+        if filepath is not None:
             open(filepath,'w').write(c)
         #end if
         return c
@@ -5025,7 +5025,7 @@ class Structure(Sobj):
         for p,e in zip(self.pos,self.elem):
             c += 'atom_frac   {0: 12.8f}  {1: 12.8f}  {2: 12.8f}  {3}\n'.format(p[0],p[1],p[2],e)
         #end for
-        if filepath!=None:
+        if filepath is not None:
             open(filepath,'w').write(c)
         #end if
         return c
@@ -5805,7 +5805,7 @@ def get_band_tiling(
                 for k in kpoints_label:
                     kindex = k == kpath_label
                     if any(kindex):
-                        if k == '' or k == None:
+                        if k == '' or k is None:
                             k = '{0}'.format(num_kpoints)
                         #end if
                         kpts[k] = array(kpath_rel[kindex][0])
@@ -6055,9 +6055,9 @@ def interpolate_structures(struct1,struct2=None,images=None,min_image=True,recen
 
     # repackage into physical system objects if requested
     if repackage:
-        if system1!=None:
+        if system1 is not None:
             system = system1
-        elif system2!=None:
+        elif system2 is not None:
             system = system2
         else:
             Structure.class_error('cannot repackage into physical systems since no system object was provided in place of a structure','interpolate_structures')
@@ -6124,7 +6124,7 @@ class DefectStructure(Structure):
 
 
     def compare(self,dist_cutoff,d1,d2=None):
-        if d2==None:
+        if d2 is None:
             d2 = d1
             d1 = self
         #end if
@@ -6490,7 +6490,7 @@ class Crystal(Structure):
     kc_keys = list(known_crystals.keys())
     for (name,cell) in kc_keys:
         desc = known_crystals[name,cell]
-        if cell=='prim' and not (name,'conv') in known_crystals:
+        if cell=='prim' and (name,'conv') not in known_crystals:
             cdesc = desc.copy()
             if cdesc.cell=='primitive':
                 cdesc.cell = 'conventional'
@@ -6648,7 +6648,7 @@ class Crystal(Structure):
             self.error('the '+lattice+' lattice depends on the constants '+str(self.lattice_constants[lattice])+'\n you provided '+str(len(constants))+': '+str(constants))
         #end if
         if isinstance(atoms,str):
-            if basis!=None:
+            if basis is not None:
                 atoms = len(basis)*[atoms]
             else:
                 atoms=[atoms]
@@ -6850,31 +6850,31 @@ class Jellium(Structure):
     def __init__(self,charge=None,background_charge=None,cell=None,volume=None,density=None,rs=None,dim=3,
                  axes=None,kpoints=None,kweights=None,kgrid=None,kshift=None,units=None,tiling=None):
         del tiling
-        if rs!=None:
-            if not dim in self.prefactors:
+        if rs is not None:
+            if dim not in self.prefactors:
                 self.error('only 1,2, or 3 dimensional jellium is currently supported\n  you requested one with dimension {0}'.format(dim))
             #end if
             density = 1.0/(self.prefactors[dim]*rs**dim)
         #end if
-        if axes!=None:
+        if axes is not None:
             cell = axes
         #end if
-        if background_charge!=None:
+        if background_charge is not None:
             charge = background_charge
         #end if
-        if cell!=None:
+        if cell is not None:
             cell   = array(cell)
             dim    = len(cell)
             volume = det(cell)
-        elif volume!=None:
+        elif volume is not None:
             volume = float(volume)
             cell   = volume**(1./dim)*identity(dim)
         #end if
-        if density!=None:
+        if density is not None:
             density = float(density)
-            if charge is None and volume!=None:
+            if charge is None and volume is not None:
                 charge = density*volume
-            elif volume is None and charge!=None:
+            elif volume is None and charge is not None:
                 volume = charge/density
                 cell   = volume**(1./dim)*identity(dim)
             #end if
@@ -6966,7 +6966,7 @@ def generate_atom_structure(
     if atom is None:
         Structure.class_error('atom must be provided','generate_atom_structure')
     #end if
-    if Lbox!=None:
+    if Lbox is not None:
         axes = [[Lbox*(1-skew),0,0],[0,Lbox,0],[0,0,Lbox*(1+skew)]]
     #end if
     if axes is None:
@@ -7000,7 +7000,7 @@ def generate_dimer_structure(
     if separation is None:
         Structure.class_error('separation must be provided to construct dimer','generate_dimer_structure')
     #end if
-    if Lbox!=None:
+    if Lbox is not None:
         axes = [[Lbox*(1-skew),0,0],[0,Lbox,0],[0,0,Lbox*(1+skew)]]
     #end if
     if axis=='x':
@@ -7059,7 +7059,7 @@ def generate_trimer_structure(
     if axis==axis2:
         Structure.class_error('axis and axis2 must be different to define the trimer plane\nyou provided {0} for both'.format(axis),'generate_trimer_structure')
     #end if
-    if Lbox!=None:
+    if Lbox is not None:
         axes = [[Lbox*(1-skew),0,0],[0,Lbox,0],[0,0,Lbox*(1+skew)]]
     #end if
     p1 = [0,0,0]
@@ -7097,7 +7097,7 @@ def generate_trimer_structure(
         s = Structure(elem=trimer,pos=[p1,p2,p3],axes=axes,kgrid=kgrid,kshift=kshift,units=units)
         s.center_molecule()
     #end if
-    if plane_rot!=None:
+    if plane_rot is not None:
         s.rotate_plane(axpair,plane_rot,angular_units)
     #end if
     return s

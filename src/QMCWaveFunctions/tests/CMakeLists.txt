@@ -108,6 +108,7 @@ set(TRIALWF_SRC
     test_wavefunction_pool.cpp
     test_example_he.cpp
     test_lattice_gaussian.cpp
+    test_twf_fastderiv_raii.cpp
     test_TWFGrads.cpp)
 
 set(SPOSET_SRC
@@ -185,6 +186,7 @@ foreach(CATEGORY common trialwf sposet jastrow determinant)
     ${UTEST_EXE}
     catch_main
     qmcwfs
+    qmcham
     platform_LA
     platform_runtime
     sposets_for_testing

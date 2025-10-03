@@ -101,6 +101,27 @@ set_tests_properties(
              PROCESSOR_AFFINITY
              TRUE)
 
+if(HAVE_MPI)
+  add_test(NAME get-supercell_2dxy_terse COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS}
+                                                 $<TARGET_FILE:qmc-get-supercell> --ptvs 1 0 0 0 1 0 0 0 1 --target 8 --2dxy)
+else()
+  add_test(NAME get-supercell_2dxy_terse COMMAND $<TARGET_FILE:qmc-get-supercell> --ptvs 1 0 0 0 1 0 0 0 1 --target 8 --2dxy)
+endif()
+set_tests_properties(
+  get-supercell_2dxy_terse
+  PROPERTIES TIMEOUT
+             120
+             LABELS
+             "deterministic"
+             PASS_REGULAR_EXPRESSION
+             "0.5   2   0   0   0   4   0   0   0   1   2   0   0   0   4   0   0   0   1"
+             PROCESSORS
+             1
+             ENVIRONMENT
+             OMP_NUM_THREADS=3
+             PROCESSOR_AFFINITY
+             TRUE)
+     
 # Check qmc-extract-eshdf-kvectors
 set(KTEST_HDF_INPUT1 ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp/pwscf.pwscf.h5)
 set(KTEST_HDF_INPUT2 ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp/pwscf.pwscf.h5)
