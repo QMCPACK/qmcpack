@@ -4441,25 +4441,34 @@ class QmcpackInput(SimulationInput,Names):
     #end def remove_calculations
 
     def gen_calculations(self,qmc,**kw):
-        allowed_qmc = ('opt','vmc','vmc_test','dmc','dmc_test')
+        allowed_qmc = ('opt','vmc','vmc_test','vmc_noJ',
+                       'dmc','dmc_test','dmc_noJ')
         if qmc not in allowed_qmc:
             self.error('calculation type "{}" is unrecognized.\nValid options are: {}'.format(qmc,allowed_qmc))
         kw = obj(**kw)
         driver = self.get_driver()
         kw.set_optional(**qmc_defaults[driver][qmc])
         kw.driver = driver
-        self.remove_calculations()
+        #self.remove_calculations()
         if qmc=='opt':
             calcs = generate_opt_calculations(**kw)
         elif 'vmc' in qmc:
+            print('gen vmc')
             calcs = generate_vmc_calculations(**kw)
         elif 'dmc' in qmc:
+            print('gen dmc')
+            print(kw)
             calcs = generate_dmc_calculations(**kw)
         assert isinstance(calcs,list)
         for calc in calcs:
             calc.incorporate_defaults(elements=False,overwrite=False,propagate=True)
         calcs = make_collection(calcs)
+        print(calcs)
+        print(repr(self.simulation))
+        print(self.simulation.calculations)
         self.simulation.calculations = calcs
+        print(repr(self.simulation))
+        #exit()
     #end def gen_calculations
 
 
