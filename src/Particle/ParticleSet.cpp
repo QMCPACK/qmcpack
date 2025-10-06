@@ -314,7 +314,7 @@ int ParticleSet::addTable(const ParticleSet& psrc, DTModes modes)
     if (myName == psrc.getName())
       DistTables.push_back(createDistanceTable(*this, description));
     else
-      DistTables.push_back(createDistanceTable(psrc, *this, description));
+      DistTables.push_back(createDistanceTable(psrc, TotalNum, myName, description));
     distTableDescriptions.push_back(description.str());
     myDistTableMap[psrc.getName()] = tid;
     app_debug() << "  ... ParticleSet::addTable Create Table #" << tid << " " << DistTables[tid]->getName()

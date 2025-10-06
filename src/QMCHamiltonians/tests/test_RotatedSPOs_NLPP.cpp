@@ -81,7 +81,7 @@ void test_hcpBe_rotation(bool use_single_det, bool use_nlpp_batched)
   especies(chargeIdx, dnIdx) = -1;
   especies(massIdx, dnIdx)   = 1.0;
   elec.resetGroups(); // need to set Mass so
-
+  elec.update();
 
   pp.addParticleSet(std::move(elec_ptr));
 
@@ -94,7 +94,7 @@ void test_hcpBe_rotation(bool use_single_det, bool use_nlpp_batched)
   int CatomicnumberIdx             = tspecies.addAttribute("atomicnumber");
   tspecies(CchargeIdx, CIdx)       = 2;
   tspecies(CatomicnumberIdx, CIdx) = 4;
-
+  ions.update();
 
   pp.addParticleSet(std::move(ions_uptr));
 

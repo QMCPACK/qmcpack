@@ -19,7 +19,9 @@
 #include "Utilities/Timer.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
+#include "Message/UniformCommunicateError.h"
 #include "ParticleBase/RandomSeqGenerator.h"
+#include "Particle/createDistanceTable.h"
 #include "Utilities/qmc_common.h"
 
 #include <array>
@@ -186,9 +188,12 @@ void EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
       AtomicCentersInfo.ion_pos[i] = IonPos[i];
     const auto& source_species = SourcePtcl->getSpeciesSet();
     int Zind                   = source_species.findAttribute("atomicnumber");
-    const int table_id         = SourcePtcl->addTable(*SourcePtcl);
-    const auto& ii_table       = SourcePtcl->getDistTable(table_id);
-    SourcePtcl->update(true);
+
+    std::ostream null_out(nullptr);
+    auto ii_dt = createDistanceTable(*SourcePtcl, null_out);
+    ii_dt->evaluate(*SourcePtcl);
+    const auto& ii_table = *ii_dt;
+
     for (int i = 0; i < IonPos.size(); i++)
     {
       AtomicCentersInfo.non_overlapping_radius[i] = std::numeric_limits<RealType>::max();
@@ -214,7 +219,7 @@ void EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
           PosType dr;
           ii_table.get_first_neighbor(j, r, dr, false);
           if (r < 1e-3)
-            APP_ABORT("EinsplineSetBuilder::ReadOrbitalInfo_ESHDF too close ions <1e-3 bohr!");
+            throw UniformCommunicateError("EinsplineSetBuilder::ReadOrbitalInfo_ESHDF too close ions <1e-3 bohr!");
           AtomicCentersInfo.non_overlapping_radius[i] = 0.5 * r;
           break;
         }

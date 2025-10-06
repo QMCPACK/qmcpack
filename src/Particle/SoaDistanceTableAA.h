@@ -34,12 +34,9 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableAA
 #if !defined(NDEBUG)
         old_prepared_elec_id_(-1),
 #endif
-        evaluate_timer_(createGlobalTimer(std::string("DTAA::evaluate_") + target.getName() + "_" + target.getName(),
-                                          timer_level_fine)),
-        move_timer_(createGlobalTimer(std::string("DTAA::move_") + target.getName() + "_" + target.getName(),
-                                      timer_level_fine)),
-        update_timer_(createGlobalTimer(std::string("DTAA::update_") + target.getName() + "_" + target.getName(),
-                                        timer_level_fine))
+        evaluate_timer_(createGlobalTimer("DTAA::evaluate_" + name_, timer_level_fine)),
+        move_timer_(createGlobalTimer("DTAA::move_" + name_, timer_level_fine)),
+        update_timer_(createGlobalTimer("DTAA::update_" + name_, timer_level_fine))
   {
     resize();
   }
@@ -74,13 +71,13 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableAA
     temp_dr_.resize(num_targets_);
   }
 
-  inline void evaluate(ParticleSet& P) override
+  inline void evaluate(const DynamicCoordinates& coords) override
   {
     ScopedTimer local_timer(evaluate_timer_);
     constexpr T BigR = std::numeric_limits<T>::max();
     for (int iat = 1; iat < num_targets_; ++iat)
-      DTD_BConds<T, D, SC>::computeDistances(P.R[iat], P.getCoordinates().getAllParticlePos(), distances_[iat].data(),
-                                             displacements_[iat], 0, iat, iat);
+      DTD_BConds<T, D, SC>::computeDistances(coords.getOneParticlePos(iat), coords.getAllParticlePos(),
+                                             distances_[iat].data(), displacements_[iat], 0, iat, iat);
   }
 
   ///evaluate the temporary pair relations

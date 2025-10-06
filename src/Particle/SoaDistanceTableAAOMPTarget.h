@@ -72,10 +72,10 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
 #if !defined(NDEBUG)
         old_prepared_elec_id_(-1),
 #endif
-        offload_timer_(createGlobalTimer(std::string("DTAAOMPTarget::offload_") + name_, timer_level_fine)),
-        evaluate_timer_(createGlobalTimer(std::string("DTAAOMPTarget::evaluate_") + name_, timer_level_fine)),
-        move_timer_(createGlobalTimer(std::string("DTAAOMPTarget::move_") + name_, timer_level_fine)),
-        update_timer_(createGlobalTimer(std::string("DTAAOMPTarget::update_") + name_, timer_level_fine))
+        offload_timer_(createGlobalTimer("DTAAOMPTarget::offload_" + name_, timer_level_fine)),
+        evaluate_timer_(createGlobalTimer("DTAAOMPTarget::evaluate_" + name_, timer_level_fine)),
+        move_timer_(createGlobalTimer("DTAAOMPTarget::move_" + name_, timer_level_fine)),
+        update_timer_(createGlobalTimer("DTAAOMPTarget::update_" + name_, timer_level_fine))
 
   {
     auto* coordinates_soa = dynamic_cast<const RealSpacePositionsOMPTarget*>(&target.getCoordinates());
@@ -170,14 +170,14 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     }
   }
 
-  inline void evaluate(ParticleSet& P) override
+  inline void evaluate(const DynamicCoordinates& coords) override
   {
     ScopedTimer local_timer(evaluate_timer_);
 
     constexpr T BigR = std::numeric_limits<T>::max();
     for (int iat = 1; iat < num_targets_; ++iat)
-      DTD_BConds<T, D, SC>::computeDistances(P.R[iat], P.getCoordinates().getAllParticlePos(), distances_[iat].data(),
-                                             displacements_[iat], 0, iat, iat);
+      DTD_BConds<T, D, SC>::computeDistances(coords.getOneParticlePos(iat), coords.getAllParticlePos(),
+                                             distances_[iat].data(), displacements_[iat], 0, iat, iat);
   }
 
   /** compute distances from particles in [range_begin, range_end) to all the particles.
