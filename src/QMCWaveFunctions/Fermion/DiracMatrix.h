@@ -18,6 +18,7 @@
 #include "type_traits/complex_help.hpp"
 #include "Concurrency/OpenMP.h"
 #include "CPU/SIMD/algorithm.hpp"
+#include "CPU/SIMD/aligned_allocator.hpp"
 
 namespace qmcplusplus
 {

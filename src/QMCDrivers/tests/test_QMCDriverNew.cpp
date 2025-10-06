@@ -16,9 +16,9 @@
 #include "QMCDrivers/tests/QMCDriverNewTestWrapper.h"
 #include "QMCDrivers/tests/ValidQMCInputSections.h"
 #include "Message/Communicate.h"
-#include "Particle/tests/MinimalParticlePool.h"
-#include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
-#include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
+#include <MinimalParticlePool.h>
+#include <MinimalWaveFunctionPool.h>
+#include <MinimalHamiltonianPool.h>
 #include "EstimatorInputDelegates.h"
 #include "QMCDrivers/MCPopulation.h"
 #include "Concurrency/Info.hpp"

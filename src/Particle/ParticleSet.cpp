@@ -190,12 +190,12 @@ void ParticleSet::resetGroups()
     assert(GroupID[iat] < nspecies);
 }
 
-void ParticleSet::randomizeFromSource(ParticleSet& src)
+void ParticleSet::randomizeFromSource(const ParticleSet& src)
 {
-  SpeciesSet& srcSpSet(src.getSpeciesSet());
+  const SpeciesSet& srcSpSet(src.getSpeciesSet());
   SpeciesSet& spSet(getSpeciesSet());
-  int srcChargeIndx = srcSpSet.addAttribute("charge");
-  int srcMemberIndx = srcSpSet.addAttribute("membersize");
+  int srcChargeIndx = srcSpSet.getAttribute("charge");
+  int srcMemberIndx = srcSpSet.getAttribute("membersize");
   int ChargeIndex   = spSet.addAttribute("charge");
   int MemberIndx    = spSet.addAttribute("membersize");
   int Nsrc          = src.getTotalNum();
@@ -314,7 +314,7 @@ int ParticleSet::addTable(const ParticleSet& psrc, DTModes modes)
     if (myName == psrc.getName())
       DistTables.push_back(createDistanceTable(*this, description));
     else
-      DistTables.push_back(createDistanceTable(psrc, *this, description));
+      DistTables.push_back(createDistanceTable(psrc, TotalNum, myName, description));
     distTableDescriptions.push_back(description.str());
     myDistTableMap[psrc.getName()] = tid;
     app_debug() << "  ... ParticleSet::addTable Create Table #" << tid << " " << DistTables[tid]->getName()

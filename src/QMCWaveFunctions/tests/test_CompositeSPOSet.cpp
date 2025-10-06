@@ -13,8 +13,8 @@
 #include "catch.hpp"
 #include "QMCWaveFunctions/CompositeSPOSet.h"
 #include <exception>
-#include "Particle/tests/MinimalParticlePool.h"
-#include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
+#include <MinimalParticlePool.h>
+#include <MinimalWaveFunctionPool.h>
 #include "Utilities/ProjectData.h"
 
 namespace qmcplusplus

@@ -410,7 +410,7 @@ public:
   /** batched version  of acceptMove and reject Move fused, but only for spins
    *
    * note: should be called BEFORE mw_accept_rejectMove since the active_ptcl_ gets reset to -1
-   * This would cause the assertion that we have the right particle index to fail if done in the 
+   * This would cause the assertion that we have the right particle index to fail if done in the
    * wrong order
    */
   static void mw_accept_rejectSpinMove(const RefVectorWithLeader<ParticleSet>& p_list,
@@ -494,7 +494,7 @@ public:
   /** Initialize particles around another ParticleSet
    * Used to initialize an electron ParticleSet by an ion ParticleSet
    */
-  void randomizeFromSource(ParticleSet& src);
+  void randomizeFromSource(const ParticleSet& src);
 
   /** get species name of particle i
    */

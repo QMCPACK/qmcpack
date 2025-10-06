@@ -67,11 +67,14 @@ TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
   ions_.create({2});
   ions_.R[0] = {0.0, 0.0, 0.0};
   ions_.R[1] = {1.68658058, 1.68658058, 1.68658058};
+  ions_.update();
+
   elec_.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create({2});
-  elec_.R[0]                 = {0.0, 0.0, 0.0};
-  elec_.R[1]                 = {0.0, 1.0, 0.0};
+  elec_.R[0] = {0.0, 0.0, 0.0};
+  elec_.R[1] = {0.0, 1.0, 0.0};
+  elec_.update();
   SpeciesSet& tspecies       = elec_.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
   int chargeIdx              = tspecies.addAttribute("charge");
@@ -581,11 +584,13 @@ TEST_CASE("RotatedSPOs hcpBe", "[wavefunction]")
   ptcl.addParticleSet(std::move(ions_uptr));
   ions.create({1});
   ions.R[0] = {0.0, 0.0, 0.0};
+  ions.update();
 
   elec.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
   elec.create({1});
   elec.R[0] = {0.0, 0.0, 0.0};
+  elec.update();
 
   SpeciesSet& tspecies       = elec.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
@@ -596,7 +601,7 @@ TEST_CASE("RotatedSPOs hcpBe", "[wavefunction]")
   // spline file for use in eval_bspline_spo.py
 
   const char* particles = R"(<tmp>
-<sposet_builder type="bspline" href="hcpBe.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="double" gpu="no">
+<sposet_builder type="bspline" href="hcpBe.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="double">
       <sposet type="bspline" name="spo_ud" spindataset="0" size="2"/>
 </sposet_builder>
 </tmp>)";
@@ -732,7 +737,6 @@ namespace testing
 {
 const opt_variables_type& getMyVars(RotatedSPOs& rot) { return rot.myVars; }
 const std::vector<QMCTraits::ValueType>& getMyVarsFull(RotatedSPOs& rot) { return rot.myVarsFull_; }
-const std::vector<std::vector<QMCTraits::ValueType>>& getHistoryParams(RotatedSPOs& rot) { return rot.history_params_; }
 } // namespace testing
 
 // Test using global rotation
@@ -787,65 +791,16 @@ TEST_CASE("RotatedSPOs read and write parameters", "[wavefunction]")
     CHECK(full_var[i] == ValueApprox(vs_values[i]));
 }
 
-// Test using history list.
-TEST_CASE("RotatedSPOs read and write parameters history", "[wavefunction]")
-{
-  //Problem with h5 parameter parsing for complex build.  To be fixed in future PR.
-  auto fake_spo = std::make_unique<FakeSPO<QMCTraits::ValueType>>();
-  fake_spo->setOrbitalSetSize(4);
-  RotatedSPOs rot("fake_rot", std::move(fake_spo));
-  rot.set_use_global_rotation(false);
-  int nel = 2;
-  rot.buildOptVariables(nel);
-
-  std::vector<SPOSet::ValueType> vs_values{0.1, 0.15, 0.2, 0.25};
-
-  optimize::VariableSet vs;
-  rot.checkInVariablesExclusive(vs);
-  auto* vs_values_data_real = (SPOSet::RealType*)vs_values.data();
-  for (size_t i = 0; i < vs.size(); i++)
-    vs[i] = vs_values_data_real[i];
-  rot.resetParametersExclusive(vs);
-
-  {
-    hdf_archive hout;
-    vs.writeToHDF("rot_vp_hist.h5", hout);
-
-    rot.writeVariationalParameters(hout);
-  }
-
-  auto fake_spo2 = std::make_unique<FakeSPO<QMCTraits::ValueType>>();
-  fake_spo2->setOrbitalSetSize(4);
-
-  RotatedSPOs rot2("fake_rot", std::move(fake_spo2));
-  rot2.buildOptVariables(nel);
-
-  optimize::VariableSet vs2;
-  rot2.checkInVariablesExclusive(vs2);
-
-  hdf_archive hin;
-  vs2.readFromHDF("rot_vp_hist.h5", hin);
-  rot2.readVariationalParameters(hin);
-
-  auto& var = testing::getMyVars(rot2);
-  for (size_t i = 0; i < var.size(); i++)
-    CHECK(var[i] == Approx(vs[i]));
-
-  const auto hist = testing::getHistoryParams(rot2);
-  REQUIRE(hist.size() == 1);
-  REQUIRE(hist[0].size() == 4);
-}
-
 template<typename T>
 class DummySPOSetWithoutMW : public SPOSetT<T>
 {
 public:
-  using SPOSet = SPOSetT<T>;
-  using ValueVector   = typename SPOSet::ValueVector;
-  using ValueMatrix   = typename SPOSet::ValueMatrix;
-  using GradVector    = typename SPOSet::GradVector;
-  using GradMatrix    = typename SPOSet::GradMatrix;
-  using ComplexType   = typename SPOSet::ComplexType;
+  using SPOSet      = SPOSetT<T>;
+  using ValueVector = typename SPOSet::ValueVector;
+  using ValueMatrix = typename SPOSet::ValueMatrix;
+  using GradVector  = typename SPOSet::GradVector;
+  using GradMatrix  = typename SPOSet::GradMatrix;
+  using ComplexType = typename SPOSet::ComplexType;
   template<typename DT>
   using OffloadMatrix = typename SPOSet::template OffloadMatrix<DT>;
 
@@ -913,9 +868,9 @@ template<typename T>
 class DummySPOSetWithMW : public DummySPOSetWithoutMW<T>
 {
 public:
-  using ValueVector   = typename DummySPOSetWithoutMW<T>::ValueVector;
-  using GradVector    = typename DummySPOSetWithoutMW<T>::GradVector;
-  using ComplexType   = typename DummySPOSetWithoutMW<T>::ComplexType;
+  using ValueVector = typename DummySPOSetWithoutMW<T>::ValueVector;
+  using GradVector  = typename DummySPOSetWithoutMW<T>::GradVector;
+  using ComplexType = typename DummySPOSetWithoutMW<T>::ComplexType;
   template<typename DT>
   using OffloadMatrix = typename DummySPOSetWithoutMW<T>::template OffloadMatrix<DT>;
   DummySPOSetWithMW(const std::string& my_name) : DummySPOSetWithoutMW<T>(my_name) {}

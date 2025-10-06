@@ -104,7 +104,7 @@ private:
   std::vector<Value> psi_ratios_;
 
   /// row major per sample workspaces
-  /** conj(basis_values) for each particle 
+  /** conj(basis_values) for each particle
    *  size: samples * basis_size
    *  vector is over species
    *  each matrix row: particle column: basis_value
@@ -219,7 +219,7 @@ private:
    *  \param[in] rng          random generator. templated for testing without dependency on app level rng.
    *  \param[in] steps        If integrator_ = Integrator::DENSITY steps is a key parameter otherwise ignored.
    *                          when set to 0 it is reset to samples_ internally
-   *  
+   *
    *  sideeffects:
    *   * samples_weights_ are set.
    *   * rsamples_ are set.

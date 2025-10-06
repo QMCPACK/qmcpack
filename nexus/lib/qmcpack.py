@@ -618,8 +618,8 @@ class Qmcpack(Simulation):
             twh = self.input.get_host('twist')
             tnh = self.input.get_host('twistnum')
             htypes = bspline_builder,determinantset
-            user_twist_given  = isinstance(twh,htypes) and twh.twist!=None
-            user_twist_given |= isinstance(tnh,htypes) and tnh.twistnum!=None
+            user_twist_given  = isinstance(twh,htypes) and twh.twist is not None
+            user_twist_given |= isinstance(tnh,htypes) and tnh.twistnum is not None
             many_kpoints = len(self.system.structure.kpoints)>1
             self.should_twist_average = many_kpoints and not user_twist_given
             if self.should_twist_average:
@@ -673,7 +673,7 @@ class Qmcpack(Simulation):
         result = obj()
         if result_name=='jastrow' or result_name=='wavefunction':
             analyzer = self.load_analyzer_image()
-            if not 'results' in analyzer or not 'optimization' in analyzer.results:
+            if 'results' not in analyzer or 'optimization' not in analyzer.results:
                 if self.should_twist_average:
                     self.error('Wavefunction optimization was performed for each twist separately.\nCurrently, the transfer of per-twist wavefunction parameters from\none QMCPACK simulation to another is not supported.  Please either\nredo the optimization with a single twist (see "twist" or "twistnum"\noptions), or request that this feature be implemented.')
                 else:
@@ -727,7 +727,7 @@ class Qmcpack(Simulation):
                     orb_elem.href = os.path.relpath(orb_elem.href,self.locdir)
                 else:
                     orb_elem.href = os.path.relpath(h5file,self.locdir)
-                    if system.structure.folded_structure!=None:
+                    if system.structure.folded_structure is not None:
                         orb_elem.tilematrix = array(system.structure.tmatrix)
                     #end if
                 #end if
@@ -736,7 +736,7 @@ class Qmcpack(Simulation):
                     meshfactor = 1.0
                     )
                 for var,val in defs.items():
-                    if not var in orb_elem:
+                    if var not in orb_elem:
                         orb_elem[var] = val
                     #end if
                 #end for
@@ -981,7 +981,7 @@ class Qmcpack(Simulation):
                     jopt = process_jastrow(optwf)
                     jnew = list(jopt.values())
                     for jtype in jold.keys():
-                        if not jtype in jopt:
+                        if jtype not in jopt:
                             jnew.append(jold[jtype])
                         #end if
                     #end for
@@ -1061,7 +1061,7 @@ class Qmcpack(Simulation):
         elif result_name=='gc_occupation':
             from qmcpack_converters import gcta_occupation
             if not isinstance(sim,Pw2qmcpack):
-                msg = 'grand-canonical occupation require Pw2qmcpack'
+                msg = 'grand-canonical occupation requires Pw2qmcpack'
                 self.error(msg)
             #endif
             # step 1: extract Fermi energy for each spin from nscf
@@ -1078,7 +1078,7 @@ class Qmcpack(Simulation):
             #end if
             na = nscf.load_analyzer_image()
             Ef_list = na.fermi_energies
-            # step 2: analyze ESH5 file for states below Fermi energy
+            # step 2: analyze ESHDF file for states below Fermi energy
             pa = sim.load_analyzer_image()
             if 'wfh5' not in pa:
               pa.analyze(Ef_list=Ef_list)
@@ -1141,7 +1141,7 @@ class Qmcpack(Simulation):
             #end if
             if cusp_run:
                 sd = self.input.get('slaterdeterminant')
-                if sd!=None:
+                if sd is not None:
                     cuspfiles = []
                     for d in sd.determinants:
                         cuspfiles.append(d.id+'.cuspInfo.xml')
@@ -1201,7 +1201,7 @@ class Qmcpack(Simulation):
     def post_analyze(self,analyzer):
         if not self.has_generic_input():
             calctypes = self.input.get_output_info('calctypes')
-            opt_run = calctypes!=None and 'opt' in calctypes
+            opt_run = calctypes is not None and 'opt' in calctypes
             if opt_run:
                 opt_file = analyzer.results.optimization.optimal_file
                 if opt_file is None:
@@ -1620,7 +1620,7 @@ def generate_cusp_correction(**kwargs):
     input = generate_qmcpack_input(**inp_args)
 
     wf = input.get('wavefunction')
-    if not 'determinantset' in wf:
+    if 'determinantset' not in wf:
         Qmcpack.class_error('wavefunction does not have determinantset, cannot create cusp correction','generate_cusp_correction')
     #end if
     wf.determinantset.cuspcorrection = True

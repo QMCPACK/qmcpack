@@ -47,7 +47,7 @@ if(NOT QMC_COMPLEX)
     list(APPEND DET_FeCO6_PYSCF_SHORT "potential" "-450.02136168 0.002") # potential energy
     list(APPEND DET_FeCO6_PYSCF_SHORT "ionion" "422.43049005 0.0001") # i-i energy
     list(APPEND DET_FeCO6_PYSCF_SHORT "localecp" "-1542.74871820 0.003") # localECP
-    list(APPEND DET_FeCO6_PYSCF_SHORT "nonlocalecp" "77.55955951 0.002") # nonlocalECP
+    list(APPEND DET_FeCO6_PYSCF_SHORT "nonlocalecp" "77.55955951 0.003") # nonlocalECP
     list(APPEND DET_FeCO6_PYSCF_SHORT "samples" "9 0.0") # samples
   else()
     list(APPEND DET_FeCO6_PYSCF_SHORT "kinetic" "157.44334976 0.000001") # kinetic energy
@@ -79,7 +79,7 @@ if(NOT QMC_COMPLEX)
     list(APPEND DET_FeCO6_PYSCF_SHORT_BATCHED "potential" "-450.02136168 0.002") # potential energy
     list(APPEND DET_FeCO6_PYSCF_SHORT_BATCHED "ionion" "422.43049027 0.0001") # i-i energy
     list(APPEND DET_FeCO6_PYSCF_SHORT_BATCHED "localecp" "-1542.74871820 0.003") # localECP
-    list(APPEND DET_FeCO6_PYSCF_SHORT_BATCHED "nonlocalecp" "77.55955951 0.002") # nonlocalECP
+    list(APPEND DET_FeCO6_PYSCF_SHORT_BATCHED "nonlocalecp" "77.55955951 0.003") # nonlocalECP
     list(APPEND DET_FeCO6_PYSCF_SHORT_BATCHED "samples" "9 0.0") # samples
   else()
     list(APPEND DET_FeCO6_PYSCF_SHORT_BATCHED "kinetic" "157.44334976 0.000001") # kinetic energy

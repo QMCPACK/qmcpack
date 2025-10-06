@@ -184,8 +184,18 @@ class Pwscf(Simulation):
         if result_name=='charge_density' or result_name=='restart':
             result.locdir   = self.locdir
             result.outdir   = os.path.join(self.locdir,outdir)
-            result.location = os.path.join(self.locdir,outdir,prefix+'.save','charge-density.dat')
-            result.spin_location = os.path.join(self.locdir,outdir,prefix+'.save','spin-polarization.dat')
+            result_save_outdir = os.path.join(self.locdir,outdir,prefix+'.save')
+            if os.path.exists(os.path.join(result_save_outdir,'charge-density.hdf5')):
+                result.location = os.path.join(result_save_outdir,'charge-density.hdf5')
+                chg_dens_format = 'hdf5'
+            else:
+                result.location = os.path.join(result_save_outdir,'charge-density.dat')
+                chg_dens_format = 'dat'
+            
+            if chg_dens_format == 'dat':
+                result.spin_location = os.path.join(result_save_outdir,'spin-polarization.dat')
+            elif chg_dens_format == 'hdf5':
+                result.spin_location = None
         elif result_name=='orbitals':
             result.location = os.path.join(self.locdir,outdir,prefix+'.wfc1')
         elif result_name=='structure':
@@ -243,15 +253,23 @@ class Pwscf(Simulation):
                 cd_loc = result.location
                 cd_rel = os.path.relpath(cd_loc,link_loc)
                 sp_loc = result.spin_location
-                sp_rel = os.path.relpath(sp_loc,link_loc)
+
                 cwd = os.getcwd()
                 if not os.path.exists(link_loc):
                     os.makedirs(link_loc)
                 #end if
+
                 os.chdir(link_loc)
-                os.system('ln -s '+cd_rel+' charge-density.dat')
-                os.system('ln -s '+sp_rel+' spin-polarization.dat')
+                if cd_rel.endswith('charge-density.hdf5'):
+                    os.system('ln -s '+cd_rel+' charge-density.hdf5')
+                elif cd_rel.endswith('charge-density.dat'):
+                    sp_rel = os.path.relpath(sp_loc,link_loc)
+                    os.system('ln -s '+cd_rel+' charge-density.dat')
+                    os.system('ln -s '+sp_rel+' spin-polarization.dat')
+                else:
+                    raise FileNotFoundError('charge-density.dat or charge-density.hdf5 not found in {0}'.format(result_save_outdir))
                 os.chdir(cwd)
+
             #end if
         elif result_name=='structure':
             relstruct = result.structure.copy()
@@ -346,7 +364,7 @@ class Pwscf(Simulation):
 def generate_pwscf(**kwargs):
     sim_args,inp_args = Pwscf.separate_inputs(kwargs)
 
-    if not 'input' in sim_args:
+    if 'input' not in sim_args:
         input_type = inp_args.delete_optional('input_type','generic')
         sim_args.input = generate_pwscf_input(input_type,**inp_args)
     #end if

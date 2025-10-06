@@ -6,8 +6,8 @@ build:
     python: "3.10"
 
 sphinx:
-   configuration: nexus/sphinx_docs/conf.py
+   configuration: nexus/docs/conf.py
 
 python:
    install:
-   - requirements: nexus/sphinx_docs/requirements.txt  
+   - requirements: nexus/docs/requirements.txt  

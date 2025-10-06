@@ -14,7 +14,6 @@
 #endif
 
 #include "Configuration.h"
-#include "type_traits/container_traits_multi.h"
 #include "hdf/hdf_multi.h"
 #include "hdf/hdf_archive.h"
 

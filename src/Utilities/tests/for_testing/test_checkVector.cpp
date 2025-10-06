@@ -10,6 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "catch.hpp"
+#include "OhmmsPETE/TinyVector.h"
 #include "checkVector.hpp"
 #include <iostream>
 #include <string>
@@ -40,7 +41,7 @@ TEST_CASE("checkVector_OhmmsVector_real", "[utilities][for_testing]")
   CHECKED_ELSE(check_vector_result.result) { FAIL(check_vector_result.result_message); }
 
   //check with epsilon
-  b_vec[2] = 2.6005;
+  b_vec[2]            = 2.6005;
   check_vector_result = checkVector(a_vec, b_vec, false, 1e-4);
   REQUIRE(check_vector_result.result == false);
   check_vector_result = checkVector(a_vec, b_vec, false, 1e-3);
@@ -54,9 +55,9 @@ TEST_CASE("checkVector_OhmmsVector_real", "[utilities][for_testing]")
   check_vector_result = checkVector(a_vec, b_vec);
   CHECKED_ELSE(check_vector_result.result) { FAIL(check_vector_result.result_message); }
 
-  b_vec[0] = 1.0;
-  b_vec[1] = 3.6;
-  check_vector_result = checkVector(a_vec, b_vec, true);
+  b_vec[0]                   = 1.0;
+  b_vec[1]                   = 3.6;
+  check_vector_result        = checkVector(a_vec, b_vec, true);
   std::string::size_type pos = 0;
   int lines                  = 0;
   while (true)
@@ -69,6 +70,39 @@ TEST_CASE("checkVector_OhmmsVector_real", "[utilities][for_testing]")
   }
   CHECK(lines == 2);
   REQUIRE(check_vector_result.result == false);
+}
+
+// only test std::vector<TinyVector<int> because that is all that is used
+// or supported in the code.
+TEST_CASE("checkVector_TinyVector_int", "[utilities][for_testing]")
+{
+  std::vector<TinyVector<int, 3>> a_vec;
+  a_vec.resize(3);
+  a_vec[0] = {1, 2, 3};
+  a_vec[1] = {4, 5, 6};
+  a_vec[2] = {7, 8, 9};
+
+  std::vector<TinyVector<int, 3>> b_vec;
+  b_vec.resize(3);
+  b_vec[0] = {1, 2, 3};
+  b_vec[1] = {4, 5, 6};
+  b_vec[2] = {7, 8, 9};
+
+  auto check_vector_result = checkVector(a_vec, b_vec);
+  // This would be how you would fail and print the information about what element failed.
+  CHECKED_ELSE(check_vector_result.result) { FAIL(check_vector_result.result_message); }
+
+  b_vec.resize(4);
+  b_vec[0] = {1, 2, 3};
+  b_vec[1] = {4, 5, 6};
+  b_vec[2] = {7, 8, 9};
+
+  check_vector_result = checkVector(a_vec, b_vec);
+  CHECKED_ELSE(check_vector_result.result) { FAIL(check_vector_result.result_message); }
+
+  a_vec[0][0]         = 2;
+  check_vector_result = checkVector(a_vec, b_vec);
+  CHECK(check_vector_result.result == false);
 }
 
 } // namespace qmcplusplus

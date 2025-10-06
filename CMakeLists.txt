@@ -18,12 +18,8 @@ endif()
 ######################################################################
 project(
   qmcpack
-  VERSION 4.0.9 
+  VERSION 4.1.9
   LANGUAGES C CXX)
-
-# add the automatically determined parts of the RPATH
-# which point to directories outside the build tree to the install RPATH
-set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 #--------------------------------------------------------------------
 # Directory where customize cmake files reside
@@ -31,6 +27,11 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 set(PROJECT_CMAKE ${qmcpack_SOURCE_DIR}/CMake)
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_CMAKE})
 include(macros)
+
+# add the automatically determined parts of the RPATH
+# which point to directories outside the build tree to the install RPATH
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+include(AddRPATH)
 
 ######################################################################
 # Build and install options
@@ -134,8 +135,10 @@ option(BUILD_UNIT_TESTS "Build unit tests" ON)
 option(BUILD_MICRO_BENCHMARKS "Build micro benchmarks" ON)
 option(BUILD_LMYENGINE_INTERFACE "Build LMY engine" ON)
 if(MIXED_PRECISION AND BUILD_LMYENGINE_INTERFACE)
-  message(STATUS "LMY engine is not compatible with CPU mixed precision build! Disabling LMY engine")
+  message(STATUS "LMY engine is not compatible with mixed precision build! Disabling LMY engine. Some optimizers will not be available.")
   set(BUILD_LMYENGINE_INTERFACE OFF)
+else()
+  message(STATUS "LMY engine enabled for widest range of wavefunction optimization methods.")
 endif()
 option(BUILD_AFQMC "Build with AFQMC" OFF)
 # explicit HIP source codes only exist in AFQMC.
@@ -151,32 +154,13 @@ endif()
 option(QMC_BUILD_STATIC "Link to static libraries" OFF)
 option(ENABLE_TIMERS "Enable internal timers" ON)
 option(ENABLE_STACKTRACE "Enable use of boost::stacktrace" OFF)
-option(USE_VTUNE_API "Enable use of VTune ittnotify APIs" OFF)
-option(USE_HPCTOOLKIT_API "Enable use of HPCToolkit start/stop APIs" OFF)
-cmake_dependent_option(USE_VTUNE_TASKS "USE VTune ittnotify task annotation" OFF "ENABLE_TIMERS AND USE_VTUNE_API" OFF)
-# CMake note - complex conditionals in cmake_dependent_option must have spaces around parentheses
-cmake_dependent_option(USE_NVTX_API "Enable/disable NVTX regions in CUDA code." OFF "ENABLE_TIMERS AND ENABLE_CUDA" OFF)
 set(HAVE_EINSPLINE 1) # to be removed
 option(QMC_EXP_THREADING "Experimental non openmp threading models" OFF)
 mark_as_advanced(QMC_EXP_THREADING)
 
-#--------------------------------------------------------------------
-# Sanitizer options
-#--------------------------------------------------------------------
-
-# Add optional sanitizers ASAN, UBSAN, MSAN
-set(VALID_SANITIZERS "asan" "ubsan" "tsan" "msan")
-set(ENABLE_SANITIZER "" CACHE STRING "asan,ubsan,tsan,msan")
-set_property(CACHE ENABLE_SANITIZER PROPERTY STRINGS ${VALID_SANITIZERS})
-
-if(ENABLE_SANITIZER)
-  # Perform sanitizer option check, only works in debug mode
-  if(NOT ENABLE_SANITIZER IN_LIST VALID_SANITIZERS)
-    message(FATAL_ERROR "Invalid -DENABLE_SANITIZER=${ENABLE_SANITIZER}, value must be one of ${VALID_SANITIZERS}")
-  else()
-    message(STATUS "Enable sanitizer ENABLE_SANITIZER=${ENABLE_SANITIZER}")
-  endif()
-endif()
+# Add optional sanitizers ASAN, UBSAN, MSAN, TYPESAN
+set(VALID_SANITIZERS "asan" "ubsan" "tsan" "msan" "typesan")
+set(ENABLE_SANITIZER "" CACHE STRING "Valid input: ${VALID_SANITIZERS} or left empty")
 
 #--------------------------------------------------------------------
 # INSTALL_NEXUS install Nexus alongside QMCPACK
@@ -207,16 +191,7 @@ if(QMC_OMP)
   endif()
 
   # explicitly set OpenMP runtime library rpath like other normal libraries.
-  list(GET OpenMP_CXX_LIBRARIES 0 OpenMP_LIBRARY_FILE)
-  if(OpenMP_LIBRARY_FILE)
-    cmake_path(GET OpenMP_LIBRARY_FILE PARENT_PATH OpenMP_LIBRARY_DIR)
-    list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES ${OpenMP_LIBRARY_DIR} isSystemDir)
-    if("${isSystemDir}" STREQUAL "-1")
-      message(STATUS "Append OpenMP runtime library path ${OpenMP_LIBRARY_DIR}")
-      list(APPEND CMAKE_BUILD_RPATH ${OpenMP_LIBRARY_DIR})
-      list(APPEND CMAKE_INSTALL_RPATH ${OpenMP_LIBRARY_DIR})
-    endif("${isSystemDir}" STREQUAL "-1")
-  endif()
+  AddRPATH("OpenMP" ${OpenMP_CXX_LIBRARIES})
 endif(QMC_OMP)
 
 #-------------------------------------------------------------------------------
@@ -237,30 +212,6 @@ else(CMAKE_TOOLCHAIN_FILE)
     message(WARNING "Cray Programming Environment has been detected but C++ compiler wrapper CC is not used! "
                     "Please use cc/CC as the C/C++ compiler to ensure correct cross-compiling for the compute nodes "
                     "unless you understand cross-compiling and intend not to use Cray compiler wrappers.")
-  endif()
-  if(CMAKE_SYSTEM_NAME STREQUAL "CrayLinuxEnvironment")
-    message(STATUS "Running on a Cray machine.")
-
-    if(NOT $ENV{CRAYPE_LINK_TYPE} STREQUAL "dynamic")
-      message(WARNING "Cray Programming Environment uses static linking by default. "
-                      "We prefer dynamic linking which makes library searching easier. "
-                      "Setting environment variable CRAYPE_LINK_TYPE to \"dynamic\" enables dynamic linking.\n")
-    endif()
-
-    if(NOT DEFINED MPIEXEC_EXECUTABLE)
-      find_program(MPIEXEC_EXECUTABLE aprun)
-      if(NOT MPIEXEC_EXECUTABLE)
-        # For slurm use srun
-        find_program(MPIEXEC_EXECUTABLE srun)
-      endif(NOT MPIEXEC_EXECUTABLE)
-    endif()
-  else()
-    if($ENV{CRAYPE_VERSION} MATCHES "." AND BASE_CXX_COMPILER_NAME STREQUAL "CC")
-      message(
-        FATAL_ERROR
-          "Cray compiler wrapper detected. Empty the build folder and rerun cmake with -DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment added."
-      )
-    endif()
   endif()
 
   include(inspectCompiler)
@@ -289,6 +240,12 @@ include(TestCxx17Library)
 # SETUP SANITIZERS FLAGS
 #-----------------------------------------------------------------------
 if(ENABLE_SANITIZER)
+  message(STATUS "Enable sanitizer ENABLE_SANITIZER=${ENABLE_SANITIZER}")
+  # Perform sanitizer option check
+  if(NOT ENABLE_SANITIZER IN_LIST VALID_SANITIZERS)
+    message(FATAL_ERROR "Invalid ENABLE_SANITIZER input, value must be one of ${VALID_SANITIZERS}")
+  endif()
+
   if(NOT ${COMPILER} MATCHES "GNU" AND NOT ${COMPILER} MATCHES "Clang")
     message(FATAL_ERROR "-DENABLE_SANITIZER=${ENABLE_SANITIZER} only works with GNU or Clang compilers")
   endif()
@@ -297,6 +254,16 @@ if(ENABLE_SANITIZER)
     set(CMAKE_CXX_FLAGS_SAN
         "-fsanitize=address -fno-optimize-sibling-calls -fsanitize-address-use-after-scope -fno-omit-frame-pointer"
         CACHE STRING "AddressSanitizer C++ compiler builds." FORCE)
+    if(NOT DEFINED LSAN_OPTIONS)
+      if(QMC_MPI)
+        set(LSAN_OPTIONS "suppressions=${PROJECT_SOURCE_DIR}/config/sanitizers/lsan_mpi.supp")
+      else()
+        set(LSAN_OPTIONS "")
+      endif()
+    endif()
+    if(LSAN_OPTIONS)
+      message(STATUS "Set environment variable LSAN_OPTIONS for CTest: ${LSAN_OPTIONS}")
+    endif()
   elseif("${ENABLE_SANITIZER}" STREQUAL "ubsan")
     set(CMAKE_CXX_FLAGS_SAN
         "-fsanitize=undefined"
@@ -309,6 +276,10 @@ if(ENABLE_SANITIZER)
     set(CMAKE_CXX_FLAGS_SAN
         "-fsanitize=thread"
         CACHE STRING "ThreadSanitizer C++ compiler builds." FORCE)
+  elseif("${ENABLE_SANITIZER}" STREQUAL "typesan")
+    set(CMAKE_CXX_FLAGS_SAN
+        "-fsanitize=type"
+        CACHE STRING "TypeSanitizer C++ compiler builds." FORCE)
   endif()
 
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_SAN}")
@@ -732,21 +703,6 @@ if(ENABLE_CUDA AND NOT QMC_CUDA2HIP)
   message("Project CUDA_FLAGS: ${CMAKE_CUDA_FLAGS}")
 endif()
 
-if(USE_NVTX_API AND NOT QMC_CUDA2HIP)
-  message(STATUS "Enabling use of CUDA NVTX APIs")
-  find_library(
-    NVTX_API_LIB NAME nvToolsExt
-    HINTS ${CUDA_TOOLKIT_ROOT_DIR}
-    PATH_SUFFIXES lib lib64)
-  if(NOT NVTX_API_LIB)
-    message(FATAL_ERROR "USE_NVTX_API set but NVTX_API_LIB not found")
-  endif(NOT NVTX_API_LIB)
-  message("CUDA nvToolsExt library: ${NVTX_API_LIB}")
-  link_libraries(${NVTX_API_LIB})
-else()
-  message(STATUS "CUDA NVTX APIs disabled")
-endif(USE_NVTX_API AND NOT QMC_CUDA2HIP)
-
 #-------------------------------------------------------------------
 #  set up ROCM compiler options and libraries
 #-------------------------------------------------------------------
@@ -770,7 +726,13 @@ if(ENABLE_ROCM)
         "This happens when the ROCm installation cannot be found by CMake. "
         "Rerun cmake with -DROCM_ROOT=<your ROCm installation root directory> added.")
   endif()
+
   find_package(hipblas CONFIG REQUIRED)
+  # Check for minimum required rocBLAS version
+  if(hipblas_VERSION VERSION_LESS "2.0.0")
+    message(FATAL_ERROR "QMCPACK requires hipBLAS minimum version 2.0.0 from ROCm 6.0. Detected ${hipblas_VERSION}.")
+  endif()
+
   find_package(rocsolver CONFIG REQUIRED)
   find_package(rocthrust CONFIG REQUIRED)
 
@@ -806,20 +768,6 @@ if(ENABLE_ROCM)
     message(STATUS "Use of hipHostRegister disabled")
   endif()
 endif(ENABLE_ROCM)
-
-if(USE_NVTX_API AND QMC_CUDA2HIP)
-  message(STATUS "Enabling use of ROCm rocTX APIs")
-  find_library(
-    ROCTX_API_LIB NAME libroctx64.so
-    PATH_SUFFIXES lib lib64)
-  if(NOT ROCTX_API_LIB)
-    message(FATAL_ERROR "USE_ROCTX_API set but ROCTX_API_LIB not found")
-  endif(NOT ROCTX_API_LIB)
-  message("ROCm rocTX library: ${ROCTX_API_LIB}")
-  link_libraries(${ROCTX_API_LIB})
-  else()
-    message(STATUS "ROCm rocTX APIs disabled")
-endif(USE_NVTX_API AND QMC_CUDA2HIP)
 
 #-------------------------------------------------------------------
 #  set up AFQMC-specific HIP compiler options
@@ -878,7 +826,7 @@ endif(ENABLE_SYCL)
 #-----------------------------------------------------
 # Some OpenMP offload runtime libraries have composibility issue with vendor native ones.
 # A workaround is making the vendor native runtime responsible for memory allocations and OpenMP associate/disassocate them.
-# CUDA/HIP supported, not SYCL
+# CUDA/HIP/SYCL supported
 if(${COMPILER} MATCHES "Clang" AND QMC_CUDA2HIP AND ENABLE_OFFLOAD)
   # Known issue HIP<5.5 https://github.com/ROCm/aomp/issues/253
   # Known performance issue remains in 6.3.3
@@ -887,59 +835,15 @@ else()
   set(QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT OFF)
 endif()
 cmake_dependent_option(QMC_OFFLOAD_MEM_ASSOCIATED "Use omp_target_associate_ptr instead of direct OpenMP offload maps in dual-space allocators"
-  ${QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT} "ENABLE_OFFLOAD;ENABLE_CUDA;NOT ENABLE_SYCL" OFF)
+                       ${QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT} "ENABLE_OFFLOAD;ENABLE_CUDA OR ENABLE_SYCL" OFF)
 if(QMC_OFFLOAD_MEM_ASSOCIATED)
   message(STATUS "Use omp_target_associate_ptr instead of direct OpenMP offload maps in dual-space allocators")
 endif()
 
 #-------------------------------------------------------------------
-# set up VTune ittnotify library
+# Link profiler runtime libraries (NVTX, Ittnotify, HPCToolkit)
 #-------------------------------------------------------------------
-
-if(USE_VTUNE_API)
-  message(STATUS "Enabling use of VTune ittnotify APIs")
-  find_path(
-    VTUNE_ITTNOTIFY_INCLUDE_DIR ittnotify.h
-    HINTS ${VTUNE_ROOT} $ENV{VTUNE_ROOT}
-    PATH_SUFFIXES include REQUIRED)
-  message(STATUS "Found VTUNE_ITTNOTIFY_INCLUDE_DIR ${VTUNE_ITTNOTIFY_INCLUDE_DIR}")
-  find_library(
-    VTUNE_ITTNOTIFY_LIBRARY ittnotify
-    HINTS ${VTUNE_ROOT} $ENV{VTUNE_ROOT}
-    PATH_SUFFIXES lib64 lib REQUIRED)
-  message(STATUS "Found VTUNE_ITTNOTIFY_LIBRARY ${VTUNE_ITTNOTIFY_LIBRARY}")
-
-  include_directories(${VTUNE_ITTNOTIFY_INCLUDE_DIR})
-  link_libraries(${VTUNE_ITTNOTIFY_LIBRARY})
-  if(USE_VTUNE_TASKS)
-    message(STATUS "VTune ittnotify tasks enabled")
-  endif()
-else()
-  message(STATUS "VTune ittnotify APIs disabled")
-endif()
-
-#-------------------------------------------------------------------
-# set up HPCToolkit library
-#-------------------------------------------------------------------
-
-if(USE_HPCTOOLKIT_API)
-  message(STATUS "Enabling use of HPCToolkit start/stop APIs")
-  find_path(
-    HPCTOOLKIT_INCLUDE_DIR hpctoolkit.h
-    HINTS ${HPCTOOLKIT_ROOT} $ENV{HPCTOOLKIT_ROOT}
-    PATH_SUFFIXES include REQUIRED)
-  message(STATUS "Found HPCTOOLKIT_INCLUDE_DIR ${HPCTOOLKIT_INCLUDE_DIR}")
-  find_library(
-    HPCTOOLKIT_LIBRARY hpctoolkit
-    HINTS ${HPCTOOLKIT_ROOT} $ENV{HPCTOOLKIT_ROOT}
-    PATH_SUFFIXES lib64 lib REQUIRED)
-  message(STATUS "Found HPCTOOLKIT_LIBRARY ${HPCTOOLKIT_LIBRARY}")
-
-  include_directories(${HPCTOOLKIT_INCLUDE_DIR})
-  link_libraries(${HPCTOOLKIT_LIBRARY})
-else()
-  message(STATUS "HPCToolkit start/stop APIs disabled")
-endif()
+include("CMake/FindProfilerLibs.cmake")
 
 #-------------------------------------------------------------------
 # Add user extra flags

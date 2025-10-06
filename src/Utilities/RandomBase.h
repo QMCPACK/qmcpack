@@ -13,6 +13,7 @@
 #ifndef QMCPLUSPLUS_RANDOMBASE_H
 #define QMCPLUSPLUS_RANDOMBASE_H
 
+#include <cstdint>
 #include <istream>
 #include <memory>
 #include <ostream>
@@ -25,7 +26,7 @@ class RandomBase
 {
 public:
   using result_type                                         = T;
-  using uint_type                                           = uint_fast32_t;
+  using uint_type                                           = std::uint_fast32_t;
   virtual ~RandomBase()                                     = default;
   virtual void init(int iseed_in)                           = 0;
   virtual void seed(uint_type aseed)                        = 0;
@@ -36,6 +37,11 @@ public:
   virtual void save(std::vector<uint_type>& curstate) const = 0;
   virtual size_t state_size() const                         = 0;
   virtual std::unique_ptr<RandomBase<T>> makeClone() const  = 0;
+  virtual RandomBase& operator=(const RandomBase& other) { return *this; }
+
+protected:
+  RandomBase()                  = default;
+  RandomBase(const RandomBase&) = default;
 };
 
 } // namespace qmcplusplus

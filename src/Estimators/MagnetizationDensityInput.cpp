@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2023 QMCPACK developers.
+// Copyright (c) 2025 QMCPACK developers.
 //
 // File developed by: Raymond Clay, rclay@sandia.gov, Sandia National Laboratories
 //
@@ -26,13 +26,14 @@ MagnetizationDensityInput::MagnetizationDensityInput(xmlNodePtr cur)
   input_section_.readXML(cur);
   auto setIfInInput = LAMBDA_setIfInInput;
   setIfInInput(nsamples_, "samples");
+  setIfInInput(name_, "name");
+  setIfInInput(type_, "type");
   setIfInInput(integrator_, "integrator");
   have_center_ = setIfInInput(center_, "center");
   have_corner_ = setIfInInput(corner_, "corner");
   have_grid_   = setIfInInput(grid_real_, "grid");
   have_dr_     = setIfInInput(dr_, "dr");
 }
-
 
 MagnetizationDensityInput::DerivedParameters MagnetizationDensityInput::calculateDerivedParameters(
     const Lattice& lattice) const

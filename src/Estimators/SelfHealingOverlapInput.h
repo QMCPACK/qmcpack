@@ -22,6 +22,8 @@ class SelfHealingOverlap;
 class SelfHealingOverlapInput
 {
 public:
+  static constexpr std::string_view type_tag{"SelfHealingOverlap"};
+
   using Consumer = SelfHealingOverlap;
   using Real     = QMCTraits::RealType;
 
@@ -31,23 +33,30 @@ public:
     // clang-format: off
     SelfHealingOverlapInputSection()
     {
-      section_name   = "SelfHealingOverlap";
+      section_name   = type_tag;
       attributes     = {"type", "name", "param_deriv"};
       strings        = {"type", "name"};
       bools          = {"param_deriv"};
-      default_values = {{"type", std::string("sh_overlap")},
-                        {"name", std::string("sh_overlap")},
-                        {"param_deriv", false}};
+      default_values = {{"param_deriv", false}};
     }
     // clang-format: on
   };
 
-  SelfHealingOverlapInput(xmlNodePtr cur) { input_section_.readXML(cur); }
+  std::string get_name() const { return name_; }
+  std::string get_type() const { return type_; }
+
+  SelfHealingOverlapInput(xmlNodePtr cur);
   /** default copy constructor
    *  This is required due to MDI being part of a variant used as a vector element.
    */
   SelfHealingOverlapInput(const SelfHealingOverlapInput&) = default;
+
+  // SelfHealingOverlap violates the encapsulation of SelfHealingOverlapInput
   SelfHealingOverlapInputSection input_section_;
+
+private:
+  std::string name_{type_tag};
+  std::string type_{type_tag};
 };
 
 } // namespace qmcplusplus

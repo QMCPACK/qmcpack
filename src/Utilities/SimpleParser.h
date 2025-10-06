@@ -26,6 +26,10 @@
 #include <list>
 #include <sstream>
 
+/** Legacy readLine function, this readline eats the \n and treats ; as \n
+ *  weird side effect if fp is empty and max > 0 then s[0] set to '\0'
+ *  plus some corner cases with line continuation character and \n or ; following
+ */
 char* readLine(char* s, int max, std::istream& fp);
 
 int getwords(std::vector<std::string>& slist, std::istream& fp, int dummy = 0, const std::string& extra_tokens = "");

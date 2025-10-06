@@ -24,16 +24,18 @@
 #include "TWFGrads.hpp"
 #include "Utilities/RuntimeOptions.h"
 #include <ResourceCollection.h>
-#include "Particle/tests/MinimalParticlePool.h"
-#include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
+#include <MinimalParticlePool.h>
+#include <MinimalWaveFunctionPool.h>
 #include "Utilities/ProjectData.h"
 
 namespace qmcplusplus
 {
-#if defined(ENABLE_CUDA) && !defined(QMC_CUDA2HIP)
-using DiracDet = DiracDeterminant<DelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
+#if defined(ENABLE_CUDA)
+using DiracDet = DiracDeterminant<PlatformKind::CUDA, QMCTraits::ValueType, QMCTraits::QTFull::ValueType>;
+#elif defined(ENABLE_SYCL)
+using DiracDet = DiracDeterminant<PlatformKind::SYCL, QMCTraits::ValueType, QMCTraits::QTFull::ValueType>;
 #else
-using DiracDet = DiracDeterminant<DelayedUpdate<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
+using DiracDet = DiracDeterminant<>;
 #endif
 
 using LogValue  = TrialWaveFunction::LogValue;
@@ -114,10 +116,12 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   REQUIRE(spo != nullptr);
 
   std::vector<std::unique_ptr<DiracDeterminantBase>> dets;
-  dets.push_back(std::make_unique<DiracDet>(spo->makeClone(), 0, 2));
-  dets.push_back(std::make_unique<DiracDet>(spo->makeClone(), 2, 4));
+  dets.push_back(std::make_unique<DiracDet>(*spo, 0, 2));
+  dets.push_back(std::make_unique<DiracDet>(*spo, 2, 4));
 
-  auto slater_det = std::make_unique<SlaterDet>(elec_, std::move(dets));
+  std::vector<std::unique_ptr<SPOSet>> unique_sposets;
+  unique_sposets.emplace_back(std::move(spo));
+  auto slater_det = std::make_unique<SlaterDet>(elec_, std::move(unique_sposets), std::move(dets));
 
   RuntimeOptions runtime_options;
   TrialWaveFunction psi(runtime_options);
@@ -372,15 +376,15 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 }
 
 #if defined(QMC_COMPLEX) && !defined(ENABLE_CUDA)
-/** This test is intended to catch a bug that was found in the batched code 
-  * when using spinors and jastrows. The issue came about because WFCs that don't 
+/** This test is intended to catch a bug that was found in the batched code
+  * when using spinors and jastrows. The issue came about because WFCs that don't
   * contribute to the spin gradient end up going back to the normal mw_evalGrad
   * In the TWF::mw_evalGrad, it uses TWFGrads to accumulate the spin gradient and normal gradients
-  * using a returned variable grads. The individual components are stored in grads_z and the update over the 
-  * component loop is grads += grads_z. Internally to the WFCs, the position gradients get zeroed and computed. 
-  * However, for the spins, if they weren't being touched then the spin part is left untouched. But that means that if 
-  * grads += grads_z didn't account for zeroing out the spin part for that component, then it acctually accumulates the previous ones. 
-  * This test fails with the buggy code, and now makes sure TWF has the right behavior. 
+  * using a returned variable grads. The individual components are stored in grads_z and the update over the
+  * component loop is grads += grads_z. Internally to the WFCs, the position gradients get zeroed and computed.
+  * However, for the spins, if they weren't being touched then the spin part is left untouched. But that means that if
+  * grads += grads_z didn't account for zeroing out the spin part for that component, then it acctually accumulates the previous ones.
+  * This test fails with the buggy code, and now makes sure TWF has the right behavior.
   }
   */
 TEST_CASE("TrialWaveFunction::mw_evalGrad for spinors", "[wavefunction]")

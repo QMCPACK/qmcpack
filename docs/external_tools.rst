@@ -22,6 +22,7 @@ In general:
 - undefined behavior sanitizer (ubsan): low-overhead, catches undefined behavior accessing misaligned memory or signed or float to integer overflows.
 - undefined behavior sanitizer (tsan): catches potential race conditions in threaded code.
 - memory sanitizer (msan): catches using uninitialized memory errors, but is difficult to use without a full set of msan-instrumented libraries.
+- type sanitizer (typesan): catches aliasing violations, such as pointers of one type accessing objects of another type.
 
 These set the basic flags required to build with either of these sanitizer libraries which are mutually exclusive. Depending on your system and linker, these may be incompatible with the "Release" build, so set ``-DCMAKE_BUILD_TYPE=Debug`` or ``-DCMAKE_BUILD_TYPE=RelWithDebInfo``. They are tested on GitHub Actions CI using deterministic tests ``ctest -L deterministic`` (currently ubsan). See the following links for additional information on use, run time, and build options of the sanitizers: https://clang.llvm.org/docs/AddressSanitizer.html & https://clang.llvm.org/docs/MemorySanitizer.html.
 
@@ -90,8 +91,11 @@ NVIDIA's Tools Extensions (NVTX) API enables programmers to annotate their sourc
 NVTX API
 ~~~~~~~~
 
-If the variable ``USE_NVTX_API`` is set, QMCPACK will add the library (``libnvToolsExt.so``) to the QMCPACK target. To add NVTX annotations
-to a function, it is necessary to include the ``nvToolsExt.h`` header file and then make the appropriate calls into the NVTX API. For more information
+If the variable ``USE_NVTX_API`` is set, QMCPACK will enable NVTX support. On systems only with legacy NVTX (v2),
+QMCPACK will add the library (``libnvToolsExt.so``) to the QMCPACK target. On systems with NVTX v3 (CUDA 11+),
+NVTX is header-only and no ``libnvToolsExt.so`` is required; QMCPACK instead add include path (via ``CUDA::nvtx3``)
+and a shim header so existing ``#include <nvToolsExt.h>`` continues to work.
+To add NVTX annotations to a function, it is necessary to include the ``nvToolsExt.h`` header file and then make the appropriate calls into the NVTX API. For more information
 about the NVTX API, see https://docs.nvidia.com/cuda/profiler-users-guide/index.html#nvtx. Any additional calls to the NVTX API should be guarded by
 the ``USE_NVTX_API`` compiler define.
 

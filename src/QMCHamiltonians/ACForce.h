@@ -106,8 +106,6 @@ private:
   Forces sw_pulay_;
   Forces sw_grad_;
 
-
-  TWFFastDerivWrapper psi_wrapper_;
 };
 
 } // namespace qmcplusplus

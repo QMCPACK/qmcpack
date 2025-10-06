@@ -72,6 +72,9 @@ public:
       BandIndexMap[i] = i;
   }
 
+  /// resize vectors related to spline evaluaton results.
+  virtual void resizeStorage(size_t n) = 0;
+
   ///remap kpoints to group general kpoints & special kpoints
   int remap_kpoints()
   {

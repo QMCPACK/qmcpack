@@ -49,11 +49,15 @@ void test_diamond_2x1x1_xml_input(const std::string& spo_xml_string)
   ions_.R[1] = {1.68658058, 1.68658058, 1.68658058};
   ions_.R[2] = {3.37316115, 3.37316115, 0.0};
   ions_.R[3] = {5.05974173, 5.05974173, 1.68658058};
+  ions_.update();
+
   elec_.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create({2});
-  elec_.R[0]                 = {0.0, 0.0, 0.0};
-  elec_.R[1]                 = {0.0, 1.0, 0.0};
+  elec_.R[0] = {0.0, 0.0, 0.0};
+  elec_.R[1] = {0.0, 1.0, 0.0};
+  elec_.update();
+
   SpeciesSet& tspecies       = elec_.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
   int chargeIdx              = tspecies.addAttribute("charge");
@@ -147,7 +151,7 @@ TEST_CASE("SPO input spline from HDF diamond_2x1x1", "[wavefunction]")
   const char* spo_xml_string3 = R"(<wavefunction name="psi0" target="elec">
 <determinantset type="einspline" href="diamondC_2x1x1.pwscf.h5" tilematrix="2 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="float">
   <slaterdeterminant>
-    <determinant name="spo" size="4" spindataset="0"/>
+    <determinant id="spo" size="4" spindataset="0"/>
   </slaterdeterminant>
 </determinantset>
 </wavefunction>

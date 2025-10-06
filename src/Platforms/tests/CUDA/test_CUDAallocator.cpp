@@ -15,7 +15,7 @@
 #include <memory>
 #include <iostream>
 #include "CUDA/CUDAruntime.hpp"
-#include "CUDA/CUDAallocator.hpp"
+#include "CUDA/MemManageCUDA.hpp"
 #include "OhmmsPETE/OhmmsVector.h"
 
 namespace qmcplusplus

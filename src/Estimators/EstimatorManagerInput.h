@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2022 QMCPACK developers.
+// Copyright (c) 2025 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -10,15 +10,13 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 /** \file
- *  declares the list  supported estimator input types and declares the input type for 
+ *  declares the list  supported estimator input types and declares the input type for
  *  EstimatorManagerNew.
  */
 #ifndef QMCPLUSPLUS_ESIMATORMANAGERINPUT_H
 #define QMCPLUSPLUS_ESIMATORMANAGERINPUT_H
 
-
-#include "type_traits/template_types.hpp"
-#include <functional>
+#include "PairCorrelationInput.h"
 #include <vector>
 #include <variant>
 #include <libxml/tree.h>
@@ -44,14 +42,20 @@ class OneBodyDensityMatricesInput;
 class SelfHealingOverlapInput;
 class MagnetizationDensityInput;
 class PerParticleHamiltonianLoggerInput;
-using EstimatorInput  = std::variant<std::monostate,
-                                     MomentumDistributionInput,
-                                     SpinDensityInput,
-                                     OneBodyDensityMatricesInput,
-                                     SelfHealingOverlapInput,
-                                     MagnetizationDensityInput,
-                                     PerParticleHamiltonianLoggerInput,
-                                     EnergyDensityInput>;
+class StructureFactorInput;
+class PairCorrelationInput;
+
+using EstimatorInput = std::variant<std::monostate,
+                                    MomentumDistributionInput,
+                                    SpinDensityInput,
+                                    OneBodyDensityMatricesInput,
+                                    SelfHealingOverlapInput,
+                                    MagnetizationDensityInput,
+                                    PerParticleHamiltonianLoggerInput,
+                                    EnergyDensityInput,
+                                    StructureFactorInput,
+                                    PairCorrelationInput>;
+
 using EstimatorInputs = std::vector<EstimatorInput>;
 
 /** The scalar esimtator inputs
@@ -94,6 +98,16 @@ public:
   void append(const EstimatorInput& ei);
   void append(const ScalarEstimatorInput& sei);
 
+  /** Get Indexes of inputs of type T
+   *
+   *  Right now This is only used to prevent magic numbers in tests,
+   *  magic numbers that will result in test maintence issues as the
+   *  EstimatorManagerInputTest::create.. cases are
+   *  expanded.
+   */
+  template<typename T>
+  std::vector<int> getEstimatorTypeIndexes() const;
+
 private:
   /// this is a vector of variants for typesafe access to the estimator inputs
   EstimatorInputs estimator_inputs_;
@@ -113,6 +127,20 @@ private:
 
   friend class testing::EstimatorManagerInputTests;
 };
+
+// Explicity instantiate these to prevent type bleed into the header.
+// There is one of these for each forward declaration of a type in the
+// EstimaterInput variant
+extern template std::vector<int> EstimatorManagerInput::getEstimatorTypeIndexes<EnergyDensityInput>() const;
+extern template std::vector<int> EstimatorManagerInput::getEstimatorTypeIndexes<SpinDensityInput>() const;
+extern template std::vector<int> EstimatorManagerInput::getEstimatorTypeIndexes<MomentumDistributionInput>() const;
+extern template std::vector<int> EstimatorManagerInput::getEstimatorTypeIndexes<OneBodyDensityMatricesInput>() const;
+extern template std::vector<int> EstimatorManagerInput::getEstimatorTypeIndexes<SelfHealingOverlapInput>() const;
+extern template std::vector<int> EstimatorManagerInput::getEstimatorTypeIndexes<MagnetizationDensityInput>() const;
+extern template std::vector<int> EstimatorManagerInput::getEstimatorTypeIndexes<PerParticleHamiltonianLoggerInput>()
+    const;
+extern template std::vector<int> EstimatorManagerInput::getEstimatorTypeIndexes<StructureFactorInput>() const;
+extern template std::vector<int> EstimatorManagerInput::getEstimatorTypeIndexes<PairCorrelationInput>() const;
 
 } // namespace qmcplusplus
 

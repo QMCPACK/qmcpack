@@ -10,7 +10,7 @@
 #ifndef QMCPLUSPLUS_ACCELBLAS_OMPTARGET_H
 #define QMCPLUSPLUS_ACCELBLAS_OMPTARGET_H
 
-#include "AccelBLASHandle.hpp"
+#include "Common/AccelBLASHandle.hpp"
 #include "QueueOMPTarget.hpp"
 #include "ompBLAS.hpp"
 

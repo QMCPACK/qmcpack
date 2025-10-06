@@ -23,5 +23,7 @@
 #include "PerParticleHamiltonianLoggerInput.h"
 #include "SelfHealingOverlapInput.h"
 #include "EnergyDensityInput.h"
+#include "StructureFactorInput.h"
+#include "PairCorrelationInput.h"
 
 #endif

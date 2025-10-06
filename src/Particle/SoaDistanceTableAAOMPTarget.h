@@ -16,8 +16,7 @@
 
 #include "Lattice/ParticleBConds3DSoa.h"
 #include "DistanceTable.h"
-#include "OMPTarget/OMPallocator.hpp"
-#include "Platforms/PinnedAllocator.h"
+#include "OMPTarget/OffloadAlignedAllocators.hpp"
 #include "Particle/RealSpacePositionsOMPTarget.h"
 #include "ResourceCollection.h"
 #include "OMPTarget/OMPTargetMath.hpp"
@@ -30,9 +29,11 @@ namespace qmcplusplus
 template<typename T, unsigned D, int SC>
 struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public DistanceTableAA
 {
+  template<typename DT>
+  using OffloadPinnedVector = Vector<DT, OffloadPinnedAllocator<DT>>;
+
   /// actual memory for dist and displacements_
   aligned_vector<RealType> memory_pool_;
-
   /// actual memory for temp_r_
   DistRow temp_r_mem_;
   /// actual memory for temp_dr_
@@ -46,14 +47,14 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
   struct DTAAMultiWalkerMem : public Resource
   {
     ///dist displ for temporary and old pairs
-    Vector<RealType, OMPallocator<RealType, PinnedAlignedAllocator<RealType>>> mw_new_old_dist_displ;
+    OffloadPinnedVector<RealType> mw_new_old_dist_displ;
 
     /** distances from a range of indics to the source.
      * for original particle index i (row) and source particle id j (col)
      * j < i,  the element data is dist(r_i - r_j)
      * j > i,  the element data is dist(r_(n - 1 - i) - r_(n - 1 - j))
      */
-    Vector<RealType, OMPallocator<RealType, PinnedAlignedAllocator<RealType>>> mw_distances_subset;
+    OffloadPinnedVector<RealType> mw_distances_subset;
 
     DTAAMultiWalkerMem() : Resource("DTAAMultiWalkerMem") {}
 
@@ -64,17 +65,17 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
 
   ResourceHandle<DTAAMultiWalkerMem> mw_mem_handle_;
 
-  SoaDistanceTableAAOMPTarget(ParticleSet& target)
+  SoaDistanceTableAAOMPTarget(const ParticleSet& target)
       : DTD_BConds<T, D, SC>(target.getLattice()),
         DistanceTableAA(target, DTModes::ALL_OFF),
         num_targets_padded_(getAlignedSize<T>(num_targets_)),
 #if !defined(NDEBUG)
         old_prepared_elec_id_(-1),
 #endif
-        offload_timer_(createGlobalTimer(std::string("DTAAOMPTarget::offload_") + name_, timer_level_fine)),
-        evaluate_timer_(createGlobalTimer(std::string("DTAAOMPTarget::evaluate_") + name_, timer_level_fine)),
-        move_timer_(createGlobalTimer(std::string("DTAAOMPTarget::move_") + name_, timer_level_fine)),
-        update_timer_(createGlobalTimer(std::string("DTAAOMPTarget::update_") + name_, timer_level_fine))
+        offload_timer_(createGlobalTimer("DTAAOMPTarget::offload_" + name_, timer_level_fine)),
+        evaluate_timer_(createGlobalTimer("DTAAOMPTarget::evaluate_" + name_, timer_level_fine)),
+        move_timer_(createGlobalTimer("DTAAOMPTarget::move_" + name_, timer_level_fine)),
+        update_timer_(createGlobalTimer("DTAAOMPTarget::update_" + name_, timer_level_fine))
 
   {
     auto* coordinates_soa = dynamic_cast<const RealSpacePositionsOMPTarget*>(&target.getCoordinates());
@@ -169,14 +170,14 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     }
   }
 
-  inline void evaluate(ParticleSet& P) override
+  inline void evaluate(const DynamicCoordinates& coords) override
   {
     ScopedTimer local_timer(evaluate_timer_);
 
     constexpr T BigR = std::numeric_limits<T>::max();
     for (int iat = 1; iat < num_targets_; ++iat)
-      DTD_BConds<T, D, SC>::computeDistances(P.R[iat], P.getCoordinates().getAllParticlePos(), distances_[iat].data(),
-                                             displacements_[iat], 0, iat, iat);
+      DTD_BConds<T, D, SC>::computeDistances(coords.getOneParticlePos(iat), coords.getAllParticlePos(),
+                                             distances_[iat].data(), displacements_[iat], 0, iat, iat);
   }
 
   /** compute distances from particles in [range_begin, range_end) to all the particles.

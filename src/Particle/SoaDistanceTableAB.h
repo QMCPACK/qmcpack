@@ -25,15 +25,12 @@ namespace qmcplusplus
 template<typename T, unsigned D, int SC>
 struct SoaDistanceTableAB : public DTD_BConds<T, D, SC>, public DistanceTableAB
 {
-  SoaDistanceTableAB(const ParticleSet& source, ParticleSet& target)
+  SoaDistanceTableAB(const ParticleSet& source, const size_t target_size, const std::string& target_name)
       : DTD_BConds<T, D, SC>(source.getLattice()),
-        DistanceTableAB(source, target, DTModes::ALL_OFF),
-        evaluate_timer_(createGlobalTimer(std::string("DTAB::evaluate_") + target.getName() + "_" + source.getName(),
-                                          timer_level_fine)),
-        move_timer_(createGlobalTimer(std::string("DTAB::move_") + target.getName() + "_" + source.getName(),
-                                      timer_level_fine)),
-        update_timer_(createGlobalTimer(std::string("DTAB::update_") + target.getName() + "_" + source.getName(),
-                                        timer_level_fine))
+        DistanceTableAB(source, target_size, target_name, DTModes::ALL_OFF),
+        evaluate_timer_(createGlobalTimer("DTAB::evaluate_" + name_, timer_level_fine)),
+        move_timer_(createGlobalTimer("DTAB::move_" + name_, timer_level_fine)),
+        update_timer_(createGlobalTimer("DTAB::update_" + name_, timer_level_fine))
   {
     resize();
   }
@@ -63,7 +60,7 @@ struct SoaDistanceTableAB : public DTD_BConds<T, D, SC>, public DistanceTableAB
   SoaDistanceTableAB(const SoaDistanceTableAB&) = delete;
 
   /** evaluate the full table */
-  inline void evaluate(ParticleSet& P) override
+  inline void evaluate(const DynamicCoordinates& coords) override
   {
     ScopedTimer local_timer(evaluate_timer_);
 #pragma omp parallel
@@ -73,8 +70,9 @@ struct SoaDistanceTableAB : public DTD_BConds<T, D, SC>, public DistanceTableAB
 
       //be aware of the sign of Displacement
       for (int iat = 0; iat < num_targets_; ++iat)
-        DTD_BConds<T, D, SC>::computeDistances(P.R[iat], origin_.getCoordinates().getAllParticlePos(),
-                                               distances_[iat].data(), displacements_[iat], first, last);
+        DTD_BConds<T, D, SC>::computeDistances(coords.getOneParticlePos(iat),
+                                               origin_.getCoordinates().getAllParticlePos(), distances_[iat].data(),
+                                               displacements_[iat], first, last);
     }
   }
 

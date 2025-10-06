@@ -1293,4 +1293,9 @@ void MultiDiracDeterminant::evaluateDerivativesWF(ParticleSet& P,
                              Minv_dn_host_view, detData_local, lookup_tbl);
 }
 
+void MultiDiracDeterminant::registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const
+{
+  twf.addGroup(P, P.getGroupID(FirstIndex), Phi.get());
+}
+
 } // namespace qmcplusplus

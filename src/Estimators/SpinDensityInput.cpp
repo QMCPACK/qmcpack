@@ -18,17 +18,15 @@
 namespace qmcplusplus
 {
 
-SpinDensityInput::SpinDensityInput(xmlNodePtr node)
-{
-  readXML(node);
-}
+SpinDensityInput::SpinDensityInput(xmlNodePtr node) { readXML(node); }
 
 void SpinDensityInput::readXML(xmlNodePtr cur)
 {
   std::string write_report;
   std::string save_memory;
   OhmmsAttributeSet attrib;
-  attrib.add(myName_, "name");
+  attrib.add(name_, "name");
+  attrib.add(type_, "type");
   attrib.add(write_report, "report");
   attrib.add(save_memory, "save_memory");
   attrib.put(cur);

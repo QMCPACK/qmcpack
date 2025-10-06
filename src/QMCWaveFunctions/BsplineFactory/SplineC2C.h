@@ -108,7 +108,7 @@ public:
   */
   void applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy) override;
 
-  inline void resizeStorage(size_t n, size_t nvals)
+  inline void resizeStorage(size_t n) override
   {
     init_base(n);
     size_t npad = getAlignedSize<ST>(2 * n);

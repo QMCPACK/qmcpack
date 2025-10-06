@@ -16,6 +16,7 @@
 
 
 #include "CoulombPBCAA.h"
+#include <cstdint>
 #include <numeric>
 #include "EwaldRef.h"
 #include "Particle/DistanceTable.h"
@@ -124,7 +125,6 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces, bo
     {
       app_log() << "  Check passed." << std::endl;
     }
-
   }
   prefix_ = "F_AA";
   app_log() << "  Maximum K shell " << AA->MaxKshell << std::endl;
@@ -306,8 +306,8 @@ void CoulombPBCAA::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
           v1 = 0.0;
           for (int s = 0; s < num_species; ++s)
             v1 += z * cpbcaa.Zspec[s] *
-                cpbcaa.AA->evaluate(pset.getSimulationCell().getKLists().kshell, PtclRhoK.rhok_r[s], PtclRhoK.rhok_i[s],
-                                    PtclRhoK.eikr_r[i], PtclRhoK.eikr_i[i]);
+                cpbcaa.AA->evaluate(pset.getSimulationCell().getKLists().getKShell(), PtclRhoK.rhok_r[s],
+                                    PtclRhoK.rhok_i[s], PtclRhoK.eikr_r[i], PtclRhoK.eikr_i[i]);
           v_sample[i] += v1;
           Vlr += v1;
         }
@@ -324,7 +324,7 @@ void CoulombPBCAA::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
     RealType Vlrnow = cpbcaa.evalLR(pset);
     RealType Vsrnow = cpbcaa.evalSR(pset);
     RealType Vcnow  = cpbcaa.myConst;
-    RealType Vcsum = std::accumulate(pp_consts.begin(), pp_consts.end(), 0.0);
+    RealType Vcsum  = std::accumulate(pp_consts.begin(), pp_consts.end(), 0.0);
     RealType Vnow   = Vlrnow + Vsrnow + Vcnow;
     RealType Vsum   = std::accumulate(v_sample.begin(), v_sample.end(), 0.0);
     if (std::abs(Vsum - Vnow) > TraceManager::trace_tol)
@@ -420,7 +420,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluate_sp(ParticleSet& P)
         v1 = 0.0;
         for (int s = 0; s < NumSpecies; ++s)
           v1 += z * Zspec[s] *
-              AA->evaluate(P.getSimulationCell().getKLists().kshell, PtclRhoK.rhok_r[s], PtclRhoK.rhok_i[s],
+              AA->evaluate(P.getSimulationCell().getKLists().getKShell(), PtclRhoK.rhok_r[s], PtclRhoK.rhok_i[s],
                            PtclRhoK.eikr_r[i], PtclRhoK.eikr_i[i]);
         V_samp(i) += v1;
         Vlr += v1;
@@ -623,7 +623,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalConsts(bool report)
     }
     // perform long-range Madelung sum
     const StructFact& PtclRhoK(Ps.getSK());
-    v1 = AA->evaluate_slab(0, Ps.getSimulationCell().getKLists().kshell, PtclRhoK.eikr_r[0], PtclRhoK.eikr_i[0],
+    v1 = AA->evaluate_slab(0, Ps.getSimulationCell().getKLists().getKShell(), PtclRhoK.eikr_r[0], PtclRhoK.eikr_i[0],
                            PtclRhoK.eikr_r[0], PtclRhoK.eikr_i[0]);
     if (report)
       app_log() << "   LR Madelung = " << v1 << std::endl;
@@ -746,12 +746,12 @@ std::vector<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSR_offload(const RefVec
       ScopedTimer offload_scope(caa_leader.offload_timer_);
 
       PRAGMA_OFFLOAD("omp target teams distribute num_teams(nw)")
-      for (uint32_t iw = 0; iw < nw; iw++)
+      for (std::uint32_t iw = 0; iw < nw; iw++)
       {
         mRealType SR = 0.0;
         PRAGMA_OFFLOAD("omp parallel for reduction(+ : SR)")
-        for (uint32_t jcol = 0; jcol < total_num; jcol++)
-          for (uint32_t irow = first; irow < last; irow++)
+        for (std::uint32_t jcol = 0; jcol < total_num; jcol++)
+          for (std::uint32_t irow = first; irow < last; irow++)
           {
             const RealType dist = mw_dist[num_padded * (irow - first + iw * this_chunk_size) + jcol];
             if (irow == jcol || (irow * 2 + 1 == total_num && jcol > irow))
@@ -794,8 +794,8 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalLR(const ParticleSet& P) const
       {
         const RealType z = std::abs(dr[jat][slab_dir]);
         u += Zat[jat] *
-            AA->evaluate_slab(z, P.getSimulationCell().getKLists().kshell, PtclRhoK.eikr_r[iat], PtclRhoK.eikr_i[iat],
-                              PtclRhoK.eikr_r[jat], PtclRhoK.eikr_i[jat]);
+            AA->evaluate_slab(z, P.getSimulationCell().getKLists().getKShell(), PtclRhoK.eikr_r[iat],
+                              PtclRhoK.eikr_i[iat], PtclRhoK.eikr_r[jat], PtclRhoK.eikr_i[jat]);
       }
       res += Zat[iat] * u;
     }
@@ -807,7 +807,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalLR(const ParticleSet& P) const
       mRealType Z1 = Zspec[spec1];
       for (int spec2 = spec1; spec2 < NumSpecies; spec2++)
       {
-        mRealType temp = AA->evaluate(P.getSimulationCell().getKLists().kshell, PtclRhoK.rhok_r[spec1],
+        mRealType temp = AA->evaluate(P.getSimulationCell().getKLists().getKShell(), PtclRhoK.rhok_r[spec1],
                                       PtclRhoK.rhok_i[spec1], PtclRhoK.rhok_r[spec2], PtclRhoK.rhok_i[spec2]);
         if (spec2 == spec1)
           temp *= 0.5;

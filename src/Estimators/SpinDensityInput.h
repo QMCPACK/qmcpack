@@ -32,12 +32,12 @@ class SpinDensityNew;
 class SpinDensityInput
 {
 public:
+  static constexpr std::string_view type_tag{"SpinDensity"};
   using Real               = QMCTraits::RealType;
   using PosType            = QMCTraits::PosType;
   using Consumer           = SpinDensityNew;
   static constexpr int DIM = QMCTraits::DIM;
 
-public:
   SpinDensityInput(xmlNodePtr node);
   /** default copy constructor
    *  This is required due to SDI being part of a variant used as a vector element.
@@ -49,6 +49,8 @@ public:
   int get_npoints() const { return npoints_; }
   bool get_write_report() const { return write_report_; }
   bool get_save_memory() const { return save_memory_; }
+  const std::string& get_name() const { return name_; }
+  const std::string& get_type() const { return type_; }
 
   struct DerivedParameters
   {
@@ -71,7 +73,8 @@ private:
   void readXML(xmlNodePtr cur);
 
   ///name of this Estimator
-  std::string myName_;
+  std::string name_{type_tag};
+  std::string type_{type_tag};
 
   Lattice cell_;
   PosType corner_;
@@ -82,7 +85,7 @@ private:
   bool write_report_;
   bool save_memory_;
   /** these are necessary for calculateDerivedParameters
-   *  
+   *
    *  If we are going to later write out a canonical input for
    *  this input then they are needed as well.
    */

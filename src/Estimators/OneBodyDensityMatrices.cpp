@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2021 QMCPACK developers.
+// Copyright (c) 2025 QMCPACK developers.
 //
 // File developed by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
@@ -32,15 +32,14 @@ OneBodyDensityMatrices::OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obd
                                                const SpeciesSet& species,
                                                const SPOMap& spomap,
                                                const ParticleSet& pset_target)
-    : OperatorEstBase(DataLocality::crowd),
+    : OperatorEstBase(DataLocality::crowd, obdmi.get_name(), obdmi.get_type()),
       input_(obdmi),
-      lattice_(lattice),
+      lattice_(std::move(lattice)),
       species_(species),
       basis_functions_("OneBodyDensityMatrices::basis"),
       is_spinor_(pset_target.isSpinor()),
       timers_("OneBodyDensityMatrix")
 {
-  my_name_ = "OneBodyDensityMatrices";
   lattice_.reset();
 
   if (input_.get_corner_defined())
@@ -390,18 +389,18 @@ inline void OneBodyDensityMatrices::generateDensitySamplesWithSpin(bool save,
     Position diff = diffuse(sqt, rng); // get diffusion
 
     //now do spin variables
-    Real spinp;                         // trial spin
-    Real dspinp = 0;                    // trial spindrifty
-    Real sdiff = diffuseSpin(sqt, rng); //spin diffusion
+    Real spinp;                          // trial spin
+    Real dspinp = 0;                     // trial spindrifty
+    Real sdiff  = diffuseSpin(sqt, rng); //spin diffusion
     if (input_.get_use_drift())
     {
       rp    = r + diff + d;                                               //update trial position
       spinp = spcur_ + sdiff + dspcur_;                                   //update trial spin
       calcDensityDriftWithSpin(rp, spinp, rhop, dp, dspinp, pset_target); //get trial drift and density
-      ratio   = rhop / rho;                                               //density ratio
-      ds      = dp + d;                                                   //drift sum
+      ratio        = rhop / rho;                                          //density ratio
+      ds           = dp + d;                                              //drift sum
       auto spin_ds = dspinp + dspcur_;                                    //spin drift sum
-      Pacc    = ratio * std::exp(-ot * (dot(diff, ds) + .5 * dot(ds, ds))) *
+      Pacc         = ratio * std::exp(-ot * (dot(diff, ds) + .5 * dot(ds, ds))) *
           std::exp(-ot * (sdiff * spin_ds) + 0.5 * spin_ds * spin_ds); //acceptance probability
     }
     else

@@ -90,16 +90,8 @@ def test_options():
 
     # read
     opts = '-a -b 1 -c=2 --dname="0 1 2" --evar -fval -gval other --hval'
-    ref = obj(
-        a     = '-a',
-        b     = '-b 1',
-        c     = '-c=2',
-        dname = '--dname="0 1 2"',
-        evar  = '--evar',
-        fval  = '-fval',
-        gval  = '-gval other',
-        hval  = '--hval',
-        )
+    ref = obj()
+    ref['0'] = opts
     o = Options()
     o.read(opts)
     assert(object_eq(o.to_obj(),ref))
@@ -107,7 +99,7 @@ def test_options():
     # write
     opts_write = o.write()
     o2 = Options()
-    o2.read(opts_write)
+    o2.read(opts_write.strip())
     assert(object_eq(o2.to_obj(),ref))
 #end def test_options
 
@@ -1299,7 +1291,26 @@ def test_job_run_command():
         ('baseline'       , 'n2_t2'         ) : 'srun test.x',
         ('baseline'       , 'n2_t2_e'       ) : 'srun test.x',
         ('baseline'       , 'n2_t2_p2'      ) : 'srun test.x',
+        ('besms'          , 'n1'            ) : 'srun test.x',
+        ('besms'          , 'n1_p1'         ) : 'srun test.x',
+        ('besms'          , 'n2'            ) : 'srun test.x',
+        ('besms'          , 'n2_t2'         ) : 'srun test.x',
+        ('besms'          , 'n2_t2_e'       ) : 'srun test.x',
+        ('besms'          , 'n2_t2_p2'      ) : 'srun test.x',
+        ('frontier'       , 'n1'            ) : 'srun -N 1 -c 1 --cpu-bind=threads -n 56 --threads-per-core=1 test.x',
+        ('frontier'       , 'n1_p1'         ) : 'srun -N 1 -c 1 --cpu-bind=threads -n 1 --threads-per-core=1 test.x',
+        ('frontier'       , 'n2'            ) : 'srun -N 2 -c 1 --cpu-bind=threads -n 112 --threads-per-core=1 test.x',
+        ('frontier'       , 'n2_t2'         ) : 'srun -N 2 -c 2 --cpu-bind=threads -n 56 --threads-per-core=2 test.x',
+        ('frontier'       , 'n2_t2_e'       ) : 'srun -N 2 -c 2 --cpu-bind=threads -n 56 --threads-per-core=2 test.x',
+        ('frontier'       , 'n2_t2_p2'      ) : 'srun -N 2 -c 2 --cpu-bind=threads -n 4 --threads-per-core=2 test.x',
+        ('aurora'         , 'n1'            ) : 'mpiexec --cpu-bind depth --depth=1 -n 102 --ppn 102 --env OMP_NUM_THREADS=1 --env OMP_PLACES=cores test.x',
+        ('aurora'         , 'n1_p1'         ) : 'mpiexec --cpu-bind depth --depth=1 -n 1 --ppn 1 --env OMP_NUM_THREADS=1 --env OMP_PLACES=cores test.x',
+        ('aurora'         , 'n2'            ) : 'mpiexec --cpu-bind depth --depth=1 -n 204 --ppn 102 --env OMP_NUM_THREADS=1 --env OMP_PLACES=cores test.x',
+        ('aurora'         , 'n2_t2'         ) : 'mpiexec --cpu-bind depth --depth=2 -n 102 --ppn 51 --env OMP_NUM_THREADS=2 --env OMP_PLACES=cores test.x',
+        ('aurora'         , 'n2_t2_e'       ) : 'mpiexec --cpu-bind depth --depth=2 -n 102 --ppn 51 --env OMP_NUM_THREADS=2 --env OMP_PLACES=cores test.x',
+        ('aurora'         , 'n2_t2_p2'      ) : 'mpiexec --cpu-bind depth --depth=2 -n 4 --ppn 2 --env OMP_NUM_THREADS=2 --env OMP_PLACES=cores test.x'
         })
+
 
     if testing.global_data['job_ref_table']:
         print('\n\n')
@@ -2115,6 +2126,56 @@ srun test.x''',
 export ENV_VAR=1
 export OMP_NUM_THREADS=1
 srun test.x''',
+
+        besms = '''#!/bin/bash
+#SBATCH -A ABC123
+#SBATCH -p t92
+#SBATCH -J jobname
+#SBATCH -t 06:30:00
+#SBATCH -N 2
+#SBATCH --ntasks-per-node=96
+#SBATCH --cpus-per-task=1
+#SBATCH -o test.out
+#SBATCH -e test.err
+#SBATCH --mem=350G
+#SBATCH --exclusive
+#SBATCH --export=ALL
+
+export ENV_VAR=1
+export OMP_NUM_THREADS=1
+srun test.x''',
+      
+        frontier = '''#!/bin/sh
+#SBATCH -A ABC123
+#SBATCH -p batch
+#SBATCH -J jobname
+#SBATCH -t 06:30
+#SBATCH -N 2
+#SBATCH -S 8
+#SBATCH -o jobname.out
+#SBATCH -e jobname.err
+
+export ENV_VAR=1
+export OMP_NUM_THREADS=1
+srun -N 2 -c 1 --cpu-bind=threads -n 112 --threads-per-core=1 test.x''',
+
+        aurora = '''#!/bin/sh
+#PBS -l select=2
+#PBS -l place=scatter
+#PBS -l filesystems=flare
+#PBS -l walltime=06:30:00
+#PBS -A ABC123
+#PBS -q prod
+#PBS -N jobname
+#PBS -k doe
+#PBS -o test.out
+#PBS -e test.err
+
+cd ${PBS_O_WORKDIR}
+
+export ENV_VAR=1
+export OMP_NUM_THREADS=1
+mpiexec --cpu-bind depth --depth=1 -n 204 --ppn 102 --env OMP_NUM_THREADS=1 --env OMP_PLACES=cores test.x''',
         )
 
     def process_job_file(jf):
