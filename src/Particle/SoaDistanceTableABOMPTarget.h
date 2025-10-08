@@ -121,9 +121,7 @@ public:
       : DTD_BConds<T, D, SC>(source.getLattice()),
         DistanceTableAB(source, target_size, target_name, DTModes::ALL_OFF),
         offload_timer_(createGlobalTimer("DTABOMPTarget::offload_" + name_, timer_level_fine)),
-        evaluate_timer_(createGlobalTimer("DTABOMPTarget::evaluate_" + name_, timer_level_fine)),
-        move_timer_(createGlobalTimer("DTABOMPTarget::move_" + name_, timer_level_fine)),
-        update_timer_(createGlobalTimer("DTABOMPTarget::update_" + name_, timer_level_fine))
+        evaluate_timer_(createGlobalTimer("DTABOMPTarget::evaluate_" + name_, timer_level_fine))
 
   {
     auto* coordinates_soa = dynamic_cast<const RealSpacePositionsOMPTarget*>(&source.getCoordinates());
@@ -348,59 +346,13 @@ public:
   ///evaluate the temporary pair relations
   inline void move(const ParticleSet& P, const PosType& rnew, const IndexType iat, bool prepare_old) override
   {
-    ScopedTimer local_timer(move_timer_);
-    DTD_BConds<T, D, SC>::computeDistances(rnew, origin_.getCoordinates().getAllParticlePos(), temp_r_.data(), temp_dr_,
-                                           0, num_sources_);
-    // If the full table is not ready all the time, overwrite the current value.
-    // If this step is missing, DT values can be undefined in case a move is rejected.
-    if (!(modes_ & DTModes::NEED_FULL_TABLE_ANYTIME) && prepare_old)
-      DTD_BConds<T, D, SC>::computeDistances(P.R[iat], origin_.getCoordinates().getAllParticlePos(),
-                                             distances_[iat].data(), displacements_[iat], 0, num_sources_);
+    throw std::runtime_error("Report bug! SoaDistanceTableABOMPTarget::move should never be called!");
   }
 
   ///update the stripe for jat-th particle
   inline void update(IndexType iat) override
   {
-    ScopedTimer local_timer(update_timer_);
-    std::copy_n(temp_r_.data(), num_sources_, distances_[iat].data());
-    for (int idim = 0; idim < D; ++idim)
-      std::copy_n(temp_dr_.data(idim), num_sources_, displacements_[iat].data(idim));
-  }
-
-  int get_first_neighbor(IndexType iat, RealType& r, PosType& dr, bool newpos) const override
-  {
-    RealType min_dist = std::numeric_limits<RealType>::max();
-    int index         = -1;
-    if (newpos)
-    {
-      for (int jat = 0; jat < num_sources_; ++jat)
-        if (temp_r_[jat] < min_dist)
-        {
-          min_dist = temp_r_[jat];
-          index    = jat;
-        }
-      if (index >= 0)
-      {
-        r  = min_dist;
-        dr = temp_dr_[index];
-      }
-    }
-    else
-    {
-      for (int jat = 0; jat < num_sources_; ++jat)
-        if (distances_[iat][jat] < min_dist)
-        {
-          min_dist = distances_[iat][jat];
-          index    = jat;
-        }
-      if (index >= 0)
-      {
-        r  = min_dist;
-        dr = displacements_[iat][index];
-      }
-    }
-    assert(index >= 0 && index < num_sources_);
-    return index;
+    throw std::runtime_error("Report bug! SoaDistanceTableABOMPTarget::update should never be called!");
   }
 
 private:
@@ -408,10 +360,6 @@ private:
   NewTimer& offload_timer_;
   /// timer for evaluate()
   NewTimer& evaluate_timer_;
-  /// timer for move()
-  NewTimer& move_timer_;
-  /// timer for update()
-  NewTimer& update_timer_;
 };
 } // namespace qmcplusplus
 #endif

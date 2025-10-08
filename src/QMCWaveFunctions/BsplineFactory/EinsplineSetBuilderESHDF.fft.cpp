@@ -190,7 +190,7 @@ void EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
     int Zind                   = source_species.findAttribute("atomicnumber");
 
     std::ostream null_out(nullptr);
-    auto ii_dt = createDistanceTable(*SourcePtcl, null_out);
+    auto ii_dt = createDistanceTableAA(*SourcePtcl, null_out);
     ii_dt->evaluate(*SourcePtcl);
     const auto& ii_table = *ii_dt;
 

@@ -54,11 +54,18 @@ VirtualParticleSet::VirtualParticleSet(const ParticleSet& p, int nptcl, size_t d
   assert(dt_count_limit <= p.getNumDistTables());
   if (dt_count_limit == 0)
     dt_count_limit = p.getNumDistTables();
+
+  std::ostream null_out(nullptr);
   for (int i = 0; i < dt_count_limit; ++i)
-    if (p.getDistTable(i).getModes() & DTModes::NEED_VP_FULL_TABLE_ON_HOST)
-      addTable(p.getDistTable(i).get_origin());
-    else
-      addTable(p.getDistTable(i).get_origin(), DTModes::MW_EVALUATE_RESULT_NO_TRANSFER_TO_HOST);
+  {
+    size_t tid = DistTables.size();
+    auto& dt = p.getDistTable(i);
+    DistTables.push_back(createDistanceTable(dt.get_origin(), TotalNum, myName, null_out));
+    if (!(dt.getModes() & DTModes::NEED_VP_FULL_TABLE_ON_HOST))
+      DistTables[tid]->setModes(DTModes::MW_EVALUATE_RESULT_NO_TRANSFER_TO_HOST);
+    app_debug() << "  ... VirtualParticleSet::VirtualParticleSet Create Table #" << tid << " "
+                << DistTables[tid]->getName() << std::endl;
+  }
 }
 
 VirtualParticleSet::~VirtualParticleSet() = default;
