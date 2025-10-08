@@ -74,47 +74,6 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableAA
     }
   }
 
-  int get_first_neighbor(IndexType iat, RealType& r, PosType& dr, bool newpos) const override
-  {
-    //ensure there are neighbors
-    assert(num_targets_ > 1);
-    RealType min_dist = std::numeric_limits<RealType>::max();
-    int index         = -1;
-    if (newpos)
-    {
-      for (int jat = 0; jat < num_targets_; ++jat)
-        if (temp_r_[jat] < min_dist && jat != iat)
-        {
-          min_dist = temp_r_[jat];
-          index    = jat;
-        }
-      assert(index >= 0);
-      dr = temp_dr_[index];
-    }
-    else
-    {
-      for (int jat = 0; jat < iat; ++jat)
-        if (distances_[iat][jat] < min_dist)
-        {
-          min_dist = distances_[iat][jat];
-          index    = jat;
-        }
-      for (int jat = iat + 1; jat < num_targets_; ++jat)
-        if (distances_[jat][iat] < min_dist)
-        {
-          min_dist = distances_[jat][iat];
-          index    = jat;
-        }
-      assert(index != iat && index >= 0);
-      if (index < iat)
-        dr = displacements_[iat][index];
-      else
-        dr = displacements_[index][iat];
-    }
-    r = min_dist;
-    return index;
-  }
-
   /** After accepting the iat-th particle, update the iat-th row of distances_ and displacements_.
    * Upper triangle is not needed in the later computation and thus not updated
    */
