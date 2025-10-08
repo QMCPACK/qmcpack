@@ -31,30 +31,7 @@ struct SoaDistanceTableAB : public DTD_BConds<T, D, SC>, public DistanceTableAB
         evaluate_timer_(createGlobalTimer("DTAB::evaluate_" + name_, timer_level_fine)),
         move_timer_(createGlobalTimer("DTAB::move_" + name_, timer_level_fine)),
         update_timer_(createGlobalTimer("DTAB::update_" + name_, timer_level_fine))
-  {
-    resize();
-  }
-
-  void resize()
-  {
-    if (num_sources_ * num_targets_ == 0)
-      return;
-
-    // initialize memory containers and views
-    const int num_sources_padded = getAlignedSize<T>(num_sources_);
-    distances_.resize(num_targets_);
-    displacements_.resize(num_targets_);
-    for (int i = 0; i < num_targets_; ++i)
-    {
-      distances_[i].resize(num_sources_padded);
-      displacements_[i].resize(num_sources_padded);
-    }
-
-    // The padding of temp_r_ and temp_dr_ is necessary for the memory copy in the update function
-    // temp_r_ is padded explicitly while temp_dr_ is padded internally
-    temp_r_.resize(num_sources_padded);
-    temp_dr_.resize(num_sources_);
-  }
+  {}
 
   SoaDistanceTableAB()                          = delete;
   SoaDistanceTableAB(const SoaDistanceTableAB&) = delete;
@@ -63,6 +40,8 @@ struct SoaDistanceTableAB : public DTD_BConds<T, D, SC>, public DistanceTableAB
   inline void evaluate(const DynamicCoordinates& coords) override
   {
     ScopedTimer local_timer(evaluate_timer_);
+    if (num_targets_ != coords.size())
+      resize(coords.size());
 #pragma omp parallel
     {
       int first, last;
@@ -80,6 +59,9 @@ struct SoaDistanceTableAB : public DTD_BConds<T, D, SC>, public DistanceTableAB
   inline void move(const ParticleSet& P, const PosType& rnew, const IndexType iat, bool prepare_old) override
   {
     ScopedTimer local_timer(move_timer_);
+    if (num_targets_ != P.getTotalNum())
+      resize(P.getTotalNum());
+
     DTD_BConds<T, D, SC>::computeDistances(rnew, origin_.getCoordinates().getAllParticlePos(), temp_r_.data(), temp_dr_,
                                            0, num_sources_);
     // If the full table is not ready all the time, overwrite the current value.
@@ -99,6 +81,29 @@ struct SoaDistanceTableAB : public DTD_BConds<T, D, SC>, public DistanceTableAB
   }
 
 private:
+  void resize(const size_t num_targets) override
+  {
+    num_targets_ = num_targets;
+
+    if (num_sources_ * num_targets_ == 0)
+      return;
+
+    // initialize memory containers and views
+    const int num_sources_padded = getAlignedSize<T>(num_sources_);
+    distances_.resize(num_targets_);
+    displacements_.resize(num_targets_);
+    for (int i = 0; i < num_targets_; ++i)
+    {
+      distances_[i].resize(num_sources_padded);
+      displacements_[i].resize(num_sources_padded);
+    }
+
+    // The padding of temp_r_ and temp_dr_ is necessary for the memory copy in the update function
+    // temp_r_ is padded explicitly while temp_dr_ is padded internally
+    temp_r_.resize(num_sources_padded);
+    temp_dr_.resize(num_sources_);
+  }
+
   /// timer for evaluate()
   NewTimer& evaluate_timer_;
   /// timer for move()

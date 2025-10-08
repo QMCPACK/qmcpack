@@ -46,12 +46,16 @@ public:
   using DistRow   = Vector<RealType, aligned_allocator<RealType>>;
   using DisplRow  = VectorSoaContainer<RealType, DIM>;
 
+private:
+  /// resize based on number of target particles
+  virtual void resize(const size_t num_targets) = 0;
+
 protected:
   /// source particleset
   const ParticleSet& origin_;
 
   const size_t num_sources_;
-  const size_t num_targets_;
+  size_t num_targets_ = 0;
 
   ///name of the table
   const std::string name_;
@@ -64,7 +68,7 @@ public:
   DistanceTable(const ParticleSet& source, const size_t target_size, const std::string& target_name, DTModes modes)
       : origin_(source),
         num_sources_(source.getTotalNum()),
-        num_targets_(target_size),
+        num_targets_(0),
         name_(source.getName() + "_" + target_name),
         modes_(modes)
   {}

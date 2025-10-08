@@ -55,29 +55,8 @@ private:
 
   ResourceHandle<DTABMultiWalkerMem> mw_mem_handle_;
 
-  void resize()
-  {
-    if (num_sources_ * num_targets_ == 0)
-      return;
-    if (distances_.size())
-      return;
-
-    // initialize memory containers and views
-    const size_t num_padded  = getAlignedSize<T>(num_sources_);
-    const size_t stride_size = getPerTargetPctlStrideSize();
-    r_dr_memorypool_.resize(stride_size * num_targets_);
-
-    distances_.resize(num_targets_);
-    displacements_.resize(num_targets_);
-    for (int i = 0; i < num_targets_; ++i)
-    {
-      distances_[i].attachReference(r_dr_memorypool_.data() + i * stride_size, num_sources_);
-      displacements_[i].attachReference(num_sources_, num_padded,
-                                        r_dr_memorypool_.data() + i * stride_size + num_padded);
-    }
-  }
-
-  static void associateResource(const RefVectorWithLeader<DistanceTable>& dt_list)
+  static void associateResource(const RefVectorWithLeader<DistanceTable>& dt_list,
+                                const RefVectorWithLeader<const DynamicCoordinates>& coords_list)
   {
     auto& dt_leader = dt_list.getCastedLeader<SoaDistanceTableABOMPTarget>();
 
@@ -85,8 +64,8 @@ private:
     size_t count_targets = 0;
     for (size_t iw = 0; iw < dt_list.size(); iw++)
     {
-      auto& dt = dt_list.getCastedElement<SoaDistanceTableABOMPTarget>(iw);
-      count_targets += dt.targets();
+      auto& dt                         = dt_list.getCastedElement<SoaDistanceTableABOMPTarget>(iw);
+      count_targets += dt.num_targets_ = coords_list[iw].size();
       dt.r_dr_memorypool_.free();
     }
 
@@ -150,18 +129,17 @@ public:
   {
     auto& dt_leader          = dt_list.getCastedLeader<SoaDistanceTableABOMPTarget>();
     dt_leader.mw_mem_handle_ = collection.lendResource<DTABMultiWalkerMem>();
-    associateResource(dt_list);
+    dt_leader.num_targets_   = 0;
   }
 
   void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<DistanceTable>& dt_list) const override
   {
-    collection.takebackResource(dt_list.getCastedLeader<SoaDistanceTableABOMPTarget>().mw_mem_handle_);
+    auto& dt_leader        = dt_list.getCastedLeader<SoaDistanceTableABOMPTarget>();
+    dt_leader.num_targets_ = 0;
+    collection.takebackResource(dt_leader.mw_mem_handle_);
+
     for (size_t iw = 0; iw < dt_list.size(); iw++)
-    {
-      auto& dt = dt_list.getCastedElement<SoaDistanceTableABOMPTarget>(iw);
-      dt.distances_.clear();
-      dt.displacements_.clear();
-    }
+      dt_list.getCastedElement<SoaDistanceTableABOMPTarget>(iw).num_targets_ = 0;
   }
 
   const T* getMultiWalkerDataPtr() const override { return mw_mem_handle_.getResource().mw_r_dr.data(); }
@@ -171,7 +149,8 @@ public:
   /** evaluate the full table */
   inline void evaluate(const DynamicCoordinates& coords) override
   {
-    resize();
+    if (num_targets_ != coords.size())
+      resize(coords.size());
 
     ScopedTimer local_timer(evaluate_timer_);
     // be aware of the sign of Displacement
@@ -230,6 +209,7 @@ public:
 
     ScopedTimer local_timer(evaluate_timer_);
 
+    associateResource(dt_list, coords_list);
     const size_t nw            = dt_list.size();
     DTABMultiWalkerMem& mw_mem = dt_leader.mw_mem_handle_;
     auto& mw_r_dr              = mw_mem.mw_r_dr;
@@ -356,6 +336,25 @@ public:
   }
 
 private:
+  void resize(const size_t num_targets) override
+  {
+    num_targets_ = num_targets;
+
+    // initialize memory containers and views
+    const size_t num_padded  = getAlignedSize<T>(num_sources_);
+    const size_t stride_size = getPerTargetPctlStrideSize();
+    r_dr_memorypool_.resize(stride_size * num_targets_);
+
+    distances_.resize(num_targets_);
+    displacements_.resize(num_targets_);
+    for (int i = 0; i < num_targets_; ++i)
+    {
+      distances_[i].attachReference(r_dr_memorypool_.data() + i * stride_size, num_sources_);
+      displacements_[i].attachReference(num_sources_, num_padded,
+                                        r_dr_memorypool_.data() + i * stride_size + num_padded);
+    }
+  }
+
   /// timer for offload portion
   NewTimer& offload_timer_;
   /// timer for evaluate()

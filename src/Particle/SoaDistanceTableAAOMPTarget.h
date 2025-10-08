@@ -68,7 +68,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
   SoaDistanceTableAAOMPTarget(const ParticleSet& target)
       : DTD_BConds<T, D, SC>(target.getLattice()),
         DistanceTableAA(target, DTModes::ALL_OFF),
-        num_targets_padded_(getAlignedSize<T>(num_targets_)),
+        num_targets_padded_(getAlignedSize<T>(num_sources_)),
 #if !defined(NDEBUG)
         old_prepared_elec_id_(-1),
 #endif
@@ -81,39 +81,12 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     auto* coordinates_soa = dynamic_cast<const RealSpacePositionsOMPTarget*>(&target.getCoordinates());
     if (!coordinates_soa)
       throw std::runtime_error("Source particle set doesn't have OpenMP offload. Contact developers!");
-    resize();
     PRAGMA_OFFLOAD("omp target enter data map(to : this[:1])")
   }
 
   SoaDistanceTableAAOMPTarget()                                   = delete;
   SoaDistanceTableAAOMPTarget(const SoaDistanceTableAAOMPTarget&) = delete;
-  ~SoaDistanceTableAAOMPTarget(){PRAGMA_OFFLOAD("omp target exit data map(delete : this[:1])")}
-
-  size_t compute_size(int N) const
-  {
-    const size_t num_padded = getAlignedSize<T>(N);
-    const size_t Alignment  = getAlignment<T>();
-    return (num_padded * (2 * N - num_padded + 1) + (Alignment - 1) * num_padded) / 2;
-  }
-
-  void resize()
-  {
-    // initialize memory containers and views
-    const size_t total_size = compute_size(num_targets_);
-    memory_pool_.resize(total_size * (1 + D));
-    distances_.resize(num_targets_);
-    displacements_.resize(num_targets_);
-    for (int i = 0; i < num_targets_; ++i)
-    {
-      distances_[i].attachReference(memory_pool_.data() + compute_size(i), i);
-      displacements_[i].attachReference(i, total_size, memory_pool_.data() + total_size + compute_size(i));
-    }
-
-    old_r_mem_.resize(num_targets_);
-    old_dr_mem_.resize(num_targets_);
-    temp_r_mem_.resize(num_targets_);
-    temp_dr_mem_.resize(num_targets_);
-  }
+  ~SoaDistanceTableAAOMPTarget() { PRAGMA_OFFLOAD("omp target exit data map(delete : this[:1])") }
 
   const RealType* getMultiWalkerTempDataPtr() const override
   {
@@ -173,6 +146,8 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
   inline void evaluate(const DynamicCoordinates& coords) override
   {
     ScopedTimer local_timer(evaluate_timer_);
+    if (num_targets_ != coords.size())
+      resize(coords.size());
 
     constexpr T BigR = std::numeric_limits<T>::max();
     for (int iat = 1; iat < num_targets_; ++iat)
@@ -258,6 +233,8 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
   inline void move(const ParticleSet& P, const PosType& rnew, const IndexType iat, bool prepare_old) override
   {
     ScopedTimer local_timer(move_timer_);
+    if (num_targets_ != P.getTotalNum())
+      resize(P.getTotalNum());
 
 #if !defined(NDEBUG)
     old_prepared_elec_id_ = prepare_old ? iat : -1;
@@ -293,23 +270,22 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
                bool prepare_old = true) const override
   {
     assert(this == &dt_list.getLeader());
-    auto& dt_leader            = dt_list.getCastedLeader<SoaDistanceTableAAOMPTarget>();
-    DTAAMultiWalkerMem& mw_mem = dt_leader.mw_mem_handle_;
-    auto& pset_leader          = p_list.getLeader();
+    auto& dt_leader             = dt_list.getCastedLeader<SoaDistanceTableAAOMPTarget>();
+    auto& pset_leader           = p_list.getLeader();
+    DTAAMultiWalkerMem& mw_mem  = dt_leader.mw_mem_handle_;
+    auto& mw_new_old_dist_displ = mw_mem.mw_new_old_dist_displ;
+    const size_t nw             = dt_list.size();
 
     ScopedTimer local_timer(move_timer_);
-    const size_t nw          = dt_list.size();
-    const size_t stride_size = num_targets_padded_ * (D + 1);
-
-    auto& mw_new_old_dist_displ = mw_mem.mw_new_old_dist_displ;
 
     for (int iw = 0; iw < nw; iw++)
     {
       auto& dt = dt_list.getCastedElement<SoaDistanceTableAAOMPTarget>(iw);
+      if (dt.num_targets_ != p_list[iw].getTotalNum())
+        dt.resize(p_list[iw].getTotalNum());
 #if !defined(NDEBUG)
       dt.old_prepared_elec_id_ = prepare_old ? iat : -1;
 #endif
-      auto& coordinates_soa = static_cast<const RealSpacePositionsOMPTarget&>(p_list[iw].getCoordinates());
     }
 
     const int ChunkSizePerTeam = 512;
@@ -323,6 +299,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     auto* r_dr_ptr               = mw_new_old_dist_displ.data();
     auto* new_pos_ptr            = coordinates_leader.getFusedNewPosBuffer().data();
     const size_t new_pos_stride  = coordinates_leader.getFusedNewPosBuffer().capacity();
+    const size_t stride_size     = num_targets_padded_ * (D + 1);
 
     {
       ScopedTimer offload(offload_timer_);
@@ -484,7 +461,35 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
 
   size_t get_num_particls_stored() const override { return num_particls_stored; }
 
+  /// compute internal storage size
+  size_t compute_size(int N) const
+  {
+    const size_t num_padded = getAlignedSize<T>(N);
+    const size_t Alignment  = getAlignment<T>();
+    return (num_padded * (2 * N - num_padded + 1) + (Alignment - 1) * num_padded) / 2;
+  }
+
 private:
+  void resize(const size_t num_targets) override
+  {
+    num_targets_ = num_targets;
+    // initialize memory containers and views
+    const size_t total_size = compute_size(num_targets_);
+    memory_pool_.resize(total_size * (1 + D));
+    distances_.resize(num_targets_);
+    displacements_.resize(num_targets_);
+    for (int i = 0; i < num_targets_; ++i)
+    {
+      distances_[i].attachReference(memory_pool_.data() + compute_size(i), i);
+      displacements_[i].attachReference(i, total_size, memory_pool_.data() + total_size + compute_size(i));
+    }
+
+    old_r_mem_.resize(num_targets_);
+    old_dr_mem_.resize(num_targets_);
+    temp_r_mem_.resize(num_targets_);
+    temp_dr_mem_.resize(num_targets_);
+  }
+
   ///number of targets with padding
   const size_t num_targets_padded_;
 #if !defined(NDEBUG)
