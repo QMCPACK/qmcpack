@@ -186,7 +186,6 @@ foreach(CATEGORY common trialwf sposet jastrow determinant)
     ${UTEST_EXE}
     catch_main
     qmcwfs
-    qmcham
     platform_LA
     platform_runtime
     sposets_for_testing

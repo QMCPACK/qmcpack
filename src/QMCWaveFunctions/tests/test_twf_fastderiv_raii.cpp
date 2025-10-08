@@ -270,13 +270,9 @@ TEST_CASE("TWFFastDerivWrapper RAII resource management", "[wavefunction][resour
       elec_list.push_back(createMinimalElectrons(sim_cell));
 
     std::vector<std::unique_ptr<TrialWaveFunction>> twf_list;
-    std::vector<std::unique_ptr<QMCHamiltonian>> ham_list;
 
     for (int i = 0; i < num_walkers; ++i)
-    {
       twf_list.push_back(std::make_unique<TrialWaveFunction>(runtime_options, "psi", false));
-      ham_list.push_back(std::make_unique<QMCHamiltonian>());
-    }
 
     RefVectorWithLeader<ParticleSet> elec_refs(elec_list[0]);
     for (auto& elec : elec_list)
@@ -286,27 +282,20 @@ TEST_CASE("TWFFastDerivWrapper RAII resource management", "[wavefunction][resour
     for (auto& twf : twf_list)
       twf_refs.push_back(*twf);
 
-    RefVectorWithLeader<QMCHamiltonian> ham_refs(*ham_list[0]);
-    for (auto& ham : ham_list)
-      ham_refs.push_back(*ham);
-
     // Create wrappers
     for (int i = 0; i < num_walkers; ++i)
       twf_refs[i].getOrCreateTWFFastDerivWrapper(elec_refs[i]);
 
     ResourceCollection pset_res("pset");
     ResourceCollection twf_res("twf");
-    ResourceCollection ham_res("ham");
 
     elec_refs.getLeader().createResource(pset_res);
     twf_refs.getLeader().createResource(twf_res);
-    ham_refs.getLeader().createResource(ham_res);
 
     // Test nested locks don't cause deadlock or double-takeback
     {
       ResourceCollectionTeamLock<ParticleSet> pset_lock(pset_res, elec_refs);
       ResourceCollectionTeamLock<TrialWaveFunction> twf_lock(twf_res, twf_refs);
-      ResourceCollectionTeamLock<QMCHamiltonian> ham_lock(ham_res, ham_refs);
       // All resources active
     }
     // All released in correct order
@@ -315,7 +304,6 @@ TEST_CASE("TWFFastDerivWrapper RAII resource management", "[wavefunction][resour
     {
       ResourceCollectionTeamLock<ParticleSet> pset_lock(pset_res, elec_refs);
       ResourceCollectionTeamLock<TrialWaveFunction> twf_lock(twf_res, twf_refs);
-      ResourceCollectionTeamLock<QMCHamiltonian> ham_lock(ham_res, ham_refs);
       // No double-takeback errors
     }
   }
