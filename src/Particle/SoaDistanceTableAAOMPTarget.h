@@ -233,8 +233,6 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
   inline void move(const ParticleSet& P, const PosType& rnew, const IndexType iat, bool prepare_old) override
   {
     ScopedTimer local_timer(move_timer_);
-    if (num_targets_ != P.getTotalNum())
-      resize(P.getTotalNum());
 
 #if !defined(NDEBUG)
     old_prepared_elec_id_ = prepare_old ? iat : -1;
@@ -281,8 +279,6 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     for (int iw = 0; iw < nw; iw++)
     {
       auto& dt = dt_list.getCastedElement<SoaDistanceTableAAOMPTarget>(iw);
-      if (dt.num_targets_ != p_list[iw].getTotalNum())
-        dt.resize(p_list[iw].getTotalNum());
 #if !defined(NDEBUG)
       dt.old_prepared_elec_id_ = prepare_old ? iat : -1;
 #endif

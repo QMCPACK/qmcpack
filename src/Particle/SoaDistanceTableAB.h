@@ -59,8 +59,6 @@ struct SoaDistanceTableAB : public DTD_BConds<T, D, SC>, public DistanceTableAB
   inline void move(const ParticleSet& P, const PosType& rnew, const IndexType iat, bool prepare_old) override
   {
     ScopedTimer local_timer(move_timer_);
-    if (num_targets_ != P.getTotalNum())
-      resize(P.getTotalNum());
 
     DTD_BConds<T, D, SC>::computeDistances(rnew, origin_.getCoordinates().getAllParticlePos(), temp_r_.data(), temp_dr_,
                                            0, num_sources_);

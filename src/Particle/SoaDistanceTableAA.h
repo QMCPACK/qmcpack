@@ -58,8 +58,6 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableAA
   inline void move(const ParticleSet& P, const PosType& rnew, const IndexType iat, bool prepare_old) override
   {
     ScopedTimer local_timer(move_timer_);
-    if (num_targets_ != P.getTotalNum())
-      resize(P.getTotalNum());
 
 #if !defined(NDEBUG)
     old_prepared_elec_id_ = prepare_old ? iat : -1;
