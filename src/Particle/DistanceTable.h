@@ -369,6 +369,42 @@ public:
    */
   const DisplRow& getTempDispls() const { return temp_dr_; }
 
+  int get_first_neighbor(IndexType iat, RealType& r, PosType& dr, bool newpos) const final
+  {
+    RealType min_dist = std::numeric_limits<RealType>::max();
+    int index         = -1;
+    if (newpos)
+    {
+      for (int jat = 0; jat < num_sources_; ++jat)
+        if (temp_r_[jat] < min_dist)
+        {
+          min_dist = temp_r_[jat];
+          index    = jat;
+        }
+      if (index >= 0)
+      {
+        r  = min_dist;
+        dr = temp_dr_[index];
+      }
+    }
+    else
+    {
+      for (int jat = 0; jat < num_sources_; ++jat)
+        if (distances_[iat][jat] < min_dist)
+        {
+          min_dist = distances_[iat][jat];
+          index    = jat;
+        }
+      if (index >= 0)
+      {
+        r  = min_dist;
+        dr = displacements_[iat][index];
+      }
+    }
+    assert(index >= 0 && index < num_sources_);
+    return index;
+  }
+
   /// return multi-walker full (all pairs) distance table data pointer
   [[noreturn]] virtual const RealType* getMultiWalkerDataPtr() const
   {
