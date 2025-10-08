@@ -57,6 +57,7 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableAA
   ///evaluate the temporary pair relations
   inline void move(const ParticleSet& P, const PosType& rnew, const IndexType iat, bool prepare_old) override
   {
+    assert(num_targets_ > 0);
     ScopedTimer local_timer(move_timer_);
 
 #if !defined(NDEBUG)
