@@ -96,9 +96,9 @@ private:
   }
 
 public:
-  SoaDistanceTableABOMPTarget(const ParticleSet& source, const size_t target_size, const std::string& target_name)
+  SoaDistanceTableABOMPTarget(const ParticleSet& source, const std::string& target_name)
       : DTD_BConds<T, D, SC>(source.getLattice()),
-        DistanceTableAB(source, target_size, target_name, DTModes::ALL_OFF),
+        DistanceTableAB(source, target_name, DTModes::ALL_OFF),
         offload_timer_(createGlobalTimer("DTABOMPTarget::offload_" + name_, timer_level_fine)),
         evaluate_timer_(createGlobalTimer("DTABOMPTarget::evaluate_" + name_, timer_level_fine))
 

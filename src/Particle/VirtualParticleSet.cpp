@@ -59,8 +59,8 @@ VirtualParticleSet::VirtualParticleSet(const ParticleSet& p, int nptcl, size_t d
   for (int i = 0; i < dt_count_limit; ++i)
   {
     size_t tid = DistTables.size();
-    auto& dt = p.getDistTable(i);
-    DistTables.push_back(createDistanceTable(dt.get_origin(), TotalNum, myName, null_out));
+    auto& dt   = p.getDistTable(i);
+    DistTables.push_back(createDistanceTable(dt.get_origin(), myName, null_out));
     if (!(dt.getModes() & DTModes::NEED_VP_FULL_TABLE_ON_HOST))
       DistTables[tid]->setModes(DTModes::MW_EVALUATE_RESULT_NO_TRANSFER_TO_HOST);
     app_debug() << "  ... VirtualParticleSet::VirtualParticleSet Create Table #" << tid << " "
