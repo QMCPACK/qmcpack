@@ -34,7 +34,7 @@ NonLocalECPComponent::NonLocalECPComponent(const NonLocalECPComponent& nl_ecpc, 
   for (int i = 0; i < nl_ecpc.nlpp_m.size(); ++i)
     nlpp_m[i] = nl_ecpc.nlpp_m[i]->makeClone();
   if (nl_ecpc.VP)
-    VP = new VirtualParticleSet(pset, nknot, nl_ecpc.VP->getNumDistTables());
+    VP = new VirtualParticleSet(pset, nl_ecpc.VP->getNumDistTables());
 }
 
 NonLocalECPComponent::~NonLocalECPComponent()
@@ -51,7 +51,7 @@ void NonLocalECPComponent::initVirtualParticle(const ParticleSet& qp)
 {
   assert(VP == 0);
   outputManager.pause();
-  VP = new VirtualParticleSet(qp, nknot);
+  VP = new VirtualParticleSet(qp);
   outputManager.resume();
 }
 

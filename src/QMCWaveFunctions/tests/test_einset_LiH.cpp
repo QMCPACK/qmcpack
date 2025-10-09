@@ -231,8 +231,8 @@ void test_einset_LiH_x(bool use_offload)
     const size_t nvp_                  = 4;
     const size_t nvp_2                 = 3;
     const std::vector<size_t> nvp_list = {nvp_, nvp_2};
-    VirtualParticleSet VP_(elec_, nvp_);
-    VirtualParticleSet VP_2(elec_2, nvp_2);
+    VirtualParticleSet VP_(elec_);
+    VirtualParticleSet VP_2(elec_2);
 
     // move VPs
     std::vector<ParticleSet::SingleParticlePos> newpos_vp_(nvp_);

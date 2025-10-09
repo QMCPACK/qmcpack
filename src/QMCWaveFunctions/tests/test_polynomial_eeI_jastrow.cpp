@@ -318,7 +318,7 @@ void test_J3_polynomial3D(const DynamicCoordinateKind kind_selected)
   for (int i = 0; i < NumOptimizables; i++)
     CHECK(dlogpsi[i] == ValueApprox(dlogpsiWF[i]));
 
-  VirtualParticleSet VP(elec_, 2);
+  VirtualParticleSet VP(elec_);
   std::vector<PosType> newpos2(2);
   std::vector<ValueType> ratios2(2);
   newpos2[0] = newpos - elec_.R[1];
@@ -361,7 +361,7 @@ void test_J3_polynomial3D(const DynamicCoordinateKind kind_selected)
 
   // test NLPP related APIs
   const int nknot = 3;
-  VirtualParticleSet vp(elec_, nknot), vp_clone(elec_clone, nknot);
+  VirtualParticleSet vp(elec_), vp_clone(elec_clone);
   RefVectorWithLeader<VirtualParticleSet> vp_list(vp, {vp, vp_clone});
   ResourceCollection vp_res("test_vp_res");
   vp.createResource(vp_res);
