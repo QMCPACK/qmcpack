@@ -53,16 +53,13 @@ inline std::unique_ptr<DistanceTableAA> createDistanceTable(const ParticleSet& s
 
 ///free function create a distable table of s-t
 std::unique_ptr<DistanceTableAB> createDistanceTableAB(const ParticleSet& s,
-                                                       const size_t t_size,
                                                        const std::string& t_name,
                                                        std::ostream& description);
 std::unique_ptr<DistanceTableAB> createDistanceTableABOMPTarget(const ParticleSet& s,
-                                                                const size_t t_size,
                                                                 const std::string& t_name,
                                                                 std::ostream& description);
 
 inline std::unique_ptr<DistanceTableAB> createDistanceTable(const ParticleSet& s,
-                                                            const size_t t_size,
                                                             const std::string& t_name,
                                                             std::ostream& description)
 {
@@ -70,9 +67,9 @@ inline std::unique_ptr<DistanceTableAB> createDistanceTable(const ParticleSet& s
   // is determined by the number of source particles.
   // Thus the implementation selection is determined by the source particle set.
   if (s.getCoordinates().getKind() == DynamicCoordinateKind::DC_POS_OFFLOAD)
-    return createDistanceTableABOMPTarget(s, t_size, t_name, description);
+    return createDistanceTableABOMPTarget(s, t_name, description);
   else
-    return createDistanceTableAB(s, t_size, t_name, description);
+    return createDistanceTableAB(s, t_name, description);
 }
 
 } // namespace qmcplusplus

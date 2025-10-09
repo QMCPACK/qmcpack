@@ -502,7 +502,7 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_list);
 
   //update all walkers
-  elec_.mw_update(p_list);
+  ParticleSet::mw_update(p_list);
 
   std::unique_ptr<SPOSet> spo_2(spo->makeClone());
   RefVectorWithLeader<SPOSet> spo_list(*spo);
@@ -579,11 +579,11 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
     displs.positions = {dR[iat], dR[iat]};
     displs.spins     = {dS[iat], dS[iat]};
 
-    elec_.mw_makeMove(p_list, iat, displs);
+    ParticleSet::mw_makeMove(p_list, iat, displs);
     std::vector<bool> accept = {true, true};
-    elec_.mw_accept_rejectMove<CoordsType::POS_SPIN>(p_list, iat, accept);
+    ParticleSet::mw_accept_rejectMove<CoordsType::POS_SPIN>(p_list, iat, accept);
   }
-  elec_.mw_update(p_list);
+  ParticleSet::mw_update(p_list);
 
   SPOSet::ValueVector psi_work_2(OrbitalSetSize);
   SPOSet::GradVector dpsi_work_2(OrbitalSetSize);
@@ -609,7 +609,7 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
     displs.positions = {-dR[iat], -dR[iat]};
     displs.spins     = {-dS[iat], -dS[iat]};
 
-    elec_.mw_makeMove(p_list, iat, displs);
+    ParticleSet::mw_makeMove(p_list, iat, displs);
     spo->mw_evaluateVGLWithSpin(spo_list, p_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list, mw_dspin);
     //walker 0
     CHECK(psi_v_list[0].get()[0] == ComplexApprox(psiM_ref[iat][0]).epsilon(h));
@@ -662,7 +662,7 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
     CHECK(mw_dspin[1][2] == ComplexApprox(dspsiM_ref[(iat + 1) % 3][2]).epsilon(h));
 
     std::vector<bool> accept = {false, false};
-    elec_.mw_accept_rejectMove<CoordsType::POS_SPIN>(p_list, iat, accept);
+    ParticleSet::mw_accept_rejectMove<CoordsType::POS_SPIN>(p_list, iat, accept);
   }
 
   //test mw_evaluateDetRatios
@@ -676,13 +676,12 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   inv_row = {0.1, 0.2, 0.3};
   inv_row.updateTo();
   std::vector<const SPOSet::ValueType*> inv_row_ptr(2, spo->isOMPoffload() ? inv_row.device_data() : inv_row.data());
+  const auto& ei_table1    = elec_.getDistTableAB(elec_.addTable(ions_));
+  const auto& ei_table2     = elec_2.getDistTableAB(elec_2.addTable(ions_));
+  ParticleSet::mw_update(p_list);
   for (int iat = 0; iat < 3; iat++)
   {
-    const int ei_table_index = elec_.addTable(ions_);
-    const auto& ei_table1    = elec_.getDistTableAB(ei_table_index);
     NLPPJob<RealType> job1(0, iat, ei_table1.getDistances()[iat][0], -ei_table1.getDisplacements()[iat][0]);
-    const int ei_table_index2 = elec_2.addTable(ions_);
-    const auto& ei_table2     = elec_2.getDistTableAB(ei_table_index2);
     NLPPJob<RealType> job2(0, iat, ei_table2.getDistances()[iat][0], -ei_table2.getDisplacements()[iat][0]);
 
     std::vector<ParticleSet::PosType> deltaV1{{-dR[iat][0], -dR[iat][1], -dR[iat][2]}};

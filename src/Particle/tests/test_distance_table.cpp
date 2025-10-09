@@ -597,6 +597,7 @@ void test_distance_pbc_z_batched_APIs(DynamicCoordinateKind test_kind)
 
   std::vector<ParticleSet::SingleParticlePos> disp{{0.2, 0.1, 0.3}, {0.2, 0.1, 0.3}};
 
+  ParticleSet::mw_update(p_list);
   ParticleSet::mw_makeMove(p_list, 0, disp);
   ParticleSet::mw_accept_rejectMove(p_list, 0, {true, true}, true);
   ParticleSet::mw_makeMove(p_list, 1, disp);
@@ -643,6 +644,7 @@ void test_distance_fcc_pbc_z_batched_APIs(DynamicCoordinateKind test_kind)
 
   std::vector<ParticleSet::SingleParticlePos> disp{{0.2, 0.1, 0.3}, {0.2, 0.1, 0.3}};
 
+  ParticleSet::mw_update(p_list);
   ParticleSet::mw_makeMove(p_list, 0, disp);
   ParticleSet::mw_accept_rejectMove(p_list, 0, {true, true}, true);
   ParticleSet::mw_makeMove(p_list, 1, disp);
@@ -697,6 +699,7 @@ void test_distance_pbc_z_batched_APIs_ee_NEED_TEMP_DATA_ON_HOST(DynamicCoordinat
 
   std::vector<ParticleSet::SingleParticlePos> disp{{0.2, 0.1, 0.3}, {0.2, 0.1, 0.3}};
 
+  ParticleSet::mw_update(p_list);
   ParticleSet::mw_makeMove(p_list, 0, disp);
   CHECK(ee_dtable.getTempDists()[1] == Approx(2.7239676944));
   CHECK(ee_dtable.getTempDispls()[1][0] == Approx(2.7));

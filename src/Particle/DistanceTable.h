@@ -46,12 +46,16 @@ public:
   using DistRow   = Vector<RealType, aligned_allocator<RealType>>;
   using DisplRow  = VectorSoaContainer<RealType, DIM>;
 
+private:
+  /// resize based on number of target particles
+  virtual void resize(const size_t num_targets) = 0;
+
 protected:
   /// source particleset
   const ParticleSet& origin_;
 
   const size_t num_sources_;
-  const size_t num_targets_;
+  size_t num_targets_ = 0;
 
   ///name of the table
   const std::string name_;
@@ -61,12 +65,8 @@ protected:
 
 public:
   ///constructor using source and target ParticleSet
-  DistanceTable(const ParticleSet& source, const size_t target_size, const std::string& target_name, DTModes modes)
-      : origin_(source),
-        num_sources_(source.getTotalNum()),
-        num_targets_(target_size),
-        name_(source.getName() + "_" + target_name),
-        modes_(modes)
+  DistanceTable(const ParticleSet& source, const std::string& target_name, DTModes modes)
+      : origin_(source), num_sources_(source.getTotalNum()), name_(source.getName() + "_" + target_name), modes_(modes)
   {}
 
   /// copy constructor. deleted
@@ -266,9 +266,7 @@ protected:
 
 public:
   ///constructor using source and target ParticleSet
-  DistanceTableAA(const ParticleSet& target, DTModes modes)
-      : DistanceTable(target, target.getTotalNum(), target.getName(), modes)
-  {}
+  DistanceTableAA(const ParticleSet& target, DTModes modes) : DistanceTable(target, target.getName(), modes) {}
 
   /** return full table distances
    */
@@ -317,6 +315,47 @@ public:
   {
     return nullptr;
   }
+
+  int get_first_neighbor(IndexType iat, RealType& r, PosType& dr, bool newpos) const final
+  {
+    //ensure there are neighbors
+    assert(num_targets_ > 1);
+    RealType min_dist = std::numeric_limits<RealType>::max();
+    int index         = -1;
+    if (newpos)
+    {
+      for (int jat = 0; jat < num_targets_; ++jat)
+        if (temp_r_[jat] < min_dist && jat != iat)
+        {
+          min_dist = temp_r_[jat];
+          index    = jat;
+        }
+      assert(index >= 0);
+      dr = temp_dr_[index];
+    }
+    else
+    {
+      for (int jat = 0; jat < iat; ++jat)
+        if (distances_[iat][jat] < min_dist)
+        {
+          min_dist = distances_[iat][jat];
+          index    = jat;
+        }
+      for (int jat = iat + 1; jat < num_targets_; ++jat)
+        if (distances_[jat][iat] < min_dist)
+        {
+          min_dist = distances_[jat][iat];
+          index    = jat;
+        }
+      assert(index != iat && index >= 0);
+      if (index < iat)
+        dr = displacements_[iat][index];
+      else
+        dr = displacements_[index][iat];
+    }
+    r = min_dist;
+    return index;
+  }
 };
 
 /** AB type of DistanceTable containing storage. 'source' and 'target' are different sets of particles. */
@@ -341,8 +380,8 @@ protected:
 
 public:
   ///constructor using source and target ParticleSet
-  DistanceTableAB(const ParticleSet& source, const size_t target_size, const std::string& target_name, DTModes modes)
-      : DistanceTable(source, target_size, target_name, modes)
+  DistanceTableAB(const ParticleSet& source, const std::string& target_name, DTModes modes)
+      : DistanceTable(source, target_name, modes)
   {}
 
   /** return full table distances
