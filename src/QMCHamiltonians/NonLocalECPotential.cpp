@@ -38,7 +38,6 @@ struct NonLocalECPotential::NonLocalECPotentialMultiWalkerResource : public Reso
     return std::make_unique<NonLocalECPotentialMultiWalkerResource>(*this);
   }
 
-
   ResourceCollection collection{"NLPPcollection"};
   /// a crowds worth of per particle nonlocal ecp potential values
   Matrix<Real> ve_samples;
@@ -52,20 +51,25 @@ void NonLocalECPotential::resetTargetParticleSet(ParticleSet& P) {}
  *\param els the positions of the electrons
  *\param psi trial wavefunction
  */
-NonLocalECPotential::NonLocalECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi, bool enable_DLA)
+NonLocalECPotential::NonLocalECPotential(ParticleSet& ions,
+                                         ParticleSet& els,
+                                         TrialWaveFunction& psi,
+                                         bool enable_DLA,
+                                         bool use_VP)
     : ForceBase(ions, els),
       myRNG(nullptr),
       IonConfig(ions),
       Psi(psi),
       use_DLA(enable_DLA),
+      vp_(use_VP ? std::make_unique<VirtualParticleSet>(els) : nullptr),
       Peln(els),
       ElecNeighborIons(els),
       IonNeighborElecs(ions)
 {
   setEnergyDomain(POTENTIAL);
-  twoBodyQuantumDomain(ions, els);
-  myTableIndex = els.addTable(ions);
-  NumIons      = ions.getTotalNum();
+  twoBodyQuantumDomain(IonConfig, els);
+  myTableIndex = els.addTable(IonConfig);
+  NumIons      = IonConfig.getTotalNum();
   //els.resizeSphere(NumIons);
   PP.resize(NumIons, nullptr);
   prefix_ = "FNL";
@@ -78,6 +82,38 @@ NonLocalECPotential::NonLocalECPotential(ParticleSet& ions, ParticleSet& els, Tr
     // this should be enough in most calculations assuming that every electron cannot be in more than two pseudo regions.
     nlpp_jobs[ig].reserve(2 * els.groupsize(ig));
   }
+}
+
+NonLocalECPotential::NonLocalECPotential(const NonLocalECPotential& nlpp, ParticleSet& els, TrialWaveFunction& psi)
+    : ForceBase(nlpp.IonConfig, els),
+      myRNG(nullptr),
+      IonConfig(nlpp.IonConfig),
+      Psi(psi),
+      use_DLA(nlpp.use_DLA),
+      vp_(nlpp.vp_ ? std::make_unique<VirtualParticleSet>(els, nlpp.vp_->getNumDistTables()) : nullptr),
+      Peln(els),
+      ElecNeighborIons(els),
+      IonNeighborElecs(nlpp.IonConfig)
+{
+  setEnergyDomain(POTENTIAL);
+  twoBodyQuantumDomain(IonConfig, els);
+  myTableIndex = els.addTable(IonConfig);
+  NumIons      = IonConfig.getTotalNum();
+  //els.resizeSphere(NumIons);
+  PP.resize(NumIons, nullptr);
+  prefix_ = "FNL";
+  PPset.resize(IonConfig.getSpeciesSet().getTotalNum());
+  PulayTerm.resize(NumIons);
+  update_mode_.set(NONLOCAL, 1);
+  nlpp_jobs.resize(els.groups());
+  for (size_t ig = 0; ig < els.groups(); ig++)
+  {
+    // this should be enough in most calculations assuming that every electron cannot be in more than two pseudo regions.
+    nlpp_jobs[ig].reserve(2 * els.groupsize(ig));
+  }
+  for (int ig = 0; ig < nlpp.PPset.size(); ++ig)
+    if (nlpp.PPset[ig])
+      addComponent(ig, std::make_unique<NonLocalECPComponent>(*nlpp.PPset[ig], els));
 }
 
 NonLocalECPotential::~NonLocalECPotential() = default;
@@ -198,7 +234,8 @@ void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool compute_txy_all, boo
         if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
         {
           Real pairpot =
-              PP[iat]->evaluateOne(P, iat, Psi, jel, dist[iat], -displ[iat],
+              PP[iat]->evaluateOne(P, vp_ ? makeOptionalRef<VirtualParticleSet>(*vp_) : std::nullopt, iat, Psi, jel,
+                                   dist[iat], -displ[iat],
                                    compute_txy_all ? makeOptionalRef<std::vector<NonLocalData>>(tmove_xy_all_)
                                                    : std::nullopt,
                                    use_DLA);
@@ -317,6 +354,7 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
     assert(&o_list.getCastedElement<NonLocalECPotential>(iw).Psi == &wf_list[iw]);
 
   RefVector<const NLPPJob<Real>> batch_list;
+  RefVector<VirtualParticleSet> vp_list;
   std::vector<Real> pairpots(nw);
   RefVector<std::vector<NonLocalData>> tmove_xy_all_batch_list;
 
@@ -347,6 +385,7 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
       psi_list.clear();
       batch_list.clear();
       tmove_xy_all_batch_list.clear();
+      vp_list.reserve(nw);
       for (size_t iw = 0; iw < nw; iw++)
       {
         auto& O = o_list.getCastedElement<NonLocalECPotential>(iw);
@@ -356,6 +395,8 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
           ecp_potential_list.push_back(O);
           ecp_component_list.push_back(*O.PP[job.ion_id]);
           pset_list.push_back(p_list[iw]);
+          if (O.vp_)
+            vp_list.push_back(*O.vp_);
           psi_list.push_back(wf_list[iw]);
           batch_list.push_back(job);
           if (compute_txy_all)
@@ -363,16 +404,22 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
         }
       }
 
-      NonLocalECPComponent::mw_evaluateOne(ecp_component_list, pset_list, psi_list, batch_list, pairpots,
-                                           tmove_xy_all_batch_list, O_leader.mw_res_handle_.getResource().collection,
-                                           O_leader.use_DLA);
+      NonLocalECPComponent::mw_evaluateOne(ecp_component_list, pset_list,
+                                           O_leader.vp_
+                                               ? std::make_optional<
+                                                     const RefVectorWithLeader<VirtualParticleSet>>(*O_leader.vp_,
+                                                                                                    std::move(vp_list))
+                                               : std::nullopt,
+                                           psi_list, batch_list, pairpots, tmove_xy_all_batch_list,
+                                           O_leader.mw_res_handle_.getResource().collection, O_leader.use_DLA);
 
       // Right now this is just over walker but could and probably should be over a set
       // larger than the walker count.  The easiest way to not complicate the per particle
       // reporting code would be to add the crowd walker index to the nlpp job meta data.
       for (size_t j = 0; j < ecp_potential_list.size(); j++)
       {
-        ecp_potential_list[j].get().value_ += pairpots[j];
+        NonLocalECPotential& ecp = ecp_potential_list[j];
+        ecp.value_ += pairpots[j];
 
         if (listeners)
         {
@@ -387,9 +434,10 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
 #ifdef DEBUG_NLPP_BATCHED
         std::vector<NonLocalData> tmove_xy_dummy;
         Real check_value =
-            ecp_component_list[j].evaluateOne(pset_list[j], batch_list[j].get().ion_id, psi_list[j],
-                                              batch_list[j].get().electron_id, batch_list[j].get().ion_elec_dist,
-                                              batch_list[j].get().ion_elec_displ,
+            ecp_component_list[j].evaluateOne(pset_list[j],
+                                              ecp.vp_ ? makeOptionalRef<VirtualParticleSet>(*ecp.vp_) : std::nullopt,
+                                              batch_list[j].get().ion_id, psi_list[j], batch_list[j].get().electron_id,
+                                              batch_list[j].get().ion_elec_dist, batch_list[j].get().ion_elec_displ,
                                               compute_txy_all
                                                   ? makeOptionalRef<std::vector<NonLocalData>>(tmove_xy_dummy)
                                                   : std::nullopt,
@@ -456,7 +504,8 @@ void NonLocalECPotential::evaluateIonDerivs(ParticleSet& P,
         if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
         {
           value_ +=
-              PP[iat]->evaluateOneWithForces(P, ions, iat, Psi, jel, dist[iat], -displ[iat], forces_[iat], PulayTerm);
+              PP[iat]->evaluateOneWithForces(P, vp_ ? makeOptionalRef<VirtualParticleSet>(*vp_) : std::nullopt, ions,
+                                             iat, Psi, jel, dist[iat], -displ[iat], forces_[iat], PulayTerm);
           NeighborIons.push_back(iat);
           IonNeighborElecs.getNeighborList(iat).push_back(jel);
         }
@@ -476,7 +525,8 @@ void NonLocalECPotential::computeOneElectronTxy(ParticleSet& P, const int ref_el
   const auto& dist  = myTable.getDistRow(ref_elec);
   const auto& displ = myTable.getDisplRow(ref_elec);
   for (const int iat : NeighborIons)
-    PP[iat]->evaluateOne(P, iat, Psi, ref_elec, dist[iat], -displ[iat], tmove_xy, use_DLA);
+    PP[iat]->evaluateOne(P, vp_ ? makeOptionalRef<VirtualParticleSet>(*vp_) : std::nullopt, iat, Psi, ref_elec,
+                         dist[iat], -displ[iat], tmove_xy, use_DLA);
 }
 
 void NonLocalECPotential::evaluateOneBodyOpMatrix(ParticleSet& P,
@@ -701,13 +751,8 @@ void NonLocalECPotential::addComponent(int groupID, std::unique_ptr<NonLocalECPC
 void NonLocalECPotential::createResource(ResourceCollection& collection) const
 {
   auto new_res = std::make_unique<NonLocalECPotentialMultiWalkerResource>();
-  for (int ig = 0; ig < PPset.size(); ++ig)
-    if (PPset[ig] && PPset[ig]->getVP()) // H pp doesn't contain non-local channels and PPset[ig] can be nullptr
-    {
-      PPset[ig]->getVP()->createResource(new_res->collection);
-      // the VP of the first NonLocalECPComponent is responsible for creating the shared resource.
-      break;
-    }
+  if (vp_)
+    vp_->createResource(new_res->collection);
   auto resource_index = collection.addResource(std::move(new_res));
 }
 
@@ -727,11 +772,7 @@ void NonLocalECPotential::releaseResource(ResourceCollection& collection,
 
 std::unique_ptr<OperatorBase> NonLocalECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  std::unique_ptr<NonLocalECPotential> myclone = std::make_unique<NonLocalECPotential>(IonConfig, qp, psi, use_DLA);
-  for (int ig = 0; ig < PPset.size(); ++ig)
-    if (PPset[ig])
-      myclone->addComponent(ig, std::make_unique<NonLocalECPComponent>(*PPset[ig], qp));
-  return myclone;
+  return std::make_unique<NonLocalECPotential>(*this, qp, psi);
 }
 
 } // namespace qmcplusplus

@@ -28,7 +28,6 @@ struct SOECPotential::SOECPotentialMultiWalkerResource : public Resource
     return std::make_unique<SOECPotentialMultiWalkerResource>(*this);
   }
 
-
   ResourceCollection collection{"SOPPcollection"};
 
   //crowds worth of per particle soecp values
@@ -41,24 +40,53 @@ struct SOECPotential::SOECPotentialMultiWalkerResource : public Resource
  *\param els electronic poitions
  *\param psi Trial wave function
 */
-SOECPotential::SOECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi, bool use_exact_spin)
+SOECPotential::SOECPotential(ParticleSet& ions,
+                             ParticleSet& els,
+                             TrialWaveFunction& psi,
+                             bool use_exact_spin,
+                             bool use_VP)
     : my_rng_(nullptr),
       ion_config_(ions),
       psi_(psi),
+      vp_(use_VP ? std::make_unique<VirtualParticleSet>(els) : nullptr),
       peln_(els),
       elec_neighbor_ions_(els),
       ion_neighbor_elecs_(ions),
       use_exact_spin_(use_exact_spin)
 {
   setEnergyDomain(POTENTIAL);
-  twoBodyQuantumDomain(ions, els);
-  my_table_index_ = els.addTable(ions);
-  num_ions_       = ions.getTotalNum();
+  twoBodyQuantumDomain(ion_config_, els);
+  my_table_index_ = els.addTable(ion_config_);
+  num_ions_       = ion_config_.getTotalNum();
   pp_.resize(num_ions_, nullptr);
   ppset_.resize(ion_config_.getSpeciesSet().getTotalNum());
   sopp_jobs_.resize(els.groups());
   for (size_t ig = 0; ig < els.groups(); ig++)
     sopp_jobs_[ig].reserve(2 * els.groupsize(ig));
+}
+
+SOECPotential::SOECPotential(const SOECPotential& sopp, ParticleSet& els, TrialWaveFunction& psi)
+    : my_rng_(nullptr),
+      ion_config_(sopp.ion_config_),
+      psi_(psi),
+      vp_(sopp.vp_ ? std::make_unique<VirtualParticleSet>(els, sopp.vp_->getNumDistTables()) : nullptr),
+      peln_(els),
+      elec_neighbor_ions_(els),
+      ion_neighbor_elecs_(sopp.ion_config_),
+      use_exact_spin_(sopp.use_exact_spin_)
+{
+  setEnergyDomain(POTENTIAL);
+  twoBodyQuantumDomain(ion_config_, els);
+  my_table_index_ = els.addTable(ion_config_);
+  num_ions_       = ion_config_.getTotalNum();
+  pp_.resize(num_ions_, nullptr);
+  ppset_.resize(ion_config_.getSpeciesSet().getTotalNum());
+  sopp_jobs_.resize(els.groups());
+  for (size_t ig = 0; ig < els.groups(); ig++)
+    sopp_jobs_[ig].reserve(2 * els.groupsize(ig));
+  for (int ig = 0; ig < sopp.ppset_.size(); ++ig)
+    if (sopp.ppset_[ig])
+      addComponent(ig, std::unique_ptr<SOECPComponent>(sopp.ppset_[ig]->makeClone(els)));
 }
 
 SOECPotential::~SOECPotential() = default;
@@ -101,9 +129,10 @@ void SOECPotential::evaluateImpl(ParticleSet& P, bool keep_grid)
       {
         RealType pairpot = 0;
         if (use_exact_spin_)
-          pairpot = pp_[iat]->evaluateOneExactSpinIntegration(P, iat, psi_, jel, dist[iat], -displ[iat]);
+          pairpot = pp_[iat]->evaluateOneExactSpinIntegration(P, *vp_, iat, psi_, jel, dist[iat], -displ[iat]);
         else
-          pairpot = pp_[iat]->evaluateOne(P, iat, psi_, jel, dist[iat], -displ[iat]);
+          pairpot = pp_[iat]->evaluateOne(P, vp_ ? makeOptionalRef<VirtualParticleSet>(*vp_) : std::nullopt, iat, psi_,
+                                          jel, dist[iat], -displ[iat]);
         value_ += pairpot;
         NeighborIons.push_back(iat);
         ion_neighbor_elecs_.getNeighborList(iat).push_back(jel);
@@ -130,12 +159,15 @@ SOECPotential::Return_t SOECPotential::evaluateValueAndDerivatives(ParticleSet& 
       if (pp_[iat] != nullptr && dist[iat] < pp_[iat]->getRmax())
       {
         if (use_exact_spin_)
-          value_ += pp_[iat]->evaluateValueAndDerivativesExactSpinIntegration(P, iat, psi_, jel, dist[iat], -displ[iat],
-                                                                              optvars, dlogpsi, dhpsioverpsi);
+          value_ +=
+              pp_[iat]->evaluateValueAndDerivativesExactSpinIntegration(P, *vp_, iat, psi_, jel, dist[iat], -displ[iat],
+                                                                        optvars, dlogpsi, dhpsioverpsi);
 
         else
-          value_ += pp_[iat]->evaluateValueAndDerivatives(P, iat, psi_, jel, dist[iat], -displ[iat], optvars, dlogpsi,
-                                                          dhpsioverpsi);
+          value_ +=
+              pp_[iat]->evaluateValueAndDerivatives(P, vp_ ? makeOptionalRef<VirtualParticleSet>(*vp_) : std::nullopt,
+                                                    iat, psi_, jel, dist[iat], -displ[iat], optvars, dlogpsi,
+                                                    dhpsioverpsi);
       }
   }
   return value_;
@@ -228,6 +260,7 @@ void SOECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& o_l
     assert(&o_list.getCastedElement<SOECPotential>(iw).psi_ == &wf_list[iw]);
 
   RefVector<const NLPPJob<RealType>> batch_list;
+  RefVector<VirtualParticleSet> vp_list;
   std::vector<RealType> pairpots(nw);
 
   soecp_potential_list.reserve(nw);
@@ -254,6 +287,7 @@ void SOECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& o_l
       pset_list.clear();
       psi_list.clear();
       batch_list.clear();
+      vp_list.reserve(nw);
       for (size_t iw = 0; iw < nw; iw++)
       {
         auto& O = o_list.getCastedElement<SOECPotential>(iw);
@@ -263,16 +297,27 @@ void SOECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& o_l
           soecp_potential_list.push_back(O);
           soecp_component_list.push_back(*O.pp_[job.ion_id]);
           pset_list.push_back(p_list[iw]);
+          if (O.vp_)
+            vp_list.push_back(*O.vp_);
           psi_list.push_back(wf_list[iw]);
           batch_list.push_back(job);
         }
       }
 
       if (O_leader.use_exact_spin_)
-        SOECPComponent::mw_evaluateOneExactSpinIntegration(soecp_component_list, pset_list, psi_list, batch_list,
+      {
+        SOECPComponent::mw_evaluateOneExactSpinIntegration(soecp_component_list, pset_list,
+                                                           {*O_leader.vp_, std::move(vp_list)}, psi_list, batch_list,
                                                            pairpots, O_leader.mw_res_handle_.getResource().collection);
+      }
       else
-        SOECPComponent::mw_evaluateOne(soecp_component_list, pset_list, psi_list, batch_list, pairpots,
+        SOECPComponent::mw_evaluateOne(soecp_component_list, pset_list,
+                                       O_leader.vp_
+                                           ? std::make_optional<
+                                                 const RefVectorWithLeader<VirtualParticleSet>>(*O_leader.vp_,
+                                                                                                std::move(vp_list))
+                                           : std::nullopt,
+                                       psi_list, batch_list, pairpots,
                                        O_leader.mw_res_handle_.getResource().collection);
 
       for (size_t j = 0; j < soecp_potential_list.size(); j++)
@@ -312,11 +357,7 @@ void SOECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& o_l
 
 std::unique_ptr<OperatorBase> SOECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  std::unique_ptr<SOECPotential> myclone = std::make_unique<SOECPotential>(ion_config_, qp, psi, use_exact_spin_);
-  for (int ig = 0; ig < ppset_.size(); ++ig)
-    if (ppset_[ig])
-      myclone->addComponent(ig, std::unique_ptr<SOECPComponent>(ppset_[ig]->makeClone(qp)));
-  return myclone;
+  return std::make_unique<SOECPotential>(*this, qp, psi);
 }
 
 void SOECPotential::addComponent(int groupID, std::unique_ptr<SOECPComponent>&& ppot)
@@ -330,12 +371,8 @@ void SOECPotential::addComponent(int groupID, std::unique_ptr<SOECPComponent>&& 
 void SOECPotential::createResource(ResourceCollection& collection) const
 {
   auto new_res = std::make_unique<SOECPotentialMultiWalkerResource>();
-  for (int ig = 0; ig < ppset_.size(); ig++)
-    if (ppset_[ig]->getVP())
-    {
-      ppset_[ig]->getVP()->createResource(new_res->collection);
-      break;
-    }
+  if (vp_)
+    vp_->createResource(new_res->collection);
   auto resource_index = collection.addResource(std::move(new_res));
 }
 

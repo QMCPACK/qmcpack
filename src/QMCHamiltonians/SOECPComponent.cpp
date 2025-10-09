@@ -19,34 +19,15 @@
 
 namespace qmcplusplus
 {
-SOECPComponent::SOECPComponent()
-    : lmax_(0), nchannel_(0), nknot_(0), sknot_(0), total_knots_(0), rmax_(-1), vp_(nullptr)
-{}
+SOECPComponent::SOECPComponent() : lmax_(0), nchannel_(0), nknot_(0), sknot_(0), total_knots_(0), rmax_(-1) {}
 
 SOECPComponent::~SOECPComponent()
 {
   for (int i = 0; i < sopp_m_.size(); i++)
     delete sopp_m_[i];
-  if (vp_)
-    delete vp_;
 }
 
 void SOECPComponent::print(std::ostream& os) {}
-
-void SOECPComponent::initVirtualParticle(const ParticleSet& qp)
-{
-  assert(vp_ == nullptr);
-  outputManager.pause();
-  vp_ = new VirtualParticleSet(qp);
-  outputManager.resume();
-}
-
-void SOECPComponent::deleteVirtualParticle()
-{
-  if (vp_)
-    delete vp_;
-  vp_ = nullptr;
-}
 
 void SOECPComponent::add(int l, RadialPotentialType* pp)
 {
@@ -59,8 +40,6 @@ SOECPComponent* SOECPComponent::makeClone(const ParticleSet& qp)
   SOECPComponent* myclone = new SOECPComponent(*this);
   for (int i = 0; i < sopp_m_.size(); i++)
     myclone->sopp_m_[i] = sopp_m_[i]->makeClone();
-  if (vp_)
-    myclone->vp_ = new VirtualParticleSet(qp);
   return myclone;
 }
 
@@ -157,6 +136,7 @@ SOECPComponent::ComplexType SOECPComponent::matrixElementDecomposed(int l, int m
 }
 
 SOECPComponent::RealType SOECPComponent::evaluateOne(ParticleSet& W,
+                                                     const OptionalRef<VirtualParticleSet> vp,
                                                      int iat,
                                                      TrialWaveFunction& Psi,
                                                      int iel,
@@ -166,10 +146,11 @@ SOECPComponent::RealType SOECPComponent::evaluateOne(ParticleSet& W,
   RealType sold = W.spins[iel];
   buildTotalQuadrature(r, dr, sold);
 
-  if (vp_)
+  if (vp)
   {
-    vp_->makeMovesWithSpin(W, iel, deltaV_, deltaS_, true, iat);
-    Psi.evaluateRatios(*vp_, psiratio_);
+    VirtualParticleSet& vp_set(*vp);
+    vp_set.makeMovesWithSpin(W, iel, deltaV_, deltaS_, true, iat);
+    Psi.evaluateRatios(vp_set, psiratio_);
   }
   else
     for (int iq = 0; iq < total_knots_; iq++)
@@ -259,6 +240,7 @@ void SOECPComponent::setupExactSpinProjector(RealType r, const PosType& dr, Real
 }
 
 SOECPComponent::RealType SOECPComponent::evaluateOneExactSpinIntegration(ParticleSet& W,
+                                                                         VirtualParticleSet& vp,
                                                                          const int iat,
                                                                          const TrialWaveFunction& psi,
                                                                          const int iel,
@@ -269,11 +251,11 @@ SOECPComponent::RealType SOECPComponent::evaluateOneExactSpinIntegration(Particl
 
   for (int j = 0; j < nknot_; j++)
     deltaV_[j] = r * rrotsgrid_m_[j] - dr;
-  vp_->makeMoves(W, iel, deltaV_, true, iat);
+  vp.makeMoves(W, iel, deltaV_, true, iat);
 
   setupExactSpinProjector(r, dr, sold);
 
-  psi.evaluateSpinorRatios(*vp_, spinor_multiplier_, psiratio_);
+  psi.evaluateSpinorRatios(vp, spinor_multiplier_, psiratio_);
   ComplexType pairpot;
   for (size_t iq = 0; iq < nknot_; iq++)
     pairpot += psiratio_[iq];
@@ -282,22 +264,20 @@ SOECPComponent::RealType SOECPComponent::evaluateOneExactSpinIntegration(Particl
 
 void SOECPComponent::mw_evaluateOne(const RefVectorWithLeader<SOECPComponent>& soecp_component_list,
                                     const RefVectorWithLeader<ParticleSet>& p_list,
+                                    const std::optional<const RefVectorWithLeader<VirtualParticleSet>> vp_list,
                                     const RefVectorWithLeader<TrialWaveFunction>& psi_list,
                                     const RefVector<const NLPPJob<RealType>>& joblist,
                                     std::vector<RealType>& pairpots,
                                     ResourceCollection& collection)
 {
   auto& soecp_component_leader = soecp_component_list.getLeader();
-  if (soecp_component_leader.vp_)
+  if (vp_list)
   {
     // Compute ratios with VP
-    RefVectorWithLeader<VirtualParticleSet> vp_list(*soecp_component_leader.vp_);
-    RefVectorWithLeader<const VirtualParticleSet> const_vp_list(*soecp_component_leader.vp_);
+    const auto& vp_set_list(*vp_list);
     RefVector<const std::vector<PosType>> deltaV_list;
     RefVector<const std::vector<RealType>> deltaS_list;
     RefVector<std::vector<ValueType>> psiratios_list;
-    vp_list.reserve(soecp_component_list.size());
-    const_vp_list.reserve(soecp_component_list.size());
     deltaV_list.reserve(soecp_component_list.size());
     deltaS_list.reserve(soecp_component_list.size());
     psiratios_list.reserve(soecp_component_list.size());
@@ -310,16 +290,19 @@ void SOECPComponent::mw_evaluateOne(const RefVectorWithLeader<SOECPComponent>& s
 
       component.buildTotalQuadrature(job.ion_elec_dist, job.ion_elec_displ, sold);
 
-      vp_list.push_back(*component.vp_);
-      const_vp_list.push_back(*component.vp_);
       deltaV_list.push_back(component.deltaV_);
       deltaS_list.push_back(component.deltaS_);
       psiratios_list.push_back(component.psiratio_);
     }
 
-    ResourceCollectionTeamLock<VirtualParticleSet> vp_res_lock(collection, vp_list);
+    RefVectorWithLeader<const VirtualParticleSet> const_vp_list(vp_set_list.getLeader());
+    const_vp_list.reserve(vp_set_list.size());
+    for (VirtualParticleSet& vp_set : vp_set_list)
+      const_vp_list.push_back(vp_set);
 
-    VirtualParticleSet::mw_makeMovesWithSpin(vp_list, p_list, deltaV_list, deltaS_list, joblist, true);
+    ResourceCollectionTeamLock<VirtualParticleSet> vp_res_lock(collection, vp_set_list);
+
+    VirtualParticleSet::mw_makeMovesWithSpin(vp_set_list, p_list, deltaV_list, deltaS_list, joblist, true);
 
     TrialWaveFunction::mw_evaluateRatios(psi_list, const_vp_list, psiratios_list);
   }
@@ -357,6 +340,7 @@ void SOECPComponent::mw_evaluateOne(const RefVectorWithLeader<SOECPComponent>& s
 
 void SOECPComponent::mw_evaluateOneExactSpinIntegration(const RefVectorWithLeader<SOECPComponent>& soecp_component_list,
                                                         const RefVectorWithLeader<ParticleSet>& p_list,
+                                                        const RefVectorWithLeader<VirtualParticleSet>& vp_list,
                                                         const RefVectorWithLeader<TrialWaveFunction>& psi_list,
                                                         const RefVector<const NLPPJob<RealType>>& joblist,
                                                         std::vector<RealType>& pairpots,
@@ -365,13 +349,11 @@ void SOECPComponent::mw_evaluateOneExactSpinIntegration(const RefVectorWithLeade
 #ifdef QMC_COMPLEX
   auto& soecp_component_leader = soecp_component_list.getLeader();
   // Compute ratios with VP
-  RefVectorWithLeader<VirtualParticleSet> vp_list(*soecp_component_leader.vp_);
-  RefVectorWithLeader<const VirtualParticleSet> const_vp_list(*soecp_component_leader.vp_);
+  RefVectorWithLeader<const VirtualParticleSet> const_vp_list(vp_list.getLeader());
   RefVector<const std::vector<PosType>> deltaV_list;
   RefVector<std::vector<ValueType>> psiratios_list;
   RefVector<std::pair<SPOSet::ValueVector, SPOSet::ValueVector>> spinor_multiplier_list;
-  vp_list.reserve(soecp_component_list.size());
-  const_vp_list.reserve(soecp_component_list.size());
+  const_vp_list.reserve(vp_list.size());
   deltaV_list.reserve(soecp_component_list.size());
   psiratios_list.reserve(soecp_component_list.size());
   spinor_multiplier_list.reserve(soecp_component_list.size());
@@ -384,8 +366,7 @@ void SOECPComponent::mw_evaluateOneExactSpinIntegration(const RefVectorWithLeade
     for (int j = 0; j < component.nknot_; j++)
       component.deltaV_[j] = job.ion_elec_dist * component.rrotsgrid_m_[j] - job.ion_elec_displ;
 
-    vp_list.push_back(*component.vp_);
-    const_vp_list.push_back(*component.vp_);
+    const_vp_list.push_back(vp_list[i]);
     deltaV_list.push_back(component.deltaV_);
     psiratios_list.push_back(component.psiratio_);
     spinor_multiplier_list.push_back(component.spinor_multiplier_);
@@ -419,6 +400,7 @@ void SOECPComponent::mw_evaluateOneExactSpinIntegration(const RefVectorWithLeade
 }
 
 SOECPComponent::RealType SOECPComponent::evaluateValueAndDerivatives(ParticleSet& W,
+                                                                     const OptionalRef<VirtualParticleSet> vp,
                                                                      int iat,
                                                                      TrialWaveFunction& Psi,
                                                                      int iel,
@@ -441,11 +423,12 @@ SOECPComponent::RealType SOECPComponent::evaluateValueAndDerivatives(ParticleSet
 
   //Now we have all the spin and spatial quadrature points acculated to use in evaluation
   //Now we need to obtain dlogpsi and dlogpsi_vp
-  if (vp_)
+  if (vp)
   {
     // Compute ratios with VP
-    vp_->makeMovesWithSpin(W, iel, deltaV_, deltaS_, true, iat);
-    Psi.evaluateDerivRatios(*vp_, optvars, psiratio_, dratio_);
+    VirtualParticleSet& vp_set(*vp);
+    vp_set.makeMovesWithSpin(W, iel, deltaV_, deltaS_, true, iat);
+    Psi.evaluateDerivRatios(vp_set, optvars, psiratio_, dratio_);
   }
   else
     for (int iq = 0; iq < total_knots_; iq++)
@@ -477,6 +460,7 @@ SOECPComponent::RealType SOECPComponent::evaluateValueAndDerivatives(ParticleSet
 
 SOECPComponent::RealType SOECPComponent::evaluateValueAndDerivativesExactSpinIntegration(
     ParticleSet& W,
+    VirtualParticleSet& vp,
     int iat,
     TrialWaveFunction& Psi,
     int iel,
@@ -496,11 +480,12 @@ SOECPComponent::RealType SOECPComponent::evaluateValueAndDerivativesExactSpinInt
   RealType sold = W.spins[iel];
   for (int j = 0; j < nknot_; j++)
     deltaV_[j] = r * rrotsgrid_m_[j] - dr;
-  vp_->makeMoves(W, iel, deltaV_, true, iat);
+  vp.makeMoves(W, iel, deltaV_, true, iat);
   setupExactSpinProjector(r, dr, sold);
-  Psi.evaluateSpinorDerivRatios(*vp_, spinor_multiplier_, optvars, psiratio_, dratio_);
+  Psi.evaluateSpinorDerivRatios(vp, spinor_multiplier_, optvars, psiratio_, dratio_);
 
-  BLAS::gemv('N', num_vars, total_knots_, 1.0, dratio_.data(), num_vars, psiratio_.data(), 1, 1.0, dhpsioverpsi.data(), 1);
+  BLAS::gemv('N', num_vars, total_knots_, 1.0, dratio_.data(), num_vars, psiratio_.data(), 1, 1.0, dhpsioverpsi.data(),
+             1);
 
   ComplexType pairpot;
   for (size_t iq = 0; iq < nknot_; iq++)
