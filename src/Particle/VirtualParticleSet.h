@@ -50,7 +50,7 @@ private:
   OptionalRef<const ParticleSet> refPS;
 
   // resize internal storage
-  void resizeVP(const size_t nptcl);
+  void resize(const size_t nptcl);
 
 public:
   /// Reference particle

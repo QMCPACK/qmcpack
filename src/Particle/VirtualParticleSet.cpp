@@ -62,7 +62,7 @@ VirtualParticleSet::VirtualParticleSet(const ParticleSet& p, size_t dt_count_lim
   }
 }
 
-void VirtualParticleSet::resizeVP(const size_t nptcl)
+void VirtualParticleSet::resize(const size_t nptcl)
 {
   TotalNum = nptcl;
   R.resize(nptcl);
@@ -150,7 +150,7 @@ void VirtualParticleSet::makeMoves(const ParticleSet& refp,
   refPtcl       = jel;
   refSourcePtcl = iat;
 
-  resizeVP(deltaV.size());
+  resize(deltaV.size());
   for (size_t ivp = 0; ivp < R.size(); ivp++)
     R[ivp] = refp.R[jel] + deltaV[ivp];
   if (refp.isSpinor())
@@ -176,7 +176,7 @@ void VirtualParticleSet::makeMovesWithSpin(const ParticleSet& refp,
   refPtcl       = jel;
   refSourcePtcl = iat;
 
-  resizeVP(deltaV.size());
+  resize(deltaV.size());
   assert(deltaV.size() == deltaS.size());
   for (size_t ivp = 0; ivp < R.size(); ivp++)
   {
@@ -217,7 +217,7 @@ void VirtualParticleSet::mw_makeMoves(const RefVectorWithLeader<VirtualParticleS
     vp.refPtcl       = job.electron_id;
     vp.refSourcePtcl = job.ion_id;
 
-    vp.resizeVP(deltaV.size());
+    vp.resize(deltaV.size());
     for (size_t k = 0; k < vp.R.size(); k++, ivp++)
     {
       vp.R[k] = refp_list[iw].R[vp.refPtcl] + deltaV[k];
@@ -269,7 +269,7 @@ void VirtualParticleSet::mw_makeMovesWithSpin(const RefVectorWithLeader<VirtualP
     vp.refPtcl       = job.electron_id;
     vp.refSourcePtcl = job.ion_id;
 
-    vp.resizeVP(deltaV.size());
+    vp.resize(deltaV.size());
     assert(deltaV.size() == deltaS.size());
     for (size_t k = 0; k < vp.R.size(); k++, ivp++)
     {
