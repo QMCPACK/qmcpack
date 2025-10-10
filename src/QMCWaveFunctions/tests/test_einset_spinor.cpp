@@ -359,7 +359,7 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   elec_.update();
 
   //Now we test evaluateValue()
-  VirtualParticleSet vp(elec_, 1);
+  VirtualParticleSet vp(elec_);
   for (unsigned int iat = 0; iat < 3; iat++)
   {
     std::vector<ParticleSet::PosType> delta_v(1);
@@ -666,7 +666,7 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   }
 
   //test mw_evaluateDetRatios
-  VirtualParticleSet vp1(elec_, 1), vp2(elec_2, 1);
+  VirtualParticleSet vp1(elec_), vp2(elec_2);
   RefVectorWithLeader<VirtualParticleSet> vp_list(vp1, {vp1, vp2});
   ResourceCollection vp_res("vp_res");
   vp.createResource(vp_res);

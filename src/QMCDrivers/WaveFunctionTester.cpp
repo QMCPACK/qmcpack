@@ -1380,7 +1380,7 @@ void WaveFunctionTester::runRatioV()
   Tau=0.025;
 
   //create a VP with 8 virtual moves
-  VirtualParticleSet vp(&W,8);
+  VirtualParticleSet vp(W);
   W.enableVirtualMoves();
 
   //cheating

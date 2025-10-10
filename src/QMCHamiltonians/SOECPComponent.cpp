@@ -37,7 +37,7 @@ void SOECPComponent::initVirtualParticle(const ParticleSet& qp)
 {
   assert(vp_ == nullptr);
   outputManager.pause();
-  vp_ = new VirtualParticleSet(qp, total_knots_);
+  vp_ = new VirtualParticleSet(qp);
   outputManager.resume();
 }
 
@@ -60,7 +60,7 @@ SOECPComponent* SOECPComponent::makeClone(const ParticleSet& qp)
   for (int i = 0; i < sopp_m_.size(); i++)
     myclone->sopp_m_[i] = sopp_m_[i]->makeClone();
   if (vp_)
-    myclone->vp_ = new VirtualParticleSet(qp, total_knots_);
+    myclone->vp_ = new VirtualParticleSet(qp);
   return myclone;
 }
 

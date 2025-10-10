@@ -402,7 +402,7 @@ void test_J1_spline(const DynamicCoordinateKind kind_selected)
 
   // test NLPP related APIs
   const int nknot = 3;
-  VirtualParticleSet vp(elec_, nknot), vp_clone(elec_clone, nknot);
+  VirtualParticleSet vp(elec_), vp_clone(elec_clone);
   RefVectorWithLeader<VirtualParticleSet> vp_list(vp, {vp, vp_clone});
   ResourceCollection vp_res("test_vp_res");
   vp.createResource(vp_res);
