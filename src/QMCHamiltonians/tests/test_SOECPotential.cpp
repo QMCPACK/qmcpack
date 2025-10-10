@@ -38,20 +38,12 @@ public:
   {
     so_ecp.ppset_[0]->rrotsgrid_m_ = so_ecp.ppset_[0]->sgridxyz_m_;
   }
+
   static bool didGridChange(SOECPotential& so_ecp)
   {
     return so_ecp.ppset_[0]->rrotsgrid_m_ != so_ecp.ppset_[0]->sgridxyz_m_;
   }
-  static void addVPs(const RefVectorWithLeader<OperatorBase>& o_list, const RefVectorWithLeader<ParticleSet>& p_list)
-  {
-    for (size_t iw = 0; iw < o_list.size(); iw++)
-    {
-      auto& sopp = o_list.getCastedElement<SOECPotential>(iw);
-      auto& pset = p_list[iw];
-      for (auto& uptr_comp : sopp.ppset_)
-        uptr_comp.get()->initVirtualParticle(pset);
-    }
-  }
+
   static void mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& o_list,
                               const RefVectorWithLeader<TrialWaveFunction>& twf_list,
                               const RefVectorWithLeader<ParticleSet>& p_list,
@@ -157,8 +149,9 @@ void doSOECPotentialTest(bool use_VPs)
   QMCTraits::IndexType norb = spinor_set->getOrbitalSetSize();
   REQUIRE(norb == 2);
 
-  auto dd = std::make_unique<DiracDeterminantBatched<PlatformKind::OMPTARGET, QMCTraits::ValueType,
-                                                     QMCTraits::QTFull::ValueType>>(*spinor_set, 0, nelec);
+  auto dd = std::make_unique<
+      DiracDeterminantBatched<PlatformKind::OMPTARGET, QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>(*spinor_set,
+                                                                                                            0, nelec);
   std::vector<std::unique_ptr<SPOSet>> sposets;
   sposets.push_back(std::move(spinor_set));
   std::vector<std::unique_ptr<DiracDeterminantBase>> dirac_dets;
@@ -192,7 +185,7 @@ void doSOECPotentialTest(bool use_VPs)
   ResourceCollectionTeamLock<TrialWaveFunction> mw_twf_lock(twf_res, twf_list);
 
   //Now we set up the SO ECP component.
-  SOECPotential so_ecp(ions, elec, psi, false);
+  SOECPotential so_ecp(ions, elec, psi, false, use_VPs);
   ECPComponentBuilder ecp_comp_builder("test_read_soecp", c);
   okay = ecp_comp_builder.read_pp_file("so_ecp_test.xml");
   REQUIRE(okay);
@@ -208,8 +201,6 @@ void doSOECPotentialTest(bool use_VPs)
 
   RefVector<OperatorBase> so_ecps{so_ecp, so_ecp2};
   RefVectorWithLeader<OperatorBase> o_list(so_ecp, so_ecps);
-  if (use_VPs)
-    testing::TestSOECPotential::addVPs(o_list, p_list);
   ResourceCollection so_ecp_res("test_so_ecp_res");
   so_ecp.createResource(so_ecp_res);
   ResourceCollectionTeamLock<OperatorBase> so_ecp_lock(so_ecp_res, o_list);
@@ -256,7 +247,7 @@ void doSOECPotentialTest(bool use_VPs)
   if (use_VPs)
   {
     value = 0.0;
-    SOECPotential so_ecp_exact(ions, elec, psi, true);
+    SOECPotential so_ecp_exact(ions, elec, psi, true, true);
     //srule is 0 for exact evaluation
     ECPComponentBuilder ecp_comp_builder("test_read_soecp", c, -1, -1, 0);
     okay = ecp_comp_builder.read_pp_file("so_ecp_test.xml");
@@ -274,7 +265,6 @@ void doSOECPotentialTest(bool use_VPs)
     so_ecp_exact.setRandomGenerator(&rng);
     so_ecp2_exact.setRandomGenerator(&rng2);
 
-    testing::TestSOECPotential::addVPs(o_exact_list, p_list);
     ResourceCollection so_ecp_res("test_so_ecp_res");
     so_ecp_exact.createResource(so_ecp_res);
     ResourceCollectionTeamLock<OperatorBase> so_ecp_lock(so_ecp_res, o_exact_list);

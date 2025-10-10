@@ -23,17 +23,21 @@ template<typename T>
 class RefVectorWithLeader : public std::vector<std::reference_wrapper<T>>
 {
 public:
+  using BaseVec = std::vector<std::reference_wrapper<T>>;
+
   RefVectorWithLeader(T& leader) : leader_(leader) {}
 
-  RefVectorWithLeader(T& leader, const std::vector<std::reference_wrapper<T>>& vec) : leader_(leader)
+  RefVectorWithLeader(T& leader, const BaseVec& vec) : leader_(leader)
   {
     for (T& element : vec)
       this->push_back(element);
   }
 
+  RefVectorWithLeader(T& leader, BaseVec&& vec) : BaseVec(std::move(vec)), leader_(leader) {}
+
   T& getLeader() const { return leader_; }
 
-  T& operator[](size_t i) const { return std::vector<std::reference_wrapper<T>>::operator[](i).get(); }
+  T& operator[](size_t i) const { return BaseVec::operator[](i).get(); }
 
   template<typename CASTTYPE>
   CASTTYPE& getCastedLeader() const

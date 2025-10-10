@@ -44,7 +44,8 @@ class NonLocalECPotential : public OperatorBase, public ForceBase
   struct NonLocalECPotentialMultiWalkerResource;
 
 public:
-  NonLocalECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi, bool enable_DLA);
+  NonLocalECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi, bool enable_DLA, bool use_VP);
+  NonLocalECPotential(const NonLocalECPotential& nlpp, ParticleSet& els, TrialWaveFunction& psi);
   ~NonLocalECPotential() override;
 
   bool dependsOnWaveFunction() const override { return true; }
@@ -167,6 +168,8 @@ protected:
   bool use_DLA;
 
 private:
+  ///virtual particle set
+  const std::unique_ptr<VirtualParticleSet> vp_;
   ///number of ions
   int NumIons;
   ///index of distance table for the ion-el pair
