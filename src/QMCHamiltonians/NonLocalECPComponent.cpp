@@ -892,27 +892,6 @@ void NonLocalECPComponent::rotateQuadratureGrid(const TensorType& rmat)
       rrotsgrid_m[i] = sgridxyz_m[i];
 }
 
-template<typename T>
-void NonLocalECPComponent::rotateQuadratureGrid(std::vector<T>& sphere, const TensorType& rmat)
-{
-  SpherGridType::iterator it(sgridxyz_m.begin());
-  SpherGridType::iterator it_end(sgridxyz_m.end());
-  SpherGridType::iterator jt(rrotsgrid_m.begin());
-  while (it != it_end)
-  {
-    if (do_randomize_grid_)
-      *jt = dot(rmat, *it);
-    else
-      *jt = *it;
-    ++it;
-    ++jt;
-  }
-  //copy the randomized grid to sphere
-  for (int i = 0; i < rrotsgrid_m.size(); i++)
-    for (int j = 0; j < OHMMS_DIM; j++)
-      sphere[OHMMS_DIM * i + j] = rrotsgrid_m[i][j];
-}
-
 void NonLocalECPComponent::buildQuadraturePointDeltaPositions(RealType r,
                                                               const PosType& dr,
                                                               std::vector<PosType>& deltaV) const
@@ -926,10 +905,5 @@ void NonLocalECPComponent::contributeTxy(int iel, std::vector<NonLocalData>& Txy
   for (int j = 0; j < nknot; j++)
     Txy.push_back(NonLocalData(iel, knot_pots[j], deltaV[j]));
 }
-
-/// \relates NonLocalEcpComponent
-template void NonLocalECPComponent::rotateQuadratureGrid(std::vector<float>& sphere, const TensorType& rmat);
-template void NonLocalECPComponent::rotateQuadratureGrid(std::vector<double>& sphere, const TensorType& rmat);
-
 
 } // namespace qmcplusplus

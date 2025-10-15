@@ -156,8 +156,6 @@ public:
   void resize_warrays(int n, int m, int l);
 
   void rotateQuadratureGrid(const TensorType& rmat);
-  template<typename T>
-  void rotateQuadratureGrid(std::vector<T>& sphere, const TensorType& rmat);
 
   /** @brief Evaluate the nonlocal pp contribution via randomized quadrature grid
    * to total energy from ion "iat" and electron "iel".
