@@ -137,7 +137,7 @@ public:
 
   static void mw_evaluateOne(const RefVectorWithLeader<SOECPComponent>& soecp_component_list,
                              const RefVectorWithLeader<ParticleSet>& p_list,
-                             const std::optional<const RefVectorWithLeader<VirtualParticleSet>> vp_list,
+                             const RefVectorWithLeader<VirtualParticleSet>& vp_list,
                              const RefVectorWithLeader<TrialWaveFunction>& psi_list,
                              const RefVector<const NLPPJob<RealType>>& joblist,
                              std::vector<RealType>& pairpots,

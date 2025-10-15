@@ -209,9 +209,9 @@ void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool compute_txy_all, boo
     Vi_samp = 0.0;
   }
 #endif
-  for (int ipp = 0; ipp < PPset.size(); ipp++)
-    if (PPset[ipp])
-      if (!keep_grid)
+  if (!keep_grid)
+    for (int ipp = 0; ipp < PPset.size(); ipp++)
+      if (PPset[ipp])
         PPset[ipp]->rotateQuadratureGrid(generateRandomRotationMatrix(*myRNG));
 
   //loop over all the ions
@@ -404,14 +404,22 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
         }
       }
 
-      NonLocalECPComponent::mw_evaluateOne(ecp_component_list, pset_list,
-                                           O_leader.vp_
-                                               ? std::make_optional<
-                                                     const RefVectorWithLeader<VirtualParticleSet>>(*O_leader.vp_,
-                                                                                                    std::move(vp_list))
-                                               : std::nullopt,
-                                           psi_list, batch_list, pairpots, tmove_xy_all_batch_list,
-                                           O_leader.mw_res_handle_.getResource().collection, O_leader.use_DLA);
+      if (O_leader.vp_)
+      {
+        NonLocalECPComponent::mw_evaluateOne(ecp_component_list, pset_list, {*O_leader.vp_, std::move(vp_list)},
+                                             psi_list, batch_list, pairpots, tmove_xy_all_batch_list,
+                                             O_leader.mw_res_handle_.getResource().collection, O_leader.use_DLA);
+      }
+      else
+        for (size_t iw = 0; iw < nw; iw++)
+          pairpots[iw] =
+              ecp_component_list[iw].evaluateOne(pset_list[iw], std::nullopt, batch_list[iw].get().ion_id, psi_list[iw],
+                                                 batch_list[iw].get().electron_id, batch_list[iw].get().ion_elec_dist,
+                                                 batch_list[iw].get().ion_elec_displ,
+                                                 compute_txy_all ? makeOptionalRef<std::vector<NonLocalData>>(
+                                                                       tmove_xy_all_batch_list[iw])
+                                                                 : std::nullopt,
+                                                 O_leader.use_DLA);
 
       // Right now this is just over walker but could and probably should be over a set
       // larger than the walker count.  The easiest way to not complicate the per particle

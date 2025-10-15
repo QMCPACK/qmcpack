@@ -310,15 +310,16 @@ void SOECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& o_l
                                                            {*O_leader.vp_, std::move(vp_list)}, psi_list, batch_list,
                                                            pairpots, O_leader.mw_res_handle_.getResource().collection);
       }
+      else if (O_leader.vp_)
+        SOECPComponent::mw_evaluateOne(soecp_component_list, pset_list, {*O_leader.vp_, std::move(vp_list)}, psi_list,
+                                       batch_list, pairpots, O_leader.mw_res_handle_.getResource().collection);
       else
-        SOECPComponent::mw_evaluateOne(soecp_component_list, pset_list,
-                                       O_leader.vp_
-                                           ? std::make_optional<
-                                                 const RefVectorWithLeader<VirtualParticleSet>>(*O_leader.vp_,
-                                                                                                std::move(vp_list))
-                                           : std::nullopt,
-                                       psi_list, batch_list, pairpots,
-                                       O_leader.mw_res_handle_.getResource().collection);
+        for (size_t iw = 0; iw < nw; iw++)
+          pairpots[iw] = soecp_component_list[iw].evaluateOne(pset_list[iw], std::nullopt, batch_list[iw].get().ion_id,
+                                                              psi_list[iw], batch_list[iw].get().electron_id,
+                                                              batch_list[iw].get().ion_elec_dist,
+                                                              batch_list[iw].get().ion_elec_displ);
+
 
       for (size_t j = 0; j < soecp_potential_list.size(); j++)
       {
