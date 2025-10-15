@@ -264,70 +264,43 @@ SOECPComponent::RealType SOECPComponent::evaluateOneExactSpinIntegration(Particl
 
 void SOECPComponent::mw_evaluateOne(const RefVectorWithLeader<SOECPComponent>& soecp_component_list,
                                     const RefVectorWithLeader<ParticleSet>& p_list,
-                                    const std::optional<const RefVectorWithLeader<VirtualParticleSet>> vp_list,
+                                    const RefVectorWithLeader<VirtualParticleSet>& vp_list,
                                     const RefVectorWithLeader<TrialWaveFunction>& psi_list,
                                     const RefVector<const NLPPJob<RealType>>& joblist,
                                     std::vector<RealType>& pairpots,
                                     ResourceCollection& collection)
 {
-  auto& soecp_component_leader = soecp_component_list.getLeader();
-  if (vp_list)
+  // Compute ratios with VP
+  RefVector<const std::vector<PosType>> deltaV_list;
+  RefVector<const std::vector<RealType>> deltaS_list;
+  RefVector<std::vector<ValueType>> psiratios_list;
+  deltaV_list.reserve(soecp_component_list.size());
+  deltaS_list.reserve(soecp_component_list.size());
+  psiratios_list.reserve(soecp_component_list.size());
+
+  for (size_t i = 0; i < soecp_component_list.size(); i++)
   {
-    // Compute ratios with VP
-    const auto& vp_set_list(*vp_list);
-    RefVector<const std::vector<PosType>> deltaV_list;
-    RefVector<const std::vector<RealType>> deltaS_list;
-    RefVector<std::vector<ValueType>> psiratios_list;
-    deltaV_list.reserve(soecp_component_list.size());
-    deltaS_list.reserve(soecp_component_list.size());
-    psiratios_list.reserve(soecp_component_list.size());
+    SOECPComponent& component(soecp_component_list[i]);
+    const NLPPJob<RealType>& job = joblist[i];
+    const RealType sold          = p_list[i].spins[job.electron_id];
 
-    for (size_t i = 0; i < soecp_component_list.size(); i++)
-    {
-      SOECPComponent& component(soecp_component_list[i]);
-      const NLPPJob<RealType>& job = joblist[i];
-      const RealType sold          = p_list[i].spins[job.electron_id];
+    component.buildTotalQuadrature(job.ion_elec_dist, job.ion_elec_displ, sold);
 
-      component.buildTotalQuadrature(job.ion_elec_dist, job.ion_elec_displ, sold);
-
-      deltaV_list.push_back(component.deltaV_);
-      deltaS_list.push_back(component.deltaS_);
-      psiratios_list.push_back(component.psiratio_);
-    }
-
-    RefVectorWithLeader<const VirtualParticleSet> const_vp_list(vp_set_list.getLeader());
-    const_vp_list.reserve(vp_set_list.size());
-    for (VirtualParticleSet& vp_set : vp_set_list)
-      const_vp_list.push_back(vp_set);
-
-    ResourceCollectionTeamLock<VirtualParticleSet> vp_res_lock(collection, vp_set_list);
-
-    VirtualParticleSet::mw_makeMovesWithSpin(vp_set_list, p_list, deltaV_list, deltaS_list, joblist, true);
-
-    TrialWaveFunction::mw_evaluateRatios(psi_list, const_vp_list, psiratios_list);
+    deltaV_list.push_back(component.deltaV_);
+    deltaS_list.push_back(component.deltaS_);
+    psiratios_list.push_back(component.psiratio_);
   }
-  else
-  {
-    // Compute ratios without VP. Slow
-    for (size_t i = 0; i < p_list.size(); i++)
-    {
-      SOECPComponent& component(soecp_component_list[i]);
-      ParticleSet& W(p_list[i]);
-      TrialWaveFunction& psi(psi_list[i]);
-      const NLPPJob<RealType>& job = joblist[i];
 
-      const RealType sold = W.spins[job.electron_id];
-      component.buildTotalQuadrature(job.ion_elec_dist, job.ion_elec_displ, sold);
+  RefVectorWithLeader<const VirtualParticleSet> const_vp_list(vp_list.getLeader());
+  const_vp_list.reserve(vp_list.size());
+  for (VirtualParticleSet& vp_set : vp_list)
+    const_vp_list.push_back(vp_set);
 
-      for (int j = 0; j < component.total_knots_; j++)
-      {
-        W.makeMoveWithSpin(job.electron_id, component.deltaV_[j], component.deltaS_[j]);
-        component.psiratio_[j] = psi.calcRatio(W, job.electron_id);
-        W.rejectMove(job.electron_id);
-        psi.resetPhaseDiff();
-      }
-    }
-  }
+  ResourceCollectionTeamLock<VirtualParticleSet> vp_res_lock(collection, vp_list);
+
+  VirtualParticleSet::mw_makeMovesWithSpin(vp_list, p_list, deltaV_list, deltaS_list, joblist, true);
+
+  TrialWaveFunction::mw_evaluateRatios(psi_list, const_vp_list, psiratios_list);
 
   for (size_t i = 0; i < p_list.size(); i++)
   {
