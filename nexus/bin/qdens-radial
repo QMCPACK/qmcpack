@@ -27,11 +27,8 @@ try:
     nexus_version = versions.nexus_version
     del versions
 
-    generic = import_nexus_module('generic')
-    obj = generic.obj
-    del generic
-
     developer = import_nexus_module('developer')
+    obj         = developer.obj
     DevBase     = developer.DevBase
     error       = developer.error
     ci          = developer.ci
@@ -50,8 +47,7 @@ try:
     del fileio
 except:
     from versions import nexus_version
-    from generic import obj
-    from developer import DevBase,error,ci,unavailable
+    from developer import DevBase,obj,error,ci,unavailable
     import memory
     from observables import ChargeDensity, vlog
     from fileio import XsfFile

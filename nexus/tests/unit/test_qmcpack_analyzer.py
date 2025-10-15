@@ -12,7 +12,7 @@ def test_import():
 
 
 def test_empty_init():
-    from generic import obj
+    from developer import obj
     from qmcpack_analyzer import QmcpackAnalyzer
 
     qa = QmcpackAnalyzer()
@@ -66,7 +66,7 @@ def test_empty_init():
 
 def test_vmc_dmc_analysis():
     import os
-    from generic import obj
+    from developer import obj
     from qmcpack_analyzer import QmcpackAnalyzer
 
     tpath = testing.setup_unit_test_output_directory(
@@ -239,7 +239,7 @@ def test_vmc_dmc_analysis():
 def test_optimization_analysis():
     import os
     from numpy import array
-    from generic import obj
+    from developer import obj
     from qmcpack_analyzer import QmcpackAnalyzer
     
     tpath = testing.setup_unit_test_output_directory(
@@ -384,7 +384,7 @@ def test_optimization_analysis():
 
 def test_twist_average_analysis():
     import os
-    from generic import obj
+    from developer import obj
     from qmcpack_analyzer import QmcpackAnalyzer
 
     tpath = testing.setup_unit_test_output_directory(
@@ -438,7 +438,7 @@ if versions.h5py_available:
     def test_density_analysis():
         import os
         from numpy import array
-        from generic import obj
+        from developer import obj
         from qmcpack_analyzer import QmcpackAnalyzer
 
         tpath = testing.setup_unit_test_output_directory(

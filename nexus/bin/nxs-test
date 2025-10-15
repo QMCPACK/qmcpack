@@ -35,7 +35,8 @@ for d in dirs_check:
 # enforce association between nxs-test executable and Nexus library
 sys.path.insert(0,library_dir)
 
-from generic import generic_settings,object_interface,NexusError
+from generic import generic_settings
+from developer import object_interface, NexusError
 
 generic_settings.raise_error = True
 
@@ -1886,7 +1887,7 @@ def user_examples(label):
                     # store failing reference files
                     test_failures_file.write(ref_filepath+'\n')
                     # report on failures
-                    from generic import obj
+                    from developer import obj
                     dgen = obj(dgen)
                     dref = obj(dref)
                     msg = 'reference and generated input files differ\n'

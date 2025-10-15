@@ -35,7 +35,7 @@ def test_empty_init():
 
 def test_projwfc_analyzer():
     import os
-    from generic import obj
+    from developer import obj
     from pwscf_postprocessors import ProjwfcAnalyzer
 
     tpath = testing.setup_unit_test_output_directory(

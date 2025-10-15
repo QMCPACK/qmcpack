@@ -33,14 +33,10 @@
 
 import os
 import numpy as np
-from numpy import array,ndarray,abs
-from generic import obj
-from developer import DevBase
-from debug import *
+from developer import obj
 from simulation import Simulation
-from gamess_input import GamessInput,generate_gamess_input,FormattedGroup,KeywordGroup,GuessGroup,GIarray
+from gamess_input import GamessInput, generate_gamess_input, FormattedGroup, GuessGroup, GIarray
 from gamess_analyzer import GamessAnalyzer
-
 
 
 class Gamess(Simulation):
@@ -261,7 +257,6 @@ class Gamess(Simulation):
         return filepath
     #end def
 #end class Gamess
-
 
 
 def generate_gamess(**kwargs):
