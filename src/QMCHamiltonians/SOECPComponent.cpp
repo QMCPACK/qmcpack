@@ -320,7 +320,6 @@ void SOECPComponent::mw_evaluateOneExactSpinIntegration(const RefVectorWithLeade
                                                         ResourceCollection& collection)
 {
 #ifdef QMC_COMPLEX
-  auto& soecp_component_leader = soecp_component_list.getLeader();
   // Compute ratios with VP
   RefVectorWithLeader<const VirtualParticleSet> const_vp_list(vp_list.getLeader());
   RefVector<const std::vector<PosType>> deltaV_list;

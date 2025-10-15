@@ -224,7 +224,6 @@ void NonLocalECPComponent::mw_evaluateOne(const RefVectorWithLeader<NonLocalECPC
 {
   const bool use_TMDLA = (!tmove_xy_all_list.empty()) && use_DLA;
 
-  auto& ecp_component_leader = ecp_component_list.getLeader();
   // Compute ratios with VP
   RefVector<const std::vector<PosType>> deltaV_list;
   RefVector<std::vector<ValueType>> psiratios_list;
