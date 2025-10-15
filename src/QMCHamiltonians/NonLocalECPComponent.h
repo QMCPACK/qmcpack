@@ -115,9 +115,6 @@ private:
   ///The gradient of the wave function w.r.t. the ion position
   ParticleSet::ParticleGradient Gion;
 
-  ///virtual particle set: delayed initialization
-  VirtualParticleSet* VP;
-
   /// Can disable grid randomization for testing
   bool do_randomize_grid_;
 
@@ -177,6 +174,7 @@ public:
    * @return RealType Contribution to $\frac{V\Psi_T}{\Psi_T}$ from ion iat and electron iel.
    */
   RealType evaluateOne(ParticleSet& W,
+                       const OptionalRef<VirtualParticleSet> vp,
                        int iat,
                        TrialWaveFunction& Psi,
                        int iel,
@@ -201,6 +199,7 @@ public:
    */
   static void mw_evaluateOne(const RefVectorWithLeader<NonLocalECPComponent>& ecp_component_list,
                              const RefVectorWithLeader<ParticleSet>& p_list,
+                             const RefVectorWithLeader<VirtualParticleSet>& vp_list,
                              const RefVectorWithLeader<TrialWaveFunction>& psi_list,
                              const RefVector<const NLPPJob<RealType>>& joblist,
                              std::vector<RealType>& pairpots,
@@ -222,6 +221,7 @@ public:
    * @return RealType Contribution to $\frac{V\Psi_T}{\Psi_T}$ from ion iat and electron iel.
    */
   RealType evaluateOneWithForces(ParticleSet& W,
+                                 const OptionalRef<VirtualParticleSet> vp,
                                  int iat,
                                  TrialWaveFunction& Psi,
                                  int iel,
@@ -245,6 +245,7 @@ public:
    * @return RealType Contribution to $\frac{V\Psi_T}{\Psi_T}$ from ion iat and electron iel.
    */
   RealType evaluateOneWithForces(ParticleSet& W,
+                                 const OptionalRef<VirtualParticleSet> vp,
                                  ParticleSet& ions,
                                  int iat,
                                  TrialWaveFunction& Psi,
@@ -256,6 +257,7 @@ public:
 
   // This function needs to be updated to SoA. myTableIndex is introduced temporarily.
   RealType evaluateValueAndDerivatives(ParticleSet& P,
+                                       const OptionalRef<VirtualParticleSet> vp,
                                        int iat,
                                        TrialWaveFunction& psi,
                                        int iel,
@@ -313,15 +315,11 @@ public:
 
   void print(std::ostream& os);
 
-  void initVirtualParticle(const ParticleSet& qp);
-  void deleteVirtualParticle();
-
   inline void setRmax(int rmax) { Rmax = rmax; }
   inline RealType getRmax() const { return Rmax; }
   inline int getNknot() const { return nknot; }
   inline void setLmax(int Lmax) { lmax = Lmax; }
   inline int getLmax() const { return lmax; }
-  const VirtualParticleSet* getVP() const { return VP; };
 
   // copy sgridxyz_m to rrotsgrid_m without rotation. For testing only.
   friend void copyGridUnrotatedForTest(NonLocalECPComponent& nlpp);

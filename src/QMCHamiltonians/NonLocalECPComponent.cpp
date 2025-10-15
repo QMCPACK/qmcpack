@@ -22,9 +22,7 @@
 
 namespace qmcplusplus
 {
-NonLocalECPComponent::NonLocalECPComponent()
-    : lmax(0), nchannel(0), nknot(0), Rmax(-1), VP(nullptr), do_randomize_grid_(true)
-{}
+NonLocalECPComponent::NonLocalECPComponent() : lmax(0), nchannel(0), nknot(0), Rmax(-1), do_randomize_grid_(true) {}
 
 // unfortunately we continue the sloppy use of the default copy constructor followed by reassigning pointers.
 // This prevents use of smart pointers and concievably sets us up for trouble with double frees and the destructor.
@@ -33,34 +31,15 @@ NonLocalECPComponent::NonLocalECPComponent(const NonLocalECPComponent& nl_ecpc, 
 {
   for (int i = 0; i < nl_ecpc.nlpp_m.size(); ++i)
     nlpp_m[i] = nl_ecpc.nlpp_m[i]->makeClone();
-  if (nl_ecpc.VP)
-    VP = new VirtualParticleSet(pset, nknot, nl_ecpc.VP->getNumDistTables());
 }
 
 NonLocalECPComponent::~NonLocalECPComponent()
 {
   for (int ip = 0; ip < nlpp_m.size(); ip++)
     delete nlpp_m[ip];
-  if (VP)
-    delete VP;
 }
 
 void NonLocalECPComponent::set_randomize_grid(bool do_randomize_grid) { do_randomize_grid_ = do_randomize_grid; }
-
-void NonLocalECPComponent::initVirtualParticle(const ParticleSet& qp)
-{
-  assert(VP == 0);
-  outputManager.pause();
-  VP = new VirtualParticleSet(qp, nknot);
-  outputManager.resume();
-}
-
-void NonLocalECPComponent::deleteVirtualParticle()
-{
-  if (VP)
-    delete VP;
-  VP = nullptr;
-}
 
 void NonLocalECPComponent::add(int l, RadialPotentialType* pp)
 {
@@ -128,6 +107,7 @@ void NonLocalECPComponent::print(std::ostream& os)
 }
 
 NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOne(ParticleSet& W,
+                                                                 const OptionalRef<VirtualParticleSet> vp,
                                                                  int iat,
                                                                  TrialWaveFunction& psi,
                                                                  int iel,
@@ -140,21 +120,22 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOne(ParticleSet& W,
 
   const bool use_TMDLA = tmove_xy && use_DLA;
 
-  if (VP)
+  if (vp)
   {
+    VirtualParticleSet& vp_set(*vp);
     // Compute ratios with VP
-    VP->makeMoves(W, iel, deltaV, true, iat);
+    vp_set.makeMoves(W, iel, deltaV, true, iat);
     if (use_TMDLA)
     {
-      psi.evaluateRatios(*VP, psiratio_det, TrialWaveFunction::ComputeType::FERMIONIC);
-      psi.evaluateRatios(*VP, psiratio, TrialWaveFunction::ComputeType::NONFERMIONIC);
+      psi.evaluateRatios(vp_set, psiratio_det, TrialWaveFunction::ComputeType::FERMIONIC);
+      psi.evaluateRatios(vp_set, psiratio, TrialWaveFunction::ComputeType::NONFERMIONIC);
       for (int j = 0; j < nknot; j++)
         psiratio[j] *= psiratio_det[j];
     }
     else if (use_DLA)
-      psi.evaluateRatios(*VP, psiratio, TrialWaveFunction::ComputeType::FERMIONIC);
+      psi.evaluateRatios(vp_set, psiratio, TrialWaveFunction::ComputeType::FERMIONIC);
     else
-      psi.evaluateRatios(*VP, psiratio);
+      psi.evaluateRatios(vp_set, psiratio);
   }
   else
   {
@@ -233,6 +214,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::calculatePotential(RealType
 
 void NonLocalECPComponent::mw_evaluateOne(const RefVectorWithLeader<NonLocalECPComponent>& ecp_component_list,
                                           const RefVectorWithLeader<ParticleSet>& p_list,
+                                          const RefVectorWithLeader<VirtualParticleSet>& vp_list,
                                           const RefVectorWithLeader<TrialWaveFunction>& psi_list,
                                           const RefVector<const NLPPJob<RealType>>& joblist,
                                           std::vector<RealType>& pairpots,
@@ -242,90 +224,54 @@ void NonLocalECPComponent::mw_evaluateOne(const RefVectorWithLeader<NonLocalECPC
 {
   const bool use_TMDLA = (!tmove_xy_all_list.empty()) && use_DLA;
 
-  auto& ecp_component_leader = ecp_component_list.getLeader();
-  if (ecp_component_leader.VP)
+  // Compute ratios with VP
+  RefVector<const std::vector<PosType>> deltaV_list;
+  RefVector<std::vector<ValueType>> psiratios_list;
+  RefVector<std::vector<ValueType>> psiratios_det_list;
+  deltaV_list.reserve(ecp_component_list.size());
+  psiratios_list.reserve(ecp_component_list.size());
+  psiratios_det_list.reserve(ecp_component_list.size());
+
+  for (size_t i = 0; i < ecp_component_list.size(); i++)
   {
-    // Compute ratios with VP
-    RefVectorWithLeader<VirtualParticleSet> vp_list(*ecp_component_leader.VP);
-    RefVectorWithLeader<const VirtualParticleSet> const_vp_list(*ecp_component_leader.VP);
-    RefVector<const std::vector<PosType>> deltaV_list;
-    RefVector<std::vector<ValueType>> psiratios_list;
-    RefVector<std::vector<ValueType>> psiratios_det_list;
-    vp_list.reserve(ecp_component_list.size());
-    const_vp_list.reserve(ecp_component_list.size());
-    deltaV_list.reserve(ecp_component_list.size());
-    psiratios_list.reserve(ecp_component_list.size());
-    psiratios_det_list.reserve(ecp_component_list.size());
+    NonLocalECPComponent& component(ecp_component_list[i]);
+    const NLPPJob<RealType>& job = joblist[i];
 
-    for (size_t i = 0; i < ecp_component_list.size(); i++)
-    {
-      NonLocalECPComponent& component(ecp_component_list[i]);
-      const NLPPJob<RealType>& job = joblist[i];
+    component.buildQuadraturePointDeltaPositions(job.ion_elec_dist, job.ion_elec_displ, component.deltaV);
 
-      component.buildQuadraturePointDeltaPositions(job.ion_elec_dist, job.ion_elec_displ, component.deltaV);
-
-      vp_list.push_back(*component.VP);
-      const_vp_list.push_back(*component.VP);
-      deltaV_list.push_back(component.deltaV);
-      psiratios_list.push_back(component.psiratio);
-      psiratios_det_list.push_back(component.psiratio_det);
-    }
-
-    ResourceCollectionTeamLock<VirtualParticleSet> vp_res_lock(collection, vp_list);
-
-    VirtualParticleSet::mw_makeMoves(vp_list, p_list, deltaV_list, joblist, true);
-
-    if (use_TMDLA)
-    {
-      TrialWaveFunction::mw_evaluateRatios(psi_list, const_vp_list, psiratios_det_list,
-                                           TrialWaveFunction::ComputeType::FERMIONIC);
-      TrialWaveFunction::mw_evaluateRatios(psi_list, const_vp_list, psiratios_list,
-                                           TrialWaveFunction::ComputeType::NONFERMIONIC);
-      for (size_t i = 0; i < psiratios_list.size(); i++)
-      {
-        std::vector<ValueType>& psiratios           = psiratios_list[i];
-        const std::vector<ValueType>& psiratios_det = psiratios_det_list[i];
-        for (int j = 0; j < psiratios.size(); j++)
-          psiratios[j] *= psiratios_det[j];
-      }
-    }
-    else if (use_DLA)
-      TrialWaveFunction::mw_evaluateRatios(psi_list, const_vp_list, psiratios_list,
-                                           TrialWaveFunction::ComputeType::FERMIONIC);
-    else
-      TrialWaveFunction::mw_evaluateRatios(psi_list, const_vp_list, psiratios_list);
+    deltaV_list.push_back(component.deltaV);
+    psiratios_list.push_back(component.psiratio);
+    psiratios_det_list.push_back(component.psiratio_det);
   }
+
+  RefVectorWithLeader<const VirtualParticleSet> const_vp_list(vp_list.getLeader());
+  const_vp_list.reserve(vp_list.size());
+  for (VirtualParticleSet& vp_set : vp_list)
+    const_vp_list.push_back(vp_set);
+
+  ResourceCollectionTeamLock<VirtualParticleSet> vp_res_lock(collection, vp_list);
+
+  VirtualParticleSet::mw_makeMoves(vp_list, p_list, deltaV_list, joblist, true);
+
+  if (use_TMDLA)
+  {
+    TrialWaveFunction::mw_evaluateRatios(psi_list, const_vp_list, psiratios_det_list,
+                                         TrialWaveFunction::ComputeType::FERMIONIC);
+    TrialWaveFunction::mw_evaluateRatios(psi_list, const_vp_list, psiratios_list,
+                                         TrialWaveFunction::ComputeType::NONFERMIONIC);
+    for (size_t i = 0; i < psiratios_list.size(); i++)
+    {
+      std::vector<ValueType>& psiratios           = psiratios_list[i];
+      const std::vector<ValueType>& psiratios_det = psiratios_det_list[i];
+      for (int j = 0; j < psiratios.size(); j++)
+        psiratios[j] *= psiratios_det[j];
+    }
+  }
+  else if (use_DLA)
+    TrialWaveFunction::mw_evaluateRatios(psi_list, const_vp_list, psiratios_list,
+                                         TrialWaveFunction::ComputeType::FERMIONIC);
   else
-  {
-    // Compute ratios without VP. This is working but very slow code path.
-    for (size_t i = 0; i < p_list.size(); i++)
-    {
-      NonLocalECPComponent& component(ecp_component_list[i]);
-      ParticleSet& W(p_list[i]);
-      TrialWaveFunction& psi(psi_list[i]);
-      const NLPPJob<RealType>& job = joblist[i];
-
-      component.buildQuadraturePointDeltaPositions(job.ion_elec_dist, job.ion_elec_displ, component.deltaV);
-
-      // Compute ratio of wave functions
-      for (int j = 0; j < component.getNknot(); j++)
-      {
-        W.makeMove(job.electron_id, component.deltaV[j], false);
-        if (use_TMDLA)
-        {
-          component.psiratio_det[j] = psi.calcRatio(W, job.electron_id, TrialWaveFunction::ComputeType::FERMIONIC);
-          component.psiratio[j]     = component.psiratio_det[j] *
-              psi.calcRatio(W, job.electron_id, TrialWaveFunction::ComputeType::NONFERMIONIC);
-        }
-        if (use_DLA)
-          component.psiratio[j] = psi.calcRatio(W, job.electron_id, TrialWaveFunction::ComputeType::FERMIONIC);
-        else
-          component.psiratio[j] = psi.calcRatio(W, job.electron_id);
-        W.rejectMove(job.electron_id);
-        psi.resetPhaseDiff();
-      }
-    }
-  }
+    TrialWaveFunction::mw_evaluateRatios(psi_list, const_vp_list, psiratios_list);
 
   if (!tmove_xy_all_list.empty())
     assert(tmove_xy_all_list.size() == ecp_component_list.size());
@@ -341,6 +287,7 @@ void NonLocalECPComponent::mw_evaluateOne(const RefVectorWithLeader<NonLocalECPC
 }
 
 NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(ParticleSet& W,
+                                                                           const OptionalRef<VirtualParticleSet> vp,
                                                                            int iat,
                                                                            TrialWaveFunction& psi,
                                                                            int iel,
@@ -372,12 +319,13 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
   // term coming from dependence of quadrature grid on ion position.
   PosType gradwfnterm_(0);
 
-  if (VP)
+  if (vp)
   {
     APP_ABORT("NonLocalECPComponent::evaluateOneWithForces(...): Forces not implemented with virtual particle moves\n");
+    VirtualParticleSet& vp_set(*vp);
     // Compute ratios with VP
-    VP->makeMoves(W, iel, deltaV, true, iat);
-    psi.evaluateRatios(*VP, psiratio);
+    vp_set.makeMoves(W, iel, deltaV, true, iat);
+    psi.evaluateRatios(vp_set, psiratio);
   }
   else
   {
@@ -475,6 +423,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
 }
 
 NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(ParticleSet& W,
+                                                                           const OptionalRef<VirtualParticleSet> vp,
                                                                            ParticleSet& ions,
                                                                            int iat,
                                                                            TrialWaveFunction& psi,
@@ -522,12 +471,13 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
   for (size_t j = 0; j < nknot; j++)
     pulay_quad[j].resize(ions.getTotalNum());
 
-  if (VP)
+  if (vp)
   {
     APP_ABORT("NonLocalECPComponent::evaluateOneWithForces(...): Forces not implemented with virtual particle moves\n");
+    VirtualParticleSet& vp_set(*vp);
     // Compute ratios with VP
-    VP->makeMoves(W, iel, deltaV, true, iat);
-    psi.evaluateRatios(*VP, psiratio);
+    vp_set.makeMoves(W, iel, deltaV, true, iat);
+    psi.evaluateRatios(vp_set, psiratio);
   }
   else
   {

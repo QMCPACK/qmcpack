@@ -541,6 +541,7 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
     // The random particle placement step executes after this part of the code, overwriting
     // the leftover positions from the cusp initialization.
     ParticleSet tmp_targetPtcl(targetPtcl);
+    tmp_targetPtcl.update();
 
     const int num_centers = sourcePtcl.getTotalNum();
     auto& lcwc            = dynamic_cast<LCAOrbitalSetWithCorrection&>(*sposet);

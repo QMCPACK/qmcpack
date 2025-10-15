@@ -31,7 +31,8 @@ class SOECPotential : public OperatorBase
   using Real = QMCTraits::RealType;
 
 public:
-  SOECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi, bool use_exact_spin);
+  SOECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi, bool use_exact_spin, bool use_VP);
+  SOECPotential(const SOECPotential& sopp, ParticleSet& els, TrialWaveFunction& psi);
   ~SOECPotential() override;
 
   bool dependsOnWaveFunction() const override { return true; }
@@ -92,6 +93,8 @@ protected:
                               bool keep_grid = false);
 
 private:
+  ///virtual particle set
+  const std::unique_ptr<VirtualParticleSet> vp_;
   ///number of ions
   int num_ions_;
   ///index of distance table for ion-el pair

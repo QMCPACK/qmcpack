@@ -118,7 +118,7 @@ void test_DiracDeterminant_first(const DetMatInvertor inverter_kind)
 
   CHECK(std::real(ratio_0) == Approx(-0.5343861437));
 
-  VirtualParticleSet VP(elec, 2);
+  VirtualParticleSet VP(elec);
   std::vector<Pos> newpos2(2);
   std::vector<Value> ratios2(2);
   newpos2[0] = newpos - elec.R[1];

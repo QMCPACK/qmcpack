@@ -146,7 +146,7 @@ void MagnetizationDensity::generateSpinIntegrand(ParticleSet& pset_target,
   for (int samp = 0; samp < nsamples_; samp++)
     ds[samp] = sgrid[samp] - pset_target.spins[iat];
 
-  VirtualParticleSet vp(pset_target, nsamples_);
+  VirtualParticleSet vp(pset_target);
   std::vector<Position> dV(nsamples_, 0);
   vp.makeMovesWithSpin(pset_target, iat, dV, ds);
   psi_target.evaluateRatios(vp, ratios);

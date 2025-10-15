@@ -131,7 +131,7 @@ TEST_CASE("NonLocalECPotential", "[hamiltonian]")
   TrialWaveFunction psi2(runtime_options);
   RefVectorWithLeader<TrialWaveFunction> twf_list(psi, {psi, psi2});
 
-  NonLocalECPotential nl_ecp(ions, elec, psi, false /*use_DLA*/);
+  NonLocalECPotential nl_ecp(ions, elec, psi, false /*use_DLA*/, false /*use_VP*/);
 
   int num_walkers = 2;
   int max_values  = 10;
