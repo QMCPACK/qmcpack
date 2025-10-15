@@ -209,9 +209,9 @@ void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool compute_txy_all, boo
     Vi_samp = 0.0;
   }
 #endif
-  for (int ipp = 0; ipp < PPset.size(); ipp++)
-    if (PPset[ipp])
-      if (!keep_grid)
+  if (!keep_grid)
+    for (int ipp = 0; ipp < PPset.size(); ipp++)
+      if (PPset[ipp])
         PPset[ipp]->rotateQuadratureGrid(generateRandomRotationMatrix(*myRNG));
 
   //loop over all the ions
