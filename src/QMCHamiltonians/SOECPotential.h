@@ -13,7 +13,6 @@
 #define QMCPLUSPLUS_SO_ECPOTENTIAL_H
 
 #include "QMCHamiltonians/SOECPComponent.h"
-#include "Particle/NeighborLists.h"
 
 namespace qmcplusplus
 {
@@ -101,10 +100,6 @@ private:
   int my_table_index_;
   ///reference to the electrons
   ParticleSet& peln_;
-  ///neighborlist of electrons
-  NeighborLists elec_neighbor_ions_;
-  ///neighborlist of ions
-  NeighborLists ion_neighbor_elecs_;
   //job list for evaluation
   std::vector<std::vector<NLPPJob<RealType>>> sopp_jobs_;
   //multi walker resource

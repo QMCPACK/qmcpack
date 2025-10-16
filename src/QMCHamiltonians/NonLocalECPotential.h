@@ -20,7 +20,7 @@
 #include "Configuration.h"
 #include "QMCHamiltonians/ForceBase.h"
 #include "QMCHamiltonians/OperatorBase.h"
-#include "Particle/NeighborLists.h"
+#include "NeighborListsForPseudo.h"
 #include "type_traits/OptionalRef.hpp"
 
 namespace qmcplusplus
@@ -176,10 +176,8 @@ private:
   int myTableIndex;
   ///reference to the electrons
   ParticleSet& Peln;
-  ///neighborlist of electrons
-  NeighborLists ElecNeighborIons;
-  ///neighborlist of ions
-  NeighborLists IonNeighborElecs;
+  ///neighbor lists for marking electrons touched by T-moves
+  NeighborListsForPseudo neighbor_lists;
   ///ture if an electron is affected by other electrons moved by T-moves
   std::vector<bool> elecTMAffected;
   ///Pulay force vector
@@ -211,13 +209,6 @@ private:
    * @param tmove_xy off-diagonal terms for one electron.
    */
   void computeOneElectronTxy(ParticleSet& P, const int ref_elec, std::vector<NonLocalData>& tmove_xy);
-
-  /** mark all the electrons affected by Tmoves and update ElecNeighborIons and IonNeighborElecs
-   * @param myTable electron ion distance table
-   * @param iel reference electron
-   * Note this function should be called before acceptMove for a Tmove
-   */
-  void markAffectedElecs(const DistanceTableAB& myTable, int iel);
 
   friend class testing::TestNonLocalECPotential;
 };
