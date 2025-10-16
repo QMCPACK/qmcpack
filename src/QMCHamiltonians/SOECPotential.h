@@ -94,8 +94,6 @@ protected:
 private:
   ///virtual particle set
   const std::unique_ptr<VirtualParticleSet> vp_;
-  ///number of ions
-  int num_ions_;
   ///index of distance table for ion-el pair
   int my_table_index_;
   //job list for evaluation

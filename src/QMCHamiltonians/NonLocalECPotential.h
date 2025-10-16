@@ -170,8 +170,6 @@ protected:
 private:
   ///virtual particle set
   const std::unique_ptr<VirtualParticleSet> vp_;
-  ///number of ions
-  int NumIons;
   ///index of distance table for the ion-el pair
   int myTableIndex;
   ///reference to the electrons

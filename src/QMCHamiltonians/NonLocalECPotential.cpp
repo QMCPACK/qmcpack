@@ -67,13 +67,12 @@ NonLocalECPotential::NonLocalECPotential(ParticleSet& ions,
 {
   setEnergyDomain(POTENTIAL);
   twoBodyQuantumDomain(IonConfig, els);
-  myTableIndex = els.addTable(IonConfig);
-  NumIons      = IonConfig.getTotalNum();
-  //els.resizeSphere(NumIons);
-  PP.resize(NumIons, nullptr);
+  myTableIndex  = els.addTable(IonConfig);
+  auto num_ions = IonConfig.getTotalNum();
+  PP.resize(num_ions, nullptr);
   prefix_ = "FNL";
   PPset.resize(IonConfig.getSpeciesSet().getTotalNum());
-  PulayTerm.resize(NumIons);
+  PulayTerm.resize(num_ions);
   update_mode_.set(NONLOCAL, 1);
   nlpp_jobs.resize(els.groups());
   for (size_t ig = 0; ig < els.groups(); ig++)
@@ -95,13 +94,12 @@ NonLocalECPotential::NonLocalECPotential(const NonLocalECPotential& nlpp, Partic
 {
   setEnergyDomain(POTENTIAL);
   twoBodyQuantumDomain(IonConfig, els);
-  myTableIndex = els.addTable(IonConfig);
-  NumIons      = IonConfig.getTotalNum();
-  //els.resizeSphere(NumIons);
-  PP.resize(NumIons, nullptr);
+  myTableIndex  = els.addTable(IonConfig);
+  auto num_ions = IonConfig.getTotalNum();
+  PP.resize(num_ions, nullptr);
   prefix_ = "FNL";
   PPset.resize(IonConfig.getSpeciesSet().getTotalNum());
-  PulayTerm.resize(NumIons);
+  PulayTerm.resize(num_ions);
   update_mode_.set(NONLOCAL, 1);
   nlpp_jobs.resize(els.groups());
   for (size_t ig = 0; ig < els.groups(); ig++)
@@ -222,7 +220,7 @@ void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool compute_txy_all, boo
     {
       const auto& dist  = myTable.getDistRow(jel);
       const auto& displ = myTable.getDisplRow(jel);
-      for (int iat = 0; iat < NumIons; iat++)
+      for (int iat = 0; iat < PP.size(); iat++)
         if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
         {
           Real pairpot =
@@ -303,7 +301,7 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
       {
         const auto& dist  = myTable.getDistRow(jel);
         const auto& displ = myTable.getDisplRow(jel);
-        for (int iat = 0; iat < O.NumIons; iat++)
+        for (int iat = 0; iat < O.PP.size(); iat++)
           if (O.PP[iat] != nullptr && dist[iat] < O.PP[iat]->getRmax())
           {
             O.neighbor_lists.addElecIonPair(jel, iat);
@@ -450,7 +448,7 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
     for (int iw = 0; iw < nw; ++iw)
     {
       Vector<Real> ve_sample(ve_samples.begin(iw), num_electrons);
-      Vector<Real> vi_sample(vi_samples.begin(iw), O_leader.NumIons);
+      Vector<Real> vi_sample(vi_samples.begin(iw), O_leader.IonConfig.getTotalNum());
       for (const ListenerVector<Real>& listener : listeners->electron_values)
         listener.report(iw, O_leader.getName(), ve_sample);
 
@@ -482,7 +480,7 @@ void NonLocalECPotential::evaluateIonDerivs(ParticleSet& P,
     {
       const auto& dist  = myTable.getDistRow(jel);
       const auto& displ = myTable.getDisplRow(jel);
-      for (int iat = 0; iat < NumIons; iat++)
+      for (int iat = 0; iat < PP.size(); iat++)
         if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
           value_ +=
               PP[iat]->evaluateOneWithForces(P, vp_ ? makeOptionalRef<VirtualParticleSet>(*vp_) : std::nullopt, ions,
@@ -522,7 +520,7 @@ void NonLocalECPotential::evaluateOneBodyOpMatrix(ParticleSet& P,
     {
       const auto& dist  = myTable.getDistRow(jel);
       const auto& displ = myTable.getDisplRow(jel);
-      for (int iat = 0; iat < NumIons; iat++)
+      for (int iat = 0; iat < PP.size(); iat++)
         if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
           PP[iat]->evaluateOneBodyOpMatrixContribution(P, iat, psi, jel, dist[iat], -displ[iat], B);
     }
@@ -548,7 +546,7 @@ void NonLocalECPotential::evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P,
     {
       const auto& dist  = myTable.getDistRow(jel);
       const auto& displ = myTable.getDisplRow(jel);
-      for (int iat = 0; iat < NumIons; iat++)
+      for (int iat = 0; iat < PP.size(); iat++)
         if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
           PP[iat]->evaluateOneBodyOpMatrixdRContribution(P, source, iat, iat_source, psi, jel, dist[iat], -displ[iat],
                                                          Bforce);

@@ -38,7 +38,7 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateValueAndDerivatives(P
   {
     const auto& dist  = myTable.getDistRow(jel);
     const auto& displ = myTable.getDisplRow(jel);
-    for (int iat = 0; iat < NumIons; iat++)
+    for (int iat = 0; iat < PP.size(); iat++)
       if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
         value_ +=
             PP[iat]->evaluateValueAndDerivatives(P, vp_ ? makeOptionalRef<VirtualParticleSet>(*vp_) : std::nullopt,

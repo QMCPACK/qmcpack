@@ -54,8 +54,7 @@ SOECPotential::SOECPotential(ParticleSet& ions,
   setEnergyDomain(POTENTIAL);
   twoBodyQuantumDomain(ion_config_, els);
   my_table_index_ = els.addTable(ion_config_);
-  num_ions_       = ion_config_.getTotalNum();
-  pp_.resize(num_ions_, nullptr);
+  pp_.resize(ion_config_.getTotalNum(), nullptr);
   ppset_.resize(ion_config_.getSpeciesSet().getTotalNum());
   sopp_jobs_.resize(els.groups());
   for (size_t ig = 0; ig < els.groups(); ig++)
@@ -72,8 +71,7 @@ SOECPotential::SOECPotential(const SOECPotential& sopp, ParticleSet& els, TrialW
   setEnergyDomain(POTENTIAL);
   twoBodyQuantumDomain(ion_config_, els);
   my_table_index_ = els.addTable(ion_config_);
-  num_ions_       = ion_config_.getTotalNum();
-  pp_.resize(num_ions_, nullptr);
+  pp_.resize(ion_config_.getTotalNum(), nullptr);
   ppset_.resize(ion_config_.getSpeciesSet().getTotalNum());
   sopp_jobs_.resize(els.groups());
   for (size_t ig = 0; ig < els.groups(); ig++)
@@ -113,7 +111,7 @@ void SOECPotential::evaluateImpl(ParticleSet& P, bool keep_grid)
   {
     const auto& dist  = ble.getDistRow(jel);
     const auto& displ = ble.getDisplRow(jel);
-    for (int iat = 0; iat < num_ions_; iat++)
+    for (int iat = 0; iat < pp_.size(); iat++)
       if (pp_[iat] != nullptr && dist[iat] < pp_[iat]->getRmax())
         value_ += use_exact_spin_
             ? pp_[iat]->evaluateOneExactSpinIntegration(P, *vp_, iat, psi_, jel, dist[iat], -displ[iat])
@@ -137,7 +135,7 @@ SOECPotential::Return_t SOECPotential::evaluateValueAndDerivatives(ParticleSet& 
   {
     const auto& dist  = ble.getDistRow(jel);
     const auto& displ = ble.getDisplRow(jel);
-    for (int iat = 0; iat < num_ions_; iat++)
+    for (int iat = 0; iat < pp_.size(); iat++)
       if (pp_[iat] != nullptr && dist[iat] < pp_[iat]->getRmax())
       {
         if (use_exact_spin_)
@@ -204,7 +202,7 @@ void SOECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& o_l
       {
         const auto& dist  = ble.getDistRow(jel);
         const auto& displ = ble.getDisplRow(jel);
-        for (size_t iat = 0; iat < O.num_ions_; iat++)
+        for (size_t iat = 0; iat < O.pp_.size(); iat++)
           if (O.pp_[iat] != nullptr && dist[iat] < O.pp_[iat]->getRmax())
             joblist.emplace_back(iat, jel, dist[iat], -displ[iat]);
       }
@@ -315,7 +313,7 @@ void SOECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& o_l
     for (int iw = 0; iw < nw; iw++)
     {
       Vector<Real> ve_sample(ve_samples.begin(iw), num_electrons);
-      Vector<Real> vi_sample(vi_samples.begin(iw), O_leader.num_ions_);
+      Vector<Real> vi_sample(vi_samples.begin(iw), O_leader.ion_config_.getTotalNum());
       for (const ListenerVector<Real>& listener : listeners->electron_values)
         listener.report(iw, O_leader.getName(), ve_sample);
       for (const ListenerVector<Real>& listener : listeners->ion_values)
