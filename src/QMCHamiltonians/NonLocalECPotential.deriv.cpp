@@ -76,25 +76,20 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
   dratio.resize(nknot, num_vars);
   dlogpsi_vp.resize(dlogpsi.size());
 
-  deltaV.resize(nknot);
-
-  //displacements wrt W.R[iel]
-  for (int j = 0; j < nknot; j++)
-    deltaV[j] = r * rrotsgrid_m[j] - dr;
+  buildQuadraturePointDeltaPosAndPartialPotential(r, dr, deltaV_, knot_pots_);
 
   if (vp)
   {
     VirtualParticleSet& vp_set(*vp);
     // Compute ratios with VP
-    vp_set.makeMoves(W, iel, deltaV, true, iat);
+    vp_set.makeMoves(W, iel, deltaV_, true, iat);
     psi.evaluateDerivRatios(vp_set, optvars, psiratio, dratio);
   }
   else
   {
     for (int j = 0; j < nknot; j++)
     {
-      PosType pos_now = W.R[iel];
-      W.makeMove(iel, deltaV[j]);
+      W.makeMove(iel, deltaV_[j]);
       psiratio[j] = psi.calcRatio(W, iel);
       psi.acceptMove(W, iel);
       W.acceptMove(iel);
@@ -105,39 +100,17 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
       for (int v = 0; v < dlogpsi_vp.size(); ++v)
         dratio(j, v) = dlogpsi_vp[v] - dlogpsi[v];
 
-      W.makeMove(iel, -deltaV[j]);
+      W.makeMove(iel, -deltaV_[j]);
       psi.calcRatio(W, iel);
       psi.acceptMove(W, iel);
       W.acceptMove(iel);
     }
   }
 
-  for (int j = 0; j < nknot; ++j)
-    psiratio[j] *= sgridweight_m[j];
-
-  for (int ip = 0; ip < nchannel; ip++)
-    vrad[ip] = nlpp_m[ip]->splint(r) * wgt_angpp_m[ip];
-
   RealType pairpot(0);
-  const RealType rinv = RealType(1) / r;
-  // Compute spherical harmonics on grid
-  for (int j = 0, jl = 0; j < nknot; j++)
+  for (int j = 0; j < nknot; j++)
   {
-    RealType zz = dot(dr, rrotsgrid_m[j]) * rinv;
-    // Forming the Legendre polynomials
-    lpol[0]           = 1.0;
-    RealType lpolprev = 0.0;
-    for (int l = 0; l < lmax; l++)
-    {
-      lpol[l + 1] = (Lfactor1[l] * zz * lpol[l] - l * lpolprev) * Lfactor2[l];
-      lpolprev    = lpol[l];
-    }
-
-    RealType lsum = 0.0;
-    for (int l = 0; l < nchannel; l++)
-      lsum += vrad[l] * lpol[angpp_m[l]];
-
-    wvec[j] = lsum * psiratio[j];
+    wvec[j] = knot_pots_[j] * psiratio[j];
     pairpot += std::real(wvec[j]);
   }
 
