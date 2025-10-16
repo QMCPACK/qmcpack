@@ -49,16 +49,12 @@ SOECPotential::SOECPotential(ParticleSet& ions,
       ion_config_(ions),
       psi_(psi),
       vp_(use_VP ? std::make_unique<VirtualParticleSet>(els) : nullptr),
-      peln_(els),
-      elec_neighbor_ions_(els),
-      ion_neighbor_elecs_(ions),
       use_exact_spin_(use_exact_spin)
 {
   setEnergyDomain(POTENTIAL);
   twoBodyQuantumDomain(ion_config_, els);
   my_table_index_ = els.addTable(ion_config_);
-  num_ions_       = ion_config_.getTotalNum();
-  pp_.resize(num_ions_, nullptr);
+  pp_.resize(ion_config_.getTotalNum(), nullptr);
   ppset_.resize(ion_config_.getSpeciesSet().getTotalNum());
   sopp_jobs_.resize(els.groups());
   for (size_t ig = 0; ig < els.groups(); ig++)
@@ -70,16 +66,12 @@ SOECPotential::SOECPotential(const SOECPotential& sopp, ParticleSet& els, TrialW
       ion_config_(sopp.ion_config_),
       psi_(psi),
       vp_(sopp.vp_ ? std::make_unique<VirtualParticleSet>(els, sopp.vp_->getNumDistTables()) : nullptr),
-      peln_(els),
-      elec_neighbor_ions_(els),
-      ion_neighbor_elecs_(sopp.ion_config_),
       use_exact_spin_(sopp.use_exact_spin_)
 {
   setEnergyDomain(POTENTIAL);
   twoBodyQuantumDomain(ion_config_, els);
   my_table_index_ = els.addTable(ion_config_);
-  num_ions_       = ion_config_.getTotalNum();
-  pp_.resize(num_ions_, nullptr);
+  pp_.resize(ion_config_.getTotalNum(), nullptr);
   ppset_.resize(ion_config_.getSpeciesSet().getTotalNum());
   sopp_jobs_.resize(els.groups());
   for (size_t ig = 0; ig < els.groups(); ig++)
@@ -114,29 +106,17 @@ void SOECPotential::evaluateImpl(ParticleSet& P, bool keep_grid)
         ppset_[ipp]->rotateQuadratureGrid(generateRandomRotationMatrix(*my_rng_));
 
   const auto& ble = P.getDistTableAB(my_table_index_);
-  for (int iat = 0; iat < num_ions_; iat++)
-    ion_neighbor_elecs_.getNeighborList(iat).clear();
-  for (int jel = 0; jel < P.getTotalNum(); jel++)
-    elec_neighbor_ions_.getNeighborList(jel).clear();
 
   for (int jel = 0; jel < P.getTotalNum(); jel++)
   {
-    const auto& dist               = ble.getDistRow(jel);
-    const auto& displ              = ble.getDisplRow(jel);
-    std::vector<int>& NeighborIons = elec_neighbor_ions_.getNeighborList(jel);
-    for (int iat = 0; iat < num_ions_; iat++)
+    const auto& dist  = ble.getDistRow(jel);
+    const auto& displ = ble.getDisplRow(jel);
+    for (int iat = 0; iat < pp_.size(); iat++)
       if (pp_[iat] != nullptr && dist[iat] < pp_[iat]->getRmax())
-      {
-        RealType pairpot = 0;
-        if (use_exact_spin_)
-          pairpot = pp_[iat]->evaluateOneExactSpinIntegration(P, *vp_, iat, psi_, jel, dist[iat], -displ[iat]);
-        else
-          pairpot = pp_[iat]->evaluateOne(P, vp_ ? makeOptionalRef<VirtualParticleSet>(*vp_) : std::nullopt, iat, psi_,
-                                          jel, dist[iat], -displ[iat]);
-        value_ += pairpot;
-        NeighborIons.push_back(iat);
-        ion_neighbor_elecs_.getNeighborList(iat).push_back(jel);
-      }
+        value_ += use_exact_spin_
+            ? pp_[iat]->evaluateOneExactSpinIntegration(P, *vp_, iat, psi_, jel, dist[iat], -displ[iat])
+            : pp_[iat]->evaluateOne(P, vp_ ? makeOptionalRef<VirtualParticleSet>(*vp_) : std::nullopt, iat, psi_, jel,
+                                    dist[iat], -displ[iat]);
   }
 }
 
@@ -155,7 +135,7 @@ SOECPotential::Return_t SOECPotential::evaluateValueAndDerivatives(ParticleSet& 
   {
     const auto& dist  = ble.getDistRow(jel);
     const auto& displ = ble.getDisplRow(jel);
-    for (int iat = 0; iat < num_ions_; iat++)
+    for (int iat = 0; iat < pp_.size(); iat++)
       if (pp_[iat] != nullptr && dist[iat] < pp_[iat]->getRmax())
       {
         if (use_exact_spin_)
@@ -212,11 +192,6 @@ void SOECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& o_l
 
     //loop over all the ions
     const auto& ble = P.getDistTableAB(O.my_table_index_);
-    //clear elec and ion neighbor lists
-    for (size_t iat = 0; iat < O.num_ions_; iat++)
-      O.ion_neighbor_elecs_.getNeighborList(iat).clear();
-    for (size_t jel = 0; jel < P.getTotalNum(); jel++)
-      O.elec_neighbor_ions_.getNeighborList(jel).clear();
 
     for (size_t ig = 0; ig < P.groups(); ig++) // loop over species
     {
@@ -225,16 +200,11 @@ void SOECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& o_l
 
       for (size_t jel = P.first(ig); jel < P.last(ig); jel++)
       {
-        const auto& dist               = ble.getDistRow(jel);
-        const auto& displ              = ble.getDisplRow(jel);
-        std::vector<int>& NeighborIons = O.elec_neighbor_ions_.getNeighborList(jel);
-        for (size_t iat = 0; iat < O.num_ions_; iat++)
+        const auto& dist  = ble.getDistRow(jel);
+        const auto& displ = ble.getDisplRow(jel);
+        for (size_t iat = 0; iat < O.pp_.size(); iat++)
           if (O.pp_[iat] != nullptr && dist[iat] < O.pp_[iat]->getRmax())
-          {
-            NeighborIons.push_back(iat);
-            O.ion_neighbor_elecs_.getNeighborList(iat).push_back(jel);
             joblist.emplace_back(iat, jel, dist[iat], -displ[iat]);
-          }
       }
     }
     O.value_ = 0.0;
@@ -305,11 +275,9 @@ void SOECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& o_l
       }
 
       if (O_leader.use_exact_spin_)
-      {
         SOECPComponent::mw_evaluateOneExactSpinIntegration(soecp_component_list, pset_list,
                                                            {*O_leader.vp_, std::move(vp_list)}, psi_list, batch_list,
                                                            pairpots, O_leader.mw_res_handle_.getResource().collection);
-      }
       else if (O_leader.vp_)
         SOECPComponent::mw_evaluateOne(soecp_component_list, pset_list, {*O_leader.vp_, std::move(vp_list)}, psi_list,
                                        batch_list, pairpots, O_leader.mw_res_handle_.getResource().collection);
@@ -345,7 +313,7 @@ void SOECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& o_l
     for (int iw = 0; iw < nw; iw++)
     {
       Vector<Real> ve_sample(ve_samples.begin(iw), num_electrons);
-      Vector<Real> vi_sample(vi_samples.begin(iw), O_leader.num_ions_);
+      Vector<Real> vi_sample(vi_samples.begin(iw), O_leader.ion_config_.getTotalNum());
       for (const ListenerVector<Real>& listener : listeners->electron_values)
         listener.report(iw, O_leader.getName(), ve_sample);
       for (const ListenerVector<Real>& listener : listeners->ion_values)
