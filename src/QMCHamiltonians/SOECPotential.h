@@ -98,8 +98,6 @@ private:
   int num_ions_;
   ///index of distance table for ion-el pair
   int my_table_index_;
-  ///reference to the electrons
-  ParticleSet& peln_;
   //job list for evaluation
   std::vector<std::vector<NLPPJob<RealType>>> sopp_jobs_;
   //multi walker resource

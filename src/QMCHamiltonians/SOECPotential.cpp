@@ -49,7 +49,6 @@ SOECPotential::SOECPotential(ParticleSet& ions,
       ion_config_(ions),
       psi_(psi),
       vp_(use_VP ? std::make_unique<VirtualParticleSet>(els) : nullptr),
-      peln_(els),
       use_exact_spin_(use_exact_spin)
 {
   setEnergyDomain(POTENTIAL);
@@ -68,7 +67,6 @@ SOECPotential::SOECPotential(const SOECPotential& sopp, ParticleSet& els, TrialW
       ion_config_(sopp.ion_config_),
       psi_(psi),
       vp_(sopp.vp_ ? std::make_unique<VirtualParticleSet>(els, sopp.vp_->getNumDistTables()) : nullptr),
-      peln_(els),
       use_exact_spin_(sopp.use_exact_spin_)
 {
   setEnergyDomain(POTENTIAL);
