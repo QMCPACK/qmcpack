@@ -110,7 +110,7 @@ def test_check_result():
 
 
 def test_get_result():
-    from developer import NexusError
+    from generic import NexusError
 
     tpath = testing.setup_unit_test_output_directory('pwscf_simulation','test_get_result',**pseudo_inputs)
 
@@ -164,7 +164,7 @@ def test_get_result():
 
 
 def test_incorporate_result():
-    from developer import obj
+    from generic import obj
     tpath = testing.setup_unit_test_output_directory('pwscf_simulation','test_incorporate_result',**pseudo_inputs)
 
     sim = get_pwscf_sim('scf')

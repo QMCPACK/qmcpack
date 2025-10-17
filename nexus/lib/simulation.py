@@ -68,14 +68,15 @@
 import os
 import sys
 import shutil
-from string import Template
-from subprocess import Popen
-import tempfile
-from developer import obj, unavailable
+import string
+from subprocess import Popen,PIPE
+from developer import unavailable,ci
+from generic import obj
+from periodic_table import is_element
 from physical_system import PhysicalSystem
 from machines import Job
 from pseudopotential import ppset
-from nexus_base import NexusCore, nexus_core
+from nexus_base import NexusCore,nexus_core
 
  
 class SimulationInput(NexusCore):
@@ -1513,6 +1514,8 @@ class GenericSimulation(Simulation):
 #end class GenericSimulation
 
 
+
+from string import Template
 class SimulationInputTemplateDev(SimulationInput):
     def __init__(self,filepath=None,text=None):
         self.reset()
@@ -1715,6 +1718,7 @@ def generate_simulation(**kwargs):
 
 
 
+
 # ability to graph simulation workflows
 try:
     from pydot import Dot,Node,Edge
@@ -1728,7 +1732,7 @@ except:
     imread = unavailable('matplotlib.image','imread')
     imshow,show,xticks,yticks = unavailable('matplotlib.pyplot','imshow','show','xticks','yticks')
 #end try
-
+import tempfile
 exit_call = sys.exit
 def graph_sims(sims=None,savefile=None,useid=False,exit=True,quants=True,display=True):
     if sims is None:

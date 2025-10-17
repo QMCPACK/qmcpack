@@ -32,13 +32,16 @@
 #                                                                    #
 #====================================================================#
 
-import os
-from copy import deepcopy
+
 import numpy as np
-from developer import DevBase, obj
+from numpy import dot,array
+from numpy.linalg import inv
+from generic import obj
+from developer import DevBase
 from unit_converter import convert
-from periodic_table import is_element, ptable
-from structure import Structure, generate_structure, read_structure
+from periodic_table import is_element
+from structure import Structure
+from debug import *
 
 
 class Matter(DevBase):
@@ -227,7 +230,7 @@ plist = [
     Particle('up_electron'  ,1.0,-1, 1),
     Particle('down_electron',1.0,-1,-1),
     ]
-
+from periodic_table import ptable
 for name,a in ptable.elements.items():
     spin = 0 # don't have this data
     protons  = a.atomic_number
@@ -622,6 +625,10 @@ class PhysicalSystem(Matter):
 #end class PhysicalSystem
 
 
+
+import os
+from structure import generate_structure,read_structure
+from copy import deepcopy
 ps_defaults = dict(
     type='crystal',
     kshift = (0,0,0),
@@ -722,7 +729,7 @@ def generate_physical_system(**kwargs):
                 PhysicalSystem.class_error('pretile does not divide evenly into tiling\n  tiling provided: {0}\n  pretile provided: {1}'.format(tiling,pretile),'generate_physical_system')
             #end if
         #end for
-        tiling = tuple(np.array(tiling)//np.array(pretile))
+        tiling = tuple(array(tiling)//array(pretile))
         kwargs['tiling'] = pretile
         pre = generate_structure(**kwargs)
         pre.remove_folded_structure()

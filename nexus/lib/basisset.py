@@ -4,20 +4,18 @@
 
 
 import os
-import numpy as np
+from numpy import array,sqrt,arange,linspace,zeros,exp
+from generic import obj
 from periodic_table import is_element
-from developer import DevBase, obj, error, to_str, unavailable
+from developer import DevBase,error,to_str
 from fileio import TextFile
+from plotting import *
+from debug import *
 
-try:
-    import matplotlib.pyplot as plt
-except:
-    plt = unavailable('matplotlib','pyplot')
-#end try
 
 
 def show_plots():
-    plt.show()
+    show()
 #end def show_plots
 
 # container class for available basis set files
@@ -361,7 +359,7 @@ class GaussianBasisSet(DevBase):
                 tokens = basis_lines[i].split(); i+=1
                 ltext = tokens[0].lower()
                 ngauss = int(tokens[1])
-                scale  = np.array(tokens[2:],dtype=float)
+                scale  = array(tokens[2:],dtype=float)
                 bterms = obj()
                 for j in range(ngauss):
                     index,expon,coeff = basis_lines[i].split(); i+=1
@@ -378,7 +376,7 @@ class GaussianBasisSet(DevBase):
                 tokens = basis_lines[i].split(); i+=1
                 ltext = tokens[0].lower()
                 ngauss = int(tokens[1])
-                scale  = np.array(tokens[2:],dtype=float)
+                scale  = array(tokens[2:],dtype=float)
                 bterms = obj()
                 for j in range(ngauss):
                     expon,coeff = basis_lines[i].split(); i+=1
@@ -399,7 +397,7 @@ class GaussianBasisSet(DevBase):
                 l_type        =   int(tokens[1])
                 ngauss        =   int(tokens[2])
                 formal_charge = float(tokens[3])
-                scale         = np.array([tokens[4]],dtype=float)
+                scale         = array([tokens[4]],dtype=float)
                 ltext = GaussianBasisSet.crystal_lmap[l_type]
                 if ltext!='sp':
                     bterms = obj()
@@ -579,16 +577,16 @@ class GaussianBasisSet(DevBase):
                     for i in range(len(uterms)):
                         expon = uterms[i].expon
                         if len(exponents)==0:
-                            exponents = np.array([expon],dtype=float)
+                            exponents = array([expon],dtype=float)
                         elif abs(exponents-expon).min()>tol:
-                            exponents = np.array(list(exponents)+[expon],dtype=float)
+                            exponents = array(list(exponents)+[expon],dtype=float)
                         #end if
                     #end for
                 #end for
                 for expon in exponents:
                     cterms = obj()
                     cterms.append(obj(expon=expon,coeff=1.0))
-                    bf = obj(l=l,scale=np.array([1.0]),terms=cterms)
+                    bf = obj(l=l,scale=array([1.0]),terms=cterms)
                     self.basis.append(bf)
                 #end for
             #end if
@@ -647,7 +645,7 @@ class GaussianBasisSet(DevBase):
             for n in range(len(lbas)):
                 e.append(lbas[n].terms[0].expon)
             #end for
-            gexpon[l] = np.array(e,dtype=float)
+            gexpon[l] = array(e,dtype=float)
         #end for
         return gexpon
     #end def prim_expons
@@ -663,9 +661,9 @@ class GaussianBasisSet(DevBase):
         for l,lbas in lbasis.items():
             w = []
             for n in range(len(lbas)):
-                w.append(1./np.sqrt(2.*lbas[n].terms[0].expon))
+                w.append(1./sqrt(2.*lbas[n].terms[0].expon))
             #end for
-            gwidth[l] = np.array(w,dtype=float)
+            gwidth[l] = array(w,dtype=float)
         #end for
         return gwidth
     #end def prim_widths
@@ -695,7 +693,7 @@ class GaussianBasisSet(DevBase):
                     self.error('comp must be < or >, you provided: {0}'.format(comp))
                 #end if
                 gw = gwidths[l]
-                iw = np.arange(len(gw))
+                iw = arange(len(gw))
                 nkeep = 0
                 if keep is not None and l in keep:
                     nkeep = keep[l]
@@ -848,7 +846,7 @@ class GaussianBasisSet(DevBase):
             for l in self.lset_full:
                 primitives = []
                 widths     = []
-                orig_widths = np.array([])
+                orig_widths = array([])
                 if l in lbasis:
                     primitives.extend(lbasis[l].list())
                     widths.extend(gwidths[l])
@@ -865,7 +863,7 @@ class GaussianBasisSet(DevBase):
                         #end if
                     #end if
                 #end if
-                primitives = np.array(primitives,dtype=object)[np.array(widths).argsort()]
+                primitives = array(primitives,dtype=object)[array(widths).argsort()]
                 for bf in primitives:
                     self.basis.append(bf)
                 #end for
@@ -876,7 +874,7 @@ class GaussianBasisSet(DevBase):
 
     def plot(self,r=None,rmin=0.01,rmax=8.0,show=True,fig=True,sep=False,prim=False,style=None,fmt=None,nsub=None):
         if r is None:
-            r = np.linspace(rmin,rmax,1000)
+            r = linspace(rmin,rmax,1000)
         #end if
         if not prim:
             ptitle = '{0} {1} basis'.format(self.name,self.basis_size())
@@ -884,7 +882,7 @@ class GaussianBasisSet(DevBase):
             ptitle = '{0} {1} primitives'.format(self.name,self.basis_size())
         #end if
         if fig:
-            plt.figure()
+            figure()
         #end if
         r2 = r**2
         lcount = self.lcount()
@@ -897,10 +895,10 @@ class GaussianBasisSet(DevBase):
             if l in lbasis:
                 lc+=1
                 if sep:
-                    plt.subplot(lcount,1,lc)
-                    plt.ylabel(l)
+                    subplot(lcount,1,lc)
+                    ylabel(l)
                     if lc==1:
-                        plt.title(ptitle)
+                        title(ptitle)
                     #end if
                 #end if
                 lstyle=self.lstyles[l]
@@ -913,20 +911,20 @@ class GaussianBasisSet(DevBase):
                 lbas = lbasis[l]
                 for n in range(len(lbas)):
                     bf = lbas[n]
-                    br = np.zeros(r.shape)
+                    br = zeros(r.shape)
                     s  = bf.scale[0]
                     for pf in bf.terms:
                         c =  pf.coeff
                         a = -pf.expon*s**2
-                        pr = np.exp(a*r2)
+                        pr = exp(a*r2)
                         if not prim:
                             br += c*pr
                         else:
-                            plt.plot(r,pr,lstyle,label=l)
+                            plot(r,pr,lstyle,label=l)
                         #end if
                     #end for
                     if not prim:
-                        plt.plot(r,br,lstyle,label=l)
+                        plot(r,br,lstyle,label=l)
                     #end if
                 #end for
             #end if
@@ -934,12 +932,12 @@ class GaussianBasisSet(DevBase):
         if fig:
             if not sep:
                 if self.name is not None:
-                    plt.title(ptitle)
+                    title(ptitle)
                 #end if
-                plt.ylabel('basis functions')
-                plt.legend()
+                ylabel('basis functions')
+                legend()
             #end if
-            plt.xlabel('r')
+            xlabel('r')
             if show:
                 show_plots()
             #end if
@@ -958,7 +956,7 @@ class GaussianBasisSet(DevBase):
         #end if
         ptitle = '{0} {1} primitive widths'.format(self.name,self.basis_size())
         if fig:
-            plt.figure()
+            figure()
         #end if
         pwidths = self.prim_widths()
         lcount = self.lcount()
@@ -972,10 +970,10 @@ class GaussianBasisSet(DevBase):
                 lwidths = pwidths[l]
                 lc+=1
                 if sep:
-                    plt.subplot(lcount,1,lc)
-                    plt.ylabel(l)
+                    subplot(lcount,1,lc)
+                    ylabel(l)
                     if lc==1:
-                        plt.title(ptitle)
+                        title(ptitle)
                     #end if
                 #end if
                 lstyle=self.lstyles[l]
@@ -986,9 +984,9 @@ class GaussianBasisSet(DevBase):
                     lstyle=fmt
                 #end if
                 if semilog:
-                    plotter = plt.semilogy
+                    plotter = semilogy
                 else:
-                    plotter = plt.plot
+                    plotter = plot
                 #end if
                 plotter(list(range(len(lwidths))),lwidths,lstyle,label=l)
             #end if
@@ -996,12 +994,12 @@ class GaussianBasisSet(DevBase):
         if label:
             if not sep:
                 if self.name is not None:
-                    plt.title(ptitle)
+                    title(ptitle)
                 #end if
-                plt.ylabel('primitive widths')
-                plt.legend()
+                ylabel('primitive widths')
+                legend()
             #end if
-            plt.xlabel('primitive index')
+            xlabel('primitive index')
         #end if
         if show:
             show_plots()
