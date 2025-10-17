@@ -53,7 +53,7 @@ def test_input():
     import os
     import numpy as np
     import pwscf_input as pwi
-    from developer import obj
+    from generic import obj
     from structure import read_structure
     from physical_system import generate_physical_system
     from pwscf_input import check_new_variables,check_section_classes

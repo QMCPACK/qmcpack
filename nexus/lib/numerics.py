@@ -84,12 +84,14 @@
 import sys
 import inspect
 import numpy as np
-from numpy import pi, exp, sqrt, sin, cos
+from numpy import array,ndarray,zeros,linspace,pi,exp,sqrt,polyfit,polyval
+from numpy import sum,abs,arange,empty,sin,cos,dot,atleast_2d,ogrid
+from numpy import ones_like,sign,cross,prod
 from numpy.linalg import norm
-from developer import obj, unavailable, error
+from generic import obj
+from developer import unavailable,warn,error
 from unit_converter import convert
 from periodic_table import pt as ptable
-
 try:
     from scipy.special import betainc
     from scipy.optimize import fmin
@@ -105,8 +107,8 @@ except:
 
 # cost functions
 def least_squares(p, x, y, f):  return ((f(p,x)-y)**2).sum()
-def absmin(p, x, y, f):         return np.abs(f(p,x)-y).sum()
-def madmin(p, x, y, f):         return np.abs(f(p,x)-y).max()
+def absmin(p, x, y, f):         return abs(f(p,x)-y).sum()
+def madmin(p, x, y, f):         return abs(f(p,x)-y).max()
 
 cost_functions = obj(
     least_squares = least_squares,
@@ -254,7 +256,7 @@ def morse_rDw_fit(re,De,w,m1,m2=None,Einf=0.0,Dunit='eV'):
 #    pf,pmean,perror = morse_fit(r,E,jackknife=True)  returns jackknife estimates of parameters
 def morse_fit(r,E,p0=None,jackknife=False,cost=least_squares,auxfuncs=None,auxres=None,capture=None):
     if isinstance(E,(list,tuple)):
-        E = np.array(E,dtype=float)
+        E = array(E,dtype=float)
     #end if
 
     Edata = None
@@ -266,7 +268,7 @@ def morse_fit(r,E,p0=None,jackknife=False,cost=least_squares,auxfuncs=None,auxre
     pp = None
     if p0 is None:
         # make a simple quadratic fit to get initial guess for morse fit
-        pp = np.polyfit(r,E,2)
+        pp = polyfit(r,E,2)
         r0   = -pp[1]/(2*pp[0])
         E0   = pp[2]+.5*pp[1]*r0
         d2E  = 2*pp[0]
@@ -345,7 +347,7 @@ def morse_fit(r,E,p0=None,jackknife=False,cost=least_squares,auxfuncs=None,auxre
 #   by using morse as an auxiliary jackknife function
 def morse_fit_fine(r,E,p0=None,rfine=None,both=False,jackknife=False,cost=least_squares,capture=None):  
     if rfine is None:
-        rfine = np.linspace(r.min(),r.max(),400)
+        rfine = linspace(r.min(),r.max(),400)
     #end if
     auxfuncs = obj(
         Efine = (morse,[None,rfine])
@@ -462,10 +464,10 @@ def eos_param(p,param,type='vinet'):
 
 def eos_fit(V,E,type='vinet',p0=None,cost='least_squares',jackknife=False,auxfuncs=None,auxres=None,capture=None):
     if isinstance(V,(list,tuple)):
-        V = np.array(V,dtype=float)
+        V = array(V,dtype=float)
     #end if
     if isinstance(E,(list,tuple)):
-        E = np.array(E,dtype=float)
+        E = array(E,dtype=float)
     #end if
     Edata = None
     if len(E)!=E.size and len(E.shape)==2:
@@ -478,7 +480,7 @@ def eos_fit(V,E,type='vinet',p0=None,cost='least_squares',jackknife=False,auxfun
     eos_func = eos_funcs[type]
 
     if p0 is None:
-        pp = np.polyfit(V,E,2)
+        pp = polyfit(V,E,2)
         V0   = -pp[1]/(2*pp[0])
         B0   = -pp[1]
         Bp0  = 0.0
@@ -617,7 +619,7 @@ def jackknife(data,function,args=None,kwargs=None,position=None,capture=None):
         if b==0:
             # determine the return type from the first sample
             # and initialize the jackknife sums
-            array_return = isinstance(jsample,np.ndarray)
+            array_return = isinstance(jsample,ndarray)
             if array_return:
                 jsum  = jsample.copy()
                 jsum2 = jsum**2
@@ -865,18 +867,18 @@ def ndgrid(*args, **kwargs):
            [[ 1. ,  1.1,  1.2], [ 1. ,  1.1,  1.2]]])
     """
     same_dtype = kwargs.get("same_dtype", True)
-    V = [np.array(v) for v in args] # ensure all input vectors are arrays
+    V = [array(v) for v in args] # ensure all input vectors are arrays
     shape = [len(v) for v in args] # common shape of the outputs
     result = []
     for i, v in enumerate(V):
         # reshape v so it can broadcast to the common shape
         # http://docs.scipy.org/doc/numpy/user/basics.broadcasting.html
-        zero = np.zeros(shape, dtype=v.dtype)
-        thisshape = np.ones_like(shape)
+        zero = zeros(shape, dtype=v.dtype)
+        thisshape = ones_like(shape)
         thisshape[i] = shape[i]
         result.append(zero + v.reshape(thisshape))
     if same_dtype:
-        return np.array(result) # converts to a common dtype
+        return array(result) # converts to a common dtype
     else:
         return result # keeps separate dtype for each output
 
@@ -909,11 +911,11 @@ def simstats(x,dim=None):
         r.insert(dim,ndim-1)
         invperm     = tuple(r)
         x=x.transpose(permutation)
-        shape = tuple(np.array(shape)[np.array(permutation)])
+        shape = tuple(array(shape)[array(permutation)])
         dim = ndim-1
     #end if
     if reshape:        
-        nvars = np.prod(shape[0:dim])
+        nvars = prod(shape[0:dim])
         x=x.reshape(nvars,nblocks)
         rdim=dim
         dim=1
@@ -931,7 +933,7 @@ def simstats(x,dim=None):
         tempC=0.5
         kappa=0.0
         mtmp=mean
-        if np.abs(var)<1e-15:
+        if abs(var)<1e-15:
             kappa = 1.0
         else:
             ovar=1.0/var
@@ -939,7 +941,7 @@ def simstats(x,dim=None):
                 kappa=kappa+2.0*tempC
                 i=i+1
                 #tempC=corr(i,x,mean,var)
-                tempC = ovar/(N-i)*np.sum((x[0:N-i]-mtmp)*(x[i:N]-mtmp))
+                tempC = ovar/(N-i)*sum((x[0:N-i]-mtmp)*(x[i:N]-mtmp))
             #end while
             if kappa == 0.0:
                 kappa = 1.0
@@ -951,22 +953,22 @@ def simstats(x,dim=None):
         #end if
         error=sqrt(var/Neff)
     else:
-        error = np.zeros(mean.shape,dtype=mean.dtype)
-        kappa = np.zeros(mean.shape,dtype=mean.dtype)
+        error = zeros(mean.shape,dtype=mean.dtype)
+        kappa = zeros(mean.shape,dtype=mean.dtype)
         for v in range(nvars):
             i=0          
             tempC=0.5
             kap=0.0
             vtmp = var[v]
             mtmp = mean[v]
-            if np.abs(vtmp)<1e-15:
+            if abs(vtmp)<1e-15:
                 kap = 1.0
             else:
                 ovar   = 1.0/vtmp
                 while (tempC>0 and i<(N-1)):
                     i += 1
                     kap += 2.0*tempC
-                    tempC = ovar/(N-i)*np.sum((x[v,0:N-i]-mtmp)*(x[v,i:N]-mtmp))
+                    tempC = ovar/(N-i)*sum((x[v,0:N-i]-mtmp)*(x[v,i:N]-mtmp))
                 #end while
                 if kap == 0.0:
                     kap = 1.0
@@ -1027,14 +1029,14 @@ def equilibration_length(x,tail=.5,plot=False,xlim=None,bounces=2,random=True,se
     #end if
     #mean  = xh.mean()
     #sigma = sqrt(xh.var())
-    xs = np.array(xt)
+    xs = array(xt)
     xs.sort()
     mean  = xs[int(.5*(nxt-1)+.5)]
-    sigma = (np.abs(xs[int((.5-.341)*nxt+.5)]-mean)+np.abs(xs[int((.5+.341)*nxt+.5)]-mean))/2
+    sigma = (abs(xs[int((.5-.341)*nxt+.5)]-mean)+abs(xs[int((.5+.341)*nxt+.5)]-mean))/2
     crossings = bounces*[0,0]
     bounce = None
-    if np.abs(x[0]-mean)>sigma:
-        s = -np.sign(x[0]-mean)
+    if abs(x[0]-mean)>sigma:
+        s = -sign(x[0]-mean)
         ncrossings = 0
         for i in range(nx):
             dist = s*(x[i]-mean) 
@@ -1059,9 +1061,9 @@ def equilibration_length(x,tail=.5,plot=False,xlim=None,bounces=2,random=True,se
     if plot:
         xlims = xlim
         del plot,xlim
-        from matplotlib.pyplot import plot, figure, show, xlim
+        from matplotlib.pyplot import plot,figure,show,xlim
         figure()
-        ix = np.arange(nx)
+        ix = arange(nx)
         plot(ix,x,'b.-')
         plot([0,nx],[mean,mean],'k-')
         plot([0,nx],[mean+sigma,mean+sigma],'r-')
@@ -1102,13 +1104,13 @@ def ttest(m1,e1,n1,m2,e2,n2):
 # test needed
 def surface_normals(x,y,z):
     nu,nv = x.shape
-    normals = np.empty((nu,nv,3))
+    normals = empty((nu,nv,3))
     mi=nu-1
     mj=nv-1
-    v1 = np.empty((3,))
-    v2 = np.empty((3,))
-    v3 = np.empty((3,))
-    dr = np.empty((3,))
+    v1 = empty((3,))
+    v2 = empty((3,))
+    v3 = empty((3,))
+    dr = empty((3,))
     dr[0] = x[0,0]-x[1,0]
     dr[1] = y[0,0]-y[1,0]
     dr[2] = z[0,0]-z[1,0]
@@ -1159,7 +1161,7 @@ def surface_normals(x,y,z):
             v2[0] = x[i,jp]-x[i,jm]
             v2[1] = y[i,jp]-y[i,jm]
             v2[2] = z[i,jp]-z[i,jm]
-            v3 = np.cross(v1,v2)
+            v3 = cross(v1,v2)
             onorm = 1./norm(v3)
             normals[i,j,:]=v3[:]*onorm
         #end for
@@ -1201,15 +1203,15 @@ def simple_surface(origin,axes,grid):
             sys.exit()
         #end if
     #end if
-    u=np.empty((3,))
-    r=np.empty((3,))
+    u=empty((3,))
+    r=empty((3,))
     if coord==0:
         xl = grid['x']
         yl = grid['y']
         zl = grid['z']
         dim = (len(xl),len(yl),len(zl))
-        npoints = np.prod(dim)
-        points = np.empty((npoints,3))
+        npoints = prod(dim)
+        points = empty((npoints,3))
         n=0
         for i in range(dim[0]):
             for j in range(dim[1]):
@@ -1217,7 +1219,7 @@ def simple_surface(origin,axes,grid):
                     r[0] = xl[i]
                     r[1] = yl[j]
                     r[2] = zl[k]
-                    points[n,:] = np.dot(axes,r) + origin
+                    points[n,:] = dot(axes,r) + origin
                     n+=1
                 #end for
             #end for
@@ -1227,8 +1229,8 @@ def simple_surface(origin,axes,grid):
         phil = 2.*pi*grid['phi']
         zl   = grid['z']
         dim = (len(rl),len(phil),len(zl))
-        npoints = np.prod(dim)
-        points = np.empty((npoints,3))
+        npoints = prod(dim)
+        points = empty((npoints,3))
         n=0
         for i in range(dim[0]):
             for j in range(dim[1]):
@@ -1239,7 +1241,7 @@ def simple_surface(origin,axes,grid):
                     r[0] = u[0]*cos(u[1])
                     r[1] = u[0]*sin(u[1])
                     r[2] = u[2]
-                    points[n,:] = np.dot(axes,r) + origin
+                    points[n,:] = dot(axes,r) + origin
                     n+=1
                 #end for
             #end for
@@ -1255,8 +1257,8 @@ def simple_surface(origin,axes,grid):
         else:
             sgn = 1.
         #end if
-        npoints = np.prod(dim)
-        points = np.empty((npoints,3))
+        npoints = prod(dim)
+        points = empty((npoints,3))
         n=0
         for i in range(dim[0]):
             for j in range(dim[1]):
@@ -1267,7 +1269,7 @@ def simple_surface(origin,axes,grid):
                     r[0] = sgn*u[0]*sin(u[2])*cos(u[1])
                     r[1] = sgn*u[0]*sin(u[2])*sin(u[1])
                     r[2] = sgn*u[0]*cos(u[2])
-                    points[n,:] = np.dot(axes,r) + origin
+                    points[n,:] = dot(axes,r) + origin
                     n+=1
                 #end for
             #end for
@@ -1310,15 +1312,15 @@ def distance_table(p1,p2,ordering=0):
     n1 = len(p1)
     n2 = len(p2)
     same = id(p1)==id(p2)
-    if not isinstance(p1,np.ndarray):
-        p1=np.array(p1,dtype=float)
+    if not isinstance(p1,ndarray):
+        p1=array(p1,dtype=float)
     #end if
     if same:
         p2 = p1
-    elif not isinstance(p2,np.ndarray):
-        p2=np.array(p2,dtype=float)
+    elif not isinstance(p2,ndarray):
+        p2=array(p2,dtype=float)
     #end if
-    dt = np.zeros((n1,n2),dtype=float)
+    dt = zeros((n1,n2),dtype=float)
     for i1 in range(n1):
         for i2 in range(n2):
             dt[i1,i2] = norm(p1[i1]-p2[i2])
@@ -1335,7 +1337,7 @@ def distance_table(p1,p2,ordering=0):
         else:
             error('ordering must be 1 or 2,\nyou provided '+str(ordering),'distance_table')
         #end if
-        order = np.empty(dt.shape,dtype=int)
+        order = empty(dt.shape,dtype=int)
         for i in range(n):
             o = dt[i].argsort()
             order[i] = o
@@ -1354,9 +1356,9 @@ def nearest_neighbors(n,points,qpoints=None,return_distances=False,slow=False):
         if len(points)>1:
             extra=1
         elif return_distances:
-            return np.array([]),np.array([])
+            return array([]),array([])
         else:
-            return np.array([])
+            return array([])
         #end if
     #end if
     if n>len(qpoints)-extra:
@@ -1372,7 +1374,7 @@ def nearest_neighbors(n,points,qpoints=None,return_distances=False,slow=False):
         ind  = order[:,0:n+extra]
     #end if
     if extra==0 and n==1 and not slow:
-        nn = np.atleast_2d(ind).T
+        nn = atleast_2d(ind).T
     else:
         nn = ind[:,extra:]
     #end if
@@ -1399,7 +1401,7 @@ def convex_hull(points,dimension=None,tol=None):
     #end if
     d1 = dimension+1
     tri = Delaunay(points,qhull_options='QJ')
-    all_inds = np.empty((d1,),dtype=bool)
+    all_inds = empty((d1,),dtype=bool)
     all_inds[:] = True
     verts = []
     have_tol = tol is not None
@@ -1422,7 +1424,7 @@ def convex_hull(points,dimension=None,tol=None):
                 a = points[v[i]]-c
                 b = points[v[iv[0]]]-c
                 bn = norm(b)
-                d = norm(a-np.dot(a,b)/(bn*bn)*b)
+                d = norm(a-dot(a,b)/(bn*bn)*b)
                 if d<tol:
                     inds[i]=True
                 #end if

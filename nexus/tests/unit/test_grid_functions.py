@@ -324,7 +324,7 @@ grid_properties = dict()
 
 
 def properties_from_name(grid_name):
-    from developer import obj
+    from generic import obj
     grid_types = dict(
         p = 'parallelotope',
         s = 'spheroid',
@@ -361,7 +361,7 @@ def get_grids():
     Generate a variety of grids.
     """
 
-    from developer import obj
+    from generic import obj
     from grid_functions import ParallelotopeGrid
     from grid_functions import SpheroidGrid
     from grid_functions import SpheroidSurfaceGrid
@@ -482,7 +482,7 @@ def get_grids():
 
 
 def get_props():
-    from developer import obj
+    from generic import obj
     get_grids()
     return obj(grid_properties)
 #end def get_props
@@ -627,7 +627,7 @@ def test_parallelotope_grid_initialization():
 
 def test_grid_reset():
     from testing import object_eq
-    from developer import obj
+    from generic import obj
     from grid_functions import ParallelotopeGrid
     from grid_functions import SpheroidGrid
     from grid_functions import SpheroidSurfaceGrid
@@ -653,7 +653,7 @@ def test_grid_reset():
 
 def test_grid_set_operations():
     import numpy as np
-    from developer import obj
+    from generic import obj
     from testing import value_eq
 
     grids = get_grids()

@@ -58,7 +58,7 @@ def test_pw2qmcpack_check_result():
 
 
 def test_pw2qmcpack_get_result():
-    from developer import NexusError, obj
+    from generic import NexusError,obj
 
     sim = get_pw2qmcpack_sim()
     
@@ -89,7 +89,7 @@ def test_pw2qmcpack_get_result():
 
 
 def test_pw2qmcpack_incorporate_result():
-    from developer import NexusError, obj
+    from generic import NexusError,obj
     from simulation import Simulation
     from test_pwscf_simulation import pseudo_inputs,get_pwscf_sim
 
@@ -122,7 +122,7 @@ def test_pw2qmcpack_incorporate_result():
 
 def test_pw2qmcpack_check_sim_status():
     import os
-    from developer import NexusError, obj
+    from generic import NexusError,obj
     from nexus_base import nexus_core
 
     tpath = testing.setup_unit_test_output_directory('qmcpack_converter_simulations','test_pw2qmcpack_check_sim_status',divert=True)
@@ -232,7 +232,7 @@ def test_convert4qmc_check_result():
 
 
 def test_convert4qmc_get_result():
-    from developer import NexusError, obj
+    from generic import NexusError,obj
 
     sim = get_convert4qmc_sim()
     
@@ -270,7 +270,7 @@ def test_convert4qmc_get_result():
 
 
 def test_convert4qmc_incorporate_result():
-    from developer import NexusError, obj
+    from generic import NexusError,obj
     from simulation import Simulation
     from gamess import Gamess
     from pyscf_sim import Pyscf
@@ -360,7 +360,7 @@ def test_convert4qmc_incorporate_result():
 
 def test_convert4qmc_check_sim_status():
     import os
-    from developer import NexusError, obj
+    from generic import NexusError,obj
     from nexus_base import nexus_core
 
     tpath = testing.setup_unit_test_output_directory('qmcpack_converter_simulations','test_convert4qmc_check_sim_status',divert=True)
@@ -469,7 +469,7 @@ def test_pyscf_to_afqmc_check_result():
 
 
 def test_pyscf_to_afqmc_get_result():
-    from developer import NexusError, obj
+    from generic import NexusError,obj
 
     sim = get_pyscf_to_afqmc_sim()
     
@@ -505,7 +505,7 @@ def test_pyscf_to_afqmc_get_result():
 
 def test_pyscf_to_afqmc_incorporate_result():
     import os
-    from developer import NexusError, obj
+    from generic import NexusError,obj
     from simulation import Simulation
     from test_pyscf_simulation import get_pyscf_sim
 
@@ -543,7 +543,7 @@ def test_pyscf_to_afqmc_incorporate_result():
 
 def test_pyscf_to_afqmc_check_sim_status():
     import os
-    from developer import NexusError, obj
+    from generic import NexusError,obj
     from nexus_base import nexus_core
 
     tpath = testing.setup_unit_test_output_directory('qmcpack_converter_simulations','test_pyscf_to_afqmc_check_sim_status',divert=True)

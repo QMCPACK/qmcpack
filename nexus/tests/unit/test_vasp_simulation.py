@@ -108,7 +108,7 @@ def test_get_result():
     import os
     import shutil
     from numpy import array
-    from developer import obj, NexusError
+    from generic import obj,NexusError
 
     tpath = testing.setup_unit_test_output_directory('vasp_simulation','test_get_result',**pseudo_inputs)
 
@@ -194,7 +194,7 @@ def test_incorporate_result():
     import os
     import shutil
     from numpy import array
-    from developer import obj
+    from generic import obj
 
     tpath = testing.setup_unit_test_output_directory('vasp_simulation','test_incorporate_result',**pseudo_inputs)
 

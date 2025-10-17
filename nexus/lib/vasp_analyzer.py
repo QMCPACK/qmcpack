@@ -30,10 +30,12 @@
 
 
 import os
-import numpy as np
+from numpy import array,zeros
+from generic import obj
 from simulation import Simulation,SimulationAnalyzer
-from vasp_input import Incar
-from developer import DevBase, obj
+from vasp_input import VaspInput,Incar
+from developer import DevBase
+from debug import *
 
 
 # vasp xml reader classes/functions
@@ -190,7 +192,7 @@ class VXML(DevBase):
                 #end if
             #end for
             if arr is not None:
-                self._value = np.array(arr)
+                self._value = array(arr)
             #end if
         #end if
     #end def parse_values
@@ -236,7 +238,7 @@ class VXML(DevBase):
                         dims   = dims.list()
                         dims.reverse()
                         dims = tuple(dims)
-                        dim_counts = np.zeros((len(dims),),dtype=int)
+                        dim_counts = zeros((len(dims),),dtype=int)
                         set_dims = True
                     #end if
                     level += 1
@@ -260,7 +262,7 @@ class VXML(DevBase):
             for field_vals in field_list:
                 lst.append(field_vals[findex])
             #end for
-            arr = np.array(lst,dtype=field.dtype).ravel()
+            arr = array(lst,dtype=field.dtype).ravel()
             arr.shape = tuple(dim_counts)
             self[field.name] = arr
         #end for
@@ -328,13 +330,13 @@ def readval(val):
             val = val.split()
         #end if
         try:
-            v = np.array(val,dtype=int)
+            v = array(val,dtype=int)
         except:
             try:
-                v = np.array(val,dtype=float)
+                v = array(val,dtype=float)
             except:
                 try:
-                    v = np.array(val,dtype=str)
+                    v = array(val,dtype=str)
                 except:
                     fail = True
                 #end try
@@ -495,7 +497,7 @@ def read_outcar_header_values(vlines,odata):
 
 def read_outcar_core_potentials(vlines,odata):
     line = vlines.advance_token('the test charge radii are')
-    odata.core_potential_radii = np.array(line.split()[5:],dtype=float)
+    odata.core_potential_radii = array(line.split()[5:],dtype=float)
     vlines.advance(2)
     n = 0
     cpots = []
@@ -508,7 +510,7 @@ def read_outcar_core_potentials(vlines,odata):
         tokens = line.replace('-',' -').split()
         cpots.extend(tokens[1::2])
     #end for
-    odata.core_potentials = np.array(cpots,dtype=float)
+    odata.core_potentials = array(cpots,dtype=float)
     vlines.advance(n)
 #end def read_outcar_core_potentials
 
@@ -534,7 +536,7 @@ def read_outcar_bands(vlines,odata):
                 elif line[1]=='k':
                     tokens = line.split()
                     nk = int(tokens[1])
-                    kp = np.array(tokens[3:],dtype=float)
+                    kp = array(tokens[3:],dtype=float)
                     kpoint = obj(kpoint=kp,energies=[],occupations=[])
                     spin[nk]=kpoint
                 elif line[2]=='b':
@@ -557,8 +559,8 @@ def read_outcar_bands(vlines,odata):
     #end if
     for ns,spin in bands.items():
         for nk,kpoint in spin.items():
-            kpoint.energies    = np.array(kpoint.energies,dtype=float)
-            kpoint.occupations = np.array(kpoint.occupations,dtype=float)
+            kpoint.energies    = array(kpoint.energies,dtype=float)
+            kpoint.occupations = array(kpoint.occupations,dtype=float)
         #end for
     #end for
     odata.bands = bands
@@ -580,7 +582,7 @@ def read_outcar_charge_mag(vlines,odata,token):
         if line[0]=='-':
             prev_end = True
         else:
-            vals = np.array(line.split()[1:],dtype=float)
+            vals = array(line.split()[1:],dtype=float)
             ion.s.append(vals[0])
             ion.p.append(vals[1])
             ion.d.append(vals[2])
@@ -588,10 +590,10 @@ def read_outcar_charge_mag(vlines,odata,token):
         #end if
     #end for
     for channel,vals in ion.items():
-        ion[channel] = np.array(vals,dtype=float)
+        ion[channel] = array(vals,dtype=float)
     #end for
     vlines.advance(n)
-    vals = np.array(line.split()[1:],dtype=float)
+    vals = array(line.split()[1:],dtype=float)
     total.s   = vals[0]
     total.p   = vals[1]
     total.d   = vals[2]
@@ -618,8 +620,8 @@ def read_outcar_stress(vlines,odata):
     vlines.advance_token('FORCE on cell')
     line = vlines.advance_line(1)
     dirs = line.split()[1:]
-    st       = np.array(vlines.advance_token('Total').split()[1:],dtype=float)
-    st_kb    = np.array(vlines.advance_line(1).split()[2:],dtype=float)
+    st       = array(vlines.advance_token('Total').split()[1:],dtype=float)
+    st_kb    = array(vlines.advance_line(1).split()[2:],dtype=float)
     pressure = float(vlines.advance_line(1).split()[3])
     stress = obj()
     stress_kb = obj()
@@ -640,7 +642,7 @@ def read_outcar_cell(vlines,odata):
     a1 = vlines.advance_line(2).split()[0:3]
     a2 = vlines.advance_line(1).split()[0:3]
     a3 = vlines.advance_line(1).split()[0:3]
-    lattice_vectors = np.array([a1,a2,a3],dtype=float)
+    lattice_vectors = array([a1,a2,a3],dtype=float)
     odata.volume = volume
     odata.lattice_vectors = lattice_vectors
 #end def read_outcar_cell
@@ -665,9 +667,9 @@ def read_outcar_position_force(vlines,odata):
         #end if
     #end for
     total_drift = line.split()[2:5]
-    odata.position = np.array(position,dtype=float)
-    odata.force    = np.array(force,dtype=float)
-    odata.total_drift = np.array(total_drift,dtype=float)
+    odata.position = array(position,dtype=float)
+    odata.force    = array(force,dtype=float)
+    odata.total_drift = array(total_drift,dtype=float)
 #end def read_outcar_position_force
 
 
@@ -878,11 +880,11 @@ class VaspAnalyzer(SimulationAnalyzer):
         del n
         # read data from each iteration
         if len(ion_steps)>0:
-            imax = np.array(list(ion_steps.keys()),dtype=int).max()
+            imax = array(list(ion_steps.keys()),dtype=int).max()
             for inum,ion_step in ion_steps.items():
                 ilast = inum==imax
                 if len(ion_step)>0:
-                    emax = np.array(list(ion_step.keys()),dtype=int).max()
+                    emax = array(list(ion_step.keys()),dtype=int).max()
                     for enum,elec_step in ion_step.items():
                         elast = enum==emax
                         elec_step.read(ilast,elast,all=False)

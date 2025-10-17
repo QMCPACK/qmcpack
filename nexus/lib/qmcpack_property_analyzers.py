@@ -34,12 +34,13 @@
 #====================================================================#
 
 
+
 import os
-import numpy as np
+from numpy import loadtxt,array,ones,dot,floor,zeros
 from qmcpack_input import QmcpackInput
 from qmcpack_analyzer_base import QAobject,QAanalyzer
 from developer import unavailable
-
+from debug import *
 try:
     from matplotlib.pyplot import plot,show,figure,xlabel,ylabel,title,legend
 except:
@@ -47,16 +48,17 @@ except:
 #end try
 
 
+
 class Bspline(QAobject):
-    A = np.array([-1.0/6.0,  3.0/6.0, -3.0/6.0, 1.0/6.0,
+    A = array([-1.0/6.0,  3.0/6.0, -3.0/6.0, 1.0/6.0,
                 3.0/6.0, -6.0/6.0,  0.0/6.0, 4.0/6.0,
                -3.0/6.0,  3.0/6.0,  3.0/6.0, 1.0/6.0,
                 1.0/6.0,  0.0/6.0,  0.0/6.0, 0.0/6.0 ])
-    dA =np.array([0.0, -0.5,  1.0, -0.5,
+    dA =array([0.0, -0.5,  1.0, -0.5,
                0.0,  1.5, -2.0,  0.0,
                0.0, -1.5,  1.0,  0.5,
                0.0,  0.5,  0.0,  0.0 ])
-    d2A=np.array([0.0, 0.0, -1.0,  1.0,
+    d2A=array([0.0, 0.0, -1.0,  1.0,
                0.0, 0.0,  3.0, -2.0,
                0.0, 0.0, -3.0,  1.0,
                0.0, 0.0,  1.0,  0.0 ])
@@ -65,10 +67,10 @@ class Bspline(QAobject):
     d2A.shape = 4,4                 
 
     def __init__(self,params,cusp,rcut):
-        p = np.array(params)
+        p = array(params)
         cusp = float(cusp)
         rcut = float(rcut)
-        c = np.zeros((1,len(p)+4))
+        c = zeros((1,len(p)+4))
         nintervals = len(p) + 1
         dr = rcut/nintervals
         odr = 1./dr
@@ -91,28 +93,28 @@ class Bspline(QAobject):
     #end def __init__
 
     def evaluate(self,r):
-        tp=np.zeros((4,1))
+        tp=zeros((4,1))
         ni  = self.nintervals
         odr = self.odr
         c   = self.c
         A   = self.A
         dA  = self.dA
         d2A = self.d2A
-        v   = np.zeros(r.shape)
-        dv  = np.zeros(r.shape)
-        d2v = np.zeros(r.shape)
+        v   = zeros(r.shape)
+        dv  = zeros(r.shape)
+        d2v = zeros(r.shape)
         for p in range(len(r)):               
             ri = r[p]*odr
-            i = int(np.floor(ri))
+            i = int(floor(ri))
             if i<ni:
                 t = ri - i
                 tp[0,0] = t*t*t
                 tp[1,0] = t*t
                 tp[2,0] = t
                 tp[3,0] = 1.
-                v[p]   = np.dot(c[:,i:i+4],  np.dot(A,tp))
-                dv[p]  = np.dot(c[:,i:i+4], np.dot(dA,tp))
-                d2v[p] = np.dot(c[:,i:i+4],np.dot(d2A,tp))
+                v[p]   = dot(c[:,i:i+4],  dot(A,tp))
+                dv[p]  = dot(c[:,i:i+4], dot(dA,tp))
+                d2v[p] = dot(c[:,i:i+4],dot(d2A,tp))
             else:
                 v[p] = 0.
                 dv[p] = 0.
@@ -126,6 +128,7 @@ class Bspline(QAobject):
 #end class Bspline
 
 
+from numpy import linspace
 class RadialJastrow(QAobject):
     def __init__(self,ftype,coeff,cusp,rcut):
         self.coeff = coeff
@@ -144,7 +147,7 @@ class RadialJastrow(QAobject):
         if r1 is None:
             r1,r2 = self.function.default_range
         #end if
-        r = np.linspace(r1,r2,n)
+        r = linspace(r1,r2,n)
         d0,d1,d2 = self.function.evaluate(r)
         return r,d0,d1,d2
     #end def interpolate
@@ -285,7 +288,7 @@ class WavefunctionAnalyzer(PropertyAnalyzer):
         for jt in self.jastrow_types:
             for jn,je in self[jt].items():
                 J = self[jt][jn]
-                data = np.loadtxt(os.path.join(self.sourcepath,jt+'.'+jn+ext))
+                data = loadtxt(os.path.join(self.sourcepath,jt+'.'+jn+ext))
                 J.r  = data[:,0]
                 J.d0 = data[:,1]
                 J.d1 = data[:,2]

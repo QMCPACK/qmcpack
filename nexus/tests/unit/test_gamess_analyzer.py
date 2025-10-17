@@ -19,7 +19,7 @@ def test_empty_init():
 def test_analyze():
     import os
     from numpy import array,ndarray
-    from developer import obj
+    from generic import obj
     from gamess_analyzer import GamessAnalyzer
 
     tpath = testing.setup_unit_test_output_directory(

@@ -81,10 +81,16 @@ Module contents
 """
 
 import os
-from developer import DevBase, obj, error, unavailable
-from fileio import StandardFile,XsfFile
-import numpy as np
 
+from generic import obj
+from developer import DevBase,ci,message,error,unavailable
+from fileio import StandardFile,XsfFile
+
+try:
+    import numpy as np
+except:
+    np = unavailable('numpy','np')
+#end try
 try:
     import matplotlib.pyplot as plt
 except:
@@ -675,6 +681,7 @@ class PlotHandler(DevBase):
         else:
             fig = plt.figure()
             if dim==3:
+                from mpl_toolkits.mplot3d import Axes3D
                 ax = fig.add_subplot(111, projection='3d')
                 ax.set_xlabel(ax1)
                 ax.set_ylabel(ax2)

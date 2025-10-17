@@ -68,7 +68,7 @@ def test_check_result():
 
 def test_get_result():
     import os
-    from developer import NexusError, obj
+    from generic import NexusError,obj
     from nexus_base import nexus_core
 
     tpath = testing.setup_unit_test_output_directory('pyscf_simulation','test_get_result',divert=True)

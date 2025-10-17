@@ -137,14 +137,20 @@ import os
 import inspect
 import keyword
 import numpy as np
+from numpy import fromstring,empty,array,float64,\
+    loadtxt,ndarray,dtype,sqrt,pi,arange,exp,eye,\
+    ceil,mod,dot,abs,identity,floor,linalg,where,isclose
 from io import StringIO
-from xmlreader import XMLreader, XMLelement
-from developer import DevBase, obj, hidden, error
+from superstring import string2val
+from generic import obj,hidden
+from xmlreader import XMLreader,XMLelement
+from developer import DevBase,error
 from periodic_table import is_element
-from structure import Structure, Jellium, get_kpath
+from structure import Structure,Jellium,get_kpath
 from physical_system import PhysicalSystem
-from simulation import SimulationInput, SimulationInputTemplate
+from simulation import SimulationInput,SimulationInputTemplate
 from pwscf_input import array_to_string as pwscf_array_string
+from debug import ci as interact
 
 yesno_dict     = {True:'yes' ,False:'no'}
 truefalse_dict = {True:'true',False:'false'}
@@ -172,9 +178,9 @@ def is_float(var):
 def is_array(var,type):
     try:
         if isinstance(var,str):
-            np.array(var.split(),type)
+            array(var.split(),type)
         else:
-            np.array(var,type)
+            array(var,type)
         #end if
         return True
     except ValueError:
@@ -189,12 +195,12 @@ def attribute_to_value(attr):
     elif is_float(attr):
         val = float(attr)
     elif is_array(attr,int):
-        val = np.array(attr.split(),int)
+        val = array(attr.split(),int)
         if val.size==9:
             val.shape = 3,3
         #end if
     elif is_array(attr,float):
-        val = np.array(attr.split(),float)
+        val = array(attr.split(),float)
     else:
         val = attr
     #end if
@@ -521,8 +527,8 @@ class Names(QIobj):
         print()
         print('Condensed Name Report:')
         print('----------------------')
-        keylist = np.array(list(self.condensed_names.keys()))
-        order = np.array(list(self.condensed_names.values())).argsort()
+        keylist = array(list(self.condensed_names.keys()))
+        order = array(list(self.condensed_names.values())).argsort()
         keylist = keylist[order]
         for expanded in keylist: 
             condensed = self.condensed_names[expanded]
@@ -1174,7 +1180,7 @@ class QIxml(Names):
                 val = self[var]
                 not_coll = not isinstance(val,collection)
                 not_xml  = not isinstance(val,QIxml)
-                not_arr  = not isinstance(val,np.ndarray)
+                not_arr  = not isinstance(val,ndarray)
                 if not_coll and not_xml and not_arr:
                     self[var] = vnew
                 #end if
@@ -1204,7 +1210,7 @@ class QIxml(Names):
             for var,val in self.items():
                 not_coll = not isinstance(val,collection)
                 not_xml  = not isinstance(val,QIxml)
-                not_arr  = not isinstance(val,np.ndarray)
+                not_arr  = not isinstance(val,ndarray)
                 if not_coll and not_xml and not_arr and val==vold:
                     self[var] = vnew
                 #end if
@@ -1219,7 +1225,7 @@ class QIxml(Names):
                 else:
                     not_coll = not isinstance(val,collection)
                     not_xml  = not isinstance(val,QIxml)
-                    not_arr  = not isinstance(val,np.ndarray)
+                    not_arr  = not isinstance(val,ndarray)
                     if not_coll and not_xml and not_arr and val==vold:
                         self[var] = vnew
                     #end if
@@ -1399,22 +1405,22 @@ class QIxml(Names):
                         #end if
                     #end for
                 else:
-                    if isinstance(value1,np.ndarray):
+                    if isinstance(value1,ndarray):
                         a1 = value1.ravel()
                     else:
-                        a1 = np.array([value1])
+                        a1 = array([value1])
                     #end if
-                    if isinstance(value2,np.ndarray):
+                    if isinstance(value2,ndarray):
                         a2 = value2.ravel()
                     else:
-                        a2 = np.array([value2])
+                        a2 = array([value2])
                     #end if
                     if len(a1)!=len(a2):
                         kdifferent = True
                     elif len(a1)==0:
                         kdifferent = False
                     elif (isinstance(a1[0],float) or isinstance(a2[0],float)) and not  (isinstance(a1[0],str)   or isinstance(a2[0],str)):
-                        kdifferent = np.abs(a1-a2).max()/max(1e-99,np.abs(a1).max(),np.abs(a2).max()) > 1e-6
+                        kdifferent = abs(a1-a2).max()/max(1e-99,abs(a1).max(),abs(a2).max()) > 1e-6
                     else:
                         kdifferent = not (a1==a2).all()
                     #end if
@@ -1594,19 +1600,19 @@ class Param(Names):
             token = xml.text.split('\n',1)[0].split(None,1)[0]
             try:
                 if is_int(token):
-                    val = np.loadtxt(StringIO(xml.text),int)
+                    val = loadtxt(StringIO(xml.text),int)
                 elif is_float(token):
-                    val = np.loadtxt(StringIO(xml.text),float)
+                    val = loadtxt(StringIO(xml.text),float)
                 else:
-                    val = np.array(xml.text.split())
+                    val = array(xml.text.split())
                 #end if
             except:
                 if is_int(token):
-                    val = np.array(xml.text.split(),dtype=int)
+                    val = array(xml.text.split(),dtype=int)
                 elif is_float(token):
-                    val = np.array(xml.text.split(),dtype=float)
+                    val = array(xml.text.split(),dtype=float)
                 else:
-                    val = np.array(xml.text.split())
+                    val = array(xml.text.split())
                 #end if
             #end try
             if val.size==1:
@@ -1625,10 +1631,10 @@ class Param(Names):
             self.error(mode+' is not a valid mode.  Options are attr,elem.')
         #end if
         if isinstance(value,list) or isinstance(value,tuple):
-            value = np.array(value)
+            value = array(value)
         #end if
         if attr_mode:
-            if isinstance(value,np.ndarray):
+            if isinstance(value,ndarray):
                 arr = value.ravel()
                 for v in arr:
                     c+=self.write_val(v)+' '
@@ -1639,7 +1645,7 @@ class Param(Names):
             #end if
         elif elem_mode:
             c+=pad
-            is_array = isinstance(value,np.ndarray)
+            is_array = isinstance(value,ndarray)
             is_single = not (is_array and value.size>1)
             if tag is not None:
                 if is_single:
@@ -1687,7 +1693,7 @@ class Param(Names):
                 elif ndim==2:
                     nrows,ncols = value.shape
                     fmt=pp
-                    if value.dtype == np.float64:
+                    if value.dtype == dtype(float):
                         if self.precision is None:
                             vfmt = ':16.8f' # must have 8 digits of post decimal accuracy to meet qmcpack tolerance standards
                             #vfmt = ':16.8e'
@@ -3698,11 +3704,11 @@ class QmcpackInput(SimulationInput,Names):
             nelectrons += g.size
         #end for
         density = nelectrons/volume
-        wp = np.sqrt(4*np.pi*density)
+        wp = sqrt(4*pi*density)
         dr = rcut/size
-        r = .02 + dr*np.arange(size)
-        uuc = .5/(wp*r)*(1.-np.exp(-r*np.sqrt(wp/2)))*np.exp(-(2*r/rcut)**2)
-        udc = .5/(wp*r)*(1.-np.exp(-r*np.sqrt(wp)))*np.exp(-(2*r/rcut)**2)
+        r = .02 + dr*arange(size)
+        uuc = .5/(wp*r)*(1.-exp(-r*sqrt(wp/2)))*exp(-(2*r/rcut)**2)
+        udc = .5/(wp*r)*(1.-exp(-r*sqrt(wp)))*exp(-(2*r/rcut)**2)
         jastrows.J2 = jastrow2(
             name = 'J2',type='Two-Body',function=j2func,print='yes',
             correlations = collection(
@@ -3767,7 +3773,7 @@ class QmcpackInput(SimulationInput,Names):
             J2 = wavefunction.jastrows.J2
             if 'function' in J2 and J2.function.lower()=='bspline':
                 c = wavefunction.jastrows.J2.correlations
-                ctot = np.abs(np.array(c.uu.coefficients.coeff)).sum() + np.abs(np.array(c.ud.coefficients.coeff)).sum()
+                ctot = abs(array(c.uu.coefficients.coeff)).sum() + abs(array(c.ud.coefficients.coeff)).sum()
                 if ctot < 1e-3:
                     wavefunction.jastrows.J2 = jastrows.J2
                 #end if
@@ -3813,7 +3819,7 @@ class QmcpackInput(SimulationInput,Names):
             for pname,pset in ps.items():
                 g0name = list(pset.groups.keys())[0]
                 g0 = pset.groups[g0name]
-                if np.abs(-1-g0.charge)<1e-2:
+                if abs(-1-g0.charge)<1e-2:
                     old_eps_name = pname
                 elif 'ionid' in pset:
                     old_ips_name = pname
@@ -3855,14 +3861,14 @@ class QmcpackInput(SimulationInput,Names):
             #  the wavefunction hdf5 file from pwscf
             if structure.folded_structure is not None:
                 fs = structure.folded_structure
-                axes = np.array(pwscf_array_string(fs.axes).split(),dtype=float)
+                axes = array(pwscf_array_string(fs.axes).split(),dtype=float)
                 axes.shape = fs.axes.shape
-                axes = np.dot(structure.tmatrix,axes)
-                if np.abs(axes-structure.axes).sum()>1e-5:
+                axes = dot(structure.tmatrix,axes)
+                if abs(axes-structure.axes).sum()>1e-5:
                     self.error('supercell axes do not match tiled version of folded cell axes\n  you may have changed one set of axes (super/folded) and not the other\n  folded cell axes:\n'+str(fs.axes)+'\n  supercell axes:\n'+str(structure.axes)+'\n  folded axes tiled:\n'+str(axes))
                 #end if
             else:
-                axes = np.array(pwscf_array_string(structure.axes).split(),dtype=float)
+                axes = array(pwscf_array_string(structure.axes).split(),dtype=float)
                 axes.shape = structure.axes.shape
             #end if
             structure.adjust_axes(axes)
@@ -3938,7 +3944,7 @@ class QmcpackInput(SimulationInput,Names):
             ddet.size = elns.down_electron.count
         #end if
 
-        if np.abs(net_spin) > 1e-1:
+        if abs(net_spin) > 1e-1:
             if ddet is not None:
                 if 'occupation' in ddet:
                     ddet.occupation.spindataset = 1
@@ -4059,8 +4065,8 @@ class QmcpackInput(SimulationInput,Names):
                     elem = None
                     pos  = None
                 else:
-                    elem  = np.array(elem)
-                    pos   = np.array(pos)
+                    elem  = array(elem)
+                    pos   = array(pos)
                     order = elem.argsort()
                     elem  = elem[order]
                     pos   = pos[order]
@@ -4074,7 +4080,7 @@ class QmcpackInput(SimulationInput,Names):
             else:
                 md = input._metadata
                 if 'position' in md and 'condition' in md['position'] and md['position']['condition']==1:
-                    pos = np.dot(pos,axes)
+                    pos = dot(pos,axes)
                 #end if
                 center = axes.sum(0)/2
             #end if
@@ -5345,14 +5351,14 @@ def generate_simulationcell(bconds='ppp',lr_dim_cutoff=15,lr_tol=None,lr_handler
             #  the wavefunction hdf5 file from pwscf
             if structure.folded_structure is not None:
                 fs = structure.folded_structure
-                axes = np.array(pwscf_array_string(fs.axes).split(),dtype=float)
+                axes = array(pwscf_array_string(fs.axes).split(),dtype=float)
                 axes.shape = fs.axes.shape
-                axes = np.dot(structure.tmatrix,axes)
-                if np.abs(axes-structure.axes).sum()>1e-5:
+                axes = dot(structure.tmatrix,axes)
+                if abs(axes-structure.axes).sum()>1e-5:
                     QmcpackInput.class_error('in generate_simulationcell\nsupercell axes do not match tiled version of folded cell axes\nyou may have changed one set of axes (super/folded) and not the other\nfolded cell axes:\n'+str(fs.axes)+'\nsupercell axes:\n'+str(structure.axes)+'\nfolded axes tiled:\n'+str(axes))
                 #end if
             else:
-                axes = np.array(pwscf_array_string(structure.axes).split(),dtype=float)
+                axes = array(pwscf_array_string(structure.axes).split(),dtype=float)
                 axes.shape = structure.axes.shape
             #end if
             structure.adjust_axes(axes)
@@ -5588,7 +5594,7 @@ def generate_bspline_builder(type           = 'bspline',
                              gpusharing     = None,
                              spinor         = None,
                              ):
-    tilematrix = np.identity(3,dtype=int)
+    tilematrix = identity(3,dtype=int)
     if system is not None:
         tilematrix = system.structure.tilematrix()
     #end if
@@ -5877,7 +5883,7 @@ def check_excitation_type(excitation):
         else:
             tmp = None
             try:
-                tmp = np.array(exc2.split(),dtype=int)
+                tmp = array(exc2.split(),dtype=int)
             except:
                 format_failed = True
             #end try
@@ -5942,7 +5948,7 @@ def generate_determinantset_old(type           = 'bspline',
     if spin_polarized:
         down_spin=1
     #end if
-    tilematrix = np.identity(3,dtype=int)
+    tilematrix = identity(3,dtype=int)
     if system is not None:
         tilematrix = system.structure.tilematrix()
     #end if
@@ -6109,7 +6115,7 @@ def generate_determinantset_old(type           = 'bspline',
                     exc_orbs = [nup,nup+1]
                 else:
                     # assume excitation of form '-216 +217' or '-216 217'
-                    exc_orbs = np.array(exc2.split(),dtype=int)
+                    exc_orbs = array(exc2.split(),dtype=int)
                     exc_orbs[0] *= -1
                 #end if
 
@@ -6152,7 +6158,7 @@ def generate_determinantset_old(type           = 'bspline',
                 QmcpackInput.class_error('excitation with vb-cb band format works only with special k-points')
             #end if
             
-            vb = int(sdet.size / np.abs(np.linalg.det(tilematrix))) -1  # Separate for each spin channel
+            vb = int(sdet.size / abs(linalg.det(tilematrix))) -1  # Separate for each spin channel
             cb = vb+1
             # Convert band_1, band_2 to band indexes
             bands = [band_1, band_2]
@@ -6188,25 +6194,25 @@ def generate_determinantset_old(type           = 'bspline',
             structure = system.structure.get_smallest().copy()
             structure.change_units('A')
             kpath       = get_kpath(structure=structure)
-            kpath_label = np.array(kpath['explicit_kpoints_labels'])
+            kpath_label = array(kpath['explicit_kpoints_labels'])
             kpath_rel   = kpath['explicit_kpoints_rel']
             
             k1_in = k_1
             k2_in = k_2
             if k_1 in kpath_label and k_2 in kpath_label:   
-                k_1 = kpath_rel[np.where(kpath_label == k_1)][0]
-                k_2 = kpath_rel[np.where(kpath_label == k_2)][0]
+                k_1 = kpath_rel[where(kpath_label == k_1)][0]
+                k_2 = kpath_rel[where(kpath_label == k_2)][0]
 
                 #kpts = nscf.input.k_points.kpoints
                 kpts = structure.kpoints_unit()
                 found_k1 = False
                 found_k2 = False
                 for knum, k in enumerate(kpts):
-                    if np.isclose(k_1, k).all():
+                    if isclose(k_1, k).all():
                         k_1 = knum
                         found_k1 = True
                     #end if
-                    if np.isclose(k_2, k).all():
+                    if isclose(k_2, k).all():
                         k_2 = knum
                         found_k2 = True
                     #end if
@@ -6659,7 +6665,7 @@ def generate_jastrows_alt(
             #end if
         #end if
         if J1_size is None:
-            J1_size = int(np.ceil(J1_rcut/J1_dr))
+            J1_size = int(ceil(J1_rcut/J1_dr))
         #end if
         kw = obj(system=system)
         if J1_opt is not None:
@@ -6682,7 +6688,7 @@ def generate_jastrows_alt(
             #end if
         #end if
         if J2_size is None:
-            J2_size = int(np.ceil(J2_rcut/J2_dr))
+            J2_size = int(ceil(J2_rcut/J2_dr))
         #end if
         kw = obj(system=system)
         if J2_opt is not None:
@@ -6912,11 +6918,11 @@ def generate_bspline_jastrow2(size=8,rcut=None,coeff=None,spins=('u','d'),densit
             if not allperiodic:
                 QmcpackInput.class_error('rpa initialization can only be used for fully periodic systems','generate_bspline_jastrow2')
             #end if
-            wp = np.sqrt(4*np.pi*density)
+            wp = sqrt(4*pi*density)
             dr = rcut/size
-            r = .02 + dr*np.arange(size)
-            uuc = .5/(wp*r)*(1.-np.exp(-r*np.sqrt(wp/2)))*np.exp(-(2*r/rcut)**2)
-            udc = .5/(wp*r)*(1.-np.exp(-r*np.sqrt(wp))  )*np.exp(-(2*r/rcut)**2)
+            r = .02 + dr*arange(size)
+            uuc = .5/(wp*r)*(1.-exp(-r*sqrt(wp/2)))*exp(-(2*r/rcut)**2)
+            udc = .5/(wp*r)*(1.-exp(-r*sqrt(wp))  )*exp(-(2*r/rcut)**2)
             coeff = [uuc,udc]
         elif init=='zero' or init==0:
             coeff = [size*[0],size*[0]]
@@ -7352,12 +7358,12 @@ def generate_opt(method,
     tot_walkers = processes*walkers_per_proc
     if min_walkers is not None:
         tot_walkers = max(min_walkers,tot_walkers)
-        walkers = int(np.ceil(float(tot_walkers)/processes-.001))
-        if threads is not None and np.mod(walkers,threads)!=0:
-            walkers = threads*int(np.ceil(float(walkers)/threads-.001))
+        walkers = int(ceil(float(tot_walkers)/processes-.001))
+        if threads is not None and mod(walkers,threads)!=0:
+            walkers = threads*int(ceil(float(walkers)/threads-.001))
         #end if
     #end if
-    #blocks = int(np.ceil(float(decorr*samples)/(steps*tot_walkers)))
+    #blocks = int(ceil(float(decorr*samples)/(steps*tot_walkers)))
     blocks = min(blocks,samples_per_proc*decorr)
 
     opt = opt_map[method]()
@@ -9320,8 +9326,8 @@ if __name__=='__main__':
                 qmcsystem = section(
                     simulationcell = section(
                         name = 'global',
-                        lattice = np.array([[1,1,0],[1,0,1],[0,1,1]]),
-                        reciprocal = np.array([[1,1,-1],[1,-1,1],[-1,1,1]]),
+                        lattice = array([[1,1,0],[1,0,1],[0,1,1]]),
+                        reciprocal = array([[1,1,-1],[1,-1,1],[-1,1,1]]),
                         bconds = 'p p p',
                         LR_dim_cutoff = 15            
                         ),
@@ -9341,7 +9347,7 @@ if __name__=='__main__':
                                 ],
                             ionid = ['B','C','C','C','C','C','C','C','C','C','C','C','C','C','C','C',
                                      'B','C','C','C','C','C','C','C','C','C','C','C','C','C','C','C'],
-                            position = np.array([
+                            position = array([
                                     [ 0.00, 0.00, 0.00],[ 1.68, 1.68, 1.68],[ 3.37, 3.37, 0.00],
                                     [ 5.05, 5.05, 1.68],[ 3.37, 0.00, 3.37],[ 5.05, 1.68, 5.05],
                                     [ 6.74, 3.37, 3.37],[ 8.42, 5.05, 5.05],[ 0.00, 3.37, 3.37],
@@ -9458,7 +9464,7 @@ if __name__=='__main__':
                             type='bspline',
                             href='Si.pwscf.h5',
                             sort = 1,
-                            tilematrix = np.array([[1,0,0],[0,1,0],[0,0,1]]),
+                            tilematrix = array([[1,0,0],[0,1,0],[0,0,1]]),
                             twistnum = 0,
                             source = 'ion0',
                             slaterdeterminant = section(
@@ -9831,7 +9837,7 @@ if __name__=='__main__':
             qmcsystem = section(
                 simulationcell = section(
                     units = 'bohr',
-                    lattice = np.array([[1,1,0],[1,0,1],[0,1,1]]),
+                    lattice = array([[1,1,0],[1,0,1],[0,1,1]]),
                     bconds = 'p p p',
                     LR_dim_cutoff = 15            
                     ),
@@ -9839,7 +9845,7 @@ if __name__=='__main__':
                     particleset('ion0', ('C',4), ('B',3),
                         ionid = ['B','C','C','C','C','C','C','C','C','C','C','C','C','C','C','C',
                                  'B','C','C','C','C','C','C','C','C','C','C','C','C','C','C','C'],
-                        position = np.array([
+                        position = array([
                                 [ 0.00, 0.00, 0.00],[ 1.68, 1.68, 1.68],[ 3.37, 3.37, 0.00],
                                 [ 5.05, 5.05, 1.68],[ 3.37, 0.00, 3.37],[ 5.05, 1.68, 5.05],
                                 [ 6.74, 3.37, 3.37],[ 8.42, 5.05, 5.05],[ 0.00, 3.37, 3.37],
@@ -9875,7 +9881,7 @@ if __name__=='__main__':
                 wavefunction = section('psi0','e',
                     determinantset = section('bspline','Si.pwscf.h5','ion0',
                         sort = 1,
-                        tilematrix = np.array([[1,0,0],[0,1,0],[0,0,1]]),
+                        tilematrix = array([[1,0,0],[0,1,0],[0,0,1]]),
                         twistnum = 0,
                         slaterdeterminant = [
                             determinant('updet',64,'ground',0),
