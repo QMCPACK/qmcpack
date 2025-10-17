@@ -26,41 +26,29 @@
 
 import os
 import numpy as np
-from simulation import Simulation, NullSimulationAnalyzer
-from qmcpack_input import (
-    QmcpackInput,
-    TracedQmcpackInput,
-    loop,
-    linear,
-    cslinear,
-    vmc,
-    dmc,
-    collection,
-    determinantset,
-    hamiltonian,
-    init,
-    pairpot,
-    bspline_builder,
-    generate_qmcpack_input,
-    generate_jastrows,
-    generate_jastrow,
-    generate_jastrow1,
-    generate_jastrow2,
-    generate_jastrow3,
-    generate_opt,
-    generate_opts,
-    check_excitation_type,
-)
+from numpy import array,dot,pi
+from numpy.linalg import inv,norm
+from generic import obj
+from periodic_table import periodic_table
+from physical_system import PhysicalSystem
+from simulation import Simulation,NullSimulationAnalyzer
+from qmcpack_input import QmcpackInput,generate_qmcpack_input
+from qmcpack_input import TracedQmcpackInput
+from qmcpack_input import loop,linear,cslinear,vmc,dmc,collection,determinantset,hamiltonian,init,pairpot,bspline_builder
+from qmcpack_input import generate_jastrows,generate_jastrow,generate_jastrow1,generate_jastrow2,generate_jastrow3
+from qmcpack_input import generate_opt,generate_opts
+from qmcpack_input import check_excitation_type
 from qmcpack_analyzer import QmcpackAnalyzer
-from qmcpack_converters import Pw2qmcpack, Convert4qmc, Convertpw4qmc, PyscfToAfqmc
+from qmcpack_converters import Pw2qmcpack,Convert4qmc,Convertpw4qmc,PyscfToAfqmc
 from pyscf_sim import Pyscf
-from developer import DevBase, obj, error, unavailable
+from debug import ci,ls,gs
+from developer import DevBase,error,unavailable
 from nexus_base import nexus_core
 from copy import deepcopy
 from hdfreader import read_hdf
 from unit_converter import convert
 from pwscf import Pwscf
-from xmlreader import XMLreader
+from xmlreader import XMLreader,XMLelement
 try:
     import h5py
 except:
@@ -136,7 +124,7 @@ class GCTA(DevBase):
         Read the ESHDF eigenvalues, k-point info and store the data in the GCTA instance as an attribute
         '''
         def h5_scalar(i):
-            value = np.array(i)
+            value = array(i)
             if value.ndim == 0:
                 return value.item()
             else:
@@ -157,11 +145,11 @@ class GCTA(DevBase):
             for ispin in range(nspins):
                 path = 'electrons/kpoint_{0}/spin_{1}'.format(ikpoint,ispin)
                 spin = h.get_path(path)
-                eigs = convert(np.array(spin.eigenvalues),'Ha','eV')
+                eigs = convert(array(spin.eigenvalues),'Ha','eV')
                 nstates = h5_scalar(spin.number_of_states)
                 data[ikpoint,ispin] = obj(
-                    eig    = np.array(eigs),
-                    kpoint = np.array(kp.reduced_k), # unit (crystal) coordinates for kpoints. The range is [0, 1).
+                    eig    = array(eigs),
+                    kpoint = array(kp.reduced_k), # unit (crystal) coordinates for kpoints. The range is [0, 1).
                     kweight = kw,
                     )
             #end for
@@ -200,12 +188,12 @@ class GCTA(DevBase):
         '''
         Returns the number of unsymmetrized k-points when a supercell is unfolded back to the primitive cell
         '''
-        kgrid = np.array(self.system.generation_info.kgrid)
+        kgrid = array(self.system.generation_info.kgrid)
         nkgrid = np.prod(kgrid)
         if self.system.folded_system is None:
             ntile = 1
         else:
-            tmatrix = np.array(self.system.structure.tmatrix)
+            tmatrix = array(self.system.structure.tmatrix)
             ntile = np.linalg.det(tmatrix)
         #end if
         nkpoints = round(nkgrid * ntile)
@@ -249,7 +237,7 @@ class GCTA(DevBase):
         for ikpoint in range(nkpoints):
             eig_kpoints.append(self.eig_data.data[ikpoint, 0].kpoint) # 0: only checking the consistency in one spin channel
         #end for
-        eig_kpoints = np.array(eig_kpoints)
+        eig_kpoints = array(eig_kpoints)
         # Check if each row of gcta_kpoints exists in eig_kpoints
         for gcta_row in gcta_kpoints:
             if not np.any(np.all(np.isclose(eig_kpoints, gcta_row, atol=tol), axis=1)):
@@ -271,7 +259,7 @@ class GCTA(DevBase):
         for ikpoint in range(nkpoints):
             eig_kpoints.append(self.eig_data.data[ikpoint, 0].kpoint) # 0: only need one spin channel
         #end for
-        eig_kpoints = np.array(eig_kpoints)
+        eig_kpoints = array(eig_kpoints)
         # Check if each row of gcta_kpoints exists in eig_kpoints
         for i, gcta_row in enumerate(gcta_kpoints):
             for k, eig_row in enumerate(eig_kpoints):
@@ -343,7 +331,7 @@ class GCTA(DevBase):
         if tot_magnetization == True:
             up_fermi = float(xml['qes:espresso']['output']['band_structure']['two_fermi_energies']['text'].split()[0])
             dn_fermi = float(xml['qes:espresso']['output']['band_structure']['two_fermi_energies']['text'].split()[1])
-            fermi_level = np.array([up_fermi, dn_fermi])
+            fermi_level = array([up_fermi, dn_fermi])
         else:
             fermi_level = float(xml['qes:espresso']['output']['band_structure']['fermi_energy']['text'])
         #end if
@@ -411,7 +399,7 @@ class GCTA(DevBase):
         dn_index = (nelecs_prim * nosym_kpoints) - up_index
         up_fermi = float(combined_eigens[0][up_index-1] + combined_eigens[0][up_index]) / 2
         dn_fermi = float(combined_eigens[1][dn_index-1] + combined_eigens[1][dn_index]) / 2
-        fermi_level = np.array([up_fermi, dn_fermi])
+        fermi_level = array([up_fermi, dn_fermi])
         return fermi_level
     #end def adapted_fermi_level
 
@@ -465,7 +453,7 @@ class GCTA(DevBase):
         n_dn = self.system.particles.down_electron.count
         n_total = n_up + n_dn
         nelecs_at_twist = self.nelecs_at_twist
-        kweights = np.array(self.system.structure.kweights)
+        kweights = array(self.system.structure.kweights)
         assert (len(kweights) == len(nelecs_at_twist))
         q_sum_twists = 0
         for itwist, nelec_up_dn in enumerate(nelecs_at_twist):
@@ -481,7 +469,7 @@ class GCTA(DevBase):
         Returns the net spin of a system with multiple twists (not averaged)
         '''
         nelecs_at_twist = self.nelecs_at_twist
-        kweights = np.array(self.system.structure.kweights)
+        kweights = array(self.system.structure.kweights)
         assert (len(kweights) == len(nelecs_at_twist))
         spin_sum_twists = 0
         for itwist, nelec_up_dn in enumerate(nelecs_at_twist):
@@ -538,7 +526,7 @@ class GCTA(DevBase):
         n_dn = self.system.particles.down_electron.count
         n_total = n_up + n_dn
         nelecs_at_twist = self.nelecs_at_twist
-        fermi_level = np.array(fermi_level)
+        fermi_level = array(fermi_level)
         filepath = '{}/gcta_report.txt'.format(locdir)
         with open(filepath, 'w') as gcta_file:
             # Writing data to a file
@@ -740,7 +728,7 @@ class Qmcpack(Simulation):
                 else:
                     orb_elem.href = os.path.relpath(h5file,self.locdir)
                     if system.structure.folded_structure is not None:
-                        orb_elem.tilematrix = np.array(system.structure.tmatrix)
+                        orb_elem.tilematrix = array(system.structure.tmatrix)
                     #end if
                 #end if
                 defs = obj(
@@ -1381,7 +1369,7 @@ class Qmcpack(Simulation):
 
                         from structure import get_kpath
                         kpath       = get_kpath(structure=structure)
-                        kpath_label = np.array(kpath['explicit_kpoints_labels'])
+                        kpath_label = array(kpath['explicit_kpoints_labels'])
                         kpath_rel   = kpath['explicit_kpoints_rel']
                         
                         k1_in = k_1
@@ -1558,14 +1546,14 @@ class Qmcpack(Simulation):
             #end if
             edata[spinlab] = obj()
             with open(einpath) as f:
-                data = np.array(f.read().split()[1:])
+                data = array(f.read().split()[1:])
                 data.shape = len(data)//12,12
                 data = data.T
                 for darr in data:
                     if darr[0][0]=='K' or darr[0][0]=='E':
-                        edata[spinlab][darr[0]] = np.array(list(map(float,darr[1:])))
+                        edata[spinlab][darr[0]] = array(list(map(float,darr[1:])))
                     else:
-                        edata[spinlab][darr[0]] = np.array(list(map(int,darr[1:])))
+                        edata[spinlab][darr[0]] = array(list(map(int,darr[1:])))
                     #end if
                 #end for
             #end with

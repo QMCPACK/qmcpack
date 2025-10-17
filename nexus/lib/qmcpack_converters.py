@@ -43,16 +43,14 @@
 #====================================================================#
 
 
+
 import os
-import numpy as np
-from developer import obj, error
-from simulation import Simulation, SimulationInput, SimulationAnalyzer
+from generic import obj
+from simulation import Simulation,SimulationInput,SimulationAnalyzer
 from pwscf import Pwscf
 from gamess import Gamess
 from pyscf_sim import Pyscf
 from quantum_package import QuantumPackage
-from unit_converter import convert
-from hdfreader import read_hdf
 
 
 # read/write functions associated with pw2qmcpack only
@@ -188,13 +186,20 @@ def generate_pw2qmcpack_input(prefix='pwscf',outdir='pwscf_output',write_psir=Fa
 
 
 def read_eshdf_eig_data(filename, Ef_list):
+    import numpy as np
+    from numpy import array,pi
+    from numpy.linalg import inv
+    from unit_converter import convert
+    from hdfreader import read_hdf
+    from developer import error
+
     def h5int(i):
-        return np.array(i,dtype=int)[0]
+        return array(i,dtype=int)[0]
     #end def h5int
 
     h        = read_hdf(filename,view=True)
-    axes     = np.array(h.supercell.primitive_vectors)
-    kaxes    = 2*np.pi*np.linalg.inv(axes).T
+    axes     = array(h.supercell.primitive_vectors)
+    kaxes    = 2*pi*inv(axes).T
     nk       = h5int(h.electrons.number_of_kpoints)
     ns       = h5int(h.electrons.number_of_spins)
     if (len(Ef_list) == 1 and ns == 2):
@@ -212,7 +217,7 @@ def read_eshdf_eig_data(filename, Ef_list):
             eig_s = []
             path = 'electrons/kpoint_{0}/spin_{1}'.format(k,s)
             spin = h.get_path(path)
-            eig = convert(np.array(spin.eigenvalues),'Ha','eV')
+            eig = convert(array(spin.eigenvalues),'Ha','eV')
             nst = h5int(spin.number_of_states)
             for st in range(nst):
                 e = eig[st]
@@ -221,8 +226,8 @@ def read_eshdf_eig_data(filename, Ef_list):
                 #end if
             #end for
             data[k,s] = obj(
-                kpoint = np.array(kp.reduced_k),
-                eig    = np.array(eig_s),
+                kpoint = array(kp.reduced_k),
+                eig    = array(eig_s),
                 )
         #end for
     #end for

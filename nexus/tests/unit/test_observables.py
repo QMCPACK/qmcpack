@@ -14,7 +14,7 @@ def test_import():
 
 
 def test_defined_attribute_base():
-    from developer import obj, NexusError
+    from generic import obj,NexusError
     from observables import AttributeProperties,DefinedAttributeBase
 
     # empty init

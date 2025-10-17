@@ -2,15 +2,17 @@
 ##  (c) Copyright 2020-  by Jaron T. Krogel                     ##
 ##################################################################
 
-
 import os
 import numpy as np
-from developer import obj, to_str
+
+from generic import obj
+from developer import to_str
 from fileio import TextFile
 from unit_converter import convert
-from simulation import SimulationAnalyzer, Simulation
+from simulation import SimulationAnalyzer,Simulation
 from structure import generate_structure
-from rmg_input import RmgInput, rmg_modes
+from rmg_input import RmgInput,rmg_modes
+
 
 
 class RmgAnalyzer(SimulationAnalyzer):

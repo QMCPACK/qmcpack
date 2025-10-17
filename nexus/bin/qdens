@@ -29,9 +29,12 @@ try:
     nexus_version = versions.nexus_version
     del versions
 
+    generic = import_nexus_module('generic')
+    obj = generic.obj
+    del generic
+
     developer = import_nexus_module('developer')
     DevBase     = developer.DevBase
-    obj         = developer.obj
     error       = developer.error
     ci          = developer.ci
     unavailable = developer.unavailable
@@ -69,7 +72,8 @@ try:
     del qmcpack_input
 except:
     from versions import nexus_version
-    from developer import DevBase,obj,error,ci,unavailable
+    from generic import obj
+    from developer import DevBase,error,ci,unavailable
     import memory
     from hdfreader import HDFreader
     from fileio import XsfFile,ChgcarFile

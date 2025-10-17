@@ -116,7 +116,7 @@ def test_check_result():
 def test_get_result():
     import os
     from subprocess import Popen,PIPE
-    from developer import NexusError, obj
+    from generic import NexusError,obj
     from nexus_base import nexus_core
     from qmcpack_analyzer import QmcpackAnalyzer
 
@@ -192,7 +192,7 @@ def test_incorporate_result():
     import shutil
     from subprocess import Popen,PIPE
     from numpy import array
-    from developer import NexusError, obj
+    from generic import NexusError,obj
     from nexus_base import nexus_core
     from test_vasp_simulation import setup_vasp_sim as get_vasp_sim
     from test_vasp_simulation import pseudo_inputs as vasp_pseudo_inputs

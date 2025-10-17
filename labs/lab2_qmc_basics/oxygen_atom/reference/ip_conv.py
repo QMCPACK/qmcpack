@@ -4,7 +4,7 @@ import os
 import sys
 from subprocess import Popen,PIPE
 from numpy import array,sqrt,polyfit,polyval,linspace
-from developer import obj
+from generic import obj
 from plotting import *
 
 params = {'legend.fontsize':14,'figure.facecolor':'white','figure.subplot.hspace':0.6,

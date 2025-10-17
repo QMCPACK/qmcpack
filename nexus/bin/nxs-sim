@@ -29,13 +29,13 @@ try:
     nexus_version = versions.nexus_version
     del versions
 
-    developer = import_nexus_module('developer')
-    obj   = developer.obj
-    del developer
+    generic = import_nexus_module('generic')
+    obj   = generic.obj
+    del generic
 except:
     # Failing path-based imports, import installed Nexus modules.
     from versions import nexus_version
-    from developer import obj
+    from generic import obj
 #end try
 
 

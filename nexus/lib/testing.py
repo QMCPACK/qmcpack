@@ -1,20 +1,3 @@
-import os
-import shutil
-from subprocess import Popen,PIPE
-from generic import generic_settings
-from developer import obj, object_interface
-from execute import execute as nexus_execute
-from nexus_base import (
-    nexus_core,
-    nexus_noncore,
-    nexus_core_noncore,
-    nexus_core_defaults,
-    nexus_noncore_defaults,
-    nexus_core_noncore_defaults,
-)
-from pseudopotential import Pseudopotentials
-from simulation import Simulation
-
 try:
     import numpy as np
     if np.lib.NumpyVersion(np.__version__) >= '2.0.0b1':
@@ -222,7 +205,7 @@ def text_diff(t1,t2,atol=def_atol,rtol=def_rtol,int_as_float=False,full=False,by
 
 # print the difference between two objects
 def print_diff(o1,o2,atol=def_atol,rtol=def_rtol,int_as_float=False,text=False,by_line=False): # used in debugging, not actual tests
-
+    from generic import obj
     hline = '========== {} =========='
     print(hline.format('left object'))
     print(o1)
@@ -295,7 +278,7 @@ def text_eq(*args,**kwargs):
 
 # find the path to the Nexus directory and other internal paths
 def nexus_path(append=None,location=None):
-
+    import os
     testing_path = os.path.realpath(__file__)
 
     assert(isinstance(testing_path,str))
@@ -337,6 +320,7 @@ def nexus_path(append=None,location=None):
 
 # find the path to a file associated with a unit test
 def unit_test_file_path(test,file=None):
+    import os
     unit_path  = nexus_path(location='unit')
     files_dir  = 'test_{}_files'.format(test)
     path = os.path.join(unit_path,files_dir)
@@ -351,6 +335,7 @@ def unit_test_file_path(test,file=None):
 
 # collect paths to all files associated with a unit test
 def collect_unit_test_file_paths(test,storage):
+    import os
     if len(storage)==0:
         test_files_dir = unit_test_file_path(test)
         files = os.listdir(test_files_dir)
@@ -369,6 +354,7 @@ def collect_unit_test_file_paths(test,storage):
 
 # find the output path for a test
 def unit_test_output_path(test,subtest=None):
+    import os
     unit_path  = nexus_path(location='unit')
     files_dir  = 'test_{}_output'.format(test)
     path = os.path.join(unit_path,files_dir)
@@ -382,6 +368,9 @@ def unit_test_output_path(test,subtest=None):
 
 # setup the output directory for a test
 def setup_unit_test_output_directory(test,subtest,divert=False,file_sets=None,pseudo_dir=None,pseudo_files=None,pseudo_files_create=None):
+    import os
+    import shutil
+    from subprocess import Popen,PIPE
 
     divert |= pseudo_dir is not None
 
@@ -398,7 +387,7 @@ def setup_unit_test_output_directory(test,subtest,divert=False,file_sets=None,ps
 
     # divert nexus paths and output, if requested
     if divert:
-
+        from nexus_base import nexus_core
         divert_nexus()
         nexus_core.local_directory  = path
         nexus_core.remote_directory = path
@@ -439,6 +428,7 @@ def setup_unit_test_output_directory(test,subtest,divert=False,file_sets=None,ps
 
     # create pseudopotential directory and set internal nexus data structures
     if pseudo_dir is not None:
+        from nexus_base import nexus_noncore
         pseudo_path = os.path.join(path,pseudo_dir)
         if not os.path.exists(pseudo_path):
             os.makedirs(pseudo_path)
@@ -475,7 +465,7 @@ def setup_unit_test_output_directory(test,subtest,divert=False,file_sets=None,ps
             #end for
         #end if
         if len(pseudo_filepaths)>0:
-            
+            from pseudopotential import Pseudopotentials
             for pp_file in pseudo_filepaths:
                 assert(os.path.exists(pp_file))
                 assert(os.path.isfile(pp_file))
@@ -527,7 +517,7 @@ nexus_noncore_storage = dict()
 
 # divert nexus log output
 def divert_nexus_log():
-
+    from generic import generic_settings,object_interface
     assert(len(logging_storage)==0)
     logging_storage['devlog'] = generic_settings.devlog
     logging_storage['objlog'] = object_interface._logfile 
@@ -540,7 +530,7 @@ def divert_nexus_log():
 
 # restore nexus log output
 def restore_nexus_log():
-
+    from generic import generic_settings,object_interface
     assert(set(logging_storage.keys())==set(['devlog','objlog']))
     generic_settings.devlog   = logging_storage.pop('devlog')
     object_interface._logfile = logging_storage.pop('objlog')
@@ -569,6 +559,7 @@ noncore_keys = [
 
 # divert nexus core attributes
 def divert_nexus_core():
+    from nexus_base import nexus_core,nexus_noncore
     assert(len(nexus_core_storage)==0)
     for key in core_keys:
         nexus_core_storage[key] = nexus_core[key]
@@ -584,6 +575,8 @@ def divert_nexus_core():
 
 # restore nexus core attributes
 def restore_nexus_core():
+    from nexus_base import nexus_core,nexus_noncore,nexus_core_noncore
+    from nexus_base import nexus_noncore_defaults
     for key in core_keys:
         nexus_core[key] = nexus_core_storage.pop(key)
     #end for
@@ -637,17 +630,22 @@ global_data = dict(
 
 
 def divert_nexus_errors():
+    from generic import generic_settings
     generic_settings.raise_error = True
 #end def divert_nexus_errors
 
 
 def clear_all_sims():
+    from simulation import Simulation
     Simulation.clear_all_sims()
 #end def clear_all_sims
 
 
 
 def check_final_state():
+    from nexus_base import nexus_core,nexus_core_defaults
+    from nexus_base import nexus_noncore,nexus_noncore_defaults
+    from nexus_base import nexus_core_noncore,nexus_core_noncore_defaults
     
     assert('runs' in nexus_core_defaults)
     assert('basis_dir' in nexus_noncore_defaults)
@@ -657,6 +655,8 @@ def check_final_state():
     assert(object_eq(nexus_noncore,nexus_noncore_defaults))
     assert(object_eq(nexus_core_noncore,nexus_core_noncore_defaults))
 
+    from simulation import Simulation
+
     assert(Simulation.sim_count==0)
     assert(len(Simulation.all_sims)==0)
     assert(len(Simulation.sim_directories)==0)
@@ -665,6 +665,7 @@ def check_final_state():
 
 
 def executable_path(exe_name):
+    import os
     # nexus bin directory
     nexus_bin = nexus_path(location='bin')
     # path to exe
@@ -679,6 +680,7 @@ def executable_path(exe_name):
 
 
 def create_file(filename,path,contents=''):
+    import os
     filepath = os.path.join(path,filename)
     f = open(filepath,'w')
     f.write(contents)
@@ -690,6 +692,7 @@ def create_file(filename,path,contents=''):
 
 
 def create_path(path,basepath=None):
+    import os
     if basepath is not None:
         path = os.path.join(basepath,path)
     #end if
@@ -702,7 +705,7 @@ def create_path(path,basepath=None):
 
 
 def execute(command):
-    
+    from execute import execute as nexus_execute
     out,err,rc = nexus_execute(command)
     if rc!=0:
         msg = '''Executed system command failed.

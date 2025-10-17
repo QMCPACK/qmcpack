@@ -23,10 +23,13 @@
 import os
 import mmap
 import numpy as np
-from numpy.linalg import det, norm
-from developer import DevBase, obj, error, to_str
-from periodic_table import is_element, pt as ptable
+from numpy import array,zeros,ndarray,around,arange,dot,savetxt,empty,reshape
+from numpy.linalg import det,norm
+from generic import obj
+from developer import DevBase,error,to_str
+from periodic_table import pt as ptable,is_element
 from unit_converter import convert
+from debug import *
 
 
 class TextFile(DevBase):
@@ -368,14 +371,14 @@ class XsfFile(StandardFile):
                     self.animsteps = int(tokens[1])
                     self.filetype = 'axsf'
                 elif keyword=='primvec':
-                    primvec = np.array((lines[i+1]+' '+
+                    primvec = array((lines[i+1]+' '+
                                      lines[i+2]+' '+
                                      lines[i+3]).split(),dtype=float)
                     primvec.shape = 3,3
                     self.add_to_image(image,'primvec',primvec)
                     i+=3
                 elif keyword=='convvec':
-                    convvec = np.array((lines[i+1]+' '+
+                    convvec = array((lines[i+1]+' '+
                                      lines[i+2]+' '+
                                      lines[i+3]).split(),dtype=float)
                     convvec.shape = 3,3
@@ -401,13 +404,13 @@ class XsfFile(StandardFile):
                         i+=1
                         tokens = lines[i].strip().split()
                     #end while
-                    elem = np.array(elem,dtype=int)
-                    pos  = np.array(pos,dtype=float)
+                    elem = array(elem,dtype=int)
+                    pos  = array(pos,dtype=float)
                     pos.shape = natoms,3
                     self.add_to_image(image,'elem',elem)
                     self.add_to_image(image,'pos',pos)
                     if len(force)>0:
-                        force = np.array(force,dtype=float)
+                        force = array(force,dtype=float)
                         force.shape = natoms,3
                         self.add_to_image(image,'force',force)
                     #end if
@@ -426,16 +429,16 @@ class XsfFile(StandardFile):
                         #end if
                     #end for
                     try:
-                        elem = np.array(elem,dtype=int)
+                        elem = array(elem,dtype=int)
                     except:
-                        elem = np.array(elem,dtype=str)
+                        elem = array(elem,dtype=str)
                     #end try
-                    pos  = np.array(pos,dtype=float)
+                    pos  = array(pos,dtype=float)
                     pos.shape = natoms,3
                     self.add_to_image(image,'elem',elem)
                     self.add_to_image(image,'pos',pos)
                     if len(force)>0:
-                        force = np.array(force,dtype=float)
+                        force = array(force,dtype=float)
                         force.shape = natoms,3
                         self.add_to_image(image,'force',force)
                     #end if
@@ -466,14 +469,14 @@ class XsfFile(StandardFile):
                         line = lines[i].strip().lower()
                         if line.startswith('begin_datagrid') or line.startswith('datagrid_'):
                             grid_identifier = line.replace('begin_datagrid_{0}d_'.format(d),'')
-                            grid   = np.array(lines[i+1].split(),dtype=int)[:d]
-                            corner = np.array(lines[i+2].split(),dtype=float)
+                            grid   = array(lines[i+1].split(),dtype=int)[:d]
+                            corner = array(lines[i+2].split(),dtype=float)
                             if d==2:
-                                cell   = np.array((lines[i+3]+' '+
+                                cell   = array((lines[i+3]+' '+
                                                 lines[i+4]).split(),dtype=float)
                                 i+=5
                             elif d==3:
-                                cell   = np.array((lines[i+3]+' '+
+                                cell   = array((lines[i+3]+' '+
                                                 lines[i+4]+' '+
                                                 lines[i+5]).split(),dtype=float)
                                 i+=6
@@ -486,8 +489,8 @@ class XsfFile(StandardFile):
                                 i+=1
                                 line = lines[i].strip().lower()
                             #end while
-                            grid_data = np.array(dtokens,dtype=float)
-                            grid_data=np.reshape(grid_data,grid,order=order)
+                            grid_data = array(dtokens,dtype=float)
+                            grid_data=reshape(grid_data,grid,order=order)
                             data[grid_identifier] = obj(
                                 grid   = grid,
                                 corner = corner,
@@ -535,14 +538,14 @@ class XsfFile(StandardFile):
                         if line.startswith('begin_bandgrid'):
                             grid_identifier = line.replace('begin_bandgrid_{0}d_'.format(d),'')
                             nbands = int(lines[i+1].strip())
-                            grid   = np.array(lines[i+2].split(),dtype=int)[:d]
-                            corner = np.array(lines[i+3].split(),dtype=float)
+                            grid   = array(lines[i+2].split(),dtype=int)[:d]
+                            corner = array(lines[i+3].split(),dtype=float)
                             if d==2:
-                                cell   = np.array((lines[i+4]+' '+
+                                cell   = array((lines[i+4]+' '+
                                                 lines[i+5]).split(),dtype=float)
                                 i+=6
                             elif d==3:
-                                cell   = np.array((lines[i+4]+' '+
+                                cell   = array((lines[i+4]+' '+
                                                 lines[i+5]+' '+
                                                 lines[i+6]).split(),dtype=float)
                                 i+=7
@@ -561,7 +564,7 @@ class XsfFile(StandardFile):
                                 line = lines[i].strip().lower()
                             #end while
                             for bi,bv in bands.items():
-                                bands[bi] = np.array(bv,dtype=float)
+                                bands[bi] = array(bv,dtype=float)
                                 bands[bi].shape = tuple(grid)
                             #end for
                             band[grid_identifier] = obj(
@@ -820,27 +823,27 @@ class XsfFile(StandardFile):
         self.filetype    = 'xsf'
         self.periodicity = 'crystal' # assumed
         self.primvec     = s.axes
-        self.elem        = np.array(elem,dtype=int)
+        self.elem        = array(elem,dtype=int)
         self.pos         = s.pos
     #end def incorporate_structure
 
 
     def add_density(self,cell,density,name='density',corner=None,grid=None,centered=False,add_ghost=False):
         if corner is None:
-            corner = np.zeros((3,),dtype=float)
+            corner = zeros((3,),dtype=float)
         #end if
         if grid is None:
             grid = density.shape
         #end if
-        grid    = np.array(grid,dtype=int)
-        corner  = np.array(corner,dtype=float)
-        cell    = np.array(cell  ,dtype=float)
-        density = np.array(density,dtype=float)
+        grid    = array(grid,dtype=int)
+        corner  = array(corner,dtype=float)
+        cell    = array(cell  ,dtype=float)
+        density = array(density,dtype=float)
         density.shape = tuple(grid)
         
         if centered: # shift corner by half a grid cell to center it
             dc = 0.5/grid     
-            dc = np.dot(dc,cell)
+            dc = dot(dc,cell)
             corner += dc
         #end if
 
@@ -848,7 +851,7 @@ class XsfFile(StandardFile):
             g = grid  # this is an extra shell of points in PBC
             d = density
             grid = g+1
-            density = np.zeros(tuple(grid),dtype=float)
+            density = zeros(tuple(grid),dtype=float)
             density[:g[0],:g[1],:g[2]] = d[:,:,:] # volume copy
             density[   -1,:g[1],:g[2]] = d[0,:,:] # face copies
             density[:g[0],   -1,:g[2]] = d[:,0,:]
@@ -900,8 +903,8 @@ class XsfFile(StandardFile):
 
         # remove the ghost cells
         d = data
-        g = np.array(d.shape,dtype=int)-1
-        data = np.zeros(tuple(g),dtype=float)
+        g = array(d.shape,dtype=int)-1
+        data = zeros(tuple(g),dtype=float)
         data[:,:,:] = d[:g[0],:g[1],:g[2]]
         density.values_noghost = data
         return data
@@ -948,14 +951,14 @@ class XsfFile(StandardFile):
         s = data.shape
         data.shape = s[0],s[1]*s[2]
         line_data = data.sum(1)*dV/dr
-        r_data = density.corner[dim] + dr*np.arange(len(line_data),dtype=float)
+        r_data = density.corner[dim] + dr*arange(len(line_data),dtype=float)
         return r_data,line_data
     #end def line_data
 
 
     def line_plot(self,dim,filepath):
         r,d = self.line_data(dim)
-        np.savetxt(filepath,np.array(list(zip(r,d))))
+        savetxt(filepath,array(list(zip(r,d))))
     #end def line_plot
 
     # test needed
@@ -1080,7 +1083,7 @@ class PoscarFile(StandardFile):
         #end if
         if self.axes is None:
             msgs.append('axes is missing')
-        elif not isinstance(self.axes,np.ndarray):
+        elif not isinstance(self.axes,ndarray):
             msgs.append('axes must be an array')
         elif self.axes.shape!=(3,3):
             msgs.append('axes must be a 3x3 array, shape provided is {0}'.format(self.axes.shape))
@@ -1090,7 +1093,7 @@ class PoscarFile(StandardFile):
         natoms = -1
         if self.elem_count is None:
             msgs.append('elem_count is missing')
-        elif not isinstance(self.elem_count,np.ndarray):
+        elif not isinstance(self.elem_count,ndarray):
             msgs.append('elem_count must be an array')
         elif len(self.elem_count)==0:
             msgs.append('elem_count array must contain at least one entry')
@@ -1103,9 +1106,9 @@ class PoscarFile(StandardFile):
             natoms = self.elem_count.sum()
         #end if
         if self.elem is not None: # presence depends on vasp version
-            if not isinstance(self.elem,np.ndarray):
+            if not isinstance(self.elem,ndarray):
                 msgs.append('elem must be an array')
-            elif isinstance(self.elem_count,np.ndarray) and len(self.elem)!=len(self.elem_count):
+            elif isinstance(self.elem_count,ndarray) and len(self.elem)!=len(self.elem_count):
                 msgs.append('elem and elem_count arrays must be the same length')
             elif not isinstance(self.elem[0],str):
                 msgs.append('elem must be an array of text')
@@ -1125,7 +1128,7 @@ class PoscarFile(StandardFile):
         #end if
         if self.pos is None:
             msgs.append('pos is missing')
-        elif not isinstance(self.pos,np.ndarray):
+        elif not isinstance(self.pos,ndarray):
             msgs.append('pos must be an array')
         elif natoms>0 and self.pos.shape!=(natoms,3):
             msgs.append('pos must be a {0}x3 array, shape provided is {1}'.format(natoms),self.pos.shape)
@@ -1133,7 +1136,7 @@ class PoscarFile(StandardFile):
             msgs.append('pos must be an array of real numbers')
         #end if
         if self.dynamic is not None: # dynamic is optional
-            if not isinstance(self.dynamic,np.ndarray):
+            if not isinstance(self.dynamic,ndarray):
                 msgs.append('dynamic must be an array')
             elif natoms>0 and self.dynamic.shape!=(natoms,3):
                 msgs.append('dynamic must be a {0}x3 array, shape provided is {1}'.format(natoms),self.dynamic.shape)
@@ -1147,7 +1150,7 @@ class PoscarFile(StandardFile):
             #end if
         #end if
         if self.vel is not None: # velocities are optional
-            if not isinstance(self.vel,np.ndarray):
+            if not isinstance(self.vel,ndarray):
                 msgs.append('vel must be an array')
             elif natoms>0 and self.vel.shape!=(natoms,3):
                 msgs.append('vel must be a {0}x3 array, shape provided is {1}'.format(natoms),self.vel.shape)
@@ -1258,8 +1261,8 @@ class PoscarFile(StandardFile):
 
         self.scale      = 1.0
         self.axes       = axes
-        self.elem       = np.array(species,dtype=str)
-        self.elem_count = np.array(species_counts,dtype=int)
+        self.elem       = array(species,dtype=str)
+        self.elem_count = array(species_counts,dtype=int)
         self.coord      = 'cartesian'
         self.pos        = pos
 
@@ -1293,7 +1296,7 @@ class ChgcarFile(StandardFile):
         #end if
         if self.grid is None:
             msgs.append('grid is missing')
-        elif not isinstance(self.grid,np.ndarray):
+        elif not isinstance(self.grid,ndarray):
             msgs.append('grid must be an array')
         elif len(self.grid)!=3 or self.grid.size!=3:
             msgs.append('grid must have 3 entries')
@@ -1307,7 +1310,7 @@ class ChgcarFile(StandardFile):
         #end if
         if self.charge_density is None:
             msgs.append('charge_density is missing')
-        elif not isinstance(self.charge_density,np.ndarray):
+        elif not isinstance(self.charge_density,ndarray):
             msgs.append('charge_density must be an array')
         elif len(self.charge_density)!=ng:
             msgs.append('charge_density must have {0} entries ({1} present by length)'.format(ng,len(self.charge_density)))
@@ -1317,7 +1320,7 @@ class ChgcarFile(StandardFile):
             msgs.append('charge_density must be an array of real numbers')
         #end if
         if self.spin_density is not None: # spin density is optional
-            if not isinstance(self.spin_density,np.ndarray):
+            if not isinstance(self.spin_density,ndarray):
                 msgs.append('spin_density must be an array')
             elif len(self.spin_density)!=ng:
                 msgs.append('spin_density must have {0} entries ({1} present)'.format(ng,len(self.spin_density)))
@@ -1368,7 +1371,7 @@ class ChgcarFile(StandardFile):
         poscar.incorporate_xsf(xsf)
         density = xsf.remove_ghost().copy()
         self.poscar         = poscar
-        self.grid           = np.array(density.shape,dtype=int)
+        self.grid           = array(density.shape,dtype=int)
         self.charge_density = density.ravel(order='F')
         self.check_valid()
     #end def incorporate_xsf
@@ -1414,18 +1417,18 @@ def read_poscar_chgcar(host,text):
     description = lines[0]
     dim = 3
     scale = float(lines[1].strip())
-    axes = np.empty((dim,dim))
-    axes[0] = np.array(lines[2].split(),dtype=float)
-    axes[1] = np.array(lines[3].split(),dtype=float)
-    axes[2] = np.array(lines[4].split(),dtype=float)
+    axes = empty((dim,dim))
+    axes[0] = array(lines[2].split(),dtype=float)
+    axes[1] = array(lines[3].split(),dtype=float)
+    axes[2] = array(lines[4].split(),dtype=float)
     tokens = lines[5].split()
     if tokens[0].isdigit():
-        counts = np.array(tokens,dtype=int)
+        counts = array(tokens,dtype=int)
         elem   = None
         lcur   = 6
     else:
-        elem   = np.array(tokens,dtype=str)
-        counts = np.array(lines[6].split(),dtype=int)
+        elem   = array(tokens,dtype=str)
+        counts = array(lines[6].split(),dtype=int)
         lcur   = 7
     #end if
 
@@ -1459,10 +1462,10 @@ def read_poscar_chgcar(host,text):
         spos.append(lines[lcur+i].split())
     #end for
     lcur += npos
-    spos = np.array(spos)
-    pos  = np.array(spos[:,0:3],dtype=float)
+    spos = array(spos)
+    pos  = array(spos[:,0:3],dtype=float)
     if selective_dynamics:
-        dynamic = np.array(spos[:,3:6],dtype=str)
+        dynamic = array(spos[:,3:6],dtype=str)
         dynamic = dynamic=='T'
     else:
         dynamic = None
@@ -1501,7 +1504,7 @@ def read_poscar_chgcar(host,text):
             svel.append(lines[lcur+i].split())
         #end for
         lcur += npos
-        vel = np.array(svel,dtype=float)
+        vel = array(svel,dtype=float)
     else:
         vel_coord = None
         vel = None
@@ -1511,7 +1514,7 @@ def read_poscar_chgcar(host,text):
     if is_chgcar:
         lcur+=1
         if lcur<len(lines) and len(lines[lcur])>0:
-            grid = np.array(lines[lcur].split(),dtype=int)
+            grid = array(lines[lcur].split(),dtype=int)
             lcur+=1
         else:
             host.error('file {0} is incomplete (missing grid)'.format(host.filepath))
@@ -1539,7 +1542,7 @@ def read_poscar_chgcar(host,text):
                         break
                     #end if
                 #end while
-                density = np.array(density[:n],dtype=float)
+                density = array(density[:n],dtype=float)
             else:
                 host.error('file {0} is incomplete (missing density)'.format(host.filepath))
             #end if
@@ -1555,7 +1558,7 @@ def read_poscar_chgcar(host,text):
                 spin_density   = density[ng:]
             elif ndens==4:
                 charge_density = density[:ng]
-                spin_density   = np.empty((ng,3),dtype=float)
+                spin_density   = empty((ng,3),dtype=float)
                 for i in range(3):
                     spin_density[:,i] = density[(i+1)*ng:(i+2)*ng]
                 #end for
