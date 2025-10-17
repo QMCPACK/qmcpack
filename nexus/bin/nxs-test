@@ -85,11 +85,6 @@ def import_from_unit_test_module(module_name,test_name):
 #end def import_from_unit_test_module
 
 
-# import core testing functions (shared between nxs-test and unit tests)
-from testing import *
-import testing as nexus_testing
-
-
 
 # exception indicating test failure
 class NexusTestFail(Exception):
@@ -1777,6 +1772,7 @@ def user_examples(label):
     from qmcpack_converters import Pw2qmcpackInput
     from gamess_input import GamessInput
     from qmcpack_input import QmcpackInput
+    import testing as nexus_testing
 
     # load information for a single user example
     if label not in example_information:
@@ -2302,9 +2298,6 @@ if __name__=='__main__':
         exit()
     #end if
 
-    global_data['verbose']       = options.verbose
-    global_data['job_ref_table'] = options.job_ref_table
-
     if options.regex!='none':
         regex = options.regex
     #end if
@@ -2381,6 +2374,12 @@ if __name__=='__main__':
     if options.pythonpath!='none':
         os.environ['PYTHONPATH']=options.pythonpath
     #end if
+
+    # import core testing functions (shared between nxs-test and unit tests)
+    from testing import *
+
+    global_data['verbose']       = options.verbose
+    global_data['job_ref_table'] = options.job_ref_table
 
     # guard against missing numpy (required)
     if len(tests)>0 and not numpy_available:
