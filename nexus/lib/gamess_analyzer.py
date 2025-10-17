@@ -16,11 +16,9 @@
 
 
 import os
-from numpy import array,ndarray,abs
-from generic import obj
-from developer import DevBase
+import numpy as np
+from developer import obj
 from fileio import TextFile
-from debug import *
 from simulation import SimulationAnalyzer,Simulation
 from gamess_input import GamessInput
 
@@ -275,7 +273,7 @@ class GamessAnalyzer(SimulationAnalyzer):
                     #end if
                     coeff.append(tokens[4:])
                 #end for
-                coefficients.extend(array(coeff,dtype=float).T)
+                coefficients.extend(np.array(coeff,dtype=float).T)
                 if not have_basis:
                     stype = []
                     ptype = []
@@ -307,18 +305,18 @@ class GamessAnalyzer(SimulationAnalyzer):
             #end if
             if success:
                 orbs[spec] = obj(
-                    eigenvalue   = array(eigenvalue  ,dtype=float),
-                    symmetry     = array(symmetry    ,dtype=str  ),
+                    eigenvalue   = np.array(eigenvalue  ,dtype=float),
+                    symmetry     = np.array(symmetry    ,dtype=str  ),
                     # skip large coefficient data
-                    #coefficients = array(coefficients,dtype=float),
+                    #coefficients = np.array(coefficients,dtype=float),
                     #basis = obj(
-                    #    element    = array(element   ,dtype=str),
-                    #    spec_index = array(spec_index,dtype=int),
-                    #    angular    = array(angular   ,dtype=str),
-                    #    stype      = array(stype     ,dtype=int),
-                    #    ptype      = array(ptype     ,dtype=int),
-                    #    dtype      = array(dtype     ,dtype=int),
-                    #    ftype      = array(ftype     ,dtype=int),
+                    #    element    = np.array(element   ,dtype=str),
+                    #    spec_index = np.array(spec_index,dtype=int),
+                    #    angular    = np.array(angular   ,dtype=str),
+                    #    stype      = np.array(stype     ,dtype=int),
+                    #    ptype      = np.array(ptype     ,dtype=int),
+                    #    dtype      = np.array(dtype     ,dtype=int),
+                    #    ftype      = np.array(ftype     ,dtype=int),
                     #    )
                     )
             #end if
@@ -368,10 +366,10 @@ class GamessAnalyzer(SimulationAnalyzer):
                     self.error('unrecognized angular type: {0}'.format(angular[ia]))
                 #end if
             #end for
-            mulliken = array(mulliken,dtype=float)
-            lowdin   = array(lowdin  ,dtype=float)
+            mulliken = np.array(mulliken,dtype=float)
+            lowdin   = np.array(lowdin  ,dtype=float)
             for l,lind in linds.items():
-                linds[l] = array(lind,dtype=int)
+                linds[l] = np.array(lind,dtype=int)
             #end for
 
             mulliken_shell = []
@@ -391,11 +389,11 @@ class GamessAnalyzer(SimulationAnalyzer):
                         shellinds.append(n)
                         n+=1
                     #end for
-                    shell[l] = array(shellinds,dtype=int)
+                    shell[l] = np.array(shellinds,dtype=int)
                 #end if
             #end for
-            mulliken_shell = array(mulliken_shell)
-            lowdin_shell   = array(lowdin_shell)
+            mulliken_shell = np.array(mulliken_shell)
+            lowdin_shell   = np.array(lowdin_shell)
             mulliken_angular = obj()
             lowdin_angular   = obj()
             for l,shellinds in shell.items():
@@ -403,9 +401,9 @@ class GamessAnalyzer(SimulationAnalyzer):
                 lowdin_angular[l]   = lowdin_shell[shellinds].sum()
             #end for
             basis = obj(
-                element    = array(element   ,dtype=str),
-                spec_index = array(spec_index,dtype=int),
-                angular    = array(angular   ,dtype=str),
+                element    = np.array(element   ,dtype=str),
+                spec_index = np.array(spec_index,dtype=int),
+                angular    = np.array(angular   ,dtype=str),
                 )
             basis.transfer_from(linds)
             ao_populations.set(
