@@ -2204,10 +2204,7 @@ def regenerate_reference(update=False):
             #end if
         #end for
     #end if
-
 #end def regenerate_reference
-
-
 
 
 
@@ -2225,24 +2222,6 @@ def import_nexus_module(module_name):
 #end def import_nexus_module
 
 
-# Get Nexus version
-try:
-    # Attempt specialized path-based imports.
-    #  (The executable should still work even if Nexus is not installed)
-    find_nexus_modules()
-
-    versions = import_nexus_module('versions')
-    nexus_version = versions.nexus_version
-    del versions
-except:
-    try:
-        from versions import nexus_version
-    except:
-        nexus_version = 0,0,0
-    #end try
-#end try
-
-
 
 if __name__=='__main__':
     import re
@@ -2257,7 +2236,6 @@ if __name__=='__main__':
     parser = OptionParser(
         usage='usage: %prog [options]',
         add_help_option=False,
-        version='%prog {}.{}.{}'.format(*nexus_version)
         )
 
     parser.add_option('-h','--help',dest='help',
