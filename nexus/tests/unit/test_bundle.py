@@ -12,7 +12,7 @@ def test_import():
 
 
 def test_bundle():
-    from generic import NexusError
+    from developer import NexusError
     from machines import job,get_machine
     from bundle import bundle
     from bundle import SimulationBundle

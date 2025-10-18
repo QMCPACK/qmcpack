@@ -1356,7 +1356,7 @@ Container types: ``tuple, list, array, dict, obj``
 ::
 
   from numpy import array  # get array from numpy module
-  from generic import obj  # get obj from Nexus' generic module
+  from developer import obj  # get obj from Nexus' developer module
 
   t=('A',42,56,123.0)     # tuple
 
@@ -1461,7 +1461,7 @@ Iteration: ``for``
 
 ::
 
-  from generic import obj
+  from developer import obj
 
   l = [1,2,3]
   m = [4,5,6]

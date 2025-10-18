@@ -29,7 +29,7 @@ def test_import():
 
 
 def test_read():
-    from generic import obj
+    from developer import obj
     from xmlreader import readxml,XMLelement
 
     ref = obj(
