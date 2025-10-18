@@ -937,8 +937,8 @@ class SemilocalPP(Pseudopotential):
             elif len(rc)!=len(r):
                 self.error('numeric representation of channels do not match in length')
             else:
-                vmin = np.min(vmin,vc)
-                vmax = np.max(vmax,vc)
+                vmin = min(vmin,vc)
+                vmax = max(vmax,vc)
             #end if
         #end for
         vspread = vmax-vmin

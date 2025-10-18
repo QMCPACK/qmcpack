@@ -1395,7 +1395,7 @@ def voronoi_neighbors(points):
 
 def convex_hull(points,dimension=None,tol=None):
     if dimension is None:
-        np,dimension = points.shape
+        npts,dimension = points.shape
     #end if
     d1 = dimension+1
     tri = Delaunay(points,qhull_options='QJ')
