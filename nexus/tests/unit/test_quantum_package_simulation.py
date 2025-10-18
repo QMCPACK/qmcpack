@@ -74,7 +74,7 @@ def test_check_result():
 
 
 def test_get_result():
-    from developer import NexusError, obj
+    from generic import NexusError,obj
 
     sim = get_quantum_package_sim()
     
@@ -105,7 +105,7 @@ def test_get_result():
 
 
 def test_incorporate_result():
-    from developer import NexusError, obj
+    from generic import NexusError,obj
     from machines import job
     from simulation import Simulation
     from gamess import generate_gamess,Gamess
@@ -151,7 +151,7 @@ def test_incorporate_result():
 
 def test_check_sim_status():
     import os
-    from developer import NexusError, obj
+    from generic import NexusError,obj
     from nexus_base import nexus_core
 
     tpath = testing.setup_unit_test_output_directory('quantum_package_simulation','test_check_sim_status',divert=True)

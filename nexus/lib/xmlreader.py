@@ -24,17 +24,22 @@
 
 
 from xml.parsers import expat
+from numpy import array
+import sys
 import keyword
 import re
 import os
-from developer import DevBase, obj
-from superstring import (
-    find_matching_pair,
-    remove_pair_sections,
-    remove_empty_lines,
-    valid_variable_name,
-    string2val,
-)
+from inspect import getmembers
+
+from superstring import \
+    find_matching_pair, \
+    remove_pair_sections, \
+    remove_empty_lines, \
+    valid_variable_name,\
+    string2val
+
+from generic import obj
+from developer import DevBase
 
 
 class XMLelement(DevBase):

@@ -18,13 +18,14 @@
 
 
 import os
-import numpy as np
-from developer import obj
+from numpy import array
+from generic import obj
 from physical_system import PhysicalSystem
 from simulation import Simulation
-from pwscf_input import PwscfInput, generate_pwscf_input
+from pwscf_input import PwscfInput,generate_pwscf_input
 from pwscf_analyzer import PwscfAnalyzer
 from execute import execute
+from debug import ci
 
 
 unique_vdw_functionals = [
@@ -208,7 +209,7 @@ class Pwscf(Simulation):
             else:
                 scale = 1.0
             #end if
-            pos   = scale*np.array(pos)
+            pos   = scale*array(pos)
             
             structure = self.system.structure.copy()
             structure.change_units('B')

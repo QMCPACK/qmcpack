@@ -660,7 +660,7 @@ def get_serial_references():
 
 
 def check_vs_serial_reference(gi,name):
-    from developer import obj
+    from generic import obj
     sr = obj(get_serial_references()[name])
     sg = gi.serial()
     assert(check_object_eq(sg,sr))
@@ -757,7 +757,7 @@ def test_write():
 
 def test_generate():
     import numpy as np
-    from developer import obj
+    from generic import obj
     from unit_converter import convert
     from physical_system import generate_physical_system
     from rmg_input import generate_rmg_input

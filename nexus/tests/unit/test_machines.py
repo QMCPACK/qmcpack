@@ -9,7 +9,7 @@ machines_data = dict()
 
 
 def get_machine_data():
-    from developer import obj
+    from generic import obj
     from machines import Machine,Workstation,Supercomputer
     if len(machines_data)==0:
         workstations   = obj()
@@ -67,7 +67,7 @@ def test_cpu_count():
 
 
 def test_options():
-    from developer import obj
+    from generic import obj
     from machines import Options
 
     # empty init
@@ -142,7 +142,7 @@ def test_job_init():
 
 
 def test_job_time():
-    from developer import obj
+    from generic import obj
     from machines import job,Job
 
     def check_time(j,d,h,m,s,td,th,tm,ts):
@@ -454,7 +454,7 @@ def test_machine_instantiation():
 
 
 def test_workstation_init():
-    from developer import obj
+    from generic import obj
     from machines import Workstation
 
     ws = Workstation('wsi',16,'mpirun')
@@ -595,7 +595,7 @@ def test_workstation_scheduling():
 
 
 def test_supercomputer_init():
-    from developer import obj
+    from generic import obj
     from machines import Theta
 
     class ThetaInit(Theta):
@@ -641,7 +641,7 @@ def test_supercomputer_init():
 def test_supercomputer_scheduling():
     import os
     import time
-    from developer import obj
+    from generic import obj
     from machines import Theta
     from machines import job,Job
 
@@ -771,7 +771,7 @@ aprun -e OMP_NUM_THREADS=8 -d 8 -cc depth -j 1 -n 16 -N 8 echo run'''
 
 def test_process_job():
     from random import randint
-    from developer import obj
+    from generic import obj
     from machines import Machine,Job
 
     nw  = 5
@@ -964,7 +964,7 @@ def test_process_job():
 
 
 def test_job_run_command():
-    from developer import obj
+    from generic import obj
     from machines import Machine,Job
 
     workstations,supercomputers = get_machine_data()
@@ -1427,7 +1427,7 @@ def test_job_run_command():
 
 
 def test_write_job():
-    from developer import obj
+    from generic import obj
     from machines import Machine,job
 
     supercomputers = get_supercomputers()

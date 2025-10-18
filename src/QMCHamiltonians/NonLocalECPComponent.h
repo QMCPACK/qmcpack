@@ -77,7 +77,7 @@ private:
   std::vector<ValueType> wvec;
 
   //Position delta for virtual moves.
-  std::vector<PosType> deltaV;
+  std::vector<PosType> deltaV_;
   //Array for P_l[cos(theta)].
   std::vector<RealType> lpol;
   //Array for P'_l[cos(theta)]
@@ -100,7 +100,7 @@ private:
   //This stores grad psi/psi - dot(u,grad psi)
   std::vector<PosType> wfngrad;
   //This stores potential contribution per knot:
-  std::vector<RealType> knot_pots;
+  std::vector<RealType> knot_pots_;
 
   /// scratch spaces used by evaluateValueAndDerivatives
   Matrix<ValueType> dratio;
@@ -123,9 +123,15 @@ private:
 
   void calculateKnotPartialProduct(RealType r, const PosType& dr, std::vector<RealType>& knot_prods);
 
+  /// build QP position deltas and partial product of potentials
+  void buildQuadraturePointDeltaPosAndPartialPotential(RealType r,
+                                                       const PosType& dr,
+                                                       std::vector<PosType>& deltaV,
+                                                       std::vector<RealType>& knot_prods);
+
   /** finalize the calculation of $\frac{V\Psi_T}{\Psi_T}$
    */
-  RealType calculatePotential(RealType r, const PosType& dr, bool use_TMDLA);
+  RealType calculatePotential(std::vector<RealType>& knot_pots, bool use_TMDLA) const;
 
   /** contribute local non-local move data
    * @param iel reference electron id.
@@ -156,8 +162,6 @@ public:
   void resize_warrays(int n, int m, int l);
 
   void rotateQuadratureGrid(const TensorType& rmat);
-  template<typename T>
-  void rotateQuadratureGrid(std::vector<T>& sphere, const TensorType& rmat);
 
   /** @brief Evaluate the nonlocal pp contribution via randomized quadrature grid
    * to total energy from ion "iat" and electron "iel".
