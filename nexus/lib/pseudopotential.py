@@ -1008,13 +1008,13 @@ class SemilocalPP(Pseudopotential):
             if title is None:
                 title = 'Semilocal {0} PP ({1} core)'.format(self.element,self.core)
             #end if
-            plt.title()(title)
+            plt.title(title)
             plt.ylabel('channel potentials (Ha)')
             plt.xlabel('r (Bohr)')
             plt.legend()
         #end if
         if show:
-            plt.show()()
+            plt.show()
         #end if
     #end def plot
 
@@ -1151,13 +1151,13 @@ class SemilocalPP(Pseudopotential):
             if title is None:
                 title = 'Semilocal {0} PP angular channels ({1} core)'.format(self.element,self.core)
             #end if
-            plt.title()(title)
+            plt.title(title)
             plt.ylabel('channels')
             plt.xlabel('r')
             plt.legend()
         #end if
         if show:
-            plt.show()()
+            plt.show()
         #end if
     #end def plot_channels
 
@@ -1184,13 +1184,13 @@ class SemilocalPP(Pseudopotential):
             if title is None:
                 title = 'L2 positive definite condition {0} PP ({1} core)'.format(self.element,self.core)
             #end if
-            plt.title()(title)
+            plt.title(title)
             plt.ylabel('1+b > 0')
             plt.xlabel('r (Bohr)')
             plt.legend()
         #end if
         if show:
-            plt.show()()
+            plt.show()
         #end if
     #end def plot_positive_definite
 
@@ -1393,7 +1393,7 @@ class SemilocalPP(Pseudopotential):
         #end if
 
         if show:
-            plt.show()()
+            plt.show()
         #end if
 
     #end def plot_nonlocal_polar
