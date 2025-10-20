@@ -457,16 +457,9 @@ typename DiracDeterminant<PL, VT, FPVT>::PsiValue DiracDeterminant<PL, VT, FPVT>
 template<PlatformKind PL, typename VT, typename FPVT>
 void DiracDeterminant<PL, VT, FPVT>::evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios)
 {
-  {
-    ScopedTimer local_timer(RatioTimer);
-    const int WorkingIndex = VP.refPtcl - FirstIndex;
-    assert(WorkingIndex >= 0);
-    std::copy_n(psiM[WorkingIndex], invRow.size(), invRow.data());
-  }
-  {
-    ScopedTimer local_timer(SPOVTimer);
-    phi_.evaluateDetRatios(VP, psiV, invRow, ratios);
-  }
+  ScopedTimer local_timer(SPOVTimer);
+  Vector<ValueType> inv_row(psiM[VP.refPtcl - FirstIndex], psiV.size());
+  phi_.evaluateDetRatios(VP, psiV, inv_row, ratios);
 }
 
 template<PlatformKind PL, typename VT, typename FPVT>
@@ -474,63 +467,9 @@ void DiracDeterminant<PL, VT, FPVT>::evaluateSpinorRatios(const VirtualParticleS
                                                           const std::pair<ValueVector, ValueVector>& spinor_multiplier,
                                                           std::vector<ValueType>& ratios)
 {
-  {
-    ScopedTimer local_timer(RatioTimer);
-    const int WorkingIndex = VP.refPtcl - FirstIndex;
-    assert(WorkingIndex >= 0);
-    std::copy_n(psiM[WorkingIndex], invRow.size(), invRow.data());
-  }
-  {
-    ScopedTimer local_timer(SPOVTimer);
-    phi_.evaluateDetSpinorRatios(VP, psiV, spinor_multiplier, invRow, ratios);
-  }
-}
-
-template<PlatformKind PL, typename VT, typename FPVT>
-void DiracDeterminant<PL, VT, FPVT>::mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                                       const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
-                                                       std::vector<std::vector<ValueType>>& ratios) const
-{
-  const size_t nw = wfc_list.size();
-
-  RefVectorWithLeader<SPOSet> phi_list(phi_);
-  RefVector<ValueVector> psiV_list;
-  std::vector<const ValueType*> invRow_ptr_list;
-  phi_list.reserve(nw);
-  psiV_list.reserve(nw);
-  invRow_ptr_list.reserve(nw);
-
-  {
-    ScopedTimer local_timer(RatioTimer);
-    for (size_t iw = 0; iw < nw; iw++)
-    {
-      auto& det = wfc_list.getCastedElement<DiracDeterminant<PL, VT, FPVT>>(iw);
-      const VirtualParticleSet& vp(vp_list[iw]);
-      const int WorkingIndex = vp.refPtcl - FirstIndex;
-      assert(WorkingIndex >= 0);
-      // If DiracDeterminant is in a valid state this copy_n is not necessary.
-      // That is at minimum a call to evaluateLog and ...
-      // std::copy_n(det.psiM[WorkingIndex], det.invRow.s.ize(), det.invRow.data());
-      // build lists
-      phi_list.push_back(det.phi_);
-      psiV_list.push_back(det.psiV);
-      invRow_ptr_list.push_back(det.psiM[WorkingIndex]);
-    }
-  }
-
-  {
-    ScopedTimer local_timer(SPOVTimer);
-    // phi_.isOMPoffload() requires device invRow pointers for mw_evaluateDetRatios.
-    // evaluateDetRatios only requires host invRow pointers.
-    if (phi_.isOMPoffload())
-      for (int iw = 0; iw < phi_list.size(); iw++)
-      {
-        Vector<ValueType> invRow(const_cast<ValueType*>(invRow_ptr_list[iw]), psiV_list[iw].get().size());
-        phi_list[iw].evaluateDetRatios(vp_list[iw], psiV_list[iw], invRow, ratios[iw]);
-      }
-    else
-      phi_.mw_evaluateDetRatios(phi_list, vp_list, psiV_list, invRow_ptr_list, ratios);
-  }
+  ScopedTimer local_timer(SPOVTimer);
+  Vector<ValueType> inv_row(psiM[VP.refPtcl - FirstIndex], psiV.size());
+  phi_.evaluateDetSpinorRatios(VP, psiV, spinor_multiplier, inv_row, ratios);
 }
 
 template<PlatformKind PL, typename VT, typename FPVT>
