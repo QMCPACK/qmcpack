@@ -67,19 +67,17 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces, bo
   setEnergyDomain(POTENTIAL);
   twoBodyQuantumDomain(ref);
   PtclRefName = ref.getDistTable(d_aa_ID).getName();
+
   if (ComputeForces || quasi2d)
-  {
     ref.turnOnPerParticleSK();
-  }
+
   initBreakup(ref);
+
   if (ComputeForces)
-  {
     updateSource(ref);
-  }
 
   if (!is_active)
   {
-    ref.update();
     updateSource(ref);
 
     ewaldref::RealMat A;
@@ -145,6 +143,7 @@ void CoulombPBCAA::addObservables(PropertySetType& plist, BufferType& collectabl
 
 void CoulombPBCAA::updateSource(ParticleSet& s)
 {
+  s.update();
   mRealType eL(0.0), eS(0.0);
   if (ComputeForces)
   {

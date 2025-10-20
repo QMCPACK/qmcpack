@@ -53,13 +53,14 @@ void test_einset_diamond_1x1x1(bool use_offload)
   ions_.create({2});
   ions_.R[0] = {0.0, 0.0, 0.0};
   ions_.R[1] = {1.68658058, 1.68658058, 1.68658058};
-
+  ions_.update();
 
   elec_.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create({2});
   elec_.R[0] = {0.0, 0.0, 0.0};
   elec_.R[1] = {0.0, 1.0, 0.0};
+  elec_.update();
 
   SpeciesSet& tspecies       = elec_.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
@@ -323,7 +324,7 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1 5 electrons", "[wavefunction]")
   ions_.R[1] = {1.68658058, 1.68658058, 1.68658058};
   ions_.R[2] = {3.37316115, 3.37316115, 0.0};
   ions_.R[3] = {5.05974173, 5.05974173, 1.68658058};
-
+  ions_.update();
 
   elec_.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
@@ -333,6 +334,7 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1 5 electrons", "[wavefunction]")
   elec_.R[2] = {0.0, 1.1, 0.0};
   elec_.R[3] = {0.0, 1.2, 0.0};
   elec_.R[4] = {0.0, 1.3, 0.0};
+  elec_.update();
 
   SpeciesSet& tspecies       = elec_.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");

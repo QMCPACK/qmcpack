@@ -67,11 +67,14 @@ TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
   ions_.create({2});
   ions_.R[0] = {0.0, 0.0, 0.0};
   ions_.R[1] = {1.68658058, 1.68658058, 1.68658058};
+  ions_.update();
+
   elec_.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create({2});
-  elec_.R[0]                 = {0.0, 0.0, 0.0};
-  elec_.R[1]                 = {0.0, 1.0, 0.0};
+  elec_.R[0] = {0.0, 0.0, 0.0};
+  elec_.R[1] = {0.0, 1.0, 0.0};
+  elec_.update();
   SpeciesSet& tspecies       = elec_.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
   int chargeIdx              = tspecies.addAttribute("charge");
@@ -581,11 +584,13 @@ TEST_CASE("RotatedSPOs hcpBe", "[wavefunction]")
   ptcl.addParticleSet(std::move(ions_uptr));
   ions.create({1});
   ions.R[0] = {0.0, 0.0, 0.0};
+  ions.update();
 
   elec.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
   elec.create({1});
   elec.R[0] = {0.0, 0.0, 0.0};
+  elec.update();
 
   SpeciesSet& tspecies       = elec.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
@@ -790,12 +795,12 @@ template<typename T>
 class DummySPOSetWithoutMW : public SPOSetT<T>
 {
 public:
-  using SPOSet = SPOSetT<T>;
-  using ValueVector   = typename SPOSet::ValueVector;
-  using ValueMatrix   = typename SPOSet::ValueMatrix;
-  using GradVector    = typename SPOSet::GradVector;
-  using GradMatrix    = typename SPOSet::GradMatrix;
-  using ComplexType   = typename SPOSet::ComplexType;
+  using SPOSet      = SPOSetT<T>;
+  using ValueVector = typename SPOSet::ValueVector;
+  using ValueMatrix = typename SPOSet::ValueMatrix;
+  using GradVector  = typename SPOSet::GradVector;
+  using GradMatrix  = typename SPOSet::GradMatrix;
+  using ComplexType = typename SPOSet::ComplexType;
   template<typename DT>
   using OffloadMatrix = typename SPOSet::template OffloadMatrix<DT>;
 
@@ -863,9 +868,9 @@ template<typename T>
 class DummySPOSetWithMW : public DummySPOSetWithoutMW<T>
 {
 public:
-  using ValueVector   = typename DummySPOSetWithoutMW<T>::ValueVector;
-  using GradVector    = typename DummySPOSetWithoutMW<T>::GradVector;
-  using ComplexType   = typename DummySPOSetWithoutMW<T>::ComplexType;
+  using ValueVector = typename DummySPOSetWithoutMW<T>::ValueVector;
+  using GradVector  = typename DummySPOSetWithoutMW<T>::GradVector;
+  using ComplexType = typename DummySPOSetWithoutMW<T>::ComplexType;
   template<typename DT>
   using OffloadMatrix = typename DummySPOSetWithoutMW<T>::template OffloadMatrix<DT>;
   DummySPOSetWithMW(const std::string& my_name) : DummySPOSetWithoutMW<T>(my_name) {}
