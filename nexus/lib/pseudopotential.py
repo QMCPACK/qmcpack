@@ -347,9 +347,6 @@ ppset = PPset()
 
 
 # real pseudopotentials
-#from plotting import show, title
-#show_plots = show
-#set_title  = title
 
 class Pseudopotential(DevBase):
 

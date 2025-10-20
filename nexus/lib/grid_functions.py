@@ -83,8 +83,12 @@ Module contents
 import os
 from developer import DevBase, obj, error, unavailable
 from fileio import StandardFile,XsfFile
-import numpy as np
 
+try:
+    import numpy as np
+except:
+    np = unavailable('numpy','np')
+#end try
 try:
     import matplotlib.pyplot as plt
 except:

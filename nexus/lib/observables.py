@@ -18,6 +18,9 @@ from structure import Structure, get_seekpath_full
 from fileio import XsfFile
 from hdfreader import read_hdf
 
+# Referenced in MomentumDistribution.backfold()
+from debug import ci
+
 try:
     import matplotlib.pyplot as plt
 except:
@@ -767,6 +770,8 @@ class MomentumDistribution(ObservableWithComponents):
         print(dk)
         print(np.diag(kaxes)/np.diag(dk))
         print(c.grid.cell_grid_shape)
+        print("ci called from MomentumDistribution.backfold()")
+        ci()
         exit()
     #end def backfold
 

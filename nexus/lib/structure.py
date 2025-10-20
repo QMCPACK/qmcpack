@@ -1231,11 +1231,11 @@ class Structure(Sobj):
         corner = self.center - self.axes.sum(0) / 2
 
         # Convert min distance to cell units
-        L = np.linalg.norm(self.axes, axis=0)
+        L = norm(self.axes, axis=0)
         umin = rmin_edge / L
 
         # Obtain current unit coordinates of the atoms
-        upos = np.dot(self.pos - corner, np.linalg.inv(self.axes))
+        upos = np.dot(self.pos - corner, inv(self.axes))
 
         # Align the molecule to contact the cell facets
         upos -= upos.min(0)
@@ -1421,7 +1421,7 @@ class Structure(Sobj):
       axes = self.axes
       raxes = 2*np.pi*inv(axes).T
       kvecs = self.tile_points(origin, raxes, tilevec)
-      kvecs -= np.dot(tilevec, raxes)/2  # center np.around 0
+      kvecs -= np.dot(tilevec, raxes)/2  # center around 0
       kmags = norm(kvecs, axis=-1)
 
       # make sure tilevec is sufficient for kcut
@@ -2490,11 +2490,11 @@ class Structure(Sobj):
     # test needed
     def shells(self,identifiers,radii=None,exterior=False,cumshells=False,distances=False,dtol=1e-6):
         # get indices for 'core' and 'bulk'
-        #   core is selected by identifiers, forms core for shells to be built np.around
+        #   core is selected by identifiers, forms core for shells to be built around
         #   bulk is all atoms except for core
         if identifiers=='point_defects':
             if 'point_defects' not in self:
-                self.error('requested shells np.around point defects, but structure has no point defects')
+                self.error('requested shells around point defects, but structure has no point defects')
             #end if
             core = []
             for pd in self.point_defects:
@@ -2519,7 +2519,7 @@ class Structure(Sobj):
         order  = dist.argsort()
         dist   = dist[order]
         ind    = bulk_ind[ind[order]]
-        # find shells np.around the core
+        # find shells around the core
         #   the closest atom to the core starts the first shell and defines a shell distance
         #   other atoms are in the shell if within dtol distance of the first atom
         #   otherwise a new shell is started
