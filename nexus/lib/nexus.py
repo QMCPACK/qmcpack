@@ -24,8 +24,9 @@
 
 import os
 
-from versions import    nexus_version,  current_versions,   policy_versions,    check_versions
-from developer import   obj,            error,              log
+from versions  import nexus_version,  current_versions,   policy_versions,    check_versions
+from developer import obj,            error,              log
+from debug     import ci
 
 from nexus_base      import NexusCore,              nexus_core,     nexus_noncore,          nexus_core_noncore,         restore_nexus_core_defaults,    nexus_core_defaults
 from machines        import Job,                    job,            Machine,Supercomputer,  get_machine
