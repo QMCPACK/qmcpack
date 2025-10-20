@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2019 QMCPACK developers.
+// Copyright (c) 2025 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -57,47 +57,17 @@ public:
   static HamiltonianPool make_hamWithEE(Communicate* comm,
                                         ParticleSetPool& particle_pool,
                                         WaveFunctionPool& wavefunction_pool);
+
   static HamiltonianPool makeHamWithEEEI(Communicate* comm,
                                          ParticleSetPool& particle_pool,
-                                         WaveFunctionPool& wavefunction_pool)
-  {
-    HamiltonianPool hpool(particle_pool, wavefunction_pool, comm);
-    Libxml2Document doc;
-    doc.parseFromString(hamiltonian_eeei_xml);
-
-    xmlNodePtr root = doc.getRoot();
-    hpool.put(root);
-
-    return hpool;
-  }
-
+                                         WaveFunctionPool& wavefunction_pool);
   static HamiltonianPool makeHamWithEEEIII(Communicate* comm,
                                            ParticleSetPool& particle_pool,
-                                           WaveFunctionPool& wavefunction_pool)
-  {
-    HamiltonianPool hpool(particle_pool, wavefunction_pool, comm);
-    Libxml2Document doc;
-    doc.parseFromString(hamiltonian_eeeiii_xml);
-
-    xmlNodePtr root = doc.getRoot();
-    hpool.put(root);
-
-    return hpool;
-  }
+                                           WaveFunctionPool& wavefunction_pool);
 
   static HamiltonianPool makeHamWithEEEIPS(Communicate* comm,
                                            ParticleSetPool& particle_pool,
-                                           WaveFunctionPool& wavefunction_pool)
-  {
-    HamiltonianPool hpool(particle_pool, wavefunction_pool, comm);
-    Libxml2Document doc;
-    doc.parseFromString(hamiltonian_eeeips_xml);
-
-    xmlNodePtr root = doc.getRoot();
-    hpool.put(root);
-
-    return hpool;
-  }
+                                           WaveFunctionPool& wavefunction_pool);
 };
 
 } // namespace qmcplusplus

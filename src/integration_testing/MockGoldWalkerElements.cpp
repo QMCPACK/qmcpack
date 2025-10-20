@@ -51,8 +51,9 @@ MockGoldWalkerElements makeGoldWalkerElementsWithEEEIPS(Communicate* comm, Runti
   using namespace std::placeholders;
   MockGoldWalkerElements::WaveFunctionPoolFactoryFunc wfp_diamondC =
       std::bind(MinimalWaveFunctionPool::make_diamondC_1x1x1, _1, _2, _3);
-  MockGoldWalkerElements::HamPoolFactoryFunc hamp_ee = std::bind(MinimalHamiltonianPool::makeHamWithEEEIPS, _1, _2, _3);
-  return MockGoldWalkerElements(comm, runtime_opt, wfp_diamondC, hamp_ee);
+  MockGoldWalkerElements::HamPoolFactoryFunc hamp_ee_ips =
+      std::bind(MinimalHamiltonianPool::makeHamWithEEEIPS, _1, _2, _3);
+  return MockGoldWalkerElements(comm, runtime_opt, wfp_diamondC, hamp_ee_ips);
 }
 
 } // namespace testing

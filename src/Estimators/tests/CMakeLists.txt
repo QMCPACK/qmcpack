@@ -18,7 +18,6 @@ set(TEST_ESTIMATORS_HELP
     GenerateRandomParticleSets.cpp
     EnergyDensityTest.cpp
     EDenEstimatorManagerIntegrationTest.cpp
-    MockGoldWalkerElements.cpp
     EstimatorTesting.cpp
     SpaceGridTest.cpp)
 
