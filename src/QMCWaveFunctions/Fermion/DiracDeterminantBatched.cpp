@@ -792,15 +792,9 @@ void DiracDeterminantBatched<PL, VT, FPVT>::mw_calcRatio(const RefVectorWithLead
 template<PlatformKind PL, typename VT, typename FPVT>
 void DiracDeterminantBatched<PL, VT, FPVT>::evaluateRatios(const VirtualParticleSet& VP, std::vector<Value>& ratios)
 {
-  {
-    ScopedTimer local_timer(RatioTimer);
-    const int WorkingIndex = VP.refPtcl - FirstIndex;
-    std::copy_n(psiMinv_[WorkingIndex], d2psiV.size(), d2psiV.data());
-  }
-  {
-    ScopedTimer local_timer(SPOVTimer);
-    phi_.evaluateDetRatios(VP, psiV_host_view, d2psiV_host_view, ratios);
-  }
+  ScopedTimer local_timer(SPOVTimer);
+  Vector<ValueType> inv_row(psiMinv_[VP.refPtcl - FirstIndex], psiV.size());
+  phi_.evaluateDetRatios(VP, psiV_host_view, inv_row, ratios);
 }
 
 template<PlatformKind PL, typename VT, typename FPVT>
@@ -809,15 +803,9 @@ void DiracDeterminantBatched<PL, VT, FPVT>::evaluateSpinorRatios(
     const std::pair<ValueVector, ValueVector>& spinor_multiplier,
     std::vector<Value>& ratios)
 {
-  {
-    ScopedTimer local_timer(RatioTimer);
-    const int WorkingIndex = VP.refPtcl - FirstIndex;
-    std::copy_n(psiMinv_[WorkingIndex], d2psiV.size(), d2psiV.data());
-  }
-  {
-    ScopedTimer local_timer(SPOVTimer);
-    phi_.evaluateDetSpinorRatios(VP, psiV_host_view, spinor_multiplier, d2psiV_host_view, ratios);
-  }
+  ScopedTimer local_timer(SPOVTimer);
+  Vector<ValueType> inv_row(psiMinv_[VP.refPtcl - FirstIndex], psiV.size());
+  phi_.evaluateDetSpinorRatios(VP, psiV_host_view, spinor_multiplier, inv_row, ratios);
 }
 
 template<PlatformKind PL, typename VT, typename FPVT>
