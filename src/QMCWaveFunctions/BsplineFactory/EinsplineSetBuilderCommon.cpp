@@ -174,6 +174,10 @@ void EinsplineSetBuilder::BroadcastOrbitalInfo()
   if (primcell_kpoints.size() != NumTwists)
     primcell_kpoints.resize(NumTwists);
   bbuffer.add(&primcell_kpoints[0][0], &primcell_kpoints[0][0] + OHMMS_DIM * NumTwists);
+
+  // sizes of arrays to be transferred via buffers must agree with pre-arranged sizes
+  assert(numDensityGvecs == TargetPtcl.DensityReducedGvecs.size());
+  assert(numDensityGvecs == TargetPtcl.Density_G.size());
   if (numDensityGvecs > 0)
   {
     bibuffer.add(&(TargetPtcl.DensityReducedGvecs[0][0]),
