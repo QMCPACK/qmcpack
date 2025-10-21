@@ -27,7 +27,7 @@
 
 import os
 import gc as garbage_collector
-from versions import nexus_version
+from nexus_version import nexus_version
 from memory import resident
 from developer import DevBase, obj, log
 

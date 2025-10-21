@@ -13,11 +13,6 @@ import datetime
 import importlib
 
 
-nexus_version = 2,1,0
-"""
-Current Nexus version.
-"""
-
 python_supported = 'python3'
 """
 Current Python family supported.
