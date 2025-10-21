@@ -344,3 +344,13 @@ def available(*items):
     #end for
     return True
 #end def available
+
+
+def valid_variable_name(s):
+    """Check if a variable name contains invalid characters"""
+    if not any([i in ('!"#$%&\'()*+,-./:;<=>?@[\\]^`{|}-\n\t ') for i in s]):
+        return True
+    else:
+        return False
+    #end if
+#end def valid_variable_name
