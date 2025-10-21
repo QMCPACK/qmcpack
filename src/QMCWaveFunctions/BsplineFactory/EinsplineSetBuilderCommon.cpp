@@ -174,9 +174,12 @@ void EinsplineSetBuilder::BroadcastOrbitalInfo()
   if (primcell_kpoints.size() != NumTwists)
     primcell_kpoints.resize(NumTwists);
   bbuffer.add(&primcell_kpoints[0][0], &primcell_kpoints[0][0] + OHMMS_DIM * NumTwists);
-  bibuffer.add(&(TargetPtcl.DensityReducedGvecs[0][0]),
-               &(TargetPtcl.DensityReducedGvecs[0][0]) + numDensityGvecs * OHMMS_DIM);
-  bbuffer.add(&(TargetPtcl.Density_G[0]), &(TargetPtcl.Density_G[0]) + numDensityGvecs);
+  if (numDensityGvecs > 0)
+  {
+    bibuffer.add(&(TargetPtcl.DensityReducedGvecs[0][0]),
+                 &(TargetPtcl.DensityReducedGvecs[0][0]) + numDensityGvecs * OHMMS_DIM);
+    bbuffer.add(&(TargetPtcl.Density_G[0]), &(TargetPtcl.Density_G[0]) + numDensityGvecs);
+  }
   myComm->bcast(bbuffer);
   myComm->bcast(bibuffer);
   if (myComm->rank())
@@ -187,9 +190,12 @@ void EinsplineSetBuilder::BroadcastOrbitalInfo()
       bibuffer.get(IonTypes[i]);
     bbuffer.get(&IonPos[0][0], &IonPos[0][0] + OHMMS_DIM * numIons);
     bbuffer.get(&primcell_kpoints[0][0], &primcell_kpoints[0][0] + OHMMS_DIM * NumTwists);
-    bibuffer.get(&(TargetPtcl.DensityReducedGvecs[0][0]),
-                 &(TargetPtcl.DensityReducedGvecs[0][0]) + numDensityGvecs * OHMMS_DIM);
-    bbuffer.get(&(TargetPtcl.Density_G[0]), &(TargetPtcl.Density_G[0]) + numDensityGvecs);
+    if (numDensityGvecs > 0)
+    {
+      bibuffer.get(&(TargetPtcl.DensityReducedGvecs[0][0]),
+                   &(TargetPtcl.DensityReducedGvecs[0][0]) + numDensityGvecs * OHMMS_DIM);
+      bbuffer.get(&(TargetPtcl.Density_G[0]), &(TargetPtcl.Density_G[0]) + numDensityGvecs);
+    }
   }
   //buffer to bcast hybrid representation atomic orbital info
   PooledData<double> cbuffer;
