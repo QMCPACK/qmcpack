@@ -7,6 +7,7 @@ def test_import():
     from developer import DevBase
     from developer import Void
     from developer import unavailable,available
+    from developer import valid_variable_name
 #end def test_import
 
 
@@ -98,3 +99,21 @@ def test_unavailable():
     generic_settings.raise_error = gre
 
 #end def test_unavailable
+
+
+def test_valid_variable_name():
+    from developer import valid_variable_name
+
+    assert(valid_variable_name('valid_variable_name'))
+    assert(valid_variable_name('_valid_variable_name'))
+    assert(valid_variable_name('__valid_variable_name'))
+    assert(valid_variable_name('valid_variable_name__'))
+    assert(valid_variable_name('validVariableName'))
+    assert(not valid_variable_name('invalid variable name'))
+    assert(not valid_variable_name('invalid_variable-name'))
+    assert(not valid_variable_name('inval!d_variable_name'))
+    assert(not valid_variable_name('inv@lid_variable_name'))
+    assert(not valid_variable_name('in>alid_variable_name'))
+    assert(not valid_variable_name('invalid_variable_name '))
+
+#end def test_valid_variable_name

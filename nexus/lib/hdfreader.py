@@ -21,8 +21,7 @@
 import numpy as np
 import keyword
 from inspect import getmembers
-from superstring import valid_variable_name
-from developer import DevBase, obj, unavailable
+from developer import DevBase, obj, unavailable, valid_variable_name
 
 try:
     import h5py

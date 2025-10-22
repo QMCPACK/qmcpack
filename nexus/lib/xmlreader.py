@@ -27,14 +27,77 @@ from xml.parsers import expat
 import keyword
 import re
 import os
-from developer import DevBase, obj
-from superstring import (
-    find_matching_pair,
-    remove_pair_sections,
-    remove_empty_lines,
-    valid_variable_name,
-    string2val,
-)
+from developer import DevBase, obj, valid_variable_name
+
+
+def parse_string(s, delim = None):
+    if not isinstance(s, str):
+        raise TypeError("This function only parses strings!")
+
+    # Check if number
+    try:
+        return int(s)
+    except ValueError:
+        try:
+            return float(s)
+        except ValueError:
+            pass
+    #end try
+
+    # Check if bool
+    if s.lower() in ["true", "false"]:
+        return s.lower() == "true" # return True if s=="true" else False
+    #end if
+
+    # Check if number array
+    try:
+        return np.array(s.split(delim), int)
+    except ValueError:
+        try:
+            return np.array(s.split(delim), float)
+        except ValueError:
+            return s
+    #end try
+#end def parse_string
+
+
+def find_pair(s, pairs, start = 0, end = None):
+    if end is None:
+        end = len(s)
+
+    left_pair = pairs[0]
+    right_pair  = pairs[1]
+
+    start_loc = s.find(left_pair, start, end)
+    end_loc   = s.find(right_pair, start_loc + len(left_pair), end)
+    if start_loc == -1 or end_loc == -1:
+        return start_loc, end_loc
+
+    return start_loc, end_loc+len(right_pair)
+
+
+def remove_pair_sections(s, pair):
+    sc = s
+    ir = 0
+    while ir != -1:
+        il, ir = find_pair(sc, pair)
+        sc = sc.replace(sc[il:ir], "")
+    #end while
+    return sc
+#end def remove_pair_sections
+
+
+def remove_empty_lines(s):
+    """Remove any lines with only whitespace present."""
+    sr = ""
+    lines = s.splitlines()
+    for line in lines:
+        if line.strip() != "":
+            sr += line+"\n"
+        #end if
+    #end for
+    return sr
+#end def remove_empty lines
 
 
 class XMLelement(DevBase):
@@ -158,17 +221,17 @@ class XMLelement(DevBase):
     # test needed
     def convert_numeric(self):
         for name,attr in self._attributes.items():
-            self[name] = string2val(attr)
+            self[name] = parse_string(attr)
         #end for
         if 'text' in self:
-            self.value = string2val(self.text)
+            self.value = parse_string(self.text)
             del self.text
         #end if
         texts = []
         for name,elem in self._elements.items():
             if isinstance(elem,XMLelement):
                 if 'text' in elem and len(elem._attributes)==0 and len(elem._elements)==0:
-                    self[name] = string2val(elem.text)
+                    self[name] = parse_string(elem.text)
                     texts.append(name)
                 else:
                     elem.convert_numeric()
@@ -248,14 +311,13 @@ class XMLreader(DevBase):
             self.xml = xml
         #end if
         #remove all comments
-        pair='<!--','-->'
+        pair = ('<!--', '-->')
         self.xml = remove_pair_sections(self.xml,pair)
         #process includes
         while self.xml.find('<include')!=-1:
             self.include_files()
             self.xml = remove_pair_sections(self.xml,pair)
         #end while
-        #remove empty lines
         self.xml = remove_empty_lines(self.xml)
         #print self.xml
 
@@ -280,12 +342,12 @@ class XMLreader(DevBase):
 
     # test needed
     def include_files(self):
-        pair = '<include','/>'
-        qpair = '<?','?>'
-        ir=0
-        while ir!=-1:
-            il,ir = find_matching_pair(self.xml,pair,ir)
-            if ir!=-1:
+        pair = ('<include', '/>')
+        qpair = ('<?', '?>')
+        ir = 0
+        while ir != -1:
+            il, ir = find_pair(self.xml, pair, ir)
+            if ir != -1:
                 cont = self.xml[il:ir].strip(pair[0]).rstrip(pair[1])
                 fname = cont.split('=',1)[1].strip().strip('"')
                 fobj = open(os.path.join(self.base_path,fname),'r')
@@ -406,6 +468,8 @@ class XMLreader(DevBase):
             else:
                 k = kraw
             #end if
+            
+            # Check for variables containing invalid characters
             if valid_variable_name(k):
                 kname = cur._escape_name(k)
                 cur[kname] = v

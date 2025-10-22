@@ -10,7 +10,6 @@ def get_files():
 #end def get_files
 
 
-
 def test_files():
     filenames = [
         'vmc.in.xml',
@@ -20,12 +19,14 @@ def test_files():
 #end def test_files
 
 
-
 def test_import():
     import xmlreader
     from xmlreader import XMLreader,readxml
+    from xmlreader import parse_string
+    from xmlreader import find_pair
+    from xmlreader import remove_pair_sections
+    from xmlreader import remove_empty_lines
 #end def test_import
-
 
 
 def test_read():
@@ -258,3 +259,195 @@ def test_read():
 
     assert(object_eq(o,ref))
 #end def test_read
+
+
+def test_parse_string():
+    import numpy as np
+    from testing import value_eq
+    from xmlreader import parse_string
+
+    v = parse_string('False')
+    assert(isinstance(v,bool))
+    assert(v==False)
+
+    v = parse_string('True')
+    assert(isinstance(v,bool))
+    assert(v==True)
+
+    v = parse_string('43')
+    assert(isinstance(v,int))
+    assert(v==43)
+
+    v = parse_string('3.14')
+    assert(isinstance(v,float))
+    assert(np.abs(v-3.14)<1e-6)
+
+    v = parse_string('1 2 3 4',delim=' ')
+    assert(isinstance(v, np.ndarray))
+    assert(value_eq(v,np.array([1,2,3,4],dtype=int)))
+
+    v = parse_string('1, 2, 3, 4',delim=',')
+    assert(isinstance(v, np.ndarray))
+    assert(value_eq(v,np.array([1,2,3,4],dtype=int)))
+
+    v = parse_string('1. 2 3 4',delim=' ')
+    assert(isinstance(v, np.ndarray))
+    assert(value_eq(v,np.array([1,2,3,4],dtype=float)))
+
+    v = parse_string('1., 2, 3, 4',delim=',')
+    assert(isinstance(v, np.ndarray))
+    assert(value_eq(v,np.array([1,2,3,4],dtype=float)))
+#end def test_parse_string
+
+
+def test_find_pair():
+    from xmlreader import find_pair
+
+    s = '''
+        <simulation>
+            <project id="vmc_hf_noj" series="0">
+                <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
+            </project>
+            <qmcsystem>
+                <simulationcell>
+                ...
+                </simulationcell>
+                <particleset>
+                ...
+                </particleset>
+                <wavefunction>
+                ...
+                </wavefunction>
+                <hamiltonian>
+                ...
+                </hamiltonian>
+            </qmcsystem>
+            <qmc method="vmc" move="pbyp">
+                ...
+            </qmc>
+        </simulation>
+        '''
+
+    i1,i2 = find_pair(s,['<','>'])
+    assert(s[i1:i2]=='<simulation>')
+    i1,i2 = find_pair(s,['<','>'],i2)
+    assert(s[i1:i2]=='<project id="vmc_hf_noj" series="0">')
+    i1,i2 = find_pair(s,['</','>'])
+    assert(s[i1:i2]=='</project>')
+    i1,i2 = find_pair(s,['</','>'],i2)
+    assert(s[i1:i2]=='</simulationcell>')
+    i1,i2 = find_pair(s,['</','>'],i2)
+    assert(s[i1:i2]=='</particleset>')
+    i1,i2 = find_pair(s,['</','>'],i2)
+    assert(s[i1:i2]=='</wavefunction>')
+    i1,i2 = find_pair(s,['</','>'],i2)
+    assert(s[i1:i2]=='</hamiltonian>')
+    i1,i2 = find_pair(s,['</','>'],i2)
+    assert(s[i1:i2]=='</qmcsystem>')
+    i1,i2 = find_pair(s,['</','>'],i2)
+    assert(s[i1:i2]=='</qmc>')
+    i1,i2 = find_pair(s,['</','>'],i2)
+    assert(s[i1:i2]=='</simulation>')
+#end def test_find_pair
+
+
+def test_remove_pair_sections():
+    from xmlreader import remove_pair_sections
+
+    s = '''
+        <simulation>
+           <project id="vmc_hf_noj" series="0">
+              <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
+           </project>
+           <qmcsystem>
+              <simulationcell>
+                ...
+              </simulationcell>
+              <particleset>
+                ...
+              </particleset>
+              <wavefunction>
+                ...
+              </wavefunction>
+              <hamiltonian>
+                ...
+              </hamiltonian>
+           </qmcsystem>
+           <qmc method="vmc" move="pbyp">
+              ...
+           </qmc>
+        </simulation>
+        '''
+
+    s = remove_pair_sections(s,('<hamiltonian>','</hamiltonian>'))
+
+    s_no_h = '''
+        <simulation>
+           <project id="vmc_hf_noj" series="0">
+              <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
+           </project>
+           <qmcsystem>
+              <simulationcell>
+                ...
+              </simulationcell>
+              <particleset>
+                ...
+              </particleset>
+              <wavefunction>
+                ...
+              </wavefunction>
+              
+           </qmcsystem>
+           <qmc method="vmc" move="pbyp">
+              ...
+           </qmc>
+        </simulation>
+        '''
+    assert(s==s_no_h)
+
+    s = remove_pair_sections(s,('<qmcsystem>','</qmcsystem>'))
+
+    s_no_sys = '''
+        <simulation>
+           <project id="vmc_hf_noj" series="0">
+              <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
+           </project>
+           
+           <qmc method="vmc" move="pbyp">
+              ...
+           </qmc>
+        </simulation>
+        '''
+    assert(s==s_no_sys)
+    
+    s = remove_pair_sections(s,('<simulation>','</simulation>'))
+    assert(s.strip()=='')
+#end def test_remove_pair_sections
+
+
+def test_remove_empty_lines():
+    from xmlreader import remove_empty_lines
+
+    s = '''
+        
+        This string
+
+
+        has a
+
+        number of
+
+
+
+        empty lines.
+        '''
+
+    sref = '''        This string
+        has a
+        number of
+        empty lines.
+'''
+
+
+    assert(remove_empty_lines(s)==sref)
+#end def test_remove_empty_lines
