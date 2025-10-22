@@ -104,12 +104,10 @@
 #====================================================================#
 
 
-
-import os   
-from generic import obj
+import os
 from fileio import TextFile
 from simulation import Simulation,SimulationInput,SimulationAnalyzer,NullSimulationAnalyzer
-from developer import DevBase,ci
+from developer import DevBase, obj
 
 
 booldict = {'.true.':True,'.false.':False}

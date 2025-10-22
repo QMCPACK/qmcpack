@@ -21,36 +21,32 @@
 #====================================================================#
 
 
-
-from time import time
-
 #python standard library imports
 import os
-import re
 import sys
 import traceback
-from numpy import arange,array
+import numpy as np
 #custom library imports
-from generic import obj
-from developer import unavailable
-from xmlreader import XMLreader
-from plotting import *
+from developer import obj, unavailable
 from physical_system import ghost_atoms
 #QmcpackAnalyzer classes imports
-from qmcpack_analyzer_base import QAobject,QAanalyzer,QAanalyzerCollection
-from qmcpack_property_analyzers \
-    import WavefunctionAnalyzer
-from qmcpack_quantity_analyzers \
-    import ScalarsDatAnalyzer,ScalarsHDFAnalyzer,DmcDatAnalyzer,\
-    EnergyDensityAnalyzer,TracesAnalyzer,DensityMatricesAnalyzer,\
-    SpinDensityAnalyzer,StructureFactorAnalyzer,DensityAnalyzer
-from qmcpack_method_analyzers \
-    import OptAnalyzer,VmcAnalyzer,DmcAnalyzer
-from qmcpack_result_analyzers \
-    import OptimizationAnalyzer,TimestepStudyAnalyzer
+from qmcpack_analyzer_base import QAobject, QAanalyzer, QAanalyzerCollection
+from qmcpack_property_analyzers import WavefunctionAnalyzer
+from qmcpack_quantity_analyzers import (
+    ScalarsDatAnalyzer,
+    ScalarsHDFAnalyzer,
+    DmcDatAnalyzer,
+    EnergyDensityAnalyzer,
+    TracesAnalyzer,
+    DensityMatricesAnalyzer,
+    SpinDensityAnalyzer,
+    StructureFactorAnalyzer,
+    DensityAnalyzer,
+)
+from qmcpack_method_analyzers import OptAnalyzer, VmcAnalyzer, DmcAnalyzer
+from qmcpack_result_analyzers import OptimizationAnalyzer, TimestepStudyAnalyzer
 from simulation import SimulationAnalyzer,Simulation
 from qmcpack_input import QmcpackInput
-from debug import *
 
 try:
     import h5py
@@ -60,6 +56,11 @@ except:
     h5py_unavailable = True
 #end try
 
+try:
+    import matplotlib.pyplot as plt
+except:
+    plt = unavailable('matplotlib','pyplot')
+#end try
 
 
 class QmcpackAnalyzerCapabilities(QAobject):
@@ -356,7 +357,7 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
         self.set_global_info()        
 
         if len(request.calculations)==0:
-            request.calculations = set(series_start+arange(len(calculations)))
+            request.calculations = set(series_start+np.arange(len(calculations)))
         #end if
 
         method_aliases = dict()
@@ -747,29 +748,29 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
                 )
             soffset += len(qn)
         #end for
-        q = array(q)
+        q = np.array(q)
         qmin = q.min()
         qmax = q.max()
         mlabel_height = qmin + .8*(qmax-qmin)
         if shw:
-            figure()
+            plt.figure()
         #end if
-        plot(offset+arange(len(q)),q,style,label=id)
+        plt.plot(offset+np.arange(len(q)),q,style,label=id)
         for s in series:
             sd = sdata[s]
             if mlabels:
-                text(sd.mloc,mlabel_height,sd.mlab)
+                plt.text(sd.mloc,mlabel_height,sd.mlab)
             #end if
             if mlines:
-                plot([sd.line_loc,sd.line_loc],[qmin,qmax],'k-')
+                plt.plot([sd.line_loc,sd.line_loc],[qmin,qmax],'k-')
             #end if
         #end for
         if shw:
-            title('{0} vs series for {1}'.format(quantity,id))
-            xlabel('blocks')
-            ylabel(quantity)
-            legend()
-            show()
+            plt.title('{0} vs series for {1}'.format(quantity,id))
+            plt.xlabel('blocks')
+            plt.ylabel(quantity)
+            plt.legend()
+            plt.show()
         #end if
     #end def plot_trace
           

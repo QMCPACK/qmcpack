@@ -24,14 +24,11 @@
 
 
 from xml.parsers import expat
-import numpy as np
-import sys
 import keyword
 import re
 import os
-from inspect import getmembers
-from generic import obj
-from developer import DevBase,valid_variable_name
+import numpy as np
+from developer import DevBase, obj, valid_variable_name
 
 
 def parse_string(s, delim = None):

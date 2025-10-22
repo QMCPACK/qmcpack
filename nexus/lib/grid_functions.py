@@ -81,9 +81,7 @@ Module contents
 """
 
 import os
-
-from generic import obj
-from developer import DevBase,ci,message,error,unavailable
+from developer import DevBase, obj, error, unavailable
 from fileio import StandardFile,XsfFile
 
 try:
@@ -681,7 +679,6 @@ class PlotHandler(DevBase):
         else:
             fig = plt.figure()
             if dim==3:
-                from mpl_toolkits.mplot3d import Axes3D
                 ax = fig.add_subplot(111, projection='3d')
                 ax.set_xlabel(ax1)
                 ax.set_ylabel(ax2)

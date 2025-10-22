@@ -60,8 +60,8 @@ class gaussian:
 
   # arguments:
   #   name
-  #   A should be a 3x3 np.array
-  #   B, D should be a 3 element np.array
+  #   A should be a 3x3 array
+  #   B, D should be a 3 element array
   #   C, K should just be a floating point number
   def __init__(self, name, A, B, C, D = None, K = None):
     self.A = np.ndarray(buffer=deepcopy(A),shape=(3,3),dtype=np.float64)

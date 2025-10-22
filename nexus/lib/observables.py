@@ -1,5 +1,3 @@
-
-
 # Python standard library imports
 import os
 import inspect
@@ -9,7 +7,20 @@ from copy import deepcopy
 # Non-standard Python imports
 import numpy as np
 
-from developer import unavailable # Nexus unavailable module guard
+# Nexus imports
+import memory
+from unit_converter import convert
+from developer import DevBase, obj, log, error, unavailable
+from numerics import simstats
+from grid_functions import grid_function, read_grid, StructuredGrid, grid as generate_grid
+from grid_functions import SpheroidGrid
+from structure import Structure, get_seekpath_full
+from fileio import XsfFile
+from hdfreader import read_hdf
+
+# Referenced in MomentumDistribution.backfold()
+from debug import ci
+
 try:
     import matplotlib.pyplot as plt
 except:
@@ -20,19 +31,6 @@ try:
 except:
     h5py = unavailable('h5py')
 #end try
-
-# Nexus imports
-import memory
-from unit_converter import convert
-from generic import obj
-from developer import DevBase,log,error,ci
-from numerics import simstats
-from grid_functions import grid_function,read_grid,StructuredGrid,grid as generate_grid
-from grid_functions import SpheroidGrid
-from structure import Structure,read_structure
-from fileio import XsfFile
-
-
 
 
 class VLog(DevBase):
@@ -542,12 +540,9 @@ class ObservableWithComponents(Observable):
 
 
 def read_eshdf_nofk_data(filename,Ef):
-    from numpy import array,pi,dot,sqrt,abs,zeros
-    from numpy.linalg import inv,det
-    from hdfreader import read_hdf
 
     def h5int(i):
-        return array(i,dtype=int)[0]
+        return np.array(i,dtype=int)[0]
     #end def h5int
 
     # Use slightly shifted Fermi energy
@@ -558,16 +553,16 @@ def read_eshdf_nofk_data(filename,Ef):
     h        = read_hdf(filename,view=True)
 
     # Get the G-vectors in cell coordinates
-    gvu      = array(h.electrons.kpoint_0.gvectors)
+    gvu      = np.array(h.electrons.kpoint_0.gvectors)
 
     # Get the untiled cell axes
-    axes     = array(h.supercell.primitive_vectors)
+    axes     = np.array(h.supercell.primitive_vectors)
 
     # Compute the k-space cell axes
-    kaxes    = 2*pi*inv(axes).T
+    kaxes    = 2*np.pi*np.linalg.inv(axes).T
 
     # Convert G-vectors from cell coordinates to atomic units 
-    gv       = dot(gvu,kaxes)
+    gv       = np.dot(gvu,kaxes)
 
     # Get number of kpoints/twists, spins, and G-vectors
     nkpoints = h5int(h.electrons.number_of_kpoints)
@@ -582,9 +577,9 @@ def read_eshdf_nofk_data(filename,Ef):
         eig_k   = obj()
         k_k     = obj()
         nk_k    = obj()
-        nelec_k = zeros((nspins,),dtype=float)
+        nelec_k = np.zeros((nspins,),dtype=float)
         kp      = h.electrons['kpoint_'+str(k)]
-        gvs     = dot(array(kp.reduced_k),kaxes)
+        gvs     = np.dot(np.array(kp.reduced_k),kaxes)
         gvk     = gv.copy()
         for d in range(3):
             gvk[:,d] += gvs[d]
@@ -594,17 +589,17 @@ def read_eshdf_nofk_data(filename,Ef):
             kin_s   = []
             eig_s   = []
             k_s     = gvk
-            nk_s    = zeros((ngvecs,),dtype=float)
+            nk_s    = np.zeros((ngvecs,),dtype=float)
             nelec_s = 0
             path    = 'electrons/kpoint_{0}/spin_{1}'.format(k,s)
             spin    = h.get_path(path)
-            eigs    = convert(array(spin.eigenvalues),'Ha','eV')
+            eigs    = convert(np.array(spin.eigenvalues),'Ha','eV')
             nstates = h5int(spin.number_of_states)
             for st in range(nstates):
                 eig = eigs[st]
                 if eig<E_fermi:
                     stpath   = path+'/state_{0}/psi_g'.format(st)
-                    psi      = array(h.get_path(stpath))
+                    psi      = np.array(h.get_path(stpath))
                     nk_orb   = (psi**2).sum(1)
                     kin_orb  = (kinetic*nk_orb).sum()
                     nelec_s += nk_orb.sum()
@@ -614,9 +609,9 @@ def read_eshdf_nofk_data(filename,Ef):
                 #end if
             #end for
             data[k,s] = obj(
-                kpoint = array(kp.reduced_k),
-                kin    = array(kin_s),
-                eig    = array(eig_s),
+                kpoint = np.array(kp.reduced_k),
+                kin    = np.array(kin_s),
+                eig    = np.array(eig_s),
                 k      = k_s,
                 nk     = nk_s,
                 ne     = nelec_s,
@@ -775,6 +770,7 @@ class MomentumDistribution(ObservableWithComponents):
         print(dk)
         print(np.diag(kaxes)/np.diag(dk))
         print(c.grid.cell_grid_shape)
+        print("ci called from MomentumDistribution.backfold()")
         ci()
         exit()
     #end def backfold
@@ -798,7 +794,6 @@ class MomentumDistribution(ObservableWithComponents):
         a2 = np.asarray(a2)
         if unit_in:
             s = self.get_attribute('structure',assigned=True)
-            from structure import get_seekpath_full
             skp   = get_seekpath_full(structure=s,primitive=True)
             kaxes = np.asarray(skp.reciprocal_primitive_lattice)
             o_in  = o

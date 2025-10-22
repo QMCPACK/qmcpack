@@ -51,15 +51,12 @@ try:
     nexus_version = versions.nexus_version
     del versions
 
-    generic = import_nexus_module('generic')
-    obj   = generic.obj
-    log   = generic.log
-    warn  = generic.warn
-    error = generic.error
-    del generic
-
     developer = import_nexus_module('developer')
     DevBase = developer.DevBase
+    obj     = developer.obj
+    log     = developer.log
+    warn    = developer.warn
+    error   = developer.error
     del developer
 
     numerics = import_nexus_module('numerics')
@@ -90,8 +87,7 @@ try:
 except:
     # Failing path-based imports, import installed Nexus modules.
     from versions import nexus_version
-    from generic import obj,log,warn,error
-    from developer import DevBase
+    from developer import DevBase,obj,log,warn,error
     from numerics import jackknife,jackknife_aux
     from numerics import simstats,equilibration_length
     from numerics import curve_fit,least_squares

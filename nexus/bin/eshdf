@@ -34,11 +34,8 @@ try:
     nexus_version = versions.nexus_version
     del versions
 
-    generic = import_nexus_module('generic')
-    obj = generic.obj
-    del generic
-
     developer = import_nexus_module('developer')
+    obj         = developer.obj
     log         = developer.log
     warn        = developer.warn
     error       = developer.error
@@ -50,8 +47,7 @@ try:
     del hdfreader
 except:
     from versions import nexus_version
-    from generic import obj
-    from developer import log,warn,error,ci
+    from developer import obj,log,warn,error,ci
     from hdfreader import read_hdf
 #end try
 

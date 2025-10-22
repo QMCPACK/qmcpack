@@ -54,7 +54,7 @@ def test_empty_init():
 def test_analyze():
     import os
     from numpy import array,ndarray
-    from generic import obj
+    from developer import obj
     from vasp_analyzer import VaspAnalyzer,VXML,VXMLcoll,OutcarData
 
     tpath = testing.setup_unit_test_output_directory(
