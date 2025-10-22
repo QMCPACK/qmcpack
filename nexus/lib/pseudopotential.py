@@ -44,7 +44,6 @@ from numpy import linspace,array,zeros,append,mgrid,empty,exp,minimum,maximum,sq
 
 from fileio import TextFile
 from xmlreader import readxml
-from superstring import string2val,split_delims
 from periodic_table import pt,is_element
 from unit_converter import convert
 from generic import obj
@@ -401,7 +400,7 @@ class Pseudopotential(DevBase):
         if not os.path.exists(filepath):
             self.error('cannot read {0}, file does not exist'.format(filepath))
         #end if
-        self.element = split_delims(os.path.split(filepath)[1])[0]
+        self.element = pp_elem_label(os.path.split(filepath)[1])[0]
         text = open(filepath,'r').read()
         self.read_text(text,format,filepath=filepath)
     #end def read
@@ -1606,7 +1605,7 @@ class GaussianPP(SemilocalPP):
             name,type,Zcore,lmax = lines[i].split(); i+=1
             Zcore = int(Zcore)
             lmax  = int(lmax)
-            element = split_delims(name)[0]
+            element = pp_elem_label(name)[0]
             while i<len(lines):
                 n = int(lines[i]); i+=1
                 terms = []

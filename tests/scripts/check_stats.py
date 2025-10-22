@@ -959,27 +959,6 @@ class obj(object_interface):
 ######################################################################
 
 
-######################################################################
-# from superstring.py
-######################################################################
-
-import string
-
-def contains_any(str, set):
-    for c in set:
-        if c in str: return 1;
-    return 0;
-#end def contains_any
-
-invalid_variable_name_chars=set('!"#$%&\'()*+,-./:;<=>?@[\\]^`{|}-\n\t ')
-def valid_variable_name(s):
-    return not contains_any(s,invalid_variable_name_chars)
-#end def valid_variable_name
-
-######################################################################
-# end from superstring.py
-######################################################################
-
 
 ######################################################################
 # from debug.py
@@ -1016,6 +995,16 @@ class DevBase(obj):
         self.error('a base class function has not been implemented',trace=True)
     #end def not_implemented
 #end class DevBase
+
+
+def valid_variable_name(s):
+    """Check if a variable name contains invalid characters"""
+    if not any([i in ('!"#$%&\'()*+,-./:;<=>?@[\\]^`{|}-\n\t ') for i in s]):
+        return True
+    else:
+        return False
+    #end if
+#end def valid_variable_name
 
 ######################################################################
 # end from developer.py

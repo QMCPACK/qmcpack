@@ -24,9 +24,8 @@ import sys
 import keyword
 from inspect import getmembers
 
-from superstring import valid_variable_name
 from generic import obj
-from developer import DevBase,unavailable
+from developer import DevBase,unavailable,valid_variable_name
 try:
     import h5py
 except:

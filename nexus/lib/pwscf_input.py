@@ -47,7 +47,6 @@
 import os
 import inspect
 from copy import deepcopy
-from superstring import string2val
 from numpy import fromstring,empty,array,float64,ones,pi,dot,ceil,ndarray, where, append, unique
 from numpy.linalg import inv
 from unit_converter import convert
