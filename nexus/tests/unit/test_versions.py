@@ -7,7 +7,7 @@ def test_import():
 
 
 def test_constants():
-    from versions import nexus_version
+    from nexus_version import nexus_version
     from versions import python_supported
     from versions import years_supported
 
