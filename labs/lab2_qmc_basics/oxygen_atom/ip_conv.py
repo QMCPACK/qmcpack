@@ -5,11 +5,11 @@ import sys
 from subprocess import Popen,PIPE
 from numpy import array,sqrt,polyfit,polyval,linspace
 from developer import obj
-from plotting import *
+import matplotlib.pyplot as plt
 
 params = {'legend.fontsize':14,'figure.facecolor':'white','figure.subplot.hspace':0.6,
           'axes.labelsize':16,'xtick.labelsize':14,'ytick.labelsize':14}
-rcParams.update(params)
+plt.rcParams.update(params)
 
 
 #files = sys.argv[1:]
@@ -119,29 +119,32 @@ if len(res)==2:
     print()
     print()
 
-    figure()
-    errorbar(q0.timesteps,q0.energies,q0.errs,fmt='b.',label='q0')
-    plot(tfit,q0fit,'k--',lw=2)
-    title('Oxygen q=0 total energy vs. timestep')
-    ylabel('Total energy (eV)')
-    xlabel('timestep (1/Ha)')
-    legend()
+    fig_1 = plt.figure(num="q=0 Total Energy vs. Time Step")
+    ax_1 = fig_1.add_subplot()
+    ax_1.errorbar(q0.timesteps,q0.energies,q0.errs,fmt='b.',label='q0')
+    ax_1.plot(tfit,q0fit,'k--',lw=2)
+    ax_1.title('Oxygen q=0 total energy vs. timestep')
+    ax_1.ylabel('Total energy (eV)')
+    ax_1.xlabel('timestep (1/Ha)')
+    ax_1.legend()
 
-    figure()
-    errorbar(q1.timesteps,q1.energies,q1.errs,fmt='b.',label='q1')
-    plot(tfit,q1fit,'k--',lw=2)
-    title('Oxygen q=1 total energy vs. timestep')
-    ylabel('Total energy (eV)')
-    xlabel('timestep (1/Ha)')
-    legend()
+    fig_2 = plt.figure(num="q=1 Total Energy vs. Time Step")
+    ax_2 = fig_2.add_subplot()
+    ax_2.errorbar(q1.timesteps,q1.energies,q1.errs,fmt='b.',label='q1')
+    ax_2.plot(tfit,q1fit,'k--',lw=2)
+    ax_2.title('Oxygen q=1 total energy vs. timestep')
+    ax_2.ylabel('Total energy (eV)')
+    ax_2.xlabel('timestep (1/Ha)')
+    ax_2.legend()
 
-    figure()
-    errorbar(ts,ip,iperr,fmt='r.',label='1st IP')
-    plot(tfit,ipfit,'g--',lw=2)
-    title('Oxygen 1st IP vs. timestep')
-    ylabel('IP (eV)')
-    xlabel('timestep (1/Ha)')
-    legend()
+    fig_3 = plt.figure(num="1st Ionization Potential vs. Time Step")
+    ax_3 = fig_3.add_subplot()
+    ax_3.errorbar(ts,ip,iperr,fmt='r.',label='1st IP')
+    ax_3.plot(tfit,ipfit,'g--',lw=2)
+    ax_3.title('Oxygen 1st IP vs. timestep')
+    ax_3.ylabel('IP (eV)')
+    ax_3.xlabel('timestep (1/Ha)')
+    ax_3.legend()
 
-    show()
+    plt.show()
 #end if
