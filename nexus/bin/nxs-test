@@ -630,14 +630,6 @@ def memory():
 
 
 
-def plotting():
-    nunit('import')
-
-    nunit_all()
-#end def plotting
-
-
-
 def generic_operation():
     nunit('logging')
 
@@ -1910,7 +1902,6 @@ NexusTest( execute                         )
 NexusTest( memory                          )
 NexusTest( generic_operation               , 'generic' )
 NexusTest( developer                       )
-NexusTest( plotting                        )
 NexusTest( unit_converter                  )
 NexusTest( periodic_table                  )
 NexusTest( numerics                        )
@@ -1986,7 +1977,6 @@ NexusTest( qdens_radial                    )
 #NexusTest( optional_dependencies           , optional=True)
 #NexusTest( periodic_table                  )
 #NexusTest( physical_system                 )
-#NexusTest( plotting                        )
 #NexusTest( project_manager                 )
 #NexusTest( pseudopotential                 )
 #NexusTest( pwscf_analyzer                  )
