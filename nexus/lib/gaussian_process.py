@@ -1940,6 +1940,7 @@ class GPTestFunction(DevBase):
         print(rP(self.Pmin),rE(Emin))
 
         if self.plot:
+            import matplotlib.pyplot as plt
             n=200
             fline = []
             Eline = []
@@ -1951,10 +1952,10 @@ class GPTestFunction(DevBase):
                 Eline.append(Ef)
                 #print f,Ef
             #end for
-            from plotting import figure,plot,show
-            figure()
-            plot(fline,Eline)
-            show()
+            fig = plt.figure()
+            ax = fig.add_suplot()
+            ax.plot(fline, Eline)
+            fig.show()
         #end if
     #end def test
 #end class GPTestFunction
