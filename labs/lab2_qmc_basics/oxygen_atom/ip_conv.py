@@ -5,12 +5,11 @@ import sys
 from subprocess import Popen,PIPE
 from numpy import array,sqrt,polyfit,polyval,linspace
 from developer import obj
-from plotting import *
+import matplotlib.pyplot as plt
 
 params = {'legend.fontsize':14,'figure.facecolor':'white','figure.subplot.hspace':0.6,
-          'axes.labelsize':16,'xtick.labelsize':14,'ytick.labelsize':14}
-rcParams.update(params)
-
+        'axes.labelsize':16,'xtick.labelsize':14,'ytick.labelsize':14}
+plt.rcParams.update(params)
 
 #files = sys.argv[1:]
 
@@ -119,29 +118,29 @@ if len(res)==2:
     print()
     print()
 
-    figure()
-    errorbar(q0.timesteps,q0.energies,q0.errs,fmt='b.',label='q0')
-    plot(tfit,q0fit,'k--',lw=2)
-    title('Oxygen q=0 total energy vs. timestep')
-    ylabel('Total energy (eV)')
-    xlabel('timestep (1/Ha)')
-    legend()
+    plt.figure()
+    plt.errorbar(q0.timesteps,q0.energies,q0.errs,fmt='b.',label='q0')
+    plt.plot(tfit,q0fit,'k--',lw=2)
+    plt.title('Oxygen q=0 total energy vs. timestep')
+    plt.ylabel('Total energy (eV)')
+    plt.xlabel('timestep (1/Ha)')
+    plt.legend()
 
-    figure()
-    errorbar(q1.timesteps,q1.energies,q1.errs,fmt='b.',label='q1')
-    plot(tfit,q1fit,'k--',lw=2)
-    title('Oxygen q=1 total energy vs. timestep')
-    ylabel('Total energy (eV)')
-    xlabel('timestep (1/Ha)')
-    legend()
+    plt.figure()
+    plt.errorbar(q1.timesteps,q1.energies,q1.errs,fmt='b.',label='q1')
+    plt.plot(tfit,q1fit,'k--',lw=2)
+    plt.title('Oxygen q=1 total energy vs. timestep')
+    plt.ylabel('Total energy (eV)')
+    plt.xlabel('timestep (1/Ha)')
+    plt.legend()
 
-    figure()
-    errorbar(ts,ip,iperr,fmt='r.',label='1st IP')
-    plot(tfit,ipfit,'g--',lw=2)
-    title('Oxygen 1st IP vs. timestep')
-    ylabel('IP (eV)')
-    xlabel('timestep (1/Ha)')
-    legend()
+    plt.figure()
+    plt.errorbar(ts,ip,iperr,fmt='r.',label='1st IP')
+    plt.plot(tfit,ipfit,'g--',lw=2)
+    plt.title('Oxygen 1st IP vs. timestep')
+    plt.ylabel('IP (eV)')
+    plt.xlabel('timestep (1/Ha)')
+    plt.legend()
 
-    show()
+    plt.show()
 #end if
