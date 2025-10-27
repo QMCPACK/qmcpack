@@ -56,12 +56,12 @@ try:
     #  (The executable should still work even if Nexus is not installed)
     find_nexus_modules()
 
-    versions = import_nexus_module('versions')
-    nexus_version = versions.nexus_version
-    del versions
+    nxs_ver_mod = import_nexus_module('nexus_version')
+    nexus_version = nxs_ver_mod.nexus_version
+    del nxs_ver_mod
 except:
     try:
-        from versions import nexus_version
+        from nexus_version import nexus_version
     except:
         nexus_version = 0,0,0
     #end try
