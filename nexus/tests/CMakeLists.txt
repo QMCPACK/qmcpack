@@ -9,7 +9,11 @@ if(ADD_TEST)
   if(NOT "${NEXUS_TESTLIST_TIMESTAMP}" STREQUAL "${CACHE_NEXUS_TESTLIST_TIMESTAMP}")
     message("Generating Nexus test list for the first time or after a nxs-test time stamp change")
     execute_process(COMMAND ${Python3_EXECUTABLE} ${qmcpack_SOURCE_DIR}/nexus/bin/nxs-test --ctestlist
-                    OUTPUT_VARIABLE NEXUS_TESTLIST)
+                    RESULT_VARIABLE NEXUS_TESTLIST_RESULT OUTPUT_VARIABLE NEXUS_TESTLIST)
+    if(NOT NEXUS_TESTLIST_RESULT EQUAL 0)
+      message(FATAL_ERROR "Command line '${Python3_EXECUTABLE} ${qmcpack_SOURCE_DIR}/nexus/bin/nxs-test --ctestlist' failed!")
+    endif()
+
     set(CACHE_NEXUS_TESTLIST
         ${NEXUS_TESTLIST}
         CACHE INTERNAL "NEXUS_TESTLIST cache variable" FORCE)
