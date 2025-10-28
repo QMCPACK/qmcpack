@@ -317,7 +317,7 @@ def lennard_jones(x):
     x = x.ravel()
     nparams = len(x)
     if nparams!=1 and nparams%3!=0 or nparams==0:
-        print 'invalid number of parameters for lennard jones'
+        print('invalid number of parameters for lennard jones')
         exit()
     #end if
     r = [[   0,0,0],
@@ -554,7 +554,7 @@ def find_min(Co_GP,mol_pos,E,dE,hyp_parm):
 
     cnum =  np.linalg.cond(K+W)
     if cnum>1e16:
-        print 'Warning high condition number results may suffer'
+        print('Warning high condition number results may suffer')
  
     delta_pos = ref_dis+np.zeros([Nc,d])
     tol_pos = ref_dis/10
@@ -1126,9 +1126,9 @@ def gp_opt_example():
             GP_info.n_its = 5
 
             if d == 3:
-                print 'True min: f(x) = -3, x = [1 .5 sqrt(3)/2]'
+                print('True min: f(x) = -3, x = [1 .5 sqrt(3)/2]')
         else:
-            print 'True min: f(x) = -1, x = 1'
+            print('True min: f(x) = -1, x = 1')
 
     elif opt_fun == 2: 
         d = 2
@@ -1138,8 +1138,8 @@ def gp_opt_example():
         GP_info.hyper_cube[0,1] = 4
         GP_info.hyper_cube[1,1] = 1
 
-        print 'Only defined for d=2'
-        print '2D function, global minimum at (3,.5)'   
+        print('Only defined for d=2')
+        print('2D function, global minimum at (3,.5)'   )
 
     elif opt_fun == 3: 
 
@@ -1153,8 +1153,8 @@ def gp_opt_example():
         GP_info.hyper_cube = 1.5*np.ones([d,2])       # Upper and lower bound for each dimension
         GP_info.hyper_cube[:,0] = 0.5     
 
-        print 'Only defined for d=3-7'
-        print 'Global minimum at (1,1,...,1)'
+        print('Only defined for d=3-7')
+        print('Global minimum at (1,1,...,1)')
 
     elif opt_fun == 4: 
         d = 2
@@ -1164,8 +1164,8 @@ def gp_opt_example():
         GP_info.hyper_cube[0,1] = 1
         GP_info.hyper_cube[1,1] = 0
 
-        print 'Only defined for d=2'
-        print '2D function, global minimum at (0,-1)'  
+        print('Only defined for d=2')
+        print('2D function, global minimum at (0,-1)'  )
 
     else:
         GP_info.hyper_cube = np.ones([d,2])/2       # Upper and lower bound for each dimension
@@ -1173,14 +1173,14 @@ def gp_opt_example():
 
         GP_info.n_its = 4
 
-        print 'True min: f(x) = -1, x = 0'
+        print('True min: f(x) = -1, x = 0')
 
     ## Setup Gausian Process Structure ##
     try:
         GP_info.hyper_cube
         E,dE,mol_pos,best_pos,best_E,GP_info = gp_opt_setup(GP_info)
     except:
-        print 'Please Define GP_info.hyper_cube'
+        print('Please Define GP_info.hyper_cube')
         exit
 
     ## Do Gausian Process Iteration ##
@@ -1202,10 +1202,10 @@ def gp_opt_example():
                 dE = np.append(dE,new_dE,axis=0)
 
 
-    print 'Best Guess in position: '
-    print best_pos
-    print 'Best Guess in energy: '
-    print best_E
+    print('Best Guess in position: ')
+    print(best_pos)
+    print('Best Guess in energy: ')
+    print(best_E)
 #end def gp_opt_example        
 
 
@@ -1910,7 +1910,7 @@ class GPTestFunction(DevBase):
         Perform optimization test and print the results of each iteration.
         """
         print
-        print 'testing:',self.name
+        print('testing:',self.name)
         GPO = GaussianProcessOptimizer(
             niterations     = self.niterations,
             param_lower     = self.param_lower,
@@ -1934,10 +1934,10 @@ class GPTestFunction(DevBase):
         Emin,Emin_err = self(self.Pmin)
 
         for i in range(len(P0)):
-            print rP(P0[i]),rE(E0[i]),rE(Eref[i]),rE(E0[i]-Eref[i]),rE(E0[i]-Emin)
+            print(rP(P0[i]),rE(E0[i]),rE(Eref[i]),rE(E0[i]-Eref[i]),rE(E0[i]-Emin))
         #end for
-        print 20*'-'
-        print rP(self.Pmin),rE(Emin)
+        print(20*'-')
+        print(rP(self.Pmin),rE(Emin))
 
         if self.plot:
             import matplotlib.pyplot as plt
@@ -2092,13 +2092,6 @@ if __name__=='__main__':
         #end if
         return E
     #end def trunc_log_lennard_jones
-        
-
-    def trunc_lennard_jones(x):
-        E = lennard_jones(x)
-        E = min(E,10)
-        return E
-    #end def trunc_lennard_jones
 
 
     sphere2 = GPTestFunction(
