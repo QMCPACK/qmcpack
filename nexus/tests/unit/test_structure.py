@@ -1302,6 +1302,18 @@ def test_min_image_distances():
         [31,  1,  7],
         [30, 22, 20]])
 
+    print("Reference: \n")
+    print(nt_ref, "\n\n")
+
+    print("Calculated: \n")
+    print(nt, "\n\n")
+    
+    print("Reference Set: \n")
+    print(set(nt_ref), "\n\n")
+
+    print("Calculated Set: \n")
+    print(set(nt), "\n\n")
+
     for nti,nti_ref in zip(nt,nt_ref):
         assert(set(nti)==set(nti_ref))
     #end for
