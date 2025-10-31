@@ -1259,14 +1259,29 @@ def test_min_image_distances():
         tiling    = (4,4,1),
         )
 
+    print("g: ", g)
+    print("g.pos: ", g.pos)
+    print("g.axes", g.axes)
+    print("single = points.shape==(self.dim,): ", g.pos.shape==g.dim)
+    print("if single: points = [points]", )
+    print("npoints: ", len(g.pos))
+
     # Get the neighbor (index) table, along with sorted distance 
     # and displacement tables.
     nt,dt,vt = g.neighbor_table(distances=True,vectors=True)
+
+    print("nt: ", nt)
+    print("dt: ", dt)
+    print("vt: ", vt)
 
     # Restrict to 3 nearest neighbors (not including self at index 0)
     nt = nt[:,1:4]
     dt = dt[:,1:4]
     vt = vt[:,1:4]
+
+    print("nt = nt[:,1:4]: ", nt)
+    print("dt = dt[:,1:4]: ", dt)
+    print("vt = vt[:,1:4]: ", vt)
     
     nt_ref = np.array([
         [ 1, 11,  9],
@@ -1308,11 +1323,24 @@ def test_min_image_distances():
     print("Calculated: \n")
     print(nt, "\n\n")
     
-    print("Reference Set: \n")
-    print(set(nt_ref), "\n\n")
+    for nti,nti_ref in zip(nt,nt_ref):
+        print("set(nti): ", set(nti), "\n")
+        print("set(nti_ref): ", set(nti_ref), "\n")
+        print("set(nti)==set(nti_ref): ", set(nti)==set(nti_ref), "\n")
+    #end for
 
-    print("Calculated Set: \n")
-    print(set(nt), "\n\n")
+    dist = dt.ravel()
+    print("dist = dt.ravel(): ", dist, "\n")
+    print("assert(value_eq(dist.min(),1.42143636)): ", dist.min(), "\n")
+    print("assert(value_eq(dist.max(),1.42143636)): ", dist.max(), "\n")
+
+    vec = vt.ravel()
+    print("vec = vt.ravel(): ", vec)
+    vec.shape = np.prod(dt.shape),3
+    print("vec.shape = np.prod(dt.shape),3: ", vec, "\n")
+    vdist = np.linalg.norm(vec,axis=1)
+    print("vdist = np.linalg.norm(vec,axis=1): ", vdist, "\n")
+    print("assert(value_eq(vdist,dist)): ", value_eq(vdist, dist), "\n")
 
     for nti,nti_ref in zip(nt,nt_ref):
         assert(set(nti)==set(nti_ref))
