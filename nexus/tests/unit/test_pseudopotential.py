@@ -176,7 +176,7 @@ h 1 1.00
 
 
 def test_ppset():
-    from generic import obj
+    from developer import obj
     from pseudopotential import ppset
 
     ppset_ref = obj(

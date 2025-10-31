@@ -25,13 +25,11 @@
 
 
 import os
-from generic import obj
-from simulation import Simulation,SimulationInput,SimulationAnalyzer
+from developer import obj
+from simulation import Simulation
 from vasp_input import VaspInput,generate_vasp_input,generate_poscar,Poscar
-from vasp_analyzer import VaspAnalyzer,read_vxml
+from vasp_analyzer import VaspAnalyzer
 from structure import Structure
-from debug import *
-
 
 
 class Vasp(Simulation):

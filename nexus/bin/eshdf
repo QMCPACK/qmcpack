@@ -30,15 +30,12 @@ try:
     #  (The executable should still work even if Nexus is not installed)
     find_nexus_modules()
 
-    versions = import_nexus_module('versions')
-    nexus_version = versions.nexus_version
-    del versions
-
-    generic = import_nexus_module('generic')
-    obj = generic.obj
-    del generic
+    nxs_ver_mod = import_nexus_module('nexus_version')
+    nexus_version = nxs_ver_mod.nexus_version
+    del nxs_ver_mod
 
     developer = import_nexus_module('developer')
+    obj         = developer.obj
     log         = developer.log
     warn        = developer.warn
     error       = developer.error
@@ -49,9 +46,8 @@ try:
     read_hdf = hdfreader.read_hdf
     del hdfreader
 except:
-    from versions import nexus_version
-    from generic import obj
-    from developer import log,warn,error,ci
+    from nexus_version import nexus_version
+    from developer import obj,log,warn,error,ci
     from hdfreader import read_hdf
 #end try
 

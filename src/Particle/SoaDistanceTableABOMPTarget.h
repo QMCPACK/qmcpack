@@ -55,29 +55,8 @@ private:
 
   ResourceHandle<DTABMultiWalkerMem> mw_mem_handle_;
 
-  void resize()
-  {
-    if (num_sources_ * num_targets_ == 0)
-      return;
-    if (distances_.size())
-      return;
-
-    // initialize memory containers and views
-    const size_t num_padded  = getAlignedSize<T>(num_sources_);
-    const size_t stride_size = getPerTargetPctlStrideSize();
-    r_dr_memorypool_.resize(stride_size * num_targets_);
-
-    distances_.resize(num_targets_);
-    displacements_.resize(num_targets_);
-    for (int i = 0; i < num_targets_; ++i)
-    {
-      distances_[i].attachReference(r_dr_memorypool_.data() + i * stride_size, num_sources_);
-      displacements_[i].attachReference(num_sources_, num_padded,
-                                        r_dr_memorypool_.data() + i * stride_size + num_padded);
-    }
-  }
-
-  static void associateResource(const RefVectorWithLeader<DistanceTable>& dt_list)
+  static void associateResource(const RefVectorWithLeader<DistanceTable>& dt_list,
+                                const RefVectorWithLeader<const DynamicCoordinates>& coords_list)
   {
     auto& dt_leader = dt_list.getCastedLeader<SoaDistanceTableABOMPTarget>();
 
@@ -85,8 +64,8 @@ private:
     size_t count_targets = 0;
     for (size_t iw = 0; iw < dt_list.size(); iw++)
     {
-      auto& dt = dt_list.getCastedElement<SoaDistanceTableABOMPTarget>(iw);
-      count_targets += dt.targets();
+      auto& dt                         = dt_list.getCastedElement<SoaDistanceTableABOMPTarget>(iw);
+      count_targets += dt.num_targets_ = coords_list[iw].size();
       dt.r_dr_memorypool_.free();
     }
 
@@ -117,13 +96,11 @@ private:
   }
 
 public:
-  SoaDistanceTableABOMPTarget(const ParticleSet& source, const size_t target_size, const std::string& target_name)
+  SoaDistanceTableABOMPTarget(const ParticleSet& source, const std::string& target_name)
       : DTD_BConds<T, D, SC>(source.getLattice()),
-        DistanceTableAB(source, target_size, target_name, DTModes::ALL_OFF),
+        DistanceTableAB(source, target_name, DTModes::ALL_OFF),
         offload_timer_(createGlobalTimer("DTABOMPTarget::offload_" + name_, timer_level_fine)),
-        evaluate_timer_(createGlobalTimer("DTABOMPTarget::evaluate_" + name_, timer_level_fine)),
-        move_timer_(createGlobalTimer("DTABOMPTarget::move_" + name_, timer_level_fine)),
-        update_timer_(createGlobalTimer("DTABOMPTarget::update_" + name_, timer_level_fine))
+        evaluate_timer_(createGlobalTimer("DTABOMPTarget::evaluate_" + name_, timer_level_fine))
 
   {
     auto* coordinates_soa = dynamic_cast<const RealSpacePositionsOMPTarget*>(&source.getCoordinates());
@@ -152,18 +129,17 @@ public:
   {
     auto& dt_leader          = dt_list.getCastedLeader<SoaDistanceTableABOMPTarget>();
     dt_leader.mw_mem_handle_ = collection.lendResource<DTABMultiWalkerMem>();
-    associateResource(dt_list);
+    dt_leader.num_targets_   = 0;
   }
 
   void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<DistanceTable>& dt_list) const override
   {
-    collection.takebackResource(dt_list.getCastedLeader<SoaDistanceTableABOMPTarget>().mw_mem_handle_);
+    auto& dt_leader        = dt_list.getCastedLeader<SoaDistanceTableABOMPTarget>();
+    dt_leader.num_targets_ = 0;
+    collection.takebackResource(dt_leader.mw_mem_handle_);
+
     for (size_t iw = 0; iw < dt_list.size(); iw++)
-    {
-      auto& dt = dt_list.getCastedElement<SoaDistanceTableABOMPTarget>(iw);
-      dt.distances_.clear();
-      dt.displacements_.clear();
-    }
+      dt_list.getCastedElement<SoaDistanceTableABOMPTarget>(iw).num_targets_ = 0;
   }
 
   const T* getMultiWalkerDataPtr() const override { return mw_mem_handle_.getResource().mw_r_dr.data(); }
@@ -173,7 +149,8 @@ public:
   /** evaluate the full table */
   inline void evaluate(const DynamicCoordinates& coords) override
   {
-    resize();
+    if (num_targets_ != coords.size())
+      resize(coords.size());
 
     ScopedTimer local_timer(evaluate_timer_);
     // be aware of the sign of Displacement
@@ -232,6 +209,7 @@ public:
 
     ScopedTimer local_timer(evaluate_timer_);
 
+    associateResource(dt_list, coords_list);
     const size_t nw            = dt_list.size();
     DTABMultiWalkerMem& mw_mem = dt_leader.mw_mem_handle_;
     auto& mw_r_dr              = mw_mem.mw_r_dr;
@@ -348,70 +326,39 @@ public:
   ///evaluate the temporary pair relations
   inline void move(const ParticleSet& P, const PosType& rnew, const IndexType iat, bool prepare_old) override
   {
-    ScopedTimer local_timer(move_timer_);
-    DTD_BConds<T, D, SC>::computeDistances(rnew, origin_.getCoordinates().getAllParticlePos(), temp_r_.data(), temp_dr_,
-                                           0, num_sources_);
-    // If the full table is not ready all the time, overwrite the current value.
-    // If this step is missing, DT values can be undefined in case a move is rejected.
-    if (!(modes_ & DTModes::NEED_FULL_TABLE_ANYTIME) && prepare_old)
-      DTD_BConds<T, D, SC>::computeDistances(P.R[iat], origin_.getCoordinates().getAllParticlePos(),
-                                             distances_[iat].data(), displacements_[iat], 0, num_sources_);
+    throw std::runtime_error("Report bug! SoaDistanceTableABOMPTarget::move should never be called!");
   }
 
   ///update the stripe for jat-th particle
   inline void update(IndexType iat) override
   {
-    ScopedTimer local_timer(update_timer_);
-    std::copy_n(temp_r_.data(), num_sources_, distances_[iat].data());
-    for (int idim = 0; idim < D; ++idim)
-      std::copy_n(temp_dr_.data(idim), num_sources_, displacements_[iat].data(idim));
-  }
-
-  int get_first_neighbor(IndexType iat, RealType& r, PosType& dr, bool newpos) const override
-  {
-    RealType min_dist = std::numeric_limits<RealType>::max();
-    int index         = -1;
-    if (newpos)
-    {
-      for (int jat = 0; jat < num_sources_; ++jat)
-        if (temp_r_[jat] < min_dist)
-        {
-          min_dist = temp_r_[jat];
-          index    = jat;
-        }
-      if (index >= 0)
-      {
-        r  = min_dist;
-        dr = temp_dr_[index];
-      }
-    }
-    else
-    {
-      for (int jat = 0; jat < num_sources_; ++jat)
-        if (distances_[iat][jat] < min_dist)
-        {
-          min_dist = distances_[iat][jat];
-          index    = jat;
-        }
-      if (index >= 0)
-      {
-        r  = min_dist;
-        dr = displacements_[iat][index];
-      }
-    }
-    assert(index >= 0 && index < num_sources_);
-    return index;
+    throw std::runtime_error("Report bug! SoaDistanceTableABOMPTarget::update should never be called!");
   }
 
 private:
+  void resize(const size_t num_targets) override
+  {
+    num_targets_ = num_targets;
+
+    // initialize memory containers and views
+    const size_t num_padded  = getAlignedSize<T>(num_sources_);
+    const size_t stride_size = getPerTargetPctlStrideSize();
+    r_dr_memorypool_.resize(stride_size * num_targets_);
+
+    distances_.resize(num_targets_);
+    displacements_.resize(num_targets_);
+    for (int i = 0; i < num_targets_; ++i)
+    {
+      distances_[i].attachReference(r_dr_memorypool_.data() + i * stride_size, num_sources_);
+      displacements_[i].attachReference(num_sources_, num_padded,
+                                        r_dr_memorypool_.data() + i * stride_size + num_padded);
+    }
+  }
+
   /// timer for offload portion
   NewTimer& offload_timer_;
   /// timer for evaluate()
   NewTimer& evaluate_timer_;
-  /// timer for move()
-  NewTimer& move_timer_;
-  /// timer for update()
-  NewTimer& update_timer_;
 };
 } // namespace qmcplusplus
 #endif

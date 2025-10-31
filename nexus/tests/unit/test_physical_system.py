@@ -37,7 +37,7 @@ def test_import():
 
 
 def test_particle_initialization():
-    from generic import obj
+    from developer import obj
     from physical_system import Matter,Particle,Ion,PseudoIon,Particles
     from physical_system import PhysicalSystem,generate_physical_system
 
@@ -106,7 +106,7 @@ def test_particle_initialization():
 
 def test_physical_system_initialization():
     import os
-    from generic import obj
+    from developer import obj
     from structure import generate_structure
     from physical_system import generate_physical_system
     from physical_system import PhysicalSystem
@@ -421,7 +421,7 @@ def test_change_units():
 
 
 def test_rename():
-    from generic import obj
+    from developer import obj
     from physical_system import generate_physical_system
 
     sys = generate_physical_system(

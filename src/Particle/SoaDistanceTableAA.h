@@ -30,50 +30,24 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableAA
   SoaDistanceTableAA(const ParticleSet& target)
       : DTD_BConds<T, D, SC>(target.getLattice()),
         DistanceTableAA(target, DTModes::ALL_OFF),
-        num_targets_padded_(getAlignedSize<T>(num_targets_)),
 #if !defined(NDEBUG)
         old_prepared_elec_id_(-1),
 #endif
         evaluate_timer_(createGlobalTimer("DTAA::evaluate_" + name_, timer_level_fine)),
         move_timer_(createGlobalTimer("DTAA::move_" + name_, timer_level_fine)),
         update_timer_(createGlobalTimer("DTAA::update_" + name_, timer_level_fine))
-  {
-    resize();
-  }
+  {}
 
   SoaDistanceTableAA()                          = delete;
   SoaDistanceTableAA(const SoaDistanceTableAA&) = delete;
   ~SoaDistanceTableAA() override {}
 
-  size_t compute_size(int N) const
-  {
-    const size_t num_padded = getAlignedSize<T>(N);
-    const size_t Alignment  = getAlignment<T>();
-    return (num_padded * (2 * N - num_padded + 1) + (Alignment - 1) * num_padded) / 2;
-  }
-
-  void resize()
-  {
-    // initialize memory containers and views
-    const size_t total_size = compute_size(num_targets_);
-    memory_pool_.resize(total_size * (1 + D));
-    distances_.resize(num_targets_);
-    displacements_.resize(num_targets_);
-    for (int i = 0; i < num_targets_; ++i)
-    {
-      distances_[i].attachReference(memory_pool_.data() + compute_size(i), i);
-      displacements_[i].attachReference(i, total_size, memory_pool_.data() + total_size + compute_size(i));
-    }
-
-    old_r_.resize(num_targets_);
-    old_dr_.resize(num_targets_);
-    temp_r_.resize(num_targets_);
-    temp_dr_.resize(num_targets_);
-  }
-
   inline void evaluate(const DynamicCoordinates& coords) override
   {
     ScopedTimer local_timer(evaluate_timer_);
+    if (num_targets_ != coords.size())
+      resize(coords.size());
+
     constexpr T BigR = std::numeric_limits<T>::max();
     for (int iat = 1; iat < num_targets_; ++iat)
       DTD_BConds<T, D, SC>::computeDistances(coords.getOneParticlePos(iat), coords.getAllParticlePos(),
@@ -83,6 +57,7 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableAA
   ///evaluate the temporary pair relations
   inline void move(const ParticleSet& P, const PosType& rnew, const IndexType iat, bool prepare_old) override
   {
+    assert(num_targets_ > 0);
     ScopedTimer local_timer(move_timer_);
 
 #if !defined(NDEBUG)
@@ -98,47 +73,6 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableAA
                                              0, num_targets_, iat);
       old_r_[iat] = std::numeric_limits<T>::max(); //assign a big number
     }
-  }
-
-  int get_first_neighbor(IndexType iat, RealType& r, PosType& dr, bool newpos) const override
-  {
-    //ensure there are neighbors
-    assert(num_targets_ > 1);
-    RealType min_dist = std::numeric_limits<RealType>::max();
-    int index         = -1;
-    if (newpos)
-    {
-      for (int jat = 0; jat < num_targets_; ++jat)
-        if (temp_r_[jat] < min_dist && jat != iat)
-        {
-          min_dist = temp_r_[jat];
-          index    = jat;
-        }
-      assert(index >= 0);
-      dr = temp_dr_[index];
-    }
-    else
-    {
-      for (int jat = 0; jat < iat; ++jat)
-        if (distances_[iat][jat] < min_dist)
-        {
-          min_dist = distances_[iat][jat];
-          index    = jat;
-        }
-      for (int jat = iat + 1; jat < num_targets_; ++jat)
-        if (distances_[jat][iat] < min_dist)
-        {
-          min_dist = distances_[jat][iat];
-          index    = jat;
-        }
-      assert(index != iat && index >= 0);
-      if (index < iat)
-        dr = displacements_[iat][index];
-      else
-        dr = displacements_[index][iat];
-    }
-    r = min_dist;
-    return index;
   }
 
   /** After accepting the iat-th particle, update the iat-th row of distances_ and displacements_.
@@ -186,9 +120,35 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableAA
     }
   }
 
+  /// compute internal storage size
+  size_t compute_size(int N) const
+  {
+    const size_t num_padded = getAlignedSize<T>(N);
+    const size_t Alignment  = getAlignment<T>();
+    return (num_padded * (2 * N - num_padded + 1) + (Alignment - 1) * num_padded) / 2;
+  }
+
 private:
-  ///number of targets with padding
-  const size_t num_targets_padded_;
+  void resize(const size_t num_targets) override
+  {
+    // initialize memory containers and views
+    num_targets_            = num_targets;
+    const size_t total_size = compute_size(num_targets_);
+    memory_pool_.resize(total_size * (1 + D));
+    distances_.resize(num_targets_);
+    displacements_.resize(num_targets_);
+    for (int i = 0; i < num_targets_; ++i)
+    {
+      distances_[i].attachReference(memory_pool_.data() + compute_size(i), i);
+      displacements_[i].attachReference(i, total_size, memory_pool_.data() + total_size + compute_size(i));
+    }
+
+    old_r_.resize(num_targets_);
+    old_dr_.resize(num_targets_);
+    temp_r_.resize(num_targets_);
+    temp_dr_.resize(num_targets_);
+  }
+
 #if !defined(NDEBUG)
   /** set to particle id after move() with prepare_old = true. -1 means not prepared.
    * It is intended only for safety checks, not for codepath selection.

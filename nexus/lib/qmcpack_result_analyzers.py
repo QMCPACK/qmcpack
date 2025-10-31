@@ -26,13 +26,10 @@
 #====================================================================#
 
 
-from numpy import array,empty,zeros,sqrt,arange
-from generic import obj
+import numpy as np
+from developer import obj
 from unit_converter import convert
-from qmcpack_input import QmcpackInput
 from qmcpack_analyzer_base import QAobject,QAanalyzer
-from debug import *
-
 
 
 class ResultAnalyzer(QAanalyzer):
@@ -152,12 +149,12 @@ class OptimizationAnalyzer(ResultAnalyzer):
         unstable |= not any_complete
 
         nseries = len(res)
-        en    = zeros((nseries,),dtype=float)
-        enerr = zeros((nseries,),dtype=float)
-        va    = zeros((nseries,),dtype=float)
-        vaerr = zeros((nseries,),dtype=float)
+        en    = np.zeros((nseries,),dtype=float)
+        enerr = np.zeros((nseries,),dtype=float)
+        va    = np.zeros((nseries,),dtype=float)
+        vaerr = np.zeros((nseries,),dtype=float)
 
-        series = array(sorted(res.keys()),dtype=int)
+        series = np.array(sorted(res.keys()),dtype=int)
         i = 0
         for s in series:
             sres = res[s]
@@ -207,7 +204,7 @@ class OptimizationAnalyzer(ResultAnalyzer):
         self.optimal_wavefunction = None
         if any_stable:
             if optimize=='energy_within_variance_tol' or optimize=='ewvt':
-                indices = arange(len(series),dtype=int)
+                indices = np.arange(len(series),dtype=int)
                 vartol  = 0.2
                 vmin    = va.min()
                 vind    = indices[abs(va-vmin)/vmin<vartol]
@@ -307,7 +304,7 @@ class OptimizationAnalyzer(ResultAnalyzer):
         xticks([])
         xlim([r[0]-.5,r[-1]+.5])
         subplot(3,1,3)
-        plot(r,abs(sqrt(va)/en),'k')
+        plot(r,abs(np.sqrt(va)/en),'k')
         ylabel('Var.^(1/2)/|En.|')
         xlabel('Optimization attempts')
         xticks(r)
@@ -343,8 +340,8 @@ class OptimizationAnalyzer(ResultAnalyzer):
                 order[jt].sort()
             #end if
         #end for
-        cs = array([1.,0,0])
-        ce = array([0,0,1.])
+        cs = np.array([1.,0,0])
+        ce = np.array([0,0,1.])
         for jt in jtypes:
             if jt in w:
                 figure()
@@ -406,9 +403,9 @@ class TimestepStudyAnalyzer(ResultAnalyzer):
             energies.append(dmc.scalars.LocalEnergy.mean)
             errors.append(dmc.scalars.LocalEnergy.error)
         #end for
-        timesteps = array(timesteps)
-        energies  = array(energies)
-        errors    = array(errors)
+        timesteps = np.array(timesteps)
+        energies  = np.array(energies)
+        errors    = np.array(errors)
         order = timesteps.argsort()
         self.timesteps = timesteps[order]
         self.energies  = energies[order]
@@ -447,7 +444,7 @@ class TimestepStudyAnalyzer(ResultAnalyzer):
         tsrange = [0,1.1*timesteps[-1]]
         plot(tsrange,[0,0],'k-')
         errorbar(timesteps,energies-Esmall,errors,fmt='k.')
-        text(array(tsrange).mean(),0,'{0:6.4f} eV'.format(Esmall))
+        text(np.array(tsrange).mean(),0,'{0:6.4f} eV'.format(Esmall))
         xticks(timesteps)
         xlim(tsrange)
         xlabel('Timestep (Ha)')

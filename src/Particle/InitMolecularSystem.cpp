@@ -99,7 +99,7 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
     return initAtom(ions, els);
 
   std::ostream null_out(nullptr);
-  auto ii_dt = createDistanceTable(*ions, null_out);
+  auto ii_dt = createDistanceTableAA(*ions, null_out);
   ii_dt->evaluate(*ions);
 
   const ParticleSet::ParticleIndex& grID(ions->GroupID);

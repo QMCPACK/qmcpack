@@ -35,12 +35,6 @@ for d in dirs_check:
 # enforce association between nxs-test executable and Nexus library
 sys.path.insert(0,library_dir)
 
-from generic import generic_settings,object_interface,NexusError
-
-generic_settings.raise_error = True
-
-
-
 # add unit test modules
 sys.path.append(os.path.abspath(os.path.join(__file__,'..','..','tests','unit')))
 
@@ -83,12 +77,6 @@ def import_from_unit_test_module(module_name,test_name):
     #end if
     return module[test_name]
 #end def import_from_unit_test_module
-
-
-# import core testing functions (shared between nxs-test and unit tests)
-from testing import *
-import testing as nexus_testing
-
 
 
 # exception indicating test failure
@@ -204,6 +192,7 @@ def nlabel(label):
 
 # divert nexus log output
 def nlog_divert():
+    from generic import generic_settings,object_interface
     logging_storage['devlog'] = generic_settings.devlog
     logging_storage['objlog'] = object_interface._logfile 
     logfile = FakeLog()
@@ -214,6 +203,7 @@ def nlog_divert():
 
 # restore nexus log output
 def nlog_restore():
+    from generic import generic_settings,object_interface
     generic_settings.devlog   = logging_storage['devlog']
     object_interface._logfile = logging_storage['devlog']
 #end def nlog_restore
@@ -467,6 +457,9 @@ class NexusTest(NexusTestBase):
 
     # run the current test
     def run(self):
+
+        from testing import check_final_state
+
         nleave()
         NexusTestBase.current_test  = self
         NexusTestBase.current_label = ''
@@ -630,34 +623,6 @@ def memory():
 
 
 
-def plotting():
-    nunit('import')
-
-    nunit_all()
-#end def plotting
-
-
-
-def superstring():
-    nunit('imports')
-
-    nunit('string2val')
-
-    nunit('split_delims')
-
-    nunit('valid_variable_name')
-
-    nunit('find_matching_pair')
-
-    nunit('remove_pair_sections')
-
-    nunit('remove_empty_lines')
-
-    nunit_all()
-#end def superstring
-
-
-
 def generic_operation():
     nunit('logging')
 
@@ -674,6 +639,8 @@ def developer():
     nunit('import')
 
     nunit('unavailable')
+
+    nunit('valid_variable_name')
 
     nunit_all()
 #end def developer
@@ -815,6 +782,14 @@ def xmlreader():
     nunit('import')
 
     nunit('read')
+
+    nunit('parse_string')
+
+    nunit('find_pair')
+
+    nunit('remove_pair_sections')
+
+    nunit('remove_empty_lines')
 
     nunit_all()
 #end def xmlreader
@@ -1777,6 +1752,7 @@ def user_examples(label):
     from qmcpack_converters import Pw2qmcpackInput
     from gamess_input import GamessInput
     from qmcpack_input import QmcpackInput
+    import testing as nexus_testing
 
     # load information for a single user example
     if label not in example_information:
@@ -1854,7 +1830,7 @@ def user_examples(label):
             input_class = input_classes[code]
             ref_input = input_class(ref_filepath)
             gen_input = input_class(gen_filepath)
-            diff,dgen,dref = object_diff(gen_input,ref_input,full=True)
+            diff,dgen,dref = nexus_testing.object_diff(gen_input,ref_input,full=True)
             if diff:
                 # assume failure
                 failed = True
@@ -1918,10 +1894,8 @@ NexusTest( nexus_imports                   )
 NexusTest( testing                         )
 NexusTest( execute                         )
 NexusTest( memory                          )
-NexusTest( superstring                     )
 NexusTest( generic_operation               , 'generic' )
 NexusTest( developer                       )
-NexusTest( plotting                        )
 NexusTest( unit_converter                  )
 NexusTest( periodic_table                  )
 NexusTest( numerics                        )
@@ -1997,7 +1971,6 @@ NexusTest( qdens_radial                    )
 #NexusTest( optional_dependencies           , optional=True)
 #NexusTest( periodic_table                  )
 #NexusTest( physical_system                 )
-#NexusTest( plotting                        )
 #NexusTest( project_manager                 )
 #NexusTest( pseudopotential                 )
 #NexusTest( pwscf_analyzer                  )
@@ -2026,7 +1999,6 @@ NexusTest( qdens_radial                    )
 #NexusTest( settings_operation              , 'settings' )
 #NexusTest( simulation                      , 'simulation_module' )
 #NexusTest( structure                       )
-#NexusTest( superstring                     )
 #NexusTest( testing                         )
 #NexusTest( unit_converter                  )
 #NexusTest( vasp_analyzer                   )
@@ -2231,12 +2203,12 @@ try:
     #  (The executable should still work even if Nexus is not installed)
     find_nexus_modules()
 
-    versions = import_nexus_module('versions')
-    nexus_version = versions.nexus_version
-    del versions
+    nxs_ver_mod = import_nexus_module('nexus_version')
+    nexus_version = nxs_ver_mod.nexus_version
+    del nxs_ver_mod
 except:
     try:
-        from versions import nexus_version
+        from nexus_version import nexus_version
     except:
         nexus_version = 0,0,0
     #end try
@@ -2324,9 +2296,6 @@ if __name__=='__main__':
         exit()
     #end if
 
-    global_data['verbose']       = options.verbose
-    global_data['job_ref_table'] = options.job_ref_table
-
     if options.regex!='none':
         regex = options.regex
     #end if
@@ -2403,6 +2372,16 @@ if __name__=='__main__':
     if options.pythonpath!='none':
         os.environ['PYTHONPATH']=options.pythonpath
     #end if
+
+    from generic import generic_settings
+
+    generic_settings.raise_error = True
+
+    # import core testing functions (shared between nxs-test and unit tests)
+    from testing import global_data,numpy_available
+
+    global_data['verbose']       = options.verbose
+    global_data['job_ref_table'] = options.job_ref_table
 
     # guard against missing numpy (required)
     if len(tests)>0 and not numpy_available:

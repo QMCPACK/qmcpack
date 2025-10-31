@@ -20,8 +20,7 @@
 #====================================================================#
 
 
-from generic import obj
-from developer import DevBase,error
+from developer import DevBase, obj, error
 
 
 class Unit(DevBase):
