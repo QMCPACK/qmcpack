@@ -1253,6 +1253,8 @@ def test_min_image_distances():
     import numpy as np
     from structure import generate_structure
 
+    print("np.iinfo(dtype=np.uint64): ", np.iinfo(dtype=np.uint64))
+
     g = generate_structure(
         structure = 'graphene',
         cell      = 'prim',
