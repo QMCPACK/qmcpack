@@ -425,6 +425,7 @@ def reduce_tilematrix(tiling):
         tvset = set()
         for tv in tvecs_old:
             tvk = tuple(np.array(np.around(1e7*tv),dtype=np.uint64))
+            print("tvk: ", tvk)
             if tvk not in tvset:
                 tvset.add(tvk)
                 tvecs.append(tv)
