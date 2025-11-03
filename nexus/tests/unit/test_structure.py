@@ -1271,7 +1271,7 @@ def test_min_image_distances():
 
     dot = np.dot(pos_i-c,axinv)
     print("Dot Output: ", dot)
-
+    raise ValueError("Stop Structure")
     g = generate_structure(
         structure = 'graphene',
         cell      = 'prim',
