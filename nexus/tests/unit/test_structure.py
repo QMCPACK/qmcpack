@@ -1251,11 +1251,10 @@ def test_min_image_distances():
     Compute minimum image distances between nearest neighbors.
     """
     import numpy as np
-    import sys
     from structure import generate_structure
 
-    print("Python Version: ", sys.version)
-    print("NumPy Version: ", np.__version__)
+    print(np.show_runtime())
+
     np.set_printoptions(precision=20, floatmode="fixed")
 
     pos_i = np.array([0., 0., 0.], dtype=np.float64)
