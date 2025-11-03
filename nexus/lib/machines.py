@@ -3257,7 +3257,7 @@ class Stampede2(Supercomputer):
         c+='#SBATCH --account='+str(job.account)+'\n'
         c+='#SBATCH -N '+str(job.nodes)+'\n'
         c+='#SBATCH --ntasks-per-node={0}\n'.format(job.processes_per_node)
-        c+='#SBATCH --cpus-per-task={}\n'.format(job.threads)
+        c+='#SBATCH --cpus-per-task={0}\n'.format(job.threads)
         c+='#SBATCH -t {0}:{1}:{2}\n'.format(str(job.hours+24*job.days).zfill(2),str(job.minutes).zfill(2),str(job.seconds).zfill(2))
         c+='#SBATCH -o {0}\n'.format(job.outfile)
         c+='#SBATCH -e {0}\n'.format(job.errfile)
