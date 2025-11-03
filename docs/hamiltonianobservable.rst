@@ -509,7 +509,7 @@ density (``density``), number density resolved by particle spin
 (``gofr``), static structure factor (``sk``), static structure factor
 (``skall``), energy density (``energydensity``), one body reduced
 density matrix (``dm1b``), :math:`S(k)` based kinetic energy correction
-(``chiesa``), forward walking (``ForwardWalking``), and force
+(``chiesa``), and force
 (``Force``) estimators. Other estimators are not yet covered.
 
 When an ``<estimator/>`` element appears in ``<hamiltonian/>``, it is
@@ -554,8 +554,6 @@ section (e.g., during VMC only).
   |                  | chiesa           | Chiesa-Ceperley-Martin-Holzmann kinetic energy correction |
   +------------------+------------------+-----------------------------------------------------------+
   |                  | Force            | Family of "force" estimators (see :ref:`ccz-force-est`)   |
-  +------------------+------------------+-----------------------------------------------------------+
-  |                  | ForwardWalking   | Forward walking values for existing estimators            |
   +------------------+------------------+-----------------------------------------------------------+
   |                  | orbitalimages    | Create image files for orbitals, then exit                |
   +------------------+------------------+-----------------------------------------------------------+
@@ -1919,90 +1917,6 @@ Additional information:
     <sposet type="bspline" name="spo_d"  group="0" size="2"/>
     <sposet type="bspline" name="dm_basis" size="50" spindataset="0"/>
   </sposet_builder>
-
-.. _forward-walking:
-
-Forward-Walking Estimators
---------------------------
-
-Forward walking is a method for sampling the pure fixed-node
-distribution :math:`\langle \Phi_0 | \Phi_0\rangle`. Specifically, one
-multiplies each walker’s DMC mixed estimate for the observable
-:math:`\mathcal{O}`,
-:math:`\frac{\mathcal{O}(\mathbf{R})\Psi_T(\mathbf{R})}{\Psi_T(\mathbf{R})}`,
-by the weighting factor
-:math:`\frac{\Phi_0(\mathbf{R})}{\Psi_T(\mathbf{R})}`. As it turns out,
-this weighting factor for any walker :math:`\mathbf{R}` is proportional
-to the total number of descendants the walker will have after a
-sufficiently long projection time :math:`\beta`.
-
-To forward walk on an observable, declare a generic forward-walking
-estimator within a ``<hamiltonian>`` block, and then specify the
-observables to forward walk on and the forward-walking parameters. Here
-is a summary.
-
-``estimator type=ForwardWalking`` element:
-
-  +------------------+----------------------+
-  | parent elements: | ``hamiltonian, qmc`` |
-  +------------------+----------------------+
-  | child elements:  | ``Observable``       |
-  +------------------+----------------------+
-
-  attributes:
-
-    +---------------------+--------------+--------------------+-------------+---------------------------+
-    | **Name**            | **Datatype** | **Values**         | **Default** | **Description**           |
-    +=====================+==============+====================+=============+===========================+
-    | ``type``:math:`^r`  | text         | **ForwardWalking** |             | Must be "ForwardWalking"  |
-    +---------------------+--------------+--------------------+-------------+---------------------------+
-    | ``name``:math:`^r`  | text         | *anything*         | any         | Unique name for estimator |
-    +---------------------+--------------+--------------------+-------------+---------------------------+
-
-``Observable`` element:
-
-  +------------------+---------------------------------+
-  | parent elements: | ``estimator, hamiltonian, qmc`` |
-  +------------------+---------------------------------+
-  | child elements:  | *None*                          |
-  +------------------+---------------------------------+
-
-    +--------------------------+--------------+---------------+-------------+---------------------------------------------------------------------------------+
-    | **Name**                 | **Datatype** | **Values**    | **Default** | **Description**                                                                 |
-    +==========================+==============+===============+=============+=================================================================================+
-    | ``name``:math:`^r`       | text         | *anything*    | any         | Registered name of existing estimator on which to forward walk                  |
-    +--------------------------+--------------+---------------+-------------+---------------------------------------------------------------------------------+
-    | ``max``:math:`^r`        | integer      | :math:`>0`    |             | Maximum projection time in steps (``max``:math:`=\beta/\tau`)                   |
-    +--------------------------+--------------+---------------+-------------+---------------------------------------------------------------------------------+
-    | ``frequency``:math:`^r`  | text         | :math:`\geq 1`|             | Dump data only for every ``frequency``-th to ``scalar.dat`` file                |
-    +--------------------------+--------------+---------------+-------------+---------------------------------------------------------------------------------+
-
-Additional information:
-
--  **Cost**: Because histories of observables up to ``max`` time steps
-   have to be stored, the memory cost of storing the nonforward-walked
-   observables variables should be multiplied by :math:`\texttt{max}`.
-   Although this is not an issue for items such as potential energy, it
-   could be prohibitive for observables such as density, forces, etc.
-
--  **Naming Convention**: Forward-walked observables are automatically
-   named ``FWE_name_i``, where ``i`` is the forward-walked expectation
-   value at time step ``i``, and ``name`` is whatever name appears in
-   the ``<Observable>`` block. This is also how it will appear in the
-   ``scalar.dat`` file.
-
-In the following example case, QMCPACK forward walks on the potential
-energy for 300 time steps and dumps the forward-walked value at every
-time step.
-
-.. code-block::
-  :caption: Forward-walking estimator element.
-  :name: Listing 42
-
-  <estimator name="fw" type="ForwardWalking">
-      <Observable name="LocalPotential" max="300" frequency="1"/>
-       <!--- Additional Observable blocks go here -->
-   </estimator>
 
 .. _ccz-force-est:
 
