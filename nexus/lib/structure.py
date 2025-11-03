@@ -4081,9 +4081,7 @@ class Structure(Sobj):
             #end for
             #   make an integer space corresponding to 1e-7 self.units spatial resolution
             cmax = np.uint64(1e7)*np.uint64(np.ceil(axmax))
-            print("cmax: ",cmax)
             ipoints = np.array(np.around(cmax*upoints),dtype=np.uint64)
-            print("ipoints: ",ipoints)
             ipoints[ipoints==cmax] = 0 # make the outer boundary the same as the inner boundary
             # load the cell table with point indices
             #   points in the same cell are identical

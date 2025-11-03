@@ -1251,9 +1251,27 @@ def test_min_image_distances():
     Compute minimum image distances between nearest neighbors.
     """
     import numpy as np
+    import sys
     from structure import generate_structure
 
-    print("np.iinfo(np.uint64): ", np.iinfo(np.uint64))
+    print("Python Version: ", sys.version)
+    print("NumPy Version: ", np.__version__)
+    np.set_printoptions(precision=20, floatmode="fixed")
+
+    pos_i = np.array([0., 0., 0.], dtype=np.float64)
+
+    c = np.array([0.61550000000000071321, 1.06607727205864510900, 7.50000000000000000000], dtype=np.float64)
+
+    axinv = np.array(
+        [
+            [ 4.06173842404549123586e-01,  0.00000000000000000000e+00, 0.00000000000000000000e+00],
+            [ 2.34504577250050944004e-01,  4.69009154500102054541e-01, 0.00000000000000000000e+00],
+            [-4.97419495998112408112e-17, -4.97419495998112408112e-17, 6.66666666666666657415e-02],
+        ], dtype=np.float64
+    )
+
+    dot = np.dot(pos_i-c,axinv)
+    print("Dot Output: ", dot)
 
     g = generate_structure(
         structure = 'graphene',
@@ -1261,29 +1279,14 @@ def test_min_image_distances():
         tiling    = (4,4,1),
         )
 
-    print("g: ", g)
-    print("g.pos: ", g.pos)
-    print("g.axes", g.axes)
-    print("single = points.shape==(self.dim,): ", g.pos.shape==g.dim)
-    print("if single: points = [points]", )
-    print("npoints: ", len(g.pos))
-
     # Get the neighbor (index) table, along with sorted distance 
     # and displacement tables.
     nt,dt,vt = g.neighbor_table(distances=True,vectors=True)
-
-    print("nt: ", nt)
-    print("dt: ", dt)
-    print("vt: ", vt)
 
     # Restrict to 3 nearest neighbors (not including self at index 0)
     nt = nt[:,1:4]
     dt = dt[:,1:4]
     vt = vt[:,1:4]
-
-    print("nt = nt[:,1:4]: ", nt)
-    print("dt = dt[:,1:4]: ", dt)
-    print("vt = vt[:,1:4]: ", vt)
     
     nt_ref = np.array([
         [ 1, 11,  9],
@@ -1318,31 +1321,6 @@ def test_min_image_distances():
         [28, 18, 20],
         [31,  1,  7],
         [30, 22, 20]])
-
-    print("Reference: \n")
-    print(nt_ref, "\n\n")
-
-    print("Calculated: \n")
-    print(nt, "\n\n")
-    
-    for nti,nti_ref in zip(nt,nt_ref):
-        print("set(nti): ", set(nti), "\n")
-        print("set(nti_ref): ", set(nti_ref), "\n")
-        print("set(nti)==set(nti_ref): ", set(nti)==set(nti_ref), "\n")
-    #end for
-
-    dist = dt.ravel()
-    print("dist = dt.ravel(): ", dist, "\n")
-    print("assert(value_eq(dist.min(),1.42143636)): ", dist.min(), "\n")
-    print("assert(value_eq(dist.max(),1.42143636)): ", dist.max(), "\n")
-
-    vec = vt.ravel()
-    print("vec = vt.ravel(): ", vec)
-    vec.shape = np.prod(dt.shape),3
-    print("vec.shape = np.prod(dt.shape),3: ", vec, "\n")
-    vdist = np.linalg.norm(vec,axis=1)
-    print("vdist = np.linalg.norm(vec,axis=1): ", vdist, "\n")
-    print("assert(value_eq(vdist,dist)): ", value_eq(vdist, dist), "\n")
 
     for nti,nti_ref in zip(nt,nt_ref):
         assert(set(nti)==set(nti_ref))
