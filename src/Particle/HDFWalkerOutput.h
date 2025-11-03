@@ -53,7 +53,6 @@ public:
    * @param w walkers
    */
   bool dump(const WalkerConfigurations& w, int block);
-  //     bool dump(ForwardWalkingHistoryObject& FWO);
 
 private:
   ///PooledData<T> is used to define the shape of multi-dimensional array

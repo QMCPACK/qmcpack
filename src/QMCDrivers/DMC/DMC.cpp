@@ -253,11 +253,6 @@ bool DMC::run()
 
     for (IndexType step = 0; step < nSteps; ++step, CurrentStep += BranchInterval)
     {
-      //         if(storeConfigs && (CurrentStep%storeConfigs == 0)) {
-      //           ForwardWalkingHistory.storeConfigsForForwardWalking(W);
-      //           W.resetWalkerParents();
-      //         }
-
 #pragma omp parallel
       {
         int ip = omp_get_thread_num();
@@ -282,10 +277,6 @@ bool DMC::run()
           W.Collectables += wClones[ip]->Collectables;
       }
       branchEngine->branch(CurrentStep, W);
-      //         if(storeConfigs && (CurrentStep%storeConfigs == 0)) {
-      //           ForwardWalkingHistory.storeConfigsForForwardWalking(W);
-      //           W.resetWalkerParents();
-      //         }
       if (variablePop)
         FairDivideLow(W.getActiveWalkers(), NumThreads, wPerRank);
       sample++;
