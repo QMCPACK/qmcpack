@@ -182,6 +182,7 @@ job_defaults_assign = obj(
     ntasks_per_core    = None,
     cpus_per_task      = None,
     template           = None,
+    reservation        = None,
     )
 
     # these are not assigned directly
@@ -2941,17 +2942,14 @@ class Amos(Supercomputer):
 
 
 class SnlMachine(Supercomputer):
-    requires_account   = True
-    batch_capable      = True
-    #executable_subfile = True
+    requires_account     = True
+    batch_capable        = True
+    gpu_machine          = False
+    reservation_required = False
 
     prefixed_output    = True
     outfile_extension  = '.output'
     errfile_extension  = '.error'
-
-    #for mpiexec
-    def post_process_job(self,job):
-        job.run_options.add(bindto="--bind-to none",npernode="--npernode {}".format(job.processes_per_node))
 
     def write_job_header(self,job):
         if job.queue is None:
@@ -2982,29 +2980,37 @@ class SnlMachine(Supercomputer):
             job.seconds = 0
         #end if
 
+        if self.gpu_machine:
+            if job.processes_per_node > self.gpus_per_node:
+                self.warn('!!! ATTENTION !!!\n  the number of processes per node {0} should not be more than the number of gpus available {1}\n  Adjusting the number of tasks per node accordingly'.format(job.processes_per_node, self.gpus_per_node))
+                job.processes_per_node = self.gpus_per_node
+
 
         c='#!/bin/bash\n'
         c+='#SBATCH -p '+str(job.queue)+'\n'
         c+='#SBATCH --job-name '+str(job.name)+'\n'
         c+='#SBATCH --account='+str(job.account)+'\n'
-        c+='#SBATCH -N '+str(job.nodes)+'\n'
+        c+='#SBATCH --ntasks='+str(job.nodes * job.processes_per_node)+'\n'
+        c+='#SBATCH --ntasks-per-node='+str(job.processes_per_node)+'\n'
+        if job.cpus_per_task is None:
+            c+='#SBATCH --cpus-per-task={}\n'.format(job.threads)
+        else:
+            c+='#SBATCH --cpus-per-task={}\n'.format(job.cpus_per_task)
+        if self.gpu_machine:
+            c+='#SBATCH --gpus-per-task=1\n'
+        c+='#SBATCH --hint=nomultithread\n'
         c+='#SBATCH -t {0}:{1}:{2}\n'.format(str(job.hours+24*job.days).zfill(2),str(job.minutes).zfill(2),str(job.seconds).zfill(2))
         c+='#SBATCH -o {0}\n'.format(job.outfile)
         c+='#SBATCH -e {0}\n'.format(job.errfile)
         if job.qos:
             c+='#SBATCH --qos={}\n'.format(job.qos)
+        if self.reservation_required:
+            assert job.reservation is not None
+            c+='#SBATCH --reservation={}\n'.format(job.reservation)
         c+='\n'
         return c
     #end def write_job_header
 #end class SnlMachine
-#Unknown
-class Chama(SnlMachine):
-    name = 'chama'
-#end class Chama
-#Unknown
-class Skybridge(SnlMachine):
-    name = 'skybridge'
-#end class Skybridge
 #Unknown
 class Eclipse(SnlMachine):
     name = 'eclipse'
@@ -3026,13 +3032,19 @@ class Amber(SnlMachine):
     name = 'amber'
 #end class Amber
 #Unknown
-class Uno(SnlMachine):
-    name = 'uno'
-#end class Uno
-#Unknown
 class Solo(SnlMachine):
     name = 'solo'
 #end class Solo
+#Unknown
+class Flight(SnlMachine):
+    name = 'flight'
+    reservation_required = True
+#end class Flight
+class Hops(SnlMachine):
+    name          = 'hops'
+    gpu_machine   = True
+    gpus_per_node = 4
+#end class Hops
 
 
 # Active
@@ -4338,15 +4350,14 @@ Lonestar(    22656,   2,     6,   12,  128,  'ibrun',     'qsub',   'qstat',    
 Matisse(        20,   2,     8,   64,    2, 'mpirun',   'sbatch',   'sacct', 'scancel')
 Komodo(         24,   2,     6,   48,    2, 'mpirun',   'sbatch',   'sacct', 'scancel')
 Amos(         5120,   1,    16,   16,  128,   'srun',   'sbatch',   'sacct', 'scancel')
-Chama(        1232,   2,     8,   64, 1000,'mpiexec',   'sbatch',  'squeue', 'scancel')
-Uno(           168,   2,     8,  128, 1000,'mpiexec',   'sbatch',  'squeue', 'scancel')
-Eclipse(      1488,   2,    18,  128, 1000,'mpiexec',   'sbatch',  'squeue', 'scancel')
-Attaway(      1488,   2,    18,  192, 1000,'mpiexec',   'sbatch',  'squeue', 'scancel')
-Manzano(      1488,   2,    24,  192, 1000,'mpiexec',   'sbatch',  'squeue', 'scancel')
-Ghost(         740,   2,    18,  128, 1000,'mpiexec',   'sbatch',  'squeue', 'scancel')
-Amber(        1496,   2,    56,  256, 1000,'mpiexec',   'sbatch',  'squeue', 'scancel')
-Skybridge(    1848,   2,     8,   64, 1000,'mpiexec',   'sbatch',  'squeue', 'scancel')
-Solo(          374,   2,    18,  128, 1000,'mpiexec',   'sbatch',  'squeue', 'scancel')
+Eclipse(      1488,   2,    18,  128, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
+Attaway(      1488,   2,    18,  192, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
+Manzano(      1488,   2,    24,  192, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
+Ghost(         740,   2,    18,  128, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
+Amber(        1496,   2,    56,  256, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
+Solo(          374,   2,    18,  128, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
+Flight(        744,   2,    56,  256, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
+Hops(           64,   2,    56,  256, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
 SuperMUC(      512,   1,    28,  256,    8,'mpiexec', 'llsubmit',     'llq','llcancel')
 Stampede2(    4200,   1,    68,   96,   50,  'ibrun',   'sbatch',  'squeue', 'scancel')
 CadesMoab(     156,   2,    18,  128,  100, 'mpirun',     'qsub',   'qstat',    'qdel')
