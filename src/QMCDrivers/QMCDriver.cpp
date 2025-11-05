@@ -138,7 +138,6 @@ QMCDriver::QMCDriver(const ProjectData& project_data,
   m_param.add(nBlocksBetweenRecompute, "blocks_between_recompute");
   ////add each OperatorBase to W.PropertyList so that averages can be taken
   //H.add2WalkerProperty(W);
-  //if (storeConfigs) ForwardWalkingHistory.storeConfigsForForwardWalking(w);
   rotation = 0;
 }
 
