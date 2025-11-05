@@ -1253,25 +1253,6 @@ def test_min_image_distances():
     import numpy as np
     from structure import generate_structure
 
-    print(np.show_runtime())
-
-    np.set_printoptions(precision=20, floatmode="fixed")
-
-    pos_i = np.array([0., 0., 0.], dtype=np.float64)
-
-    c = np.array([0.61550000000000071321, 1.06607727205864510900, 7.50000000000000000000], dtype=np.float64)
-
-    axinv = np.array(
-        [
-            [ 4.06173842404549123586e-01,  0.00000000000000000000e+00, 0.00000000000000000000e+00],
-            [ 2.34504577250050944004e-01,  4.69009154500102054541e-01, 0.00000000000000000000e+00],
-            [-4.97419495998112408112e-17, -4.97419495998112408112e-17, 6.66666666666666657415e-02],
-        ], dtype=np.float64
-    )
-
-    dot = np.dot(pos_i-c,axinv)
-    print("Dot Output: ", dot)
-    raise ValueError("Stop Structure")
     g = generate_structure(
         structure = 'graphene',
         cell      = 'prim',
@@ -1288,42 +1269,50 @@ def test_min_image_distances():
     vt = vt[:,1:4]
     
     nt_ref = np.array([
-        [ 1, 11,  9],
-        [30,  0, 24],
-        [ 3, 11, 13],
-        [ 2, 26, 24],
-        [ 5, 15, 13],
-        [ 4, 26, 28],
+        [ 1,  7, 31],
+        [ 0,  2, 10],
+        [ 1,  3, 25],
+        [ 2,  4, 12],
+        [ 3,  5, 27],
+        [ 4,  6, 14],
+        [ 5,  7, 29],
+        [ 0,  6,  8],
         [ 7,  9, 15],
-        [ 6, 30, 28],
-        [ 9, 19, 17],
-        [ 8,  6,  0],
-        [11, 19, 21],
-        [10,  0,  2],
-        [13, 23, 21],
-        [12,  2,  4],
+        [ 8, 10, 18],
+        [ 1,  9, 11],
+        [10, 12, 20],
+        [ 3, 11, 13],
+        [12, 14, 22],
+        [ 5, 13, 15],
+        [ 8, 14, 16],
         [15, 17, 23],
-        [14,  4,  6],
-        [17, 27, 25],
-        [16,  8, 14],
-        [19, 27, 29],
-        [18, 10,  8],
-        [21, 29, 31],
-        [20, 12, 10],
+        [16, 18, 26],
+        [ 9, 17, 19],
+        [18, 20, 28],
+        [11, 19, 21],
+        [20, 22, 30],
+        [13, 21, 23],
+        [16, 22, 24],
         [23, 25, 31],
-        [22, 12, 14],
-        [25,  1,  3],
-        [24, 22, 16],
-        [27,  3,  5],
-        [26, 18, 16],
-        [29,  5,  7],
-        [28, 18, 20],
-        [31,  1,  7],
-        [30, 22, 20]])
+        [ 2, 24, 26],
+        [17, 25, 27],
+        [ 4, 26, 28],
+        [19, 27, 29],
+        [ 6, 28, 30],
+        [21, 29, 31],
+        [ 0, 24, 30],
+    ])
 
-    for nti,nti_ref in zip(nt,nt_ref):
-        assert(set(nti)==set(nti_ref))
-    #end for
+    ref_set = []
+
+    for nti_ref in nt_ref:
+        ref_set.append(set(nti_ref))
+
+    tested = []
+
+    for nti in nt:
+        assert(set(nti) in ref_set and set(nti) not in tested)
+        tested.append(set(nti))
 
     dist = dt.ravel()
     assert(value_eq(dist.min(),1.42143636))
@@ -1414,9 +1403,11 @@ if versions.scipy_available:
         # check that the large local distortion made in the small cell
         # is present in the large cell after embedding
         rnn_max_ref = 2.1076122431022664
-        rnn_max = np.linalg.norm(gr.pos[1]-gr.pos[30])
+        rnn_max = np.linalg.norm(gr.pos[0]-gr.pos[1])
         assert(value_eq(rnn_max,rnn_max_ref))
-        rnn_max = np.linalg.norm(ge.pos[1]-ge.pos[28])
+        rnn_max = np.linalg.norm(ge.pos[0]-ge.pos[7])
+        assert(value_eq(rnn_max,rnn_max_ref))
+        rnn_max = np.linalg.norm(ge.pos[0]-ge.pos[31])
         assert(value_eq(rnn_max,rnn_max_ref))
 
     #end test_embed

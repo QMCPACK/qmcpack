@@ -172,7 +172,7 @@ jobs:
         run: |
           brew upgrade || brew link --overwrite python@3.12
           brew install gcc@14 ninja hdf5 fftw boost
-          python3 -m pip install numpy==1.26.4 h5py pandas threadpoolctl
+          python3 -m pip install numpy h5py pandas
 
       - name: Configure
         run: tests/test_automation/github-actions/ci/run_step.sh configure
