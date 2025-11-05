@@ -102,7 +102,6 @@ ParticleSet::ParticleSet(const ParticleSet& p)
   myName              = p.getName();
   PropertyList.Names  = p.PropertyList.Names;
   PropertyList.Values = p.PropertyList.Values;
-  PropertyHistory     = p.PropertyHistory;
   Collectables        = p.Collectables;
   //construct the distance tables with the same order
   for (int i = 0; i < p.DistTables.size(); ++i)
@@ -907,48 +906,6 @@ void ParticleSet::initPropertyList()
   //   throw std::runtime_error("ParticleSet::initPropertyList");
   // }
 }
-
-int ParticleSet::addPropertyHistory(int leng)
-{
-  int newL = PropertyHistory.size();
-  PropertyHistory.push_back(std::vector<FullPrecRealType>(leng, 0.0));
-  PHindex.push_back(0);
-  return newL;
-}
-
-//      void ParticleSet::resetPropertyHistory( )
-//     {
-//       for(int i=0;i<PropertyHistory.size();i++)
-//       {
-//         PHindex[i]=0;
-//  for(int k=0;k<PropertyHistory[i].size();k++)
-//  {
-//    PropertyHistory[i][k]=0.0;
-//  }
-//       }
-//     }
-
-//      void ParticleSet::addPropertyHistoryPoint(int index, RealType data)
-//     {
-//       PropertyHistory[index][PHindex[index]]=(data);
-//       PHindex[index]++;
-//       if (PHindex[index]==PropertyHistory[index].size()) PHindex[index]=0;
-// //       PropertyHistory[index].pop_back();
-//     }
-
-//      void ParticleSet::rejectedMove()
-//     {
-//       for(int dindex=0;dindex<PropertyHistory.size();dindex++){
-//         int lastIndex=PHindex[dindex]-1;
-//         if (lastIndex<0) lastIndex+=PropertyHistory[dindex].size();
-//         PropertyHistory[dindex][PHindex[dindex]]=PropertyHistory[dindex][lastIndex];
-//         PHindex[dindex]++;
-//         if (PHindex[dindex]==PropertyHistory[dindex].size()) PHindex[dindex]=0;
-// //       PropertyHistory[dindex].push_front(PropertyHistory[dindex].front());
-// //       PropertyHistory[dindex].pop_back();
-//       }
-//     }
-
 
 void ParticleSet::createResource(ResourceCollection& collection) const
 {
