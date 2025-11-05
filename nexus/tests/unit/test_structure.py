@@ -1405,9 +1405,7 @@ if versions.scipy_available:
         rnn_max_ref = 2.1076122431022664
         rnn_max = np.linalg.norm(gr.pos[0]-gr.pos[1])
         assert(value_eq(rnn_max,rnn_max_ref))
-        rnn_max = np.linalg.norm(ge.pos[0]-ge.pos[7])
-        assert(value_eq(rnn_max,rnn_max_ref))
-        rnn_max = np.linalg.norm(ge.pos[0]-ge.pos[31])
+        rnn_max = np.linalg.norm(ge.pos[0]-ge.pos[1])
         assert(value_eq(rnn_max,rnn_max_ref))
 
     #end test_embed
