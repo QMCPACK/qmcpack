@@ -63,6 +63,7 @@ TEST_CASE("Einspline SPO from HDF NiO a16 97 electrons", "[wavefunction]")
   ions_.R[13] = {0.5, 0, 0.25};
   ions_.R[14] = {0.5, 0.5, 0.5};
   ions_.R[15] = {0.5, 0, 0.75};
+  ions_.update();
 
   // convert to cartesian
   ions_.R.setUnit(PosUnit::Lattice);
@@ -82,6 +83,7 @@ TEST_CASE("Einspline SPO from HDF NiO a16 97 electrons", "[wavefunction]")
   elec_.R[2] = {0.0, 1.1, 0.0};
   elec_.R[3] = {0.0, 1.2, 0.0};
   elec_.R[4] = {0.0, 1.3, 0.0};
+  elec_.update();
 
   SpeciesSet& tspecies       = elec_.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");

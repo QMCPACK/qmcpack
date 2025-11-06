@@ -29,7 +29,7 @@
 
 
 import os
-from generic import obj
+from developer import obj
 from simulation import Simulation,SimulationInput,SimulationAnalyzer
 
 
@@ -105,7 +105,7 @@ class TemplateSimulationInput(SimulationInput):
         # optional
         #  below is a convenient default
         #  but it can be changed to anything desired
-        if filepath!=None:
+        if filepath is not None:
             self.read(filepath)
         #end if
     #end def __init__
@@ -202,7 +202,7 @@ def generate_template_simulation_input(
 
     # a common feature is to read information from a PhysicalSystem object
     #  (#electrons, atom positions, etc)
-    # if system!=None
+    # if system is not None
     #     gi.incorporate_system(system)
     # #end if
 
@@ -231,7 +231,7 @@ class TemplateSimulationAnalyzer(SimulationAnalyzer):
         else:
             infile = arg0
         #end if
-        if infile!=None:
+        if infile is not None:
             self.path = os.path.dirname(infile)
             self.input = TemplateSimulationInput(infile)
         #end if

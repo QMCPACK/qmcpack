@@ -31,16 +31,11 @@
 #====================================================================#
 
 
-
-import os
-from numpy import array,ndarray,abs
-from generic import obj
+import numpy as np
 from periodic_table import pt
-from developer import DevBase
+from developer import DevBase, obj
 from nexus_base import nexus_noncore
 from simulation import SimulationInput
-from debug import *
-
 
 
 class GIbase(DevBase):
@@ -50,17 +45,16 @@ class GIbase(DevBase):
 #end class GIbase
 
 
-
 class GIarray(GIbase):
     def __init__(self,d):
         for n,v in d.items():
             if not isinstance(n,int):
                 self.error("keys must be integers\nattempted to initialize array from input provided: {0}\nnote that dict's are used only for arrays".format(d))
             #end if
-            if isinstance(v,(tuple,list,ndarray)):
-                nv = array(v,type(v[0]))
+            if isinstance(v,(tuple,list,np.ndarray)):
+                nv = np.array(v,type(v[0]))
             else:
-                nv = array([v],type[v])
+                nv = np.array([v],type[v])
             #end if
             self[n]=nv
         #end for
@@ -71,7 +65,7 @@ class GIarray(GIbase):
 
 class Group(GIbase):
     def __init__(self,text=None,**kwargs):
-        if text!=None:
+        if text is not None:
             self.read(text)
         #end if
         self.set(**kwargs)
@@ -112,13 +106,13 @@ class KeywordGroup(Group):
                     if ' ' in val:
                         val = val.split()
                         try:
-                            v = array(val,dtype=int)
+                            v = np.array(val,dtype=int)
                         except:
                             try:
-                                v = array(val,dtype=float)
+                                v = np.array(val,dtype=float)
                             except:
                                 try:
-                                    v = array(val,dtype=str)
+                                    v = np.array(val,dtype=str)
                                 except:
                                     fail = True
                                 #end try
@@ -152,13 +146,13 @@ class KeywordGroup(Group):
         vars = list(self.keys())
         for var in vars:
             val = self.readval(self[var])
-            if not '(' in var:
+            if '(' not in var:
                 self[var] = val
             else:
                 del self[var]
                 var,index = var.replace('(',' ').replace(')','').split()
                 index = int(index)
-                if not var in self:
+                if var not in self:
                     arr = GIarray({index:val})
                     self[var] = arr
                 else:
@@ -182,7 +176,7 @@ class KeywordGroup(Group):
             sval = str(val)
         elif isinstance(val,float):
             sval = str(val).replace('e','d')
-        elif isinstance(val,(ndarray,list)):
+        elif isinstance(val,(np.ndarray,list)):
             sval = ''
             for v in val:
                 vs = str(v)+','
@@ -297,7 +291,7 @@ class CardGroup(Group):
     def writeval(self,val):
         if isinstance(val,float):
             sval = str(val).replace('e','d')
-            if len(sval)>8 and abs(val)>=10.0:
+            if len(sval)>8 and np.abs(val)>=10.0:
                 sval = '{0:16.8e}'.format(val).replace('e','d')
             #end if
         else:
@@ -806,7 +800,7 @@ class GamessInput(SimulationInput,GIbase):
         )
 
     def __init__(self,filepath=None):
-        if filepath!=None:
+        if filepath is not None:
             self.read(filepath)
         #end if
     #end def __init__
@@ -842,7 +836,7 @@ class GamessInput(SimulationInput,GIbase):
                 #end if
             elif len(line)>0 and line[0]==' ' and ls!='':
                 if len(line)>1 and line[1]=='$' and not ingroup:
-                    if not ' ' in ls:
+                    if ' ' not in ls:
                         group_name = ls.replace('$','').lower()
                         gname = group_name
                         ingroup = True
@@ -881,7 +875,7 @@ class GamessInput(SimulationInput,GIbase):
             #end if                    
             # specialized parsing for unknown card groups
             if ended:
-                if not '=' in groups[gname]:
+                if '=' not in groups[gname]:
                     groups[gname]=gtext
                 #end if
                 gtext = ''
@@ -1087,9 +1081,9 @@ def generate_any_gamess_input(**kwargs):
     # handle nexus specific input generation keywords
     #  ecp 287
     #  data 37
-    if pskw.system!=None and not 'data' in gi:
+    if pskw.system is not None and 'data' not in gi:
         system = pskw.system
-        if not 'contrl' in gi:
+        if 'contrl' not in gi:
             gi.contrl = ContrlGroup()
         #end if
         # allow user override of charge and multiplicity from physical system
@@ -1112,7 +1106,7 @@ def generate_any_gamess_input(**kwargs):
             data+='\n'
         #end if
         if pskw.pseudos is None:
-            if pskw.bases!=None:
+            if pskw.bases is not None:
                 bss = nexus_noncore.basissets.bases_by_atom(*pskw.bases)
             else:
                 bss = obj()
@@ -1171,7 +1165,7 @@ def generate_any_gamess_input(**kwargs):
 
 
 def check_keyspec_groups():
-    from generic import error,warn
+    from developer import error, warn
 
     groups      = GamessInput.keyspec_groups
     group_order = GamessInput.group_order
@@ -1245,7 +1239,7 @@ def check_keyspec_groups():
             reals    = float,
             bools    = bool,
             strings  = str,
-            arrays   = ndarray
+            arrays   = np.ndarray
             )
         for tname in sorted(go.keys()):
             type = to[tname]

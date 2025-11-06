@@ -17,13 +17,10 @@
 
 
 import os
-from generic import obj
-from execute import execute
+from developer import obj
 from simulation import Simulation
-from pyscf_input import PyscfInput,generate_pyscf_input
+from pyscf_input import PyscfInput, generate_pyscf_input
 from pyscf_analyzer import PyscfAnalyzer
-from developer import ci
-
 
 
 class Pyscf(Simulation):
@@ -110,7 +107,7 @@ class Pyscf(Simulation):
 def generate_pyscf(**kwargs):
     sim_args,inp_args = Pyscf.separate_inputs(kwargs)
 
-    if not 'input' in sim_args:
+    if 'input' not in sim_args:
         if 'input_type' in inp_args:
             input_type = inp_args.input_type
             del inp_args.input_type

@@ -22,8 +22,8 @@ def format_value(v):
             s = s[:-2]
         #end if
         s += '])'
-    elif isinstance(v,(str,np.string_)):
-        s = "'"+v+"'"
+    elif isinstance(v,(str,np.bytes_)):
+        s = "'"+str(v)+"'"
     else:
         s = str(v)
     #end if
@@ -48,7 +48,7 @@ serial_references = dict()
 
 def generate_serial_references():
     import numpy as np
-    from generic import obj
+    from developer import obj
     
     # references for read
     serial_references['h2o.ezfio read'] = {
@@ -220,7 +220,7 @@ def get_serial_references():
 
 
 def check_vs_serial_reference(qi,name):
-    from generic import obj
+    from developer import obj
     sr = obj(get_serial_references()[name])
     sg = qi.serial()
     assert(object_eq(sg,sr))
@@ -276,7 +276,7 @@ def test_read():
 
 def test_generate():
     import os
-    from generic import obj
+    from developer import obj
     from physical_system import generate_physical_system
     from quantum_package_input import generate_quantum_package_input
 

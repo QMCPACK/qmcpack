@@ -18,22 +18,16 @@
 #                                                                    #                                        
 #====================================================================#
 
-
-from numpy import array,ndarray,minimum,abs,ix_,resize
-import sys
+import numpy as np
 import keyword
 from inspect import getmembers
+from developer import DevBase, obj, unavailable, valid_variable_name
 
-from superstring import valid_variable_name
-from generic import obj
-from developer import DevBase,unavailable
 try:
     import h5py
 except:
     h5py = unavailable('h5py')
 #end try
-from debug import *
-
 
 
 class HDFglobals(DevBase):
@@ -101,8 +95,8 @@ class HDFgroup(DevBase):
     def __init__(self):
         self._name=''
         self._parent=None
-        self._groups={};
-        self._datasets={};
+        self._groups={}
+        self._datasets={}
         self._group_counts={}
 
         self._escape_names=None
@@ -138,7 +132,7 @@ class HDFgroup(DevBase):
             if isinstance(v,HDFgroup):
                 v.read_arrays()
             else:
-                self[k] = array(v)
+                self[k] = np.array(v)
             #end if
         #end for
     #end def read_arrays
@@ -157,7 +151,7 @@ class HDFgroup(DevBase):
 
     def zero(self,*names):
         for name in names:
-            if name in self and isinstance(self[name],ndarray):
+            if name in self and isinstance(self[name],np.ndarray):
                 self[name][:] = 0
             #end if
         #end for
@@ -179,11 +173,11 @@ class HDFgroup(DevBase):
             for name in snames:
                 svalue = self[name]
                 ovalue = other[name]
-                if not isinstance(svalue,ndarray) or not isinstance(ovalue,ndarray):
+                if not isinstance(svalue,np.ndarray) or not isinstance(ovalue,np.ndarray):
                     self.error(name+' is not an array')
                 #end if
-                shape  = minimum(svalue.shape,ovalue.shape)
-                self[name] = resize(svalue,shape)
+                shape  = np.minimum(svalue.shape,ovalue.shape)
+                self[name] = np.resize(svalue,shape)
             #end for
         #end if
         for name in self.get_keys():
@@ -208,11 +202,11 @@ class HDFgroup(DevBase):
             for name in snames:
                 svalue = self[name]
                 ovalue = other[name]
-                if not isinstance(svalue,ndarray) or not isinstance(ovalue,ndarray):
+                if not isinstance(svalue,np.ndarray) or not isinstance(ovalue,np.ndarray):
                     self.error(name+' is not an array')
                 #end if
-                shape  = minimum(svalue.shape,ovalue.shape)
-                if abs(shape-array(svalue.shape)).sum() > 0:
+                shape  = np.minimum(svalue.shape,ovalue.shape)
+                if np.abs(shape-np.array(svalue.shape)).sum() > 0:
                     self.error(name+' in partner is too large')
                 #end if
                 ranges = []
@@ -220,7 +214,7 @@ class HDFgroup(DevBase):
                     ranges.append(range(s))
                 #end for
                 #add the part of the other data that fits into own data
-                svalue += ovalue[ix_(*ranges)]
+                svalue += ovalue[np.ix_(*ranges)]
             #end for
         #end if
         for name in self.get_keys():
@@ -239,7 +233,7 @@ class HDFgroup(DevBase):
     
     def normalize(self,normalization,*names):
         for name in names:
-            if name in self and isinstance(self[name],ndarray):
+            if name in self and isinstance(self[name],np.ndarray):
                 self[name] /= normalization
             #end if
         #end for
@@ -255,7 +249,7 @@ class HDFgroup(DevBase):
         
     def sum(self,*names):
         for name in names:
-            if name in self and isinstance(self[name],ndarray) and name=='value':
+            if name in self and isinstance(self[name],np.ndarray) and name=='value':
                 s = self[name].mean(0).sum()
             #end if
         #end for
@@ -347,7 +341,7 @@ class HDFreader(DevBase):
 
     def add_dataset(self,cur,k,v):
         if not HDFglobals.view:
-            cur[k]=array(v)
+            cur[k]=np.array(v)
         else:
             cur[k] = v
         #end if

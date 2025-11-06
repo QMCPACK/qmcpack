@@ -1,16 +1,7 @@
-# Workaround numpy2 changes
-def portable_numpy(np):
-    if np.lib.NumpyVersion(np.__version__) >= '2.0.0b1':
-        np.set_printoptions(legacy="1.25")
-        np.string_ = np.bytes_
-        np.float_  = np.float64
-    #end if
-#end def portable_numpy
-
-
 try:
     import numpy as np
-    portable_numpy(np)
+    if np.lib.NumpyVersion(np.__version__) >= '2.0.0b1':
+        np.set_printoptions(legacy="1.25")
     numpy_available = True
 except:
     numpy_available = False
@@ -34,10 +25,10 @@ def value_diff(v1,v2,atol=def_atol,rtol=def_rtol,int_as_float=False):
     v2_bool  = isinstance(v2,(bool,np.bool_))
     v1_int   = isinstance(v1,(int,np.int_)) and not v1_bool
     v2_int   = isinstance(v2,(int,np.int_)) and not v2_bool
-    v1_float = isinstance(v1,(float,np.float_))
-    v2_float = isinstance(v2,(float,np.float_))
-    v1_str   = isinstance(v1,(str,np.string_))
-    v2_str   = isinstance(v2,(str,np.string_))
+    v1_float = isinstance(v1,(float,np.float64))
+    v2_float = isinstance(v2,(float,np.float64))
+    v1_str   = isinstance(v1,(str,np.bytes_))
+    v2_str   = isinstance(v2,(str,np.bytes_))
     if id(v1)==id(v2):
         None
     elif int_as_float and (v1_int or v1_float) and (v2_int or v2_float):
@@ -138,7 +129,7 @@ def read_text_value(s):
         try:
             v = float(s)
         except:
-            None
+            pass
         #end try
     #end try
     return v

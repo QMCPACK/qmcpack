@@ -38,18 +38,13 @@
 
 
 import os
-from numpy import array,abs,empty,ndarray,dot
-from numpy.linalg import inv
-from generic import obj
+import numpy as np
 from periodic_table import is_element
 from nexus_base import nexus_noncore
 from simulation import SimulationInput
-from structure import interpolate_structures,Structure
+from structure import interpolate_structures, Structure
 from physical_system import PhysicalSystem
-from developer import DevBase,error
-from debug import *
-lcs = ls
-
+from developer import DevBase, obj, error
 
 
 # support functions for keyword files
@@ -101,12 +96,12 @@ def read_string(sval):
 
 
 def read_int_array(sval):
-    return array(expand_array(sval),dtype=int)
+    return np.array(expand_array(sval),dtype=int)
 #end def read_int_array
 
 
 def read_real_array(sval):
-    return array(expand_array(sval),dtype=float)
+    return np.array(expand_array(sval),dtype=float)
 #end def read_real_array
 
 
@@ -116,7 +111,7 @@ def read_bool_array(sval):
     for v in expand_array(sval):
         barr.append(bool_array_dict[v])
     #end for
-    return array(barr,dtype=bool)
+    return np.array(barr,dtype=bool)
 #end def read_bool_array
 
 
@@ -154,7 +149,7 @@ def equality(a,b):
 
 
 def real_equality(a,b):
-    return abs(a-b)<=1e-6*(abs(a)+abs(b))/2
+    return np.abs(a-b)<=1e-6*(np.abs(a)+np.abs(b))/2
 #end def real_equality
 
 
@@ -230,8 +225,8 @@ def assign_string(v):
 
 
 def assign_int_array(a):
-    if isinstance(a,(tuple,list,ndarray)):
-        return array(a,dtype=int)
+    if isinstance(a,(tuple,list,np.ndarray)):
+        return np.array(a,dtype=int)
     else:
         raise ValueError('value must be a tuple, list, or array')
     #end if
@@ -239,8 +234,8 @@ def assign_int_array(a):
 
 
 def assign_real_array(a):
-    if isinstance(a,(tuple,list,ndarray)):
-        return array(a,dtype=float)
+    if isinstance(a,(tuple,list,np.ndarray)):
+        return np.array(a,dtype=float)
     else:
         raise ValueError('value must be a tuple, list, or array')
     #end if
@@ -248,8 +243,8 @@ def assign_real_array(a):
 
 
 def assign_bool_array(a):
-    if isinstance(a,(tuple,list,ndarray)):
-        return array(a,dtype=bool)
+    if isinstance(a,(tuple,list,np.ndarray)):
+        return np.array(a,dtype=bool)
     else:
         raise ValueError('value must be a tuple, list, or array')
     #end if
@@ -263,7 +258,7 @@ def vasp_to_nexus_elem(elem,elem_count):
     for x,count in zip(elem,elem_count):
         syselem+=[x for i in range(0,count)]
     #end for
-    return array(syselem)
+    return np.array(syselem)
 #end def vasp_to_nexus_elem
 
 
@@ -892,7 +887,7 @@ class Kpoints(VFormattedFile):
     def read_text(self,text,filepath=''):
         lines = self.read_lines(text,remove_empty=True)
         if len(lines)>2:
-            if not ' ' in lines[1]:
+            if ' ' not in lines[1]:
                 iselect = int(lines[1])
             else: # erroneous case? (e.g. user supplies '0 0 0' instead of '0')
                 iselect = int(lines[1].split()[0])
@@ -906,18 +901,18 @@ class Kpoints(VFormattedFile):
                 elif cselect=='g' or cselect=='m': # gamma or monkhorst mesh
                     self.mode      = 'auto'
                     self.centering = self.centering_options[cselect]
-                    self.kgrid     = array(lines[3].split(),dtype=int)
+                    self.kgrid     = np.array(lines[3].split(),dtype=int)
                     if len(lines)>4:
-                        self.kshift    = array(lines[4].split(),dtype=float)
+                        self.kshift    = np.array(lines[4].split(),dtype=float)
                     else:
                         self.kshift = None
                     #end if
                 else:
                     self.mode   = 'basis'  # basis generated mesh
                     self.coord  = self.coord_options(cselect)
-                    self.kbasis = array(self.join(lines,3,5).split(),dtype=float)
+                    self.kbasis = np.array(self.join(lines,3,5).split(),dtype=float)
                     self.kbasis.shape = 3,3
-                    self.kshift = array(lines[6].split(),dtype=float)
+                    self.kshift = np.array(lines[6].split(),dtype=float)
                 #end if
             elif cselect=='l': # line mode (band structure)
                 self.mode    = 'line'
@@ -927,7 +922,7 @@ class Kpoints(VFormattedFile):
                 for line in lines[4:]:
                     endpoints.append(line.split())
                 #end for
-                self.kendpoints = array(endpoints,dtype=float)
+                self.kendpoints = np.array(endpoints,dtype=float)
             else: # explicit kpoints
                 self.mode  = 'explicit'
                 self.coord = self.coord_options(cselect)
@@ -936,7 +931,7 @@ class Kpoints(VFormattedFile):
                 for line in lines[3:3+nkpoints]:
                     kpw.append(line.split())
                 #end for
-                kpw = array(kpw,dtype=float)
+                kpw = np.array(kpw,dtype=float)
                 self.kpoints  = kpw[:,0:3]
                 self.kweights = kpw[:,3].ravel()
                 tetline = 3+nkpoints
@@ -950,7 +945,7 @@ class Kpoints(VFormattedFile):
                         self.tetrahedra.append(
                             obj(volume     = tet_volume,
                                 degeneracy = int(tokens[0]),
-                                corners    = array(tokens[1:],dtype=int))
+                                corners    = np.array(tokens[1:],dtype=int))
                             )
                     #end for
                 #end if
@@ -1065,7 +1060,7 @@ class Poscar(VFormattedFile):
         if spec=="cartesian":
             pass
         elif spec=="direct":
-            pos=dot(pos,unitcellvec)
+            pos=np.dot(pos,unitcellvec)
         else:
             self.error("Poscar.change_specifier():  %s is not a valid coordinate specifier"%(spec))
         #end if
@@ -1074,7 +1069,7 @@ class Poscar(VFormattedFile):
         if spec=="cartesian":
             pass # already in cartesian coordinates.
         elif spec=="direct":
-            pos=dot(pos,inv(axes))
+            pos=np.dot(pos,np.linalg.inv(axes))
         else:
             self.error("Poscar.change_specifier():  %s is not a valid coordinate specifier"%(spec))
         #end if
@@ -1094,18 +1089,18 @@ class Poscar(VFormattedFile):
         description = lines[0]
         dim = 3
         scale = float(lines[1].strip())
-        axes = empty((dim,dim))
-        axes[0] = array(lines[2].split(),dtype=float)
-        axes[1] = array(lines[3].split(),dtype=float)
-        axes[2] = array(lines[4].split(),dtype=float)
+        axes = np.empty((dim,dim))
+        axes[0] = np.array(lines[2].split(),dtype=float)
+        axes[1] = np.array(lines[3].split(),dtype=float)
+        axes[2] = np.array(lines[4].split(),dtype=float)
         tokens = lines[5].split()
         if tokens[0].isdigit():
-            counts = array(tokens,dtype=int)
+            counts = np.array(tokens,dtype=int)
             elem   = None
             lcur   = 6
         else:
-            elem   = array(tokens,dtype=str)
-            counts = array(lines[6].split(),dtype=int)
+            elem   = np.array(tokens,dtype=str)
+            counts = np.array(lines[6].split(),dtype=int)
             lcur   = 7
         #end if
 
@@ -1139,10 +1134,10 @@ class Poscar(VFormattedFile):
             spos.append(lines[lcur+i].split())
         #end for
         lcur += npos
-        spos = array(spos)
-        pos  = array(spos[:,0:3],dtype=float)
+        spos = np.array(spos)
+        pos  = np.array(spos[:,0:3],dtype=float)
         if selective_dynamics:
-            dynamic = array(spos[:,3:6],dtype=str)
+            dynamic = np.array(spos[:,3:6],dtype=str)
             dynamic = dynamic=='T'
         else:
             dynamic = None
@@ -1164,7 +1159,7 @@ class Poscar(VFormattedFile):
                 svel.append(lines[lcur+i].split())
             #end for
             lcur += npos
-            vel = array(svel,dtype=float)
+            vel = np.array(svel,dtype=float)
         else:
             vel_coord = None
             vel = None
@@ -1553,7 +1548,7 @@ class VaspInput(SimulationInput,Vobj):
         if self.kpoints.mode=="auto":
             kshift=self.kpoints.kshift
             if self.kpoints.centering=="monkhorst-pack":
-                kshift=kshift+array([0.5,0.5,0.5])
+                kshift=kshift+np.array([0.5,0.5,0.5])
             elif self.kpoints.centering=="gamma":
                 pass
             #end if
@@ -1585,7 +1580,7 @@ class VaspInput(SimulationInput,Vobj):
         ion_charge = 0
         atoms      = list(elem)
         for atom in atoms:
-            if not atom in valency:
+            if atom not in valency:
                 self.error('valence charge for atom {0} has not been defined\nplease provide the valence charge as an argument to return_system()'.format(atom))
             #end if
             ion_charge += atoms.count(atom)*valency[atom]
@@ -1620,7 +1615,7 @@ class VaspInput(SimulationInput,Vobj):
                 iselem,symbol = is_element(element,symbol=True)
                 if not iselem:
                     self.error('{0} is not an element'.format(element))
-                elif not symbol in pseudo_map:
+                elif symbol not in pseudo_map:
                     self.error('pseudopotential for element {0} not found\nelements present: {1}'.format(symbol,sorted(pseudo_map.keys())))
                 #end if
                 ordered_pseudos.append(pseudo_map[symbol])
@@ -1765,7 +1760,7 @@ def generate_any_vasp_input(**kwargs):
             vf[name] = default
         #end if
     #end for
-    gen_kpoints = not 'kspacing' in kwargs
+    gen_kpoints = 'kspacing' not in kwargs
 
     # create an empty input file
     vi = VaspInput()

@@ -31,8 +31,8 @@ def format_value(v):
             s = s[:-2]
         #end if
         s += '])'
-    elif isinstance(v,(str,np.string_)):
-        s = "'"+v+"'"
+    elif isinstance(v,(str,np.bytes_)):
+        s = "'"+str(v)+"'"
     else:
         s = str(v)
     #end if
@@ -62,7 +62,7 @@ End of Dataset
 
 def generate_serial_references():
     import numpy as np
-    from generic import obj
+    from developer import obj
 
     ref = {
         'incar/encut' : 450.0,
@@ -140,7 +140,7 @@ def get_serial_references():
 
 
 def check_vs_serial_reference(gi,name):
-    from generic import obj
+    from developer import obj
     sr = obj(get_serial_references()[name])
     sg = gi.serial()
     same = object_eq(sg,sr)

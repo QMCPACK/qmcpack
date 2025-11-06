@@ -142,13 +142,6 @@ public:
   ///scalar properties of a walker
   PropertyContainer_t Properties;
 
-  /** Property history vector
-   *
-   *  these are used as fixed length cyclic traces of a "property"
-   */
-  std::vector<std::vector<FullPrecRealType>> PropertyHistory;
-  std::vector<int> PHindex;
-
   ///buffer for the data for particle-by-particle update
   WFBuffer_t DataSet;
   size_t block_end, scalar_end;
@@ -199,51 +192,6 @@ public:
       resize(nptcl);
   }
 
-  inline int addPropertyHistory(int leng)
-  {
-    int newL = PropertyHistory.size();
-    PropertyHistory.push_back(std::vector<RealType>(leng, 0.0));
-    PHindex.push_back(0);
-    return newL;
-  }
-
-  inline void deletePropertyHistory() { PropertyHistory.clear(); }
-
-  inline void resetPropertyHistory()
-  {
-    for (int i = 0; i < PropertyHistory.size(); i++)
-    {
-      PHindex[i] = 0;
-      for (int k = 0; k < PropertyHistory[i].size(); k++)
-      {
-        PropertyHistory[i][k] = 0.0;
-      }
-    }
-  }
-
-  inline void addPropertyHistoryPoint(int index, FullPrecRealType data)
-  {
-    PropertyHistory[index][PHindex[index]] = (data);
-    PHindex[index]++;
-    if (PHindex[index] == PropertyHistory[index].size())
-      PHindex[index] = 0;
-    //       PropertyHistory[index].pop_back();
-  }
-
-  inline FullPrecRealType getPropertyHistorySum(int index, int endN)
-  {
-    FullPrecRealType mean = 0.0;
-    typename std::vector<FullPrecRealType>::const_iterator phStart;
-    phStart = PropertyHistory[index].begin() + PHindex[index];
-    for (int i = 0; i < endN; phStart++, i++)
-    {
-      if (phStart >= PropertyHistory[index].end())
-        phStart -= PropertyHistory[index].size();
-      mean += (*phStart);
-    }
-    return mean;
-  }
-
   ///assignment operator
   inline Walker& operator=(const Walker& a)
   {
@@ -274,7 +222,6 @@ public:
    *  R & spins
    *  Properties.copy instead of operator= ConstantSizeMatrix has strict size semantics for assignment.
    *                                       but they seem like they should be fine.
-   *  PropertyHistory
    */
   inline void makeCopy(const Walker& a)
   {
@@ -299,11 +246,6 @@ public:
     DataSet    = a.DataSet;
     block_end  = a.block_end;
     scalar_end = a.scalar_end;
-    if (PropertyHistory.size() != a.PropertyHistory.size())
-      PropertyHistory.resize(a.PropertyHistory.size());
-    for (int i = 0; i < PropertyHistory.size(); i++)
-      PropertyHistory[i] = a.PropertyHistory[i];
-    PHindex = a.PHindex;
   }
 
   //return the address of the values of Hamiltonian terms
@@ -425,9 +367,6 @@ public:
     //DataSet.add(Properties.first_address(), Properties.last_address());
 
     // \todo likely to be broken if the Properties change above is needed.
-    for (int iat = 0; iat < PropertyHistory.size(); iat++)
-      DataSet.add(PropertyHistory[iat].data(), PropertyHistory[iat].data() + PropertyHistory[iat].size());
-    DataSet.add(PHindex.data(), PHindex.data() + PHindex.size());
     block_end  = DataSet.current();
     scalar_end = DataSet.current_scalar();
   }
@@ -449,9 +388,6 @@ public:
     DataSet.get(L.first_address(), L.last_address());
 #endif
     DataSet.get(Properties.data(), Properties.data() + Properties.capacity());
-    for (int iat = 0; iat < PropertyHistory.size(); iat++)
-      DataSet.get(PropertyHistory[iat].data(), PropertyHistory[iat].data() + PropertyHistory[iat].size());
-    DataSet.get(PHindex.data(), PHindex.data() + PHindex.size());
     assert(block_end == DataSet.current());
     assert(scalar_end == DataSet.current_scalar());
   }
@@ -470,9 +406,6 @@ public:
     DataSet.put(L.first_address(), L.last_address());
 #endif
     DataSet.put(Properties.data(), Properties.data() + Properties.capacity());
-    for (int iat = 0; iat < PropertyHistory.size(); iat++)
-      DataSet.put(PropertyHistory[iat].data(), PropertyHistory[iat].data() + PropertyHistory[iat].size());
-    DataSet.put(PHindex.data(), PHindex.data() + PHindex.size());
     assert(block_end == DataSet.current());
     assert(scalar_end == DataSet.current_scalar());
   }

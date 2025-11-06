@@ -246,10 +246,6 @@ Contents
    ~~~~~~~~~
      Interface to XSF files.  Other will go here later.
  
-   plotting.py
-   ~~~~~~~~~~~
-     Access to plotting functions via matplotlib.
- 
    pseudopotential.py
    ~~~~~~~~~~~~~~~~~~
      Classes representing pseudopotentials.  Functions supporting 

@@ -121,15 +121,22 @@ import os
 import numpy as np
 from copy import deepcopy
 from random import randint
-from numpy import abs,all,append,arange,around,array,atleast_2d,ceil,cos,cross,cross,diag,dot,empty,exp,flipud,floor,identity,isclose,logical_not,mgrid,mod,ndarray,ones,pi,round,sign,sin,sqrt,uint64,zeros
-from numpy.linalg import inv,det,norm
+from numpy import (
+    cos,
+    cross,
+    dot,
+    pi,
+    sin,
+    sqrt,
+)
+from numpy.linalg import inv, det, norm
 from unit_converter import convert
-from numerics import nearest_neighbors,convex_hull,voronoi_neighbors
-from periodic_table import pt,is_element
-from fileio import XsfFile,PoscarFile
-from generic import obj
-from developer import DevBase,unavailable,error,warn
-from debug import ci,ls,gs
+from numerics import nearest_neighbors, convex_hull, voronoi_neighbors
+from periodic_table import is_element
+from periodic_table import pt as ptable
+from fileio import XsfFile, PoscarFile
+from developer import DevBase, obj, unavailable, error
+import itertools
 
 try:
     from scipy.special import erfc
@@ -144,6 +151,28 @@ except:
 #end try
 
 
+
+# installation instructions for spglib interface
+#
+#  this is bootstrapped off of spglib's ASE Python interface
+#
+#  installation of spglib
+#    go to http://sourceforge.net/projects/spglib/files/
+#    click on Download spglib-1.8.2.tar.gz (952.6 kB)
+#    unpack directory (tar -xzf spglib-1.8.2.tar.gz)
+#    enter ase directory (cd spglib-1.8.2/python/ase/)
+#    build and install (sudo python setup.py install)
+
+#try:
+#    from pyspglib import spglib
+#except:
+#    spglib = unavailable('pyspglib','spglib')
+##end try
+try:
+    import spglib
+except:
+    spglib = unavailable('spglib')
+#end try
 
 
 
@@ -183,7 +212,6 @@ except:
 
 
 cif2cell_unit_dict = dict(angstrom='A',bohr='B',nm='nm')
-
 
 
 def read_cif_celldata(filepath,block=None,grammar='1.1'):
@@ -260,7 +288,7 @@ def read_cif(filepath,block=None,grammar='1.1',cell='prim',args_only=False):
     scale = float(cell.lengthscale)
     scale = convert(scale,units,'A')
     units = 'A'
-    axes  = scale*array(cell.latticevectors,dtype=float)
+    axes  = scale*np.array(cell.latticevectors,dtype=float)
     elem  = []
     pos   = []
     for wyckoff_atoms in cell.atomdata:
@@ -269,7 +297,7 @@ def read_cif(filepath,block=None,grammar='1.1',cell='prim',args_only=False):
             pos.append(atom.position)
         #end for
     #end for
-    pos = dot(array(pos,dtype=float),axes)
+    pos = dot(np.array(pos,dtype=float),axes)
 
     if not args_only:
         s = Structure(
@@ -285,35 +313,6 @@ def read_cif(filepath,block=None,grammar='1.1',cell='prim',args_only=False):
 #end def read_cif
 
 
-
-
-
-# installation instructions for spglib interface
-#
-#  this is bootstrapped off of spglib's ASE Python interface
-#
-#  installation of spglib
-#    go to http://sourceforge.net/projects/spglib/files/
-#    click on Download spglib-1.8.2.tar.gz (952.6 kB)
-#    unpack directory (tar -xzf spglib-1.8.2.tar.gz)
-#    enter ase directory (cd spglib-1.8.2/python/ase/)
-#    build and install (sudo python setup.py install)
-from periodic_table import pt as ptable
-#try:
-#    from pyspglib import spglib
-#except:
-#    spglib = unavailable('pyspglib','spglib')
-##end try
-try:
-    import spglib
-except:
-    spglib = unavailable('spglib')
-#end try
-
-
-
-
-
 def equate(expr):
     return expr
 #end def equate
@@ -321,7 +320,6 @@ def equate(expr):
 def negate(expr):
     return not expr
 #end def negate
-
 
 
 def kmesh(kaxes,dim,shift=None):
@@ -332,12 +330,12 @@ def kmesh(kaxes,dim,shift=None):
         shift = (0.,0,0)
     #end if
     ndim = len(dim)
-    d = array(dim)
-    s = array(shift)
+    d = np.array(dim)
+    s = np.array(shift)
     s.shape = 1,ndim
     d.shape = 1,ndim
-    kp = empty((1,ndim),dtype=float)
-    kgrid = empty((d.prod(),ndim))
+    kp = np.empty((1,ndim),dtype=float)
+    kgrid = np.empty((d.prod(),ndim))
     n=0
     for k in range(dim[2]):
         for j in range(dim[1]):
@@ -356,16 +354,16 @@ def kmesh(kaxes,dim,shift=None):
 
 
 def reduce_tilematrix(tiling):
-    tiling = array(tiling)
-    t = array(tiling,dtype=int)
-    if abs(tiling-t).sum()>1e-6:
+    tiling = np.array(tiling)
+    t = np.array(tiling,dtype=int)
+    if np.abs(tiling-t).sum()>1e-6:
         Structure.class_error('requested tiling is non-integer\n tiling requested: '+str(tiling))
     #end if
 
     dim = len(t)
     matrix_tiling = t.shape == (dim,dim)
     if matrix_tiling:
-        if abs(det(t))==0:
+        if np.abs(det(t))==0:
             Structure.class_error('requested tiling matrix is singular\ntiling requested: {0}'.format(t))
         #end if
         #find a tiling tuple from the tiling matrix
@@ -378,7 +376,7 @@ def reduce_tilematrix(tiling):
         T = t  #tiling matrix
         tilematrix = T.copy()
         del t
-        tbar = identity(dim) #basis for shearing
+        tbar = np.identity(dim) #basis for shearing
         dr = list(range(dim))
         #dr = [1,0,2]
         other = dim*[0] # other[d] = dimensions other than d
@@ -391,7 +389,7 @@ def reduce_tilematrix(tiling):
         tvecs = []
         for dp in [(0,1,2),(2,0,1),(1,2,0),(2,1,0),(0,2,1),(1,0,2)]:
             success = True
-            Tnew = array(T,dtype=float) #sheared/orthogonal tiling matrix
+            Tnew = np.array(T,dtype=float) #sheared/orthogonal tiling matrix
             for d in dr:
                 tb = tbar[dp[d]] 
                 t  = T[d]
@@ -399,7 +397,7 @@ def reduce_tilematrix(tiling):
                 n = cross(Tnew[d2],Tnew[d3])  #vector normal to 2 cell faces
                 vol   = dot(n,t)
                 bcomp = dot(n,tb)
-                if abs(bcomp)<1e-6:
+                if np.abs(bcomp)<1e-6:
                     success = False
                     break
                 #end if
@@ -414,28 +412,28 @@ def reduce_tilematrix(tiling):
                     Tnew[d2] = Tn[d]
                 #end for
                 #the resulting tiling matrix should be diagonal and integer
-                tr = diag(Tnew)
-                nondiagonal = abs(Tnew-diag(tr)).sum()>1e-6
+                tr = np.diag(Tnew)
+                nondiagonal = np.abs(Tnew-np.diag(tr)).sum()>1e-6
                 if nondiagonal:
                     Structure.class_error('could not find a diagonal tiling matrix for generating tiled coordinates')
                 #end if
-                tvecs.append(abs(tr))
+                tvecs.append(np.abs(tr))
             #end if
         #end for
         tvecs_old = tvecs
         tvecs = []
         tvset = set()
         for tv in tvecs_old:
-            tvk = tuple(array(around(1e7*tv),dtype=uint64))
+            tvk = tuple(np.array(np.around(1e7*tv),dtype=np.uint64))
             if tvk not in tvset:
                 tvset.add(tvk)
                 tvecs.append(tv)
             #end if
         #end for
-        tilevector = array(tvecs)
+        tilevector = np.array(tvecs)
     else:
         tilevector = t
-        tilematrix = diag(t)
+        tilematrix = np.diag(t)
     #end if
 
     return tilematrix,tilevector
@@ -478,7 +476,7 @@ def rotate_plane(plane,angle,points,units='degrees'):
     else:
         error('plane must be xy/yx/yz/zy/zx/xz\nyou provided: {0}'.format(plane),'rotate_plane')
     #end if
-    R = array(R,dtype=float)
+    R = np.array(R,dtype=float)
     return dot(R,points.T).T
 #end def rotate_plane
 
@@ -493,11 +491,11 @@ def trivial_filter(T):
 
 class MaskFilter(DevBase):
     def set(self,mask,dim=3):
-        omask = array(mask)
-        mask  = array(mask,dtype=bool)
+        omask = np.array(mask)
+        mask  = np.array(mask,dtype=bool)
         if mask.size==dim:
             mvec = mask.ravel()
-            mask = empty((dim,dim),dtype=bool)
+            mask = np.empty((dim,dim),dtype=bool)
             i=0
             for mi in mvec:
                 j=0
@@ -510,7 +508,7 @@ class MaskFilter(DevBase):
         elif mask.shape!=(dim,dim):
             error('shape of mask array must be {0},{0}\nshape received: {1},{2}\nmask array received: {3}'.format(dim,mask.shape[0],mask.shape[1],omask),'optimal_tilematrix')
         #end if
-        self.mask = mask==False
+        self.mask = not mask
     #end def set
 
     def __call__(self,T):
@@ -529,16 +527,16 @@ def optimal_tilematrix(axes,volfac,dn=1,tol=1e-3,filter=trivial_filter,mask=None
     if isinstance(axes,Structure):
         axes = axes.axes
     else:
-        axes = array(axes,dtype=float)
+        axes = np.array(axes,dtype=float)
     #end if
     if not isinstance(volfac,int):
-        volfac = int(around(volfac))
+        volfac = int(np.around(volfac))
     #end if
-    volume = abs(det(axes))*volfac
+    volume = np.abs(det(axes))*volfac
     axinv  = inv(axes)
-    cube   = volume**(1./3)*identity(dim)
+    cube   = volume**(1./3)*np.identity(dim)
     if Tref is None:
-        Tref = array(around(dot(cube,axinv)),dtype=int)
+        Tref = np.array(np.around(dot(cube,axinv)),dtype=int)
     else:
         Tref = np.asarray(Tref)
     #end if
@@ -565,7 +563,7 @@ def optimal_tilematrix(axes,volfac,dn=1,tol=1e-3,filter=trivial_filter,mask=None
                 #end for
             #end for
         #end for
-        mats = array(mats,dtype=int)
+        mats = np.array(mats,dtype=int)
         mats.shape = (2*dn+1)**(dim*dim),dim,dim
         opt_tm_matrices[dn] = mats
     else:
@@ -584,7 +582,7 @@ def optimal_tilematrix(axes,volfac,dn=1,tol=1e-3,filter=trivial_filter,mask=None
                 #end for
             #end for
         #end for
-        inds = array(inds,dtype=int)
+        inds = np.array(inds,dtype=int)
         opt_tm_wig_indices[nc] = inds
     else:
         inds = opt_tm_wig_indices[nc]
@@ -608,14 +606,14 @@ def optimal_tilematrix(axes,volfac,dn=1,tol=1e-3,filter=trivial_filter,mask=None
         [(0,1),(1,0),(2,2)],
         [(0,2),(1,1),(2,0)]
         ]
-    volfacs = zeros((len(mats),),dtype=int)
+    volfacs = np.zeros((len(mats),),dtype=int)
     for (i1,j1),(i2,j2),(i3,j3) in det_inds_p:
         volfacs += (Tref[i1,j1]+mats[:,i1,j1])*(Tref[i2,j2]+mats[:,i2,j2])*(Tref[i3,j3]+mats[:,i3,j3])
     #end for
     for (i1,j1),(i2,j2),(i3,j3) in det_inds_m:
         volfacs -= (Tref[i1,j1]+mats[:,i1,j1])*(Tref[i2,j2]+mats[:,i2,j2])*(Tref[i3,j3]+mats[:,i3,j3])
     #end for
-    Tmats = mats[abs(volfacs)==volfac]
+    Tmats = mats[np.abs(volfacs)==volfac]
     nequiv_volume = len(Tmats)    
     # find the set of cells with maximal inscribing radius
     inscribe_tilings = []
@@ -629,7 +627,7 @@ def optimal_tilematrix(axes,volfac,dn=1,tol=1e-3,filter=trivial_filter,mask=None
             rc2 = norm(cross(Taxes[1],Taxes[2]))
             rc3 = norm(cross(Taxes[2],Taxes[0]))
             r   = 0.5*volume/max(rc1,rc2,rc3) # inscribing radius
-            if r>rmax or abs(r-rmax)<tol:
+            if r>rmax or np.abs(r-rmax)<tol:
                 inscribe_tilings.append((r,T,Taxes))
                 rmax = r
             #end if
@@ -639,13 +637,13 @@ def optimal_tilematrix(axes,volfac,dn=1,tol=1e-3,filter=trivial_filter,mask=None
     wigner_tilings = []
     rwmax = -1e99
     for r,T,Taxes in inscribe_tilings:
-        if abs(r-rmax)<tol:
+        if np.abs(r-rmax)<tol:
             nequiv_inscribe+=1
             rw = 1e99
             for ind in inds:
                 rw = min(rw,0.5*norm(dot(ind,Taxes)))
             #end for
-            if rw>rwmax or abs(rw-rwmax)<tol:
+            if rw>rwmax or np.abs(rw-rwmax)<tol:
                 wigner_tilings.append((rw,T,Taxes))
                 rwmax = rw
             #end if
@@ -656,17 +654,17 @@ def optimal_tilematrix(axes,volfac,dn=1,tol=1e-3,filter=trivial_filter,mask=None
     cube_tilings = []            
     cmin = 1e99
     for rw,T,Ta in wigner_tilings:
-        if abs(rw-rwmax)<tol:
+        if np.abs(rw-rwmax)<tol:
             nequiv_wigner+=1
             dc = volume**(1./3)*sqrt(2.)
-            d1 = abs(norm(Ta[0]+Ta[1])-dc)
-            d2 = abs(norm(Ta[1]+Ta[2])-dc)
-            d3 = abs(norm(Ta[2]+Ta[0])-dc)
-            d4 = abs(norm(Ta[0]-Ta[1])-dc)
-            d5 = abs(norm(Ta[1]-Ta[2])-dc)
-            d6 = abs(norm(Ta[2]-Ta[0])-dc)
+            d1 = np.abs(norm(Ta[0]+Ta[1])-dc)
+            d2 = np.abs(norm(Ta[1]+Ta[2])-dc)
+            d3 = np.abs(norm(Ta[2]+Ta[0])-dc)
+            d4 = np.abs(norm(Ta[0]-Ta[1])-dc)
+            d5 = np.abs(norm(Ta[1]-Ta[2])-dc)
+            d6 = np.abs(norm(Ta[2]-Ta[0])-dc)
             cube_dev = (d1+d2+d3+d4+d5+d6)/(6*dc)
-            if cube_dev<cmin or abs(cube_dev-cmin)<tol:
+            if cube_dev<cmin or np.abs(cube_dev-cmin)<tol:
                 cube_tilings.append((cube_dev,rw,T,Ta))
                 cmin = cube_dev
             #end if
@@ -679,12 +677,12 @@ def optimal_tilematrix(axes,volfac,dn=1,tol=1e-3,filter=trivial_filter,mask=None
     shapely_tilings = []
     smax = -1e99
     for cd,rw,T,Taxes in cube_tilings:
-        if abs(cd-cmin)<tol:
+        if np.abs(cd-cmin)<tol:
             nequiv_cubicity+=1
-            d = diag(T)
-            o = (T-diag(d)).ravel()
-            s = sign(d).sum()-(abs(o)>0).sum()-(o<0).sum()
-            if s>smax or abs(s-smax)<tol:
+            d = np.diag(T)
+            o = (T-np.diag(d)).ravel()
+            s = np.sign(d).sum()-(np.abs(o)>0).sum()-(o<0).sum()
+            if s>smax or np.abs(s-smax)<tol:
                 shapely_tilings.append((s,rw,T,Taxes))
                 smax = s
             #end if
@@ -699,14 +697,14 @@ def optimal_tilematrix(axes,volfac,dn=1,tol=1e-3,filter=trivial_filter,mask=None
     antisymmetric = []
     other         = []
     for s,rw,T,Taxes in shapely_tilings:
-        if abs(s-smax)<tol:
+        if np.abs(s-smax)<tol:
             nequiv_shape+=1
-            Td = diag(diag(T))
-            if abs(Td-T).sum()==0:
+            Td = np.diag(np.diag(T))
+            if np.abs(Td-T).sum()==0:
                 diagonal.append((rw,T,Taxes))
-            elif abs(T.T-T).sum()==0:
+            elif np.abs(T.T-T).sum()==0:
                 symmetric.append((rw,T,Taxes))
-            elif abs(T.T+T-2*Td).sum()==0:
+            elif np.abs(T.T+T-2*Td).sum()==0:
                 antisymmetric.append((rw,T,Taxes))
             else:
                 other.append((rw,T,Taxes))
@@ -729,8 +727,8 @@ def optimal_tilematrix(axes,volfac,dn=1,tol=1e-3,filter=trivial_filter,mask=None
     skew_min = 1e99
     if len(cells)>0:
         for rw,T,Taxes in cells:
-            Td = diag(diag(T))
-            skew = abs(T.T-s*T-(1-s)*Td).sum()
+            Td = np.diag(np.diag(T))
+            skew = np.abs(T.T-s*T-(1-s)*Td).sum()
             if skew<skew_min:
                 ropt = rw
                 Topt = T
@@ -797,12 +795,12 @@ class Structure(Sobj):
                  ):
 
         if isinstance(axes,str):
-            axes = array(axes.split(),dtype=float)
+            axes = np.array(axes.split(),dtype=float)
             axes.shape = dim,dim
         #end if
         if center is None:
             if axes is not None:
-                center = array(axes,dtype=float).sum(0)/2
+                center = np.array(axes,dtype=float).sum(0)/2
             else:
                 center = dim*[0]
             #end if
@@ -815,7 +813,7 @@ class Structure(Sobj):
             bconds = []
         #end if
         if elem_pos is not None:
-            ep = array(elem_pos.split(),dtype=str)
+            ep = np.array(elem_pos.split(),dtype=str)
             ep.shape = ep.size//(dim+1),(dim+1)
             elem = ep[:,0].ravel()
             pos  = ep[:,1:dim+1]
@@ -827,7 +825,7 @@ class Structure(Sobj):
             pos = posu
         #end if
         if pos is None:
-            pos = empty((0,dim))
+            pos = np.empty((0,dim))
         #end if
         if kshift is None:
             kshift = 0,0,0
@@ -835,19 +833,19 @@ class Structure(Sobj):
         self.scale    = 1.
         self.units    = units
         self.dim      = dim
-        self.center   = array(center,dtype=float)
-        self.axes     = array(axes,dtype=float)
+        self.center   = np.array(center,dtype=float)
+        self.axes     = np.array(axes,dtype=float)
         self.set_bconds(bconds)
         self.set_elem(elem)
         self.set_pos(pos)
         self.set_mag(mag)
         self.set_frozen(frozen)
-        self.kpoints  = empty((0,dim))            
-        self.kweights = empty((0,))         
+        self.kpoints  = np.empty((0,dim))            
+        self.kweights = np.empty((0,))         
         self.background_charge = background_charge
         self.remove_folded_structure()
         if len(axes)==0:
-            self.kaxes=array([])
+            self.kaxes=np.array([])
         else:
             self.kaxes=2*pi*inv(self.axes).T
         #end if
@@ -891,7 +889,7 @@ class Structure(Sobj):
         msg = ''
         if self.has_axes():
             kaxes = 2*pi*inv(self.axes).T
-            abs_diff = abs(self.kaxes-kaxes).sum()
+            abs_diff = np.abs(self.kaxes-kaxes).sum()
             if abs_diff>tol:
                 msg += 'Direct and reciprocal space axes are not consistent.\naxes present:\n{0}\nkaxes present:\n{1}\nConsistent kaxes:\n{2}\nAbsolute difference: {3}\n'.format(self.axes,self.kaxes,kaxes,abs_diff)
             #end if
@@ -926,17 +924,17 @@ class Structure(Sobj):
 
 
     def set_bconds(self,bconds):
-        self.bconds = array(tuple(bconds),dtype=str)
+        self.bconds = np.array(tuple(bconds),dtype=str)
     #end def bconds
 
 
     def set_elem(self,elem):
-        self.elem = array(elem,dtype=object)
+        self.elem = np.array(elem,dtype=object)
     #end def set_elem
 
     
     def set_pos(self,pos):
-        self.pos = array(pos,dtype=float)
+        self.pos = np.array(pos,dtype=float)
         if len(self.pos)!=len(self.elem):
             self.error('Atomic positions must have same length as elem.\nelem length: {}\nAtomic positions length: {}\n'.format(len(self.elem),len(self.pos)))
         #end if
@@ -979,7 +977,7 @@ class Structure(Sobj):
 
     def operate(self,operations):
         for op in operations:
-            if not op in self.operations:
+            if op not in self.operations:
                 self.error('{0} is not a known operation\nvalid options are:\n  {1}'.format(op,list(self.operations.keys())))
             else:
                 self.operations[op](self)
@@ -1046,7 +1044,7 @@ class Structure(Sobj):
                 self.pos  = self.pos[order]
             #end if
         #end if
-        if self.folded_structure!=None and folded:
+        if self.folded_structure is not None and folded:
             self.folded_structure.group_atoms(folded)
         #end if
     #end def group_atoms
@@ -1062,7 +1060,7 @@ class Structure(Sobj):
                 #end if
             #end for
         #end for
-        if self.folded_structure!=None and folded:
+        if self.folded_structure is not None and folded:
             self.folded_structure.rename(folded=folded,**name_pairs)
         #end if
     #end def rename
@@ -1073,7 +1071,7 @@ class Structure(Sobj):
         if axes is None:
             axes = self.axes
         else:
-            axes = array(axes)
+            axes = np.array(axes)
             self.remove_folded_structure()
         #end if
         self.axes  = axes
@@ -1090,15 +1088,15 @@ class Structure(Sobj):
 
     # test needed
     def reshape_axes(self,reshaping):
-        R = array(reshaping)
-        if abs(abs(det(R))-1)<1e-6:
+        R = np.array(reshaping)
+        if np.abs(np.abs(det(R))-1)<1e-6:
             self.axes = dot(self.axes,R)
         else:
             R = dot(inv(self.axes),R)
-            if abs(abs(det(R))-1)<1e-6:
+            if np.abs(np.abs(det(R))-1)<1e-6:
                 self.axes = dot(self.axes,R)
             else:
-                self.error('reshaping matrix must not change the volume\n  reshaping matrix:\n  {0}\n  volume change ratio: {1}'.format(R,abs(det(R))))
+                self.error('reshaping matrix must not change the volume\n  reshaping matrix:\n  {0}\n  volume change ratio: {1}'.format(R,np.abs(det(R))))
             #end if
         #end if
     #end def reshape_axes
@@ -1115,7 +1113,7 @@ class Structure(Sobj):
     
     def corners(self):
         a = self.axes
-        c = array([(0,0,0),
+        c = np.array([(0,0,0),
                    a[0],
                    a[1],
                    a[2],
@@ -1166,7 +1164,7 @@ class Structure(Sobj):
             c2 = dot(a2,p)/a2n
             plane_coords.append((c1,c2))
         #end for
-        return array(plane_coords,dtype=float)
+        return np.array(plane_coords,dtype=float)
     #end def project_plane
 
         
@@ -1181,12 +1179,12 @@ class Structure(Sobj):
             #end for
         #end if
         if box=='tight':
-            axes = diag(prange)
+            axes = np.diag(prange)
         elif box=='cubic' or box=='cube':
             prmax = prange.max()
-            axes = diag((prmax,prmax,prmax))
-        elif isinstance(box,ndarray) or isinstance(box,list):
-            box = array(box)
+            axes = np.diag((prmax,prmax,prmax))
+        elif isinstance(box,np.ndarray) or isinstance(box,list):
+            box = np.array(box)
             if box.shape!=(3,3):
                 self.error('requested box must be 3-dimensional (3x3 axes)\n  you provided: '+str(box)+'\n shape: '+str(box.shape))
             #end if
@@ -1196,7 +1194,7 @@ class Structure(Sobj):
             pmax    = pu.max(0)
             pcenter = (pmax+pmin)/2
             prange  = pmax-pmin
-            axes    = dot(diag(prange),box)
+            axes    = dot(np.diag(prange),box)
         else:
             self.error("invalid request for box\n  valid options are 'tight', 'cubic', or axes array (3x3)\n  you provided: "+str(box))
         #end if
@@ -1205,8 +1203,63 @@ class Structure(Sobj):
     #end def bounding_box
 
 
-    def center_molecule(self):
-        self.slide(self.center-self.pos.mean(0),recenter=False)
+    def center_molecule(self, rmin_edge = 1e-8):
+        """Center a molecule in a unit cell, ensuring equal padding on all sides.
+
+        Parameters
+        ----------
+        rmin_edge : float-like or array-like, default=1e-8
+            Minimum acceptable distance from the cell edges to any atom in the molecule, potentially specified per-axis.
+
+        Note
+        ----
+        The default rmin_edge of 1e-8 is designed to just barely contain the molecule. It is
+        important to ensure that for larger, non-periodic molecular systems or atoms that the unit
+        cell size is sufficiently large to contain the charge density otherwise the molecular system
+        will interact with the neighboring periodic replica, resulting in unphysical electrostatic interactions
+
+        For reference, 5 Bohr contains >99.3% of the charge density around a Hydrogen atom.
+        """
+        if hasattr(rmin_edge, '__len__'):
+            rmin_edge = np.abs(np.asarray(rmin_edge, dtype=float).flatten())
+            if rmin_edge.shape != (self.dim,):
+                self.error('rmin_edge must have length '+str(self.dim))
+        else:
+            rmin_edge = abs(float(rmin_edge))
+
+        #cell origin
+        corner = self.center - self.axes.sum(0) / 2
+
+        # Convert min distance to cell units
+        L = norm(self.axes, axis=0)
+        umin = rmin_edge / L
+
+        # Obtain current unit coordinates of the atoms
+        upos = np.dot(self.pos - corner, inv(self.axes))
+
+        # Align the molecule to contact the cell facets
+        upos -= upos.min(0)
+
+        # Align the molecule to be halfway between each cell facet
+        upos += (1-upos.max(0)) / 2
+
+        # Check that the molecule fits inside the box
+        utol = 1e-8 / L # numerical tolerance, 10 nano Bohr/Angstrom
+        upos_min  = upos.min(0)
+        upos_max  = upos.max(0)
+        lower_out = (upos_min < utol).any()
+        upper_out = (upos_max > (1.-utol)).any()
+        if lower_out or upper_out:
+            self.error('molecule does not fit in the cell')
+
+        # Check that the molecule is far enough from the cell edges
+        lower_out = (upos_min < umin).any()
+        upper_out = (upos_max > (1.-umin)).any()
+        if lower_out or upper_out:
+            self.error('molecule is too close to the cell edges')
+
+        # Transform back into real space coordinates
+        self.pos = np.dot(upos, self.axes) + corner
     #end def center_molecule
 
 
@@ -1221,13 +1274,13 @@ class Structure(Sobj):
     # test needed
     def permute(self,permutation):
         dim = self.dim
-        P = empty((dim,dim),dtype=int)
+        P = np.empty((dim,dim),dtype=int)
         if len(permutation)!=dim:
             self.error(' permutation vector must have {0} elements\n you provided {1}'.format(dim,permutation))
         #end if
         for i in range(dim):
             p = permutation[i]
-            pv = zeros((dim,),dtype=int)
+            pv = np.zeros((dim,),dtype=int)
             if p=='x' or p=='0':
                 pv[0] = 1
             elif p=='y' or p=='1':
@@ -1250,7 +1303,7 @@ class Structure(Sobj):
         if len(self.kpoints)>0:
             self.kpoints = dot(self.kpoints,P)
         #end if
-        if self.folded_structure!=None:
+        if self.folded_structure is not None:
             self.folded_structure.permute(permutation)
         #end if
     #end def permute
@@ -1282,7 +1335,7 @@ class Structure(Sobj):
     # test needed
     def incorporate(self,other):
         self.set_elem(list(self.elem)+list(other.elem))
-        self.pos=array(list(self.pos)+list(other.pos))
+        self.pos=np.array(list(self.pos)+list(other.pos))
     #end def incorporate
 
 
@@ -1299,7 +1352,7 @@ class Structure(Sobj):
     # test needed
     def add_atoms(self,elem,pos):
         self.set_elem(list(self.elem)+list(elem))
-        self.pos=array(list(self.pos)+list(pos))
+        self.pos=np.array(list(self.pos)+list(pos))
     #end def add_atoms
 
 
@@ -1366,10 +1419,10 @@ class Structure(Sobj):
 
       origin = np.array([[0, 0, 0]])
       axes = self.axes
-      raxes = 2*np.pi*np.linalg.inv(axes).T
+      raxes = 2*np.pi*inv(axes).T
       kvecs = self.tile_points(origin, raxes, tilevec)
       kvecs -= np.dot(tilevec, raxes)/2  # center around 0
-      kmags = np.linalg.norm(kvecs, axis=-1)
+      kmags = norm(kvecs, axis=-1)
 
       # make sure tilevec is sufficient for kcut
       klimit = 0.5*kmags.max()
@@ -1389,7 +1442,7 @@ class Structure(Sobj):
         if not self.has_axes():
             return None
         else:
-            return abs(det(self.axes))
+            return np.abs(det(self.axes))
         #end if
     #end def volume
 
@@ -1399,7 +1452,7 @@ class Structure(Sobj):
             self.error('rwigner is currently only implemented for 3 dimensions')
         #end if
         rmin = 1e90
-        n=empty((1,3))
+        n=np.empty((1,3))
         rng = tuple(range(-nc,nc+1))
         for k in rng:
             for j in rng:
@@ -1426,7 +1479,7 @@ class Structure(Sobj):
             i = d
             j = (d+1)%dim
             rc = cross(axes[i,:],axes[j,:])
-            radius = min(radius,.5*abs(det(axes))/norm(rc))
+            radius = min(radius,.5*np.abs(det(axes))/norm(rc))
         #end for
         return radius
     #end def rinscribe
@@ -1466,12 +1519,12 @@ class Structure(Sobj):
     def cube_deviation(self):
         a = self.axes
         dc = self.volume()**(1./3)*sqrt(2.)
-        d1 = abs(norm(a[0]+a[1])-dc)
-        d2 = abs(norm(a[1]+a[2])-dc)
-        d3 = abs(norm(a[2]+a[0])-dc)
-        d4 = abs(norm(a[0]-a[1])-dc)
-        d5 = abs(norm(a[1]-a[2])-dc)
-        d6 = abs(norm(a[2]-a[0])-dc)
+        d1 = np.abs(norm(a[0]+a[1])-dc)
+        d2 = np.abs(norm(a[1]+a[2])-dc)
+        d3 = np.abs(norm(a[2]+a[0])-dc)
+        d4 = np.abs(norm(a[0]-a[1])-dc)
+        d5 = np.abs(norm(a[1]-a[2])-dc)
+        d6 = np.abs(norm(a[2]-a[0])-dc)
         return (d1+d2+d3+d4+d5+d6)/(6*dc)
     #end def cube_deviation
 
@@ -1490,9 +1543,9 @@ class Structure(Sobj):
             axes = self.axes
         #end if
         dim=3
-        axbar = identity(dim)
-        axnew = array(axes,dtype=float)
-        dists = empty((dim,))
+        axbar = np.identity(dim)
+        axnew = np.array(axes,dtype=float)
+        dists = np.empty((dim,))
         for d in range(dim):
             d2 = (d+1)%dim
             d3 = (d+2)%dim
@@ -1528,7 +1581,7 @@ class Structure(Sobj):
         if not distances:
             return fv
         else:
-            return fv,diag(dv)
+            return fv,np.diag(dv)
         #end if
     #end def face_vectors
 
@@ -1547,7 +1600,7 @@ class Structure(Sobj):
         self.center *= scale
         self.kaxes  /= scale
         self.kpoints/= scale
-        if self.folded_structure!=None:
+        if self.folded_structure is not None:
             self.folded_structure.rescale(scale)
         #end if
     #end def rescale
@@ -1558,7 +1611,7 @@ class Structure(Sobj):
         if self.dim!=3:
             self.error('stretch is currently only implemented for 3 dimensions')
         #end if
-        d = diag((s1,s2,s3))
+        d = np.diag((s1,s2,s3))
         self.skew(d)
     #end def stretch
 
@@ -1614,7 +1667,7 @@ class Structure(Sobj):
                     r = dirmap[r]
                 #end if
             else:
-                r = array(r,dtype=float)
+                r = np.array(r,dtype=float)
                 if len(r.shape)>1:
                     self.error('r must be given as a 1-d vector or string, if rp is not None')
                 #end if
@@ -1635,16 +1688,16 @@ class Structure(Sobj):
                         rp = dirmap[rp]
                     #end if
                 else:
-                    rp = array(rp,dtype=float)
+                    rp = np.array(rp,dtype=float)
                 #end if
                 # go from r,rp to r,theta
-                c = np.dot(r,rp)/np.linalg.norm(r)/np.linalg.norm(rp)
-                if abs(c-1)<1e-6:
+                c = np.dot(r,rp)/norm(r)/norm(rp)
+                if np.abs(c-1)<1e-6:
                     s = 0.0
                     r = np.array([1,0,0])
                 else:
-                    s = np.dot(np.cross(r,rp),np.cross(r,rp))/np.linalg.norm(r)/np.linalg.norm(rp)/np.linalg.norm(np.cross(r,rp)) 
-                    r = np.cross(r,rp)/np.linalg.norm(np.cross(r,rp))
+                    s = np.dot(cross(r,rp),cross(r,rp))/norm(r)/norm(rp)/norm(cross(r,rp)) 
+                    r = cross(r,rp)/norm(cross(r,rp))
                 #end if
             #end if
             # make R from r,theta
@@ -1654,12 +1707,12 @@ class Structure(Sobj):
         else:
             R = r
         #end if
-        R = array(R,dtype=float)
+        R = np.array(R,dtype=float)
         if passive:
             R = R.T
         #end if
         if check:
-            if not np.allclose(dot(R,R.T),identity(len(R))):
+            if not np.allclose(dot(R,R.T),np.identity(len(R))):
                 self.error('the function, rotate, must be given an orthogonal matrix')
             #end if
         #end if
@@ -1689,7 +1742,7 @@ class Structure(Sobj):
         self.kpoints = dot(dot(self.kpoints,kaxinv),kaxnew)
         self.axes  = axnew
         self.kaxes = kaxnew
-        if self.folded_structure!=None:
+        if self.folded_structure is not None:
             self.folded_structure.matrix_transform(A.T)
         #end if
     #end def matrix_transform
@@ -1723,7 +1776,7 @@ class Structure(Sobj):
             self.kpoints/= scale
             self.units  = units
         #end if
-        if self.folded_structure!=None and folded:
+        if self.folded_structure is not None and folded:
             self.folded_structure.change_units(units,folded=folded)
         #end if
     #end def change_units
@@ -1745,16 +1798,16 @@ class Structure(Sobj):
         else:
             v = axis
         #end if
-        c = array(c)  # point on cleave plane
-        v = array(v)  # normal vector to cleave plane, norm is cleave separation
-        if sep!=None:
-            v = abs(sep)*v/norm(v)
+        c = np.array(c)  # point on cleave plane
+        v = np.array(v)  # normal vector to cleave plane, norm is cleave separation
+        if sep is not None:
+            v = np.abs(sep)*v/norm(v)
         #end if
         if norm(v)<tol:
             return
         #end if
-        vn = array(v/norm(v))
-        if sep!=None and sep<0:
+        vn = np.array(v/norm(v))
+        if sep is not None and sep<0:
             v = -v # preserve the normal direction for atom identification, but reverse the shift direction
         #end if
         self.recorner()  # want box contents to be static
@@ -1767,7 +1820,7 @@ class Structure(Sobj):
                 i3 = (i+2)%dim
                 a2 = axes[i2]/norm(axes[i2])
                 a3 = axes[i3]/norm(axes[i3])
-                comp = abs(dot(a2,vn))+abs(dot(a3,vn))
+                comp = np.abs(dot(a2,vn))+np.abs(dot(a3,vn))
                 if comp < 1e-6:
                     components+=1
                     iaxis = i
@@ -1786,7 +1839,7 @@ class Structure(Sobj):
         for i in range(len(pos)):
             p = pos[i]
             comp = dot(p-c,vn)
-            if comp>0 or abs(comp)<tol:
+            if comp>0 or np.abs(comp)<tol:
                 pos[i] += v
                 indices.append(i)
             #end if
@@ -1799,13 +1852,13 @@ class Structure(Sobj):
 
     # test needed
     def translate(self,v):
-        v = array(v)
+        v = np.array(v)
         pos = self.pos
         for i in range(len(pos)):
             pos[i]+=v
         #end for
         self.center+=v
-        if self.folded_structure!=None:
+        if self.folded_structure is not None:
             self.folded_structure.translate(v)
         #end if
     #end def translate
@@ -1813,7 +1866,7 @@ class Structure(Sobj):
                               
     # test needed
     def slide(self,v,recenter=True):
-        v = array(v)
+        v = np.array(v)
         pos = self.pos
         for i in range(len(pos)):
             pos[i]+=v
@@ -1821,7 +1874,7 @@ class Structure(Sobj):
         if recenter:
             self.recenter()
         #end if
-        if self.folded_structure!=None:
+        if self.folded_structure is not None:
             self.folded_structure.slide(v,recenter)
         #end if
     #end def slide
@@ -1836,7 +1889,7 @@ class Structure(Sobj):
 
     # test needed
     def locate_simple(self,pos):
-        pos = array(pos)
+        pos = np.array(pos)
         if pos.shape==(self.dim,):
             pos = [pos]
         #end if
@@ -1851,8 +1904,8 @@ class Structure(Sobj):
         if isinstance(identifiers,Structure):
             cell = identifiers
             indices = cell.inside(self.pos)
-        elif isinstance(identifiers,ndarray) and identifiers.dtype==bool:
-            indices = arange(len(self.pos))[identifiers]
+        elif isinstance(identifiers,np.ndarray) and identifiers.dtype==bool:
+            indices = np.arange(len(self.pos))[identifiers]
         elif isinstance(identifiers,int):
             indices = [identifiers]
         elif len(identifiers)>0 and isinstance(identifiers[0],int):
@@ -1893,7 +1946,7 @@ class Structure(Sobj):
                     indices.append(dtable[i].argmin())
                 #end for
             else:
-                ipos = arange(len(self.pos))
+                ipos = np.arange(len(self.pos))
                 for i in range(len(pos)):
                     indices.extend(ipos[dtable[i]<radii[i]])
                 #end for
@@ -1907,7 +1960,7 @@ class Structure(Sobj):
 
     
     def freeze(self,identifiers=None,radii=None,exterior=False,negate=False,directions='xyz'):
-        if isinstance(identifiers,ndarray) and identifiers.shape==self.pos.shape and identifiers.dtype==bool:
+        if isinstance(identifiers,np.ndarray) and identifiers.shape==self.pos.shape and identifiers.dtype==bool:
             if negate:
                 self.frozen = ~identifiers
             else:
@@ -1916,7 +1969,7 @@ class Structure(Sobj):
             return
         #end if
         if identifiers is None:
-            indices = arange(len(self.pos),dtype=int)
+            indices = np.arange(len(self.pos),dtype=int)
         else:
             indices = self.locate(identifiers,radii,exterior)
         #end if
@@ -1924,16 +1977,16 @@ class Structure(Sobj):
             self.error('failed to select any atoms to freeze')
         #end if
         if isinstance(directions,str):
-            d = empty((3,),dtype=bool)
+            d = np.empty((3,),dtype=bool)
             d[0] = 'x' in directions
             d[1] = 'y' in directions
             d[2] = 'z' in directions
             directions = len(indices)*[d]
         else:
-            directions = array(directions,dtype=bool)
+            directions = np.array(directions,dtype=bool)
         #end if
         if self.frozen is None:
-            self.frozen = zeros(self.pos.shape,dtype=bool)
+            self.frozen = np.zeros(self.pos.shape,dtype=bool)
         #end if
         frozen = self.frozen
         i=0
@@ -1968,14 +2021,14 @@ class Structure(Sobj):
         elif isinstance(magnetization,obj):
             magsin = magnetization.copy()
         #endif
-        if magsin!=None:
+        if magsin is not None:
             magsin.transfer_from(mags)
             mags = magsin
             identifiers = None
             magnetization = ''
         #end if
         for e,m in mags.items():
-            if not e in self.elem:
+            if e not in self.elem:
                 self.error('cannot magnetize non-existent element {0}'.format(e))
             elif m is not None or not isinstance(m,int):
                 self.error('magnetizations provided must be either None or integer\n  you provided: {0}\n  full magnetization request provided:\n {1}'.format(m,mags))
@@ -1990,7 +2043,7 @@ class Structure(Sobj):
         else:
             indices = self.locate(identifiers)
         #end if
-        if not isinstance(magnetization,(list,tuple,ndarray)):
+        if not isinstance(magnetization,(list,tuple,np.ndarray)):
             magnetization = [magnetization]
         #end if
         for m in magnetization:
@@ -2017,7 +2070,7 @@ class Structure(Sobj):
         magnetic = False
         if self.mag is not None:
             for m in self.mag:
-                if m is not None and abs(m)>tol:
+                if m is not None and np.abs(m)>tol:
                     magnetic = True
                     break
                 #end if
@@ -2039,7 +2092,7 @@ class Structure(Sobj):
             sub.elem = self.elem[indices]
             sub.pos  = self.pos[indices]
         #end if
-        sub.host_indices = array(indices)
+        sub.host_indices = np.array(indices)
         return sub
     #end def carve
 
@@ -2064,28 +2117,28 @@ class Structure(Sobj):
             cell = elem
             elem = cell.elem
             pos  = cell.pos
-        elif elem==None:
+        elif elem is None:
             elem = self.elem
         #end if
-        indices=array(indices)
-        elem=array(elem,dtype=object)
-        pos =array(pos)
+        indices=np.array(indices)
+        elem=np.array(elem,dtype=object)
+        pos =np.array(pos)
         nrem = len(indices)
         nadd = len(pos)
         if nadd<nrem:
-            ar = array(list(range(0,nadd)))
-            rr = array(list(range(nadd,nrem)))
+            ar = np.array(list(range(0,nadd)))
+            rr = np.array(list(range(nadd,nrem)))
             self.elem[indices[ar]] = elem[:]
             self.pos[indices[ar]]  = pos[:]
             self.remove(indices[rr])
         elif nadd>nrem:
-            ar = array(list(range(0,nrem)))
-            er = array(list(range(nrem,nadd)))
+            ar = np.array(list(range(0,nrem)))
+            er = np.array(list(range(nrem,nadd)))
             self.elem[indices[ar]] = elem[ar]
             self.pos[indices[ar]]  = pos[ar]
             ii = indices[ar[-1]]
             self.set_elem( list(self.elem[0:ii])+list(elem[er])+list(self.elem[ii:]) )
-            self.pos = array( list(self.pos[0:ii])+list(pos[er])+list(self.pos[ii:]) )
+            self.pos = np.array( list(self.pos[0:ii])+list(pos[er])+list(self.pos[ii:]) )
         else:
             self.elem[indices] = elem[:]
             self.pos[indices]  = pos[:]
@@ -2104,8 +2157,8 @@ class Structure(Sobj):
         nn = nearest_neighbors(1,self.pos,pos)
         np = len(pos)
         nps= len(self.pos)
-        d = empty((np,))
-        ip = array(list(range(np)))
+        d = np.empty((np,))
+        ip = np.array(list(range(np)))
         ips= nn.ravel()
         for i in ip:
             j = ips[i]
@@ -2114,7 +2167,7 @@ class Structure(Sobj):
         order = d.argsort()
         ip = ip[order]
         ips=ips[order]
-        replacable = empty((nps,))
+        replacable = np.empty((nps,))
         replacable[:] = False
         replacable[ips]=True
         insert = []
@@ -2131,11 +2184,11 @@ class Structure(Sobj):
                 insert.append(i)
             #end if
         #end for
-        insert=array(insert)
+        insert=np.array(insert)
         ii = last_replaced
         if len(insert)>0:
             self.set_elem( list(self.elem[0:ii])+list(elem[insert])+list(self.elem[ii:]) )
-            self.pos = array( list(self.pos[0:ii])+list(pos[insert])+list(self.pos[ii:]) )
+            self.pos = np.array( list(self.pos[0:ii])+list(pos[insert])+list(self.pos[ii:]) )
         #end if
         self.remove_folded_structure()
     #end def replace_nearest
@@ -2145,11 +2198,11 @@ class Structure(Sobj):
     def point_defect(self,identifiers=None,elem=None,dr=None):
         if isinstance(elem,str):
             elem = [elem]
-            if dr!=None:
+            if dr is not None:
                 dr = [dr]
             #end if
         #end if
-        if not 'point_defects' in self:
+        if 'point_defects' not in self:
             self.point_defects = obj()
         #end if
         point_defects = self.point_defects
@@ -2170,13 +2223,13 @@ class Structure(Sobj):
             self.error('must supply substitutional elements comprising the point defect\n  expected a list or similar for input argument elem')
         elif len(elem)>1 and dr is None:
             self.error('must supply displacements (dr) since many atoms comprise the point defect')
-        elif dr!=None and len(elem)!=len(dr):
+        elif dr is not None and len(elem)!=len(dr):
             self.error('elem and dr must have the same length')
         #end if
         r = self.pos[index]
         e = self.elem[index]
-        elem = array(elem)
-        pos = zeros((len(elem),len(r)))
+        elem = np.array(elem)
+        pos = np.zeros((len(elem),len(r)))
         if dr is None:
             rc = r
             for i in range(len(elem)):
@@ -2185,7 +2238,7 @@ class Structure(Sobj):
         else:
             nrc = 0
             rc  = 0*r
-            dr = array(dr)
+            dr = np.array(dr)
             for i in range(len(elem)):
                 pos[i] = r + dr[i]
                 if norm(dr[i])>1e-5:
@@ -2220,7 +2273,7 @@ class Structure(Sobj):
             #end for
         #end if
         self.set_elem(elist)
-        self.pos  = array(plist)
+        self.pos  = np.array(plist)
         self.remove_folded_structure()
     #end def point_defect
 
@@ -2281,7 +2334,7 @@ class Structure(Sobj):
         spec_set = set()
         for i in range(len(self.elem)):
             e = self.elem[i]
-            if not e in spec_set:
+            if e not in spec_set:
                 spec_set.add(e)
                 species.append(e)
                 species_counts.append(0)
@@ -2298,7 +2351,7 @@ class Structure(Sobj):
         #end for
         self.reorder(elem_order)
 
-        if folded and self.folded_structure!=None:
+        if folded and self.folded_structure is not None:
             self.folded_structure.order_by_species(folded)
         #end if
 
@@ -2308,7 +2361,7 @@ class Structure(Sobj):
 
     # test needed
     def reorder(self,order):
-        order = array(order)
+        order = np.array(order)
         self.elem = self.elem[order]
         self.pos  = self.pos[order]
     #end def reorder
@@ -2342,19 +2395,19 @@ class Structure(Sobj):
         daxis = norm(vaxis)
         naxis = vaxis/daxis
         dbin  = dtol/nbox
-        nbins = int(ceil(daxis/dbin))
+        nbins = int(np.ceil(daxis/dbin))
         dbin  = daxis/nbins
-        dbins = daxis*(arange(nbins)+.5)/nbins
+        dbins = daxis*(np.arange(nbins)+.5)/nbins
         dists = daxis*s.pos_unit()[:,axis]
-        hist  = zeros((nbins,),dtype=int)
-        boxhist = zeros((nbins,),dtype=int)
+        hist  = np.zeros((nbins,),dtype=int)
+        boxhist = np.zeros((nbins,),dtype=int)
         ihist = obj()
         iboxhist = obj()
         index = 0
         for d in dists:
-            ibin = int(floor(d/dbin))
+            ibin = int(np.floor(d/dbin))
             hist[ibin]+=1
-            if not ibin in ihist:
+            if ibin not in ihist:
                 ihist[ibin] = []
             #end if
             ihist[ibin].append(index)
@@ -2365,7 +2418,7 @@ class Structure(Sobj):
                 n = hist[i%nbins]
                 if n>0:
                     boxhist[ib]+=n
-                    if not ib in iboxhist:
+                    if ib not in iboxhist:
                         iboxhist[ib] = []
                     #end if
                     iboxhist[ib].extend(ihist[i%nbins])
@@ -2398,7 +2451,7 @@ class Structure(Sobj):
             ldist = dbins[ib] # distance is along an axis vector
             faxis = self.face_vectors()[axis]
             ldist = dot(ldist*naxis,faxis/norm(faxis))
-            layers[ldist] = array(pindices,dtype=int)
+            layers[ldist] = np.array(pindices,dtype=int)
         #end for
         if plot:
             plt.plot(dbins,boxhist,'b.-',label='boxcar histogram')
@@ -2440,14 +2493,14 @@ class Structure(Sobj):
         #   core is selected by identifiers, forms core for shells to be built around
         #   bulk is all atoms except for core
         if identifiers=='point_defects':
-            if not 'point_defects' in self:
+            if 'point_defects' not in self:
                 self.error('requested shells around point defects, but structure has no point defects')
             #end if
             core = []
             for pd in self.point_defects:
                 core.append(pd.center)
             #end for
-            core = array(core)
+            core = np.array(core)
             bulk_ind = self.locate(core,radii=dtol,exterior=True)
             core_ind = self.locate(bulk_ind,exterior=True)
             bulk = self.pos[bulk_ind]
@@ -2457,12 +2510,12 @@ class Structure(Sobj):
             core = self.pos[core_ind]
             bulk = self.pos[bulk_ind]
         #end if
-        bulk_ind = array(bulk_ind,dtype=int)
+        bulk_ind = np.array(bulk_ind,dtype=int)
         # build distance table between bulk and core
         dtable = self.distance_table(bulk,core)
         # find shortest distance for each bulk atom to any core atom and order by distance
         dist   = dtable.min(1)
-        ind    = arange(len(bulk))
+        ind    = np.arange(len(bulk))
         order  = dist.argsort()
         dist   = dist[order]
         ind    = bulk_ind[ind[order]]
@@ -2476,7 +2529,7 @@ class Structure(Sobj):
         shells[ns] = list(core_ind)  # first shell is all core atoms
         dshells = [0.]
         for n in range(len(dist)):
-            if abs(dist[n]-ds)>dtol:
+            if np.abs(dist[n]-ds)>dtol:
                 shell = [ind[n]]   # new shell starts with single atom
                 ns+=1
                 shells[ns] = shell
@@ -2486,7 +2539,7 @@ class Structure(Sobj):
                 shell.append(ind[n])
             #end if
         #end for
-        dshells = array(dshells,dtype=float)
+        dshells = np.array(dshells,dtype=float)
         results = [shells]
         if cumshells:
             # assemble cumulative shells, ie cumshell[ns] = sum(shells[n],n=0 to ns)
@@ -2496,12 +2549,12 @@ class Structure(Sobj):
                 cumshells[ns] = cumshells[ns-1]+shells[ns]
             #end for
             for ns,cshell in cumshells.items():
-                cumshells[ns] = array(cshell,dtype=int)
+                cumshells[ns] = np.array(cshell,dtype=int)
             #end for
             results.append(cumshells)
         #end if
         for ns,shell in shells.items():
-            shells[ns] = array(shell,dtype=int)
+            shells[ns] = np.array(shell,dtype=int)
         if distances:
             results.append(dshells)
         #end if
@@ -2539,14 +2592,15 @@ class Structure(Sobj):
     #             (1,1,2) = [ (3,5,4) ]
     #           6    #   sum of vertex degrees is 6 (each atom is connected to 2 others)
     #             (2,2,2) = [ (0,1,2) ]           # graphs with vertex degree (2,2,2)  
+
     def connected_graphs(self,order,indices=None,rmax=None,nmax=None,voronoi=False,degree=False,site_maps=False,**spec_max):
         if indices is None:
-            indices = arange(len(self.pos),dtype=int)
+            indices = np.arange(len(self.pos),dtype=int)
             pos = self.pos
         else:
             pos = self.pos[indices]
         #end if
-        np = len(indices)
+        num_indices = len(indices)
         neigh_table = []
         actual_indices = None
         if voronoi:
@@ -2559,9 +2613,9 @@ class Structure(Sobj):
             actual_indices = False
             elem = set(self.elem[indices])
             spec = set(spec_max.keys())
-            if spec==elem or rmax!=None:
+            if spec==elem or rmax is not None:
                 None
-            elif spec<elem and nmax!=None:
+            elif spec<elem and nmax is not None:
                 for e in elem:
                     if e not in spec:
                         spec_max[e] = nmax
@@ -2571,33 +2625,33 @@ class Structure(Sobj):
             # get neighbor table for subset of atoms specified by indices
             nt,dt = self.neighbor_table(pos,pos,distances=True)
             # determine how many neighbors to consider based on rmax (all are neighbors if rmax is None)
-            nneigh = zeros((np,),dtype=int)
+            nneigh = np.zeros((num_indices,),dtype=int)
             if len(spec_max)>0:
-                for n in range(np):
+                for n in range(num_indices):
                     nneigh[n] = min(spec_max[self.elem[n]],len(nt[n]))
                 #end for
             elif rmax is None:
-                nneigh[:] = np
+                nneigh[:] = num_indices
             else:
                 nneigh = (dt<rmax).sum(1)                    
             #end if
-            for i in range(np):
+            for i in range(num_indices):
                 neigh_table.append(nt[i,1:nneigh[i]])
             #end for
             del nt,dt,nneigh,elem,spec,rmax
         #end if
-        neigh_table = array(neigh_table,dtype=int)
+        neigh_table = np.array(neigh_table,dtype=int)
         # record which atoms are neighbors to each other
         neigh_pairs = set()
         if actual_indices:
-            for i in range(np):
+            for i in range(num_indices):
                 for ni in neigh_table[i]:
                     neigh_pairs.add((i,ni))
                     neigh_pairs.add((ni,i))
                 #end for
             #end for
         else:
-            for i in range(np):
+            for i in range(num_indices):
                 for ni in neigh_table[i]:
                     ii = indices[i]
                     jj = indices[ni]
@@ -2614,7 +2668,7 @@ class Structure(Sobj):
         #end for
         if order>0:
             cg = cgraphs[1]
-            for i in range(np):  # list of single atoms
+            for i in range(num_indices):  # list of single atoms
                 gi = (i,)              # graph indices
                 cg.append(gi)          # add graph to graph list of order 1
                 graphs_found.add(gi)   # add graph to set of all graphs
@@ -2637,18 +2691,18 @@ class Structure(Sobj):
         #end if
         if actual_indices:
             for o,cg in cgraphs.items():
-                cgraphs[o] = array(cg,dtype=int)
+                cgraphs[o] = np.array(cg,dtype=int)
             #end for
         else:
             # map indices back to actual atomic indices
             for o,cg in cgraphs.items():
                 cgmap = []
                 for gi in cg:
-                    #gi = array(gi)
-                    gimap = tuple(sorted(indices[array(gi)]))
+                    #gi = np.array(gi)
+                    gimap = tuple(sorted(indices[np.array(gi)]))
                     cgmap.append(gimap)
                 #end for
-                cgraphs[o] = array(sorted(cgmap),dtype=int)
+                cgraphs[o] = np.array(sorted(cgmap),dtype=int)
             #end for
         #end if
         # reorganize the graph listing by cluster and vertex degree, if desired
@@ -2659,7 +2713,7 @@ class Structure(Sobj):
                 dgo = obj()
                 cgraphs_deg[o] = dgo
                 for gi in cg:
-                    di = zeros((o,),dtype=int)
+                    di = np.zeros((o,),dtype=int)
                     for m in range(o):
                         i = gi[m]
                         for n in range(m+1,o):
@@ -2673,12 +2727,12 @@ class Structure(Sobj):
                     d = int(di.sum())
                     dorder = di.argsort()
                     di = tuple(di[dorder])
-                    gi = tuple(array(gi)[dorder])
-                    if not d in dgo:
+                    gi = tuple(np.array(gi)[dorder])
+                    if d not in dgo:
                         dgo[d]=obj()
                     #end if
                     dgd = dgo[d]
-                    if not di in dgd:
+                    if di not in dgd:
                         dgd[di] = []
                     #end if
                     dgd[di].append(gi)
@@ -2686,7 +2740,7 @@ class Structure(Sobj):
                 #end for
                 for dgd in dgo:
                     for di,dgi in dgd.items():
-                        dgd[di]=array(sorted(dgi),dtype=int)
+                        dgd[di]=np.array(sorted(dgi),dtype=int)
                     #end for
                 #end for
             #end for
@@ -2702,7 +2756,7 @@ class Structure(Sobj):
                     cmap = obj()
                     for slist in og:
                         for s in slist:
-                            if not s in cmap:
+                            if s not in cmap:
                                 cmap[s] = obj()
                             #end if
                             cmap[s].append(slist)
@@ -2719,10 +2773,10 @@ class Structure(Sobj):
                                 n=0
                                 for s in slist:
                                     d = local_degree[n]
-                                    if not s in cmap:
+                                    if s not in cmap:
                                         cmap[s] = obj()
                                     #end if
-                                    if not d in cmap[s]:
+                                    if d not in cmap[s]:
                                         cmap[s][d] = obj()
                                     #end if
                                     cmap[s][d].append(slist)
@@ -2762,7 +2816,7 @@ class Structure(Sobj):
                     #end if
                 #end if
             #end if
-            if lg!=None:
+            if lg is not None:
                 lg_end = obj()
                 for gi in lg:
                     end_key = tuple(sorted(gi[0:2])) # end points
@@ -2781,7 +2835,7 @@ class Structure(Sobj):
             o2 = o1+o%2
             lg1 = lgraphs.get_optional(o1,None) # sets of half order lines
             lg2 = lgraphs.get_optional(o2,None)
-            if lg1!=None and lg2!=None:
+            if lg1 is not None and lg2 is not None:
                 rg = []
                 rset = set()
                 for end_key,llist1 in lg1.items(): # list of lines sharing endpoints
@@ -2798,7 +2852,7 @@ class Structure(Sobj):
                         #end for
                     #end if
                 #end for
-                rgraphs[o] = array(sorted(rg),dtype=int)
+                rgraphs[o] = np.array(sorted(rg),dtype=int)
             #end if
         #end for
         return rgraphs
@@ -2808,12 +2862,12 @@ class Structure(Sobj):
     # test needed
     # find the centroid of a set of points/atoms in min image convention
     def min_image_centroid(self,points=None,indices=None):
-        if indices!=None:
+        if indices is not None:
             points = self.pos[indices]
         elif points is None:
             self.error('points or images must be provided to min_image_centroid')
         #end if
-        p     = array(points,dtype=float)
+        p     = np.array(points,dtype=float)
         cprev = p[0]+1e99
         c     = p[0]
         while(norm(c-cprev)>1e-8):
@@ -2829,18 +2883,18 @@ class Structure(Sobj):
     # find min image centroids of multiple sets of points/atoms
     def min_image_centroids(self,points=None,indices=None):
         cents = []
-        if points!=None:
+        if points is not None:
             for p in points:
                 cents.append(self.min_image_centroid(p))
             #end for
-        elif indices!=None:
+        elif indices is not None:
             for ind in indices:
                 cents.append(self.min_image_centroid(indices=ind))
             #end for
         else:
             self.error('points or images must be provided to min_image_centroid')
         #end if
-        return array(cents,dtype=float)
+        return np.array(cents,dtype=float)
     #end def min_image_centroids
     
     
@@ -2854,7 +2908,7 @@ class Structure(Sobj):
             axes  = self.axes
         #end if
         axinv = inv(axes)
-        points = array(points)
+        points = np.array(points)
         single = points.shape==(self.dim,)
         if single:
             points = [points]
@@ -2869,7 +2923,7 @@ class Structure(Sobj):
         npoints  = len(points)
         npoints2 = len(points2)
         if pairs:
-            vtable = empty((npoints,npoints2,self.dim),dtype=float)
+            vtable = np.empty((npoints,npoints2,self.dim),dtype=float)
             i=-1
             for p in points:
                 i+=1
@@ -2877,7 +2931,7 @@ class Structure(Sobj):
                 for pp in points2:
                     j+=1
                     u = dot(pp-p,axinv)
-                    vtable[i,j] = dot(u-floor(u+.5),axes)
+                    vtable[i,j] = dot(u-np.floor(u+.5),axes)
                 #end for
             #end for
             result = vtable
@@ -2885,12 +2939,12 @@ class Structure(Sobj):
             if npoints!=npoints2:
                 self.error('cannot create one to one minimum image vectors, point sets differ in length\n  npoints1 = {0}\n  npoints2 = {1}'.format(npoints,npoints2))
             #end if
-            vectors = empty((npoints,self.dim),dtype=float)
+            vectors = np.empty((npoints,self.dim),dtype=float)
             n = 0
             for p in points:
                 pp = points2[n]
                 u = dot(pp-p,axinv)
-                vectors[n] = dot(u-floor(u+.5),axes)
+                vectors[n] = dot(u-np.floor(u+.5),axes)
                 n+=1
             #end for
             result = vectors
@@ -2924,7 +2978,7 @@ class Structure(Sobj):
     
     def neighbor_table(self,points=None,points2=None,axes=None,distances=False,vectors=False):
         dtable,vtable = self.min_image_distances(points,points2,axes,vectors=True)
-        ntable = empty(dtable.shape,dtype=int)
+        ntable = np.empty(dtable.shape,dtype=int)
         for i in range(len(dtable)):
             ntable[i] = dtable[i].argsort()
         #end for
@@ -2957,7 +3011,7 @@ class Structure(Sobj):
         rdim = len(vtable.shape)-1
         nout = []
         for p in norms:
-            nout.append( ((abs(vtable)**p).sum(rdim))**(1./p) )
+            nout.append( ((np.abs(vtable)**p).sum(rdim))**(1./p) )
         #end for
         if len(norms)==1:
             nout = nout[0]
@@ -2970,7 +3024,7 @@ class Structure(Sobj):
     # get all neighbors according to contacting voronoi polyhedra in PBC
     def voronoi_neighbors(self,indices=None,restrict=False,distance_ordered=True):
         if indices is None:
-            indices = arange(len(self.pos))
+            indices = np.arange(len(self.pos))
         #end if
         indices = set(indices)
         # make a new version of this (small cell)
@@ -2978,7 +3032,7 @@ class Structure(Sobj):
         sn.recenter()
         # tile a large cell periodically
         d = 3
-        t = tuple(zeros((d,),dtype=int)+3)
+        t = tuple(np.zeros((d,),dtype=int)+3)
         ss = sn.tile(t)
         ss.recenter(sn.center)
         # get nearest neighbor index pairs in the large cell
@@ -2994,12 +3048,12 @@ class Structure(Sobj):
                 i = large_to_small[i]  # mapping to small cell indices
                 j = large_to_small[j]
                 if not restrict or (i in indices and j in indices): # restrict to orig index set
-                    if not i in neighbors:
+                    if i not in neighbors:
                         neighbors[i] = [j]
                     else:
                         neighbors[i].append(j)
                     #ned if
-                    if not j in neighbors:
+                    if j not in neighbors:
                         neighbors[j] = [i]
                     else:
                         neighbors[j].append(i)
@@ -3011,14 +3065,14 @@ class Structure(Sobj):
         if distance_ordered:
             dt = self.distance_table()
             for i,ni in neighbors.items():
-                ni = array(list(set(ni)),dtype=int)
+                ni = np.array(list(set(ni)),dtype=int)
                 di = dt[i,ni]
                 order = di.argsort()
                 neighbors[i] = ni[order]
             #end for
         else:  # just remove duplicates
             for i,ni in neighbors.items():
-                neighbors[i] = array(list(set(ni)),dtype=int)
+                neighbors[i] = np.array(list(set(ni)),dtype=int)
             #end for
         #end if
         return neighbors
@@ -3040,7 +3094,7 @@ class Structure(Sobj):
         vv = self.voronoi_vectors(indices,restrict)
         vd = obj()
         for i,vvi in vv.items():
-            vd[i] = np.linalg.norm(vvi,axis=1)
+            vd[i] = norm(vvi,axis=1)
         #end for
         return vd
     #end def voronoi_distances
@@ -3075,13 +3129,13 @@ class Structure(Sobj):
     # get nearest neighbors according to constraints (voronoi, max distance, coord. number)
     def nearest_neighbors(self,indices=None,rmax=None,nmax=None,restrict=False,voronoi=False,distances=False,**spec_max):
         if indices is None:
-            indices = arange(len(self.pos))
+            indices = np.arange(len(self.pos))
         #end if
         elem = set(self.elem[indices])
         spec = set(spec_max.keys())
-        if spec==elem or rmax!=None or voronoi:
+        if spec==elem or rmax is not None or voronoi:
             None
-        elif spec<elem and nmax!=None:
+        elif spec<elem and nmax is not None:
             for e in elem:
                 if e not in spec:
                     spec_max[e] = nmax
@@ -3139,7 +3193,7 @@ class Structure(Sobj):
     # determine local chemical coordination limited by constraints
     def chemical_coordination(self,indices=None,nmax=None,rmax=None,restrict=False,voronoi=False,neighbors=False,distances=False,**spec_max):
         if indices is None:
-            indices = arange(len(self.pos))
+            indices = np.arange(len(self.pos))
         #end if
         if not distances:
             neigh = self.nearest_neighbors(indices=indices,nmax=nmax,rmax=rmax,restrict=restrict,voronoi=voronoi,**spec_max)
@@ -3151,9 +3205,9 @@ class Structure(Sobj):
             neigh_elem.extend(self.elem[neigh[i]])
         #end for
         chem_key = tuple(sorted(set(neigh_elem)))
-        chem_coord = zeros((len(indices),len(chem_key)),dtype=int)
+        chem_coord = np.zeros((len(indices),len(chem_key)),dtype=int)
         for i in range(len(indices)):
-            counts = zeros((len(chem_key),),dtype=int)
+            counts = np.zeros((len(chem_key),),dtype=int)
             nn = list(self.elem[neigh[i]])
             for n in range(len(counts)):
                 chem_coord[i,n] = nn.count(chem_key[n])
@@ -3163,7 +3217,7 @@ class Structure(Sobj):
         i=0
         for coord in chem_coord:
             coord = tuple(coord)
-            if not coord in chem_map:
+            if coord not in chem_map:
                 chem_map[coord] = [indices[i]]
             else:
                 chem_map[coord].append(indices[i])
@@ -3171,7 +3225,7 @@ class Structure(Sobj):
             i+=1
         #end for
         for coord,ind in chem_map.items():
-            chem_map[coord] = array(ind,dtype=int)
+            chem_map[coord] = np.array(ind,dtype=int)
         #end for
         results = [chem_key,chem_coord,chem_map]
         if neighbors:
@@ -3189,7 +3243,7 @@ class Structure(Sobj):
         nt,dt = self.neighbor_table(self.pos,distances=True)
         d = dt[:,1]
         rcm = d.min()/2
-        if units!=None:
+        if units is not None:
             rcm = convert(rcm,self.units,units)
         #end if
         return rcm
@@ -3198,17 +3252,17 @@ class Structure(Sobj):
 
     # test needed
     def cell_image(self,p,center=None):
-        pos = array(p,dtype=float)
+        pos = np.array(p,dtype=float)
         if center is None:
             c = self.center.copy()
         else:
-            c = array(center,dtype=float)
+            c = np.array(center,dtype=float)
         #end if
         axes = self.axes
         axinv = inv(axes)
         for i in range(len(pos)):
             u = dot(pos[i]-c,axinv)
-            pos[i] = dot(u-floor(u+.5),axes)+c
+            pos[i] = dot(u-np.floor(u+.5),axes)+c
         #end for
         return pos
     #end def cell_image
@@ -3219,7 +3273,7 @@ class Structure(Sobj):
         if center is None:
             c = self.center.copy()
         else:
-            c = array(center,dtype=float)
+            c = np.array(center,dtype=float)
         #end if        
         points = self.cell_image(points,center=c)
         for i in range(len(points)):
@@ -3232,16 +3286,16 @@ class Structure(Sobj):
     # test needed
     def recenter(self,center=None):
         if center is not None:
-            self.center=array(center,dtype=float)
+            self.center=np.array(center,dtype=float)
         #end if
         pos = self.pos
-        c = empty((1,self.dim),dtype=float)
+        c = np.empty((1,self.dim),dtype=float)
         c[:] = self.center[:]
         axes = self.axes
         axinv = inv(axes)
         for i in range(len(pos)):
             u = dot(pos[i]-c,axinv)
-            pos[i] = dot(u-floor(u+.5),axes)+c
+            pos[i] = dot(u-np.floor(u+.5),axes)+c
         #end for
         self.recenter_k()
     #end def recenter
@@ -3254,7 +3308,7 @@ class Structure(Sobj):
         axinv = inv(axes)
         for i in range(len(pos)):
             u = dot(pos[i],axinv)
-            pos[i] = dot(u-floor(u),axes)
+            pos[i] = dot(u-np.floor(u),axes)
         #end for
     #end def recorner
 
@@ -3274,27 +3328,27 @@ class Structure(Sobj):
             if kcenter is None:
                 c = axes.sum(0)/2
             else:
-                c = array(kcenter)
+                c = np.array(kcenter)
             #end if
             for i in range(len(kpoints)):
                 u = dot(kpoints[i]-c,axinv)
-                u -= floor(u+.5)
-                u[abs(u-.5)<1e-12] -= 1.0
-                u[abs(u   )<1e-12]  = 0.0
+                u -= np.floor(u+.5)
+                u[np.abs(u-.5)<1e-12] -= 1.0
+                u[np.abs(u   )<1e-12]  = 0.0
                 kpoints[i] = dot(u,axes)+c
             #end for
             if remove_duplicates:
                 inside = self.inside(kpoints,axes,c)
                 kpoints  = kpoints[inside]
                 nkpoints = len(kpoints)
-                unique = empty((nkpoints,),dtype=bool)
+                unique = np.empty((nkpoints,),dtype=bool)
                 unique[:] = True
                 nn = nearest_neighbors(1,kpoints)
                 if nkpoints>1:
                     nn.shape = nkpoints,
                     dist = self.distances(kpoints,kpoints[nn])
                     tol = 1e-8
-                    duplicates = arange(nkpoints)[dist<tol]
+                    duplicates = np.arange(nkpoints)[dist<tol]
                     for i in duplicates:
                         if unique[i]:
                             for j in duplicates:
@@ -3318,22 +3372,22 @@ class Structure(Sobj):
 
     # test needed
     def inside(self,pos,axes=None,center=None,tol=1e-8,separate=False):
-        if axes==None:
+        if axes is None:
             axes=self.axes
         #end if
-        if center==None:
+        if center is None:
             center=self.center
         #end if
-        axes = array(axes)
-        center = array(center)
+        axes = np.array(axes)
+        center = np.array(center)
         inside = []
         surface = []
         su = []
         axinv = inv(axes)
         for i in range(len(pos)):
             u = dot(pos[i]-center,axinv)
-            umax = abs(u).max()
-            if abs(umax-.5)<tol:
+            umax = np.abs(u).max()
+            if np.abs(umax-.5)<tol:
                 surface.append(i)
                 su.append(u)
             elif umax<.5:
@@ -3347,10 +3401,10 @@ class Structure(Sobj):
         while i<n:
             j=i+1
             while j<n:
-                du = abs(su[i]-su[j])
+                du = np.abs(su[i]-su[j])
                 match = False
                 for d in drange:
-                    match = match or abs(du[d]-1.)<tol
+                    match = match or np.abs(du[d]-1.)<tol
                 #end for
                 if match:
                     surface[j]=surface[-1]
@@ -3387,15 +3441,15 @@ class Structure(Sobj):
         else:
             tiling = td
         #end if
-        tiling = array(tiling)
+        tiling = np.array(tiling)
 
         matrix_tiling = tiling.shape == (dim,dim)
 
         tilematrix,tilevector = reduce_tilematrix(tiling)
 
-        ncells = int(round( abs(det(tilematrix)) ))
+        ncells = int(np.round( np.abs(det(tilematrix)) ))
 
-        if ncells==1 and abs(tilematrix-identity(self.dim)).sum()<1e-1:
+        if ncells==1 and np.abs(tilematrix-np.identity(self.dim)).sum()<1e-1:
             if in_place:
                 return self
             else:
@@ -3405,14 +3459,14 @@ class Structure(Sobj):
 
         self.recenter()
 
-        elem = array(ncells*list(self.elem))
+        elem = np.array(ncells*list(self.elem))
         pos  = self.tile_points(self.pos,self.axes,tilematrix,tilevector)
         axes = dot(tilematrix,self.axes)
 
         center   = axes.sum(0)/2
         kaxes    = dot(inv(tilematrix.T),self.kaxes)
-        kpoints  = array(self.kpoints)
-        kweights = array(self.kweights)
+        kpoints  = np.array(self.kpoints)
+        kweights = np.array(self.kweights)
         mag      = None
         frozen   = None
         if self.mag is not None:
@@ -3463,22 +3517,22 @@ class Structure(Sobj):
         if tilevec is None:
             tilemat,tilevec = reduce_tilematrix(tilemat)
         #end if
-        if not isinstance(tilemat,ndarray):
-            tilemat = array(tilemat)
+        if not isinstance(tilemat,np.ndarray):
+            tilemat = np.array(tilemat)
         #end if
-        matrix_tiling = abs(tilemat-diag(diag(tilemat))).sum()>0.1
+        matrix_tiling = np.abs(tilemat-np.diag(np.diag(tilemat))).sum()>0.1
         if not matrix_tiling:
-            return self.tile_points_simple(points,axes,diag(abs(tilemat)))
+            return self.tile_points_simple(points,axes,np.diag(np.abs(tilemat)))
         else:
-            if not isinstance(axes,ndarray):
-                axes = array(axes)
+            if not isinstance(axes,np.ndarray):
+                axes = np.array(axes)
             #end if
-            if not isinstance(tilevec,ndarray):
-                tilevec = array(tilevec)
+            if not isinstance(tilevec,np.ndarray):
+                tilevec = np.array(tilevec)
             #end if
             dim     = len(axes)
             npoints = len(points)
-            ntpoints = npoints*int(round(abs(det(tilemat))))
+            ntpoints = npoints*int(np.round(np.abs(det(tilemat))))
             if tilevec.size==dim:
                 tilevec.shape = 1,dim
             #end if
@@ -3505,14 +3559,14 @@ class Structure(Sobj):
 
 
     def tile_points_simple(self,points,axes,tilevec):
-        if not isinstance(points,ndarray):
-            points = array(points)
+        if not isinstance(points,np.ndarray):
+            points = np.array(points)
         #end if
-        if not isinstance(tilevec,ndarray):
-            tilevec = array(tilevec)
+        if not isinstance(tilevec,np.ndarray):
+            tilevec = np.array(tilevec)
         #end if
-        if not isinstance(axes,ndarray):
-            axes = array(axes)
+        if not isinstance(axes,np.ndarray):
+            axes = np.array(axes)
         #end if
         if len(points.shape)==1:
             npoints,dim = len(points),1
@@ -3520,31 +3574,31 @@ class Structure(Sobj):
             npoints,dim = points.shape
         #end if
         t = tilevec
-        ti = array(around(t),dtype=int)
-        noninteger = abs(t-ti).sum()>1e-6
+        ti = np.array(np.around(t),dtype=int)
+        noninteger = np.abs(t-ti).sum()>1e-6
         if noninteger:
             tp = t.prod()
-            if abs(tp-int(tp))>1e-6:
+            if np.abs(tp-int(tp))>1e-6:
                 self.error('tiling vector does not correspond to an integer volume change\ntiling vector: {0}\nvolume change: {1}  {2}  {3}'.format(tilevec,tilevec.prod(),ntpoints,int(ntpoints)))
             #end if
-            t = array(ceil(t),dtype=int)+1
+            t = np.array(np.ceil(t),dtype=int)+1
         else:
             t = ti
         #end if
         if t.min()<0:
             self.error('tiling vector cannot be negative\ntiling vector provided: {}'.format(t))
         #end if
-        ntpoints = npoints*int(round( t.prod() ))
+        ntpoints = npoints*int(np.round( t.prod() ))
         if ntpoints==0:
-            tpoints = array([])
+            tpoints = np.array([])
         else:
-            tpoints = empty((ntpoints,dim))
+            tpoints = np.empty((ntpoints,dim))
             ns=0
             ne=npoints
             for k in range(t[2]):
                 for j in range(t[1]):
                     for i in range(t[0]):
-                        v = dot(array([[i,j,k]]),axes)
+                        v = dot(np.array([[i,j,k]]),axes)
                         for d in range(dim):
                             tpoints[ns:ne,d] = points[:,d]+v[0,d]
                         #end for
@@ -3602,10 +3656,10 @@ class Structure(Sobj):
             msgs.append('tiled atom count does is not divisible by untiled atom count')
         #end if
         vratio = st.volume()/s.volume()
-        if abs(vratio-float(nt)/n)>tol:
+        if np.abs(vratio-float(nt)/n)>tol:
             msgs.append('tiled/untiled volume ratio does not match tiled/untiled atom count ratio')
         #end if
-        if abs(vratio-abs(det(st.tmatrix)))>tol:
+        if np.abs(vratio-np.abs(det(st.tmatrix)))>tol:
             msgs.append('tiled/untiled volume ratio does not match tiling matrix determinant')
         #end if
         p,w,pmap = self.unique_points_fast(st.pos,st.axes)
@@ -3630,14 +3684,14 @@ class Structure(Sobj):
         if isinstance(tiling,int):
             tiling = self.dim*[tiling]
         #end if
-        tiling = array(tiling)
+        tiling = np.array(tiling)
         if tiling.shape==(self.dim,self.dim):
             tiling = tiling.T
         #end if
         tilematrix,tilevector = reduce_tilematrix(tiling)
-        ncells = int(round( abs(det(tilematrix)) ))
+        ncells = int(np.round( np.abs(det(tilematrix)) ))
         kp     = self.tile_points(kpoints,self.kaxes,tilematrix,tilevector)
-        kw     = array(ncells*list(kweights),dtype=float)/ncells
+        kw     = np.array(ncells*list(kweights),dtype=float)/ncells
         return kp,kw
     #end def kfold
 
@@ -3660,13 +3714,13 @@ class Structure(Sobj):
         self.recenter_k()
         corners = []
         ndim = len(small.axes)
-        imin = empty((ndim,),dtype=int)
-        imax = empty((ndim,),dtype=int)
+        imin = np.empty((ndim,),dtype=int)
+        imax = np.empty((ndim,),dtype=int)
         imin[:] =  1000000
         imax[:] = -1000000
         axinv  = inv(self.kaxes)
         center = self.kaxes.sum(0)/2 
-        c = empty((1,3))
+        c = np.empty((1,3))
         for k in -1,2:
             for j in -1,2:
                 for i in -1,2:
@@ -3674,8 +3728,8 @@ class Structure(Sobj):
                     c = dot(c,small.kaxes)
                     u = dot(c-center,axinv)
                     for d in range(ndim):
-                        imin[d] = min(int(floor(u[0,d])),imin[d])
-                        imax[d] = max(int(ceil(u[0,d])),imax[d])
+                        imin[d] = min(int(np.floor(u[0,d])),imin[d])
+                        imax[d] = max(int(np.ceil(u[0,d])),imax[d])
                     #end for
                 #end for
             #end for
@@ -3688,7 +3742,7 @@ class Structure(Sobj):
         nkpoints = len(self.kpoints)
         kindices = []
         kpoints  = []
-        shift = empty((ndim,))
+        shift = np.empty((ndim,))
         kr = list(range(nkpoints))
         for k in range(imin[2],imax[2]+1):
             for j in range(imin[1],imax[1]+1):
@@ -3698,7 +3752,7 @@ class Structure(Sobj):
                         shift = dot(shift,self.kaxes)
                         kp = self.kpoints[n]+shift
                         u = dot(kp-center,axinv)
-                        if abs(u).max()<.5+1e-10:
+                        if np.abs(u).max()<.5+1e-10:
                             kindices.append(n)
                             kpoints.append(kp)
                         #end if
@@ -3706,15 +3760,15 @@ class Structure(Sobj):
                 #end for
             #end for
         #end for
-        kindices = array(kindices)
-        kpoints  = array(kpoints)
+        kindices = np.array(kindices)
+        kpoints  = np.array(kpoints)
         inside = self.inside(kpoints,axes,center)
         kindices = kindices[inside]
         kpoints  = kpoints[inside]
 
         small.kpoints = kpoints
         small.recenter_k()
-        kpoints = array(small.kpoints)
+        kpoints = np.array(small.kpoints)
         if len(requests)>0:
             results = []
             for request in requests:
@@ -3725,10 +3779,10 @@ class Structure(Sobj):
                     #end for
                     for i in range(len(kpoints)):
                         kp = tuple(self.kpoints[kindices[i]])
-                        kmap[kp].append(array(kpoints[i]))
+                        kmap[kp].append(np.array(kpoints[i]))
                     #end for
                     for kl,ks in kmap.items():
-                        kmap[kl] = array(ks)
+                        kmap[kl] = np.array(ks)
                     #end for
                     res = kmap
                 elif request=='tilematrix':
@@ -3748,12 +3802,12 @@ class Structure(Sobj):
             if self.folded_structure is not None:
                 small = self.folded_structure
             else:
-                return identity(self.dim,dtype=int)
+                return np.identity(self.dim,dtype=int)
             #end if
         #end if
         tm = dot(self.axes,inv(small.axes))
-        tilemat = array(around(tm),dtype=int)
-        error = abs(tilemat-tm).sum()
+        tilemat = np.array(np.around(tm),dtype=int)
+        error = np.abs(tilemat-tm).sum()
         non_integer_elements = error > tol
         if status:
             return tilemat,not non_integer_elements
@@ -3805,13 +3859,13 @@ class Structure(Sobj):
 
     def add_kpoints(self,kpoints,kweights=None,unique=False,recenter=True,cell_unit=False):
         if kweights is None:
-            kweights = ones((len(kpoints),))
+            kweights = np.ones((len(kpoints),))
         #end if
         if cell_unit:
-            kpoints = np.dot(array(kpoints),self.kaxes)
+            kpoints = np.dot(np.array(kpoints),self.kaxes)
         #end if
-        self.kpoints  = append(self.kpoints,kpoints,axis=0)
-        self.kweights = append(self.kweights,kweights)
+        self.kpoints  = np.append(self.kpoints,kpoints,axis=0)
+        self.kweights = np.append(self.kweights,kweights)
         if unique:
             self.unique_kpoints()
         #end if
@@ -3827,9 +3881,9 @@ class Structure(Sobj):
 
     # test needed
     def clear_kpoints(self):
-        self.kpoints  = empty((0,self.dim))
-        self.kweights = empty((0,))
-        if self.folded_structure!=None:
+        self.kpoints  = np.empty((0,self.dim))
+        self.kweights = np.empty((0,))
+        if self.folded_structure is not None:
             self.folded_structure.clear_kpoints()
         #end if
     #end def clear_kpoints
@@ -3838,7 +3892,7 @@ class Structure(Sobj):
     def kgrid_from_kspacing(self,kspacing):
         kgrid = []
         for ka in self.kaxes:
-            km = np.linalg.norm(ka)
+            km = norm(ka)
             kg = int(np.ceil(km/kspacing))
             kgrid.append(kg)
         #end for
@@ -3875,9 +3929,9 @@ class Structure(Sobj):
             )
 
         # create the Monkhorst-Pack mesh
-        kshift = array(kshift,dtype=float)
-        okgrid = 1.0/array(kgrid,dtype=float)
-        kpoints = empty(kpoints_int.shape,dtype=float)
+        kshift = np.array(kshift,dtype=float)
+        okgrid = 1.0/np.array(kgrid,dtype=float)
+        kpoints = np.empty(kpoints_int.shape,dtype=float)
         for i,ki in enumerate(kpoints_int):
             kpoints[i] = (ki+kshift)*okgrid
         #end for
@@ -3893,8 +3947,8 @@ class Structure(Sobj):
             #end if
         #end for
         nkpoints = len(kwmap)
-        kpoints_symm  = empty((nkpoints,self.dim),dtype=float)
-        kweights_symm = empty((nkpoints,),dtype=float)
+        kpoints_symm  = np.empty((nkpoints,self.dim),dtype=float)
+        kweights_symm = np.empty((nkpoints,),dtype=float)
         n = 0
         for ik,kw in kwmap.items():
             kpoints_symm[n]  = kpoints[ik]
@@ -3938,7 +3992,7 @@ class Structure(Sobj):
         kaxes = self.kaxes
         ntable,dtable = self.neighbor_table(kp,-kp,kaxes,distances=True)
         pairs = set()
-        keep = empty((len(kp),),dtype=bool)
+        keep = np.empty((len(kp),),dtype=bool)
         keep[:] = True
         for i in range(len(dtable)):
             if keep[i] and dtable[i,0]<tol:
@@ -3951,7 +4005,7 @@ class Structure(Sobj):
         #end for
         self.kpoints  = self.kpoints[keep]
         self.kweights = self.kweights[keep]
-        if folded and self.folded_structure!=None:
+        if folded and self.folded_structure is not None:
             self.folded_structure.inversion_symmetrize_kpoints(tol)
         #end if
     #end def inversion_symmetrize_kpoints
@@ -3963,10 +4017,10 @@ class Structure(Sobj):
         npoints = len(points)
         if npoints>0:
             if weights is None:
-                weights = ones((npoints,),dtype=int)
+                weights = np.ones((npoints,),dtype=int)
             #end if
             ntable,dtable = self.neighbor_table(points,points,axes,distances=True)
-            keep = empty((npoints,),dtype=bool)
+            keep = np.empty((npoints,),dtype=bool)
             keep[:] = True
             pmo = obj()
             for i in range(npoints):
@@ -4003,22 +4057,22 @@ class Structure(Sobj):
     def unique_points_fast(self,points,axes,weights=None,tol=1e-10):
         # use an O(N) cell table instead of an O(N^2) neighbor table
         pmap = obj()
-        points = array(points)
-        axes   = array(axes)
+        points = np.array(points)
+        axes   = np.array(axes)
         npoints = len(points)
         if npoints>0:
             if weights is None:
-                weights = ones((npoints,),dtype=int)
+                weights = np.ones((npoints,),dtype=int)
             else:
-                weights = array(weights)
+                weights = np.array(weights)
             #end if
-            keep = ones((npoints,),dtype=bool)
+            keep = np.ones((npoints,),dtype=bool)
             # place all the points in the box, converted to unit coords
-            upoints = array(points)
+            upoints = np.array(points)
             axinv = inv(axes)
             for i in range(len(points)):
                 u = dot(points[i],axinv)
-                upoints[i] = u-floor(u)
+                upoints[i] = u-np.floor(u)
             #end for
             # create an integer array of cell indices
             axmax = -1.0
@@ -4026,8 +4080,8 @@ class Structure(Sobj):
                 axmax = max(axmax,norm(a))
             #end for
             #   make an integer space corresponding to 1e-7 self.units spatial resolution
-            cmax = uint64(1e7)*uint64(ceil(axmax)) 
-            ipoints = array(around(cmax*upoints),dtype=uint64)
+            cmax = np.uint64(1e7)*np.uint64(np.ceil(axmax)) 
+            ipoints = np.array(np.around(cmax*upoints),dtype=np.uint64)
             ipoints[ipoints==cmax] = 0 # make the outer boundary the same as the inner boundary
             # load the cell table with point indices
             #   points in the same cell are identical
@@ -4059,7 +4113,7 @@ class Structure(Sobj):
         if len(pos)!=len(self.pos):
             self.pos = pos
         #end if
-        if folded and self.folded_structure!=None:
+        if folded and self.folded_structure is not None:
             self.folded_structure.unique_positions(tol)
         #end if
         return pmap
@@ -4074,7 +4128,7 @@ class Structure(Sobj):
             kaxes = self.kaxes
             ntable,dtable = self.neighbor_table(kp,kp,kaxes,distances=True)
             npoints = len(kp)
-            keep = empty((len(kp),),dtype=bool)
+            keep = np.empty((len(kp),),dtype=bool)
             keep[:] = True
             kmo = obj()
             for i in range(npoints):
@@ -4103,7 +4157,7 @@ class Structure(Sobj):
                 #end if
             #end for
         #end if
-        if folded and self.folded_structure!=None:
+        if folded and self.folded_structure is not None:
             self.folded_structure.unique_kpoints(tol)
         #end if
         return kmap
@@ -4112,10 +4166,10 @@ class Structure(Sobj):
 
     def kmap(self):
         kmap = None
-        if self.folded_structure!=None:
+        if self.folded_structure is not None:
             fs = self.folded_structure
-            self.kpoints  = array(fs.kpoints)
-            self.kweights = array(fs.kweights)
+            self.kpoints  = np.array(fs.kpoints)
+            self.kweights = np.array(fs.kweights)
             kmap = self.unique_kpoints()
         #end if
         return kmap
@@ -4134,8 +4188,8 @@ class Structure(Sobj):
             else:
                 invalid_selector = True
             #end if
-        elif isinstance(selector,(tuple,list,ndarray)):
-            ku_sel = array(selector,dtype=float)
+        elif isinstance(selector,(tuple,list,np.ndarray)):
+            ku_sel = np.array(selector,dtype=float)
             n = 0
             for ku in self.kpoints_unit():
                 if norm(ku-ku_sel)<tol:
@@ -4160,13 +4214,13 @@ class Structure(Sobj):
     # test needed
     def fold_pos(self,large,tol=0.001):
         vratio = large.volume()/self.volume()
-        if abs(vratio-int(around(vratio)))>1e-6:
+        if np.abs(vratio-int(np.around(vratio)))>1e-6:
             self.error('cannot fold positions from large cell into current one\nlarge cell volume is not an integer multiple of the current one\nlarge cell volume: {0}\ncurrent cell volume: {1}\nvolume ratio: {2}'.format(large.volume(),self.volume(),vratio))
         T,success = large.tilematrix(self,status=True)
         if not success:
             self.error('cannot fold positions from large cell into current one\ncells are related by non-integer tilematrix')
         #end if
-        nnearest = int(around(vratio))
+        nnearest = int(np.around(vratio))
         self.elem = large.elem.copy() 
         self.pos  = large.pos.copy()
         self.recenter()
@@ -4176,7 +4230,7 @@ class Structure(Sobj):
         if dt.ravel().max()>tol:
             self.error('cannot fold positions from large cell into current one\npositions of equivalent atoms are further apart than the tolerance\nmax distance encountered: {0}\ntolerance: {1}'.format(dt.ravel().max(),tol))
         #end if
-        counts = zeros((len(self.pos),),dtype=int)
+        counts = np.zeros((len(self.pos),),dtype=int)
         for n in nt.ravel():
             counts[n] += 1
         #end for
@@ -4232,7 +4286,7 @@ class Structure(Sobj):
     # test needed
     def at_Gpoint(self):
         kpu = self.kpoints_unit()
-        kg = array([0,0,0])
+        kg = np.array([0,0,0])
         return len(kpu)==1 and norm(kg-kpu[0])<1e-6
     #end def at_Gpoint
 
@@ -4240,7 +4294,7 @@ class Structure(Sobj):
     # test needed
     def at_Lpoint(self):
         kpu = self.kpoints_unit()
-        kg = array([.5,.5,.5])
+        kg = np.array([.5,.5,.5])
         return len(kpu)==1 and norm(kg-kpu[0])<1e-6
     #end def at_Lpoint
 
@@ -4248,7 +4302,7 @@ class Structure(Sobj):
     # test needed
     def at_real_kpoint(self):
         kpu = 2*self.kpoints_unit()
-        return len(kpu)==1 and abs(kpu-around(kpu)).sum()<1e-6
+        return len(kpu)==1 and np.abs(kpu-np.around(kpu)).sum()<1e-6
     #end def at_real_kpoint
 
 
@@ -4258,9 +4312,9 @@ class Structure(Sobj):
             self.error('bonds is currently only implemented for 3 dimensions')
         #end if
         natoms,dim = self.pos.shape
-        centers = empty((natoms,neighbors,dim))
-        distances = empty((natoms,neighbors))
-        vect      = empty((natoms,neighbors,dim))
+        centers = np.empty((natoms,neighbors,dim))
+        distances = np.empty((natoms,neighbors))
+        vect      = np.empty((natoms,neighbors,dim))
         t = self.tile((3,3,3))
         t.recenter(self.center)
         nn = nearest_neighbors(neighbors+1,t.pos,self.pos)
@@ -4298,7 +4352,7 @@ class Structure(Sobj):
         #end if
         ref = reference.tile((3,3,3))
         ref.recenter(reference.center)
-        rmap = array(3**3*list(range(len(reference.pos)),dtype=int))
+        rmap = np.array(3**3*list(range(len(reference.pos)),dtype=int))
         nn = nearest_neighbors(1,ref.pos,self.pos).ravel()
         displacement = self.pos - ref.pos[nn]
         if not map:
@@ -4329,14 +4383,14 @@ class Structure(Sobj):
         rbi,rbc,rbl,rbv =  ref.bonds(neighbors,vectors=True)
         sbi,sbc,sbl,sbv = self.bonds(neighbors,vectors=True)
         nn = nearest_neighbors(1,reference.pos,self.pos).ravel()
-        distortion = empty(sbv.shape)
-        magnitude  = empty((len(self.pos),))
+        distortion = np.empty(sbv.shape)
+        magnitude  = np.empty((len(self.pos),))
         for i in range(len(self.pos)):
             ir = nn[i]
             bonds  = sbv[i]
             rbonds = rbv[ir]
-            ib  = empty((neighbors,),dtype=int)
-            ibr = empty((neighbors,),dtype=int)
+            ib  = np.empty((neighbors,),dtype=int)
+            ibr = np.empty((neighbors,),dtype=int)
             r  = list(range(neighbors))
             rr = list(range(neighbors))
             for n in range(neighbors):
@@ -4373,7 +4427,7 @@ class Structure(Sobj):
         rbi,rbc,rbl =  ref.bonds(neighbors)
         sbi,sbc,sbl = self.bonds(neighbors)
         bondlen = rbl.mean()
-        return abs(1.-sbl/bondlen).max(axis=1)
+        return np.abs(1.-sbl/bondlen).max(axis=1)
     #end def bond_compression
 
 
@@ -4381,7 +4435,7 @@ class Structure(Sobj):
     def boundary(self,dims=(0,1,2),dtol=1e-6):
         dim_eff = len(dims)
         natoms,dim = self.pos.shape
-        bdims = array(dim*[False])
+        bdims = np.array(dim*[False])
         for d in dims:
             bdims[d] = True
         #end for
@@ -4394,7 +4448,7 @@ class Structure(Sobj):
     def embed(self,small,dims=(0,1,2),dtol=1e-6,utol=1e-6):
         small = small.copy()
         small.recenter()
-        center = array(self.center)
+        center = np.array(self.center)
         self.recenter(small.center)
         bind = small.boundary(dims,dtol)
         bpos = small.pos[bind]
@@ -4410,7 +4464,7 @@ class Structure(Sobj):
             small.pos[i]+=dr
         #end for
         ins,surface = small.inside(self.pos,tol=utol,separate=True)
-        replaced = empty((len(self.pos),),dtype=bool)
+        replaced = np.empty((len(self.pos),),dtype=bool)
         replaced[:] = False
         inside = replaced.copy()
         inside[ins] = True
@@ -4430,15 +4484,15 @@ class Structure(Sobj):
                 plist.append(pos[i])
             #end if
         #end for
-        remove = arange(len(self.pos))[inside & logical_not(replaced)]
+        remove = np.arange(len(self.pos))[inside & np.logical_not(replaced)]
         remove.sort()
-        remove = flipud(remove)
+        remove = np.flipud(remove)
         for i in remove:
             elist.pop(i)
             plist.pop(i)
         #end for
         self.set_elem(elist)
-        self.pos  = array(plist)
+        self.pos  = np.array(plist)
         self.recenter(center)
         return dmax
     #end def embed
@@ -4454,8 +4508,8 @@ class Structure(Sobj):
         natoms,dim=self.pos.shape
         ncells=3**3
         ntile = ncells*natoms
-        pos = empty((ntile,dim))
-        ind = empty((ntile,),dtype=int)
+        pos = np.empty((ntile,dim))
+        ind = np.empty((ntile,),dtype=int)
         oind = list(range(natoms))
         for nt in range(ncells):
             n=nt*natoms
@@ -4466,7 +4520,7 @@ class Structure(Sobj):
         for k in -1,0,1:
             for j in -1,0,1:
                 for i in -1,0,1:
-                    iv = array([[i,j,k]])
+                    iv = np.array([[i,j,k]])
                     v = dot(iv,self.axes)
                     for d in range(dim):
                         ns = nt*natoms
@@ -4478,7 +4532,7 @@ class Structure(Sobj):
             #end for
         #end for
         
-        inside = empty(ntile,)
+        inside = np.empty(ntile,)
         inside[:]=False
         ins = cell.inside(pos)
         inside[ins]=True
@@ -4521,7 +4575,7 @@ class Structure(Sobj):
         ax2  = s2.axes
         pos1 = s1.pos
         pos2 = s2.pos
-        min_image &= abs(ax1-ax2).max()<1e-6
+        min_image &= np.abs(ax1-ax2).max()<1e-6
         if min_image:
             dp = self.min_image_vectors(pos1,pos2,ax1,pairs=False)
             pos2 = pos1 + dp
@@ -4570,7 +4624,7 @@ class Structure(Sobj):
         if self.units!='B':
             a = convert(a,self.units,'B')
         #end if
-        volume = abs(det(a))
+        volume = np.abs(det(a))
         b = 2*pi*inv(a).T
         rconv = 8*(3.*volume/(4*pi))**(1./3)
         kconv = 2*pi/rconv
@@ -4582,7 +4636,7 @@ class Structure(Sobj):
         p = Sobj()
         m = Sobj()
         for n in range(1,nshells+1):
-            i = mgrid[-n:n+1,-n:n+1,-n:n+1]
+            i = np.mgrid[-n:n+1,-n:n+1,-n:n+1]
             i = i.reshape(3,(2*n+1)**3)
             R = sqrt((dot(a,i)**2).sum(0))
             G2 = (dot(b,i)**2).sum(0)
@@ -4596,9 +4650,9 @@ class Structure(Sobj):
             domains = [p,m]
             vshell.append(0.)
             for d in domains:
-                vshell[n] += (erfc(kconv*d.R)/d.R).sum() + 4*pi/volume*(exp(gconst*d.G2)/d.G2).sum()
+                vshell[n] += (erfc(kconv*d.R)/d.R).sum() + 4*pi/volume*(np.exp(gconst*d.G2)/d.G2).sum()
             #end for
-            if abs(vshell[n]-vshell[n-1])<tol:
+            if np.abs(vshell[n]-vshell[n-1])<tol:
                 break
             #end if
         #end for
@@ -4685,10 +4739,10 @@ class Structure(Sobj):
                 tokens = lines[1].split()
                 if len(tokens)==4:
                     e = tokens[0]
-                    p = array(tokens[1:],float)
+                    p = np.array(tokens[1:],float)
                 #end if
             except:
-                None
+                pass
             #end try
             if p is not None:
                 elem.append(e)
@@ -4700,7 +4754,7 @@ class Structure(Sobj):
                     tokens = l.split()
                     if len(tokens)==4:
                         elem.append(tokens[0])
-                        pos.append(array(tokens[1:],float))
+                        pos.append(np.array(tokens[1:],float))
                         natoms+=1
                         if natoms==ntot:
                             break
@@ -4714,7 +4768,7 @@ class Structure(Sobj):
         #end if
         self.dim   = 3
         self.set_elem(elem)
-        self.pos   = array(pos)
+        self.pos   = np.array(pos)
         self.units = 'A'
     #end def read_xyz
 
@@ -4733,7 +4787,7 @@ class Structure(Sobj):
             if isinstance(n,str):
                 elem.append(n)
             else:
-                elem.append(pt.simple_elements[n].symbol)
+                elem.append(ptable.simple_elements[n].symbol)
             #end if
         #end for
         self.dim   = 3
@@ -4757,17 +4811,17 @@ class Structure(Sobj):
         #end if
         dim = 3
         scale = float(lines[1].strip())
-        axes = empty((dim,dim))
-        axes[0] = array(lines[2].split(),dtype=float)
-        axes[1] = array(lines[3].split(),dtype=float)
-        axes[2] = array(lines[4].split(),dtype=float)
+        axes = np.empty((dim,dim))
+        axes[0] = np.array(lines[2].split(),dtype=float)
+        axes[1] = np.array(lines[3].split(),dtype=float)
+        axes[2] = np.array(lines[4].split(),dtype=float)
         if scale<0.0:
-            scale = abs(scale)/det(axes)
+            scale = np.abs(scale)/det(axes)
         #end if
         axes = scale*axes
         tokens = lines[5].split()
         if tokens[0].isdigit():
-            counts = array(tokens,dtype=int)
+            counts = np.array(tokens,dtype=int)
             if elem is None:
                 self.error('variable elem must be provided to read_poscar() to assign atomic species to positions for POSCAR format')
             elif len(elem)!=len(counts):
@@ -4776,7 +4830,7 @@ class Structure(Sobj):
             lcur = 6
         else:
             elem   = tokens
-            counts = array(lines[6].split(),dtype=int)
+            counts = np.array(lines[6].split(),dtype=int)
             lcur = 7
         #end if
         species = elem
@@ -4826,8 +4880,8 @@ class Structure(Sobj):
         for i in range(npos):
             spos.append(lines[lcur+i].split())
         #end for
-        spos = array(spos)
-        pos  = array(spos[:,0:3],dtype=float)
+        spos = np.array(spos)
+        pos  = np.array(spos[:,0:3],dtype=float)
         if cartesian:
             pos = scale*pos
         else:
@@ -4836,7 +4890,7 @@ class Structure(Sobj):
         self.set_elem(elem)
         self.pos = pos
         if selective_dynamics or spos.shape[1]>3:
-            move = array(spos[:,3:6],dtype=str)
+            move = np.array(spos[:,3:6],dtype=str)
             self.freeze(list(range(self.size())),directions=move=='F')
         #end if
     #end def read_poscar
@@ -4888,8 +4942,8 @@ class Structure(Sobj):
                 #end if
             #end if
         #end for
-        axes = array(axes,dtype=float)
-        pos  = array(pos,dtype=float)
+        axes = np.array(axes,dtype=float)
+        pos  = np.array(pos,dtype=float)
         if unit_pos:
             pos = dot(pos,axes)
         #end if
@@ -4901,7 +4955,7 @@ class Structure(Sobj):
         self.pos   = pos
         self.units = 'A'
         if len(constrain_relax)>0:
-            constrain_relax = array(constrain_relax)
+            constrain_relax = np.array(constrain_relax)
             self.freeze(list(range(self.size())),directions=constrain_relax=='.true.')
         #end if
     #end def read_fhi_aims
@@ -4948,7 +5002,7 @@ class Structure(Sobj):
             p = s.pos[i]
             c+=' {0:2} {1:12.8f} {2:12.8f} {3:12.8f}\n'.format(e,p[0],p[1],p[2])
         #end for
-        if filepath!=None:
+        if filepath is not None:
             open(filepath,'w').write(c)
         #end if
         return c
@@ -4970,23 +5024,23 @@ class Structure(Sobj):
         c += '   {0} 1\n'.format(len(s.elem))
         for i in range(len(s.elem)):
             e = s.elem[i]
-            identified = e in pt.elements
+            identified = e in ptable.elements
             if not identified:
                 if len(e)>2:
                     e = e[0:2]
                 elif len(e)==2:
                     e = e[0:1]
                 #end if
-                identified = e in pt.elements
+                identified = e in ptable.elements
             #end if
             if not identified:
                 self.error('{0} is not an element\nxsf file cannot be written'.format(e))
             #end if
-            enum = pt.elements[e].atomic_number
+            enum = ptable.elements[e].atomic_number
             r = s.pos[i]
             c += '   {0:>3} {1:12.8f}  {2:12.8f}  {3:12.8f}\n'.format(enum,r[0],r[1],r[2])
         #end for
-        if filepath!=None:
+        if filepath is not None:
             open(filepath,'w').write(c)
         #end if
         return c
@@ -5025,7 +5079,7 @@ class Structure(Sobj):
         for p,e in zip(self.pos,self.elem):
             c += 'atom_frac   {0: 12.8f}  {1: 12.8f}  {2: 12.8f}  {3}\n'.format(p[0],p[1],p[2],e)
         #end for
-        if filepath!=None:
+        if filepath is not None:
             open(filepath,'w').write(c)
         #end if
         return c
@@ -5040,7 +5094,7 @@ class Structure(Sobj):
         ax = self.axes.copy()
         a  = self.axes[iz]
         dc = self.center-ax.sum(0)/2
-        pp = array([0*a,ax[ix],ax[ix]+ax[iy],ax[iy],0*a])
+        pp = np.array([0*a,ax[ix],ax[ix]+ax[iy],ax[iy],0*a])
         for i in range(len(pp)):
             pp[i]+=dc
             pp[i]-=dot(a,pp[i])/dot(a,a)*a
@@ -5104,7 +5158,7 @@ class Structure(Sobj):
         ax = self.kaxes.copy()
         a  = ax[iz]
         dc = 0*a
-        pp = array([0*a,ax[ix],ax[ix]+ax[iy],ax[iy],0*a])
+        pp = np.array([0*a,ax[ix],ax[ix]+ax[iy],ax[iy],0*a])
         for i in range(len(pp)):
             pp[i]+=dc
             pp[i]-=dot(a,pp[i])/dot(a,a)*a
@@ -5159,7 +5213,7 @@ class Structure(Sobj):
                 an.append(ptable[esymb].atomic_number)
             #end if
         #end for
-        return array(an,dtype='intc')
+        return np.array(an,dtype='intc')
     #end def get_atomic_numbers
 
     def get_magnetic_moments(self):
@@ -5264,7 +5318,7 @@ class Structure(Sobj):
         if not unit:
             # Transform to Cartesian
             axes = self.axes
-            axinv = np.linalg.inv(axes)
+            axinv = inv(axes)
             for n,(R,t) in enumerate(zip(rotations,translations)):
                 rotations[n]    = np.dot(axinv,np.dot(R,axes))
                 translations[n] = np.dot(t,axes)
@@ -5456,7 +5510,7 @@ class Structure(Sobj):
             tmatrix    = None
         else:
             s_trans = self.copy()
-            R = np.dot(np.linalg.inv(s.axes),sp.axes)
+            R = np.dot(inv(s.axes),sp.axes)
             s_trans.matrix_transform(R.T)
             if tmatrix is not None:
                 s_trans = s_trans.tile(tmatrix)
@@ -5483,17 +5537,17 @@ class Structure(Sobj):
                 b = axes[1,1]
                 c = axes[2,2]
             elif bl_type=='Cubic Body Centered':
-                a = np.linalg.norm(axes[0])*2/np.sqrt(3.)
+                a = norm(axes[0])*2/np.sqrt(3.)
                 b = a
                 c = a
             elif bl_type=='Cubic Face Centered':
-                a = np.linalg.norm(axes[0])*2/np.sqrt(2.)
+                a = norm(axes[0])*2/np.sqrt(2.)
                 b = a
                 c = a
             elif bl_type=='Hexagonal Primitive':
-                a = np.linalg.norm(axes[0])
+                a = norm(axes[0])
                 b = a
-                c = np.linalg.norm(axes[2])
+                c = norm(axes[2])
             else:
                 self.error('Unrecognized RMG bravais_lattice_type "{}"'.format(bl_type))
             #end if
@@ -5524,13 +5578,6 @@ Structure.set_operations()
 #
 #  installation of seekpath
 #    pip install seekpath
-import itertools
-from periodic_table import pt as ptable
-try:
-    from numpy import array_equal
-except:
-    array_equal = unavailable('numpy','array_equal')
-#end try
 try:
     import seekpath
     from seekpath import get_explicit_k_path
@@ -5595,7 +5642,7 @@ def get_conventional_cell(
     bcharge     = structure.background_charge*volfac
     pos         = dot(posd,axes)
     sout        = structure.copy()
-    elem        = empty(len(enumbers), dtype='str')
+    elem        = np.empty(len(enumbers), dtype='str')
     for el in ptable.elements.items():
         elem[enumbers==el[1].atomic_number]=el[0]
     #end for
@@ -5621,7 +5668,7 @@ def get_primitive_cell(
     bcharge     = structure.background_charge*volfac
     pos         = dot(posd,axes)
     sout        = structure.copy()
-    elem        = array(enumbers, dtype='str')
+    elem        = np.array(enumbers, dtype='str')
     for el in ptable.elements.items():
         elem[enumbers==el[1].atomic_number]=el[0]
     #end for
@@ -5649,7 +5696,7 @@ def get_kpath(
         structure.change_units('A')
         axes    = structure.axes
         primlat = seekpathout['primitive_lattice']
-        if not isclose(primlat, axes).all():
+        if not np.isclose(primlat, axes).all():
             #print primlat, axes
             Structure.class_error('Input lattice is not the conventional lattice. If you like otherwise, set check_standard=False.')
         #end if
@@ -5725,14 +5772,14 @@ def get_band_tiling(
 
     def cube_deviation(axes):
         a = axes
-        volume = abs(dot(cross(axes[0,:], axes[1,:]), axes[2,:]))
+        volume = np.abs(dot(cross(axes[0,:], axes[1,:]), axes[2,:]))
         dc = volume**(1./3)*sqrt(2.)
-        d1 = abs(norm(a[0]+a[1])-dc)
-        d2 = abs(norm(a[1]+a[2])-dc)
-        d3 = abs(norm(a[2]+a[0])-dc)
-        d4 = abs(norm(a[0]-a[1])-dc)
-        d5 = abs(norm(a[1]-a[2])-dc)
-        d6 = abs(norm(a[2]-a[0])-dc)
+        d1 = np.abs(norm(a[0]+a[1])-dc)
+        d2 = np.abs(norm(a[1]+a[2])-dc)
+        d3 = np.abs(norm(a[2]+a[0])-dc)
+        d4 = np.abs(norm(a[0]-a[1])-dc)
+        d5 = np.abs(norm(a[1]-a[2])-dc)
+        d6 = np.abs(norm(a[2]-a[0])-dc)
         return (d1+d2+d3+d4+d5+d6)/(6*dc)
     #end def cube_deviation
 
@@ -5767,9 +5814,9 @@ def get_band_tiling(
     def alphas_on_grid(alphas, divs):
         new_alphas = []
         for alpha in alphas:
-            abs_alpha  = abs(alpha)
-            sign_alpha = sign(alpha) 
-            new_alpha  = round(abs_alpha*divs)*1./divs*sign_alpha
+            abs_alpha  = np.abs(alpha)
+            sign_alpha = np.sign(alpha) 
+            new_alpha  = np.round(abs_alpha*divs)*1./divs*sign_alpha
             new_alphas.append(new_alpha)
         #end for
         return new_alphas
@@ -5778,7 +5825,7 @@ def get_band_tiling(
     def find_alphas(structure, kpoints_label, kpoints_rel, check_standard):
         # Read wavevectors from the input and return the differences between all wavevectors (alphas) 
         kpath       = get_kpath(structure = structure, check_standard = check_standard)
-        kpath_label = array(kpath['explicit_kpoints_labels'])
+        kpath_label = np.array(kpath['explicit_kpoints_labels'])
         kpath_rel   = kpath['explicit_kpoints_rel']
         kpts        = dict()
     
@@ -5788,9 +5835,9 @@ def get_band_tiling(
                 Structure.class_error('Please define symbolic or crystal coordinates for kpoints. e.g. [\'GAMMA\', \'K\']  or [[0.0, 0.0, 0.0], [0.5, 0.5, 0.5]]')
             else:
                 for k in kpoints_rel:
-                    kindex = isclose(kpath_rel,k, atol=1e-5).all(1)
+                    kindex = np.isclose(kpath_rel,k, atol=1e-5).all(1)
                     if any(kindex):
-                        kpts[kpath_label[kindex][0]] = array(k)
+                        kpts[kpath_label[kindex][0]] = np.array(k)
                     else:
                         Structure.class_error('{0} is not found in the kpath'.format(k))
                     #end if
@@ -5805,17 +5852,17 @@ def get_band_tiling(
                 for k in kpoints_label:
                     kindex = k == kpath_label
                     if any(kindex):
-                        if k == '' or k == None:
+                        if k == '' or k is None:
                             k = '{0}'.format(num_kpoints)
                         #end if
-                        kpts[k] = array(kpath_rel[kindex][0])
+                        kpts[k] = np.array(kpath_rel[kindex][0])
                     else:
                         Structure.class_error('{0} is not found in the kpath'.format(k))
                     #end if
                 #end for
             #end if
         #end if
-        alphas = array([x[0] - x[1] for x in itertools.combinations(kpts.values(),2)]) #Combinations of k_1 - k_2 in kpts list
+        alphas = np.array([x[0] - x[1] for x in itertools.combinations(kpts.values(),2)]) #Combinations of k_1 - k_2 in kpts list
         kpt0 = list(kpts.values())[0]
         return alphas, kpt0
     #end def find_alphas
@@ -5850,12 +5897,12 @@ def get_band_tiling(
                 new_alphas = alphas_on_grid(alphas, c)
 
     
-                rec_grid_voxel = array([1./a_1,1./a_2,1./a_3]) # reciprocal grid voxel size
+                rec_grid_voxel = np.array([1./a_1,1./a_2,1./a_3]) # reciprocal grid voxel size
                 rem = []
                 for alpha in alphas:
-                    rem.append(mod(abs(alpha), rec_grid_voxel))
+                    rem.append(np.mod(np.abs(alpha), rec_grid_voxel))
                 #end for
-                if all(isclose(rem,0.0,atol=ktol)):
+                if np.all(np.isclose(rem,0.0,atol=ktol)):
                     n1     = a_1
                     n2     = a_2
                     n3     = a_3
@@ -5910,10 +5957,10 @@ def get_band_tiling(
                             [0, n2//g23, p*n3//g23], 
                             [0,0,n3]]
                         comm = []
-                        div = array([n1, n2, n3])
+                        div = np.array([n1, n2, n3])
                         new_alphas = alphas_on_grid(alphas, div)
                         for new_alpha in new_alphas:
-                            if (isclose(abs(dot(temp_mat,new_alpha))%1.0, 0, atol = 1e-6)).all():
+                            if (np.isclose(np.abs(dot(temp_mat,new_alpha))%1.0, 0, atol = 1e-6)).all():
                                 comm.append(True) # new_alpha is commensurate with tmat
                             else:
                                 comm.append(False)
@@ -5935,7 +5982,7 @@ def get_band_tiling(
         final_axes       = []
         final_t          = []
         final_cubicity   = 1e6
-        mats             = array(mats)
+        mats             = np.array(mats)
         for m in mats:
             axes     = structure.axes.copy()
             s        = structure.copy()
@@ -6055,9 +6102,9 @@ def interpolate_structures(struct1,struct2=None,images=None,min_image=True,recen
 
     # repackage into physical system objects if requested
     if repackage:
-        if system1!=None:
+        if system1 is not None:
             system = system1
-        elif system2!=None:
+        elif system2 is not None:
             system = system2
         else:
             Structure.class_error('cannot repackage into physical systems since no system object was provided in place of a structure','interpolate_structures')
@@ -6108,8 +6155,8 @@ class DefectStructure(Structure):
 
     def defect_from_bond_compression(self,compression_cutoff,bond_eq,neighbors):
         bind,bcent,blens = self.bonds(neighbors)
-        ind = bind[ abs(blens/bond_eq - 1.) > compression_cutoff ]
-        idefect = array(list(set(ind.ravel())))
+        ind = bind[ np.abs(blens/bond_eq - 1.) > compression_cutoff ]
+        idefect = np.array(list(set(ind.ravel())))
         defect = self.carve(idefect)
         return defect
     #end def defect_from_bond_compression
@@ -6124,7 +6171,7 @@ class DefectStructure(Structure):
 
 
     def compare(self,dist_cutoff,d1,d2=None):
-        if d2==None:
+        if d2 is None:
             d2 = d1
             d1 = self
         #end if
@@ -6139,7 +6186,7 @@ class DefectStructure(Structure):
         nn = nearest_neighbors(1,dlarge,dsmall)
         dist = dsmall.distances(dlarge[nn.ravel()])
         dmatch = dist<dist_cutoff
-        ismall = array(list(range(len(dsmall.pos))))
+        ismall = np.array(list(range(len(dsmall.pos))))
         ismall = ismall[dmatch]
         ilarge = nn[ismall]
         if natoms1<natoms2:
@@ -6325,7 +6372,7 @@ class Crystal(Structure):
             angular_units = 'degrees',
             atoms     = ('O','O'),
             basis     = [[0,0,1.15/2],[0,0,-1.15/2]],
-            basis_vectors = identity(3)
+            basis_vectors = np.identity(3)
             ),
         # http://en.wikipedia.org/wiki/Calcium_oxide
         # http://www.springermaterials.com/docs/info/10681719_224.html
@@ -6490,7 +6537,7 @@ class Crystal(Structure):
     kc_keys = list(known_crystals.keys())
     for (name,cell) in kc_keys:
         desc = known_crystals[name,cell]
-        if cell=='prim' and not (name,'conv') in known_crystals:
+        if cell=='prim' and (name,'conv') not in known_crystals:
             cdesc = desc.copy()
             if cdesc.cell=='primitive':
                 cdesc.cell = 'conventional'
@@ -6648,7 +6695,7 @@ class Crystal(Structure):
             self.error('the '+lattice+' lattice depends on the constants '+str(self.lattice_constants[lattice])+'\n you provided '+str(len(constants))+': '+str(constants))
         #end if
         if isinstance(atoms,str):
-            if basis!=None:
+            if basis is not None:
                 atoms = len(basis)*[atoms]
             else:
                 atoms=[atoms]
@@ -6674,10 +6721,10 @@ class Crystal(Structure):
         if len(cscale)!=len(constants):
             self.error('cscale and constants must be the same length')
         #end if
-        basis  = array(basis)
-        tiling = array(tiling,dtype=int)
-        cscale = array(cscale)
-        constants = cscale*array(constants)
+        basis  = np.array(basis)
+        tiling = np.array(tiling,dtype=int)
+        cscale = np.array(cscale)
+        constants = cscale*np.array(constants)
 
         a,b,c,alpha,beta,gamma = None,None,None,None,None,None
         if angular_units=='radians':
@@ -6727,13 +6774,13 @@ class Crystal(Structure):
         sb,cb = sin(beta) ,cos(beta)
         sg,cg = sin(gamma),cos(gamma)
         y     = (ca-cg*cb)/sg
-        a1c = a*array([1,0,0])
-        a2c = b*array([cg,sg,0])
-        a3c = c*array([cb,y,sqrt(sb**2-y**2)])
-        #a1c = array([a,0,0])
-        #a2c = array([b*cos(gamma),b*sin(gamma),0])
-        #a3c = array([c*cos(beta),c*cos(alpha)*sin(beta),c*sin(alpha)*sin(beta)])
-        axes_conv = array([a1c,a2c,a3c]).copy()
+        a1c = a*np.array([1,0,0])
+        a2c = b*np.array([cg,sg,0])
+        a3c = c*np.array([cb,y,sqrt(sb**2-y**2)])
+        #a1c = np.array([a,0,0])
+        #a2c = np.array([b*cos(gamma),b*sin(gamma),0])
+        #a3c = np.array([c*cos(beta),c*cos(alpha)*sin(beta),c*sin(alpha)*sin(beta)])
+        axes_conv = np.array([a1c,a2c,a3c]).copy()
 
         if axes is None:
             if cell not in self.cell_types:
@@ -6774,7 +6821,7 @@ class Crystal(Structure):
             else:
                 self.error('the variable centering must be specified\n  valid options are: P,A,B,C,I,F,R')
             #end if
-            axes_prim = array([a1,a2,a3])
+            axes_prim = np.array([a1,a2,a3])
             if cell=='primitive':
                 axes = axes_prim
             elif cell=='conventional':            
@@ -6782,9 +6829,9 @@ class Crystal(Structure):
                 points.extend(self.centerings[centering])
             #end if            
         elif known_crystal:
-            axes = dot(diag([a,b,c]),array(axes))
+            axes = dot(np.diag([a,b,c]),np.array(axes))
         #end if
-        points = array(points,dtype=float)
+        points = np.array(points,dtype=float)
 
         elem = []
         pos  = []
@@ -6807,11 +6854,11 @@ class Crystal(Structure):
                 pos.append(p)
             #end for
         #end for
-        pos = array(pos)
+        pos = np.array(pos)
 
         self.set(
-            constants = array([a,b,c]),
-            angles    = array([alpha,beta,gamma]),
+            constants = np.array([a,b,c]),
+            angles    = np.array([alpha,beta,gamma]),
             generation_info = generation_info
             )
 
@@ -6850,33 +6897,33 @@ class Jellium(Structure):
     def __init__(self,charge=None,background_charge=None,cell=None,volume=None,density=None,rs=None,dim=3,
                  axes=None,kpoints=None,kweights=None,kgrid=None,kshift=None,units=None,tiling=None):
         del tiling
-        if rs!=None:
-            if not dim in self.prefactors:
+        if rs is not None:
+            if dim not in self.prefactors:
                 self.error('only 1,2, or 3 dimensional jellium is currently supported\n  you requested one with dimension {0}'.format(dim))
             #end if
             density = 1.0/(self.prefactors[dim]*rs**dim)
         #end if
-        if axes!=None:
+        if axes is not None:
             cell = axes
         #end if
-        if background_charge!=None:
+        if background_charge is not None:
             charge = background_charge
         #end if
-        if cell!=None:
-            cell   = array(cell)
+        if cell is not None:
+            cell   = np.array(cell)
             dim    = len(cell)
             volume = det(cell)
-        elif volume!=None:
+        elif volume is not None:
             volume = float(volume)
-            cell   = volume**(1./dim)*identity(dim)
+            cell   = volume**(1./dim)*np.identity(dim)
         #end if
-        if density!=None:
+        if density is not None:
             density = float(density)
-            if charge is None and volume!=None:
+            if charge is None and volume is not None:
                 charge = density*volume
-            elif volume is None and charge!=None:
+            elif volume is None and charge is not None:
                 volume = charge/density
-                cell   = volume**(1./dim)*identity(dim)
+                cell   = volume**(1./dim)*np.identity(dim)
             #end if
         #end if
         if charge is None or cell is None:
@@ -6911,10 +6958,10 @@ def generate_cell(shape,tiling=None,scale=1.,units=None,struct_type=Structure):
         tiling = (1,1,1)
     #end if
     axes = Sobj()
-    axes.sc  =  1.*array([[ 1,0,0],[0, 1,0],[0,0, 1]])
-    axes.bcc = .5*array([[-1,1,1],[1,-1,1],[1,1,-1]])
-    axes.fcc = .5*array([[ 1,1,0],[1, 0,1],[0,1, 1]])
-    ax     = dot(diag(tiling),axes[shape])
+    axes.sc  =  1.*np.array([[ 1,0,0],[0, 1,0],[0,0, 1]])
+    axes.bcc = .5*np.array([[-1,1,1],[1,-1,1],[1,1,-1]])
+    axes.fcc = .5*np.array([[ 1,1,0],[1, 0,1],[0,1, 1]])
+    ax     = dot(np.diag(tiling),axes[shape])
     center = ax.sum(0)/2
     c = Structure(axes=ax,scale=scale,center=center,units=units)
     if struct_type!=Structure:
@@ -6966,7 +7013,7 @@ def generate_atom_structure(
     if atom is None:
         Structure.class_error('atom must be provided','generate_atom_structure')
     #end if
-    if Lbox!=None:
+    if Lbox is not None:
         axes = [[Lbox*(1-skew),0,0],[0,Lbox,0],[0,0,Lbox*(1+skew)]]
     #end if
     if axes is None:
@@ -7000,7 +7047,7 @@ def generate_dimer_structure(
     if separation is None:
         Structure.class_error('separation must be provided to construct dimer','generate_dimer_structure')
     #end if
-    if Lbox!=None:
+    if Lbox is not None:
         axes = [[Lbox*(1-skew),0,0],[0,Lbox,0],[0,0,Lbox*(1+skew)]]
     #end if
     if axis=='x':
@@ -7059,7 +7106,7 @@ def generate_trimer_structure(
     if axis==axis2:
         Structure.class_error('axis and axis2 must be different to define the trimer plane\nyou provided {0} for both'.format(axis),'generate_trimer_structure')
     #end if
-    if Lbox!=None:
+    if Lbox is not None:
         axes = [[Lbox*(1-skew),0,0],[0,Lbox,0],[0,0,Lbox*(1+skew)]]
     #end if
     p1 = [0,0,0]
@@ -7097,7 +7144,7 @@ def generate_trimer_structure(
         s = Structure(elem=trimer,pos=[p1,p2,p3],axes=axes,kgrid=kgrid,kshift=kshift,units=units)
         s.center_molecule()
     #end if
-    if plane_rot!=None:
+    if plane_rot is not None:
         s.rotate_plane(axpair,plane_rot,angular_units)
     #end if
     return s

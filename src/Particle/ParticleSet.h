@@ -125,9 +125,6 @@ public:
    */
   Buffer_t Collectables;
 
-  ///Property history vector
-  std::vector<std::vector<FullPrecRealType>> PropertyHistory;
-  std::vector<int> PHindex;
   ///@}
 
   ///current MC step
@@ -419,11 +416,6 @@ public:
 
   void initPropertyList();
   inline int addProperty(const std::string& pname) { return PropertyList.add(pname.c_str()); }
-
-  int addPropertyHistory(int leng);
-  //        void rejectedMove();
-  //        void resetPropertyHistory( );
-  //        void addPropertyHistoryPoint(int index, RealType data);
 
   void convert(const ParticlePos& pin, ParticlePos& pout);
   void convert2Unit(const ParticlePos& pin, ParticlePos& pout);

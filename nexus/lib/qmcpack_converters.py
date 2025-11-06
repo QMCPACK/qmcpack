@@ -43,14 +43,16 @@
 #====================================================================#
 
 
-
 import os
-from generic import obj
-from simulation import Simulation,SimulationInput,SimulationAnalyzer
+import numpy as np
+from developer import obj, error
+from simulation import Simulation, SimulationInput, SimulationAnalyzer
 from pwscf import Pwscf
 from gamess import Gamess
 from pyscf_sim import Pyscf
 from quantum_package import QuantumPackage
+from unit_converter import convert
+from hdfreader import read_hdf
 
 
 # read/write functions associated with pw2qmcpack only
@@ -162,7 +164,7 @@ class Pw2qmcpackInput(SimulationInput):
 
 
     def __init__(self,filepath=None,**vars):
-        if filepath!=None:
+        if filepath is not None:
             self.read(filepath)
         else:
             inputpp = obj()
@@ -186,20 +188,13 @@ def generate_pw2qmcpack_input(prefix='pwscf',outdir='pwscf_output',write_psir=Fa
 
 
 def read_eshdf_eig_data(filename, Ef_list):
-    import numpy as np
-    from numpy import array,pi
-    from numpy.linalg import inv
-    from unit_converter import convert
-    from hdfreader import read_hdf
-    from developer import error
-
     def h5int(i):
-        return array(i,dtype=int)[0]
+        return np.array(i,dtype=int)[0]
     #end def h5int
 
     h        = read_hdf(filename,view=True)
-    axes     = array(h.supercell.primitive_vectors)
-    kaxes    = 2*pi*inv(axes).T
+    axes     = np.array(h.supercell.primitive_vectors)
+    kaxes    = 2*np.pi*np.linalg.inv(axes).T
     nk       = h5int(h.electrons.number_of_kpoints)
     ns       = h5int(h.electrons.number_of_spins)
     if (len(Ef_list) == 1 and ns == 2):
@@ -217,7 +212,7 @@ def read_eshdf_eig_data(filename, Ef_list):
             eig_s = []
             path = 'electrons/kpoint_{0}/spin_{1}'.format(k,s)
             spin = h.get_path(path)
-            eig = convert(array(spin.eigenvalues),'Ha','eV')
+            eig = convert(np.array(spin.eigenvalues),'Ha','eV')
             nst = h5int(spin.number_of_states)
             for st in range(nst):
                 e = eig[st]
@@ -226,8 +221,8 @@ def read_eshdf_eig_data(filename, Ef_list):
                 #end if
             #end for
             data[k,s] = obj(
-                kpoint = array(kp.reduced_k),
-                eig    = array(eig_s),
+                kpoint = np.array(kp.reduced_k),
+                eig    = np.array(eig_s),
                 )
         #end for
     #end for
@@ -450,7 +445,7 @@ class Pw2qmcpack(Simulation):
 def generate_pw2qmcpack(**kwargs):
     sim_args,inp_args = Simulation.separate_inputs(kwargs)
 
-    if not 'input' in sim_args:
+    if 'input' not in sim_args:
         sim_args.input = generate_pw2qmcpack_input(**inp_args)
     #end if
     pw2qmcpack = Pw2qmcpack(**sim_args)
@@ -699,7 +694,7 @@ class Convert4qmcInput(SimulationInput):
 
     def output_files(self):
         prefix = 'sample'
-        if self.prefix!=None:
+        if self.prefix is not None:
             prefix = self.prefix
         #end if
         wfn_file  = prefix+'.Gaussian-G2.xml'
@@ -908,11 +903,11 @@ class Convert4qmc(Simulation):
 
 def generate_convert4qmc(**kwargs):
     sim_args,inp_args = Simulation.separate_inputs(kwargs)
-    if 'identifier' in sim_args and not 'prefix' in inp_args:
+    if 'identifier' in sim_args and 'prefix' not in inp_args:
         inp_args.prefix = sim_args.identifier
     #end if
 
-    if not 'input' in sim_args:
+    if 'input' not in sim_args:
         sim_args.input = generate_convert4qmc_input(**inp_args)
     #end if
     convert4qmc = Convert4qmc(**sim_args)
@@ -1079,7 +1074,7 @@ class Convertpw4qmc(Simulation):
 def generate_convertpw4qmc(**kwargs):
     sim_args,inp_args = Simulation.separate_inputs(kwargs)
 
-    if not 'input' in sim_args:
+    if 'input' not in sim_args:
         sim_args.input = generate_convertpw4qmc_input(**inp_args)
     #end if
     sim = Convertpw4qmc(**sim_args)
@@ -1387,7 +1382,7 @@ def generate_pyscf_to_afqmc(**kwargs):
         #end if
     #end if
 
-    if not 'input' in sim_args:
+    if 'input' not in sim_args:
         sim_args.input = generate_pyscf_to_afqmc_input(**inp_args)
     #end if
     sim = PyscfToAfqmc(**sim_args)

@@ -13,11 +13,6 @@ import datetime
 import importlib
 
 
-nexus_version = 2,1,0
-"""
-Current Nexus version.
-"""
-
 python_supported = 'python3'
 """
 Current Python family supported.
@@ -741,7 +736,7 @@ class Versions(object):
             required = name in self.required_dependencies
             if self.available(name):
                 supported = self.supported(name)
-                unknown = supported == None
+                unknown = supported is None
                 if unknown:
                     if required:
                         req_unknown.append(name)

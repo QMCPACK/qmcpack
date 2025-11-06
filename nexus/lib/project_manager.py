@@ -16,13 +16,11 @@
 #====================================================================#
 
 
-import os
 import time
 import memory
-from generic import obj
-from nexus_base import NexusCore,nexus_core
+from developer import obj
+from nexus_base import NexusCore, nexus_core
 from simulation import Simulation
-from debug import ci
 
 
 def trivial(sim,*args,**kwargs):
@@ -160,7 +158,7 @@ class ProjectManager(NexusCore):
         entry_order = obj()
         def set_entry_order(sim,entry_order):
             locdir = sim.locdir
-            if not locdir in entry_order:
+            if locdir not in entry_order:
                 entry_order[locdir] = [sim]
             else:
                 entry_order[locdir].append(sim)
@@ -186,7 +184,7 @@ class ProjectManager(NexusCore):
                     #end if
                 #end for
                 for f,sims in filespace.items():
-                    if len(sims)>1 and f!=None:
+                    if len(sims)>1 and f is not None:
                         any_collisions = True
                         msg = 'collision: file '+f+' is overwritten by '
                         for sim in sims:

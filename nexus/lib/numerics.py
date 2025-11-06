@@ -84,14 +84,12 @@
 import sys
 import inspect
 import numpy as np
-from numpy import array,ndarray,zeros,linspace,pi,exp,sqrt,polyfit,polyval
-from numpy import sum,abs,arange,empty,sin,cos,dot,atleast_2d,ogrid
-from numpy import ones_like,sign,cross,prod
+from numpy import pi, exp, sqrt, sin, cos
 from numpy.linalg import norm
-from generic import obj
-from developer import unavailable,warn,error
+from developer import obj, unavailable, error
 from unit_converter import convert
 from periodic_table import pt as ptable
+
 try:
     from scipy.special import betainc
     from scipy.optimize import fmin
@@ -106,9 +104,9 @@ except:
 
 
 # cost functions
-least_squares = lambda p,x,y,f: ((f(p,x)-y)**2).sum()
-absmin        = lambda p,x,y,f: abs(f(p,x)-y).sum()
-madmin        = lambda p,x,y,f: abs(f(p,x)-y).max()
+def least_squares(p, x, y, f):  return ((f(p,x)-y)**2).sum()
+def absmin(p, x, y, f):         return np.abs(f(p,x)-y).sum()
+def madmin(p, x, y, f):         return np.abs(f(p,x)-y).max()
 
 cost_functions = obj(
     least_squares = least_squares,
@@ -134,17 +132,16 @@ def curve_fit(x,y,f,p0,cost='least_squares',optimizer='fmin'):
 
 
 # morse potential
-#               V(r) =  De ( (1-e^-a(r-re))^2 - 1 ) + E_infinity
-morse = lambda p,r: p[2]*((1-exp(-(r-p[0])/p[1]))**2-1)+p[3]
-morse_re    = lambda p: p[0]         # equilibrium separation
-morse_a     = lambda p: 1./p[1]      # 'a' parameter, related to well width
-morse_De    = lambda p: p[2]         # 'De' parameter, related to well depth
-morse_Einf  = lambda p: p[3]         # potential energy at infinite separation
-morse_width = lambda p: p[1]         # well width
-morse_depth = lambda p: morse_De(p)  # well depth
-morse_Ee    = lambda p: morse_Einf(p)-morse_De(p)   # potential energy at equilibrium
-morse_k     = lambda p: 2*morse_De(p)*morse_a(p)**2 # force constant k = d2V/dr2(r=re), Vh=1/2 k r^2
-morse_params= lambda re,a,De,E_inf: (re,1./a,De,E_inf)  # return p given standard inputs
+def morse(p, r):                    return p[2]*((1-exp(-(r-p[0])/p[1]))**2-1)+p[3] # V(r) =  De ( (1-e^-a(r-re))^2 - 1 ) + E_infinity
+def morse_re(p):                    return p[0]                                     # equilibrium separation
+def morse_a(p):                     return 1./p[1]                                  # 'a' parameter, related to well width
+def morse_De(p):                    return p[2]                                     # 'De' parameter, related to well depth
+def morse_Einf(p):                  return p[3]                                     # potential energy at infinite separation
+def morse_width(p):                 return p[1]                                     # well width
+def morse_depth(p):                 return morse_De(p)                              # well depth
+def morse_Ee(p):                    return morse_Einf(p)-morse_De(p)                # potential energy at equilibrium
+def morse_k(p):                     return 2*morse_De(p)*morse_a(p)**2              # force constant k = d2V/dr2(r=re), Vh=1/2 k r^2
+def morse_params(re, a, De, E_inf): return re, 1./a, De, E_inf                      # return p given standard inputs
 
 # morse_reduced_mass gives the reduced mass in Hartree units
 #   m1 and m2 are masses or atomic symbols
@@ -257,7 +254,7 @@ def morse_rDw_fit(re,De,w,m1,m2=None,Einf=0.0,Dunit='eV'):
 #    pf,pmean,perror = morse_fit(r,E,jackknife=True)  returns jackknife estimates of parameters
 def morse_fit(r,E,p0=None,jackknife=False,cost=least_squares,auxfuncs=None,auxres=None,capture=None):
     if isinstance(E,(list,tuple)):
-        E = array(E,dtype=float)
+        E = np.array(E,dtype=float)
     #end if
 
     Edata = None
@@ -269,7 +266,7 @@ def morse_fit(r,E,p0=None,jackknife=False,cost=least_squares,auxfuncs=None,auxre
     pp = None
     if p0 is None:
         # make a simple quadratic fit to get initial guess for morse fit
-        pp = polyfit(r,E,2)
+        pp = np.polyfit(r,E,2)
         r0   = -pp[1]/(2*pp[0])
         E0   = pp[2]+.5*pp[1]*r0
         d2E  = 2*pp[0]
@@ -278,8 +275,8 @@ def morse_fit(r,E,p0=None,jackknife=False,cost=least_squares,auxfuncs=None,auxre
         p0 = r0,sqrt(2*(Einf-E0)/d2E),Einf-E0,Einf
     #end if
     
-    calc_aux = auxfuncs!=None and auxres!=None
-    capture_results = capture!=None
+    calc_aux = auxfuncs is not None and auxres is not None
+    capture_results = capture is not None
     jcapture    = None
     jauxcapture = None
     if capture_results:
@@ -348,7 +345,7 @@ def morse_fit(r,E,p0=None,jackknife=False,cost=least_squares,auxfuncs=None,auxre
 #   by using morse as an auxiliary jackknife function
 def morse_fit_fine(r,E,p0=None,rfine=None,both=False,jackknife=False,cost=least_squares,capture=None):  
     if rfine is None:
-        rfine = linspace(r.min(),r.max(),400)
+        rfine = np.linspace(r.min(),r.max(),400)
     #end if
     auxfuncs = obj(
         Efine = (morse,[None,rfine])
@@ -383,13 +380,41 @@ def morse_fit_fine(r,E,p0=None,rfine=None,both=False,jackknife=False,cost=least_
  
 
 # equation of state
-murnaghan  = lambda p,V: p[0] + p[2]/p[3]*V*((p[1]/V)**p[3]/(p[3]-1)+1)-p[1]*p[2]/(p[3]-1)
-birch      = lambda p,V: p[0] + 9*p[1]*p[2]/16*((p[1]/V)**(2./3)-1)**2*( 2 + (p[3]-4)*((p[1]/V)**(2./3)-1) )
-vinet      = lambda p,V: p[0] + 2*p[1]*p[2]/(p[3]-1)**2*( 2 - (2+3*(p[3]-1)*((V/p[1])**(1./3)-1))*exp(-1.5*(p[3]-1)*((V/p[1])**(1./3)-1)) ) 
+def murnaghan(p, V):
+    return p[0] + p[2] / p[3] * V * ((p[1] / V) ** p[3] / (p[3] - 1) + 1) - p[1] * p[2] / (p[3] - 1)
 
-murnaghan_pressure = lambda p,V: p[1]/p[2]*((p[0]/V)**p[2]-1)
-birch_pressure     = lambda p,V: 1.5*p[1]*(p[0]/V)**(5./3)*((p[0]/V)**(2./3)-1)*(1.+.75*(p[2]-1)*((p[0]/V)**(2./3)-1))
-vinet_pressure     = lambda p,V: 3.*p[1]*(1.-(V/p[0])**(1./3))*(p[0]/V)**(2./3)*exp(1.5*(p[2]-1)*(1.-(V/p[0])**(1./3)))
+def birch(p, V):
+    return p[0] + 9 * p[1] * p[2] / 16 * ((p[1] / V) ** (2.0 / 3) - 1) ** 2 * (
+        2 + (p[3] - 4) * ((p[1] / V) ** (2.0 / 3) - 1)
+    )
+
+def vinet(p, V):
+    return p[0] + 2 * p[1] * p[2] / (p[3] - 1) ** 2 * (
+        2
+        - (2 + 3 * (p[3] - 1) * ((V / p[1]) ** (1.0 / 3) - 1))
+        * exp(-1.5 * (p[3] - 1) * ((V / p[1]) ** (1.0 / 3) - 1))
+    )
+
+def murnaghan_pressure(p, V):
+    return p[1] / p[2] * ((p[0] / V) ** p[2] - 1)
+
+def birch_pressure(p, V):
+    return (
+        1.5
+        * p[1]
+        * (p[0] / V) ** (5.0 / 3)
+        * ((p[0] / V) ** (2.0 / 3) - 1)
+        * (1.0 + 0.75 * (p[2] - 1) * ((p[0] / V) ** (2.0 / 3) - 1))
+    )
+
+def vinet_pressure(p, V):
+    return (
+        3.0
+        * p[1]
+        * (1.0 - (V / p[0]) ** (1.0 / 3))
+        * (p[0] / V) ** (2.0 / 3)
+        * exp(1.5 * (p[2] - 1) * (1.0 - (V / p[0]) ** (1.0 / 3)))
+    )
 
 
 eos_funcs = obj(
@@ -398,11 +423,10 @@ eos_funcs = obj(
     vinet     = vinet,
     )
 
-
-eos_Einf = lambda p: p[0]  # energy at infinite separation
-eos_V    = lambda p: p[1]  # equilibrium volume
-eos_B    = lambda p: p[2]  # bulk modulus
-eos_Bp   = lambda p: p[3]  # B prime
+def eos_Einf(p):    return p[0] # energy at infinite separation
+def eos_V(p):       return p[1] # equilibrium volume
+def eos_B(p):       return p[2] # bulk modulus
+def eos_Bp(p):      return p[3] # B prime
 
 eos_param_tmp = obj(
     Einf = eos_Einf,
@@ -438,10 +462,10 @@ def eos_param(p,param,type='vinet'):
 
 def eos_fit(V,E,type='vinet',p0=None,cost='least_squares',jackknife=False,auxfuncs=None,auxres=None,capture=None):
     if isinstance(V,(list,tuple)):
-        V = array(V,dtype=float)
+        V = np.array(V,dtype=float)
     #end if
     if isinstance(E,(list,tuple)):
-        E = array(E,dtype=float)
+        E = np.array(E,dtype=float)
     #end if
     Edata = None
     if len(E)!=E.size and len(E.shape)==2:
@@ -454,7 +478,7 @@ def eos_fit(V,E,type='vinet',p0=None,cost='least_squares',jackknife=False,auxfun
     eos_func = eos_funcs[type]
 
     if p0 is None:
-        pp = polyfit(V,E,2)
+        pp = np.polyfit(V,E,2)
         V0   = -pp[1]/(2*pp[0])
         B0   = -pp[1]
         Bp0  = 0.0
@@ -462,8 +486,8 @@ def eos_fit(V,E,type='vinet',p0=None,cost='least_squares',jackknife=False,auxfun
         p0 = Einf,V0,B0,Bp0
     #end if
 
-    calc_aux = auxfuncs!=None and auxres!=None
-    capture_results = capture!=None
+    calc_aux = auxfuncs is not None and auxres is not None
+    capture_results = capture is not None
     jcapture    = None
     jauxcapture = None
     if capture_results:
@@ -515,7 +539,7 @@ def eos_fit(V,E,type='vinet',p0=None,cost='least_squares',jackknife=False,auxfun
                 num_variables = len(inspect.getargspec(auxfunc).args)
                 if num_variables > 1:
                     # Assume that the second variable is volume for the pressure fits
-                    auxfunc_p = lambda p: auxfunc(p, eq_vol)
+                    def auxfunc_p(p): return auxfunc(p, eq_vol)
                 else:
                     auxfunc_p = auxfunc
                 #end if 
@@ -563,7 +587,7 @@ def eos_fit(V,E,type='vinet',p0=None,cost='least_squares',jackknife=False,auxfun
 #             if string , will be placed in kwargs: kwargs[position] = input_array
 #   capture: an object that will contain most jackknife info upon exit
 def jackknife(data,function,args=None,kwargs=None,position=None,capture=None):
-    capture_results = capture!=None
+    capture_results = capture is not None
     if capture_results:
         capture.data         = data
         capture.function     = function
@@ -593,7 +617,7 @@ def jackknife(data,function,args=None,kwargs=None,position=None,capture=None):
         if b==0:
             # determine the return type from the first sample
             # and initialize the jackknife sums
-            array_return = isinstance(jsample,ndarray)
+            array_return = isinstance(jsample,np.ndarray)
             if array_return:
                 jsum  = jsample.copy()
                 jsum2 = jsum**2
@@ -675,7 +699,7 @@ def jackknife_aux(jsamples,auxfunc,args=None,kwargs=None,position=None,capture=N
     # check the requested argument position
     argpos,kwargpos,args,kwargs,position = check_jackknife_inputs(args,kwargs,position)
 
-    capture_results = capture!=None
+    capture_results = capture is not None
     if capture_results:
         capture.auxfunc  = auxfunc 
         capture.args     = args    
@@ -725,7 +749,7 @@ def jackknife_aux(jsamples,auxfunc,args=None,kwargs=None,position=None,capture=N
 def check_jackknife_inputs(args,kwargs,position):
     argpos   = False
     kwargpos = False
-    if position!=None:
+    if position is not None:
         if isinstance(position,int):
             argpos = True
         elif isinstance(position,str):
@@ -841,18 +865,18 @@ def ndgrid(*args, **kwargs):
            [[ 1. ,  1.1,  1.2], [ 1. ,  1.1,  1.2]]])
     """
     same_dtype = kwargs.get("same_dtype", True)
-    V = [array(v) for v in args] # ensure all input vectors are arrays
+    V = [np.array(v) for v in args] # ensure all input vectors are arrays
     shape = [len(v) for v in args] # common shape of the outputs
     result = []
     for i, v in enumerate(V):
         # reshape v so it can broadcast to the common shape
         # http://docs.scipy.org/doc/numpy/user/basics.broadcasting.html
-        zero = zeros(shape, dtype=v.dtype)
-        thisshape = ones_like(shape)
+        zero = np.zeros(shape, dtype=v.dtype)
+        thisshape = np.ones_like(shape)
         thisshape[i] = shape[i]
         result.append(zero + v.reshape(thisshape))
     if same_dtype:
-        return array(result) # converts to a common dtype
+        return np.array(result) # converts to a common dtype
     else:
         return result # keeps separate dtype for each output
 
@@ -885,11 +909,11 @@ def simstats(x,dim=None):
         r.insert(dim,ndim-1)
         invperm     = tuple(r)
         x=x.transpose(permutation)
-        shape = tuple(array(shape)[array(permutation)])
+        shape = tuple(np.array(shape)[np.array(permutation)])
         dim = ndim-1
     #end if
     if reshape:        
-        nvars = prod(shape[0:dim])
+        nvars = np.prod(shape[0:dim])
         x=x.reshape(nvars,nblocks)
         rdim=dim
         dim=1
@@ -907,7 +931,7 @@ def simstats(x,dim=None):
         tempC=0.5
         kappa=0.0
         mtmp=mean
-        if abs(var)<1e-15:
+        if np.abs(var)<1e-15:
             kappa = 1.0
         else:
             ovar=1.0/var
@@ -915,7 +939,7 @@ def simstats(x,dim=None):
                 kappa=kappa+2.0*tempC
                 i=i+1
                 #tempC=corr(i,x,mean,var)
-                tempC = ovar/(N-i)*sum((x[0:N-i]-mtmp)*(x[i:N]-mtmp))
+                tempC = ovar/(N-i)*np.sum((x[0:N-i]-mtmp)*(x[i:N]-mtmp))
             #end while
             if kappa == 0.0:
                 kappa = 1.0
@@ -927,22 +951,22 @@ def simstats(x,dim=None):
         #end if
         error=sqrt(var/Neff)
     else:
-        error = zeros(mean.shape,dtype=mean.dtype)
-        kappa = zeros(mean.shape,dtype=mean.dtype)
+        error = np.zeros(mean.shape,dtype=mean.dtype)
+        kappa = np.zeros(mean.shape,dtype=mean.dtype)
         for v in range(nvars):
             i=0          
             tempC=0.5
             kap=0.0
             vtmp = var[v]
             mtmp = mean[v]
-            if abs(vtmp)<1e-15:
+            if np.abs(vtmp)<1e-15:
                 kap = 1.0
             else:
                 ovar   = 1.0/vtmp
                 while (tempC>0 and i<(N-1)):
                     i += 1
                     kap += 2.0*tempC
-                    tempC = ovar/(N-i)*sum((x[v,0:N-i]-mtmp)*(x[v,i:N]-mtmp))
+                    tempC = ovar/(N-i)*np.sum((x[v,0:N-i]-mtmp)*(x[v,i:N]-mtmp))
                 #end while
                 if kap == 0.0:
                     kap = 1.0
@@ -1003,14 +1027,14 @@ def equilibration_length(x,tail=.5,plot=False,xlim=None,bounces=2,random=True,se
     #end if
     #mean  = xh.mean()
     #sigma = sqrt(xh.var())
-    xs = array(xt)
+    xs = np.array(xt)
     xs.sort()
     mean  = xs[int(.5*(nxt-1)+.5)]
-    sigma = (abs(xs[int((.5-.341)*nxt+.5)]-mean)+abs(xs[int((.5+.341)*nxt+.5)]-mean))/2
+    sigma = (np.abs(xs[int((.5-.341)*nxt+.5)]-mean)+np.abs(xs[int((.5+.341)*nxt+.5)]-mean))/2
     crossings = bounces*[0,0]
     bounce = None
-    if abs(x[0]-mean)>sigma:
-        s = -sign(x[0]-mean)
+    if np.abs(x[0]-mean)>sigma:
+        s = -np.sign(x[0]-mean)
         ncrossings = 0
         for i in range(nx):
             dist = s*(x[i]-mean) 
@@ -1035,9 +1059,9 @@ def equilibration_length(x,tail=.5,plot=False,xlim=None,bounces=2,random=True,se
     if plot:
         xlims = xlim
         del plot,xlim
-        from matplotlib.pyplot import plot,figure,show,xlim
+        from matplotlib.pyplot import plot, figure, show, xlim
         figure()
-        ix = arange(nx)
+        ix = np.arange(nx)
         plot(ix,x,'b.-')
         plot([0,nx],[mean,mean],'k-')
         plot([0,nx],[mean+sigma,mean+sigma],'r-')
@@ -1048,7 +1072,7 @@ def equilibration_length(x,tail=.5,plot=False,xlim=None,bounces=2,random=True,se
         #end if
         plot([ix[eqlen],ix[eqlen]],[x.min(),x.max()],'g-')
         plot(ix[eqlen],x[eqlen],'go')
-        if xlims!=None:
+        if xlims is not None:
             xlim(xlims)
         #end if
         show()
@@ -1078,13 +1102,13 @@ def ttest(m1,e1,n1,m2,e2,n2):
 # test needed
 def surface_normals(x,y,z):
     nu,nv = x.shape
-    normals = empty((nu,nv,3))
+    normals = np.empty((nu,nv,3))
     mi=nu-1
     mj=nv-1
-    v1 = empty((3,))
-    v2 = empty((3,))
-    v3 = empty((3,))
-    dr = empty((3,))
+    v1 = np.empty((3,))
+    v2 = np.empty((3,))
+    v3 = np.empty((3,))
+    dr = np.empty((3,))
     dr[0] = x[0,0]-x[1,0]
     dr[1] = y[0,0]-y[1,0]
     dr[2] = z[0,0]-z[1,0]
@@ -1135,7 +1159,7 @@ def surface_normals(x,y,z):
             v2[0] = x[i,jp]-x[i,jm]
             v2[1] = y[i,jp]-y[i,jm]
             v2[2] = z[i,jp]-z[i,jm]
-            v3 = cross(v1,v2)
+            v3 = np.cross(v1,v2)
             onorm = 1./norm(v3)
             normals[i,j,:]=v3[:]*onorm
         #end for
@@ -1177,15 +1201,15 @@ def simple_surface(origin,axes,grid):
             sys.exit()
         #end if
     #end if
-    u=empty((3,))
-    r=empty((3,))
+    u=np.empty((3,))
+    r=np.empty((3,))
     if coord==0:
         xl = grid['x']
         yl = grid['y']
         zl = grid['z']
         dim = (len(xl),len(yl),len(zl))
-        npoints = prod(dim)
-        points = empty((npoints,3))
+        npoints = np.prod(dim)
+        points = np.empty((npoints,3))
         n=0
         for i in range(dim[0]):
             for j in range(dim[1]):
@@ -1193,7 +1217,7 @@ def simple_surface(origin,axes,grid):
                     r[0] = xl[i]
                     r[1] = yl[j]
                     r[2] = zl[k]
-                    points[n,:] = dot(axes,r) + origin
+                    points[n,:] = np.dot(axes,r) + origin
                     n+=1
                 #end for
             #end for
@@ -1203,8 +1227,8 @@ def simple_surface(origin,axes,grid):
         phil = 2.*pi*grid['phi']
         zl   = grid['z']
         dim = (len(rl),len(phil),len(zl))
-        npoints = prod(dim)
-        points = empty((npoints,3))
+        npoints = np.prod(dim)
+        points = np.empty((npoints,3))
         n=0
         for i in range(dim[0]):
             for j in range(dim[1]):
@@ -1215,7 +1239,7 @@ def simple_surface(origin,axes,grid):
                     r[0] = u[0]*cos(u[1])
                     r[1] = u[0]*sin(u[1])
                     r[2] = u[2]
-                    points[n,:] = dot(axes,r) + origin
+                    points[n,:] = np.dot(axes,r) + origin
                     n+=1
                 #end for
             #end for
@@ -1231,8 +1255,8 @@ def simple_surface(origin,axes,grid):
         else:
             sgn = 1.
         #end if
-        npoints = prod(dim)
-        points = empty((npoints,3))
+        npoints = np.prod(dim)
+        points = np.empty((npoints,3))
         n=0
         for i in range(dim[0]):
             for j in range(dim[1]):
@@ -1243,7 +1267,7 @@ def simple_surface(origin,axes,grid):
                     r[0] = sgn*u[0]*sin(u[2])*cos(u[1])
                     r[1] = sgn*u[0]*sin(u[2])*sin(u[1])
                     r[2] = sgn*u[0]*cos(u[2])
-                    points[n,:] = dot(axes,r) + origin
+                    points[n,:] = np.dot(axes,r) + origin
                     n+=1
                 #end for
             #end for
@@ -1274,7 +1298,7 @@ def simple_surface(origin,axes,grid):
 
 
 # test needed
-#least_squares = lambda p,x,y,f: ((f(p,x)-y)**2).sum()
+#def least_squares(p, x, y, f): return ((f(p,x)-y)**2).sum()
 def func_fit(x,y,fitting_function,p0,cost=least_squares):
     f = fitting_function
     p = fmin(cost,p0,args=(x,y,f),maxiter=10000,maxfun=10000)
@@ -1286,15 +1310,15 @@ def distance_table(p1,p2,ordering=0):
     n1 = len(p1)
     n2 = len(p2)
     same = id(p1)==id(p2)
-    if not isinstance(p1,ndarray):
-        p1=array(p1,dtype=float)
+    if not isinstance(p1,np.ndarray):
+        p1=np.array(p1,dtype=float)
     #end if
     if same:
         p2 = p1
-    elif not isinstance(p2,ndarray):
-        p2=array(p2,dtype=float)
+    elif not isinstance(p2,np.ndarray):
+        p2=np.array(p2,dtype=float)
     #end if
-    dt = zeros((n1,n2),dtype=float)
+    dt = np.zeros((n1,n2),dtype=float)
     for i1 in range(n1):
         for i2 in range(n2):
             dt[i1,i2] = norm(p1[i1]-p2[i2])
@@ -1311,7 +1335,7 @@ def distance_table(p1,p2,ordering=0):
         else:
             error('ordering must be 1 or 2,\nyou provided '+str(ordering),'distance_table')
         #end if
-        order = empty(dt.shape,dtype=int)
+        order = np.empty(dt.shape,dtype=int)
         for i in range(n):
             o = dt[i].argsort()
             order[i] = o
@@ -1330,9 +1354,9 @@ def nearest_neighbors(n,points,qpoints=None,return_distances=False,slow=False):
         if len(points)>1:
             extra=1
         elif return_distances:
-            return array([]),array([])
+            return np.array([]),np.array([])
         else:
-            return array([])
+            return np.array([])
         #end if
     #end if
     if n>len(qpoints)-extra:
@@ -1348,7 +1372,7 @@ def nearest_neighbors(n,points,qpoints=None,return_distances=False,slow=False):
         ind  = order[:,0:n+extra]
     #end if
     if extra==0 and n==1 and not slow:
-        nn = atleast_2d(ind).T
+        nn = np.atleast_2d(ind).T
     else:
         nn = ind[:,extra:]
     #end if
@@ -1371,14 +1395,14 @@ def voronoi_neighbors(points):
 
 def convex_hull(points,dimension=None,tol=None):
     if dimension is None:
-        np,dimension = points.shape
+        npts,dimension = points.shape
     #end if
     d1 = dimension+1
     tri = Delaunay(points,qhull_options='QJ')
-    all_inds = empty((d1,),dtype=bool)
+    all_inds = np.empty((d1,),dtype=bool)
     all_inds[:] = True
     verts = []
-    have_tol = tol!=None
+    have_tol = tol is not None
     for ni in range(len(tri.neighbors)):
         n = tri.neighbors[ni]
         ns = list(n)
@@ -1398,7 +1422,7 @@ def convex_hull(points,dimension=None,tol=None):
                 a = points[v[i]]-c
                 b = points[v[iv[0]]]-c
                 bn = norm(b)
-                d = norm(a-dot(a,b)/(bn*bn)*b)
+                d = norm(a-np.dot(a,b)/(bn*bn)*b)
                 if d<tol:
                     inds[i]=True
                 #end if

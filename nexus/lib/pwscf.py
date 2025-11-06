@@ -18,14 +18,13 @@
 
 
 import os
-from numpy import array
-from generic import obj
+import numpy as np
+from developer import obj
 from physical_system import PhysicalSystem
 from simulation import Simulation
-from pwscf_input import PwscfInput,generate_pwscf_input
+from pwscf_input import PwscfInput, generate_pwscf_input
 from pwscf_analyzer import PwscfAnalyzer
 from execute import execute
-from debug import ci
 
 
 unique_vdw_functionals = [
@@ -209,7 +208,7 @@ class Pwscf(Simulation):
             else:
                 scale = 1.0
             #end if
-            pos   = scale*array(pos)
+            pos   = scale*np.array(pos)
             
             structure = self.system.structure.copy()
             structure.change_units('B')
@@ -364,7 +363,7 @@ class Pwscf(Simulation):
 def generate_pwscf(**kwargs):
     sim_args,inp_args = Pwscf.separate_inputs(kwargs)
 
-    if not 'input' in sim_args:
+    if 'input' not in sim_args:
         input_type = inp_args.delete_optional('input_type','generic')
         sim_args.input = generate_pwscf_input(input_type,**inp_args)
     #end if

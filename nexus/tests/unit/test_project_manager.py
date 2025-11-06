@@ -13,7 +13,7 @@ def test_import():
 
 
 def test_init():
-    from generic import obj
+    from developer import obj
     from nexus_base import nexus_core
     from project_manager import ProjectManager
 
@@ -109,7 +109,7 @@ def test_traverse_cascades():
 
 
 def test_screen_fake_sims():
-    from generic import NexusError
+    from developer import NexusError
     from simulation import Simulation
     from project_manager import ProjectManager
 
@@ -145,7 +145,7 @@ def test_screen_fake_sims():
 
 
 def test_resolve_file_collisions():
-    from generic import NexusError
+    from developer import NexusError
     from simulation import Simulation
     from project_manager import ProjectManager
 
@@ -188,7 +188,7 @@ def test_resolve_file_collisions():
 
 
 def test_propagate_blockages():
-    from generic import NexusError
+    from developer import NexusError
     from simulation import Simulation
     from project_manager import ProjectManager
 

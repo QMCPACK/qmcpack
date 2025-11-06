@@ -23,6 +23,7 @@
 #include "Particle/ParticleSetPool.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Particle/DistanceTable.h"
+#include "Particle/createDistanceTable.h"
 #include "ParticleBase/RandomSeqGeneratorGlobal.h"
 
 namespace qmcplusplus
@@ -97,8 +98,10 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
   if (ions->getTotalNum() == 1)
     return initAtom(ions, els);
 
-  const int d_ii_ID = ions->addTable(*ions);
-  ions->update();
+  std::ostream null_out(nullptr);
+  auto ii_dt = createDistanceTableAA(*ions, null_out);
+  ii_dt->evaluate(*ions);
+
   const ParticleSet::ParticleIndex& grID(ions->GroupID);
   SpeciesSet& Species(ions->getSpeciesSet());
   int Centers = ions->getTotalNum();
@@ -124,7 +127,7 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
   RealType rmin = cutoff;
   ParticleSet::SingleParticlePos cm;
 
-  const auto& dist = ions->getDistTableAA(d_ii_ID).getDistances();
+  const auto& dist = ii_dt->getDistances();
   // Step 1. Distribute even Q[iat] of atomic center iat. If Q[iat] is odd, put Q[iat]-1 and save the lone electron.
   for (size_t iat = 0; iat < Centers; iat++)
   {

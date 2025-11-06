@@ -18,15 +18,13 @@
 
 
 import os
-from generic import obj
+from developer import obj
 from execute import execute
 from nexus_base import nexus_core
 from simulation import Simulation
-from quantum_package_input import QuantumPackageInput,generate_quantum_package_input,read_qp_value
+from quantum_package_input import QuantumPackageInput, generate_quantum_package_input, read_qp_value
 from quantum_package_analyzer import QuantumPackageAnalyzer
 from gamess import Gamess
-from developer import ci
-
 
 
 class QuantumPackage(Simulation):
@@ -398,7 +396,7 @@ class QuantumPackage(Simulation):
 def generate_quantum_package(**kwargs):
     sim_args,inp_args = QuantumPackage.separate_inputs(kwargs)
 
-    if not 'input' in sim_args:
+    if 'input' not in sim_args:
         if 'input_type' in inp_args:
             input_type = inp_args.input_type
             del inp_args.input_type

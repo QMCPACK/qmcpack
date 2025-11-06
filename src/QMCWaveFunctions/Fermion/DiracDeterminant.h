@@ -138,10 +138,6 @@ public:
                             const std::pair<ValueVector, ValueVector>& spinor_multipler,
                             std::vector<ValueType>& ratios) override;
 
-  void mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                         const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
-                         std::vector<std::vector<ValueType>>& ratios) const override;
-
   void evaluateDerivRatios(const VirtualParticleSet& VP,
                            const opt_variables_type& optvars,
                            std::vector<ValueType>& ratios,

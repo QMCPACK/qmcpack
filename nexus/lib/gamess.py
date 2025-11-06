@@ -33,14 +33,10 @@
 
 import os
 import numpy as np
-from numpy import array,ndarray,abs
-from generic import obj
-from developer import DevBase
-from debug import *
+from developer import obj
 from simulation import Simulation
-from gamess_input import GamessInput,generate_gamess_input,FormattedGroup,KeywordGroup,GuessGroup,GIarray
+from gamess_input import GamessInput, generate_gamess_input, FormattedGroup, GuessGroup, GIarray
 from gamess_analyzer import GamessAnalyzer
-
 
 
 class Gamess(Simulation):
@@ -141,7 +137,7 @@ class Gamess(Simulation):
             if result.vec is None or result.norbitals<1:
                 self.error('could not obtain orbitals from previous GAMESS run')
             #end if
-            if not 'guess' in input:
+            if 'guess' not in input:
                 input.guess = GuessGroup()
             #end if
             if 'norb' in input.guess: # user provided norb
@@ -263,11 +259,10 @@ class Gamess(Simulation):
 #end class Gamess
 
 
-
 def generate_gamess(**kwargs):
     sim_args,inp_args = Gamess.separate_inputs(kwargs,copy_pseudos=False,sim_kw=['mo_reorder'])
 
-    if not 'input' in sim_args:
+    if 'input' not in sim_args:
         sim_args.input = generate_gamess_input(**inp_args)
     #end if
     gamess = Gamess(**sim_args)

@@ -30,8 +30,8 @@ def format_value(v):
             s = s[:-2]
         #end if
         s += '])'
-    elif isinstance(v,(str,np.string_)):
-        s = "'"+v+"'"
+    elif isinstance(v,(str,np.bytes_)):
+        s = "'"+str(v)+"'"
     else:
         s = str(v)
     #end if
@@ -517,7 +517,7 @@ def get_serial_references():
 
 
 def check_vs_serial_reference(qi,name):
-    from generic import obj
+    from developer import obj
     sr = get_serial_references()[name]
     assert(len(sr)>0)
     sq = qi.serial()
@@ -558,7 +558,7 @@ def test_import():
 
 
 def test_qixml_class_init():
-    from generic import obj
+    from developer import obj
     from qmcpack_input import classes
 
     attr_types = obj(
@@ -629,7 +629,7 @@ def test_qixml_class_init():
 
 def test_compose():
     import numpy as np
-    from generic import obj
+    from developer import obj
     from qmcpack_input import QmcpackInput
     from qmcpack_input import simulation,meta,section
 
@@ -1979,7 +1979,7 @@ def test_magnetization_density():
     """Test magnetization density estimator functionality"""
     from qmcpack_input import QmcpackInput
     from qmcpack_input import simulation, meta, section
-    from generic import obj
+    from developer import obj
     import numpy as np
     # Helper function to find pattern in text allowing for flexible whitespace
     def pattern_in_text(pattern, text):

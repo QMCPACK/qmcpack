@@ -32,16 +32,13 @@
 #                                                                    #
 #====================================================================#
 
-
+import os
+from copy import deepcopy
 import numpy as np
-from numpy import dot,array
-from numpy.linalg import inv
-from generic import obj
-from developer import DevBase
+from developer import DevBase, obj
 from unit_converter import convert
-from periodic_table import is_element
-from structure import Structure
-from debug import *
+from periodic_table import is_element, ptable
+from structure import Structure, generate_structure, read_structure
 
 
 class Matter(DevBase):
@@ -230,7 +227,7 @@ plist = [
     Particle('up_electron'  ,1.0,-1, 1),
     Particle('down_electron',1.0,-1,-1),
     ]
-from periodic_table import ptable
+
 for name,a in ptable.elements.items():
     spin = 0 # don't have this data
     protons  = a.atomic_number
@@ -416,8 +413,8 @@ class PhysicalSystem(Matter):
         
     def check_folded_system(self,exit=True,message=False):
         msg = ''
-        sys_folded    = self.folded_system!=None
-        struct_folded = self.structure.folded_structure!=None
+        sys_folded    = self.folded_system is not None
+        struct_folded = self.structure.folded_structure is not None
         if sys_folded!=struct_folded:
             msg+='folding of physical system and structure is not consistent\nsystem folded: {0}\nstructure folded: {1}\n'.format(sys_folded,struct_folded)
         #end if
@@ -465,7 +462,7 @@ class PhysicalSystem(Matter):
 
     def change_units(self,units):
         self.structure.change_units(units,folded=False)
-        if self.folded_system!=None:
+        if self.folded_system is not None:
             self.folded_system.change_units(units)
         #end if
     #end def change_units
@@ -473,7 +470,7 @@ class PhysicalSystem(Matter):
 
     def group_atoms(self):
         self.structure.group_atoms(folded=False)
-        if self.folded_system!=None:
+        if self.folded_system is not None:
             self.folded_system.group_atoms()
         #end if
     #end def group_atoms
@@ -493,7 +490,7 @@ class PhysicalSystem(Matter):
             #end for
             self.valency_in = self.valency
         #end if
-        if self.folded_system!=None and folded:
+        if self.folded_system is not None and folded:
             self.folded_system.rename(folded=folded,**name_pairs)
         #end if
     #end def rename
@@ -501,7 +498,7 @@ class PhysicalSystem(Matter):
 
     def copy(self):
         cp = DevBase.copy(self)
-        if self.folded_system!=None and self.structure.folded_structure!=None:
+        if self.folded_system is not None and self.structure.folded_structure is not None:
             del cp.folded_system.structure
             cp.folded_system.structure = cp.structure.folded_structure
         #end if
@@ -511,7 +508,7 @@ class PhysicalSystem(Matter):
 
     def load(self,filepath):
         DevBase.load(self,filepath)
-        if self.folded_system!=None and self.structure.folded_structure!=None:
+        if self.folded_system is not None and self.structure.folded_structure is not None:
             del self.folded_system.structure
             self.folded_system.structure = self.structure.folded_structure
         #end if
@@ -625,10 +622,6 @@ class PhysicalSystem(Matter):
 #end class PhysicalSystem
 
 
-
-import os
-from structure import generate_structure,read_structure
-from copy import deepcopy
 ps_defaults = dict(
     type='crystal',
     kshift = (0,0,0),
@@ -641,7 +634,7 @@ ps_defaults = dict(
     )
 def generate_physical_system(**kwargs):
     for var,val in ps_defaults.items():
-        if not var in kwargs:
+        if var not in kwargs:
             kwargs[var] = val
         #end if
     #end for
@@ -729,7 +722,7 @@ def generate_physical_system(**kwargs):
                 PhysicalSystem.class_error('pretile does not divide evenly into tiling\n  tiling provided: {0}\n  pretile provided: {1}'.format(tiling,pretile),'generate_physical_system')
             #end if
         #end for
-        tiling = tuple(array(tiling)//array(pretile))
+        tiling = tuple(np.array(tiling)//np.array(pretile))
         kwargs['tiling'] = pretile
         pre = generate_structure(**kwargs)
         pre.remove_folded_structure()
@@ -759,7 +752,7 @@ def generate_physical_system(**kwargs):
                 net_spin   = ncells*net_spin
             #end if
         #end if
-        if tiled_spin!=None:
+        if tiled_spin is not None:
             net_spin = tiled_spin
         #end if
         ps = PhysicalSystem(

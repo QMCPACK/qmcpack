@@ -46,7 +46,7 @@ def test_import():
 
 
 def test_empty_init():
-    from generic import obj
+    from developer import obj
     from pyscf_input import PyscfInput,generate_pyscf_input
 
     ref = obj(
@@ -72,7 +72,7 @@ def test_empty_init():
 
 def test_generate():
     import os
-    from generic import obj
+    from developer import obj
     from physical_system import generate_physical_system
     from pyscf_input import generate_pyscf_input
 
@@ -403,7 +403,7 @@ def test_generate():
 
 def test_write():
     import os
-    from generic import obj
+    from developer import obj
     from physical_system import generate_physical_system
     from pyscf_input import generate_pyscf_input
 

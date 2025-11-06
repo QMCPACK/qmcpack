@@ -100,8 +100,6 @@ bool VMC::run()
         ++now_loc;
         if (Period4WalkerDump && now_loc % Period4WalkerDump == 0)
           wClones[ip]->saveEnsemble(wit, wit_end);
-        //           if(storeConfigs && (now_loc%storeConfigs == 0))
-        //             ForwardWalkingHistory.storeConfigsForForwardWalking(*wClones[ip]);
       }
       Movers[ip]->stopBlock(false);
     } //end-of-parallel for

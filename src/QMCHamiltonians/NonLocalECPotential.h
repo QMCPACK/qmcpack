@@ -20,7 +20,7 @@
 #include "Configuration.h"
 #include "QMCHamiltonians/ForceBase.h"
 #include "QMCHamiltonians/OperatorBase.h"
-#include "Particle/NeighborLists.h"
+#include "NeighborListsForPseudo.h"
 #include "type_traits/OptionalRef.hpp"
 
 namespace qmcplusplus
@@ -44,7 +44,8 @@ class NonLocalECPotential : public OperatorBase, public ForceBase
   struct NonLocalECPotentialMultiWalkerResource;
 
 public:
-  NonLocalECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi, bool enable_DLA);
+  NonLocalECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi, bool enable_DLA, bool use_VP);
+  NonLocalECPotential(const NonLocalECPotential& nlpp, ParticleSet& els, TrialWaveFunction& psi);
   ~NonLocalECPotential() override;
 
   bool dependsOnWaveFunction() const override { return true; }
@@ -167,16 +168,14 @@ protected:
   bool use_DLA;
 
 private:
-  ///number of ions
-  int NumIons;
+  ///virtual particle set
+  const std::unique_ptr<VirtualParticleSet> vp_;
   ///index of distance table for the ion-el pair
   int myTableIndex;
   ///reference to the electrons
   ParticleSet& Peln;
-  ///neighborlist of electrons
-  NeighborLists ElecNeighborIons;
-  ///neighborlist of ions
-  NeighborLists IonNeighborElecs;
+  ///neighbor lists for marking electrons touched by T-moves
+  NeighborListsForPseudo neighbor_lists;
   ///ture if an electron is affected by other electrons moved by T-moves
   std::vector<bool> elecTMAffected;
   ///Pulay force vector
@@ -208,13 +207,6 @@ private:
    * @param tmove_xy off-diagonal terms for one electron.
    */
   void computeOneElectronTxy(ParticleSet& P, const int ref_elec, std::vector<NonLocalData>& tmove_xy);
-
-  /** mark all the electrons affected by Tmoves and update ElecNeighborIons and IonNeighborElecs
-   * @param myTable electron ion distance table
-   * @param iel reference electron
-   * Note this function should be called before acceptMove for a Tmove
-   */
-  void markAffectedElecs(const DistanceTableAB& myTable, int iel);
 
   friend class testing::TestNonLocalECPotential;
 };
