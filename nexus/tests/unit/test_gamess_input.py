@@ -261,7 +261,7 @@ def get_serial_references():
 
 
 def check_vs_serial_reference(gi,name):
-    from generic import obj
+    from developer import obj
     sr = obj(get_serial_references()[name])
     sg = gi.serial()
     assert(object_eq(sg,sr))
@@ -358,7 +358,7 @@ def test_write():
 
 def test_generate():
     import os
-    from generic import obj
+    from developer import obj
     from nexus_base import nexus_noncore
     from pseudopotential import Pseudopotentials
     from physical_system import generate_physical_system

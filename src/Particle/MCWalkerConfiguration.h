@@ -92,8 +92,6 @@ public:
 
   ///clean up the walker list
   using WalkerConfigurations::clear;
-  ///resize Walker::PropertyHistory and Walker::PHindex:
-  void resizeWalkerHistories();
 
   ///make random moves for all the walkers
   //void sample(iterator first, iterator last, value_type tauinv);

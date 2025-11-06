@@ -40,16 +40,11 @@
 #====================================================================#
 
 
-from numpy import minimum,resize
-from generic import obj
-from developer import DevBase
-from hdfreader import HDFgroup
-from debug import *
-
-
-
-
 import numpy as np
+from developer import DevBase, obj
+from hdfreader import HDFgroup
+from numerics import surface_normals
+
 
 class Plotter(DevBase):
     def __init__(self):
@@ -104,7 +99,7 @@ class Plotter(DevBase):
                 opacity = options.opacity
         #end if
         self.ensure_init()
-        from numerics import surface_normals
+
         self.mesh(x,y,z,opacity=.2)
         surfnorm = scale*surface_normals(x,y,z)
         xs=x.copy()
@@ -257,7 +252,7 @@ class QAdata(QAobject):
     def minsize(self,other):
         for name,value in self.items():
             if name in other:
-                self[name] = resize(value,minimum(value.shape,other[name].shape))
+                self[name] = np.resize(value,np.minimum(value.shape,other[name].shape))
             else:
                 self.error(name+' not found in minsize partner')
             #end if

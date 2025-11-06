@@ -32,8 +32,8 @@
 
 
 from utilities import to_str
-from generic import obj,object_interface,log,error,warn,message
-from debug import ci,interact
+from generic import obj, object_interface, hidden, NexusError, log, error, warn, message
+from debug import ci, interact
 
 
 class DevBase(obj):
@@ -344,3 +344,13 @@ def available(*items):
     #end for
     return True
 #end def available
+
+
+def valid_variable_name(s):
+    """Check if a variable name contains invalid characters"""
+    if not any([i in ('!"#$%&\'()*+,-./:;<=>?@[\\]^`{|}-\n\t ') for i in s]):
+        return True
+    else:
+        return False
+    #end if
+#end def valid_variable_name

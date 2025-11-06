@@ -38,7 +38,7 @@ def test_pw2qmcpack_input_empty_init():
 
 def test_pw2qmcpack_input_read():
     import os
-    from generic import obj
+    from developer import obj
     from qmcpack_converters import Pw2qmcpackInput
 
     tpath = testing.setup_unit_test_output_directory('qmcpack_converter_input','test_pw2qmcpack_input_read')
@@ -62,7 +62,7 @@ def test_pw2qmcpack_input_read():
 
 def test_pw2qmcpack_input_write():
     import os
-    from generic import obj
+    from developer import obj
     from qmcpack_converters import Pw2qmcpackInput
 
     tpath = testing.setup_unit_test_output_directory('qmcpack_converter_input','test_pw2qmcpack_input_write')
@@ -90,7 +90,7 @@ def test_pw2qmcpack_input_write():
 
 
 def test_pw2qmcpack_input_generate():
-    from generic import obj
+    from developer import obj
     from qmcpack_converters import generate_pw2qmcpack_input
 
     pi = generate_pw2qmcpack_input(
@@ -124,7 +124,7 @@ def test_convert4qmc_input_empty_init():
 
 
 def test_convert4qmc_input_generate():
-    from generic import obj
+    from developer import obj
     from qmcpack_converters import generate_convert4qmc_input
 
     ci = generate_convert4qmc_input(

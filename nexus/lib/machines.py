@@ -44,21 +44,16 @@
 
 
 import os
-import time
 #from multiprocessing import cpu_count
 from socket import gethostname
-from subprocess import Popen,PIPE
-from numpy import array,mod,floor,ceil,round,log,empty
-from generic import obj
-from developer import DevBase,to_str
-from nexus_base import NexusCore,nexus_core
+from subprocess import Popen
+import numpy as np
+from developer import DevBase, obj
+from nexus_base import NexusCore, nexus_core
 from execute import execute
-from debug import *
-
-import re,subprocess
-
 import importlib.util
 import importlib.machinery
+
 
 def our_load_source(modname, filename):
     """" Replacement for the deprecated imp.load_source function"""
@@ -187,6 +182,7 @@ job_defaults_assign = obj(
     ntasks_per_core    = None,
     cpus_per_task      = None,
     template           = None,
+    reservation        = None,
     )
 
     # these are not assigned directly
@@ -449,7 +445,7 @@ class Job(NexusCore):
     def set_processes(self):
         if self.processes is None:
             self.error('processes should have been set before now\ncontact the developers and have them fix this','Developer')
-            self.processes = int(ceil(float(self.cores)/self.threads))
+            self.processes = int(np.ceil(float(self.cores)/self.threads))
         #end if
     #end def set_processes
 
@@ -955,8 +951,8 @@ class Workstation(Machine):
                 job.cores = self.cores
             #end if
         #end if
-        job.processes = max(1,int(floor(float(job.cores)/job.threads)))
-        grains = int(ceil(float(job.cores)/self.process_granularity))
+        job.processes = max(1,int(np.floor(float(job.cores)/job.threads)))
+        grains = int(np.ceil(float(job.cores)/self.process_granularity))
         if abs(grains-1-float(job.cores)/self.process_granularity)<1e-6:
             grains-=1
         #end if
@@ -1058,15 +1054,15 @@ class Workstation(Machine):
             job_req.append(job)
             core_req.append(job.cores)
         #end for
-        core_req = array(core_req,dtype=int)
+        core_req = np.array(core_req,dtype=int)
 
         # The following line does not work correctly under Numpy 1.10 or greater.
         # It should create an ndarray of Job objects from a list of Job objects.
         # Instead it creates nested ndarray's with inner type of bool
-        #job_req  = array(job_req ,dtype=object)
+        #job_req  = np.array(job_req ,dtype=object)
 
         job_req_tmp = job_req
-        job_req  = empty(len(job_req_tmp) ,dtype=object)
+        job_req  = np.empty(len(job_req_tmp) ,dtype=object)
         for idx,job in enumerate(job_req_tmp):
             job_req[idx] = job
         #end for
@@ -1215,13 +1211,13 @@ class InteractiveCluster(Workstation):
         job.nodes = job.grains
         job.procs = job.nodes*self.procs_per_node
 
-        if mod(job.processes,job.nodes)!=0:
+        if np.mod(job.processes,job.nodes)!=0:
             job.processes_per_node = None
         else:
             job.processes_per_node = job.processes//job.nodes
         #end if
 
-        if mod(job.processes,job.procs)!=0:
+        if np.mod(job.processes,job.procs)!=0:
             job.processes_per_proc = None
         else:
             job.processes_per_proc = job.processes//job.procs
@@ -1446,7 +1442,7 @@ class Supercomputer(Machine):
         elif no_cores:
             job.cores = self.cores_per_node*job.nodes
         elif no_nodes:
-            job.nodes = int(ceil(float(job.cores)/self.cores_per_node))
+            job.nodes = int(np.ceil(float(job.cores)/self.cores_per_node))
             if abs(job.nodes-1-float(job.cores)/self.cores_per_node)<1e-6:
                 job.nodes-=1
             #end if
@@ -1461,13 +1457,13 @@ class Supercomputer(Machine):
         job.tot_cores = job.nodes*self.cores_per_node
         job.procs = job.nodes*self.procs_per_node
 
-        if mod(job.processes,job.nodes)!=0:
+        if np.mod(job.processes,job.nodes)!=0:
             job.processes_per_node = None
         else:
             job.processes_per_node = job.processes//job.nodes
         #end if
 
-        if mod(job.processes,job.procs)!=0:
+        if np.mod(job.processes,job.procs)!=0:
             job.processes_per_proc = None
         else:
             job.processes_per_proc = job.processes//job.procs
@@ -2341,7 +2337,7 @@ class Cori(NerscMachine):
         else:
             self.error('SLURM input "constraint" must contain either "knl", "haswell" or "amd" on Cori\nyou provided: {0}'.format(job.constraint))
         #end if
-        cpus_per_task = int(floor(float(self.cores_per_node)/job.processes_per_node))*hyperthreads
+        cpus_per_task = int(np.floor(float(self.cores_per_node)/job.processes_per_node))*hyperthreads
         c='#!/bin/bash\n'
         if job.account is not None:
             c+= '#SBATCH -A '+job.account+'\n'
@@ -2458,7 +2454,7 @@ class Perlmutter(NerscMachine):
             cpus_per_task = job.cpus_per_task
         else:
             hyperthreads = 2 # Both CPU and GPU nodes use the same AMD EPYC 7763 (Milan) CPUs
-            cpus_per_task = int(floor(float(self.cores_per_node)/job.processes_per_node))*hyperthreads
+            cpus_per_task = int(np.floor(float(self.cores_per_node)/job.processes_per_node))*hyperthreads
         #end if
 
         c='#!/bin/bash\n'
@@ -2480,7 +2476,7 @@ class Perlmutter(NerscMachine):
             c+='#SBATCH --mail-user={0}\n'.format(job.email)
 
         if 'gpu' in job.constraint:
-            gpus_per_task = int(floor(float(self.gpus_per_node)/job.processes_per_node))
+            gpus_per_task = int(np.floor(float(self.gpus_per_node)/job.processes_per_node))
             c+='#SBATCH --gpus-per-task={0}\n'.format(gpus_per_task)
         #end if
 
@@ -2662,9 +2658,9 @@ class ALCF_Machine(Supercomputer):
         if job.nodes<self.base_partition:
             self.warn('!!! ATTENTION !!!\n  number of nodes on {0} should not be less than {1}\n  you requested: {2}'.format(self.name,self.base_partition,job.nodes))
         else:
-            partition = log(float(job.nodes)/self.base_partition)/log(2.)
+            partition = np.log(float(job.nodes)/self.base_partition)/np.log(2.)
             if abs(partition-int(partition))>1e-6:
-                self.warn('!!! ATTENTION !!!\n  number of nodes on {0} must be {1} times a power of two\n  you requested: {2}\n  nearby valid node count: {3}'.format(self.name,self.base_partition,job.nodes,self.base_partition*2**int(round(partition))))
+                self.warn('!!! ATTENTION !!!\n  number of nodes on {0} must be {1} times a power of two\n  you requested: {2}\n  nearby valid node count: {3}'.format(self.name,self.base_partition,job.nodes,self.base_partition*2**int(np.round(partition))))
             #end if
         #end if
         valid_ppn = (1,2,4,8,16,32,64)
@@ -2918,9 +2914,9 @@ class Amos(Supercomputer):
             self.warn('!!! ATTENTION !!!\n  number of nodes in {0} should not be more than {1}\n  you requested: {2}'.format(job.queue,max_partition,job.nodes))
         else:
             if job.queue != 'verylarge':
-                partition = log(float(job.nodes)/base_partition)/log(2.)
+                partition = np.log(float(job.nodes)/base_partition)/np.log(2.)
                 if abs(partition-int(partition))>1e-6:
-                    self.warn('!!! ATTENTION !!!\n  number of nodes on {0} must be {1} times a power of two\n  you requested: {2}\n  nearby valid node count: {3}'.format(self.name,base_partition,job.nodes,base_partition*2**int(round(partition))))
+                    self.warn('!!! ATTENTION !!!\n  number of nodes on {0} must be {1} times a power of two\n  you requested: {2}\n  nearby valid node count: {3}'.format(self.name,base_partition,job.nodes,base_partition*2**int(np.round(partition))))
             elif job.nodes != 3072 and job.nodes != 4096:
                 self.warn('!!! ATTENTION !!!\n  number of nodes on {0} must be 3072 or 4096 you requested {1}'.format(self.name,job.nodes))
             #end if
@@ -2946,24 +2942,21 @@ class Amos(Supercomputer):
 
 
 class SnlMachine(Supercomputer):
-    requires_account   = True
-    batch_capable      = True
-    #executable_subfile = True
+    requires_account     = True
+    batch_capable        = True
+    gpu_machine          = False
+    reservation_required = False
 
     prefixed_output    = True
     outfile_extension  = '.output'
     errfile_extension  = '.error'
-
-    #for mpiexec
-    def post_process_job(self,job):
-        job.run_options.add(bindto="--bind-to none",npernode="--npernode {}".format(job.processes_per_node))
 
     def write_job_header(self,job):
         if job.queue is None:
             job.queue='batch'
         #end if
 
-        cpus_per_task = int(floor(float(self.cores_per_node)/job.processes_per_node))
+        cpus_per_task = int(np.floor(float(self.cores_per_node)/job.processes_per_node))
 
         if job.qos == 'long':
             max_time = 96
@@ -2987,29 +2980,37 @@ class SnlMachine(Supercomputer):
             job.seconds = 0
         #end if
 
+        if self.gpu_machine:
+            if job.processes_per_node > self.gpus_per_node:
+                self.warn('!!! ATTENTION !!!\n  the number of processes per node {0} should not be more than the number of gpus available {1}\n  Adjusting the number of tasks per node accordingly'.format(job.processes_per_node, self.gpus_per_node))
+                job.processes_per_node = self.gpus_per_node
+
 
         c='#!/bin/bash\n'
         c+='#SBATCH -p '+str(job.queue)+'\n'
         c+='#SBATCH --job-name '+str(job.name)+'\n'
         c+='#SBATCH --account='+str(job.account)+'\n'
-        c+='#SBATCH -N '+str(job.nodes)+'\n'
+        c+='#SBATCH --ntasks='+str(job.nodes * job.processes_per_node)+'\n'
+        c+='#SBATCH --ntasks-per-node='+str(job.processes_per_node)+'\n'
+        if job.cpus_per_task is None:
+            c+='#SBATCH --cpus-per-task={}\n'.format(job.threads)
+        else:
+            c+='#SBATCH --cpus-per-task={}\n'.format(job.cpus_per_task)
+        if self.gpu_machine:
+            c+='#SBATCH --gpus-per-task=1\n'
+        c+='#SBATCH --hint=nomultithread\n'
         c+='#SBATCH -t {0}:{1}:{2}\n'.format(str(job.hours+24*job.days).zfill(2),str(job.minutes).zfill(2),str(job.seconds).zfill(2))
         c+='#SBATCH -o {0}\n'.format(job.outfile)
         c+='#SBATCH -e {0}\n'.format(job.errfile)
         if job.qos:
             c+='#SBATCH --qos={}\n'.format(job.qos)
+        if self.reservation_required:
+            assert job.reservation is not None
+            c+='#SBATCH --reservation={}\n'.format(job.reservation)
         c+='\n'
         return c
     #end def write_job_header
 #end class SnlMachine
-#Unknown
-class Chama(SnlMachine):
-    name = 'chama'
-#end class Chama
-#Unknown
-class Skybridge(SnlMachine):
-    name = 'skybridge'
-#end class Skybridge
 #Unknown
 class Eclipse(SnlMachine):
     name = 'eclipse'
@@ -3031,13 +3032,19 @@ class Amber(SnlMachine):
     name = 'amber'
 #end class Amber
 #Unknown
-class Uno(SnlMachine):
-    name = 'uno'
-#end class Uno
-#Unknown
 class Solo(SnlMachine):
     name = 'solo'
 #end class Solo
+#Unknown
+class Flight(SnlMachine):
+    name = 'flight'
+    reservation_required = True
+#end class Flight
+class Hops(SnlMachine):
+    name          = 'hops'
+    gpu_machine   = True
+    gpus_per_node = 4
+#end class Hops
 
 
 # Active
@@ -3271,7 +3278,7 @@ class CadesMoab(Supercomputer):
     def post_process_job(self,job):
         ppn = job.processes_per_node
         if job.threads>1 and ppn is not None and ppn>1:
-            processes_per_socket = int(floor(job.processes_per_node/2))
+            processes_per_socket = int(np.floor(job.processes_per_node/2))
             job.run_options.add(npersocket='--npersocket {0}'.format(processes_per_socket))
         #end if
     #end def post_process_job
@@ -3478,7 +3485,7 @@ class Frontier(Supercomputer):
                 threads_per_core='--threads-per-core={0}'.format(job.threads)
             )            
         elif 'gpu' in job.constraint:
-            gpus_per_task = int(floor(float(self.gpus_per_node)/job.processes_per_node))
+            gpus_per_task = int(np.floor(float(self.gpus_per_node)/job.processes_per_node))
             job.run_options.add(
                 gpu_bind='--gpu-bind=closest',
                 gpus_per_task='--gpus-per-task={0}'.format(gpus_per_task)
@@ -4343,15 +4350,14 @@ Lonestar(    22656,   2,     6,   12,  128,  'ibrun',     'qsub',   'qstat',    
 Matisse(        20,   2,     8,   64,    2, 'mpirun',   'sbatch',   'sacct', 'scancel')
 Komodo(         24,   2,     6,   48,    2, 'mpirun',   'sbatch',   'sacct', 'scancel')
 Amos(         5120,   1,    16,   16,  128,   'srun',   'sbatch',   'sacct', 'scancel')
-Chama(        1232,   2,     8,   64, 1000,'mpiexec',   'sbatch',  'squeue', 'scancel')
-Uno(           168,   2,     8,  128, 1000,'mpiexec',   'sbatch',  'squeue', 'scancel')
-Eclipse(      1488,   2,    18,  128, 1000,'mpiexec',   'sbatch',  'squeue', 'scancel')
-Attaway(      1488,   2,    18,  192, 1000,'mpiexec',   'sbatch',  'squeue', 'scancel')
-Manzano(      1488,   2,    24,  192, 1000,'mpiexec',   'sbatch',  'squeue', 'scancel')
-Ghost(         740,   2,    18,  128, 1000,'mpiexec',   'sbatch',  'squeue', 'scancel')
-Amber(        1496,   2,    56,  256, 1000,'mpiexec',   'sbatch',  'squeue', 'scancel')
-Skybridge(    1848,   2,     8,   64, 1000,'mpiexec',   'sbatch',  'squeue', 'scancel')
-Solo(          374,   2,    18,  128, 1000,'mpiexec',   'sbatch',  'squeue', 'scancel')
+Eclipse(      1488,   2,    18,  128, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
+Attaway(      1488,   2,    18,  192, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
+Manzano(      1488,   2,    24,  192, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
+Ghost(         740,   2,    18,  128, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
+Amber(        1496,   2,    56,  256, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
+Solo(          374,   2,    18,  128, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
+Flight(        744,   2,    56,  256, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
+Hops(           64,   2,    56,  256, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
 SuperMUC(      512,   1,    28,  256,    8,'mpiexec', 'llsubmit',     'llq','llcancel')
 Stampede2(    4200,   1,    68,   96,   50,  'ibrun',   'sbatch',  'squeue', 'scancel')
 CadesMoab(     156,   2,    18,  128,  100, 'mpirun',     'qsub',   'qstat',    'qdel')

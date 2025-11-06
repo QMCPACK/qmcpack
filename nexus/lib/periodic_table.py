@@ -21,8 +21,7 @@
 #====================================================================#
 
 
-from generic import obj
-from developer import DevBase
+from developer import DevBase, obj
 from unit_converter import UnitConverter
 
 

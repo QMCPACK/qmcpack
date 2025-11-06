@@ -8,8 +8,7 @@ from optparse import OptionParser
 from numpy import ndarray,array,abs,sqrt
 
 # Nexus imports
-from generic import obj
-from developer import DevBase,ci,log,warn,error
+from developer import DevBase, obj, ci, log, warn, error
 from execute import execute
 from fileio import TextFile
 from nexus import settings,job,run_project

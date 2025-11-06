@@ -54,7 +54,7 @@ def test_empty_init():
 
 def test_read():
     import os
-    from generic import obj
+    from developer import obj
     from pwscf_postprocessors import ProjwfcInput
 
     tpath = testing.setup_unit_test_output_directory('pwscf_postprocessor_input','test_read')
@@ -78,7 +78,7 @@ def test_read():
 
 def test_write():
     import os
-    from generic import obj
+    from developer import obj
     from pwscf_postprocessors import ProjwfcInput
 
     tpath = testing.setup_unit_test_output_directory('pwscf_postprocessor_input','test_write')
@@ -106,7 +106,7 @@ def test_write():
 
 
 def test_generate():
-    from generic import obj
+    from developer import obj
     from pwscf_postprocessors import generate_projwfc_input
 
     pi = generate_projwfc_input(

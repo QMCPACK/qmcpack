@@ -85,7 +85,7 @@ def structure_same(s1,s2):
 
 
 def get_reference_inputs():
-    from generic import obj
+    from developer import obj
     if len(reference_inputs)==0:
         ref_in = obj()
         ref_in.diamond_prim = obj(
@@ -195,7 +195,7 @@ def get_reference_inputs():
 
 
 def get_reference_structures():
-    from generic import obj
+    from developer import obj
     from structure import Structure
     if len(reference_structures)==0:
         ref_in = get_reference_inputs()
@@ -211,7 +211,7 @@ def get_reference_structures():
 
 
 def get_generated_structures():
-    from generic import obj
+    from developer import obj
     from structure import generate_structure
     if len(generated_structures)==0:
         ref_in = get_reference_inputs()
@@ -225,7 +225,7 @@ def get_generated_structures():
 
 
 def get_crystal_structures():
-    from generic import obj
+    from developer import obj
     from structure import Crystal,generate_structure
     if len(crystal_structures)==0:
         crys = crystal_structures
@@ -284,7 +284,7 @@ def test_empty_init():
 
 
 def test_reference_inputs():
-    from generic import obj
+    from developer import obj
     ref_in = get_reference_inputs()
     assert(len(ref_in)>0)
 #end def test_reference_inputs
@@ -871,7 +871,7 @@ def test_monkhorst_pack_kpoints():
     Add k-points according to Monkhorst-Pack grid.
     """
     import numpy as np
-    from generic import obj
+    from developer import obj
     from structure import generate_structure
 
     g11 = generate_structure(
@@ -1510,7 +1510,7 @@ if versions.spglib_available:
 if versions.spglib_available and versions.seekpath_available:
     def test_rmg_transform():
         from numpy import array
-        from generic import obj
+        from developer import obj
         from structure import generate_structure
 
         ref = obj({

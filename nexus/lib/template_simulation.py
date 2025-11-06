@@ -29,7 +29,7 @@
 
 
 import os
-from generic import obj
+from developer import obj
 from simulation import Simulation,SimulationInput,SimulationAnalyzer
 
 
