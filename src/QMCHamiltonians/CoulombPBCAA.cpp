@@ -339,22 +339,7 @@ void CoulombPBCAA::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
     return value;
   };
 
-  auto evaluate_static = [name, &v_sample, &o_list](const std::vector<ListenerVector<RealType>>& listeners) {
-    auto& o_leader = o_list.getCastedLeader<CoulombPBCAA>();
-    assert(!o_leader.is_active);
-    for (auto& samp : v_sample)
-      samp = 0.5 * o_leader.value_;
-    for (int iw = 0; iw < o_list.size(); iw++)
-    {
-      for (const ListenerVector<RealType>& listener : listeners)
-      {
-        listener.report(iw, name, v_sample);
-      }
-    }
-  };
-
   if (is_active)
-  {
     for (int iw = 0; iw < o_list.size(); iw++)
     {
       auto& coulomb_aa  = o_list.getCastedElement<CoulombPBCAA>(iw);
@@ -362,7 +347,6 @@ void CoulombPBCAA::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
       for (const ListenerVector<RealType>& listener : listeners)
         listener.report(iw, name, v_sample);
     }
-  }
   else
   {
     auto& o_leader = o_list.getCastedLeader<CoulombPBCAA>();
@@ -373,12 +357,8 @@ void CoulombPBCAA::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
     //copy them every time and send them to the listeners to preserve
     //a common design between per particle hamiltonian energy values
     for (int iw = 0; iw < o_list.size(); iw++)
-    {
       for (const ListenerVector<RealType>& listener : listeners_ions)
-      {
         listener.report(iw, name, v_sample);
-      }
-    }
   }
 }
 
