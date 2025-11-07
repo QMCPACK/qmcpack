@@ -53,6 +53,7 @@ public:
 
 MockGoldWalkerElements makeGoldWalkerElementsWithEE(Communicate*, RuntimeOptions run_time_opt);
 MockGoldWalkerElements makeGoldWalkerElementsWithEEEI(Communicate*, RuntimeOptions run_time_opt);
+MockGoldWalkerElements makeGoldWalkerElementsWithEEEIPS(Communicate*, RuntimeOptions run_time_opt);
 } // namespace testing
 } // namespace qmcplusplus
 
