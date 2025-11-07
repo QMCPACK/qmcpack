@@ -140,6 +140,9 @@ public:
   const auto& getDataVector() const { return data_; }
   const auto& getDM() const { return dm_; }
   int getNValuesPerDomain() const { return nvalues_per_domain_; }
+  /** find linear index into grid for position, this is templated to
+   * prevent contamination with ParticleAttribute type in NESpaceGrid
+   * translation unit.
   template<typename POS>
   auto findGMapIndexes(const POS& position);
 
