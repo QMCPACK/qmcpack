@@ -140,11 +140,10 @@ public:
   const auto& getDataVector() const { return data_; }
   const auto& getDM() const { return dm_; }
   int getNValuesPerDomain() const { return nvalues_per_domain_; }
-  /** find linear index into grid for position, this is templated to
-   * prevent contamination with ParticleAttribute type in NESpaceGrid
-   * translation unit.
-  template<typename POS>
-  auto findGMapIndexes(const POS& position);
+  /** function to get the linear index into the space grid for a position
+   */
+  std::array<int, 3> findGMapIndexes(const TinyVector<REAL, OHMMS_DIM>& position);
+
 
 private:
   /** copy AxisGrid data to SoA layout for evaluation
@@ -276,40 +275,6 @@ public:
   friend class testing::NESpaceGridTests;
 };
 
-template<typename REAL>
-template<typename POS>
-auto NESpaceGrid<REAL>::findGMapIndexes(const POS& position)
-{
-  std::array<int, OHMMS_DIM> iu;
-  Point u = dot(axinv_, (position - origin_));
-
-  auto gmapIndex = [this](int d, const auto& u) {
-    int raw_index = std::floor((u[d] - this->umin_[d]) * this->odu_[d]);
-    if (raw_index == gmap_[d].size())
-      return raw_index - 1;
-    else if (raw_index == -1)
-      return 0;
-    else
-      return raw_index;
-  };
-  try
-  {
-    for (int d = 0; d < OHMMS_DIM; ++d)
-      iu[d] = gmap_[d].at(gmapIndex(d, u));
-  }
-  catch (const std::exception& exc)
-  {
-    std::ostringstream error;
-    error << "NESpaceGrid: position: " << position << " u: " << u + origin_ << "   u-org: " << u << '\n'
-          << "which maps to ";
-    for (int d = 0; d < OHMMS_DIM; ++d)
-      error << gmapIndex(d, u) << ",  umin: " << umin_[d] << "  umax: " << umax_[d] << "  odu: " << odu_[d] << '\n';
-    error << "falls outside of the cell, for a period system all particle positions must be in the cell!\n";
-    error << "It is very likely you have not set up your space grid correctly.\n";
-    std::throw_with_nested(std::runtime_error(error.str()));
-  }
-  return iu;
-}
 
 extern template class NESpaceGrid<float>;
 extern template class NESpaceGrid<double>;
