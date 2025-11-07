@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2023 QMCPACK developers.
+// Copyright (c) 2025 QMCPACK developers.
 //
 // File developed by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
@@ -77,13 +77,11 @@ public:
 
   void evaluate(ParticleSet& pset, const MCPWalker& walker, const int walker_index);
 
-  /** this allows the EstimatorManagerNew to reduce without needing to know the details
-   *  of SpaceGrid's data.
-   *
-   *  can use base class default until crowd level MomentumDistribution
-   *  estimators don't have a copy of the density grid.
+  /** Reduce across crowds
    */
   void collect(const RefVector<OperatorEstBase>& type_erased_operator_estimators) override;
+
+  void normalize(Real invToWgt) override;
 
   std::size_t getFullDataSize() const override;
 
@@ -110,6 +108,8 @@ public:
 
   void write(hdf_archive& file) override;
 
+  void zero() override;
+
   RefVector<NESpaceGrid<Real>> getSpaceGrids();
 
   RefVector<std::vector<QMCT::RealType>>& getExtraData();
@@ -123,17 +123,20 @@ private:
   CrowdEnergyValues<Real> local_pot_values_;
   CrowdEnergyValues<Real> local_ion_pot_values_;
 
-  /// working space for reduced_values_;
+  /** @ingroup Working Space for accumulating values over energy category
+   *  meaning pot, kinetic etc.
+   * @{
+   */
   std::vector<Vector<Real>> reduced_local_pot_values_;
   std::vector<Vector<Real>> reduced_local_kinetic_values_;
   std::vector<Vector<Real>> reduced_local_ion_pot_values_;
-
+  /// @}
   ParticleSet pset_dynamic_;
   std::optional<ParticleSet> pset_static_;
   int dtable_index_ = -1;
 
-  int n_particles_;
-  int n_ions_;
+  int n_particles_{0};
+  int n_ions_{0};
 
   UPtr<NEReferencePoints> ref_points_;
 
@@ -162,7 +165,7 @@ private:
    */
   int outside_buffer_offset{0};
   std::vector<bool> particles_outside_;
-
+  std::vector<bool> particles_outside_ions_;
   /// @}
 
   /// spacegrids are used to find which cell domain contains the Energy information of particles
@@ -175,7 +178,7 @@ private:
   /// particle positions includes ion positions if pset_stat_ and !input_.get_ion_points()
   ParticlePos r_work_;
   /// ion positions if pset_static_ && input.get_ion_points_ are true
-  Matrix<Real> r_ion_work_;
+  ParticlePos r_ion_work_;
 
   /** preallocated value matrices
    *  It seems like these should be local variables in evaluate,
@@ -198,6 +201,7 @@ private:
   // std::vector<Real> Zptcl;
   // ParticlePos Rptcl;
 };
+
 } // namespace qmcplusplus
 
 #endif

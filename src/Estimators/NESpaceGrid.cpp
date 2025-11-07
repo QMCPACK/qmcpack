@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2023 QMCPACK developers.
+// Copyright (c) 2025 QMCPACK developers.
 //
 // File developed by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
@@ -14,10 +14,15 @@
 #include "NESpaceGrid.h"
 
 #include <hdf5.h>
+#include <functional>
+
+#ifndef NDEBUG
+// for debugging
+#include <numeric>
+#endif
 
 #include "OhmmsData/AttributeSet.h"
 #include "Utilities/string_utils.h"
-#include <cmath>
 #include "OhmmsPETE/OhmmsArray.h"
 #include "NEReferencePoints.h"
 #include "Concurrency/OpenMP.h"
@@ -588,32 +593,35 @@ void NESpaceGrid<REAL>::accumulate(const ParticlePos& R,
       {
         particles_outside[p] = false;
         Point u              = dot(axinv_, (R[p] - origin_));
-	// numerical accuracy of the dot is not good enough for this to be not produce out of bounds indexes
-	// with REAL = float, u 10^-8 outside of umin_ to  umax_ is not uncommon i.e  p > (1 in 32000)
-	// for the coordinate ranges typical of our simulations. I guess the branch predictor will mostly
-	// mitigate this.
-	auto gmapIndex = [this](int d, const auto& u) { int raw_index = floor((u[d] - this->umin_[d]) * this->odu_[d]);
-	  if ( raw_index == gmap_[d].size() )
-	    return raw_index - 1;
-	  else if ( raw_index == -1 )
-	    return 0;
-	  else
-	    return raw_index;
-	};
+        // numerical accuracy of the dot is not good enough for this to be not produce out of bounds indexes
+        // with REAL = float, u 10^-8 outside of umin_ to  umax_ is not uncommon i.e  p > (1 in 32000)
+        // for the coordinate ranges typical of our simulations. I guess the branch predictor will mostly
+        // mitigate this.
+        auto gmapIndex = [this](int d, const auto& u) {
+          int raw_index = floor((u[d] - this->umin_[d]) * this->odu_[d]);
+          if (raw_index == gmap_[d].size())
+            return raw_index - 1;
+          else if (raw_index == -1)
+            return 0;
+          else
+            return raw_index;
+        };
         try
         {
           for (int d = 0; d < OHMMS_DIM; ++d)
-            iu[d] = gmap_[d].at(gmapIndex(d,u));
+            iu[d] = gmap_[d].at(gmapIndex(d, u));
         }
         catch (const std::exception& exc)
         {
           std::ostringstream error;
-          error << "NESpaceGrid: particle: " << p << " position: " << R[p] << " u: " << u + origin_ << "   u-org: " << u << '\n'
+          error << "NESpaceGrid: particle: " << p << " position: " << R[p] << " u: " << u + origin_ << "   u-org: " << u
+                << '\n'
                 << "which maps to ";
-	  for (int d = 0; d < OHMMS_DIM; ++d)
-	    error << gmapIndex(d, u) << ",  umin: " << umin_[d] << "  umax: " << umax_[d] << "  odu: " << odu_[d] << '\n';
-	  error << "which falls outside of the cell, for a period system all particle positions must be in the cell!\n";
-	  error << "It is very likely you have not set up your space grid correctly.\n";
+          for (int d = 0; d < OHMMS_DIM; ++d)
+            error << gmapIndex(d, u) << ",  umin: " << umin_[d] << "  umax: " << umax_[d] << "  odu: " << odu_[d]
+                  << '\n';
+          error << "which falls outside of the cell, for a period system all particle positions must be in the cell!\n";
+          error << "It is very likely you have not set up your space grid correctly.\n";
           std::throw_with_nested(std::runtime_error(error.str()));
         }
         buf_index = buffer_offset_;
@@ -709,8 +717,13 @@ void NESpaceGrid<REAL>::sum(const BufferType& buf, Real* vals)
 }
 
 template<typename REAL>
-void NESpaceGrid<REAL>::collect(NESpaceGrid& reduction_grid, RefVector<NESpaceGrid> grid_for_each_crowd)
+void NESpaceGrid<REAL>::collect(NESpaceGrid& reduction_grid, const RefVector<NESpaceGrid> grid_for_each_crowd)
 {
+  assert(!grid_for_each_crowd.empty());
+#ifndef NDEBUG
+  const NESpaceGrid& filled_grid = grid_for_each_crowd.front();
+  assert(reduction_grid.getDataVector().size() == filled_grid.getDataVector().size());
+#endif
   for (NESpaceGrid& crowd_grid : grid_for_each_crowd)
   {
     std::transform(reduction_grid.data_.begin(), reduction_grid.data_.end(), crowd_grid.data_.begin(),
@@ -720,9 +733,16 @@ void NESpaceGrid<REAL>::collect(NESpaceGrid& reduction_grid, RefVector<NESpaceGr
 }
 
 template<typename REAL>
+void NESpaceGrid<REAL>::normalize(REAL invToWgt)
+{
+  std::transform(data_.begin(), data_.end(), data_.begin(),
+                 std::bind(std::multiplies<REAL>(), std::placeholders::_1, invToWgt));
+}
+
+template<typename REAL>
 void NESpaceGrid<REAL>::zero()
 {
-  data_.clear();
+  std::fill(data_.begin(), data_.end(), 0.0);
 }
 
 template<typename REAL>
