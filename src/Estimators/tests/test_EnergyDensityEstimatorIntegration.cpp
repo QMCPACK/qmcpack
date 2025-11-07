@@ -30,7 +30,6 @@
 #include "EstimatorManagerNewTest.h"
 #include "EDenEstimatorManagerIntegrationTest.h"
 
-
 constexpr bool generate_test_data = false;
 
 namespace qmcplusplus
