@@ -16,9 +16,17 @@
 
 namespace qmcplusplus
 {
+
+using namespace std::string_literals;
+
 PerParticleHamiltonianLogger::PerParticleHamiltonianLogger(PerParticleHamiltonianLoggerInput&& input, int rank)
     : OperatorEstBase(DataLocality::crowd, input.get_name(), input.get_type()), input_(input), rank_(rank)
 {
+  labeled_crowd_log_values_ = {{"local_potential"s, local_potential_values_},
+                               {"local_energy"s, local_energy_values_},
+                               {"ion_potential"s, local_ion_potential_values_},
+                               {"kinetic_energy"s, kinetic_energy_values_}};
+
   requires_listener_ = true;
 
   std::string filename("rank_" + std::to_string(rank_) + "_" + input_.get_name() + ".dat");
@@ -30,28 +38,36 @@ PerParticleHamiltonianLogger::PerParticleHamiltonianLogger(PerParticleHamiltonia
       rank_estimator_(makeOptionalRef(pphl)),
       input_(pphl.input_)
 {
+  labeled_crowd_log_values_ = {{"local_potential"s, local_potential_values_},
+                               {"local_energy"s, local_energy_values_},
+                               {"ion_potential"s, local_ion_potential_values_},
+                               {"kinetic_energy"s, kinetic_energy_values_}};
+
   requires_listener_ = true;
   data_locality_     = dl;
 }
 
-void PerParticleHamiltonianLogger::write(CrowdLogValues& cl_values, const std::vector<long>& walker_ids)
+void PerParticleHamiltonianLogger::write(LabeledCrowdLogValues& labeled_cl_values, const std::vector<long>& walker_ids)
 {
   // fstream is not thread safe but it is buffered.  If the buffer isn't too small this
   // should mostly return quickly and the contention for the lock should be manageable.
   const std::lock_guard<std::mutex> lock(write_lock);
-  for (auto& [component, values] : cl_values)
-  {
-    rank_fstream_ << "operator: " << component << '\n'; // " crowd: " << crowd_id <<
-    for (int iw = 0; iw < values.size(); ++iw)
-      rank_fstream_ << " walker:" << walker_ids[iw] << " " << NativePrint(values[iw]) << '\n';
-  }
-  if (input_.get_to_stdout())
+  for (auto& [label, cl_values] : labeled_cl_values)
   {
     for (auto& [component, values] : cl_values)
     {
-      std::cout << component << '\n';
+      rank_fstream_ << "operator: " << component << '\n'; // " crowd: " << crowd_id <<
       for (int iw = 0; iw < values.size(); ++iw)
-        std::cout << " walker: " << walker_ids[iw] << "  " << NativePrint(values[iw]) << '\n';
+        rank_fstream_ << " walker:" << walker_ids[iw] << " " << NativePrint(values[iw]) << '\n';
+    }
+    if (input_.get_to_stdout())
+    {
+      for (auto& [component, values] : cl_values)
+      {
+        std::cout << component << '\n';
+        for (int iw = 0; iw < values.size(); ++iw)
+          std::cout << " walker: " << walker_ids[iw] << "  " << NativePrint(values[iw]) << '\n';
+      }
     }
   }
 }
@@ -69,18 +85,34 @@ void PerParticleHamiltonianLogger::accumulate(const RefVector<MCPWalker>& walker
   walker_ids_.clear();
   for (MCPWalker& walker : walkers)
     walker_ids_.push_back(walker.getWalkerID());
-  rank_estimator_->get().write(values_, walker_ids_);
+  rank_estimator_->get().write(labeled_crowd_log_values_, walker_ids_);
 
   // \todo some per crowd reduction.
   //       clear log values
 }
 
-PerParticleHamiltonianLogger::Real PerParticleHamiltonianLogger::sumOverAll() const
+PerParticleHamiltonianLogger::Real PerParticleHamiltonianLogger::sumOverSome(std::vector<std::string> which_listeners)
 {
   Real sum{0};
-  for (auto& [component, values] : values_)
-    for (auto& a_vector : values)
-      sum += std::accumulate(a_vector.begin(), a_vector.end(), 0.0);
+  for (auto& listener_label : which_listeners)
+  {
+    const auto& cl_values = labeled_crowd_log_values_.at(listener_label);
+    for (auto& [component, values] : cl_values)
+      for (auto& a_vector : values)
+        sum += std::accumulate(a_vector.begin(), a_vector.end(), 0.0);
+  }
+  return sum;
+}
+
+PerParticleHamiltonianLogger::Real PerParticleHamiltonianLogger::sumOverAll()
+{
+  Real sum{0};
+  for (auto& [label, cl_values] : labeled_crowd_log_values_)
+  {
+    for (auto& [component, values] : cl_values)
+      for (auto& a_vector : values)
+        sum += std::accumulate(a_vector.begin(), a_vector.end(), 0.0);
+  }
   return sum;
 }
 
@@ -97,7 +129,13 @@ std::unique_ptr<OperatorEstBase> PerParticleHamiltonianLogger::spawnCrowdClone()
 
 ListenerVector<QMCTraits::RealType>::ReportingFunction PerParticleHamiltonianLogger::getLogger()
 {
-  auto& local_values = values_;
+  return getLogger(local_energy_values_);
+}
+
+ListenerVector<QMCTraits::RealType>::ReportingFunction PerParticleHamiltonianLogger::getLogger(CrowdLogValues& values)
+{
+  // \todo Now that I pass in the values this may not be necessary
+  auto& local_values = values;
   return [&local_values](const int walker_index, const std::string& name, const Vector<Real>& inputV) {
     if (walker_index >= local_values[name].size())
       local_values[name].resize(walker_index + 1);
@@ -112,9 +150,14 @@ void PerParticleHamiltonianLogger::collect(const RefVector<OperatorEstBase>& typ
 
 void PerParticleHamiltonianLogger::registerListeners(QMCHamiltonian& ham_leader)
 {
-  ListenerVector<Real> listener(name_, getLogger());
-  QMCHamiltonian::mw_registerLocalEnergyListener(ham_leader, listener);
-  QMCHamiltonian::mw_registerLocalIonPotentialListener(ham_leader, listener);
+  ListenerVector<Real> local_energy_listener(name_, getLogger(local_energy_values_));
+  ListenerVector<Real> local_potential_listener(name_, getLogger(local_potential_values_));
+  ListenerVector<Real> local_ion_potential_listener(name_, getLogger(local_ion_potential_values_));
+  ListenerVector<Real> kinetic_energy_listener(name_, getLogger(kinetic_energy_values_));
+  QMCHamiltonian::mw_registerLocalEnergyListener(ham_leader, local_energy_listener);
+  QMCHamiltonian::mw_registerLocalPotentialListener(ham_leader, local_potential_listener);
+  QMCHamiltonian::mw_registerLocalIonPotentialListener(ham_leader, local_ion_potential_listener);
+  QMCHamiltonian::mw_registerKineticListener(ham_leader, kinetic_energy_listener);
 }
 
 void PerParticleHamiltonianLogger::startBlock(int steps)
