@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2023 QMCPACK developers.
+// Copyright (c) 2025 QMCPACK developers.
 //
 // File developed by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
@@ -20,7 +20,7 @@
 #define QMCPLUSPLUS_NESPACEGRID_H
 
 #include <Configuration.h>
-
+#include <cmath>
 #include "SpaceGridInput.h"
 #include "OhmmsPETE/Tensor.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
@@ -100,14 +100,16 @@ public:
   void accumulate(const ParticlePos& R, const Matrix<Real>& values, std::vector<bool>& particles_outside);
 
   /** SpaceGridAccumulate not type erased and with its own particular interface.
-   *  the composing class needs to provide the following to spave grid.
+   *  the composing class needs to provide the following to space grid.
    *  \param[in]      R                    particle positions
    *  \param[in]      values               matrix indexed particle, value
    *  \param[in/out]  buf                  buffer to accumulating grid to
    *  \param[out]     particles_outside    mask vector of particles falling outside the grid box
    *  \param[in]      dtab                 particle A to Particle B distance table
    *
-   *  right now cartesian grids are assumed to be periodic because this was the legacy behavior 
+   *  This method accumulates to this space grid, at least in DMC with each step.
+   *
+   *  right now cartesian grids are assumed to be periodic because this was the legacy behavior
    *  In the period case the assumption minimum image is called holds, a out of bounds exception will occur
    *  for anything coordinate more than one grid cell outside of the periodic boundaries and density can
    *  incorrectly be accumulated at the edges of the grid for particles outside of the minimum image boundary
@@ -126,17 +128,33 @@ public:
 
   void sum(const BufferType& buf, Real* vals);
 
-  void static collect(NESpaceGrid& reduction_grid, RefVector<NESpaceGrid> grid_for_each_crowd);
+  /** collect to the rank level space grid.
+   *  This is intended to occur each block. accumulated state is of the crowd grids is not changed.
+   */
+  void static collect(NESpaceGrid& reduction_grid, const RefVector<NESpaceGrid> grid_for_each_crowd);
 
+  void zero();
+
+  void normalize(Real invToWgt);
   auto& getDataVector() { return data_; }
+  const auto& getDataVector() const { return data_; }
+  /** return OHMMS_DIM array of int with the stride size of each index
+   *  wrt linear indexing, this is here to minimize changes from the
+   *  legacy implementation.
+   */
+  const auto& getDM() const { return dm_; }
+  /// Number of values per grid point
+  int getNValuesPerDomain() const { return nvalues_per_domain_; }
+  /** function to get the indexes into the space grid for a position
+   *  Only used for testing.
+   */
+  std::array<int, 3> findGMapIndexes(const TinyVector<REAL, OHMMS_DIM>& position);
 
 private:
   /** copy AxisGrid data to SoA layout for evaluation
    */
   void copyToSoA();
 
-
-  void zero();
 
   /** return actual origin point based on input
    */
@@ -152,7 +170,7 @@ private:
    *  Causes side effects updating
    *    origin_    fixed up origin for grid
    *    axes_      axes with scaling applied to it.
-   *    axinv_     the inverse of the axes with scaling applied   
+   *    axinv_     the inverse of the axes with scaling applied
    */
   bool initializeRectilinear(const SpaceGridInput& input, const Points& points);
 
@@ -162,7 +180,7 @@ private:
    *  Causes side effects updating
    *    origin_    fixed up origin for grid
    *    axes_      axes with scaling applied to it.
-   *    axinv_     the inverse of the axes with scaling applied   
+   *    axinv_     the inverse of the axes with scaling applied
    */
   bool initializeCylindrical(const SpaceGridInput& input, const Points& points);
 
@@ -172,7 +190,7 @@ private:
    *  Causes side effects updating
    *    origin_    fixed up origin for grid
    *    axes_      axes with scaling applied to it.
-   *    axinv_     the inverse of the axes with scaling applied   
+   *    axinv_     the inverse of the axes with scaling applied
    */
   bool initializeSpherical(const SpaceGridInput& input, const Points& points);
 
@@ -261,6 +279,7 @@ public:
   template<typename T>
   friend class testing::NESpaceGridTests;
 };
+
 
 extern template class NESpaceGrid<float>;
 extern template class NESpaceGrid<double>;

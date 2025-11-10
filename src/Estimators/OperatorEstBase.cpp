@@ -36,6 +36,12 @@ void OperatorEstBase::collect(const RefVector<OperatorEstBase>& type_erased_oper
   }
 }
 
+void OperatorEstBase::zero(RefVector<OperatorEstBase>& type_erased_operator_estimators)
+{
+  for (OperatorEstBase& crowd_oeb : type_erased_operator_estimators)
+    crowd_oeb.zero();
+}
+
 void OperatorEstBase::normalize(QMCT::RealType invTotWgt)
 {
   for (QMCT::RealType& elem : data_)

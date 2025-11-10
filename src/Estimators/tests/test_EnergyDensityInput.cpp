@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2023 QMCPACK developers.
+// Copyright (c) 2025 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //
@@ -12,10 +12,10 @@
 
 #include "catch.hpp"
 
-#include <iostream>
 #include "EnergyDensityInput.h"
 #include "EstimatorTesting.h"
 #include "ValidEnergyDensityInput.h"
+#include <iostream>
 #include "OhmmsData/Libxml2Doc.h"
 
 namespace qmcplusplus
@@ -28,7 +28,7 @@ TEST_CASE("EnergyDensityInput::parseXML::valid", "[estimators]")
   int test_num = 0;
   for (auto input_xml : input)
   {
-    std::cout << "input number: " << test_num++ << '\n'; 
+    std::cout << "input number: " << test_num++ << '\n';
     Libxml2Document doc;
     bool okay       = doc.parseFromString(input_xml);
     xmlNodePtr node = doc.getRoot();
@@ -81,7 +81,7 @@ TEST_CASE("EnergyDensityInput::copy_construction", "[estimators]")
   EnergyDensityInput edi(node);
 
   static_assert(std::is_copy_constructible_v<EnergyDensityInput>);
-  
+
   EnergyDensityInput edi2(edi);
 }
 
