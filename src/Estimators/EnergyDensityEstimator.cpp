@@ -85,9 +85,6 @@ NEEnergyDensityEstimator::NEEnergyDensityEstimator(const EnergyDensityInput& inp
     spacegrids_.emplace_back(
         std::make_unique<NESpaceGrid<Real>>(spacegrid_inputs_[ig], ref_points_->get_points(), N_EDVALS, periodic));
   }
-#ifndef NDEBUG
-  app_log() << "Instantiated " << spacegrids_.size() << " spacegrids\n";
-#endif
 }
 
 NEEnergyDensityEstimator::NEEnergyDensityEstimator(const NEEnergyDensityEstimator& ede, const DataLocality dl)
@@ -239,9 +236,7 @@ void NEEnergyDensityEstimator::accumulate(const RefVector<MCPWalker>& walkers,
   }
   auto zero_reduced_values = [](auto& reduced_values) {
     for (auto& walker_values : reduced_values)
-    {
       std::fill(walker_values.begin(), walker_values.end(), 0.0);
-    }
   };
   zero_reduced_values(reduced_local_kinetic_values_);
   zero_reduced_values(reduced_local_pot_values_);
@@ -393,7 +388,6 @@ void NEEnergyDensityEstimator::registerOperatorEstimator(hdf_archive& file)
   if (input_.get_ion_points())
   {
     file.write(n_ions_, "nions");
-    //file.write(r_ion_work_, "ion_positions");
   }
   file.pop();
 

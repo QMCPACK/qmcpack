@@ -138,12 +138,17 @@ public:
   void normalize(Real invToWgt);
   auto& getDataVector() { return data_; }
   const auto& getDataVector() const { return data_; }
+  /** return OHMMS_DIM array of int with the stride size of each index
+   *  wrt linear indexing, this is here to minimize changes from the
+   *  legacy implementation.
+   */
   const auto& getDM() const { return dm_; }
+  /// Number of values per grid point
   int getNValuesPerDomain() const { return nvalues_per_domain_; }
-  /** function to get the linear index into the space grid for a position
+  /** function to get the indexes into the space grid for a position
+   *  Only used for testing.
    */
   std::array<int, 3> findGMapIndexes(const TinyVector<REAL, OHMMS_DIM>& position);
-
 
 private:
   /** copy AxisGrid data to SoA layout for evaluation
