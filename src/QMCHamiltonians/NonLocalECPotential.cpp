@@ -414,8 +414,8 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
           auto& vi_samples = O_leader.mw_res_handle_.getResource().vi_samples;
           // CAUTION! This may not be so simple in the future
           int iw = j;
-          ve_samples(iw, batch_list[j].get().electron_id) += pairpots[j];
-          vi_samples(iw, batch_list[j].get().ion_id) += pairpots[j];
+          ve_samples(iw, batch_list[j].get().electron_id) += 0.5 * pairpots[j];
+          vi_samples(iw, batch_list[j].get().ion_id) += 0.5 * pairpots[j];
         }
 
 #ifdef DEBUG_NLPP_BATCHED
@@ -453,7 +453,7 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
         listener.report(iw, O_leader.getName(), ve_sample);
 
       for (const ListenerVector<Real>& listener : listeners->ion_values)
-        listener.report(iw, O_leader.getName(), vi_sample);
+        listener.report(iw, ion_listener_operator_name, vi_sample);
     }
     ve_samples = 0.0;
     vi_samples = 0.0;
