@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <simulation>
-  <project id="qmc_edens_cell_short_batched" series="0">
+  <project id="qmc_edens_cell_no_ions_short_batched" series="0">
     <application name="qmcapp" role="molecu" class="serial" version="1.0" />
     <parameter name="driver_version">batched</parameter>
   </project>
@@ -41,7 +41,7 @@
     <wavefunction name="psi0" target="e">
       <sposet_collection type="bspline" href="pwscf.pwscf.h5"
         tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0"
-        meshfactor="1.0" precision="float">
+        meshfactor="1.0" precision="double">
         <sposet type="bspline" name="spo_ud" size="4" spindataset="0" />
       </sposet_collection>
       <determinantset>
@@ -78,8 +78,7 @@
       </jastrow>
     </wavefunction>
     <hamiltonian name="h0" type="generic" target="e">
-      <pairpot type="coulomb" name="ElecElec" source="e" target="e" />
-      <pairpot type="coulomb" name="IonIon" source="ion0" target="ion0" />
+      <pairpot type="coulomb" name="ElecElec" source="e" />
       <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0"
         format="xml">
         <pseudo elementType="C" href="C.BFD.xml" />

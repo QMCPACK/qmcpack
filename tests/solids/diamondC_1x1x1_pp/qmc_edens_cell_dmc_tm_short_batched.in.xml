@@ -1,10 +1,9 @@
 <?xml version="1.0"?>
 <simulation>
-   <project id="det_qmc_short_vmcbatch_edens_cell" series="0">
-      <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
-    <parameter name="driver_version">batched</parameter>
+   <project id="qmc_edens_cell_dmc_tm_short_batched" series="0">
+     <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
+          <parameter name="driver_version">batched</parameter>
    </project>
-   <random seed="71"/>
    <qmcsystem>
       <simulationcell>
          <parameter name="lattice" units="bohr">
@@ -45,8 +44,8 @@
          </sposet_collection>
          <determinantset>
            <slaterdeterminant>
-	      <determinant sposet="spo_ud"/>
-              <determinant sposet="spo_ud"/>
+               <determinant sposet="spo_ud"/>
+               <determinant sposet="spo_ud"/>
            </slaterdeterminant>
          </determinantset>
          <jastrow type="One-Body" name="J1" function="bspline" source="ion0" print="yes">
@@ -78,29 +77,38 @@
          <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml">
             <pseudo elementType="C" href="C.BFD.xml"/>
          </pairpot>
-         <pairpot name="MPC" type="MPC" source="e" target="e" ecut="60.0" physical="false"/>
-         <estimator type="flux" name="Flux"/>
-         <estimator type="EnergyDensity" name="EDcell" dynamic="e" static="ion0">
+
+
+      </hamiltonian>
+   </qmcsystem>
+   <traces array="yes" write="no"/>
+   <qmc method="vmc" move="pbyp">
+      <parameter name="walkers_per_rank"             >    256              </parameter>
+      <parameter name="blocks"              >    1            </parameter>
+      <parameter name="steps"               >    100               </parameter>
+      <parameter name="subSteps"            >    2               </parameter>
+      <parameter name="timestep"            >    0.3             </parameter>
+      <parameter name="warmupSteps"         >    100             </parameter>
+   </qmc>
+   <qmc method="dmc" move="pbyp" checkpoint="-1">
+     <parameter name="targetwalkers"             >    256              </parameter>
+     <estimators>
+       <estimator type="EnergyDensity" name="EDcell" dynamic="e" static="ion0">
            <spacegrid coord="cartesian">
              <origin p1="zero"/>
              <axis p1="a1" scale=".5" label="x" grid="-1 (.1) 1"/>
              <axis p1="a2" scale=".5" label="y" grid="-1 (.1) 1"/>
              <axis p1="a3" scale=".5" label="z" grid="-1 (.1) 1"/>
            </spacegrid>
-         </estimator>
-         <estimator type="EnergyDensity" name="EDvoronoi" dynamic="e" static="ion0">
-           <spacegrid coord="voronoi"/>
-         </estimator>
-      </hamiltonian>
-   </qmcsystem>
-   <traces array="yes" write="no"/>
-   <qmc method="vmc" move="pbyp">
-      <estimator name="LocalEnergy" hdf5="no"/>
-      <parameter name="totalwalkers"        >    1               </parameter>
-      <parameter name="blocks"              >    3               </parameter>
-      <parameter name="steps"               >    3               </parameter>
-      <parameter name="subSteps"            >    2               </parameter>
-      <parameter name="timestep"            >    0.3             </parameter>
-      <parameter name="warmupSteps"         >    3               </parameter>
+       </estimator>
+       <estimator name="LocalEnergy" hdf5="no"/>
+     </estimators>
+     <parameter name="reconfiguration">   no </parameter>
+     <parameter name="warmupSteps">  100  </parameter>
+     <parameter name="timestep">  0.005 </parameter>
+     <parameter name="steps">   100   </parameter>
+     <parameter name="blocks">  100   </parameter>
+     <parameter name="nonlocalmoves">  v3 </parameter>
    </qmc>
+
 </simulation>
