@@ -3295,7 +3295,10 @@ class Structure(Sobj):
         axinv = inv(axes)
         for i in range(len(pos)):
             u = dot(pos[i]-c,axinv)
-            pos[i] = dot(u-np.floor(u+.5),axes)+c
+            u -= np.floor(u+.5)
+            u[np.abs(u-.5)<1e-12] -=  1.0
+            u[np.abs(u+.5)<1e-12]  = -0.5
+            pos[i] = dot(u,axes)+c
         #end for
         self.recenter_k()
     #end def recenter
@@ -3333,8 +3336,8 @@ class Structure(Sobj):
             for i in range(len(kpoints)):
                 u = dot(kpoints[i]-c,axinv)
                 u -= np.floor(u+.5)
-                u[np.abs(u-.5)<1e-12] -= 1.0
-                u[np.abs(u   )<1e-12]  = 0.0
+                u[np.abs(u-.5)<1e-12] -=  1.0
+                u[np.abs(u+.5)<1e-12]  = -0.5
                 kpoints[i] = dot(u,axes)+c
             #end for
             if remove_duplicates:
