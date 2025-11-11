@@ -814,18 +814,18 @@ class StatFile(QDBase):
         sdim = tuple('xyz')[dim]
         for name,spin_density in self.spin_density_data.items():
             prefix = '{0}.{1}_lineplot_{2}'.format(self.file_prefix,name,sdim)
-            datas = {'u':spin_density.u.value, 
+            data  = {'u':spin_density.u.value, 
                      'd': spin_density.d.value, 
                      'u+d': spin_density.u.value+spin_density.d.value, 
                      'u-d': spin_density.u.value-spin_density.d.value}
-            for key,data in datas.items():
+            for key,datum in data.items():
                 if permute:
-                    data = data.transpose(permutation)
+                    datum = datum.transpose(permutation)
                 #end if
-                s = data.shape
-                data.shape = s[0],s[1],s[2]*s[3]
-                data = data.sum(2)
-                lmean,lvar,lerror,lkappa = simstats(data,dim=0)
+                s = datum.shape
+                datum = datum.reshape(s[0], s[1], s[2]*s[3])
+                datum = datum.sum(2)
+                lmean,lvar,lerror,lkappa = simstats(datum,dim=0)
                 if rmax is None:
                     r = np.arange(len(lmean))
                     xlab = 'bin number'
@@ -835,16 +835,32 @@ class StatFile(QDBase):
                     r = dr/2+dr*np.arange(len(lmean),dtype=float)
                     lmean/=dr
                     lerror/=dr
-                    xlab = sdim+' ($\\AA$)'.format(dim)
+                    xlab = f'{sdim} ($\\AA$)'
                     ylab = '$N_e/\\AA$'
                 #end if
+                # Use np.trapz for backwards and forwards compatibility.
+                # np.trapz is deprecated in newer numpy, but still works (with warning); np.trapezoid is only available in 2.0+.
+                # Prefer np.trapz, but warn the user if a warning occurs.
+                np_version = tuple(map(int, np.__version__.split('.')[:2]))
+                use_trapz = np_version < (2, 0)
                 try:
-                    # For numpy ver. 1.26 and below
-                    print(f'Total number of {key} electrons: {np.trapz(lmean, r)}')
-                except:
-                    # For numpy ver. 2.0 and above
-                    print(f'Total number of {key} electrons: {np.trapezoid(lmean, r)}')
+                    if use_trapz:
+                        import warnings
+                        with warnings.catch_warnings(record=True) as w:
+                            warnings.simplefilter("always")
+                            total_electrons = np.trapz(lmean, r)
+                            if w and any('deprecated' in str(warning.message).lower() for warning in w):
+                                print("Warning: np.trapz is deprecated in numpy 2.0+, consider upgrading this code for future compatibility.", flush=True)
+                            #end if
+                    else:
+                        # In NumPy >= 2.0, prefer np.trapezoid
+                        total_electrons = np.trapezoid(lmean, r)
+                    #end if
+                except AttributeError:
+                    # Fallback if np.trapezoid not available in old numpy
+                    total_electrons = np.trapz(lmean, r)
                 #end try
+                print(f'Total number of {key} electrons: {total_electrons}')
                 plt.figure(tight_layout=True)
                 plt.errorbar(r,lmean,lerror,fmt='b.-')
                 plt.xlabel(xlab)
