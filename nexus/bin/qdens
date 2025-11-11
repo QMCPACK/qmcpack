@@ -839,27 +839,13 @@ class StatFile(QDBase):
                     ylab = '$N_e/\\AA$'
                 #end if
                 # Use np.trapz for backwards and forwards compatibility.
-                # np.trapz is deprecated in newer numpy, but still works (with warning); np.trapezoid is only available in 2.0+.
-                # Prefer np.trapz, but warn the user if a warning occurs.
                 np_version = tuple(map(int, np.__version__.split('.')[:2]))
                 use_trapz = np_version < (2, 0)
-                try:
-                    if use_trapz:
-                        import warnings
-                        with warnings.catch_warnings(record=True) as w:
-                            warnings.simplefilter("always")
-                            total_electrons = np.trapz(lmean, r)
-                            if w and any('deprecated' in str(warning.message).lower() for warning in w):
-                                print("Warning: np.trapz is deprecated in numpy 2.0+, consider upgrading this code for future compatibility.", flush=True)
-                            #end if
-                    else:
-                        # In NumPy >= 2.0, prefer np.trapezoid
-                        total_electrons = np.trapezoid(lmean, r)
-                    #end if
-                except AttributeError:
-                    # Fallback if np.trapezoid not available in old numpy
+                if use_trapz:
                     total_electrons = np.trapz(lmean, r)
-                #end try
+                else:
+                    # In NumPy >= 2.0, prefer np.trapezoid
+                    total_electrons = np.trapezoid(lmean, r)
                 print(f'Total number of {key} electrons: {total_electrons}')
                 plt.figure(tight_layout=True)
                 plt.errorbar(r,lmean,lerror,fmt='b.-')
