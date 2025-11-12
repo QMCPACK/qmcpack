@@ -953,7 +953,7 @@ Attribute:
 
 .. code-block::
    :caption: Orbital Rotation XML element.
-   :name: Listing 1
+   :name: Listing 1R
 
    <sposet_collection ...>
      <rotated_sposet name="rot_spo">
