@@ -677,10 +677,12 @@ convenience we use a generic BLAS. A vendor-optimized BLAS is usually faster.
   make -j 8 # Adjust to available core count
   ls -l bin/qmcpack
 
-We recommend running the deterministic test set. Since by default OpenMPI will not
-allow processes to use more than the available number of cores, set `export OMPI_MCA_rmaps_base_oversubscribe=true`:
+We recommend running the deterministic test set. Since by default OpenMPI will not allow processes to use more than the available
+number of cores, set ``export OMPI_MCA_rmaps_base_oversubscribe=true``. Note that this environment variable is case sensitive. i.e.
+Use
 
 ::
+
   export OMPI_MCA_rmaps_base_oversubscribe=true
   time ctest -j 16 -L deterministic --output-on-failure
  
