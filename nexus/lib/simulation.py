@@ -1488,14 +1488,16 @@ class GenericSimulation(Simulation):
     def __init__(self,**kwargs):
         import os
         self.outfiles = kwargs.pop('outfiles',[])
-        input = kwargs['input']
-        if isinstance(input,str):
-            if os.path.exists(input):
-                self.infile = input
-                kwargs['input'] = input_template(filepath=self.infile)
-            else:
-                text = input
-                kwargs['input'] = input_template(text=text)
+        if 'input' in kwargs:
+            input = kwargs['input']
+            if isinstance(input,str):
+                if os.path.exists(input):
+                    self.infile = input
+                    kwargs['input'] = input_template(filepath=self.infile)
+                else:
+                    text = input
+                    kwargs['input'] = input_template(text=text)
+            #end if
         #end if
         self.input_type    = NullSimulationInput
         self.analyzer_type = NullSimulationAnalyzer
