@@ -59,7 +59,7 @@ from pwscf_postprocessors import Bands   , BandsInput   , BandsAnalyzer   , gene
 from pwscf_postprocessors import Projwfc , ProjwfcInput , ProjwfcAnalyzer , generate_projwfc_input , generate_projwfc
 from pwscf_postprocessors import Cppp    , CpppInput    , CpppAnalyzer    , generate_cppp_input    , generate_cppp
 from pwscf_postprocessors import Pwexport, PwexportInput, PwexportAnalyzer, generate_pwexport_input, generate_pwexport
-from pwscf_postprocessors import Hp      , HpInput      , HpAnalyzer      , generate_hp_input.     , generate_hp
+from pwscf_postprocessors import Hp      , HpInput      , HpAnalyzer      , generate_hp_input      , generate_hp
 
 from qmcpack import loop,linear,cslinear,vmc,dmc
 from qmcpack import generate_jastrows,generate_jastrow,generate_jastrow1,generate_jastrow2,generate_jastrow3,generate_opt,generate_opts
