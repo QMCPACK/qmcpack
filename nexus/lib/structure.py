@@ -481,6 +481,20 @@ def rotate_plane(plane,angle,points,units='degrees'):
 #end def rotate_plane
 
 
+def _center_points(pos, center, axes):
+    pos_new = np.empty(pos.shape, dtype=float)
+    pos_new[:] = pos[:]
+    axinv = inv(axes)
+    for i in range(len(pos_new)):
+        u = dot(pos_new[i] - center, axinv)
+        u -= np.floor(u+.5)
+        u[np.abs(u-.5)<1e-12] = -0.5
+        u[np.abs(u+.5)<1e-12] = -0.5
+        pos_new[i] = dot(u,axes) + center
+    #end for
+
+    return pos_new
+
 
 opt_tm_matrices    = obj()
 opt_tm_wig_indices = obj()
@@ -3284,38 +3298,14 @@ class Structure(Sobj):
 
 
     # test needed
-    def recenter(self,center=None):
+    def recenter(self, center=None):
         if center is not None:
-            self.center=np.array(center,dtype=float)
+            self.center = np.array(center, dtype=float)
         #end if
-        pos = self.pos
-        c = np.empty((1,self.dim),dtype=float)
-        c[:] = self.center[:]
-        axes = self.axes
-        axinv = inv(axes)
-        for i in range(len(pos)):
-            u = dot(pos[i]-c,axinv)
-            u -= np.floor(u+.5)
-            u[np.abs(u-.5)<1e-12] -=  1.0
-            u[np.abs(u+.5)<1e-12]  = -0.5
-            pos[i] = dot(u,axes)+c
-        #end for
-        self.recenter_k()
-    #end def recenter
+        new_pos = _center_points(pos=self.pos, center=self.center, axes=self.axes)
+        self.pos = new_pos
 
 
-    # test needed
-    def recorner(self):
-        pos = self.pos
-        axes = self.axes
-        axinv = inv(axes)
-        for i in range(len(pos)):
-            u = dot(pos[i],axinv)
-            pos[i] = dot(u-np.floor(u),axes)
-        #end for
-    #end def recorner
-
-    
     # test needed
     def recenter_k(self,kpoints=None,kaxes=None,kcenter=None,remove_duplicates=False):
         use_self = kpoints is None
@@ -3327,50 +3317,56 @@ class Structure(Sobj):
         #end if
         if len(kpoints)>0:
             axes = kaxes
-            axinv = inv(axes)
             if kcenter is None:
-                c = axes.sum(0)/2
+                center = axes.sum(0)/2
             else:
-                c = np.array(kcenter)
-            #end if
-            for i in range(len(kpoints)):
-                u = dot(kpoints[i]-c,axinv)
-                u -= np.floor(u+.5)
-                u[np.abs(u-.5)<1e-12] -=  1.0
-                u[np.abs(u+.5)<1e-12]  = -0.5
-                kpoints[i] = dot(u,axes)+c
-            #end for
+                center = np.array(kcenter)
+
+            new_kpts = _center_points(pos=kpoints, center=center, axes=axes)
+
             if remove_duplicates:
-                inside = self.inside(kpoints,axes,c)
-                kpoints  = kpoints[inside]
-                nkpoints = len(kpoints)
+                inside = self.inside(new_kpts,axes,center)
+                new_kpts  = new_kpts[inside]
+                nkpoints = len(new_kpts)
                 unique = np.empty((nkpoints,),dtype=bool)
                 unique[:] = True
-                nn = nearest_neighbors(1,kpoints)
+                nn = nearest_neighbors(1,new_kpts)
                 if nkpoints>1:
                     nn.shape = nkpoints,
-                    dist = self.distances(kpoints,kpoints[nn])
+                    dist = self.distances(new_kpts,new_kpts[nn])
                     tol = 1e-8
                     duplicates = np.arange(nkpoints)[dist<tol]
                     for i in duplicates:
                         if unique[i]:
                             for j in duplicates:
-                                if sqrt(((kpoints[i]-kpoints[j])**2).sum(1))<tol:
+                                if sqrt(((new_kpts[i]-new_kpts[j])**2).sum(1))<tol:
                                     unique[j] = False
                                 #end if
                             #end for
                         #end if
                     #end for
                 #end if
-                kpoints = kpoints[unique]
+                new_kpts = new_kpts[unique]
             #end if
         #end if
         if use_self:
-            self.kpoints = kpoints
+            self.kpoints = new_kpts
         else:
-            return kpoints   
+            return new_kpts   
         #end if
     #end def recenter_k
+
+
+    # test needed
+    def recorner(self, center = None):
+        if center is not None:
+            self.center = np.array(center, dtype=float)
+        pos = self.pos
+        axes = self.axes
+        corner = self.center - np.array(axes, dtype=float).sum(0)/2
+        new_pos = _center_points(pos=pos, center=corner, axes=axes)
+        self.pos = new_pos
+    #end def recorner
 
 
     # test needed
