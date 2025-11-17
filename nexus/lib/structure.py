@@ -482,6 +482,14 @@ def rotate_plane(plane,angle,points,units='degrees'):
 
 
 def _center_points(pos, center, axes):
+    """Center a given set of points in a cell around a provided center.
+    
+    Note
+    ----
+    This function also ensures that points close (within 1e-12) to the minimum edge (-0.5) of the
+    cell are placed exactly on that edge. The intent here is to make sure that atoms close to or
+    on the leading edge (+0.5) are wrapped around to retain periodicity.
+    """
     pos_new = np.empty(pos.shape, dtype=float)
     pos_new[:] = pos[:]
     axinv = inv(axes)
@@ -3299,6 +3307,9 @@ class Structure(Sobj):
 
     # test needed
     def recenter(self, center=None):
+        """Center atoms around the provided center of the unit cell, or if the
+        center is not provided then use the (0.5 0.5 0.5) point of the unit cell.
+        """
         if center is not None:
             self.center = np.array(center, dtype=float)
         #end if
@@ -3308,6 +3319,7 @@ class Structure(Sobj):
 
     # test needed
     def recenter_k(self,kpoints=None,kaxes=None,kcenter=None,remove_duplicates=False):
+        """Center k-points around the center of k-space"""
         use_self = kpoints is None
         if use_self:
             kpoints=self.kpoints
@@ -3359,6 +3371,7 @@ class Structure(Sobj):
 
     # test needed
     def recorner(self, center = None):
+        """Center atoms around the origin of the cell"""
         if center is not None:
             self.center = np.array(center, dtype=float)
         pos = self.pos
