@@ -582,7 +582,7 @@ The following provides an example of job bundling applied to the equation of sta
           C     = 4,                    # Pseudpotential valence charge
           )
 
-      # PBE calculation with Quantum Espresso
+      # PBE calculation with Quantum ESPRESSO
       scf = generate_pwscf(
           identifier   = 'scf',                      # In/out file prefix
           path         = 'a_{:6.4f}'.format(a),      # Run directory
@@ -593,7 +593,7 @@ The following provides an example of job bundling applied to the equation of sta
           ecutwfc      = 200,                        # PW energy cutoff (Ry)
           conv_thr     = 1e-8,                       # SCF conv threshold (Ry)
           system       = system,                     # System from above
-          pseudos      = ['C.BFD.upf'],            # Pseudopotential files
+          pseudos      = ['C.BFD.upf'],              # Pseudopotential files
           kgrid        = (4,4,4),                    # M.P. k-point grid
           kshift       = (0,0,0),                    # M.P. grid shift
           )
@@ -610,6 +610,7 @@ The following provides an example of job bundling applied to the equation of sta
 
 Without job bundling, the example above results in 5 different job submissions, each using 4 nodes and corresponding to a different lattice constant of diamond.
 Since these jobs are mutually independent, they can be combined into a single 20 nodes (4 nodes * 5 tasks) job using ``bundle`` function as seen in the example.
+The bundled jobs can involve any combination of node counts and types of simulation. However, the simulations should have close to the same runtime to make the most efficient use of resources.
 
 
 .. _custom-job-options:
