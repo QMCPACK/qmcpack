@@ -611,7 +611,7 @@ The following provides an example of job bundling applied to the equation of sta
 Without job bundling, the example above results in 5 different job submissions, each using 4 nodes and corresponding to a different lattice constant of diamond.
 Since these jobs are mutually independent, they can be combined into a single 20 nodes (4 nodes * 5 tasks) job using ``bundle`` function as seen in the example.
 The bundled jobs can involve any combination of node counts and types of simulation. However, the simulations should have close to the same runtime to make the most efficient use of resources.
-
+The bundled jobs are not required to be combined into a single job. Their size can be adjusted by distributing tasks across separate ``bundle`` functions.
 
 .. _custom-job-options:
 
