@@ -185,7 +185,6 @@ struct LRHandlerBase
 
   virtual void initBreakup(ParticleSet& ref)              = 0;
   virtual void Breakup(ParticleSet& ref, mRealType rs_in) = 0;
-  virtual void resetTargetParticleSet(ParticleSet& ref)   = 0;
 
   virtual mRealType evaluate(mRealType r, mRealType rinv) const = 0;
   virtual mRealType evaluateLR(mRealType r) const               = 0;
@@ -250,7 +249,6 @@ struct DummyLRHandler : public LRHandlerBase
   mRealType evaluateLR(mRealType r) const override { return 0.0; }
   mRealType srDf(mRealType r, mRealType rinv) const override { return 0.0; }
   void Breakup(ParticleSet& ref, mRealType rs_in) override {}
-  void resetTargetParticleSet(ParticleSet& ref) override {}
   LRHandlerBase* makeClone(ParticleSet& ref) const override { return new DummyLRHandler<Func>(LR_kc); }
 };
 
