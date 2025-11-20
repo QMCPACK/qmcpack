@@ -69,8 +69,6 @@ bool BareKineticEnergy::dependsOnWaveFunction() const { return true; }
 
 std::string BareKineticEnergy::getClassName() const { return "BareKineticEnergy"; }
 
-void BareKineticEnergy::resetTargetParticleSet(ParticleSet& p) {}
-
 #if !defined(REMOVE_TRACEMANAGER)
 void BareKineticEnergy::contributeParticleQuantities()
 {

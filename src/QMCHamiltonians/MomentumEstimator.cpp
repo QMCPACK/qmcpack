@@ -36,8 +36,6 @@ MomentumEstimator::MomentumEstimator(ParticleSet& elns, TrialWaveFunction& psi)
   twist = elns.getTwist();
 }
 
-void MomentumEstimator::resetTargetParticleSet(ParticleSet& P) {}
-
 MomentumEstimator::Return_t MomentumEstimator::evaluate(TrialWaveFunction& psi, ParticleSet& P)
 {
   const int np = P.getTotalNum();

@@ -37,8 +37,6 @@ SkPot::SkPot(ParticleSet& source)
   }
 }
 
-void SkPot::resetTargetParticleSet(ParticleSet& P) { sourcePtcl = &P; }
-
 SkPot::Return_t SkPot::evaluate(ParticleSet& P)
 {
   throw std::runtime_error("SkPot::evaluate not implemented. There was an implementation with"

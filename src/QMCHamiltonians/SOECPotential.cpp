@@ -83,8 +83,6 @@ SOECPotential::SOECPotential(const SOECPotential& sopp, ParticleSet& els, TrialW
 
 SOECPotential::~SOECPotential() = default;
 
-void SOECPotential::resetTargetParticleSet(ParticleSet& P) {}
-
 SOECPotential::Return_t SOECPotential::evaluate(TrialWaveFunction& psi, ParticleSet& P)
 {
   evaluateImpl(psi, P, false);

@@ -44,8 +44,6 @@ DensityEstimator::DensityEstimator(ParticleSet& elns)
 
 std::string DensityEstimator::getClassName() const { return "DensityEstimator"; }
 
-void DensityEstimator::resetTargetParticleSet(ParticleSet& P) {}
-
 DensityEstimator::Return_t DensityEstimator::evaluate(ParticleSet& P)
 {
   if (t_walker_ == nullptr)

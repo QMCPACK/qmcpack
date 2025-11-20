@@ -49,9 +49,6 @@ public:
   //Not derived from base class.  But we need it to properly set the Hamiltonian reference.
   std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& H);
 
-  /** Initialization/assignment **/
-  void resetTargetParticleSet(ParticleSet& P) final;
-
   void addObservables(PropertySetType& plist, BufferType& collectables) final;
 
   void setObservables(PropertySetType& plist) final;

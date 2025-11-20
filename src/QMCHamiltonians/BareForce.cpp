@@ -29,8 +29,6 @@ BareForce::BareForce(ParticleSet& ions, ParticleSet& elns) : ForceBase(ions, eln
 
 std::string BareForce::getClassName() const { return "BareForce"; }
 
-void BareForce::resetTargetParticleSet(ParticleSet& P) {}
-
 std::unique_ptr<OperatorBase> BareForce::makeClone(ParticleSet& qp)
 {
   return std::make_unique<BareForce>(*this);

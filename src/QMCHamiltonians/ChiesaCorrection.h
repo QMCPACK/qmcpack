@@ -26,8 +26,6 @@ public:
 
   std::string getClassName() const override;
 
-  void resetTargetParticleSet(ParticleSet& P) override;
-
   Return_t evaluate(TrialWaveFunction& psi, ParticleSet& P) override;
 
   bool put(xmlNodePtr cur) override;

@@ -135,8 +135,6 @@ ACForce::Return_t ACForce::evaluate(TrialWaveFunction& psi, ParticleSet& P)
   return 0.0;
 };
 
-void ACForce::resetTargetParticleSet(ParticleSet& P) {}
-
 void ACForce::addObservables(PropertySetType& plist, BufferType& collectables)
 {
   if (first_force_index_ < 0)

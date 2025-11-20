@@ -31,7 +31,6 @@ public:
   DensityEstimator(ParticleSet& elns);
 
   std::string getClassName() const override;
-  void resetTargetParticleSet(ParticleSet& P) override;
 
   Return_t evaluate(ParticleSet& P) override;
 

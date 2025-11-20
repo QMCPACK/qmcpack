@@ -74,8 +74,6 @@ struct L2Potential : public OperatorBase
   bool dependsOnWaveFunction() const override { return true; }
   std::string getClassName() const override { return "L2Potential"; }
 
-  void resetTargetParticleSet(ParticleSet& P) override;
-
   Return_t evaluate(TrialWaveFunction& psi, ParticleSet& P) override;
 
   void evaluateDK(ParticleSet& P, int iel, TensorType& D, PosType& K);

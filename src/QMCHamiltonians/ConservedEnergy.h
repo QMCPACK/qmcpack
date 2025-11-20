@@ -71,8 +71,6 @@ struct ConservedEnergy : public OperatorDependsOnlyOnParticleSet
   ConservedEnergy() {}
   ~ConservedEnergy() override {}
 
-  void resetTargetParticleSet(ParticleSet& P) override {}
-
   std::string getClassName() const override { return "ConservedEnergy"; }
 
   Return_t evaluate(ParticleSet& P) override

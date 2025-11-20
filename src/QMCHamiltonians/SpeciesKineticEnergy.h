@@ -35,7 +35,6 @@ public:
   Return_t evaluate(ParticleSet& P) override;
 
   // pure virtual functions require overrider
-  void resetTargetParticleSet(ParticleSet& P) override {}                                 // required
   std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp) final; // required
 
   // allocate multiple columns in scalar.dat

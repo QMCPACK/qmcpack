@@ -57,8 +57,6 @@ public:
 
   void setObservables(PropertySetType& plist) override { setObservablesF(plist); }
 
-  void resetTargetParticleSet(ParticleSet& P) override {}
-
   // Compute ion-ion forces at construction to include in the total forces
   void evaluate_IonIon(ParticleSet::ParticlePos& forces) const;
 

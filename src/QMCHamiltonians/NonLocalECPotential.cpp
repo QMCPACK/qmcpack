@@ -44,8 +44,6 @@ struct NonLocalECPotential::NonLocalECPotentialMultiWalkerResource : public Reso
   Matrix<Real> vi_samples;
 };
 
-void NonLocalECPotential::resetTargetParticleSet(ParticleSet& P) {}
-
 /** constructor
  *\param ions the positions of the ions
  *\param els the positions of the electrons

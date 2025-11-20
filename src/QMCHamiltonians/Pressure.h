@@ -29,33 +29,32 @@ namespace qmcplusplus
  where d is the dimension of space and /Omega is the volume.
 **/
 
-struct Pressure : public OperatorDependsOnlyOnParticleSet
+class Pressure : public OperatorDependsOnlyOnParticleSet
 {
   using WP = WalkerProperties::Indexes;
-  double pNorm;
   //     bool ZV;
   //     bool ZB;
 
+public:
   /** constructor
    *
    * Pressure operators need to be re-evaluated during optimization.
    */
-  Pressure(ParticleSet& P)
+  Pressure()
   {
     update_mode_.set(OPTIMIZABLE, 1);
-    pNorm = 1.0 / (P.getLattice().DIM * P.getLattice().Volume);
   }
   ///destructor
   ~Pressure() override {}
 
   bool dependsOnWaveFunction() const override { return true; }
   std::string getClassName() const override { return "Pressure"; }
-  void resetTargetParticleSet(ParticleSet& P) override { pNorm = 1.0 / (P.getLattice().DIM * P.getLattice().Volume); }
 
   inline Return_t evaluate(ParticleSet& P) override
   {
+    const double pNorm = 1.0 / (P.getLattice().DIM * P.getLattice().Volume);
     value_ = 2.0 * P.PropertyList[WP::LOCALENERGY] - P.PropertyList[WP::LOCALPOTENTIAL];
-    value_ *= pNorm;
+    value_ *= 1.0 / (P.getLattice().DIM * P.getLattice().Volume);;
     return 0.0;
   }
 
@@ -132,7 +131,7 @@ struct Pressure : public OperatorDependsOnlyOnParticleSet
 
   std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp) final
   {
-    return std::make_unique<Pressure>(qp);
+    return std::make_unique<Pressure>();
   }
 };
 } // namespace qmcplusplus

@@ -55,7 +55,6 @@ public:
 
   bool dependsOnWaveFunction() const override;
   std::string getClassName() const override;
-  void resetTargetParticleSet(ParticleSet& p) override;
 
 #if !defined(REMOVE_TRACEMANAGER)
   void contributeParticleQuantities() override;

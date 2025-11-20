@@ -173,12 +173,6 @@ public:
 
   //////// PURELY VIRTUAL FUNCTIONS ////////////////
   /** 
-   * @brief Reset the data with the target ParticleSet
-   * @param P new target ParticleSet
-   */
-  virtual void resetTargetParticleSet(ParticleSet& P) = 0;
-
-  /** 
    * @brief Evaluate the local energy contribution of this component
    * @param P input configuration containing N particles
    * @return the value of the Hamiltonian component

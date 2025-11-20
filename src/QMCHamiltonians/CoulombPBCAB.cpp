@@ -67,16 +67,6 @@ std::unique_ptr<OperatorBase> CoulombPBCAB::makeClone(ParticleSet& qp)
 
 CoulombPBCAB::~CoulombPBCAB() = default;
 
-void CoulombPBCAB::resetTargetParticleSet(ParticleSet& P)
-{
-  int tid = P.addTable(pset_ions_);
-  if (tid != myTableIndex)
-  {
-    APP_ABORT("CoulombPBCAB::resetTargetParticleSet found inconsistent table index");
-  }
-  AB->resetTargetParticleSet(P);
-}
-
 void CoulombPBCAB::addObservables(PropertySetType& plist, BufferType& collectables)
 {
   my_index_ = plist.add(name_.c_str());

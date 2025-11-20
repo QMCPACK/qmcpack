@@ -41,8 +41,8 @@ struct CoulombPBCAA : public OperatorDependsOnlyOnParticleSet, public ForceBase
   using mRealType      = LRHandlerType::mRealType;
   using OffloadSpline  = OneDimCubicSplineLinearGrid<LRCoulombSingleton::pRealType>;
 
-  /// energy-optimized long range handle. Should be const LRHandlerType eventually
-  std::shared_ptr<LRHandlerType> lr_aa_;
+  /// energy-optimized long range handle
+  std::shared_ptr<const LRHandlerType> lr_aa_;
   /// energy-optimized short range pair potential
   std::shared_ptr<const RadFunctorType> rVs;
   /// the same as rVs but can be used inside OpenMP offload regions
@@ -113,8 +113,6 @@ struct CoulombPBCAA : public OperatorDependsOnlyOnParticleSet, public ForceBase
   ~CoulombPBCAA() override;
 
   std::string getClassName() const override { return "CoulombPBCAA"; }
-
-  void resetTargetParticleSet(ParticleSet& P) override;
 
   /** evaluate just one walker
    *

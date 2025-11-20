@@ -79,7 +79,6 @@ struct LocalECPotential : public OperatorDependsOnlyOnParticleSet
   void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<OperatorBase>& o_list) const override;
 
   std::string getClassName() const override { return "LocalECPotential"; }
-  void resetTargetParticleSet(ParticleSet& P) override;
 
 #if !defined(REMOVE_TRACEMANAGER)
   void contributeParticleQuantities() override;

@@ -246,12 +246,6 @@ bool EnergyDensityEstimator::get(std::ostream& os) const
 }
 
 
-void EnergyDensityEstimator::resetTargetParticleSet(ParticleSet& P)
-{
-  //remains empty
-}
-
-
 //#define ENERGYDENSITY_CHECK
 
 EnergyDensityEstimator::Return_t EnergyDensityEstimator::evaluate(ParticleSet& P)

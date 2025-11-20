@@ -27,7 +27,6 @@ struct BareForce : public OperatorDependsOnlyOnParticleSet, public ForceBase
 public:
   BareForce(ParticleSet& ions, ParticleSet& elns);
   std::string getClassName() const override;
-  void resetTargetParticleSet(ParticleSet& P) override;
 
   Return_t evaluate(ParticleSet& P) override;
 
