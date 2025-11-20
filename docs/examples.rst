@@ -66,3 +66,11 @@ Directory                                               Description
 ``rsqmc_misc/graphene``                                 Graphene sheet DMC example including use of Nexus analyzer to obtain total energy.
 ``rsqmc_misc/c20``                                      C\ :math:`_{20}` fullerene molecule using pseudopotentials and spline orbitals from Quantum ESPRESSO.
 ======================================================= =================================================================================================================================================================
+
+Beyond orchestrating QMCPACK calculations, Nexus can launch arbitrary Python or shell scripts. Therefore, custom preparation and analysis steps remain integrated in the workflow; for example, this feature can be used to post-process QMCPACK charge densities via command-line executables such as ``qdens``.
+
+Directory                                               Description
+======================================================= =================================================================================================================================================================
+``nexus/examples/generic/python_demo``                   Generates an example data file and processes the dependent data file as Nexus simulation objects.
+``nexus/examples/generic/bash_demo``                     Simple bash command that lists the contents of a directory as a Nexus simulation object.
+======================================================= =================================================================================================================================================================
