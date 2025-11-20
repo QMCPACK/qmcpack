@@ -52,10 +52,15 @@ class NonLocalTOperator;
 struct NonLocalData;
 
 /** @ingroup hamiltonian
- * @brief An abstract class for Local Energy operators
+ * @brief An abstract class for Hamiltonian components and non-Hamiltonian observables
+ * A base class for both for Hamiltonian operator components and non-Hamiltonian operators
+ * Only Hamiltonian components contributes to local energy.
  *
- * Return_t is defined as RealTye.
- * The types should be checked when using complex wave functions.
+ * As a base class, it expresses full dependency on TrialWaveFunction and ParticleSet.
+ * For derived classes that depends solely on ParticleSet, use a much simpler OperatorDependsOnlyOnParticleSet as a base class instead.
+ *
+ * OperatorBase derived class output results in via scalar.dat and stat.h5. Individual feature decides supporting either or both.
+ * The former uses "Observables" and the latter uses "Collectables"
  */
 class OperatorBase : public QMCTraits
 {
@@ -614,6 +619,9 @@ private:
   bool quantumDomainValid(QuantumDomains qdomain) const noexcept;
 };
 
+/** @ingroup hamiltonian
+ * A base class for both for Hamiltonian operator components and non-Hamiltonian operators that depends solely on ParticleSet
+ */
 class OperatorDependsOnlyOnParticleSet : public OperatorBase
 {
 public:
