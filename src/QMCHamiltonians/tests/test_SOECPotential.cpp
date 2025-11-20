@@ -54,10 +54,10 @@ public:
     o_leader.mw_evaluateImpl(o_list, twf_list, p_list, listener_opt, keep_grid);
   }
 
-  static void evalFast(SOECPotential& so_ecp, ParticleSet& elec, OperatorBase::Return_t& value)
+  static void evalFast(SOECPotential& so_ecp, TrialWaveFunction& psi, ParticleSet& elec, OperatorBase::Return_t& value)
   {
     copyGridUnrotatedForTest(so_ecp);
-    so_ecp.evaluateImpl(elec, true);
+    so_ecp.evaluateImpl(psi, elec, true);
     value = so_ecp.getValue();
   }
 };
@@ -232,7 +232,7 @@ void doSOECPotentialTest(bool use_VPs)
   testing::TestSOECPotential::mw_evaluateImpl(o_list, twf_list, p_list, listener_opt, true);
 
   //use single walker API to get reference value
-  auto value = o_list[0].evaluateDeterministic(p_list[0]);
+  auto value = o_list[0].evaluateDeterministic(twf_list[0], p_list[0]);
 
   //also check whether or not reference value from single_walker API is actually correct
   //this value comes directly from the reference code soecp_eval_reference.cpp
@@ -269,7 +269,7 @@ void doSOECPotentialTest(bool use_VPs)
     so_ecp_exact.createResource(so_ecp_res);
     ResourceCollectionTeamLock<OperatorBase> so_ecp_lock(so_ecp_res, o_exact_list);
 
-    testing::TestSOECPotential::evalFast(so_ecp_exact, elec, value);
+    testing::TestSOECPotential::evalFast(so_ecp_exact, psi, elec, value);
     CHECK(value == Approx(-3.530511241));
 
 
@@ -291,7 +291,7 @@ void doSOECPotentialTest(bool use_VPs)
 
   CHECK(!testing::TestSOECPotential::didGridChange(so_ecp));
   CHECK(!testing::TestSOECPotential::didGridChange(so_ecp2));
-  auto value2 = o_list[0].evaluateDeterministic(elec);
+  auto value2 = o_list[0].evaluateDeterministic(psi, elec);
 
   CHECK(std::accumulate(local_pots.begin(), local_pots.begin() + local_pots.cols(), 0.0) == Approx(value2));
   // check the second walker which will be unchanged.
