@@ -25,7 +25,7 @@ public:
   std::string getClassName() const override { return "MomentumEstimator"; }
   void resetTargetParticleSet(ParticleSet& P) override;
 
-  Return_t evaluate(ParticleSet& P) override;
+  Return_t evaluate(ParticleSet& P, TrialWaveFunction& psi) override;
 
   void addObservables(PropertySetType& plist) {}
   void addObservables(PropertySetType& plist, BufferType& olist) override;

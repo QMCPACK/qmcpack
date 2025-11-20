@@ -12,6 +12,7 @@
 
 #include "HamiltonianRef.h"
 #include "CPU/math.hpp"
+#include "TrialWaveFunction.h"
 
 namespace qmcplusplus
 {
@@ -20,23 +21,24 @@ using FullPrecRealType = HamiltonianRef::FullPrecRealType;
 HamiltonianRef::HamiltonianRef(const RefVector<OperatorBase> refs) : Hrefs_(refs) {}
 
 FullPrecRealType HamiltonianRef::evaluateValueAndDerivatives(ParticleSet& P,
+		                                             TrialWaveFunction& psi,
                                                              const opt_variables_type& optvars,
                                                              Vector<ValueType>& dlogpsi,
                                                              Vector<ValueType>& dhpsioverpsi)
 {
   FullPrecRealType LocalEnergy(0);
   for (OperatorBase& Href : Hrefs_)
-    LocalEnergy += Href.evaluateValueAndDerivatives(P, optvars, dlogpsi, dhpsioverpsi);
+    LocalEnergy += Href.evaluateValueAndDerivatives(P, psi, optvars, dlogpsi, dhpsioverpsi);
   return LocalEnergy;
 }
 
 /// the same evaluate as QMCHamiltonian
-FullPrecRealType HamiltonianRef::evaluate(ParticleSet& P)
+FullPrecRealType HamiltonianRef::evaluate(ParticleSet& P, TrialWaveFunction& psi)
 {
   FullPrecRealType LocalEnergy = 0.0;
   for (int i = 0; i < Hrefs_.size(); ++i)
   {
-    const auto LocalEnergyComponent = Hrefs_[i].get().evaluate(P);
+    const auto LocalEnergyComponent = Hrefs_[i].get().evaluate(P, psi);
     if (qmcplusplus::isnan(LocalEnergyComponent))
       APP_ABORT("HamiltonianRef::evaluate component " + Hrefs_[i].get().getName() + " returns NaN\n");
     LocalEnergy += LocalEnergyComponent;

@@ -98,7 +98,7 @@ void ACForce::add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCHamilt
     ham_in.addOperator(std::move(myclone), name_, update_mode_[PHYSICAL]);
   }
 }
-ACForce::Return_t ACForce::evaluate(ParticleSet& P)
+ACForce::Return_t ACForce::evaluate(ParticleSet& P, TrialWaveFunction& psi)
 {
   hf_force_    = 0;
   pulay_force_ = 0;

@@ -30,13 +30,13 @@ public:
   HamiltonianRef(const RefVector<OperatorBase>);
 
   /// the same evaluateValueAndDerivatives as QMCHamiltonian
-  FullPrecRealType evaluateValueAndDerivatives(ParticleSet& P,
+  FullPrecRealType evaluateValueAndDerivatives(ParticleSet& P, TrialWaveFunction& psi,
                                                const opt_variables_type& optvars,
                                                Vector<ValueType>& dlogpsi,
                                                Vector<ValueType>& dhpsioverpsi);
 
   /// the same evaluate as QMCHamiltonian
-  FullPrecRealType evaluate(ParticleSet& P);
+  FullPrecRealType evaluate(ParticleSet& P, TrialWaveFunction& psi);
 
   int size() const { return Hrefs_.size(); }
 

@@ -33,7 +33,7 @@ using WP = WalkerProperties::Indexes;
  * Hamiltonian operator for the Coulomb interaction for both AA and AB type for open systems.
  */
 
-class CoulombPotential : public OperatorBase, public ForceBase
+class CoulombPotential : public OperatorDependsOnlyOnParticleSet, public ForceBase
 {
 public:
   struct CoulombPotentialMultiWalkerResource;
@@ -149,7 +149,7 @@ public:
 
   void setParticlePropertyList(PropertySetType& plist, int offset) override;
 
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) override;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp) override;
 private:
   ResourceHandle<CoulombPotentialMultiWalkerResource> mw_res_handle_;
 };

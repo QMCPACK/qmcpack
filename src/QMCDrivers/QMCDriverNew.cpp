@@ -19,6 +19,7 @@
 #include "Concurrency/ParallelExecutor.hpp"
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
+#include "TrialWaveFunction.h"
 #include "Utilities/FairDivide.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/Communicate.h"
@@ -300,11 +301,11 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
   for (int iw = 0; iw < crowd.size(); ++iw)
     resetSigNLocalEnergy(walkers[iw], walker_twfs[iw], local_energies[iw]);
 
-  auto evaluateNonPhysicalHamiltonianElements = [](QMCHamiltonian& ham, ParticleSet& pset, MCPWalker& walker) {
-    ham.auxHevaluate(pset, walker);
+  auto evaluateNonPhysicalHamiltonianElements = [](QMCHamiltonian& ham, TrialWaveFunction& psi, ParticleSet& pset, MCPWalker& walker) {
+    ham.auxHevaluate(pset, psi, walker);
   };
   for (int iw = 0; iw < crowd.size(); ++iw)
-    evaluateNonPhysicalHamiltonianElements(walker_hamiltonians[iw], walker_elecs[iw], walkers[iw]);
+    evaluateNonPhysicalHamiltonianElements(walker_hamiltonians[iw], walker_twfs[iw], walker_elecs[iw], walkers[iw]);
 
   auto savePropertiesIntoWalker = [](QMCHamiltonian& ham, MCPWalker& walker) {
     ham.saveProperty(walker.getPropertyBase());

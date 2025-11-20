@@ -23,7 +23,7 @@ namespace qmcplusplus
  *  If hdf5="yes", then data will be added to stat.h5 as well.
  * The sum of every column that starts with skinetic should be equivalent to the Kinetic column.
  */
-class SpeciesKineticEnergy : public OperatorBase
+class SpeciesKineticEnergy : public OperatorDependsOnlyOnParticleSet
 {
 public:
   SpeciesKineticEnergy(ParticleSet& P);
@@ -36,7 +36,7 @@ public:
 
   // pure virtual functions require overrider
   void resetTargetParticleSet(ParticleSet& P) override {}                                 // required
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final; // required
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp) final; // required
 
   // allocate multiple columns in scalar.dat
   void addObservables(PropertySetType& plist, BufferType& collectables) override;

@@ -68,7 +68,7 @@ void SelfHealingOverlapLegacy::registerCollectables(std::vector<ObservableHelper
 }
 
 
-SelfHealingOverlapLegacy::Return_t SelfHealingOverlapLegacy::evaluate(ParticleSet& P)
+SelfHealingOverlapLegacy::Return_t SelfHealingOverlapLegacy::evaluate(ParticleSet& P, TrialWaveFunction& psi)
 {
   RealType weight = t_walker_->Weight;
   int offset = my_index_;

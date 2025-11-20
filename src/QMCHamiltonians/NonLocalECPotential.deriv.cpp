@@ -19,7 +19,7 @@
 
 namespace qmcplusplus
 {
-NonLocalECPotential::Return_t NonLocalECPotential::evaluateValueAndDerivatives(ParticleSet& P,
+NonLocalECPotential::Return_t NonLocalECPotential::evaluateValueAndDerivatives(ParticleSet& P, TrialWaveFunction& psi,
                                                                                const opt_variables_type& optvars,
                                                                                const Vector<ValueType>& dlogpsi,
                                                                                Vector<ValueType>& dhpsioverpsi)

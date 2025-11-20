@@ -137,15 +137,15 @@ void NonLocalECPotential::deleteParticleQuantities()
 }
 #endif
 
-NonLocalECPotential::Return_t NonLocalECPotential::evaluate(ParticleSet& P)
+NonLocalECPotential::Return_t NonLocalECPotential::evaluate(ParticleSet& P, TrialWaveFunction& psi)
 {
-  evaluateImpl(P, false);
+  evaluateImpl(P, psi, false);
   return value_;
 }
 
-NonLocalECPotential::Return_t NonLocalECPotential::evaluateDeterministic(ParticleSet& P)
+NonLocalECPotential::Return_t NonLocalECPotential::evaluateDeterministic(ParticleSet& P, TrialWaveFunction& psi)
 {
-  evaluateImpl(P, false, true);
+  evaluateImpl(P, psi, false, true);
   return value_;
 }
 
@@ -156,9 +156,9 @@ void NonLocalECPotential::mw_evaluate(const RefVectorWithLeader<OperatorBase>& o
   mw_evaluateImpl(o_list, wf_list, p_list, false, std::nullopt);
 }
 
-NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithToperator(ParticleSet& P)
+NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithToperator(ParticleSet& P, TrialWaveFunction& psi)
 {
-  evaluateImpl(P, true);
+  evaluateImpl(P, psi, true);
   return value_;
 }
 
@@ -190,7 +190,7 @@ void NonLocalECPotential::mw_evaluatePerParticleWithToperator(
   mw_evaluateImpl(o_list, wf_list, p_list, true, l_opt);
 }
 
-void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool compute_txy_all, bool keep_grid)
+void NonLocalECPotential::evaluateImpl(ParticleSet& P, TrialWaveFunction& psi, bool compute_txy_all, bool keep_grid)
 {
   if (compute_txy_all)
     tmove_xy_all_.clear();

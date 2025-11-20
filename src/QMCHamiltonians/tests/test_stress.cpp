@@ -79,7 +79,7 @@ TEST_CASE("Stress BCC H Ewald3D", "[hamiltonian]")
   StressPBC est(ions, elec, psi);
 
   elec.update();
-  est.evaluate(elec);
+  est.evaluate(elec, psi);
 
   // i-i = e-e stress is validated against Quantum Espresso's ewald method
   //  they are also double checked using finite-difference

@@ -22,7 +22,7 @@
 
 namespace qmcplusplus
 {
-struct BareForce : public OperatorBase, public ForceBase
+struct BareForce : public OperatorDependsOnlyOnParticleSet, public ForceBase
 {
 public:
   BareForce(ParticleSet& ions, ParticleSet& elns);
@@ -48,7 +48,7 @@ public:
 
   bool get(std::ostream& os) const override;
 
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp) final;
 
 private:
   const int d_ei_id_;

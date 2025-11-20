@@ -33,7 +33,7 @@ public:
 
   std::string getClassName() const override { return "EnergyDensityEstimator"; }
   void resetTargetParticleSet(ParticleSet& P) override;
-  Return_t evaluate(ParticleSet& P) override;
+  Return_t evaluate(ParticleSet& P, TrialWaveFunction& psi) override;
   void addObservables(PropertySetType& plist) {}
   void addObservables(PropertySetType& plist, BufferType& olist) override;
   void registerCollectables(std::vector<ObservableHelper>& h5desc, hdf_archive& file) const override;

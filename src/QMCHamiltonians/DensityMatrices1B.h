@@ -153,7 +153,7 @@ public:
   //standard interface
   std::unique_ptr<OperatorBase> makeClone(ParticleSet& P, TrialWaveFunction& psi) final;
   bool put(xmlNodePtr cur) override;
-  Return_t evaluate(ParticleSet& P) override;
+  Return_t evaluate(ParticleSet& P, TrialWaveFunction& psi) override;
 
   //optional standard interface
   void getRequiredTraces(TraceManager& tm) override;

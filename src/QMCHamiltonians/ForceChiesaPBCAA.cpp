@@ -229,7 +229,7 @@ void ForceChiesaPBCAA::addObservables(PropertySetType& plist, BufferType& collec
   addObservablesF(plist);
 }
 
-std::unique_ptr<OperatorBase> ForceChiesaPBCAA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> ForceChiesaPBCAA::makeClone(ParticleSet& qp)
 {
   std::unique_ptr<ForceChiesaPBCAA> tmp = std::make_unique<ForceChiesaPBCAA>(PtclA, qp, false);
   tmp->Rcut                             = Rcut;    // parameter: radial distance within which estimator is used

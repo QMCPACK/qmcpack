@@ -488,7 +488,7 @@ void CoulombPotential::setParticlePropertyList(PropertySetType& plist, int offse
 }
 
 
-std::unique_ptr<OperatorBase> CoulombPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> CoulombPotential::makeClone(ParticleSet& qp)
 {
   if (is_AA)
   {

@@ -18,7 +18,6 @@
 #define QMCPLUSPLUS_NONLOCAL_ECPOTENTIAL_COMPONENT_H
 
 #include "type_traits/OptionalRef.hpp"
-#include "QMCHamiltonians/OperatorBase.h"
 #include "QMCHamiltonians/RandomRotationMatrix.h"
 #include <ResourceCollection.h>
 #include <TrialWaveFunction.h>
@@ -27,6 +26,7 @@
 #include "Numerics/OneDimLinearSpline.h"
 #include "Numerics/OneDimCubicSpline.h"
 #include "NLPPJob.h"
+#include "NonLocalData.h"
 
 namespace qmcplusplus
 {

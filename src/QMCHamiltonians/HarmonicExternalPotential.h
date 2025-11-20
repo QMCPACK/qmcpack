@@ -19,7 +19,7 @@
 
 namespace qmcplusplus
 {
-struct HarmonicExternalPotential : public OperatorBase
+struct HarmonicExternalPotential : public OperatorDependsOnlyOnParticleSet
 {
   //data members
   RealType mass;
@@ -49,11 +49,10 @@ struct HarmonicExternalPotential : public OperatorBase
   //standard interface functions
   bool put(xmlNodePtr cur) override;
   bool get(std::ostream& os) const override;
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& P, TrialWaveFunction& psi) final;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& P) final;
 
   //functions for physical (hamiltonian component) estimator
   Return_t evaluate(ParticleSet& P) override;
-  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy) { return evaluate(P); }
 
 #if !defined(REMOVE_TRACEMANAGER)
   //traces interface

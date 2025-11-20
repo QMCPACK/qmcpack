@@ -89,8 +89,8 @@ void DMCUpdateAllWithRejection::advanceWalker(Walker_t& thisWalker, bool recompu
   }
 
   // evaluate Hamiltonian
-  enew = non_local_ops_.getMoveKind() == TmoveKind::OFF ? H.evaluate(W) : H.evaluateWithToperator(W);
-  H.auxHevaluate(W, thisWalker);
+  enew = non_local_ops_.getMoveKind() == TmoveKind::OFF ? H.evaluate(W, Psi) : H.evaluateWithToperator(W, Psi);
+  H.auxHevaluate(W, Psi, thisWalker);
   H.saveProperty(thisWalker.getPropertyBase());
 
   // operate on thisWalker.
@@ -106,7 +106,7 @@ void DMCUpdateAllWithRejection::advanceWalker(Walker_t& thisWalker, bool recompu
     thisWalker.Properties(WP::R2PROPOSED) = rr_proposed;
   }
 
-  const int NonLocalMoveAcceptedTemp = H.makeNonLocalMoves(W, non_local_ops_);
+  const int NonLocalMoveAcceptedTemp = H.makeNonLocalMoves(W, Psi, non_local_ops_);
   if (NonLocalMoveAcceptedTemp > 0)
   {
     W.saveWalker(thisWalker);
@@ -176,7 +176,7 @@ void DMCUpdateAllWithKill::advanceWalker(Walker_t& thisWalker, bool recompute)
   }
   else
   {
-    enew           = H.evaluate(W);
+    enew           = H.evaluate(W, Psi);
     RealType logGf = -0.5 * Dot(deltaR, deltaR);
     //nodecorr = setScaledDriftPbyPandNodeCorr(m_tauovermass,W.G,drift);
     nodecorr       = setScaledDriftPbyPandNodeCorr(Tau, MassInvP, W.G, drift);
@@ -202,7 +202,7 @@ void DMCUpdateAllWithKill::advanceWalker(Walker_t& thisWalker, bool recompute)
       W.saveWalker(thisWalker);
       rr_accepted = rr_proposed;
       thisWalker.resetProperty(logpsi, Psi.getPhase(), enew, rr_accepted, rr_proposed, nodecorr);
-      H.auxHevaluate(W, thisWalker);
+      H.auxHevaluate(W, Psi, thisWalker);
       H.saveProperty(thisWalker.getPropertyBase());
     }
     //         std::cout <<logpsi<<"  "<<Psi.getPhase()<<"  "<<enew<<"  "<<rr_accepted<<"  "<<rr_proposed<<"  "<<nodecorr<< std::endl;

@@ -78,7 +78,7 @@ void RMCUpdatePbyPWithDrift::initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it
     RealType logpsi = Psi.updateBuffer(W, awalker.DataSet, false);
     awalker.G       = W.G;
     awalker.L       = W.L;
-    RealType eloc   = H.evaluate(W);
+    RealType eloc   = H.evaluate(W, Psi);
     awalker.resetProperty(logpsi, Psi.getPhase(), eloc);
   }
 }
@@ -206,11 +206,11 @@ void RMCUpdatePbyPWithDrift::advanceWalkersVMC()
     W.saveWalker(prophead);
     update_mbo_timer_.stop();
     energy_timer_.start();
-    enew = H.evaluate(W);
+    enew = H.evaluate(W, Psi);
     energy_timer_.stop();
     prophead.resetProperty(logpsi, Psi.getPhase(), enew, rr_accepted, rr_proposed, 0.0);
     prophead.Weight = 1.0;
-    H.auxHevaluate(W, prophead, true, false); //evaluate properties but not collectables.
+    H.auxHevaluate(W, Psi, prophead, true, false); //evaluate properties but not collectables.
     H.saveProperty(prophead.getPropertyBase());
     newhead = prophead;
     nAccept++;
@@ -232,7 +232,7 @@ void RMCUpdatePbyPWithDrift::advanceWalkersVMC()
   Walker_t& centerbead = W.reptile->getCenter();
   W.loadWalker(centerbead, true);
   W.update();
-  H.auxHevaluate(W, centerbead); //evaluate collectables but not properties.
+  H.auxHevaluate(W, Psi, centerbead); //evaluate collectables but not properties.
   // Traces->buffer_sample();
 }
 
@@ -330,7 +330,7 @@ void RMCUpdatePbyPWithDrift::advanceWalkersRMC()
   RealType logpsi = Psi.updateBuffer(W, w_buffer, false);
   W.saveWalker(prophead);
   Walker_t &lastbead(W.reptile->getTail()), nextlastbead(W.reptile->getNext());
-  RealType eloc = H.evaluate(W);
+  RealType eloc = H.evaluate(W, Psi);
   RealType dS   = branchEngine->DMCLinkAction(eloc, curhead.Properties(WP::LOCALENERGY)) -
       branchEngine->DMCLinkAction(lastbead.Properties(WP::LOCALENERGY), nextlastbead.Properties(WP::LOCALENERGY));
   RealType acceptProb = std::min((RealType)1.0, std::exp(-dS));
@@ -343,7 +343,7 @@ void RMCUpdatePbyPWithDrift::advanceWalkersRMC()
     prophead.Properties(WP::LOCALENERGY) = eloc;
     prophead.Properties(WP::R2ACCEPTED)  = rr_accepted;
     prophead.Properties(WP::R2PROPOSED)  = rr_proposed;
-    H.auxHevaluate(W, prophead, true, false); //evaluate properties? true.  collectables?  false.
+    H.auxHevaluate(W, Psi, prophead, true, false); //evaluate properties? true.  collectables?  false.
     H.saveProperty(prophead.getPropertyBase());
     prophead.Age    = 0;
     overwriteWalker = prophead;
@@ -363,7 +363,7 @@ void RMCUpdatePbyPWithDrift::advanceWalkersRMC()
   Walker_t& centerbead = W.reptile->getCenter();
   W.loadWalker(centerbead, true);
   W.update();                                 //Called to recompute S(k) and distance tables.
-  H.auxHevaluate(W, centerbead, false, true); //evaluate properties?  false.  Collectables?  true.
+  H.auxHevaluate(W, Psi, centerbead, false, true); //evaluate properties?  false.  Collectables?  true.
 }
 
 void RMCUpdatePbyPWithDrift::advanceWalker(Walker_t& thisWalker, bool recompute)

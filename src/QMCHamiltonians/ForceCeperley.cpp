@@ -141,7 +141,7 @@ bool ForceCeperley::put(xmlNodePtr cur)
   return true;
 }
 
-std::unique_ptr<OperatorBase> ForceCeperley::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> ForceCeperley::makeClone(ParticleSet& qp)
 {
   return std::make_unique<ForceCeperley>(*this);
 }

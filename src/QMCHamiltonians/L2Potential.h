@@ -76,7 +76,7 @@ struct L2Potential : public OperatorBase
 
   void resetTargetParticleSet(ParticleSet& P) override;
 
-  Return_t evaluate(ParticleSet& P) override;
+  Return_t evaluate(ParticleSet& P, TrialWaveFunction& psi) override;
 
   void evaluateDK(ParticleSet& P, int iel, TensorType& D, PosType& K);
   void evaluateD(ParticleSet& P, int iel, TensorType& D);

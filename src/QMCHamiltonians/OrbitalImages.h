@@ -226,7 +226,7 @@ public:
   bool put(xmlNodePtr cur) override;
 
   ///hijack estimator evaluate to evaluate and write all orbitals
-  Return_t evaluate(ParticleSet& P) override;
+  Return_t evaluate(ParticleSet& P, TrialWaveFunction& psi) override;
 
   //optional standard interface
   //void getRequiredTraces(TraceManager& tm);

@@ -260,7 +260,7 @@ SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evalConsts_AA(ParticleSet& 
   return tmpconsts;
 }
 
-StressPBC::Return_t StressPBC::evaluate(ParticleSet& P)
+StressPBC::Return_t StressPBC::evaluate(ParticleSet& P, TrialWaveFunction& psi)
 {
   const RealType vinv(-1.0 / P.getLattice().Volume);
   stress_     = 0.0;

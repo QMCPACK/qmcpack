@@ -134,13 +134,13 @@ void CSVMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
     thisWalker.L                                    = *L1[ipsi];
     W.L                                             = thisWalker.L;
     W.G                                             = thisWalker.G;
-    thisWalker.Properties(ipsi, WP::LOCALENERGY)    = H1[ipsi]->evaluate(W);
+    thisWalker.Properties(ipsi, WP::LOCALENERGY)    = H1[ipsi]->evaluate(W, *Psi1[ipsi]);
     thisWalker.Properties(ipsi, WP::LOGPSI)         = logpsi[ipsi];
     thisWalker.Properties(ipsi, WP::SIGN)           = Psi1[ipsi]->getPhase();
     thisWalker.Properties(ipsi, WP::UMBRELLAWEIGHT) = 1.0 / sumratio[ipsi];
     //Use Multiplicity as a temporary container for sumratio.
     thisWalker.Multiplicity = sumratio[0];
-    H1[ipsi]->auxHevaluate(W, thisWalker);
+    H1[ipsi]->auxHevaluate(W, *Psi1[ipsi], thisWalker);
     H1[ipsi]->saveProperty(thisWalker.getPropertyBase(ipsi));
   }
 }

@@ -85,19 +85,19 @@ SOECPotential::~SOECPotential() = default;
 
 void SOECPotential::resetTargetParticleSet(ParticleSet& P) {}
 
-SOECPotential::Return_t SOECPotential::evaluate(ParticleSet& P)
+SOECPotential::Return_t SOECPotential::evaluate(ParticleSet& P, TrialWaveFunction& psi)
 {
-  evaluateImpl(P, false);
+  evaluateImpl(P, psi, false);
   return value_;
 }
 
-SOECPotential::Return_t SOECPotential::evaluateDeterministic(ParticleSet& P)
+SOECPotential::Return_t SOECPotential::evaluateDeterministic(ParticleSet& P, TrialWaveFunction& psi)
 {
-  evaluateImpl(P, true);
+  evaluateImpl(P, psi, true);
   return value_;
 }
 
-void SOECPotential::evaluateImpl(ParticleSet& P, bool keep_grid)
+void SOECPotential::evaluateImpl(ParticleSet& P, TrialWaveFunction& psi, bool keep_grid)
 {
   value_ = 0.0;
   if (!keep_grid)
@@ -120,7 +120,7 @@ void SOECPotential::evaluateImpl(ParticleSet& P, bool keep_grid)
   }
 }
 
-SOECPotential::Return_t SOECPotential::evaluateValueAndDerivatives(ParticleSet& P,
+SOECPotential::Return_t SOECPotential::evaluateValueAndDerivatives(ParticleSet& P, TrialWaveFunction& psi,
                                                                    const opt_variables_type& optvars,
                                                                    const Vector<ValueType>& dlogpsi,
                                                                    Vector<ValueType>& dhpsioverpsi)

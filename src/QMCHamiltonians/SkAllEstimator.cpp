@@ -289,7 +289,7 @@ bool SkAllEstimator::get(std::ostream& os) const
   return true;
 }
 
-std::unique_ptr<OperatorBase> SkAllEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> SkAllEstimator::makeClone(ParticleSet& P)
 {
   std::unique_ptr<SkAllEstimator> myclone = std::make_unique<SkAllEstimator>(*this);
   myclone->hdf5_out                       = hdf5_out;

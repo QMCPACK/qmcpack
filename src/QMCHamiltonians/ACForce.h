@@ -71,7 +71,7 @@ public:
   static RealType compute_regularizer_f(const ParticleGradient& G, const RealType epsilon);
 
   /** Evaluate **/
-  Return_t evaluate(ParticleSet& P) final;
+  Return_t evaluate(ParticleSet& P, TrialWaveFunction& psi) final;
 
 private:
   ///Finite difference timestep

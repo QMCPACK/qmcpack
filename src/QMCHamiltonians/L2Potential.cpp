@@ -48,7 +48,7 @@ void L2Potential::add(int groupID, std::unique_ptr<L2RadialPotential>&& ppot)
 }
 
 
-L2Potential::Return_t L2Potential::evaluate(ParticleSet& P)
+L2Potential::Return_t L2Potential::evaluate(ParticleSet& P, TrialWaveFunction& psi)
 {
   // compute the Hessian
   TrialWaveFunction::HessVector D2;

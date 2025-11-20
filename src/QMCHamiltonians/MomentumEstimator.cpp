@@ -38,7 +38,7 @@ MomentumEstimator::MomentumEstimator(ParticleSet& elns, TrialWaveFunction& psi)
 
 void MomentumEstimator::resetTargetParticleSet(ParticleSet& P) {}
 
-MomentumEstimator::Return_t MomentumEstimator::evaluate(ParticleSet& P)
+MomentumEstimator::Return_t MomentumEstimator::evaluate(ParticleSet& P, TrialWaveFunction& psi)
 {
   const int np = P.getTotalNum();
   const int nk = kPoints.size();

@@ -322,7 +322,7 @@ LocalECPotential::Return_t LocalECPotential::evaluate_orig(ParticleSet& P)
   return value_;
 }
 
-std::unique_ptr<OperatorBase> LocalECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> LocalECPotential::makeClone(ParticleSet& qp)
 {
   std::unique_ptr<LocalECPotential> myclone = std::make_unique<LocalECPotential>(IonConfig, qp);
 

@@ -876,7 +876,7 @@ void CoulombPBCAA::releaseResource(ResourceCollection& collection,
   collection.takebackResource(o_leader.mw_res_handle_);
 }
 
-std::unique_ptr<OperatorBase> CoulombPBCAA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> CoulombPBCAA::makeClone(ParticleSet& qp)
 {
   return std::make_unique<CoulombPBCAA>(*this);
 }

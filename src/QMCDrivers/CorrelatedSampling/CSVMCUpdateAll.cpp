@@ -104,12 +104,12 @@ void CSVMCUpdateAll::advanceWalker(Walker_t& thisWalker, bool recompute)
       W.L = *L1[ipsi];
       W.G = *G1[ipsi];
 
-      RealType et                                     = H1[ipsi]->evaluate(W);
+      RealType et                                     = H1[ipsi]->evaluate(W, *Psi1[ipsi]);
       thisWalker.Properties(ipsi, WP::LOGPSI)         = logpsi[ipsi];
       thisWalker.Properties(ipsi, WP::SIGN)           = Psi1[ipsi]->getPhase();
       thisWalker.Properties(ipsi, WP::UMBRELLAWEIGHT) = invsumratio[ipsi];
       thisWalker.Properties(ipsi, WP::LOCALENERGY)    = et;
-      H1[ipsi]->auxHevaluate(W, thisWalker);
+      H1[ipsi]->auxHevaluate(W, *Psi1[ipsi], thisWalker);
       H1[ipsi]->saveProperty(thisWalker.getPropertyBase(ipsi));
     }
     ++nAccept;
@@ -204,12 +204,12 @@ void CSVMCUpdateAllWithDrift::advanceWalker(Walker_t& thisWalker, bool recompute
     {
       W.L                                             = *L1[ipsi];
       W.G                                             = *G1[ipsi];
-      RealType et                                     = H1[ipsi]->evaluate(W);
+      RealType et                                     = H1[ipsi]->evaluate(W, *Psi1[ipsi]);
       thisWalker.Properties(ipsi, WP::LOGPSI)         = logpsi[ipsi];
       thisWalker.Properties(ipsi, WP::SIGN)           = Psi1[ipsi]->getPhase();
       thisWalker.Properties(ipsi, WP::UMBRELLAWEIGHT) = invsumratio[ipsi];
       thisWalker.Properties(ipsi, WP::LOCALENERGY)    = et;
-      H1[ipsi]->auxHevaluate(W, thisWalker);
+      H1[ipsi]->auxHevaluate(W, *Psi1[ipsi], thisWalker);
       H1[ipsi]->saveProperty(thisWalker.getPropertyBase(ipsi));
     }
     ++nAccept;

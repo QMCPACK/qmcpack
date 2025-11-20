@@ -22,7 +22,7 @@
 
 namespace qmcplusplus
 {
-struct ForceChiesaPBCAA : public OperatorBase, public ForceBase
+struct ForceChiesaPBCAA : public OperatorDependsOnlyOnParticleSet, public ForceBase
 {
   using LRHandlerType  = LRCoulombSingleton::LRHandlerType;
   using GridType       = LRCoulombSingleton::GridType;
@@ -100,7 +100,7 @@ struct ForceChiesaPBCAA : public OperatorBase, public ForceBase
   void resetTargetParticleSet(ParticleSet& P) override;
 
 
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp) final;
 
   bool put(xmlNodePtr cur) override;
 

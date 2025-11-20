@@ -168,7 +168,7 @@ void RMCUpdateAllWithDrift::advanceWalkersVMC()
     //app_log()<<"hit a node.  Bouncing...\n";
     return;
   }
-  RealType eloc           = H.evaluate(W);
+  RealType eloc           = H.evaluate(W, Psi);
   new_headProp[Action[2]] = 0.5 * Tau * eloc;
 
   ////////////////////////////////////////////////////////////////////////
@@ -248,7 +248,7 @@ void RMCUpdateAllWithDrift::advanceWalkersVMC()
     overwriteWalker.Properties(W.reptile->TransProb[forward])  = W.Properties(W.reptile->TransProb[forward]);
     overwriteWalker.Properties(W.reptile->TransProb[backward]) = W.Properties(W.reptile->TransProb[backward]);
     overwriteWalker.resetProperty(logpsi, Psi.getPhase(), eloc);
-    H.auxHevaluate(W, overwriteWalker, true, false); //properties but not collectables.
+    H.auxHevaluate(W, Psi, overwriteWalker, true, false); //properties but not collectables.
     H.saveProperty(overwriteWalker.getPropertyBase());
     overwriteWalker.Age = 0;
     ++nAccept;
@@ -277,8 +277,8 @@ void RMCUpdateAllWithDrift::initWalkers(WalkerIter_t it, WalkerIter_t it_end)
     (*it)->G          = W.G;
     (*it)->L          = W.L;
     RealType nodecorr = setScaledDriftPbyPandNodeCorr(Tau, MassInvP, W.G, drift);
-    RealType ene      = H.evaluate(W);
-    H.auxHevaluate(W);
+    RealType ene      = H.evaluate(W, Psi);
+    H.auxHevaluate(W, Psi);
     (*it)->resetProperty(logpsi, Psi.getPhase(), ene, 0.0, 0.0, nodecorr);
     (*it)->Weight = 1;
     H.saveProperty((*it)->getPropertyBase());
@@ -391,7 +391,7 @@ void RMCUpdateAllWithDrift::advanceWalkersRMC()
     //app_log()<<"hit a node.  Bouncing...\n";
     return;
   }
-  RealType eloc                 = H.evaluate(W);
+  RealType eloc                 = H.evaluate(W, Psi);
   W.Properties(WP::LOCALENERGY) = eloc;
   //new_headProp[Action[2]]= 0.5*Tau*eloc;
   ////////////////////////////////////////////////////////////////////////
@@ -504,7 +504,7 @@ void RMCUpdateAllWithDrift::advanceWalkersRMC()
     overwriteWalker.Properties(WP::R2PROPOSED) = r2proposed;
 
     // lastbead.Properties(R2PROPOSED)=lastbead.Properties(R2ACCEPTED)=nextlastbead.Properties(R2PROPOSED);
-    H.auxHevaluate(W, overwriteWalker, true, false); //evaluate properties but not collectables.
+    H.auxHevaluate(W, Psi, overwriteWalker, true, false); //evaluate properties but not collectables.
     H.saveProperty(overwriteWalker.getPropertyBase());
     overwriteWalker.Age = 0;
 
@@ -527,7 +527,7 @@ void RMCUpdateAllWithDrift::advanceWalkersRMC()
   }
   W.loadWalker(centerbead, true);
   W.update(false);                            //skip S(k) evaluation?  False
-  H.auxHevaluate(W, centerbead, false, true); //collectables, but not properties
+  H.auxHevaluate(W, Psi, centerbead, false, true); //collectables, but not properties
 }
 
 void RMCUpdateAllWithDrift::accumulate(WalkerIter_t it, WalkerIter_t it_end)

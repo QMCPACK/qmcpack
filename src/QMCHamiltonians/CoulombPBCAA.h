@@ -33,7 +33,7 @@ class OneDimCubicSplineLinearGrid;
  *\brief Calculates the AA Coulomb potential using PBCs
  *
  */
-struct CoulombPBCAA : public OperatorBase, public ForceBase
+struct CoulombPBCAA : public OperatorDependsOnlyOnParticleSet, public ForceBase
 {
   using LRHandlerType  = LRCoulombSingleton::LRHandlerType;
   using GridType       = LRCoulombSingleton::GridType;
@@ -166,7 +166,7 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
     return true;
   }
 
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) override;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp) override;
 
   /** Inform objects associated with this operator of per particle listeners.
    *  i.e. turnOnPerParticleSK of particleset qp.

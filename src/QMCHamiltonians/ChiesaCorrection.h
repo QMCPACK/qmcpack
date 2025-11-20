@@ -28,7 +28,7 @@ public:
 
   void resetTargetParticleSet(ParticleSet& P) override;
 
-  Return_t evaluate(ParticleSet& P) override;
+  Return_t evaluate(ParticleSet& P, TrialWaveFunction& psi) override;
 
   bool put(xmlNodePtr cur) override;
 

@@ -254,7 +254,7 @@ void EnergyDensityEstimator::resetTargetParticleSet(ParticleSet& P)
 
 //#define ENERGYDENSITY_CHECK
 
-EnergyDensityEstimator::Return_t EnergyDensityEstimator::evaluate(ParticleSet& P)
+EnergyDensityEstimator::Return_t EnergyDensityEstimator::evaluate(ParticleSet& P, TrialWaveFunction& psi)
 {
   if (have_required_traces_)
   {

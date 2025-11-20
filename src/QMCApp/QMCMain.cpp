@@ -711,7 +711,7 @@ bool QMCMain::executeCMCSection(xmlNodePtr cur)
   double logpsi1 = primaryPsi->evaluateLog(*qmc_system_);
   std::cout << "logpsi1 " << logpsi1 << std::endl;
 
-  double eloc1 = primaryH->evaluate(*qmc_system_);
+  double eloc1 = primaryH->evaluate(*qmc_system_, *primaryPsi);
   std::cout << "Local Energy " << eloc1 << std::endl;
 
   for (int i = 0; i < primaryH->sizeOfObservables(); i++)
@@ -726,7 +726,7 @@ bool QMCMain::executeCMCSection(xmlNodePtr cur)
 
     qmc_system_->update();
     double logpsi2 = primaryPsi->evaluateLog(*qmc_system_);
-    double eloc2   = primaryH->evaluate(*qmc_system_);
+    double eloc2   = primaryH->evaluate(*qmc_system_, *primaryPsi);
 
     std::cout << "\nION " << iat << " " << ions->R[iat] << std::endl;
     std::cout << "logpsi " << logpsi2 << std::endl;
@@ -740,7 +740,7 @@ bool QMCMain::executeCMCSection(xmlNodePtr cur)
 
     qmc_system_->update();
     double logpsi3 = primaryPsi->evaluateLog(*qmc_system_);
-    double eloc3   = primaryH->evaluate(*qmc_system_);
+    double eloc3   = primaryH->evaluate(*qmc_system_, *primaryPsi);
 
     if (std::abs(eloc1 - eloc3) > 1e-12)
     {

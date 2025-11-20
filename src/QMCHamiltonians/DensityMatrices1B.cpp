@@ -595,7 +595,7 @@ void DensityMatrices1B::warmup_sampling()
 }
 
 
-DensityMatrices1B::Return_t DensityMatrices1B::evaluate(ParticleSet& P)
+DensityMatrices1B::Return_t DensityMatrices1B::evaluate(ParticleSet& P, TrialWaveFunction& psi)
 {
   ScopedTimer t(timers[DM_eval]);
   if (have_required_traces_ || !energy_mat)

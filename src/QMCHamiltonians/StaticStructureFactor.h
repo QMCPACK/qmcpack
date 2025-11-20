@@ -18,7 +18,7 @@
 
 namespace qmcplusplus
 {
-class StaticStructureFactor : public OperatorBase
+class StaticStructureFactor : public OperatorDependsOnlyOnParticleSet
 {
 public:
   using k2_t   = std::vector<RealType>;
@@ -38,7 +38,7 @@ public:
 
   //standard interface
   std::string getClassName() const override { return "StaticStructureFactor"; }
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& P, TrialWaveFunction& psi) final;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& P) final;
   bool put(xmlNodePtr cur) override;
   Return_t evaluate(ParticleSet& P) override;
 
