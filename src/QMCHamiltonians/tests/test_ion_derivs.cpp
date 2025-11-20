@@ -222,7 +222,7 @@ void test_msd_wrapper(const std::string& wffile,
 
   QMCHamiltonian& ham = create_CN_Hamiltonian(hf);
 
-  RealType eloc = ham.evaluateDeterministic(elec, *psi);
+  RealType eloc = ham.evaluateDeterministic(*psi, elec);
 
   //Enum to give human readable indexing into QMCHamiltonian.
   enum observ_id
@@ -725,7 +725,7 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
   CHECK(logpsi == Approx(-14.233853149));
 
   QMCHamiltonian& ham = create_CN_Hamiltonian(hf);
-  RealType eloc       = ham.evaluateDeterministic(elec, *psi);
+  RealType eloc       = ham.evaluateDeterministic(*psi, elec);
   enum observ_id
   {
     KINETIC = 0,
@@ -884,7 +884,7 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
 
   QMCHamiltonian& ham = create_CN_Hamiltonian(hf);
 
-  RealType eloc = ham.evaluateDeterministic(elec, *psi);
+  RealType eloc = ham.evaluateDeterministic(*psi, elec);
   enum observ_id
   {
     KINETIC = 0,
@@ -1049,7 +1049,7 @@ TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
 
   QMCHamiltonian& ham = create_CN_Hamiltonian(hf);
 
-  RealType eloc = ham.evaluateDeterministic(elec, *psi);
+  RealType eloc = ham.evaluateDeterministic(*psi, elec);
   enum observ_id
   {
     KINETIC = 0,
@@ -1200,7 +1200,7 @@ TEST_CASE("Eloc_Derivatives:multislater_wj", "[hamiltonian]")
 
   QMCHamiltonian& ham = create_CN_Hamiltonian(hf);
 
-  RealType eloc = ham.evaluateDeterministic(elec, *psi);
+  RealType eloc = ham.evaluateDeterministic(*psi, elec);
   enum observ_id
   {
     KINETIC = 0,
@@ -1889,7 +1889,7 @@ TEST_CASE("Eloc_Derivatives:slater_fastderiv_complex_pbc", "[hamiltonian]")
   using ValueType = QMCTraits::ValueType;
   RealType logpsi = psi->evaluateLog(elec);
   app_log() << " LOGPSI = " << logpsi << std::endl;
-  RealType eloc = ham.evaluateDeterministic(elec, *psi);
+  RealType eloc = ham.evaluateDeterministic(*psi, elec);
   enum observ_id
   {
     KINETIC = 0,
@@ -2406,7 +2406,7 @@ TEST_CASE("Eloc_Derivatives:proto_md_wj", "[hamiltonian]")
 
   QMCHamiltonian& ham = *hf.getH();
 
-  RealType eloc = ham.evaluateDeterministic(elec, *psi);
+  RealType eloc = ham.evaluateDeterministic(*psi, elec);
   enum observ_id
   {
     KINETIC = 0,
@@ -2575,7 +2575,7 @@ TEST_CASE("Eloc_Derivatives:proto_md_wj", "[hamiltonian]")
 
   QMCHamiltonian& ham = *hf.getH();
 
-  RealType eloc = ham.evaluateDeterministic(elec, *psi);
+  RealType eloc = ham.evaluateDeterministic(*psi, elec);
   enum observ_id
   {
     KINETIC = 0,
@@ -2731,7 +2731,7 @@ TEST_CASE("Eloc_Derivatives:proto_md_wj", "[hamiltonian]")
 
   QMCHamiltonian& ham = *hf.getH();
 
-  RealType eloc = ham.evaluateDeterministic(elec, *psi);
+  RealType eloc = ham.evaluateDeterministic(*psi, elec);
   enum observ_id
   {
     KINETIC = 0,

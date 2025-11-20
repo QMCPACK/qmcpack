@@ -12,13 +12,12 @@
 
 #include "SelfHealingOverlapLegacy.h"
 #include "TrialWaveFunction.h"
-#include "QMCWaveFunctions/Fermion/MultiSlaterDetTableMethod.h" 
+#include "QMCWaveFunctions/Fermion/MultiSlaterDetTableMethod.h"
 #include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus
 {
-SelfHealingOverlapLegacy::SelfHealingOverlapLegacy(TrialWaveFunction& wfn)
-  : psi_ref(wfn)
+SelfHealingOverlapLegacy::SelfHealingOverlapLegacy(TrialWaveFunction& wfn) : psi_ref(wfn)
 {
   name_ = "SelfHealingOverlap";
   update_mode_.set(COLLECTABLE, 1);
@@ -34,7 +33,7 @@ SelfHealingOverlapLegacy::SelfHealingOverlapLegacy(TrialWaveFunction& wfn)
 }
 
 
-std::unique_ptr<OperatorBase> SelfHealingOverlapLegacy::makeClone(ParticleSet& P, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> SelfHealingOverlapLegacy::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   return std::make_unique<SelfHealingOverlapLegacy>(psi);
 }
@@ -47,7 +46,6 @@ bool SelfHealingOverlapLegacy::put(xmlNodePtr cur)
   attrib.put(cur);
   return true;
 }
-
 
 
 void SelfHealingOverlapLegacy::addObservables(PropertySetType& plist, BufferType& collectables)
@@ -68,11 +66,11 @@ void SelfHealingOverlapLegacy::registerCollectables(std::vector<ObservableHelper
 }
 
 
-SelfHealingOverlapLegacy::Return_t SelfHealingOverlapLegacy::evaluate(ParticleSet& P, TrialWaveFunction& psi)
+SelfHealingOverlapLegacy::Return_t SelfHealingOverlapLegacy::evaluate(TrialWaveFunction& psi, ParticleSet& P)
 {
   RealType weight = t_walker_->Weight;
-  int offset = my_index_;
-  auto& wcs  = psi_ref.getOrbitals();
+  int offset      = my_index_;
+  auto& wcs       = psi_ref.getOrbitals();
 
   // separate jastrow and fermi wavefunction components
   std::vector<WaveFunctionComponent*> wcs_jastrow;
@@ -82,7 +80,7 @@ SelfHealingOverlapLegacy::Return_t SelfHealingOverlapLegacy::evaluate(ParticleSe
       wcs_fermi.push_back(wc.get());
     else
       wcs_jastrow.push_back(wc.get());
-  auto msd_refvec = psi_ref.findMSD();
+  auto msd_refvec                = psi_ref.findMSD();
   MultiSlaterDetTableMethod& msd = msd_refvec[0];
 
   // fermionic must have only one component, and must be multideterminant
@@ -103,7 +101,7 @@ SelfHealingOverlapLegacy::Return_t SelfHealingOverlapLegacy::evaluate(ParticleSe
   // accumulate data
   assert(det_ratios.size() == ncoef);
   for (int ic = 0; ic < det_ratios.size(); ++ic)
-    P.Collectables[offset+ic] += weight * Jprefactor * std::real(det_ratios[ic]); // only real supported for now
+    P.Collectables[offset + ic] += weight * Jprefactor * std::real(det_ratios[ic]); // only real supported for now
 
   return 0.0;
 }

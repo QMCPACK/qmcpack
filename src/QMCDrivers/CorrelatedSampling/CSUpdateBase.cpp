@@ -205,7 +205,7 @@ void CSUpdateBase::initCSWalkers(WalkerIter_t it, WalkerIter_t it_end, bool rese
       logpsi[ipsi]                            = Psi1[ipsi]->evaluateLog(W);
       Psi1[ipsi]->G                           = W.G;
       thisWalker.Properties(ipsi, WP::LOGPSI) = logpsi[ipsi];
-      RealType e = thisWalker.Properties(ipsi, WP::LOCALENERGY) = H1[ipsi]->evaluate(W, *Psi1[ipsi]);
+      RealType e = thisWalker.Properties(ipsi, WP::LOCALENERGY) = H1[ipsi]->evaluate(*Psi1[ipsi], W);
       H1[ipsi]->saveProperty(thisWalker.getPropertyBase(ipsi));
       sumratio[ipsi] = 1.0;
     }
@@ -286,7 +286,7 @@ void CSUpdateBase::initCSWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end, bo
       *L1[ipsi]     = W.L;
 
       awalker.Properties(ipsi, WP::LOGPSI)      = logpsi[ipsi];
-      awalker.Properties(ipsi, WP::LOCALENERGY) = H1[ipsi]->evaluate(W, *Psi1[ipsi]);
+      awalker.Properties(ipsi, WP::LOCALENERGY) = H1[ipsi]->evaluate(*Psi1[ipsi], W);
       H1[ipsi]->saveProperty(awalker.getPropertyBase(ipsi));
       sumratio[ipsi] = 1.0;
     }
@@ -336,7 +336,7 @@ void CSUpdateBase::updateCSWalkers(WalkerIter_t it, WalkerIter_t it_end)
       logpsi[ipsi]                                 = Psi1[ipsi]->updateBuffer(W, (*it)->DataSet);
       Psi1[ipsi]->G                                = W.G;
       thisWalker.Properties(ipsi, WP::LOGPSI)      = logpsi[ipsi];
-      thisWalker.Properties(ipsi, WP::LOCALENERGY) = H1[ipsi]->evaluate(W, *Psi1[ipsi]);
+      thisWalker.Properties(ipsi, WP::LOCALENERGY) = H1[ipsi]->evaluate(*Psi1[ipsi], W);
       H1[ipsi]->saveProperty(thisWalker.getPropertyBase(ipsi));
       sumratio[ipsi] = 1.0;
     }

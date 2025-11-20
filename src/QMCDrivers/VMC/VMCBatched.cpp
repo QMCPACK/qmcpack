@@ -202,9 +202,8 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
 
   {
     ScopedTimer collectables_local_timer(timers.collectables_timer);
-    auto evaluateNonPhysicalHamiltonianElements = [](QMCHamiltonian& ham, TrialWaveFunction& psi, ParticleSet& pset, MCPWalker& walker) {
-      ham.auxHevaluate(pset, psi, walker);
-    };
+    auto evaluateNonPhysicalHamiltonianElements = [](QMCHamiltonian& ham, TrialWaveFunction& psi, ParticleSet& pset,
+                                                     MCPWalker& walker) { ham.auxHevaluate(psi, pset, walker); };
     for (int iw = 0; iw < crowd.size(); ++iw)
       evaluateNonPhysicalHamiltonianElements(walker_hamiltonians[iw], walker_twfs[iw], walker_elecs[iw], walkers[iw]);
 

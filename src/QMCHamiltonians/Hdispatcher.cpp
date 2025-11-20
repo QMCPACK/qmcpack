@@ -31,7 +31,7 @@ std::vector<QMCHamiltonian::FullPrecRealType> Hdispatcher::flex_evaluate(
   {
     std::vector<FullPrecRealType> local_energies(ham_list.size());
     for (size_t iw = 0; iw < ham_list.size(); iw++)
-      local_energies[iw] = ham_list[iw].evaluate(p_list[iw], wf_list[iw]);
+      local_energies[iw] = ham_list[iw].evaluate(wf_list[iw], p_list[iw]);
     return local_energies;
   }
 }
@@ -48,7 +48,7 @@ std::vector<QMCHamiltonian::FullPrecRealType> Hdispatcher::flex_evaluateWithTope
   {
     std::vector<FullPrecRealType> local_energies(ham_list.size());
     for (size_t iw = 0; iw < ham_list.size(); iw++)
-      local_energies[iw] = ham_list[iw].evaluateWithToperator(p_list[iw], wf_list[iw]);
+      local_energies[iw] = ham_list[iw].evaluateWithToperator(wf_list[iw], p_list[iw]);
     return local_energies;
   }
 }
@@ -65,7 +65,7 @@ std::vector<int> Hdispatcher::flex_makeNonLocalMoves(const RefVectorWithLeader<Q
   {
     std::vector<int> num_accepts(ham_list.size());
     for (size_t iw = 0; iw < ham_list.size(); iw++)
-      num_accepts[iw] = ham_list[iw].makeNonLocalMoves(p_list[iw], wf_list[iw], move_op);
+      num_accepts[iw] = ham_list[iw].makeNonLocalMoves(wf_list[iw], p_list[iw], move_op);
     return num_accepts;
   }
 }

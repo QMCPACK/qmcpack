@@ -22,7 +22,7 @@
 
 namespace qmcplusplus
 {
-class EnergyDensityEstimator : public OperatorBase, public PtclOnLatticeTraits
+class EnergyDensityEstimator : public OperatorDependsOnlyOnParticleSet, public PtclOnLatticeTraits
 {
 public:
   using Point  = ReferencePoints::Point;
@@ -33,7 +33,7 @@ public:
 
   std::string getClassName() const override { return "EnergyDensityEstimator"; }
   void resetTargetParticleSet(ParticleSet& P) override;
-  Return_t evaluate(ParticleSet& P, TrialWaveFunction& psi) override;
+  Return_t evaluate(ParticleSet& P) override;
   void addObservables(PropertySetType& plist) {}
   void addObservables(PropertySetType& plist, BufferType& olist) override;
   void registerCollectables(std::vector<ObservableHelper>& h5desc, hdf_archive& file) const override;
@@ -42,7 +42,7 @@ public:
   bool put(xmlNodePtr cur) override;
   bool put(xmlNodePtr cur, ParticleSet& P);
   bool get(std::ostream& os) const override;
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp) final;
 
   void write_description(std::ostream& os);
 

@@ -63,16 +63,17 @@ public:
   void deleteParticleQuantities() override;
 #endif
 
-  Return_t evaluate(ParticleSet& P, TrialWaveFunction& psi) override;
+  Return_t evaluate(TrialWaveFunction& psi, ParticleSet& P) override;
 
-  Return_t evaluateValueAndDerivatives(ParticleSet& P, TrialWaveFunction& psi,
+  Return_t evaluateValueAndDerivatives(TrialWaveFunction& psi,
+                                       ParticleSet& P,
                                        const opt_variables_type& optvars,
                                        const Vector<ValueType>& dlogpsi,
                                        Vector<ValueType>& dhpsioverpsi) override;
 
   void mw_evaluateWithParameterDerivatives(const RefVectorWithLeader<OperatorBase>& o_list,
+                                           const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                            const RefVectorWithLeader<ParticleSet>& p_list,
-                              const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                            const opt_variables_type& optvars,
                                            const RecordArray<ValueType>& dlogpsi,
                                            RecordArray<ValueType>& dhpsioverpsi) const override;

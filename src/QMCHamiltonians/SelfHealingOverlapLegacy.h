@@ -39,9 +39,9 @@ public:
 
   //standard interface
   std::string getClassName() const override { return "SelfHealingOverlapLegacy"; }
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& P, TrialWaveFunction& psi) final;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
   bool put(xmlNodePtr cur) override;
-  Return_t evaluate(ParticleSet& P, TrialWaveFunction& psi) override;
+  Return_t evaluate(TrialWaveFunction& psi, ParticleSet& P) override;
 
   //required for Collectables interface
   void addObservables(PropertySetType& plist, BufferType& olist) override;
@@ -61,7 +61,6 @@ public:
   bool get(std::ostream& os) const override { return false; }
 
   //local functions
-
 };
 } // namespace qmcplusplus
 

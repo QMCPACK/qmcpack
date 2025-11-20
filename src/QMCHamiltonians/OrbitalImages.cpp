@@ -60,11 +60,11 @@ OrbitalImages::OrbitalImages(const OrbitalImages& other)
     sposets.push_back(element->makeClone());
 }
 
-std::unique_ptr<OperatorBase> OrbitalImages::makeClone(ParticleSet& P, TrialWaveFunction& Psi)
+std::unique_ptr<OperatorBase> OrbitalImages::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   //cloning shouldn't strictly be necessary, but do it right just in case
   std::unique_ptr<OrbitalImages> clone = std::make_unique<OrbitalImages>(*this);
-  clone->Peln                          = &P;
+  clone->Peln                          = &qp;
   return clone;
 }
 
@@ -303,7 +303,7 @@ void OrbitalImages::report(const std::string& pad)
 }
 
 
-OrbitalImages::Return_t OrbitalImages::evaluate(ParticleSet& P, TrialWaveFunction& psi)
+OrbitalImages::Return_t OrbitalImages::evaluate(TrialWaveFunction& psi, ParticleSet& P)
 {
   //only the first thread of the master task writes the orbitals
   if (comm->rank() == 0 && omp_get_thread_num() == 0)

@@ -280,7 +280,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
     // evaluate non-physical hamiltonian elements
     for (int iw = 0; iw < walkers.size(); ++iw)
-      walker_hamiltonians[iw].auxHevaluate(walker_elecs[iw], walker_twfs[iw], walkers[iw]);
+      walker_hamiltonians[iw].auxHevaluate(walker_twfs[iw], walker_elecs[iw], walkers[iw]);
 
     // save properties into walker
     for (int iw = 0; iw < walkers.size(); ++iw)
@@ -311,7 +311,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     for (int iw = 0; iw < walkers.size(); ++iw)
     {
       walker_non_local_moves_accepted[iw] =
-          walker_hamiltonians[iw].makeNonLocalMoves(walker_elecs[iw], walker_twfs[iw], step_context.non_local_ops);
+          walker_hamiltonians[iw].makeNonLocalMoves(walker_twfs[iw], walker_elecs[iw], step_context.non_local_ops);
 
       if (walker_non_local_moves_accepted[iw] > 0)
       {

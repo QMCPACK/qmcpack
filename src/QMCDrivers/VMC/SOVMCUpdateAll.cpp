@@ -97,14 +97,15 @@ void SOVMCUpdateAll::advanceWalker(Walker_t& thisWalker, bool recompute)
     W.loadWalker(thisWalker, false); // move W back to last accepted configuration
     W.update();                      // update W.DistTables and SK
     logpsi_old = Psi.evaluateLog(W); // update W.G,L
-  }                                  // W and logpsi_old are up-to-date at this point
+  } // W and logpsi_old are up-to-date at this point
 
   RealType eloc = H.evaluate(
-      W, Psi); // calculate local energy; W.SK must be up-to-date if Coulomb interaction is used with periodic boundary. W.SK is used to calculate the long-range part of the Coulomb potential.
+      Psi,
+      W); // calculate local energy; W.SK must be up-to-date if Coulomb interaction is used with periodic boundary. W.SK is used to calculate the long-range part of the Coulomb potential.
   W.saveWalker(thisWalker);
   thisWalker.resetProperty(logpsi_old, Psi.getPhase(),
                            eloc);               // update thisWalker::Properties[WP::LOGPSI,WP::SIGN,WP::LOCALENERGY]
-  H.auxHevaluate(W, Psi, thisWalker);                // update auxiliary observables, i.e. fill H::Observables
+  H.auxHevaluate(Psi, W, thisWalker);           // update auxiliary observables, i.e. fill H::Observables
   H.saveProperty(thisWalker.getPropertyBase()); // copy H::Observables to thisWalker::Properties
 }
 

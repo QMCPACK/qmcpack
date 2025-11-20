@@ -71,7 +71,7 @@ public:
   static RealType compute_regularizer_f(const ParticleGradient& G, const RealType epsilon);
 
   /** Evaluate **/
-  Return_t evaluate(ParticleSet& P, TrialWaveFunction& psi) final;
+  Return_t evaluate(TrialWaveFunction& psi, ParticleSet& P) final;
 
 private:
   ///Finite difference timestep
@@ -105,7 +105,6 @@ private:
   Forces wf_grad_;
   Forces sw_pulay_;
   Forces sw_grad_;
-
 };
 
 } // namespace qmcplusplus

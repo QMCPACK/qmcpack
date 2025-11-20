@@ -466,8 +466,8 @@ TEST_CASE("AC Force", "[hamiltonian]")
 
   force_old.put(oldh1);
   force_new.put(newh1);
-  const auto vold = force_old.evaluate(elec, psi);
-  const auto vnew = force_new.evaluate(elec, psi);
+  const auto vold = force_old.evaluate(psi, elec);
+  const auto vnew = force_new.evaluate(psi, elec);
   force_old.resetTargetParticleSet(elec); // does nothing?
 
   CHECK(vold == Approx(0));

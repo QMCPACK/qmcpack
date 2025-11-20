@@ -220,13 +220,13 @@ public:
   std::string getClassName() const override { return "OrbitalImages"; }
 
   //standard interface
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& P, TrialWaveFunction& psi) final;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
 
   ///read xml input
   bool put(xmlNodePtr cur) override;
 
   ///hijack estimator evaluate to evaluate and write all orbitals
-  Return_t evaluate(ParticleSet& P, TrialWaveFunction& psi) override;
+  Return_t evaluate(TrialWaveFunction& psi, ParticleSet& P) override;
 
   //optional standard interface
   //void getRequiredTraces(TraceManager& tm);

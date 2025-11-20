@@ -103,7 +103,7 @@ void BareKineticEnergy::deleteParticleQuantities()
 #endif
 
 
-Return_t BareKineticEnergy::evaluate(ParticleSet& P, TrialWaveFunction& psi)
+Return_t BareKineticEnergy::evaluate(TrialWaveFunction& psi, ParticleSet& P)
 {
 #if !defined(REMOVE_TRACEMANAGER)
   if (streaming_particles_)
@@ -136,7 +136,8 @@ Return_t BareKineticEnergy::evaluate(ParticleSet& P, TrialWaveFunction& psi)
   return value_;
 }
 
-Return_t BareKineticEnergy::evaluateValueAndDerivatives(ParticleSet& P, TrialWaveFunction& psi,
+Return_t BareKineticEnergy::evaluateValueAndDerivatives(TrialWaveFunction& psi,
+                                                        ParticleSet& P,
                                                         const opt_variables_type& optvars,
                                                         const Vector<ValueType>& dlogpsi,
                                                         Vector<ValueType>& dhpsioverpsi)
@@ -144,12 +145,12 @@ Return_t BareKineticEnergy::evaluateValueAndDerivatives(ParticleSet& P, TrialWav
   // const_cast is needed because TWF::evaluateDerivatives calculates dlogpsi.
   // KineticEnergy must be the first element in the hamiltonian array.
   psi_.evaluateDerivatives(P, optvars, const_cast<Vector<ValueType>&>(dlogpsi), dhpsioverpsi);
-  return evaluate(P, psi);
+  return evaluate(psi, P);
 }
 
 void BareKineticEnergy::mw_evaluateWithParameterDerivatives(const RefVectorWithLeader<OperatorBase>& o_list,
+                                                            const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                                             const RefVectorWithLeader<ParticleSet>& p_list,
-							    const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                                             const opt_variables_type& optvars,
                                                             const RecordArray<ValueType>& dlogpsi,
                                                             RecordArray<ValueType>& dhpsioverpsi) const

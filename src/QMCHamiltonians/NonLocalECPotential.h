@@ -58,13 +58,13 @@ public:
   void deleteParticleQuantities() override;
 #endif
 
-  Return_t evaluate(ParticleSet& P, TrialWaveFunction& psi) override;
-  Return_t evaluateDeterministic(ParticleSet& P, TrialWaveFunction& psi) override;
+  Return_t evaluate(TrialWaveFunction& psi, ParticleSet& P) override;
+  Return_t evaluateDeterministic(TrialWaveFunction& psi, ParticleSet& P) override;
   void mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
                    const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                    const RefVectorWithLeader<ParticleSet>& p_list) const override;
 
-  Return_t evaluateWithToperator(ParticleSet& P, TrialWaveFunction& QMCPLUSPLUS_NONLOCAL_ECPOTENTIAL_H) override;
+  Return_t evaluateWithToperator(TrialWaveFunction& psi, ParticleSet& P) override;
 
   void mw_evaluateWithToperator(const RefVectorWithLeader<OperatorBase>& o_list,
                                 const RefVectorWithLeader<TrialWaveFunction>& wf_list,
@@ -103,7 +103,8 @@ public:
    */
   int makeNonLocalMovesPbyP(ParticleSet& P, NonLocalTOperator& move_op) override;
 
-  Return_t evaluateValueAndDerivatives(ParticleSet& P, TrialWaveFunction& psi,
+  Return_t evaluateValueAndDerivatives(TrialWaveFunction& psi,
+                                       ParticleSet& P,
                                        const opt_variables_type& optvars,
                                        const Vector<ValueType>& dlogpsi,
                                        Vector<ValueType>& dhpsioverpsi) override;
@@ -198,7 +199,7 @@ private:
    * @param compute_txy_all whether to compute Txy for all the electrons affected by NLPP
    * @param keepGrid.  If true, does not randomize the quadrature grid before evaluation.  
    */
-  void evaluateImpl(ParticleSet& P, TrialWaveFunction& psi, bool compute_txy_all, bool keepGrid = false);
+  void evaluateImpl(TrialWaveFunction& psi, ParticleSet& P, bool compute_txy_all, bool keepGrid = false);
 
   /** compute the T move transition probability for a given electron
    * member variable nonLocalOps.Txy is updated

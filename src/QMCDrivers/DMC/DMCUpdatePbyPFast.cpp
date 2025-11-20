@@ -143,13 +143,13 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
     }
     {
       ScopedTimer local_timer(myTimers[DMC_hamiltonian]);
-      enew = non_local_ops_.getMoveKind() == TmoveKind::OFF ? H.evaluate(W, Psi) : H.evaluateWithToperator(W, Psi);
+      enew = non_local_ops_.getMoveKind() == TmoveKind::OFF ? H.evaluate(Psi, W) : H.evaluateWithToperator(Psi, W);
     }
     thisWalker.resetProperty(logpsi, Psi.getPhase(), enew, rr_accepted, rr_proposed, 1.0);
     thisWalker.Weight *= branchEngine->branchWeight(enew, eold);
     {
       ScopedTimer local_timer(myTimers[DMC_collectables]);
-      H.auxHevaluate(W, Psi, thisWalker);
+      H.auxHevaluate(Psi, W, thisWalker);
       H.saveProperty(thisWalker.getPropertyBase());
     }
   }
@@ -175,7 +175,7 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
     wlog_collector->collect(thisWalker, W, Psi, H);
   {
     ScopedTimer local_timer(myTimers[DMC_tmoves]);
-    const int NonLocalMoveAcceptedTemp = H.makeNonLocalMoves(W, Psi, non_local_ops_);
+    const int NonLocalMoveAcceptedTemp = H.makeNonLocalMoves(Psi, W, non_local_ops_);
     if (NonLocalMoveAcceptedTemp > 0)
     {
       RealType logpsi = Psi.updateBuffer(W, w_buffer, false);

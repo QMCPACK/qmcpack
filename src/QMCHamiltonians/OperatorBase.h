@@ -178,7 +178,7 @@ public:
    * @param P input configuration containing N particles
    * @return the value of the Hamiltonian component
    */
-  virtual Return_t evaluate(ParticleSet& P, TrialWaveFunction& psi) = 0;
+  virtual Return_t evaluate(TrialWaveFunction& psi, ParticleSet& P) = 0;
 
   /** write about the class */
   virtual bool get(std::ostream& os) const = 0;
@@ -239,7 +239,7 @@ public:
    * @param P input configuration containing N particles
    * @return the value of the Hamiltonian component
    */
-  virtual Return_t evaluateDeterministic(ParticleSet& P, TrialWaveFunction& psi);
+  virtual Return_t evaluateDeterministic(TrialWaveFunction& psi, ParticleSet& P);
 
   /**
    * @brief Evaluate the contribution of this component of multiple walkers.
@@ -281,8 +281,8 @@ public:
    * @param dhpsioverpsi 
    */
   virtual void mw_evaluateWithParameterDerivatives(const RefVectorWithLeader<OperatorBase>& o_list,
+                                                   const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                                    const RefVectorWithLeader<ParticleSet>& p_list,
-                                          const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                                    const opt_variables_type& optvars,
                                                    const RecordArray<ValueType>& dlogpsi,
                                                    RecordArray<ValueType>& dhpsioverpsi) const;
@@ -301,7 +301,7 @@ public:
    * @param P input configuration containing N particles
    * @return the value of the Hamiltonian component
    */
-  virtual Return_t evaluateWithToperator(ParticleSet& P, TrialWaveFunction& psi);
+  virtual Return_t evaluateWithToperator(TrialWaveFunction& psi, ParticleSet& P);
 
   /**
    * @brief Evaluate the contribution of this component of multiple walkers
@@ -339,7 +339,8 @@ public:
    * @param dhpsioverpsi 
    * @return Return_t 
    */
-  virtual Return_t evaluateValueAndDerivatives(ParticleSet& P, TrialWaveFunction& psi,
+  virtual Return_t evaluateValueAndDerivatives(TrialWaveFunction& psi,
+                                               ParticleSet& P,
                                                const opt_variables_type& optvars,
                                                const Vector<ValueType>& dlogpsi,
                                                Vector<ValueType>& dhpsioverpsi);
@@ -613,13 +614,18 @@ private:
   bool quantumDomainValid(QuantumDomains qdomain) const noexcept;
 };
 
-class OperatorDependsOnlyOnParticleSet: public OperatorBase
+class OperatorDependsOnlyOnParticleSet : public OperatorBase
 {
-	private:
+public:
   virtual Return_t evaluate(ParticleSet& pset) = 0;
-  inline Return_t evaluate(ParticleSet& pset, TrialWaveFunction& psi) final { return evaluate(pset); }
   virtual std::unique_ptr<OperatorBase> makeClone(ParticleSet& pset) = 0;
-  inline std::unique_ptr<OperatorBase> makeClone(ParticleSet& pset, TrialWaveFunction& psi) final {return makeClone(pset); }
+
+private:
+  inline Return_t evaluate(TrialWaveFunction& psi, ParticleSet& pset) final { return evaluate(pset); }
+  inline std::unique_ptr<OperatorBase> makeClone(ParticleSet& pset, TrialWaveFunction& psi) final
+  {
+    return makeClone(pset);
+  }
 };
 } // namespace qmcplusplus
 #endif
