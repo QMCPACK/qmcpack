@@ -214,7 +214,6 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluate(ParticleSet& P)
 }
 
 void CoulombPBCAA::mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
-                               const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                const RefVectorWithLeader<ParticleSet>& p_list) const
 {
   auto& o_leader = o_list.getCastedLeader<CoulombPBCAA>();
@@ -238,11 +237,10 @@ void CoulombPBCAA::mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
     }
   }
   else
-    OperatorBase::mw_evaluate(o_list, wf_list, p_list);
+    OperatorDependsOnlyOnParticleSet::mw_evaluate(o_list, p_list);
 }
 
 void CoulombPBCAA::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase>& o_list,
-                                          const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                           const RefVectorWithLeader<ParticleSet>& p_list,
                                           const std::vector<ListenerVector<RealType>>& listeners,
                                           const std::vector<ListenerVector<RealType>>& listeners_ions) const
@@ -361,17 +359,6 @@ void CoulombPBCAA::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
         listener.report(iw, name, v_sample);
   }
 }
-
-void CoulombPBCAA::mw_evaluatePerParticleWithToperator(const RefVectorWithLeader<OperatorBase>& o_list,
-                                                       const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                                       const RefVectorWithLeader<ParticleSet>& p_list,
-                                                       const std::vector<ListenerVector<RealType>>& listeners,
-                                                       const std::vector<ListenerVector<RealType>>& ion_listeners) const
-
-{
-  mw_evaluatePerParticle(o_list, wf_list, p_list, listeners, ion_listeners);
-}
-
 
 void CoulombPBCAA::evaluateIonDerivs(ParticleSet& P,
                                      ParticleSet& ions,
@@ -876,8 +863,5 @@ void CoulombPBCAA::releaseResource(ResourceCollection& collection,
   collection.takebackResource(o_leader.mw_res_handle_);
 }
 
-std::unique_ptr<OperatorBase> CoulombPBCAA::makeClone(ParticleSet& qp)
-{
-  return std::make_unique<CoulombPBCAA>(*this);
-}
+std::unique_ptr<OperatorBase> CoulombPBCAA::makeClone(ParticleSet& qp) { return std::make_unique<CoulombPBCAA>(*this); }
 } // namespace qmcplusplus
