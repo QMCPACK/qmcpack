@@ -556,7 +556,20 @@ def run_project(*args,**kwargs):
     if nexus_core.graph_sims:
         graph_sims()
     #end if
-    pm = ProjectManager()
+    # Support for enhanced project manager
+    from simulation import Simulation
+    use_enhanced_pm = False
+    try:
+        from enhanced_simulation import EnhancedSimulation
+    except ImportError:
+        EnhancedSimulation = None
+    else:
+        use_enhanced_pm = any(isinstance(sim, EnhancedSimulation) for sim in Simulation.all_sims)
+    if use_enhanced_pm:
+        from enhanced_project_manager import EnhancedProjectManager
+        pm = EnhancedProjectManager()
+    else:
+        pm = ProjectManager()
     pm.add_simulations(*args,**kwargs)
     pm.run_project()
     return pm
