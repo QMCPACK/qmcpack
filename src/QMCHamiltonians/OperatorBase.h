@@ -615,18 +615,68 @@ private:
 
 /** @ingroup hamiltonian
  * A base class for both for Hamiltonian operator components and non-Hamiltonian operators that depends solely on ParticleSet
+ * Due to lack of TWF dependency, there is no response to T operator.
  */
 class OperatorDependsOnlyOnParticleSet : public OperatorBase
 {
 public:
-  virtual Return_t evaluate(ParticleSet& pset) = 0;
+  virtual Return_t evaluate(ParticleSet& pset)                       = 0;
   virtual std::unique_ptr<OperatorBase> makeClone(ParticleSet& pset) = 0;
+
+  virtual void mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
+                           const RefVectorWithLeader<ParticleSet>& p_list) const
+  {
+    assert(this == &o_list.getLeader());
+    for (int iw = 0; iw < o_list.size(); iw++)
+      o_list.getCastedElement<OperatorDependsOnlyOnParticleSet>(iw).evaluate(p_list[iw]);
+  }
+
+  virtual void mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase>& o_list,
+                                      const RefVectorWithLeader<ParticleSet>& p_list,
+                                      const std::vector<ListenerVector<RealType>>& listeners,
+                                      const std::vector<ListenerVector<RealType>>& listeners_ions) const
+  {
+    mw_evaluate(o_list, p_list);
+  }
 
 private:
   inline Return_t evaluate(TrialWaveFunction& psi, ParticleSet& pset) final { return evaluate(pset); }
   inline std::unique_ptr<OperatorBase> makeClone(ParticleSet& pset, TrialWaveFunction& psi) final
   {
     return makeClone(pset);
+  }
+
+  inline void mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
+                          const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                          const RefVectorWithLeader<ParticleSet>& p_list) const final
+  {
+    mw_evaluate(o_list, p_list);
+  }
+
+  inline void mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase>& o_list,
+                                     const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                     const RefVectorWithLeader<ParticleSet>& p_list,
+                                     const std::vector<ListenerVector<RealType>>& listeners,
+                                     const std::vector<ListenerVector<RealType>>& listeners_ions) const final
+  {
+    mw_evaluatePerParticle(o_list, p_list, listeners, listeners_ions);
+  }
+
+  inline void mw_evaluateWithToperator(const RefVectorWithLeader<OperatorBase>& o_list,
+                                       const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                       const RefVectorWithLeader<ParticleSet>& p_list) const final
+  {
+    mw_evaluate(o_list, p_list);
+  }
+
+  inline void mw_evaluatePerParticleWithToperator(
+      const RefVectorWithLeader<OperatorBase>& o_list,
+      const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+      const RefVectorWithLeader<ParticleSet>& p_list,
+      const std::vector<ListenerVector<RealType>>& listeners,
+      const std::vector<ListenerVector<RealType>>& listeners_ions) const final
+  {
+    mw_evaluatePerParticle(o_list, p_list, listeners, listeners_ions);
   }
 };
 } // namespace qmcplusplus
