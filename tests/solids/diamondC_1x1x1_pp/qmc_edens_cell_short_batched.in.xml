@@ -99,7 +99,7 @@
       </estimator>
       <estimator name="LocalEnergy" hdf5="no" />
     </estimators>
-    <parameter name="walkers_per_rank"> 16 </parameter>
+    <parameter name="total_walkers"> 16 </parameter>
     <parameter name="blocks"> 1000 </parameter>
     <parameter name="steps"> 8 </parameter>
     <parameter name="subSteps"> 2 </parameter>
