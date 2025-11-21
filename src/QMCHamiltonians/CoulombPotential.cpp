@@ -379,7 +379,6 @@ Return_t CoulombPotential::evaluate(ParticleSet& P)
 }
 
 void CoulombPotential::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase>& o_list,
-                                              const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                               const RefVectorWithLeader<ParticleSet>& p_list,
                                               const std::vector<ListenerVector<RealType>>& listeners,
                                               const std::vector<ListenerVector<RealType>>& ion_listeners) const
@@ -395,24 +394,23 @@ void CoulombPotential::mw_evaluatePerParticle(const RefVectorWithLeader<Operator
   auto myTableIndex           = o_leader.myTableIndex;
   auto nCenters               = o_leader.nCenters;
 
-  auto evaluate_walker = [&va_sample, &vb_sample, myTableIndex,
-                          is_AA, is_active](int walker_index, const ParticleSet& pset, const ParticleSet& pset_ions,
-                                 const std::vector<ListenerVector<RealType>>& listeners,
-                                 const std::vector<ListenerVector<RealType>>& ion_listeners) -> Return_t {
+  auto evaluate_walker = [&va_sample, &vb_sample, myTableIndex, is_AA,
+                          is_active](int walker_index, const ParticleSet& pset, const ParticleSet& pset_ions,
+                                     const std::vector<ListenerVector<RealType>>& listeners,
+                                     const std::vector<ListenerVector<RealType>>& ion_listeners) -> Return_t {
     Return_t value = 0;
     if (is_AA)
       if (is_active)
-	value =
-          evaluate_spAA(pset.getDistTableAA(myTableIndex), pset.Z.first_address(), va_sample, listeners);
+        value = evaluate_spAA(pset.getDistTableAA(myTableIndex), pset.Z.first_address(), va_sample, listeners);
       else
-	value =
-          evaluate_spAA(pset.getDistTableAA(myTableIndex), pset.Z.first_address(), va_sample, ion_listeners);
+        value = evaluate_spAA(pset.getDistTableAA(myTableIndex), pset.Z.first_address(), va_sample, ion_listeners);
     else
-      value = evaluate_spAB(pset.getDistTableAB(myTableIndex), pset_ions.Z.first_address(), pset.Z.first_address(), va_sample, vb_sample, listeners, ion_listeners);
+      value = evaluate_spAB(pset.getDistTableAB(myTableIndex), pset_ions.Z.first_address(), pset.Z.first_address(),
+                            va_sample, vb_sample, listeners, ion_listeners);
     return value;
   };
 
-  auto name                   = o_leader.name_;
+  auto name = o_leader.name_;
   for (int iw = 0; iw < o_list.size(); ++iw)
   {
     auto& coulomb_pot = o_list.getCastedElement<CoulombPotential>(iw);
@@ -439,16 +437,6 @@ void CoulombPotential::mw_evaluatePerParticle(const RefVectorWithLeader<Operator
       for (const ListenerVector<RealType>& ion_listener : ion_listeners)
         ion_listener.report(iw, name, va_sample);
   }
-}
-
-void CoulombPotential::mw_evaluatePerParticleWithToperator(
-    const RefVectorWithLeader<OperatorBase>& o_list,
-    const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-    const RefVectorWithLeader<ParticleSet>& p_list,
-    const std::vector<ListenerVector<RealType>>& listeners,
-    const std::vector<ListenerVector<RealType>>& ion_listeners) const
-{
-  mw_evaluatePerParticle(o_list, wf_list, p_list, listeners, ion_listeners);
 }
 
 void CoulombPotential::evaluateIonDerivs(ParticleSet& P,
