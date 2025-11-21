@@ -2834,6 +2834,67 @@ def test_generate_simulation():
 #end def test_generate_simulation
 
 
+def test_generic_simulation():
+    import os
+    from simulation import Simulation,GenericSimulation
+    from simulation import generate_simulation,SimulationInputTemplate
+    from machines import job
+
+    tpath = testing.setup_unit_test_output_directory('simulation','test_generic_simulation')
+
+    # Test 1: Create GenericSimulation with string input
+    script_text = 'print("Hello from GenericSimulation")'
+    sim1 = generate_simulation(
+        identifier = 'test_generic_string',
+        path       = os.path.join(tpath,'test1'),
+        job        = job(machine='ws1', serial=True, app='python3'),
+        input      = script_text,
+        outfiles   = ['output.txt'],
+        )
+    assert(isinstance(sim1,GenericSimulation))
+    assert(isinstance(sim1,Simulation))
+    assert(sim1.outfiles == ['output.txt'])
+    assert(isinstance(sim1.input,SimulationInputTemplate))
+    
+    sim1_input_text = sim1.input.write_text()
+    assert(sim1_input_text == script_text)
+
+    assert(sim1.get_output_files() == ['output.txt'])
+
+    assert(sim1.app_command() is not None)
+    assert('python3' in sim1.app_command() or sim1.job.app_name == 'python3')
+
+
+    script_file = os.path.join(tpath,'test_script.py')
+    script_file_content = 'print("Hello from file")\n'
+    with open(script_file,'w') as f:
+        f.write(script_file_content)
+    #end with
+    
+    # Test 2: GenericSimulation with file path input
+    sim2 = generate_simulation(
+        identifier = 'test_generic_file',
+        path       = os.path.join(tpath,'test2'),
+        job        = job(machine='ws1', serial=True, app='python3'),
+        input      = script_file,
+        outfiles   = ['result.txt'],
+        )
+    assert(isinstance(sim2,GenericSimulation))
+    assert(sim2.outfiles == ['result.txt'])
+    assert(isinstance(sim2.input,SimulationInputTemplate))
+    
+    sim2_input_text = sim2.input.write_text()
+    assert(sim2_input_text == script_file_content)
+
+    assert(sim2.get_output_files() == ['result.txt'])
+
+    assert(sim2.app_command() is not None)
+    assert('python3' in sim2.app_command() or sim2.job.app_name == 'python3')
+
+    Simulation.clear_all_sims()
+#end def test_generic_simulation
+
+
 
 if versions.matplotlib_available and versions.pydot_available:
     def test_graph_sims():
