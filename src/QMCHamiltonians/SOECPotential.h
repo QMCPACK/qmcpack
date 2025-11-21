@@ -12,7 +12,8 @@
 #ifndef QMCPLUSPLUS_SO_ECPOTENTIAL_H
 #define QMCPLUSPLUS_SO_ECPOTENTIAL_H
 
-#include "QMCHamiltonians/SOECPComponent.h"
+#include "SOECPComponent.h"
+#include "OperatorBase.h"
 
 namespace qmcplusplus
 {
@@ -38,10 +39,11 @@ public:
   std::string getClassName() const override { return "SOECPotential"; }
   void resetTargetParticleSet(ParticleSet& P) override;
 
-  Return_t evaluate(ParticleSet& P) override;
-  Return_t evaluateDeterministic(ParticleSet& P) override;
+  Return_t evaluate(TrialWaveFunction& psi, ParticleSet& P) override;
+  Return_t evaluateDeterministic(TrialWaveFunction& psi, ParticleSet& P) override;
 
-  Return_t evaluateValueAndDerivatives(ParticleSet& P,
+  Return_t evaluateValueAndDerivatives(TrialWaveFunction& psi,
+                                       ParticleSet& P,
                                        const opt_variables_type& optvars,
                                        const Vector<ValueType>& dlogpsi,
                                        Vector<ValueType>& dhpsioverpsi) override;
@@ -104,7 +106,7 @@ private:
   //flag to use fast evaluation
   const bool use_exact_spin_;
 
-  void evaluateImpl(ParticleSet& elec, bool keep_grid = false);
+  void evaluateImpl(TrialWaveFunction& psi, ParticleSet& elec, bool keep_grid = false);
 
   //for testing
   friend class testing::TestSOECPotential;

@@ -30,7 +30,7 @@ namespace qmcplusplus
  *\brief Calculates the Model Periodic Coulomb potential using PBCs
  */
 
-class MPC : public OperatorBase
+class MPC : public OperatorDependsOnlyOnParticleSet
 {
 protected:
   std::shared_ptr<UBspline_3d_d> VlongSpline;
@@ -91,7 +91,7 @@ public:
     return true;
   }
 
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) override;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& P) override;
 };
 
 } // namespace qmcplusplus

@@ -46,7 +46,7 @@ int WalkerReconfiguration::getIndexPermutation(MCWalkerConfiguration& W)
   FullPrecRealType r2_accepted = 0.0, r2_proposed = 0.0;
   for (int iw = 0; iw < nw; iw++)
   {
-    const auto &walker = W[iw];
+    const auto& walker = W[iw];
     r2_accepted += walker->Properties(WP::R2ACCEPTED);
     r2_proposed += walker->Properties(WP::R2PROPOSED);
     FullPrecRealType wgt(walker->Weight);

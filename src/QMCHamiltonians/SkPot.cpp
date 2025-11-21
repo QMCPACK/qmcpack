@@ -61,7 +61,7 @@ bool SkPot::put(xmlNodePtr cur)
 
 bool SkPot::get(std::ostream& os) const { return true; }
 
-std::unique_ptr<OperatorBase> SkPot::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> SkPot::makeClone(ParticleSet& P)
 {
   std::unique_ptr<SkPot> myclone = std::make_unique<SkPot>(*this);
   myclone->FillFk();

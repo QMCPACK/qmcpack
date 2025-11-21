@@ -31,7 +31,7 @@ namespace qmcplusplus
  * \brief Evaluate the local potentials (either pseudo or full core) around each ion.
  */
 
-struct LocalECPotential : public OperatorBase
+struct LocalECPotential : public OperatorDependsOnlyOnParticleSet
 {
   using GridType            = OneDimGridBase<RealType>;
   using RadialPotentialType = OneDimCubicSpline<RealType>;
@@ -118,7 +118,7 @@ struct LocalECPotential : public OperatorBase
     return true;
   }
 
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) override;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& P) override;
 
   /** Add a RadialPotentialType of a species
    * @param groupID index of the ion species

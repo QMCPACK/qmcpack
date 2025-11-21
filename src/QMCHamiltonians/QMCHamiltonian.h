@@ -215,9 +215,13 @@ public:
   ////return the LocalPotential \f$=\sum_i H^{qmc}_{i} - KE\f$
   inline FullPrecRealType getLocalPotential() { return LocalEnergy - KineticEnergy; }
   inline FullPrecRealType getKineticEnergy() { return KineticEnergy; }
-  void auxHevaluate(ParticleSet& P);
-  void auxHevaluate(ParticleSet& P, Walker_t& ThisWalker);
-  void auxHevaluate(ParticleSet& P, Walker_t& ThisWalker, bool do_properties, bool do_collectables);
+  void auxHevaluate(TrialWaveFunction& psi, ParticleSet& P);
+  void auxHevaluate(TrialWaveFunction& psi, ParticleSet& P, Walker_t& ThisWalker);
+  void auxHevaluate(TrialWaveFunction& psi,
+                    ParticleSet& P,
+                    Walker_t& ThisWalker,
+                    bool do_properties,
+                    bool do_collectables);
   void rejectedMove(ParticleSet& P, Walker_t& ThisWalker);
 
   /** set PRIMARY bit of all the components
@@ -234,14 +238,14 @@ public:
    *
    * P.R, P.G and P.L are used to evaluate the LocalEnergy.
    */
-  FullPrecRealType evaluate(ParticleSet& P);
+  FullPrecRealType evaluate(TrialWaveFunction& psi, ParticleSet& P);
 
   /** evaluate Local Energy deterministically.  Defaults to evaluate(P) for operators 
    * without a stochastic component. For the nonlocal PP, the quadrature grid is not rerandomized.  
    * @param P ParticleSet
    * @return Local energy. 
    */
-  FullPrecRealType evaluateDeterministic(ParticleSet& P);
+  FullPrecRealType evaluateDeterministic(TrialWaveFunction& psi, ParticleSet& P);
   /** batched version of evaluate for LocalEnergy 
    *
    *  Encapsulation is ignored for ham_list hamiltonians method uses its status as QMCHamiltonian to break encapsulation.
@@ -258,7 +262,7 @@ public:
    * @param P ParticleSEt
    * @return Local energy
    */
-  FullPrecRealType evaluateWithToperator(ParticleSet& P);
+  FullPrecRealType evaluateWithToperator(TrialWaveFunction& psi, ParticleSet& P);
 
   /** batched version of evaluate Local energy with Toperators updated.
    */
@@ -275,7 +279,8 @@ public:
    * @param dhpsioverpsi \f$\partial(\hat{h}\Psi({\bf R})/\Psi({\bf R})) /\partial \alpha \f$
    * @param compute_deriv if true, compute dhpsioverpsi of the non-local potential component
    */
-  FullPrecRealType evaluateValueAndDerivatives(ParticleSet& P,
+  FullPrecRealType evaluateValueAndDerivatives(TrialWaveFunction& psi,
+                                               ParticleSet& P,
                                                const opt_variables_type& optvars,
                                                Vector<ValueType>& dlogpsi,
                                                Vector<ValueType>& dhpsioverpsi);
@@ -311,7 +316,7 @@ public:
   * @param A finite difference step size if applicable.  Default is to use finite diff with delta=1e-5.
   * @return EGrad.  Function itself returns nothing.
   */
-  void evaluateElecGrad(ParticleSet& P, TrialWaveFunction& psi, ParticleSet::ParticlePos& EGrad, RealType delta = 1e-5);
+  void evaluateElecGrad(TrialWaveFunction& psi, ParticleSet& P, ParticleSet::ParticlePos& EGrad, RealType delta = 1e-5);
 
   /** evaluate local energy and derivatives w.r.t ionic coordinates without randomizing the quadrature point grid.
   * @param P target particle set (electrons)
@@ -332,7 +337,7 @@ public:
    * @param P particle set
    * @return the number of accepted moves
    */
-  int makeNonLocalMoves(ParticleSet& P, NonLocalTOperator& move_op);
+  int makeNonLocalMoves(TrialWaveFunction& psi, ParticleSet& P, NonLocalTOperator& move_op);
 
   /** determine if L2 potential is present
    */
@@ -368,7 +373,7 @@ public:
    * @param free_nlpp if true, non-local PP is a variable
    * @return KE + NonLocal potential
    */
-  FullPrecRealType evaluateVariableEnergy(ParticleSet& P, bool free_nlpp);
+  FullPrecRealType evaluateVariableEnergy(TrialWaveFunction& psi, ParticleSet& P, bool free_nlpp);
 
   /** return an average value of the LocalEnergy
    *

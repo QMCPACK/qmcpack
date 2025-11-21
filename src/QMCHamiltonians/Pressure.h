@@ -29,7 +29,7 @@ namespace qmcplusplus
  where d is the dimension of space and /Omega is the volume.
 **/
 
-struct Pressure : public OperatorBase
+struct Pressure : public OperatorDependsOnlyOnParticleSet
 {
   using WP = WalkerProperties::Indexes;
   double pNorm;
@@ -130,7 +130,7 @@ struct Pressure : public OperatorBase
     return true;
   }
 
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp) final
   {
     return std::make_unique<Pressure>(qp);
   }

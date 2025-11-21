@@ -13,7 +13,7 @@
 
 #ifndef QMCPLUSPLUS_SO_ECPOTENTIAL_COMPONENT_H
 #define QMCPLUSPLUS_SO_ECPOTENTIAL_COMPONENT_H
-#include "QMCHamiltonians/OperatorBase.h"
+
 #include "QMCHamiltonians/RandomRotationMatrix.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include <ResourceCollection.h>

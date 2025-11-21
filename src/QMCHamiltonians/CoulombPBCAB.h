@@ -35,7 +35,7 @@ namespace qmcplusplus
  * Functionally identical to CoulombPBCAB but uses a templated version of
  * LRHandler.
  */
-class CoulombPBCAB : public OperatorBase, public ForceBase
+class CoulombPBCAB : public OperatorDependsOnlyOnParticleSet, public ForceBase
 {
 public:
   using LRHandlerType  = LRCoulombSingleton::LRHandlerType;
@@ -174,7 +174,7 @@ public:
     return true;
   }
 
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) override;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp) override;
 
   ///Computes the short-range contribution to the coulomb energy.
   Return_t evalSR(ParticleSet& P);

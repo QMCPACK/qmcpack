@@ -68,7 +68,7 @@ struct StressPBC : public OperatorBase, public ForceBase
 
   std::string getClassName() const override { return "StressPBC"; }
 
-  Return_t evaluate(ParticleSet& P) override;
+  Return_t evaluate(TrialWaveFunction& psi, ParticleSet& P) override;
 
   void initBreakup(ParticleSet& P);
 

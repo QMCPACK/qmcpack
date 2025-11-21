@@ -98,7 +98,7 @@ void ACForce::add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCHamilt
     ham_in.addOperator(std::move(myclone), name_, update_mode_[PHYSICAL]);
   }
 }
-ACForce::Return_t ACForce::evaluate(ParticleSet& P)
+ACForce::Return_t ACForce::evaluate(TrialWaveFunction& psi, ParticleSet& P)
 {
   hf_force_    = 0;
   pulay_force_ = 0;
@@ -108,7 +108,8 @@ ACForce::Return_t ACForce::evaluate(ParticleSet& P)
 
   //This function returns d/dR of the sum of all observables in the physical hamiltonian.
   //Note that the sign will be flipped based on definition of force = -d/dR.
-  if (fastDerivatives_){
+  if (fastDerivatives_)
+  {
     TWFFastDerivWrapper& psi_wrapper_ = psi_.getOrCreateTWFFastDerivWrapper(P);
     ham_.evaluateIonDerivsFast(P, ions_, psi_, psi_wrapper_, hf_force_, wf_grad_);
   }
@@ -121,7 +122,7 @@ ACForce::Return_t ACForce::evaluate(ParticleSet& P)
     el_grad.resize(P.getTotalNum());
     el_grad = 0;
 
-    ham_.evaluateElecGrad(P, psi_, el_grad, delta_);
+    ham_.evaluateElecGrad(psi_, P, el_grad, delta_);
     swt_.computeSWT(P, ions_, el_grad, P.G, sw_pulay_, sw_grad_);
   }
 

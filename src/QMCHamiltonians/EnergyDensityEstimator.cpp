@@ -526,7 +526,7 @@ void EnergyDensityEstimator::setParticlePropertyList(PropertySetType& plist, int
 }
 
 
-std::unique_ptr<OperatorBase> EnergyDensityEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> EnergyDensityEstimator::makeClone(ParticleSet& qp)
 {
   bool write = omp_get_thread_num() == 0;
   if (write)

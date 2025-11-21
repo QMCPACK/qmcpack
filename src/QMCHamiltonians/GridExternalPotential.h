@@ -24,7 +24,7 @@ namespace qmcplusplus
 {
 /** This class allows one to read in an arbitrary external potential
   */
-class GridExternalPotential : public OperatorBase
+class GridExternalPotential : public OperatorDependsOnlyOnParticleSet
 {
 public:
   GridExternalPotential(ParticleSet& P);
@@ -36,11 +36,10 @@ public:
   //standard interface functions
   bool put(xmlNodePtr cur) override;
   bool get(std::ostream& os) const override;
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& P, TrialWaveFunction& psi) final;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& P) final;
 
   //functions for physical (hamiltonian component) estimator
   Return_t evaluate(ParticleSet& P) override;
-  Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy);
 
 #if !defined(REMOVE_TRACEMANAGER)
   //traces interface

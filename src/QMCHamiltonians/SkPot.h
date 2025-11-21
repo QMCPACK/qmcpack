@@ -24,7 +24,7 @@ namespace qmcplusplus
  *
  * <estimator name="sk" type="sk" debug="no"/>
  */
-class SkPot : public OperatorBase
+class SkPot : public OperatorDependsOnlyOnParticleSet
 {
 public:
   SkPot(ParticleSet& elns);
@@ -36,7 +36,7 @@ public:
 
   bool put(xmlNodePtr cur) override;
   bool get(std::ostream& os) const override;
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& P) final;
 
   inline void FillFk()
   {

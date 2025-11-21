@@ -25,7 +25,7 @@ namespace qmcplusplus
  *
  * <estimator name="sk" type="sk" debug="no"/>
  */
-class SkEstimator : public OperatorBase
+class SkEstimator : public OperatorDependsOnlyOnParticleSet
 {
 public:
   SkEstimator(ParticleSet& elns);
@@ -42,7 +42,7 @@ public:
   void setParticlePropertyList(PropertySetType& plist, int offset) override;
   bool put(xmlNodePtr cur) override;
   bool get(std::ostream& os) const override;
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) override;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& P) override;
 
 protected:
   ParticleSet* sourcePtcl;

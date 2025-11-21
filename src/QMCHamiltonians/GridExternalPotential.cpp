@@ -103,7 +103,7 @@ bool GridExternalPotential::get(std::ostream& os) const
 }
 
 
-std::unique_ptr<OperatorBase> GridExternalPotential::makeClone(ParticleSet& P, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> GridExternalPotential::makeClone(ParticleSet& P)
 {
   return std::make_unique<GridExternalPotential>(*this);
 }
@@ -131,11 +131,6 @@ GridExternalPotential::Return_t GridExternalPotential::evaluate(ParticleSet& P)
   }
 #endif
   return value_;
-}
-
-GridExternalPotential::Return_t GridExternalPotential::evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
-{
-  return evaluate(P);
 }
 
 #if !defined(REMOVE_TRACEMANAGER)

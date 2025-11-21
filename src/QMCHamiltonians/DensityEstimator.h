@@ -25,7 +25,7 @@ using LRHandlerType  = LRCoulombSingleton::LRHandlerType;
 using GridType       = LRCoulombSingleton::GridType;
 using RadFunctorType = LRCoulombSingleton::RadFunctorType;
 
-class DensityEstimator : public OperatorBase
+class DensityEstimator : public OperatorDependsOnlyOnParticleSet
 {
 public:
   DensityEstimator(ParticleSet& elns);
@@ -42,7 +42,7 @@ public:
   void setParticlePropertyList(PropertySetType& plist, int offset) override;
   bool put(xmlNodePtr cur) override;
   bool get(std::ostream& os) const override;
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp) final;
 
 
 private:

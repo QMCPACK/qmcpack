@@ -273,8 +273,8 @@ void QMCCostFunction::checkConfigurations(EngineHandle& handle)
       wRef.loadSample(wRef, iw);
       wRef.update();
       Return_rt* restrict saved = (*RecordsOnNode[ip])[iw];
-      psiClones[ip]->evaluateDeltaLogSetup(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg],
-                                           *d2LogPsi[iwg]);
+      auto& psi_ref             = *psiClones[ip];
+      psi_ref.evaluateDeltaLogSetup(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg], *d2LogPsi[iwg]);
       saved[REWEIGHT] = 1.0;
       Return_rt etmp;
       if (needGrads)
@@ -286,7 +286,7 @@ void QMCCostFunction::checkConfigurations(EngineHandle& handle)
         Vector<Return_t> Dsaved(NumOptimizables, 0.0);
         Vector<Return_t> HDsaved(NumOptimizables, 0.0);
 
-        etmp = hClones[ip]->evaluateValueAndDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved);
+        etmp = hClones[ip]->evaluateValueAndDerivatives(psi_ref, wRef, OptVariablesForPsi, Dsaved, HDsaved);
 
 
         //FIXME the ifdef should be removed after the optimizer is made compatible with complex coefficients
@@ -298,7 +298,7 @@ void QMCCostFunction::checkConfigurations(EngineHandle& handle)
         std::copy(rHDsaved.begin(), rHDsaved.end(), (*HDerivRecords[ip])[iw]);
       }
       else
-        etmp = hClones[ip]->evaluate(wRef);
+        etmp = hClones[ip]->evaluate(psi_ref, wRef);
 
       e0 += saved[ENERGY_TOT] = saved[ENERGY_NEW] = etmp;
       e2 += etmp * etmp;
@@ -396,8 +396,8 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
       wRef.loadSample(wRef, iw);
       wRef.update();
       Return_rt* restrict saved = (*RecordsOnNode[ip])[iw];
-      psiClones[ip]->evaluateDeltaLogSetup(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg],
-                                           *d2LogPsi[iwg]);
+      auto& psi_ref             = *psiClones[ip];
+      psi_ref.evaluateDeltaLogSetup(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg], *d2LogPsi[iwg]);
       saved[REWEIGHT] = 1.0;
       Return_rt etmp;
       if (needGrads)
@@ -406,7 +406,7 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
         Vector<Return_t> Dsaved(NumOptimizables, 0.0);
         Vector<Return_t> HDsaved(NumOptimizables, 0.0);
 
-        etmp = hClones[ip]->evaluateValueAndDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved);
+        etmp = hClones[ip]->evaluateValueAndDerivatives(psi_ref, wRef, OptVariablesForPsi, Dsaved, HDsaved);
 
         // add non-differentiated derivative vector
         std::vector<Return_t> der_rat_samp(NumOptimizables + 1, 0.0);
@@ -440,7 +440,7 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
 #endif
       }
       else
-        etmp = hClones[ip]->evaluate(wRef);
+        etmp = hClones[ip]->evaluate(psi_ref, wRef);
 
       e0 += saved[ENERGY_TOT] = etmp;
       e2 += etmp * etmp;
@@ -527,7 +527,8 @@ QMCCostFunction::EffectiveWeight QMCCostFunction::correlatedSampling(bool needGr
       wRef.update(true);
       Return_rt* restrict saved = (*RecordsOnNode[ip])[iw];
       Return_rt logpsi;
-      logpsi = psiClones[ip]->evaluateDeltaLog(wRef, compute_all_from_scratch);
+      auto& psi_ref = *psiClones[ip];
+      logpsi        = psi_ref.evaluateDeltaLog(wRef, compute_all_from_scratch);
       wRef.G += *dLogPsi[iwg];
       wRef.L += *d2LogPsi[iwg];
       Return_rt weight = saved[REWEIGHT] = vmc_or_dmc * (logpsi - saved[LOGPSI_FREE]);
@@ -540,19 +541,19 @@ QMCCostFunction::EffectiveWeight QMCCostFunction::correlatedSampling(bool needGr
         Vector<Return_rt> rHDsaved(NumOptimizables, 0);
 
         saved[ENERGY_NEW] =
-            H_KE_Node[ip]->evaluateValueAndDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved) + saved[ENERGY_FIXED];
-        ;
+            H_KE_Node[ip]->evaluateValueAndDerivatives(psi_ref, wRef, OptVariablesForPsi, Dsaved, HDsaved) +
+            saved[ENERGY_FIXED];
 
         for (int i = 0; i < NumOptimizables; i++)
         {
-          rDsaved[i]  = std::real(Dsaved[i]);
-          rHDsaved[i] = std::real(HDsaved[i]);
+          rDsaved[i]                  = std::real(Dsaved[i]);
+          rHDsaved[i]                 = std::real(HDsaved[i]);
           (*DerivRecords[ip])(iw, i)  = rDsaved[i];
           (*HDerivRecords[ip])(iw, i) = rHDsaved[i];
         }
       }
       else
-        saved[ENERGY_NEW] = H_KE_Node[ip]->evaluate(wRef) + saved[ENERGY_FIXED];
+        saved[ENERGY_NEW] = H_KE_Node[ip]->evaluate(psi_ref, wRef) + saved[ENERGY_FIXED];
       wgt_node += inv_n_samples * weight;
       wgt_node2 += inv_n_samples * weight * weight;
     }
