@@ -66,12 +66,9 @@ struct L2Potential : public OperatorBase
   std::vector<std::unique_ptr<L2RadialPotential>> PPset;
   ///PP[iat] is the L2 potential for the iat-th particle
   std::vector<L2RadialPotential*> PP;
-  ///Associated trial wavefunction
-  TrialWaveFunction* psi_ref;
 
   L2Potential(const ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi);
 
-  bool dependsOnWaveFunction() const override { return true; }
   std::string getClassName() const override { return "L2Potential"; }
 
   Return_t evaluate(TrialWaveFunction& psi, ParticleSet& P) override;

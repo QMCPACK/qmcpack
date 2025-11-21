@@ -961,7 +961,7 @@ int QMCHamiltonian::makeNonLocalMoves(TrialWaveFunction& psi, ParticleSet& P, No
 {
   int num_moves = 0;
   for (int i = 0; i < H.size(); ++i)
-    num_moves += H[i]->makeNonLocalMovesPbyP(P, move_op);
+    num_moves += H[i]->makeNonLocalMovesPbyP(psi, P, move_op);
   return num_moves;
 }
 

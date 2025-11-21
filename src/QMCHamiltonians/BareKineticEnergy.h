@@ -53,7 +53,6 @@ public:
   ///destructor
   ~BareKineticEnergy() override;
 
-  bool dependsOnWaveFunction() const override;
   std::string getClassName() const override;
 
 #if !defined(REMOVE_TRACEMANAGER)
@@ -177,8 +176,6 @@ private:
 
   struct MultiWalkerResource;
   ResourceHandle<MultiWalkerResource> mw_res_;
-
-  TrialWaveFunction& psi_;
 };
 
 } // namespace qmcplusplus

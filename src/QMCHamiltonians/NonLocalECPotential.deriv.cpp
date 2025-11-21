@@ -44,7 +44,7 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateValueAndDerivatives(T
         value_ +=
             PP[iat]->evaluateValueAndDerivatives(P, vp_ ? makeOptionalRef<VirtualParticleSet>(*vp_) : std::nullopt,
 
-                                                 iat, Psi, jel, dist[iat], -displ[iat], optvars, dlogpsi, dhpsioverpsi);
+                                                 iat, psi, jel, dist[iat], -displ[iat], optvars, dlogpsi, dhpsioverpsi);
   }
   return value_;
 }

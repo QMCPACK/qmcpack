@@ -27,8 +27,12 @@ namespace qmcplusplus
  @brief Evaluate the Bare Pressure.
  P=/frac{2T+V}{d* /Omega}
  where d is the dimension of space and /Omega is the volume.
-**/
-
+ Pressure can only be a non-Hamiltonian operator.
+ In physics, it depends on the full Hamiltonian, see the above equation.
+ The current implementation accesses Hamiltonian value via ParticleSet::PropertyList.
+ This is a quite bad implementation choice but cannot be addressed
+ until a proper ParticleSet::PropertyList gets in-place.
+ **/
 class Pressure : public OperatorDependsOnlyOnParticleSet
 {
   using WP = WalkerProperties::Indexes;
@@ -40,21 +44,17 @@ public:
    *
    * Pressure operators need to be re-evaluated during optimization.
    */
-  Pressure()
-  {
-    update_mode_.set(OPTIMIZABLE, 1);
-  }
+  Pressure() { update_mode_.set(OPTIMIZABLE, 1); }
   ///destructor
   ~Pressure() override {}
 
-  bool dependsOnWaveFunction() const override { return true; }
   std::string getClassName() const override { return "Pressure"; }
 
   inline Return_t evaluate(ParticleSet& P) override
   {
     const double pNorm = 1.0 / (P.getLattice().DIM * P.getLattice().Volume);
-    value_ = 2.0 * P.PropertyList[WP::LOCALENERGY] - P.PropertyList[WP::LOCALPOTENTIAL];
-    value_ *= 1.0 / (P.getLattice().DIM * P.getLattice().Volume);;
+    value_             = 2.0 * P.PropertyList[WP::LOCALENERGY] - P.PropertyList[WP::LOCALPOTENTIAL];
+    value_ *= 1.0 / (P.getLattice().DIM * P.getLattice().Volume);
     return 0.0;
   }
 
@@ -129,10 +129,7 @@ public:
     return true;
   }
 
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp) final
-  {
-    return std::make_unique<Pressure>();
-  }
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp) final { return std::make_unique<Pressure>(); }
 };
 } // namespace qmcplusplus
 #endif
