@@ -43,8 +43,8 @@ public:
   using RadFunctorType = LRCoulombSingleton::RadFunctorType;
   using mRealType      = LRHandlerType::mRealType;
 
-  ///long-range Handler. Should be const LRHandlerType eventually
-  std::shared_ptr<LRHandlerType> AB;
+  ///long-range Handler
+  std::shared_ptr<const LRHandlerType> AB;
   ///long-range derivative handler
   std::shared_ptr<const LRHandlerType> dAB;
   ///locator of the distance table
@@ -128,8 +128,6 @@ public:
   //CoulombPBCAB(const CoulombPBCAB& c);
 
   ~CoulombPBCAB() override;
-
-  void resetTargetParticleSet(ParticleSet& P) override;
 
   std::string getClassName() const override { return "CoulombPBCAB"; }
 

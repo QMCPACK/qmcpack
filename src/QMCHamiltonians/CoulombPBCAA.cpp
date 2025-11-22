@@ -161,15 +161,6 @@ void CoulombPBCAA::updateSource(ParticleSet& s)
   new_value_ = value_ = eL + eS + myConst;
 }
 
-void CoulombPBCAA::resetTargetParticleSet(ParticleSet& P)
-{
-  if (is_active)
-  {
-    PtclRefName = P.getDistTable(d_aa_ID).getName();
-    lr_aa_->resetTargetParticleSet(P);
-  }
-}
-
 #if !defined(REMOVE_TRACEMANAGER)
 void CoulombPBCAA::contributeParticleQuantities() { request_.contribute_array(name_); }
 

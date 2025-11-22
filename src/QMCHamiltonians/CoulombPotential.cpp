@@ -352,12 +352,6 @@ Return_t CoulombPotential::evaluate_spAB(const DistanceTableAB& d,
 }
 #endif
 
-
-void CoulombPotential::resetTargetParticleSet(ParticleSet& P)
-{
-  //myTableIndex is the same
-}
-
 void CoulombPotential::updateSource(ParticleSet& s)
 {
   if (is_AA)

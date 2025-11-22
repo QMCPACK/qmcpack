@@ -52,9 +52,6 @@ SkAllEstimator::SkAllEstimator(ParticleSet& source, ParticleSet& target)
   hdf5_out = false;
 }
 
-void SkAllEstimator::resetTargetParticleSet(ParticleSet& P) { elns = &P; }
-
-
 void SkAllEstimator::evaluateIonIon()
 {
   std::stringstream ss;

@@ -43,9 +43,6 @@ struct HarmonicExternalPotential : public OperatorDependsOnlyOnParticleSet
   ~HarmonicExternalPotential() override {}
 
   std::string getClassName() const override { return "HarmonicExternalPotential"; }
-  //unneeded interface functions
-  void resetTargetParticleSet(ParticleSet& P) override {}
-
   //standard interface functions
   bool put(xmlNodePtr cur) override;
   bool get(std::ostream& os) const override;

@@ -31,8 +31,6 @@ public:
 
   std::string getClassName() const override { return "GridExternalPotential"; }
 
-  void resetTargetParticleSet(ParticleSet& P) override {}
-
   //standard interface functions
   bool put(xmlNodePtr cur) override;
   bool get(std::ostream& os) const override;

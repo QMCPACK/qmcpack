@@ -118,7 +118,6 @@ public:
                          const ParticleScalar* restrict Za,
                          const ParticleScalar* restrict Zb);
 #endif
-  void resetTargetParticleSet(ParticleSet& P) override;
   ~CoulombPotential() override {};
 
   void updateSource(ParticleSet& s) override;

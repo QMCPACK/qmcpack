@@ -949,14 +949,6 @@ RefVector<OperatorBase> QMCHamiltonian::getTWFDependentComponents()
   return components;
 }
 
-void QMCHamiltonian::resetTargetParticleSet(ParticleSet& P)
-{
-  for (int i = 0; i < H.size(); i++)
-    H[i]->resetTargetParticleSet(P);
-  for (int i = 0; i < auxH.size(); i++)
-    auxH[i]->resetTargetParticleSet(P);
-}
-
 void QMCHamiltonian::setRandomGenerator(RandomBase<FullPrecRealType>* rng)
 {
   for (int i = 0; i < H.size(); i++)

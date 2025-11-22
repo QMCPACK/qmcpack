@@ -348,7 +348,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur)
       {
         if (estType == "coulomb")
         {
-          std::unique_ptr<Pressure> BP = std::make_unique<Pressure>(targetPtcl);
+          std::unique_ptr<Pressure> BP = std::make_unique<Pressure>();
           BP->put(element);
           targetH->addOperator(std::move(BP), "Pressure", false);
           int nlen(100);

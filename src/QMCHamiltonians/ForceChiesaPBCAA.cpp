@@ -221,8 +221,6 @@ bool ForceChiesaPBCAA::put(xmlNodePtr cur)
   return true;
 }
 
-void ForceChiesaPBCAA::resetTargetParticleSet(ParticleSet& P) { dAB->resetTargetParticleSet(P); }
-
 void ForceChiesaPBCAA::addObservables(PropertySetType& plist, BufferType& collectables)
 {
   my_index_ = plist.add(name_.c_str());
@@ -231,19 +229,6 @@ void ForceChiesaPBCAA::addObservables(PropertySetType& plist, BufferType& collec
 
 std::unique_ptr<OperatorBase> ForceChiesaPBCAA::makeClone(ParticleSet& qp)
 {
-  std::unique_ptr<ForceChiesaPBCAA> tmp = std::make_unique<ForceChiesaPBCAA>(PtclA, qp, false);
-  tmp->Rcut                             = Rcut;    // parameter: radial distance within which estimator is used
-  tmp->m_exp                            = m_exp;   // parameter: exponent in polynomial fit
-  tmp->N_basis                          = N_basis; // parameter: size of polynomial basis set
-  tmp->Sinv.resize(N_basis, N_basis);
-  tmp->Sinv = Sinv; // terms in fitting polynomial
-  tmp->h.resize(N_basis);
-  tmp->h = h; // terms in fitting polynomial
-  tmp->c.resize(N_basis);
-  tmp->c               = c; // polynomial coefficients
-  tmp->add_ion_ion_    = add_ion_ion_;
-  tmp->forces_ion_ion_ = forces_ion_ion_;
-  tmp->initBreakup(qp);
-  return tmp;
+  return std::make_unique<ForceChiesaPBCAA>(*this);
 }
 } // namespace qmcplusplus

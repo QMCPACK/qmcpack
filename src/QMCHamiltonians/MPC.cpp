@@ -30,8 +30,6 @@
 
 namespace qmcplusplus
 {
-void MPC::resetTargetParticleSet(ParticleSet& ptcl) {}
-
 MPC::MPC(ParticleSet& ptcl, double cutoff)
     : Ecut(cutoff), d_aa_ID(ptcl.addTable(ptcl, DTModes::NEED_FULL_TABLE_ON_HOST_AFTER_DONEPBYP)), FirstTime(true)
 {

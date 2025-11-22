@@ -21,8 +21,6 @@ ChiesaCorrection::ChiesaCorrection(ParticleSet& ptcl, const TrialWaveFunction& p
 
 std::string ChiesaCorrection::getClassName() const { return "ChiesaCorrection"; }
 
-void ChiesaCorrection::resetTargetParticleSet(ParticleSet& P) {}
-
 bool ChiesaCorrection::put(xmlNodePtr cur) { return true; }
 
 bool ChiesaCorrection::get(std::ostream& os) const

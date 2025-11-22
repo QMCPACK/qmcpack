@@ -71,15 +71,6 @@ void LocalECPotential::releaseResource(ResourceCollection& collection,
   collection.takebackResource(O_leader.mw_res_handle_);
 }
 
-void LocalECPotential::resetTargetParticleSet(ParticleSet& P)
-{
-  int tid = P.addTable(IonConfig);
-  if (tid != myTableIndex)
-  {
-    APP_ABORT("  LocalECPotential::resetTargetParticleSet found a different distance table index.");
-  }
-}
-
 void LocalECPotential::add(int groupID, std::unique_ptr<RadialPotentialType>&& ppot, RealType z)
 {
   for (int iat = 0; iat < PP.size(); iat++)

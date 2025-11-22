@@ -125,8 +125,6 @@ public:
   //bool put(xmlNodePtr cur);
   bool put(QMCHamiltonian& H, xmlNodePtr cur);
 
-  void resetTargetParticleSet(ParticleSet& p);
-
   /** reset the estimator
    */
   void reset();

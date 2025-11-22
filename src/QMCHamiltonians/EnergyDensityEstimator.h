@@ -32,7 +32,6 @@ public:
   ~EnergyDensityEstimator() override;
 
   std::string getClassName() const override { return "EnergyDensityEstimator"; }
-  void resetTargetParticleSet(ParticleSet& P) override;
   Return_t evaluate(ParticleSet& P) override;
   void addObservables(PropertySetType& plist) {}
   void addObservables(PropertySetType& plist, BufferType& olist) override;

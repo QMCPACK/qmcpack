@@ -37,7 +37,6 @@ public:
 
   bool dependsOnWaveFunction() const override { return true; }
   std::string getClassName() const override { return "SOECPotential"; }
-  void resetTargetParticleSet(ParticleSet& P) override;
 
   Return_t evaluate(TrialWaveFunction& psi, ParticleSet& P) override;
   Return_t evaluateDeterministic(TrialWaveFunction& psi, ParticleSet& P) override;

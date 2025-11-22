@@ -29,16 +29,6 @@ L2Potential::L2Potential(const ParticleSet& ions, ParticleSet& els, TrialWaveFun
   psi_ref = &psi;
 }
 
-void L2Potential::resetTargetParticleSet(ParticleSet& P)
-{
-  int tid = P.addTable(IonConfig);
-  if (tid != myTableIndex)
-  {
-    APP_ABORT("  L2Potential::resetTargetParticleSet found a different distance table index.");
-  }
-}
-
-
 void L2Potential::add(int groupID, std::unique_ptr<L2RadialPotential>&& ppot)
 {
   for (int iat = 0; iat < PP.size(); iat++)

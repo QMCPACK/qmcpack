@@ -42,8 +42,6 @@ SkEstimator::SkEstimator(ParticleSet& source)
   hdf5_out = true;
 }
 
-void SkEstimator::resetTargetParticleSet(ParticleSet& P) { sourcePtcl = &P; }
-
 SkEstimator::Return_t SkEstimator::evaluate(ParticleSet& P)
 {
   //sum over species

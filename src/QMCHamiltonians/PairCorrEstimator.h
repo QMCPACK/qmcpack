@@ -36,7 +36,6 @@ public:
   PairCorrEstimator(ParticleSet& elns, std::string& sources);
 
   std::string getClassName() const override { return "PairCorrEstimator"; }
-  void resetTargetParticleSet(ParticleSet& P) override;
 
   /* evaluate the pair correlation functions */
   Return_t evaluate(ParticleSet& P) override;

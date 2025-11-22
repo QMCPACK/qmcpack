@@ -50,7 +50,6 @@ public:
 
   bool dependsOnWaveFunction() const override { return true; }
   std::string getClassName() const override { return "NonLocalECPotential"; }
-  void resetTargetParticleSet(ParticleSet& P) override;
 
 #if !defined(REMOVE_TRACEMANAGER)
   void contributeParticleQuantities() override;

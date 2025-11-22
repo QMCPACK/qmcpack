@@ -78,7 +78,6 @@ public:
   ~MPC() override;
 
   std::string getClassName() const override { return "MPC"; }
-  void resetTargetParticleSet(ParticleSet& P) override;
 
   Return_t evaluate(ParticleSet& P) override;
 

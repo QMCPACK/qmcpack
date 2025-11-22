@@ -381,8 +381,6 @@ public:
    */
   FullPrecRealType getEnsembleAverage();
 
-  void resetTargetParticleSet(ParticleSet& P);
-
   const std::string& getName() const { return myName; }
 
   bool get(std::ostream& os) const;

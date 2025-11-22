@@ -59,8 +59,6 @@ TEST_CASE("Density Estimator evaluate exception", "[hamiltonian]")
   ParticleSet elec(simulation_cell);
   DensityEstimator density_estimator(elec);
   REQUIRE(density_estimator.getClassName() == "DensityEstimator");
-  // empty function
-  density_estimator.resetTargetParticleSet(elec);
   // check exception is thrown when weights are not defined
   CHECK_THROWS_AS(density_estimator.evaluate(elec), std::invalid_argument);
 }

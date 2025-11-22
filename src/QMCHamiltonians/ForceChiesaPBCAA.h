@@ -39,7 +39,7 @@ struct ForceChiesaPBCAA : public OperatorDependsOnlyOnParticleSet, public ForceB
   ///source particle set
   ParticleSet& PtclA;
   ///long-range Handler
-  std::unique_ptr<LRHandlerType> dAB;
+  std::shared_ptr<const LRHandlerType> dAB;
   ///number of species of A particle set
   int NumSpeciesA;
   ///number of species of B particle set
@@ -95,10 +95,6 @@ struct ForceChiesaPBCAA : public OperatorDependsOnlyOnParticleSet, public ForceB
     OperatorBase::setParticlePropertyList(plist, offset);
     setParticleSetF(plist, offset);
   }
-
-
-  void resetTargetParticleSet(ParticleSet& P) override;
-
 
   std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp) final;
 
