@@ -13,6 +13,7 @@
 
 #include "DensityMatrices1B.h"
 #include "OhmmsData/AttributeSet.h"
+#include "ParticleSet.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "Numerics/MatrixOperators.h"
 #include "Utilities/IteratorUtility.h"
@@ -49,7 +50,7 @@ DensityMatrices1B::DensityMatrices1B(ParticleSet& P, TrialWaveFunction& psi, Par
     : timers(getGlobalTimerManager(), DMTimerNames, timer_level_fine),
       basis_functions("DensityMatrices1B::basis"),
       lattice_(P.getLattice()),
-      Psi(psi),
+      spomap(psi.getSPOMap()),
       Pq(P),
       Pc(Pcl)
 {
@@ -61,7 +62,7 @@ DensityMatrices1B::DensityMatrices1B(DensityMatrices1B& master, ParticleSet& P, 
       timers(getGlobalTimerManager(), DMTimerNames, timer_level_fine),
       basis_functions(master.basis_functions),
       lattice_(P.getLattice()),
-      Psi(psi),
+      spomap(psi.getSPOMap()),
       Pq(P),
       Pc(master.Pc)
 {
@@ -279,8 +280,7 @@ void DensityMatrices1B::set_state(xmlNodePtr cur)
 
   for (int i = 0; i < sposets.size(); ++i)
   {
-    auto& spomap = Psi.getSPOMap();
-    auto spo_it  = spomap.find(sposets[i]);
+    auto spo_it = spomap.find(sposets[i]);
     if (spo_it == spomap.end())
       throw std::runtime_error("DensityMatrices1B::put  sposet " + sposets[i] + " does not exist.");
     basis_functions.add(spo_it->second->makeClone());
@@ -603,9 +603,9 @@ DensityMatrices1B::Return_t DensityMatrices1B::evaluate(TrialWaveFunction& psi, 
     if (check_derivatives)
       test_derivatives();
     if (evaluator == loop)
-      evaluate_loop(P);
+      evaluate_loop(psi, P);
     else if (evaluator == matrix)
-      evaluate_matrix(P);
+      evaluate_matrix(psi, P);
     else
       APP_ABORT("DensityMatrices1B::evaluate  invalid evaluator");
   }
@@ -613,7 +613,7 @@ DensityMatrices1B::Return_t DensityMatrices1B::evaluate(TrialWaveFunction& psi, 
 }
 
 
-DensityMatrices1B::Return_t DensityMatrices1B::evaluate_matrix(ParticleSet& P)
+DensityMatrices1B::Return_t DensityMatrices1B::evaluate_matrix(TrialWaveFunction& psi, ParticleSet& P)
 {
   //perform warmup sampling the first time
   if (!warmed_up)
@@ -630,9 +630,9 @@ DensityMatrices1B::Return_t DensityMatrices1B::evaluate_matrix(ParticleSet& P)
   // compute sample positions (monte carlo or deterministic)
   generate_samples(weight);
   // compute basis and wavefunction ratio values in matrix form
-  generate_sample_basis(Phi_MB);      // basis           : samples   x basis_size
-  generate_sample_ratios(Psi_NM);     // conj(Psi ratio) : particles x samples
-  generate_particle_basis(P, Phi_NB); // conj(basis)     : particles x basis_size
+  generate_sample_basis(Phi_MB);          // basis           : samples   x basis_size
+  generate_sample_ratios(psi, P, Psi_NM); // conj(Psi ratio) : particles x samples
+  generate_particle_basis(P, Phi_NB);     // conj(basis)     : particles x basis_size
   // perform integration via matrix products
   {
     ScopedTimer local_timer(timers[DM_matrix_products]);
@@ -766,7 +766,7 @@ DensityMatrices1B::Return_t DensityMatrices1B::evaluate_matrix(ParticleSet& P)
 }
 
 
-DensityMatrices1B::Return_t DensityMatrices1B::evaluate_check(ParticleSet& P)
+DensityMatrices1B::Return_t DensityMatrices1B::evaluate_check(TrialWaveFunction& psi, ParticleSet& P)
 {
 #ifdef DMCHECK
   APP_ABORT("DensityMatrices1B::evaluate_check  use of E_trace in this function needs to be replaces with "
@@ -841,7 +841,7 @@ DensityMatrices1B::Return_t DensityMatrices1B::evaluate_check(ParticleSet& P)
 }
 
 
-DensityMatrices1B::Return_t DensityMatrices1B::evaluate_loop(ParticleSet& P)
+DensityMatrices1B::Return_t DensityMatrices1B::evaluate_loop(TrialWaveFunction& psi, ParticleSet& P)
 {
   const int basis_size2 = basis_size * basis_size;
   if (!warmed_up)
@@ -858,7 +858,7 @@ DensityMatrices1B::Return_t DensityMatrices1B::evaluate_loop(ParticleSet& P)
   {
     for (int ns = 0; ns < species_size[s]; ++ns, ++n)
     {
-      integrate(P, n);
+      integrate(psi, P, n);
       update_basis(P.R[n]);
       int ij = nindex + s * basis_size2;
       for (int i = 0; i < basis_size; ++i)
@@ -1168,14 +1168,16 @@ void DensityMatrices1B::generate_sample_basis(Matrix_t& Phi_mb)
 }
 
 
-void DensityMatrices1B::generate_sample_ratios(std::vector<Matrix_t*> Psi_nm)
+void DensityMatrices1B::generate_sample_ratios(TrialWaveFunction& psi,
+                                               ParticleSet& elecs,
+                                               std::vector<Matrix_t*> Psi_nm)
 {
   ScopedTimer t(timers[DM_gen_sample_ratios]);
   for (int m = 0; m < samples; ++m)
   {
     // get N ratios for the current sample point
-    Pq.makeVirtualMoves(rsamples[m]);
-    Psi.evaluateRatiosAlltoOne(Pq, psi_ratios);
+    elecs.makeVirtualMoves(rsamples[m]);
+    psi.evaluateRatiosAlltoOne(Pq, psi_ratios);
 
     // collect ratios into per-species matrices
     int p = 0;
@@ -1209,16 +1211,16 @@ void DensityMatrices1B::generate_particle_basis(ParticleSet& P, std::vector<Matr
 }
 
 
-inline void DensityMatrices1B::integrate(ParticleSet& P, int n)
+inline void DensityMatrices1B::integrate(TrialWaveFunction& psi, ParticleSet& elecs, int n)
 {
   std::fill(integrated_values.begin(), integrated_values.end(), 0.0);
   for (int s = 0; s < samples; ++s)
   {
     PosType& rsamp = rsamples[s];
     update_basis(rsamp);
-    P.makeMove(n, rsamp - P.R[n]);
-    Value_t ratio = sample_weights[s] * qmcplusplus::conj(Psi.calcRatio(P, n));
-    P.rejectMove(n);
+    elecs.makeMove(n, rsamp - elecs.R[n]);
+    Value_t ratio = sample_weights[s] * qmcplusplus::conj(psi.calcRatio(elecs, n));
+    elecs.rejectMove(n);
     for (int i = 0; i < basis_size; ++i)
       integrated_values[i] += ratio * basis_values[i];
   }

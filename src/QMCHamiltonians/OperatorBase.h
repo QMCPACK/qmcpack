@@ -127,7 +127,7 @@ public:
   virtual ~OperatorBase() = default;
 
   /// return true if this operator depends on a wavefunction
-  virtual bool dependsOnWaveFunction() const { return false; }
+  virtual bool dependsOnWaveFunction() const { return true; }
 
   //////// GETTER AND SETTER FUNCTIONS ////////////////
 
@@ -392,10 +392,11 @@ public:
   {}
 
   /** make non local moves with particle-by-particle moves
+   * @param psi trial wavefunction
    * @param P particle set
    * @return the number of accepted moves
    */
-  virtual int makeNonLocalMovesPbyP(ParticleSet& P, NonLocalTOperator& move_op) { return 0; }
+  virtual int makeNonLocalMovesPbyP(TrialWaveFunction& psi, ParticleSet& P, NonLocalTOperator& move_op) { return 0; }
 
   /** 
    * @brief Update data associated with a particleset.
@@ -622,6 +623,7 @@ class OperatorDependsOnlyOnParticleSet : public OperatorBase
 public:
   virtual Return_t evaluate(ParticleSet& pset)                       = 0;
   virtual std::unique_ptr<OperatorBase> makeClone(ParticleSet& pset) = 0;
+  bool dependsOnWaveFunction() const final { return false; }
 
   virtual void mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
                            const RefVectorWithLeader<ParticleSet>& p_list) const

@@ -44,7 +44,7 @@ struct BareKineticEnergy::MultiWalkerResource : public Resource
    * Store mass per species and use SameMass to choose the methods.
    * if SameMass, probably faster and easy to vectorize but no impact on the performance.
    */
-BareKineticEnergy::BareKineticEnergy(ParticleSet& p, TrialWaveFunction& psi) : ps_(p), psi_(psi)
+BareKineticEnergy::BareKineticEnergy(ParticleSet& p, TrialWaveFunction& psi) : ps_(p)
 {
   setEnergyDomain(KINETIC);
   oneBodyQuantumDomain(p);
@@ -64,8 +64,6 @@ BareKineticEnergy::BareKineticEnergy(ParticleSet& p, TrialWaveFunction& psi) : p
 
 ///destructor
 BareKineticEnergy::~BareKineticEnergy() = default;
-
-bool BareKineticEnergy::dependsOnWaveFunction() const { return true; }
 
 std::string BareKineticEnergy::getClassName() const { return "BareKineticEnergy"; }
 
@@ -142,7 +140,7 @@ Return_t BareKineticEnergy::evaluateValueAndDerivatives(TrialWaveFunction& psi,
 {
   // const_cast is needed because TWF::evaluateDerivatives calculates dlogpsi.
   // KineticEnergy must be the first element in the hamiltonian array.
-  psi_.evaluateDerivatives(P, optvars, const_cast<Vector<ValueType>&>(dlogpsi), dhpsioverpsi);
+  psi.evaluateDerivatives(P, optvars, const_cast<Vector<ValueType>&>(dlogpsi), dhpsioverpsi);
   return evaluate(psi, P);
 }
 

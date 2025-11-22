@@ -22,8 +22,6 @@ namespace qmcplusplus
 ACForce::ACForce(ParticleSet& source, ParticleSet& target, TrialWaveFunction& psi_in, QMCHamiltonian& H)
     : delta_(1e-4),
       ions_(source),
-      elns_(target),
-      psi_(psi_in),
       ham_(H),
       first_force_index_(-1),
       useSpaceWarp_(false),
@@ -40,7 +38,7 @@ ACForce::ACForce(ParticleSet& source, ParticleSet& target, TrialWaveFunction& ps
   wf_grad_.resize(nIons);
   sw_pulay_.resize(nIons);
   sw_grad_.resize(nIons);
-  psi_in.getOrCreateTWFFastDerivWrapper(elns_);
+  psi_in.getOrCreateTWFFastDerivWrapper(target);
 };
 
 std::unique_ptr<OperatorBase> ACForce::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
@@ -110,11 +108,11 @@ ACForce::Return_t ACForce::evaluate(TrialWaveFunction& psi, ParticleSet& P)
   //Note that the sign will be flipped based on definition of force = -d/dR.
   if (fastDerivatives_)
   {
-    TWFFastDerivWrapper& psi_wrapper_ = psi_.getOrCreateTWFFastDerivWrapper(P);
-    ham_.evaluateIonDerivsFast(P, ions_, psi_, psi_wrapper_, hf_force_, wf_grad_);
+    TWFFastDerivWrapper& psiwrapper_ = psi.getOrCreateTWFFastDerivWrapper(P);
+    ham_.evaluateIonDerivsFast(P, ions_, psi, psiwrapper_, hf_force_, wf_grad_);
   }
   else
-    ham_.evaluateIonDerivs(P, ions_, psi_, hf_force_, pulay_force_, wf_grad_);
+    ham_.evaluateIonDerivs(P, ions_, psi, hf_force_, pulay_force_, wf_grad_);
 
   if (useSpaceWarp_)
   {
@@ -122,15 +120,15 @@ ACForce::Return_t ACForce::evaluate(TrialWaveFunction& psi, ParticleSet& P)
     el_grad.resize(P.getTotalNum());
     el_grad = 0;
 
-    ham_.evaluateElecGrad(psi_, P, el_grad, delta_);
+    ham_.evaluateElecGrad(psi, P, el_grad, delta_);
     swt_.computeSWT(P, ions_, el_grad, P.G, sw_pulay_, sw_grad_);
   }
 
   //Now we compute the regularizer.
-  //WE ASSUME THAT psi_.evaluateLog(P) HAS ALREADY BEEN CALLED AND Grad(logPsi)
+  //WE ASSUME THAT psi.evaluateLog(P) HAS ALREADY BEEN CALLED AND Grad(logPsi)
   //IS ALREADY UP TO DATE FOR THIS CONFIGURATION.
 
-  f_epsilon_ = compute_regularizer_f(psi_.G, reg_epsilon_);
+  f_epsilon_ = compute_regularizer_f(psi.G, reg_epsilon_);
 
   return 0.0;
 };

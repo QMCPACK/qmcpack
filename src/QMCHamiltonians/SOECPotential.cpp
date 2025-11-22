@@ -47,7 +47,6 @@ SOECPotential::SOECPotential(ParticleSet& ions,
                              bool use_VP)
     : my_rng_(nullptr),
       ion_config_(ions),
-      psi_(psi),
       vp_(use_VP ? std::make_unique<VirtualParticleSet>(els) : nullptr),
       use_exact_spin_(use_exact_spin)
 {
@@ -64,7 +63,6 @@ SOECPotential::SOECPotential(ParticleSet& ions,
 SOECPotential::SOECPotential(const SOECPotential& sopp, ParticleSet& els, TrialWaveFunction& psi)
     : my_rng_(nullptr),
       ion_config_(sopp.ion_config_),
-      psi_(psi),
       vp_(sopp.vp_ ? std::make_unique<VirtualParticleSet>(els, sopp.vp_->getNumDistTables()) : nullptr),
       use_exact_spin_(sopp.use_exact_spin_)
 {
@@ -112,8 +110,8 @@ void SOECPotential::evaluateImpl(TrialWaveFunction& psi, ParticleSet& P, bool ke
     for (int iat = 0; iat < pp_.size(); iat++)
       if (pp_[iat] != nullptr && dist[iat] < pp_[iat]->getRmax())
         value_ += use_exact_spin_
-            ? pp_[iat]->evaluateOneExactSpinIntegration(P, *vp_, iat, psi_, jel, dist[iat], -displ[iat])
-            : pp_[iat]->evaluateOne(P, vp_ ? makeOptionalRef<VirtualParticleSet>(*vp_) : std::nullopt, iat, psi_, jel,
+            ? pp_[iat]->evaluateOneExactSpinIntegration(P, *vp_, iat, psi, jel, dist[iat], -displ[iat])
+            : pp_[iat]->evaluateOne(P, vp_ ? makeOptionalRef<VirtualParticleSet>(*vp_) : std::nullopt, iat, psi, jel,
                                     dist[iat], -displ[iat]);
   }
 }
@@ -139,13 +137,13 @@ SOECPotential::Return_t SOECPotential::evaluateValueAndDerivatives(TrialWaveFunc
       {
         if (use_exact_spin_)
           value_ +=
-              pp_[iat]->evaluateValueAndDerivativesExactSpinIntegration(P, *vp_, iat, psi_, jel, dist[iat], -displ[iat],
+              pp_[iat]->evaluateValueAndDerivativesExactSpinIntegration(P, *vp_, iat, psi, jel, dist[iat], -displ[iat],
                                                                         optvars, dlogpsi, dhpsioverpsi);
 
         else
           value_ +=
               pp_[iat]->evaluateValueAndDerivatives(P, vp_ ? makeOptionalRef<VirtualParticleSet>(*vp_) : std::nullopt,
-                                                    iat, psi_, jel, dist[iat], -displ[iat], optvars, dlogpsi,
+                                                    iat, psi, jel, dist[iat], -displ[iat], optvars, dlogpsi,
                                                     dhpsioverpsi);
       }
   }
@@ -223,10 +221,7 @@ void SOECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& o_l
   RefVector<SOECPotential> soecp_potential_list;
   RefVectorWithLeader<SOECPComponent> soecp_component_list(**pp_component);
   RefVectorWithLeader<ParticleSet> pset_list(pset_leader);
-  RefVectorWithLeader<TrialWaveFunction> psi_list(O_leader.psi_);
-  assert(&O_leader.psi_ == &wf_list.getLeader());
-  for (size_t iw = 0; iw < nw; iw++)
-    assert(&o_list.getCastedElement<SOECPotential>(iw).psi_ == &wf_list[iw]);
+  RefVectorWithLeader<TrialWaveFunction> psi_list(wf_list.getLeader());
 
   RefVector<const NLPPJob<RealType>> batch_list;
   RefVector<VirtualParticleSet> vp_list;
