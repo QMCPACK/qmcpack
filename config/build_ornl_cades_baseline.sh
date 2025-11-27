@@ -8,24 +8,24 @@
 ## * Execute this script in qmcpack git top level directory                        ##
 ##   ./config/build_ornl_cades_baseline.sh                                         ##
 ##                                                                                 ##
-## Last verified: May 23, 2024                                                     ##
+## Last verified: Nov 26, 2025                                                     ##
 #####################################################################################
 
 # module files resulting from module imports below:
 # Currently Loaded Modules:
-#  1) DefApps   2) gcc/12.2.0   3) openmpi/4.0.4   4) boost/1.83.0   5) fftw/3.3.10
-#  6) openblas/0.3.23   7) hdf5/1.14.3   8) cmake/3.26.3
+#  1) DefApps   2) gcc/13.3.0   3) openmpi/5.0.5   4) boost/1.86.0   5) fftw/3.3.10
+#  6) openblas/0.3.28   7) hdf5/1.14.5   8) cmake/3.30.5
 
 source $MODULESHOME/init/bash
 module purge
 module load DefApps
-module load gcc/12.2.0
-module load openmpi/4.0.4
-module load boost/1.83.0
+module load gcc/13.3.0
+module load openmpi/5.0.5
+module load boost/1.86.0
 module load fftw/3.3.10
-module load openblas/0.3.23
-module load hdf5/1.14.3
-module load cmake/3.26.3
+module load openblas/0.3.28
+module load hdf5/1.14.5
+module load cmake/3.30.5
  
 module list
 
