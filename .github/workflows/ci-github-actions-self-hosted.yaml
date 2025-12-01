@@ -301,7 +301,7 @@ jobs:
       ( startsWith(github.event.comment.body, 'Test this please') || 
         startsWith(github.event.comment.body, 'Start testing in-house') )
 
-    runs-on: [self-hosted, Linux, X64, ornl-nitrogen-2]
+    runs-on: [self-hosted, Linux, X64, ornl-nitrogen2]
 
     env:
       GH_JOBNAME: ${{matrix.jobname}}
