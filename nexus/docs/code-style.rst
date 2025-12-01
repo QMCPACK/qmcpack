@@ -24,7 +24,7 @@ All other code is snake case: ``def perform_work():``.
 Variable and function names
 ---------------------------
 
-Be descriptive and limit names to three words or less for legibility.
+Be descriptive and generally limit names to three words or less for legibility.
 
 No: ``def slice_dice_and_mince_data(data):``
 
@@ -278,4 +278,36 @@ Auto-formatting
 
 Nexus code is not required to follow formats used by auto-formatting tools.
 
-If you use such a tool for newly committed code, ensure that the formatted code is largely consistent with other code in the Nexus repository.
+If you use such a tool for newly committed code, ensure that the formatted code is largely consistent with existing code in the Nexus repository.
+
+
+
+.. _unit-tests:
+
+Unit tests
+----------
+
+Developers are encouraged to include unit tests with newly committed code.
+
+It is best if new or modified functionality is tested at some level of encapsulation.
+
+If only one test is to be written, please enclose as much functionality as possible (i.e. at a higher level in the call tree). 
+
+As an example, see ``def test_ndgrid():`` in ``nexus/tests/unit/test_numerics.py``.  
+
+If you have questions about how to integrate unit tests into Nexus, please reach out to a Nexus developer. 
+
+
+
+.. _user_documentation:
+
+User documentation
+------------------
+
+Developers are encouraged to include documentation in the Nexus manual for code that will be accessed at the user level.
+
+For example, all ``generate_*`` functions should have user documentation, but sadly do not.
+
+If functionality includes operations commonly used by materials/chemical scientists, e.g. structure manipulation, adding documentation to the manual is also encouraged. 
+
+
