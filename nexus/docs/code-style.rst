@@ -18,6 +18,7 @@ Class names are camel case: ``class BaseClass:``.
 All other code is snake case: ``def perform_work():``.
 
 
+
 .. _variable-names:
 
 Variable and function names
@@ -275,21 +276,6 @@ Allow the code to error out to reveal the actual problem (``try-except`` masks i
 Auto-formatting
 ---------------
 
-No auto-formatting (e.g. Black).
+Nexus code is not required to follow formats used by auto-formatting tools.
 
-
-
-.. _static-analysis:
-
-Static analysis
----------------
-
-Do not strictly enforce/require static analysis. Instead, prefer unit testing.
-
-
-
-.. _other-generalities:
-
-Other generalities
-------------------
-PEP8 is not the source of all truth.
+If you use such a tool for newly committed code, ensure that the formatted code is largely consistent with other code in the Nexus repository.
