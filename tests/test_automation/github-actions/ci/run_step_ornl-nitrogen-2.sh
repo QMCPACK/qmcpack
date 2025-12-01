@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Executes pipeline steps for the nitrogen-1 CI jobs
+# Executes pipeline steps for the nitrogen2 CI jobs
 
 set -x
 HOST_NAME=$(hostname -s)
@@ -73,7 +73,7 @@ case "$1" in
    
   test)
     echo "Running deterministic tests"
-    rocm-smi --showdriverversion
+    amd-smi version
     cd ${GITHUB_WORKSPACE}/../qmcpack-build
     ctest --output-on-failure -L deterministic -j 32 --timeout 120 --repeat after-timeout:4
     ;;
