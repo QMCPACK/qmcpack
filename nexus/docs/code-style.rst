@@ -43,7 +43,8 @@ Documentation style
 
 Use inline comments, but not on every line and be brief.
 
-Follow ``numpy`` formatting for class/function docs:
+Class and function level docstrings are encouraged.  For these, 
+follow ``numpy`` formatting for class/function docs:
 
 
 ::
@@ -89,6 +90,8 @@ Function and class endings are delimited with a comment:
         ...
     #end BaseClass
 
+Enclosing comments such as ``#end if`` and ``#end for`` are not required,
+but are encouraged in cases of deep nesting for readability.
 
 
 
@@ -126,11 +129,23 @@ Avoid set/get accessors.
 Type hints
 ----------
 
-No type hints, except when there is no other option (e.g. ``dataclass``).
+Type hints are not encouraged, but are allowed in new code with the 
+following stipulations:
 
-If you need documentation, write it.
+  1. They appear only in function argument lists and not in code bodies.
 
-If you need specific types, enforce them.
+  2. If a specific type (or types) is actually required by a type-hinted argument, then explicit runtime checking is required (e.g. via ``isinstance``).
+
+  3. If the actually allowed types are significantly broader or narrower than a type hint suggests, then documentation for that argument must appear in a docstring. 
+
+In Nexus, the meaning of type hints is explicitly as loose documentation. In and of themselves, they do not represent strict requirements.
+
+Given the limited nature of documentation that type hints provide, docstrings 
+are generally preferred. This follows the philosophy:
+
+* "If you need documentation, write it."
+
+* "If you need specific types, enforce them."
 
 
 
@@ -162,6 +177,9 @@ Less: ``assert isinstance(item_counts,np.ndarray)``
 
 More: ``item_counts = np.asarray(item_counts)``
 
+Less: ``assert isinstance(x,float)``
+
+More: ``x = float(x)``
 
 
 .. _accessors:
