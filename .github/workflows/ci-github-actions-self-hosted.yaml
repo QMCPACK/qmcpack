@@ -370,15 +370,15 @@ jobs:
 
       - name: Configure
         if: steps.check.outputs.triggered == 'true'
-        run: tests/test_automation/github-actions/ci/run_step_ornl-nitrogen-2.sh configure
+        run: tests/test_automation/github-actions/ci/run_step_ornl-nitrogen2.sh configure
 
       - name: Build
         if: steps.check.outputs.triggered == 'true'
-        run: tests/test_automation/github-actions/ci/run_step_ornl-nitrogen-2.sh build
+        run: tests/test_automation/github-actions/ci/run_step_ornl-nitrogen2.sh build
 
       - name: Test
         if: steps.check.outputs.triggered == 'true'
-        run: tests/test_automation/github-actions/ci/run_step_ornl-nitrogen-2.sh test
+        run: tests/test_automation/github-actions/ci/run_step_ornl-nitrogen2.sh test
 
       - name: Report PR status
         if: always() && steps.check.outputs.triggered == 'true'
