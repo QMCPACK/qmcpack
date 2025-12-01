@@ -17,6 +17,8 @@ Class names are camel case: ``class BaseClass:``.
 
 All other code is snake case: ``def perform_work():``.
 
+Camel case means the first letter of each word is capitalized with no separation between words. Snake case means each word is lowercase with single underscores separating each word.
+
 
 
 .. _variable-names:
