@@ -44,7 +44,7 @@ Documentation style
 Use inline comments, but not on every line and be brief.
 
 Class and function level docstrings are encouraged.  For these, 
-follow ``numpy`` formatting for class/function docs:
+follow ``numpy`` formatting for class/function docs (see https://numpydoc.readthedocs.io/en/latest/format.html):
 
 
 ::
@@ -250,7 +250,11 @@ Yes:
 Imports
 -------
 
-Use deferred (a.k.a. "lazy") imports.
+Use deferred (a.k.a. "lazy") imports.  
+
+With deferred imports, Nexus requires the minimum from external libraries and only fails if a specific missing functionality is actually used during execution.  This way, Nexus will often operate successfully even if some libraries are missing or outdated.
+
+
 
 Top-level/header imports:
 
