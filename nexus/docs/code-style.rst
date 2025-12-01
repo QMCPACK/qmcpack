@@ -12,14 +12,30 @@ This section outlines requirements and recommendations regarding new code develo
 Text style
 ----------
   
-Class names are camel case: ``class BaseClass``.
+Class names are camel case: ``class BaseClass:``.
 
 
 All other code is snake case: ``def perform_work():``.
 
 
+.. _variable-names:
 
-.. _documentation-style
+Variable and function names
+---------------------------
+
+Be descriptive and limit names to three words or less for legibility.
+
+No: ``def slice_dice_and_mince_data(data):``
+
+Yes: ``def slice_data(data):``
+
+No: ``total_amount_of_money_in_bag = total_number_of_pennies_in_bag + number_of_pennies_in_a_nickel*total_number_of_nickels_in_bag + number_of_pennies_in_a_dime*total_number_of_nickels_in_bag + ...``
+
+Yes: ``money_tot = pennies + 5*nickels + 10*dimes + ...``
+
+
+
+.. _documentation-style:
 
 Documentation style
 -------------------
@@ -55,7 +71,7 @@ Follow ``numpy`` formatting for class/function docs:
 
 
 
-.. _encapsulation
+.. _encapsulation:
 
 Encapsulation
 -------------
@@ -74,7 +90,8 @@ Function and class endings are delimited with a comment:
 
 
 
-.. _function-arguments
+
+.. _function-arguments:
 
 Function arguments
 ------------------
@@ -88,7 +105,7 @@ Functions with arbitrary arguments are allowed: ``def mega_function(*args,**kwar
 
 
 
-.. _classes
+.. _classes:
 
 Classes
 -------
@@ -103,7 +120,7 @@ Avoid set/get accessors.
 
 
 
-.. _type-hints
+.. _type-hints:
 
 Type hints
 ----------
@@ -116,7 +133,7 @@ If you need specific types, enforce them.
 
 
 
-.. _type-enforcement
+.. _type-enforcement:
 
 Type enforcement
 ----------------
@@ -146,7 +163,7 @@ More: ``item_counts = np.asarray(item_counts)``
 
 
 
-.. _accessors
+.. _accessors:
 
 Accessors
 ---------
@@ -176,7 +193,7 @@ No:
 
         def set_data(self,data):
             self.data = data
-        #end def set
+        #end def set_data
     #end class DataClass
 
 Yes: 
@@ -209,12 +226,12 @@ Yes:
 
 
 
-.. _imports
+.. _imports:
 
 Imports
 -------
 
-Use lazy imports.
+Use deferred (a.k.a. "lazy") imports.
 
 Top-level/header imports:
 
@@ -236,7 +253,7 @@ Function/method imports:
 
 
 
-.. _exceptions
+.. _exceptions:
 
 Exceptions
 ----------
@@ -253,7 +270,7 @@ Allow the code to error out to reveal the actual problem (``try-except`` masks i
 
 
 
-.. _auto-formatting
+.. _auto-formatting:
 
 Auto-formatting
 ---------------
@@ -262,7 +279,7 @@ No auto-formatting (e.g. Black).
 
 
 
-.. _static-analysis
+.. _static-analysis:
 
 Static analysis
 ---------------
@@ -271,7 +288,7 @@ Do not strictly enforce/require static analysis. Instead, prefer unit testing.
 
 
 
-.. _other-generalities
+.. _other-generalities:
 
 Other generalities
 ------------------
