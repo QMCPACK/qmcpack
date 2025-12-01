@@ -311,10 +311,10 @@ jobs:
       matrix:
         jobname:
           [
-            Instinct-AMDClang-NoMPI-Offload-Real-Mixed,
-            Instinct-AMDClang-NoMPI-Offload-Real,
-            Instinct-AMDClang-NoMPI-Offload-Real-Mixed,
-            Instinct-AMDClang-NoMPI-Offload-Real,
+            MI210-AMDClang-NoMPI-Offload-Real-Mixed,
+            MI210-AMDClang-NoMPI-Offload-Real,
+            MI210-AMDClang-NoMPI-Offload-Real-Mixed,
+            MI210-AMDClang-NoMPI-Offload-Real,
           ]
 
     steps:
