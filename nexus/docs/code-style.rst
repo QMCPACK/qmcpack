@@ -51,25 +51,23 @@ follow ``numpy`` formatting for class/function docs (see https://numpydoc.readth
 
 ::
 
-  def real(val):
-      '''
+  def real(value):
+      """
       Return the real part of the complex argument.
       
-      Parameters:
+      Parameters
+      ----------
+          value: array_like
+              Input array.
       
-          val: array_like
-      
-             Input array.
-      
-      Returns:
-      
-          out: ndarray or scalar
-      
-             The real component of the complex argument. 
-             If val is real, the type of val is used for 
-             the output. If val has complex elements, 
-             the returned type is float.
-      '''
+      Returns
+      -------
+          output: ndarray or scalar
+              The real component of the complex argument. 
+              If value is real, the type of value is used for 
+              the output. If value has complex elements, 
+              the returned type is float.
+      """
       ...
   #end def real
 
