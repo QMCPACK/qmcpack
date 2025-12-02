@@ -1,0 +1,90 @@
+FROM ubuntu:latest
+LABEL Description="Development version of QMCPACK and Nexus configured for use with complete source codes, plus Quantum ESPRESSO"
+
+SHELL ["/bin/bash", "-c"]
+
+ARG USERNAME=qmcuser
+ARG USER_UID=1201
+ARG USER_GID=$USER_UID
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV QE_VERSION="7.5"
+#ENV QMCPACK_VERSION="4.1.0"
+
+# Create the user, update, and make a sudoer
+RUN groupadd --gid $USER_GID $USERNAME \
+    && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \
+    && apt-get update \
+    && apt-get install -y sudo \
+    && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
+    && chmod 0440 /etc/sudoers.d/$USERNAME
+
+# QMCPACK and NEXUS dependencies, plus:
+# * gfortan for convenient QE build
+# * matplotlib for qmca plotting
+# (apt-get update already run above)
+RUN apt-get install -y --no-install-recommends \
+    make ninja-build git cmake wget bzip2 rsync  g++ gfortran openmpi-bin libopenmpi-dev libboost-dev \
+    libopenblas-openmp-dev libhdf5-dev libxml2-dev libfftw3-dev \
+    python3-numpy python3-scipy python3-pandas python3-h5py python3-matplotlib
+
+WORKDIR /scratch
+
+RUN wget https://gitlab.com/QEF/q-e/-/archive/qe-${QE_VERSION}/q-e-qe-${QE_VERSION}.tar.gz && tar xzvf q-e-qe-${QE_VERSION}.tar.gz && cd q-e-qe-${QE_VERSION} && pwd && \
+    mkdir build_mpi && cd build_mpi && \
+    mkdir -p /opt/qe && \
+    cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_Fortran_COMPILER=mpif90 -DQE_ENABLE_PLUGINS=pw2qmcpack -DCMAKE_INSTALL_PREFIX=/opt/qe/ .. && \
+    make -j 4 && \
+    echo "Installing QE..." && make install && cd ../.. && pwd && \
+    # cleanup
+    echo "QE Cleanup" &&\
+    rm -rf /scratch/q-e-qe-${QE_VERSION} /scratch/q-e-qe-${QE_VERSION}.tar.gz
+
+ENV PATH=${PATH}:/opt/qe/bin
+
+WORKDIR /scratch
+
+# Build a specific version $QMCPACK_VERSION of QMCPACK using the release artifacts
+#RUN wget https://github.com/QMCPACK/qmcpack/archive/refs/tags/v${QMCPACK_VERSION}.tar.gz && tar xvzf v${QMCPACK_VERSION}.tar.gz && pwd && \
+#    mkdir -p /opt/qmcpack && \
+#    mv qmcpack-${QMCPACK_VERSION} /opt/qmcpack/qmcpack && \
+#    mkdir build_qmcpack_mpi && cd build_qmcpack_mpi && pwd && \ 
+#    cmake -DCMAKE_INSTALL_PREFIX=/opt/qmcpack -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpiCC /opt/qmcpack/qmcpack && \
+#    make -j 4 && \
+#    echo "Installing QMCPACK..." && make install && cd .. && pwd && \
+#    mkdir build_qmcpack_complex_mpi && cd build_qmcpack_complex_mpi && \
+#    cmake -DCMAKE_INSTALL_PREFIX=/opt/qmcpack -DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpiCC /opt/qmcpack/qmcpack && \
+#    make -j 4 && \
+#    cp -p bin/qmcpack_complex /opt/qmcpack/bin && \
+#    cd .. && \
+#    # cleanup
+#    rm -r -f /scratch/build_qmcpack_mpi /scratch/build_qmcpack_complex_mpi v${QMCPACK_VERSION}.tar.gz 
+
+# Build latest development version of QMCPACK from shallow-cloned git repository
+RUN mkdir -p /opt/qmcpack && cd /opt/qmcpack && \
+    git clone https://github.com/QMCPACK/qmcpack.git --depth=1 && \
+    cd /scratch && \
+    mkdir build_qmcpack_mpi && cd build_qmcpack_mpi && pwd && \ 
+    cmake -DCMAKE_INSTALL_PREFIX=/opt/qmcpack -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpiCC /opt/qmcpack/qmcpack && \
+    make -j 4 && \
+    echo "Installing QMCPACK..." && make install && cd .. && pwd && \
+    mkdir build_qmcpack_complex_mpi && cd build_qmcpack_complex_mpi && \
+    cmake -DCMAKE_INSTALL_PREFIX=/opt/qmcpack -DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpiCC /opt/qmcpack/qmcpack && \
+    make -j 4 && \
+    cp -p bin/qmcpack_complex /opt/qmcpack/bin && \
+    cd .. && \
+    # cleanup
+    rm -r -f /scratch/build_qmcpack_mpi /scratch/build_qmcpack_complex_mpi
+
+ENV PATH=${PATH}:/opt/qmcpack/bin
+ENV PATH=${PATH}:/opt/qmcpack/qmcpack/nexus/bin
+ENV PYTHONPATH=/opt/qmcpack/qmcpack/nexus/lib
+
+# Default user and directory
+USER $USERNAME
+WORKDIR /home/$USERNAME
+
+# Permit OpenMPI v5.x oversubscription to allow all tests to pass
+# e.g. allows 16 MPI tasks on a 4 core system 
+ENV OMPI_MCA_rmaps_base_oversubscribe=true
+
