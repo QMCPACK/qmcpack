@@ -93,6 +93,80 @@ Function and class endings are delimited with a comment:
 Enclosing comments such as ``#end if`` and ``#end for`` are not required,
 but are encouraged in cases of deep nesting for readability.
 
+For closing parentheses (and similar), the closing character should have the same indentation as the function arguments or e.g. list elements.
+
+No:
+
+::
+
+    def operate(key1 = 'key1',
+                key2 = 'key2',
+                key3 = 'key3',
+    ):            
+        key = (key1,key2,key3)
+        return key
+    #end def operate
+
+Yes:
+
+::
+
+    def operate(key1 = 'key1',
+                key2 = 'key2',
+                key3 = 'key3',
+                ):            
+        key = (key1,key2,key3)
+        return key
+    #end def operate
+
+No:
+ 
+::
+
+    d = dict(a = 1,
+             b = 2,
+    )
+
+Yes:
+ 
+::
+
+    d = dict(a = 1,
+             b = 2,
+             )
+
+    # or
+
+    d = dict(a = 1,
+             b = 2)
+
+No:
+ 
+::
+
+    l = ['key1',
+         'key2',
+         'key3',
+    ]
+
+
+Yes:
+ 
+::
+
+    l = ['key1',
+         'key2',
+         'key3',
+         ]
+
+    # or
+
+    l = ['key1',
+         'key2',
+         'key3']
+
+
+        
 
 
 .. _function-arguments:
