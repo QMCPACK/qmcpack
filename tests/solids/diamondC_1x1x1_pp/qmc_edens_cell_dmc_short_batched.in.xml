@@ -94,12 +94,12 @@
          </estimator>
 	 <estimator name="LocalEnergy" hdf5="no"/>
 </estimators>
-     <parameter name="targetwalkers"> 256 </parameter>
+     <parameter name="targetwalkers"> 64 </parameter>
      <parameter name="reconfiguration">   no </parameter>
      <parameter name="warmupSteps">  100 </parameter>
      <parameter name="timestep">  0.005 </parameter>
-     <parameter name="steps">   100 </parameter>
-     <parameter name="blocks">  100 </parameter>
+     <parameter name="steps">   1 </parameter>
+     <parameter name="blocks">  1 </parameter>
      <parameter name="nonlocalmoves">  no </parameter>
    </qmc>
 
@@ -114,12 +114,12 @@
          </estimator>
 	 <estimator name="LocalEnergy" hdf5="no"/>
 </estimators>
-     <parameter name="targetwalkers"> 256 </parameter>
+     <parameter name="targetwalkers"> 64 </parameter>
      <parameter name="reconfiguration">   no </parameter>
-     <parameter name="warmupSteps">  100 </parameter>
+     <parameter name="warmupSteps">  200 </parameter>
      <parameter name="timestep">  0.005 </parameter>
-     <parameter name="steps">   100 </parameter>
-     <parameter name="blocks">  100 </parameter>
+     <parameter name="steps">   400 </parameter>
+     <parameter name="blocks">  200 </parameter>
      <parameter name="nonlocalmoves">  no </parameter>
    </qmc>
 

@@ -91,6 +91,7 @@ void WalkerControl::start()
                    << "AvgSentWalkers"; //add the number of walkers
       (*dmcStream) << std::setw(20) << "TrialEnergy" << std::setw(20) << "DiffEff";
       (*dmcStream) << std::setw(20) << "LivingFraction";
+      (*dmcStream) << std::setw(20) << "WeightedEnergySum";
       (*dmcStream) << std::endl;
       dmcFname = std::move(hname);
     }
@@ -110,7 +111,8 @@ void WalkerControl::writeDMCdat(int iter, const std::vector<FullPrecRealType>& c
   ensemble_property_.R2Proposed = curData[R2PROPOSED_INDEX];
   ensemble_property_.LivingFraction =
       static_cast<FullPrecRealType>(curData[FNSIZE_INDEX]) / static_cast<FullPrecRealType>(curData[WALKERSIZE_INDEX]);
-  ensemble_property_.AlternateEnergy = FullPrecRealType(0);
+  ensemble_property_.AlternateEnergy   = FullPrecRealType(0);
+  ensemble_property_.WeightedEnergySum = curData[ENERGY_INDEX];
   // \\todo If WalkerControl is not exclusively for dmc then this shouldn't be here.
   // If it is it shouldn't be in QMDrivers but QMCDrivers/DMC
   if (dmcStream)
@@ -124,6 +126,7 @@ void WalkerControl::writeDMCdat(int iter, const std::vector<FullPrecRealType>& c
     (*dmcStream) << std::setw(20) << trial_energy_ << std::setw(20)
                  << ensemble_property_.R2Accepted / ensemble_property_.R2Proposed;
     (*dmcStream) << std::setw(20) << ensemble_property_.LivingFraction;
+    (*dmcStream) << std::setw(20) << ensemble_property_.WeightedEnergySum;
     // Work around for bug with deterministic scalar trace test on select compiler/architectures.
     // While WalkerControl appears to have exclusive ownership of the dmcStream pointer,
     // this is not actually true. Apparently it doesn't actually and can loose ownership then it is
