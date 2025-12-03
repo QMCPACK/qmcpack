@@ -24,7 +24,7 @@ RUN groupadd --gid $USER_GID $USERNAME \
 # * matplotlib for qmca plotting
 # (apt-get update already run above)
 RUN apt-get install -y --no-install-recommends \
-    make ninja-build git cmake wget bzip2 rsync  g++ gfortran openmpi-bin libopenmpi-dev libboost-dev \
+    ca-certificates make ninja-build git cmake wget bzip2 rsync  g++ gfortran openmpi-bin libopenmpi-dev libboost-dev \
     libopenblas-openmp-dev libhdf5-dev libxml2-dev libfftw3-dev \
     python3-numpy python3-scipy python3-pandas python3-h5py python3-matplotlib
 
@@ -34,7 +34,7 @@ RUN wget https://gitlab.com/QEF/q-e/-/archive/qe-${QE_VERSION}/q-e-qe-${QE_VERSI
     mkdir build_mpi && cd build_mpi && \
     mkdir -p /opt/qe && \
     cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_Fortran_COMPILER=mpif90 -DQE_ENABLE_PLUGINS=pw2qmcpack -DCMAKE_INSTALL_PREFIX=/opt/qe/ .. && \
-    make -j 4 && \
+    make -j && \
     echo "Installing QE..." && make install && cd ../.. && pwd && \
     # cleanup
     echo "QE Cleanup" &&\
@@ -49,12 +49,12 @@ WORKDIR /scratch
 #    mkdir -p /opt/qmcpack && \
 #    mv qmcpack-${QMCPACK_VERSION} /opt/qmcpack/qmcpack && \
 #    mkdir build_qmcpack_mpi && cd build_qmcpack_mpi && pwd && \ 
-#    cmake -DCMAKE_INSTALL_PREFIX=/opt/qmcpack -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpiCC /opt/qmcpack/qmcpack && \
-#    make -j 4 && \
-#    echo "Installing QMCPACK..." && make install && cd .. && pwd && \
+#    cmake -GNinja -DCMAKE_INSTALL_PREFIX=/opt/qmcpack -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpiCC /opt/qmcpack/qmcpack && \
+#    ninja && \
+#    echo "Installing QMCPACK..." && ninja install && cd .. && pwd && \
 #    mkdir build_qmcpack_complex_mpi && cd build_qmcpack_complex_mpi && \
-#    cmake -DCMAKE_INSTALL_PREFIX=/opt/qmcpack -DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpiCC /opt/qmcpack/qmcpack && \
-#    make -j 4 && \
+#    cmake -GNinja -DCMAKE_INSTALL_PREFIX=/opt/qmcpack -DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpiCC /opt/qmcpack/qmcpack && \
+#    ninja && \
 #    cp -p bin/qmcpack_complex /opt/qmcpack/bin && \
 #    cd .. && \
 #    # cleanup
@@ -65,12 +65,12 @@ RUN mkdir -p /opt/qmcpack && cd /opt/qmcpack && \
     git clone https://github.com/QMCPACK/qmcpack.git --depth=1 && \
     cd /scratch && \
     mkdir build_qmcpack_mpi && cd build_qmcpack_mpi && pwd && \ 
-    cmake -DCMAKE_INSTALL_PREFIX=/opt/qmcpack -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpiCC /opt/qmcpack/qmcpack && \
-    make -j 4 && \
-    echo "Installing QMCPACK..." && make install && cd .. && pwd && \
+    cmake -GNinja -DCMAKE_INSTALL_PREFIX=/opt/qmcpack -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpiCC /opt/qmcpack/qmcpack && \
+    ninja && \
+    echo "Installing QMCPACK..." && ninja install && cd .. && pwd && \
     mkdir build_qmcpack_complex_mpi && cd build_qmcpack_complex_mpi && \
-    cmake -DCMAKE_INSTALL_PREFIX=/opt/qmcpack -DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpiCC /opt/qmcpack/qmcpack && \
-    make -j 4 && \
+    cmake -GNinja -DCMAKE_INSTALL_PREFIX=/opt/qmcpack -DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpiCC /opt/qmcpack/qmcpack && \
+    ninja && \
     cp -p bin/qmcpack_complex /opt/qmcpack/bin && \
     cd .. && \
     # cleanup
