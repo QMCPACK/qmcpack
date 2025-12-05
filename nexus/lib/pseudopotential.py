@@ -249,13 +249,14 @@ class Pseudopotentials(DevBase):
 class PPset(DevBase):
     instance_counter = 0
 
-    known_codes = set('pwscf gamess vasp qmcpack'.split())
+    known_codes = set('pwscf gamess vasp qmcpack rmg'.split())
 
     default_extensions = obj(
         pwscf   = ['ncpp','upf'],
         gamess  = ['gms'],
         vasp    = ['potcar'],
         qmcpack = ['xml'],
+        rmg     = ['xml','upf'],
         )
 
     def __init__(self):

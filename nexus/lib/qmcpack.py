@@ -57,6 +57,7 @@ from pyscf_sim import Pyscf
 from developer import DevBase, obj, error, unavailable
 from nexus_base import nexus_core
 from copy import deepcopy
+from rmg import Rmg 
 from hdfreader import read_hdf
 from unit_converter import convert
 from pwscf import Pwscf
@@ -712,8 +713,9 @@ class Qmcpack(Simulation):
         input = self.input
         system = self.system
         if result_name=='orbitals':
+
             gcta_possible = False
-            if isinstance(sim,Pw2qmcpack) or isinstance(sim,Convertpw4qmc):
+            if isinstance(sim,(Pw2qmcpack,Rmg)) or isinstance(sim,Convertpw4qmc):
 
                 gcta_possible = True
                 h5file = result.h5file
@@ -815,6 +817,7 @@ class Qmcpack(Simulation):
                 #end if
                 qs.wavefunction = newwfn
 
+
             elif isinstance(sim,Pyscf):
                 sinp = sim.input
                 skpoints = None
@@ -843,6 +846,7 @@ class Qmcpack(Simulation):
                 ds = self.input.get('determinantset')
                 ds.twistnum = -1 # set during twist average
                 self.twist_average(twist_updates)
+
             else:
                 self.error('incorporating orbitals from '+sim.__class__.__name__+' has not been implemented')
             #end if
