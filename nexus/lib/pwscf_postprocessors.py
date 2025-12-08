@@ -90,6 +90,19 @@
 #      SimulationInput class for pwexport.                           #
 #                                                                    #
 #                                                                    #
+#    generate_pw2wan90                                               #
+#      User-facing function to create pw2wannier90 simulation objects. #
+#                                                                    #
+#    generate_pw2wan90_input                                         #
+#      User-facing function to create input for pw2wannier90.        #
+#                                                                    #
+#    Pw2wan90                                                        #
+#      Simulation class for pw2wannier90.                            #
+#                                                                    #
+#    Pw2wan90Input                                                   #
+#      SimulationInput class for pw2wannier90.                       #
+#                                                                    #
+#                                                                    #
 #    NamelistInput                                                   #
 #      Generic SimulationInput class to handle Fortran namelists.    #
 #      Base class for all *Input classes listed above.               #
@@ -1043,6 +1056,52 @@ def generate_hp(**kwargs):
 
 
 
+class Pw2wan90Namelist(Namelist):
+    namelist = 'inputpp'
+    names    = ['prefix','outdir','seedname','spin_component','wan_mode','write_mmn','write_amn',
+                'write_unk','write_dmn','read_unk','reduce_unk','reduce_unk_factor','wvfn_formatted',
+                'write_unkg','write_uHu','write_uIu','write_spn','spn_formatted','uHu_formatted',
+                'uIu_formatted','write_sHu','sHu_formatted','write_sIu','sIu_formatted',
+                'regular_mesh','plot_bands','check_complex','irr_bz','read_sym',
+                'auto_projections','atom_proj','atom_proj_exclude','atom_proj_ext',
+                'atom_proj_dir','atom_proj_ortho','scdm_proj','scdm_entanglement','scdm_mu',
+                'scdm_sigma','scdm_depth']
+#end class Pw2wan90Namelist
+
+
+class Pw2wan90Input(NamelistInput):
+    namelists = ['inputpp']
+    namelist_classes = obj(
+        inputpp = Pw2wan90Namelist
+        )
+#end class Pw2wan90Input
+
+
+class Pw2wan90(PostProcessSimulation):
+    input_type         = Pw2wan90Input
+    generic_identifier = 'pw2wan90'
+    application        = 'pw2wannier90.x'
+#end class Pw2wan90
+
+
+def generate_pw2wan90_input(prefix='pwscf',outdir='pwscf_output',seedname='wannier',**vals):
+    pw2wan90_input = Pw2wan90Input()
+    pw2wan90_input.inputpp.prefix = prefix
+    pw2wan90_input.inputpp.outdir = outdir
+    pw2wan90_input.inputpp.seedname = seedname
+    pw2wan90_input.inputpp.assign_values('values',**vals)
+    return pw2wan90_input
+#end def generate_pw2wan90_input
+
+
+def generate_pw2wan90(**kwargs):
+    sim_args,inp_args = separate_inputs(kwargs,copy_args=True)
+    pw2wan90 = Pw2wan90(**sim_args)
+    pw2wan90.input = generate_pw2wan90_input(**inp_args)
+    return pw2wan90
+#end def generate_pw2wan90
+
+
 
 
 namelist_classes = [
@@ -1054,6 +1113,7 @@ namelist_classes = [
     CpppInputppNamelist    , CpppInput,
     PwexportInputppNamelist, PwexportInput,
     HpNamelist             , HpInput,
+    Pw2wan90Namelist       , Pw2wan90Input,
     ]
 for cls in namelist_classes:
     cls.class_init()

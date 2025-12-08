@@ -1,0 +1,77 @@
+## Valence states ##
+num_wann        = 15
+####################
+
+## Valence + conduction states ##
+#num_wann        = 18
+#num_bands       = 90
+#dis_froz_max    = -6.0
+#dis_win_max     =  4.0
+#dis_num_iter    =  100
+#################################
+
+num_iter        = 100
+conv_tol        = 1e-10
+conv_window     = 5
+
+translate_home_cell=true
+
+guiding_centres = true
+
+iprint          = 2
+
+## Plotting #################
+#restart             = plot
+#wannier_plot        = true
+#wannier_plot_format = cube
+#wannier_plot_list   = 1,7,13
+#############################
+
+mp_grid         : 1 1 1
+gamma_only      = true
+
+begin kpoints
+0.0000  0.0000   0.0000
+end kpoints
+
+begin atoms_cart
+Bohr
+C     15.628439779     15.000000000  15.00
+C     14.309410418     17.284679795  15.00
+C     11.671351697     17.284679795  15.00
+C     10.352322336     15.000000000  15.00
+C     11.671351697     12.715320205  15.00
+C     14.309410418     12.715320205  15.00
+H     17.675013988     15.000000000  15.00
+H     15.333642386     19.057243606  15.00
+H     10.647119729     19.057243606  15.00
+H      8.305748128     15.000000000  15.00
+H     10.647119729     10.942756393  15.00
+H     15.333642386     10.942756393  15.00
+end atoms_cart
+
+## Valence states ##
+begin projections
+random
+end projections
+####################
+
+## Valence + conduction states ##
+#begin projections
+#Bohr
+#H:s
+#c=  13.0,  12.7,  15.0 : s
+#c=  13.0,  17.3,  15.0 : s
+#c=  11.0,  16.1,  15.0 : s
+#c=  11.0,  13.9,  15.0 : s
+#c=  15.0,  13.9,  15.0 : s
+#c=  15.0,  16.1,  15.0 : s
+#C:pz
+#end projections
+#################################
+begin unit_cell_cart
+bohr
+  30.000   0.0000000   0.000
+   0.000  30.0000000   0.000
+   0.000   0.0000000  30.000
+end unit_cell_cart
