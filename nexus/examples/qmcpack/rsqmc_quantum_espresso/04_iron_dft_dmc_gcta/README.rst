@@ -5,7 +5,6 @@ It presents a challenge due to two reasons.
 One is that it is a metal (conductor) and thus has a varying number of electron occupations at different twists due to band crossings at the Fermi level.
 The second reason is that it is a ferromagnet, and we would like to closely reproduce the reference SCF cell magnetization in QMC twist averaging.
 
-The pseudopotentials for this example are not included here but can be obtained from `pseudopotentiallibrary <https://pseudopotentiallibrary.org/>`_.
 In the Nexus script ``iron_ldaU_dmc_gcta.py``, we carry out the standard sequence of SCF, NSCF, conversion, and Jastrow optimizations.
 As usual, the Jastrow optimizations are carried out at the Gamma twist and with a spin close to the SCF value (5.66 Bohr mag/cell).
 
