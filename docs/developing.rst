@@ -1,5 +1,5 @@
-.. _developguide:
 .. highlight:: c++
+.. _developguide:
 
 Development Guide
 =================
@@ -654,7 +654,7 @@ contain the state of a logical object, and might allow access to object data thr
 while preserving maximally ability to change internal implementation of the class.
 
 Do not...
-"""""""""
+^^^^^^^^^
 
 - use ``struct`` as a way to avoid controlling access to the class. Only when the instantiated objects are public data structure is ``struct`` appropriate.
 
@@ -753,7 +753,7 @@ memory leaks if pointers are not managed properly. Since C++11, smart pointers w
 it demands developers to think about the ownership and lifetime of declared pointer objects.
 
 std::unique_ptr
-"""""""""""""""
+^^^^^^^^^^^^^^^
 
 A unique pointer is the unique owner of a piece of allocated memory. Pointers in per-walker data structure with distinct contents
 should be unique pointers. For example, every walker has a trial wavefunction object which contains an SPO object pointer. Because
@@ -764,7 +764,7 @@ In QMCPACK, most raw pointers can be directly replaced with ``std::unique_ptr``.
 Corresponding use of ``new`` operator can be replaced with ``std:make_unique``.
 
 std::shared_ptr
-"""""""""""""""
+^^^^^^^^^^^^^^^
 
 A shared pointer is the shared owner of a piece of allocated memory. Moving a pointer ownership from one place to another should
 not use shared pointers but C++ move semantics. Shared contents between walkers may be candidates for shared pointers. For example,
@@ -813,6 +813,7 @@ header file or preferably cpp file. For example, put the following under "protec
 Initialize timers in the constructor:
 
 ::
+
   # if you have many timers;
   const TimerNameList_t<PSTimers>
   PSTimerNames = {{PS_newpos, "ParticleSet::computeNewPosDTandSK"},
@@ -827,6 +828,7 @@ Initialize timers in the constructor:
 Finally, there are two ways of using the timers. Using the ScopedTimer is required when possible.
 
 ::
+
   // RAII pattern
   {
     ScopedTimer update_scope(myTimers[PS_update]);
@@ -921,7 +923,7 @@ simple process should be followed step-by-step to ensure accuracy and avoid need
    preferred way to get a list of all merged PRs is via the gh cli tool. Use the following to generate a starting point, after adjusting
    the dates to include the day of the previous release. Edit the output to include only "significant" changes.
 
-::
+.. code:: shell
 
   gh search prs --merged-at 2025-02-05..2025-04-29 -R QMCPACK/qmcpack  --json title,url,repository,number -L 1000 --jq '.[]|("* " + .title + " [#" + (.number|tostring) +"]("+ .url + ")\n")'
 
@@ -1321,7 +1323,6 @@ Helium Wavefunction Example
 
 The code contains an example of a wavefunction component for a Helium atom using STO orbitals and a Pade Jastrow.
 
-to
 The wavefunction is
 
 .. math::

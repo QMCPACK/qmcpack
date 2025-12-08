@@ -61,7 +61,6 @@ public:
   }
   void initBreakup(ParticleSet& ref) override {}
   void Breakup(ParticleSet& ref, mRealType rs_in) override { initBreakup(ref); }
-  void resetTargetParticleSet(ParticleSet& ref) override {}
   // overrides end
 private:
   mRealType alpha;

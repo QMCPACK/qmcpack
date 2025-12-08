@@ -220,13 +220,13 @@ public:
   std::string getClassName() const override { return "OrbitalImages"; }
 
   //standard interface
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& P, TrialWaveFunction& psi) final;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
 
   ///read xml input
   bool put(xmlNodePtr cur) override;
 
   ///hijack estimator evaluate to evaluate and write all orbitals
-  Return_t evaluate(ParticleSet& P) override;
+  Return_t evaluate(TrialWaveFunction& psi, ParticleSet& P) override;
 
   //optional standard interface
   //void getRequiredTraces(TraceManager& tm);
@@ -236,7 +236,6 @@ public:
   void registerCollectables(std::vector<ObservableHelper>& h5desc, hdf_archive& file) const override {}
 
   //should be empty for Collectables interface
-  void resetTargetParticleSet(ParticleSet& P) override {}
   void setObservables(PropertySetType& plist) override {}
   void setParticlePropertyList(PropertySetType& plist, int offset) override {}
 #if !defined(REMOVE_TRACEMANAGER)

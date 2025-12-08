@@ -19,3 +19,4 @@ The Nexus User Guide
    python-basics
    theory
    qmcpack-input-mod
+   code-style

@@ -348,7 +348,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur)
       {
         if (estType == "coulomb")
         {
-          std::unique_ptr<Pressure> BP = std::make_unique<Pressure>(targetPtcl);
+          std::unique_ptr<Pressure> BP = std::make_unique<Pressure>();
           BP->put(element);
           targetH->addOperator(std::move(BP), "Pressure", false);
           int nlen(100);
@@ -370,7 +370,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur)
         {
           APP_ABORT("Unknown psi \"" + PsiName + "\" for momentum.");
         }
-        std::unique_ptr<MomentumEstimator> ME = std::make_unique<MomentumEstimator>(targetPtcl, *psi_it->second);
+        std::unique_ptr<MomentumEstimator> ME = std::make_unique<MomentumEstimator>(targetPtcl);
         bool rt(myComm->rank() == 0);
         ME->putSpecial(element, targetPtcl, rt);
         targetH->addOperator(std::move(ME), "MomentumEstimator", false);

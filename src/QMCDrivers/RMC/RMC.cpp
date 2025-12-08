@@ -221,7 +221,6 @@ void RMC::resetRun()
     for (int ip = 0; ip < NumThreads; ++ip)
     {
       std::ostringstream os;
-      estimatorClones[ip]->resetTargetParticleSet(*wClones[ip]);
       estimatorClones[ip]->setCollectionMode(false);
       Rng[ip] = RandomNumberControl::Children[ip]->makeClone();
 #if !defined(REMOVE_TRACEMANAGER)

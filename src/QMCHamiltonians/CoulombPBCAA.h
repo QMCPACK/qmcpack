@@ -33,7 +33,7 @@ class OneDimCubicSplineLinearGrid;
  *\brief Calculates the AA Coulomb potential using PBCs
  *
  */
-struct CoulombPBCAA : public OperatorBase, public ForceBase
+struct CoulombPBCAA : public OperatorDependsOnlyOnParticleSet, public ForceBase
 {
   using LRHandlerType  = LRCoulombSingleton::LRHandlerType;
   using GridType       = LRCoulombSingleton::GridType;
@@ -41,8 +41,8 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
   using mRealType      = LRHandlerType::mRealType;
   using OffloadSpline  = OneDimCubicSplineLinearGrid<LRCoulombSingleton::pRealType>;
 
-  /// energy-optimized long range handle. Should be const LRHandlerType eventually
-  std::shared_ptr<LRHandlerType> lr_aa_;
+  /// energy-optimized long range handle
+  std::shared_ptr<const LRHandlerType> lr_aa_;
   /// energy-optimized short range pair potential
   std::shared_ptr<const RadFunctorType> rVs;
   /// the same as rVs but can be used inside OpenMP offload regions
@@ -114,8 +114,6 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
 
   std::string getClassName() const override { return "CoulombPBCAA"; }
 
-  void resetTargetParticleSet(ParticleSet& P) override;
-
   /** evaluate just one walker
    *
    *  This is still called for batch AA IonIon
@@ -126,7 +124,6 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
   Return_t evaluate(ParticleSet& P) override;
 
   void mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
-                   const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                    const RefVectorWithLeader<ParticleSet>& p_list) const override;
 
   /**
@@ -134,16 +131,9 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
    * to registered listeners from Estimators.
    */
   void mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase>& o_list,
-                              const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                               const RefVectorWithLeader<ParticleSet>& p_list,
                               const std::vector<ListenerVector<RealType>>& listeners,
                               const std::vector<ListenerVector<RealType>>& ion_listeners) const override;
-
-  void mw_evaluatePerParticleWithToperator(const RefVectorWithLeader<OperatorBase>& o_list,
-                                           const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                           const RefVectorWithLeader<ParticleSet>& p_list,
-                                           const std::vector<ListenerVector<RealType>>& listeners,
-                                           const std::vector<ListenerVector<RealType>>& ion_listeners) const override;
 
   void evaluateIonDerivs(ParticleSet& P,
                          ParticleSet& ions,
@@ -166,7 +156,7 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
     return true;
   }
 
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) override;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp) override;
 
   /** Inform objects associated with this operator of per particle listeners.
    *  i.e. turnOnPerParticleSK of particleset qp.

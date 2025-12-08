@@ -213,9 +213,7 @@ void LatticeDeviationEstimator::setObservables(PropertySetType& plist)
   }
 }
 
-void LatticeDeviationEstimator::resetTargetParticleSet(ParticleSet& P) {}
-
-std::unique_ptr<OperatorBase> LatticeDeviationEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> LatticeDeviationEstimator::makeClone(ParticleSet& qp)
 {
   // default constructor does not work with threads
   //LatticeDeviationEstimator* myclone = new LatticeDeviationEstimator(*this);

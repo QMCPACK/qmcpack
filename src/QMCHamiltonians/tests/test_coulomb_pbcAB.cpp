@@ -245,7 +245,7 @@ TEST_CASE("CoulombAB::Listener", "[hamiltonian]")
   ion_listeners.emplace_back("localpotential", getParticularListener(ion_pots2));
 
   ParticleSet::mw_update(p_list);
-  cab.mw_evaluatePerParticle(o_list, twf_list, p_list, listeners, ion_listeners);
+  cab.mw_evaluatePerParticle(o_list, p_list, listeners, ion_listeners);
   CHECK(cab.getValue() == Approx(-2.219665062 + 0.0267892759 * 4));
   CHECK(cab2.getValue() == Approx(-1.7222343352));
   // Check that the sum of the particle energies == the total
