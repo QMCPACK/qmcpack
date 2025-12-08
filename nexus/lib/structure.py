@@ -481,27 +481,40 @@ def rotate_plane(plane,angle,points,units='degrees'):
 #end def rotate_plane
 
 
-def _center_points(pos, center, axes):
+def recenter_points(pos, center, axes):
     """Center a given set of points in a cell around a provided center.
     
+    Parameters
+    ----------
+    pos : NDArray
+        Array of *N* positions with shape (*N*,3)
+    center : NDArray
+        Position of the center
+    axes : NDArray
+        Array of the cell vectors with shape (3,3)
+
+    Returns
+    -------
+    pos : NDArray
+        Array of positions centered around the given center
+
     Note
     ----
     This function also ensures that points close (within 1e-12) to the minimum edge (-0.5) of the
     cell are placed exactly on that edge. The intent here is to make sure that atoms close to or
     on the leading edge (+0.5) are wrapped around to retain periodicity.
     """
-    pos_new = np.empty(pos.shape, dtype=float)
-    pos_new[:] = pos[:]
+    pos = pos.copy()
     axinv = inv(axes)
-    for i in range(len(pos_new)):
-        u = dot(pos_new[i] - center, axinv)
+    for i in range(len(pos)):
+        u = dot(pos[i] - center, axinv)
         u -= np.floor(u+.5)
         u[np.abs(u-.5)<1e-12] = -0.5
         u[np.abs(u+.5)<1e-12] = -0.5
-        pos_new[i] = dot(u,axes) + center
+        pos[i] = dot(u,axes) + center
     #end for
 
-    return pos_new
+    return pos
 
 
 opt_tm_matrices    = obj()
@@ -3307,19 +3320,32 @@ class Structure(Sobj):
 
     # test needed
     def recenter(self, center=None):
-        """Center atoms around the provided center of the unit cell, or if the
+        """Center atoms around a new provided center of the unit cell, or if a new
         center is not provided then use the (0.5 0.5 0.5) point of the unit cell.
         """
         if center is not None:
             self.center = np.array(center, dtype=float)
         #end if
-        new_pos = _center_points(pos=self.pos, center=self.center, axes=self.axes)
-        self.pos = new_pos
+        self.pos = recenter_points(pos=self.pos, center=self.center, axes=self.axes)
+        self.recenter_k()
+    #end def recenter
 
 
     # test needed
     def recenter_k(self,kpoints=None,kaxes=None,kcenter=None,remove_duplicates=False):
-        """Center k-points around the center of k-space"""
+        """Center k-points around the provided center of k-space.
+        
+        Parameters
+        ----------
+        kpoints : NDArray | None, default = None
+            Array of *N* k-points to center with shape (*N*,3)
+        kaxes : NDArray | None, default = None
+            Array of axes describing the k-space cell with shape (3,3)
+        kcenter : NDArray | None, default = None
+            Array containing a custom center of k-space with shape (3,3)
+        remove_duplicates : bool, default = False
+            Remove k-points that have a distance less than 1e-8
+        """
         use_self = kpoints is None
         if use_self:
             kpoints=self.kpoints
@@ -3334,7 +3360,7 @@ class Structure(Sobj):
             else:
                 center = np.array(kcenter)
 
-            new_kpts = _center_points(pos=kpoints, center=center, axes=axes)
+            new_kpts = recenter_points(pos=kpoints, center=center, axes=axes)
 
             if remove_duplicates:
                 inside = self.inside(new_kpts,axes,center)
@@ -3371,14 +3397,24 @@ class Structure(Sobj):
 
     # test needed
     def recorner(self, center = None):
-        """Center atoms around the origin of the cell"""
+        """Center atoms around the origin of the cell
+        
+        Parameters
+        ----------
+        center : NDArray, default = self.center
+            Position of the center of the cell.
+        
+        Note
+        ----
+        If the user supplies `center`, then this will modify `self.center` to reflect
+        that change.
+        """
         if center is not None:
             self.center = np.array(center, dtype=float)
         pos = self.pos
         axes = self.axes
-        corner = self.center - np.array(axes, dtype=float).sum(0)/2
-        new_pos = _center_points(pos=pos, center=corner, axes=axes)
-        self.pos = new_pos
+        corner = self.center - axes.sum(0)/2
+        self.pos = recenter_points(pos=pos, center=corner, axes=axes)
     #end def recorner
 
 
