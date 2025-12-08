@@ -107,10 +107,6 @@ public:
     LR_rc = Basis.get_rc();
   }
 
-  void resetTargetParticleSet(ParticleSet& ref) override { myFunc.reset(ref); }
-
-  void resetTargetParticleSet(ParticleSet& ref, mRealType rs) { myFunc.reset(ref, rs); }
-
   inline mRealType evaluate(mRealType r, mRealType rinv) const override
   {
     //Right now LRHandlerSRCoulomb is the force only handler.  This is why the gcoefs are used for evaluate.

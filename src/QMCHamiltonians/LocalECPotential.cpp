@@ -71,15 +71,6 @@ void LocalECPotential::releaseResource(ResourceCollection& collection,
   collection.takebackResource(O_leader.mw_res_handle_);
 }
 
-void LocalECPotential::resetTargetParticleSet(ParticleSet& P)
-{
-  int tid = P.addTable(IonConfig);
-  if (tid != myTableIndex)
-  {
-    APP_ABORT("  LocalECPotential::resetTargetParticleSet found a different distance table index.");
-  }
-}
-
 void LocalECPotential::add(int groupID, std::unique_ptr<RadialPotentialType>&& ppot, RealType z)
 {
   for (int iat = 0; iat < PP.size(); iat++)
@@ -143,7 +134,6 @@ LocalECPotential::Return_t LocalECPotential::evaluate(ParticleSet& P)
 }
 
 void LocalECPotential::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase>& o_list,
-                                              const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                               const RefVectorWithLeader<ParticleSet>& p_list,
                                               const std::vector<ListenerVector<RealType>>& listeners,
                                               const std::vector<ListenerVector<RealType>>& ion_listeners) const
@@ -199,16 +189,6 @@ void LocalECPotential::mw_evaluatePerParticle(const RefVectorWithLeader<Operator
     auto& local_ecp  = o_list.getCastedElement<LocalECPotential>(iw);
     local_ecp.value_ = evaluate_walker(iw, p_list[iw], PP, listeners, ion_listeners);
   }
-}
-
-void LocalECPotential::mw_evaluatePerParticleWithToperator(
-    const RefVectorWithLeader<OperatorBase>& o_list,
-    const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-    const RefVectorWithLeader<ParticleSet>& p_list,
-    const std::vector<ListenerVector<RealType>>& listeners,
-    const std::vector<ListenerVector<RealType>>& ion_listeners) const
-{
-  mw_evaluatePerParticle(o_list, wf_list, p_list, listeners, ion_listeners);
 }
 
 void LocalECPotential::evaluateIonDerivs(ParticleSet& P,
@@ -322,7 +302,7 @@ LocalECPotential::Return_t LocalECPotential::evaluate_orig(ParticleSet& P)
   return value_;
 }
 
-std::unique_ptr<OperatorBase> LocalECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> LocalECPotential::makeClone(ParticleSet& qp)
 {
   std::unique_ptr<LocalECPotential> myclone = std::make_unique<LocalECPotential>(IonConfig, qp);
 

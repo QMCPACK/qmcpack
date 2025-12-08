@@ -15,6 +15,7 @@
 #include "Concurrency/Info.hpp"
 #include "Message/UniformCommunicateError.h"
 #include "Message/CommOperators.h"
+#include "TrialWaveFunction.h"
 #include "Utilities/RunTimeManager.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Particle/MCSample.h"
@@ -201,11 +202,10 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
 
   {
     ScopedTimer collectables_local_timer(timers.collectables_timer);
-    auto evaluateNonPhysicalHamiltonianElements = [](QMCHamiltonian& ham, ParticleSet& pset, MCPWalker& walker) {
-      ham.auxHevaluate(pset, walker);
-    };
+    auto evaluateNonPhysicalHamiltonianElements = [](QMCHamiltonian& ham, TrialWaveFunction& psi, ParticleSet& pset,
+                                                     MCPWalker& walker) { ham.auxHevaluate(psi, pset, walker); };
     for (int iw = 0; iw < crowd.size(); ++iw)
-      evaluateNonPhysicalHamiltonianElements(walker_hamiltonians[iw], walker_elecs[iw], walkers[iw]);
+      evaluateNonPhysicalHamiltonianElements(walker_hamiltonians[iw], walker_twfs[iw], walker_elecs[iw], walkers[iw]);
 
     auto savePropertiesIntoWalker = [](QMCHamiltonian& ham, MCPWalker& walker) {
       ham.saveProperty(walker.getPropertyBase());

@@ -20,12 +20,10 @@ namespace qmcplusplus
 class MomentumEstimator : public OperatorBase
 {
 public:
-  MomentumEstimator(ParticleSet& elns, TrialWaveFunction& psi);
-  bool dependsOnWaveFunction() const override { return true; }
+  MomentumEstimator(ParticleSet& elns);
   std::string getClassName() const override { return "MomentumEstimator"; }
-  void resetTargetParticleSet(ParticleSet& P) override;
 
-  Return_t evaluate(ParticleSet& P) override;
+  Return_t evaluate(TrialWaveFunction& psi, ParticleSet& P) override;
 
   void addObservables(PropertySetType& plist) {}
   void addObservables(PropertySetType& plist, BufferType& olist) override;
@@ -41,8 +39,6 @@ public:
   void resize(const std::vector<PosType>& kin, const int Min);
   ///number of samples
   int M;
-  ///reference to the trial wavefunction for ratio evaluations
-  TrialWaveFunction& refPsi;
   ///lattice vector
   const Lattice& lattice_;
   ///normalization factor for n(k)

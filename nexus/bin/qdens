@@ -814,35 +814,50 @@ class StatFile(QDBase):
         sdim = tuple('xyz')[dim]
         for name,spin_density in self.spin_density_data.items():
             prefix = '{0}.{1}_lineplot_{2}'.format(self.file_prefix,name,sdim)
-            data = spin_density.u.value+spin_density.d.value
-            if permute:
-                data = data.transpose(permutation)
-            #end if
-            s = data.shape
-            data.shape = s[0],s[1],s[2]*s[3]
-            data = data.sum(2)
-            lmean,lvar,lerror,lkappa = simstats(data,dim=0)
-            if rmax is None:
-                r = np.arange(len(lmean))
-                xlab = 'bin number'
-                ylab = '$N_e$/bin'
-            else:
-                dr = rmax/len(lmean)
-                r = dr/2+dr*np.arange(len(lmean),dtype=float)
-                lmean/=dr
-                lerror/=dr
-                xlab = sdim+' ($\\AA$)'.format(dim)
-                ylab = '$N_e/\\AA$'
-            #end if
-            plt.figure(tight_layout=True)
-            plt.errorbar(r,lmean,lerror,fmt='b.-')
-            plt.xlabel(xlab)
-            plt.ylabel(ylab)
-            plt.title('{0}  (axis {1})  {2}'.format(name,dim,os.path.split(self.file_prefix)[1]))
-            self.vlog('        creating file {0}.pdf'.format(prefix))
-            plt.savefig(prefix+'.pdf')
-            self.vlog('        creating file {0}.dat'.format(prefix))
-            np.savetxt(prefix+'.dat',np.array(list(zip(r,lmean,lerror))))
+            data  = {'u':spin_density.u.value, 
+                     'd': spin_density.d.value, 
+                     'u+d': spin_density.u.value+spin_density.d.value, 
+                     'u-d': spin_density.u.value-spin_density.d.value}
+            for key,datum in data.items():
+                if permute:
+                    datum = datum.transpose(permutation)
+                #end if
+                s = datum.shape
+                datum = datum.reshape(s[0], s[1], s[2]*s[3])
+                datum = datum.sum(2)
+                lmean,lvar,lerror,lkappa = simstats(datum,dim=0)
+                if rmax is None:
+                    r = np.arange(len(lmean))
+                    xlab = 'bin number'
+                    ylab = '$N_e$/bin'
+                else:
+                    dr = rmax/len(lmean)
+                    r = dr/2+dr*np.arange(len(lmean),dtype=float)
+                    lmean/=dr
+                    lerror/=dr
+                    xlab = f'{sdim} ($\\AA$)'
+                    ylab = '$N_e/\\AA$'
+                #end if
+                # Use np.trapz for backwards and forwards compatibility.
+                np_version = tuple(map(int, np.__version__.split('.')[:2]))
+                use_trapz = np_version < (2, 0)
+                if use_trapz:
+                    total_electrons = np.trapz(lmean, r)
+                else:
+                    # In NumPy >= 2.0, prefer np.trapezoid
+                    total_electrons = np.trapezoid(lmean, r)
+                print(f'Total number of {key} electrons: {total_electrons}')
+                plt.figure(tight_layout=True)
+                plt.errorbar(r,lmean,lerror,fmt='b.-')
+                plt.xlabel(xlab)
+                plt.ylabel(ylab)
+                plt.title('{0}  (axis {1})  {2}'.format(name,dim,os.path.split(self.file_prefix)[1]))
+                self.vlog(f'        creating file {prefix}_{key}.pdf')
+                # plt.savefig(prefix+'.pdf')
+                plt.savefig(prefix+f'_{key}.pdf')
+                self.vlog(f'        creating file {prefix}_{key}.dat')
+                # np.savetxt(prefix+'.dat',np.array(list(zip(r,lmean,lerror))))
+                np.savetxt(prefix+f'_{key}.dat',np.array(list(zip(r,lmean,lerror))))
         #end for
     #end def line_plot
 #end class StatFile

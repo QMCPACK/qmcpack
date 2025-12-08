@@ -68,7 +68,7 @@ struct StressPBC : public OperatorBase, public ForceBase
 
   std::string getClassName() const override { return "StressPBC"; }
 
-  Return_t evaluate(ParticleSet& P) override;
+  Return_t evaluate(TrialWaveFunction& psi, ParticleSet& P) override;
 
   void initBreakup(ParticleSet& P);
 
@@ -89,8 +89,6 @@ struct StressPBC : public OperatorBase, public ForceBase
   void addObservables(PropertySetType& plist, BufferType& collectables) override { addObservablesStress(plist); }
 
   void setObservables(PropertySetType& plist) override { setObservablesStress(plist); }
-
-  void resetTargetParticleSet(ParticleSet& P) override {}
 
   void setParticlePropertyList(PropertySetType& plist, int offset) override { setParticleSetStress(plist, offset); }
   std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;

@@ -18,8 +18,8 @@
 #ifndef QMCPLUSPLUS_NONLOCAL_ECPOTENTIAL_H
 #define QMCPLUSPLUS_NONLOCAL_ECPOTENTIAL_H
 #include "Configuration.h"
-#include "QMCHamiltonians/ForceBase.h"
-#include "QMCHamiltonians/OperatorBase.h"
+#include "ForceBase.h"
+#include "OperatorBase.h"
 #include "NeighborListsForPseudo.h"
 #include "type_traits/OptionalRef.hpp"
 
@@ -44,13 +44,11 @@ class NonLocalECPotential : public OperatorBase, public ForceBase
   struct NonLocalECPotentialMultiWalkerResource;
 
 public:
-  NonLocalECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi, bool enable_DLA, bool use_VP);
-  NonLocalECPotential(const NonLocalECPotential& nlpp, ParticleSet& els, TrialWaveFunction& psi);
+  NonLocalECPotential(ParticleSet& ions, ParticleSet& els, bool enable_DLA, bool use_VP);
+  NonLocalECPotential(const NonLocalECPotential& nlpp, ParticleSet& els);
   ~NonLocalECPotential() override;
 
-  bool dependsOnWaveFunction() const override { return true; }
   std::string getClassName() const override { return "NonLocalECPotential"; }
-  void resetTargetParticleSet(ParticleSet& P) override;
 
 #if !defined(REMOVE_TRACEMANAGER)
   void contributeParticleQuantities() override;
@@ -58,13 +56,13 @@ public:
   void deleteParticleQuantities() override;
 #endif
 
-  Return_t evaluate(ParticleSet& P) override;
-  Return_t evaluateDeterministic(ParticleSet& P) override;
+  Return_t evaluate(TrialWaveFunction& psi, ParticleSet& P) override;
+  Return_t evaluateDeterministic(TrialWaveFunction& psi, ParticleSet& P) override;
   void mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
                    const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                    const RefVectorWithLeader<ParticleSet>& p_list) const override;
 
-  Return_t evaluateWithToperator(ParticleSet& P) override;
+  Return_t evaluateWithToperator(TrialWaveFunction& psi, ParticleSet& P) override;
 
   void mw_evaluateWithToperator(const RefVectorWithLeader<OperatorBase>& o_list,
                                 const RefVectorWithLeader<TrialWaveFunction>& wf_list,
@@ -98,12 +96,14 @@ public:
 
 
   /** make non local moves with particle-by-particle moves
+   * @param psi trial wavefunction
    * @param P particle set
    * @return the number of accepted moves
    */
-  int makeNonLocalMovesPbyP(ParticleSet& P, NonLocalTOperator& move_op) override;
+  int makeNonLocalMovesPbyP(TrialWaveFunction& psi, ParticleSet& P, NonLocalTOperator& move_op) override;
 
-  Return_t evaluateValueAndDerivatives(ParticleSet& P,
+  Return_t evaluateValueAndDerivatives(TrialWaveFunction& psi,
+                                       ParticleSet& P,
                                        const opt_variables_type& optvars,
                                        const Vector<ValueType>& dlogpsi,
                                        Vector<ValueType>& dhpsioverpsi) override;
@@ -162,8 +162,6 @@ protected:
   std::vector<std::unique_ptr<NonLocalECPComponent>> PPset;
   ///reference to the center ion
   ParticleSet& IonConfig;
-  ///target TrialWaveFunction
-  TrialWaveFunction& Psi;
   ///true, determinant localization approximation(DLA) is enabled
   bool use_DLA;
 
@@ -198,15 +196,19 @@ private:
    * @param compute_txy_all whether to compute Txy for all the electrons affected by NLPP
    * @param keepGrid.  If true, does not randomize the quadrature grid before evaluation.  
    */
-  void evaluateImpl(ParticleSet& P, bool compute_txy_all, bool keepGrid = false);
+  void evaluateImpl(TrialWaveFunction& psi, ParticleSet& P, bool compute_txy_all, bool keepGrid = false);
 
   /** compute the T move transition probability for a given electron
    * member variable nonLocalOps.Txy is updated
+   * @param psi trial wavefunction
    * @param P particle set
    * @param ref_elec reference electron id
    * @param tmove_xy off-diagonal terms for one electron.
    */
-  void computeOneElectronTxy(ParticleSet& P, const int ref_elec, std::vector<NonLocalData>& tmove_xy);
+  void computeOneElectronTxy(TrialWaveFunction& psi,
+                             ParticleSet& P,
+                             const int ref_elec,
+                             std::vector<NonLocalData>& tmove_xy);
 
   friend class testing::TestNonLocalECPotential;
 };

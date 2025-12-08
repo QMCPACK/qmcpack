@@ -366,6 +366,4 @@ For an extensive contribution, it can be helpful to discuss on the [Google QMCPA
 group](https://groups.google.com/forum/#!forum/qmcpack), to create a GitHub issue, or to talk directly with a developer in
 advance.
 
-Contributions are made under the same UIUC/NCSA open source license that covers QMCPACK. Please contact us if this is problematic.
-
-
+Contributions are made under the same UIUC/NCSA open source [license](LICENSE) that covers QMCPACK. Please contact us if this is problematic.

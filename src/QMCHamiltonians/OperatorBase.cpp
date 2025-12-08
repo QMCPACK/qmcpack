@@ -76,40 +76,18 @@ void OperatorBase::setParticlePropertyList(PropertySetType& plist, int offset) {
 
 void OperatorBase::setHistories(Walker_t& ThisWalker) { t_walker_ = &(ThisWalker); }
 
-OperatorBase::Return_t OperatorBase::evaluateDeterministic(ParticleSet& P) { return evaluate(P); }
+OperatorBase::Return_t OperatorBase::evaluateDeterministic(TrialWaveFunction& psi, ParticleSet& P)
+{
+  return evaluate(psi, P);
+}
 
 void OperatorBase::mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
                                const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                const RefVectorWithLeader<ParticleSet>& p_list) const
 {
   assert(this == &o_list.getLeader());
-/**  Temporary raw omp pragma for simple thread parallelism
-   *   ignoring the driver level concurrency
-   *   
-   *  TODO: replace this with a proper abstraction. It should adequately describe the behavior
-   *  and strictly limit the activation of this level concurrency to when it is intended.
-   *  It is unlikely to belong in this function.
-   *  
-   *  This implicitly depends on openmp work division logic. Essentially adhoc runtime
-   *  crowds over which we have given up control of thread/global scope.
-   *  How many walkers per thread? How to handle their data movement if any of these
-   *  hamiltonians should be accelerated? We can neither reason about or describe it in C++
-   *
-   *  As I understand it it should only be required for as long as the AMD openmp offload 
-   *  compliler is incapable of running multiple threads. They should/must fix their compiler
-   *  before delivery of frontier and it should be removed at that point at latest
-   *
-   *  If you want 16 threads of 1 walker that should be 16 crowds of 1
-   *  not one crowd of 16 with openmp thrown in at hamiltonian level.
-   *  If this must be different from the other crowd batching. Make this a reasoned about
-   *  and controlled level of concurency blocking at the driver level.
-   *
-   *  This is only thread safe only if each walker has a complete
-   *  set of anything involved in an Operator.evaluate.
-   */
-#pragma omp parallel for
   for (int iw = 0; iw < o_list.size(); iw++)
-    o_list[iw].evaluate(p_list[iw]);
+    o_list[iw].evaluate(wf_list[iw], p_list[iw]);
 }
 
 void OperatorBase::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase>& o_list,
@@ -118,11 +96,13 @@ void OperatorBase::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
                                           const std::vector<ListenerVector<RealType>>& listeners,
                                           const std::vector<ListenerVector<RealType>>& listeners_ions) const
 {
+  assert(this == &o_list.getLeader());
   mw_evaluate(o_list, wf_list, p_list);
 }
 
 
 void OperatorBase::mw_evaluateWithParameterDerivatives(const RefVectorWithLeader<OperatorBase>& o_list,
+                                                       const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                                        const RefVectorWithLeader<ParticleSet>& p_list,
                                                        const opt_variables_type& optvars,
                                                        const RecordArray<ValueType>& dlogpsi,
@@ -134,13 +114,17 @@ void OperatorBase::mw_evaluateWithParameterDerivatives(const RefVectorWithLeader
     const Vector<ValueType> dlogpsi_record_view(const_cast<ValueType*>(dlogpsi[iw]), nparam);
     Vector<ValueType> dhpsioverpsi_record_view(dhpsioverpsi[iw], nparam);
 
-    o_list[iw].evaluateValueAndDerivatives(p_list[iw], optvars, dlogpsi_record_view, dhpsioverpsi_record_view);
+    o_list[iw].evaluateValueAndDerivatives(wf_list[iw], p_list[iw], optvars, dlogpsi_record_view,
+                                           dhpsioverpsi_record_view);
   }
 }
 
 OperatorBase::Return_t OperatorBase::rejectedMove(ParticleSet& P) { return 0; }
 
-OperatorBase::Return_t OperatorBase::evaluateWithToperator(ParticleSet& P) { return evaluate(P); }
+OperatorBase::Return_t OperatorBase::evaluateWithToperator(TrialWaveFunction& psi, ParticleSet& P)
+{
+  return evaluate(psi, P);
+}
 
 void OperatorBase::mw_evaluateWithToperator(const RefVectorWithLeader<OperatorBase>& o_list,
                                             const RefVectorWithLeader<TrialWaveFunction>& wf_list,
@@ -165,7 +149,8 @@ void OperatorBase::mw_evaluatePerParticleWithToperator(
   mw_evaluateWithToperator(o_list, wf_list, p_list);
 }
 
-OperatorBase::Return_t OperatorBase::evaluateValueAndDerivatives(ParticleSet& P,
+OperatorBase::Return_t OperatorBase::evaluateValueAndDerivatives(TrialWaveFunction& psi,
+                                                                 ParticleSet& P,
                                                                  const opt_variables_type& optvars,
                                                                  const Vector<ValueType>& dlogpsi,
                                                                  Vector<ValueType>& dhpsioverpsi)
@@ -175,7 +160,7 @@ OperatorBase::Return_t OperatorBase::evaluateValueAndDerivatives(ParticleSet& P,
                            "::evaluateValueAndDerivatives"
                            "must be overloaded when the OperatorBase depends on a wavefunction.");
 
-  return evaluate(P);
+  return evaluate(psi, P);
 }
 
 void OperatorBase::evaluateIonDerivs(ParticleSet& P,

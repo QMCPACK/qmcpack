@@ -244,7 +244,7 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   // copied.  Would be nice if there were a better way than inspection
   // to ensure all the members are copied/set up/tested.
 
-  std::unique_ptr<OperatorBase> base_force2 = force.makeClone(elec, psi);
+  std::unique_ptr<OperatorBase> base_force2 = force.makeClone(elec);
   ForceChiesaPBCAA* force2                  = dynamic_cast<ForceChiesaPBCAA*>(base_force2.get());
   REQUIRE(force2 != nullptr);
 
@@ -466,9 +466,8 @@ TEST_CASE("AC Force", "[hamiltonian]")
 
   force_old.put(oldh1);
   force_new.put(newh1);
-  const auto vold = force_old.evaluate(elec);
-  const auto vnew = force_new.evaluate(elec);
-  force_old.resetTargetParticleSet(elec); // does nothing?
+  const auto vold = force_old.evaluate(psi, elec);
+  const auto vnew = force_new.evaluate(psi, elec);
 
   CHECK(vold == Approx(0));
   CHECK(vnew == Approx(0));

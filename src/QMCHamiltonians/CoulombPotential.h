@@ -33,7 +33,7 @@ using WP = WalkerProperties::Indexes;
  * Hamiltonian operator for the Coulomb interaction for both AA and AB type for open systems.
  */
 
-class CoulombPotential : public OperatorBase, public ForceBase
+class CoulombPotential : public OperatorDependsOnlyOnParticleSet, public ForceBase
 {
 public:
   struct CoulombPotentialMultiWalkerResource;
@@ -100,15 +100,16 @@ public:
   Return_t evaluateAB(const DistanceTableAB& d, const ParticleScalar* restrict Za, const ParticleScalar* restrict Zb);
 
   static Return_t evaluate_spAA(const DistanceTableAA& d,
-                                const ParticleScalar* restrict Z, Vector<RealType>& ve_samples,
+                                const ParticleScalar* restrict Z,
+                                Vector<RealType>& ve_samples,
                                 const std::vector<ListenerVector<RealType>>& listeners);
   static Return_t evaluate_spAB(const DistanceTableAB& d,
                                 const ParticleScalar* restrict Za,
                                 const ParticleScalar* restrict Zb,
-				Vector<RealType>& ve_samples,
-				Vector<RealType>& vi_samples,
-				const std::vector<ListenerVector<RealType>>& listeners,
-				const std::vector<ListenerVector<RealType>>& ion_listeners);
+                                Vector<RealType>& ve_samples,
+                                Vector<RealType>& vi_samples,
+                                const std::vector<ListenerVector<RealType>>& listeners,
+                                const std::vector<ListenerVector<RealType>>& ion_listeners);
 
 #if !defined(REMOVE_TRACEMANAGER)
   /** evaluate AA-type interactions */
@@ -117,23 +118,15 @@ public:
                          const ParticleScalar* restrict Za,
                          const ParticleScalar* restrict Zb);
 #endif
-  void resetTargetParticleSet(ParticleSet& P) override;
   ~CoulombPotential() override {};
 
   void updateSource(ParticleSet& s) override;
   Return_t evaluate(ParticleSet& P) override;
 
   void mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase>& o_list,
-                              const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                               const RefVectorWithLeader<ParticleSet>& p_list,
                               const std::vector<ListenerVector<RealType>>& listeners,
                               const std::vector<ListenerVector<RealType>>& ion_listeners) const override;
-
-  void mw_evaluatePerParticleWithToperator(const RefVectorWithLeader<OperatorBase>& o_list,
-                                           const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                           const RefVectorWithLeader<ParticleSet>& p_list,
-                                           const std::vector<ListenerVector<RealType>>& listeners,
-                                           const std::vector<ListenerVector<RealType>>& ion_listeners) const override;
 
   void evaluateIonDerivs(ParticleSet& P,
                          ParticleSet& ions,
@@ -149,7 +142,8 @@ public:
 
   void setParticlePropertyList(PropertySetType& plist, int offset) override;
 
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) override;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp) override;
+
 private:
   ResourceHandle<CoulombPotentialMultiWalkerResource> mw_res_handle_;
 };

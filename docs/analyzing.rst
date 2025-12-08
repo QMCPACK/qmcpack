@@ -1446,6 +1446,18 @@ Produce twist averaged densities (also works with multiple series and reblocking
 Twist averaging with arbitrary weights can be performed via the ``-w``
 option in a fashion identical to ``qmca``.
 
+Generate line plots of the spin-resolved twist averaged densities along the first lattice
+direction:
+
+::
+
+  qdens -v --lineplot 0 -e 40 -a --noplot -i qmc.g000.twistnum_0.in.xml qmc.g*.s000.stat.h5
+
+The integer supplied to ``--lineplot`` selects the axis (``0`` for x,
+``1`` for y, ``2`` for z).  Combine it with ``--noplot`` when running on
+systems without a display to skip interactive windows; the plot data is
+still written to disk.
+
 Files produced
 ~~~~~~~~~~~~~~
 
@@ -1482,6 +1494,17 @@ sufficient number of blocks remaining following any reblocking.
 
 When twist averaging, the group tag (e.g. ``g000`` or similar) will be
 replaced with ``avg`` in the names of the outputted files.
+
+When ``--lineplot`` is requested, ``qdens`` additionally produces
+``.pdf`` and ``.dat`` files for each spin channel and derived total or
+difference density.  For a spin-density estimate named ``SpinDensity``
+an input file such as ``qmc.s000.stat.h5`` yields files of the form
+``qmc.s000.SpinDensity_lineplot_x_u.pdf`` and
+``qmc.s000.SpinDensity_lineplot_x_u.dat`` (and similarly for ``_d``,
+``_u+d``, and ``_u-d``).  The ``.pdf`` files contain the plotted mean
+densities with error bars along the chosen direction, while the matching
+``.dat`` files store the numeric coordinates and error estimates used to
+create the plots.
 
 .. _qdens-radial:
 

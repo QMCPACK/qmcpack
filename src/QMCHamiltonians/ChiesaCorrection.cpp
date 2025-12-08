@@ -21,8 +21,6 @@ ChiesaCorrection::ChiesaCorrection(ParticleSet& ptcl, const TrialWaveFunction& p
 
 std::string ChiesaCorrection::getClassName() const { return "ChiesaCorrection"; }
 
-void ChiesaCorrection::resetTargetParticleSet(ParticleSet& P) {}
-
 bool ChiesaCorrection::put(xmlNodePtr cur) { return true; }
 
 bool ChiesaCorrection::get(std::ostream& os) const
@@ -36,6 +34,9 @@ std::unique_ptr<OperatorBase> ChiesaCorrection::makeClone(ParticleSet& qp, Trial
   return std::make_unique<ChiesaCorrection>(qp, psi);
 }
 
-ChiesaCorrection::Return_t ChiesaCorrection::evaluate(ParticleSet& P) { return value_ = psi_ref_.KECorrection(); }
+ChiesaCorrection::Return_t ChiesaCorrection::evaluate(TrialWaveFunction& psi, ParticleSet& P)
+{
+  return value_ = psi_ref_.KECorrection();
+}
 
 } // namespace qmcplusplus

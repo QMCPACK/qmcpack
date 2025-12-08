@@ -52,10 +52,15 @@ class NonLocalTOperator;
 struct NonLocalData;
 
 /** @ingroup hamiltonian
- * @brief An abstract class for Local Energy operators
+ * @brief An abstract class for Hamiltonian components and non-Hamiltonian observables
+ * A base class for both for Hamiltonian operator components and non-Hamiltonian operators
+ * Only Hamiltonian components contributes to local energy.
  *
- * Return_t is defined as RealTye.
- * The types should be checked when using complex wave functions.
+ * As a base class, it expresses full dependency on TrialWaveFunction and ParticleSet.
+ * For derived classes that depends solely on ParticleSet, use a much simpler OperatorDependsOnlyOnParticleSet as a base class instead.
+ *
+ * OperatorBase derived class output results in via scalar.dat and stat.h5. Individual feature decides supporting either or both.
+ * The former uses "Observables" and the latter uses "Collectables"
  */
 class OperatorBase : public QMCTraits
 {
@@ -122,7 +127,7 @@ public:
   virtual ~OperatorBase() = default;
 
   /// return true if this operator depends on a wavefunction
-  virtual bool dependsOnWaveFunction() const { return false; }
+  virtual bool dependsOnWaveFunction() const { return true; }
 
   //////// GETTER AND SETTER FUNCTIONS ////////////////
 
@@ -168,17 +173,11 @@ public:
 
   //////// PURELY VIRTUAL FUNCTIONS ////////////////
   /** 
-   * @brief Reset the data with the target ParticleSet
-   * @param P new target ParticleSet
-   */
-  virtual void resetTargetParticleSet(ParticleSet& P) = 0;
-
-  /** 
    * @brief Evaluate the local energy contribution of this component
    * @param P input configuration containing N particles
    * @return the value of the Hamiltonian component
    */
-  virtual Return_t evaluate(ParticleSet& P) = 0;
+  virtual Return_t evaluate(TrialWaveFunction& psi, ParticleSet& P) = 0;
 
   /** write about the class */
   virtual bool get(std::ostream& os) const = 0;
@@ -239,7 +238,7 @@ public:
    * @param P input configuration containing N particles
    * @return the value of the Hamiltonian component
    */
-  virtual Return_t evaluateDeterministic(ParticleSet& P);
+  virtual Return_t evaluateDeterministic(TrialWaveFunction& psi, ParticleSet& P);
 
   /**
    * @brief Evaluate the contribution of this component of multiple walkers.
@@ -281,6 +280,7 @@ public:
    * @param dhpsioverpsi 
    */
   virtual void mw_evaluateWithParameterDerivatives(const RefVectorWithLeader<OperatorBase>& o_list,
+                                                   const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                                    const RefVectorWithLeader<ParticleSet>& p_list,
                                                    const opt_variables_type& optvars,
                                                    const RecordArray<ValueType>& dlogpsi,
@@ -300,7 +300,7 @@ public:
    * @param P input configuration containing N particles
    * @return the value of the Hamiltonian component
    */
-  virtual Return_t evaluateWithToperator(ParticleSet& P);
+  virtual Return_t evaluateWithToperator(TrialWaveFunction& psi, ParticleSet& P);
 
   /**
    * @brief Evaluate the contribution of this component of multiple walkers
@@ -338,7 +338,8 @@ public:
    * @param dhpsioverpsi 
    * @return Return_t 
    */
-  virtual Return_t evaluateValueAndDerivatives(ParticleSet& P,
+  virtual Return_t evaluateValueAndDerivatives(TrialWaveFunction& psi,
+                                               ParticleSet& P,
                                                const opt_variables_type& optvars,
                                                const Vector<ValueType>& dlogpsi,
                                                Vector<ValueType>& dhpsioverpsi);
@@ -391,10 +392,11 @@ public:
   {}
 
   /** make non local moves with particle-by-particle moves
+   * @param psi trial wavefunction
    * @param P particle set
    * @return the number of accepted moves
    */
-  virtual int makeNonLocalMovesPbyP(ParticleSet& P, NonLocalTOperator& move_op) { return 0; }
+  virtual int makeNonLocalMovesPbyP(TrialWaveFunction& psi, ParticleSet& P, NonLocalTOperator& move_op) { return 0; }
 
   /** 
    * @brief Update data associated with a particleset.
@@ -610,6 +612,74 @@ private:
 
   ///return whether the quantum domain is valid
   bool quantumDomainValid(QuantumDomains qdomain) const noexcept;
+};
+
+/** @ingroup hamiltonian
+ * A base class for both for Hamiltonian operator components and non-Hamiltonian operators that depends solely on ParticleSet
+ * Due to lack of TWF dependency, there is no response to T operator.
+ */
+class OperatorDependsOnlyOnParticleSet : public OperatorBase
+{
+public:
+  virtual Return_t evaluate(ParticleSet& pset)                       = 0;
+  virtual std::unique_ptr<OperatorBase> makeClone(ParticleSet& pset) = 0;
+  bool dependsOnWaveFunction() const final { return false; }
+
+  virtual void mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
+                           const RefVectorWithLeader<ParticleSet>& p_list) const
+  {
+    assert(this == &o_list.getLeader());
+    for (int iw = 0; iw < o_list.size(); iw++)
+      o_list.getCastedElement<OperatorDependsOnlyOnParticleSet>(iw).evaluate(p_list[iw]);
+  }
+
+  virtual void mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase>& o_list,
+                                      const RefVectorWithLeader<ParticleSet>& p_list,
+                                      const std::vector<ListenerVector<RealType>>& listeners,
+                                      const std::vector<ListenerVector<RealType>>& listeners_ions) const
+  {
+    mw_evaluate(o_list, p_list);
+  }
+
+private:
+  inline Return_t evaluate(TrialWaveFunction& psi, ParticleSet& pset) final { return evaluate(pset); }
+  inline std::unique_ptr<OperatorBase> makeClone(ParticleSet& pset, TrialWaveFunction& psi) final
+  {
+    return makeClone(pset);
+  }
+
+  inline void mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
+                          const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                          const RefVectorWithLeader<ParticleSet>& p_list) const final
+  {
+    mw_evaluate(o_list, p_list);
+  }
+
+  inline void mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase>& o_list,
+                                     const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                     const RefVectorWithLeader<ParticleSet>& p_list,
+                                     const std::vector<ListenerVector<RealType>>& listeners,
+                                     const std::vector<ListenerVector<RealType>>& listeners_ions) const final
+  {
+    mw_evaluatePerParticle(o_list, p_list, listeners, listeners_ions);
+  }
+
+  inline void mw_evaluateWithToperator(const RefVectorWithLeader<OperatorBase>& o_list,
+                                       const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                       const RefVectorWithLeader<ParticleSet>& p_list) const final
+  {
+    mw_evaluate(o_list, p_list);
+  }
+
+  inline void mw_evaluatePerParticleWithToperator(
+      const RefVectorWithLeader<OperatorBase>& o_list,
+      const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+      const RefVectorWithLeader<ParticleSet>& p_list,
+      const std::vector<ListenerVector<RealType>>& listeners,
+      const std::vector<ListenerVector<RealType>>& listeners_ions) const final
+  {
+    mw_evaluatePerParticle(o_list, p_list, listeners, listeners_ions);
+  }
 };
 } // namespace qmcplusplus
 #endif

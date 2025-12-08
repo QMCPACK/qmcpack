@@ -23,6 +23,12 @@
 
 namespace qmcplusplus
 {
+/** Assaraf-Caffarel force operator
+ * Unlike most OperatorBase derived classes, it requires call Hamiltonian functions.
+ * To workaround the limitation of OperatorBase, it captures a QMCHamiltonian object reference via the constructor
+ * or add2Hamiltonian which wraps the usual makeClone function with a QMCHamiltonian object reference added.
+ * This is quite ungly but that is how things currently work.
+ */
 class ACForce : public OperatorBase
 {
 public:
@@ -34,7 +40,6 @@ public:
   /** Destructor, "final" triggers a clang warning **/
   ~ACForce() override = default;
 
-  bool dependsOnWaveFunction() const override { return true; }
   std::string getClassName() const override { return "ACForce"; }
 
   /** I/O Routines */
@@ -48,9 +53,6 @@ public:
 
   //Not derived from base class.  But we need it to properly set the Hamiltonian reference.
   std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& H);
-
-  /** Initialization/assignment **/
-  void resetTargetParticleSet(ParticleSet& P) final;
 
   void addObservables(PropertySetType& plist, BufferType& collectables) final;
 
@@ -71,18 +73,16 @@ public:
   static RealType compute_regularizer_f(const ParticleGradient& G, const RealType epsilon);
 
   /** Evaluate **/
-  Return_t evaluate(ParticleSet& P) final;
+  Return_t evaluate(TrialWaveFunction& psi, ParticleSet& P) final;
 
 private:
   ///Finite difference timestep
   RealType delta_;
 
   //** Internal variables **/
-  //  I'm assuming that psi, ions, elns, and the hamiltonian are bound to this
+  //  I'm assuming that ions and the hamiltonian are bound to this
   //  instantiation.  Making sure no crosstalk happens is the job of whatever clones this.
-  ParticleSet& ions_;
-  ParticleSet& elns_;
-  TrialWaveFunction& psi_;
+  ParticleSet& ions_; // can ions_ make const?
   QMCHamiltonian& ham_;
 
   ///For indexing observables
@@ -105,7 +105,6 @@ private:
   Forces wf_grad_;
   Forces sw_pulay_;
   Forces sw_grad_;
-
 };
 
 } // namespace qmcplusplus

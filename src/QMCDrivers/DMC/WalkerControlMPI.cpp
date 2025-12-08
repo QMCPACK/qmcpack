@@ -226,7 +226,7 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
   {
     const int walkerID;
     const int target;
-    job(int wid, int target_in) : walkerID(wid), target(target_in){};
+    job(int wid, int target_in) : walkerID(wid), target(target_in) {};
   };
   std::vector<job> job_list;
   for (int ic = 0; ic < nswap; ic++)
