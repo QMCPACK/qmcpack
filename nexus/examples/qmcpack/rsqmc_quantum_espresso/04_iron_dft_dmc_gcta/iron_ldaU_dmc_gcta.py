@@ -68,7 +68,7 @@ basepath = './'
 scf = generate_pwscf(
     identifier        = 'scf',
     path              = basepath + 'scf',
-    job               = job(cores=8, app='pw.x'),
+    job               = job(cores=16, app='pw.x'),
     calculation       = 'scf',
     system            = system,
     kgrid             = (24,24,24),
