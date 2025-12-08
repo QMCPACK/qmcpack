@@ -3360,37 +3360,37 @@ class Structure(Sobj):
             else:
                 center = np.array(kcenter)
 
-            new_kpts = recenter_points(pos=kpoints, center=center, axes=axes)
+            kpoints = recenter_points(pos=kpoints, center=center, axes=axes)
 
             if remove_duplicates:
-                inside = self.inside(new_kpts,axes,center)
-                new_kpts  = new_kpts[inside]
-                nkpoints = len(new_kpts)
+                inside = self.inside(kpoints,axes,center)
+                kpoints  = kpoints[inside]
+                nkpoints = len(kpoints)
                 unique = np.empty((nkpoints,),dtype=bool)
                 unique[:] = True
-                nn = nearest_neighbors(1,new_kpts)
+                nn = nearest_neighbors(1,kpoints)
                 if nkpoints>1:
                     nn.shape = nkpoints,
-                    dist = self.distances(new_kpts,new_kpts[nn])
+                    dist = self.distances(kpoints,kpoints[nn])
                     tol = 1e-8
                     duplicates = np.arange(nkpoints)[dist<tol]
                     for i in duplicates:
                         if unique[i]:
                             for j in duplicates:
-                                if sqrt(((new_kpts[i]-new_kpts[j])**2).sum(1))<tol:
+                                if sqrt(((kpoints[i]-kpoints[j])**2).sum(1))<tol:
                                     unique[j] = False
                                 #end if
                             #end for
                         #end if
                     #end for
                 #end if
-                new_kpts = new_kpts[unique]
+                kpoints = kpoints[unique]
             #end if
         #end if
         if use_self:
-            self.kpoints = new_kpts
+            self.kpoints = kpoints
         else:
-            return new_kpts   
+            return kpoints   
         #end if
     #end def recenter_k
 
