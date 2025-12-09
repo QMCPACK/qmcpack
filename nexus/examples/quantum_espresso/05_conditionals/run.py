@@ -18,21 +18,22 @@ from nexus import generate_physical_system
 from nexus import generate_pwscf
 
 from enhanced_simulation import make_enhanced
-from conditionals import (
-    machine_conditional,
-)
 
 # Computer configuration
-computer = 'baseline'
+computer = 'ws16'
 
 if computer == 'baseline':
     qe_modules = 'module purge; module load Core/25.05   gcc/12.4.0   openmpi/5.0.5   DefApps hdf5'
     qe_bin = '/ccsopen/home/ksu/SOFTWARE/qe/q-e-qe-7.4.1/build/bin'
     account = 'phy191'
+elif computer == 'ws16':
+    qe_modules = ''
+    qe_bin = '/Users/ksu/Software/qe/q-e-qe-7.5/build/bin'
+    account = 'ks'
 else:
     print('Undefined computer')
     exit()
-
+    
 settings(
     pseudo_dir = '../pseudopotentials',
     results    = '',
@@ -97,7 +98,7 @@ scf2_base = generate_pwscf(
 # Use machine_conditional to only run on baseline
 scf2 = make_enhanced(
     scf2_base,
-    condition=machine_conditional('baseline', required=True),
+    required_machine='ws16',
     )
 
 # Simulation 3: Checks scf2's energy result
@@ -120,7 +121,7 @@ scf3_base = generate_pwscf(
 # Use a custom conditional to check if scf2's energy is below threshold
 def scf2_energy_below_threshold(sim):
     """Custom conditional that checks scf2's energy via analyzer."""
-    try:
+    try:    
         scf2_sim = None
         for dep in sim.dependencies.values():
             if dep.sim.identifier == 'scf2':
@@ -130,7 +131,12 @@ def scf2_energy_below_threshold(sim):
             return False
         analyzer = scf2_sim.load_analyzer_image()
         if hasattr(analyzer, 'E') and analyzer.E != 0.0:
-            return analyzer.E < -30.0
+            condition = analyzer.E < -30.0
+            if condition:
+                print(analyzer.E, " is less than -30.0, condition is True")
+            else:
+                print(analyzer.E, " is greater than -30.0, condition is False")
+            return condition
         return False
     except Exception:
         return False

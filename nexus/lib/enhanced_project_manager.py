@@ -164,16 +164,7 @@ class EnhancedProjectManager(ProjectManager):
                     self.filtered_sims.append(sim)
                     blocked_ids.add(sim.simid)
                     continue
-                
-                # Definition-time conditional check
-                if sim.conditional_enabled:
-                    cls = sim.__class__
-                    if hasattr(cls, '_conditional_execution_time'):
-                        if not cls._conditional_execution_time:  # Definition-time
-                            if not sim.evaluate_condition():
-                                self.filtered_sims.append(sim)
-                                blocked_ids.add(sim.simid)
-                                continue
+        
             
             filtered_sims.append(sim)
         # Second pass: filter out simulations that depend on blocked simulations
@@ -494,10 +485,9 @@ class EnhancedProjectManager(ProjectManager):
                 # Use simid comparison to avoid recursion issues with __eq__
                 if hasattr(sim, 'simid') and sim.simid not in sims_to_check_simids:
                     # Check if it would be blocked
-                    if not sim.is_machine_compatible() or (sim.conditional_enabled and 
-                        hasattr(sim.__class__, '_conditional_execution_time') and
-                        not sim.__class__._conditional_execution_time and
-                        not sim.evaluate_condition()):
+                    # Check if it would be blocked by definition-time conditional
+                    is_definition_time = False
+                    if not sim.is_machine_compatible() or (is_definition_time and not sim.evaluate_condition()):
                         sims_to_check.append(sim)
                         sims_to_check_simids.add(sim.simid)
         
@@ -518,19 +508,6 @@ class EnhancedProjectManager(ProjectManager):
                         reasons.append(f"allowed_machines={allowed} (current: '{machine_name}')")
                     else:
                         reasons.append(f"machine incompatible (current: '{machine_name}')")
-                
-                # Check definition-time conditionals
-                if sim.conditional_enabled:
-                    cls = sim.__class__
-                    if hasattr(cls, '_conditional_execution_time'):
-                        if not cls._conditional_execution_time:  # Definition-time
-                            try:
-                                if not sim.evaluate_condition():
-                                    reasons.append("definition-time conditional failed")
-                            except Exception as e:
-                                reasons.append(f"definition-time conditional error: {str(e)}")
-                
-                # Check if skipped
                 if getattr(sim, 'skipped', False):
                     reasons.append("skipped")
             

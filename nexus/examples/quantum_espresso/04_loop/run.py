@@ -15,12 +15,16 @@ from nexus import generate_pwscf
 from enhanced_simulation import make_enhanced
 
 # Computer configuration
-computer = 'baseline'
+computer = 'ws16'
 
 if computer == 'baseline':
     qe_modules = 'module purge; module load Core/25.05   gcc/12.4.0   openmpi/5.0.5   DefApps hdf5'
     qe_bin = '/ccsopen/home/ksu/SOFTWARE/qe/q-e-qe-7.4.1/build/bin'
     account = 'phy191'
+elif computer == 'ws16':
+    qe_modules = ''
+    qe_bin = '/Users/ksu/Software/qe/q-e-qe-7.5/build/bin'
+    account = 'ks'
 else:
     print('Undefined computer')
     exit()
@@ -77,7 +81,7 @@ scf_seed = generate_pwscf(
     calculation  = 'scf',
     input_dft    = 'lda',
     ecutwfc      = 200,
-    conv_thr     = 1e-8,
+    conv_thr     = 1e-3,
     system       = system,
     pseudos      = ['C.BFD.upf'],
     kgrid        = (4,4,4),
@@ -112,13 +116,9 @@ def modify_loop_input(sim):
     base_threshold = 1e-4
     iteration_factor = 10 ** (-sim.iteration_count)
     sim.input.electrons.conv_thr = base_threshold * iteration_factor
-    
     # Example: Store iteration-specific values in loop_variables
-    if hasattr(sim.loop_variables, 'modified_conv_thr'):
-        sim.loop_variables['modified_conv_thr'] = sim.input.electrons.conv_thr
-    else:
-        sim.loop_variables['modified_conv_thr'].append(sim.input.electrons.conv_thr)
-
+    sim.loop_variables['modified_conv_thr'] = sim.input.electrons.conv_thr
+    
 
 
 loop_base = generate_pwscf(
@@ -129,13 +129,15 @@ loop_base = generate_pwscf(
     calculation  = 'scf',
     input_dft    = 'lda',
     ecutwfc      = 200,
-    conv_thr     = 1e-8,
+    # conv_thr     = 1e-3,
     system       = system,
     pseudos      = ['C.BFD.upf'],
     kgrid        = (4,4,4),
     kshift       = (0,0,0),
     dependencies = (scf_seed, 'charge_density'),
     )
+
+loop_base.sync_from_scf = True
 
 scf_loop = make_enhanced(
     loop_base,

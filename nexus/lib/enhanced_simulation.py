@@ -7,8 +7,11 @@ for DAG workflows while maintaining backward compatibility.
 
 from typing import Dict, Set, List, Optional, Callable, Any, Tuple
 import os
+import shutil
 from datetime import datetime
 
+from developer import obj
+from nexus_base import nexus_core
 from simulation import Simulation
 from error_handler import ErrorHandler
 
@@ -106,7 +109,7 @@ class EnhancedSimulation(Simulation):
     
     # Allowed inputs extended from Simulation
     enhanced_allowed_inputs = set([
-        'error_handlers', 'condition', 
+        'error_handlers', 'condition', 'conditional_execution_time',
         'required_machine', 'allowed_machines', 'loop_enabled',
         'loop_condition', 'loop_max_iterations', 'loop_modifier',
         'merge_strategy', 'merge_selector'
@@ -128,6 +131,9 @@ class EnhancedSimulation(Simulation):
         self.attempt_history: List[Dict[str, Any]] = []
         self.condition: Optional[Callable[[Any], bool]] = enhanced_kwargs.get('condition', None)
         self.conditional_enabled: bool = self.condition is not None
+        # Three-state system: True=evaluated and passed, False=evaluated and failed, None=NotSet (keep checking)
+        # All conditionals are execution-time (dynamic) - this tracks evaluation state, not timing
+        self.conditional_execution_time: Optional[bool] = enhanced_kwargs.get('conditional_execution_time', None)
         self.skipped: bool = False
         self.required_machine: Optional[str] = enhanced_kwargs.get('required_machine', None)
         self.allowed_machines: Set[str] = set(enhanced_kwargs.get('allowed_machines', []))
@@ -169,12 +175,6 @@ class EnhancedSimulation(Simulation):
                 return
         
         # Definition-time conditional check
-        if self.conditional_enabled and hasattr(cls, '_conditional_execution_time'):
-            if not cls._conditional_execution_time:  # Definition-time
-                if not self.evaluate_condition():
-                    self.fake_sim = True
-                    return
-        
         # Store base identifier and path for resubmissions
         if self.base_identifier is None:
             self.base_identifier = self.identifier
@@ -260,8 +260,14 @@ class EnhancedSimulation(Simulation):
         if self.condition is None:
             return "cond:None[invalid]"
         
-        # Check if we have execution-time vs definition-time info
-        exec_time = "dynamic" if hasattr(self.__class__, '_conditional_execution_time') and self.__class__._conditional_execution_time else "static"
+        # Three-state system: True=evaluated and passed, False=evaluated and failed, None=NotSet (not yet evaluated)
+        # All conditionals are execution-time (dynamic) - this shows evaluation state
+        if self.conditional_execution_time is True:
+            state = "passed"
+        elif self.conditional_execution_time is False:
+            state = "failed"
+        else:
+            state = "pending"  # NotSet - not yet evaluated
         
         # Get conditional description (with error handling)
         try:
@@ -277,10 +283,10 @@ class EnhancedSimulation(Simulation):
         
         # Check if skipped
         if self.skipped:
-            return f"cond:{cond_desc}[{exec_time},skipped]"
+            return f"cond:{cond_desc}[dynamic,{state},skipped]"
         
-        # Return conditional info without evaluation status (evaluation can be expensive/risky)
-        return f"cond:{cond_desc}[{exec_time}]"
+        # Return conditional info with evaluation state
+        return f"cond:{cond_desc}[dynamic,{state}]"
     
     def skip(self):
         """Mark simulation as skipped."""
@@ -432,16 +438,25 @@ class EnhancedSimulation(Simulation):
     def progress(self, dependency_id=None):
         """Override to handle conditionals, loops, and merge strategies."""
         # Check execution-time conditional
+        # Three-state system: True/False = already evaluated (use cached), None = NotSet (evaluate now)
         if self.conditional_enabled and not self.skipped:
-            if hasattr(self.__class__, '_conditional_execution_time'):
-                if self.__class__._conditional_execution_time:  # Execution-time
-                    if not self.evaluate_condition():
-                        self.skip()
-                        return
+            # If NotSet (None), evaluate the conditional and cache the result
+            if self.conditional_execution_time is None:
+                result = self.evaluate_condition()
+                self.conditional_execution_time = result
+            else:
+                # Use cached result (True or False)
+                result = self.conditional_execution_time
+            
+            # If conditional failed, skip the simulation
+            if not result:
+                self.skip()
+                return
         
         # Handle merge strategies for multiple dependencies
         # This must happen BEFORE calling super().progress() because
         # super() checks if wait_ids is empty
+        handled_dependency = False  # Track if we've already handled dependency_id removal
         if dependency_id is not None and len(self.dependency_ids) > 1:
             if not hasattr(self, '_completed_dependencies'):
                 self._completed_dependencies = set()
@@ -449,16 +464,14 @@ class EnhancedSimulation(Simulation):
             
             if self.merge_strategy == 'first':
                 # First dependency completed - clear all waits and proceed
-                # Remove the completed one first (parent will do this, but we clear all)
+                # Remove the completed one from wait_ids, then clear all
                 if dependency_id in self.wait_ids:
                     self.wait_ids.remove(dependency_id)
                 self.wait_ids.clear()  # Clear all to proceed immediately
+                handled_dependency = True  # We've already handled dependency_id removal
             elif self.merge_strategy == 'all':
                 # For 'all' strategy, wait for all dependencies
-                # If selector is provided, use it to select which dependency's results to use
-                # Remove completed dependency from wait_ids
-                if dependency_id in self.wait_ids:
-                    self.wait_ids.remove(dependency_id)
+                # Don't remove dependency_id here - let super() handle it
                 # Check if all completed
                 if len(self._completed_dependencies) == len(self.dependency_ids):
                     # All completed - if selector is set, use it to choose which dependency to use
@@ -483,13 +496,21 @@ class EnhancedSimulation(Simulation):
                                             self._selected_dependency_id = dep_id
                                             break
                                 # Use selected simulation's results when get_dependencies() is called
+                                # Remove dependency_id before clearing (super() will try to remove it)
+                                if dependency_id in self.wait_ids:
+                                    self.wait_ids.remove(dependency_id)
                                 self.wait_ids.clear()
+                                handled_dependency = True  # We've cleared wait_ids, don't pass dependency_id to super()
                             except Exception as e:
                                 self.warn(f'Error in merge_selector: {e}')
+                                # Remove dependency_id before clearing (super() will try to remove it)
+                                if dependency_id in self.wait_ids:
+                                    self.wait_ids.remove(dependency_id)
                                 self.wait_ids.clear()
+                                handled_dependency = True  # We've cleared wait_ids, don't pass dependency_id to super()
                     else:
                         # No selector - standard AND behavior, all dependencies are used
-                        # wait_ids will be cleared by parent progress() when empty
+                        # Let super() handle dependency_id removal normally
                         pass
         
         # Handle loops
@@ -503,7 +524,8 @@ class EnhancedSimulation(Simulation):
                         self.loop_enabled = False
         
         # Call parent progress (handles standard AND logic and dependency removal)
-        super().progress(dependency_id)
+        # If we've already handled dependency_id removal (e.g., cleared wait_ids), pass None
+        super().progress(None if handled_dependency else dependency_id)
         
         # Handle loop iteration
         if self.loop_enabled and self.finished and not self.failed:
@@ -516,10 +538,52 @@ class EnhancedSimulation(Simulation):
         
         This method:
         1. Increments iteration_count
-        2. Resets indicators for next iteration
-        3. Calls loop_modifier (if provided) to modify input/state
+        2. Backs up input and output files from previous iteration (with iteration_count - 1)
+        3. Resets indicators for next iteration
+        4. Calls loop_modifier (if provided) to modify input/state
         """
         self.iteration_count += 1
+        prev_iteration = self.iteration_count - 1
+        
+        # Backup input file from previous iteration
+        if self.infile is not None:
+            infile_path = os.path.join(self.locdir, self.infile)
+            if os.path.exists(infile_path):
+                # Create backup filename with iteration number
+                infile_base, infile_ext = os.path.splitext(self.infile)
+                if infile_ext == '':
+                    backup_name = f'{self.infile}.iter{prev_iteration}'
+                else:
+                    backup_name = f'{infile_base}.iter{prev_iteration}{infile_ext}'
+                backup_path = os.path.join(self.locdir, backup_name)
+                try:
+                    shutil.copy2(infile_path, backup_path)
+                    if hasattr(self, 'log'):
+                        self.log(f'Backed up input file to {backup_name} (iteration {prev_iteration})', n=2)
+                except Exception as e:
+                    if hasattr(self, 'warn'):
+                        self.warn(f'Failed to backup input file: {e}')
+        
+        # Backup output files from previous iteration
+        for file_attr in ['outfile', 'errfile']:
+            if hasattr(self, file_attr) and getattr(self, file_attr) is not None:
+                file_name = getattr(self, file_attr)
+                file_path = os.path.join(self.locdir, file_name)
+                if os.path.exists(file_path):
+                    # Create backup filename with iteration number
+                    file_base, file_ext = os.path.splitext(file_name)
+                    if file_ext == '':
+                        backup_name = f'{file_name}.iter{prev_iteration}'
+                    else:
+                        backup_name = f'{file_base}.iter{prev_iteration}{file_ext}'
+                    backup_path = os.path.join(self.locdir, backup_name)
+                    try:
+                        shutil.copy2(file_path, backup_path)
+                        if hasattr(self, 'log'):
+                            self.log(f'Backed up {file_attr} to {backup_name} (iteration {prev_iteration})', n=2)
+                    except Exception as e:
+                        if hasattr(self, 'warn'):
+                            self.warn(f'Failed to backup {file_attr}: {e}')
         
         # Reset indicators for next iteration
         self.reset_indicators()
@@ -533,6 +597,43 @@ class EnhancedSimulation(Simulation):
         
         # Update loop variables if needed
         # (subclasses can override to modify state)
+    
+    def reset_indicators(self):
+        """
+        Override to preserve got_dependencies for loop iterations after the first one.
+        
+        For loop iterations after the first one, dependencies are already incorporated
+        and don't need to be re-incorporated.
+        """
+        # Preserve got_dependencies for loop iterations after the first one
+        preserve_got_deps = self.loop_enabled and self.iteration_count > 0
+        if preserve_got_deps:
+            got_deps = self.got_dependencies
+        
+        # Call parent method
+        super().reset_indicators()
+        
+        # Restore got_dependencies if we're in a loop iteration after the first
+        if preserve_got_deps:
+            self.got_dependencies = got_deps
+    
+    def incorporate_result(self, result_name, result, sim):
+        """
+        Override to skip dependency incorporation for loop iterations after the first one.
+        
+        For loop iterations after the first one, dependencies are already in the same
+        directory and don't need to be re-incorporated.
+        """
+        # Skip incorporation for loop iterations after the first one
+        if self.loop_enabled and self.iteration_count > 0:
+            # Dependencies are already in the same directory from the first iteration
+            # No need to incorporate again
+            if hasattr(self, 'log'):
+                self.log(f'Skipping dependency incorporation for loop iteration {self.iteration_count} (files already in directory)', n=2)
+            return
+        
+        # Call parent method for first iteration or non-loop simulations
+        super().incorporate_result(result_name, result, sim)
     
     def depends(self, *dependencies, strategy = 'all', selector=None):
         """
@@ -574,13 +675,54 @@ class EnhancedSimulation(Simulation):
         
         When a merge_selector has selected a specific dependency,
         only that dependency's results are used.
+        
+        For loop iterations after the first one (iteration_count > 0),
+        skips dependency incorporation since files are already in the same directory.
         """
+        # For loop iterations after the first one, skip dependency incorporation
+        # Dependencies are already in the same directory from the first iteration
+        if self.loop_enabled and self.iteration_count > 0:
+            # Still need to mark dependencies as satisfied, but skip incorporation
+            # Get results but don't incorporate them
+            if nexus_core.generate_only or self.finished:
+                for dep in self.dependencies:
+                    for result_name in dep.result_names:
+                        dep.results[result_name] = result_name
+                    #end for
+                #end for
+            else:
+                for dep in self.dependencies:
+                    sim = dep.sim
+                    for result_name in dep.result_names:
+                        if result_name!='other':
+                            if sim.has_generic_input():
+                                self.error('a simulation result cannot be inferred from generic formatted or template input\nplease use {0} instead of {1}\nsim id: {2}\ndirectory: {3}\nresult: {4}'.format(self.input_type.__class__.__name__,sim.input.__class__.__name__,sim.id,sim.locdir,result_name))
+                            #end if
+                            dep.results[result_name] = sim.get_result(result_name,sim)
+                        else:
+                            dep.results['other'] = obj()
+                        #end if
+                    #end for
+                #end for
+                # Skip incorporation for loop iterations after the first
+                # Files are already in the same directory
+                if not self.got_dependencies:
+                    # Mark as got_dependencies without incorporating
+                    pass
+                #end if
+            #end if
+            if self.renew_app_command:
+                self.job.renew_app_command(self)
+            #end if
+            self.got_dependencies = True
+            return
+        #end if
+        
         # If a dependency was selected via merge_selector, filter to only that one
         if self._selected_dependency_id is not None and self._selected_dependency_id in self.dependencies:
             # Temporarily store original dependencies
             original_dependencies = self.dependencies
             # Create filtered dependencies dict with only the selected one
-            from developer import obj
             filtered_deps = obj()
             filtered_deps[self._selected_dependency_id] = self.dependencies[self._selected_dependency_id]
             # Temporarily replace dependencies
@@ -663,6 +805,7 @@ def make_enhanced(sim: Simulation, **enhanced_kwargs) -> EnhancedSimulation:
     enhanced_sim.loop_variables = {}
     enhanced_sim.condition = None
     enhanced_sim.conditional_enabled = False
+    enhanced_sim.conditional_execution_time = None  # NotSet - not yet evaluated
     enhanced_sim.required_machine = None
     enhanced_sim.allowed_machines = set()
     enhanced_sim.loop_enabled = False
@@ -676,7 +819,7 @@ def make_enhanced(sim: Simulation, **enhanced_kwargs) -> EnhancedSimulation:
     
     # Apply enhanced kwargs (overrides defaults)
     enhanced_keys = [
-        'error_handlers', 'condition', 
+        'error_handlers', 'condition', 'conditional_execution_time',
         'required_machine', 'allowed_machines', 'loop_enabled',
         'loop_condition', 'loop_max_iterations', 'loop_modifier',
         'merge_strategy', 'merge_selector'
@@ -787,16 +930,6 @@ def make_enhanced(sim: Simulation, **enhanced_kwargs) -> EnhancedSimulation:
             enhanced_sim.fake_sim = True
             _replace_in_all_sims()
             return enhanced_sim
-    
-    # Definition-time conditional check (if applicable)
-    if enhanced_sim.conditional_enabled:
-        cls = enhanced_sim.__class__
-        if hasattr(cls, '_conditional_execution_time'):
-            if not cls._conditional_execution_time:  # Definition-time
-                if not enhanced_sim.evaluate_condition():
-                    enhanced_sim.fake_sim = True
-                    _replace_in_all_sims()
-                    return enhanced_sim
     
     # CRITICAL: Replace original simulation in Simulation.all_sims with enhanced version
     # This ensures that when add_simulations() is called without arguments,

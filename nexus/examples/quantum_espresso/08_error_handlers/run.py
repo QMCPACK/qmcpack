@@ -43,16 +43,16 @@ from pwscf_error_handler import (
 )
 
 # Computer configuration
-computer = 'baseline'
+computer = 'ws16'
 
 if computer == 'baseline':
     qe_modules = 'module purge; module load Core/25.05   gcc/12.4.0   openmpi/5.0.5   DefApps hdf5'
     qe_bin = '/ccsopen/home/ksu/SOFTWARE/qe/q-e-qe-7.4.1/build/bin'
     account = 'phy191'
-elif computer == 'ws4':
-    qe_modules = 'module purge; module load Core/25.05   gcc/12.4.0   openmpi/5.0.5   DefApps hdf5'
-    qe_bin = '/ccsopen/home/ksu/SOFTWARE/qe/q-e-qe-7.4.1/build/bin'
-    account = 'phy191'
+elif computer == 'ws16':
+    qe_modules = ''
+    qe_bin = '/Users/ksu/Software/qe/q-e-qe-7.5/build/bin'
+    account = 'ks'
 else:
     print('Undefined computer')
     exit()

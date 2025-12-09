@@ -18,16 +18,21 @@ Merging:
 from nexus import settings, Job, run_project
 from nexus import generate_physical_system
 from nexus import generate_pwscf
+import random
 
 from enhanced_simulation import make_enhanced, create_branch
 
 # Computer configuration
-computer = 'baseline'
+computer = 'ws16'
 
 if computer == 'baseline':
     qe_modules = 'module purge; module load Core/25.05   gcc/12.4.0   openmpi/5.0.5   DefApps hdf5'
     qe_bin = '/ccsopen/home/ksu/SOFTWARE/qe/q-e-qe-7.4.1/build/bin'
     account = 'phy191'
+elif computer == 'ws16':
+    qe_modules = ''
+    qe_bin = '/Users/ksu/Software/qe/q-e-qe-7.5/build/bin'
+    account = 'ks'
 else:
     print('Undefined computer')
     exit()
@@ -76,19 +81,8 @@ scf1 = generate_pwscf(
     kshift       = (0,0,0),
     )
 
-# Conditional functions for branching
-def condition_a(sim):
-    """Example condition A - always returns True for demo."""
-    analyzer = sim.load_analyzer_image()
-    return True
-
-def condition_b(sim):
-    """Example condition B - always returns False for demo."""
-    analyzer = sim.load_analyzer_image()
-    return False
-
 # Create branches using create_branch (natural API)
-scf2_base = generate_pwscf(
+scf2 = generate_pwscf(
     identifier   = 'scf2',
     path         = 'diamond/branch_merge/scf2',
     job          = qe_job,
@@ -101,9 +95,10 @@ scf2_base = generate_pwscf(
     pseudos      = ['C.BFD.upf'],
     kgrid        = (4,4,4),
     kshift       = (0,0,0),
+    dependencies = (scf1, 'charge_density'),
     )
 
-scf3_base = generate_pwscf(
+scf3 = generate_pwscf(
     identifier   = 'scf3',
     path         = 'diamond/branch_merge/scf3',
     job          = qe_job,
@@ -116,16 +111,8 @@ scf3_base = generate_pwscf(
     pseudos      = ['C.BFD.upf'],
     kgrid        = (4,4,4),
     kshift       = (0,0,0),
+    dependencies = (scf1, 'charge_density'),
     )
-
-# Natural branching: scf2 runs if condition_a, scf3 runs if condition_b
-scf2, scf3 = create_branch(
-    parent=scf1,
-    branches=[
-        (scf2_base, condition_a, 'charge_density'),
-        (scf3_base, condition_b, 'charge_density'),
-    ]
-)
 
 # Now demonstrate merging strategies
 # scf4 will merge scf2 and scf3 with different strategies

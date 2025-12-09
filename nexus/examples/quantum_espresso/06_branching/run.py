@@ -33,15 +33,20 @@ from enhanced_simulation import make_enhanced, create_branch
 from error_handler import RetryErrorHandler
 
 # Computer configuration
-computer = 'baseline'
+computer = 'ws16'
 
 if computer == 'baseline':
     qe_modules = 'module purge; module load Core/25.05   gcc/12.4.0   openmpi/5.0.5   DefApps hdf5'
     qe_bin = '/ccsopen/home/ksu/SOFTWARE/qe/q-e-qe-7.4.1/build/bin'
     account = 'phy191'
+elif computer == 'ws16':
+    qe_modules = ''
+    qe_bin = '/Users/ksu/Software/qe/q-e-qe-7.5/build/bin'
+    account = 'ks'
 else:
     print('Undefined computer')
     exit()
+
 
 settings(
     pseudo_dir = '../pseudopotentials',
@@ -138,7 +143,12 @@ def energy_below_threshold(sim):
         analyzer = scf2_sim.load_analyzer_image()
         if hasattr(analyzer, 'E') and analyzer.E != 0.0:
             energy = analyzer.E
-            return energy < energy_threshold
+            condition = energy < energy_threshold
+            if condition:
+                print(energy, " is less than -30.0, condition is True")
+            else:
+                print(energy, " is greater than -30.0, condition is False")
+            return condition
         else:
             return False  # Energy not available
     except Exception:
@@ -180,7 +190,7 @@ scf4_base = generate_pwscf(
     # Note: dependencies will be set by create_branch
     )
 
-# Create if/else branch using create_branch (more natural API)
+# Create if/else branch using create_branch
 scf3, scf4 = create_branch(
     parent=scf2,
     branches=[
