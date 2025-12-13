@@ -4447,22 +4447,14 @@ class QmcpackInput(SimulationInput,Names):
         if qmc=='opt':
             calcs = generate_opt_calculations(**kw)
         elif 'vmc' in qmc:
-            print('gen vmc')
             calcs = generate_vmc_calculations(**kw)
         elif 'dmc' in qmc:
-            print('gen dmc')
-            print(kw)
             calcs = generate_dmc_calculations(**kw)
         assert isinstance(calcs,list)
         for calc in calcs:
             calc.incorporate_defaults(elements=False,overwrite=False,propagate=True)
         calcs = make_collection(calcs)
-        print(calcs)
-        print(repr(self.simulation))
-        print(self.simulation.calculations)
         self.simulation.calculations = calcs
-        print(repr(self.simulation))
-        #exit()
     #end def gen_calculations
 
 
@@ -5015,7 +5007,6 @@ class QmcpackInput(SimulationInput,Names):
             multidet_opt = bool(multidet_opt)
         if calculations is not None and qmc is not None:
             self.error('cannot both provide calculation list ("calculations keyword") and request calculation generation ("qmc" keyword)')
-
         # set driver version
         if driver is not None:
             self.set_driver(driver)
@@ -5103,10 +5094,15 @@ class QmcpackInput(SimulationInput,Names):
         # remove calculations
         remove_calculations = bool(remove_calculations)
         if remove_calculations:
-            self.remove('calculation')
+            if 'simulation' in self and 'calculations' in self.simulation:
+                del self.simulation.calculations
+            else:
+                self.remove('calculation')
         # set calculations
         if qmc is not None:
             self.gen_calculations(qmc,**gen_calcs)
+        elif len(gen_calcs)>0:
+            self.error('invalid keywords provided to the modify function:\n{}\n'.format(sorted(gen_calcs.keys()))+'  Please see the documentation.  If you are trying to generate qmc calculation sections, please provide the "qmc" keyword.')
         elif calculations is not None:
             self.simulation.calculations = make_collection(calculations).copy()
     #end def modify
