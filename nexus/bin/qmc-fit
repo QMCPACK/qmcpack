@@ -86,11 +86,11 @@ try:
     del numerics
 except:
     # Failing path-based imports, import installed Nexus modules.
-    from ..lib.nexus_version import nexus_version
-    from ..lib.developer import DevBase,obj,log,warn,error
-    from ..lib.numerics import jackknife,jackknife_aux
-    from ..lib.numerics import simstats,equilibration_length
-    from ..lib.numerics import curve_fit,least_squares
+    from nexus_version import nexus_version
+    from developer import DevBase,obj,log,warn,error
+    from numerics import jackknife,jackknife_aux
+    from numerics import simstats,equilibration_length
+    from numerics import curve_fit,least_squares
 #end try
 
 

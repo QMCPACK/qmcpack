@@ -47,10 +47,10 @@ try:
     del numerics
 except:
     # Failing path-based imports, import installed Nexus modules.
-    from ..lib.nexus_version import nexus_version
-    from ..lib.developer import DevBase,obj,unavailable
-    from ..lib.unit_converter import convert
-    from ..lib.numerics import simstats,simplestats,equilibration_length
+    from nexus_version import nexus_version
+    from developer import DevBase,obj,unavailable
+    from unit_converter import convert
+    from numerics import simstats,simplestats,equilibration_length
 #end try
 
 

@@ -1,11 +1,11 @@
 #!/env/bin/python
 
 import numpy as np
-import versions
-import testing
-from testing import value_eq as value_eq_orig
-from testing import object_eq as object_eq_orig
-from testing import object_diff as object_diff_orig
+import nexus.versions as versions
+import nexus.testing as testing
+from nexus.testing import value_eq as value_eq_orig
+from nexus.testing import object_eq as object_eq_orig
+from nexus.testing import object_diff as object_diff_orig
 
 
 struct_atol = 1e-10
@@ -85,7 +85,7 @@ def structure_same(s1,s2):
 
 
 def get_reference_inputs():
-    from developer import obj
+    from nexus.developer import obj
     if len(reference_inputs)==0:
         ref_in = obj()
         ref_in.diamond_prim = obj(
@@ -195,8 +195,8 @@ def get_reference_inputs():
 
 
 def get_reference_structures():
-    from developer import obj
-    from structure import Structure
+    from nexus.developer import obj
+    from nexus.structure import Structure
     if len(reference_structures)==0:
         ref_in = get_reference_inputs()
         ref = reference_structures
@@ -211,8 +211,8 @@ def get_reference_structures():
 
 
 def get_generated_structures():
-    from developer import obj
-    from structure import generate_structure
+    from nexus.developer import obj
+    from nexus.structure import generate_structure
     if len(generated_structures)==0:
         ref_in = get_reference_inputs()
         gen = generated_structures
@@ -225,8 +225,8 @@ def get_generated_structures():
 
 
 def get_crystal_structures():
-    from developer import obj
-    from structure import Crystal,generate_structure
+    from nexus.developer import obj
+    from nexus.structure import Crystal,generate_structure
     if len(crystal_structures)==0:
         crys = crystal_structures
         for (latt,cell),inputs in Crystal.known_crystals.items():
@@ -240,7 +240,7 @@ def get_crystal_structures():
 
 def example_structure_h4():
     # hydrogen at rs=1.31
-    from structure import Structure
+    from nexus.structure import Structure
     natom = 4
     alat = 3.3521298178767225
     axes = alat*np.eye(3)
@@ -266,16 +266,16 @@ def test_files():
 
 
 def test_import():
-    from structure import Structure,Crystal
-    from structure import generate_structure
-    from structure import read_structure
+    from nexus.structure import Structure,Crystal
+    from nexus.structure import generate_structure
+    from nexus.structure import read_structure
 #end def test_import
 
 
 
 def test_empty_init():
-    from structure import Structure
-    from structure import generate_structure
+    from nexus.structure import Structure
+    from nexus.structure import generate_structure
     s1 = Structure()
     s2 = generate_structure('empty')
     assert(object_eq(s1,s2))
@@ -284,7 +284,7 @@ def test_empty_init():
 
 
 def test_reference_inputs():
-    from developer import obj
+    from nexus.developer import obj
     ref_in = get_reference_inputs()
     assert(len(ref_in)>0)
 #end def test_reference_inputs
@@ -511,7 +511,7 @@ def test_gen_molecule():
     """
     Create an H2O molecule.
     """
-    from structure import generate_structure
+    from nexus.structure import generate_structure
 
     h2o = generate_structure(
         elem  = ['O','H','H'], 
@@ -534,7 +534,7 @@ def test_gen_diamond_direct():
     Create a conventional cell of diamond directly.
     """
     import numpy as np
-    from structure import generate_structure
+    from nexus.structure import generate_structure
 
     diamond = generate_structure(
         units = 'A',
@@ -571,7 +571,7 @@ def test_gen_diamond_lattice():
     """
     Create a conventional cell of diamond from lattice information.
     """
-    from structure import generate_structure
+    from nexus.structure import generate_structure
 
     diamond = generate_structure(
         lattice   = 'cubic',        # cubic tetragonal orthorhombic rhombohedral
@@ -611,7 +611,7 @@ def test_gen_graphene():
     """
     Create a graphene cell using stored information.
     """
-    from structure import generate_structure
+    from nexus.structure import generate_structure
 
     graphene = generate_structure(
         structure = 'graphene',
@@ -638,7 +638,7 @@ def test_read_write():
     Write/read conventional diamond cell to/from XYZ, XSF, and POSCAR formats.
     """
     import os
-    from structure import generate_structure, read_structure
+    from nexus.structure import generate_structure, read_structure
 
     tpath = testing.setup_unit_test_output_directory('structure','test_read_write')
 
@@ -681,7 +681,7 @@ if versions.pycifrw_available and versions.cif2cell_available:
         """
         Read La2CuO4 structure from a CIF file.
         """
-        from structure import read_structure,generate_structure
+        from nexus.structure import read_structure,generate_structure
 
         files = get_files()
 
@@ -719,7 +719,7 @@ if versions.pycifrw_available and versions.cif2cell_available:
 
 def test_bounding_box():
     import numpy as np
-    from structure import generate_structure,read_structure
+    from nexus.structure import generate_structure,read_structure
 
     files = get_files()
 
@@ -763,7 +763,7 @@ def test_bounding_box():
 
 def test_opt_tiling():
     import numpy as np
-    from structure import generate_structure
+    from nexus.structure import generate_structure
 
     dprim = generate_structure(
         structure = 'diamond',
@@ -788,7 +788,7 @@ if versions.seekpath_available:
         Find the primitive cell given a supercell.
         """
 
-        from structure import generate_structure
+        from nexus.structure import generate_structure
 
         d2 = generate_structure(
             structure = 'diamond',
@@ -830,7 +830,7 @@ def test_unit_coords():
     Get atomic positions in unit coordinates.
     """
     import numpy as np
-    from structure import generate_structure
+    from nexus.structure import generate_structure
 
     s = generate_structure(
         structure = 'diamond',
@@ -871,8 +871,8 @@ def test_monkhorst_pack_kpoints():
     Add k-points according to Monkhorst-Pack grid.
     """
     import numpy as np
-    from developer import obj
-    from structure import generate_structure
+    from nexus.developer import obj
+    from nexus.structure import generate_structure
 
     g11 = generate_structure(
         structure = 'graphene',
@@ -1086,7 +1086,7 @@ if versions.spglib_available:
         """
         Add symmetrized Monkhorst-Pack kpoints.
         """
-        from structure import generate_structure
+        from nexus.structure import generate_structure
 
         # Note: this demo requires spglib
 
@@ -1194,7 +1194,7 @@ def test_count_kshells():
 
 
 def test_rinscribe():
-    from structure import generate_structure
+    from nexus.structure import generate_structure
     s = generate_structure(
         structure = 'graphene',
         cell      = 'prim',
@@ -1207,7 +1207,7 @@ def test_rinscribe():
 
 
 def test_rwigner():
-    from structure import generate_structure
+    from nexus.structure import generate_structure
     s = generate_structure(
         structure = 'graphene',
         cell      = 'prim',
@@ -1251,7 +1251,7 @@ def test_min_image_distances():
     Compute minimum image distances between nearest neighbors.
     """
     import numpy as np
-    from structure import generate_structure
+    from nexus.structure import generate_structure
 
     g = generate_structure(
         structure = 'graphene',
@@ -1323,7 +1323,7 @@ def test_freeze():
     """
     Freeze sets of atoms to prevent relaxation.
     """
-    from structure import generate_structure
+    from nexus.structure import generate_structure
 
     g = generate_structure(
         structure = 'graphene',
@@ -1353,7 +1353,7 @@ if versions.scipy_available:
         Embed a "relaxed" structure in a larger pristine cell.
         """
         import numpy as np
-        from structure import generate_structure
+        from nexus.structure import generate_structure
 
         center = (0,0,0)
 
@@ -1410,7 +1410,7 @@ def test_interpolate():
     Interpolate between two "relaxed" structures for NEB initialization.
     """
     import numpy as np
-    from structure import generate_structure
+    from nexus.structure import generate_structure
     
     g = generate_structure(
         structure = 'graphene',
@@ -1464,7 +1464,7 @@ def test_interpolate():
 
 if versions.spglib_available:
     def test_point_group_operations():
-        from structure import generate_structure,Crystal
+        from nexus.structure import generate_structure,Crystal
 
         nrotations = dict(
             Ca2CuO3    =  8,
@@ -1510,8 +1510,8 @@ if versions.spglib_available:
 if versions.spglib_available and versions.seekpath_available:
     def test_rmg_transform():
         from numpy import array
-        from developer import obj
-        from structure import generate_structure
+        from nexus.developer import obj
+        from nexus.structure import generate_structure
 
         ref = obj({
             ('Ca2CuO3', 'conv') : obj(

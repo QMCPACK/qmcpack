@@ -289,7 +289,7 @@ def nexus_path(append=None,location=None):
 
     assert(len(tokens)>=3)
     assert(tokens[-1].startswith('testing.py'))
-    assert(tokens[-2]=='lib')
+    assert(tokens[-2]=='nexus')
     assert(tokens[-3]=='nexus')
 
     path = os.path.dirname(testing_path)
