@@ -27,9 +27,9 @@
 
 import os
 import gc as garbage_collector
-from nexus_version import nexus_version
-from memory import resident
-from developer import DevBase, obj, log
+from .nexus_version import nexus_version
+from .memory import resident
+from .developer import DevBase, obj, log
 
 
 # Nexus namespaces

@@ -32,10 +32,10 @@
 
 
 import numpy as np
-from periodic_table import pt
-from developer import DevBase, obj
-from nexus_base import nexus_noncore
-from simulation import SimulationInput
+from .periodic_table import pt
+from .developer import DevBase, obj, error, warn
+from .nexus_base import nexus_noncore
+from .simulation import SimulationInput
 
 
 class GIbase(DevBase):
@@ -1165,7 +1165,6 @@ def generate_any_gamess_input(**kwargs):
 
 
 def check_keyspec_groups():
-    from developer import error, warn
 
     groups      = GamessInput.keyspec_groups
     group_order = GamessInput.group_order

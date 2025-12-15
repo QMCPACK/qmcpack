@@ -8,18 +8,18 @@ from copy import deepcopy
 import numpy as np
 
 # Nexus imports
-import memory
-from unit_converter import convert
-from developer import DevBase, obj, log, error, unavailable
-from numerics import simstats
-from grid_functions import grid_function, read_grid, StructuredGrid, grid as generate_grid
-from grid_functions import SpheroidGrid
-from structure import Structure, get_seekpath_full
-from fileio import XsfFile
-from hdfreader import read_hdf
+from . import memory
+from .unit_converter import convert
+from .developer import DevBase, obj, log, error, unavailable
+from .numerics import simstats
+from .grid_functions import grid_function, read_grid, StructuredGrid, grid as generate_grid
+from .grid_functions import SpheroidGrid
+from .structure import Structure, get_seekpath_full
+from .fileio import XsfFile
+from .hdfreader import read_hdf
 
 # Referenced in MomentumDistribution.backfold()
-from debug import ci
+from .debug import ci
 
 try:
     import matplotlib.pyplot as plt

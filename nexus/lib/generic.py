@@ -36,7 +36,7 @@ from copy import deepcopy
 import pickle
 from random import randint
 
-from utilities import sorted_py2
+from .utilities import sorted_py2
 
 
 class generic_settings:

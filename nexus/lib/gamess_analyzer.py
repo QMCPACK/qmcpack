@@ -17,10 +17,10 @@
 
 import os
 import numpy as np
-from developer import obj
-from fileio import TextFile
-from simulation import SimulationAnalyzer,Simulation
-from gamess_input import GamessInput
+from .developer import obj
+from .fileio import TextFile
+from .simulation import SimulationAnalyzer,Simulation
+from .gamess_input import GamessInput
 
 
 def assign_value(host,dest,file,string):

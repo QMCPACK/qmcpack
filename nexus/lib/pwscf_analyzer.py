@@ -19,15 +19,15 @@
 
 import os
 import numpy as np
-from developer import obj, unavailable
-from unit_converter import convert
-from periodic_table import PeriodicTable
-from numerics import simstats, simplestats
-from simulation import SimulationAnalyzer, Simulation
-from structure import Structure, get_kpath
-from pwscf_input import PwscfInput
-from pwscf_data_reader import read_qexml
-from fileio import TextFile
+from .developer import obj, unavailable
+from .unit_converter import convert
+from .periodic_table import PeriodicTable
+from .numerics import simstats, simplestats
+from .simulation import SimulationAnalyzer, Simulation
+from .structure import Structure, get_kpath
+from .pwscf_input import PwscfInput
+from .pwscf_data_reader import read_qexml
+from .fileio import TextFile
 
 pt = PeriodicTable()
 elements = set(pt.elements.keys())

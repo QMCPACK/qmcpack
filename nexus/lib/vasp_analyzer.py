@@ -31,9 +31,9 @@
 
 import os
 import numpy as np
-from simulation import Simulation,SimulationAnalyzer
-from vasp_input import Incar
-from developer import DevBase, obj
+from .simulation import Simulation,SimulationAnalyzer
+from .vasp_input import Incar
+from .developer import DevBase, obj
 
 
 # vasp xml reader classes/functions

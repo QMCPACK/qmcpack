@@ -1,10 +1,10 @@
 import numpy as np
 
-from developer import DevBase, obj, error
-from unit_converter import convert
-from pseudopotential import pp_elem_label
-from structure import generate_structure
-from simulation import SimulationInput
+from .developer import DevBase, obj, error
+from .unit_converter import convert
+from .pseudopotential import pp_elem_label
+from .structure import generate_structure
+from .simulation import SimulationInput
 
 
 class RmgInputSettings(DevBase):

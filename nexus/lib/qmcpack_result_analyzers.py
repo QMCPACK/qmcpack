@@ -27,9 +27,9 @@
 
 
 import numpy as np
-from developer import obj
-from unit_converter import convert
-from qmcpack_analyzer_base import QAobject,QAanalyzer
+from .developer import obj
+from .unit_converter import convert
+from .qmcpack_analyzer_base import QAobject,QAanalyzer
 
 
 class ResultAnalyzer(QAanalyzer):

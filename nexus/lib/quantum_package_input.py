@@ -17,11 +17,11 @@
 
 
 import os
-from developer import DevBase,  obj, log, error
-from structure import Structure
-from physical_system import PhysicalSystem
-from simulation import SimulationInput
-from execute import execute
+from .developer import DevBase,  obj, log, error
+from .structure import Structure
+from .physical_system import PhysicalSystem
+from .simulation import SimulationInput
+from .execute import execute
 
 
 bool_values = dict(T=True,F=False)

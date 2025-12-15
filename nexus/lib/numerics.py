@@ -86,9 +86,9 @@ import inspect
 import numpy as np
 from numpy import pi, exp, sqrt, sin, cos
 from numpy.linalg import norm
-from developer import obj, unavailable, error
-from unit_converter import convert
-from periodic_table import pt as ptable
+from .developer import obj, unavailable, error
+from .unit_converter import convert
+from .periodic_table import pt as ptable
 
 try:
     from scipy.special import betainc

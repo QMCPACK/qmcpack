@@ -27,12 +27,12 @@ import sys
 import traceback
 import numpy as np
 #custom library imports
-from developer import obj, unavailable
-from physical_system import ghost_atoms
+from .developer import obj, unavailable
+from .physical_system import ghost_atoms
 #QmcpackAnalyzer classes imports
-from qmcpack_analyzer_base import QAobject, QAanalyzer, QAanalyzerCollection
-from qmcpack_property_analyzers import WavefunctionAnalyzer
-from qmcpack_quantity_analyzers import (
+from .qmcpack_analyzer_base import QAobject, QAanalyzer, QAanalyzerCollection
+from .qmcpack_property_analyzers import WavefunctionAnalyzer
+from .qmcpack_quantity_analyzers import (
     ScalarsDatAnalyzer,
     ScalarsHDFAnalyzer,
     DmcDatAnalyzer,
@@ -43,10 +43,10 @@ from qmcpack_quantity_analyzers import (
     StructureFactorAnalyzer,
     DensityAnalyzer,
 )
-from qmcpack_method_analyzers import OptAnalyzer, VmcAnalyzer, DmcAnalyzer
-from qmcpack_result_analyzers import OptimizationAnalyzer, TimestepStudyAnalyzer
-from simulation import SimulationAnalyzer,Simulation
-from qmcpack_input import QmcpackInput
+from .qmcpack_method_analyzers import OptAnalyzer, VmcAnalyzer, DmcAnalyzer
+from .qmcpack_result_analyzers import OptimizationAnalyzer, TimestepStudyAnalyzer
+from .simulation import SimulationAnalyzer,Simulation
+from .qmcpack_input import QmcpackInput
 
 try:
     import h5py

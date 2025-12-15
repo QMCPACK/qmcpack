@@ -48,9 +48,9 @@ import os
 from socket import gethostname
 from subprocess import Popen
 import numpy as np
-from developer import DevBase, obj
-from nexus_base import NexusCore, nexus_core
-from execute import execute
+from .developer import DevBase, obj
+from .nexus_base import NexusCore, nexus_core
+from .execute import execute
 import importlib.util
 import importlib.machinery
 

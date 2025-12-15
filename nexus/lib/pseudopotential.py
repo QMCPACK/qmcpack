@@ -38,15 +38,15 @@
 
 import os
 import numpy as np
-from execute import execute
-from fileio import TextFile
-from xmlreader import readxml
-from periodic_table import pt, is_element
-from unit_converter import convert
-from developer import DevBase, obj, unavailable, error
-from basisset import process_gaussian_text, GaussianBasisSet
-from physical_system import PhysicalSystem
-from testing import object_eq
+from .execute import execute
+from .fileio import TextFile
+from .xmlreader import readxml
+from .periodic_table import pt, is_element
+from .unit_converter import convert
+from .developer import DevBase, obj, unavailable, error
+from .basisset import process_gaussian_text, GaussianBasisSet
+from .physical_system import PhysicalSystem
+from .testing import object_eq
 
 try:
     import matplotlib.pyplot as plt

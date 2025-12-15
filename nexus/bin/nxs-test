@@ -192,7 +192,7 @@ def nlabel(label):
 
 # divert nexus log output
 def nlog_divert():
-    from generic import generic_settings,object_interface
+    from ..lib.generic import generic_settings,object_interface
     logging_storage['devlog'] = generic_settings.devlog
     logging_storage['objlog'] = object_interface._logfile 
     logfile = FakeLog()
@@ -203,7 +203,7 @@ def nlog_divert():
 
 # restore nexus log output
 def nlog_restore():
-    from generic import generic_settings,object_interface
+    from ..lib.generic import generic_settings,object_interface
     generic_settings.devlog   = logging_storage['devlog']
     object_interface._logfile = logging_storage['devlog']
 #end def nlog_restore
@@ -458,7 +458,7 @@ class NexusTest(NexusTestBase):
     # run the current test
     def run(self):
 
-        from testing import check_final_state
+        from ..lib.testing import check_final_state
 
         nleave()
         NexusTestBase.current_test  = self
@@ -1748,11 +1748,11 @@ user_examples_data = dict()
 
 def user_examples(label):
 
-    from pwscf_input import PwscfInput
-    from qmcpack_converters import Pw2qmcpackInput
-    from gamess_input import GamessInput
-    from qmcpack_input import QmcpackInput
-    import testing as nexus_testing
+    from ..lib.pwscf_input import PwscfInput
+    from ..lib.qmcpack_converters import Pw2qmcpackInput
+    from ..lib.gamess_input import GamessInput
+    from ..lib.qmcpack_input import QmcpackInput
+    from ..lib import testing as nexus_testing
 
     # load information for a single user example
     if label not in example_information:
@@ -1862,7 +1862,7 @@ def user_examples(label):
                     # store failing reference files
                     test_failures_file.write(ref_filepath+'\n')
                     # report on failures
-                    from generic import obj
+                    from ..lib.generic import obj
                     dgen = obj(dgen)
                     dref = obj(dref)
                     msg = 'reference and generated input files differ\n'
@@ -2208,7 +2208,7 @@ try:
     del nxs_ver_mod
 except:
     try:
-        from nexus_version import nexus_version
+        from ..lib.nexus_version import nexus_version
     except:
         nexus_version = 0,0,0
     #end try
@@ -2373,12 +2373,12 @@ if __name__=='__main__':
         os.environ['PYTHONPATH']=options.pythonpath
     #end if
 
-    from generic import generic_settings
+    from ..lib.generic import generic_settings
 
     generic_settings.raise_error = True
 
     # import core testing functions (shared between nxs-test and unit tests)
-    from testing import global_data,numpy_available
+    from ..lib.testing import global_data,numpy_available
 
     global_data['verbose']       = options.verbose
     global_data['job_ref_table'] = options.job_ref_table

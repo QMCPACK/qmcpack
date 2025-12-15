@@ -35,10 +35,10 @@
 import os
 from copy import deepcopy
 import numpy as np
-from developer import DevBase, obj
-from unit_converter import convert
-from periodic_table import is_element, ptable
-from structure import Structure, generate_structure, read_structure
+from .developer import DevBase, obj
+from .unit_converter import convert
+from .periodic_table import is_element, ptable
+from .structure import Structure, generate_structure, read_structure
 
 
 class Matter(DevBase):

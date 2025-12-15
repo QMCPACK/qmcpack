@@ -121,6 +121,7 @@ import os
 import numpy as np
 from copy import deepcopy
 from random import randint
+import itertools
 from numpy import (
     cos,
     cross,
@@ -130,13 +131,12 @@ from numpy import (
     sqrt,
 )
 from numpy.linalg import inv, det, norm
-from unit_converter import convert
-from numerics import nearest_neighbors, convex_hull, voronoi_neighbors
-from periodic_table import is_element
-from periodic_table import pt as ptable
-from fileio import XsfFile, PoscarFile
-from developer import DevBase, obj, unavailable, error
-import itertools
+from .unit_converter import convert
+from .numerics import nearest_neighbors, convex_hull, voronoi_neighbors
+from .periodic_table import is_element
+from .periodic_table import pt as ptable
+from .fileio import XsfFile, PoscarFile
+from .developer import DevBase, obj, unavailable, error
 
 try:
     from scipy.special import erfc

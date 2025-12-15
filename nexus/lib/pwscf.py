@@ -19,12 +19,12 @@
 
 import os
 import numpy as np
-from developer import obj
-from physical_system import PhysicalSystem
-from simulation import Simulation
-from pwscf_input import PwscfInput, generate_pwscf_input
-from pwscf_analyzer import PwscfAnalyzer
-from execute import execute
+from .developer import obj
+from .physical_system import PhysicalSystem
+from .simulation import Simulation
+from .pwscf_input import PwscfInput, generate_pwscf_input
+from .pwscf_analyzer import PwscfAnalyzer
+from .execute import execute
 
 
 unique_vdw_functionals = [

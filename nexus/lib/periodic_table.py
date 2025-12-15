@@ -21,8 +21,8 @@
 #====================================================================#
 
 
-from developer import DevBase, obj
-from unit_converter import UnitConverter
+from .developer import DevBase, obj
+from .unit_converter import UnitConverter
 
 
 def phys_value_dict(value=None,units=None):    

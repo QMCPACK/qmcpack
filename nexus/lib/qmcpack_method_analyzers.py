@@ -18,11 +18,11 @@
 
 
 import os
-from developer import obj
-from hdfreader import HDFreader
-from qmcpack_analyzer_base import Checks,QAanalyzer,QAHDFdata
-from qmcpack_property_analyzers import WavefunctionAnalyzer
-from qmcpack_quantity_analyzers import HDFAnalyzer
+from .developer import obj
+from .hdfreader import HDFreader
+from .qmcpack_analyzer_base import Checks,QAanalyzer,QAHDFdata
+from .qmcpack_property_analyzers import WavefunctionAnalyzer
+from .qmcpack_quantity_analyzers import HDFAnalyzer
 
 
 class MethodAnalyzer(QAanalyzer):

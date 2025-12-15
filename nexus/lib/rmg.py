@@ -3,9 +3,9 @@
 ##################################################################
 
 
-from simulation import Simulation
-from rmg_input import RmgInput,generate_rmg_input
-from rmg_analyzer import RmgAnalyzer
+from .simulation import Simulation
+from .rmg_input import RmgInput, generate_rmg_input
+from .rmg_analyzer import RmgAnalyzer
 
 
 

@@ -17,10 +17,10 @@
 
 
 import time
-import memory
-from developer import obj
-from nexus_base import NexusCore, nexus_core
-from simulation import Simulation
+from . import memory
+from .developer import obj
+from .nexus_base import NexusCore, nexus_core
+from .simulation import Simulation
 
 
 def trivial(sim,*args,**kwargs):

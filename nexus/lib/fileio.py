@@ -24,9 +24,9 @@ import os
 import mmap
 import numpy as np
 from numpy.linalg import det, norm
-from developer import DevBase, obj, error, to_str
-from periodic_table import is_element, pt as ptable
-from unit_converter import convert
+from .developer import DevBase, obj, error, to_str
+from .periodic_table import is_element, pt as ptable
+from .unit_converter import convert
 
 
 class TextFile(DevBase):

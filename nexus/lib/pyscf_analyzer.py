@@ -15,7 +15,7 @@
 #====================================================================#
 
 
-from simulation import NullSimulationAnalyzer
+from .simulation import NullSimulationAnalyzer
 
 
 class PyscfAnalyzer(NullSimulationAnalyzer):

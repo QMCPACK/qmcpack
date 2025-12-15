@@ -36,9 +36,9 @@
 
 import os
 import numpy as np
-from qmcpack_input import QmcpackInput
-from qmcpack_analyzer_base import QAobject,QAanalyzer
-from developer import unavailable
+from .qmcpack_input import QmcpackInput
+from .qmcpack_analyzer_base import QAobject,QAanalyzer
+from .developer import unavailable
 
 try:
     from matplotlib.pyplot import plot,show,figure,xlabel,ylabel,title,legend

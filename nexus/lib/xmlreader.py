@@ -28,7 +28,7 @@ import keyword
 import re
 import os
 import numpy as np
-from developer import DevBase, obj, valid_variable_name
+from .developer import DevBase, obj, valid_variable_name
 
 
 def parse_string(s, delim = None):

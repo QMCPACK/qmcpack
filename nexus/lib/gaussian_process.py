@@ -83,7 +83,7 @@
 
 import os
 import numpy as np
-from developer import DevBase, obj, unavailable, error
+from .developer import DevBase, obj, unavailable, error
 
 try:
     import matplotlib.pyplot as plt

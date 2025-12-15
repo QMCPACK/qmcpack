@@ -21,7 +21,7 @@
 
 
 import numpy as np
-from developer import DevBase, obj
+from .developer import DevBase, obj
 
 
 class QEXML(DevBase):

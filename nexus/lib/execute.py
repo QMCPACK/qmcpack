@@ -16,7 +16,7 @@
 
 
 from subprocess import Popen, PIPE
-from developer import to_str
+from .developer import to_str
 
 def execute(command,verbose=False,skip=False):
     out,err = '',''

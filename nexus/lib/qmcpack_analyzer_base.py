@@ -41,9 +41,9 @@
 
 
 import numpy as np
-from developer import DevBase, obj
-from hdfreader import HDFgroup
-from numerics import surface_normals
+from .developer import DevBase, obj
+from .hdfreader import HDFgroup
+from .numerics import surface_normals
 
 
 class Plotter(DevBase):

@@ -205,7 +205,7 @@ def text_diff(t1,t2,atol=def_atol,rtol=def_rtol,int_as_float=False,full=False,by
 
 # print the difference between two objects
 def print_diff(o1,o2,atol=def_atol,rtol=def_rtol,int_as_float=False,text=False,by_line=False): # used in debugging, not actual tests
-    from generic import obj
+    from .generic import obj
     hline = '========== {} =========='
     print(hline.format('left object'))
     print(o1)
@@ -387,7 +387,7 @@ def setup_unit_test_output_directory(test,subtest,divert=False,file_sets=None,ps
 
     # divert nexus paths and output, if requested
     if divert:
-        from nexus_base import nexus_core
+        from .nexus_base import nexus_core
         divert_nexus()
         nexus_core.local_directory  = path
         nexus_core.remote_directory = path
@@ -428,7 +428,7 @@ def setup_unit_test_output_directory(test,subtest,divert=False,file_sets=None,ps
 
     # create pseudopotential directory and set internal nexus data structures
     if pseudo_dir is not None:
-        from nexus_base import nexus_noncore
+        from .nexus_base import nexus_noncore
         pseudo_path = os.path.join(path,pseudo_dir)
         if not os.path.exists(pseudo_path):
             os.makedirs(pseudo_path)
@@ -465,7 +465,7 @@ def setup_unit_test_output_directory(test,subtest,divert=False,file_sets=None,ps
             #end for
         #end if
         if len(pseudo_filepaths)>0:
-            from pseudopotential import Pseudopotentials
+            from .pseudopotential import Pseudopotentials
             for pp_file in pseudo_filepaths:
                 assert(os.path.exists(pp_file))
                 assert(os.path.isfile(pp_file))
@@ -517,7 +517,7 @@ nexus_noncore_storage = dict()
 
 # divert nexus log output
 def divert_nexus_log():
-    from generic import generic_settings,object_interface
+    from .generic import generic_settings,object_interface
     assert(len(logging_storage)==0)
     logging_storage['devlog'] = generic_settings.devlog
     logging_storage['objlog'] = object_interface._logfile 
@@ -530,7 +530,7 @@ def divert_nexus_log():
 
 # restore nexus log output
 def restore_nexus_log():
-    from generic import generic_settings,object_interface
+    from .generic import generic_settings,object_interface
     assert(set(logging_storage.keys())==set(['devlog','objlog']))
     generic_settings.devlog   = logging_storage.pop('devlog')
     object_interface._logfile = logging_storage.pop('objlog')
@@ -559,7 +559,7 @@ noncore_keys = [
 
 # divert nexus core attributes
 def divert_nexus_core():
-    from nexus_base import nexus_core,nexus_noncore
+    from .nexus_base import nexus_core,nexus_noncore
     assert(len(nexus_core_storage)==0)
     for key in core_keys:
         nexus_core_storage[key] = nexus_core[key]
@@ -575,8 +575,8 @@ def divert_nexus_core():
 
 # restore nexus core attributes
 def restore_nexus_core():
-    from nexus_base import nexus_core,nexus_noncore,nexus_core_noncore
-    from nexus_base import nexus_noncore_defaults
+    from .nexus_base import nexus_core,nexus_noncore,nexus_core_noncore
+    from .nexus_base import nexus_noncore_defaults
     for key in core_keys:
         nexus_core[key] = nexus_core_storage.pop(key)
     #end for
@@ -630,22 +630,22 @@ global_data = dict(
 
 
 def divert_nexus_errors():
-    from generic import generic_settings
+    from .generic import generic_settings
     generic_settings.raise_error = True
 #end def divert_nexus_errors
 
 
 def clear_all_sims():
-    from simulation import Simulation
+    from .simulation import Simulation
     Simulation.clear_all_sims()
 #end def clear_all_sims
 
 
 
 def check_final_state():
-    from nexus_base import nexus_core,nexus_core_defaults
-    from nexus_base import nexus_noncore,nexus_noncore_defaults
-    from nexus_base import nexus_core_noncore,nexus_core_noncore_defaults
+    from .nexus_base import nexus_core,nexus_core_defaults
+    from .nexus_base import nexus_noncore,nexus_noncore_defaults
+    from .nexus_base import nexus_core_noncore,nexus_core_noncore_defaults
     
     assert('runs' in nexus_core_defaults)
     assert('basis_dir' in nexus_noncore_defaults)
@@ -655,7 +655,7 @@ def check_final_state():
     assert(object_eq(nexus_noncore,nexus_noncore_defaults))
     assert(object_eq(nexus_core_noncore,nexus_core_noncore_defaults))
 
-    from simulation import Simulation
+    from .simulation import Simulation
 
     assert(Simulation.sim_count==0)
     assert(len(Simulation.all_sims)==0)
@@ -705,7 +705,7 @@ def create_path(path,basepath=None):
 
 
 def execute(command):
-    from execute import execute as nexus_execute
+    from .execute import execute as nexus_execute
     out,err,rc = nexus_execute(command)
     if rc!=0:
         msg = '''Executed system command failed.

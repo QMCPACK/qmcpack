@@ -45,14 +45,14 @@
 
 import os
 import numpy as np
-from developer import obj, error
-from simulation import Simulation, SimulationInput, SimulationAnalyzer
-from pwscf import Pwscf
-from gamess import Gamess
-from pyscf_sim import Pyscf
-from quantum_package import QuantumPackage
-from unit_converter import convert
-from hdfreader import read_hdf
+from .developer import obj, error
+from .simulation import Simulation, SimulationInput, SimulationAnalyzer
+from .pwscf import Pwscf
+from .gamess import Gamess
+from .pyscf_sim import Pyscf
+from .quantum_package import QuantumPackage
+from .unit_converter import convert
+from .hdfreader import read_hdf
 
 
 # read/write functions associated with pw2qmcpack only

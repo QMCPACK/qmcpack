@@ -17,8 +17,8 @@
 
 
 import numpy as np
-from developer import obj, error
-from simulation import SimulationInputTemplateDev
+from .developer import obj, error
+from .simulation import SimulationInputTemplateDev
 
 
 def render_string(s_in,n):

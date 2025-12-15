@@ -5,9 +5,9 @@
 
 import os
 import numpy as np
-from periodic_table import is_element
-from developer import DevBase, obj, error, to_str, unavailable
-from fileio import TextFile
+from .periodic_table import is_element
+from .developer import DevBase, obj, error, to_str, unavailable
+from .fileio import TextFile
 
 try:
     import matplotlib.pyplot as plt

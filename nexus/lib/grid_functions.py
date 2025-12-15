@@ -81,8 +81,8 @@ Module contents
 """
 
 import os
-from developer import DevBase, obj, error, unavailable
-from fileio import StandardFile,XsfFile
+from .developer import DevBase, obj, error, unavailable
+from .fileio import StandardFile,XsfFile
 
 try:
     import numpy as np

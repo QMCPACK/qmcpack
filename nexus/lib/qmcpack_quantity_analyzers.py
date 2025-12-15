@@ -73,11 +73,11 @@ import copy
 import numpy as np
 from numpy import pi,sin,cos,sqrt
 from numpy.linalg import LinAlgError, inv, det, eig
-from developer import obj
-from fileio import XsfFile
-from hdfreader import HDFreader, HDFgroup
-from numerics import ndgrid, simstats, simplestats, equilibration_length
-from qmcpack_analyzer_base import QAobject, QAanalyzer, QAdata, QAHDFdata
+from .developer import obj
+from .fileio import XsfFile
+from .hdfreader import HDFreader, HDFgroup
+from .numerics import ndgrid, simstats, simplestats, equilibration_length
+from .qmcpack_analyzer_base import QAobject, QAanalyzer, QAdata, QAHDFdata
 
 class QuantityAnalyzer(QAanalyzer):
     def __init__(self,nindent=0):

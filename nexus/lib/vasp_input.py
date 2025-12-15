@@ -39,12 +39,12 @@
 
 import os
 import numpy as np
-from periodic_table import is_element
-from nexus_base import nexus_noncore
-from simulation import SimulationInput
-from structure import interpolate_structures, Structure
-from physical_system import PhysicalSystem
-from developer import DevBase, obj, error
+from .periodic_table import is_element
+from .nexus_base import nexus_noncore
+from .simulation import SimulationInput
+from .structure import interpolate_structures, Structure
+from .physical_system import PhysicalSystem
+from .developer import DevBase, obj, error
 
 
 # support functions for keyword files

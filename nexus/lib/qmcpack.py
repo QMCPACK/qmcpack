@@ -25,9 +25,10 @@
 
 
 import os
+from copy import deepcopy
 import numpy as np
-from simulation import Simulation, NullSimulationAnalyzer
-from qmcpack_input import (
+from .simulation import Simulation, NullSimulationAnalyzer
+from .qmcpack_input import (
     QmcpackInput,
     TracedQmcpackInput,
     loop,
@@ -51,16 +52,15 @@ from qmcpack_input import (
     generate_opts,
     check_excitation_type,
 )
-from qmcpack_analyzer import QmcpackAnalyzer
-from qmcpack_converters import Pw2qmcpack, Convert4qmc, Convertpw4qmc, PyscfToAfqmc
-from pyscf_sim import Pyscf
-from developer import DevBase, obj, error, unavailable
-from nexus_base import nexus_core
-from copy import deepcopy
-from hdfreader import read_hdf
-from unit_converter import convert
-from pwscf import Pwscf
-from xmlreader import XMLreader
+from .qmcpack_analyzer import QmcpackAnalyzer
+from .qmcpack_converters import Pw2qmcpack, Convert4qmc, Convertpw4qmc, PyscfToAfqmc
+from .pyscf_sim import Pyscf
+from .developer import DevBase, obj, error, unavailable
+from .nexus_base import nexus_core
+from .hdfreader import read_hdf
+from .unit_converter import convert
+from .pwscf import Pwscf
+from .xmlreader import XMLreader
 try:
     import h5py
 except:
@@ -1071,7 +1071,7 @@ class Qmcpack(Simulation):
                 self.error('incorporating wavefunction from '+sim.__class__.__name__+' has not been implemented')
             #end if
         elif result_name=='gc_occupation':
-            from qmcpack_converters import gcta_occupation
+            from .qmcpack_converters import gcta_occupation
             if not isinstance(sim,Pw2qmcpack):
                 msg = 'grand-canonical occupation requires Pw2qmcpack'
                 self.error(msg)
@@ -1379,7 +1379,7 @@ class Qmcpack(Simulation):
                         structure = self.system.structure.get_smallest().copy()
                         structure.change_units('A')
 
-                        from structure import get_kpath
+                        from .structure import get_kpath
                         kpath       = get_kpath(structure=structure)
                         kpath_label = np.array(kpath['explicit_kpoints_labels'])
                         kpath_rel   = kpath['explicit_kpoints_rel']

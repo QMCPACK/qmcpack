@@ -71,11 +71,11 @@ import shutil
 from string import Template
 from subprocess import Popen
 import tempfile
-from developer import obj, unavailable
-from physical_system import PhysicalSystem
-from machines import Job
-from pseudopotential import ppset
-from nexus_base import NexusCore, nexus_core
+from .developer import obj, unavailable
+from .physical_system import PhysicalSystem
+from .machines import Job
+from .pseudopotential import ppset
+from .nexus_base import NexusCore, nexus_core
 
  
 class SimulationInput(NexusCore):

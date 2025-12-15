@@ -50,13 +50,13 @@ from copy import deepcopy
 import numpy as np
 from numpy import pi
 from numpy.linalg import inv
-from unit_converter import convert
-from periodic_table import is_element
-from structure import Structure, kmesh
-from physical_system import PhysicalSystem
-from developer import DevBase, obj, log, warn, error
-from pseudopotential import pp_elem_label
-from simulation import SimulationInput
+from .unit_converter import convert
+from .periodic_table import is_element
+from .structure import Structure, kmesh
+from .physical_system import PhysicalSystem
+from .developer import DevBase, obj, log, warn, error
+from .pseudopotential import pp_elem_label
+from .simulation import SimulationInput
 
 
 def read_str(sv):

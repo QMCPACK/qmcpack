@@ -138,13 +138,13 @@ import inspect
 import keyword
 import numpy as np
 from io import StringIO
-from xmlreader import XMLreader, XMLelement
-from developer import DevBase, obj, hidden, error
-from periodic_table import is_element
-from structure import Structure, Jellium, get_kpath
-from physical_system import PhysicalSystem
-from simulation import SimulationInput, SimulationInputTemplate
-from pwscf_input import array_to_string as pwscf_array_string
+from .xmlreader import XMLreader, XMLelement
+from .developer import DevBase, obj, hidden, error
+from .periodic_table import is_element
+from .structure import Structure, Jellium, get_kpath
+from .physical_system import PhysicalSystem
+from .simulation import SimulationInput, SimulationInputTemplate
+from .pwscf_input import array_to_string as pwscf_array_string
 
 yesno_dict     = {True:'yes' ,False:'no'}
 truefalse_dict = {True:'true',False:'false'}
@@ -9177,8 +9177,8 @@ if __name__=='__main__':
 
 
     if test_ret_system:
-        from structure import generate_structure
-        from physical_system import PhysicalSystem
+        from .structure import generate_structure
+        from .physical_system import PhysicalSystem
         
         system = PhysicalSystem(
             structure = generate_structure('diamond','fcc','Ge',(2,2,2),scale=5.639,units='A'),
@@ -9197,8 +9197,8 @@ if __name__=='__main__':
 
 
     if test_gen_input:
-        from structure import generate_structure
-        from physical_system import PhysicalSystem
+        from .structure import generate_structure
+        from .physical_system import PhysicalSystem
         
         system = PhysicalSystem(
             structure = generate_structure('diamond','fcc','Ge',(2,2,2),scale=5.639,units='A'),

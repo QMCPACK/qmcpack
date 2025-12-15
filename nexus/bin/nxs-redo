@@ -29,7 +29,7 @@ try:
     del nxs_ver_mod
 except:
     try:
-        from nexus_version import nexus_version
+        from ..lib.nexus_version import nexus_version
     except:
         nexus_version = 0,0,0
     #end try

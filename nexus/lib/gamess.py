@@ -33,10 +33,10 @@
 
 import os
 import numpy as np
-from developer import obj
-from simulation import Simulation
-from gamess_input import GamessInput, generate_gamess_input, FormattedGroup, GuessGroup, GIarray
-from gamess_analyzer import GamessAnalyzer
+from .developer import obj
+from .simulation import Simulation
+from .gamess_input import GamessInput, generate_gamess_input, FormattedGroup, GuessGroup, GIarray
+from .gamess_analyzer import GamessAnalyzer
 
 
 class Gamess(Simulation):
