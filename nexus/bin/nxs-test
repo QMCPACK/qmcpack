@@ -2222,7 +2222,7 @@ if __name__=='__main__':
     from pathlib import Path
     test_file_path = Path(__file__)
     nexus_dir = test_file_path.parent.parent
-    sys.path.append(str(nexus_dir))
+    sys.path.append(str(nexus_dir)+"/nexus")
 
     tstart_all = time()
 
@@ -2377,7 +2377,7 @@ if __name__=='__main__':
         os.environ['PYTHONPATH']=options.pythonpath
     #end if
 
-    from nexus.generic import generic_settings
+    from core.generic import generic_settings
 
     generic_settings.raise_error = True
 

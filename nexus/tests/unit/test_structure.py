@@ -1,11 +1,11 @@
 #!/env/bin/python
 
 import numpy as np
-import nexus.versions as versions
-import nexus.testing as testing
-from nexus.testing import value_eq as value_eq_orig
-from nexus.testing import object_eq as object_eq_orig
-from nexus.testing import object_diff as object_diff_orig
+from ... import versions as versions
+from ... import testing as testing
+from ...testing import value_eq as value_eq_orig
+from ...testing import object_eq as object_eq_orig
+from ...testing import object_diff as object_diff_orig
 
 
 struct_atol = 1e-10

@@ -21,7 +21,6 @@
 #                                                                    #
 #====================================================================#
 
-
 import os
 
 from .nexus_version import nexus_version
