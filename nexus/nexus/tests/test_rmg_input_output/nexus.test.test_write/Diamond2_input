@@ -1,0 +1,81 @@
+# control options
+
+a_length               = "6.10000000"
+b_length               = "6.10000000"
+c_length               = "6.10000000"
+calculation_mode       = "Quench Electrons"
+compressed_infile      = "false"
+compressed_outfile     = "false"
+description            = "diamond"
+energy_convergence_criterion = "1.00000000e-09"
+max_scf_steps          = "100"
+start_mode             = "Restart From File"
+write_data_period      = "10"
+
+
+# cell parameter options
+
+atomic_coordinate_type = "Cell Relative"
+bravais_lattice_type   = "Cubic Face Centered"
+kpoint_is_shift        = "0 0 0"
+kpoint_mesh            = "4 4 4"
+potential_grid_refinement = "2"
+wavefunction_grid      = "16 16 16"
+
+
+# pseudopotential related options
+
+localize_localpp       = "false"
+localize_projectors    = "false"
+pseudopotential        = "
+C    C_ONCV_PBE_sr.upf
+"
+
+
+# kohn sham solver options
+
+kohn_sham_mucycles     = "3"
+kohn_sham_solver       = "davidson"
+
+
+# orbital occupation options
+
+occupations_type       = "Fixed"
+states_count_and_occupation = "4 2.0 4 0.0"
+
+
+# charge density mixing options
+
+charge_density_mixing  = "0.50000000"
+charge_mixing_type     = "Broyden"
+potential_acceleration_constant_step = "1.00000000"
+
+
+# diagonalization options
+
+subdiag_driver         = "lapack"
+
+
+# testing options
+
+test_energy            = "-11.32982439"
+
+
+# miscellaneous options
+
+kpoint_distribution    = "8"
+
+
+# undocumented options
+
+atoms                  = "
+C      0.250000000000   0.250000000000   0.250000000000 1 1 1  0.0000   0.00   0.00
+C      0.000000000000   0.000000000000   0.000000000000 1 1 1  0.0000   0.00   0.00
+"
+
+
+# deprecated options
+
+alpha                  = "0.00000000"
+beta                   = "0.00000000"
+gamma                  = "0.00000000"

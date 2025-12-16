@@ -1,0 +1,110 @@
+# control options
+
+a_length               = "28.93846312"
+b_length               = "28.93846312"
+c_length               = "8.03846198"
+calculation_mode       = "Band Structure Only"
+description            = "Carbon Nanotube"
+max_scf_steps          = "10"
+rms_convergence_criterion = "0.00000010"
+start_mode             = "LCAO Start"
+
+
+# cell parameter options
+
+atomic_coordinate_type = "Absolute"
+bravais_lattice_type   = "Orthorhombic Primitive"
+kpoint_is_shift        = "0 0 0"
+kpoint_mesh            = "-1 1 8"
+potential_grid_refinement = "2"
+wavefunction_grid      = "72 72 20"
+
+
+# pseudopotential related options
+
+localize_localpp       = "false"
+localize_projectors    = "false"
+
+
+# kohn sham solver options
+
+kohn_sham_mg_levels    = "2"
+
+
+# exchange correlation options
+
+exchange_correlation_type = "LDA"
+
+
+# orbital occupation options
+
+occupation_electron_temperature_eV = "0.02500000"
+occupation_number_mixing = "1.00000000"
+occupations_type       = "Fixed"
+unoccupied_states_per_kpoint = "64"
+
+
+# charge density mixing options
+
+charge_density_mixing  = "0.20000000"
+charge_mixing_type     = "Linear"
+charge_pulay_order     = "5"
+charge_pulay_scale     = "0.20000000"
+
+
+# diagonalization options
+
+subdiag_driver         = "lapack"
+
+
+# miscellaneous options
+
+system_charge          = "0.00000000"
+
+
+# undocumented options
+
+kpoints_bandstructure  = "
+  0.000000000000   0.000000000000   0.000000000000    1  G
+  0.000000000000   0.000000000000   0.500000000000   25  X
+"
+atoms                  = "
+C     21.291338700000  15.369989000000   5.370077350000  1
+C     20.840598400000  17.635986500000   6.712590650000  1
+C     21.291338700000  15.369989000000   2.685034650000  1
+C     19.557019900000  19.557019900000   5.370077350000  1
+C     17.635986500000  20.840598400000   6.712590650000  1
+C     20.840598400000  17.635986500000   1.342521350000  1
+C     19.557019900000  19.557019900000   2.685034650000  1
+C     15.369989000000  21.291338700000   5.370077350000  1
+C     13.103991500000  20.840598400000   6.712590650000  1
+C     17.635986500000  20.840598400000   1.342521350000  1
+C     15.369989000000  21.291338700000   2.685034650000  1
+C     11.182958100000  19.557019900000   5.370077350000  1
+C      9.899379560000  17.635986500000   6.712590650000  1
+C     13.103991500000  20.840598400000   1.342521350000  1
+C     11.182958100000  19.557019900000   2.685034650000  1
+C      9.448639260000  15.369989000000   5.370077350000  1
+C      9.899379560000  13.103991500000   6.712590650000  1
+C      9.899379560000  17.635986500000   1.342521350000  1
+C      9.448639260000  15.369989000000   2.685034650000  1
+C     11.182958100000  11.182958100000   5.370077350000  1
+C     13.103991500000   9.899379560000   6.712590650000  1
+C      9.899379560000  13.103991500000   1.342521350000  1
+C     11.182958100000  11.182958100000   2.685034650000  1
+C     15.369989000000   9.448639260000   5.370077350000  1
+C     17.635986500000   9.899379560000   6.712590650000  1
+C     13.103991500000   9.899379560000   1.342521350000  1
+C     15.369989000000   9.448639260000   2.685034650000  1
+C     19.557019900000  11.182958100000   5.370077350000  1
+C     20.840598400000  13.103991500000   6.712590650000  1
+C     17.635986500000   9.899379560000   1.342521350000  1
+C     19.557019900000  11.182958100000   2.685034650000  1
+C     20.840598400000  13.103991500000   1.342521350000  1
+"
+
+
+# deprecated options
+
+length_units           = "Bohr"
+projector_mixing       = "0.40000000"

@@ -1,0 +1,5 @@
+
+a     = "$a"
+b     = $b
+file1 = "$file.$ext1"
+file2 = "$file.$ext2"

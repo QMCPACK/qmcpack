@@ -1,0 +1,25 @@
+Rank =    0  Free Memory = 13232 MB
+Rank =    1  Free Memory = 13232 MB
+Rank =    2  Free Memory = 13232 MB
+Rank =    3  Free Memory = 13232 MB
+Rank =    4  Free Memory = 13232 MB
+Rank =    5  Free Memory = 13232 MB
+Rank =    6  Free Memory = 13232 MB
+Rank =    7  Free Memory = 13232 MB
+Rank =    8  Free Memory = 13232 MB
+Rank =    9  Free Memory = 13232 MB
+Rank =   10  Free Memory = 13232 MB
+Rank =   11  Free Memory = 13232 MB
+WARNING ParticleSet::checkBoundBox 3.4> SimulationCellRadius=1.9475
+ Using SLOW method for the sphere update. 
+WARNING Skip Chiesa estimator due to the lack of support with SoA. Access the correction via AoS at the moment.
+ERROR CostFunction-> Number of Effective Walkers is too small! 
+  Number of effective walkers (samples) / total number of samples = 4.99405e-05
+  User specified threshold minwalkers = 0.2
+  If this message appears frequently. You might have to be cautious. 
+  Find info about parameter "minwalkers" in the user manual!
+ERROR CostFunction-> Number of Effective Walkers is too small! 
+  Number of effective walkers (samples) / total number of samples = 2.0281e-05
+  User specified threshold minwalkers = 0.2
+  If this message appears frequently. You might have to be cautious. 
+  Find info about parameter "minwalkers" in the user manual!

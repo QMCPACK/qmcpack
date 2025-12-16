@@ -1,0 +1,15 @@
+#!/bin/bash
+#PBS -q mstqmc13q
+#PBS -N relax
+#PBS -l walltime=02:00:00
+#PBS -l nodes=1:ppn=32
+#PBS -W x="NACCESSPOLICY:SINGLEJOB"
+#PBS -o relax.out
+#PBS -e relax.err
+#PBS -V
+
+echo $PBS_O_WORKDIR
+cd $PBS_O_WORKDIR
+
+export OMP_NUM_THREADS=1
+mpirun -np 32 vasp

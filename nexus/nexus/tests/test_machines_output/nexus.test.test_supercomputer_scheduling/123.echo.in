@@ -1,0 +1,10 @@
+#!/bin/bash
+#COBALT -q default
+#COBALT -A ABC123
+#COBALT -n 2
+#COBALT -t 210
+#COBALT -O 123
+#COBALT --attrs mcdram=cache:numa=quad
+
+export OMP_NUM_THREADS=8
+aprun -N 8 -cc depth -d 8 -e OMP_NUM_THREADS=8 -j 1 -n 16 echo run

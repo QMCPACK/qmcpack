@@ -1,0 +1,138 @@
+--------------------------------------------------------------------------
+[[28028,1],0]: A high-performance Open MPI point-to-point messaging module
+was unable to find any relevant network interfaces:
+
+Module: OpenFabrics (openib)
+  Host: psi2
+
+Another transport will be used instead, although this may result in
+lower performance.
+
+NOTE: You can disable this warning by setting the MCA parameter
+btl_base_warn_component_unused to 0.
+--------------------------------------------------------------------------
+
+     Program PROJWFC v.6.4 starts on 22May2019 at 16: 4:21 
+
+     This program is part of the open-source Quantum ESPRESSO suite
+     for quantum simulation of materials; please cite
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 21 395502 (2009);
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 29 465901 (2017);
+          URL http://www.quantum-espresso.org", 
+     in publications or presentations arising from this work. More details at
+     http://www.quantum-espresso.org/quote
+
+     Parallel version (MPI), running on     1 processors
+
+     MPI processes distributed on     1 nodes
+
+     Reading data from directory:
+     pwscf_output/pwscf.save/
+
+     IMPORTANT: XC functional enforced from input :
+     Exchange-correlation      = PZ ( 1  1  0  0 0 0)
+     Any further DFT definition will be discarded
+     Please, verify this is what you really want
+
+               file S.BFD.upf: wavefunction(s)  0s 0p 0d renormalized
+
+     G-vector sticks info
+     --------------------
+     sticks:   dense  smooth     PW     G-vecs:    dense   smooth      PW
+     Sum       89493   89493  22389             20148069 20148069 2518261
+
+     Generating pointlists ...
+     new r_m :  11.6927 (alat units) 11.6927 (a.u.) for type    1
+
+     Gaussian broadening (read from file): ngauss,degauss= -99    0.000100
+
+
+     Calling projwave .... 
+
+     Atomic states used for projection
+     (read from pseudopotential files):
+
+     state #   1: atom   1 (S  ), wfc  1 (l=0 m= 1)
+     state #   2: atom   1 (S  ), wfc  2 (l=1 m= 1)
+     state #   3: atom   1 (S  ), wfc  2 (l=1 m= 2)
+     state #   4: atom   1 (S  ), wfc  2 (l=1 m= 3)
+     state #   5: atom   1 (S  ), wfc  3 (l=2 m= 1)
+     state #   6: atom   1 (S  ), wfc  3 (l=2 m= 2)
+     state #   7: atom   1 (S  ), wfc  3 (l=2 m= 3)
+     state #   8: atom   1 (S  ), wfc  3 (l=2 m= 4)
+     state #   9: atom   1 (S  ), wfc  3 (l=2 m= 5)
+
+ k =   0.0000000000  0.0000000000  0.0000000000
+==== e(   1) =   -17.95855 eV ==== 
+     psi = 1.000*[#   1]+
+    |psi|^2 = 1.000
+==== e(   2) =    -7.57747 eV ==== 
+     psi = 0.981*[#   3]+0.019*[#   2]+
+    |psi|^2 = 1.000
+==== e(   3) =    -7.57712 eV ==== 
+     psi = 0.927*[#   4]+0.070*[#   2]+0.002*[#   3]+
+    |psi|^2 = 1.000
+==== e(   4) =    -7.57707 eV ==== 
+     psi = 0.911*[#   2]+0.073*[#   4]+0.017*[#   3]+
+    |psi|^2 = 1.000
+==== e(   5) =    -0.44308 eV ==== 
+     psi = 
+    |psi|^2 = 0.000
+==== e(   6) =     0.27915 eV ==== 
+     psi = 
+    |psi|^2 = 0.000
+==== e(   7) =     0.53949 eV ==== 
+     psi = 
+    |psi|^2 = 0.000
+==== e(   8) =     0.66125 eV ==== 
+     psi = 0.086*[#   8]+0.062*[#   5]+
+    |psi|^2 = 0.148
+
+ k =   0.0000000000  0.0000000000  0.0000000000
+==== e(   1) =   -16.15908 eV ==== 
+     psi = 1.000*[#   1]+
+    |psi|^2 = 1.000
+==== e(   2) =    -6.04672 eV ==== 
+     psi = 0.516*[#   2]+0.482*[#   4]+0.002*[#   3]+
+    |psi|^2 = 0.999
+==== e(   3) =    -6.04672 eV ==== 
+     psi = 0.511*[#   4]+0.467*[#   2]+0.021*[#   3]+
+    |psi|^2 = 0.999
+==== e(   4) =    -6.04671 eV ==== 
+     psi = 0.977*[#   3]+0.016*[#   2]+0.006*[#   4]+
+    |psi|^2 = 0.999
+==== e(   5) =    -0.30775 eV ==== 
+     psi = 
+    |psi|^2 = 0.000
+==== e(   6) =     0.33457 eV ==== 
+     psi = 
+    |psi|^2 = 0.000
+==== e(   7) =     0.57370 eV ==== 
+     psi = 
+    |psi|^2 = 0.000
+==== e(   8) =     0.66729 eV ==== 
+     psi = 0.088*[#   8]+0.049*[#   5]+
+    |psi|^2 = 0.137
+
+Lowdin Charges: 
+
+           1           2  0.99994735367175747        2.9989414841158681        1.7154547760651906E-012
+           2           2  0.99984170903831404       0.99897439701579627        4.2938119251077157E-015
+     Atom #   1: total charge =   5.9977, s =  1.9998, p =  3.9979, d =  0.0000, 
+                 spin up      =   3.9989, s =  0.9999, 
+                 spin up      =   3.9989, p =  2.9989, pz=  0.9996, px=  0.9996, py=  0.9996, 
+                 spin up      =   3.9989, d =  0.0000, dz2=  0.0000, dxz=  0.0000, dyz=  0.0000, dx2-y2=  0.0000, dxy=  0.0000, 
+                 spin down    =   1.9988, s =  0.9998, 
+                 spin down    =   1.9988, p =  0.9990, pz=  0.3336, px=  0.3318, py=  0.3336, 
+                 spin down    =   1.9988, d =  0.0000, dz2=  0.0000, dxz=  0.0000, dyz=  0.0000, dx2-y2=  0.0000, dxy=  0.0000, 
+                 polarization =   2.0001, s =  0.0001, p =  2.0000, d =  0.0000, 
+     Spilling Parameter:   0.0004
+
+     PROJWFC      :   2m36.15s CPU   2m43.07s WALL
+
+
+   This run was terminated on:  16: 7: 4  22May2019            
+
+=------------------------------------------------------------------------------=
+   JOB DONE.
+=------------------------------------------------------------------------------=

@@ -1,0 +1,5 @@
+&projwfc
+  prefix = 'pwscf'
+  outdir = 'pwscf_output'
+/
+

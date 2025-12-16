@@ -308,6 +308,7 @@ class XMLreader(DevBase):
         if xml is None:
             fobj = open(fpath,'r')
             self.xml = fobj.read()
+            print("self.xml ", type(self.xml))
         else:
             self.xml = xml
         #end if
@@ -329,7 +330,6 @@ class XMLreader(DevBase):
         #  Set the current xml element
         self.obj = XMLelement()
         self.cur=[self.obj]
-
         self.parser.Parse(self.xml,True)
 
         #the expat parser is troublesome in that it

@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<qmcsystem>
+  <wavefunction name="psi0" target="e">
+         <sposet_builder type="bspline" href="../scf/pwscf_output/pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" version="0.10" meshfactor="1.0" precision="float" truncate="no">
+            <sposet type="bspline" name="spo_ud" size="4" spindataset="0"/>
+         </sposet_builder>
+         <determinantset>
+            <slaterdeterminant>
+               <determinant id="updet" group="u" sposet="spo_ud" size="4"/>
+               <determinant id="downdet" group="d" sposet="spo_ud" size="4"/>
+            </slaterdeterminant>
+         </determinantset>
+         <jastrow type="Two-Body" name="J2" function="bspline" print="yes">
+            <correlation speciesA="u" speciesB="u" size="8" rcut="2.385185123200013">
+               <coefficients id="uu" type="Array"> 0.2755828005 0.176814764 0.133651923 0.09383499257 0.06307137496 0.03912348199 0.02066636166 0.009174661494</coefficients>
+            </correlation>
+            <correlation speciesA="u" speciesB="d" size="8" rcut="2.385185123200013">
+               <coefficients id="ud" type="Array"> 0.4370528043 0.3194757835 0.226686659 0.1551863442 0.1004552796 0.06065020752 0.03148413853 0.01374153153</coefficients>
+            </correlation>
+         </jastrow>
+      </wavefunction>
+</qmcsystem>

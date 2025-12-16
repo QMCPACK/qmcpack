@@ -1,0 +1,80 @@
+# control options
+
+a_length               = "7.42000000"
+b_length               = "7.42000000"
+c_length               = "7.42000000"
+calculation_mode       = "Quench Electrons"
+compressed_infile      = "false"
+compressed_outfile     = "false"
+description            = "atom_Pt_pp"
+energy_convergence_criterion = "1.00000000e-09"
+max_scf_steps          = "100"
+noncollinear           = "true"
+pseudo_dir             = "./"
+spinorbit              = "true"
+start_mode             = "LCAO Start"
+write_data_period      = "10"
+write_qmcpack_restart  = "false"
+
+
+# cell parameter options
+
+atomic_coordinate_type = "Absolute"
+bravais_lattice_type   = "Cubic Face Centered"
+kpoint_is_shift        = "1 1 1"
+kpoint_mesh            = "4 4 4"
+potential_grid_refinement = "2"
+wavefunction_grid      = "32 32 32"
+
+
+# pseudopotential related options
+
+localize_localpp       = "false"
+localize_projectors    = "false"
+pseudopotential        = "
+Pt   Pt.rel-pbe-n-rrkjus.UPF
+"
+
+
+# kohn sham solver options
+
+kohn_sham_mucycles     = "3"
+kohn_sham_solver       = "davidson"
+
+
+# orbital occupation options
+
+occupation_electron_temperature_eV = "0.20000000"
+occupations_type       = "MethfesselPaxton"
+states_count_and_occupation = "10 1.0 10 0.0"
+
+
+# charge density mixing options
+
+charge_density_mixing  = "0.50000000"
+charge_mixing_type     = "Broyden"
+potential_acceleration_constant_step = "1.00000000"
+
+
+# diagonalization options
+
+subdiag_driver         = "lapack"
+
+
+# testing options
+
+test_energy            = "-45.09801811"
+
+
+# undocumented options
+
+atoms                  = "
+Pt     0.000000000000   0.000000000000   0.000000000000 1 1 1  0.0000  90.00   0.00
+"
+
+
+# deprecated options
+
+alpha                  = "0.00000000"
+beta                   = "0.00000000"
+gamma                  = "0.00000000"

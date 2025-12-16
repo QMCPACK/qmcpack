@@ -23,54 +23,99 @@
 
 import os
 
-from .nexus_version import nexus_version
-from .versions      import current_versions,   policy_versions,    check_versions
-from .developer     import obj,                error,              log
-from .debug         import ci
+from .nexus_base import NexusCore,  nexus_core, nexus_noncore, nexus_core_noncore, restore_nexus_core_defaults, nexus_core_defaults
+from .developer import obj
 
-from .nexus_base      import NexusCore,              nexus_core,     nexus_noncore,          nexus_core_noncore,         restore_nexus_core_defaults,    nexus_core_defaults
-from .machines        import Job,                    job,            Machine,Supercomputer,  get_machine
-from .simulation      import generate_simulation,    input_template, multi_input_template,   generate_template_input,    generate_multi_template_input,  graph_sims
-from .project_manager import ProjectManager
+if os.environ.get("NEXUSTEST", default=None) == "True":
+    pass
+else:
+    from .nexus_version import nexus_version
+    from .versions      import current_versions,   policy_versions,    check_versions
+    from .developer     import obj,                error,              log
+    from .debug         import ci
 
-from .structure       import Structure,          generate_structure,         generate_cell,  read_structure
-from .physical_system import PhysicalSystem,     generate_physical_system
-from .pseudopotential import Pseudopotential,    Pseudopotentials,           ppset
-from .basisset        import BasisSets
-from .bundle          import bundle
+    from .nexus_base      import NexusCore,              nexus_core,     nexus_noncore,          nexus_core_noncore,         restore_nexus_core_defaults,    nexus_core_defaults
+    from .machines        import Job,                    job,            Machine,Supercomputer,  get_machine
+    from .simulation      import generate_simulation,    input_template, multi_input_template,   generate_template_input,    generate_multi_template_input,  graph_sims
+    from .project_manager import ProjectManager
 
-from .pwscf   import Pwscf  , PwscfInput  , PwscfAnalyzer  , generate_pwscf_input  , generate_pwscf
-from .gamess  import Gamess , GamessInput , GamessAnalyzer , generate_gamess_input , generate_gamess, FormattedGroup
-from .vasp    import Vasp   , VaspInput   , VaspAnalyzer   , generate_vasp_input   , generate_vasp
-from .qmcpack import Qmcpack, QmcpackInput, QmcpackAnalyzer, generate_qmcpack_input, generate_qmcpack
-from .quantum_package import QuantumPackage,QuantumPackageInput,QuantumPackageAnalyzer,generate_quantum_package_input,generate_quantum_package
-from .pyscf_sim import Pyscf, PyscfInput, PyscfAnalyzer, generate_pyscf_input, generate_pyscf
-from .rmg import Rmg, RmgInput, RmgAnalyzer, generate_rmg_input, generate_rmg
+    from .structure       import Structure,          generate_structure,         generate_cell,  read_structure
+    from .physical_system import PhysicalSystem,     generate_physical_system
+    from .pseudopotential import Pseudopotential,    Pseudopotentials,           ppset
+    from .basisset        import BasisSets
+    from .bundle          import bundle
 
-from .qmcpack_converters import Pw2qmcpack , Pw2qmcpackInput , Pw2qmcpackAnalyzer , generate_pw2qmcpack_input , generate_pw2qmcpack
-from .qmcpack_converters import Convert4qmc, Convert4qmcInput, Convert4qmcAnalyzer, generate_convert4qmc_input, generate_convert4qmc
-from .qmcpack_converters import Convertpw4qmc, Convertpw4qmcInput, Convertpw4qmcAnalyzer, generate_convertpw4qmc_input, generate_convertpw4qmc
-from .qmcpack_converters import PyscfToAfqmc, PyscfToAfqmcInput, PyscfToAfqmcAnalyzer, generate_pyscf_to_afqmc_input, generate_pyscf_to_afqmc
+    from .pwscf   import Pwscf  , PwscfInput  , PwscfAnalyzer  , generate_pwscf_input  , generate_pwscf
+    from .gamess  import Gamess , GamessInput , GamessAnalyzer , generate_gamess_input , generate_gamess, FormattedGroup
+    from .vasp    import Vasp   , VaspInput   , VaspAnalyzer   , generate_vasp_input   , generate_vasp
+    from .qmcpack import Qmcpack, QmcpackInput, QmcpackAnalyzer, generate_qmcpack_input, generate_qmcpack
+    from .quantum_package import QuantumPackage,QuantumPackageInput,QuantumPackageAnalyzer,generate_quantum_package_input,generate_quantum_package
+    from .pyscf_sim import Pyscf, PyscfInput, PyscfAnalyzer, generate_pyscf_input, generate_pyscf
+    from .rmg import Rmg, RmgInput, RmgAnalyzer, generate_rmg_input, generate_rmg
 
-from .pwscf_postprocessors import PP      , PPInput      , PPAnalyzer      , generate_pp_input      , generate_pp
-from .pwscf_postprocessors import Dos     , DosInput     , DosAnalyzer     , generate_dos_input     , generate_dos
-from .pwscf_postprocessors import Bands   , BandsInput   , BandsAnalyzer   , generate_bands_input   , generate_bands
-from .pwscf_postprocessors import Projwfc , ProjwfcInput , ProjwfcAnalyzer , generate_projwfc_input , generate_projwfc
-from .pwscf_postprocessors import Cppp    , CpppInput    , CpppAnalyzer    , generate_cppp_input    , generate_cppp
-from .pwscf_postprocessors import Pwexport, PwexportInput, PwexportAnalyzer, generate_pwexport_input, generate_pwexport
-from .pwscf_postprocessors import Hp      , HpInput      , HpAnalyzer      , generate_hp_input      , generate_hp
+    from .qmcpack_converters import Pw2qmcpack , Pw2qmcpackInput , Pw2qmcpackAnalyzer , generate_pw2qmcpack_input , generate_pw2qmcpack
+    from .qmcpack_converters import Convert4qmc, Convert4qmcInput, Convert4qmcAnalyzer, generate_convert4qmc_input, generate_convert4qmc
+    from .qmcpack_converters import Convertpw4qmc, Convertpw4qmcInput, Convertpw4qmcAnalyzer, generate_convertpw4qmc_input, generate_convertpw4qmc
+    from .qmcpack_converters import PyscfToAfqmc, PyscfToAfqmcInput, PyscfToAfqmcAnalyzer, generate_pyscf_to_afqmc_input, generate_pyscf_to_afqmc
 
-from .qmcpack import loop,linear,cslinear,vmc,dmc
-from .qmcpack import generate_jastrows,generate_jastrow,generate_jastrow1,generate_jastrow2,generate_jastrow3,generate_opt,generate_opts
-from .qmcpack import generate_cusp_correction
+    from .pwscf_postprocessors import PP      , PPInput      , PPAnalyzer      , generate_pp_input      , generate_pp
+    from .pwscf_postprocessors import Dos     , DosInput     , DosAnalyzer     , generate_dos_input     , generate_dos
+    from .pwscf_postprocessors import Bands   , BandsInput   , BandsAnalyzer   , generate_bands_input   , generate_bands
+    from .pwscf_postprocessors import Projwfc , ProjwfcInput , ProjwfcAnalyzer , generate_projwfc_input , generate_projwfc
+    from .pwscf_postprocessors import Cppp    , CpppInput    , CpppAnalyzer    , generate_cppp_input    , generate_cppp
+    from .pwscf_postprocessors import Pwexport, PwexportInput, PwexportAnalyzer, generate_pwexport_input, generate_pwexport
+    from .pwscf_postprocessors import Hp      , HpInput      , HpAnalyzer      , generate_hp_input      , generate_hp
+
+    from .qmcpack import loop,linear,cslinear,vmc,dmc
+    from .qmcpack import generate_jastrows,generate_jastrow,generate_jastrow1,generate_jastrow2,generate_jastrow3,generate_opt,generate_opts
+    from .qmcpack import generate_cusp_correction
 
 
-#set the machine if known, otherwise user will provide
-hostmachine = Machine.get_hostname()
-if Machine.exists(hostmachine):
-    Job.machine = hostmachine
-    ProjectManager.machine = Machine.get(hostmachine)
-#end if
+    #set the machine if known, otherwise user will provide
+    hostmachine = Machine.get_hostname()
+    if Machine.exists(hostmachine):
+        Job.machine = hostmachine
+        ProjectManager.machine = Machine.get(hostmachine)
+    #end if
+
+    
+    # test needed
+    def run_project(*args,**kwargs):
+        if nexus_core.graph_sims:
+            graph_sims()
+        #end if
+        pm = ProjectManager()
+        pm.add_simulations(*args,**kwargs)
+        pm.run_project()
+        return pm
+    #end def run_project
+
+    # test needed
+    # read input function
+    #   place here for now as it depends on all other input functions
+    def read_input(filepath,format=None):
+        if not os.path.exists(filepath):
+            error('cannot read input file\nfile does not exist: {0}'.format(filepath),'read_input')
+        #end if
+        if format is None:
+            if filepath.endswith('in.xml'):
+                format = 'qmcpack'
+            else:
+                error('cannot identify file format\nplease provide format for file: {0}'.format(filepath))
+            #end if
+        #end if
+        format = format.lower()
+        if format=='qmcpack':
+            input = QmcpackInput(filepath)
+        elif format=='pwscf':
+            input = PwscfInput(filepath)
+        elif format=='gamess':
+            input = GamessInput(filepath)
+        else:
+            error('cannot read input file\nfile format "{0}" is unsupported'.format(format))
+        #end if
+        return input
+    #end def read_input
 
 
 
@@ -116,7 +161,7 @@ class Settings(NexusCore):
     nexus_noncore_vars = noncore_assign_vars | noncore_process_vars
     nexus_vars         = nexus_core_vars     | nexus_noncore_vars
     allowed_vars       = nexus_vars | machine_vars \
-                       | gamess_vars | pwscf_vars | qm_package_vars
+                    | gamess_vars | pwscf_vars | qm_package_vars
 
 
     @staticmethod
@@ -255,73 +300,73 @@ class Settings(NexusCore):
         parser = OptionParser(usage=usage,add_help_option=True,version='%prog '+version)
 
         parser.add_option('--status_only',dest='status_only',
-                          action='store_true',default=False,
-                          help='Report status of all simulations and then exit.'
-                          )
+                        action='store_true',default=False,
+                        help='Report status of all simulations and then exit.'
+                        )
         parser.add_option('--status',dest='status',
-                          default='none',
-                          help="Controls displayed simulation status information.  May be set to one of 'standard', 'active', 'failed', or 'ready'."
-                          )
+                        default='none',
+                        help="Controls displayed simulation status information.  May be set to one of 'standard', 'active', 'failed', or 'ready'."
+                        )
         parser.add_option('--generate_only',dest='generate_only',
-                          action='store_true',default=False,
-                          help='Write inputs to all simulations and then exit.  Note that no dependencies are processed, e.g. if one simulation depends on another for an orbital file location or for a relaxed structure, this information will not be present in the generated input file for that simulation since no simulations are actually run with this option.'
-                          )
+                        action='store_true',default=False,
+                        help='Write inputs to all simulations and then exit.  Note that no dependencies are processed, e.g. if one simulation depends on another for an orbital file location or for a relaxed structure, this information will not be present in the generated input file for that simulation since no simulations are actually run with this option.'
+                        )
         parser.add_option('--graph_sims',dest='graph_sims',
-                          action='store_true',default=False,
-                          help='Display a graph of simulation workflows, then exit.'
-                          )
+                        action='store_true',default=False,
+                        help='Display a graph of simulation workflows, then exit.'
+                        )
         parser.add_option('--progress_tty',dest='progress_tty',
-                          action='store_true',default=False,
-                          help='Print abbreviated polling messages.'
-                          )
+                        action='store_true',default=False,
+                        help='Print abbreviated polling messages.'
+                        )
         parser.add_option('--sleep',dest='sleep',
-                          default='none',
-                          help='Number of seconds between polls.  At each poll, simulations are actually run provided all simulations they depend on have successfully completed (default={0}).'.format(nexus_core_defaults.sleep)
-                          )
+                        default='none',
+                        help='Number of seconds between polls.  At each poll, simulations are actually run provided all simulations they depend on have successfully completed (default={0}).'.format(nexus_core_defaults.sleep)
+                        )
         parser.add_option('--machine',dest='machine',
-                          default='none',
-                          help="(Required) Name of the machine the simulations will be run on.  Workstations with between 1 and 128 cores may be specified by 'ws1' to 'ws128' (works for any machine where only mpirun is used).  For a complete listing of currently available machines (including those at HPC centers) please see the manual."
-                          )
+                        default='none',
+                        help="(Required) Name of the machine the simulations will be run on.  Workstations with between 1 and 128 cores may be specified by 'ws1' to 'ws128' (works for any machine where only mpirun is used).  For a complete listing of currently available machines (including those at HPC centers) please see the manual."
+                        )
         parser.add_option('--account',dest='account',
-                          default='none',
-                          help='Account name required to submit jobs at some HPC centers.'
-                          )
+                        default='none',
+                        help='Account name required to submit jobs at some HPC centers.'
+                        )
         parser.add_option('--runs',dest='runs',
-                          default='none',
-                          help='Directory to perform all runs in.  Simulation paths are appended to this directory (default={0}).'.format(nexus_core_defaults.runs)
-                          )
+                        default='none',
+                        help='Directory to perform all runs in.  Simulation paths are appended to this directory (default={0}).'.format(nexus_core_defaults.runs)
+                        )
         parser.add_option('--results',dest='results',
-                          default='none',
-                          help="Directory to copy out lightweight results data.  If set to '', results will not be stored outside of the runs directory (default={0}).".format(nexus_core_defaults.results)
-                          )
+                        default='none',
+                        help="Directory to copy out lightweight results data.  If set to '', results will not be stored outside of the runs directory (default={0}).".format(nexus_core_defaults.results)
+                        )
         parser.add_option('--local_directory',dest='local_directory',
-                          default='none',
-                          help='Base path where runs and results directories will be created (default={0}).'.format(nexus_core_defaults.local_directory)
-                          )
+                        default='none',
+                        help='Base path where runs and results directories will be created (default={0}).'.format(nexus_core_defaults.local_directory)
+                        )
         parser.add_option('--pseudo_dir',dest='pseudo_dir',
-                          default='none',
-                          help='Path to directory containing pseudopotential files (required if running with pseudopotentials).'
-                          )
+                        default='none',
+                        help='Path to directory containing pseudopotential files (required if running with pseudopotentials).'
+                        )
         parser.add_option('--basis_dir',dest='basis_dir',
-                          default='none',
-                          help='Path to directory containing basis set files (useful if running gaussian based QMC workflows).'
-                          )
+                        default='none',
+                        help='Path to directory containing basis set files (useful if running gaussian based QMC workflows).'
+                        )
         parser.add_option('--ericfmt',dest='ericfmt',
-                          default='none',
-                          help='Path to the ericfmt file used with GAMESS (required if running GAMESS).'
-                          )
+                        default='none',
+                        help='Path to the ericfmt file used with GAMESS (required if running GAMESS).'
+                        )
         parser.add_option('--mcppath',dest='mcppath',
-                          default='none',
-                          help='Path to the mcpdata file used with GAMESS (optional for most workflows)'
-                          )
+                        default='none',
+                        help='Path to the mcpdata file used with GAMESS (optional for most workflows)'
+                        )
         parser.add_option('--vdw_table',dest='vdw_table',
-                          default='none',
-                          help='Path to the vdw_table file used with Quantum Espresso (required only if running Quantum Espresso with van der Waals functionals).'
-                          )
+                        default='none',
+                        help='Path to the vdw_table file used with Quantum Espresso (required only if running Quantum Espresso with van der Waals functionals).'
+                        )
         parser.add_option('--qprc',dest='qprc',
-                          default='none',
-                          help='Path to the quantum_package.rc file used with Quantum Package.'
-                          )
+                        default='none',
+                        help='Path to the quantum_package.rc file used with Quantum Package.'
+                        )
 
         # parse the command line inputs
         options,files_in = parser.parse_args()
@@ -549,47 +594,3 @@ class Settings(NexusCore):
 # create settings functor for UI
 settings = Settings()
 
-
-# test needed
-def run_project(*args,**kwargs):
-    if nexus_core.graph_sims:
-        graph_sims()
-    #end if
-    pm = ProjectManager()
-    pm.add_simulations(*args,**kwargs)
-    pm.run_project()
-    return pm
-#end def run_project
-
-
-
-
-
-
-
-# test needed
-# read input function
-#   place here for now as it depends on all other input functions
-def read_input(filepath,format=None):
-    if not os.path.exists(filepath):
-        error('cannot read input file\nfile does not exist: {0}'.format(filepath),'read_input')
-    #end if
-    if format is None:
-        if filepath.endswith('in.xml'):
-            format = 'qmcpack'
-        else:
-            error('cannot identify file format\nplease provide format for file: {0}'.format(filepath))
-        #end if
-    #end if
-    format = format.lower()
-    if format=='qmcpack':
-        input = QmcpackInput(filepath)
-    elif format=='pwscf':
-        input = PwscfInput(filepath)
-    elif format=='gamess':
-        input = GamessInput(filepath)
-    else:
-        error('cannot read input file\nfile format "{0}" is unsupported'.format(format))
-    #end if
-    return input
-#end def read_input

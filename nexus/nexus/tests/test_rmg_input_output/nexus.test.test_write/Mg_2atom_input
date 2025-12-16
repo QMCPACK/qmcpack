@@ -1,0 +1,74 @@
+# control options
+
+a_length               = "3.19405000"
+b_length               = "3.19405000"
+c_length               = "5.17198000"
+calculation_mode       = "Quench Electrons"
+energy_convergence_criterion = "1.00000000e-12"
+max_scf_steps          = "200"
+start_mode             = "LCAO Start"
+write_data_period      = "500"
+
+
+# cell parameter options
+
+atomic_coordinate_type = "Cell Relative"
+bravais_lattice_type   = "Hexagonal Primitive"
+crds_units             = "Angstrom"
+kpoint_mesh            = "5 5 3"
+lattice_units          = "Angstrom"
+potential_grid_refinement = "2"
+wavefunction_grid      = "24 24 40"
+
+
+# pseudopotential related options
+
+localize_localpp       = "false"
+localize_projectors    = "false"
+
+
+# kohn sham solver options
+
+kohn_sham_solver       = "davidson"
+
+
+# orbital occupation options
+
+occupation_electron_temperature_eV = "0.00010000"
+occupations_type       = "MethfesselPaxton"
+unoccupied_states_per_kpoint = "4"
+
+
+# charge density mixing options
+
+charge_density_mixing  = "0.50000000"
+charge_mixing_type     = "Broyden"
+potential_acceleration_constant_step = "1.00000000"
+
+
+# relaxation and molecular dynamics options
+
+renormalize_forces     = "false"
+
+
+# performance related options
+
+preconditioner_threshold = "0.00010000"
+
+
+# testing options
+
+test_energy            = "-125.31535043"
+
+
+# miscellaneous options
+
+kpoint_distribution    = "2"
+
+
+# undocumented options
+
+atoms                  = "
+Mg     0.000000000000   0.000000000000   0.000000000000  1
+Mg     0.333333333333   0.333333333333   0.500000000000  1
+"

@@ -299,7 +299,7 @@ def nexus_path(append=None,location=None):
 
     if location is not None:
         if location=='unit':
-            append = 'tests/unit'
+            append = 'nexus/tests'
         elif location=='bin':
             append = 'bin'
         else:
@@ -359,7 +359,7 @@ def unit_test_output_path(test,subtest=None):
     files_dir  = 'test_{}_output'.format(test)
     path = os.path.join(unit_path,files_dir)
     if subtest is not None:
-        path = os.path.join(path,subtest)
+        path = os.path.join(path,("nexus."+"test."+subtest))
     #end if
     return path
 #end def unit_test_output_path
@@ -376,9 +376,9 @@ def setup_unit_test_output_directory(test,subtest,divert=False,file_sets=None,ps
 
     path = unit_test_output_path(test,subtest)
     assert('nexus' in path)
-    assert('unit' in path)
-    assert(os.path.basename(path).startswith('test_'))
-    assert(path.endswith('/'+subtest))
+    assert('nexus/tests' in path)
+    assert(os.path.basename(path).startswith('nexus.test.test_'))
+    assert(path.endswith('/nexus.test.'+subtest))
     if os.path.exists(path):
         shutil.rmtree(path)
     #end if

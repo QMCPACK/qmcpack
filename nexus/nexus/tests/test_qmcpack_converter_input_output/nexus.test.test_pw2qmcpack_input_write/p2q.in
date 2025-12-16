@@ -1,0 +1,4 @@
+&inputpp
+  prefix = 'pwscf'
+  outdir = 'pwscf_output'
+/

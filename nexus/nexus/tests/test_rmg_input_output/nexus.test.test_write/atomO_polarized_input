@@ -1,0 +1,76 @@
+# control options
+
+a_length               = "20.00000000"
+b_length               = "20.00000000"
+c_length               = "20.00000000"
+calculation_mode       = "Quench Electrons"
+description            = "atom_O_pp"
+max_scf_steps          = "40"
+rms_convergence_criterion = "1.00000000e-10"
+start_mode             = "LCAO Start"
+write_data_period      = "10"
+write_qmcpack_restart  = "true"
+
+
+# cell parameter options
+
+atomic_coordinate_type = "Absolute"
+bravais_lattice_type   = "Cubic Primitive"
+potential_grid_refinement = "1"
+wavefunction_grid      = "128 128 128"
+
+
+# pseudopotential related options
+
+pseudopotential        = "
+O    ./O.BFD.xml
+"
+
+
+# kohn sham solver options
+
+kohn_sham_mucycles     = "3"
+kohn_sham_solver       = "davidson"
+
+
+# orbital occupation options
+
+occupations_type       = "Fixed"
+states_count_and_occupation_spin_down = "1 1.0  3 0.3333333333 3 0.0"
+states_count_and_occupation_spin_up = "1 1.0  3 1.0 3 0.0"
+
+
+# charge density mixing options
+
+charge_density_mixing  = "0.70000000"
+charge_mixing_type     = "Broyden"
+potential_acceleration_constant_step = "1.00000000"
+
+
+# diagonalization options
+
+subdiag_driver         = "lapack"
+
+
+# performance related options
+
+preconditioner_threshold = "0.00010000"
+
+
+# testing options
+
+test_energy            = "-15.87801563"
+
+
+# undocumented options
+
+atoms                  = "
+O     10.000000000000  10.000000000000  10.000000000000  1   0.0000
+"
+
+
+# deprecated options
+
+alpha                  = "0.00000000"
+beta                   = "0.00000000"
+gamma                  = "0.00000000"

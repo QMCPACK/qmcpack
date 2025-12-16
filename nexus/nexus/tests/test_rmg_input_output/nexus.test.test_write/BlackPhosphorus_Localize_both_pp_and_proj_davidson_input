@@ -1,0 +1,78 @@
+# control options
+
+a_length               = "3.31360000"
+b_length               = "10.47800000"
+c_length               = "4.37630000"
+calculation_mode       = "Quench Electrons"
+description            = "Black Phosphorus"
+max_scf_steps          = "20"
+output_wave_function_file = "Waves/wave.out"
+rms_convergence_criterion = "0.00000010"
+start_mode             = "LCAO Start"
+
+
+# cell parameter options
+
+atomic_coordinate_type = "Absolute"
+bravais_lattice_type   = "Orthorhombic Primitive"
+crds_units             = "Angstrom"
+kpoint_is_shift        = "0 0 0"
+kpoint_mesh            = "2 1 2"
+potential_grid_refinement = "2"
+
+
+# pseudopotential related options
+
+localize_localpp       = "true"
+localize_projectors    = "true"
+
+
+# kohn sham solver options
+
+kohn_sham_mg_levels    = "2"
+kohn_sham_solver       = "davidson"
+kohn_sham_time_step    = "0.66000000"
+
+
+# orbital occupation options
+
+occupation_electron_temperature_eV = "0.02500000"
+occupation_number_mixing = "1.00000000"
+occupations_type       = "Fermi Dirac"
+unoccupied_states_per_kpoint = "10"
+
+
+# charge density mixing options
+
+charge_density_mixing  = "0.20000000"
+charge_mixing_type     = "Pulay"
+charge_pulay_order     = "5"
+charge_pulay_scale     = "0.50000000"
+potential_acceleration_constant_step = "0.00000000"
+
+
+# diagonalization options
+
+initial_diagonalization = "true"
+subdiag_driver         = "lapack"
+
+
+# miscellaneous options
+
+system_charge          = "0.00000000"
+
+
+# undocumented options
+
+atoms                  = "
+P      0.000000000000   0.000000000000   0.000000000000  1
+P      1.656800000000   0.000000000000   1.483640000000  1
+P      1.656800000000   2.130540000000   2.188150000000  1
+P      0.000000000000   2.130540000000   3.671790000000  1
+"
+
+
+# deprecated options
+
+length_units           = "Angstrom"
+projector_mixing       = "0.40000000"
