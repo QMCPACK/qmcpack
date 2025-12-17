@@ -31,7 +31,7 @@ H  0.000000  0.757160 -0.586260
 
 scf_template = '''#! /usr/bin/env python3
 
-from ..pyscf import scf
+from pyscf import scf
 
 $system
 
@@ -100,7 +100,7 @@ def test_generate():
 
     ref_system = '''
         ### generated system text ###
-        from ..pyscf import gto as gto_loc
+        from pyscf import gto as gto_loc
         mol = gto_loc.Mole()
         mol.atom     = {0}
                        O    0.00000000   0.00000000   0.00000000
@@ -163,7 +163,7 @@ def test_generate():
     ref_system = '''
         ### generated system text ###
         from numpy import array
-        from ..pyscf.pbc import gto as gto_loc
+        from pyscf.pbc import gto as gto_loc
         cell = gto_loc.Cell()
         cell.a             = {0}
                              1.78500000   1.78500000   0.00000000
@@ -220,7 +220,7 @@ def test_generate():
 
     ref_system = '''
         ### generated system text ###
-        from ..pyscf import gto as gto_loc
+        from pyscf import gto as gto_loc
         mol = gto_loc.Mole()
         mol.atom     = {0}
                        O    0.00000000   0.00000000   0.00000000
@@ -247,7 +247,7 @@ def test_generate():
 
     ref_pyscfimport = '''
         ### generated pyscfimport text ###
-        from ..pyscf import df, scf, dft
+        from pyscf import df, scf, dft
         ### end generated pyscfimport text ###
         '''.format("'''")
                     
@@ -317,7 +317,7 @@ def test_generate():
     ref_system = """
         ### generated system text ###
         from numpy import array
-        from ..pyscf.pbc import gto as gto_loc
+        from pyscf.pbc import gto as gto_loc
         cell = gto_loc.Cell()
         cell.a             = '''
                              4.49453800   0.00000000   0.00000000
@@ -368,7 +368,7 @@ def test_generate():
 
     ref_pyscfimport = '''
         ### generated pyscfimport text ###
-        from ..pyscf.pbc import df, scf
+        from pyscf.pbc import df, scf
         ### end generated pyscfimport text ###
         '''.format("'''")
                     
@@ -438,41 +438,41 @@ def test_write():
 
     assert(os.path.exists(write_path))
 
-    text = open(write_path,'r').read()
+    text = open(write_path,'r').read().strip()
 
     ref_text = '''
-        #! /usr/bin/env python3
-        
-        from ..pyscf import scf
-        
-        
-        ### generated system text ###
-        from ..pyscf import gto as gto_loc
-        mol = gto_loc.Mole()
-        mol.verbose  = 5
-        mol.atom     = {0}
-                       O    0.00000000   0.00000000   0.00000000
-                       H    0.00000000   0.75716000   0.58626000
-                       H    0.00000000   0.75716000  -0.58626000
-                       {0}
-        mol.basis    = 'ccpvtz'
-        mol.unit     = 'A'
-        mol.charge   = 0
-        mol.spin     = 0
-        mol.symmetry = True
-        mol.build()
-        ### end generated system text ###
-        
-        
-        
-        mf = scf.RHF(mol)
-        mf.kernel()
-        
-        ### generated conversion text ###
-        from ..pyscfToQmcpack import savetoqmcpack
-        savetoqmcpack(mol,mf,'scf')
-        ### end generated conversion text ###
-        '''.format("'''")
+#! /usr/bin/env python3
+
+from pyscf import scf
+
+
+### generated system text ###
+from pyscf import gto as gto_loc
+mol = gto_loc.Mole()
+mol.verbose  = 5
+mol.atom     = {0}
+               O    0.00000000   0.00000000   0.00000000
+               H    0.00000000   0.75716000   0.58626000
+               H    0.00000000   0.75716000  -0.58626000
+               {0}
+mol.basis    = 'ccpvtz'
+mol.unit     = 'A'
+mol.charge   = 0
+mol.spin     = 0
+mol.symmetry = True
+mol.build()
+### end generated system text ###
+
+
+
+mf = scf.RHF(mol)
+mf.kernel()
+
+### generated conversion text ###
+from PyscfToQmcpack import savetoqmcpack
+savetoqmcpack(mol,mf,'scf')
+### end generated conversion text ###
+        '''.format("'''").strip()
 
     assert(text_eq(text,ref_text))
 
@@ -517,12 +517,12 @@ def test_write():
     ref_text = '''
         #! /usr/bin/env python3
         
-        from ..pyscf import scf
+        from pyscf import scf
         
         
         ### generated system text ###
         from numpy import array
-        from ..pyscf.pbc import gto as gto_loc
+        from pyscf.pbc import gto as gto_loc
         cell = gto_loc.Cell()
         cell.a             = {0}
                              1.78500000   1.78500000   0.00000000
@@ -553,7 +553,7 @@ def test_write():
         mf.kernel()
         
         ### generated conversion text ###
-        from ..pyscfToQmcpack import savetoqmcpack
+        from PyscfToQmcpack import savetoqmcpack
         tiling = [2,1,1]
         sp_kpoints = array([
             [0.0, 0.0, 0.0]])

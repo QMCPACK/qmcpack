@@ -23,99 +23,94 @@
 
 import os
 
-from .nexus_base import NexusCore,  nexus_core, nexus_noncore, nexus_core_noncore, restore_nexus_core_defaults, nexus_core_defaults
-from .developer import obj
+from .nexus_version import nexus_version
+from .versions      import current_versions,   policy_versions,    check_versions
+from .generic       import generic_settings
+from .developer     import obj,                error,              log
+from .debug         import ci
 
-if os.environ.get("NEXUSTEST", default=None) == "True":
-    pass
-else:
-    from .nexus_version import nexus_version
-    from .versions      import current_versions,   policy_versions,    check_versions
-    from .developer     import obj,                error,              log
-    from .debug         import ci
+from .nexus_base      import NexusCore,              nexus_core,     nexus_noncore,          nexus_core_noncore,         restore_nexus_core_defaults,    nexus_core_defaults
+from .machines        import Job,                    job,            Machine, Supercomputer, get_machine
+from .simulation      import generate_simulation,    input_template, multi_input_template,   generate_template_input,    generate_multi_template_input,  graph_sims
+from .project_manager import ProjectManager
 
-    from .nexus_base      import NexusCore,              nexus_core,     nexus_noncore,          nexus_core_noncore,         restore_nexus_core_defaults,    nexus_core_defaults
-    from .machines        import Job,                    job,            Machine,Supercomputer,  get_machine
-    from .simulation      import generate_simulation,    input_template, multi_input_template,   generate_template_input,    generate_multi_template_input,  graph_sims
-    from .project_manager import ProjectManager
+from .structure       import Structure,          generate_structure,         generate_cell,  read_structure
+from .physical_system import PhysicalSystem,     generate_physical_system
+from .pseudopotential import Pseudopotential,    Pseudopotentials,           ppset
+from .basisset        import BasisSets
+from .bundle          import bundle
 
-    from .structure       import Structure,          generate_structure,         generate_cell,  read_structure
-    from .physical_system import PhysicalSystem,     generate_physical_system
-    from .pseudopotential import Pseudopotential,    Pseudopotentials,           ppset
-    from .basisset        import BasisSets
-    from .bundle          import bundle
+from .pwscf   import Pwscf  , PwscfInput  , PwscfAnalyzer  , generate_pwscf_input  , generate_pwscf
+from .gamess  import Gamess , GamessInput , GamessAnalyzer , generate_gamess_input , generate_gamess, FormattedGroup
+from .vasp    import Vasp   , VaspInput   , VaspAnalyzer   , generate_vasp_input   , generate_vasp
+from .qmcpack import Qmcpack, QmcpackInput, QmcpackAnalyzer, generate_qmcpack_input, generate_qmcpack
+from .quantum_package import QuantumPackage,QuantumPackageInput,QuantumPackageAnalyzer,generate_quantum_package_input,generate_quantum_package
+from .pyscf_sim import Pyscf, PyscfInput, PyscfAnalyzer, generate_pyscf_input, generate_pyscf
+from .rmg import Rmg, RmgInput, RmgAnalyzer, generate_rmg_input, generate_rmg
 
-    from .pwscf   import Pwscf  , PwscfInput  , PwscfAnalyzer  , generate_pwscf_input  , generate_pwscf
-    from .gamess  import Gamess , GamessInput , GamessAnalyzer , generate_gamess_input , generate_gamess, FormattedGroup
-    from .vasp    import Vasp   , VaspInput   , VaspAnalyzer   , generate_vasp_input   , generate_vasp
-    from .qmcpack import Qmcpack, QmcpackInput, QmcpackAnalyzer, generate_qmcpack_input, generate_qmcpack
-    from .quantum_package import QuantumPackage,QuantumPackageInput,QuantumPackageAnalyzer,generate_quantum_package_input,generate_quantum_package
-    from .pyscf_sim import Pyscf, PyscfInput, PyscfAnalyzer, generate_pyscf_input, generate_pyscf
-    from .rmg import Rmg, RmgInput, RmgAnalyzer, generate_rmg_input, generate_rmg
+from .qmcpack_converters import Pw2qmcpack , Pw2qmcpackInput , Pw2qmcpackAnalyzer , generate_pw2qmcpack_input , generate_pw2qmcpack
+from .qmcpack_converters import Convert4qmc, Convert4qmcInput, Convert4qmcAnalyzer, generate_convert4qmc_input, generate_convert4qmc
+from .qmcpack_converters import Convertpw4qmc, Convertpw4qmcInput, Convertpw4qmcAnalyzer, generate_convertpw4qmc_input, generate_convertpw4qmc
+from .qmcpack_converters import PyscfToAfqmc, PyscfToAfqmcInput, PyscfToAfqmcAnalyzer, generate_pyscf_to_afqmc_input, generate_pyscf_to_afqmc
 
-    from .qmcpack_converters import Pw2qmcpack , Pw2qmcpackInput , Pw2qmcpackAnalyzer , generate_pw2qmcpack_input , generate_pw2qmcpack
-    from .qmcpack_converters import Convert4qmc, Convert4qmcInput, Convert4qmcAnalyzer, generate_convert4qmc_input, generate_convert4qmc
-    from .qmcpack_converters import Convertpw4qmc, Convertpw4qmcInput, Convertpw4qmcAnalyzer, generate_convertpw4qmc_input, generate_convertpw4qmc
-    from .qmcpack_converters import PyscfToAfqmc, PyscfToAfqmcInput, PyscfToAfqmcAnalyzer, generate_pyscf_to_afqmc_input, generate_pyscf_to_afqmc
+from .pwscf_postprocessors import PP      , PPInput      , PPAnalyzer      , generate_pp_input      , generate_pp
+from .pwscf_postprocessors import Dos     , DosInput     , DosAnalyzer     , generate_dos_input     , generate_dos
+from .pwscf_postprocessors import Bands   , BandsInput   , BandsAnalyzer   , generate_bands_input   , generate_bands
+from .pwscf_postprocessors import Projwfc , ProjwfcInput , ProjwfcAnalyzer , generate_projwfc_input , generate_projwfc
+from .pwscf_postprocessors import Cppp    , CpppInput    , CpppAnalyzer    , generate_cppp_input    , generate_cppp
+from .pwscf_postprocessors import Pwexport, PwexportInput, PwexportAnalyzer, generate_pwexport_input, generate_pwexport
+from .pwscf_postprocessors import Hp      , HpInput      , HpAnalyzer      , generate_hp_input      , generate_hp
 
-    from .pwscf_postprocessors import PP      , PPInput      , PPAnalyzer      , generate_pp_input      , generate_pp
-    from .pwscf_postprocessors import Dos     , DosInput     , DosAnalyzer     , generate_dos_input     , generate_dos
-    from .pwscf_postprocessors import Bands   , BandsInput   , BandsAnalyzer   , generate_bands_input   , generate_bands
-    from .pwscf_postprocessors import Projwfc , ProjwfcInput , ProjwfcAnalyzer , generate_projwfc_input , generate_projwfc
-    from .pwscf_postprocessors import Cppp    , CpppInput    , CpppAnalyzer    , generate_cppp_input    , generate_cppp
-    from .pwscf_postprocessors import Pwexport, PwexportInput, PwexportAnalyzer, generate_pwexport_input, generate_pwexport
-    from .pwscf_postprocessors import Hp      , HpInput      , HpAnalyzer      , generate_hp_input      , generate_hp
-
-    from .qmcpack import loop,linear,cslinear,vmc,dmc
-    from .qmcpack import generate_jastrows,generate_jastrow,generate_jastrow1,generate_jastrow2,generate_jastrow3,generate_opt,generate_opts
-    from .qmcpack import generate_cusp_correction
+from .qmcpack import loop,linear,cslinear,vmc,dmc
+from .qmcpack import generate_jastrows,generate_jastrow,generate_jastrow1,generate_jastrow2,generate_jastrow3,generate_opt,generate_opts
+from .qmcpack import generate_cusp_correction
 
 
-    #set the machine if known, otherwise user will provide
-    hostmachine = Machine.get_hostname()
-    if Machine.exists(hostmachine):
-        Job.machine = hostmachine
-        ProjectManager.machine = Machine.get(hostmachine)
+#set the machine if known, otherwise user will provide
+hostmachine = Machine.get_hostname()
+if Machine.exists(hostmachine):
+    Job.machine = hostmachine
+    ProjectManager.machine = Machine.get(hostmachine)
+#end if
+
+
+# test needed
+def run_project(*args,**kwargs):
+    if nexus_core.graph_sims:
+        graph_sims()
     #end if
+    pm = ProjectManager()
+    pm.add_simulations(*args,**kwargs)
+    pm.run_project()
+    return pm
+#end def run_project
 
-    
-    # test needed
-    def run_project(*args,**kwargs):
-        if nexus_core.graph_sims:
-            graph_sims()
-        #end if
-        pm = ProjectManager()
-        pm.add_simulations(*args,**kwargs)
-        pm.run_project()
-        return pm
-    #end def run_project
-
-    # test needed
-    # read input function
-    #   place here for now as it depends on all other input functions
-    def read_input(filepath,format=None):
-        if not os.path.exists(filepath):
-            error('cannot read input file\nfile does not exist: {0}'.format(filepath),'read_input')
-        #end if
-        if format is None:
-            if filepath.endswith('in.xml'):
-                format = 'qmcpack'
-            else:
-                error('cannot identify file format\nplease provide format for file: {0}'.format(filepath))
-            #end if
-        #end if
-        format = format.lower()
-        if format=='qmcpack':
-            input = QmcpackInput(filepath)
-        elif format=='pwscf':
-            input = PwscfInput(filepath)
-        elif format=='gamess':
-            input = GamessInput(filepath)
+# test needed
+# read input function
+#   place here for now as it depends on all other input functions
+def read_input(filepath,format=None):
+    if not os.path.exists(filepath):
+        error('cannot read input file\nfile does not exist: {0}'.format(filepath),'read_input')
+    #end if
+    if format is None:
+        if filepath.endswith('in.xml'):
+            format = 'qmcpack'
         else:
-            error('cannot read input file\nfile format "{0}" is unsupported'.format(format))
+            error('cannot identify file format\nplease provide format for file: {0}'.format(filepath))
         #end if
-        return input
-    #end def read_input
+    #end if
+    format = format.lower()
+    if format=='qmcpack':
+        input = QmcpackInput(filepath)
+    elif format=='pwscf':
+        input = PwscfInput(filepath)
+    elif format=='gamess':
+        input = GamessInput(filepath)
+    else:
+        error('cannot read input file\nfile format "{0}" is unsupported'.format(format))
+    #end if
+    return input
+#end def read_input
 
 
 

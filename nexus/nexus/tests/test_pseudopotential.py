@@ -224,15 +224,20 @@ def test_pseudopotential_classes():
     tpath = testing.setup_unit_test_output_directory('pseudopotential','test_pseudopotential_classes')
 
     files = get_files()
-    print("files ", files)
+
     # empty initialization
     SemilocalPP()
     GaussianPP()
     QmcpackPP()
     CasinoPP()
 
-    print("files['C.BFD.xml'] ", files['C.BFD.xml'])
-    qpp = QmcpackPP(files['C.BFD.xml'])
+    f = open(files['C.BFD.xml'],'r')
+    pp_relpath = f.read().strip()
+    pp_path = os.path.split(files['C.BFD.xml'])[0]
+    filepath = os.path.join(pp_path,pp_relpath)
+    f.close()
+
+    qpp = QmcpackPP(filepath)
 
     # SemilocalPP attributes/methods
     assert(qpp.name is None)

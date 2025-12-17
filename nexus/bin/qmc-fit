@@ -30,7 +30,7 @@ except (ImportError,RuntimeError):
 
 def find_nexus_modules():
     import sys
-    nexus_lib = os.path.abspath(os.path.join(__file__,'..','..','lib'))
+    nexus_lib = os.path.abspath(os.path.join(__file__,'..','..','nexus'))
     assert(os.path.exists(nexus_lib))
     sys.path.append(nexus_lib)
 #end def find_nexus_modules
@@ -47,11 +47,11 @@ try:
     # Attempt specialized path-based imports.
     #  (The executable should still work even if Nexus is not installed)
     find_nexus_modules()
-    nxs_ver_mod = import_nexus_module('nexus_version')
+    nxs_ver_mod = import_nexus_module('nexus.nexus_version')
     nexus_version = nxs_ver_mod.nexus_version
     del nxs_ver_mod
 
-    developer = import_nexus_module('developer')
+    developer = import_nexus_module('nexus.developer')
     DevBase = developer.DevBase
     obj     = developer.obj
     log     = developer.log
@@ -59,7 +59,7 @@ try:
     error   = developer.error
     del developer
 
-    numerics = import_nexus_module('numerics')
+    numerics = import_nexus_module('nexus.numerics')
     jackknife            = numerics.jackknife
     jackknife_aux        = numerics.jackknife_aux
     simstats             = numerics.simstats
@@ -86,11 +86,11 @@ try:
     del numerics
 except:
     # Failing path-based imports, import installed Nexus modules.
-    from nexus_version import nexus_version
-    from developer import DevBase,obj,log,warn,error
-    from numerics import jackknife,jackknife_aux
-    from numerics import simstats,equilibration_length
-    from numerics import curve_fit,least_squares
+    from nexus.nexus_version import nexus_version
+    from nexus.developer import DevBase,obj,log,warn,error
+    from nexus.numerics import jackknife,jackknife_aux
+    from nexus.numerics import simstats,equilibration_length
+    from nexus.numerics import curve_fit,least_squares
 #end try
 
 
