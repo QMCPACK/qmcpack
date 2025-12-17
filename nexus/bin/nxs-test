@@ -17,7 +17,7 @@ if host_dir is not None:
 #end if
 
 # save nexus directories
-library_dir   = os.path.join(parent_dir,'nexus')
+library_dir   = parent_dir
 test_dir      = os.path.join(parent_dir,'nexus/tests')
 reference_dir = os.path.join(parent_dir,'nexus/tests/reference')
 example_dir   = os.path.join(parent_dir,'examples')
@@ -457,8 +457,8 @@ class NexusTest(NexusTestBase):
 
     # run the current test
     def run(self):
-
-        from nexus.testing import check_final_state
+        tst = importlib.import_module('testing')
+        check_final_state = tst.check_final_state
 
         nleave()
         NexusTestBase.current_test  = self
@@ -2219,12 +2219,19 @@ except:
 if __name__=='__main__':
     import re
     from time import time # used to get user wall clock rather than cpu time
-    from pathlib import Path
-    test_file_path = Path(__file__)
-    nexus_dir = test_file_path.parent.parent
-    sys.path.append(str(nexus_dir))
-    os.environ["NEXUSTEST"] = "True"
     tstart_all = time()
+
+    testing_wrong_nexus_install = False
+    try:
+        import nexus
+        nexus_file = os.path.abspath(os.path.join(nexus.__file__,'../..'))
+        test_file  = os.path.abspath(os.path.join(__file__,'../..'))
+        testing_wrong_nexus_install = nexus_file!=test_file
+    except:
+        pass
+    if testing_wrong_nexus_install:
+        print('\n\n\nInstalled Nexus package does not reside with this nxs-test executable.\n  Currently installed nexus package: {}\n  Correct Nexus package            : {}\n  Please install the correct Nexus package above.\n\n'.format(nexus_file,test_file))
+        sys.exit(1)
 
     # read command line input
     regex = None
@@ -2377,12 +2384,15 @@ if __name__=='__main__':
         os.environ['PYTHONPATH']=options.pythonpath
     #end if
 
-    from nexus.generic import generic_settings
+    gs = importlib.import_module('generic_settings')
+    generic_settings = gs.generic_settings
 
     generic_settings.raise_error    = True
 
     # import core testing functions (shared between nxs-test and unit tests)
-    from nexus.testing import global_data,numpy_available
+    tst = importlib.import_module('testing')
+    global_data     = tst.global_data
+    numpy_available = tst.numpy_available
 
     global_data['verbose']       = options.verbose
     global_data['job_ref_table'] = options.job_ref_table
