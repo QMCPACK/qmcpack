@@ -8,7 +8,7 @@ qmcpack_manual.toc
 qmcpack_manual.pdf
 .DS_Store
 /build_*/
-nexus/tests/unit/*output
+nexus/nexus/tests/*output
 tests/solids/NiO_a4_e48_pp/NiO-fcc-supertwist111-supershift000-S1.h5
 
 # Eclipse IDE
