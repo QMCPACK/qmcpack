@@ -308,7 +308,6 @@ class XMLreader(DevBase):
         if xml is None:
             fobj = open(fpath,'r')
             self.xml = fobj.read()
-            print("self.xml ", type(self.xml))
         else:
             self.xml = xml
         #end if

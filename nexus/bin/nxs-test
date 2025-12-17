@@ -1890,6 +1890,7 @@ def user_examples(label):
 NexusTest( versions                        )
 NexusTest( required_dependencies           )
 NexusTest( optional_dependencies           , optional=True)
+NexusTest( nexus_base                      )
 NexusTest( nexus_imports                   )
 NexusTest( testing                         )
 NexusTest( execute                         )
@@ -1907,7 +1908,6 @@ NexusTest( structure                       )
 NexusTest( physical_system                 )
 NexusTest( basisset                        )
 NexusTest( pseudopotential                 )
-NexusTest( nexus_base                      )
 NexusTest( machines                        )
 NexusTest( simulation                      , 'simulation_module' )
 NexusTest( bundle                          )
@@ -2203,7 +2203,7 @@ try:
     #  (The executable should still work even if Nexus is not installed)
     find_nexus_modules()
 
-    nxs_ver_mod = import_nexus_module('nexus_version')
+    nxs_ver_mod = import_nexus_module('nexus.nexus_version')
     nexus_version = nxs_ver_mod.nexus_version
     del nxs_ver_mod
 except:
@@ -2379,7 +2379,7 @@ if __name__=='__main__':
 
     from nexus.generic import generic_settings
 
-    generic_settings.raise_error = True
+    generic_settings.raise_error    = True
 
     # import core testing functions (shared between nxs-test and unit tests)
     from nexus.testing import global_data,numpy_available

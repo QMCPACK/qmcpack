@@ -5634,10 +5634,16 @@ def get_conventional_cell(
     if seekpathout is None:
         seekpathout = _getseekpath(structure=structure, symprec = symprec, angle_tolerance=angle_tolerance)
     #end if
-    axes        = seekpathout['conv_lattice']
-    enumbers    = seekpathout['conv_types']
-    posd        = seekpathout['conv_positions']
-    volfac      = seekpathout['volume_original_wrt_conv']
+    try:
+        axes        = seekpathout['conv_lattice']
+        enumbers    = seekpathout['conv_types']
+        posd        = seekpathout['conv_positions']
+        volfac      = seekpathout['volume_original_wrt_conv']
+    except: # dict-like access above deprecated at some point
+        axes        = seekpathout.conv_lattice
+        enumbers    = seekpathout.conv_types
+        posd        = seekpathout.conv_positions
+        volfac      = seekpathout.volume_original_wrt_conv
     bcharge     = structure.background_charge*volfac
     pos         = dot(posd,axes)
     sout        = structure.copy()

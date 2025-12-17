@@ -708,7 +708,7 @@ class Job(NexusCore):
 
 class Machine(NexusCore):
 
-    machines = obj()
+    machines = dict()
 
     modes = obj(
         none        = 0,
@@ -842,6 +842,10 @@ class Machine(NexusCore):
     #end def specialized_bundle_commands
 
     def __init__(self,name,queue_size=0):
+        # deferred type change for Machine.machines (protects testing)
+        if isinstance(Machine.machines,dict):
+            Machine.machines = obj(**Machine.machines)
+
         self.name = name
         self.queue_size = queue_size
         self.processes = obj()
