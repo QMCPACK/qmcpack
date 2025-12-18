@@ -1,8 +1,18 @@
 
-import versions
+import sys
 from .. import testing
 from ..testing import execute,text_eq,check_value_eq
 
+def find_nexus_modules():
+    import os
+    nexus_lib = os.path.abspath(os.path.join(__file__,'../../..'))
+    assert(os.path.exists(nexus_lib))
+    sys.path.insert(0, nexus_lib)
+#end def find_nexus_modules
+
+find_nexus_modules()
+
+import nexus.versions as versions
 
 if versions.h5py_available:
     def test_density():
@@ -28,7 +38,7 @@ if versions.h5py_available:
 
         assert(check_value_eq(set(os.listdir(dmc_path)),set(files_bef)))
 
-        command = '{0} -v -e 4 -f xsf -i {1}/dmc.in.xml {1}/*stat.h5'.format(exe,dmc_path)
+        command = 'PYTHONPATH="{0}" {1} -v -e 4 -f xsf -i {2}/dmc.in.xml {2}/*stat.h5'.format(sys.path[0],exe,dmc_path)
 
         out,err,rc = execute(command)
 

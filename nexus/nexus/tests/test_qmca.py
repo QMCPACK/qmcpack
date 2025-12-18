@@ -3,6 +3,14 @@ import sys
 from .. import testing
 from ..testing import execute,text_eq
 
+def find_nexus_modules():
+    import os
+    nexus_lib = os.path.abspath(os.path.join(__file__,'../../..'))
+    assert(os.path.exists(nexus_lib))
+    sys.path.insert(0, nexus_lib)
+#end def find_nexus_modules
+
+find_nexus_modules()
 
 test_info = dict()
 directories = dict()
@@ -77,11 +85,11 @@ def test_help():
 
     help_text = 'Usage: qmca'
 
-    command = sys.executable+' {}'.format(exe)
+    command = 'PYTHONPATH="{}" '.format(sys.path[0])+sys.executable+' {}'.format(exe)
     out,err,rc = execute(command)
     assert(help_text in out)
 
-    command = sys.executable+' {} -h'.format(exe)
+    command = 'PYTHONPATH="{}" '.format(sys.path[0])+sys.executable+' {} -h'.format(exe)
     out,err,rc = execute(command)
     assert(help_text in out)
 #end def test_help
@@ -93,7 +101,7 @@ def test_examples():
 
     example_text = 'QMCA examples'
 
-    command = sys.executable+' {} -x'.format(exe)
+    command = 'PYTHONPATH="{}" '.format(sys.path[0])+sys.executable+' {} -x'.format(exe)
     out,err,rc = execute(command)
     assert(example_text in out)
 #end def test_examples
@@ -105,7 +113,7 @@ def test_unit_conversion():
 
     enter('vmc')
 
-    command = sys.executable+' {} -e 5 -q e -u eV --fp=16.8f *scalar*'.format(exe)
+    command = 'PYTHONPATH="{}" '.format(sys.path[0])+sys.executable+' {} -e 5 -q e -u eV --fp=16.8f *scalar*'.format(exe)
     out,err,rc = execute(command)
 
     out_ref = '''
@@ -124,7 +132,7 @@ def test_selected_quantities():
 
     enter('vmc')
 
-    command = sys.executable+" {} -e 5 -q 'e k p' --fp=16.8f *scalar*".format(exe)
+    command = 'PYTHONPATH="{}" '.format(sys.path[0])+sys.executable+" {} -e 5 -q 'e k p' --fp=16.8f *scalar*".format(exe)
     out,err,rc = execute(command)
 
     out_ref = '''
@@ -146,7 +154,7 @@ def test_all_quantities():
 
     enter('vmc')
 
-    command = sys.executable+" {} -e 5 --fp=16.8f *scalar*".format(exe)
+    command = 'PYTHONPATH="{}" '.format(sys.path[0])+sys.executable+" {} -e 5 --fp=16.8f *scalar*".format(exe)
     out,err,rc = execute(command)
 
     out_ref = '''
@@ -183,7 +191,7 @@ def test_energy_variance():
 
     enter('opt')
 
-    command = sys.executable+" {} -e 5 -q ev --fp=16.8f *scalar*".format(exe)
+    command = 'PYTHONPATH="{}" '.format(sys.path[0])+sys.executable+" {} -e 5 -q ev --fp=16.8f *scalar*".format(exe)
     out,err,rc = execute(command)
 
     out_ref = '''
@@ -208,7 +216,7 @@ def test_multiple_equilibration():
 
     enter('dmc')
 
-    command = sys.executable+" {} -e '5 10 15 20' -q ev --fp=16.8f *scalar*".format(exe)
+    command = 'PYTHONPATH="{}" '.format(sys.path[0])+sys.executable+" {} -e '5 10 15 20' -q ev --fp=16.8f *scalar*".format(exe)
     out,err,rc = execute(command)
 
     out_ref = '''
@@ -231,7 +239,7 @@ def test_join():
 
     enter('dmc')
 
-    command = sys.executable+" {} -e 5 -j '1 3' -q ev --fp=16.8f *scalar*".format(exe)
+    command = 'PYTHONPATH="{}" '.format(sys.path[0])+sys.executable+" {} -e 5 -j '1 3' -q ev --fp=16.8f *scalar*".format(exe)
     out,err,rc = execute(command)
 
     out_ref = '''
@@ -252,7 +260,7 @@ def test_multiple_directories():
 
     enter('multi')
 
-    command = sys.executable+" {} -e 5 -q ev --fp=16.8f */*scalar*".format(exe)
+    command = 'PYTHONPATH="{}" '.format(sys.path[0])+sys.executable+" {} -e 5 -q ev --fp=16.8f */*scalar*".format(exe)
     out,err,rc = execute(command)
 
     out_ref = '''
@@ -284,7 +292,7 @@ def test_twist_average():
 
     enter('vmc_twist')
 
-    command = sys.executable+" {} -a -e 5 -q ev --fp=16.8f *scalar*".format(exe)
+    command = 'PYTHONPATH="{}" '.format(sys.path[0])+sys.executable+" {} -a -e 5 -q ev --fp=16.8f *scalar*".format(exe)
     out,err,rc = execute(command)
 
     out_ref = '''
@@ -304,7 +312,7 @@ def test_weighted_twist_average():
 
     enter('vmc_twist')
 
-    command = sys.executable+" {} -a -w '1 3 3 1' -e 5 -q ev --fp=16.8f *scalar*".format(exe)
+    command = 'PYTHONPATH="{}" '.format(sys.path[0])+sys.executable+" {} -a -w '1 3 3 1' -e 5 -q ev --fp=16.8f *scalar*".format(exe)
     out,err,rc = execute(command)
 
     out_ref = '''
