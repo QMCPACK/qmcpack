@@ -114,6 +114,13 @@ unsupported and untested by the developers although they may still work.
    are required to support the C++ 17 standard. Use of recent (“current
    year version”) compilers is strongly encouraged.
 
+-  To build the GPU accelerated version, an installation of NVIDIA CUDA Toolkit, AMD ROCm software, or Intel OneAPI HPC toolkit is required.
+   Ensure that this is compatible with the installed GPU drivers and C++ compiler versions you plan to use.
+   To achieve the best GPU performance, we recommend the following C++ compilers that support OpenMP offload
+   - For NVIDIA GPUs, LLVM clang.
+   - For AMD GPUS, ROCm and LLVM clang.
+   - For Intel GPUs, OneAPI icpx.
+
 -  An MPI library such as OpenMPI (http://open-mpi.org) or a
    vendor-optimized MPI.
 
@@ -134,9 +141,6 @@ unsupported and untested by the developers although they may still work.
 
 -  FFTW, FFT library (http://www.fftw.org/).
 
-To build the GPU accelerated version of QMCPACK, an installation of NVIDIA CUDA, AMD ROCm, or Intel OneAPI is required. Ensure that
-this is compatible with the installed GPU drivers and the C and C++ compiler versions you plan to use. 
-
 Many of the utilities provided with QMCPACK require Python (v3). The numpy and matplotlib libraries are required for full
 functionality.
 
@@ -146,6 +150,7 @@ Nightly testing currently includes at least the following software versions:
   
   * Clang/LLVM 20.1.4
   * GCC 14.2.0, 12.4.0
+  * OneAPI 2025.3
 
 * Boost 1.88.0, 1.82.0
 * HDF5 1.14.5
@@ -158,8 +163,7 @@ Nightly testing currently includes at least the following software versions:
 * NumPy 2.2.5
 
 For GPU acceleration on NVIDIA GPUs we test LLVM with CUDA using the above versions. On AMD GPUs we support using the latest ROCm
-version and its matching amdclang compiler, as listed above. On a developmental basis we also check the latest Clang and GCC
-development versions, and Intel OneAPI compilers.
+version and its matching amdclang compiler, as listed above. On Intel GPUs we test the up-to-date OneAPI release.
 
 GitHub Actions-based tests include additional version combinations from within our two-year support window.
 
