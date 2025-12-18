@@ -457,8 +457,7 @@ class NexusTest(NexusTestBase):
 
     # run the current test
     def run(self):
-        tst = importlib.import_module('testing')
-        check_final_state = tst.check_final_state
+        from nexus.testing import check_final_state
 
         nleave()
         NexusTestBase.current_test  = self
@@ -1747,7 +1746,7 @@ example_information = dict(
 user_examples_data = dict()
 
 def user_examples(label):
-    os.environ["NEXUSTEST"] = "None"
+
     from nexus.pwscf_input import PwscfInput
     from nexus.qmcpack_converters import Pw2qmcpackInput
     from nexus.gamess_input import GamessInput
@@ -2383,16 +2382,28 @@ if __name__=='__main__':
     if options.pythonpath!='none':
         os.environ['PYTHONPATH']=options.pythonpath
     #end if
-
-    gs = importlib.import_module('generic_settings')
-    generic_settings = gs.generic_settings
+    try:
+        from nexus.generic import generic_settings
+    except Exception as exception:
+        print("\n\n")
+        print(40*"!")
+        print(exception)
+        print(40*"!","\n\n")
+        print("Can not load nexus.generic, please check the offending modules!\n")
+        sys.exit(1)
 
     generic_settings.raise_error    = True
 
     # import core testing functions (shared between nxs-test and unit tests)
-    tst = importlib.import_module('testing')
-    global_data     = tst.global_data
-    numpy_available = tst.numpy_available
+    try:
+        from nexus.testing import global_data, numpy_available
+    except Exception as exception:
+        print("\n\n")
+        print(40*"!")
+        print(exception)
+        print(40*"!","\n\n")
+        print("Can not load nexus.testing, please check the offending modules!\n")
+        sys.exit(1)
 
     global_data['verbose']       = options.verbose
     global_data['job_ref_table'] = options.job_ref_table
