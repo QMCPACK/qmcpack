@@ -50,26 +50,14 @@ scripts are for many systems in the config directory. The following sections of 
 
 # Installation Prerequisites
 
- * C++ 17 and C99 capable compilers. 
- * CMake v3.21.0 or later, build utility, http://www.cmake.org
- * BLAS/LAPACK, numerical library. Use vendor and platform-optimized libraries.
- * LibXml2, XML parser, http://xmlsoft.org/
- * HDF5 v1.10.0 or later, portable I/O library, http://www.hdfgroup.org/HDF5/
- * BOOST v1.70.0 or newer, peer-reviewed portable C++ source libraries, http://www.boost.org
- * FFTW, FFT library, http://www.fftw.org/
- * MPI, parallel library. Optional, but a near requirement for production calculations.
- * Python3. Older versions are not supported as of January 2020.
- * CUDA v11.0 or later. Optional, but required for builds with NVIDIA GPU support. Use 12.3 or newer if possible. 11.3-12.2 have
-   a bug affecting multideterminant calculations. Single determinant calculations are OK.
+Full list of prerequisites and details of regularly tested versions are given in the [manual section on installation
+prerequisites](https://qmcpack.readthedocs.io/en/develop/installation.html#prerequisites).
 
 We aim to support open source compilers and libraries released within two years of each QMCPACK release. Use of software versions
 over two years old may work but is discouraged and untested. Proprietary compilers (Intel, NVHPC) are generally supported over the
 same period but may require use of an exact version. We also aim to support the standard software environments on machines such as
 Frontier and Summit at OLCF, Aurora and Polaris at ALCF, and Perlmutter at NERSC. Use of the most recently released compilers and
 library versions is particularly encouraged for highest performance and easiest configuration.
-
-Details of regularly tested versions are given in the [manual section on installation
-prerequisites](https://qmcpack.readthedocs.io/en/develop/installation.html#prerequisites).
 
 # Building with CMake
 
