@@ -117,6 +117,7 @@ unsupported and untested by the developers although they may still work.
 -  To build the GPU accelerated version, an installation of NVIDIA CUDA Toolkit, AMD ROCm software, or Intel OneAPI HPC toolkit is required.
    Ensure that this is compatible with the installed GPU drivers and C++ compiler versions you plan to use.
    To achieve the best GPU performance, we recommend the following C++ compilers that support OpenMP offload
+
    - For NVIDIA GPUs, LLVM clang.
    - For AMD GPUS, ROCm and LLVM clang.
    - For Intel GPUs, OneAPI icpx.
