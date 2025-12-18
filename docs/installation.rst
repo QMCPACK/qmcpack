@@ -119,7 +119,7 @@ unsupported and untested by the developers although they may still work.
    To achieve the best GPU performance, we recommend the following C++ compilers that support OpenMP offload
 
    - For NVIDIA GPUs, LLVM clang.
-   - For AMD GPUS, ROCm and LLVM clang.
+   - For AMD GPUS, ROCm clang(amdclang).
    - For Intel GPUs, OneAPI icpx.
 
 -  An MPI library such as OpenMPI (http://open-mpi.org) or a
