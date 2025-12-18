@@ -211,7 +211,7 @@ void QMCFixedSampleLinearOptimizeBatched::start()
     ScopedTimer local(initialize_timer_);
     Timer t_deriv;
     optTarget->getConfigurations("");
-    optTarget->setRng(vmcEngine->getRngRefs());
+    optTarget->setRng(rngs_);
     NullEngineHandle handle;
     if (options_LMY_.current_optimizer_type == OptimizerType::STOCHASTIC_RECONFIGURATION_CG)
       optTarget->checkConfigurationsSR(handle);
@@ -255,7 +255,7 @@ void QMCFixedSampleLinearOptimizeBatched::engine_start(cqmc::engine::LMYEngine<V
   Timer t1;
   initialize_timer_.start();
   optTarget->getConfigurations("");
-  optTarget->setRng(vmcEngine->getRngRefs());
+  optTarget->setRng(rngs_);
   optTarget->checkConfigurations(*handle);
 
   initialize_timer_.stop();

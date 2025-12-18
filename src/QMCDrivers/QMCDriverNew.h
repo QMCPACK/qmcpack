@@ -186,8 +186,6 @@ public:
 
   DriftModifierBase& get_drift_modifier() const { return *drift_modifier_; }
 
-  const RefVector<RandomBase<FullPrecRealType>>& getRngRefs() const { return rngs_; }
-
   /** record the state of the block
    * @param block current block
    *
