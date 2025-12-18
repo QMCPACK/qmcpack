@@ -82,7 +82,6 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
   aAttrib.add(update_mode_, "move");
   aAttrib.add(scoped_profiling_, "profiling");
   aAttrib.add(Period4CheckPoint, "checkpoint");
-  aAttrib.add(k_delay_, "kdelay");
   // This does all the parameter parsing setup in the constructor
   aAttrib.put(cur);
 
