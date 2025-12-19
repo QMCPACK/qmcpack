@@ -31,7 +31,7 @@ struct NLPPJob
   const int electron_id;
   const RealType ion_elec_dist;
   const PosType ion_elec_displ;
-
+  int walker_index = -1;
   /** This allows construction using emplace back
    *  could be a way to pull it off with aggregate initialization
    *  but it is nontrivial
@@ -44,6 +44,18 @@ struct NLPPJob
         electron_id(electron_id_in),
         ion_elec_dist(ion_elec_dist_in),
         ion_elec_displ(ion_elec_displ_in)
+  {}
+
+  NLPPJob(const int ion_id_in,
+          const int electron_id_in,
+          const RealType ion_elec_dist_in,
+          const PosType& ion_elec_displ_in,
+          int walker_index)
+      : ion_id(ion_id_in),
+        electron_id(electron_id_in),
+        ion_elec_dist(ion_elec_dist_in),
+        ion_elec_displ(ion_elec_displ_in),
+        walker_index(walker_index)
   {}
 };
 } // namespace qmcplusplus
