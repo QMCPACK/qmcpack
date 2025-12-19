@@ -1796,7 +1796,7 @@ def user_examples(label):
     #end if
     for script in einfo['scripts']:
         # run the example script
-        command = 'PYTHONPATH="{}" '.format(sys.path[0])+sys.executable+' ./'+script+' --generate_only --sleep=0.01'
+        command = sys.executable+' ./'+script+' --generate_only --sleep=0.01'
         out,err,rc = nexus_testing.execute(command)
     #end for
     os.chdir(cwd)
