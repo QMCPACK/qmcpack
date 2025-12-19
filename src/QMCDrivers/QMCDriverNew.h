@@ -412,9 +412,6 @@ protected:
   ///drift modifer
   std::unique_ptr<DriftModifierBase> drift_modifier_;
 
-  ///the number to delay updates by
-  int k_delay;
-
   /** period of recording walker configurations
    *
    * Default is 0 indicating that only the last configuration will be saved.
