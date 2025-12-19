@@ -1,17 +1,10 @@
 
 import sys
 from .. import testing
-from ..testing import restore_nexus,clear_all_sims
+from ..testing import divert_nexus,restore_nexus,clear_all_sims
 from ..testing import execute,text_eq
 
-def find_nexus_modules():
-    import os
-    nexus_lib = os.path.abspath(os.path.join(__file__,'../../..'))
-    assert(os.path.exists(nexus_lib))
-    sys.path.insert(0, nexus_lib)
-#end def find_nexus_modules
 
-find_nexus_modules()
 
 def test_sim():
     import os
@@ -36,7 +29,7 @@ def test_sim():
 
 
     # initial simulation state
-    command = 'PYTHONPATH="{}" '.format(sys.path[0])+sys.executable+' {} show {}'.format(exe,simp_path)
+    command = sys.executable+' {} show {}'.format(exe,simp_path)
 
     out,err,rc = execute(command)
 
@@ -55,10 +48,10 @@ def test_sim():
 
 
     # final simulation state
-    command = 'PYTHONPATH="{}" '.format(sys.path[0])+sys.executable+' {} complete {}'.format(exe,simp_path)
+    command = sys.executable+' {} complete {}'.format(exe,simp_path)
     out,err,rc = execute(command)
 
-    command = 'PYTHONPATH="{}" '.format(sys.path[0])+sys.executable+' {} show {}'.format(exe,simp_path)
+    command = sys.executable+' {} show {}'.format(exe,simp_path)
     out,err,rc = execute(command)
 
     out_ref = '''
@@ -76,13 +69,13 @@ def test_sim():
 
 
     # intermediate simulation state 1
-    command = 'PYTHONPATH="{}" '.format(sys.path[0])+sys.executable+' {} reset {}'.format(exe,simp_path)
+    command = sys.executable+' {} reset {}'.format(exe,simp_path)
     out,err,rc = execute(command)
 
-    command = 'PYTHONPATH="{}" '.format(sys.path[0])+sys.executable+' {} set setup sent_files submitted {}'.format(exe,simp_path)
+    command = sys.executable+' {} set setup sent_files submitted {}'.format(exe,simp_path)
     out,err,rc = execute(command)
 
-    command = 'PYTHONPATH="{}" '.format(sys.path[0])+sys.executable+' {} show {}'.format(exe,simp_path)
+    command = sys.executable+' {} show {}'.format(exe,simp_path)
     out,err,rc = execute(command)
 
     out_ref = '''
@@ -98,13 +91,13 @@ def test_sim():
 
 
     # intermediate simulation state 2
-    command = 'PYTHONPATH="{}" '.format(sys.path[0])+sys.executable+' {} complete {}'.format(exe,simp_path)
+    command = sys.executable+' {} complete {}'.format(exe,simp_path)
     out,err,rc = execute(command)
 
-    command = 'PYTHONPATH="{}" '.format(sys.path[0])+sys.executable+' {} unset got_output analyzed {}'.format(exe,simp_path)
+    command = sys.executable+' {} unset got_output analyzed {}'.format(exe,simp_path)
     out,err,rc = execute(command)
 
-    command = 'PYTHONPATH="{}" '.format(sys.path[0])+sys.executable+' {} show {}'.format(exe,simp_path)
+    command = sys.executable+' {} show {}'.format(exe,simp_path)
     out,err,rc = execute(command)
 
     out_ref = '''

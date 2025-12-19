@@ -1,18 +1,9 @@
 
-import sys
+import versions
 from .. import testing
 from ..testing import execute,text_eq
 
-def find_nexus_modules():
-    import os
-    nexus_lib = os.path.abspath(os.path.join(__file__,'../../..'))
-    assert(os.path.exists(nexus_lib))
-    sys.path.insert(0, nexus_lib)
-#end def find_nexus_modules
 
-find_nexus_modules()
-
-import nexus.versions as versions
 
 if versions.scipy_available:
     def test_fit():
@@ -30,7 +21,7 @@ if versions.scipy_available:
         dmc_infile = os.path.join(dmc_path,'dmc.in.xml')
         assert(os.path.exists(dmc_infile))
 
-        command = "PYTHONPATH='{}' {} ts --noplot -e 10 -s 1 -t '0.02 0.01 0.005' -f linear {}/*scalar*".format(sys.path[0],exe,dmc_path)
+        command = "{} ts --noplot -e 10 -s 1 -t '0.02 0.01 0.005' -f linear {}/*scalar*".format(exe,dmc_path)
 
         out,err,rc = execute(command)
 

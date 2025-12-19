@@ -1,18 +1,8 @@
 
-import sys
+import versions
 from .. import testing
 from ..testing import execute,text_eq,check_value_eq
 
-def find_nexus_modules():
-    import os
-    nexus_lib = os.path.abspath(os.path.join(__file__,'../../..'))
-    assert(os.path.exists(nexus_lib))
-    sys.path.insert(0, nexus_lib)
-#end def find_nexus_modules
-
-find_nexus_modules()
-
-import nexus.versions as versions
 
 if versions.spglib_available:
     def test_radial_density():
