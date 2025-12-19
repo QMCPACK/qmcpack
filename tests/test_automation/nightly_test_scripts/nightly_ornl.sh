@@ -216,7 +216,7 @@ fi
 # Sanity check cmake config file present
 if [ -e qmcpack/CMakeLists.txt ]; then
 
-export PYTHONPATH=${test_dir}/qmcpack/nexus/lib
+export PYTHONPATH=${test_dir}/qmcpack/nexus
 echo --- PYTHONPATH=$PYTHONPATH
 
 echo --- Starting test builds and tests

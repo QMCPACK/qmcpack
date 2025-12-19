@@ -5,7 +5,7 @@ from nexus import generate_physical_system
 from nexus import generate_pyscf
 from nexus import generate_pyscf_to_afqmc
 from nexus import generate_qmcpack
-from qmcpack_input import back_propagation,onerdm
+from nexus.qmcpack_input import back_propagation,onerdm
 
 settings(
     results = '',

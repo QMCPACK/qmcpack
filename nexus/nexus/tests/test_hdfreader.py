@@ -1,5 +1,5 @@
 
-from versions import h5py_available
+from nexus.versions import h5py_available
 from .. import testing
 from ..testing import value_eq,object_eq
 

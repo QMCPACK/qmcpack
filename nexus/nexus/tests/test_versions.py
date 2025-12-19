@@ -7,9 +7,9 @@ def test_import():
 
 
 def test_constants():
-    from nexus_version import nexus_version
-    from versions import python_supported
-    from versions import years_supported
+    from ..nexus_version import nexus_version
+    from ..versions import python_supported
+    from ..versions import years_supported
 
     assert(len(nexus_version)==3)
     for n in nexus_version:
@@ -25,7 +25,7 @@ def test_constants():
 
 def test_time():
     from datetime import date
-    from versions import time_ago
+    from ..versions import time_ago
 
     long_ago = date(year=2017,month=9,day=1)
 
@@ -37,7 +37,7 @@ def test_time():
 
 
 def test_version_processing():
-    from versions import process_version,version_to_string
+    from ..versions import process_version,version_to_string
 
     assert( (1,3,0) == process_version('1.3')     )
     assert( (1,3,0) == process_version(1,3)       )
@@ -56,10 +56,10 @@ def test_version_processing():
 
 
 def test_versions_object():
-    from versions import Versions,versions,raw_version_data
-    from versions import currently_supported
-    from versions import years_supported,time_ago
-    from versions import check_versions
+    from ..versions import Versions,versions,raw_version_data
+    from ..versions import currently_supported
+    from ..versions import years_supported,time_ago
+    from ..versions import check_versions
 
     # object construction successful
     assert(versions is not None)

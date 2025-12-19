@@ -1,5 +1,5 @@
 
-from versions import scipy_available
+from nexus.versions import scipy_available
 
 
 def test_import():

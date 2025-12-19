@@ -1,13 +1,13 @@
 
 
 def test_import():
-    from memory import memory,resident,stacksize
+    from ..memory import memory,resident,stacksize
 #end def test_import
 
 
 
 def test_memory():
-    from memory import memory
+    from ..memory import memory
 
     mem = memory()
     assert(isinstance(mem,float))
@@ -21,7 +21,7 @@ def test_memory():
 
 
 def test_resident():
-    from memory import resident
+    from ..memory import resident
 
     mem = resident()
     assert(isinstance(mem,float))
@@ -35,7 +35,7 @@ def test_resident():
 
 
 def test_stacksize():
-    from memory import stacksize
+    from ..memory import stacksize
 
     mem = stacksize()
     assert(isinstance(mem,float))
