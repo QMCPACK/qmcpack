@@ -33,7 +33,7 @@ if(ADD_TEST)
     #message("Adding test ntest_nexus_${TESTNAME}")
     set(NTEST "${qmcpack_SOURCE_DIR}/nexus/bin/nxs-test")
     add_test(NAME ntest_nexus_${TESTNAME} COMMAND ${Python3_EXECUTABLE} ${NTEST} -R ${TESTNAME}\$ --ctest
-                                                  --pythonpath=${PROJECT_SOURCE_DIR}/nexus/lib:$ENV{PYTHONPATH})
+                                                  --pythonpath=${PROJECT_SOURCE_DIR}/nexus:$ENV{PYTHONPATH})
     set_tests_properties(ntest_nexus_${TESTNAME} PROPERTIES ENVIRONMENT PYTHONPATH=$ENV{PYTHONPATH})
     set_property(
       TEST ntest_nexus_${TESTNAME}
