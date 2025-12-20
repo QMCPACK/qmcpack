@@ -12,6 +12,10 @@ Notable changes to QMCPACK are documented in this file.
 * The energy density estimator is incorrect [#5468](https://github.com/QMCPACK/qmcpack/issues/5468)
 * AFQMC utilities and converters are not compatible with modern PySCF [#4653](https://github.com/QMCPACK/qmcpack/issues/4653)
 
+### NEXUS
+
+* Updated Nexus so modules and methods can now be more easily accessed using the syntax `nexus.<module>.<class or function>`.
+
 ## [4.1.0] - 2025-04-30
 
 This release is recommended for all users and includes improved support for calculating forces, better GPU support, updated build
