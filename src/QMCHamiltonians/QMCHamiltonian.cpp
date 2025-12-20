@@ -606,6 +606,7 @@ std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluate(
                                    ham_leader.mw_res_handle_.getResource().ion_kinetic_listeners_);
     else
       ham_leader.H[kinetic_index]->mw_evaluate(HC_list, wf_list, p_list);
+
     for (int iw = 0; iw < ham_list.size(); iw++)
       updateComponent(HC_list[iw], ham_list[iw], p_list[iw]);
   }
@@ -625,8 +626,8 @@ std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluate(
       updateComponent(HC_list[iw], ham_list[iw], p_list[iw]);
   }
 
-  for (int iw = 0; iw < ham_list.size(); iw++)
-    updateKinetic(ham_list[iw], p_list[iw]);
+  // for (int iw = 0; iw < ham_list.size(); iw++)
+  //   updateKinetic(ham_list[iw], p_list[iw]);
 
   std::vector<FullPrecRealType> local_energies(ham_list.size(), 0.0);
   for (int iw = 0; iw < ham_list.size(); ++iw)
@@ -847,9 +848,6 @@ std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluateWithTop
     for (int iw = 0; iw < ham_list.size(); ++iw)
       updateComponent(HC_list[iw], ham_list[iw], p_list[iw]);
   }
-
-  for (int iw = 0; iw < ham_list.size(); iw++)
-    updateKinetic(ham_list[iw], p_list[iw]);
 
   std::vector<FullPrecRealType> local_energies(ham_list.size());
   for (int iw = 0; iw < ham_list.size(); ++iw)

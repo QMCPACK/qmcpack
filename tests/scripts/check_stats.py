@@ -2363,18 +2363,20 @@ def check_values(options,values):
                 #end if
 
                 if scalars.file_type=='dmc':
-                    ftol = 5e-4
+                    ftol = 5e-8
                 else:
                     ftol = 1e-8
                 # This test is actually relative error assuming the
                 # the scv is the true value. since conventionally the
                 # divisor is the true value.
+                print("checking estimator", comparisons[k], "versus scalar agreement")
                 for i,(edv,scv) in enumerate(zip(ed_vals,sc_vals)):
                     if abs((edv-scv)/scv)>ftol:
                         ed_success = False
                         msg += '    {0} {1} {2}!={3}\n'.format(k,i,edv,scv)
                     #end if
                 #end for
+
             #end for
 
             if ed_success:
@@ -2387,18 +2389,6 @@ def check_values(options,values):
             msg += '    status of this test: {0}\n'.format(passfail[ed_success])
             success &= ed_success
         #end if
-
-            if scalars.file_type=='dmc':
-                diff_dmc_nrgs = sc_dmc_energies['WeightedEnergySum'] - sc_dmc_energies['LocalEnergy']
-                msg += '\ndmc.dat energy accumulation diff\n'
-                msg += 'Note: We calculated both dmc block energies both by divided the total\n'
-                msg += 'weighted energy sum by the total weight and by taking the '
-                msg += 'average of the local step energies\n'
-                scaled_diffs = diff_dmc_nrgs / sc_dmc_energies['LocalEnergy']
-                max_relative_error = max(scaled_diffs)
-                msg += 'max relative block error between repeated step wise averaging\n'
-                msg += f"and block wise averaging.sums: {max_relative_error:.2e}\n"
-                msg += f'If your ftol ({ftol:.2e}) is significantly smaller than this you need to adjust your test calculation.\n'
 
         # function used immediately below to test a mean value vs reference
         def check_mean(label,mean_comp,error_comp,mean_ref,error_ref,nsigma):
