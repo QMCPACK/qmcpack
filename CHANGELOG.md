@@ -14,7 +14,9 @@ Notable changes to QMCPACK are documented in this file.
 
 ### NEXUS
 
-* Updated Nexus so modules and methods can now be more easily accessed using the syntax `nexus.<module>.<class or function>`.
+* Nexus is being refactored so that it can be installed and used as a conventional Python package.
+  PYTHONPATH should now point to the topmost nexus directory, not nexus/lib. Modules and methods can
+  now be accessed using the syntax `nexus.<module>.<class or function>` [#5700](https://github.com/QMCPACK/qmcpack/pull/5700)
 
 ## [4.1.0] - 2025-04-30
 
