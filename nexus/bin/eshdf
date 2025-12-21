@@ -12,7 +12,7 @@ import numpy as np
 
 def find_nexus_modules():
     import sys
-    nexus_lib = os.path.abspath(os.path.join(__file__,'..','..','lib'))
+    nexus_lib = os.path.abspath(os.path.join(__file__,'..','..','nexus'))
     assert(os.path.exists(nexus_lib))
     sys.path.append(nexus_lib)
 #end def find_nexus_modules
@@ -30,11 +30,11 @@ try:
     #  (The executable should still work even if Nexus is not installed)
     find_nexus_modules()
 
-    nxs_ver_mod = import_nexus_module('nexus_version')
+    nxs_ver_mod = import_nexus_module('nexus.nexus_version')
     nexus_version = nxs_ver_mod.nexus_version
     del nxs_ver_mod
 
-    developer = import_nexus_module('developer')
+    developer = import_nexus_module('nexus.developer')
     obj         = developer.obj
     log         = developer.log
     warn        = developer.warn
@@ -42,13 +42,13 @@ try:
     ci          = developer.ci
     del developer
 
-    hdfreader = import_nexus_module('hdfreader')
+    hdfreader = import_nexus_module('nexus.hdfreader')
     read_hdf = hdfreader.read_hdf
     del hdfreader
 except:
-    from nexus_version import nexus_version
-    from developer import obj,log,warn,error,ci
-    from hdfreader import read_hdf
+    from nexus.nexus_version import nexus_version
+    from nexus.developer import obj,log,warn,error,ci
+    from nexus.hdfreader import read_hdf
 #end try
 
 

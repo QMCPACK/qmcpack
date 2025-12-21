@@ -3,8 +3,8 @@
 import sys
 import os
 from numpy import array,polyfit,polyval,linspace,sqrt
-from qmcpack_analyzer import QmcpackAnalyzer
-from unit_converter import convert
+from nexus.qmcpack_analyzer import QmcpackAnalyzer
+from nexus.unit_converter import convert
 import matplotlib.pyplot as plt
 
 

@@ -5,7 +5,7 @@ from nexus import generate_physical_system
 from nexus import generate_pwscf
 from nexus import generate_pw2qmcpack
 from nexus import generate_qmcpack,vmc
-from structure import *
+from nexus.structure import *
 
 settings(
     pseudo_dir    = '../../pseudopotentials',
@@ -85,7 +85,7 @@ band = generate_pwscf(
 run_project()
 
 if band.finished:
-    from pwscf_analyzer import PwscfAnalyzer
+    from nexus.pwscf_analyzer import PwscfAnalyzer
     p = PwscfAnalyzer(band)
     p.analyze()
     p.plot_bandstructure()

@@ -36,7 +36,7 @@ and (3) use of different estimators and analysis of the samples results.
 
 For information about using Nexus, see the User Guide in ``nexus/docs`` or at https://nexus-workflows.readthedocs.io/ .
 
-For Python to find the Nexus library, the PYTHONPATH environment variable should be set to ``<QMCPACK source>/nexus/lib``.
+For Python to find the Nexus library, the PYTHONPATH environment variable should be set to ``<QMCPACK source>/nexus``.
 The executables for both QMCPACK and Quantum ESPRESSO (or relevant density functional or quantum chemical code) should be
 on the PATH, or the paths in the script should be adjusted.
 

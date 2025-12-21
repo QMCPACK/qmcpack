@@ -111,8 +111,8 @@ def matprint(m):
 
 if __name__ == '__main__':
 
-    from developer import ci
-    from qmcpack_analyzer import QmcpackAnalyzer
+    from nexus.developer import ci
+    from nexus.qmcpack_analyzer import QmcpackAnalyzer
     from uncertainties import ufloat,unumpy
 
     # Exit if atomic_proj.xml and outdir locations not given
@@ -176,7 +176,7 @@ if __name__ == '__main__':
     # Store stats of number matrix corresponding to single determinant with no jastrow, projected
     # on MO basis
 
-    from numerics import simstats
+    from nexus.numerics import simstats
 
     m_mo,v_mo,e_mo,k_mo = simstats(nm,dim=2) # stats over blocks
 

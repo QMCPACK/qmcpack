@@ -6,7 +6,7 @@ from nexus import generate_pwscf
 from nexus import generate_pw2qmcpack
 from nexus import generate_qmcpack,vmc,dmc
 from nexus import ppset,obj
-from qmcpack_input import spindensity
+from nexus.qmcpack_input import spindensity
 
 settings(
     pseudo_dir    = './pseudopotentials',

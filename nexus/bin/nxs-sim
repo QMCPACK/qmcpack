@@ -6,7 +6,7 @@ from optparse import OptionParser
 
 def find_nexus_modules():
     import sys
-    nexus_lib = os.path.abspath(os.path.join(__file__,'..','..','lib'))
+    nexus_lib = os.path.abspath(os.path.join(__file__,'..','..','nexus'))
     assert(os.path.exists(nexus_lib))
     sys.path.append(nexus_lib)
 #end def find_nexus_modules
@@ -25,17 +25,17 @@ try:
     #  (The executable should still work even if Nexus is not installed)
     find_nexus_modules()
 
-    nxs_ver_mod = import_nexus_module('nexus_version')
+    nxs_ver_mod = import_nexus_module('nexus.nexus_version')
     nexus_version = nxs_ver_mod.nexus_version
     del nxs_ver_mod
 
-    developer = import_nexus_module('developer')
-    obj   = developer.obj
+    developer = import_nexus_module('nexus.developer')
+    obj = developer.obj
     del developer
 except:
     # Failing path-based imports, import installed Nexus modules.
-    from nexus_version import nexus_version
-    from developer import obj
+    from nexus.nexus_version import nexus_version
+    from nexus.developer import obj
 #end try
 
 
