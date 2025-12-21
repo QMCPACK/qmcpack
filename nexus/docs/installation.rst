@@ -17,7 +17,7 @@ aware of Nexus, simply set the PYTHONPATH environment variable.  For example, in
 
 .. code-block:: rest
 
-  export PYTHONPATH=/your_download_path/nexus/lib:$PYTHONPATH
+  export PYTHONPATH=/your_download_path/nexus:$PYTHONPATH
 
 Add this to, *e.g.*, your .bashrc file to make Nexus available
 in future sessions.
@@ -286,60 +286,60 @@ Code coverage can be assessed by using the ``coverage`` tool
   >cd nexus/bin/
   >coverage run nxs-test
   ...
-  >coverage report | grep nexus/lib
+  >coverage report | grep nexus/nexus
 
-  nexus/lib/basisset.py                      631    375    41%
-  nexus/lib/bundle.py                        191     68    64%
-  nexus/lib/debug.py                          12      6    50%
-  nexus/lib/developer.py                     261     97    63%
-  nexus/lib/execute.py                        13      2    85%
-  nexus/lib/fileio.py                        957    373    61%
-  nexus/lib/gamess.py                        102     20    80%
-  nexus/lib/gamess_analyzer.py               305    149    51%
-  nexus/lib/gamess_input.py                  597    167    72%
-  nexus/lib/generic.py                       817    173    79%
-  nexus/lib/grid_functions.py               1192    435    64%
-  nexus/lib/hdfreader.py                     215     61    72%
-  nexus/lib/machines.py                     1887    463    75%
-  nexus/lib/memory.py                         60      7    88%
-  nexus/lib/nexus.py                         297    140    53%
-  nexus/lib/nexus_base.py                     74     11    85%
-  nexus/lib/numerics.py                      756    372    51%
-  nexus/lib/periodic_table.py               1505     24    98%
-  nexus/lib/physical_system.py               427     73    83%
-  nexus/lib/plotting.py                       22      7    68%
-  nexus/lib/project_manager.py               234     37    84%
-  nexus/lib/pseudopotential.py              1225    559    54%
-  nexus/lib/pwscf.py                         198     73    63%
-  nexus/lib/pwscf_analyzer.py                634    316    50%
-  nexus/lib/pwscf_data_reader.py             132    120     9%
-  nexus/lib/pwscf_input.py                  1261    563    55%
-  nexus/lib/pwscf_postprocessors.py          434     56    87%
-  nexus/lib/pyscf_analyzer.py                  3      0   100%
-  nexus/lib/pyscf_input.py                   181     26    86%
-  nexus/lib/pyscf_sim.py                      57      8    86%
-  nexus/lib/qmcpack.py                       344    146    58%
-  nexus/lib/qmcpack_analyzer.py              457    104    77%
-  nexus/lib/qmcpack_analyzer_base.py         327    137    58%
-  nexus/lib/qmcpack_converters.py            507     83    84%
-  nexus/lib/qmcpack_input.py                3605   1439    60%
-  nexus/lib/qmcpack_method_analyzers.py      198     64    68%
-  nexus/lib/qmcpack_property_analyzers.py    205     97    53%
-  nexus/lib/qmcpack_quantity_analyzers.py   2070   1789    14%
-  nexus/lib/qmcpack_result_analyzers.py      285    142    50%
-  nexus/lib/quantum_package.py               253    141    44%
-  nexus/lib/quantum_package_analyzer.py        3      0   100%
-  nexus/lib/quantum_package_input.py         338    164    51%
-  nexus/lib/simulation.py                   1019    169    83%
-  nexus/lib/structure.py                    3830   2055    46%
-  nexus/lib/superstring.py                   311    199    36%
-  nexus/lib/testing.py                       409     67    84%
-  nexus/lib/unit_converter.py                121      4    97%
-  nexus/lib/vasp.py                           94     15    84%
-  nexus/lib/vasp_analyzer.py                 548     73    87%
-  nexus/lib/vasp_input.py                    906    412    55%
-  nexus/lib/versions.py                      335     50    85%
-  nexus/lib/xmlreader.py                     260     54    79%
+  nexus/nexus/basisset.py                      631    375    41%
+  nexus/nexus/bundle.py                        191     68    64%
+  nexus/nexus/debug.py                          12      6    50%
+  nexus/nexus/developer.py                     261     97    63%
+  nexus/nexus/execute.py                        13      2    85%
+  nexus/nexus/fileio.py                        957    373    61%
+  nexus/nexus/gamess.py                        102     20    80%
+  nexus/nexus/gamess_analyzer.py               305    149    51%
+  nexus/nexus/gamess_input.py                  597    167    72%
+  nexus/nexus/generic.py                       817    173    79%
+  nexus/nexus/grid_functions.py               1192    435    64%
+  nexus/nexus/hdfreader.py                     215     61    72%
+  nexus/nexus/machines.py                     1887    463    75%
+  nexus/nexus/memory.py                         60      7    88%
+  nexus/nexus/nexus.py                         297    140    53%
+  nexus/nexus/nexus_base.py                     74     11    85%
+  nexus/nexus/numerics.py                      756    372    51%
+  nexus/nexus/periodic_table.py               1505     24    98%
+  nexus/nexus/physical_system.py               427     73    83%
+  nexus/nexus/plotting.py                       22      7    68%
+  nexus/nexus/project_manager.py               234     37    84%
+  nexus/nexus/pseudopotential.py              1225    559    54%
+  nexus/nexus/pwscf.py                         198     73    63%
+  nexus/nexus/pwscf_analyzer.py                634    316    50%
+  nexus/nexus/pwscf_data_reader.py             132    120     9%
+  nexus/nexus/pwscf_input.py                  1261    563    55%
+  nexus/nexus/pwscf_postprocessors.py          434     56    87%
+  nexus/nexus/pyscf_analyzer.py                  3      0   100%
+  nexus/nexus/pyscf_input.py                   181     26    86%
+  nexus/nexus/pyscf_sim.py                      57      8    86%
+  nexus/nexus/qmcpack.py                       344    146    58%
+  nexus/nexus/qmcpack_analyzer.py              457    104    77%
+  nexus/nexus/qmcpack_analyzer_base.py         327    137    58%
+  nexus/nexus/qmcpack_converters.py            507     83    84%
+  nexus/nexus/qmcpack_input.py                3605   1439    60%
+  nexus/nexus/qmcpack_method_analyzers.py      198     64    68%
+  nexus/nexus/qmcpack_property_analyzers.py    205     97    53%
+  nexus/nexus/qmcpack_quantity_analyzers.py   2070   1789    14%
+  nexus/nexus/qmcpack_result_analyzers.py      285    142    50%
+  nexus/nexus/quantum_package.py               253    141    44%
+  nexus/nexus/quantum_package_analyzer.py        3      0   100%
+  nexus/nexus/quantum_package_input.py         338    164    51%
+  nexus/nexus/simulation.py                   1019    169    83%
+  nexus/nexus/structure.py                    3830   2055    46%
+  nexus/nexus/superstring.py                   311    199    36%
+  nexus/nexus/testing.py                       409     67    84%
+  nexus/nexus/unit_converter.py                121      4    97%
+  nexus/nexus/vasp.py                           94     15    84%
+  nexus/nexus/vasp_analyzer.py                 548     73    87%
+  nexus/nexus/vasp_input.py                    906    412    55%
+  nexus/nexus/versions.py                      335     50    85%
+  nexus/nexus/xmlreader.py                     260     54    79%
 
 The first column is the total number of statements, the second is the
 number not yet covered by the tests and the third is the percent

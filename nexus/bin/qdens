@@ -7,7 +7,7 @@ from optparse import OptionParser
 
 def find_nexus_modules():
     import sys
-    nexus_lib = os.path.abspath(os.path.join(__file__,'..','..','lib'))
+    nexus_lib = os.path.abspath(os.path.join(__file__,'..','..','nexus'))
     assert(os.path.exists(nexus_lib))
     sys.path.append(nexus_lib)
 #end def find_nexus_modules
@@ -25,11 +25,11 @@ try:
     #  (The executable should still work even if Nexus is not installed)
     find_nexus_modules()
 
-    nxs_ver_mod = import_nexus_module('nexus_version')
+    nxs_ver_mod = import_nexus_module('nexus.nexus_version')
     nexus_version = nxs_ver_mod.nexus_version
     del nxs_ver_mod
 
-    developer = import_nexus_module('developer')
+    developer = import_nexus_module('nexus.developer')
     DevBase     = developer.DevBase
     obj         = developer.obj
     error       = developer.error
@@ -37,48 +37,48 @@ try:
     unavailable = developer.unavailable
     del developer
 
-    memory = import_nexus_module('memory')
+    memory = import_nexus_module('nexus.memory')
 
-    unit_converter = import_nexus_module('unit_converter')
+    unit_converter = import_nexus_module('nexus.unit_converter')
     convert = unit_converter.convert
     del unit_converter
 
-    hdfreader = import_nexus_module('hdfreader')
+    hdfreader = import_nexus_module('nexus.hdfreader')
     HDFreader = hdfreader.HDFreader
     del hdfreader
 
-    fileio = import_nexus_module('fileio')
+    fileio = import_nexus_module('nexus.fileio')
     XsfFile    = fileio.XsfFile
     ChgcarFile = fileio.ChgcarFile
     del fileio
 
-    structure = import_nexus_module('structure')
+    structure = import_nexus_module('nexus.structure')
     read_structure = structure.read_structure
     Structure      = structure.Structure
     del structure
 
-    numerics = import_nexus_module('numerics')
+    numerics = import_nexus_module('nexus.numerics')
     simplestats = numerics.simplestats
     simstats    = numerics.simstats
     del numerics
 
-    qmcpack_input = import_nexus_module('qmcpack_input')
+    qmcpack_input = import_nexus_module('nexus.qmcpack_input')
     QmcpackInput    = qmcpack_input.QmcpackInput
     spindensity_xml = qmcpack_input.spindensity
     density_xml = qmcpack_input.density  # temporary
     del qmcpack_input
 except:
-    from nexus_version import nexus_version
-    from developer import DevBase,obj,error,ci,unavailable
-    import memory
-    from hdfreader import HDFreader
-    from fileio import XsfFile,ChgcarFile
-    from structure import read_structure,Structure
-    from numerics import simplestats,simstats
-    from qmcpack_input import QmcpackInput
-    from qmcpack_input import spindensity as spindensity_xml
-    from qmcpack_input import density as density_xml
-    from unit_converter import convert
+    from nexus.nexus_version import nexus_version
+    from nexus.developer import DevBase,obj,error,ci,unavailable
+    import nexus.memory as memory
+    from nexus.hdfreader import HDFreader
+    from nexus.fileio import XsfFile,ChgcarFile
+    from nexus.structure import read_structure,Structure
+    from nexus.numerics import simplestats,simstats
+    from nexus.qmcpack_input import QmcpackInput
+    from nexus.qmcpack_input import spindensity as spindensity_xml
+    from nexus.qmcpack_input import density as density_xml
+    from nexus.unit_converter import convert
 #end try
 
 

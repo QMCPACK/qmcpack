@@ -73,7 +73,7 @@ Contents
    Then you can add one line to the .bashrc file in your 
    home directory:
    
-     export PYTHONPATH=/your/path/to/nexus/lib/:$PYTHONPATH
+     export PYTHONPATH=/your/path/to/nexus/:$PYTHONPATH
    
    After adding this line, type "source $HOME/.bashrc".  Now check 
    that Nexus is available by typing "python" then "import nexus".

@@ -78,7 +78,7 @@ RUN mkdir -p /opt/qmcpack && cd /opt/qmcpack && \
 
 ENV PATH=${PATH}:/opt/qmcpack/bin
 ENV PATH=${PATH}:/opt/qmcpack/qmcpack/nexus/bin
-ENV PYTHONPATH=/opt/qmcpack/qmcpack/nexus/lib
+ENV PYTHONPATH=/opt/qmcpack/qmcpack/nexus
 
 # Default user and directory
 USER $USERNAME

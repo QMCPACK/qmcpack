@@ -6,7 +6,7 @@ from nexus import generate_pwscf
 from nexus import generate_pw2qmcpack
 from nexus import generate_qmcpack,vmc,dmc
 from nexus import ppset,obj
-from qmcpack_input import spindensity
+from nexus.qmcpack_input import spindensity
 
 settings(
     pseudo_dir    = './pseudopotentials',
@@ -35,8 +35,8 @@ dft_shared = obj(
     degauss          = 1e-3,
     mixing_beta      = 0.4,
     nspin            = 2,
-    U_projection_type = 'ortho-atomic',
-    hubbard_u        = obj(Fe=5.5),
+    hubbard          = {'U':{'Fe-3d': 5.5}},
+    hubbard_proj     = 'ortho-atomic',
     start_mag        = obj(Fe=0.1),
     kshift           = (0,0,0),
     pseudos          = pseudos,

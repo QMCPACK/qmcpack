@@ -7,7 +7,7 @@ from optparse import OptionParser
 
 def find_nexus_modules():
     import sys
-    nexus_lib = os.path.abspath(os.path.join(__file__,'..','..','lib'))
+    nexus_lib = os.path.abspath(os.path.join(__file__,'..','..','nexus'))
     assert(os.path.exists(nexus_lib))
     sys.path.append(nexus_lib)
 #end def find_nexus_modules
@@ -26,31 +26,31 @@ try:
     #  (The executable should still work even if Nexus is not installed)
     find_nexus_modules()
 
-    nxs_ver_mod = import_nexus_module('nexus_version')
+    nxs_ver_mod = import_nexus_module('nexus.nexus_version')
     nexus_version = nxs_ver_mod.nexus_version
     del nxs_ver_mod
 
-    developer = import_nexus_module('developer')
+    developer = import_nexus_module('nexus.developer')
     obj         = developer.obj
     DevBase     = developer.DevBase
     unavailable = developer.unavailable
     del developer
 
-    unit_converter = import_nexus_module('unit_converter')
+    unit_converter = import_nexus_module('nexus.unit_converter')
     convert = unit_converter.convert
     del unit_converter
 
-    numerics = import_nexus_module('numerics')
+    numerics = import_nexus_module('nexus.numerics')
     simstats             = numerics.simstats
     simplestats          = numerics.simplestats
     equilibration_length = numerics.equilibration_length
     del numerics
 except:
     # Failing path-based imports, import installed Nexus modules.
-    from nexus_version import nexus_version
-    from developer import DevBase,obj,unavailable
-    from unit_converter import convert
-    from numerics import simstats,simplestats,equilibration_length
+    from nexus.nexus_version import nexus_version
+    from nexus.developer import DevBase,obj,unavailable
+    from nexus.unit_converter import convert
+    from nexus.numerics import simstats,simplestats,equilibration_length
 #end try
 
 
