@@ -285,7 +285,7 @@ Quantum ESPRESSO (PWSCF) generation:
 
 
 The keywords ``calculation``, ``input_dft``, ``ecutwfc``, and
-``conv_thr`` will be familiar to the casual user of PWSCF. Any input
+``conv_thr`` will be familiar to the casual user of Quantum ESPRESSO's PWSCF/pw.x program. Any input
 keyword that normally appears as part of a namelist in PWSCF input can
 be directly supplied here. The ``generate_pwscf`` function, like most of
 the others, actually takes an arbitrary number of keyword arguments.
@@ -293,6 +293,29 @@ These are later screened against known inputs to PWSCF to avoid errors.
 The ``kgrid`` and ``kshift`` inputs inform the ``KPOINTS`` card in the
 PWSCF input file, overriding any similar information provided in
 ``generate_physical_system``.
+
+Note on DFT+U support in Quantum ESPRESSO and Nexus: a new set of keywords was adopted for DFT+U-based methods starting with v7.1 of
+Quantum ESPRESSO. Both the current ("new") and old formats are supported by Nexus, but via different keywords.
+
+For v7.1 and above use:
+
+::
+
+    hubbard          = {'U':{'Fe-3d': 5.5}},
+    hubbard_proj     = 'ortho-atomic',
+
+
+For older versions use:
+
+::
+
+    U_projection_type = 'ortho-atomic',
+    hubbard_u        = obj(Fe=5.5),
+
+
+Examples of this usage can be found in nexus/examples, e.g.,
+nexus/examples/qmcpack/rsqmc_quantum_espresso/04_iron_dft_dmc_gcta/iron_ldaU_dmc_gcta.py shows how to run DFT+U calculations for
+grand-canonical twist averaging using the latest format.
 
 VASP generation:
 ****************
