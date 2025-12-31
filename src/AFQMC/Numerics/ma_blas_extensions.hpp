@@ -83,7 +83,7 @@ MultiArray2DB&& axty(T const alpha, MultiArray2DA const& A, MultiArray2DB&& B)
   assert(A.num_elements() == B.num_elements());
   assert(get<1>(A.strides()) == 1);
   assert(A.stride() == get<1>(A.sizes()));
-  assert(get<1>(B.stride()) == 1);
+  assert(get<1>(B.strides()) == 1);
   assert(B.stride() == get<1>(B.sizes()));
   axty(A.num_elements(), alpha, pointer_dispatch(A.origin()), 1, pointer_dispatch(B.origin()), 1);
   return B;
