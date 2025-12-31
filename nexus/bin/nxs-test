@@ -2184,7 +2184,7 @@ def regenerate_reference(update=False):
 
 def find_nexus_modules():
     import sys
-    nexus_lib = os.path.abspath(os.path.join(__file__,'..','..','nexus'))
+    nexus_lib = os.path.abspath(os.path.join(__file__,'..','..','..','nexus'))
     assert(os.path.exists(nexus_lib))
     sys.path.append(nexus_lib)
 #end def find_nexus_modules

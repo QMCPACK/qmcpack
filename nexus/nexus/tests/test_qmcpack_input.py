@@ -1,5 +1,5 @@
 
-import versions
+from .. import versions
 from .. import testing
 from ..testing import divert_nexus_log,restore_nexus_log
 from ..testing import value_eq,object_eq,check_object_eq
