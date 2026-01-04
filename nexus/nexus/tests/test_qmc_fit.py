@@ -1,5 +1,5 @@
 
-import versions
+from .. import versions
 from .. import testing
 from ..testing import execute,text_eq
 

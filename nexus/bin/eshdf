@@ -9,48 +9,22 @@ from optparse import OptionParser
 import numpy as np
 
 
-
 def find_nexus_modules():
+    import os
     import sys
-    nexus_lib = os.path.abspath(os.path.join(__file__,'..','..','nexus'))
+    nexus_lib = os.path.abspath(os.path.join(__file__,'..','..','..','nexus'))
     assert(os.path.exists(nexus_lib))
-    sys.path.append(nexus_lib)
+    sys.path.insert(0,nexus_lib)
+    import nexus
+    nexus_lib2 = os.path.abspath(os.path.join(nexus.__file__,'..','..'))
+    assert nexus_lib2==nexus_lib
 #end def find_nexus_modules
 
-
-def import_nexus_module(module_name):
-    import importlib
-    return importlib.import_module(module_name)
-#end def import_nexus_module
-
-
 # Load Nexus modules
-try:
-    # Attempt specialized path-based imports.
-    #  (The executable should still work even if Nexus is not installed)
-    find_nexus_modules()
-
-    nxs_ver_mod = import_nexus_module('nexus.nexus_version')
-    nexus_version = nxs_ver_mod.nexus_version
-    del nxs_ver_mod
-
-    developer = import_nexus_module('nexus.developer')
-    obj         = developer.obj
-    log         = developer.log
-    warn        = developer.warn
-    error       = developer.error
-    ci          = developer.ci
-    del developer
-
-    hdfreader = import_nexus_module('nexus.hdfreader')
-    read_hdf = hdfreader.read_hdf
-    del hdfreader
-except:
-    from nexus.nexus_version import nexus_version
-    from nexus.developer import obj,log,warn,error,ci
-    from nexus.hdfreader import read_hdf
-#end try
-
+find_nexus_modules()
+from nexus.nexus_version import nexus_version
+from nexus.developer import obj,log,warn,error,ci
+from nexus.hdfreader import read_hdf
 
 
 opt = obj(
