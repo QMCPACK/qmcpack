@@ -36,7 +36,7 @@ template<class T,
 void adotpby(T const alpha, MultiArray1Dx const& x, MultiArray1Dy const& y, Q const beta, ptr res)
 {
   assert(x.size() == y.size());
-  adotpby(x.size(), alpha, pointer_dispatch(x.origin()), x.stride(0), pointer_dispatch(y.origin()), y.stride(0), beta,
+  adotpby(x.size(), alpha, pointer_dispatch(x.origin()), x.stride(), pointer_dispatch(y.origin()), y.stride(), beta,
           to_address(res));
 }
 
@@ -52,11 +52,11 @@ template<class T,
 void adotpby(T const alpha, MultiArray2Dx const& x, MultiArray2Dy const& y, Q const beta, MultiArray1D res)
 {
   using std::get;
-  if (get<0>(x.sizes()) != get<0>(y.sizes()) || get<0>(x.sizes()) != get<0>(res.sizes()) || get<1>(x.sizes()) != get<1>(y.sizes()) || x.stride(1) != 1 ||
-      y.stride(1) != 1)
+  if (get<0>(x.sizes()) != get<0>(y.sizes()) || get<0>(x.sizes()) != get<0>(res.sizes()) || get<1>(x.sizes()) != get<1>(y.sizes()) || get<1>(x.strides()) != 1 ||
+      get<1>(y.strides()) != 1)
     throw std::runtime_error(" Error: Inconsistent matrix dimensions in adotpby(2D).\n");
-  strided_adotpby(get<0>(x.sizes()), get<1>(x.sizes()), alpha, pointer_dispatch(x.origin()), x.stride(0), pointer_dispatch(y.origin()),
-                  y.stride(0), beta, to_address(res.origin()), res.stride(0));
+  strided_adotpby(get<0>(x.sizes()), get<1>(x.sizes()), alpha, pointer_dispatch(x.origin()), x.stride(), pointer_dispatch(y.origin()),
+                  y.stride(), beta, to_address(res.origin()), res.stride());
 }
 
 template<class T,
@@ -67,7 +67,7 @@ template<class T,
 MultiArray1Dy&& axty(T const alpha, MultiArray1Dx const& x, MultiArray1Dy&& y)
 {
   assert(x.size() == y.size());
-  axty(x.size(), alpha, pointer_dispatch(x.origin()), x.stride(0), pointer_dispatch(y.origin()), y.stride(0));
+  axty(x.size(), alpha, pointer_dispatch(x.origin()), x.stride(), pointer_dispatch(y.origin()), y.stride());
   return y;
 }
 
@@ -81,10 +81,10 @@ MultiArray2DB&& axty(T const alpha, MultiArray2DA const& A, MultiArray2DB&& B)
 {
   using std::get;
   assert(A.num_elements() == B.num_elements());
-  assert(A.stride(1) == 1);
-  assert(A.stride(0) == get<1>(A.sizes()));
-  assert(B.stride(1) == 1);
-  assert(B.stride(0) == get<1>(B.sizes()));
+  assert(get<1>(A.strides()) == 1);
+  assert(A.stride() == get<1>(A.sizes()));
+  assert(get<1>(B.strides()) == 1);
+  assert(B.stride() == get<1>(B.sizes()));
   axty(A.num_elements(), alpha, pointer_dispatch(A.origin()), 1, pointer_dispatch(B.origin()), 1);
   return B;
 }
@@ -105,8 +105,8 @@ MultiArray2DB&& acAxpbB(T const alpha, MultiArray2DA const& A, MultiArray1D cons
   assert(get<0>(A.sizes()) == get<0>(B.sizes()));
   assert(get<1>(A.sizes()) == get<1>(B.sizes()));
   assert(get<1>(A.sizes()) == get<0>(x.sizes()));
-  acAxpbB(get<1>(A.sizes()), get<0>(A.sizes()), alpha, pointer_dispatch(A.origin()), A.stride(0), pointer_dispatch(x.origin()),
-          x.stride(0), beta, pointer_dispatch(B.origin()), B.stride(0));
+  acAxpbB(get<1>(A.sizes()), get<0>(A.sizes()), alpha, pointer_dispatch(A.origin()), A.stride(), pointer_dispatch(x.origin()),
+          x.stride(), beta, pointer_dispatch(B.origin()), B.stride());
   return B;
 }
 
@@ -120,7 +120,7 @@ MultiArray1Dy&& adiagApy(T const alpha, MultiArray2DA const& A, MultiArray1Dy&& 
   using std::get;
   assert(get<0>(A.sizes()) == get<1>(A.sizes()));
   assert(get<0>(A.sizes()) == y.size());
-  adiagApy(y.size(), alpha, pointer_dispatch(A.origin()), A.stride(0), pointer_dispatch(y.origin()), y.stride(0));
+  adiagApy(y.size(), alpha, pointer_dispatch(A.origin()), A.stride(), pointer_dispatch(y.origin()), y.stride());
   return y;
 }
 
@@ -128,7 +128,7 @@ template<class MultiArray1D,
          typename = typename std::enable_if<std::decay<MultiArray1D>::type::dimensionality == 1>::type>
 auto sum(MultiArray1D const& y)
 {
-  return sum(y.size(), pointer_dispatch(y.origin()), y.stride(0));
+  return sum(y.size(), pointer_dispatch(y.origin()), y.stride());
 }
 
 template<class MultiArray2D,
@@ -136,10 +136,10 @@ template<class MultiArray2D,
          typename = void>
 auto sum(MultiArray2D const& A)
 {
-  assert(A.stride(1) == 1);
   using std::get;
+  assert(get<1>(A.strides()) == 1);
   // blas call assumes fortran ordering
-  return sum(get<1>(A.sizes()), get<0>(A.sizes()), pointer_dispatch(A.origin()), A.stride(0));
+  return sum(get<1>(A.sizes()), get<0>(A.sizes()), pointer_dispatch(A.origin()), A.stride());
 }
 
 template<class MultiArray3D,
@@ -150,9 +150,9 @@ auto sum(MultiArray3D const& A)
 {
   using std::get;
   // only arrays and array_refs for now
-  assert(A.stride(0) == get<1>(A.sizes()) * get<2>(A.sizes()));
-  assert(A.stride(1) == get<2>(A.sizes()));
-  assert(A.stride(2) == 1);
+  assert(A.stride() == get<1>(A.sizes()) * get<2>(A.sizes()));
+  assert(get<1>(A.strides()) == get<2>(A.sizes()));
+  assert(get<2>(A.strides()) == 1);
   return sum(A.num_elements(), pointer_dispatch(A.origin()), 1);
 }
 
@@ -165,10 +165,10 @@ auto sum(MultiArray4D const& A)
 {
   using std::get;
   // only arrays and array_refs for now
-  assert(A.stride(0) == get<1>(A.sizes()) * get<2>(A.sizes()) * get<3>(A.sizes()));
-  assert(A.stride(1) == get<2>(A.sizes()) * get<3>(A.sizes()));
-  assert(A.stride(2) == get<3>(A.sizes()));
-  assert(A.stride(3) == 1);
+  assert(A.stride() == get<1>(A.sizes()) * get<2>(A.sizes()) * get<3>(A.sizes()));
+  assert(get<1>(A.strides()) == get<2>(A.sizes()) * get<3>(A.sizes()));
+  assert(get<2>(A.strides()) == get<3>(A.sizes()));
+  assert(get<3>(A.strides()) == 1);
   return sum(A.num_elements(), pointer_dispatch(A.origin()), 1);
 }
 
@@ -178,7 +178,7 @@ template<class T,
 MultiArray1D&& setVector(T alpha, MultiArray1D&& a)
 {
   using std::get;
-  set1D(get<0>(a.sizes()), alpha, pointer_dispatch(a.origin()), a.stride(0));
+  set1D(get<0>(a.sizes()), alpha, pointer_dispatch(a.origin()), a.stride());
   return std::forward<MultiArray1D>(a);
 }
 
@@ -192,7 +192,7 @@ template<class MultiArray2D, typename = std::enable_if_t<std::decay<MultiArray2D
 MultiArray2D&& set_identity(MultiArray2D&& m)
 {
   using std::get;
-  set_identity(get<1>(m.sizes()), get<0>(m.sizes()), pointer_dispatch(m.origin()), m.stride(0));
+  set_identity(get<1>(m.sizes()), get<0>(m.sizes()), pointer_dispatch(m.origin()), m.stride());
   return std::forward<MultiArray2D>(m);
 }
 
@@ -202,7 +202,7 @@ template<class MultiArray3D,
 MultiArray3D&& set_identity(MultiArray3D&& m)
 {
   using std::get;
-  set_identity_strided(get<0>(m.sizes()), m.stride(0), get<2>(m.sizes()), get<1>(m.sizes()), pointer_dispatch(m.origin()), m.stride(1));
+  set_identity_strided(get<0>(m.sizes()), m.stride(), get<2>(m.sizes()), get<1>(m.sizes()), pointer_dispatch(m.origin()), get<1>(m.strides()));
   return std::forward<MultiArray3D>(m);
 }
 
@@ -213,7 +213,7 @@ MultiArray2D&& fill(MultiArray2D&& m, T const& value)
 {
   using qmcplusplus::afqmc::fill2D;
   using std::get;
-  fill2D(get<0>(m.sizes()), get<1>(m.sizes()), pointer_dispatch(m.origin()), m.stride(0), value);
+  fill2D(get<0>(m.sizes()), get<1>(m.sizes()), pointer_dispatch(m.origin()), m.stride(), value);
   return std::forward<MultiArray2D>(m);
 }
 
@@ -225,11 +225,11 @@ template<class MultiArray3D,
 void get_diagonal_strided(MultiArray3D const& B, MultiArray2D&& A)
 {
   using std::get;
-  if (get<0>(A.sizes()) != get<0>(B.sizes()) || get<1>(A.sizes()) != get<1>(B.sizes()) || get<1>(A.sizes()) != get<2>(B.sizes()) || A.stride(1) != 1 ||
-      B.stride(2) != 1)
+  if (get<0>(A.sizes()) != get<0>(B.sizes()) || get<1>(A.sizes()) != get<1>(B.sizes()) || get<1>(A.sizes()) != get<2>(B.sizes()) || get<1>(A.strides()) != 1 ||
+      get<2>(B.strides()) != 1)
     throw std::runtime_error(" Error: Inconsistent matrix dimensions in get_diagonal_strided.\n");
-  get_diagonal_strided(get<0>(A.sizes()), get<1>(A.sizes()), pointer_dispatch(B.origin()), B.stride(1), B.stride(0),
-                       pointer_dispatch(A.origin()), A.stride(0));
+  get_diagonal_strided(get<0>(A.sizes()), get<1>(A.sizes()), pointer_dispatch(B.origin()), get<1>(B.strides()), B.stride(),
+                       pointer_dispatch(A.origin()), A.stride());
 }
 
 template<class CSR,
@@ -488,8 +488,8 @@ void Matrix2MA(char TA, MA const& A, MultiArray2D& M)
   }
   else
   {
-    geam(TA, TA, get<1>(M.sizes()), get<0>(M.sizes()), Type2(1.0), pointer_dispatch(A.origin()), A.stride(0), Type2(0.0),
-         pointer_dispatch(A.origin()), A.stride(0), pointer_dispatch(M.origin()), M.stride(0));
+    geam(TA, TA, get<1>(M.sizes()), get<0>(M.sizes()), Type2(1.0), pointer_dispatch(A.origin()), A.stride(), Type2(0.0),
+         pointer_dispatch(A.origin()), A.stride(), pointer_dispatch(M.origin()), M.stride());
   }
 }
 
@@ -555,8 +555,8 @@ void Matrix2MAREF(char TA, MA const& A, MultiArray2D& M)
   }
   else
   {
-    geam(TA, TA, get<1>(M.sizes()), get<0>(M.sizes()), Type2(1.0), pointer_dispatch(A.origin()), A.stride(0), Type2(0.0),
-         pointer_dispatch(A.origin()), A.stride(0), pointer_dispatch(M.origin()), M.stride(0));
+    geam(TA, TA, get<1>(M.sizes()), get<0>(M.sizes()), Type2(1.0), pointer_dispatch(A.origin()), A.stride(), Type2(0.0),
+         pointer_dispatch(A.origin()), A.stride(), pointer_dispatch(M.origin()), M.stride());
   }
 }
 
