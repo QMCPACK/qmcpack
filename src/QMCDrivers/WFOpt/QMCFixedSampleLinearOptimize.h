@@ -17,7 +17,7 @@
 #ifndef QMCPLUSPLUS_QMCFSLINEAROPTIMIZATION_VMCSINGLE_H
 #define QMCPLUSPLUS_QMCFSLINEAROPTIMIZATION_VMCSINGLE_H
 
-#include "Optimize/NRCOptimization.h"
+#include "NRCOptimization.h"
 #ifdef HAVE_LMY_ENGINE
 #include "formic/utils/matrix.h"
 #include "formic/utils/lmyengine/engine.h"
