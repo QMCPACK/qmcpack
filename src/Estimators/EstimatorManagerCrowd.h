@@ -32,14 +32,14 @@ class QMCHamiltonian;
  *
  *  Stepping away from the CloneManger + clones design which creates EstimatorManagers
  *  Which operate differently based on internal switches.
- *  
+ *
  *  see EstimatorManagerNew.h for full description of the new design.
  */
 class EstimatorManagerCrowd
 {
 public:
-  using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
-  using RealType  = EstimatorManagerNew::RealType;
+  using MCPWalker        = Walker<QMCTraits, PtclOnLatticeTraits>;
+  using RealType         = EstimatorManagerNew::RealType;
   using FullPrecRealType = EstimatorManagerNew::FullPrecRealType;
 
   /** EstimatorManagerCrowd are always spawn of an EstimatorManagerNew
@@ -47,7 +47,7 @@ public:
   EstimatorManagerCrowd(EstimatorManagerNew& em);
 
   ///destructor
-  ~EstimatorManagerCrowd(){};
+  ~EstimatorManagerCrowd() {};
 
   ///return the number of ScalarEstimators
   inline int size() const { return scalar_estimators_.size(); }
