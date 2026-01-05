@@ -731,7 +731,18 @@ void NESpaceGrid<REAL>::collect(NESpaceGrid& reduction_grid, const RefVector<NES
 template<typename REAL>
 void NESpaceGrid<REAL>::normalize(REAL invToWgt)
 {
-  std::transform(data_.begin(), data_.end(), data_.begin(),
+  // I think its better to not transform the weights folling the
+  // convention that value 0 is always the weight.
+
+  // for (int i = 0, n = buffer_offset_; i < ndomains_; i++, n += nvalues_per_domain_)
+  // {
+  //   for (int v = 0; v < nvalues_per_domain_; v++)
+  //   {
+  //     data_[n + v] *= invToWgt;
+  //   }
+  // }
+
+  std::transform(data_.begin() + buffer_offset_, data_.end(), data_.begin() + buffer_offset_,
                  std::bind(std::multiplies<REAL>(), std::placeholders::_1, invToWgt));
 }
 
