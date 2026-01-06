@@ -26,7 +26,7 @@ void GradientTest::run(QMCCostFunctionBase& costFunc, const std::string& root_na
 
   for (int i = 0; i < num_params; i++)
   {
-    params[i] = std::real(costFunc.Params(i));
+    params[i] = std::real(opt_vars[i]);
   }
 
 
