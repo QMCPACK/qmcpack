@@ -254,12 +254,6 @@ bool QMCMain::execute()
     {
       executeCMCSection(cur);
     }
-    else if (cname == "debug")
-    {
-      executeDebugSection(cur);
-      app_log() << "  Debug is done. Skip the rest of the input " << std::endl;
-      break;
-    }
   }
   // free if m_qmcation owns the memory of xmlNodePtr before clearing
   for (auto& qmcactionPair : qmc_action_)
@@ -663,14 +657,6 @@ bool QMCMain::setMCWalkers(xmlXPathContextPtr context_)
     if (fname.size())
       RandomNumberControl::read(fname, myComm);
   }
-  return true;
-}
-
-bool QMCMain::executeDebugSection(xmlNodePtr cur)
-{
-  app_log() << "QMCMain::executeDebugSection " << std::endl;
-  app_log() << "  Use this to debug new features with <debug/> in the input file " << std::endl;
-
   return true;
 }
 
