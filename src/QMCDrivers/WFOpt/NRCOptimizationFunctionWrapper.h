@@ -16,7 +16,7 @@
 #ifndef QMCPLUSPLUS_NRCOPTIMIZATIONFUNCTIONWRAPPER_H
 #define QMCPLUSPLUS_NRCOPTIMIZATIONFUNCTIONWRAPPER_H
 
-#include "Optimize/NRCOptimization.h"
+#include "NRCOptimization.h"
 
 namespace qmcplusplus
 {
