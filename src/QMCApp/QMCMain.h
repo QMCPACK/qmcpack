@@ -107,9 +107,6 @@ private:
   /** execute loop **/
   void executeLoop(xmlNodePtr cur);
 
-  ///execute <debug/> element
-  bool executeDebugSection(xmlNodePtr cur);
-
   /** execute qmc
    * @param cur qmc xml node
    * @param reuse if true, reuse the driver built from the last QMC section. This should be used by loop only.
