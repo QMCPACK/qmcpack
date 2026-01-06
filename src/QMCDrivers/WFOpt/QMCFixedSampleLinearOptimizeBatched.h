@@ -21,8 +21,7 @@
 #include "QMCDrivers/QMCDriverNew.h"
 #include "QMCDrivers/QMCDriverInput.h"
 #include "QMCDrivers/VMC/VMCDriverInput.h"
-#include "Optimize/NRCOptimization.h"
-#include "Optimize/NRCOptimizationFunctionWrapper.h"
+#include "NRCOptimizationFunctionWrapper.h"
 #ifdef HAVE_LMY_ENGINE
 #include "formic/utils/matrix.h"
 #include "formic/utils/lmyengine/engine.h"
