@@ -21,7 +21,7 @@ namespace qmcplusplus
 class RotatedSPOs;
 namespace testing
 {
-const opt_variables_type& getMyVars(RotatedSPOs& rot);
+const OptVariables& getMyVars(RotatedSPOs& rot);
 const std::vector<QMCTraits::ValueType>& getMyVarsFull(RotatedSPOs& rot);
 } // namespace testing
 
@@ -147,20 +147,20 @@ public:
 
 
   void evaluateDerivatives(ParticleSet& P,
-                           const opt_variables_type& optvars,
+                           const OptVariables& optvars,
                            Vector<ValueType>& dlogpsi,
                            Vector<ValueType>& dhpsioverpsi,
                            const int& FirstIndex,
                            const int& LastIndex) override;
 
   void evaluateDerivativesWF(ParticleSet& P,
-                             const opt_variables_type& optvars,
+                             const OptVariables& optvars,
                              Vector<ValueType>& dlogpsi,
                              int FirstIndex,
                              int LastIndex) override;
 
   void evaluateDerivatives(ParticleSet& P,
-                           const opt_variables_type& optvars,
+                           const OptVariables& optvars,
                            Vector<ValueType>& dlogpsi,
                            Vector<ValueType>& dhpsioverpsi,
                            const ValueType& psiCurrent,
@@ -187,7 +187,7 @@ public:
                            const std::vector<std::vector<int>>& lookup_tbl) override;
 
   void evaluateDerivativesWF(ParticleSet& P,
-                             const opt_variables_type& optvars,
+                             const OptVariables& optvars,
                              Vector<ValueType>& dlogpsi,
                              const FullPrecValue& psiCurrent,
                              const std::vector<ValueType>& Coeff,
@@ -250,16 +250,16 @@ public:
 
   void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override { opt_obj_refs.push_back(*this); }
 
-  void checkInVariablesExclusive(opt_variables_type& active) override
+  void checkInVariablesExclusive(OptVariables& active) override
   {
     if (myVars.size())
       active.insertFrom(myVars);
   }
 
-  void checkOutVariables(const opt_variables_type& active) override { myVars.getIndex(active); }
+  void checkOutVariables(const OptVariables& active) override { myVars.getIndex(active); }
 
   ///reset
-  void resetParametersExclusive(const opt_variables_type& active) override;
+  void resetParametersExclusive(const OptVariables& active) override;
 
   void writeVariationalParameters(hdf_archive& hout) override;
 
@@ -304,7 +304,7 @@ public:
   }
 
   void evaluateDerivRatios(const VirtualParticleSet& VP,
-                           const opt_variables_type& optvars,
+                           const OptVariables& optvars,
                            ValueVector& psi,
                            const ValueVector& psiinv,
                            std::vector<ValueType>& ratios,
@@ -466,7 +466,7 @@ private:
 
   static RefVectorWithLeader<SPOSet> extractPhiRefList(const RefVectorWithLeader<SPOSet>& spo_list);
 
-  friend const opt_variables_type& testing::getMyVars(RotatedSPOs& rot);
+  friend const OptVariables& testing::getMyVars(RotatedSPOs& rot);
   friend const std::vector<ValueType>& testing::getMyVarsFull(RotatedSPOs& rot);
 };
 

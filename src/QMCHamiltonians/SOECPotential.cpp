@@ -118,7 +118,7 @@ void SOECPotential::evaluateImpl(TrialWaveFunction& psi, ParticleSet& P, bool ke
 
 SOECPotential::Return_t SOECPotential::evaluateValueAndDerivatives(TrialWaveFunction& psi,
                                                                    ParticleSet& P,
-                                                                   const opt_variables_type& optvars,
+                                                                   const OptVariables& optvars,
                                                                    const Vector<ValueType>& dlogpsi,
                                                                    Vector<ValueType>& dhpsioverpsi)
 {

@@ -133,14 +133,14 @@ public:
     std::cerr << offsetPrms << std::endl;
   }
 
-  void resetParameters(const opt_variables_type& active) override
+  void resetParameters(const OptVariables& active) override
   {
     for (int i = 0; i < RadFunc.size(); ++i)
       if (Fmask(i) == i)
         RadFunc(i)->resetParameters(active);
   }
 
-  void checkInVariables(opt_variables_type& active) override
+  void checkInVariables(OptVariables& active) override
   {
     //myVars.clear();
     for (int i = 0; i < RadFunc.size(); ++i)
@@ -148,7 +148,7 @@ public:
         RadFunc(i)->checkInVariables(active);
   }
 
-  void checkOutVariables(const opt_variables_type& active) override
+  void checkOutVariables(const OptVariables& active) override
   {
     for (int i = 0; i < RadFunc.size(); ++i)
       if (Fmask(i) == i)

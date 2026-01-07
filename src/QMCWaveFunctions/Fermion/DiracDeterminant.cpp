@@ -474,7 +474,7 @@ void DiracDeterminant<PL, VT, FPVT>::evaluateSpinorRatios(const VirtualParticleS
 
 template<PlatformKind PL, typename VT, typename FPVT>
 void DiracDeterminant<PL, VT, FPVT>::evaluateDerivRatios(const VirtualParticleSet& VP,
-                                                         const opt_variables_type& optvars,
+                                                         const OptVariables& optvars,
                                                          std::vector<ValueType>& ratios,
                                                          Matrix<ValueType>& dratios)
 {
@@ -488,7 +488,7 @@ template<PlatformKind PL, typename VT, typename FPVT>
 void DiracDeterminant<PL, VT, FPVT>::evaluateSpinorDerivRatios(
     const VirtualParticleSet& VP,
     const std::pair<ValueVector, ValueVector>& spinor_multiplier,
-    const opt_variables_type& optvars,
+    const OptVariables& optvars,
     std::vector<ValueType>& ratios,
     Matrix<ValueType>& dratios)
 {
@@ -708,7 +708,7 @@ void DiracDeterminant<PL, VT, FPVT>::recompute(const ParticleSet& P)
 
 template<PlatformKind PL, typename VT, typename FPVT>
 void DiracDeterminant<PL, VT, FPVT>::evaluateDerivatives(ParticleSet& P,
-                                                         const opt_variables_type& active,
+                                                         const OptVariables& active,
                                                          Vector<ValueType>& dlogpsi,
                                                          Vector<ValueType>& dhpsioverpsi)
 {
@@ -717,7 +717,7 @@ void DiracDeterminant<PL, VT, FPVT>::evaluateDerivatives(ParticleSet& P,
 
 template<PlatformKind PL, typename VT, typename FPVT>
 void DiracDeterminant<PL, VT, FPVT>::evaluateDerivativesWF(ParticleSet& P,
-                                                           const opt_variables_type& active,
+                                                           const OptVariables& active,
                                                            Vector<ValueType>& dlogpsi)
 {
   phi_.evaluateDerivativesWF(P, active, dlogpsi, FirstIndex, LastIndex);

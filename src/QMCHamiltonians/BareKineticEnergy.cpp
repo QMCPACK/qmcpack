@@ -134,7 +134,7 @@ Return_t BareKineticEnergy::evaluate(TrialWaveFunction& psi, ParticleSet& P)
 
 Return_t BareKineticEnergy::evaluateValueAndDerivatives(TrialWaveFunction& psi,
                                                         ParticleSet& P,
-                                                        const opt_variables_type& optvars,
+                                                        const OptVariables& optvars,
                                                         const Vector<ValueType>& dlogpsi,
                                                         Vector<ValueType>& dhpsioverpsi)
 {
@@ -147,7 +147,7 @@ Return_t BareKineticEnergy::evaluateValueAndDerivatives(TrialWaveFunction& psi,
 void BareKineticEnergy::mw_evaluateWithParameterDerivatives(const RefVectorWithLeader<OperatorBase>& o_list,
                                                             const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                                             const RefVectorWithLeader<ParticleSet>& p_list,
-                                                            const opt_variables_type& optvars,
+                                                            const OptVariables& optvars,
                                                             const RecordArray<ValueType>& dlogpsi,
                                                             RecordArray<ValueType>& dhpsioverpsi) const
 {

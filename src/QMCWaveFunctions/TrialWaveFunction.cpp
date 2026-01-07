@@ -926,21 +926,21 @@ UniqueOptObjRefs TrialWaveFunction::extractOptimizableObjectRefs()
   return opt_obj_refs;
 }
 
-void TrialWaveFunction::checkInVariables(opt_variables_type& active)
+void TrialWaveFunction::checkInVariables(OptVariables& active)
 {
   auto opt_obj_refs = extractOptimizableObjectRefs();
   for (OptimizableObject& obj : opt_obj_refs)
     obj.checkInVariablesExclusive(active);
 }
 
-void TrialWaveFunction::checkOutVariables(const opt_variables_type& active)
+void TrialWaveFunction::checkOutVariables(const OptVariables& active)
 {
   for (int i = 0; i < Z.size(); i++)
     if (Z[i]->isOptimizable())
       Z[i]->checkOutVariables(active);
 }
 
-void TrialWaveFunction::resetParameters(const opt_variables_type& active)
+void TrialWaveFunction::resetParameters(const OptVariables& active)
 {
   auto opt_obj_refs = extractOptimizableObjectRefs();
   for (OptimizableObject& obj : opt_obj_refs)
@@ -1143,7 +1143,7 @@ void TrialWaveFunction::mw_evaluateSpinorRatios(
 }
 
 void TrialWaveFunction::evaluateDerivRatios(const VirtualParticleSet& VP,
-                                            const opt_variables_type& optvars,
+                                            const OptVariables& optvars,
                                             std::vector<ValueType>& ratios,
                                             Matrix<ValueType>& dratio)
 {
@@ -1161,7 +1161,7 @@ void TrialWaveFunction::evaluateDerivRatios(const VirtualParticleSet& VP,
 
 void TrialWaveFunction::evaluateSpinorDerivRatios(const VirtualParticleSet& VP,
                                                   const std::pair<ValueVector, ValueVector>& spinor_multiplier,
-                                                  const opt_variables_type& optvars,
+                                                  const OptVariables& optvars,
                                                   std::vector<ValueType>& ratios,
                                                   Matrix<ValueType>& dratio)
 {
@@ -1195,7 +1195,7 @@ std::unique_ptr<TrialWaveFunction> TrialWaveFunction::makeClone(ParticleSet& tqp
  * @todo WaveFunctionComponent objects should take the mass into account.
  */
 void TrialWaveFunction::evaluateDerivatives(ParticleSet& P,
-                                            const opt_variables_type& optvars,
+                                            const OptVariables& optvars,
                                             Vector<ValueType>& dlogpsi,
                                             Vector<ValueType>& dhpsioverpsi)
 {
@@ -1215,7 +1215,7 @@ void TrialWaveFunction::evaluateDerivatives(ParticleSet& P,
 
 void TrialWaveFunction::mw_evaluateParameterDerivatives(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                                         const RefVectorWithLeader<ParticleSet>& p_list,
-                                                        const opt_variables_type& optvars,
+                                                        const OptVariables& optvars,
                                                         RecordArray<ValueType>& dlogpsi,
                                                         RecordArray<ValueType>& dhpsioverpsi)
 {
@@ -1230,9 +1230,7 @@ void TrialWaveFunction::mw_evaluateParameterDerivatives(const RefVectorWithLeade
 }
 
 
-void TrialWaveFunction::evaluateDerivativesWF(ParticleSet& P,
-                                              const opt_variables_type& optvars,
-                                              Vector<ValueType>& dlogpsi)
+void TrialWaveFunction::evaluateDerivativesWF(ParticleSet& P, const OptVariables& optvars, Vector<ValueType>& dlogpsi)
 {
   for (int i = 0; i < Z.size(); i++)
   {
@@ -1243,7 +1241,7 @@ void TrialWaveFunction::evaluateDerivativesWF(ParticleSet& P,
 
 void TrialWaveFunction::mw_evaluateParameterDerivativesWF(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                                           const RefVectorWithLeader<ParticleSet>& p_list,
-                                                          const opt_variables_type& optvars,
+                                                          const OptVariables& optvars,
                                                           RecordArray<ValueType>& dlogpsi)
 {
   const int nparam = dlogpsi.getNumOfParams();
@@ -1391,7 +1389,7 @@ TWFFastDerivWrapper& TrialWaveFunction::getOrCreateTWFFastDerivWrapper(const Par
 {
   if (!twf_fastderiv_)
   {
-    twf_fastderiv_             = std::make_unique<TWFFastDerivWrapper>();
+    twf_fastderiv_ = std::make_unique<TWFFastDerivWrapper>();
     initializeTWFFastDerivWrapper(P, *twf_fastderiv_);
   }
   return *twf_fastderiv_;

@@ -268,7 +268,7 @@ void QMCCostFunctionBase::reportParametersH5()
   if (!myComm->rank())
   {
     int ci_size = 0;
-    std::vector<opt_variables_type::real_type> CIcoeff;
+    std::vector<OptVariables::real_type> CIcoeff;
     for (int i = 0; i < opt_vars.size(); i++)
     {
       std::array<char, 128> Coeff;
@@ -515,7 +515,7 @@ void QMCCostFunctionBase::updateXmlNodes()
       if (aname.empty())
         continue;
       xmlAttrPtr aptr = xmlHasProp(cur, (const xmlChar*)"coeff");
-      opt_variables_type::iterator oit(opt_vars.find(aname));
+      OptVariables::iterator oit(opt_vars.find(aname));
       if (xmlAttrPtr aptr = xmlHasProp(cur, (const xmlChar*)"coeff"); aptr != NULL)
         if (auto oit = opt_vars.find(aname); oit != opt_vars.end())
           attribNodes[aname] = std::pair<xmlNodePtr, std::string>(cur, "coeff");
@@ -619,7 +619,7 @@ void QMCCostFunctionBase::updateXmlNodes()
             length = std::snprintf(lambda_id.data(), lambda_id.size(), "%s_%d_%d", rname.c_str(), i, j);
           if (length < 0)
             throw std::runtime_error("Error generating lambda_id");
-          opt_variables_type::iterator vTarget(opt_vars.find(lambda_id.data()));
+          OptVariables::iterator vTarget(opt_vars.find(lambda_id.data()));
           if (vTarget != opt_vars.end())
           {
             std::ostringstream vout;
@@ -665,7 +665,7 @@ void QMCCostFunctionBase::addCoefficients(xmlXPathContextPtr acontext, const cha
     {
       //check if any optimizables contains the id of coefficients
       bool notlisted = true;
-      opt_variables_type::iterator oit(opt_vars.begin()), oit_end(opt_vars.end());
+      OptVariables::iterator oit(opt_vars.begin()), oit_end(opt_vars.end());
       while (notlisted && oit != oit_end)
       {
         const std::string& oname((*oit).first);
@@ -722,7 +722,7 @@ void QMCCostFunctionBase::addCJParams(xmlXPathContextPtr acontext, const char* c
       }
 
       // count the total number of registered F matrix variables
-      opt_variables_type::iterator oit(opt_vars.begin()), oit_end(opt_vars.end());
+      OptVariables::iterator oit(opt_vars.begin()), oit_end(opt_vars.end());
       for (; oit != oit_end; ++oit)
       {
         const std::string& oname((*oit).first);
@@ -868,7 +868,7 @@ void QMCCostFunctionBase::addCJParams(xmlXPathContextPtr acontext, const char* c
                 {
                   std::string varname = "cj_" + fid + "_" + aname4;
                   bool notlisted      = true;
-                  opt_variables_type::iterator oit(opt_vars.begin()), oit_end(opt_vars.end());
+                  OptVariables::iterator oit(opt_vars.begin()), oit_end(opt_vars.end());
                   while (notlisted && oit != oit_end)
                   {
                     const std::string& oname((*oit).first);
@@ -896,7 +896,7 @@ void QMCCostFunctionBase::addCJParams(xmlXPathContextPtr acontext, const char* c
 
 void QMCCostFunctionBase::printCJParams(xmlNodePtr cur, std::string& rname)
 {
-  opt_variables_type::iterator vit(opt_vars.begin());
+  OptVariables::iterator vit(opt_vars.begin());
   // F matrix variables
   if (rname.find("cj_F") < rname.size())
   {
@@ -1010,7 +1010,7 @@ UniqueOptObjRefs QMCCostFunctionBase::extractOptimizableObjects(TrialWaveFunctio
   return opt_obj_refs;
 }
 
-void QMCCostFunctionBase::resetOptimizableObjects(TrialWaveFunction& psi, const opt_variables_type& opt_variables) const
+void QMCCostFunctionBase::resetOptimizableObjects(TrialWaveFunction& psi, const OptVariables& opt_variables) const
 {
   const auto opt_obj_refs = extractOptimizableObjects(psi);
   for (OptimizableObject& obj : opt_obj_refs)
