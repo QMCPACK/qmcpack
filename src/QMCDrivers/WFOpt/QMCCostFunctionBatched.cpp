@@ -53,25 +53,25 @@ void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
                                       Return_rt FiniteDiff)
 {
   for (int j = 0; j < NumOptimizables; j++)
-    OptVariables[j] = PM[j];
+    opt_vars[j] = PM[j];
   if (FiniteDiff > 0)
   {
     QMCTraits::RealType dh = 1.0 / (2.0 * FiniteDiff);
     for (int i = 0; i < NumOptimizables; i++)
     {
       // + FiniteDiff
-      OptVariables[i] = PM[i] + FiniteDiff;
+      opt_vars[i] = PM[i] + FiniteDiff;
       resetPsi();
       correlatedSampling(false);
       auto CostPlus = computedCost();
       // - FiniteDiff
-      OptVariables[i] = PM[i] - FiniteDiff;
+      opt_vars[i] = PM[i] - FiniteDiff;
       resetPsi();
       correlatedSampling(false);
       auto CostMinus = computedCost();
       // calculate gradient
-      PGradient[i]    = (CostPlus - CostMinus) * dh;
-      OptVariables[i] = PM[i]; // revert parameter change
+      PGradient[i] = (CostPlus - CostMinus) * dh;
+      opt_vars[i]  = PM[i]; // revert parameter change
     }
   }
   else
@@ -391,7 +391,7 @@ void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
 
   ParallelExecutor<> crowd_tasks;
   crowd_tasks(opt_num_crowds, evalOptConfig, opt_eval, samples_per_crowd_offsets, walkers_per_crowd_, dLogPsi, d2LogPsi,
-              RecordsOnNode_, DerivRecords_, HDerivRecords_, samples_, OptVariables, needGrads, handle);
+              RecordsOnNode_, DerivRecords_, HDerivRecords_, samples_, opt_vars, needGrads, handle);
   // Sum energy values over crowds
   for (int i = 0; i < opt_eval.size(); i++)
   {
@@ -585,7 +585,7 @@ void QMCCostFunctionBatched::checkConfigurationsSR(EngineHandle& handle)
 
   ParallelExecutor<> crowd_tasks;
   crowd_tasks(opt_num_crowds, evalOptConfig, opt_eval, samples_per_crowd_offsets, walkers_per_crowd_, dLogPsi, d2LogPsi,
-              RecordsOnNode_, DerivRecords_, samples_, OptVariables, needGrads, handle);
+              RecordsOnNode_, DerivRecords_, samples_, opt_vars, needGrads, handle);
   // Sum energy values over crowds
   for (int i = 0; i < opt_eval.size(); i++)
   {
@@ -634,10 +634,7 @@ void QMCCostFunctionBatched::engine_checkConfigurations(cqmc::engine::LMYEngine<
 #endif
 
 
-void QMCCostFunctionBatched::resetPsi(bool final_reset)
-{
-  resetOptimizableObjects(Psi, OptVariables);
-}
+void QMCCostFunctionBatched::resetPsi(bool final_reset) { resetOptimizableObjects(Psi, opt_vars); }
 
 QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampling(bool needGrad)
 {
@@ -798,8 +795,8 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
   const bool compute_all_from_scratch = H.getTWFDependentComponents().size() > 1;
   ParallelExecutor<> crowd_tasks;
   crowd_tasks(opt_num_crowds, evalOptCorrelated, opt_eval, samples_per_crowd_offsets, walkers_per_crowd_, dLogPsi,
-              d2LogPsi, RecordsOnNode_, DerivRecords_, HDerivRecords_, samples_, OptVariables,
-              compute_all_from_scratch, vmc_or_dmc, needGrad);
+              d2LogPsi, RecordsOnNode_, DerivRecords_, HDerivRecords_, samples_, opt_vars, compute_all_from_scratch,
+              vmc_or_dmc, needGrad);
   // Sum weights over crowds
   for (int i = 0; i < opt_eval.size(); i++)
     wgt_tot += opt_eval[i]->get_wgt();

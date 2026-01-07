@@ -47,25 +47,25 @@ void QMCCostFunction::GradCost(std::vector<Return_rt>& PGradient,
                                Return_rt FiniteDiff)
 {
   for (int j = 0; j < NumOptimizables; j++)
-    OptVariables[j] = PM[j];
+    opt_vars[j] = PM[j];
   if (FiniteDiff > 0)
   {
     QMCTraits::RealType dh = 1.0 / (2.0 * FiniteDiff);
     for (int i = 0; i < NumOptimizables; i++)
     {
       // + FiniteDiff
-      OptVariables[i] = PM[i] + FiniteDiff;
+      opt_vars[i] = PM[i] + FiniteDiff;
       resetPsi();
       correlatedSampling(false);
       auto CostPlus = computedCost();
       // - FiniteDiff
-      OptVariables[i] = PM[i] - FiniteDiff;
+      opt_vars[i] = PM[i] - FiniteDiff;
       resetPsi();
       correlatedSampling(false);
       auto CostMinus = computedCost();
       // calculate gradient
-      PGradient[i]    = (CostPlus - CostMinus) * dh;
-      OptVariables[i] = PM[i]; // revert parameter change
+      PGradient[i] = (CostPlus - CostMinus) * dh;
+      opt_vars[i]  = PM[i]; // revert parameter change
     }
   }
   else
@@ -260,7 +260,7 @@ void QMCCostFunction::checkConfigurations(EngineHandle& handle)
     }
     // Populate local to global index mapping into psiClone internal component 'myVars',
     // because psiClones persist between different sections and need update.
-    psiClones[ip]->checkOutVariables(OptVariables);
+    psiClones[ip]->checkOutVariables(opt_vars);
     //    synchronize the random number generator with the node
     (*MoverRng[ip]) = (*RngSaved[ip]);
     hClones[ip]->setRandomGenerator(MoverRng[ip]);
@@ -286,7 +286,7 @@ void QMCCostFunction::checkConfigurations(EngineHandle& handle)
         Vector<Return_t> Dsaved(NumOptimizables, 0.0);
         Vector<Return_t> HDsaved(NumOptimizables, 0.0);
 
-        etmp = hClones[ip]->evaluateValueAndDerivatives(psi_ref, wRef, OptVariables, Dsaved, HDsaved);
+        etmp = hClones[ip]->evaluateValueAndDerivatives(psi_ref, wRef, opt_vars, Dsaved, HDsaved);
 
 
         //FIXME the ifdef should be removed after the optimizer is made compatible with complex coefficients
@@ -381,7 +381,7 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
     }
     // Populate local to global index mapping into psiClone internal component 'myVars',
     // because psiClones persist between different sections and need update.
-    psiClones[ip]->checkOutVariables(OptVariables);
+    psiClones[ip]->checkOutVariables(opt_vars);
     //    synchronize the random number generator with the node
     (*MoverRng[ip]) = (*RngSaved[ip]);
     hClones[ip]->setRandomGenerator(MoverRng[ip]);
@@ -406,7 +406,7 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
         Vector<Return_t> Dsaved(NumOptimizables, 0.0);
         Vector<Return_t> HDsaved(NumOptimizables, 0.0);
 
-        etmp = hClones[ip]->evaluateValueAndDerivatives(psi_ref, wRef, OptVariables, Dsaved, HDsaved);
+        etmp = hClones[ip]->evaluateValueAndDerivatives(psi_ref, wRef, opt_vars, Dsaved, HDsaved);
 
         // add non-differentiated derivative vector
         std::vector<Return_t> der_rat_samp(NumOptimizables + 1, 0.0);
@@ -490,9 +490,9 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
 
 void QMCCostFunction::resetPsi(bool final_reset)
 {
-  resetOptimizableObjects(Psi, OptVariables);
+  resetOptimizableObjects(Psi, opt_vars);
   for (int i = 0; i < psiClones.size(); ++i)
-    resetOptimizableObjects(*psiClones[i], OptVariables);
+    resetOptimizableObjects(*psiClones[i], opt_vars);
 }
 
 QMCCostFunction::EffectiveWeight QMCCostFunction::correlatedSampling(bool needGrad)
@@ -535,8 +535,7 @@ QMCCostFunction::EffectiveWeight QMCCostFunction::correlatedSampling(bool needGr
         Vector<Return_rt> rHDsaved(NumOptimizables, 0);
 
         saved[ENERGY_NEW] =
-            H_KE_Node[ip]->evaluateValueAndDerivatives(psi_ref, wRef, OptVariables, Dsaved, HDsaved) +
-            saved[ENERGY_FIXED];
+            H_KE_Node[ip]->evaluateValueAndDerivatives(psi_ref, wRef, opt_vars, Dsaved, HDsaved) + saved[ENERGY_FIXED];
 
         for (int i = 0; i < NumOptimizables; i++)
         {
