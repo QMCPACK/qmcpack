@@ -260,7 +260,7 @@ void QMCCostFunction::checkConfigurations(EngineHandle& handle)
     }
     // Populate local to global index mapping into psiClone internal component 'myVars',
     // because psiClones persist between different sections and need update.
-    psiClones[ip]->checkOutVariables(OptVariablesForPsi);
+    psiClones[ip]->checkOutVariables(OptVariables);
     //    synchronize the random number generator with the node
     (*MoverRng[ip]) = (*RngSaved[ip]);
     hClones[ip]->setRandomGenerator(MoverRng[ip]);
@@ -286,7 +286,7 @@ void QMCCostFunction::checkConfigurations(EngineHandle& handle)
         Vector<Return_t> Dsaved(NumOptimizables, 0.0);
         Vector<Return_t> HDsaved(NumOptimizables, 0.0);
 
-        etmp = hClones[ip]->evaluateValueAndDerivatives(psi_ref, wRef, OptVariablesForPsi, Dsaved, HDsaved);
+        etmp = hClones[ip]->evaluateValueAndDerivatives(psi_ref, wRef, OptVariables, Dsaved, HDsaved);
 
 
         //FIXME the ifdef should be removed after the optimizer is made compatible with complex coefficients
@@ -381,7 +381,7 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
     }
     // Populate local to global index mapping into psiClone internal component 'myVars',
     // because psiClones persist between different sections and need update.
-    psiClones[ip]->checkOutVariables(OptVariablesForPsi);
+    psiClones[ip]->checkOutVariables(OptVariables);
     //    synchronize the random number generator with the node
     (*MoverRng[ip]) = (*RngSaved[ip]);
     hClones[ip]->setRandomGenerator(MoverRng[ip]);
@@ -406,7 +406,7 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
         Vector<Return_t> Dsaved(NumOptimizables, 0.0);
         Vector<Return_t> HDsaved(NumOptimizables, 0.0);
 
-        etmp = hClones[ip]->evaluateValueAndDerivatives(psi_ref, wRef, OptVariablesForPsi, Dsaved, HDsaved);
+        etmp = hClones[ip]->evaluateValueAndDerivatives(psi_ref, wRef, OptVariables, Dsaved, HDsaved);
 
         // add non-differentiated derivative vector
         std::vector<Return_t> der_rat_samp(NumOptimizables + 1, 0.0);
@@ -490,15 +490,9 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
 
 void QMCCostFunction::resetPsi(bool final_reset)
 {
-  for (int i = 0; i < OptVariables.size(); ++i)
-    OptVariablesForPsi[i] = OptVariables[i];
-  //cout << "######### QMCCostFunction::resetPsi " << std::endl;
-  //OptVariablesForPsi.print(std::cout);
-  //cout << "-------------------------------------- " << std::endl;
-
-  resetOptimizableObjects(Psi, OptVariablesForPsi);
+  resetOptimizableObjects(Psi, OptVariables);
   for (int i = 0; i < psiClones.size(); ++i)
-    resetOptimizableObjects(*psiClones[i], OptVariablesForPsi);
+    resetOptimizableObjects(*psiClones[i], OptVariables);
 }
 
 QMCCostFunction::EffectiveWeight QMCCostFunction::correlatedSampling(bool needGrad)
@@ -541,7 +535,7 @@ QMCCostFunction::EffectiveWeight QMCCostFunction::correlatedSampling(bool needGr
         Vector<Return_rt> rHDsaved(NumOptimizables, 0);
 
         saved[ENERGY_NEW] =
-            H_KE_Node[ip]->evaluateValueAndDerivatives(psi_ref, wRef, OptVariablesForPsi, Dsaved, HDsaved) +
+            H_KE_Node[ip]->evaluateValueAndDerivatives(psi_ref, wRef, OptVariables, Dsaved, HDsaved) +
             saved[ENERGY_FIXED];
 
         for (int i = 0; i < NumOptimizables; i++)

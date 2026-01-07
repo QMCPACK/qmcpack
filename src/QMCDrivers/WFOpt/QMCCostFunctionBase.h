@@ -117,7 +117,7 @@ public:
 
   inline void getParameterTypes(std::vector<int>& types) const
   {
-    return OptVariablesForPsi.getParameterTypeList(types);
+    return OptVariables.getParameterTypeList(types);
   }
 
   ///dump the current parameters and other report
@@ -243,19 +243,11 @@ protected:
 
   ///list of optimizables
   opt_variables_type OptVariables;
-  /** full list of optimizables
-   *
-   * The size of OptVariablesForPsi is equal to or larger than
-   * that of OptVariables due to the dependent variables.
-   * This is used for TrialWaveFunction::resetParameters and
-   * is normally the same as OptVariables.
-   */
-  opt_variables_type OptVariablesForPsi;
   // unchanged initial checked-in variables
   opt_variables_type InitVariables;
   /** index mapping for <negate> constraints
    *
-   * - negateVarMap[i][0] : index in OptVariablesForPsi
+   * - negateVarMap[i][0] : index in OptVariables
    * - negateVarMap[i][1] : index in OptVariables
    */
   ///index mapping for <negative> constraints

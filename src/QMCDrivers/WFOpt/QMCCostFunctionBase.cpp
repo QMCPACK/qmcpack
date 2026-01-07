@@ -382,18 +382,17 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
     app_log() << "   '" << obj.getName() << "'" << (obj.isOptimized() ? " optimized" : " fixed") << std::endl;
 
   //build optimizables from the wavefunction
-  OptVariablesForPsi.clear();
+  OptVariables.clear();
   for (OptimizableObject& obj : opt_obj_refs)
     if (obj.isOptimized())
-      obj.checkInVariablesExclusive(OptVariablesForPsi);
-  OptVariablesForPsi.resetIndex();
-  app_log() << " Variational subset selects " << OptVariablesForPsi.size() << " parameters." << std::endl;
+      obj.checkInVariablesExclusive(OptVariables);
+  OptVariables.resetIndex();
+  app_log() << " Variational subset selects " << OptVariables.size() << " parameters." << std::endl;
 
-  //synchronize OptVariables and OptVariablesForPsi
-  OptVariables  = OptVariablesForPsi;
-  InitVariables = OptVariablesForPsi;
+  //synchronize OptVariables
+  InitVariables = OptVariables;
   //get the indices
-  Psi.checkOutVariables(OptVariablesForPsi);
+  Psi.checkOutVariables(OptVariables);
   NumOptimizables = OptVariables.size();
   if (NumOptimizables == 0)
   {
@@ -483,7 +482,7 @@ void QMCCostFunctionBase::updateXmlNodes()
       std::string aname(getXMLAttributeValue(cur, "id"));
       if (aname.empty())
         continue;
-      if (auto oit = OptVariablesForPsi.find(aname); oit != OptVariablesForPsi.end())
+      if (auto oit = OptVariables.find(aname); oit != OptVariables.end())
         paramNodes[aname] = cur;
     }
     xmlXPathFreeObject(result);
@@ -498,12 +497,12 @@ void QMCCostFunctionBase::updateXmlNodes()
       if (xmlAttrPtr aptr = xmlHasProp(cur, (const xmlChar*)"exponent"); aptr != nullptr)
       {
         std::string expID = aname + "_E";
-        if (auto oit = OptVariablesForPsi.find(expID); oit != OptVariablesForPsi.end())
+        if (auto oit = OptVariables.find(expID); oit != OptVariables.end())
           attribNodes[expID] = std::pair<xmlNodePtr, std::string>(cur, "exponent");
       }
       std::string cID = aname + "_C";
       if (xmlAttrPtr aptr = xmlHasProp(cur, (const xmlChar*)"contraction"); aptr != nullptr)
-        if (auto oit = OptVariablesForPsi.find(cID); oit != OptVariablesForPsi.end())
+        if (auto oit = OptVariables.find(cID); oit != OptVariables.end())
           attribNodes[cID] = std::pair<xmlNodePtr, std::string>(cur, "contraction");
     }
     xmlXPathFreeObject(result);
@@ -516,9 +515,9 @@ void QMCCostFunctionBase::updateXmlNodes()
       if (aname.empty())
         continue;
       xmlAttrPtr aptr = xmlHasProp(cur, (const xmlChar*)"coeff");
-      opt_variables_type::iterator oit(OptVariablesForPsi.find(aname));
+      opt_variables_type::iterator oit(OptVariables.find(aname));
       if (xmlAttrPtr aptr = xmlHasProp(cur, (const xmlChar*)"coeff"); aptr != NULL)
-        if (auto oit = OptVariablesForPsi.find(aname); oit != OptVariablesForPsi.end())
+        if (auto oit = OptVariables.find(aname); oit != OptVariables.end())
           attribNodes[aname] = std::pair<xmlNodePtr, std::string>(cur, "coeff");
     }
     xmlXPathFreeObject(result);
@@ -531,7 +530,7 @@ void QMCCostFunctionBase::updateXmlNodes()
       if (aname.empty())
         continue;
       if (xmlAttrPtr aptr = xmlHasProp(cur, (const xmlChar*)"coeff"); aptr != nullptr)
-        if (auto oit = OptVariablesForPsi.find(aname); oit != OptVariablesForPsi.end())
+        if (auto oit = OptVariables.find(aname); oit != OptVariables.end())
           attribNodes[aname] = std::pair<xmlNodePtr, std::string>(cur, "coeff");
     }
     xmlXPathFreeObject(result);
@@ -555,7 +554,7 @@ void QMCCostFunctionBase::updateXmlNodes()
   for (const auto& [pname, pptr] : paramNodes)
   {
     //FIXME real value is forced here to makde sure that the code builds
-    Return_rt v = std::real(OptVariablesForPsi[pname]);
+    Return_rt v = std::real(OptVariables[pname]);
     getContent(v, pptr);
   }
   for (const auto& [aname, attrib] : attribNodes)
@@ -563,7 +562,7 @@ void QMCCostFunctionBase::updateXmlNodes()
     std::ostringstream vout;
     vout.setf(std::ios::scientific, std::ios::floatfield);
     vout.precision(16);
-    vout << OptVariablesForPsi[aname];
+    vout << OptVariables[aname];
     xmlSetProp(attrib.first, (const xmlChar*)attrib.second.c_str(), (const xmlChar*)vout.str().c_str());
   }
   for (const auto& [cname, cptr] : coeffNodes)
@@ -580,7 +579,7 @@ void QMCCostFunctionBase::updateXmlNodes()
       //
       aname.append("_");
       std::vector<Return_rt> c;
-      for (const auto& [name, value] : OptVariablesForPsi)
+      for (const auto& [name, value] : OptVariables)
       {
         if (name.find(aname) == 0)
         {
@@ -620,8 +619,8 @@ void QMCCostFunctionBase::updateXmlNodes()
             length = std::snprintf(lambda_id.data(), lambda_id.size(), "%s_%d_%d", rname.c_str(), i, j);
           if (length < 0)
             throw std::runtime_error("Error generating lambda_id");
-          opt_variables_type::iterator vTarget(OptVariablesForPsi.find(lambda_id.data()));
-          if (vTarget != OptVariablesForPsi.end())
+          opt_variables_type::iterator vTarget(OptVariables.find(lambda_id.data()));
+          if (vTarget != OptVariables.end())
           {
             std::ostringstream vout;
             vout.setf(std::ios::scientific, std::ios::floatfield);
@@ -666,7 +665,7 @@ void QMCCostFunctionBase::addCoefficients(xmlXPathContextPtr acontext, const cha
     {
       //check if any optimizables contains the id of coefficients
       bool notlisted = true;
-      opt_variables_type::iterator oit(OptVariablesForPsi.begin()), oit_end(OptVariablesForPsi.end());
+      opt_variables_type::iterator oit(OptVariables.begin()), oit_end(OptVariables.end());
       while (notlisted && oit != oit_end)
       {
         const std::string& oname((*oit).first);
@@ -949,7 +948,7 @@ void QMCCostFunctionBase::printCJParams(xmlNodePtr cur, std::string& rname)
     std::string var_prefix = rname.substr(3);
     std::vector<Return_rt> vals;
 
-    for (auto vit = OptVariablesForPsi.begin(); vit != OptVariablesForPsi.end(); ++vit)
+    for (auto vit = OptVariables.begin(); vit != OptVariables.end(); ++vit)
     {
       if (vit->first.find(var_prefix) == 0)
       {

@@ -391,7 +391,7 @@ void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
 
   ParallelExecutor<> crowd_tasks;
   crowd_tasks(opt_num_crowds, evalOptConfig, opt_eval, samples_per_crowd_offsets, walkers_per_crowd_, dLogPsi, d2LogPsi,
-              RecordsOnNode_, DerivRecords_, HDerivRecords_, samples_, OptVariablesForPsi, needGrads, handle);
+              RecordsOnNode_, DerivRecords_, HDerivRecords_, samples_, OptVariables, needGrads, handle);
   // Sum energy values over crowds
   for (int i = 0; i < opt_eval.size(); i++)
   {
@@ -585,7 +585,7 @@ void QMCCostFunctionBatched::checkConfigurationsSR(EngineHandle& handle)
 
   ParallelExecutor<> crowd_tasks;
   crowd_tasks(opt_num_crowds, evalOptConfig, opt_eval, samples_per_crowd_offsets, walkers_per_crowd_, dLogPsi, d2LogPsi,
-              RecordsOnNode_, DerivRecords_, samples_, OptVariablesForPsi, needGrads, handle);
+              RecordsOnNode_, DerivRecords_, samples_, OptVariables, needGrads, handle);
   // Sum energy values over crowds
   for (int i = 0; i < opt_eval.size(); i++)
   {
@@ -636,13 +636,7 @@ void QMCCostFunctionBatched::engine_checkConfigurations(cqmc::engine::LMYEngine<
 
 void QMCCostFunctionBatched::resetPsi(bool final_reset)
 {
-  for (int i = 0; i < OptVariables.size(); ++i)
-    OptVariablesForPsi[i] = OptVariables[i];
-
-  //cout << "######### QMCCostFunctionBatched::resetPsi " << std::endl;
-  //OptVariablesForPsi.print(std::cout);
-  //cout << "-------------------------------------- " << std::endl;
-  resetOptimizableObjects(Psi, OptVariablesForPsi);
+  resetOptimizableObjects(Psi, OptVariables);
 }
 
 QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampling(bool needGrad)
@@ -804,7 +798,7 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
   const bool compute_all_from_scratch = H.getTWFDependentComponents().size() > 1;
   ParallelExecutor<> crowd_tasks;
   crowd_tasks(opt_num_crowds, evalOptCorrelated, opt_eval, samples_per_crowd_offsets, walkers_per_crowd_, dLogPsi,
-              d2LogPsi, RecordsOnNode_, DerivRecords_, HDerivRecords_, samples_, OptVariablesForPsi,
+              d2LogPsi, RecordsOnNode_, DerivRecords_, HDerivRecords_, samples_, OptVariables,
               compute_all_from_scratch, vmc_or_dmc, needGrad);
   // Sum weights over crowds
   for (int i = 0; i < opt_eval.size(); i++)
