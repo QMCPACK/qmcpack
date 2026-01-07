@@ -281,7 +281,7 @@ void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
                           const std::vector<int>& samples_per_crowd_offsets, const std::vector<int>& walkers_per_crowd,
                           std::vector<ParticleGradient*>& gradPsi, std::vector<ParticleLaplacian*>& lapPsi,
                           Matrix<Return_rt>& RecordsOnNode, Matrix<Return_t>& DerivRecords,
-                          Matrix<Return_rt>& HDerivRecords, const SampleStack& samples, opt_variables_type& optVars,
+                          Matrix<Return_rt>& HDerivRecords, const SampleStack& samples, OptVariables& optVars,
                           bool needGrads, EngineHandle& handle) {
     CostFunctionCrowdData& opt_data = *opt_crowds[crowd_id];
 
@@ -479,7 +479,7 @@ void QMCCostFunctionBatched::checkConfigurationsSR(EngineHandle& handle)
                           const std::vector<int>& samples_per_crowd_offsets, const std::vector<int>& walkers_per_crowd,
                           std::vector<ParticleGradient*>& gradPsi, std::vector<ParticleLaplacian*>& lapPsi,
                           Matrix<Return_rt>& RecordsOnNode, Matrix<Return_t>& DerivRecords, const SampleStack& samples,
-                          opt_variables_type& optVars, bool needGrads, EngineHandle& handle) {
+                          OptVariables& optVars, bool needGrads, EngineHandle& handle) {
     CostFunctionCrowdData& opt_data = *opt_crowds[crowd_id];
 
     const int local_samples = samples_per_crowd_offsets[crowd_id + 1] - samples_per_crowd_offsets[crowd_id];
@@ -672,7 +672,7 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
       [](int crowd_id, UPtrVector<CostFunctionCrowdData>& opt_crowds, const std::vector<int>& samples_per_crowd_offsets,
          const std::vector<int>& walkers_per_crowd, std::vector<ParticleGradient*>& gradPsi,
          std::vector<ParticleLaplacian*>& lapPsi, Matrix<Return_rt>& RecordsOnNode, Matrix<Return_t>& DerivRecords,
-         Matrix<Return_rt>& HDerivRecords, const SampleStack& samples, const opt_variables_type& optVars,
+         Matrix<Return_rt>& HDerivRecords, const SampleStack& samples, const OptVariables& optVars,
          bool compute_all_from_scratch, Return_rt vmc_or_dmc, bool needGrad) {
         CostFunctionCrowdData& opt_data = *opt_crowds[crowd_id];
 

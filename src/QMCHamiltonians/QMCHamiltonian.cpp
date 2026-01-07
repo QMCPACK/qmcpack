@@ -637,7 +637,7 @@ std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluate(
 
 QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateValueAndDerivatives(TrialWaveFunction& psi,
                                                                              ParticleSet& P,
-                                                                             const opt_variables_type& optvars,
+                                                                             const OptVariables& optvars,
                                                                              Vector<ValueType>& dlogpsi,
                                                                              Vector<ValueType>& dhpsioverpsi)
 {
@@ -664,7 +664,7 @@ std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluateValueAn
     const RefVectorWithLeader<QMCHamiltonian>& ham_list,
     const RefVectorWithLeader<TrialWaveFunction>& wf_list,
     const RefVectorWithLeader<ParticleSet>& p_list,
-    const opt_variables_type& optvars,
+    const OptVariables& optvars,
     RecordArray<ValueType>& dlogpsi,
     RecordArray<ValueType>& dhpsioverpsi)
 {

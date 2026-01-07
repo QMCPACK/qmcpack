@@ -148,7 +148,7 @@ std::unique_ptr<TrialWaveFunction> WaveFunctionFactory::buildTWF(xmlNodePtr cur,
   //  targetPsi->VarList.print(app_log());
   //}
   // synch all parameters. You don't want some being different if same name.
-  opt_variables_type dummy;
+  OptVariables dummy;
   targetPsi->checkInVariables(dummy);
   dummy.resetIndex();
   targetPsi->checkOutVariables(dummy);

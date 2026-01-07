@@ -132,7 +132,7 @@ public:
   /** check out variational optimizable variables
    * @param active a super set of optimizable variables
    */
-  virtual void checkOutVariables(const opt_variables_type& active);
+  virtual void checkOutVariables(const OptVariables& active);
 
   /** Register the component with the TWFFastDerivWrapper wrapper.  
    */
@@ -470,7 +470,7 @@ public:
    *         This is a bug when the particle set doesn't hold equal mass particles.
    */
   virtual void evaluateDerivatives(ParticleSet& P,
-                                   const opt_variables_type& optvars,
+                                   const OptVariables& optvars,
                                    Vector<ValueType>& dlogpsi,
                                    Vector<ValueType>& dhpsioverpsi) = 0;
 
@@ -482,7 +482,7 @@ public:
    *  Note: this function differs from the evaluateDerivatives function in the way that it only computes
    *        the derivative of the log of the wavefunction.
   */
-  virtual void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& optvars, Vector<ValueType>& dlogpsi);
+  virtual void evaluateDerivativesWF(ParticleSet& P, const OptVariables& optvars, Vector<ValueType>& dlogpsi);
 
   virtual void finalizeOptimization() {}
 
@@ -525,7 +525,7 @@ public:
    * @param dratios Nq x Num_param matrix. \f$\partial_{\alpha}(\ln \Psi ({\bf R}^{\prime}) - \ln \Psi ({\bf R})) \f$
    */
   virtual void evaluateDerivRatios(const VirtualParticleSet& VP,
-                                   const opt_variables_type& optvars,
+                                   const OptVariables& optvars,
                                    std::vector<ValueType>& ratios,
                                    Matrix<ValueType>& dratios);
 
@@ -537,7 +537,7 @@ public:
    */
   virtual void evaluateSpinorDerivRatios(const VirtualParticleSet& VP,
                                          const std::pair<ValueVector, ValueVector>& spinor_multiplier,
-                                         const opt_variables_type& optvars,
+                                         const OptVariables& optvars,
                                          std::vector<ValueType>& ratios,
                                          Matrix<ValueType>& dratios);
 

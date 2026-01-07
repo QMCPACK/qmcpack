@@ -182,7 +182,7 @@ void test_hcpBe_rotation(bool use_single_det, bool use_nlpp_batched)
   xmlNodePtr root2 = doc2.getRoot();
   hf.put(root2);
 
-  opt_variables_type opt_vars;
+  OptVariables opt_vars;
   psi->checkInVariables(opt_vars);
   opt_vars.resetIndex();
   psi->checkOutVariables(opt_vars);

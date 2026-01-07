@@ -116,19 +116,19 @@ $evaluate_parameter_derivative
 //  bool put(xmlNodePtr cur)
 $xml_input
 
-  void checkInVariables(opt_variables_type& active)
+  void checkInVariables(OptVariables& active)
   {
     active.insertFrom(myVars);
     //myVars.print(std::cout);
   }
 
-  void checkOutVariables(const opt_variables_type& active)
+  void checkOutVariables(const OptVariables& active)
   {
     myVars.getIndex(active);
     //myVars.print(std::cout);
   }
 
-//void resetParameters(const opt_variables_type& active)
+//void resetParameters(const OptVariables& active)
 $reset_parameters
 };
 

@@ -249,7 +249,7 @@ TEST_CASE("Rotated LCAO WF0 zero angle", "[qmcapp]")
   REQUIRE(psi != nullptr);
   REQUIRE(psi->getOrbitals().size() == 1);
 
-  opt_variables_type opt_vars;
+  OptVariables opt_vars;
   psi->checkInVariables(opt_vars);
   opt_vars.resetIndex();
   psi->checkOutVariables(opt_vars);
@@ -323,7 +323,7 @@ TEST_CASE("Rotated LCAO WF1", "[qmcapp]")
   REQUIRE(psi != nullptr);
   REQUIRE(psi->getOrbitals().size() == 1);
 
-  opt_variables_type opt_vars;
+  OptVariables opt_vars;
   psi->checkInVariables(opt_vars);
   psi->checkOutVariables(opt_vars);
   psi->resetParameters(opt_vars);
@@ -422,7 +422,7 @@ TEST_CASE("Rotated LCAO WF2 with jastrow", "[qmcapp]")
   REQUIRE(psi != nullptr);
   REQUIRE(psi->getOrbitals().size() == 2);
 
-  opt_variables_type opt_vars;
+  OptVariables opt_vars;
   psi->checkInVariables(opt_vars);
   opt_vars.resetIndex();
   psi->checkOutVariables(opt_vars);
@@ -499,7 +499,7 @@ TEST_CASE("Rotated LCAO WF1, MO coeff rotated, zero angle", "[qmcapp]")
   REQUIRE(psi != nullptr);
   REQUIRE(psi->getOrbitals().size() == 1);
 
-  opt_variables_type opt_vars;
+  OptVariables opt_vars;
   psi->checkInVariables(opt_vars);
   opt_vars.resetIndex();
   psi->checkOutVariables(opt_vars);
@@ -563,7 +563,7 @@ TEST_CASE("Rotated LCAO WF1 MO coeff rotated, half angle", "[qmcapp]")
   REQUIRE(psi != nullptr);
   REQUIRE(psi->getOrbitals().size() == 1);
 
-  opt_variables_type opt_vars;
+  OptVariables opt_vars;
   psi->checkInVariables(opt_vars);
   opt_vars.resetIndex();
   psi->checkOutVariables(opt_vars);
@@ -767,7 +767,7 @@ TEST_CASE("Rotated LCAO Be single determinant", "[qmcapp]")
   REQUIRE(psi != nullptr);
   REQUIRE(psi->getOrbitals().size() == 1);
 
-  opt_variables_type opt_vars;
+  OptVariables opt_vars;
   psi->checkInVariables(opt_vars);
   opt_vars.resetIndex();
   psi->checkOutVariables(opt_vars);
@@ -834,7 +834,7 @@ TEST_CASE("Rotated LCAO Be multi determinant with one determinant", "[qmcapp]")
   REQUIRE(psi != nullptr);
   REQUIRE(psi->getOrbitals().size() == 1);
 
-  opt_variables_type opt_vars;
+  OptVariables opt_vars;
   psi->checkInVariables(opt_vars);
   opt_vars.resetIndex();
   psi->checkOutVariables(opt_vars);
@@ -901,7 +901,7 @@ TEST_CASE("Rotated LCAO Be two determinant", "[qmcapp]")
   REQUIRE(psi != nullptr);
   REQUIRE(psi->getOrbitals().size() == 1);
 
-  opt_variables_type opt_vars;
+  OptVariables opt_vars;
   psi->checkInVariables(opt_vars);
   opt_vars.resetIndex();
   psi->checkOutVariables(opt_vars);

@@ -29,7 +29,7 @@ class Backflow_ee_kSpace : public BackflowFunctionBase
   ///typedef for real values
   //using real_type = optimize::VariableSet::real_type;
   ///typedef for variableset: this is going to be replaced
-  using opt_variables_type = optimize::VariableSet;
+  using OptVariables = optimize::VariableSet;
 
 public:
   //number of groups of the target particleset
@@ -45,7 +45,7 @@ public:
 
   Matrix<int> PairID;
   ///set of variables to be optimized
-  opt_variables_type myVars;
+  OptVariables myVars;
 
   Backflow_ee_kSpace(ParticleSet& ions, ParticleSet& els) : BackflowFunctionBase(ions, els)
   {
@@ -131,7 +131,7 @@ public:
 
   void reportStatus(std::ostream& os) override { myVars.print(os); }
 
-  void resetParameters(const opt_variables_type& active) override
+  void resetParameters(const OptVariables& active) override
   {
     if (Optimize)
     {
@@ -148,13 +148,13 @@ public:
     }
   }
 
-  void checkInVariables(opt_variables_type& active) override
+  void checkInVariables(OptVariables& active) override
   {
     if (Optimize)
       active.insertFrom(myVars);
   }
 
-  void checkOutVariables(const opt_variables_type& active) override
+  void checkOutVariables(const OptVariables& active) override
   {
     if (Optimize)
       myVars.getIndex(active);

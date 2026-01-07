@@ -209,7 +209,7 @@ std::unique_ptr<WaveFunctionComponent> ExampleHeComponent::makeClone(ParticleSet
   return std::make_unique<ExampleHeComponent>(*this);
 }
 
-void ExampleHeComponent::resetParametersExclusive(const opt_variables_type& active)
+void ExampleHeComponent::resetParametersExclusive(const OptVariables& active)
 {
   if (my_vars_.size())
   {
@@ -226,7 +226,7 @@ void ExampleHeComponent::resetParametersExclusive(const opt_variables_type& acti
 }
 
 void ExampleHeComponent::evaluateDerivatives(ParticleSet& P,
-                                             const opt_variables_type& optvars,
+                                             const OptVariables& optvars,
                                              Vector<ValueType>& dlogpsi,
                                              Vector<ValueType>& dhpsioverpsi)
 {

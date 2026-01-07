@@ -297,7 +297,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
     test_evaluateOne(std::nullopt);
   }
 
-  opt_variables_type optvars;
+  OptVariables optvars;
   Vector<ValueType> dlogpsi;
   Vector<ValueType> dhpsioverpsi;
 
@@ -573,7 +573,7 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   }
 
   //Check evaluateValueAndDerivatives
-  opt_variables_type optvars;
+  OptVariables optvars;
   Vector<ValueType> dlogpsi;
   Vector<ValueType> dhpsioverpsi;
 

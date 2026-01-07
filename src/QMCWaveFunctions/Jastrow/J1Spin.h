@@ -62,7 +62,7 @@ struct J1Spin : public WaveFunctionComponent
   const ParticleSet& Ions;
 
   ///variables handled by this orbital
-  opt_variables_type myVars;
+  OptVariables myVars;
 
   valT curAt;
   valT curLap;
@@ -220,7 +220,7 @@ struct J1Spin : public WaveFunctionComponent
   }
 
   void evaluateDerivatives(ParticleSet& P,
-                           const opt_variables_type& active,
+                           const OptVariables& active,
                            Vector<ValueType>& dlogpsi,
                            Vector<ValueType>& dhpsioverpsi) override
   {
@@ -232,7 +232,7 @@ struct J1Spin : public WaveFunctionComponent
       int kk = myVars.where(k);
       if (kk < 0)
         continue;
-      recalculate = true;
+      recalculate  = true;
       rcsingles[k] = true;
     }
     if (recalculate)
@@ -250,7 +250,7 @@ struct J1Spin : public WaveFunctionComponent
     }
   }
 
-  void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& active, Vector<ValueType>& dlogpsi) override
+  void evaluateDerivativesWF(ParticleSet& P, const OptVariables& active, Vector<ValueType>& dlogpsi) override
   {
     resizeWFOptVectors();
 
@@ -261,7 +261,7 @@ struct J1Spin : public WaveFunctionComponent
       int kk = myVars.where(k);
       if (kk < 0)
         continue;
-      recalculate = true;
+      recalculate  = true;
       rcsingles[k] = true;
     }
     if (recalculate)
@@ -517,7 +517,7 @@ struct J1Spin : public WaveFunctionComponent
       opt_obj_refs.push_back(*functor);
   }
 
-  void checkOutVariables(const opt_variables_type& active) override
+  void checkOutVariables(const OptVariables& active) override
   {
     myVars.clear();
     for (auto& J1UniqueFunctor : J1UniqueFunctors)

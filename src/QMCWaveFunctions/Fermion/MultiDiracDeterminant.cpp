@@ -1212,7 +1212,7 @@ int MultiDiracDeterminant::build_occ_vec(const OffloadVector<int>& data,
 
 
 void MultiDiracDeterminant::evaluateDerivatives(ParticleSet& P,
-                                                const opt_variables_type& optvars,
+                                                const OptVariables& optvars,
                                                 Vector<ValueType>& dlogpsi,
                                                 Vector<ValueType>& dhpsioverpsi,
                                                 const MultiDiracDeterminant& pseudo_dn,
@@ -1261,7 +1261,7 @@ void MultiDiracDeterminant::evaluateDerivatives(ParticleSet& P,
 
 
 void MultiDiracDeterminant::evaluateDerivativesWF(ParticleSet& P,
-                                                  const opt_variables_type& optvars,
+                                                  const OptVariables& optvars,
                                                   Vector<ValueType>& dlogpsi,
                                                   const MultiDiracDeterminant& pseudo_dn,
                                                   const PsiValue& psiCurrent,

@@ -134,7 +134,7 @@ public:
   //  2. Optimization algorithm computes new values for those parameters.
   //  3. Changed parameters are propagated back to each of the components.
   //
-  // The collection of variables is of type VariableSet (opt_variables_type is a typedef).
+  // The collection of variables is of type VariableSet (OptVariables is a typedef).
   // The variables local to each component are stored in WaveFunctionComponent::myVars, which
   // is set to the local parameters when the component is set up.
   // The call to checkInVariables collects all the local parameters into a global list (step 1).
@@ -153,16 +153,16 @@ public:
    *
    * Gather all the optimizable parameters from wavefunction components into a single list
    */
-  void checkInVariables(opt_variables_type& o);
+  void checkInVariables(OptVariables& o);
 
   /** Check out optimizable variables
    * Assign index mappings from global list (o) to local values in each component
    */
-  void checkOutVariables(const opt_variables_type& o);
+  void checkOutVariables(const OptVariables& o);
 
   /**  Set values of parameters in each component from the global list
    */
-  void resetParameters(const opt_variables_type& active);
+  void resetParameters(const OptVariables& active);
 
 
   /** print out state of the trial wavefunction
@@ -337,7 +337,7 @@ public:
 
   /** compute both ratios and deriatives of ratio with respect to the optimizables*/
   void evaluateDerivRatios(const VirtualParticleSet& VP,
-                           const opt_variables_type& optvars,
+                           const OptVariables& optvars,
                            std::vector<ValueType>& ratios,
                            Matrix<ValueType>& dratio);
 
@@ -347,7 +347,7 @@ public:
    */
   void evaluateSpinorDerivRatios(const VirtualParticleSet& VP,
                                  const std::pair<ValueVector, ValueVector>& spinor_multiplier,
-                                 const opt_variables_type& optvars,
+                                 const OptVariables& optvars,
                                  std::vector<ValueType>& ratios,
                                  Matrix<ValueType>& dratio);
 
@@ -486,13 +486,13 @@ public:
   RealType KECorrection() const;
 
   void evaluateDerivatives(ParticleSet& P,
-                           const opt_variables_type& optvars,
+                           const OptVariables& optvars,
                            Vector<ValueType>& dlogpsi,
                            Vector<ValueType>& dhpsioverpsi);
 
   static void mw_evaluateParameterDerivatives(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                               const RefVectorWithLeader<ParticleSet>& p_list,
-                                              const opt_variables_type& optvars,
+                                              const OptVariables& optvars,
                                               RecordArray<ValueType>& dlogpsi,
                                               RecordArray<ValueType>& dhpsioverpsi);
 
@@ -504,11 +504,11 @@ public:
    *  Note: this function differs from the evaluateDerivatives function in the way that it only computes
    *        the derivative of the log of the wavefunction.
   */
-  void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& optvars, Vector<ValueType>& dlogpsi);
+  void evaluateDerivativesWF(ParticleSet& P, const OptVariables& optvars, Vector<ValueType>& dlogpsi);
   /// batched version of evaluateDerivativesWF
   static void mw_evaluateParameterDerivativesWF(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                                 const RefVectorWithLeader<ParticleSet>& p_list,
-                                                const opt_variables_type& optvars,
+                                                const OptVariables& optvars,
                                                 RecordArray<ValueType>& dlogpsi);
 
   /** evaluate the hessian w.r.t. electronic coordinates of particle iat **/
