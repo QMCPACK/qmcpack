@@ -140,7 +140,7 @@ public:
   /// store index of qp coordinates that changed during pbyp move
   std::vector<int> indexQP, index;
 
-  opt_variables_type myVars;
+  OptVariables myVars;
 
   BackflowTransformation(ParticleSet& els);
 
@@ -157,16 +157,16 @@ public:
   void restore(int iat = 0);
 
   bool isOptimizable() const;
-  void checkInVariables(opt_variables_type& active);
-  void checkOutVariables(const opt_variables_type& active);
-  void resetParameters(const opt_variables_type& active);
+  void checkInVariables(OptVariables& active);
+  void checkOutVariables(const OptVariables& active);
+  void resetParameters(const OptVariables& active);
   void reportStatus(std::ostream& os) final;
 
   // extractOptimizableObjectRefs is not enabled in BackflowTransformation.
   // it is exposed as a whole to the opitmizer. Thus the underlying OptimizableObject are not explosed.
   // Simply redirect existing implentation.
-  void checkInVariablesExclusive(opt_variables_type& active) final { checkInVariables(active); }
-  void resetParametersExclusive(const opt_variables_type& active) final { resetParameters(active); }
+  void checkInVariablesExclusive(OptVariables& active) final { checkInVariables(active); }
+  void resetParametersExclusive(const OptVariables& active) final { resetParameters(active); }
 
   void registerData(ParticleSet& P, WFBufferType& buf);
 

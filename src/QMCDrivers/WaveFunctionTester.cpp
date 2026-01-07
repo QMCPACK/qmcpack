@@ -1737,7 +1737,7 @@ void WaveFunctionTester::runDerivTest()
     fout << W.L[iat] << "  ";
     fout << std::endl;
   }
-  opt_variables_type wfVars, wfvar_prime;
+  OptVariables wfVars, wfvar_prime;
   //build optimizables from the wavefunction
   wfVars.clear();
   Psi.checkInVariables(wfVars);
@@ -1846,7 +1846,7 @@ void WaveFunctionTester::runDerivNLPPTest()
     nlout << W.L[iat] << "  ";
     nlout << std::endl;
   }
-  opt_variables_type wfVars, wfvar_prime;
+  OptVariables wfVars, wfvar_prime;
   //build optimizables from the wavefunction
   wfVars.clear();
   Psi.checkInVariables(wfVars);
@@ -1936,7 +1936,7 @@ void WaveFunctionTester::runDerivCloneTest()
   W.update();
   w_clone->R = awalker.R;
   w_clone->update();
-  opt_variables_type wfVars;
+  OptVariables wfVars;
   //build optimizables from the wavefunction
   //   wfVars.clear();
   Psi.checkInVariables(wfVars);
@@ -1944,7 +1944,7 @@ void WaveFunctionTester::runDerivCloneTest()
   Psi.checkOutVariables(wfVars);
   wfVars.print(fout);
   int Nvars = wfVars.size();
-  opt_variables_type wfvar_prime;
+  OptVariables wfvar_prime;
   //   wfvar_prime.insertFrom(wfVars);
   //   wfvar_prime.clear();
   psi_clone->checkInVariables(wfvar_prime);

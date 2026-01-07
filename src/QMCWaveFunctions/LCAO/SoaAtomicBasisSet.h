@@ -60,19 +60,19 @@ public:
         psi_timer_(createGlobalTimer("SoaAtomicBasisSet::psi", timer_level_fine))
   {}
 
-  void checkInVariables(opt_variables_type& active)
+  void checkInVariables(OptVariables& active)
   {
     //for(size_t nl=0; nl<Rnl.size(); nl++)
     //  Rnl[nl]->checkInVariables(active);
   }
 
-  void checkOutVariables(const opt_variables_type& active)
+  void checkOutVariables(const OptVariables& active)
   {
     //for(size_t nl=0; nl<Rnl.size(); nl++)
     //  Rnl[nl]->checkOutVariables(active);
   }
 
-  void resetParameters(const opt_variables_type& active)
+  void resetParameters(const OptVariables& active)
   {
     //for(size_t nl=0; nl<Rnl.size(); nl++)
     //  Rnl[nl]->resetParameters(active);
@@ -739,15 +739,15 @@ public:
  */
   template<typename LAT, typename VT>
   inline void mw_evaluateVGL_multiCenter(const RefVectorWithLeader<SoaAtomicBasisSet>& atom_bs_list,
-                                   const LAT& lattice,
-                                   Array<VT, 3, OffloadPinnedAllocator<VT>>& psi_vgl,
-                                   const Vector<RealType, OffloadPinnedAllocator<RealType>>& displ_list,
-                                   const Vector<RealType, OffloadPinnedAllocator<RealType>>& Tv_list,
-                                   const size_t nElec,
-                                   const size_t nBasTot,
-                                   const Vector<size_t, OffloadPinnedAllocator<size_t>>& c_list,
-                                   const Vector<size_t, OffloadPinnedAllocator<size_t>>& basis_offsets,
-                                   const size_t NumCenters)
+                                         const LAT& lattice,
+                                         Array<VT, 3, OffloadPinnedAllocator<VT>>& psi_vgl,
+                                         const Vector<RealType, OffloadPinnedAllocator<RealType>>& displ_list,
+                                         const Vector<RealType, OffloadPinnedAllocator<RealType>>& Tv_list,
+                                         const size_t nElec,
+                                         const size_t nBasTot,
+                                         const Vector<size_t, OffloadPinnedAllocator<size_t>>& c_list,
+                                         const Vector<size_t, OffloadPinnedAllocator<size_t>>& basis_offsets,
+                                         const size_t NumCenters)
   {
     assert(this == &atom_bs_list.getLeader());
     auto& atom_bs_leader = atom_bs_list.template getCastedLeader<SoaAtomicBasisSet>();

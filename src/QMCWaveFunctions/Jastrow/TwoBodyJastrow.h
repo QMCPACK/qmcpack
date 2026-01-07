@@ -110,7 +110,7 @@ private:
   ///Container for \f$F[ig*NumGroups+jg]\f$. treat every pointer as a reference.
   std::vector<FT*> F;
   ///optimizable variables extracted from functors
-  opt_variables_type myVars;
+  OptVariables myVars;
 
   /// e-e table ID
   const int my_table_ID_;
@@ -175,7 +175,7 @@ public:
   void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override;
   /** check out optimizable variables
    */
-  void checkOutVariables(const opt_variables_type& active) override;
+  void checkOutVariables(const OptVariables& active) override;
 
   inline void finalizeOptimization() override { KEcorr = j2_ke_corr_helper.computeKEcorr(); }
 
@@ -255,17 +255,17 @@ public:
   // Accessors for unit testing
   std::pair<int, int> getComponentOffset(int index) { return OffSet.at(index); }
 
-  opt_variables_type& getComponentVars() { return myVars; }
+  OptVariables& getComponentVars() { return myVars; }
 
   void evaluateDerivatives(ParticleSet& P,
-                           const opt_variables_type& active,
+                           const OptVariables& active,
                            Vector<ValueType>& dlogpsi,
                            Vector<ValueType>& dhpsioverpsi) override;
 
-  void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& active, Vector<ValueType>& dlogpsi) override;
+  void evaluateDerivativesWF(ParticleSet& P, const OptVariables& active, Vector<ValueType>& dlogpsi) override;
 
   void evaluateDerivRatios(const VirtualParticleSet& VP,
-                           const opt_variables_type& optvars,
+                           const OptVariables& optvars,
                            std::vector<ValueType>& ratios,
                            Matrix<ValueType>& dratios) override;
 };

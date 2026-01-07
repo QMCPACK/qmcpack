@@ -185,7 +185,7 @@ TEST_CASE("Pade2 Jastrow", "[wavefunction]")
 
   auto& twf_component_list = twf.getOrbitals();
 
-  opt_variables_type active;
+  OptVariables active;
   twf.checkInVariables(active);
   active.resetIndex();
   int nparam = active.size_of_active();

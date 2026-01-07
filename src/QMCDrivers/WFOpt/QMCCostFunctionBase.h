@@ -171,7 +171,7 @@ public:
   inline void setneedGrads(bool tf) { needGrads = tf; }
   inline void setDMC() { vmc_or_dmc = 1.0; }
 
-  inline const opt_variables_type& getOptVariables() const { return opt_vars; }
+  inline const OptVariables& getOptVariables() const { return opt_vars; }
 
   /// return variance after checkConfigurations
   inline Return_rt getVariance() const
@@ -239,9 +239,9 @@ protected:
   double omega_shift;
 
   ///list of optimizables
-  opt_variables_type opt_vars;
+  OptVariables opt_vars;
   // unchanged initial checked-in variables
-  opt_variables_type InitVariables;
+  OptVariables InitVariables;
   /** index mapping for <negate> constraints
    *
    * - negateVarMap[i][0] : index in opt_vars
@@ -313,7 +313,7 @@ protected:
   /// survey all the optimizable objects
   UniqueOptObjRefs extractOptimizableObjects(TrialWaveFunction& psi) const;
 
-  void resetOptimizableObjects(TrialWaveFunction& psi, const opt_variables_type& opt_variables) const;
+  void resetOptimizableObjects(TrialWaveFunction& psi, const OptVariables& opt_variables) const;
 
 #ifdef HAVE_LMY_ENGINE
   virtual Return_rt LMYEngineCost_detail(cqmc::engine::LMYEngine<Return_t>* EngineObj)

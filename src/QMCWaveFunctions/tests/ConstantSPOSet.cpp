@@ -39,16 +39,22 @@ std::unique_ptr<SPOSetT<T>> ConstantSPOSet<T>::makeClone() const
 };
 
 template<typename T>
-std::string ConstantSPOSet<T>::getClassName() const { return "ConstantSPOSet"; };
+std::string ConstantSPOSet<T>::getClassName() const
+{
+  return "ConstantSPOSet";
+};
 
 template<typename T>
-void ConstantSPOSet<T>::checkOutVariables(const opt_variables_type& active)
+void ConstantSPOSet<T>::checkOutVariables(const OptVariables& active)
 {
   APP_ABORT("ConstantSPOSet should not call checkOutVariables");
 };
 
 template<typename T>
-void ConstantSPOSet<T>::setOrbitalSetSize(int norbs) { APP_ABORT("ConstantSPOSet should not call setOrbitalSetSize()"); }
+void ConstantSPOSet<T>::setOrbitalSetSize(int norbs)
+{
+  APP_ABORT("ConstantSPOSet should not call setOrbitalSetSize()");
+}
 
 template<typename T>
 void ConstantSPOSet<T>::setRefVals(const ValueMatrix& vals)
@@ -78,7 +84,7 @@ template<typename T>
 void ConstantSPOSet<T>::evaluateValue(const ParticleSet& P, int iat, ValueVector& psi)
 {
   const auto* vp = dynamic_cast<const VirtualParticleSet*>(&P);
-  int ptcl = vp ? vp->refPtcl : iat;
+  int ptcl       = vp ? vp->refPtcl : iat;
   assert(psi.size() == SPOSet::OrbitalSetSize);
   for (int iorb = 0; iorb < SPOSet::OrbitalSetSize; iorb++)
     psi[iorb] = ref_psi_(ptcl, iorb);

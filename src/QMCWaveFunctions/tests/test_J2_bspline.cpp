@@ -94,7 +94,7 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
   j2->extractOptimizableObjectRefs(opt_obj_refs);
   REQUIRE(opt_obj_refs.size() == 1);
 
-  opt_variables_type optvars;
+  OptVariables optvars;
   Vector<WaveFunctionComponent::ValueType> dlogpsi;
   Vector<WaveFunctionComponent::ValueType> dhpsioverpsi;
 
