@@ -880,6 +880,9 @@ The twists can be run as individual jobs using the following:
                              job      = qmc_job,
                              ...)
 
+Note that when the above approach is used, the ``twist_info.dat`` files are not currently created. When analysing the results, care
+should be taken to apply the correct weight to each twist.
+
 A job can be scaled proportionally to the number of twists as follows:
 
 ::
