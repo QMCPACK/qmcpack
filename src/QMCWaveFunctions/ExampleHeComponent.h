@@ -32,15 +32,15 @@ public:
         my_table_ee_idx_(els.addTable(els, DTModes::NEED_TEMP_DATA_ON_HOST | DTModes::NEED_VP_FULL_TABLE_ON_HOST)),
         my_table_ei_idx_(els.addTable(ions, DTModes::NEED_VP_FULL_TABLE_ON_HOST)){};
 
-  using OptVariablesType = optimize::VariableSet;
+  using opt_variables_type = optimize::VariableSet;
   using PtclGrpIndexes   = QMCTraits::PtclGrpIndexes;
 
   std::string getClassName() const override { return "ExampleHeComponent"; }
   void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override { opt_obj_refs.push_back(*this); }
   bool isOptimizable() const override { return true; }
-  void checkInVariablesExclusive(OptVariablesType& active) override { active.insertFrom(my_vars_); }
-  void checkOutVariables(const OptVariablesType& active) override { my_vars_.getIndex(active); }
-  void resetParametersExclusive(const OptVariablesType& active) override;
+  void checkInVariablesExclusive(opt_variables_type& active) override { active.insertFrom(my_vars_); }
+  void checkOutVariables(const opt_variables_type& active) override { my_vars_.getIndex(active); }
+  void resetParametersExclusive(const opt_variables_type& active) override;
 
   LogValue evaluateLog(const ParticleSet& P,
                        ParticleSet::ParticleGradient& G,
@@ -57,7 +57,7 @@ public:
   PsiValue ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
 
   void evaluateDerivatives(ParticleSet& P,
-                           const OptVariablesType& optvars,
+                           const opt_variables_type& optvars,
                            Vector<ValueType>& dlogpsi,
                            Vector<ValueType>& dhpsioverpsi) override;
 
@@ -84,7 +84,7 @@ private:
   const int my_table_ee_idx_;
   const int my_table_ei_idx_;
 
-  OptVariablesType my_vars_;
+  opt_variables_type my_vars_;
 };
 
 } // namespace qmcplusplus

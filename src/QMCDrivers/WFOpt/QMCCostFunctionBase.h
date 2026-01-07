@@ -93,10 +93,10 @@ public:
   ///Path and name of the HDF5 prefix where CI coeffs are saved
   std::string newh5;
   ///assign optimization parameter i
-  Return_rt& Params(int i) { return OptVariables[i]; }
+  Return_rt& Params(int i) { return opt_vars[i]; }
   ///return optimization parameter i
-  Return_t Params(int i) const { return OptVariables[i]; }
-  int getType(int i) const { return OptVariables.getType(i); }
+  Return_t Params(int i) const { return opt_vars[i]; }
+  int getType(int i) const { return opt_vars.getType(i); }
   ///return the cost value for CGMinimization
   Return_rt Cost(bool needGrad = true);
 
@@ -108,17 +108,14 @@ public:
                         const std::vector<Return_rt>& PM,
                         Return_rt FiniteDiff = 0) = 0;
   ///return the number of optimizable parameters
-  inline int getNumParams() const { return OptVariables.size(); }
+  inline int getNumParams() const { return opt_vars.size(); }
   ///return the global number of samples
   inline int getNumSamples() const { return NumSamples; }
   inline void setNumSamples(int newNumSamples) { NumSamples = newNumSamples; }
   ///reset the wavefunction
   virtual void resetPsi(bool final_reset = false) = 0;
 
-  inline void getParameterTypes(std::vector<int>& types) const
-  {
-    return OptVariablesForPsi.getParameterTypeList(types);
-  }
+  inline void getParameterTypes(std::vector<int>& types) const { return opt_vars.getParameterTypeList(types); }
 
   ///dump the current parameters and other report
   void Report();
@@ -174,7 +171,7 @@ public:
   inline void setneedGrads(bool tf) { needGrads = tf; }
   inline void setDMC() { vmc_or_dmc = 1.0; }
 
-  inline const opt_variables_type& getOptVariables() const { return OptVariables; }
+  inline const opt_variables_type& getOptVariables() const { return opt_vars; }
 
   /// return variance after checkConfigurations
   inline Return_rt getVariance() const
@@ -242,21 +239,13 @@ protected:
   double omega_shift;
 
   ///list of optimizables
-  opt_variables_type OptVariables;
-  /** full list of optimizables
-   *
-   * The size of OptVariablesForPsi is equal to or larger than
-   * that of OptVariables due to the dependent variables.
-   * This is used for TrialWaveFunction::resetParameters and
-   * is normally the same as OptVariables.
-   */
-  opt_variables_type OptVariablesForPsi;
+  opt_variables_type opt_vars;
   // unchanged initial checked-in variables
   opt_variables_type InitVariables;
   /** index mapping for <negate> constraints
    *
-   * - negateVarMap[i][0] : index in OptVariablesForPsi
-   * - negateVarMap[i][1] : index in OptVariables
+   * - negateVarMap[i][0] : index in opt_vars
+   * - negateVarMap[i][1] : index in opt_vars
    */
   ///index mapping for <negative> constraints
   std::vector<TinyVector<int, 2>> negateVarMap;

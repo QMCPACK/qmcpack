@@ -42,7 +42,7 @@ public:
       for (int j = 0; j < np; j++)
         Amat_[i * np + j] = Amat[i][j];
       std::string name = "tmp" + std::to_string(i);
-      OptVariables.insert(name, 0);
+      opt_vars.insert(name, 0);
     }
   }
 
