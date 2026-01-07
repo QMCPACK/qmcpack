@@ -766,14 +766,21 @@ manner.
     variance        = 0.850521272106
 
 
+.. _twist-averaging:
+
+Twist averaged calculations
+---------------------------
+
+This section describes several special features and capabilities to make specifying and running of twist-averaged calculations more
+convenient and efficient.
 
 .. _user-occupations:
 
 Twist occupation specification
-------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Gapped systems
-^^^^^^^^^^^^^^
+**************
 
 For QMC calculations involving twist-averaging, Nexus can set the desired twist occupations for the spin up and down electron channels.
 By default, the spin up and down occupations for each twist will be equal (non-magnetic phase) and each twist will be charge neutral.
@@ -782,7 +789,7 @@ This will result in each twist having magnetization equal to ``net_spin`` while 
 Specifying ``net_spin`` is sufficient for gapped systems since the charge and the net spin should not vary from twist to twist.
 
 Metallic systems
-^^^^^^^^^^^^^^^^
+****************
 
 The charge and the net spin are expected to vary from twist to twist in metallic systems in general.
 In Nexus, this can be handled via grand-canonical twist-averaging (GCTA), by specifying the ``gcta`` argument in the ``generate_qmcpack()`` function.
@@ -849,6 +856,40 @@ Currently, only workflows that use Quantum ESPRESSO (PWSCF) are supported by ``g
 - ``gcta`` currently supports only Quantum ESPRESSO (PWSCF).
 
 Please contact the developers if any of these issues are critical for research.
+
+.. _modifying-twist-bundling:
+
+Bundling of twist-averaged jobs
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Twist averaged calculations will be run as a single job and QMCPACK invocation by default, dividing the total requested number of
+nodes & tasks by the total number of twists. This requires and will only work if the number of twists perfectly divides into the
+requested computational resources. For example, a job requesting 8 nodes with 4 total twists would use 2 nodes per twist, while a
+job with 5 twists would need to request a multiple of 5 nodes by default. Depending on details of the machine, it may be preferable
+to run the individual twist calculations separately or to automatically scale the size of the job according to the number of twists.
+
+The twists can be run as individual jobs using the following:
+
+::
+
+  ntwists = len(system.structure.kpoints)
+  qmc_job = job(processes=1,threads=2,hours=8)
+  for n in range(ntwists):
+      qmc = generate_qmcpack(id       = 'dmc.g'+str(n).zfill(3),
+                             twistnum = n,
+                             job      = qmc_job,
+                             ...)
+
+A job can be scaled proportionally to the number of twists as follows:
+
+::
+
+  system = generate_physical_system(...)
+  N = 10
+  M = len(system.structure.kpoints)
+  qmc_job = job(nodes=N*M,...)
+  qmc = generate_qmpcack(job=qmc_job,...)
+
 
 .. _command-line-options:
 
