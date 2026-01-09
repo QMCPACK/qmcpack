@@ -34,6 +34,7 @@ import sys
 import traceback
 from copy import deepcopy
 import pickle
+from pickle import UnpicklingError
 from random import randint
 
 from .utilities import sorted_py2
@@ -124,6 +125,9 @@ nexus_modules = [
 
 
 class NexusUnpickler(pickle.Unpickler):
+    """This class is designed for backwards compatibility with pickles generated
+    Nexus was packaged. It shouldn't touch anything but old Nexus pickles.
+    """
     def find_class(self, module, name):
         if module in nexus_modules and "nexus." not in module:
             module = "nexus." + module
@@ -507,20 +511,28 @@ class object_interface(object):
             fpath='./'+self.__class__.__name__+'.p'
         #end if
         fobj = open(fpath,'rb')
+
         try:
-            tmp = NexusUnpickler(fobj).load()
-        except:
+            tmp = pickle.load(fobj)
+        except ModuleNotFoundError:
             try:
-                tmp = NexusUnpickler(fobj).load(encoding='latin1')
-            except:
-                # fallback for files created with protocol 5
-                # in environments that only support up to protocol 4
+                # Old pickles from before Nexus was packaged won't have the correct module path
+                # The custom unpickler will handle this by prepending "nexus." to the module path
+                tmp = NexusUnpickler(fobj).load()
+            except UnpicklingError:
                 try:
-                    import pickle5
-                    tmp = pickle5.load(fobj)
-                except ImportError:
-                    have_pickle5 = False
-                    error("Highest pickle protocol in current python version is {}, but {} is written using a higher protocol. Install pickle5, e.g. via pip, to enable protocol 5 in python <= 3.7.x".format(pickle.HIGHEST_PROTOCOL, fpath))
+                    # NumPy pickles can use latin1 encoding
+                    # They will likely still fail from an underflow since they are not pickle-compliant
+                    tmp = NexusUnpickler(fobj).load(encoding='latin1')
+                except UnpicklingError:
+                    # fallback for files created with protocol 5
+                    # in environments that only support up to protocol 4
+                    try:
+                        import pickle5
+                        tmp = pickle5.load(fobj)
+                    except ImportError:
+                        have_pickle5 = False
+                        error("Highest pickle protocol in current python version is {}, but {} is written using a higher protocol. Install pickle5, e.g. via pip, to enable protocol 5 in python <= 3.7.x".format(pickle.HIGHEST_PROTOCOL, fpath))
                 #end try
             #end try
         #end try
