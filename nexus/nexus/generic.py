@@ -126,7 +126,8 @@ nexus_modules = [
 
 class NexusUnpickler(pickle.Unpickler):
     """This class is designed for backwards compatibility with pickles generated
-    Nexus was packaged. It shouldn't touch anything but old Nexus pickles.
+    before Nexus was packaged (PR #5700, December 20, 2025). 
+    It shouldn't touch anything but old Nexus pickles.
     """
     def find_class(self, module, name):
         if module in nexus_modules and "nexus." not in module:
@@ -516,8 +517,9 @@ class object_interface(object):
             tmp = pickle.load(fobj)
         except ModuleNotFoundError:
             try:
-                # Old pickles from before Nexus was packaged won't have the correct module path
-                # The custom unpickler will handle this by prepending "nexus." to the module path
+                # Old pickles from before Nexus was packaged (PR #5700, December 20 2025)
+                # won't have the correct module path. The custom unpickler will handle this by 
+                # prepending "nexus." to the module path
                 tmp = NexusUnpickler(fobj).load()
             except UnpicklingError:
                 try:
