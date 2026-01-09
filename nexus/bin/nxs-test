@@ -36,7 +36,7 @@ for d in dirs_check:
 sys.path.insert(0,library_dir)
 
 # add unit test modules
-#sys.path.append(os.path.abspath(os.path.join(__file__,'..','..','nexus','tests')))
+#sys.path.append(os.path.realpath(os.path.join(__file__,'..','..','nexus','tests')))
 
 unit_test_module_lists = dict()
 unit_test_modules      = dict()
@@ -2184,7 +2184,7 @@ def regenerate_reference(update=False):
 
 def find_nexus_modules():
     import sys
-    nexus_lib = os.path.abspath(os.path.join(__file__,'..','..','..','nexus'))
+    nexus_lib = os.path.realpath(os.path.join(__file__,'..','..','..','nexus'))
     assert(os.path.exists(nexus_lib))
     sys.path.append(nexus_lib)
 #end def find_nexus_modules
@@ -2223,8 +2223,8 @@ if __name__=='__main__':
     testing_wrong_nexus_install = False
     try:
         import nexus
-        nexus_file = os.path.abspath(os.path.join(nexus.__file__,'../..'))
-        test_file  = os.path.abspath(os.path.join(__file__,'../..'))
+        nexus_file = os.path.realpath(os.path.join(nexus.__file__,'../..'))
+        test_file  = os.path.realpath(os.path.join(__file__,'../..'))
         testing_wrong_nexus_install = nexus_file!=test_file
     except:
         pass
