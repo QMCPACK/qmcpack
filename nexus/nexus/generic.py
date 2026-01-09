@@ -61,6 +61,73 @@ def nocopy(value):
 
 sorted_generic = sorted_py2
 
+# There must be a better way to do this than store these, but this was faster for testing
+nexus_modules = [
+    "xmlreader",
+    "fileio",
+    "quantum_package_analyzer",
+    "pwscf",
+    "pwscf_analyzer",
+    "quantum_package_input",
+    "testing",
+    "rmg_input",
+    "machines",
+    "qmcpack_converters",
+    "simulation",
+    "pwscf_postprocessors",
+    "pyscf_sim",
+    "unit_converter",
+    "execute",
+    "qmcpack_result_analyzers",
+    "basisset",
+    "project_manager",
+    "gamess_input",
+    "quantum_package",
+    "pwscf_input",
+    "pyscf_input",
+    "physical_system",
+    "pseudopotential",
+    "nexus_version",
+    "periodic_table",
+    "rmg_analyzer",
+    "memory",
+    "vasp_input",
+    "qmcpack",
+    "numerics",
+    "qmcpack_analyzer",
+    "structure",
+    "gamess_analyzer",
+    "developer",
+    "template_simulation",
+    "bundle",
+    "qmcpack_property_analyzers",
+    "qmcpack_quantity_analyzers",
+    "rmg",
+    "grid_functions",
+    "hdfreader",
+    "utilities",
+    "qmcpack_analyzer_base",
+    "vasp",
+    "generic",
+    "nexus_base",
+    "debug",
+    "qmcpack_method_analyzers",
+    "observables",
+    "gamess",
+    "versions",
+    "vasp_analyzer",
+    "gaussian_process",
+    "pwscf_data_reader",
+    "qmcpack_input",
+    "pyscf_analyzer",
+]
+
+
+class NexusUnpickler(pickle.Unpickler):
+    def find_class(self, module, name):
+        if module in nexus_modules and "nexus." not in module:
+            module = "nexus." + module
+        return super().find_class(module, name)
 
 
 def log(*items,**kwargs):
@@ -441,10 +508,10 @@ class object_interface(object):
         #end if
         fobj = open(fpath,'rb')
         try:
-            tmp = pickle.load(fobj)
+            tmp = NexusUnpickler(fobj).load()
         except:
             try:
-                tmp = pickle.load(fobj,encoding='latin1')
+                tmp = NexusUnpickler(fobj).load(encoding='latin1')
             except:
                 # fallback for files created with protocol 5
                 # in environments that only support up to protocol 4
