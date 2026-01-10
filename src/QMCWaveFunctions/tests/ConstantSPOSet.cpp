@@ -86,8 +86,11 @@ void ConstantSPOSet<T>::evaluateValue(const ParticleSet& P, int iat, ValueVector
   const auto* vp = dynamic_cast<const VirtualParticleSet*>(&P);
   int ptcl       = vp ? vp->refPtcl : iat;
   assert(psi.size() == SPOSet::OrbitalSetSize);
+
+  int group = P.getGroupID(ptcl);
+  int first = P.first(group);
   for (int iorb = 0; iorb < SPOSet::OrbitalSetSize; iorb++)
-    psi[iorb] = ref_psi_(ptcl, iorb);
+    psi[iorb] = ref_psi_(ptcl - first, iorb);
 };
 
 template<typename T>
@@ -97,11 +100,13 @@ void ConstantSPOSet<T>::evaluateVGL(const ParticleSet& P,
                                     GradVector& dpsi,
                                     ValueVector& d2psi)
 {
+  int group = P.getGroupID(ptcl);
+  int first = P.first(group);
   for (int iorb = 0; iorb < SPOSet::OrbitalSetSize; iorb++)
   {
-    psi[iorb]   = ref_psi_(iat, iorb);
-    dpsi[iorb]  = ref_egrad_(iat, iorb);
-    d2psi[iorb] = ref_elapl_(iat, iorb);
+    psi[iorb]   = ref_psi_(iat - first, iorb);
+    dpsi[iorb]  = ref_egrad_(iat - first, iorb);
+    d2psi[iorb] = ref_elapl_(iat - first, iorb);
   }
 };
 
