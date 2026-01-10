@@ -100,7 +100,7 @@ void ConstantSPOSet<T>::evaluateVGL(const ParticleSet& P,
                                     GradVector& dpsi,
                                     ValueVector& d2psi)
 {
-  int group = P.getGroupID(ptcl);
+  int group = P.getGroupID(iat);
   int first = P.first(group);
   for (int iorb = 0; iorb < SPOSet::OrbitalSetSize; iorb++)
   {
