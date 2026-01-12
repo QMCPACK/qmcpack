@@ -87,8 +87,8 @@ void ConstantSPOSet<T>::evaluateValue(const ParticleSet& P, int iat, ValueVector
   int ptcl       = vp ? vp->refPtcl : iat;
   assert(psi.size() == SPOSet::OrbitalSetSize);
 
-  int group = P.getGroupID(ptcl);
-  int first = P.first(group);
+  const int group = P.getGroupID(ptcl);
+  const int first = P.first(group);
   for (int iorb = 0; iorb < SPOSet::OrbitalSetSize; iorb++)
     psi[iorb] = ref_psi_(ptcl - first, iorb);
 };
@@ -100,8 +100,8 @@ void ConstantSPOSet<T>::evaluateVGL(const ParticleSet& P,
                                     GradVector& dpsi,
                                     ValueVector& d2psi)
 {
-  int group = P.getGroupID(iat);
-  int first = P.first(group);
+  const int group = P.getGroupID(iat);
+  const int first = P.first(group);
   for (int iorb = 0; iorb < SPOSet::OrbitalSetSize; iorb++)
   {
     psi[iorb]   = ref_psi_(iat - first, iorb);
