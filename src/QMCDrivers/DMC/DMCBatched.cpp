@@ -251,6 +251,11 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     ps_dispatcher.flex_saveWalker(walker_elecs, walkers);
   }
 
+
+  std::vector<FullPrecRealType> post_branch_weights(num_walkers, 0.0);
+  for (int iw = 0; iw < num_walkers; ++iw)
+    post_branch_weights[iw] = walkers[iw].get().Weight;
+
   { // hamiltonian
     ScopedTimer ham_local(timers.hamiltonian_timer);
 
@@ -285,13 +290,19 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
         new_energies[iw] = old_energies[iw];
       }
       FullPrecRealType branch_weight = sft.branch_engine.branchWeight(new_energies[iw], old_energies[iw]);
-      walkers[iw].get().Weight *= branch_weight;
+      post_branch_weights[iw] *= branch_weight;
     }
   }
 
   { // estimator collectables
     ScopedTimer collectable_local(timers.collectables_timer);
 
+    // Now we can assign the post_branch_weights
+    for (int iw = 0; iw < num_walkers; ++iw)
+    {
+      walkers[iw].get().Weight        = post_branch_weights[iw];
+      walkers[iw].get().Properties(0) = post_branch_weights[iw];
+    }
     // evaluate non-physical hamiltonian elements
     // In legacy this was only done if the move was accepted
     // This mean many/all estimators did not accumulate failed moves.

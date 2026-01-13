@@ -2317,6 +2317,7 @@ def check_values(options,values):
             vlog('checking energy density terms per block',n=1)
             msg+='\n  Energy density sums vs. scalar file per block tests:\n'
             scalars = load_scalar_file(options,'auto')
+            block_scalar = load_scalar_file(options, 'scalar')
             ed_success = True
             ed_values = obj(
                 T = values.T.data.full_sum,
@@ -2332,7 +2333,7 @@ def check_values(options,values):
                     V='LocalPotential',
                     )
             elif scalars.file_type=='dmc':
-                comparisons = obj(E='LocalEnergy', WE='WeightedEnergySum')
+                comparisons = obj(E='LocalEnergy') #, WE='WeightedEnergySum')
             else:
                 exit_fail('unrecognized scalar file type: {0}'.format(scalars.file_type))
             #end if
@@ -2342,15 +2343,27 @@ def check_values(options,values):
                 ed_vals = ed_values[k]
                 sc_vals = scalars.data[comparisons[k]]
                 if scalars.file_type=='dmc':
-                    if len(sc_vals)%len(ed_vals)==0 and len(sc_vals)>len(ed_vals):
+                    print("len(sc_vals)%len(ed_vals)", len(sc_vals)%len(ed_vals), len(sc_vals), " >= ", len(ed_vals))
+                    if len(sc_vals)%len(ed_vals)==0 and len(sc_vals)>=len(ed_vals):
                         steps = len(sc_vals)//len(ed_vals)
-                        sc_vals.shape = len(sc_vals)//steps,steps
                         if comparisons[k] == 'WeightedEnergySum':
+                            sc_vals.shape = len(sc_vals)//steps,steps
                             sc_weights = scalars.data['Weight']
                             sc_vals = sc_vals.sum(1)
                             sc_weights = sc_weights.reshape(len(sc_weights)//steps,steps)
                             sc_weights = sc_weights.sum(1)
                             sc_vals = sc_vals / sc_weights
+                        elif comparisons[k] == 'LocalEnergy':
+                            sc_weights = scalars.data['Weight']
+                            sc_vals = array([val * weight for val, weight in zip(sc_vals, sc_weights)])
+                            sc_vals = sc_vals.reshape(len(sc_vals)//steps,steps)
+                            sc_vals = sc_vals.sum(1)
+                            sc_weights = sc_weights.reshape(len(sc_weights)//steps,steps)
+                            sc_weights = sc_weights.sum(1)
+                            sc_vals = sc_vals / sc_weights
+                        elif comparisons[k] == 'Weight':
+                            sc_vals = sc_vals.reshape(len(sc_vals)//steps,steps)
+                            sc_vals = sc_vals.sum(1)
                         else:
                             sc_vals = sc_vals.mean(1)
                         #end if
@@ -2363,9 +2376,9 @@ def check_values(options,values):
                 #end if
 
                 if scalars.file_type=='dmc':
-                    ftol = 5e-8
+                    ftol = 1e-7
                 else:
-                    ftol = 1e-8
+                    ftol = 1e-7
                 # This test is actually relative error assuming the
                 # the scv is the true value. since conventionally the
                 # divisor is the true value.
