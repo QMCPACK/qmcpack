@@ -1,7 +1,6 @@
 # Build stage with Spack pre-installed and ready to be used
 FROM spack/centos-stream as builder
 
-
 # What we want to install and how we want to install it
 # is specified in a manifest file (spack.yaml)
 
@@ -83,4 +82,3 @@ RUN ranlib /opt/view/lib/gcc/x86_64-pc-linux-gnu/11.3.0/libgcc.a
 
 ENTRYPOINT ["/bin/bash", "--rcfile", "/etc/profile", "-l", "-c", "$*", "--" ]
 CMD [ "/bin/bash" ]
-
