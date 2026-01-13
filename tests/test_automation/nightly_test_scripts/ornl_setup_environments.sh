@@ -105,6 +105,7 @@ fi
 
 spack add py-lxml
 spack add py-matplotlib
+spack add py-pandas
 spack add py-mpi4py
 spack add py-numpy@${numpy_vnew}
 spack add py-scipy
@@ -159,6 +160,7 @@ fi
 
 spack add py-lxml
 spack add py-matplotlib
+spack add py-pandas
 spack add py-numpy@${numpy_vnew}
 spack add py-scipy
 spack add py-h5py ^hdf5@${hdf5_vnew}
@@ -187,6 +189,7 @@ spack add ninja
 
 spack add py-lxml
 spack add py-matplotlib
+spack add py-pandas
 spack add py-numpy@${numpy_vold}
 spack add py-scipy
 spack add py-h5py ^hdf5@${hdf5_vnew}
@@ -215,6 +218,7 @@ spack add ninja
 
 spack add py-lxml
 spack add py-matplotlib
+spack add py-pandas
 spack add py-mpi4py
 spack add py-numpy@${numpy_vold}
 spack add py-scipy
@@ -268,6 +272,7 @@ spack env deactivate
  
  spack add py-lxml
  spack add py-matplotlib
+ spack add py-pandas
  spack add py-mpi4py
  spack add py-numpy@${numpy_vold}
  spack add py-scipy
@@ -303,6 +308,7 @@ spack env deactivate
  
  spack add py-lxml
  spack add py-matplotlib
+ spack add py-pandas
  spack add py-numpy@${numpy_vold}
  spack add py-scipy
  spack add py-h5py ^hdf5@${hdf5_vnew}
@@ -336,6 +342,7 @@ spack add openblas threads=openmp
 
 spack add py-lxml
 spack add py-matplotlib
+spack add py-pandas
 spack add py-mpi4py
 spack add py-numpy@${numpy_vold}
 spack add py-scipy
@@ -367,6 +374,7 @@ spack add openblas threads=openmp
 
 spack add py-lxml
 spack add py-matplotlib
+spack add py-pandas
 spack add py-numpy@${numpy_vold}
 spack add py-scipy
 spack add py-h5py ^hdf5@${hdf5_vold}
@@ -399,6 +407,7 @@ spack add amdblis; spack add amdlibflame; #spack add amd-aocl
 
 spack add py-lxml
 spack add py-matplotlib
+spack add py-pandas
 spack add py-mpi4py
 spack add py-numpy@${numpy_vold}
 spack add py-scipy
@@ -430,6 +439,7 @@ spack add amdblis; spack add amdlibflame; #spack add amd-aocl
 
 spack add py-lxml
 spack add py-matplotlib
+spack add py-pandas
 spack add py-numpy@${numpy_vold}
 spack add py-scipy
 spack add py-h5py ^hdf5@${hdf5_vold}
