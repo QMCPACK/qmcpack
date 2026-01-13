@@ -76,10 +76,10 @@ if(add_tests)
     16
     check_collectables_h5dat.py
     dat-h5_allp)
-  simple_run_and_check(deterministic-estimator-acforce-legacy "${qmcpack_SOURCE_DIR}/tests/estimator/acforce" vmc.legacy.in.xml 1 16
+  simple_run_and_check(estimator-acforce-legacy "${qmcpack_SOURCE_DIR}/tests/estimator/acforce" vmc.legacy.in.xml 1 16
                        check_forces.py)
   simple_run_and_check(
-    deterministic-estimator-acforce-fast
+    estimator-acforce-fast
     "${qmcpack_SOURCE_DIR}/tests/estimator/acforce"
     vmc.fast.in.xml
     1
