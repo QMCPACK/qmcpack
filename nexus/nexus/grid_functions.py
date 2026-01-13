@@ -1393,7 +1393,7 @@ class StructuredGrid(Grid):
                 self.error('cannot set shape\ngrid shape provided does not match the number of points in the grid\npoints in grid: {}\npoints from shape: {}'.format(len(self.points),npoints))
             #end if
         #end if
-        self = self.reshape(tuple(shape))
+        self.shape = tuple(shape)
     #end def set_shape
 
 
@@ -1473,7 +1473,7 @@ class StructuredGrid(Grid):
         This should only be a local and temporary change of state.  It should 
         be reversed by calling `reshape_flat` as soon as possible.
         """
-        self.r = self.r.reshape(self.full_points_shape)
+        self.points = self.r.reshape(self.full_points_shape)
     #end def reshape_full
 
 
@@ -1485,7 +1485,7 @@ class StructuredGrid(Grid):
         This function is meant to reverse the temporary state change induced 
         by `reshape_full`.
         """
-        self.r = self.r.reshape(self.flat_points_shape)
+        self.points = self.r.reshape(self.flat_points_shape)
     #end def reshape_flat
 
 
