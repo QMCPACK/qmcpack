@@ -41,6 +41,8 @@ RUN export DEBIAN_FRONTEND=noninteractive &&\
     apt-get install python3-numpy \
     python3-h5py \
     python3-pandas \
+    python3-coverage \
+    python3-pytest \
     python3-pip \
     -y
 
