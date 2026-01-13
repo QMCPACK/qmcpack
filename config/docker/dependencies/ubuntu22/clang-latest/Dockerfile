@@ -35,8 +35,7 @@ RUN wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key| apt-key add - &&\
 RUN apt-get update -y &&\     
     apt-get install clang-16 clang-tools-16 libomp-16-dev -y
 
-# must add a user different from root 
-# to run MPI executables
+# must add a user different from root to run MPI executables
 RUN useradd -ms /bin/bash user
 # allow in sudoers to install packages
 RUN adduser user sudo
