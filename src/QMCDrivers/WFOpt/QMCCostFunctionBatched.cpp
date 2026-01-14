@@ -797,9 +797,9 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
               vmc_or_dmc, needGrad);
 
   // Sum weights over crowds
-  Return_rt inv_n_samples = 1.0 / samples_.getGlobalNumSamples();
+  Return_rt inv_n_samples = 1.0 / (samples_.getNumSamples() * myComm->size());
   for (int i = 0; i < opt_eval.size(); i++)
-    wgt_tot += opt_eval[i]->get_wgt() *inv_n_samples;
+    wgt_tot += opt_eval[i]->get_wgt() * inv_n_samples;
 
   //this is MPI barrier
   OHMMS::Controller->barrier();
@@ -851,7 +851,7 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
   }
   //collect everything
   myComm->allreduce(SumValue);
-  return SumValue[SUM_WGT] * SumValue[SUM_WGT] / (SumValue[SUM_WGTSQ] * samples_.getGlobalNumSamples());
+  return inv_n_samples * SumValue[SUM_WGT] * SumValue[SUM_WGT] / SumValue[SUM_WGTSQ];
 }
 
 
