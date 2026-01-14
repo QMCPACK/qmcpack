@@ -1,7 +1,6 @@
 #! /usr/bin/env python3
 
 import numpy as np
-import pandas as pd
 import h5py
 
 def print_fail_2d(a1_name, a1, a2_name, a2):
@@ -24,8 +23,25 @@ if __name__ == '__main__':
     # get particle-averaged latdev from scalar.dat
     sdata = np.loadtxt(fdat)
     with open(fdat,'r') as f:
-        header = f.readline().strip('#').split()
-    df = pd.DataFrame(sdata,columns=header)
+        file_data = f.readlines()
+
+    # Gather columns into list, removing the '#' from the beginning
+    cols = file_data[0].strip('#').split()
+
+    # Initialize empty dictionary
+    data = {}
+
+    # Initialize columns
+    for col in cols:
+        data[col] = []
+
+    # Add data from file to columns
+    for row in file_data[1:]:
+        row_data = row.split()
+        for col, datum in zip(cols, row_data):
+            data[col] += [float(datum)]
+
+
     nblock = sdata.shape[0]
 
     # get particle-resolved latdev from stat.dat
@@ -33,8 +49,16 @@ if __name__ == '__main__':
     # The trailing [:] converts the Dataset to numpy array
     latdev = fp['latdev/value'][:]
     latdir = latdev.reshape(nblock,natom,ndim).mean(axis=1)
-    lat_cols = [col for col in df.columns if col.startswith('latdev')]
-    slatdir  = df.loc[:,lat_cols].values
+    lat_cols = [col for col in list(data.keys()) if col.startswith('latdev')]
+
+    # Pull relevant data (the columns in lat_cols) out of the dictionary that was read in
+    slatdir = []
+    for col in lat_cols:
+        slatdir += [data[col]]
+
+    # slatdir is originally of shape (3, 100), while latdir is of shape (100, 3)
+    # the transpose operation makes slatdir have shape (100, 3)
+    slatdir = np.array(slatdir, dtype=np.float64).transpose()
 
     passed = True
     # check h5 against scalar.dat
