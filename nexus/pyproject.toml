@@ -1,0 +1,23 @@
+[project]
+name = "nexus"
+version = "0.1.0"
+description = "Automated workflow manager for DFT & QMC calculations"
+readme = "README"
+requires-python = ">=3.6"
+
+dependencies = [
+    "numpy>=1.13.0"
+]
+[project.optional-dependencies]
+qol = [
+    "scipy>=0.19.1",
+    "h5py>=2.7.0",
+    "matplotlib>=2.0.2",
+    "spglib>=1.12.0.post3",
+]
+
+full = [
+    "cif2cell>=2.1.0", # pycifrw is required by cif2cell
+    "pydot>=1.2.4",
+    "seekpath>=1.9.0",
+]
