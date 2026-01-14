@@ -1,9 +1,9 @@
-name: Build and Push Ubuntu22 Serial build CI Image to GHCR
+name: Build and Push Ubuntu22 OpenMPI build CI Image to GHCR
 
 on:
   push:
     paths:
-      - 'config/docker/dependencies/ubuntu22/serial/**'
+      - 'config/docker/dependencies/ubuntu22/openmpi/**'
     branches:
       - develop
 
@@ -36,9 +36,9 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: config/docker/dependencies/ubuntu22/serial/Dockerfile
+          file: config/docker/dependencies/ubuntu22/openmpi/Dockerfile
           push: true
           tags: | 
-            ghcr.io/qmcpack/ubuntu22-serial:latest
+            ghcr.io/qmcpack/ubuntu22-openmpi:latest
           platforms: linux/amd64
   
