@@ -752,7 +752,6 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
             RecordsOnNode[is][REWEIGHT] = weight;
             // move to opt_data
             opt_data.get_wgt() += inv_n_samples * weight;
-            opt_data.get_wgt2() += inv_n_samples * weight * weight;
           }
 
           if (needGrad)
