@@ -3,29 +3,42 @@ name = "nexus"
 version = "0.1.0"
 description = "Automated workflow manager for DFT & QMC calculations"
 readme = "README.md"
-requires-python = ">=3.6"
+requires-python = ">=3.12"
 
 dependencies = [
-    "numpy>=1.13.0"
+    "cif2cell>=2.1.0",
+    "h5py>=3.12.1",
+    "matplotlib>=3.10.0",
+    "numpy>=2.2.0",
+    "pycifrw>=4.4.6",
+    "pydot>=3.0.3",
+    "scipy>=1.14.1",
+    "seekpath>=2.1.0",
+    "spglib>=2.4.0",
 ]
+
+#dependencies = [
+#    "numpy>=1.13.0"
+#]
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-[project.optional-dependencies]
-qol = [
-    "scipy>=0.19.1",
-    "h5py>=2.7.0",
-    "matplotlib>=2.0.2",
-    "spglib>=1.12.0.post3",
-]
+# [project.optional-dependencies]
 
-full = [
-    "cif2cell>=2.1.0", # pycifrw is required by cif2cell
-    "pydot>=1.2.4",
-    "seekpath>=1.9.0",
-]
+# qol = [
+#     "scipy>=0.19.1",
+#     "h5py>=2.7.0",
+#     "matplotlib>=2.0.2",
+#     "spglib>=1.12.0.post3",
+# ]
+
+# full = [
+#     "cif2cell>=2.1.0", # pycifrw is required by cif2cell
+#     "pydot>=1.2.4",
+#     "seekpath>=1.9.0",
+# ]
 
 [project.urls]
 Repository = "https://github.com/QMCPACK/qmcpack"
