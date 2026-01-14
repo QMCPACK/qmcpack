@@ -8,6 +8,11 @@ requires-python = ">=3.6"
 dependencies = [
     "numpy>=1.13.0"
 ]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project.optional-dependencies]
 qol = [
     "scipy>=0.19.1",
@@ -21,3 +26,6 @@ full = [
     "pydot>=1.2.4",
     "seekpath>=1.9.0",
 ]
+
+[project.urls]
+Repository = "https://github.com/QMCPACK/qmcpack"
