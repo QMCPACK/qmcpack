@@ -14,10 +14,10 @@ Current Images
 Docker containers are identified by `domain/image:tag` and stored using `The Github Container Registry <https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry>`.
 Currently available containers have pre-installed QMCPACK dependencies, see the Dockerfile file link for available dependencies on each image:
 
-- `Linux containers <https://github.com/orgs/QMCPACK/packages>` 
-   - ghcr.io/qmcpack/ubuntu22-openmpi:latest: `Dockerfile <https://github.com/QMCPACK/qmcpack/blob/develop/config/docker/dependencies/ubuntu22/openmpi/Dockerfile>`
-   - ghcr.io/qmcpack/ubuntu22-clang:latest: `Dockerfile <https://github.com/QMCPACK/qmcpack/blob/develop/config/docker/dependencies/ubuntu22/clang/Dockerfile>`
-   - ghcr.io/qmcpack/centos-stream-gcc11:latest: `Dockerfile <https://github.com/QMCPACK/qmcpack/blob/develop/config/docker/dependencies/centos-stream/Dockerfile>`
+- `Linux containers <https://github.com/orgs/QMCPACK/packages>`_ 
+   - ghcr.io/qmcpack/ubuntu22-openmpi:latest: `Dockerfile <https://github.com/QMCPACK/qmcpack/blob/develop/config/docker/dependencies/ubuntu22/openmpi/Dockerfile>`_
+   - ghcr.io/qmcpack/ubuntu22-clang:latest: `Dockerfile <https://github.com/QMCPACK/qmcpack/blob/develop/config/docker/dependencies/ubuntu22/clang/Dockerfile>`_
+   - ghcr.io/qmcpack/centos-stream-gcc11:latest: `Dockerfile <https://github.com/QMCPACK/qmcpack/blob/develop/config/docker/dependencies/centos-stream/Dockerfile>`_
 
 
 Running Docker Containers
@@ -125,4 +125,4 @@ Use the regular Linux environment build instructions for QMCPACK:
 
 .. caution::
 
-   OpenMPI strongly advises against running as a `root` user, see `docs <https://docs.open-mpi.org/en/v5.0.x/man-openmpi/man1/mpirun.1.html#the-allow-run-as-root-option>`. The provided containers are configured to avoid this.
+   OpenMPI strongly advises against running as a `root` user, see `docs <https://docs.open-mpi.org/en/v5.0.x/man-openmpi/man1/mpirun.1.html#the-allow-run-as-root-option>`_. The provided containers are configured to avoid this.
