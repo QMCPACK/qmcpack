@@ -28,7 +28,7 @@ if(add_tests)
                        skinetic_check.py)
 endif()
 
-check_python_reqs("numpy;pandas;h5py" estimator-latdev add_tests)
+check_python_reqs("numpy;h5py" estimator-latdev add_tests)
 
 if(add_tests)
   simple_run_and_check(estimator-latdev "${qmcpack_SOURCE_DIR}/tests/estimator/latdev" vmc.xml 1 16 latdev_check.py)
@@ -41,7 +41,7 @@ if(add_tests)
                        flatdev.py)
 endif()
 
-check_python_reqs("numpy;pandas;h5py" estimator-sofk add_tests)
+check_python_reqs("numpy;h5py" estimator-sofk add_tests)
 
 if(add_tests)
   simple_run_and_check(
