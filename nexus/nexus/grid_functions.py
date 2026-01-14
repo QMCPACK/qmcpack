@@ -335,7 +335,7 @@ def unit_grid_points(shape,centered=False,endpoint=None):
     points = np.meshgrid(*linear_grids,indexing='ij')
     points = np.array(points)
     # reshape and transpose the points
-    points.shape = (len(points),np.array(shape).prod())
+    points = points.reshape(len(points),np.array(shape).prod())
     points = points.T
     return points
 #end def unit_grid_points
@@ -1473,7 +1473,7 @@ class StructuredGrid(Grid):
         This should only be a local and temporary change of state.  It should 
         be reversed by calling `reshape_flat` as soon as possible.
         """
-        self.r.shape = self.full_points_shape
+        self.points = self.r.reshape(self.full_points_shape)
     #end def reshape_full
 
 
@@ -1485,7 +1485,7 @@ class StructuredGrid(Grid):
         This function is meant to reverse the temporary state change induced 
         by `reshape_full`.
         """
-        self.r.shape = self.flat_points_shape
+        self.points = self.r.reshape(self.flat_points_shape)
     #end def reshape_flat
 
 
@@ -1710,10 +1710,10 @@ class StructuredGrid(Grid):
         #end for
         if not unit:
             bpoints = self.points_from_unit(upoints)
-            bpoints.shape = nlines,n,self.space_dim
+            bpoints = bpoints.reshape(nlines,n,self.space_dim)
         else:
             bpoints = upoints
-            bpoints.shape = nlines,n,self.grid_dim
+            bpoints = bpoints.reshape(nlines,n,self.grid_dim)
         #end if
         return bpoints
     #end def get_boundary_lines
@@ -3352,7 +3352,7 @@ class GridFunction(GBase):
             if nvtot%nv!=0 or nvtot//nv!=grid.npoints:
                 self.error('value_shape and total number of values are inconsistent.\nTotal number of values: {}\nvalue_shape: {}\nExpected number of values per grid point: {}\nActual number of values per grid point: {}'.format(nvtot,value_shape,nv,nvtot/nv))
             #end if
-            values.shape = (grid.npoints,nv)
+            values = values.reshape(grid.npoints,nv)
         #end if
 
         # assign grid and values
@@ -3395,12 +3395,12 @@ class GridFunction(GBase):
 
 
     def reshape_values_full(self):
-        self.values.shape = (self.npoints,)+self.value_shape
+        self.values = self.values.reshape((self.npoints,)+self.value_shape)
     #end def reshape_values_full
 
 
     def reshape_values_flat(self):
-        self.values.shape = (self.npoints,self.nvalues)
+        self.values = self.values.reshape(self.npoints,self.nvalues)
     #end def reshape_values_flat
 #end class GridFunction
 
@@ -3478,25 +3478,25 @@ class StructuredGridFunction(GridFunction):
     
 
     def reshape_points_full(self):
-        self.values.shape = self.grid_shape+(self.nvalues,)
+        self.values = self.values.reshape(self.grid_shape+(self.nvalues,))
         self.grid.reshape_full()
     #end def reshape_points_full
 
 
     def reshape_points_flat(self):
-        self.values.shape = (self.npoints,self.nvalues)
+        self.values = self.values.reshape(self.npoints,self.nvalues)
         self.grid.reshape_flat()
     #end def reshape_points_flat
 
 
     def reshape_full(self):
-        self.values.shape = self.grid_shape+self.value_shape
+        self.values = self.values.reshape(self.grid_shape+self.value_shape)
         self.grid.reshape_full()
     #end def reshape_full
 
 
     def reshape_flat(self):
-        self.values.shape = (self.npoints,self.nvalues)
+        self.values = self.values.reshape(self.npoints,self.nvalues)
         self.grid.reshape_flat()
     #end def reshape_flat
 
@@ -3571,11 +3571,11 @@ class StructuredGridFunction(GridFunction):
             self.error('cannot plot contours in unit coordinates\ngrid must have dimension 2 to make contour plots\ndimension of grid for this function: {}'.format(self.grid_dim))
         #end if
         X,Y = self.grid.unit_points().T
-        X.shape = self.grid_shape
-        Y.shape = self.grid_shape
+        X = X.reshape(self.grid_shape)
+        Y = Y.reshape(self.grid_shape)
         Zm = self.f.T
         for Z in Zm:
-            Z.shape = self.grid_shape
+            Z = Z.reshape(self.grid_shape)
             fig,ax = self.setup_mpl_fig(fig=fig,dim=self.grid_dim)
             ax.contour(X,Y,Z,**kwargs)
             if boundary:
@@ -3605,11 +3605,11 @@ class StructuredGridFunction(GridFunction):
             self.error('cannot plot contours in unit coordinates\ngrid must have dimension 2 to make contour plots\ndimension of grid for this function: {}'.format(self.grid_dim))
         #end if
         X,Y = self.grid.unit_points().T
-        X.shape = self.grid_shape
-        Y.shape = self.grid_shape
+        X = X.reshape(self.grid_shape)
+        Y = Y.reshape(self.grid_shape)
         Zm = self.f.T
         for Z in Zm:
-            Z.shape = self.grid_shape
+            Z = Z.reshape(self.grid_shape)
             fig,ax = self.setup_mpl_fig(fig=fig,dim=self.grid_dim+1)
             ax.plot_surface(X,Y,Z,**kwargs)
         #end for
@@ -3645,7 +3645,7 @@ class StructuredGridFunction(GridFunction):
             if level is None:
                 level = (f.max()+f.min())/2
             #end if
-            f.shape = self.grid_shape
+            f = f.reshape(self.grid_shape)
             ret = measure.marching_cubes(f,level,spacing=spacing)
             verts = ret[0] 
             faces = ret[1]
@@ -3704,9 +3704,9 @@ class StructuredGridFunctionWithAxes(StructuredGridFunction):
                 self.error('Interpolation is not yet supported for nvalues>1.')
             #end if
             v_shape = v.shape
-            v.shape = v_shape[:-1]
+            v = v.reshape(v_shape[:-1])
             values = scipy_ndimage.map_coordinates(v, indices, **kw)
-            v.shape = v_shape
+            v = v.reshape(v_shape)
         else:
             self.error('Interpolation of type "{}" is not supported.\nValid options are: map_coordinates'.format(type))
         #end if
@@ -3759,11 +3759,11 @@ class StructuredGridFunctionWithAxes(StructuredGridFunction):
             X,Y    = np.dot(ax,self.r.T)
             ax_trans = ax
         #end if
-        X.shape = self.grid_shape
-        Y.shape = self.grid_shape
+        X = X.reshape(self.grid_shape)
+        Y = Y.reshape(self.grid_shape)
         Zm = self.f.T
         for Z in Zm:
-            Z.shape = self.grid_shape
+            Z = Z.reshape(self.grid_shape)
             fig,ax = self.setup_mpl_fig(fig=fig,dim=self.grid_dim)
             ax.contour(X,Y,Z,**kwargs)
             if boundary:
@@ -3802,11 +3802,11 @@ class StructuredGridFunctionWithAxes(StructuredGridFunction):
             self.error('cannot plot surface\ngrid must have dimension 2 to make contour plots\ndimension of grid for this function: {}'.format(self.grid_dim))
         #end if
         X,Y = self.r.T
-        X.shape = self.grid_shape
-        Y.shape = self.grid_shape
+        X = X.reshape(self.grid_shape)
+        Y = Y.reshape(self.grid_shape)
         Zm = self.f.T
         for Z in Zm:
-            Z.shape = self.grid_shape
+            Z = Z.reshape(self.grid_shape)
             fig,ax = self.setup_mpl_fig(fig=fig,dim=self.grid_dim+1)
             ax.plot_surface(X,Y,Z,**kwargs)
         #end for
@@ -3845,7 +3845,7 @@ class StructuredGridFunctionWithAxes(StructuredGridFunction):
             if level is None:
                 level = (f.max()+f.min())/2
             #end if
-            f.shape = self.grid_shape
+            f = f.reshape(self.grid_shape)
             ret = measure.marching_cubes(f,level,spacing=spacing)
             verts = ret[0] 
             faces = ret[1]
@@ -4000,7 +4000,7 @@ class ParallelotopeGridFunction(StructuredGridFunctionWithAxes):
         #end if
 
         # reshape values (for now GridFunction does not support more structured values)
-        values.shape = len(values),values.size//len(values)
+        values = values.reshape(len(values),values.size//len(values))
 
         # normalize the axes
         for d in range(D):

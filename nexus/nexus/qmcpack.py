@@ -1559,7 +1559,7 @@ class Qmcpack(Simulation):
             edata[spinlab] = obj()
             with open(einpath) as f:
                 data = np.array(f.read().split()[1:])
-                data.shape = len(data)//12,12
+                data = data.reshape(len(data)//12,12)
                 data = data.T
                 for darr in data:
                     if darr[0][0]=='K' or darr[0][0]=='E':

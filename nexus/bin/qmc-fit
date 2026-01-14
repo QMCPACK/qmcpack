@@ -313,11 +313,11 @@ def process_scalar_files(scalar_files,equils=None,reblock_factors=None,series_st
         nbe = len(E)%bt
         E = E[nbe:]
         reblock = len(E)//bt
-        E.shape = (bt,reblock)
+        E = E.reshape(bt,reblock)
         if reblock>1:
             E = E.sum(1)/reblock
         #end if
-        E.shape = (bt,)
+        E = E.reshape(bt,)
         Edata[n] = E
     #end for
     Edata = np.array(Edata,dtype=float)
