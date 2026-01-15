@@ -101,14 +101,14 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
   for (OptimizableObject& obj : opt_obj_refs)
     obj.checkInVariablesExclusive(optvars);
   optvars.resetIndex();
-  const int NumOptimizables(optvars.size());
+  const int num_opt_vars(optvars.size());
   j2->checkOutVariables(optvars);
-  dlogpsi.resize(NumOptimizables);
-  dhpsioverpsi.resize(NumOptimizables);
+  dlogpsi.resize(num_opt_vars);
+  dhpsioverpsi.resize(num_opt_vars);
   j2->evaluateDerivatives(elec_, optvars, dlogpsi, dhpsioverpsi);
 
   app_log() << std::endl << "reporting dlogpsi and dhpsioverpsi" << std::scientific << std::endl;
-  for (int iparam = 0; iparam < NumOptimizables; iparam++)
+  for (int iparam = 0; iparam < num_opt_vars; iparam++)
     app_log() << "param=" << iparam << " : " << dlogpsi[iparam] << "  " << dhpsioverpsi[iparam] << std::endl;
   app_log() << std::endl;
 
