@@ -201,8 +201,6 @@ protected:
   int NumCostCalls;
   /// global number of samples to use in correlated sampling
   int NumSamples;
-  ///total number of optimizable variables
-  int NumOptimizables;
   ///counter for output
   int ReportCounter;
   ///weights for energy and variance in the cost function
