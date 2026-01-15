@@ -299,14 +299,14 @@ void test_J3_polynomial3D(const DynamicCoordinateKind kind_selected)
   for (OptimizableObject& obj : opt_obj_refs)
     obj.checkInVariablesExclusive(optvars);
   optvars.resetIndex();
-  const int NumOptimizables(optvars.size());
+  const int num_opt_vars(optvars.size());
   j3->checkOutVariables(optvars);
-  dlogpsi.resize(NumOptimizables);
-  dhpsioverpsi.resize(NumOptimizables);
+  dlogpsi.resize(num_opt_vars);
+  dhpsioverpsi.resize(num_opt_vars);
   j3->evaluateDerivatives(elec_, optvars, dlogpsi, dhpsioverpsi);
 
   app_log() << std::endl << "reporting dlogpsi and dhpsioverpsi" << std::scientific << std::endl;
-  for (int iparam = 0; iparam < NumOptimizables; iparam++)
+  for (int iparam = 0; iparam < num_opt_vars; iparam++)
     app_log() << "param=" << iparam << " : " << dlogpsi[iparam] << "  " << dhpsioverpsi[iparam] << std::endl;
   app_log() << std::endl;
 
@@ -314,9 +314,9 @@ void test_J3_polynomial3D(const DynamicCoordinateKind kind_selected)
   CHECK(std::real(dhpsioverpsi[43]) == Approx(-2.3246270644e+05));
 
   Vector<WaveFunctionComponent::ValueType> dlogpsiWF;
-  dlogpsiWF.resize(NumOptimizables);
+  dlogpsiWF.resize(num_opt_vars);
   j3->evaluateDerivativesWF(elec_, optvars, dlogpsiWF);
-  for (int i = 0; i < NumOptimizables; i++)
+  for (int i = 0; i < num_opt_vars; i++)
     CHECK(dlogpsi[i] == ValueApprox(dlogpsiWF[i]));
 
   VirtualParticleSet VP(elec_);
@@ -331,7 +331,7 @@ void test_J3_polynomial3D(const DynamicCoordinateKind kind_selected)
   CHECK(std::real(ratios2[1]) == Approx(1.0257141422));
 
   std::fill(ratios2.begin(), ratios2.end(), 0);
-  Matrix<ValueType> dratio(2, NumOptimizables);
+  Matrix<ValueType> dratio(2, num_opt_vars);
   j3->evaluateDerivRatios(VP, optvars, ratios2, dratio);
 
   CHECK(std::real(ratios2[0]) == Approx(1.0357541137));
