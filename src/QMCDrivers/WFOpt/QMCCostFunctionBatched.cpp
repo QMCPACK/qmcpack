@@ -649,9 +649,6 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
     H.setRandomGenerator(MoverRng[0]);
   }
 
-  //Return_rt wgt_node = 0.0, wgt_node2 = 0.0;
-  Return_rt wgt_tot = 0.0;
-
   // Ensure number of samples did not change after getConfiguration
   assert(rank_local_num_samples_ == samples_.getNumSamples());
 
@@ -797,6 +794,7 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
               vmc_or_dmc, needGrad);
 
   // Sum weights over crowds
+  Return_rt wgt_tot = 0.0;
   Return_rt inv_n_samples = 1.0 / (samples_.getNumSamples() * myComm->size());
   for (int i = 0; i < opt_eval.size(); i++)
     wgt_tot += opt_eval[i]->get_wgt() * inv_n_samples;
