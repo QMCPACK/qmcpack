@@ -5,25 +5,21 @@
   2) Installation instructions
   3) Summary of library files 
 
-
 ## 1) About Nexus
-  
-  Nexus was written by Jaron T. Krogel starting in 2012 at UIUC.
-  Most of the code was developed at ORNL after Dec. 2012.
 
-
+Nexus was written by Jaron T. Krogel starting in 2012 at UIUC. Most of the code was developed at ORNL after Dec. 2012.
 
 ## 2) Installation instructions (Linux only)
 
 ### a. Ensure that Python is available
 
-
 The vast majority Linux distributions come with Python pre-installed.
 
-To check for Python, type `python3 --version` at the command line. You should see something like "Python 3.6.9".  Nexus is only compatible with Python >3.6 (2.x is no longer supported). If Python 3 is not present on your system, you can install it by following the instructions at [python-guide.org](https://docs.python-guide.org/starting/installation/)
+To check for Python, type `python3 --version` at the command line. You should see something like `Python 3.6.9`.  Nexus is only compatible with Python >3.6 (2.x is no longer supported). If Python 3 is not present on your system, you can install it by following the instructions at [python-guide.org](https://docs.python-guide.org/starting/installation/)
 
 With Python present, check for pip.  Type `pip --version` at the command line (older versions of Python may require using `python3 -m pip --version`).  You should see something like:
 ```
+> python3 -m pip --version
 pip 9.0.1 from /usr/lib/python3/dist-packages (python 3.6)
 ```
 For legacy installation, this is fine, however for direct installation via a package manager such as `uv` or `pip`, you will either need to [install uv](https://docs.astral.sh/uv/getting-started/installation/) or, provided you have `pip` you should run the command
@@ -32,7 +28,7 @@ For legacy installation, this is fine, however for direct installation via a pac
 ```
 which will upgrade your `pip` installation to the latest version.
 
-### **Nexus requires `numpy>=1.13.0` to function. If you are installing via the legacy install instructions, you must download `numpy` manually through your package manager.**
+#### **Nexus requires `numpy>=1.13.0` to function. If you are installing via the legacy install instructions, you must download `numpy` manually through your package manager.**
 
 ### b. Nexus Install Instructions
 
@@ -53,7 +49,7 @@ The latest versions of Nexus include packaging as a Python project that enable t
 ```
 ---
 
-Installing via a package manager will automatically install the required dependency (NumPy), however it is strongly encouraged to install the optional dependencies as well. The current optional dependencies are in two groups, one is for quality of life improvements and near-complete access to Nexus's capabilities, which can be installed by adding `[qol]` to the install command, and another group is for full functionality of Nexus, which is denoted `[full]`. These can either be added individually or combined by adding `[qol,full]` in `nexus@git`, which would look like
+Installing via a package manager will automatically install required dependencies (`numpy`), however it is strongly encouraged to install the optional dependencies as well. The current optional dependencies are in two groups, one is for quality of life improvements and near-complete access to Nexus's capabilities, which can be installed by adding `[qol]` to the install command, and another group is for full functionality of Nexus, which is denoted `[full]`. These can either be added individually or combined by adding `[qol,full]` in `nexus@git`, which would look like
 ```bash
 > <python3 -m | uv> pip install "nexus[qol,full]@git+https://github.com/QMCPACK/qmcpack.git@develop#subdirectory=nexus"
 ```
@@ -83,7 +79,7 @@ If you would like to install these packages manually, this can be done via `pip`
     <python3 -m | uv> pip install --user cif2cell
     <python3 -m | uv> pip install --user seekpath
 
-Please see the Nexus user guide (PDF) for more information about installing dependencies and how they are used by Nexus.
+Please see the [Nexus User Guide](https://nexus-workflows.readthedocs.io/en/latest/index.html) for more information about installing dependencies and how they are used by Nexus.
 
 ### c. Legacy Installation Instructions
 
