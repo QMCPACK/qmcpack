@@ -1012,7 +1012,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillHamVec(std::vector
   return 1.0;
 }
 
-void QMCCostFunctionBatched::calcOvlParmVec(const std::vector<Return_rt>& parm, std::vector<Return_rt>& ovlParmVec)
+void QMCCostFunctionBatched::calcOvlParmVec(const std::vector<Return_rt>& param, std::vector<Return_rt>& ovlParmVec)
 {
   ScopedTimer tmp_timer(fill_timer_);
 
@@ -1039,7 +1039,7 @@ void QMCCostFunctionBatched::calcOvlParmVec(const std::vector<Return_rt>& parm, 
     Return_rt weight                = saved[REWEIGHT] * wgtinv;
     const Return_t* Dsaved          = DerivRecords_[iw];
     for (int pm = 0; pm < getNumParams(); pm++)
-      prod[iw] += (Dsaved[pm] - D_avg[pm]) * parm[pm];
+      prod[iw] += (Dsaved[pm] - D_avg[pm]) * param[pm];
   }
 
 
