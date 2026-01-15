@@ -1,5 +1,6 @@
 *.pyc
 *.aux
+.python-version
 qmcpack_manual.bbl
 qmcpack_manual.blg
 qmcpack_manual.log
