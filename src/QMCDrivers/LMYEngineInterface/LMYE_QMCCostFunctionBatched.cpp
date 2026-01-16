@@ -19,7 +19,7 @@
 
 namespace qmcplusplus
 {
-size_t QMCCostFunctionBatched::total_samples() { return samples_.getGlobalNumSamples(); }
+size_t QMCCostFunctionBatched::total_samples() { return samples_.getNumSamples() * myComm->size(); }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 /// \brief  Computes the cost function using the LMYEngine for interfacing with batched driver

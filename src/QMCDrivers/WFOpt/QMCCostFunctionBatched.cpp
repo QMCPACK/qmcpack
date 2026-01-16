@@ -649,13 +649,8 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
     H.setRandomGenerator(MoverRng[0]);
   }
 
-  //Return_rt wgt_node = 0.0, wgt_node2 = 0.0;
-  Return_rt wgt_tot = 0.0;
-
   // Ensure number of samples did not change after getConfiguration
   assert(rank_local_num_samples_ == samples_.getNumSamples());
-
-  Return_rt inv_n_samples = 1.0 / samples_.getGlobalNumSamples();
 
   const size_t opt_num_crowds = walkers_per_crowd_.size();
   // Divide samples among crowds
@@ -738,8 +733,6 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
           TrialWaveFunction::mw_evaluateDeltaLog(wf_list, p_list, opt_data.get_log_psi_opt(), dummyG_list, dummyL_list,
                                                  compute_all_from_scratch);
 
-          Return_rt inv_n_samples = 1.0 / samples.getGlobalNumSamples();
-
           for (int ib = 0; ib < current_batch_size; ib++)
           {
             const int is = base_sample_index + ib;
@@ -751,7 +744,7 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
             Return_rt weight = vmc_or_dmc * (opt_data.get_log_psi_opt()[ib] - RecordsOnNode[is][LOGPSI_FREE]);
             RecordsOnNode[is][REWEIGHT] = weight;
             // move to opt_data
-            opt_data.get_wgt() += inv_n_samples * weight;
+            opt_data.get_wgt() += weight;
           }
 
           if (needGrad)
@@ -799,9 +792,12 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
   crowd_tasks(opt_num_crowds, evalOptCorrelated, opt_eval, samples_per_crowd_offsets, walkers_per_crowd_, dLogPsi,
               d2LogPsi, RecordsOnNode_, DerivRecords_, HDerivRecords_, samples_, opt_vars, compute_all_from_scratch,
               vmc_or_dmc, needGrad);
+
   // Sum weights over crowds
+  Return_rt wgt_tot = 0.0;
+  Return_rt inv_n_samples = 1.0 / (samples_.getNumSamples() * myComm->size());
   for (int i = 0; i < opt_eval.size(); i++)
-    wgt_tot += opt_eval[i]->get_wgt();
+    wgt_tot += opt_eval[i]->get_wgt() * inv_n_samples;
 
   //this is MPI barrier
   OHMMS::Controller->barrier();
@@ -853,7 +849,7 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
   }
   //collect everything
   myComm->allreduce(SumValue);
-  return SumValue[SUM_WGT] * SumValue[SUM_WGT] / (SumValue[SUM_WGTSQ] * samples_.getGlobalNumSamples());
+  return inv_n_samples * SumValue[SUM_WGT] * SumValue[SUM_WGT] / SumValue[SUM_WGTSQ];
 }
 
 
