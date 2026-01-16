@@ -1,11 +1,4 @@
 *.pyc
-*.aux
-qmcpack_manual.bbl
-qmcpack_manual.blg
-qmcpack_manual.log
-qmcpack_manual.out
-qmcpack_manual.toc
-qmcpack_manual.pdf
 .DS_Store
 /build_*/
 nexus/nexus/tests/*output
@@ -28,3 +21,7 @@ doxygen/qmcpack_all.tag
 # Sphinx output
 docs/_build/
 nexus/sphinx_docs/_build/
+
+# Certificates
+*.crt
+*.pem
