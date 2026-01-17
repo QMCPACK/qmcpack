@@ -115,7 +115,9 @@ case "$1" in
 
     if [[ "$CONTAINER_OS" =~ (centos) ]]
     then
+       module avail
        module load mpi/openmpi-x86_64
+       module list
     fi
     
     case "${GH_JOBNAME}" in
