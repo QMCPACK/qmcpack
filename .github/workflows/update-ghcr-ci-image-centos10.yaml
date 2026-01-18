@@ -36,7 +36,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: config/docker/dependencies/centos-stream/Dockerfile
+          file: config/docker/dependencies/centos10/Dockerfile
           push: true
           tags: | 
             ghcr.io/qmcpack/centos10:latest
