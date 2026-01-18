@@ -3,7 +3,7 @@ name: Build and Push CentOS CI Image to GHCR
 on:
   push:
     paths:
-      - 'config/docker/dependencies/centos-stream/**'
+      - 'config/docker/dependencies/centos10/**'
     branches:
       - develop
 
@@ -39,6 +39,6 @@ jobs:
           file: config/docker/dependencies/centos-stream/Dockerfile
           push: true
           tags: | 
-            ghcr.io/qmcpack/centos-stream-gcc11:latest
+            ghcr.io/qmcpack/centos10:latest
           platforms: linux/amd64
   
