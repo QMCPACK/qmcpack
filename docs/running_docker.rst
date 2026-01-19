@@ -17,7 +17,7 @@ Currently available containers have pre-installed QMCPACK dependencies, see the 
 - `Linux containers <https://github.com/orgs/QMCPACK/packages>`_ 
    - ghcr.io/qmcpack/ubuntu22-openmpi:latest: `Dockerfile <https://github.com/QMCPACK/qmcpack/blob/develop/config/docker/dependencies/ubuntu22/openmpi/Dockerfile>`_
    - ghcr.io/qmcpack/ubuntu22-clang:latest: `Dockerfile <https://github.com/QMCPACK/qmcpack/blob/develop/config/docker/dependencies/ubuntu22/clang/Dockerfile>`_
-   - ghcr.io/qmcpack/centos-stream-gcc11:latest: `Dockerfile <https://github.com/QMCPACK/qmcpack/blob/develop/config/docker/dependencies/centos-stream/Dockerfile>`_
+   - ghcr.io/qmcpack/centos10:latest: `Dockerfile <https://github.com/QMCPACK/qmcpack/blob/develop/config/docker/dependencies/centos10/Dockerfile>`_
 
 
 Running Docker Containers
