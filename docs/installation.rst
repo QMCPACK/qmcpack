@@ -719,6 +719,7 @@ To build QMCPACK:
 
   module load mpi/openmpi-x86_64
   which mpirun # Sanity check; should print something like /usr/lib64/openmpi/bin/mpirun
+  cd build
   cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpiCC ..
   make -j 8 # Adjust to available core count
   ls -l bin/qmcpack
