@@ -16,9 +16,3 @@ RUN dnf install -y python3-h5py
 RUN adduser -u 1000 -d /home/user -s /bin/bash user
 USER user
 WORKDIR /home/user
-
-# To build QMCPACK:
-#
-# module load mpi/openmpi-x86_64
-# cd /work/build
-# cmake -GNinja -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpiCC -DQMC_DATA=/data ..
