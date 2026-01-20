@@ -32,8 +32,16 @@ if(ADD_TEST)
   foreach(TESTNAME ${NEXUS_TESTLIST})
     #message("Adding test ntest_nexus_${TESTNAME}")
     set(NTEST "${qmcpack_SOURCE_DIR}/nexus/bin/nxs-test")
-    add_test(NAME ntest_nexus_${TESTNAME} COMMAND ${Python3_EXECUTABLE} ${NTEST} -R ${TESTNAME}\$ --ctest
-                                                  --pythonpath=${PROJECT_SOURCE_DIR}/nexus:$ENV{PYTHONPATH})
+    IF(ENABLE_PYCOV)
+#      add_test(NAME ntest_nexus_${TESTNAME} COMMAND ${PYTHON_COVERAGE_EXECUTABLE} run --data-file=.coverage_${TESTNAME} -a ${NTEST} -R ${TESTNAME}\$ --ctest
+#                                                    --pythonpath=${PROJECT_SOURCE_DIR}/nexus:$ENV{PYTHONPATH})
+      add_test(NAME ntest_nexus_${TESTNAME} COMMAND ${PYTHON_COVERAGE_EXECUTABLE} run -p ${NTEST} -R ${TESTNAME}\$ --ctest
+                                                    --pythonpath=${PROJECT_SOURCE_DIR}/nexus:$ENV{PYTHONPATH})
+
+    ELSE()
+      add_test(NAME ntest_nexus_${TESTNAME} COMMAND ${Python3_EXECUTABLE} ${NTEST} -R ${TESTNAME}\$ --ctest
+                                                    --pythonpath=${PROJECT_SOURCE_DIR}/nexus:$ENV{PYTHONPATH})
+    ENDIF() 
     set_tests_properties(ntest_nexus_${TESTNAME} PROPERTIES ENVIRONMENT PYTHONPATH=$ENV{PYTHONPATH})
     set_property(
       TEST ntest_nexus_${TESTNAME}

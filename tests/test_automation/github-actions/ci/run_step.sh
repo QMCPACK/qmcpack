@@ -166,6 +166,7 @@ case "$1" in
               -DMPI_C_COMPILER=mpicc \
               -DMPI_CXX_COMPILER=mpicxx \
               -DENABLE_GCOV=TRUE \
+              -DENABLE_PYCOV=TRUE \
               ${GITHUB_WORKSPACE}
       ;;
       *"GCC"*"-Werror"*)
