@@ -38,29 +38,27 @@ The latest versions of Nexus include packaging as a Python project that enable t
 #### `pip` installation (one line)
 
 ```bash
-> python3 -m pip install "nexus@git+https://github.com/QMCPACK/qmcpack.git@develop#subdirectory=nexus"
+> python3 -m pip install "nexus@git+https://github.com/QMCPACK/qmcpack.git@main#subdirectory=nexus"
 ```
 ---
 #### `uv` installation (with venv)
 
 ```bash
 > uv venv .venv
-> uv pip install "nexus@git+https://github.com/QMCPACK/qmcpack.git@develop#subdirectory=nexus"
+> uv pip install "nexus@git+https://github.com/QMCPACK/qmcpack.git@main#subdirectory=nexus"
 ```
 ---
 
-Installing via a package manager will automatically install required dependencies (`numpy`), however it is strongly encouraged to install the optional dependencies as well. The current optional dependencies are in two groups, one is for quality of life improvements and near-complete access to Nexus's capabilities, which can be installed by adding `[qol]` to the install command, and another group is for full functionality of Nexus, which is denoted `[full]`. These can either be added individually or combined by adding `[qol,full]` in `nexus@git`, which would look like
+Installing via a package manager will automatically install required dependencies (`numpy`), however it is strongly encouraged to install the optional dependencies as well. The optional dependencies can be installed by adding `[full]` to the install command, which would look like
 ```bash
-> <python3 -m | uv> pip install "nexus[qol,full]@git+https://github.com/QMCPACK/qmcpack.git@develop#subdirectory=nexus"
+> <python3 -m | uv> pip install "nexus[full]@git+https://github.com/QMCPACK/qmcpack.git@main#subdirectory=nexus"
 ```
 
-The `[qol]` dependencies are
+The `[full]` optional dependencies are
 - `scipy`
 - `matplotlib`
 - `h5py`
 - `spglib`
-
-The `[full]` dependencies are
 - `pydot`
     - This requires GraphViz to be installed, which can be done through your Linux distribution's package manager
         - For Debian/Ubuntu, `> apt-get install graphviz`

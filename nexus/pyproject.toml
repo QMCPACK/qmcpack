@@ -13,17 +13,23 @@ dependencies = [
     "numpy (>=1.21.0, <2.3.0)  ; python_version == '3.10.*'",
     "numpy (>=1.23.2, !=2.4.0) ; python_version == '3.11.*'", #
     "numpy (>=1.26.0, !=2.4.0) ; python_version == '3.12.*'", # Numpy 2.4.0 was yanked from PyPI for 
-    "numpy (>=2.1.0, !=2.4.0)  ; python_version == '3.13.*'",  # breaking backwards compatibility
-    "numpy (>=2.3.0, !=2.4.0)  ; python_version >= '3.14.0'",  # 
+    "numpy (>=2.1.0, !=2.4.0)  ; python_version == '3.13.*'", # breaking backwards compatibility
+    "numpy (>=2.3.0, !=2.4.0)  ; python_version >= '3.14.0'", # 
 ]
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+    "pytest-cov>=7.0.0",
+]
+
 [project.optional-dependencies]
 
-qol = [
+full = [
     "scipy (>=0.19.0, <1.6.0)  ; python_version == '3.6.*'",
     "scipy (>=1.0.0,  <1.8.0)  ; python_version == '3.7.*'",
     "scipy (>=1.4.0,  <1.11.0) ; python_version == '3.8.*'",
@@ -52,9 +58,6 @@ qol = [
     "matplotlib (>=3.3.0)          ; python_version == '3.13.*'",
     "matplotlib (>=3.3.0)          ; python_version >= '3.14.0'",
     "spglib>=1.12.0.post3", # Difficult to test version specification, requires headers that aren't easily available
-]
-
-full = [
     "cif2cell>=2.1.0", # pycifrw is required by cif2cell
     "pydot>=1.2.4",
     "seekpath>=1.9.0",

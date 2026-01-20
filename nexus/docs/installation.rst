@@ -26,11 +26,13 @@ If you are working in a system where you can manage your own Python environment 
 
     > pip install "nexus@git+https://github.com/QMCPACK/qmcpack.git@main#subdirectory=nexus"
 
-will install Nexus with ``numpy`` as the only dependency. This is required for Nexus to function, however should the user want to take full advantage of Nexus's capabilities, we offer two levels of optional dependencies. First is ``[qol]``, which additionally will install ``scipy``, ``h5py``, ``matplotlib``, and ``spglib``. Beyond this, the ``[full]`` modifier will install all remaing dependencies, ``cif2cell``, ``pydot``, and ``seekpath``. A complete install command would look like this
+will install Nexus with ``numpy`` as the only dependency. This is required for Nexus to function, however should the user want to take full advantage of Nexus's capabilities, we offer a set of optional dependencies. These include ``scipy``, ``h5py``, ``matplotlib``, ``spglib``, ``cif2cell``, ``pydot``, and ``seekpath``. A complete install command would look like this
 
 .. code-block:: bash
 
-    > pip install "nexus[qol,full]@git+https://github.com/QMCPACK/qmcpack.git@main#subdirectory=nexus"
+    > pip install "nexus[full]@git+https://github.com/QMCPACK/qmcpack.git@main#subdirectory=nexus"
+
+If you do not want to install all of the dependencies, you can do so with ``pip``, in the same manner as shown in :ref:`manual_install`.
 
 .. caution::
     This method of installation is not recommended for those who wish to customize Nexus for a specific project as ``pip`` will default to installing Nexus to the global Python environment and thus any changes made to the source code there will affect all projects that use it.
@@ -69,9 +71,11 @@ Additionally, you can use ``uv`` to automatically set the dependencies of a scri
 
 which ensures that, as long as the script is run with ``uv``, Nexus will be available. This does not, however, exclude the script from being run directly with Python (e.g. ``python <script_name>.py``)
 
-.. note::
-    You can use ``uv`` to add any additional dependencies you desire, however any dependencies required by Nexus (e.g. ``numpy``, and if you add ``[qol]`` and/or ``[full]``, all of the optional dependencies) will already be installed if you have Nexus added to the script, so there is no need to add them again.
+.. tip::
+    You can use ``uv`` to add any additional dependencies you desire, however any dependencies installed with Nexus (e.g. ``numpy``, and if you add ``[full]``, all of the optional dependencies) will already be installed if you have Nexus added to the script, so there is no need to add them again.
 
+.. note::
+    If you want to customize Nexus for a specific project but do not want to continually download QMCPACK, this option will create a version of Nexus that is local to each virtual environment, so you can modify it without fear of altering other virtual environments. Importantly however, this has two caveats, the first being that this installation method does indeed create duplicates of Nexus in each virtual environment (though this is a minimal side effect, as the entirety of Nexus is only a handful of megabytes in size), and secondly that there is no version tracking in a ``uv`` installation, so any changes made will not be tracked via ``git``.
 
 .. _manual_install:
 
