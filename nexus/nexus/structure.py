@@ -503,7 +503,6 @@ def recenter_points(pos, center, axes):
     cell are placed exactly on that edge. The intent here is to make sure that atoms close to or
     on the leading edge (+0.5) are wrapped around to retain periodicity.
     """
-    pos = pos.copy()
     axinv = inv(axes)
     for i in range(len(pos)):
         u = dot(pos[i] - center, axinv)
