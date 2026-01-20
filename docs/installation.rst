@@ -444,6 +444,13 @@ the path to the source directory.
 
 See :ref:`Sanitizer-Libraries` for more information.
 
+- Code coverage related
+  
+  ::
+
+    ENABLE_GCOV  OFF(default)/ON, build with C++ source code line coverage measurement using gcov
+    ENABLE_PYCOV OFF(default)/ON, build with Python source code line coverage measurement using coverage.py
+
 
 Installation from CMake
 ~~~~~~~~~~~~~~~~~~~~~~~
