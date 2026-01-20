@@ -356,7 +356,9 @@ case "$1" in
     # see https://gcovr.com/en/stable/faq.html#why-does-c-code-have-so-many-uncovered-branches
     gcovr --exclude-unreachable-branches --exclude-throw-branches --root=${GITHUB_WORKSPACE}/.. --xml-pretty -o coverage.xml
     du -hs coverage.xml
-    cat coverage.xml
+    #cat coverage.xml
+    python3-coverage combine nexus/nexus/tests/.coverage*
+    du -hs .coverage
     ;;
   
   # Install the library (not triggered at the moment)
