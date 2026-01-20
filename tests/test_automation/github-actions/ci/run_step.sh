@@ -359,6 +359,9 @@ case "$1" in
     #cat coverage.xml
     python3-coverage combine nexus/nexus/tests/.coverage*
     du -hs .coverage
+    python3-coverage report
+    python3-coverage xml -o python_coverage.xml
+    du -hs python_coverage.xml
     ;;
   
   # Install the library (not triggered at the moment)
