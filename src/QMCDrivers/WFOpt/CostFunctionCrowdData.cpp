@@ -20,7 +20,7 @@ CostFunctionCrowdData::CostFunctionCrowdData(int crowd_size,
                                              TrialWaveFunction& Psi,
                                              QMCHamiltonian& H,
                                              RandomBase<FullPrecRealType>& Rng)
-    : h0_res_("h0 resource"), e0_(0.0), e2_(0.0), wgt_(0.0), wgt2_(0.0)
+    : h0_res_("h0 resource"), e0_(0.0), e2_(0.0), wgt_(0.0)
 {
   P.createResource(driverwalker_resource_collection_.pset_res);
   Psi.createResource(driverwalker_resource_collection_.twf_res);

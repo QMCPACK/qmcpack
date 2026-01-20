@@ -591,7 +591,7 @@ void DiracDeterminantWithBackflow::acceptMove(ParticleSet& P, int iat, bool safe
 void DiracDeterminantWithBackflow::restore(int iat) { curRatio = 1.0; }
 
 void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
-                                                       const opt_variables_type& active,
+                                                       const OptVariables& active,
                                                        Vector<ValueType>& dlogpsi,
                                                        Vector<ValueType>& dhpsioverpsi)
 {
@@ -733,7 +733,7 @@ void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
 
 /* Used in MultiSlaterDeterminantWithBackflow::evaluateDerivatives */
 void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
-                                                       const opt_variables_type& active,
+                                                       const OptVariables& active,
                                                        int offset,
                                                        Matrix<RealType>& dlogpsi,
                                                        Array<GradType, OHMMS_DIM>& dG,
@@ -868,7 +868,7 @@ void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
 }
 
 void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
-                                                       const opt_variables_type& active,
+                                                       const OptVariables& active,
                                                        std::vector<RealType>& dlogpsi,
                                                        std::vector<RealType>& dhpsioverpsi,
                                                        ParticleSet::ParticleGradient* G0,
@@ -1168,7 +1168,7 @@ void DiracDeterminantWithBackflow::testGGG(ParticleSet& P)
 void DiracDeterminantWithBackflow::testDerivFjj(ParticleSet& P, int pa)
 {
   app_log() << " Testing derivatives of the F matrix, prm: " << pa << std::endl;
-  opt_variables_type wfVars, wfvar_prime;
+  OptVariables wfVars, wfvar_prime;
   BFTrans_.checkInVariables(wfVars);
   BFTrans_.checkOutVariables(wfVars);
   int Nvars   = wfVars.size();
@@ -1267,7 +1267,7 @@ void DiracDeterminantWithBackflow::testDerivFjj(ParticleSet& P, int pa)
 void DiracDeterminantWithBackflow::testDerivLi(ParticleSet& P, int pa)
 {
   //app_log() <<"Testing new L[i]: \n";
-  opt_variables_type wfVars, wfvar_prime;
+  OptVariables wfVars, wfvar_prime;
   BFTrans_.checkInVariables(wfVars);
   BFTrans_.checkOutVariables(wfVars);
   int Nvars   = wfVars.size();

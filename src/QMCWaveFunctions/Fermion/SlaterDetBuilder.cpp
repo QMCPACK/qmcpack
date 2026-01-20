@@ -517,7 +517,7 @@ std::unique_ptr<MultiSlaterDetTableMethod> SlaterDetBuilder::createMSDFast(
   auto C_ptr = std::make_unique<std::vector<ValueType>>();
   auto& C(*C_ptr);
 
-  auto myVars_ptr = std::make_unique<opt_variables_type>();
+  auto myVars_ptr = std::make_unique<OptVariables>();
   auto& myVars(*myVars_ptr);
 
   bool Optimizable    = false;

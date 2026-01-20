@@ -251,7 +251,12 @@ struct BsplineFunctor : public OptimizableFunctorBase
 
   inline void evaluateAll(Real r, Real rinv) { Y = evaluate(r, dY, d2Y); }
 
-  inline static Real evaluate_impl(Real r, const Real* coefs, const Real DeltaRInv, const int max_index, Real& dudr, Real& d2udr2)
+  inline static Real evaluate_impl(Real r,
+                                   const Real* coefs,
+                                   const Real DeltaRInv,
+                                   const int max_index,
+                                   Real& dudr,
+                                   Real& d2udr2)
   {
     r *= DeltaRInv;
     int i;
@@ -678,14 +683,14 @@ struct BsplineFunctor : public OptimizableFunctorBase
     myVars.print(os);
   }
 
-  void checkOutVariables(const opt_variables_type& active) override
+  void checkOutVariables(const OptVariables& active) override
   {
     if (notOpt)
       return;
     myVars.getIndex(active);
   }
 
-  void checkInVariablesExclusive(opt_variables_type& active) override
+  void checkInVariablesExclusive(OptVariables& active) override
   {
     if (notOpt)
       return;
@@ -693,7 +698,7 @@ struct BsplineFunctor : public OptimizableFunctorBase
     active.insertFrom(myVars);
   }
 
-  void resetParametersExclusive(const opt_variables_type& active) override
+  void resetParametersExclusive(const OptVariables& active) override
   {
     if (notOpt)
       return;
@@ -743,8 +748,8 @@ inline REAL BsplineFunctor<REAL>::evaluateV(const int iat,
       distArrayCompressed[iCount++] = distArray[jat];
   }
 
-  Real d      = 0.0;
-  auto& coefs = *spline_coefs_;
+  Real d              = 0.0;
+  auto& coefs         = *spline_coefs_;
   const int max_index = getMaxIndex();
 #pragma omp simd reduction(+ : d)
   for (int jat = 0; jat < iCount; jat++)
@@ -754,10 +759,10 @@ inline REAL BsplineFunctor<REAL>::evaluateV(const int iat,
     int i;
     Real t;
     getSplineBound(r, max_index, i, t);
-    Real d1      = coefs[i + 0] * (((A0 * t + A1) * t + A2) * t + A3);
-    Real d2      = coefs[i + 1] * (((A4 * t + A5) * t + A6) * t + A7);
-    Real d3      = coefs[i + 2] * (((A8 * t + A9) * t + A10) * t + A11);
-    Real d4      = coefs[i + 3] * (((A12 * t + A13) * t + A14) * t + A15);
+    Real d1 = coefs[i + 0] * (((A0 * t + A1) * t + A2) * t + A3);
+    Real d2 = coefs[i + 1] * (((A4 * t + A5) * t + A6) * t + A7);
+    Real d3 = coefs[i + 2] * (((A8 * t + A9) * t + A10) * t + A11);
+    Real d4 = coefs[i + 3] * (((A12 * t + A13) * t + A14) * t + A15);
     d += (d1 + d2 + d3 + d4);
   }
   return d;
@@ -800,7 +805,7 @@ inline void BsplineFunctor<REAL>::evaluateVGL(const int iat,
     }
   }
 
-  auto& coefs = *spline_coefs_;
+  auto& coefs         = *spline_coefs_;
   const int max_index = getMaxIndex();
 #pragma omp simd
   for (int j = 0; j < iCount; j++)

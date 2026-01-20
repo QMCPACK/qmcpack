@@ -39,13 +39,12 @@ class QMCHamiltonian;
 class MCPopulation
 {
 public:
-  using MCPWalker          = Walker<QMCTraits, PtclOnLatticeTraits>;
-  using WFBuffer           = MCPWalker::WFBuffer_t;
-  using RealType           = QMCTraits::RealType;
-  using Properties         = MCPWalker::PropertyContainer_t;
-  using IndexType          = QMCTraits::IndexType;
-  using FullPrecRealType   = QMCTraits::FullPrecRealType;
-  using opt_variables_type = optimize::VariableSet;
+  using MCPWalker        = Walker<QMCTraits, PtclOnLatticeTraits>;
+  using WFBuffer         = MCPWalker::WFBuffer_t;
+  using RealType         = QMCTraits::RealType;
+  using Properties       = MCPWalker::PropertyContainer_t;
+  using IndexType        = QMCTraits::IndexType;
+  using FullPrecRealType = QMCTraits::FullPrecRealType;
 
 private:
   // Potential thread safety issue

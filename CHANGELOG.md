@@ -55,21 +55,21 @@ recipes and documentation for many machines, and a broad range of other useful i
 
 ### NEXUS
 
-* Nexus: Documentation for command line options such as --status_only and --progress_tty
+* Documentation for command line options such as --status_only and --progress_tty
   [#5393](https://github.com/QMCPACK/qmcpack/pull/5393), see
   https://nexus-workflows.readthedocs.io/en/latest/user-scripts.html#nexus-command-line-options
-* Nexus: Support for stochastic reconfiguration and orbital rotation / orbital optimization
+* Support for stochastic reconfiguration and orbital rotation / orbital optimization
   [#5386](https://github.com/QMCPACK/qmcpack/pull/5386)
-* Nexus: Grand-canonical twist averaging (GCTA) documentation and examples [#5316](https://github.com/QMCPACK/qmcpack/pull/5316)
-* Nexus: Support for magnetization density estimator  [#5346](https://github.com/QMCPACK/qmcpack/pull/5346)
-* Nexus: Support for several new CPU clusters, e.g. BES-MS machine  [#5416](https://github.com/QMCPACK/qmcpack/pull/5416), ORNL
+* Grand-canonical twist averaging (GCTA) documentation and examples [#5316](https://github.com/QMCPACK/qmcpack/pull/5316)
+* Support for magnetization density estimator  [#5346](https://github.com/QMCPACK/qmcpack/pull/5346)
+* Support for several new CPU clusters, e.g. BES-MS machine  [#5416](https://github.com/QMCPACK/qmcpack/pull/5416), ORNL
   Baseline  [#5371](https://github.com/QMCPACK/qmcpack/pull/5371)
-* Nexus: Support orbital images for plotting/debugging of orbitals [#5448](https://github.com/QMCPACK/qmcpack/pull/5448)
-* Nexus: Support QE HDF5 charge density results  [#5427](https://github.com/QMCPACK/qmcpack/pull/5427)
-* Nexus: Job options are now supported, e.g. to set custom mpirun options for thread binding
+* Support orbital images for plotting/debugging of orbitals [#5448](https://github.com/QMCPACK/qmcpack/pull/5448)
+* Support QE HDF5 charge density results  [#5427](https://github.com/QMCPACK/qmcpack/pull/5427)
+* Job options are now supported, e.g. to set custom mpirun options for thread binding
   [#5255](https://github.com/QMCPACK/qmcpack/pull/5255), [#5413](https://github.com/QMCPACK/qmcpack/pull/5413)
-* Nexus: Update force keyword handling [#5405](https://github.com/QMCPACK/qmcpack/pull/5405)
-* Nexus: Compatibility with spglib >=v2.5.0 [#5429](https://github.com/QMCPACK/qmcpack/pull/5429)
+* Update force keyword handling [#5405](https://github.com/QMCPACK/qmcpack/pull/5405)
+* Compatibility with spglib >=v2.5.0 [#5429](https://github.com/QMCPACK/qmcpack/pull/5429)
 
 ## [4.0.0] - 2025-02-05
 
@@ -164,30 +164,30 @@ drivers" in the manual, e.g., https://qmcpack.readthedocs.io/en/develop/performa
 
 ### NEXUS
 
-* Nexus: NumPy 2 support [#5215](https://github.com/QMCPACK/qmcpack/pull/5215)
-* Nexus: Extensive examples for specifying estimators [#5214](https://github.com/QMCPACK/qmcpack/pull/5214)
-* Nexus: Implementation of Grand Canonical Twist Averaging (GCTA) with (spin)-adapted Fermi levels [#5029](https://github.com/QMCPACK/qmcpack/pull/5029)
-* Nexus: Support for GCTA with SOC calculations [#5098](https://github.com/QMCPACK/qmcpack/pull/5098)
-* Nexus: Support QE 7.2 DFT+U+V Hubbard format with nearest neighbors [#5230](https://github.com/QMCPACK/qmcpack/pull/5230)
-* Nexus: Capability to run self-consistent DFT+U+V in QE > 7.1  [#4528](https://github.com/QMCPACK/qmcpack/pull/4528)
-* Nexus: Support for supercell twists in PySCF workflows [#5073](https://github.com/QMCPACK/qmcpack/pull/5073)
-* Nexus: Spinor workflows capability [#4787](https://github.com/QMCPACK/qmcpack/pull/4787)
-* Nexus: Handle J3 terms in spin-orbit calculations [#5184](https://github.com/QMCPACK/qmcpack/pull/5184)
-* Nexus: Added dependency versions requirements files [#5256](https://github.com/QMCPACK/qmcpack/pull/5256)
-* Nexus: Support samples tag with batched drivers [#5134](https://github.com/QMCPACK/qmcpack/pull/5134)
-* Nexus: Print warning for the Nexus user before Quantum ESPRESSO wavefunction rsync (can be slow) [#4984](https://github.com/QMCPACK/qmcpack/pull/4984)
-* Nexus: Implement alternative to deprecated load_source [#4964](https://github.com/QMCPACK/qmcpack/pull/4964)
-* Nexus: Updates for QMCPACK batched input generation [#4867](https://github.com/QMCPACK/qmcpack/pull/4867)
-* Nexus: All inputs specify drivers where needed [#5278](https://github.com/QMCPACK/qmcpack/pull/5278)
-* Nexus: Set correct cusp in SOC Jastrow [#4868](https://github.com/QMCPACK/qmcpack/pull/4868)
-* Nexus: Support for Inti at ORNL [#5102](https://github.com/QMCPACK/qmcpack/pull/5102)
-* Nexus: Support LLNL machines Lassen and Ruby [#5097](https://github.com/QMCPACK/qmcpack/pull/5097)
-* Nexus: Support for NREL Kestrel [#5096](https://github.com/QMCPACK/qmcpack/pull/5096)
-* Nexus: Support for ANL LCRC machine Improv [#4983](https://github.com/QMCPACK/qmcpack/pull/4983)
-* Nexus: Support for SNL machines update [#4916](https://github.com/QMCPACK/qmcpack/pull/4916)
-* Nexus: Updated PBS job states for ALCF Polaris [#4987](https://github.com/QMCPACK/qmcpack/pull/4987)
-* Nexus: Bug fix for SOC J3 terms [#5200](https://github.com/QMCPACK/qmcpack/pull/5200)
-* Nexus: Bug fix for 1RDM input generation [#5067](https://github.com/QMCPACK/qmcpack/pull/5067)
+* NumPy 2 support [#5215](https://github.com/QMCPACK/qmcpack/pull/5215)
+* Extensive examples for specifying estimators [#5214](https://github.com/QMCPACK/qmcpack/pull/5214)
+* Implementation of Grand Canonical Twist Averaging (GCTA) with (spin)-adapted Fermi levels [#5029](https://github.com/QMCPACK/qmcpack/pull/5029)
+* Support for GCTA with SOC calculations [#5098](https://github.com/QMCPACK/qmcpack/pull/5098)
+* Support QE 7.2 DFT+U+V Hubbard format with nearest neighbors [#5230](https://github.com/QMCPACK/qmcpack/pull/5230)
+* Capability to run self-consistent DFT+U+V in QE > 7.1  [#4528](https://github.com/QMCPACK/qmcpack/pull/4528)
+* Support for supercell twists in PySCF workflows [#5073](https://github.com/QMCPACK/qmcpack/pull/5073)
+* Spinor workflows capability [#4787](https://github.com/QMCPACK/qmcpack/pull/4787)
+* Handle J3 terms in spin-orbit calculations [#5184](https://github.com/QMCPACK/qmcpack/pull/5184)
+* Added dependency versions requirements files [#5256](https://github.com/QMCPACK/qmcpack/pull/5256)
+* Support samples tag with batched drivers [#5134](https://github.com/QMCPACK/qmcpack/pull/5134)
+* Print warning for the Nexus user before Quantum ESPRESSO wavefunction rsync (can be slow) [#4984](https://github.com/QMCPACK/qmcpack/pull/4984)
+* Implement alternative to deprecated load_source [#4964](https://github.com/QMCPACK/qmcpack/pull/4964)
+* Updates for QMCPACK batched input generation [#4867](https://github.com/QMCPACK/qmcpack/pull/4867)
+* All inputs specify drivers where needed [#5278](https://github.com/QMCPACK/qmcpack/pull/5278)
+* Set correct cusp in SOC Jastrow [#4868](https://github.com/QMCPACK/qmcpack/pull/4868)
+* Support for Inti at ORNL [#5102](https://github.com/QMCPACK/qmcpack/pull/5102)
+* Support LLNL machines Lassen and Ruby [#5097](https://github.com/QMCPACK/qmcpack/pull/5097)
+* Support for NREL Kestrel [#5096](https://github.com/QMCPACK/qmcpack/pull/5096)
+* Support for ANL LCRC machine Improv [#4983](https://github.com/QMCPACK/qmcpack/pull/4983)
+* Support for SNL machines update [#4916](https://github.com/QMCPACK/qmcpack/pull/4916)
+* Updated PBS job states for ALCF Polaris [#4987](https://github.com/QMCPACK/qmcpack/pull/4987)
+* Bug fix for SOC J3 terms [#5200](https://github.com/QMCPACK/qmcpack/pull/5200)
+* Bug fix for 1RDM input generation [#5067](https://github.com/QMCPACK/qmcpack/pull/5067)
 
 ## [3.17.1] - 2023-08-25
 
@@ -199,7 +199,7 @@ This minor release is recommended for all users and includes a couple of build f
 
 ### NEXUS
 
-* NEXUS: Support for spinor inputs. [#4707](https://github.com/QMCPACK/qmcpack/pull/4707)
+* Support for spinor inputs. [#4707](https://github.com/QMCPACK/qmcpack/pull/4707)
 
 ## [3.17.0] - 2023-08-18
 
@@ -242,14 +242,14 @@ be ported towards v4 by the core QMCPACK developers without prior arrangement. P
 
 ### NEXUS
 
-* Nexus: Equilibration detection algorithm is now deterministic [#4557](https://github.com/QMCPACK/qmcpack/pull/4557)
-* Nexus: Support for Kagayaki cluster at JAIST [#4598](https://github.com/QMCPACK/qmcpack/pull/4598)
-* Nexus: GPU support fix for NERSC/Perlmutter [#4699](https://github.com/QMCPACK/qmcpack/pull/4699)
-* Nexus: Use simplices in convex_hull to support newer scipy versions [#4671](https://github.com/QMCPACK/qmcpack/pull/4671)
-* Nexus: Add pdos flag for Projwfc [#4655](https://github.com/QMCPACK/qmcpack/pull/4655)
-* Nexus: Adding crowds_serialize_walkers tag to dmc input list [#4651](https://github.com/QMCPACK/qmcpack/pull/4651)
-* Nexus: Qdens handles batched driver input/output [#4645](https://github.com/QMCPACK/qmcpack/pull/4645)
-* Nexus: Fix namelist read for Projwfc input [#4644](https://github.com/QMCPACK/qmcpack/pull/4644)
+* Equilibration detection algorithm is now deterministic [#4557](https://github.com/QMCPACK/qmcpack/pull/4557)
+* Support for Kagayaki cluster at JAIST [#4598](https://github.com/QMCPACK/qmcpack/pull/4598)
+* GPU support fix for NERSC/Perlmutter [#4699](https://github.com/QMCPACK/qmcpack/pull/4699)
+* Use simplices in convex_hull to support newer scipy versions [#4671](https://github.com/QMCPACK/qmcpack/pull/4671)
+* Add pdos flag for Projwfc [#4655](https://github.com/QMCPACK/qmcpack/pull/4655)
+* Adding crowds_serialize_walkers tag to dmc input list [#4651](https://github.com/QMCPACK/qmcpack/pull/4651)
+* Qdens handles batched driver input/output [#4645](https://github.com/QMCPACK/qmcpack/pull/4645)
+* Fix namelist read for Projwfc input [#4644](https://github.com/QMCPACK/qmcpack/pull/4644)
 
 ### Known problems
 
@@ -329,17 +329,17 @@ improving overall usability and maintainability.
 
 ### NEXUS
 
-* Nexus: Support for use of templates for job submission scripts [\#4344](https://github.com/QMCPACK/qmcpack/pull/4344)
-* Nexus: twist_info.dat files now added to results directory for easier analysis of twist average quantities
+* Support for use of templates for job submission scripts [\#4344](https://github.com/QMCPACK/qmcpack/pull/4344)
+* twist_info.dat files now added to results directory for easier analysis of twist average quantities
   [\#4302](https://github.com/QMCPACK/qmcpack/pull/4302)
-* Nexus: Initial support for Polaris at ALCF [\#4354](https://github.com/QMCPACK/qmcpack/pull/4354)
-* Nexus: Initial support for Perlmutter at NERSC [\#4356](https://github.com/QMCPACK/qmcpack/pull/4356)
-* Nexus: Support for gpusharing keyword for legacy CUDA [\#4403](https://github.com/QMCPACK/qmcpack/pull/4403)
-* Nexus: Support for handling multiple pickle protocols [\#4385](https://github.com/QMCPACK/qmcpack/pull/4385)
-* Nexus: CPU/GPU flags for batched code [\#4341](https://github.com/QMCPACK/qmcpack/pull/4341)
-* Nexus: Jastrow factors can be read from existing files [\#4339](https://github.com/QMCPACK/qmcpack/pull/4339)
-* Nexus: Fix VASP POSCAR write [\#4331](https://github.com/QMCPACK/qmcpack/pull/4331)
-* Nexus: Better handling of VASP pseudopotentials [\#4330](https://github.com/QMCPACK/qmcpack/pull/4330)
+* Initial support for Polaris at ALCF [\#4354](https://github.com/QMCPACK/qmcpack/pull/4354)
+* Initial support for Perlmutter at NERSC [\#4356](https://github.com/QMCPACK/qmcpack/pull/4356)
+* Support for gpusharing keyword for legacy CUDA [\#4403](https://github.com/QMCPACK/qmcpack/pull/4403)
+* Support for handling multiple pickle protocols [\#4385](https://github.com/QMCPACK/qmcpack/pull/4385)
+* CPU/GPU flags for batched code [\#4341](https://github.com/QMCPACK/qmcpack/pull/4341)
+* Jastrow factors can be read from existing files [\#4339](https://github.com/QMCPACK/qmcpack/pull/4339)
+* Fix VASP POSCAR write [\#4331](https://github.com/QMCPACK/qmcpack/pull/4331)
+* Better handling of VASP pseudopotentials [\#4330](https://github.com/QMCPACK/qmcpack/pull/4330)
 
 ### Known problems
 
@@ -410,21 +410,21 @@ be required, we recommend trying these drivers now and reporting any issues.
 
 ### NEXUS
 
-* Nexus: support to current batched driver style. Example inputs for batched
+* support to current batched driver style. Example inputs for batched
   runs using trial wavefunctions from QE are included in
   examples/qmcpack/rsqmc_quantum_espresso
   [\#4246](https://github.com/QMCPACK/qmcpack/pull/4246)
-* Nexus: add override_vp_parameters element
+* add override_vp_parameters element
   [\#4245](https://github.com/QMCPACK/qmcpack/pull/4245)
-* Nexus: fix convert4qmc hdf5 issue
+* fix convert4qmc hdf5 issue
   [\#4243](https://github.com/QMCPACK/qmcpack/pull/4243)
-* Nexus: extend angular channels for pseudopotentials up to l_max=21
+* extend angular channels for pseudopotentials up to l_max=21
   [\#4148](https://github.com/QMCPACK/qmcpack/pull/4148)
-* Nexus: Pass PYTHONPATH recorded at cmake step to nxs-test to ensure tests run
+* Pass PYTHONPATH recorded at cmake step to nxs-test to ensure tests run
   [\#3935](https://github.com/QMCPACK/qmcpack/pull/3935)
-* Nexus: Support for VASP keywords to version 6.3
+* Support for VASP keywords to version 6.3
   [\#4056](https://github.com/QMCPACK/qmcpack/pull/4056)
-* Nexus: Adding docs for limiting the number of simultaneously submitted jobs to
+* Adding docs for limiting the number of simultaneously submitted jobs to
   a queue  [\#4133](https://github.com/QMCPACK/qmcpack/pull/4133)
 
 ## [3.14.0] - 2022-04-06
@@ -448,7 +448,7 @@ introduced, currently optional, to disambiguate between the versions and their i
 
 ### NEXUS
 
-* Nexus: proper use of max\_seconds in legacy drivers [\#3877](https://github.com/QMCPACK/qmcpack/pull/3877)
+* proper use of max\_seconds in legacy drivers [\#3877](https://github.com/QMCPACK/qmcpack/pull/3877)
 
 ## [3.13.0] - 2022-02-16
 
@@ -477,13 +477,13 @@ calculations, and ongoing modernization of the code. This is a recommended relea
 
 ### NEXUS
 
-* Nexus: Add --user $USER to squeue command [\#3796](https://github.com/QMCPACK/qmcpack/pull/3796) 
-* Nexus: Add Example and tests for qdens-radial tool [\#3676](https://github.com/QMCPACK/qmcpack/pull/3676)
-* Nexus: Add Lowdin example [\#3666](https://github.com/QMCPACK/qmcpack/pull/3666)
-* Nexus: Fixed Nexus 'install' target [\#3720](https://github.com/QMCPACK/qmcpack/issues/3720)
-* Nexus: Harden Nexus excitation checks [\#3729](https://github.com/QMCPACK/qmcpack/pull/3729)
-* Nexus: Small fix to excitation checks [\#3701](https://github.com/QMCPACK/qmcpack/pull/3701)
-* Nexus: Faster configuration time [\#3706](https://github.com/QMCPACK/qmcpack/pull/3706)
+* Add --user $USER to squeue command [\#3796](https://github.com/QMCPACK/qmcpack/pull/3796) 
+* Add Example and tests for qdens-radial tool [\#3676](https://github.com/QMCPACK/qmcpack/pull/3676)
+* Add Lowdin example [\#3666](https://github.com/QMCPACK/qmcpack/pull/3666)
+* Fixed Nexus 'install' target [\#3720](https://github.com/QMCPACK/qmcpack/issues/3720)
+* Harden Nexus excitation checks [\#3729](https://github.com/QMCPACK/qmcpack/pull/3729)
+* Small fix to excitation checks [\#3701](https://github.com/QMCPACK/qmcpack/pull/3701)
+* Faster configuration time [\#3706](https://github.com/QMCPACK/qmcpack/pull/3706)
 
 ## [3.12.0] - 2021-12-08
 

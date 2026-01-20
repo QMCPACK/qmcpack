@@ -40,7 +40,7 @@ void SPOSetT<T>::extractOptimizableObjectRefs(UniqueOptObjRefs&)
 }
 
 template<typename T>
-void SPOSetT<T>::checkOutVariables(const opt_variables_type& active)
+void SPOSetT<T>::checkOutVariables(const OptVariables& active)
 {
   if (isOptimizable())
     throw std::logic_error("Bug!! " + getClassName() +
@@ -88,18 +88,20 @@ void SPOSetT<T>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSetT>& spo_li
 }
 
 template<typename T>
-void SPOSetT<T>::mw_evaluateDetSpinorRatios(const RefVectorWithLeader<SPOSetT>& spo_list,
-                                            const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
-                                            const RefVector<ValueVector>& psi_list,
-                                            const RefVector<std::pair<ValueVector, ValueVector>>& spinor_multiplier_list,
-                                            const std::vector<const ValueType*>& invRow_ptr_list,
-                                            std::vector<std::vector<ValueType>>& ratios_list) const
+void SPOSetT<T>::mw_evaluateDetSpinorRatios(
+    const RefVectorWithLeader<SPOSetT>& spo_list,
+    const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+    const RefVector<ValueVector>& psi_list,
+    const RefVector<std::pair<ValueVector, ValueVector>>& spinor_multiplier_list,
+    const std::vector<const ValueType*>& invRow_ptr_list,
+    std::vector<std::vector<ValueType>>& ratios_list) const
 {
   assert(this == &spo_list.getLeader());
   for (int iw = 0; iw < spo_list.size(); iw++)
   {
     Vector<ValueType> invRow(const_cast<ValueType*>(invRow_ptr_list[iw]), psi_list[iw].get().size());
-    spo_list[iw].evaluateDetSpinorRatios(vp_list[iw], psi_list[iw], spinor_multiplier_list[iw], invRow, ratios_list[iw]);
+    spo_list[iw].evaluateDetSpinorRatios(vp_list[iw], psi_list[iw], spinor_multiplier_list[iw], invRow,
+                                         ratios_list[iw]);
   }
 }
 
@@ -305,7 +307,7 @@ void SPOSetT<T>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy)
 
 template<typename T>
 void SPOSetT<T>::evaluateDerivatives(ParticleSet& P,
-                                     const opt_variables_type& optvars,
+                                     const OptVariables& optvars,
                                      Vector<ValueType>& dlogpsi,
                                      Vector<ValueType>& dhpsioverpsi,
                                      const int& FirstIndex,
@@ -319,7 +321,7 @@ void SPOSetT<T>::evaluateDerivatives(ParticleSet& P,
 
 template<typename T>
 void SPOSetT<T>::evaluateDerivativesWF(ParticleSet& P,
-                                       const opt_variables_type& optvars,
+                                       const OptVariables& optvars,
                                        Vector<ValueType>& dlogpsi,
                                        int FirstIndex,
                                        int LastIndex)
@@ -332,7 +334,7 @@ void SPOSetT<T>::evaluateDerivativesWF(ParticleSet& P,
 
 template<typename T>
 void SPOSetT<T>::evaluateDerivRatios(const VirtualParticleSet& VP,
-                                     const opt_variables_type& optvars,
+                                     const OptVariables& optvars,
                                      ValueVector& psi,
                                      const ValueVector& psiinv,
                                      std::vector<ValueType>& ratios,
@@ -352,7 +354,7 @@ void SPOSetT<T>::evaluateDerivRatios(const VirtualParticleSet& VP,
 template<typename T>
 void SPOSetT<T>::evaluateSpinorDerivRatios(const VirtualParticleSet& VP,
                                            const std::pair<ValueVector, ValueVector>& spinor_multiplier,
-                                           const opt_variables_type& optvars,
+                                           const OptVariables& optvars,
                                            ValueVector& psi,
                                            const ValueVector& psiinv,
                                            std::vector<ValueType>& ratios,
@@ -375,7 +377,7 @@ void SPOSetT<T>::evaluateSpinorDerivRatios(const VirtualParticleSet& VP,
    */
 template<typename T>
 void SPOSetT<T>::evaluateDerivatives(ParticleSet& P,
-                                     const opt_variables_type& optvars,
+                                     const OptVariables& optvars,
                                      Vector<ValueType>& dlogpsi,
                                      Vector<ValueType>& dhpsioverpsi,
                                      const ValueType& psiCurrent,
@@ -412,7 +414,7 @@ void SPOSetT<T>::evaluateDerivatives(ParticleSet& P,
    */
 template<typename T>
 void SPOSetT<T>::evaluateDerivativesWF(ParticleSet& P,
-                                       const opt_variables_type& optvars,
+                                       const OptVariables& optvars,
                                        Vector<ValueType>& dlogpsi,
                                        const FullPrecValue& psiCurrent,
                                        const std::vector<ValueType>& Coeff,

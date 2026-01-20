@@ -104,7 +104,7 @@ public:
 
   Return_t evaluateValueAndDerivatives(TrialWaveFunction& psi,
                                        ParticleSet& P,
-                                       const opt_variables_type& optvars,
+                                       const OptVariables& optvars,
                                        const Vector<ValueType>& dlogpsi,
                                        Vector<ValueType>& dhpsioverpsi) override;
 

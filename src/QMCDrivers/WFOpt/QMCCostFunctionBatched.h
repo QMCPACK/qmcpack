@@ -64,7 +64,7 @@ public:
   void GradCost(std::vector<Return_rt>& PGradient, const std::vector<Return_rt>& PM, Return_rt FiniteDiff = 0) override;
   Return_rt fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left, Matrix<Return_rt>& Right) override;
   Return_rt fillHamVec(std::vector<Return_rt>& ham) override;
-  void calcOvlParmVec(const std::vector<Return_rt>& parm, std::vector<Return_rt>& ovlParmVec) override;
+  void calcOvlParmVec(const std::vector<Return_rt>& param, std::vector<Return_rt>& ovlParmVec) override;
 
 protected:
   /// H components used in correlated sampling. It can be KE or KE+NLPP

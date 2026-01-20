@@ -22,7 +22,7 @@ HamiltonianRef::HamiltonianRef(const RefVector<OperatorBase> refs) : Hrefs_(refs
 
 FullPrecRealType HamiltonianRef::evaluateValueAndDerivatives(TrialWaveFunction& psi,
                                                              ParticleSet& P,
-                                                             const opt_variables_type& optvars,
+                                                             const OptVariables& optvars,
                                                              Vector<ValueType>& dlogpsi,
                                                              Vector<ValueType>& dhpsioverpsi)
 {

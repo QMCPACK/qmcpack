@@ -51,7 +51,7 @@ void SlaterDet::extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs)
     sposet->extractOptimizableObjectRefs(opt_obj_refs);
 }
 
-void SlaterDet::checkOutVariables(const opt_variables_type& active)
+void SlaterDet::checkOutVariables(const OptVariables& active)
 {
   for (const auto& sposet : sposets_)
     if (sposet->isOptimizable())
@@ -108,7 +108,7 @@ void SlaterDet::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& r
 }
 
 void SlaterDet::evaluateDerivRatios(const VirtualParticleSet& VP,
-                                    const opt_variables_type& optvars,
+                                    const OptVariables& optvars,
                                     std::vector<ValueType>& ratios,
                                     Matrix<ValueType>& dratios)
 {
@@ -117,7 +117,7 @@ void SlaterDet::evaluateDerivRatios(const VirtualParticleSet& VP,
 
 void SlaterDet::evaluateSpinorDerivRatios(const VirtualParticleSet& VP,
                                           const std::pair<ValueVector, ValueVector>& spinor_multiplier,
-                                          const opt_variables_type& optvars,
+                                          const OptVariables& optvars,
                                           std::vector<ValueType>& ratios,
                                           Matrix<ValueType>& dratios)
 {

@@ -158,7 +158,7 @@ public:
                                        int iel,
                                        RealType r,
                                        const PosType& dr,
-                                       const opt_variables_type& optvars,
+                                       const OptVariables& optvars,
                                        const Vector<ValueType>& dlogpsi,
                                        Vector<ValueType>& dhpsioverpsi);
 
@@ -169,7 +169,7 @@ public:
                                                            int iel,
                                                            RealType r,
                                                            const PosType& dr,
-                                                           const opt_variables_type& optvars,
+                                                           const OptVariables& optvars,
                                                            const Vector<ValueType>& dlogpsi,
                                                            Vector<ValueType>& dhpsioverpsi);
 

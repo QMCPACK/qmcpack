@@ -133,11 +133,11 @@ struct FakeFunctor : public OptimizableFunctorBase
   bool put(xmlNodePtr cur) override { return true; }
 
 
-  void checkInVariablesExclusive(opt_variables_type& active) override {}
+  void checkInVariablesExclusive(OptVariables& active) override {}
 
-  void checkOutVariables(const opt_variables_type& active) override {}
+  void checkOutVariables(const OptVariables& active) override {}
 
-  void resetParametersExclusive(const opt_variables_type& active) override {}
+  void resetParametersExclusive(const OptVariables& active) override {}
 
 
   std::vector<TinyVector<real_type, 3>> derivs_;

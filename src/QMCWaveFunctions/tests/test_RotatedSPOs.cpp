@@ -639,7 +639,7 @@ TEST_CASE("RotatedSPOs hcpBe", "[wavefunction]")
 
   CHECK(std::real(d2psiM_bare[0][0]) == Approx(5.303848362116568));
 
-  opt_variables_type opt_vars;
+  OptVariables opt_vars;
   rot_spo->checkInVariablesExclusive(opt_vars);
   opt_vars.resetIndex();
   rot_spo->checkOutVariables(opt_vars);
@@ -735,7 +735,7 @@ TEST_CASE("RotatedSPOs construct delta matrix", "[wavefunction]")
 
 namespace testing
 {
-const opt_variables_type& getMyVars(RotatedSPOs& rot) { return rot.myVars; }
+const OptVariables& getMyVars(RotatedSPOs& rot) { return rot.myVars; }
 const std::vector<QMCTraits::ValueType>& getMyVarsFull(RotatedSPOs& rot) { return rot.myVarsFull_; }
 } // namespace testing
 

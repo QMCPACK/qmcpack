@@ -104,7 +104,7 @@ public:
   /** check out variational optimizable variables
    * @param active a super set of optimizable variables
    */
-  virtual void checkOutVariables(const opt_variables_type& active);
+  virtual void checkOutVariables(const OptVariables& active);
 
   /// Query if this SPOSet uses OpenMP offload
   virtual bool isOMPoffload() const { return false; }
@@ -125,7 +125,7 @@ public:
 
   /// Parameter derivatives of the wavefunction and the Laplacian of the wavefunction
   virtual void evaluateDerivatives(ParticleSet& P,
-                                   const opt_variables_type& optvars,
+                                   const OptVariables& optvars,
                                    Vector<ValueType>& dlogpsi,
                                    Vector<ValueType>& dhpsioverpsi,
                                    const int& FirstIndex,
@@ -133,7 +133,7 @@ public:
 
   /// Parameter derivatives of the wavefunction
   virtual void evaluateDerivativesWF(ParticleSet& P,
-                                     const opt_variables_type& optvars,
+                                     const OptVariables& optvars,
                                      Vector<ValueType>& dlogpsi,
                                      int FirstIndex,
                                      int LastIndex);
@@ -142,7 +142,7 @@ public:
    *  this is used only for MSD, to be refined for better serving both single and multi SD
    */
   virtual void evaluateDerivatives(ParticleSet& P,
-                                   const opt_variables_type& optvars,
+                                   const OptVariables& optvars,
                                    Vector<ValueType>& dlogpsi,
                                    Vector<ValueType>& dhpsioverpsi,
                                    const ValueType& psiCurrent,
@@ -172,7 +172,7 @@ public:
    *  this is used only for MSD, to be refined for better serving both single and multi SD
    */
   virtual void evaluateDerivativesWF(ParticleSet& P,
-                                     const opt_variables_type& optvars,
+                                     const OptVariables& optvars,
                                      Vector<ValueType>& dlogpsi,
                                      const FullPrecValue& psiCurrent,
                                      const std::vector<ValueType>& Coeff,
@@ -228,7 +228,7 @@ public:
 
   /// Determinant ratios and parameter derivatives of the wavefunction for virtual moves
   virtual void evaluateDerivRatios(const VirtualParticleSet& VP,
-                                   const opt_variables_type& optvars,
+                                   const OptVariables& optvars,
                                    ValueVector& psi,
                                    const ValueVector& psiinv,
                                    std::vector<ValueType>& ratios,
@@ -245,7 +245,7 @@ public:
    */
   virtual void evaluateSpinorDerivRatios(const VirtualParticleSet& VP,
                                          const std::pair<ValueVector, ValueVector>& spinor_multiplier,
-                                         const opt_variables_type& optvars,
+                                         const OptVariables& optvars,
                                          ValueVector& psi,
                                          const ValueVector& psiinv,
                                          std::vector<ValueType>& ratios,

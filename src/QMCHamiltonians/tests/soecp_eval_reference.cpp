@@ -72,7 +72,7 @@ public:
 
   double getVal(double x) const { return bspline(x, knots_, coeffs_, degree_); }
 
-  double parmDeriv(const int ip, double x)
+  double paramDeriv(const int ip, double x)
   {
     //changing parameter 0 means changing coefficient 1, and so on
     const int ic                           = ip + 1;
@@ -399,7 +399,7 @@ std::complex<double> dratioTWF(const int ip,
   double dz                 = (cart1[2] - cart0[2]);
   double r12                = std::sqrt(dx * dx + dy * dy + dz * dz);
   //Since the det doesn't have any parameters to optimize, the dratioTWF is only -dJ
-  return -J2.parmDeriv(ip, r12);
+  return -J2.paramDeriv(ip, r12);
 }
 
 std::complex<double> calcAngInt(int iel,

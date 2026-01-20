@@ -122,9 +122,9 @@ struct GaussianTimesRN : public OptimizableFunctorBase
 
   void reset() override;
 
-  void checkInVariablesExclusive(opt_variables_type& active) override {}
-  void checkOutVariables(const opt_variables_type& active) override {}
-  void resetParametersExclusive(const opt_variables_type& active) override
+  void checkInVariablesExclusive(OptVariables& active) override {}
+  void checkOutVariables(const OptVariables& active) override {}
+  void resetParametersExclusive(const OptVariables& active) override
   {
     ///DO NOTHING FOR NOW
   }

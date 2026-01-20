@@ -113,7 +113,7 @@ void SlaterDetWithBackflow::testDerivGL(ParticleSet& P)
 {
   // testing derivatives of G and L
   app_log() << "testing derivatives of G and L \n";
-  opt_variables_type wfVars, wfvar_prime;
+  OptVariables wfVars, wfvar_prime;
   UniqueOptObjRefs opt_obj_refs;
   extractOptimizableObjectRefs(opt_obj_refs);
   for (OptimizableObject& obj : opt_obj_refs)
@@ -205,7 +205,7 @@ void SlaterDetWithBackflow::testDerivGL(ParticleSet& P)
 
 
 void SlaterDetWithBackflow::evaluateDerivatives(ParticleSet& P,
-                                                const opt_variables_type& optvars,
+                                                const OptVariables& optvars,
                                                 Vector<ValueType>& dlogpsi,
                                                 Vector<ValueType>& dhpsioverpsi)
 {

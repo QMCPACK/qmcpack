@@ -100,11 +100,11 @@ public:
   std::string getClassName() const override { return "DiracDeterminant"; }
 
   void evaluateDerivatives(ParticleSet& P,
-                           const opt_variables_type& active,
+                           const OptVariables& active,
                            Vector<ValueType>& dlogpsi,
                            Vector<ValueType>& dhpsioverpsi) override;
 
-  void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& optvars, Vector<ValueType>& dlogpsi) override;
+  void evaluateDerivativesWF(ParticleSet& P, const OptVariables& optvars, Vector<ValueType>& dlogpsi) override;
 
   void registerData(ParticleSet& P, WFBufferType& buf) override;
 
@@ -139,13 +139,13 @@ public:
                             std::vector<ValueType>& ratios) override;
 
   void evaluateDerivRatios(const VirtualParticleSet& VP,
-                           const opt_variables_type& optvars,
+                           const OptVariables& optvars,
                            std::vector<ValueType>& ratios,
                            Matrix<ValueType>& dratios) override;
 
   void evaluateSpinorDerivRatios(const VirtualParticleSet& VP,
                                  const std::pair<ValueVector, ValueVector>& spinor_multipler,
-                                 const opt_variables_type& optvars,
+                                 const OptVariables& optvars,
                                  std::vector<ValueType>& ratios,
                                  Matrix<ValueType>& dratios) override;
 

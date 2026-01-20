@@ -29,69 +29,29 @@ except (ImportError,RuntimeError):
 
 
 def find_nexus_modules():
+    import os
     import sys
-    nexus_lib = os.path.abspath(os.path.join(__file__,'..','..','nexus'))
+    nexus_lib = os.path.realpath(os.path.join(__file__,'..','..','..','nexus'))
     assert(os.path.exists(nexus_lib))
-    sys.path.append(nexus_lib)
+    sys.path.insert(0,nexus_lib)
+    import nexus
+    nexus_lib2 = os.path.realpath(os.path.join(nexus.__file__,'..','..'))
+    assert nexus_lib2==nexus_lib
 #end def find_nexus_modules
 
-
-def import_nexus_module(module_name):
-    import inspect
-    import importlib
-    return importlib.import_module(module_name)
-#end def import_nexus_module
-
 # Load Nexus modules
-try:
-    # Attempt specialized path-based imports.
-    #  (The executable should still work even if Nexus is not installed)
-    find_nexus_modules()
-    nxs_ver_mod = import_nexus_module('nexus.nexus_version')
-    nexus_version = nxs_ver_mod.nexus_version
-    del nxs_ver_mod
-
-    developer = import_nexus_module('nexus.developer')
-    DevBase = developer.DevBase
-    obj     = developer.obj
-    log     = developer.log
-    warn    = developer.warn
-    error   = developer.error
-    del developer
-
-    numerics = import_nexus_module('nexus.numerics')
-    jackknife            = numerics.jackknife
-    jackknife_aux        = numerics.jackknife_aux
-    simstats             = numerics.simstats
-    equilibration_length = numerics.equilibration_length
-    curve_fit            = numerics.curve_fit
-    least_squares        = numerics.least_squares
-    num_eos_fit          = numerics.eos_fit
-    morse_fit            = numerics.morse_fit
-    morse                = numerics.morse
-    morse_einf           = numerics.morse_Einf
-    morse_re             = numerics.morse_re
-    morse_De             = numerics.morse_De
-    morse_a              = numerics.morse_a
-    morse_width          = numerics.morse_width
-    morse_depth          = numerics.morse_depth
-    morse_Ee             = numerics.morse_Ee
-    morse_k              = numerics.morse_k
-    murnaghan            = numerics.murnaghan
-    birch                = numerics.birch
-    vinet                = numerics.vinet
-    murnaghan_pressure   = numerics.murnaghan_pressure
-    birch_pressure       = numerics.birch_pressure
-    vinet_pressure       = numerics.vinet_pressure
-    del numerics
-except:
-    # Failing path-based imports, import installed Nexus modules.
-    from nexus.nexus_version import nexus_version
-    from nexus.developer import DevBase,obj,log,warn,error
-    from nexus.numerics import jackknife,jackknife_aux
-    from nexus.numerics import simstats,equilibration_length
-    from nexus.numerics import curve_fit,least_squares
-#end try
+find_nexus_modules()
+from nexus.nexus_version import nexus_version
+from nexus.developer import DevBase,obj,log,warn,error
+from nexus.numerics import jackknife,jackknife_aux
+from nexus.numerics import simstats,equilibration_length
+from nexus.numerics import curve_fit,least_squares
+from nexus.numerics import eos_fit as num_eos_fit
+from nexus.numerics import morse_fit,morse,morse_re,morse_De
+from nexus.numerics import morse_Einf as morse_einf
+from nexus.numerics import morse_a,morse_width,morse_depth,morse_Ee,morse_k
+from nexus.numerics import murnaghan,birch,vinet
+from nexus.numerics import murnaghan_pressure,birch_pressure,vinet_pressure
 
 
 # Polynomial functions
@@ -353,11 +313,11 @@ def process_scalar_files(scalar_files,equils=None,reblock_factors=None,series_st
         nbe = len(E)%bt
         E = E[nbe:]
         reblock = len(E)//bt
-        E.shape = (bt,reblock)
+        E = E.reshape(bt,reblock)
         if reblock>1:
             E = E.sum(1)/reblock
         #end if
-        E.shape = (bt,)
+        E = E.reshape(bt,)
         Edata[n] = E
     #end for
     Edata = np.array(Edata,dtype=float)

@@ -706,6 +706,12 @@ def create_path(path,basepath=None):
 
 def execute(command):
     from .execute import execute as nexus_execute
+    import os
+    # for python exe's, restrict pythonpath to this nexus repo
+    ct = command.split()
+    if len(ct)>0 and ct[0].strip('3').endswith('python'):
+        pypath = os.path.abspath(os.path.join(__file__,'..','..'))
+        command = 'PYTHONPATH='+pypath+' '+command
     out,err,rc = nexus_execute(command)
     if rc!=0:
         msg = '''Executed system command failed.

@@ -141,7 +141,7 @@ void test_LiH_msd(const std::string& spo_xml_string,
   CHECK(ratio == ValueApprox(1.374307585));
 
 
-  opt_variables_type active;
+  OptVariables active;
   twf.checkInVariables(active);
 
   const int nparam = active.size_of_active();

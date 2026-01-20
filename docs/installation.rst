@@ -692,47 +692,38 @@ Use
   time ctest -j 16 -L deterministic --output-on-failure
  
 
-Installing on CentOS Linux or other yum-based distributions
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Installing on CentOS Linux or other dnf/yum-based distribution
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The following is designed to obtain a working QMCPACK build on, for example, a
-student laptop, starting from a basic Linux installation with none of
-the developer tools installed. CentOS 7 (Red Hat compatible) is using
-gcc 4.8.2. The installation is complicated only by the need to install
-another repository to obtain HDF5 packages that are not available by
-default. Note that for convenience we use a generic BLAS. For
-production, a platform-optimized BLAS should be used.
+In this example we use the default GCC14 starting from a minimal installation of CentOS 10. The same recipe is expected to work on
+RHEL. Note that to make MPI available, the appropriate MPI module should be loaded ahead of running cmake. For convenience, we also
+use a generic BLAS. In production, a platform-optimized BLAS is recommended.
 
 ::
 
-  sudo yum install make cmake gcc gcc-c++ openmpi openmpi-devel fftw fftw-devel \
-                    boost boost-devel libxml2 libxml2-devel
-  sudo yum install blas-devel lapack-devel atlas-devel
-  module load mpi
+  sudo dnf install -y epel-release
+  sudo /usr/bin/crb enable
+  sudo dnf update -y
+  sudo dnf install -y make cmake gcc gcc-c++ gcc-gfortran openmpi-devel fftw-devel
+  sudo dnf install -y boost-devel libxml2-devel
+  sudo dnf install -y blas-devel lapack-devel
+  sudo dnf install -y hdf5-devel
+  sudo dnf install -y rsync
+  sudo dnf install -y python3-numpy
+  sudo dnf install -y python3-h5py
 
-To set up repoforge as a source for the HDF5 package, go to
-http://repoforge.org/use. Install the appropriate up-to-date
-release package for your operating system. By default, CentOS Firefox will offer
-to run the installer. The CentOS 6.5 settings were still usable for HDF5 on
-CentOS 7 in 2016, but use CentOS 7 versions when they become
-available.
-
-::
-
-  sudo yum install hdf5 hdf5-devel
 
 To build QMCPACK:
 
 ::
 
   module load mpi/openmpi-x86_64
-  which mpirun
-  # Sanity check; should print something like   /usr/lib64/openmpi/bin/mpirun
-  export CXX=mpiCC
+  which mpirun # Sanity check; should print something like /usr/lib64/openmpi/bin/mpirun
   cd build
-  cmake ..
-  make -j 8
+  cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpiCC ..
+  make -j 8 # Adjust to available core count
   ls -l bin/qmcpack
+
 
 Installing on Mac OS X using Macports
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

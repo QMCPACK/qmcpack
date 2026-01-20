@@ -59,7 +59,7 @@ public:
   bool isOptimizable() const override { return true; }
   /** check out optimizable variables
     */
-  void checkOutVariables(const opt_variables_type& o) override;
+  void checkOutVariables(const OptVariables& o) override;
 
   void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override
   {
@@ -88,7 +88,7 @@ public:
   std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
 
   void evaluateDerivatives(ParticleSet& P,
-                           const opt_variables_type& optvars,
+                           const OptVariables& optvars,
                            Vector<ValueType>& dlogpsi,
                            Vector<ValueType>& dhpsioverpsi) override
   {}

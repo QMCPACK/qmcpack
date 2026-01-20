@@ -38,7 +38,7 @@ namespace qmcplusplus
  * optimizations. The virtual functions are intended for non-critical operations that
  * are executed infrequently during optimizations.
  *
- * This class handles myVars of opt_variables_type (VariableSet.h). A derived class
+ * This class handles myVars of OptVariables (VariableSet.h). A derived class
  * can insert any number of variables it handles during optimizations, by calling
  * myVars.insert(name,value);
  * Unlike VarList which uses map, VariableSet is serialized in that the internal order is according
@@ -47,7 +47,7 @@ namespace qmcplusplus
 struct OptimizableFunctorBase : public OptimizableObject
 {
   ///typedef for real values
-  using real_type = opt_variables_type::real_type;
+  using real_type = OptVariables::real_type;
   ///expose OptimizableObject::myVars for direct access by a few consumers. Should clean up the consumers.
   using OptimizableObject::myVars;
   ///maximum cutoff
@@ -65,13 +65,13 @@ struct OptimizableFunctorBase : public OptimizableObject
   /** check out variational optimizable variables
    * @param active a super set of optimizable variables
    */
-  virtual void checkOutVariables(const opt_variables_type& active) = 0;
+  virtual void checkOutVariables(const OptVariables& active) = 0;
 
   /** reset the parameters during optimizations
    */
   using OptimizableObject::resetParametersExclusive;
 
-  inline void getIndex(const opt_variables_type& active) { myVars.getIndex(active); }
+  inline void getIndex(const OptVariables& active) { myVars.getIndex(active); }
 
   /** create a clone of this object
    */

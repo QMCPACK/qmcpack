@@ -261,7 +261,7 @@ class VXML(DevBase):
                 lst.append(field_vals[findex])
             #end for
             arr = np.array(lst,dtype=field.dtype).ravel()
-            arr.shape = tuple(dim_counts)
+            arr = arr.reshape(tuple(dim_counts))
             self[field.name] = arr
         #end for
         #print '  done'

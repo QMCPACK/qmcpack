@@ -172,7 +172,7 @@ jobs:
         run: |
           brew upgrade || brew link --overwrite python@3.12
           brew install gcc@14 ninja hdf5 fftw boost
-          python3 -m pip install numpy h5py pandas
+          python3 -m pip install numpy h5py
 
       - name: Configure
         run: tests/test_automation/github-actions/ci/run_step.sh configure
@@ -186,39 +186,39 @@ jobs:
       - name: Install
         run: tests/test_automation/github-actions/ci/run_step.sh install
 
-  spack-centos-stream:
+  centos10:
     runs-on: ubuntu-latest
     container: ${{ matrix.container }}
     env:
       GH_JOBNAME: ${{ matrix.jobname }}
       GH_OS: Linux
-      CONTAINER_OS: spack-centos-stream
+      CONTAINER_OS: centos10
     strategy:
       fail-fast: false
       matrix:
         jobname:
           [
-            GCC11-NoMPI-Debug-Real,
-            GCC11-NoMPI-NoOMP-Real,
-            GCC11-NoMPI-NoOMP-Complex,
-            GCC11-NoMPI-Sandbox-Real,
+            GCC14-NoMPI-Debug-Real,
+            GCC14-NoMPI-NoOMP-Real,
+            GCC14-NoMPI-NoOMP-Complex,
+            GCC14-NoMPI-Sandbox-Real,
           ]
         include:
-          - jobname: GCC11-NoMPI-Debug-Real
+          - jobname: GCC14-NoMPI-Debug-Real
             container:
-              image: ghcr.io/qmcpack/centos-stream-gcc11:latest
+              image: ghcr.io/qmcpack/centos10:latest
               options: -u 1001
-          - jobname: GCC11-NoMPI-NoOMP-Real
+          - jobname: GCC14-NoMPI-NoOMP-Real
             container:
-              image: ghcr.io/qmcpack/centos-stream-gcc11:latest
+              image: ghcr.io/qmcpack/centos10:latest
               options: -u 1001
-          - jobname: GCC11-NoMPI-NoOMP-Complex
+          - jobname: GCC14-NoMPI-NoOMP-Complex
             container:
-              image: ghcr.io/qmcpack/centos-stream-gcc11:latest
+              image: ghcr.io/qmcpack/centos10:latest
               options: -u 1001
-          - jobname: GCC11-NoMPI-Sandbox-Real
+          - jobname: GCC14-NoMPI-Sandbox-Real
             container:
-              image: ghcr.io/qmcpack/centos-stream-gcc11:latest
+              image: ghcr.io/qmcpack/centos10:latest
               options: -u 1001
 
     steps:
