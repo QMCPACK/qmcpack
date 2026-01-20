@@ -1,6 +1,6 @@
 [project]
 name = "nexus"
-version = "0.1.0"
+version = "2.2.0"
 description = "Automated workflow manager for DFT & QMC calculations"
 readme = "README.md"
 requires-python = ">=3.6"
@@ -13,8 +13,8 @@ dependencies = [
     "numpy (>=1.21.0, <2.3.0)  ; python_version == '3.10.*'",
     "numpy (>=1.23.2, !=2.4.0) ; python_version == '3.11.*'", #
     "numpy (>=1.26.0, !=2.4.0) ; python_version == '3.12.*'", # Numpy 2.4.0 was yanked from PyPI for 
-    "numpy (>=2.1.0, !=2.4.0) ; python_version == '3.13.*'",  # breaking backwards compatibility
-    "numpy (>=2.3.0, !=2.4.0) ; python_version == '3.14.*'",  # 
+    "numpy (>=2.1.0, !=2.4.0)  ; python_version == '3.13.*'",  # breaking backwards compatibility
+    "numpy (>=2.3.0, !=2.4.0)  ; python_version >= '3.14.0'",  # 
 ]
 
 [build-system]
@@ -29,29 +29,29 @@ qol = [
     "scipy (>=1.4.0,  <1.11.0) ; python_version == '3.8.*'",
     "scipy (>=1.5.0,  <1.14.0) ; python_version == '3.9.*'",
     "scipy (>=1.7.0,  <1.16.0) ; python_version == '3.10.*'",
-    "scipy (>=1.9.0)  ; python_version == '3.11.*'",
-    "scipy (>=1.11.0) ; python_version == '3.12.*'",
-    "scipy (>=1.14.0) ; python_version == '3.13.*'",
-    "scipy (>=1.17.0) ; python_version == '3.14.*'",
+    "scipy (>=1.9.0)           ; python_version == '3.11.*'",
+    "scipy (>=1.11.0)          ; python_version == '3.12.*'",
+    "scipy (>=1.14.0)          ; python_version == '3.13.*'",
+    "scipy (>=1.17.0)          ; python_version >= '3.14.0'",
     "h5py (>=2.6.0, <3.2.0)  ; python_version == '3.6.*'",
     "h5py (>=2.8.0, <3.2.0)  ; python_version == '3.7.*'", # Note that 3.2.0 requires `apt-get install pkg-config`
     "h5py (>=2.9.0, <3.11.0) ; python_version == '3.8.*'",
     "h5py (>=3.0.0, <3.15.0) ; python_version == '3.9.*'",
-    "h5py (>=3.6.0) ; python_version == '3.10.*'",
-    "h5py (>=3.8.0) ; python_version == '3.11.*'",
-    "h5py (>=3.10.0) ; python_version == '3.12.*'",
-    "h5py (>=3.12.1) ; python_version == '3.13.*'", # h5py 3.12.0 was yanked for import errors
-    "h5py (>=3.13.0) ; python_version == '3.14.*'",
+    "h5py (>=3.6.0)          ; python_version == '3.10.*'",
+    "h5py (>=3.8.0)          ; python_version == '3.11.*'",
+    "h5py (>=3.10.0)         ; python_version == '3.12.*'",
+    "h5py (>=3.12.1)         ; python_version == '3.13.*'", # h5py 3.12.0 was yanked for import errors
+    "h5py (>=3.13.0)         ; python_version >= '3.14.0'",
     "matplotlib (>=2.0.0, <3.4.0)  ; python_version == '3.6.*'",
     "matplotlib (>=2.2.5, <3.6.0)  ; python_version == '3.7.*'",
     "matplotlib (>=3.2.0, <3.8.0)  ; python_version == '3.8.*'",
     "matplotlib (>=3.3.0, <3.10.0) ; python_version == '3.9.*'",
-    "matplotlib (>=2.0.2, <3.11.0) ; python_version == '3.10.*'",
-    "matplotlib (>=2.0.2) ; python_version == '3.11.*'",
-    "matplotlib (>=2.0.2) ; python_version == '3.12.*'",
-    "matplotlib (>=2.0.2) ; python_version == '3.13.*'",
-    "matplotlib (>=2.0.2) ; python_version == '3.14.*'",
-    "spglib>=1.12.0.post3", # Difficult to test, requires headers that aren't easily available
+    "matplotlib (>=3.3.0, <3.11.0) ; python_version == '3.10.*'",
+    "matplotlib (>=3.3.0)          ; python_version == '3.11.*'",
+    "matplotlib (>=3.3.0)          ; python_version == '3.12.*'",
+    "matplotlib (>=3.3.0)          ; python_version == '3.13.*'",
+    "matplotlib (>=3.3.0)          ; python_version >= '3.14.0'",
+    "spglib>=1.12.0.post3", # Difficult to test version specification, requires headers that aren't easily available
 ]
 
 full = [
