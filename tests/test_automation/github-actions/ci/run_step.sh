@@ -362,8 +362,8 @@ case "$1" in
     python3-coverage report
     python3-coverage xml -o python_coverage.xml
     du -hs python_coverage.xml
-    # Debug/temporary hack only: overwrite gcov file to see if python coverage appears.  Workflow ci-github-actions.yaml eventually needs python_coverage.xml file reference
-    mv python_coverage.xml coverage.xml
+    # Debug only: overwrite gcov file with python coverage to test codecov.io
+    #mv python_coverage.xml coverage.xml
     ;;
   
   # Install the library (not triggered at the moment)

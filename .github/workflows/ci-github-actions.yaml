@@ -141,7 +141,7 @@ jobs:
         if: contains(matrix.jobname, 'Gcov') && github.repository_owner == 'QMCPACK'
         uses: codecov/codecov-action@v5
         with:
-          files: ../qmcpack-build/coverage.xml
+          files: ../qmcpack-build/coverage.xml ../qmcpack-build/python_coverage.xml
           flags: tests-deterministic # optional
           name: codecov-QMCPACK # optional
           fail_ci_if_error: true # optional (default = false)
