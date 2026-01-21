@@ -911,7 +911,7 @@ class Kpoints(VFormattedFile):
                     self.mode   = 'basis'  # basis generated mesh
                     self.coord  = self.coord_options(cselect)
                     self.kbasis = np.array(self.join(lines,3,5).split(),dtype=float)
-                    self.kbasis = self.kbasis.reshape(3,3)
+                    self.kbasis.shape = 3,3
                     self.kshift = np.array(lines[6].split(),dtype=float)
                 #end if
             elif cselect=='l': # line mode (band structure)
