@@ -28,6 +28,13 @@ RUN apt-get install -y --no-install-recommends \
     libopenblas-openmp-dev libhdf5-dev libxml2-dev libfftw3-dev \
     python3-numpy python3-scipy python3-pandas python3-h5py python3-matplotlib
 
+# Convenience feature to setup certificates for behind firewall builds.
+# * Copy any provided certificates into the container and update the SSL config
+# * Needed if e.g. wget fails with SSL errors
+# * No effect if no *.crt files provided
+COPY *.crt /usr/local/share/ca-certificates/
+RUN update-ca-certificates
+
 WORKDIR /scratch
 
 RUN wget https://gitlab.com/QEF/q-e/-/archive/qe-${QE_VERSION}/q-e-qe-${QE_VERSION}.tar.gz && tar xzvf q-e-qe-${QE_VERSION}.tar.gz && cd q-e-qe-${QE_VERSION} && pwd && \
