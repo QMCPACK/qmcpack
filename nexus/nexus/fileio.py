@@ -371,14 +371,14 @@ class XsfFile(StandardFile):
                     primvec = np.array((lines[i+1]+' '+
                                      lines[i+2]+' '+
                                      lines[i+3]).split(),dtype=float)
-                    primvec = primvec.reshape(3,3)
+                    primvec.shape = 3,3
                     self.add_to_image(image,'primvec',primvec)
                     i+=3
                 elif keyword=='convvec':
                     convvec = np.array((lines[i+1]+' '+
                                      lines[i+2]+' '+
                                      lines[i+3]).split(),dtype=float)
-                    convvec = convvec.reshape(3,3)
+                    convvec.shape = 3,3
                     self.add_to_image(image,'convvec',convvec)
                     i+=3
                 elif keyword=='atoms':
@@ -403,12 +403,12 @@ class XsfFile(StandardFile):
                     #end while
                     elem = np.array(elem,dtype=int)
                     pos  = np.array(pos,dtype=float)
-                    pos = pos.reshape(natoms,3)
+                    pos.shape = natoms,3
                     self.add_to_image(image,'elem',elem)
                     self.add_to_image(image,'pos',pos)
                     if len(force)>0:
                         force = np.array(force,dtype=float)
-                        force = force.reshape(natoms,3)
+                        force.shape = natoms,3
                         self.add_to_image(image,'force',force)
                     #end if
                     i-=1
@@ -431,12 +431,12 @@ class XsfFile(StandardFile):
                         elem = np.array(elem,dtype=str)
                     #end try
                     pos  = np.array(pos,dtype=float)
-                    pos = pos.reshape(natoms,3)
+                    pos.shape = natoms,3
                     self.add_to_image(image,'elem',elem)
                     self.add_to_image(image,'pos',pos)
                     if len(force)>0:
                         force = np.array(force,dtype=float)
-                        force = force.reshape(natoms,3)
+                        force.shape = natoms,3
                         self.add_to_image(image,'force',force)
                     #end if
                     i+=natoms+1
@@ -478,7 +478,7 @@ class XsfFile(StandardFile):
                                                 lines[i+5]).split(),dtype=float)
                                 i+=6
                             #end if
-                            cell = cell.reshape(d,3)
+                            cell.shape = d,3
                             dtokens = []
                             line = lines[i].strip().lower()
                             while not line.startswith('end_datagrid'):
@@ -547,7 +547,7 @@ class XsfFile(StandardFile):
                                                 lines[i+6]).split(),dtype=float)
                                 i+=7
                             #end if
-                            cell = cell.reshape(d,3)
+                            cell.shape = d,3
                             bands = obj()
                             line = lines[i].strip().lower()
                             while not line.startswith('end_bandgrid'):
@@ -562,7 +562,7 @@ class XsfFile(StandardFile):
                             #end while
                             for bi,bv in bands.items():
                                 bands[bi] = np.array(bv,dtype=float)
-                                bands[bi] = bands[bi].reshape(tuple(grid))
+                                bands[bi].shape = tuple(grid)
                             #end for
                             band[grid_identifier] = obj(
                                 grid   = grid,
@@ -836,7 +836,7 @@ class XsfFile(StandardFile):
         corner  = np.array(corner,dtype=float)
         cell    = np.array(cell  ,dtype=float)
         density = np.array(density,dtype=float)
-        density = density.reshape(tuple(grid))
+        density.shape = tuple(grid)
         
         if centered: # shift corner by half a grid cell to center it
             dc = 0.5/grid     
@@ -857,7 +857,7 @@ class XsfFile(StandardFile):
             density[   -1,:g[1],   -1] = d[0,:,0] 
             density[:g[0],   -1,   -1] = d[:,0,0] 
             density[   -1,   -1,   -1] = d[0,0,0] # corner copy
-            density = density.reshape(tuple(grid))
+            density.shape = tuple(grid)
         #end if
 
         self.data = obj()     
@@ -946,7 +946,7 @@ class XsfFile(StandardFile):
             data = data.transpose(permutation)
         #end if
         s = data.shape
-        data = data.reshape(s[0],s[1]*s[2])
+        data.shape = s[0],s[1]*s[2]
         line_data = data.sum(1)*dV/dr
         r_data = density.corner[dim] + dr*np.arange(len(line_data),dtype=float)
         return r_data,line_data

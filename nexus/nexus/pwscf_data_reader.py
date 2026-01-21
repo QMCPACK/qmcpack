@@ -51,7 +51,7 @@ class QEXML(DevBase):
                     if len(a)==1:
                         a = a[0]
                     elif 'columns' in v and v.size%v.columns==0:
-                        a = a.reshape(v.size//v.columns,v.columns)
+                        a.shape = v.size//v.columns,v.columns
                     #end if
                     self[k] = a
                 else:
