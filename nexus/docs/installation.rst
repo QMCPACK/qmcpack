@@ -7,6 +7,9 @@ Installation of Nexus can be accomplished in two ways, either through a package 
 
 Each section below talks about the related upsides and downsides, however for those who are not actively developing Nexus or QMCPACK, it is recommended to use a package manager.
 
+.. important::
+    Currently Nexus is not packaged with any scripts (``qmca``, ``nxs-test``, etc.), so users who wish to use those will need to proceed via the instructions in the section on :ref:`manual_install`. This feature will potentially be included in future versions of the package.
+
 .. contents::
 
 .. _ via a single download from ``qmcpack.org``
@@ -35,9 +38,9 @@ will install Nexus with ``numpy`` as the only dependency. This is required for N
 If you do not want to install all of the dependencies, you can do so with ``pip``, in the same manner as shown in :ref:`manual_install`.
 
 .. caution::
-    This method of installation is not recommended for those who wish to customize Nexus for a specific project as ``pip`` will default to installing Nexus to the global Python environment and thus any changes made to the source code there will affect all projects that use it.
+    This method of installation is not recommended for those who wish to customize Nexus for a specific project as ``pip`` will default to installing Nexus to your main Python environment and thus any changes made to the source code there will affect all projects that use it. 
     
-    Additionally, if you have an existing Nexus installation that has modified your ``$PYTHONPATH`` environment variable then that existing installation will override a version installed by ``pip``
+    Additionally, if you have an existing Nexus installation that has modified your ``$PYTHONPATH`` environment variable then that existing installation will override a version installed by ``pip``.
 
 1) ``uv``
 ^^^^^^^^^
@@ -69,10 +72,24 @@ Additionally, you can use ``uv`` to automatically set the dependencies of a scri
 
     uv add --script <script_name>.py "nexus@git+https://github.com/QMCPACK/qmcpack.git@main#subdirectory=nexus"
 
-which ensures that, as long as the script is run with ``uv``, Nexus will be available. This does not, however, exclude the script from being run directly with Python (e.g. ``python <script_name>.py``)
+This adds a piece of `Inline Script Metadata <https://packaging.python.org/en/latest/specifications/inline-script-metadata/>`__ to the top of your file that specifies two main things, first the Python version, and second the dependencies of the script. For Nexus this looks something like:
+
+.. code-block:: python
+
+    # /// script
+    # requires-python = ">=3.14"
+    # dependencies = [
+    #     "nexus",
+    # ]
+    #
+    # [tool.uv.sources]
+    # nexus = { git = "https://github.com/QMCPACK/qmcpack.git", subdirectory = "nexus", rev "main" }
+    # ///
+
+This metadata ensures that ``uv`` can find the required dependencies for your project and will ensure that they are loaded at runtime. This inline metadata will not exclude the script from being run directly with Python (e.g. ``python <script_name>.py``), and so can be thought of simply as extra documentation for your scripts if you so choose.
 
 .. tip::
-    You can use ``uv`` to add any additional dependencies you desire, however any dependencies installed with Nexus (e.g. ``numpy``, and if you add ``[full]``, all of the optional dependencies) will already be installed if you have Nexus added to the script, so there is no need to add them again.
+    You can use ``uv`` to add any additional dependencies you desire, however any dependencies installed with Nexus (e.g. ``numpy``) will already be installed if you have Nexus added to the script, so there is no need to add them again.
 
 .. note::
     If you want to customize Nexus for a specific project but do not want to continually download QMCPACK, this option will create a version of Nexus that is local to each virtual environment, so you can modify it without fear of altering other virtual environments. Importantly however, this has two caveats, the first being that this installation method does indeed create duplicates of Nexus in each virtual environment (though this is a minimal side effect, as the entirety of Nexus is only a handful of megabytes in size), and secondly that there is no version tracking in a ``uv`` installation, so any changes made will not be tracked via ``git``.
@@ -83,11 +100,13 @@ Manual Installation of Nexus
 ----------------------------
 
 .. warning::
-    This method of installing Nexus can lead to undefined behavior! For example, if you wish to update your Nexus installation, then you must make sure that your ``.bashrc`` file is updated to point at the correct path, otherwise you will still be using the previous version of Nexus. Installation via this route can also override existing installations of Nexus via ``pip`` or ``uv``.
+    This method of installing Nexus can lead to undefined behavior! For example, if you wish to update your Nexus installation, then you must make sure that your ``.bashrc`` file is updated to point at the correct path, otherwise you will still be using the previous version of Nexus. Installation via this route will also supersede existing installations of Nexus via ``pip`` or ``uv``.
     
     Additionally, due to the method `by which Python searches for modules <https://docs.python.org/3/library/sys_path_init.html>`__, you can get situations where another Python script in the same directory as your current script will override Nexus's modules. This problem is largely mitigated by `PR #5700 <https://github.com/QMCPACK/qmcpack/pull/5700>`__ which changed Nexus's import method to behave more like a Python package, however not all edge cases have been tested. 
     
     If you encounter unusual behavior, please open an issue at `the QMCPACK GitHub page <https://github.com/QMCPACK/qmcpack>`__.
+
+Installing Nexus via this method requires downloading/cloning the `QMCPACK repository <https://github.com/QMCPACK/qmcpack>`__.
 
 To make your Python installation (must be Python 3.x, 2.x is no longer supported) aware of Nexus, simply set the ``PYTHONPATH`` environment variable.  For example, in bash this would look like:
 
@@ -97,13 +116,16 @@ To make your Python installation (must be Python 3.x, 2.x is no longer supported
 
 Add this to, *e.g.*, your ``.bashrc`` file to make Nexus available in future sessions.
 
+.. note::
+    If your shell does not use ``export`` for environment variables, you will need to adapt the provided command for use with your shell. For example, the ``fish`` shell would need a command that looks like ``set -gx PYTHONPATH /your_download_path/nexus``.
+
 If you want to use Nexus's command line tools, add them to your path:
 
 .. code-block:: bash
 
     export PATH=/your_download_path/nexus/bin:$PATH
 
-Both of these environment variables can be set automatically by the ``install`` script packaged with Nexus.  To use the installer, instead of performing the manual installation above, simply type the following at the command line:
+Both of these environment variables can be set automatically by the ``install`` script packaged with Nexus (this script will only work for some shells). To use the installer, instead of performing the manual installation above, simply type the following at the command line:
 
 ::
 
@@ -120,7 +142,7 @@ Installing Python dependencies
 
 In addition to the standard Python installation, the ``numpy`` module must be installed for Nexus to function at a basic level. To realize the full range of functionality available, it is recommended that the ``scipy``, ``matplotlib``, ``h5py``, ``pydot``, ``spglib``, ``pycifrw``, ``cif2cell`` and ``seekpath`` modules be installed as well. Many of these packages are already available in various supercomputing environments.
 
-On a Linux systems, such as Ubuntu or Fedora, installation of these Python modules is easily accomplished by using your distribution's package manager (e.g. ``apt`` for Debian-based systems, ``dnf`` for Fedora, etc.). For example, here is how one may install some of the packages with ``apt``:
+On a Linux systems, such as Ubuntu or Fedora, installation of these Python modules is easily accomplished by using your distribution's package manager (e.g. ``apt`` for Debian-based systems like Ubuntu). For example, here is how one may install some of the packages with ``apt``:
 
 .. code-block:: bash
 
@@ -131,7 +153,7 @@ On a Linux systems, such as Ubuntu or Fedora, installation of these Python modul
 
 Other Linux systems often come with their own package managers (such as ``dnf`` for Fedora), and can often be used as drop-in replacements for ``apt``.
 
-To install the Python modules on other platforms (as well as those not listed with ``apt`` above on Debian systems), try ``pip`` or ``pip3``:
+To install the Python modules on other platforms (as well as those not available via your package manager), try ``pip`` or ``pip3``:
 
 .. code-block:: bash
 
@@ -154,7 +176,10 @@ While Nexus does not have strict version requirements, most recent dependency ve
 
     pip3 install --user -r requirements.txt
 
-``qmcpack/nexus/requirements_minimal.txt`` can be used similarly but only contains a recently tested version of ``numpy``.
+``qmcpack/nexus/requirements_minimal.txt`` can be used similarly but only contains a recently tested version of ``numpy``. 
+
+.. note::
+    Additionally, for users of ``uv``, the project's ``pyproject.toml`` can be used to install dependencies in a similar fashion: ``uv pip install -r pyproject.toml``.
 
 The purpose of each library is described below:
 
@@ -360,60 +385,60 @@ Code coverage can be assessed by using the ``pytest-cov`` plugin (``pip install 
     >cd nexus
     >pytest-cov --cov=nexus 
     ...
-    >coverage report | grep nexus/nexus
+    >coverage report
 
-    nexus/nexus/basisset.py                      631    375    41%
-    nexus/nexus/bundle.py                        191     68    64%
-    nexus/nexus/debug.py                          12      6    50%
-    nexus/nexus/developer.py                     261     97    63%
-    nexus/nexus/execute.py                        13      2    85%
-    nexus/nexus/fileio.py                        957    373    61%
-    nexus/nexus/gamess.py                        102     20    80%
-    nexus/nexus/gamess_analyzer.py               305    149    51%
-    nexus/nexus/gamess_input.py                  597    167    72%
-    nexus/nexus/generic.py                       817    173    79%
-    nexus/nexus/grid_functions.py               1192    435    64%
-    nexus/nexus/hdfreader.py                     215     61    72%
-    nexus/nexus/machines.py                     1887    463    75%
-    nexus/nexus/memory.py                         60      7    88%
-    nexus/nexus/nexus.py                         297    140    53%
-    nexus/nexus/nexus_base.py                     74     11    85%
-    nexus/nexus/numerics.py                      756    372    51%
-    nexus/nexus/periodic_table.py               1505     24    98%
-    nexus/nexus/physical_system.py               427     73    83%
-    nexus/nexus/plotting.py                       22      7    68%
-    nexus/nexus/project_manager.py               234     37    84%
-    nexus/nexus/pseudopotential.py              1225    559    54%
-    nexus/nexus/pwscf.py                         198     73    63%
-    nexus/nexus/pwscf_analyzer.py                634    316    50%
-    nexus/nexus/pwscf_data_reader.py             132    120     9%
-    nexus/nexus/pwscf_input.py                  1261    563    55%
-    nexus/nexus/pwscf_postprocessors.py          434     56    87%
-    nexus/nexus/pyscf_analyzer.py                  3      0   100%
-    nexus/nexus/pyscf_input.py                   181     26    86%
-    nexus/nexus/pyscf_sim.py                      57      8    86%
-    nexus/nexus/qmcpack.py                       344    146    58%
-    nexus/nexus/qmcpack_analyzer.py              457    104    77%
-    nexus/nexus/qmcpack_analyzer_base.py         327    137    58%
-    nexus/nexus/qmcpack_converters.py            507     83    84%
-    nexus/nexus/qmcpack_input.py                3605   1439    60%
-    nexus/nexus/qmcpack_method_analyzers.py      198     64    68%
-    nexus/nexus/qmcpack_property_analyzers.py    205     97    53%
-    nexus/nexus/qmcpack_quantity_analyzers.py   2070   1789    14%
-    nexus/nexus/qmcpack_result_analyzers.py      285    142    50%
-    nexus/nexus/quantum_package.py               253    141    44%
-    nexus/nexus/quantum_package_analyzer.py        3      0   100%
-    nexus/nexus/quantum_package_input.py         338    164    51%
-    nexus/nexus/simulation.py                   1019    169    83%
-    nexus/nexus/structure.py                    3830   2055    46%
-    nexus/nexus/superstring.py                   311    199    36%
-    nexus/nexus/testing.py                       409     67    84%
-    nexus/nexus/unit_converter.py                121      4    97%
-    nexus/nexus/vasp.py                           94     15    84%
-    nexus/nexus/vasp_analyzer.py                 548     73    87%
-    nexus/nexus/vasp_input.py                    906    412    55%
-    nexus/nexus/versions.py                      335     50    85%
-    nexus/nexus/xmlreader.py                     260     54    79%
+    nexus/basisset.py                      631    375    41%
+    nexus/bundle.py                        191     68    64%
+    nexus/debug.py                          12      6    50%
+    nexus/developer.py                     261     97    63%
+    nexus/execute.py                        13      2    85%
+    nexus/fileio.py                        957    373    61%
+    nexus/gamess.py                        102     20    80%
+    nexus/gamess_analyzer.py               305    149    51%
+    nexus/gamess_input.py                  597    167    72%
+    nexus/generic.py                       817    173    79%
+    nexus/grid_functions.py               1192    435    64%
+    nexus/hdfreader.py                     215     61    72%
+    nexus/machines.py                     1887    463    75%
+    nexus/memory.py                         60      7    88%
+    nexus/nexus.py                         297    140    53%
+    nexus/nexus_base.py                     74     11    85%
+    nexus/numerics.py                      756    372    51%
+    nexus/periodic_table.py               1505     24    98%
+    nexus/physical_system.py               427     73    83%
+    nexus/plotting.py                       22      7    68%
+    nexus/project_manager.py               234     37    84%
+    nexus/pseudopotential.py              1225    559    54%
+    nexus/pwscf.py                         198     73    63%
+    nexus/pwscf_analyzer.py                634    316    50%
+    nexus/pwscf_data_reader.py             132    120     9%
+    nexus/pwscf_input.py                  1261    563    55%
+    nexus/pwscf_postprocessors.py          434     56    87%
+    nexus/pyscf_analyzer.py                  3      0   100%
+    nexus/pyscf_input.py                   181     26    86%
+    nexus/pyscf_sim.py                      57      8    86%
+    nexus/qmcpack.py                       344    146    58%
+    nexus/qmcpack_analyzer.py              457    104    77%
+    nexus/qmcpack_analyzer_base.py         327    137    58%
+    nexus/qmcpack_converters.py            507     83    84%
+    nexus/qmcpack_input.py                3605   1439    60%
+    nexus/qmcpack_method_analyzers.py      198     64    68%
+    nexus/qmcpack_property_analyzers.py    205     97    53%
+    nexus/qmcpack_quantity_analyzers.py   2070   1789    14%
+    nexus/qmcpack_result_analyzers.py      285    142    50%
+    nexus/quantum_package.py               253    141    44%
+    nexus/quantum_package_analyzer.py        3      0   100%
+    nexus/quantum_package_input.py         338    164    51%
+    nexus/simulation.py                   1019    169    83%
+    nexus/structure.py                    3830   2055    46%
+    nexus/superstring.py                   311    199    36%
+    nexus/testing.py                       409     67    84%
+    nexus/unit_converter.py                121      4    97%
+    nexus/vasp.py                           94     15    84%
+    nexus/vasp_analyzer.py                 548     73    87%
+    nexus/vasp_input.py                    906    412    55%
+    nexus/versions.py                      335     50    85%
+    nexus/xmlreader.py                     260     54    79%
 
 The first column is the total number of statements, the second is the number not yet covered by the tests and the third is the percent covered. By averaging the third column, you can tell roughly what percent of Nexus is covered by testing. From the testing shown above, code coverage is at ~67.5%.
 
@@ -423,6 +448,4 @@ To obtain an annotated view of the statements in the source that are not yet cov
 
     > pytest --cov=nexus --cov-report html
 
-Open ``htmlcov/index.html`` in a browser to view the report. More
-information regarding the ``coverage`` tool can be found at
-https://coverage.readthedocs.io/en/v4.5.x/.
+Open ``htmlcov/index.html`` in a browser to view the report. More information regarding the ``coverage`` tool can be found at https://coverage.readthedocs.io/en/v4.5.x/.

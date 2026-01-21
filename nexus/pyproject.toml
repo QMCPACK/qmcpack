@@ -17,6 +17,17 @@ dependencies = [
     "numpy (>=2.3.0, !=2.4.0)  ; python_version >= '3.14.0'", # 
 ]
 
+# TODO Restructure to support including the scripts with the package distribution
+# [project.scripts]
+# eshdf = "nexus.scripts:eshdf"
+# nxs-redo = "nexus.scripts:nxs_redo"
+# nxs-sim = "nexus.scripts:nxs_sim"
+# nxs-test = "nexus.scripts:nxs_test"
+# qdens = "nexus.scripts:qdens"
+# qdens-radial = "nexus.scripts:qdens_radial"
+# qmca = "nexus.scripts:qmca"
+# qmc-fit = "nexus.scripts:qmc_fit"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
