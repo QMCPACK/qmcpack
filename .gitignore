@@ -1,6 +1,9 @@
 *.pyc
 *.aux
 .python-version
+.coverage
+uv.lock
+.venv
 qmcpack_manual.bbl
 qmcpack_manual.blg
 qmcpack_manual.log
