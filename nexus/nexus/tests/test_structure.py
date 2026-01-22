@@ -1312,7 +1312,7 @@ def test_min_image_distances():
     assert(value_eq(dist.max(),1.42143636))
 
     vec = vt.ravel()
-    npe.reshape_array(vec, (np.prod(dt.shape), 3))
+    npe.reshape_inplace(vec, (np.prod(dt.shape), 3))
     vdist = np.linalg.norm(vec,axis=1)
     assert(value_eq(vdist,dist))
 
@@ -1370,7 +1370,7 @@ if versions.scipy_available:
         gr = g.copy()
         npos = len(gr.pos)
         dr = gr.min_image_vectors(center)
-        npe.reshape_array(dr, (npos, 3))
+        npe.reshape_inplace(dr, (npos, 3))
         r = np.linalg.norm(dr,axis=1)
         dilation = 2*r*np.exp(-r)
         for i in range(npos):

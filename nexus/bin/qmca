@@ -263,7 +263,7 @@ class DatAnalyzer(QBase):
         self.extract_info(filepath)
         lt = np.loadtxt(filepath)
         if len(lt.shape)==1:
-            npe.reshape_array(lt, (1, len(lt)))
+            npe.reshape_inplace(lt, (1, len(lt)))
         #end if
         if lt.size==0:
             self.info.load_failed = True

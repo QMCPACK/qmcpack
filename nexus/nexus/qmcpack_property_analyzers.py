@@ -61,9 +61,9 @@ class Bspline(QAobject):
                0.0, 0.0,  3.0, -2.0,
                0.0, 0.0, -3.0,  1.0,
                0.0, 0.0,  1.0,  0.0 ])
-    npe.reshape_array(A, (4, 4))
-    npe.reshape_array(dA, (4, 4))
-    npe.reshape_array(d2A, (4, 4))
+    npe.reshape_inplace(A, (4, 4))
+    npe.reshape_inplace(dA, (4, 4))
+    npe.reshape_inplace(d2A, (4, 4))
 
     def __init__(self,params,cusp,rcut):
         p = np.array(params)

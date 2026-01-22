@@ -773,7 +773,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 nb = int(np.floor(float(nv)/autocorr))
                 nexclude = nv-nb*autocorr
                 v = v[nexclude:]
-                npe.reshape_array(v, (nb, autocorr))
+                npe.reshape_inplace(v, (nb, autocorr))
                 mean,error = simplestats(v.mean(axis=1))
             #end if
             mds[q] = mean,error

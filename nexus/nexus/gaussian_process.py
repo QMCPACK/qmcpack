@@ -1861,7 +1861,7 @@ class GPTestFunction(DevBase):
         exit_on_save  : (Optional) same as GaussianProcessOptimizer.exit_on_save.
         """
         Pmin = np.array(Pmin,dtype=float).ravel()
-        npe.reshape_array(Pmin, (1, len(Pmin)))
+        npe.reshape_inplace(Pmin, (1, len(Pmin)))
         self.name          = name
         self.niterations   = niterations
         self.param_lower   = param_lower
@@ -1891,14 +1891,14 @@ class GPTestFunction(DevBase):
         if self.deterministic:
             for i in range(npoints):
                 Pi = P[i].ravel()
-                npe.reshape_array(Pi, (1, len(Pi)))
+                npe.reshape_inplace(Pi, (1, len(Pi)))
                 E[i,0]  = self.function(Pi)
                 dE[i,0] = self.sigma
             #end for
         else:
             for i in range(npoints):
                 Pi = P[i].ravel()
-                npe.reshape_array(Pi, (1, len(Pi)))
+                npe.reshape_inplace(Pi, (1, len(Pi)))
                 E[i,0],dE[i,0] = self.function(Pi)
             #end for
         #end if

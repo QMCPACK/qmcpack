@@ -139,7 +139,7 @@ def array_from_lines(lines):
     nelem = len(a)
     nlines = len(lines)
     dim = nelem//nlines
-    npe.reshape_array(a, (nlines, dim))
+    npe.reshape_inplace(a, (nlines, dim))
     return a
 #end def array_from_lines
 
@@ -1134,7 +1134,7 @@ class k_points(Card):
             a = array_from_lines(lines[1:])
             self.kpoints = a[:,0:3]
             self.weights = a[:,3]
-            npe.reshape_array(self.weights, (self.nkpoints,))
+            npe.reshape_inplace(self.weights, (self.nkpoints,))
         elif self.specifier == 'automatic':
             a = np.fromstring(lines[0],sep=' ')
             self.grid  = a[0:3]
@@ -2232,14 +2232,14 @@ def generate_any_pwscf_input(**kwargs):
         if s.folded_structure is not None:
             fs = s.folded_structure
             axes = np.array(array_to_string(fs.axes).split(),dtype=float)
-            npe.reshape_array(axes, fs.axes.shape)
+            npe.reshape_inplace(axes, fs.axes.shape)
             axes = np.dot(s.tmatrix,axes)
             if abs(axes-s.axes).sum()>1e-5:
                 PwscfInput.class_error('supercell axes do not match tiled version of folded cell axes\nyou may have changed one set of axes (super/folded) and not the other\nfolded cell axes:\n'+str(fs.axes)+'\nsupercell axes:\n'+str(s.axes)+'\nfolded axes tiled:\n'+str(axes),'generate_pwscf_input')
             #end if
         else:
             axes = np.array(array_to_string(s.axes).split(),dtype=float)
-            npe.reshape_array(axes, s.axes.shape)
+            npe.reshape_inplace(axes, s.axes.shape)
         #end if
         s.adjust_axes(axes)
         if use_folded:
@@ -2516,14 +2516,14 @@ def generate_scf_input(prefix       = 'pwscf',
     if s.folded_structure is not None:
         fs = s.folded_structure
         axes = np.array(array_to_string(fs.axes).split(),dtype=float)
-        npe.reshape_array(axes, fs.axes.shape)
+        npe.reshape_inplace(axes, fs.axes.shape)
         axes = np.dot(s.tmatrix,axes)
         if abs(axes-s.axes).sum()>1e-5:
             PwscfInput.class_error('supercell axes do not match tiled version of folded cell axes\n  you may have changed one set of axes (super/folded) and not the other\n  folded cell axes:\n'+str(fs.axes)+'\n  supercell axes:\n'+str(s.axes)+'\n  folded axes tiled:\n'+str(axes))
         #end if
     else:
         axes = np.array(array_to_string(s.axes).split(),dtype=float)
-        npe.reshape_array(axes, s.axes.shape)
+        npe.reshape_inplace(axes, s.axes.shape)
     #end if
     s.adjust_axes(axes)
 

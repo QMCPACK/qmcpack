@@ -38,7 +38,7 @@ def test_coord_conversion():
         ]
 
     th_cos_sin = np.array(th_cos_sin)
-    npe.reshape_array(th_cos_sin, (len(th_cos_sin)//3, 3))
+    npe.reshape_inplace(th_cos_sin, (len(th_cos_sin)//3, 3))
     th  = th_cos_sin[:,0]
     cos = th_cos_sin[:,1]
     sin = th_cos_sin[:,2]
@@ -111,7 +111,7 @@ def test_unit_grid_points():
 
     def make_1d(x):
         p = x.copy()
-        npe.reshape_array(p, (len(p), 1))
+        npe.reshape_inplace(p, (len(p), 1))
         return p
     #end def make_1d
 
@@ -665,7 +665,7 @@ def test_grid_set_operations():
 
     # set points
     points = np.linspace(0,1,2*10)
-    npe.reshape_array(points, (10, 2))
+    npe.reshape_inplace(points, (10, 2))
     for name in grids_check:
         g = grids[name].copy()
         g.set_points(points)
@@ -781,7 +781,7 @@ def test_grid_translate():
         shift = p.space_dim*(6.7,)
         translate_and_check(g,shift)
         shift = np.array(shift)
-        npe.reshape_array(shift, (p.space_dim,))
+        npe.reshape_inplace(shift, (p.space_dim,))
         translate_and_check(g,shift)
     #end for
 #end def test_grid_translate
@@ -823,7 +823,7 @@ def test_grid_unit_points():
 
     def make_1d(x):
         p = x.copy()
-        npe.reshape_array(p, (len(p), 1))
+        npe.reshape_inplace(p, (len(p), 1))
         return p
     #end def make_1d
 
@@ -1027,7 +1027,7 @@ def test_grid_project():
     
     def make_1d(x):
         p = x.copy()
-        npe.reshape_array(p, (len(p), 1))
+        npe.reshape_inplace(p, (len(p), 1))
         return p
     #end def make_1d
 

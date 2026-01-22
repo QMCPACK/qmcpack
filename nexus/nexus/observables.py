@@ -1278,8 +1278,8 @@ class Density(ObservableWithComponents):
                     rsphere   += dr
                     rcenter    = new_center
                     dsphere    = d.interpolate(rsphere,**interp_kwargs)
-                    npe.reshape_array(dsphere, sgrid.shape)
-                    npe.reshape_array(dsphere, (len(dsphere), dsphere.size//len(dsphere)))
+                    npe.reshape_inplace(dsphere, sgrid.shape)
+                    npe.reshape_inplace(dsphere, (len(dsphere), dsphere.size//len(dsphere)))
                     drad += dsphere.mean(axis=1)*4*np.pi*rrad**2
                 #end for
                 drad /= len(atom_indices)

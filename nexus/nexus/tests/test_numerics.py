@@ -47,7 +47,7 @@ def test_ndgrid():
         #end for
     #end for
     points = np.array(points)
-    npe.reshape_array(points, (3, len(x), len(y), len(z)))
+    npe.reshape_inplace(points, (3, len(x), len(y), len(z)))
     points = points
 
     grid = ndgrid(x,y,z)

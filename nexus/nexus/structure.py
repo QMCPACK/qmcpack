@@ -332,8 +332,8 @@ def kmesh(kaxes,dim,shift=None):
     ndim = len(dim)
     d = np.array(dim)
     s = np.array(shift)
-    npe.reshape_array(s, (1, ndim))
-    npe.reshape_array(d, (1, ndim))
+    npe.reshape_inplace(s, (1, ndim))
+    npe.reshape_inplace(d, (1, ndim))
     kp = np.empty((1,ndim),dtype=float)
     kgrid = np.empty((d.prod(),ndim))
     n=0
@@ -564,7 +564,7 @@ def optimal_tilematrix(axes,volfac,dn=1,tol=1e-3,filter=trivial_filter,mask=None
             #end for
         #end for
         mats = np.array(mats,dtype=int)
-        npe.reshape_array(mats, ((2*dn+1)**(dim*dim), dim, dim))
+        npe.reshape_inplace(mats, ((2*dn+1)**(dim*dim), dim, dim))
         opt_tm_matrices[dn] = mats
     else:
         mats = opt_tm_matrices[dn]
@@ -796,7 +796,7 @@ class Structure(Sobj):
 
         if isinstance(axes,str):
             axes = np.array(axes.split(),dtype=float)
-            npe.reshape_array(axes, (dim, dim))
+            npe.reshape_inplace(axes, (dim, dim))
         #end if
         if center is None:
             if axes is not None:
@@ -814,7 +814,7 @@ class Structure(Sobj):
         #end if
         if elem_pos is not None:
             ep = np.array(elem_pos.split(),dtype=str)
-            npe.reshape_array(ep, (ep.size//(dim+1), (dim+1)))
+            npe.reshape_inplace(ep, (ep.size//(dim+1), (dim+1)))
             elem = ep[:,0].ravel()
             pos  = ep[:,1:dim+1]
         #end if
@@ -3345,7 +3345,7 @@ class Structure(Sobj):
                 unique[:] = True
                 nn = nearest_neighbors(1,kpoints)
                 if nkpoints>1:
-                    npe.reshape_array(nn, (nkpoints,))
+                    npe.reshape_inplace(nn, (nkpoints,))
                     dist = self.distances(kpoints,kpoints[nn])
                     tol = 1e-8
                     duplicates = np.arange(nkpoints)[dist<tol]
@@ -3534,7 +3534,7 @@ class Structure(Sobj):
             npoints = len(points)
             ntpoints = npoints*int(np.round(np.abs(det(tilemat))))
             if tilevec.size==dim:
-                npe.reshape_array(tilevec, (1, dim))
+                npe.reshape_inplace(tilevec, (1, dim))
             #end if
             taxes = dot(tilemat,axes)
             success = False

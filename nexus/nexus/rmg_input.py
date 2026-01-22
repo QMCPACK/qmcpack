@@ -2726,7 +2726,7 @@ class PseudopotentialKeyword(FormattedTableRmgKeyword):
 
     def read(self,value):
         d = np.array(value.split(),dtype=str)
-        npe.reshape_array(d, (len(d)//2, 2))
+        npe.reshape_inplace(d, (len(d)//2, 2))
         species = d[:,0].flatten()
         pseudos = d[:,1].flatten()
         return obj(species=species,pseudos=pseudos)
@@ -2756,7 +2756,7 @@ class KpointsKeyword(FormattedTableRmgKeyword):
 
     def read(self,value):
         d = np.array(value.split(),dtype=float)
-        npe.reshape_array(d, (len(d)//4, 4))
+        npe.reshape_inplace(d, (len(d)//4, 4))
         kpoints = d[:,:3]
         weights = d[:,-1].flatten()
         return obj(kpoints=kpoints,weights=weights)
@@ -2787,7 +2787,7 @@ class KpointsBandstructureKeyword(FormattedTableRmgKeyword):
 
     def read(self,value):
         d = np.array(value.split(),dtype=str)
-        npe.reshape_array(d, (len(d)//4, 5))
+        npe.reshape_inplace(d, (len(d)//4, 5))
         kpoints = np.array(d[:,:3],dtype=float)
         counts  = np.array(d[:,3],dtype=int).flatten()
         labels  = d[:,-1].flatten()
@@ -2848,7 +2848,7 @@ class AtomsKeyword(FormattedTableRmgKeyword):
 
         # initial array parse of value table
         d = np.array(value.split(),dtype=str)
-        npe.reshape_array(d, (len(d)//nvals, nvals))
+        npe.reshape_inplace(d, (len(d)//nvals, nvals))
 
         # extract universal atom labels and positions
         atom_labels = d[:,0]
