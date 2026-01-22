@@ -39,6 +39,7 @@ import numpy as np
 from .qmcpack_input import QmcpackInput
 from .qmcpack_analyzer_base import QAobject,QAanalyzer
 from .developer import unavailable
+from . import numpy_extensions as npe
 
 try:
     from matplotlib.pyplot import plot,show,figure,xlabel,ylabel,title,legend
@@ -60,9 +61,9 @@ class Bspline(QAobject):
                0.0, 0.0,  3.0, -2.0,
                0.0, 0.0, -3.0,  1.0,
                0.0, 0.0,  1.0,  0.0 ])
-    A   = A.reshape(4,4)
-    dA  = dA.reshape(4,4)
-    d2A = d2A.reshape(4,4)                 
+    npe.reshape_array(A, (4, 4))
+    npe.reshape_array(dA, (4, 4))
+    npe.reshape_array(d2A, (4, 4))
 
     def __init__(self,params,cusp,rcut):
         p = np.array(params)
