@@ -85,8 +85,9 @@ inline cublasStatus_t cublas_scal(cublasHandle_t handle,
                                   std::complex<float>* x,
                                   int incx)
 {
+  const cuComplex alpha_cu = make_cuComplex(alpha.real(), alpha.imag());
   cublasStatus_t success =
-      cublasCscal(handle, n, reinterpret_cast<cuComplex const*>(&alpha), reinterpret_cast<cuComplex*>(x), incx);
+      cublasCscal(handle, n, &alpha_cu, reinterpret_cast<cuComplex*>(x), incx);
   cudaDeviceSynchronize();
   return success;
 }
@@ -97,7 +98,8 @@ inline cublasStatus_t cublas_scal(cublasHandle_t handle,
                                   std::complex<double>* x,
                                   int incx)
 {
-  cublasStatus_t success = cublasZscal(handle, n, reinterpret_cast<cuDoubleComplex const*>(&alpha),
+  const cuDoubleComplex alpha_cu = make_cuDoubleComplex(alpha.real(), alpha.imag());
+  cublasStatus_t success = cublasZscal(handle, n, &alpha_cu,
                                       reinterpret_cast<cuDoubleComplex*>(x), incx);
   cudaDeviceSynchronize();
   return success;
@@ -235,8 +237,9 @@ inline cublasStatus_t cublas_axpy(cublasHandle_t handle,
                                   std::complex<float>* y,
                                   int incy)
 {
+  const cuComplex alpha_cu = make_cuComplex(alpha.real(), alpha.imag());
   cublasStatus_t success =
-      cublasCaxpy(handle, n, reinterpret_cast<cuComplex const*>(&alpha), reinterpret_cast<cuComplex const*>(x), incx,
+      cublasCaxpy(handle, n, &alpha_cu, reinterpret_cast<cuComplex const*>(x), incx,
                   reinterpret_cast<cuComplex*>(y), incy);
   cudaDeviceSynchronize();
   return success;
@@ -250,8 +253,9 @@ inline cublasStatus_t cublas_axpy(cublasHandle_t handle,
                                   std::complex<double>* y,
                                   int incy)
 {
+  const cuDoubleComplex alpha_cu = make_cuDoubleComplex(alpha.real(), alpha.imag());
   cublasStatus_t success =
-      cublasZaxpy(handle, n, reinterpret_cast<cuDoubleComplex const*>(&alpha),
+      cublasZaxpy(handle, n, &alpha_cu,
                   reinterpret_cast<cuDoubleComplex const*>(x), incx, reinterpret_cast<cuDoubleComplex*>(y), incy);
   cudaDeviceSynchronize();
   return success;
@@ -307,10 +311,12 @@ inline cublasStatus_t cublas_gemv(cublasHandle_t handle,
                                   std::complex<float>* y,
                                   int incy)
 {
+  const cuComplex alpha_cu = make_cuComplex(alpha.real(), alpha.imag());
+  const cuComplex beta_cu  = make_cuComplex(beta.real(), beta.imag());
   cublasStatus_t success =
-      cublasCgemv(handle, cublasOperation(Atrans), M, N, reinterpret_cast<cuComplex const*>(&alpha),
+      cublasCgemv(handle, cublasOperation(Atrans), M, N, &alpha_cu,
                   reinterpret_cast<cuComplex const*>(A), lda, reinterpret_cast<cuComplex const*>(x), incx,
-                  reinterpret_cast<cuComplex const*>(&beta), reinterpret_cast<cuComplex*>(y), incy);
+                  &beta_cu, reinterpret_cast<cuComplex*>(y), incy);
   cudaDeviceSynchronize();
   return success;
 }
@@ -328,10 +334,12 @@ inline cublasStatus_t cublas_gemv(cublasHandle_t handle,
                                   std::complex<double>* y,
                                   int incy)
 {
+  const cuDoubleComplex alpha_cu = make_cuDoubleComplex(alpha.real(), alpha.imag());
+  const cuDoubleComplex beta_cu  = make_cuDoubleComplex(beta.real(), beta.imag());
   cublasStatus_t success =
-      cublasZgemv(handle, cublasOperation(Atrans), M, N, reinterpret_cast<cuDoubleComplex const*>(&alpha),
+      cublasZgemv(handle, cublasOperation(Atrans), M, N, &alpha_cu,
                   reinterpret_cast<cuDoubleComplex const*>(A), lda, reinterpret_cast<cuDoubleComplex const*>(x), incx,
-                  reinterpret_cast<cuDoubleComplex const*>(&beta), reinterpret_cast<cuDoubleComplex*>(y), incy);
+                  &beta_cu, reinterpret_cast<cuDoubleComplex*>(y), incy);
   cudaDeviceSynchronize();
   return success;
 }
@@ -455,10 +463,12 @@ inline cublasStatus_t cublas_gemm(cublasHandle_t handle,
                                   std::complex<float>* C,
                                   int ldc)
 {
+  const cuComplex alpha_cu = make_cuComplex(alpha.real(), alpha.imag());
+  const cuComplex beta_cu  = make_cuComplex(beta.real(), beta.imag());
   cublasStatus_t success = cublasCgemm(handle, cublasOperation(Atrans), cublasOperation(Btrans), M, N, K,
-                                      reinterpret_cast<cuComplex const*>(&alpha), reinterpret_cast<cuComplex const*>(A),
+                                      &alpha_cu, reinterpret_cast<cuComplex const*>(A),
                                       lda, reinterpret_cast<cuComplex const*>(B), ldb,
-                                      reinterpret_cast<cuComplex const*>(&beta), reinterpret_cast<cuComplex*>(C), ldc);
+                                      &beta_cu, reinterpret_cast<cuComplex*>(C), ldc);
   cudaDeviceSynchronize();
   return success;
 }
@@ -478,10 +488,12 @@ inline cublasStatus_t cublas_gemm(cublasHandle_t handle,
                                   std::complex<double>* C,
                                   int ldc)
 {
+  const cuDoubleComplex alpha_cu = make_cuDoubleComplex(alpha.real(), alpha.imag());
+  const cuDoubleComplex beta_cu  = make_cuDoubleComplex(beta.real(), beta.imag());
   cublasStatus_t success =
       cublasZgemm(handle, cublasOperation(Atrans), cublasOperation(Btrans), M, N, K,
-                  reinterpret_cast<cuDoubleComplex const*>(&alpha), reinterpret_cast<cuDoubleComplex const*>(A), lda,
-                  reinterpret_cast<cuDoubleComplex const*>(B), ldb, reinterpret_cast<cuDoubleComplex const*>(&beta),
+                  &alpha_cu, reinterpret_cast<cuDoubleComplex const*>(A), lda,
+                  reinterpret_cast<cuDoubleComplex const*>(B), ldb, &beta_cu,
                   reinterpret_cast<cuDoubleComplex*>(C), ldc);
   cudaDeviceSynchronize();
   return success;
@@ -786,9 +798,11 @@ inline cublasStatus_t cublas_geam(cublasHandle_t handle,
                                   std::complex<float>* C,
                                   int ldc)
 {
+  const cuComplex alpha_cu = make_cuComplex(alpha.real(), alpha.imag());
+  const cuComplex beta_cu  = make_cuComplex(beta.real(), beta.imag());
   cublasStatus_t success = cublasCgeam(handle, cublasOperation(Atrans), cublasOperation(Btrans), M, N,
-                                      reinterpret_cast<cuComplex const*>(&alpha), reinterpret_cast<cuComplex const*>(A),
-                                      lda, reinterpret_cast<cuComplex const*>(&beta),
+                                      &alpha_cu, reinterpret_cast<cuComplex const*>(A),
+                                      lda, &beta_cu,
                                       reinterpret_cast<cuComplex const*>(B), ldb, reinterpret_cast<cuComplex*>(C), ldc);
   cudaDeviceSynchronize();
   return success;
@@ -808,10 +822,12 @@ inline cublasStatus_t cublas_geam(cublasHandle_t handle,
                                   std::complex<double>* C,
                                   int ldc)
 {
+  const cuDoubleComplex alpha_cu = make_cuDoubleComplex(alpha.real(), alpha.imag());
+  const cuDoubleComplex beta_cu  = make_cuDoubleComplex(beta.real(), beta.imag());
   cublasStatus_t success =
       cublasZgeam(handle, cublasOperation(Atrans), cublasOperation(Btrans), M, N,
-                  reinterpret_cast<cuDoubleComplex const*>(&alpha), reinterpret_cast<cuDoubleComplex const*>(A), lda,
-                  reinterpret_cast<cuDoubleComplex const*>(&beta), reinterpret_cast<cuDoubleComplex const*>(B), ldb,
+                  &alpha_cu, reinterpret_cast<cuDoubleComplex const*>(A), lda,
+                  &beta_cu, reinterpret_cast<cuDoubleComplex const*>(B), ldb,
                   reinterpret_cast<cuDoubleComplex*>(C), ldc);
   cudaDeviceSynchronize();
   return success;
@@ -888,11 +904,13 @@ inline cublasStatus_t cublas_gemmStridedBatched(cublasHandle_t handle,
                                                 int strideC,
                                                 int batchSize)
 {
+  const cuComplex alpha_cu = make_cuComplex(alpha.real(), alpha.imag());
+  const cuComplex beta_cu  = make_cuComplex(beta.real(), beta.imag());
   cublasStatus_t success =
       cublasCgemmStridedBatched(handle, cublasOperation(Atrans), cublasOperation(Btrans), M, N, K,
-                                reinterpret_cast<cuComplex const*>(&alpha), reinterpret_cast<cuComplex const*>(A), lda,
+                                &alpha_cu, reinterpret_cast<cuComplex const*>(A), lda,
                                 strideA, reinterpret_cast<cuComplex const*>(B), ldb, strideB,
-                                reinterpret_cast<cuComplex const*>(&beta), reinterpret_cast<cuComplex*>(C), ldc,
+                                &beta_cu, reinterpret_cast<cuComplex*>(C), ldc,
                                 strideC, batchSize);
   cudaDeviceSynchronize();
   return success;
@@ -917,11 +935,13 @@ inline cublasStatus_t cublas_gemmStridedBatched(cublasHandle_t handle,
                                                 int strideC,
                                                 int batchSize)
 {
+  const cuDoubleComplex alpha_cu = make_cuDoubleComplex(alpha.real(), alpha.imag());
+  const cuDoubleComplex beta_cu  = make_cuDoubleComplex(beta.real(), beta.imag());
   cublasStatus_t success = cublasZgemmStridedBatched(handle, cublasOperation(Atrans), cublasOperation(Btrans), M, N, K,
-                                                    reinterpret_cast<cuDoubleComplex const*>(&alpha),
+                                                    &alpha_cu,
                                                     reinterpret_cast<cuDoubleComplex const*>(A), lda, strideA,
                                                     reinterpret_cast<cuDoubleComplex const*>(B), ldb, strideB,
-                                                    reinterpret_cast<cuDoubleComplex const*>(&beta),
+                                                    &beta_cu,
                                                     reinterpret_cast<cuDoubleComplex*>(C), ldc, strideC, batchSize);
   cudaDeviceSynchronize();
   return success;
@@ -987,10 +1007,12 @@ inline cublasStatus_t cublas_gemmBatched(cublasHandle_t handle,
                                          int ldc,
                                          int batchSize)
 {
+  const cuComplex alpha_cu = make_cuComplex(alpha.real(), alpha.imag());
+  const cuComplex beta_cu  = make_cuComplex(beta.real(), beta.imag());
   cublasStatus_t success =
       cublasCgemmBatched(handle, cublasOperation(Atrans), cublasOperation(Btrans), M, N, K,
-                         reinterpret_cast<cuComplex*>(&alpha), reinterpret_cast<cuComplex**>(A), lda,
-                         reinterpret_cast<cuComplex**>(B), ldb, reinterpret_cast<cuComplex*>(&beta),
+                         &alpha_cu, reinterpret_cast<cuComplex**>(A), lda,
+                         reinterpret_cast<cuComplex**>(B), ldb, &beta_cu,
                          reinterpret_cast<cuComplex**>(C), ldc, batchSize);
   cudaDeviceSynchronize();
   return success;
@@ -1012,10 +1034,12 @@ inline cublasStatus_t cublas_gemmBatched(cublasHandle_t handle,
                                          int ldc,
                                          int batchSize)
 {
+  const cuDoubleComplex alpha_cu = make_cuDoubleComplex(alpha.real(), alpha.imag());
+  const cuDoubleComplex beta_cu  = make_cuDoubleComplex(beta.real(), beta.imag());
   cublasStatus_t success =
       cublasZgemmBatched(handle, cublasOperation(Atrans), cublasOperation(Btrans), M, N, K,
-                         reinterpret_cast<cuDoubleComplex*>(&alpha), reinterpret_cast<cuDoubleComplex**>(A), lda,
-                         reinterpret_cast<cuDoubleComplex**>(B), ldb, reinterpret_cast<cuDoubleComplex*>(&beta),
+                         &alpha_cu, reinterpret_cast<cuDoubleComplex**>(A), lda,
+                         reinterpret_cast<cuDoubleComplex**>(B), ldb, &beta_cu,
                          reinterpret_cast<cuDoubleComplex**>(C), ldc, batchSize);
   cudaDeviceSynchronize();
   return success;
