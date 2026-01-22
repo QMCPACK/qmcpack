@@ -101,9 +101,11 @@ inline void gemm(BLASHandle<PlatformKind::CUDA>& handle,
                  std::complex<float>* C,
                  int ldc)
 {
+  const cuComplex alpha_cu = make_cuComplex(alpha.real(), alpha.imag());
+  const cuComplex beta_cu  = make_cuComplex(beta.real(), beta.imag());
   cublasErrorCheck(cublasCgemm(handle.h_cublas, cuBLAS::convertOperation(transa), cuBLAS::convertOperation(transb), m,
-                               n, k, castNativeType(&alpha), castNativeType(A), lda, castNativeType(B), ldb,
-                               castNativeType(&beta), castNativeType(C), ldc),
+                               n, k, &alpha_cu, castNativeType(A), lda, castNativeType(B), ldb, &beta_cu,
+                               castNativeType(C), ldc),
                    "cublasCgemm failed!");
 }
 
@@ -122,9 +124,11 @@ inline void gemm(BLASHandle<PlatformKind::CUDA>& handle,
                  std::complex<double>* C,
                  int ldc)
 {
+  const cuDoubleComplex alpha_cu = make_cuDoubleComplex(alpha.real(), alpha.imag());
+  const cuDoubleComplex beta_cu  = make_cuDoubleComplex(beta.real(), beta.imag());
   cublasErrorCheck(cublasZgemm(handle.h_cublas, cuBLAS::convertOperation(transa), cuBLAS::convertOperation(transb), m,
-                               n, k, castNativeType(&alpha), castNativeType(A), lda, castNativeType(B), ldb,
-                               castNativeType(&beta), castNativeType(C), ldc),
+                               n, k, &alpha_cu, castNativeType(A), lda, castNativeType(B), ldb, &beta_cu,
+                               castNativeType(C), ldc),
                    "cublasZgemm failed!");
 }
 
@@ -177,9 +181,10 @@ inline void gemv(BLASHandle<PlatformKind::CUDA>& handle,
                  std::complex<float>* y,
                  const int incy)
 {
-  cublasErrorCheck(cublasCgemv(handle.h_cublas, cuBLAS::convertOperation(trans), m, n, castNativeType(&alpha),
-                               castNativeType(A), lda, castNativeType(x), incx, castNativeType(&beta),
-                               castNativeType(y), incy),
+  const cuComplex alpha_cu = make_cuComplex(alpha.real(), alpha.imag());
+  const cuComplex beta_cu  = make_cuComplex(beta.real(), beta.imag());
+  cublasErrorCheck(cublasCgemv(handle.h_cublas, cuBLAS::convertOperation(trans), m, n, &alpha_cu, castNativeType(A),
+                               lda, castNativeType(x), incx, &beta_cu, castNativeType(y), incy),
                    "cublasCgemv failed!");
 }
 
@@ -196,9 +201,10 @@ inline void gemv(BLASHandle<PlatformKind::CUDA>& handle,
                  std::complex<double>* y,
                  const int incy)
 {
-  cublasErrorCheck(cublasZgemv(handle.h_cublas, cuBLAS::convertOperation(trans), m, n, castNativeType(&alpha),
-                               castNativeType(A), lda, castNativeType(x), incx, castNativeType(&beta),
-                               castNativeType(y), incy),
+  const cuDoubleComplex alpha_cu = make_cuDoubleComplex(alpha.real(), alpha.imag());
+  const cuDoubleComplex beta_cu  = make_cuDoubleComplex(beta.real(), beta.imag());
+  cublasErrorCheck(cublasZgemv(handle.h_cublas, cuBLAS::convertOperation(trans), m, n, &alpha_cu, castNativeType(A),
+                               lda, castNativeType(x), incx, &beta_cu, castNativeType(y), incy),
                    "cublasZgemv failed!");
 }
 
@@ -261,8 +267,9 @@ inline void ger(BLASHandle<PlatformKind::CUDA>& handle,
                 std::complex<float>* A,
                 const int lda)
 {
-  cublasErrorCheck(cublasCgeru(handle.h_cublas, m, n, castNativeType(&alpha), castNativeType(x), incx,
-                               castNativeType(y), incy, castNativeType(A), lda),
+  const cuComplex alpha_cu = make_cuComplex(alpha.real(), alpha.imag());
+  cublasErrorCheck(cublasCgeru(handle.h_cublas, m, n, &alpha_cu, castNativeType(x), incx, castNativeType(y), incy,
+                               castNativeType(A), lda),
                    "cublasCger failed!");
 }
 
@@ -277,8 +284,9 @@ inline void ger(BLASHandle<PlatformKind::CUDA>& handle,
                 std::complex<double>* A,
                 const int lda)
 {
-  cublasErrorCheck(cublasZgeru(handle.h_cublas, m, n, castNativeType(&alpha), castNativeType(x), incx,
-                               castNativeType(y), incy, castNativeType(A), lda),
+  const cuDoubleComplex alpha_cu = make_cuDoubleComplex(alpha.real(), alpha.imag());
+  cublasErrorCheck(cublasZgeru(handle.h_cublas, m, n, &alpha_cu, castNativeType(x), incx, castNativeType(y), incy,
+                               castNativeType(A), lda),
                    "cublasZger failed!");
 }
 
