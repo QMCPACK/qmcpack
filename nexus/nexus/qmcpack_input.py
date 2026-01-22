@@ -1580,7 +1580,7 @@ class Param(Names):
     #end def __call__
 
     def read(self,xml):
-        val = ''
+        val = None
         attr = set(xml._attributes.keys())
         other_attr = attr-set(['name'])
         if 'name' in attr and len(other_attr)>0:
@@ -1591,46 +1591,40 @@ class Param(Names):
             self.metadata[xml.name] = oa
         #end if
         if 'text' in xml:
-            success = False
+            text = xml.text.strip()
+            if ' ' not in text:
+                try:
+                    val = int(text)
+                except:
+                    try:
+                        val = float(text)
+                    except:
+                        val = text
+                return val
             try:
-                val_float = np.loadtxt(StringIO(xml.text),float)
                 val_int   = np.loadtxt(StringIO(xml.text),int)
-                if np.allclose(val_float,val_int):
+                val_float = np.loadtxt(StringIO(xml.text),float)
+                if np.allclose(val_int,val_float):
                     val = val_int
                 else:
                     val = val_float
-                success = True
             except:
                 pass
-            if not success:
+            if val is not None:
+                return val
+            text_split = text.split()
+            try:
+                val = np.array(text_split,dtype=int)
+            except:
                 try:
-                    val = np.loadtxt(StringIO(xml.text))
-                    sucess = True
+                    val = np.array(text_split,dtype=float)
                 except:
-                    pass
-            if not success:
-                text_split = xml.text.split()
-                try:
-                    val_float = np.array(text_split,dtype=float)
-                    val_int   = np.array(text_split,dtype=int)
-                    if np.allclose(val_float,val_int):
-                        val = val_int
-                    else:
-                        val = val_float
-                    success = True
-                except:
-                    pass
-            if not success:
-                try:
-                    val = np.array(text_split)
-                    success = True
-                except:
-                    pass
-            if not success:
-                val = xml.text
-            elif val.size==1:
+                    val = np.array(xml.text.split(),dtype=object)
+            if val.size==1:
                 val = val.ravel()[0]
-        #end if
+            return val
+        if val is None:
+            val = ''
         return val
     #end def read
 
