@@ -17,7 +17,7 @@
 #include <cuda.h>
 #include <thrust/complex.h>
 #include <cuda_runtime.h>
-#include <thrust/system/cuda/detail/core/util.h>
+#include "Platforms/CUDA/uninitialized_array.hpp"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/cuda_settings.h"
 #define ENABLE_CUDA 1
 #include "AFQMC/Memory/CUDA/cuda_utilities.h"
@@ -116,7 +116,7 @@ __global__ void kernel_Aijk_Bkj_Cik(int ni,
                                     thrust::complex<T>* C,
                                     int ldc)
 {
-  __shared__ thrust::cuda_cub::core::uninitialized_array<thrust::complex<T>, 32> cache;
+  __shared__ qmcplusplus::device::uninitialized_array<thrust::complex<T>, 32> cache;
   int k = blockIdx.x;
   int i = blockIdx.y;
   if ((i < ni) && (k < nk))
@@ -228,8 +228,8 @@ __global__ void kernel_element_wise_Aij_Bjk_Ckji(int ni,
 {
   // hard-coded to TILE_DIM=32
   int TILE_DIM = 32;
-  __shared__ thrust::cuda_cub::core::uninitialized_array<T2, 32 * 32> Acache;
-  __shared__ thrust::cuda_cub::core::uninitialized_array<thrust::complex<T>, 32> Bcache;
+  __shared__ qmcplusplus::device::uninitialized_array<T2, 32 * 32> Acache;
+  __shared__ qmcplusplus::device::uninitialized_array<thrust::complex<T>, 32> Bcache;
 
   int k = blockIdx.z;
   int j = blockIdx.x * TILE_DIM + threadIdx.x;

@@ -17,7 +17,7 @@
 #include <cuda.h>
 #include <thrust/complex.h>
 #include <cuda_runtime.h>
-#include <thrust/system/cuda/detail/core/util.h>
+#include "Platforms/CUDA/uninitialized_array.hpp"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/cuda_settings.h"
 #define ENABLE_CUDA 1
 #include "AFQMC/Memory/CUDA/cuda_utilities.h"
@@ -46,7 +46,7 @@ __global__ void kernel_construct_X(int nCV,
   int iw = blockIdx.y;
   if (ni >= nsteps || iw >= nwalk)
     return;
-  __shared__ thrust::cuda_cub::core::uninitialized_array<thrust::complex<T>, 2 * REDUCE_BLOCK_SIZE> cache;
+  __shared__ qmcplusplus::device::uninitialized_array<thrust::complex<T>, 2 * REDUCE_BLOCK_SIZE> cache;
   cache[2 * threadIdx.x]     = thrust::complex<T>(0.0);
   cache[2 * threadIdx.x + 1] = thrust::complex<T>(0.0);
 
@@ -109,7 +109,7 @@ __global__ void kernel_construct_X_free_projection(int nCV,
   int iw = blockIdx.y;
   if (ni >= nsteps || iw >= nwalk)
     return;
-  __shared__ thrust::cuda_cub::core::uninitialized_array<thrust::complex<T>, REDUCE_BLOCK_SIZE> cache;
+  __shared__ qmcplusplus::device::uninitialized_array<thrust::complex<T>, REDUCE_BLOCK_SIZE> cache;
   cache[threadIdx.x] = thrust::complex<T>(0.0);
 
   thrust::complex<T> im(0.0, 1.0);
