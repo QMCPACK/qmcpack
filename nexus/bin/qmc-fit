@@ -52,6 +52,7 @@ from nexus.numerics import morse_Einf as morse_einf
 from nexus.numerics import morse_a,morse_width,morse_depth,morse_Ee,morse_k
 from nexus.numerics import murnaghan,birch,vinet
 from nexus.numerics import murnaghan_pressure,birch_pressure,vinet_pressure
+import nexus.numpy_extensions as npe
 
 
 # Polynomial functions
@@ -317,7 +318,7 @@ def process_scalar_files(scalar_files,equils=None,reblock_factors=None,series_st
         if reblock>1:
             E = E.sum(1)/reblock
         #end if
-        E = E.reshape(bt,)
+        npe.reshape_array(E, bt,)
         Edata[n] = E
     #end for
     Edata = np.array(Edata,dtype=float)

@@ -23,6 +23,7 @@ from nexus.nexus_version import nexus_version
 from nexus.developer import DevBase,obj,unavailable
 from nexus.unit_converter import convert
 from nexus.numerics import simstats,simplestats,equilibration_length
+import nexus.numpy_extensions as npe
 
 
 # numpy imports
@@ -262,7 +263,7 @@ class DatAnalyzer(QBase):
         self.extract_info(filepath)
         lt = np.loadtxt(filepath)
         if len(lt.shape)==1:
-            lt = lt.reshape(1,len(lt))
+            npe.reshape_array(lt, (1, len(lt)))
         #end if
         if lt.size==0:
             self.info.load_failed = True
