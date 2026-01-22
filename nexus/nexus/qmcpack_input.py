@@ -1591,27 +1591,45 @@ class Param(Names):
             self.metadata[xml.name] = oa
         #end if
         if 'text' in xml:
-            token = xml.text.split('\n',1)[0].split(None,1)[0]
+            success = False
             try:
-                if is_int(token):
-                    val = np.loadtxt(StringIO(xml.text),int)
-                elif is_float(token):
-                    val = np.loadtxt(StringIO(xml.text),float)
+                val_float = np.loadtxt(StringIO(xml.text),float)
+                val_int   = np.loadtxt(StringIO(xml.text),int)
+                if np.allclose(val_float,val_int):
+                    val = val_int
                 else:
-                    val = np.array(xml.text.split())
-                #end if
+                    val = val_float
+                success = True
             except:
-                if is_int(token):
-                    val = np.array(xml.text.split(),dtype=int)
-                elif is_float(token):
-                    val = np.array(xml.text.split(),dtype=float)
-                else:
-                    val = np.array(xml.text.split())
-                #end if
-            #end try
-            if val.size==1:
+                pass
+            if not success:
+                try:
+                    val = np.loadtxt(StringIO(xml.text))
+                    sucess = True
+                except:
+                    pass
+            if not success:
+                text_split = xml.text.split()
+                try:
+                    val_float = np.array(text_split,dtype=float)
+                    val_int   = np.array(text_split,dtype=int)
+                    if np.allclose(val_float,val_int):
+                        val = val_int
+                    else:
+                        val = val_float
+                    success = True
+                except:
+                    pass
+            if not success:
+                try:
+                    val = np.array(text_split)
+                    success = True
+                except:
+                    pass
+            if not success:
+                val = xml.text
+            elif val.size==1:
                 val = val.ravel()[0]
-            #end if
         #end if
         return val
     #end def read
