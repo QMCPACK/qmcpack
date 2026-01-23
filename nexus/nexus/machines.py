@@ -3742,6 +3742,253 @@ class Rhea(Supercomputer):
 #end class Rhea
 
 # Active
+# Leonardo BOOSTER at CINECA
+## Added 24/11/2025 by A Zen
+class Leonardo(Supercomputer):
+
+    name             = 'leonardo'
+    requires_account = True
+    batch_capable    = True
+    prefixed_output  = True
+    outfile_extension = '.out'
+    errfile_extension = '.err'
+
+    # QOS on Booster (boost_usr_prod)
+    # https://docs.hpc.cineca.it/hpc/leonardo.html#file-systems-and-data-managment
+    # parallel partition: boost_usr_prod 
+    # GPUs: up to 4 gpus per node
+    booster_qos = {
+        'normal': {
+            'max_nodes' : 64,
+            'min_nodes' : 1,
+            'max_hours' : 24.0,
+        },
+        'boost_qos_dbg': {
+            'max_nodes' : 4,
+            'min_nodes' : 1,
+            'max_hours' : 0.5,   # 30 minuti
+        },
+        'boost_qos_bprod': {
+            'min_nodes' : 65,
+            'max_nodes' : 256,
+            'max_hours' : 24.0,
+        },
+        'boost_qos_lprod': {
+            'min_nodes' : 1,
+            'max_nodes' : 8,
+            'max_hours' : 96.0,  # 4 giorni
+        },
+    }
+    # serial partition: lrd_all_serial
+    # No GPUs, Hyperthreading x 2, Budget Free, 30800 MB RAM
+    serial_partition  = 'lrd_all_serial'
+    serial_max_cores  = 4      # 4 core max
+    serial_max_hours  = 4.0    # 4 ore
+
+    def post_process_job(self, job):
+        """
+        Adjust srun options based on job properties (nodes, processes, threads).
+        This is called after the Job object is created and before writing the script.
+        """
+
+        # Base srun options: total nodes and total MPI processes
+        job.run_options.add(
+            N='-N {}'.format(job.nodes),
+            n='-n {}'.format(job.processes),
+        )
+
+        # If OpenMP threads are requested, set -c and cpu binding
+        if job.threads > 1:
+            job.run_options.add(
+                c='-c {}'.format(job.threads),
+            )
+
+            # Only add cpu_bind if not already specified by the user
+            if 'cpu_bind' not in job.run_options:
+                if job.processes_per_node == self.cores_per_node:
+                    # If all cores are used per node, bind by threads
+                    cpu_bind = '--cpu-bind=threads'
+                else:
+                    # Otherwise, bind by cores (more standard)
+                    cpu_bind = '--cpu-bind=cores'
+                # end if
+                job.run_options.add(cpu_bind=cpu_bind)
+            # end if
+        # end if
+    # end def post_process_job
+
+    def write_job_header(self, job):
+        """
+        Write the SLURM job script header according to:
+          - Booster partition (boost_usr_prod) and its QoS table
+          - Serial partition lrd_all_serial for light tests
+
+        Any violation of queue rules (nodes/time/cores/QoS) results in a RuntimeError.
+        """
+
+        # Determine if we are using the serial partition.
+        # We trigger this mode by setting job.queue = 'lrd_all_serial' in the Job.
+        serial_mode = (job.queue == 'serial')
+
+        # Compute total requested hours from days/hours/minutes/seconds
+        job.total_hours = (
+            job.days * 24
+            + job.hours
+            + job.minutes / 60.0
+            + job.seconds / 3600.0
+        )
+
+        if serial_mode:
+            # ===== SERIAL MODE: lrd_all_serial =====
+            partition = self.serial_partition
+
+            # lrd_all_serial: it is a serial partition, 1 node only
+            if job.nodes != 1:
+                raise RuntimeError(
+                    f'The serial queue (partition=lrd_all_serial) allows exactly 1 node, '
+                    f'but job.nodes={job.nodes}.'
+                )
+
+            # Check total cores (processes_per_node * threads)
+            ppn = getattr(job, 'processes_per_node', None)
+            threads = job.threads if job.threads is not None else 1
+
+            if ppn is not None:
+                total_cores = ppn * threads
+                if total_cores > self.serial_max_cores:
+                    raise RuntimeError(
+                        f'The serial queue (partition=lrd_all_serial) allows at most {self.serial_max_cores} cores, '
+                        f'but you requested {total_cores} (ppn={ppn}, threads={threads}).'
+                    )
+            # end if
+
+            # Enforce serial walltime limit
+            if job.total_hours > self.serial_max_hours:
+                raise RuntimeError(
+                    f'Requested runtime ({job.total_hours:.2f} h) exceeds '
+                    f'lrd_all_serial limit ({self.serial_max_hours:.2f} h).'
+                )
+
+        else:
+            # ===== BOOSTER MODE: boost_usr_prod with QoS table =====
+            partition = 'boost_usr_prod'
+
+            # Default QoS if not specified: "normal"
+            if job.queue is None:
+                job.queue = 'normal'
+
+            # Get QoS rules; if unknown, raise error
+            qos_rules = self.booster_qos.get(job.queue)
+            if qos_rules is None:
+                raise RuntimeError(
+                    f'Unknown QoS "{job.queue}" for machine "leonardo". '
+                    f'Valid QoS: {", ".join(self.booster_qos.keys())}.'
+                )
+            # end if
+
+            min_nodes = qos_rules.get('min_nodes', 1)
+            max_nodes = qos_rules.get('max_nodes', None)
+            max_hours = qos_rules['max_hours']
+
+            # Enforce node limits
+            if job.nodes < min_nodes:
+                raise RuntimeError(
+                    f'Requested nodes ({job.nodes}) < min ({min_nodes}) '
+                    f'for QoS {job.queue}.'
+                )
+            # end if
+
+            if max_nodes is not None and job.nodes > max_nodes:
+                raise RuntimeError(
+                    f'Requested nodes ({job.nodes}) > max ({max_nodes}) '
+                    f'for QoS {job.queue}.'
+                )
+            # end if
+
+            # Enforce walltime limit
+            if job.total_hours > max_hours:
+                raise RuntimeError(
+                    f'Requested runtime ({job.total_hours:.2f} h) exceeds '
+                    f'limit ({max_hours:.2f} h) for QoS {job.queue}.'
+                )
+            # end if
+        # end if serial_mode
+
+        # ===== Common SLURM header =====
+        c  = '#!/bin/bash\n'
+        c += f'#SBATCH --job-name={job.name}\n'
+        c += f'#SBATCH --account={job.account}\n'
+        c += f'#SBATCH --partition={partition}\n'
+        c += f'#SBATCH --nodes={job.nodes}\n'
+        c += '#SBATCH --time={:02d}:{:02d}:{:02d}\n'.format(
+            job.hours + 24 * job.days,
+            job.minutes,
+            job.seconds
+        )
+        c += f'#SBATCH --output={job.outfile}\n'
+        c += f'#SBATCH --error={job.errfile}\n'
+
+        # For Booster mode, add QoS (for "normal" usually no explicit --qos is needed)
+        if (not serial_mode) and job.queue is not None and job.queue != 'normal':
+            c += f'#SBATCH --qos={job.queue}\n'
+        # end if
+
+        # SLURM task and thread configuration (if provided in the Job)
+        if getattr(job, 'processes_per_node', None) is not None:
+            c += f'#SBATCH --ntasks-per-node={job.processes_per_node}\n'
+        # end if
+        if job.threads is not None and job.threads > 0:
+            c += f'#SBATCH --cpus-per-task={job.threads}\n'
+        # end if
+
+        # GPU resources: do NOT request GPUs in serial mode
+        if (not serial_mode) and getattr(job, 'gpus_per_node', None) is not None:
+            c += f'#SBATCH --gres=gpu:{job.gpus_per_node}\n'
+        # end if
+
+        # Set memory per node/cpu (units GiB)
+        if getattr(job,'memory_per_node',None) is not None:
+            if job.memory_per_node > 0:
+                c += f'#SBATCH --mem={job.memory_per_node}G\n'
+            elif type(job.memory_per_node) is str:
+                c += f'#SBATCH --mem={job.memory_per_node}\n'
+        elif getattr(job,'mem_per_cpu',None) is not None:
+            if job.memory_per_cpu > 0:
+                c += f'#SBATCH --mem-per-cpu={job.mem_per_cpu}G\n'
+            elif type(job.memory_per_cpu) is str:
+                c += f'#SBATCH --mem-per-cpu={job.mem_per_cpu}\n'
+        else: # use all the memory of the node
+            c += f'#SBATCH --mem=0\n'
+        # end if
+
+        # Additional flags
+        if getattr(job,'sbatch_flags',None) is not None:
+            if type( job.sbatch_flags ) is str:
+                c += f'#SBATCH {job.sbatch_flags}\n'
+            elif type( job.sbatch_flags ) is list or type( job.sbatch_flags ) is tuple:
+                for s in job.sbatch_flags:
+                    if type(s) is str:
+                        c += f'#SBATCH {s}\n'
+        # end if
+
+        # Mail notifications (if requested)
+        if job.email is not None:
+            c += f'#SBATCH --mail-user={job.email}\n'
+            c += '#SBATCH --mail-type=ALL\n'
+        # end if
+
+        c += '\ncd $SLURM_SUBMIT_DIR\n\n'
+        c += 'echo "JobID : $SLURM_JOBID"\n'
+        c += 'echo "Number of nodes requested: $SLURM_JOB_NUM_NODES"\n'
+        c += 'echo "List of nodes assigned to the job: $SLURM_NODELIST"\n\n'
+
+        return c
+    # end def write_job_header
+
+# end class Leonardo
+
+
+# Active
 # Andes at ORNL
 ## Added 19/03/2021 by A Zen
 class Andes(Supercomputer):
@@ -4336,6 +4583,7 @@ for cores in range(1,128+1):
 #end for
 #  supercomputers and clusters
 #            nodes sockets cores ram qslots  qlaunch  qsubmit     qstatus    qdelete
+Leonardo(     3456,   1,    32,  512,   10,   'srun',   'sbatch',  'squeue', 'scancel')
 Jaguar(      18688,   2,     8,   32,  100,  'aprun',     'qsub',   'qstat',    'qdel')
 Kraken(       9408,   2,     6,   16,  100,  'aprun',     'qsub',   'qstat',    'qdel')
 Golub(          512,  2,     6,   32, 1000, 'mpirun',     'qsub',   'qstat',    'qdel')
