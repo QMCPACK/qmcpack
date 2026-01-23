@@ -61,6 +61,8 @@ from .hdfreader import read_hdf
 from .unit_converter import convert
 from .pwscf import Pwscf
 from .xmlreader import XMLreader
+from . import numpy_extensions as npe
+
 try:
     import h5py
 except:
@@ -1559,7 +1561,7 @@ class Qmcpack(Simulation):
             edata[spinlab] = obj()
             with open(einpath) as f:
                 data = np.array(f.read().split()[1:])
-                data = data.reshape(len(data)//12,12)
+                npe.reshape_inplace(data, (len(data)//12,12))
                 data = data.T
                 for darr in data:
                     if darr[0][0]=='K' or darr[0][0]=='E':

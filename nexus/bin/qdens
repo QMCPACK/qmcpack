@@ -3,7 +3,7 @@
 import gc
 import os
 from optparse import OptionParser
-
+import nexus.numpy_extensions as npe
 
 def find_nexus_modules():
     import os
@@ -171,7 +171,7 @@ def reblock(data,eq,rb=None,filepath=None):
     # reblock the data
     s = list(d.shape)
     snew = tuple([len(d)//rb,rb]+s[1:])
-    d = d.reshape(snew)
+    npe.reshape_inplace(d, snew)
     d = d.mean(1)
     return d
 #end def reblock
@@ -622,7 +622,7 @@ class StatFile(QDBase):
                         if ncells!=data_cells:
                             self.error('grid does not match number of data cells\ngrid provided: {0}\nnumber of cells in grid: {1}\nnumber of cells in data: {2}'.format(grid,ncells,data_cells))
                         #end if
-                        data.value = data.value.reshape(len(data.value),g[0],g[1],g[2])
+                        npe.reshape_inplace(data.value, (len(data.value),g[0],g[1],g[2]))
                     #end for
                 #end for
                 # reblock the data
@@ -696,7 +696,7 @@ class StatFile(QDBase):
                         if ncells!=data_cells:
                             self.error('grid does not match number of data cells\ngrid provided: {0}\nnumber of cells in grid: {1}\nnumber of cells in data: {2}'.format(grid,ncells,data_cells))
                         #end if
-                        data = data.reshape(len(data),g[0],g[1],g[2])
+                        npe.reshape_inplace(data, (len(data),g[0],g[1],g[2]))
                     #end for
                 #end for
                 # reblock the data
@@ -1159,7 +1159,7 @@ class QMCDensityProcessor(QDBase):
             if len(cell)!=9:
                 self.error('--cell input misformatted\nexpected 9 elements for 3x3 matrix\nreceived {0} elements with values: {1}'.format(len(cell),cell))
             #end if
-            cell = cell.reshape(3,3)
+            npe.reshape_inplace(cell, (3, 3))
             opt.cell = cell
         else:
             opt.cell = cell
@@ -1177,7 +1177,7 @@ class QMCDensityProcessor(QDBase):
             if len(np.array(density_cell).ravel())!=9:
                 self.error('--density_cell input misformatted\nexpected 9 elements for 3x3 matrix\nreceived {0} elements with values: {1}'.format(len(density_cell),density_cell))
             #end if
-            density_cell = density_cell.reshape(3,3)
+            npe.reshape_inplace(density_cell, (3, 3))
             opt.density_cell = density_cell
         else:
             opt.density_cell = density_cell

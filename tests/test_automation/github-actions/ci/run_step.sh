@@ -166,6 +166,7 @@ case "$1" in
               -DMPI_C_COMPILER=mpicc \
               -DMPI_CXX_COMPILER=mpicxx \
               -DENABLE_GCOV=TRUE \
+              -DENABLE_PYCOV=TRUE \
               ${GITHUB_WORKSPACE}
       ;;
       *"GCC"*"-Werror"*)
@@ -355,7 +356,14 @@ case "$1" in
     # see https://gcovr.com/en/stable/faq.html#why-does-c-code-have-so-many-uncovered-branches
     gcovr --exclude-unreachable-branches --exclude-throw-branches --root=${GITHUB_WORKSPACE}/.. --xml-pretty -o coverage.xml
     du -hs coverage.xml
-    cat coverage.xml
+    #cat coverage.xml
+    python3-coverage combine nexus/nexus/tests/.coverage*
+    du -hs .coverage
+    python3-coverage report
+    python3-coverage xml -o python_coverage.xml
+    du -hs python_coverage.xml
+    # Debug only: overwrite gcov file with python coverage to test codecov.io
+    #mv python_coverage.xml coverage.xml
     ;;
   
   # Install the library (not triggered at the moment)

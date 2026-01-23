@@ -34,7 +34,7 @@ import numpy as np
 from .simulation import Simulation,SimulationAnalyzer
 from .vasp_input import Incar
 from .developer import DevBase, obj
-
+from . import numpy_extensions as npe
 
 # vasp xml reader classes/functions
 
@@ -261,7 +261,7 @@ class VXML(DevBase):
                 lst.append(field_vals[findex])
             #end for
             arr = np.array(lst,dtype=field.dtype).ravel()
-            arr = arr.reshape(tuple(dim_counts))
+            npe.reshape_inplace(arr, (tuple(dim_counts)))
             self[field.name] = arr
         #end for
         #print '  done'

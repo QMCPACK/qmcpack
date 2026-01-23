@@ -145,6 +145,7 @@ from .structure import Structure, Jellium, get_kpath
 from .physical_system import PhysicalSystem
 from .simulation import SimulationInput, SimulationInputTemplate
 from .pwscf_input import array_to_string as pwscf_array_string
+from . import numpy_extensions as npe
 
 yesno_dict     = {True:'yes' ,False:'no'}
 truefalse_dict = {True:'true',False:'false'}
@@ -191,7 +192,7 @@ def attribute_to_value(attr):
     elif is_array(attr,int):
         val = np.array(attr.split(),int)
         if val.size==9:
-            val = val.reshape(3,3)
+            npe.reshape_inplace(val, (3, 3))
         #end if
     elif is_array(attr,float):
         val = np.array(attr.split(),float)
@@ -3856,14 +3857,14 @@ class QmcpackInput(SimulationInput,Names):
             if structure.folded_structure is not None:
                 fs = structure.folded_structure
                 axes = np.array(pwscf_array_string(fs.axes).split(),dtype=float)
-                axes = axes.reshape(fs.axes.shape)
+                npe.reshape_inplace(axes, fs.axes.shape)
                 axes = np.dot(structure.tmatrix,axes)
                 if np.abs(axes-structure.axes).sum()>1e-5:
                     self.error('supercell axes do not match tiled version of folded cell axes\n  you may have changed one set of axes (super/folded) and not the other\n  folded cell axes:\n'+str(fs.axes)+'\n  supercell axes:\n'+str(structure.axes)+'\n  folded axes tiled:\n'+str(axes))
                 #end if
             else:
                 axes = np.array(pwscf_array_string(structure.axes).split(),dtype=float)
-                axes = axes.reshape(structure.axes.shape)
+                npe.reshape_inplace(axes, structure.axes.shape)
             #end if
             structure.adjust_axes(axes)
 
@@ -4083,7 +4084,7 @@ class QmcpackInput(SimulationInput,Names):
             # reshape single atom case, shape (3,) as shape (1,3)
             pos = np.asarray(pos)
             if len(pos.flatten())==3:
-                pos = pos.reshape(1,3)
+                npe.reshape_inplace(pos, (1, 3))
             #end if
 
             structure = Structure(axes=axes,elem=elem,pos=pos,center=center,units='B')
@@ -5342,14 +5343,14 @@ def generate_simulationcell(bconds='ppp',lr_dim_cutoff=15,lr_tol=None,lr_handler
             if structure.folded_structure is not None:
                 fs = structure.folded_structure
                 axes = np.array(pwscf_array_string(fs.axes).split(),dtype=float)
-                axes = axes.reshape(fs.axes.shape)
+                npe.reshape_inplace(axes, fs.axes.shape)
                 axes = np.dot(structure.tmatrix,axes)
                 if np.abs(axes-structure.axes).sum()>1e-5:
                     QmcpackInput.class_error('in generate_simulationcell\nsupercell axes do not match tiled version of folded cell axes\nyou may have changed one set of axes (super/folded) and not the other\nfolded cell axes:\n'+str(fs.axes)+'\nsupercell axes:\n'+str(structure.axes)+'\nfolded axes tiled:\n'+str(axes))
                 #end if
             else:
                 axes = np.array(pwscf_array_string(structure.axes).split(),dtype=float)
-                axes = axes.reshape(structure.axes.shape)
+                npe.reshape_inplace(axes, structure.axes.shape)
             #end if
             structure.adjust_axes(axes)
 

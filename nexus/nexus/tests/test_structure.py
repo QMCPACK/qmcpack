@@ -498,7 +498,7 @@ def test_matrix_tiling():
         npass = 0
         for tmat in matrix_tilings:
             tmat = np.array(tmat,dtype=int)
-            tmat = tmat.reshape(3,3)
+            tmat.shape = 3,3
             st = s.tile(tmat)
             st.check_tiling()
         #end for
@@ -1252,6 +1252,7 @@ def test_min_image_distances():
     """
     import numpy as np
     from ..structure import generate_structure
+    from .. import numpy_extensions as npe
 
     g = generate_structure(
         structure = 'graphene',
@@ -1314,7 +1315,7 @@ def test_min_image_distances():
     assert(value_eq(dist.max(),1.42143636))
 
     vec = vt.ravel()
-    vec = vec.reshape(np.prod(dt.shape),3)
+    npe.reshape_inplace(vec, (np.prod(dt.shape), 3))
     vdist = np.linalg.norm(vec,axis=1)
     assert(value_eq(vdist,dist))
 
@@ -1357,6 +1358,7 @@ if versions.scipy_available:
         """
         import numpy as np
         from ..structure import generate_structure
+        from .. import numpy_extensions as npe
 
         center = (0,0,0)
 
@@ -1371,7 +1373,7 @@ if versions.scipy_available:
         gr = g.copy()
         npos = len(gr.pos)
         dr = gr.min_image_vectors(center)
-        dr = dr.reshape(npos,3)
+        npe.reshape_inplace(dr, (npos, 3))
         r = np.linalg.norm(dr,axis=1)
         dilation = 2*r*np.exp(-r)
         for i in range(npos):
