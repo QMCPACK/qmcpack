@@ -78,6 +78,7 @@ from .fileio import XsfFile
 from .hdfreader import HDFreader, HDFgroup
 from .numerics import ndgrid, simstats, simplestats, equilibration_length
 from .qmcpack_analyzer_base import QAobject, QAanalyzer, QAdata, QAHDFdata
+from . import numpy_extensions as npe
 
 class QuantityAnalyzer(QAanalyzer):
     def __init__(self,nindent=0):
@@ -148,7 +149,7 @@ class ScalarsDatAnalyzer(DatAnalyzer):
 
         lt = np.loadtxt(filepath)
         if len(lt.shape)==1:
-            lt.shape = (1,len(lt))
+            npe.reshape_inplace(lt, (1, len(lt)))
         #end if
 
         data = lt[:,1:].transpose()
@@ -202,7 +203,7 @@ class DmcDatAnalyzer(DatAnalyzer):
 
         lt = np.loadtxt(filepath)
         if len(lt.shape)==1:
-            lt.shape = (1,len(lt))
+            npe.reshape_inplace(lt, (1,len(lt)))
         #end if
 
         data = lt[:,1:].transpose()
@@ -250,7 +251,7 @@ class DmcDatAnalyzer(DatAnalyzer):
         for varname,samples in data.items():
             samp = samples[nse:]
             if block_avg:
-                samp.shape = ndmc_blocks,block_size
+                npe.reshape_inplace(samp, (ndmc_blocks, block_size))
                 samp = samp.mean(axis=1)
             #end if
             (mean,var,error,kappa)=simstats(samp)
@@ -993,9 +994,9 @@ class TracesFileHDF(QAobject):
                     else:
                         shape = [nrows]+list(fquantity.shape[0:q.dimension])+[q.unit_size]
                     #end if
-                    quantity.shape = tuple(shape)
+                    npe.reshape_inplace(quantity, tuple(shape))
                     #if len(fquantity.shape)==q.dimension:
-                    #    quantity.shape = tuple([nrows]+list(fquantity.shape))
+                    #    npe.reshape_inplace(quantity, tuple([nrows]+list(fquantity.shape)))
                     ##end if
                     domain[qname] = quantity
                 #end for
@@ -1656,9 +1657,9 @@ class DensityMatricesAnalyzer(HDFAnalyzer):
                     # remove states with insignificant occupation
                     mos = m
                     m = m[sig_occ]
-                    m.shape = nsig,nsig
+                    npe.reshape_inplace(m, (nsig, nsig))
                     merr = merr[sig_occ]
-                    merr.shape = nsig,nsig
+                    npe.reshape_inplace(merr, (nsig, nsig))
                     # remove off-diagonal elements with insignificant coupling
                     insig_coup = np.ones(m.shape,dtype=bool)
                     for i in range(nsig):
@@ -1706,7 +1707,7 @@ class DensityMatricesAnalyzer(HDFAnalyzer):
                         nb = float(nblocks)
                         for b in range(nblocks):
                             mb = mdata[b,...][sig_occ]
-                            mb.shape = nsig,nsig
+                            npe.reshape_inplace(mb, (nsig, nsig))
                             mb[insig_coup_stat] = 0.0
                             mj = (nb*m-mb)/(nb-1)
                             mjdata[b,...] = mj
@@ -1960,9 +1961,9 @@ class SpinDensityAnalyzer(DensityAnalyzerBase):
 
         for d in self.data:
             b = len(d.value)
-            d.value.shape = (b,g[0],g[1],g[2])
+            npe.reshape_inplace(d.value, (b, g[0], g[1], g[2]))
             if 'value_squared' in d:
-                d.value_squared.shape = (b,g[0],g[1],g[2])
+                npe.reshape_inplace(d.value_squared, (b, g[0], g[1], g[2]))
             #end if
         #end for
     #end def load_data_local
@@ -3316,7 +3317,7 @@ class RectilinearGrid(SpaceGridBase):
         points[:,2] = z.ravel()
         val = self.interpolate(points,[quantity])
         scalars = val[quantity].mean
-        scalars.shape = x.shape
+        npe.reshape_inplace(scalars, x.shape)
         self.plotter.surface_slice(x,y,z,scalars,options)
         return
     #end def surface_slice
