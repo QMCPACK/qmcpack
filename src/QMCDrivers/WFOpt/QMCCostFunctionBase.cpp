@@ -135,7 +135,7 @@ QMCCostFunctionBase::Return_rt QMCCostFunctionBase::fillHamVec(std::vector<Retur
   throw std::runtime_error("Need to implement fillHamVec");
 }
 
-void QMCCostFunctionBase::calcOvlParmVec(const std::vector<Return_rt>& parm, std::vector<Return_rt>& ovlParmVec)
+void QMCCostFunctionBase::calcOvlParmVec(const std::vector<Return_rt>& param, std::vector<Return_rt>& ovlParmVec)
 {
   throw std::runtime_error("Need to implement calcOvlParmVec");
 }
@@ -393,13 +393,11 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
   InitVariables = opt_vars;
   //get the indices
   Psi.checkOutVariables(opt_vars);
-  NumOptimizables = opt_vars.size();
-  if (NumOptimizables == 0)
-  {
-    APP_ABORT("QMCCostFunctionBase::put No valid optimizable variables are found.");
-  }
+  
+  if (const auto num_opt_vars = opt_vars.size(); num_opt_vars == 0)
+    throw UniformCommunicateError("QMCCostFunctionBase::put No valid optimizable variables are found.");
   else
-    app_log() << " In total " << NumOptimizables << " parameters being optimized after applying constraints."
+    app_log() << " In total " << num_opt_vars << " parameters being optimized after applying constraints."
               << std::endl;
   //     app_log() << "<active-optimizables> " << std::endl;
   //     opt_vars.print(app_log());

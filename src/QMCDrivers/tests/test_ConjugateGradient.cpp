@@ -46,15 +46,15 @@ public:
     }
   }
 
-  void calcOvlParmVec(const std::vector<Return_rt>& parm, std::vector<Return_rt>& ovlParmVec) override
+  void calcOvlParmVec(const std::vector<Return_rt>& param, std::vector<Return_rt>& ovlParmVec) override
   {
-    assert(ovlParmVec.size() == parm.size());
-    assert(parm.size() * parm.size() == Amat_.size());
+    assert(ovlParmVec.size() == param.size());
+    assert(param.size() * param.size() == Amat_.size());
 
     std::fill(ovlParmVec.begin(), ovlParmVec.end(), 0.0);
-    for (int i = 0; i < parm.size(); i++)
-      for (int j = 0; j < parm.size(); j++)
-        ovlParmVec[i] += Amat_[i * parm.size() + j] * parm[j];
+    for (int i = 0; i < param.size(); i++)
+      for (int j = 0; j < param.size(); j++)
+        ovlParmVec[i] += Amat_[i * param.size() + j] * param[j];
   }
 
 private:

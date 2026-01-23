@@ -46,12 +46,13 @@ void QMCCostFunction::GradCost(std::vector<Return_rt>& PGradient,
                                const std::vector<Return_rt>& PM,
                                Return_rt FiniteDiff)
 {
-  for (int j = 0; j < NumOptimizables; j++)
+  const auto num_opt_vars = opt_vars.size();
+  for (int j = 0; j < num_opt_vars; j++)
     opt_vars[j] = PM[j];
   if (FiniteDiff > 0)
   {
     QMCTraits::RealType dh = 1.0 / (2.0 * FiniteDiff);
-    for (int i = 0; i < NumOptimizables; i++)
+    for (int i = 0; i < num_opt_vars; i++)
     {
       // + FiniteDiff
       opt_vars[i] = PM[i] + FiniteDiff;
@@ -77,11 +78,11 @@ void QMCCostFunction::GradCost(std::vector<Return_rt>& PGradient,
     curAvg_w = SumValue[SUM_E_WGT] / SumValue[SUM_WGT];
     //    Return_t curAvg2_w = curAvg_w*curAvg_w;
     curVar_w = SumValue[SUM_ESQ_WGT] / SumValue[SUM_WGT] - curAvg_w * curAvg_w;
-    std::vector<Return_rt> EDtotals(NumOptimizables, 0.0);
-    std::vector<Return_rt> EDtotals_w(NumOptimizables, 0.0);
-    std::vector<Return_rt> E2Dtotals_w(NumOptimizables, 0.0);
-    std::vector<Return_rt> URV(NumOptimizables, 0.0);
-    std::vector<Return_rt> HD_avg(NumOptimizables, 0.0);
+    std::vector<Return_rt> EDtotals(num_opt_vars, 0.0);
+    std::vector<Return_rt> EDtotals_w(num_opt_vars, 0.0);
+    std::vector<Return_rt> E2Dtotals_w(num_opt_vars, 0.0);
+    std::vector<Return_rt> URV(num_opt_vars, 0.0);
+    std::vector<Return_rt> HD_avg(num_opt_vars, 0.0);
     Return_rt wgtinv   = 1.0 / SumValue[SUM_WGT];
     Return_rt delE_bar = 0;
     for (int ip = 0; ip < NumThreads; ip++)
@@ -94,13 +95,13 @@ void QMCCostFunction::GradCost(std::vector<Return_rt>& PGradient,
         Return_rt eloc_new              = saved[ENERGY_NEW];
         delE_bar += weight * std::pow(std::abs(eloc_new - EtargetEff), PowerE);
         const Return_rt* HDsaved = (*HDerivRecords[ip])[iw];
-        for (int pm = 0; pm < NumOptimizables; pm++)
+        for (int pm = 0; pm < num_opt_vars; pm++)
           HD_avg[pm] += HDsaved[pm];
       }
     }
     myComm->allreduce(HD_avg);
     myComm->allreduce(delE_bar);
-    for (int pm = 0; pm < NumOptimizables; pm++)
+    for (int pm = 0; pm < num_opt_vars; pm++)
       HD_avg[pm] *= 1.0 / static_cast<Return_rt>(NumSamples);
     for (int ip = 0; ip < NumThreads; ip++)
     {
@@ -118,7 +119,7 @@ void QMCCostFunction::GradCost(std::vector<Return_rt>& PGradient,
         Return_rt ddelE          = PowerE * std::pow(std::abs(eloc_new - EtargetEff), PowerE - 1);
         const Return_t* Dsaved   = (*DerivRecords[ip])[iw];
         const Return_rt* HDsaved = (*HDerivRecords[ip])[iw];
-        for (int pm = 0; pm < NumOptimizables; pm++)
+        for (int pm = 0; pm < num_opt_vars; pm++)
         {
           EDtotals_w[pm] += weight * (HDsaved[pm] + 2.0 * std::real(Dsaved[pm]) * delta_l);
           URV[pm] += 2.0 * (eloc_new * HDsaved[pm] - curAvg * HD_avg[pm]);
@@ -145,7 +146,7 @@ void QMCCostFunction::GradCost(std::vector<Return_rt>& PGradient,
         Return_rt sigma_l               = delta_l * delta_l;
         const Return_t* Dsaved          = (*DerivRecords[ip])[iw];
         const Return_rt* HDsaved        = (*HDerivRecords[ip])[iw];
-        for (int pm = 0; pm < NumOptimizables; pm++)
+        for (int pm = 0; pm < num_opt_vars; pm++)
         {
           E2Dtotals_w[pm] +=
               weight * 2.0 * (std::real(Dsaved[pm]) * (sigma_l - curVar_w) + delta_l * (HDsaved[pm] - EDtotals_w[pm]));
@@ -153,9 +154,9 @@ void QMCCostFunction::GradCost(std::vector<Return_rt>& PGradient,
       }
     }
     myComm->allreduce(E2Dtotals_w);
-    for (int pm = 0; pm < NumOptimizables; pm++)
+    for (int pm = 0; pm < num_opt_vars; pm++)
       URV[pm] *= smpinv;
-    for (int j = 0; j < NumOptimizables; j++)
+    for (int j = 0; j < num_opt_vars; j++)
     {
       PGradient[j] = 0.0;
       if (std::abs(w_var) > 1.0e-10)
@@ -231,6 +232,7 @@ void QMCCostFunction::getConfigurations(const std::string& aroot)
 /** evaluate everything before optimization */
 void QMCCostFunction::checkConfigurations(EngineHandle& handle)
 {
+  const auto num_opt_vars = opt_vars.size();
   RealType et_tot = 0.0;
   RealType e2_tot = 0.0;
 #pragma omp parallel reduction(+ : et_tot, e2_tot)
@@ -244,9 +246,9 @@ void QMCCostFunction::checkConfigurations(EngineHandle& handle)
       if (needGrads)
       {
         DerivRecords[ip] = new Matrix<Return_t>;
-        DerivRecords[ip]->resize(wRef.numSamples(), NumOptimizables);
+        DerivRecords[ip]->resize(wRef.numSamples(), num_opt_vars);
         HDerivRecords[ip] = new Matrix<Return_rt>;
-        HDerivRecords[ip]->resize(wRef.numSamples(), NumOptimizables);
+        HDerivRecords[ip]->resize(wRef.numSamples(), num_opt_vars);
       }
     }
     else if (RecordsOnNode[ip]->size1() != wRef.numSamples())
@@ -254,8 +256,8 @@ void QMCCostFunction::checkConfigurations(EngineHandle& handle)
       RecordsOnNode[ip]->resize(wRef.numSamples(), SUM_INDEX_SIZE);
       if (needGrads)
       {
-        DerivRecords[ip]->resize(wRef.numSamples(), NumOptimizables);
-        HDerivRecords[ip]->resize(wRef.numSamples(), NumOptimizables);
+        DerivRecords[ip]->resize(wRef.numSamples(), num_opt_vars);
+        HDerivRecords[ip]->resize(wRef.numSamples(), num_opt_vars);
       }
     }
     // Populate local to global index mapping into psiClone internal component 'myVars',
@@ -280,17 +282,17 @@ void QMCCostFunction::checkConfigurations(EngineHandle& handle)
       if (needGrads)
       {
         //allocate vector
-        Vector<Return_rt> rDsaved(NumOptimizables, 0.0);
-        Vector<Return_rt> rHDsaved(NumOptimizables, 0.0);
+        Vector<Return_rt> rDsaved(num_opt_vars, 0.0);
+        Vector<Return_rt> rHDsaved(num_opt_vars, 0.0);
 
-        Vector<Return_t> Dsaved(NumOptimizables, 0.0);
-        Vector<Return_t> HDsaved(NumOptimizables, 0.0);
+        Vector<Return_t> Dsaved(num_opt_vars, 0.0);
+        Vector<Return_t> HDsaved(num_opt_vars, 0.0);
 
         etmp = hClones[ip]->evaluateValueAndDerivatives(psi_ref, wRef, opt_vars, Dsaved, HDsaved);
 
 
         //FIXME the ifdef should be removed after the optimizer is made compatible with complex coefficients
-        for (int i = 0; i < NumOptimizables; i++)
+        for (int i = 0; i < num_opt_vars; i++)
         {
           rHDsaved[i] = std::real(HDsaved[i]);
         }
@@ -347,10 +349,11 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
                                                  DescentEngine& descentEngineObj,
                                                  const std::string& MinMethod)
 {
+  const auto num_opt_vars = opt_vars.size();
   if (MinMethod == "descent")
   {
     //Reset vectors and scalars from any previous iteration
-    descentEngineObj.prepareStorage(omp_get_max_threads(), NumOptimizables);
+    descentEngineObj.prepareStorage(omp_get_max_threads(), num_opt_vars);
   }
   RealType et_tot = 0.0;
   RealType e2_tot = 0.0;
@@ -365,9 +368,9 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
       if (needGrads)
       {
         DerivRecords[ip] = new Matrix<Return_t>;
-        //DerivRecords[ip]->resize(wRef.numSamples(),NumOptimizables);
+        //DerivRecords[ip]->resize(wRef.numSamples(),num_opt_vars);
         HDerivRecords[ip] = new Matrix<Return_rt>;
-        //HDerivRecords[ip]->resize(wRef.numSamples(),NumOptimizables);
+        //HDerivRecords[ip]->resize(wRef.numSamples(),num_opt_vars);
       }
     }
     else if (RecordsOnNode[ip]->size1() != wRef.numSamples())
@@ -375,8 +378,8 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
       RecordsOnNode[ip]->resize(wRef.numSamples(), SUM_INDEX_SIZE);
       if (needGrads)
       {
-        //DerivRecords[ip]->resize(wRef.numSamples(),NumOptimizables);
-        //HDerivRecords[ip]->resize(wRef.numSamples(),NumOptimizables);
+        //DerivRecords[ip]->resize(wRef.numSamples(),num_opt_vars);
+        //HDerivRecords[ip]->resize(wRef.numSamples(),num_opt_vars);
       }
     }
     // Populate local to global index mapping into psiClone internal component 'myVars',
@@ -403,14 +406,14 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
       if (needGrads)
       {
         //allocate vector
-        Vector<Return_t> Dsaved(NumOptimizables, 0.0);
-        Vector<Return_t> HDsaved(NumOptimizables, 0.0);
+        Vector<Return_t> Dsaved(num_opt_vars, 0.0);
+        Vector<Return_t> HDsaved(num_opt_vars, 0.0);
 
         etmp = hClones[ip]->evaluateValueAndDerivatives(psi_ref, wRef, opt_vars, Dsaved, HDsaved);
 
         // add non-differentiated derivative vector
-        std::vector<Return_t> der_rat_samp(NumOptimizables + 1, 0.0);
-        std::vector<Return_t> le_der_samp(NumOptimizables + 1, 0.0);
+        std::vector<Return_t> der_rat_samp(num_opt_vars + 1, 0.0);
+        std::vector<Return_t> le_der_samp(num_opt_vars + 1, 0.0);
 
         // dervative vectors
         der_rat_samp.at(0) = 1.0;
@@ -497,6 +500,7 @@ void QMCCostFunction::resetPsi(bool final_reset)
 
 QMCCostFunction::EffectiveWeight QMCCostFunction::correlatedSampling(bool needGrad)
 {
+  const auto num_opt_vars = opt_vars.size();
   for (int ip = 0; ip < NumThreads; ++ip)
   {
     //    synchronize the random number generator with the node
@@ -528,16 +532,16 @@ QMCCostFunction::EffectiveWeight QMCCostFunction::correlatedSampling(bool needGr
       Return_rt weight = saved[REWEIGHT] = vmc_or_dmc * (logpsi - saved[LOGPSI_FREE]);
       if (needGrad)
       {
-        Vector<Return_t> Dsaved(NumOptimizables, 0);
-        Vector<Return_t> HDsaved(NumOptimizables, 0);
+        Vector<Return_t> Dsaved(num_opt_vars, 0);
+        Vector<Return_t> HDsaved(num_opt_vars, 0);
 
-        Vector<Return_rt> rDsaved(NumOptimizables, 0);
-        Vector<Return_rt> rHDsaved(NumOptimizables, 0);
+        Vector<Return_rt> rDsaved(num_opt_vars, 0);
+        Vector<Return_rt> rHDsaved(num_opt_vars, 0);
 
         saved[ENERGY_NEW] =
             H_KE_Node[ip]->evaluateValueAndDerivatives(psi_ref, wRef, opt_vars, Dsaved, HDsaved) + saved[ENERGY_FIXED];
 
-        for (int i = 0; i < NumOptimizables; i++)
+        for (int i = 0; i < num_opt_vars; i++)
         {
           rDsaved[i]                  = std::real(Dsaved[i]);
           rHDsaved[i]                 = std::real(HDsaved[i]);

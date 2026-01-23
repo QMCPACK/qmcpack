@@ -52,12 +52,13 @@ void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
                                       const std::vector<Return_rt>& PM,
                                       Return_rt FiniteDiff)
 {
-  for (int j = 0; j < NumOptimizables; j++)
+  const auto num_opt_vars = opt_vars.size();
+  for (int j = 0; j < num_opt_vars; j++)
     opt_vars[j] = PM[j];
   if (FiniteDiff > 0)
   {
     QMCTraits::RealType dh = 1.0 / (2.0 * FiniteDiff);
-    for (int i = 0; i < NumOptimizables; i++)
+    for (int i = 0; i < num_opt_vars; i++)
     {
       // + FiniteDiff
       opt_vars[i] = PM[i] + FiniteDiff;
@@ -83,11 +84,11 @@ void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
     curAvg_w = SumValue[SUM_E_WGT] / SumValue[SUM_WGT];
     //    Return_t curAvg2_w = curAvg_w*curAvg_w;
     curVar_w = SumValue[SUM_ESQ_WGT] / SumValue[SUM_WGT] - curAvg_w * curAvg_w;
-    std::vector<Return_rt> EDtotals(NumOptimizables, 0.0);
-    std::vector<Return_rt> EDtotals_w(NumOptimizables, 0.0);
-    std::vector<Return_rt> E2Dtotals_w(NumOptimizables, 0.0);
-    std::vector<Return_rt> URV(NumOptimizables, 0.0);
-    std::vector<Return_rt> HD_avg(NumOptimizables, 0.0);
+    std::vector<Return_rt> EDtotals(num_opt_vars, 0.0);
+    std::vector<Return_rt> EDtotals_w(num_opt_vars, 0.0);
+    std::vector<Return_rt> E2Dtotals_w(num_opt_vars, 0.0);
+    std::vector<Return_rt> URV(num_opt_vars, 0.0);
+    std::vector<Return_rt> HD_avg(num_opt_vars, 0.0);
     Return_rt wgtinv   = 1.0 / SumValue[SUM_WGT];
     Return_rt delE_bar = 0;
     {
@@ -98,13 +99,13 @@ void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
         Return_rt eloc_new              = saved[ENERGY_NEW];
         delE_bar += weight * std::pow(std::abs(eloc_new - EtargetEff), PowerE);
         const Return_rt* HDsaved = HDerivRecords_[iw];
-        for (int pm = 0; pm < NumOptimizables; pm++)
+        for (int pm = 0; pm < num_opt_vars; pm++)
           HD_avg[pm] += HDsaved[pm];
       }
     }
     myComm->allreduce(HD_avg);
     myComm->allreduce(delE_bar);
-    for (int pm = 0; pm < NumOptimizables; pm++)
+    for (int pm = 0; pm < num_opt_vars; pm++)
       HD_avg[pm] *= 1.0 / static_cast<Return_rt>(NumSamples);
     {
       for (int iw = 0; iw < rank_local_num_samples_; iw++)
@@ -120,7 +121,7 @@ void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
         Return_rt ddelE          = PowerE * std::pow(std::abs(eloc_new - EtargetEff), PowerE - 1);
         const Return_t* Dsaved   = DerivRecords_[iw];
         const Return_rt* HDsaved = HDerivRecords_[iw];
-        for (int pm = 0; pm < NumOptimizables; pm++)
+        for (int pm = 0; pm < num_opt_vars; pm++)
         {
           //From Toulouse J. Chem. Phys. 126, 084102 (2007), this is H_0j+H_j0, which are independent
           //estimates of 1/2 the energy gradient g.  So g1+g2 is an estimate of g.
@@ -147,7 +148,7 @@ void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
         Return_rt sigma_l               = delta_l * delta_l;
         const Return_t* Dsaved          = DerivRecords_[iw];
         const Return_rt* HDsaved        = HDerivRecords_[iw];
-        for (int pm = 0; pm < NumOptimizables; pm++)
+        for (int pm = 0; pm < num_opt_vars; pm++)
         {
           E2Dtotals_w[pm] +=
               weight * 2.0 * (std::real(Dsaved[pm]) * (sigma_l - curVar_w) + delta_l * (HDsaved[pm] - EDtotals_w[pm]));
@@ -155,9 +156,9 @@ void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
       }
     }
     myComm->allreduce(E2Dtotals_w);
-    for (int pm = 0; pm < NumOptimizables; pm++)
+    for (int pm = 0; pm < num_opt_vars; pm++)
       URV[pm] *= smpinv;
-    for (int j = 0; j < NumOptimizables; j++)
+    for (int j = 0; j < num_opt_vars; j++)
     {
       PGradient[j] = 0.0;
       if (std::abs(w_var) > 1.0e-10)
@@ -236,13 +237,14 @@ void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
   // Ensure number of samples did not change after getConfigurations
   assert(rank_local_num_samples_ == samples_.getNumSamples());
 
+  const auto num_opt_vars = opt_vars.size();
   if (RecordsOnNode_.size1() == 0)
   {
     RecordsOnNode_.resize(rank_local_num_samples_, SUM_INDEX_SIZE);
     if (needGrads)
     {
-      DerivRecords_.resize(rank_local_num_samples_, NumOptimizables);
-      HDerivRecords_.resize(rank_local_num_samples_, NumOptimizables);
+      DerivRecords_.resize(rank_local_num_samples_, num_opt_vars);
+      HDerivRecords_.resize(rank_local_num_samples_, num_opt_vars);
     }
   }
   else if (RecordsOnNode_.size1() != rank_local_num_samples_)
@@ -250,8 +252,8 @@ void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
     RecordsOnNode_.resize(rank_local_num_samples_, SUM_INDEX_SIZE);
     if (needGrads)
     {
-      DerivRecords_.resize(rank_local_num_samples_, NumOptimizables);
-      HDerivRecords_.resize(rank_local_num_samples_, NumOptimizables);
+      DerivRecords_.resize(rank_local_num_samples_, num_opt_vars);
+      HDerivRecords_.resize(rank_local_num_samples_, num_opt_vars);
     }
   }
   //    synchronize the random number generator with the node
@@ -275,7 +277,7 @@ void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
   std::vector<int> samples_per_crowd_offsets(opt_num_crowds + 1);
   FairDivide(rank_local_num_samples_, opt_num_crowds, samples_per_crowd_offsets);
 
-  handle.prepareSampling(NumOptimizables, rank_local_num_samples_);
+  handle.prepareSampling(num_opt_vars, rank_local_num_samples_);
   // lambda to execute on each crowd
   auto evalOptConfig = [](int crowd_id, UPtrVector<CostFunctionCrowdData>& opt_crowds,
                           const std::vector<int>& samples_per_crowd_offsets, const std::vector<int>& walkers_per_crowd,
@@ -440,17 +442,18 @@ void QMCCostFunctionBatched::checkConfigurationsSR(EngineHandle& handle)
   // Ensure number of samples did not change after getConfigurations
   assert(rank_local_num_samples_ == samples_.getNumSamples());
 
+  const auto num_opt_vars = opt_vars.size();
   if (RecordsOnNode_.size1() == 0)
   {
     RecordsOnNode_.resize(rank_local_num_samples_, SUM_INDEX_SIZE);
     if (needGrads)
-      DerivRecords_.resize(rank_local_num_samples_, NumOptimizables);
+      DerivRecords_.resize(rank_local_num_samples_, num_opt_vars);
   }
   else if (RecordsOnNode_.size1() != rank_local_num_samples_)
   {
     RecordsOnNode_.resize(rank_local_num_samples_, SUM_INDEX_SIZE);
     if (needGrads)
-      DerivRecords_.resize(rank_local_num_samples_, NumOptimizables);
+      DerivRecords_.resize(rank_local_num_samples_, num_opt_vars);
   }
   //    synchronize the random number generator with the node
   (*MoverRng[0]) = (*RngSaved[0]);
@@ -473,7 +476,7 @@ void QMCCostFunctionBatched::checkConfigurationsSR(EngineHandle& handle)
   std::vector<int> samples_per_crowd_offsets(opt_num_crowds + 1);
   FairDivide(rank_local_num_samples_, opt_num_crowds, samples_per_crowd_offsets);
 
-  handle.prepareSampling(NumOptimizables, rank_local_num_samples_);
+  handle.prepareSampling(num_opt_vars, rank_local_num_samples_);
   // lambda to execute on each crowd
   auto evalOptConfig = [](int crowd_id, UPtrVector<CostFunctionCrowdData>& opt_crowds,
                           const std::vector<int>& samples_per_crowd_offsets, const std::vector<int>& walkers_per_crowd,
@@ -646,13 +649,8 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
     H.setRandomGenerator(MoverRng[0]);
   }
 
-  //Return_rt wgt_node = 0.0, wgt_node2 = 0.0;
-  Return_rt wgt_tot = 0.0;
-
   // Ensure number of samples did not change after getConfiguration
   assert(rank_local_num_samples_ == samples_.getNumSamples());
-
-  Return_rt inv_n_samples = 1.0 / samples_.getGlobalNumSamples();
 
   const size_t opt_num_crowds = walkers_per_crowd_.size();
   // Divide samples among crowds
@@ -735,8 +733,6 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
           TrialWaveFunction::mw_evaluateDeltaLog(wf_list, p_list, opt_data.get_log_psi_opt(), dummyG_list, dummyL_list,
                                                  compute_all_from_scratch);
 
-          Return_rt inv_n_samples = 1.0 / samples.getGlobalNumSamples();
-
           for (int ib = 0; ib < current_batch_size; ib++)
           {
             const int is = base_sample_index + ib;
@@ -748,8 +744,7 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
             Return_rt weight = vmc_or_dmc * (opt_data.get_log_psi_opt()[ib] - RecordsOnNode[is][LOGPSI_FREE]);
             RecordsOnNode[is][REWEIGHT] = weight;
             // move to opt_data
-            opt_data.get_wgt() += inv_n_samples * weight;
-            opt_data.get_wgt2() += inv_n_samples * weight * weight;
+            opt_data.get_wgt() += weight;
           }
 
           if (needGrad)
@@ -797,9 +792,12 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
   crowd_tasks(opt_num_crowds, evalOptCorrelated, opt_eval, samples_per_crowd_offsets, walkers_per_crowd_, dLogPsi,
               d2LogPsi, RecordsOnNode_, DerivRecords_, HDerivRecords_, samples_, opt_vars, compute_all_from_scratch,
               vmc_or_dmc, needGrad);
+
   // Sum weights over crowds
+  Return_rt wgt_tot = 0.0;
+  Return_rt inv_n_samples = 1.0 / (samples_.getNumSamples() * myComm->size());
   for (int i = 0; i < opt_eval.size(); i++)
-    wgt_tot += opt_eval[i]->get_wgt();
+    wgt_tot += opt_eval[i]->get_wgt() * inv_n_samples;
 
   //this is MPI barrier
   OHMMS::Controller->barrier();
@@ -851,7 +849,7 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
   }
   //collect everything
   myComm->allreduce(SumValue);
-  return SumValue[SUM_WGT] * SumValue[SUM_WGT] / (SumValue[SUM_WGTSQ] * samples_.getGlobalNumSamples());
+  return inv_n_samples * SumValue[SUM_WGT] * SumValue[SUM_WGT] / SumValue[SUM_WGTSQ];
 }
 
 
@@ -1012,7 +1010,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillHamVec(std::vector
   return 1.0;
 }
 
-void QMCCostFunctionBatched::calcOvlParmVec(const std::vector<Return_rt>& parm, std::vector<Return_rt>& ovlParmVec)
+void QMCCostFunctionBatched::calcOvlParmVec(const std::vector<Return_rt>& param, std::vector<Return_rt>& ovlParmVec)
 {
   ScopedTimer tmp_timer(fill_timer_);
 
@@ -1039,7 +1037,7 @@ void QMCCostFunctionBatched::calcOvlParmVec(const std::vector<Return_rt>& parm, 
     Return_rt weight                = saved[REWEIGHT] * wgtinv;
     const Return_t* Dsaved          = DerivRecords_[iw];
     for (int pm = 0; pm < getNumParams(); pm++)
-      prod[iw] += (Dsaved[pm] - D_avg[pm]) * parm[pm];
+      prod[iw] += (Dsaved[pm] - D_avg[pm]) * param[pm];
   }
 
 

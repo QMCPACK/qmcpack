@@ -144,7 +144,7 @@ public:
   virtual Return_rt fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left, Matrix<Return_rt>& Right) = 0;
 
   virtual Return_rt fillHamVec(std::vector<Return_rt>& ham);
-  virtual void calcOvlParmVec(const std::vector<Return_rt>& parm, std::vector<Return_rt>& ovlParmVec);
+  virtual void calcOvlParmVec(const std::vector<Return_rt>& param, std::vector<Return_rt>& ovlParmVec);
 
 #ifdef HAVE_LMY_ENGINE
   Return_rt LMYEngineCost(const bool needDeriv, cqmc::engine::LMYEngine<Return_t>* EngineObj);
@@ -201,8 +201,6 @@ protected:
   int NumCostCalls;
   /// global number of samples to use in correlated sampling
   int NumSamples;
-  ///total number of optimizable variables
-  int NumOptimizables;
   ///counter for output
   int ReportCounter;
   ///weights for energy and variance in the cost function

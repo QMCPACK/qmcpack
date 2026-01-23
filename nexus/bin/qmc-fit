@@ -314,7 +314,7 @@ def process_scalar_files(scalar_files,equils=None,reblock_factors=None,series_st
         nbe = len(E)%bt
         E = E[nbe:]
         reblock = len(E)//bt
-        E = E.reshape(bt,reblock)
+        E.shape = (bt,reblock)
         if reblock>1:
             E = E.sum(1)/reblock
         #end if
