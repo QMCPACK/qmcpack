@@ -4583,7 +4583,7 @@ for cores in range(1,128+1):
 #end for
 #  supercomputers and clusters
 #            nodes sockets cores ram qslots  qlaunch  qsubmit     qstatus    qdelete
-Leonardo(     3456,   1,    32,  512,   10,   'srun',   'sbatch',  'squeue', 'scancel')
+Leonardo(     3456,   1,    32,  512, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
 Jaguar(      18688,   2,     8,   32,  100,  'aprun',     'qsub',   'qstat',    'qdel')
 Kraken(       9408,   2,     6,   16,  100,  'aprun',     'qsub',   'qstat',    'qdel')
 Golub(          512,  2,     6,   32, 1000, 'mpirun',     'qsub',   'qstat',    'qdel')
