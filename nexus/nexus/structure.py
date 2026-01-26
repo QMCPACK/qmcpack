@@ -136,6 +136,7 @@ from .periodic_table import is_element
 from .periodic_table import pt as ptable
 from .fileio import XsfFile, PoscarFile
 from .developer import DevBase, obj, unavailable, error
+from . import numpy_extensions as npe
 
 try:
     from scipy.special import erfc
@@ -331,8 +332,8 @@ def kmesh(kaxes,dim,shift=None):
     ndim = len(dim)
     d = np.array(dim)
     s = np.array(shift)
-    s.shape = 1,ndim
-    d.shape = 1,ndim
+    npe.reshape_inplace(s, (1, ndim))
+    npe.reshape_inplace(d, (1, ndim))
     kp = np.empty((1,ndim),dtype=float)
     kgrid = np.empty((d.prod(),ndim))
     n=0
@@ -480,6 +481,40 @@ def rotate_plane(plane,angle,points,units='degrees'):
 #end def rotate_plane
 
 
+def recenter_points(pos, center, axes):
+    """Center a given set of points in a cell around a provided center.
+    
+    Parameters
+    ----------
+    pos : NDArray
+        Array of *N* positions with shape (*N*,3)
+    center : NDArray
+        Position of the center
+    axes : NDArray
+        Array of the cell vectors with shape (3,3)
+
+    Returns
+    -------
+    pos : NDArray
+        Array of positions centered around the given center
+
+    Note
+    ----
+    This function also ensures that points close (within 1e-12) to the minimum edge (-0.5) of the
+    cell are placed exactly on that edge. The intent here is to make sure that atoms close to or
+    on the leading edge (+0.5) are wrapped around to retain periodicity.
+    """
+    axinv = inv(axes)
+    for i in range(len(pos)):
+        u = dot(pos[i] - center, axinv)
+        u -= np.floor(u+.5)
+        u[np.abs(u-.5)<1e-12] = -0.5
+        u[np.abs(u+.5)<1e-12] = -0.5
+        pos[i] = dot(u,axes) + center
+    #end for
+
+    return pos
+
 
 opt_tm_matrices    = obj()
 opt_tm_wig_indices = obj()
@@ -563,7 +598,7 @@ def optimal_tilematrix(axes,volfac,dn=1,tol=1e-3,filter=trivial_filter,mask=None
             #end for
         #end for
         mats = np.array(mats,dtype=int)
-        mats.shape = (2*dn+1)**(dim*dim),dim,dim
+        npe.reshape_inplace(mats, ((2*dn+1)**(dim*dim), dim, dim))
         opt_tm_matrices[dn] = mats
     else:
         mats = opt_tm_matrices[dn]
@@ -795,7 +830,7 @@ class Structure(Sobj):
 
         if isinstance(axes,str):
             axes = np.array(axes.split(),dtype=float)
-            axes.shape = dim,dim
+            npe.reshape_inplace(axes, (dim, dim))
         #end if
         if center is None:
             if axes is not None:
@@ -813,7 +848,7 @@ class Structure(Sobj):
         #end if
         if elem_pos is not None:
             ep = np.array(elem_pos.split(),dtype=str)
-            ep.shape = ep.size//(dim+1),(dim+1)
+            npe.reshape_inplace(ep, (ep.size//(dim+1), (dim+1)))
             elem = ep[:,0].ravel()
             pos  = ep[:,1:dim+1]
         #end if
@@ -3283,37 +3318,33 @@ class Structure(Sobj):
 
 
     # test needed
-    def recenter(self,center=None):
+    def recenter(self, center=None):
+        """Center atoms around a new provided center of the unit cell, or if a new
+        center is not provided then use the (0.5 0.5 0.5) point of the unit cell.
+        """
         if center is not None:
-            self.center=np.array(center,dtype=float)
+            self.center = np.array(center, dtype=float)
         #end if
-        pos = self.pos
-        c = np.empty((1,self.dim),dtype=float)
-        c[:] = self.center[:]
-        axes = self.axes
-        axinv = inv(axes)
-        for i in range(len(pos)):
-            u = dot(pos[i]-c,axinv)
-            pos[i] = dot(u-np.floor(u+.5),axes)+c
-        #end for
+        self.pos = recenter_points(pos=self.pos, center=self.center, axes=self.axes)
         self.recenter_k()
     #end def recenter
 
 
     # test needed
-    def recorner(self):
-        pos = self.pos
-        axes = self.axes
-        axinv = inv(axes)
-        for i in range(len(pos)):
-            u = dot(pos[i],axinv)
-            pos[i] = dot(u-np.floor(u),axes)
-        #end for
-    #end def recorner
-
-    
-    # test needed
     def recenter_k(self,kpoints=None,kaxes=None,kcenter=None,remove_duplicates=False):
+        """Center k-points around the provided center of k-space.
+        
+        Parameters
+        ----------
+        kpoints : NDArray | None, default = None
+            Array of *N* k-points to center with shape (*N*,3)
+        kaxes : NDArray | None, default = None
+            Array of axes describing the k-space cell with shape (3,3)
+        kcenter : NDArray | None, default = None
+            Array containing a custom center of k-space with shape (3,3)
+        remove_duplicates : bool, default = False
+            Remove k-points that have a distance less than 1e-8
+        """
         use_self = kpoints is None
         if use_self:
             kpoints=self.kpoints
@@ -3323,28 +3354,22 @@ class Structure(Sobj):
         #end if
         if len(kpoints)>0:
             axes = kaxes
-            axinv = inv(axes)
             if kcenter is None:
-                c = axes.sum(0)/2
+                center = axes.sum(0)/2
             else:
-                c = np.array(kcenter)
-            #end if
-            for i in range(len(kpoints)):
-                u = dot(kpoints[i]-c,axinv)
-                u -= np.floor(u+.5)
-                u[np.abs(u-.5)<1e-12] -= 1.0
-                u[np.abs(u   )<1e-12]  = 0.0
-                kpoints[i] = dot(u,axes)+c
-            #end for
+                center = np.array(kcenter)
+
+            kpoints = recenter_points(pos=kpoints, center=center, axes=axes)
+
             if remove_duplicates:
-                inside = self.inside(kpoints,axes,c)
+                inside = self.inside(kpoints,axes,center)
                 kpoints  = kpoints[inside]
                 nkpoints = len(kpoints)
                 unique = np.empty((nkpoints,),dtype=bool)
                 unique[:] = True
                 nn = nearest_neighbors(1,kpoints)
                 if nkpoints>1:
-                    nn.shape = nkpoints,
+                    npe.reshape_inplace(nn, (nkpoints,))
                     dist = self.distances(kpoints,kpoints[nn])
                     tol = 1e-8
                     duplicates = np.arange(nkpoints)[dist<tol]
@@ -3367,6 +3392,29 @@ class Structure(Sobj):
             return kpoints   
         #end if
     #end def recenter_k
+
+
+    # test needed
+    def recorner(self, center = None):
+        """Center atoms around the origin of the cell
+        
+        Parameters
+        ----------
+        center : NDArray, default = self.center
+            Position of the center of the cell.
+        
+        Note
+        ----
+        If the user supplies `center`, then this will modify `self.center` to reflect
+        that change.
+        """
+        if center is not None:
+            self.center = np.array(center, dtype=float)
+        pos = self.pos
+        axes = self.axes
+        corner = self.center - axes.sum(0)/2
+        self.pos = recenter_points(pos=pos, center=corner, axes=axes)
+    #end def recorner
 
 
     # test needed
@@ -3533,7 +3581,7 @@ class Structure(Sobj):
             npoints = len(points)
             ntpoints = npoints*int(np.round(np.abs(det(tilemat))))
             if tilevec.size==dim:
-                tilevec.shape = 1,dim
+                npe.reshape_inplace(tilevec, (1, dim))
             #end if
             taxes = dot(tilemat,axes)
             success = False

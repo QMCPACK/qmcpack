@@ -12,6 +12,7 @@ def test_coord_conversion():
     import numpy as np
     from ..grid_functions import polar_to_cartesian,cartesian_to_polar
     from ..grid_functions import spherical_to_cartesian,cartesian_to_spherical
+    from .. import numpy_extensions as npe
 
     pi = np.pi
     sqrt = np.sqrt
@@ -37,7 +38,7 @@ def test_coord_conversion():
         ]
 
     th_cos_sin = np.array(th_cos_sin)
-    th_cos_sin.shape = len(th_cos_sin)//3,3
+    npe.reshape_inplace(th_cos_sin, (len(th_cos_sin)//3, 3))
     th  = th_cos_sin[:,0]
     cos = th_cos_sin[:,1]
     sin = th_cos_sin[:,2]
@@ -97,7 +98,7 @@ def test_unit_grid_points():
     import numpy as np
 
     from ..testing import value_eq
-
+    from .. import numpy_extensions as npe    
     from ..grid_functions import unit_grid_points
 
     lin_grid = np.array([0.00,0.25,0.50,0.75])
@@ -110,7 +111,7 @@ def test_unit_grid_points():
 
     def make_1d(x):
         p = x.copy()
-        p.shape = len(p),1
+        npe.reshape_inplace(p, (len(p), 1))
         return p
     #end def make_1d
 
@@ -655,6 +656,7 @@ def test_grid_set_operations():
     import numpy as np
     from ..developer import obj
     from ..testing import value_eq
+    from .. import numpy_extensions as npe
 
     grids = get_grids()
     props = get_props()
@@ -663,7 +665,7 @@ def test_grid_set_operations():
 
     # set points
     points = np.linspace(0,1,2*10)
-    points.shape = 10,2
+    npe.reshape_inplace(points, (10, 2))
     for name in grids_check:
         g = grids[name].copy()
         g.set_points(points)
@@ -755,6 +757,7 @@ def test_grid_copy():
 def test_grid_translate():
     import numpy as np
     from ..testing import value_eq
+    from .. import numpy_extensions as npe
 
     grids = get_grids()
     props = get_props()
@@ -778,7 +781,7 @@ def test_grid_translate():
         shift = p.space_dim*(6.7,)
         translate_and_check(g,shift)
         shift = np.array(shift)
-        shift.shape = (p.space_dim,)
+        npe.reshape_inplace(shift, (p.space_dim,))
         translate_and_check(g,shift)
     #end for
 #end def test_grid_translate
@@ -816,10 +819,11 @@ def test_grid_reshape():
 def test_grid_unit_points():
     import numpy as np
     from ..testing import value_eq,object_eq
-    
+    from .. import numpy_extensions as npe
+
     def make_1d(x):
         p = x.copy()
-        p.shape = len(p),1
+        npe.reshape_inplace(p, (len(p), 1))
         return p
     #end def make_1d
 
@@ -1019,10 +1023,11 @@ def test_grid_inside():
 def test_grid_project():
     import numpy as np
     from ..testing import value_eq,object_eq
+    from .. import numpy_extensions as npe
     
     def make_1d(x):
         p = x.copy()
-        p.shape = len(p),1
+        npe.reshape_inplace(p, (len(p), 1))
         return p
     #end def make_1d
 
