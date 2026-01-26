@@ -1303,6 +1303,12 @@ def test_job_run_command():
         ('aurora'         , 'n2_t2'         ) : 'mpiexec --cpu-bind depth --depth=2 -n 102 --ppn 51 --env OMP_NUM_THREADS=2 --env OMP_PLACES=cores test.x',
         ('aurora'         , 'n2_t2_e'       ) : 'mpiexec --cpu-bind depth --depth=2 -n 102 --ppn 51 --env OMP_NUM_THREADS=2 --env OMP_PLACES=cores test.x',
         ('aurora'         , 'n2_t2_p2'      ) : 'mpiexec --cpu-bind depth --depth=2 -n 4 --ppn 2 --env OMP_NUM_THREADS=2 --env OMP_PLACES=cores test.x'
+        ('leonardo'       , 'n1'            ) : 'srun -N 1 -c 1 --cpu-bind=threads -n  32 --threads-per-core=1 test.x',
+        ('leonardo'       , 'n1_p1'         ) : 'srun -N 1 -c 1 --cpu-bind=threads -n   1 --threads-per-core=1 test.x',
+        ('leonardo'       , 'n2'            ) : 'srun -N 2 -c 1 --cpu-bind=threads -n  64 --threads-per-core=1 test.x',
+        ('leonardo'       , 'n2_t2'         ) : 'srun -N 2 -c 2 --cpu-bind=threads -n  32 --threads-per-core=2 test.x',
+        ('leonardo'       , 'n2_t2_e'       ) : 'srun -N 2 -c 2 --cpu-bind=threads -n  32 --threads-per-core=2 test.x',
+        ('leonardo'       , 'n2_t2_p2'      ) : 'srun -N 2 -c 2 --cpu-bind=threads -n   4 --threads-per-core=2 test.x',
         })
 
 
@@ -2133,7 +2139,6 @@ srun test.x''',
 export ENV_VAR=1
 export OMP_NUM_THREADS=1
 srun test.x''',
-
         besms = '''#!/bin/bash
 #SBATCH -A ABC123
 #SBATCH -p t92
@@ -2151,7 +2156,6 @@ srun test.x''',
 export ENV_VAR=1
 export OMP_NUM_THREADS=1
 srun test.x''',
-      
         frontier = '''#!/bin/sh
 #SBATCH -A ABC123
 #SBATCH -p batch
@@ -2165,7 +2169,6 @@ srun test.x''',
 export ENV_VAR=1
 export OMP_NUM_THREADS=1
 srun -N 2 -c 1 --cpu-bind=threads -n 112 --threads-per-core=1 test.x''',
-
         aurora = '''#!/bin/sh
 #PBS -l select=2
 #PBS -l place=scatter
@@ -2183,6 +2186,22 @@ cd ${PBS_O_WORKDIR}
 export ENV_VAR=1
 export OMP_NUM_THREADS=1
 mpiexec --cpu-bind depth --depth=1 -n 204 --ppn 102 --env OMP_NUM_THREADS=1 --env OMP_PLACES=cores test.x''',
+        leonardo = '''#!/bin/sh
+#SBATCH -A ABC123
+#SBATCH -p boost_usr_prod
+#SBATCH -J jobname
+#SBATCH -o jobname.out
+#SBATCH -e jobname.err
+#SBATCH -t 06:30
+#SBATCH -N 2
+#SBATCH --ntasks-per-node=32
+#SBATCH --cpus-per-task=1
+#SBATCH --gres=gpu:4
+#SBATCH --mem=0
+
+export ENV_VAR=1
+export OMP_NUM_THREADS=1
+srun -N 2 -c 1 --cpu-bind=threads -n 64 --threads-per-core=1 test.x''',
         )
 
     def process_job_file(jf):
