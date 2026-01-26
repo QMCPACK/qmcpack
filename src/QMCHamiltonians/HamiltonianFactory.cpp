@@ -30,7 +30,6 @@
 #include "QMCHamiltonians/LatticeDeviationEstimator.h"
 #include "QMCHamiltonians/MomentumEstimator.h"
 #include "QMCHamiltonians/Pressure.h"
-#include "QMCHamiltonians/ForwardWalking.h"
 #include "QMCHamiltonians/PairCorrEstimator.h"
 #include "QMCHamiltonians/DensityEstimator.h"
 #include "QMCHamiltonians/SkEstimator.h"
@@ -349,7 +348,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur)
       {
         if (estType == "coulomb")
         {
-          std::unique_ptr<Pressure> BP = std::make_unique<Pressure>(targetPtcl);
+          std::unique_ptr<Pressure> BP = std::make_unique<Pressure>();
           BP->put(element);
           targetH->addOperator(std::move(BP), "Pressure", false);
           int nlen(100);
@@ -371,7 +370,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur)
         {
           APP_ABORT("Unknown psi \"" + PsiName + "\" for momentum.");
         }
-        std::unique_ptr<MomentumEstimator> ME = std::make_unique<MomentumEstimator>(targetPtcl, *psi_it->second);
+        std::unique_ptr<MomentumEstimator> ME = std::make_unique<MomentumEstimator>(targetPtcl);
         bool rt(myComm->rank() == 0);
         ME->putSpecial(element, targetPtcl, rt);
         targetH->addOperator(std::move(ME), "MomentumEstimator", false);
@@ -392,25 +391,6 @@ bool HamiltonianFactory::build(xmlNodePtr cur)
 
   //add observables with physical and simple estimators
   targetH->addObservables(targetPtcl);
-  //do correction
-  bool dmc_correction = false;
-  processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
-    std::string potType("0");
-    OhmmsAttributeSet attrib;
-    attrib.add(potType, "type");
-    attrib.put(element);
-    if (cname == "estimator" && potType == "ForwardWalking")
-    {
-      app_log() << "  Adding Forward Walking Operator" << std::endl;
-      std::unique_ptr<ForwardWalking> FW = std::make_unique<ForwardWalking>();
-      FW->putSpecial(element, *targetH, targetPtcl);
-      targetH->addOperator(std::move(FW), "ForwardWalking", false);
-      dmc_correction = true;
-    }
-  });
-  //evaluate the observables again
-  if (dmc_correction)
-    targetH->addObservables(targetPtcl);
   return true;
 }
 

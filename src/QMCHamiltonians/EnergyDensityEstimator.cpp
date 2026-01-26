@@ -246,12 +246,6 @@ bool EnergyDensityEstimator::get(std::ostream& os) const
 }
 
 
-void EnergyDensityEstimator::resetTargetParticleSet(ParticleSet& P)
-{
-  //remains empty
-}
-
-
 //#define ENERGYDENSITY_CHECK
 
 EnergyDensityEstimator::Return_t EnergyDensityEstimator::evaluate(ParticleSet& P)
@@ -526,7 +520,7 @@ void EnergyDensityEstimator::setParticlePropertyList(PropertySetType& plist, int
 }
 
 
-std::unique_ptr<OperatorBase> EnergyDensityEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> EnergyDensityEstimator::makeClone(ParticleSet& qp)
 {
   bool write = omp_get_thread_num() == 0;
   if (write)

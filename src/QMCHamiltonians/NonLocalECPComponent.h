@@ -18,7 +18,6 @@
 #define QMCPLUSPLUS_NONLOCAL_ECPOTENTIAL_COMPONENT_H
 
 #include "type_traits/OptionalRef.hpp"
-#include "QMCHamiltonians/OperatorBase.h"
 #include "QMCHamiltonians/RandomRotationMatrix.h"
 #include <ResourceCollection.h>
 #include <TrialWaveFunction.h>
@@ -27,6 +26,7 @@
 #include "Numerics/OneDimLinearSpline.h"
 #include "Numerics/OneDimCubicSpline.h"
 #include "NLPPJob.h"
+#include "NonLocalData.h"
 
 namespace qmcplusplus
 {
@@ -77,7 +77,7 @@ private:
   std::vector<ValueType> wvec;
 
   //Position delta for virtual moves.
-  std::vector<PosType> deltaV;
+  std::vector<PosType> deltaV_;
   //Array for P_l[cos(theta)].
   std::vector<RealType> lpol;
   //Array for P'_l[cos(theta)]
@@ -100,7 +100,7 @@ private:
   //This stores grad psi/psi - dot(u,grad psi)
   std::vector<PosType> wfngrad;
   //This stores potential contribution per knot:
-  std::vector<RealType> knot_pots;
+  std::vector<RealType> knot_pots_;
 
   /// scratch spaces used by evaluateValueAndDerivatives
   Matrix<ValueType> dratio;
@@ -115,9 +115,6 @@ private:
   ///The gradient of the wave function w.r.t. the ion position
   ParticleSet::ParticleGradient Gion;
 
-  ///virtual particle set: delayed initialization
-  VirtualParticleSet* VP;
-
   /// Can disable grid randomization for testing
   bool do_randomize_grid_;
 
@@ -126,9 +123,15 @@ private:
 
   void calculateKnotPartialProduct(RealType r, const PosType& dr, std::vector<RealType>& knot_prods);
 
+  /// build QP position deltas and partial product of potentials
+  void buildQuadraturePointDeltaPosAndPartialPotential(RealType r,
+                                                       const PosType& dr,
+                                                       std::vector<PosType>& deltaV,
+                                                       std::vector<RealType>& knot_prods);
+
   /** finalize the calculation of $\frac{V\Psi_T}{\Psi_T}$
    */
-  RealType calculatePotential(RealType r, const PosType& dr, bool use_TMDLA);
+  RealType calculatePotential(std::vector<RealType>& knot_pots, bool use_TMDLA) const;
 
   /** contribute local non-local move data
    * @param iel reference electron id.
@@ -159,8 +162,6 @@ public:
   void resize_warrays(int n, int m, int l);
 
   void rotateQuadratureGrid(const TensorType& rmat);
-  template<typename T>
-  void rotateQuadratureGrid(std::vector<T>& sphere, const TensorType& rmat);
 
   /** @brief Evaluate the nonlocal pp contribution via randomized quadrature grid
    * to total energy from ion "iat" and electron "iel".
@@ -177,6 +178,7 @@ public:
    * @return RealType Contribution to $\frac{V\Psi_T}{\Psi_T}$ from ion iat and electron iel.
    */
   RealType evaluateOne(ParticleSet& W,
+                       const OptionalRef<VirtualParticleSet> vp,
                        int iat,
                        TrialWaveFunction& Psi,
                        int iel,
@@ -201,6 +203,7 @@ public:
    */
   static void mw_evaluateOne(const RefVectorWithLeader<NonLocalECPComponent>& ecp_component_list,
                              const RefVectorWithLeader<ParticleSet>& p_list,
+                             const RefVectorWithLeader<VirtualParticleSet>& vp_list,
                              const RefVectorWithLeader<TrialWaveFunction>& psi_list,
                              const RefVector<const NLPPJob<RealType>>& joblist,
                              std::vector<RealType>& pairpots,
@@ -222,6 +225,7 @@ public:
    * @return RealType Contribution to $\frac{V\Psi_T}{\Psi_T}$ from ion iat and electron iel.
    */
   RealType evaluateOneWithForces(ParticleSet& W,
+                                 const OptionalRef<VirtualParticleSet> vp,
                                  int iat,
                                  TrialWaveFunction& Psi,
                                  int iel,
@@ -245,6 +249,7 @@ public:
    * @return RealType Contribution to $\frac{V\Psi_T}{\Psi_T}$ from ion iat and electron iel.
    */
   RealType evaluateOneWithForces(ParticleSet& W,
+                                 const OptionalRef<VirtualParticleSet> vp,
                                  ParticleSet& ions,
                                  int iat,
                                  TrialWaveFunction& Psi,
@@ -256,12 +261,13 @@ public:
 
   // This function needs to be updated to SoA. myTableIndex is introduced temporarily.
   RealType evaluateValueAndDerivatives(ParticleSet& P,
+                                       const OptionalRef<VirtualParticleSet> vp,
                                        int iat,
                                        TrialWaveFunction& psi,
                                        int iel,
                                        RealType r,
                                        const PosType& dr,
-                                       const opt_variables_type& optvars,
+                                       const OptVariables& optvars,
                                        const Vector<ValueType>& dlogpsi,
                                        Vector<ValueType>& dhpsioverpsi);
 
@@ -313,15 +319,11 @@ public:
 
   void print(std::ostream& os);
 
-  void initVirtualParticle(const ParticleSet& qp);
-  void deleteVirtualParticle();
-
   inline void setRmax(int rmax) { Rmax = rmax; }
   inline RealType getRmax() const { return Rmax; }
   inline int getNknot() const { return nknot; }
   inline void setLmax(int Lmax) { lmax = Lmax; }
   inline int getLmax() const { return lmax; }
-  const VirtualParticleSet* getVP() const { return VP; };
 
   // copy sgridxyz_m to rrotsgrid_m without rotation. For testing only.
   friend void copyGridUnrotatedForTest(NonLocalECPComponent& nlpp);

@@ -99,7 +99,7 @@ QMCMain::QMCMain(Communicate* c)
       << "\n  Number of ranks in group  = " << myComm->size()
       << "\n  MPI ranks per node        = " << node_comm.size()
 #if defined(ENABLE_OFFLOAD) || defined(ENABLE_CUDA) || defined(ENABLE_ROCM) || defined(ENABLE_SYCL)
-      << "\n  Accelerators per node     = " << DeviceManager::getGlobal().getNumDevices()
+      << "\n  Accelerators per rank     = " << DeviceManager::getGlobal().getNumDevices()
 #endif
       << std::endl;
   // clang-format on
@@ -253,12 +253,6 @@ bool QMCMain::execute()
     else if (cname == "cmc")
     {
       executeCMCSection(cur);
-    }
-    else if (cname == "debug")
-    {
-      executeDebugSection(cur);
-      app_log() << "  Debug is done. Skip the rest of the input " << std::endl;
-      break;
     }
   }
   // free if m_qmcation owns the memory of xmlNodePtr before clearing
@@ -666,14 +660,6 @@ bool QMCMain::setMCWalkers(xmlXPathContextPtr context_)
   return true;
 }
 
-bool QMCMain::executeDebugSection(xmlNodePtr cur)
-{
-  app_log() << "QMCMain::executeDebugSection " << std::endl;
-  app_log() << "  Use this to debug new features with <debug/> in the input file " << std::endl;
-
-  return true;
-}
-
 bool QMCMain::executeQMCSection(xmlNodePtr cur, bool reuse)
 {
   std::string target("e");
@@ -711,7 +697,7 @@ bool QMCMain::executeCMCSection(xmlNodePtr cur)
   double logpsi1 = primaryPsi->evaluateLog(*qmc_system_);
   std::cout << "logpsi1 " << logpsi1 << std::endl;
 
-  double eloc1 = primaryH->evaluate(*qmc_system_);
+  double eloc1 = primaryH->evaluate(*primaryPsi, *qmc_system_);
   std::cout << "Local Energy " << eloc1 << std::endl;
 
   for (int i = 0; i < primaryH->sizeOfObservables(); i++)
@@ -726,7 +712,7 @@ bool QMCMain::executeCMCSection(xmlNodePtr cur)
 
     qmc_system_->update();
     double logpsi2 = primaryPsi->evaluateLog(*qmc_system_);
-    double eloc2   = primaryH->evaluate(*qmc_system_);
+    double eloc2   = primaryH->evaluate(*primaryPsi, *qmc_system_);
 
     std::cout << "\nION " << iat << " " << ions->R[iat] << std::endl;
     std::cout << "logpsi " << logpsi2 << std::endl;
@@ -740,7 +726,7 @@ bool QMCMain::executeCMCSection(xmlNodePtr cur)
 
     qmc_system_->update();
     double logpsi3 = primaryPsi->evaluateLog(*qmc_system_);
-    double eloc3   = primaryH->evaluate(*qmc_system_);
+    double eloc3   = primaryH->evaluate(*primaryPsi, *qmc_system_);
 
     if (std::abs(eloc1 - eloc3) > 1e-12)
     {

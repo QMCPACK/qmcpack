@@ -48,8 +48,6 @@ Links to more information in other sections of the manual:
 
  - **GPU related build options:** :ref:`cmakeoptions` section of the :ref:`obtaininginstalling` chapter.
 
- - **Supported features:** :ref:`gpufeatures` section of the :ref:`chap:features` chapter.
-
  - **Selecting between batch and legacy drivers** :ref:`driver-version-parameter` section of the :ref:`input-overview` chapter.
 
  - **Driver Inputs:** :ref:`batched_drivers` section of the :ref:`qmcmethods` chapter.

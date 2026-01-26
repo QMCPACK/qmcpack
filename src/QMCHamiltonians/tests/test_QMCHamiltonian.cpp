@@ -14,9 +14,9 @@
 
 #include "type_traits/template_types.hpp"
 #include "QMCHamiltonians/QMCHamiltonian.h"
-#include "Particle/tests/MinimalParticlePool.h"
-#include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
-#include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
+#include <MinimalParticlePool.h>
+#include <MinimalWaveFunctionPool.h>
+#include <MinimalHamiltonianPool.h>
 #include "TestListenerFunction.h"
 #include "Utilities/ResourceCollection.h"
 #include "Utilities/StlPrettyPrint.hpp"

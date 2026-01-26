@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2023 QMCPACK developers.
+// Copyright (c) 2025 QMCPACK developers.
 //
 // File developed by: Raymond Clay, rclay@sandia.gov, Sandia National Laboratories
 //
@@ -14,9 +14,8 @@
 namespace qmcplusplus
 {
 MagnetizationDensity::MagnetizationDensity(MagnetizationDensityInput&& minput, const Lattice& lat)
-    : OperatorEstBase(DataLocality::crowd), input_(minput), lattice_(lat)
+    : OperatorEstBase(DataLocality::crowd, minput.get_name(), minput.get_type()), input_(minput), lattice_(lat)
 {
-  my_name_ = "MagnetizationDensity";
   //Pull consistent corner, grids, etc., from already inititalized input.
   //DerivedParameters does the sanity checks and consistent initialization of these variables.
   MagnetizationDensityInput::DerivedParameters derived = minput.calculateDerivedParameters(lat);
@@ -39,10 +38,9 @@ MagnetizationDensity::MagnetizationDensity(MagnetizationDensityInput&& minput, c
 MagnetizationDensity::MagnetizationDensity(const MagnetizationDensity& magdens, DataLocality dl)
     : MagnetizationDensity(magdens)
 {
-  my_name_       = "MagnetizationDensity";
   data_locality_ = dl;
 }
-void MagnetizationDensity::startBlock(int steps){};
+void MagnetizationDensity::startBlock(int steps) {};
 
 size_t MagnetizationDensity::getFullDataSize() const { return npoints_ * DIM; }
 
@@ -148,7 +146,7 @@ void MagnetizationDensity::generateSpinIntegrand(ParticleSet& pset_target,
   for (int samp = 0; samp < nsamples_; samp++)
     ds[samp] = sgrid[samp] - pset_target.spins[iat];
 
-  VirtualParticleSet vp(pset_target, nsamples_);
+  VirtualParticleSet vp(pset_target);
   std::vector<Position> dV(nsamples_, 0);
   vp.makeMovesWithSpin(pset_target, iat, dV, ds);
   psi_target.evaluateRatios(vp, ratios);

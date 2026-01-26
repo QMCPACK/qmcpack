@@ -71,12 +71,16 @@ echo --- Host is $ourhostname
 case "$ourhostname" in
     sulfur )
 	if [[ $jobtype == "nightly" ]]; then
-	    buildsys="gccnewnompi_debug_asan gccnewmpi_mkl clangnewmpi gccnewnompi gccnewmpi gccoldmpi clangnewmpi_complex gccnewnompi_complex gccnewmpi_complex clangnewmpi_mixed gccnewnompi_mixed gccnewmpi_mixed clangnewmpi_mixed_complex gccnewnompi_mixed_complex gccnewmpi_mixed_complex \
-		clangoffloadmpi_offloadcuda \
-		clangoffloadnompi_offloadcuda clangoffloadnompi_offloadcuda_debug \
-		clangoffloadnompi_offloadcuda_complex clangoffloadnompi_offloadcuda_complex_debug \
-		clangoffloadnompi_offloadcuda_mixed clangoffloadnompi_offloadcuda_mixed_debug \
-		clangoffloadnompi_offloadcuda_mixed_complex clangoffloadnompi_offloadcuda_mixed_complex_debug"
+	    buildsys="clangoffloadmpi_offloadcuda \
+		clangoffloadnompi_offloadcuda \
+		clangoffloadnompi_offloadcuda_complex \
+		clangoffloadnompi_offloadcuda_mixed \
+		clangoffloadnompi_offloadcuda_mixed_complex \
+                clangoffloadnompi_offloadcuda_debug \
+                clangoffloadnompi_offloadcuda_complex_debug \
+                gccnewnompi_debug_asan gccnewnompi_debug_ubsan \
+                gccnewmpi_mkl clangnewmpi gccnewnompi gccnewmpi gccoldmpi clangnewmpi_complex gccnewnompi_complex gccnewmpi_complex \
+                clangnewmpi_mixed gccnewnompi_mixed gccnewmpi_mixed clangnewmpi_mixed_complex gccnewnompi_mixed_complex gccnewmpi_mixed_complex"
 	else
 	    buildsys="gccnewmpi_mkl clangnewmpi gccnewmpi clangnewmpi_complex clangnewmpi_mixed clangnewmpi_mixed_complex clangoffloadmpi_offloadcuda"
 	fi
@@ -84,12 +88,14 @@ case "$ourhostname" in
 	;;
     nitrogen2 )
 	if [[ $jobtype == "nightly" ]]; then
-	    buildsys="amdclangnompi_offloadhip_complex gccnewnompi gccnewnompi_aocl gccnewnompi_complex gccnewnompi_debug gccnewnompi_complex_debug gccnewnompi_mixed_debug gccnewnompi_mixed_complex_debug gccnewnompi_aocl_mixed_complex_debug gccnewmpi gccnewmpi_aocl clangnewmpi \
-		amdclangnompi amdclangnompi_debug \
+	    buildsys="amdclangnompi_offloadhip_complex \
 		amdclangnompi_offloadhip amdclangnompi_offloadhip_debug \
 		amdclangnompi_offloadhip_complex_debug \
 		amdclangnompi_offloadhip_mixed amdclangnompi_offloadhip_mixed_debug \
-		amdclangnompi_offloadhip_mixed_complex amdclangnompi_offloadhip_mixed_complex_debug"
+		amdclangnompi_offloadhip_mixed_complex amdclangnompi_offloadhip_mixed_complex_debug \
+                gccnewnompi gccnewnompi_aocl gccnewnompi_complex gccnewnompi_debug gccnewnompi_complex_debug \
+                gccnewnompi_mixed_debug gccnewnompi_mixed_complex_debug gccnewnompi_aocl_mixed_complex_debug gccnewmpi gccnewmpi_aocl clangnewmpi \
+		amdclangnompi amdclangnompi_debug"
 	else
 	    buildsys="gccnewmpi gccnewmpi_aocl amdclangnompi gccnewnompi gccnewnompi_aocl clangnewmpi amdclangnompi_offloadhip"
 	fi
@@ -98,9 +104,9 @@ case "$ourhostname" in
 	;;
     nitrogen )
 	if [[ $jobtype == "nightly" ]]; then
-	    buildsys="gccnewmpi amdclangnompi gccnewnompi clangnewmpi amdclangnompi_offloadhip"
+	    buildsys="amdclangnompi_offloadhip gccnewmpi amdclangnompi gccnewnompi clangnewmpi"
 	else
-	    buildsys="gccnewmpi amdclangnompi gccnewnompi clangnewmpi amdclangnompi_offloadhip"
+	    buildsys="amdclangnompi_offloadhip gccnewmpi amdclangnompi gccnewnompi clangnewmpi"
 	fi
 	export QMC_DATA=/scratch/${USER}/QMC_DATA_FULL # Route to directory containing performance test files
 	export amdgpuarch=`/usr/bin/rocminfo | awk '/gfx/ {print $2; exit 0;}'`
@@ -171,6 +177,7 @@ export LIBOMPTARGET_AMDGPU_MAX_ASYNC_COPY_BYTES=0
 
 module() { eval `/usr/bin/modulecmd bash $*`; }
 
+export SPACK_USER_CONFIG_PATH=$HOME/apps/spack_user_config  # Avoid using $HOME/.spack
 export SPACK_ROOT=$HOME/apps/spack
 export PATH=$SPACK_ROOT/bin:$PATH
 . $SPACK_ROOT/share/spack/setup-env.sh
@@ -209,7 +216,7 @@ fi
 # Sanity check cmake config file present
 if [ -e qmcpack/CMakeLists.txt ]; then
 
-export PYTHONPATH=${test_dir}/qmcpack/nexus/lib
+export PYTHONPATH=${test_dir}/qmcpack/nexus
 echo --- PYTHONPATH=$PYTHONPATH
 
 echo --- Starting test builds and tests
@@ -499,16 +506,13 @@ else
 fi
 
 if [[ $sys == *"asan"* ]]; then
-    export QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-ASan
+    export QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-Asan
     export QMC_OPTIONS="${QMC_OPTIONS};-DENABLE_SANITIZER=asan"
 fi
-if [[ $sys == *"tsan"* ]]; then
-    export QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-TSan
-    export QMC_OPTIONS="${QMC_OPTIONS};-DENABLE_SANITIZER=tsan"
-fi
-if [[ $sys == *"typesan"* ]]; then
-    export QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-TypeSan
-    export QMC_OPTIONS="${QMC_OPTIONS};-DENABLE_SANITIZER=typesan"
+
+if [[ $sys == *"ubsan"* ]]; then
+    export QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-UBSan
+    export QMC_OPTIONS="${QMC_OPTIONS};-DENABLE_SANITIZER=ubsan"
 fi
 
 echo TEST SUBMIT NAME: $QMCPACK_TEST_SUBMIT_NAME

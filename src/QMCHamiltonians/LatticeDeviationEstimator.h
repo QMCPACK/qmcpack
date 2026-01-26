@@ -36,7 +36,7 @@ namespace qmcplusplus
 particles, whereas the stat.h5 entries are particle-resolved. The two sets of outputs can be compared
 as a consistency check for the estimator.
  */
-class LatticeDeviationEstimator : public OperatorBase
+class LatticeDeviationEstimator : public OperatorDependsOnlyOnParticleSet
 {
 public:
   LatticeDeviationEstimator(ParticleSet& P, ParticleSet& sP, const std::string& tgroup, const std::string& sgroup);
@@ -58,8 +58,7 @@ public:
   //void addObservables(PropertySetType& plist, BufferType& collectables); // also used for multiple scalars
 
   // pure virtual functions require overrider
-  void resetTargetParticleSet(ParticleSet& P) override;                                   // required
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final; // required
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& P) final; // required
 
 private:
   SpeciesSet& tspecies;       // species table of target particle set

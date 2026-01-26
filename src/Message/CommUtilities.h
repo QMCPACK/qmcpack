@@ -26,21 +26,21 @@ inline void wait_all(IT first, IT last)
 {
   std::vector<Communicate::request> r(first, last);
   std::vector<Communicate::status> st(r.size());
-  MPI_Waitall(r.size(), &(r[0]), &(st[0]));
+  MPI_Waitall(r.size(), r.data(), st.data());
 }
 
 template<typename CT>
 inline void wait_all(CT& requests)
 {
   std::vector<Communicate::status> st(requests.size());
-  MPI_Waitall(requests.size(), &(requests[0]), &(st[0]));
+  MPI_Waitall(requests.size(), requests.data(), st.data());
 }
 
 
 inline void wait_all(int n, Communicate::request* pending)
 {
   std::vector<Communicate::status> st(n);
-  MPI_Waitall(n, pending, &(st[0]));
+  MPI_Waitall(n, pending, st.data());
 }
 
 template<typename CT>

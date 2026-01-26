@@ -28,11 +28,16 @@ namespace testing
 /**
  *  This function sets particle set positions from a set of Rs or writes out a set of positions for test reproducibility.
  */
-std::vector<ParticleSet> generateRandomParticleSets(ParticleSet& pset_target,
-                                                    ParticleSet& pset_source,
-                                                    std::vector<ParticleSet::ParticlePos>& deterministic_rs,
+std::vector<ParticleSet> generateRandomParticleSets(const ParticleSet& pset_target,
+                                                    const ParticleSet& pset_source,
+                                                    const std::vector<ParticleSet::ParticlePos>& deterministic_rs,
                                                     int num_psets,
-						   bool generate_test_data = false);
+                                                    bool generate_test_data = false);
+
+void particleSetsToRandomPositions(RefVector<ParticleSet> pset_targets,
+                                   const ParticleSet& pset_source,
+                                   const std::vector<ParticleSet::ParticlePos>& deterministic_rs,
+                                   bool generate_test_data);
 
 } // namespace testing
 } // namespace qmcplusplus

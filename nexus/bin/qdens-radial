@@ -4,58 +4,24 @@ from optparse import OptionParser
 
 
 def find_nexus_modules():
+    import os
     import sys
-    nexus_lib = os.path.abspath(os.path.join(__file__,'..','..','lib'))
+    nexus_lib = os.path.realpath(os.path.join(__file__,'..','..','..','nexus'))
     assert(os.path.exists(nexus_lib))
-    sys.path.append(nexus_lib)
+    sys.path.insert(0,nexus_lib)
+    import nexus
+    nexus_lib2 = os.path.realpath(os.path.join(nexus.__file__,'..','..'))
+    assert nexus_lib2==nexus_lib
 #end def find_nexus_modules
 
 
-def import_nexus_module(module_name):
-    import importlib
-    return importlib.import_module(module_name)
-#end def import_nexus_module
-
-
 # Load Nexus modules
-try:
-    # Attempt specialized path-based imports.
-    #  (The executable should still work even if Nexus is not installed)
-    find_nexus_modules()
-
-    versions = import_nexus_module('versions')
-    nexus_version = versions.nexus_version
-    del versions
-
-    generic = import_nexus_module('generic')
-    obj = generic.obj
-    del generic
-
-    developer = import_nexus_module('developer')
-    DevBase     = developer.DevBase
-    error       = developer.error
-    ci          = developer.ci
-    unavailable = developer.unavailable
-    del developer
-
-    memory = import_nexus_module('memory')
-
-    observables = import_nexus_module('observables')
-    ChargeDensity = observables.ChargeDensity
-    vlog = observables.vlog
-    del observables
-
-    fileio = import_nexus_module('fileio')
-    XsfFile = fileio.XsfFile
-    del fileio
-except:
-    from versions import nexus_version
-    from generic import obj
-    from developer import DevBase,error,ci,unavailable
-    import memory
-    from observables import ChargeDensity, vlog
-    from fileio import XsfFile
-#end try
+find_nexus_modules()
+from nexus.nexus_version import nexus_version
+from nexus.developer import DevBase,obj,error,ci,unavailable
+import nexus.memory as memory
+from nexus.observables import ChargeDensity, vlog
+from nexus.fileio import XsfFile
 
 
 # External imports

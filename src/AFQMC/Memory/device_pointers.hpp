@@ -335,6 +335,9 @@ struct device_pointer : base_device_pointer
   explicit operator bool() const { return (impl_ != nullptr); }
   auto operator+(std::ptrdiff_t n) const { return device_pointer{impl_ + n}; }
   auto operator-(std::ptrdiff_t n) const { return device_pointer{impl_ - n}; }
+
+  friend device_pointer operator+(std::ptrdiff_t n, device_pointer const& self) { return self + n; }
+
   std::ptrdiff_t operator-(device_pointer other) const { return std::ptrdiff_t(impl_ - other.impl_); }
   bool operator<(device_pointer const& other) const { return impl_ < other.impl_; }
   operator device_pointer<T const>() const { return device_pointer<T const>{impl_}; }

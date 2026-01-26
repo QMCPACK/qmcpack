@@ -81,7 +81,7 @@ void test_hcpBe_rotation(bool use_single_det, bool use_nlpp_batched)
   especies(chargeIdx, dnIdx) = -1;
   especies(massIdx, dnIdx)   = 1.0;
   elec.resetGroups(); // need to set Mass so
-
+  elec.update();
 
   pp.addParticleSet(std::move(elec_ptr));
 
@@ -94,7 +94,7 @@ void test_hcpBe_rotation(bool use_single_det, bool use_nlpp_batched)
   int CatomicnumberIdx             = tspecies.addAttribute("atomicnumber");
   tspecies(CchargeIdx, CIdx)       = 2;
   tspecies(CatomicnumberIdx, CIdx) = 4;
-
+  ions.update();
 
   pp.addParticleSet(std::move(ions_uptr));
 
@@ -182,7 +182,7 @@ void test_hcpBe_rotation(bool use_single_det, bool use_nlpp_batched)
   xmlNodePtr root2 = doc2.getRoot();
   hf.put(root2);
 
-  opt_variables_type opt_vars;
+  OptVariables opt_vars;
   psi->checkInVariables(opt_vars);
   opt_vars.resetIndex();
   psi->checkOutVariables(opt_vars);
@@ -235,19 +235,19 @@ void test_hcpBe_rotation(bool use_single_det, bool use_nlpp_batched)
   RandomGenerator myrng;
   h->setRandomGenerator(&myrng);
 
-  h->evaluate(elec);
+  h->evaluate(*psi, elec);
   double loc_e = h->getLocalEnergy();
   double ke    = h->getKineticEnergy();
   CHECK(ke == Approx(-6.818620576308302));
   CHECK(loc_e == Approx(-3.562354739253797));
 
   auto* localECP_H = h->getHamiltonian("LocalECP");
-  double local_pp  = localECP_H->evaluate(elec);
+  double local_pp  = localECP_H->evaluate(*psi, elec);
 
   Vector<ValueType> dlogpsi2(2);
   Vector<ValueType> dhpsioverpsi2(2);
 
-  h->evaluateValueAndDerivatives(elec, opt_vars, dlogpsi2, dhpsioverpsi2);
+  h->evaluateValueAndDerivatives(*psi, elec, opt_vars, dlogpsi2, dhpsioverpsi2);
   // Derivative the wavefunction is unchanged by NLPP
   CHECK(dlogpsi2[0] == Approx(dlogpsi[0]));
   CHECK(dlogpsi2[1] == Approx(dlogpsi[1]));

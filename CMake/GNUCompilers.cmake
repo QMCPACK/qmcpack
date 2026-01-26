@@ -69,6 +69,10 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-deprecated")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated")
 
+# Disable psABI diagnostic, mostly for std::pair<T,T> with C++17
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-psabi")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-psabi")
+
 # treat VLA as error
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror=vla")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wvla")

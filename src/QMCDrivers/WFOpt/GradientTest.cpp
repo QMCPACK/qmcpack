@@ -18,14 +18,15 @@ namespace qmcplusplus
 
 void GradientTest::run(QMCCostFunctionBase& costFunc, const std::string& root_name)
 {
-  int num_params = costFunc.getNumParams();
+  const auto& opt_vars = costFunc.getOptVariables();
+  const int num_params = opt_vars.size();
   std::vector<Return_t> numeric_grad(num_params);
   std::vector<Return_t> params(num_params);
   std::vector<Return_t> analytic_grad(num_params);
 
   for (int i = 0; i < num_params; i++)
   {
-    params[i] = std::real(costFunc.Params(i));
+    params[i] = std::real(opt_vars[i]);
   }
 
 
@@ -40,7 +41,7 @@ void GradientTest::run(QMCCostFunctionBase& costFunc, const std::string& root_na
     param_deriv_file_ << "# Index ";
     for (int i = 0; i < num_params; i++)
     {
-      param_deriv_file_ << " " << costFunc.getParamName(i);
+      param_deriv_file_ << " " << opt_vars.name(i);
     }
     param_deriv_file_ << std::endl;
     first_ = false;
@@ -63,7 +64,7 @@ void GradientTest::run(QMCCostFunctionBase& costFunc, const std::string& root_na
   size_t max_name_len = param_name_header.size();
   for (int k = 0; k < num_params; k++)
   {
-    std::string vname = costFunc.getParamName(k);
+    std::string vname = opt_vars.name(k);
     max_name_len      = std::max(vname.size(), max_name_len);
   }
   max_name_len += 2; // add some padding
@@ -78,7 +79,7 @@ void GradientTest::run(QMCCostFunctionBase& costFunc, const std::string& root_na
 
   for (int k = 0; k < num_params; k++)
   {
-    std::string vname = costFunc.getParamName(k);
+    std::string vname = opt_vars.name(k);
     std::ostringstream rel_diff_str;
     std::string over_threshold;
     if (numeric_grad[k] != 0)

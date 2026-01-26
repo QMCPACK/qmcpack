@@ -12,7 +12,7 @@
 
 #include "catch.hpp"
 
-#include "MinimalParticlePool.h"
+#include <MinimalParticlePool.h>
 #include "Particle/VirtualParticleSet.h"
 #include "ResourceCollection.h"
 #include "DistanceTable.h"
@@ -41,11 +41,11 @@ TEST_CASE("VirtualParticleSet", "[particle]")
   ParticleSet elecs_clone(elecs);
   elecs_clone.update();
 
-  VirtualParticleSet vp_Ni(elecs, 3);
-  VirtualParticleSet vp_O(elecs, 5);
+  VirtualParticleSet vp_Ni(elecs);
+  VirtualParticleSet vp_O(elecs);
 
-  VirtualParticleSet vp_Ni_clone(elecs_clone, 3);
-  VirtualParticleSet vp_O_clone(elecs_clone, 5);
+  VirtualParticleSet vp_Ni_clone(elecs_clone);
+  VirtualParticleSet vp_O_clone(elecs_clone);
 
   vp_Ni_clone.makeMoves(elecs_clone, 3, {{0.1, 0.2, 0.3}, {0.2, 0.1, 0.3}, {0.3, 0.1, 0.2}});
   const DistanceTableAB& dt_vp_ion = vp_Ni_clone.getDistTableAB(0);

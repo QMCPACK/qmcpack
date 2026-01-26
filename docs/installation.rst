@@ -114,6 +114,14 @@ unsupported and untested by the developers although they may still work.
    are required to support the C++ 17 standard. Use of recent (“current
    year version”) compilers is strongly encouraged.
 
+-  To build the GPU accelerated version, an installation of NVIDIA CUDA Toolkit, AMD ROCm software, or Intel OneAPI HPC toolkit is required.
+   Ensure that this is compatible with the installed GPU drivers and C++ compiler versions you plan to use.
+   To achieve the best GPU performance, we recommend the following C++ compilers that support OpenMP offload
+
+   - For NVIDIA GPUs, LLVM clang.
+   - For AMD GPUS, ROCm clang(amdclang).
+   - For Intel GPUs, OneAPI icpx.
+
 -  An MPI library such as OpenMPI (http://open-mpi.org) or a
    vendor-optimized MPI.
 
@@ -134,14 +142,34 @@ unsupported and untested by the developers although they may still work.
 
 -  FFTW, FFT library (http://www.fftw.org/).
 
-To build the GPU accelerated version of QMCPACK, an installation of
-NVIDIA CUDA development tools is required. Ensure that this is
-compatible with the C and C++ compiler versions you plan to use.
-Supported versions are included in the NVIDIA release notes.
+Many of the utilities provided with QMCPACK require Python (v3). The numpy and matplotlib libraries are required for full
+functionality.
 
-Many of the utilities provided with QMCPACK require Python (v3). The numpy
-and matplotlib libraries are required for full functionality.
+Nightly testing currently includes at least the following software versions:
 
+* Compilers
+  
+  * Clang/LLVM 20.1.4
+  * GCC 14.2.0, 12.4.0
+  * OneAPI 2025.3
+
+* Boost 1.88.0, 1.82.0
+* HDF5 1.14.5
+* FFTW 3.3.10
+* CMake 3.31.6
+* OpenMPI 5.0.6
+* CUDA 12.6
+* ROCm 6.4.0
+* Python 3.13.2
+* NumPy 2.2.5
+
+For GPU acceleration on NVIDIA GPUs we test LLVM with CUDA using the above versions. On AMD GPUs we support using the latest ROCm
+version and its matching amdclang compiler, as listed above. On Intel GPUs we test the up-to-date OneAPI release.
+
+GitHub Actions-based tests include additional version combinations from within our two-year support window.
+
+Workflow tests are currently performed with Quantum ESPRESSO v7.4.1 and PySCF v2.9.0. These check trial wavefunction generation and
+conversion through to actual QMC runs.
 
 C++ 17 standard library
 -----------------------
@@ -251,9 +279,10 @@ give examples for a number of common systems in :ref:`installexamples`.
 Environment variables
 ~~~~~~~~~~~~~~~~~~~~~
 
-A number of environment variables affect the build.  In particular
-they can control the default paths for libraries, the default
-compilers, etc.  The list of environment variables is given below:
+A number of environment variables affect the build.  In particular, they can control the default paths for libraries, the default
+compilers, etc. Where possible, we recommend making maximum full use of the CMake configuration options and configuring the
+locations of libraries using cmake arguments. However, e.g., on some supercomputer sites, libraries are made available via modules
+which in turn set environment variables. The list of supported environment variables is given below:
 
 ::
 
@@ -413,17 +442,14 @@ the path to the source directory.
     ENABLE_SANITIZER  link with the GNU or Clang sanitizer library for asan, ubsan, tsan or msan (default=none)
     
 
-`Clang address sanitizer library asan <https://clang.llvm.org/docs/AddressSanitizer.html>`_
-
-`Clang address sanitizer library ubsan <https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html>`_
-
-`Clang thread sanitizer library tsan <https://clang.llvm.org/docs/ThreadSanitizer.html>`_
-
-`Clang memory sanitizer library msan <https://clang.llvm.org/docs/MemorySanitizer.html>`_
-
-`Clang type sanitizer library typesan <https://clang.llvm.org/docs/TypeSanitizer.html>`_
-
 See :ref:`Sanitizer-Libraries` for more information.
+
+- Code coverage related
+  
+  ::
+
+    ENABLE_GCOV  OFF(default)/ON, build with C++ source code line coverage measurement using gcov
+    ENABLE_PYCOV OFF(default)/ON, build with Python source code line coverage measurement using coverage.py
 
 
 Installation from CMake
@@ -647,70 +673,64 @@ Installing on Ubuntu Linux or other apt-get--based distributions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The following is designed to obtain a working QMCPACK build on, for example, a
-student laptop, starting from a basic Linux installation with none of
-the developer tools installed. Fortunately, all the required packages
-are available in the default repositories making for a quick
-installation. Note that for convenience we use a generic BLAS. For
-production, a platform-optimized BLAS should be used.
-
+student laptop, starting from a basic Linux installation with none of the
+developer tools installed. Fortunately, all the required packages are available
+in the default repositories making for a quick installation. Note that for
+convenience we use a generic BLAS. A vendor-optimized BLAS is usually faster.
 
 ::
 
   sudo apt-get install cmake g++ openmpi-bin libopenmpi-dev libboost-dev
-  sudo apt-get install libatlas-base-dev liblapack-dev libhdf5-dev libxml2-dev fftw3-dev
-  export CXX=mpiCC
+  sudo apt-get install libopenblas-openmp-dev libhdf5-dev libxml2-dev libfftw3-dev
+  # For qmca and other python-based analysis tools tools:
+  sudo apt-get install python3-numpy python3-scipy python3-h5py python3-matplotlib
   cd build
-  cmake ..
-  make -j 8
+  cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpiCC ..
+  make -j 8 # Adjust to available core count
   ls -l bin/qmcpack
 
-For qmca and other tools to function, we install some Python libraries:
+We recommend running the deterministic test set. Since by default OpenMPI will not allow processes to use more than the available
+number of cores, set ``export OMPI_MCA_rmaps_base_oversubscribe=true``. Note that this environment variable is case sensitive. i.e.
+Use
 
 ::
 
-  sudo apt-get install python-numpy python-matplotlib
+  export OMPI_MCA_rmaps_base_oversubscribe=true
+  time ctest -j 16 -L deterministic --output-on-failure
+ 
 
-Installing on CentOS Linux or other yum-based distributions
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Installing on CentOS Linux or other dnf/yum-based distribution
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The following is designed to obtain a working QMCPACK build on, for example, a
-student laptop, starting from a basic Linux installation with none of
-the developer tools installed. CentOS 7 (Red Hat compatible) is using
-gcc 4.8.2. The installation is complicated only by the need to install
-another repository to obtain HDF5 packages that are not available by
-default. Note that for convenience we use a generic BLAS. For
-production, a platform-optimized BLAS should be used.
+In this example we use the default GCC14 starting from a minimal installation of CentOS 10. The same recipe is expected to work on
+RHEL. Note that to make MPI available, the appropriate MPI module should be loaded ahead of running cmake. For convenience, we also
+use a generic BLAS. In production, a platform-optimized BLAS is recommended.
 
 ::
 
-  sudo yum install make cmake gcc gcc-c++ openmpi openmpi-devel fftw fftw-devel \
-                    boost boost-devel libxml2 libxml2-devel
-  sudo yum install blas-devel lapack-devel atlas-devel
-  module load mpi
+  sudo dnf install -y epel-release
+  sudo /usr/bin/crb enable
+  sudo dnf update -y
+  sudo dnf install -y make cmake gcc gcc-c++ gcc-gfortran openmpi-devel fftw-devel
+  sudo dnf install -y boost-devel libxml2-devel
+  sudo dnf install -y blas-devel lapack-devel
+  sudo dnf install -y hdf5-devel
+  sudo dnf install -y rsync
+  sudo dnf install -y python3-numpy
+  sudo dnf install -y python3-h5py
 
-To set up repoforge as a source for the HDF5 package, go to
-http://repoforge.org/use. Install the appropriate up-to-date
-release package for your operating system. By default, CentOS Firefox will offer
-to run the installer. The CentOS 6.5 settings were still usable for HDF5 on
-CentOS 7 in 2016, but use CentOS 7 versions when they become
-available.
-
-::
-
-  sudo yum install hdf5 hdf5-devel
 
 To build QMCPACK:
 
 ::
 
   module load mpi/openmpi-x86_64
-  which mpirun
-  # Sanity check; should print something like   /usr/lib64/openmpi/bin/mpirun
-  export CXX=mpiCC
+  which mpirun # Sanity check; should print something like /usr/lib64/openmpi/bin/mpirun
   cd build
-  cmake ..
-  make -j 8
+  cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpiCC ..
+  make -j 8 # Adjust to available core count
   ls -l bin/qmcpack
+
 
 Installing on Mac OS X using Macports
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -15,6 +15,7 @@
 #include "Concurrency/Info.hpp"
 #include "Message/UniformCommunicateError.h"
 #include "Message/CommOperators.h"
+#include "TrialWaveFunction.h"
 #include "Utilities/RunTimeManager.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Particle/MCSample.h"
@@ -201,11 +202,10 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
 
   {
     ScopedTimer collectables_local_timer(timers.collectables_timer);
-    auto evaluateNonPhysicalHamiltonianElements = [](QMCHamiltonian& ham, ParticleSet& pset, MCPWalker& walker) {
-      ham.auxHevaluate(pset, walker);
-    };
+    auto evaluateNonPhysicalHamiltonianElements = [](QMCHamiltonian& ham, TrialWaveFunction& psi, ParticleSet& pset,
+                                                     MCPWalker& walker) { ham.auxHevaluate(psi, pset, walker); };
     for (int iw = 0; iw < crowd.size(); ++iw)
-      evaluateNonPhysicalHamiltonianElements(walker_hamiltonians[iw], walker_elecs[iw], walkers[iw]);
+      evaluateNonPhysicalHamiltonianElements(walker_hamiltonians[iw], walker_twfs[iw], walker_elecs[iw], walkers[iw]);
 
     auto savePropertiesIntoWalker = [](QMCHamiltonian& ham, MCPWalker& walker) {
       ham.saveProperty(walker.getPropertyBase());
@@ -256,7 +256,7 @@ void VMCBatched::runVMCStep(int crowd_id,
   // Are we entering the the last step of a block to recompute at?
   const bool recompute_this_step = (sft.is_recomputing_block && (step + 1) == sft.steps_per_block);
   // For VMC we don't call this method for warmup steps.
-  const bool accumulate_this_step = true;
+  const bool accumulate_this_step = (step % sft.qmcdrv_input.get_estimator_measurement_period() == 0);
   const bool spin_move            = sft.population.get_golden_electrons().isSpinor();
   if (spin_move)
     advanceWalkers<CoordsType::POS_SPIN>(sft, crowd, timers, *context_for_steps[crowd_id], recompute_this_step,
@@ -494,7 +494,7 @@ void VMCBatched::enable_sample_collection()
   assert(steps_per_block_ > 0 && "VMCBatched::enable_sample_collection steps_per_block_ must be positive!");
   auto samples = compute_samples_per_rank(qmcdriver_input_.get_max_blocks(), steps_per_block_,
                                           population_.get_num_local_walkers());
-  samples_.setMaxSamples(samples, population_.get_num_ranks());
+  samples_.setMaxSamples(samples);
   collect_samples_ = true;
 
   auto total_samples = samples * population_.get_num_ranks();

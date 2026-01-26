@@ -43,9 +43,13 @@ public:
     return nl_ecp.PPset[0]->rrotsgrid_m != nl_ecp.PPset[0]->sgridxyz_m;
   }
 
-  static void evaluateImpl(NonLocalECPotential& nl_ecp, ParticleSet& P, bool compute_txy_all, bool keep_grid)
+  static void evaluateImpl(NonLocalECPotential& nl_ecp,
+                           TrialWaveFunction& psi,
+                           ParticleSet& P,
+                           bool compute_txy_all,
+                           bool keep_grid)
   {
-    nl_ecp.evaluateImpl(P, compute_txy_all, keep_grid);
+    nl_ecp.evaluateImpl(psi, P, compute_txy_all, keep_grid);
   }
 
   static void mw_evaluateImpl(NonLocalECPotential& nl_ecp,
@@ -131,7 +135,7 @@ TEST_CASE("NonLocalECPotential", "[hamiltonian]")
   TrialWaveFunction psi2(runtime_options);
   RefVectorWithLeader<TrialWaveFunction> twf_list(psi, {psi, psi2});
 
-  NonLocalECPotential nl_ecp(ions, elec, psi, false /*use_DLA*/);
+  NonLocalECPotential nl_ecp(ions, elec, false /*use_DLA*/, false /*use_VP*/);
 
   int num_walkers = 2;
   int max_values  = 10;
@@ -187,13 +191,15 @@ TEST_CASE("NonLocalECPotential", "[hamiltonian]")
   testing::TestNonLocalECPotential::mw_evaluateImpl(nl_ecp, o_list, twf_list, p_list, false, listener_opt, true);
 
   // for now we'll check against the single particle API
-  testing::TestNonLocalECPotential::evaluateImpl(nl_ecp, elec, false, true);
+  testing::TestNonLocalECPotential::evaluateImpl(nl_ecp, psi, elec, false, true);
   const auto value = nl_ecp.getValue();
 
-  CHECK(std::accumulate(local_pots.begin(), local_pots.begin() + local_pots.cols(), 0.0) == Approx(value));
-  CHECK(std::accumulate(local_pots2.begin(), local_pots2.begin() + local_pots2.cols(), 0.0) == Approx(value));
-  CHECK(std::accumulate(ion_pots.begin(), ion_pots.begin() + ion_pots.cols(), 0.0) == Approx(-2.1047365665));
-  CHECK(std::accumulate(ion_pots2.begin(), ion_pots2.begin() + ion_pots2.cols(), 0.0) == Approx(-2.1047365665));
+  double total_localpots = std::accumulate(local_pots.begin(), local_pots.begin() + local_pots.cols(), 0.0);
+  total_localpots += std::accumulate(ion_pots.begin(), ion_pots.begin() + ion_pots.cols(), 0.0);
+  CHECK(total_localpots == Approx(value));
+  double total_localpots2 = std::accumulate(local_pots[1], local_pots[1] + local_pots.cols(), 0.0);
+  total_localpots2 += std::accumulate(ion_pots[1], ion_pots[1] + ion_pots.cols(), 0.0);
+  CHECK(total_localpots2 == Approx(value));
 
   CHECK(!testing::TestNonLocalECPotential::didGridChange(nl_ecp));
 
@@ -203,16 +209,22 @@ TEST_CASE("NonLocalECPotential", "[hamiltonian]")
   testing::TestNonLocalECPotential::mw_evaluateImpl(nl_ecp, o_list, twf_list, p_list, false, listener_opt, true);
 
   CHECK(!testing::TestNonLocalECPotential::didGridChange(nl_ecp));
-  auto value2 = o_list[0].evaluateDeterministic(elec);
+  auto value_moved = o_list[0].evaluateDeterministic(psi, elec);
 
-  CHECK(std::accumulate(local_pots.begin(), local_pots.begin() + local_pots.cols(), 0.0) == Approx(value2));
+  total_localpots = std::accumulate(local_pots.begin(), local_pots.begin() + local_pots.cols(), 0.0);
+  total_localpots += std::accumulate(ion_pots.begin(), ion_pots.begin() + ion_pots.cols(), 0.0);
+  CHECK(total_localpots == Approx(value_moved));
   // check the second walker which will be unchanged.
-  CHECK(std::accumulate(local_pots2[1], local_pots2[1] + local_pots2.cols(), 0.0) == Approx(value));
+  total_localpots2 = std::accumulate(local_pots[1], local_pots[1] + local_pots.cols(), 0.0);
+  total_localpots2 += std::accumulate(ion_pots[1], ion_pots[1] + ion_pots.cols(), 0.0);
+  CHECK(total_localpots2 == Approx(value));
 
-  // Randomizing grid does nothing for Na pp
   testing::TestNonLocalECPotential::mw_evaluateImpl(nl_ecp, o_list, twf_list, p_list, false, listener_opt, false);
-  auto value3 = o_list[0].evaluateDeterministic(p_list[0]);
-  CHECK(std::accumulate(local_pots.begin(), local_pots.begin() + local_pots.cols(), 0.0) == Approx(value3));
+  auto value3     = o_list[0].evaluateDeterministic(twf_list[0], p_list[0]);
+  total_localpots = std::accumulate(local_pots.begin(), local_pots.begin() + local_pots.cols(), 0.0);
+  total_localpots += std::accumulate(ion_pots.begin(), ion_pots.begin() + ion_pots.cols(), 0.0);
+
+  CHECK(total_localpots == Approx(value3));
 }
 
 } // namespace qmcplusplus

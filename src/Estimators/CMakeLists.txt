@@ -35,7 +35,10 @@ set(QMCEST_SRC
     OneBodyDensityMatrices.cpp
     MagnetizationDensity.cpp
     MagnetizationDensityInput.cpp
+    SelfHealingOverlapInput.cpp
     SelfHealingOverlap.cpp
+    PairCorrelationInput.cpp
+    PairCorrelationEstimator.cpp
     PerParticleHamiltonianLoggerInput.cpp
     PerParticleHamiltonianLogger.cpp
     ReferencePointsInput.cpp

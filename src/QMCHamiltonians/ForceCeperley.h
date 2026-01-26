@@ -25,7 +25,7 @@
 
 namespace qmcplusplus
 {
-struct ForceCeperley : public OperatorBase, public ForceBase
+struct ForceCeperley : public OperatorDependsOnlyOnParticleSet, public ForceBase
 {
 private:
   const int d_aa_ID;
@@ -57,13 +57,11 @@ public:
 
   void setObservables(PropertySetType& plist) override { setObservablesF(plist); }
 
-  void resetTargetParticleSet(ParticleSet& P) override {}
-
   // Compute ion-ion forces at construction to include in the total forces
   void evaluate_IonIon(ParticleSet::ParticlePos& forces) const;
 
   void setParticlePropertyList(PropertySetType& plist, int offset) override { setParticleSetF(plist, offset); }
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp) final;
 
   bool put(xmlNodePtr cur) override;
 

@@ -17,6 +17,7 @@
 #include "Platforms/OMPTarget/ompReductionComplex.hpp"
 #include "ApplyPhaseC2C.hpp"
 #include "Concurrency/OpenMP.h"
+#include "CPU/BLAS.hpp"
 
 namespace qmcplusplus
 {
@@ -50,6 +51,73 @@ bool SplineC2COMPTarget<ST>::write_splines(hdf_archive& h5f)
   o << "spline_" << MyIndex;
   einspline_engine<SplineType> bigtable(SplineInst->getSplinePtr());
   return h5f.writeEntry(bigtable, o.str().c_str()); //"spline_0");
+}
+
+template<typename ST>
+void SplineC2COMPTarget<ST>::storeParamsBeforeRotation()
+{
+  const auto spline_ptr = SplineInst->getSplinePtr();
+  const auto coefs_tot_size = spline_ptr->coefs_size;
+  coef_copy_ = std::make_shared<std::vector<ST>>(coefs_tot_size);
+  std::copy_n(spline_ptr->coefs, coefs_tot_size, coef_copy_->begin());
+}
+
+
+template<typename ST>
+void SplineC2COMPTarget<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy)
+{
+  const auto spline_ptr = SplineInst->getSplinePtr();
+  assert(spline_ptr != nullptr);
+  const auto spl_coefs      = spline_ptr->coefs;
+  const auto Nsplines       = spline_ptr->num_splines; // May include padding
+  const auto coefs_tot_size = spline_ptr->coefs_size;
+  const auto basis_set_size = coefs_tot_size / Nsplines;
+  assert(OrbitalSetSize == rot_mat.rows());
+  assert(OrbitalSetSize == rot_mat.cols());
+
+  if (!use_stored_copy)
+  {
+    assert(coef_copy_ != nullptr);
+    std::copy_n(spl_coefs, coefs_tot_size, coef_copy_->begin());
+  }
+
+  if constexpr (std::is_same_v<ST, RealType>)
+  {
+    //if ST is double, go ahead and use blas to make things faster
+    //Note that Nsplines needs to be divided by 2 since spl_coefs and coef_copy_ are stored as reals.
+    //Also casting them as ValueType so they are complex to do the correct gemm
+    BLAS::gemm('N', 'N', OrbitalSetSize, basis_set_size, OrbitalSetSize, ValueType(1.0, 0.0), rot_mat.data(),
+               OrbitalSetSize, (ValueType*)coef_copy_->data(), Nsplines / 2, ValueType(0.0, 0.0),
+               (ValueType*)spl_coefs, Nsplines / 2);
+  }
+  else
+  {
+    // if ST is float, RealType is double and ValueType is std::complex<double> for C2C
+    // Just use naive matrix multiplication in order to avoid losing precision on rotation matrix
+    for (IndexType i = 0; i < basis_set_size; i++)
+      for (IndexType j = 0; j < OrbitalSetSize; j++)
+      {
+        // cur_elem points to the real componend of the coefficient.
+        // Imag component is adjacent in memory.
+        const auto cur_elem = Nsplines * i + 2 * j;
+        ST newval_r{0.};
+        ST newval_i{0.};
+        for (IndexType k = 0; k < OrbitalSetSize; k++)
+        {
+          const auto index = Nsplines * i + 2 * k;
+          ST zr            = (*coef_copy_)[index];
+          ST zi            = (*coef_copy_)[index + 1];
+          ST wr            = rot_mat[k][j].real();
+          ST wi            = rot_mat[k][j].imag();
+          newval_r += zr * wr - zi * wi;
+          newval_i += zr * wi + zi * wr;
+        }
+        spl_coefs[cur_elem]     = newval_r;
+        spl_coefs[cur_elem + 1] = newval_i;
+      }
+  }
+  // update coefficients on GPU from host
+  SplineInst->finalize();
 }
 
 template<typename ST>

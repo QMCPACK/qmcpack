@@ -22,6 +22,14 @@ class StructureFactorAccess
   using Real = StructureFactorEstimator::Real;
 
 public:
+  static auto makeStructureFactorEstimator(const StructureFactorInput& sfi,
+                                           const ParticleSet& pset_ions,
+                                           const ParticleSet& pset_elec,
+                                           DataLocality data_locality = DataLocality::crowd)
+  {
+    return StructureFactorEstimator(sfi, pset_ions, pset_elec, data_locality);
+  }
+
   const Vector<Real>& getSKElecElec(const StructureFactorEstimator& sfe) const { return sfe.getSKElecElec(); }
   const Vector<std::complex<Real>>& getRhoKElec(const StructureFactorEstimator& sfe) const { return sfe.getRhoKElec(); }
 };
@@ -41,6 +49,7 @@ public:
   static DataC getRhoKElec();
 };
 
+// NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers)
 template<>
 typename StructureFactorTests::Data StructureFactorTests::getSKElecElec<double>()
 {
@@ -642,6 +651,7 @@ typename StructureFactorTests::DataC StructureFactorTests::getRhoKElec<std::comp
   };
   return rhok_e_expected;
 }
+// NOLINTEND(cppcoreguidelines-avoid-magic-numbers)
 
 template<>
 typename StructureFactorTests::Data StructureFactorTests::getSKElecElec<std::complex<float>>()

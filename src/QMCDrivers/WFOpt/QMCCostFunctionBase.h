@@ -18,7 +18,6 @@
 #define QMCPLUSPLUS_COSTFUNCTIONBASE_H
 
 #include "Configuration.h"
-#include "Optimize/OptimizeBase.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "Message/MPIObjectBase.h"
@@ -44,7 +43,7 @@ class DescentEngine;
  * generated from VMC.
  */
 
-class QMCCostFunctionBase : public CostFunctionBase<QMCTraits::RealType>, public MPIObjectBase
+class QMCCostFunctionBase : public MPIObjectBase
 {
 public:
   enum FieldIndex_OPT
@@ -69,52 +68,57 @@ public:
     SUM_INDEX_SIZE
   };
 
+  using Return_t  = qmcplusplus::QMCTraits::ValueType;
+  using Return_rt = qmcplusplus::QMCTraits::RealType;
+
   using EffectiveWeight  = QMCTraits::QTFull::RealType;
   using FullPrecRealType = QMCTraits::FullPrecRealType;
   ///Constructor.
   QMCCostFunctionBase(ParticleSet& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm);
 
   ///Destructor
-  ~QMCCostFunctionBase() override;
+  virtual ~QMCCostFunctionBase();
 
   ///process xml node
   bool put(xmlNodePtr cur);
   void resetCostFunction(std::vector<xmlNodePtr>& cset);
+  /** boolean to indicate if the cost function is valid.
+   *
+   * Can be used by optimizers to stop optimization.
+   */
+  bool IsValid;
   ///Save opt parameters to HDF5
   bool reportH5;
   bool CI_Opt;
   ///Path and name of the HDF5 prefix where CI coeffs are saved
   std::string newh5;
   ///assign optimization parameter i
-  Return_rt& Params(int i) override { return OptVariables[i]; }
+  Return_rt& Params(int i) { return opt_vars[i]; }
   ///return optimization parameter i
-  Return_t Params(int i) const override { return OptVariables[i]; }
-  int getType(int i) const { return OptVariables.getType(i); }
+  Return_t Params(int i) const { return opt_vars[i]; }
+  int getType(int i) const { return opt_vars.getType(i); }
   ///return the cost value for CGMinimization
-  Return_rt Cost(bool needGrad = true) override;
+  Return_rt Cost(bool needGrad = true);
 
   ///return the cost value for CGMinimization
   Return_rt computedCost();
   void printEstimates();
   ///return the gradient of cost value for CGMinimization
-  void GradCost(std::vector<Return_rt>& PGradient,
-                const std::vector<Return_rt>& PM,
-                Return_rt FiniteDiff = 0) override{};
+  virtual void GradCost(std::vector<Return_rt>& PGradient,
+                        const std::vector<Return_rt>& PM,
+                        Return_rt FiniteDiff = 0) = 0;
   ///return the number of optimizable parameters
-  inline int getNumParams() const override { return OptVariables.size(); }
+  inline int getNumParams() const { return opt_vars.size(); }
   ///return the global number of samples
   inline int getNumSamples() const { return NumSamples; }
   inline void setNumSamples(int newNumSamples) { NumSamples = newNumSamples; }
   ///reset the wavefunction
   virtual void resetPsi(bool final_reset = false) = 0;
 
-  inline void getParameterTypes(std::vector<int>& types) const
-  {
-    return OptVariablesForPsi.getParameterTypeList(types);
-  }
+  inline void getParameterTypes(std::vector<int>& types) const { return opt_vars.getParameterTypeList(types); }
 
   ///dump the current parameters and other report
-  void Report() override;
+  void Report();
   ///report  parameters at the end
   void reportParameters();
 
@@ -140,8 +144,7 @@ public:
   virtual Return_rt fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left, Matrix<Return_rt>& Right) = 0;
 
   virtual Return_rt fillHamVec(std::vector<Return_rt>& ham);
-  virtual void calcOvlParmVec(const std::vector<Return_rt>& parm,
-                              std::vector<Return_rt>& ovlParmVec);
+  virtual void calcOvlParmVec(const std::vector<Return_rt>& param, std::vector<Return_rt>& ovlParmVec);
 
 #ifdef HAVE_LMY_ENGINE
   Return_rt LMYEngineCost(const bool needDeriv, cqmc::engine::LMYEngine<Return_t>* EngineObj);
@@ -168,9 +171,7 @@ public:
   inline void setneedGrads(bool tf) { needGrads = tf; }
   inline void setDMC() { vmc_or_dmc = 1.0; }
 
-  inline std::string getParamName(int i) const override { return OptVariables.name(i); }
-
-  inline const opt_variables_type& getOptVariables() const { return OptVariables; }
+  inline const OptVariables& getOptVariables() const { return opt_vars; }
 
   /// return variance after checkConfigurations
   inline Return_rt getVariance() const
@@ -200,8 +201,6 @@ protected:
   int NumCostCalls;
   /// global number of samples to use in correlated sampling
   int NumSamples;
-  ///total number of optimizable variables
-  int NumOptimizables;
   ///counter for output
   int ReportCounter;
   ///weights for energy and variance in the cost function
@@ -238,21 +237,13 @@ protected:
   double omega_shift;
 
   ///list of optimizables
-  opt_variables_type OptVariables;
-  /** full list of optimizables
-   *
-   * The size of OptVariablesForPsi is equal to or larger than
-   * that of OptVariables due to the dependent variables.
-   * This is used for TrialWaveFunction::resetParameters and
-   * is normally the same as OptVariables.
-   */
-  opt_variables_type OptVariablesForPsi;
+  OptVariables opt_vars;
   // unchanged initial checked-in variables
-  opt_variables_type InitVariables;
+  OptVariables InitVariables;
   /** index mapping for <negate> constraints
    *
-   * - negateVarMap[i][0] : index in OptVariablesForPsi
-   * - negateVarMap[i][1] : index in OptVariables
+   * - negateVarMap[i][0] : index in opt_vars
+   * - negateVarMap[i][1] : index in opt_vars
    */
   ///index mapping for <negative> constraints
   std::vector<TinyVector<int, 2>> negateVarMap;
@@ -320,7 +311,7 @@ protected:
   /// survey all the optimizable objects
   UniqueOptObjRefs extractOptimizableObjects(TrialWaveFunction& psi) const;
 
-  void resetOptimizableObjects(TrialWaveFunction& psi, const opt_variables_type& opt_variables) const;
+  void resetOptimizableObjects(TrialWaveFunction& psi, const OptVariables& opt_variables) const;
 
 #ifdef HAVE_LMY_ENGINE
   virtual Return_rt LMYEngineCost_detail(cqmc::engine::LMYEngine<Return_t>* EngineObj)

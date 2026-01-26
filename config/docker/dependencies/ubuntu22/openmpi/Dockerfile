@@ -43,6 +43,8 @@ RUN export DEBIAN_FRONTEND=noninteractive &&\
     apt-get install python3-numpy \
     python3-h5py \
     python3-pandas \
+    python3-coverage \
+    python3-pytest \
     python3-pip \
     -y
 
@@ -61,8 +63,7 @@ RUN update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/cl
     update-alternatives --install /usr/bin/clang-tidy clang-tidy /usr/bin/clang-tidy-14 100 && \
     update-alternatives --install /usr/bin/clang-tidy-diff.py clang-tidy-diff.py /usr/bin/clang-tidy-diff-14.py 100
 
-# must add a user different from root 
-# to run MPI executables
+# must add a user different from root to run MPI executables
 RUN useradd -ms /bin/bash user
 # allow in sudoers to install packages
 RUN adduser user sudo

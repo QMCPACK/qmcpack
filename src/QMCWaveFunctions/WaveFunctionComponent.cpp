@@ -223,7 +223,7 @@ void WaveFunctionComponent::extractOptimizableObjectRefs(UniqueOptObjRefs&)
                            "must be overloaded when the WFC is optimizable.");
 }
 
-void WaveFunctionComponent::checkOutVariables(const opt_variables_type& active)
+void WaveFunctionComponent::checkOutVariables(const OptVariables& active)
 {
   if (isOptimizable())
     throw std::logic_error("Bug!! " + getClassName() +
@@ -232,7 +232,7 @@ void WaveFunctionComponent::checkOutVariables(const opt_variables_type& active)
 }
 
 void WaveFunctionComponent::evaluateDerivativesWF(ParticleSet& P,
-                                                  const opt_variables_type& active,
+                                                  const OptVariables& active,
                                                   Vector<ValueType>& dlogpsi)
 {
   throw std::runtime_error("WaveFunctionComponent::evaluateDerivativesWF is not implemented by " + getClassName());
@@ -300,7 +300,7 @@ void WaveFunctionComponent::mw_evaluateSpinorRatios_serialized(
 }
 
 void WaveFunctionComponent::evaluateDerivRatios(const VirtualParticleSet& VP,
-                                                const opt_variables_type& optvars,
+                                                const OptVariables& optvars,
                                                 std::vector<ValueType>& ratios,
                                                 Matrix<ValueType>& dratios)
 {
@@ -310,7 +310,7 @@ void WaveFunctionComponent::evaluateDerivRatios(const VirtualParticleSet& VP,
 
 void WaveFunctionComponent::evaluateSpinorDerivRatios(const VirtualParticleSet& VP,
                                                       const std::pair<ValueVector, ValueVector>& spinor_multiplier,
-                                                      const opt_variables_type& optvars,
+                                                      const OptVariables& optvars,
                                                       std::vector<ValueType>& ratios,
                                                       Matrix<ValueType>& dratios)
 {

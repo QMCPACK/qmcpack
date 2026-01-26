@@ -20,6 +20,12 @@ function(ADD_UNIT_TEST TESTNAME PROCS THREADS TEST_BINARY)
   if(TEST_ADDED)
     set_tests_properties(${TESTNAME} PROPERTIES PROCESSORS ${TOT_PROCS} ENVIRONMENT OMP_NUM_THREADS=${THREADS}
                                                 PROCESSOR_AFFINITY TRUE)
+    if("asan" IN_LIST ENABLE_SANITIZER)
+      set_property(
+        TEST ${TESTNAME}
+        APPEND
+        PROPERTY ENVIRONMENT LSAN_OPTIONS=${LSAN_OPTIONS})
+    endif()
 
     if(ENABLE_CUDA
        OR ENABLE_ROCM
@@ -38,7 +44,10 @@ function(ADD_UNIT_TEST TESTNAME PROCS THREADS TEST_BINARY)
 
   set(TEST_LABELS_TEMP "")
   add_test_labels(${TESTNAME} TEST_LABELS_TEMP)
-  set_property(TEST ${TESTNAME} APPEND PROPERTY LABELS "unit")
+  set_property(
+    TEST ${TESTNAME}
+    APPEND
+    PROPERTY LABELS "unit")
 endfunction()
 
 # Add a test to see if the target output exists in the desired location in the build directory.
@@ -53,5 +62,8 @@ function(add_test_target_in_output_location TARGET_NAME_TO_TEST EXE_DIR_RELATIVE
   set(TESTNAME build_output_${TARGET_NAME_TO_TEST}_exists)
   add_test(NAME ${TESTNAME} COMMAND ls ${qmcpack_BINARY_DIR}/bin/${BASE_NAME})
 
-  set_property(TEST ${TESTNAME} APPEND PROPERTY LABELS "unit;deterministic")
+  set_property(
+    TEST ${TESTNAME}
+    APPEND
+    PROPERTY LABELS "unit;deterministic")
 endfunction()

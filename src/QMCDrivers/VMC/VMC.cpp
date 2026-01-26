@@ -100,8 +100,6 @@ bool VMC::run()
         ++now_loc;
         if (Period4WalkerDump && now_loc % Period4WalkerDump == 0)
           wClones[ip]->saveEnsemble(wit, wit_end);
-        //           if(storeConfigs && (now_loc%storeConfigs == 0))
-        //             ForwardWalkingHistory.storeConfigsForForwardWalking(*wClones[ip]);
       }
       Movers[ip]->stopBlock(false);
     } //end-of-parallel for
@@ -176,7 +174,6 @@ void VMC::resetRun()
     for (int ip = 0; ip < NumThreads; ++ip)
     {
       std::ostringstream os;
-      estimatorClones[ip]->resetTargetParticleSet(*wClones[ip]);
       estimatorClones[ip]->setCollectionMode(false);
 #if !defined(REMOVE_TRACEMANAGER)
       traceClones[ip] = Traces->makeClone();
@@ -262,7 +259,8 @@ void VMC::resetRun()
     //int ip=omp_get_thread_num();
     Movers[ip]->put(qmcNode);
     //Movers[ip]->resetRun(branchEngine.get(), estimatorClones[ip], traceClones[ip], DriftModifier);
-    Movers[ip]->resetRun2(branchEngine.get(), estimatorClones[ip], traceClones[ip],  wlog_collectors[ip].get(), DriftModifier);
+    Movers[ip]->resetRun2(branchEngine.get(), estimatorClones[ip], traceClones[ip], wlog_collectors[ip].get(),
+                          DriftModifier);
     if (qmc_driver_mode[QMC_UPDATE_MODE])
       Movers[ip]->initWalkersForPbyP(W.begin() + wPerRank[ip], W.begin() + wPerRank[ip + 1]);
     else

@@ -18,3 +18,5 @@ The Nexus User Guide
    reading
    python-basics
    theory
+   qmcpack-input-mod
+   code-style

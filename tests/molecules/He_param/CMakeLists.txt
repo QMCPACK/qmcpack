@@ -48,7 +48,7 @@ if(NOT QMC_MIXED_PRECISION)
     set(SDIR "${CMAKE_CURRENT_SOURCE_DIR}")
     # Normally the directory is created by qmc_run_and_check_custom_scalar,
     # but we need to write a file there before that runs
-    set(TDIR "${CMAKE_CURRENT_BINARY_DIR}/He_param_grad_load-1-16")
+    set(TDIR "${CMAKE_CURRENT_BINARY_DIR}/He_param_grad_load-r1-t16")
     file(MAKE_DIRECTORY ${TDIR})
     execute_process(COMMAND ${Python3_EXECUTABLE} ${qmcpack_SOURCE_DIR}/tests/molecules/He_param/convert_vp_format.py
                             ${SDIR}/he_vp_opt.txt -o ${TDIR}/he_vp_opt.h5)

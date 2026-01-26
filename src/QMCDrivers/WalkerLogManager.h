@@ -31,14 +31,14 @@ struct WalkerLogInput;
  *    to the HDF file at the end of each MC block.
  *
  *    Just prior to the write, this class examines the distribution of walker
- *    energies on its rank for each MC step in the MC block, identifies the 
- *    minimum/maximum/median energy walkers and buffers their full data 
+ *    energies on its rank for each MC step in the MC block, identifies the
+ *    minimum/maximum/median energy walkers and buffers their full data
  *    (including per-particle information) for the write.
- *    This data corresponds to walker information at specific quantiles of the 
+ *    This data corresponds to walker information at specific quantiles of the
  *    energy distribution.
  *    See WalkerLogManager::writeBuffers()
  *
- *    Writing per-particle information for all walkers is optional, as is 
+ *    Writing per-particle information for all walkers is optional, as is
  *    writing data for the minimum/maximum/median energy walkers.
  *    Scalar "property" data for each walker is always written.
  */
@@ -104,7 +104,8 @@ private:
 
 public:
   WalkerLogManager(WalkerLogInput& inp, bool allow_logs, std::string series_root, Communicate* comm = 0);
-
+  WalkerLogManager& operator=(WalkerLogManager&& other) = default;
+  WalkerLogManager(WalkerLogManager&& other)            = default;
   /// create a WalkerLogCollector
   std::unique_ptr<WalkerLogCollector> makeCollector() const;
 

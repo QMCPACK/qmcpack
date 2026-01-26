@@ -103,6 +103,7 @@ SoaLocalizedBasisSet<COT, ORBT>::SoaLocalizedBasisSet(ParticleSet& ions, Particl
   LOBasisSet.resize(ions.getSpeciesSet().getTotalNum());
   BasisOffset.resize(NumCenters + 1);
   BasisSetSize = 0;
+  initializeSpeciesOffsets();
 }
 
 template<class COT, typename ORBT>
@@ -119,6 +120,7 @@ SoaLocalizedBasisSet<COT, ORBT>::SoaLocalizedBasisSet(const SoaLocalizedBasisSet
   LOBasisSet.reserve(a.LOBasisSet.size());
   for (auto& elem : a.LOBasisSet)
     LOBasisSet.push_back(std::make_unique<COT>(*elem));
+  initializeSpeciesOffsets();
 }
 
 template<class COT, typename ORBT>
@@ -180,16 +182,7 @@ void SoaLocalizedBasisSet<COT, ORBT>::queryOrbitalsForSType(const std::vector<bo
     std::vector<bool> local_is_s_orbital(bss);
     LOBasisSet[IonID[c]]->queryOrbitalsForSType(local_is_s_orbital);
     for (int k = 0; k < bss; k++)
-    {
-      if (corrCenter[c])
-      {
-        is_s_orbital[idx++] = local_is_s_orbital[k];
-      }
-      else
-      {
-        is_s_orbital[idx++] = false;
-      }
-    }
+      is_s_orbital[idx++] = corrCenter[c] ? local_is_s_orbital[k] : false;
   }
 }
 
@@ -259,54 +252,16 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateVGL(const RefVectorWithLeader<S
     const auto& species_names = ions_.getSpeciesSet().speciesName;
     const int num_species     = species_names.size();
 
-
-    std::vector<std::vector<size_t>> local_species_offsets(num_species);
-    std::vector<std::vector<size_t>> local_species_centers(num_species);
-
-    for (int c = 0; c < NumCenters; ++c)
-    {
-      const int species_id = IonID[c];
-      local_species_centers[species_id].push_back(c);
-      local_species_offsets[species_id].push_back(BasisOffset[c]);
-    }
-
-    using PinnedVector = Vector<size_t, OffloadPinnedAllocator<size_t>>;
-    std::vector<PinnedVector> species_centers(num_species);
-    std::vector<PinnedVector> species_basis_offsets(num_species);
-
-
-    for (int species_id = 0; species_id < num_species; ++species_id)
-    {
-      species_centers[species_id].resize(local_species_centers[species_id].size());
-      species_basis_offsets[species_id].resize(local_species_offsets[species_id].size());
-
-
-      // Copy from the std::vector into pinned memory
-      for (size_t i = 0; i < local_species_centers[species_id].size(); i++)
-        species_centers[species_id][i] = local_species_centers[species_id][i];
-
-      for (size_t i = 0; i < local_species_offsets[species_id].size(); i++)
-        species_basis_offsets[species_id][i] = local_species_offsets[species_id][i];
-
-
-      species_centers[species_id].updateTo();
-      species_basis_offsets[species_id].updateTo();
-    }
-
-
     // Process each species batch
     for (int species_id = 0; species_id < num_species; ++species_id)
-    {
-      const auto& c_list = species_centers[species_id];
-      if (c_list.size() == 0)
-        continue;
-
-      const auto& basis_offsets   = species_basis_offsets[species_id];
-      auto one_species_basis_list = extractOneSpeciesBasisRefList(basis_list, species_id);
-      LOBasisSet[species_id]->mw_evaluateVGL_multiCenter(one_species_basis_list, pset_leader.getLattice(), vgl_v,
-                                                   displ_list_tr, Tv_list, Nw, BasisSetSize, c_list, basis_offsets,
-                                                   NumCenters);
-    }
+      if (const auto& c_list = species_centers_[species_id]; c_list.size() > 0)
+      {
+        const auto& basis_offsets   = species_center_coffsets_[species_id];
+        auto one_species_basis_list = extractOneSpeciesBasisRefList(basis_list, species_id);
+        LOBasisSet[species_id]->mw_evaluateVGL_multiCenter(one_species_basis_list, pset_leader.getLattice(), vgl_v,
+                                                           displ_list_tr, Tv_list, Nw, BasisSetSize, c_list,
+                                                           basis_offsets, NumCenters);
+      }
   }
 }
 
@@ -364,7 +319,6 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValueVPs(const RefVectorWithLea
 
   auto& vps_leader = vp_list.getLeader();
 
-
   const auto dt_list(vps_leader.extractDTRefList(vp_list, myTableIndex));
   const auto coordR_list(vps_leader.extractVPCoords(vp_list));
 
@@ -374,7 +328,6 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValueVPs(const RefVectorWithLea
   auto& displ_list_tr = basis_leader.mw_mem_handle_.getResource().displ_list_tr;
   Tv_list.resize(3ULL * NumCenters * nVPs);
   displ_list_tr.resize(3ULL * NumCenters * nVPs);
-
 
   auto* Tv_host    = Tv_list.data();
   auto* displ_host = displ_list_tr.data();
@@ -424,40 +377,15 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateValueVPs(const RefVectorWithLea
     local_offsets[s_id].push_back(BasisOffset[c]);
   }
 
-  ///Should be done only once at Begining of simulation and made available. 
-  using PinnedVecSizeT = Vector<size_t, OffloadPinnedAllocator<size_t>>;
-  std::vector<PinnedVecSizeT> species_centers(num_species_);
-  std::vector<PinnedVecSizeT> species_center_coffsets(num_species_);
-
-  // Fill pinned vectors
   for (int s = 0; s < num_species_; s++)
-  {
-    auto& c_list_s    = species_centers[s];
-    auto& offs_list_s = species_center_coffsets[s];
-    c_list_s.resize(local_centers[s].size());
-    offs_list_s.resize(local_offsets[s].size());
+    if (auto& c_list_s = species_centers_[s]; c_list_s.size() > 0)
+    {
+      auto& offs_list_s = species_center_coffsets_[s];
+      auto basis_refs   = extractOneSpeciesBasisRefList(basis_list, s);
 
-    for (size_t i = 0; i < local_centers[s].size(); i++)
-      c_list_s[i] = local_centers[s][i];
-    for (size_t i = 0; i < local_offsets[s].size(); i++)
-      offs_list_s[i] = local_offsets[s][i];
-
-    c_list_s.updateTo();
-    offs_list_s.updateTo();
-  }
-
-  for (int s = 0; s < num_species_; s++)
-  {
-    auto& c_list_s    = species_centers[s];
-    auto& offs_list_s = species_center_coffsets[s];
-    if (c_list_s.size() == 0)
-      continue;
-
-    auto basis_refs = extractOneSpeciesBasisRefList(basis_list, s);
-
-    LOBasisSet[s]->mw_evaluateV_multiCenter(basis_refs, vps_leader.getLattice(), vp_basis_v, displ_list_tr, Tv_list,
-                                            nVPs, BasisSetSize, c_list_s, offs_list_s, NumCenters);
-  }
+      LOBasisSet[s]->mw_evaluateV_multiCenter(basis_refs, vps_leader.getLattice(), vp_basis_v, displ_list_tr, Tv_list,
+                                              nVPs, BasisSetSize, c_list_s, offs_list_s, NumCenters);
+    }
 }
 
 
@@ -645,6 +573,40 @@ template<class COT, typename ORBT>
 void SoaLocalizedBasisSet<COT, ORBT>::add(int icenter, std::unique_ptr<COT> aos)
 {
   LOBasisSet[icenter] = std::move(aos);
+}
+
+template<class COT, typename ORBT>
+void SoaLocalizedBasisSet<COT, ORBT>::initializeSpeciesOffsets()
+{
+  const auto& species_names = ions_.getSpeciesSet().speciesName;
+  const size_t num_species  = species_names.size();
+  const auto& IonID(ions_.GroupID);
+
+  std::vector<std::vector<size_t>> local_centers(num_species);
+  std::vector<std::vector<size_t>> local_offsets(num_species);
+  for (int c = 0; c < NumCenters; ++c)
+  {
+    const int s = IonID[c];
+    local_centers[s].push_back(c);
+    local_offsets[s].push_back(BasisOffset[c]);
+  }
+
+  species_centers_.resize(num_species);
+  species_center_coffsets_.resize(num_species);
+
+  for (int s = 0; s < num_species; ++s)
+  {
+    auto& c_list = species_centers_[s];
+    auto& o_list = species_center_coffsets_[s];
+    c_list.resize(local_centers[s].size());
+    o_list.resize(local_offsets[s].size());
+    for (size_t i = 0; i < c_list.size(); ++i)
+      c_list[i] = local_centers[s][i];
+    for (size_t i = 0; i < o_list.size(); ++i)
+      o_list[i] = local_offsets[s][i];
+    c_list.updateTo();
+    o_list.updateTo();
+  }
 }
 
 template class SoaLocalizedBasisSet<

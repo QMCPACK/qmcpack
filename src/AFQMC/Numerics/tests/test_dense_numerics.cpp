@@ -620,7 +620,7 @@ void test_dense_gerf_gqr_strided_device(Allocator& alloc)
     array<int, 1, IAllocator> info(iextensions<1u>{2}, IAllocator{alloc});
     array<T, 2, Allocator> TAU({2, 4}, alloc);
 
-    geqrfStrided(4, 3, A.origin(), 4, 12, TAU.origin(), sz, info.origin(), 2);
+    geqrfStrided(4, 3, A.origin(), 4, 12, TAU.origin(), 4, info.origin(), 2);
     gqrStrided(4, 3, 3, A.origin(), 4, 12, TAU.origin(), 4, WORK.origin(), sz, info.origin(), 2);
     for (int i = 0; i < 2; i++)
     {
@@ -764,7 +764,6 @@ TEST_CASE("dense_ma_operations_device_complex", "[matrix_operations]")
     test_dense_mat_mul_device<Alloc>(alloc);
     test_dense_gerf_gqr_device<Alloc>(alloc);
     test_dense_gerf_gqr_strided_device<Alloc>(alloc);
-    test_dense_geqrf_getri_batched_device<Alloc>(alloc);
     test_dense_geqrf_getri_batched_device<Alloc>(alloc);
     test_dense_batched_gemm<Alloc>(alloc);
   }

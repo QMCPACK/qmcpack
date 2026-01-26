@@ -142,7 +142,8 @@ void DMC::resetUpdateEngines()
           Movers[ip]->setSpinMass(SpinMass);
           Movers[ip]->put(qmcNode);
           //Movers[ip]->resetRun(branchEngine.get(), estimatorClones[ip], traceClones[ip], DriftModifier);
-          Movers[ip]->resetRun2(branchEngine.get(), estimatorClones[ip], traceClones[ip], wlog_collectors[ip].get(), DriftModifier);
+          Movers[ip]->resetRun2(branchEngine.get(), estimatorClones[ip], traceClones[ip], wlog_collectors[ip].get(),
+                                DriftModifier);
           Movers[ip]->initWalkersForPbyP(W.begin() + wPerRank[ip], W.begin() + wPerRank[ip + 1]);
         }
         else
@@ -161,7 +162,8 @@ void DMC::resetUpdateEngines()
 
           Movers[ip]->put(qmcNode);
           //Movers[ip]->resetRun(branchEngine.get(), estimatorClones[ip], traceClones[ip], DriftModifier);
-          Movers[ip]->resetRun2(branchEngine.get(), estimatorClones[ip], traceClones[ip], wlog_collectors[ip].get(), DriftModifier);
+          Movers[ip]->resetRun2(branchEngine.get(), estimatorClones[ip], traceClones[ip], wlog_collectors[ip].get(),
+                                DriftModifier);
           Movers[ip]->initWalkersForPbyP(W.begin() + wPerRank[ip], W.begin() + wPerRank[ip + 1]);
         }
         else
@@ -172,7 +174,8 @@ void DMC::resetUpdateEngines()
             Movers[ip] = new DMCUpdateAllWithRejection(*wClones[ip], *psiClones[ip], *hClones[ip], *rngs_[ip]);
           Movers[ip]->put(qmcNode);
           //Movers[ip]->resetRun(branchEngine.get(), estimatorClones[ip], traceClones[ip], DriftModifier);
-          Movers[ip]->resetRun2(branchEngine.get(), estimatorClones[ip], traceClones[ip],  wlog_collectors[ip].get(), DriftModifier);
+          Movers[ip]->resetRun2(branchEngine.get(), estimatorClones[ip], traceClones[ip], wlog_collectors[ip].get(),
+                                DriftModifier);
           Movers[ip]->initWalkers(W.begin() + wPerRank[ip], W.begin() + wPerRank[ip + 1]);
         }
       }
@@ -253,11 +256,6 @@ bool DMC::run()
 
     for (IndexType step = 0; step < nSteps; ++step, CurrentStep += BranchInterval)
     {
-      //         if(storeConfigs && (CurrentStep%storeConfigs == 0)) {
-      //           ForwardWalkingHistory.storeConfigsForForwardWalking(W);
-      //           W.resetWalkerParents();
-      //         }
-
 #pragma omp parallel
       {
         int ip = omp_get_thread_num();
@@ -282,10 +280,6 @@ bool DMC::run()
           W.Collectables += wClones[ip]->Collectables;
       }
       branchEngine->branch(CurrentStep, W);
-      //         if(storeConfigs && (CurrentStep%storeConfigs == 0)) {
-      //           ForwardWalkingHistory.storeConfigsForForwardWalking(W);
-      //           W.resetWalkerParents();
-      //         }
       if (variablePop)
         FairDivideLow(W.getActiveWalkers(), NumThreads, wPerRank);
       sample++;

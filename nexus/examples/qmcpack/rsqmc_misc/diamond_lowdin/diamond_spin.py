@@ -10,10 +10,10 @@ from nexus import generate_pw2qmcpack
 from nexus import generate_qmcpack
 from nexus import vmc
 
-from structure import *
+from nexus.structure import *
 
-from qmcpack_input import dm1b
-from qmcpack_input import sposet
+from nexus.qmcpack_input import dm1b
+from nexus.qmcpack_input import sposet
 
 settings(
     pseudo_dir    = '../../pseudopotentials',

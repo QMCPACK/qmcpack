@@ -80,6 +80,8 @@ protected:
   IndexType blocks_between_recompute_ = std::is_same<RealType, FullPrecisionRealType>::value ? 10 : 1;
   bool append_run_                    = false;
 
+  IndexType estimator_measurement_period_{1};
+
   // from QMCDriverFactory
   std::string qmc_method_{"invalid"};
   std::string update_mode_{"pbyp"};
@@ -92,7 +94,6 @@ protected:
   input::PeriodStride walker_dump_period_{0, 0};
   input::PeriodStride check_point_period_{0, 0};
   bool dump_config_  = false;
-  IndexType k_delay_ = 0;
   bool reset_random_ = false;
 
   // from QMCUpdateBase
@@ -122,9 +123,9 @@ public:
   RealType get_spin_mass() const { return spin_mass_; }
   IndexType get_blocks_between_recompute() const { return blocks_between_recompute_; }
   bool get_append_run() const { return append_run_; }
+  IndexType get_estimator_measurement_period() const { return estimator_measurement_period_; }
   input::PeriodStride get_walker_dump_period() const { return walker_dump_period_; }
   input::PeriodStride get_check_point_period() const { return check_point_period_; }
-  IndexType get_k_delay() const { return k_delay_; }
   bool get_reset_random() const { return reset_random_; }
   bool get_dump_config() const { return dump_config_; }
 

@@ -245,17 +245,11 @@ void test_CoulombPBCAA_3p(DynamicCoordinateKind kind)
   RefVectorWithLeader<ParticleSet> p_ref_list(elec, {elec, elec_clone});
   RefVectorWithLeader<OperatorBase> caa_ref_list(caa, {caa, caa_clone});
 
-  // dummy psi
-  RuntimeOptions runtime_options;
-  TrialWaveFunction psi(runtime_options);
-  TrialWaveFunction psi_clone(runtime_options);
-  RefVectorWithLeader<TrialWaveFunction> psi_ref_list(psi, {psi, psi_clone});
-
   ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_ref_list);
   ResourceCollectionTeamLock<OperatorBase> mw_caa_lock(caa_res, caa_ref_list);
 
   ParticleSet::mw_update(p_ref_list);
-  caa.mw_evaluate(caa_ref_list, psi_ref_list, p_ref_list);
+  caa.mw_evaluate(caa_ref_list, p_ref_list);
 
   CHECK(caa.getValue() == Approx(-5.4954533536));
   CHECK(caa_clone.getValue() == Approx(-6.329373489));
@@ -307,10 +301,6 @@ TEST_CASE("CoulombAA::mw_evaluatePerParticle", "[hamiltonian]")
   // golden CoulombPBCAA
   CoulombPBCAA caa(elec, true, false, kind == DynamicCoordinateKind::DC_POS_OFFLOAD);
 
-  // mock golden wavefunction, only needed to satisfy APIs
-  RuntimeOptions runtime_options;
-  TrialWaveFunction psi(runtime_options);
-
   // informOfPerParticleListener should be called on the golden instance of this operator if there
   // are listeners present for it.  This would normally be done by QMCHamiltonian but this is a unit test.
   caa.informOfPerParticleListener();
@@ -325,9 +315,6 @@ TEST_CASE("CoulombAA::mw_evaluatePerParticle", "[hamiltonian]")
   CoulombPBCAA caa2(elec2, true, false, kind == DynamicCoordinateKind::DC_POS_OFFLOAD);
   RefVector<OperatorBase> caas{caa, caa2};
   RefVectorWithLeader<OperatorBase> o_list(caa, caas);
-
-  TrialWaveFunction psi_clone(runtime_options);
-  RefVectorWithLeader<TrialWaveFunction> twf_list(psi, {psi, psi_clone});
 
   // Self-energy correction, no background charge for e-e interaction
   double consts = caa.myConst;
@@ -356,7 +343,7 @@ TEST_CASE("CoulombAA::mw_evaluatePerParticle", "[hamiltonian]")
 
   ParticleSet::mw_update(p_list);
 
-  caa.mw_evaluatePerParticle(o_list, twf_list, p_list, listeners, ion_listeners);
+  caa.mw_evaluatePerParticle(o_list, p_list, listeners, ion_listeners);
   CHECK(caa.getValue() == Approx(-2.9332312765));
   CHECK(caa2.getValue() == Approx(-3.4537460926));
   // Check that the sum of the particle energies == the total

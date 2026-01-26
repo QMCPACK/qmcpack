@@ -124,12 +124,45 @@ Note the following:
    :math:`E_{PT_2}=\sum_\alpha \Delta E_\alpha` estimates the distance
    to the FCI solution.
 
+.. _qp2installation:
+
+Installing the QMCPACK plugin to Quantum Package (QP2)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In the following examples of using the CIPSI wavefunction interface, QP2 code :cite:`QP` is used to perform a CIPSI calculation. The
+resultant wavefunction is then stored and subsequently converted to standard QMCPACK formats. For this to work, a QMCPACK related
+plugin must be installed in QP2.
+
+The following illustrates one possibility for installing QP2 with the plugin included:
+
+.. code:: shell
+
+    CC=gcc
+    CXX=g++
+    F90=gfortran
+    F95=gfortran
+    F77=gfortran
+    git clone https://github.com/QuantumPackage/qp2.git 
+    cd qp2
+    #git checkout v2.2.2 # Example of using a specific released version
+    #git checkout dev-pbc # Periodic boundary condition development version
+    ./configure -i all
+    ./configure -c config/gfortran.cfg
+    source quantum_package.rc
+    ninja
+    cd plugins
+    git clone https://github.com/QuantumPackage/qmcpack.git
+    cd ../
+    qp_plugins install qmcpack
+    ninja
+
+
 .. _cipsi:
 
 CIPSI wavefunction interface
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The CIPSI method is implemented in the QP code:cite:`QP` developed by the Caffarel group. Once the trial wavefunction is generated, QP is able to produce output readable by the QMCPACK converter as described in :ref:`convert4qmc`. QP can be installed with multiple plugins for different levels of theory in quantum chemistry. When installing the "QMC" plugin, QP can save the wavefunction in a format readable by the QMCPACK converter.
+The CIPSI method is implemented in the QP code :cite:`QP` developed by the Caffarel group. Once the trial wavefunction is generated, QP is able to produce output readable by the QMCPACK converter as described in :ref:`convert4qmc`. QP can be installed with multiple plugins for different levels of theory in quantum chemistry. When installing the "QMC" plugin, QP can save the wavefunction in a format readable by the QMCPACK converter.
 
 In the following we use the :math:`C_2O_2H_3N` molecule
 (:numref:`fig13`) as an example of how to run a multireference
@@ -301,7 +334,7 @@ The following steps show how to run from Hartree-Fock to selected CI using QP2, 
   :math:`1.10^{-4}`, :math:`1.10^{-5}`, and :math:`1.10^{-6}`, translating
   to 239, 44539, 541380, and 908128 determinants, respectively.
 
-  To  truncate the determinants in QP, edit the ``ezfio`` file as follows:
+  To truncate the determinants in QP, edit the ``ezfio`` file as follows:
 
   ::
 
@@ -330,9 +363,9 @@ The following steps show how to run from Hartree-Fock to selected CI using QP2, 
 .. centered:: :numref:`table11` Energies of :math:`C_2O_2H_3N` using orbitals from
    Hartree-Fock, natural orbitals, and 0.4M and 4M determinants
 
-- Save the wavefunction for QMCPACK.
-  The wavefunction in QP is now ready to be converted to QMCPACK format.
-  Save the wavefunction into QMCPACK format and then convert the wavefunction using the ``convert4qmc`` tool.
+- Save the wavefunction for QMCPACK. The wavefunction in QP is now ready to be converted to QMCPACK format. Save the wavefunction
+  into QMCPACK format and then convert the wavefunction using the ``convert4qmc`` tool. Should the ``qp_run save_for_qmcpack`` step
+  fail with an unknown command error, verify that the QMCPACK plugin was installed in QP2 (detailed above).
 
   ::
 
@@ -427,7 +460,7 @@ determinants, its nodal surface is still lower than the best SD-DMC
 DMC-B3LYP. Although 6 (1) mHa can seem very small, it is important to
 remember that CCSD(T) cannot correctly describe multireference systems;
 therefore, it is impossible to assess the correctness of the
-single-determinant–DMC result, making CIPSI-DMC calculations an ideal
+single-determinant-DMC result, making CIPSI-DMC calculations an ideal
 benchmark tool for multireference systems.
 
 .. bibliography:: /bibs/sCI.bib

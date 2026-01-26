@@ -36,6 +36,8 @@ if(QMC_OMP)
             CACHE STRING "Offload target architecture")
         set(OPENMP_OFFLOAD_COMPILE_OPTIONS "-fopenmp-targets=${OFFLOAD_TARGET}")
       endif()
+      # Select the intra-team reduction implementation using shared local memory.
+      set(OPENMP_OFFLOAD_COMPILE_OPTIONS "${OPENMP_OFFLOAD_COMPILE_OPTIONS} -mllvm -vpo-paropt-atomic-free-reduction-slm=true" )
     endif(ENABLE_OFFLOAD)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fiopenmp")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fiopenmp")

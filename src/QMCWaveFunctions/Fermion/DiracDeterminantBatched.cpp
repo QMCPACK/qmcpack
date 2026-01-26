@@ -792,15 +792,9 @@ void DiracDeterminantBatched<PL, VT, FPVT>::mw_calcRatio(const RefVectorWithLead
 template<PlatformKind PL, typename VT, typename FPVT>
 void DiracDeterminantBatched<PL, VT, FPVT>::evaluateRatios(const VirtualParticleSet& VP, std::vector<Value>& ratios)
 {
-  {
-    ScopedTimer local_timer(RatioTimer);
-    const int WorkingIndex = VP.refPtcl - FirstIndex;
-    std::copy_n(psiMinv_[WorkingIndex], d2psiV.size(), d2psiV.data());
-  }
-  {
-    ScopedTimer local_timer(SPOVTimer);
-    phi_.evaluateDetRatios(VP, psiV_host_view, d2psiV_host_view, ratios);
-  }
+  ScopedTimer local_timer(SPOVTimer);
+  Vector<ValueType> inv_row(psiMinv_[VP.refPtcl - FirstIndex], psiV.size());
+  phi_.evaluateDetRatios(VP, psiV_host_view, inv_row, ratios);
 }
 
 template<PlatformKind PL, typename VT, typename FPVT>
@@ -809,15 +803,9 @@ void DiracDeterminantBatched<PL, VT, FPVT>::evaluateSpinorRatios(
     const std::pair<ValueVector, ValueVector>& spinor_multiplier,
     std::vector<Value>& ratios)
 {
-  {
-    ScopedTimer local_timer(RatioTimer);
-    const int WorkingIndex = VP.refPtcl - FirstIndex;
-    std::copy_n(psiMinv_[WorkingIndex], d2psiV.size(), d2psiV.data());
-  }
-  {
-    ScopedTimer local_timer(SPOVTimer);
-    phi_.evaluateDetSpinorRatios(VP, psiV_host_view, spinor_multiplier, d2psiV_host_view, ratios);
-  }
+  ScopedTimer local_timer(SPOVTimer);
+  Vector<ValueType> inv_row(psiMinv_[VP.refPtcl - FirstIndex], psiV.size());
+  phi_.evaluateDetSpinorRatios(VP, psiV_host_view, spinor_multiplier, inv_row, ratios);
 }
 
 template<PlatformKind PL, typename VT, typename FPVT>
@@ -860,8 +848,48 @@ void DiracDeterminantBatched<PL, VT, FPVT>::mw_evaluateRatios(
 }
 
 template<PlatformKind PL, typename VT, typename FPVT>
+void DiracDeterminantBatched<PL, VT, FPVT>::mw_evaluateSpinorRatios(
+    const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+    const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+    const RefVector<std::pair<ValueVector, ValueVector>>& spinor_multiplier_list,
+    std::vector<std::vector<Value>>& ratios) const
+{
+  assert(this == &wfc_list.getLeader());
+  const size_t nw = wfc_list.size();
+
+  RefVectorWithLeader<SPOSet> phi_list(phi_);
+  RefVector<Vector<Value>> psiV_list;
+  std::vector<const Value*> invRow_ptr_list;
+  phi_list.reserve(nw);
+  psiV_list.reserve(nw);
+  invRow_ptr_list.reserve(nw);
+
+  {
+    ScopedTimer local_timer(RatioTimer);
+    for (size_t iw = 0; iw < nw; iw++)
+    {
+      auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<PL, VT, FPVT>>(iw);
+      const VirtualParticleSet& vp(vp_list[iw]);
+      const int WorkingIndex = vp.refPtcl - FirstIndex;
+      // build lists
+      phi_list.push_back(det.phi_);
+      psiV_list.push_back(det.psiV_host_view);
+      if (phi_.isOMPoffload())
+        invRow_ptr_list.push_back(det.psiMinv_.device_data() + WorkingIndex * psiMinv_.cols());
+      else
+        invRow_ptr_list.push_back(det.psiMinv_[WorkingIndex]);
+    }
+  }
+
+  {
+    ScopedTimer local_timer(SPOVTimer);
+    phi_.mw_evaluateDetSpinorRatios(phi_list, vp_list, psiV_list, spinor_multiplier_list, invRow_ptr_list, ratios);
+  }
+}
+
+template<PlatformKind PL, typename VT, typename FPVT>
 void DiracDeterminantBatched<PL, VT, FPVT>::evaluateDerivRatios(const VirtualParticleSet& VP,
-                                                                const opt_variables_type& optvars,
+                                                                const OptVariables& optvars,
                                                                 std::vector<ValueType>& ratios,
                                                                 Matrix<ValueType>& dratios)
 {
@@ -875,7 +903,7 @@ template<PlatformKind PL, typename VT, typename FPVT>
 void DiracDeterminantBatched<PL, VT, FPVT>::evaluateSpinorDerivRatios(
     const VirtualParticleSet& VP,
     const std::pair<ValueVector, ValueVector>& spinor_multiplier,
-    const opt_variables_type& optvars,
+    const OptVariables& optvars,
     std::vector<ValueType>& ratios,
     Matrix<ValueType>& dratios)
 {
@@ -1171,7 +1199,7 @@ void DiracDeterminantBatched<PL, VT, FPVT>::mw_recompute(const RefVectorWithLead
 
 template<PlatformKind PL, typename VT, typename FPVT>
 void DiracDeterminantBatched<PL, VT, FPVT>::evaluateDerivatives(ParticleSet& P,
-                                                                const opt_variables_type& active,
+                                                                const OptVariables& active,
                                                                 Vector<Value>& dlogpsi,
                                                                 Vector<Value>& dhpsioverpsi)
 {
@@ -1180,7 +1208,7 @@ void DiracDeterminantBatched<PL, VT, FPVT>::evaluateDerivatives(ParticleSet& P,
 
 template<PlatformKind PL, typename VT, typename FPVT>
 void DiracDeterminantBatched<PL, VT, FPVT>::evaluateDerivativesWF(ParticleSet& P,
-                                                                  const opt_variables_type& active,
+                                                                  const OptVariables& active,
                                                                   Vector<ValueType>& dlogpsi)
 {
   phi_.evaluateDerivativesWF(P, active, dlogpsi, FirstIndex, LastIndex);

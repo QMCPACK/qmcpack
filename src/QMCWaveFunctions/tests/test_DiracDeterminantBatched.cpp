@@ -103,7 +103,7 @@ void test_DiracDeterminantBatched_first()
 
   CHECK(std::real(ratio_0) == Approx(-0.5343861437));
 
-  VirtualParticleSet VP(elec, 2);
+  VirtualParticleSet VP(elec);
   std::vector<Pos> newpos2(2);
   std::vector<Value> ratios2(2);
   newpos2[0] = newpos - elec.R[1];
@@ -727,6 +727,7 @@ void test_DiracDeterminantBatched_spinor_update(const int delay_rank, DetMatInve
   //Check initial values for both walkers
   RefVector<ParticleGradient> G_list  = {G, G2};
   RefVector<ParticleLaplacian> L_list = {L, L2};
+  ParticleSet::mw_update(p_ref_list);
   sd.mw_evaluateLog(sd_ref_list, p_ref_list, G_list, L_list);
   for (int iw = 0; iw < sd_ref_list.size(); iw++)
   {
@@ -750,7 +751,7 @@ void test_DiracDeterminantBatched_spinor_update(const int delay_rank, DetMatInve
   MCCoords<CoordsType::POS_SPIN> displs(2);
   displs.positions = {dr, dr};
   displs.spins     = {ds, ds};
-  elec_.mw_makeMove(p_ref_list, 1, displs);
+  ParticleSet::mw_makeMove(p_ref_list, 1, displs);
 
   //Check ratios and grads for both walkers for proposed move
   std::vector<PsiValue> ratios(2);
@@ -779,7 +780,7 @@ void test_DiracDeterminantBatched_spinor_update(const int delay_rank, DetMatInve
 
   //reject move and check for initial values for mw_evalGrad
   std::fill(grads.begin(), grads.end(), 0);
-  elec_.mw_accept_rejectMove<CoordsType::POS_SPIN>(p_ref_list, 1, {false, false});
+  ParticleSet::mw_accept_rejectMove<CoordsType::POS_SPIN>(p_ref_list, 1, {false, false});
   sd.mw_evalGrad(sd_ref_list, p_ref_list, 1, grads);
   for (int iw = 0; iw < grads.size(); iw++)
   {
@@ -800,8 +801,8 @@ void test_DiracDeterminantBatched_spinor_update(const int delay_rank, DetMatInve
   }
 
   //now make and accept move, checking new values
-  elec_.mw_makeMove(p_ref_list, 1, displs);
-  elec_.mw_accept_rejectMove<CoordsType::POS_SPIN>(p_ref_list, 1, {true, true});
+  ParticleSet::mw_makeMove(p_ref_list, 1, displs);
+  ParticleSet::mw_accept_rejectMove<CoordsType::POS_SPIN>(p_ref_list, 1, {true, true});
 
   G  = 0;
   L  = 0;

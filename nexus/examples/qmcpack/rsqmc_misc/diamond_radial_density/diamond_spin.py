@@ -10,9 +10,9 @@ from nexus import generate_pw2qmcpack
 from nexus import generate_qmcpack
 from nexus import vmc
 
-from structure import *
+from nexus.structure import *
 
-from qmcpack_input import spindensity
+from nexus.qmcpack_input import spindensity
 
 settings(
     pseudo_dir    = '../../pseudopotentials',

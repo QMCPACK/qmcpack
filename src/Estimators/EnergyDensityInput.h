@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2024 QMCPACK developers.
+// Copyright (c) 2025 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -15,7 +15,6 @@
 #include "InputSection.h"
 #include "ReferencePointsInput.h"
 #include "SpaceGridInput.h"
-#include "type_traits/template_types.hpp"
 
 namespace qmcplusplus
 {
@@ -38,12 +37,13 @@ class EnergyDensityInput
 public:
   using Consumer = NEEnergyDensityEstimator;
 
+  static constexpr std::string_view type_tag{"EnergyDensity"};
   class EnergyDensityInputSection : public InputSection
   {
   public:
     EnergyDensityInputSection()
     {
-      section_name = "EnergyDensity";
+      section_name = type_tag;
       attributes   = {"name", "dynamic", "static", "ion_points", "type"};
       parameters   = {"reference_points", "spacegrid"};
       strings      = {"name", "type", "dynamic", "static"};
@@ -64,15 +64,18 @@ public:
   EnergyDensityInput(xmlNodePtr cur);
 
   const std::string& get_name() const { return name_; }
+  const std::string& get_type() const { return type_; }
   const std::string& get_dynamic() const { return dynamic_; }
   const std::string& get_static() const { return static_; }
   ReferencePointsInput get_ref_points_input() const { return ref_points_input_; }
   std::vector<SpaceGridInput> get_space_grid_inputs() const;
   const bool& get_ion_points() const { return ion_points_; }
+
 private:
-  std::string name_;
-  std::string dynamic_;
-  std::string static_;
+  std::string name_{type_tag};
+  std::string type_{type_tag};
+  std::string dynamic_{"e"};
+  std::string static_{"ion"};
   bool ion_points_{false};
   EnergyDensityInputSection input_section_;
   ReferencePointsInput ref_points_input_;

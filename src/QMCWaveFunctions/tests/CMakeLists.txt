@@ -10,6 +10,10 @@
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
+add_library(minimal_wavefunction_pool MinimalWaveFunctionPool.cpp)
+target_include_directories(minimal_wavefunction_pool PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+target_link_libraries(minimal_wavefunction_pool PUBLIC qmcwfs)
+
 set(SRC_DIR wavefunction)
 set(UTEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
 #SET(UTEST_HDF_INPUT ${qmcpack_SOURCE_DIR}/tests/solids/monoO_1x1x1_pp/pwscf.pwscf.h5)
@@ -104,6 +108,7 @@ set(TRIALWF_SRC
     test_wavefunction_pool.cpp
     test_example_he.cpp
     test_lattice_gaussian.cpp
+    test_twf_fastderiv_raii.cpp
     test_TWFGrads.cpp)
 
 set(SPOSET_SRC
@@ -185,7 +190,9 @@ foreach(CATEGORY common trialwf sposet jastrow determinant)
     platform_runtime
     sposets_for_testing
     utilities_for_test
-    container_testing)
+    container_testing
+    minimal_particle_pool
+    minimal_wavefunction_pool)
   if(USE_OBJECT_TARGET)
     target_link_libraries(${UTEST_EXE} qmcparticle qmcparticle_omptarget qmcwfs_omptarget spline2 spline2_omptarget qmcutil platform_omptarget_LA)
   endif()

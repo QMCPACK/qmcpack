@@ -285,7 +285,7 @@ Quantum ESPRESSO (PWSCF) generation:
 
 
 The keywords ``calculation``, ``input_dft``, ``ecutwfc``, and
-``conv_thr`` will be familiar to the casual user of PWSCF. Any input
+``conv_thr`` will be familiar to the casual user of Quantum ESPRESSO's PWSCF/pw.x program. Any input
 keyword that normally appears as part of a namelist in PWSCF input can
 be directly supplied here. The ``generate_pwscf`` function, like most of
 the others, actually takes an arbitrary number of keyword arguments.
@@ -293,6 +293,29 @@ These are later screened against known inputs to PWSCF to avoid errors.
 The ``kgrid`` and ``kshift`` inputs inform the ``KPOINTS`` card in the
 PWSCF input file, overriding any similar information provided in
 ``generate_physical_system``.
+
+Note on DFT+U support in Quantum ESPRESSO and Nexus: a new set of keywords was adopted for DFT+U-based methods starting with v7.1 of
+Quantum ESPRESSO. Both the current ("new") and old formats are supported by Nexus, but via different keywords.
+
+For v7.1 and above use:
+
+::
+
+    hubbard          = {'U':{'Fe-3d': 5.5}},
+    hubbard_proj     = 'ortho-atomic',
+
+
+For older versions use:
+
+::
+
+    U_projection_type = 'ortho-atomic',
+    hubbard_u        = obj(Fe=5.5),
+
+
+Examples of this usage can be found in nexus/examples, e.g.,
+nexus/examples/qmcpack/rsqmc_quantum_espresso/04_iron_dft_dmc_gcta/iron_ldaU_dmc_gcta.py shows how to run DFT+U calculations for
+grand-canonical twist averaging using the latest format.
 
 VASP generation:
 ****************
@@ -546,6 +569,73 @@ In this case, Nexus will never submit more than 10 jobs at a time, even if more 
 Having the option of limiting the number of jobs running at the same time can be useful even on local workstations (to avoid taking over all the available resources). In such a case, a simpler strategy is possible by claiming fewer available cores in ``settings``, e.g. machine='ws8' vs 'ws4' vs 'ws2' etc.
 
 
+.. _job-bundling:
+
+Job bundling
+------------
+
+Job bundling refers to aggregating multiple independent tasks into a single job submission to reduce queueing overhead and improve resource utilization.
+This approach is especially beneficial on systems that impose strict limits on the number of job submissions or priortize capability jobs over numberous small jobs.
+
+The following provides an example of job bundling applied to the equation of state calculation for diamond:
+
+::
+
+  from nexus import bundle
+
+  # Equilibrium lattice constant of diamond (Angstrom)
+  a_eqm = 3.57
+
+  bscfsims=[]
+
+  # Calculate diamond equation of state (energy vs. lattice constant)
+  for scale in [.80,.90,1.00,1.10,1.20]:
+
+      a = scale*a_eqm
+
+      # Details of the physical system
+      system = generate_physical_system(
+          units = 'A',                  # Angstrom units
+          axes  = [[a/2, a/2,   0],     # Cell axes
+                   [  0, a/2, a/2],
+                   [a/2,   0, a/2]],
+          elem  = ['C','C'],            # Element names
+          posu  = [[0.00, 0.00, 0.00],  # Element positions (crystal units)
+                   [0.25, 0.25, 0.25]],
+          C     = 4,                    # Pseudpotential valence charge
+          )
+
+      # PBE calculation with Quantum ESPRESSO
+      scf = generate_pwscf(
+          identifier   = 'scf',                      # In/out file prefix
+          path         = 'a_{:6.4f}'.format(a),      # Run directory
+          job          = job(nodes=4,app='pw.x'),    # Job details
+          input_type   = 'generic',                  # QE inputs below
+          calculation  = 'scf',                      # SCF calculation
+          input_dft    = 'pbe',                      # PBE functional
+          ecutwfc      = 200,                        # PW energy cutoff (Ry)
+          conv_thr     = 1e-8,                       # SCF conv threshold (Ry)
+          system       = system,                     # System from above
+          pseudos      = ['C.BFD.upf'],              # Pseudopotential files
+          kgrid        = (4,4,4),                    # M.P. k-point grid
+          kshift       = (0,0,0),                    # M.P. grid shift
+          )
+
+      bscfsims.append(scf)
+
+  #end for
+
+  # Job bundling
+  bsim = bundle(bscfsims)
+
+  # Execute the workflow
+  run_project()
+
+Without job bundling, the example above results in 5 different job submissions, each using 4 nodes and corresponding to a different lattice constant of diamond.
+Since these jobs are mutually independent, they can be combined into a single 20 nodes (4 nodes * 5 tasks) job using ``bundle`` function as seen in the example.
+The bundled jobs can involve any combination of node counts and types of simulation. However, the simulations should have close to the same runtime to make the most efficient use of resources.
+The bundled jobs are not required to be combined into a single job. Their size can be adjusted by distributing tasks across separate ``bundle`` functions.
+
 .. _custom-job-options:
 
 Customizing job options
@@ -676,14 +766,21 @@ manner.
     variance        = 0.850521272106
 
 
+.. _twist-averaging:
+
+Twist averaged calculations
+---------------------------
+
+This section describes several special features and capabilities to make specifying and running of twist-averaged calculations more
+convenient and efficient.
 
 .. _user-occupations:
 
 Twist occupation specification
-------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Gapped systems
-^^^^^^^^^^^^^^
+**************
 
 For QMC calculations involving twist-averaging, Nexus can set the desired twist occupations for the spin up and down electron channels.
 By default, the spin up and down occupations for each twist will be equal (non-magnetic phase) and each twist will be charge neutral.
@@ -692,7 +789,7 @@ This will result in each twist having magnetization equal to ``net_spin`` while 
 Specifying ``net_spin`` is sufficient for gapped systems since the charge and the net spin should not vary from twist to twist.
 
 Metallic systems
-^^^^^^^^^^^^^^^^
+****************
 
 The charge and the net spin are expected to vary from twist to twist in metallic systems in general.
 In Nexus, this can be handled via grand-canonical twist-averaging (GCTA), by specifying the ``gcta`` argument in the ``generate_qmcpack()`` function.
@@ -759,6 +856,43 @@ Currently, only workflows that use Quantum ESPRESSO (PWSCF) are supported by ``g
 - ``gcta`` currently supports only Quantum ESPRESSO (PWSCF).
 
 Please contact the developers if any of these issues are critical for research.
+
+.. _modifying-twist-bundling:
+
+Bundling of twist-averaged jobs
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Twist averaged calculations will be run as a single job and QMCPACK invocation by default, dividing the total requested number of
+nodes & tasks by the total number of twists. This requires and will only work if the number of twists perfectly divides into the
+requested computational resources. For example, a job requesting 8 nodes with 4 total twists would use 2 nodes per twist, while a
+job with 5 twists would need to request a multiple of 5 nodes by default. Depending on details of the machine, it may be preferable
+to run the individual twist calculations separately or to automatically scale the size of the job according to the number of twists.
+
+The twists can be run as individual jobs using the following:
+
+::
+
+  ntwists = len(system.structure.kpoints)
+  qmc_job = job(processes=1,threads=2,hours=8)
+  for n in range(ntwists):
+      qmc = generate_qmcpack(id       = 'dmc.g'+str(n).zfill(3),
+                             twistnum = n,
+                             job      = qmc_job,
+                             ...)
+
+Note that when the above approach is used, the ``twist_info.dat`` files are not currently created. When analysing the results, care
+should be taken to apply the correct weight to each twist.
+
+A job can be scaled proportionally to the number of twists as follows:
+
+::
+
+  system = generate_physical_system(...)
+  N = 10
+  M = len(system.structure.kpoints)
+  qmc_job = job(nodes=N*M,...)
+  qmc = generate_qmpcack(job=qmc_job,...)
+
 
 .. _command-line-options:
 

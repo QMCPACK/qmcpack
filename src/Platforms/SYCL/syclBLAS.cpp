@@ -93,7 +93,7 @@ template sycl::event gemv(sycl::queue& handle,
 
 /** gemv trans = 'T' case. COLS refers to columns of the m x n column-major Fortran matrix A.
  */
-template<typename T, unsigned COLBS>
+template<typename T, unsigned ROWBS, unsigned COLBS>
 sycl::event gemvT_batched_impl(sycl::queue& handle,
                                const int m,
                                const int n,
@@ -111,22 +111,60 @@ sycl::event gemvT_batched_impl(sycl::queue& handle,
   if (m == 0 || n == 0 || batch_count == 0)
     return sycl::event();
 
-  const int num_col_blocks = (n + COLBS - 1) / COLBS;
-  return handle.parallel_for(sycl::nd_range<2>{{batch_count, num_col_blocks * COLBS}, {1, COLBS}},
-                             [=](sycl::nd_item<2> item) {
-                               const unsigned batch = item.get_group(0);
-                               const int col        = item.get_global_id(1);
-                               if (col < n)
-                               {
-                                 T sum(0);
-                                 for (int row = 0; row < m; row++)
-                                   sum += A[batch][col * lda + row] * x[batch][row * incx];
-                                 if (beta[batch] == T(0))
-                                   y[batch][col * incy] = alpha[batch] * sum; // protecting NaN from y_iw
-                                 else
-                                   y[batch][col * incy] = alpha[batch] * sum + beta[batch] * y[batch][col * incy];
-                               }
-                             });
+  static_assert(ROWBS <= COLBS, "Row block size must not be larger than column block size!");
+
+  constexpr int SUM_SIZE   = ROWBS * COLBS;
+  const int num_row_blocks = (n + ROWBS - 1) / ROWBS;
+
+  return handle.submit([&](sycl::handler& h) {
+    h.depends_on(events);
+
+    sycl::local_accessor<T, 1> sum(SUM_SIZE, h);
+
+    h.parallel_for(sycl::nd_range<2>({batch_count, COLBS * num_row_blocks}, {1, COLBS}), [=](sycl::nd_item<2> item) {
+      const int bx  = static_cast<int>(item.get_group(0)); // blockIdx.x
+      const int by  = static_cast<int>(item.get_group(1)); // blockIdx.y
+      const int tid = item.get_local_id(1);                // threadIdx.x
+
+      for (int i = 0; i < ROWBS; ++i)
+        sum[i * COLBS + tid] = T(0);
+
+      const T* __restrict__ A_iw = A[bx];
+      const T* __restrict__ x_iw = x[bx];
+
+      const int row_begin = by * ROWBS;
+      const int row_max   = (n - row_begin) < ROWBS ? (n - row_begin) : ROWBS;
+
+      const int num_col_blocks = (m + COLBS - 1) / COLBS;
+      for (int ib = 0; ib < num_col_blocks; ++ib)
+        if (const int col_id = ib * COLBS + tid; col_id < m)
+        {
+          const T xv = x_iw[col_id * incx];
+          for (int row_id = row_begin; row_id < row_begin + row_max; ++row_id)
+            sum[(row_id - row_begin) * COLBS + tid] += xv * A_iw[row_id * lda + col_id];
+        }
+
+      for (int iend = COLBS / 2; iend > 0; iend /= 2)
+      {
+        item.barrier(sycl::access::fence_space::local_space);
+        for (int irow = 0; irow < row_max; ++irow)
+          if (tid < iend)
+            sum[irow * COLBS + tid] += sum[irow * COLBS + tid + iend];
+      }
+
+      item.barrier(sycl::access::fence_space::local_space);
+      T* __restrict__ y_iw = y[bx];
+      if (tid < row_max)
+      {
+        const int yidx = (row_begin + tid) * incy;
+        const T s      = sum[tid * COLBS];
+        if (beta[bx] == T(0))
+          y_iw[yidx] = alpha[bx] * s; // protect NaN from y_iw
+        else
+          y_iw[yidx] = alpha[bx] * s + beta[bx] * y_iw[yidx];
+      }
+    });
+  });
 }
 
 /** gemv trans = 'N' case. ROW refers to rows of the m x n column-major Fortran matrix A.
@@ -150,21 +188,22 @@ sycl::event gemvN_batched_impl(sycl::queue& handle,
     return sycl::event();
 
   const int num_row_blocks = (m + ROWBS - 1) / ROWBS;
-  return handle.parallel_for(sycl::nd_range<2>{{batch_count, num_row_blocks * ROWBS}, {1, ROWBS}},
-                             [=](sycl::nd_item<2> item) {
-                               const unsigned batch = item.get_group(0);
-                               const int row        = item.get_global_id(1);
-                               if (row < m)
-                               {
-                                 T sum(0);
-                                 for (int col = 0; col < n; col++)
-                                   sum += A[batch][col * lda + row] * x[batch][col * incx];
-                                 if (beta[batch] == T(0))
-                                   y[batch][row * incy] = alpha[batch] * sum; // protecting NaN from y_iw
-                                 else
-                                   y[batch][row * incy] = alpha[batch] * sum + beta[batch] * y[batch][row * incy];
-                               }
-                             });
+
+  return handle.parallel_for(sycl::nd_range<2>({batch_count, ROWBS * num_row_blocks}, {1, ROWBS}), [=](sycl::nd_item<2> item) {
+    const unsigned batch = item.get_group(0);
+    const int row        = item.get_global_id(1);
+    if (row < m)
+    {
+      T sum(0);
+#pragma unroll
+      for (int col = 0; col < n; col++)
+        sum += A[batch][col * lda + row] * x[batch][col * incx];
+      if (beta[batch] == T(0))
+        y[batch][row * incy] = alpha[batch] * sum; // protecting NaN from y_iw
+      else
+        y[batch][row * incy] = alpha[batch] * sum + beta[batch] * y[batch][row * incy];
+    }
+  });
 }
 
 template<>
@@ -186,7 +225,7 @@ sycl::event gemv_batched<float>(sycl::queue& handle,
   if (trans == 'N' || trans == 'n')
     return gemvN_batched_impl<float, 64>(handle, m, n, alpha, A, lda, x, incx, beta, y, incy, batch_count);
   else if (trans == 'T' || trans == 't')
-    return gemvT_batched_impl<float, 64>(handle, m, n, alpha, A, lda, x, incx, beta, y, incy, batch_count);
+    return gemvT_batched_impl<float, 4, 64>(handle, m, n, alpha, A, lda, x, incx, beta, y, incy, batch_count);
   else
     throw std::runtime_error("syclBLAS::gemv_batched only supports 'N', 'T', 'C', 'n'. Input value is " +
                              std::string(1, trans));
@@ -211,7 +250,7 @@ sycl::event gemv_batched<double>(sycl::queue& handle,
   if (trans == 'N' || trans == 'n')
     return gemvN_batched_impl<double, 64>(handle, m, n, alpha, A, lda, x, incx, beta, y, incy, batch_count);
   else if (trans == 'T' || trans == 't')
-    return gemvT_batched_impl<double, 64>(handle, m, n, alpha, A, lda, x, incx, beta, y, incy, batch_count);
+    return gemvT_batched_impl<double, 4, 64>(handle, m, n, alpha, A, lda, x, incx, beta, y, incy, batch_count);
   else
     throw std::runtime_error("syclBLAS::gemv_batched only supports 'N', 'T', 'C', 'n'. Input value is " +
                              std::string(1, trans));
@@ -237,8 +276,8 @@ sycl::event gemv_batched<std::complex<float>>(sycl::queue& handle,
     return gemvN_batched_impl<std::complex<float>, 64>(handle, m, n, alpha, A, lda, x, incx, beta, y, incy,
                                                        batch_count);
   else if (trans == 'T' || trans == 't')
-    return gemvT_batched_impl<std::complex<float>, 64>(handle, m, n, alpha, A, lda, x, incx, beta, y, incy,
-                                                       batch_count);
+    return gemvT_batched_impl<std::complex<float>, 4, 64>(handle, m, n, alpha, A, lda, x, incx, beta, y, incy,
+                                                          batch_count);
   else
     throw std::runtime_error("syclBLAS::gemv_batched only supports 'N', 'T', 'C', 'n'. Input value is " +
                              std::string(1, trans));
@@ -264,8 +303,8 @@ sycl::event gemv_batched<std::complex<double>>(sycl::queue& handle,
     return gemvN_batched_impl<std::complex<double>, 64>(handle, m, n, alpha, A, lda, x, incx, beta, y, incy,
                                                         batch_count);
   else if (trans == 'T' || trans == 't')
-    return gemvT_batched_impl<std::complex<double>, 64>(handle, m, n, alpha, A, lda, x, incx, beta, y, incy,
-                                                        batch_count);
+    return gemvT_batched_impl<std::complex<double>, 4, 64>(handle, m, n, alpha, A, lda, x, incx, beta, y, incy,
+                                                           batch_count);
   else
     throw std::runtime_error("syclBLAS::gemv_batched only supports 'N', 'T', 'C', 'n'. Input value is " +
                              std::string(1, trans));

@@ -28,7 +28,7 @@ TEST_CASE("TwoBodyJastrow simple", "[wavefunction]")
   elec.create({1, 1});
   TwoBodyJastrow<FakeJasFunctor> jorb("J2_fake", elec, false);
 
-  opt_variables_type active;
+  OptVariables active;
   jorb.checkOutVariables(active);
 }
 
@@ -48,7 +48,7 @@ TEST_CASE("TwoBodyJastrow one species and two variables", "[wavefunction]")
   j2.myVars.resetIndex();
   jorb.addFunc(0, 0, std::move(j2_uptr));
 
-  opt_variables_type global_active;
+  OptVariables global_active;
   global_active.insertFrom(j2.myVars);
 
   jorb.checkOutVariables(global_active);
@@ -100,7 +100,7 @@ TEST_CASE("TwoBodyJastrow two variables", "[wavefunction]")
   j2b.myVars.resetIndex();
   jorb.addFunc(0, 1, std::move(j2b_uptr));
 
-  opt_variables_type global_active;
+  OptVariables global_active;
   global_active.insertFrom(j2a.myVars);
   global_active.insertFrom(j2b.myVars);
   global_active.resetIndex();
@@ -167,7 +167,7 @@ TEST_CASE("TwoBodyJastrow variables fail", "[wavefunction]")
   j2b.myVars.resetIndex();
   jorb.addFunc(0, 1, std::move(j2b_uptr));
 
-  opt_variables_type global_active;
+  OptVariables global_active;
   global_active.insertFrom(j2b.myVars);
   global_active.resetIndex();
 
@@ -233,7 +233,7 @@ TEST_CASE("TwoBodyJastrow other variables", "[wavefunction]")
   j2b.myVars.resetIndex();
   jorb.addFunc(0, 1, std::move(j2b_uptr));
 
-  opt_variables_type global_active;
+  OptVariables global_active;
   // This is a parameter from another part of the wavefunction
   global_active.insert("other_opt", 1.0);
   global_active.insertFrom(j2b.myVars);

@@ -245,6 +245,67 @@ void getBestTile(double* primcell, int target, int* tilemat, double& radius, int
 }
 
 
+void getBestTileXY2D(double* primcell, int target, int* tilemat, double& radius, int range = 7)
+{
+  double largest          = 0.0;
+  double bestScore        = 0.0;
+  static const double tol = 0.0000001;
+  double detPrim          = getDet(primcell);
+
+  if (detPrim < 0)
+  {
+    target *= -1;
+  }
+#pragma omp parallel
+  {
+    double my_largest = 0.0;
+    int my_besttile[9];
+    double localBestScore = 0.0;
+#pragma omp for
+    for (int i = -range; i <= range; i++)
+    { 
+     int d[9];
+     double super[9];
+     for (int j = -range; j <= range; j++) 
+     for (int k = -range; k <= range; k++) 
+     for (int l = -range; l <= range; l++)  
+     {
+      int det_tile = i*l - j*k;
+      if (det_tile != target) continue;
+
+      d[0] = i; d[1] = j; d[2] = 0;
+      d[3] = k; d[4] = l; d[5] = 0;
+      d[6] = 0; d[7] = 0; d[8] = 1;
+
+      getSupercell(primcell, d, super);
+      double score = getScore(super);
+      double rad = SimCellRad(super);
+
+      if (rad > my_largest + tol || (rad > my_largest - tol && score > localBestScore))
+      {
+        my_largest     = rad;
+        localBestScore = score;
+        std::memcpy(my_besttile, d, 9 * sizeof(int));
+      } 
+     } 
+    }
+    if (my_largest > largest + tol || (my_largest > largest - tol && localBestScore > bestScore))
+    {    
+#pragma omp critical
+      {
+        if (my_largest > largest + tol || (my_largest > largest - tol && localBestScore > bestScore))
+        {
+          largest   = my_largest;
+          bestScore = localBestScore;
+          std::memcpy(tilemat, my_besttile, 9 * sizeof(int));
+        }
+      }
+     }
+  }
+  radius = largest;
+}
+
+
 int main(int argc, char* argv[])
 {
   double prim[9];
@@ -252,6 +313,8 @@ int main(int argc, char* argv[])
   char* pend;
   int verbose  = 0;
   int maxentry = 4;
+  int xy_2d = 0;
+
   for (int i = 1; i < argc; i++)
   {
     if (i <= argc)
@@ -278,13 +341,25 @@ int main(int argc, char* argv[])
         maxentry = strtol(argv[i + 1], &pend, 10);
         i++;
       }
-    }
+      if (!std::strcmp(argv[i], "--2dxy"))
+      {
+        xy_2d = 1;
+      }
+    } 
   }
 
   int besttile[9];
   double super[9];
   double radius;
-  getBestTile(prim, target, besttile, radius, maxentry);
+
+  if (xy_2d == 1)
+  {
+    getBestTileXY2D(prim, target, besttile, radius, maxentry);
+  }
+  else
+  {
+    getBestTile(prim, target, besttile, radius, maxentry);
+  }
   getSupercell(prim, besttile, super);
   if (verbose)
   {

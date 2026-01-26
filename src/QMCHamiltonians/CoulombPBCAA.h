@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2022 QMCPACK developers.
+// Copyright (c) 2025 QMCPACK developers.
 //
 // File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
@@ -32,10 +32,8 @@ class OneDimCubicSplineLinearGrid;
 /** @ingroup hamiltonian
  *\brief Calculates the AA Coulomb potential using PBCs
  *
- * Functionally identical to CoulombPBCAA but uses a templated version of
- * LRHandler.
  */
-struct CoulombPBCAA : public OperatorBase, public ForceBase
+struct CoulombPBCAA : public OperatorDependsOnlyOnParticleSet, public ForceBase
 {
   using LRHandlerType  = LRCoulombSingleton::LRHandlerType;
   using GridType       = LRCoulombSingleton::GridType;
@@ -43,8 +41,8 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
   using mRealType      = LRHandlerType::mRealType;
   using OffloadSpline  = OneDimCubicSplineLinearGrid<LRCoulombSingleton::pRealType>;
 
-  /// energy-optimized long range handle. Should be const LRHandlerType eventually
-  std::shared_ptr<LRHandlerType> AA;
+  /// energy-optimized long range handle
+  std::shared_ptr<const LRHandlerType> lr_aa_;
   /// energy-optimized short range pair potential
   std::shared_ptr<const RadFunctorType> rVs;
   /// the same as rVs but can be used inside OpenMP offload regions
@@ -85,22 +83,47 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
   Array<TraceReal, 1>* V_sample;
   Array<TraceReal, 1> V_const;
 #endif
+
+  /** Needs to be a mutable reference and not a copy since ParticleSet
+   *  copy misses important state which causes later access
+   *  violations.
+   *  This is a bad bad smell.
+   */
   ParticleSet& Ps;
 
-
-  /** constructor */
+  /** constructor
+   *  Sadly there is significant conditional behavior here
+   *  the constructor does the operator calculation for the static
+   *  and only for active==true are most of the methods other than
+   *  nops.
+   *
+   *  Consistent side effects
+   *  * local copies of most of of pset refs basic properties
+   *    input psets will not be checked for consistency later!
+   *  *
+   *  Conditional side effects include
+   *  When ComputeForces == true
+   *  * turnOnPerParticleSK for ref
+   *  * updateSource(ref)
+   *  When is_activate == false
+   *
+   */
   CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces, bool use_offload);
 
   ~CoulombPBCAA() override;
 
   std::string getClassName() const override { return "CoulombPBCAA"; }
 
-  void resetTargetParticleSet(ParticleSet& P) override;
-
+  /** evaluate just one walker
+   *
+   *  This is still called for batch AA IonIon
+   *  we later need to make sure for Ions that we assign from value_
+   *  to the v_samples in multi walker reference.
+   *  AA IonIon evaluation.
+   */
   Return_t evaluate(ParticleSet& P) override;
 
   void mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
-                   const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                    const RefVectorWithLeader<ParticleSet>& p_list) const override;
 
   /**
@@ -108,22 +131,20 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
    * to registered listeners from Estimators.
    */
   void mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase>& o_list,
-                              const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                               const RefVectorWithLeader<ParticleSet>& p_list,
                               const std::vector<ListenerVector<RealType>>& listeners,
                               const std::vector<ListenerVector<RealType>>& ion_listeners) const override;
-
-  void mw_evaluatePerParticleWithToperator(const RefVectorWithLeader<OperatorBase>& o_list,
-                                           const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                           const RefVectorWithLeader<ParticleSet>& p_list,
-                                           const std::vector<ListenerVector<RealType>>& listeners,
-                                           const std::vector<ListenerVector<RealType>>& ion_listeners) const override;
 
   void evaluateIonDerivs(ParticleSet& P,
                          ParticleSet& ions,
                          TrialWaveFunction& psi,
                          ParticleSet::ParticlePos& hf_terms,
                          ParticleSet::ParticlePos& pulay_terms) override;
+
+  /**
+   *  calls  eval(LR|SR){withForces} and updates eS and eL updates new_value_
+   *  new_value_ doesn't seem to ever be used anywhere
+   */
   void updateSource(ParticleSet& s) override;
 
   /** Do nothing */
@@ -135,7 +156,7 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
     return true;
   }
 
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) override;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp) override;
 
   /** Inform objects associated with this operator of per particle listeners.
    *  i.e. turnOnPerParticleSK of particleset qp.
@@ -209,7 +230,13 @@ private:
 
   /** constructor code factored out
    */
-  void initBreakup(ParticleSet& P);
+  void initBreakup(ParticleSet& ref_pset);
+
+  /** initialize everything for a static particle set
+   *  for static particle set hamiltonians no significant calculation
+   *  is done after this.
+   */
+  void inactiveInitialization(ParticleSet& ref);
 
   /** Compute the const part of the per particle coulomb self interaction potential.
    *  \param[out]  pp_consts   constant values for the particles self interaction

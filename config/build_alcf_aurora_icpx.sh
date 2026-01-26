@@ -1,6 +1,6 @@
 #!/bin/bash
 # This recipe is intended for ALCF Aurora https://www.alcf.anl.gov/support-center/aurora-sunspot
-# last revision: Apr 25th 2025
+# last revision: Jul 11th 2025
 #
 # How to invoke this script?
 # build_alcf_aurora_icpx.sh # build all the variants assuming the current directory is the source directory.
@@ -52,7 +52,6 @@ for name in gpu_real_MP gpu_real gpu_cplx_MP gpu_cplx \
 do
 
 CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=$TYPE -DMPIEXEC_PREFLAGS='--cpu-bind;depth;-d;8'"
-unset CMAKE_CXX_FLAGS
 
 if [[ $name == *"cplx"* ]]; then
   CMAKE_FLAGS="$CMAKE_FLAGS -DQMC_COMPLEX=ON"
@@ -64,7 +63,6 @@ fi
 
 if [[ $name == *"gpu"* ]]; then
   CMAKE_FLAGS="$CMAKE_FLAGS -DQMC_GPU_ARCHS=intel_gpu_pvc"
-  CMAKE_CXX_FLAGS="-mllvm -vpo-paropt-atomic-free-reduction-slm=true"
 fi
 
 folder=build_${Machine}_${Compiler}_${name}
@@ -76,15 +74,14 @@ fi
 echo "**********************************"
 echo "folder $folder"
 echo "CMAKE_FLAGS: $CMAKE_FLAGS"
-echo "CMAKE_CXX_FLAGS: $CMAKE_CXX_FLAGS"
 echo "**********************************"
 
 mkdir $folder
 cd $folder
 
 if [ ! -f CMakeCache.txt ] ; then
-cmake $CMAKE_FLAGS -DCMAKE_CXX_FLAGS="$CMAKE_CXX_FLAGS" \
-      -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx $source_folder
+cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx \
+      $CMAKE_FLAGS $source_folder
 fi
 
 if [[ -v install_folder ]]; then

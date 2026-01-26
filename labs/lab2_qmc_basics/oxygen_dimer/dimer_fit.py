@@ -3,10 +3,9 @@
 import sys
 import os
 from numpy import array,polyfit,polyval,linspace,sqrt
-from qmcpack_analyzer import QmcpackAnalyzer
-from unit_converter import convert
-from plotting import *
-from debug import *
+from nexus.qmcpack_analyzer import QmcpackAnalyzer
+from nexus.unit_converter import convert
+import matplotlib.pyplot as plt
 
 
 args = sys.argv[1:]
@@ -88,12 +87,12 @@ print('DMC bond length, binding energy:',sf[mloc],ef[mloc])
 print('Exp bond length, binding energy:',se,ee)
 
 
-figure()
-errorbar(seps,energies,errors,fmt='r.')
-plot(sf,ef,'g-',lw=2,label='n={0} fit'.format(nfit))
-xlabel('bond length (A)')
-ylabel(Elabel+' (eV)')
-title('DMC '+Elabel+' vs. bond length')
-legend()
+plt.figure()
+plt.errorbar(seps,energies,errors,fmt='r.')
+plt.plot(sf,ef,'g-',lw=2,label='n={0} fit'.format(nfit))
+plt.xlabel('bond length (A)')
+plt.ylabel(Elabel+' (eV)')
+plt.title('DMC '+Elabel+' vs. bond length')
+plt.legend()
 
-show()
+plt.show()

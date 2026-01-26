@@ -12,8 +12,8 @@
 #ifndef QMCPLUSPLUS_SO_ECPOTENTIAL_H
 #define QMCPLUSPLUS_SO_ECPOTENTIAL_H
 
-#include "QMCHamiltonians/SOECPComponent.h"
-#include "Particle/NeighborLists.h"
+#include "SOECPComponent.h"
+#include "OperatorBase.h"
 
 namespace qmcplusplus
 {
@@ -31,18 +31,18 @@ class SOECPotential : public OperatorBase
   using Real = QMCTraits::RealType;
 
 public:
-  SOECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi, bool use_exact_spin);
+  SOECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi, bool use_exact_spin, bool use_VP);
+  SOECPotential(const SOECPotential& sopp, ParticleSet& els, TrialWaveFunction& psi);
   ~SOECPotential() override;
 
-  bool dependsOnWaveFunction() const override { return true; }
   std::string getClassName() const override { return "SOECPotential"; }
-  void resetTargetParticleSet(ParticleSet& P) override;
 
-  Return_t evaluate(ParticleSet& P) override;
-  Return_t evaluateDeterministic(ParticleSet& P) override;
+  Return_t evaluate(TrialWaveFunction& psi, ParticleSet& P) override;
+  Return_t evaluateDeterministic(TrialWaveFunction& psi, ParticleSet& P) override;
 
-  Return_t evaluateValueAndDerivatives(ParticleSet& P,
-                                       const opt_variables_type& optvars,
+  Return_t evaluateValueAndDerivatives(TrialWaveFunction& psi,
+                                       ParticleSet& P,
+                                       const OptVariables& optvars,
                                        const Vector<ValueType>& dlogpsi,
                                        Vector<ValueType>& dhpsioverpsi) override;
 
@@ -84,7 +84,6 @@ protected:
   std::vector<SOECPComponent*> pp_;
   std::vector<std::unique_ptr<SOECPComponent>> ppset_;
   ParticleSet& ion_config_;
-  TrialWaveFunction& psi_;
   static void mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& o_list,
                               const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                               const RefVectorWithLeader<ParticleSet>& p_list,
@@ -92,16 +91,10 @@ protected:
                               bool keep_grid = false);
 
 private:
-  ///number of ions
-  int num_ions_;
+  ///virtual particle set
+  const std::unique_ptr<VirtualParticleSet> vp_;
   ///index of distance table for ion-el pair
   int my_table_index_;
-  ///reference to the electrons
-  ParticleSet& peln_;
-  ///neighborlist of electrons
-  NeighborLists elec_neighbor_ions_;
-  ///neighborlist of ions
-  NeighborLists ion_neighbor_elecs_;
   //job list for evaluation
   std::vector<std::vector<NLPPJob<RealType>>> sopp_jobs_;
   //multi walker resource
@@ -110,7 +103,7 @@ private:
   //flag to use fast evaluation
   const bool use_exact_spin_;
 
-  void evaluateImpl(ParticleSet& elec, bool keep_grid = false);
+  void evaluateImpl(TrialWaveFunction& psi, ParticleSet& elec, bool keep_grid = false);
 
   //for testing
   friend class testing::TestSOECPotential;
