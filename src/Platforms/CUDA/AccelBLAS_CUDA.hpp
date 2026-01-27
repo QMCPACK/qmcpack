@@ -366,10 +366,13 @@ inline void gemm_batched(BLASHandle<PlatformKind::CUDA>& handle,
   auto non_const_B = const_cast<BottomConstRemoved<decltype(B)>::type>(B);
   auto non_const_C = const_cast<BottomConstRemoved<decltype(C)>::type>(C);
 
+  const cuComplex alpha_cu = make_cuComplex(alpha.real(), alpha.imag());
+  const cuComplex beta_cu  = make_cuComplex(beta.real(), beta.imag());
+
   cublasErrorCheck(cublasCgemmBatched(handle.h_cublas, cuBLAS::convertOperation(transa),
-                                      cuBLAS::convertOperation(transb), m, n, k, castNativeType(&alpha),
+                                      cuBLAS::convertOperation(transb), m, n, k, &alpha_cu,
                                       castNativeType(non_const_A), lda, castNativeType(non_const_B), ldb,
-                                      castNativeType(&beta), castNativeType(non_const_C), ldc, batchCount),
+                                      &beta_cu, castNativeType(non_const_C), ldc, batchCount),
                    "cublasCgemmBatched failed!");
 }
 
@@ -415,10 +418,13 @@ inline void gemm_batched(BLASHandle<PlatformKind::CUDA>& handle,
   auto non_const_B = const_cast<BottomConstRemoved<decltype(B)>::type>(B);
   auto non_const_C = const_cast<BottomConstRemoved<decltype(C)>::type>(C);
 
+  const cuDoubleComplex alpha_cu = make_cuDoubleComplex(alpha.real(), alpha.imag());
+  const cuDoubleComplex beta_cu  = make_cuDoubleComplex(beta.real(), beta.imag());
+
   cublasErrorCheck(cublasZgemmBatched(handle.h_cublas, cuBLAS::convertOperation(transa),
-                                      cuBLAS::convertOperation(transb), m, n, k, castNativeType(&alpha),
+                                      cuBLAS::convertOperation(transb), m, n, k, &alpha_cu,
                                       castNativeType(non_const_A), lda, castNativeType(non_const_B), ldb,
-                                      castNativeType(&beta), castNativeType(non_const_C), ldc, batchCount),
+                                      &beta_cu, castNativeType(non_const_C), ldc, batchCount),
                    "cublasZgemmBatched failed!");
 }
 
