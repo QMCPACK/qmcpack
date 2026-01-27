@@ -51,7 +51,10 @@ using CUDATypeMap =
                               OnTypesEqual<T, const std::complex<double>* const*, const cuDoubleComplex* const*>,
                               default_type<void>>::type;
 
-// Poison-pill overloads for host scalar complex
+// Poison-pill overloads for host scalar complex.
+// These prevent accidental misuse of castCUDAType with host std::complex<T> types,
+// which are not aligned with cu[Double]Complex.
+// Those host scalars should be explicitly converted by `make_cu[Double]Complex`.
 inline cuComplex castCUDAType(std::complex<float>&)       = delete;
 inline cuComplex castCUDAType(const std::complex<float>&) = delete;
 
