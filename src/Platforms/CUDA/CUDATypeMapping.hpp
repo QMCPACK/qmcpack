@@ -52,10 +52,10 @@ using CUDATypeMap =
                               default_type<void>>::type;
 
 // Poison-pill overloads for host scalar complex
-inline cuComplex castCUDAType(std::complex<float>&) = delete;
+inline cuComplex castCUDAType(std::complex<float>&)       = delete;
 inline cuComplex castCUDAType(const std::complex<float>&) = delete;
 
-inline cuDoubleComplex castCUDAType(std::complex<double>&) = delete;
+inline cuDoubleComplex castCUDAType(std::complex<double>&)       = delete;
 inline cuDoubleComplex castCUDAType(const std::complex<double>&) = delete;
 
 template<typename T>

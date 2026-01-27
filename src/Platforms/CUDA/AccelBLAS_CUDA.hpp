@@ -370,9 +370,9 @@ inline void gemm_batched(BLASHandle<PlatformKind::CUDA>& handle,
   const cuComplex beta_cu  = make_cuComplex(beta.real(), beta.imag());
 
   cublasErrorCheck(cublasCgemmBatched(handle.h_cublas, cuBLAS::convertOperation(transa),
-                                      cuBLAS::convertOperation(transb), m, n, k, &alpha_cu,
-                                      castNativeType(non_const_A), lda, castNativeType(non_const_B), ldb,
-                                      &beta_cu, castNativeType(non_const_C), ldc, batchCount),
+                                      cuBLAS::convertOperation(transb), m, n, k, &alpha_cu, castNativeType(non_const_A),
+                                      lda, castNativeType(non_const_B), ldb, &beta_cu, castNativeType(non_const_C), ldc,
+                                      batchCount),
                    "cublasCgemmBatched failed!");
 }
 
@@ -422,9 +422,9 @@ inline void gemm_batched(BLASHandle<PlatformKind::CUDA>& handle,
   const cuDoubleComplex beta_cu  = make_cuDoubleComplex(beta.real(), beta.imag());
 
   cublasErrorCheck(cublasZgemmBatched(handle.h_cublas, cuBLAS::convertOperation(transa),
-                                      cuBLAS::convertOperation(transb), m, n, k, &alpha_cu,
-                                      castNativeType(non_const_A), lda, castNativeType(non_const_B), ldb,
-                                      &beta_cu, castNativeType(non_const_C), ldc, batchCount),
+                                      cuBLAS::convertOperation(transb), m, n, k, &alpha_cu, castNativeType(non_const_A),
+                                      lda, castNativeType(non_const_B), ldb, &beta_cu, castNativeType(non_const_C), ldc,
+                                      batchCount),
                    "cublasZgemmBatched failed!");
 }
 
