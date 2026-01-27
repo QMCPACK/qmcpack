@@ -134,6 +134,19 @@ qmc_run_and_check(
   HEG14GSSJ_NEW_SCALARS # VMC
 )
 
+# batch driver energy density
+qmc_run_and_check(
+  short-heg_14_gamma-sj-dmc_eden_batch
+  "${qmcpack_SOURCE_DIR}/tests/heg/heg_14_gamma/batch"
+  short_heg_SJ-dmc_eden_batch
+  short-heg-SJ-dmc_eden_batch.xml
+  4
+  4
+  TRUE
+  0
+  HEG14GSSJ_NEW_SCALARS # VMC
+)
+
 # batch deterministic
 if(QMC_MIXED_PRECISION)
   list(APPEND DET_HEG14GSSJ_SCALARS "totenergy" "-1.24699382 0.00002")

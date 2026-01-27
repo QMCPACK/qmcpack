@@ -1,10 +1,11 @@
 <?xml version="1.0"?>
 <simulation>
-   <project id="short_heg_SJ_batch" series="0">
+   <project id="short_heg_SJ_batch_2" series="0">
      <parameter name="driver_version">batch</parameter>
    </project>
+   <random seed="49154"/>
    <qmcsystem>
-      <simulationcell>
+     <simulationcell>
          <parameter name="bconds">
             p p p
          </parameter>
@@ -51,20 +52,20 @@
    </qmcsystem>
    <qmc method="vmc" move="pbyp">
       <parameter name="warmupsteps"         >    200             </parameter>
-      <parameter name="blocks"              >    100             </parameter>
-      <parameter name="steps"               >    40              </parameter>
+      <parameter name="blocks"              >    102             </parameter>
+      <parameter name="steps"               >    100              </parameter>
       <parameter name="tau"                 >    5.0      </parameter>
+      <parameter name="total_walkers" > 64 </parameter>
       <estimators>
       <estimator type="EnergyDensity" name="EDcell" dynamic="e">
         <spacegrid coord="cartesian">
           <origin p1="zero" />
-          <axis p1="a1" scale=".5" label="x" grid="-1 (.5) 1" />
-          <axis p1="a2" scale=".5" label="y" grid="-1 (.5) 1" />
-          <axis p1="a3" scale=".5" label="z" grid="-1 (.5) 1" />
+          <axis p1="a1" scale=".5" label="x" grid="-1 (.25) 1" />
+          <axis p1="a2" scale=".5" label="y" grid="-1 (.25) 1" />
+          <axis p1="a3" scale=".5" label="z" grid="-1 (.25) 1" />
         </spacegrid>
       </estimator>
       <estimator name="LocalEnergy" hdf5="no" />
-    </estimators>
-
+      </estimators>
    </qmc>
 </simulation>
