@@ -2178,17 +2178,7 @@ def regenerate_reference(update=False):
 
 #end def regenerate_reference
 
-
-
-
-
-def find_nexus_modules():
-    import sys
-    nexus_lib = os.path.realpath(os.path.join(__file__,'..','..','..','nexus'))
-    assert(os.path.exists(nexus_lib))
-    sys.path.append(nexus_lib)
-#end def find_nexus_modules
-
+from nexus_modules import find_nexus_modules
 
 def import_nexus_module(module_name):
     import importlib
@@ -2219,18 +2209,6 @@ if __name__=='__main__':
     import re
     from time import time # used to get user wall clock rather than cpu time
     tstart_all = time()
-
-    testing_wrong_nexus_install = False
-    try:
-        import nexus
-        nexus_file = os.path.realpath(os.path.join(nexus.__file__,'../..'))
-        test_file  = os.path.realpath(os.path.join(__file__,'../..'))
-        testing_wrong_nexus_install = nexus_file!=test_file
-    except:
-        pass
-    if testing_wrong_nexus_install:
-        print('\n\n\nInstalled Nexus package does not reside with this nxs-test executable.\n  Currently installed nexus package: {}\n  Correct Nexus package            : {}\n  Please install the correct Nexus package above.\n\n'.format(nexus_file,test_file))
-        sys.exit(1)
 
     # read command line input
     regex = None
