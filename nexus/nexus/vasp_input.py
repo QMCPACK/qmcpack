@@ -45,7 +45,7 @@ from .simulation import SimulationInput
 from .structure import interpolate_structures, Structure
 from .physical_system import PhysicalSystem
 from .developer import DevBase, obj, error
-
+from . import numpy_extensions as npe
 
 # support functions for keyword files
 
@@ -911,7 +911,7 @@ class Kpoints(VFormattedFile):
                     self.mode   = 'basis'  # basis generated mesh
                     self.coord  = self.coord_options(cselect)
                     self.kbasis = np.array(self.join(lines,3,5).split(),dtype=float)
-                    self.kbasis = self.kbasis.reshape(3,3)
+                    npe.reshape_inplace(self.kbasis, (3, 3))
                     self.kshift = np.array(lines[6].split(),dtype=float)
                 #end if
             elif cselect=='l': # line mode (band structure)

@@ -498,7 +498,7 @@ def test_matrix_tiling():
         npass = 0
         for tmat in matrix_tilings:
             tmat = np.array(tmat,dtype=int)
-            tmat = tmat.reshape(3,3)
+            tmat.shape = 3,3
             st = s.tile(tmat)
             st.check_tiling()
         #end for
@@ -1252,6 +1252,7 @@ def test_min_image_distances():
     """
     import numpy as np
     from ..structure import generate_structure
+    from .. import numpy_extensions as npe
 
     g = generate_structure(
         structure = 'graphene',
@@ -1268,39 +1269,42 @@ def test_min_image_distances():
     dt = dt[:,1:4]
     vt = vt[:,1:4]
     
-    nt_ref = np.array([
-        [ 1, 11,  9],
-        [30,  0, 24],
-        [ 3, 11, 13],
-        [ 2, 26, 24],
-        [ 5, 15, 13],
-        [ 4, 26, 28],
-        [ 7,  9, 15],
-        [ 6, 30, 28],
-        [ 9, 19, 17],
-        [ 8,  6,  0],
-        [11, 19, 21],
-        [10,  0,  2],
-        [13, 23, 21],
-        [12,  2,  4],
-        [15, 17, 23],
-        [14,  4,  6],
-        [17, 27, 25],
-        [16,  8, 14],
-        [19, 27, 29],
-        [18, 10,  8],
-        [21, 29, 31],
-        [20, 12, 10],
-        [23, 25, 31],
-        [22, 12, 14],
-        [25,  1,  3],
-        [24, 22, 16],
-        [27,  3,  5],
-        [26, 18, 16],
-        [29,  5,  7],
-        [28, 18, 20],
-        [31,  1,  7],
-        [30, 22, 20]])
+    nt_ref = np.array(
+        [
+            [ 1,  7, 31],
+            [ 0,  2, 10],
+            [ 1,  3, 25],
+            [ 2,  4, 12],
+            [ 3,  5, 27],
+            [ 4,  6, 14],
+            [ 5,  7, 29],
+            [ 0,  6,  8],
+            [ 7,  9, 15],
+            [ 8, 10, 18],
+            [ 1,  9, 11],
+            [10, 12, 20],
+            [ 3, 11, 13],
+            [12, 14, 22],
+            [ 5, 13, 15],
+            [ 8, 14, 16],
+            [15, 17, 23],
+            [16, 18, 26],
+            [ 9, 17, 19],
+            [18, 20, 28],
+            [11, 19, 21],
+            [20, 22, 30],
+            [13, 21, 23],
+            [16, 22, 24],
+            [23, 25, 31],
+            [ 2, 24, 26],
+            [17, 25, 27],
+            [ 4, 26, 28],
+            [19, 27, 29],
+            [ 6, 28, 30],
+            [21, 29, 31],
+            [ 0, 24, 30],
+        ]
+    )
 
     for nti,nti_ref in zip(nt,nt_ref):
         assert(set(nti)==set(nti_ref))
@@ -1311,7 +1315,7 @@ def test_min_image_distances():
     assert(value_eq(dist.max(),1.42143636))
 
     vec = vt.ravel()
-    vec = vec.reshape(np.prod(dt.shape),3)
+    npe.reshape_inplace(vec, (np.prod(dt.shape), 3))
     vdist = np.linalg.norm(vec,axis=1)
     assert(value_eq(vdist,dist))
 
@@ -1354,6 +1358,7 @@ if versions.scipy_available:
         """
         import numpy as np
         from ..structure import generate_structure
+        from .. import numpy_extensions as npe
 
         center = (0,0,0)
 
@@ -1368,7 +1373,7 @@ if versions.scipy_available:
         gr = g.copy()
         npos = len(gr.pos)
         dr = gr.min_image_vectors(center)
-        dr = dr.reshape(npos,3)
+        npe.reshape_inplace(dr, (npos, 3))
         r = np.linalg.norm(dr,axis=1)
         dilation = 2*r*np.exp(-r)
         for i in range(npos):
@@ -1395,9 +1400,13 @@ if versions.scipy_available:
         # check that the large local distortion made in the small cell
         # is present in the large cell after embedding
         rnn_max_ref = 2.1076122431022664
-        rnn_max = np.linalg.norm(gr.pos[1]-gr.pos[30])
+        
+        # Check small cell distortion max distance
+        rnn_max = np.linalg.norm(gr.pos[0]-gr.pos[1])
         assert(value_eq(rnn_max,rnn_max_ref))
-        rnn_max = np.linalg.norm(ge.pos[1]-ge.pos[28])
+
+        # Check large cell distortion max distance
+        rnn_max = np.linalg.norm(ge.pos[0]-ge.pos[1])
         assert(value_eq(rnn_max,rnn_max_ref))
 
     #end test_embed
