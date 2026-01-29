@@ -5034,21 +5034,83 @@ class Structure(Sobj):
     #end def write
 
 
-    def write_xyz(self,filepath=None,header=True,units='A'):
+    def write_coords(self, filepath=None, units="A"):
+        """Write the atoms and coordinates of a `Structure` object to a file.
+
+        Parameters
+        ----------
+        filepath : PathLike or None, default=None
+            Path to where the coordinates should be written.
+            If this is ``None`` then this function just returns
+            what would have been written to the file.
+        units : str, default="A"
+            Units for the coordinates in the file.
+
+        Returns
+        -------
+        coords : str
+            The text that was or would have been written to the file.
+
+        Notes
+        -----
+        This function will write the coordinates in the format
+        ```python
+            " {element:2} {dim1:12.8f} {dim2:12.8f} ... {dimN:12.8f}\\n"
+        ```
+        This function is also generic with respect to the dimensionality of
+        the system, so *N*-dimensional systems will have *N* number of
+        coordinates in the output.
+        """
+        s = self.copy()
+        s.change_units(units)
+
+        c = ""
+        for i in range(len(s.elem)):
+            e = s.elem[i]
+            p = s.pos[i]
+            c += f" {e:2}"
+            for j in p:
+                c += f" {j:12.8f}"
+            c += "\n"
+        #end for
+
+        if filepath is not None:
+            open(filepath,'w').write(c)
+        #end if
+        return c
+    #end def write_coords
+
+
+    def write_xyz(self, filepath=None):
+        """Write a `Structure` object to an XYZ file
+        
+        Parameters
+        ----------
+        filepath : PathLike or None, default=None
+            Path to where the XYZ file should be written.
+            If this is ``None``, then this function just returns 
+            what would have been written to the XYZ file.
+
+        Returns
+        -------
+        xyz : str
+            The text that was or would have been written to the XYZ file.
+        """
         if self.dim!=3:
             self.error('write_xyz is currently only implemented for 3 dimensions')
         #end if
         s = self.copy()
-        s.change_units(units)
-        c=''
-        if header:
-            c += str(len(s.elem))+'\n\n'
-        #end if
+        s.change_units("A")
+
+        c = ''
+        c += str(len(s.elem))+'\n\n'
+
         for i in range(len(s.elem)):
             e = s.elem[i]
             p = s.pos[i]
             c+=' {0:2} {1:12.8f} {2:12.8f} {3:12.8f}\n'.format(e,p[0],p[1],p[2])
         #end for
+
         if filepath is not None:
             open(filepath,'w').write(c)
         #end if
