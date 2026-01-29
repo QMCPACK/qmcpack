@@ -5034,7 +5034,7 @@ class Structure(Sobj):
     #end def write
 
 
-    def write_coords(self, filepath=None, units="A"):
+    def write_coords(self, filepath=None, header=False, units="A"):
         """Write the atoms and coordinates of a `Structure` object to a file.
 
         Parameters
@@ -5043,6 +5043,9 @@ class Structure(Sobj):
             Path to where the coordinates should be written.
             If this is ``None`` then this function just returns
             what would have been written to the file.
+        header : bool, default=False
+            Optionally write the number of atoms at the beginning
+            of the string, with a newline afterwards.
         units : str, default="A"
             Units for the coordinates in the file.
 
@@ -5065,6 +5068,9 @@ class Structure(Sobj):
         s.change_units(units)
 
         c = ""
+        if header:
+            c += str(len(s.elem))+'\n\n'
+        #end if
         for i in range(len(s.elem)):
             e = s.elem[i]
             p = s.pos[i]
@@ -5095,6 +5101,14 @@ class Structure(Sobj):
         -------
         xyz : str
             The text that was or would have been written to the XYZ file.
+
+        Note
+        ----
+        This function previously performed the job of `write_coords()`,
+        but after PR #5770 it was split to only write standardized XYZ files.
+        If you encounter errors about keyword arguments, remove the deprecated
+        `header` and `units` keyword arguments. If you want to change the units,
+        use `write_coords()` instead.
         """
         if self.dim!=3:
             self.error('write_xyz is currently only implemented for 3 dimensions')
