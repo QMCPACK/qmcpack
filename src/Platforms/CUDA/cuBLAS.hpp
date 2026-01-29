@@ -155,8 +155,11 @@ inline cublasStatus_t geam(cublasHandle_t& handle,
                            std::complex<double>* C,
                            int ldc)
 {
-  return cublasZgeam(handle, transa, transb, m, n, castNativeType(alpha), castNativeType(A), lda, castNativeType(beta),
-                     castNativeType(B), ldb, castNativeType(C), ldc);
+  const cuDoubleComplex alpha_cu = make_cuDoubleComplex(alpha->real(), alpha->imag());
+  const cuDoubleComplex beta_cu  = make_cuDoubleComplex(beta->real(), beta->imag());
+
+  return cublasZgeam(handle, transa, transb, m, n, &alpha_cu, castNativeType(A), lda, &beta_cu, castNativeType(B), ldb,
+                     castNativeType(C), ldc);
 }
 
 inline cublasStatus_t geam(cublasHandle_t& handle,
@@ -173,8 +176,11 @@ inline cublasStatus_t geam(cublasHandle_t& handle,
                            std::complex<float>* C,
                            int ldc)
 {
-  return cublasCgeam(handle, transa, transb, m, n, castNativeType(alpha), castNativeType(A), lda, castNativeType(beta),
-                     castNativeType(B), ldb, castNativeType(C), ldc);
+  const cuComplex alpha_cu = make_cuComplex(alpha->real(), alpha->imag());
+  const cuComplex beta_cu  = make_cuComplex(beta->real(), beta->imag());
+
+  return cublasCgeam(handle, transa, transb, m, n, &alpha_cu, castNativeType(A), lda, &beta_cu, castNativeType(B), ldb,
+                     castNativeType(C), ldc);
 }
 
 inline cublasStatus_t getrf_batched(cublasHandle_t& handle,

@@ -17,6 +17,7 @@ from .grid_functions import SpheroidGrid
 from .structure import Structure, get_seekpath_full
 from .fileio import XsfFile
 from .hdfreader import read_hdf
+from . import numpy_extensions as npe
 
 # Referenced in MomentumDistribution.backfold()
 from .debug import ci
@@ -1277,8 +1278,8 @@ class Density(ObservableWithComponents):
                     rsphere   += dr
                     rcenter    = new_center
                     dsphere    = d.interpolate(rsphere,**interp_kwargs)
-                    dsphere.shape = sgrid.shape
-                    dsphere.shape = len(dsphere),dsphere.size//len(dsphere)
+                    npe.reshape_inplace(dsphere, sgrid.shape)
+                    npe.reshape_inplace(dsphere, (len(dsphere), dsphere.size//len(dsphere)))
                     drad += dsphere.mean(axis=1)*4*np.pi*rrad**2
                 #end for
                 drad /= len(atom_indices)
