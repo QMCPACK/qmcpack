@@ -2178,7 +2178,7 @@ def regenerate_reference(update=False):
 
 #end def regenerate_reference
 
-# Gold implementation. All the Nexus scripts need to be updated.
+# Copied from verify_nexus_installation. Modification must done on verify_nexus_installation first
 # Locate and import the closely coupled Nexus module
 def find_nexus_modules():
     import os
@@ -2193,7 +2193,7 @@ def find_nexus_modules():
         import nexus
     except (ImportError, ModuleNotFoundError):
         raise ImportError(
-            "Nexus module is required but cannot be imported!"
+            "Nexus module is required but cannot be imported! Make sure Nexus module available under " + nexus_lib
         )
     nexus_lib2 = os.path.realpath(os.path.join(nexus.__file__,'..','..'))
 
