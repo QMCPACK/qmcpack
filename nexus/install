@@ -111,12 +111,21 @@ if install_dir!=source_dir:
     if not os.path.exists(install_dir):
         os.makedirs(install_dir)
     #end if
+    install_bin_dir = os.path.join(install_dir,'bin')
+    if not os.path.exists(install_bin_dir):
+        os.makedirs(install_bin_dir)
+    #end if
+    install_nexus_dir = os.path.join(install_dir,'nexus')
+    if not os.path.exists(install_nexus_dir):
+        os.makedirs(install_nexus_dir)
+    #end if
 
     # copy binaries
-    execute('cp {0}/bin/* {1}'.format(source_dir,install_dir))
+    execute('cp {0}/bin/[^_]* {1}'.format(source_dir,install_bin_dir))
+    execute('cp {0}/nexus/*.py {1}'.format(source_dir,install_nexus_dir))
 
     # update path in nxs-test
-    nxs_test = os.path.join(install_dir,'nxs-test')
+    nxs_test = os.path.join(install_bin_dir,'nxs-test')
     f = open(nxs_test,'r')
     contents = f.read()
     f.close()
@@ -126,7 +135,8 @@ if install_dir!=source_dir:
     f.close()
 
     # update bin directory for install
-    bin_dir = install_dir
+    bin_dir = install_bin_dir
+    lib_dir = install_dir
 #end if
 
 # install library (add lib path to PYTHONPATH)
