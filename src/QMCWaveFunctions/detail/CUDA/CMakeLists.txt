@@ -16,4 +16,4 @@ if(QMC_CUDA2HIP)
   set_source_files_properties(${WFSSRCS_CUDA} PROPERTIES LANGUAGE HIP)
 endif()
 
-target_link_libraries(qmcwfs_cuda PRIVATE platform_LA qmc_external_thrust)
+target_link_libraries(qmcwfs_cuda PRIVATE platform_LA)
