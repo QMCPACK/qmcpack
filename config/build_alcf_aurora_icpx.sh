@@ -13,7 +13,7 @@ do
 done
 
 module load oneapi/release/2025.0.5
-module load cmake hdf5 boost
+module load cmake hdf5 boost libxml2
 module list >& module_list.txt
 
 # unset the following to desensitize CMake to modules/environment variables.
