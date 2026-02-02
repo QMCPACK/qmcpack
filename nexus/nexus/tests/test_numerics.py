@@ -30,6 +30,7 @@ def test_ndgrid():
     import numpy as np
     from ..testing import value_eq
     from ..numerics import ndgrid
+    from .. import numpy_extensions as npe
 
     x = [0,1,2.]
     y = [3,4.,5,6]
@@ -46,7 +47,7 @@ def test_ndgrid():
         #end for
     #end for
     points = np.array(points)
-    points.shape = 3,len(x),len(y),len(z)
+    npe.reshape_inplace(points, (3, len(x), len(y), len(z)))
     points = points
 
     grid = ndgrid(x,y,z)

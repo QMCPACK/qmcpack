@@ -28,6 +28,7 @@ from .structure import Structure, get_kpath
 from .pwscf_input import PwscfInput
 from .pwscf_data_reader import read_qexml
 from .fileio import TextFile
+from . import numpy_extensions as npe
 
 pt = PeriodicTable()
 elements = set(pt.elements.keys())
@@ -772,7 +773,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 nb = int(np.floor(float(nv)/autocorr))
                 nexclude = nv-nb*autocorr
                 v = v[nexclude:]
-                v.shape = nb,autocorr
+                npe.reshape_inplace(v, (nb, autocorr))
                 mean,error = simplestats(v.mean(axis=1))
             #end if
             mds[q] = mean,error

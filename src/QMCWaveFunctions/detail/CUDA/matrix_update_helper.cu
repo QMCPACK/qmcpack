@@ -15,21 +15,13 @@
 #include "config.h"
 #ifndef QMC_CUDA2HIP
 #include <cuComplex.h>
-#include <thrust/system/cuda/detail/core/util.h>
-namespace qmcplusplus
-{
-namespace CUDA
-{
-using namespace thrust::cuda_cub::core;
-}
-} // namespace qmcplusplus
 #else
 #include <hip/hip_complex.h>
 #include "ROCm/cuda2hip.h"
-#include "uninitialized_array.hpp"
 #endif
 #include "subtractOne.cuh"
 #include <thrust/complex.h>
+#include "Platforms/CUDA/uninitialized_array.cuh"
 
 namespace qmcplusplus
 {
@@ -37,6 +29,7 @@ namespace qmcplusplus
  */
 namespace CUDA
 {
+using qmcplusplus::device::uninitialized_array;
 
 template<typename T, int COLBS>
 __global__ void copyAinvRow_saveGL_kernel(const int rowchanged,
