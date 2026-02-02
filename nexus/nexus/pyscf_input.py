@@ -214,7 +214,7 @@ $calculation
             #end if
             is_mole |= is_molecule
             is_cell |= is_solid
-            sys_inputs.atom   = s.write_coords(units=s.units)
+            sys_inputs.atom   = s.pos_to_str(units=s.units, with_elem=True)
             sys_inputs.unit   = s.units
             sys_inputs.charge = system.net_charge
             sys_inputs.spin   = system.net_spin
