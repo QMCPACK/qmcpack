@@ -5034,57 +5034,42 @@ class Structure(Sobj):
     #end def write
 
 
-    def write_coords(self, filepath=None, header=False, units="A"):
-        """Write the atoms and coordinates of a `Structure` object to a file.
+    def pos_to_str(self, units: str = "A", with_elem: bool = False):
+        """Write the positions of a structure to a string, optionally with atomic symbols.
 
         Parameters
         ----------
-        filepath : PathLike or None, default=None
-            Path to where the coordinates should be written.
-            If this is ``None`` then this function just returns
-            what would have been written to the file.
-        header : bool, default=False
-            Optionally write the number of atoms at the beginning
-            of the string, with a newline afterwards.
         units : str, default="A"
-            Units for the coordinates in the file.
-
-        Returns
-        -------
-        coords : str
-            The text that was or would have been written to the file.
+            Units for the positions.
+        with_elem : bool, default=False
+            Optionally write the atomic symbols with the positions.
 
         Notes
         -----
-        This function will write the coordinates in the format
+        This function will write the positions in the format
+        (in this case using `with_elem=True`)
         ```python
-            " {element:2} {dim1:12.8f} {dim2:12.8f} ... {dimN:12.8f}\\n"
+            "{element:2} {dim1:12.8f} {dim2:12.8f} ... {dimN:12.8f}\\n"
         ```
-        This function is also generic with respect to the dimensionality of
-        the system, so *N*-dimensional systems will have *N* number of
-        coordinates in the output.
         """
         s = self.copy()
         s.change_units(units)
 
         c = ""
-        if header:
-            c += str(len(s.elem))+'\n\n'
-        #end if
         for i in range(len(s.elem)):
             e = s.elem[i]
             p = s.pos[i]
-            c += f" {e:2}"
+
+            if with_elem:
+                c += f"{e:2}"
             for j in p:
-                c += f" {j:12.8f}"
+                c += f"{j:12.8f} "
+            c = c.rstrip()
             c += "\n"
         #end for
 
-        if filepath is not None:
-            open(filepath,'w').write(c)
-        #end if
         return c
-    #end def write_coords
+    #end def pos_to_str
 
 
     def write_xyz(self, filepath=None):
@@ -5104,11 +5089,7 @@ class Structure(Sobj):
 
         Note
         ----
-        This function previously performed the job of `write_coords()`,
-        but after PR #5770 it was split to only write standardized XYZ files.
-        If you encounter errors about keyword arguments, remove the deprecated
-        `header` and `units` keyword arguments. If you want to change the units,
-        use `write_coords()` instead.
+        To get a string of only the atomic positions, use `pos_to_str()` instead.
         """
         if self.dim!=3:
             self.error('write_xyz is currently only implemented for 3 dimensions')
