@@ -1600,10 +1600,10 @@ class Param(Names):
             if ' ' not in text:
                 try:
                     val = int(text)
-                except:
+                except ValueError:
                     try:
                         val = float(text)
-                    except:
+                    except ValueError:
                         val = text
                 return val
             # array value
@@ -1617,15 +1617,16 @@ class Param(Names):
                 tokens.extend(t)
             try:
                 val = np.array(tokens,dtype=int)
-            except:
+            except ValueError:
                 try:
                     val = np.array(tokens,dtype=float)
-                except:
+                except ValueError:
                     val = np.array(tokens,dtype=object)
             if len(set(rowlens))==1 and len(rowlens)>1:
                 # rows have identical size: 2d
                 reshape_inplace(val,len(rowlens),rowlens[0])
-            assert val.size>1
+            if val.size>1:
+                self.error('scalar value interpreted as an array.  This is a developer error.')
         if val is None:
             val = ''
         return val
