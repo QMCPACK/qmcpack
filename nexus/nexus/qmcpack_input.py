@@ -137,7 +137,6 @@ import os
 import inspect
 import keyword
 import numpy as np
-from io import StringIO
 from .xmlreader import XMLreader, XMLelement
 from .developer import DevBase, obj, hidden, error
 from .periodic_table import is_element
@@ -1592,6 +1591,10 @@ class Param(Names):
         #end if
         if 'text' in xml:
             text = xml.text.strip()
+            # nothing in text
+            if len(text)==0:
+                return text
+            # scalar value
             if ' ' not in text:
                 try:
                     val = int(text)
@@ -1601,28 +1604,26 @@ class Param(Names):
                     except:
                         val = text
                 return val
+            # array value
+            tokens  = []
+            rowlens = []
+            for line in text.splitlines():
+                if len(line.strip())==0:
+                    continue
+                t = line.split()
+                rowlens.append(len(t))
+                tokens.extend(t)
             try:
-                val_int   = np.loadtxt(StringIO(xml.text),int)
-                val_float = np.loadtxt(StringIO(xml.text),float)
-                if np.allclose(val_int,val_float):
-                    val = val_int
-                else:
-                    val = val_float
-            except:
-                pass
-            if val is not None:
-                return val
-            text_split = text.split()
-            try:
-                val = np.array(text_split,dtype=int)
+                val = np.array(tokens,dtype=int)
             except:
                 try:
-                    val = np.array(text_split,dtype=float)
+                    val = np.array(tokens,dtype=float)
                 except:
-                    val = np.array(xml.text.split(),dtype=object)
-            if val.size==1:
-                val = val.ravel()[0]
-            return val
+                    val = np.array(tokens,dtype=object)
+            if len(set(rowlens))==1:
+                # rows have identical size: 2d
+                val.shape = len(rowlens),rowlens[0]
+            assert val.size>1
         if val is None:
             val = ''
         return val
