@@ -137,6 +137,7 @@ import os
 import inspect
 import keyword
 import numpy as np
+from .numpy_extensions import reshape_inplace
 from .xmlreader import XMLreader, XMLelement
 from .developer import DevBase, obj, hidden, error
 from .periodic_table import is_element
@@ -1623,7 +1624,7 @@ class Param(Names):
                     val = np.array(tokens,dtype=object)
             if len(set(rowlens))==1 and len(rowlens)>1:
                 # rows have identical size: 2d
-                val.shape = len(rowlens),rowlens[0]
+                reshape_inplace(val,len(rowlens),rowlens[0])
             assert val.size>1
         if val is None:
             val = ''
