@@ -1620,7 +1620,7 @@ class Param(Names):
                     val = np.array(tokens,dtype=float)
                 except:
                     val = np.array(tokens,dtype=object)
-            if len(set(rowlens))==1:
+            if len(set(rowlens))==1 and len(rowlens)>1:
                 # rows have identical size: 2d
                 val.shape = len(rowlens),rowlens[0]
             assert val.size>1
