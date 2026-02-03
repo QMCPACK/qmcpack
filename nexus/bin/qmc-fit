@@ -438,14 +438,26 @@ def hubbard_u_fit(args):
     if opt.hubbards is not None:
         parse_list(opt,'hubbards',float)
         if len(Edata)!=len(opt.hubbards):
-            error('must provide one hubbard_u value per scalar file\nnumber of hubbard_u provided: {0}\nnumber of scalar files provided: {1}\hubbards provided: {2}\nscalar files provided: {3}'.format(len(opt.hubbards),len(scalar_files),opt.hubbards,scalar_files))
+            error(
+                "must provide one hubbard_u value per scalar file\n"
+                "number of hubbard_u provided: {0}\n"
+                "number of scalar files provided: {1}\n"
+                "hubbards provided: {2}\n"
+                "scalar files provided: {3}".format(len(opt.hubbards),len(scalar_files),opt.hubbards,scalar_files)
+                )
         #end if
         x = opt.hubbards
     elif opt.exx is not None:
         hubbard_u = False
         parse_list(opt,'exx',float)
         if len(Edata)!=len(opt.exx):
-            error('must provide one hubbard_u value per scalar file\nnumber of hubbard_u provided: {0}\nnumber of scalar files provided: {1}\hubbards provided: {2}\nscalar files provided: {3}'.format(len(opt.hubbards),len(scalar_files),opt.hubbards,scalar_files))
+            error(
+                "must provide one hubbard_u value per scalar file\n"
+                "number of hubbard_u provided: {0}\n"
+                "number of scalar files provided: {1}\n"
+                "hubbards provided: {2}\n"
+                "scalar files provided: {3}".format(len(opt.hubbards),len(scalar_files),opt.hubbards,scalar_files)
+                )
         #end if
         x = opt.exx
     else:
