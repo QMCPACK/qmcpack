@@ -36,6 +36,7 @@ def find_nexus_modules():
 find_nexus_modules()
 import nexus.numpy_extensions as npe
 from nexus.nexus_version import nexus_version
+import nexus.numpy_extensions as npe
 from nexus.developer import DevBase,obj,error,ci,unavailable
 import nexus.memory as memory
 from nexus.hdfreader import HDFreader
