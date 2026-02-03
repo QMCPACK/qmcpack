@@ -18,7 +18,7 @@
 #include <cuda.h>
 #include <thrust/complex.h>
 #include <cuda_runtime.h>
-//#include <thrust/system/cuda/detail/core/util.h>
+//#include "Platforms/CUDA/uninitialized_array.cuh"
 #include "AFQMC/Memory/CUDA/cuda_utilities.h"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/cuda_settings.h"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/copy_n_cast.cuh"
@@ -37,8 +37,8 @@ __global__ void kernel_inplace_cast(Size n, thrust::complex<T>* A, thrust::compl
     //      not worring about this now, since it is not currently used in the code
     //      and the implementation is tricky!
     //    Size nel(SM_SIZE_KB/sizeof(thrust::complex<Q>));
-    //    __shared__ thrust::cuda_cub::core::uninitialized_array<thrust::complex<Q>,
-    //                             SM_SIZE_KB*MAX_THREADS_PER_DIM/sizeof(thrust::complex<Q>)> cache;
+    //    __shared__ uninitialized_array<thrust::complex<Q>,
+    //                   SM_SIZE_KB*MAX_THREADS_PER_DIM/sizeof(thrust::complex<Q>)> cache;
     // copy and cast into the cache without need to sync, sync when the cache is full,
     // then copy to B without sync.
     // Alternatively, instead of using shared memory here, you can use the device buffers

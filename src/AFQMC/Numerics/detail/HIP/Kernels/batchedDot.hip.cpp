@@ -14,12 +14,13 @@
 #include <complex>
 #include <hip/hip_runtime.h>
 #include <thrust/complex.h>
-#include "uninitialized_array.hpp"
+#include "Platforms/CUDA/uninitialized_array.cuh"
 #include "AFQMC/Numerics/detail/HIP/Kernels/hip_settings.h"
 #include "AFQMC/Numerics/detail/HIP/hip_kernel_utils.h"
 
 namespace kernels
 {
+using qmcplusplus::device::uninitialized_array;
 template<typename T>
 __global__ void kernel_dot(int n, T const alpha, T const* A, int lda, T const* B, int ldb, T const beta, T* y, int incy)
 {

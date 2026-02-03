@@ -137,7 +137,7 @@ import os
 import inspect
 import keyword
 import numpy as np
-from io import StringIO
+from .numpy_extensions import reshape_inplace
 from .xmlreader import XMLreader, XMLelement
 from .developer import DevBase, obj, hidden, error
 from .periodic_table import is_element
@@ -1581,7 +1581,7 @@ class Param(Names):
     #end def __call__
 
     def read(self,xml):
-        val = ''
+        val = None
         attr = set(xml._attributes.keys())
         other_attr = attr-set(['name'])
         if 'name' in attr and len(other_attr)>0:
@@ -1592,28 +1592,43 @@ class Param(Names):
             self.metadata[xml.name] = oa
         #end if
         if 'text' in xml:
-            token = xml.text.split('\n',1)[0].split(None,1)[0]
+            text = xml.text.strip()
+            # nothing in text
+            if len(text)==0:
+                return text
+            # scalar value
+            if ' ' not in text:
+                try:
+                    val = int(text)
+                except ValueError:
+                    try:
+                        val = float(text)
+                    except ValueError:
+                        val = text
+                return val
+            # array value
+            tokens  = []
+            rowlens = []
+            for line in text.splitlines():
+                if len(line.strip())==0:
+                    continue
+                t = line.split()
+                rowlens.append(len(t))
+                tokens.extend(t)
             try:
-                if is_int(token):
-                    val = np.loadtxt(StringIO(xml.text),int)
-                elif is_float(token):
-                    val = np.loadtxt(StringIO(xml.text),float)
-                else:
-                    val = np.array(xml.text.split())
-                #end if
-            except:
-                if is_int(token):
-                    val = np.array(xml.text.split(),dtype=int)
-                elif is_float(token):
-                    val = np.array(xml.text.split(),dtype=float)
-                else:
-                    val = np.array(xml.text.split())
-                #end if
-            #end try
+                val = np.array(tokens,dtype=int)
+            except ValueError:
+                try:
+                    val = np.array(tokens,dtype=float)
+                except ValueError:
+                    val = np.array(tokens,dtype=object)
+            if len(set(rowlens))==1 and len(rowlens)>1:
+                # rows have identical size: 2d
+                reshape_inplace(val,len(rowlens),rowlens[0])
             if val.size==1:
-                val = val.ravel()[0]
-            #end if
-        #end if
+                self.error('scalar value interpreted as an array.  This is a developer error.')
+        if val is None:
+            val = ''
         return val
     #end def read
 

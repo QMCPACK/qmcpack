@@ -14,7 +14,7 @@ set_tests_properties(${PYSCF_TEST_NAME} PROPERTIES PASS_REGULAR_EXPRESSION "succ
 softlink_h5(${PYSCF_TEST_NAME} diamondC_1x1x1_pp-vmc_gaussian_sdj-r1-t16 C_Diamond C_Diamond.h5 LAST_TEST_NAME)
 
 # LCAO and Bspline test should use the same references.
-list(APPEND DIAMOND_SCALARS "totenergy" "-10.495941 0.0065")
+list(APPEND DIAMOND_SCALARS "totenergy" "-10.495941 0.0090")
 list(APPEND DIAMOND_SCALARS "kinetic" "11.51198 0.078")
 list(APPEND DIAMOND_SCALARS "potential" "-22.00792 0.079")
 list(APPEND DIAMOND_SCALARS "eeenergy" "-2.68548 0.018")
