@@ -33,6 +33,6 @@ for m in nexus_modules:
     module_file = os.path.join(nexus_src,m)
     shutil.copy2(module_file,nexus_dest)
 
-verify_file = os.path.join(current_path,'verify_nexus_installation')
+verify_file = os.path.join(current_path,'verify_nexus_binary_installation')
 shutil.copy2(verify_file,bin_dest)
 
