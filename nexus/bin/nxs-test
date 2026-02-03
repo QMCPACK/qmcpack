@@ -2178,33 +2178,17 @@ def regenerate_reference(update=False):
 
 #end def regenerate_reference
 
-# Copied from verify_nexus_installation. Modification must done on verify_nexus_installation first
-# Locate and import the closely coupled Nexus module
+
+
+
+
 def find_nexus_modules():
-    import os
     import sys
-    # Prepend the assumed path of a folder containing the closely coupled nexus module to module search path
-    # It points to the top Nexus directory not necessarily the top QMCPACK directory.
     nexus_lib = os.path.realpath(os.path.join(__file__,'..','..'))
-    sys.path.insert(0,nexus_lib)
-
-    # check import of nexus modules
-    try:
-        import nexus
-    except (ImportError, ModuleNotFoundError):
-        raise ImportError(
-            "Nexus module is required but cannot be imported! Make sure Nexus module available under " + nexus_lib
-        )
-    nexus_lib2 = os.path.realpath(os.path.join(nexus.__file__,'..','..'))
-
-    # ensure closely coupled nexus module is in use.
-    if nexus_lib != nexus_lib2:
-        exe_full_path = os.path.abspath(sys.argv[0])
-        raise Exception('Broken Nexus installation! Nexus Python scripts are required to reside in the directory that contains the Nexus module.'
-                        + '\nNexus Python script         : ' + exe_full_path
-                        + '\nNexus module root directory : ' + nexus_lib2)
-
+    assert(os.path.exists(nexus_lib))
+    sys.path.append(nexus_lib)
 #end def find_nexus_modules
+
 
 def import_nexus_module(module_name):
     import importlib
@@ -2235,6 +2219,18 @@ if __name__=='__main__':
     import re
     from time import time # used to get user wall clock rather than cpu time
     tstart_all = time()
+
+    testing_wrong_nexus_install = False
+    try:
+        import nexus
+        nexus_file = os.path.realpath(os.path.join(nexus.__file__,'../..'))
+        test_file  = os.path.realpath(os.path.join(__file__,'../..'))
+        testing_wrong_nexus_install = nexus_file!=test_file
+    except:
+        pass
+    if testing_wrong_nexus_install:
+        print('\n\n\nInstalled Nexus package does not reside with this nxs-test executable.\n  Currently installed nexus package: {}\n  Correct Nexus package            : {}\n  Please install the correct Nexus package above.\n\n'.format(nexus_file,test_file))
+        sys.exit(1)
 
     # read command line input
     regex = None
