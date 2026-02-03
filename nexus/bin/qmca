@@ -4,7 +4,9 @@ import os
 import sys
 from optparse import OptionParser
 
-# Copied from verify_nexus_installation. Modification must done on verify_nexus_installation first
+# Gold implementation. All the Nexus scripts need to be updated once modified.
+# <nexus_root>/bin # contains nexus exectuables
+# <nexus_root>/nexus #contains nexus module files
 # Locate and import the closely coupled Nexus module
 def find_nexus_modules():
     import os

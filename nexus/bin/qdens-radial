@@ -2,7 +2,7 @@
 
 from optparse import OptionParser
 
-# Copied from verify_nexus_installation. Modification must done on verify_nexus_installation first
+# Copied from qmca. Modification must done on qmca first
 # Locate and import the closely coupled Nexus module
 def find_nexus_modules():
     import os
