@@ -169,7 +169,7 @@ set(ENABLE_SANITIZER "" CACHE STRING "Valid input: ${VALID_SANITIZERS} or left e
 option(INSTALL_NEXUS "Install Nexus alongside QMCPACK" ON)
 if(INSTALL_NEXUS)
   install(
-    CODE "EXECUTE_PROCESS(COMMAND ${qmcpack_SOURCE_DIR}/install_nexus \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX})"
+    CODE "EXECUTE_PROCESS(COMMAND ${qmcpack_SOURCE_DIR}/install_nexus_binaries \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX})"
   )
 endif()
 
