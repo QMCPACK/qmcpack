@@ -4,7 +4,7 @@ import sys
 import os
 import shutil
 
-assert len(sys.argv)==2,'install_nexus only takes a single argument (the installation path)'
+assert len(sys.argv)==2,'install_nexus_binaries only takes a single argument (the installation path)'
 
 current_path = os.path.split(__file__)[0]
 install_path = sys.argv[1]
