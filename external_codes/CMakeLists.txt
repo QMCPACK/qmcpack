@@ -17,8 +17,5 @@ target_link_libraries(qmc_external_mpi_wrapper INTERFACE MPI::MPI_CXX Boost::boo
 add_library(qmc_external_multi INTERFACE)
 target_include_directories(qmc_external_multi INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/boost_multi/multi/include)
 
-add_library(qmc_external_thrust INTERFACE)
-target_include_directories(qmc_external_thrust INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/thrust)
-
 add_library(qmc_external_catch2 INTERFACE)
 target_include_directories(qmc_external_catch2 INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/catch)

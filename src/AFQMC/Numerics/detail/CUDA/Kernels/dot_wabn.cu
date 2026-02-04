@@ -17,7 +17,7 @@
 #include <cuda.h>
 #include <thrust/complex.h>
 #include <cuda_runtime.h>
-#include <thrust/system/cuda/detail/core/util.h>
+#include "Platforms/CUDA/uninitialized_array.cuh"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/cuda_settings.h"
 #define ENABLE_CUDA 1
 #include "AFQMC/Memory/CUDA/cuda_utilities.h"
@@ -27,6 +27,7 @@
 
 namespace kernels
 {
+using qmcplusplus::device::uninitialized_array;
 // Tab nwalk][nocc][nocc][nchol]
 template<typename T, typename T2>
 __global__ void kernel_dot_wabn(int nwalk,
@@ -39,7 +40,7 @@ __global__ void kernel_dot_wabn(int nwalk,
 {
   if (blockIdx.x >= nwalk * nocc * nocc)
     return;
-  __shared__ thrust::cuda_cub::core::uninitialized_array<thrust::complex<T>, DOT_BLOCK_SIZE> cache;
+  __shared__ uninitialized_array<thrust::complex<T>, DOT_BLOCK_SIZE> cache;
   int nocc2              = nocc * nocc;
   int w                  = blockIdx.x / (nocc2);
   int a                  = (blockIdx.x % (nocc2)) / nocc;
@@ -90,7 +91,7 @@ __global__ void kernel_dot_wanb(int nt,
   int a  = blockIdx.y * blockDim.x + threadIdx.x;
   int nb = blockIdx.z * blockDim.y * nt + threadIdx.y;
 
-  __shared__ thrust::cuda_cub::core::uninitialized_array<thrust::complex<T>, 1024> cache;
+  __shared__ uninitialized_array<thrust::complex<T>, 1024> cache;
 
   int nid = blockDim.x * blockDim.y * blockDim.z;
   int id  = (threadIdx.x * blockDim.y + threadIdx.y) * blockDim.z + threadIdx.z;
@@ -138,7 +139,7 @@ __global__ void kernel_dot_wanb2(int nwalk,
 {
   if (blockIdx.x >= nwalk * nocc * nocc)
     return;
-  __shared__ thrust::cuda_cub::core::uninitialized_array<thrust::complex<T>, DOT_BLOCK_SIZE> cache;
+  __shared__ uninitialized_array<thrust::complex<T>, DOT_BLOCK_SIZE> cache;
   int nocc2              = nocc * nocc;
   int w                  = blockIdx.x / (nocc2);
   int a                  = (blockIdx.x % (nocc2)) / nocc;
@@ -181,7 +182,7 @@ __global__ void kernel_dot_wpan_waqn_Fwpq(int nwalk,
                                           thrust::complex<T2> const* Tab,
                                           thrust::complex<T>* F)
 {
-  __shared__ thrust::cuda_cub::core::uninitialized_array<thrust::complex<T>, DOT_BLOCK_SIZE> cache;
+  __shared__ uninitialized_array<thrust::complex<T>, DOT_BLOCK_SIZE> cache;
   int p                  = blockIdx.x;
   int q                  = blockIdx.y;
   int a                  = blockIdx.z;
