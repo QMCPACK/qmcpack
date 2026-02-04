@@ -16,24 +16,47 @@ def find_nexus_modules():
     # Prepend the assumed path of a folder containing the closely coupled nexus module to module search path
     # It points to the top Nexus directory not necessarily the top QMCPACK directory.
     nexus_lib = os.path.realpath(os.path.join(__file__,'..','..'))
-    sys.path.insert(0,nexus_lib)
+
+    # "import nexus" will succeed if nexus directory exists without __init__.py in it.
+    # Explicitly check the existence of nexus/__init__.py at the closely coupled location
+    nexus_init = os.path.join(nexus_lib,'nexus','__init__.py')
+    if not os.path.exists(nexus_init):
+        print('\nFile '+nexus_init+' does not exist!'
+              '\nBroken Nexus installation!'
+              '\nMake sure Nexus modules are available at:'
+              '\n  '+nexus_lib+'\n')
+        sys.exit(1)
 
     # check import of nexus modules
+    sys.path.insert(0,nexus_lib)
     try:
         import nexus
-    except (ImportError, ModuleNotFoundError):
-        raise ImportError(
-            "Nexus module is required but cannot be imported! Make sure Nexus module available under " + nexus_lib
-        )
-    nexus_lib2 = os.path.realpath(os.path.join(nexus.__file__,'..','..'))
+    except Exception as err:
+        print('\nImporting Nexus modules failed for an unknown reason.'
+              '\nThis is likely a developer error.'
+              '\nFor more information, the original exception is reproduced below.'
+              '\nPlease report this error to the Nexus developers.'+2*'\n')
+        import traceback
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        exc_lines = traceback.format_exception(exc_type, exc_value, exc_traceback)
+        for line in exc_lines:
+            print(line.rstrip())
+        print()
+        sys.exit(1)
 
+    # Sanity check. Most likely errors get caught earlier.
     # ensure closely coupled nexus module is in use.
+    nexus_lib2 = os.path.realpath(os.path.join(nexus.__file__,'..','..'))
     if nexus_lib != nexus_lib2:
         exe_full_path = os.path.abspath(sys.argv[0])
-        raise Exception('Broken Nexus installation! Nexus Python scripts are required to reside in the directory that contains the Nexus module.'
-                        + '\nNexus Python script         : ' + exe_full_path
-                        + '\nNexus module root directory : ' + nexus_lib2)
-
+        print('\nNexus executables and modules are not from the same installation!'
+              '\nLocations required : '
+              '\n  exectuables reside at <nexus_root>/bin'
+              '\n  modules reside at <nexus_root>/nexus'
+              '\nLocations detected : '
+              '\n  Nexus executable            : ' + exe_full_path +
+              '\n  Module derived <nexus_root> : ' + nexus_lib2 + '\n')
+        sys.exit(1)
 #end def find_nexus_modules
 
 # Load Nexus modules
