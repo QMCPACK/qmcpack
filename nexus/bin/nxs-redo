@@ -44,13 +44,10 @@ def find_nexus_modules():
     nexus_lib2 = os.path.realpath(os.path.join(nexus.__file__,'..','..'))
     if nexus_lib != nexus_lib2:
         exe_full_path = os.path.abspath(sys.argv[0])
-        print('\nNexus executables and modules are not from the same installation!'
-              '\nLocations required : '
-              '\n  exectuables reside at <nexus_root>/bin'
-              '\n  modules reside at <nexus_root>/nexus'
-              '\nLocations detected : '
-              '\n  Nexus executable            : ' + exe_full_path +
-              '\n  Module derived <nexus_root> : ' + nexus_lib2 + '\n')
+        print('\nNexus executable ' + exe_full_path +
+              '\n  Executable derived <nexus_root> = ' + nexus_lib +
+              '\n  Module     derived <nexus_root> = ' + nexus_lib2 +
+              '\nNexus executables and modules are not from the same installation!\n')
         sys.exit(1)
 #end def find_nexus_modules
 
