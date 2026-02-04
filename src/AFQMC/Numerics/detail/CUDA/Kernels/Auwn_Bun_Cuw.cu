@@ -17,13 +17,14 @@
 #include <cuda.h>
 #include <thrust/complex.h>
 #include <cuda_runtime.h>
-#include <thrust/system/cuda/detail/core/util.h>
+#include "Platforms/CUDA/uninitialized_array.cuh"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/cuda_settings.h"
 #define ENABLE_CUDA 1
 #include "AFQMC/Memory/CUDA/cuda_utilities.h"
 
 namespace kernels
 {
+using qmcplusplus::device::uninitialized_array;
 // C[u][w] = alpha * sum_a A[u][w][a] * B[u][a]
 template<typename T>
 __global__ void kernel_Auwn_Bun_Cuw(int nu,
@@ -116,7 +117,7 @@ __global__ void kernel_Aijk_Bkj_Cik(int ni,
                                     thrust::complex<T>* C,
                                     int ldc)
 {
-  __shared__ thrust::cuda_cub::core::uninitialized_array<thrust::complex<T>, 32> cache;
+  __shared__ uninitialized_array<thrust::complex<T>, 32> cache;
   int k = blockIdx.x;
   int i = blockIdx.y;
   if ((i < ni) && (k < nk))
@@ -228,8 +229,8 @@ __global__ void kernel_element_wise_Aij_Bjk_Ckji(int ni,
 {
   // hard-coded to TILE_DIM=32
   int TILE_DIM = 32;
-  __shared__ thrust::cuda_cub::core::uninitialized_array<T2, 32 * 32> Acache;
-  __shared__ thrust::cuda_cub::core::uninitialized_array<thrust::complex<T>, 32> Bcache;
+  __shared__ uninitialized_array<T2, 32 * 32> Acache;
+  __shared__ uninitialized_array<thrust::complex<T>, 32> Bcache;
 
   int k = blockIdx.z;
   int j = blockIdx.x * TILE_DIM + threadIdx.x;

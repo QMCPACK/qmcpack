@@ -17,7 +17,7 @@ function(RUN_PYSCF_TEST BASE_NAME SRC_DIR TEST_INPUT_PREFIX TEST_NAME)
   set(MY_WORKDIR ${CMAKE_CURRENT_BINARY_DIR}/${BASE_NAME})
   message(VERBOSE "Adding test ${BASE_NAME}")
   copy_directory("${SRC_DIR}" "${MY_WORKDIR}")
-  add_pyscf_test(${BASE_NAME} python ${MY_WORKDIR} ${TEST_INPUT_PREFIX}.py)
+  add_pyscf_test(${BASE_NAME} ${Python3_EXECUTABLE} ${MY_WORKDIR} ${TEST_INPUT_PREFIX}.py)
 endfunction()
 
 function(SOFTLINK_H5 SOURCE TARGET PREFIX FILENAME TEST_NAME)

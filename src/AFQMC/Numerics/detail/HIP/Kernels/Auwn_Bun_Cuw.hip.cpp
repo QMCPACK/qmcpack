@@ -13,12 +13,13 @@
 #include <complex>
 #include <thrust/complex.h>
 #include <hip/hip_runtime.h>
-#include "uninitialized_array.hpp"
+#include "Platforms/CUDA/uninitialized_array.cuh"
 #include "AFQMC/Numerics/detail/HIP/Kernels/hip_settings.h"
 #include "AFQMC/Numerics/detail/HIP/hip_kernel_utils.h"
 
 namespace kernels
 {
+using qmcplusplus::device::uninitialized_array;
 // C[u][w] = alpha * sum_a A[u][w][a] * B[u][a]
 template<typename T>
 __global__ void kernel_Auwn_Bun_Cuw(int nu,
