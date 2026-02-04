@@ -72,7 +72,7 @@ Base class for :py:class:`DefectStructure`, :py:class:`Crystal`, and :py:class:`
 
 SeeK-path functions
 
-* :py:func:`\_getseekpath`
+* :py:func:`_getseekpath`
 * :py:func:`get_conventional_cell`
 * :py:func:`get_primitive_cell`
 * :py:func:`get_kpath`
