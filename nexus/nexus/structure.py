@@ -5300,21 +5300,78 @@ class Structure(Sobj):
     #end def write
 
 
-    def write_xyz(self,filepath=None,header=True,units='A'):
+    def pos_to_str(self, units: str = "A", with_elem: bool = False):
+        """Write the positions of a structure to a string, optionally with atomic symbols.
+
+        Parameters
+        ----------
+        units : str, default="A"
+            Units for the positions.
+        with_elem : bool, default=False
+            Optionally write the atomic symbols with the positions.
+
+        Notes
+        -----
+        This function will write the positions in the format
+        (in this case using `with_elem=True`)
+        ```python
+            "{element:2} {dim1:12.8f} {dim2:12.8f} ... {dimN:12.8f}\\n"
+        ```
+        """
+        s = self.copy()
+        s.change_units(units)
+
+        c = ""
+        for i in range(len(s.elem)):
+            e = s.elem[i]
+            p = s.pos[i]
+
+            if with_elem:
+                c += f"{e:2}"
+            for j in p:
+                c += f"{j:12.8f} "
+            c = c.rstrip()
+            c += "\n"
+        #end for
+
+        return c
+    #end def pos_to_str
+
+
+    def write_xyz(self, filepath=None):
+        """Write a `Structure` object to an XYZ file
+        
+        Parameters
+        ----------
+        filepath : PathLike or None, default=None
+            Path to where the XYZ file should be written.
+            If this is ``None``, then this function just returns 
+            what would have been written to the XYZ file.
+
+        Returns
+        -------
+        xyz : str
+            The text that was or would have been written to the XYZ file.
+
+        Note
+        ----
+        To get a string of only the atomic positions, use `pos_to_str()` instead.
+        """
         if self.dim!=3:
             self.error('write_xyz is currently only implemented for 3 dimensions')
         #end if
         s = self.copy()
-        s.change_units(units)
-        c=''
-        if header:
-            c += str(len(s.elem))+'\n\n'
-        #end if
+        s.change_units("A")
+
+        c = ''
+        c += str(len(s.elem))+'\n\n'
+
         for i in range(len(s.elem)):
             e = s.elem[i]
             p = s.pos[i]
             c+=' {0:2} {1:12.8f} {2:12.8f} {3:12.8f}\n'.format(e,p[0],p[1],p[2])
         #end for
+
         if filepath is not None:
             open(filepath,'w').write(c)
         #end if
