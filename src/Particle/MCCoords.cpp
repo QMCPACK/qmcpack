@@ -10,9 +10,20 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "MCCoords.hpp"
+#include "Configuration.h"
+#include <initializer_list>
 
 namespace qmcplusplus
 {
+
+MCCoords<CoordsType::POS>::MCCoords(std::initializer_list<QMCTraits::PosType> pos_list) : positions(pos_list) {}
+
+MCCoords<CoordsType::POS_SPIN>::MCCoords(
+    std::pair<std::initializer_list<QMCTraits::PosType>, std::initializer_list<QMCTraits::FullPrecRealType>> pos_spins)
+    : positions(pos_spins.first), spins(pos_spins.second)
+{}
+
+
 void MCCoords<CoordsType::POS>::getSubset(const std::size_t offset,
                                           const std::size_t size,
                                           MCCoords<CoordsType::POS>& out) const
@@ -46,6 +57,6 @@ MCCoords<CoordsType::POS_SPIN>& MCCoords<CoordsType::POS_SPIN>::operator+=(const
   return *this;
 }
 
-template struct MCCoords<CoordsType::POS>;
-template struct MCCoords<CoordsType::POS_SPIN>;
+template class MCCoords<CoordsType::POS>;
+template class MCCoords<CoordsType::POS_SPIN>;
 } // namespace qmcplusplus

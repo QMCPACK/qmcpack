@@ -28,12 +28,15 @@ enum class CoordsType
 };
 
 template<CoordsType MCT>
-struct MCCoords;
+class MCCoords;
 
 template<>
-struct MCCoords<CoordsType::POS>
+class MCCoords<CoordsType::POS>
 {
+public:
   MCCoords(const std::size_t size) : positions(size) {}
+
+  MCCoords(std::initializer_list<QMCTraits::PosType> pos_list);
 
   MCCoords& operator+=(const MCCoords& rhs);
 
@@ -46,9 +49,13 @@ struct MCCoords<CoordsType::POS>
 };
 
 template<>
-struct MCCoords<CoordsType::POS_SPIN>
+class MCCoords<CoordsType::POS_SPIN>
 {
+public:
   MCCoords(const std::size_t size) : positions(size), spins(size) {}
+
+  MCCoords(std::pair<std::initializer_list<QMCTraits::PosType>, std::initializer_list<QMCTraits::FullPrecRealType>>
+               pos_spin_list);
 
   MCCoords& operator+=(const MCCoords& rhs);
 
@@ -61,8 +68,8 @@ struct MCCoords<CoordsType::POS_SPIN>
   std::vector<QMCTraits::FullPrecRealType> spins;
 };
 
-extern template struct MCCoords<CoordsType::POS>;
-extern template struct MCCoords<CoordsType::POS_SPIN>;
+extern template class MCCoords<CoordsType::POS>;
+extern template class MCCoords<CoordsType::POS_SPIN>;
 } // namespace qmcplusplus
 
 #endif

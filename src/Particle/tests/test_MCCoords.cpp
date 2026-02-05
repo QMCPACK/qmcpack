@@ -10,6 +10,7 @@
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
+#include "Configuration.h"
 #include "catch.hpp"
 #include "MCCoords.hpp"
 #include "Utilities/StlPrettyPrint.hpp"
@@ -30,8 +31,8 @@ TEST_CASE("MCCoords", "[Particle]")
     QMCTraits::PosType p3({0.7, 0.8, 0.9});
     QMCTraits::PosType p4({-1.0, -1.0, -1.0});
 
-    mc_coords.positions = {p1, p2, p3};
-    auto shift_coords   = MCCoords<mct>(3);
+    mc_coords.positions    = {p1, p2, p3};
+    auto shift_coords      = MCCoords<mct>(3);
     shift_coords.positions = {p4, p4, p4};
     mc_coords += shift_coords;
     CHECK(Approx(mc_coords.positions[0][0]) == -0.9);
@@ -44,7 +45,7 @@ TEST_CASE("MCCoords", "[Particle]")
     CHECK(Approx(mc_coords.positions[2][1]) == -0.2);
     CHECK(Approx(mc_coords.positions[2][2]) == -0.1);
 
-    auto shift_coords2   = MCCoords<mct>(3);
+    auto shift_coords2      = MCCoords<mct>(3);
     shift_coords2.positions = {-p4, -p4, -p4};
     mc_coords += shift_coords2;
     CHECK(Approx(mc_coords.positions[0][0]) == 0.1);
@@ -70,15 +71,15 @@ TEST_CASE("MCCoords", "[Particle]")
     REQUIRE(mc_coords.positions.size() == 3);
     REQUIRE(mc_coords.spins.size() == 3);
 
-    mc_coords.spins   = {0.1, 0.2, 0.3};
-    auto shift_coords = MCCoords<mct>(3);
+    mc_coords.spins    = {0.1, 0.2, 0.3};
+    auto shift_coords  = MCCoords<mct>(3);
     shift_coords.spins = {1.0, 1.0, 1.0};
     mc_coords += shift_coords;
     CHECK(Approx(mc_coords.spins[0]) == 1.1);
     CHECK(Approx(mc_coords.spins[1]) == 1.2);
     CHECK(Approx(mc_coords.spins[2]) == 1.3);
 
-    auto shift_coords2   = MCCoords<mct>(3);
+    auto shift_coords2  = MCCoords<mct>(3);
     shift_coords2.spins = {-1.0, -1.0, -1.0};
     mc_coords += shift_coords2;
     CHECK(Approx(mc_coords.spins[0]) == 0.1);
@@ -89,6 +90,25 @@ TEST_CASE("MCCoords", "[Particle]")
     mc_coords.getSubset(2, 1, subset);
     REQUIRE(subset.spins.size() == 1);
     CHECK(Approx(subset.spins[0]) == 0.3);
+  }
+}
+
+TEST_CASE("MCCoords::initializer_list_constructor", "[Particle]")
+{
+  SECTION("CoordsType::POS")
+  {
+    constexpr auto mct      = CoordsType::POS;
+    MCCoords<mct> test_list = {{0.1, 0.2, 0.3}, {0.4, 0.5, 0.6}};
+    CHECK(test_list.positions[0] == QMCTraits::PosType({0.1, 0.2, 0.3}));
+    CHECK(test_list.positions[1] == QMCTraits::PosType({0.4, 0.5, 0.6}));
+  }
+  {
+    constexpr auto mct      = CoordsType::POS_SPIN;
+    MCCoords<mct> test_list = {{{{0.1, 0.2, 0.3}, {0.4, 0.5, 0.6}}, {1.0, 1.2}}};
+    CHECK(test_list.positions[0] == QMCTraits::PosType({0.1, 0.2, 0.3}));
+    CHECK(test_list.positions[1] == QMCTraits::PosType({0.4, 0.5, 0.6}));
+    CHECK(test_list.spins[0] == QMCTraits::FullPrecRealType(1.0));
+    CHECK(test_list.spins[1] == QMCTraits::FullPrecRealType(1.2));
   }
 }
 
