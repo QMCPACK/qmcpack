@@ -126,7 +126,15 @@ void HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
                 << std::endl;
       return;
     }
+    // In my opion the ParticleSet should know whether its quantum or
+    // not.  In fact in CoulombPBCAA's attached to quantum particule
+    // sets are refered to as active and ones with classical
+    // particlesets are not.  The assumption here is that classic
+    // particles never change position during a qmcrun.
     bool quantum = (sourceInp == targetPtcl.getName());
+    app_summary() << "    AA ParticleSet: " << sourceInp << " dynamic particle set: " << (quantum ? "true" : "false")
+                  << '\n';
+
     if (applyPBC)
     {
       if (use_gpu.empty())

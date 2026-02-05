@@ -158,7 +158,8 @@ void CoulombPBCAA::updateSource(ParticleSet& s)
     eL = evalLR(s);
     eS = evalSR(s);
   }
-  new_value_ = value_ = eL + eS + myConst;
+  value_     = eL + eS + myConst;
+  new_value_ = value_;
 }
 
 #if !defined(REMOVE_TRACEMANAGER)
@@ -212,7 +213,20 @@ void CoulombPBCAA::mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
   assert(this == &o_list.getLeader());
 
   if (!o_leader.is_active)
-    return;
+    if (!o_leader.is_static_initialized)
+      return;
+    else
+    {
+      for (int iw = 0; iw < o_list.size(); iw++)
+      {
+        auto& coulomb_aa = o_list.getCastedElement<CoulombPBCAA>(iw);
+        if (!coulomb_aa.is_static_initialized)
+        {
+          o_list.getCastedElement<OperatorDependsOnlyOnParticleSet>(iw).evaluate(p_list[iw]);
+        }
+      }
+      return;
+    }
 
   if (use_offload_)
   {
@@ -239,13 +253,16 @@ void CoulombPBCAA::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
   auto& o_leader = o_list.getCastedLeader<CoulombPBCAA>();
   auto& p_leader = p_list.getLeader();
   assert(this == &o_list.getLeader());
-  auto num_centers = (is_active ? p_leader.getTotalNum() : Ps.getTotalNum());
+  // This may break ion ion for listeners
+
+  auto num_centers = (o_leader.is_active ? p_leader.getTotalNum() : Ps.getTotalNum());
+
   auto name(o_leader.getName());
   Vector<RealType>& v_sample = o_leader.mw_res_handle_.getResource().v_sample;
   const auto& pp_consts      = o_leader.mw_res_handle_.getResource().pp_consts;
   auto num_species           = p_leader.getSpeciesSet().getTotalNum();
   v_sample.resize(num_centers);
-  auto current_value = o_leader.getValue();
+
   // This lambda is mostly about getting a handle on what is being
   // touched by the per particle evaluation.
   // v_sample is updated as a side effect
@@ -254,7 +271,7 @@ void CoulombPBCAA::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
     mRealType Vsr = 0.0;
     mRealType Vlr = 0.0;
     mRealType Vc  = cpbcaa.myConst;
-    v_sample      = 0.0; //.begin(), v_sample.end(), 0.0);
+    v_sample.zero();
     {
       //SR
       const auto& d_aa(pset.getDistTableAA(cpbcaa.d_aa_ID));
@@ -325,10 +342,11 @@ void CoulombPBCAA::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
       throw std::runtime_error("Trace check failed");
     }
 #endif
+    // Legacy here assigns value to this walker coulombPBCAA
     return value;
   };
 
-  if (is_active)
+  if (o_leader.is_active)
     for (int iw = 0; iw < o_list.size(); iw++)
     {
       auto& coulomb_aa  = o_list.getCastedElement<CoulombPBCAA>(iw);
@@ -340,14 +358,19 @@ void CoulombPBCAA::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
   {
     auto& o_leader = o_list.getCastedLeader<CoulombPBCAA>();
     assert(!o_leader.is_active);
+
     for (auto& samp : v_sample)
       samp = 0.5 * o_leader.value_;
     //these static parts of the QMCHamiltonian don't change we just
     //copy them every time and send them to the listeners to preserve
     //a common design between per particle hamiltonian energy values
     for (int iw = 0; iw < o_list.size(); iw++)
+    {
+      auto& coulomb_aa  = o_list.getCastedElement<CoulombPBCAA>(iw);
+      coulomb_aa.value_ = o_leader.value_;
       for (const ListenerVector<RealType>& listener : listeners_ions)
         listener.report(iw, name, v_sample);
+    }
   }
 }
 
