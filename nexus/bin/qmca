@@ -19,10 +19,8 @@ def find_nexus_modules():
     # Explicitly check the existence of nexus/__init__.py at the closely coupled location
     nexus_init = os.path.join(nexus_lib,'nexus','__init__.py')
     if not os.path.exists(nexus_init):
-        print('\nFile '+nexus_init+' does not exist!'
-              '\nBroken Nexus installation!'
-              '\nMake sure Nexus modules are available at:'
-              '\n  '+nexus_lib+'\n')
+        print('\nExpected file '+nexus_init+' does not exist!'
+              '\nBroken Nexus installation! Please follow Nexus manual regarding installation.\n')
         sys.exit(1)
 
     # check import of nexus modules
