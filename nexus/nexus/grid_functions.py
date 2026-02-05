@@ -116,15 +116,15 @@ def polar_to_cartesian(points,surface=False):
     Parameters
     ----------
     points  : `array_like, float, shape (N,d)`
-        Real valued points in polar coordinates :math:`(r,\phi)`. `N` is the 
+        Real valued points in polar coordinates :math:`(r,\\phi)`. `N` is the 
         number of points and `d` is the dimension of the coordinate system.  
-        The inputted points must satisfy :math:`r=\mathrm{points[:,0]}`, 
-        :math:`\phi=\mathrm{points[:,1]}`, and :math:`\phi\in[0,2\pi)`.
+        The inputted points must satisfy :math:`r=\\mathrm{points[:,0]}`, 
+        :math:`\\phi=\\mathrm{points[:,1]}`, and :math:`\\phi\\in[0,2\\pi)`.
     surface : `bool, optional, default False`
         Points lie only on the boundary (a circle) or not.  If `False` (the 
         default), the inputted points are two-dimensional (`d=2`) with 
-        :math:`(r,\phi)` provided.  If `True`, the inputted points are angular 
-        only (`d=1` with :math:`\phi=\mathrm{points[:,0]}`). In this case, 
+        :math:`(r,\\phi)` provided.  If `True`, the inputted points are angular 
+        only (`d=1` with :math:`\\phi=\\mathrm{points[:,0]}`). In this case, 
         :math:`r=1`.
 
     Returns
@@ -161,13 +161,13 @@ def cartesian_to_polar(points,surface=False):
     ----------
     points  : `array_like, float, shape (N,2)`
         Real valued points in Cartesian coordinates :math:`(x, y)`. `N` is 
-        the number of points and :math:`x=\mathrm{points[:,0]}`, 
-        :math:`y=\mathrm{points[:,1]}`. 
+        the number of points and :math:`x=\\mathrm{points[:,0]}`, 
+        :math:`y=\\mathrm{points[:,1]}`. 
     surface : `bool, optional, default False`
         Inputted points lie only on a circle or not.  It is the user's 
         responsibility to guarantee the correctness of this assertion.
         If `False` (the default), the outputted points are two-dimensional 
-        (`d=2`) with :math:`(r,\phi)` returned.  If `True`, only :math:`\phi` 
+        (`d=2`) with :math:`(r,\\phi)` returned.  If `True`, only :math:`\\phi` 
         is returned (`d=1`).
 
     Returns
@@ -204,18 +204,18 @@ def spherical_to_cartesian(points,surface=False):
     Parameters
     ----------
     points  : `array_like, float, shape (N,d)`
-        Real valued points in spherical coordinates :math:`(r,\\theta,\phi)`. 
+        Real valued points in spherical coordinates :math:`(r,\\theta,\\phi)`. 
         `N` is the number of points, `d` is the dimension of the coordinate 
         system.  The inputted points must satisfy 
-        :math:`r=\mathrm{points[:,0]}`, :math:`\\theta=\mathrm{points[:,1]}`, 
-        :math:`\phi=\mathrm{points[:,1]}`, with :math:`\\theta\in[0,\pi)`, 
-        :math:`\phi\in[0,2\pi)`.
+        :math:`r=\\mathrm{points[:,0]}`, :math:`\\theta=\\mathrm{points[:,1]}`, 
+        :math:`\\phi=\\mathrm{points[:,1]}`, with :math:`\\theta\\in[0,\\pi)`, 
+        :math:`\\phi\\in[0,2\\pi)`.
     surface : `bool, optional, default False`
         Points lie only on the boundary (a sphere) or not. If `False` (the 
         default), the inputted points are 3D (`d=3`) with 
-        :math:`(r,\\theta,\phi)` provided.  If `True`, the inputted points are 
-        angular only (`d=2` with :math:`\\theta=\mathrm{points[:,0]}`, 
-        :math:`\phi=\mathrm{points[:,0]}`). In this case, :math:`r=1`.
+        :math:`(r,\\theta,\\phi)` provided.  If `True`, the inputted points are 
+        angular only (`d=2` with :math:`\\theta=\\mathrm{points[:,0]}`, 
+        :math:`\\phi=\\mathrm{points[:,0]}`). In this case, :math:`r=1`.
 
     Returns
     -------
@@ -255,14 +255,14 @@ def cartesian_to_spherical(points,surface=False):
     ----------
     points  : `array_like, float, shape (N,3)`
         Real valued points in Cartesian coordinates :math:`(x,y,z)`. `N` is 
-        the number of points and :math:`x=\mathrm{points[:,0]}`, 
-        :math:`y=\mathrm{points[:,1]}`, :math:`z=\mathrm{points[:,2]}`. 
+        the number of points and :math:`x=\\mathrm{points[:,0]}`, 
+        :math:`y=\\mathrm{points[:,1]}`, :math:`z=\\mathrm{points[:,2]}`. 
     surface : `bool, optional, default False`
         Inputted points lie only on a sphere or not.  It is the user's 
         responsibility to guarantee the correctness of this assertion.
         If `False` (the default), the outputted points are 3D (`d=3`) with 
-        :math:`(r,\\theta,\phi)` returned.  If `True`, only 
-        :math:`(\\theta,\phi)` is returned (`d=2`).
+        :math:`(r,\\theta,\\phi)` returned.  If `True`, only 
+        :math:`(\\theta,\\phi)` is returned (`d=2`).
 
     Returns
     -------
@@ -2430,7 +2430,7 @@ class SpheroidGrid(StructuredGridWithAxes):
         the grid.
     shape : `array_like, int, shape (dg,), optional`
         The number of grid points in each dimension. The number of grid cells 
-        in the azimuthal direction (:math:`\phi`) matches the number of grid 
+        in the azimuthal direction (:math:`\\phi`) matches the number of grid 
         points.  In the radial (and, if present, 3D polar) dimension, there is 
         one fewer grid cell than grid points as the grid points go all the way 
         to the edge of the boundary in those directions.  `dg` is the dimension 
@@ -2804,7 +2804,7 @@ class SpheroidSurfaceGrid(StructuredGridWithAxes):
         to generate the grid.
     shape : `array_like, int, shape (dg,), optional`
         The number of grid points in each dimension. The number of grid cells 
-        in the azimuthal direction (:math:`\phi`) matches the number of grid 
+        in the azimuthal direction (:math:`\\phi`) matches the number of grid 
         points.  In 3D spherical coordinates, along the polar dimension there is
         one fewer grid cell than grid points as the grid points go all the way 
         to the edge of the boundary in that direction.  `dg` is the dimension 
