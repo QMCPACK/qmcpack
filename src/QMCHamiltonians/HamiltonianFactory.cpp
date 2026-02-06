@@ -101,7 +101,6 @@ bool HamiltonianFactory::build(xmlNodePtr cur)
   hAttrib.add(source, "source");
   hAttrib.add(defaultKE, "default");
   hAttrib.put(cur);
-  renameProperty(source);
   auto psi_it(psiPool.find(psiName));
   if (psi_it == psiPool.end())
     APP_ABORT("Unknown psi \"" + psiName + "\" for target Psi");
@@ -136,8 +135,6 @@ bool HamiltonianFactory::build(xmlNodePtr cur)
     attrib.add(potUnit, "units");
     attrib.add(estType, "potential");
     attrib.put(element);
-    renameProperty(sourceInp);
-    renameProperty(targetInp);
 
     int nham = targetH->total_size();
     if (cname == "pairpot")
@@ -392,18 +389,6 @@ bool HamiltonianFactory::build(xmlNodePtr cur)
   //add observables with physical and simple estimators
   targetH->addObservables(targetPtcl);
   return true;
-}
-
-
-void HamiltonianFactory::renameProperty(const std::string& a, const std::string& b) { RenamedProperty[a] = b; }
-
-void HamiltonianFactory::renameProperty(std::string& aname)
-{
-  std::map<std::string, std::string>::iterator it(RenamedProperty.find(aname));
-  if (it != RenamedProperty.end())
-  {
-    aname = (*it).second;
-  }
 }
 
 bool HamiltonianFactory::put(xmlNodePtr cur)
