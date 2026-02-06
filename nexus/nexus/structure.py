@@ -72,7 +72,7 @@ Base class for :py:class:`DefectStructure`, :py:class:`Crystal`, and :py:class:`
 
 SeeK-path functions
 
-* :py:func:`\_getseekpath`
+* :py:func:`_getseekpath`
 * :py:func:`get_conventional_cell`
 * :py:func:`get_primitive_cell`
 * :py:func:`get_kpath`
@@ -836,7 +836,6 @@ class Structure(Sobj):
                  tiling            = None,
                  rescale           = True,
                  dim               = 3,
-                 magnetization     = None,
                  operations        = None,
                  background_charge = 0,
                  frozen            = None,
@@ -904,9 +903,6 @@ class Structure(Sobj):
         #end if
         if posu is not None:
             self.pos_to_cartesian()
-        #end if
-        if magnetization is not None:
-            self.magnetize(magnetization)
         #end if
         if use_prim is not None and use_prim is not False:
             self.become_primitive(source=use_prim,add_kpath=add_kpath)
@@ -2158,78 +2154,6 @@ class Structure(Sobj):
             return self.frozen.sum(1)>0
         #end if
     #end def is_frozen
-
-
-    # test needed
-    def magnetize(self,identifiers=None,magnetization='',**mags):
-        magsin = None
-        if isinstance(identifiers,obj):
-            magsin = identifiers.copy()
-        elif isinstance(magnetization,obj):
-            magsin = magnetization.copy()
-        #endif
-        if magsin is not None:
-            magsin.transfer_from(mags)
-            mags = magsin
-            identifiers = None
-            magnetization = ''
-        #end if
-        for e,m in mags.items():
-            if e not in self.elem:
-                self.error('cannot magnetize non-existent element {0}'.format(e))
-            elif m is not None or not isinstance(m,int):
-                self.error(
-                    "magnetizations provided must be either None or integer\n"
-                    "  you provided: {0}\n"
-                    "  full magnetization request provided:\n"
-                    " {1}".format(m, mags)
-                )
-            #end if
-            self.mag[self.elem==e] = m
-        #end for
-        if identifiers is None and magnetization=='':
-            return
-        elif magnetization=='':
-            magnetization = identifiers
-            indices = list(range(len(self.elem)))
-        else:
-            indices = self.locate(identifiers)
-        #end if
-        if not isinstance(magnetization,(list,tuple,np.ndarray)):
-            magnetization = [magnetization]
-        #end if
-        for m in magnetization:
-            if m is not None or not isinstance(m,int):
-                self.error(
-                    "magnetizations provided must be either None or integer\n"
-                    "  you provided: {0}\n"
-                    "  full magnetization list provided: {1}".format(m, magnetization)
-                )
-            #end if
-        #end for
-        if len(magnetization)==1:
-            m = magnetization[0]
-            for i in indices:
-                self.mag[i] = m
-            #end for
-        elif len(magnetization)==len(indices):
-            for i in range(len(indices)):
-                self.mag[indices[i]] = magnetization[i]
-            #end for
-        else:
-            self.error(
-                "magnetization list and list selected atoms differ in length\n"
-                "  length of magnetization list: {0}\n"
-                "  number of atoms selected: {1}\n"
-                "  magnetization list: {2}\n"
-                "  atom indices selected: {3}\n"
-                "  atoms selected: {4}".format(
-                    len(magnetization), len(indices),
-                    magnetization, indices, self.elem[indices]
-                )
-            )
-        #end if
-    #end def magnetize
 
 
     def is_magnetic(self,tol=1e-8):
@@ -5300,21 +5224,78 @@ class Structure(Sobj):
     #end def write
 
 
-    def write_xyz(self,filepath=None,header=True,units='A'):
+    def pos_to_str(self, units: str = "A", with_elem: bool = False):
+        """Write the positions of a structure to a string, optionally with atomic symbols.
+
+        Parameters
+        ----------
+        units : str, default="A"
+            Units for the positions.
+        with_elem : bool, default=False
+            Optionally write the atomic symbols with the positions.
+
+        Notes
+        -----
+        This function will write the positions in the format
+        (in this case using `with_elem=True`)
+        ```python
+            "{element:2} {dim1:12.8f} {dim2:12.8f} ... {dimN:12.8f}\\n"
+        ```
+        """
+        s = self.copy()
+        s.change_units(units)
+
+        c = ""
+        for i in range(len(s.elem)):
+            e = s.elem[i]
+            p = s.pos[i]
+
+            if with_elem:
+                c += f"{e:2}"
+            for j in p:
+                c += f"{j:12.8f} "
+            c = c.rstrip()
+            c += "\n"
+        #end for
+
+        return c
+    #end def pos_to_str
+
+
+    def write_xyz(self, filepath=None):
+        """Write a `Structure` object to an XYZ file
+        
+        Parameters
+        ----------
+        filepath : PathLike or None, default=None
+            Path to where the XYZ file should be written.
+            If this is ``None``, then this function just returns 
+            what would have been written to the XYZ file.
+
+        Returns
+        -------
+        xyz : str
+            The text that was or would have been written to the XYZ file.
+
+        Note
+        ----
+        To get a string of only the atomic positions, use `pos_to_str()` instead.
+        """
         if self.dim!=3:
             self.error('write_xyz is currently only implemented for 3 dimensions')
         #end if
         s = self.copy()
-        s.change_units(units)
-        c=''
-        if header:
-            c += str(len(s.elem))+'\n\n'
-        #end if
+        s.change_units("A")
+
+        c = ''
+        c += str(len(s.elem))+'\n\n'
+
         for i in range(len(s.elem)):
             e = s.elem[i]
             p = s.pos[i]
             c+=' {0:2} {1:12.8f} {2:12.8f} {3:12.8f}\n'.format(e,p[0],p[1],p[2])
         #end for
+
         if filepath is not None:
             open(filepath,'w').write(c)
         #end if
@@ -6914,7 +6895,6 @@ class Crystal(Structure):
                  kgrid          = None,
                  mag            = None,
                  frozen         = None,
-                 magnetization  = None,
                  kshift         = (0,0,0),
                  permute        = None,
                  operations     = None,
@@ -6944,7 +6924,6 @@ class Crystal(Structure):
             angular_units  = angular_units ,
             frozen         = frozen        ,
             mag            = mag           ,
-            magnetization  = magnetization ,
             kpoints        = kpoints       ,
             kgrid          = kgrid         ,
             kshift         = kshift        ,
@@ -7249,7 +7228,6 @@ class Crystal(Structure):
             units          = units,
             frozen         = frozen,
             mag            = mag,
-            magnetization  = magnetization,
             tiling         = tiling,
             kpoints        = kpoints,
             kgrid          = kgrid,
@@ -7588,7 +7566,6 @@ def generate_crystal_structure(
     axes           = None,
     units          = None,
     angular_units  = 'degrees',
-    magnetization  = None,
     mag            = None,
     kpoints        = None,
     kweights       = None,
@@ -7641,7 +7618,6 @@ def generate_crystal_structure(
             units          = units,
             mag            = mag,
             frozen         = frozen,
-            magnetization  = magnetization,
             tiling         = tiling,
             kpoints        = kpoints,
             kgrid          = kgrid,
@@ -7706,7 +7682,6 @@ def generate_crystal_structure(
         angular_units  = angular_units ,
         frozen         = frozen        ,
         mag            = mag           ,
-        magnetization  = magnetization ,
         kpoints        = kpoints       ,
         kgrid          = kgrid         ,
         kshift         = kshift        ,
