@@ -42,7 +42,7 @@ public:
   bool put(xmlNodePtr cur);
 
   ///get targetH
-  QMCHamiltonian* getH() const { return targetH.get(); }
+  std::unique_ptr<QMCHamiltonian> releaseHamiltonian() { return std::move(targetH); }
 
 private:
   /** process xmlNode to populate targetPsi
