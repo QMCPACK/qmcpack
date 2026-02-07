@@ -126,27 +126,30 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   ScopedTimer spo_timer_scope(createGlobalTimer("einspline::CreateSPOSetFromXML", timer_level_medium));
 
   {
+    // sposet builder XML node
     TinyVector<int, OHMMS_DIM> TileFactor_do_not_use;
-    OhmmsAttributeSet a;
-    a.add(H5FileName, "href");
-    a.add(TileFactor_do_not_use, "tile", {}, TagStatus::DELETED);
-    a.add(sortBands, "sort");
-    a.add(TileMatrix, "tilematrix");
-    a.add(twist_num_inp, "twistnum");
-    a.add(twist_inp, "twist");
-    a.add(sourceName, "source");
-    a.add(MeshFactor, "meshfactor");
-    a.add(hybrid_rep, "hybridrep");
-    a.add(useGPU, "gpu", CPUOMPTargetSelector::candidate_values);
-    a.add(GPUsharing, "gpusharing"); // split spline across GPUs visible per rank
-    a.add(spo_prec, "precision");
-    a.add(truncate, "truncate");
-    a.add(myName, "tag");
-    a.add(skip_checks, "skip_checks");
-    a.put(XMLRoot);
+    OhmmsAttributeSet a_root;
+    a_root.add(H5FileName, "href");
+    a_root.add(TileFactor_do_not_use, "tile", {}, TagStatus::DELETED);
+    a_root.add(sortBands, "sort");
+    a_root.add(TileMatrix, "tilematrix");
+    a_root.add(twist_num_inp, "twistnum");
+    a_root.add(twist_inp, "twist");
+    a_root.add(sourceName, "source");
+    a_root.add(MeshFactor, "meshfactor");
+    a_root.add(hybrid_rep, "hybridrep");
+    a_root.add(useGPU, "gpu", CPUOMPTargetSelector::candidate_values);
+    a_root.add(GPUsharing, "gpusharing"); // split spline across GPUs visible per rank
+    a_root.add(spo_prec, "precision");
+    a_root.add(truncate, "truncate");
+    a_root.add(myName, "tag");
+    a_root.add(skip_checks, "skip_checks");
+    a_root.put(XMLRoot);
 
+    // sposet XML node
+    OhmmsAttributeSet a;
+    a.add(numOrbs, "norbs", {0}, TagStatus::DELETED);
     a.add(numOrbs, "size");
-    a.add(numOrbs, "norbs", {}, TagStatus::DELETED);
     a.add(spinSet, "spindataset");
     a.add(spinSet, "group");
     a.add(spo_object_name, "name");
@@ -160,6 +163,9 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   if (skip_checks == "yes")
     skipChecks = true;
 
+  if (numOrbs < 1)
+    myComm->barrier_and_abort("Non-positive orbital set size! Please correct attribute \"size\".");
+
   auto pit(ParticleSets.find(sourceName));
   if (pit == ParticleSets.end())
     myComm->barrier_and_abort("Einspline needs the source particleset");
@@ -172,12 +178,6 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   const std::vector<int> last_occ(Occ);
   Occ.resize(0, 0); // correspond to ground
   bool NewOcc(false);
-
-  {
-    OhmmsAttributeSet oAttrib;
-    oAttrib.add(spinSet, "spindataset");
-    oAttrib.put(cur);
-  }
 
   xmlNodePtr spo_cur = cur;
   cur                = cur->children;
