@@ -27,10 +27,7 @@ WaveFunctionPool::WaveFunctionPool(const RuntimeOptions& runtime_options,
                                    Communicate* c,
                                    const char* aname)
     : MPIObjectBase(c), runtime_options_(runtime_options), primary_psi_(nullptr), ptcl_pool_(pset_pool)
-{
-  ClassName = "WaveFunctionPool";
-  myName    = aname;
-}
+{}
 
 WaveFunctionPool::~WaveFunctionPool() = default;
 

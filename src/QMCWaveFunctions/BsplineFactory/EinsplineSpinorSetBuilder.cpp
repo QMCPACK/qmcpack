@@ -70,7 +70,6 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
     a_root.add(hybrid_rep, "hybridrep");
     a_root.add(spo_prec, "precision");
     a_root.add(truncate, "truncate");
-    a_root.add(myName, "tag");
     a_root.add(useGPU, "gpu", CPUOMPTargetSelector::candidate_values);
     a_root.put(XMLRoot);
 
@@ -83,9 +82,6 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
     a.add(spo_object_name, "name");
     a.add(spo_object_name, "id", {}, TagStatus::DEPRECATED);
     a.put(cur);
-
-    if (myName.empty())
-      myName = "einspline.spinor";
   }
 
   if (numOrbs < 1)

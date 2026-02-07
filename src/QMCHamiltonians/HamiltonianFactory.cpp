@@ -65,9 +65,7 @@ HamiltonianFactory::HamiltonianFactory(const std::string& hName,
       psiName("psi0")
 {
   //PBCType is zero or 1 but should be generalized
-  PBCType   = targetPtcl.getLattice().SuperCellEnum;
-  ClassName = "HamiltonianFactory";
-  myName    = hName;
+  PBCType = targetPtcl.getLattice().SuperCellEnum;
   targetPtcl.set_quantum();
 }
 
@@ -92,7 +90,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur)
   app_summary() << std::endl;
   app_summary() << " Hamiltonian and observables" << std::endl;
   app_summary() << " ---------------------------" << std::endl;
-  app_summary() << "  Name: " << myName << std::endl;
+  app_summary() << "  Name: " << targetH->getName() << std::endl;
   app_summary() << std::endl;
 
   std::string htype("generic"), source("i"), defaultKE("yes");
