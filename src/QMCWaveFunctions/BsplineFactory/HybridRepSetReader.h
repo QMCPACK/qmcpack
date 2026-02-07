@@ -47,12 +47,12 @@ class HybridRepSetReader : public BsplineReader
   using DataType     = typename SA::DataType;
   SplineReader spline_reader_;
 
-public:
-  HybridRepSetReader(EinsplineSetBuilder* e);
-
   std::unique_ptr<SPOSet> create_spline_set(const std::string& my_name,
                                             int spin,
                                             const BandInfoGroup& bandgroup) override;
+
+public:
+  HybridRepSetReader(EinsplineSetBuilder* e);
 
   /** initialize basic parameters of atomic orbitals */
   void initialize_hybridrep_atomic_centers(SA& bspline) const;
