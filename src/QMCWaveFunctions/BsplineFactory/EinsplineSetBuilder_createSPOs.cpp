@@ -105,6 +105,7 @@ void EinsplineSetBuilder::set_metadata(int numOrbs,
 std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
   //use 2 bohr as the default when truncated orbitals are used based on the extend of the ions
+  std::string spo_object_name;
   int numOrbs = 0;
   int sortBands(1);
   int spinSet       = 0;
@@ -142,12 +143,14 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     a.add(truncate, "truncate");
     a.add(myName, "tag");
     a.add(skip_checks, "skip_checks");
-
     a.put(XMLRoot);
+
     a.add(numOrbs, "size");
-    a.add(numOrbs, "norbs");
+    a.add(numOrbs, "norbs", {}, TagStatus::DELETED);
     a.add(spinSet, "spindataset");
     a.add(spinSet, "group");
+    a.add(spo_object_name, "name");
+    a.add(spo_object_name, "id", {}, TagStatus::DEPRECATED);
     a.put(cur);
 
     if (myName.empty())
@@ -243,7 +246,7 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     TileIons();
 
   //read g-vectors and set MeshSize based on g-vectors and meshfactor
-  if(!ReadGvectors_ESHDF())
+  if (!ReadGvectors_ESHDF())
     myComm->barrier_and_abort("Failed to load g-vectors.");
 
   bool use_single = (spo_prec == "single" || spo_prec == "float");
@@ -267,7 +270,7 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   }
 
   MixedSplineReader->setCommon(XMLRoot);
-  auto OrbitalSet = MixedSplineReader->create_spline_set(spinSet, spo_cur);
+  auto OrbitalSet = MixedSplineReader->create_spline_set(spo_object_name, spinSet, numOrbs);
   if (!OrbitalSet)
     myComm->barrier_and_abort("Failed to create SPOSet*");
   app_log() << "Time spent in creating B-spline SPOs " << mytimer.elapsed() << " sec" << std::endl;
@@ -281,18 +284,21 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSet(xmlNodePtr cur, SPOSet
   if (MixedSplineReader == 0)
     myComm->barrier_and_abort("EinsplineSetExtended<T> cannot create a SPOSet");
 
-  std::string aname;
+  std::string spo_object_name;
   int spinSet(0);
   OhmmsAttributeSet a;
   a.add(spinSet, "spindataset");
   a.add(spinSet, "group");
+  a.add(spo_object_name, "name");
+  a.add(spo_object_name, "id", {}, TagStatus::DEPRECATED);
+
   a.put(cur);
 
   //allow only non-overlapping index sets and use the max index as the identifier
   int norb = input_info.max_index();
   H5OrbSet aset(H5FileName, spinSet, norb);
 
-  auto bspline_zd = MixedSplineReader->create_spline_set(spinSet, cur, input_info);
+  auto bspline_zd = MixedSplineReader->create_spline_set(spo_object_name, spinSet, input_info);
   if (bspline_zd)
     SPOSetMap[aset] = bspline_zd.get();
   return bspline_zd;

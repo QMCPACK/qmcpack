@@ -51,7 +51,7 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
   std::string truncate("no");
   std::string hybrid_rep("no");
   std::string spo_object_name;
-  std::string useGPU; 
+  std::string useGPU;
 
   ScopedTimer spo_timer_scope(createGlobalTimer("einspline::CreateSpinorSetFromXML", timer_level_medium));
 
@@ -169,7 +169,7 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
     TileIons();
 
   //read g-vectors and set MeshSize based on g-vectors and meshfactor
-  if(!ReadGvectors_ESHDF())
+  if (!ReadGvectors_ESHDF())
     myComm->barrier_and_abort("Failed to load g-vectors.");
 
   bool use_single = (spo_prec == "single" || spo_prec == "float");
@@ -199,12 +199,12 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
   MixedSplineReader->setRotate(false);
 
   //Make the up spin set.
-  auto bspline_zd_u = MixedSplineReader->create_spline_set(spinSet, spo_cur);
+  auto bspline_zd_u = MixedSplineReader->create_spline_set(spo_object_name, spinSet, numOrbs);
   bspline_zd_u->finalizeConstruction();
 
   //Make the down spin set.
   OccupyBands(spinSet2, sortBands, numOrbs, skipChecks);
-  auto bspline_zd_d = MixedSplineReader->create_spline_set(spinSet2, spo_cur);
+  auto bspline_zd_d = MixedSplineReader->create_spline_set(spo_object_name, spinSet2, numOrbs);
   bspline_zd_d->finalizeConstruction();
 
   //register with spin set and we're off to the races.

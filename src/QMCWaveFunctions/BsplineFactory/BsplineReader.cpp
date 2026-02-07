@@ -30,9 +30,7 @@ namespace qmcplusplus
 {
 BsplineReader::BsplineReader(EinsplineSetBuilder* e)
     : mybuilder(e), checkNorm(true), saveSplineCoefs(false), rotate(true)
-{
-  myComm = mybuilder->getCommunicator();
-}
+{ myComm = mybuilder->getCommunicator(); }
 
 BsplineReader::~BsplineReader() = default;
 
@@ -85,26 +83,15 @@ void BsplineReader::setCommon(xmlNodePtr cur)
     checkNorm = false;
   }
   saveSplineCoefs = saveCoefs == "yes";
-  use_offload = CPUOMPTargetSelector::selectPlatform(useGPU) == PlatformKind::OMPTARGET;
-  if(use_offload)
+  use_offload     = CPUOMPTargetSelector::selectPlatform(useGPU) == PlatformKind::OMPTARGET;
+  if (use_offload)
     app_summary() << "    Running OpenMP offload code path." << std::endl;
   else
     app_summary() << "    Running on CPU." << std::endl;
 }
 
-std::unique_ptr<SPOSet> BsplineReader::create_spline_set(int spin, xmlNodePtr cur)
+std::unique_ptr<SPOSet> BsplineReader::create_spline_set(const std::string& spo_name, int spin, const size_t size)
 {
-  int ns(0);
-  std::string spo_object_name;
-  OhmmsAttributeSet a;
-  a.add(ns, "size");
-  a.add(spo_object_name, "name");
-  a.add(spo_object_name, "id");
-  a.put(cur);
-
-  if (ns == 0)
-    APP_ABORT_TRACE(__FILE__, __LINE__, "parameter/@size missing");
-
   if (spo2band.empty())
     spo2band.resize(mybuilder->states.size());
 
@@ -122,20 +109,16 @@ std::unique_ptr<SPOSet> BsplineReader::create_spline_set(int spin, xmlNodePtr cu
   BandInfoGroup vals;
   vals.TwistIndex = fullband[0].TwistIndex;
   vals.GroupID    = 0;
-  vals.myName = make_bandgroup_name(mybuilder->getName(), spin, mybuilder->twist_num_, mybuilder->TileMatrix, 0, ns);
-  vals.selectBands(fullband, 0, ns, false);
+  vals.myName = make_bandgroup_name(mybuilder->getName(), spin, mybuilder->twist_num_, mybuilder->TileMatrix, 0, size);
+  vals.selectBands(fullband, 0, size, false);
 
-  return create_spline_set(spo_object_name, spin, vals);
+  return create_spline_set(spo_name, spin, vals);
 }
 
-std::unique_ptr<SPOSet> BsplineReader::create_spline_set(int spin, xmlNodePtr cur, SPOSetInputInfo& input_info)
+std::unique_ptr<SPOSet> BsplineReader::create_spline_set(const std::string& spo_name,
+                                                         int spin,
+                                                         SPOSetInputInfo& input_info)
 {
-  std::string spo_object_name;
-  OhmmsAttributeSet a;
-  a.add(spo_object_name, "name");
-  a.add(spo_object_name, "id");
-  a.put(cur);
-
   if (spo2band.empty())
     spo2band.resize(mybuilder->states.size());
 
@@ -158,7 +141,7 @@ std::unique_ptr<SPOSet> BsplineReader::create_spline_set(int spin, xmlNodePtr cu
   vals.selectBands(fullband, spo2band[spin][input_info.min_index()], input_info.max_index() - input_info.min_index(),
                    false);
 
-  return create_spline_set(spo_object_name, spin, vals);
+  return create_spline_set(spo_name, spin, vals);
 }
 
 /** build index tables to map a state to band with k-point folidng
