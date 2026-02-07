@@ -30,7 +30,6 @@ namespace qmcplusplus
  *   -- 1 = do not write anything
  *   -- 0 = dump after the completion of a qmc section
  *   -- n = dump after n blocks
- * - kdelay = "0|1|n" default=0
  */
 void QMCDriverInput::readXML(xmlNodePtr cur)
 {

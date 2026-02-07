@@ -393,7 +393,6 @@ void QMCDriver::setWalkerOffsets()
  *   -- 1 = do not write anything
  *   -- 0 = dump after the completion of a qmc section
  *   -- n = dump after n blocks
- * - kdelay = "0|1|n" default=0
  */
 bool QMCDriver::putQMCInfo(xmlNodePtr cur)
 {
@@ -412,7 +411,6 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
   int defaultw      = omp_get_max_threads();
   OhmmsAttributeSet aAttrib;
   aAttrib.add(Period4CheckPoint, "checkpoint");
-  aAttrib.add(kDelay, "kdelay");
   aAttrib.put(cur);
   if (cur != NULL)
   {
