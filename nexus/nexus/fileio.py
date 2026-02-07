@@ -21,6 +21,7 @@
 
 
 import os
+from os import PathLike
 import mmap
 import numpy as np
 from numpy.linalg import det, norm
@@ -86,7 +87,15 @@ class TextFile(DevBase):
             format = formats[0]
             all_same = True
         elif len(formats)>len(stokens):
-            self.error('formatted line read failed\nnumber of tokens and provided number of formats do not match\nline: {0}\nnumber of tokens: {1}\nnumber of formats provided: {2}'.format(line,len(stokens),len(formats)))
+            self.error(
+                'formatted line read failed\n'
+                'number of tokens and provided number of formats do not match\n'
+                'line: {0}\n'
+                'number of tokens: {1}\n'
+                'number of formats provided: {2}'.format(
+                    line,len(stokens),len(formats)
+                )
+            )
         #end if
         tokens = []
         if all_same:
@@ -121,7 +130,10 @@ class TextFile(DevBase):
                 elif whence==1:
                     start = self.mm.tell()
                 else:
-                    self.error('relative positioning must be either 0 (begin), 1 (current), or 2 (end)\nyou provided: {0}'.format(whence))
+                    self.error(
+                        'relative positioning must be either 0 (begin), 1 (current), or 2 (end)\n'
+                        'you provided: {0}'.format(whence)
+                    )
                 #end if
             #end if
             if whence!=2:
@@ -230,7 +242,7 @@ class StandardFile(DevBase):
     def __init__(self,filepath=None):
         if filepath is None:
             None
-        elif isinstance(filepath,str):
+        elif isinstance(filepath, PathLike):
             self.read(filepath)
         else:
             self.error('unsupported input: {0}'.format(filepath))
@@ -798,7 +810,10 @@ class XsfFile(StandardFile):
         if v:
             return []
         else:
-            return ['xsf file must have animation, bands, structure, or data\nthe current file is missing all of these']
+            return [(
+                'xsf file must have animation, bands, structure, or data\n'
+                'the current file is missing all of these'
+            )]
         #end if
     #end def validity_checks
 
@@ -1128,7 +1143,7 @@ class PoscarFile(StandardFile):
         elif not isinstance(self.pos,np.ndarray):
             msgs.append('pos must be an array')
         elif natoms>0 and self.pos.shape!=(natoms,3):
-            msgs.append('pos must be a {0}x3 array, shape provided is {1}'.format(natoms),self.pos.shape)
+            msgs.append('pos must be a {0}x3 array, shape provided is {1}'.format(natoms,self.pos.shape))
         elif natoms>0 and not isinstance(self.pos[0,0],float):
             msgs.append('pos must be an array of real numbers')
         #end if
@@ -1136,7 +1151,7 @@ class PoscarFile(StandardFile):
             if not isinstance(self.dynamic,np.ndarray):
                 msgs.append('dynamic must be an array')
             elif natoms>0 and self.dynamic.shape!=(natoms,3):
-                msgs.append('dynamic must be a {0}x3 array, shape provided is {1}'.format(natoms),self.dynamic.shape)
+                msgs.append('dynamic must be a {0}x3 array, shape provided is {1}'.format(natoms,self.dynamic.shape))
             elif natoms>0 and not isinstance(self.dynamic[0,0],bool):
                 msgs.append('dynamic must be an array of booleans (true/false)')
             #end if
@@ -1150,7 +1165,7 @@ class PoscarFile(StandardFile):
             if not isinstance(self.vel,np.ndarray):
                 msgs.append('vel must be an array')
             elif natoms>0 and self.vel.shape!=(natoms,3):
-                msgs.append('vel must be a {0}x3 array, shape provided is {1}'.format(natoms),self.vel.shape)
+                msgs.append('vel must be a {0}x3 array, shape provided is {1}'.format(natoms,self.vel.shape))
             elif natoms>0 and not isinstance(self.vel[0,0],float):
                 msgs.append('vel must be an array of real numbers')
             #end if
@@ -1380,7 +1395,10 @@ def read_poscar_chgcar(host,text):
     is_poscar = isinstance(host,PoscarFile)
     is_chgcar = isinstance(host,ChgcarFile)
     if not is_poscar and not is_chgcar:
-        error('read_poscar_chgcar must be used in conjunction with PoscarFile or ChgcarFile objects only\nencountered object of type: {0}'.format(host.__class__.__name__))
+        error(
+            'read_poscar_chgcar must be used in conjunction with PoscarFile or ChgcarFile objects only\n'
+            'encountered object of type: {0}'.format(host.__class__.__name__)
+        )
     #end if
 
     # read lines and remove fortran comments
@@ -1409,7 +1427,12 @@ def read_poscar_chgcar(host,text):
     nlines = len(lines)
     min_lines = 8
     if nlines<min_lines:
-        host.error('file {0} must have at least {1} lines\nonly {2} lines found'.format(host.filepath,min_lines,nlines))
+        host.error(
+            'file {0} must have at least {1} lines\n'
+            'only {2} lines found'.format(
+                host.filepath, min_lines, nlines
+            )
+        )
     #end if
     description = lines[0]
     dim = 3
@@ -1544,7 +1567,14 @@ def read_poscar_chgcar(host,text):
                 host.error('file {0} is incomplete (missing density)'.format(host.filepath))
             #end if
             if density.size%ng!=0:
-                host.error('number of density data entries is not a multiple of the grid\ngrid shape: {0}\ngrid size: {1}\ndensity size: {2}'.format(grid,ng,density.size))
+                host.error(
+                    'number of density data entries is not a multiple of the grid\n'
+                    'grid shape: {0}\n'
+                    'grid size: {1}\n'
+                    'density size: {2}'.format(
+                        grid, ng, density.size
+                    )
+                )
             #end if
             ndens = density.size//ng
             if ndens==1:
@@ -1560,7 +1590,13 @@ def read_poscar_chgcar(host,text):
                     spin_density[:,i] = density[(i+1)*ng:(i+2)*ng]
                 #end for
             else:
-                host.error('density data must be present for one of the following situations\n  1) charge density only (1 density)\n  2) charge and collinear spin densities (2 densities)\n  3) charge and non-collinear spin densities (4 densities)\nnumber of densities found: {0}'.format(ndens))
+                host.error(
+                    'density data must be present for one of the following situations\n'
+                    '  1) charge density only (1 density)\n'
+                    '  2) charge and collinear spin densities (2 densities)\n'
+                    '  3) charge and non-collinear spin densities (4 densities)\n'
+                    'number of densities found: {0}'.format(ndens)
+                )
             #end if
         else:
             host.error('file {0} is incomplete (missing density)'.format(host.filepath))
