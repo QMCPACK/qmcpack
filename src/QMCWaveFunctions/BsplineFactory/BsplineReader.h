@@ -37,13 +37,40 @@ struct SPOSetInputInfo;
  * - set_grid : create the basic grid and boundary conditions for einspline
  * Note that template is abused but it works.
  */
-struct BsplineReader
+class BsplineReader
 {
+  /** create the actual spline sets
+   */
+  virtual std::unique_ptr<SPOSet> create_spline_set(const std::string& my_name,
+                                                    int spin,
+                                                    const BandInfoGroup& bandgroup) = 0;
+
+public:
+  BsplineReader(EinsplineSetBuilder* e);
+
+  virtual ~BsplineReader();
+
+  /** setting common parameters
+   */
+  void setCommon(xmlNodePtr cur);
+
+  /** create the spline after one of the kind is created */
+  std::unique_ptr<SPOSet> create_spline_set(int spin, xmlNodePtr cur, SPOSetInputInfo& input_info);
+
+  /** create the spline set */
+  std::unique_ptr<SPOSet> create_spline_set(int spin, xmlNodePtr cur);
+
+  /** Set the checkNorm variable */
+  inline void setCheckNorm(bool new_checknorm) { checkNorm = new_checknorm; };
+
+  /** Set the orbital rotation flag. Rotations are applied to balance the real/imaginary components. */
+  inline void setRotate(bool new_rotate) { rotate = new_rotate; };
+
   ///pointer to the EinsplineSetBuilder
   EinsplineSetBuilder* mybuilder;
   ///communicator
   Communicate* myComm;
-  ///mesh size
+protected:
   ///check the norm of orbitals
   bool checkNorm;
   ///save spline coefficients to storage
@@ -54,10 +81,6 @@ struct BsplineReader
   std::vector<std::vector<int>> spo2band;
   /// if true, use offload
   bool use_offload;
-
-  BsplineReader(EinsplineSetBuilder* e);
-
-  virtual ~BsplineReader();
 
   std::string getSplineDumpFileName(const BandInfoGroup& bandgroup) const
   {
@@ -158,28 +181,6 @@ struct BsplineReader
     path << "/electrons/kpoint_" << ti << "/spin_" << spin << "/state_" << ib << "/psi_r";
     return path.str();
   }
-
-  /** create the actual spline sets
-   */
-  virtual std::unique_ptr<SPOSet> create_spline_set(const std::string& my_name,
-                                                    int spin,
-                                                    const BandInfoGroup& bandgroup) = 0;
-
-  /** setting common parameters
-   */
-  void setCommon(xmlNodePtr cur);
-
-  /** create the spline after one of the kind is created */
-  std::unique_ptr<SPOSet> create_spline_set(int spin, xmlNodePtr cur, SPOSetInputInfo& input_info);
-
-  /** create the spline set */
-  std::unique_ptr<SPOSet> create_spline_set(int spin, xmlNodePtr cur);
-
-  /** Set the checkNorm variable */
-  inline void setCheckNorm(bool new_checknorm) { checkNorm = new_checknorm; };
-
-  /** Set the orbital rotation flag. Rotations are applied to balance the real/imaginary components. */
-  inline void setRotate(bool new_rotate) { rotate = new_rotate; };
 
   void initialize_spo2band(int spin,
                            const std::vector<BandInfo>& bigspace,
