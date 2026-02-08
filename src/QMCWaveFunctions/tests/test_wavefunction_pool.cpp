@@ -92,7 +92,8 @@ TEST_CASE("WaveFunctionPool", "[wavefunction]")
   WaveFunctionPool wp(test_project.getRuntimeOptions(), pp, c);
 
   REQUIRE(wp.empty() == true);
-  CHECK_THROWS_WITH(wp.getWaveFunction("abc"), Catch::Matchers::Equals("Wavefunction pool is empty! Cannot find wavefunction named \"abc\"!"));
+  CHECK_THROWS_WITH(wp.getWaveFunction("abc"),
+                    Catch::Matchers::Equals("wavefunction pool is empty! Cannot find wavefunction named \"abc\"!"));
 
   const char* wf_input = R"(<wavefunction target='e'>
      <determinantset type='einspline' href='diamondC_1x1x1.pwscf.h5' tilematrix='1 0 0 0 1 0 0 0 1' twistnum='0' source='ion' meshfactor='1.0' precision='float'>
@@ -116,6 +117,11 @@ TEST_CASE("WaveFunctionPool", "[wavefunction]")
 
   wp.put(root);
 
+  // test contains()
+  REQUIRE(wp.contains("psi0"));
+  REQUIRE(!wp.contains("psi"));
+
+  // test getWaveFunction()
   TrialWaveFunction* psi = wp.getWaveFunction("psi0");
   REQUIRE(psi != nullptr);
   REQUIRE(psi->getOrbitals().size() == 1);
@@ -125,6 +131,8 @@ TEST_CASE("WaveFunctionPool", "[wavefunction]")
   TrialWaveFunction* psi_empty_name = wp.getWaveFunction("");
   REQUIRE(psi == psi_empty_name);
 
-  CHECK_THROWS_WITH(wp.getWaveFunction("abc"), Catch::Matchers::Equals("Wavefunction pool contains \"psi0\".\nCannot find wavefunction named \"abc\"!"));
+  CHECK_THROWS_WITH(wp.getWaveFunction("abc"),
+                    Catch::Matchers::Equals(
+                        "wavefunction pool contains \"psi0\".\nCannot find wavefunction named \"abc\"!"));
 }
 } // namespace qmcplusplus
