@@ -35,7 +35,7 @@ class Communicate;
 namespace qmcplusplus
 {
 ///forward declaration of BsplineReader
-struct BsplineReader;
+class BsplineReader;
 
 // Helper needed for TwistMap
 struct Int3less
