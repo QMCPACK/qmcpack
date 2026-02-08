@@ -103,13 +103,13 @@ std::unique_ptr<SPOSet> BsplineReader::create_spline_set(const std::string& spo_
     if (!mybuilder->states[spin])
       mybuilder->states[spin] = std::make_unique<SPOSetInfo>();
     mybuilder->clear_states(spin);
-    initialize_spo2band(spin, fullband, *mybuilder->states[spin], spo2band[spin]);
+    initialize_spo2band(spo_name, spin, fullband, *mybuilder->states[spin], spo2band[spin]);
   }
 
   BandInfoGroup vals;
   vals.TwistIndex = fullband[0].TwistIndex;
   vals.GroupID    = 0;
-  vals.myName = make_bandgroup_name(mybuilder->getName(), spin, mybuilder->twist_num_, mybuilder->TileMatrix, 0, size);
+  vals.myName     = make_bandgroup_name(spo_name, spin, mybuilder->twist_num_, mybuilder->TileMatrix, 0, size);
   vals.selectBands(fullband, 0, size, false);
 
   return create_spline_set(spo_name, spin, vals);
@@ -130,13 +130,13 @@ std::unique_ptr<SPOSet> BsplineReader::create_spline_set(const std::string& spo_
     if (!mybuilder->states[spin])
       mybuilder->states[spin] = std::make_unique<SPOSetInfo>();
     mybuilder->clear_states(spin);
-    initialize_spo2band(spin, fullband, *mybuilder->states[spin], spo2band[spin]);
+    initialize_spo2band(spo_name, spin, fullband, *mybuilder->states[spin], spo2band[spin]);
   }
 
   BandInfoGroup vals;
   vals.TwistIndex = fullband[0].TwistIndex;
   vals.GroupID    = 0;
-  vals.myName     = make_bandgroup_name(mybuilder->getName(), spin, mybuilder->twist_num_, mybuilder->TileMatrix,
+  vals.myName     = make_bandgroup_name(spo_name, spin, mybuilder->twist_num_, mybuilder->TileMatrix,
                                         input_info.min_index(), input_info.max_index());
   vals.selectBands(fullband, spo2band[spin][input_info.min_index()], input_info.max_index() - input_info.min_index(),
                    false);
@@ -151,7 +151,8 @@ std::unique_ptr<SPOSet> BsplineReader::create_spline_set(const std::string& spo_
    *
    * At gamma or arbitrary kpoints with complex wavefunctions, spo2band[i]==i
    */
-void BsplineReader::initialize_spo2band(int spin,
+void BsplineReader::initialize_spo2band(const std::string& spo_name,
+                                        int spin,
                                         const std::vector<BandInfo>& bigspace,
                                         SPOSetInfo& sposet,
                                         std::vector<int>& spo2band)
@@ -178,8 +179,8 @@ void BsplineReader::initialize_spo2band(int spin,
   if (comm->rank())
     return;
 
-  std::filesystem::path aname = make_bandinfo_filename(mybuilder->getName(), spin, mybuilder->twist_num_,
-                                                       mybuilder->TileMatrix, comm->getGroupID());
+  std::filesystem::path aname =
+      make_bandinfo_filename(spo_name, spin, mybuilder->twist_num_, mybuilder->TileMatrix, comm->getGroupID());
   aname += ".bandinfo.dat";
 
   std::ofstream o(aname.c_str());

@@ -22,6 +22,7 @@
 
 #include <map>
 #include <memory>
+#include <string>
 #include "Message/MPIObjectBase.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 
@@ -81,7 +82,9 @@ public:
    *
    * Each builder class builds an object for composing a many-body wavefunction.
    */
-  WaveFunctionComponentBuilder(Communicate* comm, ParticleSet& p) : MPIObjectBase(comm), targetPtcl(p), myNode(NULL) {}
+  WaveFunctionComponentBuilder(Communicate* comm, ParticleSet& p, const std::string_view class_name = "")
+      : MPIObjectBase(comm), targetPtcl(p), myNode(NULL), class_name_(class_name)
+  {}
 
   virtual ~WaveFunctionComponentBuilder() = default;
   /// process a xml node at cur
@@ -90,9 +93,10 @@ public:
 protected:
   /// reference to the particle set on which targetPsi is defined
   ParticleSet& targetPtcl;
-
   /// xmlNode operated by this object
   xmlNodePtr myNode;
+  /// class name
+  const std::string class_name_;
 };
 
 } // namespace qmcplusplus

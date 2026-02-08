@@ -34,10 +34,8 @@
 namespace qmcplusplus
 {
 WaveFunctionFactory::WaveFunctionFactory(ParticleSet& qp, const PSetMap& pset, Communicate* c)
-    : MPIObjectBase(c), targetPtcl(qp), ptclPool(pset)
-{
-  ClassName = "WaveFunctionFactory";
-}
+    : MPIObjectBase(c), targetPtcl(qp), ptclPool(pset), class_name_("WaveFunctionFactory")
+{}
 
 WaveFunctionFactory::~WaveFunctionFactory() = default;
 
@@ -47,7 +45,7 @@ std::unique_ptr<TrialWaveFunction> WaveFunctionFactory::buildTWF(xmlNodePtr cur,
   if (cur == NULL)
     return nullptr;
 
-  ReportEngine PRE(ClassName, "build");
+  ReportEngine PRE(class_name_, "build");
 
   std::string psiName("psi0"), tasking;
   OhmmsAttributeSet pAttrib;
@@ -175,7 +173,7 @@ std::unique_ptr<TrialWaveFunction> WaveFunctionFactory::buildTWF(xmlNodePtr cur,
 
 bool WaveFunctionFactory::addFermionTerm(TrialWaveFunction& psi, SPOSetBuilderFactory& spo_factory, xmlNodePtr cur)
 {
-  ReportEngine PRE(ClassName, "addFermionTerm");
+  ReportEngine PRE(class_name_, "addFermionTerm");
   std::string orbtype("MolecularOrbital");
   std::string nuclei("i");
   OhmmsAttributeSet oAttrib;
