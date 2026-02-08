@@ -117,6 +117,7 @@ RUN mkdir -p /opt/qmcpack && cd /opt/qmcpack && \
     # cleanup
     rm -r -f /scratch/build_qmcpack_mpi /scratch/build_qmcpack_complex_mpi /opt/qmcpack/qmcpack_git
 ENV PATH=${PATH}:/opt/qmcpack/bin
+ENV PYTHONPATH=${PYTHONPATH}:/opt/qmcpack
 
 # Default user and directory
 USER $USERNAME
