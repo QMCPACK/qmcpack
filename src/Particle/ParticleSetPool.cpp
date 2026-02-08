@@ -32,17 +32,11 @@ namespace qmcplusplus
 {
 ParticleSetPool::ParticleSetPool(Communicate* c, const char* aname)
     : MPIObjectBase(c), simulation_cell_(std::make_unique<SimulationCell>())
-{
-  ClassName = "ParticleSetPool";
-  myName    = aname;
-}
+{}
 
 ParticleSetPool::ParticleSetPool(ParticleSetPool&& other) noexcept
     : MPIObjectBase(other.myComm), simulation_cell_(std::move(other.simulation_cell_)), myPool(std::move(other.myPool))
-{
-  ClassName = other.ClassName;
-  myName    = other.myName;
-}
+{}
 
 ParticleSetPool::~ParticleSetPool() = default;
 

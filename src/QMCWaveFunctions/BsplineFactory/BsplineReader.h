@@ -45,6 +45,12 @@ class BsplineReader
                                                     int spin,
                                                     const BandInfoGroup& bandgroup) = 0;
 
+  void initialize_spo2band(const std::string& spo_name,
+                           int spin,
+                           const std::vector<BandInfo>& bigspace,
+                           SPOSetInfo& sposet,
+                           std::vector<int>& band2spo);
+
 public:
   BsplineReader(EinsplineSetBuilder* e);
 
@@ -170,23 +176,6 @@ protected:
     path << "/electrons/kpoint_" << ti << "/spin_" << spin << "/state_" << ib << "/psi_g";
     return path.str();
   }
-
-  /** return the path name in hdf5
-   * @param ti twist index
-   * @param spin spin index
-   * @param ib band index
-   */
-  inline std::string psi_r_path(int ti, int spin, int ib) const
-  {
-    std::ostringstream path;
-    path << "/electrons/kpoint_" << ti << "/spin_" << spin << "/state_" << ib << "/psi_r";
-    return path.str();
-  }
-
-  void initialize_spo2band(int spin,
-                           const std::vector<BandInfo>& bigspace,
-                           SPOSetInfo& sposet,
-                           std::vector<int>& band2spo);
 };
 
 } // namespace qmcplusplus

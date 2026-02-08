@@ -142,7 +142,6 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     a_root.add(GPUsharing, "gpusharing"); // split spline across GPUs visible per rank
     a_root.add(spo_prec, "precision");
     a_root.add(truncate, "truncate");
-    a_root.add(myName, "tag");
     a_root.add(skip_checks, "skip_checks");
     a_root.put(XMLRoot);
 
@@ -155,9 +154,6 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     a.add(spo_object_name, "name");
     a.add(spo_object_name, "id", {}, TagStatus::DEPRECATED);
     a.put(cur);
-
-    if (myName.empty())
-      myName = "einspline";
   }
 
   if (skip_checks == "yes")
