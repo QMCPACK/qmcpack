@@ -43,7 +43,7 @@ TEST_CASE("EstimatorManagerCrowd::EstimatorManagerCrowd", "[estimators]")
       MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
   auto& pset            = *(particle_pool.getParticleSet("e"));
   auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
-  auto& twf             = *(wavefunction_pool.getWaveFunction("wavefunction"));
+  auto& twf             = *(wavefunction_pool.getWaveFunction());
   auto& ham             = *(hamiltonian_pool.getPrimary());
 
   EstimatorManagerNew emn(ham, comm);
@@ -72,7 +72,7 @@ TEST_CASE("EstimatorManagerCrowd PerParticleHamiltonianLogger integration", "[es
   // This is where the pset properties "properies" gain the different hamiltonian operator values.
   auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
 
-  auto& twf = *(wavefunction_pool.getWaveFunction("wavefunction"));
+  auto& twf = *(wavefunction_pool.getWaveFunction());
   auto& ham = *(hamiltonian_pool.getPrimary());
 
   ham.informOperatorsOfListener();

@@ -16,16 +16,18 @@
 /**@file WaveFunctionPool.cpp
  * @brief Implements WaveFunctionPool operators.
  */
+#include <sstream>
 #include "WaveFunctionPool.h"
+#include "Message/UniformCommunicateError.h"
 #include "Particle/ParticleSetPool.h"
 #include "OhmmsData/AttributeSet.h"
+#include "Utilities/StlPrettyPrint.hpp"
 
 namespace qmcplusplus
 {
 WaveFunctionPool::WaveFunctionPool(const RuntimeOptions& runtime_options,
                                    ParticleSetPool& pset_pool,
-                                   Communicate* c,
-                                   const char* aname)
+                                   Communicate* c)
     : MPIObjectBase(c), runtime_options_(runtime_options), primary_psi_(nullptr), ptcl_pool_(pset_pool)
 {}
 
@@ -62,6 +64,25 @@ void WaveFunctionPool::addFactory(std::unique_ptr<TrialWaveFunction> psi, bool p
     primary_psi_ = psi.get();
   myPool.emplace(psi->getName(), std::move(psi));
 }
+
+TrialWaveFunction* WaveFunctionPool::getWaveFunction(const std::string& pname)
+  {
+    if(myPool.empty())
+      throw UniformCommunicateError("Wavefunction pool is empty! Cannot find wavefunction named \""+pname+"\"!");
+
+    if(pname.empty() && myPool.size() == 1)
+      return myPool.begin()->second.get();
+
+    if (auto pit(myPool.find(pname)); pit != myPool.end())
+      return pit->second.get();
+    else
+    {
+	std::ostringstream msg;
+	msg << "Wavefunction pool contains " << myPool << "." << std::endl
+	    << "Cannot find wavefunction named \""+pname+"\"!";
+      throw UniformCommunicateError(msg.str());
+    }
+  }
 
 xmlNodePtr WaveFunctionPool::getWaveFunctionNode(const std::string& id)
 {

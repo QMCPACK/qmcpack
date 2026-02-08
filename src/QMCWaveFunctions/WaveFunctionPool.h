@@ -42,8 +42,7 @@ public:
 
   WaveFunctionPool(const RuntimeOptions& runtime_options,
                    ParticleSetPool& pset_pool,
-                   Communicate* c,
-                   const char* aname = "wavefunction");
+                   Communicate* c);
   WaveFunctionPool(const WaveFunctionPool&)            = delete;
   WaveFunctionPool& operator=(const WaveFunctionPool&) = delete;
   WaveFunctionPool(WaveFunctionPool&&)                 = default;
@@ -57,18 +56,12 @@ public:
 
   TrialWaveFunction* getPrimary() { return primary_psi_; }
 
-  TrialWaveFunction* getWaveFunction(const std::string& pname)
-  {
-    if (auto pit(myPool.find(pname)); pit == myPool.end())
-    {
-      if (myPool.empty())
-        return nullptr;
-      else
-        return myPool.begin()->second.get();
-    }
-    else
-      return pit->second.get();
-  }
+  /** look up wavefunction by name
+   * @param pname wavefunction name to look up
+   * if pname is empty and the pool contains one entry, return the only entry
+   * if pname is not empty and not found in the pool, throw error
+   */
+  TrialWaveFunction* getWaveFunction(const std::string& pname = "");
 
   /** return a xmlNode containing Jastrow
    * @param id name of the wave function
