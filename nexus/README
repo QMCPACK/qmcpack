@@ -90,16 +90,21 @@ Contents
    installer packaged with Nexus.  To use it, simply type 
    the following at the command line:
 
-     >/your/path/to/nexus/install
+     >/your/path/to/nexus/install ~/.bashrc
 
+   followed by:
+ 
+     >source ~/.bashrc
+ 
+   While the above example is shown for .bashrc, other rc files 
+   are recognized automatically: zshrc, tschrc, cshrc, and kshrc.
+   If you are using a file other than these, you can specify 
+   the shell directly:
+
+     >/your/path/to/nexus install ~/.profile bash
+  
    Check the end of your .bashrc (or equivalent) to make sure the 
-   PATH and PYTHONPATH variables have been set properly.
-
-   If you want the binaries to be copied to a location outside 
-   the downloaded Nexus distribution, then just provide that as 
-   a path to the installer:
-
-     >/your/path/to/nexus/install /some/other/location
+   PATH and PYTHONPATH variables have been set properly. 
 
 
 3. Summary of important library files
