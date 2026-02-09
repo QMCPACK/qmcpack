@@ -1,0 +1,108 @@
+#! /usr/bin/env python3
+
+import os
+import sys
+from subprocess import Popen,PIPE
+
+#=======#
+# setup #
+#=======#
+
+# define usage
+usage = 'usage: "install <rc_file>"'
+
+# find paths to install script and source directory
+installer  = os.path.realpath(__file__)
+source_dir = os.path.dirname(installer)
+lib_dir    = os.path.join(source_dir,'nexus')
+bin_dir    = os.path.join(source_dir,'bin')
+
+# function to report errors
+def error(msg):
+    print('\ninstall error: '+msg+'\n')
+    sys.exit(1)
+
+# function to execute shell commands
+def execute(command):
+    process = Popen(command,shell=True,stdout=PIPE,stderr=PIPE,close_fds=True)
+    out,err = process.communicate()
+    if process.returncode!=0:
+        error('problem encountered, see output below\nout: {0}\nerr: {1}'.format(out,err))
+    return out,err
+
+
+#================#
+# main execution #
+#================#
+
+# determine config file and shell from user-provided rc file path
+if len(sys.argv) < 2 or len(sys.argv) > 3:
+    error('\ninstall takes the path to an rc file and an optional shell name.'
+          f'\n\nFor example: {sys.argv[0]} ~/.bashrc'
+          f'\nOr         : {sys.argv[0]} ~/.profile bash'
+          '\n\nSupported shells are: bash, zsh, tcsh, csh, and ksh.')
+
+rc_file = os.path.expanduser(sys.argv[1])
+if not os.path.exists(rc_file):
+    error('specified config (rc) file "{0}" does not exist'.format(rc_file))
+
+rc_name = os.path.basename(rc_file)
+
+def infer_shell_from_rc(rc_name):
+    if 'bash' in rc_name:
+        return 'bash'
+    if 'zsh' in rc_name:
+        return 'zsh'
+    if 'tcsh' in rc_name:
+        return 'tcsh'
+    if 'csh' in rc_name:
+        return 'csh'
+    if 'ksh' in rc_name:
+        return 'ksh'
+    error('could not infer shell type from rc file name "{0}"'.format(rc_name))
+
+if len(sys.argv) == 3:
+    # shell explicitly provided by user
+    shell = sys.argv[2]
+else:
+    # infer shell from rc file name
+    shell = infer_shell_from_rc(rc_name)
+
+# get format for setting env variables in shell
+set_env_formats = dict(
+    ksh  = 'export {0}={1}\n',
+    csh  = 'setenv {0} {1}\n',
+    tcsh = 'setenv {0} {1}\n',
+    bash = 'export {0}={1}\n',
+    zsh  = 'export {0}={1}\n',
+    )
+if shell not in set_env_formats:
+    error('shell "{0}" is not supported; must be one of: {1}'.format(shell,', '.join(sorted(set_env_formats.keys()))))
+set_env_fmt = set_env_formats[shell]
+
+header_start = '### added by Nexus '
+header = '### added by Nexus 2.0.0 installer ###'
+footer = '### end Nexus additions ###'
+paths  = set_env_fmt.format('PATH',bin_dir+':$PATH')
+paths += set_env_fmt.format('PYTHONPATH',lib_dir+':$PYTHONPATH')
+
+# add lib path to PYTHONPATH in config file
+execute('cp {0} {0}-nexus.bak'.format(rc_file))
+f = open(rc_file,'r')
+rc_contents = f.read()
+f.close()
+if header_start in rc_contents and footer in rc_contents:
+    header_loc = rc_contents.find(header_start)
+    footer_loc = rc_contents.find(footer)
+    before_header = rc_contents[:header_loc]
+    after_footer  = rc_contents[footer_loc+len(footer):]
+    rc_contents = before_header + after_footer
+rc_contents = rc_contents.rstrip()+'\n\n\n'
+rc_contents += header+'\n'
+rc_contents += paths
+rc_contents += footer+'\n'
+f = open(rc_file,'w')
+f.write(rc_contents)
+f.close()
+
+
