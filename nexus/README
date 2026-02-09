@@ -101,7 +101,7 @@ Contents
    If you are using a file other than these, you can specify 
    the shell directly:
 
-     >/your/path/to/nexus install ~/.profile bash
+     >/your/path/to/nexus/install ~/.profile bash
   
    Check the end of your .bashrc (or equivalent) to make sure the 
    PATH and PYTHONPATH variables have been set properly. 
