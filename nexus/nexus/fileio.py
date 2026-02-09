@@ -243,7 +243,7 @@ class StandardFile(DevBase):
     def __init__(self,filepath=None):
         if filepath is None:
             None
-        elif isinstance(filepath, str | Path):
+        elif isinstance(filepath, (str, Path)):
             self.read(filepath)
         else:
             self.error('unsupported input: {0}'.format(filepath))
