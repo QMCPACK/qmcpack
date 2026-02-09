@@ -49,7 +49,6 @@ void HamiltonianFactory::addMPCPotential(xmlNodePtr cur, bool isphysical)
   hAttrib.add(cutoff, "cutoff");
   hAttrib.add(physical, "physical");
   hAttrib.put(cur);
-  renameProperty(a);
   isphysical = (physical == "yes" || physical == "true");
 
   app_summary() << std::endl;
@@ -107,7 +106,6 @@ void HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
   ParticleSet* ptclA = &targetPtcl;
   if (sourceInp != targetPtcl.getName())
   {
-    //renameProperty(sourceInp);
     auto pit(ptclPool.find(sourceInp));
     if (pit == ptclPool.end())
     {
@@ -173,7 +171,6 @@ void HamiltonianFactory::addForceHam(xmlNodePtr cur)
 
   bool quantum = (a == targetPtcl.getName());
 
-  renameProperty(a);
   auto pit(ptclPool.find(a));
   if (pit == ptclPool.end())
   {
@@ -244,8 +241,6 @@ void HamiltonianFactory::addPseudoPotential(xmlNodePtr cur)
   {
     APP_ABORT("pseudopotential Table format is not supported.");
   }
-  renameProperty(src);
-  renameProperty(wfname);
   auto pit(ptclPool.find(src));
   if (pit == ptclPool.end())
   {

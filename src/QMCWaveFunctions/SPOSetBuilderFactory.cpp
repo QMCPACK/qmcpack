@@ -62,15 +62,13 @@ const SPOSet* SPOSetBuilderFactory::getSPOSet(const std::string& name) const
  */
 SPOSetBuilderFactory::SPOSetBuilderFactory(Communicate* comm, ParticleSet& els, const PSetMap& psets)
     : MPIObjectBase(comm), targetPtcl(els), ptclPool(psets)
-{
-  ClassName = "SPOSetBuilderFactory";
-}
+{}
 
 SPOSetBuilderFactory::~SPOSetBuilderFactory() { DEBUG_MEMORY("SPOSetBuilderFactory::~SPOSetBuilderFactory"); }
 
 std::unique_ptr<SPOSetBuilder> SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
 {
-  ReportEngine PRE(ClassName, "createSPOSetBuilder");
+  ReportEngine PRE("SPOSetBuilderFactory", "createSPOSetBuilder");
   std::string sourceOpt("ion0");
   std::string type("");
   std::string name("");

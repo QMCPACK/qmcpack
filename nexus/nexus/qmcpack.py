@@ -1226,7 +1226,7 @@ class Qmcpack(Simulation):
             if exc_run:
                 exc_failure = False
 
-                edata = self.read_einspline_dat()
+                edata = self.read_bandinfo_dat()
                 exc_input = self.excitation
 
                 exc_spin,exc_type,exc_spins,exc_types,exc1,exc2 = check_excitation_type(exc_input)
@@ -1547,10 +1547,10 @@ class Qmcpack(Simulation):
         #end if
     #end def write_prep
 
-    def read_einspline_dat(self):
+    def read_bandinfo_dat(self):
         edata = obj()
         import glob
-        for einpath in glob.glob(self.locdir+'/einsplin*'):
+        for einpath in glob.glob(self.locdir+'/*.bandinfo.dat'):
             ftokens = einpath.split('.')
             fspin = int(ftokens[-5][5])
             if fspin==0:
@@ -1573,7 +1573,7 @@ class Qmcpack(Simulation):
             #end with
         #end for
         return edata
-    #end def read_einspline_dat
+    #end def read_bandinfo_dat
 #end class Qmcpack
 
 
