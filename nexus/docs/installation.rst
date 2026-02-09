@@ -33,11 +33,6 @@ Both of these environment variables can be set automatically by the ``install`` 
 
   /your_download_path/nexus/install
 
-If you want the Nexus binaries to reside a location different than ``/your_download_path/nexus/bin``, simply provide this path to the installer:
-
-::
-
-  /your_download_path/nexus/install /some/other/location
 
 Installing Python dependencies
 ------------------------------
