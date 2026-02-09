@@ -17,7 +17,6 @@
 
 
 #include "SPOSetBuilderFactory.h"
-#include "SPOSetScanner.h"
 #include "HarmonicOscillator/SHOSetBuilder.h"
 #include "PlaneWave/PWOrbitalSetBuilder.h"
 #include "ModernStringUtils.hpp"
@@ -199,16 +198,6 @@ void SPOSetBuilderFactory::buildSPOSetCollection(xmlNodePtr cur)
 
   if (nsposets == 0)
     myComm->barrier_and_abort("SPOSetBuilderFactory::buildSPOSetCollection  no <sposet/> elements found");
-
-  // going through a list of spo_scanner entries
-  processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
-    if (cname == "spo_scanner")
-      if (myComm->rank() == 0)
-      {
-        SPOSetScanner ascanner(sposets, targetPtcl, ptclPool);
-        ascanner.put(element);
-      }
-  });
 }
 
 void SPOSetBuilderFactory::addSPOSet(std::unique_ptr<SPOSet> spo)
