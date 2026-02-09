@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2022 QMCPACK developers.
+// Copyright (c) 2026 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //                    Cody A. Melton, cmelton@sandia.gov, Sandia National Laboratories
@@ -14,6 +14,7 @@
 #define QMCPLUSPLUS_MCCOORDS_HPP
 
 #include "Configuration.h"
+#include <initializer_list>
 #include "type_traits/complex_help.hpp"
 #include <algorithm>
 

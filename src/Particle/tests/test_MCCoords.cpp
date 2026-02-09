@@ -10,7 +10,6 @@
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "Configuration.h"
 #include "catch.hpp"
 #include "MCCoords.hpp"
 #include "Utilities/StlPrettyPrint.hpp"
