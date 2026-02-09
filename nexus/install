@@ -8,7 +8,7 @@
 #  user's .bashrc file (or similar for other shells):                #
 #                                                                    #
 #    export PATH=/your/path/to/nexus/bin:$PATH                       #
-#    export PYHTONPATH=/your/path/to/nexus:$PYTHONPATH               #
+#    export PYTHONPATH=/your/path/to/nexus:$PYTHONPATH               #
 #                                                                    #
 #  Text similar to this is added directly to the end of the rc file. #
 #                                                                    #
