@@ -105,4 +105,7 @@ f = open(rc_file,'w')
 f.write(rc_contents)
 f.close()
 
+print('\nNexus installation complete.')
+print(f'\nExecute "source {rc_file}" to make Nexus available in the current session.\n')
+
 
