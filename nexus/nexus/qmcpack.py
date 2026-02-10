@@ -1038,7 +1038,13 @@ class Qmcpack(Simulation):
             if isinstance(sim,Qmcpack):
                 opt = QmcpackInput(result.opt_file)
                 qs = input.get('qmcsystem')
-                qs.wavefunction = opt.qmcsystem.wavefunction.copy()
+                wfn = opt.qmcsystem.wavefunction.copy()
+                ovp = 'override_variational_parameters' # name is too long
+                if ovp in wfn:
+                    href = os.path.join(sim.locdir,wfn[ovp].href)
+                    href = os.path.relpath(href,self.locdir)
+                    wfn[ovp].href = href
+                qs.wavefunction = wfn
             elif isinstance(sim,PyscfToAfqmc):
                 if not self.input.is_afqmc_input():
                     self.error('incorporating wavefunction from {} is only supported for AFQMC calculations'.format(sim.__class__.__name__))
