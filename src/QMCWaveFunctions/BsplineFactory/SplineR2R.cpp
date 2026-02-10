@@ -538,8 +538,7 @@ void SplineR2R<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPO
   {
     ScopedTimer offload(offload_timer_);
     PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*num_pos) \
-                    map(always, to: buffer_H2D_ptr[:buffer_H2D.size()]) \
-                    map(always, from: rg_private_ptr[0:rg_private.size()])")
+                    map(always, to: buffer_H2D_ptr[:buffer_H2D.size()])")
     for (int iw = 0; iw < num_pos; iw++)
       for (int team_id = 0; team_id < NumTeams; team_id++)
       {
@@ -548,17 +547,10 @@ void SplineR2R<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPO
 
         auto* restrict offload_scratch_iw_ptr = offload_scratch_ptr + spline_padded_size * iw * SoAFields3D::NUM_FIELDS;
         const auto* restrict pos_iw_ptr       = reinterpret_cast<ST*>(buffer_H2D_ptr + buffer_H2D_stride * iw);
-        const auto* restrict invRow_iw_ptr =
-            *reinterpret_cast<ValueType**>(buffer_H2D_ptr + buffer_H2D_stride * iw + sizeof(ST) * 4);
-
         int ix, iy, iz;
         ST a[4], b[4], c[4], da[4], db[4], dc[4], d2a[4], d2b[4], d2c[4];
         spline2::computeLocationAndFractional(spline_ptr, pos_iw_ptr[1], pos_iw_ptr[2], pos_iw_ptr[3], ix, iy, iz, a, b,
                                               c, da, db, dc, d2a, d2b, d2c);
-
-        const ST G[9]      = {PrimLattice_G_ptr[0], PrimLattice_G_ptr[1], PrimLattice_G_ptr[2],
-                              PrimLattice_G_ptr[3], PrimLattice_G_ptr[4], PrimLattice_G_ptr[5],
-                              PrimLattice_G_ptr[6], PrimLattice_G_ptr[7], PrimLattice_G_ptr[8]};
         const ST symGGt[6] = {GGt_ptr[0], GGt_ptr[1] + GGt_ptr[3], GGt_ptr[2] + GGt_ptr[6],
                               GGt_ptr[4], GGt_ptr[5] + GGt_ptr[7], GGt_ptr[8]};
 
@@ -576,6 +568,28 @@ void SplineR2R<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPO
                        offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::HESS12 + output_index],
                        offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::HESS22 + output_index], symGGt);
         }
+      }
+  }
+
+  {
+    ScopedTimer offload(offload_timer_);
+    PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*num_pos) \
+                    map(always, to: buffer_H2D_ptr[:buffer_H2D.size()]) \
+                    map(always, from: rg_private_ptr[:NumTeams*num_pos*4])")
+    for (int iw = 0; iw < num_pos; iw++)
+      for (int team_id = 0; team_id < NumTeams; team_id++)
+      {
+        const size_t first       = ChunkSizePerTeam * team_id;
+        const size_t last        = omptarget::min(first + ChunkSizePerTeam, spline_padded_size);
+        const size_t reduce_last = omptarget::min(last, static_cast<size_t>(requested_orb_size));
+
+        auto* restrict offload_scratch_iw_ptr = offload_scratch_ptr + spline_padded_size * iw * SoAFields3D::NUM_FIELDS;
+        const auto* restrict pos_iw_ptr       = reinterpret_cast<ST*>(buffer_H2D_ptr + buffer_H2D_stride * iw);
+        const auto* restrict invRow_iw_ptr =
+            *reinterpret_cast<ValueType**>(buffer_H2D_ptr + buffer_H2D_stride * iw + sizeof(ST) * 4);
+        const ST G[9] = {PrimLattice_G_ptr[0], PrimLattice_G_ptr[1], PrimLattice_G_ptr[2],
+                         PrimLattice_G_ptr[3], PrimLattice_G_ptr[4], PrimLattice_G_ptr[5],
+                         PrimLattice_G_ptr[6], PrimLattice_G_ptr[7], PrimLattice_G_ptr[8]};
 
         ValueType ratio(0), grad_x(0), grad_y(0), grad_z(0);
         PRAGMA_OFFLOAD("omp parallel for reduction(+: ratio, grad_x, grad_y, grad_z)")
