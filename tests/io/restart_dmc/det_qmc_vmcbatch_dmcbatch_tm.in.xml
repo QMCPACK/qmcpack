@@ -87,9 +87,9 @@
      <estimator name="LocalEnergy" hdf5="no"/>
      <parameter name="total_walkers">    16   </parameter>
      <parameter name="substeps">  2 </parameter>
-     <parameter name="warmupSteps">  3  </parameter>
-     <parameter name="steps">  3 </parameter>
-     <parameter name="blocks">  3 </parameter>
+     <parameter name="warmupSteps">  2  </parameter>
+     <parameter name="steps">  2 </parameter>
+     <parameter name="blocks">  2 </parameter>
      <parameter name="timestep">  1.0 </parameter>
      <parameter name="usedrift">   no </parameter>
    </qmc>
@@ -97,19 +97,19 @@
      <estimator name="LocalEnergy" hdf5="no"/>
      <parameter name="total_walkers"> 16  </parameter>
      <parameter name="reconfiguration">   no </parameter>
-     <parameter name="warmupSteps">  3  </parameter>
+     <parameter name="warmupSteps">  2  </parameter>
      <parameter name="timestep">  0.005 </parameter>
-     <parameter name="steps">   3   </parameter>
-     <parameter name="blocks">  3   </parameter>
+     <parameter name="steps">   2   </parameter>
+     <parameter name="blocks">  2   </parameter>
      <parameter name="nonlocalmoves">  v0 </parameter>
    </qmc>
    <qmc method="dmc_batch" move="pbyp" checkpoint="0">
      <estimator name="LocalEnergy" hdf5="yes"/>
      <parameter name="reconfiguration">   no </parameter>
-     <parameter name="warmupSteps">  3  </parameter>
+     <parameter name="warmupSteps">  2  </parameter>
      <parameter name="timestep">  0.005 </parameter>
-     <parameter name="steps">   3   </parameter>
-     <parameter name="blocks">  3   </parameter>
+     <parameter name="steps">   2   </parameter>
+     <parameter name="blocks">  1   </parameter>
      <parameter name="nonlocalmoves">  v1 </parameter>
 </qmc>
 </simulation>

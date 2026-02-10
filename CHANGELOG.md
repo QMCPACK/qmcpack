@@ -25,8 +25,8 @@ recipes and documentation for many machines, and a broad range of other useful i
 
 * Fast forces with multideterminant wavefunctions [#5398](https://github.com/QMCPACK/qmcpack/pull/5398)
 * Significant improvement in AMD GPU performance with better memory handling [#5339](https://github.com/QMCPACK/qmcpack/pull/5339).
-  Note also updated Frontier instructions [#5399](https://github.com/QMCPACK/qmcpack/pull/5399). Use of
-  LIBOMPTARGET_AMDGPU_MAX_ASYNC_COPY_BYTES is currently recommended.
+  Note also updated Frontier instructions [#5399](https://github.com/QMCPACK/qmcpack/pull/5399). Setting environment variable
+  LIBOMPTARGET_AMDGPU_MAX_ASYNC_COPY_BYTES to 0 at run-time is currently recommended.
 * Ongoing performance optimization of LCAO / Gaussian basis set GPU evaluation e.g.
   [#5357](https://github.com/QMCPACK/qmcpack/pull/5357), [#5342](https://github.com/QMCPACK/qmcpack/pull/5342)
 * Updated build recipes for numerous machines, including NERSC Perlmutter [#5464](https://github.com/QMCPACK/qmcpack/pull/5464) ,

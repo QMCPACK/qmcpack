@@ -91,7 +91,7 @@ TEST_CASE("J1 evaluate derivatives Jastrow", "[wavefunction]")
 
   auto& twf_component_list = twf.getOrbitals();
 
-  opt_variables_type active;
+  OptVariables active;
   twf.checkInVariables(active);
   active.resetIndex();
   int nparam = active.size_of_active();
@@ -192,7 +192,7 @@ TEST_CASE("J1 evaluate derivatives Jastrow with two species", "[wavefunction]")
 
   auto& twf_component_list = twf.getOrbitals();
 
-  opt_variables_type active;
+  OptVariables active;
   twf.checkInVariables(active);
   active.resetIndex();
   int nparam = active.size_of_active();
@@ -290,7 +290,7 @@ TEST_CASE("J1 evaluate derivatives Jastrow with two species one without Jastrow"
 
   auto& twf_component_list = twf.getOrbitals();
 
-  opt_variables_type active;
+  OptVariables active;
   twf.checkInVariables(active);
   active.resetIndex();
   int nparam = active.size_of_active();

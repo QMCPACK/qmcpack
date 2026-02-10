@@ -45,10 +45,11 @@ SlaterDetBuilder::SlaterDetBuilder(Communicate* comm,
                                    ParticleSet& els,
                                    TrialWaveFunction& psi,
                                    const PSetMap& psets)
-    : WaveFunctionComponentBuilder(comm, els), sposet_builder_factory_(factory), targetPsi(psi), ptclPool(psets)
-{
-  ClassName = "SlaterDetBuilder";
-}
+    : WaveFunctionComponentBuilder(comm, els, "SlaterDetBuilder"),
+      sposet_builder_factory_(factory),
+      targetPsi(psi),
+      ptclPool(psets)
+{}
 
 /** process <determinantset>
  *
@@ -61,7 +62,7 @@ SlaterDetBuilder::SlaterDetBuilder(Communicate* comm,
  */
 std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodePtr cur)
 {
-  ReportEngine PRE(ClassName, "put(xmlNodePtr)");
+  ReportEngine PRE(class_name_, "put(xmlNodePtr)");
   ///save the current node
   bool multiDet = false;
   std::string msd_algorithm;
@@ -176,8 +177,8 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
         std::vector<std::unique_ptr<DiracDeterminantWithBackflow>> dirac_dets_bf;
         for (auto& det : dirac_dets)
           dirac_dets_bf.emplace_back(dynamic_cast<DiracDeterminantWithBackflow*>(det.release()));
-        auto single_det              = std::make_unique<SlaterDetWithBackflow>(targetPtcl, std::move(unique_sposets),
-                                                                               std::move(BFTrans), std::move(dirac_dets_bf));
+        auto single_det = std::make_unique<SlaterDetWithBackflow>(targetPtcl, std::move(unique_sposets),
+                                                                  std::move(BFTrans), std::move(dirac_dets_bf));
         built_singledet_or_multidets = std::move(single_det);
       }
       else
@@ -272,7 +273,7 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
     std::vector<std::unique_ptr<SPOSet>>& unique_sposets,
     const std::unique_ptr<BackflowTransformation>& BFTrans)
 {
-  ReportEngine PRE(ClassName, "putDeterminant(xmlNodePtr,int)");
+  ReportEngine PRE(class_name_, "putDeterminant(xmlNodePtr,int)");
 
   const SpeciesSet& target_species = targetPtcl.getSpeciesSet();
 
@@ -517,7 +518,7 @@ std::unique_ptr<MultiSlaterDetTableMethod> SlaterDetBuilder::createMSDFast(
   auto C_ptr = std::make_unique<std::vector<ValueType>>();
   auto& C(*C_ptr);
 
-  auto myVars_ptr = std::make_unique<opt_variables_type>();
+  auto myVars_ptr = std::make_unique<OptVariables>();
   auto& myVars(*myVars_ptr);
 
   bool Optimizable    = false;

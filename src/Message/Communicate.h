@@ -53,7 +53,6 @@ struct CommunicatorTraits
 #include <vector>
 #include <utility>
 #include <unistd.h>
-#include <cstring>
 
 #include "Message/AppAbort.h"
 

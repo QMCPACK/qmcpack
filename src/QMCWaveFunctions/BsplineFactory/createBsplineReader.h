@@ -19,7 +19,7 @@
 namespace qmcplusplus
 {
 ///forward declaration
-struct BsplineReader;
+class BsplineReader;
 class EinsplineSetBuilder;
 
 template<typename ST>

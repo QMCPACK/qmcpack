@@ -633,17 +633,11 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
     return true;
   }
 
-  void checkInVariablesExclusive(opt_variables_type& active) override
-  {
-    active.insertFrom(myVars);
-  }
+  void checkInVariablesExclusive(OptVariables& active) override { active.insertFrom(myVars); }
 
-  void checkOutVariables(const opt_variables_type& active) override
-  {
-    myVars.getIndex(active);
-  }
+  void checkOutVariables(const OptVariables& active) override { myVars.getIndex(active); }
 
-  void resetParametersExclusive(const opt_variables_type& active) override
+  void resetParametersExclusive(const OptVariables& active) override
   {
     if (myVars.size())
     {

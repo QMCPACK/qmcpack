@@ -1,23 +1,23 @@
 .. _running_docker:
 
-Running QMCPACK on Docker Containers
+Running QMCPACK in Docker Containers
 ====================================
 
 This guide will briefly cover running QMCPACK on your machine using a docker container. Docker containers are a portable way to achieve reproducibility across all developers and users. Two main uses:
 
 1. Debugging CI related issues running on Docker containers that are not reproducible in other environments.
-2. Ease the learning curve by providing a ready-to-go environment in a single container (binary available in DockerHub) to new community members. 
+2. Ease the learning curve by providing a ready-to-go environment in a single container to new community members. 
 
 Current Images
 --------------
 
-Docker containers are identified by `domain/image:tag` and stored using `The Github Container Registry <https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry>`_.
+Docker containers are identified by `domain/image:tag` and stored using `The Github Container Registry <https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry>`.
 Currently available containers have pre-installed QMCPACK dependencies, see the Dockerfile file link for available dependencies on each image:
 
 - `Linux containers <https://github.com/orgs/QMCPACK/packages>`_ 
-   - ghcr.io/qmcpack/ubuntu22-openmpi:latest: `Dockerfile <https://github.com/QMCPACK/qmcpack/blob/develop/config/docker/dependencies/ubuntu/openmpi/Dockerfile>`_
-   - ghcr.io/qmcpack/ubuntu22-clang:latest: `Dockerfile <https://github.com/QMCPACK/qmcpack/blob/develop/config/docker/dependencies/ubuntu/clang-latest/Dockerfile>`_
-   - ghcr.io/qmcpack/centos-stream-gcc11:latest: `Dockerfile <https://github.com/QMCPACK/qmcpack/blob/develop/config/docker/dependencies/centos-stream/Dockerfile>`_
+   - ghcr.io/qmcpack/ubuntu22-openmpi:latest: `Dockerfile <https://github.com/QMCPACK/qmcpack/blob/develop/config/docker/dependencies/ubuntu22/openmpi/Dockerfile>`_
+   - ghcr.io/qmcpack/ubuntu22-clang:latest: `Dockerfile <https://github.com/QMCPACK/qmcpack/blob/develop/config/docker/dependencies/ubuntu22/clang/Dockerfile>`_
+   - ghcr.io/qmcpack/centos10:latest: `Dockerfile <https://github.com/QMCPACK/qmcpack/blob/develop/config/docker/dependencies/centos10/Dockerfile>`_
 
 
 Running Docker Containers
@@ -37,9 +37,9 @@ Running Docker Containers
    
       docker pull ghcr.io/qmcpack/ubuntu22-openmpi:latest
 
-3. **Run an image**: the `docker run` command will spin up a container with using the image we just downloaded from step 2. Alternatively, `docker run` will automatically fallback to pulling the image and tag from DockerHub (requires connection).
+3. **Run an image**: the `docker run` command will spin up a container with using the image we just downloaded from step 2. Alternatively, `docker run` will automatically fallback to pulling the image and tag from the container registry.
 
-   For a quick and safe, non `sudo`, run:   
+   For a quick and safe, non `sudo`, run:
 
    .. code-block:: bash
 
@@ -56,13 +56,13 @@ Running Docker Containers
 
    Flags used by `docker run` (Note: The flags -i and -t are combined above):
     
-    `-u` : For building we need write permissions, the current arguments will set your container user and group to match your host user and group (e.g. install additional packages, allocating shared volume permissions, etc.).
+    `-u` : To create or modify files the container will need write permissions. The current arguments will set your container user and group to match your host user and group (e.g. install additional packages, allocating shared volume permissions, etc.).
 
-    `-v` : Replace `<QMCPACK Source Directory>` with the direct path to your QMCPACK directory, this maps it to our landing directory and gives docker access to the files
+    `-v` : Replace `<QMCPACK Source Directory>` with the direct path to your QMCPACK directory, this maps it to our landing directory and gives docker access to the files.
 
-    `-i` : Specifies the image to use
+    `-i` : Specifies the image to use.
 
-    `-t` : Allocate a pseudo-tty, allows an instance of bash to pass commands to it
+    `-t` : Allocate a pseudo-tty, allows an instance of bash to pass commands to it.
 
    As an example, if extra permissions are needed the container can be run with the `sudo` user (not recommended):
 
@@ -71,12 +71,12 @@ Running Docker Containers
       docker run -u root -v path/to/QMCPACK:home/user -it ghcr.io/qmcpack/ubuntu22-openmpi:latest /bin/bash
 
 
-Build QMCPACK on Docker
------------------------
+Building QMCPACK in Containers
+------------------------------
 
-The following steps just follow a regular QMCPACK build on any Linux environment
+Use the regular Linux environment build instructions for QMCPACK:
 
-1. **Get QMCPACK**: use `https` as `ssh` requires extra authentication  
+1. **Get QMCPACK**: use `https` as `ssh` requires extra authentication
 
 * Option 1 (fresh build):
 
@@ -104,11 +104,11 @@ The following steps just follow a regular QMCPACK build on any Linux environment
 		   -DQMC_COMPLEX=0 \
 		   ..
 
-* Note: To reproduce the build in the Docker container used by GitHub Actions CI pipeline we provide an optimized build with debug symbols `-DCMAKE_BUILD_TYPE=RelWithDebInfo` , but users can select any other cmake build type(`Release` being default): 
+* Note: To reproduce the build in the Docker container used by GitHub Actions CI pipeline we provide an optimized build with debug symbols `-DCMAKE_BUILD_TYPE=RelWithDebInfo`, but users can select any other cmake build type(`Release` being default): 
             
             - `Debug`
             - `Release` 
-            - `RelWithDebInfo`    
+            - `RelWithDebInfo`
 
 3. **Build**:
 
@@ -120,10 +120,9 @@ The following steps just follow a regular QMCPACK build on any Linux environment
 
    .. code-block:: bash
 
-      ctest -VV -R deterministic-unit_test_wavefunction_trialwf
-      ctest -L deterministic
+      ctest -j 8 -L deterministic --output-on-failure # Adjust -j parallelism to suit host
 
 
 .. caution::
 
-   OpenMPI strongly advises against running as a `root` user, see `docs <https://www.open-mpi.org/doc/v3.1/man1/mpirun.1.php#sect22>`_
+   OpenMPI strongly advises against running as a `root` user, see `docs <https://docs.open-mpi.org/en/v5.0.x/man-openmpi/man1/mpirun.1.html#the-allow-run-as-root-option>`_. The provided containers are configured to avoid this.

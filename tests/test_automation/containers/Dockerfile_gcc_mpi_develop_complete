@@ -3,13 +3,15 @@ LABEL Description="Development version of QMCPACK and Nexus configured for use w
 
 SHELL ["/bin/bash", "-c"]
 
+ENV QE_VERSION="7.5"
+ENV PYSCF_VERSION=2.12.0
+#ENV QMCPACK_VERSION="4.1.0"
+
 ARG USERNAME=qmcuser
 ARG USER_UID=1201
 ARG USER_GID=$USER_UID
 
 ENV DEBIAN_FRONTEND=noninteractive
-ENV QE_VERSION="7.5"
-#ENV QMCPACK_VERSION="4.1.0"
 
 # Create the user, update, and make a sudoer
 RUN groupadd --gid $USER_GID $USERNAME \
@@ -28,8 +30,15 @@ RUN apt-get install -y --no-install-recommends \
     libopenblas-openmp-dev libhdf5-dev libxml2-dev libfftw3-dev \
     python3-numpy python3-scipy python3-pandas python3-h5py python3-matplotlib
 
-WORKDIR /scratch
+# Convenience feature to setup certificates for behind firewall builds.
+# * Copy any provided certificates into the container and update the SSL config
+# * Needed if e.g. wget fails with SSL errors
+# * No effect if no *.crt files provided
+COPY *.crt /usr/local/share/ca-certificates/
+RUN update-ca-certificates
 
+# Quatum ESPRESSO installation
+WORKDIR /scratch
 RUN wget https://gitlab.com/QEF/q-e/-/archive/qe-${QE_VERSION}/q-e-qe-${QE_VERSION}.tar.gz && tar xzvf q-e-qe-${QE_VERSION}.tar.gz && cd q-e-qe-${QE_VERSION} && pwd && \
     mkdir build_mpi && cd build_mpi && \
     mkdir -p /opt/qe && \
@@ -39,52 +48,81 @@ RUN wget https://gitlab.com/QEF/q-e/-/archive/qe-${QE_VERSION}/q-e-qe-${QE_VERSI
     # cleanup
     echo "QE Cleanup" &&\
     rm -rf /scratch/q-e-qe-${QE_VERSION} /scratch/q-e-qe-${QE_VERSION}.tar.gz
-
 ENV PATH=${PATH}:/opt/qe/bin
 
-WORKDIR /scratch
+## PySCF installation
+#WORKDIR /scratch
+#RUN wget https://github.com/pyscf/pyscf/archive/refs/tags/v${PYSCF_VERSION}.tar.gz && tar xzvf v${PYSCF_VERSION}.tar.gz && \
+#    mv pyscf-${PYSCF_VERSION} /opt/pyscf && cd /opt/pyscf && \
+#    cd pyscf/lib && mkdir build && cd build && cmake .. && make -j 4 && \
+#    # cleanup cd .. && rm -r -f build &&
+#    rm -r -f /scratch/v${PYSCF_VERSION}.tar.gz
+#ENV PYTHONPATH=/opt/pyscf
 
-# Build a specific version $QMCPACK_VERSION of QMCPACK using the release artifacts
+# PySCF installation with external dependencies libcint, libxc, xcfun
+WORKDIR /scratch
+RUN git clone https://github.com/sunqm/libcint.git && cd libcint && git checkout b942ac8226e49d2aecb2105e6da36ee283adc0a2 &&\
+    mkdir build && cd build && \
+    cmake -DWITH_F12=1 -DWITH_RANGE_COULOMB=1 -DWITH_COULOMB_ERF=1 -DCMAKE_INSTALL_PREFIX:PATH=/opt -DCMAKE_INSTALL_LIBDIR:PATH=lib .. && \
+    make -j 4 && make install && cd ../.. && rm -rf /scratch/libcint
+RUN wget https://gitlab.com/libxc/libxc/-/archive/6.0.0/libxc-6.0.0.tar.gz && tar xvzf libxc-6.0.0.tar.gz && \
+    cd libxc-6.0.0 && mkdir build && cd build && \
+    cmake  -DCMAKE_BUILD_TYPE=RELEASE -DBUILD_SHARED_LIBS=1 \
+           -DENABLE_FORTRAN=0 -DDISABLE_KXC=0 -DDISABLE_LXC=1 \
+           -DCMAKE_INSTALL_PREFIX:PATH=/opt -DCMAKE_INSTALL_LIBDIR:PATH=lib .. && \
+    make -j 4 && make install && cd ../.. && rm -rf /scratch/libxc-6.0.0 libxc-6.0.0.tar.gz
+RUN wget -O xcfun.tar.gz https://github.com/fishjojo/xcfun/archive/refs/tags/cmake-3.5.tar.gz && tar xvzf xcfun.tar.gz && \
+    cd xcfun-cmake-3.5 && mkdir build && cd build && \
+    cmake -DCMAKE_BUILD_TYPE=RELEASE -DBUILD_SHARED_LIBS=1 -DXCFUN_MAX_ORDER=3 -DXCFUN_ENABLE_TESTS=0 \
+          -DCMAKE_INSTALL_PREFIX:PATH=/opt -DCMAKE_INSTALL_LIBDIR:PATH=lib .. && \
+    make -j 4 && make install && cd ../.. && rm -rf /scratch/xcfun-cmake-3.5 xcfun.tar.gz
+RUN wget https://github.com/pyscf/pyscf/archive/refs/tags/v${PYSCF_VERSION}.tar.gz && tar xzvf v${PYSCF_VERSION}.tar.gz && \
+    mv pyscf-${PYSCF_VERSION} /opt/pyscf && cd /opt/pyscf && \
+    cd pyscf/lib && mkdir build && cd build && cmake -DBUILD_LIBCINT=0 -DBUILD_LIBXC=0 -DBUILD_XCFUN=0 -DCMAKE_INSTALL_PREFIX:PATH=/opt .. && make -j 4 && \
+    # cleanup cd .. && rm -r -f build &&
+    rm -r -f /scratch/v${PYSCF_VERSION}.tar.gz
+ENV PYTHONPATH=/opt/pyscf
+ENV LD_LIBRARY_PATH=/opt/lib
+
+WORKDIR /scratch
+## Build a specific version $QMCPACK_VERSION of QMCPACK using the release artifacts
 #RUN wget https://github.com/QMCPACK/qmcpack/archive/refs/tags/v${QMCPACK_VERSION}.tar.gz && tar xvzf v${QMCPACK_VERSION}.tar.gz && pwd && \
 #    mkdir -p /opt/qmcpack && \
-#    mv qmcpack-${QMCPACK_VERSION} /opt/qmcpack/qmcpack && \
+#    mv qmcpack-${QMCPACK_VERSION} /opt/qmcpack/qmcpack_src && \
 #    mkdir build_qmcpack_mpi && cd build_qmcpack_mpi && pwd && \ 
-#    cmake -GNinja -DCMAKE_INSTALL_PREFIX=/opt/qmcpack -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpiCC /opt/qmcpack/qmcpack && \
+#    cmake -GNinja -DCMAKE_INSTALL_PREFIX=/opt/qmcpack -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpiCC /opt/qmcpack/qmcpack_src && \
 #    ninja && \
 #    echo "Installing QMCPACK..." && ninja install && cd .. && pwd && \
 #    mkdir build_qmcpack_complex_mpi && cd build_qmcpack_complex_mpi && \
-#    cmake -GNinja -DCMAKE_INSTALL_PREFIX=/opt/qmcpack -DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpiCC /opt/qmcpack/qmcpack && \
+#    cmake -GNinja -DCMAKE_INSTALL_PREFIX=/opt/qmcpack -DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpiCC /opt/qmcpack/qmcpack_src && \
 #    ninja && \
 #    cp -p bin/qmcpack_complex /opt/qmcpack/bin && \
 #    cd .. && \
 #    # cleanup
-#    rm -r -f /scratch/build_qmcpack_mpi /scratch/build_qmcpack_complex_mpi v${QMCPACK_VERSION}.tar.gz 
+#    rm -r -f /scratch/build_qmcpack_mpi /scratch/build_qmcpack_complex_mpi v${QMCPACK_VERSION}.tar.gz /opt/qmcpack/qmcpack_src
 
 # Build latest development version of QMCPACK from shallow-cloned git repository
 RUN mkdir -p /opt/qmcpack && cd /opt/qmcpack && \
-    git clone https://github.com/QMCPACK/qmcpack.git --depth=1 && \
+    git clone https://github.com/QMCPACK/qmcpack.git --depth=1 qmcpack_git && \
     cd /scratch && \
     mkdir build_qmcpack_mpi && cd build_qmcpack_mpi && pwd && \ 
-    cmake -GNinja -DCMAKE_INSTALL_PREFIX=/opt/qmcpack -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpiCC /opt/qmcpack/qmcpack && \
+    cmake -GNinja -DCMAKE_INSTALL_PREFIX=/opt/qmcpack -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpiCC /opt/qmcpack/qmcpack_git && \
     ninja && \
     echo "Installing QMCPACK..." && ninja install && cd .. && pwd && \
     mkdir build_qmcpack_complex_mpi && cd build_qmcpack_complex_mpi && \
-    cmake -GNinja -DCMAKE_INSTALL_PREFIX=/opt/qmcpack -DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpiCC /opt/qmcpack/qmcpack && \
+    cmake -GNinja -DCMAKE_INSTALL_PREFIX=/opt/qmcpack -DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpiCC /opt/qmcpack/qmcpack_git && \
     ninja && \
     cp -p bin/qmcpack_complex /opt/qmcpack/bin && \
     cd .. && \
     # cleanup
-    rm -r -f /scratch/build_qmcpack_mpi /scratch/build_qmcpack_complex_mpi
-
+    rm -r -f /scratch/build_qmcpack_mpi /scratch/build_qmcpack_complex_mpi /opt/qmcpack/qmcpack_git
 ENV PATH=${PATH}:/opt/qmcpack/bin
-ENV PATH=${PATH}:/opt/qmcpack/qmcpack/nexus/bin
-ENV PYTHONPATH=/opt/qmcpack/qmcpack/nexus
+ENV PYTHONPATH=${PYTHONPATH}:/opt/qmcpack
 
 # Default user and directory
 USER $USERNAME
 WORKDIR /home/$USERNAME
 
-# Permit OpenMPI v5.x oversubscription to allow all tests to pass
+# Permit OpenMPI v5.x oversubscription
 # e.g. allows 16 MPI tasks on a 4 core system 
 ENV OMPI_MCA_rmaps_base_oversubscribe=true
-

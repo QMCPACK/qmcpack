@@ -27,71 +27,66 @@ except (ImportError,RuntimeError):
     plots_available = False
 #end try
 
-
+# Copied from qmca. Modification must done on qmca first
+# Locate and import the closely coupled Nexus module
 def find_nexus_modules():
+    import os
     import sys
-    nexus_lib = os.path.abspath(os.path.join(__file__,'..','..','nexus'))
-    assert(os.path.exists(nexus_lib))
-    sys.path.append(nexus_lib)
+    # Prepend the assumed path of a folder containing the closely coupled nexus module to module search path
+    # It points to the top Nexus directory not necessarily the top QMCPACK directory.
+    nexus_lib = os.path.realpath(os.path.join(__file__,'..','..'))
+
+    # "import nexus" will succeed if nexus directory exists without __init__.py in it.
+    # Explicitly check the existence of nexus/__init__.py at the closely coupled location
+    nexus_init = os.path.join(nexus_lib,'nexus','__init__.py')
+    if not os.path.exists(nexus_init):
+        print('\nExpected file '+nexus_init+' does not exist!'
+              '\nBroken Nexus installation! Please follow Nexus manual regarding installation.\n')
+        sys.exit(1)
+
+    # check import of nexus modules
+    sys.path.insert(0,nexus_lib)
+    try:
+        import nexus
+    except Exception as err:
+        print('\nImporting Nexus modules failed for an unknown reason.'
+              '\nThis is likely a developer error.'
+              '\nFor more information, the original exception is reproduced below.'
+              '\nPlease report this error to the Nexus developers.'+2*'\n')
+        import traceback
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        exc_lines = traceback.format_exception(exc_type, exc_value, exc_traceback)
+        for line in exc_lines:
+            print(line.rstrip())
+        print()
+        sys.exit(1)
+
+    # Sanity check. Most likely errors get caught earlier.
+    # ensure closely coupled nexus module is in use.
+    nexus_lib2 = os.path.realpath(os.path.join(nexus.__file__,'..','..'))
+    if nexus_lib != nexus_lib2:
+        exe_full_path = os.path.abspath(sys.argv[0])
+        print('\nNexus executable ' + exe_full_path +
+              '\n  Executable derived <nexus_root> = ' + nexus_lib +
+              '\n  Module     derived <nexus_root> = ' + nexus_lib2 +
+              '\nNexus executables and modules are not from the same installation!\n')
+        sys.exit(1)
 #end def find_nexus_modules
 
-
-def import_nexus_module(module_name):
-    import inspect
-    import importlib
-    return importlib.import_module(module_name)
-#end def import_nexus_module
-
 # Load Nexus modules
-try:
-    # Attempt specialized path-based imports.
-    #  (The executable should still work even if Nexus is not installed)
-    find_nexus_modules()
-    nxs_ver_mod = import_nexus_module('nexus.nexus_version')
-    nexus_version = nxs_ver_mod.nexus_version
-    del nxs_ver_mod
-
-    developer = import_nexus_module('nexus.developer')
-    DevBase = developer.DevBase
-    obj     = developer.obj
-    log     = developer.log
-    warn    = developer.warn
-    error   = developer.error
-    del developer
-
-    numerics = import_nexus_module('nexus.numerics')
-    jackknife            = numerics.jackknife
-    jackknife_aux        = numerics.jackknife_aux
-    simstats             = numerics.simstats
-    equilibration_length = numerics.equilibration_length
-    curve_fit            = numerics.curve_fit
-    least_squares        = numerics.least_squares
-    num_eos_fit          = numerics.eos_fit
-    morse_fit            = numerics.morse_fit
-    morse                = numerics.morse
-    morse_einf           = numerics.morse_Einf
-    morse_re             = numerics.morse_re
-    morse_De             = numerics.morse_De
-    morse_a              = numerics.morse_a
-    morse_width          = numerics.morse_width
-    morse_depth          = numerics.morse_depth
-    morse_Ee             = numerics.morse_Ee
-    morse_k              = numerics.morse_k
-    murnaghan            = numerics.murnaghan
-    birch                = numerics.birch
-    vinet                = numerics.vinet
-    murnaghan_pressure   = numerics.murnaghan_pressure
-    birch_pressure       = numerics.birch_pressure
-    vinet_pressure       = numerics.vinet_pressure
-    del numerics
-except:
-    # Failing path-based imports, import installed Nexus modules.
-    from nexus.nexus_version import nexus_version
-    from nexus.developer import DevBase,obj,log,warn,error
-    from nexus.numerics import jackknife,jackknife_aux
-    from nexus.numerics import simstats,equilibration_length
-    from nexus.numerics import curve_fit,least_squares
-#end try
+find_nexus_modules()
+from nexus.nexus_version import nexus_version
+from nexus.developer import DevBase,obj,log,warn,error
+from nexus.numerics import jackknife,jackknife_aux
+from nexus.numerics import simstats,equilibration_length
+from nexus.numerics import curve_fit,least_squares
+from nexus.numerics import eos_fit as num_eos_fit
+from nexus.numerics import morse_fit,morse,morse_re,morse_De
+from nexus.numerics import morse_Einf as morse_einf
+from nexus.numerics import morse_a,morse_width,morse_depth,morse_Ee,morse_k
+from nexus.numerics import murnaghan,birch,vinet
+from nexus.numerics import murnaghan_pressure,birch_pressure,vinet_pressure
+import nexus.numpy_extensions as npe
 
 
 # Polynomial functions
@@ -357,7 +352,7 @@ def process_scalar_files(scalar_files,equils=None,reblock_factors=None,series_st
         if reblock>1:
             E = E.sum(1)/reblock
         #end if
-        E.shape = (bt,)
+        npe.reshape_inplace(E, bt,)
         Edata[n] = E
     #end for
     Edata = np.array(Edata,dtype=float)
@@ -477,14 +472,26 @@ def hubbard_u_fit(args):
     if opt.hubbards is not None:
         parse_list(opt,'hubbards',float)
         if len(Edata)!=len(opt.hubbards):
-            error('must provide one hubbard_u value per scalar file\nnumber of hubbard_u provided: {0}\nnumber of scalar files provided: {1}\hubbards provided: {2}\nscalar files provided: {3}'.format(len(opt.hubbards),len(scalar_files),opt.hubbards,scalar_files))
+            error(
+                "must provide one hubbard_u value per scalar file\n"
+                "number of hubbard_u provided: {0}\n"
+                "number of scalar files provided: {1}\n"
+                "hubbards provided: {2}\n"
+                "scalar files provided: {3}".format(len(opt.hubbards),len(scalar_files),opt.hubbards,scalar_files)
+                )
         #end if
         x = opt.hubbards
     elif opt.exx is not None:
         hubbard_u = False
         parse_list(opt,'exx',float)
         if len(Edata)!=len(opt.exx):
-            error('must provide one hubbard_u value per scalar file\nnumber of hubbard_u provided: {0}\nnumber of scalar files provided: {1}\hubbards provided: {2}\nscalar files provided: {3}'.format(len(opt.hubbards),len(scalar_files),opt.hubbards,scalar_files))
+            error(
+                "must provide one hubbard_u value per scalar file\n"
+                "number of hubbard_u provided: {0}\n"
+                "number of scalar files provided: {1}\n"
+                "hubbards provided: {2}\n"
+                "scalar files provided: {3}".format(len(opt.hubbards),len(scalar_files),opt.hubbards,scalar_files)
+                )
         #end if
         x = opt.exx
     else:

@@ -158,12 +158,12 @@ public:
   std::string getClassName() const override { return "kSpaceJastrow"; }
   //implement virtual functions for optimizations
   bool isOptimizable() const override { return true; }
-  void checkOutVariables(const opt_variables_type& active) override;
+  void checkOutVariables(const OptVariables& active) override;
 
   void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override { opt_obj_refs.push_back(*this); }
 
-  void checkInVariablesExclusive(opt_variables_type& active) final;
-  void resetParametersExclusive(const opt_variables_type& active) final;
+  void checkInVariablesExclusive(OptVariables& active) final;
+  void resetParametersExclusive(const OptVariables& active) final;
 
   LogValue evaluateLog(const ParticleSet& P,
                        ParticleSet::ParticleGradient& G,
@@ -198,11 +198,11 @@ public:
   std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
 
   void evaluateDerivatives(ParticleSet& P,
-                           const opt_variables_type& active,
+                           const OptVariables& active,
                            Vector<ValueType>& dlogpsi,
                            Vector<ValueType>& dhpsioverpsi) override;
 
-  void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& active, Vector<ValueType>& dlogpsi) override;
+  void evaluateDerivativesWF(ParticleSet& P, const OptVariables& active, Vector<ValueType>& dlogpsi) override;
 
   /** evaluate the ratio
   */

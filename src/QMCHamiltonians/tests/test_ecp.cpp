@@ -297,17 +297,17 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
     test_evaluateOne(std::nullopt);
   }
 
-  opt_variables_type optvars;
+  OptVariables optvars;
   Vector<ValueType> dlogpsi;
   Vector<ValueType> dhpsioverpsi;
 
   psi.checkInVariables(optvars);
   optvars.resetIndex();
-  const int NumOptimizables(optvars.size());
+  const int num_opt_vars(optvars.size());
   psi.checkOutVariables(optvars);
   auto test_evaluateValueAndDerivatives = [&](const OptionalRef<VirtualParticleSet> vp) {
-    dlogpsi.resize(NumOptimizables, ValueType(0));
-    dhpsioverpsi.resize(NumOptimizables, ValueType(0));
+    dlogpsi.resize(num_opt_vars, ValueType(0));
+    dhpsioverpsi.resize(num_opt_vars, ValueType(0));
     psi.evaluateDerivatives(elec, optvars, dlogpsi, dhpsioverpsi);
     CHECK(std::real(dlogpsi[0]) == Approx(-0.2211666667));
     CHECK(std::real(dlogpsi[2]) == Approx(-0.1215));
@@ -573,13 +573,13 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   }
 
   //Check evaluateValueAndDerivatives
-  opt_variables_type optvars;
+  OptVariables optvars;
   Vector<ValueType> dlogpsi;
   Vector<ValueType> dhpsioverpsi;
 
   psi.checkInVariables(optvars);
   optvars.resetIndex();
-  const int NumOptimizables(optvars.size());
+  const int num_opt_vars(optvars.size());
   psi.checkOutVariables(optvars);
 
 
@@ -596,10 +596,10 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
 
 
   auto test_evaluateValueAndDerivatives = [&](bool exact, const OptionalRef<VirtualParticleSet> vp) {
-    dlogpsi.resize(NumOptimizables, ValueType(0));
-    dhpsioverpsi.resize(NumOptimizables, ValueType(0));
+    dlogpsi.resize(num_opt_vars, ValueType(0));
+    dhpsioverpsi.resize(num_opt_vars, ValueType(0));
     psi.evaluateDerivatives(elec, optvars, dlogpsi, dhpsioverpsi);
-    for (int ip = 0; ip < NumOptimizables; ip++)
+    for (int ip = 0; ip < num_opt_vars; ip++)
     {
       CHECK(std::real(dlogpsi[ip]) == Approx(dlogpsi_refs[ip]));
       CHECK(std::real(dhpsioverpsi[ip]) == Approx(dkinpsioverpsi_refs[ip]));
@@ -625,7 +625,7 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
     }
     REQUIRE(Value1 == Approx(-3.530511241).epsilon(2.e-5));
 
-    for (int ip = 0; ip < NumOptimizables; ip++)
+    for (int ip = 0; ip < num_opt_vars; ip++)
       CHECK(std::real(dhpsioverpsi[ip]) == Approx(dhpsioverpsi_refs[ip]));
   };
 

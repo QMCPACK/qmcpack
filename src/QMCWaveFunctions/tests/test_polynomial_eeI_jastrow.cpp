@@ -43,24 +43,25 @@ TEST_CASE("PolynomialFunctor3D functor zero", "[wavefunction]")
   REQUIRE(u == 0.0);
 }
 
-void create_J3_ion_reference_values(TinyVector<ParticleSet::ParticleGradient,3>& igr_egrad,
-                                    TinyVector<ParticleSet::ParticleLaplacian,3>& igr_lapl, int ionid)
+void create_J3_ion_reference_values(TinyVector<ParticleSet::ParticleGradient, 3>& igr_egrad,
+                                    TinyVector<ParticleSet::ParticleLaplacian, 3>& igr_lapl,
+                                    int ionid)
 {
-  const int Nelec=4; //This was the size of the electron set generated.
-  
-  //Incidentally, two ions were used for reference values. 
-  for(int i=0; i<3; i++)
+  const int Nelec = 4; //This was the size of the electron set generated.
+
+  //Incidentally, two ions were used for reference values.
+  for (int i = 0; i < 3; i++)
   {
     igr_egrad[i].resize(4);
     igr_lapl[i].resize(4);
-    igr_egrad[i]=0;
-    igr_lapl[i]=0;
+    igr_egrad[i] = 0;
+    igr_lapl[i]  = 0;
   }
-  
-  if( ionid == 0 )
+
+  if (ionid == 0)
   {
     ////////////////////////////////
-    // Test Derivatives w.r.t Ion 0 
+    // Test Derivatives w.r.t Ion 0
     ////////////////////////////////
     // d/dR_0
     ////////////////////////////////
@@ -76,10 +77,10 @@ void create_J3_ion_reference_values(TinyVector<ParticleSet::ParticleGradient,3>&
     igr_egrad[0][3][0] = 1.416451e-02;
     igr_egrad[0][3][1] = 0.000000e+00;
     igr_egrad[0][3][2] = -4.392479e-02;
-    igr_lapl[0][0] = 9.355446e-01;
-    igr_lapl[0][1] = 2.150360e-01;
-    igr_lapl[0][2] = -5.127206e-02;
-    igr_lapl[0][3] = -7.065001e-02;
+    igr_lapl[0][0]     = 9.355446e-01;
+    igr_lapl[0][1]     = 2.150360e-01;
+    igr_lapl[0][2]     = -5.127206e-02;
+    igr_lapl[0][3]     = -7.065001e-02;
 
     // d/dR_1
     ////////////////////////////////
@@ -95,10 +96,10 @@ void create_J3_ion_reference_values(TinyVector<ParticleSet::ParticleGradient,3>&
     igr_egrad[1][3][0] = 0.000000e+00;
     igr_egrad[1][3][1] = -9.110417e-02;
     igr_egrad[1][3][2] = 0.000000e+00;
-    igr_lapl[1][0] = 0.000000e+00;
-    igr_lapl[1][1] = 0.000000e+00;
-    igr_lapl[1][2] = 0.000000e+00;
-    igr_lapl[1][3] = 0.000000e+00;
+    igr_lapl[1][0]     = 0.000000e+00;
+    igr_lapl[1][1]     = 0.000000e+00;
+    igr_lapl[1][2]     = 0.000000e+00;
+    igr_lapl[1][3]     = 0.000000e+00;
 
     // d/dR_2
     ////////////////////////////////
@@ -114,15 +115,15 @@ void create_J3_ion_reference_values(TinyVector<ParticleSet::ParticleGradient,3>&
     igr_egrad[2][3][0] = -5.502826e-02;
     igr_egrad[2][3][1] = 0.000000e+00;
     igr_egrad[2][3][2] = -4.319823e-02;
-    igr_lapl[2][0] = 1.613281e-01;
-    igr_lapl[2][1] = 5.972737e-02;
-    igr_lapl[2][2] = 2.801520e-03;
-    igr_lapl[2][3] = 1.414764e-01;
+    igr_lapl[2][0]     = 1.613281e-01;
+    igr_lapl[2][1]     = 5.972737e-02;
+    igr_lapl[2][2]     = 2.801520e-03;
+    igr_lapl[2][3]     = 1.414764e-01;
   }
   else if (ionid == 1)
   {
     ////////////////////////////////
-    // Test Derivatives w.r.t Ion 1 
+    // Test Derivatives w.r.t Ion 1
     ////////////////////////////////
     // d/dR_0
     ////////////////////////////////
@@ -138,10 +139,10 @@ void create_J3_ion_reference_values(TinyVector<ParticleSet::ParticleGradient,3>&
     igr_egrad[0][3][0] = 1.205085e-02;
     igr_egrad[0][3][1] = 0.000000e+00;
     igr_egrad[0][3][2] = 4.321063e-02;
-    igr_lapl[0][0] = 1.671657e-01;
-    igr_lapl[0][1] = 8.572653e-03;
-    igr_lapl[0][2] = -7.744252e-01;
-    igr_lapl[0][3] = 1.543136e-01;
+    igr_lapl[0][0]     = 1.671657e-01;
+    igr_lapl[0][1]     = 8.572653e-03;
+    igr_lapl[0][2]     = -7.744252e-01;
+    igr_lapl[0][3]     = 1.543136e-01;
 
     // d/dR_1
     ////////////////////////////////
@@ -157,10 +158,10 @@ void create_J3_ion_reference_values(TinyVector<ParticleSet::ParticleGradient,3>&
     igr_egrad[1][3][0] = 0.000000e+00;
     igr_egrad[1][3][1] = -7.397172e-02;
     igr_egrad[1][3][2] = 0.000000e+00;
-    igr_lapl[1][0] = 0.000000e+00;
-    igr_lapl[1][1] = 0.000000e+00;
-    igr_lapl[1][2] = 0.000000e+00;
-    igr_lapl[1][3] = 0.000000e+00;
+    igr_lapl[1][0]     = 0.000000e+00;
+    igr_lapl[1][1]     = 0.000000e+00;
+    igr_lapl[1][2]     = 0.000000e+00;
+    igr_lapl[1][3]     = 0.000000e+00;
 
     // d/dR_2
     ////////////////////////////////
@@ -176,10 +177,10 @@ void create_J3_ion_reference_values(TinyVector<ParticleSet::ParticleGradient,3>&
     igr_egrad[2][3][0] = 2.541299e-02;
     igr_egrad[2][3][1] = 0.000000e+00;
     igr_egrad[2][3][2] = -5.560366e-02;
-    igr_lapl[2][0] = 2.159518e-02;
-    igr_lapl[2][1] = 5.972737e-02;
-    igr_lapl[2][2] = 3.744006e-02;
-    igr_lapl[2][3] = 1.398887e-01;
+    igr_lapl[2][0]     = 2.159518e-02;
+    igr_lapl[2][1]     = 5.972737e-02;
+    igr_lapl[2][2]     = 3.744006e-02;
+    igr_lapl[2][3]     = 1.398887e-01;
   }
   else
     throw std::runtime_error("create_J3_ion_reference_values: ionid can only be 0 or 1");
@@ -291,21 +292,21 @@ void test_J3_polynomial3D(const DynamicCoordinateKind kind_selected)
   j3->extractOptimizableObjectRefs(opt_obj_refs);
   REQUIRE(opt_obj_refs.size() == 2);
 
-  opt_variables_type optvars;
+  OptVariables optvars;
   Vector<WaveFunctionComponent::ValueType> dlogpsi;
   Vector<WaveFunctionComponent::ValueType> dhpsioverpsi;
 
   for (OptimizableObject& obj : opt_obj_refs)
     obj.checkInVariablesExclusive(optvars);
   optvars.resetIndex();
-  const int NumOptimizables(optvars.size());
+  const int num_opt_vars(optvars.size());
   j3->checkOutVariables(optvars);
-  dlogpsi.resize(NumOptimizables);
-  dhpsioverpsi.resize(NumOptimizables);
+  dlogpsi.resize(num_opt_vars);
+  dhpsioverpsi.resize(num_opt_vars);
   j3->evaluateDerivatives(elec_, optvars, dlogpsi, dhpsioverpsi);
 
   app_log() << std::endl << "reporting dlogpsi and dhpsioverpsi" << std::scientific << std::endl;
-  for (int iparam = 0; iparam < NumOptimizables; iparam++)
+  for (int iparam = 0; iparam < num_opt_vars; iparam++)
     app_log() << "param=" << iparam << " : " << dlogpsi[iparam] << "  " << dhpsioverpsi[iparam] << std::endl;
   app_log() << std::endl;
 
@@ -313,9 +314,9 @@ void test_J3_polynomial3D(const DynamicCoordinateKind kind_selected)
   CHECK(std::real(dhpsioverpsi[43]) == Approx(-2.3246270644e+05));
 
   Vector<WaveFunctionComponent::ValueType> dlogpsiWF;
-  dlogpsiWF.resize(NumOptimizables);
+  dlogpsiWF.resize(num_opt_vars);
   j3->evaluateDerivativesWF(elec_, optvars, dlogpsiWF);
-  for (int i = 0; i < NumOptimizables; i++)
+  for (int i = 0; i < num_opt_vars; i++)
     CHECK(dlogpsi[i] == ValueApprox(dlogpsiWF[i]));
 
   VirtualParticleSet VP(elec_);
@@ -330,7 +331,7 @@ void test_J3_polynomial3D(const DynamicCoordinateKind kind_selected)
   CHECK(std::real(ratios2[1]) == Approx(1.0257141422));
 
   std::fill(ratios2.begin(), ratios2.end(), 0);
-  Matrix<ValueType> dratio(2, NumOptimizables);
+  Matrix<ValueType> dratio(2, num_opt_vars);
   j3->evaluateDerivRatios(VP, optvars, ratios2, dratio);
 
   CHECK(std::real(ratios2[0]) == Approx(1.0357541137));
@@ -391,74 +392,73 @@ void test_J3_polynomial3D(const DynamicCoordinateKind kind_selected)
   CHECK(ValueApprox(nlpp_ratios[1][0]) == ValueType(1.0013145208));
   CHECK(ValueApprox(nlpp_ratios[1][1]) == ValueType(1.0011137724));
   CHECK(ValueApprox(nlpp_ratios[1][2]) == ValueType(1.0017225742));
-  
+
   //Now to test the J3 ion derivatives
-  using GradType = QMCTraits::GradType;
+  using GradType  = QMCTraits::GradType;
   GradType g0_ref = {ValueType(0.4175355519), ValueType(0.0), ValueType(-0.1822083424)};
   GradType g1_ref = {ValueType(-0.4841712529), ValueType(0.0), ValueType(-0.1479434372)};
 
   GradType g0(0), g1(0);
 
-  g0=j3->evalGradSource(elec_,ions_,0);
-  g1=j3->evalGradSource(elec_,ions_,1);
+  g0 = j3->evalGradSource(elec_, ions_, 0);
+  g1 = j3->evalGradSource(elec_, ions_, 1);
 
-  for (int idim=0; idim<3; idim++)
-  { 
-    CHECK( g0[idim] == ValueApprox(g0_ref[idim]));
-    CHECK( g1[idim] == ValueApprox(g1_ref[idim]));
+  for (int idim = 0; idim < 3; idim++)
+  {
+    CHECK(g0[idim] == ValueApprox(g0_ref[idim]));
+    CHECK(g1[idim] == ValueApprox(g1_ref[idim]));
   }
 
-  TinyVector<ParticleSet::ParticleGradient,3> g_grad_ref;
-  TinyVector<ParticleSet::ParticleLaplacian,3> g_lapl_ref;
-  TinyVector<ParticleSet::ParticleGradient,3> g_grad;
-  TinyVector<ParticleSet::ParticleLaplacian,3> g_lapl;
+  TinyVector<ParticleSet::ParticleGradient, 3> g_grad_ref;
+  TinyVector<ParticleSet::ParticleLaplacian, 3> g_lapl_ref;
+  TinyVector<ParticleSet::ParticleGradient, 3> g_grad;
+  TinyVector<ParticleSet::ParticleLaplacian, 3> g_lapl;
 
   const int nelec = elec_.getTotalNum();
-  for (int idim=0; idim<3; idim++)
+  for (int idim = 0; idim < 3; idim++)
   {
     g_grad_ref[idim].resize(nelec);
     g_lapl_ref[idim].resize(nelec);
     g_grad[idim].resize(nelec);
     g_lapl[idim].resize(nelec);
-  } 
+  }
 
   //check ion 0
-  create_J3_ion_reference_values(g_grad_ref,g_lapl_ref,0);
-  j3->evalGradSource(elec_,ions_,0,g_grad,g_lapl);
-  for(int igdim=0; igdim<3; igdim++)
+  create_J3_ion_reference_values(g_grad_ref, g_lapl_ref, 0);
+  j3->evalGradSource(elec_, ions_, 0, g_grad, g_lapl);
+  for (int igdim = 0; igdim < 3; igdim++)
   {
-    for(int ielec=0; ielec<nelec; ielec++)
-    {  
-      for(int idim=0; idim<3; idim++)
-        CHECK( g_grad[igdim][ielec][idim] == ValueApprox(g_grad_ref[igdim][ielec][idim]) );
-      
-      CHECK( g_lapl[igdim][ielec] == ValueApprox(g_lapl_ref[igdim][ielec]) );
+    for (int ielec = 0; ielec < nelec; ielec++)
+    {
+      for (int idim = 0; idim < 3; idim++)
+        CHECK(g_grad[igdim][ielec][idim] == ValueApprox(g_grad_ref[igdim][ielec][idim]));
+
+      CHECK(g_lapl[igdim][ielec] == ValueApprox(g_lapl_ref[igdim][ielec]));
     }
-  } 
+  }
 
   //clear reference values
-  for(int igdim=0; igdim<3; igdim++)
+  for (int igdim = 0; igdim < 3; igdim++)
   {
-    g_grad_ref[igdim]=0;
-    g_lapl_ref[igdim]=0;
-    g_grad[igdim]=0;
-    g_lapl[igdim]=0;
+    g_grad_ref[igdim] = 0;
+    g_lapl_ref[igdim] = 0;
+    g_grad[igdim]     = 0;
+    g_lapl[igdim]     = 0;
   }
-  
-  //check ion 1
-  create_J3_ion_reference_values(g_grad_ref,g_lapl_ref,1);
-  j3->evalGradSource(elec_,ions_,1,g_grad,g_lapl);
-  for(int igdim=0; igdim<3; igdim++)
-  {
-    for(int ielec=0; ielec<nelec; ielec++)
-    {  
-      for(int idim=0; idim<3; idim++)
-        CHECK( g_grad[igdim][ielec][idim] == ValueApprox(g_grad_ref[igdim][ielec][idim]) );
-      
-      CHECK( g_lapl[igdim][ielec] == ValueApprox(g_lapl_ref[igdim][ielec]) );
-    }
-  } 
 
+  //check ion 1
+  create_J3_ion_reference_values(g_grad_ref, g_lapl_ref, 1);
+  j3->evalGradSource(elec_, ions_, 1, g_grad, g_lapl);
+  for (int igdim = 0; igdim < 3; igdim++)
+  {
+    for (int ielec = 0; ielec < nelec; ielec++)
+    {
+      for (int idim = 0; idim < 3; idim++)
+        CHECK(g_grad[igdim][ielec][idim] == ValueApprox(g_grad_ref[igdim][ielec][idim]));
+
+      CHECK(g_lapl[igdim][ielec] == ValueApprox(g_lapl_ref[igdim][ielec]));
+    }
+  }
 }
 
 TEST_CASE("PolynomialFunctor3D Jastrow", "[wavefunction]")

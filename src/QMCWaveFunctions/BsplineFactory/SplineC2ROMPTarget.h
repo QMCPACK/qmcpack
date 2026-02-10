@@ -302,7 +302,7 @@ public:
 
   template<class BSPLINESPO>
   friend class SplineSetReader;
-  friend struct BsplineReader;
+  friend class BsplineReader;
 };
 
 extern template class SplineC2ROMPTarget<float>;

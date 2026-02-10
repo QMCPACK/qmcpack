@@ -1,5 +1,5 @@
 
-import versions
+from .. import versions
 from .. import testing
 from ..testing import divert_nexus_log,restore_nexus_log
 from ..testing import value_eq,object_eq,check_object_eq
@@ -543,6 +543,7 @@ def test_files():
     filenames = [
         'VO2_M1_afm.in.xml',
         'CH4_afqmc.in.xml',
+        'OH_mixed_pos.in.xml',
         ]
     files = get_files()
     assert(set(filenames)==set(files.keys()))
@@ -1389,6 +1390,7 @@ def test_generate():
 
 
 def test_read():
+    import numpy as np
     from ..qmcpack_input import QmcpackInput
 
     files = get_files()
@@ -1419,6 +1421,16 @@ def test_read():
     assert(qi.is_afqmc_input())
 
     check_vs_serial_reference(qi,'CH4_afqmc.in.xml read')
+
+
+    # test reading mixed integer/float positions 
+    qi = QmcpackInput(files['OH_mixed_pos.in.xml'])
+    pos = qi.qmcsystem.particlesets.ion0.position
+    assert pos.dtype==float
+    pos_ref = np.array(
+        [[0., 0., 0.               ],
+         [0., 0., 1.8330343408e+00]],dtype=float)
+    assert value_eq(pos,pos_ref)
 
 #end def test_read
 

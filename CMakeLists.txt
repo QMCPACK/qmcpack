@@ -131,6 +131,7 @@ message(STATUS "CMAKE_BUILD_TYPE is ${CMAKE_BUILD_TYPE}")
 
 option(QMC_BUILD_SANDBOX_ONLY "Build only applications in Sandbox directory" OFF)
 option(ENABLE_GCOV "Enable code coverage" OFF)
+option(ENABLE_PYCOV "Enable python code coverage" OFF)
 option(BUILD_UNIT_TESTS "Build unit tests" ON)
 option(BUILD_MICRO_BENCHMARKS "Build micro benchmarks" ON)
 option(BUILD_LMYENGINE_INTERFACE "Build LMY engine" ON)
@@ -168,7 +169,7 @@ set(ENABLE_SANITIZER "" CACHE STRING "Valid input: ${VALID_SANITIZERS} or left e
 option(INSTALL_NEXUS "Install Nexus alongside QMCPACK" ON)
 if(INSTALL_NEXUS)
   install(
-    CODE "EXECUTE_PROCESS(COMMAND ${qmcpack_SOURCE_DIR}/nexus/install --leave_paths \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/bin)"
+    CODE "EXECUTE_PROCESS(COMMAND ${qmcpack_SOURCE_DIR}/install_nexus_binaries \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX})"
   )
 endif()
 
@@ -296,6 +297,11 @@ if(ENABLE_GCOV)
     message(FATAL_ERROR "ENABLE_GCOV was specified but compiler does not support GCC coverage flag")
   endif()
 endif(ENABLE_GCOV)
+
+if(ENABLE_PYCOV)
+  find_program(PYTHON_COVERAGE_EXECUTABLE NAMES python3-coverage coverage.py REQUIRED)
+  message(STATUS "Python coverage is enabled. Using ${PYTHON_COVERAGE_EXECUTABLE}")
+endif(ENABLE_PYCOV)
 
 #-------------------------------------------------------------------------------
 # Check SIMD alignment for CPU only

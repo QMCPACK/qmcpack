@@ -98,7 +98,7 @@ extern template class MemManage<PlatformKind::SYCL>;
 }; // namespace compute
 
 /** allocator for SYCL shared memory
- * @tparm T data type
+ * @tparam T data type
  */
 template<typename T>
 struct SYCLSharedAllocator

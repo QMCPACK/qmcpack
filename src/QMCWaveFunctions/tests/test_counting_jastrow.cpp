@@ -64,7 +64,7 @@ TEST_CASE("Gaussian Functor", "[wavefunction]")
   // return variables
   RealType fval, lval, llap, flap;
   PosType fgrad, lgrad;
-  opt_variables_type opt_vars;
+  OptVariables opt_vars;
 
   std::vector<RealType> dfval;
   std::vector<PosType> dfgrad;

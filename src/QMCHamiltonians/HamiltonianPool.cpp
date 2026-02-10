@@ -31,10 +31,7 @@ HamiltonianPool::HamiltonianPool(ParticleSetPool& pset_pool,
                                  Communicate* c,
                                  const char* aname)
     : MPIObjectBase(c), curH(0), ptcl_pool_(pset_pool), psi_pool_(psi_pool), curDoc(0)
-{
-  ClassName = "HamiltonianPool";
-  myName    = aname;
-}
+{}
 
 HamiltonianPool::~HamiltonianPool()
 {
@@ -71,8 +68,7 @@ bool HamiltonianPool::put(xmlNodePtr cur)
   PoolType::iterator hit(myPool.find(id));
   if (hit == myPool.end())
   {
-    curH = new HamiltonianFactory(id, *qp, ptcl_pool_.getPool(), psi_pool_.getPool(), myComm);
-    curH->setName(id);
+    curH       = new HamiltonianFactory(id, *qp, ptcl_pool_.getPool(), psi_pool_.getPool(), myComm);
     myPool[id] = curH;
   }
   else
@@ -85,7 +81,7 @@ bool HamiltonianPool::put(xmlNodePtr cur)
 
 bool HamiltonianPool::get(std::ostream& os) const
 {
-  for(auto& [name, factory] : myPool)
+  for (auto& [name, factory] : myPool)
   {
     os << "  Hamiltonian " << name << std::endl;
     factory->getH()->get(os);

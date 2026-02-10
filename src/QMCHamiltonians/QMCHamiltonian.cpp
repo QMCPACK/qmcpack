@@ -637,7 +637,7 @@ std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluate(
 
 QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateValueAndDerivatives(TrialWaveFunction& psi,
                                                                              ParticleSet& P,
-                                                                             const opt_variables_type& optvars,
+                                                                             const OptVariables& optvars,
                                                                              Vector<ValueType>& dlogpsi,
                                                                              Vector<ValueType>& dhpsioverpsi)
 {
@@ -664,7 +664,7 @@ std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluateValueAn
     const RefVectorWithLeader<QMCHamiltonian>& ham_list,
     const RefVectorWithLeader<TrialWaveFunction>& wf_list,
     const RefVectorWithLeader<ParticleSet>& p_list,
-    const opt_variables_type& optvars,
+    const OptVariables& optvars,
     RecordArray<ValueType>& dlogpsi,
     RecordArray<ValueType>& dhpsioverpsi)
 {
@@ -921,23 +921,6 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::getEnsembleAverage()
   for (int i = 0; i < H.size(); i++)
     sum += H[i]->getEnsembleAverage();
   return sum;
-}
-
-/** return pointer to the QMCHamtiltonian with the name
- *@param aname the name of Hamiltonian
- *@return the pointer to the named term.
- *
- * If not found, return 0
- */
-OperatorBase* QMCHamiltonian::getHamiltonian(const std::string& aname)
-{
-  for (int i = 0; i < H.size(); ++i)
-    if (H[i]->getName() == aname)
-      return H[i].get();
-  for (int i = 0; i < auxH.size(); ++i)
-    if (auxH[i]->getName() == aname)
-      return auxH[i].get();
-  return nullptr;
 }
 
 RefVector<OperatorBase> QMCHamiltonian::getTWFDependentComponents()

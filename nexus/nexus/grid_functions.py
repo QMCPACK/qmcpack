@@ -83,6 +83,7 @@ Module contents
 import os
 from .developer import DevBase, obj, error, unavailable
 from .fileio import StandardFile,XsfFile
+from . import numpy_extensions as npe
 
 try:
     import numpy as np
@@ -115,15 +116,15 @@ def polar_to_cartesian(points,surface=False):
     Parameters
     ----------
     points  : `array_like, float, shape (N,d)`
-        Real valued points in polar coordinates :math:`(r,\phi)`. `N` is the 
+        Real valued points in polar coordinates :math:`(r,\\phi)`. `N` is the 
         number of points and `d` is the dimension of the coordinate system.  
-        The inputted points must satisfy :math:`r=\mathrm{points[:,0]}`, 
-        :math:`\phi=\mathrm{points[:,1]}`, and :math:`\phi\in[0,2\pi)`.
+        The inputted points must satisfy :math:`r=\\mathrm{points[:,0]}`, 
+        :math:`\\phi=\\mathrm{points[:,1]}`, and :math:`\\phi\\in[0,2\\pi)`.
     surface : `bool, optional, default False`
         Points lie only on the boundary (a circle) or not.  If `False` (the 
         default), the inputted points are two-dimensional (`d=2`) with 
-        :math:`(r,\phi)` provided.  If `True`, the inputted points are angular 
-        only (`d=1` with :math:`\phi=\mathrm{points[:,0]}`). In this case, 
+        :math:`(r,\\phi)` provided.  If `True`, the inputted points are angular 
+        only (`d=1` with :math:`\\phi=\\mathrm{points[:,0]}`). In this case, 
         :math:`r=1`.
 
     Returns
@@ -160,13 +161,13 @@ def cartesian_to_polar(points,surface=False):
     ----------
     points  : `array_like, float, shape (N,2)`
         Real valued points in Cartesian coordinates :math:`(x, y)`. `N` is 
-        the number of points and :math:`x=\mathrm{points[:,0]}`, 
-        :math:`y=\mathrm{points[:,1]}`. 
+        the number of points and :math:`x=\\mathrm{points[:,0]}`, 
+        :math:`y=\\mathrm{points[:,1]}`. 
     surface : `bool, optional, default False`
         Inputted points lie only on a circle or not.  It is the user's 
         responsibility to guarantee the correctness of this assertion.
         If `False` (the default), the outputted points are two-dimensional 
-        (`d=2`) with :math:`(r,\phi)` returned.  If `True`, only :math:`\phi` 
+        (`d=2`) with :math:`(r,\\phi)` returned.  If `True`, only :math:`\\phi` 
         is returned (`d=1`).
 
     Returns
@@ -203,18 +204,18 @@ def spherical_to_cartesian(points,surface=False):
     Parameters
     ----------
     points  : `array_like, float, shape (N,d)`
-        Real valued points in spherical coordinates :math:`(r,\\theta,\phi)`. 
+        Real valued points in spherical coordinates :math:`(r,\\theta,\\phi)`. 
         `N` is the number of points, `d` is the dimension of the coordinate 
         system.  The inputted points must satisfy 
-        :math:`r=\mathrm{points[:,0]}`, :math:`\\theta=\mathrm{points[:,1]}`, 
-        :math:`\phi=\mathrm{points[:,1]}`, with :math:`\\theta\in[0,\pi)`, 
-        :math:`\phi\in[0,2\pi)`.
+        :math:`r=\\mathrm{points[:,0]}`, :math:`\\theta=\\mathrm{points[:,1]}`, 
+        :math:`\\phi=\\mathrm{points[:,1]}`, with :math:`\\theta\\in[0,\\pi)`, 
+        :math:`\\phi\\in[0,2\\pi)`.
     surface : `bool, optional, default False`
         Points lie only on the boundary (a sphere) or not. If `False` (the 
         default), the inputted points are 3D (`d=3`) with 
-        :math:`(r,\\theta,\phi)` provided.  If `True`, the inputted points are 
-        angular only (`d=2` with :math:`\\theta=\mathrm{points[:,0]}`, 
-        :math:`\phi=\mathrm{points[:,0]}`). In this case, :math:`r=1`.
+        :math:`(r,\\theta,\\phi)` provided.  If `True`, the inputted points are 
+        angular only (`d=2` with :math:`\\theta=\\mathrm{points[:,0]}`, 
+        :math:`\\phi=\\mathrm{points[:,0]}`). In this case, :math:`r=1`.
 
     Returns
     -------
@@ -254,14 +255,14 @@ def cartesian_to_spherical(points,surface=False):
     ----------
     points  : `array_like, float, shape (N,3)`
         Real valued points in Cartesian coordinates :math:`(x,y,z)`. `N` is 
-        the number of points and :math:`x=\mathrm{points[:,0]}`, 
-        :math:`y=\mathrm{points[:,1]}`, :math:`z=\mathrm{points[:,2]}`. 
+        the number of points and :math:`x=\\mathrm{points[:,0]}`, 
+        :math:`y=\\mathrm{points[:,1]}`, :math:`z=\\mathrm{points[:,2]}`. 
     surface : `bool, optional, default False`
         Inputted points lie only on a sphere or not.  It is the user's 
         responsibility to guarantee the correctness of this assertion.
         If `False` (the default), the outputted points are 3D (`d=3`) with 
-        :math:`(r,\\theta,\phi)` returned.  If `True`, only 
-        :math:`(\\theta,\phi)` is returned (`d=2`).
+        :math:`(r,\\theta,\\phi)` returned.  If `True`, only 
+        :math:`(\\theta,\\phi)` is returned (`d=2`).
 
     Returns
     -------
@@ -335,7 +336,7 @@ def unit_grid_points(shape,centered=False,endpoint=None):
     points = np.meshgrid(*linear_grids,indexing='ij')
     points = np.array(points)
     # reshape and transpose the points
-    points.shape = (len(points),np.array(shape).prod())
+    npe.reshape_inplace(points, (len(points),np.array(shape).prod()))
     points = points.T
     return points
 #end def unit_grid_points
@@ -1473,7 +1474,7 @@ class StructuredGrid(Grid):
         This should only be a local and temporary change of state.  It should 
         be reversed by calling `reshape_flat` as soon as possible.
         """
-        self.r.shape = self.full_points_shape
+        npe.reshape_inplace(self.r, self.full_points_shape)
     #end def reshape_full
 
 
@@ -1485,7 +1486,7 @@ class StructuredGrid(Grid):
         This function is meant to reverse the temporary state change induced 
         by `reshape_full`.
         """
-        self.r.shape = self.flat_points_shape
+        npe.reshape_inplace(self.r, self.flat_points_shape)
     #end def reshape_flat
 
 
@@ -1710,10 +1711,10 @@ class StructuredGrid(Grid):
         #end for
         if not unit:
             bpoints = self.points_from_unit(upoints)
-            bpoints.shape = nlines,n,self.space_dim
+            npe.reshape_inplace(bpoints, (nlines, n, self.space_dim))
         else:
             bpoints = upoints
-            bpoints.shape = nlines,n,self.grid_dim
+            npe.reshape_inplace(bpoints, (nlines, n, self.grid_dim))
         #end if
         return bpoints
     #end def get_boundary_lines
@@ -2429,7 +2430,7 @@ class SpheroidGrid(StructuredGridWithAxes):
         the grid.
     shape : `array_like, int, shape (dg,), optional`
         The number of grid points in each dimension. The number of grid cells 
-        in the azimuthal direction (:math:`\phi`) matches the number of grid 
+        in the azimuthal direction (:math:`\\phi`) matches the number of grid 
         points.  In the radial (and, if present, 3D polar) dimension, there is 
         one fewer grid cell than grid points as the grid points go all the way 
         to the edge of the boundary in those directions.  `dg` is the dimension 
@@ -2803,7 +2804,7 @@ class SpheroidSurfaceGrid(StructuredGridWithAxes):
         to generate the grid.
     shape : `array_like, int, shape (dg,), optional`
         The number of grid points in each dimension. The number of grid cells 
-        in the azimuthal direction (:math:`\phi`) matches the number of grid 
+        in the azimuthal direction (:math:`\\phi`) matches the number of grid 
         points.  In 3D spherical coordinates, along the polar dimension there is
         one fewer grid cell than grid points as the grid points go all the way 
         to the edge of the boundary in that direction.  `dg` is the dimension 
@@ -3352,7 +3353,7 @@ class GridFunction(GBase):
             if nvtot%nv!=0 or nvtot//nv!=grid.npoints:
                 self.error('value_shape and total number of values are inconsistent.\nTotal number of values: {}\nvalue_shape: {}\nExpected number of values per grid point: {}\nActual number of values per grid point: {}'.format(nvtot,value_shape,nv,nvtot/nv))
             #end if
-            values.shape = (grid.npoints,nv)
+            npe.reshape_inplace(values, (grid.npoints, nv))
         #end if
 
         # assign grid and values
@@ -3395,12 +3396,12 @@ class GridFunction(GBase):
 
 
     def reshape_values_full(self):
-        self.values.shape = (self.npoints,)+self.value_shape
+        npe.reshape_inplace(self.values, ((self.npoints,)+self.value_shape))
     #end def reshape_values_full
 
 
     def reshape_values_flat(self):
-        self.values.shape = (self.npoints,self.nvalues)
+        npe.reshape_inplace(self.values, (self.npoints,self.nvalues))
     #end def reshape_values_flat
 #end class GridFunction
 
@@ -3478,25 +3479,25 @@ class StructuredGridFunction(GridFunction):
     
 
     def reshape_points_full(self):
-        self.values.shape = self.grid_shape+(self.nvalues,)
+        npe.reshape_inplace(self.values, (self.grid_shape+(self.nvalues,)))
         self.grid.reshape_full()
     #end def reshape_points_full
 
 
     def reshape_points_flat(self):
-        self.values.shape = (self.npoints,self.nvalues)
+        npe.reshape_inplace(self.values, (self.npoints, self.nvalues))
         self.grid.reshape_flat()
     #end def reshape_points_flat
 
 
     def reshape_full(self):
-        self.values.shape = self.grid_shape+self.value_shape
+        npe.reshape_inplace(self.values, (self.grid_shape + self.value_shape))
         self.grid.reshape_full()
     #end def reshape_full
 
 
     def reshape_flat(self):
-        self.values.shape = (self.npoints,self.nvalues)
+        npe.reshape_inplace(self.values, (self.npoints, self.nvalues))
         self.grid.reshape_flat()
     #end def reshape_flat
 
@@ -3571,11 +3572,11 @@ class StructuredGridFunction(GridFunction):
             self.error('cannot plot contours in unit coordinates\ngrid must have dimension 2 to make contour plots\ndimension of grid for this function: {}'.format(self.grid_dim))
         #end if
         X,Y = self.grid.unit_points().T
-        X.shape = self.grid_shape
-        Y.shape = self.grid_shape
+        npe.reshape_inplace(X, self.grid_shape)
+        npe.reshape_inplace(Y, self.grid_shape)
         Zm = self.f.T
         for Z in Zm:
-            Z.shape = self.grid_shape
+            npe.reshape_inplace(Z, self.grid_shape)
             fig,ax = self.setup_mpl_fig(fig=fig,dim=self.grid_dim)
             ax.contour(X,Y,Z,**kwargs)
             if boundary:
@@ -3605,11 +3606,11 @@ class StructuredGridFunction(GridFunction):
             self.error('cannot plot contours in unit coordinates\ngrid must have dimension 2 to make contour plots\ndimension of grid for this function: {}'.format(self.grid_dim))
         #end if
         X,Y = self.grid.unit_points().T
-        X.shape = self.grid_shape
-        Y.shape = self.grid_shape
+        npe.reshape_inplace(X, self.grid_shape)
+        npe.reshape_inplace(Y, self.grid_shape)
         Zm = self.f.T
         for Z in Zm:
-            Z.shape = self.grid_shape
+            npe.reshape_inplace(Z, self.grid_shape)
             fig,ax = self.setup_mpl_fig(fig=fig,dim=self.grid_dim+1)
             ax.plot_surface(X,Y,Z,**kwargs)
         #end for
@@ -3645,7 +3646,7 @@ class StructuredGridFunction(GridFunction):
             if level is None:
                 level = (f.max()+f.min())/2
             #end if
-            f.shape = self.grid_shape
+            npe.reshape_inplace(f, self.grid_shape)
             ret = measure.marching_cubes(f,level,spacing=spacing)
             verts = ret[0] 
             faces = ret[1]
@@ -3704,9 +3705,9 @@ class StructuredGridFunctionWithAxes(StructuredGridFunction):
                 self.error('Interpolation is not yet supported for nvalues>1.')
             #end if
             v_shape = v.shape
-            v.shape = v_shape[:-1]
+            npe.reshape_inplace(v, v_shape[:-1])
             values = scipy_ndimage.map_coordinates(v, indices, **kw)
-            v.shape = v_shape
+            npe.reshape_inplace(v, v_shape)
         else:
             self.error('Interpolation of type "{}" is not supported.\nValid options are: map_coordinates'.format(type))
         #end if
@@ -3759,11 +3760,11 @@ class StructuredGridFunctionWithAxes(StructuredGridFunction):
             X,Y    = np.dot(ax,self.r.T)
             ax_trans = ax
         #end if
-        X.shape = self.grid_shape
-        Y.shape = self.grid_shape
+        npe.reshape_inplace(X, self.grid_shape)
+        npe.reshape_inplace(Y, self.grid_shape)
         Zm = self.f.T
         for Z in Zm:
-            Z.shape = self.grid_shape
+            npe.reshape_inplace(Z, self.grid_shape)
             fig,ax = self.setup_mpl_fig(fig=fig,dim=self.grid_dim)
             ax.contour(X,Y,Z,**kwargs)
             if boundary:
@@ -3802,11 +3803,11 @@ class StructuredGridFunctionWithAxes(StructuredGridFunction):
             self.error('cannot plot surface\ngrid must have dimension 2 to make contour plots\ndimension of grid for this function: {}'.format(self.grid_dim))
         #end if
         X,Y = self.r.T
-        X.shape = self.grid_shape
-        Y.shape = self.grid_shape
+        npe.reshape_inplace(X, self.grid_shape)
+        npe.reshape_inplace(Y, self.grid_shape)
         Zm = self.f.T
         for Z in Zm:
-            Z.shape = self.grid_shape
+            npe.reshape_inplace(Z, self.grid_shape)
             fig,ax = self.setup_mpl_fig(fig=fig,dim=self.grid_dim+1)
             ax.plot_surface(X,Y,Z,**kwargs)
         #end for
@@ -3845,7 +3846,7 @@ class StructuredGridFunctionWithAxes(StructuredGridFunction):
             if level is None:
                 level = (f.max()+f.min())/2
             #end if
-            f.shape = self.grid_shape
+            npe.reshape_inplace(f, self.grid_shape)
             ret = measure.marching_cubes(f,level,spacing=spacing)
             verts = ret[0] 
             faces = ret[1]
@@ -4000,7 +4001,7 @@ class ParallelotopeGridFunction(StructuredGridFunctionWithAxes):
         #end if
 
         # reshape values (for now GridFunction does not support more structured values)
-        values.shape = len(values),values.size//len(values)
+        npe.reshape_inplace(values, (len(values),values.size//len(values)))
 
         # normalize the axes
         for d in range(D):

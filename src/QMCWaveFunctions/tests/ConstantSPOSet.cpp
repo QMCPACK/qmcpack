@@ -39,16 +39,16 @@ std::unique_ptr<SPOSetT<T>> ConstantSPOSet<T>::makeClone() const
 };
 
 template<typename T>
-std::string ConstantSPOSet<T>::getClassName() const { return "ConstantSPOSet"; };
+std::string ConstantSPOSet<T>::getClassName() const
+{ return "ConstantSPOSet"; }
 
 template<typename T>
-void ConstantSPOSet<T>::checkOutVariables(const opt_variables_type& active)
-{
-  APP_ABORT("ConstantSPOSet should not call checkOutVariables");
-};
+void ConstantSPOSet<T>::checkOutVariables(const OptVariables& active)
+{ APP_ABORT("ConstantSPOSet should not call checkOutVariables"); }
 
 template<typename T>
-void ConstantSPOSet<T>::setOrbitalSetSize(int norbs) { APP_ABORT("ConstantSPOSet should not call setOrbitalSetSize()"); }
+void ConstantSPOSet<T>::setOrbitalSetSize(int norbs)
+{ APP_ABORT("ConstantSPOSet should not call setOrbitalSetSize()"); }
 
 template<typename T>
 void ConstantSPOSet<T>::setRefVals(const ValueMatrix& vals)
@@ -78,10 +78,14 @@ template<typename T>
 void ConstantSPOSet<T>::evaluateValue(const ParticleSet& P, int iat, ValueVector& psi)
 {
   const auto* vp = dynamic_cast<const VirtualParticleSet*>(&P);
-  int ptcl = vp ? vp->refPtcl : iat;
+  const int ptcl = vp ? vp->refPtcl : iat;
+  auto& pset     = vp ? vp->getRefPS() : P;
   assert(psi.size() == SPOSet::OrbitalSetSize);
+
+  const int group = pset.getGroupID(ptcl);
+  const int first = pset.first(group);
   for (int iorb = 0; iorb < SPOSet::OrbitalSetSize; iorb++)
-    psi[iorb] = ref_psi_(ptcl, iorb);
+    psi[iorb] = ref_psi_(ptcl - first, iorb);
 };
 
 template<typename T>
@@ -91,11 +95,13 @@ void ConstantSPOSet<T>::evaluateVGL(const ParticleSet& P,
                                     GradVector& dpsi,
                                     ValueVector& d2psi)
 {
+  const int group = P.getGroupID(iat);
+  const int first = P.first(group);
   for (int iorb = 0; iorb < SPOSet::OrbitalSetSize; iorb++)
   {
-    psi[iorb]   = ref_psi_(iat, iorb);
-    dpsi[iorb]  = ref_egrad_(iat, iorb);
-    d2psi[iorb] = ref_elapl_(iat, iorb);
+    psi[iorb]   = ref_psi_(iat - first, iorb);
+    dpsi[iorb]  = ref_egrad_(iat - first, iorb);
+    d2psi[iorb] = ref_elapl_(iat - first, iorb);
   }
 };
 

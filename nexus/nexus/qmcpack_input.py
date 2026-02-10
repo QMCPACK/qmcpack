@@ -137,7 +137,7 @@ import os
 import inspect
 import keyword
 import numpy as np
-from io import StringIO
+from .numpy_extensions import reshape_inplace
 from .xmlreader import XMLreader, XMLelement
 from .developer import DevBase, obj, hidden, error
 from .periodic_table import is_element
@@ -145,6 +145,7 @@ from .structure import Structure, Jellium, get_kpath
 from .physical_system import PhysicalSystem
 from .simulation import SimulationInput, SimulationInputTemplate
 from .pwscf_input import array_to_string as pwscf_array_string
+from . import numpy_extensions as npe
 
 yesno_dict     = {True:'yes' ,False:'no'}
 truefalse_dict = {True:'true',False:'false'}
@@ -191,7 +192,7 @@ def attribute_to_value(attr):
     elif is_array(attr,int):
         val = np.array(attr.split(),int)
         if val.size==9:
-            val.shape = 3,3
+            npe.reshape_inplace(val, (3, 3))
         #end if
     elif is_array(attr,float):
         val = np.array(attr.split(),float)
@@ -1580,7 +1581,7 @@ class Param(Names):
     #end def __call__
 
     def read(self,xml):
-        val = ''
+        val = None
         attr = set(xml._attributes.keys())
         other_attr = attr-set(['name'])
         if 'name' in attr and len(other_attr)>0:
@@ -1591,28 +1592,43 @@ class Param(Names):
             self.metadata[xml.name] = oa
         #end if
         if 'text' in xml:
-            token = xml.text.split('\n',1)[0].split(None,1)[0]
+            text = xml.text.strip()
+            # nothing in text
+            if len(text)==0:
+                return text
+            # scalar value
+            if ' ' not in text:
+                try:
+                    val = int(text)
+                except ValueError:
+                    try:
+                        val = float(text)
+                    except ValueError:
+                        val = text
+                return val
+            # array value
+            tokens  = []
+            rowlens = []
+            for line in text.splitlines():
+                if len(line.strip())==0:
+                    continue
+                t = line.split()
+                rowlens.append(len(t))
+                tokens.extend(t)
             try:
-                if is_int(token):
-                    val = np.loadtxt(StringIO(xml.text),int)
-                elif is_float(token):
-                    val = np.loadtxt(StringIO(xml.text),float)
-                else:
-                    val = np.array(xml.text.split())
-                #end if
-            except:
-                if is_int(token):
-                    val = np.array(xml.text.split(),dtype=int)
-                elif is_float(token):
-                    val = np.array(xml.text.split(),dtype=float)
-                else:
-                    val = np.array(xml.text.split())
-                #end if
-            #end try
+                val = np.array(tokens,dtype=int)
+            except ValueError:
+                try:
+                    val = np.array(tokens,dtype=float)
+                except ValueError:
+                    val = np.array(tokens,dtype=object)
+            if len(set(rowlens))==1 and len(rowlens)>1:
+                # rows have identical size: 2d
+                reshape_inplace(val,len(rowlens),rowlens[0])
             if val.size==1:
-                val = val.ravel()[0]
-            #end if
-        #end if
+                self.error('scalar value interpreted as an array.  This is a developer error.')
+        if val is None:
+            val = ''
         return val
     #end def read
 
@@ -3856,14 +3872,14 @@ class QmcpackInput(SimulationInput,Names):
             if structure.folded_structure is not None:
                 fs = structure.folded_structure
                 axes = np.array(pwscf_array_string(fs.axes).split(),dtype=float)
-                axes.shape = fs.axes.shape
+                npe.reshape_inplace(axes, fs.axes.shape)
                 axes = np.dot(structure.tmatrix,axes)
                 if np.abs(axes-structure.axes).sum()>1e-5:
                     self.error('supercell axes do not match tiled version of folded cell axes\n  you may have changed one set of axes (super/folded) and not the other\n  folded cell axes:\n'+str(fs.axes)+'\n  supercell axes:\n'+str(structure.axes)+'\n  folded axes tiled:\n'+str(axes))
                 #end if
             else:
                 axes = np.array(pwscf_array_string(structure.axes).split(),dtype=float)
-                axes.shape = structure.axes.shape
+                npe.reshape_inplace(axes, structure.axes.shape)
             #end if
             structure.adjust_axes(axes)
 
@@ -4083,7 +4099,7 @@ class QmcpackInput(SimulationInput,Names):
             # reshape single atom case, shape (3,) as shape (1,3)
             pos = np.asarray(pos)
             if len(pos.flatten())==3:
-                pos.shape = (1,3)
+                npe.reshape_inplace(pos, (1, 3))
             #end if
 
             structure = Structure(axes=axes,elem=elem,pos=pos,center=center,units='B')
@@ -5342,14 +5358,14 @@ def generate_simulationcell(bconds='ppp',lr_dim_cutoff=15,lr_tol=None,lr_handler
             if structure.folded_structure is not None:
                 fs = structure.folded_structure
                 axes = np.array(pwscf_array_string(fs.axes).split(),dtype=float)
-                axes.shape = fs.axes.shape
+                npe.reshape_inplace(axes, fs.axes.shape)
                 axes = np.dot(structure.tmatrix,axes)
                 if np.abs(axes-structure.axes).sum()>1e-5:
                     QmcpackInput.class_error('in generate_simulationcell\nsupercell axes do not match tiled version of folded cell axes\nyou may have changed one set of axes (super/folded) and not the other\nfolded cell axes:\n'+str(fs.axes)+'\nsupercell axes:\n'+str(structure.axes)+'\nfolded axes tiled:\n'+str(axes))
                 #end if
             else:
                 axes = np.array(pwscf_array_string(structure.axes).split(),dtype=float)
-                axes.shape = structure.axes.shape
+                npe.reshape_inplace(axes, structure.axes.shape)
             #end if
             structure.adjust_axes(axes)
 
