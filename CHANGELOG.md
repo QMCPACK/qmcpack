@@ -8,14 +8,14 @@ Notable changes to QMCPACK are documented in this file.
   https://qmcpack.readthedocs.io/en/develop/performance_portable.html for instructions on using the batched/performance portable drivers.
   New projects should only use the batched drivers.
 * Added new variable period for estimator measurements feature, input parameter estimator_period, and Nexus support
-  [#5574](https://github.com/QMCPACK/qmcpack/pull/5574), [#5577](https://github.com/QMCPACK/qmcpack/pull/5577). antial speed and
+  [#5574](https://github.com/QMCPACK/qmcpack/pull/5574), [#5577](https://github.com/QMCPACK/qmcpack/pull/5577).
   efficiency improvements are possible for properties with a long autocorrelation period.
 * GPU offload of SOC calculations completed [#5547](https://github.com/QMCPACK/qmcpack/pull/5547)
 * Batched implementation of G of r ( g(r), PairCorrEstimator ) [#5600](https://github.com/QMCPACK/qmcpack/pull/5600)
 * Batched structure factor estimator [#5490](https://github.com/QMCPACK/qmcpack/pull/5490),
   [#5540](https://github.com/QMCPACK/qmcpack/pull/5540)
 * Orbital rotation support for fully complex wavefunctions on GPUs [#5549](https://github.com/QMCPACK/qmcpack/pull/5549)
-* Support for ROCm 7.0+  [#5548](https://github.com/QMCPACK/qmcpack/pull/5548)
+* Support for ROCm 7.0+ [#5548](https://github.com/QMCPACK/qmcpack/pull/5548)
 * Container with "complete" QMCPACK development version including Quantum ESPRESSO and PySCF
   [#5681](https://github.com/QMCPACK/qmcpack/pull/5681), [#5782](https://github.com/QMCPACK/qmcpack/pull/5782). This will be
   expanded and documented in future versions.
