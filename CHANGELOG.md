@@ -5,7 +5,7 @@ Notable changes to QMCPACK are documented in this file.
 ## [Unreleased]
 
 * Upcoming breaking change: Classic/non-batched drivers will be removed in a future release. See
-  https://qmcpack.readthedocs.io/en/develop/performance_portable.html for instructions on using the batched/performance portable rs.
+  https://qmcpack.readthedocs.io/en/develop/performance_portable.html for instructions on using the batched/performance portable drivers.
   New projects should only use the batched drivers.
 * Added new variable period for estimator measurements feature, input parameter estimator_period, and Nexus support
   [#5574](https://github.com/QMCPACK/qmcpack/pull/5574), [#5577](https://github.com/QMCPACK/qmcpack/pull/5577). antial speed and
