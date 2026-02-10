@@ -551,22 +551,12 @@ void SplineR2R<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPO
         ST a[4], b[4], c[4], da[4], db[4], dc[4], d2a[4], d2b[4], d2c[4];
         spline2::computeLocationAndFractional(spline_ptr, pos_iw_ptr[1], pos_iw_ptr[2], pos_iw_ptr[3], ix, iy, iz, a, b,
                                               c, da, db, dc, d2a, d2b, d2c);
-        const ST symGGt[6] = {GGt_ptr[0], GGt_ptr[1] + GGt_ptr[3], GGt_ptr[2] + GGt_ptr[6],
-                              GGt_ptr[4], GGt_ptr[5] + GGt_ptr[7], GGt_ptr[8]};
 
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = 0; index < last - first; index++)
         {
           spline2offload::evaluate_vgh_impl_v2(spline_ptr, ix, iy, iz, first + index, a, b, c, da, db, dc, d2a, d2b,
                                                d2c, offload_scratch_iw_ptr + first + index, spline_padded_size);
-          const int output_index = first + index;
-          offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::LAPL + output_index] =
-              SymTrace(offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::HESS00 + output_index],
-                       offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::HESS01 + output_index],
-                       offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::HESS02 + output_index],
-                       offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::HESS11 + output_index],
-                       offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::HESS12 + output_index],
-                       offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::HESS22 + output_index], symGGt);
         }
       }
 
@@ -587,6 +577,21 @@ void SplineR2R<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPO
         const ST G[9] = {PrimLattice_G_ptr[0], PrimLattice_G_ptr[1], PrimLattice_G_ptr[2],
                          PrimLattice_G_ptr[3], PrimLattice_G_ptr[4], PrimLattice_G_ptr[5],
                          PrimLattice_G_ptr[6], PrimLattice_G_ptr[7], PrimLattice_G_ptr[8]};
+        const ST symGGt[6] = {GGt_ptr[0], GGt_ptr[1] + GGt_ptr[3], GGt_ptr[2] + GGt_ptr[6],
+                              GGt_ptr[4], GGt_ptr[5] + GGt_ptr[7], GGt_ptr[8]};
+
+        PRAGMA_OFFLOAD("omp parallel for")
+        for (int index = 0; index < last - first; index++)
+        {
+          const int output_index = first + index;
+          offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::LAPL + output_index] =
+              SymTrace(offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::HESS00 + output_index],
+                       offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::HESS01 + output_index],
+                       offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::HESS02 + output_index],
+                       offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::HESS11 + output_index],
+                       offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::HESS12 + output_index],
+                       offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::HESS22 + output_index], symGGt);
+        }
 
         ValueType ratio(0), grad_x(0), grad_y(0), grad_z(0);
         PRAGMA_OFFLOAD("omp parallel for reduction(+: ratio, grad_x, grad_y, grad_z)")
