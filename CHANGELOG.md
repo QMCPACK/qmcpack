@@ -9,7 +9,7 @@ Notable changes to QMCPACK are documented in this file.
   New projects should only use the batched drivers.
 * Added new variable period for estimator measurements feature, input parameter estimator_period, and Nexus support
   [#5574](https://github.com/QMCPACK/qmcpack/pull/5574), [#5577](https://github.com/QMCPACK/qmcpack/pull/5577).
-  efficiency improvements are possible for properties with a long autocorrelation period.
+  Substantial speed and efficiency improvements are possible for properties with a long autocorrelation period.
 * GPU offload of SOC calculations completed [#5547](https://github.com/QMCPACK/qmcpack/pull/5547)
 * Batched implementation of G of r ( g(r), PairCorrEstimator ) [#5600](https://github.com/QMCPACK/qmcpack/pull/5600)
 * Batched structure factor estimator [#5490](https://github.com/QMCPACK/qmcpack/pull/5490),
