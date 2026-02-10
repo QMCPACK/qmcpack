@@ -28,6 +28,7 @@ set(QMCDRIVERS
     SFNBranch.cpp
     BranchIO.cpp
     MCPopulation.cpp
+    PsiHamNamePairReader.cpp
     QMCDriver.cpp
     QMCDriverInput.cpp
     QMCDriverNew.cpp
