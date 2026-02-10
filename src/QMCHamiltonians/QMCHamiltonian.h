@@ -87,17 +87,11 @@ public:
   ///return the total number of Hamiltonians (physical + aux)
   inline int total_size() const { return H.size() + auxH.size(); }
 
-  /** return OperatorBase with the name aname
-   * @param aname name of a OperatorBase
-   * @return 0 if aname is not found.
-   */
-  OperatorBase* getHamiltonian(const std::string& aname);
-
   /** return i-th OperatorBase
    * @param i index of the OperatorBase
    * @return H[i]
    */
-  OperatorBase* getHamiltonian(int i) { return H[i].get(); }
+  OperatorBase* getComponent(int i) const { return H[i].get(); }
 
   /** return components, auxH not included, depending on TWF.
    */
@@ -423,7 +417,7 @@ private:
   FullPrecRealType NewLocalEnergy;
   ///getName is in the way
   const std::string myName;
-  ///vector of Hamiltonians
+  ///vector of Hamiltonian components
   std::vector<std::unique_ptr<OperatorBase>> H;
   ///true if H contains NLPP
   bool hasPhysicalNLPP_;

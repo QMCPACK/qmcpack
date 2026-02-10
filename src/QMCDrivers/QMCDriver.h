@@ -220,8 +220,6 @@ protected:
    * using MyCounter++ as in RQMC.
    */
   int MyCounter;
-  ///the number to delay updates by
-  int kDelay;
   /** period of dumping walker configurations and everything else for restart
    *
    * The unit is a block.
