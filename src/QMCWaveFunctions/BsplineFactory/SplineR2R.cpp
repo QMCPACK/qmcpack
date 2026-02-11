@@ -377,7 +377,7 @@ void SplineR2R<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_
         auto* restrict pos_scratch = reinterpret_cast<ST*>(buffer_H2D_ptr + nw * sizeof(ValueType*));
 
         ValueType sum(0);
-        PRAGMA_OFFLOAD("omp parallel for simd reduction(+:sum)")
+        PRAGMA_OFFLOAD("omp parallel for reduction(+:sum)")
         for (int index = first; index < reduce_last; index++)
         {
           sum += psiinv_ptr[index] * offload_scratch_iat_ptr[spline_padded_size * SoAFields3D::VAL + index] *
