@@ -27,53 +27,85 @@ from .pwscf_analyzer import PwscfAnalyzer
 from .execute import execute
 
 
+# From q-e/Modules/funct.f90, QE 7.5, 2/11/26
 unique_vdw_functionals = [
-    'optb86b-vdw',
-    'vdw-df3', # optB88+vdW
-    'vdw-df',
-    'vdw-df2',
-    'rev-vdw-df2',
-    'vdw-df-c09',
-    'vdw-df2-c09',
-    'rvv10',
-    ]
-repeat_vdw_functionals = [
-    'vdw-df4', # 'optB86b-vdW'
-    ]
-unique_functionals = [
-    'revpbe',
-    'pw86pbe',
-    'b86bpbe',
-    'pbe0',
-    'hse',
-    'gaup',
-    'pbesol',
-    'pbeq2d',
-    'optbk88',
-    'optb86b',
-    'pbe',
-    'wc',
-    'b3lyp',
-    'pbc',
-    'bp',
-    'pw91',
-    'hcth',
-    'olyp',
-    'tpss',
-    'oep',
-    'hf',
-    'blyp',
-    'lda',
-    'sogga',
-    'm06l',
-    'ev93',
-    ]+unique_vdw_functionals
-repeat_functionals = [
-    'q2d', # pbeq2d
-    'pz', # lda
-    ]+repeat_vdw_functionals
+    "vdw-df",
+    "vdw-df2",
+    "vdw-df-c09",
+    "vdw-df2-c09",
+    "vdw-df-obk8",
+    "vdw-df-ob86",
+    "vdw-df2-b86r",
+    "vdw-df-cx",
+    "vdw-df-cx0",
+    "vdw-df2-0",
+    "vdw-df2-br0",
+    "vdw-df-c090",
+    "vdw-df3-opt1",
+    "vdw-df3-opt2",
+    "vdw-df3-mc",
+    "vdw-df-C6",
+    "rvv10",
+]
 
-vdw_functionals     = set(unique_vdw_functionals+repeat_vdw_functionals)
+# From q-e/XClib/qe_dft_list.f90, QE 7.5, 2/11/26
+unique_functionals = [
+    "pz",
+    "lda",
+    "pw",
+    "vwn-rpa",
+    "oep",
+    "kli",
+    "hf",
+    "pbe",
+    "b88",
+    "bp",
+    "pw91",
+    "revpbe",
+    "pbesol",
+    "blyp",
+    "optbk88",
+    "optb86b",
+    "pbc",
+    "hcth",
+    "olyp",
+    "wc",
+    "pw86pbe",
+    "b86bpbe",
+    "pbeq2d",
+    "q2d",
+    "sogga",
+    "ev93",
+    "rpbe",
+    "pbe0",
+    "b86bpbex",
+    "bhahlyp",
+    "bhandhlyp",
+    "hse",
+    "gaup",
+    "b3lyp",
+    "b3lyp-v1r",
+    "x3lyp",
+    "tpss",
+    "m06l",
+    "tb09",
+    "scan",
+    "scan0",
+    "r2scan",
+    "pbe-ah",
+    "pbesol-ah",
+    "rscan",
+] + unique_vdw_functionals
+
+# From q-e/XClib/qe_dft_list.f90, QE 7.5, 2/11/26
+repeat_functionals = [
+    "lda",       # "pz"
+    "q2d",       # "pbeq2d"
+    "bhandhlyp", # "bhahlyp"
+    "gaupbe",    # "gaup"
+]
+
+vdw_functionals     = set(unique_vdw_functionals)
 allowed_functionals = set(unique_functionals+repeat_functionals)
 
 
