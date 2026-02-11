@@ -159,7 +159,7 @@ TEST_CASE("MCPopulation::redistributeWalkers", "[particle][population]")
   auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(runtime_options, comm, particle_pool);
   auto hamiltonian_pool  = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
   WalkerConfigurations walker_confs;
-  MCPopulation population(1, comm->rank(), particle_pool.getParticleSet("e"), wavefunction_pool.getPrimary(),
+  MCPopulation population(1, comm->rank(), particle_pool.getParticleSet("e"), wavefunction_pool.getWaveFunction(),
                           hamiltonian_pool.getPrimary());
 
   population.createWalkers(8, walker_confs);
@@ -193,7 +193,7 @@ TEST_CASE("MCPopulation::fissionHighMultiplicityWalkers", "[particle][population
   auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(runtime_options, comm, particle_pool);
   auto hamiltonian_pool  = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
   WalkerConfigurations walker_confs;
-  MCPopulation population(1, comm->rank(), particle_pool.getParticleSet("e"), wavefunction_pool.getPrimary(),
+  MCPopulation population(1, comm->rank(), particle_pool.getParticleSet("e"), wavefunction_pool.getWaveFunction(),
                           hamiltonian_pool.getPrimary());
 
   population.createWalkers(8, walker_confs);

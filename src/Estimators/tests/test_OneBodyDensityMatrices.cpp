@@ -436,7 +436,7 @@ TEST_CASE("OneBodyDensityMatrices::accumulate", "[estimators]")
   std::vector<ParticleSet> psets =
       testing::generateRandomParticleSets(pset_target, pset_source, deterministic_rs, nwalkers, generate_test_data);
 
-  auto& trial_wavefunction = *(wavefunction_pool.getPrimary());
+  auto& trial_wavefunction = *(wavefunction_pool.getWaveFunction());
   std::vector<UPtr<TrialWaveFunction>> twfcs(nwalkers);
   for (int iw = 0; iw < nwalkers; ++iw)
     twfcs[iw] = trial_wavefunction.makeClone(psets[iw]);
@@ -494,7 +494,7 @@ TEST_CASE("OneBodyDensityMatrices::evaluateMatrix", "[estimators]")
     auto& pset_target = *(particle_pool.getParticleSet("e"));
     auto& species_set = pset_target.getSpeciesSet();
     OneBodyDensityMatrices obdm(std::move(obdmi), pset_target.getLattice(), species_set, spomap, pset_target);
-    auto& trial_wavefunction = *(wavefunction_pool.getPrimary());
+    auto& trial_wavefunction = *(wavefunction_pool.getWaveFunction());
 
     // Because we can't control or consistent know the global random state we must initialize particle positions to known values.
     pset_target.R = ParticleSet::ParticlePos{

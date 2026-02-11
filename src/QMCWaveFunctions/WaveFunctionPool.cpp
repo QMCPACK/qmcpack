@@ -30,7 +30,6 @@ WaveFunctionPool::WaveFunctionPool(const RuntimeOptions& runtime_options, Partic
     : MPIObjectBase(c),
       ObjectPool("wavefunction"),
       runtime_options_(runtime_options),
-      primary_psi_(nullptr),
       ptcl_pool_(pset_pool)
 {}
 
@@ -52,19 +51,17 @@ bool WaveFunctionPool::put(xmlNodePtr cur)
 
   WaveFunctionFactory psiFactory(*qp, ptcl_pool_.getPool(), myComm);
   auto psi = psiFactory.buildTWF(cur, runtime_options_);
-  addFactory(std::move(psi), empty() || role == "primary");
+  addFactory(std::move(psi));
   return true;
 }
 
-void WaveFunctionPool::addFactory(std::unique_ptr<TrialWaveFunction> psi, bool primary)
+void WaveFunctionPool::addFactory(std::unique_ptr<TrialWaveFunction> psi)
 {
   if (contains(psi->getName()))
     throw UniformCommunicateError("wavefunction " + psi->getName() + " exists. Cannot be added to the pool.");
 
   app_log() << "  Adding " << psi->getName() << " TrialWaveFunction to the pool" << std::endl;
 
-  if (primary)
-    primary_psi_ = psi.get();
   add(psi->getName(), std::move(psi));
 }
 

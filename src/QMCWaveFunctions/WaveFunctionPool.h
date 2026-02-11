@@ -53,8 +53,6 @@ public:
 
   bool put(xmlNodePtr cur);
 
-  TrialWaveFunction* getPrimary() { return primary_psi_; }
-
   /** look up wavefunction by name
    * @param pname wavefunction name to look up
    * if pname is empty and the pool contains one entry, return the only entry
@@ -75,14 +73,11 @@ public:
 
   /** add a TrialWaveFunction* to myPool
    */
-  void addFactory(std::unique_ptr<TrialWaveFunction> psi, bool primary);
+  void addFactory(std::unique_ptr<TrialWaveFunction> psi);
 
 private:
   /// @brief top-level runtime options from project data information
   const RuntimeOptions& runtime_options_;
-
-  /// pointer to the primary TrialWaveFunction
-  TrialWaveFunction* primary_psi_;
 
   /** pointer to ParticleSetPool
    *

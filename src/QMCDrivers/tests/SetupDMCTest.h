@@ -51,7 +51,7 @@ public:
             std::move(dmc_input_copy),
             walker_confs,
             MCPopulation(comm->size(), comm->rank(), particle_pool->getParticleSet("e"),
-                         wavefunction_pool->getPrimary(), hamiltonian_pool->getPrimary()),
+                         wavefunction_pool->getWaveFunction(), hamiltonian_pool->getPrimary()),
             rng_pool.getRngRefs(),
             comm};
   }
