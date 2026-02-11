@@ -611,7 +611,7 @@ void SplineR2R<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPO
           PRAGMA_OFFLOAD("omp barrier")
 
           PRAGMA_OFFLOAD("omp for")
-          for (int index = first; index < requested_orb_size; index++)
+          for (int index = first; index < reduce_last; index++)
           {
             const ST* restrict val   = offload_scratch_iw_ptr + spline_padded_size * SoAFields3D::VAL;
             const ST* restrict g0    = offload_scratch_iw_ptr + spline_padded_size * SoAFields3D::GRAD0;
