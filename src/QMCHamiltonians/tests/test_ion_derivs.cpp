@@ -14,7 +14,7 @@
 
 #include "type_traits/template_types.hpp"
 #include "type_traits/ConvertToReal.h"
-#include "QMCHamiltonians/QMCHamiltonian.h"
+#include "QMCHamiltonians/HamiltonianFactory.h"
 #include <MinimalParticlePool.h>
 #include <MinimalWaveFunctionPool.h>
 #include <MinimalHamiltonianPool.h>
@@ -139,7 +139,7 @@ void create_C_pbc_particlesets(ParticleSet& elec, ParticleSet& ions)
 }
 
 //Takes a HamiltonianFactory and handles the XML I/O to get a QMCHamiltonian pointer.  For CN molecule with pseudopotentials.
-QMCHamiltonian& create_CN_Hamiltonian(HamiltonianFactory& hf)
+std::unique_ptr<QMCHamiltonian> create_CN_Hamiltonian(HamiltonianFactory& hf)
 {
   //Incantation to build hamiltonian
   const char* hamiltonian_xml = R"(<hamiltonian name="h0" type="generic" target="e">
@@ -158,7 +158,7 @@ QMCHamiltonian& create_CN_Hamiltonian(HamiltonianFactory& hf)
   xmlNodePtr root = doc.getRoot();
   hf.put(root);
 
-  return *hf.getH();
+  return hf.releaseHamiltonian();
 }
 
 void test_msd_wrapper(const std::string& wffile,
@@ -220,7 +220,8 @@ void test_msd_wrapper(const std::string& wffile,
 
   HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
 
-  QMCHamiltonian& ham = create_CN_Hamiltonian(hf);
+  auto ham_ptr = create_CN_Hamiltonian(hf);
+  QMCHamiltonian& ham(*ham_ptr);
 
   RealType eloc = ham.evaluateDeterministic(*psi, elec);
 
@@ -724,8 +725,9 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
   RealType logpsi = psi->evaluateLog(elec);
   CHECK(logpsi == Approx(-14.233853149));
 
-  QMCHamiltonian& ham = create_CN_Hamiltonian(hf);
-  RealType eloc       = ham.evaluateDeterministic(*psi, elec);
+  auto ham_ptr = create_CN_Hamiltonian(hf);
+  QMCHamiltonian& ham(*ham_ptr);
+  RealType eloc = ham.evaluateDeterministic(*psi, elec);
   enum observ_id
   {
     KINETIC = 0,
@@ -882,7 +884,8 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
   RealType logpsi = psi->evaluateLog(elec);
   CHECK(logpsi == Approx(-8.9455094611e+00));
 
-  QMCHamiltonian& ham = create_CN_Hamiltonian(hf);
+  auto ham_ptr = create_CN_Hamiltonian(hf);
+  QMCHamiltonian& ham(*ham_ptr);
 
   RealType eloc = ham.evaluateDeterministic(*psi, elec);
   enum observ_id
@@ -1047,7 +1050,8 @@ TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
   RealType logpsi = psi->evaluateLog(elec);
   CHECK(logpsi == Approx(-1.41149961982e+01));
 
-  QMCHamiltonian& ham = create_CN_Hamiltonian(hf);
+  auto ham_ptr = create_CN_Hamiltonian(hf);
+  QMCHamiltonian& ham(*ham_ptr);
 
   RealType eloc = ham.evaluateDeterministic(*psi, elec);
   enum observ_id
@@ -1198,7 +1202,8 @@ TEST_CASE("Eloc_Derivatives:multislater_wj", "[hamiltonian]")
   RealType logpsi = psi->evaluateLog(elec);
   CHECK(logpsi == Approx(-8.69329994846e+00));
 
-  QMCHamiltonian& ham = create_CN_Hamiltonian(hf);
+  auto ham_ptr = create_CN_Hamiltonian(hf);
+  QMCHamiltonian& ham(*ham_ptr);
 
   RealType eloc = ham.evaluateDeterministic(*psi, elec);
   enum observ_id
@@ -1339,7 +1344,8 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
 
   HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
 
-  QMCHamiltonian& ham = create_CN_Hamiltonian(hf);
+  auto ham_ptr = create_CN_Hamiltonian(hf);
+  QMCHamiltonian& ham(*ham_ptr);
 
   //Enum to give human readable indexing into QMCHamiltonian.
   enum observ_id
@@ -1599,7 +1605,8 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj", "[hamiltonian]")
 
   HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
 
-  QMCHamiltonian& ham = create_CN_Hamiltonian(hf);
+  auto ham_ptr = create_CN_Hamiltonian(hf);
+  QMCHamiltonian& ham(*ham_ptr);
 
   //This is already defined in QMCHamiltonian, but keep it here for easy access.
   enum observ_id
@@ -1881,8 +1888,8 @@ TEST_CASE("Eloc_Derivatives:slater_fastderiv_complex_pbc", "[hamiltonian]")
 
   xmlNodePtr hroot = hdoc.getRoot();
   hf.put(hroot);
-
-  QMCHamiltonian& ham = *hf.getH();
+  auto ham_ptr        = hf.releaseHamiltonian();
+  QMCHamiltonian& ham = *ham_ptr;
 
 
   using RealType  = QMCTraits::RealType;

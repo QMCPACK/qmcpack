@@ -77,13 +77,14 @@ TEST_CASE("HamiltonianFactory", "[hamiltonian]")
   xmlNodePtr root = doc.getRoot();
   hf.put(root);
 
+  auto ham = hf.releaseHamiltonian();
 
-  REQUIRE(hf.getH());
-  REQUIRE(hf.getH()->size() == 3);
-  REQUIRE(hf.getH()->total_size() == 3);
+  REQUIRE(ham);
+  REQUIRE(ham->size() == 3);
+  REQUIRE(ham->total_size() == 3);
 
-  REQUIRE(hf.getH()->getOperatorType("ElecElec") == "coulomb");
-  REQUIRE(hf.getH()->getOperatorType("ElecIon") == "coulomb");
+  REQUIRE(ham->getOperatorType("ElecElec") == "coulomb");
+  REQUIRE(ham->getOperatorType("ElecIon") == "coulomb");
 }
 
 TEST_CASE("HamiltonianFactory pseudopotential", "[hamiltonian]")

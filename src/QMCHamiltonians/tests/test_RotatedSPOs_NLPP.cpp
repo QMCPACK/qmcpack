@@ -231,7 +231,7 @@ void test_hcpBe_rotation(bool use_single_det, bool use_nlpp_batched)
   CHECK(dhpsi_over_psi_list[0][1] == Approx(dhpsioverpsi[1]));
 
 
-  QMCHamiltonian* h = hf.getH();
+  auto h = hf.releaseHamiltonian();
   RandomGenerator myrng;
   h->setRandomGenerator(&myrng);
 
