@@ -349,7 +349,7 @@ void SplineR2R<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_
         const size_t last  = omptarget::min(first + ChunkSizePerTeam, spline_padded_size);
 
         auto* restrict offload_scratch_iat_ptr = offload_scratch_ptr + spline_padded_size * iat;
-        auto* restrict pos_scratch = reinterpret_cast<ST*>(buffer_H2D_ptr + nw * sizeof(ValueType*));
+        auto* restrict pos_scratch             = reinterpret_cast<ST*>(buffer_H2D_ptr + nw * sizeof(ValueType*));
 
         int ix, iy, iz;
         ST a[4], b[4], c[4];
