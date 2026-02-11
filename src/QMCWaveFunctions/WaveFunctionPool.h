@@ -71,10 +71,6 @@ public:
    */
   inline const PoolType& getPool() const { return myPool; }
 
-  /** add a TrialWaveFunction* to myPool
-   */
-  void addFactory(std::unique_ptr<TrialWaveFunction> psi);
-
 private:
   /// @brief top-level runtime options from project data information
   const RuntimeOptions& runtime_options_;
