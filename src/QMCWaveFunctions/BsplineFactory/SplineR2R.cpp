@@ -341,7 +341,7 @@ void SplineR2R<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_
   {
     ScopedTimer offload(offload_timer_);
     PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*mw_nVP) \
-                map(always, to: buffer_H2D_ptr[0:det_ratios_buffer_H2D.size()])")
+                    map(always, to: buffer_H2D_ptr[0:det_ratios_buffer_H2D.size()])")
     for (int iat = 0; iat < mw_nVP; iat++)
       for (int team_id = 0; team_id < NumTeams; team_id++)
       {
@@ -363,7 +363,7 @@ void SplineR2R<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_
       }
 
     PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*mw_nVP) \
-                map(always, from: ratios_private_ptr[0:NumTeams*mw_nVP])")
+                    map(always, from: ratios_private_ptr[0:NumTeams*mw_nVP])")
     for (int iat = 0; iat < mw_nVP; iat++)
       for (int team_id = 0; team_id < NumTeams; team_id++)
       {
