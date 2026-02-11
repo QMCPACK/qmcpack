@@ -82,7 +82,7 @@ TEST_CASE("DMC", "[drivers][dmc]")
     rng = std::make_unique<FakeRandom<QMCTraits::FullPrecRealType>>();
 
   QMCHamiltonian h;
-  std::unique_ptr<BareKineticEnergy> p_bke = std::make_unique<BareKineticEnergy>(elec, psi);
+  std::unique_ptr<BareKineticEnergy> p_bke = std::make_unique<BareKineticEnergy>(elec);
   h.addOperator(std::move(p_bke), "Kinetic");
   h.addObservables(elec); // get double free error on 'h.Observables' w/o this
 
@@ -166,7 +166,7 @@ TEST_CASE("SODMC", "[drivers][dmc]")
     rng = std::make_unique<FakeRandom<QMCTraits::FullPrecRealType>>();
 
   QMCHamiltonian h;
-  std::unique_ptr<BareKineticEnergy> p_bke = std::make_unique<BareKineticEnergy>(elec, psi);
+  std::unique_ptr<BareKineticEnergy> p_bke = std::make_unique<BareKineticEnergy>(elec);
   h.addOperator(std::move(p_bke), "Kinetic");
   h.addObservables(elec); // get double free error on 'h.Observables' w/o this
 

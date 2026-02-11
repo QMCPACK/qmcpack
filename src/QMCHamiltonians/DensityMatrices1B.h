@@ -80,7 +80,7 @@ public:
   int nindex;
   int eindex;
   const Lattice_t& lattice_;
-  const SPOSet::SPOMap& spomap;
+  const SPOSet::SPOMap& spomap_;
   ParticleSet& Pq;
   const ParticleSet* Pc;
   TraceSample<TraceReal>* w_trace;
@@ -144,7 +144,7 @@ public:
 
 
   //constructor/destructor
-  DensityMatrices1B(ParticleSet& P, TrialWaveFunction& psi, ParticleSet* Pcl);
+  DensityMatrices1B(ParticleSet& P, const SPOSet::SPOMap& spomap, ParticleSet* Pcl);
   DensityMatrices1B(DensityMatrices1B& master, ParticleSet& P, TrialWaveFunction& psi);
   ~DensityMatrices1B() override;
 
