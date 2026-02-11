@@ -592,11 +592,18 @@ void SplineR2R<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPO
         const ST symGGt[6] = {GGt_ptr[0], GGt_ptr[1] + GGt_ptr[3], GGt_ptr[2] + GGt_ptr[6],
                               GGt_ptr[4], GGt_ptr[5] + GGt_ptr[7], GGt_ptr[8]};
 
-        const ST* restrict val   = offload_scratch_iw_ptr + spline_padded_size * SoAFields3D::VAL;
-        const ST* restrict g0    = offload_scratch_iw_ptr + spline_padded_size * SoAFields3D::GRAD0;
-        const ST* restrict g1    = offload_scratch_iw_ptr + spline_padded_size * SoAFields3D::GRAD1;
-        const ST* restrict g2    = offload_scratch_iw_ptr + spline_padded_size * SoAFields3D::GRAD2;
-        const ST* restrict lcart = offload_scratch_iw_ptr + spline_padded_size * SoAFields3D::LAPL;
+        const ST* restrict val = offload_scratch_iw_ptr + spline_padded_size * SoAFields3D::VAL;
+        const ST* restrict g0  = offload_scratch_iw_ptr + spline_padded_size * SoAFields3D::GRAD0;
+        const ST* restrict g1  = offload_scratch_iw_ptr + spline_padded_size * SoAFields3D::GRAD1;
+        const ST* restrict g2  = offload_scratch_iw_ptr + spline_padded_size * SoAFields3D::GRAD2;
+        const ST* restrict h00 = offload_scratch_iw_ptr + spline_padded_size * SoAFields3D::HESS00;
+        const ST* restrict h01 = offload_scratch_iw_ptr + spline_padded_size * SoAFields3D::HESS01;
+        const ST* restrict h02 = offload_scratch_iw_ptr + spline_padded_size * SoAFields3D::HESS02;
+        const ST* restrict h11 = offload_scratch_iw_ptr + spline_padded_size * SoAFields3D::HESS11;
+        const ST* restrict h12 = offload_scratch_iw_ptr + spline_padded_size * SoAFields3D::HESS12;
+        const ST* restrict h22 = offload_scratch_iw_ptr + spline_padded_size * SoAFields3D::HESS22;
+
+        ST* restrict lcart = offload_scratch_iw_ptr + spline_padded_size * SoAFields3D::LAPL;
 
         ValueType* restrict out_phi    = phi_vgl_ptr + iw * requested_orb_size;
         ValueType* restrict out_dphi_x = out_phi + phi_vgl_stride;
@@ -605,38 +612,22 @@ void SplineR2R<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPO
         ValueType* restrict out_d2phi  = out_dphi_z + phi_vgl_stride;
 
         ValueType ratio(0), grad_x(0), grad_y(0), grad_z(0);
-        PRAGMA_OFFLOAD("omp parallel reduction(+: ratio, grad_x, grad_y, grad_z)")
+        PRAGMA_OFFLOAD("omp parallel for reduction(+: ratio, grad_x, grad_y, grad_z)")
+        for (int index = first; index < reduce_last; index++)
         {
-          PRAGMA_OFFLOAD("omp for nowait")
-          for (int index = 0; index < last - first; index++)
-          {
-            const int output_index = first + index;
-            offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::LAPL + output_index] =
-                SymTrace(offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::HESS00 + output_index],
-                         offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::HESS01 + output_index],
-                         offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::HESS02 + output_index],
-                         offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::HESS11 + output_index],
-                         offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::HESS12 + output_index],
-                         offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::HESS22 + output_index], symGGt);
-          }
+          lcart[index] = SymTrace(h00[index], h01[index], h02[index], h11[index], h12[index], h22[index], symGGt);
 
-          PRAGMA_OFFLOAD("omp barrier")
+          const size_t psiIndex = first_spo_local + index;
+          out_phi[psiIndex]     = pos_iw_ptr[0] * val[index];
+          out_dphi_x[psiIndex]  = pos_iw_ptr[0] * (G[0] * g0[index] + G[1] * g1[index] + G[2] * g2[index]);
+          out_dphi_y[psiIndex]  = pos_iw_ptr[0] * (G[3] * g0[index] + G[4] * g1[index] + G[5] * g2[index]);
+          out_dphi_z[psiIndex]  = pos_iw_ptr[0] * (G[6] * g0[index] + G[7] * g1[index] + G[8] * g2[index]);
+          out_d2phi[psiIndex]   = pos_iw_ptr[0] * lcart[index];
 
-          PRAGMA_OFFLOAD("omp for")
-          for (int index = first; index < reduce_last; index++)
-          {
-            const size_t psiIndex = first_spo_local + index;
-            out_phi[psiIndex]     = pos_iw_ptr[0] * val[index];
-            out_dphi_x[psiIndex]  = pos_iw_ptr[0] * (G[0] * g0[index] + G[1] * g1[index] + G[2] * g2[index]);
-            out_dphi_y[psiIndex]  = pos_iw_ptr[0] * (G[3] * g0[index] + G[4] * g1[index] + G[5] * g2[index]);
-            out_dphi_z[psiIndex]  = pos_iw_ptr[0] * (G[6] * g0[index] + G[7] * g1[index] + G[8] * g2[index]);
-            out_d2phi[psiIndex]   = pos_iw_ptr[0] * lcart[index];
-
-            ratio += out_phi[psiIndex] * invRow_iw_ptr[psiIndex];
-            grad_x += out_dphi_x[psiIndex] * invRow_iw_ptr[psiIndex];
-            grad_y += out_dphi_y[psiIndex] * invRow_iw_ptr[psiIndex];
-            grad_z += out_dphi_z[psiIndex] * invRow_iw_ptr[psiIndex];
-          }
+          ratio += out_phi[psiIndex] * invRow_iw_ptr[psiIndex];
+          grad_x += out_dphi_x[psiIndex] * invRow_iw_ptr[psiIndex];
+          grad_y += out_dphi_y[psiIndex] * invRow_iw_ptr[psiIndex];
+          grad_z += out_dphi_z[psiIndex] * invRow_iw_ptr[psiIndex];
         }
 
 
