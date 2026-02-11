@@ -367,8 +367,9 @@ void SplineR2R<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_
     for (int iat = 0; iat < mw_nVP; iat++)
       for (int team_id = 0; team_id < NumTeams; team_id++)
       {
-        const size_t first = ChunkSizePerTeam * team_id;
-        const size_t last  = omptarget::min(first + ChunkSizePerTeam, spline_padded_size);
+        const size_t first       = ChunkSizePerTeam * team_id;
+        const size_t last        = omptarget::min(first + ChunkSizePerTeam, spline_padded_size);
+        const size_t reduce_last = omptarget::min(last, static_cast<size_t>(requested_orb_size));
 
         auto* restrict offload_scratch_iat_ptr = offload_scratch_ptr + spline_padded_size * iat;
         auto* ref_id_ptr = reinterpret_cast<int*>(buffer_H2D_ptr + nw * sizeof(ValueType*) + mw_nVP * 4 * sizeof(ST));
@@ -377,7 +378,7 @@ void SplineR2R<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_
 
         ValueType sum(0);
         PRAGMA_OFFLOAD("omp parallel for simd reduction(+:sum)")
-        for (int index = first; index < requested_orb_size; index++)
+        for (int index = first; index < reduce_last; index++)
         {
           sum += psiinv_ptr[index] * offload_scratch_iat_ptr[spline_padded_size * SoAFields3D::VAL + index] *
               pos_scratch[iat * 4];
