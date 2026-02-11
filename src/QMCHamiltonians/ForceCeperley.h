@@ -61,7 +61,7 @@ public:
   void evaluate_IonIon(ParticleSet::ParticlePos& forces) const;
 
   void setParticlePropertyList(PropertySetType& plist, int offset) override { setParticleSetF(plist, offset); }
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp) final;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp) const final;
 
   bool put(xmlNodePtr cur) override;
 

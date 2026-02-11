@@ -41,13 +41,13 @@ ACForce::ACForce(ParticleSet& source, ParticleSet& target, TrialWaveFunction& ps
   psi_in.getOrCreateTWFFastDerivWrapper(target);
 };
 
-std::unique_ptr<OperatorBase> ACForce::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> ACForce::makeClone(ParticleSet& qp, TrialWaveFunction& psi) const
 {
   APP_ABORT("ACForce::makeClone(ParticleSet&,TrialWaveFunction&) shouldn't be called");
   return nullptr;
 }
 
-std::unique_ptr<OperatorBase> ACForce::makeClone(ParticleSet& qp, TrialWaveFunction& psi_in, QMCHamiltonian& ham_in)
+std::unique_ptr<OperatorBase> ACForce::makeClone(ParticleSet& qp, TrialWaveFunction& psi_in, QMCHamiltonian& ham_in) const
 {
   std::unique_ptr<ACForce> myclone = std::make_unique<ACForce>(ions_, qp, psi_in, ham_in);
   myclone->fastDerivatives_        = fastDerivatives_;
@@ -87,7 +87,7 @@ bool ACForce::put(xmlNodePtr cur)
 
 bool ACForce::get(std::ostream& os) const { return true; }
 
-void ACForce::add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& ham_in)
+void ACForce::add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& ham_in) const
 {
   //The following line is modified
   std::unique_ptr<OperatorBase> myclone = makeClone(qp, psi, ham_in);

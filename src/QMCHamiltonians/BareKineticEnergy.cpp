@@ -621,7 +621,7 @@ bool BareKineticEnergy::get(std::ostream& os) const
   return true;
 }
 
-std::unique_ptr<OperatorBase> BareKineticEnergy::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> BareKineticEnergy::makeClone(ParticleSet& qp, TrialWaveFunction& psi) const
 {
   return std::make_unique<BareKineticEnergy>(qp);
 }

@@ -165,7 +165,7 @@ public:
     return true;
   }
 
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp) override;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp) const override;
 
   ///Computes the short-range contribution to the coulomb energy.
   Return_t evalSR(ParticleSet& P);
