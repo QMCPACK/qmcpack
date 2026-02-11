@@ -341,7 +341,28 @@ void SplineR2R<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_
   {
     ScopedTimer offload(offload_timer_);
     PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*mw_nVP) \
-                map(always, to: buffer_H2D_ptr[0:det_ratios_buffer_H2D.size()]) \
+                map(always, to: buffer_H2D_ptr[0:det_ratios_buffer_H2D.size()])")
+    for (int iat = 0; iat < mw_nVP; iat++)
+      for (int team_id = 0; team_id < NumTeams; team_id++)
+      {
+        const size_t first = ChunkSizePerTeam * team_id;
+        const size_t last  = omptarget::min(first + ChunkSizePerTeam, spline_padded_size);
+
+        auto* restrict offload_scratch_iat_ptr = offload_scratch_ptr + spline_padded_size * iat;
+        auto* restrict pos_scratch = reinterpret_cast<ST*>(buffer_H2D_ptr + nw * sizeof(ValueType*));
+
+        int ix, iy, iz;
+        ST a[4], b[4], c[4];
+        spline2::computeLocationAndFractional(spline_ptr, pos_scratch[iat * 4 + 1], pos_scratch[iat * 4 + 2],
+                                              pos_scratch[iat * 4 + 3], ix, iy, iz, a, b, c);
+
+        PRAGMA_OFFLOAD("omp parallel for")
+        for (int index = 0; index < last - first; index++)
+          spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, first + index, a, b, c,
+                                             offload_scratch_iat_ptr + first + index);
+      }
+
+    PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*mw_nVP) \
                 map(always, from: ratios_private_ptr[0:NumTeams*mw_nVP])")
     for (int iat = 0; iat < mw_nVP; iat++)
       for (int team_id = 0; team_id < NumTeams; team_id++)
@@ -354,15 +375,6 @@ void SplineR2R<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_
         auto* restrict psiinv_ptr  = reinterpret_cast<const ValueType**>(buffer_H2D_ptr)[ref_id_ptr[iat]];
         auto* restrict pos_scratch = reinterpret_cast<ST*>(buffer_H2D_ptr + nw * sizeof(ValueType*));
 
-        int ix, iy, iz;
-        ST a[4], b[4], c[4];
-        spline2::computeLocationAndFractional(spline_ptr, pos_scratch[iat * 4 + 1], pos_scratch[iat * 4 + 2],
-                                              pos_scratch[iat * 4 + 3], ix, iy, iz, a, b, c);
-
-        PRAGMA_OFFLOAD("omp parallel for")
-        for (int index = 0; index < last - first; index++)
-          spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, first + index, a, b, c,
-                                             offload_scratch_iat_ptr + first + index);
         ValueType sum(0);
         PRAGMA_OFFLOAD("omp parallel for simd reduction(+:sum)")
         for (int index = first; index < requested_orb_size; index++)
