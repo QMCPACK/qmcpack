@@ -80,7 +80,7 @@ public:
   int nindex;
   int eindex;
   const Lattice_t& lattice_;
-  TrialWaveFunction& Psi;
+  const SPOSet::SPOMap& spomap;
   ParticleSet& Pq;
   const ParticleSet* Pc;
   TraceSample<TraceReal>* w_trace;
@@ -148,12 +148,11 @@ public:
   DensityMatrices1B(DensityMatrices1B& master, ParticleSet& P, TrialWaveFunction& psi);
   ~DensityMatrices1B() override;
 
-  bool dependsOnWaveFunction() const override { return true; }
   std::string getClassName() const override { return "DensityMatrices1B"; }
   //standard interface
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& P, TrialWaveFunction& psi) final;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
   bool put(xmlNodePtr cur) override;
-  Return_t evaluate(ParticleSet& P) override;
+  Return_t evaluate(TrialWaveFunction& psi, ParticleSet& P) override;
 
   //optional standard interface
   void getRequiredTraces(TraceManager& tm) override;
@@ -164,7 +163,6 @@ public:
   void registerCollectables(std::vector<ObservableHelper>& h5desc, hdf_archive& file) const override;
 
   //should be empty for Collectables interface
-  void resetTargetParticleSet(ParticleSet& P) override {}
   void setObservables(PropertySetType& plist) override {}
   void setParticlePropertyList(PropertySetType& plist, int offset) override {}
   void contributeScalarQuantities() override {}
@@ -197,7 +195,7 @@ public:
   //  basis & wavefunction ratio matrix construction
   void get_energies(std::vector<Vector_t*>& E_n);
   void generate_sample_basis(Matrix_t& Phi_mb);
-  void generate_sample_ratios(std::vector<Matrix_t*> Psi_nm);
+  void generate_sample_ratios(TrialWaveFunction& psi, ParticleSet& elecs, std::vector<Matrix_t*> Psi_nm);
   void generate_particle_basis(ParticleSet& P, std::vector<Matrix_t*>& Phi_nb);
   //  basis set updates
   void update_basis(const PosType& r);
@@ -206,11 +204,11 @@ public:
   void test_overlap();
   void test_derivatives();
   //  original loop implementation
-  void integrate(ParticleSet& P, int n);
-  Return_t evaluate_loop(ParticleSet& P);
+  void integrate(TrialWaveFunction& psi, ParticleSet& elecs, int n);
+  Return_t evaluate_loop(TrialWaveFunction& psi, ParticleSet& P);
   //  matrix implementation
-  Return_t evaluate_check(ParticleSet& P);
-  Return_t evaluate_matrix(ParticleSet& P);
+  Return_t evaluate_check(TrialWaveFunction& psi, ParticleSet& P);
+  Return_t evaluate_matrix(TrialWaveFunction& psi, ParticleSet& P);
 
 
   bool match(Value_t e1, Value_t e2, RealType tol = 1e-12);

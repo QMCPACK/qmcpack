@@ -355,7 +355,8 @@ public:
       data_displ[SM_AUX] = walker_size;
       walker_size += nrow * ncol;
       CMatrix wb({get<0>(walker_buffer.sizes()), walker_size}, walker_buffer.get_allocator());
-      ma::copy(walker_buffer, wb(wb.extension(0), {0, sz}));
+      using std::get;
+      ma::copy(walker_buffer, wb(get<0>(wb.extensions()), {0, sz}));
       walker_buffer = std::move(wb);
     }
   }
@@ -420,8 +421,9 @@ public:
     for (int i = 0; i < M.size(); i++)
     {
       W[tot_num_walkers] = M[i].sliced(0, walker_size);
+      using std::get;
       if (wlk_desc[3] > 0)
-        BPW(BPW.extension(0), tot_num_walkers) = M[i].sliced(walker_size, walker_size + bp_walker_size);
+        BPW(get<0>(BPW.extensions()), tot_num_walkers) = M[i].sliced(walker_size, walker_size + bp_walker_size);
       tot_num_walkers++;
     }
   }
@@ -521,8 +523,9 @@ public:
         // 3. swap
         std::swap(*kill, *keep);
         W[std::distance(itbegin, kill)] = W[tot_num_walkers - 1];
+        using std::get;
         if (wlk_desc[3] > 0)
-          BPW(BPW.extension(0), std::distance(itbegin, kill)) = BPW(BPW.extension(0), tot_num_walkers - 1);
+          BPW(get<0>(BPW.extensions()), std::distance(itbegin, kill)) = BPW(get<0>(BPW.extensions()), tot_num_walkers - 1);
         --tot_num_walkers;
         --keep;
       }
@@ -571,18 +574,19 @@ public:
         fill_n(W[pos].origin() + data_displ[WEIGHT], 1, ComplexType(itbegin->first, 0.0));
         if (wlk_desc[6] > 0 && his_pos >= 0 && his_pos < wlk_desc[6])
           fill_n(BPW[data_displ[WEIGHT_HISTORY] + his_pos].origin() + pos, 1, ComplexType(itbegin->first, 0.0));
+        using std::get;
         for (int i = 0; i < n; i++)
         {
           W[tot_num_walkers] = W[pos];
           if (wlk_desc[3] > 0)
-            BPW(BPW.extension(0), tot_num_walkers) = BPW(BPW.extension(0), pos);
+            BPW(get<0>(BPW.extensions()), tot_num_walkers) = BPW(get<0>(BPW.extensions()), pos);
           tot_num_walkers++;
         }
         for (int i = 0, in = itbegin->second - 1 - n; i < in; i++, cnt++)
         {
           M[cnt].sliced(0, walker_size) = W[pos];
           if (wlk_desc[3] > 0)
-            M[cnt].sliced(walker_size, walker_size + bp_walker_size) = BPW(BPW.extension(0), pos);
+            M[cnt].sliced(walker_size, walker_size + bp_walker_size) = BPW(get<0>(BPW.extensions()), pos);
         }
       }
     }

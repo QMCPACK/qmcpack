@@ -395,7 +395,7 @@ inline void evaluate(Vector<T, C>& lhs, const Op& op, const Expression<RHS>& rhs
   {
     // We get here if the vectors on the RHS are the same size as those on
     // the LHS.
-    for (int i = 0; i < lhs.size(); ++i)
+    for (size_t i = 0; i < lhs.size(); ++i)
     {
       // The actual assignment operation is performed here.
       // PETE operator tags all define operator() to perform the operation.
@@ -419,7 +419,7 @@ bool operator==(const Vector<T, Alloc>& lhs, const Vector<T, Alloc>& rhs)
   static_assert(qmc_allocator_traits<Alloc>::is_host_accessible, "operator== requires host accessible Vector.");
   if (lhs.size() == rhs.size())
   {
-    for (int i = 0; i < rhs.size(); i++)
+    for (size_t i = 0; i < rhs.size(); i++)
       if (lhs[i] != rhs[i])
         return false;
     return true;
@@ -440,7 +440,7 @@ template<class T, class Alloc>
 std::ostream& operator<<(std::ostream& out, const Vector<T, Alloc>& rhs)
 {
   static_assert(qmc_allocator_traits<Alloc>::is_host_accessible, "operator<< requires host accessible Vector.");
-  for (int i = 0; i < rhs.size(); i++)
+  for (size_t i = 0; i < rhs.size(); i++)
     out << rhs[i] << std::endl;
   return out;
 }
@@ -450,7 +450,7 @@ std::istream& operator>>(std::istream& is, Vector<T, Alloc>& rhs)
 {
   static_assert(qmc_allocator_traits<Alloc>::is_host_accessible, "operator>> requires host accessible Vector.");
   //printTinyVector<TinyVector<T,D> >::print(out,rhs);
-  for (int i = 0; i < rhs.size(); i++)
+  for (size_t i = 0; i < rhs.size(); i++)
     is >> rhs[i];
   return is;
 }

@@ -20,7 +20,6 @@
 #include <cstdlib>
 #include <vector>
 #include <type_traits>
-#include "type_traits/container_traits_multi.h"
 
 #include "Configuration.h"
 #include "AFQMC/config.h"

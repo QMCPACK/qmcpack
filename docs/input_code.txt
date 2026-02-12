@@ -156,7 +156,7 @@ The constructor of the ``InputSection`` subtype uses a pseudo DSL to define the 
 
 Any easy way of thinking about this is you are adding your input elements to different logical sets from parsing and validation. The input breaks down into attributes and parameters for each node. So first each element is added to one of these two sets. Then required inputs should be added to the required set. If its permissible for multiple instances of an input element in the section add it to the multiples set. Then each element should be added to the type set it matches. The types supported are: strings, bools, integers, reals, positions, multi_strings, multi_reals. Two require special mention, multi_strings and multi_reals parse multiple whitespace separated values to a vector of strings or reals. If your type has a fixed number of values and you define and element as one of these types you should validate you have parsed the expected number of values in your input section subtype's ``checkParticularValidbity.``
 
-Without extension ``InputSection`` provides only a basic set of types and expects only attribute and parameter elements. There is an established API for delegation to other input classes when an included child nodes are actually complex Inputs in their own right, i.e. not just parameters and attribute. There is also an extension method through custom stream handlers for types not covered by ``InputSection`` (see :ref:`_advanced-input_section`). Any element of input that isn't declared in this fashion will cause a fatal error when the input node is parsed by the ``InputSection.`` 
+Without extension ``InputSection`` provides only a basic set of types and expects only attribute and parameter elements. There is an established API for delegation to other input classes when an included child nodes are actually complex Inputs in their own right, i.e. not just parameters and attribute. There is also an extension method through custom stream handlers for types not covered by ``InputSection`` (see :ref:`advanced-input-section`). Any element of input that isn't declared in this fashion will cause a fatal error when the input node is parsed by the ``InputSection.`` 
 
 Special concerns if your InputClass is for an Estimator
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -196,7 +196,7 @@ Delegation to InputClasses
   This is used when child node in input represents another logical input class we register a factory function for that input child class as a delegate of the input class responsible for the parent node.
 
   The delgating class should will pass an entire node to this input class factory function and receive an input class as a ``std::any`` back. The delegate class is expected to take responsibility for complete parsing of this node. Including its own internal validation. 
-  a tag name (see :ref:`_delegating_lst`).
+  a tag name (see :ref:`delegating_lst`).
 
 .. literalinclude:: delegating.cpp
    :caption: Delgating to another ``InputSection`` subtype
@@ -205,7 +205,7 @@ Delegation to InputClasses
 Custom stream handlers
 ^^^^^^^^^^^^^^^^^^^^^^
 
-In the case that we just have a input parameter that is unique to a particular input class,  not for one of the types handled by ``InputSection``, and it does not logically map to a separate Input we should use a custom stream handler (see :ref:`_custom_stream_handler_lst`).
+In the case that we just have a input parameter that is unique to a particular input class,  not for one of the types handled by ``InputSection``, and it does not logically map to a separate Input we should use a custom stream handler (see :ref:`custom_stream_handler_lst`).
 
 
 .. literalinclude:: custom_stream_handler.cpp

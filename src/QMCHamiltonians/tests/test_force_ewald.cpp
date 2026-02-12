@@ -18,9 +18,7 @@
 #include "Particle/ParticleSetPool.h"
 #include "QMCHamiltonians/ForceChiesaPBCAA.h"
 #include "QMCHamiltonians/ForceCeperley.h"
-#include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "LongRange/EwaldHandler3D.h"
-#include "Utilities/RuntimeOptions.h"
 
 #include <stdio.h>
 #include <string>
@@ -177,14 +175,8 @@ TEST_CASE("fccz sr lr clone", "[hamiltonian]")
   CHECK(force.getForces()[1][1] == Approx(-0.078308730));
   CHECK(force.getForces()[1][2] == Approx(0.000000000));
 
-  // test cloning !!!! makeClone is not testable
-  // example call path:
-  //  QMCDrivers/CloneManager::makeClones
-  //  QMCHamiltonian::makeClone
-  //  OperatorBase::add2Hamiltonian -> ForceChiesaPBCAA::makeClone
-  RuntimeOptions runtime_options;
-  TrialWaveFunction psi(runtime_options);
-  std::unique_ptr<ForceChiesaPBCAA> clone(dynamic_cast<ForceChiesaPBCAA*>(force.makeClone(elec, psi).release()));
+  // test cloning
+  std::unique_ptr<ForceChiesaPBCAA> clone(dynamic_cast<ForceChiesaPBCAA*>(force.makeClone(elec).release()));
   clone->evaluate(elec);
   REQUIRE(clone->getAddIonIon() == force.getAddIonIon());
   CHECK(clone->getForcesIonIon()[0][0] == Approx(-0.0228366));

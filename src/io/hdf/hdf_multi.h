@@ -14,6 +14,7 @@
 
 #include <multi/array.hpp>
 #include <multi/array_ref.hpp>
+#include "container_traits_multi.h"
 #include "hdf_dataproxy.h"
 #include "hdf_hyperslab.h"
 

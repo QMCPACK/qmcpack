@@ -12,7 +12,7 @@ from nexus import generate_physical_system
 from nexus import generate_pwscf
 from nexus import generate_pw2qmcpack
 from nexus import generate_qmcpack
-from qmcpack_input import spindensity,momentumdistribution,onebodydensitymatrices,sposet
+from nexus.qmcpack_input import spindensity,momentumdistribution,onebodydensitymatrices,sposet
 
 settings(
     pseudo_dir = '../../pseudopotentials',

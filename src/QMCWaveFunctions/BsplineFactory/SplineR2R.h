@@ -140,7 +140,7 @@ public:
   */
   void applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy) override;
 
-  inline void resizeStorage(size_t n, size_t nvals)
+  inline void resizeStorage(size_t n) override
   {
     init_base(n);
     const size_t npad = getAlignedSize<ST>(n);
@@ -265,7 +265,7 @@ public:
 
   template<class BSPLINESPO>
   friend class SplineSetReader;
-  friend struct BsplineReader;
+  friend class BsplineReader;
 };
 
 extern template class SplineR2R<float>;

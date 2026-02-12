@@ -21,9 +21,9 @@
 #include "Estimators/tests/EstimatorManagerNewTest.h"
 #include "Estimators/EstimatorInputDelegates.h"
 #include "EstimatorManagerInputTest.h"
-#include "Particle/tests/MinimalParticlePool.h"
-#include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
-#include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
+#include <MinimalParticlePool.h>
+#include <MinimalHamiltonianPool.h>
+#include <MinimalWaveFunctionPool.h>
 #include "Utilities/ResourceCollection.h"
 #include "Utilities/ProjectData.h"
 
@@ -38,7 +38,6 @@ TEST_CASE("EstimatorManagerCrowd::EstimatorManagerCrowd", "[estimators]")
   Libxml2Document estimators_doc = createEstimatorManagerNewInputXML();
   EstimatorManagerInput emi(estimators_doc.getRoot());
 
-
   auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool =
       MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
@@ -50,7 +49,7 @@ TEST_CASE("EstimatorManagerCrowd::EstimatorManagerCrowd", "[estimators]")
   EstimatorManagerNew emn(ham, comm);
   emn.constructEstimators(std::move(emi), pset, twf, ham, particle_pool.getPool());
 
-  CHECK(emn.getNumEstimators() == 3);
+  CHECK(emn.getNumEstimators() == n_opest_new_input_xml);
   CHECK(emn.getNumScalarEstimators() == 0);
 
   EstimatorManagerCrowd emc(emn);
@@ -132,7 +131,6 @@ TEST_CASE("EstimatorManagerCrowd PerParticleHamiltonianLogger integration", "[es
 
   auto twf_refs = convertUPtrToRefVector(twfs);
   RefVectorWithLeader<TrialWaveFunction> twf_list{twf_refs[0], twf_refs};
-
   ResourceCollection wfc_res("test_wfc_res");
   twf_list.getLeader().createResource(wfc_res);
   ResourceCollectionTeamLock<TrialWaveFunction> mw_wfc_lock(wfc_res, twf_list);
@@ -152,7 +150,7 @@ TEST_CASE("EstimatorManagerCrowd PerParticleHamiltonianLogger integration", "[es
   // Without this QMCHamiltonian::mw_evaluate segfaults
   // Because the CoulombPBCAA hamiltonian component has PtclRhoK (StructFact) that is invalid.
   ParticleSet::mw_update(p_list);
-
+  TrialWaveFunction::mw_evaluateLog(twf_list, p_list);
   QMCHamiltonian::mw_evaluate(ham_list, twf_list, p_list);
 
   auto savePropertiesIntoWalker = [](QMCHamiltonian& ham, MCPWalker& walker) {

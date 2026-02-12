@@ -47,7 +47,7 @@ public:
   void collectOperatorEstimators();
   /** for mpi test (it's trivial for 1 rank)
    *
-   * only used by test_manager_mpi.cpp so implemented there.  
+   * only used by test_manager_mpi.cpp so implemented there.
    */
   std::vector<QMCT::RealType> generateGoodOperatorData(int num_ranks);
   /// test replacing the main estimator
@@ -74,6 +74,8 @@ public:
   EstimatorManagerNewTestAccess(EstimatorManagerNew& emn) : emn_(emn) {}
 
   void reduceOperatorEstimators() { emn_.reduceOperatorEstimators(); }
+
+  void stopBlockUpToWrite(unsigned long accept, unsigned long reject, double weight);
 
   const ScalarEstimatorBase& getMainEstimator() { return *(emn_.main_estimator_.get()); }
   RefVector<OperatorEstBase> getOperatorEstimators() { return convertUPtrToRefVector(emn_.operator_ests_); }

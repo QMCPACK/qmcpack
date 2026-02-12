@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from unit_converter import convert
+from nexus.unit_converter import convert
 
 from nexus import settings,job,obj,run_project
 from nexus import generate_physical_system

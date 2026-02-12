@@ -1544,7 +1544,7 @@ k-point grid density in one dimension.
   format. Another option is to use an indexing of the orbitals depending
   on their energetic ordering. In this example this would correspond to
   "excitation = [’up’, ’-11 +12’]". Band/twist index and energy indexes
-  of the orbitals can be found in "einspline" files or they can be
+  of the orbitals can be found in "bandinfo" files or they can be
   determined after parsing the "nscf.out" file using PwscfAnalyzer.
   In addition to these options, "excitation = ['up','lowest']" can also 
   be specified which will execute a homo-lumo excitation based on the
@@ -1705,3 +1705,311 @@ k-point grid density in one dimension.
 
   run_project(scf,nscf,conv,qmc)
 
+.. _custom-simulations:
+
+
+Example 7: GenericSimulation Examples
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The files for this example are found in:
+
+.. code:: rest
+
+  /your_download_path/nexus/examples/generic
+
+GenericSimulation class provides support for executing custom scripts with Nexus.
+It uses template files for input generation and also provides output file tracking to determine simulation completion status.
+This makes it ideal for running Python scripts, bash commands, and any other executable within the Nexus framework.
+GenericSimulation can execute both serial and parallel jobs, making it suitable for a wide range of computational workflows.
+
+Key Features
+~~~~~~~~~~~~
+
+**Automatic Template Processing**: GenericSimulation automatically handles
+input templates for both file paths and text content, making it easy to
+pass parameters between simulations. Templates support variable substitution
+using Python's ``string.Template`` syntax.
+
+**Output File Tracking**: The system tracks specified output files to determine
+simulation completion status, eliminating the need for manual completion files.
+
+**Flexible Job Configuration**: Supports both serial and parallel execution
+through standard job configuration with automatic command generation.
+
+**Template Substitution**: Automatic replacement of template variables like
+``${output}`` with actual dependency paths.
+
+**Extensibility**: Any executable or script can be integrated into Nexus
+workflows using a template and dependency management system.
+
+Available Examples
+~~~~~~~~~~~~~~~~~~
+
+The generic examples directory contains several demonstration scripts:
+
+**bash_demo.py**: Demonstrates bash command execution using Python subprocess
+   - Shows how to run bash commands
+   - Uses template substitution for dependency handling
+   - Simple and easy to understand
+
+**python_demo.py**: Demonstrates pure Python data processing
+   - Uses numpy for data generation and analysis
+   - Shows template-based dependency management
+   
+Basic Usage
+~~~~~~~~~~~
+
+The simplest way to use GenericSimulation is to create a simulation with
+a script file. Here's a simplified version of the actual examples:
+
+**Python Data Generation Example** (from ``python_demo.py``):
+
+.. code:: python
+
+  from nexus import generate_simulation, job, run_project
+
+  # Create a data generator simulation
+  data_generator = generate_simulation(
+      identifier='data_generator',
+      path='data_generator',
+      job=job(serial=True, app='python3'),
+      input='scripts/data_generator.py',  # Script file path
+      outfiles=['data_generation_complete.txt']  # Expected output files
+  )
+
+  # Run the simulation
+  run_project(data_generator)
+
+**Job Configuration Options**:
+
+GenericSimulation supports both serial and parallel execution. 
+Assuming a suitable script is provided in ``generate_simulation`` function, following options are available:
+
+.. code:: python
+
+  # Serial execution
+  job(serial=True, app='python3') # python3 my_script.py
+  
+  # Parallel execution (uses machine settings)
+  job(app='python3', cores=4) # mpirun -np 4 python3 my_script.py
+  
+  # Custom executable
+  job(serial=True, app='/path/to/custom/executable') # /path/to/custom/executable my_script
+  
+  # Bash script
+  job(serial=True, app='bash') # bash my_script.sh
+
+**Bash Command Example** (from ``bash_demo.py``):
+
+.. code:: python
+
+  from nexus import generate_simulation, input_template, job, run_project
+
+  # Create bash command simulation with template
+  input_template = input_template(filepath='scripts/list_directory.sh')
+  input_template.assign(output='/path/to/data/directory')
+
+  bash_executor = generate_simulation(
+      identifier='bash_executor',
+      path='bash_executor',
+      job=job(serial=True, app='bash'),
+      input=input_template,
+      outfiles=['list_directory_complete.txt']
+  )
+
+  run_project(bash_executor)
+
+**Input Types**:
+
+GenericSimulation accepts different types of input:
+
+.. code:: python
+
+  # 1. Script file path (recommended)
+  input='scripts/data_generator.py'
+  
+  # 2. Text content directly
+  input='''#!/usr/bin/env python3
+  print("Hello!")
+  '''
+  
+  # 3. Template with variables and file path
+  input_template = input_template(filepath='scripts/list_directory.sh')
+  input_template.assign(output='/path/to/data')
+  input=input_template
+
+  # 4. Template with variables and text content
+  input_template = input_template(text='''#!/usr/bin/env python3
+  print("Hello! ${variable1} ${variable2}")
+  ''')
+  input_template.assign(variable1='value1', variable2='value2')
+  input=input_template
+
+Template-Based Dependencies
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+GenericSimulation supports template substitution for dependencies, allowing
+simulations flexible options including accessing data from other simulations through automatic path
+replacement. 
+
+**What input_template does**:
+
+The ``input_template`` function creates a template object that can substitute
+variables in script files. It automatically replaces template variables with
+actual values at runtime.
+
+**Complete Workflow Example** (simplified from ``python_demo.py``):
+
+.. code:: python
+
+  from nexus import generate_simulation, input_template, job, run_project
+  import os
+
+  # First simulation - generates data
+  data_generator = generate_simulation(
+      identifier='data_generator',
+      path='data_generator',
+      job=job(serial=True, app='python3'),
+      input='scripts/data_generator.py',
+      outfiles=['data_generation_complete.txt']
+  )
+
+  # Second simulation - processes data from first simulation
+  input_template = input_template(filepath='scripts/data_processor.py')
+  input_template.assign(output=os.path.abspath(data_generator.locdir))
+
+  data_processor = generate_simulation(
+      identifier='data_processor',
+      path='data_processor',
+      job=job(serial=True, app='python3'),
+      input=input_template,
+      outfiles=['data_processing_complete.txt'],
+      dependencies=[(data_generator, 'other')]  # data_generator must complete first
+  )
+
+  run_project()
+
+**Template Variable Usage in Scripts**:
+
+In your script files, use template variables that will be replaced at runtime:
+
+**Python Script Example** (simplified from ``data_processor.py``):
+
+.. code:: python
+
+  # Template variable will be replaced with actual path
+  data_dir = '${output}'  # Replaced with data_generator's output directory path
+  
+  print(f"Processing data from: {data_dir}")
+  
+  # Use the variable in your code
+  with open(f"{data_dir}/data/matrix.txt", 'r') as f:
+      data = f.read()
+
+**Bash Script Example** (simplified from ``list_directory.sh``):
+
+.. code:: bash
+
+  # Template variable will be replaced with actual path
+  ls -alth ${output}  # Lists contents of the dependency directory
+  ls $$HOME           # Additional $: escaped $ for literal use in bash
+
+
+Script Templates
+~~~~~~~~~~~~~~~~
+
+GenericSimulation scripts should follow a simple template. The choice between
+Python and Bash depends on your specific needs:
+
+**Python Script Template** (simplified from ``data_generator.py``):
+
+.. code:: python
+
+  #!/usr/bin/env python3
+  import sys
+  import os
+
+  try:
+      # Your code here
+      print("=== Data Generator Simulation ===")
+      
+      # Process data, run calculations, etc.
+      # Template variables are automatically replaced
+      data_path = '${output}'  # If using templates
+      print(f"Processing data from: {data_path}")
+      
+      # Create output files
+      with open('data_generation_complete.txt', 'w') as f:
+          f.write("Data generation completed successfully\n")
+      
+      print("Simulation completed successfully!")
+      
+  except Exception as e:
+      # Error handling
+      print(f"Simulation failed: {e}")
+      sys.exit(1)
+
+**Bash Script Template** (from ``list_directory.sh``):
+
+.. code:: bash
+
+  #!/bin/bash
+  # Template variables are automatically replaced
+  ls -alth ${output}  # Lists contents of dependency directory
+  ls $$HOME           # Escaped $ for literal use
+  
+  # Create output files
+  echo "List directory completed" > ./list_directory_complete.txt
+
+
+**Important Note for Bash Scripts**: The template system uses Python's ``string.Template``
+class with ``$`` as the default delimiter. This can conflict with bash variable syntax
+where ``$`` is used for variable substitution. When writing bash scripts for use with
+GenericSimulation, be careful using ``$``. For example:
+
+- Use ``${output}`` for template variables (will be replaced)
+- Avoid ``$HOME``, ``$PATH``, etc. in bash scripts, use ``$$`` to escape a literal ``$`` character if needed (e.g. ``$$HOME`` )
+
+This limitation exists because templating is based on the standard Python ``string.Template``
+class, and unless there is significant demand for a more flexible templating method,
+this approach will be maintained.
+
+**Extensibility and Custom Executables**:
+
+GenericSimulation can run any executable, not just Python and Bash scripts:
+
+.. code:: python
+
+  # Custom executable
+  custom_sim = generate_simulation(
+      identifier='custom_tool',
+      path='./custom_tool',
+      job=job(serial=True, app='/path/to/your/executable'),
+      input='input_file.txt',
+      outfiles=['output.txt']
+  )
+  
+  # MATLAB script
+  matlab_sim = generate_simulation(
+      identifier='matlab_calc',
+      path='./matlab_calc',
+      job=job(serial=True, app='matlab'),
+      input="run_script.m",
+      outfiles=['results.mat']
+  )
+  
+  # R script
+  r_sim = generate_simulation(
+      identifier='r_analysis',
+      path='./r_analysis',
+      job=job(serial=True, app='Rscript'),
+      input='analysis.R',
+      outfiles=['plots.pdf', 'data.csv']
+  )
+
+This makes GenericSimulation extremely flexible for integrating any computational
+tool into Nexus workflows, as long as the tool can read input files and produce
+output files that can be tracked for completion status. For templating input files, 
+``input_template`` function is based on the standard Python ``string.Template`` class, 
+hence uses ``$`` as the default delimiter. If users want to use a different delimiter, 
+that is more suitable for their code syntax, they can develop their own template class.

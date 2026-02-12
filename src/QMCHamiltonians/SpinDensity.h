@@ -19,7 +19,7 @@
 
 namespace qmcplusplus
 {
-class SpinDensity : public OperatorBase
+class SpinDensity : public OperatorDependsOnlyOnParticleSet
 {
 public:
   using Lattice_t = Lattice;
@@ -44,7 +44,7 @@ public:
 
   //standard interface
   std::string getClassName() const override { return "SpinDensity"; }
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& P, TrialWaveFunction& psi) final;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& P) final;
   bool put(xmlNodePtr cur) override;
   Return_t evaluate(ParticleSet& P) override;
 
@@ -53,7 +53,6 @@ public:
   void registerCollectables(std::vector<ObservableHelper>& h5desc, hdf_archive& file) const override;
 
   //should be empty for Collectables interface
-  void resetTargetParticleSet(ParticleSet& P) override {}
   void setObservables(PropertySetType& plist) override {}
   void setParticlePropertyList(PropertySetType& plist, int offset) override {}
 #if !defined(REMOVE_TRACEMANAGER)

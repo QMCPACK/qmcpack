@@ -14,7 +14,7 @@
 #include "ValidReferencePointsInput.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "EstimatorTesting.h"
-#include "Particle/tests/MinimalParticlePool.h"
+#include <MinimalParticlePool.h>
 
 /** \file
  *  This is a postfacto unit testing written for reference points during porting of EnergyDensity

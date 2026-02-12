@@ -27,11 +27,8 @@
 namespace qmcplusplus
 {
 JastrowBuilder::JastrowBuilder(Communicate* comm, ParticleSet& p, const PSetMap& psets)
-    : WaveFunctionComponentBuilder(comm, p), ptclPool(psets)
-{
-  resetOptions();
-  ClassName = "JastrowBuilder";
-}
+    : WaveFunctionComponentBuilder(comm, p, "JastrowBuilder"), ptclPool(psets)
+{ resetOptions(); }
 
 void JastrowBuilder::resetOptions()
 {
@@ -86,7 +83,7 @@ std::unique_ptr<WaveFunctionComponent> JastrowBuilder::buildComponent(xmlNodePtr
 
 std::unique_ptr<WaveFunctionComponent> JastrowBuilder::buildCounting(xmlNodePtr cur)
 {
-  ReportEngine PRE(ClassName, "addCounting(xmlNodePtr)");
+  ReportEngine PRE(class_name_, "addCounting(xmlNodePtr)");
   std::unique_ptr<CountingJastrowBuilder> cjb;
   auto pa_it(ptclPool.find(sourceOpt));
   if (pa_it != ptclPool.end() && sourceOpt != targetPtcl.getName()) // source is not target
@@ -112,7 +109,7 @@ std::unique_ptr<WaveFunctionComponent> JastrowBuilder::buildkSpace(xmlNodePtr cu
 
 std::unique_ptr<WaveFunctionComponent> JastrowBuilder::buildOneBody(xmlNodePtr cur)
 {
-  ReportEngine PRE(ClassName, "addOneBody(xmlNodePtr)");
+  ReportEngine PRE(class_name_, "addOneBody(xmlNodePtr)");
   if (sourceOpt == targetPtcl.getName())
   {
     PRE.error("One-Body Jastrow Function needs a source different from " + targetPtcl.getName() +
@@ -133,7 +130,7 @@ std::unique_ptr<WaveFunctionComponent> JastrowBuilder::buildOneBody(xmlNodePtr c
 std::unique_ptr<WaveFunctionComponent> JastrowBuilder::build_eeI(xmlNodePtr cur)
 {
 #if OHMMS_DIM == 3
-  ReportEngine PRE(ClassName, "add_eeI(xmlNodePtr)");
+  ReportEngine PRE(class_name_, "add_eeI(xmlNodePtr)");
   auto pit(ptclPool.find(sourceOpt));
   if (pit == ptclPool.end())
   {
@@ -154,7 +151,7 @@ std::unique_ptr<WaveFunctionComponent> JastrowBuilder::build_eeI(xmlNodePtr cur)
 
 std::unique_ptr<WaveFunctionComponent> JastrowBuilder::buildTwoBody(xmlNodePtr cur)
 {
-  ReportEngine PRE(ClassName, "addTwoBody(xmlNodePtr)");
+  ReportEngine PRE(class_name_, "addTwoBody(xmlNodePtr)");
   RadialJastrowBuilder rb(myComm, targetPtcl);
   return rb.buildComponent(cur);
 }

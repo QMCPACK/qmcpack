@@ -5,7 +5,7 @@ from nexus import generate_physical_system
 from nexus import generate_pwscf
 from nexus import generate_pw2qmcpack
 from nexus import generate_qmcpack,vmc
-from structure import *
+from nexus.structure import *
 
 '''
 This nexus example shows a variety of ways that excitations can be specified.

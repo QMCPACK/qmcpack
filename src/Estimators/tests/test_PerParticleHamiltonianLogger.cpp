@@ -11,8 +11,8 @@
 
 #include "catch.hpp"
 
-#include <filesystem>
 #include "PerParticleHamiltonianLogger.h"
+#include <filesystem>
 #include "Utilities/StdRandom.h"
 #include "OhmmsData/Libxml2Doc.h"
 
@@ -30,7 +30,7 @@ private:
   int walkers_;
 
 public:
-  MultiWalkerTalker(const std::string& name, int walkers) : name_(name), walkers_(walkers){};
+  MultiWalkerTalker(const std::string& name, int walkers) : name_(name), walkers_(walkers) {};
   void registerVector(ListenerVector<Real>& listener_vector) { listener_vectors_.push_back(listener_vector); }
   void reportVector()
   {
@@ -61,8 +61,13 @@ TEST_CASE("PerParticleHamiltonianLogger_sum", "[estimators]")
 
   CHECK(!pphli.get_to_stdout());
 
-  if (std::filesystem::exists("rank_0_per_particle_log.dat"))
-    std::filesystem::remove("rank_0_per_particle_log.dat");
+  auto& log_name_stem = pphli.get_name();
+
+  using namespace std::string_literals;
+  std::string per_rank_log_file_name{"rank_0_"s + log_name_stem + ".dat"s};
+
+  if (std::filesystem::exists(per_rank_log_file_name))
+    std::filesystem::remove(per_rank_log_file_name);
 
   {
     int rank = 0;
@@ -120,14 +125,14 @@ TEST_CASE("PerParticleHamiltonianLogger_sum", "[estimators]")
 
     FakeRandom<OHMMS_PRECISION_FULL> rng;
 
-    int crowd_id = 0;
+    int crowd_id   = 0;
     long walker_id = 0;
     for (auto& crowd_oeb : crowd_loggers)
     {
       // Mocking walker ids
       using Walker = typename decltype(ref_walkers)::value_type::type;
-      for(Walker& walker : ref_walkers)
-	walker.setWalkerID(walker_id++);
+      for (Walker& walker : ref_walkers)
+        walker.setWalkerID(walker_id++);
       crowd_oeb->accumulate(ref_walkers, ref_psets, ref_wfns, ref_hams, rng);
     }
 
@@ -135,7 +140,7 @@ TEST_CASE("PerParticleHamiltonianLogger_sum", "[estimators]")
     rank_logger.collect(crowd_loggers_refs);
   }
   // Now that the rank_logger has be destroyed its file must be present
-  CHECK(std::filesystem::exists("rank_0_per_particle_log.dat"));
+  CHECK(std::filesystem::exists(per_rank_log_file_name));
 }
 
 } // namespace qmcplusplus

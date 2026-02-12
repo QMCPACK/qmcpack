@@ -11,6 +11,7 @@
 //                    Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //                    Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Anouar Benali, abenali.sci@gmail.com, Qubit Pharmaceuticals
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -40,6 +41,7 @@ namespace qmcplusplus
 {
 class SlaterDet;
 class MultiSlaterDetTableMethod;
+class TWFFastDerivWrapper;
 
 /** @ingroup MBWfs
  * @brief Class to represent a many-body trial wave function
@@ -132,7 +134,7 @@ public:
   //  2. Optimization algorithm computes new values for those parameters.
   //  3. Changed parameters are propagated back to each of the components.
   //
-  // The collection of variables is of type VariableSet (opt_variables_type is a typedef).
+  // The collection of variables is of type VariableSet (OptVariables is a typedef).
   // The variables local to each component are stored in WaveFunctionComponent::myVars, which
   // is set to the local parameters when the component is set up.
   // The call to checkInVariables collects all the local parameters into a global list (step 1).
@@ -151,16 +153,16 @@ public:
    *
    * Gather all the optimizable parameters from wavefunction components into a single list
    */
-  void checkInVariables(opt_variables_type& o);
+  void checkInVariables(OptVariables& o);
 
   /** Check out optimizable variables
    * Assign index mappings from global list (o) to local values in each component
    */
-  void checkOutVariables(const opt_variables_type& o);
+  void checkOutVariables(const OptVariables& o);
 
   /**  Set values of parameters in each component from the global list
    */
-  void resetParameters(const opt_variables_type& active);
+  void resetParameters(const OptVariables& active);
 
 
   /** print out state of the trial wavefunction
@@ -170,6 +172,18 @@ public:
   /** Initialize a TWF wrapper for fast derivative evaluation
    */
   void initializeTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const;
+
+  /** Get or create the TWF wrapper for fast force evaluation
+ *  @param P particle set for initialization if wrapper doesn't exist
+ *  @return reference to the wrapper (created if necessary)
+ *  
+ *  Creates the wrapper on first call and initializes it with SPOSets/Jastrows.
+ *  Subsequent calls return the existing wrapper, re-initializing only if the 
+ *  particle set or wave function components have changed.
+ *  Used by ACForce to enable fast derivative computation for force evaluation.
+ */
+  TWFFastDerivWrapper& getOrCreateTWFFastDerivWrapper(const ParticleSet& P);
+
   /** evalaute the log (internally gradients and laplacian) of the trial wavefunction. gold reference */
   RealType evaluateLog(ParticleSet& P);
 
@@ -323,7 +337,7 @@ public:
 
   /** compute both ratios and deriatives of ratio with respect to the optimizables*/
   void evaluateDerivRatios(const VirtualParticleSet& VP,
-                           const opt_variables_type& optvars,
+                           const OptVariables& optvars,
                            std::vector<ValueType>& ratios,
                            Matrix<ValueType>& dratio);
 
@@ -333,7 +347,7 @@ public:
    */
   void evaluateSpinorDerivRatios(const VirtualParticleSet& VP,
                                  const std::pair<ValueVector, ValueVector>& spinor_multiplier,
-                                 const opt_variables_type& optvars,
+                                 const OptVariables& optvars,
                                  std::vector<ValueType>& ratios,
                                  Matrix<ValueType>& dratio);
 
@@ -472,13 +486,13 @@ public:
   RealType KECorrection() const;
 
   void evaluateDerivatives(ParticleSet& P,
-                           const opt_variables_type& optvars,
+                           const OptVariables& optvars,
                            Vector<ValueType>& dlogpsi,
                            Vector<ValueType>& dhpsioverpsi);
 
   static void mw_evaluateParameterDerivatives(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                               const RefVectorWithLeader<ParticleSet>& p_list,
-                                              const opt_variables_type& optvars,
+                                              const OptVariables& optvars,
                                               RecordArray<ValueType>& dlogpsi,
                                               RecordArray<ValueType>& dhpsioverpsi);
 
@@ -490,11 +504,11 @@ public:
    *  Note: this function differs from the evaluateDerivatives function in the way that it only computes
    *        the derivative of the log of the wavefunction.
   */
-  void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& optvars, Vector<ValueType>& dlogpsi);
+  void evaluateDerivativesWF(ParticleSet& P, const OptVariables& optvars, Vector<ValueType>& dlogpsi);
   /// batched version of evaluateDerivativesWF
   static void mw_evaluateParameterDerivativesWF(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                                 const RefVectorWithLeader<ParticleSet>& p_list,
-                                                const opt_variables_type& optvars,
+                                                const OptVariables& optvars,
                                                 RecordArray<ValueType>& dlogpsi);
 
   /** evaluate the hessian w.r.t. electronic coordinates of particle iat **/
@@ -546,6 +560,7 @@ public:
   /// find MSD WFCs if exist
   RefVector<MultiSlaterDetTableMethod> findMSD() const;
 
+
 private:
   static void debugOnlyCheckBuffer(WFBufferType& buffer);
 
@@ -588,8 +603,7 @@ private:
   ///a list of WaveFunctionComponents constituting many-body wave functions
   std::vector<std::unique_ptr<WaveFunctionComponent>> Z;
 
-  /// For now, TrialWaveFunction will own the wrapper.
-  TWFFastDerivWrapper twf_prototype;
+  //TWFFastDerivWrapper twf_prototype;
   /// timers at TrialWaveFunction function call level
   TimerList_t TWF_timers_;
   /// timers at WaveFunctionComponent function call level
@@ -613,7 +627,9 @@ private:
   // helper function for extracting a list of laplacian from a list of TrialWaveFunction
   static RefVector<ParticleSet::ParticleLaplacian> extractLRefList(
       const RefVectorWithLeader<TrialWaveFunction>& wf_list);
+
+  std::unique_ptr<TWFFastDerivWrapper> twf_fastderiv_;
 };
-/**@}*/
+
 } // namespace qmcplusplus
 #endif

@@ -41,21 +41,8 @@ public:
   ///read from xmlNode
   bool put(xmlNodePtr cur);
 
-  /** add a property whose name will be renamed by b
-   * @param a target property whose name should be replaced by b
-   * @param b new property name
-   */
-  void renameProperty(const std::string& a, const std::string& b);
-
-  /** renamd a property
-   * @param a current name
-   *
-   * If a is found among the RenamedProperty, a is replaced,
-   */
-  void renameProperty(std::string& a);
-
   ///get targetH
-  QMCHamiltonian* getH() const { return targetH.get(); }
+  std::unique_ptr<QMCHamiltonian> releaseHamiltonian() { return std::move(targetH); }
 
 private:
   /** process xmlNode to populate targetPsi
@@ -80,9 +67,6 @@ private:
 
   ///name of the TrialWaveFunction
   std::string psiName;
-
-  ///list of the old to new name
-  std::map<std::string, std::string> RenamedProperty;
 };
 } // namespace qmcplusplus
 #endif

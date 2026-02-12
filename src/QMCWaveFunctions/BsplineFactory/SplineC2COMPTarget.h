@@ -27,6 +27,7 @@
 #include "Utilities/TimerManager.h"
 #include <ResourceHandle.h>
 #include "SplineOMPTargetMultiWalkerMem.h"
+#include <cstdint>
 
 namespace qmcplusplus
 {
@@ -72,6 +73,9 @@ private:
   Tensor<ST, 3> GGt;
   ///multi bspline set
   std::shared_ptr<MultiBsplineBase<ST>> SplineInst;
+
+  ///Copy of original splines for orbital rotation. Only need these on host
+  std::shared_ptr<std::vector<ST>> coef_copy_;
 
   std::shared_ptr<OffloadVector<ST>> mKK;
   std::shared_ptr<OffloadPosVector<ST>> myKcart;
@@ -142,7 +146,14 @@ public:
 
   std::unique_ptr<SPOSet> makeClone() const override { return std::make_unique<SplineC2COMPTarget>(*this); }
 
-  inline void resizeStorage(size_t n, size_t nvals)
+  bool isRotationSupported() const override { return true; }
+
+  ///store copy of spline coefficients for obrital rotation
+  void storeParamsBeforeRotation() override;
+
+  void applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy) override;
+
+  inline void resizeStorage(size_t n) override
   {
     init_base(n);
     size_t npad = getAlignedSize<ST>(2 * n);
@@ -187,7 +198,7 @@ public:
     // transfer static data to GPU
     mKK->updateTo();
     myKcart->updateTo();
-    for (uint32_t i = 0; i < 9; i++)
+    for (std::uint32_t i = 0; i < 9; i++)
     {
       (*GGt_offload)[i]           = GGt[i];
       (*PrimLattice_G_offload)[i] = PrimLattice.G[i];
@@ -294,7 +305,7 @@ public:
 
   template<class BSPLINESPO>
   friend class SplineSetReader;
-  friend struct BsplineReader;
+  friend class BsplineReader;
 };
 
 extern template class SplineC2COMPTarget<float>;

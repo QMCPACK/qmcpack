@@ -734,6 +734,8 @@ void generateCuspInfo(Matrix<CuspCorrectionParameters>& info,
 
       if (corrO)
       {
+        localTargetPtcl.update();
+
         OneMolecularOrbital etaMO(&localTargetPtcl, &localSourcePtcl, &local_eta);
         etaMO.changeOrbital(center_idx, mo_idx);
 

@@ -66,12 +66,10 @@ using WP = WalkerProperties::Indexes;
  \f[\Psi\f] in terms of \f[\ln \Psi\] should use normal complex
  multiplication.
 */
-struct ConservedEnergy : public OperatorBase
+struct ConservedEnergy : public OperatorDependsOnlyOnParticleSet
 {
   ConservedEnergy() {}
   ~ConservedEnergy() override {}
-
-  void resetTargetParticleSet(ParticleSet& P) override {}
 
   std::string getClassName() const override { return "ConservedEnergy"; }
 
@@ -97,7 +95,7 @@ struct ConservedEnergy : public OperatorBase
     return true;
   }
 
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp) final
   {
     return std::make_unique<ConservedEnergy>();
   }

@@ -4,86 +4,66 @@ import gc
 import os
 from optparse import OptionParser
 
-
+# Copied from qmca. Modification must done on qmca first
+# Locate and import the closely coupled Nexus module
 def find_nexus_modules():
+    import os
     import sys
-    nexus_lib = os.path.abspath(os.path.join(__file__,'..','..','lib'))
-    assert(os.path.exists(nexus_lib))
-    sys.path.append(nexus_lib)
+    # Prepend the assumed path of a folder containing the closely coupled nexus module to module search path
+    # It points to the top Nexus directory not necessarily the top QMCPACK directory.
+    nexus_lib = os.path.realpath(os.path.join(__file__,'..','..'))
+
+    # "import nexus" will succeed if nexus directory exists without __init__.py in it.
+    # Explicitly check the existence of nexus/__init__.py at the closely coupled location
+    nexus_init = os.path.join(nexus_lib,'nexus','__init__.py')
+    if not os.path.exists(nexus_init):
+        print('\nExpected file '+nexus_init+' does not exist!'
+              '\nBroken Nexus installation! Please follow Nexus manual regarding installation.\n')
+        sys.exit(1)
+
+    # check import of nexus modules
+    sys.path.insert(0,nexus_lib)
+    try:
+        import nexus
+    except Exception as err:
+        print('\nImporting Nexus modules failed for an unknown reason.'
+              '\nThis is likely a developer error.'
+              '\nFor more information, the original exception is reproduced below.'
+              '\nPlease report this error to the Nexus developers.'+2*'\n')
+        import traceback
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        exc_lines = traceback.format_exception(exc_type, exc_value, exc_traceback)
+        for line in exc_lines:
+            print(line.rstrip())
+        print()
+        sys.exit(1)
+
+    # Sanity check. Most likely errors get caught earlier.
+    # ensure closely coupled nexus module is in use.
+    nexus_lib2 = os.path.realpath(os.path.join(nexus.__file__,'..','..'))
+    if nexus_lib != nexus_lib2:
+        exe_full_path = os.path.abspath(sys.argv[0])
+        print('\nNexus executable ' + exe_full_path +
+              '\n  Executable derived <nexus_root> = ' + nexus_lib +
+              '\n  Module     derived <nexus_root> = ' + nexus_lib2 +
+              '\nNexus executables and modules are not from the same installation!\n')
+        sys.exit(1)
 #end def find_nexus_modules
 
-
-def import_nexus_module(module_name):
-    import importlib
-    return importlib.import_module(module_name)
-#end def import_nexus_module
-
-
 # Load Nexus modules
-try:
-    # Attempt specialized path-based imports.
-    #  (The executable should still work even if Nexus is not installed)
-    find_nexus_modules()
-
-    versions = import_nexus_module('versions')
-    nexus_version = versions.nexus_version
-    del versions
-
-    generic = import_nexus_module('generic')
-    obj = generic.obj
-    del generic
-
-    developer = import_nexus_module('developer')
-    DevBase     = developer.DevBase
-    error       = developer.error
-    ci          = developer.ci
-    unavailable = developer.unavailable
-    del developer
-
-    memory = import_nexus_module('memory')
-
-    unit_converter = import_nexus_module('unit_converter')
-    convert = unit_converter.convert
-    del unit_converter
-
-    hdfreader = import_nexus_module('hdfreader')
-    HDFreader = hdfreader.HDFreader
-    del hdfreader
-
-    fileio = import_nexus_module('fileio')
-    XsfFile    = fileio.XsfFile
-    ChgcarFile = fileio.ChgcarFile
-    del fileio
-
-    structure = import_nexus_module('structure')
-    read_structure = structure.read_structure
-    Structure      = structure.Structure
-    del structure
-
-    numerics = import_nexus_module('numerics')
-    simplestats = numerics.simplestats
-    simstats    = numerics.simstats
-    del numerics
-
-    qmcpack_input = import_nexus_module('qmcpack_input')
-    QmcpackInput    = qmcpack_input.QmcpackInput
-    spindensity_xml = qmcpack_input.spindensity
-    density_xml = qmcpack_input.density  # temporary
-    del qmcpack_input
-except:
-    from versions import nexus_version
-    from generic import obj
-    from developer import DevBase,error,ci,unavailable
-    import memory
-    from hdfreader import HDFreader
-    from fileio import XsfFile,ChgcarFile
-    from structure import read_structure,Structure
-    from numerics import simplestats,simstats
-    from qmcpack_input import QmcpackInput
-    from qmcpack_input import spindensity as spindensity_xml
-    from qmcpack_input import density as density_xml
-    from unit_converter import convert
-#end try
+find_nexus_modules()
+from nexus.nexus_version import nexus_version
+import nexus.numpy_extensions as npe
+from nexus.developer import DevBase,obj,error,ci,unavailable
+import nexus.memory as memory
+from nexus.hdfreader import HDFreader
+from nexus.fileio import XsfFile,ChgcarFile
+from nexus.structure import read_structure,Structure
+from nexus.numerics import simplestats,simstats
+from nexus.qmcpack_input import QmcpackInput
+from nexus.qmcpack_input import spindensity as spindensity_xml
+from nexus.qmcpack_input import density as density_xml
+from nexus.unit_converter import convert
 
 
 try:
@@ -225,7 +205,7 @@ def reblock(data,eq,rb=None,filepath=None):
     # reblock the data
     s = list(d.shape)
     snew = tuple([len(d)//rb,rb]+s[1:])
-    d.shape = snew
+    npe.reshape_inplace(d, snew)
     d = d.mean(1)
     return d
 #end def reblock
@@ -676,7 +656,7 @@ class StatFile(QDBase):
                         if ncells!=data_cells:
                             self.error('grid does not match number of data cells\ngrid provided: {0}\nnumber of cells in grid: {1}\nnumber of cells in data: {2}'.format(grid,ncells,data_cells))
                         #end if
-                        data.value.shape = len(data.value),g[0],g[1],g[2]
+                        npe.reshape_inplace(data.value, (len(data.value),g[0],g[1],g[2]))
                     #end for
                 #end for
                 # reblock the data
@@ -750,7 +730,7 @@ class StatFile(QDBase):
                         if ncells!=data_cells:
                             self.error('grid does not match number of data cells\ngrid provided: {0}\nnumber of cells in grid: {1}\nnumber of cells in data: {2}'.format(grid,ncells,data_cells))
                         #end if
-                        data.shape = len(data),g[0],g[1],g[2]
+                        npe.reshape_inplace(data, (len(data),g[0],g[1],g[2]))
                     #end for
                 #end for
                 # reblock the data
@@ -818,35 +798,50 @@ class StatFile(QDBase):
         sdim = tuple('xyz')[dim]
         for name,spin_density in self.spin_density_data.items():
             prefix = '{0}.{1}_lineplot_{2}'.format(self.file_prefix,name,sdim)
-            data = spin_density.u.value+spin_density.d.value
-            if permute:
-                data = data.transpose(permutation)
-            #end if
-            s = data.shape
-            data.shape = s[0],s[1],s[2]*s[3]
-            data = data.sum(2)
-            lmean,lvar,lerror,lkappa = simstats(data,dim=0)
-            if rmax is None:
-                r = np.arange(len(lmean))
-                xlab = 'bin number'
-                ylab = '$N_e$/bin'
-            else:
-                dr = rmax/len(lmean)
-                r = dr/2+dr*np.arange(len(lmean),dtype=float)
-                lmean/=dr
-                lerror/=dr
-                xlab = sdim+' ($\\AA$)'.format(dim)
-                ylab = '$N_e/\\AA$'
-            #end if
-            plt.figure(tight_layout=True)
-            plt.errorbar(r,lmean,lerror,fmt='b.-')
-            plt.xlabel(xlab)
-            plt.ylabel(ylab)
-            plt.title('{0}  (axis {1})  {2}'.format(name,dim,os.path.split(self.file_prefix)[1]))
-            self.vlog('        creating file {0}.pdf'.format(prefix))
-            plt.savefig(prefix+'.pdf')
-            self.vlog('        creating file {0}.dat'.format(prefix))
-            np.savetxt(prefix+'.dat',np.array(list(zip(r,lmean,lerror))))
+            data  = {'u':spin_density.u.value, 
+                     'd': spin_density.d.value, 
+                     'u+d': spin_density.u.value+spin_density.d.value, 
+                     'u-d': spin_density.u.value-spin_density.d.value}
+            for key,datum in data.items():
+                if permute:
+                    datum = datum.transpose(permutation)
+                #end if
+                s = datum.shape
+                datum = datum.reshape(s[0], s[1], s[2]*s[3])
+                datum = datum.sum(2)
+                lmean,lvar,lerror,lkappa = simstats(datum,dim=0)
+                if rmax is None:
+                    r = np.arange(len(lmean))
+                    xlab = 'bin number'
+                    ylab = '$N_e$/bin'
+                else:
+                    dr = rmax/len(lmean)
+                    r = dr/2+dr*np.arange(len(lmean),dtype=float)
+                    lmean/=dr
+                    lerror/=dr
+                    xlab = f'{sdim} ($\\AA$)'
+                    ylab = '$N_e/\\AA$'
+                #end if
+                # Use np.trapz for backwards and forwards compatibility.
+                np_version = tuple(map(int, np.__version__.split('.')[:2]))
+                use_trapz = np_version < (2, 0)
+                if use_trapz:
+                    total_electrons = np.trapz(lmean, r)
+                else:
+                    # In NumPy >= 2.0, prefer np.trapezoid
+                    total_electrons = np.trapezoid(lmean, r)
+                print(f'Total number of {key} electrons: {total_electrons}')
+                plt.figure(tight_layout=True)
+                plt.errorbar(r,lmean,lerror,fmt='b.-')
+                plt.xlabel(xlab)
+                plt.ylabel(ylab)
+                plt.title('{0}  (axis {1})  {2}'.format(name,dim,os.path.split(self.file_prefix)[1]))
+                self.vlog(f'        creating file {prefix}_{key}.pdf')
+                # plt.savefig(prefix+'.pdf')
+                plt.savefig(prefix+f'_{key}.pdf')
+                self.vlog(f'        creating file {prefix}_{key}.dat')
+                # np.savetxt(prefix+'.dat',np.array(list(zip(r,lmean,lerror))))
+                np.savetxt(prefix+f'_{key}.dat',np.array(list(zip(r,lmean,lerror))))
         #end for
     #end def line_plot
 #end class StatFile
@@ -1198,7 +1193,7 @@ class QMCDensityProcessor(QDBase):
             if len(cell)!=9:
                 self.error('--cell input misformatted\nexpected 9 elements for 3x3 matrix\nreceived {0} elements with values: {1}'.format(len(cell),cell))
             #end if
-            cell.shape = 3,3
+            npe.reshape_inplace(cell, (3, 3))
             opt.cell = cell
         else:
             opt.cell = cell
@@ -1216,7 +1211,7 @@ class QMCDensityProcessor(QDBase):
             if len(np.array(density_cell).ravel())!=9:
                 self.error('--density_cell input misformatted\nexpected 9 elements for 3x3 matrix\nreceived {0} elements with values: {1}'.format(len(density_cell),density_cell))
             #end if
-            density_cell.shape = 3,3
+            npe.reshape_inplace(density_cell, (3, 3))
             opt.density_cell = density_cell
         else:
             opt.density_cell = density_cell

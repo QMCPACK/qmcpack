@@ -29,7 +29,7 @@ else()
   # workdir is CMAKE_CURRENT_BINARY_DIR/RMG_TEST_NAME
   message("${RMG_TEST_NAME}")
 
-  softlink_rmg_input(${RMG_TEST_NAME} 1-16 rmg-${RMG_SYSTEM} LAST_TEST_NAME)
+  softlink_rmg_input(${RMG_TEST_NAME} r1-t16 rmg-${RMG_SYSTEM} LAST_TEST_NAME)
   # TODO: do larger run to get better reference?
   # ref values:                                                        adjusted for 1.6E4 samples
   # TotalSamples          =         120000000 +/-          0
@@ -61,8 +61,8 @@ else()
     DIAMOND2_GAMMA_SCALARS # VMC
   )
 
-  if(TEST ${THIS_TEST_NAME}-1-16)
-    set_tests_properties(${THIS_TEST_NAME}-1-16 PROPERTIES DEPENDS ${LAST_TEST_NAME})
+  if(TEST ${THIS_TEST_NAME}-r1-t16)
+    set_tests_properties(${THIS_TEST_NAME}-r1-t16 PROPERTIES DEPENDS ${LAST_TEST_NAME})
   endif()
 
 endif()

@@ -575,7 +575,7 @@ void test_Ne(bool transform)
     // when a determinant only contains a single particle.
     SPOSet::ValueVector phi(1), phiinv(1);
     phiinv[0] = 100;
-    VirtualParticleSet VP(elec, 2);
+    VirtualParticleSet VP(elec);
     std::vector<ParticleSet::SingleParticlePos> newpos2(2);
     std::vector<SPOSet::ValueType> ratios2(2);
     newpos2[0] = disp;

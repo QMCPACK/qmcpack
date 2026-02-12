@@ -30,7 +30,6 @@
 #include "QMCHamiltonians/LatticeDeviationEstimator.h"
 #include "QMCHamiltonians/MomentumEstimator.h"
 #include "QMCHamiltonians/Pressure.h"
-#include "QMCHamiltonians/ForwardWalking.h"
 #include "QMCHamiltonians/PairCorrEstimator.h"
 #include "QMCHamiltonians/DensityEstimator.h"
 #include "QMCHamiltonians/SkEstimator.h"
@@ -66,9 +65,7 @@ HamiltonianFactory::HamiltonianFactory(const std::string& hName,
       psiName("psi0")
 {
   //PBCType is zero or 1 but should be generalized
-  PBCType   = targetPtcl.getLattice().SuperCellEnum;
-  ClassName = "HamiltonianFactory";
-  myName    = hName;
+  PBCType = targetPtcl.getLattice().SuperCellEnum;
   targetPtcl.set_quantum();
 }
 
@@ -93,7 +90,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur)
   app_summary() << std::endl;
   app_summary() << " Hamiltonian and observables" << std::endl;
   app_summary() << " ---------------------------" << std::endl;
-  app_summary() << "  Name: " << myName << std::endl;
+  app_summary() << "  Name: " << targetH->getName() << std::endl;
   app_summary() << std::endl;
 
   std::string htype("generic"), source("i"), defaultKE("yes");
@@ -102,7 +99,6 @@ bool HamiltonianFactory::build(xmlNodePtr cur)
   hAttrib.add(source, "source");
   hAttrib.add(defaultKE, "default");
   hAttrib.put(cur);
-  renameProperty(source);
   auto psi_it(psiPool.find(psiName));
   if (psi_it == psiPool.end())
     APP_ABORT("Unknown psi \"" + psiName + "\" for target Psi");
@@ -137,8 +133,6 @@ bool HamiltonianFactory::build(xmlNodePtr cur)
     attrib.add(potUnit, "units");
     attrib.add(estType, "potential");
     attrib.put(element);
-    renameProperty(sourceInp);
-    renameProperty(targetInp);
 
     int nham = targetH->total_size();
     if (cname == "pairpot")
@@ -349,7 +343,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur)
       {
         if (estType == "coulomb")
         {
-          std::unique_ptr<Pressure> BP = std::make_unique<Pressure>(targetPtcl);
+          std::unique_ptr<Pressure> BP = std::make_unique<Pressure>();
           BP->put(element);
           targetH->addOperator(std::move(BP), "Pressure", false);
           int nlen(100);
@@ -371,7 +365,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur)
         {
           APP_ABORT("Unknown psi \"" + PsiName + "\" for momentum.");
         }
-        std::unique_ptr<MomentumEstimator> ME = std::make_unique<MomentumEstimator>(targetPtcl, *psi_it->second);
+        std::unique_ptr<MomentumEstimator> ME = std::make_unique<MomentumEstimator>(targetPtcl);
         bool rt(myComm->rank() == 0);
         ME->putSpecial(element, targetPtcl, rt);
         targetH->addOperator(std::move(ME), "MomentumEstimator", false);
@@ -392,38 +386,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur)
 
   //add observables with physical and simple estimators
   targetH->addObservables(targetPtcl);
-  //do correction
-  bool dmc_correction = false;
-  processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
-    std::string potType("0");
-    OhmmsAttributeSet attrib;
-    attrib.add(potType, "type");
-    attrib.put(element);
-    if (cname == "estimator" && potType == "ForwardWalking")
-    {
-      app_log() << "  Adding Forward Walking Operator" << std::endl;
-      std::unique_ptr<ForwardWalking> FW = std::make_unique<ForwardWalking>();
-      FW->putSpecial(element, *targetH, targetPtcl);
-      targetH->addOperator(std::move(FW), "ForwardWalking", false);
-      dmc_correction = true;
-    }
-  });
-  //evaluate the observables again
-  if (dmc_correction)
-    targetH->addObservables(targetPtcl);
   return true;
-}
-
-
-void HamiltonianFactory::renameProperty(const std::string& a, const std::string& b) { RenamedProperty[a] = b; }
-
-void HamiltonianFactory::renameProperty(std::string& aname)
-{
-  std::map<std::string, std::string>::iterator it(RenamedProperty.find(aname));
-  if (it != RenamedProperty.end())
-  {
-    aname = (*it).second;
-  }
 }
 
 bool HamiltonianFactory::put(xmlNodePtr cur)

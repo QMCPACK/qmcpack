@@ -14,26 +14,19 @@
 #include "config.h"
 #ifndef QMC_CUDA2HIP
 #include <cuComplex.h>
-#include <thrust/system/cuda/detail/core/util.h>
-namespace qmcplusplus
-{
-namespace cuBLAS_MFs
-{
-using namespace thrust::cuda_cub::core;
-}
-} // namespace qmcplusplus
-
 #else
 #include <hip/hip_complex.h>
 #include "Platforms/ROCm/cuda2hip.h"
-#include "uninitialized_array.hpp"
 #endif
 #include <thrust/complex.h>
+#include "uninitialized_array.cuh"
 
 namespace qmcplusplus
 {
 namespace cuBLAS_MFs
 {
+using qmcplusplus::device::uninitialized_array;
+
 template<typename T, int ROWBS, int COLBS>
 __global__ void gemvT_batched_kernel(const int m, // number of columns in row major A
                                      const int n, // number of rows in row major A
@@ -50,7 +43,6 @@ __global__ void gemvT_batched_kernel(const int m, // number of columns in row ma
 
   constexpr int SUM_SIZE = ROWBS * COLBS;
   __shared__ uninitialized_array<T, SUM_SIZE> sum;
-  __shared__ uninitialized_array<T, COLBS> x_part;
 
   const int tid = threadIdx.x;
   for (int i = 0; i < ROWBS; i++)
@@ -64,14 +56,12 @@ __global__ void gemvT_batched_kernel(const int m, // number of columns in row ma
 
   const int num_col_blocks = (m + COLBS - 1) / COLBS;
   for (int ib = 0; ib < num_col_blocks; ib++)
-  {
-    const int col_id = ib * COLBS + tid;
-    if (col_id < m)
-      x_part[tid] = x_iw[col_id * incx];
-    for (int row_id = row_begin; row_id < row_begin + row_max; row_id++)
-      if (col_id < m)
-        sum[(row_id - row_begin) * COLBS + tid] += x_part[tid] * A_iw[row_id * lda + col_id];
-  }
+    if (const int col_id = ib * COLBS + tid; col_id < m)
+    {
+      const T x = x_iw[col_id * incx];
+      for (int row_id = row_begin; row_id < row_begin + row_max; row_id++)
+        sum[(row_id - row_begin) * COLBS + tid] += x * A_iw[row_id * lda + col_id];
+    }
 
   for (int iend = COLBS / 2; iend > 0; iend /= 2)
   {

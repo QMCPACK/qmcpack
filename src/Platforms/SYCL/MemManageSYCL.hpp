@@ -46,7 +46,7 @@ public:
   {
     auto device = getSYCLDefaultDeviceDefaultQueue().get_device();
     if (device.has(sycl::aspect::ext_intel_free_memory))
-      return getSYCLDefaultDeviceDefaultQueue().get_device().get_info<sycl::ext::intel::info::device::free_memory>();
+      return device.get_info<sycl::ext::intel::info::device::free_memory>();
     else
       return 0;
   }
@@ -98,7 +98,7 @@ extern template class MemManage<PlatformKind::SYCL>;
 }; // namespace compute
 
 /** allocator for SYCL shared memory
- * @tparm T data type
+ * @tparam T data type
  */
 template<typename T>
 struct SYCLSharedAllocator

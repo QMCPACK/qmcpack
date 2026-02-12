@@ -44,8 +44,6 @@ DensityEstimator::DensityEstimator(ParticleSet& elns)
 
 std::string DensityEstimator::getClassName() const { return "DensityEstimator"; }
 
-void DensityEstimator::resetTargetParticleSet(ParticleSet& P) {}
-
 DensityEstimator::Return_t DensityEstimator::evaluate(ParticleSet& P)
 {
   if (t_walker_ == nullptr)
@@ -149,7 +147,7 @@ bool DensityEstimator::get(std::ostream& os) const
   return true;
 }
 
-std::unique_ptr<OperatorBase> DensityEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> DensityEstimator::makeClone(ParticleSet& qp)
 {
   //default constructor is sufficient
   return std::make_unique<DensityEstimator>(*this);

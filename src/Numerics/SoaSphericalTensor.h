@@ -13,6 +13,7 @@
 #ifndef QMCPLUSPLUS_SOA_SPHERICAL_CARTESIAN_TENSOR_H
 #define QMCPLUSPLUS_SOA_SPHERICAL_CARTESIAN_TENSOR_H
 
+#include <cstdint>
 #include <stdexcept>
 #include <limits>
 #include "OhmmsSoA/VectorSoaContainer.h"
@@ -94,7 +95,7 @@ public:
 
   /**
    * @brief evaluate V for multiple electrons and multiple pbc images
-   * 
+   *
    * @param [in] xyz electron positions [Nelec, Npbc, 3(x,y,z)]
    * @param [out] Ylm Spherical tensor elements [Nelec, Npbc, Nlm]
   */
@@ -118,7 +119,7 @@ public:
 
     PRAGMA_OFFLOAD("omp target teams distribute parallel for \
                     is_device_ptr(factorLM__ptr, factorL__ptr, norm_factor__ptr, xyz_ptr, Ylm_ptr)")
-    for (uint32_t ir = 0; ir < nR; ir++)
+    for (std::uint32_t ir = 0; ir < nR; ir++)
     {
       evaluate_bare(xyz_ptr[0 + 3 * ir], xyz_ptr[1 + 3 * ir], xyz_ptr[2 + 3 * ir], Ylm_ptr + (ir * Nlm), Lmax,
                     factorL__ptr, factorLM__ptr);
@@ -129,10 +130,10 @@ public:
 
   /**
    * @brief evaluate VGL for multiple electrons and multiple pbc images
-   * 
+   *
    * when offload is enabled, xyz is assumed to be up to date on the device before entering the function
    * Ylm_vgl will be up to date on the device (but not host) when this function exits
-   * 
+   *
    * @param [in] xyz electron positions [Nelec, Npbc, 3(x,y,z)]
    * @param [out] Ylm_vgl Spherical tensor elements [5(v, gx, gy, gz, lapl), Nelec, Npbc, Nlm]
   */
@@ -161,7 +162,7 @@ public:
     PRAGMA_OFFLOAD("omp target teams distribute parallel for \
                     is_device_ptr(factorLM__ptr, factorL__ptr, norm_factor__ptr, factor2L__ptr) \
                     is_device_ptr(xyz_ptr, Ylm_vgl_ptr)")
-    for (uint32_t ir = 0; ir < nR; ir++)
+    for (std::uint32_t ir = 0; ir < nR; ir++)
       evaluateVGL_impl(xyz_ptr[0 + 3 * ir], xyz_ptr[1 + 3 * ir], xyz_ptr[2 + 3 * ir], Ylm_vgl_ptr + (ir * Nlm), Lmax,
                        factorL__ptr, factorLM__ptr, factor2L__ptr, norm_factor__ptr, offset);
   }

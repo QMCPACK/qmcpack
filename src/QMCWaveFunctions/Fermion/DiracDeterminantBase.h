@@ -78,9 +78,7 @@ public:
     throw std::runtime_error("DiracDeterminantBase::registerTWFFastDerivWrapper must be overridden\n");
   }
 
-  virtual void evaluateDerivativesWF(ParticleSet& P,
-                                     const opt_variables_type& optvars,
-                                     Vector<ValueType>& dlogpsi) override
+  virtual void evaluateDerivativesWF(ParticleSet& P, const OptVariables& optvars, Vector<ValueType>& dlogpsi) override
   {
     // assume no orbital optimization. If implemented, override this function
   }
@@ -131,7 +129,7 @@ public:
 
   // used by DiracDeterminantWithBackflow
   virtual void evaluateDerivatives(ParticleSet& P,
-                                   const opt_variables_type& active,
+                                   const OptVariables& active,
                                    int offset,
                                    Matrix<RealType>& dlogpsi,
                                    Array<GradType, 3>& dG,

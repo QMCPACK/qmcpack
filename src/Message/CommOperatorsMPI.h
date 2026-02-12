@@ -164,7 +164,7 @@ template<>
 inline void gsum(std::vector<int>& g, int gid)
 {
   std::vector<int> gt(g.size(), 0);
-  MPI_Allreduce(&(g[0]), &(gt[0]), g.size(), MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Allreduce(g.data(), gt.data(), g.size(), MPI_INT, MPI_SUM, MPI_COMM_WORLD);
   g = gt;
 }
 
@@ -189,7 +189,7 @@ template<>
 inline void gsum(std::vector<double>& g, int gid)
 {
   std::vector<double> gt(g.size(), 0.0);
-  MPI_Allreduce(&(g[0]), &(gt[0]), g.size(), MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Allreduce(g.data(), gt.data(), g.size(), MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   g = gt;
 }
 
@@ -200,7 +200,7 @@ inline void gsum(qmcplusplus::Matrix<double>& g, int gid)
   //MPI_Allreduce(gt.begin(), g.begin(), N, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   std::vector<double> gt(g.size());
   copy(g.begin(), g.end(), gt.begin());
-  MPI_Allreduce(g.data(), &gt[0], g.size(), MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Allreduce(g.data(), gt.data(), g.size(), MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   copy(gt.begin(), gt.end(), g.data());
 }
 
@@ -285,7 +285,7 @@ inline void Communicate::allreduce(std::vector<int>& g)
   if (d_ncontexts == 1)
     return;
   std::vector<int> gt(g.size(), 0);
-  MPI_Allreduce(&(g[0]), &(gt[0]), g.size(), MPI_INT, MPI_SUM, myMPI);
+  MPI_Allreduce(g.data(), gt.data(), g.size(), MPI_INT, MPI_SUM, myMPI);
   g = gt;
 }
 
@@ -295,7 +295,7 @@ inline void Communicate::allreduce(std::vector<long>& g)
   if (d_ncontexts == 1)
     return;
   std::vector<long> gt(g.size(), 0);
-  MPI_Allreduce(&(g[0]), &(gt[0]), g.size(), MPI_LONG, MPI_SUM, myMPI);
+  MPI_Allreduce(g.data(), gt.data(), g.size(), MPI_LONG, MPI_SUM, myMPI);
   g = gt;
 }
 
@@ -305,7 +305,7 @@ inline void Communicate::allreduce(std::vector<unsigned long>& g)
   if (d_ncontexts == 1)
     return;
   std::vector<unsigned long> gt(g.size(), 0);
-  MPI_Allreduce(&(g[0]), &(gt[0]), g.size(), MPI_UNSIGNED_LONG, MPI_SUM, myMPI);
+  MPI_Allreduce(g.data(), gt.data(), g.size(), MPI_UNSIGNED_LONG, MPI_SUM, myMPI);
   g = gt;
 }
 
@@ -313,7 +313,7 @@ template<>
 inline void Communicate::allreduce(std::vector<float>& g)
 {
   std::vector<float> gt(g.size(), 0.0f);
-  MPI_Allreduce(&(g[0]), &(gt[0]), g.size(), MPI_FLOAT, MPI_SUM, myMPI);
+  MPI_Allreduce(g.data(), gt.data(), g.size(), MPI_FLOAT, MPI_SUM, myMPI);
   g = gt;
 }
 
@@ -321,7 +321,7 @@ template<>
 inline void Communicate::allreduce(std::vector<double>& g)
 {
   std::vector<double> gt(g.size(), 0.0);
-  MPI_Allreduce(&(g[0]), &(gt[0]), g.size(), MPI_DOUBLE, MPI_SUM, myMPI);
+  MPI_Allreduce(g.data(), gt.data(), g.size(), MPI_DOUBLE, MPI_SUM, myMPI);
   g = gt;
 }
 
@@ -329,7 +329,7 @@ template<>
 inline void Communicate::allreduce(std::vector<std::complex<float>>& g)
 {
   std::vector<std::complex<float>> gt(g.size(), std::complex<float>(0.0));
-  MPI_Allreduce(&(g[0]), &(gt[0]), 2 * g.size(), MPI_FLOAT, MPI_SUM, myMPI);
+  MPI_Allreduce(g.data(), gt.data(), 2 * g.size(), MPI_FLOAT, MPI_SUM, myMPI);
   g = gt;
 }
 
@@ -337,7 +337,7 @@ template<>
 inline void Communicate::allreduce(std::vector<std::complex<double>>& g)
 {
   std::vector<std::complex<double>> gt(g.size(), std::complex<double>(0.0));
-  MPI_Allreduce(&(g[0]), &(gt[0]), 2 * g.size(), MPI_DOUBLE, MPI_SUM, myMPI);
+  MPI_Allreduce(g.data(), gt.data(), 2 * g.size(), MPI_DOUBLE, MPI_SUM, myMPI);
   g = gt;
 }
 
@@ -353,7 +353,7 @@ template<>
 inline void Communicate::allreduce(PooledData<double>& g)
 {
   PooledData<double> gt(g.size());
-  MPI_Allreduce(&(g[0]), &(gt[0]), g.size(), MPI_DOUBLE, MPI_SUM, myMPI);
+  MPI_Allreduce(g.data(), gt.data(), g.size(), MPI_DOUBLE, MPI_SUM, myMPI);
   g = gt;
 }
 
@@ -362,7 +362,7 @@ inline void Communicate::allreduce(qmcplusplus::Matrix<float>& g)
 {
   std::vector<float> gt(g.size());
   std::copy(g.begin(), g.end(), gt.begin());
-  MPI_Allreduce(g.data(), &gt[0], g.size(), MPI_FLOAT, MPI_SUM, myMPI);
+  MPI_Allreduce(g.data(), gt.data(), g.size(), MPI_FLOAT, MPI_SUM, myMPI);
   std::copy(gt.begin(), gt.end(), g.data());
 }
 
@@ -371,7 +371,7 @@ inline void Communicate::allreduce(qmcplusplus::Matrix<double>& g)
 {
   std::vector<double> gt(g.size());
   copy(g.begin(), g.end(), gt.begin());
-  MPI_Allreduce(g.data(), &gt[0], g.size(), MPI_DOUBLE, MPI_SUM, myMPI);
+  MPI_Allreduce(g.data(), gt.data(), g.size(), MPI_DOUBLE, MPI_SUM, myMPI);
   copy(gt.begin(), gt.end(), g.data());
 }
 
@@ -379,7 +379,7 @@ template<>
 inline void Communicate::reduce(std::vector<float>& g)
 {
   std::vector<float> gt(g.size(), 0.0f);
-  MPI_Reduce(&(g[0]), &(gt[0]), g.size(), MPI_FLOAT, MPI_SUM, 0, myMPI);
+  MPI_Reduce(g.data(), gt.data(), g.size(), MPI_FLOAT, MPI_SUM, 0, myMPI);
   if (!d_mycontext)
     g = gt;
 }
@@ -388,7 +388,7 @@ template<>
 inline void Communicate::reduce(std::vector<double>& g)
 {
   std::vector<double> gt(g.size(), 0.0);
-  MPI_Reduce(&(g[0]), &(gt[0]), g.size(), MPI_DOUBLE, MPI_SUM, 0, myMPI);
+  MPI_Reduce(g.data(), gt.data(), g.size(), MPI_DOUBLE, MPI_SUM, 0, myMPI);
   if (!d_mycontext)
     g = gt;
 }
@@ -397,7 +397,7 @@ template<>
 inline void Communicate::reduce(std::vector<int>& g)
 {
   std::vector<int> gt(g.size(), 0.0);
-  MPI_Reduce(&(g[0]), &(gt[0]), g.size(), MPI_INT, MPI_SUM, 0, myMPI);
+  MPI_Reduce(g.data(), gt.data(), g.size(), MPI_INT, MPI_SUM, 0, myMPI);
   if (!d_mycontext)
     g = gt;
 }
@@ -406,7 +406,7 @@ template<>
 inline void Communicate::reduce(std::vector<long>& g)
 {
   std::vector<long> gt(g.size(), 0.0);
-  MPI_Reduce(&(g[0]), &(gt[0]), g.size(), MPI_LONG, MPI_SUM, 0, myMPI);
+  MPI_Reduce(g.data(), gt.data(), g.size(), MPI_LONG, MPI_SUM, 0, myMPI);
   if (!d_mycontext)
     g = gt;
 }
@@ -448,15 +448,15 @@ inline void Communicate::bcast(int& g)
 }
 
 template<>
-inline void Communicate::bcast(uint32_t& g)
+inline void Communicate::bcast(std::uint32_t& g)
 {
   MPI_Bcast(&g, 1, MPI_UNSIGNED, 0, myMPI);
 }
 
 template<>
-inline void Communicate::bcast(std::vector<uint32_t>& g)
+inline void Communicate::bcast(std::vector<std::uint32_t>& g)
 {
-  MPI_Bcast(&(g[0]), g.size(), MPI_UNSIGNED, 0, myMPI);
+  MPI_Bcast(g.data(), g.size(), MPI_UNSIGNED, 0, myMPI);
 }
 
 
@@ -501,7 +501,8 @@ inline void Communicate::bcast(qmcplusplus::TinyVector<int, 3>& g)
 template<>
 inline void Communicate::bcast(std::vector<qmcplusplus::TinyVector<int, 3>>& g)
 {
-  MPI_Bcast(&g[0][0], 3 * g.size(), MPI_INT, 0, myMPI);
+  if (g.size())
+    MPI_Bcast(g[0].data(), 3 * g.size(), MPI_INT, 0, myMPI);
 }
 
 template<>
@@ -525,62 +526,62 @@ inline void Communicate::bcast(qmcplusplus::TinyVector<double, 4>& g)
 template<>
 inline void Communicate::bcast(qmcplusplus::Tensor<double, 3>& g)
 {
-  MPI_Bcast(&(g[0]), 9, MPI_DOUBLE, 0, myMPI);
+  MPI_Bcast(g.data(), 9, MPI_DOUBLE, 0, myMPI);
 }
 
 template<>
 inline void Communicate::bcast(qmcplusplus::Tensor<float, 3>& g)
 {
-  MPI_Bcast(&(g[0]), 9, MPI_FLOAT, 0, myMPI);
+  MPI_Bcast(g.data(), 9, MPI_FLOAT, 0, myMPI);
 }
 
 template<>
 inline void Communicate::bcast(qmcplusplus::Vector<double>& g)
 {
-  MPI_Bcast(&(g[0]), g.size(), MPI_DOUBLE, 0, myMPI);
+  MPI_Bcast(g.data(), g.size(), MPI_DOUBLE, 0, myMPI);
 }
 
 template<>
 inline void Communicate::bcast(qmcplusplus::Vector<float>& g)
 {
-  MPI_Bcast(&(g[0]), g.size(), MPI_FLOAT, 0, myMPI);
+  MPI_Bcast(g.data(), g.size(), MPI_FLOAT, 0, myMPI);
 }
 
 template<>
 inline void Communicate::bcast(qmcplusplus::Vector<std::complex<double>>& g)
 {
-  MPI_Bcast(&(g[0]), 2 * g.size(), MPI_DOUBLE, 0, myMPI);
+  MPI_Bcast(g.data(), 2 * g.size(), MPI_DOUBLE, 0, myMPI);
 }
 
 template<>
 inline void Communicate::bcast(qmcplusplus::Vector<std::complex<float>>& g)
 {
-  MPI_Bcast(&(g[0]), 2 * g.size(), MPI_FLOAT, 0, myMPI);
+  MPI_Bcast(g.data(), 2 * g.size(), MPI_FLOAT, 0, myMPI);
 }
 
 template<>
 inline void Communicate::bcast(qmcplusplus::Vector<int>& g)
 {
-  MPI_Bcast(&(g[0]), g.size(), MPI_INT, 0, myMPI);
+  MPI_Bcast(g.data(), g.size(), MPI_INT, 0, myMPI);
 }
 
 
 template<>
 inline void Communicate::bcast(qmcplusplus::Vector<qmcplusplus::TinyVector<double, 2>>& g)
 {
-  MPI_Bcast(&(g[0]), 2 * g.size(), MPI_DOUBLE, 0, myMPI);
+  MPI_Bcast(g.data(), 2 * g.size(), MPI_DOUBLE, 0, myMPI);
 }
 
 template<>
 inline void Communicate::bcast(qmcplusplus::Vector<qmcplusplus::TinyVector<double, 3>>& g)
 {
-  MPI_Bcast(&(g[0]), 3 * g.size(), MPI_DOUBLE, 0, myMPI);
+  MPI_Bcast(g.data(), 3 * g.size(), MPI_DOUBLE, 0, myMPI);
 }
 
 template<>
 inline void Communicate::bcast(qmcplusplus::Vector<qmcplusplus::TinyVector<float, 3>>& g)
 {
-  MPI_Bcast(&(g[0]), 3 * g.size(), MPI_FLOAT, 0, myMPI);
+  MPI_Bcast(g.data(), 3 * g.size(), MPI_FLOAT, 0, myMPI);
 }
 
 template<>
@@ -631,25 +632,25 @@ inline void Communicate::bcast(Array<std::complex<float>, 3>& g)
 template<>
 inline void Communicate::bcast(std::vector<double>& g)
 {
-  MPI_Bcast(&(g[0]), g.size(), MPI_DOUBLE, 0, myMPI);
+  MPI_Bcast(g.data(), g.size(), MPI_DOUBLE, 0, myMPI);
 }
 
 template<>
 inline void Communicate::bcast(std::vector<std::complex<double>>& g)
 {
-  MPI_Bcast(&(g[0]), 2 * g.size(), MPI_DOUBLE, 0, myMPI);
+  MPI_Bcast(g.data(), 2 * g.size(), MPI_DOUBLE, 0, myMPI);
 }
 
 template<>
 inline void Communicate::bcast(std::vector<std::complex<float>>& g)
 {
-  MPI_Bcast(&(g[0]), 2 * g.size(), MPI_FLOAT, 0, myMPI);
+  MPI_Bcast(g.data(), 2 * g.size(), MPI_FLOAT, 0, myMPI);
 }
 
 template<>
 inline void Communicate::bcast(std::vector<float>& g)
 {
-  MPI_Bcast(&(g[0]), g.size(), MPI_FLOAT, 0, myMPI);
+  MPI_Bcast(g.data(), g.size(), MPI_FLOAT, 0, myMPI);
 }
 
 template<>
@@ -673,25 +674,28 @@ inline void Communicate::bcast(PooledData<int>& g)
 template<>
 inline void Communicate::bcast(std::vector<qmcplusplus::TinyVector<double, 2>>& g)
 {
-  MPI_Bcast(&(g[0][0]), 2 * g.size(), MPI_DOUBLE, 0, myMPI);
+  if (g.size())
+    MPI_Bcast(g[0].data(), 2 * g.size(), MPI_DOUBLE, 0, myMPI);
 }
 
 template<>
 inline void Communicate::bcast(std::vector<qmcplusplus::TinyVector<double, 3>>& g)
 {
-  MPI_Bcast(&(g[0][0]), 3 * g.size(), MPI_DOUBLE, 0, myMPI);
+  if (g.size())
+    MPI_Bcast(g[0].data(), 3 * g.size(), MPI_DOUBLE, 0, myMPI);
 }
 
 template<>
 inline void Communicate::bcast(std::vector<qmcplusplus::TinyVector<float, 3>>& g)
 {
-  MPI_Bcast(&(g[0][0]), 3 * g.size(), MPI_FLOAT, 0, myMPI);
+  if (g.size())
+    MPI_Bcast(g[0].data(), 3 * g.size(), MPI_FLOAT, 0, myMPI);
 }
 
 template<>
 inline void Communicate::bcast(std::vector<int>& g)
 {
-  MPI_Bcast(&(g[0]), g.size(), MPI_INT, 0, myMPI);
+  MPI_Bcast(g.data(), g.size(), MPI_INT, 0, myMPI);
 }
 
 template<>
@@ -714,7 +718,7 @@ inline void Communicate::bcast(double* restrict x, int n)
 template<>
 inline void Communicate::bcast(std::complex<double>* restrict x, int n)
 {
-  MPI_Bcast(x, 2*n, MPI_DOUBLE, 0, myMPI);
+  MPI_Bcast(x, 2 * n, MPI_DOUBLE, 0, myMPI);
 }
 
 template<>
@@ -726,7 +730,7 @@ inline void Communicate::bcast(float* restrict x, int n)
 template<>
 inline void Communicate::bcast(std::complex<float>* restrict x, int n)
 {
-  MPI_Bcast(x, 2*n, MPI_FLOAT, 0, myMPI);
+  MPI_Bcast(x, 2 * n, MPI_FLOAT, 0, myMPI);
 }
 
 template<>
@@ -750,20 +754,20 @@ inline void Communicate::bcast(std::string& g)
   if (rank() != 0)
     g.resize(string_size);
 
-  bcast(&g[0], g.size());
+  bcast(g.data(), g.size());
 }
 
 template<>
 inline void Communicate::send(int dest, int tag, std::vector<double>& g)
 {
-  MPI_Send(&(g[0]), g.size(), MPI_DOUBLE, dest, tag, myMPI);
+  MPI_Send(g.data(), g.size(), MPI_DOUBLE, dest, tag, myMPI);
 }
 
 template<>
 inline Communicate::request Communicate::isend(int dest, int tag, std::vector<double>& g)
 {
   request r;
-  MPI_Isend(&(g[0]), g.size(), MPI_DOUBLE, dest, tag, myMPI, &r);
+  MPI_Isend(g.data(), g.size(), MPI_DOUBLE, dest, tag, myMPI, &r);
   return r;
 }
 
@@ -771,7 +775,7 @@ template<>
 inline Communicate::request Communicate::irecv(int source, int tag, std::vector<double>& g)
 {
   request r;
-  MPI_Irecv(&(g[0]), g.size(), MPI_DOUBLE, source, tag, myMPI, &r);
+  MPI_Irecv(g.data(), g.size(), MPI_DOUBLE, source, tag, myMPI, &r);
   return r;
 }
 
@@ -782,7 +786,7 @@ inline void Communicate::gatherv(std::vector<char>& l,
                                  std::vector<int>& displ,
                                  int dest)
 {
-  int ierr = MPI_Gatherv(&l[0], l.size(), MPI_CHAR, &g[0], &counts[0], &displ[0], MPI_CHAR, dest, myMPI);
+  int ierr = MPI_Gatherv(l.data(), l.size(), MPI_CHAR, g.data(), counts.data(), displ.data(), MPI_CHAR, dest, myMPI);
 }
 
 
@@ -793,7 +797,8 @@ inline void Communicate::gatherv(std::vector<double>& l,
                                  std::vector<int>& displ,
                                  int dest)
 {
-  int ierr = MPI_Gatherv(&l[0], l.size(), MPI_DOUBLE, &g[0], &counts[0], &displ[0], MPI_DOUBLE, dest, myMPI);
+  int ierr =
+      MPI_Gatherv(l.data(), l.size(), MPI_DOUBLE, g.data(), counts.data(), displ.data(), MPI_DOUBLE, dest, myMPI);
 }
 
 template<>
@@ -803,7 +808,7 @@ inline void Communicate::gatherv(std::vector<float>& l,
                                  std::vector<int>& displ,
                                  int dest)
 {
-  int ierr = MPI_Gatherv(&l[0], l.size(), MPI_FLOAT, &g[0], &counts[0], &displ[0], MPI_FLOAT, dest, myMPI);
+  int ierr = MPI_Gatherv(l.data(), l.size(), MPI_FLOAT, g.data(), counts.data(), displ.data(), MPI_FLOAT, dest, myMPI);
 }
 
 template<>
@@ -813,19 +818,19 @@ inline void Communicate::gatherv(std::vector<int>& l,
                                  std::vector<int>& displ,
                                  int dest)
 {
-  int ierr = MPI_Gatherv(&l[0], l.size(), MPI_INT, &g[0], &counts[0], &displ[0], MPI_INT, dest, myMPI);
+  int ierr = MPI_Gatherv(l.data(), l.size(), MPI_INT, g.data(), counts.data(), displ.data(), MPI_INT, dest, myMPI);
 }
 
 template<>
 inline void Communicate::allgather(std::vector<char>& sb, std::vector<char>& rb, int count)
 {
-  MPI_Allgather(&sb[0], count, MPI_CHAR, &rb[0], count, MPI_CHAR, myMPI);
+  MPI_Allgather(sb.data(), count, MPI_CHAR, rb.data(), count, MPI_CHAR, myMPI);
 }
 
 template<>
 inline void Communicate::allgather(std::vector<int>& sb, std::vector<int>& rb, int count)
 {
-  MPI_Allgather(&sb[0], count, MPI_INT, &rb[0], count, MPI_INT, myMPI);
+  MPI_Allgather(sb.data(), count, MPI_INT, rb.data(), count, MPI_INT, myMPI);
 }
 
 
@@ -835,7 +840,7 @@ inline void Communicate::allgatherv(std::vector<int>& l,
                                     std::vector<int>& counts,
                                     std::vector<int>& displ)
 {
-  int ierr = MPI_Allgatherv(&l[0], l.size(), MPI_INT, &g[0], &counts[0], &displ[0], MPI_INT, myMPI);
+  int ierr = MPI_Allgatherv(l.data(), l.size(), MPI_INT, g.data(), counts.data(), displ.data(), MPI_INT, myMPI);
 }
 
 template<>
@@ -845,25 +850,25 @@ inline void Communicate::gatherv(std::vector<long>& l,
                                  std::vector<int>& displ,
                                  int dest)
 {
-  int ierr = MPI_Gatherv(&l[0], l.size(), MPI_LONG, &g[0], &counts[0], &displ[0], MPI_LONG, dest, myMPI);
+  int ierr = MPI_Gatherv(l.data(), l.size(), MPI_LONG, g.data(), counts.data(), displ.data(), MPI_LONG, dest, myMPI);
 }
 
 template<>
 inline void Communicate::gather(std::vector<double>& l, std::vector<double>& g, int dest)
 {
-  int ierr = MPI_Gather(&l[0], l.size(), MPI_DOUBLE, &g[0], l.size(), MPI_DOUBLE, dest, myMPI);
+  int ierr = MPI_Gather(l.data(), l.size(), MPI_DOUBLE, g.data(), l.size(), MPI_DOUBLE, dest, myMPI);
 }
 
 template<>
 inline void Communicate::gather(std::vector<char>& l, std::vector<char>& g, int dest)
 {
-  int ierr = MPI_Gather(&l[0], l.size(), MPI_CHAR, &g[0], l.size(), MPI_CHAR, dest, myMPI);
+  int ierr = MPI_Gather(l.data(), l.size(), MPI_CHAR, g.data(), l.size(), MPI_CHAR, dest, myMPI);
 }
 
 template<>
 inline void Communicate::gather(std::vector<int>& l, std::vector<int>& g, int dest)
 {
-  int ierr = MPI_Gather(&l[0], l.size(), MPI_INT, &g[0], l.size(), MPI_INT, dest, myMPI);
+  int ierr = MPI_Gather(l.data(), l.size(), MPI_INT, g.data(), l.size(), MPI_INT, dest, myMPI);
 }
 
 template<>
@@ -873,7 +878,8 @@ inline void Communicate::gatherv(PooledData<double>& l,
                                  std::vector<int>& displ,
                                  int dest)
 {
-  int ierr = MPI_Gatherv(l.data(), l.size(), MPI_DOUBLE, g.data(), &counts[0], &displ[0], MPI_DOUBLE, dest, myMPI);
+  int ierr =
+      MPI_Gatherv(l.data(), l.size(), MPI_DOUBLE, g.data(), counts.data(), displ.data(), MPI_DOUBLE, dest, myMPI);
 }
 
 template<>
@@ -886,7 +892,7 @@ template<>
 inline void Communicate::gsum(std::vector<int>& g)
 {
   std::vector<int> gt(g.size(), 0.0);
-  MPI_Allreduce(&(g[0]), &(gt[0]), g.size(), MPI_INT, MPI_SUM, myMPI);
+  MPI_Allreduce(g.data(), gt.data(), g.size(), MPI_INT, MPI_SUM, myMPI);
   g = gt;
 }
 
@@ -894,7 +900,7 @@ template<>
 inline void Communicate::gsum(std::vector<double>& g)
 {
   std::vector<double> gt(g.size(), 0.0);
-  MPI_Allreduce(&(g[0]), &(gt[0]), g.size(), MPI_DOUBLE, MPI_SUM, myMPI);
+  MPI_Allreduce(g.data(), gt.data(), g.size(), MPI_DOUBLE, MPI_SUM, myMPI);
   g = gt;
 }
 
@@ -902,7 +908,7 @@ template<>
 inline void gsum(std::vector<std::complex<double>>& g, int gid)
 {
   std::vector<std::complex<double>> gt(g.size(), 0.0);
-  MPI_Allreduce(&(g[0]), &(gt[0]), 2 * g.size(), MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Allreduce(g.data(), gt.data(), 2 * g.size(), MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   g = gt;
 }
 
@@ -910,14 +916,14 @@ template<>
 inline void Communicate::gsum(std::vector<std::complex<double>>& g)
 {
   std::vector<std::complex<double>> gt(g.size(), 0.0);
-  MPI_Allreduce(&(g[0]), &(gt[0]), 2 * g.size(), MPI_DOUBLE, MPI_SUM, myMPI);
+  MPI_Allreduce(g.data(), gt.data(), 2 * g.size(), MPI_DOUBLE, MPI_SUM, myMPI);
   g = gt;
 }
 
 template<>
 inline void Communicate::gatherv(char* l, char* g, int n, std::vector<int>& counts, std::vector<int>& displ, int dest)
 {
-  int ierr = MPI_Gatherv(l, n, MPI_CHAR, g, &counts[0], &displ[0], MPI_CHAR, dest, myMPI);
+  int ierr = MPI_Gatherv(l, n, MPI_CHAR, g, counts.data(), displ.data(), MPI_CHAR, dest, myMPI);
 }
 
 template<>
@@ -933,7 +939,8 @@ inline void Communicate::scatterv(std::vector<char>& sb,
                                   std::vector<int>& displ,
                                   int source)
 {
-  int ierr = MPI_Scatterv(&sb[0], &counts[0], &displ[0], MPI_CHAR, &rb[0], rb.size(), MPI_CHAR, source, myMPI);
+  int ierr =
+      MPI_Scatterv(sb.data(), counts.data(), displ.data(), MPI_CHAR, rb.data(), rb.size(), MPI_CHAR, source, myMPI);
 }
 
 template<typename T, typename TMPI, typename IT>
@@ -951,7 +958,7 @@ inline void Communicate::allreduce(qmcplusplus::Matrix<std::complex<double>>& g)
 {
   std::vector<std::complex<double>> gt(g.size());
   std::copy(g.begin(), g.end(), gt.begin());
-  MPI_Allreduce(g.data(), &gt[0], 2 * g.size(), MPI_DOUBLE, MPI_SUM, myMPI);
+  MPI_Allreduce(g.data(), gt.data(), 2 * g.size(), MPI_DOUBLE, MPI_SUM, myMPI);
   std::copy(gt.begin(), gt.end(), g.data());
 }
 
@@ -960,7 +967,7 @@ inline void Communicate::allreduce(qmcplusplus::Matrix<std::complex<float>>& g)
 {
   std::vector<std::complex<float>> gt(g.size());
   std::copy(g.begin(), g.end(), gt.begin());
-  MPI_Allreduce(g.data(), &gt[0], 2 * g.size(), MPI_FLOAT, MPI_SUM, myMPI);
+  MPI_Allreduce(g.data(), gt.data(), 2 * g.size(), MPI_FLOAT, MPI_SUM, myMPI);
   std::copy(gt.begin(), gt.end(), g.data());
 }
 

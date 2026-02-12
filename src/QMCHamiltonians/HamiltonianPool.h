@@ -17,7 +17,7 @@
 #ifndef QMCPLUSPLUS_QMCHAMILTONIANS_H
 #define QMCPLUSPLUS_QMCHAMILTONIANS_H
 
-#include "QMCHamiltonians/HamiltonianFactory.h"
+#include "QMCHamiltonian.h"
 #include "OhmmsData/OhmmsElementBase.h"
 #include "Message/MPIObjectBase.h"
 #include <map>
@@ -40,16 +40,16 @@ class WaveFunctionPool;
 class HamiltonianPool : public MPIObjectBase
 {
 public:
-  using PoolType = std::map<std::string, HamiltonianFactory*>;
+  using PoolType = std::map<std::string, const std::unique_ptr<QMCHamiltonian>>;
 
   HamiltonianPool(ParticleSetPool& pset_pool,
                   WaveFunctionPool& psi_pool,
                   Communicate* c,
                   const char* aname = "hamiltonian");
-  HamiltonianPool(const HamiltonianPool&) = delete;
+  HamiltonianPool(const HamiltonianPool&)            = delete;
   HamiltonianPool& operator=(const HamiltonianPool&) = delete;
   HamiltonianPool(HamiltonianPool&&)                 = default;
-  HamiltonianPool& operator=(HamiltonianPool&&) = delete;
+  HamiltonianPool& operator=(HamiltonianPool&&)      = delete;
   ~HamiltonianPool();
 
   bool put(xmlNodePtr cur);
@@ -76,10 +76,10 @@ public:
       if (myPool.empty())
         return nullptr;
       else
-        return (*(myPool.begin())).second->getH();
+        return myPool.begin()->second.get();
     }
     else
-      return (*hit).second->getH();
+      return hit->second.get();
   }
 
   void setDocument(Libxml2Document* doc) { curDoc = doc; }
@@ -88,10 +88,6 @@ private:
   /** pointer to the primary QMCHamiltonian
    */
   QMCHamiltonian* primaryH;
-
-  /** pointer to a current QMCHamiltonian to be built.
-   */
-  QMCHamiltonian* curH;
 
   /** pointer to ParticleSetPool
    *
@@ -113,7 +109,7 @@ private:
   /** point to the working document */
   Libxml2Document* curDoc;
 
-  /** storage for HamiltonianFactory */
+  /** storage for QMCHamiltonian */
   PoolType myPool;
 };
 } // namespace qmcplusplus

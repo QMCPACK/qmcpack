@@ -276,7 +276,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   double logpsi = psi.evaluateLog(elec);
   CHECK(logpsi == Approx(5.1497823982));
 
-  auto test_evaluateOne = [&]() {
+  auto test_evaluateOne = [&](const OptionalRef<VirtualParticleSet> vp) {
     double Value1(0.0);
     //Using SoA distance tables, hence the guard.
     for (int jel = 0; jel < elec.getTotalNum(); jel++)
@@ -285,30 +285,29 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
       const auto& displ = myTable.getDisplRow(jel);
       for (int iat = 0; iat < ions.getTotalNum(); iat++)
         if (nlpp != nullptr && dist[iat] < nlpp->getRmax())
-          Value1 += nlpp->evaluateOne(elec, iat, psi, jel, dist[iat], -displ[iat], std::nullopt, false);
+          Value1 += nlpp->evaluateOne(elec, vp, iat, psi, jel, dist[iat], -displ[iat], std::nullopt, false);
     }
     //These numbers are validated against an alternate code path via wavefunction tester.
     CHECK(Value1 == Approx(6.9015710211e-02));
   };
 
   {
-    nlpp->initVirtualParticle(elec);
-    test_evaluateOne();
-    nlpp->deleteVirtualParticle();
-    test_evaluateOne();
+    VirtualParticleSet vp(elec);
+    test_evaluateOne(makeOptionalRef<VirtualParticleSet>(vp));
+    test_evaluateOne(std::nullopt);
   }
 
-  opt_variables_type optvars;
+  OptVariables optvars;
   Vector<ValueType> dlogpsi;
   Vector<ValueType> dhpsioverpsi;
 
   psi.checkInVariables(optvars);
   optvars.resetIndex();
-  const int NumOptimizables(optvars.size());
+  const int num_opt_vars(optvars.size());
   psi.checkOutVariables(optvars);
-  auto test_evaluateValueAndDerivatives = [&]() {
-    dlogpsi.resize(NumOptimizables, ValueType(0));
-    dhpsioverpsi.resize(NumOptimizables, ValueType(0));
+  auto test_evaluateValueAndDerivatives = [&](const OptionalRef<VirtualParticleSet> vp) {
+    dlogpsi.resize(num_opt_vars, ValueType(0));
+    dhpsioverpsi.resize(num_opt_vars, ValueType(0));
     psi.evaluateDerivatives(elec, optvars, dlogpsi, dhpsioverpsi);
     CHECK(std::real(dlogpsi[0]) == Approx(-0.2211666667));
     CHECK(std::real(dlogpsi[2]) == Approx(-0.1215));
@@ -330,7 +329,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
       const auto& displ = myTable.getDisplRow(jel);
       for (int iat = 0; iat < ions.getTotalNum(); iat++)
         if (nlpp != nullptr && dist[iat] < nlpp->getRmax())
-          Value1 += nlpp->evaluateValueAndDerivatives(elec, iat, psi, jel, dist[iat], -displ[iat], optvars, dlogpsi,
+          Value1 += nlpp->evaluateValueAndDerivatives(elec, vp, iat, psi, jel, dist[iat], -displ[iat], optvars, dlogpsi,
                                                       dhpsioverpsi);
     }
     CHECK(Value1 == Approx(6.9015710211e-02));
@@ -343,10 +342,9 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   };
 
   {
-    nlpp->initVirtualParticle(elec);
-    test_evaluateValueAndDerivatives();
-    nlpp->deleteVirtualParticle();
-    test_evaluateValueAndDerivatives();
+    VirtualParticleSet vp(elec);
+    test_evaluateValueAndDerivatives(vp);
+    test_evaluateValueAndDerivatives(std::nullopt);
   }
 
   double Value2(0.0);
@@ -366,9 +364,9 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
     for (int iat = 0; iat < ions.getTotalNum(); iat++)
       if (nlpp != nullptr && dist[iat] < nlpp->getRmax())
       {
-        Value2 += nlpp->evaluateOneWithForces(elec, iat, psi, jel, dist[iat], -displ[iat], HFTerm[iat]);
-        Value3 +=
-            nlpp->evaluateOneWithForces(elec, ions, iat, psi, jel, dist[iat], -displ[iat], HFTerm2[iat], PulayTerm);
+        Value2 += nlpp->evaluateOneWithForces(elec, std::nullopt, iat, psi, jel, dist[iat], -displ[iat], HFTerm[iat]);
+        Value3 += nlpp->evaluateOneWithForces(elec, std::nullopt, ions, iat, psi, jel, dist[iat], -displ[iat],
+                                              HFTerm2[iat], PulayTerm);
       }
   }
   //These values are validated against print statements.
@@ -546,7 +544,7 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   //Need to set up temporary data for this configuration in trial wavefunction.  Needed for ratios.
   auto logpsi = psi.evaluateLog(elec);
 
-  auto test_evaluateOne = [&](bool exact) {
+  auto test_evaluateOne = [&](bool exact, const OptionalRef<VirtualParticleSet> vp) {
     RealType Value1(0.0);
     for (int jel = 0; jel < elec.getTotalNum(); jel++)
     {
@@ -556,9 +554,10 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
         if (sopp != nullptr && dist[iat] < sopp->getRmax())
         {
           if (exact)
-            Value1 += sopp->evaluateOneExactSpinIntegration(elec, iat, psi, jel, dist[iat], RealType(-1) * displ[iat]);
+            Value1 +=
+                sopp->evaluateOneExactSpinIntegration(elec, *vp, iat, psi, jel, dist[iat], RealType(-1) * displ[iat]);
           else
-            Value1 += sopp->evaluateOne(elec, iat, psi, jel, dist[iat], RealType(-1) * displ[iat]);
+            Value1 += sopp->evaluateOne(elec, vp, iat, psi, jel, dist[iat], RealType(-1) * displ[iat]);
         }
     }
     REQUIRE(Value1 == Approx(-3.530511241));
@@ -566,22 +565,21 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
 
   {
     //test with VPs
-    sopp->initVirtualParticle(elec);
-    test_evaluateOne(false);
-    test_evaluateOne(true);
-    sopp->deleteVirtualParticle();
+    VirtualParticleSet vp(elec);
+    test_evaluateOne(false, vp);
+    test_evaluateOne(true, vp);
     //test without VPs
-    test_evaluateOne(false);
+    test_evaluateOne(false, std::nullopt);
   }
 
   //Check evaluateValueAndDerivatives
-  opt_variables_type optvars;
+  OptVariables optvars;
   Vector<ValueType> dlogpsi;
   Vector<ValueType> dhpsioverpsi;
 
   psi.checkInVariables(optvars);
   optvars.resetIndex();
-  const int NumOptimizables(optvars.size());
+  const int num_opt_vars(optvars.size());
   psi.checkOutVariables(optvars);
 
 
@@ -597,11 +595,11 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
                                              -8.169955304e-14};
 
 
-  auto test_evaluateValueAndDerivatives = [&](bool exact) {
-    dlogpsi.resize(NumOptimizables, ValueType(0));
-    dhpsioverpsi.resize(NumOptimizables, ValueType(0));
+  auto test_evaluateValueAndDerivatives = [&](bool exact, const OptionalRef<VirtualParticleSet> vp) {
+    dlogpsi.resize(num_opt_vars, ValueType(0));
+    dhpsioverpsi.resize(num_opt_vars, ValueType(0));
     psi.evaluateDerivatives(elec, optvars, dlogpsi, dhpsioverpsi);
-    for (int ip = 0; ip < NumOptimizables; ip++)
+    for (int ip = 0; ip < num_opt_vars; ip++)
     {
       CHECK(std::real(dlogpsi[ip]) == Approx(dlogpsi_refs[ip]));
       CHECK(std::real(dhpsioverpsi[ip]) == Approx(dkinpsioverpsi_refs[ip]));
@@ -617,25 +615,27 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
         if (sopp != nullptr && dist[iat] < sopp->getRmax())
         {
           if (exact)
-            Value1 += sopp->evaluateValueAndDerivativesExactSpinIntegration(elec, iat, psi, jel, dist[iat], -displ[iat],
-                                                                            optvars, dlogpsi, dhpsioverpsi);
+            Value1 +=
+                sopp->evaluateValueAndDerivativesExactSpinIntegration(elec, *vp, iat, psi, jel, dist[iat], -displ[iat],
+                                                                      optvars, dlogpsi, dhpsioverpsi);
           else
-            Value1 += sopp->evaluateValueAndDerivatives(elec, iat, psi, jel, dist[iat], -displ[iat], optvars, dlogpsi,
-                                                        dhpsioverpsi);
+            Value1 += sopp->evaluateValueAndDerivatives(elec, vp, iat, psi, jel, dist[iat], -displ[iat], optvars,
+                                                        dlogpsi, dhpsioverpsi);
         }
     }
     REQUIRE(Value1 == Approx(-3.530511241).epsilon(2.e-5));
 
-    for (int ip = 0; ip < NumOptimizables; ip++)
+    for (int ip = 0; ip < num_opt_vars; ip++)
       CHECK(std::real(dhpsioverpsi[ip]) == Approx(dhpsioverpsi_refs[ip]));
   };
 
   {
-    sopp->initVirtualParticle(elec);
-    test_evaluateValueAndDerivatives(false);
-    test_evaluateValueAndDerivatives(true);
-    sopp->deleteVirtualParticle();
-    test_evaluateValueAndDerivatives(false);
+    //test with VPs
+    VirtualParticleSet vp(elec);
+    test_evaluateValueAndDerivatives(false, vp);
+    test_evaluateValueAndDerivatives(true, vp);
+    //test without VPs
+    test_evaluateValueAndDerivatives(false, std::nullopt);
   }
 }
 #endif

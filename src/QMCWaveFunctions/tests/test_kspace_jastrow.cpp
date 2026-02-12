@@ -192,7 +192,7 @@ TEST_CASE("kspace jastrow derivatives", "[wavefunction]")
   CHECK(std::real(elec_.L[0]) == Approx(-9.23735526));
   CHECK(std::real(elec_.L[1]) == Approx(2.37396869));
 
-  opt_variables_type opt_vars;
+  OptVariables opt_vars;
   jas->checkInVariablesExclusive(opt_vars);
   opt_vars.resetIndex();
   jas->checkOutVariables(opt_vars);
@@ -258,7 +258,7 @@ TEST_CASE("kspace jastrow derivatives", "[wavefunction]")
   CHECK(std::real(elec_.L[0]) == Approx(-1.13586493));
   CHECK(std::real(elec_.L[1]) == Approx(-1.13586493));
 
-  opt_variables_type opt_vars2;
+  OptVariables opt_vars2;
   j2->checkInVariablesExclusive(opt_vars2);
   opt_vars2.resetIndex();
   j2->checkOutVariables(opt_vars2);

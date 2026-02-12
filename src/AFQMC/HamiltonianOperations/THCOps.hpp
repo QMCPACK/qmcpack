@@ -272,7 +272,7 @@ public:
     fill_n(E.origin(), E.num_elements(), ComplexType(0.0));
     if (addH1)
     {
-      ma::product(ComplexType(1.0), G, haj[k], ComplexType(0.0), E(E.extension(0), 0));
+      ma::product(ComplexType(1.0), G, haj[k], ComplexType(0.0), E(E.extension(), 0));
       for (int i = 0; i < nwalk; i++)
         E[i][0] += E0;
     }
@@ -481,25 +481,25 @@ public:
       static_assert(std::decay<MatG>::type::dimensionality==3, "Wrong dimensionality");
       static_assert(std::decay<MatQ>::type::dimensionality==3, "Wrong dimensionality");
       //static_assert(std::decay<MatB>::type::dimensionality==3, "Wrong dimensionality");
-      int nspin = E.size(0);
+      int nspin = E.size();
       int nrefs = haj.size();
-      int nwalk = GrefA.size(0);
+      int nwalk = GrefA.size();
       int naoa_ = QQ0A.size(1);
       int naob_ = QQ0B.size(1);
-      int nmo_ = rotPiu.size(0);
-      int nu = rotMuv.size(0);
+      int nmo_ = rotPiu.size();
+      int nu = rotMuv.size();
       int nu0 = rotnmu0; 
       int nv = rotMuv.size(1);
       int nel_ = rotcPua[0].size(1);
       // checking
       assert(E.size(2) == nwalk);
       assert(E.size(3) == 3);
-      assert(Ov.size(0) == nspin);
+      assert(Ov.size() == nspin);
       assert(Ov.size(1) == E.size(1));
       assert(Ov.size(2) == nwalk);
       assert(GrefA.size(1) == naoa_);
       assert(GrefA.size(2) == nmo_);
-      assert(GrefB.size(0) == nwalk);
+      assert(GrefB.size() == nwalk);
       assert(GrefB.size(1) == naob_);
       assert(GrefB.size(2) == nmo_);
       // limited to single reference now
@@ -556,10 +556,10 @@ public:
         auto Eb = E[1][0];
         boost::multi::array_cref<ComplexType,2> G2DA(to_address(GrefA.origin()),
                                           {nwalk,GrefA[0].num_elements()});
-        ma::product(ComplexType(1.0),G2DA,haj[0],ComplexType(0.0),Ea(Ea.extension(0),0));
+        ma::product(ComplexType(1.0),G2DA,haj[0],ComplexType(0.0),Ea(Ea.extension(),0));
         boost::multi::array_cref<ComplexType,2> G2DB(to_address(GrefA.origin()),
                                           {nwalk,GrefA[0].num_elements()});
-        ma::product(ComplexType(1.0),G2DB,haj[0],ComplexType(0.0),Eb(Eb.extension(0),0));
+        ma::product(ComplexType(1.0),G2DB,haj[0],ComplexType(0.0),Eb(Eb.extension(),0));
         for(int i=0; i<nwalk; i++) {
             Ea[i][0] += E0;
             Eb[i][0] += E0;
@@ -920,9 +920,9 @@ public:
                                      {get<0>(Luv.sizes()), 2 * get<1>(Luv.sizes())});
       Array_ref<SPRealType, 2> Guu_R(pointer_cast<SPRealType>(Guu.origin()), {nu, 2 * nwalk});
       Array_ref<SPRealType, 2> vsp_R(pointer_cast<SPRealType>(vsp.origin()), {get<0>(vsp.sizes()), 2 * get<1>(vsp.sizes())});
-      ma::product(SPRealType(a), T(Luv_R(Luv_R.extension(0), {c0, cN})), Guu_R, SPRealType(c), vsp_R.sliced(c0, cN));
+      ma::product(SPRealType(a), T(Luv_R(Luv_R.extension(), {c0, cN})), Guu_R, SPRealType(c), vsp_R.sliced(c0, cN));
 #else
-      ma::product(SPRealType(a), T(Luv(Luv.extension(0), {c0, cN})), Guu, SPRealType(c), vsp.sliced(c0, cN));
+      ma::product(SPRealType(a), T(Luv(Luv.extension(), {c0, cN})), Guu, SPRealType(c), vsp.sliced(c0, cN));
 #endif
     }
     else
@@ -935,9 +935,9 @@ public:
                                      {get<0>(Luv.sizes()), 2 * get<1>(Luv.sizes())});
       Array_ref<SPRealType, 2> Guu_R(pointer_cast<SPRealType>(Guu.origin()), {nu, 2 * nwalk});
       Array_ref<SPRealType, 2> vsp_R(pointer_cast<SPRealType>(vsp.origin()), {get<0>(vsp.sizes()), 2 * get<1>(vsp.sizes())});
-      ma::product(SPRealType(a), T(Luv_R(Luv_R.extension(0), {c0, cN})), Guu_R, SPRealType(c), vsp_R.sliced(c0, cN));
+      ma::product(SPRealType(a), T(Luv_R(Luv_R.extension(), {c0, cN})), Guu_R, SPRealType(c), vsp_R.sliced(c0, cN));
 #else
-      ma::product(SPRealType(a), T(Luv(Luv.extension(0), {c0, cN})), Guu, SPRealType(c), vsp.sliced(c0, cN));
+      ma::product(SPRealType(a), T(Luv(Luv.extension(), {c0, cN})), Guu, SPRealType(c), vsp.sliced(c0, cN));
 #endif
     }
     if (not std::is_same<vType, SPComplexType>::value)
@@ -1006,7 +1006,7 @@ protected:
       std::tie(k0, kN) = FairDivideBoundary(comm->rank(), nmo_, comm->size());
       ShmArray<SPComplexType, 2> TGw({nmo_, nw * nel_},
                                      shm_buffer_manager.get_generator().template get_allocator<SPComplexType>());
-      ma::transpose(Gw(Gw.extension(0), {k0, kN}), TGw.sliced(k0, kN));
+      ma::transpose(Gw(Gw.extension(), {k0, kN}), TGw.sliced(k0, kN));
       comm->barrier();
       ma::product(ma::T(Piu({0, nmo_}, {u0, uN})), TGw, T1);
     }
@@ -1153,11 +1153,11 @@ protected:
       // dispatch these through ma_blas_extensions!!!
       // Gwv = sum_a Twav Pva
       if (nu0 > 0) // calculate Guu from u={0,nu0}
-        Aijk_Bkj_Cik(nw, nelec[ispin], nu0, make_device_ptr(Tav.origin()), Tav.stride(1), Tav.stride(0),
-                     make_device_ptr(rotcPua[k].origin()), rotcPua[k].stride(0), make_device_ptr(Guu.origin()), nv);
+        Aijk_Bkj_Cik(nw, nelec[ispin], nu0, make_device_ptr(Tav.origin()), Tav.stride(1), Tav.stride(),
+                     make_device_ptr(rotcPua[k].origin()), rotcPua[k].stride(), make_device_ptr(Guu.origin()), nv);
       if (nu0 + nu < nv) // calculate Guu from u={nu0+nu,nv}
         Aijk_Bkj_Cik(nw, nelec[ispin], nv - nu0 - nu, make_device_ptr(Tav.origin()) + nu0 + nu, Tav.stride(1),
-                     Tav.stride(0), make_device_ptr(rotcPua[k][nu0 + nu].origin()), rotcPua[k].stride(0),
+                     Tav.stride(), make_device_ptr(rotcPua[k][nu0 + nu].origin()), rotcPua[k].stride(),
                      make_device_ptr(Guu.origin()) + nu0 + nu, nv);
     }
     comm->barrier();
@@ -1180,36 +1180,39 @@ protected:
       static_assert(std::decay<MatB>::type::dimensionality == 2, "Wrong dimensionality");
       static_assert(std::decay<MatC>::type::dimensionality == 1, "Wrong dimensionality");
       static_assert(std::decay<MatD>::type::dimensionality == 2, "Wrong dimensionality");
-      int nmo_ = int(rotPiu.size(0));
-      int nu = int(rotMuv.size(0));  // potentially distributed over nodes
-      int nv = int(rotMuv.size(1));  // not distributed over nodes
-      assert(rotPiu.size(1) == nv);
+      int nmo_ = int(rotPiu.size());
+
+      using std::get;
+
+      int nu = int(rotMuv.size());  // potentially distributed over nodes
+      int nv = int(get<1>(rotMuv.sizes()));  // not distributed over nodes
+      assert(get<1>(rotPiu.sizes()) == nv);
       int v0,vN;
       std::tie(v0,vN) = FairDivideBoundary(comm->rank(),nv,comm->size());
       int nu0 = rotnmu0; 
       ComplexType zero(0.0,0.0);
 
-      assert(Guu.size(0) == nv);
-      assert(Guv.size(0) == nu);
-      assert(Guv.size(1) == nv);
+      assert(Guu.size() == nv);
+      assert(Guv.size() == nu);
+      assert(get<1>(Guv.sizes()) == nv);
 
       // sync first
       comm->barrier();
       int nel_ = (walker_type==CLOSED)?nup:(nup+ndown);
-      assert(G.size(0) == size_t(nel_));
+      assert(G.size() == size_t(nel_));
       assert(G.size(1) == size_t(nmo_));
-      assert(T1.size(0) == size_t(nel_));
+      assert(T1.size() == size_t(nel_));
       assert(T1.size(1) == size_t(nv));
 
       ma::product(G,rotPiu({0,nmo_},{v0,vN}),
-                  T1(T1.extension(0),{v0,vN}));
+                  T1(T1.extension(),{v0,vN}));
       // This operation might benefit from a 2-D work distribution
       ma::product(rotcPua[k].sliced(nu0,nu0+nu),
-                  T1(T1.extension(0),{v0,vN}),
-                  Guv(Guv.extension(0),{v0,vN}));
+                  T1(T1.extension(),{v0,vN}),
+                  Guv(Guv.extension(),{v0,vN}));
       for(int v=v0; v<vN; ++v)
         if( v < nu0 || v >= nu0+nu ) {
-          Guu[v] = ma::dot(rotcPua[k][v],T1(T1.extension(0),v)); 
+          Guu[v] = ma::dot(rotcPua[k][v],T1(T1.extension(),v)); 
         } else
          Guu[v] = Guv[v-nu0][v];
       comm->barrier();

@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 /** \file
- *  
+ *
  */
 
 #include "OhmmsData/AttributeSet.h"
@@ -18,6 +18,7 @@
 #include "EstimatorInputDelegates.h"
 #include "Concurrency/Info.hpp"
 #include "ModernStringUtils.hpp"
+#include "Message/UniformCommunicateError.h"
 
 namespace qmcplusplus
 {
@@ -29,7 +30,6 @@ namespace qmcplusplus
  *   -- 1 = do not write anything
  *   -- 0 = dump after the completion of a qmc section
  *   -- n = dump after n blocks
- * - kdelay = "0|1|n" default=0
  */
 void QMCDriverInput::readXML(xmlNodePtr cur)
 {
@@ -61,6 +61,7 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
   parameter_set.add(total_walkers_, "total_walkers");
   parameter_set.add(dummy_int, "stepsbetweensamples", {}, TagStatus::UNSUPPORTED);
   parameter_set.add(dummy_int, "samplesperthread", {}, TagStatus::UNSUPPORTED);
+  parameter_set.add(estimator_measurement_period_, "estimator_period");
   parameter_set.add(requested_samples_, "samples");
   parameter_set.add(tau_, "timestep");
   parameter_set.add(tau_, "time_step");
@@ -80,7 +81,6 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
   aAttrib.add(update_mode_, "move");
   aAttrib.add(scoped_profiling_, "profiling");
   aAttrib.add(Period4CheckPoint, "checkpoint");
-  aAttrib.add(k_delay_, "kdelay");
   // This does all the parameter parsing setup in the constructor
   aAttrib.put(cur);
 
@@ -155,6 +155,14 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
 
   if (check_point_period_.period < 1)
     check_point_period_.period = max_blocks_;
+
+  // \todo this should be moved to a checkParticularValidity override
+  // when QMCDriverInput is modernized.
+  const std::string error_tag{"QMCDriverInput: "};
+  if (requested_steps_ % estimator_measurement_period_ != 0)
+  {
+    throw UniformCommunicateError(error_tag + " steps must be a multiple of estimator measurement period!");
+  }
 
   dump_config_ = (Period4CheckPoint >= 0);
 }

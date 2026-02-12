@@ -71,7 +71,7 @@ TEST_CASE("Bare Kinetic Energy", "[hamiltonian]")
 
   elec.L[0] = 1.0;
   elec.L[1] = 0.0;
-  double v  = bare_ke.evaluate(elec);
+  double v  = bare_ke.evaluate(psi, elec);
   REQUIRE(v == -0.5);
 
   elec.L[0]    = 0.0;
@@ -82,7 +82,7 @@ TEST_CASE("Bare Kinetic Energy", "[hamiltonian]")
   elec.G[1][0] = 0.0;
   elec.G[1][1] = 0.0;
   elec.G[1][2] = 0.0;
-  v            = bare_ke.evaluate(elec);
+  v            = bare_ke.evaluate(psi, elec);
   REQUIRE(v == -0.5);
 }
 
@@ -200,7 +200,7 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
 
   RealType logpsi = psi.evaluateLog(elec);
 
-  RealType keval = bare_ke.evaluate(elec);
+  RealType keval = bare_ke.evaluate(psi, elec);
   //This is validated against an alternate code path (waveefunction tester for local energy).
   CHECK(keval == Approx(-0.147507745));
   CHECK(keval == Approx(bare_ke.getValue()));

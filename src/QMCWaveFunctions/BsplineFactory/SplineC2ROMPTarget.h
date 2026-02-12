@@ -27,6 +27,7 @@
 #include "Utilities/TimerManager.h"
 #include <ResourceHandle.h>
 #include "SplineOMPTargetMultiWalkerMem.h"
+#include <cstdint>
 
 namespace qmcplusplus
 {
@@ -148,7 +149,7 @@ public:
 
   std::unique_ptr<SPOSet> makeClone() const override { return std::make_unique<SplineC2ROMPTarget>(*this); }
 
-  inline void resizeStorage(size_t n, size_t nvals)
+  inline void resizeStorage(size_t n) override
   {
     init_base(n);
     size_t npad = getAlignedSize<ST>(2 * n);
@@ -193,7 +194,7 @@ public:
     // transfer static data to GPU
     mKK->updateTo();
     myKcart->updateTo();
-    for (uint32_t i = 0; i < 9; i++)
+    for (std::uint32_t i = 0; i < 9; i++)
     {
       (*GGt_offload)[i]           = GGt[i];
       (*PrimLattice_G_offload)[i] = PrimLattice.G[i];
@@ -301,7 +302,7 @@ public:
 
   template<class BSPLINESPO>
   friend class SplineSetReader;
-  friend struct BsplineReader;
+  friend class BsplineReader;
 };
 
 extern template class SplineC2ROMPTarget<float>;

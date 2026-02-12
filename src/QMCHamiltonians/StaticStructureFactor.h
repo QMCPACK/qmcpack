@@ -18,7 +18,7 @@
 
 namespace qmcplusplus
 {
-class StaticStructureFactor : public OperatorBase
+class StaticStructureFactor : public OperatorDependsOnlyOnParticleSet
 {
 public:
   using k2_t   = std::vector<RealType>;
@@ -38,7 +38,7 @@ public:
 
   //standard interface
   std::string getClassName() const override { return "StaticStructureFactor"; }
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& P, TrialWaveFunction& psi) final;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& P) final;
   bool put(xmlNodePtr cur) override;
   Return_t evaluate(ParticleSet& P) override;
 
@@ -47,7 +47,6 @@ public:
   void registerCollectables(std::vector<ObservableHelper>& h5desc, hdf_archive& file) const override;
 
   //should be empty for Collectables interface
-  void resetTargetParticleSet(ParticleSet& P) override {}
   void setObservables(PropertySetType& plist) override {}
   void setParticlePropertyList(PropertySetType& plist, int offset) override {}
 

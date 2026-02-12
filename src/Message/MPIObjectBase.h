@@ -17,6 +17,7 @@
 
 #ifndef QMCPLUSPLUS_MPIOBJECTBASE_H
 #define QMCPLUSPLUS_MPIOBJECTBASE_H
+
 #include "Message/Communicate.h"
 
 namespace qmcplusplus
@@ -50,21 +51,11 @@ public:
   */
   inline bool is_manager() const { return !myComm->rank(); }
 
-  ///return the name
-  inline const std::string& getName() const { return myName; }
-
-  inline void setName(const std::string& aname) { myName = aname; }
-
 protected:
   /** pointer to Communicate
    * @todo use smart pointer
    */
   Communicate* myComm;
-  /** class Name
-   */
-  std::string ClassName;
-  /** name of the object */
-  std::string myName;
 };
 
 } // namespace qmcplusplus

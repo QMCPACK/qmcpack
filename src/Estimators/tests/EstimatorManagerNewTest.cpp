@@ -152,5 +152,14 @@ void EstimatorManagerNewTest::collectMainEstimators()
 
 void EstimatorManagerNewTest::testReduceOperatorEstimators() { em.reduceOperatorEstimators(); }
 
+void EstimatorManagerNewTestAccess::stopBlockUpToWrite(unsigned long accept, unsigned long reject, double weight)
+{
+  // Its not ideal that this code from EstimatorManagerNew is repeated here \todo refactor EstimatorManagerNew::stopBlock
+  emn_.PropertyCache[emn_.weightInd] = weight;
+  emn_.makeBlockAverages(accept, reject);
+  emn_.reduceOperatorEstimators();
+}
+
+
 } // namespace testing
 } // namespace qmcplusplus

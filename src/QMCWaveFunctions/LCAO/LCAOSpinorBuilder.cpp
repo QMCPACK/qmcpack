@@ -21,15 +21,13 @@ namespace qmcplusplus
 LCAOSpinorBuilder::LCAOSpinorBuilder(ParticleSet& els, ParticleSet& ions, Communicate* comm, xmlNodePtr cur)
     : LCAOrbitalBuilder(els, ions, comm, cur)
 {
-  ClassName = "LCAOSpinorBuilder";
-
   if (h5_path == "")
     myComm->barrier_and_abort("LCAOSpinorBuilder only works with href");
 }
 
 std::unique_ptr<SPOSet> LCAOSpinorBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
-  ReportEngine PRE(ClassName, "createSPO(xmlNodePtr)");
+  ReportEngine PRE("LCAOSpinorBuilder", "createSPO(xmlNodePtr)");
   std::string spo_name(""), optimize("no");
   std::string basisset_name("LCAOBSet");
   size_t norbs(0);

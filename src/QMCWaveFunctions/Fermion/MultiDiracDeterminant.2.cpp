@@ -22,6 +22,9 @@
 #include "OMPTarget/ompBLAS.hpp"
 #include "OMPTarget/ompReductionComplex.hpp"
 #include "OhmmsPETE/ompReductionTinyVector.hpp"
+#include <cstdint>
+
+using uint32_t = std::uint32_t;
 
 namespace qmcplusplus
 {

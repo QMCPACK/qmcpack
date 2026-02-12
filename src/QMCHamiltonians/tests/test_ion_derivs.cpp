@@ -14,10 +14,10 @@
 
 #include "type_traits/template_types.hpp"
 #include "type_traits/ConvertToReal.h"
-#include "QMCHamiltonians/QMCHamiltonian.h"
-#include "Particle/tests/MinimalParticlePool.h"
-#include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
-#include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
+#include "QMCHamiltonians/HamiltonianFactory.h"
+#include <MinimalParticlePool.h>
+#include <MinimalWaveFunctionPool.h>
+#include <MinimalHamiltonianPool.h>
 #include "ParticleIO/XMLParticleIO.h"
 #include "Utilities/RandomGenerator.h"
 #include "Utilities/RuntimeOptions.h"
@@ -139,7 +139,7 @@ void create_C_pbc_particlesets(ParticleSet& elec, ParticleSet& ions)
 }
 
 //Takes a HamiltonianFactory and handles the XML I/O to get a QMCHamiltonian pointer.  For CN molecule with pseudopotentials.
-QMCHamiltonian& create_CN_Hamiltonian(HamiltonianFactory& hf)
+std::unique_ptr<QMCHamiltonian> create_CN_Hamiltonian(HamiltonianFactory& hf)
 {
   //Incantation to build hamiltonian
   const char* hamiltonian_xml = R"(<hamiltonian name="h0" type="generic" target="e">
@@ -158,7 +158,7 @@ QMCHamiltonian& create_CN_Hamiltonian(HamiltonianFactory& hf)
   xmlNodePtr root = doc.getRoot();
   hf.put(root);
 
-  return *hf.getH();
+  return hf.releaseHamiltonian();
 }
 
 void test_msd_wrapper(const std::string& wffile,
@@ -220,9 +220,10 @@ void test_msd_wrapper(const std::string& wffile,
 
   HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
 
-  QMCHamiltonian& ham = create_CN_Hamiltonian(hf);
+  auto ham_ptr = create_CN_Hamiltonian(hf);
+  QMCHamiltonian& ham(*ham_ptr);
 
-  RealType eloc = ham.evaluateDeterministic(elec);
+  RealType eloc = ham.evaluateDeterministic(*psi, elec);
 
   //Enum to give human readable indexing into QMCHamiltonian.
   enum observ_id
@@ -365,7 +366,7 @@ void test_msd_wrapper(const std::string& wffile,
 
   app_log() << "STARTING KINETIC TEST: " << wffile << std::endl;
   /// evaluate for kinetic energy only for this test
-  OperatorBase* kinop = ham.getHamiltonian(KINETIC);
+  OperatorBase* kinop = ham.getComponent(KINETIC);
   kinop->evaluateOneBodyOpMatrix(elec, twf, B);
   twf.getGSMatrices(B, B_gs);
   twf.buildIntermediates(Minv, B, M, X, Minv_B, Minv_Mv);
@@ -551,7 +552,7 @@ void test_msd_wrapper(const std::string& wffile,
   app_log() << " KEVal = " << keval << std::endl;
 
   app_log() << " Now evaluating nonlocalecp\n";
-  OperatorBase* nlppop = ham.getHamiltonian(NONLOCALECP);
+  OperatorBase* nlppop = ham.getComponent(NONLOCALECP);
   app_log() << "nlppop = " << nlppop << std::endl;
   app_log() << "  Evaluated.  Calling evaluteOneBodyOpMatrix\n";
 
@@ -724,8 +725,9 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
   RealType logpsi = psi->evaluateLog(elec);
   CHECK(logpsi == Approx(-14.233853149));
 
-  QMCHamiltonian& ham = create_CN_Hamiltonian(hf);
-  RealType eloc       = ham.evaluateDeterministic(elec);
+  auto ham_ptr = create_CN_Hamiltonian(hf);
+  QMCHamiltonian& ham(*ham_ptr);
+  RealType eloc = ham.evaluateDeterministic(*psi, elec);
   enum observ_id
   {
     KINETIC = 0,
@@ -772,7 +774,7 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
   //Kinetic Force
   hf_term       = 0.0;
   pulay_term    = 0.0;
-  auto& ham_ke  = *ham.getHamiltonian(KINETIC);
+  auto& ham_ke  = *ham.getComponent(KINETIC);
   auto ke_saved = ham_ke.getValue();
   ham_ke.evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
   CHECK(ke_saved == Approx(ham_ke.getValue()));
@@ -794,7 +796,7 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
   //NLPP Force
   hf_term               = 0.0;
   pulay_term            = 0.0;
-  auto& ham_nonlocalpp  = *ham.getHamiltonian(NONLOCALECP);
+  auto& ham_nonlocalpp  = *ham.getComponent(NONLOCALECP);
   auto nonlocalpp_saved = ham_nonlocalpp.getValue();
   ham_nonlocalpp.evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
   CHECK(nonlocalpp_saved == Approx(ham_nonlocalpp.getValue()));
@@ -882,9 +884,10 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
   RealType logpsi = psi->evaluateLog(elec);
   CHECK(logpsi == Approx(-8.9455094611e+00));
 
-  QMCHamiltonian& ham = create_CN_Hamiltonian(hf);
+  auto ham_ptr = create_CN_Hamiltonian(hf);
+  QMCHamiltonian& ham(*ham_ptr);
 
-  RealType eloc = ham.evaluateDeterministic(elec);
+  RealType eloc = ham.evaluateDeterministic(*psi, elec);
   enum observ_id
   {
     KINETIC = 0,
@@ -931,7 +934,7 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
   //Kinetic Force
   hf_term       = 0.0;
   pulay_term    = 0.0;
-  auto& ham_ke  = *ham.getHamiltonian(KINETIC);
+  auto& ham_ke  = *ham.getComponent(KINETIC);
   auto ke_saved = ham_ke.getValue();
   ham_ke.evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
   CHECK(ke_saved == Approx(ham_ke.getValue()));
@@ -952,7 +955,7 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
 #endif
 
   //Local PP Force
-  auto& ham_localpp  = *ham.getHamiltonian(LOCALECP);
+  auto& ham_localpp  = *ham.getComponent(LOCALECP);
   auto localpp_saved = ham_localpp.getValue();
   ham_localpp.evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
   CHECK(localpp_saved == Approx(ham_localpp.getValue()));
@@ -960,7 +963,7 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
   //NLPP Force
   hf_term               = 0.0;
   pulay_term            = 0.0;
-  auto& ham_nonlocalpp  = *ham.getHamiltonian(NONLOCALECP);
+  auto& ham_nonlocalpp  = *ham.getComponent(NONLOCALECP);
   auto nonlocalpp_saved = ham_nonlocalpp.getValue();
   ham_nonlocalpp.evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
   CHECK(nonlocalpp_saved == Approx(ham_nonlocalpp.getValue()));
@@ -1047,9 +1050,10 @@ TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
   RealType logpsi = psi->evaluateLog(elec);
   CHECK(logpsi == Approx(-1.41149961982e+01));
 
-  QMCHamiltonian& ham = create_CN_Hamiltonian(hf);
+  auto ham_ptr = create_CN_Hamiltonian(hf);
+  QMCHamiltonian& ham(*ham_ptr);
 
-  RealType eloc = ham.evaluateDeterministic(elec);
+  RealType eloc = ham.evaluateDeterministic(*psi, elec);
   enum observ_id
   {
     KINETIC = 0,
@@ -1110,7 +1114,7 @@ TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
   //Kinetic Force
   /*  hf_term=0.0;
   pulay_term=0.0;
-  (ham.getHamiltonian(KINETIC))->evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
+  (ham.getComponent(KINETIC))->evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
 #if defined(MIXED_PRECISION) 
   CHECK( hf_term[0][0]+pulay_term[0][0] == Approx( 7.4631825180304636).epsilon(1e-4));
   CHECK( hf_term[0][1]+pulay_term[0][1] == Approx( 26.0975954772035799).epsilon(1e-4));
@@ -1130,7 +1134,7 @@ TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
   //NLPP Force
   /*  hf_term=0.0;
   pulay_term=0.0;
-  double val=(ham.getHamiltonian(NONLOCALECP))->evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
+  double val=(ham.getComponent(NONLOCALECP))->evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
 #if defined(MIXED_PRECISION)
   CHECK( hf_term[0][0]+pulay_term[0][0] == Approx( 18.9414437404167302).epsilon(2e-4));
   CHECK( hf_term[0][1]+pulay_term[0][1] == Approx(-42.9017371899931277).epsilon(2e-4));
@@ -1198,9 +1202,10 @@ TEST_CASE("Eloc_Derivatives:multislater_wj", "[hamiltonian]")
   RealType logpsi = psi->evaluateLog(elec);
   CHECK(logpsi == Approx(-8.69329994846e+00));
 
-  QMCHamiltonian& ham = create_CN_Hamiltonian(hf);
+  auto ham_ptr = create_CN_Hamiltonian(hf);
+  QMCHamiltonian& ham(*ham_ptr);
 
-  RealType eloc = ham.evaluateDeterministic(elec);
+  RealType eloc = ham.evaluateDeterministic(*psi, elec);
   enum observ_id
   {
     KINETIC = 0,
@@ -1249,7 +1254,7 @@ TEST_CASE("Eloc_Derivatives:multislater_wj", "[hamiltonian]")
   //Kinetic Force
   /*  hf_term=0.0;
   pulay_term=0.0;
-  (ham.getHamiltonian(KINETIC))->evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
+  (ham.getComponent(KINETIC))->evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
 #if defined(MIXED_PRECISION)
   CHECK( hf_term[0][0]+pulay_term[0][0] == Approx(  4.1783687883878429).epsilon(1e-4));
   CHECK( hf_term[0][1]+pulay_term[0][1] == Approx( 32.2193450745800192).epsilon(1e-4));
@@ -1269,7 +1274,7 @@ TEST_CASE("Eloc_Derivatives:multislater_wj", "[hamiltonian]")
   //NLPP Force
   /*  hf_term=0.0;
   pulay_term=0.0;
-  double val=(ham.getHamiltonian(NONLOCALECP))->evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
+  double val=(ham.getComponent(NONLOCALECP))->evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
 #if defined(MIXED_PRECISION)
   CHECK( hf_term[0][0]+pulay_term[0][0] == Approx( 21.6829856774403140).epsilon(2e-4));
   CHECK( hf_term[0][1]+pulay_term[0][1] == Approx(-43.4432406419382673).epsilon(2e-4));
@@ -1339,7 +1344,8 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
 
   HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
 
-  QMCHamiltonian& ham = create_CN_Hamiltonian(hf);
+  auto ham_ptr = create_CN_Hamiltonian(hf);
+  QMCHamiltonian& ham(*ham_ptr);
 
   //Enum to give human readable indexing into QMCHamiltonian.
   enum observ_id
@@ -1394,7 +1400,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
 
   twf.getM(elec, matlist);
 
-  OperatorBase* kinop = ham.getHamiltonian(KINETIC);
+  OperatorBase* kinop = ham.getComponent(KINETIC);
 
   kinop->evaluateOneBodyOpMatrix(elec, twf, B);
 
@@ -1487,7 +1493,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   app_log() << " KEVal = " << keval << std::endl;
 
   app_log() << " Now evaluating nonlocalecp\n";
-  OperatorBase* nlppop = ham.getHamiltonian(NONLOCALECP);
+  OperatorBase* nlppop = ham.getComponent(NONLOCALECP);
   app_log() << "nlppop = " << nlppop << std::endl;
   app_log() << "  Evaluated.  Calling evaluteOneBodyOpMatrix\n";
 
@@ -1599,7 +1605,8 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj", "[hamiltonian]")
 
   HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
 
-  QMCHamiltonian& ham = create_CN_Hamiltonian(hf);
+  auto ham_ptr = create_CN_Hamiltonian(hf);
+  QMCHamiltonian& ham(*ham_ptr);
 
   //This is already defined in QMCHamiltonian, but keep it here for easy access.
   enum observ_id
@@ -1654,7 +1661,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj", "[hamiltonian]")
 
   twf.getM(elec, matlist);
 
-  OperatorBase* kinop = ham.getHamiltonian(KINETIC);
+  OperatorBase* kinop = ham.getComponent(KINETIC);
 
   kinop->evaluateOneBodyOpMatrix(elec, twf, B);
 
@@ -1747,7 +1754,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj", "[hamiltonian]")
   app_log() << " KEVal = " << keval << std::endl;
 
   app_log() << " Now evaluating nonlocalecp\n";
-  OperatorBase* nlppop = ham.getHamiltonian(NONLOCALECP);
+  OperatorBase* nlppop = ham.getComponent(NONLOCALECP);
   app_log() << "nlppop = " << nlppop << std::endl;
   app_log() << "  Evaluated.  Calling evaluteOneBodyOpMatrix\n";
 
@@ -1881,15 +1888,15 @@ TEST_CASE("Eloc_Derivatives:slater_fastderiv_complex_pbc", "[hamiltonian]")
 
   xmlNodePtr hroot = hdoc.getRoot();
   hf.put(hroot);
-
-  QMCHamiltonian& ham = *hf.getH();
+  auto ham_ptr        = hf.releaseHamiltonian();
+  QMCHamiltonian& ham = *ham_ptr;
 
 
   using RealType  = QMCTraits::RealType;
   using ValueType = QMCTraits::ValueType;
   RealType logpsi = psi->evaluateLog(elec);
   app_log() << " LOGPSI = " << logpsi << std::endl;
-  RealType eloc = ham.evaluateDeterministic(elec);
+  RealType eloc = ham.evaluateDeterministic(*psi, elec);
   enum observ_id
   {
     KINETIC = 0,
@@ -1964,7 +1971,7 @@ TEST_CASE("Eloc_Derivatives:slater_fastderiv_complex_pbc", "[hamiltonian]")
 
   twf.getM(elec, matlist);
 
-  OperatorBase* kinop = ham.getHamiltonian(KINETIC);
+  OperatorBase* kinop = ham.getComponent(KINETIC);
   app_log() << kinop << std::endl;
   kinop->evaluateOneBodyOpMatrix(elec, twf, B);
 
@@ -2060,7 +2067,7 @@ TEST_CASE("Eloc_Derivatives:slater_fastderiv_complex_pbc", "[hamiltonian]")
   app_log() << " KEVal = " << keval << std::endl;
 
   app_log() << " Now evaluating nonlocalecp\n";
-  OperatorBase* nlppop = ham.getHamiltonian(NONLOCALECP);
+  OperatorBase* nlppop = ham.getComponent(NONLOCALECP);
   app_log() << "  Evaluated.  Calling evaluteOneBodyOpMatrix\n";
 
 
@@ -2406,7 +2413,7 @@ TEST_CASE("Eloc_Derivatives:proto_md_wj", "[hamiltonian]")
 
   QMCHamiltonian& ham = *hf.getH();
 
-  RealType eloc = ham.evaluateDeterministic(elec);
+  RealType eloc = ham.evaluateDeterministic(*psi, elec);
   enum observ_id
   {
     KINETIC = 0,
@@ -2453,7 +2460,7 @@ TEST_CASE("Eloc_Derivatives:proto_md_wj", "[hamiltonian]")
   //Kinetic Force
   hf_term    = 0.0;
   pulay_term = 0.0;
-  (ham.getHamiltonian(KINETIC))->evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
+  (ham.getComponent(KINETIC))->evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
 #if defined(MIXED_PRECISION)
   CHECK(hf_term[0][0] + pulay_term[0][0] == Approx(-3.3359153349010735).epsilon(1e-4));
   CHECK(hf_term[0][1] + pulay_term[0][1] == Approx(30.0487085581835309).epsilon(1e-4));
@@ -2473,7 +2480,7 @@ TEST_CASE("Eloc_Derivatives:proto_md_wj", "[hamiltonian]")
   hf_term    = 0.0;
   pulay_term = 0.0;
   double val =
-      (ham.getHamiltonian(NONLOCALECP))->evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
+      (ham.getComponent(NONLOCALECP))->evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
 //MP fails the first CHECK with 27.15313.  Just bypass the checks in those builds.
 #if defined(MIXED_PRECISION)
   CHECK(hf_term[0][0] + pulay_term[0][0] == Approx(27.1517161490208956).epsilon(2e-4));
@@ -2575,7 +2582,7 @@ TEST_CASE("Eloc_Derivatives:proto_md_wj", "[hamiltonian]")
 
   QMCHamiltonian& ham = *hf.getH();
 
-  RealType eloc = ham.evaluateDeterministic(elec);
+  RealType eloc = ham.evaluateDeterministic(*psi, elec);
   enum observ_id
   {
     KINETIC = 0,
@@ -2625,7 +2632,7 @@ TEST_CASE("Eloc_Derivatives:proto_md_wj", "[hamiltonian]")
   //Kinetic Force
   //hf_term=0.0;
   //pulay_term=0.0;
-  //(ham.getHamiltonian(KINETIC))->evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
+  //(ham.getComponent(KINETIC))->evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
 //#if defined(MIXED_PRECISION) 
   //CHECK( hf_term[0][0]+pulay_term[0][0] == Approx( 7.4631825180304636).epsilon(1e-4));
   //CHECK( hf_term[0][1]+pulay_term[0][1] == Approx( 26.0975954772035799).epsilon(1e-4));
@@ -2645,7 +2652,7 @@ TEST_CASE("Eloc_Derivatives:proto_md_wj", "[hamiltonian]")
   //NLPP Force
  // hf_term=0.0;
 //  pulay_term=0.0;
-//  double val=(ham.getHamiltonian(NONLOCALECP))->evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
+//  double val=(ham.getComponent(NONLOCALECP))->evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
 //#if defined(MIXED_PRECISION)
 //  CHECK( hf_term[0][0]+pulay_term[0][0] == Approx( 18.9414437404167302).epsilon(2e-4));
 //  CHECK( hf_term[0][1]+pulay_term[0][1] == Approx(-42.9017371899931277).epsilon(2e-4));
@@ -2731,7 +2738,7 @@ TEST_CASE("Eloc_Derivatives:proto_md_wj", "[hamiltonian]")
 
   QMCHamiltonian& ham = *hf.getH();
 
-  RealType eloc = ham.evaluateDeterministic(elec);
+  RealType eloc = ham.evaluateDeterministic(*psi, elec);
   enum observ_id
   {
     KINETIC = 0,
@@ -2780,7 +2787,7 @@ TEST_CASE("Eloc_Derivatives:proto_md_wj", "[hamiltonian]")
   //Kinetic Force
 //  hf_term=0.0;
 //  pulay_term=0.0;
-//  (ham.getHamiltonian(KINETIC))->evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
+//  (ham.getComponent(KINETIC))->evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
 //#if defined(MIXED_PRECISION)
 //  CHECK( hf_term[0][0]+pulay_term[0][0] == Approx(  4.1783687883878429).epsilon(1e-4));
 //  CHECK( hf_term[0][1]+pulay_term[0][1] == Approx( 32.2193450745800192).epsilon(1e-4));
@@ -2800,7 +2807,7 @@ TEST_CASE("Eloc_Derivatives:proto_md_wj", "[hamiltonian]")
   //NLPP Force
 //  hf_term=0.0;
 //  pulay_term=0.0;
-//  double val=(ham.getHamiltonian(NONLOCALECP))->evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
+//  double val=(ham.getComponent(NONLOCALECP))->evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
 //#if defined(MIXED_PRECISION)
 //  CHECK( hf_term[0][0]+pulay_term[0][0] == Approx( 21.6829856774403140).epsilon(2e-4));
 //  CHECK( hf_term[0][1]+pulay_term[0][1] == Approx(-43.4432406419382673).epsilon(2e-4));

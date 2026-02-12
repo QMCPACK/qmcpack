@@ -97,7 +97,7 @@ void BackflowTransformation::restore(int iat)
     bfFuns[i]->restore(iat, UpdateMode);
 }
 
-void BackflowTransformation::checkInVariables(opt_variables_type& active)
+void BackflowTransformation::checkInVariables(OptVariables& active)
 {
   for (int i = 0; i < bfFuns.size(); i++)
     bfFuns[i]->checkInVariables(active);
@@ -109,7 +109,7 @@ void BackflowTransformation::reportStatus(std::ostream& os)
     bfFuns[i]->reportStatus(os);
 }
 
-void BackflowTransformation::checkOutVariables(const opt_variables_type& active)
+void BackflowTransformation::checkOutVariables(const OptVariables& active)
 {
   for (int i = 0; i < bfFuns.size(); i++)
     bfFuns[i]->checkOutVariables(active);
@@ -123,7 +123,7 @@ bool BackflowTransformation::isOptimizable() const
   return false;
 }
 
-void BackflowTransformation::resetParameters(const opt_variables_type& active)
+void BackflowTransformation::resetParameters(const OptVariables& active)
 {
   //reset each unique basis functions
   for (int i = 0; i < bfFuns.size(); i++)
@@ -442,7 +442,7 @@ void BackflowTransformation::testDeriv(const ParticleSet& P)
   }
   app_log() << " Testing derivatives of backflow transformation. \n";
   app_log() << " Numtargets: " << NumTargets << std::endl;
-  opt_variables_type wfVars, wfvar_prime;
+  OptVariables wfVars, wfvar_prime;
   checkInVariables(wfVars);
   checkOutVariables(wfVars);
   int Nvars   = wfVars.size();

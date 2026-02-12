@@ -145,7 +145,7 @@ struct Array<T, 1, base_type> : base_type
   using sizes_type = decltype(std::declval<base_type const&>().sizes());
   sizes_type shape() const { return base_type::sizes(); }
   void resize(sizes_type sizes) { resizeAndPreserve(sizes); }
-  void resizeAndPreserve(sizes_type sizes) { base_type::reextent(sizes); }
+  void resizeAndPreserve(sizes_type sizes) { using std::get; base_type::reextent({get<0>(sizes)}); }
   std::ptrdiff_t extent(int d) const
   {
     switch (d)

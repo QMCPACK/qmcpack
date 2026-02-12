@@ -1,5 +1,5 @@
-.. _developguide:
 .. highlight:: c++
+.. _developguide:
 
 Development Guide
 =================
@@ -290,14 +290,29 @@ Golden rule of comments
 
 If you modify a piece of code, also adapt the comments that belong to it if necessary.
 
-Formatting and "style"
-~~~~~~~~~~~~~~~~~~~~~~
+Formatting and "style" (clang-format)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Use the provided clang-format style in ``src/.clang-format`` to format ``.h``, ``.hpp``, ``.cu``, and ``.cpp`` files. Many of the following rules will be applied to the code by clang-format, which should allow you to ignore most of them if you always run it on your modified code.
+We make use of clang-format for automatic source code formatting. It is widely available, including in all standard package
+managers. clang-format removes the burden of formatting source code by hand. We provide a clang-format style in
+``src/.clang-format``. Use this to format ``.h``, ``.hpp``, ``.cu``, and ``.cpp`` files. Many of the following rules will be applied
+to the code by clang-format, which should allow you to ignore most of them if you always run it on your modified code.
 
-You should use clang-format support and the ``.clangformat`` file with your editor, use a Git precommit hook to run clang-format
-or run clang-format manually on every file you modify.  However, if you see numerous formatting updates outside of the code you
-have modified, first commit the formatting changes in a separate PR.
+Use of clang-format can be fully automated: there are many guides to the use of clang-format with different editors online, as well
+as using it manually. In addition to running the formatting in your editor, you can use a Git precommit hook to run clang-format
+automatically, or you can run clang-format manually. If working on old code, please clang-format the file, and if you see
+particularly large changes, commit the formatting changes in a separate pull request.
+
+Disable the use of clang-format for sections of code that would be more readable when formatted differently, e.g., for matrices or
+for code blocks where a particular alignment would clearly help readability.
+
+::
+
+  // clang-format off
+  Matrix my_matrix = { {1, 2, 3},
+                       {4, 5, 6},
+                       {7, 8 ,9} };
+  // clang-format on
 
 Indentation
 ^^^^^^^^^^^
@@ -639,7 +654,7 @@ contain the state of a logical object, and might allow access to object data thr
 while preserving maximally ability to change internal implementation of the class.
 
 Do not...
-"""""""""
+^^^^^^^^^
 
 - use ``struct`` as a way to avoid controlling access to the class. Only when the instantiated objects are public data structure is ``struct`` appropriate.
 
@@ -738,7 +753,7 @@ memory leaks if pointers are not managed properly. Since C++11, smart pointers w
 it demands developers to think about the ownership and lifetime of declared pointer objects.
 
 std::unique_ptr
-"""""""""""""""
+^^^^^^^^^^^^^^^
 
 A unique pointer is the unique owner of a piece of allocated memory. Pointers in per-walker data structure with distinct contents
 should be unique pointers. For example, every walker has a trial wavefunction object which contains an SPO object pointer. Because
@@ -749,7 +764,7 @@ In QMCPACK, most raw pointers can be directly replaced with ``std::unique_ptr``.
 Corresponding use of ``new`` operator can be replaced with ``std:make_unique``.
 
 std::shared_ptr
-"""""""""""""""
+^^^^^^^^^^^^^^^
 
 A shared pointer is the shared owner of a piece of allocated memory. Moving a pointer ownership from one place to another should
 not use shared pointers but C++ move semantics. Shared contents between walkers may be candidates for shared pointers. For example,
@@ -777,6 +792,53 @@ and capture it where ``Communicate::barrier_and_abort()`` can be used. Note that
 uniform error, improper use may cause QMCPACK hanging.
 
 In addition, avoid directly calling C function ``abort()``, ``exit()`` and ``MPI_Abort()`` for stopping the code.
+
+Adding and using timers
+~~~~~~~~~~~~~~~~~~~~~~~
+In your class header file, add ```#include <NewTimer.h>```. Add a timer enumeration and define the timer names in the
+header file or preferably cpp file. For example, put the following under "protected/private"
+
+::
+
+  enum PSTimers
+  {
+    PS_newpos,
+    PS_donePbyP,
+    PS_setActive,
+    PS_update
+  };
+  
+  TimerList_t myTimers;
+
+Initialize timers in the constructor:
+
+::
+
+  # if you have many timers;
+  const TimerNameList_t<PSTimers>
+  PSTimerNames = {{PS_newpos, "ParticleSet::computeNewPosDTandSK"},
+                  {PS_donePbyP, "ParticleSet::donePbyP"},
+                  {PS_setActive, "ParticleSet::setActive"},
+                  {PS_update, "ParticleSet::update"}};
+  setup_timers(myTimers, PSTimerNames, timer_level_fine);
+  
+  # if you have just one timer to be registered in the manager.
+  myTimers[PS_update] = TimerManager.createTimer("ParticleSet::update", timer_level_fine);
+
+Finally, there are two ways of using the timers. Using the ScopedTimer is required when possible.
+
+::
+
+  // RAII pattern
+  {
+    ScopedTimer update_scope(myTimers[PS_update]);
+    //timed body
+  }
+  
+  // explicit controlling
+  myTimers[PS_update]->start();
+  //timed body
+  myTimers[PS_update]->stop();
 
 GitHub Pull Request guidance
 ----------------------------
@@ -843,7 +905,7 @@ understand, and review. In this way we can maintain a good collective developmen
 Release Process
 ---------------
 
-This section documents the steps to follow to make a new release of QMCPACK. The examples are given for the 3.12.0 release. This
+This section documents the steps to follow to make a new release of QMCPACK. The examples are given for the 4.1.0 release. This
 simple process should be followed step-by-step to ensure accuracy and avoid need for a rerelease.
 
 1. Make a fresh clone of the repo and create a release candidate branch labeled rc_Mmp where Mmp are digits following semantic versioning.
@@ -852,37 +914,46 @@ simple process should be followed step-by-step to ensure accuracy and avoid need
 
  git clone https://github.com/QMCPACK/qmcpack.git
  cd qmcpack
- git branch rc_3120
- git checkout rc_3120
+ git branch rc_410
+ git checkout rc_410
 
-2. Update the VERSION numbers in the project section of qmcpack/CMakeLists.txt for the new release, e.g. 3.12.0
-3. Update qmcpack/CHANGELOG.md by replacing the unreleased section with the new version and release date. Update the notes section to recommend the update to all users (if appropriate) and note any major headline items such as backwards incompatibility. Use `github_changelog_generator -u QMCPACK -p qmcpack -o AUTOCHANGELOG.md -t YOUR_GITHUB_TOKEN --since-tag v3.11.0` to automatically generate a starting point. It will need substantial editing.
+2. Update the VERSION numbers in the project section of qmcpack/CMakeLists.txt for the new release, e.g. 4.1.0
+3. Update qmcpack/CHANGELOG.md by replacing the unreleased section with the new version and release date. Update the notes section
+   to recommend the update to all users (if appropriate) and note any major headline items such as backwards incompatibility. The
+   preferred way to get a list of all merged PRs is via the gh cli tool. Use the following to generate a starting point, after adjusting
+   the dates to include the day of the previous release. Edit the output to include only "significant" changes.
+
+.. code:: shell
+
+  gh search prs --merged-at 2025-02-05..2025-04-29 -R QMCPACK/qmcpack  --json title,url,repository,number -L 1000 --jq '.[]|("* " + .title + " [#" + (.number|tostring) +"]("+ .url + ")\n")'
+
+4. Commit and push the changes to GitHub
 
 ::
 
  git add qmcpack/CMakeLists.txt qmcpack/CHANGELOG.md
  git commit -m "Increase version number, update release notes"
- git push origin rc_3120
+ git push origin rc_410
 
-4. On GitHub, make a pull request into the main branch from the rc.
-5. Ensure CI tests run and pass.
-6. Make an independent download of the proposed merged PR.
-7. Verify code configures and builds on at least one system. Be sure to do this on a clean, freshly cloned repo.
-8. Run all the tests apart from the long ones, confirm version reports correctly. e.g. ctest -VV -E long. Confirm the results are appropriately similar to the last nightly and weekly test results.
-9. Push any needed fixes to the rc and repeat the tests.
-10. Add notes on the test status to the PR.
-11. Request reviewer / other PR approver approves the merge. At least one review is required to merge to main. ** The reviewer needs to check the updated version number and CHANGELOG. **
-12. Merge the PR.
-13. Create a new release using the release tool on GitHub. Link to the CHANGELOG.md in the release notes. The GitHub link can be copied & updated from previous release. 
-14. Issue a PR back to develop from main to update with the new version number and any other updates made to the rc.
-15. Once the PR is merged to develop, update the QMCPACK_VERSION_PATCH version to 9 in CMakeLists.txt in the develop branch to indicate it is the development version.
-16. Delete the rc branch.
-17. Verify readthedocs is seeing the new release and update readthedocs configuration if needed.
-18. Announce the release on qmcpack.org. Create a new page of type "Release" with title similar to "QMCPACK Release v3.5.0 -
-    2018-08-02" via https://qmcpack.org/user. The page type is required for https://www.qmcpack.org/releases to update
+5. On GitHub, make a pull request into the main branch from the rc.
+6. Ensure CI tests run and pass.
+7. Make an independent download of the proposed merged PR.
+8. Verify code configures and builds on at least one system. Be sure to do this on a clean, freshly cloned repo.
+9. Run all the tests apart from the long ones, confirm version reports correctly. e.g. ctest -VV -E long. Confirm the results are appropriately similar to the last nightly and weekly test results.
+10. Push any needed fixes to the rc and repeat the tests.
+11. Add notes on the test status to the PR.
+12. Request reviewer / other PR approver approves the merge. At least one review is required to merge to main. ** The reviewer needs to check the updated version number and CHANGELOG. **
+13. Merge the PR.
+14. Create a new release using the release tool on GitHub. Link to the CHANGELOG.md in the release notes. The GitHub link can be copied & updated from previous release. 
+15. Issue a PR back to develop from main to update with the new version number and any other updates made to the rc.
+16. Once the PR is merged to develop, update the QMCPACK_VERSION_PATCH version to 9 in CMakeLists.txt in the develop branch to indicate it is the development version.
+17. Delete the rc branch.
+18. Verify readthedocs is seeing the new release and update readthedocs configuration if needed.
+19. Announce the release on qmcpack.org. Create a new page of type "Release" with title similar to "QMCPACK Release v4.1.0 -
+    2025-04-30" via https://qmcpack.org/user. The page type is required for https://www.qmcpack.org/releases to update
     automatically. Also check the documentation pages.
-19. Announce the release on Google Groups.
-20. Update the spack package https://packages.spack.io/package.html?name=qmcpack
+20. Announce the release on Google Groups.
+21. Update the spack package https://packages.spack.io/package.html?name=qmcpack
 
 
 .. include:: input_code.txt
@@ -1252,7 +1323,6 @@ Helium Wavefunction Example
 
 The code contains an example of a wavefunction component for a Helium atom using STO orbitals and a Pade Jastrow.
 
-to
 The wavefunction is
 
 .. math::

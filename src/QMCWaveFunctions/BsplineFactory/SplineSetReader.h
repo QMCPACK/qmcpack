@@ -51,12 +51,12 @@ class SplineC2ROMPTarget;
 template<typename SA>
 class SplineSetReader : public BsplineReader
 {
-public:
-  SplineSetReader(EinsplineSetBuilder* e);
-
   std::unique_ptr<SPOSet> create_spline_set(const std::string& my_name,
                                             int spin,
                                             const BandInfoGroup& bandgroup) override;
+
+public:
+  SplineSetReader(EinsplineSetBuilder* e);
 
   /** create data space in the spline object and try open spline dump files.
    * @param bandgroup band info

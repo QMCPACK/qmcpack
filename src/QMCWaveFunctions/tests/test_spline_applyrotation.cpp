@@ -50,12 +50,14 @@ TEST_CASE("Spline applyRotation zero rotation", "[wavefunction]")
   ions_.create({2});
   ions_.R[0] = {0.0, 0.0, 0.0};
   ions_.R[1] = {1.68658058, 1.68658058, 1.68658058};
+  ions_.update();
 
   elec_.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create({2});
   elec_.R[0] = {0.0, 0.0, 0.0};
   elec_.R[1] = {0.0, 1.0, 0.0};
+  elec_.update();
 
   SpeciesSet& tspecies       = elec_.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
@@ -65,7 +67,7 @@ TEST_CASE("Spline applyRotation zero rotation", "[wavefunction]")
   // Load diamondC_1x1x1 wfn and explicitly construct a SplineC2C object with 7 orbitals
   // This results in padding of the spline coefs table and thus is a more stringent test.
   const char* particles = R"(
-<sposet_collection type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" gpu="no" precision="double">
+<sposet_collection type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" precision="double">
   <sposet name="updet" size="7"/>
 </sposet_collection>)";
 
@@ -186,12 +188,14 @@ TEST_CASE("Spline applyRotation one rotation", "[wavefunction]")
   ions_.create({2});
   ions_.R[0] = {0.0, 0.0, 0.0};
   ions_.R[1] = {1.68658058, 1.68658058, 1.68658058};
+  ions_.update();
 
   elec_.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create({2});
   elec_.R[0] = {0.0, 0.0, 0.0};
   elec_.R[1] = {0.0, 1.0, 0.0};
+  elec_.update();
 
   SpeciesSet& tspecies       = elec_.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
@@ -201,7 +205,7 @@ TEST_CASE("Spline applyRotation one rotation", "[wavefunction]")
   // Load diamondC_1x1x1 wfn and explicitly construct a SplineC2C object with 7 orbitals
   // This results in padding of the spline coefs table and thus is a more stringent test.
   const char* particles = R"(
-<sposet_collection type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" gpu="no" precision="double">
+<sposet_collection type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" precision="double">
   <sposet name="updet" size="7"/>
 </sposet_collection>)";
 
@@ -395,12 +399,14 @@ TEST_CASE("Spline applyRotation two rotations", "[wavefunction]")
   ions_.create({2});
   ions_.R[0] = {0.0, 0.0, 0.0};
   ions_.R[1] = {1.68658058, 1.68658058, 1.68658058};
+  ions_.update();
 
   elec_.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create({2});
   elec_.R[0] = {0.0, 0.0, 0.0};
   elec_.R[1] = {0.0, 1.0, 0.0};
+  elec_.update();
 
   SpeciesSet& tspecies       = elec_.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
@@ -410,7 +416,7 @@ TEST_CASE("Spline applyRotation two rotations", "[wavefunction]")
   // Load diamondC_1x1x1 wfn and explicitly construct a SplineC2C object with 7 orbitals
   // This results in padding of the spline coefs table and thus is a more stringent test.
   const char* particles = R"(
-<sposet_collection type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" gpu="no" precision="double">
+<sposet_collection type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" precision="double">
   <sposet name="updet" size="7"/>
 </sposet_collection>)";
 
@@ -699,12 +705,14 @@ TEST_CASE("Spline applyRotation complex rotation", "[wavefunction]")
   ions_.create({2});
   ions_.R[0] = {0.0, 0.0, 0.0};
   ions_.R[1] = {1.68658058, 1.68658058, 1.68658058};
+  ions_.update();
 
   elec_.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create({2});
   elec_.R[0] = {0.0, 0.0, 0.0};
   elec_.R[1] = {0.0, 1.0, 0.0};
+  elec_.update();
 
   SpeciesSet& tspecies       = elec_.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
@@ -714,7 +722,7 @@ TEST_CASE("Spline applyRotation complex rotation", "[wavefunction]")
   // Load diamondC_1x1x1 wfn and explicitly construct a SplineC2C object with 7 orbitals
   // This results in padding of the spline coefs table and thus is a more stringent test.
   const char* particles = R"(
-<sposet_collection type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" gpu="no" precision="double">
+<sposet_collection type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" precision="double">
   <sposet name="updet" size="7"/>
 </sposet_collection>)";
 

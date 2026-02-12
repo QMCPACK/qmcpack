@@ -53,7 +53,7 @@ An example of options to be passed to CMake:
   -DVTUNE_ROOT=/opt/intel/vtune_amplifier_xe
 
 HPCToolkit API
-~~~~~~~~~
+~~~~~~~~~~~~~~
 
 If the variable ``USE_HPCTOOLKIT_API`` is set, QMCPACK will check that the
 include file (``hpctoolkit.h``) and the library (``hpctoolkit.so``) can be found.
@@ -91,8 +91,11 @@ NVIDIA's Tools Extensions (NVTX) API enables programmers to annotate their sourc
 NVTX API
 ~~~~~~~~
 
-If the variable ``USE_NVTX_API`` is set, QMCPACK will add the library (``libnvToolsExt.so``) to the QMCPACK target. To add NVTX annotations
-to a function, it is necessary to include the ``nvToolsExt.h`` header file and then make the appropriate calls into the NVTX API. For more information
+If the variable ``USE_NVTX_API`` is set, QMCPACK will enable NVTX support. On systems only with legacy NVTX (v2),
+QMCPACK will add the library (``libnvToolsExt.so``) to the QMCPACK target. On systems with NVTX v3 (CUDA 11+),
+NVTX is header-only and no ``libnvToolsExt.so`` is required; QMCPACK instead add include path (via ``CUDA::nvtx3``)
+and a shim header so existing ``#include <nvToolsExt.h>`` continues to work.
+To add NVTX annotations to a function, it is necessary to include the ``nvToolsExt.h`` header file and then make the appropriate calls into the NVTX API. For more information
 about the NVTX API, see https://docs.nvidia.com/cuda/profiler-users-guide/index.html#nvtx. Any additional calls to the NVTX API should be guarded by
 the ``USE_NVTX_API`` compiler define.
 

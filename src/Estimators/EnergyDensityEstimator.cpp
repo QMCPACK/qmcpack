@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2023 QMCPACK developers.
+// Copyright (c) 2025 QMCPACK developers.
 //
 // File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //                    Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
@@ -12,10 +12,13 @@
 // Some code refactored from: QMCHamiltonian/EnergyDensityEstimator.cpp
 //////////////////////////////////////////////////////////////////////////////////////
 
+#include <OhmmsPETE/TinyVector.h>
 #include "EnergyDensityEstimator.h"
 
 namespace qmcplusplus
 {
+
+using Real = NEEnergyDensityEstimator::Real;
 
 struct PosCharge
 {
@@ -49,10 +52,12 @@ auto NEEnergyDensityEstimator::extractIonPositionsAndCharge(const ParticleSet& p
 NEEnergyDensityEstimator::NEEnergyDensityEstimator(const EnergyDensityInput& input,
                                                    const PSPool& pset_pool,
                                                    DataLocality data_locality)
-    : OperatorEstBase(data_locality), input_(input), pset_dynamic_(getParticleSet(pset_pool, input.get_dynamic()))
+    : OperatorEstBase(data_locality, input.get_name(), input.get_type()),
+      input_(input),
+      pset_dynamic_(getParticleSet(pset_pool, input.get_dynamic()))
 {
   requires_listener_ = true;
-  my_name_           = "NEEnergyDensityEstimator";
+  my_name_           = input.get_name();
   n_particles_       = pset_dynamic_.getTotalNum();
   if (!(input_.get_static().empty()))
   {
@@ -61,6 +66,9 @@ NEEnergyDensityEstimator::NEEnergyDensityEstimator(const EnergyDensityInput& inp
     {
       n_ions_ = pset_static_->getTotalNum();
       n_particles_ += n_ions_;
+    }
+    else
+    {
       ed_ion_values_.resize(n_ions_, N_EDVALS);
       r_ion_work_.resize(n_ions_, OHMMS_DIM);
     }
@@ -77,13 +85,10 @@ NEEnergyDensityEstimator::NEEnergyDensityEstimator(const EnergyDensityInput& inp
     spacegrids_.emplace_back(
         std::make_unique<NESpaceGrid<Real>>(spacegrid_inputs_[ig], ref_points_->get_points(), N_EDVALS, periodic));
   }
-#ifndef NDEBUG
-  std::cout << "Instantiated " << spacegrids_.size() << " spacegrids\n";
-#endif
 }
 
 NEEnergyDensityEstimator::NEEnergyDensityEstimator(const NEEnergyDensityEstimator& ede, const DataLocality dl)
-    : OperatorEstBase(dl),
+    : OperatorEstBase(dl, ede.input_.get_name(), ede.input_.get_type()),
       input_(ede.input_),
       pset_dynamic_(ede.pset_dynamic_),
       pset_static_(ede.pset_static_),
@@ -114,7 +119,7 @@ void NEEnergyDensityEstimator::constructToReferencePoints(ParticleSet& pset_dyna
   if (pset_static_)
   {
     dtable_index_ = pset_dynamic_.addTable(pset_static_.value());
-    pset_refs.push_back(pset_static_.value());
+    pset_refs.emplace_back(pset_static_.value());
   }
 
   r_work_.resize(n_particles_);
@@ -127,9 +132,11 @@ void NEEnergyDensityEstimator::constructToReferencePoints(ParticleSet& pset_dyna
     r_ion_work_.resize(n_ions_, OHMMS_DIM);
     for (int i = 0; i < n_ions_; ++i)
       for (int d = 0; d < OHMMS_DIM; ++d)
-        r_ion_work_(i, d) = pset_static_->R[i][d];
+        r_ion_work_[i][d] = pset_static_->R[i][d];
   }
+  data_.resize(N_EDVALS);
   particles_outside_.resize(n_particles_, true);
+  particles_outside_ions_.resize(n_ions_, true);
   ref_points_ = std::make_unique<NEReferencePoints>(input_.get_ref_points_input(), pset_dynamic_, pset_refs);
 }
 
@@ -154,6 +161,8 @@ ListenerVector<QMCTraits::RealType>::ReportingFunction NEEnergyDensityEstimator:
     CrowdEnergyValues<Real>& local_values)
 {
   return [&local_values](const int walker_index, const std::string& name, const Vector<Real>& inputV) {
+    if (local_values.find(name) == local_values.end())
+      local_values[name] = {};
     if (walker_index >= local_values[name].size())
       local_values[name].resize(walker_index + 1);
     local_values[name][walker_index] = inputV;
@@ -164,10 +173,8 @@ const ParticleSet& NEEnergyDensityEstimator::getParticleSet(const PSPool& psetpo
 {
   auto pset_iter(psetpool.find(psname));
   if (pset_iter == psetpool.end())
-  {
     throw UniformCommunicateError("Particle set pool does not contain \"" + psname +
                                   "\" so NEEnergyDensityEstimator::get_particleset fails!");
-  }
   return *(pset_iter->second.get());
 }
 
@@ -227,6 +234,13 @@ void NEEnergyDensityEstimator::accumulate(const RefVector<MCPWalker>& walkers,
     walkers_weight_ += walkers[iw].get().Weight;
     evaluate(psets[iw], walkers[iw], iw);
   }
+  auto zero_reduced_values = [](auto& reduced_values) {
+    for (auto& walker_values : reduced_values)
+      std::fill(walker_values.begin(), walker_values.end(), 0.0);
+  };
+  zero_reduced_values(reduced_local_kinetic_values_);
+  zero_reduced_values(reduced_local_pot_values_);
+  zero_reduced_values(reduced_local_ion_pot_values_);
 }
 
 void NEEnergyDensityEstimator::evaluate(ParticleSet& pset, const MCPWalker& walker, const int walker_index)
@@ -234,20 +248,20 @@ void NEEnergyDensityEstimator::evaluate(ParticleSet& pset, const MCPWalker& walk
   //Collect positions from ParticleSets
   int p_count = 0;
   {
-    const ParticlePos& Rs = pset.R;
-    for (int i = 0; i < Rs.size(); i++)
+    const ParticlePos& r_target = pset.R;
+    for (int i = 0; i < r_target.size(); i++)
     {
-      r_work_[p_count] = Rs[i];
-      p_count++;
+      r_work_[p_count] = r_target[i];
+      ++p_count;
     }
   }
   if (pset_static_ && !input_.get_ion_points())
   {
-    const ParticlePos& Rs = pset_static_->R;
-    for (int i = 0; i < Rs.size(); i++)
+    const ParticlePos& r_static = pset_static_->R;
+    for (int i = 0; i < r_static.size(); i++)
     {
-      r_work_[p_count] = Rs[i];
-      p_count++;
+      r_work_[p_count] = r_static[i];
+      ++p_count;
     }
   }
 
@@ -264,29 +278,36 @@ void NEEnergyDensityEstimator::evaluate(ParticleSet& pset, const MCPWalker& walk
       ed_values_(p_count, W) = weight;
       ed_values_(p_count, T) = weight * Ts[i];
       ed_values_(p_count, V) = weight * Vd[i];
-      p_count++;
+      ++p_count;
     }
   }
   if (pset_static_)
   {
     const ParticleSet& Ps = *pset_static_;
-    const auto& Vs        = reduced_local_ion_pot_values_[walker_index];
+    auto& Vs              = reduced_local_ion_pot_values_[walker_index];
     if (!input_.get_ion_points())
-      for (int i = 0; i < Ps.getTotalNum(); i++)
+    {
+      // If there are no potentials involving ions only Vs will be
+      // empty.
+      for (auto ion_value : Vs)
       {
         ed_values_(p_count, W) = weight;
         ed_values_(p_count, T) = 0.0;
-        if (Vs.size() > i)
-          ed_values_(p_count, V) = weight * Vs[i];
-        p_count++;
+        ed_values_(p_count, V) = weight * ion_value;
+        ++p_count;
       }
+    }
     else
-      for (int i = 0; i < Ps.getTotalNum(); i++)
+    {
+      int ion_index{0};
+      for (auto ion_value : Vs)
       {
-        ed_ion_values_(i, W) = weight;
-        ed_ion_values_(i, T) = 0.0;
-        ed_ion_values_(i, V) = weight * Vs[i];
+        ed_ion_values_(ion_index, W) = weight;
+        ed_ion_values_(ion_index, T) = 0.0;
+        ed_ion_values_(ion_index, V) = weight * ion_value;
+        ++ion_index;
       }
+    }
   }
   //Accumulate energy density in spacegrids
   //const auto& dtab(pset.getDistTableAB(dtable_index_));
@@ -295,6 +316,17 @@ void NEEnergyDensityEstimator::evaluate(ParticleSet& pset, const MCPWalker& walk
   {
     NESpaceGrid<Real>& sg = *(spacegrids_[i]);
     sg.accumulate(r_work_, ed_values_, particles_outside_); //, dtab);
+  }
+
+  if (pset_static_ && input_.get_ion_points())
+  {
+    //
+    fill(particles_outside_ions_.begin(), particles_outside_ions_.end(), true);
+    for (int i = 0; i < spacegrids_.size(); i++)
+    {
+      NESpaceGrid<Real>& sg = *(spacegrids_[i]);
+      sg.accumulate(r_ion_work_, ed_ion_values_, particles_outside_ions_);
+    }
   }
 
   //Accumulate energy density of particles outside any spacegrid
@@ -320,7 +352,7 @@ void NEEnergyDensityEstimator::evaluate(ParticleSet& pset, const MCPWalker& walk
         data_[bi] += ed_ion_values_(i, v);
       }
   }
-  nsamples_++;
+  ++nsamples_;
 }
 
 void NEEnergyDensityEstimator::collect(const RefVector<OperatorEstBase>& type_erased_operator_estimators)
@@ -348,15 +380,14 @@ void NEEnergyDensityEstimator::registerOperatorEstimator(hdf_archive& file)
 
   hdf_path path_variables = hdf_name / std::string_view("variables");
   file.push(path_variables, true);
-  file.write(const_cast<int&>(n_particles_), "nparticles");
+  file.write(n_particles_, "nparticles");
   auto nspacegrids = input_.get_space_grid_inputs().size();
   file.write(nspacegrids, "nspacegrids");
-  file.write(const_cast<int&>(nsamples_), "nsamples");
+  file.write(nsamples_, "nsamples");
 
   if (input_.get_ion_points())
   {
-    file.write(const_cast<int&>(n_ions_), "nions");
-    file.write(const_cast<Matrix<Real>&>(r_ion_work_), "ion_positions");
+    file.write(n_ions_, "nions");
   }
   file.pop();
 
@@ -387,6 +418,13 @@ void NEEnergyDensityEstimator::write(hdf_archive& file)
   file.pop();
 }
 
+void NEEnergyDensityEstimator::zero()
+{
+  for (auto& spacegrid : spacegrids_)
+    spacegrid->zero();
+  walkers_weight_ = 0;
+}
+
 std::unique_ptr<OperatorEstBase> NEEnergyDensityEstimator::spawnCrowdClone() const
 {
   auto spawn_data_locality = data_locality_;
@@ -399,6 +437,12 @@ std::unique_ptr<OperatorEstBase> NEEnergyDensityEstimator::spawnCrowdClone() con
 RefVector<NESpaceGrid<NEEnergyDensityEstimator::Real>> NEEnergyDensityEstimator::getSpaceGrids()
 {
   return convertUPtrToRefVector(spacegrids_);
+}
+
+void NEEnergyDensityEstimator::normalize(QMCT::RealType invTotWgt)
+{
+  for (auto& spacegrid : spacegrids_)
+    spacegrid->normalize(invTotWgt);
 }
 
 void NEEnergyDensityEstimator::startBlock(int steps) {}

@@ -74,7 +74,7 @@ class JeeIOrbitalSoA : public WaveFunctionComponent
   //YYYY
   std::map<FT*, int> J3UniqueIndex;
   ///optimizable variables extracted from functors
-  opt_variables_type myVars;
+  OptVariables myVars;
 
   /// the cutoff for e-I pairs
   std::vector<valT> Ion_cutoff;
@@ -324,7 +324,7 @@ public:
 
   /** check out optimizable variables
    */
-  void checkOutVariables(const opt_variables_type& active) override
+  void checkOutVariables(const OptVariables& active) override
   {
     myVars.clear();
 
@@ -495,20 +495,24 @@ public:
       auto iter       = std::find(elecs_inside(ig, jat).begin(), elecs_inside(ig, jat).end(), iat);
       auto iter_dist  = elecs_inside_dist(ig, jat).begin() + std::distance(elecs_inside(ig, jat).begin(), iter);
       auto iter_displ = elecs_inside_displ(ig, jat).begin() + std::distance(elecs_inside(ig, jat).begin(), iter);
-// sentinel code
-#ifndef NDEBUG
+      // If not found, segfault can happen later. Stop here.
       if (iter == elecs_inside(ig, jat).end())
       {
-        std::cerr << std::setprecision(std::numeric_limits<valT>::digits10 + 1) << "updating electron iat = " << iat
-                  << " near ion " << jat << " dist " << eI_table.getDistRow(iat)[jat] << std::endl;
-        throw std::runtime_error("BUG electron not found in elecs_inside");
+        std::ostringstream msg;
+        msg << "Report bug! Updating electron iat = " << iat << " near ion " << jat
+            << " distance = " << std::setprecision(std::numeric_limits<float>::digits10 + 1)
+            << eI_table.getDistRow(iat)[jat] << ". Failed to find it in elecs_inside!" << std::endl;
+        throw std::runtime_error(msg.str());
       }
-      else if (std::abs(eI_table.getDistRow(iat)[jat] - *iter_dist) >= std::numeric_limits<valT>::epsilon())
+#ifndef NDEBUG
+      else if (std::abs(eI_table.getDistRow(iat)[jat] - *iter_dist) >= 10 * std::numeric_limits<float>::epsilon())
       {
-        std::cerr << std::setprecision(std::numeric_limits<valT>::digits10 + 1) << "inconsistent electron iat = " << iat
-                  << " near ion " << jat << " dist " << eI_table.getDistRow(iat)[jat]
-                  << " stored value = " << *iter_dist << std::endl;
-        throw std::runtime_error("BUG eI distance stored value elecs_inside_dist not matching distance table");
+        std::ostringstream msg;
+        msg << "Report bug! Inconsistent electron iat = " << iat << " near ion " << jat << " dist "
+            << std::setprecision(std::numeric_limits<float>::digits10 + 1) << eI_table.getDistRow(iat)[jat]
+            << " stored value = " << *iter_dist
+            << ". eI distance stored value elecs_inside_dist does not match distance table!" << std::endl;
+        throw std::runtime_error(msg.str());
       }
 #endif
 
@@ -571,6 +575,18 @@ public:
           save_g[kel] += new_g[kel];
       }
     }
+  }
+
+  void mw_recompute(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                    const RefVectorWithLeader<ParticleSet>& p_list,
+                    const std::vector<bool>& recompute) const override
+  {
+    for (int iw = 0; iw < wfc_list.size(); iw++)
+      if (auto& jeei = wfc_list.getCastedElement<JeeIOrbitalSoA>(iw); recompute[iw])
+        jeei.recompute(p_list[iw]);
+      else
+        // distance values may change due to recomputing and thus bring internal data up-to-date
+        jeei.build_compact_list(p_list[iw]);
   }
 
   inline valT computeU(const ParticleSet& P,
@@ -830,7 +846,7 @@ public:
   }
 
   void evaluateDerivatives(ParticleSet& P,
-                           const opt_variables_type& optvars,
+                           const OptVariables& optvars,
                            Vector<ValueType>& dlogpsi,
                            Vector<ValueType>& dhpsioverpsi) override
   {
@@ -948,7 +964,7 @@ public:
     }
   }
 
-  void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& optvars, Vector<ValueType>& dlogpsi) override
+  void evaluateDerivativesWF(ParticleSet& P, const OptVariables& optvars, Vector<ValueType>& dlogpsi) override
   {
     resizeWFOptVectors();
 
@@ -1032,7 +1048,7 @@ public:
   }
 
   void evaluateDerivRatios(const VirtualParticleSet& VP,
-                           const opt_variables_type& optvars,
+                           const OptVariables& optvars,
                            std::vector<ValueType>& ratios,
                            Matrix<ValueType>& dratios) override
   {
@@ -1161,7 +1177,7 @@ public:
             }
           }
       }
-    return ion_deriv;;
+    return ion_deriv;
   }
 
   inline GradType evalGradSource(ParticleSet& P,
@@ -1269,7 +1285,7 @@ public:
             }
           }
       }
-    return ion_deriv;;
+    return ion_deriv;
   }
 };
 

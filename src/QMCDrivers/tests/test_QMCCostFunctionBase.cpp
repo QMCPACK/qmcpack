@@ -26,6 +26,9 @@ public:
       : QMCCostFunctionBase(w, psi, h, c)
   {}
 
+  void GradCost(std::vector<Return_rt>& PGradient, const std::vector<Return_rt>& PM, Return_rt FiniteDiff = 0) override
+  {}
+
   void resetPsi(bool final_reset = false) override {}
   Return_rt fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left, Matrix<Return_rt>& Right) override { return 0; }
   void getConfigurations(const std::string& aroot) override {}

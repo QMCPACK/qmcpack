@@ -13,7 +13,7 @@
 
 #ifndef QMCPLUSPLUS_SO_ECPOTENTIAL_COMPONENT_H
 #define QMCPLUSPLUS_SO_ECPOTENTIAL_COMPONENT_H
-#include "QMCHamiltonians/OperatorBase.h"
+
 #include "QMCHamiltonians/RandomRotationMatrix.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include <ResourceCollection.h>
@@ -78,7 +78,6 @@ private:
   //scratch spaces used by evaluateValueAndDerivative
   Matrix<ValueType> dratio_;
   Vector<ValueType> dlogpsi_vp_;
-  VirtualParticleSet* vp_;
   std::pair<SPOSet::ValueVector, SPOSet::ValueVector> spinor_multiplier_;
 
   //This builds the full quadrature grid for the Simpsons rule used for spin integrals as well as
@@ -115,7 +114,13 @@ public:
    *
    * @return RealType Contribution to $\frac{V\Psi_T}{\Psi_T}$ from ion iat and electron iel.
    */
-  RealType evaluateOne(ParticleSet& W, int iat, TrialWaveFunction& Psi, int iel, RealType r, const PosType& dr);
+  RealType evaluateOne(ParticleSet& W,
+                       const OptionalRef<VirtualParticleSet> vp,
+                       int iat,
+                       TrialWaveFunction& Psi,
+                       int iel,
+                       RealType r,
+                       const PosType& dr);
 
   RealType calculateProjector(RealType r, const PosType& dr, RealType sold);
 
@@ -123,6 +128,7 @@ public:
   void setupExactSpinProjector(RealType r, const PosType& dr, RealType sold);
 
   RealType evaluateOneExactSpinIntegration(ParticleSet& W,
+                                           VirtualParticleSet& vp,
                                            const int iat,
                                            const TrialWaveFunction& psi,
                                            const int iel,
@@ -131,6 +137,7 @@ public:
 
   static void mw_evaluateOne(const RefVectorWithLeader<SOECPComponent>& soecp_component_list,
                              const RefVectorWithLeader<ParticleSet>& p_list,
+                             const RefVectorWithLeader<VirtualParticleSet>& vp_list,
                              const RefVectorWithLeader<TrialWaveFunction>& psi_list,
                              const RefVector<const NLPPJob<RealType>>& joblist,
                              std::vector<RealType>& pairpots,
@@ -138,35 +145,35 @@ public:
 
   static void mw_evaluateOneExactSpinIntegration(const RefVectorWithLeader<SOECPComponent>& soecp_component_list,
                                                  const RefVectorWithLeader<ParticleSet>& p_list,
+                                                 const RefVectorWithLeader<VirtualParticleSet>& vp_list,
                                                  const RefVectorWithLeader<TrialWaveFunction>& psi_list,
                                                  const RefVector<const NLPPJob<RealType>>& joblist,
                                                  std::vector<RealType>& pairpots,
                                                  ResourceCollection& collection);
 
   RealType evaluateValueAndDerivatives(ParticleSet& P,
+                                       const OptionalRef<VirtualParticleSet> vp,
                                        int iat,
                                        TrialWaveFunction& psi,
                                        int iel,
                                        RealType r,
                                        const PosType& dr,
-                                       const opt_variables_type& optvars,
+                                       const OptVariables& optvars,
                                        const Vector<ValueType>& dlogpsi,
                                        Vector<ValueType>& dhpsioverpsi);
 
   RealType evaluateValueAndDerivativesExactSpinIntegration(ParticleSet& P,
+                                                           VirtualParticleSet& vp,
                                                            int iat,
                                                            TrialWaveFunction& psi,
                                                            int iel,
                                                            RealType r,
                                                            const PosType& dr,
-                                                           const opt_variables_type& optvars,
+                                                           const OptVariables& optvars,
                                                            const Vector<ValueType>& dlogpsi,
                                                            Vector<ValueType>& dhpsioverpsi);
 
   void print(std::ostream& os);
-
-  void initVirtualParticle(const ParticleSet& qp);
-  void deleteVirtualParticle();
 
   inline void setRmax(RealType rmax) { rmax_ = rmax; }
   inline RealType getRmax() const { return rmax_; }
@@ -174,8 +181,6 @@ public:
   inline int getLmax() const { return lmax_; }
   inline int getNknot() const { return nknot_; }
   inline int getSknot() const { return sknot_; }
-
-  const VirtualParticleSet* getVP() const { return vp_; };
 
   friend struct ECPComponentBuilder;
   friend void copyGridUnrotatedForTest(SOECPComponent& nlpp);

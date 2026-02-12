@@ -81,10 +81,8 @@ public:
     for (int i = 0; i < nparam; i++)
     {
       std::string varname = "var" + std::to_string(i);
-      costFn.OptVariables.insert(varname, 1.0);
+      costFn.opt_vars.insert(varname, 1.0);
     }
-
-    costFn.NumOptimizables = numParam;
 
     getRecordsOnNode().resize(numSamples, QMCCostFunctionBase::SUM_INDEX_SIZE);
     getDerivRecords().resize(numSamples, numParam);

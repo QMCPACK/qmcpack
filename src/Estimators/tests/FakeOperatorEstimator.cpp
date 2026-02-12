@@ -15,7 +15,8 @@
 namespace qmcplusplus
 {
 
-FakeOperatorEstimator::FakeOperatorEstimator(int num_ranks, DataLocality data_locality) : OperatorEstBase(data_locality)
+FakeOperatorEstimator::FakeOperatorEstimator(int num_ranks, DataLocality data_locality)
+    : OperatorEstBase(data_locality, "fake", "fake")
 {
   data_locality_ = data_locality;
   data_.resize(num_ranks * 10);

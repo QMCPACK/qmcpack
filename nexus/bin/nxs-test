@@ -17,13 +17,13 @@ if host_dir is not None:
 #end if
 
 # save nexus directories
-library_dir   = os.path.join(parent_dir,'lib')
-test_dir      = os.path.join(parent_dir,'tests')
-reference_dir = os.path.join(parent_dir,'tests/reference')
+library_dir   = parent_dir
+test_dir      = os.path.join(parent_dir,'nexus/tests')
+reference_dir = os.path.join(parent_dir,'nexus/tests/reference')
 example_dir   = os.path.join(parent_dir,'examples')
 
 # ensure that nxs-test executable is resident in a nexus directory tree
-dirs_check = ['examples','bin','lib','tests','tests/reference']
+dirs_check = ['examples','bin','nexus','nexus/tests','nexus/tests/reference']
 for d in dirs_check:
     pd = os.path.join(parent_dir,d)
     if not os.path.exists(pd):
@@ -35,14 +35,8 @@ for d in dirs_check:
 # enforce association between nxs-test executable and Nexus library
 sys.path.insert(0,library_dir)
 
-from generic import generic_settings,object_interface,NexusError
-
-generic_settings.raise_error = True
-
-
-
 # add unit test modules
-sys.path.append(os.path.abspath(os.path.join(__file__,'..','..','tests','unit')))
+#sys.path.append(os.path.realpath(os.path.join(__file__,'..','..','nexus','tests')))
 
 unit_test_module_lists = dict()
 unit_test_modules      = dict()
@@ -83,12 +77,6 @@ def import_from_unit_test_module(module_name,test_name):
     #end if
     return module[test_name]
 #end def import_from_unit_test_module
-
-
-# import core testing functions (shared between nxs-test and unit tests)
-from testing import *
-import testing as nexus_testing
-
 
 
 # exception indicating test failure
@@ -204,6 +192,7 @@ def nlabel(label):
 
 # divert nexus log output
 def nlog_divert():
+    from nexus.generic import generic_settings,object_interface
     logging_storage['devlog'] = generic_settings.devlog
     logging_storage['objlog'] = object_interface._logfile 
     logfile = FakeLog()
@@ -214,6 +203,7 @@ def nlog_divert():
 
 # restore nexus log output
 def nlog_restore():
+    from nexus.generic import generic_settings,object_interface
     generic_settings.devlog   = logging_storage['devlog']
     object_interface._logfile = logging_storage['devlog']
 #end def nlog_restore
@@ -340,7 +330,7 @@ def nassert(result):
 
 # run a unit test from an external file
 def nunit(test_name):
-    module_name = 'test_'+NexusTestBase.current_test.name
+    module_name = 'nexus.tests.test_'+NexusTestBase.current_test.name
     if not test_name.startswith('test_'):
         test_name = 'test_'+test_name
     #end if
@@ -353,7 +343,7 @@ def nunit(test_name):
 # run all uncalled unit tests from an external file
 def nunit_all():
     nexus_test = NexusTestBase.current_test
-    module_name = 'test_'+NexusTestBase.current_test.name
+    module_name = 'nexus.tests.test_'+NexusTestBase.current_test.name
     module = import_unit_test_module(module_name)
     load_external_unit_tests()
     uncalled_tests = sorted(nexus_test.unit_tests-nexus_test.unit_tests_called)
@@ -368,7 +358,7 @@ def nunit_all():
 def load_external_unit_tests():
     nexus_test = NexusTestBase.current_test
     if len(nexus_test.unit_tests)==0:
-        module_name = 'test_'+nexus_test.name
+        module_name = 'nexus.tests.test_'+nexus_test.name
         module = import_unit_test_module(module_name)
         nexus_test.unit_tests = set(module.keys())
     #end if
@@ -467,6 +457,8 @@ class NexusTest(NexusTestBase):
 
     # run the current test
     def run(self):
+        from nexus.testing import check_final_state
+
         nleave()
         NexusTestBase.current_test  = self
         NexusTestBase.current_label = ''
@@ -630,34 +622,6 @@ def memory():
 
 
 
-def plotting():
-    nunit('import')
-
-    nunit_all()
-#end def plotting
-
-
-
-def superstring():
-    nunit('imports')
-
-    nunit('string2val')
-
-    nunit('split_delims')
-
-    nunit('valid_variable_name')
-
-    nunit('find_matching_pair')
-
-    nunit('remove_pair_sections')
-
-    nunit('remove_empty_lines')
-
-    nunit_all()
-#end def superstring
-
-
-
 def generic_operation():
     nunit('logging')
 
@@ -674,6 +638,8 @@ def developer():
     nunit('import')
 
     nunit('unavailable')
+
+    nunit('valid_variable_name')
 
     nunit_all()
 #end def developer
@@ -815,6 +781,14 @@ def xmlreader():
     nunit('import')
 
     nunit('read')
+
+    nunit('parse_string')
+
+    nunit('find_pair')
+
+    nunit('remove_pair_sections')
+
+    nunit('remove_empty_lines')
 
     nunit_all()
 #end def xmlreader
@@ -1773,10 +1747,11 @@ user_examples_data = dict()
 
 def user_examples(label):
 
-    from pwscf_input import PwscfInput
-    from qmcpack_converters import Pw2qmcpackInput
-    from gamess_input import GamessInput
-    from qmcpack_input import QmcpackInput
+    from nexus.pwscf_input import PwscfInput
+    from nexus.qmcpack_converters import Pw2qmcpackInput
+    from nexus.gamess_input import GamessInput
+    from nexus.qmcpack_input import QmcpackInput
+    import nexus.testing as nexus_testing
 
     # load information for a single user example
     if label not in example_information:
@@ -1854,7 +1829,7 @@ def user_examples(label):
             input_class = input_classes[code]
             ref_input = input_class(ref_filepath)
             gen_input = input_class(gen_filepath)
-            diff,dgen,dref = object_diff(gen_input,ref_input,full=True)
+            diff,dgen,dref = nexus_testing.object_diff(gen_input,ref_input,full=True)
             if diff:
                 # assume failure
                 failed = True
@@ -1886,7 +1861,7 @@ def user_examples(label):
                     # store failing reference files
                     test_failures_file.write(ref_filepath+'\n')
                     # report on failures
-                    from generic import obj
+                    from nexus.generic import obj
                     dgen = obj(dgen)
                     dref = obj(dref)
                     msg = 'reference and generated input files differ\n'
@@ -1914,14 +1889,13 @@ def user_examples(label):
 NexusTest( versions                        )
 NexusTest( required_dependencies           )
 NexusTest( optional_dependencies           , optional=True)
+NexusTest( nexus_base                      )
 NexusTest( nexus_imports                   )
 NexusTest( testing                         )
 NexusTest( execute                         )
 NexusTest( memory                          )
-NexusTest( superstring                     )
 NexusTest( generic_operation               , 'generic' )
 NexusTest( developer                       )
-NexusTest( plotting                        )
 NexusTest( unit_converter                  )
 NexusTest( periodic_table                  )
 NexusTest( numerics                        )
@@ -1933,7 +1907,6 @@ NexusTest( structure                       )
 NexusTest( physical_system                 )
 NexusTest( basisset                        )
 NexusTest( pseudopotential                 )
-NexusTest( nexus_base                      )
 NexusTest( machines                        )
 NexusTest( simulation                      , 'simulation_module' )
 NexusTest( bundle                          )
@@ -1997,7 +1970,6 @@ NexusTest( qdens_radial                    )
 #NexusTest( optional_dependencies           , optional=True)
 #NexusTest( periodic_table                  )
 #NexusTest( physical_system                 )
-#NexusTest( plotting                        )
 #NexusTest( project_manager                 )
 #NexusTest( pseudopotential                 )
 #NexusTest( pwscf_analyzer                  )
@@ -2026,7 +1998,6 @@ NexusTest( qdens_radial                    )
 #NexusTest( settings_operation              , 'settings' )
 #NexusTest( simulation                      , 'simulation_module' )
 #NexusTest( structure                       )
-#NexusTest( superstring                     )
 #NexusTest( testing                         )
 #NexusTest( unit_converter                  )
 #NexusTest( vasp_analyzer                   )
@@ -2213,7 +2184,7 @@ def regenerate_reference(update=False):
 
 def find_nexus_modules():
     import sys
-    nexus_lib = os.path.abspath(os.path.join(__file__,'..','..','lib'))
+    nexus_lib = os.path.realpath(os.path.join(__file__,'..','..'))
     assert(os.path.exists(nexus_lib))
     sys.path.append(nexus_lib)
 #end def find_nexus_modules
@@ -2231,12 +2202,12 @@ try:
     #  (The executable should still work even if Nexus is not installed)
     find_nexus_modules()
 
-    versions = import_nexus_module('versions')
-    nexus_version = versions.nexus_version
-    del versions
+    nxs_ver_mod = import_nexus_module('nexus.nexus_version')
+    nexus_version = nxs_ver_mod.nexus_version
+    del nxs_ver_mod
 except:
     try:
-        from versions import nexus_version
+        from nexus.nexus_version import nexus_version
     except:
         nexus_version = 0,0,0
     #end try
@@ -2247,8 +2218,19 @@ except:
 if __name__=='__main__':
     import re
     from time import time # used to get user wall clock rather than cpu time
-
     tstart_all = time()
+
+    testing_wrong_nexus_install = False
+    try:
+        import nexus
+        nexus_file = os.path.realpath(os.path.join(nexus.__file__,'../..'))
+        test_file  = os.path.realpath(os.path.join(__file__,'../..'))
+        testing_wrong_nexus_install = nexus_file!=test_file
+    except:
+        pass
+    if testing_wrong_nexus_install:
+        print('\n\n\nInstalled Nexus package does not reside with this nxs-test executable.\n  Currently installed nexus package: {}\n  Correct Nexus package            : {}\n  Please install the correct Nexus package above.\n\n'.format(nexus_file,test_file))
+        sys.exit(1)
 
     # read command line input
     regex = None
@@ -2323,9 +2305,6 @@ if __name__=='__main__':
         print('\n'+parser.format_help().strip())
         exit()
     #end if
-
-    global_data['verbose']       = options.verbose
-    global_data['job_ref_table'] = options.job_ref_table
 
     if options.regex!='none':
         regex = options.regex
@@ -2403,6 +2382,31 @@ if __name__=='__main__':
     if options.pythonpath!='none':
         os.environ['PYTHONPATH']=options.pythonpath
     #end if
+    try:
+        from nexus.generic import generic_settings
+    except Exception as exception:
+        print("\n\n")
+        print(40*"!")
+        print(exception)
+        print(40*"!","\n\n")
+        print("Can not load nexus.generic, please check the offending modules!\n")
+        sys.exit(1)
+
+    generic_settings.raise_error    = True
+
+    # import core testing functions (shared between nxs-test and unit tests)
+    try:
+        from nexus.testing import global_data, numpy_available
+    except Exception as exception:
+        print("\n\n")
+        print(40*"!")
+        print(exception)
+        print(40*"!","\n\n")
+        print("Can not load nexus.testing, please check the offending modules!\n")
+        sys.exit(1)
+
+    global_data['verbose']       = options.verbose
+    global_data['job_ref_table'] = options.job_ref_table
 
     # guard against missing numpy (required)
     if len(tests)>0 and not numpy_available:

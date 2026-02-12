@@ -57,7 +57,6 @@ public:
   bool put(std::istream& is) override;
   bool put(xmlNodePtr cur) override;
   void reset() override;
-  static void test();
 
   static void make_seeds();
   static void make_children();

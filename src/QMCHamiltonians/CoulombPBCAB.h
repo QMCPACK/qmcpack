@@ -35,7 +35,7 @@ namespace qmcplusplus
  * Functionally identical to CoulombPBCAB but uses a templated version of
  * LRHandler.
  */
-class CoulombPBCAB : public OperatorBase, public ForceBase
+class CoulombPBCAB : public OperatorDependsOnlyOnParticleSet, public ForceBase
 {
 public:
   using LRHandlerType  = LRCoulombSingleton::LRHandlerType;
@@ -43,8 +43,8 @@ public:
   using RadFunctorType = LRCoulombSingleton::RadFunctorType;
   using mRealType      = LRHandlerType::mRealType;
 
-  ///long-range Handler. Should be const LRHandlerType eventually
-  std::shared_ptr<LRHandlerType> AB;
+  ///long-range Handler
+  std::shared_ptr<const LRHandlerType> AB;
   ///long-range derivative handler
   std::shared_ptr<const LRHandlerType> dAB;
   ///locator of the distance table
@@ -129,8 +129,6 @@ public:
 
   ~CoulombPBCAB() override;
 
-  void resetTargetParticleSet(ParticleSet& P) override;
-
   std::string getClassName() const override { return "CoulombPBCAB"; }
 
 #if !defined(REMOVE_TRACEMANAGER)
@@ -147,17 +145,10 @@ public:
    *  to registered listeners from Estimators.
    */
   void mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase>& o_list,
-                              const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                               const RefVectorWithLeader<ParticleSet>& p_list,
                               const std::vector<ListenerVector<RealType>>& listeners,
                               const std::vector<ListenerVector<RealType>>& ion_listeners) const override;
 
-
-  void mw_evaluatePerParticleWithToperator(const RefVectorWithLeader<OperatorBase>& o_list,
-                                           const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                           const RefVectorWithLeader<ParticleSet>& p_list,
-                                           const std::vector<ListenerVector<RealType>>& listeners,
-                                           const std::vector<ListenerVector<RealType>>& ion_listeners) const override;
 
   void evaluateIonDerivs(ParticleSet& P,
                          ParticleSet& ions,
@@ -174,7 +165,7 @@ public:
     return true;
   }
 
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) override;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp) override;
 
   ///Computes the short-range contribution to the coulomb energy.
   Return_t evalSR(ParticleSet& P);

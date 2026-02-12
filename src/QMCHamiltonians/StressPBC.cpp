@@ -36,7 +36,7 @@ StressPBC::StressPBC(ParticleSet& ions, ParticleSet& elns, TrialWaveFunction& Ps
       firstTimeStress(true)
 {
   ReportEngine PRE("StressPBC", "StressPBC");
-  name_  = "StressPBC";
+  name_   = "StressPBC";
   prefix_ = "StressPBC";
   //This sets up the long range breakups.
   initBreakup(PtclTarg);
@@ -44,6 +44,7 @@ StressPBC::StressPBC(ParticleSet& ions, ParticleSet& elns, TrialWaveFunction& Ps
   stress_ee_const = 0.0;
   if (firstTimeStress)
   { // calculate constants
+    ions.update();
     CalculateIonIonStress();
     firstTimeStress = false;
   }
@@ -173,13 +174,13 @@ SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evaluateLR_AA(ParticleSet& 
     for (int spec2 = spec1; spec2 < NumSpecies; spec2++)
     {
       SymTensor<RealType, OHMMS_DIM> temp =
-          AA->evaluateStress(P.getSimulationCell().getKLists().getKShell(), PtclRhoK.rhok_r[spec1], PtclRhoK.rhok_i[spec1],
-                             PtclRhoK.rhok_r[spec2], PtclRhoK.rhok_i[spec2]);
+          AA->evaluateStress(P.getSimulationCell().getKLists().getKShell(), PtclRhoK.rhok_r[spec1],
+                             PtclRhoK.rhok_i[spec1], PtclRhoK.rhok_r[spec2], PtclRhoK.rhok_i[spec2]);
       if (spec2 == spec1)
         temp *= 0.5;
       stress_aa += Z1 * Zmyspec[spec2] * temp;
     } //spec2
-  }   //spec1
+  } //spec1
 
   return stress_aa;
 }
@@ -259,7 +260,7 @@ SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evalConsts_AA(ParticleSet& 
   return tmpconsts;
 }
 
-StressPBC::Return_t StressPBC::evaluate(ParticleSet& P)
+StressPBC::Return_t StressPBC::evaluate(TrialWaveFunction& psi, ParticleSet& P)
 {
   const RealType vinv(-1.0 / P.getLattice().Volume);
   stress_     = 0.0;

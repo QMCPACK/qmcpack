@@ -28,17 +28,15 @@
 
 namespace qmcplusplus
 {
-MomentumEstimator::MomentumEstimator(ParticleSet& elns, TrialWaveFunction& psi)
-    : M(40), refPsi(psi), lattice_(elns.getLattice()), norm_nofK(1), hdf5_out(false)
+MomentumEstimator::MomentumEstimator(ParticleSet& elns)
+    : M(40), lattice_(elns.getLattice()), norm_nofK(1), hdf5_out(false)
 {
   update_mode_.set(COLLECTABLE, 1);
   psi_ratios.resize(elns.getTotalNum());
   twist = elns.getTwist();
 }
 
-void MomentumEstimator::resetTargetParticleSet(ParticleSet& P) {}
-
-MomentumEstimator::Return_t MomentumEstimator::evaluate(ParticleSet& P)
+MomentumEstimator::Return_t MomentumEstimator::evaluate(TrialWaveFunction& psi, ParticleSet& P)
 {
   const int np = P.getTotalNum();
   const int nk = kPoints.size();
@@ -50,7 +48,7 @@ MomentumEstimator::Return_t MomentumEstimator::evaluate(ParticleSet& P)
     //make it cartesian
     vPos[s] = lattice_.toCart(newpos);
     P.makeVirtualMoves(vPos[s]);
-    refPsi.evaluateRatiosAlltoOne(P, psi_ratios);
+    psi.evaluateRatiosAlltoOne(P, psi_ratios);
     for (int i = 0; i < np; ++i)
       psi_ratios_all[s][i] = psi_ratios[i];
 
@@ -425,7 +423,7 @@ bool MomentumEstimator::get(std::ostream& os) const { return true; }
 
 std::unique_ptr<OperatorBase> MomentumEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  std::unique_ptr<MomentumEstimator> myclone = std::make_unique<MomentumEstimator>(qp, psi);
+  std::unique_ptr<MomentumEstimator> myclone = std::make_unique<MomentumEstimator>(qp);
   myclone->resize(kPoints, M);
   myclone->my_index_ = my_index_;
   myclone->norm_nofK = norm_nofK;

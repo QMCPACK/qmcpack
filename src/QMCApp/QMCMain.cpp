@@ -99,7 +99,7 @@ QMCMain::QMCMain(Communicate* c)
       << "\n  Number of ranks in group  = " << myComm->size()
       << "\n  MPI ranks per node        = " << node_comm.size()
 #if defined(ENABLE_OFFLOAD) || defined(ENABLE_CUDA) || defined(ENABLE_ROCM) || defined(ENABLE_SYCL)
-      << "\n  Accelerators per node     = " << DeviceManager::getGlobal().getNumDevices()
+      << "\n  Accelerators per rank     = " << DeviceManager::getGlobal().getNumDevices()
 #endif
       << std::endl;
   // clang-format on
@@ -249,16 +249,6 @@ bool QMCMain::execute()
       qmc_common.qmc_counter = 0;
       executeLoop(cur);
       qmc_common.qmc_counter = 0;
-    }
-    else if (cname == "cmc")
-    {
-      executeCMCSection(cur);
-    }
-    else if (cname == "debug")
-    {
-      executeDebugSection(cur);
-      app_log() << "  Debug is done. Skip the rest of the input " << std::endl;
-      break;
     }
   }
   // free if m_qmcation owns the memory of xmlNodePtr before clearing
@@ -666,92 +656,18 @@ bool QMCMain::setMCWalkers(xmlXPathContextPtr context_)
   return true;
 }
 
-bool QMCMain::executeDebugSection(xmlNodePtr cur)
-{
-  app_log() << "QMCMain::executeDebugSection " << std::endl;
-  app_log() << "  Use this to debug new features with <debug/> in the input file " << std::endl;
-
-  return true;
-}
-
 bool QMCMain::executeQMCSection(xmlNodePtr cur, bool reuse)
 {
   std::string target("e");
   std::string random_test("no");
   OhmmsAttributeSet a;
   a.add(target, "target");
-  a.add(random_test, "testrng");
   a.put(cur);
-  if (random_test == "yes")
-    RandomNumberControl::test();
   if (qmc_system_ == nullptr)
     qmc_system_ = particle_set_pool_->getWalkerSet(target);
   bool success = runQMC(cur, reuse);
   first_qmc_   = false;
   return success;
 }
-
-bool QMCMain::executeCMCSection(xmlNodePtr cur)
-{
-  bool success = true;
-  std::string target("ion0");
-  OhmmsAttributeSet a;
-  a.add(target, "target");
-  a.put(cur);
-
-  MCWalkerConfiguration* ions   = particle_set_pool_->getWalkerSet(target);
-  TrialWaveFunction* primaryPsi = psi_pool_->getPrimary();
-  QMCHamiltonian* primaryH      = ham_pool_->getPrimary();
-
-  app_log() << "QMCMain::executeCMCSection moving " << target << " by dummy move." << std::endl;
-
-  int nat = ions->getTotalNum();
-  ParticleSet::ParticlePos deltaR(nat);
-
-  makeGaussRandomWithEngine(deltaR, Random); //generate random displacement
-  qmc_system_->update();
-
-  double logpsi1 = primaryPsi->evaluateLog(*qmc_system_);
-  std::cout << "logpsi1 " << logpsi1 << std::endl;
-
-  double eloc1 = primaryH->evaluate(*qmc_system_);
-  std::cout << "Local Energy " << eloc1 << std::endl;
-
-  for (int i = 0; i < primaryH->sizeOfObservables(); i++)
-    app_log() << "  HamTest " << primaryH->getObservableName(i) << " " << primaryH->getObservable(i) << std::endl;
-
-  for (int iat = 0; iat < nat; ++iat)
-  {
-    ions->R[iat] += deltaR[iat];
-
-    ions->update(); //update position and distance table of itself
-    primaryH->updateSource(*ions);
-
-    qmc_system_->update();
-    double logpsi2 = primaryPsi->evaluateLog(*qmc_system_);
-    double eloc2   = primaryH->evaluate(*qmc_system_);
-
-    std::cout << "\nION " << iat << " " << ions->R[iat] << std::endl;
-    std::cout << "logpsi " << logpsi2 << std::endl;
-    std::cout << "Local Energy " << eloc2 << std::endl;
-    for (int i = 0; i < primaryH->sizeOfObservables(); i++)
-      app_log() << "  HamTest " << primaryH->getObservableName(i) << " " << primaryH->getObservable(i) << std::endl;
-
-    ions->R[iat] -= deltaR[iat];
-    ions->update(); //update position and distance table of itself
-    primaryH->updateSource(*ions);
-
-    qmc_system_->update();
-    double logpsi3 = primaryPsi->evaluateLog(*qmc_system_);
-    double eloc3   = primaryH->evaluate(*qmc_system_);
-
-    if (std::abs(eloc1 - eloc3) > 1e-12)
-    {
-      std::cout << "ERROR Energies are different " << std::endl;
-    }
-  }
-  return success;
-}
-
 
 } // namespace qmcplusplus

@@ -17,6 +17,7 @@
 #include "ValidSpinDensityInput.h"
 #include "ValidMomentumDistributionInput.h"
 #include "ValidScalarEstimatorInput.h"
+#include "tests/ValidStructureFactorInput.h"
 
 namespace qmcplusplus
 {
@@ -37,6 +38,22 @@ Libxml2Document createEstimatorManagerNewGlobalInputXML()
     estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
   }
 
+  return estimators_doc;
+}
+
+Libxml2Document createEstimatorNewGlobalOperatorEstInputXML()
+{
+  const int max_node_recurse = 3;
+  Libxml2Document estimators_doc;
+  estimators_doc.newDoc("Estimators");
+  {
+    using Input = testing::ValidStructureFactorInput;
+    Libxml2Document doc;
+    bool okay = doc.parseFromString(Input::getXml(Input::valid::SKALL));
+    REQUIRE(okay);
+    xmlNodePtr node = doc.getRoot();
+    estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
+  }
   return estimators_doc;
 }
 
@@ -64,6 +81,14 @@ Libxml2Document createEstimatorManagerNewInputXML()
     using Input = testing::EnergyDensityInputs;
     Libxml2Document doc;
     bool okay = doc.parseFromString(Input::getXml(Input::valid::CELL));
+    REQUIRE(okay);
+    xmlNodePtr node = doc.getRoot();
+    estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
+  }
+  {
+    using Input = testing::ValidStructureFactorInput;
+    Libxml2Document doc;
+    bool okay = doc.parseFromString(Input::getXml(Input::valid::SKALL));
     REQUIRE(okay);
     xmlNodePtr node = doc.getRoot();
     estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));

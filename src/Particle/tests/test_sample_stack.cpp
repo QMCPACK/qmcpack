@@ -30,11 +30,9 @@ TEST_CASE("SampleStack", "[particle]")
   const int total_num = 2; // number of particles
 
   // reserve storage
-  int nranks = 2;
-  samples.setMaxSamples(8, nranks);
+  samples.setMaxSamples(8);
   REQUIRE(samples.getMaxSamples() == 8);
   REQUIRE(samples.getNumSamples() == 0);
-  REQUIRE(samples.getGlobalNumSamples() == 16);
 
   // increase storage
   samples.setMaxSamples(10);

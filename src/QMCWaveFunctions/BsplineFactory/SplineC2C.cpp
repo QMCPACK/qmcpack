@@ -157,6 +157,8 @@ void SplineC2C<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_co
         spl_coefs[cur_elem + 1] = newval_i;
       }
   }
+  // update coefficients on GPU from host
+  SplineInst->finalize();
 }
 
 template<typename ST>

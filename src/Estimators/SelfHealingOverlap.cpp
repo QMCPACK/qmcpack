@@ -20,7 +20,7 @@
 namespace qmcplusplus
 {
 SelfHealingOverlap::SelfHealingOverlap(SelfHealingOverlapInput&& inp_, const TrialWaveFunction& wfn, DataLocality dl)
-    : OperatorEstBase(dl),
+    : OperatorEstBase(dl, inp_.get_name(), inp_.get_type()),
       input_(std::move(inp_)),
       wf_type(no_wf),
       use_param_deriv(input_.input_section_.get<bool>("param_deriv"))

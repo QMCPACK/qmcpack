@@ -17,9 +17,9 @@ def get_last_sk(fdat,fh5):
   """
 
   # get S(k) from scalar.dat
-  df = read(fdat)
-  sk_cols = [col for col in df.columns if col.startswith('sk')]
-  myy = df[sk_cols[-1]].values
+  data = read(fdat)
+  sk_cols = [col for col in list(data.keys()) if col.startswith('sk')]
+  myy = np.array(data[sk_cols[-1]], dtype=np.float64)
 
   # get S(k) from stat.h5
   fp = h5py.File(fh5, 'r')

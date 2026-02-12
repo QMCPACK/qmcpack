@@ -54,7 +54,7 @@ bool HarmonicExternalPotential::get(std::ostream& os) const
 }
 
 
-std::unique_ptr<OperatorBase> HarmonicExternalPotential::makeClone(ParticleSet& P, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> HarmonicExternalPotential::makeClone(ParticleSet& P)
 {
   return std::make_unique<HarmonicExternalPotential>(*this);
 }
