@@ -957,7 +957,7 @@ class QIxml(Names):
             #    self.error(msg,'QmcpackInput',exit=exit,trace=exit)
             ##end if
 
-            print(obj(dict(self.__class__.__dict__)))
+            #print(obj(dict(self.__class__.__dict__)))
 
             self.error(msg,'QmcpackInput',exit=exit,trace=exit)
         #end if
@@ -1897,6 +1897,15 @@ sposet_builder = QIxmlFactory(
     typekey = 'type'
     )
 
+sposet_collection = QIxmlFactory(
+    name    = 'sposet_collection',
+    types   = dict(bspline=bspline_builder,
+                   einspline=bspline_builder,
+                   heg=heg_builder,
+                   composite=composite_builder,
+                   molecularorbital = molecular_orbital_builder),
+    typekey = 'type'
+    )
 
 
 class wavefunction(QIxml):
@@ -1904,7 +1913,7 @@ class wavefunction(QIxml):
     attributes = ['name','target','id','ref']+['info','type']
     #            afqmc
     parameters = ['filetype','filename','cutoff']
-    elements   = ['sposet_builder','determinantset','jastrow','override_variational_parameters']
+    elements   = ['sposet_builder','determinantset','jastrow','override_variational_parameters','sposet_collection']
     identifier = 'name','id'
 #end class wavefunction
 
@@ -2762,15 +2771,16 @@ classes = [   #standard classes
     afqmcinfo,walkerset,propagator,execute,back_propagation,onerdm
     ]
 types = dict( #simple types and factories
-    #host           = param,
-    #date           = param,
-    #user           = param,
-    pairpot        = pairpot,
-    estimator      = estimator,
-    sposet_builder = sposet_builder,
-    jastrow        = jastrow,
-    qmc            = qmc,
-    optimizer      = optimizer,
+    #host              = param,
+    #date              = param,
+    #user              = param,
+    pairpot           = pairpot,
+    estimator         = estimator,
+    sposet_builder    = sposet_builder,
+    sposet_collection = sposet_collection,
+    jastrow           = jastrow,
+    qmc               = qmc,
+    optimizer         = optimizer,
     )
 plurals = obj(
     particlesets    = 'particleset',

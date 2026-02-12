@@ -33,7 +33,7 @@ TEST_CASE("CompositeSPO::diamond_1x1x1", "[wavefunction")
   auto wavefunction_pool =
       MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
   auto& pset = *particle_pool.getParticleSet("e");
-  auto& twf  = *wavefunction_pool.getWaveFunction("wavefunction");
+  auto& twf  = *wavefunction_pool.getWaveFunction();
 
   CompositeSPOSet<SPOSet::ValueType> comp_sposet("one_composite_set");
 

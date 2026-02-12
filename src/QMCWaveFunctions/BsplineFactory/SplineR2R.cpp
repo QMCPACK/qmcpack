@@ -341,8 +341,7 @@ void SplineR2R<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_
   {
     ScopedTimer offload(offload_timer_);
     PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*mw_nVP) \
-                map(always, to: buffer_H2D_ptr[0:det_ratios_buffer_H2D.size()]) \
-                map(always, from: ratios_private_ptr[0:NumTeams*mw_nVP])")
+                    map(always, to: buffer_H2D_ptr[0:det_ratios_buffer_H2D.size()])")
     for (int iat = 0; iat < mw_nVP; iat++)
       for (int team_id = 0; team_id < NumTeams; team_id++)
       {
@@ -350,9 +349,7 @@ void SplineR2R<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_
         const size_t last  = omptarget::min(first + ChunkSizePerTeam, spline_padded_size);
 
         auto* restrict offload_scratch_iat_ptr = offload_scratch_ptr + spline_padded_size * iat;
-        auto* ref_id_ptr = reinterpret_cast<int*>(buffer_H2D_ptr + nw * sizeof(ValueType*) + mw_nVP * 4 * sizeof(ST));
-        auto* restrict psiinv_ptr  = reinterpret_cast<const ValueType**>(buffer_H2D_ptr)[ref_id_ptr[iat]];
-        auto* restrict pos_scratch = reinterpret_cast<ST*>(buffer_H2D_ptr + nw * sizeof(ValueType*));
+        auto* restrict pos_scratch             = reinterpret_cast<ST*>(buffer_H2D_ptr + nw * sizeof(ValueType*));
 
         int ix, iy, iz;
         ST a[4], b[4], c[4];
@@ -363,9 +360,25 @@ void SplineR2R<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_
         for (int index = 0; index < last - first; index++)
           spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, first + index, a, b, c,
                                              offload_scratch_iat_ptr + first + index);
+      }
+
+    PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*mw_nVP) \
+                    map(always, from: ratios_private_ptr[0:NumTeams*mw_nVP])")
+    for (int iat = 0; iat < mw_nVP; iat++)
+      for (int team_id = 0; team_id < NumTeams; team_id++)
+      {
+        const size_t first       = ChunkSizePerTeam * team_id;
+        const size_t last        = omptarget::min(first + ChunkSizePerTeam, spline_padded_size);
+        const size_t reduce_last = omptarget::min(last, static_cast<size_t>(requested_orb_size));
+
+        auto* restrict offload_scratch_iat_ptr = offload_scratch_ptr + spline_padded_size * iat;
+        auto* ref_id_ptr = reinterpret_cast<int*>(buffer_H2D_ptr + nw * sizeof(ValueType*) + mw_nVP * 4 * sizeof(ST));
+        auto* restrict psiinv_ptr  = reinterpret_cast<const ValueType**>(buffer_H2D_ptr)[ref_id_ptr[iat]];
+        auto* restrict pos_scratch = reinterpret_cast<ST*>(buffer_H2D_ptr + nw * sizeof(ValueType*));
+
         ValueType sum(0);
-        PRAGMA_OFFLOAD("omp parallel for simd reduction(+:sum)")
-        for (int index = first; index < requested_orb_size; index++)
+        PRAGMA_OFFLOAD("omp parallel for reduction(+:sum)")
+        for (int index = first; index < reduce_last; index++)
         {
           sum += psiinv_ptr[index] * offload_scratch_iat_ptr[spline_padded_size * SoAFields3D::VAL + index] *
               pos_scratch[iat * 4];
@@ -538,8 +551,7 @@ void SplineR2R<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPO
   {
     ScopedTimer offload(offload_timer_);
     PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*num_pos) \
-                    map(always, to: buffer_H2D_ptr[:buffer_H2D.size()]) \
-                    map(always, from: rg_private_ptr[0:rg_private.size()])")
+                    map(always, to: buffer_H2D_ptr[:buffer_H2D.size()])")
     for (int iw = 0; iw < num_pos; iw++)
       for (int team_id = 0; team_id < NumTeams; team_id++)
       {
@@ -548,50 +560,63 @@ void SplineR2R<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPO
 
         auto* restrict offload_scratch_iw_ptr = offload_scratch_ptr + spline_padded_size * iw * SoAFields3D::NUM_FIELDS;
         const auto* restrict pos_iw_ptr       = reinterpret_cast<ST*>(buffer_H2D_ptr + buffer_H2D_stride * iw);
-        const auto* restrict invRow_iw_ptr =
-            *reinterpret_cast<ValueType**>(buffer_H2D_ptr + buffer_H2D_stride * iw + sizeof(ST) * 4);
-
         int ix, iy, iz;
         ST a[4], b[4], c[4], da[4], db[4], dc[4], d2a[4], d2b[4], d2c[4];
         spline2::computeLocationAndFractional(spline_ptr, pos_iw_ptr[1], pos_iw_ptr[2], pos_iw_ptr[3], ix, iy, iz, a, b,
                                               c, da, db, dc, d2a, d2b, d2c);
-
-        const ST G[9]      = {PrimLattice_G_ptr[0], PrimLattice_G_ptr[1], PrimLattice_G_ptr[2],
-                              PrimLattice_G_ptr[3], PrimLattice_G_ptr[4], PrimLattice_G_ptr[5],
-                              PrimLattice_G_ptr[6], PrimLattice_G_ptr[7], PrimLattice_G_ptr[8]};
-        const ST symGGt[6] = {GGt_ptr[0], GGt_ptr[1] + GGt_ptr[3], GGt_ptr[2] + GGt_ptr[6],
-                              GGt_ptr[4], GGt_ptr[5] + GGt_ptr[7], GGt_ptr[8]};
 
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = 0; index < last - first; index++)
         {
           spline2offload::evaluate_vgh_impl_v2(spline_ptr, ix, iy, iz, first + index, a, b, c, da, db, dc, d2a, d2b,
                                                d2c, offload_scratch_iw_ptr + first + index, spline_padded_size);
-          const int output_index = first + index;
-          offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::LAPL + output_index] =
-              SymTrace(offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::HESS00 + output_index],
-                       offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::HESS01 + output_index],
-                       offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::HESS02 + output_index],
-                       offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::HESS11 + output_index],
-                       offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::HESS12 + output_index],
-                       offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::HESS22 + output_index], symGGt);
         }
+      }
+
+    PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*num_pos) \
+                    map(always, to: buffer_H2D_ptr[:buffer_H2D.size()]) \
+                    map(always, from: rg_private_ptr[:NumTeams*num_pos*4])")
+    for (int iw = 0; iw < num_pos; iw++)
+      for (int team_id = 0; team_id < NumTeams; team_id++)
+      {
+        const size_t first       = ChunkSizePerTeam * team_id;
+        const size_t last        = omptarget::min(first + ChunkSizePerTeam, spline_padded_size);
+        const size_t reduce_last = omptarget::min(last, static_cast<size_t>(requested_orb_size));
+
+        auto* restrict offload_scratch_iw_ptr = offload_scratch_ptr + spline_padded_size * iw * SoAFields3D::NUM_FIELDS;
+        const auto* restrict pos_iw_ptr       = reinterpret_cast<ST*>(buffer_H2D_ptr + buffer_H2D_stride * iw);
+        const auto* restrict invRow_iw_ptr =
+            *reinterpret_cast<ValueType**>(buffer_H2D_ptr + buffer_H2D_stride * iw + sizeof(ST) * 4);
+        const ST G[9]      = {PrimLattice_G_ptr[0], PrimLattice_G_ptr[1], PrimLattice_G_ptr[2],
+                              PrimLattice_G_ptr[3], PrimLattice_G_ptr[4], PrimLattice_G_ptr[5],
+                              PrimLattice_G_ptr[6], PrimLattice_G_ptr[7], PrimLattice_G_ptr[8]};
+        const ST symGGt[6] = {GGt_ptr[0], GGt_ptr[1] + GGt_ptr[3], GGt_ptr[2] + GGt_ptr[6],
+                              GGt_ptr[4], GGt_ptr[5] + GGt_ptr[7], GGt_ptr[8]};
+
+        const ST* restrict val = offload_scratch_iw_ptr + spline_padded_size * SoAFields3D::VAL;
+        const ST* restrict g0  = offload_scratch_iw_ptr + spline_padded_size * SoAFields3D::GRAD0;
+        const ST* restrict g1  = offload_scratch_iw_ptr + spline_padded_size * SoAFields3D::GRAD1;
+        const ST* restrict g2  = offload_scratch_iw_ptr + spline_padded_size * SoAFields3D::GRAD2;
+        const ST* restrict h00 = offload_scratch_iw_ptr + spline_padded_size * SoAFields3D::HESS00;
+        const ST* restrict h01 = offload_scratch_iw_ptr + spline_padded_size * SoAFields3D::HESS01;
+        const ST* restrict h02 = offload_scratch_iw_ptr + spline_padded_size * SoAFields3D::HESS02;
+        const ST* restrict h11 = offload_scratch_iw_ptr + spline_padded_size * SoAFields3D::HESS11;
+        const ST* restrict h12 = offload_scratch_iw_ptr + spline_padded_size * SoAFields3D::HESS12;
+        const ST* restrict h22 = offload_scratch_iw_ptr + spline_padded_size * SoAFields3D::HESS22;
+
+        ST* restrict lcart = offload_scratch_iw_ptr + spline_padded_size * SoAFields3D::LAPL;
+
+        ValueType* restrict out_phi    = phi_vgl_ptr + iw * requested_orb_size;
+        ValueType* restrict out_dphi_x = out_phi + phi_vgl_stride;
+        ValueType* restrict out_dphi_y = out_dphi_x + phi_vgl_stride;
+        ValueType* restrict out_dphi_z = out_dphi_y + phi_vgl_stride;
+        ValueType* restrict out_d2phi  = out_dphi_z + phi_vgl_stride;
 
         ValueType ratio(0), grad_x(0), grad_y(0), grad_z(0);
         PRAGMA_OFFLOAD("omp parallel for reduction(+: ratio, grad_x, grad_y, grad_z)")
-        for (int index = first; index < requested_orb_size; index++)
+        for (int index = first; index < reduce_last; index++)
         {
-          const ST* restrict val   = offload_scratch_iw_ptr + spline_padded_size * SoAFields3D::VAL;
-          const ST* restrict g0    = offload_scratch_iw_ptr + spline_padded_size * SoAFields3D::GRAD0;
-          const ST* restrict g1    = offload_scratch_iw_ptr + spline_padded_size * SoAFields3D::GRAD1;
-          const ST* restrict g2    = offload_scratch_iw_ptr + spline_padded_size * SoAFields3D::GRAD2;
-          const ST* restrict lcart = offload_scratch_iw_ptr + spline_padded_size * SoAFields3D::LAPL;
-
-          ValueType* restrict out_phi    = phi_vgl_ptr + iw * requested_orb_size;
-          ValueType* restrict out_dphi_x = out_phi + phi_vgl_stride;
-          ValueType* restrict out_dphi_y = out_dphi_x + phi_vgl_stride;
-          ValueType* restrict out_dphi_z = out_dphi_y + phi_vgl_stride;
-          ValueType* restrict out_d2phi  = out_dphi_z + phi_vgl_stride;
+          lcart[index] = SymTrace(h00[index], h01[index], h02[index], h11[index], h12[index], h22[index], symGGt);
 
           const size_t psiIndex = first_spo_local + index;
           out_phi[psiIndex]     = pos_iw_ptr[0] * val[index];
