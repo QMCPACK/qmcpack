@@ -2,7 +2,11 @@
 
 Notable changes to QMCPACK are documented in this file.
 
-## [Unreleased]
+## [4.2.0] - 2026-02-12
+
+This release is recommended for all users and includes several new features, improved GPU support, a broad range of other useful
+improvements, and compatibility and bug fixes. NEXUS also receives significant updates including a packaging update to make it
+function as a conventional Python package (requiring an update PYTHONPATH).
 
 * Upcoming breaking change: Classic/non-batched drivers will be removed in a future release. See
   https://qmcpack.readthedocs.io/en/develop/performance_portable.html for instructions on using the batched/performance portable drivers.
@@ -47,7 +51,7 @@ Notable changes to QMCPACK are documented in this file.
 * The energy density estimator is incorrect [#5468](https://github.com/QMCPACK/qmcpack/issues/5468)
 * AFQMC utilities and converters are not compatible with modern PySCF [#4653](https://github.com/QMCPACK/qmcpack/issues/4653)
 
-### NEXUS
+### NEXUS [2.2.0]
 
 * Refactored so that it can be used as a conventional Python package. PYTHONPATH should now point to the topmost nexus directory,
   not nexus/lib. Modules and methods can now be accessed using the syntax nexus.<module>.s or function>
