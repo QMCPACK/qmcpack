@@ -21,6 +21,7 @@
 #include "Message/MPIObjectBase.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
 #include "Utilities/RuntimeOptions.h"
+#include "Utilities/ObjectPool.h"
 #include <map>
 #include <string>
 
@@ -29,21 +30,20 @@ namespace qmcplusplus
 class ParticleSetPool;
 class ParticleSet;
 
+extern template class ObjectPool<TrialWaveFunction>;
+
 /** @ingroup qmcapp
  * @brief Manage a collection of TrialWaveFunction objects
  *
  * This object handles \<wavefunction\> elements and
  * functions as a builder class for TrialWaveFunction objects.
  */
-class WaveFunctionPool : public MPIObjectBase
+class WaveFunctionPool : public MPIObjectBase, public ObjectPool<TrialWaveFunction>
 {
 public:
-  using PoolType = std::map<std::string, const std::unique_ptr<TrialWaveFunction>>;
+  using PoolType = typename ObjectPool<TrialWaveFunction>::Pool;
 
-  WaveFunctionPool(const RuntimeOptions& runtime_options,
-                   ParticleSetPool& pset_pool,
-                   Communicate* c,
-                   const char* aname = "wavefunction");
+  WaveFunctionPool(const RuntimeOptions& runtime_options, ParticleSetPool& pset_pool, Communicate* c);
   WaveFunctionPool(const WaveFunctionPool&)            = delete;
   WaveFunctionPool& operator=(const WaveFunctionPool&) = delete;
   WaveFunctionPool(WaveFunctionPool&&)                 = default;
@@ -53,22 +53,14 @@ public:
 
   bool put(xmlNodePtr cur);
 
-  inline bool empty() const { return myPool.empty(); }
-
   TrialWaveFunction* getPrimary() { return primary_psi_; }
 
-  TrialWaveFunction* getWaveFunction(const std::string& pname)
-  {
-    if (auto pit(myPool.find(pname)); pit == myPool.end())
-    {
-      if (myPool.empty())
-        return nullptr;
-      else
-        return myPool.begin()->second.get();
-    }
-    else
-      return pit->second.get();
-  }
+  /** look up wavefunction by name
+   * @param pname wavefunction name to look up
+   * if pname is empty and the pool contains one entry, return the only entry
+   * if pname is not empty and not found in the pool, throw error
+   */
+  TrialWaveFunction* getWaveFunction(const std::string& pname = "");
 
   /** return a xmlNode containing Jastrow
    * @param id name of the wave function
@@ -91,9 +83,6 @@ private:
 
   /// pointer to the primary TrialWaveFunction
   TrialWaveFunction* primary_psi_;
-
-  /// storage of WaveFunctionFactory
-  PoolType myPool;
 
   /** pointer to ParticleSetPool
    *
