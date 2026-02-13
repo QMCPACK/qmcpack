@@ -135,7 +135,7 @@ TEST_CASE("StructureFactorEstimator::Accumulate", "[estimators]")
       MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
   auto& spomap = wavefunction_pool.getWaveFunction()->getSPOMap();
 
-  auto& trial_wavefunction = *(wavefunction_pool.getPrimary());
+  auto& trial_wavefunction = *(wavefunction_pool.getWaveFunction());
   std::vector<UPtr<TrialWaveFunction>> twfcs(nwalkers);
   for (int iw = 0; iw < nwalkers; ++iw)
     twfcs[iw] = trial_wavefunction.makeClone(psets[iw]);

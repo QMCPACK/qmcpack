@@ -27,22 +27,19 @@ namespace qmcplusplus
 template class ObjectPool<TrialWaveFunction>;
 
 WaveFunctionPool::WaveFunctionPool(const RuntimeOptions& runtime_options, ParticleSetPool& pset_pool, Communicate* c)
-    : MPIObjectBase(c),
-      ObjectPool("wavefunction"),
-      runtime_options_(runtime_options),
-      primary_psi_(nullptr),
-      ptcl_pool_(pset_pool)
+    : MPIObjectBase(c), ObjectPool("wavefunction"), runtime_options_(runtime_options), ptcl_pool_(pset_pool)
 {}
 
 WaveFunctionPool::~WaveFunctionPool() = default;
 
 bool WaveFunctionPool::put(xmlNodePtr cur)
 {
-  std::string target("e"), role("extra");
+  std::string target("e"), psi_name("psi0");
   OhmmsAttributeSet pAttrib;
   pAttrib.add(target, "target");
   pAttrib.add(target, "ref");
-  pAttrib.add(role, "role");
+  pAttrib.add(psi_name, "id");
+  pAttrib.add(psi_name, "name");
   pAttrib.put(cur);
 
   ParticleSet* qp = ptcl_pool_.getParticleSet(target);
@@ -50,22 +47,15 @@ bool WaveFunctionPool::put(xmlNodePtr cur)
   if (qp == nullptr)
     myComm->barrier_and_abort("target particle set named '" + target + "' not found");
 
+  if (contains(psi_name))
+    throw UniformCommunicateError("\"" + psi_name +
+                                  "\" already exists in the wavefunction pool. Please rename this wavefunction node.");
+
   WaveFunctionFactory psiFactory(*qp, ptcl_pool_.getPool(), myComm);
-  auto psi = psiFactory.buildTWF(cur, runtime_options_);
-  addFactory(std::move(psi), empty() || role == "primary");
-  return true;
-}
-
-void WaveFunctionPool::addFactory(std::unique_ptr<TrialWaveFunction> psi, bool primary)
-{
-  if (contains(psi->getName()))
-    throw UniformCommunicateError("wavefunction " + psi->getName() + " exists. Cannot be added to the pool.");
-
-  app_log() << "  Adding " << psi->getName() << " TrialWaveFunction to the pool" << std::endl;
-
-  if (primary)
-    primary_psi_ = psi.get();
+  auto psi = psiFactory.buildTWF(cur, runtime_options_, psi_name);
   add(psi->getName(), std::move(psi));
+  app_log() << "  Added \"" << psi_name << "\" to the wavefunction pool" << std::endl;
+  return true;
 }
 
 TrialWaveFunction* WaveFunctionPool::getWaveFunction(const std::string& pname)
@@ -80,8 +70,5 @@ TrialWaveFunction* WaveFunctionPool::getWaveFunction(const std::string& pname)
   }
 }
 
-xmlNodePtr WaveFunctionPool::getWaveFunctionNode(const std::string& id)
-{
-  return getWaveFunction(id)->getNode();
-}
+xmlNodePtr WaveFunctionPool::getWaveFunctionNode(const std::string& id) { return getWaveFunction(id)->getNode(); }
 } // namespace qmcplusplus

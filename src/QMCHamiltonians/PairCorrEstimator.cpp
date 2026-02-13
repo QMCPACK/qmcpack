@@ -322,7 +322,7 @@ bool PairCorrEstimator::get(std::ostream& os) const
   return true;
 }
 
-std::unique_ptr<OperatorBase> PairCorrEstimator::makeClone(ParticleSet& P)
+std::unique_ptr<OperatorBase> PairCorrEstimator::makeClone(ParticleSet& P) const
 {
   //default constructor is sufficient
   return std::make_unique<PairCorrEstimator>(*this);

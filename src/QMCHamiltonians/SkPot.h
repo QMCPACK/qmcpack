@@ -35,7 +35,7 @@ public:
 
   bool put(xmlNodePtr cur) override;
   bool get(std::ostream& os) const override;
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& P) final;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& P) const final;
 
   inline void FillFk()
   {

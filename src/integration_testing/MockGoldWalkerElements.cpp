@@ -24,7 +24,7 @@ MockGoldWalkerElements::MockGoldWalkerElements(Communicate* comm,
       pset_ions(*(particle_pool.getParticleSet("ion"))),
       wavefunction_pool(wavefunction_pool_fac_func(runtime_opt, comm, particle_pool)),
       hamiltonian_pool(ham_pool_fac_func(comm, particle_pool, wavefunction_pool)),
-      twf(*(wavefunction_pool.getPrimary())),
+      twf(*(wavefunction_pool.getWaveFunction())),
       ham(*(hamiltonian_pool.getPrimary()))
 {}
 

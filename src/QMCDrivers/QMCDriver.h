@@ -132,15 +132,6 @@ public:
    */
   void setStatus(const std::string& aname, const std::string& h5name, bool append) override;
 
-  /** add QMCHamiltonian/TrialWaveFunction pair for multiple
-   * @param h QMCHamiltonian
-   * @param psi TrialWaveFunction
-   *
-   * *Multiple* drivers use multiple H/Psi pairs to perform correlated sampling
-   * for energy difference evaluations.
-   */
-  void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi) override;
-
   /** initialize with xmlNode
    */
   void process(xmlNodePtr cur) override;
@@ -162,9 +153,7 @@ public:
 
   template<class PDT>
   void setValue(const std::string& aname, PDT x)
-  {
-    m_param.setValue(aname, x);
-  }
+  { m_param.setValue(aname, x); }
 
   ///set the BranchEngineType
   void setBranchEngine(std::unique_ptr<BranchEngineType>&& be) override { branchEngine = std::move(be); }
@@ -315,12 +304,6 @@ protected:
 
   ///record engine for walkers
   std::unique_ptr<HDFWalkerOutput> wOut;
-
-  ///a list of TrialWaveFunctions for multiple method
-  std::vector<TrialWaveFunction*> Psi1;
-
-  ///a list of QMCHamiltonians for multiple method
-  std::vector<QMCHamiltonian*> H1;
 
   ///a list of mcwalkerset element
   std::vector<xmlNodePtr> mcwalkerNodePtr;

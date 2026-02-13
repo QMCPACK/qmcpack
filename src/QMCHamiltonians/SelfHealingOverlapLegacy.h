@@ -39,7 +39,7 @@ public:
 
   //standard interface
   std::string getClassName() const override { return "SelfHealingOverlapLegacy"; }
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) const final;
   bool put(xmlNodePtr cur) override;
   Return_t evaluate(TrialWaveFunction& psi, ParticleSet& P) override;
 

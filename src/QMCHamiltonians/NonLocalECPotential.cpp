@@ -666,7 +666,7 @@ void NonLocalECPotential::releaseResource(ResourceCollection& collection,
   collection.takebackResource(O_leader.mw_res_handle_);
 }
 
-std::unique_ptr<OperatorBase> NonLocalECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> NonLocalECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi) const
 {
   return std::make_unique<NonLocalECPotential>(*this, qp);
 }

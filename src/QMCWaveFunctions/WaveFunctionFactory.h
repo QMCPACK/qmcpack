@@ -46,7 +46,9 @@ public:
   ~WaveFunctionFactory();
 
   ///read from xmlNode
-  std::unique_ptr<TrialWaveFunction> buildTWF(xmlNodePtr cur, const RuntimeOptions& runtime_options);
+  std::unique_ptr<TrialWaveFunction> buildTWF(xmlNodePtr cur,
+                                              const RuntimeOptions& runtime_options,
+                                              const std::string psi_name = "");
 
   /// create an empty TrialWaveFunction for testing use.
   std::unique_ptr<TrialWaveFunction> static buildEmptyTWFForTesting(const RuntimeOptions& runtime_options,

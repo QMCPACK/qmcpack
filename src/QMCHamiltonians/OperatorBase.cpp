@@ -186,7 +186,7 @@ void OperatorBase::releaseResource(ResourceCollection& collection,
 
 void OperatorBase::setRandomGenerator(RandomBase<FullPrecRealType>* rng) {}
 
-void OperatorBase::add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& targetH)
+void OperatorBase::add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& targetH) const
 {
   std::unique_ptr<OperatorBase> myclone = makeClone(qp, psi);
   if (myclone)

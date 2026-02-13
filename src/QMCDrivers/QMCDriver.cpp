@@ -147,12 +147,6 @@ QMCDriver::~QMCDriver()
     delete DriftModifier;
 }
 
-void QMCDriver::add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi)
-{
-  H1.push_back(h);
-  Psi1.push_back(psi);
-}
-
 /** process a <qmc/> element
  * @param cur xmlNode with qmc tag
  *
@@ -177,9 +171,6 @@ void QMCDriver::process(xmlNodePtr cur)
   putQMCInfo(cur);
   ////set the Tau parameter inside the Hamiltonian
   //H.setTau(Tau);
-  //need to initialize properties
-  int numCopies = (H1.empty()) ? 1 : H1.size();
-  W.resetWalkerProperty(numCopies);
   //create branchEngine first
   if (!branchEngine)
   {
