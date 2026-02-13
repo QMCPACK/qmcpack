@@ -48,8 +48,8 @@ bool WaveFunctionPool::put(xmlNodePtr cur)
     myComm->barrier_and_abort("target particle set named '" + target + "' not found");
 
   if (contains(psi_name))
-    throw UniformCommunicateError("\"" + psi_name + "\" exists in the wavefunction pool. Pleaes rename the wavefunction node.");
-
+    throw UniformCommunicateError("\"" + psi_name +
+                                  "\" already exists in the wavefunction pool. Please rename this wavefunction node.");
 
   WaveFunctionFactory psiFactory(*qp, ptcl_pool_.getPool(), myComm);
   auto psi = psiFactory.buildTWF(cur, runtime_options_, psi_name);
