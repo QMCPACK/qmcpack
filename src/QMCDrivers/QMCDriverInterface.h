@@ -33,7 +33,7 @@ class TrialWaveFunction;
 class QMCDriverInterface
 {
 public:
-  using BranchEngineType = SimpleFixedNodeBranch;
+  using BranchEngineType              = SimpleFixedNodeBranch;
   using FullPrecRealType              = QMCTraits::FullPrecRealType;
   virtual bool run()                  = 0;
   virtual bool put(xmlNodePtr cur)    = 0;
@@ -41,17 +41,16 @@ public:
 
   virtual void setStatus(const std::string& aname, const std::string& h5name, bool append) = 0;
 
-  virtual void setUpdateMode(bool pbyp)                                 = 0;
-  virtual void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi) = 0;
-  virtual void putWalkers(std::vector<xmlNodePtr>& wset)                = 0;
-  virtual void putTraces(xmlNodePtr txml)                               = 0;
-  virtual void requestTraces(bool allow_traces)                         = 0;
-  virtual void putWalkerLogs(xmlNodePtr wlxml)                          = 0;
-  virtual void requestWalkerLogs(bool allow_walker_logs_)               = 0;
-  virtual void process(xmlNodePtr cur)                                  = 0;
-  virtual QMCRunType getRunType()                                       = 0;
-  virtual std::string getEngineName()                                   = 0;
-  virtual unsigned long getDriverMode()                                 = 0;
+  virtual void setUpdateMode(bool pbyp)                   = 0;
+  virtual void putWalkers(std::vector<xmlNodePtr>& wset)  = 0;
+  virtual void putTraces(xmlNodePtr txml)                 = 0;
+  virtual void requestTraces(bool allow_traces)           = 0;
+  virtual void putWalkerLogs(xmlNodePtr wlxml)            = 0;
+  virtual void requestWalkerLogs(bool allow_walker_logs_) = 0;
+  virtual void process(xmlNodePtr cur)                    = 0;
+  virtual QMCRunType getRunType()                         = 0;
+  virtual std::string getEngineName()                     = 0;
+  virtual unsigned long getDriverMode()                   = 0;
   virtual ~QMCDriverInterface() {}
 
   virtual void setBranchEngine(std::unique_ptr<BranchEngineType>&& be) {}

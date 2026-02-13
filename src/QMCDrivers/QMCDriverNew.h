@@ -217,8 +217,6 @@ public:
    */
   void setStatus(const std::string& aname, const std::string& h5name, bool append) override;
 
-  void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi) override{};
-
   void putWalkers(std::vector<xmlNodePtr>& wset) override;
 
   /** intended for logging output and debugging
