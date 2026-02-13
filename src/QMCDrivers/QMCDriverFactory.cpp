@@ -145,43 +145,10 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
                                                                       HamiltonianPool& hamiltonian_pool,
                                                                       Communicate* comm) const
 {
-  ///////////////////////////////////////////////
-  // get primaryPsi and primaryH
-  ///////////////////////////////////////////////
-  TrialWaveFunction* primaryPsi = wavefunction_pool.getPrimary();
-  QMCHamiltonian* primaryH      = hamiltonian_pool.getPrimary();
-
-  auto makeEstimatorManager = [&](const std::optional<EstimatorManagerInput>& global_emi,
-                                  const std::optional<EstimatorManagerInput>& driver_emi) -> UPtr<EstimatorManagerNew> {
-    // This is done so that the application level input structures reflect the actual input to the code.
-    // While the actual simulation objects still take singular input structures at construction.
-    auto makeEstimatorManagerInput = [](auto& global_emi, auto& local_emi) -> EstimatorManagerInput {
-      if (global_emi.has_value() && local_emi.has_value())
-        return {global_emi.value(), local_emi.value()};
-      else if (global_emi.has_value())
-        return {global_emi.value()};
-      else if (local_emi.has_value())
-        return {local_emi.value()};
-      else
-        return {};
-    };
-
-    auto estimator_manager = std::make_unique<EstimatorManagerNew>(*primaryH, comm);
-    estimator_manager->constructEstimators(makeEstimatorManagerInput(global_emi, driver_emi), qmc_system, *primaryPsi,
-                                           *primaryH, particle_pool.getPool());
-    return estimator_manager;
-  };
-
   std::unique_ptr<QMCDriverInterface> new_driver;
 
-  if (das.new_run_type == QMCRunType::VMC)
-  {
-    new_driver = std::make_unique<VMC>(project_data_, qmc_system, *primaryPsi, *primaryH,
-                                       RandomNumberControl::getChildren(), comm, das.enable_profiling);
-    new_driver->setUpdateMode(das.what_to_do[UPDATE_MODE]);
-  }
-  else if (das.new_run_type == QMCRunType::CSVMC)
-  {
+  if (das.new_run_type == QMCRunType::CSVMC)
+  { // CSVMC requires multiple pairs of Psi and Ham
     std::vector<TrialWaveFunction*> multi_psi;
     std::vector<QMCHamiltonian*> multi_ham;
     for (const auto& name_pair : PsiHamNamePairReader::readMultiplePairs(cur))
@@ -192,135 +159,173 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
     new_driver = std::make_unique<CSVMC>(project_data_, qmc_system, std::move(multi_psi), std::move(multi_ham), comm);
     new_driver->setUpdateMode(das.what_to_do[UPDATE_MODE]);
   }
-  else if (das.new_run_type == QMCRunType::VMC_BATCH)
-  {
-    if (!das.what_to_do[UPDATE_MODE])
-      throw UniformCommunicateError("Batched driver only supports particle-by-particle moves.");
-
-    app_summary() << "\n========================================"
-                     "\n  Reading VMC driver XML input section"
-                     "\n========================================"
-                  << std::endl;
-
-    QMCDriverInput qmcdriver_input;
-    VMCDriverInput vmcdriver_input;
-    try
-    {
-      qmcdriver_input.readXML(cur);
-      vmcdriver_input.readXML(cur);
-    }
-    catch (const std::exception& e)
-    {
-      throw UniformCommunicateError(e.what());
-    }
-
-    // I don't like that QMCDriverFactory is unpacking the driver input here, ideally only the driver should need to
-    // depend on the content and implementation of the input.  This seems to be to be a bigger deal that passing the
-    // known at this level PSPool down.
-    new_driver =
-        std::make_unique<VMCBatched>(project_data_, std::move(qmcdriver_input),
-                                     makeEstimatorManager(emi, qmcdriver_input.get_estimator_manager_input()),
-                                     std::move(vmcdriver_input), qmc_system,
-                                     MCPopulation(comm->size(), comm->rank(), &qmc_system, primaryPsi, primaryH),
-                                     RandomNumberControl::getChildrenRefs(), qmc_system.getSampleStack(), comm);
-
-    new_driver->setUpdateMode(1);
-  }
-  else if (das.new_run_type == QMCRunType::DMC)
-  {
-    DMCFactory fac(das.what_to_do[UPDATE_MODE], das.what_to_do[GPU_MODE], cur);
-    new_driver = fac.create(project_data_, qmc_system, *primaryPsi, *primaryH, comm, das.enable_profiling);
-  }
-  else if (das.new_run_type == QMCRunType::DMC_BATCH)
-  {
-    app_summary() << "\n========================================"
-                     "\n  Reading DMC driver XML input section"
-                     "\n========================================"
-                  << std::endl;
-
-    QMCDriverInput qmcdriver_input;
-    DMCDriverInput dmcdriver_input;
-    try
-    {
-      qmcdriver_input.readXML(cur);
-      dmcdriver_input.readXML(cur);
-    }
-    catch (const std::exception& e)
-    {
-      throw UniformCommunicateError(e.what());
-    }
-
-    new_driver =
-        std::make_unique<DMCBatched>(project_data_, std::move(qmcdriver_input),
-                                     makeEstimatorManager(emi, qmcdriver_input.get_estimator_manager_input()),
-                                     std::move(dmcdriver_input), qmc_system,
-                                     MCPopulation(comm->size(), comm->rank(), &qmc_system, primaryPsi, primaryH),
-                                     RandomNumberControl::getChildrenRefs(), comm);
-  }
-  else if (das.new_run_type == QMCRunType::RMC)
-  {
-    RMCFactory fac(das.what_to_do[UPDATE_MODE], cur);
-    new_driver = fac.create(project_data_, qmc_system, *primaryPsi, *primaryH, comm);
-  }
-  else if (das.new_run_type == QMCRunType::LINEAR_OPTIMIZE)
-  {
-#ifdef MIXED_PRECISION
-    APP_ABORT("QMCDriverFactory::createQMCDriver : method=\"linear\" is not safe with CPU mixed precision. Please use "
-              "full precision build instead.");
-#endif
-    QMCFixedSampleLinearOptimize* opt =
-        new QMCFixedSampleLinearOptimize(project_data_, qmc_system, *primaryPsi, *primaryH, comm);
-    //ZeroVarianceOptimize *opt = new ZeroVarianceOptimize(qmc_system,*primaryPsi,*primaryH );
-    opt->setWaveFunctionNode(wavefunction_pool.getWaveFunctionNode("psi0"));
-    new_driver.reset(opt);
-  }
-  else if (das.new_run_type == QMCRunType::LINEAR_OPTIMIZE_BATCH)
-  {
-#ifdef MIXED_PRECISION
-    APP_ABORT("QMCDriverFactory::createQMCDriver : method=\"linear_batch\" is not safe with CPU mixed precision. "
-              "Please use full precision build instead.");
-#endif
-    app_summary() << "\n========================================"
-                     "\n  Reading WFOpt driver XML input section"
-                     "\n========================================"
-                  << std::endl;
-
-    QMCDriverInput qmcdriver_input;
-    VMCDriverInput vmcdriver_input;
-    try
-    {
-      qmcdriver_input.readXML(cur);
-      vmcdriver_input.readXML(cur);
-    }
-    catch (const std::exception& e)
-    {
-      throw UniformCommunicateError(e.what());
-    }
-
-    if (qmcdriver_input.get_estimator_manager_input())
-      app_warning() << "The batched wavefunction optimization driver ignores local estimator input.";
-    if (emi)
-      app_warning() << "The batched wavefunction optimization driver ignores global estimator input.";
-
-    auto opt = std::make_unique<QMCFixedSampleLinearOptimizeBatched>(project_data_, std::move(qmcdriver_input),
-                                                                     std::move(vmcdriver_input), qmc_system,
-                                                                     MCPopulation(comm->size(), comm->rank(),
-                                                                                  &qmc_system, primaryPsi, primaryH),
-                                                                     RandomNumberControl::getChildrenRefs(),
-                                                                     qmc_system.getSampleStack(), comm);
-    opt->setWaveFunctionNode(wavefunction_pool.getWaveFunctionNode("psi0"));
-    new_driver = std::move(opt);
-  }
-  else if (das.new_run_type == QMCRunType::WF_TEST)
-  {
-    app_log() << "Testing wavefunctions." << std::endl;
-    QMCDriverInterface* temp_ptr =
-        new WaveFunctionTester(project_data_, qmc_system, *primaryPsi, *primaryH, particle_pool, comm);
-    new_driver.reset(temp_ptr);
-  }
   else
-  {
-    APP_ABORT("Unhandled run type: " << static_cast<int>(das.new_run_type));
+  { // other drivers require at most one pair of Psi and Ham
+    auto one_pair = PsiHamNamePairReader::readOnePair(cur);
+    // get primaryPsi and primaryH
+    TrialWaveFunction* primaryPsi =
+        one_pair.has_value() ? wavefunction_pool.getWaveFunction(one_pair->first) : wavefunction_pool.getWaveFunction();
+    QMCHamiltonian* primaryH = hamiltonian_pool.getPrimary();
+
+    auto makeEstimatorManager =
+        [&](const std::optional<EstimatorManagerInput>& global_emi,
+            const std::optional<EstimatorManagerInput>& driver_emi) -> UPtr<EstimatorManagerNew> {
+      // This is done so that the application level input structures reflect the actual input to the code.
+      // While the actual simulation objects still take singular input structures at construction.
+      auto makeEstimatorManagerInput = [](auto& global_emi, auto& local_emi) -> EstimatorManagerInput {
+        if (global_emi.has_value() && local_emi.has_value())
+          return {global_emi.value(), local_emi.value()};
+        else if (global_emi.has_value())
+          return {global_emi.value()};
+        else if (local_emi.has_value())
+          return {local_emi.value()};
+        else
+          return {};
+      };
+
+      auto estimator_manager = std::make_unique<EstimatorManagerNew>(*primaryH, comm);
+      estimator_manager->constructEstimators(makeEstimatorManagerInput(global_emi, driver_emi), qmc_system, *primaryPsi,
+                                             *primaryH, particle_pool.getPool());
+      return estimator_manager;
+    };
+
+    if (das.new_run_type == QMCRunType::VMC)
+    {
+      new_driver = std::make_unique<VMC>(project_data_, qmc_system, *primaryPsi, *primaryH,
+                                         RandomNumberControl::getChildren(), comm, das.enable_profiling);
+      new_driver->setUpdateMode(das.what_to_do[UPDATE_MODE]);
+    }
+    else if (das.new_run_type == QMCRunType::VMC_BATCH)
+    {
+      if (!das.what_to_do[UPDATE_MODE])
+        throw UniformCommunicateError("Batched driver only supports particle-by-particle moves.");
+
+      app_summary() << "\n========================================"
+                       "\n  Reading VMC driver XML input section"
+                       "\n========================================"
+                    << std::endl;
+
+      QMCDriverInput qmcdriver_input;
+      VMCDriverInput vmcdriver_input;
+      try
+      {
+        qmcdriver_input.readXML(cur);
+        vmcdriver_input.readXML(cur);
+      }
+      catch (const std::exception& e)
+      {
+        throw UniformCommunicateError(e.what());
+      }
+
+      // I don't like that QMCDriverFactory is unpacking the driver input here, ideally only the driver should need to
+      // depend on the content and implementation of the input.  This seems to be to be a bigger deal that passing the
+      // known at this level PSPool down.
+      new_driver =
+          std::make_unique<VMCBatched>(project_data_, std::move(qmcdriver_input),
+                                       makeEstimatorManager(emi, qmcdriver_input.get_estimator_manager_input()),
+                                       std::move(vmcdriver_input), qmc_system,
+                                       MCPopulation(comm->size(), comm->rank(), &qmc_system, primaryPsi, primaryH),
+                                       RandomNumberControl::getChildrenRefs(), qmc_system.getSampleStack(), comm);
+
+      new_driver->setUpdateMode(1);
+    }
+    else if (das.new_run_type == QMCRunType::DMC)
+    {
+      DMCFactory fac(das.what_to_do[UPDATE_MODE], das.what_to_do[GPU_MODE], cur);
+      new_driver = fac.create(project_data_, qmc_system, *primaryPsi, *primaryH, comm, das.enable_profiling);
+    }
+    else if (das.new_run_type == QMCRunType::DMC_BATCH)
+    {
+      app_summary() << "\n========================================"
+                       "\n  Reading DMC driver XML input section"
+                       "\n========================================"
+                    << std::endl;
+
+      QMCDriverInput qmcdriver_input;
+      DMCDriverInput dmcdriver_input;
+      try
+      {
+        qmcdriver_input.readXML(cur);
+        dmcdriver_input.readXML(cur);
+      }
+      catch (const std::exception& e)
+      {
+        throw UniformCommunicateError(e.what());
+      }
+
+      new_driver =
+          std::make_unique<DMCBatched>(project_data_, std::move(qmcdriver_input),
+                                       makeEstimatorManager(emi, qmcdriver_input.get_estimator_manager_input()),
+                                       std::move(dmcdriver_input), qmc_system,
+                                       MCPopulation(comm->size(), comm->rank(), &qmc_system, primaryPsi, primaryH),
+                                       RandomNumberControl::getChildrenRefs(), comm);
+    }
+    else if (das.new_run_type == QMCRunType::RMC)
+    {
+      RMCFactory fac(das.what_to_do[UPDATE_MODE], cur);
+      new_driver = fac.create(project_data_, qmc_system, *primaryPsi, *primaryH, comm);
+    }
+    else if (das.new_run_type == QMCRunType::LINEAR_OPTIMIZE)
+    {
+#ifdef MIXED_PRECISION
+      APP_ABORT(
+          "QMCDriverFactory::createQMCDriver : method=\"linear\" is not safe with CPU mixed precision. Please use "
+          "full precision build instead.");
+#endif
+      QMCFixedSampleLinearOptimize* opt =
+          new QMCFixedSampleLinearOptimize(project_data_, qmc_system, *primaryPsi, *primaryH, comm);
+      //ZeroVarianceOptimize *opt = new ZeroVarianceOptimize(qmc_system,*primaryPsi,*primaryH );
+      opt->setWaveFunctionNode(wavefunction_pool.getWaveFunctionNode("psi0"));
+      new_driver.reset(opt);
+    }
+    else if (das.new_run_type == QMCRunType::LINEAR_OPTIMIZE_BATCH)
+    {
+#ifdef MIXED_PRECISION
+      APP_ABORT("QMCDriverFactory::createQMCDriver : method=\"linear_batch\" is not safe with CPU mixed precision. "
+                "Please use full precision build instead.");
+#endif
+      app_summary() << "\n========================================"
+                       "\n  Reading WFOpt driver XML input section"
+                       "\n========================================"
+                    << std::endl;
+
+      QMCDriverInput qmcdriver_input;
+      VMCDriverInput vmcdriver_input;
+      try
+      {
+        qmcdriver_input.readXML(cur);
+        vmcdriver_input.readXML(cur);
+      }
+      catch (const std::exception& e)
+      {
+        throw UniformCommunicateError(e.what());
+      }
+
+      if (qmcdriver_input.get_estimator_manager_input())
+        app_warning() << "The batched wavefunction optimization driver ignores local estimator input.";
+      if (emi)
+        app_warning() << "The batched wavefunction optimization driver ignores global estimator input.";
+
+      auto opt = std::make_unique<QMCFixedSampleLinearOptimizeBatched>(project_data_, std::move(qmcdriver_input),
+                                                                       std::move(vmcdriver_input), qmc_system,
+                                                                       MCPopulation(comm->size(), comm->rank(),
+                                                                                    &qmc_system, primaryPsi, primaryH),
+                                                                       RandomNumberControl::getChildrenRefs(),
+                                                                       qmc_system.getSampleStack(), comm);
+      opt->setWaveFunctionNode(wavefunction_pool.getWaveFunctionNode("psi0"));
+      new_driver = std::move(opt);
+    }
+    else if (das.new_run_type == QMCRunType::WF_TEST)
+    {
+      app_log() << "Testing wavefunctions." << std::endl;
+      QMCDriverInterface* temp_ptr =
+          new WaveFunctionTester(project_data_, qmc_system, *primaryPsi, *primaryH, particle_pool, comm);
+      new_driver.reset(temp_ptr);
+    }
+    else
+    {
+      APP_ABORT("Unhandled run type: " << static_cast<int>(das.new_run_type));
+    }
   }
 
   infoSummary.flush();
