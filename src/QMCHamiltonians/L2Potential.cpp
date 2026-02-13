@@ -139,7 +139,7 @@ void L2Potential::evaluateD(ParticleSet& P, int iel, TensorType& D)
 }
 
 
-std::unique_ptr<OperatorBase> L2Potential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> L2Potential::makeClone(ParticleSet& qp, TrialWaveFunction& psi) const
 {
   std::unique_ptr<L2Potential> myclone = std::make_unique<L2Potential>(IonConfig, qp);
   for (int ig = 0; ig < PPset.size(); ++ig)

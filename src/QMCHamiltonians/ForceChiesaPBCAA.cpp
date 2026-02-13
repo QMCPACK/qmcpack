@@ -227,7 +227,7 @@ void ForceChiesaPBCAA::addObservables(PropertySetType& plist, BufferType& collec
   addObservablesF(plist);
 }
 
-std::unique_ptr<OperatorBase> ForceChiesaPBCAA::makeClone(ParticleSet& qp)
+std::unique_ptr<OperatorBase> ForceChiesaPBCAA::makeClone(ParticleSet& qp) const
 {
   return std::make_unique<ForceChiesaPBCAA>(*this);
 }

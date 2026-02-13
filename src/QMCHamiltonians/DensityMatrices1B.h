@@ -145,12 +145,12 @@ public:
 
   //constructor/destructor
   DensityMatrices1B(ParticleSet& P, const SPOSet::SPOMap& spomap, ParticleSet* Pcl);
-  DensityMatrices1B(DensityMatrices1B& master, ParticleSet& P, TrialWaveFunction& psi);
+  DensityMatrices1B(const DensityMatrices1B& master, ParticleSet& P, TrialWaveFunction& psi);
   ~DensityMatrices1B() override;
 
   std::string getClassName() const override { return "DensityMatrices1B"; }
   //standard interface
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) const final;
   bool put(xmlNodePtr cur) override;
   Return_t evaluate(TrialWaveFunction& psi, ParticleSet& P) override;
 
@@ -177,7 +177,7 @@ public:
   //  initialization/finalization
   void reset();
   void set_state(xmlNodePtr cur);
-  void set_state(DensityMatrices1B& master);
+  void set_state(const DensityMatrices1B& master);
   void initialize();
   void finalize();
   void normalize();

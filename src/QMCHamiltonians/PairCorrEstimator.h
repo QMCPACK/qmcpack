@@ -50,7 +50,7 @@ public:
   void setParticlePropertyList(PropertySetType& plist, int offset) override;
   bool put(xmlNodePtr cur) override;
   bool get(std::ostream& os) const override;
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& P) final;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& P) const final;
 
   void set_norm_factor();
   void report();

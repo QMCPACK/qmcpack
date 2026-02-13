@@ -35,7 +35,7 @@ void SOECPComponent::add(int l, RadialPotentialType* pp)
   sopp_m_.push_back(pp);
 }
 
-SOECPComponent* SOECPComponent::makeClone(const ParticleSet& qp)
+SOECPComponent* SOECPComponent::makeClone(const ParticleSet& qp) const
 {
   SOECPComponent* myclone = new SOECPComponent(*this);
   for (int i = 0; i < sopp_m_.size(); i++)

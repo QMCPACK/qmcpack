@@ -115,7 +115,7 @@ SpeciesKineticEnergy::Return_t SpeciesKineticEnergy::evaluate(ParticleSet& P)
   return value_;
 }
 
-std::unique_ptr<OperatorBase> SpeciesKineticEnergy::makeClone(ParticleSet& qp)
+std::unique_ptr<OperatorBase> SpeciesKineticEnergy::makeClone(ParticleSet& qp) const
 {
   return std::make_unique<SpeciesKineticEnergy>(*this);
 }
