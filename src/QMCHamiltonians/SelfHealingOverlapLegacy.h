@@ -18,23 +18,23 @@
 namespace qmcplusplus
 {
 /** Class that collects MSD coefficient values via the Self-Healing overlap
+ *    It doesn't serve generic TrialWaveFunction 
  *    (legacy driver version) 
  */
 class SelfHealingOverlapLegacy : public OperatorBase
 {
+  //data members
+  const size_t ncoefs_;
+  Vector<ValueType> det_ratios;
+
 public:
   using RealType    = QMCTraits::RealType;
   using ComplexType = QMCTraits::ComplexType;
   using ValueType   = QMCTraits::ValueType;
   using PosType     = QMCTraits::PosType;
 
-  //data members
-  size_t ncoef;
-  TrialWaveFunction& psi_ref;
-  Vector<ValueType> det_ratios;
-
   //constructor/destructor
-  SelfHealingOverlapLegacy(TrialWaveFunction& wfn);
+  SelfHealingOverlapLegacy(const size_t msd_size);
   ~SelfHealingOverlapLegacy() override {}
 
   //standard interface

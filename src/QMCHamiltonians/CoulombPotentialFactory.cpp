@@ -271,7 +271,7 @@ void HamiltonianFactory::addPseudoPotential(xmlNodePtr cur)
   app_summary() << "    Name: " << title << "   Wavefunction : " << psiName << std::endl;
   app_summary() << std::endl;
 
-  ECPotentialBuilder ecp(*targetH, *ion, targetPtcl, *psi, myComm);
+  ECPotentialBuilder ecp(*targetH, *ion, targetPtcl, myComm);
   ecp.put(cur);
 #else
   APP_ABORT("HamiltonianFactory::addPseudoPotential\n pairpot@type=\"pseudo\" is invalid if DIM != 3");

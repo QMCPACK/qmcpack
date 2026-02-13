@@ -49,7 +49,7 @@ public:
    * Store mass per species and use SameMass to choose the methods.
    * if SameMass, probably faster and easy to vectorize but no impact on the performance.
    */
-  BareKineticEnergy(ParticleSet& p, TrialWaveFunction& psi);
+  BareKineticEnergy(ParticleSet& p);
   ///destructor
   ~BareKineticEnergy() override;
 

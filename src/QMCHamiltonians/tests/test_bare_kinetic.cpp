@@ -66,7 +66,7 @@ TEST_CASE("Bare Kinetic Energy", "[hamiltonian]")
 
   RuntimeOptions runtime_options;
   TrialWaveFunction psi(runtime_options);
-  BareKineticEnergy bare_ke(elec, psi);
+  BareKineticEnergy bare_ke(elec);
   bare_ke.put(h1);
 
   elec.L[0] = 1.0;
@@ -191,7 +191,7 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
 
   xmlNodePtr h1 = xmlFirstElementChild(root);
 
-  BareKineticEnergy bare_ke(elec, psi);
+  BareKineticEnergy bare_ke(elec);
   bare_ke.put(h1);
 
   // update all distance tables
@@ -277,8 +277,8 @@ void testElecCase(double mass_up,
   RefVector<ParticleSet> ptcls{elec, elec2};
   RefVectorWithLeader<ParticleSet> p_list(elec, ptcls);
 
-  BareKineticEnergy bare_ke(elec, psi);
-  BareKineticEnergy bare_ke2(elec, psi_clone);
+  BareKineticEnergy bare_ke(elec);
+  BareKineticEnergy bare_ke2(elec);
 
   RefVector<OperatorBase> bare_kes{bare_ke, bare_ke2};
   RefVectorWithLeader<OperatorBase> o_list(bare_ke, bare_kes);

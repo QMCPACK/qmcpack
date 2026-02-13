@@ -67,7 +67,7 @@ struct L2Potential : public OperatorBase
   ///PP[iat] is the L2 potential for the iat-th particle
   std::vector<L2RadialPotential*> PP;
 
-  L2Potential(const ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi);
+  L2Potential(const ParticleSet& ions, ParticleSet& els);
 
   std::string getClassName() const override { return "L2Potential"; }
 

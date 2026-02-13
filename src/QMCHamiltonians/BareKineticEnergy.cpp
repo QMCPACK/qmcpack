@@ -44,7 +44,7 @@ struct BareKineticEnergy::MultiWalkerResource : public Resource
    * Store mass per species and use SameMass to choose the methods.
    * if SameMass, probably faster and easy to vectorize but no impact on the performance.
    */
-BareKineticEnergy::BareKineticEnergy(ParticleSet& p, TrialWaveFunction& psi) : ps_(p)
+BareKineticEnergy::BareKineticEnergy(ParticleSet& p) : ps_(p)
 {
   setEnergyDomain(KINETIC);
   oneBodyQuantumDomain(p);
@@ -623,7 +623,7 @@ bool BareKineticEnergy::get(std::ostream& os) const
 
 std::unique_ptr<OperatorBase> BareKineticEnergy::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  return std::make_unique<BareKineticEnergy>(qp, psi);
+  return std::make_unique<BareKineticEnergy>(qp);
 }
 
 } // namespace qmcplusplus

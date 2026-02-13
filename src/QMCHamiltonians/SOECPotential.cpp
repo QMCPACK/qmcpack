@@ -42,7 +42,6 @@ struct SOECPotential::SOECPotentialMultiWalkerResource : public Resource
 */
 SOECPotential::SOECPotential(ParticleSet& ions,
                              ParticleSet& els,
-                             TrialWaveFunction& psi,
                              bool use_exact_spin,
                              bool use_VP)
     : my_rng_(nullptr),
@@ -60,7 +59,7 @@ SOECPotential::SOECPotential(ParticleSet& ions,
     sopp_jobs_[ig].reserve(2 * els.groupsize(ig));
 }
 
-SOECPotential::SOECPotential(const SOECPotential& sopp, ParticleSet& els, TrialWaveFunction& psi)
+SOECPotential::SOECPotential(const SOECPotential& sopp, ParticleSet& els)
     : my_rng_(nullptr),
       ion_config_(sopp.ion_config_),
       vp_(sopp.vp_ ? std::make_unique<VirtualParticleSet>(els, sopp.vp_->getNumDistTables()) : nullptr),
@@ -320,7 +319,7 @@ void SOECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& o_l
 
 std::unique_ptr<OperatorBase> SOECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  return std::make_unique<SOECPotential>(*this, qp, psi);
+  return std::make_unique<SOECPotential>(*this, qp);
 }
 
 void SOECPotential::addComponent(int groupID, std::unique_ptr<SOECPComponent>&& ppot)
