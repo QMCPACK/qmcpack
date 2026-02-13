@@ -21,16 +21,17 @@
 /**@file QMCDriverFactory.cpp
  * @brief Implments QMCMain operators.
  */
+
+#include "QMCDriverFactory.h"
 #include <queue>
-
-
 #include "QMCDrivers/MCPopulation.h"
 #include "Utilities/qmc_common.h"
-#include "QMCDriverFactory.h"
 #include "QMCWaveFunctions/WaveFunctionPool.h"
 #include "QMCHamiltonians/HamiltonianPool.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "QMCDrivers/VMC/VMCFactory.h"
+#include "PsiHamNamePairReader.h"
+#include "QMCDrivers/VMC/VMC.h"
+#include "QMCDrivers/CorrelatedSampling/CSVMC.h"
 #include "QMCDrivers/DMC/DMCFactory.h"
 #include "QMCDrivers/RMC/RMCFactory.h"
 #include "VMC/VMCDriverInput.h"
@@ -115,29 +116,22 @@ QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(xmlNodePtr c
       das.new_run_type = QMCRunType::LINEAR_OPTIMIZE_BATCH;
     else if (qmc_mode.find("linear") < nchars)
       das.new_run_type = QMCRunType::LINEAR_OPTIMIZE;
+    else if (qmc_mode.find("rmc") < nchars)
+      das.new_run_type = QMCRunType::RMC;
+    else if (qmc_mode.find("csvmc") < nchars)
+      das.new_run_type = QMCRunType::CSVMC;
+    else if (qmc_mode.find("vmc_batch") < nchars) // order matters here
+      das.new_run_type = QMCRunType::VMC_BATCH;
+    else if (qmc_mode.find("vmc") < nchars)
+      das.new_run_type = QMCRunType::VMC;
+    else if (qmc_mode.find("dmc_batch") < nchars) // order matters here
+      das.new_run_type = QMCRunType::DMC_BATCH;
+    else if (qmc_mode.find("dmc") < nchars)
+      das.new_run_type = QMCRunType::DMC;
+    else if (qmc_mode == "wftest")
+      das.new_run_type = QMCRunType::WF_TEST;
     else
-    {
-      if (qmc_mode.find("ptcl") < nchars)
-        das.what_to_do[UPDATE_MODE] = 1;
-      if (qmc_mode.find("mul") < nchars)
-        das.what_to_do[MULTIPLE_MODE] = 1;
-      if (qmc_mode.find("warp") < nchars)
-        das.what_to_do[SPACEWARP_MODE] = 1;
-      if (qmc_mode.find("rmc") < nchars)
-        das.new_run_type = QMCRunType::RMC;
-      else if (qmc_mode.find("vmc_batch") < nchars) // order matters here
-        das.new_run_type = QMCRunType::VMC_BATCH;
-      else if (qmc_mode.find("vmc") < nchars)
-        das.new_run_type = QMCRunType::VMC;
-      else if (qmc_mode.find("dmc_batch") < nchars) // order matters here
-        das.new_run_type = QMCRunType::DMC_BATCH;
-      else if (qmc_mode.find("dmc") < nchars)
-        das.new_run_type = QMCRunType::DMC;
-      else if (qmc_mode == "wftest")
-        das.new_run_type = QMCRunType::WF_TEST;
-      else
-        throw std::runtime_error("qmc method cannot be empty!");
-    }
+      throw std::runtime_error("qmc method cannot be empty!");
   }
   return das;
 }
@@ -154,55 +148,8 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
   ///////////////////////////////////////////////
   // get primaryPsi and primaryH
   ///////////////////////////////////////////////
-  TrialWaveFunction* primaryPsi = 0;
-  QMCHamiltonian* primaryH      = 0;
-  std::queue<TrialWaveFunction*> targetPsi; //FIFO
-  std::queue<QMCHamiltonian*> targetH;      //FIFO
-  xmlNodePtr tcur = cur->children;
-  std::unique_ptr<QMCDriverInterface> new_driver;
-  while (tcur != NULL)
-  {
-    if (xmlStrEqual(tcur->name, (const xmlChar*)"qmcsystem"))
-    {
-      const std::string wf_name(getXMLAttributeValue(tcur, "wavefunction"));
-      if (!wf_name.empty())
-      {
-        targetPsi.push(wavefunction_pool.getWaveFunction(wf_name));
-      }
-      else
-      {
-        app_warning() << " qmcsystem does not have wavefunction. Assign 0" << std::endl;
-        targetPsi.push(0);
-      }
-      const std::string ham_name(getXMLAttributeValue(tcur, "hamiltonian"));
-      if (!ham_name.empty())
-      {
-        targetH.push(hamiltonian_pool.getHamiltonian(ham_name));
-      }
-      else
-      {
-        app_warning() << " qmcsystem does not have hamiltonian. Assign 0" << std::endl;
-        targetH.push(0);
-      }
-    }
-    tcur = tcur->next;
-  }
-  //mark the first targetPsi and targetH as the primaries
-  if (targetH.empty())
-  {
-    primaryPsi = wavefunction_pool.getPrimary();
-    primaryH   = hamiltonian_pool.getPrimary();
-  }
-  else
-  {
-    primaryPsi = targetPsi.front();
-    // targetPsi.pop();
-    primaryH = targetH.front();
-    //  targetH.pop();
-  }
-  //set primaryH->Primary
-  primaryH->setPrimary(true);
-
+  TrialWaveFunction* primaryPsi = wavefunction_pool.getPrimary();
+  QMCHamiltonian* primaryH      = hamiltonian_pool.getPrimary();
 
   auto makeEstimatorManager = [&](const std::optional<EstimatorManagerInput>& global_emi,
                                   const std::optional<EstimatorManagerInput>& driver_emi) -> UPtr<EstimatorManagerNew> {
@@ -224,25 +171,26 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
                                            *primaryH, particle_pool.getPool());
     return estimator_manager;
   };
-  ////flux is evaluated only with single-configuration VMC
-  //if(curRunType ==QMCRunType::VMC && !curQmcModeBits[MULTIPLE_MODE])
-  //{
-  //  OperatorBase* flux=primaryH->getHamiltonian("Flux");
-  //  if(flux == 0) primaryH->addOperator(new ConservedEnergy,"Flux");
-  //}
-  //else
-  //{
-  //  primaryH->remove("Flux");
-  //}
-  //(SPACEWARP_MODE,MULTIPE_MODE,UPDATE_MODE)
-  if (das.new_run_type == QMCRunType::VMC || das.new_run_type == QMCRunType::CSVMC)
+
+  std::unique_ptr<QMCDriverInterface> new_driver;
+
+  if (das.new_run_type == QMCRunType::VMC)
   {
-    //VMCFactory fac(curQmcModeBits[UPDATE_MODE],cur);
-    VMCFactory fac(das.what_to_do.to_ulong(), cur);
-    new_driver = fac.create(project_data_, qmc_system, *primaryPsi, *primaryH, comm, das.enable_profiling);
-    //TESTING CLONE
-    //TrialWaveFunction* psiclone=primaryPsi->makeClone(qmc_system);
-    //qmcDriver = fac.create(qmc_system,*psiclone,*primaryH,particle_pool,hamiltonian_pool);
+    new_driver = std::make_unique<VMC>(project_data_, qmc_system, *primaryPsi, *primaryH,
+                                       RandomNumberControl::getChildren(), comm, das.enable_profiling);
+    new_driver->setUpdateMode(das.what_to_do[UPDATE_MODE]);
+  }
+  else if (das.new_run_type == QMCRunType::CSVMC)
+  {
+    std::vector<TrialWaveFunction*> multi_psi;
+    std::vector<QMCHamiltonian*> multi_ham;
+    for (const auto& name_pair : PsiHamNamePairReader::readMultiplePairs(cur))
+    {
+      multi_psi.emplace_back(wavefunction_pool.getWaveFunction(name_pair.first));
+      multi_ham.emplace_back(hamiltonian_pool.getHamiltonian(name_pair.second));
+    }
+    new_driver = std::make_unique<CSVMC>(project_data_, qmc_system, std::move(multi_psi), std::move(multi_ham), comm);
+    new_driver->setUpdateMode(das.what_to_do[UPDATE_MODE]);
   }
   else if (das.new_run_type == QMCRunType::VMC_BATCH)
   {
@@ -373,15 +321,6 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
   else
   {
     APP_ABORT("Unhandled run type: " << static_cast<int>(das.new_run_type));
-  }
-  if (das.what_to_do[MULTIPLE_MODE])
-  {
-    while (targetH.size())
-    {
-      new_driver->add_H_and_Psi(targetH.front(), targetPsi.front());
-      targetH.pop();
-      targetPsi.pop();
-    }
   }
 
   infoSummary.flush();

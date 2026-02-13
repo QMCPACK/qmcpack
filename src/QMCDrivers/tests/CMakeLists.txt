@@ -33,6 +33,7 @@ set(DRIVER_TEST_SRC
     test_LMYEngine.cpp
     test_vmc_driver.cpp
     test_dmc_driver.cpp
+    test_PsiHamNamePairReader.cpp
     test_SimpleFixedNodeBranch.cpp
     test_QMCDriverFactory.cpp
     test_WalkerLogManager.cpp)
