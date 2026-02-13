@@ -16,17 +16,22 @@
 /**@file WaveFunctionPool.cpp
  * @brief Implements WaveFunctionPool operators.
  */
+#include <sstream>
 #include "WaveFunctionPool.h"
+#include "Message/UniformCommunicateError.h"
 #include "Particle/ParticleSetPool.h"
 #include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus
 {
-WaveFunctionPool::WaveFunctionPool(const RuntimeOptions& runtime_options,
-                                   ParticleSetPool& pset_pool,
-                                   Communicate* c,
-                                   const char* aname)
-    : MPIObjectBase(c), runtime_options_(runtime_options), primary_psi_(nullptr), ptcl_pool_(pset_pool)
+template class ObjectPool<TrialWaveFunction>;
+
+WaveFunctionPool::WaveFunctionPool(const RuntimeOptions& runtime_options, ParticleSetPool& pset_pool, Communicate* c)
+    : MPIObjectBase(c),
+      ObjectPool("wavefunction"),
+      runtime_options_(runtime_options),
+      primary_psi_(nullptr),
+      ptcl_pool_(pset_pool)
 {}
 
 WaveFunctionPool::~WaveFunctionPool() = default;
@@ -47,29 +52,36 @@ bool WaveFunctionPool::put(xmlNodePtr cur)
 
   WaveFunctionFactory psiFactory(*qp, ptcl_pool_.getPool(), myComm);
   auto psi = psiFactory.buildTWF(cur, runtime_options_);
-  addFactory(std::move(psi), myPool.empty() || role == "primary");
+  addFactory(std::move(psi), empty() || role == "primary");
   return true;
 }
 
 void WaveFunctionPool::addFactory(std::unique_ptr<TrialWaveFunction> psi, bool primary)
 {
-  if (myPool.find(psi->getName()) != myPool.end())
-    throw std::runtime_error("  " + psi->getName() + " exists. Cannot be added.");
+  if (contains(psi->getName()))
+    throw UniformCommunicateError("wavefunction " + psi->getName() + " exists. Cannot be added to the pool.");
 
   app_log() << "  Adding " << psi->getName() << " TrialWaveFunction to the pool" << std::endl;
 
   if (primary)
     primary_psi_ = psi.get();
-  myPool.emplace(psi->getName(), std::move(psi));
+  add(psi->getName(), std::move(psi));
+}
+
+TrialWaveFunction* WaveFunctionPool::getWaveFunction(const std::string& pname)
+{
+  try
+  {
+    return getObject(pname).get();
+  }
+  catch (const std::exception& re)
+  {
+    throw UniformCommunicateError(re.what());
+  }
 }
 
 xmlNodePtr WaveFunctionPool::getWaveFunctionNode(const std::string& id)
 {
-  if (myPool.empty())
-    return NULL;
-  if (auto it(myPool.find(id)); it == myPool.end())
-    return (*myPool.begin()).second->getNode();
-  else
-    return (*it).second->getNode();
+  return getWaveFunction(id)->getNode();
 }
 } // namespace qmcplusplus
