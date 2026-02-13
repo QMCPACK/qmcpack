@@ -70,7 +70,7 @@ TEST_CASE("integrateListeners", "[hamiltonian]")
   auto& pset_target      = *(particle_pool.getParticleSet("e"));
   //auto& species_set        = pset_target.getSpeciesSet();
   //auto& spo_map            = wavefunction_pool.getWaveFunction("wavefunction")->getSPOMap();
-  auto& trial_wavefunction = *(wavefunction_pool.getPrimary());
+  auto& trial_wavefunction = *(wavefunction_pool.getWaveFunction());
 
   UPtrVector<QMCHamiltonian> hams;
   UPtrVector<TrialWaveFunction> twfs;

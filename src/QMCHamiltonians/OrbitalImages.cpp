@@ -60,7 +60,7 @@ OrbitalImages::OrbitalImages(const OrbitalImages& other)
     sposets.push_back(element->makeClone());
 }
 
-std::unique_ptr<OperatorBase> OrbitalImages::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> OrbitalImages::makeClone(ParticleSet& qp, TrialWaveFunction& psi) const
 {
   //cloning shouldn't strictly be necessary, but do it right just in case
   std::unique_ptr<OrbitalImages> clone = std::make_unique<OrbitalImages>(*this);

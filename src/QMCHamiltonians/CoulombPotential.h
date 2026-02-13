@@ -142,7 +142,7 @@ public:
 
   void setParticlePropertyList(PropertySetType& plist, int offset) override;
 
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp) override;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp) const override;
 
 private:
   ResourceHandle<CoulombPotentialMultiWalkerResource> mw_res_handle_;

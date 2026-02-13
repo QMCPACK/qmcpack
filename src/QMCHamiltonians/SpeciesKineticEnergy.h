@@ -35,7 +35,7 @@ public:
   Return_t evaluate(ParticleSet& P) override;
 
   // pure virtual functions require overrider
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp) final; // required
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp) const final; // required
 
   // allocate multiple columns in scalar.dat
   void addObservables(PropertySetType& plist, BufferType& collectables) override;
