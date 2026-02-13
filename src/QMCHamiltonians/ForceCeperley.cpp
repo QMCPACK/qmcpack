@@ -141,7 +141,7 @@ bool ForceCeperley::put(xmlNodePtr cur)
   return true;
 }
 
-std::unique_ptr<OperatorBase> ForceCeperley::makeClone(ParticleSet& qp)
+std::unique_ptr<OperatorBase> ForceCeperley::makeClone(ParticleSet& qp) const
 {
   return std::make_unique<ForceCeperley>(*this);
 }

@@ -24,7 +24,7 @@ SelfHealingOverlapLegacy::SelfHealingOverlapLegacy(const size_t msd_size) : ncoe
 }
 
 
-std::unique_ptr<OperatorBase> SelfHealingOverlapLegacy::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> SelfHealingOverlapLegacy::makeClone(ParticleSet& qp, TrialWaveFunction& psi) const
 {
   return std::make_unique<SelfHealingOverlapLegacy>(ncoefs_);
 }

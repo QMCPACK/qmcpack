@@ -88,7 +88,7 @@ struct StressPBC : public OperatorBase, public ForceBase
   void setObservables(PropertySetType& plist) override { setObservablesStress(plist); }
 
   void setParticlePropertyList(PropertySetType& plist, int offset) override { setParticleSetStress(plist, offset); }
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) const final;
   bool put(xmlNodePtr cur) override;
 
   bool get(std::ostream& os) const override

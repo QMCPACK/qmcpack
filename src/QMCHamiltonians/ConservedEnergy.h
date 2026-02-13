@@ -95,7 +95,7 @@ struct ConservedEnergy : public OperatorDependsOnlyOnParticleSet
     return true;
   }
 
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp) final
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp) const final
   {
     return std::make_unique<ConservedEnergy>();
   }

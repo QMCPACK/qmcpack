@@ -40,7 +40,7 @@ struct L2RadialPotential : public QMCTraits
       return 0.0;
   }
 
-  L2RadialPotential* makeClone()
+  L2RadialPotential* makeClone() const
   {
     auto c = new L2RadialPotential();
     c->vL2.reset(vL2->makeClone());
@@ -84,7 +84,7 @@ struct L2Potential : public OperatorBase
     return true;
   }
 
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) const final;
 
   /** Add a RadialPotentialType of a species
    * @param groupID index of the ion species

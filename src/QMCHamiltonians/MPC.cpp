@@ -311,7 +311,7 @@ void MPC::initBreakup(const ParticleSet& ptcl)
   app_log() << "  === MPC interaction initialized === \n\n";
 }
 
-std::unique_ptr<OperatorBase> MPC::makeClone(ParticleSet& P)
+std::unique_ptr<OperatorBase> MPC::makeClone(ParticleSet& P) const
 {
   auto newMPC = std::make_unique<MPC>(*this);
   return newMPC;
