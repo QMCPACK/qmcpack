@@ -117,6 +117,27 @@ To continue a run, specify the ``mcwalkerset`` element before your VMC/DMC block
 In the project id section, make sure that the series number is different from any existing ones to avoid overwriting them.
 
 
+``qmc`` element may contain ``qmcsystem`` elements for selecting specific wavefunction and hamiltonian pairs by name.
+In most QMC methods, only one pair of wavefunction and hamiltonian is needed, ``qmcsystem`` is only necessary
+when more than one pair of ``wavefunction`` and ``hamiltonian`` elements where specified in the simultion system specificiation.
+CSVMC driver requires at least two entries of ``qmcsystem`` elements.
+
+  +-----------------+---------------+
+  | Parent elements | ``qmc``       |
+  +-----------------+---------------+
+  | Child elements  | ``qmcsystem`` |
+  +-----------------+---------------+
+
+attributes:
+
++-----------------------------+------------+--------+---------+----------------------------------------+
+| Name                        | Datatype   | Values | Default | Description                            |
++=============================+============+========+=========+========================================+
+| ``wavefunction``            | Text       |        |  ""     | name of the wavefunction to operate on |
++-----------------------------+------------+--------+---------+----------------------------------------+
+| ``hamiltonian``             | Text       |        |  ""     | name of the hamiltonian to operate on  |
++-----------------------------+------------+--------+---------+----------------------------------------+
+
 .. _batched_drivers:
 
 Use of crowds in the batched drivers

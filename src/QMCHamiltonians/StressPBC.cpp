@@ -25,9 +25,8 @@
 
 namespace qmcplusplus
 {
-StressPBC::StressPBC(ParticleSet& ions, ParticleSet& elns, TrialWaveFunction& Psi0)
+StressPBC::StressPBC(ParticleSet& ions, ParticleSet& elns)
     : ForceBase(ions, elns),
-      Psi(Psi0),
       PtclTarg(elns),
       PtclA(ions),
       ei_table_index(elns.addTable(ions)),
@@ -277,7 +276,7 @@ StressPBC::Return_t StressPBC::evaluate(TrialWaveFunction& psi, ParticleSet& P)
   stress_ee_ += vinv * stress_ee_const;
 
 
-  stress_kin_ += vinv * evaluateKineticSymTensor(P);
+  stress_kin_ += vinv * evaluateKineticSymTensor(psi, P);
 
   stress_ = stress_ee_ + stress_ei_ + stress_kin_;
   if (add_ion_ion_)
@@ -286,10 +285,10 @@ StressPBC::Return_t StressPBC::evaluate(TrialWaveFunction& psi, ParticleSet& P)
   return 0.0;
 }
 
-SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evaluateKineticSymTensor(ParticleSet& P)
+SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evaluateKineticSymTensor(TrialWaveFunction& psi, ParticleSet& P)
 {
   WaveFunctionComponent::HessVector grad_grad_psi;
-  Psi.evaluateHessian(P, grad_grad_psi);
+  psi.evaluateHessian(P, grad_grad_psi);
   SymTensor<RealType, OHMMS_DIM> kinetic_tensor;
   Tensor<ComplexType, OHMMS_DIM> complex_ktensor;
 
@@ -320,9 +319,9 @@ bool StressPBC::put(xmlNodePtr cur)
   return true;
 }
 
-std::unique_ptr<OperatorBase> StressPBC::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> StressPBC::makeClone(ParticleSet& qp, TrialWaveFunction& psi) const
 {
-  std::unique_ptr<StressPBC> tmp = std::make_unique<StressPBC>(PtclA, qp, psi);
+  std::unique_ptr<StressPBC> tmp = std::make_unique<StressPBC>(PtclA, qp);
   tmp->firstTimeStress           = firstTimeStress;
   tmp->stress_ion_ion_           = stress_ion_ion_;
   tmp->stress_ee_const           = stress_ee_const;

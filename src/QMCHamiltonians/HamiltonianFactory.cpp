@@ -49,6 +49,8 @@
 #endif
 #include "QMCHamiltonians/SkPot.h"
 #include "OhmmsData/AttributeSet.h"
+#include "Message/UniformCommunicateError.h"
+#include "Fermion/MultiSlaterDetTableMethod.h"
 
 namespace qmcplusplus
 {
@@ -105,7 +107,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur)
   TrialWaveFunction* targetPsi = psi_it->second.get();
   // KineticEnergy must be the first element in the hamiltonian array.
   if (defaultKE != "no")
-    targetH->addOperator(std::make_unique<BareKineticEnergy>(targetPtcl, *targetPsi), "Kinetic");
+    targetH->addOperator(std::make_unique<BareKineticEnergy>(targetPtcl), "Kinetic");
 
   // Virtual particle sets only need to carry distance tables used by the wavefunction.
   // Other Hamiltonian elements or estimators may add distance tables in particle sets.
@@ -240,7 +242,15 @@ bool HamiltonianFactory::build(xmlNodePtr cur)
       else if (potType == "selfhealingoverlap" || potType == "SelfHealingOverlap")
       {
         app_log() << "  Adding SelfHealingOverlap" << std::endl;
-        std::unique_ptr<SelfHealingOverlapLegacy> apot = std::make_unique<SelfHealingOverlapLegacy>(*targetPsi);
+
+        auto msd_refvec = targetPsi->findMSD();
+        if (msd_refvec.size() != 1)
+          throw UniformCommunicateError("SelfHealingOverlap requires one and only one multi slater determinant "
+                                        "component in the trial wavefunction.");
+
+        const MultiSlaterDetTableMethod& msd = msd_refvec[0];
+        std::unique_ptr<SelfHealingOverlapLegacy> apot =
+            std::make_unique<SelfHealingOverlapLegacy>(msd.getLinearExpansionCoefs().size());
         apot->put(element);
         targetH->addOperator(std::move(apot), potName, false);
       }
@@ -277,7 +287,8 @@ bool HamiltonianFactory::build(xmlNodePtr cur)
         {
           APP_ABORT("Unknown source \"" + source + "\" for DensityMatrices1B");
         }
-        std::unique_ptr<DensityMatrices1B> apot = std::make_unique<DensityMatrices1B>(targetPtcl, *targetPsi, Pc);
+        std::unique_ptr<DensityMatrices1B> apot =
+            std::make_unique<DensityMatrices1B>(targetPtcl, targetPsi->getSPOMap(), Pc);
         apot->put(element);
         targetH->addOperator(std::move(apot), potName, false);
       }
@@ -356,15 +367,6 @@ bool HamiltonianFactory::build(xmlNodePtr cur)
       else if (potType == "momentum")
       {
         app_log() << "  Adding Momentum Estimator" << std::endl;
-        std::string PsiName = "psi0";
-        OhmmsAttributeSet hAttrib;
-        hAttrib.add(PsiName, "wavefunction");
-        hAttrib.put(element);
-        auto psi_it(psiPool.find(PsiName));
-        if (psi_it == psiPool.end())
-        {
-          APP_ABORT("Unknown psi \"" + PsiName + "\" for momentum.");
-        }
         std::unique_ptr<MomentumEstimator> ME = std::make_unique<MomentumEstimator>(targetPtcl);
         bool rt(myComm->rank() == 0);
         ME->putSpecial(element, targetPtcl, rt);

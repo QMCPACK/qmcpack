@@ -156,7 +156,7 @@ TEST_CASE("MomentumDistribution::accumulate", "[estimators]")
   for (int iw = 0; iw < nwalkers; ++iw)
     psets.emplace_back(pset);
 
-  auto& trial_wavefunction = *(wavefunction_pool.getPrimary());
+  auto& trial_wavefunction = *(wavefunction_pool.getWaveFunction());
   std::vector<UPtr<TrialWaveFunction>> wfns(nwalkers);
   for (int iw = 0; iw < nwalkers; ++iw)
     wfns[iw] = trial_wavefunction.makeClone(psets[iw]);

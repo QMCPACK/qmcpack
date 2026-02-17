@@ -41,7 +41,7 @@ public:
   bool put(xmlNodePtr cur) override;
   bool put(xmlNodePtr cur, ParticleSet& P);
   bool get(std::ostream& os) const override;
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp) final;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp) const final;
 
   void write_description(std::ostream& os);
 

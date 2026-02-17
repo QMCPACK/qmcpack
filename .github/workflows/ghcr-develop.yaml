@@ -11,6 +11,7 @@ env:
 
 jobs:
   build-and-push-image:
+    if: github.repository == 'qmcpack/qmcpack'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -39,4 +40,5 @@ jobs:
           tags: | 
             ghcr.io/qmcpack/qmcpack_complete_develop:latest
           platforms: linux/amd64
-  
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

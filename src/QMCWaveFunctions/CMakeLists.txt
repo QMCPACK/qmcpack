@@ -110,10 +110,6 @@ if(OHMMS_DIM MATCHES 3)
     set(FERMION_SRCS ${FERMION_SRCS} PlaneWave/PWRealOrbitalSet.cpp)
   endif(QMC_COMPLEX)
 
-  if(NOT QMC_COMPLEX)
-    set(FERMION_SRCS ${FERMION_SRCS} AGPDeterminant.cpp AGPDeterminantBuilder.cpp)
-  endif(NOT QMC_COMPLEX)
-
 endif(OHMMS_DIM MATCHES 3)
 
 set(FERMION_SRCS

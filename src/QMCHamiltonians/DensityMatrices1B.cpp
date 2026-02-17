@@ -46,23 +46,23 @@ static const TimerNameList_t<DMTimers> DMTimerNames =
      {DM_matrix_products, "DensityMatrices1B::evaluate_matrix_products"},
      {DM_accumulate, "DensityMatrices1B::evaluate_matrix_accum"}};
 
-DensityMatrices1B::DensityMatrices1B(ParticleSet& P, TrialWaveFunction& psi, ParticleSet* Pcl)
+DensityMatrices1B::DensityMatrices1B(ParticleSet& P, const SPOSet::SPOMap& spomap, ParticleSet* Pcl)
     : timers(getGlobalTimerManager(), DMTimerNames, timer_level_fine),
       basis_functions("DensityMatrices1B::basis"),
       lattice_(P.getLattice()),
-      spomap(psi.getSPOMap()),
+      spomap_(spomap),
       Pq(P),
       Pc(Pcl)
 {
   reset();
 }
 
-DensityMatrices1B::DensityMatrices1B(DensityMatrices1B& master, ParticleSet& P, TrialWaveFunction& psi)
+DensityMatrices1B::DensityMatrices1B(const DensityMatrices1B& master, ParticleSet& P, TrialWaveFunction& psi)
     : OperatorBase(master),
       timers(getGlobalTimerManager(), DMTimerNames, timer_level_fine),
       basis_functions(master.basis_functions),
       lattice_(P.getLattice()),
-      spomap(psi.getSPOMap()),
+      spomap_(master.spomap_),
       Pq(P),
       Pc(master.Pc)
 {
@@ -81,7 +81,7 @@ DensityMatrices1B::~DensityMatrices1B()
 }
 
 
-std::unique_ptr<OperatorBase> DensityMatrices1B::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> DensityMatrices1B::makeClone(ParticleSet& qp, TrialWaveFunction& psi) const
 {
   return std::make_unique<DensityMatrices1B>(*this, qp, psi);
 }
@@ -280,8 +280,8 @@ void DensityMatrices1B::set_state(xmlNodePtr cur)
 
   for (int i = 0; i < sposets.size(); ++i)
   {
-    auto spo_it = spomap.find(sposets[i]);
-    if (spo_it == spomap.end())
+    auto spo_it = spomap_.find(sposets[i]);
+    if (spo_it == spomap_.end())
       throw std::runtime_error("DensityMatrices1B::put  sposet " + sposets[i] + " does not exist.");
     basis_functions.add(spo_it->second->makeClone());
   }
@@ -292,7 +292,7 @@ void DensityMatrices1B::set_state(xmlNodePtr cur)
 }
 
 
-void DensityMatrices1B::set_state(DensityMatrices1B& master)
+void DensityMatrices1B::set_state(const DensityMatrices1B& master)
 {
   basis_size    = master.basis_size;
   energy_mat    = master.energy_mat;

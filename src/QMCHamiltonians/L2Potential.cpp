@@ -17,7 +17,7 @@
 
 namespace qmcplusplus
 {
-L2Potential::L2Potential(const ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi) : IonConfig(ions)
+L2Potential::L2Potential(const ParticleSet& ions, ParticleSet& els) : IonConfig(ions)
 {
   setEnergyDomain(POTENTIAL);
   twoBodyQuantumDomain(ions, els);
@@ -139,9 +139,9 @@ void L2Potential::evaluateD(ParticleSet& P, int iel, TensorType& D)
 }
 
 
-std::unique_ptr<OperatorBase> L2Potential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> L2Potential::makeClone(ParticleSet& qp, TrialWaveFunction& psi) const
 {
-  std::unique_ptr<L2Potential> myclone = std::make_unique<L2Potential>(IonConfig, qp, psi);
+  std::unique_ptr<L2Potential> myclone = std::make_unique<L2Potential>(IonConfig, qp);
   for (int ig = 0; ig < PPset.size(); ++ig)
   {
     if (PPset[ig])
