@@ -1,4 +1,15 @@
 *.pyc
+*.aux
+.python-version
+.coverage
+uv.lock
+.venv
+qmcpack_manual.bbl
+qmcpack_manual.blg
+qmcpack_manual.log
+qmcpack_manual.out
+qmcpack_manual.toc
+qmcpack_manual.pdf
 .DS_Store
 /build_*/
 nexus/nexus/tests/*output
