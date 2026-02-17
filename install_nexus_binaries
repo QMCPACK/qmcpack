@@ -1,0 +1,35 @@
+#! /usr/bin/env python3
+
+import sys
+import os
+import shutil
+
+assert len(sys.argv)==2,'install_nexus_binaries only takes a single argument (the installation path)'
+
+current_path = os.path.split(__file__)[0]
+install_path = sys.argv[1]
+
+bin_src    = os.path.join(current_path,'nexus/bin')
+nexus_src  = os.path.join(current_path,'nexus/nexus')
+
+bin_dest   = os.path.join(install_path,'bin')
+nexus_dest = os.path.join(install_path,'nexus')
+
+assert os.path.exists(bin_src)
+assert os.path.exists(nexus_src)
+
+if not os.path.exists(bin_dest):
+    os.makedirs(bin_dest)
+if not os.path.exists(nexus_dest):
+    os.makedirs(nexus_dest)
+
+qmcpack_binaries = ['qmca','qmc-fit','qdens','qdens-radial']
+for b in qmcpack_binaries:
+    bin_file = os.path.join(bin_src,b)
+    shutil.copy2(bin_file,bin_dest)
+
+nexus_modules = [m for m in os.listdir(nexus_src) if m.endswith('.py')]
+for m in nexus_modules:
+    module_file = os.path.join(nexus_src,m)
+    shutil.copy2(module_file,nexus_dest)
+

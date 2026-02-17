@@ -23,10 +23,8 @@
 namespace qmcplusplus
 {
 eeI_JastrowBuilder::eeI_JastrowBuilder(Communicate* comm, ParticleSet& target, ParticleSet& source)
-    : WaveFunctionComponentBuilder(comm, target), sourcePtcl(&source)
-{
-  ClassName = "eeI_JastroBuilder";
-}
+    : WaveFunctionComponentBuilder(comm, target, "eeI_JastroBuilder"), sourcePtcl(&source)
+{}
 
 
 template<typename J3type>
@@ -53,8 +51,8 @@ bool eeI_JastrowBuilder::putkids(xmlNodePtr kids, J3type& J3)
       rAttrib.put(kids);
       using FT           = typename J3type::FuncType;
       const auto coef_id = extractCoefficientsID(kids);
-      auto functor =
-          std::make_unique<FT>(coef_id.empty() ? jname + "_"  + iSpecies + eSpecies1 + eSpecies2 : coef_id, ee_cusp, eI_cusp);
+      auto functor = std::make_unique<FT>(coef_id.empty() ? jname + "_" + iSpecies + eSpecies1 + eSpecies2 : coef_id,
+                                          ee_cusp, eI_cusp);
       functor->iSpecies  = iSpecies;
       functor->eSpecies1 = eSpecies1;
       functor->eSpecies2 = eSpecies2;
@@ -119,7 +117,7 @@ bool eeI_JastrowBuilder::putkids(xmlNodePtr kids, J3type& J3)
 
 std::unique_ptr<WaveFunctionComponent> eeI_JastrowBuilder::buildComponent(xmlNodePtr cur)
 {
-  ReportEngine PRE(ClassName, "put(xmlNodePtr)");
+  ReportEngine PRE(class_name_, "put(xmlNodePtr)");
   xmlNodePtr kids = cur->xmlChildrenNode;
 
   // Create a three-body Jastrow

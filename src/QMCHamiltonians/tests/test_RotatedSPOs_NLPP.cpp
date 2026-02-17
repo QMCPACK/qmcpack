@@ -231,7 +231,7 @@ void test_hcpBe_rotation(bool use_single_det, bool use_nlpp_batched)
   CHECK(dhpsi_over_psi_list[0][1] == Approx(dhpsioverpsi[1]));
 
 
-  QMCHamiltonian* h = hf.getH();
+  auto h = hf.releaseHamiltonian();
   RandomGenerator myrng;
   h->setRandomGenerator(&myrng);
 
@@ -241,8 +241,15 @@ void test_hcpBe_rotation(bool use_single_det, bool use_nlpp_batched)
   CHECK(ke == Approx(-6.818620576308302));
   CHECK(loc_e == Approx(-3.562354739253797));
 
-  auto* localECP_H = h->getHamiltonian("LocalECP");
-  double local_pp  = localECP_H->evaluate(*psi, elec);
+  //Enum to give human readable indexing into QMCHamiltonian.
+  enum observ_id
+  {
+    KINETIC = 0,
+    LOCALECP,
+    NONLOCALECP
+  };
+
+  double local_pp  = h->getComponent(LOCALECP)->evaluate(*psi, elec);
 
   Vector<ValueType> dlogpsi2(2);
   Vector<ValueType> dhpsioverpsi2(2);

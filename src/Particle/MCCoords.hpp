@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2022 QMCPACK developers.
+// Copyright (c) 2026 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //                    Cody A. Melton, cmelton@sandia.gov, Sandia National Laboratories
@@ -14,6 +14,7 @@
 #define QMCPLUSPLUS_MCCOORDS_HPP
 
 #include "Configuration.h"
+#include <initializer_list>
 #include "type_traits/complex_help.hpp"
 #include <algorithm>
 
@@ -28,12 +29,15 @@ enum class CoordsType
 };
 
 template<CoordsType MCT>
-struct MCCoords;
+class MCCoords;
 
 template<>
-struct MCCoords<CoordsType::POS>
+class MCCoords<CoordsType::POS>
 {
+public:
   MCCoords(const std::size_t size) : positions(size) {}
+
+  MCCoords(std::initializer_list<QMCTraits::PosType> pos_list);
 
   MCCoords& operator+=(const MCCoords& rhs);
 
@@ -46,9 +50,13 @@ struct MCCoords<CoordsType::POS>
 };
 
 template<>
-struct MCCoords<CoordsType::POS_SPIN>
+class MCCoords<CoordsType::POS_SPIN>
 {
+public:
   MCCoords(const std::size_t size) : positions(size), spins(size) {}
+
+  MCCoords(std::pair<std::initializer_list<QMCTraits::PosType>, std::initializer_list<QMCTraits::FullPrecRealType>>
+               pos_spin_list);
 
   MCCoords& operator+=(const MCCoords& rhs);
 
@@ -61,8 +69,8 @@ struct MCCoords<CoordsType::POS_SPIN>
   std::vector<QMCTraits::FullPrecRealType> spins;
 };
 
-extern template struct MCCoords<CoordsType::POS>;
-extern template struct MCCoords<CoordsType::POS_SPIN>;
+extern template class MCCoords<CoordsType::POS>;
+extern template class MCCoords<CoordsType::POS_SPIN>;
 } // namespace qmcplusplus
 
 #endif
