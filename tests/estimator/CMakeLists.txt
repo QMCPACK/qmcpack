@@ -24,20 +24,20 @@ endif()
 check_python_reqs("numpy;h5py" estimator-skinetic add_tests)
 
 if(add_tests)
-  simple_run_and_check(estimator-skinetic "${qmcpack_SOURCE_DIR}/tests/estimator/skinetic" vmc.xml 1 16
+  simple_run_and_check(deterministic-estimator-skinetic "${qmcpack_SOURCE_DIR}/tests/estimator/skinetic" vmc.xml 1 16
                        skinetic_check.py)
 endif()
 
 check_python_reqs("numpy;h5py" estimator-latdev add_tests)
 
 if(add_tests)
-  simple_run_and_check(estimator-latdev "${qmcpack_SOURCE_DIR}/tests/estimator/latdev" vmc.xml 1 16 latdev_check.py)
+  simple_run_and_check(deterministic-estimator-latdev "${qmcpack_SOURCE_DIR}/tests/estimator/latdev" vmc.xml 1 16 latdev_check.py)
 endif()
 
 check_python_reqs("numpy;h5py" estimator-latdev-free add_tests)
 
 if(add_tests)
-  simple_run_and_check(estimator-latdev-free "${qmcpack_SOURCE_DIR}/tests/estimator/latdev/free" two.xml 1 16
+  simple_run_and_check(deterministic-estimator-latdev-free "${qmcpack_SOURCE_DIR}/tests/estimator/latdev/free" two.xml 1 16
                        flatdev.py)
 endif()
 
@@ -45,7 +45,7 @@ check_python_reqs("numpy;h5py" estimator-sofk add_tests)
 
 if(add_tests)
   simple_run_and_check(
-    estimator-sofk_pbyp-properties
+    deterministic-estimator-sofk_pbyp-properties
     "${qmcpack_SOURCE_DIR}/tests/estimator/sofk"
     pbyp_dat-h5.xml
     1
@@ -53,7 +53,7 @@ if(add_tests)
     check_properties_h5dat.py
     dat-h5_pbyp)
   simple_run_and_check(
-    estimator-sofk_pbyp-collectables
+    deterministic-estimator-sofk_pbyp-collectables
     "${qmcpack_SOURCE_DIR}/tests/estimator/sofk"
     pbyp_dat-h5.xml
     1
@@ -61,7 +61,7 @@ if(add_tests)
     check_collectables_h5dat.py
     dat-h5_pbyp)
   simple_run_and_check(
-    estimator-sofk_allp-properties
+    deterministic-estimator-sofk_allp-properties
     "${qmcpack_SOURCE_DIR}/tests/estimator/sofk"
     allp_dat-h5.xml
     1
@@ -69,7 +69,7 @@ if(add_tests)
     check_properties_h5dat.py
     dat-h5_allp)
   simple_run_and_check(
-    estimator-sofk_allp-collectables
+    deterministic-estimator-sofk_allp-collectables
     "${qmcpack_SOURCE_DIR}/tests/estimator/sofk"
     allp_dat-h5.xml
     1
