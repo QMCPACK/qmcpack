@@ -24,9 +24,6 @@
 #include "QMCWaveFunctions/Fermion/SlaterDetBuilder.h"
 #include "QMCWaveFunctions/LatticeGaussianProductBuilder.h"
 #include "QMCWaveFunctions/ExampleHeBuilder.h"
-#if OHMMS_DIM == 3 && !defined(QMC_COMPLEX)
-#include "QMCWaveFunctions/AGPDeterminantBuilder.h"
-#endif
 
 #include "Utilities/ProgressReportEngine.h"
 #include "Utilities/IteratorUtility.h"
@@ -125,13 +122,6 @@ std::unique_ptr<TrialWaveFunction> WaveFunctionFactory::buildTWF(xmlNodePtr cur,
       auto exampleHe_builder = std::make_unique<ExampleHeBuilder>(myComm, targetPtcl, ptclPool);
       targetPsi->addComponent(exampleHe_builder->buildComponent(cur));
     }
-#if !defined(QMC_COMPLEX) && OHMMS_DIM == 3
-    else if (cname == "agp")
-    {
-      auto agpbuilder = std::make_unique<AGPDeterminantBuilder>(myComm, targetPtcl, ptclPool);
-      targetPsi->addComponent(agpbuilder->buildComponent(cur));
-    }
-#endif
     else if (cname == "override_variational_parameters")
     {
       OhmmsAttributeSet attribs;
