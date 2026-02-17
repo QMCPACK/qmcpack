@@ -39,6 +39,8 @@ jobs:
           push: true
           tags: | 
             ghcr.io/qmcpack/qmcpack_complete_develop:latest
+          build-args: |
+            GIT_COMMIT_SHA=${{ github.sha }}
           platforms: linux/amd64
           cache-from: type=gha
           cache-to: type=gha,mode=max
