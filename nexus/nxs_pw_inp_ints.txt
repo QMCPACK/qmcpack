@@ -1,0 +1,70 @@
+"nstep"
+"iprint"
+"gdir"
+"nppstr"
+"nberrycyc"
+"ibrav"
+"nat"
+"ntyp"
+"nbnd"
+"nr1"
+"nr2"
+"nr3"
+"nr1s"
+"nr2s"
+"nr3s"
+"nspin"
+"multiplicity"          # Removed?
+"edir"
+"report"
+"electron_maxstep"
+"mixing_ndim"
+"mixing_fixed_ns"
+"ortho_para"            # Removed?
+"diago_cg_maxiter"
+"diago_david_ndim"
+"nraise"
+"bfgs_ndim"
+"num_of_images"         # Removed?
+"fe_nstep"              # Removed?
+"sw_nstep"              # Removed?
+"modenum"               # Removed?
+"n_charge_compensation" # Removed?
+"nlev"                  # Removed?
+"lda_plus_u_kind"       # Removed?
+"nqx1"
+"nqx2"
+"nqx3"
+"esm_nfit"
+"space_group"
+"origin_choice"
+"dftd3_version"
+
+
+"nextffield",       # New?
+"exx_maxstep",      # New?
+"diago_rmm_ndim",   # New?
+"diago_gs_nblock",  # New?
+"nhpcl",            # New?
+"nhptyp",           # New?
+"ndega",            # New?
+"fire_nmin",        # New?
+"fcp_ndiis",        # New?
+"fcp_nraise",       # New?
+"nsolv",            # New?
+"rism1d_maxstep",   # New?
+"rism3d_maxstep",   # New?
+"mdiis1d_size",     # New?
+"mdiis3d_size",     # New?
+"rism1d_nproc",     # New?
+"laue_nfit",        # New?
+"nks",              # New?
+"nks_add",          # New?
+"nconstr",          # New?
+"nbnd_cond",        # New?
+"nk1",              # New?
+"nk2",              # New?
+"nk3",              # New?
+"sk1",              # New?
+"sk2",              # New?
+"sk3",              # New?
