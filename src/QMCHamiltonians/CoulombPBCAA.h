@@ -176,6 +176,9 @@ struct CoulombPBCAA : public OperatorDependsOnlyOnParticleSet, public ForceBase
   static std::vector<Return_t> mw_evalSR_offload(const RefVectorWithLeader<OperatorBase>& o_list,
                                                  const RefVectorWithLeader<ParticleSet>& p_list);
 
+  static std::vector<Return_t> mw_evalSRPerParticle_offload(const RefVectorWithLeader<OperatorBase>& o_list,
+                                                            const RefVectorWithLeader<ParticleSet>& p_list);
+
   Return_t evalLR(const ParticleSet& P) const;
   Return_t evalSRwithForces(ParticleSet& P);
   Return_t evalLRwithForces(ParticleSet& P);
