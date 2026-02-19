@@ -41,7 +41,10 @@ struct CoulombPBCAA::CoulombPBCAAMultiWalkerResource : public Resource
   Vector<CoulombPBCAA::Return_t, OffloadPinnedAllocator<CoulombPBCAA::Return_t>> values_offload;
 
   /// at least a chunks worth of per particle sr values
-  Vector<CoulombPBCAA::Return_t, OffloadPinnedAllocator<CoulombPBCAA::Return_t>> sr_values;
+  Vector<CoulombPBCAA::Return_t, OffloadPinnedAllocator<CoulombPBCAA::Return_t>> pp_sr_values_offload;
+
+  /// Working space for pp_sr_values to be returned.
+  Matrix<RealType> pp_sr_values;
 
   /// a walkers worth of per particle coulomb AA potential values
   Vector<RealType> v_sample;
@@ -215,7 +218,9 @@ void CoulombPBCAA::mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
   auto& p_leader = p_list.getLeader();
   assert(this == &o_list.getLeader());
 
+  // Tired of warnings about dangling else
   if (!o_leader.is_active)
+  {
     if (!o_leader.is_static_initialized)
       return;
     else
@@ -230,6 +235,7 @@ void CoulombPBCAA::mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
       }
       return;
     }
+  }
 
   if (use_offload_)
   {
@@ -274,43 +280,17 @@ void CoulombPBCAA::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
   auto num_species           = p_leader.getSpeciesSet().getTotalNum();
   v_sample.resize(num_centers);
 
-  RefVectorWithLeader<DistanceTable> dt_list(p_leader.getDistTable(o_leader.d_aa_ID));
-  dt_list.reserve(p_list.size());
-  for (ParticleSet& p : p_list)
-    dt_list.push_back(p.getDistTable(o_leader.d_aa_ID));
-
-  auto& dtaa_leader = dynamic_cast<DistanceTableAA&>(p_leader.getDistTable(caa_leader.d_aa_ID));
-  auto&
-      // This lambda is mostly about getting a handle on what is being
-      // touched by the per particle evaluation.
-      // v_sample is updated as a side effect
-      auto evaluate_walker =
-          [num_species, num_centers, name, &v_sample, &pp_consts](const int iw, const CoulombPBCAA& cpbcaa,
-                                                                  const ParticleSet& pset, const) -> RealType {
+  // This lambda is mostly about getting a handle on what is being
+  // touched by the per particle evaluation.
+  // v_sample is updated as a side effect
+  auto evaluate_walker = [num_species, num_centers, name, &v_sample,
+                          &pp_consts](const int iw, const CoulombPBCAA& cpbcaa, const ParticleSet& pset,
+                                      Matrix<RealType>& pp_sr_values) -> RealType {
     mRealType Vsr = 0.0;
     mRealType Vlr = 0.0;
     mRealType Vc  = cpbcaa.myConst;
     v_sample.zero();
     {
-      //SR
-      const auto& d_aa(pset.getDistTableAA(cpbcaa.d_aa_ID));
-      RealType z;
-      for (int ipart = 1; ipart < num_centers; ipart++)
-      {
-        z                = .5 * cpbcaa.Zat[ipart];
-        const auto& dist = d_aa.getDistRow(ipart);
-        for (int jpart = 0; jpart < ipart; ++jpart)
-        {
-          RealType pairpot = z * cpbcaa.Zat[jpart] * cpbcaa.rVs->splint(dist[jpart]) / dist[jpart];
-          v_sample[ipart] += pairpot;
-          v_sample[jpart] += pairpot;
-          Vsr += pairpot;
-        }
-      }
-      Vsr *= 2.0;
-    }
-    {
-      //LR
       const StructFact& PtclRhoK(pset.getSK());
       if (PtclRhoK.SuperCellEnum == SUPERCELL_SLAB)
       {
@@ -324,6 +304,10 @@ void CoulombPBCAA::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
         RealType z;
         for (int i = 0; i < num_centers; i++)
         {
+          // per particle short range already done for all particles
+          // and walkers.
+          v_sample[i] += pp_sr_values(i, iw);
+          Vsr += pp_sr_values(i, iw);
           z  = .5 * cpbcaa.Zat[i];
           v1 = 0.0;
           for (int s = 0; s < num_species; ++s)
@@ -368,21 +352,28 @@ void CoulombPBCAA::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
     // Legacy here assigns value to this walker coulombPBCAA
     return value;
   };
-
+  Matrix<RealType> pp_sr_values;
   if (o_leader.is_active)
+  {
+    if (use_offload_)
+      pp_sr_values = mw_evalSRPerParticle_offload(o_list, p_list);
+    else
+      pp_sr_values = mw_evalSRPerParticle(o_list, p_list);
+
     for (int iw = 0; iw < o_list.size(); iw++)
     {
       auto& coulomb_aa = o_list.getCastedElement<CoulombPBCAA>(iw);
 #ifndef NDEBUG
       auto collective_evaluate_value = coulomb_aa.value_;
 #endif
-      coulomb_aa.value_ = evaluate_walker(iw, coulomb_aa, p_list[iw]);
+      coulomb_aa.value_ = evaluate_walker(iw, coulomb_aa, p_list[iw], pp_sr_values);
 #ifndef NDEBUG
       assert(coulomb_aa.value_ == collective_evaluate_value);
 #endif
       for (const ListenerVector<RealType>& listener : listeners)
         listener.report(iw, name, v_sample);
     }
+  }
   else
   {
     auto& o_leader = o_list.getCastedLeader<CoulombPBCAA>();
@@ -774,6 +765,7 @@ std::vector<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSR_offload(const RefVec
     std::fill_n(values_offload.data(), nw, 0);
     auto value_ptr = values_offload.data();
     values_offload.updateTo();
+
     for (size_t ichunk = 0; ichunk < num_chunks; ichunk++)
     {
       const size_t first           = ichunk * chunk_size;
@@ -814,7 +806,7 @@ std::vector<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSR_offload(const RefVec
   return values;
 }
 
-std::vector<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSRPerParticle_offload(
+Matrix<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSRPerParticle_offload(
     const RefVectorWithLeader<OperatorBase>& o_list,
     const RefVectorWithLeader<ParticleSet>& p_list)
 {
@@ -835,6 +827,7 @@ std::vector<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSRPerParticle_offload(
     throw std::runtime_error("bug dtaa_leader.get_num_particls_stored() == 0");
 
   auto& values_offload        = caa_leader.mw_res_handle_.getResource().values_offload;
+  auto& pp_sr_values_offload  = caa_leader.mw_res_handle_.getResource().pp_sr_values_offload;
   const size_t total_num      = p_leader.getTotalNum();
   const size_t total_num_half = (total_num + 1) / 2;
   const size_t num_padded     = getAlignedSize<RealType>(total_num);
@@ -854,6 +847,11 @@ std::vector<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSRPerParticle_offload(
     values_offload.resize(nw);
     std::fill_n(values_offload.data(), nw, 0);
     auto value_ptr = values_offload.data();
+
+    pp_sr_values_offload.resize(nw * total_num);
+    std::fill_n(values_offload.data(), nw * total_num, 0);
+    auto pp_sr_value_ptr = pp_sr_values_offload.data();
+
     values_offload.updateTo();
     for (size_t ichunk = 0; ichunk < num_chunks; ichunk++)
     {
@@ -877,24 +875,74 @@ std::vector<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSRPerParticle_offload(
             if (irow == jcol || (irow * 2 + 1 == total_num && jcol > irow))
               continue;
 
+
             const size_t i = irow > jcol ? irow : total_num - 1 - irow;
             const size_t j = irow > jcol ? jcol : total_num - 1 - jcol;
-
-            SR += Zat[i] * Zat[j] *
+            auto sr_value  = Zat[i] * Zat[j] *
                 OffloadSpline::splint(r_min, r_max, X, delta_inv, m_Y, m_Y2, first_deriv, const_value, dist) / dist;
+            pp_sr_value_ptr[j + total_num * iw] += sr_value;
+            SR += sr_value;
           }
         value_ptr[iw] += SR;
       }
     }
 
     values_offload.updateFrom();
+    pp_sr_values_offload.updateFrom();
   }
+  Matrix<Return_t> pp_sr_values(total_num, nw);
   std::vector<Return_t> values(nw);
   for (int iw = 0; iw < nw; iw++)
+  {
+    Return_t sr_value_sum{0};
     values[iw] = values_offload[iw];
-  return values;
+    for (int ip = 0; ip < total_num; ++ip)
+    {
+      pp_sr_values(ip, iw) = pp_sr_values_offload[ip + iw * nw];
+      sr_value_sum += pp_sr_values(ip, iw);
+    }
+#ifndef NDEBUG
+    //auto sum_pp_values = std::accumulate(pp_sr_values.begin(iw), (pp_sr_values.begin(iw) + total_num));
+    assert(sr_value_sum == values[iw]);
+#endif
+  }
+  return pp_sr_values;
 }
 
+Matrix<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSRPerParticle(const RefVectorWithLeader<OperatorBase>& o_list,
+                                                                  const RefVectorWithLeader<ParticleSet>& p_list)
+{
+  auto& o_leader         = o_list.getCastedLeader<CoulombPBCAA>();
+  auto& p_leader         = p_list.getLeader();
+  const size_t total_num = p_leader.getTotalNum();
+  const int num_walkers  = o_list.size();
+  Matrix<Return_t> pp_sr_values(total_num, num_walkers);
+
+  auto num_centers = p_leader.getTotalNum();
+
+  for (int iw = 0; iw < num_walkers; ++iw)
+  {
+    ParticleSet& pset = p_list[iw];
+
+    //SR
+    const auto& d_aa(pset.getDistTableAA(o_leader.d_aa_ID));
+    RealType z;
+
+    for (int ipart = 1; ipart < num_centers; ipart++)
+    {
+      z                = .5 * o_leader.Zat[ipart];
+      const auto& dist = d_aa.getDistRow(ipart);
+      for (int jpart = 0; jpart < ipart; ++jpart)
+      {
+        RealType pairpot = z * o_leader.Zat[jpart] * o_leader.rVs->splint(dist[jpart]) / dist[jpart];
+        pp_sr_values(ipart, iw) += pairpot;
+        pp_sr_values(jpart, iw) += pairpot;
+      }
+    }
+  }
+
+  return pp_sr_values;
+}
 
 CoulombPBCAA::Return_t CoulombPBCAA::evalLR(const ParticleSet& P) const
 {
