@@ -49,8 +49,6 @@
 #endif
 #include "QMCHamiltonians/SkPot.h"
 #include "OhmmsData/AttributeSet.h"
-#include "Message/UniformCommunicateError.h"
-#include "Fermion/MultiSlaterDetTableMethod.h"
 
 namespace qmcplusplus
 {
@@ -242,15 +240,8 @@ bool HamiltonianFactory::build(xmlNodePtr cur)
       else if (potType == "selfhealingoverlap" || potType == "SelfHealingOverlap")
       {
         app_log() << "  Adding SelfHealingOverlap" << std::endl;
-
-        auto msd_refvec = targetPsi->findMSD();
-        if (msd_refvec.size() != 1)
-          throw UniformCommunicateError("SelfHealingOverlap requires one and only one multi slater determinant "
-                                        "component in the trial wavefunction.");
-
-        const MultiSlaterDetTableMethod& msd = msd_refvec[0];
         std::unique_ptr<SelfHealingOverlapLegacy> apot =
-            std::make_unique<SelfHealingOverlapLegacy>(msd.getLinearExpansionCoefs().size());
+            std::make_unique<SelfHealingOverlapLegacy>(*targetPsi);
         apot->put(element);
         targetH->addOperator(std::move(apot), potName, false);
       }
