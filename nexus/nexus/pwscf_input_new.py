@@ -72,37 +72,37 @@ class ControlDefinitions(NamelistParamDefinition, NamelistEnumBase):
     throughout the rest of the code base can be utilized properly.
     """
 
-    calculation               = str,   False, (1,), ('scf', 'nscf', 'bands', 'relax', 'md', 'vc-relax', 'vc-md')
-    title                     = str,   False, (1,), None
-    verbosity                 = str,   False, (1,), ('high', 'low')
-    restart_mode              = str,   False, (1,), ('from_scratch', 'restart')
-    wf_collect                = bool,  False, (1,), None
-    nstep                     = int,   False, (1,), None
-    iprint                    = int,   False, (1,), None
-    tstress                   = bool,  False, (1,), None
-    tprnfor                   = bool,  False, (1,), None
-    dt                        = float, False, (1,), None
-    outdir                    = str,   False, (1,), None
-    wfcdir                    = str,   False, (1,), None
-    prefix                    = str,   False, (1,), None
-    lkpoint_dir               = bool,  False, (1,), None
-    max_seconds               = float, False, (1,), None
-    etot_conv_thr             = float, False, (1,), None
-    forc_conv_thr             = float, False, (1,), None
-    disk_io                   = str,   False, (1,), ('high', 'medium', 'low', 'nowf', 'minimal', 'none')
-    pseudo_dir                = str,   False, (1,), None
-    tefield                   = bool,  False, (1,), None
-    dipfield                  = bool,  False, (1,), None
-    lelfield                  = bool,  False, (1,), None
-    nberrycyc                 = int,   False, (1,), None
-    lorbm                     = bool,  False, (1,), None
-    lberry                    = bool,  False, (1,), None
-    gdir                      = int,   False, (1,), None
-    nppstr                    = int,   False, (1,), None
-    gate                      = bool,  False, (1,), None
-    twochem                   = bool,  False, (1,), None
-    lfcp                      = bool,  False, (1,), None
-    trism                     = bool,  False, (1,), None
+    calculation   = str,   False, (1,), ('scf', 'nscf', 'bands', 'relax', 'md', 'vc-relax', 'vc-md')
+    title         = str,   False, (1,), None
+    verbosity     = str,   False, (1,), ('high', 'low')
+    restart_mode  = str,   False, (1,), ('from_scratch', 'restart')
+    wf_collect    = bool,  False, (1,), None
+    nstep         = int,   False, (1,), None
+    iprint        = int,   False, (1,), None
+    tstress       = bool,  False, (1,), None
+    tprnfor       = bool,  False, (1,), None
+    dt            = float, False, (1,), None
+    outdir        = str,   False, (1,), None
+    wfcdir        = str,   False, (1,), None
+    prefix        = str,   False, (1,), None
+    lkpoint_dir   = bool,  False, (1,), None
+    max_seconds   = float, False, (1,), None
+    etot_conv_thr = float, False, (1,), None
+    forc_conv_thr = float, False, (1,), None
+    disk_io       = str,   False, (1,), ('high', 'medium', 'low', 'nowf', 'minimal', 'none')
+    pseudo_dir    = str,   False, (1,), None
+    tefield       = bool,  False, (1,), None
+    dipfield      = bool,  False, (1,), None
+    lelfield      = bool,  False, (1,), None
+    nberrycyc     = int,   False, (1,), None
+    lorbm         = bool,  False, (1,), None
+    lberry        = bool,  False, (1,), None
+    gdir          = int,   False, (1,), None
+    nppstr        = int,   False, (1,), None
+    gate          = bool,  False, (1,), None
+    twochem       = bool,  False, (1,), None
+    lfcp          = bool,  False, (1,), None
+    trism         = bool,  False, (1,), None
 #end class ControlDefinitions
 
 class SystemVariables(NamelistParamDefinition, NamelistEnumBase):
@@ -247,32 +247,32 @@ class ElectronsVariables(NamelistParamDefinition, NamelistEnumBase):
     throughout the rest of the code base can be utilized properly.
     """
 
-    electron_maxstep          = int,   False, (1,), None
-    exx_maxstep               = int,   False, (1,), None
-    scf_must_converge         = bool,  False, (1,), None
-    conv_thr                  = float, False, (1,), None
-    adaptive_thr              = bool,  False, (1,), None
-    conv_thr_init             = float, False, (1,), None
-    conv_thr_multi            = float, False, (1,), None
-    mixing_mode               = str,   False, (1,), ('plain', 'TF', 'local-TF')
-    mixing_beta               = float, False, (1,), None
-    mixing_ndim               = int,   False, (1,), None
-    mixing_fixed_ns           = int,   False, (1,), None
-    diagonalization           = str,   False, (1,), ('david', 'cg', 'ppcg', 'paro', 'ParO', 'rmm-davidson', 'rmm-paro')
-    diago_thr_init            = float, False, (1,), None
-    diago_cg_maxiter          = int,   False, (1,), None
-    diago_david_ndim          = int,   False, (1,), None
-    diago_rmm_ndim            = int,   False, (1,), None
-    diago_rmm_conv            = bool,  False, (1,), None
-    diago_gs_nblock           = int,   False, (1,), None
-    diago_full_acc            = bool,  False, (1,), None
-    efield                    = float, False, (1,), None
-    efield_phase              = str,   False, (1,), ('read', 'write', 'none')
-    startingpot               = str,   False, (1,), ('atomic', 'file')
-    startingwfc               = str,   False, (1,), ('atomic', 'atomic+random', 'random', 'file')
-    tqr                       = bool,  False, (1,), None
-    real_space                = bool,  False, (1,), None
-    efield_cart               = float, False, ((1,), (3,)), None
+    electron_maxstep  = int,   False, (1,), None
+    exx_maxstep       = int,   False, (1,), None
+    scf_must_converge = bool,  False, (1,), None
+    conv_thr          = float, False, (1,), None
+    adaptive_thr      = bool,  False, (1,), None
+    conv_thr_init     = float, False, (1,), None
+    conv_thr_multi    = float, False, (1,), None
+    mixing_mode       = str,   False, (1,), ('plain', 'TF', 'local-TF')
+    mixing_beta       = float, False, (1,), None
+    mixing_ndim       = int,   False, (1,), None
+    mixing_fixed_ns   = int,   False, (1,), None
+    diagonalization   = str,   False, (1,), ('david', 'cg', 'ppcg', 'paro', 'ParO', 'rmm-davidson', 'rmm-paro')
+    diago_thr_init    = float, False, (1,), None
+    diago_cg_maxiter  = int,   False, (1,), None
+    diago_david_ndim  = int,   False, (1,), None
+    diago_rmm_ndim    = int,   False, (1,), None
+    diago_rmm_conv    = bool,  False, (1,), None
+    diago_gs_nblock   = int,   False, (1,), None
+    diago_full_acc    = bool,  False, (1,), None
+    efield            = float, False, (1,), None
+    efield_phase      = str,   False, (1,), ('read', 'write', 'none')
+    startingpot       = str,   False, (1,), ('atomic', 'file')
+    startingwfc       = str,   False, (1,), ('atomic', 'atomic+random', 'random', 'file')
+    tqr               = bool,  False, (1,), None
+    real_space        = bool,  False, (1,), None
+    efield_cart       = float, False, ((1,), (3,)), None
 #end class ElectronsVariables
 
 class IonsVariables(NamelistParamDefinition, NamelistEnumBase):
@@ -289,38 +289,38 @@ class IonsVariables(NamelistParamDefinition, NamelistEnumBase):
     throughout the rest of the code base can be utilized properly.
     """
 
-    ion_positions             = str,   False, (1,), ('default', 'from_input')
-    ion_velocities            = str,   False, (1,), ('default', 'from_input')
-    ion_dynamics              = str,   False, (1,), ('bfgs', 'damp', 'fire', 'verlet', 'velocity-verlet', 'langevin', 'langevin-smc', 'bfgs', 'damp', 'beeman')
-    pot_extrapolation         = str,   False, (1,), ('none', 'atomic', 'first_order', 'second_order')
-    wfc_extrapolation         = str,   False, (1,), ('none', 'first_order', 'second_order')
-    remove_rigid_rot          = bool,  False, (1,), None
-    ion_temperature           = str,   False, (1,), ('rescaling', 'rescale-v', 'rescale-T', 'reduce-T', 'nose', 'berendsen', 'andersen', 'svr', 'initial', 'not_controlled')
-    tempw                     = float, False, (1,), None
-    fnosep                    = float, False, (1,), None
-    nhpcl                     = int,   False, (1,), None
-    nhptyp                    = int,   False, (1,), None
-    ndega                     = int,   False, (1,), None
-    tolp                      = float, False, (1,), None
-    delta_t                   = float, False, (1,), None
-    nraise                    = int,   False, (1,), None
-    refold_pos                = bool,  False, (1,), None
-    nhgrp                     = int,   False, ((1,), ('ntyp',)), None
-    fnhscl                    = float, False, ((1,), ('ntyp',)), None
-    upscale                   = float, False, (1,), None
-    bfgs_ndim                 = int,   False, (1,), None
-    tgdiis_step               = bool,  False, (1,), None
-    trust_radius_max          = float, False, (1,), None
-    trust_radius_min          = float, False, (1,), None
-    trust_radius_ini          = float, False, (1,), None
-    w_1                       = float, False, (1,), None
-    w_2                       = float, False, (1,), None
-    fire_alpha_init           = float, False, (1,), None
-    fire_falpha               = float, False, (1,), None
-    fire_nmin                 = int,   False, (1,), None
-    fire_f_inc                = float, False, (1,), None
-    fire_f_dec                = float, False, (1,), None
-    fire_dtmax                = float, False, (1,), None
+    ion_positions     = str,   False, (1,), ('default', 'from_input')
+    ion_velocities    = str,   False, (1,), ('default', 'from_input')
+    ion_dynamics      = str,   False, (1,), ('bfgs', 'damp', 'fire', 'verlet', 'velocity-verlet', 'langevin', 'langevin-smc', 'bfgs', 'damp', 'beeman')
+    pot_extrapolation = str,   False, (1,), ('none', 'atomic', 'first_order', 'second_order')
+    wfc_extrapolation = str,   False, (1,), ('none', 'first_order', 'second_order')
+    remove_rigid_rot  = bool,  False, (1,), None
+    ion_temperature   = str,   False, (1,), ('rescaling', 'rescale-v', 'rescale-T', 'reduce-T', 'nose', 'berendsen', 'andersen', 'svr', 'initial', 'not_controlled')
+    tempw             = float, False, (1,), None
+    fnosep            = float, False, (1,), None
+    nhpcl             = int,   False, (1,), None
+    nhptyp            = int,   False, (1,), None
+    ndega             = int,   False, (1,), None
+    tolp              = float, False, (1,), None
+    delta_t           = float, False, (1,), None
+    nraise            = int,   False, (1,), None
+    refold_pos        = bool,  False, (1,), None
+    nhgrp             = int,   False, ((1,), ('ntyp',)), None
+    fnhscl            = float, False, ((1,), ('ntyp',)), None
+    upscale           = float, False, (1,), None
+    bfgs_ndim         = int,   False, (1,), None
+    tgdiis_step       = bool,  False, (1,), None
+    trust_radius_max  = float, False, (1,), None
+    trust_radius_min  = float, False, (1,), None
+    trust_radius_ini  = float, False, (1,), None
+    w_1               = float, False, (1,), None
+    w_2               = float, False, (1,), None
+    fire_alpha_init   = float, False, (1,), None
+    fire_falpha       = float, False, (1,), None
+    fire_nmin         = int,   False, (1,), None
+    fire_f_inc        = float, False, (1,), None
+    fire_f_dec        = float, False, (1,), None
+    fire_dtmax        = float, False, (1,), None
 #end class IonsVariables
 
 class CellVariables(NamelistParamDefinition, NamelistEnumBase):
@@ -337,12 +337,12 @@ class CellVariables(NamelistParamDefinition, NamelistEnumBase):
     throughout the rest of the code base can be utilized properly.
     """
 
-    cell_dynamics             = str,   False, (1,), ('none', 'sd', 'damp-pr', 'damp-w', 'bfgs', 'none', 'pr', 'w')
-    press                     = float, False, (1,), None
-    wmass                     = float, False, (1,), None
-    cell_factor               = float, False, (1,), None
-    press_conv_thr            = float, False, (1,), None
-    cell_dofree               = str,   False, (1,), ('all', 'ibrav', 'a', 'b', 'c', 'fixa', 'fixb', 'fixc', 'x', 'y', 'z', 'xy', 'xz', 'yz', 'xyz', 'shape', 'volume', '2Dxy', '2Dshape', 'epitaxial_ab', 'epitaxial_ac', 'epitaxial_bc')
+    cell_dynamics  = str,   False, (1,), ('none', 'sd', 'damp-pr', 'damp-w', 'bfgs', 'none', 'pr', 'w')
+    press          = float, False, (1,), None
+    wmass          = float, False, (1,), None
+    cell_factor    = float, False, (1,), None
+    press_conv_thr = float, False, (1,), None
+    cell_dofree    = str,   False, (1,), ('all', 'ibrav', 'a', 'b', 'c', 'fixa', 'fixb', 'fixc', 'x', 'y', 'z', 'xy', 'xz', 'yz', 'xyz', 'shape', 'volume', '2Dxy', '2Dshape', 'epitaxial_ab', 'epitaxial_ac', 'epitaxial_bc')
 #end class CellVariables
 
 class FCPVariables(NamelistParamDefinition, NamelistEnumBase):
@@ -359,18 +359,18 @@ class FCPVariables(NamelistParamDefinition, NamelistEnumBase):
     throughout the rest of the code base can be utilized properly.
     """
 
-    fcp_mu                    = float, True,  (1,), None
-    fcp_dynamics              = str,   False, (1,), ('bfgs', 'newton', 'damp', 'lm', 'velocity-verlet', 'verlet')
-    fcp_conv_thr              = float, False, (1,), None
-    fcp_ndiis                 = int,   False, (1,), None
-    freeze_all_atoms          = bool,  False, (1,), None
-    fcp_mass                  = float, False, (1,), None
-    fcp_velocity              = float, False, (1,), None
-    fcp_temperature           = str,   False, (1,), ('rescaling', 'rescale-v', 'rescale-T', 'reduce-T', 'berendsen', 'andersen', 'initial', 'not_controlled')
-    fcp_tempw                 = float, False, (1,), None
-    fcp_tolp                  = float, False, (1,), None
-    fcp_delta_t               = float, False, (1,), None
-    fcp_nraise                = int,   False, (1,), None
+    fcp_mu           = float, True,  (1,), None
+    fcp_dynamics     = str,   False, (1,), ('bfgs', 'newton', 'damp', 'lm', 'velocity-verlet', 'verlet')
+    fcp_conv_thr     = float, False, (1,), None
+    fcp_ndiis        = int,   False, (1,), None
+    freeze_all_atoms = bool,  False, (1,), None
+    fcp_mass         = float, False, (1,), None
+    fcp_velocity     = float, False, (1,), None
+    fcp_temperature  = str,   False, (1,), ('rescaling', 'rescale-v', 'rescale-T', 'reduce-T', 'berendsen', 'andersen', 'initial', 'not_controlled')
+    fcp_tempw        = float, False, (1,), None
+    fcp_tolp         = float, False, (1,), None
+    fcp_delta_t      = float, False, (1,), None
+    fcp_nraise       = int,   False, (1,), None
 #end class FCPVariables
 
 class RismVariables(NamelistParamDefinition, NamelistEnumBase):
@@ -387,45 +387,45 @@ class RismVariables(NamelistParamDefinition, NamelistEnumBase):
     throughout the rest of the code base can be utilized properly.
     """
 
-    nsolv                     = int,   True,  (1,), None
-    closure                   = str,   False, (1,), ('kh', 'hnc')
-    tempv                     = float, False, (1,), None
-    ecutsolv                  = float, False, (1,), None
-    starting1d                = str,   False, (1,), ('zero', 'file', 'fix')
-    starting3d                = str,   False, (1,), ('zero', 'file')
-    smear1d                   = float, False, (1,), None
-    smear3d                   = float, False, (1,), None
-    rism1d_maxstep            = int,   False, (1,), None
-    rism3d_maxstep            = int,   False, (1,), None
-    rism1d_conv_thr           = float, False, (1,), None
-    rism3d_conv_thr           = float, False, (1,), None
-    mdiis1d_size              = int,   False, (1,), None
-    mdiis3d_size              = int,   False, (1,), None
-    mdiis1d_step              = float, False, (1,), None
-    mdiis3d_step              = float, False, (1,), None
-    rism1d_bond_width         = float, False, (1,), None
-    rism1d_dielectric         = float, False, (1,), None
-    rism1d_molesize           = float, False, (1,), None
-    rism1d_nproc              = int,   False, (1,), None
-    rism3d_conv_level         = float, False, (1,), None
-    rism3d_planar_average     = bool,  False, (1,), None
-    laue_nfit                 = int,   False, (1,), None
-    laue_expand_right         = float, False, (1,), None
-    laue_expand_left          = float, False, (1,), None
-    laue_starting_right       = float, False, (1,), None
-    laue_starting_left        = float, False, (1,), None
-    laue_buffer_right         = float, False, (1,), None
-    laue_buffer_left          = float, False, (1,), None
-    laue_both_hands           = bool,  False, (1,), None
-    laue_wall                 = str,   False, (1,), ('none', 'auto', 'manual')
-    laue_wall_z               = float, False, (1,), None
-    laue_wall_rho             = float, False, (1,), None
-    laue_wall_epsilon         = float, False, (1,), None
-    laue_wall_sigma           = float, False, (1,), None
-    laue_wall_lj6             = bool,  False, (1,), None
-    solute_lj                 = str,   False, ((1,), ('ntyp',)), None
-    solute_epsilon            = float, False, ((1,), ('ntyp',)), None
-    solute_sigma              = float, False, ((1,), ('ntyp',)), None
+    nsolv                 = int,   True,  (1,), None
+    closure               = str,   False, (1,), ('kh', 'hnc')
+    tempv                 = float, False, (1,), None
+    ecutsolv              = float, False, (1,), None
+    starting1d            = str,   False, (1,), ('zero', 'file', 'fix')
+    starting3d            = str,   False, (1,), ('zero', 'file')
+    smear1d               = float, False, (1,), None
+    smear3d               = float, False, (1,), None
+    rism1d_maxstep        = int,   False, (1,), None
+    rism3d_maxstep        = int,   False, (1,), None
+    rism1d_conv_thr       = float, False, (1,), None
+    rism3d_conv_thr       = float, False, (1,), None
+    mdiis1d_size          = int,   False, (1,), None
+    mdiis3d_size          = int,   False, (1,), None
+    mdiis1d_step          = float, False, (1,), None
+    mdiis3d_step          = float, False, (1,), None
+    rism1d_bond_width     = float, False, (1,), None
+    rism1d_dielectric     = float, False, (1,), None
+    rism1d_molesize       = float, False, (1,), None
+    rism1d_nproc          = int,   False, (1,), None
+    rism3d_conv_level     = float, False, (1,), None
+    rism3d_planar_average = bool,  False, (1,), None
+    laue_nfit             = int,   False, (1,), None
+    laue_expand_right     = float, False, (1,), None
+    laue_expand_left      = float, False, (1,), None
+    laue_starting_right   = float, False, (1,), None
+    laue_starting_left    = float, False, (1,), None
+    laue_buffer_right     = float, False, (1,), None
+    laue_buffer_left      = float, False, (1,), None
+    laue_both_hands       = bool,  False, (1,), None
+    laue_wall             = str,   False, (1,), ('none', 'auto', 'manual')
+    laue_wall_z           = float, False, (1,), None
+    laue_wall_rho         = float, False, (1,), None
+    laue_wall_epsilon     = float, False, (1,), None
+    laue_wall_sigma       = float, False, (1,), None
+    laue_wall_lj6         = bool,  False, (1,), None
+    solute_lj             = str,   False, ((1,), ('ntyp',)), None
+    solute_epsilon        = float, False, ((1,), ('ntyp',)), None
+    solute_sigma          = float, False, ((1,), ('ntyp',)), None
 #end class RismVariables
 
 
