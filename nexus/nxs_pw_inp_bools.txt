@@ -1,0 +1,43 @@
+"wf_collect",
+"tstress",
+"tprnfor",
+"lkpoint_dir",
+"tefield",
+"dipfield",
+"lelfield",
+"lberry",
+"nosym",
+"nosym_evc",
+"noinv",
+"force_symmorphic",
+"noncolin",             # Removed?
+"lda_plus_u",           # Removed?
+"lspinorb",
+"do_ee",                # Removed?
+"london",
+"diago_full_acc",
+"tqr",
+"remove_rigid_rot",
+"refold_pos",
+"first_last_opt",       # Removed?
+"use_masses",           # Removed?
+"use_freezing",         # Removed?
+"la2F",                 # Removed?
+"lorbm",
+"lfcpopt",              # Removed?
+"scf_must_converge",
+"adaptive_thr",
+"no_t_rev",
+"use_all_frac",
+"one_atom_occupations",
+"starting_spin_angle",
+"x_gamma_extrapolation",
+"xdm",
+"uniqueb",
+"rhombohedral",
+"gate",
+"block",
+"relaxz",
+"dftd3_threebody",
+"ts_vdw_isolated",      # Removed?
+"lforcet",

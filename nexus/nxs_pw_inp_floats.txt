@@ -1,0 +1,138 @@
+"dt",
+"max_seconds",
+"etot_conv_thr",
+"forc_conv_thr",
+"celldm",
+"A",
+"B",
+"C",
+"cosAB",
+"cosAC",
+"cosBC",
+"nelec",                        # Removed?
+"ecutwfc",
+"ecutrho",
+"degauss",
+"tot_charge",
+"tot_magnetization",
+"starting_magnetization",
+"nelup",                        # Removed?
+"neldw",                        # Removed?
+"ecfixed",
+"qcutz",
+"q2sigma",
+"Hubbard_alpha",                # Removed?
+"Hubbard_U",                    # Removed?
+"Hubbard_J",                    # Removed?
+"starting_ns_eigenvalue",
+"emaxpos",
+"eopreg",
+"eamp",
+"angle1",
+"angle2",
+"fixed_magnetization",
+"lambda",
+"london_s6",
+"london_rcut",
+"conv_thr",
+"mixing_beta",
+"diago_thr_init",
+"efield",
+"tempw",
+"tolp",
+"delta_t",
+"upscale",
+"trust_radius_max",
+"trust_radius_min",
+"trust_radius_ini",
+"w_1",
+"w_2",
+"temp_req",                     # Removed?
+"ds",                           # Removed?
+"k_max",                        # Removed?
+"k_min",                        # Removed?
+"path_thr",                     # Removed?
+"fe_step",                      # Removed?
+"g_amplitude",                  # Removed?
+"press",
+"wmass",
+"cell_factor",
+"press_conv_thr",
+"xqq",                          # Removed?
+"ecutcoarse",                   # Removed?
+"mixing_charge_compensation",   # Removed?
+"comp_thr",                     # Removed?
+"exx_fraction",
+"ecutfock",
+"conv_thr_init",
+"conv_thr_multi",
+"efield_cart",
+"screening_parameter",
+"ecutvcut",
+"Hubbard_J0",                   # Removed?
+"Hubbard_beta",
+"Hubbard_J",                    # Removed?
+"esm_w",
+"esm_efield",
+"fcp_mu",
+"london_c6",
+"london_rvdw",
+"xdm_a1",
+"xdm_a2",
+"block_1",
+"block_2",
+"block_height",
+"zgate",
+"ts_vdw_econv_thr",
+"starting_charge"
+
+
+
+"degauss_cond",         # New?
+"nelec_cond",           # New?
+"sic_gamma",            # New?
+"sci_vb",               # New?
+"sci_cb",               # New?
+"localization_thr",     # New?    
+"gcscf_mu",             # New?
+"gcscf_conv_thr",       # New?    
+"gcscf_beta",           # New?
+"fnosep",               # New?
+"fire_alpha_init",      # New?    
+"fire_falpha",          # New?
+"fire_f_inc",           # New?
+"fire_f_dec",           # New?
+"fire_dtmax",           # New?
+"fcp_conv_thr",         # New?
+"fcp_mass",             # New?
+"fcp_velocity",         # New?
+"fcp_tempw",            # New?
+"fcp_tolp",             # New?
+"fcp_delta_t",          # New?
+"tempv",                # New?
+"ecutsolv",             # New?
+"smear1d",              # New?
+"smear3d",              # New?
+"rism1d_conv_thr",      # New?    
+"rism3d_conv_thr",      # New?    
+"mdiis1d_step",         # New?
+"mdiis3d_step",         # New?
+"rism1d_bond_width",    # New?        
+"rism1d_dielectric",    # New?        
+"rism1d_molesize",      # New?    
+"rism3d_conv_level",    # New?        
+"laue_expand_right",    # New?        
+"laue_expand_left",     # New?    
+"laue_starting_right",  # New?        
+"laue_starting_left",   # New?        
+"laue_buffer_right",    # New?        
+"laue_buffer_left",     # New?    
+"laue_wall_z",          # New?
+"laue_wall_rho",        # New?    
+"laue_wall_epsilon",    # New?        
+"laue_wall_sigma",      # New?    
+"constr_tol",           # New?
+"Hubbard_occ",          # New?
+"fnhscl",               # New?
+"solute_epsilon",       # New?    
+"solute_sigma",         # New?
