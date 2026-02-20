@@ -70,7 +70,7 @@
                </coefficients>
             </correlation>
          </jastrow>
-      <override_variational_parameters href="qmc_short_batch.s002.vp.h5"/>
+      <override_variational_parameters href="qmc_short_batch.s000.vp.h5"/>
       </wavefunction>
       <hamiltonian name="h0" type="generic" target="e">
          <pairpot type="coulomb" name="ElecElec" source="e" target="e"/>
