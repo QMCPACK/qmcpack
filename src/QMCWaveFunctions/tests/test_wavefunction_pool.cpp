@@ -93,7 +93,8 @@ TEST_CASE("WaveFunctionPool", "[wavefunction]")
 
   REQUIRE(wp.empty() == true);
   CHECK_THROWS_WITH(wp.getWaveFunction("abc"),
-                    Catch::Matchers::Equals("wavefunction pool is empty! Cannot find wavefunction named \"abc\"!"));
+                    Catch::Matchers::Equals(
+                        "The wavefunction pool is empty. Need at least one wavefunction node in the xml input!"));
 
   const char* wf_input = R"(<wavefunction target='e'>
      <determinantset type='einspline' href='diamondC_1x1x1.pwscf.h5' tilematrix='1 0 0 0 1 0 0 0 1' twistnum='0' source='ion' meshfactor='1.0' precision='float'>
@@ -122,17 +123,18 @@ TEST_CASE("WaveFunctionPool", "[wavefunction]")
   REQUIRE(!wp.contains("psi"));
 
   // test getWaveFunction()
-  TrialWaveFunction* psi = wp.getWaveFunction("psi0");
-  REQUIRE(psi != nullptr);
-  REQUIRE(psi->getOrbitals().size() == 1);
+  TrialWaveFunction& psi(wp.getWaveFunction().value());
+  REQUIRE(psi.getOrbitals().size() == 1);
 
-  TrialWaveFunction* psi_noname = wp.getWaveFunction();
-  REQUIRE(psi == psi_noname);
-  TrialWaveFunction* psi_empty_name = wp.getWaveFunction("");
-  REQUIRE(psi == psi_empty_name);
+  auto psi_noname_optional = wp.getWaveFunction();
+  REQUIRE(psi_noname_optional);
+  TrialWaveFunction& psi_noname(*psi_noname_optional);
+  REQUIRE(&psi == &psi_noname);
+  auto psi_empty_optional = wp.getWaveFunction("");
+  REQUIRE(psi_empty_optional);
+  TrialWaveFunction& psi_empty(*psi_empty_optional);
+  REQUIRE(&psi == &psi_empty);
 
-  CHECK_THROWS_WITH(wp.getWaveFunction("abc"),
-                    Catch::Matchers::Equals(
-                        "wavefunction pool contains \"psi0\".\nCannot find wavefunction named \"abc\"!"));
+  REQUIRE(!wp.getWaveFunction("abc"));
 }
 } // namespace qmcplusplus

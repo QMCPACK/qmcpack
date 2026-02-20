@@ -245,21 +245,20 @@ TEST_CASE("Rotated LCAO WF0 zero angle", "[qmcapp]")
 
   wp.put(root);
 
-  TrialWaveFunction* psi = wp.getWaveFunction("psi0");
-  REQUIRE(psi != nullptr);
-  REQUIRE(psi->getOrbitals().size() == 1);
+  TrialWaveFunction& psi(wp.getWaveFunction().value());
+  REQUIRE(psi.getOrbitals().size() == 1);
 
   OptVariables opt_vars;
-  psi->checkInVariables(opt_vars);
+  psi.checkInVariables(opt_vars);
   opt_vars.resetIndex();
-  psi->checkOutVariables(opt_vars);
-  psi->resetParameters(opt_vars);
+  psi.checkOutVariables(opt_vars);
+  psi.resetParameters(opt_vars);
 
   ParticleSet* elec = pp.getParticleSet("e");
   elec->update();
 
 
-  double logval = psi->evaluateLog(*elec);
+  double logval = psi.evaluateLog(*elec);
   CHECK(logval == Approx(-11.467952668216984));
 
   CHECK(elec->G[0][0] == ValueApprox(-0.5345224838248487));
@@ -269,14 +268,14 @@ TEST_CASE("Rotated LCAO WF0 zero angle", "[qmcapp]")
   using ValueType = QMCTraits::ValueType;
   Vector<ValueType> dlogpsi(2);
   Vector<ValueType> dhpsioverpsi(2);
-  psi->evaluateDerivatives(*elec, opt_vars, dlogpsi, dhpsioverpsi);
+  psi.evaluateDerivatives(*elec, opt_vars, dlogpsi, dhpsioverpsi);
 
   CHECK(dlogpsi[0] == ValueApprox(32.2062050179872));
   CHECK(dlogpsi[1] == ValueApprox(5.87482925187464));
   CHECK(dhpsioverpsi[0] == ValueApprox(46.0088643114103));
   CHECK(dhpsioverpsi[1] == ValueApprox(7.84119772047731));
 
-  RefVectorWithLeader<TrialWaveFunction> wf_list(*psi, {*psi});
+  RefVectorWithLeader<TrialWaveFunction> wf_list(psi, {psi});
   RefVectorWithLeader<ParticleSet> p_list(*elec, {*elec});
 
   // Test list with one wavefunction
@@ -319,20 +318,19 @@ TEST_CASE("Rotated LCAO WF1", "[qmcapp]")
 
   wp.put(root);
 
-  TrialWaveFunction* psi = wp.getWaveFunction("psi0");
-  REQUIRE(psi != nullptr);
-  REQUIRE(psi->getOrbitals().size() == 1);
+  TrialWaveFunction& psi(wp.getWaveFunction().value());
+  REQUIRE(psi.getOrbitals().size() == 1);
 
   OptVariables opt_vars;
-  psi->checkInVariables(opt_vars);
-  psi->checkOutVariables(opt_vars);
-  psi->resetParameters(opt_vars);
+  psi.checkInVariables(opt_vars);
+  psi.checkOutVariables(opt_vars);
+  psi.resetParameters(opt_vars);
 
   ParticleSet* elec = pp.getParticleSet("e");
   elec->update();
 
 
-  double logval = psi->evaluateLog(*elec);
+  double logval = psi.evaluateLog(*elec);
   CHECK(logval == Approx(-9.26625670653773));
 
   CHECK(elec->G[0][0] == ValueApprox(-0.2758747113720909));
@@ -342,7 +340,7 @@ TEST_CASE("Rotated LCAO WF1", "[qmcapp]")
   using ValueType = QMCTraits::ValueType;
   Vector<ValueType> dlogpsi(2);
   Vector<ValueType> dhpsioverpsi(2);
-  psi->evaluateDerivatives(*elec, opt_vars, dlogpsi, dhpsioverpsi);
+  psi.evaluateDerivatives(*elec, opt_vars, dlogpsi, dhpsioverpsi);
 
 
   CHECK(dlogpsi[0] == ValueApprox(7.58753078998516));
@@ -418,21 +416,20 @@ TEST_CASE("Rotated LCAO WF2 with jastrow", "[qmcapp]")
 
   wp.put(root);
 
-  TrialWaveFunction* psi = wp.getWaveFunction("psi0");
-  REQUIRE(psi != nullptr);
-  REQUIRE(psi->getOrbitals().size() == 2);
+  TrialWaveFunction& psi(wp.getWaveFunction().value());
+  REQUIRE(psi.getOrbitals().size() == 2);
 
   OptVariables opt_vars;
-  psi->checkInVariables(opt_vars);
+  psi.checkInVariables(opt_vars);
   opt_vars.resetIndex();
-  psi->checkOutVariables(opt_vars);
-  psi->resetParameters(opt_vars);
+  psi.checkOutVariables(opt_vars);
+  psi.resetParameters(opt_vars);
 
   ParticleSet* elec = pp.getParticleSet("e");
   elec->update();
 
 
-  double logval = psi->evaluateLog(*elec);
+  double logval = psi.evaluateLog(*elec);
   CHECK(logval == Approx(-15.791249652199634));
 
   CHECK(elec->G[0][0] == ValueApprox(-0.2956989647881321));
@@ -442,7 +439,7 @@ TEST_CASE("Rotated LCAO WF2 with jastrow", "[qmcapp]")
   using ValueType = QMCTraits::ValueType;
   Vector<ValueType> dlogpsi(3);
   Vector<ValueType> dhpsioverpsi(3);
-  psi->evaluateDerivatives(*elec, opt_vars, dlogpsi, dhpsioverpsi);
+  psi.evaluateDerivatives(*elec, opt_vars, dlogpsi, dhpsioverpsi);
 
   CHECK(dlogpsi[0] == ValueApprox(32.206205017987166));
   CHECK(dlogpsi[1] == ValueApprox(5.874829251874641));
@@ -454,8 +451,8 @@ TEST_CASE("Rotated LCAO WF2 with jastrow", "[qmcapp]")
   // Check for out-of-bounds array access when a variable is disabled.
   // When a variable is disabled, myVars.where() returns -1.
   opt_vars.insert("rot-spo-up_orb_rot_0000_0001", 0.0, false);
-  psi->checkOutVariables(opt_vars);
-  psi->evaluateDerivatives(*elec, opt_vars, dlogpsi, dhpsioverpsi);
+  psi.checkOutVariables(opt_vars);
+  psi.evaluateDerivatives(*elec, opt_vars, dlogpsi, dhpsioverpsi);
 }
 
 // Test the case where the rotation has already been applied to
@@ -495,20 +492,19 @@ TEST_CASE("Rotated LCAO WF1, MO coeff rotated, zero angle", "[qmcapp]")
 
   wp.put(root);
 
-  TrialWaveFunction* psi = wp.getWaveFunction("psi0");
-  REQUIRE(psi != nullptr);
-  REQUIRE(psi->getOrbitals().size() == 1);
+  TrialWaveFunction& psi(wp.getWaveFunction().value());
+  REQUIRE(psi.getOrbitals().size() == 1);
 
   OptVariables opt_vars;
-  psi->checkInVariables(opt_vars);
+  psi.checkInVariables(opt_vars);
   opt_vars.resetIndex();
-  psi->checkOutVariables(opt_vars);
-  psi->resetParameters(opt_vars);
+  psi.checkOutVariables(opt_vars);
+  psi.resetParameters(opt_vars);
 
   ParticleSet* elec = pp.getParticleSet("e");
   elec->update();
 
-  double logval = psi->evaluateLog(*elec);
+  double logval = psi.evaluateLog(*elec);
   CHECK(logval == Approx(-9.26625670653773));
 
   CHECK(elec->G[0][0] == ValueApprox(-0.2758747113720909));
@@ -518,7 +514,7 @@ TEST_CASE("Rotated LCAO WF1, MO coeff rotated, zero angle", "[qmcapp]")
   using ValueType = QMCTraits::ValueType;
   Vector<ValueType> dlogpsi(2);
   Vector<ValueType> dhpsioverpsi(2);
-  psi->evaluateDerivatives(*elec, opt_vars, dlogpsi, dhpsioverpsi);
+  psi.evaluateDerivatives(*elec, opt_vars, dlogpsi, dhpsioverpsi);
 
 
   CHECK(dlogpsi[0] == ValueApprox(7.58753078998516));
@@ -559,20 +555,19 @@ TEST_CASE("Rotated LCAO WF1 MO coeff rotated, half angle", "[qmcapp]")
 
   wp.put(root);
 
-  TrialWaveFunction* psi = wp.getWaveFunction("psi0");
-  REQUIRE(psi != nullptr);
-  REQUIRE(psi->getOrbitals().size() == 1);
+  TrialWaveFunction& psi(wp.getWaveFunction().value());
+  REQUIRE(psi.getOrbitals().size() == 1);
 
   OptVariables opt_vars;
-  psi->checkInVariables(opt_vars);
+  psi.checkInVariables(opt_vars);
   opt_vars.resetIndex();
-  psi->checkOutVariables(opt_vars);
-  psi->resetParameters(opt_vars);
+  psi.checkOutVariables(opt_vars);
+  psi.resetParameters(opt_vars);
 
   ParticleSet* elec = pp.getParticleSet("e");
   elec->update();
 
-  double logval = psi->evaluateLog(*elec);
+  double logval = psi.evaluateLog(*elec);
   CHECK(logval == Approx(-9.26625670653773));
 
   CHECK(elec->G[0][0] == ValueApprox(-0.2758747113720909));
@@ -582,7 +577,7 @@ TEST_CASE("Rotated LCAO WF1 MO coeff rotated, half angle", "[qmcapp]")
   using ValueType = QMCTraits::ValueType;
   Vector<ValueType> dlogpsi(2);
   Vector<ValueType> dhpsioverpsi(2);
-  psi->evaluateDerivatives(*elec, opt_vars, dlogpsi, dhpsioverpsi);
+  psi.evaluateDerivatives(*elec, opt_vars, dlogpsi, dhpsioverpsi);
 
 
   CHECK(dlogpsi[0] == ValueApprox(7.58753078998516));
@@ -662,12 +657,11 @@ TEST_CASE("Rotated LCAO rotation consistency", "[qmcapp]")
 
   wp.put(root);
 
-  TrialWaveFunction* psi = wp.getWaveFunction("psi0");
-  REQUIRE(psi != nullptr);
-  REQUIRE(psi->getOrbitals().size() == 1);
+  TrialWaveFunction& psi(wp.getWaveFunction().value());
+  REQUIRE(psi.getOrbitals().size() == 1);
 
   // Type should be pointer to SlaterDet
-  auto orb1       = psi->getOrbitals()[0].get();
+  auto orb1       = psi.getOrbitals()[0].get();
   SlaterDet* sdet = dynamic_cast<SlaterDet*>(orb1);
   REQUIRE(sdet != nullptr);
 
@@ -762,28 +756,26 @@ TEST_CASE("Rotated LCAO Be single determinant", "[qmcapp]")
 
   wp.put(xmlFirstElementChild(root));
 
-
-  TrialWaveFunction* psi = wp.getWaveFunction("psi0");
-  REQUIRE(psi != nullptr);
-  REQUIRE(psi->getOrbitals().size() == 1);
+  TrialWaveFunction& psi(wp.getWaveFunction().value());
+  REQUIRE(psi.getOrbitals().size() == 1);
 
   OptVariables opt_vars;
-  psi->checkInVariables(opt_vars);
+  psi.checkInVariables(opt_vars);
   opt_vars.resetIndex();
-  psi->checkOutVariables(opt_vars);
-  psi->resetParameters(opt_vars);
+  psi.checkOutVariables(opt_vars);
+  psi.resetParameters(opt_vars);
 
   ParticleSet* elec = pp.getParticleSet("e");
   elec->update();
 
 
-  double logval = psi->evaluateLog(*elec);
+  double logval = psi.evaluateLog(*elec);
   CHECK(logval == Approx(-17.768474132175342));
 
   using ValueType = QMCTraits::ValueType;
   Vector<ValueType> dlogpsi(10);
   Vector<ValueType> dhpsioverpsi(10);
-  psi->evaluateDerivatives(*elec, opt_vars, dlogpsi, dhpsioverpsi);
+  psi.evaluateDerivatives(*elec, opt_vars, dlogpsi, dhpsioverpsi);
 
   CHECK(dlogpsi[0] == ValueApprox(0.24797938203759148));
   CHECK(dlogpsi[1] == ValueApprox(0.41454059122930453));
@@ -830,27 +822,26 @@ TEST_CASE("Rotated LCAO Be multi determinant with one determinant", "[qmcapp]")
 
   wp.put(xmlFirstElementChild(root));
 
-  TrialWaveFunction* psi = wp.getWaveFunction("psi0");
-  REQUIRE(psi != nullptr);
-  REQUIRE(psi->getOrbitals().size() == 1);
+  TrialWaveFunction& psi(wp.getWaveFunction().value());
+  REQUIRE(psi.getOrbitals().size() == 1);
 
   OptVariables opt_vars;
-  psi->checkInVariables(opt_vars);
+  psi.checkInVariables(opt_vars);
   opt_vars.resetIndex();
-  psi->checkOutVariables(opt_vars);
-  psi->resetParameters(opt_vars);
+  psi.checkOutVariables(opt_vars);
+  psi.resetParameters(opt_vars);
 
   ParticleSet* elec = pp.getParticleSet("e");
   elec->update();
 
 
-  double logval = psi->evaluateLog(*elec);
+  double logval = psi.evaluateLog(*elec);
   CHECK(logval == Approx(-17.768474132175342));
 
   using ValueType = QMCTraits::ValueType;
   Vector<ValueType> dlogpsi(10);
   Vector<ValueType> dhpsioverpsi(10);
-  psi->evaluateDerivatives(*elec, opt_vars, dlogpsi, dhpsioverpsi);
+  psi.evaluateDerivatives(*elec, opt_vars, dlogpsi, dhpsioverpsi);
 
   CHECK(dlogpsi[0] == ValueApprox(0.24797938203759148));
   CHECK(dlogpsi[1] == ValueApprox(0.41454059122930453));
@@ -897,27 +888,26 @@ TEST_CASE("Rotated LCAO Be two determinant", "[qmcapp]")
 
   wp.put(xmlFirstElementChild(root));
 
-  TrialWaveFunction* psi = wp.getWaveFunction("psi0");
-  REQUIRE(psi != nullptr);
-  REQUIRE(psi->getOrbitals().size() == 1);
+  TrialWaveFunction& psi(wp.getWaveFunction().value());
+  REQUIRE(psi.getOrbitals().size() == 1);
 
   OptVariables opt_vars;
-  psi->checkInVariables(opt_vars);
+  psi.checkInVariables(opt_vars);
   opt_vars.resetIndex();
-  psi->checkOutVariables(opt_vars);
-  psi->resetParameters(opt_vars);
+  psi.checkOutVariables(opt_vars);
+  psi.resetParameters(opt_vars);
 
   ParticleSet* elec = pp.getParticleSet("e");
   elec->update();
 
 
-  double logval = psi->evaluateLog(*elec);
+  double logval = psi.evaluateLog(*elec);
   CHECK(logval == Approx(-17.762687110866413));
 
   using ValueType = QMCTraits::ValueType;
   Vector<ValueType> dlogpsi(16);
   Vector<ValueType> dhpsioverpsi(16);
-  psi->evaluateDerivatives(*elec, opt_vars, dlogpsi, dhpsioverpsi);
+  psi.evaluateDerivatives(*elec, opt_vars, dlogpsi, dhpsioverpsi);
 
   CHECK(dlogpsi[0] == ValueApprox(0.05770308755290168));
   CHECK(dlogpsi[1] == ValueApprox(0.00593995768443123));

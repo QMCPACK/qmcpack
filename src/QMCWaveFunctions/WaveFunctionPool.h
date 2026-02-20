@@ -58,7 +58,7 @@ public:
    * if pname is empty and the pool contains one entry, return the only entry
    * if pname is not empty and not found in the pool, throw error
    */
-  TrialWaveFunction* getWaveFunction(const std::string& pname = "");
+  OptionalRef<TrialWaveFunction> getWaveFunction(const std::string& pname = "");
 
   /** return a xmlNode containing Jastrow
    * @param id name of the wave function

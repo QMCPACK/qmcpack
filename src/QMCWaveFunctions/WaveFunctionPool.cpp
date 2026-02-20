@@ -21,13 +21,14 @@
 #include "Message/UniformCommunicateError.h"
 #include "Particle/ParticleSetPool.h"
 #include "OhmmsData/AttributeSet.h"
+#include "StlPrettyPrint.hpp"
 
 namespace qmcplusplus
 {
 template class ObjectPool<TrialWaveFunction>;
 
 WaveFunctionPool::WaveFunctionPool(const RuntimeOptions& runtime_options, ParticleSetPool& pset_pool, Communicate* c)
-    : MPIObjectBase(c), ObjectPool("wavefunction"), runtime_options_(runtime_options), ptcl_pool_(pset_pool)
+    : MPIObjectBase(c), runtime_options_(runtime_options), ptcl_pool_(pset_pool)
 {}
 
 WaveFunctionPool::~WaveFunctionPool() = default;
@@ -47,6 +48,10 @@ bool WaveFunctionPool::put(xmlNodePtr cur)
   if (qp == nullptr)
     myComm->barrier_and_abort("target particle set named '" + target + "' not found");
 
+  if (psi_name.empty())
+    throw UniformCommunicateError(
+        "A wavefunction node cannot be named with an empty string. Please check the name attribute.");
+
   if (contains(psi_name))
     throw UniformCommunicateError("\"" + psi_name +
                                   "\" already exists in the wavefunction pool. Please rename this wavefunction node.");
@@ -58,17 +63,30 @@ bool WaveFunctionPool::put(xmlNodePtr cur)
   return true;
 }
 
-TrialWaveFunction* WaveFunctionPool::getWaveFunction(const std::string& pname)
+OptionalRef<TrialWaveFunction> WaveFunctionPool::getWaveFunction(const std::string& pname)
 {
-  try
-  {
-    return getObject(pname).get();
-  }
-  catch (const std::exception& re)
-  {
-    throw UniformCommunicateError(re.what());
-  }
+  if (empty())
+    throw UniformCommunicateError(
+        "The wavefunction pool is empty. Need at least one wavefunction node in the xml input!");
+
+  if (pname.empty())
+    return getTheOneAndOnly();
+  else
+    return getObjectByName(pname);
 }
 
-xmlNodePtr WaveFunctionPool::getWaveFunctionNode(const std::string& id) { return getWaveFunction(id)->getNode(); }
+xmlNodePtr WaveFunctionPool::getWaveFunctionNode(const std::string& id)
+{
+  auto wf_optional = getWaveFunction(id);
+  if (!wf_optional)
+  {
+    std::ostringstream msg;
+    msg << "Wavefunction pool contains " << myPool << "." << std::endl
+        << "Cannot find wavefunction named \"" + id + "\"!";
+    throw UniformCommunicateError(msg.str());
+  }
+
+  TrialWaveFunction& wf = *wf_optional;
+  return wf.getNode();
+}
 } // namespace qmcplusplus

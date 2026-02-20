@@ -52,7 +52,7 @@ TEST_CASE("MCPopulation::createWalkers", "[particle][population]")
   // keep 3 only configurations.
   WalkerConfigurations walker_confs2;
   walker_confs2.resize(3, 0);
-  for(int iw = 0; iw < walker_confs2.getActiveWalkers(); ++iw)
+  for (int iw = 0; iw < walker_confs2.getActiveWalkers(); ++iw)
     *walker_confs2[iw] = *walker_confs[iw];
   CHECK(walker_confs2.getActiveWalkers() == 3);
   auto old_R00 = walker_confs[0]->R[0][0];
@@ -97,7 +97,7 @@ TEST_CASE("MCPopulation::createWalkers_walker_ids", "[particle][population]")
     pops.emplace_back(num_ranks, i, particle_pool.getParticleSet("e"), &twf, hamiltonian_pool.getPrimary());
 
   std::vector<long> walker_ids;
-  std::array<std::vector<long>,3> per_rank_walker_ids;
+  std::array<std::vector<long>, 3> per_rank_walker_ids;
   for (int i = 0; i < num_ranks; ++i)
   {
     pops[i].createWalkers(8, walker_confs, 2.0);
@@ -113,8 +113,9 @@ TEST_CASE("MCPopulation::createWalkers_walker_ids", "[particle][population]")
   }
   std::sort(walker_ids.begin(), walker_ids.end());
   // Walker IDs cannot collide unless they are -1
-  for (int i = 1; i < walker_ids.size(); ++i) {
-    INFO(" i = " << i );
+  for (int i = 1; i < walker_ids.size(); ++i)
+  {
+    INFO(" i = " << i);
     CHECK(walker_ids[i - 1] != walker_ids[i]);
   }
   int new_walkers = 3;
@@ -142,7 +143,8 @@ TEST_CASE("MCPopulation::createWalkers_walker_ids", "[particle][population]")
   for (int rank = 0; rank < num_ranks; ++rank)
   {
     std::vector<long> rank_expected_ids(11);
-    std::generate(rank_expected_ids.begin(), rank_expected_ids.end(),  [n = 0, rank, num_ranks] () mutable { return (n++) * num_ranks + rank + 1;});
+    std::generate(rank_expected_ids.begin(), rank_expected_ids.end(),
+                  [n = 0, rank, num_ranks]() mutable { return (n++) * num_ranks + rank + 1; });
     CHECK(per_rank_walker_ids[rank] == rank_expected_ids);
     std::cout << NativePrint(rank_expected_ids) << '\n';
   }
@@ -159,8 +161,8 @@ TEST_CASE("MCPopulation::redistributeWalkers", "[particle][population]")
   auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(runtime_options, comm, particle_pool);
   auto hamiltonian_pool  = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
   WalkerConfigurations walker_confs;
-  MCPopulation population(1, comm->rank(), particle_pool.getParticleSet("e"), wavefunction_pool.getWaveFunction(),
-                          hamiltonian_pool.getPrimary());
+  MCPopulation population(1, comm->rank(), particle_pool.getParticleSet("e"),
+                          &wavefunction_pool.getWaveFunction().value().get(), hamiltonian_pool.getPrimary());
 
   population.createWalkers(8, walker_confs);
   REQUIRE(population.get_walkers().size() == 8);
@@ -193,22 +195,22 @@ TEST_CASE("MCPopulation::fissionHighMultiplicityWalkers", "[particle][population
   auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(runtime_options, comm, particle_pool);
   auto hamiltonian_pool  = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
   WalkerConfigurations walker_confs;
-  MCPopulation population(1, comm->rank(), particle_pool.getParticleSet("e"), wavefunction_pool.getWaveFunction(),
-                          hamiltonian_pool.getPrimary());
+  MCPopulation population(1, comm->rank(), particle_pool.getParticleSet("e"),
+                          &wavefunction_pool.getWaveFunction().value().get(), hamiltonian_pool.getPrimary());
 
   population.createWalkers(8, walker_confs);
   auto& walkers = population.get_walkers();
   CHECK(walkers.size() == 8);
-  walkers[0]->Multiplicity=4;
+  walkers[0]->Multiplicity = 4;
   population.fissionHighMultiplicityWalkers();
   CHECK(walkers.size() == 11);
 
-  walkers[2]->Multiplicity=3;
-  walkers[9]->Multiplicity=4;
+  walkers[2]->Multiplicity = 3;
+  walkers[9]->Multiplicity = 4;
   population.fissionHighMultiplicityWalkers();
   CHECK(walkers.size() == 16);
 
-  for(auto& walker : walkers)
+  for (auto& walker : walkers)
     CHECK(walker->Multiplicity == 1.0);
 }
 

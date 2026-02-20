@@ -14,10 +14,9 @@
 
 #include <map>
 #include <string>
-#include <sstream>
 #include <stdexcept>
 #include <memory>
-#include "StlPrettyPrint.hpp"
+#include "type_traits/OptionalRef.hpp"
 
 namespace qmcplusplus
 {
@@ -34,54 +33,63 @@ public:
   bool contains(const std::string& name) const { return myPool.find(name) != myPool.end(); }
 
   bool empty() const { return myPool.empty(); }
+  bool size() const { return myPool.size(); }
 
   /// add [key, value] pair to map
   void add(const std::string& key, std::unique_ptr<T>&& value)
   {
     if (key.empty())
-      throw std::runtime_error("Report bug! Empty object name not allowed in the pool");
+      throw std::runtime_error("Report bug! ObjectPool::add doesn't allow an empty string as the object name.");
 
     if (contains(key))
-      throw std::runtime_error("Report bug! The caller should check key existence by calling contains() and issue "
-                               "message to users before starting expensive object construction!");
+      throw std::runtime_error(
+          "Report bug! The caller of ObjectPool::add should check key existence by calling contains() and issue "
+          "message to users before starting expensive object construction!");
 
     myPool.emplace(key, std::move(value));
   }
 
 protected:
-  ObjectPool(const std::string& object_type_name) : object_type_name_(object_type_name) {}
-
   /** look up object by name
-   * @param name object name to look up
-   * if name is empty and the pool contains one entry, return the only entry
-   * if name is not empty and not found in the pool, throw error
+   * @param name object name to look up. It cannot be an empty string
    */
-  const std::unique_ptr<T>& getObject(const std::string& name) const
+  OptionalRef<T> getObjectByName(const std::string& name) const
   {
-    if (myPool.empty())
-      throw std::runtime_error(object_type_name_ + " pool is empty! Cannot find " + object_type_name_ + " named \"" +
-                               name + "\"!");
+    guardEmptyPool();
 
-    if (name.empty() && myPool.size() == 1)
-      return myPool.begin()->second;
+    if (name.empty())
+      throw std::runtime_error(
+          "Report bug! ObjectPool::getObjectByName doesn't allow an empty string as the object name.");
 
     if (auto pit(myPool.find(name)); pit != myPool.end())
-      return pit->second;
+      return *pit->second;
     else
-    {
-      std::ostringstream msg;
-      msg << object_type_name_ << " pool contains " << myPool << "." << std::endl
-          << "Cannot find " << object_type_name_ << " named \"" + name + "\"!";
-      throw std::runtime_error(msg.str());
-    }
+      return std::nullopt;
+  }
+
+  /** get the one and only object in the pool
+   *
+   */
+  OptionalRef<T> getTheOneAndOnly() const
+  {
+    guardEmptyPool();
+
+    if (myPool.size() == 1)
+      return *myPool.begin()->second;
+    else
+      return std::nullopt;
   }
 
   /// storage of WaveFunctionFactory
   Pool myPool;
 
 private:
-  /// object type name
-  const std::string object_type_name_;
+  void guardEmptyPool() const
+  {
+    if (myPool.empty())
+      throw std::runtime_error(
+          "Report bug! Empty pool! Check pool size before any look-up and issue proper user error!");
+  }
 };
 } // namespace qmcplusplus
 #endif

@@ -396,8 +396,8 @@ TEST_CASE("TrialWaveFunction::mw_evalGrad for spinors", "[wavefunction]")
   auto wavefunction_pool =
       MinimalWaveFunctionPool::make_O2_spinor(test_project.getRuntimeOptions(), comm, particle_pool);
 
-  auto& elec    = *(particle_pool).getParticleSet("e");
-  auto& psi_noJ = *(wavefunction_pool).getWaveFunction();
+  auto& elec = *(particle_pool).getParticleSet("e");
+  TrialWaveFunction& psi_noJ(wavefunction_pool.getWaveFunction().value());
 
   elec.update();
   auto logpsi = psi_noJ.evaluateLog(elec);
@@ -414,7 +414,7 @@ TEST_CASE("TrialWaveFunction::mw_evalGrad for spinors", "[wavefunction]")
   // Now tack on a jastrow to make sure it is still the same since jastrows don't contribute
   auto wavefunction_pool2 =
       MinimalWaveFunctionPool::make_O2_spinor_J12(test_project.getRuntimeOptions(), comm, particle_pool);
-  auto& psi = *(wavefunction_pool2).getWaveFunction();
+  TrialWaveFunction& psi = wavefunction_pool2.getWaveFunction().value();
 
   // make clones
   ParticleSet elec_clone(elec);
