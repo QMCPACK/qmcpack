@@ -80,7 +80,7 @@
          <estimator type="flux" name="Flux"/>
       </hamiltonian>
    </qmcsystem>
-  <loop max="3">
+  <loop max="1">
     <qmc method="linear_batch" move="pbyp" checkpoint="0">
       <parameter name="total_walkers"       >    16              </parameter>   
       <parameter name="blocks">     8  </parameter>

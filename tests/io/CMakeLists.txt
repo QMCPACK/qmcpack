@@ -132,10 +132,10 @@ if(NOT QMC_MIXED_PRECISION)
     check.sh
     false)
   
-  add_test_check_file_existence(deterministic-restart_batch_opt-r2-t2 qmc_short_batch.s002.config.h5 TRUE)
-  add_test_check_file_existence(deterministic-restart_batch_opt-r2-t2 qmc_short_batch.s002.random.h5 TRUE)
-  add_test_check_file_existence(deterministic-restart_batch_opt-r2-t2 qmc_short_batch.s003.config.h5 FALSE)
-  add_test_check_file_existence(deterministic-restart_batch_opt-r2-t2 qmc_short_batch.s003.random.h5 FALSE)
+  add_test_check_file_existence(deterministic-restart_batch_opt-r2-t2 qmc_short_batch.s000.config.h5 TRUE)
+  add_test_check_file_existence(deterministic-restart_batch_opt-r2-t2 qmc_short_batch.s000.random.h5 TRUE)
+  add_test_check_file_existence(deterministic-restart_batch_opt-r2-t2 qmc_short_batch.s001.config.h5 FALSE)
+  add_test_check_file_existence(deterministic-restart_batch_opt-r2-t2 qmc_short_batch.s001.random.h5 FALSE)
   
   run_restart_and_check(
     deterministic-restart_batch_opt
@@ -146,10 +146,10 @@ if(NOT QMC_MIXED_PRECISION)
     check.sh
     true)
   
-  add_test_check_file_existence(deterministic-restart_batch_opt-r1-t4 qmc_short_batch.s002.config.h5 TRUE)
-  add_test_check_file_existence(deterministic-restart_batch_opt-r1-t4 qmc_short_batch.s002.random.h5 TRUE)
-  add_test_check_file_existence(deterministic-restart_batch_opt-r1-t4 qmc_short_batch.s003.config.h5 FALSE)
-  add_test_check_file_existence(deterministic-restart_batch_opt-r1-t4 qmc_short_batch.s003.random.h5 FALSE)
+  add_test_check_file_existence(deterministic-restart_batch_opt-r1-t4 qmc_short_batch.s000.config.h5 TRUE)
+  add_test_check_file_existence(deterministic-restart_batch_opt-r1-t4 qmc_short_batch.s000.random.h5 TRUE)
+  add_test_check_file_existence(deterministic-restart_batch_opt-r1-t4 qmc_short_batch.s001.config.h5 FALSE)
+  add_test_check_file_existence(deterministic-restart_batch_opt-r1-t4 qmc_short_batch.s001.random.h5 FALSE)
 endif()
 
 run_restart_and_check(
