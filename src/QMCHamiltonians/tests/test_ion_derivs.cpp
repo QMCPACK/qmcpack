@@ -203,27 +203,24 @@ void test_msd_wrapper(const std::string& wffile,
 
   RuntimeOptions runtime_options;
   WaveFunctionFactory wff(elec, particle_set_map, c);
-  HamiltonianFactory::PsiPoolType psi_map;
-  psi_map.emplace("psi0", wff.buildTWF(root2, runtime_options));
-
-  TrialWaveFunction* psi = psi_map["psi0"].get();
-  REQUIRE(psi != nullptr);
+  auto psi_ptr = wff.buildTWF(root2, runtime_options);
+  auto& psi(*psi_ptr);
   //end incantation
 
   TWFFastDerivWrapper twf;
 
-  psi->initializeTWFFastDerivWrapper(elec, twf);
+  psi.initializeTWFFastDerivWrapper(elec, twf);
 
   /// NOTE: don't remove this; I think this is what initialized the det ratios that we need later
-  RealType logpsi = psi->evaluateLog(elec);
+  RealType logpsi = psi.evaluateLog(elec);
   CHECK(logpsi == Approx(ref_logpsi));
 
-  HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
+  HamiltonianFactory hf("h0", elec, particle_set_map, psi, c);
 
   auto ham_ptr = create_CN_Hamiltonian(hf);
   QMCHamiltonian& ham(*ham_ptr);
 
-  RealType eloc = ham.evaluateDeterministic(*psi, elec);
+  RealType eloc = ham.evaluateDeterministic(psi, elec);
 
   //Enum to give human readable indexing into QMCHamiltonian.
   enum observ_id
@@ -704,13 +701,10 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
 
   RuntimeOptions runtime_options;
   xmlNodePtr wfroot = wfdoc.getRoot();
-  HamiltonianFactory::PsiPoolType psi_map;
-  psi_map.emplace("psi0", wff.buildTWF(wfroot, runtime_options));
+  auto psi_ptr      = wff.buildTWF(wfroot, runtime_options);
+  auto& psi(*psi_ptr);
 
-  TrialWaveFunction* psi = psi_map["psi0"].get();
-  REQUIRE(psi != nullptr);
-
-  HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
+  HamiltonianFactory hf("h0", elec, particle_set_map, psi, c);
 
   //Output of WFTester Eloc test for this ion/electron configuration.
   //Logpsi: (-1.4233853149e+01,0.0000000000e+00)
@@ -722,12 +716,12 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
   //HamTest NonLocalECP 1.384955836167661225e+01
 
 
-  RealType logpsi = psi->evaluateLog(elec);
+  RealType logpsi = psi.evaluateLog(elec);
   CHECK(logpsi == Approx(-14.233853149));
 
   auto ham_ptr = create_CN_Hamiltonian(hf);
   QMCHamiltonian& ham(*ham_ptr);
-  RealType eloc = ham.evaluateDeterministic(*psi, elec);
+  RealType eloc = ham.evaluateDeterministic(psi, elec);
   enum observ_id
   {
     KINETIC = 0,
@@ -757,8 +751,8 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
   hf_term.resize(Nions);
   pulay_term.resize(Nions);
 
-  wfgradraw[0] = psi->evalGradSource(elec, ions, 0); //On the C atom.
-  wfgradraw[1] = psi->evalGradSource(elec, ions, 1); //On the N atom.
+  wfgradraw[0] = psi.evalGradSource(elec, ions, 0); //On the C atom.
+  wfgradraw[1] = psi.evalGradSource(elec, ions, 1); //On the N atom.
 
   convertToReal(wfgradraw[0], wf_grad[0]);
   convertToReal(wfgradraw[1], wf_grad[1]);
@@ -776,7 +770,7 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
   pulay_term    = 0.0;
   auto& ham_ke  = *ham.getComponent(KINETIC);
   auto ke_saved = ham_ke.getValue();
-  ham_ke.evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
+  ham_ke.evaluateIonDerivs(elec, ions, psi, hf_term, pulay_term);
   CHECK(ke_saved == Approx(ham_ke.getValue()));
 #if defined(MIXED_PRECISION)
   CHECK(hf_term[0][0] + pulay_term[0][0] == Approx(1.0852823603357820).epsilon(1e-4));
@@ -798,7 +792,7 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
   pulay_term            = 0.0;
   auto& ham_nonlocalpp  = *ham.getComponent(NONLOCALECP);
   auto nonlocalpp_saved = ham_nonlocalpp.getValue();
-  ham_nonlocalpp.evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
+  ham_nonlocalpp.evaluateIonDerivs(elec, ions, psi, hf_term, pulay_term);
   CHECK(nonlocalpp_saved == Approx(ham_nonlocalpp.getValue()));
 
 //MP fails the first REQUIRE with 24.22544.  Just bypass the checks in those builds.
@@ -824,7 +818,7 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
   hf_term    = 0.0;
   pulay_term = 0.0;
   wf_grad    = 0.0;
-  ham.evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term, wf_grad);
+  ham.evaluateIonDerivs(elec, ions, psi, hf_term, pulay_term, wf_grad);
 
   CHECK(dot(hf_term[0], hf_term[0]) != Approx(0));
   CHECK(dot(pulay_term[0], pulay_term[0]) != Approx(0));
@@ -864,13 +858,10 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
 
   RuntimeOptions runtime_options;
   xmlNodePtr wfroot = wfdoc.getRoot();
-  HamiltonianFactory::PsiPoolType psi_map;
-  psi_map.emplace("psi0", wff.buildTWF(wfroot, runtime_options));
+  auto psi_ptr      = wff.buildTWF(wfroot, runtime_options);
+  auto& psi(*psi_ptr);
 
-  TrialWaveFunction* psi = psi_map["psi0"].get();
-  REQUIRE(psi != nullptr);
-
-  HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
+  HamiltonianFactory hf("h0", elec, particle_set_map, psi, c);
 
   //Output of WFTester Eloc test for this ion/electron configuration.
   //  Logpsi: (-8.945509461103977600e+00,0.000000000000000000e+00)
@@ -881,13 +872,13 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
   //  HamTest LocalECP -6.783942829945100073e+01
   //  HamTest NonLocalECP 1.373654152480333224e+01
 
-  RealType logpsi = psi->evaluateLog(elec);
+  RealType logpsi = psi.evaluateLog(elec);
   CHECK(logpsi == Approx(-8.9455094611e+00));
 
   auto ham_ptr = create_CN_Hamiltonian(hf);
   QMCHamiltonian& ham(*ham_ptr);
 
-  RealType eloc = ham.evaluateDeterministic(*psi, elec);
+  RealType eloc = ham.evaluateDeterministic(psi, elec);
   enum observ_id
   {
     KINETIC = 0,
@@ -917,8 +908,8 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
   hf_term.resize(Nions);
   pulay_term.resize(Nions);
 
-  wfgradraw[0] = psi->evalGradSource(elec, ions, 0); //On the C atom.
-  wfgradraw[1] = psi->evalGradSource(elec, ions, 1); //On the N atom.
+  wfgradraw[0] = psi.evalGradSource(elec, ions, 0); //On the C atom.
+  wfgradraw[1] = psi.evalGradSource(elec, ions, 1); //On the N atom.
 
   convertToReal(wfgradraw[0], wf_grad[0]);
   convertToReal(wfgradraw[1], wf_grad[1]);
@@ -936,7 +927,7 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
   pulay_term    = 0.0;
   auto& ham_ke  = *ham.getComponent(KINETIC);
   auto ke_saved = ham_ke.getValue();
-  ham_ke.evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
+  ham_ke.evaluateIonDerivs(elec, ions, psi, hf_term, pulay_term);
   CHECK(ke_saved == Approx(ham_ke.getValue()));
 #if defined(MIXED_PRECISION)
   CHECK(hf_term[0][0] + pulay_term[0][0] == Approx(-3.3359153349010735).epsilon(1e-4));
@@ -957,7 +948,7 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
   //Local PP Force
   auto& ham_localpp  = *ham.getComponent(LOCALECP);
   auto localpp_saved = ham_localpp.getValue();
-  ham_localpp.evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
+  ham_localpp.evaluateIonDerivs(elec, ions, psi, hf_term, pulay_term);
   CHECK(localpp_saved == Approx(ham_localpp.getValue()));
 
   //NLPP Force
@@ -965,7 +956,7 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
   pulay_term            = 0.0;
   auto& ham_nonlocalpp  = *ham.getComponent(NONLOCALECP);
   auto nonlocalpp_saved = ham_nonlocalpp.getValue();
-  ham_nonlocalpp.evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
+  ham_nonlocalpp.evaluateIonDerivs(elec, ions, psi, hf_term, pulay_term);
   CHECK(nonlocalpp_saved == Approx(ham_nonlocalpp.getValue()));
 //MP fails the first REQUIRE with 27.15313.  Just bypass the checks in those builds.
 #if defined(MIXED_PRECISION)
@@ -990,7 +981,7 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
   hf_term    = 0.0;
   pulay_term = 0.0;
   wf_grad    = 0.0;
-  ham.evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term, wf_grad);
+  ham.evaluateIonDerivs(elec, ions, psi, hf_term, pulay_term, wf_grad);
 
   CHECK(dot(hf_term[0], hf_term[0]) != Approx(0));
   CHECK(dot(pulay_term[0], pulay_term[0]) != Approx(0));
@@ -1030,13 +1021,10 @@ TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
 
   RuntimeOptions runtime_options;
   xmlNodePtr wfroot = wfdoc.getRoot();
-  HamiltonianFactory::PsiPoolType psi_map;
-  psi_map.emplace("psi0", wff.buildTWF(wfroot, runtime_options));
+  auto psi_ptr      = wff.buildTWF(wfroot, runtime_options);
+  auto& psi(*psi_ptr);
 
-  TrialWaveFunction* psi = psi_map["psi0"].get();
-  REQUIRE(psi != nullptr);
-
-  HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
+  HamiltonianFactory hf("h0", elec, particle_set_map, psi, c);
 
   //Output of WFTester Eloc test for this ion/electron configuration.
   //Logpsi: (-1.411499619826623686e+01,0.000000000000000000e+00)
@@ -1047,13 +1035,13 @@ TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
   //HamTest LocalECP -6.783942829945100073e+01
   //HamTest NonLocalECP 1.269054876473223636e+01
 
-  RealType logpsi = psi->evaluateLog(elec);
+  RealType logpsi = psi.evaluateLog(elec);
   CHECK(logpsi == Approx(-1.41149961982e+01));
 
   auto ham_ptr = create_CN_Hamiltonian(hf);
   QMCHamiltonian& ham(*ham_ptr);
 
-  RealType eloc = ham.evaluateDeterministic(*psi, elec);
+  RealType eloc = ham.evaluateDeterministic(psi, elec);
   enum observ_id
   {
     KINETIC = 0,
@@ -1084,16 +1072,16 @@ TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
   pulay_term.resize(Nions);
 
   /// TODO: remove these?
-  wfgradraw[0] = psi->evalGradSource(elec, ions, 0); //On the C atom.
-  wfgradraw[1] = psi->evalGradSource(elec, ions, 1); //On the N atom.
+  wfgradraw[0] = psi.evalGradSource(elec, ions, 0); //On the C atom.
+  wfgradraw[1] = psi.evalGradSource(elec, ions, 1); //On the N atom.
 
   TWFFastDerivWrapper twf;
-  psi->initializeTWFFastDerivWrapper(elec, twf);
+  psi.initializeTWFFastDerivWrapper(elec, twf);
 
   ParticleSet::ParticlePos dedr;
   dedr.resize(Nions);
 
-  ham.evaluateIonDerivsFast(elec, ions, *psi, twf, dedr, wf_grad);
+  ham.evaluateIonDerivsFast(elec, ions, psi, twf, dedr, wf_grad);
 
 
   // convertToReal(wfgradraw[0], wf_grad[0]);
@@ -1114,7 +1102,7 @@ TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
   //Kinetic Force
   /*  hf_term=0.0;
   pulay_term=0.0;
-  (ham.getComponent(KINETIC))->evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
+  (ham.getComponent(KINETIC))->evaluateIonDerivs(elec, ions, psi, hf_term, pulay_term);
 #if defined(MIXED_PRECISION) 
   CHECK( hf_term[0][0]+pulay_term[0][0] == Approx( 7.4631825180304636).epsilon(1e-4));
   CHECK( hf_term[0][1]+pulay_term[0][1] == Approx( 26.0975954772035799).epsilon(1e-4));
@@ -1134,7 +1122,7 @@ TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
   //NLPP Force
   /*  hf_term=0.0;
   pulay_term=0.0;
-  double val=(ham.getComponent(NONLOCALECP))->evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
+  double val=(ham.getComponent(NONLOCALECP))->evaluateIonDerivs(elec, ions, psi, hf_term, pulay_term);
 #if defined(MIXED_PRECISION)
   CHECK( hf_term[0][0]+pulay_term[0][0] == Approx( 18.9414437404167302).epsilon(2e-4));
   CHECK( hf_term[0][1]+pulay_term[0][1] == Approx(-42.9017371899931277).epsilon(2e-4));
@@ -1181,13 +1169,10 @@ TEST_CASE("Eloc_Derivatives:multislater_wj", "[hamiltonian]")
 
   RuntimeOptions runtime_options;
   xmlNodePtr wfroot = wfdoc.getRoot();
-  HamiltonianFactory::PsiPoolType psi_map;
-  psi_map.emplace("psi0", wff.buildTWF(wfroot, runtime_options));
+  auto psi_ptr      = wff.buildTWF(wfroot, runtime_options);
+  auto& psi(*psi_ptr);
 
-  TrialWaveFunction* psi = psi_map["psi0"].get();
-  REQUIRE(psi != nullptr);
-
-  HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
+  HamiltonianFactory hf("h0", elec, particle_set_map, psi, c);
 
   //Output of WFTester Eloc test for this ion/electron configuration.
   //Logpsi: (-8.693299948465634586e+00,0.000000000000000000e+00)
@@ -1199,13 +1184,13 @@ TEST_CASE("Eloc_Derivatives:multislater_wj", "[hamiltonian]")
   //HamTest NonLocalECP 1.249362906275283969e+01
 
 
-  RealType logpsi = psi->evaluateLog(elec);
+  RealType logpsi = psi.evaluateLog(elec);
   CHECK(logpsi == Approx(-8.69329994846e+00));
 
   auto ham_ptr = create_CN_Hamiltonian(hf);
   QMCHamiltonian& ham(*ham_ptr);
 
-  RealType eloc = ham.evaluateDeterministic(*psi, elec);
+  RealType eloc = ham.evaluateDeterministic(psi, elec);
   enum observ_id
   {
     KINETIC = 0,
@@ -1235,8 +1220,8 @@ TEST_CASE("Eloc_Derivatives:multislater_wj", "[hamiltonian]")
   hf_term.resize(Nions);
   pulay_term.resize(Nions);
 
-  wfgradraw[0] = psi->evalGradSource(elec, ions, 0); //On the C atom.
-  wfgradraw[1] = psi->evalGradSource(elec, ions, 1); //On the N atom.
+  wfgradraw[0] = psi.evalGradSource(elec, ions, 0); //On the C atom.
+  wfgradraw[1] = psi.evalGradSource(elec, ions, 1); //On the N atom.
 
   convertToReal(wfgradraw[0], wf_grad[0]);
   convertToReal(wfgradraw[1], wf_grad[1]);
@@ -1254,7 +1239,7 @@ TEST_CASE("Eloc_Derivatives:multislater_wj", "[hamiltonian]")
   //Kinetic Force
   /*  hf_term=0.0;
   pulay_term=0.0;
-  (ham.getComponent(KINETIC))->evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
+  (ham.getComponent(KINETIC))->evaluateIonDerivs(elec, ions, psi, hf_term, pulay_term);
 #if defined(MIXED_PRECISION)
   CHECK( hf_term[0][0]+pulay_term[0][0] == Approx(  4.1783687883878429).epsilon(1e-4));
   CHECK( hf_term[0][1]+pulay_term[0][1] == Approx( 32.2193450745800192).epsilon(1e-4));
@@ -1274,7 +1259,7 @@ TEST_CASE("Eloc_Derivatives:multislater_wj", "[hamiltonian]")
   //NLPP Force
   /*  hf_term=0.0;
   pulay_term=0.0;
-  double val=(ham.getComponent(NONLOCALECP))->evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
+  double val=(ham.getComponent(NONLOCALECP))->evaluateIonDerivs(elec, ions, psi, hf_term, pulay_term);
 #if defined(MIXED_PRECISION)
   CHECK( hf_term[0][0]+pulay_term[0][0] == Approx( 21.6829856774403140).epsilon(2e-4));
   CHECK( hf_term[0][1]+pulay_term[0][1] == Approx(-43.4432406419382673).epsilon(2e-4));
@@ -1325,16 +1310,13 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
 
   RuntimeOptions runtime_options;
   WaveFunctionFactory wff(elec, particle_set_map, c);
-  HamiltonianFactory::PsiPoolType psi_map;
-  psi_map.emplace("psi0", wff.buildTWF(root2, runtime_options));
-
-  TrialWaveFunction* psi = psi_map["psi0"].get();
-  REQUIRE(psi != nullptr);
+  auto psi_ptr = wff.buildTWF(root2, runtime_options);
+  auto& psi(*psi_ptr);
   //end incantation
 
   TWFFastDerivWrapper twf;
 
-  psi->initializeTWFFastDerivWrapper(elec, twf);
+  psi.initializeTWFFastDerivWrapper(elec, twf);
   SPOSet::ValueVector values;
   SPOSet::GradVector dpsi;
   SPOSet::ValueVector d2psi;
@@ -1342,7 +1324,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   dpsi.resize(9);
   d2psi.resize(9);
 
-  HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
+  HamiltonianFactory hf("h0", elec, particle_set_map, psi, c);
 
   auto ham_ptr = create_CN_Hamiltonian(hf);
   QMCHamiltonian& ham(*ham_ptr);
@@ -1586,16 +1568,13 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj", "[hamiltonian]")
 
   RuntimeOptions runtime_options;
   WaveFunctionFactory wff(elec, particle_set_map, c);
-  HamiltonianFactory::PsiPoolType psi_map;
-  psi_map.emplace("psi0", wff.buildTWF(root2, runtime_options));
-
-  TrialWaveFunction* psi = psi_map["psi0"].get();
-  REQUIRE(psi != nullptr);
+  auto psi_ptr = wff.buildTWF(root2, runtime_options);
+  auto& psi(*psi_ptr);
   //end incantation
 
   TWFFastDerivWrapper twf;
 
-  psi->initializeTWFFastDerivWrapper(elec, twf);
+  psi.initializeTWFFastDerivWrapper(elec, twf);
   SPOSet::ValueVector values;
   SPOSet::GradVector dpsi;
   SPOSet::ValueVector d2psi;
@@ -1603,7 +1582,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj", "[hamiltonian]")
   dpsi.resize(9);
   d2psi.resize(9);
 
-  HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
+  HamiltonianFactory hf("h0", elec, particle_set_map, psi, c);
 
   auto ham_ptr = create_CN_Hamiltonian(hf);
   QMCHamiltonian& ham(*ham_ptr);
@@ -1815,7 +1794,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj", "[hamiltonian]")
   //This is to test the fast force API in QMCHamiltonian.
   ParticleSet::ParticlePos dedr(ions.getTotalNum());
   ParticleSet::ParticlePos dpsidr(ions.getTotalNum());
-  ham.evaluateIonDerivsFast(elec, ions, *psi, twf, dedr, dpsidr);
+  ham.evaluateIonDerivsFast(elec, ions, psi, twf, dedr, dpsidr);
 }
 
 //This will be very similar to the previous tests, but we will check its behavior
@@ -1865,13 +1844,10 @@ TEST_CASE("Eloc_Derivatives:slater_fastderiv_complex_pbc", "[hamiltonian]")
   xmlNodePtr wfroot = wfdoc.getRoot();
 
   OhmmsXPathObject wfnode("//wavefunction[@name='psi0']", wfdoc.getXPathContext());
-  HamiltonianFactory::PsiPoolType psi_map;
-  psi_map.emplace("psi0", wff.buildTWF(wfnode[0], runtime_options));
+  auto psi_ptr = wff.buildTWF(wfnode[0], runtime_options);
+  auto& psi(*psi_ptr);
 
-  TrialWaveFunction* psi = psi_map["psi0"].get();
-  REQUIRE(psi != nullptr);
-
-  HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
+  HamiltonianFactory hf("h0", elec, particle_set_map, psi, c);
 
   const char* hamiltonian_xml = "<hamiltonian name=\"h0\" pbc=\"yes\" type=\"generic\" target=\"e\"> \
          <pairpot type=\"coulomb\" name=\"ElecElec\" source=\"e\" target=\"e\"/> \
@@ -1894,9 +1870,9 @@ TEST_CASE("Eloc_Derivatives:slater_fastderiv_complex_pbc", "[hamiltonian]")
 
   using RealType  = QMCTraits::RealType;
   using ValueType = QMCTraits::ValueType;
-  RealType logpsi = psi->evaluateLog(elec);
+  RealType logpsi = psi.evaluateLog(elec);
   app_log() << " LOGPSI = " << logpsi << std::endl;
-  RealType eloc = ham.evaluateDeterministic(*psi, elec);
+  RealType eloc = ham.evaluateDeterministic(psi, elec);
   enum observ_id
   {
     KINETIC = 0,
@@ -1926,7 +1902,7 @@ TEST_CASE("Eloc_Derivatives:slater_fastderiv_complex_pbc", "[hamiltonian]")
 
   TWFFastDerivWrapper twf;
 
-  psi->initializeTWFFastDerivWrapper(elec, twf);
+  psi.initializeTWFFastDerivWrapper(elec, twf);
 
   using ValueMatrix = SPOSet::ValueMatrix;
 
@@ -2125,7 +2101,7 @@ TEST_CASE("Eloc_Derivatives:slater_fastderiv_complex_pbc", "[hamiltonian]")
   CHECK(fnlpp[1][2] == Approx(0.0252567500));
 #endif
 
-  //  ham.evaluateIonDerivsFast(elec, ions, *psi, twf,hf_term, wf_grad);*/
+  //  ham.evaluateIonDerivsFast(elec, ions, psi, twf,hf_term, wf_grad);*/
 }
 #endif
 
@@ -2363,15 +2339,14 @@ TEST_CASE("Eloc_Derivatives:proto_md_wj", "[hamiltonian]")
   int Nelec = elec.getTotalNum();
 
   HamiltonianFactory::PSetMap particle_set_map;
-  HamiltonianFactory::PsiPoolType psi_map;
 
   particle_set_map["e"]    = &elec;
   particle_set_map["ion0"] = &ions;
 
-  HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
+  HamiltonianFactory hf("h0", elec, particle_set_map, psi, c);
 
   WaveFunctionFactory wff(elec, particle_set_map, c);
-  psi_map["psi0"] = &wff;
+  psi["psi0"] = &wff;
 
   const char* hamiltonian_xml = "<hamiltonian name=\"h0\" type=\"generic\" target=\"e\"> \
          <pairpot type=\"coulomb\" name=\"ElecElec\" source=\"e\" target=\"e\"/> \
@@ -2408,12 +2383,12 @@ TEST_CASE("Eloc_Derivatives:proto_md_wj", "[hamiltonian]")
   //  HamTest LocalECP -6.783942829945100073e+01
   //  HamTest NonLocalECP 1.373654152480333224e+01
 
-  RealType logpsi = psi->evaluateLog(elec);
+  RealType logpsi = psi.evaluateLog(elec);
   CHECK(logpsi == Approx(-8.9455094611e+00));
 
   QMCHamiltonian& ham = *hf.getH();
 
-  RealType eloc = ham.evaluateDeterministic(*psi, elec);
+  RealType eloc = ham.evaluateDeterministic(psi, elec);
   enum observ_id
   {
     KINETIC = 0,
@@ -2443,8 +2418,8 @@ TEST_CASE("Eloc_Derivatives:proto_md_wj", "[hamiltonian]")
   hf_term.resize(Nions);
   pulay_term.resize(Nions);
 
-  wfgradraw[0] = psi->evalGradSource(elec, ions, 0); //On the C atom.
-  wfgradraw[1] = psi->evalGradSource(elec, ions, 1); //On the N atom.
+  wfgradraw[0] = psi.evalGradSource(elec, ions, 0); //On the C atom.
+  wfgradraw[1] = psi.evalGradSource(elec, ions, 1); //On the N atom.
 
   convert(wfgradraw[0], wf_grad[0]);
   convert(wfgradraw[1], wf_grad[1]);
@@ -2460,7 +2435,7 @@ TEST_CASE("Eloc_Derivatives:proto_md_wj", "[hamiltonian]")
   //Kinetic Force
   hf_term    = 0.0;
   pulay_term = 0.0;
-  (ham.getComponent(KINETIC))->evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
+  (ham.getComponent(KINETIC))->evaluateIonDerivs(elec, ions, psi, hf_term, pulay_term);
 #if defined(MIXED_PRECISION)
   CHECK(hf_term[0][0] + pulay_term[0][0] == Approx(-3.3359153349010735).epsilon(1e-4));
   CHECK(hf_term[0][1] + pulay_term[0][1] == Approx(30.0487085581835309).epsilon(1e-4));
@@ -2480,7 +2455,7 @@ TEST_CASE("Eloc_Derivatives:proto_md_wj", "[hamiltonian]")
   hf_term    = 0.0;
   pulay_term = 0.0;
   double val =
-      (ham.getComponent(NONLOCALECP))->evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
+      (ham.getComponent(NONLOCALECP))->evaluateIonDerivs(elec, ions, psi, hf_term, pulay_term);
 //MP fails the first CHECK with 27.15313.  Just bypass the checks in those builds.
 #if defined(MIXED_PRECISION)
   CHECK(hf_term[0][0] + pulay_term[0][0] == Approx(27.1517161490208956).epsilon(2e-4));
@@ -2504,7 +2479,7 @@ TEST_CASE("Eloc_Derivatives:proto_md_wj", "[hamiltonian]")
   hf_term    = 0.0;
   pulay_term = 0.0;
   wf_grad    = 0.0;
-  ham.evaluateIonDerivs(elec,ions,*psi,hf_term,pulay_term,wf_grad);
+  ham.evaluateIonDerivs(elec,ions,psi,hf_term,pulay_term,wf_grad);
  
   CHECK(dot(hf_term[0],hf_term[0]) != Approx(0));
   CHECK(dot(pulay_term[0],pulay_term[0]) != Approx(0));
@@ -2532,15 +2507,14 @@ TEST_CASE("Eloc_Derivatives:proto_md_wj", "[hamiltonian]")
   int Nelec = elec.getTotalNum();
 
   HamiltonianFactory::PSetMap particle_set_map;
-  HamiltonianFactory::PsiPoolType psi_map;
 
   particle_set_map["e"]    = &elec;
   particle_set_map["ion0"] = &ions;
 
-  HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
+  HamiltonianFactory hf("h0", elec, particle_set_map, psi, c);
 
   WaveFunctionFactory wff(elec, particle_set_map, c);
-  psi_map["psi0"] = &wff;
+  psi["psi0"] = &wff;
 
   const char* hamiltonian_xml = "<hamiltonian name=\"h0\" type=\"generic\" target=\"e\"> \
          <pairpot type=\"coulomb\" name=\"ElecElec\" source=\"e\" target=\"e\"/> \
@@ -2577,12 +2551,12 @@ TEST_CASE("Eloc_Derivatives:proto_md_wj", "[hamiltonian]")
   //HamTest LocalECP -6.783942829945100073e+01
   //HamTest NonLocalECP 1.269054876473223636e+01
 
-  RealType logpsi = psi->evaluateLog(elec);
+  RealType logpsi = psi.evaluateLog(elec);
   CHECK(logpsi == Approx(-1.41149961982e+01));
 
   QMCHamiltonian& ham = *hf.getH();
 
-  RealType eloc = ham.evaluateDeterministic(*psi, elec);
+  RealType eloc = ham.evaluateDeterministic(psi, elec);
   enum observ_id
   {
     KINETIC = 0,
@@ -2612,8 +2586,8 @@ TEST_CASE("Eloc_Derivatives:proto_md_wj", "[hamiltonian]")
   hf_term.resize(Nions);
   pulay_term.resize(Nions);
 
-  wfgradraw[0] = psi->evalGradSource(elec, ions, 0); //On the C atom.
-  wfgradraw[1] = psi->evalGradSource(elec, ions, 1); //On the N atom.
+  wfgradraw[0] = psi.evalGradSource(elec, ions, 0); //On the C atom.
+  wfgradraw[1] = psi.evalGradSource(elec, ions, 1); //On the N atom.
 
   convert(wfgradraw[0], wf_grad[0]);
   convert(wfgradraw[1], wf_grad[1]);
@@ -2632,7 +2606,7 @@ TEST_CASE("Eloc_Derivatives:proto_md_wj", "[hamiltonian]")
   //Kinetic Force
   //hf_term=0.0;
   //pulay_term=0.0;
-  //(ham.getComponent(KINETIC))->evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
+  //(ham.getComponent(KINETIC))->evaluateIonDerivs(elec, ions, psi, hf_term, pulay_term);
 //#if defined(MIXED_PRECISION) 
   //CHECK( hf_term[0][0]+pulay_term[0][0] == Approx( 7.4631825180304636).epsilon(1e-4));
   //CHECK( hf_term[0][1]+pulay_term[0][1] == Approx( 26.0975954772035799).epsilon(1e-4));
@@ -2652,7 +2626,7 @@ TEST_CASE("Eloc_Derivatives:proto_md_wj", "[hamiltonian]")
   //NLPP Force
  // hf_term=0.0;
 //  pulay_term=0.0;
-//  double val=(ham.getComponent(NONLOCALECP))->evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
+//  double val=(ham.getComponent(NONLOCALECP))->evaluateIonDerivs(elec, ions, psi, hf_term, pulay_term);
 //#if defined(MIXED_PRECISION)
 //  CHECK( hf_term[0][0]+pulay_term[0][0] == Approx( 18.9414437404167302).epsilon(2e-4));
 //  CHECK( hf_term[0][1]+pulay_term[0][1] == Approx(-42.9017371899931277).epsilon(2e-4));
@@ -2687,15 +2661,14 @@ TEST_CASE("Eloc_Derivatives:proto_md_wj", "[hamiltonian]")
   int Nelec = elec.getTotalNum();
 
   HamiltonianFactory::PSetMap particle_set_map;
-  HamiltonianFactory::PsiPoolType psi_map;
 
   particle_set_map["e"]    = &elec;
   particle_set_map["ion0"] = &ions;
 
-  HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
+  HamiltonianFactory hf("h0", elec, particle_set_map, psi, c);
 
   WaveFunctionFactory wff(elec, particle_set_map, c);
-  psi_map["psi0"] = &wff;
+  psi["psi0"] = &wff;
 
   const char* hamiltonian_xml = "<hamiltonian name=\"h0\" type=\"generic\" target=\"e\"> \
          <pairpot type=\"coulomb\" name=\"ElecElec\" source=\"e\" target=\"e\"/> \
@@ -2733,12 +2706,12 @@ TEST_CASE("Eloc_Derivatives:proto_md_wj", "[hamiltonian]")
   //HamTest NonLocalECP 1.249362906275283969e+01
 
 
-  RealType logpsi = psi->evaluateLog(elec);
+  RealType logpsi = psi.evaluateLog(elec);
   CHECK(logpsi == Approx(-8.69329994846e+00));
 
   QMCHamiltonian& ham = *hf.getH();
 
-  RealType eloc = ham.evaluateDeterministic(*psi, elec);
+  RealType eloc = ham.evaluateDeterministic(psi, elec);
   enum observ_id
   {
     KINETIC = 0,
@@ -2768,8 +2741,8 @@ TEST_CASE("Eloc_Derivatives:proto_md_wj", "[hamiltonian]")
   hf_term.resize(Nions);
   pulay_term.resize(Nions);
 
-  wfgradraw[0] = psi->evalGradSource(elec, ions, 0); //On the C atom.
-  wfgradraw[1] = psi->evalGradSource(elec, ions, 1); //On the N atom.
+  wfgradraw[0] = psi.evalGradSource(elec, ions, 0); //On the C atom.
+  wfgradraw[1] = psi.evalGradSource(elec, ions, 1); //On the N atom.
 
   convert(wfgradraw[0], wf_grad[0]);
   convert(wfgradraw[1], wf_grad[1]);
@@ -2787,7 +2760,7 @@ TEST_CASE("Eloc_Derivatives:proto_md_wj", "[hamiltonian]")
   //Kinetic Force
 //  hf_term=0.0;
 //  pulay_term=0.0;
-//  (ham.getComponent(KINETIC))->evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
+//  (ham.getComponent(KINETIC))->evaluateIonDerivs(elec, ions, psi, hf_term, pulay_term);
 //#if defined(MIXED_PRECISION)
 //  CHECK( hf_term[0][0]+pulay_term[0][0] == Approx(  4.1783687883878429).epsilon(1e-4));
 //  CHECK( hf_term[0][1]+pulay_term[0][1] == Approx( 32.2193450745800192).epsilon(1e-4));
@@ -2807,7 +2780,7 @@ TEST_CASE("Eloc_Derivatives:proto_md_wj", "[hamiltonian]")
   //NLPP Force
 //  hf_term=0.0;
 //  pulay_term=0.0;
-//  double val=(ham.getComponent(NONLOCALECP))->evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term);
+//  double val=(ham.getComponent(NONLOCALECP))->evaluateIonDerivs(elec, ions, psi, hf_term, pulay_term);
 //#if defined(MIXED_PRECISION)
 //  CHECK( hf_term[0][0]+pulay_term[0][0] == Approx( 21.6829856774403140).epsilon(2e-4));
 //  CHECK( hf_term[0][1]+pulay_term[0][1] == Approx(-43.4432406419382673).epsilon(2e-4));

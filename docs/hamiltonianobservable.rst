@@ -46,27 +46,29 @@ for individual potentials is given in the sections that follow.
 
 attributes:
 
-  +------------------------+--------------+----------------------+-------------+------------------------------------------+
-  | **Name**               | **Datatype** | **Values**           | **Default** | **Description**                          |
-  +========================+==============+======================+=============+==========================================+
-  | ``name/id``:math:`^o`  | text         | *anything*           | h0          | Unique id for this Hamiltonian instance  |
-  +------------------------+--------------+----------------------+-------------+------------------------------------------+
-  | ``type``:math:`^o`     | text         |                      | generic     | *No current function*                    |
-  +------------------------+--------------+----------------------+-------------+------------------------------------------+
-  | ``role``:math:`^o`     | text         | primary/extra        | extra       | Designate as Hamiltonian or not          |
-  +------------------------+--------------+----------------------+-------------+------------------------------------------+
-  | ``source``:math:`^o`   | text         | ``particleset.name`` | i           | Identify classical ``particleset``       |
-  +------------------------+--------------+----------------------+-------------+------------------------------------------+
-  | ``target``:math:`^o`   | text         | ``particleset.name`` | e           | Identify quantum ``particleset``         |
-  +------------------------+--------------+----------------------+-------------+------------------------------------------+
-  | ``default``:math:`^o`  | boolean      | yes/no               | yes         | Include kinetic energy term implicitly   |
-  +------------------------+--------------+----------------------+-------------+------------------------------------------+
+  +----------------------------+--------------+-----------------------+-------------+------------------------------------------+
+  | **Name**                   | **Datatype** | **Values**            | **Default** | **Description**                          |
+  +============================+==============+=======================+=============+==========================================+
+  | ``name/id``:math:`^o`      | text         | *anything*            | h0          | Unique id for this Hamiltonian instance  |
+  +----------------------------+--------------+-----------------------+-------------+------------------------------------------+
+  | ``role``:math:`^o`         | text         | primary/extra         | extra       | Designate as Hamiltonian or not          |
+  +----------------------------+--------------+-----------------------+-------------+------------------------------------------+
+  | ``target``:math:`^o`       | text         | ``particleset.name``  | e           | Identify quantum ``particleset``         |
+  +----------------------------+--------------+-----------------------+-------------+------------------------------------------+
+  | ``wavefunction``:math:`^o` | text         | ``wavefunction.name`` | ""          | Identify ``wavefunction``                |
+  +----------------------------+--------------+-----------------------+-------------+------------------------------------------+
+  | ``default``:math:`^o`      | boolean      | yes/no                | yes         | Include kinetic energy term implicitly   |
+  +----------------------------+--------------+-----------------------+-------------+------------------------------------------+
 
 Additional information:
 
--  **target:** Must be set to the name of the quantum ``particleset``.
+-  **target** Must be set to the name of the quantum ``particleset``.
    The default value is typically sufficient. In normal usage, no other
    attributes are provided.
+
+-  **wavefunction** is only required when there are more than one ``wavefunction`` xml node and at least
+   one hamiltonian component or observable requires the detailed knowledge of the wavefunction that it operates on.
+   If the specified value is not an empty string, it must match the ``name`` attribute of a ``wavefunction`` xml node.
 
 .. code-block::
   :caption: All electron Hamiltonian XML element.
@@ -83,9 +85,9 @@ Additional information:
   :caption: Pseudopotential Hamiltonian XML element.
   :name: Listing 15
 
-  <hamiltonian target="e">
+  <hamiltonian target="e" wavefunction="psi0">
     <pairpot name="ElecElec"  type="coulomb" source="e" target="e"/>
-    <pairpot name="PseudoPot" type="pseudo"  source="i" wavefunction="psi0" format="xml">
+    <pairpot name="PseudoPot" type="pseudo"  source="i" format="xml">
       <pseudo elementType="Li" href="Li.xml"/>
       <pseudo elementType="H" href="H.xml"/>
     </pairpot>
@@ -320,8 +322,6 @@ attributes:
   +------------------------------+--------------+-----------------------+------------------------+--------------------------------------------------+
   | ``forces``                   | boolean      | yes/no                | no                     | *Deprecated*                                     |
   +------------------------------+--------------+-----------------------+------------------------+--------------------------------------------------+
-  | ``wavefunction``:math:`^r`   | text         | ``wavefunction.name`` | invalid                | Identify wavefunction                            |
-  +------------------------------+--------------+-----------------------+------------------------+--------------------------------------------------+
   | ``format``:math:`^r`         | text         | xml/table             | table                  | Select file format                               |
   +------------------------------+--------------+-----------------------+------------------------+--------------------------------------------------+
   | ``algorithm``:math:`^o`      | text         | batched/non-batched   | batched                | Choose NLPP algorithm                            |
@@ -386,13 +386,13 @@ Additional information:
   :caption: QMCPXML element for pseudopotential electron-ion interaction (psf files).
   :name: Listing 19
 
-    <pairpot name="PseudoPot" type="pseudo"  source="i" wavefunction="psi0" format="psf"/>
+    <pairpot name="PseudoPot" type="pseudo"  source="i" format="psf"/>
 
 .. code-block::
   :caption: QMCPXML element for pseudopotential electron-ion interaction (xml files). If SOC terms present in xml, they are added to local energy
   :name: Listing 20
 
-    <pairpot name="PseudoPot" type="pseudo"  source="i" wavefunction="psi0" format="xml">
+    <pairpot name="PseudoPot" type="pseudo"  source="i" format="xml">
       <pseudo elementType="Li" href="Li.xml"/>
       <pseudo elementType="H" href="H.xml"/>
     </pairpot>
@@ -401,7 +401,7 @@ Additional information:
   :caption: QMCPXML element for pseudopotential to accumulate the spin-orbit energy, but do not include in local energy
   :name: Listing 21
 
-    <pairpot name="PseudoPot" type="pseudo" source="i" wavefunction="psi0" format="xml" physicalSO="no">
+    <pairpot name="PseudoPot" type="pseudo" source="i" format="xml" physicalSO="no">
       <pseudo elementType="Pb" href="Pb.xml"/>
     </pairpot>
 
@@ -598,14 +598,12 @@ attributes:
   +-----------------------+--------------+------------------------+-------------+----------------------------+
   | ``source``:math:`^o`  | text         | ``particleset.name``   | e           | Identify quantum particles |
   +-----------------------+--------------+------------------------+-------------+----------------------------+
-  | ``psi``:math:`^o`     | text         | ``wavefunction.name``  | psi0        | Identify wavefunction      |
-  +-----------------------+--------------+------------------------+-------------+----------------------------+
 
 .. code-block::
   :caption: "Chiesa" kinetic energy finite-size postcorrection.
   :name: Listing 23
 
-     <estimator name="KEcorr" type="chiesa" source="e" psi="psi0"/>
+     <estimator name="KEcorr" type="chiesa" source="e"/>
 
 Density estimator
 ~~~~~~~~~~~~~~~~~

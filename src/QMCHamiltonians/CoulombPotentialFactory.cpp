@@ -23,6 +23,7 @@
 #include "QMCHamiltonians/ForceChiesaPBCAA.h"
 #include "OhmmsData/AttributeSet.h"
 #include <PlatformSelector.hpp>
+#include "Message/UniformCommunicateError.h"
 
 #if OHMMS_DIM == 3
 #include "QMCHamiltonians/ECPotentialBuilder.h"
@@ -210,15 +211,16 @@ void HamiltonianFactory::addForceHam(xmlNodePtr cur)
   else if (mode == "acforce")
   {
     app_log() << "Adding Assaraf-Caffarel total force.\n";
-    auto psi_it(psiPool.find(PsiName));
-    if (psi_it == psiPool.end())
+    if (!psi_optional_)
+      throw UniformCommunicateError(
+          "Self-heading overlap estimator requires an explicitly associated wavefunction. Please specify the "
+          "wavefunction attribute of the hamiltonian node in the xml input.");
+    else
     {
-      APP_ABORT("Unknown psi \"" + PsiName + "\" for zero-variance force.");
+      std::unique_ptr<ACForce> acforce = std::make_unique<ACForce>(*source, *target, *psi_optional_, *targetH);
+      acforce->put(cur);
+      targetH->addOperator(std::move(acforce), title, false);
     }
-    TrialWaveFunction& psi           = *psi_it->second;
-    std::unique_ptr<ACForce> acforce = std::make_unique<ACForce>(*source, *target, psi, *targetH);
-    acforce->put(cur);
-    targetH->addOperator(std::move(acforce), title, false);
   }
   else
   {
@@ -248,27 +250,11 @@ void HamiltonianFactory::addPseudoPotential(xmlNodePtr cur)
     return;
   }
   ParticleSet* ion = pit->second.get();
-  auto oit(psiPool.find(wfname));
-  TrialWaveFunction* psi = 0;
-  if (oit == psiPool.end())
-  {
-    if (psiPool.empty())
-      return;
-    app_warning() << "  Cannot find " << wfname << " in the Wavefunction pool. Using the first wavefunction."
-                  << std::endl;
-    psi = psiPool.begin()->second.get();
-  }
-  else
-  {
-    psi = (*oit).second.get();
-  }
-  //remember the TrialWaveFunction used by this pseudopotential
-  psiName = wfname;
 
   app_summary() << std::endl;
   app_summary() << "   Pseudo Potential" << std::endl;
   app_summary() << "   ----------------" << std::endl;
-  app_summary() << "    Name: " << title << "   Wavefunction : " << psiName << std::endl;
+  app_summary() << "    Name: " << title << std::endl;
   app_summary() << std::endl;
 
   ECPotentialBuilder ecp(*targetH, *ion, targetPtcl, myComm);
