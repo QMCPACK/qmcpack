@@ -12,7 +12,7 @@ function(AddRPATH LIBRARY_NAME)
       # Spack copies compiler runtime libraries to create gcc-runtime/intel-oneapi-runtime packages
       # Under certain circumstances, the following bad mix can happen:
       #     FindOpenMP.cmake found libiomp5 provided by the compiler while
-      #     FindBLAS.cmake found the copied libiomp5 due to gcc-runtime module
+      #     FindBLAS.cmake found the copied libiomp5 due to intel-oneapi-runtime module
       # we have control of neither FindOpenMP.cmake nor FindBLAS.cmake
       # The following lines ensure FindBLAS.cmake follows what FindOpenMP.cmake found.
       list(APPEND CMAKE_LIBRARY_PATH ${LIBRARY_DIR})

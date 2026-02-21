@@ -1,6 +1,6 @@
 #!/bin/bash
 # This recipe is intended for ALCF Aurora https://www.alcf.anl.gov/support-center/aurora-sunspot
-# last revision: Jul 11th 2025
+# last revision: Feb 20th 2025
 #
 # How to invoke this script?
 # build_alcf_aurora_icpx.sh # build all the variants assuming the current directory is the source directory.
@@ -12,7 +12,7 @@ do
   if module is-loaded $module_name ; then module unload $module_name; fi
 done
 
-module load oneapi/release/2025.0.5
+module load oneapi/release/2025.3.1
 module load cmake hdf5 boost libxml2
 module list >& module_list.txt
 
@@ -29,7 +29,7 @@ echo "**********************************"
 
 TYPE=Release
 Machine=aurora
-Compiler=oneapi2025.0.5
+Compiler=oneapi2025.3.1
 
 if [[ $# -eq 0 ]]; then
   source_folder=`pwd`
