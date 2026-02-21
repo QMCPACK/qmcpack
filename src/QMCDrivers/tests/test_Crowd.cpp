@@ -46,7 +46,8 @@ public:
   {
     crowd_ptr =
         std::make_unique<Crowd>(em, driverwalker_resource_collection_, *pools.particle_pool->getParticleSet("e"),
-                                *pools.wavefunction_pool->getWaveFunction(), *pools.hamiltonian_pool->getPrimary());
+                                pools.wavefunction_pool->getWaveFunction().value(),
+                                *pools.hamiltonian_pool->getPrimary());
     Crowd& crowd = *crowd_ptr;
     // To match the minimal particle set
     int num_particles = 2;
@@ -87,7 +88,7 @@ TEST_CASE("Crowd integration", "[drivers]")
   DriverWalkerResourceCollection driverwalker_resource_collection_;
 
   Crowd crowd(em, driverwalker_resource_collection_, *pools.particle_pool->getParticleSet("e"),
-              *pools.wavefunction_pool->getWaveFunction(), *pools.hamiltonian_pool->getPrimary());
+              pools.wavefunction_pool->getWaveFunction().value(), *pools.hamiltonian_pool->getPrimary());
 }
 
 TEST_CASE("Crowd redistribute walkers")

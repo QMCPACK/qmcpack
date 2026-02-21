@@ -92,8 +92,7 @@ public:
   /** This type provides all the functionality needed by drivers to instantiate estimators so we use it to reduce coupling
    *  with ParticleSetPool
    */
-  using PSPool   = ParticleSetPool::PoolType;
-  using WFBuffer = MCPopulation::WFBuffer;
+  using PSPool = ParticleSetPool::PoolType;
 
   using SetNonLocalMoveHandler = std::function<void(QMCHamiltonian&)>;
   /** bits to classify QMCDriver

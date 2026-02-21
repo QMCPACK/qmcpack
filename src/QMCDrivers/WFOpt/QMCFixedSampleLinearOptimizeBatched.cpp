@@ -756,8 +756,8 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
   vmcEngine =
       std::make_unique<VMCBatched>(project_data_, std::move(qmcdriver_input_copy), nullptr,
                                    std::move(vmcdriver_input_copy), walker_configs_ref_,
-                                   MCPopulation(myComm->size(), myComm->rank(), &population_.get_golden_electrons(),
-                                                &population_.get_golden_twf(), &population_.get_golden_hamiltonian()),
+                                   MCPopulation(myComm->size(), myComm->rank(), population_.get_golden_electrons(),
+                                                population_.get_golden_twf(), population_.get_golden_hamiltonian()),
                                    rngs_, samples_, myComm);
 
   vmcEngine->setUpdateMode(vmcMove[0] == 'p');
@@ -1501,7 +1501,7 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
     optTarget->IsValid = true;
     costValues.at(k)   = optTarget->LMYEngineCost(false, EngineObj);
     good_update.at(k)  = (good_update.at(k) &&
-                         std::abs((initCost - costValues.at(k)) / initCost) < options_LMY_.max_relative_cost_change);
+                          std::abs((initCost - costValues.at(k)) / initCost) < options_LMY_.max_relative_cost_change);
     if (!good_update.at(k))
       costValues.at(k) = std::abs(1.5 * initCost) + 1.0;
   }
@@ -1868,9 +1868,9 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration_conjugate_g
   }
 
   //We get the parameter direction from the SR solve above using CG algorithm
-  //Then, we can either use a line search with correlated sampling to find the best update along that direction, 
-  //or we can use a simple approach where we just accept the move based on the size of the step...sr_tau in this case. 
-  //The line search with correlated sampling converges faster, but can have issues if the weight from correlated 
+  //Then, we can either use a line search with correlated sampling to find the best update along that direction,
+  //or we can use a simple approach where we just accept the move based on the size of the step...sr_tau in this case.
+  //The line search with correlated sampling converges faster, but can have issues if the weight from correlated
   //sampling gets small and stays small. Otherwise, just taking a small sr_tau will work, but can take a lot of iterations
   //
   //im sure there are better ways to do this
