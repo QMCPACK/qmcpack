@@ -86,7 +86,6 @@ TEST_CASE("J1 spin evaluate derivatives Jastrow", "[wavefunction]")
   RuntimeOptions runtime_options;
   auto twf_ptr = wf_factory.buildTWF(jas1, runtime_options);
   auto& twf(*twf_ptr);
-  twf.setMassTerm(elec_);
   auto& twf_component_list = twf.getOrbitals();
   auto cloned_j1spin       = twf_component_list[0]->makeClone(elec_);
 
@@ -205,7 +204,6 @@ TEST_CASE("J1 spin evaluate derivatives multiparticle Jastrow", "[wavefunction]"
   RuntimeOptions runtime_options;
   auto twf_ptr = wf_factory.buildTWF(jas1, runtime_options);
   auto& twf(*twf_ptr);
-  twf.setMassTerm(elec_);
   auto& twf_component_list = twf.getOrbitals();
   auto cloned_j1spin       = twf_component_list[0]->makeClone(elec_);
 

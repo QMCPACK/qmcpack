@@ -179,7 +179,6 @@ TEST_CASE("Pade2 Jastrow", "[wavefunction]")
   RuntimeOptions runtime_options;
   auto twf_ptr = wf_factory.buildTWF(jas1, runtime_options);
   auto& twf(*twf_ptr);
-  twf.setMassTerm(elec_);
   twf.evaluateLog(elec_);
   twf.prepareGroup(elec_, 0);
 

@@ -141,6 +141,13 @@ Return_t BareKineticEnergy::evaluateValueAndDerivatives(TrialWaveFunction& psi,
   // const_cast is needed because TWF::evaluateDerivatives calculates dlogpsi.
   // KineticEnergy must be the first element in the hamiltonian array.
   psi.evaluateDerivatives(P, optvars, const_cast<Vector<ValueType>&>(dlogpsi), dhpsioverpsi);
+  auto& mass = P.get_mass_by_group();
+  for (int ig = 0; ig < mass.size(); ++ig)
+  {
+    auto mass_inv = 1.0 / mass[ig];
+    for (int j = P.first(ig); j < P.last(ig); ++j)
+      dhpsioverpsi *= mass_inv;
+  }
   return evaluate(psi, P);
 }
 
@@ -156,6 +163,21 @@ void BareKineticEnergy::mw_evaluateWithParameterDerivatives(const RefVectorWithL
   // KineticEnergy must be the first element in the hamiltonian array.
   TrialWaveFunction::mw_evaluateParameterDerivatives(wf_list, p_list, optvars,
                                                      const_cast<RecordArray<ValueType>&>(dlogpsi), dhpsioverpsi);
+
+  const int nparam = dlogpsi.getNumOfParams();
+
+  auto& p_leader = p_list.getLeader();
+  auto& mass     = p_leader.get_mass_by_group();
+  for (int iw = 0; iw < wf_list.size(); iw++)
+  {
+    Vector<ValueType> dhpsioverpsi_record_view(dhpsioverpsi[iw], nparam);
+    for (int ig = 0; ig < mass.size(); ++ig)
+    {
+      auto mass_inv = 1.0 / mass[ig];
+      for (int j = p_leader.first(ig); j < p_leader.last(ig); ++j)
+        dhpsioverpsi_record_view *= mass_inv;
+    }
+  }
 }
 
 /**@brief Function to compute the value, direct ionic gradient terms, and pulay terms for the local kinetic energy.
@@ -521,9 +543,7 @@ void BareKineticEnergy::mw_evaluatePerParticleWithToperator(
     const RefVectorWithLeader<ParticleSet>& p_list,
     const std::vector<ListenerVector<RealType>>& listeners,
     const std::vector<ListenerVector<RealType>>& ion_listeners) const
-{
-  mw_evaluatePerParticle(o_list, wf_list, p_list, listeners, ion_listeners);
-}
+{ mw_evaluatePerParticle(o_list, wf_list, p_list, listeners, ion_listeners); }
 
 #if !defined(REMOVE_TRACEMANAGER)
 Return_t BareKineticEnergy::evaluate_sp(ParticleSet& P)
@@ -622,8 +642,6 @@ bool BareKineticEnergy::get(std::ostream& os) const
 }
 
 std::unique_ptr<OperatorBase> BareKineticEnergy::makeClone(ParticleSet& qp, TrialWaveFunction& psi) const
-{
-  return std::make_unique<BareKineticEnergy>(qp);
-}
+{ return std::make_unique<BareKineticEnergy>(qp); }
 
 } // namespace qmcplusplus

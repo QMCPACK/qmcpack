@@ -58,7 +58,6 @@ std::unique_ptr<TrialWaveFunction> WaveFunctionFactory::buildTWF(xmlNodePtr cur,
   app_summary() << std::endl;
 
   auto targetPsi = std::make_unique<TrialWaveFunction>(runtime_options, psi_name, tasking == "yes");
-  targetPsi->setMassTerm(targetPtcl);
   targetPsi->storeXMLNode(cur);
 
   SPOSetBuilderFactory sposet_builder_factory(myComm, targetPtcl, ptclPool);
