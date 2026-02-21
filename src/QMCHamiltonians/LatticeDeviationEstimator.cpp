@@ -15,12 +15,11 @@
 namespace qmcplusplus
 {
 LatticeDeviationEstimator::LatticeDeviationEstimator(ParticleSet& P,
-                                                     ParticleSet& sP,
+                                                     const ParticleSet& sP,
                                                      const std::string& tgroup_in,
                                                      const std::string& sgroup_in)
     : tspecies(P.getSpeciesSet()),
       sspecies(sP.getSpeciesSet()),
-      tpset(P),
       spset(sP),
       tgroup(tgroup_in),
       sgroup(sgroup_in),
@@ -32,7 +31,7 @@ LatticeDeviationEstimator::LatticeDeviationEstimator(ParticleSet& P,
   int src_species_id = sspecies.findSpecies(sgroup);
   num_sites          = spset.last(src_species_id) - spset.first(src_species_id);
   int tar_species_id = tspecies.findSpecies(tgroup);
-  int num_tars       = tpset.last(tar_species_id) - tpset.first(tar_species_id);
+  int num_tars       = P.last(tar_species_id) - P.first(tar_species_id);
   if (num_tars != num_sites)
   {
     app_log() << "number of target particles = " << num_tars << std::endl;
@@ -111,9 +110,9 @@ LatticeDeviationEstimator::Return_t LatticeDeviationEstimator::evaluate(Particle
   { // for each desired source particle
     if (sspecies.speciesName[spset.GroupID[iat]] == sgroup)
     { // find desired species
-      for (int jat = cur_jat + 1; jat < tpset.getTotalNum(); jat++)
+      for (int jat = cur_jat + 1; jat < P.getTotalNum(); jat++)
       { // find corresponding (!!!! assume next) target particle
-        if (tspecies.speciesName[tpset.GroupID[jat]] == tgroup)
+        if (tspecies.speciesName[P.GroupID[jat]] == tgroup)
         {
           // distance between particle iat in source pset, and jat in target pset
           r  = d_table.getDistRow(jat)[iat];
@@ -213,7 +212,7 @@ void LatticeDeviationEstimator::setObservables(PropertySetType& plist)
   }
 }
 
-std::unique_ptr<OperatorBase> LatticeDeviationEstimator::makeClone(ParticleSet& qp)
+std::unique_ptr<OperatorBase> LatticeDeviationEstimator::makeClone(ParticleSet& qp) const
 {
   // default constructor does not work with threads
   //LatticeDeviationEstimator* myclone = new LatticeDeviationEstimator(*this);

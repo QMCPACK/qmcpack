@@ -29,7 +29,7 @@ bool ChiesaCorrection::get(std::ostream& os) const
   return true;
 }
 
-std::unique_ptr<OperatorBase> ChiesaCorrection::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> ChiesaCorrection::makeClone(ParticleSet& qp, TrialWaveFunction& psi) const
 {
   return std::make_unique<ChiesaCorrection>(qp, psi);
 }

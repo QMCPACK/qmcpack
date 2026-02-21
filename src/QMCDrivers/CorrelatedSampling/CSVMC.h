@@ -37,8 +37,8 @@ public:
   /// Constructor.
   CSVMC(const ProjectData& project_data,
         MCWalkerConfiguration& w,
-        TrialWaveFunction& psi,
-        QMCHamiltonian& h,
+        std::vector<TrialWaveFunction*>&& multi_psi,
+        std::vector<QMCHamiltonian*>&& multi_ham,
         Communicate* comm);
 
   bool run() override;
@@ -61,6 +61,12 @@ private:
   CSVMC& operator=(const CSVMC&) = delete;
 
   void resetRun();
+
+  ///a list of TrialWaveFunctions for multiple method
+  std::vector<TrialWaveFunction*> Psi1;
+
+  ///a list of QMCHamiltonians for multiple method
+  std::vector<QMCHamiltonian*> H1;
 
   CSEnergyEstimator* multiEstimator;
   CSUpdateBase* Mover;

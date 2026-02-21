@@ -62,8 +62,8 @@ TEST_CASE("EstimatorManagerNew::EstimatorManagerNew(EstimatorManagerInput,...)",
       MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
   auto& pset            = *(particle_pool.getParticleSet("e"));
   auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
-  auto& twf             = *(wavefunction_pool.getWaveFunction("wavefunction"));
-  auto& ham             = *(hamiltonian_pool.getPrimary());
+  TrialWaveFunction& twf(wavefunction_pool.getWaveFunction().value());
+  auto& ham = *(hamiltonian_pool.getPrimary());
   EstimatorManagerNew emn(ham, comm);
   emn.constructEstimators(std::move(emi), pset, twf, ham, particle_pool.getPool());
 
@@ -109,8 +109,8 @@ TEST_CASE("EstimatorManagerNew_estimator_naming", "[estimators]")
       MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
   auto& pset            = *(particle_pool.getParticleSet("e"));
   auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
-  auto& twf             = *(wavefunction_pool.getWaveFunction("wavefunction"));
-  auto& ham             = *(hamiltonian_pool.getPrimary());
+  TrialWaveFunction& twf(wavefunction_pool.getWaveFunction().value());
+  auto& ham = *(hamiltonian_pool.getPrimary());
   EstimatorManagerNew emn(ham, comm);
   emn.constructEstimators(std::move(emi), pset, twf, ham, particle_pool.getPool());
   EstimatorManagerNewTestAccess emnta(emn);

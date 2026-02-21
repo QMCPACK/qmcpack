@@ -42,7 +42,7 @@ TEST_CASE("WalkerLogCollector::collect", "[estimators]")
   // This is where the pset properties "properies" gain the different hamiltonian operator values.
   auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
 
-  auto& twf = *(wavefunction_pool.getWaveFunction("wavefunction"));
+  TrialWaveFunction& twf(wavefunction_pool.getWaveFunction().value());
   auto& ham = *(hamiltonian_pool.getPrimary());
 
   // setup data structures for multiple walkers

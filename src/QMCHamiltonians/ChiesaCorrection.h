@@ -32,7 +32,7 @@ public:
 
   bool get(std::ostream& os) const override;
 
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) const final;
 
 private:
   const TrialWaveFunction& psi_ref_;

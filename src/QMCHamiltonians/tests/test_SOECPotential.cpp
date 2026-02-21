@@ -185,7 +185,7 @@ void doSOECPotentialTest(bool use_VPs)
   ResourceCollectionTeamLock<TrialWaveFunction> mw_twf_lock(twf_res, twf_list);
 
   //Now we set up the SO ECP component.
-  SOECPotential so_ecp(ions, elec, psi, false, use_VPs);
+  SOECPotential so_ecp(ions, elec, false, use_VPs);
   ECPComponentBuilder ecp_comp_builder("test_read_soecp", c);
   okay = ecp_comp_builder.read_pp_file("so_ecp_test.xml");
   REQUIRE(okay);
@@ -247,7 +247,7 @@ void doSOECPotentialTest(bool use_VPs)
   if (use_VPs)
   {
     value = 0.0;
-    SOECPotential so_ecp_exact(ions, elec, psi, true, true);
+    SOECPotential so_ecp_exact(ions, elec, true, true);
     //srule is 0 for exact evaluation
     ECPComponentBuilder ecp_comp_builder("test_read_soecp", c, -1, -1, 0);
     okay = ecp_comp_builder.read_pp_file("so_ecp_test.xml");

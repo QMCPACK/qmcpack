@@ -76,7 +76,7 @@ TEST_CASE("Stress BCC H Ewald3D", "[hamiltonian]")
   LRCoulombSingleton::CoulombDerivHandler = std::make_unique<EwaldHandler3D>(ions);
   LRCoulombSingleton::CoulombDerivHandler->initBreakup(ions);
 
-  StressPBC est(ions, elec, psi);
+  StressPBC est(ions, elec);
 
   elec.update();
   est.evaluate(psi, elec);

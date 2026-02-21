@@ -28,9 +28,6 @@ struct StressPBC : public OperatorBase, public ForceBase
   SymTensor<RealType, OHMMS_DIM> stress_ee_const;
   SymTensor<RealType, OHMMS_DIM> stress_eI_const;
 
-  // need wave function for kinetic stress
-  TrialWaveFunction& Psi;
-
   ///source particle set
   ParticleSet& PtclTarg;
   ParticleSet& PtclA;
@@ -64,7 +61,7 @@ struct StressPBC : public OperatorBase, public ForceBase
   std::vector<RealType> Qspec;
   //Constructor
   bool firstTimeStress;
-  StressPBC(ParticleSet& ions, ParticleSet& elns, TrialWaveFunction& Psi);
+  StressPBC(ParticleSet& ions, ParticleSet& elns);
 
   std::string getClassName() const override { return "StressPBC"; }
 
@@ -79,7 +76,7 @@ struct StressPBC : public OperatorBase, public ForceBase
   SymTensor<RealType, OHMMS_DIM> evalConsts_AB();
   SymTensor<RealType, OHMMS_DIM> evalConsts_AA(ParticleSet& P);
 
-  SymTensor<RealType, OHMMS_DIM> evaluateKineticSymTensor(ParticleSet& P);
+  SymTensor<RealType, OHMMS_DIM> evaluateKineticSymTensor(TrialWaveFunction& psi, ParticleSet& P);
 
   void registerObservables(std::vector<ObservableHelper>& h5list, hdf_archive& file) const override
   {
@@ -91,7 +88,7 @@ struct StressPBC : public OperatorBase, public ForceBase
   void setObservables(PropertySetType& plist) override { setObservablesStress(plist); }
 
   void setParticlePropertyList(PropertySetType& plist, int offset) override { setParticleSetStress(plist, offset); }
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) const final;
   bool put(xmlNodePtr cur) override;
 
   bool get(std::ostream& os) const override

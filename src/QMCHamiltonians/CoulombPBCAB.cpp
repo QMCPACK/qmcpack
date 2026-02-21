@@ -60,7 +60,7 @@ CoulombPBCAB::CoulombPBCAB(ParticleSet& ions, ParticleSet& elns, bool computeFor
   app_log() << "  Number of k vectors " << AB->Fk.size() << std::endl;
 }
 
-std::unique_ptr<OperatorBase> CoulombPBCAB::makeClone(ParticleSet& qp) { return std::make_unique<CoulombPBCAB>(*this); }
+std::unique_ptr<OperatorBase> CoulombPBCAB::makeClone(ParticleSet& qp) const { return std::make_unique<CoulombPBCAB>(*this); }
 
 CoulombPBCAB::~CoulombPBCAB() = default;
 
