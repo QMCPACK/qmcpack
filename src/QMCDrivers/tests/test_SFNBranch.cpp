@@ -40,7 +40,7 @@ public:
 
   std::unique_ptr<SFNBranch> operator()(ParticleSet& pset, TrialWaveFunction& twf, QMCHamiltonian& ham)
   {
-    pop_ = std::make_unique<MCPopulation>(1, comm_->rank(), &pset, &twf, &ham);
+    pop_ = std::make_unique<MCPopulation>(1, comm_->rank(), pset, twf, ham);
     // MCPopulation owns it walkers it cannot just take refs so we just create and then update its walkers.
     pop_->createWalkers(2, walker_confs_);
 
@@ -84,7 +84,7 @@ TEST_CASE("SFNBranch::branch(MCPopulation...)", "[drivers]")
   SetupPools pools;
   SetupSFNBranch setup_sfnb(pools.comm);
   std::unique_ptr<SFNBranch> sfnb =
-      setup_sfnb(*pools.particle_pool->getParticleSet("e"), *pools.wavefunction_pool->getWaveFunction(),
+      setup_sfnb(*pools.particle_pool->getParticleSet("e"), pools.wavefunction_pool->getWaveFunction().value(),
                  *pools.hamiltonian_pool->getPrimary());
 }
 

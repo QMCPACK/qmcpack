@@ -234,7 +234,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
           std::make_unique<VMCBatched>(project_data_, std::move(qmcdriver_input),
                                        makeEstimatorManager(emi, qmcdriver_input.get_estimator_manager_input()),
                                        std::move(vmcdriver_input), qmc_system,
-                                       MCPopulation(comm->size(), comm->rank(), &qmc_system, &primaryPsi, primaryH),
+                                       MCPopulation(comm->size(), comm->rank(), qmc_system, primaryPsi, *primaryH),
                                        RandomNumberControl::getChildrenRefs(), qmc_system.getSampleStack(), comm);
 
       new_driver->setUpdateMode(1);
@@ -267,7 +267,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
           std::make_unique<DMCBatched>(project_data_, std::move(qmcdriver_input),
                                        makeEstimatorManager(emi, qmcdriver_input.get_estimator_manager_input()),
                                        std::move(dmcdriver_input), qmc_system,
-                                       MCPopulation(comm->size(), comm->rank(), &qmc_system, &primaryPsi, primaryH),
+                                       MCPopulation(comm->size(), comm->rank(), qmc_system, primaryPsi, *primaryH),
                                        RandomNumberControl::getChildrenRefs(), comm);
     }
     else if (das.new_run_type == QMCRunType::RMC)
@@ -319,7 +319,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
       auto opt = std::make_unique<QMCFixedSampleLinearOptimizeBatched>(project_data_, std::move(qmcdriver_input),
                                                                        std::move(vmcdriver_input), qmc_system,
                                                                        MCPopulation(comm->size(), comm->rank(),
-                                                                                    &qmc_system, &primaryPsi, primaryH),
+                                                                                    qmc_system, primaryPsi, *primaryH),
                                                                        RandomNumberControl::getChildrenRefs(),
                                                                        qmc_system.getSampleStack(), comm);
       opt->setWaveFunctionNode(wavefunction_pool.getWaveFunctionNode("psi0"));
