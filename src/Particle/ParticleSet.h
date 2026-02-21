@@ -240,6 +240,9 @@ public:
     }
   }
 
+  inline const auto& get_mass_by_group() const { return mass_by_group_; }
+  inline const auto& get_z_by_group() const { return z_by_group_; }
+
   inline const DynamicCoordinates& getCoordinates() const { return *coordinates_; }
 
   void resetGroups();
@@ -637,6 +640,10 @@ protected:
   ///array to handle a group of distinct particles per species
   std::shared_ptr<Vector<int, OMPallocator<int>>> group_offsets_;
 
+  /// mass by specie
+  Vector<Scalar_t> mass_by_group_;
+  /// Z by specie
+  Vector<Scalar_t> z_by_group_;
   ///internal representation of R. It can be an SoA copy of R
   std::unique_ptr<DynamicCoordinates> coordinates_;
 

@@ -163,6 +163,9 @@ void ParticleSet::resetGroups()
   }
   for (int iat = 0; iat < Z.size(); iat++)
     Z[iat] = my_species_(qind, GroupID[iat]);
+  z_by_group_.resize(nspecies);
+  for (auto ig = 0; ig < nspecies; ig++)
+    z_by_group_[ig] = my_species_(qind, ig);
   natt        = my_species_.numAttributes();
   int massind = my_species_.addAttribute("mass");
   if (massind == natt)
@@ -180,6 +183,9 @@ void ParticleSet::resetGroups()
     app_log() << "  Distinctive masses for each species " << std::endl;
   for (int iat = 0; iat < Mass.size(); iat++)
     Mass[iat] = my_species_(massind, GroupID[iat]);
+  mass_by_group_.resize(nspecies);
+  for (auto ig = 0; ig < nspecies; ig++)
+    mass_by_group_[ig] = my_species_(massind, ig);
 
   int membersize = my_species_.addAttribute("membersize");
   for (int ig = 0; ig < nspecies; ++ig)
