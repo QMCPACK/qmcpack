@@ -23,6 +23,7 @@
  *@brief Definition of a HamiltonianFactory
  */
 #include "HamiltonianFactory.h"
+#include "Message/UniformCommunicateError.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "QMCHamiltonians/BareKineticEnergy.h"
 #include "QMCHamiltonians/ConservedEnergy.h"
@@ -49,22 +50,19 @@
 #endif
 #include "QMCHamiltonians/SkPot.h"
 #include "OhmmsData/AttributeSet.h"
-#include "Message/UniformCommunicateError.h"
-#include "Fermion/MultiSlaterDetTableMethod.h"
 
 namespace qmcplusplus
 {
 HamiltonianFactory::HamiltonianFactory(const std::string& hName,
                                        ParticleSet& qp,
                                        const PSetMap& pset,
-                                       const PsiPoolType& oset,
+                                       OptionalRef<TrialWaveFunction>&& psi_optional,
                                        Communicate* c)
     : MPIObjectBase(c),
       targetH(std::make_unique<QMCHamiltonian>(hName)),
       targetPtcl(qp),
       ptclPool(pset),
-      psiPool(oset),
-      psiName("psi0")
+      psi_optional_(psi_optional)
 {
   //PBCType is zero or 1 but should be generalized
   PBCType = targetPtcl.getLattice().SuperCellEnum;
@@ -95,16 +93,10 @@ bool HamiltonianFactory::build(xmlNodePtr cur)
   app_summary() << "  Name: " << targetH->getName() << std::endl;
   app_summary() << std::endl;
 
-  std::string htype("generic"), source("i"), defaultKE("yes");
+  std::string defaultKE("yes");
   OhmmsAttributeSet hAttrib;
-  hAttrib.add(htype, "type");
-  hAttrib.add(source, "source");
   hAttrib.add(defaultKE, "default");
   hAttrib.put(cur);
-  auto psi_it(psiPool.find(psiName));
-  if (psi_it == psiPool.end())
-    APP_ABORT("Unknown psi \"" + psiName + "\" for target Psi");
-  TrialWaveFunction* targetPsi = psi_it->second.get();
   // KineticEnergy must be the first element in the hamiltonian array.
   if (defaultKE != "no")
     targetH->addOperator(std::make_unique<BareKineticEnergy>(targetPtcl), "Kinetic");
@@ -242,25 +234,31 @@ bool HamiltonianFactory::build(xmlNodePtr cur)
       else if (potType == "selfhealingoverlap" || potType == "SelfHealingOverlap")
       {
         app_log() << "  Adding SelfHealingOverlap" << std::endl;
-
-        auto msd_refvec = targetPsi->findMSD();
-        if (msd_refvec.size() != 1)
-          throw UniformCommunicateError("SelfHealingOverlap requires one and only one multi slater determinant "
-                                        "component in the trial wavefunction.");
-
-        const MultiSlaterDetTableMethod& msd = msd_refvec[0];
-        std::unique_ptr<SelfHealingOverlapLegacy> apot =
-            std::make_unique<SelfHealingOverlapLegacy>(msd.getLinearExpansionCoefs().size());
-        apot->put(element);
-        targetH->addOperator(std::move(apot), potName, false);
+        if (!psi_optional_)
+          throw UniformCommunicateError(
+              "Self-healing overlap estimator requires an explicitly associated wavefunction. Please specify the "
+              "wavefunction attribute of the hamiltonian node in the xml input.");
+        else
+        {
+          std::unique_ptr<SelfHealingOverlapLegacy> apot = std::make_unique<SelfHealingOverlapLegacy>(*psi_optional_);
+          apot->put(element);
+          targetH->addOperator(std::move(apot), potName, false);
+        }
       }
       else if (potType == "orbitalimages")
       {
         app_log() << "  Adding OrbitalImages" << std::endl;
-        std::unique_ptr<OrbitalImages> apot =
-            std::make_unique<OrbitalImages>(targetPtcl, ptclPool, myComm, targetPsi->getSPOMap());
-        apot->put(element);
-        targetH->addOperator(std::move(apot), potName, false);
+        if (!psi_optional_)
+          throw UniformCommunicateError(
+              "Orbital image estimator requires an explicitly associated wavefunction. Please specify the wavefunction "
+              "attribute of the hamiltonian node in the xml input.");
+        else
+        {
+          std::unique_ptr<OrbitalImages> apot =
+              std::make_unique<OrbitalImages>(targetPtcl, ptclPool, myComm, psi_optional_->get().getSPOMap());
+          apot->put(element);
+          targetH->addOperator(std::move(apot), potName, false);
+        }
       }
 #if !defined(REMOVE_TRACEMANAGER)
       else if (potType == "energydensity" || potType == "EnergyDensity")
@@ -287,10 +285,17 @@ bool HamiltonianFactory::build(xmlNodePtr cur)
         {
           APP_ABORT("Unknown source \"" + source + "\" for DensityMatrices1B");
         }
-        std::unique_ptr<DensityMatrices1B> apot =
-            std::make_unique<DensityMatrices1B>(targetPtcl, targetPsi->getSPOMap(), Pc);
-        apot->put(element);
-        targetH->addOperator(std::move(apot), potName, false);
+        if (!psi_optional_)
+          throw UniformCommunicateError(
+              "One-body density matrix estimator requires an explicitly associated wavefunction. Please specify the "
+              "wavefunction attribute of the hamiltonian node in the xml input.");
+        else
+        {
+          std::unique_ptr<DensityMatrices1B> apot =
+              std::make_unique<DensityMatrices1B>(targetPtcl, psi_optional_->get().getSPOMap(), Pc);
+          apot->put(element);
+          targetH->addOperator(std::move(apot), potName, false);
+        }
       }
 #endif
       else if (potType == "sk")
@@ -306,10 +311,8 @@ bool HamiltonianFactory::build(xmlNodePtr cur)
 #if OHMMS_DIM == 3
       else if (potType == "chiesa")
       {
-        std::string PsiName    = "psi0";
         std::string SourceName = "e";
         OhmmsAttributeSet hAttrib;
-        hAttrib.add(PsiName, "psi");
         hAttrib.add(SourceName, "source");
         hAttrib.put(element);
         auto pit(ptclPool.find(SourceName));
@@ -318,14 +321,15 @@ bool HamiltonianFactory::build(xmlNodePtr cur)
           APP_ABORT("Unknown source \"" + SourceName + "\" for Chiesa correction.");
         }
         ParticleSet& source = *pit->second;
-        auto psi_it(psiPool.find(PsiName));
-        if (psi_it == psiPool.end())
+        if (!psi_optional_)
+          throw UniformCommunicateError(
+              "Chiesa correction estimator requires an explicitly associated wavefunction. Please specify the "
+              "wavefunction attribute of the hamiltonian node in the xml input.");
+        else
         {
-          APP_ABORT("Unknown psi \"" + PsiName + "\" for Chiesa correction.");
+          std::unique_ptr<ChiesaCorrection> chiesa = std::make_unique<ChiesaCorrection>(source, *psi_optional_);
+          targetH->addOperator(std::move(chiesa), "KEcorr", false);
         }
-        const TrialWaveFunction& psi             = *psi_it->second;
-        std::unique_ptr<ChiesaCorrection> chiesa = std::make_unique<ChiesaCorrection>(source, psi);
-        targetH->addOperator(std::move(chiesa), "KEcorr", false);
       }
       else if (potType == "skall")
       {

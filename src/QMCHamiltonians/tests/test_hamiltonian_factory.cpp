@@ -59,10 +59,9 @@ TEST_CASE("HamiltonianFactory", "[hamiltonian]")
   particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
 
   RuntimeOptions runtime_options;
-  HamiltonianFactory::PsiPoolType psi_map;
-  psi_map.emplace("psi0", WaveFunctionFactory::buildEmptyTWFForTesting(runtime_options, "psi0"));
+  TrialWaveFunction psi(runtime_options, "psi0");
 
-  HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
+  HamiltonianFactory hf("h0", elec, particle_set_map, psi, c);
 
   const char* hamiltonian_xml = R"(<hamiltonian name="h0" type="generic" target="e">
          <pairpot type="coulomb" name="ElecElec" source="e" target="e"/>
@@ -113,10 +112,9 @@ TEST_CASE("HamiltonianFactory pseudopotential", "[hamiltonian]")
   particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
 
   RuntimeOptions runtime_options;
-  HamiltonianFactory::PsiPoolType psi_map;
-  psi_map.emplace("psi0", WaveFunctionFactory::buildEmptyTWFForTesting(runtime_options, "psi0"));
+  TrialWaveFunction psi(runtime_options, "psi0");
 
-  HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
+  HamiltonianFactory hf("h0", elec, particle_set_map, psi, c);
 
   const char* hamilonian_xml = R"(<hamiltonian name="h0" type="generic" target="e">
     <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml">

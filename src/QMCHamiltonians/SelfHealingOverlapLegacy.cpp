@@ -14,20 +14,32 @@
 #include "TrialWaveFunction.h"
 #include "QMCWaveFunctions/Fermion/MultiSlaterDetTableMethod.h"
 #include "OhmmsData/AttributeSet.h"
+#include "Message/UniformCommunicateError.h"
 
 namespace qmcplusplus
 {
-SelfHealingOverlapLegacy::SelfHealingOverlapLegacy(const size_t msd_size) : ncoefs_(msd_size)
+
+static auto getMSDCoefsSize(const TrialWaveFunction& wfn)
+{
+  auto msd_refvec = wfn.findMSD();
+  if (msd_refvec.size() != 1)
+    throw UniformCommunicateError("SelfHealingOverlap requires one and only one multi slater determinant "
+                                  "component in the trial wavefunction.");
+
+  const MultiSlaterDetTableMethod& msd = msd_refvec[0];
+  return msd.getLinearExpansionCoefs().size();
+}
+
+SelfHealingOverlapLegacy::SelfHealingOverlapLegacy(const TrialWaveFunction& wfn) : ncoefs_(getMSDCoefsSize(wfn))
 {
   name_ = "SelfHealingOverlap";
   update_mode_.set(COLLECTABLE, 1);
 }
 
+SelfHealingOverlapLegacy::~SelfHealingOverlapLegacy() = default;
 
 std::unique_ptr<OperatorBase> SelfHealingOverlapLegacy::makeClone(ParticleSet& qp, TrialWaveFunction& psi) const
-{
-  return std::make_unique<SelfHealingOverlapLegacy>(ncoefs_);
-}
+{ return std::make_unique<SelfHealingOverlapLegacy>(*this); }
 
 
 bool SelfHealingOverlapLegacy::put(xmlNodePtr cur)

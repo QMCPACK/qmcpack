@@ -34,8 +34,8 @@ public:
   using PosType     = QMCTraits::PosType;
 
   //constructor/destructor
-  SelfHealingOverlapLegacy(const size_t msd_size);
-  ~SelfHealingOverlapLegacy() override {}
+  SelfHealingOverlapLegacy(const TrialWaveFunction& wfn);
+  ~SelfHealingOverlapLegacy() override;
 
   //standard interface
   std::string getClassName() const override { return "SelfHealingOverlapLegacy"; }

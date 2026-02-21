@@ -29,13 +29,12 @@ class HamiltonianFactory : public MPIObjectBase
 {
 public:
   using PSetMap     = std::map<std::string, const std::unique_ptr<ParticleSet>>;
-  using PsiPoolType = std::map<std::string, const std::unique_ptr<TrialWaveFunction>>;
 
   ///constructor
   HamiltonianFactory(const std::string& hName,
                      ParticleSet& qp,
                      const PSetMap& pset,
-                     const PsiPoolType& oset,
+                     OptionalRef<TrialWaveFunction>&& psi_optional,
                      Communicate* c);
 
   ///read from xmlNode
@@ -62,11 +61,8 @@ private:
   ParticleSet& targetPtcl;
   ///reference to the PSetMap
   const PSetMap& ptclPool;
-  ///reference to the TrialWaveFunction Pool
-  const PsiPoolType& psiPool;
-
-  ///name of the TrialWaveFunction
-  std::string psiName;
+  ///optional reference to a TrialWaveFunction object
+  const OptionalRef<TrialWaveFunction> psi_optional_;
 };
 } // namespace qmcplusplus
 #endif

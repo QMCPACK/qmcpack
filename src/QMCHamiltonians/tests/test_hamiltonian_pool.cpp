@@ -52,7 +52,7 @@ TEST_CASE("HamiltonianPool", "[qmcapp]")
 
   RuntimeOptions runtime_options;
   WaveFunctionPool wfp(runtime_options, pp, c);
-  wfp.add("psi0", WaveFunctionFactory::buildEmptyTWFForTesting(runtime_options, "psi0"));
+  wfp.add("psi0", std::make_unique<TrialWaveFunction>(runtime_options, "psi0"));
 
   HamiltonianPool hpool(pp, wfp, c);
 

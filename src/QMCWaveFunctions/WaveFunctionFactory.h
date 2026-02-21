@@ -50,11 +50,6 @@ public:
                                               const RuntimeOptions& runtime_options,
                                               const std::string psi_name = "");
 
-  /// create an empty TrialWaveFunction for testing use.
-  std::unique_ptr<TrialWaveFunction> static buildEmptyTWFForTesting(const RuntimeOptions& runtime_options,
-                                                                    const std::string_view name)
-  { return std::make_unique<TrialWaveFunction>(runtime_options, name); }
-
 private:
   /** add Fermion wavefunction term */
   bool addFermionTerm(TrialWaveFunction& psi, SPOSetBuilderFactory& spo_factory, xmlNodePtr cur);
