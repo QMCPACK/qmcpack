@@ -70,7 +70,7 @@ TEST_CASE("integrateListeners", "[hamiltonian]")
   auto& pset_target      = *(particle_pool.getParticleSet("e"));
   //auto& species_set        = pset_target.getSpeciesSet();
   //auto& spo_map            = wavefunction_pool.getWaveFunction("wavefunction")->getSPOMap();
-  auto& trial_wavefunction = *(wavefunction_pool.getWaveFunction());
+  TrialWaveFunction& psi(wavefunction_pool.getWaveFunction().value());
 
   UPtrVector<QMCHamiltonian> hams;
   UPtrVector<TrialWaveFunction> twfs;
@@ -88,7 +88,7 @@ TEST_CASE("integrateListeners", "[hamiltonian]")
   {
     psets.emplace_back(pset_target);
     psets.back().randomizeFromSource(*particle_pool.getParticleSet("ion"));
-    twfs.emplace_back(trial_wavefunction.makeClone(psets.back()));
+    twfs.emplace_back(psi.makeClone(psets.back()));
     hams.emplace_back(hamiltonian_pool.getPrimary()->makeClone(psets.back(), *twfs.back()));
   }
 
@@ -272,8 +272,9 @@ TEST_CASE("integrateListeners", "[hamiltonian]")
 
     // Here we test consistency between the per particle energies and the per hamiltonian energies
     typename decltype(energies)::value_type hamiltonian_local_nrg_sum = 0.0;
-    typename decltype(energies)::value_type energies_sum = 0.0;
-    for (int iw = 0; iw < num_walkers; ++iw) {
+    typename decltype(energies)::value_type energies_sum              = 0.0;
+    for (int iw = 0; iw < num_walkers; ++iw)
+    {
       hamiltonian_local_nrg_sum += ham_list[iw].getLocalEnergy();
       energies_sum += energies[iw];
     }

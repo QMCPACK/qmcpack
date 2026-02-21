@@ -32,19 +32,19 @@ TEST_CASE("CompositeSPO::diamond_1x1x1", "[wavefunction")
   auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool =
       MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
-  auto& pset = *particle_pool.getParticleSet("e");
-  auto& twf  = *wavefunction_pool.getWaveFunction();
+  TrialWaveFunction& psi(wavefunction_pool.getWaveFunction().value());
 
   CompositeSPOSet<SPOSet::ValueType> comp_sposet("one_composite_set");
 
   std::vector<std::string> sposets{"spo_ud", "spo_dm"};
   for (auto sposet_str : sposets)
   {
-    auto& sposet = twf.getSPOSet(sposet_str);
+    auto& sposet = psi.getSPOSet(sposet_str);
     comp_sposet.add(sposet.makeClone());
   }
   CHECK(comp_sposet.size() == 8);
 
+  auto& pset = *particle_pool.getParticleSet("e");
   SPOSet::ValueMatrix psiM(pset.R.size(), comp_sposet.getOrbitalSetSize());
   SPOSet::GradMatrix dpsiM(pset.R.size(), comp_sposet.getOrbitalSetSize());
   SPOSet::ValueMatrix d2psiM(pset.R.size(), comp_sposet.getOrbitalSetSize());
