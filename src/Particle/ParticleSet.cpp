@@ -65,9 +65,7 @@ ParticleSet::ParticleSet(const SimulationCell& simulation_cell, const DynamicCoo
       TotalNum(0),
       group_offsets_(std::make_shared<Vector<int, OMPallocator<int>>>()),
       coordinates_(createDynamicCoordinates(kind))
-{
-  initPropertyList();
-}
+{ initPropertyList(); }
 
 ParticleSet::ParticleSet(const ParticleSet& p)
     : Properties(p.Properties),
@@ -93,8 +91,8 @@ ParticleSet::ParticleSet(const ParticleSet& p)
   is_spinor_ = p.is_spinor_;
 
   //need explicit copy:
-  Mass = p.Mass;
-  Z    = p.Z;
+  mass_by_group_ = p.mass_by_group_;
+  Z              = p.Z;
   //std::ostringstream o;
   //o<<p.getName()<<ObjectTag;
   //this->setName(o.str());
@@ -178,8 +176,9 @@ void ParticleSet::resetGroups()
     app_log() << "  All the species have the same mass " << m0 << std::endl;
   else
     app_log() << "  Distinctive masses for each species " << std::endl;
-  for (int iat = 0; iat < Mass.size(); iat++)
-    Mass[iat] = my_species_(massind, GroupID[iat]);
+  mass_by_group_.resize(nspecies);
+  for (auto ig = 0; ig < nspecies; ig++)
+    mass_by_group_[ig] = my_species_(massind, ig);
 
   int membersize = my_species_.addAttribute("membersize");
   for (int ig = 0; ig < nspecies; ++ig)
@@ -332,14 +331,10 @@ int ParticleSet::addTable(const ParticleSet& psrc, DTModes modes)
 }
 
 const DistanceTableAA& ParticleSet::getDistTableAA(int table_ID) const
-{
-  return dynamic_cast<DistanceTableAA&>(*DistTables[table_ID]);
-}
+{ return dynamic_cast<DistanceTableAA&>(*DistTables[table_ID]); }
 
 const DistanceTableAB& ParticleSet::getDistTableAB(int table_ID) const
-{
-  return dynamic_cast<DistanceTableAB&>(*DistTables[table_ID]);
-}
+{ return dynamic_cast<DistanceTableAB&>(*DistTables[table_ID]); }
 
 void ParticleSet::update(bool skipSK)
 {

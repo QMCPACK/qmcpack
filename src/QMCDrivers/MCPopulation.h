@@ -60,11 +60,6 @@ private:
   // By making this a linked list and creating the crowds at the same time we could get first touch.
   UPtrVector<MCPWalker> walkers_;
   UPtrVector<MCPWalker> dead_walkers_;
-  std::vector<RealType> ptclgrp_mass_;
-  ///1/Mass per species
-  std::vector<RealType> ptclgrp_inv_mass_;
-  ///1/Mass per particle
-  std::vector<RealType> ptcl_inv_mass_;
 
   // This is necessary MCPopulation is constructed in a simple call scope in QMCDriverFactory from the legacy MCWalkerConfiguration
   // MCPopulation should have QMCMain scope eventually and the driver will just have a reference to it.
@@ -199,9 +194,7 @@ public:
   void set_target_samples(IndexType samples) { target_samples_ = samples; }
 
   void set_ensemble_property(const MCDataType<QMCTraits::FullPrecRealType>& ensemble_property)
-  {
-    ensemble_property_ = ensemble_property;
-  }
+  { ensemble_property_ = ensemble_property; }
 
   UPtrVector<MCPWalker>& get_walkers() { return walkers_; }
   const UPtrVector<MCPWalker>& get_walkers() const { return walkers_; }
@@ -231,10 +224,6 @@ public:
    *  As operator[] don't use it to ignore the concurrency design.
    */
   std::vector<WalkerElementsRef> get_walker_elements();
-
-  const std::vector<RealType>& get_ptclgrp_mass() const { return ptclgrp_mass_; }
-  const std::vector<RealType>& get_ptclgrp_inv_mass() const { return ptclgrp_inv_mass_; }
-  const std::vector<RealType>& get_ptcl_inv_mass() const { return ptcl_inv_mass_; }
   /// @}
 
 
