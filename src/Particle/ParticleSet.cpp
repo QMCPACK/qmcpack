@@ -94,6 +94,7 @@ ParticleSet::ParticleSet(const ParticleSet& p)
 
   //need explicit copy:
   Mass = p.Mass;
+  mass_by_group_ = p.mass_by_group_;
   Z    = p.Z;
   //std::ostringstream o;
   //o<<p.getName()<<ObjectTag;

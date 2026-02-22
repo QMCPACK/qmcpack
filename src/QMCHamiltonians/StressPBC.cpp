@@ -292,11 +292,15 @@ SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evaluateKineticSymTensor(Tr
   SymTensor<RealType, OHMMS_DIM> kinetic_tensor;
   Tensor<ComplexType, OHMMS_DIM> complex_ktensor;
 
-  for (int iat = 0; iat < P.getTotalNum(); iat++)
+  auto& mass = P.get_mass_by_group();
+  for (int ig = 0; ig < mass.size(); ++ig)
   {
-    const RealType minv(1.0 / P.Mass[iat]);
-    complex_ktensor += outerProduct(P.G[iat], P.G[iat]) * static_cast<ParticleSet::SingleParticleValue>(minv);
-    complex_ktensor += grad_grad_psi[iat] * minv;
+    const RealType minv = 1.0 / mass[ig];
+    for (int iat = P.first(ig); iat < P.last(ig); ++iat)
+    {
+      complex_ktensor += outerProduct(P.G[iat], P.G[iat]) * static_cast<ParticleSet::SingleParticleValue>(minv);
+      complex_ktensor += grad_grad_psi[iat] * minv;
+    }
   }
 
   for (int i = 0; i < OHMMS_DIM; i++)
