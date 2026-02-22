@@ -51,8 +51,6 @@ void ParticleSet::createSK()
     for (int ig = 0; ig < my_species_.getTotalNum(); ++ig)
       my_species_(massind, ig) = 1.0;
   }
-  for (int iat = 0; iat < GroupID.size(); iat++)
-    Mass[iat] = my_species_(massind, GroupID[iat]);
 
   coordinates_->setAllParticlePos(R);
 }

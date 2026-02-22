@@ -83,8 +83,6 @@ public:
   ParticleGradient G;
   ///laplacians of the particles
   ParticleLaplacian L;
-  ///mass of each particle
-  ParticleScalar Mass;
   ///charge of each particle
   ParticleScalar Z;
 
@@ -241,7 +239,6 @@ public:
   }
 
   inline const auto& get_mass_by_group() const { return mass_by_group_; }
-  inline const auto& get_z_by_group() const { return z_by_group_; }
 
   inline const DynamicCoordinates& getCoordinates() const { return *coordinates_; }
 
@@ -506,7 +503,6 @@ public:
     GroupID.clear();
     G.clear();
     L.clear();
-    Mass.clear();
     Z.clear();
 
     coordinates_->resize(0);
@@ -547,10 +543,6 @@ public:
     AttribList.add(GroupID);
 
     //more particle attributes
-    Mass.setTypeName(ParticleTags::scalartype_tag);
-    Mass.setObjName("mass");
-    AttribList.add(Mass);
-
     Z.setTypeName(ParticleTags::scalartype_tag);
     Z.setObjName("charge");
     AttribList.add(Z);
@@ -642,8 +634,7 @@ protected:
 
   /// mass by specie
   Vector<Scalar_t> mass_by_group_;
-  /// Z by specie
-  Vector<Scalar_t> z_by_group_;
+
   ///internal representation of R. It can be an SoA copy of R
   std::unique_ptr<DynamicCoordinates> coordinates_;
 
@@ -689,7 +680,6 @@ protected:
     GroupID.resize(numPtcl);
     G.resize(numPtcl);
     L.resize(numPtcl);
-    Mass.resize(numPtcl);
     Z.resize(numPtcl);
 
     coordinates_->resize(numPtcl);

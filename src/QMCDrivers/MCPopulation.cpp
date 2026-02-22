@@ -27,21 +27,7 @@ MCPopulation::MCPopulation(int num_ranks,
                            TrialWaveFunction* trial_wf,
                            QMCHamiltonian* hamiltonian)
     : trial_wf_(trial_wf), elec_particle_set_(elecs), hamiltonian_(hamiltonian), num_ranks_(num_ranks), rank_(this_rank)
-{
-  const auto num_groups = elecs->groups();
-  ptclgrp_mass_.resize(num_groups);
-  ptclgrp_inv_mass_.resize(num_groups);
-  for (int ig = 0; ig < num_groups; ++ig)
-  {
-    ptclgrp_mass_[ig]     = elecs->Mass[elecs->first(ig)];
-    ptclgrp_inv_mass_[ig] = 1.0 / ptclgrp_mass_[ig];
-  }
-
-  ptcl_inv_mass_.resize(elecs->getTotalNum());
-  for (int ig = 0; ig < num_groups; ++ig)
-    for (int iat = elecs->first(ig); iat < elecs->last(ig); ++iat)
-      ptcl_inv_mass_[iat] = ptclgrp_inv_mass_[ig];
-}
+{}
 
 MCPopulation::~MCPopulation() = default;
 
@@ -160,9 +146,7 @@ void MCPopulation::createWalkers(IndexType num_walkers, const WalkerConfiguratio
 long MCPopulation::nextWalkerID() { return num_walkers_created_++ * num_ranks_ + rank_ + 1; }
 
 WalkerElementsRef MCPopulation::getWalkerElementsRef(const size_t index)
-{
-  return {*walkers_[index], *walker_elec_particle_sets_[index], *walker_trial_wavefunctions_[index]};
-}
+{ return {*walkers_[index], *walker_elec_particle_sets_[index], *walker_trial_wavefunctions_[index]}; }
 
 std::vector<WalkerElementsRef> MCPopulation::get_walker_elements()
 {
