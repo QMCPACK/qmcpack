@@ -792,17 +792,18 @@ Matrix<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSRPerParticle_offload(
     dt_list.push_back(p.getDistTable(caa_leader.d_aa_ID));
 
   auto& dtaa_leader = dynamic_cast<DistanceTableAA&>(p_leader.getDistTable(caa_leader.d_aa_ID));
-
+  // This is actually a compile time constant.
   const size_t chunk_size = dtaa_leader.get_num_particls_stored();
   if (chunk_size == 0)
     throw std::runtime_error("bug dtaa_leader.get_num_particls_stored() == 0");
-
+  // I assume there should also be some maximum chunk size here!
   auto& values_offload        = caa_leader.mw_res_handle_.getResource().values_offload;
   auto& pp_sr_values_offload  = caa_leader.mw_res_handle_.getResource().pp_sr_values_offload;
   const size_t total_num      = p_leader.getTotalNum();
   const size_t total_num_half = (total_num + 1) / 2;
   const size_t num_padded     = getAlignedSize<RealType>(total_num);
   const size_t num_chunks     = (total_num_half + chunk_size - 1) / chunk_size;
+  const size_t pp_sr_count    = (total_num * (total_num + 1)) / 2;
 
   const auto m_Y         = caa_leader.rVs_offload->get_m_Y().data();
   const auto m_Y2        = caa_leader.rVs_offload->get_m_Y2().data();
@@ -819,8 +820,8 @@ Matrix<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSRPerParticle_offload(
     std::fill_n(values_offload.data(), nw, 0);
     auto value_ptr = values_offload.data();
 
-    pp_sr_values_offload.resize(total_num, nw);
-    std::fill_n(pp_sr_values_offload.data(), nw * total_num, 0);
+    pp_sr_values_offload.resize(pp_sr_count, nw);
+    std::fill_n(pp_sr_values_offload.data(), nw * pp_sr_count, 0);
     auto pp_sr_value_ptr = pp_sr_values_offload.data();
 
     values_offload.updateTo();
@@ -848,12 +849,12 @@ Matrix<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSRPerParticle_offload(
             if (irow == jcol || (irow * 2 + 1 == total_num && jcol > irow))
               continue;
 
-
             const size_t i = irow > jcol ? irow : total_num - 1 - irow;
             const size_t j = irow > jcol ? jcol : total_num - 1 - jcol;
             auto sr_value  = Zat[i] * Zat[j] *
                 OffloadSpline::splint(r_min, r_max, X, delta_inv, m_Y, m_Y2, first_deriv, const_value, dist) / dist;
-            pp_sr_value_ptr[j + total_num * iw] += sr_value;
+            int index_pp_sr = pp_sr_count * iw + (((i - 1) * i) / 2) + j;
+            pp_sr_value_ptr[index_pp_sr] += sr_value;
             SR += sr_value;
           }
         value_ptr[iw] += SR;
@@ -863,7 +864,7 @@ Matrix<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSRPerParticle_offload(
     values_offload.updateFrom();
     pp_sr_values_offload.updateFrom();
   }
-  Matrix<Return_t> pp_sr_values(total_num, nw);
+  Matrix<Return_t> pp_sr_values(pp_sr_count, nw);
   std::vector<Return_t> values(nw);
   for (int iw = 0; iw < nw; iw++)
   {
@@ -871,12 +872,21 @@ Matrix<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSRPerParticle_offload(
     values[iw] = values_offload[iw];
     for (int ip = 0; ip < total_num; ++ip)
     {
-      pp_sr_values(ip, iw) = pp_sr_values_offload(ip, iw);
-      sr_value_sum += pp_sr_values(ip, iw);
+      for (int j = 0; j < ip; ++j)
+      {
+        int tri_index = (((ip - 1) * ip) / 2) + j;
+        auto value    = pp_sr_values_offload(tri_index, iw) * 0.5;
+        sr_value_sum += value;
+        pp_sr_values(ip, iw) += value;
+        pp_sr_values(j, iw) += value;
+      }
     }
+
 #ifndef NDEBUG
-    //auto sum_pp_values = std::accumulate(pp_sr_values.begin(iw), (pp_sr_values.begin(iw) + total_num));
-    assert(std::abs(sr_value_sum - values[iw]) < 10e-8);
+    //auto sum_pp_values = std::accumulate(pp_sr_values.begin(iw),
+    //(pp_sr_values.begin(iw) + total_num));
+    sr_value_sum *= 2.0;
+    assert(std::abs(sr_value_sum - values[iw]) < 10e-10);
 #endif
   }
   return pp_sr_values;
