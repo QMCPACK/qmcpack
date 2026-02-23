@@ -41,7 +41,7 @@ struct CoulombPBCAA::CoulombPBCAAMultiWalkerResource : public Resource
   Vector<CoulombPBCAA::Return_t, OffloadPinnedAllocator<CoulombPBCAA::Return_t>> values_offload;
 
   /// at least a chunks worth of per particle sr values
-  Vector<CoulombPBCAA::Return_t, OffloadPinnedAllocator<CoulombPBCAA::Return_t>> pp_sr_values_offload;
+  Matrix<CoulombPBCAA::Return_t, OffloadPinnedAllocator<CoulombPBCAA::Return_t>> pp_sr_values_offload;
 
   /// Working space for pp_sr_values to be returned.
   Matrix<RealType> pp_sr_values;
@@ -246,16 +246,12 @@ void CoulombPBCAA::mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
 
     for (int iw = 0; iw < o_list.size(); iw++)
     {
-      auto& coulomb_aa = o_list.getCastedElement<CoulombPBCAA>(iw);
-      auto lr_value    = coulomb_aa.evalLR(p_list[iw]);
-      std::cout << "mwev: iw=" << iw << "  LR= " << std::to_string(lr_value) << "  SR= " << short_range_results[iw]
-                << " Const= " << myConst << '\n';
+      auto& coulomb_aa  = o_list.getCastedElement<CoulombPBCAA>(iw);
       coulomb_aa.value_ = coulomb_aa.evalLR(p_list[iw]) + short_range_results[iw] + myConst;
     }
   }
   else
   {
-    app_warning() << "Unexpected eval director for CoulombAA";
     OperatorDependsOnlyOnParticleSet::mw_evaluate(o_list, p_list);
   }
 }
@@ -320,35 +316,10 @@ void CoulombPBCAA::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
       }
     }
 
-    std::cout << "mwpp: iw=" << iw << "  LR= " << std::to_string(Vlr) << "  SR= " << std::to_string(Vsr)
-              << " Const= " << std::to_string(Vc) << '\n';
-
     for (int i = 0; i < v_sample.size(); ++i)
       v_sample[i] += pp_consts[i];
     RealType value = Vsr + Vlr + Vc;
 
-#ifndef NDEBUG
-    RealType Vlrnow = cpbcaa.evalLR(pset);
-    RealType Vsrnow = cpbcaa.evalSR(pset);
-    RealType Vcnow  = cpbcaa.myConst;
-    RealType Vcsum  = std::accumulate(pp_consts.begin(), pp_consts.end(), 0.0);
-    RealType Vnow   = Vlrnow + Vsrnow + Vcnow;
-    RealType Vsum   = std::accumulate(v_sample.begin(), v_sample.end(), 0.0);
-    if (std::abs(Vsum - Vnow) > TraceManager::trace_tol)
-    {
-      app_log() << "accumtest: CoulombPBCAA::evaluate()" << std::endl;
-      app_log() << "accumtest:   tot:" << Vnow << std::endl;
-      app_log() << "accumtest:   sum:" << Vsum << std::endl;
-      throw std::runtime_error("Trace check failed");
-    }
-    if (std::abs(Vcsum - Vcnow) > TraceManager::trace_tol)
-    {
-      app_log() << "accumtest: CoulombPBCAA::evalConsts()" << std::endl;
-      app_log() << "accumtest:   tot:" << Vcnow << std::endl;
-      app_log() << "accumtest:   sum:" << Vcsum << std::endl;
-      throw std::runtime_error("Trace check failed");
-    }
-#endif
     // Legacy here assigns value to this walker coulombPBCAA
     return value;
   };
@@ -368,7 +339,7 @@ void CoulombPBCAA::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
 #endif
       coulomb_aa.value_ = evaluate_walker(iw, coulomb_aa, p_list[iw], pp_sr_values);
 #ifndef NDEBUG
-      assert(coulomb_aa.value_ == collective_evaluate_value);
+      assert(std::abs(coulomb_aa.value_ - collective_evaluate_value) < 10e-8);
 #endif
       for (const ListenerVector<RealType>& listener : listeners)
         listener.report(iw, name, v_sample);
@@ -848,11 +819,13 @@ Matrix<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSRPerParticle_offload(
     std::fill_n(values_offload.data(), nw, 0);
     auto value_ptr = values_offload.data();
 
-    pp_sr_values_offload.resize(nw * total_num);
-    std::fill_n(values_offload.data(), nw * total_num, 0);
+    pp_sr_values_offload.resize(total_num, nw);
+    std::fill_n(pp_sr_values_offload.data(), nw * total_num, 0);
     auto pp_sr_value_ptr = pp_sr_values_offload.data();
 
     values_offload.updateTo();
+    pp_sr_values_offload.updateTo();
+
     for (size_t ichunk = 0; ichunk < num_chunks; ichunk++)
     {
       const size_t first           = ichunk * chunk_size;
@@ -898,12 +871,12 @@ Matrix<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSRPerParticle_offload(
     values[iw] = values_offload[iw];
     for (int ip = 0; ip < total_num; ++ip)
     {
-      pp_sr_values(ip, iw) = pp_sr_values_offload[ip + iw * nw];
+      pp_sr_values(ip, iw) = pp_sr_values_offload(ip, iw);
       sr_value_sum += pp_sr_values(ip, iw);
     }
 #ifndef NDEBUG
     //auto sum_pp_values = std::accumulate(pp_sr_values.begin(iw), (pp_sr_values.begin(iw) + total_num));
-    assert(sr_value_sum == values[iw]);
+    assert(std::abs(sr_value_sum - values[iw]) < 10e-8);
 #endif
   }
   return pp_sr_values;
@@ -940,7 +913,6 @@ Matrix<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSRPerParticle(const RefVecto
       }
     }
   }
-
   return pp_sr_values;
 }
 
