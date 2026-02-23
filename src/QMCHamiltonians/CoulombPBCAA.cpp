@@ -853,7 +853,7 @@ Matrix<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSRPerParticle_offload(
             const size_t j = irow > jcol ? jcol : total_num - 1 - jcol;
             auto sr_value  = Zat[i] * Zat[j] *
                 OffloadSpline::splint(r_min, r_max, X, delta_inv, m_Y, m_Y2, first_deriv, const_value, dist) / dist;
-            int index_pp_sr = pp_sr_count * iw + (((i - 1) * i) / 2) + j;
+            int index_pp_sr = pp_sr_count * iw + (((i + 1) * i) / 2) + j;
             pp_sr_value_ptr[index_pp_sr] += sr_value;
             SR += sr_value;
           }
@@ -864,6 +864,8 @@ Matrix<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSRPerParticle_offload(
     values_offload.updateFrom();
     pp_sr_values_offload.updateFrom();
   }
+  std::cout << pp_sr_values_offload;
+
   Matrix<Return_t> pp_sr_values(pp_sr_count, nw);
   std::vector<Return_t> values(nw);
   for (int iw = 0; iw < nw; iw++)
@@ -872,14 +874,19 @@ Matrix<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSRPerParticle_offload(
     values[iw] = values_offload[iw];
     for (int ip = 0; ip < total_num; ++ip)
     {
-      for (int j = 0; j < ip; ++j)
+      // But you know the diagonal is nonsense since the particle
+      // doesn't interact with itself
+      std::cout << "Tri-indexes: ";
+      for (int j = 0; j <= ip; ++j)
       {
-        int tri_index = (((ip - 1) * ip) / 2) + j;
-        auto value    = pp_sr_values_offload(tri_index, iw) * 0.5;
+        int tri_index = (((ip + 1) * ip) / 2) + j;
+        std::cout << tri_index << ' ';
+        auto value = pp_sr_values_offload(tri_index, iw) * 0.5;
         sr_value_sum += value;
         pp_sr_values(ip, iw) += value;
         pp_sr_values(j, iw) += value;
       }
+      std::cout << '\n';
     }
 
 #ifndef NDEBUG
