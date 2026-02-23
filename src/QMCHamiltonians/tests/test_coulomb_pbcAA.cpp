@@ -370,8 +370,16 @@ TEST_CASE("CoulombAA::mw_evaluatePerParticle", "[hamiltonian]")
   CHECK(caa.getValue() == Approx(-2.9332312765));
   CHECK(caa2.getValue() == Approx(-3.4537460926));
   // Check that the sum of the particle energies == the total
+  auto dump_particle_pots = [](const auto& local_pots, int row) {
+    for (int i = 0; i < local_pots.cols(); ++i)
+      std::cout << *(local_pots[row] + i) << ", ";
+    std::cout << '\n';
+  };
+
   CHECK(std::accumulate(local_pots.begin(), local_pots.begin() + local_pots.cols(), 0.0) == Approx(-2.9332312765));
+  dump_particle_pots(local_pots, 0);
   CHECK(std::accumulate(local_pots[1], local_pots[1] + local_pots.cols(), 0.0) == Approx(-3.4537460926));
+  dump_particle_pots(local_pots, 1);
   // Check that the second listener received the same data
   auto check_matrix_result = checkMatrix(local_pots, local_pots2);
   CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
@@ -379,10 +387,12 @@ TEST_CASE("CoulombAA::mw_evaluatePerParticle", "[hamiltonian]")
   // Now we need to check the next move
   elec2.R[0] = {0.0, 0.5, 0.0};
   elec2.R[1] = {0.0, 0.0, 0.0};
-  //  elec2.update();
+  elec2.update();
   ParticleSet::mw_update(p_list);
   caa.mw_evaluatePerParticle(o_list, p_list, listeners, ion_listeners);
   CHECK(caa2.getValue() == Approx(-2.9332312765));
+  dump_particle_pots(local_pots, 1);
+  FAIL("We are failing to actually mock multiple moves");
 }
 
 TEST_CASE("CoulombAA::mw_eval_compare", "[hamiltonian]")
@@ -496,6 +506,5 @@ TEST_CASE("CoulombAA::mw_eval_compare", "[hamiltonian]")
   CHECK(caa.getValue() == Approx(-2.933231275));
   CHECK(caa_per_particle.getValue() == Approx(-2.933231275));
 }
-
 
 } // namespace qmcplusplus
