@@ -1,12 +1,18 @@
 from __future__ import annotations
 import os
+from os import PathLike
+from collections.abc import Sequence
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Self
+from enum import Enum
+import builtins
+
 import numpy as np
 import numpy.typing as npt
-import builtins
-from dataclasses import dataclass
-from abc import ABC, abstractmethod
-from enum import Enum
-from collections.abc import Sequence
+
+from .physical_system import PhysicalSystem
 
 
 type PwscfInputType = (
@@ -30,7 +36,6 @@ class NamelistParamDefinition:
     version_added:   tuple[float] | None = None
     version_removed: tuple[float] | None = None
 #end class NamelistDefinition
-
 
 class NamelistEnumBase(Enum, ABC):
     """Abstract base class for the namelist enumerations.
@@ -56,7 +61,6 @@ class NamelistEnumBase(Enum, ABC):
         )
         return definition
 #end class NamelistEnumBase
-
 
 class ControlDefinitions(NamelistParamDefinition, NamelistEnumBase):
     """Class representing all variables that belongs to the
@@ -429,26 +433,21 @@ class RismVariables(NamelistParamDefinition, NamelistEnumBase):
 #end class RismVariables
 
 
-class PWscfNamelist(ABC):
+class PWscfNamelistBase(ABC):
     """Abstract base class for real instances of PWscf namelists."""
 
     @abstractmethod
-    def write_card(self) -> str:
-        pass
+    def write(self) -> str: ...
 
     @abstractmethod
-    def meets_requirements(self) -> bool:
-        pass
+    def meets_requirements(self) -> bool: ...
 
     @abstractmethod
-    def __setattr__(self, name, value):
-        pass
-
+    def __setattr__(self, name, value): ...
 
     @property
     def value(self) -> PwscfInputType:
         return self._value
-
 
     @value.setter
     def value(self, val: PwscfInputType):
@@ -493,4 +492,47 @@ class PWscfNamelist(ABC):
             case _:
                 raise TypeError("Value is not a valid Pwscf Input Type!")
     #end def write_value
-#end class PWscfNamelist
+#end class PWscfNamelistBase
+
+
+class PWscfCardBase(ABC):
+    """Abstract base class for PWscf cards."""
+
+    @abstractmethod
+    def write(self) -> str: ...
+
+    @classmethod
+    @abstractmethod
+    def read(cls, card: str): ...
+
+#end class PWscfCardBase
+
+
+class AtomicSpecies(PWscfCardBase):
+    """Class for the ATOMIC_SPECIES card."""
+
+    def __init__(
+        self,
+        elements: Sequence[str],
+        pseudos: Sequence[str | PathLike],
+    ):
+        self.elements = list(elements)
+        self.pseudos = [Path(ps) for ps in pseudos]
+        #+ Will need to add masses, contingent on PR #5832
+        self.masses = None
+
+
+    @classmethod
+    def from_physical_system(cls, system: PhysicalSystem, pseudos: str) -> Self:
+        """Generate the information for the ATOMIC_SPECIES card from a
+        Nexus ``PhysicalSystem``. Must have elements and be pseudized.
+        """
+        ...
+        
+
+
+
+
+
+
+
