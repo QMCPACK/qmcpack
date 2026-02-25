@@ -874,15 +874,16 @@ Matrix<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSRPerParticle_offload(
     values[iw] = values_offload[iw];
     for (int ip = 0; ip < total_num; ++ip)
     {
-      // But you know the diagonal is nonsense since the particle
-      // doesn't interact with itself
+      // The diagonal will always still be 0 see the eval above.
       std::cout << "Tri-indexes: ";
       for (int j = 0; j <= ip; ++j)
       {
         int tri_index = (((ip + 1) * ip) / 2) + j;
-        std::cout << tri_index << ' ';
-        auto value = pp_sr_values_offload(tri_index, iw) * 0.5;
+        std::cout << tri_index << ':';
+        // for the matrix operator() its row, column)
+        auto value = pp_sr_values_offload(iw, tri_index) * 0.5;
         sr_value_sum += value;
+        std::cout << value << ' ';
         pp_sr_values(ip, iw) += value;
         pp_sr_values(j, iw) += value;
       }

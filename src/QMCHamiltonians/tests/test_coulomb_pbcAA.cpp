@@ -335,9 +335,10 @@ void test_CoulombPBCAA_3p_PerParticle(DynamicCoordinateKind kind)
   CHECK(caa_clone.getValue() == Approx(-6.329373489));
 
   auto dump_particle_pots = [](const auto& local_pots, int row) {
+    app_log() << "localpots: ";
     for (int i = 0; i < local_pots.cols(); ++i)
-      std::cout << *(local_pots[row] + i) << ", ";
-    std::cout << '\n';
+      app_log() << *(local_pots[row] + i) << ", ";
+    app_log() << '\n';
   };
   dump_particle_pots(local_pots, 0);
   dump_particle_pots(local_pots, 1);
