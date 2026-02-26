@@ -5,23 +5,21 @@ from collections.abc import Sequence
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Self
+from typing import ClassVar, Self, TypeVar
 from enum import Enum
 import builtins
 
 import numpy as np
 import numpy.typing as npt
+from numpy.linalg import inv
 
 from .physical_system import PhysicalSystem
+from .structure import kmesh
 
 
-type PwscfInputType = (
-    str
-    | bool
-    | int
-    | float
-    | Sequence
-)
+PwscfInputType = str | bool | int | float | Sequence
+# For structured array inputs (k-points, weights, reciprocal lattice, etc.)
+PwscfArrayInput = npt.NDArray[np.floating] | Sequence[Sequence[float]] | Sequence[float]
 
 
 @dataclass(frozen=True) # We generally don't want any of these to be modified
@@ -495,8 +493,25 @@ class PWscfNamelistBase(ABC):
 #end class PWscfNamelistBase
 
 
+
+class PWscfCardBaseIO(ABC):
+    """Abstract base for PWscf card read/write IO."""
+
+    @abstractmethod
+    def write(self, card: PWscfCardBase) -> str:
+        """Write the card body (excluding header line)."""
+        ...
+
+    @abstractmethod
+    def read(self, body: str, **kwargs) -> PWscfCardBase:
+        """Read the card body (excluding header line). Returns the card instance."""
+        ...
+
+
 class PWscfCardBase(ABC):
     """Abstract base class for PWscf cards."""
+    allowed_specifiers: frozenset[str] = frozenset()
+    _io: dict[str, 'PWscfCardBaseIO'] = {}
 
     @abstractmethod
     def write(self) -> str: ...
@@ -528,11 +543,578 @@ class AtomicSpecies(PWscfCardBase):
         Nexus ``PhysicalSystem``. Must have elements and be pseudized.
         """
         ...
-        
+
+_PWSCF_ARRAY_FORMAT = '{0:16.8f}' # could be imported from somewhere else to be more general
 
 
+def _array_to_string(
+    a: PwscfArrayInput,
+    pad: str = '   ',
+    fmt: str = _PWSCF_ARRAY_FORMAT,
+    rowsep: str = '\n',
+) -> str:
+    """Format a numpy array for QE card output."""
+    a = np.asarray(a)
+    if a.ndim == 1:
+        return pad + ' '.join(fmt.format(v) for v in a) + rowsep
+    return rowsep.join(
+        pad + ' '.join(fmt.format(v) for v in row) for row in a
+    )
+
+# Kpoints Card
+class KPointsGammaIO(PWscfCardBaseIO):
+    """IO for K_POINTS {gamma} - no additional lines."""
+
+    def write(self, card: KPoints) -> str:
+        return ''
+    @staticmethod
+    def read(lines: list[str]) -> KPoints:
+        return KPoints(specifier='gamma')
+
+class KPointsAutomaticIO(PWscfCardBaseIO):
+    """IO for K_POINTS {automatic} - Monkhorst-Pack grid."""
+
+    def write(self, card: KPoints) -> str:
+        grid = np.asarray(card.grid, dtype=int)
+        shift = np.asarray(card.shift, dtype=int)
+        s = '   '
+        s += ' '.join(str(g) for g in grid)
+        s += ' '
+        s += ' '.join(str(sv) for sv in shift)
+        return s
+
+    def read(self, lines: list[str]) -> KPoints:
+        a = np.fromstring(lines[0], sep=' ')
+        grid = a[0:3]
+        shift = a[3:]
+        return KPoints(specifier='automatic', grid=grid, shift=shift)
 
 
+class KPointsExplicitIO(PWscfCardBaseIO):
+    """IO for K_POINTS {tpiba,crystal,tpiba_b,crystal_b,tpiba_c,crystal_c}.
+
+    The card must store kpoints in the coordinate system matching the specifier:
+      - tpiba*: Cartesian coordinates in 2π/alat units
+      - crystal*: Crystal (reciprocal lattice) coordinates
+    The writer outputs the stored values as-is; no unit conversion is performed.
+    """
+
+    def write(self, card: KPoints) -> str:
+        kpoints = np.asarray(card.kpoints)
+        weights = np.asarray(card.weights)
+        nkpoints = len(kpoints)
+        a = np.empty((nkpoints, 4))
+        a[:, 0:3] = kpoints
+        a[:, 3] = weights
+        return f'   {nkpoints}\n' + _array_to_string(a)
+
+    def read(self, lines: list[str], specifier: str = 'crystal', **kwargs) -> KPoints:
+        nkpoints = int(lines[0].strip())
+        if len(lines) < 1 + nkpoints:
+            raise ValueError(
+                f"K_POINTS explicit: expected {nkpoints} data rows, got {len(lines) - 1}"
+            )
+        arr = np.loadtxt(lines[1:1 + nkpoints])
+        if arr.ndim == 1:
+            arr = arr.reshape(1, -1)
+        kpoints = arr[:, :3]
+        weights = arr[:, 3] if arr.shape[1] > 3 else np.ones(len(kpoints))
+        return KPoints(specifier=specifier, kpoints=kpoints, weights=weights)
+
+class KPoints(PWscfCardBase):
+    """K_POINTS card with strategy-pattern writers for specifier-dependent formats.
+
+    Specifiers:
+      - gamma: Gamma-point only
+      - automatic: Monkhorst-Pack grid (nk1 nk2 nk3 sk1 sk2 sk3)
+      - tpiba, crystal, tpiba_b, crystal_b, tpiba_c, crystal_c: require explicit list
+
+    For explicit specifiers, kpoints must be in the matching coordinate system, no unit conversion is performed.
+      - tpiba*: Cartesian, 2pi/alat units
+      - crystal*: Crystal (reciprocal lattice) coordinates
+    
+    Use change_specifier() to convert between explicit specifiers
+    Use from_physical_system() to create to inherit kpoints from a Nexus PhysicalSystem
+    """
+
+    _allowed_specifiers = frozenset({
+        'gamma', 'automatic',
+        'tpiba', 'crystal', 'tpiba_b', 'crystal_b', 'tpiba_c', 'crystal_c',
+    })
+    _explicit_specifiers = frozenset({
+        'tpiba', 'crystal', 'tpiba_b', 'crystal_b', 'tpiba_c', 'crystal_c',
+    })
+
+    _io: dict[str, PWscfCardBaseIO] = {
+        'gamma': KPointsGammaIO(),
+        'automatic': KPointsAutomaticIO(),
+        'tpiba': KPointsExplicitIO(),
+        'crystal': KPointsExplicitIO(),
+        'tpiba_b': KPointsExplicitIO(),
+        'crystal_b': KPointsExplicitIO(),
+        'tpiba_c': KPointsExplicitIO(),
+        'crystal_c': KPointsExplicitIO(),
+    }
+
+    def __init__(
+        self,
+        specifier: str = 'gamma',
+        grid: tuple[int, int, int] | None = None,
+        shift: tuple[int, int, int] | None = None,
+        kpoints: PwscfArrayInput | None = None,
+        weights: PwscfArrayInput | None = None,
+    ):
+        spec = specifier.lower() if specifier else 'gamma'
+        if spec not in self._allowed_specifiers:
+            raise ValueError(
+                f"K_POINTS specifier '{specifier}' not recognized. "
+                f"Allowed: {sorted(self._allowed_specifiers)}"
+            )
+        self.specifier = spec
+
+        if spec == 'gamma':
+            self.grid = None
+            self.shift = None
+            self.kpoints = np.empty((0, 3))
+            self.weights = np.empty((0,))
+        elif spec == 'automatic':
+            if grid is None or shift is None:
+                raise ValueError("grid and shift required for specifier 'automatic'")
+            self.grid = tuple(int(g) for g in grid)
+            self.shift = tuple(int(sv) for sv in shift)
+            self.kpoints = np.empty((0, 3))
+            self.weights = np.empty((0,))
+        else:
+            if kpoints is None or weights is None:
+                raise ValueError(
+                    f"kpoints and weights required for specifier '{spec}'"
+                )
+            kpoints = np.asarray(kpoints)
+            weights = np.asarray(weights)
+            if len(kpoints) != len(weights):
+                raise ValueError(
+                    f"kpoints and weights length mismatch: {len(kpoints)} vs {len(weights)}"
+                )
+            self.grid = None
+            self.shift = None
+            self.kpoints = kpoints
+            self.weights = weights
+
+    def write(self) -> str:
+        header = f"K_POINTS {self.specifier}\n"
+        body = self._io[self.specifier].write(self)
+        return header + body + ('\n' if body else '')
+
+    @classmethod
+    def read(cls, lines: list[str], specifier: str = 'crystal') -> Self:
+        if specifier in cls._explicit_specifiers:
+            return cls._io[specifier].read(lines, specifier=specifier.lower())
+        else:
+            return cls._io[specifier].read(lines)
+    
+    def change_specifier(
+        self,
+        new_specifier: str,
+        scale: float,
+        kaxes: PwscfArrayInput,
+    ) -> None:
+        """Convert k-points to a different coordinate specifier.
+
+        Reuses the legacy logic. Converts via cartesian reciprocal space as intermediate.
+
+        Parameters
+        ----------
+        new_specifier : str
+            One of: gamma, automatic, tpiba, crystal (tpiba_b, crystal_b not yet implemented).
+        scale : float
+            Lattice parameter alat (e.g. celldm(1) in Bohr).
+        kaxes : ndarray
+            Reciprocal lattice vectors, shape (3,3). kaxes = 2π * inv(axes).T
+            for axes in Bohr.
+        """
+        pi = np.pi
+        spec = self.specifier
+        new_spec = new_specifier.lower()
+
+        # Convert from current specifier to Cartesian reciprocal
+        if spec in ('tpiba', ''):
+            kpoints = self.kpoints * (2 * pi) / scale
+        elif spec == 'gamma':
+            kpoints = np.array([[0.0, 0.0, 0.0]])
+        elif spec == 'crystal':
+            kpoints = np.dot(self.kpoints, kaxes)
+        elif spec == 'automatic':
+            grid = np.array(self.grid, dtype=int)
+            shift = 0.5 * np.array(self.shift)
+            kpoints = kmesh(kaxes, grid, shift)
+            # automatic -> explicit: need weights (uniform for MP mesh)
+            nk = len(kpoints)
+            self.weights = np.full(nk, 1.0 / nk)
+        elif spec in ('tpiba_b', 'crystal_b', 'tpiba_c', 'crystal_c'):
+            raise NotImplementedError(
+                f"change_specifier from '{spec}' not yet implemented"
+            )
+        else:
+            raise ValueError(
+                f"Invalid current specifier '{spec}'. "
+                f"Valid: tpiba, gamma, crystal, automatic, tpiba_b, crystal_b"
+            )
+
+        # Convert from Cartesian to new specifier
+        if new_spec in ('tpiba', 'tpiba_b', 'tpiba_c'):
+            kpoints = kpoints / ((2 * pi) / scale)
+        elif new_spec == 'gamma':
+            kpoints = np.array([[0.0, 0.0, 0.0]])
+        elif new_spec in ('crystal', 'crystal_b', 'crystal_c'):
+            kpoints = np.dot(kpoints, inv(kaxes))
+        elif new_spec == 'automatic':
+            if spec != 'automatic':
+                raise ValueError(
+                    "cannot map arbitrary k-points into a Monkhorst-Pack mesh"
+                )
+        else:
+            raise ValueError(
+                f"Invalid new specifier '{new_specifier}'. "
+                f"Valid: {sorted(self._explicit_specifiers)}"
+            )
+
+        self.kpoints = np.asarray(kpoints)
+        self.specifier = new_spec
+
+    @classmethod
+    def from_gamma(cls) -> Self:
+        """Create K_POINTS for Gamma-point-only calculation."""
+        return cls(specifier='gamma')
+
+    @classmethod
+    def from_automatic(
+        cls,
+        kgrid: Sequence[int],
+        kshift: Sequence[int] = (0, 0, 0),
+    ) -> Self:
+        """Create K_POINTS using uniform grid and shift."""
+        kgrid = tuple(kgrid)
+        kshift = tuple(kshift)
+        if len(kgrid) != 3 or len(kshift) != 3:
+            raise ValueError("kgrid and kshift must have 3 elements each")
+        return cls(specifier='automatic', grid=kgrid, shift=kshift)
+
+    @classmethod
+    def from_explicit(
+        cls,
+        kpoints: PwscfArrayInput,
+        weights: PwscfArrayInput,
+        specifier: str = 'crystal',
+    ) -> Self:
+        """Create K_POINTS from an explicit k-point list."""
+        spec = specifier.lower()
+        if spec not in cls._explicit_specifiers:
+            raise ValueError(f"Specifier '{spec}' must be one of {sorted(cls.explicit_specifiers)}")
+        kpoints = np.asarray(kpoints)
+        weights = np.asarray(weights)
+        return cls(
+            specifier=spec,
+            kpoints=kpoints,
+            weights=weights,
+        )
+
+    @classmethod
+    def from_physical_system(
+        cls,
+        system: PhysicalSystem,
+        specifier: str = 'crystal',
+    ) -> Self:
+        """Create K_POINTS from a Nexus PhysicalSystem.
+
+        Uses structure.kpoints (Cartesian reciprocal) and structure.kweights.
+        Builds in crystal coordinates first, then uses change_specifier to convert
+        if the requested specifier is tpiba or another format.
+        """
+        structure = system.structure
+        kpoints = structure.kpoints
+        kweights = structure.kweights
+
+        if len(kpoints) == 0 or len(kweights) == 0:
+            raise ValueError("PhysicalSystem has no k-points or k-weights")
+
+        spec = specifier.lower()
+        if spec not in cls._explicit_specifiers:
+            raise ValueError(f"Specifier '{spec}' must be one of {sorted(cls._explicit_specifiers)}")
+
+        # Build in crystal coordinates (from structure.kpoints_unit)
+        card = cls.from_explicit(
+            kpoints=structure.kpoints_unit(),
+            weights=kweights,
+            specifier='crystal',
+        )
+        if spec in ('tpiba', 'tpiba_b', 'tpiba_c'):
+            scale = structure.scale
+            kaxes = structure.kaxes
+            card.change_specifier('tpiba', scale, kaxes)
+            card.specifier = spec  # preserve tpiba_b, tpiba_c if requested
+        elif spec in ('crystal_b', 'crystal_c'):
+            card.specifier = spec  # same coords as crystal, different specifier
+        return card
+
+# Hubbard Card
+@dataclass(frozen=True)
+class HubbardOnSite:
+    """On site Hubbard parameters.
+    Format: param label value
+    """
+    _allowed_params: ClassVar[frozenset[str]] = frozenset({'U', 'ALPHA', 'J0', 'J', 'B', 'E2', 'E3'})
+    param: str
+    label: str  # e.g. "Ni-3d"
+    value: float
+
+    def __post_init__(self):
+        if self.param not in self._allowed_params:
+            raise ValueError(f"Invalid on-site parameter: {self.param}")
+
+@dataclass(frozen=True)
+class HubbardOrbitalResolved(HubbardOnSite):
+    """On site Hubbard parameters for orbital-resolved calculations.
+    Format: param label value orb1 orb2 ... orbn, n should be in the range [1, 2*l+1]
+    """
+    param: str
+    orbitals: tuple[int, ...]  # orbital indices in manifold
+
+@dataclass(frozen=True)
+class HubbardInterSite:
+    """Inter-site Hubbard parameters.
+    Format: V label1 label2 ind1 ind2 value
+    """
+    _allowed_params: ClassVar[frozenset[str]] = frozenset({'V'})
+    param: str
+    label1: str  # e.g. "Co-3d"
+    label2: str  # e.g. "O-2p"
+    ind1: int  # atom index (1-based, ATOMIC_POSITIONS order)
+    ind2: int
+    value: float
+
+    def __post_init__(self):
+        if self.param not in self._allowed_params:
+            raise ValueError(f"Invalid inter-site parameter: {self.param}")
 
 
+HubbardEntry = HubbardOnSite | HubbardInterSite | HubbardOrbitalResolved
 
+
+class HubbardIO(PWscfCardBaseIO):
+    """IO for HUBBARD card. Body format is the same for all specifiers."""
+
+    _param_width = 5
+    _label_width = 5
+    _value_fmt = '.3f'
+
+    def write(self, card: 'Hubbard') -> str:
+        entries = card.entries
+        on_site = [e for e in entries if isinstance(e, HubbardOnSite) and not isinstance(e, HubbardOrbitalResolved)]
+        orbital = [e for e in entries if isinstance(e, HubbardOrbitalResolved)]
+        inter_site = [e for e in entries if isinstance(e, HubbardInterSite)]
+        ordered = on_site + orbital + inter_site
+
+        parts = []
+        for e in ordered:
+            p = f"{e.param:<{self._param_width}}"
+            v = format(e.value, self._value_fmt)
+            if isinstance(e, HubbardOrbitalResolved):
+                lb = f"{e.label:<{self._label_width}}"
+                orb_str = ' '.join(str(o) for o in e.orbitals)
+                parts.append(f"{p} {lb} {v}  {orb_str}")
+            elif isinstance(e, HubbardOnSite):
+                lb = f"{e.label:<{self._label_width}}"
+                parts.append(f"{p} {lb} {v}")
+            elif isinstance(e, HubbardInterSite):
+                l1 = f"{e.label1:<{self._label_width}}"
+                l2 = f"{e.label2:<{self._label_width}}"
+                parts.append(f"{p} {l1} {l2} {e.ind1} {e.ind2} {v}")
+        return '\n'.join(parts)
+    
+    def read(self, lines: list[str], specifier: str = 'atomic', **kwargs) -> Hubbard:
+        entries: list[HubbardEntry] = []
+        on_site_params = HubbardOnSite._allowed_params
+        for line in lines:
+            tokens = line.split()
+            if len(tokens) == 3:
+                param, label, val = tokens[0], tokens[1], float(tokens[2])
+                if param in on_site_params:
+                    entries.append(HubbardOnSite(param, label, val))
+            elif len(tokens) == 6 and tokens[0].upper() == 'V':
+                entries.append(HubbardInterSite(
+                    tokens[0], tokens[1], tokens[2],
+                    int(tokens[3]), int(tokens[4]), float(tokens[5]),
+                ))
+            elif len(tokens) >= 4 and tokens[0] in on_site_params:
+                param, label, val = tokens[0], tokens[1], float(tokens[2])
+                orbitals = tuple(int(t) for t in tokens[3:])
+                entries.append(HubbardOrbitalResolved(param, label, val, orbitals))
+        return Hubbard(entries=entries, specifier=specifier)
+
+
+class Hubbard(PWscfCardBase):
+    """HUBBARD card with strategy-pattern writers for line types 1, 2, 3.
+
+    Specifiers (projection type): atomic, ortho-atomic, norm-atomic, wf, pseudo.
+    Line types:
+      1: param label value (on-site shell-averaged)
+      2: V label1 label2 ind1 ind2 value (inter-site)
+      3: param label value orb1 orb2 ... (on-site orbital-resolved)
+    """
+
+    allowed_specifiers = frozenset({
+        'atomic', 'ortho-atomic', 'norm-atomic', 'wf', 'pseudo',
+    })
+    default_specifier = 'atomic'
+    _io = HubbardIO()
+
+    def __init__(
+        self,
+        entries: Sequence[HubbardEntry],
+        specifier: str = 'atomic',
+    ):
+        spec = specifier.lower() if specifier else self.default_specifier
+        if spec not in self.allowed_specifiers:
+            raise ValueError(
+                f"HUBBARD specifier '{specifier}' not recognized. "
+                f"Allowed: {sorted(self.allowed_specifiers)}"
+            )
+        self.specifier = spec
+        self.entries = list(entries)
+
+    def check_compatible(self, physical_system: PhysicalSystem) -> bool:
+        """Check if the HUBBARD card is compatible with the PhysicalSystem.
+
+        Validates that:
+        - Species in Hubbard labels (e.g. 'Ni' from 'Ni-3d') exist in structure.elem
+        - Inter-site indices are not checked, as these are typically provided by hp.x 
+        """
+        if len(self.entries) == 0:
+            return True
+
+        valid_species = set(physical_system.structure.elem)
+        def _extract_species(label: str) -> str:
+            """Extract species from Hubbard label (e.g. 'Ni-3d' -> 'Ni')."""
+            return label.split('-')[0] if '-' in label else label
+
+        for e in self.entries:
+            if isinstance(e, (HubbardOnSite, HubbardOrbitalResolved)):
+                sp = _extract_species(e.label)
+                if sp not in valid_species:
+                    raise ValueError(
+                        f"Hubbard label '{e.label}' references unknown species '{sp}'. "
+                        f"Valid species: {sorted(valid_species)}"
+                    )
+            elif isinstance(e, HubbardInterSite):
+                for lbl in (e.label1, e.label2):
+                    sp = _extract_species(lbl)
+                    if sp not in valid_species:
+                        raise ValueError(
+                            f"Hubbard inter-site label '{lbl}' references unknown species '{sp}'. "
+                            f"Valid species: {sorted(valid_species)}"
+                        )
+        return True
+
+    def write(self) -> str:
+        header = f"HUBBARD {self.specifier}\n"
+        body = self._io.write(self)
+        return header + body + '\n'
+    
+    @classmethod
+    def read(cls, lines: list[str], specifier: str = 'atomic') -> Self:
+        return cls._io.read(lines, specifier=specifier)
+
+    @classmethod
+    def from_entries(
+        cls,
+        entries: Sequence[HubbardEntry],
+        specifier: str = 'atomic',
+    ) -> Self:
+        """Create HUBBARD card from a sequence of HubbardEntry objects."""
+        return cls(entries=entries, specifier=specifier)
+
+    @classmethod
+    def from_records(
+        cls,
+        records: Sequence[dict],
+        specifier: str = 'atomic',
+    ) -> Self:
+        """Create HUBBARD card from a list of dicts.
+
+        Options:
+          1. on_site:  {type: 'on_site', param, label, value}
+          2. orbital:  {type: 'orbital', param, label, value, orbitals: tuple|list}
+          3. inter_site: {type: 'inter_site', param, label1, label2, ind1, ind2, value}
+        """
+        entries: list[HubbardEntry] = []
+        for r in records:
+            kind = r.get('type')
+            if kind == 'on_site':
+                entries.append(HubbardOnSite(
+                    r['param'], r['label'], float(r['value'])
+                ))
+            elif kind == 'orbital':
+                orb = r['orbitals']
+                entries.append(HubbardOrbitalResolved(
+                    r['param'], r['label'], float(r['value']),
+                    tuple(orb) if not isinstance(orb, tuple) else orb,
+                ))
+            elif kind == 'inter_site':
+                entries.append(HubbardInterSite(
+                    r['param'],
+                    r['label1'], r['label2'],
+                    int(r['ind1']), int(r['ind2']),
+                    float(r['value']),
+                ))
+            else:
+                raise ValueError(
+                    f"Hubbard record type '{kind}' not recognized. "
+                    "Use 'on_site', 'orbital', or 'inter_site'."
+                )
+        return cls(entries=entries, specifier=specifier)
+
+    @classmethod
+    def from_hp_output(cls, text: str) -> Self:
+        """Create HUBBARD card from hp.x HUBBARD.dat output.
+
+        Parses the block after '# Copy this data in the pw.x input file...'
+        """
+        lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
+        specifier = cls.default_specifier
+        entries: list[HubbardEntry] = []
+        on_site_params = HubbardOnSite._allowed_params
+
+        for line in lines:
+            if line.startswith('#'):
+                continue
+            tokens = line.split()
+            if not tokens:
+                continue
+            if tokens[0].upper() == 'HUBBARD':
+                for t in tokens[1:]:
+                    s = t.strip('{}()')
+                    if s and s.lower() in cls.allowed_specifiers:
+                        specifier = s.lower()
+                        break
+                continue
+            if len(tokens) == 3:
+                param, label, val = tokens[0], tokens[1], float(tokens[2])
+                if param in on_site_params:
+                    entries.append(HubbardOnSite(param, label, val))
+            elif len(tokens) == 6 and tokens[0].upper() == 'V':
+                entries.append(HubbardInterSite(
+                    tokens[0],
+                    tokens[1], tokens[2],
+                    int(tokens[3]), int(tokens[4]),
+                    float(tokens[5]),
+                ))
+            elif len(tokens) >= 4 and tokens[0] in on_site_params:
+                param, label, val = tokens[0], tokens[1], float(tokens[2])
+                orbitals = tuple(int(t) for t in tokens[3:])
+                entries.append(HubbardOrbitalResolved(param, label, val, orbitals))
+        return cls(entries=entries, specifier=specifier)
+
+    def from_hubbard_dat_file(self, file: PathLike) -> Self:
+        """Create HUBBARD card from a hubbard.dat file."""
+        with Path(file).open() as f:
+            return self.from_hp_output(f.read())
