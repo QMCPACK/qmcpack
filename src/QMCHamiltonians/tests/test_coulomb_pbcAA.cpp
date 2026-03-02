@@ -28,9 +28,11 @@
 #include <ResourceCollection.h>
 #include "DynamicCoordinates.h"
 #include "MCCoords.hpp"
+#include "OhmmsPETE/TinyVector.h"
 #include "TestListenerFunction.h"
 #include <TrialWaveFunction.h>
 #include "Utilities/RuntimeOptions.h"
+#include "config.h"
 
 using std::string;
 
@@ -312,8 +314,8 @@ void test_CoulombPBCAA_3p_PerParticle(DynamicCoordinateKind kind)
   // The test Listener emitted by getParticularListener binds a Matrix
   // it will write the reported data into it with each walker's particle values
   // in a row.
-  Matrix<Real> local_pots(3);
-  Matrix<Real> local_pots2(3);
+  Matrix<Real> local_pots(2, 3);
+  Matrix<Real> local_pots2(2, 3);
 
   using testing::getParticularListener;
   std::vector<ListenerVector<Real>> listeners;
@@ -340,13 +342,29 @@ void test_CoulombPBCAA_3p_PerParticle(DynamicCoordinateKind kind)
       app_log() << *(local_pots[row] + i) << ", ";
     app_log() << '\n';
   };
+
+  auto dump_pots_size = [](const auto& local_pots) {
+    app_log() << "local_pots.size(): " << local_pots.rows() << " x " << local_pots.cols() << '\n';
+  };
+  dump_pots_size(local_pots);
   dump_particle_pots(local_pots, 0);
   dump_particle_pots(local_pots, 1);
 
   CHECK(caa.get_madelung_constant() == Approx(vmad_bcc));
   CHECK(caa_clone.get_madelung_constant() == Approx(vmad_bcc));
-}
 
+  using SingleParticlePos                      = TinyVector<Real, OHMMS_DIM>;
+  std::vector<SingleParticlePos> displacements = {{0.1, 0.0, 0.0}, {0.0, 0.0, 0.2}};
+  p_ref_list.getLeader().mw_makeMove(p_ref_list, 1, displacements);
+
+
+  ParticleSet::mw_update(p_ref_list);
+  caa.mw_evaluatePerParticle(caa_ref_list, p_ref_list, listeners, ion_listeners);
+  dump_pots_size(local_pots);
+  dump_particle_pots(local_pots, 0);
+  dump_particle_pots(local_pots, 1);
+  dump_particle_pots(local_pots, 2);
+}
 
 TEST_CASE("Coulomb PBC A-A BCC 3 particles", "[hamiltonian]")
 {
@@ -720,7 +738,14 @@ TEST_CASE("CoulombAA::mw_evaluatePerParticle_multimove", "[hamiltonian]")
   caa.mw_evaluatePerParticle(o_list, p_list, listeners, ion_listeners);
   CHECK(caa2.getValue() == Approx(-2.9332312765));
   dump_particle_pots(local_pots, 1);
-  FAIL("We are failing to actually mock multiple moves");
+
+  elec.R[1]  = {0.1, 0.3, 0.4};
+  elec2.R[1] = {0.2, -0.3, 0.3};
+  ParticleSet::mw_accept_rejectMove(p_list, 1, {true, true});
+  ParticleSet::mw_update(p_list);
+  caa.mw_evaluatePerParticle(o_list, p_list, listeners, ion_listeners);
+  dump_particle_pots(local_pots, 0);
+  dump_particle_pots(local_pots, 1);
 }
 
 TEST_CASE("CoulombAA::mw_evaluatePerParticle_multimove2", "[hamiltonian]")

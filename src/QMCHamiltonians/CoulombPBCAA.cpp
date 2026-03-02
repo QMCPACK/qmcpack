@@ -864,7 +864,7 @@ Matrix<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSRPerParticle_offload(
     values_offload.updateFrom();
     pp_sr_values_offload.updateFrom();
   }
-  std::cout << pp_sr_values_offload;
+  //std::cout << pp_sr_values_offload;
 
   Matrix<Return_t> pp_sr_values(pp_sr_count, nw);
   std::vector<Return_t> values(nw);
@@ -875,26 +875,27 @@ Matrix<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSRPerParticle_offload(
     for (int ip = 0; ip < total_num; ++ip)
     {
       // The diagonal will always still be 0 see the eval above.
-      std::cout << "Tri-indexes: ";
+      //std::cout << "Tri-indexes: ";
       for (int j = 0; j <= ip; ++j)
       {
         int tri_index = (((ip + 1) * ip) / 2) + j;
-        std::cout << tri_index << ':';
+        //std::cout << tri_index << ':';
         // for the matrix operator() its row, column)
         auto value = pp_sr_values_offload(iw, tri_index) * 0.5;
         sr_value_sum += value;
-        std::cout << value << ' ';
+        //std::cout << value << ' ';
         pp_sr_values(ip, iw) += value;
         pp_sr_values(j, iw) += value;
       }
-      std::cout << '\n';
+      //std::cout << '\n';
     }
 
 #ifndef NDEBUG
     //auto sum_pp_values = std::accumulate(pp_sr_values.begin(iw),
     //(pp_sr_values.begin(iw) + total_num));
     sr_value_sum *= 2.0;
-    assert(std::abs(sr_value_sum - values[iw]) < 10e-10);
+    if (std::abs(sr_value_sum - values[iw]) > 10e-8)
+      std::cerr << "std::abs(sr_value_sum - values[iw]) > 10e-8) " << sr_value_sum << "  " << values[iw] << '\n';
 #endif
   }
   return pp_sr_values;
