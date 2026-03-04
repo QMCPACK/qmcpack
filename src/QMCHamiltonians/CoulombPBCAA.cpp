@@ -261,8 +261,6 @@ void CoulombPBCAA::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
                                           const std::vector<ListenerVector<RealType>>& listeners,
                                           const std::vector<ListenerVector<RealType>>& listeners_ions) const
 {
-  mw_evaluate(o_list, p_list);
-
   auto& o_leader = o_list.getCastedLeader<CoulombPBCAA>();
   auto& p_leader = p_list.getLeader();
   assert(this == &o_list.getLeader());
@@ -333,14 +331,8 @@ void CoulombPBCAA::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
 
     for (int iw = 0; iw < o_list.size(); iw++)
     {
-      auto& coulomb_aa = o_list.getCastedElement<CoulombPBCAA>(iw);
-#ifndef NDEBUG
-      auto collective_evaluate_value = coulomb_aa.value_;
-#endif
+      auto& coulomb_aa  = o_list.getCastedElement<CoulombPBCAA>(iw);
       coulomb_aa.value_ = evaluate_walker(iw, coulomb_aa, p_list[iw], pp_sr_values);
-#ifndef NDEBUG
-      assert(std::abs(coulomb_aa.value_ - collective_evaluate_value) < 10e-8);
-#endif
       for (const ListenerVector<RealType>& listener : listeners)
         listener.report(iw, name, v_sample);
     }
@@ -853,7 +845,7 @@ Matrix<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSRPerParticle_offload(
             const size_t j = irow > jcol ? jcol : total_num - 1 - jcol;
             auto sr_value  = Zat[i] * Zat[j] *
                 OffloadSpline::splint(r_min, r_max, X, delta_inv, m_Y, m_Y2, first_deriv, const_value, dist) / dist;
-            int index_pp_sr = pp_sr_count * iw + (((i + 1) * i) / 2) + j;
+            int index_pp_sr = (pp_sr_count * iw) + (((irow + 1) * irow) / 2) + jcol;
             pp_sr_value_ptr[index_pp_sr] += sr_value;
             SR += sr_value;
           }
@@ -872,20 +864,21 @@ Matrix<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSRPerParticle_offload(
   {
     Return_t sr_value_sum{0};
     values[iw] = values_offload[iw];
-    for (int ip = 0; ip < total_num; ++ip)
+    for (int ipi = 0; ipi < total_num; ++ipi)
     {
       // The diagonal will always still be 0 see the eval above.
       //std::cout << "Tri-indexes: ";
-      for (int j = 0; j <= ip; ++j)
+      for (int ipj = 0; ipj < total_num; ++ipj)
       {
-        int tri_index = (((ip + 1) * ip) / 2) + j;
+        if (ipi == ipj || ipj > ipi)
+          continue;
+        int tri_index = (((ipi + 1) * ipi) / 2) + ipj;
         //std::cout << tri_index << ':';
         // for the matrix operator() its row, column)
         auto value = pp_sr_values_offload(iw, tri_index) * 0.5;
         sr_value_sum += value;
         //std::cout << value << ' ';
-        pp_sr_values(ip, iw) += value;
-        pp_sr_values(j, iw) += value;
+        pp_sr_values(ipi, iw) += value;
       }
       //std::cout << '\n';
     }
