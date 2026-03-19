@@ -845,7 +845,7 @@ Matrix<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSRPerParticle_offload(
             const size_t j = irow > jcol ? jcol : total_num - 1 - jcol;
             auto sr_value  = Zat[i] * Zat[j] *
                 OffloadSpline::splint(r_min, r_max, X, delta_inv, m_Y, m_Y2, first_deriv, const_value, dist) / dist;
-            int index_pp_sr = (pp_sr_count * iw) + (((irow + 1) * irow) / 2) + jcol;
+            int index_pp_sr = (pp_sr_count * iw) + (((i + 1) * j) / 2) + j;
             pp_sr_value_ptr[index_pp_sr] += sr_value;
             SR += sr_value;
           }
@@ -877,10 +877,10 @@ Matrix<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSRPerParticle_offload(
         // for the matrix operator() its row, column)
         auto value = pp_sr_values_offload(iw, tri_index) * 0.5;
         sr_value_sum += value;
-        //std::cout << value << ' ';
+        std::cout << sr_value_sum << ' ';
         pp_sr_values(ipi, iw) += value;
       }
-      //std::cout << '\n';
+      std::cout << '\n';
     }
 
 #ifndef NDEBUG

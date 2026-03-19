@@ -331,8 +331,12 @@ void test_CoulombPBCAA_3p_PerParticle(DynamicCoordinateKind kind)
   ResourceCollectionTeamLock<OperatorBase> mw_caa_lock(caa_res, caa_ref_list);
 
   ParticleSet::mw_update(p_ref_list);
-  caa.mw_evaluatePerParticle(caa_ref_list, p_ref_list, listeners, ion_listeners);
 
+  caa.mw_evaluate(caa_ref_list, p_ref_list);
+  CHECK(caa.getValue() == Approx(-5.4954533536));
+  CHECK(caa_clone.getValue() == Approx(-6.329373489));
+
+  caa.mw_evaluatePerParticle(caa_ref_list, p_ref_list, listeners, ion_listeners);
   CHECK(caa.getValue() == Approx(-5.4954533536));
   CHECK(caa_clone.getValue() == Approx(-6.329373489));
 
@@ -360,10 +364,10 @@ void test_CoulombPBCAA_3p_PerParticle(DynamicCoordinateKind kind)
 
   ParticleSet::mw_update(p_ref_list);
   caa.mw_evaluatePerParticle(caa_ref_list, p_ref_list, listeners, ion_listeners);
+
   dump_pots_size(local_pots);
   dump_particle_pots(local_pots, 0);
   dump_particle_pots(local_pots, 1);
-  dump_particle_pots(local_pots, 2);
 }
 
 TEST_CASE("Coulomb PBC A-A BCC 3 particles", "[hamiltonian]")
@@ -495,6 +499,8 @@ TEST_CASE("CoulombAA::mw_evaluatePerParticle", "[hamiltonian]")
   elec2.R[1] = {0.0, 0.0, 0.0};
   elec2.update();
   ParticleSet::mw_update(p_list);
+  //To get this to work you need to call mw_makeMove or the iat will
+  //not get updated !
   caa.mw_evaluatePerParticle(o_list, p_list, listeners, ion_listeners);
   CHECK(caa2.getValue() == Approx(-2.9332312765));
   dump_particle_pots(local_pots, 1);
@@ -739,9 +745,13 @@ TEST_CASE("CoulombAA::mw_evaluatePerParticle_multimove", "[hamiltonian]")
   CHECK(caa2.getValue() == Approx(-2.9332312765));
   dump_particle_pots(local_pots, 1);
 
-  elec.R[1]  = {0.1, 0.3, 0.4};
-  elec2.R[1] = {0.2, -0.3, 0.3};
+  // need to add mw_makeMove
+  MCCoords<CoordsType::POS> moves{QMCTraits::PosType(0.25, 0.0, 0.0), QMCTraits::PosType(0.0, 0.0, 0.25)};
+  p_list.getLeader().mw_makeMove(p_list, 1, moves);
   ParticleSet::mw_accept_rejectMove(p_list, 1, {true, true});
+  MCCoords<CoordsType::POS> moves2{QMCTraits::PosType(0.25, 0.0, 0.0), QMCTraits::PosType(0.0, 0.0, 0.25)};
+  p_list.getLeader().mw_makeMove(p_list, 0, moves);
+  ParticleSet::mw_accept_rejectMove(p_list, 0, {true, true});
   ParticleSet::mw_update(p_list);
   caa.mw_evaluatePerParticle(o_list, p_list, listeners, ion_listeners);
   dump_particle_pots(local_pots, 0);
