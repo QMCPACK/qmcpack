@@ -20,7 +20,7 @@ set(UTEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
 set(COULOMB_SRCS test_coulomb_pbcAB.cpp test_coulomb_pbcAB_ewald.cpp test_coulomb_pbcAA.cpp
                  test_coulomb_pbcAA_ewald.cpp test_EwaldRef.cpp
-                 test_NonLocalECPotential.cpp     exp_reduce_loop.cpp)
+                 test_NonLocalECPotential.cpp)
 set(EWALD2D_SRCS test_ewald2d.cpp test_ewald_quasi2d.cpp)
 set(FORCE_SRCS test_force.cpp test_force_ewald.cpp test_stress.cpp test_spacewarp.cpp)
 set(HAM_SRCS
