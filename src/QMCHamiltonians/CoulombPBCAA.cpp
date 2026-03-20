@@ -795,7 +795,7 @@ Matrix<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSRPerParticle_offload(
   const size_t total_num_half = (total_num + 1) / 2;
   const size_t num_padded     = getAlignedSize<RealType>(total_num);
   const size_t num_chunks     = (total_num_half + chunk_size - 1) / chunk_size;
-  const size_t pp_sr_count    = (total_num * (total_num + 1)) / 2;
+  const size_t pp_sr_count    = (((total_num - 1) * total_num) / 2) * nw;
 
   const auto m_Y         = caa_leader.rVs_offload->get_m_Y().data();
   const auto m_Y2        = caa_leader.rVs_offload->get_m_Y2().data();
@@ -845,7 +845,7 @@ Matrix<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSRPerParticle_offload(
             const size_t j = irow > jcol ? jcol : total_num - 1 - jcol;
             auto sr_value  = Zat[i] * Zat[j] *
                 OffloadSpline::splint(r_min, r_max, X, delta_inv, m_Y, m_Y2, first_deriv, const_value, dist) / dist;
-            int index_pp_sr = (pp_sr_count * iw) + (((i + 1) * j) / 2) + j;
+            int index_pp_sr = (pp_sr_count * iw) + ((i * j) / 2) + j;
             pp_sr_value_ptr[index_pp_sr] += sr_value;
             SR += sr_value;
           }
@@ -864,23 +864,19 @@ Matrix<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSRPerParticle_offload(
   {
     Return_t sr_value_sum{0};
     values[iw] = values_offload[iw];
-    for (int ipi = 0; ipi < total_num; ++ipi)
+
+    for (int ipi = 1; ipi < total_num; ++ipi)
     {
       // The diagonal will always still be 0 see the eval above.
-      //std::cout << "Tri-indexes: ";
       for (int ipj = 0; ipj < total_num; ++ipj)
       {
         if (ipi == ipj || ipj > ipi)
           continue;
-        int tri_index = (((ipi + 1) * ipi) / 2) + ipj;
-        //std::cout << tri_index << ':';
-        // for the matrix operator() its row, column)
-        auto value = pp_sr_values_offload(iw, tri_index) * 0.5;
+        int tri_index = ((ipi * ipj) / 2) + ipj;
+        auto value    = pp_sr_values_offload(iw, tri_index) * 0.5;
         sr_value_sum += value;
-        std::cout << sr_value_sum << ' ';
         pp_sr_values(ipi, iw) += value;
       }
-      std::cout << '\n';
     }
 
 #ifndef NDEBUG
@@ -892,7 +888,7 @@ Matrix<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSRPerParticle_offload(
 #endif
   }
   return pp_sr_values;
-}
+} // namespace qmcplusplus
 
 Matrix<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSRPerParticle(const RefVectorWithLeader<OperatorBase>& o_list,
                                                                   const RefVectorWithLeader<ParticleSet>& p_list)

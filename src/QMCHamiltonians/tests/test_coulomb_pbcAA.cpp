@@ -504,7 +504,7 @@ TEST_CASE("CoulombAA::mw_evaluatePerParticle", "[hamiltonian]")
   caa.mw_evaluatePerParticle(o_list, p_list, listeners, ion_listeners);
   CHECK(caa2.getValue() == Approx(-2.9332312765));
   dump_particle_pots(local_pots, 1);
-  FAIL("We are failing to actually mock multiple moves");
+  //  FAIL("We are failing to actually mock multiple moves");
 }
 
 TEST_CASE("CoulombAA::mw_eval_compare", "[hamiltonian]")
@@ -717,45 +717,78 @@ TEST_CASE("CoulombAA::mw_evaluatePerParticle_multimove", "[hamiltonian]")
   std::vector<ListenerVector<Real>> ion_listeners;
 
   ParticleSet::mw_update(p_list);
-
   caa.mw_evaluatePerParticle(o_list, p_list, listeners, ion_listeners);
-  CHECK(caa.getValue() == Approx(-2.9332312765));
-  CHECK(caa2.getValue() == Approx(-3.4537460926));
-  // Check that the sum of the particle energies == the total
-  auto dump_particle_pots = [](const auto& local_pots, int row) {
-    for (int i = 0; i < local_pots.cols(); ++i)
-      std::cout << *(local_pots[row] + i) << ", ";
-    std::cout << '\n';
+
+  auto checkValuePotsMatch = [](auto& caa, auto& local_pots, int row, auto expected_val) {
+    CHECK(caa.getValue() == Approx(expected_val));
+    CHECK(std::accumulate(local_pots[row], local_pots[row] + local_pots.cols(), 0.0) == Approx(expected_val));
   };
 
-  CHECK(std::accumulate(local_pots.begin(), local_pots.begin() + local_pots.cols(), 0.0) == Approx(-2.9332312765));
+
+  Real expected_caa1 = -2.9332312765;
+  Real expected_caa2 = -3.4537460926;
+  checkValuePotsMatch(caa, local_pots, 0, expected_caa1);
+  checkValuePotsMatch(caa2, local_pots, 1, expected_caa2);
+  // Check that the sum of the particle energies == the total
+
+  // Nice to be able to change this to std::cout and not have to wade
+  // through all the output we don't care about from everywhere else
+  auto& local_ostream = app_log();
+
+  auto dump_particle_pots = [&local_ostream](const auto& local_pots, int row) {
+    for (int i = 0; i < local_pots.cols(); ++i)
+      local_ostream << *(local_pots[row] + i) << ", ";
+    local_ostream << '\n';
+    auto sum = std::accumulate(local_pots[row], local_pots[row] + local_pots.cols(), 0.0);
+    local_ostream << "sum: " << sum << '\n';
+  };
+
+  auto dump_particle_pos = [&local_ostream](const RefVector<ParticleSet>& p_sets) {
+    for (int iptcls = 0; iptcls < p_sets.size(); ++iptcls)
+    {
+      auto& p_set = p_sets[iptcls].get();
+      auto nptcls = p_set.getTotalNum();
+      local_ostream << "w:" << iptcls << " ";
+      for (int ip = 0; ip < nptcls; ++ip)
+      {
+        local_ostream << p_set.R[ip] << " : ";
+      }
+      local_ostream << '\n';
+    }
+  };
+
+  dump_particle_pos(ptcls);
   dump_particle_pots(local_pots, 0);
-  CHECK(std::accumulate(local_pots[1], local_pots[1] + local_pots.cols(), 0.0) == Approx(-3.4537460926));
   dump_particle_pots(local_pots, 1);
   // Check that the second listener received the same data
   auto check_matrix_result = checkMatrix(local_pots, local_pots2);
   CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
 
-  // Now we need to check the next move
-  elec2.R[0] = {0.0, 0.5, 0.0};
-  elec2.R[1] = {0.0, 0.0, 0.0};
-  elec2.update();
-  ParticleSet::mw_update(p_list);
-  caa.mw_evaluatePerParticle(o_list, p_list, listeners, ion_listeners);
-  CHECK(caa2.getValue() == Approx(-2.9332312765));
-  dump_particle_pots(local_pots, 1);
-
+  app_log() << "Make Move 1\n";
   // need to add mw_makeMove
   MCCoords<CoordsType::POS> moves{QMCTraits::PosType(0.25, 0.0, 0.0), QMCTraits::PosType(0.0, 0.0, 0.25)};
-  p_list.getLeader().mw_makeMove(p_list, 1, moves);
-  ParticleSet::mw_accept_rejectMove(p_list, 1, {true, true});
-  MCCoords<CoordsType::POS> moves2{QMCTraits::PosType(0.25, 0.0, 0.0), QMCTraits::PosType(0.0, 0.0, 0.25)};
   p_list.getLeader().mw_makeMove(p_list, 0, moves);
   ParticleSet::mw_accept_rejectMove(p_list, 0, {true, true});
   ParticleSet::mw_update(p_list);
   caa.mw_evaluatePerParticle(o_list, p_list, listeners, ion_listeners);
+  dump_particle_pos(ptcls);
   dump_particle_pots(local_pots, 0);
   dump_particle_pots(local_pots, 1);
+
+  checkValuePotsMatch(caa, local_pots, 0, -3.191198434);
+  checkValuePotsMatch(caa2, local_pots, 1, -3.607459554);
+
+  app_log() << "Make Move 2\n";
+  MCCoords<CoordsType::POS> moves2{QMCTraits::PosType(0.00, 0.0, 0.11), QMCTraits::PosType(0.0, 0.22, 0.00)};
+  p_list.getLeader().mw_makeMove(p_list, 1, moves2);
+  ParticleSet::mw_accept_rejectMove(p_list, 1, {true, true});
+  ParticleSet::mw_update(p_list);
+  caa.mw_evaluatePerParticle(o_list, p_list, listeners, ion_listeners);
+  dump_particle_pos(ptcls);
+  dump_particle_pots(local_pots, 0);
+  dump_particle_pots(local_pots, 1);
+  checkValuePotsMatch(caa, local_pots, 0, -3.23305371);
+  checkValuePotsMatch(caa2, local_pots, 1, -3.476714904);
 }
 
 TEST_CASE("CoulombAA::mw_evaluatePerParticle_multimove2", "[hamiltonian]")
