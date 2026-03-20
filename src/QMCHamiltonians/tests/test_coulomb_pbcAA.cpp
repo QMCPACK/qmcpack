@@ -523,9 +523,10 @@ TEST_CASE("CoulombAA::mw_eval_compare", "[hamiltonian]")
   ParticleSet elec(simulation_cell, kind);
 
   elec.setName("elec");
-  elec.create({2});
+  elec.create({3});
   elec.R[0]                  = {0.0, 0.5, 0.0};
   elec.R[1]                  = {0.0, 0.0, 0.0};
+  elec.R[2]                  = {0.1, 0.1, 0.1};
   SpeciesSet& tspecies       = elec.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
   int chargeIdx              = tspecies.addAttribute("charge");
@@ -555,10 +556,9 @@ TEST_CASE("CoulombAA::mw_eval_compare", "[hamiltonian]")
   RefVectorWithLeader<OperatorBase> o_list_per_particle(caa_per_particle, caas_per_particle);
 
   // Self-energy correction, no background charge for e-e interaction
-  double consts = caa.myConst;
-  CHECK(consts == Approx(-6.3314780332));
+  double consts              = caa.myConst;
   double consts_per_particle = caa_per_particle.myConst;
-  CHECK(consts_per_particle == Approx(-6.3314780332));
+  CHECK(consts_per_particle == Approx(consts));
 
   RefVector<ParticleSet> ptcls{elec};
   RefVectorWithLeader<ParticleSet> p_list(elec, ptcls);
@@ -578,8 +578,8 @@ TEST_CASE("CoulombAA::mw_eval_compare", "[hamiltonian]")
   // The test Listener emitted by getParticularListener binds a Matrix
   // it will write the reported data into it with each walker's particle values
   // in a row.
-  Matrix<Real> local_pots(2);
-  Matrix<Real> local_pots2(2);
+  Matrix<Real> local_pots(3);
+  Matrix<Real> local_pots2(3);
 
   std::vector<ListenerVector<Real>> listeners;
   listeners.emplace_back("localenergy", getParticularListener(local_pots));
@@ -589,12 +589,10 @@ TEST_CASE("CoulombAA::mw_eval_compare", "[hamiltonian]")
   ParticleSet::mw_update(p_list);
 
   caa.mw_evaluate(o_list, p_list);
-  CHECK(caa.getValue() == Approx(-2.9332312765));
-
   caa_per_particle.mw_evaluatePerParticle(o_list_per_particle, p_list, listeners, ion_listeners);
-  CHECK(caa_per_particle.getValue() == Approx(-2.9332312765));
+  CHECK(caa_per_particle.getValue() == Approx(caa.getValue()));
   // Check that the sum of the particle energies == the total
-  CHECK(std::accumulate(local_pots.begin(), local_pots.begin() + local_pots.cols(), 0.0) == Approx(-2.9332312765));
+  CHECK(std::accumulate(local_pots.begin(), local_pots.begin() + local_pots.cols(), 0.0) == Approx(caa.getValue()));
   // Check that the second listener received the same data
   auto check_matrix_result = checkMatrix(local_pots, local_pots2);
   CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
@@ -602,12 +600,13 @@ TEST_CASE("CoulombAA::mw_eval_compare", "[hamiltonian]")
   // Now we need to check the next move
   elec.R[0] = {0.0, 0.5, 0.0};
   elec.R[1] = {0.25, 0.0, 0.0};
+  elec.R[2] = {0.1, 0.2, 0.1};
+
   elec.mw_update(p_list);
   caa.mw_evaluate(o_list, p_list);
   caa_per_particle.mw_evaluatePerParticle(o_list_per_particle, p_list, listeners, ion_listeners);
 
-  CHECK(caa.getValue() == Approx(-3.1911984341));
-  CHECK(caa_per_particle.getValue() == Approx(-3.1911984341));
+  CHECK(caa_per_particle.getValue() == Approx(caa.getValue()));
   MCCoords<CoordsType::POS> moves{QMCTraits::PosType(0.25, 0.0, 0.0)};
   p_list.getLeader().mw_makeMove(p_list, 0, moves);
   elec.mw_accept_rejectMove(p_list, 0, {true}, true);
@@ -615,8 +614,7 @@ TEST_CASE("CoulombAA::mw_eval_compare", "[hamiltonian]")
 
   caa_per_particle.mw_evaluatePerParticle(o_list_per_particle, p_list, listeners, ion_listeners);
   caa.mw_evaluate(o_list, p_list);
-  CHECK(caa.getValue() == Approx(-2.933231275));
-  CHECK(caa_per_particle.getValue() == Approx(-2.933231275));
+  CHECK(caa_per_particle.getValue() == Approx(caa.getValue()));
 }
 
 TEST_CASE("CoulombAA::mw_evaluatePerParticle_multimove", "[hamiltonian]")

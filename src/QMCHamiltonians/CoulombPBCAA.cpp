@@ -829,23 +829,29 @@ Matrix<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSRPerParticle_offload(
 
       ScopedTimer offload_scope(caa_leader.offload_timer_);
 
+      //
       PRAGMA_OFFLOAD("omp target teams distribute num_teams(nw)")
-      for (std::uint32_t iw = 0; iw < nw; iw++)
+      for (std::int32_t iw = 0; iw < nw; iw++)
       {
         mRealType SR = 0.0;
         PRAGMA_OFFLOAD("omp parallel for reduction(+ : SR)")
-        for (std::uint32_t jcol = 0; jcol < total_num; jcol++)
-          for (std::uint32_t irow = first; irow < last; irow++)
+        for (std::int32_t jcol = 0; jcol < total_num; jcol++)
+          for (std::int32_t irow = first; irow < last; irow++)
           {
             const RealType dist = mw_dist[num_padded * (irow - first + iw * this_chunk_size) + jcol];
             if (irow == jcol || (irow * 2 + 1 == total_num && jcol > irow))
               continue;
-
-            const size_t i = irow > jcol ? irow : total_num - 1 - irow;
-            const size_t j = irow > jcol ? jcol : total_num - 1 - jcol;
-            auto sr_value  = Zat[i] * Zat[j] *
+            // Subtraction should be done with signed numbers
+            const std::int32_t i = irow > jcol ? irow : total_num - 1 - irow;
+            const std::int32_t j = irow > jcol ? jcol : total_num - 1 - jcol;
+            auto sr_value        = Zat[i] * Zat[j] *
                 OffloadSpline::splint(r_min, r_max, X, delta_inv, m_Y, m_Y2, first_deriv, const_value, dist) / dist;
-            int index_pp_sr = (pp_sr_count * iw) + ((i * j) / 2) + j;
+            // To me this is more intuitive way to map a strictly
+            // triangular matrix elements into a vector
+            // it trades more operations for clarity later, and I'd
+            // wager free compared to the cost of transferring the
+            // values to the host
+            std::int32_t index_pp_sr = (pp_sr_count * iw) + ((i * (i - 1)) / 2) + j;
             pp_sr_value_ptr[index_pp_sr] += sr_value;
             SR += sr_value;
           }
@@ -856,7 +862,6 @@ Matrix<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSRPerParticle_offload(
     values_offload.updateFrom();
     pp_sr_values_offload.updateFrom();
   }
-  //std::cout << pp_sr_values_offload;
 
   Matrix<Return_t> pp_sr_values(pp_sr_count, nw);
   std::vector<Return_t> values(nw);
@@ -872,17 +877,18 @@ Matrix<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSRPerParticle_offload(
       {
         if (ipi == ipj || ipj > ipi)
           continue;
-        int tri_index = ((ipi * ipj) / 2) + ipj;
-        auto value    = pp_sr_values_offload(iw, tri_index) * 0.5;
+        int tri_index = ((ipi) * (ipi - 1)) / 2 + ipj;
+        std::cout << ipi << ":" << ipj << ":" << tri_index << " ";
+
+        auto value = pp_sr_values_offload(iw, tri_index);
+
         sr_value_sum += value;
         pp_sr_values(ipi, iw) += value;
       }
     }
+    std::cout << '\n';
 
 #ifndef NDEBUG
-    //auto sum_pp_values = std::accumulate(pp_sr_values.begin(iw),
-    //(pp_sr_values.begin(iw) + total_num));
-    sr_value_sum *= 2.0;
     if (std::abs(sr_value_sum - values[iw]) > 10e-8)
       std::cerr << "std::abs(sr_value_sum - values[iw]) > 10e-8) " << sr_value_sum << "  " << values[iw] << '\n';
 #endif
