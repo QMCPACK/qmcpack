@@ -878,15 +878,11 @@ Matrix<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSRPerParticle_offload(
         if (ipi == ipj || ipj > ipi)
           continue;
         int tri_index = ((ipi) * (ipi - 1)) / 2 + ipj;
-        std::cout << ipi << ":" << ipj << ":" << tri_index << " ";
-
-        auto value = pp_sr_values_offload(iw, tri_index);
-
+        auto value    = pp_sr_values_offload(iw, tri_index);
         sr_value_sum += value;
         pp_sr_values(ipi, iw) += value;
       }
     }
-    std::cout << '\n';
 
 #ifndef NDEBUG
     if (std::abs(sr_value_sum - values[iw]) > 10e-8)
