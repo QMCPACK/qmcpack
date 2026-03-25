@@ -867,7 +867,9 @@ Matrix<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSRPerParticle_offload(
   std::vector<Return_t> values(nw);
   for (int iw = 0; iw < nw; iw++)
   {
+#ifdef COULOMBAA_DEBUG
     Return_t sr_value_sum{0};
+#endif
     values[iw] = values_offload[iw];
 
     for (int ipi = 1; ipi < total_num; ++ipi)
@@ -879,12 +881,14 @@ Matrix<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSRPerParticle_offload(
           continue;
         int tri_index = ((ipi) * (ipi - 1)) / 2 + ipj;
         auto value    = pp_sr_values_offload(iw, tri_index);
+#ifdef COULOMBAA_DEBUG
         sr_value_sum += value;
+#endif
         pp_sr_values(ipi, iw) += value;
       }
     }
 
-#ifndef NDEBUG
+#ifdef COULOMBAA_DEBUG
     if (std::abs(sr_value_sum - values[iw]) > 10e-8)
       std::cerr << "std::abs(sr_value_sum - values[iw]) > 10e-8) " << sr_value_sum << "  " << values[iw] << '\n';
 #endif
