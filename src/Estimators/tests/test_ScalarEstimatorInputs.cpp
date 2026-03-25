@@ -27,8 +27,7 @@ TEST_CASE("Scalar Estimator Input", "[estimators]")
   for (auto input_xml : scalar_input)
   {
     Libxml2Document doc;
-    bool okay = doc.parseFromString(input_xml);
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(input_xml));
     xmlNodePtr node = doc.getRoot();
     std::string atype(lowerCase(getXMLAttributeValue(node, "type")));
     std::string aname(lowerCase(getXMLAttributeValue(node, "name")));

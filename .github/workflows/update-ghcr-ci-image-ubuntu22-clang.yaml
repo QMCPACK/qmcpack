@@ -13,6 +13,7 @@ env:
 
 jobs:
   build-and-push-image:
+    if: github.repository == 'qmcpack/qmcpack'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -41,4 +42,4 @@ jobs:
           tags: | 
             ghcr.io/qmcpack/ubuntu22-clang:latest
           platforms: linux/amd64
-  
+

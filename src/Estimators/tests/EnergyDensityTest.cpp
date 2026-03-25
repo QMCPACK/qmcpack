@@ -48,7 +48,8 @@ EnergyDensityTest::EnergyDensityTest(Communicate* comm,
   Libxml2Document doc;
   using Input = testing::EnergyDensityInputs;
   Input input;
-  bool okay       = doc.parseFromString(Input::getXml(Input::valid::CELL));
+  if (!doc.parseFromString(Input::getXml(Input::valid::CELL)))
+    throw std::runtime_error("EnergyDensityTest::EnergyDensityTest failed in parsing xml input");
   xmlNodePtr node = doc.getRoot();
 
   UPtr<EnergyDensityInput> edein;
@@ -75,8 +76,9 @@ NEEnergyDensityEstimator& EnergyDensityTest::getEnergyDensityEstimator()
   if (!eden_est_)
   {
     Libxml2Document doc;
-    using Input     = testing::EnergyDensityInputs;
-    bool okay       = doc.parseFromString(Input::getXml(Input::valid::CELL));
+    using Input = testing::EnergyDensityInputs;
+    if (!doc.parseFromString(Input::getXml(Input::valid::CELL)))
+      throw std::runtime_error("EnergyDensityTest::getEnergyDensityEstimator failed in parsing xml input");
     xmlNodePtr node = doc.getRoot();
     edein_          = std::make_unique<EnergyDensityInput>(node);
     eden_est_       = std::make_unique<NEEnergyDensityEstimator>(*edein_, gold_elem_.particle_pool.getPool());
@@ -85,21 +87,13 @@ NEEnergyDensityEstimator& EnergyDensityTest::getEnergyDensityEstimator()
 }
 
 RefVectorWithLeader<EnergyDensityTest::MCPWalker> EnergyDensityTest::getWalkerList()
-{
-  return {walkers_[0], makeRefVector<MCPWalker>(walkers_)};
-}
+{ return {walkers_[0], makeRefVector<MCPWalker>(walkers_)}; }
 RefVectorWithLeader<ParticleSet> EnergyDensityTest::getPSetList()
-{
-  return {psets_[0], makeRefVector<ParticleSet>(psets_)};
-}
+{ return {psets_[0], makeRefVector<ParticleSet>(psets_)}; }
 RefVectorWithLeader<QMCHamiltonian> EnergyDensityTest::getHamList()
-{
-  return {*hams_[0], convertUPtrToRefVector(hams_)};
-}
+{ return {*hams_[0], convertUPtrToRefVector(hams_)}; }
 RefVectorWithLeader<TrialWaveFunction> EnergyDensityTest::getTwfList()
-{
-  return {*twfs_[0], convertUPtrToRefVector(twfs_)};
-}
+{ return {*twfs_[0], convertUPtrToRefVector(twfs_)}; }
 
 ResourceCollection& EnergyDensityTest::getPSetRes() { return pset_res_; }
 ResourceCollection& EnergyDensityTest::getHamRes() { return ham_res_; }

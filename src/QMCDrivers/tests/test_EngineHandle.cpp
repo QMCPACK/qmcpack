@@ -32,8 +32,7 @@ TEST_CASE("EngineHandle construction", "[drivers]")
   const std::string engine_input("<tmp> </tmp>");
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(engine_input);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(engine_input));
 
   xmlNodePtr fakeXML = doc.getRoot();
 

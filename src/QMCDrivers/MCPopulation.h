@@ -40,7 +40,6 @@ class MCPopulation
 {
 public:
   using MCPWalker        = Walker<QMCTraits, PtclOnLatticeTraits>;
-  using WFBuffer         = MCPWalker::WFBuffer_t;
   using RealType         = QMCTraits::RealType;
   using Properties       = MCPWalker::PropertyContainer_t;
   using IndexType        = QMCTraits::IndexType;
@@ -60,18 +59,13 @@ private:
   // By making this a linked list and creating the crowds at the same time we could get first touch.
   UPtrVector<MCPWalker> walkers_;
   UPtrVector<MCPWalker> dead_walkers_;
-  std::vector<RealType> ptclgrp_mass_;
-  ///1/Mass per species
-  std::vector<RealType> ptclgrp_inv_mass_;
-  ///1/Mass per particle
-  std::vector<RealType> ptcl_inv_mass_;
 
   // This is necessary MCPopulation is constructed in a simple call scope in QMCDriverFactory from the legacy MCWalkerConfiguration
   // MCPopulation should have QMCMain scope eventually and the driver will just have a reference to it.
   // Then these too can be references.
-  TrialWaveFunction* trial_wf_;
-  ParticleSet* elec_particle_set_;
-  QMCHamiltonian* hamiltonian_;
+  TrialWaveFunction& trial_wf_;
+  ParticleSet& elec_particle_set_;
+  QMCHamiltonian& hamiltonian_;
   // At the moment these are "clones" but I think this design pattern smells.
   UPtrVector<ParticleSet> walker_elec_particle_sets_;
   UPtrVector<TrialWaveFunction> walker_trial_wavefunctions_;
@@ -101,9 +95,9 @@ public:
    */
   MCPopulation(int num_ranks,
                int this_rank,
-               ParticleSet* elecs,
-               TrialWaveFunction* trial_wf,
-               QMCHamiltonian* hamiltonian_);
+               ParticleSet& elecs,
+               TrialWaveFunction& trial_wf,
+               QMCHamiltonian& hamiltonian_);
 
   ~MCPopulation();
   MCPopulation(MCPopulation&)            = delete;
@@ -185,12 +179,12 @@ public:
   //const Properties& get_properties() const { return properties_; }
 
   // accessor to the gold copy
-  const ParticleSet& get_golden_electrons() const { return *elec_particle_set_; }
-  ParticleSet& get_golden_electrons() { return *elec_particle_set_; }
-  const TrialWaveFunction& get_golden_twf() const { return *trial_wf_; }
-  TrialWaveFunction& get_golden_twf() { return *trial_wf_; }
+  const ParticleSet& get_golden_electrons() const { return elec_particle_set_; }
+  ParticleSet& get_golden_electrons() { return elec_particle_set_; }
+  const TrialWaveFunction& get_golden_twf() const { return trial_wf_; }
+  TrialWaveFunction& get_golden_twf() { return trial_wf_; }
   // TODO: the fact this is needed is sad remove need for its existence.
-  QMCHamiltonian& get_golden_hamiltonian() { return *hamiltonian_; }
+  QMCHamiltonian& get_golden_hamiltonian() { return hamiltonian_; }
 
   void set_num_global_walkers(IndexType num_global_walkers) { num_global_walkers_ = num_global_walkers; }
   void set_num_local_walkers(IndexType num_local_walkers) { num_local_walkers_ = num_local_walkers; }
@@ -199,9 +193,7 @@ public:
   void set_target_samples(IndexType samples) { target_samples_ = samples; }
 
   void set_ensemble_property(const MCDataType<QMCTraits::FullPrecRealType>& ensemble_property)
-  {
-    ensemble_property_ = ensemble_property;
-  }
+  { ensemble_property_ = ensemble_property; }
 
   UPtrVector<MCPWalker>& get_walkers() { return walkers_; }
   const UPtrVector<MCPWalker>& get_walkers() const { return walkers_; }
@@ -224,17 +216,13 @@ public:
    *  That doesn't include that you would rather just use
    *  omp parallel and ignore concurrency.
    */
-  WalkerElementsRef getWalkerElementsRef(const size_t walker_index);
+  WalkerElementsRef getWalkerElementsRef(size_t walker_index);
 
   /** As long as walker WalkerElements is used we need this for unit tests
    *
    *  As operator[] don't use it to ignore the concurrency design.
    */
   std::vector<WalkerElementsRef> get_walker_elements();
-
-  const std::vector<RealType>& get_ptclgrp_mass() const { return ptclgrp_mass_; }
-  const std::vector<RealType>& get_ptclgrp_inv_mass() const { return ptclgrp_inv_mass_; }
-  const std::vector<RealType>& get_ptcl_inv_mass() const { return ptcl_inv_mass_; }
   /// @}
 
 

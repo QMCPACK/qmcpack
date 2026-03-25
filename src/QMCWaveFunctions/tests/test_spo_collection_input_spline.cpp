@@ -64,8 +64,7 @@ void test_diamond_2x1x1_xml_input(const std::string& spo_xml_string)
   tspecies(chargeIdx, upIdx) = -1;
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(spo_xml_string);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(spo_xml_string));
 
   xmlNodePtr ein_xml = doc.getRoot();
 

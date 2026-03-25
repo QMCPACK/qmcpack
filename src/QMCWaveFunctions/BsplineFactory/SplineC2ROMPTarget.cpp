@@ -19,37 +19,9 @@
 
 namespace qmcplusplus
 {
+
 template<typename ST>
 SplineC2ROMPTarget<ST>::SplineC2ROMPTarget(const SplineC2ROMPTarget& in) = default;
-
-template<typename ST>
-inline void SplineC2ROMPTarget<ST>::set_spline(SingleSplineType* spline_r,
-                                               SingleSplineType* spline_i,
-                                               int twist,
-                                               int ispline,
-                                               int level)
-{
-  copy_spline<double, ST>(*spline_r, *SplineInst->getSplinePtr(), 2 * ispline);
-  copy_spline<double, ST>(*spline_i, *SplineInst->getSplinePtr(), 2 * ispline + 1);
-}
-
-template<typename ST>
-bool SplineC2ROMPTarget<ST>::read_splines(hdf_archive& h5f)
-{
-  std::ostringstream o;
-  o << "spline_" << MyIndex;
-  einspline_engine<SplineType> bigtable(SplineInst->getSplinePtr());
-  return h5f.readEntry(bigtable, o.str().c_str()); //"spline_0");
-}
-
-template<typename ST>
-bool SplineC2ROMPTarget<ST>::write_splines(hdf_archive& h5f)
-{
-  std::ostringstream o;
-  o << "spline_" << MyIndex;
-  einspline_engine<SplineType> bigtable(SplineInst->getSplinePtr());
-  return h5f.writeEntry(bigtable, o.str().c_str()); //"spline_0");
-}
 
 template<typename ST>
 inline void SplineC2ROMPTarget<ST>::assign_v(const PointType& r,
@@ -66,7 +38,7 @@ inline void SplineC2ROMPTarget<ST>::assign_v(const PointType& r,
   const ST* restrict ky = myKcart->data(1);
   const ST* restrict kz = myKcart->data(2);
 
-  TT* restrict psi_s              = psi.data() + first_spo;
+  TT* restrict psi_s              = psi.data();
   const size_t requested_orb_size = psi.size();
 #pragma omp simd
   for (size_t j = first; j < std::min(nComplexBands, last); j++)
@@ -100,7 +72,7 @@ template<typename ST>
 void SplineC2ROMPTarget<ST>::evaluateValue(const ParticleSet& P, const int iat, ValueVector& psi)
 {
   const PointType& r = P.activeR(iat);
-  PointType ru(PrimLattice.toUnit_floor(r));
+  PointType ru(prim_lattice_.toUnit_floor(r));
 
   if (true)
   {
@@ -132,7 +104,6 @@ void SplineC2ROMPTarget<ST>::evaluateValue(const ParticleSet& P, const int iat, 
     const auto rux = ru[0], ruy = ru[1], ruz = ru[2];
     const auto myKcart_padded_size   = myKcart->capacity();
     auto* myKcart_ptr                = myKcart->data();
-    const size_t first_spo_local     = first_spo;
     const size_t nComplexBands_local = nComplexBands;
     const auto requested_orb_size    = psi.size();
     const auto num_complex_splines   = kPoints.size();
@@ -159,7 +130,7 @@ void SplineC2ROMPTarget<ST>::evaluateValue(const ParticleSet& P, const int iat, 
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = first_cplx; index < last_cplx; index++)
           C2R::assign_v(x, y, z, results_scratch_ptr, offload_scratch_ptr, myKcart_ptr, myKcart_padded_size,
-                        first_spo_local, nComplexBands_local, index);
+                        nComplexBands_local, index);
       }
 
       for (size_t i = 0; i < requested_orb_size; i++)
@@ -185,7 +156,7 @@ void SplineC2ROMPTarget<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
   for (int iat = 0; iat < nVP; ++iat)
   {
     const PointType& r = VP.activeR(iat);
-    PointType ru(PrimLattice.toUnit_floor(r));
+    PointType ru(prim_lattice_.toUnit_floor(r));
     pos_scratch[iat * 6]     = r[0];
     pos_scratch[iat * 6 + 1] = r[1];
     pos_scratch[iat * 6 + 2] = r[2];
@@ -210,7 +181,6 @@ void SplineC2ROMPTarget<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
   auto* myKcart_ptr                = myKcart->data();
   auto* psiinv_ptr                 = psiinv_pos_copy.data();
   auto* ratios_private_ptr         = ratios_private.data();
-  const size_t first_spo_local     = first_spo;
   const size_t nComplexBands_local = nComplexBands;
   const auto requested_orb_size    = psiinv.size();
   const auto num_complex_splines   = kPoints.size();
@@ -244,8 +214,8 @@ void SplineC2ROMPTarget<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = first_cplx; index < last_cplx; index++)
           C2R::assign_v(ST(pos_scratch[iat * 6]), ST(pos_scratch[iat * 6 + 1]), ST(pos_scratch[iat * 6 + 2]),
-                        psi_iat_ptr, offload_scratch_iat_ptr, myKcart_ptr, myKcart_padded_size, first_spo_local,
-                        nComplexBands_local, index);
+                        psi_iat_ptr, offload_scratch_iat_ptr, myKcart_ptr, myKcart_padded_size, nComplexBands_local,
+                        index);
 
         const size_t first_real = first_cplx + omptarget::min(nComplexBands_local, first_cplx);
         const size_t last_real =
@@ -309,7 +279,7 @@ void SplineC2ROMPTarget<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOS
     {
       ref_id_ptr[iVP]    = iw;
       const PointType& r = VP.activeR(iat);
-      PointType ru(PrimLattice.toUnit_floor(r));
+      PointType ru(prim_lattice_.toUnit_floor(r));
       pos_ptr[0] = r[0];
       pos_ptr[1] = r[1];
       pos_ptr[2] = r[2];
@@ -336,7 +306,6 @@ void SplineC2ROMPTarget<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOS
   auto* myKcart_ptr                = myKcart->data();
   auto* buffer_H2D_ptr             = det_ratios_buffer_H2D.data();
   auto* ratios_private_ptr         = mw_ratios_private.data();
-  const size_t first_spo_local     = first_spo;
   const size_t nComplexBands_local = nComplexBands;
   const auto num_complex_splines   = kPoints.size();
 
@@ -370,9 +339,8 @@ void SplineC2ROMPTarget<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOS
         const size_t last_cplx  = omptarget::min(last / 2, num_complex_splines);
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = first_cplx; index < last_cplx; index++)
-          C2R::assign_v(pos_scratch[iat * 6], pos_scratch[iat * 6 + 1], pos_scratch[iat * 6 + 2],
-                        psi_iat_ptr, offload_scratch_iat_ptr, myKcart_ptr, myKcart_padded_size, first_spo_local,
-                        nComplexBands_local, index);
+          C2R::assign_v(pos_scratch[iat * 6], pos_scratch[iat * 6 + 1], pos_scratch[iat * 6 + 2], psi_iat_ptr,
+                        offload_scratch_iat_ptr, myKcart_ptr, myKcart_padded_size, nComplexBands_local, index);
 
         const size_t first_real = first_cplx + omptarget::min(nComplexBands_local, first_cplx);
         const size_t last_real =
@@ -443,7 +411,7 @@ inline void SplineC2ROMPTarget<ST>::assign_vgl_from_l(const PointType& r,
     ST s, c;
     omptarget::sincos(-(x * kX + y * kY + z * kZ), &s, &c);
 
-    //dot(PrimLattice.G,myG[j])
+    //dot(prim_lattice_.G,myG[j])
     const ST dX_r = g0[jr];
     const ST dY_r = g1[jr];
     const ST dZ_r = g2[jr];
@@ -463,22 +431,21 @@ inline void SplineC2ROMPTarget<ST>::assign_vgl_from_l(const PointType& r,
     const ST lap_r = myL[jr] + (*mKK)[j] * val_r + two * (kX * dX_i + kY * dY_i + kZ * dZ_i);
     const ST lap_i = myL[ji] + (*mKK)[j] * val_i - two * (kX * dX_r + kY * dY_r + kZ * dZ_r);
 
-    const size_t psiIndex = first_spo + jr;
-    if (psiIndex < requested_orb_size)
+    if (jr < requested_orb_size)
     {
-      psi[psiIndex]     = c * val_r - s * val_i;
-      d2psi[psiIndex]   = c * lap_r - s * lap_i;
-      dpsi[psiIndex][0] = c * gX_r - s * gX_i;
-      dpsi[psiIndex][1] = c * gY_r - s * gY_i;
-      dpsi[psiIndex][2] = c * gZ_r - s * gZ_i;
+      psi[jr]     = c * val_r - s * val_i;
+      d2psi[jr]   = c * lap_r - s * lap_i;
+      dpsi[jr][0] = c * gX_r - s * gX_i;
+      dpsi[jr][1] = c * gY_r - s * gY_i;
+      dpsi[jr][2] = c * gZ_r - s * gZ_i;
     }
-    if (psiIndex + 1 < requested_orb_size)
+    if (ji < requested_orb_size)
     {
-      psi[psiIndex + 1]     = c * val_i + s * val_r;
-      d2psi[psiIndex + 1]   = c * lap_i + s * lap_r;
-      dpsi[psiIndex + 1][0] = c * gX_i + s * gX_r;
-      dpsi[psiIndex + 1][1] = c * gY_i + s * gY_r;
-      dpsi[psiIndex + 1][2] = c * gZ_i + s * gZ_r;
+      psi[ji]     = c * val_i + s * val_r;
+      d2psi[ji]   = c * lap_i + s * lap_r;
+      dpsi[ji][0] = c * gX_i + s * gX_r;
+      dpsi[ji][1] = c * gY_i + s * gY_r;
+      dpsi[ji][2] = c * gZ_i + s * gZ_r;
     }
   }
 
@@ -498,7 +465,7 @@ inline void SplineC2ROMPTarget<ST>::assign_vgl_from_l(const PointType& r,
     ST s, c;
     omptarget::sincos(-(x * kX + y * kY + z * kZ), &s, &c);
 
-    //dot(PrimLattice.G,myG[j])
+    //dot(prim_lattice_.G,myG[j])
     const ST dX_r = g0[jr];
     const ST dY_r = g1[jr];
     const ST dZ_r = g2[jr];
@@ -514,7 +481,7 @@ inline void SplineC2ROMPTarget<ST>::assign_vgl_from_l(const PointType& r,
     const ST gX_i = dX_i - val_r * kX;
     const ST gY_i = dY_i - val_r * kY;
     const ST gZ_i = dZ_i - val_r * kZ;
-    if (const size_t psiIndex = first_spo + nComplexBands + j; psiIndex < requested_orb_size)
+    if (const size_t psiIndex = nComplexBands + j; psiIndex < requested_orb_size)
     {
       psi[psiIndex]     = c * val_r - s * val_i;
       dpsi[psiIndex][0] = c * gX_r - s * gX_i;
@@ -536,7 +503,7 @@ void SplineC2ROMPTarget<ST>::evaluateVGL(const ParticleSet& P,
                                          ValueVector& d2psi)
 {
   const PointType& r = P.activeR(iat);
-  PointType ru(PrimLattice.toUnit_floor(r));
+  PointType ru(prim_lattice_.toUnit_floor(r));
 
   const size_t ChunkSizePerTeam = 512;
   const int NumTeams            = (myV.size() + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
@@ -557,9 +524,8 @@ void SplineC2ROMPTarget<ST>::evaluateVGL(const ParticleSet& P,
   const auto myKcart_padded_size   = myKcart->capacity();
   auto* mKK_ptr                    = mKK->data();
   auto* GGt_ptr                    = GGt_offload->data();
-  auto* PrimLattice_G_ptr          = PrimLattice_G_offload->data();
+  auto* prim_lattice_G_ptr         = prim_lattice_G_offload->data();
   auto* myKcart_ptr                = myKcart->data();
-  const size_t first_spo_local     = first_spo;
   const size_t nComplexBands_local = nComplexBands;
   const auto requested_orb_size    = psi.size();
   const auto num_complex_splines   = kPoints.size();
@@ -577,9 +543,9 @@ void SplineC2ROMPTarget<ST>::evaluateVGL(const ParticleSet& P,
       ST a[4], b[4], c[4], da[4], db[4], dc[4], d2a[4], d2b[4], d2c[4];
       spline2::computeLocationAndFractional(spline_ptr, rux, ruy, ruz, ix, iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c);
 
-      const ST G[9]      = {PrimLattice_G_ptr[0], PrimLattice_G_ptr[1], PrimLattice_G_ptr[2],
-                            PrimLattice_G_ptr[3], PrimLattice_G_ptr[4], PrimLattice_G_ptr[5],
-                            PrimLattice_G_ptr[6], PrimLattice_G_ptr[7], PrimLattice_G_ptr[8]};
+      const ST G[9]      = {prim_lattice_G_ptr[0], prim_lattice_G_ptr[1], prim_lattice_G_ptr[2],
+                            prim_lattice_G_ptr[3], prim_lattice_G_ptr[4], prim_lattice_G_ptr[5],
+                            prim_lattice_G_ptr[6], prim_lattice_G_ptr[7], prim_lattice_G_ptr[8]};
       const ST symGGt[6] = {GGt_ptr[0], GGt_ptr[1] + GGt_ptr[3], GGt_ptr[2] + GGt_ptr[6],
                             GGt_ptr[4], GGt_ptr[5] + GGt_ptr[7], GGt_ptr[8]};
 
@@ -602,8 +568,7 @@ void SplineC2ROMPTarget<ST>::evaluateVGL(const ParticleSet& P,
       PRAGMA_OFFLOAD("omp parallel for")
       for (int index = first_cplx; index < last_cplx; index++)
         C2R::assign_vgl(x, y, z, results_scratch_ptr, sposet_padded_size, mKK_ptr, offload_scratch_ptr,
-                        spline_padded_size, G, myKcart_ptr, myKcart_padded_size, first_spo_local, nComplexBands_local,
-                        index);
+                        spline_padded_size, G, myKcart_ptr, myKcart_padded_size, nComplexBands_local, index);
     }
   }
 
@@ -643,9 +608,8 @@ void SplineC2ROMPTarget<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedA
   const auto myKcart_padded_size   = myKcart->capacity();
   auto* mKK_ptr                    = mKK->data();
   auto* GGt_ptr                    = GGt_offload->data();
-  auto* PrimLattice_G_ptr          = PrimLattice_G_offload->data();
+  auto* prim_lattice_G_ptr         = prim_lattice_G_offload->data();
   auto* myKcart_ptr                = myKcart->data();
-  const size_t first_spo_local     = first_spo;
   const size_t nComplexBands_local = nComplexBands;
   const auto requested_orb_size    = psi_v_list[0].get().size();
   const auto num_complex_splines   = kPoints.size();
@@ -669,9 +633,9 @@ void SplineC2ROMPTarget<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedA
         spline2::computeLocationAndFractional(spline_ptr, pos_copy_ptr[iw * 6 + 3], pos_copy_ptr[iw * 6 + 4],
                                               pos_copy_ptr[iw * 6 + 5], ix, iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c);
 
-        const ST G[9]      = {PrimLattice_G_ptr[0], PrimLattice_G_ptr[1], PrimLattice_G_ptr[2],
-                              PrimLattice_G_ptr[3], PrimLattice_G_ptr[4], PrimLattice_G_ptr[5],
-                              PrimLattice_G_ptr[6], PrimLattice_G_ptr[7], PrimLattice_G_ptr[8]};
+        const ST G[9]      = {prim_lattice_G_ptr[0], prim_lattice_G_ptr[1], prim_lattice_G_ptr[2],
+                              prim_lattice_G_ptr[3], prim_lattice_G_ptr[4], prim_lattice_G_ptr[5],
+                              prim_lattice_G_ptr[6], prim_lattice_G_ptr[7], prim_lattice_G_ptr[8]};
         const ST symGGt[6] = {GGt_ptr[0], GGt_ptr[1] + GGt_ptr[3], GGt_ptr[2] + GGt_ptr[6],
                               GGt_ptr[4], GGt_ptr[5] + GGt_ptr[7], GGt_ptr[8]};
 
@@ -695,7 +659,7 @@ void SplineC2ROMPTarget<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedA
         for (int index = first_cplx; index < last_cplx; index++)
           C2R::assign_vgl(pos_copy_ptr[iw * 6], pos_copy_ptr[iw * 6 + 1], pos_copy_ptr[iw * 6 + 2], psi_iw_ptr,
                           sposet_padded_size, mKK_ptr, offload_scratch_iw_ptr, spline_padded_size, G, myKcart_ptr,
-                          myKcart_padded_size, first_spo_local, nComplexBands_local, index);
+                          myKcart_padded_size, nComplexBands_local, index);
       }
   }
 
@@ -737,7 +701,7 @@ void SplineC2ROMPTarget<ST>::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& s
   for (int iw = 0; iw < nwalkers; ++iw)
   {
     const PointType& r = P_list[iw].activeR(iat);
-    PointType ru(PrimLattice.toUnit_floor(r));
+    PointType ru(prim_lattice_.toUnit_floor(r));
     mw_pos_copy[iw * 6]     = r[0];
     mw_pos_copy[iw * 6 + 1] = r[1];
     mw_pos_copy[iw * 6 + 2] = r[2];
@@ -773,7 +737,7 @@ void SplineC2ROMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
   for (int iw = 0; iw < nwalkers; ++iw)
   {
     const PointType& r = P_list[iw].activeR(iat);
-    PointType ru(PrimLattice.toUnit_floor(r));
+    PointType ru(prim_lattice_.toUnit_floor(r));
     Vector<ST> pos_copy(reinterpret_cast<ST*>(buffer_H2D[iw]), 6);
 
     pos_copy[0] = r[0];
@@ -807,12 +771,11 @@ void SplineC2ROMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
   const auto myKcart_padded_size   = myKcart->capacity();
   auto* mKK_ptr                    = mKK->data();
   auto* GGt_ptr                    = GGt_offload->data();
-  auto* PrimLattice_G_ptr          = PrimLattice_G_offload->data();
+  auto* prim_lattice_G_ptr         = prim_lattice_G_offload->data();
   auto* myKcart_ptr                = myKcart->data();
   auto* phi_vgl_ptr                = phi_vgl_v.data();
   auto* rg_private_ptr             = rg_private.data();
   const size_t buffer_H2D_stride   = buffer_H2D.cols();
-  const size_t first_spo_local     = first_spo;
   const auto requested_orb_size    = phi_vgl_v.size(2);
   const size_t phi_vgl_stride      = num_pos * requested_orb_size;
   const size_t nComplexBands_local = nComplexBands;
@@ -840,9 +803,9 @@ void SplineC2ROMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
         spline2::computeLocationAndFractional(spline_ptr, pos_iw_ptr[3], pos_iw_ptr[4], pos_iw_ptr[5], ix, iy, iz, a, b,
                                               c, da, db, dc, d2a, d2b, d2c);
 
-        const ST G[9]      = {PrimLattice_G_ptr[0], PrimLattice_G_ptr[1], PrimLattice_G_ptr[2],
-                              PrimLattice_G_ptr[3], PrimLattice_G_ptr[4], PrimLattice_G_ptr[5],
-                              PrimLattice_G_ptr[6], PrimLattice_G_ptr[7], PrimLattice_G_ptr[8]};
+        const ST G[9]      = {prim_lattice_G_ptr[0], prim_lattice_G_ptr[1], prim_lattice_G_ptr[2],
+                              prim_lattice_G_ptr[3], prim_lattice_G_ptr[4], prim_lattice_G_ptr[5],
+                              prim_lattice_G_ptr[6], prim_lattice_G_ptr[7], prim_lattice_G_ptr[8]};
         const ST symGGt[6] = {GGt_ptr[0], GGt_ptr[1] + GGt_ptr[3], GGt_ptr[2] + GGt_ptr[6],
                               GGt_ptr[4], GGt_ptr[5] + GGt_ptr[7], GGt_ptr[8]};
 
@@ -866,7 +829,7 @@ void SplineC2ROMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
         for (int index = first_cplx; index < last_cplx; index++)
           C2R::assign_vgl(pos_iw_ptr[0], pos_iw_ptr[1], pos_iw_ptr[2], psi_iw_ptr, sposet_padded_size, mKK_ptr,
                           offload_scratch_iw_ptr, spline_padded_size, G, myKcart_ptr, myKcart_padded_size,
-                          first_spo_local, nComplexBands_local, index);
+                          nComplexBands_local, index);
 
         ValueType* restrict psi    = psi_iw_ptr;
         ValueType* restrict dpsi_x = psi_iw_ptr + sposet_padded_size;
@@ -935,9 +898,9 @@ void SplineC2ROMPTarget<ST>::assign_vgh(const PointType& r,
   // protect last
   last = last > kPoints.size() ? kPoints.size() : last;
 
-  const ST g00 = PrimLattice.G(0), g01 = PrimLattice.G(1), g02 = PrimLattice.G(2), g10 = PrimLattice.G(3),
-           g11 = PrimLattice.G(4), g12 = PrimLattice.G(5), g20 = PrimLattice.G(6), g21 = PrimLattice.G(7),
-           g22 = PrimLattice.G(8);
+  const ST g00 = prim_lattice_.G(0), g01 = prim_lattice_.G(1), g02 = prim_lattice_.G(2), g10 = prim_lattice_.G(3),
+           g11 = prim_lattice_.G(4), g12 = prim_lattice_.G(5), g20 = prim_lattice_.G(6), g21 = prim_lattice_.G(7),
+           g22 = prim_lattice_.G(8);
   const ST x = r[0], y = r[1], z = r[2];
 
   const ST* restrict k0 = myKcart->data(0);
@@ -971,7 +934,7 @@ void SplineC2ROMPTarget<ST>::assign_vgh(const PointType& r,
     ST s, c;
     omptarget::sincos(-(x * kX + y * kY + z * kZ), &s, &c);
 
-    //dot(PrimLattice.G,myG[j])
+    //dot(prim_lattice_.G,myG[j])
     const ST dX_r = g00 * g0[jr] + g01 * g1[jr] + g02 * g2[jr];
     const ST dY_r = g10 * g0[jr] + g11 * g1[jr] + g12 * g2[jr];
     const ST dZ_r = g20 * g0[jr] + g21 * g1[jr] + g22 * g2[jr];
@@ -988,22 +951,20 @@ void SplineC2ROMPTarget<ST>::assign_vgh(const PointType& r,
     const ST gY_i = dY_i - val_r * kY;
     const ST gZ_i = dZ_i - val_r * kZ;
 
-    const size_t psiIndex = first_spo + jr;
-
-    if (psiIndex < requested_orb_size)
+    if (jr < requested_orb_size)
     {
-      psi[psiIndex]     = c * val_r - s * val_i;
-      dpsi[psiIndex][0] = c * gX_r - s * gX_i;
-      dpsi[psiIndex][1] = c * gY_r - s * gY_i;
-      dpsi[psiIndex][2] = c * gZ_r - s * gZ_i;
+      psi[jr]     = c * val_r - s * val_i;
+      dpsi[jr][0] = c * gX_r - s * gX_i;
+      dpsi[jr][1] = c * gY_r - s * gY_i;
+      dpsi[jr][2] = c * gZ_r - s * gZ_i;
     }
 
-    if (psiIndex + 1 < requested_orb_size)
+    if (ji < requested_orb_size)
     {
-      psi[psiIndex + 1]     = c * val_i + s * val_r;
-      dpsi[psiIndex + 1][0] = c * gX_i + s * gX_r;
-      dpsi[psiIndex + 1][1] = c * gY_i + s * gY_r;
-      dpsi[psiIndex + 1][2] = c * gZ_i + s * gZ_r;
+      psi[ji]     = c * val_i + s * val_r;
+      dpsi[ji][0] = c * gX_i + s * gX_r;
+      dpsi[ji][1] = c * gY_i + s * gY_r;
+      dpsi[ji][2] = c * gZ_i + s * gZ_r;
     }
 
     const ST h_xx_r =
@@ -1044,30 +1005,30 @@ void SplineC2ROMPTarget<ST>::assign_vgh(const PointType& r,
     const ST h_zz_i =
         v_m_v(h00[ji], h01[ji], h02[ji], h11[ji], h12[ji], h22[ji], g20, g21, g22, g20, g21, g22) - kZ * (gZ_r + dZ_r);
 
-    if (psiIndex < requested_orb_size)
+    if (jr < requested_orb_size)
     {
-      grad_grad_psi[psiIndex][0] = c * h_xx_r - s * h_xx_i;
-      grad_grad_psi[psiIndex][1] = c * h_xy_r - s * h_xy_i;
-      grad_grad_psi[psiIndex][2] = c * h_xz_r - s * h_xz_i;
-      grad_grad_psi[psiIndex][3] = c * h_yx_r - s * h_yx_i;
-      grad_grad_psi[psiIndex][4] = c * h_yy_r - s * h_yy_i;
-      grad_grad_psi[psiIndex][5] = c * h_yz_r - s * h_yz_i;
-      grad_grad_psi[psiIndex][6] = c * h_zx_r - s * h_zx_i;
-      grad_grad_psi[psiIndex][7] = c * h_zy_r - s * h_zy_i;
-      grad_grad_psi[psiIndex][8] = c * h_zz_r - s * h_zz_i;
+      grad_grad_psi[jr][0] = c * h_xx_r - s * h_xx_i;
+      grad_grad_psi[jr][1] = c * h_xy_r - s * h_xy_i;
+      grad_grad_psi[jr][2] = c * h_xz_r - s * h_xz_i;
+      grad_grad_psi[jr][3] = c * h_yx_r - s * h_yx_i;
+      grad_grad_psi[jr][4] = c * h_yy_r - s * h_yy_i;
+      grad_grad_psi[jr][5] = c * h_yz_r - s * h_yz_i;
+      grad_grad_psi[jr][6] = c * h_zx_r - s * h_zx_i;
+      grad_grad_psi[jr][7] = c * h_zy_r - s * h_zy_i;
+      grad_grad_psi[jr][8] = c * h_zz_r - s * h_zz_i;
     }
 
-    if (psiIndex + 1 < requested_orb_size)
+    if (ji < requested_orb_size)
     {
-      grad_grad_psi[psiIndex + 1][0] = c * h_xx_i + s * h_xx_r;
-      grad_grad_psi[psiIndex + 1][1] = c * h_xy_i + s * h_xy_r;
-      grad_grad_psi[psiIndex + 1][2] = c * h_xz_i + s * h_xz_r;
-      grad_grad_psi[psiIndex + 1][3] = c * h_yx_i + s * h_yx_r;
-      grad_grad_psi[psiIndex + 1][4] = c * h_yy_i + s * h_yy_r;
-      grad_grad_psi[psiIndex + 1][5] = c * h_yz_i + s * h_yz_r;
-      grad_grad_psi[psiIndex + 1][6] = c * h_zx_i + s * h_zx_r;
-      grad_grad_psi[psiIndex + 1][7] = c * h_zy_i + s * h_zy_r;
-      grad_grad_psi[psiIndex + 1][8] = c * h_zz_i + s * h_zz_r;
+      grad_grad_psi[ji][0] = c * h_xx_i + s * h_xx_r;
+      grad_grad_psi[ji][1] = c * h_xy_i + s * h_xy_r;
+      grad_grad_psi[ji][2] = c * h_xz_i + s * h_xz_r;
+      grad_grad_psi[ji][3] = c * h_yx_i + s * h_yx_r;
+      grad_grad_psi[ji][4] = c * h_yy_i + s * h_yy_r;
+      grad_grad_psi[ji][5] = c * h_yz_i + s * h_yz_r;
+      grad_grad_psi[ji][6] = c * h_zx_i + s * h_zx_r;
+      grad_grad_psi[ji][7] = c * h_zy_i + s * h_zy_r;
+      grad_grad_psi[ji][8] = c * h_zz_i + s * h_zz_r;
     }
   }
 
@@ -1087,7 +1048,7 @@ void SplineC2ROMPTarget<ST>::assign_vgh(const PointType& r,
     ST s, c;
     omptarget::sincos(-(x * kX + y * kY + z * kZ), &s, &c);
 
-    //dot(PrimLattice.G,myG[j])
+    //dot(prim_lattice_.G,myG[j])
     const ST dX_r = g00 * g0[jr] + g01 * g1[jr] + g02 * g2[jr];
     const ST dY_r = g10 * g0[jr] + g11 * g1[jr] + g12 * g2[jr];
     const ST dZ_r = g20 * g0[jr] + g21 * g1[jr] + g22 * g2[jr];
@@ -1104,7 +1065,7 @@ void SplineC2ROMPTarget<ST>::assign_vgh(const PointType& r,
     const ST gY_i = dY_i - val_r * kY;
     const ST gZ_i = dZ_i - val_r * kZ;
 
-    if (const size_t psiIndex = first_spo + nComplexBands + j; psiIndex < requested_orb_size)
+    if (const size_t psiIndex = nComplexBands + j; psiIndex < requested_orb_size)
     {
       psi[psiIndex]     = c * val_r - s * val_i;
       dpsi[psiIndex][0] = c * gX_r - s * gX_i;
@@ -1170,7 +1131,7 @@ void SplineC2ROMPTarget<ST>::evaluateVGH(const ParticleSet& P,
                                          HessVector& grad_grad_psi)
 {
   const PointType& r = P.activeR(iat);
-  PointType ru(PrimLattice.toUnit_floor(r));
+  PointType ru(prim_lattice_.toUnit_floor(r));
 #pragma omp parallel
   {
     int first, last;
@@ -1193,9 +1154,9 @@ void SplineC2ROMPTarget<ST>::assign_vghgh(const PointType& r,
   // protect last
   last = last < 0 ? kPoints.size() : (last > kPoints.size() ? kPoints.size() : last);
 
-  const ST g00 = PrimLattice.G(0), g01 = PrimLattice.G(1), g02 = PrimLattice.G(2), g10 = PrimLattice.G(3),
-           g11 = PrimLattice.G(4), g12 = PrimLattice.G(5), g20 = PrimLattice.G(6), g21 = PrimLattice.G(7),
-           g22 = PrimLattice.G(8);
+  const ST g00 = prim_lattice_.G(0), g01 = prim_lattice_.G(1), g02 = prim_lattice_.G(2), g10 = prim_lattice_.G(3),
+           g11 = prim_lattice_.G(4), g12 = prim_lattice_.G(5), g20 = prim_lattice_.G(6), g21 = prim_lattice_.G(7),
+           g22 = prim_lattice_.G(8);
   const ST x = r[0], y = r[1], z = r[2];
 
   const ST* restrict k0 = myKcart->data(0);
@@ -1241,7 +1202,7 @@ void SplineC2ROMPTarget<ST>::assign_vghgh(const PointType& r,
     ST s, c;
     omptarget::sincos(-(x * kX + y * kY + z * kZ), &s, &c);
 
-    //dot(PrimLattice.G,myG[j])
+    //dot(prim_lattice_.G,myG[j])
     const ST dX_r = g00 * g0[jr] + g01 * g1[jr] + g02 * g2[jr];
     const ST dY_r = g10 * g0[jr] + g11 * g1[jr] + g12 * g2[jr];
     const ST dZ_r = g20 * g0[jr] + g21 * g1[jr] + g22 * g2[jr];
@@ -1258,22 +1219,20 @@ void SplineC2ROMPTarget<ST>::assign_vghgh(const PointType& r,
     const ST gY_i = dY_i - val_r * kY;
     const ST gZ_i = dZ_i - val_r * kZ;
 
-    const size_t psiIndex = first_spo + jr;
-
-    if (psiIndex < requested_orb_size)
+    if (jr < requested_orb_size)
     {
-      psi[psiIndex]     = c * val_r - s * val_i;
-      dpsi[psiIndex][0] = c * gX_r - s * gX_i;
-      dpsi[psiIndex][1] = c * gY_r - s * gY_i;
-      dpsi[psiIndex][2] = c * gZ_r - s * gZ_i;
+      psi[jr]     = c * val_r - s * val_i;
+      dpsi[jr][0] = c * gX_r - s * gX_i;
+      dpsi[jr][1] = c * gY_r - s * gY_i;
+      dpsi[jr][2] = c * gZ_r - s * gZ_i;
     }
 
-    if (psiIndex + 1 < requested_orb_size)
+    if (ji < requested_orb_size)
     {
-      psi[psiIndex + 1]     = c * val_i + s * val_r;
-      dpsi[psiIndex + 1][0] = c * gX_i + s * gX_r;
-      dpsi[psiIndex + 1][1] = c * gY_i + s * gY_r;
-      dpsi[psiIndex + 1][2] = c * gZ_i + s * gZ_r;
+      psi[ji]     = c * val_i + s * val_r;
+      dpsi[ji][0] = c * gX_i + s * gX_r;
+      dpsi[ji][1] = c * gY_i + s * gY_r;
+      dpsi[ji][2] = c * gZ_i + s * gZ_r;
     }
 
     //intermediates for computation of hessian. \partial_i \partial_j phi in cartesian coordinates.
@@ -1305,30 +1264,30 @@ void SplineC2ROMPTarget<ST>::assign_vghgh(const PointType& r,
     const ST h_yz_i = f_yz_i - (kZ * dY_r + kY * dZ_r) - kZ * kY * val_i;
     const ST h_zz_i = f_zz_i - 2 * kZ * dZ_r - kZ * kZ * val_i;
 
-    if (psiIndex < requested_orb_size)
+    if (jr < requested_orb_size)
     {
-      grad_grad_psi[psiIndex][0] = c * h_xx_r - s * h_xx_i;
-      grad_grad_psi[psiIndex][1] = c * h_xy_r - s * h_xy_i;
-      grad_grad_psi[psiIndex][2] = c * h_xz_r - s * h_xz_i;
-      grad_grad_psi[psiIndex][3] = c * h_xy_r - s * h_xy_i;
-      grad_grad_psi[psiIndex][4] = c * h_yy_r - s * h_yy_i;
-      grad_grad_psi[psiIndex][5] = c * h_yz_r - s * h_yz_i;
-      grad_grad_psi[psiIndex][6] = c * h_xz_r - s * h_xz_i;
-      grad_grad_psi[psiIndex][7] = c * h_yz_r - s * h_yz_i;
-      grad_grad_psi[psiIndex][8] = c * h_zz_r - s * h_zz_i;
+      grad_grad_psi[jr][0] = c * h_xx_r - s * h_xx_i;
+      grad_grad_psi[jr][1] = c * h_xy_r - s * h_xy_i;
+      grad_grad_psi[jr][2] = c * h_xz_r - s * h_xz_i;
+      grad_grad_psi[jr][3] = c * h_xy_r - s * h_xy_i;
+      grad_grad_psi[jr][4] = c * h_yy_r - s * h_yy_i;
+      grad_grad_psi[jr][5] = c * h_yz_r - s * h_yz_i;
+      grad_grad_psi[jr][6] = c * h_xz_r - s * h_xz_i;
+      grad_grad_psi[jr][7] = c * h_yz_r - s * h_yz_i;
+      grad_grad_psi[jr][8] = c * h_zz_r - s * h_zz_i;
     }
 
-    if (psiIndex + 1 < requested_orb_size)
+    if (ji < requested_orb_size)
     {
-      grad_grad_psi[psiIndex + 1][0] = c * h_xx_i + s * h_xx_r;
-      grad_grad_psi[psiIndex + 1][1] = c * h_xy_i + s * h_xy_r;
-      grad_grad_psi[psiIndex + 1][2] = c * h_xz_i + s * h_xz_r;
-      grad_grad_psi[psiIndex + 1][3] = c * h_xy_i + s * h_xy_r;
-      grad_grad_psi[psiIndex + 1][4] = c * h_yy_i + s * h_yy_r;
-      grad_grad_psi[psiIndex + 1][5] = c * h_yz_i + s * h_yz_r;
-      grad_grad_psi[psiIndex + 1][6] = c * h_xz_i + s * h_xz_r;
-      grad_grad_psi[psiIndex + 1][7] = c * h_yz_i + s * h_yz_r;
-      grad_grad_psi[psiIndex + 1][8] = c * h_zz_i + s * h_zz_r;
+      grad_grad_psi[ji][0] = c * h_xx_i + s * h_xx_r;
+      grad_grad_psi[ji][1] = c * h_xy_i + s * h_xy_r;
+      grad_grad_psi[ji][2] = c * h_xz_i + s * h_xz_r;
+      grad_grad_psi[ji][3] = c * h_xy_i + s * h_xy_r;
+      grad_grad_psi[ji][4] = c * h_yy_i + s * h_yy_r;
+      grad_grad_psi[ji][5] = c * h_yz_i + s * h_yz_r;
+      grad_grad_psi[ji][6] = c * h_xz_i + s * h_xz_r;
+      grad_grad_psi[ji][7] = c * h_yz_i + s * h_yz_r;
+      grad_grad_psi[ji][8] = c * h_zz_i + s * h_zz_r;
     }
 
     //These are the real and imaginary components of the third SPO derivative.  _xxx denotes
@@ -1412,70 +1371,70 @@ void SplineC2ROMPTarget<ST>::assign_vghgh(const PointType& r,
     const ST gh_zzz_r = f3_zzz_r + 3 * kZ * f_zz_i - 3 * kZ * kZ * dZ_r - kZ * kZ * kZ * val_i;
     const ST gh_zzz_i = f3_zzz_i - 3 * kZ * f_zz_r - 3 * kZ * kZ * dZ_i + kZ * kZ * kZ * val_r;
 
-    if (psiIndex < requested_orb_size)
+    if (jr < requested_orb_size)
     {
-      grad_grad_grad_psi[psiIndex][0][0] = c * gh_xxx_r - s * gh_xxx_i;
-      grad_grad_grad_psi[psiIndex][0][1] = c * gh_xxy_r - s * gh_xxy_i;
-      grad_grad_grad_psi[psiIndex][0][2] = c * gh_xxz_r - s * gh_xxz_i;
-      grad_grad_grad_psi[psiIndex][0][3] = c * gh_xxy_r - s * gh_xxy_i;
-      grad_grad_grad_psi[psiIndex][0][4] = c * gh_xyy_r - s * gh_xyy_i;
-      grad_grad_grad_psi[psiIndex][0][5] = c * gh_xyz_r - s * gh_xyz_i;
-      grad_grad_grad_psi[psiIndex][0][6] = c * gh_xxz_r - s * gh_xxz_i;
-      grad_grad_grad_psi[psiIndex][0][7] = c * gh_xyz_r - s * gh_xyz_i;
-      grad_grad_grad_psi[psiIndex][0][8] = c * gh_xzz_r - s * gh_xzz_i;
+      grad_grad_grad_psi[jr][0][0] = c * gh_xxx_r - s * gh_xxx_i;
+      grad_grad_grad_psi[jr][0][1] = c * gh_xxy_r - s * gh_xxy_i;
+      grad_grad_grad_psi[jr][0][2] = c * gh_xxz_r - s * gh_xxz_i;
+      grad_grad_grad_psi[jr][0][3] = c * gh_xxy_r - s * gh_xxy_i;
+      grad_grad_grad_psi[jr][0][4] = c * gh_xyy_r - s * gh_xyy_i;
+      grad_grad_grad_psi[jr][0][5] = c * gh_xyz_r - s * gh_xyz_i;
+      grad_grad_grad_psi[jr][0][6] = c * gh_xxz_r - s * gh_xxz_i;
+      grad_grad_grad_psi[jr][0][7] = c * gh_xyz_r - s * gh_xyz_i;
+      grad_grad_grad_psi[jr][0][8] = c * gh_xzz_r - s * gh_xzz_i;
 
-      grad_grad_grad_psi[psiIndex][1][0] = c * gh_xxy_r - s * gh_xxy_i;
-      grad_grad_grad_psi[psiIndex][1][1] = c * gh_xyy_r - s * gh_xyy_i;
-      grad_grad_grad_psi[psiIndex][1][2] = c * gh_xyz_r - s * gh_xyz_i;
-      grad_grad_grad_psi[psiIndex][1][3] = c * gh_xyy_r - s * gh_xyy_i;
-      grad_grad_grad_psi[psiIndex][1][4] = c * gh_yyy_r - s * gh_yyy_i;
-      grad_grad_grad_psi[psiIndex][1][5] = c * gh_yyz_r - s * gh_yyz_i;
-      grad_grad_grad_psi[psiIndex][1][6] = c * gh_xyz_r - s * gh_xyz_i;
-      grad_grad_grad_psi[psiIndex][1][7] = c * gh_yyz_r - s * gh_yyz_i;
-      grad_grad_grad_psi[psiIndex][1][8] = c * gh_yzz_r - s * gh_yzz_i;
+      grad_grad_grad_psi[jr][1][0] = c * gh_xxy_r - s * gh_xxy_i;
+      grad_grad_grad_psi[jr][1][1] = c * gh_xyy_r - s * gh_xyy_i;
+      grad_grad_grad_psi[jr][1][2] = c * gh_xyz_r - s * gh_xyz_i;
+      grad_grad_grad_psi[jr][1][3] = c * gh_xyy_r - s * gh_xyy_i;
+      grad_grad_grad_psi[jr][1][4] = c * gh_yyy_r - s * gh_yyy_i;
+      grad_grad_grad_psi[jr][1][5] = c * gh_yyz_r - s * gh_yyz_i;
+      grad_grad_grad_psi[jr][1][6] = c * gh_xyz_r - s * gh_xyz_i;
+      grad_grad_grad_psi[jr][1][7] = c * gh_yyz_r - s * gh_yyz_i;
+      grad_grad_grad_psi[jr][1][8] = c * gh_yzz_r - s * gh_yzz_i;
 
-      grad_grad_grad_psi[psiIndex][2][0] = c * gh_xxz_r - s * gh_xxz_i;
-      grad_grad_grad_psi[psiIndex][2][1] = c * gh_xyz_r - s * gh_xyz_i;
-      grad_grad_grad_psi[psiIndex][2][2] = c * gh_xzz_r - s * gh_xzz_i;
-      grad_grad_grad_psi[psiIndex][2][3] = c * gh_xyz_r - s * gh_xyz_i;
-      grad_grad_grad_psi[psiIndex][2][4] = c * gh_yyz_r - s * gh_yyz_i;
-      grad_grad_grad_psi[psiIndex][2][5] = c * gh_yzz_r - s * gh_yzz_i;
-      grad_grad_grad_psi[psiIndex][2][6] = c * gh_xzz_r - s * gh_xzz_i;
-      grad_grad_grad_psi[psiIndex][2][7] = c * gh_yzz_r - s * gh_yzz_i;
-      grad_grad_grad_psi[psiIndex][2][8] = c * gh_zzz_r - s * gh_zzz_i;
+      grad_grad_grad_psi[jr][2][0] = c * gh_xxz_r - s * gh_xxz_i;
+      grad_grad_grad_psi[jr][2][1] = c * gh_xyz_r - s * gh_xyz_i;
+      grad_grad_grad_psi[jr][2][2] = c * gh_xzz_r - s * gh_xzz_i;
+      grad_grad_grad_psi[jr][2][3] = c * gh_xyz_r - s * gh_xyz_i;
+      grad_grad_grad_psi[jr][2][4] = c * gh_yyz_r - s * gh_yyz_i;
+      grad_grad_grad_psi[jr][2][5] = c * gh_yzz_r - s * gh_yzz_i;
+      grad_grad_grad_psi[jr][2][6] = c * gh_xzz_r - s * gh_xzz_i;
+      grad_grad_grad_psi[jr][2][7] = c * gh_yzz_r - s * gh_yzz_i;
+      grad_grad_grad_psi[jr][2][8] = c * gh_zzz_r - s * gh_zzz_i;
     }
 
-    if (psiIndex + 1 < requested_orb_size)
+    if (ji < requested_orb_size)
     {
-      grad_grad_grad_psi[psiIndex + 1][0][0] = c * gh_xxx_i + s * gh_xxx_r;
-      grad_grad_grad_psi[psiIndex + 1][0][1] = c * gh_xxy_i + s * gh_xxy_r;
-      grad_grad_grad_psi[psiIndex + 1][0][2] = c * gh_xxz_i + s * gh_xxz_r;
-      grad_grad_grad_psi[psiIndex + 1][0][3] = c * gh_xxy_i + s * gh_xxy_r;
-      grad_grad_grad_psi[psiIndex + 1][0][4] = c * gh_xyy_i + s * gh_xyy_r;
-      grad_grad_grad_psi[psiIndex + 1][0][5] = c * gh_xyz_i + s * gh_xyz_r;
-      grad_grad_grad_psi[psiIndex + 1][0][6] = c * gh_xxz_i + s * gh_xxz_r;
-      grad_grad_grad_psi[psiIndex + 1][0][7] = c * gh_xyz_i + s * gh_xyz_r;
-      grad_grad_grad_psi[psiIndex + 1][0][8] = c * gh_xzz_i + s * gh_xzz_r;
+      grad_grad_grad_psi[ji][0][0] = c * gh_xxx_i + s * gh_xxx_r;
+      grad_grad_grad_psi[ji][0][1] = c * gh_xxy_i + s * gh_xxy_r;
+      grad_grad_grad_psi[ji][0][2] = c * gh_xxz_i + s * gh_xxz_r;
+      grad_grad_grad_psi[ji][0][3] = c * gh_xxy_i + s * gh_xxy_r;
+      grad_grad_grad_psi[ji][0][4] = c * gh_xyy_i + s * gh_xyy_r;
+      grad_grad_grad_psi[ji][0][5] = c * gh_xyz_i + s * gh_xyz_r;
+      grad_grad_grad_psi[ji][0][6] = c * gh_xxz_i + s * gh_xxz_r;
+      grad_grad_grad_psi[ji][0][7] = c * gh_xyz_i + s * gh_xyz_r;
+      grad_grad_grad_psi[ji][0][8] = c * gh_xzz_i + s * gh_xzz_r;
 
-      grad_grad_grad_psi[psiIndex + 1][1][0] = c * gh_xxy_i + s * gh_xxy_r;
-      grad_grad_grad_psi[psiIndex + 1][1][1] = c * gh_xyy_i + s * gh_xyy_r;
-      grad_grad_grad_psi[psiIndex + 1][1][2] = c * gh_xyz_i + s * gh_xyz_r;
-      grad_grad_grad_psi[psiIndex + 1][1][3] = c * gh_xyy_i + s * gh_xyy_r;
-      grad_grad_grad_psi[psiIndex + 1][1][4] = c * gh_yyy_i + s * gh_yyy_r;
-      grad_grad_grad_psi[psiIndex + 1][1][5] = c * gh_yyz_i + s * gh_yyz_r;
-      grad_grad_grad_psi[psiIndex + 1][1][6] = c * gh_xyz_i + s * gh_xyz_r;
-      grad_grad_grad_psi[psiIndex + 1][1][7] = c * gh_yyz_i + s * gh_yyz_r;
-      grad_grad_grad_psi[psiIndex + 1][1][8] = c * gh_yzz_i + s * gh_yzz_r;
+      grad_grad_grad_psi[ji][1][0] = c * gh_xxy_i + s * gh_xxy_r;
+      grad_grad_grad_psi[ji][1][1] = c * gh_xyy_i + s * gh_xyy_r;
+      grad_grad_grad_psi[ji][1][2] = c * gh_xyz_i + s * gh_xyz_r;
+      grad_grad_grad_psi[ji][1][3] = c * gh_xyy_i + s * gh_xyy_r;
+      grad_grad_grad_psi[ji][1][4] = c * gh_yyy_i + s * gh_yyy_r;
+      grad_grad_grad_psi[ji][1][5] = c * gh_yyz_i + s * gh_yyz_r;
+      grad_grad_grad_psi[ji][1][6] = c * gh_xyz_i + s * gh_xyz_r;
+      grad_grad_grad_psi[ji][1][7] = c * gh_yyz_i + s * gh_yyz_r;
+      grad_grad_grad_psi[ji][1][8] = c * gh_yzz_i + s * gh_yzz_r;
 
-      grad_grad_grad_psi[psiIndex + 1][2][0] = c * gh_xxz_i + s * gh_xxz_r;
-      grad_grad_grad_psi[psiIndex + 1][2][1] = c * gh_xyz_i + s * gh_xyz_r;
-      grad_grad_grad_psi[psiIndex + 1][2][2] = c * gh_xzz_i + s * gh_xzz_r;
-      grad_grad_grad_psi[psiIndex + 1][2][3] = c * gh_xyz_i + s * gh_xyz_r;
-      grad_grad_grad_psi[psiIndex + 1][2][4] = c * gh_yyz_i + s * gh_yyz_r;
-      grad_grad_grad_psi[psiIndex + 1][2][5] = c * gh_yzz_i + s * gh_yzz_r;
-      grad_grad_grad_psi[psiIndex + 1][2][6] = c * gh_xzz_i + s * gh_xzz_r;
-      grad_grad_grad_psi[psiIndex + 1][2][7] = c * gh_yzz_i + s * gh_yzz_r;
-      grad_grad_grad_psi[psiIndex + 1][2][8] = c * gh_zzz_i + s * gh_zzz_r;
+      grad_grad_grad_psi[ji][2][0] = c * gh_xxz_i + s * gh_xxz_r;
+      grad_grad_grad_psi[ji][2][1] = c * gh_xyz_i + s * gh_xyz_r;
+      grad_grad_grad_psi[ji][2][2] = c * gh_xzz_i + s * gh_xzz_r;
+      grad_grad_grad_psi[ji][2][3] = c * gh_xyz_i + s * gh_xyz_r;
+      grad_grad_grad_psi[ji][2][4] = c * gh_yyz_i + s * gh_yyz_r;
+      grad_grad_grad_psi[ji][2][5] = c * gh_yzz_i + s * gh_yzz_r;
+      grad_grad_grad_psi[ji][2][6] = c * gh_xzz_i + s * gh_xzz_r;
+      grad_grad_grad_psi[ji][2][7] = c * gh_yzz_i + s * gh_yzz_r;
+      grad_grad_grad_psi[ji][2][8] = c * gh_zzz_i + s * gh_zzz_r;
     }
   }
 #pragma omp simd
@@ -1494,7 +1453,7 @@ void SplineC2ROMPTarget<ST>::assign_vghgh(const PointType& r,
     ST s, c;
     omptarget::sincos(-(x * kX + y * kY + z * kZ), &s, &c);
 
-    //dot(PrimLattice.G,myG[j])
+    //dot(prim_lattice_.G,myG[j])
     const ST dX_r = g00 * g0[jr] + g01 * g1[jr] + g02 * g2[jr];
     const ST dY_r = g10 * g0[jr] + g11 * g1[jr] + g12 * g2[jr];
     const ST dZ_r = g20 * g0[jr] + g21 * g1[jr] + g22 * g2[jr];
@@ -1511,7 +1470,7 @@ void SplineC2ROMPTarget<ST>::assign_vghgh(const PointType& r,
     const ST gY_i = dY_i - val_r * kY;
     const ST gZ_i = dZ_i - val_r * kZ;
 
-    if (const size_t psiIndex = first_spo + nComplexBands + j; psiIndex < requested_orb_size)
+    if (const size_t psiIndex = nComplexBands + j; psiIndex < requested_orb_size)
     {
       psi[psiIndex]     = c * val_r - s * val_i;
       dpsi[psiIndex][0] = c * gX_r - s * gX_i;
@@ -1680,7 +1639,7 @@ void SplineC2ROMPTarget<ST>::evaluateVGHGH(const ParticleSet& P,
                                            GGGVector& grad_grad_grad_psi)
 {
   const PointType& r = P.activeR(iat);
-  PointType ru(PrimLattice.toUnit_floor(r));
+  PointType ru(prim_lattice_.toUnit_floor(r));
 #pragma omp parallel
   {
     int first, last;
@@ -1732,7 +1691,7 @@ void SplineC2ROMPTarget<ST>::evaluate_notranspose(const ParticleSet& P,
     {
       // pack particle positions
       const PointType& r = P.activeR(iat + ipos);
-      PointType ru(PrimLattice.toUnit_floor(r));
+      PointType ru(prim_lattice_.toUnit_floor(r));
       multi_pos_copy[ipos * 6]     = r[0];
       multi_pos_copy[ipos * 6 + 1] = r[1];
       multi_pos_copy[ipos * 6 + 2] = r[2];

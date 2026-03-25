@@ -28,6 +28,7 @@ set(QMCDRIVERS
     SFNBranch.cpp
     BranchIO.cpp
     MCPopulation.cpp
+    PsiHamNamePairReader.cpp
     QMCDriver.cpp
     QMCDriverInput.cpp
     QMCDriverNew.cpp
@@ -54,7 +55,6 @@ set(QMCDRIVERS
     GreenFunctionModifiers/DriftModifierUNR.cpp
     VMC/VMCUpdatePbyP.cpp
     VMC/VMCUpdateAll.cpp
-    VMC/VMCFactory.cpp
     VMC/VMCDriverInput.cpp
     VMC/SOVMCUpdatePbyP.cpp
     VMC/SOVMCUpdateAll.cpp

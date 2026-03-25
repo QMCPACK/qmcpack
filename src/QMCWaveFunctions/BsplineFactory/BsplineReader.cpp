@@ -22,17 +22,16 @@
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
 #include <PlatformSelector.hpp>
+#include "einspline_helper.hpp"
 
 #include <array>
 #include <filesystem>
 
 namespace qmcplusplus
 {
-BsplineReader::BsplineReader(EinsplineSetBuilder* e)
-    : mybuilder(e), checkNorm(true), saveSplineCoefs(false), rotate(true)
-{
-  myComm = mybuilder->getCommunicator();
-}
+BsplineReader::BsplineReader(EinsplineSetBuilder* e, bool use_duplex_splines)
+    : mybuilder(e), checkNorm(true), saveSplineCoefs(false), rotate(true), use_duplex_splines_(use_duplex_splines)
+{ myComm = mybuilder->getCommunicator(); }
 
 BsplineReader::~BsplineReader() = default;
 
@@ -85,26 +84,15 @@ void BsplineReader::setCommon(xmlNodePtr cur)
     checkNorm = false;
   }
   saveSplineCoefs = saveCoefs == "yes";
-  use_offload = CPUOMPTargetSelector::selectPlatform(useGPU) == PlatformKind::OMPTARGET;
-  if(use_offload)
+  use_offload     = CPUOMPTargetSelector::selectPlatform(useGPU) == PlatformKind::OMPTARGET;
+  if (use_offload)
     app_summary() << "    Running OpenMP offload code path." << std::endl;
   else
     app_summary() << "    Running on CPU." << std::endl;
 }
 
-std::unique_ptr<SPOSet> BsplineReader::create_spline_set(int spin, xmlNodePtr cur)
+std::unique_ptr<SPOSet> BsplineReader::create_spline_set(const std::string& spo_name, int spin, const size_t size)
 {
-  int ns(0);
-  std::string spo_object_name;
-  OhmmsAttributeSet a;
-  a.add(ns, "size");
-  a.add(spo_object_name, "name");
-  a.add(spo_object_name, "id");
-  a.put(cur);
-
-  if (ns == 0)
-    APP_ABORT_TRACE(__FILE__, __LINE__, "parameter/@size missing");
-
   if (spo2band.empty())
     spo2band.resize(mybuilder->states.size());
 
@@ -116,26 +104,69 @@ std::unique_ptr<SPOSet> BsplineReader::create_spline_set(int spin, xmlNodePtr cu
     if (!mybuilder->states[spin])
       mybuilder->states[spin] = std::make_unique<SPOSetInfo>();
     mybuilder->clear_states(spin);
-    initialize_spo2band(spin, fullband, *mybuilder->states[spin], spo2band[spin]);
+    initialize_spo2band(spo_name, spin, fullband, *mybuilder->states[spin], spo2band[spin]);
   }
 
   BandInfoGroup vals;
-  vals.TwistIndex = fullband[0].TwistIndex;
-  vals.GroupID    = 0;
-  vals.myName = make_bandgroup_name(mybuilder->getName(), spin, mybuilder->twist_num_, mybuilder->TileMatrix, 0, ns);
-  vals.selectBands(fullband, 0, ns, false);
+  vals.GroupID = 0;
+  vals.myName  = make_bandgroup_name(spo_name, spin, mybuilder->twist_num_, mybuilder->TileMatrix, 0, size);
+  vals.selectBands(fullband, 0, size);
 
-  return create_spline_set(spo_object_name, spin, vals);
+  return create_spline_set(spo_name, spin, vals);
 }
 
-std::unique_ptr<SPOSet> BsplineReader::create_spline_set(int spin, xmlNodePtr cur, SPOSetInputInfo& input_info)
+bool BsplineReader::lookforSplineDataDumpFile(const BandInfoGroup& bandgroup,
+                                              const std::string& keyword,
+                                              size_t datatype_size) const
 {
-  std::string spo_object_name;
-  OhmmsAttributeSet a;
-  a.add(spo_object_name, "name");
-  a.add(spo_object_name, "id");
-  a.put(cur);
+  int foundspline = 0;
+  if (myComm->rank() == 0)
+  {
+    hdf_archive h5f(myComm);
+    foundspline = h5f.open(getSplineDumpFileName(bandgroup), H5F_ACC_RDONLY);
+    if (foundspline)
+    {
+      std::string aname("none");
+      foundspline = h5f.readEntry(aname, "class_name");
+      foundspline = (aname.find(keyword) != std::string::npos);
+    }
+    if (foundspline)
+    {
+      int sizeD   = 0;
+      foundspline = h5f.readEntry(sizeD, "sizeof");
+      foundspline = (sizeD == datatype_size);
+    }
+    h5f.close();
+  }
+  myComm->bcast(foundspline);
+  return foundspline;
+}
 
+void BsplineReader::readOneOrbitalCoefs(const std::string& s, hdf_archive& h5f, Vector<std::complex<double>>& cG) const
+{
+  if (!h5f.readEntry(cG, s))
+  {
+    std::ostringstream msg;
+    msg << "SplineSetReader Failed to read band(s) from h5 file. " << "Attempted dataset " << s << " with " << cG.size()
+        << " complex numbers." << std::endl;
+    throw std::runtime_error(msg.str());
+  }
+  double total_norm = compute_norm(cG);
+  if ((checkNorm) && (std::abs(total_norm - 1.0) > PW_COEFF_NORM_TOLERANCE))
+  {
+    std::ostringstream msg;
+    msg << "SplineSetReader The orbital dataset " << s << " has a wrong norm " << total_norm
+        << ", computed from plane wave coefficients!" << std::endl
+        << "This may indicate a problem with the HDF5 library versions used "
+        << "during wavefunction conversion or read." << std::endl;
+    throw std::runtime_error(msg.str());
+  }
+}
+
+std::unique_ptr<SPOSet> BsplineReader::create_spline_set(const std::string& spo_name,
+                                                         int spin,
+                                                         SPOSetInputInfo& input_info)
+{
   if (spo2band.empty())
     spo2band.resize(mybuilder->states.size());
 
@@ -147,18 +178,16 @@ std::unique_ptr<SPOSet> BsplineReader::create_spline_set(int spin, xmlNodePtr cu
     if (!mybuilder->states[spin])
       mybuilder->states[spin] = std::make_unique<SPOSetInfo>();
     mybuilder->clear_states(spin);
-    initialize_spo2band(spin, fullband, *mybuilder->states[spin], spo2band[spin]);
+    initialize_spo2band(spo_name, spin, fullband, *mybuilder->states[spin], spo2band[spin]);
   }
 
   BandInfoGroup vals;
-  vals.TwistIndex = fullband[0].TwistIndex;
-  vals.GroupID    = 0;
-  vals.myName     = make_bandgroup_name(mybuilder->getName(), spin, mybuilder->twist_num_, mybuilder->TileMatrix,
-                                        input_info.min_index(), input_info.max_index());
-  vals.selectBands(fullband, spo2band[spin][input_info.min_index()], input_info.max_index() - input_info.min_index(),
-                   false);
+  vals.GroupID = 0;
+  vals.myName  = make_bandgroup_name(spo_name, spin, mybuilder->twist_num_, mybuilder->TileMatrix,
+                                     input_info.min_index(), input_info.max_index());
+  vals.selectBands(fullband, spo2band[spin][input_info.min_index()], input_info.max_index() - input_info.min_index());
 
-  return create_spline_set(spo_object_name, spin, vals);
+  return create_spline_set(spo_name, spin, vals);
 }
 
 /** build index tables to map a state to band with k-point folidng
@@ -168,7 +197,8 @@ std::unique_ptr<SPOSet> BsplineReader::create_spline_set(int spin, xmlNodePtr cu
    *
    * At gamma or arbitrary kpoints with complex wavefunctions, spo2band[i]==i
    */
-void BsplineReader::initialize_spo2band(int spin,
+void BsplineReader::initialize_spo2band(const std::string& spo_name,
+                                        int spin,
                                         const std::vector<BandInfo>& bigspace,
                                         SPOSetInfo& sposet,
                                         std::vector<int>& spo2band)
@@ -195,8 +225,8 @@ void BsplineReader::initialize_spo2band(int spin,
   if (comm->rank())
     return;
 
-  std::filesystem::path aname = make_bandinfo_filename(mybuilder->getName(), spin, mybuilder->twist_num_,
-                                                       mybuilder->TileMatrix, comm->getGroupID());
+  std::filesystem::path aname =
+      make_bandinfo_filename(spo_name, spin, mybuilder->twist_num_, mybuilder->TileMatrix, comm->getGroupID());
   aname += ".bandinfo.dat";
 
   std::ofstream o(aname.c_str());

@@ -76,8 +76,7 @@ TEST_CASE("QMCDriverFactory create VMC Driver", "[qmcapp]")
   QMCDriverFactory driver_factory(test_project);
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(valid_vmc_input_sections[valid_vmc_input_vmc_index]);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(valid_vmc_input_sections[valid_vmc_input_vmc_index]));
   xmlNodePtr node                           = doc.getRoot();
   QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(node);
   REQUIRE(das.new_run_type == QMCRunType::VMC);
@@ -102,8 +101,7 @@ TEST_CASE("QMCDriverFactory create VMCBatched driver", "[qmcapp]")
     QMCDriverFactory driver_factory(test_project);
 
     Libxml2Document doc;
-    bool okay = doc.parseFromString(valid_vmc_input_sections[valid_vmc_input_vmc_batch_index]);
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(valid_vmc_input_sections[valid_vmc_input_vmc_batch_index]));
     xmlNodePtr node                           = doc.getRoot();
     QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(node);
     REQUIRE(das.new_run_type == QMCRunType::VMC_BATCH);
@@ -121,8 +119,7 @@ TEST_CASE("QMCDriverFactory create VMCBatched driver", "[qmcapp]")
     QMCDriverFactory driver_factory(test_project);
 
     Libxml2Document doc;
-    bool okay = doc.parseFromString(valid_vmc_input_sections[valid_vmc_batch_input_vmc_batch_index]);
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(valid_vmc_input_sections[valid_vmc_batch_input_vmc_batch_index]));
     xmlNodePtr node                           = doc.getRoot();
     QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(node);
     REQUIRE(das.new_run_type == QMCRunType::VMC_BATCH);
@@ -147,8 +144,7 @@ TEST_CASE("QMCDriverFactory create DMC driver", "[qmcapp]")
   QMCDriverFactory driver_factory(test_project);
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(valid_dmc_input_sections[valid_dmc_input_dmc_index]);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(valid_dmc_input_sections[valid_dmc_input_dmc_index]));
   xmlNodePtr node                           = doc.getRoot();
   QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(node);
   REQUIRE(das.new_run_type == QMCRunType::DMC);
@@ -173,8 +169,7 @@ TEST_CASE("QMCDriverFactory create DMCBatched driver", "[qmcapp]")
     QMCDriverFactory driver_factory(test_project);
 
     Libxml2Document doc;
-    bool okay = doc.parseFromString(valid_dmc_input_sections[valid_dmc_input_dmc_batch_index]);
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(valid_dmc_input_sections[valid_dmc_input_dmc_batch_index]));
     xmlNodePtr node                           = doc.getRoot();
     QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(node);
     REQUIRE(das.new_run_type == QMCRunType::DMC_BATCH);
@@ -191,8 +186,7 @@ TEST_CASE("QMCDriverFactory create DMCBatched driver", "[qmcapp]")
     QMCDriverFactory driver_factory(test_project);
 
     Libxml2Document doc;
-    bool okay = doc.parseFromString(valid_dmc_input_sections[valid_dmc_batch_input_dmc_batch_index]);
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(valid_dmc_input_sections[valid_dmc_batch_input_dmc_batch_index]));
     xmlNodePtr node                           = doc.getRoot();
     QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(node);
     REQUIRE(das.new_run_type == QMCRunType::DMC_BATCH);

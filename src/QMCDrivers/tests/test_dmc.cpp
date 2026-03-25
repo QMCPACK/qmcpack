@@ -76,7 +76,7 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers ConstantOrbital", "[drivers][
   FakeRandom rg;
 
   QMCHamiltonian h;
-  h.addOperator(std::make_unique<BareKineticEnergy>(elec, psi), "Kinetic");
+  h.addOperator(std::make_unique<BareKineticEnergy>(elec), "Kinetic");
   h.addObservables(elec); // get double free error on 'h.Observables' w/o this
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
@@ -161,7 +161,7 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers LinearOrbital", "[drivers][dm
   FakeRandom rg;
 
   QMCHamiltonian h;
-  h.addOperator(std::make_unique<BareKineticEnergy>(elec, psi), "Kinetic");
+  h.addOperator(std::make_unique<BareKineticEnergy>(elec), "Kinetic");
   h.addObservables(elec); // get double free error on 'h.Observables' w/o this
 
   elec.resetWalkerProperty(); // get memory corruption w/o this

@@ -14,8 +14,14 @@ set(UTEST_EXE test_${SRC_DIR})
 set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
 set(SRCS test_multi_spline.cpp)
+if(HAVE_MPI)
+  list(APPEND SRCS test_multi_spline_MPI_shared.cpp)
+endif()
 
 add_executable(${UTEST_EXE} ${SRCS})
+if(HAVE_MPI)
+  target_link_libraries(${UTEST_EXE} message)
+endif()
 target_link_libraries(${UTEST_EXE} catch_main spline2 einspline qmcutil)
 
 add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)

@@ -220,7 +220,7 @@ public:
   std::string getClassName() const override { return "OrbitalImages"; }
 
   //standard interface
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) const final;
 
   ///read xml input
   bool put(xmlNodePtr cur) override;

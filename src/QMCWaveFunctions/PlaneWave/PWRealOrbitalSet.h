@@ -47,8 +47,8 @@ public:
 
   /** default constructor
   */
-  PWRealOrbitalSet(const std::string& my_name)
-      : SPOSet(my_name), OwnBasisSet(false), myBasisSet(nullptr), BasisSetSize(0)
+  PWRealOrbitalSet(const std::string& my_name, size_t size)
+      : SPOSet(my_name, size), OwnBasisSet(false), myBasisSet(nullptr), BasisSetSize(0)
   {}
 
   std::string getClassName() const override { return "PWRealOrbitalSet"; }
@@ -63,10 +63,9 @@ public:
 
   /** resize  the orbital base
    * @param bset PWBasis
-   * @param nbands number of bands
    * @param cleaup if true, owns PWBasis. Will clean up.
    */
-  void resize(PWBasisPtr bset, int nbands, bool cleanup = false);
+  void resize(PWBasisPtr bset, bool cleanup = false);
 
   /** add eigenstate for jorb-th orbital
    * @param coefs real input data
@@ -80,7 +79,6 @@ public:
    */
   void addVector(const std::vector<ComplexType>& coefs, int jorb);
 
-  void setOrbitalSetSize(int norbs) override;
 
   inline ValueType evaluate(int ib, const PosType& pos)
   {
@@ -105,9 +103,7 @@ public:
                             ValueMatrix& logdet,
                             GradMatrix& dlogdet,
                             HessMatrix& grad_grad_logdet) override
-  {
-    APP_ABORT("Need specialization of evaluate_notranspose() for grad_grad_logdet. \n");
-  }
+  { APP_ABORT("Need specialization of evaluate_notranspose() for grad_grad_logdet. \n"); }
 
 
   /** boolean

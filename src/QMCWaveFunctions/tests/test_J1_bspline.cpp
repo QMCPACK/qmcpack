@@ -109,9 +109,8 @@ void test_J1_spline(const DynamicCoordinateKind kind_selected)
 </tmp>)XML";
 
   Libxml2Document doc;
-  bool okay =
-      doc.parseFromString(kind_selected == DynamicCoordinateKind::DC_POS_OFFLOAD ? j1_omptarget_xml_char : j1_xml_char);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(kind_selected == DynamicCoordinateKind::DC_POS_OFFLOAD ? j1_omptarget_xml_char
+                                                                                     : j1_xml_char));
 
   xmlNodePtr root = doc.getRoot();
 
@@ -324,9 +323,8 @@ void test_J1_spline(const DynamicCoordinateKind kind_selected)
 </tmp>)XML";
 
   Libxml2Document doc2;
-  bool okay2 = doc2.parseFromString(kind_selected == DynamicCoordinateKind::DC_POS_OFFLOAD ? j1_omptarget_xml_char_2
-                                                                                           : j1_xml_char_2);
-  REQUIRE(okay2);
+  REQUIRE(doc2.parseFromString(kind_selected == DynamicCoordinateKind::DC_POS_OFFLOAD ? j1_omptarget_xml_char_2
+                                                                                      : j1_xml_char_2));
 
   xmlNodePtr root2 = doc2.getRoot();
 

@@ -157,7 +157,7 @@ struct CoulombPBCAA : public OperatorDependsOnlyOnParticleSet, public ForceBase
     return true;
   }
 
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp) override;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp) const override;
 
   /** Inform objects associated with this operator of per particle listeners.
    *  i.e. turnOnPerParticleSK of particleset qp.

@@ -103,7 +103,7 @@ bool GridExternalPotential::get(std::ostream& os) const
 }
 
 
-std::unique_ptr<OperatorBase> GridExternalPotential::makeClone(ParticleSet& P)
+std::unique_ptr<OperatorBase> GridExternalPotential::makeClone(ParticleSet& P) const
 {
   return std::make_unique<GridExternalPotential>(*this);
 }

@@ -25,12 +25,14 @@
 #include "Utilities/Timer.h"
 #include "einspline_helper.hpp"
 #include "BsplineReader.h"
-#include "createBsplineReader.h"
+#include "SplineSetReader.h"
+#include "HybridRepSetReader.h"
 
 namespace qmcplusplus
 {
 std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
+  std::string spo_object_name;
   int numOrbs = 0;
   int sortBands(1);
   int spinSet       = 0;
@@ -49,39 +51,40 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
   std::string sourceName;
   std::string spo_prec("double");
   std::string truncate("no");
-  std::string hybrid_rep("no");
-  std::string spo_object_name;
-  std::string useGPU; 
+  std::string hybrid_rep;
 
   ScopedTimer spo_timer_scope(createGlobalTimer("einspline::CreateSpinorSetFromXML", timer_level_medium));
 
   {
-    OhmmsAttributeSet a;
+    // sposet builder XML node
+    OhmmsAttributeSet a_root;
     TinyVector<int, OHMMS_DIM> TileFactor_do_not_use;
-    a.add(H5FileName, "href");
-    a.add(TileFactor_do_not_use, "tile", {}, TagStatus::DELETED);
-    a.add(sortBands, "sort");
-    a.add(TileMatrix, "tilematrix");
-    a.add(twist_num_inp, "twistnum");
-    a.add(twist_inp, "twist");
-    a.add(sourceName, "source");
-    a.add(MeshFactor, "meshfactor");
-    a.add(hybrid_rep, "hybridrep");
-    a.add(spo_prec, "precision");
-    a.add(truncate, "truncate");
-    a.add(myName, "tag");
-    a.add(useGPU, "gpu", CPUOMPTargetSelector::candidate_values);
+    a_root.add(H5FileName, "href");
+    a_root.add(TileFactor_do_not_use, "tile", {}, TagStatus::DELETED);
+    a_root.add(sortBands, "sort");
+    a_root.add(TileMatrix, "tilematrix");
+    a_root.add(twist_num_inp, "twistnum");
+    a_root.add(twist_inp, "twist");
+    a_root.add(sourceName, "source");
+    a_root.add(MeshFactor, "meshfactor");
+    a_root.add(hybrid_rep, "hybridrep", {"no", "yes"});
+    a_root.add(spo_prec, "precision");
+    a_root.add(truncate, "truncate");
+    a_root.put(XMLRoot);
 
-    a.put(XMLRoot);
-    a.add(numOrbs, "size");
-    a.add(numOrbs, "norbs");
+    // sposet XML node
+    OhmmsAttributeSet a;
+    a.add(numOrbs, "norbs", {0}, TagStatus::DELETED);
+    a.add(numOrbs, "size", {0});
     a.add(spinSet, "spindataset");
     a.add(spinSet, "group");
+    a.add(spo_object_name, "name");
+    a.add(spo_object_name, "id", {}, TagStatus::DEPRECATED);
     a.put(cur);
-
-    if (myName.empty())
-      myName = "einspline.spinor";
   }
+
+  if (numOrbs < 1)
+    myComm->barrier_and_abort("Non-positive orbital set size! Please correct attribute \"size\".");
 
   auto pit(ParticleSets.find(sourceName));
   if (pit == ParticleSets.end())
@@ -95,14 +98,6 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
   const std::vector<int> last_occ(Occ);
   Occ.resize(0, 0); // correspond to ground
   bool NewOcc(false);
-
-  {
-    OhmmsAttributeSet oAttrib;
-    oAttrib.add(spinSet, "spindataset");
-    oAttrib.add(spo_object_name, "name");
-    oAttrib.add(spo_object_name, "id");
-    oAttrib.put(cur);
-  }
 
   xmlNodePtr spo_cur = cur;
   cur                = cur->children;
@@ -169,27 +164,34 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
     TileIons();
 
   //read g-vectors and set MeshSize based on g-vectors and meshfactor
-  if(!ReadGvectors_ESHDF())
+  if (!ReadGvectors_ESHDF())
     myComm->barrier_and_abort("Failed to load g-vectors.");
 
-  bool use_single = (spo_prec == "single" || spo_prec == "float");
+  const bool use_single = (spo_prec == "single" || spo_prec == "float");
+  app_summary() << "    Using " << (use_single ? "single" : "double") << " precision B-spline coefficients."
+                << std::endl;
+
+  const bool use_hybridrep = hybrid_rep == "yes";
+  app_summary() << "    Using " << (use_hybridrep ? "hybrid" : "regular 3D cublic B-spline")
+                << " orbital representation." << std::endl;
+
 
   // safeguard for a removed feature
   if (truncate == "yes")
     myComm->barrier_and_abort(
         "The 'truncate' feature of spline SPO has been removed. Please use hybrid orbital representation.");
 
-#if !defined(QMC_COMPLEX)
-  if (use_real_splines_)
+  if (!MixedSplineReader)
   {
-    if (MixedSplineReader == 0)
-      MixedSplineReader = createBsplineReal(this, use_single, hybrid_rep == "yes", useGPU);
-  }
-  else
-#endif
-  {
-    if (MixedSplineReader == 0)
-      MixedSplineReader = createBsplineComplex(this, use_single, hybrid_rep == "yes", useGPU);
+    if (use_hybridrep)
+      if (use_single)
+        MixedSplineReader = std::make_unique<HybridRepSetReader<float>>(this, !use_real_splines_);
+      else
+        MixedSplineReader = std::make_unique<HybridRepSetReader<double>>(this, !use_real_splines_);
+    else if (use_single)
+      MixedSplineReader = std::make_unique<SplineSetReader<float>>(this, !use_real_splines_);
+    else
+      MixedSplineReader = std::make_unique<SplineSetReader<double>>(this, !use_real_splines_);
   }
 
   MixedSplineReader->setCommon(XMLRoot);
@@ -199,17 +201,16 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
   MixedSplineReader->setRotate(false);
 
   //Make the up spin set.
-  auto bspline_zd_u = MixedSplineReader->create_spline_set(spinSet, spo_cur);
+  auto bspline_zd_u = MixedSplineReader->create_spline_set(spo_object_name, spinSet, numOrbs);
   bspline_zd_u->finalizeConstruction();
 
   //Make the down spin set.
   OccupyBands(spinSet2, sortBands, numOrbs, skipChecks);
-  auto bspline_zd_d = MixedSplineReader->create_spline_set(spinSet2, spo_cur);
+  auto bspline_zd_d = MixedSplineReader->create_spline_set(spo_object_name, spinSet2, numOrbs);
   bspline_zd_d->finalizeConstruction();
 
   //register with spin set and we're off to the races.
-  auto spinor_set = std::make_unique<SpinorSet>(spo_object_name);
-  spinor_set->set_spos(std::move(bspline_zd_u), std::move(bspline_zd_d));
+  auto spinor_set = std::make_unique<SpinorSet>(spo_object_name, std::move(bspline_zd_u), std::move(bspline_zd_d));
   return spinor_set;
 };
 } // namespace qmcplusplus

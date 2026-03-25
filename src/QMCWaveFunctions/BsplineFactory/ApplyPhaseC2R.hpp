@@ -24,7 +24,6 @@ inline void assign_v(ST x,
                      const ST* restrict offload_scratch_ptr,
                      const ST* restrict myKcart_ptr,
                      size_t myKcart_padded_size,
-                     size_t first_spo,
                      int nComplexBands,
                      int index)
 {
@@ -43,7 +42,7 @@ inline void assign_v(ST x,
 
   const ST val_r        = val[jr];
   const ST val_i        = val[ji];
-  const size_t psiIndex = first_spo + index + omptarget::min(index, nComplexBands);
+  const size_t psiIndex = index + omptarget::min(index, nComplexBands);
   psi_s[psiIndex]       = val_r * c - val_i * s;
   if (index < nComplexBands)
     psi_s[psiIndex + 1] = val_i * c + val_r * s;
@@ -63,7 +62,6 @@ inline void assign_vgl(ST x,
                        const ST G[9],
                        const ST* myKcart_ptr,
                        size_t myKcart_padded_size,
-                       size_t first_spo,
                        int nComplexBands,
                        int index)
 {
@@ -120,7 +118,7 @@ inline void assign_vgl(ST x,
   TT* restrict dpsi_z = results_scratch_ptr + orb_padded_size * 3;
   TT* restrict d2psi  = results_scratch_ptr + orb_padded_size * 4;
 
-  const size_t psiIndex = first_spo + index + omptarget::min(index, nComplexBands);
+  const size_t psiIndex = index + omptarget::min(index, nComplexBands);
 
   psi[psiIndex]    = c * val_r - s * val_i;
   d2psi[psiIndex]  = c * lap_r - s * lap_i;

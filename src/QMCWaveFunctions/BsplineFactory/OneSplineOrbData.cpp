@@ -15,7 +15,7 @@
 
 
 #include "OneSplineOrbData.hpp"
-#include <spline/einspline_engine.hpp>
+#include "spline2/einspline_impl.hpp"
 #include "einspline_helper.hpp"
 
 namespace qmcplusplus

@@ -71,7 +71,6 @@ public:
 
   /** set the OrbitalSetSize and Identity=false and initialize internal storages
     */
-  void setOrbitalSetSize(int norbs) final;
 
   /** return the size of the basis set
     */

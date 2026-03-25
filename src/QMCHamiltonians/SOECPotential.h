@@ -31,8 +31,8 @@ class SOECPotential : public OperatorBase
   using Real = QMCTraits::RealType;
 
 public:
-  SOECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi, bool use_exact_spin, bool use_VP);
-  SOECPotential(const SOECPotential& sopp, ParticleSet& els, TrialWaveFunction& psi);
+  SOECPotential(ParticleSet& ions, ParticleSet& els, bool use_exact_spin, bool use_VP);
+  SOECPotential(const SOECPotential& sopp, ParticleSet& els);
   ~SOECPotential() override;
 
   std::string getClassName() const override { return "SOECPotential"; }
@@ -64,7 +64,7 @@ public:
     return true;
   }
 
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) const final;
 
   void addComponent(int groupID, std::unique_ptr<SOECPComponent>&& pp);
 

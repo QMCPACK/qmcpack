@@ -72,8 +72,7 @@ TEST_CASE("Spline applyRotation zero rotation", "[wavefunction]")
 </sposet_collection>)";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particles));
   xmlNodePtr root = doc.getRoot();
   xmlNodePtr ein1 = xmlFirstElementChild(root);
   EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, root);
@@ -210,8 +209,7 @@ TEST_CASE("Spline applyRotation one rotation", "[wavefunction]")
 </sposet_collection>)";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particles));
   xmlNodePtr root = doc.getRoot();
   xmlNodePtr ein1 = xmlFirstElementChild(root);
   EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, root);
@@ -421,8 +419,7 @@ TEST_CASE("Spline applyRotation two rotations", "[wavefunction]")
 </sposet_collection>)";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particles));
   xmlNodePtr root = doc.getRoot();
   xmlNodePtr ein1 = xmlFirstElementChild(root);
   EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, root);
@@ -727,8 +724,7 @@ TEST_CASE("Spline applyRotation complex rotation", "[wavefunction]")
 </sposet_collection>)";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particles));
   xmlNodePtr root = doc.getRoot();
   xmlNodePtr ein1 = xmlFirstElementChild(root);
   EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, root);

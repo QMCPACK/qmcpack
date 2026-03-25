@@ -32,7 +32,6 @@ TEST_CASE("Jastrow 2D", "[wavefunction]")
   Communicate* c = OHMMS::Controller;
   Libxml2Document doc;
   xmlNodePtr root, node;
-  bool okay;
 
   // Step 1: create Jastrow
   //   TwoBodyJastrow<BsplineFunctor<RealType>> j2;
@@ -64,8 +63,7 @@ TEST_CASE("Jastrow 2D", "[wavefunction]")
       </group>
     </particleset>
   </tmp>)";
-  okay                      = doc.parseFromString(particle_text);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particle_text));
   root = doc.getRoot();
   node = xmlFirstElementChild(root);
   XMLParticleParser parse_electrons(elec);
@@ -85,8 +83,7 @@ TEST_CASE("Jastrow 2D", "[wavefunction]")
         </correlation>
       </jastrow>
 </tmp>)";
-  okay                     = doc.parseFromString(jastrow_text);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(jastrow_text));
   root = doc.getRoot();
   node = xmlFirstElementChild(root);
   RadialJastrowBuilder jastrow(c, elec);

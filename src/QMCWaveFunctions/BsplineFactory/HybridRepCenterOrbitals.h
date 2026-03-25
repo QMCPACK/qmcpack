@@ -22,11 +22,14 @@
 #include "Numerics/SoaSphericalTensor.h"
 #include "spline2/MultiBspline1D.hpp"
 #include "Numerics/SmoothFunctions.hpp"
-#include "hdf/hdf_archive.h"
+
+class Communicate;
 
 namespace qmcplusplus
 {
-template<class BSPLINESPO>
+class hdf_archive;
+
+template<class ST>
 class HybridRepSetReader;
 
 template<typename ST>
@@ -94,12 +97,8 @@ public:
     create_spline();
   }
 
-  void bcast_tables(Communicate* comm) { chunked_bcast(comm, SplineInst->getSplinePtr()); }
-
-  void gather_tables(Communicate* comm, std::vector<int>& offset)
-  {
-    gatherv(comm, SplineInst->getSplinePtr(), Npad, offset);
-  }
+  void bcast_tables(Communicate& comm);
+  void gather_tables(Communicate& comm, const std::vector<int>& offset);
 
   template<typename PT, typename VT>
   inline void set_info(const PT& R,
@@ -138,35 +137,10 @@ public:
   inline void flush_zero() { SplineInst->flush_zero(); }
 
   inline void set_spline(AtomicSingleSplineType* spline, int lm, int ispline)
-  {
-    SplineInst->copy_spline(spline, lm * Npad + ispline, 0, BaseN);
-  }
+  { SplineInst->copy_spline(spline, lm * Npad + ispline, 0, BaseN); }
 
-  bool read_splines(hdf_archive& h5f)
-  {
-    einspline_engine<AtomicSplineType> bigtable(SplineInst->getSplinePtr());
-    int lmax_in = 0, spline_npoints_in = 0;
-    ST spline_radius_in;
-    if (!h5f.readEntry(lmax_in, "l_max") || lmax_in != lmax)
-      return false;
-    if (!h5f.readEntry(spline_radius_in, "spline_radius") || spline_radius_in != spline_radius)
-      return false;
-    if (!h5f.readEntry(spline_npoints_in, "spline_npoints") || spline_npoints_in != spline_npoints)
-      return false;
-    return h5f.readEntry(bigtable, "radial_spline");
-  }
-
-  bool write_splines(hdf_archive& h5f)
-  {
-    bool success = true;
-    success      = success && h5f.writeEntry(spline_radius, "spline_radius");
-    success      = success && h5f.writeEntry(spline_npoints, "spline_npoints");
-    success      = success && h5f.writeEntry(lmax, "l_max");
-    success      = success && h5f.writeEntry(center_pos, "position");
-    einspline_engine<AtomicSplineType> bigtable(SplineInst->getSplinePtr());
-    success = success && h5f.writeEntry(bigtable, "radial_spline");
-    return success;
-  }
+  bool read_splines(hdf_archive& h5f);
+  bool write_splines(hdf_archive& h5f);
 
   //evaluate only V
   template<typename VV>
@@ -576,19 +550,8 @@ public:
               << "for the atomic radial splines in hybrid orbital representation" << std::endl;
   }
 
-  void bcast_tables(Communicate* comm)
-  {
-    for (int ic = 0; ic < AtomicCenters.size(); ic++)
-      AtomicCenters[ic].bcast_tables(comm);
-  }
-
-  void gather_atomic_tables(Communicate* comm, std::vector<int>& offset)
-  {
-    if (comm->size() == 1)
-      return;
-    for (int ic = 0; ic < AtomicCenters.size(); ic++)
-      AtomicCenters[ic].gather_tables(comm, offset);
-  }
+  void bcast_atomic_tables(Communicate& comm);
+  void gather_atomic_tables(Communicate& comm, const std::vector<int>& offset);
 
   inline void flush_zero()
   {
@@ -596,85 +559,17 @@ public:
       AtomicCenters[ic].flush_zero();
   }
 
-  bool read_splines(hdf_archive& h5f)
-  {
-    bool success = true;
-    size_t ncenter;
-
-    try
-    {
-      h5f.push("atomic_centers", false);
-    }
-    catch (...)
-    {
-      success = false;
-    }
-    success = success && h5f.readEntry(ncenter, "number_of_centers");
-    if (!success)
-      return success;
-    if (ncenter != AtomicCenters.size())
-      success = false;
-    // read splines of each center
-    for (int ic = 0; ic < AtomicCenters.size(); ic++)
-    {
-      std::ostringstream gname;
-      gname << "center_" << ic;
-      try
-      {
-        h5f.push(gname.str().c_str(), false);
-      }
-      catch (...)
-      {
-        success = false;
-      }
-      success = success && AtomicCenters[ic].read_splines(h5f);
-      h5f.pop();
-    }
-    h5f.pop();
-    return success;
-  }
-
-  bool write_splines(hdf_archive& h5f)
-  {
-    bool success = true;
-    int ncenter  = AtomicCenters.size();
-    try
-    {
-      h5f.push("atomic_centers", true);
-    }
-    catch (...)
-    {
-      success = false;
-    }
-    success = success && h5f.writeEntry(ncenter, "number_of_centers");
-    // write splines of each center
-    for (int ic = 0; ic < AtomicCenters.size(); ic++)
-    {
-      std::ostringstream gname;
-      gname << "center_" << ic;
-      try
-      {
-        h5f.push(gname.str().c_str(), true);
-      }
-      catch (...)
-      {
-        success = false;
-      }
-      success = success && AtomicCenters[ic].write_splines(h5f);
-      h5f.pop();
-    }
-    h5f.pop();
-    return success;
-  }
+  bool read_atomic_splines(hdf_archive& h5f);
+  bool write_atomic_splines(hdf_archive& h5f);
 
   template<typename Cell>
   inline int get_bc_sign(const PointType& r,
                          const PointType& r_image,
-                         const Cell& PrimLattice,
+                         const Cell& prim_lattice_,
                          TinyVector<int, D>& HalfG) const
   {
     int bc_sign          = 0;
-    PointType shift_unit = PrimLattice.toUnit(r - r_image);
+    PointType shift_unit = prim_lattice_.toUnit(r - r_image);
     for (int i = 0; i < D; i++)
     {
       ST img = round(shift_unit[i]);
@@ -731,7 +626,7 @@ public:
   // R2R case
   template<typename VM, typename Cell, typename SV>
   inline void evaluateValuesR2R(const VirtualParticleSet& VP,
-                                const Cell& PrimLattice,
+                                const Cell& prim_lattice_,
                                 TinyVector<int, D>& HalfG,
                                 VM& multi_myV,
                                 SV& bc_signs,
@@ -745,7 +640,7 @@ public:
     {
       const auto& displ = VP.getDistTableAB(myTableID).getDisplacements();
       for (int ivp = 0; ivp < VP.getTotalNum(); ivp++)
-        bc_signs[ivp] = get_bc_sign(VP.R[ivp], myCenter.getCenterPos() - displ[ivp][center_idx], PrimLattice, HalfG);
+        bc_signs[ivp] = get_bc_sign(VP.R[ivp], myCenter.getCenterPos() - displ[ivp][center_idx], prim_lattice_, HalfG);
       myCenter.evaluateValues(displ, center_idx, info.dist_r, multi_myV);
     }
   }
@@ -833,8 +728,7 @@ public:
       throw std::runtime_error("Unknown smooth scheme!");
   }
 
-  template<class BSPLINESPO>
-  friend class qmcplusplus::HybridRepSetReader;
+  friend class qmcplusplus::HybridRepSetReader<ST>;
 };
 
 extern template class AtomicOrbitals<float>;

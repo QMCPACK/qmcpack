@@ -42,11 +42,12 @@ public:
   DriverWalkerResourceCollection driverwalker_resource_collection_;
 
 public:
-  CrowdWithWalkers(SetupPools& pools) : em(*pools.hamiltonian_pool->getPrimary(), pools.comm)
+  CrowdWithWalkers(SetupPools& pools) : em(pools.hamiltonian_pool->getHamiltonian().value(), pools.comm)
   {
     crowd_ptr =
         std::make_unique<Crowd>(em, driverwalker_resource_collection_, *pools.particle_pool->getParticleSet("e"),
-                                *pools.wavefunction_pool->getPrimary(), *pools.hamiltonian_pool->getPrimary());
+                                pools.wavefunction_pool->getWaveFunction().value(),
+                                pools.hamiltonian_pool->getHamiltonian().value());
     Crowd& crowd = *crowd_ptr;
     // To match the minimal particle set
     int num_particles = 2;
@@ -55,8 +56,8 @@ public:
       walkers.emplace_back(std::make_unique<MCPWalker>(num_particles));
       walkers.back()->R[0] = pos;
       psets.emplace_back(std::make_unique<ParticleSet>(*(pools.particle_pool->getParticleSet("e"))));
-      twfs.emplace_back(pools.wavefunction_pool->getPrimary()->makeClone(*psets.back()));
-      hams.emplace_back(pools.hamiltonian_pool->getPrimary()->makeClone(*psets.back(), *twfs.back()));
+      twfs.emplace_back(pools.wavefunction_pool->getWaveFunction().value().get().makeClone(*psets.back()));
+      hams.emplace_back(pools.hamiltonian_pool->getHamiltonian().value().get().makeClone(*psets.back(), *twfs.back()));
       crowd.addWalker(*walkers.back(), *psets.back(), *twfs.back(), *hams.back());
     };
 
@@ -82,12 +83,12 @@ TEST_CASE("Crowd integration", "[drivers]")
   using namespace testing;
   SetupPools pools;
 
-  EstimatorManagerNew em(*pools.hamiltonian_pool->getPrimary(), comm);
+  EstimatorManagerNew em(pools.hamiltonian_pool->getHamiltonian().value(), comm);
 
   DriverWalkerResourceCollection driverwalker_resource_collection_;
 
   Crowd crowd(em, driverwalker_resource_collection_, *pools.particle_pool->getParticleSet("e"),
-              *pools.wavefunction_pool->getPrimary(), *pools.hamiltonian_pool->getPrimary());
+              pools.wavefunction_pool->getWaveFunction().value(), pools.hamiltonian_pool->getHamiltonian().value());
 }
 
 TEST_CASE("Crowd redistribute walkers")

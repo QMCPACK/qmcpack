@@ -19,11 +19,9 @@
 
 namespace qmcplusplus
 {
-SPOSetBuilder::SPOSetBuilder(const std::string& type_name, Communicate* comm)
-    : MPIObjectBase(comm), legacy(true), type_name_(type_name)
-{
-  reserve_states();
-}
+SPOSetBuilder::SPOSetBuilder(const std::string& type_name, Communicate* comm, std::string_view class_name)
+    : MPIObjectBase(comm), legacy(true), type_name_(type_name), class_name_(class_name)
+{ reserve_states(); }
 
 
 void SPOSetBuilder::reserve_states(int nsets)
@@ -57,7 +55,7 @@ std::unique_ptr<SPOSet> SPOSetBuilder::createSPOSet(xmlNodePtr cur)
   app_summary() << "     Single particle orbitals (SPO)" << std::endl;
   app_summary() << "     ------------------------------" << std::endl;
   app_summary() << "      Name: " << spo_object_name << "   Type: " << type_name_
-                << "   Builder class name: " << ClassName << std::endl;
+                << "   Builder class name: " << class_name_ << std::endl;
   app_summary() << std::endl;
 
   if (spo_object_name.empty())
@@ -89,7 +87,7 @@ std::unique_ptr<SPOSet> SPOSetBuilder::createSPOSet(xmlNodePtr cur)
   if (optimize == "rotation" || optimize == "yes")
   {
     app_warning() << "Specifying orbital rotation via optimize tag is deprecated. Use the rotated_spo element instead"
-		  << std::endl;
+                  << std::endl;
 
     sposet->storeParamsBeforeRotation();
     // create sposet with rotation

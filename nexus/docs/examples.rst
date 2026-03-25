@@ -1544,7 +1544,7 @@ k-point grid density in one dimension.
   format. Another option is to use an indexing of the orbitals depending
   on their energetic ordering. In this example this would correspond to
   "excitation = [’up’, ’-11 +12’]". Band/twist index and energy indexes
-  of the orbitals can be found in "einspline" files or they can be
+  of the orbitals can be found in "bandinfo" files or they can be
   determined after parsing the "nscf.out" file using PwscfAnalyzer.
   In addition to these options, "excitation = ['up','lowest']" can also 
   be specified which will execute a homo-lumo excitation based on the

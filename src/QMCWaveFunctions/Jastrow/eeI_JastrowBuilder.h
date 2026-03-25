@@ -13,6 +13,7 @@
 
 #ifndef QMCPLUSPLUS_EEI_JASTROW_BUILDER_H
 #define QMCPLUSPLUS_EEI_JASTROW_BUILDER_H
+
 #include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 
 namespace qmcplusplus

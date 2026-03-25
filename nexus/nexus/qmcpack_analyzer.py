@@ -190,7 +190,7 @@ class QmcpackAnalyzer
   usage:
      results = QmcpackAnalyzer("qmcpack.in.xml")
        |  QMC methods used and observables estimated are determined
-       \  Each observable is calculated by an object contained in results
+       |  Each observable is calculated by an object contained in results
 """
 class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
     def __init__(self,arg0=None,**kwargs):

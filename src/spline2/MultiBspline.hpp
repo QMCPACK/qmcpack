@@ -20,7 +20,6 @@
 #define QMCPLUSPLUS_MULTIEINSPLINE_HPP
 
 #include "MultiBsplineBase.hpp"
-#include "MultiBsplineAllocator.hpp"
 #include "CPU/SIMD/aligned_allocator.hpp"
 
 namespace qmcplusplus
@@ -35,14 +34,20 @@ private:
   using Base  = MultiBsplineBase<T>;
   using Alloc = aligned_allocator<T>;
   ///use allocator
-  MultiBsplineAllocator<T, Alloc> myAllocator;
-
-  typename Base::SplineType* createImpl(const Ugrid grid[3],
-                                        const typename Base::BoundaryCondition bc[3],
-                                        int num_splines) override;
+  Alloc coefs_allocator;
 
 public:
-  MultiBspline();
+  template<typename BCT>
+  MultiBspline(const Ugrid grid[3], const BCT& bc, size_t num_splines) : Base({0, num_splines})
+  {
+    Base::spline_blocks.resize(1, nullptr);
+    auto* spline_m         = new typename Base::SplineType;
+    Base::spline_blocks[0] = spline_m;
+    Base::setMetaData(*spline_m, grid[0], grid[1], grid[2], Base::createBoundaryCondition(bc).data(), num_splines,
+                      getAlignedSize<T, Alloc::alignment>(num_splines));
+    spline_m->coefs = coefs_allocator.allocate(spline_m->coefs_size);
+  }
+
   ~MultiBspline() override;
 };
 

@@ -59,8 +59,7 @@ void test_cartesian_ao()
     elec.update();
 
     Libxml2Document doc;
-    bool okay = doc.parse("cartesian_order.wfnoj.xml");
-    REQUIRE(okay);
+    REQUIRE(doc.parse("cartesian_order.wfnoj.xml"));
     xmlNodePtr root = doc.getRoot();
 
     WaveFunctionComponentBuilder::PSetMap particle_set_map;
@@ -128,8 +127,7 @@ void test_dirac_ao()
     elec.update();
 
     Libxml2Document doc;
-    bool okay = doc.parse("dirac_order.wfnoj.xml");
-    REQUIRE(okay);
+    REQUIRE(doc.parse("dirac_order.wfnoj.xml"));
     xmlNodePtr root = doc.getRoot();
 
     WaveFunctionComponentBuilder::PSetMap particle_set_map;

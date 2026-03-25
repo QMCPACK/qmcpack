@@ -73,8 +73,7 @@ void test_lcao_spinor()
    </tmp>)XML";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particles));
 
   xmlNodePtr root = doc.getRoot();
 
@@ -404,8 +403,7 @@ void test_lcao_spinor_excited()
    </tmp>)XML";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particles));
 
   xmlNodePtr root = doc.getRoot();
 
@@ -724,8 +722,7 @@ void test_lcao_spinor_ion_derivs()
    </tmp>)XML";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particles));
 
   xmlNodePtr root = doc.getRoot();
 

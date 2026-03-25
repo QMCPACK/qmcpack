@@ -1038,7 +1038,13 @@ class Qmcpack(Simulation):
             if isinstance(sim,Qmcpack):
                 opt = QmcpackInput(result.opt_file)
                 qs = input.get('qmcsystem')
-                qs.wavefunction = opt.qmcsystem.wavefunction.copy()
+                wfn = opt.qmcsystem.wavefunction.copy()
+                ovp = 'override_variational_parameters' # name is too long
+                if ovp in wfn:
+                    href = os.path.join(sim.locdir,wfn[ovp].href)
+                    href = os.path.relpath(href,self.locdir)
+                    wfn[ovp].href = href
+                qs.wavefunction = wfn
             elif isinstance(sim,PyscfToAfqmc):
                 if not self.input.is_afqmc_input():
                     self.error('incorporating wavefunction from {} is only supported for AFQMC calculations'.format(sim.__class__.__name__))
@@ -1226,7 +1232,7 @@ class Qmcpack(Simulation):
             if exc_run:
                 exc_failure = False
 
-                edata = self.read_einspline_dat()
+                edata = self.read_bandinfo_dat()
                 exc_input = self.excitation
 
                 exc_spin,exc_type,exc_spins,exc_types,exc1,exc2 = check_excitation_type(exc_input)
@@ -1547,10 +1553,10 @@ class Qmcpack(Simulation):
         #end if
     #end def write_prep
 
-    def read_einspline_dat(self):
+    def read_bandinfo_dat(self):
         edata = obj()
         import glob
-        for einpath in glob.glob(self.locdir+'/einsplin*'):
+        for einpath in glob.glob(self.locdir+'/*.bandinfo.dat'):
             ftokens = einpath.split('.')
             fspin = int(ftokens[-5][5])
             if fspin==0:
@@ -1573,7 +1579,7 @@ class Qmcpack(Simulation):
             #end with
         #end for
         return edata
-    #end def read_einspline_dat
+    #end def read_bandinfo_dat
 #end class Qmcpack
 
 

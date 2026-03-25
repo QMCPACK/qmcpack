@@ -66,7 +66,6 @@ TrialWaveFunction::TrialWaveFunction(const RuntimeOptions& runtime_options, cons
       PhaseValue(0.0),
       PhaseDiff(0.0),
       log_real_(0.0),
-      OneOverM(1.0),
       use_tasking_(tasking),
       TWF_timers_(getGlobalTimerManager(), create_names(aname), timer_level_medium)
 {
@@ -1186,7 +1185,6 @@ std::unique_ptr<TrialWaveFunction> TrialWaveFunction::makeClone(ParticleSet& tqp
   myclone->BufferCursor_scalar = BufferCursor_scalar;
   for (int i = 0; i < Z.size(); ++i)
     myclone->addComponent(Z[i]->makeClone(tqp));
-  myclone->OneOverM = OneOverM;
   return myclone;
 }
 
@@ -1208,9 +1206,6 @@ void TrialWaveFunction::evaluateDerivatives(ParticleSet& P,
     ScopedTimer z_timer(WFC_timers_[DERIVS_TIMER + TIMER_SKIP * i]);
     Z[i]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi);
   }
-  //orbitals do not know about mass of particle.
-  for (int i = 0; i < dhpsioverpsi.size(); i++)
-    dhpsioverpsi[i] *= OneOverM;
 }
 
 void TrialWaveFunction::mw_evaluateParameterDerivatives(const RefVectorWithLeader<TrialWaveFunction>& wf_list,

@@ -46,14 +46,9 @@ public:
   ~WaveFunctionFactory();
 
   ///read from xmlNode
-  std::unique_ptr<TrialWaveFunction> buildTWF(xmlNodePtr cur, const RuntimeOptions& runtime_options);
-
-  /// create an empty TrialWaveFunction for testing use.
-  std::unique_ptr<TrialWaveFunction> static buildEmptyTWFForTesting(const RuntimeOptions& runtime_options,
-                                                                    const std::string_view name)
-  {
-    return std::make_unique<TrialWaveFunction>(runtime_options, name);
-  }
+  std::unique_ptr<TrialWaveFunction> buildTWF(xmlNodePtr cur,
+                                              const RuntimeOptions& runtime_options,
+                                              const std::string psi_name = "");
 
 private:
   /** add Fermion wavefunction term */
@@ -64,6 +59,8 @@ private:
   ParticleSet& targetPtcl;
   ///reference to the PSetMap
   const PSetMap& ptclPool;
+  /// class name
+  const std::string class_name_;
 };
 
 } // namespace qmcplusplus

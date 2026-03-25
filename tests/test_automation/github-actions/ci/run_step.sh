@@ -372,14 +372,6 @@ case "$1" in
     ninja install
     ;;
 
-  rebase)
-    source external_codes/github_actions/auto-rebase.sh
-    ;;
-  
-  pull-rebase)
-    source external_codes/github_actions/trigger-rebase-on-push.sh
-    ;;
-
   *)
     echo " Invalid step" "$1"
     exit -1

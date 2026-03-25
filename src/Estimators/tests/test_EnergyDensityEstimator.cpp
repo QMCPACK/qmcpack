@@ -47,7 +47,7 @@ TEST_CASE("NEEnergyDensityEstimator::Constructor", "[estimators]")
 
   Libxml2Document doc;
   using Input     = testing::EnergyDensityInputs;
-  bool okay       = doc.parseFromString(Input::getXml(Input::valid::CELL));
+  REQUIRE(doc.parseFromString(Input::getXml(Input::valid::CELL)));
   xmlNodePtr node = doc.getRoot();
   EnergyDensityInput edein{node};
   {
@@ -73,7 +73,7 @@ TEST_CASE("NEEnergyDensityEstimator::spawnCrowdClone", "[estimators]")
 
   Libxml2Document doc;
   using Input     = testing::EnergyDensityInputs;
-  bool okay       = doc.parseFromString(Input::getXml(Input::valid::CELL));
+  REQUIRE(doc.parseFromString(Input::getXml(Input::valid::CELL)));
   xmlNodePtr node = doc.getRoot();
   EnergyDensityInput edein{node};
   {

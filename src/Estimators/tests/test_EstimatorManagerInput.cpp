@@ -49,16 +49,14 @@ TEST_CASE("EstimatorManagerInput::testInserts", "[estimators]")
   {
     using Input = testing::ValidOneBodyDensityMatricesInput;
     Libxml2Document doc;
-    bool okay = doc.parseFromString(Input::getXml(Input::valid::VANILLA));
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(Input::getXml(Input::valid::VANILLA)));
     xmlNodePtr node = doc.getRoot();
     emit.testAppendFromXML<OneBodyDensityMatricesInput>(emi, node);
   }
   {
     Libxml2Document doc;
     using spin_input = testing::ValidSpinDensityInput;
-    bool okay        = doc.parseFromString(spin_input::xml[spin_input::GRID]);
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(spin_input::xml[spin_input::GRID]));
     xmlNodePtr node = doc.getRoot();
     emit.testAppendFromXML<SpinDensityInput>(emi, node);
   }
@@ -78,8 +76,7 @@ TEST_CASE("EstimatorManagerInput::readXML", "[estimators]")
   std::string bad_estimator = R"XML(
 <estimator type="NeutrinoDensity" name="bad_estimator"/>
 )XML";
-  bool okay                 = doc.parseFromString(bad_estimator);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(bad_estimator));
   xmlNodePtr node      = doc.getRoot();
   int max_node_recurse = 1;
   estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
@@ -105,16 +102,14 @@ TEST_CASE("EstimatorManagerInput::moveFromEstimatorInputs", "[estimators]")
   {
     using Input = testing::ValidOneBodyDensityMatricesInput;
     Libxml2Document doc;
-    bool okay = doc.parseFromString(Input::getXml(Input::valid::VANILLA));
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(Input::getXml(Input::valid::VANILLA)));
     xmlNodePtr node = doc.getRoot();
     emit.testAppendFromXML<OneBodyDensityMatricesInput>(emi, node);
   }
   {
     Libxml2Document doc;
     using spin_input = testing::ValidSpinDensityInput;
-    bool okay        = doc.parseFromString(spin_input::xml[spin_input::GRID]);
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(spin_input::xml[spin_input::GRID]));
     xmlNodePtr node = doc.getRoot();
     emit.testAppendFromXML<SpinDensityInput>(emi, node);
   }

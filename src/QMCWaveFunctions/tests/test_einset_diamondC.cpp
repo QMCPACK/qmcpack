@@ -78,8 +78,7 @@ void test_einset_diamond_1x1x1(bool use_offload)
     spo_xml = std::regex_replace(spo_xml, std::regex("omptarget"), "no");
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(spo_xml);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(spo_xml));
 
   xmlNodePtr root = doc.getRoot();
 
@@ -88,6 +87,7 @@ void test_einset_diamond_1x1x1(bool use_offload)
   EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, root);
   auto spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo);
+  REQUIRE(spo->isOMPoffload() == use_offload);
 
   // Test the case where the number of psi values is not the orbital set size
   // or the number of electrons/2
@@ -349,8 +349,7 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1 5 electrons", "[wavefunction]")
 )";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(spo_xml);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(spo_xml));
 
   xmlNodePtr root = doc.getRoot();
 

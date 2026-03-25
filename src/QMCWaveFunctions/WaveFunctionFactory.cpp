@@ -24,9 +24,6 @@
 #include "QMCWaveFunctions/Fermion/SlaterDetBuilder.h"
 #include "QMCWaveFunctions/LatticeGaussianProductBuilder.h"
 #include "QMCWaveFunctions/ExampleHeBuilder.h"
-#if OHMMS_DIM == 3 && !defined(QMC_COMPLEX)
-#include "QMCWaveFunctions/AGPDeterminantBuilder.h"
-#endif
 
 #include "Utilities/ProgressReportEngine.h"
 #include "Utilities/IteratorUtility.h"
@@ -34,36 +31,33 @@
 namespace qmcplusplus
 {
 WaveFunctionFactory::WaveFunctionFactory(ParticleSet& qp, const PSetMap& pset, Communicate* c)
-    : MPIObjectBase(c), targetPtcl(qp), ptclPool(pset)
-{
-  ClassName = "WaveFunctionFactory";
-}
+    : MPIObjectBase(c), targetPtcl(qp), ptclPool(pset), class_name_("WaveFunctionFactory")
+{}
 
 WaveFunctionFactory::~WaveFunctionFactory() = default;
 
-std::unique_ptr<TrialWaveFunction> WaveFunctionFactory::buildTWF(xmlNodePtr cur, const RuntimeOptions& runtime_options)
+std::unique_ptr<TrialWaveFunction> WaveFunctionFactory::buildTWF(xmlNodePtr cur,
+                                                                 const RuntimeOptions& runtime_options,
+                                                                 const std::string psi_name)
 {
   // YL: how can this happen?
   if (cur == NULL)
     return nullptr;
 
-  ReportEngine PRE(ClassName, "build");
+  ReportEngine PRE(class_name_, "build");
 
-  std::string psiName("psi0"), tasking;
+  std::string tasking;
   OhmmsAttributeSet pAttrib;
-  pAttrib.add(psiName, "id");
-  pAttrib.add(psiName, "name");
   pAttrib.add(tasking, "tasking", {"no", "yes"});
   pAttrib.put(cur);
 
   app_summary() << std::endl;
   app_summary() << " Many-body wavefunction" << std::endl;
   app_summary() << " -------------------" << std::endl;
-  app_summary() << "  Name: " << psiName << "   Tasking: " << (tasking == "yes" ? "yes" : "no") << std::endl;
+  app_summary() << "  Name: " << psi_name << "   Tasking: " << (tasking == "yes" ? "yes" : "no") << std::endl;
   app_summary() << std::endl;
 
-  auto targetPsi = std::make_unique<TrialWaveFunction>(runtime_options, psiName, tasking == "yes");
-  targetPsi->setMassTerm(targetPtcl);
+  auto targetPsi = std::make_unique<TrialWaveFunction>(runtime_options, psi_name, tasking == "yes");
   targetPsi->storeXMLNode(cur);
 
   SPOSetBuilderFactory sposet_builder_factory(myComm, targetPtcl, ptclPool);
@@ -127,13 +121,6 @@ std::unique_ptr<TrialWaveFunction> WaveFunctionFactory::buildTWF(xmlNodePtr cur,
       auto exampleHe_builder = std::make_unique<ExampleHeBuilder>(myComm, targetPtcl, ptclPool);
       targetPsi->addComponent(exampleHe_builder->buildComponent(cur));
     }
-#if !defined(QMC_COMPLEX) && OHMMS_DIM == 3
-    else if (cname == "agp")
-    {
-      auto agpbuilder = std::make_unique<AGPDeterminantBuilder>(myComm, targetPtcl, ptclPool);
-      targetPsi->addComponent(agpbuilder->buildComponent(cur));
-    }
-#endif
     else if (cname == "override_variational_parameters")
     {
       OhmmsAttributeSet attribs;
@@ -175,7 +162,7 @@ std::unique_ptr<TrialWaveFunction> WaveFunctionFactory::buildTWF(xmlNodePtr cur,
 
 bool WaveFunctionFactory::addFermionTerm(TrialWaveFunction& psi, SPOSetBuilderFactory& spo_factory, xmlNodePtr cur)
 {
-  ReportEngine PRE(ClassName, "addFermionTerm");
+  ReportEngine PRE(class_name_, "addFermionTerm");
   std::string orbtype("MolecularOrbital");
   std::string nuclei("i");
   OhmmsAttributeSet oAttrib;

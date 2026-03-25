@@ -30,7 +30,7 @@ TEST_CASE("EnergyDensityInput::parseXML::valid", "[estimators]")
   {
     std::cout << "input number: " << test_num++ << '\n';
     Libxml2Document doc;
-    bool okay       = doc.parseFromString(input_xml);
+    REQUIRE(doc.parseFromString(input_xml));
     xmlNodePtr node = doc.getRoot();
     EnergyDensityInput edi(node);
   }
@@ -43,7 +43,7 @@ TEST_CASE("EnergyDensityInput::parseXML::invalid", "[estimators]")
   for (auto input_xml : input)
   {
     Libxml2Document doc;
-    bool okay                           = doc.parseFromString(input_xml);
+    REQUIRE(doc.parseFromString(input_xml));
     xmlNodePtr node                     = doc.getRoot();
     auto constructBadEnergyDensityInput = [](xmlNodePtr cur) { EnergyDensityInput edi(cur); };
     CHECK_THROWS_AS(constructBadEnergyDensityInput(node), UniformCommunicateError);
@@ -53,7 +53,7 @@ TEST_CASE("EnergyDensityInput::parseXML::invalid", "[estimators]")
 TEST_CASE("EnergyDensityInput::parseXML::axes", "[estimators]")
 {
   Libxml2Document doc;
-  bool okay       = doc.parseFromString(Input::getXml(Input::valid::ION));
+  REQUIRE(doc.parseFromString(Input::getXml(Input::valid::ION)));
   xmlNodePtr node = doc.getRoot();
   EnergyDensityInput edi(node);
   auto sgis = edi.get_space_grid_inputs();
@@ -64,7 +64,7 @@ TEST_CASE("EnergyDensityInput::parseXML::axes", "[estimators]")
 TEST_CASE("EnergyDensityInput::default_reference_points", "[estimators]")
 {
   Libxml2Document doc;
-  bool okay       = doc.parseFromString(Input::getXml(Input::valid::CELL));
+  REQUIRE(doc.parseFromString(Input::getXml(Input::valid::CELL)));
   xmlNodePtr node = doc.getRoot();
   EnergyDensityInput edi(node);
   auto sgis = edi.get_space_grid_inputs();
@@ -76,7 +76,7 @@ TEST_CASE("EnergyDensityInput::default_reference_points", "[estimators]")
 TEST_CASE("EnergyDensityInput::copy_construction", "[estimators]")
 {
   Libxml2Document doc;
-  bool okay       = doc.parseFromString(Input::getXml(Input::valid::CELL));
+  REQUIRE(doc.parseFromString(Input::getXml(Input::valid::CELL)));
   xmlNodePtr node = doc.getRoot();
   EnergyDensityInput edi(node);
 

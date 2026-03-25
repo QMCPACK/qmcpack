@@ -59,10 +59,9 @@ TEST_CASE("HamiltonianFactory", "[hamiltonian]")
   particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
 
   RuntimeOptions runtime_options;
-  HamiltonianFactory::PsiPoolType psi_map;
-  psi_map.emplace("psi0", WaveFunctionFactory::buildEmptyTWFForTesting(runtime_options, "psi0"));
+  TrialWaveFunction psi(runtime_options, "psi0");
 
-  HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
+  HamiltonianFactory hf("h0", elec, particle_set_map, psi, c);
 
   const char* hamiltonian_xml = R"(<hamiltonian name="h0" type="generic" target="e">
          <pairpot type="coulomb" name="ElecElec" source="e" target="e"/>
@@ -71,19 +70,19 @@ TEST_CASE("HamiltonianFactory", "[hamiltonian]")
 </hamiltonian>)";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(hamiltonian_xml);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(hamiltonian_xml));
 
   xmlNodePtr root = doc.getRoot();
   hf.put(root);
 
+  auto ham = hf.releaseHamiltonian();
 
-  REQUIRE(hf.getH());
-  REQUIRE(hf.getH()->size() == 3);
-  REQUIRE(hf.getH()->total_size() == 3);
+  REQUIRE(ham);
+  REQUIRE(ham->size() == 3);
+  REQUIRE(ham->total_size() == 3);
 
-  REQUIRE(hf.getH()->getOperatorType("ElecElec") == "coulomb");
-  REQUIRE(hf.getH()->getOperatorType("ElecIon") == "coulomb");
+  REQUIRE(ham->getOperatorType("ElecElec") == "coulomb");
+  REQUIRE(ham->getOperatorType("ElecIon") == "coulomb");
 }
 
 TEST_CASE("HamiltonianFactory pseudopotential", "[hamiltonian]")
@@ -112,10 +111,9 @@ TEST_CASE("HamiltonianFactory pseudopotential", "[hamiltonian]")
   particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
 
   RuntimeOptions runtime_options;
-  HamiltonianFactory::PsiPoolType psi_map;
-  psi_map.emplace("psi0", WaveFunctionFactory::buildEmptyTWFForTesting(runtime_options, "psi0"));
+  TrialWaveFunction psi(runtime_options, "psi0");
 
-  HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
+  HamiltonianFactory hf("h0", elec, particle_set_map, psi, c);
 
   const char* hamilonian_xml = R"(<hamiltonian name="h0" type="generic" target="e">
     <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml">
@@ -124,8 +122,7 @@ TEST_CASE("HamiltonianFactory pseudopotential", "[hamiltonian]")
 </hamiltonian>)";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(hamilonian_xml);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(hamilonian_xml));
 
   xmlNodePtr root = doc.getRoot();
   hf.put(root);

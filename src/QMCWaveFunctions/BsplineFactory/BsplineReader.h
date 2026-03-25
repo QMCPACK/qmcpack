@@ -37,13 +37,47 @@ struct SPOSetInputInfo;
  * - set_grid : create the basic grid and boundary conditions for einspline
  * Note that template is abused but it works.
  */
-struct BsplineReader
+class BsplineReader
 {
+  /** create the actual spline sets
+   */
+  virtual std::unique_ptr<SPOSet> create_spline_set(const std::string& my_name,
+                                                    int spin,
+                                                    const BandInfoGroup& bandgroup) = 0;
+
+  void initialize_spo2band(const std::string& spo_name,
+                           int spin,
+                           const std::vector<BandInfo>& bigspace,
+                           SPOSetInfo& sposet,
+                           std::vector<int>& band2spo);
+
+public:
+  BsplineReader(EinsplineSetBuilder* e, bool use_duplex_splines);
+
+  virtual ~BsplineReader();
+
+  /** setting common parameters
+   */
+  void setCommon(xmlNodePtr cur);
+
+  /** create the spline after one of the kind is created */
+  std::unique_ptr<SPOSet> create_spline_set(const std::string& spo_name, int spin, SPOSetInputInfo& input_info);
+
+  /** create the spline set */
+  std::unique_ptr<SPOSet> create_spline_set(const std::string& spo_name, int spin, const size_t size);
+
+  /** Set the checkNorm variable */
+  inline void setCheckNorm(bool new_checknorm) { checkNorm = new_checknorm; };
+
+  /** Set the orbital rotation flag. Rotations are applied to balance the real/imaginary components. */
+  inline void setRotate(bool new_rotate) { rotate = new_rotate; };
+
   ///pointer to the EinsplineSetBuilder
   EinsplineSetBuilder* mybuilder;
   ///communicator
   Communicate* myComm;
-  ///mesh size
+
+protected:
   ///check the norm of orbitals
   bool checkNorm;
   ///save spline coefficients to storage
@@ -52,12 +86,10 @@ struct BsplineReader
   bool rotate;
   ///map from spo index to band index
   std::vector<std::vector<int>> spo2band;
+  /// if true, use two real-valued splines for one complex-valued DFT orbital.
+  const bool use_duplex_splines_;
   /// if true, use offload
   bool use_offload;
-
-  BsplineReader(EinsplineSetBuilder* e);
-
-  virtual ~BsplineReader();
 
   std::string getSplineDumpFileName(const BandInfoGroup& bandgroup) const
   {
@@ -70,13 +102,13 @@ struct BsplineReader
   /** read gvectors and set the mesh, and prepare for einspline
    */
   template<typename GT, typename BCT>
-  inline void set_grid(const TinyVector<int, 3>& halfg, GT* xyz_grid, BCT* xyz_bc) const
+  static void set_grid(const TinyVector<int, 3>& mesh_sizes, const TinyVector<int, 3>& halfg, GT* xyz_grid, BCT* xyz_bc)
   {
     for (int j = 0; j < 3; ++j)
     {
       xyz_grid[j].start = 0.0;
       xyz_grid[j].end   = 1.0;
-      xyz_grid[j].num   = mybuilder->MeshSize[j];
+      xyz_grid[j].num   = mesh_sizes[j];
 
       if (halfg[j])
       {
@@ -101,12 +133,6 @@ struct BsplineReader
     const int N       = bandgroup.getNumDistinctOrbitals();
     const int numOrbs = bandgroup.getNumSPOs();
 
-    bspline.setOrbitalSetSize(numOrbs);
-    bspline.resizeStorage(N);
-
-    bspline.first_spo = bandgroup.getFirstSPO();
-    bspline.last_spo  = bandgroup.getLastSPO();
-
     const std::vector<BandInfo>& cur_bands = bandgroup.myBands;
     for (int iorb = 0, num = 0; iorb < N; iorb++)
     {
@@ -116,23 +142,27 @@ struct BsplineReader
       num += bspline.MakeTwoCopies[iorb] ? 2 : 1;
     }
 
+    bspline.resize_kpoints();
     app_log() << "NumDistinctOrbitals " << N << " numOrbs = " << numOrbs << std::endl;
+  }
 
-    bspline.HalfG             = 0;
-    TinyVector<int, 3> bconds = mybuilder->TargetPtcl.getLattice().BoxBConds;
-    if (!bspline.isComplex())
-    {
-      //no k-point folding, single special k point (G, L ...)
-      TinyVector<double, 3> twist0 = mybuilder->primcell_kpoints[bandgroup.TwistIndex];
-      for (int i = 0; i < 3; i++)
-        if (bconds[i] && ((std::abs(std::abs(twist0[i]) - 0.5) < 1.0e-8)))
-          bspline.HalfG[i] = 1;
-        else
-          bspline.HalfG[i] = 0;
-      app_log() << "  TwistIndex = " << cur_bands[0].TwistIndex << " TwistAngle " << twist0 << std::endl;
-      app_log() << "   HalfG = " << bspline.HalfG << std::endl;
-    }
-    app_log().flush();
+  /** compute sign bits at the G/2 boundaries
+   * no supercell, no k-point folding, single special k point (G, L ...)
+   */
+  static TinyVector<int, 3> computeHalfG(const TinyVector<int, OHMMS_DIM>& bconds,
+                                         const std::vector<TinyVector<double, OHMMS_DIM>>& primcell_kpoints,
+                                         size_t twist0_index)
+  {
+    TinyVector<int, 3> halfG;
+    const auto& twist0 = primcell_kpoints[twist0_index];
+    app_log() << "  TwistIndex = " << twist0_index << " TwistAngle " << twist0 << std::endl;
+    for (int i = 0; i < 3; i++)
+      if (bconds[i] && ((std::abs(std::abs(twist0[i]) - 0.5) < 1.0e-8)))
+        halfG[i] = 1;
+      else
+        halfG[i] = 0;
+    app_log() << "   HalfG = " << halfG << std::endl;
+    return halfG;
   }
 
   /** return the path name in hdf5
@@ -147,44 +177,21 @@ struct BsplineReader
     return path.str();
   }
 
-  /** return the path name in hdf5
-   * @param ti twist index
-   * @param spin spin index
-   * @param ib band index
+  /** create data space in the spline object and try open spline dump files.
+   * @param bandgroup band info
+   * @param bspline the spline object being worked on
+   * @return true if dumpfile pass class name and data type size check
    */
-  inline std::string psi_r_path(int ti, int spin, int ib) const
-  {
-    std::ostringstream path;
-    path << "/electrons/kpoint_" << ti << "/spin_" << spin << "/state_" << ib << "/psi_r";
-    return path.str();
-  }
+  bool lookforSplineDataDumpFile(const BandInfoGroup& bandgroup,
+                                 const std::string& keyword,
+                                 size_t datatype_size) const;
 
-  /** create the actual spline sets
+  /** read planewave coefficients from h5 file
+   * @param s data set full path in h5
+   * @param h5f hdf5 file handle
+   * @param cG vector to store coefficients
    */
-  virtual std::unique_ptr<SPOSet> create_spline_set(const std::string& my_name,
-                                                    int spin,
-                                                    const BandInfoGroup& bandgroup) = 0;
-
-  /** setting common parameters
-   */
-  void setCommon(xmlNodePtr cur);
-
-  /** create the spline after one of the kind is created */
-  std::unique_ptr<SPOSet> create_spline_set(int spin, xmlNodePtr cur, SPOSetInputInfo& input_info);
-
-  /** create the spline set */
-  std::unique_ptr<SPOSet> create_spline_set(int spin, xmlNodePtr cur);
-
-  /** Set the checkNorm variable */
-  inline void setCheckNorm(bool new_checknorm) { checkNorm = new_checknorm; };
-
-  /** Set the orbital rotation flag. Rotations are applied to balance the real/imaginary components. */
-  inline void setRotate(bool new_rotate) { rotate = new_rotate; };
-
-  void initialize_spo2band(int spin,
-                           const std::vector<BandInfo>& bigspace,
-                           SPOSetInfo& sposet,
-                           std::vector<int>& band2spo);
+  void readOneOrbitalCoefs(const std::string& s, hdf_archive& h5f, Vector<std::complex<double>>& cG) const;
 };
 
 } // namespace qmcplusplus

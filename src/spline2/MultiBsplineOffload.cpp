@@ -28,26 +28,21 @@ typename MultiBsplineBase<T>::SplineType* MultiBsplineOffload<T>::createImpl(
 }
 
 template<typename T>
-MultiBsplineOffload<T>::MultiBsplineOffload() = default;
-
-template<typename T>
 MultiBsplineOffload<T>::~MultiBsplineOffload()
 {
-  if (Base::spline_m != nullptr)
-    myAllocator.destroy(Base::spline_m);
+  for (auto spline_m : Base::spline_blocks)
+    myAllocator.destroy(spline_m);
 }
 
 template<typename T>
 void MultiBsplineOffload<T>::finalize()
 {
-  if (auto* spline_m = Base::spline_m; spline_m != nullptr)
+  for (auto spline_m : Base::spline_blocks)
   {
     auto* coefs = spline_m->coefs;
     // attach pointers on the device to achieve deep copy
     PRAGMA_OFFLOAD("omp target map(always, to: spline_m[:1], coefs[:spline_m->coefs_size])")
-    {
-      spline_m->coefs = coefs;
-    }
+    { spline_m->coefs = coefs; }
   }
 }
 

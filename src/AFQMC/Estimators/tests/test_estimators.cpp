@@ -83,8 +83,7 @@ void reduced_density_matrix(boost::mpi3::communicator& world)
     )";
     const char* ham_xml_block = hamil_xml.c_str();
     Libxml2Document doc;
-    bool okay = doc.parseFromString(ham_xml_block);
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(ham_xml_block));
     std::string ham_name("ham0");
     HamFac.push(ham_name, doc.getRoot());
     Hamiltonian& ham = HamFac.getHamiltonian(gTG, ham_name);
@@ -109,8 +108,7 @@ void reduced_density_matrix(boost::mpi3::communicator& world)
     const char* wlk_xml_block =
         ((type == CLOSED) ? (wlk_xml_block_closed) : (type == COLLINEAR ? wlk_xml_block_coll : wlk_xml_block_noncol));
     Libxml2Document doc3;
-    okay = doc3.parseFromString(wlk_xml_block);
-    REQUIRE(okay);
+    REQUIRE(doc3.parseFromString(wlk_xml_block));
 
     std::string wfn_xml = R"(<Wavefunction name="wfn0" info="info0">
       <parameter name="filetype">ascii</parameter>
@@ -126,8 +124,7 @@ void reduced_density_matrix(boost::mpi3::communicator& world)
     int nwalk = 1; // choose prime number to force non-trivial splits in shared routines
     RandomGenerator rng;
     Libxml2Document doc2;
-    okay = doc2.parseFromString(wfn_xml_block);
-    REQUIRE(okay);
+    REQUIRE(doc2.parseFromString(wfn_xml_block));
     std::string wfn_name("wfn0");
     WavefunctionFactory WfnFac(InfoMap);
     WfnFac.push(wfn_name, doc2.getRoot());
@@ -135,8 +132,7 @@ void reduced_density_matrix(boost::mpi3::communicator& world)
 
     const char* propg_xml_block = R"(<Propagator name="prop0"></Propagator>)";
     Libxml2Document doc5;
-    okay = doc5.parseFromString(propg_xml_block);
-    REQUIRE(okay);
+    REQUIRE(doc5.parseFromString(propg_xml_block));
     std::string prop_name("prop0");
     PropagatorFactory PropgFac(InfoMap);
     PropgFac.push(prop_name, doc5.getRoot());
@@ -160,8 +156,7 @@ void reduced_density_matrix(boost::mpi3::communicator& world)
     </Estimator>
     )";
     Libxml2Document doc4;
-    okay = doc4.parseFromString(est_xml_block);
-    REQUIRE(okay);
+    REQUIRE(doc4.parseFromString(est_xml_block));
     bool impsamp = true;
     estimators.push_back(std::make_shared<BackPropagatedEstimator>(TG, InfoMap["info0"], "none", doc4.getRoot(), type,
                                                                    wset, wfn, prop, impsamp));

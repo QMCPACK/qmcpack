@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2026 QMCPACK developers.
 //
 // File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
@@ -20,10 +20,8 @@
 #ifndef QMCPLUSPLUS_EINSPLINE_IMPL_H
 #define QMCPLUSPLUS_EINSPLINE_IMPL_H
 
-#ifndef QMCPLUSPLUS_EINSPLINE_ENGINE_HPP
-#error "einspline_impl.hpp is used only by einspline_engine.hpp"
-#endif
 #include "CPU/SIMD/algorithm.hpp"
+#include "einspline/multi_bspline.h"
 #include "einspline/multi_bspline_copy.h"
 
 namespace qmcplusplus

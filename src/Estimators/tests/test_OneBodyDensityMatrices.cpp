@@ -222,9 +222,7 @@ public:
   }
 
   void dumpData(OneBodyDensityMatrices& obdm)
-  {
-    std::cout << "Here is what is in your OneBodyDensityMatrices:\n" << NativePrint(obdm.data_) << '\n';
-  }
+  { std::cout << "Here is what is in your OneBodyDensityMatrices:\n" << NativePrint(obdm.data_) << '\n'; }
 
 private:
   Data getEvaluateMatrixData(OBDMI::Integrator integrator);
@@ -234,15 +232,12 @@ private:
 
 } // namespace testing
 
-
 TEST_CASE("OneBodyDensityMatrices::OneBodyDensityMatrices", "[estimators]")
 {
   using Input        = testing::ValidOneBodyDensityMatricesInput;
   using SpeciesCases = testing::SpeciesCases;
   Libxml2Document doc;
-  bool okay = doc.parseFromString(Input::getXml(Input::valid::VANILLA));
-  if (!okay)
-    throw std::runtime_error("cannot parse OneBodyDensitMatricesInput section");
+  REQUIRE(doc.parseFromString(Input::getXml(Input::valid::VANILLA)));
   xmlNodePtr node = doc.getRoot();
   OneBodyDensityMatricesInput obdmi(node);
   auto lattice     = testing::makeTestLattice();
@@ -256,7 +251,8 @@ TEST_CASE("OneBodyDensityMatrices::OneBodyDensityMatrices", "[estimators]")
   auto wavefunction_pool =
       MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
   auto& pset_target = *(particle_pool.getParticleSet("e"));
-  auto& spo_map     = wavefunction_pool.getWaveFunction("wavefunction")->getSPOMap();
+  TrialWaveFunction& psi(wavefunction_pool.getWaveFunction().value());
+  auto& spo_map = psi.getSPOMap();
 
   // Good constructor
   OneBodyDensityMatrices obdm(std::move(obdmi), lattice, species_set, spo_map, pset_target);
@@ -273,7 +269,7 @@ TEST_CASE("OneBodyDensityMatrices::OneBodyDensityMatrices", "[estimators]")
 
 TEST_CASE("OneBodyDensityMatrices::generateSamples", "[estimators]")
 {
-  using Input = testing::ValidOneBodyDensityMatricesInput;
+  using Input     = testing::ValidOneBodyDensityMatricesInput;
   using MCPWalker = OperatorEstBase::MCPWalker;
 
   ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
@@ -284,13 +280,12 @@ TEST_CASE("OneBodyDensityMatrices::generateSamples", "[estimators]")
       MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
   auto& pset_target = *(particle_pool.getParticleSet("e"));
   auto& species_set = pset_target.getSpeciesSet();
-  auto& spo_map     = wavefunction_pool.getWaveFunction("wavefunction")->getSPOMap();
+  TrialWaveFunction& psi(wavefunction_pool.getWaveFunction().value());
+  auto& spo_map = psi.getSPOMap();
 
   auto samplingCaseRunner = [&pset_target, &species_set, &spo_map](Input::valid test_case) {
     Libxml2Document doc;
-    bool okay = doc.parseFromString(Input::getXml(test_case));
-    if (!okay)
-      throw std::runtime_error("cannot parse OneBodyDensitMatricesInput section");
+    REQUIRE(doc.parseFromString(Input::getXml(test_case)));
     xmlNodePtr node = doc.getRoot();
     OneBodyDensityMatricesInput obdmi(node);
 
@@ -311,7 +306,7 @@ TEST_CASE("OneBodyDensityMatrices::generateSamples", "[estimators]")
 #ifdef QMC_COMPLEX
 TEST_CASE("OneBodyDensityMatrices::generateSamplesForSpinor", "[estimators]")
 {
-  using Input = testing::ValidOneBodyDensityMatricesInput;
+  using Input     = testing::ValidOneBodyDensityMatricesInput;
   using MCPWalker = OperatorEstBase::MCPWalker;
 
   ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
@@ -322,13 +317,12 @@ TEST_CASE("OneBodyDensityMatrices::generateSamplesForSpinor", "[estimators]")
       MinimalWaveFunctionPool::make_O2_spinor(test_project.getRuntimeOptions(), comm, particle_pool);
   auto& pset_target = *(particle_pool.getParticleSet("e"));
   auto& species_set = pset_target.getSpeciesSet();
-  auto& spo_map     = wavefunction_pool.getWaveFunction("wavefunction")->getSPOMap();
+  TrialWaveFunction& psi(wavefunction_pool.getWaveFunction().value());
+  auto& spo_map = psi.getSPOMap();
 
   auto samplingCaseRunner = [&pset_target, &species_set, &spo_map](Input::valid test_case) {
     Libxml2Document doc;
-    bool okay = doc.parseFromString(Input::getXml(test_case));
-    if (!okay)
-      throw std::runtime_error("cannot parse OneBodyDensitMatricesInput section");
+    REQUIRE(doc.parseFromString(Input::getXml(test_case)));
     xmlNodePtr node = doc.getRoot();
     OneBodyDensityMatricesInput obdmi(node);
 
@@ -348,7 +342,7 @@ TEST_CASE("OneBodyDensityMatrices::generateSamplesForSpinor", "[estimators]")
 
 TEST_CASE("OneBodyDensityMatrices::spawnCrowdClone()", "[estimators]")
 {
-  using Input = testing::ValidOneBodyDensityMatricesInput;
+  using Input     = testing::ValidOneBodyDensityMatricesInput;
   using MCPWalker = OperatorEstBase::MCPWalker;
 
   ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
@@ -359,16 +353,15 @@ TEST_CASE("OneBodyDensityMatrices::spawnCrowdClone()", "[estimators]")
       MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
   auto& pset_target = *(particle_pool.getParticleSet("e"));
   auto& species_set = pset_target.getSpeciesSet();
-  auto& spomap      = wavefunction_pool.getWaveFunction("wavefunction")->getSPOMap();
+  TrialWaveFunction& psi(wavefunction_pool.getWaveFunction().value());
+  auto& spo_map = psi.getSPOMap();
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(Input::getXml(Input::valid::VANILLA));
-  if (!okay)
-    throw std::runtime_error("cannot parse OneBodyDensitMatricesInput section");
+  REQUIRE(doc.parseFromString(Input::getXml(Input::valid::VANILLA)));
   xmlNodePtr node = doc.getRoot();
   OneBodyDensityMatricesInput obdmi(node);
 
-  OneBodyDensityMatrices original(std::move(obdmi), pset_target.getLattice(), species_set, spomap, pset_target);
+  OneBodyDensityMatrices original(std::move(obdmi), pset_target.getLattice(), species_set, spo_map, pset_target);
   auto clone = original.spawnCrowdClone();
   REQUIRE(clone != nullptr);
   REQUIRE(clone.get() != &original);
@@ -384,19 +377,18 @@ TEST_CASE("OneBodyDensityMatrices::accumulate", "[estimators]")
   Communicate* comm = OHMMS::Controller;
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(Input::getXml(Input::valid::VANILLA));
-  if (!okay)
-    throw std::runtime_error("cannot parse OneBodyDensitMatricesInput section");
+  REQUIRE(doc.parseFromString(Input::getXml(Input::valid::VANILLA)));
   xmlNodePtr node = doc.getRoot();
   OneBodyDensityMatricesInput obdmi(node);
   auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool =
       MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
-  auto& spomap      = wavefunction_pool.getWaveFunction("wavefunction")->getSPOMap();
+  TrialWaveFunction& psi(wavefunction_pool.getWaveFunction().value());
+  auto& spo_map     = psi.getSPOMap();
   auto& pset_target = *(particle_pool.getParticleSet("e"));
   auto& pset_source = *(particle_pool.getParticleSet("ion"));
   auto& species_set = pset_target.getSpeciesSet();
-  OneBodyDensityMatrices obdm(std::move(obdmi), pset_target.getLattice(), species_set, spomap, pset_target);
+  OneBodyDensityMatrices obdm(std::move(obdmi), pset_target.getLattice(), species_set, spo_map, pset_target);
 
   std::vector<MCPWalker> walkers;
   int nwalkers = 3;
@@ -436,10 +428,9 @@ TEST_CASE("OneBodyDensityMatrices::accumulate", "[estimators]")
   std::vector<ParticleSet> psets =
       testing::generateRandomParticleSets(pset_target, pset_source, deterministic_rs, nwalkers, generate_test_data);
 
-  auto& trial_wavefunction = *(wavefunction_pool.getPrimary());
   std::vector<UPtr<TrialWaveFunction>> twfcs(nwalkers);
   for (int iw = 0; iw < nwalkers; ++iw)
-    twfcs[iw] = trial_wavefunction.makeClone(psets[iw]);
+    twfcs[iw] = psi.makeClone(psets[iw]);
 
   StdRandom<OneBodyDensityMatrices::FullPrecRealType> rng;
   rng.init(101);
@@ -477,9 +468,7 @@ TEST_CASE("OneBodyDensityMatrices::evaluateMatrix", "[estimators]")
        std::vector<Input::valid>{Input::valid::VANILLA, Input::valid::SCALE, Input::valid::GRID})
   {
     Libxml2Document doc;
-    bool okay = doc.parseFromString(Input::getXml(valid_integrator));
-    if (!okay)
-      throw std::runtime_error("cannot parse OneBodyDensitMatricesInput section");
+    REQUIRE(doc.parseFromString(Input::getXml(valid_integrator)));
     xmlNodePtr node = doc.getRoot();
     OneBodyDensityMatricesInput obdmi(node);
 
@@ -490,11 +479,11 @@ TEST_CASE("OneBodyDensityMatrices::evaluateMatrix", "[estimators]")
     auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
     auto wavefunction_pool =
         MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
-    auto& spomap      = wavefunction_pool.getWaveFunction("wavefunction")->getSPOMap();
     auto& pset_target = *(particle_pool.getParticleSet("e"));
     auto& species_set = pset_target.getSpeciesSet();
-    OneBodyDensityMatrices obdm(std::move(obdmi), pset_target.getLattice(), species_set, spomap, pset_target);
-    auto& trial_wavefunction = *(wavefunction_pool.getPrimary());
+    TrialWaveFunction& psi(wavefunction_pool.getWaveFunction().value());
+    auto& spo_map = psi.getSPOMap();
+    OneBodyDensityMatrices obdm(std::move(obdmi), pset_target.getLattice(), species_set, spo_map, pset_target);
 
     // Because we can't control or consistent know the global random state we must initialize particle positions to known values.
     pset_target.R = ParticleSet::ParticlePos{
@@ -511,10 +500,10 @@ TEST_CASE("OneBodyDensityMatrices::evaluateMatrix", "[estimators]")
     //pset.loadWalker(walker, false);
     pset_target.update(true);
     pset_target.donePbyP();
-    trial_wavefunction.evaluateLog(pset_target);
+    psi.evaluateLog(pset_target);
     pset_target.saveWalker(walker);
     testing::OneBodyDensityMatricesTests<QMCTraits::FullPrecRealType> obdmt;
-    obdmt.testEvaluateMatrix(obdm, pset_target, trial_wavefunction, walker, rng);
+    obdmt.testEvaluateMatrix(obdm, pset_target, psi, walker, rng);
     if constexpr (dump_obdm)
       obdmt.dumpData(obdm);
   }
@@ -529,9 +518,7 @@ TEST_CASE("OneBodyDensityMatrices::registerAndWrite", "[estimators]")
   Communicate* comm = OHMMS::Controller;
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(Input::getXml(Input::valid::VANILLA));
-  if (!okay)
-    throw std::runtime_error("cannot parse OneBodyDensitMatricesInput section");
+  REQUIRE(doc.parseFromString(Input::getXml(Input::valid::VANILLA)));
   xmlNodePtr node = doc.getRoot();
   OneBodyDensityMatricesInput obdmi(node);
 
@@ -542,10 +529,11 @@ TEST_CASE("OneBodyDensityMatrices::registerAndWrite", "[estimators]")
   auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool =
       MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
-  auto& spomap      = wavefunction_pool.getWaveFunction("wavefunction")->getSPOMap();
   auto& pset_target = *(particle_pool.getParticleSet("e"));
   auto& species_set = pset_target.getSpeciesSet();
-  OneBodyDensityMatrices obdm(std::move(obdmi), pset_target.getLattice(), species_set, spomap, pset_target);
+  TrialWaveFunction& psi(wavefunction_pool.getWaveFunction().value());
+  auto& spo_map = psi.getSPOMap();
+  OneBodyDensityMatrices obdm(std::move(obdmi), pset_target.getLattice(), species_set, spo_map, pset_target);
 
   testing::OneBodyDensityMatricesTests<QMCTraits::FullPrecRealType> obdmt;
   obdmt.testRegisterAndWrite(obdm);

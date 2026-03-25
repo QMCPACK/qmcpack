@@ -92,8 +92,7 @@ public:
   /** This type provides all the functionality needed by drivers to instantiate estimators so we use it to reduce coupling
    *  with ParticleSetPool
    */
-  using PSPool   = ParticleSetPool::PoolType;
-  using WFBuffer = MCPopulation::WFBuffer;
+  using PSPool = ParticleSetPool::PoolType;
 
   using SetNonLocalMoveHandler = std::function<void(QMCHamiltonian&)>;
   /** bits to classify QMCDriver
@@ -216,8 +215,6 @@ public:
    * is the suffix for the output file.
    */
   void setStatus(const std::string& aname, const std::string& h5name, bool append) override;
-
-  void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi) override{};
 
   void putWalkers(std::vector<xmlNodePtr>& wset) override;
 

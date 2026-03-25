@@ -95,8 +95,7 @@ void wfn_fac(boost::mpi3::communicator& world)
     )";
     const char* ham_xml_block = hamil_xml.c_str();
     Libxml2Document doc;
-    bool okay = doc.parseFromString(ham_xml_block);
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(ham_xml_block));
     std::string ham_name("ham0");
     HamFac.push(ham_name, doc.getRoot());
     Hamiltonian& ham = HamFac.getHamiltonian(gTG, ham_name);
@@ -126,8 +125,7 @@ void wfn_fac(boost::mpi3::communicator& world)
         ((type == CLOSED) ? (wlk_xml_block_closed) : (type == COLLINEAR ? wlk_xml_block_coll : wlk_xml_block_noncol));
 
     Libxml2Document doc3;
-    okay = doc3.parseFromString(wlk_xml_block);
-    REQUIRE(okay);
+    REQUIRE(doc3.parseFromString(wlk_xml_block));
     std::string restart_file = create_test_hdf(UTEST_WFN, UTEST_HAMIL);
     app_log() << " wfn_fac destroy restart_file " << restart_file << "\n";
     if (!remove_file(restart_file)) APP_ABORT("failed to remove restart_file");
@@ -142,8 +140,7 @@ void wfn_fac(boost::mpi3::communicator& world)
     )";
     const char* wfn_xml_block = wfn_xml.c_str();
     Libxml2Document doc2;
-    okay = doc2.parseFromString(wfn_xml_block);
-    REQUIRE(okay);
+    REQUIRE(doc2.parseFromString(wfn_xml_block));
     std::string wfn_name("wfn0");
     WavefunctionFactory WfnFac(InfoMap);
     WfnFac.push(wfn_name, doc2.getRoot());
@@ -286,8 +283,7 @@ void wfn_fac(boost::mpi3::communicator& world)
       </Wavefunction>
       )";
       Libxml2Document doc4;
-      okay = doc4.parseFromString(wfn_xml_block_restart);
-      REQUIRE(okay);
+      REQUIRE(doc4.parseFromString(wfn_xml_block_restart));
       wfn_name = "wfn1";
       WfnFac.push(wfn_name, doc4.getRoot());
       Wavefunction& wfn2 = WfnFac.getWavefunction(TG, TG, wfn_name, type, nullptr, 1e-6, nwalk);
@@ -434,8 +430,7 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
     )";
     const char* ham_xml_block = hamil_xml.c_str();
     Libxml2Document doc;
-    bool okay = doc.parseFromString(ham_xml_block);
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(ham_xml_block));
     std::string ham_name("ham0");
     HamFac.push(ham_name, doc.getRoot());
     Hamiltonian& ham = HamFac.getHamiltonian(gTG, ham_name);
@@ -465,8 +460,7 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
         ((type == CLOSED) ? (wlk_xml_block_closed) : (type == COLLINEAR ? wlk_xml_block_coll : wlk_xml_block_noncol));
 
     Libxml2Document doc3;
-    okay = doc3.parseFromString(wlk_xml_block);
-    REQUIRE(okay);
+    REQUIRE(doc3.parseFromString(wlk_xml_block));
 
     std::string restart_file = create_test_hdf(UTEST_WFN, UTEST_HAMIL);
     app_log() << " wfn_fac_distributed destroy restart_file " << restart_file << "\n";
@@ -482,8 +476,7 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
     )";
     const char* wfn_xml_block = wfn_xml.c_str();
     Libxml2Document doc2;
-    okay = doc2.parseFromString(wfn_xml_block);
-    REQUIRE(okay);
+    REQUIRE(doc2.parseFromString(wfn_xml_block));
     std::string wfn_name("wfn0");
     WavefunctionFactory WfnFac(InfoMap);
     WfnFac.push(wfn_name, doc2.getRoot());
@@ -644,8 +637,7 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
     </Wavefunction>
     )";
     Libxml2Document doc4;
-    okay = doc4.parseFromString(wfn_xml_block_restart);
-    REQUIRE(okay);
+    REQUIRE(doc4.parseFromString(wfn_xml_block_restart));
     wfn_name = "wfn1";
     WfnFac.push(wfn_name, doc4.getRoot());
     Wavefunction& wfn2 = WfnFac.getWavefunction(TGwfn, TGwfn, wfn_name, type, nullptr, 1e-8, nwalk);
@@ -814,8 +806,7 @@ TEST_CASE("wfn_fac_collinear_phmsd", "[wavefunction_factory]")
     </Hamiltonian>
     )";
     Libxml2Document doc;
-    bool okay = doc.parseFromString(ham_xml_block);
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(ham_xml_block));
     std::string ham_name("ham0");
     HamFac.push(ham_name,doc.getRoot());
     Hamiltonian& ham = HamFac.getHamiltonian(gTG,ham_name);
@@ -833,8 +824,7 @@ TEST_CASE("wfn_fac_collinear_phmsd", "[wavefunction_factory]")
     </WalkerSet>
     )";
     Libxml2Document doc3;
-    okay = doc3.parseFromString(wlk_xml_block);
-    REQUIRE(okay);
+    REQUIRE(doc3.parseFromString(wlk_xml_block));
 
     const char *wfn_xml_block =
     R"(<Wavefunction name="wfn0" type="phmsd" info="info0">
@@ -845,8 +835,7 @@ TEST_CASE("wfn_fac_collinear_phmsd", "[wavefunction_factory]")
     )";
 
     Libxml2Document doc2;
-    okay = doc2.parseFromString(wfn_xml_block);
-    REQUIRE(okay);
+    REQUIRE(doc2.parseFromString(wfn_xml_block));
     std::string wfn_name("wfn0");
     WavefunctionFactory WfnFac(InfoMap);
     WfnFac.push(wfn_name,doc2.getRoot());
@@ -863,8 +852,7 @@ TEST_CASE("wfn_fac_collinear_phmsd", "[wavefunction_factory]")
 #define __compare__
 #ifdef __compare__
     Libxml2Document doc2_;
-    okay = doc2_.parseFromString(wfn_xml_block2);
-    REQUIRE(okay);
+    REQUIRE(doc2_.parseFromString(wfn_xml_block2));
     std::string wfn2_name("wfn1");
     WfnFac.push(wfn2_name,doc2_.getRoot());
     Wavefunction& nomsd = WfnFac.getWavefunction(TG,TG,wfn2_name,COLLINEAR,&ham,1e-6,nwalk);

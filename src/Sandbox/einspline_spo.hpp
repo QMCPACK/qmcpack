@@ -170,11 +170,10 @@ struct einspline_spo
       UBspline_3d_d* aspline = mAllocator.allocateUBspline(grid[0], grid[1], grid[2], BC[0], BC[1], BC[2], data.data());
       for (int i = 0; i < nBlocks; ++i)
       {
-        einsplines[i] = new spline_type;
-        einsplines[i]->create(grid, BC, nSplinesPerBlock);
+        einsplines[i] = new spline_type(grid, BC, nSplinesPerBlock);
         if (init_random)
           for (int j = 0; j < nSplinesPerBlock; ++j)
-            copy_spline<double, T>(*aspline, *einsplines[i]->getSplinePtr(), j);
+            einsplines[i]->set_spline(*aspline, j);
       }
       mAllocator.destroy(aspline);
     }

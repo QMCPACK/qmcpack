@@ -54,8 +54,7 @@ TEST_CASE("PerParticleHamiltonianLogger_sum", "[estimators]")
 )XML"};
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(xml);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(xml));
   xmlNodePtr node = doc.getRoot();
   PerParticleHamiltonianLoggerInput pphli(node);
 

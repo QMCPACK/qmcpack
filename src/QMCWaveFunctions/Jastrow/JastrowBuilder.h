@@ -15,6 +15,7 @@
 
 #ifndef QMCPLUSPLUS_GENERALIZED_JASTROWBUILDER_H
 #define QMCPLUSPLUS_GENERALIZED_JASTROWBUILDER_H
+
 #include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 
 namespace qmcplusplus

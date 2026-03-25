@@ -25,8 +25,7 @@ TEST_CASE("AttributeSet", "[xml]")
     <simulation name="here" deprecated_tag="lmn">
     </simulation>)";
   Libxml2Document doc;
-  bool okay = doc.parseFromString(content);
-  REQUIRE(okay == true);
+  REQUIRE(doc.parseFromString(content));
 
   xmlNodePtr root = doc.getRoot();
   OhmmsAttributeSet pattrib;
@@ -48,8 +47,7 @@ TEST_CASE("AttributeSet_bool", "[xml]")
   {
     const char* content = R"(<simulation/>)";
     Libxml2Document doc;
-    bool okay = doc.parseFromString(content);
-    REQUIRE(okay == true);
+    REQUIRE(doc.parseFromString(content));
 
     OhmmsAttributeSet pattrib;
     bool use_feature = true;
@@ -61,8 +59,7 @@ TEST_CASE("AttributeSet_bool", "[xml]")
   {
     const char* content = R"(<simulation use_feature=" yes  "/>)";
     Libxml2Document doc;
-    bool okay = doc.parseFromString(content);
-    REQUIRE(okay == true);
+    REQUIRE(doc.parseFromString(content));
 
     OhmmsAttributeSet pattrib;
     bool use_feature = true;
@@ -74,8 +71,7 @@ TEST_CASE("AttributeSet_bool", "[xml]")
   {
     const char* content = R"(<simulation use_feature=" no  "/>)";
     Libxml2Document doc;
-    bool okay = doc.parseFromString(content);
-    REQUIRE(okay == true);
+    REQUIRE(doc.parseFromString(content));
 
     OhmmsAttributeSet pattrib;
     bool use_feature = true;
@@ -87,8 +83,7 @@ TEST_CASE("AttributeSet_bool", "[xml]")
   {
     const char* content = R"(<simulation use_feature=" YES  "/>)";
     Libxml2Document doc;
-    bool okay = doc.parseFromString(content);
-    REQUIRE(okay == true);
+    REQUIRE(doc.parseFromString(content));
 
     OhmmsAttributeSet pattrib;
     bool use_feature = true;
@@ -100,8 +95,7 @@ TEST_CASE("AttributeSet_bool", "[xml]")
   {
     const char* content = R"(<simulation use_feature=" No"/>)";
     Libxml2Document doc;
-    bool okay = doc.parseFromString(content);
-    REQUIRE(okay == true);
+    REQUIRE(doc.parseFromString(content));
 
     OhmmsAttributeSet pattrib;
     bool use_feature = true;
@@ -113,8 +107,7 @@ TEST_CASE("AttributeSet_bool", "[xml]")
   {
     const char* content = R"(<simulation use_feature=" true  "/>)";
     Libxml2Document doc;
-    bool okay = doc.parseFromString(content);
-    REQUIRE(okay == true);
+    REQUIRE(doc.parseFromString(content));
 
     OhmmsAttributeSet pattrib;
     bool use_feature = true;
@@ -126,8 +119,7 @@ TEST_CASE("AttributeSet_bool", "[xml]")
   {
     const char* content = R"(<simulation use_feature="false"/>)";
     Libxml2Document doc;
-    bool okay = doc.parseFromString(content);
-    REQUIRE(okay == true);
+    REQUIRE(doc.parseFromString(content));
 
     OhmmsAttributeSet pattrib;
     bool use_feature = true;
@@ -139,8 +131,7 @@ TEST_CASE("AttributeSet_bool", "[xml]")
   {
     const char* content = R"(<simulation use_feature=" "/>)";
     Libxml2Document doc;
-    bool okay = doc.parseFromString(content);
-    REQUIRE(okay == true);
+    REQUIRE(doc.parseFromString(content));
 
     OhmmsAttributeSet pattrib;
     bool use_feature = true;
@@ -151,8 +142,7 @@ TEST_CASE("AttributeSet_bool", "[xml]")
   {
     const char* content = R"(<simulation use_feature=" no a "/>)";
     Libxml2Document doc;
-    bool okay = doc.parseFromString(content);
-    REQUIRE(okay == true);
+    REQUIRE(doc.parseFromString(content));
 
     OhmmsAttributeSet pattrib;
     bool use_feature = true;
@@ -163,8 +153,7 @@ TEST_CASE("AttributeSet_bool", "[xml]")
   {
     const char* content = R"(<simulation use_feature=" here  "/>)";
     Libxml2Document doc;
-    bool okay = doc.parseFromString(content);
-    REQUIRE(okay == true);
+    REQUIRE(doc.parseFromString(content));
 
     OhmmsAttributeSet pattrib;
     bool use_feature = true;

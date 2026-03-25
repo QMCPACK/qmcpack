@@ -81,8 +81,7 @@ void test_einset_LiH_x(bool use_offload)
     spo_xml = std::regex_replace(spo_xml, std::regex("omptarget"), "no");
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(spo_xml);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(spo_xml));
 
   xmlNodePtr root = doc.getRoot();
 
@@ -91,6 +90,7 @@ void test_einset_LiH_x(bool use_offload)
   EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, root);
   auto spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo);
+  REQUIRE(spo->isOMPoffload() == use_offload);
 
   // Test the case where the number of psi values is not the orbital set size
   // or the number of electrons/2

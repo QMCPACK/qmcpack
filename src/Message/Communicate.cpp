@@ -48,7 +48,7 @@ Communicate::~Communicate() = default;
 //exclusive:  MPI or Serial
 #ifdef HAVE_MPI
 
-  // in_comm needs to be mutable to be duplicated
+// in_comm needs to be mutable to be duplicated
 Communicate::Communicate(mpi3::communicator& in_comm) : d_groupid(0), d_ngroups(1), comm{in_comm.duplicate()}
 {
   myMPI       = comm.get();
@@ -66,7 +66,7 @@ Communicate::Communicate(mpi3::communicator&& in_comm) : d_groupid(0), d_ngroups
 Communicate::Communicate(const Communicate& in_comm, int nparts)
 {
   std::vector<int> nplist(nparts + 1);
-  int p = FairDivideLow(in_comm.rank(), in_comm.size(), nparts, nplist); //group
+  const int p = FairDivideLow(in_comm.rank(), in_comm.size(), nparts, nplist); //group
   // comm is mutable member
   comm  = in_comm.comm.split(p, in_comm.rank());
   myMPI = comm.get();
@@ -75,17 +75,13 @@ Communicate::Communicate(const Communicate& in_comm, int nparts)
   d_ncontexts = comm.size();
   d_groupid   = p;
   d_ngroups   = nparts;
-  // create a communicator among group leaders.
 
-  nplist.pop_back();
-  mpi3::communicator leader_comm = in_comm.comm.subcomm(nplist);
-  if (isGroupLeader())
-    GroupLeaderComm = std::make_unique<Communicate>(leader_comm);
-  else
-    GroupLeaderComm.reset();
+  // create an inter group communicator
+  inter_group_comm_ = std::make_unique<Communicate>(in_comm.comm.split(comm.rank(), in_comm.rank()));
 }
 
-Communicate Communicate::NodeComm() const {
+Communicate Communicate::NodeComm() const
+{
   // comm is mutable member
   return Communicate{comm.split_shared()};
 }
@@ -107,7 +103,7 @@ void Communicate::abort() const { comm.abort(1); }
 void Communicate::barrier() const { comm.barrier(); }
 #else
 
-Communicate Communicate::NodeComm() const {return Communicate{};}
+Communicate Communicate::NodeComm() const { return Communicate{}; }
 
 void Communicate::finalize() {}
 
@@ -119,9 +115,7 @@ void Communicate::cleanupMessage(void*) {}
 
 Communicate::Communicate(const Communicate& in_comm, int nparts)
     : myMPI(MPI_COMM_NULL), d_mycontext(0), d_ncontexts(1), d_groupid(0)
-{
-  GroupLeaderComm = std::make_unique<Communicate>();
-}
+{ inter_group_comm_ = std::make_unique<Communicate>(); }
 #endif // !HAVE_MPI
 
 void Communicate::barrier_and_abort(const std::string& msg) const

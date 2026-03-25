@@ -74,8 +74,7 @@ TEST_CASE("J1 evaluate derivatives Jastrow", "[wavefunction]")
 </wavefunction>
 )";
   Libxml2Document doc;
-  bool okay = doc.parseFromString(jasxml);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(jasxml));
 
   xmlNodePtr jas1 = doc.getRoot();
 
@@ -85,7 +84,6 @@ TEST_CASE("J1 evaluate derivatives Jastrow", "[wavefunction]")
   WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
   auto twf_ptr = wf_factory.buildTWF(jas1, runtime_options);
   auto& twf(*twf_ptr);
-  twf.setMassTerm(elec_);
   twf.evaluateLog(elec_);
   twf.prepareGroup(elec_, 0);
 
@@ -175,8 +173,7 @@ TEST_CASE("J1 evaluate derivatives Jastrow with two species", "[wavefunction]")
 </wavefunction>
 )";
   Libxml2Document doc;
-  bool okay = doc.parseFromString(jasxml);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(jasxml));
 
   xmlNodePtr jas1 = doc.getRoot();
 
@@ -186,7 +183,6 @@ TEST_CASE("J1 evaluate derivatives Jastrow with two species", "[wavefunction]")
   WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
   auto twf_ptr = wf_factory.buildTWF(jas1, runtime_options);
   auto& twf(*twf_ptr);
-  twf.setMassTerm(elec_);
   twf.evaluateLog(elec_);
   twf.prepareGroup(elec_, 0);
 
@@ -273,8 +269,7 @@ TEST_CASE("J1 evaluate derivatives Jastrow with two species one without Jastrow"
 </wavefunction>
 )";
   Libxml2Document doc;
-  bool okay = doc.parseFromString(jasxml);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(jasxml));
 
   xmlNodePtr jas1 = doc.getRoot();
 
@@ -284,7 +279,6 @@ TEST_CASE("J1 evaluate derivatives Jastrow with two species one without Jastrow"
   WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
   auto twf_ptr = wf_factory.buildTWF(jas1, runtime_options);
   auto& twf(*twf_ptr);
-  twf.setMassTerm(elec_);
   twf.evaluateLog(elec_);
   twf.prepareGroup(elec_, 0);
 

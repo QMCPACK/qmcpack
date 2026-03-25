@@ -59,18 +59,18 @@ QMCDriver::QMCDriver(const ProjectData& project_data,
       checkpoint_timer_(createGlobalTimer("checkpoint::recordBlock", timer_level_medium)),
       driver_scope_profiler_(enable_profiling)
 {
-  ResetRandom  = false;
-  AppendRun    = false;
-  DumpConfig   = false;
-  IsQMCDriver  = true;
-  allow_traces = false;
+  ResetRandom       = false;
+  AppendRun         = false;
+  DumpConfig        = false;
+  IsQMCDriver       = true;
+  allow_traces      = false;
   allow_walker_logs = false;
   walker_logs_xml   = NULL;
-  MyCounter    = 0;
+  MyCounter         = 0;
   //<parameter name=" "> value </parameter>
   //accept multiple names for the same value
   //recommend using all lower cases for a new parameter
-  Period4CheckPoint = 0;
+  Period4CheckPoint      = 0;
   Period4CheckProperties = 100;
   m_param.add(Period4CheckProperties, "checkProperties");
   m_param.add(Period4CheckProperties, "checkproperties");
@@ -147,12 +147,6 @@ QMCDriver::~QMCDriver()
     delete DriftModifier;
 }
 
-void QMCDriver::add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi)
-{
-  H1.push_back(h);
-  Psi1.push_back(psi);
-}
-
 /** process a <qmc/> element
  * @param cur xmlNode with qmc tag
  *
@@ -177,9 +171,6 @@ void QMCDriver::process(xmlNodePtr cur)
   putQMCInfo(cur);
   ////set the Tau parameter inside the Hamiltonian
   //H.setTau(Tau);
-  //need to initialize properties
-  int numCopies = (H1.empty()) ? 1 : H1.size();
-  W.resetWalkerProperty(numCopies);
   //create branchEngine first
   if (!branchEngine)
   {
@@ -393,13 +384,12 @@ void QMCDriver::setWalkerOffsets()
  *   -- 1 = do not write anything
  *   -- 0 = dump after the completion of a qmc section
  *   -- n = dump after n blocks
- * - kdelay = "0|1|n" default=0
  */
 bool QMCDriver::putQMCInfo(xmlNodePtr cur)
 {
   if (!IsQMCDriver)
   {
-    app_log() << getName() << "  Skip QMCDriver::putQMCInfo " << std::endl;
+    app_log() << "  Skip QMCDriver::putQMCInfo " << std::endl;
     return true;
   }
 
@@ -412,7 +402,6 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
   int defaultw      = omp_get_max_threads();
   OhmmsAttributeSet aAttrib;
   aAttrib.add(Period4CheckPoint, "checkpoint");
-  aAttrib.add(kDelay, "kdelay");
   aAttrib.put(cur);
   if (cur != NULL)
   {

@@ -65,8 +65,7 @@ TEST_CASE("distance_open_z", "[distance_table][xml]")
 )";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particles));
 
   xmlNodePtr root  = doc.getRoot();
   xmlNodePtr part1 = xmlFirstElementChild(root);
@@ -159,8 +158,7 @@ TEST_CASE("distance_open_xy", "[distance_table][xml]")
 )";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particles));
 
   xmlNodePtr root  = doc.getRoot();
   xmlNodePtr part1 = xmlFirstElementChild(root);
@@ -250,8 +248,7 @@ TEST_CASE("distance_open_species_deviation", "[distance_table][xml]")
 )";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particles));
 
   xmlNodePtr root  = doc.getRoot();
   xmlNodePtr part1 = xmlFirstElementChild(root);
@@ -331,8 +328,7 @@ SimulationCell parse_pbc_fcc_lattice()
 )";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particles));
 
   xmlNodePtr root  = doc.getRoot();
   xmlNodePtr part1 = xmlFirstElementChild(root);
@@ -364,8 +360,7 @@ SimulationCell parse_pbc_lattice()
 )";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particles));
 
   xmlNodePtr root  = doc.getRoot();
   xmlNodePtr part1 = xmlFirstElementChild(root);
@@ -421,8 +416,7 @@ void parse_electron_ion_pbc_z(ParticleSet& ions, ParticleSet& electrons)
 )";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particles));
 
   xmlNodePtr root  = doc.getRoot();
   xmlNodePtr part1 = xmlFirstElementChild(root);

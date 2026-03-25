@@ -176,6 +176,8 @@ if(ENABLE_OFFLOAD)
   set(DETERMINANT_SRC ${DETERMINANT_SRC} test_DiracMatrixInverterOMPTarget.cpp)
 endif(ENABLE_OFFLOAD)
 
+set(CATEGORY_MPI sposet)
+
 foreach(CATEGORY common trialwf sposet jastrow determinant)
   set(UTEST_EXE test_${SRC_DIR}_${CATEGORY})
   set(UTEST_NAME deterministic-unit_${UTEST_EXE})
@@ -199,6 +201,15 @@ foreach(CATEGORY common trialwf sposet jastrow determinant)
 
   add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
   set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
+
+  if(CATEGORY IN_LIST CATEGORY_MPI AND HAVE_MPI)
+    foreach(NUM_RANKS 2 3)
+      set(UTEST_NAME_MPI ${UTEST_NAME}-r${NUM_RANKS})
+      add_unit_test(${UTEST_NAME_MPI} ${NUM_RANKS} 1 $<TARGET_FILE:${UTEST_EXE}>)
+      set_tests_properties(${UTEST_NAME_MPI} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
+    endforeach()
+  endif()
+
 endforeach()
 
 if((ENABLE_CUDA OR ENABLE_SYCL) AND BUILD_MICRO_BENCHMARKS)

@@ -129,7 +129,7 @@ public:
     return true;
   }
 
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp) final { return std::make_unique<Pressure>(); }
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp) const final { return std::make_unique<Pressure>(); }
 };
 } // namespace qmcplusplus
 #endif

@@ -113,9 +113,6 @@ private:
    * @return true, if a section is successfully executed.
    */
   bool executeQMCSection(xmlNodePtr cur, bool reuse = false);
-
-  ///execute <cmc/> element
-  bool executeCMCSection(xmlNodePtr cur);
 };
 } // namespace qmcplusplus
 #endif

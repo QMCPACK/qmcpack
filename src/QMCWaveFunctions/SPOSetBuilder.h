@@ -56,7 +56,7 @@ public:
   /// state info of all possible states available in the basis
   std::vector<std::unique_ptr<SPOSetInfo>> states;
 
-  SPOSetBuilder(const std::string& type_name, Communicate* comm);
+  SPOSetBuilder(const std::string& type_name, Communicate* comm, std::string_view class_name = "");
   virtual ~SPOSetBuilder() {}
 
   /// reserve space for states (usually only one set, multiple for e.g. spin dependent einspline)
@@ -85,6 +85,9 @@ protected:
 
   /// type name of the SPO objects built by this builder.
   const std::string type_name_;
+
+  /// class name
+  const std::string class_name_;
 };
 
 } // namespace qmcplusplus

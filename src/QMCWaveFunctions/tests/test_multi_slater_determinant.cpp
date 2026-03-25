@@ -79,8 +79,7 @@ void test_LiH_msd(const std::string& spo_xml_string,
   elec_.resetGroups();
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(spo_xml_string);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(spo_xml_string));
 
   xmlNodePtr ein_xml = doc.getRoot();
 
@@ -100,7 +99,6 @@ void test_LiH_msd(const std::string& spo_xml_string,
   CHECK(msd_refvec.size() == 1);
   MultiSlaterDetTableMethod& msd = msd_refvec[0];
 
-  twf.setMassTerm(elec_);
   twf.evaluateLog(elec_);
 
   app_log() << "twf.evaluateLog logpsi " << std::setprecision(16) << twf.getLogPsi() << " " << twf.getPhase()
@@ -440,8 +438,7 @@ void test_Bi_msd(const std::string& spo_xml_string,
   elec_.resetGroups();
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(spo_xml_string);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(spo_xml_string));
 
   xmlNodePtr ein_xml = doc.getRoot();
 
@@ -456,7 +453,6 @@ void test_Bi_msd(const std::string& spo_xml_string,
   elec_.update();
 
   auto& twf(*twf_ptr);
-  twf.setMassTerm(elec_);
   twf.evaluateLog(elec_);
 
   //Reference values from QWalk with SOC

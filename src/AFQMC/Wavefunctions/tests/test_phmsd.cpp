@@ -200,8 +200,7 @@ void test_phmsd(boost::mpi3::communicator& world)
     )";
     const char* ham_xml_block = hamil_xml.c_str();
     Libxml2Document doc;
-    bool okay = doc.parseFromString(ham_xml_block);
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(ham_xml_block));
     std::string ham_name("ham0");
     HamFac.push(ham_name, doc.getRoot());
     Hamiltonian& ham = HamFac.getHamiltonian(gTG, ham_name);
@@ -216,8 +215,7 @@ void test_phmsd(boost::mpi3::communicator& world)
     )";
     const char* wfn_xml_block = wfn_xml.c_str();
     Libxml2Document doc2;
-    okay = doc2.parseFromString(wfn_xml_block);
-    REQUIRE(okay);
+    REQUIRE(doc2.parseFromString(wfn_xml_block));
     std::string wfn_name("wfn0");
     WavefunctionFactory WfnFac(InfoMap);
     WfnFac.push(wfn_name, doc2.getRoot());
@@ -228,8 +226,7 @@ void test_phmsd(boost::mpi3::communicator& world)
     </WalkerSet>
     )";
     Libxml2Document doc3;
-    okay = doc3.parseFromString(wlk_xml_block);
-    REQUIRE(okay);
+    REQUIRE(doc3.parseFromString(wlk_xml_block));
     RandomGenerator rng;
     WalkerSet wset(TG, doc3.getRoot(), InfoMap["info0"], rng);
     auto initial_guess = WfnFac.getInitialGuess(wfn_name);

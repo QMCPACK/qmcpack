@@ -147,7 +147,7 @@ bool DensityEstimator::get(std::ostream& os) const
   return true;
 }
 
-std::unique_ptr<OperatorBase> DensityEstimator::makeClone(ParticleSet& qp)
+std::unique_ptr<OperatorBase> DensityEstimator::makeClone(ParticleSet& qp) const
 {
   //default constructor is sufficient
   return std::make_unique<DensityEstimator>(*this);

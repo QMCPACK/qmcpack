@@ -40,8 +40,7 @@ void test_C_diamond()
     Communicate* c = OHMMS::Controller;
 
     Libxml2Document doc;
-    bool okay = doc.parse("C_diamond-twist-third.structure.xml");
-    REQUIRE(okay);
+    REQUIRE(doc.parse("C_diamond-twist-third.structure.xml"));
     xmlNodePtr root = doc.getRoot();
 
     Lattice lattice;
@@ -78,8 +77,7 @@ void test_C_diamond()
 
     Libxml2Document doc2;
 
-    okay = doc2.parse("C_diamond-twist-third.wfj.xml");
-    REQUIRE(okay);
+    REQUIRE(doc2.parse("C_diamond-twist-third.wfj.xml"));
     xmlNodePtr root2 = doc2.getRoot();
 
     WaveFunctionComponentBuilder::PSetMap particle_set_map;
