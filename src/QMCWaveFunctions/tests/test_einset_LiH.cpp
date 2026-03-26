@@ -253,9 +253,9 @@ void test_einset_LiH_x(bool use_offload)
     const auto& ei_table_  = elec_.getDistTableAB(ei_table_index);
     const auto& ei_table_2 = elec_2.getDistTableAB(ei_table_index);
     // make virtual move of elec 0, reference ion 1
-    NLPPJob<SPOSet::RealType> job_(1, 0, ei_table_.getDistances()[0][1], -ei_table_.getDisplacements()[0][1]);
+    NLPPJob<SPOSet::RealType> job_(1, 0, ei_table_.getDistances()[0][1], -ei_table_.getDisplacements()[0][1], 0);
     // make virtual move of elec 1, reference ion 0
-    NLPPJob<SPOSet::RealType> job_2(0, 1, ei_table_2.getDistances()[1][0], -ei_table_2.getDisplacements()[1][0]);
+    NLPPJob<SPOSet::RealType> job_2(0, 1, ei_table_2.getDistances()[1][0], -ei_table_2.getDisplacements()[1][0], 1);
 
     // make VP refvec
     RefVectorWithLeader<VirtualParticleSet> vp_list(VP_, {VP_, VP_2});

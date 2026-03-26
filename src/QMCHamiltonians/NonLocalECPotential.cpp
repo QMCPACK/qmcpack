@@ -297,7 +297,7 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
           if (O.PP[iat] != nullptr && dist[iat] < O.PP[iat]->getRmax())
           {
             O.neighbor_lists.addElecIonPair(jel, iat);
-            joblist.emplace_back(iat, jel, dist[iat], -displ[iat]);
+            joblist.emplace_back(iat, jel, dist[iat], -displ[iat], iw);
           }
       }
     }
@@ -388,9 +388,6 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
                                                                  : std::nullopt,
                                                  O_leader.use_DLA);
 
-      // Right now this is just over walker but could and probably should be over a set
-      // larger than the walker count.  The easiest way to not complicate the per particle
-      // reporting code would be to add the crowd walker index to the nlpp job meta data.
       for (size_t j = 0; j < ecp_potential_list.size(); j++)
       {
         NonLocalECPotential& ecp = ecp_potential_list[j];
@@ -400,8 +397,9 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
         {
           auto& ve_samples = O_leader.mw_res_handle_.getResource().ve_samples;
           auto& vi_samples = O_leader.mw_res_handle_.getResource().vi_samples;
-          // CAUTION! This may not be so simple in the future
-          int iw = j;
+          // This is not the walker_id but rather its index in the
+          // crowd.
+          int iw = batch_list[j].get().walker_index;
           ve_samples(iw, batch_list[j].get().electron_id) += 0.5 * pairpots[j];
           vi_samples(iw, batch_list[j].get().ion_id) += 0.5 * pairpots[j];
         }

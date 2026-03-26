@@ -40,10 +40,7 @@ struct SOECPotential::SOECPotentialMultiWalkerResource : public Resource
  *\param els electronic poitions
  *\param psi Trial wave function
 */
-SOECPotential::SOECPotential(ParticleSet& ions,
-                             ParticleSet& els,
-                             bool use_exact_spin,
-                             bool use_VP)
+SOECPotential::SOECPotential(ParticleSet& ions, ParticleSet& els, bool use_exact_spin, bool use_VP)
     : my_rng_(nullptr),
       ion_config_(ions),
       vp_(use_VP ? std::make_unique<VirtualParticleSet>(els) : nullptr),
@@ -200,7 +197,7 @@ void SOECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& o_l
         const auto& displ = ble.getDisplRow(jel);
         for (size_t iat = 0; iat < O.pp_.size(); iat++)
           if (O.pp_[iat] != nullptr && dist[iat] < O.pp_[iat]->getRmax())
-            joblist.emplace_back(iat, jel, dist[iat], -displ[iat]);
+            joblist.emplace_back(iat, jel, dist[iat], -displ[iat], iw);
       }
     }
     O.value_ = 0.0;
