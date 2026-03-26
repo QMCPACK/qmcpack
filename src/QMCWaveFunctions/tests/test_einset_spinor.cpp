@@ -675,13 +675,13 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   inv_row = {0.1, 0.2, 0.3};
   inv_row.updateTo();
   std::vector<const SPOSet::ValueType*> inv_row_ptr(2, spo->isOMPoffload() ? inv_row.device_data() : inv_row.data());
-  const auto& ei_table1    = elec_.getDistTableAB(elec_.addTable(ions_));
-  const auto& ei_table2     = elec_2.getDistTableAB(elec_2.addTable(ions_));
+  const auto& ei_table1 = elec_.getDistTableAB(elec_.addTable(ions_));
+  const auto& ei_table2 = elec_2.getDistTableAB(elec_2.addTable(ions_));
   ParticleSet::mw_update(p_list);
   for (int iat = 0; iat < 3; iat++)
   {
-    NLPPJob<RealType> job1(0, iat, ei_table1.getDistances()[iat][0], -ei_table1.getDisplacements()[iat][0]);
-    NLPPJob<RealType> job2(0, iat, ei_table2.getDistances()[iat][0], -ei_table2.getDisplacements()[iat][0]);
+    NLPPJob<RealType> job1(0, iat, ei_table1.getDistances()[iat][0], -ei_table1.getDisplacements()[iat][0], 0);
+    NLPPJob<RealType> job2(0, iat, ei_table2.getDistances()[iat][0], -ei_table2.getDisplacements()[iat][0], 1);
 
     std::vector<ParticleSet::PosType> deltaV1{{-dR[iat][0], -dR[iat][1], -dR[iat][2]}};
     std::vector<ParticleSet::PosType> deltaV2{{-dR[iat][0], -dR[iat][1], -dR[iat][2]}};
