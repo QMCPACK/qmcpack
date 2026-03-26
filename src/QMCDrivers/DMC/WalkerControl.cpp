@@ -85,12 +85,13 @@ void WalkerControl::start()
     {
       dmcStream = std::make_unique<std::ofstream>(hname);
       dmcStream->setf(std::ios::scientific, std::ios::floatfield);
-      dmcStream->precision(10);
-      (*dmcStream) << "# Index " << std::setw(20) << "LocalEnergy" << std::setw(20) << "Variance" << std::setw(20)
-                   << "Weight" << std::setw(20) << "NumOfWalkers" << std::setw(20)
+      dmcStream->precision(16);
+      (*dmcStream) << "# Index " << std::setw(28) << "LocalEnergy" << std::setw(28) << "Variance" << std::setw(28)
+                   << "Weight" << std::setw(28) << "NumOfWalkers" << std::setw(28)
                    << "AvgSentWalkers"; //add the number of walkers
-      (*dmcStream) << std::setw(20) << "TrialEnergy" << std::setw(20) << "DiffEff";
-      (*dmcStream) << std::setw(20) << "LivingFraction";
+      (*dmcStream) << std::setw(28) << "TrialEnergy" << std::setw(28) << "DiffEff";
+      (*dmcStream) << std::setw(28) << "LivingFraction";
+      (*dmcStream) << std::setw(28) << "WeightedEnergySum";
       (*dmcStream) << std::endl;
       dmcFname = std::move(hname);
     }
@@ -110,20 +111,22 @@ void WalkerControl::writeDMCdat(int iter, const std::vector<FullPrecRealType>& c
   ensemble_property_.R2Proposed = curData[R2PROPOSED_INDEX];
   ensemble_property_.LivingFraction =
       static_cast<FullPrecRealType>(curData[FNSIZE_INDEX]) / static_cast<FullPrecRealType>(curData[WALKERSIZE_INDEX]);
-  ensemble_property_.AlternateEnergy = FullPrecRealType(0);
+  ensemble_property_.AlternateEnergy   = FullPrecRealType(0);
+  ensemble_property_.WeightedEnergySum = curData[ENERGY_INDEX];
   // \\todo If WalkerControl is not exclusively for dmc then this shouldn't be here.
   // If it is it shouldn't be in QMDrivers but QMCDrivers/DMC
   if (dmcStream)
   {
     //boost::archive::text_oarchive oa(*dmcStream);
     //(*oa) & iter  & eavg_cur & wgt_cur & Etrial  & pop_old;
-    (*dmcStream) << std::setw(10) << iter << std::setw(20) << ensemble_property_.Energy << std::setw(20)
-                 << ensemble_property_.Variance << std::setw(20) << ensemble_property_.Weight << std::setw(20)
-                 << ensemble_property_.NumSamples << std::setw(20)
+    (*dmcStream) << std::setw(16) << iter << std::setw(28) << ensemble_property_.Energy << std::setw(28)
+                 << ensemble_property_.Variance << std::setw(28) << ensemble_property_.Weight << std::setw(28)
+                 << ensemble_property_.NumSamples << std::setw(28)
                  << curData[SENTWALKERS_INDEX] / static_cast<double>(num_ranks_);
-    (*dmcStream) << std::setw(20) << trial_energy_ << std::setw(20)
+    (*dmcStream) << std::setw(28) << trial_energy_ << std::setw(28)
                  << ensemble_property_.R2Accepted / ensemble_property_.R2Proposed;
-    (*dmcStream) << std::setw(20) << ensemble_property_.LivingFraction;
+    (*dmcStream) << std::setw(28) << ensemble_property_.LivingFraction;
+    (*dmcStream) << std::setw(28) << ensemble_property_.WeightedEnergySum;
     // Work around for bug with deterministic scalar trace test on select compiler/architectures.
     // While WalkerControl appears to have exclusive ownership of the dmcStream pointer,
     // this is not actually true. Apparently it doesn't actually and can loose ownership then it is

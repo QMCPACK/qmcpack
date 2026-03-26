@@ -12,10 +12,11 @@
 #
 
 #
-#  HEG14G - non-interacting Slater only VMC (exact)
+# HEG14G - non-interacting Slater only VMC (exact)
 #
 list(APPEND HEG14GSNI_SCALARS "totenergy" " 0.627711  0.000001") # total energy
-list(APPEND HEG14GSNI_SCALARS "variance" " 0.000000  0.000001") # energy variance
+list(APPEND HEG14GSNI_SCALARS "variance" " 0.000000  0.000001") # energy
+                                                                # variance
 
 qmc_run_and_check(
   short-heg_14_gamma-ni
@@ -29,10 +30,12 @@ qmc_run_and_check(
   HEG14GSNI_SCALARS)
 
 #
-#  HEG14G - non-interacting Slater only DMC (exact)
+# HEG14G - non-interacting Slater only DMC (exact)
 #
-list(APPEND HEG14GSNI_DMC_SCALARS "totenergy" " 0.627711  0.000001") # total energy
-list(APPEND HEG14GSNI_DMC_SCALARS "variance" " 0.000000  0.000001") # energy variance
+list(APPEND HEG14GSNI_DMC_SCALARS "totenergy" " 0.627711  0.000001") # total
+                                                                     # energy
+list(APPEND HEG14GSNI_DMC_SCALARS "variance" " 0.000000  0.000001") # energy
+                                                                    # variance
 
 qmc_run_and_check(
   short-heg_14_gamma-ni_dmc
@@ -47,10 +50,11 @@ qmc_run_and_check(
 )
 
 #
-#  HEG14G - Slater only VMC (Hartree-Fock)
+# HEG14G - Slater only VMC (Hartree-Fock)
 #
 list(APPEND HEG14GSHF_SCALARS "totenergy" "-0.812484  0.000271") # total energy
-list(APPEND HEG14GSHF_SCALARS "variance" " 0.193169  0.018612") # energy variance
+list(APPEND HEG14GSHF_SCALARS "variance" " 0.193169  0.018612") # energy
+                                                                # variance
 
 qmc_run_and_check(
   short-heg_14_gamma-hf
@@ -65,10 +69,11 @@ qmc_run_and_check(
 )
 
 #
-#  HEG14G - Slater-Jastrow VMC
+# HEG14G - Slater-Jastrow VMC
 #
 list(APPEND HEG14GSSJ_SCALARS "totenergy" "-1.073323  0.000271") # total energy
-list(APPEND HEG14GSSJ_SCALARS "variance" " 0.024574  0.000181") # energy variance
+list(APPEND HEG14GSSJ_SCALARS "variance" " 0.024574  0.000181") # energy
+                                                                # variance
 
 qmc_run_and_check(
   short-heg_14_gamma-sj
@@ -83,10 +88,12 @@ qmc_run_and_check(
 )
 
 #
-#  HEG14G - Slater-Jastrow VMC with newer input format
+# HEG14G - Slater-Jastrow VMC with newer input format
 #
-list(APPEND HEG14GSSJ_NEW_SCALARS "totenergy" "-1.073286  0.000271") # total energy
-list(APPEND HEG14GSSJ_NEW_SCALARS "variance" " 0.024564  0.000342") # energy variance
+list(APPEND HEG14GSSJ_NEW_SCALARS "totenergy" "-1.073286  0.000271") # total
+                                                                     # energy
+list(APPEND HEG14GSSJ_NEW_SCALARS "variance" " 0.024564  0.000342") # energy
+                                                                    # variance
 
 # legacy driver
 qmc_run_and_check(
@@ -109,6 +116,32 @@ qmc_run_and_check(
   short-heg-SJ-batch.xml
   1
   16
+  TRUE
+  0
+  HEG14GSSJ_NEW_SCALARS # VMC
+)
+
+# batch driver energy density
+qmc_run_and_check(
+  short-heg_14_gamma-sj_eden_batch
+  "${qmcpack_SOURCE_DIR}/tests/heg/heg_14_gamma/batch"
+  short_heg_SJ_eden_batch
+  short-heg-SJ-eden-batch.xml
+  4
+  4
+  TRUE
+  0
+  HEG14GSSJ_NEW_SCALARS # VMC
+)
+
+# batch driver energy density
+qmc_run_and_check(
+  short-heg_14_gamma-sj-dmc_eden_batch
+  "${qmcpack_SOURCE_DIR}/tests/heg/heg_14_gamma/batch"
+  short_heg_SJ-dmc_eden_batch
+  short-heg-SJ-dmc_eden_batch.xml
+  4
+  4
   TRUE
   0
   HEG14GSSJ_NEW_SCALARS # VMC
@@ -138,10 +171,12 @@ qmc_run_and_check(
 )
 
 #
-#  HEG14G - Slater-Jastrow DMC
+# HEG14G - Slater-Jastrow DMC
 #
-list(APPEND HEG14GSSJ_DMC_SCALARS "totenergy" "-1.110199  0.000322") # total energy
-list(APPEND HEG14GSSJ_DMC_SCALARS "variance" " 0.022894  0.000060") # energy variance
+list(APPEND HEG14GSSJ_DMC_SCALARS "totenergy" "-1.110199  0.000322") # total
+                                                                     # energy
+list(APPEND HEG14GSSJ_DMC_SCALARS "variance" " 0.022894  0.000060") # energy
+                                                                    # variance
 
 qmc_run_and_check(
   short-heg_14_gamma-sj_dmc
@@ -160,10 +195,11 @@ qmc_run_and_check(
 #
 
 #
-#  HEG14G - non-interacting Slater only VMC (exact)
+# HEG14G - non-interacting Slater only VMC (exact)
 #
 list(APPEND HEG14GLNI_SCALARS "totenergy" " 0.627711  0.000001") # total energy
-list(APPEND HEG14GLNI_SCALARS "variance" " 0.000000  0.000001") # energy variance
+list(APPEND HEG14GLNI_SCALARS "variance" " 0.000000  0.000001") # energy
+                                                                # variance
 
 qmc_run_and_check(
   long-heg_14_gamma-ni
@@ -178,10 +214,12 @@ qmc_run_and_check(
 )
 
 #
-#  HEG14G - non-interacting Slater only DMC (exact)
+# HEG14G - non-interacting Slater only DMC (exact)
 #
-list(APPEND HEG14GLNI_DMC_SCALARS "totenergy" " 0.627711  0.000001") # total energy
-list(APPEND HEG14GLNI_DMC_SCALARS "variance" " 0.000000  0.000001") # energy variance
+list(APPEND HEG14GLNI_DMC_SCALARS "totenergy" " 0.627711  0.000001") # total
+                                                                     # energy
+list(APPEND HEG14GLNI_DMC_SCALARS "variance" " 0.000000  0.000001") # energy
+                                                                    # variance
 
 qmc_run_and_check(
   long-heg_14_gamma-ni_dmc
@@ -196,10 +234,11 @@ qmc_run_and_check(
 )
 
 #
-#  HEG14G - Slater only VMC (Hartree-Fock)
+# HEG14G - Slater only VMC (Hartree-Fock)
 #
 list(APPEND HEG14GLHF_SCALARS "totenergy" "-0.812484  0.000090") # total energy
-list(APPEND HEG14GLHF_SCALARS "variance" " 0.193169  0.006142") # energy variance
+list(APPEND HEG14GLHF_SCALARS "variance" " 0.193169  0.006142") # energy
+                                                                # variance
 
 qmc_run_and_check(
   long-heg_14_gamma-hf
@@ -214,10 +253,11 @@ qmc_run_and_check(
 )
 
 #
-#  HEG14G - Slater-Jastrow VMC
+# HEG14G - Slater-Jastrow VMC
 #
 list(APPEND HEG14GLSJ_SCALARS "totenergy" "-1.073323  0.000090") # total energy
-list(APPEND HEG14GLSJ_SCALARS "variance" " 0.024574  0.000060") # energy variance
+list(APPEND HEG14GLSJ_SCALARS "variance" " 0.024574  0.000060") # energy
+                                                                # variance
 
 qmc_run_and_check(
   long-heg_14_gamma-sj
@@ -232,10 +272,12 @@ qmc_run_and_check(
 )
 
 #
-#  HEG14G - Slater-Jastrow VMC with newer input format
+# HEG14G - Slater-Jastrow VMC with newer input format
 #
-list(APPEND HEG14GLSJ_NEW_SCALARS "totenergy" "-1.073286  0.000090") # total energy
-list(APPEND HEG14GLSJ_NEW_SCALARS "variance" " 0.024564  0.000113") # energy variance
+list(APPEND HEG14GLSJ_NEW_SCALARS "totenergy" "-1.073286  0.000090") # total
+                                                                     # energy
+list(APPEND HEG14GLSJ_NEW_SCALARS "variance" " 0.024564  0.000113") # energy
+                                                                    # variance
 
 qmc_run_and_check(
   long-heg_14_gamma-sj_new
@@ -250,10 +292,12 @@ qmc_run_and_check(
 )
 
 #
-#  HEG14G - Slater-Jastrow DMC
+# HEG14G - Slater-Jastrow DMC
 #
-list(APPEND HEG14GLSJ_DMC_SCALARS "totenergy" "-1.110199  0.000106") # total energy
-list(APPEND HEG14GLSJ_DMC_SCALARS "variance" " 0.022894  0.000020") # energy variance
+list(APPEND HEG14GLSJ_DMC_SCALARS "totenergy" "-1.110199  0.000106") # total
+                                                                     # energy
+list(APPEND HEG14GLSJ_DMC_SCALARS "variance" " 0.022894  0.000020") # energy
+                                                                    # variance
 
 qmc_run_and_check(
   long-heg_14_gamma-sj_dmc
@@ -268,11 +312,11 @@ qmc_run_and_check(
 )
 
 #
-#  HEG14G - Slater-Jastrow-Backflow VMC
-#           Run 16x1, 4x4, 1x16 to test SJB cloning
+# HEG14G - Slater-Jastrow-Backflow VMC Run 16x1, 4x4, 1x16 to test SJB cloning
 #
 list(APPEND HEG14GSSJB_SCALARS "totenergy" "-1.084963  0.0006") # total energy
-list(APPEND HEG14GSSJB_SCALARS "variance" " 0.022667  0.000764") # energy variance
+list(APPEND HEG14GSSJB_SCALARS "variance" " 0.022667  0.000764") # energy
+                                                                 # variance
 
 qmc_run_and_check(
   short-heg_14_gamma-sjb
@@ -310,11 +354,11 @@ qmc_run_and_check(
   HEG14GSSJB_SCALARS # VMC
 )
 #
-#  HEG14G - Slater-Jastrow-Backflow VMC
-#           Run 16x1, 4x4, 1x16 to test SJB cloning
+# HEG14G - Slater-Jastrow-Backflow VMC Run 16x1, 4x4, 1x16 to test SJB cloning
 #
 list(APPEND HEG14GLSJB_SCALARS "totenergy" "-1.084963  0.000083") # total energy
-list(APPEND HEG14GLSJB_SCALARS "variance" " 0.022667  0.000252") # energy variance
+list(APPEND HEG14GLSJB_SCALARS "variance" " 0.022667  0.000252") # energy
+                                                                 # variance
 
 qmc_run_and_check(
   long-heg_14_gamma-sjb

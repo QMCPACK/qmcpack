@@ -137,7 +137,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
   std::vector<RealType> rr_proposed(num_walkers, 0.0);
   std::vector<RealType> rr_accepted(num_walkers, 0.0);
-
+  std::vector<int> accepted_particle_moves(num_walkers, 0);
   {
     ScopedTimer pbyp_local_timer(timers.movepbyp_timer);
     for (int ig = 0; ig < pset_leader.groups(); ++ig)
@@ -224,6 +224,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
           {
             crowd.incAccept();
             isAccepted.push_back(true);
+            ++accepted_particle_moves[iw];
             rr_accepted[iw] += rr[iw];
           }
           else
@@ -250,6 +251,11 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     ps_dispatcher.flex_saveWalker(walker_elecs, walkers);
   }
 
+
+  std::vector<FullPrecRealType> post_branch_weights(num_walkers, 0.0);
+  for (int iw = 0; iw < num_walkers; ++iw)
+    post_branch_weights[iw] = walkers[iw].get().Weight;
+
   { // hamiltonian
     ScopedTimer ham_local(timers.hamiltonian_timer);
 
@@ -265,32 +271,55 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
     for (int iw = 0; iw < walkers.size(); ++iw)
     {
-      resetSigNLocalEnergy(walkers[iw], walker_twfs[iw], new_energies[iw], rr_accepted[iw], rr_proposed[iw]);
-      FullPrecRealType branch_weight = sft.branch_engine.branchWeight(new_energies[iw], old_energies[iw]);
-      walkers[iw].get().Weight *= branch_weight;
-      if (rr_proposed[iw] > 0)
-        walkers[iw].get().Age = 0;
+      // So these energies get no weighting? I guess that's fine if
+      // old_energies aren't weighted either
+      // In legacy this is accepted_particlemoves
+      if (accepted_particle_moves[iw] > 0)
+      {
+        // A side affec of this call is setting Age to 0
+        resetSigNLocalEnergy(walkers[iw], walker_twfs[iw], new_energies[iw], rr_accepted[iw], rr_proposed[iw]);
+      }
       else
+      {
+        // This is reproducing some edge case legacy behavior more
+        // exactly
+        std::cerr << "Rare event of a walker that couldn't move any electrons occured.";
+        assert(walkers[iw].get().Properties(WP::R2ACCEPTED) == 0.0);
+        walkers[iw].get().Properties(WP::R2ACCEPTED) = 0.0;
         walkers[iw].get().Age++;
+        new_energies[iw] = old_energies[iw];
+      }
+      FullPrecRealType branch_weight = sft.branch_engine.branchWeight(new_energies[iw], old_energies[iw]);
+      post_branch_weights[iw] *= branch_weight;
     }
   }
 
   { // estimator collectables
     ScopedTimer collectable_local(timers.collectables_timer);
 
+    // Now we can assign the post_branch_weights
+    for (int iw = 0; iw < num_walkers; ++iw)
+    {
+      walkers[iw].get().Weight        = post_branch_weights[iw];
+      walkers[iw].get().Properties(0) = post_branch_weights[iw];
+    }
     // evaluate non-physical hamiltonian elements
+    // In legacy this was only done if the move was accepted
+    // This mean many/all estimators did not accumulate failed moves.
     for (int iw = 0; iw < walkers.size(); ++iw)
-      walker_hamiltonians[iw].auxHevaluate(walker_twfs[iw], walker_elecs[iw], walkers[iw]);
+      if (isAccepted[iw])
+        walker_hamiltonians[iw].auxHevaluate(walker_twfs[iw], walker_elecs[iw], walkers[iw]);
+
+    if (accumulate_this_step)
+    {
+      ScopedTimer est_timer(timers.estimators_timer);
+      crowd.accumulate(step_context.get_random_gen());
+    }
 
     // save properties into walker
     for (int iw = 0; iw < walkers.size(); ++iw)
-      walker_hamiltonians[iw].saveProperty(walkers[iw].get().getPropertyBase());
-  }
-
-  if (accumulate_this_step)
-  {
-    ScopedTimer est_timer(timers.estimators_timer);
-    crowd.accumulate(step_context.get_random_gen());
+      if (accepted_particle_moves[iw] > 0)
+        walker_hamiltonians[iw].saveProperty(walkers[iw].get().getPropertyBase());
   }
 
   // collect walker logs
@@ -509,6 +538,9 @@ bool DMCBatched::run()
 
         {
           const int iter = block * steps_per_block_ + step;
+          // This is where the dmc.dat energy is written
+          // At the very end before updating the ensemble_property_
+          // for the population.
           walker_controller_->branch(iter, population_, iter == 0);
           branch_engine_->updateParamAfterPopControl(walker_controller_->get_ensemble_property(),
                                                      population_.get_golden_electrons().getTotalNum());

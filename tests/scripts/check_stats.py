@@ -33,6 +33,19 @@ class NexusError(Exception):
 #end class NexusError
 
 
+class AliasDict(dict):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.aliases = {}
+
+    def alias(self, alias, key):
+        self.aliases[alias] = key
+
+    def __getitem__(self, key):
+        if key in self.aliases:
+            return super().__getitem__(self.aliases[key])
+        return super().__getitem__(key)
+
 exit_call = sys.exit
 
 
@@ -200,7 +213,7 @@ class object_interface(object):
         return s
     #end def __str__
 
-    def __eq__(self,other): 
+    def __eq__(self,other):
         if not hasattr(other,'__dict__'):
             return False
         #end if
@@ -450,9 +463,9 @@ class object_interface(object):
         return object_interface.keys(self,*args,**kwargs)
     def _values(self,*args,**kwargs):
         object_interface.values(self,*args,**kwargs)
-    def _items(self,*args,**kwargs):         
-        return object_interface.items(self,*args,**kwargs)         
-    def _copy(self,*args,**kwargs):              
+    def _items(self,*args,**kwargs):
+        return object_interface.items(self,*args,**kwargs)
+    def _copy(self,*args,**kwargs):
         return object_interface.copy(self,*args,**kwargs)
     def _clear(self,*args,**kwargs):
         object_interface.clear(self,*args,**kwargs)
@@ -590,7 +603,7 @@ class obj(object_interface):
         return self[max(self._keys())]
     #end def last
 
-    def select_random(self): 
+    def select_random(self):
         return self[randint(0,len(self)-1)]
     #end def select_random
 
@@ -733,7 +746,7 @@ class obj(object_interface):
                 if k not in self:
                     self[k]=copier(other[k])
                 #end if
-            #end for            
+            #end for
         #end if
     #end def transfer_from
 
@@ -755,7 +768,7 @@ class obj(object_interface):
                 if k not in self:
                     other[k]=copier(self[k])
                 #end if
-            #end for            
+            #end for
         #end if
     #end def transfer_to
 
@@ -1041,13 +1054,13 @@ class HDFgroup(DevBase):
 
     def _add_dataset(self,name,dataset):
         self._datasets[name]=dataset
-        return 
+        return
     #end def add_dataset
 
     def _add_group(self,name,group):
         group._name=name
         self._groups[name]=group
-        return 
+        return
     #end def add_group
 
     def _contains_group(self,name):
@@ -1145,9 +1158,9 @@ class HDFgroup(DevBase):
 class HDFreader(DevBase):
     datasets = set(["<class 'h5py.highlevel.Dataset'>","<class 'h5py._hl.dataset.Dataset'>","<class 'h5py._debian_h5py_serial._hl.dataset.Dataset'>"])
     groups   = set(["<class 'h5py.highlevel.Group'>","<class 'h5py._hl.group.Group'>","<class 'h5py._debian_h5py_serial._hl.group.Group'>"])
-    
+
     def __init__(self,fpath,verbose=False,view=False):
-        
+
         HDFglobals.view = view
 
         if verbose:
@@ -1309,7 +1322,7 @@ class ColorWheel(DevBase):
     def __init__(self):
         colors  = 'Black Maroon DarkOrange Green DarkBlue Purple Gray Firebrick Orange MediumSeaGreen DodgerBlue MediumOrchid'.split()
         lines  = '- -- -. :'.split()
-        markers = '. v s o ^ d p'.split() 
+        markers = '. v s o ^ d p'.split()
         ls = []
         for line in lines:
             for color in colors:
@@ -1416,7 +1429,7 @@ def erf(x):
 #end def erf
 
 
-# standalone inverse error function 
+# standalone inverse error function
 # credit: https://stackoverflow.com/questions/42381244/pure-python-inverse-error-function
 import math
 def polevl(x, coefs, N):
@@ -1586,7 +1599,7 @@ def exit_pass(msg=None):
 
 # Calculates the mean, variance, errorbar, and autocorrelation time
 # for a N-d array of statistical data values.
-# If 'exclude' is provided, the first 'exclude' values will be 
+# If 'exclude' is provided, the first 'exclude' values will be
 # excluded from the analysis.
 def simstats(x,dim=None,exclude=None):
     if exclude!=None:
@@ -1613,7 +1626,7 @@ def simstats(x,dim=None,exclude=None):
         shape = tuple(array(shape)[array(permutation)])
         dim = ndim-1
     #end if
-    if reshape:        
+    if reshape:
         nvars = prod(shape[0:dim])
         x=x.reshape(nvars,nblocks)
         rdim=dim
@@ -1628,7 +1641,7 @@ def simstats(x,dim=None,exclude=None):
     N=nblocks
 
     if ndim==1:
-        i=0          
+        i=0
         tempC=0.5
         kappa=0.0
         mtmp=mean
@@ -1655,7 +1668,7 @@ def simstats(x,dim=None,exclude=None):
         error = zeros(mean.shape)
         kappa = zeros(mean.shape)
         for v in range(nvars):
-            i=0          
+            i=0
             tempC=0.5
             kap=0.0
             vtmp = var[v]
@@ -1679,7 +1692,7 @@ def simstats(x,dim=None,exclude=None):
             #end if
             kappa[v]=kap
             error[v]=sqrt(vtmp/Neff)
-        #end for    
+        #end for
     #end if
 
     if reshape:
@@ -1903,7 +1916,7 @@ def read_command_line():
         elif options.quantity not in allowed_quantities:
             exit_fail('unrecognized quantity provided\nallowed quantities: {0}\nquantity provided: {1}'.format(allowed_quantities,options.quantity))
         #end if
-            
+
         if options.npartial_sums=='none':
             exit_fail('-c option is required')
         #end if
@@ -1967,7 +1980,7 @@ def process_stat_file(options):
     vlog('processing stat.h5 file')
 
     values = obj()
-    
+
     try:
         # find all output files matching prefix
         vlog('searching for qmcpack output files',n=1)
@@ -2241,7 +2254,7 @@ def read_reference_file(filepath):
 # Checks computed values from stat.h5 files against specified reference values.
 passfail = {True:'pass',False:'fail'}
 def check_values(options,values):
-    # check_values is for statistical tests 
+    # check_values is for statistical tests
     vlog('\nchecking against reference values')
 
     success = True
@@ -2304,13 +2317,15 @@ def check_values(options,values):
             vlog('checking energy density terms per block',n=1)
             msg+='\n  Energy density sums vs. scalar file per block tests:\n'
             scalars = load_scalar_file(options,'auto')
+            block_scalar = load_scalar_file(options, 'scalar')
             ed_success = True
-            ftol = 1e-8
             ed_values = obj(
                 T = values.T.data.full_sum,
                 V = values.V.data.full_sum,
                 )
             ed_values.E = ed_values.T + ed_values.V
+            ed_values.WE = ed_values.T + ed_values.V
+
             if scalars.file_type=='scalar':
                 comparisons = obj(
                     E='LocalEnergy',
@@ -2318,32 +2333,67 @@ def check_values(options,values):
                     V='LocalPotential',
                     )
             elif scalars.file_type=='dmc':
-                comparisons = obj(E='LocalEnergy')
+                comparisons = obj(E='LocalEnergy') #, WE='WeightedEnergySum')
             else:
                 exit_fail('unrecognized scalar file type: {0}'.format(scalars.file_type))
             #end if
+            print ("Checking block sums of hdf5 and dat files", comparisons.values())
+            sc_dmc_energies = dict()
             for k in sorted(comparisons.keys()):
                 ed_vals = ed_values[k]
                 sc_vals = scalars.data[comparisons[k]]
                 if scalars.file_type=='dmc':
-                    if len(sc_vals)%len(ed_vals)==0 and len(sc_vals)>len(ed_vals):
+                    print("len(sc_vals)%len(ed_vals)", len(sc_vals)%len(ed_vals), len(sc_vals), " >= ", len(ed_vals))
+                    if len(sc_vals)%len(ed_vals)==0 and len(sc_vals)>=len(ed_vals):
                         steps = len(sc_vals)//len(ed_vals)
-                        sc_vals.shape = len(sc_vals)//steps,steps
-                        sc_vals = sc_vals.mean(1)
+                        if comparisons[k] == 'WeightedEnergySum':
+                            sc_vals.shape = len(sc_vals)//steps,steps
+                            sc_weights = scalars.data['Weight']
+                            sc_vals = sc_vals.sum(1)
+                            sc_weights = sc_weights.reshape(len(sc_weights)//steps,steps)
+                            sc_weights = sc_weights.sum(1)
+                            sc_vals = sc_vals / sc_weights
+                        elif comparisons[k] == 'LocalEnergy':
+                            sc_weights = scalars.data['Weight']
+                            sc_vals = array([val * weight for val, weight in zip(sc_vals, sc_weights)])
+                            sc_vals = sc_vals.reshape(len(sc_vals)//steps,steps)
+                            sc_vals = sc_vals.sum(1)
+                            sc_weights = sc_weights.reshape(len(sc_weights)//steps,steps)
+                            sc_weights = sc_weights.sum(1)
+                            sc_vals = sc_vals / sc_weights
+                        elif comparisons[k] == 'Weight':
+                            sc_vals = sc_vals.reshape(len(sc_vals)//steps,steps)
+                            sc_vals = sc_vals.sum(1)
+                        else:
+                            sc_vals = sc_vals.mean(1)
+                        #end if
+                        sc_dmc_energies[comparisons[k]] = sc_vals
                     #end if
                 #end if
+
                 if len(ed_vals)!=len(sc_vals):
                     exit_fail('energy density per block test cannot be completed\nnumber of energy density and scalar blocks do not match\nenergy density blocks: {0}\nscalar file blocks: {1}'.format(len(ed_vals),len(sc_vals)))
                 #end if
+
+                if scalars.file_type=='dmc':
+                    ftol = 1e-7
+                else:
+                    ftol = 1e-7
+                # This test is actually relative error assuming the
+                # the scv is the true value. since conventionally the
+                # divisor is the true value.
+                print("checking estimator", comparisons[k], "versus scalar agreement")
                 for i,(edv,scv) in enumerate(zip(ed_vals,sc_vals)):
                     if abs((edv-scv)/scv)>ftol:
                         ed_success = False
                         msg += '    {0} {1} {2}!={3}\n'.format(k,i,edv,scv)
                     #end if
                 #end for
+
             #end for
+
             if ed_success:
-                fmsg = 'all per block sums match the scalar file'
+                fmsg = f'all per block sums match sums of {scalars.file_type}.dat'
             else:
                 fmsg = 'some per block sums do not match the scalar file'
             #end if
@@ -2352,7 +2402,6 @@ def check_values(options,values):
             msg += '    status of this test: {0}\n'.format(passfail[ed_success])
             success &= ed_success
         #end if
-
 
         # function used immediately below to test a mean value vs reference
         def check_mean(label,mean_comp,error_comp,mean_ref,error_ref,nsigma):
@@ -2440,11 +2489,11 @@ def check_values_abs_err(options,values):
 
     success = True
     msg     = ''
-    
+
     try:
         msg += '\nTests for series {0} quantity "{1}"\n'.format(options.series,options.quantity)
         N = options.npartial_sums
-        
+
         # read in the reference file
         ref_values,dnames = read_reference_file(options)
 

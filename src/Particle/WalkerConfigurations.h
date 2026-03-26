@@ -49,6 +49,7 @@ struct MCDataType
   T R2Accepted;
   T R2Proposed;
   T LivingFraction;
+  T WeightedEnergySum;
 };
 
 /** A set of light weight walkers that are carried between driver sections and restart

@@ -606,6 +606,7 @@ std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluate(
                                    ham_leader.mw_res_handle_.getResource().ion_kinetic_listeners_);
     else
       ham_leader.H[kinetic_index]->mw_evaluate(HC_list, wf_list, p_list);
+
     for (int iw = 0; iw < ham_list.size(); iw++)
       updateComponent(HC_list[iw], ham_list[iw], p_list[iw]);
   }
