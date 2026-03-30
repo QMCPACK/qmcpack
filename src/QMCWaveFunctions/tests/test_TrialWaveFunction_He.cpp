@@ -95,8 +95,7 @@ std::unique_ptr<TrialWaveFunction> setup_He_wavefunction(Communicate* c,
 
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(wavefunction_xml);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(wavefunction_xml));
 
   xmlNodePtr root = doc.getRoot();
   RuntimeOptions runtime_options;

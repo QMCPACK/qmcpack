@@ -105,8 +105,7 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 )";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(spo_xml);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(spo_xml));
 
   xmlNodePtr spo_root = doc.getRoot();
   xmlNodePtr ein1     = xmlFirstElementChild(spo_root);
@@ -136,8 +135,7 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 </tmp>
 )";
   Libxml2Document doc_jas;
-  okay = doc.parseFromString(jas_input);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(jas_input));
 
   xmlNodePtr jas_root = doc.getRoot();
   xmlNodePtr jas1     = xmlFirstElementChild(jas_root);
@@ -396,8 +394,8 @@ TEST_CASE("TrialWaveFunction::mw_evalGrad for spinors", "[wavefunction]")
   auto wavefunction_pool =
       MinimalWaveFunctionPool::make_O2_spinor(test_project.getRuntimeOptions(), comm, particle_pool);
 
-  auto& elec    = *(particle_pool).getParticleSet("e");
-  auto& psi_noJ = *(wavefunction_pool).getWaveFunction("wavefunction");
+  auto& elec = *(particle_pool).getParticleSet("e");
+  TrialWaveFunction& psi_noJ(wavefunction_pool.getWaveFunction().value());
 
   elec.update();
   auto logpsi = psi_noJ.evaluateLog(elec);
@@ -414,7 +412,7 @@ TEST_CASE("TrialWaveFunction::mw_evalGrad for spinors", "[wavefunction]")
   // Now tack on a jastrow to make sure it is still the same since jastrows don't contribute
   auto wavefunction_pool2 =
       MinimalWaveFunctionPool::make_O2_spinor_J12(test_project.getRuntimeOptions(), comm, particle_pool);
-  auto& psi = *(wavefunction_pool2).getWaveFunction("wavefunction");
+  TrialWaveFunction& psi = wavefunction_pool2.getWaveFunction().value();
 
   // make clones
   ParticleSet elec_clone(elec);

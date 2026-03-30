@@ -46,7 +46,7 @@ struct HarmonicExternalPotential : public OperatorDependsOnlyOnParticleSet
   //standard interface functions
   bool put(xmlNodePtr cur) override;
   bool get(std::ostream& os) const override;
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& P) final;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& P) const final;
 
   //functions for physical (hamiltonian component) estimator
   Return_t evaluate(ParticleSet& P) override;

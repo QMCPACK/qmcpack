@@ -27,7 +27,7 @@ TEST_CASE("StructureFactorInput::parseXML::valid", "[estimators]")
   for (auto input_xml : input)
   {
     Libxml2Document doc;
-    bool okay       = doc.parseFromString(input_xml);
+    REQUIRE(doc.parseFromString(input_xml));
     xmlNodePtr node = doc.getRoot();
     StructureFactorInput sfi(node);
   }
@@ -41,7 +41,7 @@ TEST_CASE("StructureFactorInput::parseXML::invalid", "[estimators]")
   for (auto input_xml : input)
   {
     Libxml2Document doc;
-    bool okay                             = doc.parseFromString(input_xml);
+    REQUIRE(doc.parseFromString(input_xml));
     xmlNodePtr node                       = doc.getRoot();
     auto constructBadStructureFactorInput = [](xmlNodePtr cur) { StructureFactorInput sfi(cur); };
     CHECK_THROWS_AS(constructBadStructureFactorInput(node), UniformCommunicateError);

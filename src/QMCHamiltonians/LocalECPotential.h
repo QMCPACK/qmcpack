@@ -110,7 +110,7 @@ struct LocalECPotential : public OperatorDependsOnlyOnParticleSet
     return true;
   }
 
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& P) override;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& P) const override;
 
   /** Add a RadialPotentialType of a species
    * @param groupID index of the ion species

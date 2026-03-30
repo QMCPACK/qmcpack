@@ -36,8 +36,7 @@ TEST_CASE("UserJastrowFunctor", "[wavefunction]")
         </tmp>)";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(xmltext);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(xmltext));
 
   xmlNodePtr root = doc.getRoot();
   uf.put(root);

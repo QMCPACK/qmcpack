@@ -22,14 +22,15 @@
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
 #include <PlatformSelector.hpp>
+#include "einspline_helper.hpp"
 
 #include <array>
 #include <filesystem>
 
 namespace qmcplusplus
 {
-BsplineReader::BsplineReader(EinsplineSetBuilder* e)
-    : mybuilder(e), checkNorm(true), saveSplineCoefs(false), rotate(true)
+BsplineReader::BsplineReader(EinsplineSetBuilder* e, bool use_duplex_splines)
+    : mybuilder(e), checkNorm(true), saveSplineCoefs(false), rotate(true), use_duplex_splines_(use_duplex_splines)
 { myComm = mybuilder->getCommunicator(); }
 
 BsplineReader::~BsplineReader() = default;
@@ -107,12 +108,59 @@ std::unique_ptr<SPOSet> BsplineReader::create_spline_set(const std::string& spo_
   }
 
   BandInfoGroup vals;
-  vals.TwistIndex = fullband[0].TwistIndex;
-  vals.GroupID    = 0;
-  vals.myName     = make_bandgroup_name(spo_name, spin, mybuilder->twist_num_, mybuilder->TileMatrix, 0, size);
-  vals.selectBands(fullband, 0, size, false);
+  vals.GroupID = 0;
+  vals.myName  = make_bandgroup_name(spo_name, spin, mybuilder->twist_num_, mybuilder->TileMatrix, 0, size);
+  vals.selectBands(fullband, 0, size);
 
   return create_spline_set(spo_name, spin, vals);
+}
+
+bool BsplineReader::lookforSplineDataDumpFile(const BandInfoGroup& bandgroup,
+                                              const std::string& keyword,
+                                              size_t datatype_size) const
+{
+  int foundspline = 0;
+  if (myComm->rank() == 0)
+  {
+    hdf_archive h5f(myComm);
+    foundspline = h5f.open(getSplineDumpFileName(bandgroup), H5F_ACC_RDONLY);
+    if (foundspline)
+    {
+      std::string aname("none");
+      foundspline = h5f.readEntry(aname, "class_name");
+      foundspline = (aname.find(keyword) != std::string::npos);
+    }
+    if (foundspline)
+    {
+      int sizeD   = 0;
+      foundspline = h5f.readEntry(sizeD, "sizeof");
+      foundspline = (sizeD == datatype_size);
+    }
+    h5f.close();
+  }
+  myComm->bcast(foundspline);
+  return foundspline;
+}
+
+void BsplineReader::readOneOrbitalCoefs(const std::string& s, hdf_archive& h5f, Vector<std::complex<double>>& cG) const
+{
+  if (!h5f.readEntry(cG, s))
+  {
+    std::ostringstream msg;
+    msg << "SplineSetReader Failed to read band(s) from h5 file. " << "Attempted dataset " << s << " with " << cG.size()
+        << " complex numbers." << std::endl;
+    throw std::runtime_error(msg.str());
+  }
+  double total_norm = compute_norm(cG);
+  if ((checkNorm) && (std::abs(total_norm - 1.0) > PW_COEFF_NORM_TOLERANCE))
+  {
+    std::ostringstream msg;
+    msg << "SplineSetReader The orbital dataset " << s << " has a wrong norm " << total_norm
+        << ", computed from plane wave coefficients!" << std::endl
+        << "This may indicate a problem with the HDF5 library versions used "
+        << "during wavefunction conversion or read." << std::endl;
+    throw std::runtime_error(msg.str());
+  }
 }
 
 std::unique_ptr<SPOSet> BsplineReader::create_spline_set(const std::string& spo_name,
@@ -134,12 +182,10 @@ std::unique_ptr<SPOSet> BsplineReader::create_spline_set(const std::string& spo_
   }
 
   BandInfoGroup vals;
-  vals.TwistIndex = fullband[0].TwistIndex;
-  vals.GroupID    = 0;
-  vals.myName     = make_bandgroup_name(spo_name, spin, mybuilder->twist_num_, mybuilder->TileMatrix,
-                                        input_info.min_index(), input_info.max_index());
-  vals.selectBands(fullband, spo2band[spin][input_info.min_index()], input_info.max_index() - input_info.min_index(),
-                   false);
+  vals.GroupID = 0;
+  vals.myName  = make_bandgroup_name(spo_name, spin, mybuilder->twist_num_, mybuilder->TileMatrix,
+                                     input_info.min_index(), input_info.max_index());
+  vals.selectBands(fullband, spo2band[spin][input_info.min_index()], input_info.max_index() - input_info.min_index());
 
   return create_spline_set(spo_name, spin, vals);
 }

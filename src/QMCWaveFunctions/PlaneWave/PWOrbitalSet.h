@@ -43,8 +43,8 @@ public:
 
   /** default constructor
   */
-  PWOrbitalSet(const std::string& my_name)
-      : SPOSet(my_name), OwnBasisSet(false), myBasisSet(nullptr), BasisSetSize(0), C(nullptr), IsCloned(false)
+  PWOrbitalSet(const std::string& my_name, size_t size)
+      : SPOSet(my_name, size), OwnBasisSet(false), myBasisSet(nullptr), BasisSetSize(0), C(nullptr), IsCloned(false)
   {}
 
   std::string getClassName() const override { return "PWOrbitalSet"; }
@@ -59,17 +59,15 @@ public:
   std::unique_ptr<SPOSet> makeClone() const override;
   /** resize  the orbital base
    * @param bset PWBasis
-   * @param nbands number of bands
    * @param cleaup if true, owns PWBasis. Will clean up.
    */
-  void resize(PWBasisPtr bset, int nbands, bool cleanup = false);
+  void resize(PWBasisPtr bset, bool cleanup = false);
 
   /** Builder class takes care of the assertion
   */
   void addVector(const std::vector<ComplexType>& coefs, int jorb);
   void addVector(const std::vector<RealType>& coefs, int jorb);
 
-  void setOrbitalSetSize(int norbs) override;
 
   inline ValueType evaluate(int ib, const PosType& pos)
   {

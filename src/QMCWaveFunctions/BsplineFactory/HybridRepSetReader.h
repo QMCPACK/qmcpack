@@ -19,75 +19,56 @@
 #define QMCPLUSPLUS_HYBRIDREP_READER_H
 
 #include "BsplineReader.h"
-#include "SplineSetReader.h"
-
-#if !defined(QMC_COMPLEX)
-#include "HybridRepReal.h"
-#endif
-#include "HybridRepCplx.h"
-
-#if defined(QMC_COMPLEX)
-#include "SplineC2C.h"
-#include "SplineC2COMPTarget.h"
-#else
-#include "SplineR2R.h"
-#include "SplineC2R.h"
-#include "SplineC2ROMPTarget.h"
-#endif
-
 
 namespace qmcplusplus
 {
+// forward declaration
+template<typename ST>
+class MultiBsplineBase;
+template<typename ST>
+class HybridRepCenterOrbitals;
+
 /** General HybridRepSetReader to handle any unitcell
  */
-template<typename SA>
+template<typename ST>
 class HybridRepSetReader : public BsplineReader
 {
-  using SplineReader = SplineSetReader<typename SA::SplineBase>;
-  using DataType     = typename SA::DataType;
-  SplineReader spline_reader_;
+  using HybridBase = HybridRepCenterOrbitals<ST>;
 
   std::unique_ptr<SPOSet> create_spline_set(const std::string& my_name,
                                             int spin,
                                             const BandInfoGroup& bandgroup) override;
 
 public:
-  HybridRepSetReader(EinsplineSetBuilder* e);
+  HybridRepSetReader(EinsplineSetBuilder* e, bool use_duplex_splines);
 
   /** initialize basic parameters of atomic orbitals */
-  void initialize_hybridrep_atomic_centers(SA& bspline) const;
+  void initialize_hybridrep_atomic_centers(HybridBase& multi_atomic_splines) const;
 
   /** initialize construct atomic orbital radial functions from plane waves */
   inline void create_atomic_centers_Gspace(const Vector<std::complex<double>>& cG,
                                            Communicate& band_group_comm,
                                            const int iorb,
                                            const std::complex<double>& rotate_phase,
-                                           SA& bspline) const;
+                                           const TinyVector<int, 3>& half_g,
+                                           HybridBase& multi_atomic_splines) const;
 
   /** transforming planewave orbitals to 3D B-spline orbitals and 1D B-spline radial orbitals in real space.
    * @param spin orbital dataset spin index
    * @param bandgroup band info
    * @param bspline the spline object being worked on
    */
-  void initialize_hybrid_pio_gather(const int spin, const BandInfoGroup& bandgroup, SA& bspline) const;
+  void initialize_hybrid_pio_gather(const int spin,
+                                    const BandInfoGroup& bandgroup,
+                                    const TinyVector<int, 3>& half_g,
+                                    const aligned_vector<int>& band_index_map,
+                                    HybridBase& multi_atomic_splines,
+                                    MultiBsplineBase<ST>& multi_splines) const;
 };
 
-#if defined(QMC_COMPLEX)
-extern template class HybridRepSetReader<HybridRepCplx<SplineC2C<float>>>;
-extern template class HybridRepSetReader<HybridRepCplx<SplineC2COMPTarget<float>>>;
+extern template class HybridRepSetReader<float>;
 #if !defined(QMC_MIXED_PRECISION)
-extern template class HybridRepSetReader<HybridRepCplx<SplineC2C<double>>>;
-extern template class HybridRepSetReader<HybridRepCplx<SplineC2COMPTarget<double>>>;
-#endif
-#else
-extern template class HybridRepSetReader<HybridRepReal<SplineR2R<float>>>;
-extern template class HybridRepSetReader<HybridRepCplx<SplineC2R<float>>>;
-extern template class HybridRepSetReader<HybridRepCplx<SplineC2ROMPTarget<float>>>;
-#if !defined(QMC_MIXED_PRECISION)
-extern template class HybridRepSetReader<HybridRepReal<SplineR2R<double>>>;
-extern template class HybridRepSetReader<HybridRepCplx<SplineC2R<double>>>;
-extern template class HybridRepSetReader<HybridRepCplx<SplineC2ROMPTarget<double>>>;
-#endif
+extern template class HybridRepSetReader<double>;
 #endif
 } // namespace qmcplusplus
 #endif

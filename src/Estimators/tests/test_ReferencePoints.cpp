@@ -71,7 +71,7 @@ ReferencePointsInput makeTestRPI()
 {
   using Input = testing::ValidReferencePointsInputs;
   Libxml2Document doc;
-  bool okay       = doc.parseFromString(Input::xml[Input::valid::CELL]);
+  REQUIRE(doc.parseFromString(Input::xml[Input::valid::CELL]));
   xmlNodePtr node = doc.getRoot();
   return {node};
 }

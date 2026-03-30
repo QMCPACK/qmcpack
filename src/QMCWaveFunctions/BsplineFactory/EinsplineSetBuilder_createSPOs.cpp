@@ -29,7 +29,8 @@
 #include "einspline_helper.hpp"
 #include "BsplineReader.h"
 #include "BsplineSet.h"
-#include "createBsplineReader.h"
+#include "SplineSetReader.h"
+#include "HybridRepSetReader.h"
 
 #include <array>
 #include <string_view>
@@ -96,7 +97,6 @@ void EinsplineSetBuilder::set_metadata(int numOrbs,
   // setup primitive cell and supercell
   PrimCell.set(Lattice);
   SuperCell.set(SuperLattice);
-  GGt = dot(transpose(PrimCell.G), PrimCell.G);
 
   // Now, analyze the k-point mesh to figure out the what k-points  are needed
   AnalyzeTwists2(twist_num_inp, twist_inp);
@@ -116,12 +116,8 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   std::string sourceName;
   std::string spo_prec("double");
   std::string truncate("no");
-  std::string hybrid_rep("no");
+  std::string hybrid_rep;
   std::string skip_checks("no");
-  std::string use_einspline_set_extended(
-      "no"); // use old spline library for high-order derivatives, e.g. needed for backflow optimization
-  std::string useGPU;
-  std::string GPUsharing = "no";
 
   ScopedTimer spo_timer_scope(createGlobalTimer("einspline::CreateSPOSetFromXML", timer_level_medium));
 
@@ -137,9 +133,7 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     a_root.add(twist_inp, "twist");
     a_root.add(sourceName, "source");
     a_root.add(MeshFactor, "meshfactor");
-    a_root.add(hybrid_rep, "hybridrep");
-    a_root.add(useGPU, "gpu", CPUOMPTargetSelector::candidate_values);
-    a_root.add(GPUsharing, "gpusharing"); // split spline across GPUs visible per rank
+    a_root.add(hybrid_rep, "hybridrep", {"no", "yes"});
     a_root.add(spo_prec, "precision");
     a_root.add(truncate, "truncate");
     a_root.add(skip_checks, "skip_checks");
@@ -245,24 +239,30 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   if (!ReadGvectors_ESHDF())
     myComm->barrier_and_abort("Failed to load g-vectors.");
 
-  bool use_single = (spo_prec == "single" || spo_prec == "float");
+  const bool use_single = (spo_prec == "single" || spo_prec == "float");
+  app_summary() << "    Using " << (use_single ? "single" : "double") << " precision B-spline coefficients."
+                << std::endl;
+
+  const bool use_hybridrep = hybrid_rep == "yes";
+  app_summary() << "    Using " << (use_hybridrep ? "hybrid" : "regular 3D cublic B-spline")
+                << " orbital representation." << std::endl;
 
   // safeguard for a removed feature
   if (truncate == "yes")
     myComm->barrier_and_abort(
         "The 'truncate' feature of spline SPO has been removed. Please use hybrid orbital representation.");
 
-#if !defined(QMC_COMPLEX)
-  if (use_real_splines_)
+  if (!MixedSplineReader)
   {
-    if (MixedSplineReader == 0)
-      MixedSplineReader = createBsplineReal(this, use_single, hybrid_rep == "yes");
-  }
-  else
-#endif
-  {
-    if (MixedSplineReader == 0)
-      MixedSplineReader = createBsplineComplex(this, use_single, hybrid_rep == "yes", useGPU);
+    if (use_hybridrep)
+      if (use_single)
+        MixedSplineReader = std::make_unique<HybridRepSetReader<float>>(this, !use_real_splines_);
+      else
+        MixedSplineReader = std::make_unique<HybridRepSetReader<double>>(this, !use_real_splines_);
+    else if (use_single)
+      MixedSplineReader = std::make_unique<SplineSetReader<float>>(this, !use_real_splines_);
+    else
+      MixedSplineReader = std::make_unique<SplineSetReader<double>>(this, !use_real_splines_);
   }
 
   MixedSplineReader->setCommon(XMLRoot);

@@ -17,7 +17,7 @@
 namespace qmcplusplus
 {
 SHOSet::SHOSet(const std::string& my_name, RealType l, PosType c, const std::vector<SHOState*>& sho_states)
-    : SPOSet(my_name), length(l), center(c)
+    : SPOSet(my_name, sho_states.size()), length(l), center(c)
 {
   state_info.resize(sho_states.size());
   for (int s = 0; s < sho_states.size(); ++s)
@@ -29,8 +29,6 @@ SHOSet::SHOSet(const std::string& my_name, RealType l, PosType c, const std::vec
 void SHOSet::initialize()
 {
   using std::sqrt;
-
-  OrbitalSetSize = state_info.size();
 
   qn_max = -1;
   for (int s = 0; s < state_info.size(); ++s)
@@ -523,9 +521,7 @@ void SHOSet::test_overlap()
 
 
 void SHOSet::evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix& grad_grad_grad_logdet)
-{
-  not_implemented("evaluateThirdDeriv(P,first,last,dddlogdet)");
-}
+{ not_implemented("evaluateThirdDeriv(P,first,last,dddlogdet)"); }
 
 void SHOSet::evaluate_notranspose(const ParticleSet& P,
                                   int first,
@@ -533,9 +529,7 @@ void SHOSet::evaluate_notranspose(const ParticleSet& P,
                                   ValueMatrix& logdet,
                                   GradMatrix& dlogdet,
                                   HessMatrix& grad_grad_logdet)
-{
-  not_implemented("evaluate_notranspose(P,first,last,logdet,dlogdet,ddlogdet)");
-}
+{ not_implemented("evaluate_notranspose(P,first,last,logdet,dlogdet,ddlogdet)"); }
 
 void SHOSet::evaluate_notranspose(const ParticleSet& P,
                                   int first,
@@ -544,9 +538,7 @@ void SHOSet::evaluate_notranspose(const ParticleSet& P,
                                   GradMatrix& dlogdet,
                                   HessMatrix& grad_grad_logdet,
                                   GGGMatrix& grad_grad_grad_logdet)
-{
-  not_implemented("evaluate_notranspose(P,first,last,logdet,dlogdet,ddlogdet,dddlogdet)");
-}
+{ not_implemented("evaluate_notranspose(P,first,last,logdet,dlogdet,ddlogdet,dddlogdet)"); }
 
 void SHOSet::evaluateGradSource(const ParticleSet& P,
                                 int first,
@@ -554,9 +546,7 @@ void SHOSet::evaluateGradSource(const ParticleSet& P,
                                 const ParticleSet& source,
                                 int iat_src,
                                 GradMatrix& gradphi)
-{
-  not_implemented("evaluateGradSource(P,first,last,source,iat,dphi)");
-}
+{ not_implemented("evaluateGradSource(P,first,last,source,iat,dphi)"); }
 
 void SHOSet::evaluateGradSource(const ParticleSet& P,
                                 int first,
@@ -566,8 +556,6 @@ void SHOSet::evaluateGradSource(const ParticleSet& P,
                                 GradMatrix& grad_phi,
                                 HessMatrix& grad_grad_phi,
                                 GradMatrix& grad_lapl_phi)
-{
-  not_implemented("evaluateGradSource(P,first,last,source,iat,dphi,ddphi,dd2phi)");
-}
+{ not_implemented("evaluateGradSource(P,first,last,source,iat,dphi,ddphi,dd2phi)"); }
 
 } // namespace qmcplusplus

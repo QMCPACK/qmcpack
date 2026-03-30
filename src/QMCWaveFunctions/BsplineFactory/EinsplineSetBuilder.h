@@ -170,7 +170,7 @@ public:
    */
   bool ReadGvectors_ESHDF();
 
-  Tensor<double, OHMMS_DIM> Lattice, RecipLattice, LatticeInv, SuperLattice, GGt;
+  Tensor<double, OHMMS_DIM> Lattice, RecipLattice, LatticeInv, SuperLattice;
   UnitCellType SuperCell, PrimCell, PrimCellInv;
   int NumBands, NumElectrons, NumSpins, NumTwists;
   int MaxNumGvecs;

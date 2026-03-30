@@ -3,21 +3,26 @@
 
 namespace qmcplusplus
 {
+
+static auto computeOrbitalSetSize(size_t maxk)
+{
+#ifdef QMC_COMPLEX
+  return maxk;
+#else
+  return 2 * maxk - 1; // k=0 has no (cos, sin) split
+#endif
+}
+
 FreeOrbital::FreeOrbital(const std::string& my_name, const std::vector<PosType>& kpts_cart)
-    : SPOSet(my_name),
+    : SPOSet(my_name, computeOrbitalSetSize(kpts_cart.size())),
       kvecs(kpts_cart),
 #ifdef QMC_COMPLEX
       mink(0), // first k at twist may not be 0
 #else
-      mink(1),                   // treat k=0 as special case
+      mink(1), // treat k=0 as special case
 #endif
       maxk(kpts_cart.size())
 {
-#ifdef QMC_COMPLEX
-  OrbitalSetSize = maxk;
-#else
-  OrbitalSetSize = 2 * maxk - 1; // k=0 has no (cos, sin) split
-#endif
   k2neg.resize(maxk);
   for (int ik = 0; ik < maxk; ik++)
     k2neg[ik] = -dot(kvecs[ik], kvecs[ik]);

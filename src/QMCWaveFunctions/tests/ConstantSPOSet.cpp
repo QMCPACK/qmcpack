@@ -16,9 +16,8 @@ namespace qmcplusplus
 
 template<typename T>
 ConstantSPOSet<T>::ConstantSPOSet(const std::string& my_name, const int nparticles, const int norbitals)
-    : SPOSetT<T>(my_name), numparticles_(nparticles)
+    : SPOSetT<T>(my_name, norbitals), numparticles_(nparticles)
 {
-  SPOSet::OrbitalSetSize = norbitals;
   ref_psi_.resize(numparticles_, SPOSet::OrbitalSetSize);
   ref_egrad_.resize(numparticles_, SPOSet::OrbitalSetSize);
   ref_elapl_.resize(numparticles_, SPOSet::OrbitalSetSize);
@@ -45,10 +44,6 @@ std::string ConstantSPOSet<T>::getClassName() const
 template<typename T>
 void ConstantSPOSet<T>::checkOutVariables(const OptVariables& active)
 { APP_ABORT("ConstantSPOSet should not call checkOutVariables"); }
-
-template<typename T>
-void ConstantSPOSet<T>::setOrbitalSetSize(int norbs)
-{ APP_ABORT("ConstantSPOSet should not call setOrbitalSetSize()"); }
 
 template<typename T>
 void ConstantSPOSet<T>::setRefVals(const ValueMatrix& vals)

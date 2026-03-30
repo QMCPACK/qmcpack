@@ -143,15 +143,13 @@ void test_hcpBe_rotation(bool use_single_det, bool use_nlpp_batched)
     wf_input = wf_input_single_det;
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(wf_input);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(wf_input));
 
   xmlNodePtr root = doc.getRoot();
 
   wp.put(root);
-  TrialWaveFunction* psi = wp.getWaveFunction("psi0");
-  REQUIRE(psi != nullptr);
-  REQUIRE(psi->getOrbitals().size() == 1);
+  TrialWaveFunction& psi(wp.getWaveFunction().value());
+  REQUIRE(psi.getOrbitals().size() == 1);
 
 
   // Note the pbc="no" setting to turn off long-range summation.
@@ -173,24 +171,23 @@ void test_hcpBe_rotation(bool use_single_det, bool use_nlpp_batched)
   if (use_nlpp_batched)
     ham_input = ham_input_nlpp_batched;
 
-  HamiltonianFactory hf("h0", elec, pp.getPool(), wp.getPool(), c);
+  HamiltonianFactory hf("h0", elec, pp.getPool(), wp.getWaveFunction(), c);
 
   Libxml2Document doc2;
-  bool okay2 = doc2.parseFromString(ham_input);
-  REQUIRE(okay2);
+  REQUIRE(doc2.parseFromString(ham_input));
 
   xmlNodePtr root2 = doc2.getRoot();
   hf.put(root2);
 
   OptVariables opt_vars;
-  psi->checkInVariables(opt_vars);
+  psi.checkInVariables(opt_vars);
   opt_vars.resetIndex();
-  psi->checkOutVariables(opt_vars);
-  psi->resetParameters(opt_vars);
+  psi.checkOutVariables(opt_vars);
+  psi.resetParameters(opt_vars);
 
   elec.update();
 
-  double logval = psi->evaluateLog(elec);
+  double logval = psi.evaluateLog(elec);
   CHECK(logval == Approx(-1.2865633501081344));
 
   CHECK(elec.G[0][0] == ValueApprox(0.54752651));
@@ -206,14 +203,14 @@ void test_hcpBe_rotation(bool use_single_det, bool use_nlpp_batched)
   using ValueType = QMCTraits::ValueType;
   Vector<ValueType> dlogpsi(2);
   Vector<ValueType> dhpsioverpsi(2);
-  psi->evaluateDerivatives(elec, opt_vars, dlogpsi, dhpsioverpsi);
+  psi.evaluateDerivatives(elec, opt_vars, dlogpsi, dhpsioverpsi);
 
   CHECK(dlogpsi[0] == ValueApprox(-2.97750823));
   CHECK(dlogpsi[1] == ValueApprox(-1.06146356));
   CHECK(dhpsioverpsi[0] == ValueApprox(-36.71707483));
   CHECK(dhpsioverpsi[1] == ValueApprox(-0.35274333));
 
-  RefVectorWithLeader<TrialWaveFunction> wf_list(*psi, {*psi});
+  RefVectorWithLeader<TrialWaveFunction> wf_list(psi, {psi});
   RefVectorWithLeader<ParticleSet> p_list(elec, {elec});
 
   // Test list with one wavefunction
@@ -235,7 +232,7 @@ void test_hcpBe_rotation(bool use_single_det, bool use_nlpp_batched)
   RandomGenerator myrng;
   h->setRandomGenerator(&myrng);
 
-  h->evaluate(*psi, elec);
+  h->evaluate(psi, elec);
   double loc_e = h->getLocalEnergy();
   double ke    = h->getKineticEnergy();
   CHECK(ke == Approx(-6.818620576308302));
@@ -249,12 +246,12 @@ void test_hcpBe_rotation(bool use_single_det, bool use_nlpp_batched)
     NONLOCALECP
   };
 
-  double local_pp  = h->getComponent(LOCALECP)->evaluate(*psi, elec);
+  double local_pp = h->getComponent(LOCALECP)->evaluate(psi, elec);
 
   Vector<ValueType> dlogpsi2(2);
   Vector<ValueType> dhpsioverpsi2(2);
 
-  h->evaluateValueAndDerivatives(*psi, elec, opt_vars, dlogpsi2, dhpsioverpsi2);
+  h->evaluateValueAndDerivatives(psi, elec, opt_vars, dlogpsi2, dhpsioverpsi2);
   // Derivative the wavefunction is unchanged by NLPP
   CHECK(dlogpsi2[0] == Approx(dlogpsi[0]));
   CHECK(dlogpsi2[1] == Approx(dlogpsi[1]));

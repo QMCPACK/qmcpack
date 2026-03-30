@@ -26,35 +26,6 @@ template<typename ST>
 SplineC2C<ST>::SplineC2C(const SplineC2C& in) = default;
 
 template<typename ST>
-inline void SplineC2C<ST>::set_spline(SingleSplineType* spline_r,
-                                      SingleSplineType* spline_i,
-                                      int twist,
-                                      int ispline,
-                                      int level)
-{
-  copy_spline<double, ST>(*spline_r, *SplineInst->getSplinePtr(), 2 * ispline);
-  copy_spline<double, ST>(*spline_i, *SplineInst->getSplinePtr(), 2 * ispline + 1);
-}
-
-template<typename ST>
-bool SplineC2C<ST>::read_splines(hdf_archive& h5f)
-{
-  std::ostringstream o;
-  o << "spline_" << MyIndex;
-  einspline_engine<SplineType> bigtable(SplineInst->getSplinePtr());
-  return h5f.readEntry(bigtable, o.str().c_str()); //"spline_0");
-}
-
-template<typename ST>
-bool SplineC2C<ST>::write_splines(hdf_archive& h5f)
-{
-  std::ostringstream o;
-  o << "spline_" << MyIndex;
-  einspline_engine<SplineType> bigtable(SplineInst->getSplinePtr());
-  return h5f.writeEntry(bigtable, o.str().c_str()); //"spline_0");
-}
-
-template<typename ST>
 void SplineC2C<ST>::storeParamsBeforeRotation()
 {
   const auto spline_ptr     = SplineInst->getSplinePtr();
@@ -183,7 +154,7 @@ inline void SplineC2C<ST>::assign_v(const PointType& r,
     const ST val_r = myV[2 * j];
     const ST val_i = myV[2 * j + 1];
     qmcplusplus::sincos(-(x * kx[j] + y * ky[j] + z * kz[j]), &s, &c);
-    psi[j + first_spo] = ComplexT(val_r * c - val_i * s, val_i * c + val_r * s);
+    psi[j] = ComplexT(val_r * c - val_i * s, val_i * c + val_r * s);
   }
 }
 
@@ -191,7 +162,7 @@ template<typename ST>
 void SplineC2C<ST>::evaluateValue(const ParticleSet& P, const int iat, ValueVector& psi)
 {
   const PointType& r = P.activeR(iat);
-  PointType ru(PrimLattice.toUnit_floor(r));
+  PointType ru(prim_lattice_.toUnit_floor(r));
 
 #pragma omp parallel
   {
@@ -231,7 +202,7 @@ void SplineC2C<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
     for (int iat = 0; iat < VP.getTotalNum(); ++iat)
     {
       const PointType& r = VP.activeR(iat);
-      PointType ru(PrimLattice.toUnit_floor(r));
+      PointType ru(prim_lattice_.toUnit_floor(r));
 
       spline2::evaluate3d(SplineInst->getSplinePtr(), ru, myV, first, last);
       assign_v(r, myV, psi, first_cplx, last_cplx);
@@ -264,9 +235,9 @@ inline void SplineC2C<ST>::assign_vgl(const PointType& r,
 
   constexpr ST zero(0);
   constexpr ST two(2);
-  const ST g00 = PrimLattice.G(0), g01 = PrimLattice.G(1), g02 = PrimLattice.G(2), g10 = PrimLattice.G(3),
-           g11 = PrimLattice.G(4), g12 = PrimLattice.G(5), g20 = PrimLattice.G(6), g21 = PrimLattice.G(7),
-           g22 = PrimLattice.G(8);
+  const ST g00 = prim_lattice_.G(0), g01 = prim_lattice_.G(1), g02 = prim_lattice_.G(2), g10 = prim_lattice_.G(3),
+           g11 = prim_lattice_.G(4), g12 = prim_lattice_.G(5), g20 = prim_lattice_.G(6), g21 = prim_lattice_.G(7),
+           g22 = prim_lattice_.G(8);
   const ST x = r[0], y = r[1], z = r[2];
   const ST symGG[6] = {GGt[0], GGt[1] + GGt[3], GGt[2] + GGt[6], GGt[4], GGt[5] + GGt[7], GGt[8]};
 
@@ -300,7 +271,7 @@ inline void SplineC2C<ST>::assign_vgl(const PointType& r,
     ST s, c;
     qmcplusplus::sincos(-(x * kX + y * kY + z * kZ), &s, &c);
 
-    //dot(PrimLattice.G,myG[j])
+    //dot(prim_lattice_.G,myG[j])
     const ST dX_r = g00 * g0[jr] + g01 * g1[jr] + g02 * g2[jr];
     const ST dY_r = g10 * g0[jr] + g11 * g1[jr] + g12 * g2[jr];
     const ST dZ_r = g20 * g0[jr] + g21 * g1[jr] + g22 * g2[jr];
@@ -317,16 +288,15 @@ inline void SplineC2C<ST>::assign_vgl(const PointType& r,
     const ST gY_i = dY_i - val_r * kY;
     const ST gZ_i = dZ_i - val_r * kZ;
 
-    const ST lcart_r      = SymTrace(h00[jr], h01[jr], h02[jr], h11[jr], h12[jr], h22[jr], symGG);
-    const ST lcart_i      = SymTrace(h00[ji], h01[ji], h02[ji], h11[ji], h12[ji], h22[ji], symGG);
-    const ST lap_r        = lcart_r + mKK[j] * val_r + two * (kX * dX_i + kY * dY_i + kZ * dZ_i);
-    const ST lap_i        = lcart_i + mKK[j] * val_i - two * (kX * dX_r + kY * dY_r + kZ * dZ_r);
-    const size_t psiIndex = j + first_spo;
-    psi[psiIndex]         = ComplexT(c * val_r - s * val_i, c * val_i + s * val_r);
-    dpsi[psiIndex][0]     = ComplexT(c * gX_r - s * gX_i, c * gX_i + s * gX_r);
-    dpsi[psiIndex][1]     = ComplexT(c * gY_r - s * gY_i, c * gY_i + s * gY_r);
-    dpsi[psiIndex][2]     = ComplexT(c * gZ_r - s * gZ_i, c * gZ_i + s * gZ_r);
-    d2psi[psiIndex]       = ComplexT(c * lap_r - s * lap_i, c * lap_i + s * lap_r);
+    const ST lcart_r = SymTrace(h00[jr], h01[jr], h02[jr], h11[jr], h12[jr], h22[jr], symGG);
+    const ST lcart_i = SymTrace(h00[ji], h01[ji], h02[ji], h11[ji], h12[ji], h22[ji], symGG);
+    const ST lap_r   = lcart_r + mKK[j] * val_r + two * (kX * dX_i + kY * dY_i + kZ * dZ_i);
+    const ST lap_i   = lcart_i + mKK[j] * val_i - two * (kX * dX_r + kY * dY_r + kZ * dZ_r);
+    psi[j]           = ComplexT(c * val_r - s * val_i, c * val_i + s * val_r);
+    dpsi[j][0]       = ComplexT(c * gX_r - s * gX_i, c * gX_i + s * gX_r);
+    dpsi[j][1]       = ComplexT(c * gY_r - s * gY_i, c * gY_i + s * gY_r);
+    dpsi[j][2]       = ComplexT(c * gZ_r - s * gZ_i, c * gZ_i + s * gZ_r);
+    d2psi[j]         = ComplexT(c * lap_r - s * lap_i, c * lap_i + s * lap_r);
   }
 }
 
@@ -346,8 +316,8 @@ inline void SplineC2C<ST>::assign_vgl_from_l(const PointType& r, ValueVector& ps
   const ST* restrict g1 = myG.data(1);
   const ST* restrict g2 = myG.data(2);
 
-  const size_t last_cplx = last_spo > psi.size() ? psi.size() : last_spo;
-  const size_t N         = last_cplx - first_spo;
+  const size_t last_cplx = OrbitalSetSize > psi.size() ? psi.size() : OrbitalSetSize;
+  const size_t N         = last_cplx;
 #pragma omp simd
   for (size_t j = 0; j < N; ++j)
   {
@@ -364,7 +334,7 @@ inline void SplineC2C<ST>::assign_vgl_from_l(const PointType& r, ValueVector& ps
     ST s, c;
     qmcplusplus::sincos(-(x * kX + y * kY + z * kZ), &s, &c);
 
-    //dot(PrimLattice.G,myG[j])
+    //dot(prim_lattice_.G,myG[j])
     const ST dX_r = g0[jr];
     const ST dY_r = g1[jr];
     const ST dZ_r = g2[jr];
@@ -384,12 +354,11 @@ inline void SplineC2C<ST>::assign_vgl_from_l(const PointType& r, ValueVector& ps
     const ST lap_r = myL[jr] + mKK[j] * val_r + two * (kX * dX_i + kY * dY_i + kZ * dZ_i);
     const ST lap_i = myL[ji] + mKK[j] * val_i - two * (kX * dX_r + kY * dY_r + kZ * dZ_r);
 
-    const size_t psiIndex = j + first_spo;
-    psi[psiIndex]         = ComplexT(c * val_r - s * val_i, c * val_i + s * val_r);
-    dpsi[psiIndex][0]     = ComplexT(c * gX_r - s * gX_i, c * gX_i + s * gX_r);
-    dpsi[psiIndex][1]     = ComplexT(c * gY_r - s * gY_i, c * gY_i + s * gY_r);
-    dpsi[psiIndex][2]     = ComplexT(c * gZ_r - s * gZ_i, c * gZ_i + s * gZ_r);
-    d2psi[psiIndex]       = ComplexT(c * lap_r - s * lap_i, c * lap_i + s * lap_r);
+    psi[j]     = ComplexT(c * val_r - s * val_i, c * val_i + s * val_r);
+    dpsi[j][0] = ComplexT(c * gX_r - s * gX_i, c * gX_i + s * gX_r);
+    dpsi[j][1] = ComplexT(c * gY_r - s * gY_i, c * gY_i + s * gY_r);
+    dpsi[j][2] = ComplexT(c * gZ_r - s * gZ_i, c * gZ_i + s * gZ_r);
+    d2psi[j]   = ComplexT(c * lap_r - s * lap_i, c * lap_i + s * lap_r);
   }
 }
 
@@ -401,7 +370,7 @@ void SplineC2C<ST>::evaluateVGL(const ParticleSet& P,
                                 ValueVector& d2psi)
 {
   const PointType& r = P.activeR(iat);
-  PointType ru(PrimLattice.toUnit_floor(r));
+  PointType ru(prim_lattice_.toUnit_floor(r));
 
 #pragma omp parallel
   {
@@ -426,9 +395,9 @@ void SplineC2C<ST>::assign_vgh(const PointType& r,
   const size_t last_cplx = std::min(kPoints.size(), psi.size());
   last                   = last > last_cplx ? last_cplx : last;
 
-  const ST g00 = PrimLattice.G(0), g01 = PrimLattice.G(1), g02 = PrimLattice.G(2), g10 = PrimLattice.G(3),
-           g11 = PrimLattice.G(4), g12 = PrimLattice.G(5), g20 = PrimLattice.G(6), g21 = PrimLattice.G(7),
-           g22 = PrimLattice.G(8);
+  const ST g00 = prim_lattice_.G(0), g01 = prim_lattice_.G(1), g02 = prim_lattice_.G(2), g10 = prim_lattice_.G(3),
+           g11 = prim_lattice_.G(4), g12 = prim_lattice_.G(5), g20 = prim_lattice_.G(6), g21 = prim_lattice_.G(7),
+           g22 = prim_lattice_.G(8);
   const ST x = r[0], y = r[1], z = r[2];
 
   const ST* restrict k0 = myKcart.data(0);
@@ -461,7 +430,7 @@ void SplineC2C<ST>::assign_vgh(const PointType& r,
     ST s, c;
     qmcplusplus::sincos(-(x * kX + y * kY + z * kZ), &s, &c);
 
-    //dot(PrimLattice.G,myG[j])
+    //dot(prim_lattice_.G,myG[j])
     const ST dX_r = g00 * g0[jr] + g01 * g1[jr] + g02 * g2[jr];
     const ST dY_r = g10 * g0[jr] + g11 * g1[jr] + g12 * g2[jr];
     const ST dZ_r = g20 * g0[jr] + g21 * g1[jr] + g22 * g2[jr];
@@ -478,11 +447,10 @@ void SplineC2C<ST>::assign_vgh(const PointType& r,
     const ST gY_i = dY_i - val_r * kY;
     const ST gZ_i = dZ_i - val_r * kZ;
 
-    const size_t psiIndex = j + first_spo;
-    psi[psiIndex]         = ComplexT(c * val_r - s * val_i, c * val_i + s * val_r);
-    dpsi[psiIndex][0]     = ComplexT(c * gX_r - s * gX_i, c * gX_i + s * gX_r);
-    dpsi[psiIndex][1]     = ComplexT(c * gY_r - s * gY_i, c * gY_i + s * gY_r);
-    dpsi[psiIndex][2]     = ComplexT(c * gZ_r - s * gZ_i, c * gZ_i + s * gZ_r);
+    psi[j]     = ComplexT(c * val_r - s * val_i, c * val_i + s * val_r);
+    dpsi[j][0] = ComplexT(c * gX_r - s * gX_i, c * gX_i + s * gX_r);
+    dpsi[j][1] = ComplexT(c * gY_r - s * gY_i, c * gY_i + s * gY_r);
+    dpsi[j][2] = ComplexT(c * gZ_r - s * gZ_i, c * gZ_i + s * gZ_r);
 
     const ST h_xx_r =
         v_m_v(h00[jr], h01[jr], h02[jr], h11[jr], h12[jr], h22[jr], g00, g01, g02, g00, g01, g02) + kX * (gX_i + dX_i);
@@ -522,15 +490,15 @@ void SplineC2C<ST>::assign_vgh(const PointType& r,
     const ST h_zz_i =
         v_m_v(h00[ji], h01[ji], h02[ji], h11[ji], h12[ji], h22[ji], g20, g21, g22, g20, g21, g22) - kZ * (gZ_r + dZ_r);
 
-    grad_grad_psi[psiIndex][0] = ComplexT(c * h_xx_r - s * h_xx_i, c * h_xx_i + s * h_xx_r);
-    grad_grad_psi[psiIndex][1] = ComplexT(c * h_xy_r - s * h_xy_i, c * h_xy_i + s * h_xy_r);
-    grad_grad_psi[psiIndex][2] = ComplexT(c * h_xz_r - s * h_xz_i, c * h_xz_i + s * h_xz_r);
-    grad_grad_psi[psiIndex][3] = ComplexT(c * h_yx_r - s * h_yx_i, c * h_yx_i + s * h_yx_r);
-    grad_grad_psi[psiIndex][4] = ComplexT(c * h_yy_r - s * h_yy_i, c * h_yy_i + s * h_yy_r);
-    grad_grad_psi[psiIndex][5] = ComplexT(c * h_yz_r - s * h_yz_i, c * h_yz_i + s * h_yz_r);
-    grad_grad_psi[psiIndex][6] = ComplexT(c * h_zx_r - s * h_zx_i, c * h_zx_i + s * h_zx_r);
-    grad_grad_psi[psiIndex][7] = ComplexT(c * h_zy_r - s * h_zy_i, c * h_zy_i + s * h_zy_r);
-    grad_grad_psi[psiIndex][8] = ComplexT(c * h_zz_r - s * h_zz_i, c * h_zz_i + s * h_zz_r);
+    grad_grad_psi[j][0] = ComplexT(c * h_xx_r - s * h_xx_i, c * h_xx_i + s * h_xx_r);
+    grad_grad_psi[j][1] = ComplexT(c * h_xy_r - s * h_xy_i, c * h_xy_i + s * h_xy_r);
+    grad_grad_psi[j][2] = ComplexT(c * h_xz_r - s * h_xz_i, c * h_xz_i + s * h_xz_r);
+    grad_grad_psi[j][3] = ComplexT(c * h_yx_r - s * h_yx_i, c * h_yx_i + s * h_yx_r);
+    grad_grad_psi[j][4] = ComplexT(c * h_yy_r - s * h_yy_i, c * h_yy_i + s * h_yy_r);
+    grad_grad_psi[j][5] = ComplexT(c * h_yz_r - s * h_yz_i, c * h_yz_i + s * h_yz_r);
+    grad_grad_psi[j][6] = ComplexT(c * h_zx_r - s * h_zx_i, c * h_zx_i + s * h_zx_r);
+    grad_grad_psi[j][7] = ComplexT(c * h_zy_r - s * h_zy_i, c * h_zy_i + s * h_zy_r);
+    grad_grad_psi[j][8] = ComplexT(c * h_zz_r - s * h_zz_i, c * h_zz_i + s * h_zz_r);
   }
 }
 
@@ -542,7 +510,7 @@ void SplineC2C<ST>::evaluateVGH(const ParticleSet& P,
                                 HessVector& grad_grad_psi)
 {
   const PointType& r = P.activeR(iat);
-  PointType ru(PrimLattice.toUnit_floor(r));
+  PointType ru(prim_lattice_.toUnit_floor(r));
 
 #pragma omp parallel
   {
@@ -568,9 +536,9 @@ void SplineC2C<ST>::assign_vghgh(const PointType& r,
   const size_t last_cplx = std::min(kPoints.size(), psi.size());
   last                   = last < 0 ? last_cplx : (last > last_cplx ? last_cplx : last);
 
-  const ST g00 = PrimLattice.G(0), g01 = PrimLattice.G(1), g02 = PrimLattice.G(2), g10 = PrimLattice.G(3),
-           g11 = PrimLattice.G(4), g12 = PrimLattice.G(5), g20 = PrimLattice.G(6), g21 = PrimLattice.G(7),
-           g22 = PrimLattice.G(8);
+  const ST g00 = prim_lattice_.G(0), g01 = prim_lattice_.G(1), g02 = prim_lattice_.G(2), g10 = prim_lattice_.G(3),
+           g11 = prim_lattice_.G(4), g12 = prim_lattice_.G(5), g20 = prim_lattice_.G(6), g21 = prim_lattice_.G(7),
+           g22 = prim_lattice_.G(8);
   const ST x = r[0], y = r[1], z = r[2];
 
   const ST* restrict k0 = myKcart.data(0);
@@ -615,7 +583,7 @@ void SplineC2C<ST>::assign_vghgh(const PointType& r,
     ST s, c;
     qmcplusplus::sincos(-(x * kX + y * kY + z * kZ), &s, &c);
 
-    //dot(PrimLattice.G,myG[j])
+    //dot(prim_lattice_.G,myG[j])
     const ST dX_r = g00 * g0[jr] + g01 * g1[jr] + g02 * g2[jr];
     const ST dY_r = g10 * g0[jr] + g11 * g1[jr] + g12 * g2[jr];
     const ST dZ_r = g20 * g0[jr] + g21 * g1[jr] + g22 * g2[jr];
@@ -632,11 +600,10 @@ void SplineC2C<ST>::assign_vghgh(const PointType& r,
     const ST gY_i = dY_i - val_r * kY;
     const ST gZ_i = dZ_i - val_r * kZ;
 
-    const size_t psiIndex = j + first_spo;
-    psi[psiIndex]         = ComplexT(c * val_r - s * val_i, c * val_i + s * val_r);
-    dpsi[psiIndex][0]     = ComplexT(c * gX_r - s * gX_i, c * gX_i + s * gX_r);
-    dpsi[psiIndex][1]     = ComplexT(c * gY_r - s * gY_i, c * gY_i + s * gY_r);
-    dpsi[psiIndex][2]     = ComplexT(c * gZ_r - s * gZ_i, c * gZ_i + s * gZ_r);
+    psi[j]     = ComplexT(c * val_r - s * val_i, c * val_i + s * val_r);
+    dpsi[j][0] = ComplexT(c * gX_r - s * gX_i, c * gX_i + s * gX_r);
+    dpsi[j][1] = ComplexT(c * gY_r - s * gY_i, c * gY_i + s * gY_r);
+    dpsi[j][2] = ComplexT(c * gZ_r - s * gZ_i, c * gZ_i + s * gZ_r);
 
     //intermediates for computation of hessian. \partial_i \partial_j phi in cartesian coordinates.
     const ST f_xx_r = v_m_v(h00[jr], h01[jr], h02[jr], h11[jr], h12[jr], h22[jr], g00, g01, g02, g00, g01, g02);
@@ -667,15 +634,15 @@ void SplineC2C<ST>::assign_vghgh(const PointType& r,
     const ST h_yz_i = f_yz_i - (kZ * dY_r + kY * dZ_r) - kZ * kY * val_i;
     const ST h_zz_i = f_zz_i - 2 * kZ * dZ_r - kZ * kZ * val_i;
 
-    grad_grad_psi[psiIndex][0] = ComplexT(c * h_xx_r - s * h_xx_i, c * h_xx_i + s * h_xx_r);
-    grad_grad_psi[psiIndex][1] = ComplexT(c * h_xy_r - s * h_xy_i, c * h_xy_i + s * h_xy_r);
-    grad_grad_psi[psiIndex][2] = ComplexT(c * h_xz_r - s * h_xz_i, c * h_xz_i + s * h_xz_r);
-    grad_grad_psi[psiIndex][3] = ComplexT(c * h_xy_r - s * h_xy_i, c * h_xy_i + s * h_xy_r);
-    grad_grad_psi[psiIndex][4] = ComplexT(c * h_yy_r - s * h_yy_i, c * h_yy_i + s * h_yy_r);
-    grad_grad_psi[psiIndex][5] = ComplexT(c * h_yz_r - s * h_yz_i, c * h_yz_i + s * h_yz_r);
-    grad_grad_psi[psiIndex][6] = ComplexT(c * h_xz_r - s * h_xz_i, c * h_xz_i + s * h_xz_r);
-    grad_grad_psi[psiIndex][7] = ComplexT(c * h_yz_r - s * h_yz_i, c * h_yz_i + s * h_yz_r);
-    grad_grad_psi[psiIndex][8] = ComplexT(c * h_zz_r - s * h_zz_i, c * h_zz_i + s * h_zz_r);
+    grad_grad_psi[j][0] = ComplexT(c * h_xx_r - s * h_xx_i, c * h_xx_i + s * h_xx_r);
+    grad_grad_psi[j][1] = ComplexT(c * h_xy_r - s * h_xy_i, c * h_xy_i + s * h_xy_r);
+    grad_grad_psi[j][2] = ComplexT(c * h_xz_r - s * h_xz_i, c * h_xz_i + s * h_xz_r);
+    grad_grad_psi[j][3] = ComplexT(c * h_xy_r - s * h_xy_i, c * h_xy_i + s * h_xy_r);
+    grad_grad_psi[j][4] = ComplexT(c * h_yy_r - s * h_yy_i, c * h_yy_i + s * h_yy_r);
+    grad_grad_psi[j][5] = ComplexT(c * h_yz_r - s * h_yz_i, c * h_yz_i + s * h_yz_r);
+    grad_grad_psi[j][6] = ComplexT(c * h_xz_r - s * h_xz_i, c * h_xz_i + s * h_xz_r);
+    grad_grad_psi[j][7] = ComplexT(c * h_yz_r - s * h_yz_i, c * h_yz_i + s * h_yz_r);
+    grad_grad_psi[j][8] = ComplexT(c * h_zz_r - s * h_zz_i, c * h_zz_i + s * h_zz_r);
 
     //These are the real and imaginary components of the third SPO derivative.  _xxx denotes
     // third derivative w.r.t. x, _xyz, a derivative with resepect to x,y, and z, and so on.
@@ -758,36 +725,36 @@ void SplineC2C<ST>::assign_vghgh(const PointType& r,
     const ST gh_zzz_r = f3_zzz_r + 3 * kZ * f_zz_i - 3 * kZ * kZ * dZ_r - kZ * kZ * kZ * val_i;
     const ST gh_zzz_i = f3_zzz_i - 3 * kZ * f_zz_r - 3 * kZ * kZ * dZ_i + kZ * kZ * kZ * val_r;
 
-    grad_grad_grad_psi[psiIndex][0][0] = ComplexT(c * gh_xxx_r - s * gh_xxx_i, c * gh_xxx_i + s * gh_xxx_r);
-    grad_grad_grad_psi[psiIndex][0][1] = ComplexT(c * gh_xxy_r - s * gh_xxy_i, c * gh_xxy_i + s * gh_xxy_r);
-    grad_grad_grad_psi[psiIndex][0][2] = ComplexT(c * gh_xxz_r - s * gh_xxz_i, c * gh_xxz_i + s * gh_xxz_r);
-    grad_grad_grad_psi[psiIndex][0][3] = ComplexT(c * gh_xxy_r - s * gh_xxy_i, c * gh_xxy_i + s * gh_xxy_r);
-    grad_grad_grad_psi[psiIndex][0][4] = ComplexT(c * gh_xyy_r - s * gh_xyy_i, c * gh_xyy_i + s * gh_xyy_r);
-    grad_grad_grad_psi[psiIndex][0][5] = ComplexT(c * gh_xyz_r - s * gh_xyz_i, c * gh_xyz_i + s * gh_xyz_r);
-    grad_grad_grad_psi[psiIndex][0][6] = ComplexT(c * gh_xxz_r - s * gh_xxz_i, c * gh_xxz_i + s * gh_xxz_r);
-    grad_grad_grad_psi[psiIndex][0][7] = ComplexT(c * gh_xyz_r - s * gh_xyz_i, c * gh_xyz_i + s * gh_xyz_r);
-    grad_grad_grad_psi[psiIndex][0][8] = ComplexT(c * gh_xzz_r - s * gh_xzz_i, c * gh_xzz_i + s * gh_xzz_r);
+    grad_grad_grad_psi[j][0][0] = ComplexT(c * gh_xxx_r - s * gh_xxx_i, c * gh_xxx_i + s * gh_xxx_r);
+    grad_grad_grad_psi[j][0][1] = ComplexT(c * gh_xxy_r - s * gh_xxy_i, c * gh_xxy_i + s * gh_xxy_r);
+    grad_grad_grad_psi[j][0][2] = ComplexT(c * gh_xxz_r - s * gh_xxz_i, c * gh_xxz_i + s * gh_xxz_r);
+    grad_grad_grad_psi[j][0][3] = ComplexT(c * gh_xxy_r - s * gh_xxy_i, c * gh_xxy_i + s * gh_xxy_r);
+    grad_grad_grad_psi[j][0][4] = ComplexT(c * gh_xyy_r - s * gh_xyy_i, c * gh_xyy_i + s * gh_xyy_r);
+    grad_grad_grad_psi[j][0][5] = ComplexT(c * gh_xyz_r - s * gh_xyz_i, c * gh_xyz_i + s * gh_xyz_r);
+    grad_grad_grad_psi[j][0][6] = ComplexT(c * gh_xxz_r - s * gh_xxz_i, c * gh_xxz_i + s * gh_xxz_r);
+    grad_grad_grad_psi[j][0][7] = ComplexT(c * gh_xyz_r - s * gh_xyz_i, c * gh_xyz_i + s * gh_xyz_r);
+    grad_grad_grad_psi[j][0][8] = ComplexT(c * gh_xzz_r - s * gh_xzz_i, c * gh_xzz_i + s * gh_xzz_r);
 
-    grad_grad_grad_psi[psiIndex][1][0] = ComplexT(c * gh_xxy_r - s * gh_xxy_i, c * gh_xxy_i + s * gh_xxy_r);
-    grad_grad_grad_psi[psiIndex][1][1] = ComplexT(c * gh_xyy_r - s * gh_xyy_i, c * gh_xyy_i + s * gh_xyy_r);
-    grad_grad_grad_psi[psiIndex][1][2] = ComplexT(c * gh_xyz_r - s * gh_xyz_i, c * gh_xyz_i + s * gh_xyz_r);
-    grad_grad_grad_psi[psiIndex][1][3] = ComplexT(c * gh_xyy_r - s * gh_xyy_i, c * gh_xyy_i + s * gh_xyy_r);
-    grad_grad_grad_psi[psiIndex][1][4] = ComplexT(c * gh_yyy_r - s * gh_yyy_i, c * gh_yyy_i + s * gh_yyy_r);
-    grad_grad_grad_psi[psiIndex][1][5] = ComplexT(c * gh_yyz_r - s * gh_yyz_i, c * gh_yyz_i + s * gh_yyz_r);
-    grad_grad_grad_psi[psiIndex][1][6] = ComplexT(c * gh_xyz_r - s * gh_xyz_i, c * gh_xyz_i + s * gh_xyz_r);
-    grad_grad_grad_psi[psiIndex][1][7] = ComplexT(c * gh_yyz_r - s * gh_yyz_i, c * gh_yyz_i + s * gh_yyz_r);
-    grad_grad_grad_psi[psiIndex][1][8] = ComplexT(c * gh_yzz_r - s * gh_yzz_i, c * gh_yzz_i + s * gh_yzz_r);
+    grad_grad_grad_psi[j][1][0] = ComplexT(c * gh_xxy_r - s * gh_xxy_i, c * gh_xxy_i + s * gh_xxy_r);
+    grad_grad_grad_psi[j][1][1] = ComplexT(c * gh_xyy_r - s * gh_xyy_i, c * gh_xyy_i + s * gh_xyy_r);
+    grad_grad_grad_psi[j][1][2] = ComplexT(c * gh_xyz_r - s * gh_xyz_i, c * gh_xyz_i + s * gh_xyz_r);
+    grad_grad_grad_psi[j][1][3] = ComplexT(c * gh_xyy_r - s * gh_xyy_i, c * gh_xyy_i + s * gh_xyy_r);
+    grad_grad_grad_psi[j][1][4] = ComplexT(c * gh_yyy_r - s * gh_yyy_i, c * gh_yyy_i + s * gh_yyy_r);
+    grad_grad_grad_psi[j][1][5] = ComplexT(c * gh_yyz_r - s * gh_yyz_i, c * gh_yyz_i + s * gh_yyz_r);
+    grad_grad_grad_psi[j][1][6] = ComplexT(c * gh_xyz_r - s * gh_xyz_i, c * gh_xyz_i + s * gh_xyz_r);
+    grad_grad_grad_psi[j][1][7] = ComplexT(c * gh_yyz_r - s * gh_yyz_i, c * gh_yyz_i + s * gh_yyz_r);
+    grad_grad_grad_psi[j][1][8] = ComplexT(c * gh_yzz_r - s * gh_yzz_i, c * gh_yzz_i + s * gh_yzz_r);
 
 
-    grad_grad_grad_psi[psiIndex][2][0] = ComplexT(c * gh_xxz_r - s * gh_xxz_i, c * gh_xxz_i + s * gh_xxz_r);
-    grad_grad_grad_psi[psiIndex][2][1] = ComplexT(c * gh_xyz_r - s * gh_xyz_i, c * gh_xyz_i + s * gh_xyz_r);
-    grad_grad_grad_psi[psiIndex][2][2] = ComplexT(c * gh_xzz_r - s * gh_xzz_i, c * gh_xzz_i + s * gh_xzz_r);
-    grad_grad_grad_psi[psiIndex][2][3] = ComplexT(c * gh_xyz_r - s * gh_xyz_i, c * gh_xyz_i + s * gh_xyz_r);
-    grad_grad_grad_psi[psiIndex][2][4] = ComplexT(c * gh_yyz_r - s * gh_yyz_i, c * gh_yyz_i + s * gh_yyz_r);
-    grad_grad_grad_psi[psiIndex][2][5] = ComplexT(c * gh_yzz_r - s * gh_yzz_i, c * gh_yzz_i + s * gh_yzz_r);
-    grad_grad_grad_psi[psiIndex][2][6] = ComplexT(c * gh_xzz_r - s * gh_xzz_i, c * gh_xzz_i + s * gh_xzz_r);
-    grad_grad_grad_psi[psiIndex][2][7] = ComplexT(c * gh_yzz_r - s * gh_yzz_i, c * gh_yzz_i + s * gh_yzz_r);
-    grad_grad_grad_psi[psiIndex][2][8] = ComplexT(c * gh_zzz_r - s * gh_zzz_i, c * gh_zzz_i + s * gh_zzz_r);
+    grad_grad_grad_psi[j][2][0] = ComplexT(c * gh_xxz_r - s * gh_xxz_i, c * gh_xxz_i + s * gh_xxz_r);
+    grad_grad_grad_psi[j][2][1] = ComplexT(c * gh_xyz_r - s * gh_xyz_i, c * gh_xyz_i + s * gh_xyz_r);
+    grad_grad_grad_psi[j][2][2] = ComplexT(c * gh_xzz_r - s * gh_xzz_i, c * gh_xzz_i + s * gh_xzz_r);
+    grad_grad_grad_psi[j][2][3] = ComplexT(c * gh_xyz_r - s * gh_xyz_i, c * gh_xyz_i + s * gh_xyz_r);
+    grad_grad_grad_psi[j][2][4] = ComplexT(c * gh_yyz_r - s * gh_yyz_i, c * gh_yyz_i + s * gh_yyz_r);
+    grad_grad_grad_psi[j][2][5] = ComplexT(c * gh_yzz_r - s * gh_yzz_i, c * gh_yzz_i + s * gh_yzz_r);
+    grad_grad_grad_psi[j][2][6] = ComplexT(c * gh_xzz_r - s * gh_xzz_i, c * gh_xzz_i + s * gh_xzz_r);
+    grad_grad_grad_psi[j][2][7] = ComplexT(c * gh_yzz_r - s * gh_yzz_i, c * gh_yzz_i + s * gh_yzz_r);
+    grad_grad_grad_psi[j][2][8] = ComplexT(c * gh_zzz_r - s * gh_zzz_i, c * gh_zzz_i + s * gh_zzz_r);
   }
 }
 
@@ -800,7 +767,7 @@ void SplineC2C<ST>::evaluateVGHGH(const ParticleSet& P,
                                   GGGVector& grad_grad_grad_psi)
 {
   const PointType& r = P.activeR(iat);
-  PointType ru(PrimLattice.toUnit_floor(r));
+  PointType ru(prim_lattice_.toUnit_floor(r));
 #pragma omp parallel
   {
     int first, last;

@@ -25,8 +25,7 @@ TEST_CASE("QMCDriverInput readXML", "[drivers]")
 {
   auto xml_test = [](const char* driver_xml) {
     Libxml2Document doc;
-    bool okay = doc.parseFromString(driver_xml);
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(driver_xml));
     xmlNodePtr node = doc.getRoot();
     QMCDriverInput qmcdriver_input;
     qmcdriver_input.readXML(node);

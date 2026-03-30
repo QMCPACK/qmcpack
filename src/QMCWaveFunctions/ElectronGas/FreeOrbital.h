@@ -62,7 +62,6 @@ public:
   void report(const std::string& pad) const override;
   // ---- begin required overrides
   std::unique_ptr<SPOSet> makeClone() const override { return std::make_unique<FreeOrbital>(*this); }
-  void setOrbitalSetSize(int norbs) override { throw std::runtime_error("not implemented"); }
   // required overrides end ----
 private:
   const std::vector<PosType> kvecs; // kvecs vectors

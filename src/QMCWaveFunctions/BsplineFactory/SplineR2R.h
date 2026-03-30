@@ -66,13 +66,11 @@ private:
   /// if true, gamma point calculation
   bool IsGamma;
   ///\f$GGt=G^t G \f$, transformation for tensor in LatticeUnit to CartesianUnit, e.g. Hessian
-  Tensor<ST, 3> GGt;
-  ///multi bspline set
-  std::shared_ptr<MultiBsplineBase<ST>> SplineInst;
+  const Tensor<ST, 3> GGt;
   /// const offload copy of GGt
-  std::shared_ptr<OffloadVector<ST>> GGt_offload;
-  /// const offload copy of GPrimLattice_G
-  std::shared_ptr<OffloadVector<ST>> PrimLattice_G_offload;
+  const std::shared_ptr<OffloadVector<ST>> GGt_offload;
+  /// const offload copy of Gprim_lattice_G
+  const std::shared_ptr<OffloadVector<ST>> prim_lattice_G_offload;
   /// crowd resource
   ResourceHandle<SplineOMPTargetMultiWalkerMem<ST, TT>> mw_mem_handle_;
 
@@ -83,8 +81,8 @@ private:
   Matrix<TT> ratios_private;
 
 protected:
-  ///primitive cell
-  CrystalLattice<ST, 3> PrimLattice;
+  ///multi bspline set
+  const std::shared_ptr<MultiBsplineBase<ST>> SplineInst;
   /// intermediate result vectors
   vContainer_type myV;
   vContainer_type myL;
@@ -93,18 +91,19 @@ protected:
   ghContainer_type mygH;
 
 public:
-  SplineR2R(const std::string& my_name, bool use_offload = false);
+  SplineR2R(const std::string& my_name,
+            size_t size,
+            const Lattice& prim_lattice,
+            std::unique_ptr<MultiBsplineBase<ST>>&& multi_spline,
+            bool use_offload = false);
   SplineR2R(const SplineR2R& in);
   virtual std::string getClassName() const override { return "SplineR2R"; }
   virtual std::string getKeyword() const override { return "SplineR2R"; }
-  bool isComplex() const override { return false; };
   bool isRotationSupported() const override { return true; }
   virtual bool isOMPoffload() const override { return use_offload_; }
 
   void createResource(ResourceCollection& collection) const override
-  {
-    auto resource_index = collection.addResource(std::make_unique<SplineOMPTargetMultiWalkerMem<ST, TT>>());
-  }
+  { auto resource_index = collection.addResource(std::make_unique<SplineOMPTargetMultiWalkerMem<ST, TT>>()); }
 
   void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const override
   {
@@ -153,44 +152,13 @@ public:
     IsGamma = ((HalfG[0] == 0) && (HalfG[1] == 0) && (HalfG[2] == 0));
   }
 
-  void bcast_tables(Communicate* comm) { chunked_bcast(comm, SplineInst->getSplinePtr()); }
-
-  void gather_tables(Communicate* comm)
-  {
-    if (comm->size() == 1)
-      return;
-    const int Nbands      = kPoints.size();
-    const int Nbandgroups = comm->size();
-    offset.resize(Nbandgroups + 1, 0);
-    FairDivideLow(Nbands, Nbandgroups, offset);
-    gatherv(comm, SplineInst->getSplinePtr(), SplineInst->getSplinePtr()->z_stride, offset);
-  }
-
-  template<typename BCT>
-  void create_spline(const Ugrid xyz_g[3], const BCT& xyz_bc)
-  {
-    GGt = dot(transpose(PrimLattice.G), PrimLattice.G);
-    SplineInst->create(xyz_g, xyz_bc, myV.size());
-
-    app_log() << "MEMORY " << SplineInst->sizeInByte() / (1 << 20) << " MB allocated "
-              << "for the coefficients in 3D spline orbital representation" << std::endl;
-  }
-
   /// this routine can not be called from threaded region
   void finalizeConstruction() override;
 
-  inline void flush_zero() { SplineInst->flush_zero(); }
-
-  void set_spline(SingleSplineType* spline_r, SingleSplineType* spline_i, int twist, int ispline, int level);
-
-  bool read_splines(hdf_archive& h5f);
-
-  bool write_splines(hdf_archive& h5f);
-
-  /** convert position in PrimLattice unit and return sign */
+  /** convert position in prim_lattice_ unit and return sign */
   inline int convertPos(const PointType& r, PointType& ru) const
   {
-    ru          = PrimLattice.toUnit(r);
+    ru          = prim_lattice_.toUnit(r);
     int bc_sign = 0;
     for (int i = 0; i < D; i++)
       if (-std::numeric_limits<ST>::epsilon() < ru[i] && ru[i] < 0)
@@ -263,8 +231,7 @@ public:
                      HessVector& grad_grad_psi,
                      GGGVector& grad_grad_grad_psi) override;
 
-  template<class BSPLINESPO>
-  friend class SplineSetReader;
+  friend class SplineSetReader<ST>;
   friend class BsplineReader;
 };
 

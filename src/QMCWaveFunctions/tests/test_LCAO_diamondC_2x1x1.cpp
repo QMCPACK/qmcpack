@@ -116,8 +116,7 @@ void test_LCAO_DiamondC_2x1x1_real(const bool useOffload)
     </sposet_collection>
   )";
   Libxml2Document doc;
-  bool okay = doc.parseFromString(useOffload ? wf_omp_xml_str : wf_xml_str);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(useOffload ? wf_omp_xml_str : wf_xml_str));
 
   xmlNodePtr root       = doc.getRoot();
   xmlNodePtr bset_xml   = xmlFirstElementChild(root);
@@ -533,8 +532,7 @@ void test_LCAO_DiamondC_2x1x1_cplx(const bool useOffload)
     </sposet_collection>
   )";
   Libxml2Document doc;
-  bool okay = doc.parseFromString(useOffload ? wf_omp_xml_str : wf_xml_str);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(useOffload ? wf_omp_xml_str : wf_xml_str));
 
   xmlNodePtr root       = doc.getRoot();
   xmlNodePtr bset_xml   = xmlFirstElementChild(root);

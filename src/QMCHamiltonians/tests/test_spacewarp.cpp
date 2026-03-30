@@ -40,8 +40,7 @@ TEST_CASE("SpaceWarp", "[hamiltonian]")
   Communicate* c = OHMMS::Controller;
 
   Libxml2Document doc;
-  bool okay = doc.parse("Na2.structure.xml");
-  REQUIRE(okay);
+  REQUIRE(doc.parse("Na2.structure.xml"));
   xmlNodePtr root = doc.getRoot();
 
   const SimulationCell simulation_cell;

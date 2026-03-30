@@ -57,8 +57,7 @@ TEST_CASE("Bare Kinetic Energy", "[hamiltonian]")
   const char* particles = R"(<tmp></tmp>)";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particles));
 
   xmlNodePtr root = doc.getRoot();
 
@@ -66,7 +65,7 @@ TEST_CASE("Bare Kinetic Energy", "[hamiltonian]")
 
   RuntimeOptions runtime_options;
   TrialWaveFunction psi(runtime_options);
-  BareKineticEnergy bare_ke(elec, psi);
+  BareKineticEnergy bare_ke(elec);
   bare_ke.put(h1);
 
   elec.L[0] = 1.0;
@@ -155,8 +154,7 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   </tmp>
   )";
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particles));
 
   xmlNodePtr root = doc.getRoot();
 
@@ -175,8 +173,7 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
       </jastrow>
   </tmp>
   )";
-  bool okay3             = doc.parseFromString(particles2);
-  REQUIRE(okay3);
+  REQUIRE(doc.parseFromString(particles2));
 
   root = doc.getRoot();
 
@@ -191,7 +188,7 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
 
   xmlNodePtr h1 = xmlFirstElementChild(root);
 
-  BareKineticEnergy bare_ke(elec, psi);
+  BareKineticEnergy bare_ke(elec);
   bare_ke.put(h1);
 
   // update all distance tables
@@ -277,8 +274,8 @@ void testElecCase(double mass_up,
   RefVector<ParticleSet> ptcls{elec, elec2};
   RefVectorWithLeader<ParticleSet> p_list(elec, ptcls);
 
-  BareKineticEnergy bare_ke(elec, psi);
-  BareKineticEnergy bare_ke2(elec, psi_clone);
+  BareKineticEnergy bare_ke(elec);
+  BareKineticEnergy bare_ke2(elec);
 
   RefVector<OperatorBase> bare_kes{bare_ke, bare_ke2};
   RefVectorWithLeader<OperatorBase> o_list(bare_ke, bare_kes);

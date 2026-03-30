@@ -854,5 +854,5 @@ void CoulombPBCAA::releaseResource(ResourceCollection& collection,
   collection.takebackResource(o_leader.mw_res_handle_);
 }
 
-std::unique_ptr<OperatorBase> CoulombPBCAA::makeClone(ParticleSet& qp) { return std::make_unique<CoulombPBCAA>(*this); }
+std::unique_ptr<OperatorBase> CoulombPBCAA::makeClone(ParticleSet& qp) const { return std::make_unique<CoulombPBCAA>(*this); }
 } // namespace qmcplusplus

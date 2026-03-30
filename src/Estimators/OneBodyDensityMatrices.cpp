@@ -27,6 +27,21 @@ using MatrixOperators::diag_product;
 using MatrixOperators::product;
 using MatrixOperators::product_AtB;
 
+static auto cloneSPOSets(const SPOSet::SPOMap& spomap, const std::vector<std::string>& spo_names)
+{
+  std::vector<std::unique_ptr<SPOSet>> sposets;
+  sposets.reserve(spo_names.size());
+  for (const auto& name : spo_names)
+  {
+    auto spo_it = spomap.find(name);
+    if (spo_it == spomap.end())
+      throw UniformCommunicateError("OneBodyDensityMatrices::OneBodyDensityMatrices sposet " + name +
+                                    " does not exist.");
+    sposets.emplace_back(spo_it->second->makeClone());
+  }
+  return sposets;
+}
+
 OneBodyDensityMatrices::OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obdmi,
                                                const Lattice& lattice,
                                                const SpeciesSet& species,
@@ -36,7 +51,7 @@ OneBodyDensityMatrices::OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obd
       input_(obdmi),
       lattice_(std::move(lattice)),
       species_(species),
-      basis_functions_("OneBodyDensityMatrices::basis"),
+      basis_functions_("OneBodyDensityMatrices::basis", cloneSPOSets(spomap, input_.get_basis_sets())),
       is_spinor_(pset_target.isSpinor()),
       timers_("OneBodyDensityMatrix")
 {
@@ -89,20 +104,7 @@ OneBodyDensityMatrices::OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obd
     throw UniformCommunicateError("OneBodyDensityMatrices::OneBodyDensityMatrices only density sampling implemented "
                                   "for calculations using spinors");
 
-
-  // get the sposets that form the basis
-  auto& sposets = input_.get_basis_sets();
-
-  for (int i = 0; i < sposets.size(); ++i)
-  {
-    auto spo_it = spomap.find(sposets[i]);
-    if (spo_it == spomap.end())
-      throw UniformCommunicateError("OneBodyDensityMatrices::OneBodyDensityMatrices sposet " + sposets[i] +
-                                    " does not exist.");
-    basis_functions_.add(spo_it->second->makeClone());
-  }
   basis_size_ = basis_functions_.size();
-
   if (basis_size_ < 1)
     throw UniformCommunicateError("OneBodyDensityMatrices::OneBodyDensityMatrices basis_size must be greater than one");
 
@@ -172,9 +174,7 @@ OneBodyDensityMatrices::OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obd
 
 OneBodyDensityMatrices::OneBodyDensityMatrices(const OneBodyDensityMatrices& obdm, DataLocality dl)
     : OneBodyDensityMatrices(obdm)
-{
-  data_locality_ = dl;
-}
+{ data_locality_ = dl; }
 
 std::unique_ptr<OperatorEstBase> OneBodyDensityMatrices::spawnCrowdClone() const
 {
@@ -530,9 +530,7 @@ void OneBodyDensityMatrices::accumulate(const RefVector<MCPWalker>& walkers,
                                         const RefVector<TrialWaveFunction>& wfns,
                                         const RefVector<QMCHamiltonian>& hams,
                                         RandomBase<FullPrecReal>& rng)
-{
-  implAccumulate(walkers, psets, wfns, rng);
-}
+{ implAccumulate(walkers, psets, wfns, rng); }
 
 void OneBodyDensityMatrices::implAccumulate(const RefVector<MCPWalker>& walkers,
                                             const RefVector<ParticleSet>& psets,

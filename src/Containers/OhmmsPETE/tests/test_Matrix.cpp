@@ -17,6 +17,7 @@
 
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "config.h"
+#include <checkMatrix.hpp>
 
 using std::string;
 
@@ -53,13 +54,27 @@ TEST_CASE("matrix", "[OhmmsPETE]")
     CHECK(*ia == Approx(3.1));
   }
 
-  REQUIRE( A == A);
-  REQUIRE( A != C);
+  REQUIRE(A == A);
+  REQUIRE(A != C);
 
   // copy constructor and copy method
   Mat D(C);
   CHECK(D.rows() == 3);
   CHECK(D.cols() == 3);
+
+  // Check that the zeroing behavior on construction and resize
+  // follows assumptions about zeroing.
+  Mat E(2, 2);
+  Mat E_expected(2, 2);
+  E_expected        = 0.0;
+  auto check_matrix = checkMatrix(E, E_expected);
+  CHECKED_ELSE(check_matrix.result) { FAIL(check_matrix.result_message); }
+
+  E.resize(5, 5);
+  Mat E2_expected(5, 5);
+  E2_expected  = 0.0;
+  check_matrix = checkMatrix(E, E2_expected);
+  CHECKED_ELSE(check_matrix.result) { FAIL(check_matrix.result_message); }
 
   // swap_rows
   A(0, 0) = 0.0;
@@ -81,8 +96,8 @@ TEST_CASE("matrix", "[OhmmsPETE]")
 
 TEST_CASE("matrix converting assignment", "[OhmmsPETE]")
 {
-  Matrix<double> mat_A(3,3);
-  Matrix<float> mat_B(3,3);
+  Matrix<double> mat_A(3, 3);
+  Matrix<float> mat_B(3, 3);
 
   for (int i = 0; i < 3; i++)
     for (int j = 0; j < 3; j++)
@@ -90,40 +105,40 @@ TEST_CASE("matrix converting assignment", "[OhmmsPETE]")
 
   mat_B = mat_A;
 
-  CHECK(mat_B(0,0) == Approx(0));
-  CHECK(mat_B(1,1) == Approx(4.2));
+  CHECK(mat_B(0, 0) == Approx(0));
+  CHECK(mat_B(1, 1) == Approx(4.2));
 
-  Matrix<float> mat_C(2,2);
+  Matrix<float> mat_C(2, 2);
   for (int i = 0; i < 2; i++)
     for (int j = 0; j < 2; j++)
       mat_C(i, j) = (i + j) * 2.2;
 
   mat_A.assignUpperLeft(mat_C);
-  CHECK(mat_A(1,0) == Approx(2.2));
-  CHECK(mat_A(1,2) == Approx(6.3));
+  CHECK(mat_A(1, 0) == Approx(2.2));
+  CHECK(mat_A(1, 2) == Approx(6.3));
 
-  Matrix<float> mat_D(4,4);
+  Matrix<float> mat_D(4, 4);
   for (int i = 0; i < 4; i++)
     for (int j = 0; j < 4; j++)
       mat_D(i, j) = (i + j) * 2.3;
 
   mat_A.assignUpperLeft(mat_D);
-  CHECK(mat_A(1,0) == Approx(2.3));
-  CHECK(mat_A(1,2) == Approx(6.9));
+  CHECK(mat_A(1, 0) == Approx(2.3));
+  CHECK(mat_A(1, 2) == Approx(6.9));
 
-  Matrix<float> mat_too_small(2,2);
+  Matrix<float> mat_too_small(2, 2);
   CHECK_THROWS(mat_too_small = mat_A);
-  
-  Matrix<double> mat_too_small_but_larger_value_type(2,2);
+
+  Matrix<double> mat_too_small_but_larger_value_type(2, 2);
   mat_too_small_but_larger_value_type = mat_B;
   CHECK(mat_too_small_but_larger_value_type.rows() == 3);
   CHECK(mat_too_small_but_larger_value_type.cols() == 3);
-  CHECK(mat_too_small_but_larger_value_type(1,1) == Approx(mat_B(1,1)));
-  Matrix<double> too_small_but_same(2,2);
+  CHECK(mat_too_small_but_larger_value_type(1, 1) == Approx(mat_B(1, 1)));
+  Matrix<double> too_small_but_same(2, 2);
   too_small_but_same = mat_A;
   CHECK(too_small_but_same.rows() == 3);
   CHECK(too_small_but_same.cols() == 3);
-  CHECK(too_small_but_same(1,1) == Approx(mat_A(1,1)));  
+  CHECK(too_small_but_same(1, 1) == Approx(mat_A(1, 1)));
 }
 
 } // namespace qmcplusplus

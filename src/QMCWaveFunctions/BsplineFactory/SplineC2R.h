@@ -60,14 +60,10 @@ public:
   using ghContainer_type = VectorSoaContainer<ST, 10>;
 
 private:
-  ///primitive cell
-  CrystalLattice<ST, 3> PrimLattice;
   ///\f$GGt=G^t G \f$, transformation for tensor in LatticeUnit to CartesianUnit, e.g. Hessian
-  Tensor<ST, 3> GGt;
+  const Tensor<ST, 3> GGt;
   ///number of complex bands
   int nComplexBands;
-  ///multi bspline set
-  std::shared_ptr<MultiBspline<ST>> SplineInst;
 
   vContainer_type mKK;
   VectorSoaContainer<ST, 3> myKcart;
@@ -76,6 +72,8 @@ private:
   Matrix<TT> ratios_private;
 
 protected:
+  ///multi bspline set
+  const std::shared_ptr<MultiBspline<ST>> SplineInst;
   /// intermediate result vectors
   vContainer_type myV;
   vContainer_type myL;
@@ -84,12 +82,20 @@ protected:
   ghContainer_type mygH;
 
 public:
-  SplineC2R(const std::string& my_name, bool use_offload = false) : BsplineSet(my_name), nComplexBands(0) {}
+  SplineC2R(const std::string& my_name,
+            size_t size,
+            const Lattice& prim_lattice,
+            std::unique_ptr<MultiBsplineBase<ST>>&& multi_spline,
+            bool use_offload = false)
+      : BsplineSet(my_name, size, prim_lattice),
+        GGt(dot(transpose(prim_lattice.G), prim_lattice.G)),
+        nComplexBands(0),
+        SplineInst(dynamic_cast<MultiBspline<ST>*>(multi_spline.release()))
+  {}
 
   SplineC2R(const SplineC2R& in);
   virtual std::string getClassName() const override { return "SplineC2R"; }
   virtual std::string getKeyword() const override { return "SplineC2R"; }
-  bool isComplex() const override { return true; };
 
   std::unique_ptr<SPOSet> makeClone() const override { return std::make_unique<SplineC2R>(*this); }
 
@@ -104,37 +110,8 @@ public:
     mygH.resize(npad);
   }
 
-  void bcast_tables(Communicate* comm) { chunked_bcast(comm, SplineInst->getSplinePtr()); }
-
-  void gather_tables(Communicate* comm)
-  {
-    if (comm->size() == 1)
-      return;
-    const int Nbands      = kPoints.size();
-    const int Nbandgroups = comm->size();
-    offset.resize(Nbandgroups + 1, 0);
-    FairDivideLow(Nbands, Nbandgroups, offset);
-
-    for (size_t ib = 0; ib < offset.size(); ib++)
-      offset[ib] = offset[ib] * 2;
-    gatherv(comm, SplineInst->getSplinePtr(), SplineInst->getSplinePtr()->z_stride, offset);
-  }
-
-  template<typename BCT>
-  void create_spline(const Ugrid xyz_g[3], const BCT& xyz_bc)
-  {
-    resize_kpoints();
-    SplineInst = std::make_shared<MultiBspline<ST>>();
-    SplineInst->create(xyz_g, xyz_bc, myV.size());
-
-    app_log() << "MEMORY " << SplineInst->sizeInByte() / (1 << 20) << " MB allocated "
-              << "for the coefficients in 3D spline orbital representation" << std::endl;
-  }
-
-  inline void flush_zero() { SplineInst->flush_zero(); }
-
   /** remap kPoints to pack the double copy */
-  inline void resize_kpoints()
+  inline void resize_kpoints() override
   {
     nComplexBands = this->remap_kpoints();
     const int nk  = kPoints.size();
@@ -146,12 +123,6 @@ public:
       myKcart(i) = kPoints[i];
     }
   }
-
-  void set_spline(SingleSplineType* spline_r, SingleSplineType* spline_i, int twist, int ispline, int level);
-
-  bool read_splines(hdf_archive& h5f);
-
-  bool write_splines(hdf_archive& h5f);
 
   void assign_v(const PointType& r, const vContainer_type& myV, ValueVector& psi, int first, int last) const;
 
@@ -205,8 +176,7 @@ public:
                      HessVector& grad_grad_psi,
                      GGGVector& grad_grad_grad_psi) override;
 
-  template<class BSPLINESPO>
-  friend class SplineSetReader;
+  friend class SplineSetReader<ST>;
   friend class BsplineReader;
 };
 

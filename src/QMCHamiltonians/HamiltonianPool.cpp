@@ -32,7 +32,7 @@ HamiltonianPool::HamiltonianPool(ParticleSetPool& pset_pool,
                                  WaveFunctionPool& psi_pool,
                                  Communicate* c,
                                  const char* aname)
-    : MPIObjectBase(c), ptcl_pool_(pset_pool), psi_pool_(psi_pool), curDoc(0)
+    : MPIObjectBase(c), ptcl_pool_(pset_pool), psi_pool_(psi_pool)
 {}
 
 HamiltonianPool::~HamiltonianPool() = default;
@@ -40,12 +40,12 @@ HamiltonianPool::~HamiltonianPool() = default;
 bool HamiltonianPool::put(xmlNodePtr cur)
 {
   ReportEngine PRE("HamiltonianPool", "put");
-  std::string id("h0"), target("e"), role("extra");
+  std::string id("h0"), target("e"), psi_name;
   OhmmsAttributeSet hAttrib;
   hAttrib.add(id, "id");
   hAttrib.add(id, "name");
-  hAttrib.add(role, "role");
   hAttrib.add(target, "target");
+  hAttrib.add(psi_name, "wavefunction");
   hAttrib.put(cur);
   ParticleSet* qp = ptcl_pool_.getParticleSet(target);
   if (qp == 0)
@@ -54,21 +54,15 @@ bool HamiltonianPool::put(xmlNodePtr cur)
     PRE.error("No target particle " + target + " exists.");
     return false;
   }
-  bool set2Primary = false;
-  //first Hamiltonian is set to the primary Hamiltonian
-  if (myPool.empty() || role == "primary")
-    set2Primary = true;
 
   if (myPool.find(id) != myPool.end())
     throw UniformCommunicateError(
         "Hamiltonian object named \"" + id +
         "\" already exists in the pool! Please set a different name using \"name\" attribute of \"hamiltonian\" node.");
 
-  HamiltonianFactory ham_fac(id, *qp, ptcl_pool_.getPool(), psi_pool_.getPool(), myComm);
+  HamiltonianFactory ham_fac(id, *qp, ptcl_pool_.getPool(), psi_pool_.getWaveFunction(psi_name), myComm);
   ham_fac.put(cur);
-  myPool.emplace(id, ham_fac.releaseHamiltonian());
-  if (set2Primary)
-    primaryH = myPool[id].get();
+  add(id, ham_fac.releaseHamiltonian());
   return true;
 }
 
@@ -83,5 +77,17 @@ bool HamiltonianPool::get(std::ostream& os) const
   return true;
 }
 
-void HamiltonianPool::reset() {}
+OptionalRef<QMCHamiltonian> HamiltonianPool::getHamiltonian(const std::string& pname)
+{
+  if (empty())
+    throw UniformCommunicateError(
+        "The hamiltonian pool is empty. Need at least one hamiltonian node in the xml input!");
+
+  if (pname.empty())
+    return getTheOneAndOnly();
+  else
+    return getObjectByName(pname);
+}
+
+
 } // namespace qmcplusplus

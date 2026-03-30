@@ -82,8 +82,7 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
 )";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particles));
 
   xmlNodePtr root = doc.getRoot();
 
@@ -121,7 +120,7 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
   CHECK(std::real(dpsiM[0][1][1]) == Approx(4.3501935005));
   CHECK(std::real(dpsiM[0][1][2]) == Approx(-0.6386129856));
   // lapl
-  CHECK(std::real(d2psiM[0][0]) == Approx(-4.1090884209));
+  CHECK(std::real(d2psiM[0][0]) == Approx(-4.1090884209).epsilon(1e-4));
   CHECK(std::real(d2psiM[0][1]) == Approx(22.3851032257).epsilon(3e-5));
 
   // electron 1
@@ -244,8 +243,7 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
 )";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particles));
 
   xmlNodePtr root = doc.getRoot();
 

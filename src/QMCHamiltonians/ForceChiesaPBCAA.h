@@ -96,7 +96,7 @@ struct ForceChiesaPBCAA : public OperatorDependsOnlyOnParticleSet, public ForceB
     setParticleSetF(plist, offset);
   }
 
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp) final;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp) const final;
 
   bool put(xmlNodePtr cur) override;
 

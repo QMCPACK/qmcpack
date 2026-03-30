@@ -215,12 +215,12 @@ protected:
   int d_groupid;
   /// Total number of groups in the parent communicator
   int d_ngroups;
-  /// Group Leader Communicator
-  std::unique_ptr<Communicate> GroupLeaderComm;
+  /// inter group communicator
+  std::unique_ptr<Communicate> inter_group_comm_;
 
 public:
   // Avoid public access to unique_ptr.
-  Communicate* getGroupLeaderComm() { return GroupLeaderComm.get(); }
+  Communicate& getInterGroupComm() const { return *inter_group_comm_; }
 
 #ifdef HAVE_MPI
   /// mpi3 communicator wrapper

@@ -63,8 +63,7 @@ void test_He(bool transform)
     elec.update();
 
     Libxml2Document doc;
-    bool okay = doc.parse("he_sto3g.wfj.xml");
-    REQUIRE(okay);
+    REQUIRE(doc.parse("he_sto3g.wfj.xml"));
     xmlNodePtr root = doc.getRoot();
 
     WaveFunctionComponentBuilder::PSetMap particle_set_map;
@@ -169,8 +168,7 @@ void test_He_mw(bool transform)
   elec.update();
 
   Libxml2Document doc;
-  bool okay = doc.parse("he_sto3g.wfj.xml");
-  REQUIRE(okay);
+  REQUIRE(doc.parse("he_sto3g.wfj.xml"));
   xmlNodePtr root = doc.getRoot();
 
   WaveFunctionComponentBuilder::PSetMap particle_set_map;
@@ -289,8 +287,7 @@ void test_EtOH_mw(bool transform)
   Communicate* c = OHMMS::Controller;
 
   Libxml2Document doc;
-  bool okay = doc.parse("ethanol.structure.xml");
-  REQUIRE(okay);
+  REQUIRE(doc.parse("ethanol.structure.xml"));
   xmlNodePtr root = doc.getRoot();
 
   const SimulationCell simulation_cell;
@@ -321,8 +318,7 @@ void test_EtOH_mw(bool transform)
   elec.update();
 
   Libxml2Document doc2;
-  okay = doc2.parse("ethanol.wfnoj.xml");
-  REQUIRE(okay);
+  REQUIRE(doc2.parse("ethanol.wfnoj.xml"));
   xmlNodePtr root2 = doc2.getRoot();
 
   WaveFunctionComponentBuilder::PSetMap particle_set_map;
@@ -504,8 +500,7 @@ void test_Ne(bool transform)
     elec.update();
 
     Libxml2Document doc;
-    bool okay = doc.parse("ne_def2_svp.wfnoj.xml");
-    REQUIRE(okay);
+    REQUIRE(doc.parse("ne_def2_svp.wfnoj.xml"));
     xmlNodePtr root = doc.getRoot();
 
     WaveFunctionComponentBuilder::PSetMap particle_set_map;
@@ -603,8 +598,7 @@ void test_HCN(bool transform)
     Communicate* c = OHMMS::Controller;
 
     Libxml2Document doc;
-    bool okay = doc.parse("hcn.structure.xml");
-    REQUIRE(okay);
+    REQUIRE(doc.parse("hcn.structure.xml"));
     xmlNodePtr root = doc.getRoot();
 
     const SimulationCell simulation_cell;
@@ -635,8 +629,7 @@ void test_HCN(bool transform)
     elec.update();
 
     Libxml2Document doc2;
-    okay = doc2.parse("hcn.wfnoj.xml");
-    REQUIRE(okay);
+    REQUIRE(doc2.parse("hcn.wfnoj.xml"));
     xmlNodePtr root2 = doc2.getRoot();
 
     WaveFunctionComponentBuilder::PSetMap particle_set_map;

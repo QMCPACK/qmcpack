@@ -526,17 +526,6 @@ public:
   void setTwist(std::vector<RealType>&& t) { myTwist = std::move(t); }
   const std::vector<RealType>& twist() const { return myTwist; }
 
-  inline void setMassTerm(ParticleSet& P)
-  {
-    OneOverM = 1.0 / P.Mass[0];
-    //SpeciesSet tspecies(P.getSpeciesSet());
-    //int massind=tspecies.addAttribute("mass");
-    //RealType mass = tspecies(massind,0);
-    //OneOverM = 1.0/mass;
-  }
-
-  RealType getReciprocalMass() { return OneOverM; }
-
   const std::string& getName() const { return myName; }
 
   bool use_tasking() const { return use_tasking_; }
@@ -593,9 +582,6 @@ private:
 
   ///real part of trial wave function log
   RealType log_real_;
-
-  ///One over mass of target particleset, needed for Local Energy Derivatives
-  RealType OneOverM;
 
   /// if true, using internal tasking implementation
   const bool use_tasking_;

@@ -18,7 +18,7 @@ endif()
 ######################################################################
 project(
   qmcpack
-  VERSION 4.1.9
+  VERSION 4.2.9
   LANGUAGES C CXX)
 
 #--------------------------------------------------------------------
@@ -163,15 +163,7 @@ mark_as_advanced(QMC_EXP_THREADING)
 set(VALID_SANITIZERS "asan" "ubsan" "tsan" "msan" "typesan")
 set(ENABLE_SANITIZER "" CACHE STRING "Valid input: ${VALID_SANITIZERS} or left empty")
 
-#--------------------------------------------------------------------
-# INSTALL_NEXUS install Nexus alongside QMCPACK
-#--------------------------------------------------------------------
-option(INSTALL_NEXUS "Install Nexus alongside QMCPACK" ON)
-if(INSTALL_NEXUS)
-  install(
-    CODE "EXECUTE_PROCESS(COMMAND ${qmcpack_SOURCE_DIR}/install_nexus_binaries \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX})"
-  )
-endif()
+option(QMC_INSTALL_NEXUS "Install Nexus alongside QMCPACK" ON)
 
 ######################################################################
 # Set compiler specific options/flags
@@ -1074,7 +1066,15 @@ if(NOT QMC_BUILD_SANDBOX_ONLY)
     add_subdirectory(tests)
     add_subdirectory(examples)
   endif()
-  if(IS_DIRECTORY "${PROJECT_SOURCE_DIR}/nexus" AND INSTALL_NEXUS)
+  #--------------------------------------------------------------------
+  # INSTALL_NEXUS install Nexus alongside QMCPACK
+  #--------------------------------------------------------------------
+  if(QMC_INSTALL_NEXUS)
     add_subdirectory(nexus/nexus/tests)
+    install(DIRECTORY ${qmcpack_SOURCE_DIR}/nexus/nexus DESTINATION ${CMAKE_INSTALL_PREFIX}/lib USE_SOURCE_PERMISSIONS PATTERN "__pycache__" EXCLUDE)
+    set(QMCPACK_NEXUS_SCRIPTS qmca qmc-fit qdens qdens-radial)
+    foreach(NEXUS_SCRIPT IN LISTS QMCPACK_NEXUS_SCRIPTS)
+      install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ../lib/nexus/bin/${NEXUS_SCRIPT} ${CMAKE_INSTALL_PREFIX}/bin/${NEXUS_SCRIPT})")
+    endforeach()
   endif()
 endif()

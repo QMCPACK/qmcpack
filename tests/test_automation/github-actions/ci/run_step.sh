@@ -127,6 +127,7 @@ case "$1" in
               -DCMAKE_C_COMPILER=gcc-14 \
               -DCMAKE_CXX_COMPILER=g++-14 \
               -DCMAKE_EXE_LINKER_FLAGS="-Wl,-ld_classic" \
+              -DQMC_INSTALL_NEXUS=OFF \
               ${GITHUB_WORKSPACE}
       ;;
       *"GCC9"*"-CUDA-AFQMC"*)
@@ -370,14 +371,6 @@ case "$1" in
   install)
     cd ${GITHUB_WORKSPACE}/../qmcpack-build
     ninja install
-    ;;
-
-  rebase)
-    source external_codes/github_actions/auto-rebase.sh
-    ;;
-  
-  pull-rebase)
-    source external_codes/github_actions/trigger-rebase-on-push.sh
     ;;
 
   *)

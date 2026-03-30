@@ -234,7 +234,7 @@ def test_pseudopotential_classes():
     f = open(files['C.BFD.xml'],'r')
     pp_relpath = f.read().strip()
     pp_path = os.path.split(files['C.BFD.xml'])[0]
-    filepath = os.path.join(pp_path,pp_relpath)
+    filepath = os.path.realpath(os.path.join(pp_path,pp_relpath))
     f.close()
 
     qpp = QmcpackPP(filepath)

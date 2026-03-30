@@ -129,8 +129,7 @@ TEST_CASE("SpinDensityNew::SpinDensityNew(SPInput, SpeciesSet)", "[estimators]")
 {
   Libxml2Document doc;
   using input = testing::ValidSpinDensityInput;
-  bool okay   = doc.parseFromString(input::xml[input::GRID]);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(input::xml[input::GRID]));
   xmlNodePtr node = doc.getRoot();
   SpinDensityInput sdi(node);
   SpeciesSet species_set;
@@ -146,8 +145,7 @@ TEST_CASE("SpinDensityNew::SpinDensityNew(SPInput, Lattice, SpeciesSet)", "[esti
 {
   Libxml2Document doc;
   using input = testing::ValidSpinDensityInput;
-  bool okay   = doc.parseFromString(input::xml[input::NOCELL]);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(input::xml[input::NOCELL]));
   xmlNodePtr node = doc.getRoot();
   SpinDensityInput sdi(node);
   SpeciesSet species_set;
@@ -168,8 +166,7 @@ TEST_CASE("SpinDensityNew::spawnCrowdClone()", "[estimators]")
 {
   Libxml2Document doc;
   using input = testing::ValidSpinDensityInput;
-  bool okay   = doc.parseFromString(input::xml[input::NOCELL]);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(input::xml[input::NOCELL]));
   xmlNodePtr node = doc.getRoot();
   SpinDensityInput sdi(node);
   SpeciesSet species_set;
@@ -191,8 +188,7 @@ TEST_CASE("SpinDensityNew::accumulate", "[estimators]")
 
   Libxml2Document doc;
   using input = testing::ValidSpinDensityInput;
-  bool okay   = doc.parseFromString(input::xml[input::GRID]);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(input::xml[input::GRID]));
   xmlNodePtr node = doc.getRoot();
   SpinDensityInput sdi(node);
   SpeciesSet species_set;
@@ -248,8 +244,7 @@ TEST_CASE("SpinDensityNew::collect(DataLocality::crowd)", "[estimators]")
 
     Libxml2Document doc;
     using input = testing::ValidSpinDensityInput;
-    bool okay   = doc.parseFromString(input::xml[input::GRID]);
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(input::xml[input::GRID]));
     xmlNodePtr node = doc.getRoot();
     SpinDensityInput sdi(node);
     SpeciesSet species_set;
@@ -286,8 +281,7 @@ TEST_CASE("SpinDensityNew::collect(DataLocality::rank)", "[estimators]")
 
     Libxml2Document doc;
     using input = testing::ValidSpinDensityInput;
-    bool okay   = doc.parseFromString(input::xml[input::GRID]);
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(input::xml[input::GRID]));
     xmlNodePtr node = doc.getRoot();
     SpinDensityInput sdi(node);
     SpeciesSet species_set;
@@ -325,8 +319,7 @@ TEST_CASE("SpinDensityNew algorithm comparison", "[estimators]")
 
   Libxml2Document doc;
   using input = testing::ValidSpinDensityInput;
-  bool okay   = doc.parseFromString(input::xml[input::GRID]);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(input::xml[input::GRID]));
   xmlNodePtr node = doc.getRoot();
   SpinDensityInput sdi(node);
   SpeciesSet species_set;

@@ -153,7 +153,7 @@ bool SkEstimator::put(xmlNodePtr cur)
 
 bool SkEstimator::get(std::ostream& os) const { return true; }
 
-std::unique_ptr<OperatorBase> SkEstimator::makeClone(ParticleSet& P)
+std::unique_ptr<OperatorBase> SkEstimator::makeClone(ParticleSet& P) const
 {
   std::unique_ptr<SkEstimator> myclone = std::make_unique<SkEstimator>(*this);
   myclone->hdf5_out                    = hdf5_out;

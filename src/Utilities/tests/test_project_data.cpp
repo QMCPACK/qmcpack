@@ -54,8 +54,7 @@ TEST_CASE("ProjectData::put no series", "[ohmmsapp]")
 
   const char* xml_input = R"(<project id="test1"></project>)";
   Libxml2Document doc;
-  bool okay = doc.parseFromString(xml_input);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(xml_input));
 
   xmlNodePtr root = doc.getRoot();
 
@@ -70,8 +69,7 @@ TEST_CASE("ProjectData::put with series", "[ohmmsapp]")
 
   const char* xml_input = R"(<project id="test1" series="1"></project>)";
   Libxml2Document doc;
-  bool okay = doc.parseFromString(xml_input);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(xml_input));
 
   xmlNodePtr root = doc.getRoot();
 
@@ -98,8 +96,7 @@ TEST_CASE("ProjectData::TestDriverVersion", "[ohmmsapp]")
       </project>
       )";
     Libxml2Document doc;
-    bool okay = doc.parseFromString(xml_input);
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(xml_input));
 
     xmlNodePtr root = doc.getRoot();
 
@@ -119,8 +116,7 @@ TEST_CASE("ProjectData::TestDriverVersion", "[ohmmsapp]")
       </project>
       )";
     Libxml2Document doc;
-    bool okay = doc.parseFromString(xml_input);
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(xml_input));
 
     xmlNodePtr root = doc.getRoot();
 
@@ -139,8 +135,7 @@ TEST_CASE("ProjectData::TestDriverVersion", "[ohmmsapp]")
         </parameter>
       </project>)";
     Libxml2Document doc;
-    bool okay = doc.parseFromString(xml_input);
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(xml_input));
 
     xmlNodePtr root = doc.getRoot();
 

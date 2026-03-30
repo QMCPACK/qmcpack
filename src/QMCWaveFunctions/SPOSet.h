@@ -67,7 +67,7 @@ public:
   using OffloadMatrix = Matrix<DT, OffloadPinnedAllocator<DT>>;
 
   /** constructor */
-  SPOSetT(const std::string& my_name);
+  SPOSetT(const std::string& my_name, size_t size);
 
   /** destructor
    *
@@ -186,13 +186,6 @@ public:
                                      const ValueMatrix& Minv_dn,
                                      const std::vector<int>& detData_up,
                                      const std::vector<std::vector<int>>& lookup_tbl);
-
-  /** set the OrbitalSetSize
-   * @param norbs number of single-particle orbitals
-   * Ye: I prefer to remove this interface in the future. SPOSet builders need to handle the size correctly.
-   * It doesn't make sense allowing to set the value at any place in the code.
-   */
-  virtual void setOrbitalSetSize(int norbs) = 0;
 
   /** evaluate the values of this single-particle orbital set
    * @param P current ParticleSet
@@ -592,8 +585,8 @@ public:
 protected:
   /// name of the object, unique identifier
   const std::string my_name_;
-  ///number of Single-particle orbitals
-  IndexType OrbitalSetSize;
+  ///number of Single-particle orbitals.
+  const IndexType OrbitalSetSize;
 };
 
 using SPOSet    = SPOSetT<QMCTraits::QTBase::ValueType>;

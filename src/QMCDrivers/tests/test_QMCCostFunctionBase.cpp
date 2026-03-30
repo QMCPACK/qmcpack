@@ -75,8 +75,7 @@ TEST_CASE("updateXmlNodes", "[drivers]")
     )";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(wf_xml);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(wf_xml));
   cost.setWaveFunctionNode(doc.getRoot());
 
   cost.callUpdateXmlNodes();
@@ -112,8 +111,7 @@ TEST_CASE("updateXmlNodes with existing element", "[drivers]")
     )";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(wf_xml);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(wf_xml));
   cost.setWaveFunctionNode(doc.getRoot());
 
   cost.callUpdateXmlNodes();

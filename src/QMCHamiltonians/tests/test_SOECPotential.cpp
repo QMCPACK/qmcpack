@@ -35,14 +35,10 @@ class TestSOECPotential
 
 public:
   static void copyGridUnrotatedForTest(SOECPotential& so_ecp)
-  {
-    so_ecp.ppset_[0]->rrotsgrid_m_ = so_ecp.ppset_[0]->sgridxyz_m_;
-  }
+  { so_ecp.ppset_[0]->rrotsgrid_m_ = so_ecp.ppset_[0]->sgridxyz_m_; }
 
   static bool didGridChange(SOECPotential& so_ecp)
-  {
-    return so_ecp.ppset_[0]->rrotsgrid_m_ != so_ecp.ppset_[0]->sgridxyz_m_;
-  }
+  { return so_ecp.ppset_[0]->rrotsgrid_m_ != so_ecp.ppset_[0]->sgridxyz_m_; }
 
   static void mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& o_list,
                               const RefVectorWithLeader<TrialWaveFunction>& twf_list,
@@ -144,8 +140,7 @@ void doSOECPotentialTest(bool use_VPs)
   auto spo_up = std::make_unique<FreeOrbital>("free_orb_up", kup);
   auto spo_dn = std::make_unique<FreeOrbital>("free_orb_dn", kdn);
 
-  auto spinor_set = std::make_unique<SpinorSet>("free_orsposetsb_spinor");
-  spinor_set->set_spos(std::move(spo_up), std::move(spo_dn));
+  auto spinor_set = std::make_unique<SpinorSet>("free_orsposetsb_spinor", std::move(spo_up), std::move(spo_dn));
   QMCTraits::IndexType norb = spinor_set->getOrbitalSetSize();
   REQUIRE(norb == 2);
 
@@ -171,8 +166,7 @@ void doSOECPotentialTest(bool use_VPs)
   </tmp>
   )";
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particles));
   xmlNodePtr root = doc.getRoot();
   xmlNodePtr jas2 = xmlFirstElementChild(root);
   RadialJastrowBuilder jastrow(c, elec);
@@ -185,10 +179,9 @@ void doSOECPotentialTest(bool use_VPs)
   ResourceCollectionTeamLock<TrialWaveFunction> mw_twf_lock(twf_res, twf_list);
 
   //Now we set up the SO ECP component.
-  SOECPotential so_ecp(ions, elec, psi, false, use_VPs);
+  SOECPotential so_ecp(ions, elec, false, use_VPs);
   ECPComponentBuilder ecp_comp_builder("test_read_soecp", c);
-  okay = ecp_comp_builder.read_pp_file("so_ecp_test.xml");
-  REQUIRE(okay);
+  REQUIRE(ecp_comp_builder.read_pp_file("so_ecp_test.xml"));
   UPtr<SOECPComponent> so_ecp_comp = std::move(ecp_comp_builder.pp_so);
   so_ecp.addComponent(0, std::move(so_ecp_comp));
   UPtr<OperatorBase> so_ecp2_ptr = so_ecp.makeClone(elec2, *psi_clone);
@@ -247,11 +240,10 @@ void doSOECPotentialTest(bool use_VPs)
   if (use_VPs)
   {
     value = 0.0;
-    SOECPotential so_ecp_exact(ions, elec, psi, true, true);
+    SOECPotential so_ecp_exact(ions, elec, true, true);
     //srule is 0 for exact evaluation
     ECPComponentBuilder ecp_comp_builder("test_read_soecp", c, -1, -1, 0);
-    okay = ecp_comp_builder.read_pp_file("so_ecp_test.xml");
-    REQUIRE(okay);
+    REQUIRE(ecp_comp_builder.read_pp_file("so_ecp_test.xml"));
     UPtr<SOECPComponent> so_ecp_comp = std::move(ecp_comp_builder.pp_so);
     so_ecp_exact.addComponent(0, std::move(so_ecp_comp));
 

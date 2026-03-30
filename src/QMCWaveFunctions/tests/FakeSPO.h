@@ -38,14 +38,13 @@ public:
 
   GradVector gv;
 
-  FakeSPO();
+  FakeSPO(size_t size);
   ~FakeSPO() override {}
 
   std::string getClassName() const override { return "FakeSPO"; }
 
   std::unique_ptr<SPOSet> makeClone() const override;
   virtual void report() {}
-  void setOrbitalSetSize(int norbs) override;
 
   void evaluateValue(const ParticleSet& P, int iat, ValueVector& psi) override;
 
@@ -57,6 +56,7 @@ public:
                             ValueMatrix& logdet,
                             GradMatrix& dlogdet,
                             ValueMatrix& d2logdet) override;
+
 private:
   using SPOSet::OrbitalSetSize;
 };
