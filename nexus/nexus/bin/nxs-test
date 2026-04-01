@@ -935,9 +935,6 @@ def physical_system():
 
 
 def basisset():
-    nunit('files')
-
-    nunit('import')
 
     nunit('basissets')
 

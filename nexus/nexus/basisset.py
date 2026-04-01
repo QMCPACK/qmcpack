@@ -4,6 +4,7 @@
 
 
 import os
+from pathlib import Path
 import numpy as np
 from .periodic_table import is_element
 from .developer import DevBase, obj, error, to_str, unavailable
@@ -32,7 +33,7 @@ class BasisSets(DevBase):
         for bs in basissets:
             if isinstance(bs,BasisFile):
                 bss.append(bs)
-            elif isinstance(bs,str):
+            elif isinstance(bs,(str, Path)):
                 bsfiles.append(bs)
             else:
                 self.error('expected BasisFile type or filepath, got '+str(type(bs)),exit=False)
@@ -70,8 +71,8 @@ class BasisSets(DevBase):
         self.log('')
         self.log('  Basissets')
         for filepath in bsfiles:
-            self.log('    reading basis: '+filepath)
-            ext = filepath.split('.')[-1].lower()
+            self.log('    reading basis: '+str(filepath))
+            ext = str(filepath).split('.')[-1].lower()
             if ext=='gms_bas' or ext=='bas':
                 bs = gamessBasisFile(filepath)
             else:
