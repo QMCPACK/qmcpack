@@ -917,13 +917,12 @@ Matrix<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSRPerParticle(const RefVecto
 
     for (int ipart = 1; ipart < num_centers; ipart++)
     {
-      z                = .5 * o_leader.Zat[ipart];
+      z                = 0.5 * o_leader.Zat[ipart];
       const auto& dist = d_aa.getDistRow(ipart);
-      for (int jpart = 0; jpart < ipart; ++jpart)
+      for (int jpart = 0; jpart < num_centers; ++jpart)
       {
         RealType pairpot = z * o_leader.Zat[jpart] * o_leader.rVs->splint(dist[jpart]) / dist[jpart];
         pp_sr_values(ipart, iw) += pairpot;
-        pp_sr_values(jpart, iw) += pairpot;
       }
     }
   }
