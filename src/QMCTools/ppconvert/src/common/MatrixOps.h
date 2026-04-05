@@ -39,6 +39,11 @@ static auto decompose(Matrix&& A, Permutation&& P, double tol = std::numeric_lim
 	auto const N = std::min(size(A), size(~A));
 	assert( P.size() >= N );
 
+	using std::cbegin;
+	using std::cend;
+	using std::begin;
+	using std::end;
+
 	auto&& ret = A({0, N}, {0, N});
 	for(auto i : extension(ret)){
 		if(lup::permute_max_diagonal(A, P, i) < tol) return A({0, i}, {0, i});
@@ -91,6 +96,11 @@ static auto permute(Permutation const& p, Vector&& data) -> Vector&&{
 template<class LUMatrix, class Vector>
 static auto lower_solve(LUMatrix const& LU, Vector&& x) -> Vector&&{
 	assert(size(LU) <= size(x));
+	using std::cbegin;
+	using std::cend;
+	using std::begin;
+	using std::cend;
+	
 	auto const N = size(LU);
 	for(typename LUMatrix::size_type i = 0; i != N; ++i){
 		auto const& Lrowi = LU[i]({0, i});
@@ -102,6 +112,11 @@ static auto lower_solve(LUMatrix const& LU, Vector&& x) -> Vector&&{
 template<class LUMatrix, class Vector>
 static auto upper_solve(LUMatrix const& LU, Vector&& x) -> Vector&&{
 	assert(size(LU) <= size(x));
+	using std::cbegin;
+	using std::cend;
+	using std::begin;
+	using std::end;
+	
 	auto const N = size(LU);
 	for(typename LUMatrix::size_type i = N - 1; i >= 0; --i){
 		auto const& Urowi = LU[i]({i + 1, N});
