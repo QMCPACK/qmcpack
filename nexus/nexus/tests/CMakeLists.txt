@@ -8,7 +8,7 @@ if(ADD_TEST)
   message("Generating Nexus test list")
   execute_process(COMMAND ${Python3_EXECUTABLE} -m pytest --collect-only -qq ${qmcpack_SOURCE_DIR}/nexus/nexus/tests
                   # Remove test count per module, join lines, remove file path prefix
-                  COMMAND sed -E ":a \$!N ; s/: \[0-9\]+\\n/\\;/ ; s/nexus\\/tests\\/// ; ta"
+                  COMMAND sed -E ":a \$!N ; s/: \[0-9\]+\\n/\\;/ ; s/[nexus\\/]{0,6}nexus\\/tests\\/// ; ta"
                   # Remove trailing newline from sed
                   COMMAND tr -d "\\n"
                   RESULT_VARIABLE NEXUS_TESTLIST_RESULT OUTPUT_VARIABLE NEXUS_TESTLIST)
@@ -31,7 +31,7 @@ if(ADD_TEST)
     set(NTEST "pytest")
     IF(ENABLE_PYCOV)
       add_test(NAME ntest_nexus_${TESTNAME}
-               COMMAND ${Python3_EXECUTABLE} -m ${NTEST} ${qmcpack_SOURCE_DIR}/nexus/nexus/tests/${TESTFILE} --config-file=${qmcpack_SOURCE_DIR}/nexus/pytest.toml
+               COMMAND ${Python3_EXECUTABLE} -m ${NTEST} ${qmcpack_SOURCE_DIR}/nexus/nexus/tests/${TESTFILE} -c ${qmcpack_SOURCE_DIR}/nexus/pytest.toml
                                                                                    --cov=nexus
                                                                                    --cov-report=xml
                                                                                    --cov-config=${qmcpack_SOURCE_DIR}/nexus/pyproject.toml
@@ -39,7 +39,7 @@ if(ADD_TEST)
 
     ELSE()
       add_test(NAME ntest_nexus_${TESTNAME}
-               COMMAND ${Python3_EXECUTABLE} -m ${NTEST} ${qmcpack_SOURCE_DIR}/nexus/nexus/tests/${TESTFILE} --config-file=${qmcpack_SOURCE_DIR}/nexus/pytest.toml
+               COMMAND ${Python3_EXECUTABLE} -m ${NTEST} ${qmcpack_SOURCE_DIR}/nexus/nexus/tests/${TESTFILE} -c ${qmcpack_SOURCE_DIR}/nexus/pytest.toml
               )
     ENDIF()
     set_tests_properties(ntest_nexus_${TESTNAME} PROPERTIES ENVIRONMENT PYTHONPATH=$ENV{PYTHONPATH})
