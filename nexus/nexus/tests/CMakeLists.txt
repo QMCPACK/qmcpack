@@ -8,7 +8,7 @@ if(ADD_TEST)
   message("Generating Nexus test list")
   execute_process(COMMAND ${Python3_EXECUTABLE} -m pytest --collect-only -qq ${qmcpack_SOURCE_DIR}/nexus/nexus/tests
                   # Remove test count per module, join lines, remove file path prefix
-                  COMMAND sed -E ":a \$!N ; s/: \[0-9\]+\\n/\\;/ ; s/[nexus\\/]{0,6}nexus\\/tests\\/// ; ta"
+                  COMMAND sed -E ":a \$!N ; s/\(nexus\\/\){1,2}tests\\/\(test_\\w\*\\.py\): \[0-9\]+\\n/\\2\\;/ ; ta"
                   # Remove trailing newline from sed
                   COMMAND tr -d "\\n"
                   RESULT_VARIABLE NEXUS_TESTLIST_RESULT OUTPUT_VARIABLE NEXUS_TESTLIST)
