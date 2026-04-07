@@ -29,7 +29,7 @@ RUN apt-get install -y --no-install-recommends \
     ca-certificates make ninja-build git cmake wget bzip2 rsync  g++ gfortran openmpi-bin libopenmpi-dev libboost-dev \
     libopenblas-openmp-dev libhdf5-dev libxml2-dev libfftw3-dev \
     python3-numpy python3-scipy python3-pandas python3-h5py python3-matplotlib \
-    python3-pytest python3-pytest-cov python3-pytest-order
+    python3-pytest
 
 # Convenience feature to setup certificates for behind firewall builds.
 # * Copy any provided certificates into the container and update the SSL config
