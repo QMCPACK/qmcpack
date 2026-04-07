@@ -60,3 +60,8 @@ omit = [
     "nexus/tests/*",
     "nexus/examples/*",
 ]
+
+[tool.pytest.ini_options]
+#addopts = ["--cov=nexus", "--cov-report=xml"]
+testpaths = ["nexus/tests"]
+xfail_strict = true

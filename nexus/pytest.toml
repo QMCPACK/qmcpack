@@ -1,4 +1,0 @@
-[pytest]
-#addopts = ["--cov=nexus", "--cov-report=xml"]
-testpaths = ["nexus/tests"]
-xfail_strict = true
