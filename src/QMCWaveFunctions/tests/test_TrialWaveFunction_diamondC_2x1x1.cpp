@@ -355,7 +355,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay, const OffloadSwitche
   CHECK(ratios[0] == ComplexApprox(PsiValue(1, 0)).epsilon(5e-4));
   CHECK(ratios[1] == ComplexApprox(PsiValue(0.12487384604679, 0)).epsilon(5e-5));
 #else
-  CHECK(ratios[0] == Approx(1).epsilon(5e-5));
+  CHECK(ratios[0] == Approx(1).epsilon(ratio_precision));
   CHECK(ratios[1] == Approx(0.12487384604697).epsilon(ratio_precision));
 #endif
 
