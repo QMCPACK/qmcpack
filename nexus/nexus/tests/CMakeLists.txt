@@ -7,13 +7,10 @@ check_python_reqs("numpy;pytest" "nexus base" ADD_TEST)
 if(ADD_TEST)
   message("Generating Nexus test list")
   execute_process(COMMAND ${Python3_EXECUTABLE} -m pytest --collect-only -qq ${qmcpack_SOURCE_DIR}/nexus/nexus/tests
-                  # Remove test count per module, join lines, remove file path prefix
-                  COMMAND sed -E ":a \$!N ; s/\(nexus\\/\){1,2}tests\\/\(test_\\w\*\\.py\): \[0-9\]+\\n/\\2\\;/ ; ta"
-                  # Remove trailing newline from sed
-                  COMMAND tr -d "\\n"
+                  COMMAND tr "\\n" "\;" # Join into a single line with semicolon separators
                   RESULT_VARIABLE NEXUS_TESTLIST_RESULT OUTPUT_VARIABLE NEXUS_TESTLIST)
   if(NOT NEXUS_TESTLIST_RESULT EQUAL 0)
-    message(FATAL_ERROR "Command line '${Python3_EXECUTABLE} -m pytest --collect-only -qq ${qmcpack_SOURCE_DIR}/nexus/nexus/tests | sed -E ':a $!N ; s/: [0-9]+\\n\\;// ; s/nexus\\/tests\\/test_// ; ta' | tr -d '\\n'' failed!")
+    message(FATAL_ERROR "Command line ' ${Python3_EXECUTABLE} -m pytest --collect-only -qq ${qmcpack_SOURCE_DIR}/nexus/nexus/tests | tr '\\n' '\;' ' failed!")
   endif()
 
   set(CACHE_NEXUS_TESTLIST
@@ -24,37 +21,47 @@ if(ADD_TEST)
   else()
     message("Nexus test list is empty. No Nexus tests added.")
   endif()
-  foreach(TESTFILE ${NEXUS_TESTLIST})
-    string(REPLACE "test_" "" TESTNAME ${TESTFILE})
-    string(REPLACE ".py" "" TESTNAME ${TESTNAME})
-    #message("Adding test ntest_nexus_${TESTNAME}")
-    set(NTEST "pytest")
-    IF(ENABLE_PYCOV)
-      add_test(NAME ntest_nexus_${TESTNAME}
-               COMMAND ${Python3_EXECUTABLE} -m ${NTEST} ${qmcpack_SOURCE_DIR}/nexus/nexus/tests/${TESTFILE} -c ${qmcpack_SOURCE_DIR}/nexus/pyproject.toml
+  set(NTEST "pytest")
+  if(ENABLE_PYCOV)
+    add_test(NAME ntest_nexus_coverage_all
+             COMMAND ${Python3_EXECUTABLE} -m ${NTEST} ${qmcpack_SOURCE_DIR}/nexus/nexus/tests -c ${qmcpack_SOURCE_DIR}/nexus/pyproject.toml
                                                                                    --cov=nexus
                                                                                    --cov-report=xml
-                                                                                   --cov-append
                                                                                    --cov-config=${qmcpack_SOURCE_DIR}/nexus/pyproject.toml
-              )
-
-    ELSE()
-      add_test(NAME ntest_nexus_${TESTNAME}
-               COMMAND ${Python3_EXECUTABLE} -m ${NTEST} ${qmcpack_SOURCE_DIR}/nexus/nexus/tests/${TESTFILE} -c ${qmcpack_SOURCE_DIR}/nexus/pyproject.toml
-              )
-    ENDIF()
-    set_tests_properties(ntest_nexus_${TESTNAME} PROPERTIES ENVIRONMENT PYTHONPATH=$ENV{PYTHONPATH})
+    )
+    set_tests_properties(ntest_nexus_coverage_all PROPERTIES ENVIRONMENT PYTHONPATH=$ENV{PYTHONPATH})
     set_property(
-      TEST ntest_nexus_${TESTNAME}
+      TEST ntest_nexus_coverage_all
       APPEND
       PROPERTY LABELS "nexus;deterministic")
     set(TEST_LABELS "")
-    add_test_labels(ntest_nexus_${TESTNAME} TEST_LABELS)
-    # Use a resource lock to avoid potential race condition in copying example inputs
-    if(${TESTNAME} MATCHES ".*example.*")
-      set_tests_properties(ntest_nexus_${TESTNAME} PROPERTIES RESOURCE_LOCK nexus_examples_resource)
-    endif()
-  endforeach()
+    add_test_labels(ntest_nexus_coverage_all TEST_LABELS)
+  else()
+    foreach(TESTFILE ${NEXUS_TESTLIST})
+      string(REGEX REPLACE ": [0-9][0-9]?" "" TESTFILE ${TESTFILE})
+      string(REPLACE "nexus/tests/" "" TESTFILE ${TESTFILE})
+      string(REPLACE "nexus/" "" TESTFILE ${TESTFILE})
+
+      string(REPLACE "test_" "" TESTNAME ${TESTFILE})
+      string(REPLACE ".py" "" TESTNAME ${TESTNAME})
+      #message("Adding test ntest_nexus_${TESTNAME}")
+
+      add_test(NAME ntest_nexus_${TESTNAME}
+               COMMAND ${Python3_EXECUTABLE} -m ${NTEST} ${qmcpack_SOURCE_DIR}/nexus/nexus/tests/${TESTFILE} -c ${qmcpack_SOURCE_DIR}/nexus/pyproject.toml
+              )
+      set_tests_properties(ntest_nexus_${TESTNAME} PROPERTIES ENVIRONMENT PYTHONPATH=$ENV{PYTHONPATH})
+      set_property(
+        TEST ntest_nexus_${TESTNAME}
+        APPEND
+        PROPERTY LABELS "nexus;deterministic")
+      set(TEST_LABELS "")
+      add_test_labels(ntest_nexus_${TESTNAME} TEST_LABELS)
+      # Use a resource lock to avoid potential race condition in copying example inputs
+      if(${TESTNAME} MATCHES ".*example.*")
+        set_tests_properties(ntest_nexus_${TESTNAME} PROPERTIES RESOURCE_LOCK nexus_examples_resource)
+      endif()
+    endforeach()
+  endif()
 else()
   message("Skipping Nexus tests because numpy and/or pytest is not present in python installation")
 endif()
