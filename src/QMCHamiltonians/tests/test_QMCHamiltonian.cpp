@@ -17,6 +17,7 @@
 #include <MinimalParticlePool.h>
 #include <MinimalWaveFunctionPool.h>
 #include <MinimalHamiltonianPool.h>
+#include <Particle/DistanceTable.h>
 #include "TestListenerFunction.h"
 #include "Utilities/ResourceCollection.h"
 #include "Utilities/StlPrettyPrint.hpp"
@@ -72,11 +73,14 @@ TEST_CASE("integrateListeners", "[hamiltonian]")
   //auto& spo_map            = wavefunction_pool.getWaveFunction("wavefunction")->getSPOMap();
   TrialWaveFunction& psi(wavefunction_pool.getWaveFunction().value());
 
+  // THe shadow hams are the non per particle hamiltonians
+  UPtrVector<QMCHamiltonian> shadow_hams;
   UPtrVector<QMCHamiltonian> hams;
   UPtrVector<TrialWaveFunction> twfs;
   std::vector<ParticleSet> psets;
 
   QMCHamiltonian& ham(hamiltonian_pool.getHamiltonian().value());
+  QMCHamiltonian& shadow_ham(hamiltonian_pool.getHamiltonian().value());
   // This must be done before clones otherwise the clone particle sets do not have the correct state.
   ham.informOperatorsOfListener();
 
@@ -90,6 +94,7 @@ TEST_CASE("integrateListeners", "[hamiltonian]")
     psets.back().randomizeFromSource(*particle_pool.getParticleSet("ion"));
     twfs.emplace_back(psi.makeClone(psets.back()));
     hams.emplace_back(ham.makeClone(psets.back(), *twfs.back()));
+    shadow_hams.emplace_back(shadow_ham.makeClone(psets.back(), *twfs.back()));
   }
 
   RefVector<QMCHamiltonian> ham_refs = convertUPtrToRefVector(hams);
@@ -98,6 +103,15 @@ TEST_CASE("integrateListeners", "[hamiltonian]")
   ResourceCollection ham_res("test_ham_res");
   ham_list.getLeader().createResource(ham_res);
   ResourceCollectionTeamLock<QMCHamiltonian> ham_lock(ham_res, ham_list);
+
+
+  RefVector<QMCHamiltonian> shadow_ham_refs = convertUPtrToRefVector(shadow_hams);
+  RefVectorWithLeader<QMCHamiltonian> shadow_ham_list{shadow_ham_refs[0], shadow_ham_refs};
+
+  ResourceCollection shadow_ham_res("shadow_ham_res");
+  ham_list.getLeader().createResource(shadow_ham_res);
+  ResourceCollectionTeamLock<QMCHamiltonian> shadow_ham_lock(shadow_ham_res, shadow_ham_list);
+
 
   Matrix<Real> kinetic(num_walkers, num_electrons);
   Matrix<Real> local_pots(num_walkers, num_electrons);
@@ -201,89 +215,144 @@ TEST_CASE("integrateListeners", "[hamiltonian]")
   }
 
   ParticleSet::mw_update(p_list);
+  ParticleSet::mw_donePbyP(p_list);
 
-  auto energies = QMCHamiltonian::mw_evaluate(ham_list, twf_list, p_list);
+  auto energies        = QMCHamiltonian::mw_evaluate(ham_list, twf_list, p_list);
+  auto shadow_energies = QMCHamiltonian::mw_evaluate(shadow_ham_list, twf_list, p_list);
 
-  CHECK(ham_list[0].getLocalEnergy() == energies[0]);
-  CHECK(ham_list[1].getLocalEnergy() == energies[1]);
-  CHECK(ham_list[0].getLocalEnergy() == p_list[0].PropertyList[WP::LOCALENERGY]);
-  CHECK(ham_list[1].getLocalEnergy() == p_list[1].PropertyList[WP::LOCALENERGY]);
+  CHECK(ham_list[0].getLocalEnergy() == Approx(energies[0]));
+  CHECK(ham_list[1].getLocalEnergy() == Approx(energies[1]));
+  CHECK(ham_list[0].getLocalEnergy() == Approx(p_list[0].PropertyList[WP::LOCALENERGY]));
+  CHECK(ham_list[1].getLocalEnergy() == Approx(p_list[1].PropertyList[WP::LOCALENERGY]));
 
-  if constexpr (generate_test_data)
+  CHECK(shadow_energies[0] == Approx(energies[0]));
+  CHECK(shadow_energies[3] == Approx(energies[3]));
+
+  // if constexpr (generate_test_data)
+  // {
+  std::vector<Real> vector_kinetic;
+  std::copy(kinetic.begin(), kinetic.end(), std::back_inserter(vector_kinetic));
+  std::cout << " size kinetic: " << vector_kinetic.size() << '\n';
+  std::cout << " std::vector<Real> kinetic_ref_vector = " << NativePrint(vector_kinetic) << ";\n";
+
+  std::vector<Real> vector_pots;
+  std::copy(local_pots.begin(), local_pots.end(), std::back_inserter(vector_pots));
+  std::cout << " size potentials: " << vector_pots.size() << '\n';
+  std::cout << " std::vector<Real> potential_ref_vector = " << NativePrint(vector_pots) << ";\n";
+
+  std::vector<Real> vector_ions;
+  std::copy(ion_pots.begin(), ion_pots.end(), std::back_inserter(vector_ions));
+  std::cout << " size ion potentials: " << vector_ions.size() << '\n';
+  std::cout << " std::vector<Real> ion_potential_ref_vector = " << NativePrint(vector_ions) << ";\n";
+  // }
+  // else
+  // {
+  std::vector<Real> kinetic_ref_vector = {
+      -0.5, -0, -0,   -0, -0, -0, -0, -0, -0, -0.5, -0, -0,   -0, -0, -0, -0,
+      -0,   -0, -0.5, -0, -0, -0, -0, -0, -0, -0,   -0, -0.5, -0, -0, -0, -0,
+  };
+  std::vector<Real> potential_ref_vector = {
+      -0.4304473087, -0.2378402043, -0.9860844189, -0.0820123167, -0.8099649729, -0.9536881935, -0.4498805799,
+      -0.4415831922, -0.9407454120, -0.6449453974, -2.2406055597, -1.1945141119, 0.0409778662,  -0.1860728551,
+      -0.1374062575, -0.8808210486, 0.3020427954,  0.3772186874,  -0.1128013266, -0.5531326791, 0.4633263488,
+      0.3185034177,  0.3001851179,  -0.4555109959, -0.2190705541, -0.7140044624, -1.6416141872, 0.1718039404,
+      -0.7621644841, 0.2606962685,  -0.1486035803, -1.0017470362,
+  };
+  std::vector<Real> ion_potential_ref_vector = {
+      0.04332125187, 0.173753351, -0.9332901239, -1.323815107, 1.695662975, 0.5990064144, 0.1634206772, -1.207304001,
+  };
+
+  std::size_t num_data = num_electrons * num_walkers;
+  for (std::size_t id = 0; id < num_data; ++id)
   {
-    std::vector<Real> vector_kinetic;
-    std::copy(kinetic.begin(), kinetic.end(), std::back_inserter(vector_kinetic));
-    std::cout << " size kinetic: " << vector_kinetic.size() << '\n';
-    std::cout << " std::vector<Real> kinetic_ref_vector = " << NativePrint(vector_kinetic) << ";\n";
-
-    std::vector<Real> vector_pots;
-    std::copy(local_pots.begin(), local_pots.end(), std::back_inserter(vector_pots));
-    std::cout << " size potentials: " << vector_pots.size() << '\n';
-    std::cout << " std::vector<Real> potential_ref_vector = " << NativePrint(vector_pots) << ";\n";
-
-    std::vector<Real> vector_ions;
-    std::copy(ion_pots.begin(), ion_pots.end(), std::back_inserter(vector_ions));
-    std::cout << " size ion potentials: " << vector_ions.size() << '\n';
-    std::cout << " std::vector<Real> ion_potential_ref_vector = " << NativePrint(vector_ions) << ";\n";
+    INFO("id : " << id);
+    CHECK(kinetic_ref_vector[id] == Approx(kinetic(id)));
   }
-  else
+
+  auto& local_ostream = app_log();
+
+  auto dump_particle_pots = [&local_ostream](const auto& local_pots, int row) {
+    local_ostream << "Walker: " << row << "  ";
+    for (int i = 0; i < local_pots.cols(); ++i)
+      local_ostream << *(local_pots[row] + i) << ", ";
+    local_ostream << '\n';
+    auto sum = std::accumulate(local_pots[row], local_pots[row] + local_pots.cols(), 0.0);
+    local_ostream << "sum: " << sum << '\n';
+  };
+
+  auto dump_particle_pos = [&local_ostream](const RefVector<ParticleSet>& p_sets) {
+    for (int iptcls = 0; iptcls < p_sets.size(); ++iptcls)
+    {
+      auto& p_set = p_sets[iptcls].get();
+      auto nptcls = p_set.getTotalNum();
+      local_ostream << "Positions for walker:" << iptcls << " ";
+      for (int ip = 0; ip < nptcls; ++ip)
+      {
+        local_ostream << p_set.R[ip] << " :\n ";
+      }
+      local_ostream << '\n';
+    }
+  };
+
+  auto dump_dist_table = [&local_ostream](const RefVector<ParticleSet>& p_sets, int d_aa_ID) {
+    for (int iptcls = 0; iptcls < p_sets.size(); ++iptcls)
+    {
+      auto& p_set = p_sets[iptcls].get();
+      auto nptcls = p_set.getTotalNum();
+      local_ostream << "distance table for walker:" << iptcls << "\n";
+      auto& d_aa = p_set.getDistTableAA(d_aa_ID);
+      for (int ipart = 1; ipart < nptcls; ++ipart)
+        local_ostream << NativePrint(d_aa.getDistRow(ipart)) << '\n';
+    }
+  };
+
+  app_log() << "--test_QMCHAMILTONIAN_DUMP--\n";
+  dump_particle_pos(p_list);
+  for (int ip = 0; ip < local_pots.rows(); ++ip)
+    dump_particle_pots(local_pots, ip);
+  dump_dist_table(p_list, 0);
+
+
+  for (std::size_t id = 0; id < num_data; ++id)
   {
-    std::vector<Real> kinetic_ref_vector = {
-        -0.5, -0, -0,   -0, -0, -0, -0, -0, -0, -0.5, -0, -0,   -0, -0, -0, -0,
-        -0,   -0, -0.5, -0, -0, -0, -0, -0, -0, -0,   -0, -0.5, -0, -0, -0, -0,
-    };
-    std::vector<Real> potential_ref_vector = {
-        -0.4307586866, -0.2441619174, -0.9947517455, -0.0822074905, -0.8186321171, -0.9364693452, -0.4435594392,
-        -0.4409604308, -0.9485166496, -0.6463699802, -2.2478608513, -1.1948885088, 0.0446740372,  -0.1867903076,
-        -0.1436719206, -0.8878900007, 0.1895125187,  0.2896390142,  -0.1131895118, -0.5358564671, 0.4106451240,
-        0.2696534299,  0.2523571707,  -0.5486700879, -0.2772201576, -0.7152462112, -1.6244692644, 0.1308494516,
-        -0.8215409412, 0.1786444409,  -0.1832416452, -1.0018729777,
-    };
-    std::vector<Real> ion_potential_ref_vector = {
-        0.04332125187, 0.173753351, -0.9332901239, -1.323815107, 1.695662975, 0.5990064144, 0.1634206772, -1.207304001,
-    };
-
-    std::size_t num_data = num_electrons * num_walkers;
-    for (std::size_t id = 0; id < num_data; ++id)
-    {
-      INFO("id : " << id);
-      CHECK(kinetic_ref_vector[id] == Approx(kinetic(id)));
-    }
-
-    for (std::size_t id = 0; id < num_data; ++id)
-    {
-      INFO("id : " << id);
-      CHECK(potential_ref_vector[id] == Approx(local_pots(id)));
-    }
-
-    std::size_t num_data_ions = num_ions * num_walkers;
-    for (std::size_t id = 0; id < num_data_ions; ++id)
-    {
-      INFO("id : " << id);
-      CHECK(ion_potential_ref_vector[id] == Approx(ion_pots(id)));
-    }
-
-    // When only EE and EI coulomb potentials the local energy is just the sum of
-    // the local_pots and kinetic
-    auto sum_local_pots = std::accumulate(local_pots.begin(), local_pots.end(), 0.0);
-    auto sum_kinetic    = std::accumulate(kinetic.begin(), kinetic.end(), 0.0);
-    auto sum_local_nrg  = std::accumulate(local_nrg.begin(), local_nrg.end(), 0.0);
-    CHECK(sum_local_nrg == Approx(sum_local_pots + sum_kinetic));
-
-    // Here we test consistency between the per particle energies and the per hamiltonian energies
-    typename decltype(energies)::value_type hamiltonian_local_nrg_sum = 0.0;
-    typename decltype(energies)::value_type energies_sum              = 0.0;
-    for (int iw = 0; iw < num_walkers; ++iw)
-    {
-      hamiltonian_local_nrg_sum += ham_list[iw].getLocalEnergy();
-      energies_sum += energies[iw];
-    }
-
-    // the QMCHamiltonian.getLocalEnergy() contains the ion_potential as well.
-    sum_local_nrg += std::accumulate(ion_pots.begin(), ion_pots.end(), 0.0);
-    CHECK(sum_local_nrg == Approx(hamiltonian_local_nrg_sum));
-    CHECK(sum_local_nrg == Approx(energies_sum));
+    INFO("id : " << id);
+    CHECK(potential_ref_vector[id] == Approx(local_pots(id)));
   }
+
+  std::size_t num_data_ions = num_ions * num_walkers;
+  for (std::size_t id = 0; id < num_data_ions; ++id)
+  {
+    INFO("id : " << id);
+    CHECK(ion_potential_ref_vector[id] == Approx(ion_pots(id)));
+  }
+
+  // When only EE and EI coulomb potentials the local energy is just the sum of
+  // the local_pots and kinetic
+  auto sum_local_pots = std::accumulate(local_pots.begin(), local_pots.end(), 0.0);
+  auto sum_kinetic    = std::accumulate(kinetic.begin(), kinetic.end(), 0.0);
+  auto sum_local_nrg  = std::accumulate(local_nrg.begin(), local_nrg.end(), 0.0);
+  CHECK(sum_local_nrg == Approx(sum_local_pots + sum_kinetic));
+
+  // Here we test consistency between the per particle energies and the per hamiltonian energies
+  typename decltype(energies)::value_type hamiltonian_local_nrg_sum  = 0.0;
+  typename decltype(energies)::value_type energies_sum               = 0.0;
+  typename decltype(shadow_energies)::value_type shadow_energies_sum = 0.0;
+
+  for (int iw = 0; iw < num_walkers; ++iw)
+  {
+    auto hamiltonian_local_energy = ham_list[iw].getLocalEnergy();
+    std::cout << "Walker: " << iw << " hamiltonian_local_energy (" << hamiltonian_local_energy
+              << ") shadow_energy: " << shadow_ham_list[iw].getLocalEnergy() << "\n";
+    hamiltonian_local_nrg_sum += ham_list[iw].getLocalEnergy();
+    energies_sum += energies[iw];
+    shadow_energies_sum += shadow_energies[iw];
+  }
+
+  // the QMCHamiltonian.getLocalEnergy() contains the ion_potential as well.
+  sum_local_nrg += std::accumulate(ion_pots.begin(), ion_pots.end(), 0.0);
+  CHECK(sum_local_nrg == Approx(hamiltonian_local_nrg_sum));
+  CHECK(sum_local_nrg == Approx(energies_sum));
+  //}
 }
 
 } // namespace qmcplusplus

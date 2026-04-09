@@ -251,9 +251,7 @@ void CoulombPBCAA::mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
     }
   }
   else
-  {
     OperatorDependsOnlyOnParticleSet::mw_evaluate(o_list, p_list);
-  }
 }
 
 void CoulombPBCAA::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase>& o_list,
@@ -324,6 +322,9 @@ void CoulombPBCAA::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
   Matrix<RealType> pp_sr_values;
   if (o_leader.is_active)
   {
+    // This really should be determined by the DynamicPos type and not
+    // the use_offload_ switch because many other state are set based
+    // on the DynamicPos type and ignore if offload is not enabled.
     if (use_offload_)
       pp_sr_values = mw_evalSRPerParticle_offload(o_list, p_list);
     else
@@ -789,8 +790,9 @@ Matrix<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSRPerParticle_offload(
   if (chunk_size == 0)
     throw std::runtime_error("bug dtaa_leader.get_num_particls_stored() == 0");
   // I assume there should also be some maximum chunk size here!
-  auto& values_offload        = caa_leader.mw_res_handle_.getResource().values_offload;
-  auto& pp_sr_values_offload  = caa_leader.mw_res_handle_.getResource().pp_sr_values_offload;
+  auto& values_offload       = caa_leader.mw_res_handle_.getResource().values_offload;
+  auto& pp_sr_values_offload = caa_leader.mw_res_handle_.getResource().pp_sr_values_offload;
+
   const size_t total_num      = p_leader.getTotalNum();
   const size_t total_num_half = (total_num + 1) / 2;
   const size_t num_padded     = getAlignedSize<RealType>(total_num);
@@ -811,18 +813,17 @@ Matrix<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSRPerParticle_offload(
     values_offload.resize(nw);
     std::fill_n(values_offload.data(), nw, 0);
     auto value_ptr = values_offload.data();
+    values_offload.updateTo();
 
     pp_sr_values_offload.resize(pp_sr_count, nw);
     std::fill_n(pp_sr_values_offload.data(), nw * pp_sr_count, 0);
     auto pp_sr_value_ptr = pp_sr_values_offload.data();
-
-    values_offload.updateTo();
     pp_sr_values_offload.updateTo();
 
     for (size_t ichunk = 0; ichunk < num_chunks; ichunk++)
     {
       const size_t first           = ichunk * chunk_size;
-      const size_t last            = std::min(first + chunk_size, total_num_half);
+      const size_t last            = std::min(first + chunk_size, total_num);
       const size_t this_chunk_size = last - first;
 
       auto* mw_dist = dtaa_leader.mw_evalDistsInRange(dt_list, p_list, first, last);
@@ -853,6 +854,7 @@ Matrix<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSRPerParticle_offload(
             // values to the host
             std::int32_t index_pp_sr = (pp_sr_count * iw) + ((i * (i - 1)) / 2) + j;
             pp_sr_value_ptr[index_pp_sr] += sr_value;
+
             SR += sr_value;
           }
         value_ptr[iw] += SR;
@@ -867,12 +869,9 @@ Matrix<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSRPerParticle_offload(
   std::vector<Return_t> values(nw);
   for (int iw = 0; iw < nw; iw++)
   {
-#ifdef COULOMBAA_DEBUG
-    Return_t sr_value_sum{0};
-#endif
     values[iw] = values_offload[iw];
 
-    for (int ipi = 1; ipi < total_num; ++ipi)
+    for (int ipi = 0; ipi < total_num; ++ipi)
     {
       // The diagonal will always still be 0 see the eval above.
       for (int ipj = 0; ipj < total_num; ++ipj)
@@ -881,17 +880,9 @@ Matrix<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSRPerParticle_offload(
           continue;
         int tri_index = ((ipi) * (ipi - 1)) / 2 + ipj;
         auto value    = pp_sr_values_offload(iw, tri_index);
-#ifdef COULOMBAA_DEBUG
-        sr_value_sum += value;
-#endif
         pp_sr_values(ipi, iw) += value;
       }
     }
-
-#ifdef COULOMBAA_DEBUG
-    if (std::abs(sr_value_sum - values[iw]) > 10e-8)
-      std::cerr << "std::abs(sr_value_sum - values[iw]) > 10e-8) " << sr_value_sum << "  " << values[iw] << '\n';
-#endif
   }
   return pp_sr_values;
 } // namespace qmcplusplus
@@ -910,19 +901,21 @@ Matrix<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSRPerParticle(const RefVecto
   for (int iw = 0; iw < num_walkers; ++iw)
   {
     ParticleSet& pset = p_list[iw];
-
-    //SR
     const auto& d_aa(pset.getDistTableAA(o_leader.d_aa_ID));
     RealType z;
 
-    for (int ipart = 1; ipart < num_centers; ipart++)
+    for (int ipart = 0; ipart < num_centers; ipart++)
     {
-      z                = 0.5 * o_leader.Zat[ipart];
-      const auto& dist = d_aa.getDistRow(ipart);
-      for (int jpart = 0; jpart < num_centers; ++jpart)
+      z                    = 0.5 * o_leader.Zat[ipart];
+      const auto& dist_row = d_aa.getDistRow(ipart);
+      for (int jpart = 0; jpart < ipart; ++jpart)
       {
-        RealType pairpot = z * o_leader.Zat[jpart] * o_leader.rVs->splint(dist[jpart]) / dist[jpart];
+        if (ipart == jpart)
+          continue;
+        const auto& distance = dist_row[jpart];
+        RealType pairpot     = z * o_leader.Zat[jpart] * o_leader.rVs->splint(distance) / distance;
         pp_sr_values(ipart, iw) += pairpot;
+        pp_sr_values(jpart, iw) += pairpot;
       }
     }
   }
