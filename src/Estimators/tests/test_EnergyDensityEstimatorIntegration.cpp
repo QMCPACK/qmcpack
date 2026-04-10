@@ -227,7 +227,7 @@ TEST_CASE("EnergyDensityEstimatorIntegration::normalization", "[estimators]")
   auto pset_list = eden_emn_integration_test.getPSetList();
   auto twf_list  = eden_emn_integration_test.getTwfList();
   auto& rng      = eden_emn_integration_test.getRng();
-  // The logger writes out on accumualtes so the sum must be acquired before
+  // The logger writes out on accumulates so the sum must be acquired before
   emc.accumulate(walker_list, pset_list, twf_list, ham_list, rng);
 
   NEEnergyDensityEstimator& e_den_est = dynamic_cast<NEEnergyDensityEstimator&>(crowd_operator_ests[0][0].get());
@@ -243,7 +243,6 @@ TEST_CASE("EnergyDensityEstimatorIntegration::normalization", "[estimators]")
   CHECK(summed_grid == Approx(expected_sum));
   auto debug_sum = testing::cannedSum();
   CHECK(summed_grid == Approx(debug_sum));
-
 
   std::cout << "summed grid: " << summed_grid << '\n';
 
