@@ -63,5 +63,8 @@ omit = [
 
 [tool.pytest.ini_options]
 #addopts = ["--cov=nexus", "--cov-report=xml"]
+filterwarnings = [
+    "ignore::UserWarning",
+]
 testpaths = ["nexus/tests"]
 xfail_strict = true
