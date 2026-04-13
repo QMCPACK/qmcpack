@@ -14,6 +14,18 @@ function(TEST_PYTHON_MODULE MODULE_NAME MODULE_PRESENT)
       CACHE BOOL "" FORCE)
 endfunction()
 
+# Ensure we have a compatible version of Pytest for Nexus's testing.
+function(CHECK_PYTEST_VERSION pytest_version_ok)
+  message("Checking pytest version >= 6.2.4")
+  execute_process(
+    COMMAND ${Python3_EXECUTABLE} ${qmcpack_SOURCE_DIR}/tests/scripts/test_pytest_version.py
+    OUTPUT_VARIABLE TMP_OUTPUT_VAR
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+  set(${pytest_version_ok}
+      ${TMP_OUTPUT_VAR}
+      CACHE BOOL "" FORCE)
+endfunction()
+
 # Test python module prerequisites for a particular test script
 #   module_list - input - list of module names, for example "numpy;h5py" (including the quotation marks)
 #   test_name - input - name of test (used for missing module message)
@@ -41,5 +53,15 @@ function(CHECK_PYTHON_REQS module_list test_name add_test)
           false
           PARENT_SCOPE)
     endif()
+    if(${python_module} STREQUAL "pytest")
+      check_pytest_version(pytest_version_ok)
+      if(NOT ${pytest_version_ok})
+        message("Pytest version < 6.2.4 found, will not add Nexus tests")
+        set(${add_test}
+            false
+            PARENT_SCOPE)
+      endif()
+    endif()
   endforeach()
 endfunction()
+
