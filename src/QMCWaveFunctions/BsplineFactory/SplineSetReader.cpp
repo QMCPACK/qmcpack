@@ -82,7 +82,7 @@ std::unique_ptr<SPOSet> SplineSetReader<ST>::create_spline_set(const std::string
 #if defined(HAVE_MPI)
   else if (ndistributed > 1)
     multi_splines_ptr =
-        std::make_unique<MultiBsplineMPIShared<ST>>(xyz_grid, xyz_bc, num_splines, std::move(dist_comm_ptr));
+        std::make_unique<MultiBsplineMPIShared<ST>>(xyz_grid, xyz_bc, num_splines, std::move(dist_comm_ptr), ndistributed);
 #endif
   else
     multi_splines_ptr = std::make_unique<MultiBspline<ST>>(xyz_grid, xyz_bc, num_splines);

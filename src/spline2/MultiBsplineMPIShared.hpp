@@ -35,26 +35,31 @@ class MultiBsplineMPIShared : public MultiBsplineBase<T>
 private:
   using Base  = MultiBsplineBase<T>;
   using Alloc = aligned_allocator<T>;
-  ///use allocator
-  Alloc coefs_allocator;
-
+  /// communicator covering all the ranks included distributed and shared. ranks with distributed splines are contiguous.
   const std::unique_ptr<Communicate> comm_;
 
   MPI_Win win;
+  /// number of ranks among which splines are distributed.
+  const unsigned distributed_ranks_;
 
   using Base::offsets_;
 
 public:
   template<typename BCT>
-  MultiBsplineMPIShared(const Ugrid grid[3], const BCT& bc, size_t num_splines, std::unique_ptr<Communicate>&& comm_distributed)
-      : Base(FairDivideAligned<std::vector<size_t>>(num_splines, getAlignment<T>(), comm_distributed->size())), comm_(std::move(comm_distributed))
+  MultiBsplineMPIShared(const Ugrid grid[3],
+                        const BCT& bc,
+                        size_t num_splines,
+                        std::unique_ptr<Communicate>&& comm_distributed_and_shared,
+                        unsigned distributed_ranks)
+      : Base(FairDivideAligned<std::vector<size_t>>(num_splines, getAlignment<T>(), distributed_ranks)),
+        comm_(std::move(comm_distributed_and_shared)),
+        distributed_ranks_(distributed_ranks)
   {
-	auto&  comm = *comm_;
+    auto& comm           = *comm_;
     const auto comm_rank = comm.rank();
-    const auto comm_size = comm.size();
 
-    Base::spline_blocks.resize(comm_size, nullptr);
-    for (int i = 0; i < comm_size; i++)
+    Base::spline_blocks.resize(distributed_ranks_, nullptr);
+    for (int i = 0; i < distributed_ranks_; i++)
     {
       const auto num_splines = offsets_[i + 1] - offsets_[i];
       auto* spline_m         = new typename Base::SplineType;
@@ -63,23 +68,25 @@ public:
                         getAlignedSize<T, Alloc::alignment>(num_splines));
     }
 
-
     MPI_Info info;
     MPI_Info_create(&info);
     MPI_Info_set(info, "alloc_shared_noncontig", "true");
     MPI_Info_set(info, "mpi_minimum_memory_alignment", std::to_string(Alloc::alignment).c_str());
 
-    auto& spline_owned = *Base::spline_blocks[comm_rank];
+    auto& spline_owned = *Base::spline_blocks[comm_rank % distributed_ranks_];
+    // Only the members of the first group of distributed ranks allocate memory.
+    // Other ranks are considered references and hence size = 0 is valid.
+    const MPI_Aint allocation_size =
+        comm_rank < distributed_ranks_ ? spline_owned.coefs_size * sizeof(T) + Alloc::alignment : 0;
     void* coefs = nullptr;
-    auto err = MPI_Win_allocate_shared(spline_owned.coefs_size * sizeof(T) + Alloc::alignment, sizeof(T), info,
-                                       comm.getMPI(), &coefs, &win);
+    auto err = MPI_Win_allocate_shared(allocation_size, sizeof(T), info, comm.getMPI(), &coefs, &win);
     MPI_Info_free(&info);
     if (err != MPI_SUCCESS)
       throw UniformCommunicateError("MultiBsplineMPIShared::MultiBsplineMPIShared MPI_Win_allocate_shared failed!");
 
     spline_owned.coefs = (T*)coefs;
 
-    for (int i = 0; i < comm_size; i++)
+    for (int i = 0; i < distributed_ranks_; i++)
     {
       MPI_Aint size;
       int disp_unit;

@@ -150,11 +150,17 @@ struct test_splines<T, 5> : public test_splines_base<T, 5>
   using base::grid;
   using base::N;
 
-  void test(size_t num_splines)
+  void test(size_t num_splines, unsigned shared_ranks)
   {
     auto comm_distributed = std::make_unique<Communicate>(*OHMMS::Controller, OHMMS::Controller->size());
+
     auto& comm(*comm_distributed);
-    MultiBsplineMPIShared<T> bs(grid, bc, num_splines, std::move(comm_distributed));
+
+    // need sufficient number of ranks to test the distributing and/or sharing feature.
+    if (comm.size() % shared_ranks > 0)
+      return;
+
+    MultiBsplineMPIShared<T> bs(grid, bc, num_splines, std::move(comm_distributed), comm.size() / shared_ranks);
 
     const size_t npad = getAlignedSize<T>(num_splines);
     REQUIRE(bs.num_splines_padded() == getAlignedSize<T>(num_splines));
@@ -260,8 +266,18 @@ struct test_splines<T, 5> : public test_splines_base<T, 5>
   }
 };
 
-TEST_CASE("MultiBsplineMPIShared periodic double", "[spline2]") { test_splines<double>().test(13); }
+TEST_CASE("MultiBsplineMPIShared periodic double", "[spline2]")
+{
+  test_splines<double>().test(13, 1);
+  test_splines<double>().test(13, 2);
+  test_splines<double>().test(13, 3);
+}
 
-//TEST_CASE("MultiBsplineMPIShared periodic float", "[spline2]") { test_splines<float>().test(11); }
+TEST_CASE("MultiBsplineMPIShared periodic float", "[spline2]")
+{
+  test_splines<float>().test(11, 1);
+  test_splines<float>().test(11, 2);
+  test_splines<float>().test(11, 3);
+}
 
 } // namespace qmcplusplus
