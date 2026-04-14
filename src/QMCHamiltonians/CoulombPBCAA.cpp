@@ -774,6 +774,8 @@ Matrix<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSRPerParticle_offload(
     const RefVectorWithLeader<OperatorBase>& o_list,
     const RefVectorWithLeader<ParticleSet>& p_list)
 {
+  throw std::runtime_error(
+      "CoulombPBCAA_offload and estimators requiring per particle energies are not currently supported!");
   const size_t nw  = o_list.size();
   auto& p_leader   = p_list.getLeader();
   auto& caa_leader = o_list.getCastedLeader<CoulombPBCAA>();
