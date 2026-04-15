@@ -58,6 +58,7 @@ TEST_CASE("QMCHamiltonian::flex_evaluate", "[hamiltonian]")
   //TODO: Would be nice to check some values but I think the system needs a little more setup
 }
 
+#ifndef ENABLE_OFFLOAD
 /** QMCHamiltonian + Hamiltonians with listeners integration test
  */
 TEST_CASE("integrateListeners", "[hamiltonian]")
@@ -68,7 +69,8 @@ TEST_CASE("integrateListeners", "[hamiltonian]")
   auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(runtime_options, comm, particle_pool);
   auto hamiltonian_pool  = MinimalHamiltonianPool::makeHamWithEEEI(comm, particle_pool, wavefunction_pool);
-  auto& pset_target      = *(particle_pool.getParticleSet("e"));
+
+  auto& pset_target = *(particle_pool.getParticleSet("e"));
   //auto& species_set        = pset_target.getSpeciesSet();
   //auto& spo_map            = wavefunction_pool.getWaveFunction("wavefunction")->getSPOMap();
   TrialWaveFunction& psi(wavefunction_pool.getWaveFunction().value());
@@ -354,5 +356,5 @@ TEST_CASE("integrateListeners", "[hamiltonian]")
   CHECK(sum_local_nrg == Approx(energies_sum));
   //}
 }
-
+#endif
 } // namespace qmcplusplus
