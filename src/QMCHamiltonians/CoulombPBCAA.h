@@ -251,7 +251,7 @@ private:
   static Matrix<CoulombPBCAA::Return_t> mw_evalSRPerParticle_offload(const RefVectorWithLeader<OperatorBase>& o_list,
                                                                      const RefVectorWithLeader<ParticleSet>& p_list);
 
-  static Matrix<CoulombPBCAA::Return_t> mw_evalSRPerParticle(const RefVectorWithLeader<OperatorBase>& o_list,
+  static Matrix<CoulombPBCAA::RealType> mw_evalSRPerParticle(const RefVectorWithLeader<OperatorBase>& o_list,
                                                              const RefVectorWithLeader<ParticleSet>& p_list);
 };
 

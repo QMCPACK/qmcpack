@@ -889,14 +889,14 @@ Matrix<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSRPerParticle_offload(
   return pp_sr_values;
 } // namespace qmcplusplus
 
-Matrix<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSRPerParticle(const RefVectorWithLeader<OperatorBase>& o_list,
+Matrix<CoulombPBCAA::RealType> CoulombPBCAA::mw_evalSRPerParticle(const RefVectorWithLeader<OperatorBase>& o_list,
                                                                   const RefVectorWithLeader<ParticleSet>& p_list)
 {
   auto& o_leader         = o_list.getCastedLeader<CoulombPBCAA>();
   auto& p_leader         = p_list.getLeader();
   const size_t total_num = p_leader.getTotalNum();
   const int num_walkers  = o_list.size();
-  Matrix<Return_t> pp_sr_values(total_num, num_walkers);
+  Matrix<RealType> pp_sr_values(total_num, num_walkers);
 
   auto num_centers = p_leader.getTotalNum();
 
