@@ -27,6 +27,20 @@ HamiltonianPool MinimalHamiltonianPool::make_hamWithEE(Communicate* comm,
   return hpool;
 }
 
+HamiltonianPool MinimalHamiltonianPool::makeHamWithEI(Communicate* comm,
+                                                      ParticleSetPool& particle_pool,
+                                                      WaveFunctionPool& wavefunction_pool)
+{
+  HamiltonianPool hpool(particle_pool, wavefunction_pool, comm);
+  Libxml2Document doc;
+  doc.parseFromString(hamiltonian_ei_xml);
+
+  xmlNodePtr root = doc.getRoot();
+  hpool.put(root);
+
+  return hpool;
+}
+
 HamiltonianPool MinimalHamiltonianPool::makeHamWithEEEI(Communicate* comm,
                                                         ParticleSetPool& particle_pool,
                                                         WaveFunctionPool& wavefunction_pool)
