@@ -45,26 +45,30 @@ SplineSetReader<ST>::SplineSetReader(EinsplineSetBuilder* e, bool use_duplex_spl
 template<typename ST>
 std::unique_ptr<SPOSet> SplineSetReader<ST>::create_spline_set(const std::string& my_name,
                                                                int spin,
-                                                               int ndistributed,
+                                                               const std::pair<int, int>& distributed_and_shared_ranks,
                                                                const BandInfoGroup& bandgroup)
 {
   const int N = bandgroup.getNumDistinctOrbitals();
 
+  auto [distributed_ranks, shared_ranks] = distributed_and_shared_ranks;
+
   if (use_offload)
   {
-    if (ndistributed > 1)
-      app_warning()
-          << "Offload implemenation doesn't distribute the memory of spline coefficients. Overriding ndistributed to 1."
-          << std::endl;
-    ndistributed = 1;
+    if (distributed_ranks > 1 || shared_ranks > 1)
+      app_warning() << "Offload implemenation doesn't support distributing or sharing the memory of spline "
+                       "coefficients. Overriding distributed_ranks and shared_ranks to 1."
+                    << std::endl;
+    distributed_ranks = 1;
+    shared_ranks      = 1;
   }
 
-  auto dist_comm_ptr = std::make_unique<Communicate>(*myComm, myComm->size() / ndistributed);
-  auto& dist_comm(*dist_comm_ptr);
+  auto dist_comm_ptr = std::make_unique<Communicate>(*myComm, myComm->size() / (distributed_ranks * shared_ranks));
 
   app_log() << "  Using " << (use_duplex_splines_ ? "complex" : "real") << " einspline table." << std::endl;
-  if (ndistributed > 1)
-    app_log() << "  Distributed across " << ndistributed << " MPI ranks." << std::endl;
+  if (distributed_ranks > 1)
+    app_log() << "  Distributed across " << distributed_ranks << " MPI ranks." << std::endl;
+  if (shared_ranks > 1)
+    app_log() << "  Shared across " << shared_ranks << " MPI ranks." << std::endl;
 
   const TinyVector<int, 3> half_g = use_duplex_splines_
       ? TinyVector<int, 3>(0, 0, 0)
@@ -80,9 +84,9 @@ std::unique_ptr<SPOSet> SplineSetReader<ST>::create_spline_set(const std::string
   if (use_offload)
     multi_splines_ptr = std::make_unique<MultiBsplineOffload<ST>>(xyz_grid, xyz_bc, num_splines);
 #if defined(HAVE_MPI)
-  else if (ndistributed > 1)
-    multi_splines_ptr =
-        std::make_unique<MultiBsplineMPIShared<ST>>(xyz_grid, xyz_bc, num_splines, std::move(dist_comm_ptr), ndistributed);
+  else if (distributed_ranks * shared_ranks > 1)
+    multi_splines_ptr = std::make_unique<MultiBsplineMPIShared<ST>>(xyz_grid, xyz_bc, num_splines,
+                                                                    std::move(dist_comm_ptr), distributed_ranks);
 #endif
   else
     multi_splines_ptr = std::make_unique<MultiBspline<ST>>(xyz_grid, xyz_bc, num_splines);
@@ -139,13 +143,24 @@ std::unique_ptr<SPOSet> SplineSetReader<ST>::create_spline_set(const std::string
                 << now.elapsed() << " sec." << std::endl;
   }
 
+  /* create a sub communicator. spline table is shared across MPI ranks with identical subcomm rank id.
+   *  myComm->size() == 12 ; shared_ranks = 2; distributed_ranks = 3;
+   *          | group 0 | group 1 |
+   *          |  0 1 2  |  3 4 5  |
+   *          |  6 7 8  | 9 10 11 |
+   */
+  Communicate shared_comm(*myComm, shared_ranks, distributed_ranks);
+  Communicate dist_comm(shared_comm, shared_comm.size() / distributed_ranks);
+
   if (!foundspline)
   {
-    multi_splines.flush_zero(dist_comm.rank());
-
-    Timer now;
-    initialize_spline_pio_gather(spin, bandgroup, half_g, bspline->BandIndexMap, multi_splines, dist_comm);
-    app_log() << "  SplineSetReader initialize_spline_pio " << now.elapsed() << " sec" << std::endl;
+    if (shared_comm.getGroupID() == 0)
+    {
+      multi_splines.flush_zero(dist_comm.rank());
+      Timer now;
+      initialize_spline_pio_gather(spin, bandgroup, half_g, bspline->BandIndexMap, multi_splines, dist_comm);
+      app_log() << "  SplineSetReader initialize_spline_pio " << now.elapsed() << " sec" << std::endl;
+    }
 
     if (saveSplineCoefs && myComm->rank() == 0)
     {
@@ -167,7 +182,8 @@ std::unique_ptr<SPOSet> SplineSetReader<ST>::create_spline_set(const std::string
   {
     myComm->barrier();
     Timer now;
-    SplineUtils<ST>::bcast(multi_splines, dist_comm.rank(), dist_comm.getInterGroupComm());
+    if (shared_comm.getGroupID() == 0)
+      SplineUtils<ST>::bcast(multi_splines, dist_comm.rank(), dist_comm.getInterGroupComm());
     myComm->barrier();
     app_log() << "  Time to bcast the table = " << now.elapsed() << std::endl;
   }

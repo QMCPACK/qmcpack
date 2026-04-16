@@ -30,7 +30,7 @@ using std::string;
 
 namespace qmcplusplus
 {
-void test_einset_diamond_1x1x1(bool use_offload)
+void test_einset_diamond_1x1x1(bool use_offload, int distributed_ranks = 1, int shared_ranks = 1)
 {
   Communicate* c = OHMMS::Controller;
 
@@ -72,12 +72,15 @@ void test_einset_diamond_1x1x1(bool use_offload)
   std::string spo_xml = R"XML(
 <sposet_collection type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="float" gpu="omptarget">
     <sposet name="updet" size="8">
-        <coefs_mem distributed="2"/>
+        <coefs_mem distributed_ranks="DISTRIBUTED_RANKS" shared_ranks="SHARED_RANKS"/>
     </sposet>
 </sposet_collection>)XML";
 
   if (!use_offload)
     spo_xml = std::regex_replace(spo_xml, std::regex("omptarget"), "no");
+
+  spo_xml = std::regex_replace(spo_xml, std::regex("DISTRIBUTED_RANKS"), std::to_string(distributed_ranks));
+  spo_xml = std::regex_replace(spo_xml, std::regex("SHARED_RANKS"), std::to_string(shared_ranks));
 
   Libxml2Document doc;
   REQUIRE(doc.parseFromString(spo_xml));
@@ -302,6 +305,21 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
 {
   test_einset_diamond_1x1x1(true);
   test_einset_diamond_1x1x1(false);
+  Communicate* c = OHMMS::Controller;
+  if (c->size() % 2 == 0)
+  {
+    test_einset_diamond_1x1x1(true, 2, 1);
+    test_einset_diamond_1x1x1(false, 2, 1);
+    test_einset_diamond_1x1x1(true, 1, 2);
+    test_einset_diamond_1x1x1(false, 1, 2);
+  }
+  if (c->size() % 6 == 0)
+  {
+    test_einset_diamond_1x1x1(true, 2, 3);
+    test_einset_diamond_1x1x1(false, 2, 3);
+    test_einset_diamond_1x1x1(true, 3, 2);
+    test_einset_diamond_1x1x1(false, 3, 2);
+  }
 }
 
 TEST_CASE("Einspline SPO from HDF diamond_2x1x1 5 electrons", "[wavefunction]")
