@@ -9,7 +9,7 @@ if(ADD_TEST)
   execute_process(COMMAND ${Python3_EXECUTABLE} -m pytest --collect-only -qq ${qmcpack_SOURCE_DIR}/nexus/nexus/tests
                   RESULT_VARIABLE NEXUS_TESTLIST_RESULT OUTPUT_VARIABLE NEXUS_TESTLIST)
   if(NOT NEXUS_TESTLIST_RESULT EQUAL 0)
-    message(FATAL_ERROR "Command line ' ${Python3_EXECUTABLE} -m pytest --collect-only -qq ${qmcpack_SOURCE_DIR}/nexus/nexus/tests | tr '\\n' '\;' ' failed!")
+    message(FATAL_ERROR "Command line ' ${Python3_EXECUTABLE} -m pytest --collect-only -qq ${qmcpack_SOURCE_DIR}/nexus/nexus/tests ' failed!")
   endif()
 
   string(REPLACE "\n" ";" NEXUS_TESTLIST "${NEXUS_TESTLIST}") # Join into a single line with semicolon separators

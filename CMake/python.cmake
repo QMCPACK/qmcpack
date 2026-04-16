@@ -22,13 +22,13 @@ function(CHECK_PYTEST_VERSION pytest_version_ok)
                   OUTPUT_VARIABLE PYTEST_VERSION
                   ERROR_VARIABLE PYTEST_VERSION_ERROR
                   OUTPUT_STRIP_TRAILING_WHITESPACE)
-  if(NOT ${PYTEST_VERSION} STREQUAL "")
+  if(PYTEST_VERSION)
     string(REPLACE "pytest " "" PYTEST_VERSION ${PYTEST_VERSION})
   else()
     # Old versions of pytest put the version output in stderr for some reason
     string(REPLACE "pytest " "" PYTEST_VERSION ${PYTEST_VERSION_ERROR})
   endif()
-  if(${PYTEST_VERSION} VERSION_GREATER_EQUAL "6.2.4")
+  if(PYTEST_VERSION VERSION_GREATER_EQUAL "6.2.4")
     message("Pytest version ${PYTEST_VERSION} found, continuing...")
     set(${pytest_version_ok}
         TRUE
@@ -67,14 +67,15 @@ function(CHECK_PYTHON_REQS module_list test_name add_test)
       set(${add_test}
           false
           PARENT_SCOPE)
-    endif()
-    if(${python_module} STREQUAL "pytest")
-      check_pytest_version(pytest_version_ok)
-      if(NOT ${pytest_version_ok})
-        message("Pytest version < 6.2.4 found, will not add Nexus tests")
-        set(${add_test}
-            false
-            PARENT_SCOPE)
+    else()
+      if(${python_module} STREQUAL "pytest")
+        check_pytest_version(pytest_version_ok)
+        if(NOT ${pytest_version_ok})
+          message("Pytest version < 6.2.4 found, will not add Nexus tests")
+          set(${add_test}
+              false
+              PARENT_SCOPE)
+        endif()
       endif()
     endif()
   endforeach()
