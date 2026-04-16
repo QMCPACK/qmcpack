@@ -13,6 +13,7 @@ if(ADD_TEST)
     message(FATAL_ERROR "Command line ' ${Python3_EXECUTABLE} -m pytest --collect-only -qq ${qmcpack_SOURCE_DIR}/nexus/nexus/tests | tr '\\n' '\;' ' failed!")
   endif()
 
+  list(REMOVE_ITEM NEXUS_TESTLIST "") # remove empty entries
   set(CACHE_NEXUS_TESTLIST
       ${NEXUS_TESTLIST}
       CACHE INTERNAL "NEXUS_TESTLIST cache variable" FORCE)
@@ -37,17 +38,13 @@ if(ADD_TEST)
     set(TEST_LABELS "")
     add_test_labels(ntest_nexus_coverage_all TEST_LABELS)
   else()
-    foreach(TESTFILE ${NEXUS_TESTLIST})
-      string(REGEX REPLACE ": [0-9][0-9]?" "" TESTFILE ${TESTFILE})
-      string(REPLACE "nexus/tests/" "" TESTFILE ${TESTFILE})
-      string(REPLACE "nexus/" "" TESTFILE ${TESTFILE})
-
-      string(REPLACE "test_" "" TESTNAME ${TESTFILE})
-      string(REPLACE ".py" "" TESTNAME ${TESTNAME})
+    foreach(TESTFILE IN LISTS NEXUS_TESTLIST)
+      string(REGEX REPLACE "\.py:.*[0-9]" "" TESTFILE "${TESTFILE}")
+      string(REPLACE "nexus/tests/test_" "" TESTNAME "${TESTFILE}")
       #message("Adding test ntest_nexus_${TESTNAME}")
 
       add_test(NAME ntest_nexus_${TESTNAME}
-               COMMAND ${Python3_EXECUTABLE} -m ${NTEST} ${qmcpack_SOURCE_DIR}/nexus/nexus/tests/${TESTFILE} -c ${qmcpack_SOURCE_DIR}/nexus/pyproject.toml
+               COMMAND ${Python3_EXECUTABLE} -m ${NTEST} ${qmcpack_SOURCE_DIR}/nexus/${TESTFILE}.py -c ${qmcpack_SOURCE_DIR}/nexus/pyproject.toml
               )
       set_tests_properties(ntest_nexus_${TESTNAME} PROPERTIES ENVIRONMENT PYTHONPATH=$ENV{PYTHONPATH})
       set_property(
