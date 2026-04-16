@@ -17,13 +17,14 @@ endfunction()
 # Ensure we have a compatible version of Pytest for Nexus's testing.
 function(CHECK_PYTEST_VERSION pytest_version_ok)
   message("Checking pytest version >= 6.2.4")
-  execute_process(
-    COMMAND ${Python3_EXECUTABLE} -m pytest --version
-    OUTPUT_VARIABLE PYTEST_VERSION
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
-  message("Pytest version before replace is ${PYTEST_VERSION}")
+  execute_process(COMMAND ${Python3_EXECUTABLE} -m pytest --version
+                  RESULT_VARIABLE PYTEST_VERSION_RESULT
+                  OUTPUT_VARIABLE PYTEST_VERSION
+                  OUTPUT_STRIP_TRAILING_WHITESPACE)
+  message("Pytest version result is ' ${PYTEST_VERSION_RESULT} '")
+  message("Pytest version before replace is ' ${PYTEST_VERSION} '")
   string(REPLACE "pytest " "" PYTEST_VERSION "${PYTEST_VERSION}")
-  message("Pytest version after replace is ${PYTEST_VERSION}")
+  message("Pytest version after replace is ' ${PYTEST_VERSION} '")
   if(${PYTEST_VERSION} VERSION_GREATER_EQUAL "6.2.4")
     message("Pytest version ${PYTEST_VERSION} found, continuing...")
     set(${pytest_version_ok}
