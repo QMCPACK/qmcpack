@@ -179,14 +179,8 @@ void SplineR2R<ST>::evaluateValue(const ParticleSet& P, const int iat, ValueVect
   PointType ru;
   int bc_sign = convertPos(r, ru);
 
-#pragma omp parallel
-  {
-    int first, last;
-    FairDivideAligned(psi.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
-
-    spline2::evaluate3d(SplineInst->getSplinePtr(), ru, myV, first, last);
-    assign_v(bc_sign, myV, psi, first, last);
-  }
+  SplineInst->evaluate_v(ru, myV);
+  assign_v(bc_sign, myV, psi, 0, psi.size());
 }
 
 template<typename ST>
@@ -195,40 +189,14 @@ void SplineR2R<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
                                       const ValueVector& psiinv,
                                       std::vector<ValueType>& ratios)
 {
-  const bool need_resize = ratios_private.rows() < VP.getTotalNum();
-
-#pragma omp parallel
-  {
-    int tid = omp_get_thread_num();
-    // initialize thread private ratios
-    if (need_resize)
-    {
-      if (tid == 0) // just like #pragma omp master, but one fewer call to the runtime
-        ratios_private.resize(VP.getTotalNum(), omp_get_num_threads());
-#pragma omp barrier
-    }
-    int first, last;
-    FairDivideAligned(psi.size(), getAlignment<ST>(), omp_get_num_threads(), tid, first, last);
-    const int last_real = kPoints.size() < last ? kPoints.size() : last;
-
-    for (int iat = 0; iat < VP.getTotalNum(); ++iat)
-    {
-      const PointType& r = VP.activeR(iat);
-      PointType ru;
-      int bc_sign = convertPos(r, ru);
-
-      spline2::evaluate3d(SplineInst->getSplinePtr(), ru, myV, first, last);
-      assign_v(bc_sign, myV, psi, first, last_real);
-      ratios_private[iat][tid] = simd::dot(psi.data() + first, psiinv.data() + first, last_real - first);
-    }
-  }
-
-  // do the reduction manually
   for (int iat = 0; iat < VP.getTotalNum(); ++iat)
   {
-    ratios[iat] = ValueType(0);
-    for (int tid = 0; tid < ratios_private.cols(); tid++)
-      ratios[iat] += ratios_private[iat][tid];
+    const PointType& r = VP.activeR(iat);
+    PointType ru;
+    int bc_sign = convertPos(r, ru);
+    SplineInst->evaluate_v(ru, myV);
+    assign_v(bc_sign, myV, psi, 0, psi.size());
+    ratios[iat] = simd::dot(psi.data(), psiinv.data(), psi.size());
   }
 }
 
@@ -438,14 +406,8 @@ void SplineR2R<ST>::evaluateVGL(const ParticleSet& P,
   PointType ru;
   int bc_sign = convertPos(r, ru);
 
-#pragma omp parallel
-  {
-    int first, last;
-    FairDivideAligned(psi.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
-
-    spline2::evaluate3d_vgh(SplineInst->getSplinePtr(), ru, myV, myG, myH, first, last);
-    assign_vgl(bc_sign, psi, dpsi, d2psi, first, last);
-  }
+  SplineInst->evaluate_vgh(ru, myV, myG, myH);
+  assign_vgl(bc_sign, psi, dpsi, d2psi, 0, psi.size());
 }
 
 template<typename ST>
@@ -692,14 +654,8 @@ void SplineR2R<ST>::evaluateVGH(const ParticleSet& P,
   PointType ru;
   int bc_sign = convertPos(r, ru);
 
-#pragma omp parallel
-  {
-    int first, last;
-    FairDivideAligned(psi.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
-
-    spline2::evaluate3d_vgh(SplineInst->getSplinePtr(), ru, myV, myG, myH, first, last);
-    assign_vgh(bc_sign, psi, dpsi, grad_grad_psi, first, last);
-  }
+  SplineInst->evaluate_vgh(ru, myV, myG, myH);
+  assign_vgh(bc_sign, psi, dpsi, grad_grad_psi, 0, psi.size());
 }
 
 template<typename ST>
@@ -870,14 +826,8 @@ void SplineR2R<ST>::evaluateVGHGH(const ParticleSet& P,
   PointType ru;
   int bc_sign = convertPos(r, ru);
 
-#pragma omp parallel
-  {
-    int first, last;
-    FairDivideAligned(psi.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
-
-    spline2::evaluate3d_vghgh(SplineInst->getSplinePtr(), ru, myV, myG, myH, mygH, first, last);
-    assign_vghgh(bc_sign, psi, dpsi, grad_grad_psi, grad_grad_grad_psi, first, last);
-  }
+  SplineInst->evaluate_vghgh(ru, myV, myG, myH, mygH);
+  assign_vghgh(bc_sign, psi, dpsi, grad_grad_psi, grad_grad_grad_psi, 0, psi.size());
 }
 
 template class SplineR2R<float>;

@@ -35,8 +35,8 @@
 
 
 ATOMIC_SPECIES 
-   H  1.00794 H.TN-DF.upf
-   Li 6.941 Li.TN-DF.upf
+   H  1.008 H.TN-DF.upf
+   Li 6.94 Li.TN-DF.upf
 
 ATOMIC_POSITIONS bohr
    Li       0.00000000       0.00000000       0.00000000 

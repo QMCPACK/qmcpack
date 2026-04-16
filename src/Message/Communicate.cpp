@@ -63,17 +63,19 @@ Communicate::Communicate(mpi3::communicator&& in_comm) : d_groupid(0), d_ngroups
   d_ncontexts = comm.size();
 }
 
-Communicate::Communicate(const Communicate& in_comm, int nparts)
+Communicate::Communicate(const Communicate& in_comm, int nparts, int stripe)
 {
   std::vector<int> nplist(nparts + 1);
-  const int p = FairDivideLow(in_comm.rank(), in_comm.size(), nparts, nplist); //group
+  // group index
+  const int gid = stripe == 0 ? FairDivideLow(in_comm.rank(), in_comm.size(), nparts, nplist) :
+	     in_comm.rank() / stripe % nparts;
   // comm is mutable member
-  comm  = in_comm.comm.split(p, in_comm.rank());
+  comm  = in_comm.comm.split(gid, in_comm.rank());
   myMPI = comm.get();
   // TODO: mpi3 needs to define comm
   d_mycontext = comm.rank();
   d_ncontexts = comm.size();
-  d_groupid   = p;
+  d_groupid   = gid;
   d_ngroups   = nparts;
 
   // create an inter group communicator
@@ -113,7 +115,7 @@ void Communicate::barrier() const {}
 
 void Communicate::cleanupMessage(void*) {}
 
-Communicate::Communicate(const Communicate& in_comm, int nparts)
+Communicate::Communicate(const Communicate& in_comm, int nparts, int stripe)
     : myMPI(MPI_COMM_NULL), d_mycontext(0), d_ncontexts(1), d_groupid(0)
 { inter_group_comm_ = std::make_unique<Communicate>(); }
 #endif // !HAVE_MPI

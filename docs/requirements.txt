@@ -36,11 +36,11 @@ pybtex==0.25.1
     #   sphinxcontrib-bibtex
 pybtex-docutils==1.0.3
     # via sphinxcontrib-bibtex
-pygments==2.19.2
+pygments==2.20.0
     # via sphinx
 pyyaml==6.0.3
     # via pybtex
-requests==2.32.5
+requests==2.33.0
     # via sphinx
 roman-numerals==4.1.0
     # via sphinx

@@ -1,5 +1,13 @@
 #!/env/bin/python
 
+try:
+    import pytest
+    from . import NexusTestOrder
+    pytestmark = pytest.mark.order(NexusTestOrder.STRUCTURE)
+except ImportError:
+    pass
+
+
 import numpy as np
 from .. import versions
 from .. import testing

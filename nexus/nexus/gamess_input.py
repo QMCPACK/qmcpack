@@ -32,7 +32,7 @@
 
 
 import numpy as np
-from .periodic_table import pt
+from .periodic_table import Elements
 from .developer import DevBase, obj, error, warn
 from .nexus_base import nexus_noncore
 from .simulation import SimulationInput
@@ -1116,7 +1116,7 @@ def generate_any_gamess_input(**kwargs):
             #end if
             for i in range(len(elem)):
                 a = elem[i]
-                Z = pt[a].atomic_number
+                Z = Elements(a).atomic_number
                 data+='{0} {1:3.2f} {2:16.8f} {3:16.8f} {4:16.8f}\n'.format(a,Z,*pos[i])
                 if a in bss:
                     data+=bss[a].text+'\n\n'
@@ -1129,7 +1129,7 @@ def generate_any_gamess_input(**kwargs):
                 )
             pps = nexus_noncore.pseudopotentials.pseudos_by_atom(*pskw.pseudos)
             for i,a in enumerate(elem):
-                Z = pt[a].atomic_number
+                Z = Elements(a).atomic_number
                 data+='{0} {1} {2:16.8f} {3:16.8f} {4:16.8f}\n'.format(a,Z,*pos[i])
                 if a in pps:
                     data += pps[a].basis_text+'\n\n'

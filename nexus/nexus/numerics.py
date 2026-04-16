@@ -88,7 +88,7 @@ from numpy import pi, exp, sqrt, sin, cos
 from numpy.linalg import norm
 from .developer import obj, unavailable, error
 from .unit_converter import convert
-from .periodic_table import pt as ptable
+from .periodic_table import Elements
 
 try:
     from scipy.special import betainc
@@ -146,13 +146,14 @@ def morse_params(re, a, De, E_inf): return re, 1./a, De, E_inf                  
 # morse_reduced_mass gives the reduced mass in Hartree units
 #   m1 and m2 are masses or atomic symbols
 def morse_reduced_mass(m1,m2=None):
+    amu_me = convert(1., "amu", "me")
     if isinstance(m1,str):
-        m1 = ptable[m1].atomic_weight.me
+        m1 = Elements(m1).atomic_weight * amu_me
     #end if
     if m2 is None:
         m2 = m1
     elif isinstance(m2,str):
-        m2 = ptable[m2].atomic_weight.me
+        m2 = Elements(m2).atomic_weight * amu_me
     #end if
     m = 1./(1./m1+1./m2) # reduced mass
     return m

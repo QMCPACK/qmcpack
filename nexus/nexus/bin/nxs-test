@@ -17,13 +17,75 @@ if host_dir is not None:
 #end if
 
 # save nexus directories
-library_dir   = parent_dir
-test_dir      = os.path.join(parent_dir,'nexus/tests')
-reference_dir = os.path.join(parent_dir,'nexus/tests/reference')
+library_dir   = os.path.dirname(parent_dir)
+test_dir      = os.path.join(parent_dir,'tests')
+reference_dir = os.path.join(parent_dir,'tests/reference')
 example_dir   = os.path.join(parent_dir,'examples')
 
 # ensure that nxs-test executable is resident in a nexus directory tree
-dirs_check = ['examples','bin','nexus','nexus/tests','nexus/tests/reference']
+dirs_check = [
+    "tests/",
+    "bin/",
+    "basisset.py",
+    "bundle.py",
+    "debug.py",
+    "developer.py",
+    "execute.py",
+    "fileio.py",
+    "gamess_analyzer.py",
+    "gamess_input.py",
+    "gamess.py",
+    "gaussian_process.py",
+    "generic.py",
+    "grid_functions.py",
+    "hdfreader.py",
+    "__init__.py",
+    "machines.py",
+    "memory.py",
+    "nexus_base.py",
+    "nexus_version.py",
+    "numerics.py",
+    "observables.py",
+    "periodic_table.py",
+    "physical_system.py",
+    "project_manager.py",
+    "pseudopotential.py",
+    "pwscf_analyzer.py",
+    "pwscf_data_reader.py",
+    "pwscf_input.py",
+    "pwscf_postprocessors.py",
+    "pwscf.py",
+    "pyscf_analyzer.py",
+    "pyscf_input.py",
+    "pyscf_sim.py",
+    "qmcpack_analyzer_base.py",
+    "qmcpack_analyzer.py",
+    "qmcpack_converters.py",
+    "qmcpack_input.py",
+    "qmcpack_method_analyzers.py",
+    "qmcpack_property_analyzers.py",
+    "qmcpack.py",
+    "qmcpack_quantity_analyzers.py",
+    "qmcpack_result_analyzers.py",
+    "quantum_package_analyzer.py",
+    "quantum_package_input.py",
+    "quantum_package.py",
+    "rmg_analyzer.py",
+    "rmg_input.py",
+    "rmg.py",
+    "_bin.py",
+    "simulation.py",
+    "structure.py",
+    "template_simulation.py",
+    "testing.py",
+    "unit_converter.py",
+    "utilities.py",
+    "vasp_analyzer.py",
+    "vasp_input.py",
+    "vasp.py",
+    "versions.py",
+    "xmlreader.py",
+]
 for d in dirs_check:
     pd = os.path.join(parent_dir,d)
     if not os.path.exists(pd):
@@ -663,7 +725,13 @@ def periodic_table():
 
     nunit('periodic_table')
 
+    nunit('call_elements')
+
     nunit('is_element')
+
+    nunit('element_set')
+
+    nunit('representation')
 
     nunit_all()
 #end def periodic_table
@@ -684,6 +752,8 @@ def numerics():
     nunit('simstats')
 
     nunit('equilibration_length')
+
+    nunit('jackknife')
 
     nunit('morse')
 
@@ -738,6 +808,8 @@ def grid_functions():
     nunit('grid_cell_volumes')
 
     nunit('grid_unit_metric')
+
+    nunit('grid_function_initialization')
 
     # GridFunction tests
 
@@ -810,6 +882,10 @@ def structure():
     nunit('generate_init')
 
     nunit('crystal_init')
+
+    nunit('change_units')
+
+    nunit('rotate')
 
     nunit('diagonal_tiling')
 
@@ -1269,6 +1345,8 @@ def qmcpack_input():
 
     nunit('excited_state')
 
+    nunit('magnetization_density')
+
     nunit_all()
 #end def qmcpack_input
 
@@ -1634,6 +1712,26 @@ def qmca():
 
 
 
+def user_examples_alt():
+
+    nunit('pwscf_relax_Ge_T')
+
+    nunit('gamess_H2O')
+
+    nunit('qmcpack_H2O')
+
+    nunit('qmcpack_LiH')
+
+    nunit('qmcpack_c20')
+
+    nunit('qmcpack_diamond')
+
+    nunit('qmcpack_graphene')
+
+    nunit('qmcpack_oxygen_dimer')
+
+    nunit_all()
+
 
 example_information = dict(
     pwscf_relax_Ge_T = dict(
@@ -1788,7 +1886,7 @@ def user_examples(label):
     # remove prexisting example files
     nenter(tpath,relative=True)
     # copy over nexus examples files just for this example
-    epath = os.path.join(example_dir,path)
+    epath = os.path.realpath(os.path.join(example_dir,path))
     command = 'rsync -av {0}/* ./'.format(epath)
     out,err,rc = execute(command)
     if rc>0:
@@ -1865,7 +1963,7 @@ def user_examples(label):
                     dgen = obj(dgen)
                     dref = obj(dref)
                     msg = 'reference and generated input files differ\n'
-                    msg += 'reference file: '+filepath+'\n'
+                    msg += 'reference file: '+os.path.realpath(filepath)+'\n'
                     msg += 'reference file difference\n'
                     msg += 40*'='+'\n'
                     msg += str(dref)
@@ -1946,6 +2044,8 @@ NexusTest( qmca                            )
 NexusTest( qmc_fit                         )
 NexusTest( qdens                           )
 NexusTest( qdens_radial                    )
+NexusTest( user_examples_alt               )
+
 
 # ordered alphabetically (pytest order)
 #NexusTest( basisset                        )
@@ -2223,7 +2323,7 @@ if __name__=='__main__':
     testing_wrong_nexus_install = False
     try:
         import nexus
-        nexus_file = os.path.realpath(os.path.join(nexus.__file__,'../..'))
+        nexus_file = os.path.realpath(os.path.join(nexus.__file__,'../'))
         test_file  = os.path.realpath(os.path.join(__file__,'../..'))
         testing_wrong_nexus_install = nexus_file!=test_file
     except:

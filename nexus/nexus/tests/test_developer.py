@@ -1,3 +1,10 @@
+try:
+    import pytest
+    from . import NexusTestOrder
+    pytestmark = pytest.mark.order(NexusTestOrder.DEVELOPER)
+except ImportError:
+    pass
+
 
 from ..testing import failed,FailedTest
 

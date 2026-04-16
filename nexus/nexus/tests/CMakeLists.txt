@@ -5,13 +5,13 @@ include("${PROJECT_SOURCE_DIR}/CMake/python.cmake")
 check_python_reqs(numpy "nexus base" ADD_TEST)
 
 if(ADD_TEST)
-  file(TIMESTAMP ${qmcpack_SOURCE_DIR}/nexus/bin/nxs-test NEXUS_TESTLIST_TIMESTAMP)
+  file(TIMESTAMP ${qmcpack_SOURCE_DIR}/nexus/nexus/bin/nxs-test NEXUS_TESTLIST_TIMESTAMP)
   if(NOT "${NEXUS_TESTLIST_TIMESTAMP}" STREQUAL "${CACHE_NEXUS_TESTLIST_TIMESTAMP}")
     message("Generating Nexus test list for the first time or after a nxs-test time stamp change")
-    execute_process(COMMAND ${Python3_EXECUTABLE} ${qmcpack_SOURCE_DIR}/nexus/bin/nxs-test --ctestlist
+    execute_process(COMMAND ${Python3_EXECUTABLE} ${qmcpack_SOURCE_DIR}/nexus/nexus/bin/nxs-test --ctestlist
                     RESULT_VARIABLE NEXUS_TESTLIST_RESULT OUTPUT_VARIABLE NEXUS_TESTLIST)
     if(NOT NEXUS_TESTLIST_RESULT EQUAL 0)
-      message(FATAL_ERROR "Command line '${Python3_EXECUTABLE} ${qmcpack_SOURCE_DIR}/nexus/bin/nxs-test --ctestlist' failed!")
+      message(FATAL_ERROR "Command line '${Python3_EXECUTABLE} ${qmcpack_SOURCE_DIR}/nexus/nexus/bin/nxs-test --ctestlist' failed!")
     endif()
 
     set(CACHE_NEXUS_TESTLIST
@@ -31,7 +31,7 @@ if(ADD_TEST)
   endif()
   foreach(TESTNAME ${NEXUS_TESTLIST})
     #message("Adding test ntest_nexus_${TESTNAME}")
-    set(NTEST "${qmcpack_SOURCE_DIR}/nexus/bin/nxs-test")
+    set(NTEST "${qmcpack_SOURCE_DIR}/nexus/nexus/bin/nxs-test")
     IF(ENABLE_PYCOV)
       add_test(NAME ntest_nexus_${TESTNAME} COMMAND ${PYTHON_COVERAGE_EXECUTABLE} run -p ${NTEST} -R ${TESTNAME}\$ --ctest
                                                     --pythonpath=${PROJECT_SOURCE_DIR}/nexus:$ENV{PYTHONPATH})

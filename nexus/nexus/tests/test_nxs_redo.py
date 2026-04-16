@@ -1,3 +1,9 @@
+try:
+    import pytest
+    from . import NexusTestOrder
+    pytestmark = pytest.mark.order(NexusTestOrder.NXS_REDO)
+except ImportError:
+    pass
 
 from .. import testing
 from ..testing import create_file,create_path,execute

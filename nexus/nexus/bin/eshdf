@@ -3,6 +3,7 @@
 # Python standard library imports
 import os
 import sys
+from pathlib import Path
 from optparse import OptionParser
 
 # Non-standard Python library imports
@@ -10,23 +11,23 @@ import numpy as np
 
 # Copied from qmca. Modification must done on qmca first
 # Locate and import the closely coupled Nexus module
+search_basepath = Path(__file__).resolve().parent.parent
+nexus_library_search_path = search_basepath.parent
 def find_nexus_modules():
-    import os
     import sys
-    # Prepend the assumed path of a folder containing the closely coupled nexus module to module search path
-    # It points to the top Nexus directory not necessarily the top QMCPACK directory.
-    nexus_lib = os.path.realpath(os.path.join(__file__,'..','..'))
 
     # "import nexus" will succeed if nexus directory exists without __init__.py in it.
     # Explicitly check the existence of nexus/__init__.py at the closely coupled location
-    nexus_init = os.path.join(nexus_lib,'nexus','__init__.py')
-    if not os.path.exists(nexus_init):
-        print('\nExpected file '+nexus_init+' does not exist!'
-              '\nBroken Nexus installation! Please follow Nexus manual regarding installation.\n')
+    nexus_init = nexus_library_search_path / 'nexus/__init__.py'
+    if not nexus_init.exists():
+        print(
+            '\n'
+            'Expected file '+str(nexus_init)+' does not exist!\n'
+            'Broken Nexus installation! Please follow Nexus manual regarding installation.\n')
         sys.exit(1)
 
     # check import of nexus modules
-    sys.path.insert(0,nexus_lib)
+    sys.path.insert(0,str(nexus_library_search_path))
     try:
         import nexus
     except Exception as err:
@@ -44,12 +45,12 @@ def find_nexus_modules():
 
     # Sanity check. Most likely errors get caught earlier.
     # ensure closely coupled nexus module is in use.
-    nexus_lib2 = os.path.realpath(os.path.join(nexus.__file__,'..','..'))
-    if nexus_lib != nexus_lib2:
-        exe_full_path = os.path.abspath(sys.argv[0])
-        print('\nNexus executable ' + exe_full_path +
-              '\n  Executable derived <nexus_root> = ' + nexus_lib +
-              '\n  Module     derived <nexus_root> = ' + nexus_lib2 +
+    nexus_lib2 = Path(nexus.__file__).resolve().parent.parent
+    if nexus_library_search_path != nexus_lib2:
+        exe_full_path = Path(sys.argv[0]).resolve()
+        print('\nNexus executable ' + str(exe_full_path) +
+              '\n  Executable derived <nexus_root> = ' + str(nexus_library_search_path) +
+              '\n  Module     derived <nexus_root> = ' + str(nexus_lib2) +
               '\nNexus executables and modules are not from the same installation!\n')
         sys.exit(1)
 #end def find_nexus_modules

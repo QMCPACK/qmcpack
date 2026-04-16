@@ -1,3 +1,9 @@
+try:
+    import pytest
+    from . import NexusTestOrder
+    pytestmark = pytest.mark.order(NexusTestOrder.NXS_SIM)
+except ImportError:
+    pass
 
 import sys
 from .. import testing

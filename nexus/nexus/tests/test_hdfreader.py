@@ -1,3 +1,9 @@
+try:
+    import pytest
+    from . import NexusTestOrder
+    pytestmark = pytest.mark.order(NexusTestOrder.HDFREADER)
+except ImportError:
+    pass
 
 from nexus.versions import h5py_available
 from .. import testing

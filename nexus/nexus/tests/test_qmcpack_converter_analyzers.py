@@ -1,3 +1,9 @@
+try:
+    import pytest
+    from . import NexusTestOrder
+    pytestmark = pytest.mark.order(NexusTestOrder.QMCPACK_CONVERTER_ANALYZERS)
+except ImportError:
+    pass
 
 
 

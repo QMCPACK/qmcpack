@@ -51,7 +51,7 @@ import numpy as np
 from numpy import pi
 from numpy.linalg import inv
 from .unit_converter import convert
-from .periodic_table import is_element
+from .periodic_table import Elements
 from .structure import Structure, kmesh
 from .physical_system import PhysicalSystem
 from .developer import DevBase, obj, log, warn, error
@@ -2210,9 +2210,9 @@ def generate_any_pwscf_input(**kwargs):
             pp = pw.atomic_species.pseudopotentials
             for atom in pw.atomic_species.atoms:
                 if atom not in pp:
-                    iselem,symbol = is_element(atom,symbol=True)
-                    if iselem and symbol in pp:
-                        pp[atom] = str(pp[symbol])
+                    iselem, element = Elements.is_element(atom, return_element=True)
+                    if iselem and element.symbol in pp:
+                        pp[atom] = str(pp[element.symbol])
                     #end if
                 #end if
             #end for

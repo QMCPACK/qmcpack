@@ -199,6 +199,7 @@ TEST_CASE("SpaceGrid::Basic", "[estimators]")
   CHECK(tensorAccessor(grid_data, 17, 12, 9, 0) == Approx(5.0));
   CHECK(tensorAccessor(grid_data, 17, 12, 9, 1) == Approx(5.1));
   CHECK(tensorAccessor(grid_data, 17, 12, 9, 2) == Approx(5.2));
+
   // new pset R's
   // check again
   auto min_R =
@@ -258,6 +259,13 @@ TEST_CASE("SpaceGrid::Basic", "[estimators]")
   CHECK(tensorAccessor(grid_data, 17, 12, 9, 0) == Approx(5.0));
   CHECK(tensorAccessor(grid_data, 17, 12, 9, 1) == Approx(5.1));
   CHECK(tensorAccessor(grid_data, 17, 12, 9, 2) == Approx(5.2));
+
+  // Test normalization
+  Vector<Real> ohmms_vector(grid_data.size());
+  std::copy(grid_data.begin(), grid_data.end(), ohmms_vector.begin());
+  space_grid.normalize(0.5);
+  ohmms_vector *= 0.5;
+  checkVector(ohmms_vector, grid_data, true);
 }
 
 TEST_CASE("SpaceGrid::Accumulate::outside", "[estimators]")

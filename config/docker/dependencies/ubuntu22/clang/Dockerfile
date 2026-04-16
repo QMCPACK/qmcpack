@@ -24,6 +24,7 @@ RUN export DEBIAN_FRONTEND=noninteractive &&\
     sudo \
     curl \
     rsync \
+    python3-numpy python3-pytest python3-pytest-cov python3-pytest-order \
     wget \
     software-properties-common \
     vim \

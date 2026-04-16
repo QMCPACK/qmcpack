@@ -132,8 +132,7 @@ from numpy import (
 from numpy.linalg import inv, det, norm
 from .unit_converter import convert
 from .numerics import nearest_neighbors, convex_hull, voronoi_neighbors
-from .periodic_table import is_element
-from .periodic_table import pt as ptable
+from .periodic_table import Elements
 from .fileio import XsfFile, PoscarFile
 from .developer import DevBase, obj, unavailable, error
 from . import numpy_extensions as npe
@@ -2394,8 +2393,8 @@ class Structure(Sobj):
             species_labels = set(self.elem)
             species = set()
             for e in species_labels:
-                is_elem,symbol = is_element(e,symbol=True)
-                species.add(symbol)
+                is_elem, element = Elements.is_element(e, return_element=True)
+                species.add(element.symbol)
             #end for
             return species_labels,species
         #end if
@@ -2418,7 +2417,8 @@ class Structure(Sobj):
             species  = []
             spec_set = set()
             for e in self.elem:
-                is_elem,symbol = is_element(e,symbol=True)
+                is_elem, element = Elements.is_element(e, return_element=True)
+                symbol = element.symbol
                 if e not in speclab_set:
                     speclab_set.add(e)
                     species_labels.append(e)
@@ -5008,7 +5008,7 @@ class Structure(Sobj):
             if isinstance(n,str):
                 elem.append(n)
             else:
-                elem.append(ptable.simple_elements[n].symbol)
+                elem.append(Elements(n).symbol)
             #end if
         #end for
         self.dim   = 3
@@ -5318,22 +5318,14 @@ class Structure(Sobj):
         c += '   {0} 1\n'.format(len(s.elem))
         for i in range(len(s.elem)):
             e = s.elem[i]
-            identified = e in ptable.elements
-            if not identified:
-                if len(e)>2:
-                    e = e[0:2]
-                elif len(e)==2:
-                    e = e[0:1]
-                #end if
-                identified = e in ptable.elements
-            #end if
+            identified, element = Elements.is_element(e, return_element=True)
             if not identified:
                 self.error(
                     "{0} is not an element\n"
                     "xsf file cannot be written".format(e)
                 )
             #end if
-            enum = ptable.elements[e].atomic_number
+            enum = element.atomic_number
             r = s.pos[i]
             c += '   {0:>3} {1:12.8f}  {2:12.8f}  {3:12.8f}\n'.format(enum,r[0],r[1],r[2])
         #end for
@@ -5503,11 +5495,11 @@ class Structure(Sobj):
     def get_atomic_numbers(self):
         an = []
         for e in self.elem:
-            iselem,esymb = is_element(e,symbol=True)
+            iselem, element = Elements.is_element(e, return_element=True)
             if not iselem:
-                self.error('Atomic symbol, {}, not recognized'.format(esymb))
+                self.error('Atomic symbol, {}, not recognized'.format(element))
             else:
-                an.append(ptable[esymb].atomic_number)
+                an.append(element.atomic_number)
             #end if
         #end for
         return np.array(an,dtype='intc')
@@ -5674,11 +5666,11 @@ class Structure(Sobj):
         # collect sets of species labels
         species_by_specnum = obj()
         for e,sn in zip(self.elem,ds.equivalent_atoms):
-            is_elem,es = is_element(e,symbol=True)
+            is_elem,element = Elements.is_element(e, return_element=True)
             if sn not in species_by_specnum:
                 species_by_specnum[sn] = set()
             #end if
-            species_by_specnum[sn].add(es)
+            species_by_specnum[sn].add(element.symbol)
         #end for
         for sn,sset in species_by_specnum.items():
             if len(sset)>1:
@@ -5965,10 +5957,7 @@ def get_conventional_cell(
     bcharge     = structure.background_charge*volfac
     pos         = dot(posd,axes)
     sout        = structure.copy()
-    elem        = np.empty(len(enumbers), dtype='str')
-    for el in ptable.elements.items():
-        elem[enumbers==el[1].atomic_number]=el[0]
-    #end for
+    elem        = np.array([Elements(i).symbol for i in enumbers], dtype=str)
     if abs(bcharge-int(bcharge)) > 1E-6:
         raise ValueError("Invalid background charge for conventional structure")
     #end if
@@ -5991,10 +5980,7 @@ def get_primitive_cell(
     bcharge     = structure.background_charge*volfac
     pos         = dot(posd,axes)
     sout        = structure.copy()
-    elem        = np.array(enumbers, dtype='str')
-    for el in ptable.elements.items():
-        elem[enumbers==el[1].atomic_number]=el[0]
-    #end for
+    elem        = np.array([Elements(i).symbol for i in enumbers], dtype=str)
     return {'structure' : Structure(axes=axes, elem=elem, pos=pos, background_charge=bcharge, units='A'),
             'T'         : seekpathout['primitive_transformation_matrix']}
 #end def get_primitive_cell

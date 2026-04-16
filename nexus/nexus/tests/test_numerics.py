@@ -1,3 +1,9 @@
+try:
+    import pytest
+    from . import NexusTestOrder
+    pytestmark = pytest.mark.order(NexusTestOrder.NUMERICS)
+except ImportError:
+    pass
 
 from nexus.versions import scipy_available
 
@@ -438,7 +444,7 @@ def test_morse():
     from ..numerics import morse_rDw_fit,morse_fit,morse_fit_fine
 
     rm = morse_reduced_mass('Ti','O')
-    assert(value_eq(rm,21862.2266134))
+    assert(value_eq(rm, 21858.453534035318))
 
     r_ref,D_ref,w_ref = 1.620,6.87,1009.18
     r_ref_A = r_ref
@@ -456,7 +462,7 @@ def test_morse():
     assert(value_eq(float(w),w_ref))
     assert(value_eq(float(Einf),0.0))
 
-    width_ref = 1.0451690611
+    width_ref = 1.0452592627174173
     width = morse_width(p)
     assert(value_eq(float(width),width_ref))
 
@@ -469,7 +475,7 @@ def test_morse():
     Ee = morse_Ee(p)
     assert(value_eq(float(Ee),-D_ref))
 
-    k_ref = 0.462235185922
+    k_ref = 0.46215541133767707
     k = morse_k(p)
     assert(value_eq(float(k),k_ref))
 

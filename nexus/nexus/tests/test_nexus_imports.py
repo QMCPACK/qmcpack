@@ -1,3 +1,9 @@
+try:
+    import pytest
+    from . import NexusTestOrder
+    pytestmark = pytest.mark.order(NexusTestOrder.NEXUS_IMPORTS)
+except ImportError:
+    pass
 
 
 def test_imports():

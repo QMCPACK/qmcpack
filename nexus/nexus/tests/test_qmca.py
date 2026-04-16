@@ -1,3 +1,9 @@
+try:
+    import pytest
+    from . import NexusTestOrder
+    pytestmark = pytest.mark.order(NexusTestOrder.QMCA)
+except ImportError:
+    pass
 
 import sys
 from .. import testing

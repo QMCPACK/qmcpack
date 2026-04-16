@@ -45,7 +45,7 @@ protected:
   using BoundaryCondition = typename bspline_traits<T, 3>::BCType;
   ///actual vector of einspline multi-bspline objects
   std::vector<SplineType*> spline_blocks;
-
+  ///index offsets of spline_blocks.
   const std::vector<size_t> offsets_;
 
   MultiBsplineBase(const std::vector<size_t>& offsets) : offsets_(offsets) {}
@@ -134,6 +134,9 @@ public:
 
   virtual ~MultiBsplineBase() = default;
 
+  size_t getNumBlocks() const { return spline_blocks.size(); }
+  const auto& getBlockOffsets() const { return offsets_; }
+
   SplineType* getSplinePtr()
   {
     if (spline_blocks.size() != 1)
@@ -141,11 +144,10 @@ public:
     return spline_blocks[0];
   }
 
-  void flush_zero() const
-  {
-    for (auto spline_m : spline_blocks)
-      std::fill(spline_m->coefs, spline_m->coefs + spline_m->coefs_size, T(0));
-  }
+  SplineType& getBlock(size_t iblock) { return *spline_blocks[iblock]; }
+
+  void flush_zero(size_t iblock = 0) const
+  { std::fill(spline_blocks[iblock]->coefs, spline_blocks[iblock]->coefs + spline_blocks[iblock]->coefs_size, T(0)); }
 
   size_t num_splines() const
   {
@@ -167,7 +169,7 @@ public:
   {
     size_t num_T = 0;
     for (auto spline_m : spline_blocks)
-      num_T += spline_m->coefs_size * sizeof(T);
+      num_T += spline_m->coefs_size;
     return num_T * sizeof(T);
   }
 

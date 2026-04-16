@@ -14,17 +14,18 @@
 #define QMCPLUSPLUS_SPLINE_UTILS_H
 
 #include "hdf/hdf_archive.h"
-#include "spline2/MultiBsplineBase.hpp"
-#include "spline2/MultiBspline1D.hpp"
 #include "Message/Communicate.h"
 
 namespace qmcplusplus
 {
+template<typename T>
+class MultiBsplineBase;
+template<typename T>
+class MultiBspline1D;
+
 template<typename ST>
 class SplineUtils
 {
-  static constexpr size_t my_index = 0;
-
 public:
   static bool read(MultiBsplineBase<ST>& spline, hdf_archive& h5f);
   static bool write(MultiBsplineBase<ST>& spline, hdf_archive& h5f);
@@ -32,8 +33,8 @@ public:
   static bool read(MultiBspline1D<ST>& spline, hdf_archive& h5f);
   static bool write(MultiBspline1D<ST>& spline, hdf_archive& h5f);
 
-  static void gatherv(MultiBsplineBase<ST>& spline, const std::vector<int>& offset, Communicate& comm);
-  static void bcast(MultiBsplineBase<ST>& spline, Communicate& comm);
+  static void gatherv(MultiBsplineBase<ST>& spline, size_t iblock, const std::vector<int>& offset, Communicate& comm);
+  static void bcast(MultiBsplineBase<ST>& spline, size_t iblock, Communicate& comm);
 
   static void gatherv(MultiBspline1D<ST>& spline, size_t stride, const std::vector<int>& offset, Communicate& comm);
   static void bcast(MultiBspline1D<ST>& spline, Communicate& comm);

@@ -91,7 +91,10 @@ void BsplineReader::setCommon(xmlNodePtr cur)
     app_summary() << "    Running on CPU." << std::endl;
 }
 
-std::unique_ptr<SPOSet> BsplineReader::create_spline_set(const std::string& spo_name, int spin, const size_t size)
+std::unique_ptr<SPOSet> BsplineReader::create_spline_set(const std::string& spo_name,
+                                                         int spin,
+                                                         const std::pair<int, int>& distributed_and_shared_ranks,
+                                                         const size_t size)
 {
   if (spo2band.empty())
     spo2band.resize(mybuilder->states.size());
@@ -112,7 +115,7 @@ std::unique_ptr<SPOSet> BsplineReader::create_spline_set(const std::string& spo_
   vals.myName  = make_bandgroup_name(spo_name, spin, mybuilder->twist_num_, mybuilder->TileMatrix, 0, size);
   vals.selectBands(fullband, 0, size);
 
-  return create_spline_set(spo_name, spin, vals);
+  return create_spline_set(spo_name, spin, distributed_and_shared_ranks, vals);
 }
 
 bool BsplineReader::lookforSplineDataDumpFile(const BandInfoGroup& bandgroup,
@@ -165,6 +168,7 @@ void BsplineReader::readOneOrbitalCoefs(const std::string& s, hdf_archive& h5f, 
 
 std::unique_ptr<SPOSet> BsplineReader::create_spline_set(const std::string& spo_name,
                                                          int spin,
+                                                         const std::pair<int, int>& distributed_and_shared_ranks,
                                                          SPOSetInputInfo& input_info)
 {
   if (spo2band.empty())
@@ -187,7 +191,7 @@ std::unique_ptr<SPOSet> BsplineReader::create_spline_set(const std::string& spo_
                                      input_info.min_index(), input_info.max_index());
   vals.selectBands(fullband, spo2band[spin][input_info.min_index()], input_info.max_index() - input_info.min_index());
 
-  return create_spline_set(spo_name, spin, vals);
+  return create_spline_set(spo_name, spin, distributed_and_shared_ranks, vals);
 }
 
 /** build index tables to map a state to band with k-point folidng

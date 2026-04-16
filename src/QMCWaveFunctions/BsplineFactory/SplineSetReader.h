@@ -42,6 +42,7 @@ class SplineSetReader : public BsplineReader
 {
   std::unique_ptr<SPOSet> create_spline_set(const std::string& my_name,
                                             int spin,
+                                            const std::pair<int, int>& distributed_and_shared_ranks,
                                             const BandInfoGroup& bandgroup) override;
 
 public:
@@ -50,13 +51,16 @@ public:
   /** transforming planewave orbitals to 3D B-spline orbitals in real space.
    * @param spin orbital dataset spin index
    * @param bandgroup band info
-   * @param bspline the spline object being worked on
+   * @param band_index_map band index map
+   * @param multi_bsplines the spline object being worked on
+   * @param dist_comm distributed spline communicator
    */
   void initialize_spline_pio_gather(const int spin,
                                     const BandInfoGroup& bandgroup,
                                     const TinyVector<int, 3>& half_g,
                                     const aligned_vector<int>& band_index_map,
-                                    MultiBsplineBase<ST>& multi_splines) const;
+                                    MultiBsplineBase<ST>& multi_splines,
+                                    Communicate& dist_comm) const;
 };
 
 extern template class SplineSetReader<float>;

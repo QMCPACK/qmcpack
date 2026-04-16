@@ -313,8 +313,8 @@ For older versions use:
     hubbard_u        = obj(Fe=5.5),
 
 
-Examples of this usage can be found in nexus/examples, e.g.,
-nexus/examples/qmcpack/rsqmc_quantum_espresso/04_iron_dft_dmc_gcta/iron_ldaU_dmc_gcta.py shows how to run DFT+U calculations for
+Examples of this usage can be found in nexus/nexus/examples, e.g.,
+nexus/nexus/examples/qmcpack/rsqmc_quantum_espresso/04_iron_dft_dmc_gcta/iron_ldaU_dmc_gcta.py shows how to run DFT+U calculations for
 grand-canonical twist averaging using the latest format.
 
 VASP generation:

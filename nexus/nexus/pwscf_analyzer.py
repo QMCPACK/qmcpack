@@ -21,7 +21,7 @@ import os
 import numpy as np
 from .developer import obj, unavailable
 from .unit_converter import convert
-from .periodic_table import PeriodicTable
+from .periodic_table import Elements
 from .numerics import simstats, simplestats
 from .simulation import SimulationAnalyzer, Simulation
 from .structure import Structure, get_kpath
@@ -30,8 +30,8 @@ from .pwscf_data_reader import read_qexml
 from .fileio import TextFile
 from . import numpy_extensions as npe
 
-pt = PeriodicTable()
-elements = set(pt.elements.keys())
+
+elements = set([e.symbol for e in Elements])
 
 
 def is_number(s):

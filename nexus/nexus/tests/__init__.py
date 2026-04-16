@@ -1,0 +1,71 @@
+from enum import IntEnum, auto
+
+class NexusTestOrder(IntEnum):
+    """Test order for Nexus testing.
+    
+    This dictates the order that the tests are run in, reflecting the
+    inheritance hierarchy that Nexus has, so the first tests to fail are
+    going to be indicative of where the actual root problem is.
+    """
+
+    VERSIONS                        = auto() # 1
+    REQUIRED_DEPENDENCIES           = auto() # 2
+    OPTIONAL_DEPENDENCIES           = auto() # etc.
+    NEXUS_IMPORTS                   = auto()
+    TESTING                         = auto()
+    EXECUTE                         = auto()
+    MEMORY                          = auto()
+    GENERIC_OPERATION               = auto()
+    DEVELOPER                       = auto()
+    UNIT_CONVERTER                  = auto()
+    PERIODIC_TABLE                  = auto()
+    NUMERICS                        = auto()
+    GRID_FUNCTIONS                  = auto()
+    FILEIO                          = auto()
+    HDFREADER                       = auto()
+    XMLREADER                       = auto()
+    STRUCTURE                       = auto()
+    PHYSICAL_SYSTEM                 = auto()
+    BASISSET                        = auto()
+    PSEUDOPOTENTIAL                 = auto()
+    NEXUS_BASE                      = auto()
+    MACHINES                        = auto()
+    SIMULATION                      = auto()
+    BUNDLE                          = auto()
+    PROJECT_MANAGER                 = auto()
+    SETTINGS_OPERATION              = auto()
+    VASP_INPUT                      = auto()
+    PWSCF_INPUT                     = auto()
+    PWSCF_POSTPROCESSOR_INPUT       = auto()
+    GAMESS_INPUT                    = auto()
+    PYSCF_INPUT                     = auto()
+    QUANTUM_PACKAGE_INPUT           = auto()
+    RMG_INPUT                       = auto()
+    QMCPACK_CONVERTER_INPUT         = auto()
+    QMCPACK_INPUT                   = auto()
+    VASP_ANALYZER                   = auto()
+    PWSCF_ANALYZER                  = auto()
+    PWSCF_POSTPROCESSOR_ANALYZERS   = auto()
+    GAMESS_ANALYZER                 = auto()
+    PYSCF_ANALYZER                  = auto()
+    QUANTUM_PACKAGE_ANALYZER        = auto()
+    RMG_ANALYZER                    = auto()
+    QMCPACK_CONVERTER_ANALYZERS     = auto()
+    QMCPACK_ANALYZER                = auto()
+    VASP_SIMULATION                 = auto()
+    PWSCF_SIMULATION                = auto()
+    GAMESS_SIMULATION               = auto()
+    PYSCF_SIMULATION                = auto()
+    QUANTUM_PACKAGE_SIMULATION      = auto()
+    RMG_SIMULATION                  = auto()
+    PWSCF_POSTPROCESSOR_SIMULATIONS = auto()
+    QMCPACK_CONVERTER_SIMULATIONS   = auto()
+    QMCPACK_SIMULATION              = auto()
+    OBSERVABLES                     = auto()
+    NXS_REDO                        = auto()
+    NXS_SIM                         = auto()
+    QMC_FIT                         = auto()
+    QDENS                           = auto()
+    QDENS_RADIAL                    = auto()
+    QMCA                            = auto()
+    USER_EXAMPLES                   = auto()

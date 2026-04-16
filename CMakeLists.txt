@@ -163,15 +163,8 @@ mark_as_advanced(QMC_EXP_THREADING)
 set(VALID_SANITIZERS "asan" "ubsan" "tsan" "msan" "typesan")
 set(ENABLE_SANITIZER "" CACHE STRING "Valid input: ${VALID_SANITIZERS} or left empty")
 
-#--------------------------------------------------------------------
-# INSTALL_NEXUS install Nexus alongside QMCPACK
-#--------------------------------------------------------------------
-option(INSTALL_NEXUS "Install Nexus alongside QMCPACK" ON)
-if(INSTALL_NEXUS)
-  install(
-    CODE "EXECUTE_PROCESS(COMMAND ${qmcpack_SOURCE_DIR}/install_nexus_binaries \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX})"
-  )
-endif()
+option(QMC_INSTALL_NEXUS "Install Nexus alongside QMCPACK" ON)
+option(QMC_DOXYGEN "Enable use of Doxygen documentation generator tool" ON)
 
 ######################################################################
 # Set compiler specific options/flags
@@ -692,7 +685,7 @@ if(ENABLE_CUDA AND NOT QMC_CUDA2HIP)
   if(ENABLE_CUDA)
     include(TestCUDAHostCompatibility)
   endif()
-  find_package(CUDAToolkit 11.0 REQUIRED)
+  find_package(CUDAToolkit 12.3 REQUIRED)
   if(NOT TARGET CUDA::cublas)
     message(
       FATAL_ERROR
@@ -1067,14 +1060,25 @@ message(STATUS "Ready to parse QMCPACK source tree")
 
 add_subdirectory(external_codes)
 add_subdirectory(src)
-add_subdirectory(doxygen)
+if(QMC_DOXYGEN)
+  add_subdirectory(doxygen)
+endif(QMC_DOXYGEN)
 
 if(NOT QMC_BUILD_SANDBOX_ONLY)
   if(NOT QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
     add_subdirectory(tests)
     add_subdirectory(examples)
   endif()
-  if(IS_DIRECTORY "${PROJECT_SOURCE_DIR}/nexus" AND INSTALL_NEXUS)
+  #--------------------------------------------------------------------
+  # INSTALL_NEXUS install Nexus alongside QMCPACK
+  #--------------------------------------------------------------------
+  if(QMC_INSTALL_NEXUS)
     add_subdirectory(nexus/nexus/tests)
+    install(DIRECTORY ${qmcpack_SOURCE_DIR}/nexus/nexus DESTINATION ${CMAKE_INSTALL_PREFIX}/lib USE_SOURCE_PERMISSIONS PATTERN "__pycache__" EXCLUDE)
+    set(QMCPACK_NEXUS_SCRIPTS qmca qmc-fit qdens qdens-radial)
+    foreach(NEXUS_SCRIPT IN LISTS QMCPACK_NEXUS_SCRIPTS)
+      install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ../lib/nexus/bin/${NEXUS_SCRIPT} ${CMAKE_INSTALL_PREFIX}/bin/${NEXUS_SCRIPT})")
+    endforeach()
+    install(PROGRAMS ${qmcpack_SOURCE_DIR}/nexus/manual_install DESTINATION ${CMAKE_INSTALL_PREFIX}/lib RENAME nexus-setup-env)
   endif()
 endif()

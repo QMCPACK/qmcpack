@@ -1,8 +1,14 @@
+try:
+    import pytest
+    from . import NexusTestOrder
+    pytestmark = pytest.mark.order(NexusTestOrder.PWSCF_INPUT)
+except ImportError:
+    pass
 
 from .. import testing
 from ..testing import failed
 from ..testing import divert_nexus_log,restore_nexus_log
-from ..testing import value_eq,object_eq
+from ..testing import value_eq,object_eq,object_diff
 
 
 associated_files = dict()
@@ -70,7 +76,8 @@ def test_input():
 
     # definitions
     def check_pw_same(pw1_,pw2_,l1='pw1',l2='pw2'):
-        pw_same = object_eq(pw1_,pw2_,int_as_float=True)
+        pw_same = object_eq(pw1_, pw2_, int_as_float=True, atol=5e-4)
+
         if not pw_same:
             d,d1,d2 = object_diff(pw1_,pw2_,full=True,int_as_float=True)
             diff = obj({l1:obj(d1),l2:obj(d2)})

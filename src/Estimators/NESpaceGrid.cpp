@@ -578,7 +578,6 @@ void NESpaceGrid<REAL>::accumulate(const ParticlePos& R,
   int nparticles = values.size1();
   int nvalues    = values.size2();
   int iu[OHMMS_DIM];
-  int buf_index;
   const Real o2pi = 1.0 / (2.0 * M_PI);
   using CoordForm = SpaceGridInput::CoordForm;
   auto& agr       = input_.get_axis_grids();
@@ -620,11 +619,13 @@ void NESpaceGrid<REAL>::accumulate(const ParticlePos& R,
           for (int d = 0; d < OHMMS_DIM; ++d)
             error << gmapIndex(d, u) << ",  umin: " << umin_[d] << "  umax: " << umax_[d] << "  odu: " << odu_[d]
                   << '\n';
-          error << "which falls outside of the cell, for a period system all particle positions must be in the cell!\n";
+          error
+              << "which falls outside of the cell, for a periodic system all particle positions must be in the cell!\n";
           error << "It is very likely you have not set up your space grid correctly.\n";
           std::throw_with_nested(std::runtime_error(error.str()));
         }
-        buf_index = buffer_offset_;
+        // This should always be 0
+        int buf_index = buffer_offset_;
         for (int d = 0; d < OHMMS_DIM; ++d)
           buf_index += nvalues * dm_[d] * iu[d];
         for (v = 0; v < nvalues; v++, buf_index++)
@@ -667,7 +668,7 @@ void NESpaceGrid<REAL>::accumulate(const ParticlePos& R,
         iu[0]                = gmap_[0][floor((u[0] - umin_[0]) * odu_[0])];
         iu[1]                = gmap_[1][floor((u[1] - umin_[1]) * odu_[1])];
         iu[2]                = gmap_[2][floor((u[2] - umin_[2]) * odu_[2])];
-        buf_index            = buffer_offset_ + nvalues * (dm_[0] * iu[0] + dm_[1] * iu[1] + dm_[2] * iu[2]);
+        int buf_index        = buffer_offset_ + nvalues * (dm_[0] * iu[0] + dm_[1] * iu[1] + dm_[2] * iu[2]);
         for (v = 0; v < nvalues; v++, buf_index++)
           data_[buf_index] += values(p, v);
       }
@@ -688,7 +689,7 @@ void NESpaceGrid<REAL>::accumulate(const ParticlePos& R,
         iu[0]                = gmap_[0][floor((u[0] - umin_[0]) * odu_[0])];
         iu[1]                = gmap_[1][floor((u[1] - umin_[1]) * odu_[1])];
         iu[2]                = gmap_[2][floor((u[2] - umin_[2]) * odu_[2])];
-        buf_index            = buffer_offset_ + nvalues * (dm_[0] * iu[0] + dm_[1] * iu[1] + dm_[2] * iu[2]);
+        int buf_index        = buffer_offset_ + nvalues * (dm_[0] * iu[0] + dm_[1] * iu[1] + dm_[2] * iu[2]);
         for (v = 0; v < nvalues; v++, buf_index++)
           data_[buf_index] += values(p, v);
       }
@@ -731,8 +732,8 @@ void NESpaceGrid<REAL>::collect(NESpaceGrid& reduction_grid, const RefVector<NES
 template<typename REAL>
 void NESpaceGrid<REAL>::normalize(REAL invToWgt)
 {
-  std::transform(data_.begin(), data_.end(), data_.begin(),
-                 std::bind(std::multiplies<REAL>(), std::placeholders::_1, invToWgt));
+  std::transform(data_.begin() + buffer_offset_, data_.end(), data_.begin() + buffer_offset_,
+                 [invToWgt](REAL value) { return value * invToWgt; });
 }
 
 template<typename REAL>

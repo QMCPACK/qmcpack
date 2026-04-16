@@ -27,7 +27,7 @@ import mmap
 import numpy as np
 from numpy.linalg import det, norm
 from .developer import DevBase, obj, error, to_str
-from .periodic_table import is_element, pt as ptable
+from .periodic_table import Elements
 from .unit_converter import convert
 from . import numpy_extensions as npe
 
@@ -826,9 +826,9 @@ class XsfFile(StandardFile):
         s.recenter()
         elem = []
         for e in s.elem:
-            is_elem,e = is_element(e,symbol=True)
+            is_elem, e = Elements.is_element(e, return_element=True)
             if is_elem:
-                elem.append(ptable.elements[e].atomic_number)
+                elem.append(e.atomic_number)
             else:
                 elem.append(0)
             #end if
@@ -1127,7 +1127,7 @@ class PoscarFile(StandardFile):
                 msgs.append('elem must be an array of text')
             else:
                 for e in self.elem:
-                    iselem,symbol = is_element(e,symbol=True)
+                    iselem, e = Elements.is_element(e, return_element=True)
                     if not iselem:
                         msgs.append('elem entry "{0}" is not an element'.format(e))
                     #end if
@@ -1193,11 +1193,11 @@ class PoscarFile(StandardFile):
         #end for
         if self.elem is not None:
             for e in self.elem:
-                iselem,symbol = is_element(e,symbol=True)
+                iselem, e = Elements.is_element(e, return_element=True)
                 if not iselem:
                     self.error('{0} is not an element'.format(e))
                 #end if
-                text += e+' '
+                text += e.symbol+' '
             #end for
             text += '\n'
         #end if
@@ -1269,7 +1269,7 @@ class PoscarFile(StandardFile):
         species_ind = species
         species = []
         for i in species_ind:
-            species.append(ptable.simple_elements[i].symbol)
+            species.append(Elements(i).symbol)
         #end for
 
         self.scale      = 1.0

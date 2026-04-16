@@ -270,7 +270,7 @@ prefix ``Mysim`` and output files will be
     Production VMC and DMC:
 
     Examine the results of the optimization before running these blocks.
-    For example, choose the best optimized jastrow from all obtained, put in the
+    For example, choose the best optimized Jastrow from all obtained, put in the
     wavefunction file, and do not reoptimize.
 
     -->

@@ -1,3 +1,9 @@
+try:
+    import pytest
+    from . import NexusTestOrder
+    pytestmark = pytest.mark.order(NexusTestOrder.QMCPACK_INPUT)
+except ImportError:
+    pass
 
 from .. import versions
 from .. import testing
@@ -180,7 +186,7 @@ def generate_serial_references():
         'simulation/qmcsystem/particlesets/ion0/groups/O/valence' : 6,
         'simulation/qmcsystem/particlesets/ion0/groups/V/atomicnumber' : 23,
         'simulation/qmcsystem/particlesets/ion0/groups/V/charge' : 13,
-        'simulation/qmcsystem/particlesets/ion0/groups/V/mass' : 92861.5851912,
+        'simulation/qmcsystem/particlesets/ion0/groups/V/mass' : 92860.6737469,
         'simulation/qmcsystem/particlesets/ion0/groups/V/name' : 'V',
         'simulation/qmcsystem/particlesets/ion0/groups/V/position' : np.array([
             [2.45778327, 8.39460555, 0.22661828],
@@ -687,7 +693,7 @@ def test_compose():
                                 charge       = 13,
                                 valence      = 13,
                                 atomicnumber = 23,
-                                mass         = 92861.5851912,
+                                mass         = 92860.6737469,
                                 position     = np.array([
                                     [ 2.45778327,  8.39460555,  0.22661828],
                                     [ 8.41192147,  8.75579295, -0.22661828],

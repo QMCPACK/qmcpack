@@ -1,3 +1,9 @@
+try:
+    import pytest
+    from . import NexusTestOrder
+    pytestmark = pytest.mark.order(NexusTestOrder.QMCPACK_SIMULATION)
+except ImportError:
+    pass
 
 from .. import testing
 from ..testing import divert_nexus,restore_nexus,clear_all_sims

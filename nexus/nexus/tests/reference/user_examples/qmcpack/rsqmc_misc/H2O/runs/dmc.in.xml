@@ -35,11 +35,11 @@
                      4.05580089        4.05580089        3.00901473
             </attrib>
          </group>
-         <group name="H" size="2" mass="1837.36221934">
+         <group name="H" size="2" mass="1837.47159264">
             <parameter name="charge"              >    1                     </parameter>
             <parameter name="valence"             >    1                     </parameter>
             <parameter name="atomicnumber"        >    1                     </parameter>
-            <parameter name="mass"                >    1837.36221934            </parameter>
+            <parameter name="mass"                >    1837.47159264            </parameter>
             <attrib name="position" datatype="posArray" condition="0">
                      4.05580089        1.35193363        5.10258705
                      4.05580089        6.75966815        5.10258705

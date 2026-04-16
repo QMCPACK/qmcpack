@@ -119,7 +119,7 @@ In the project id section, make sure that the series number is different from an
 
 ``qmc`` element may contain ``qmcsystem`` elements for selecting specific wavefunction and hamiltonian pairs by name.
 In most QMC methods, only one pair of wavefunction and hamiltonian is needed, ``qmcsystem`` is only necessary
-when more than one pair of ``wavefunction`` and ``hamiltonian`` elements where specified in the simultion system specificiation.
+when more than one pair of ``wavefunction`` and ``hamiltonian`` elements where specified in the simulation system specification.
 CSVMC driver requires at least two entries of ``qmcsystem`` elements.
 
   +-----------------+---------------+
@@ -156,7 +156,7 @@ Note that changing the number of crowds does not change the statistics of a run 
 crowds only affects how the work is distributed, not the amount of work. Due to differences in scheduling and random number utilization, otherwise
 identical runs with different numbers of crowds will not give numerically identical results at each step. The overall statistical properties and results are unchanged.
 
-Crowds are owned by MPI processes and the number of crowds is specifed on a per MPI process basis. If a user requests 4 crowds
+Crowds are owned by MPI processes and the number of crowds is specified on a per MPI process basis. If a user requests 4 crowds
 and there are 16 walkers per MPI rank, then each crowd will have 4 walkers.
 For the purposes of pure CPU runs, it is generally sufficient to have the number of crowds match the number of threads
 spawned by each MPI process and one walker per crowd. For large GPU runs, either for large electron
@@ -185,7 +185,7 @@ There are notable changes in the driver input section when moving from classic d
   - When running on GPUs, tuning ``walkers_per_rank`` or ``total_walkers`` is needed to maximize GPU throughput,
     just like tuning ``walkers`` in the classic drivers.
 
-  - ``crowds`` can be optionally added in batched drivers to specify the number of crowds and optimize peformance on GPUs.
+  - ``crowds`` can be optionally added in batched drivers to specify the number of crowds and optimize performance on GPUs.
 
   - Only particle-by-particle moves are supported. All-particle moves are not yet supported. Provide feedback if you have a use for these. 
 
@@ -1245,7 +1245,7 @@ By default, the parameter update is accepted as is, and the size of the proposed
 
 We are currently investigating various improvements to make this a more reliable optimizer. 
 
-``sr_cg` method:
+``sr_cg`` method:
 
   parameters:
 

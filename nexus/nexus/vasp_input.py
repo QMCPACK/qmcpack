@@ -39,7 +39,7 @@
 
 import os
 import numpy as np
-from .periodic_table import is_element
+from .periodic_table import Elements
 from .nexus_base import nexus_noncore
 from .simulation import SimulationInput
 from .structure import interpolate_structures, Structure
@@ -1196,11 +1196,11 @@ class Poscar(VFormattedFile):
         #end for
         if self.elem is not None:
             for e in self.elem:
-                iselem,symbol = is_element(e,symbol=True)
+                iselem, element = Elements.is_element(e, return_element=True)
                 if not iselem:
                     self.error('{0} is not an element'.format(e))
                 #end if
-                text += symbol+' '
+                text += element.symbol+' '
             #end for
             text += '\n'
         #end if
@@ -1612,7 +1612,8 @@ class VaspInput(SimulationInput,Vobj):
             #end for
             ordered_pseudos = []
             for element in species:
-                iselem,symbol = is_element(element,symbol=True)
+                iselem, elem = Elements.is_element(element, return_element=True)
+                symbol = elem.symbol
                 if not iselem:
                     self.error('{0} is not an element'.format(element))
                 elif symbol not in pseudo_map:

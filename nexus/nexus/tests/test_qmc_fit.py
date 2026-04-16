@@ -1,3 +1,9 @@
+try:
+    import pytest
+    from . import NexusTestOrder
+    pytestmark = pytest.mark.order(NexusTestOrder.QMC_FIT)
+except ImportError:
+    pass
 
 from .. import versions
 from .. import testing
