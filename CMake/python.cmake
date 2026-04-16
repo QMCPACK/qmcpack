@@ -18,12 +18,34 @@ endfunction()
 function(CHECK_PYTEST_VERSION pytest_version_ok)
   message("Checking pytest version >= 6.2.4")
   execute_process(
-    COMMAND ${Python3_EXECUTABLE} ${qmcpack_SOURCE_DIR}/tests/scripts/test_pytest_version.py
-    OUTPUT_VARIABLE TMP_OUTPUT_VAR
+    COMMAND ${Python3_EXECUTABLE} -m pytest --version
+    OUTPUT_VARIABLE PYTEST_VERSION
     OUTPUT_STRIP_TRAILING_WHITESPACE)
-  set(${pytest_version_ok}
-      ${TMP_OUTPUT_VAR}
-      CACHE BOOL "" FORCE)
+  string(REPLACE "pytest " "" PYTEST_VERSION ${PYTEST_VERSION})
+  if(${PYTEST_VERSION} VERSION_GREATER_EQUAL 6.2.4)
+    message("Pytest version ${PYTEST_VERSION} found, continuing...")
+    set(${pytest_version_ok}
+        TRUE
+        CACHE BOOL "" FORCE)
+  else()
+    message("Pytest version ${PYTEST_VERSION} found, tests will not be added!")
+    set(${pytest_version_ok}
+        FALSE
+        CACHE BOOL "" FORCE)
+  endif()
+  #execute_process(
+  #  COMMAND ${Python3_EXECUTABLE} ${qmcpack_SOURCE_DIR}/tests/scripts/test_pytest_version.py
+  #  OUTPUT_VARIABLE TMP_OUTPUT_VAR
+  #  OUTPUT_STRIP_TRAILING_WHITESPACE)
+  #if(${OUTPUT_VARIABLE} EQUAL 0)
+  #  set(${pytest_version_ok}
+  #      TRUE
+  #      CACHE BOOL "" FORCE)
+  #else()
+  #  set(${pytest_version_ok}
+  #      FALSE
+  #      CACHE BOOL "" FORCE)
+  #endif()
 endfunction()
 
 # Test python module prerequisites for a particular test script
