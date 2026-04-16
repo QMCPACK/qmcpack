@@ -20,11 +20,14 @@ function(CHECK_PYTEST_VERSION pytest_version_ok)
   execute_process(COMMAND ${Python3_EXECUTABLE} -m pytest --version
                   RESULT_VARIABLE PYTEST_VERSION_RESULT
                   OUTPUT_VARIABLE PYTEST_VERSION
+                  ERROR_VARIABLE PYTEST_VERSION_ERROR
                   OUTPUT_STRIP_TRAILING_WHITESPACE)
-  message("Pytest version result is ' ${PYTEST_VERSION_RESULT} '")
-  message("Pytest version before replace is ' ${PYTEST_VERSION} '")
-  string(REPLACE "pytest " "" PYTEST_VERSION "${PYTEST_VERSION}")
-  message("Pytest version after replace is ' ${PYTEST_VERSION} '")
+  if(NOT ${PYTEST_VERSION} STREQUAL "")
+    string(REPLACE "pytest " "" PYTEST_VERSION ${PYTEST_VERSION})
+  else()
+    # Old versions of pytest put the version output in stderr for some reason
+    string(REPLACE "pytest " "" PYTEST_VERSION ${PYTEST_VERSION_ERROR})
+  endif()
   if(${PYTEST_VERSION} VERSION_GREATER_EQUAL "6.2.4")
     message("Pytest version ${PYTEST_VERSION} found, continuing...")
     set(${pytest_version_ok}
