@@ -163,9 +163,17 @@ case "$1" in
       ;;
       *"GCC"*"-Gcov"*)
         echo 'Configure for code coverage with gcc and gcovr -DENABLE_GCOV=TRUE and upload reports to Codecov'
+
+        # For consistency with other compiler usage, while usually the default, specify gcc to OpenMPI wrappers.
+        export OMPI_CC=gcc
+        export OMPI_CXX=g++
+        # Make current environment variables available to subsequent steps
+        echo "OMPI_CC=gcc" >> $GITHUB_ENV
+        echo "OMPI_CXX=g++" >> $GITHUB_ENV
+
         cmake -GNinja $CMAKE_OPTIONS \
-              -DMPI_C_COMPILER=mpicc \
-              -DMPI_CXX_COMPILER=mpicxx \
+              -DCMAKE_C_COMPILER=mpicc \
+              -DCMAKE_CXX_COMPILER=mpicxx \
               -DENABLE_GCOV=TRUE \
               -DENABLE_PYCOV=TRUE \
               ${GITHUB_WORKSPACE}

@@ -263,7 +263,7 @@ protected:
    * @param cur the current xml node
    * @return the distribution size
    */
-  static int obtainMemoryAttributes(xmlNodePtr cur);
+  static std::pair<int, int> obtainMemoryAttributes(xmlNodePtr cur);
 
   /** analyze twists of orbitals in h5 and determinine twist_num_
    * @param twist_num_inp twistnum XML input

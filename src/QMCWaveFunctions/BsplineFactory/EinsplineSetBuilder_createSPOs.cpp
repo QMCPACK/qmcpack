@@ -32,7 +32,6 @@
 #include "SplineSetReader.h"
 #include "HybridRepSetReader.h"
 
-#include <numeric>
 #include <array>
 #include <string_view>
 
@@ -104,29 +103,32 @@ void EinsplineSetBuilder::set_metadata(int numOrbs,
 }
 
 
-int EinsplineSetBuilder::obtainMemoryAttributes(const xmlNodePtr cur)
+std::pair<int, int> EinsplineSetBuilder::obtainMemoryAttributes(const xmlNodePtr cur)
 {
-  int ndistributed = 0;
+  int distributed_ranks = 0;
+  int shared_ranks      = 0;
   processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
     if (cname == "coefs_mem")
     {
       OhmmsAttributeSet mem_attr;
-      mem_attr.add(ndistributed, "distributed");
+      mem_attr.add(distributed_ranks, "distributed_ranks");
+      mem_attr.add(shared_ranks, "shared_ranks");
       mem_attr.put(element);
     }
   });
 
-  if (ndistributed < 1)
-    ndistributed = 1;
+  if (distributed_ranks < 1)
+    distributed_ranks = 1;
 
-  if (auto node_comm_size = OHMMS::Controller->NodeComm().size(); node_comm_size % ndistributed > 0)
-  {
-    ndistributed = std::gcd(node_comm_size, ndistributed);
-    app_warning() << "Overriding the number of distributed memory segments to the greatest common divisor of the "
-                     "\"distributed\" input value and the number of MPI ranks per node : "
-                  << ndistributed << std::endl;
-  }
-  return ndistributed;
+  if (shared_ranks < 1)
+    shared_ranks = 1;
+
+  if (auto node_comm_size = OHMMS::Controller->NodeComm().size(); node_comm_size % distributed_ranks * shared_ranks > 0)
+    throw std::runtime_error("The number of MPI ranks per node (" + std::to_string(node_comm_size) +
+                             ") is not divisible by the product of distributed_ranks and shared_ranks (" +
+                             std::to_string(distributed_ranks * shared_ranks) + ").");
+
+  return {distributed_ranks, shared_ranks};
 }
 
 std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(const xmlNodePtr cur)

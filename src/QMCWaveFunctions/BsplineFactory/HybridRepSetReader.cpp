@@ -151,10 +151,11 @@ HybridRepSetReader<ST>::HybridRepSetReader(EinsplineSetBuilder* e, bool use_dupl
 {}
 
 template<typename ST>
-std::unique_ptr<SPOSet> HybridRepSetReader<ST>::create_spline_set(const std::string& my_name,
-                                                                  int spin,
-                                                                  int ndistributed,
-                                                                  const BandInfoGroup& bandgroup)
+std::unique_ptr<SPOSet> HybridRepSetReader<ST>::create_spline_set(
+    const std::string& my_name,
+    int spin,
+    const std::pair<int, int>& distributed_and_shared_ranks,
+    const BandInfoGroup& bandgroup)
 {
   const int N = bandgroup.getNumDistinctOrbitals();
 

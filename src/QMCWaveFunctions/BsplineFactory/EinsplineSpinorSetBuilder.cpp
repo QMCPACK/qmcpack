@@ -201,12 +201,12 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
   MixedSplineReader->setRotate(false);
 
   //Make the up spin set.
-  auto bspline_zd_u = MixedSplineReader->create_spline_set(spo_object_name, spinSet, 1, numOrbs);
+  auto bspline_zd_u = MixedSplineReader->create_spline_set(spo_object_name, spinSet, {1, 1}, numOrbs);
   bspline_zd_u->finalizeConstruction();
 
   //Make the down spin set.
   OccupyBands(spinSet2, sortBands, numOrbs, skipChecks);
-  auto bspline_zd_d = MixedSplineReader->create_spline_set(spo_object_name, spinSet2, 1, numOrbs);
+  auto bspline_zd_d = MixedSplineReader->create_spline_set(spo_object_name, spinSet2, {1, 1}, numOrbs);
   bspline_zd_d->finalizeConstruction();
 
   //register with spin set and we're off to the races.

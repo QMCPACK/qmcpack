@@ -43,7 +43,7 @@ class BsplineReader
    */
   virtual std::unique_ptr<SPOSet> create_spline_set(const std::string& my_name,
                                                     int spin,
-                                                    int ndistributed,
+                                                    const std::pair<int, int>& distributed_and_shared_ranks,
                                                     const BandInfoGroup& bandgroup) = 0;
 
   void initialize_spo2band(const std::string& spo_name,
@@ -64,11 +64,14 @@ public:
   /** create the spline after one of the kind is created */
   std::unique_ptr<SPOSet> create_spline_set(const std::string& spo_name,
                                             int spin,
-                                            int ndistributed,
+                                            const std::pair<int, int>& distributed_and_shared_ranks,
                                             SPOSetInputInfo& input_info);
 
   /** create the spline set */
-  std::unique_ptr<SPOSet> create_spline_set(const std::string& spo_name, int spin, int ndistributed, const size_t size);
+  std::unique_ptr<SPOSet> create_spline_set(const std::string& spo_name,
+                                            int spin,
+                                            const std::pair<int, int>& distributed_and_shared_ranks,
+                                            const size_t size);
 
   /** Set the checkNorm variable */
   inline void setCheckNorm(bool new_checknorm) { checkNorm = new_checknorm; };

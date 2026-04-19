@@ -37,7 +37,7 @@ class HybridRepSetReader : public BsplineReader
 
   std::unique_ptr<SPOSet> create_spline_set(const std::string& my_name,
                                             int spin,
-                                            int ndistributed,
+                                            const std::pair<int, int>& distributed_and_shared_ranks,
                                             const BandInfoGroup& bandgroup) override;
 
 public:

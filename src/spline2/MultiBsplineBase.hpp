@@ -169,7 +169,7 @@ public:
   {
     size_t num_T = 0;
     for (auto spline_m : spline_blocks)
-      num_T += spline_m->coefs_size * sizeof(T);
+      num_T += spline_m->coefs_size;
     return num_T * sizeof(T);
   }
 
