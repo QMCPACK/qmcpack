@@ -7,50 +7,20 @@ try:
 except ImportError:
     pass
 
-from .. import testing
-from ..testing import value_eq,object_eq
-from ..testing import divert_nexus_log,restore_nexus_log
+from pathlib import Path
+from ..testing import object_eq
 
 
-associated_files = dict()
-
-
-def get_filenames():
-    filenames = [
-        'Fe.aug-cc-pwcv5z-dk.0.bas',
-        'Fe.aug-cc-pwcv5z-dk.0.gbs',
-        'Fe.BFD_VQZ.bas',
-        'Fe.BFD_VQZ.gbs',
-        'Fe.stuttgart_rsc_1997.0.bas',
-        'Fe.stuttgart_rsc_1997.0.gbs',
-        'Fe.stuttgart_rsc_1997_ecp.0.bas',
-        'Fe.stuttgart_rsc_1997_ecp.0.gbs',
-        ]
-    return filenames
-#end def get_filenames
-
-
-def get_files():
-    return testing.collect_unit_test_file_paths('basisset',associated_files)
-#end def get_files
-
-
-
-def test_files():
-    filenames = get_filenames()
-    files = get_files()
-    assert(set(files.keys())==set(filenames))
-#end def test_files
-
-
-
-def test_import():
-    from .. import basisset
-    from ..basisset import BasisSets
-    from ..basisset import process_gaussian_text
-    from ..basisset import GaussianBasisSet
-#end def test_import
-
+TEST_FILES = [
+    Path(__file__+"/../test_basisset_files/Fe.aug-cc-pwcv5z-dk.0.bas").resolve(),
+    Path(__file__+"/../test_basisset_files/Fe.aug-cc-pwcv5z-dk.0.gbs").resolve(),
+    Path(__file__+"/../test_basisset_files/Fe.BFD_VQZ.bas").resolve(),
+    Path(__file__+"/../test_basisset_files/Fe.BFD_VQZ.gbs").resolve(),
+    Path(__file__+"/../test_basisset_files/Fe.stuttgart_rsc_1997.0.bas").resolve(),
+    Path(__file__+"/../test_basisset_files/Fe.stuttgart_rsc_1997.0.gbs").resolve(),
+    Path(__file__+"/../test_basisset_files/Fe.stuttgart_rsc_1997_ecp.0.bas").resolve(),
+    Path(__file__+"/../test_basisset_files/Fe.stuttgart_rsc_1997_ecp.0.gbs").resolve(),
+]
 
 
 def test_basissets():
@@ -63,31 +33,24 @@ def test_basissets():
     BasisFile()
     gamessBasisFile()
 
-    filenames = get_filenames()
-    files = get_files()
-    f = [files[fn] for fn in filenames]
+    basis_file  = BasisFile(TEST_FILES[1])
+    gamess_basis_file = gamessBasisFile(TEST_FILES[0])
+    basis_sets  = BasisSets(TEST_FILES[2:]+[basis_file,gamess_basis_file])
 
-    # standard initialization
-    divert_nexus_log()
-    bf  = BasisFile(f[1])
-    gbf = gamessBasisFile(f[0])
-    bs  = BasisSets(f[2:]+[bf,gbf])
-    restore_nexus_log()
+    assert(basis_file.element=='Fe')
+    assert(basis_file.filename=='Fe.aug-cc-pwcv5z-dk.0.gbs')
 
-    assert(bf.element=='Fe')
-    assert(bf.filename=='Fe.aug-cc-pwcv5z-dk.0.gbs')
+    assert(gamess_basis_file.element=='Fe')
+    assert(gamess_basis_file.filename=='Fe.aug-cc-pwcv5z-dk.0.bas')
+    assert(gamess_basis_file.text.startswith('IRON'))
+    assert(gamess_basis_file.text.endswith('1         1.3776500              1.0000000'))
+    assert(len(gamess_basis_file.text.strip())==21135)
 
-    assert(gbf.element=='Fe')
-    assert(gbf.filename=='Fe.aug-cc-pwcv5z-dk.0.bas')
-    assert(gbf.text.startswith('IRON'))
-    assert(gbf.text.endswith('1         1.3776500              1.0000000'))
-    assert(len(gbf.text.strip())==21135)
-
-    for fn in filenames:
-        assert(fn in bs)
-        assert(isinstance(bs[fn],BasisFile))
-        if fn.endswith('.bas'):
-            assert(isinstance(bs[fn],gamessBasisFile))
+    for fn in TEST_FILES:
+        assert(fn.name in basis_sets)
+        assert(isinstance(basis_sets[fn.name],BasisFile))
+        if fn.suffix == '.bas':
+            assert(isinstance(basis_sets[fn.name],gamessBasisFile))
         #end if
     #end for
 #end def test_basissets
@@ -97,10 +60,7 @@ def test_basissets():
 def test_process_gaussian_text():
     from ..basisset import process_gaussian_text
 
-    filenames = get_filenames()
-    files = get_files()
-
-    bs_ref = {
+    basis_refs = {
         'Fe.aug-cc-pwcv5z-dk.0.bas'   : 503, 
         'Fe.aug-cc-pwcv5z-dk.0.gbs'   : 503,
         'Fe.BFD_VQZ.bas'              : 132,
@@ -110,7 +70,7 @@ def test_process_gaussian_text():
 
         }
 
-    pp_ref = {
+    pseudo_refs = {
         'Fe.BFD_VQZ.bas'                  : (  9,  132 ),
         'Fe.BFD_VQZ.gbs'                  : ( 13,  132 ),
         'Fe.stuttgart_rsc_1997.0.bas'     : ( 13,   38 ),
@@ -119,35 +79,31 @@ def test_process_gaussian_text():
         'Fe.stuttgart_rsc_1997_ecp.0.gbs' : ( 17, None ),
         }
 
-    for fn in filenames:
+    for file in TEST_FILES:
 
-        if fn.endswith('.bas'):
+        if file.suffix == '.bas':
             format = 'gamess'
-        elif fn.endswith('.gbs'):
+        elif file.suffix == '.gbs':
             format = 'gaussian'
         else:
             format = None
         #end if
 
-        f = open(files[fn],'r')
-        text = f.read()
-        f.close()
+        file_text = file.read_text()
 
-        bs = process_gaussian_text(text,format,pp=False)
+        basis_set = process_gaussian_text(file_text,format,pp=False)
 
-        if fn in bs_ref:
-            assert(len(bs)==bs_ref[fn])
+        if file.name in basis_refs:
+            assert(len(basis_set)==basis_refs[file.name])
         #end if
 
-        pp,bs = process_gaussian_text(text,format)
+        pseudo, basis_set = process_gaussian_text(file_text,format)
 
-        if fn in pp_ref:
-            ppr,bsr = pp_ref[fn]
-            assert(len(pp)==ppr)
-            if bsr is None:
-                assert(bs is None)
-            else:
-                assert(len(bs)==bsr)
+        if file.name in pseudo_refs:
+            pseudo_ref, basis_ref = pseudo_refs[file.name]
+            assert(len(pseudo)==pseudo_ref)
+            if basis_ref is not None:
+                assert(len(basis_set)==basis_ref)
             #end if
         #end if
     #end for
@@ -158,9 +114,6 @@ def test_process_gaussian_text():
 
 def test_gaussianbasisset():
     from ..basisset import GaussianBasisSet
-
-    filenames = get_filenames()
-    files = get_files()
 
     GaussianBasisSet()
 
@@ -173,21 +126,20 @@ def test_gaussianbasisset():
         'Fe.stuttgart_rsc_1997.0.gbs' : 15,
         }
 
-    gbs = dict()
-    for fn in filenames:
-        if 'ecp' not in fn:
-            if fn.endswith('.bas'):
+    for file in TEST_FILES:
+        if 'ecp' not in file.name:
+            if file.suffix == '.bas':
                 format = 'gamess'
-            elif fn.endswith('.gbs'):
+            elif file.suffix == '.gbs':
                 format = 'gaussian'
             else:
                 format = None
             #end if
 
-            bs = GaussianBasisSet(files[fn],format)
+            bs = GaussianBasisSet(file,format)
 
             assert(bs.name=='Fe')
-            assert(len(bs.basis)==ref[fn])
+            assert(len(bs.basis)==ref[file.name])
 
             text = bs.write(format=format)
             text = 'header line\n'+text
@@ -198,4 +150,3 @@ def test_gaussianbasisset():
         #end if
     #end for
 #end def test_gaussianbasisset
-
