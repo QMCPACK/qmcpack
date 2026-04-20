@@ -7,7 +7,6 @@ try:
 except ImportError:
     pass
 
-from .. import testing
 from ..testing import failed,FailedTest
 from ..testing import divert_nexus_log,restore_nexus_log,FakeLog
 from ..testing import value_eq,object_eq,object_neq
@@ -118,14 +117,12 @@ def test_logging():
 
 
 
-def test_intrinsics():
+def test_intrinsics(tmp_path):
     # test object_interface functions
     import os
     from ..generic import obj,object_interface
     from ..generic import generic_settings,NexusError
     from numpy import array,bool_
-
-    tpath = testing.setup_unit_test_output_directory('generic','test_intrinsics')
 
     # test object set/get
     # make a simple object
@@ -289,7 +286,9 @@ def test_intrinsics():
     assert('a' not in o2)
 
     # test save/load
-    save_file = os.path.join(tpath,'o.p')
+    tmp_dir = tmp_path / "test_intrinsics"
+    tmp_dir.mkdir(exist_ok=True)
+    save_file = tmp_dir / "o.p"
     o.save(save_file)
     o2 = obj()
     o2.load(save_file)

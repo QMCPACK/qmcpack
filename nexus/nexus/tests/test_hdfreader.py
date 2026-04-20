@@ -8,8 +8,7 @@ except ImportError:
     pass
 
 from nexus.versions import h5py_available
-from .. import testing
-from ..testing import value_eq,object_eq
+from ..testing import value_eq
 
 
 def test_import():
@@ -19,8 +18,7 @@ def test_import():
 
 
 if h5py_available:
-    def test_read():
-        import os
+    def test_read(tmp_path):
         import numpy as np
         import h5py
         from ..hdfreader import read_hdf
@@ -31,8 +29,6 @@ if h5py_available:
         das = np.array(tuple('abcdefghijklmnopqrstuvwxyz'),dtype=bytes)
         dai = np.arange(20,dtype=np.int64)
         daf = 0.1*np.arange(20,dtype=np.float64)
-
-        path = testing.setup_unit_test_output_directory('hdfreader','test_read')
 
         def add_datasets(g):
             g.create_dataset('sdata',data=das)
@@ -53,7 +49,9 @@ if h5py_available:
             return g
         #end def add_group
 
-        testfile = os.path.join(path,'test.h5')
+        tmp_dir = tmp_path / "test_read"
+        tmp_dir.mkdir(exist_ok=True)
+        testfile = tmp_dir / "test.h5"
         f = h5py.File(testfile,'w')
 
         add_datasets(f)
