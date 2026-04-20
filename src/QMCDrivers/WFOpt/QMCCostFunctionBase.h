@@ -147,7 +147,7 @@ public:
   virtual void calcOvlParmVec(const std::vector<Return_rt>& param, std::vector<Return_rt>& ovlParmVec);
 
 #ifdef HAVE_LMY_ENGINE
-  Return_rt LMYEngineCost(const bool needDeriv, cqmc::engine::LMYEngine<Return_t>* EngineObj);
+  Return_rt LMYEngineCost(const bool needDeriv, cqmc::engine::LMYEngine<Return_t>& EngineObj);
 #endif
 
   virtual void getConfigurations(const std::string& aroot) = 0;
@@ -158,7 +158,7 @@ public:
   //for SR method
   virtual void checkConfigurationsSR(EngineHandle& handle);
 #ifdef HAVE_LMY_ENGINE
-  virtual void engine_checkConfigurations(cqmc::engine::LMYEngine<Return_t>* EngineObj,
+  virtual void engine_checkConfigurations(cqmc::engine::LMYEngine<Return_t>& EngineObj,
                                           DescentEngine& descentEngineObj,
                                           const std::string& MinMethod) = 0;
 
@@ -314,7 +314,7 @@ protected:
   void resetOptimizableObjects(TrialWaveFunction& psi, const OptVariables& opt_variables) const;
 
 #ifdef HAVE_LMY_ENGINE
-  virtual Return_rt LMYEngineCost_detail(cqmc::engine::LMYEngine<Return_t>* EngineObj)
+  virtual Return_rt LMYEngineCost_detail(cqmc::engine::LMYEngine<Return_t>& EngineObj)
   {
     APP_ABORT("NOT IMPLEMENTED");
     return 0;

@@ -506,7 +506,7 @@ namespace IO {
 
 
   IOVarBase *NewASCIIVar (std::string name, IODataType newType, int ndim,
-			  Array<int,1> dims)
+			  const Array<int,1>& dims)
   {
     if (ndim == 0) {
       if (newType == DOUBLE_TYPE)
