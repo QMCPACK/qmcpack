@@ -7,7 +7,6 @@ try:
 except ImportError:
     pass
 
-from .. import testing
 from ..testing import value_eq,object_eq
 from ..testing import divert_nexus_log,restore_nexus_log
 
@@ -57,11 +56,12 @@ def test_write_splash():
     
 
 
-def test_enter_leave():
+def test_enter_leave(tmp_path):
     import os
     from ..nexus_base import NexusCore
 
-    tpath = testing.setup_unit_test_output_directory('nexus_base','test_enter_leave')
+    tmp_dir = tmp_path / "test_nexus_base_output"
+    tmp_dir.mkdir(exist_ok=True)
 
     cwd = os.getcwd()
 
@@ -69,11 +69,11 @@ def test_enter_leave():
 
     nc = NexusCore()
 
-    nc.enter(tpath)
+    nc.enter(tmp_dir)
     tcwd = os.getcwd()
-    assert(tcwd==tpath)
+    assert(tcwd==str(tmp_dir))
     assert('Entering' in log.contents())
-    assert(tpath in log.contents())
+    assert(str(tmp_dir) in log.contents())
 
     nc.leave()
     assert(os.getcwd()==cwd)
