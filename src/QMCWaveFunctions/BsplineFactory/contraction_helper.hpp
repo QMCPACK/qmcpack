@@ -15,6 +15,8 @@
 
 namespace qmcplusplus
 {
+
+/// spline evaluation result layout
 enum SoAFields3D
 {
   VAL = 0,
@@ -43,9 +45,7 @@ enum SoAFields3D
    */
 template<typename T>
 inline T SymTrace(T h00, T h01, T h02, T h11, T h12, T h22, const T gg[6])
-{
-  return h00 * gg[0] + h01 * gg[1] + h02 * gg[2] + h11 * gg[3] + h12 * gg[4] + h22 * gg[5];
-}
+{ return h00 * gg[0] + h01 * gg[1] + h02 * gg[2] + h11 * gg[3] + h12 * gg[4] + h22 * gg[5]; }
 
 /** compute vector[3]^T x matrix[3][3] x vector[3]
    *

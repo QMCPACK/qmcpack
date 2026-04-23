@@ -267,6 +267,7 @@ inline void evaluate_vgh_impl(const typename qmcplusplus::bspline_traits<T, 3>::
  */
 template<typename T>
 inline void evaluate_vgh_impl_v2(const typename qmcplusplus::bspline_traits<T, 3>::SplineType* restrict spline_m,
+                                 const T* restrict spline_coefs,
                                  int ix,
                                  int iy,
                                  int iz,
@@ -301,7 +302,7 @@ inline void evaluate_vgh_impl_v2(const typename qmcplusplus::bspline_traits<T, 3
   for (int i = 0; i < 4; i++)
     for (int j = 0; j < 4; j++)
     {
-      const T* restrict coefs = spline_m->coefs + ((ix + i) * xs + (iy + j) * ys + iz * zs);
+      const T* restrict coefs = spline_coefs + ((ix + i) * xs + (iy + j) * ys + iz * zs);
       const T coefsv          = coefs[index];
       const T coefsvzs        = coefs[index + zs];
       const T coefsv2zs       = coefs[index + 2 * zs];
