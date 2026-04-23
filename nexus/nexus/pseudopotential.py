@@ -67,11 +67,18 @@ def pp_elem_label(filename,guard=False):
     is_elem, element = Elements.is_element(el, return_element=True)
     if guard: 
         if not is_elem:
-            error('cannot determine element for pseudopotential file: {0}\npseudopotential file names must be prefixed by an atomic symbol or label\n(e.g. Si, Si1, etc)'.format(filename))
+            error(
+                'cannot determine element for pseudopotential file: {0}\n'
+                'pseudopotential file names must be prefixed by an atomic symbol or label\n'
+                '(e.g. Si, Si1, etc)'.format(filename)
+            )
         #end if
         return elem_label, element.symbol
     else:
-        return elem_label, element.symbol, is_elem
+        if isinstance(element, Elements):
+            return elem_label, element.symbol, is_elem
+        else:
+            return elem_label, element, is_elem
     #end if
 #end def pp_elem_label
 

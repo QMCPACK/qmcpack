@@ -122,7 +122,7 @@ jobs:
 
     steps:
       - name: Checkout Action
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Configure
         run: tests/test_automation/github-actions/ci/run_step.sh configure
@@ -139,7 +139,7 @@ jobs:
 
       - name: Upload Coverage
         if: contains(matrix.jobname, 'Gcov') && github.repository_owner == 'QMCPACK'
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           files: ../qmcpack-build/coverage.xml,../qmcpack-build/python_coverage.xml
           flags: tests-deterministic # optional
@@ -161,10 +161,10 @@ jobs:
 
     steps:
       - name: Checkout Action
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set Python Version
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
@@ -223,7 +223,7 @@ jobs:
 
     steps:
       - name: Checkout Action
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Echo Debug
         run: |
