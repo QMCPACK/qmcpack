@@ -85,6 +85,54 @@ struct GaussianCombo
     }
   };
 
+  bool hasShortRangeCusp = false;
+  real_type src_rcut     = 0.0;
+  real_type src_alpha;
+  real_type src_a;
+  real_type src_c;
+  real_type src_cp;
+  real_type src_bp;
+  real_type src_d0;
+  real_type src_d1;
+  real_type src_d2;
+  real_type src_d3;
+  real_type src_d4;
+  real_type src_d5;
+  real_type src_delta = 0.0;
+
+  // The short-ranged cusp is intended to be used with transform="yes" and
+  // so it only implements the function value and first derivative at the
+  // smallest grid endpoint (which is assumed to not be in the interpolation region)
+
+  real_type evalShortRangeCusp(real_type r)
+  {
+    //real_type val = src_a * std::exp(-src_alpha * r) + src_c;
+    real_type val = src_a * std::exp(-src_alpha * r) + src_bp * r + src_cp;
+    return val;
+  }
+
+  real_type evalShortRangeInterp(real_type r)
+  {
+    //real_type val = src_a * std::exp(-src_alpha * r) + src_c;
+    real_type d0  = src_d0;
+    real_type d1  = src_d1;
+    real_type d2  = src_d2;
+    real_type d3  = src_d3;
+    real_type d4  = src_d4;
+    real_type d5  = src_d5;
+    real_type rc  = src_rcut;
+    real_type x   = r - rc;
+    real_type val = d5 * std::pow(x, 5) + d4 * std::pow(x, 4) + d3 * x * x * x + d2 * x * x + d1 * x + d0;
+    return val;
+  }
+
+  real_type evalShortRangeCusp_df(real_type r)
+  {
+    //real_type dval = -src_alpha * src_a * std::exp(-src_alpha * r);
+    real_type dval = -src_alpha * src_a * std::exp(-src_alpha * r) + src_bp;
+    return dval;
+  }
+
   ///Boolean
   bool Normalized;
   real_type L;
@@ -113,10 +161,21 @@ struct GaussianCombo
     real_type r2  = r * r;
     typename std::vector<BasicGaussian>::const_iterator it(gset.begin());
     typename std::vector<BasicGaussian>::const_iterator it_end(gset.end());
-    while (it != it_end)
+    if (r < src_rcut)
     {
-      res += (*it).f(r2);
-      ++it;
+      res = evalShortRangeCusp(r);
+    }
+    else if (r < src_rcut + src_delta)
+    {
+      res = evalShortRangeInterp(r);
+    }
+    else
+    {
+      while (it != it_end)
+      {
+        res += (*it).f(r2);
+        ++it;
+      }
     }
     return res;
   }
@@ -126,10 +185,17 @@ struct GaussianCombo
     real_type r2  = r * r;
     typename std::vector<BasicGaussian>::const_iterator it(gset.begin());
     typename std::vector<BasicGaussian>::const_iterator it_end(gset.end());
-    while (it != it_end)
+    if (r < src_rcut)
     {
-      res += (*it).df(r, r2);
-      ++it;
+      res = evalShortRangeCusp_df(r);
+    }
+    else
+    {
+      while (it != it_end)
+      {
+        res += (*it).df(r, r2);
+        ++it;
+      }
     }
     return res;
   }
@@ -139,10 +205,17 @@ struct GaussianCombo
     Y            = 0.0;
     real_type rr = r * r;
     typename std::vector<BasicGaussian>::iterator it(gset.begin()), it_end(gset.end());
-    while (it != it_end)
+    if (r < src_rcut)
     {
-      Y += (*it).f(rr);
-      ++it;
+      Y = evalShortRangeCusp(r);
+    }
+    else
+    {
+      while (it != it_end)
+      {
+        Y += (*it).f(rr);
+        ++it;
+      }
     }
     return Y;
   }
@@ -274,6 +347,8 @@ bool GaussianCombo<T>::putBasisGroupH5(hdf_archive& hin, Communicate& myComm)
   if (myComm.rank() == 0)
   {
     hin.read(NbRadFunc, "NbRadFunc");
+    hasShortRangeCusp = hin.is_group("shortrangecusp");
+    app_log() << "Has short range cusp = " << hasShortRangeCusp << std::endl;
     hin.push("radfunctions");
   }
   myComm.bcast(NbRadFunc);
@@ -307,6 +382,45 @@ bool GaussianCombo<T>::putBasisGroupH5(hdf_archive& hin, Communicate& myComm)
   reset();
   if (myComm.rank() == 0)
     hin.pop();
+
+  if (hasShortRangeCusp)
+  {
+    if (myComm.rank() == 0)
+    {
+      hin.push("shortrangecusp");
+      hin.read(src_rcut, "rcut");
+      hin.read(src_alpha, "alpha");
+      hin.read(src_a, "a");
+      //hin.read(src_c, "c");
+      hin.read(src_bp, "bp");
+      hin.read(src_cp, "cp");
+      hin.read(src_d0, "d0");
+      hin.read(src_d1, "d1");
+      hin.read(src_d2, "d2");
+      hin.read(src_d3, "d3");
+      hin.read(src_d4, "d4");
+      hin.read(src_d5, "d5");
+      hin.read(src_delta, "delta");
+      app_log() << " short range cusp rcut = " << src_rcut << " alpha = " << src_alpha << " a = " << src_a
+                << " src_cp = " << src_cp << " delta = " << src_delta << std::endl;
+      app_log() << "      d0 = " << src_d0 << " d1  = " << src_d1 << " d2 = " << src_d2 << " d3 = " << src_d3
+                << " d4  = " << src_d4 << " d5 = " << src_d5 << std::endl;
+      hin.pop();
+    }
+    myComm.bcast(hasShortRangeCusp);
+    myComm.bcast(src_rcut);
+    myComm.bcast(src_alpha);
+    myComm.bcast(src_a);
+    myComm.bcast(src_bp);
+    myComm.bcast(src_cp);
+    myComm.bcast(src_d0);
+    myComm.bcast(src_d1);
+    myComm.bcast(src_d2);
+    myComm.bcast(src_d3);
+    myComm.bcast(src_d4);
+    myComm.bcast(src_d5);
+    myComm.bcast(src_delta);
+  }
 
   return true;
 }
