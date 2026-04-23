@@ -16,7 +16,6 @@ endfunction()
 
 # Ensure we have a compatible version of Pytest for Nexus's testing.
 function(CHECK_PYTEST_VERSION pytest_version_ok)
-  message("Checking pytest version >= 6.2.4")
   execute_process(COMMAND ${Python3_EXECUTABLE} -m pytest --version
                   RESULT_VARIABLE PYTEST_VERSION_RESULT
                   OUTPUT_VARIABLE PYTEST_VERSION
@@ -29,12 +28,12 @@ function(CHECK_PYTEST_VERSION pytest_version_ok)
     string(REPLACE "pytest " "" PYTEST_VERSION ${PYTEST_VERSION_ERROR})
   endif()
   if(PYTEST_VERSION VERSION_GREATER_EQUAL "6.2.4")
-    message("Pytest version ${PYTEST_VERSION} found, continuing...")
+    message(STATUS "Found compatible Pytest version ${PYTEST_VERSION}")
     set(${pytest_version_ok}
         TRUE
         CACHE BOOL "" FORCE)
   else()
-    message("Pytest version ${PYTEST_VERSION} found, tests will not be added!")
+    message(STATUS "Incompatible Pytest version ${PYTEST_VERSION} found, tests will not be added. Required version >= 6.2.4 ")
     set(${pytest_version_ok}
         FALSE
         CACHE BOOL "" FORCE)
