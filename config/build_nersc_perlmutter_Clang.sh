@@ -8,20 +8,20 @@ set -e
 
 usage() {
   cat << EOF >&2
-Usage: $0 [-s <source_dir>] [-i <install_dir>] [-e <espresso_dir>] [-p <python_env>] [-t <cpu|gpu>] [-f] [-m] [-r] [-c] [-h]
+Usage: $0 [-s <source_dir>] [-i <install_dir>] [-e <espresso_dir>] [-p <python_env>] [-t <cpu|gpu>] [-fmrc] [-h]
 
--s <source_dir>      Location of the QMCPACK source code.
--i <install_dir>     Directory to install to.
--e <espresso_dir>    Location of the bin directory of a Quantum ESPRESSO build with pw2qmcpack.x (adds QE tests).
--p <python_env>      Location of a Python environment with Nexus installed.
--t <cpu|gpu>         Target CPU or GPU variants only, if not specified then build all.
--f                   Only build Full Precision variants.
--m                   Only build Mixed Precision variants.
--r                   Only build Real variants.
--c                   Only build Complex variants.
+-s <source_dir>      Location of the QMCPACK source code. (Defaults to working directory)
+-i <install_dir>     Directory to install to (affects -DCMAKE_INSTALL_PREFIX).
+-e <espresso_dir>    Location of the bin directory of a Quantum ESPRESSO build with pw2qmcpack.x (sets -DQE_BIN).
+-p <python_env>      Location of a Python environment with Nexus installed (used to set -DPython3_EXECUTABLE).
+-t <cpu|gpu>         Target CPU or GPU variants only, if not specified then build all (gpu sets -DQMC_GPU_ARCHS=sm_80).
+-f                   Only build Full Precision variants (disables Mixed Precision variants).
+-m                   Only build Mixed Precision variants (disables Full Precision variants).
+-r                   Only build Real variants (Disables Complex variants).
+-c                   Only build Complex variants (Disables Real variants).
 -h                   Display this help and exit.
 
-This script will build all currently available variants of QMCPACK unless specified through the -r setting.
+This script will build all currently available variants of QMCPACK unless otherwise specified.
 
 The current build variants are:
 
