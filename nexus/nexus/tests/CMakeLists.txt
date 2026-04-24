@@ -43,6 +43,8 @@ if(ADD_TEST)
         break()
       else()
         # If the last attempt to cut off the collection early didn't catch the warnings, this will.
+        # The warning line looks like
+        # =================================== warnings summary ===================================
         string(FIND "${TESTFILE}" "=============================" WARNLINE)
         if(NOT WARNLINE EQUAL -1)
           break()
