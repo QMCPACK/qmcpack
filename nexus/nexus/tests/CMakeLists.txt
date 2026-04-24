@@ -6,7 +6,7 @@ check_python_reqs("numpy;pytest" "nexus base" ADD_TEST)
 
 if(ADD_TEST)
   message("Generating Nexus test list")
-  execute_process(COMMAND ${Python3_EXECUTABLE} -m pytest --collect-only -qq ${qmcpack_SOURCE_DIR}/nexus/nexus/tests
+  execute_process(COMMAND ${Python3_EXECUTABLE} -m pytest --collect-only -qq --disable-warnings ${qmcpack_SOURCE_DIR}/nexus/nexus/tests
                   RESULT_VARIABLE NEXUS_TESTLIST_RESULT OUTPUT_VARIABLE NEXUS_TESTLIST)
   if(NOT NEXUS_TESTLIST_RESULT EQUAL 0)
     message(FATAL_ERROR "Command line ' ${Python3_EXECUTABLE} -m pytest --collect-only -qq ${qmcpack_SOURCE_DIR}/nexus/nexus/tests ' failed!")
@@ -39,17 +39,6 @@ if(ADD_TEST)
     add_test_labels(ntest_nexus_coverage_all TEST_LABELS)
   else()
     foreach(TESTFILE IN LISTS NEXUS_TESTLIST)
-      if("${TESTFILE}" STREQUAL "") # Empty lines should be skipped. They usually precede warnings.
-        break()
-      else()
-        # If the last attempt to cut off the collection early didn't catch the warnings, this will.
-        # The warning line looks like
-        # =================================== warnings summary ===================================
-        string(FIND "${TESTFILE}" "=============================" WARNLINE)
-        if(NOT WARNLINE EQUAL -1)
-          break()
-        endif()
-      endif()
       string(REGEX REPLACE "\.py:.*[0-9]" "" TESTFILE "${TESTFILE}")
       string(REPLACE "nexus/tests/test_" "" TESTNAME "${TESTFILE}")
       #message("Adding test ntest_nexus_${TESTNAME}")
