@@ -353,6 +353,8 @@ In general it is safe to ignore these warnings as they likely do not affect the 
     If you are planning on adding a new feature to Nexus, it is **strongly** encouraged to add a test for the new feature.
     Additionally, if you are planning on changing an existing Nexus feature, you must ensure that you either write a test for it, update the existing test, or ensure that your changes do not fail the existing test; your changes will not get merged otherwise!
 
+If you have installed Nexus through ``pip`` or ``uv``, you can still use the ``nxs-test`` executable to test Nexus, however in the future this executable will be repurposed to simply call ``pytest``.
+
 Developer Topics
 ----------------
 
