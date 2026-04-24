@@ -291,7 +291,7 @@ void SplineR2R<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_
 
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = 0; index < last - first; index++)
-          spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, first + index, a, b, c,
+          spline2offload::evaluate_v_impl_v2(spline_ptr, spline_ptr->coefs, ix, iy, iz, first + index, a, b, c,
                                              offload_scratch_iat_ptr + first + index);
       }
 
@@ -492,8 +492,9 @@ void SplineR2R<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPO
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = 0; index < last - first; index++)
         {
-          spline2offload::evaluate_vgh_impl_v2(spline_ptr, ix, iy, iz, first + index, a, b, c, da, db, dc, d2a, d2b,
-                                               d2c, offload_scratch_iw_ptr + first + index, spline_padded_size);
+          spline2offload::evaluate_vgh_impl_v2(spline_ptr, spline_ptr->coefs, ix, iy, iz, first + index, a, b, c, da,
+                                               db, dc, d2a, d2b, d2c, offload_scratch_iw_ptr + first + index,
+                                               spline_padded_size);
         }
       }
 

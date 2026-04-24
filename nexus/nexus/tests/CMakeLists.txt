@@ -6,13 +6,14 @@ check_python_reqs("numpy;pytest" "nexus base" ADD_TEST)
 
 if(ADD_TEST)
   message("Generating Nexus test list")
-  execute_process(COMMAND ${Python3_EXECUTABLE} -m pytest --collect-only -qq ${qmcpack_SOURCE_DIR}/nexus/nexus/tests
-                  COMMAND tr "\\n" "\;" # Join into a single line with semicolon separators
+  execute_process(COMMAND ${Python3_EXECUTABLE} -m pytest --collect-only -qq --disable-warnings ${qmcpack_SOURCE_DIR}/nexus/nexus/tests
                   RESULT_VARIABLE NEXUS_TESTLIST_RESULT OUTPUT_VARIABLE NEXUS_TESTLIST)
   if(NOT NEXUS_TESTLIST_RESULT EQUAL 0)
-    message(FATAL_ERROR "Command line ' ${Python3_EXECUTABLE} -m pytest --collect-only -qq ${qmcpack_SOURCE_DIR}/nexus/nexus/tests | tr '\\n' '\;' ' failed!")
+    message(FATAL_ERROR "Command line ' ${Python3_EXECUTABLE} -m pytest --collect-only -qq ${qmcpack_SOURCE_DIR}/nexus/nexus/tests ' failed!")
   endif()
 
+  string(REPLACE "\n" ";" NEXUS_TESTLIST "${NEXUS_TESTLIST}") # Join into a single line with semicolon separators
+  list(REMOVE_ITEM NEXUS_TESTLIST "") # remove empty entries
   set(CACHE_NEXUS_TESTLIST
       ${NEXUS_TESTLIST}
       CACHE INTERNAL "NEXUS_TESTLIST cache variable" FORCE)
@@ -37,17 +38,13 @@ if(ADD_TEST)
     set(TEST_LABELS "")
     add_test_labels(ntest_nexus_coverage_all TEST_LABELS)
   else()
-    foreach(TESTFILE ${NEXUS_TESTLIST})
-      string(REGEX REPLACE ": [0-9][0-9]?" "" TESTFILE ${TESTFILE})
-      string(REPLACE "nexus/tests/" "" TESTFILE ${TESTFILE})
-      string(REPLACE "nexus/" "" TESTFILE ${TESTFILE})
-
-      string(REPLACE "test_" "" TESTNAME ${TESTFILE})
-      string(REPLACE ".py" "" TESTNAME ${TESTNAME})
+    foreach(TESTFILE IN LISTS NEXUS_TESTLIST)
+      string(REGEX REPLACE "\.py:.*[0-9]" "" TESTFILE "${TESTFILE}")
+      string(REPLACE "nexus/tests/test_" "" TESTNAME "${TESTFILE}")
       #message("Adding test ntest_nexus_${TESTNAME}")
 
       add_test(NAME ntest_nexus_${TESTNAME}
-               COMMAND ${Python3_EXECUTABLE} -m ${NTEST} ${qmcpack_SOURCE_DIR}/nexus/nexus/tests/${TESTFILE} -c ${qmcpack_SOURCE_DIR}/nexus/pyproject.toml
+               COMMAND ${Python3_EXECUTABLE} -m ${NTEST} ${qmcpack_SOURCE_DIR}/nexus/${TESTFILE}.py -c ${qmcpack_SOURCE_DIR}/nexus/pyproject.toml
               )
       set_tests_properties(ntest_nexus_${TESTNAME} PROPERTIES ENVIRONMENT PYTHONPATH=$ENV{PYTHONPATH})
       set_property(
@@ -63,5 +60,5 @@ if(ADD_TEST)
     endforeach()
   endif()
 else()
-  message("Skipping Nexus tests because numpy and/or pytest is not present in python installation")
+  message(WARNING "Skipping Nexus tests because python numpy package and/or pytest were not found")
 endif()

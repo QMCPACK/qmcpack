@@ -125,67 +125,9 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(const ProjectData& pr
   m_param.add(cost_increase_tol, "cost_increase_tol");
   m_param.add(target_shift_i, "target_shift_i");
   m_param.add(param_tol, "alloweddifference");
-
-#ifdef HAVE_LMY_ENGINE
-  //app_log() << "construct QMCFixedSampleLinearOptimize" << endl;
-  std::vector<double> shift_scales(3, 1.0);
-  EngineObj = new cqmc::engine::LMYEngine<ValueType>(&vdeps,
-                                                     false, // exact sampling
-                                                     true,  // ground state?
-                                                     false, // variance correct,
-                                                     true,
-                                                     true,  // print matrices,
-                                                     true,  // build matrices
-                                                     false, // spam
-                                                     false, // use var deps?
-                                                     true,  // chase lowest
-                                                     false, // chase closest
-                                                     false, // eom
-                                                     false,
-                                                     false,  // eom related
-                                                     false,  // eom related
-                                                     false,  // use block?
-                                                     120000, // number of samples
-                                                     0,      // number of parameters
-                                                     60,     // max krylov iter
-                                                     0,      // max spam inner iter
-                                                     1,      // spam appro degree
-                                                     0,      // eom related
-                                                     0,      // eom related
-                                                     0,      // eom related
-                                                     0.0,    // omega
-                                                     0.0,    // var weight
-                                                     1.0e-6, // convergence threshold
-                                                     0.99,   // minimum S singular val
-                                                     0.0, 0.0,
-                                                     10.0, // max change allowed
-                                                     1.00, // identity shift
-                                                     1.00, // overlap shift
-                                                     0.3,  // max parameter change
-                                                     shift_scales, app_log());
-#endif
-
-
-  //   stale parameters
-  //   m_param.add(eigCG,"eigcg");
-  //   m_param.add(TotalCGSteps,"cgsteps");
-  //   m_param.add(w_beta,"beta");
-  //   quadstep=-1.0;
-  //   m_param.add(quadstep,"quadstep");
-  //   m_param.add(stepsize,"stepsize");
-  //   m_param.add(exp1,"exp1");
-  //   m_param.add(StabilizerMethod,"StabilizerMethod");
-  //   m_param.add(LambdaMax,"LambdaMax");
-  //Set parameters for line minimization:
 }
 
-/** Clean up the vector */
-QMCFixedSampleLinearOptimize::~QMCFixedSampleLinearOptimize()
-{
-#ifdef HAVE_LMY_ENGINE
-  delete EngineObj;
-#endif
-}
+QMCFixedSampleLinearOptimize::~QMCFixedSampleLinearOptimize() = default;
 
 QMCFixedSampleLinearOptimize::RealType QMCFixedSampleLinearOptimize::Func(RealType dl)
 {
@@ -572,19 +514,56 @@ bool QMCFixedSampleLinearOptimize::processOptXML(xmlNodePtr opt_xml, const std::
   previous_optimizer_type_ = current_optimizer_type_;
   current_optimizer_type_  = OptimizerNames.at(MinMethod);
 
+#ifdef HAVE_LMY_ENGINE
+  if (!EngineObj &&
+      (current_optimizer_type_ == OptimizerType::DESCENT || current_optimizer_type_ == OptimizerType::ADAPTIVE))
+  {
+    //app_log() << "construct QMCFixedSampleLinearOptimize" << endl;
+    std::vector<double> shift_scales(3, 1.0);
+    EngineObj = std::make_unique<cqmc::engine::LMYEngine<ValueType>>(&vdeps,
+                                                                     false, // exact sampling
+                                                                     true,  // ground state?
+                                                                     false, // variance correct,
+                                                                     true,
+                                                                     true,  // print matrices,
+                                                                     true,  // build matrices
+                                                                     false, // spam
+                                                                     false, // use var deps?
+                                                                     true,  // chase lowest
+                                                                     false, // chase closest
+                                                                     false, // eom
+                                                                     false,
+                                                                     false,  // eom related
+                                                                     false,  // eom related
+                                                                     false,  // use block?
+                                                                     120000, // number of samples
+                                                                     0,      // number of parameters
+                                                                     60,     // max krylov iter
+                                                                     0,      // max spam inner iter
+                                                                     1,      // spam appro degree
+                                                                     0,      // eom related
+                                                                     0,      // eom related
+                                                                     0,      // eom related
+                                                                     0.0,    // omega
+                                                                     0.0,    // var weight
+                                                                     1.0e-6, // convergence threshold
+                                                                     0.99,   // minimum S singular val
+                                                                     0.0, 0.0,
+                                                                     10.0, // max change allowed
+                                                                     1.00, // identity shift
+                                                                     1.00, // overlap shift
+                                                                     0.3,  // max parameter change
+                                                                     shift_scales, app_log());
+  }
+#endif
+
   if (current_optimizer_type_ == OptimizerType::DESCENT)
   {
     if (!descentEngineObj)
-    {
       descentEngineObj = std::make_unique<DescentEngine>(myComm, opt_xml);
-    }
-
     else
-    {
       descentEngineObj->processXML(opt_xml);
-    }
   }
-
 
   // sanity check
   if (targetExcited && current_optimizer_type_ != OptimizerType::ADAPTIVE &&
@@ -1002,7 +981,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
   EngineObj->reset();
 
   // generate samples and compute weights, local energies, and derivative vectors
-  engine_start(EngineObj, *descentEngineObj, MinMethod);
+  engine_start(*EngineObj, *descentEngineObj, MinMethod);
 
   // get dimension of the linear method matrices
   size_t N = numParams + 1;
@@ -1039,7 +1018,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
     finish();
 
     // take sample
-    engine_start(EngineObj, *descentEngineObj, MinMethod);
+    engine_start(*EngineObj, *descentEngineObj, MinMethod);
   }
 
   // say what we are doing
@@ -1135,7 +1114,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
   for (int i = 0; i < numParams; i++)
     optTarget->Params(i) = currParams.at(i) - parameterDirections.at(central_index).at(i + 1);
   optTarget->IsValid      = true;
-  const RealType initCost = optTarget->LMYEngineCost(false, EngineObj);
+  const RealType initCost = optTarget->LMYEngineCost(false, *EngineObj);
 
   // compute the update directions for the smaller and larger shifts relative to that of the middle shift
   for (int i = 0; i < numParams; i++)
@@ -1156,7 +1135,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
     for (int i = 0; i < numParams; i++)
       optTarget->Params(i) = currParams.at(i) + (k == central_index ? 0.0 : parameterDirections.at(k).at(i + 1));
     optTarget->IsValid = true;
-    costValues.at(k)   = optTarget->LMYEngineCost(false, EngineObj);
+    costValues.at(k)   = optTarget->LMYEngineCost(false, *EngineObj);
     good_update.at(k) =
         (good_update.at(k) && std::abs((initCost - costValues.at(k)) / initCost) < max_relative_cost_change);
     if (!good_update.at(k))
@@ -1417,8 +1396,7 @@ bool QMCFixedSampleLinearOptimize::descent_run()
   optTarget->setneedGrads(true);
 
   //Compute Lagrangian derivatives needed for parameter updates with engine_checkConfigurations, which is called inside engine_start
-  engine_start(EngineObj, *descentEngineObj, MinMethod);
-
+  engine_start(*EngineObj, *descentEngineObj, MinMethod);
 
   int descent_num = descentEngineObj->getDescentNum();
 
@@ -1540,7 +1518,7 @@ void QMCFixedSampleLinearOptimize::start()
 }
 
 #ifdef HAVE_LMY_ENGINE
-void QMCFixedSampleLinearOptimize::engine_start(cqmc::engine::LMYEngine<ValueType>* EngineObj,
+void QMCFixedSampleLinearOptimize::engine_start(cqmc::engine::LMYEngine<ValueType>& EngineObj,
                                                 DescentEngine& descentEngineObj,
                                                 std::string MinMethod)
 {

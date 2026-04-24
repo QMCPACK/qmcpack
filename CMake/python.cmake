@@ -16,14 +16,28 @@ endfunction()
 
 # Ensure we have a compatible version of Pytest for Nexus's testing.
 function(CHECK_PYTEST_VERSION pytest_version_ok)
-  message("Checking pytest version >= 6.2.4")
-  execute_process(
-    COMMAND ${Python3_EXECUTABLE} ${qmcpack_SOURCE_DIR}/tests/scripts/test_pytest_version.py
-    OUTPUT_VARIABLE TMP_OUTPUT_VAR
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
-  set(${pytest_version_ok}
-      ${TMP_OUTPUT_VAR}
-      CACHE BOOL "" FORCE)
+  execute_process(COMMAND ${Python3_EXECUTABLE} -m pytest --version
+                  RESULT_VARIABLE PYTEST_VERSION_RESULT
+                  OUTPUT_VARIABLE PYTEST_VERSION
+                  ERROR_VARIABLE PYTEST_VERSION_ERROR
+                  OUTPUT_STRIP_TRAILING_WHITESPACE)
+  if(PYTEST_VERSION)
+    string(REPLACE "pytest " "" PYTEST_VERSION ${PYTEST_VERSION})
+  else()
+    # Old versions of pytest put the version output in stderr for some reason
+    string(REPLACE "pytest " "" PYTEST_VERSION ${PYTEST_VERSION_ERROR})
+  endif()
+  if(PYTEST_VERSION VERSION_GREATER_EQUAL "6.2.4")
+    message(STATUS "Found compatible Pytest version ${PYTEST_VERSION}")
+    set(${pytest_version_ok}
+        TRUE
+        CACHE BOOL "" FORCE)
+  else()
+    message(STATUS "Incompatible Pytest version ${PYTEST_VERSION} found, tests will not be added. Required version >= 6.2.4 ")
+    set(${pytest_version_ok}
+        FALSE
+        CACHE BOOL "" FORCE)
+  endif()
 endfunction()
 
 # Test python module prerequisites for a particular test script
@@ -52,14 +66,15 @@ function(CHECK_PYTHON_REQS module_list test_name add_test)
       set(${add_test}
           false
           PARENT_SCOPE)
-    endif()
-    if(${python_module} STREQUAL "pytest")
-      check_pytest_version(pytest_version_ok)
-      if(NOT ${pytest_version_ok})
-        message("Pytest version < 6.2.4 found, will not add Nexus tests")
-        set(${add_test}
-            false
-            PARENT_SCOPE)
+    else()
+      if(${python_module} STREQUAL "pytest")
+        check_pytest_version(pytest_version_ok)
+        if(NOT ${pytest_version_ok})
+          message("Pytest version < 6.2.4 found, will not add Nexus tests")
+          set(${add_test}
+              false
+              PARENT_SCOPE)
+        endif()
       endif()
     endif()
   endforeach()

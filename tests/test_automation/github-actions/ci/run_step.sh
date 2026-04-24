@@ -363,7 +363,9 @@ case "$1" in
     cd ${GITHUB_WORKSPACE}/../qmcpack-build
     # filter unreachable branches with gcovr
     # see https://gcovr.com/en/stable/faq.html#why-does-c-code-have-so-many-uncovered-branches
-    gcovr --exclude-unreachable-branches --exclude-throw-branches --root=${GITHUB_WORKSPACE}/.. --xml-pretty -o coverage.xml
+    # set suspicious hits threshold=2^40
+    # see https://gcovr.com/en/stable/manpage.html#gcov-options
+    gcovr --exclude-unreachable-branches --exclude-throw-branches --gcov-ignore-parse-errors=suspicious_hits.warn_once_per_file --gcov-suspicious-hits-threshold=1099511627776 --root=${GITHUB_WORKSPACE}/.. --xml-pretty -o coverage.xml
     du -hs coverage.xml
     #cat coverage.xml
     python3-coverage combine nexus/nexus/tests/.coverage*

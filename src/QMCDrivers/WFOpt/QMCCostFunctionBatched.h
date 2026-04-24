@@ -54,7 +54,7 @@ public:
   void checkConfigurations(EngineHandle& handle) override;
   void checkConfigurationsSR(EngineHandle& handle) override;
 #ifdef HAVE_LMY_ENGINE
-  void engine_checkConfigurations(cqmc::engine::LMYEngine<Return_t>* EngineObj,
+  void engine_checkConfigurations(cqmc::engine::LMYEngine<Return_t>& EngineObj,
                                   DescentEngine& descentEngineObj,
                                   const std::string& MinMethod) override;
 #endif
@@ -94,7 +94,7 @@ protected:
 
 #ifdef HAVE_LMY_ENGINE
   size_t total_samples();
-  Return_rt LMYEngineCost_detail(cqmc::engine::LMYEngine<Return_t>* EngineObj) override;
+  Return_rt LMYEngineCost_detail(cqmc::engine::LMYEngine<Return_t>& EngineObj) override;
 #endif
 
   friend testing::LinearMethodTestSupport;
