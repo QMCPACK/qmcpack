@@ -145,6 +145,10 @@ unsupported and untested by the developers although they may still work.
 Many of the utilities provided with QMCPACK require Python (v3). The numpy and matplotlib libraries are required for full
 functionality.
 
+.. note::
+
+  We additionally recommend installing ``pytest`` for testing Python code, such as that in Nexus, however this is not a requirement for QMCPACK.
+
 Nightly testing currently includes at least the following software versions:
 
 * Compilers
@@ -160,8 +164,9 @@ Nightly testing currently includes at least the following software versions:
 * OpenMPI 5.0.6
 * CUDA 12.6
 * ROCm 6.4.0
-* Python 3.13.2
-* NumPy 2.2.5
+* Python 3.10.6, 3.12.3, 3.13.2
+* NumPy 1.26.4, 2.2.5
+* Pytest 6.2.5, 7.4.4
 
 For GPU acceleration on NVIDIA GPUs we test LLVM with CUDA using the above versions. On AMD GPUs we support using the latest ROCm
 version and its matching amdclang compiler, as listed above. On Intel GPUs we test the up-to-date OneAPI release.
@@ -450,7 +455,7 @@ See :ref:`Sanitizer-Libraries` for more information.
   ::
 
     ENABLE_GCOV  OFF(default)/ON, build with C++ source code line coverage measurement using gcov
-    ENABLE_PYCOV OFF(default)/ON, build with Python source code line coverage measurement using coverage.py
+    ENABLE_PYCOV OFF(default)/ON, build with Python source code line coverage measurement using coverage.py and/or pytest
 
 
 Installation from CMake
