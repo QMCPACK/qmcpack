@@ -24,6 +24,8 @@ if __name__ == "__main__":
     test_dir = Path(__file__).resolve().parent.parent / "tests"
 
     try:
+        # This makes the output from pytest cleaner in that it doesn't print
+        # the full path from the user's CWD to the Nexus libraries.
         os.chdir(test_dir)
     except PermissionError:
         pass
