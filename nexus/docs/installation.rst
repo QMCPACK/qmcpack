@@ -266,7 +266,7 @@ Testing your Nexus installation
 -------------------------------
 
 Nexus's testing suite is designed to run with ``pytest >= 6.2.4``.
-We additionally make use of the ``pytest-cov`` and ``pytest-order`` plugins, however these are both optional and will not cause test failure if they are not installed.
+We make optional use of the ``pytest-cov`` and ``pytest-order`` plugins. They will not cause test failure if they are not installed.
 
 To run the tests with ``pytest`` (``pip install --user pytest``), enter the ``nexus`` directory and simply invoke the ``pytest`` command:
 
@@ -349,10 +349,8 @@ Additionally, you may see a number of warnings appear; some of these may be warn
 In general it is safe to ignore these warnings as they likely do not affect the functionality of Nexus.
 
 .. note::
-    If you are planning on adding a new feature to Nexus, it is **strongly** encouraged to add a test for the new feature.
+    If you are planning on adding a new feature to Nexus, please add a test for the new feature.
     Additionally, if you are planning on changing an existing Nexus feature, you must ensure that you either write a test for it, update the existing test, or ensure that your changes do not fail the existing test; your changes will not get merged otherwise!
-
-If you have installed Nexus through ``pip`` or ``uv``, you can still use the ``nxs-test`` executable to test Nexus, however in the future this executable will be repurposed to simply call ``pytest``.
 
 Developer Topics
 ----------------
