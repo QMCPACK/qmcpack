@@ -7,8 +7,7 @@ try:
 except ImportError:
     pass
 
-from .. import testing
-from ..testing import value_eq,object_eq,text_eq,check_object_eq
+from ..testing import check_object_eq
 from ..testing import FailedTest,failed
 
 
