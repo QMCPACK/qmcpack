@@ -668,8 +668,8 @@ def generate_physical_system(**kwargs):
     if 'structure' in kwargs:
         s = kwargs['structure']
         is_str = isinstance(s,str)
-        if is_str:
-            if is_str or isinstance(s, Path):
+        if is_str or isinstance(s, Path):
+            if os.path.exists(s):
                 if 'elem' in kwargs:
                     s = read_structure(s,elem=kwargs['elem'])
                 else:
