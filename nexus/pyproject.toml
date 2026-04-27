@@ -70,6 +70,8 @@ omit = [
 #addopts = ["--cov=nexus", "--cov-report=xml"]
 filterwarnings = [
     "ignore::UserWarning",
+    "ignore::DeprecationWarning:spglib.*",
+    "ignore:::.*.CifFile",
 ]
 testpaths = ["nexus/tests"]
 xfail_strict = true

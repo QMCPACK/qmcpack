@@ -9,10 +9,10 @@ except ImportError:
 
 from ..testing import failed,FailedTest
 from ..testing import divert_nexus_log,restore_nexus_log,FakeLog
-from ..testing import value_eq,object_eq,object_neq
+from ..testing import object_eq,object_neq
 
 def test_logging():
-    from ..generic import log,message,warn,error
+    from ..generic import log,warn,error
     from ..generic import generic_settings,NexusError
 
     # send messages to object rather than stdout

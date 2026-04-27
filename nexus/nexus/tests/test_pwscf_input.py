@@ -10,7 +10,7 @@ except ImportError:
 from .. import testing
 from ..testing import failed
 from ..testing import divert_nexus_log,restore_nexus_log
-from ..testing import value_eq,object_eq,object_diff
+from ..testing import object_eq,object_diff
 
 
 associated_files = dict()
@@ -60,7 +60,6 @@ def test_input():
     # imports
     import os
     import numpy as np
-    from .. import pwscf_input as pwi
     from ..developer import obj
     from ..structure import read_structure
     from ..physical_system import generate_physical_system

@@ -16,7 +16,6 @@ def test_import():
 
 
 def test_periodic_table():
-    from ..testing import value_eq
     from ..periodic_table import Elements
 
     ref_element_symbols = (

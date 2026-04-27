@@ -500,7 +500,7 @@ def get_props():
 
 def test_grid_initialization():
     import numpy as np
-    from ..testing import object_eq,value_eq
+    from ..testing import value_eq
     from ..grid_functions import Grid,StructuredGrid,StructuredGridWithAxes
     from ..grid_functions import ParallelotopeGrid
     from ..grid_functions import SpheroidGrid
@@ -662,7 +662,6 @@ def test_grid_reset():
 
 def test_grid_set_operations():
     import numpy as np
-    from ..developer import obj
     from ..testing import value_eq
     from .. import numpy_extensions as npe
 
@@ -1030,7 +1029,7 @@ def test_grid_inside():
 
 def test_grid_project():
     import numpy as np
-    from ..testing import value_eq,object_eq
+    from ..testing import object_eq
     from .. import numpy_extensions as npe
     
     def make_1d(x):
@@ -1314,9 +1313,6 @@ def test_grid_function_initialization():
     import numpy as np
     from ..testing import object_eq
     from ..grid_functions import unit_grid_points
-    from ..grid_functions import ParallelotopeGrid
-    from ..grid_functions import SpheroidGrid
-    from ..grid_functions import SpheroidSurfaceGrid
     from ..grid_functions import GridFunction
     from ..grid_functions import StructuredGridFunction
     from ..grid_functions import StructuredGridFunctionWithAxes

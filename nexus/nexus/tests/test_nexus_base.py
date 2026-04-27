@@ -7,7 +7,7 @@ try:
 except ImportError:
     pass
 
-from ..testing import value_eq,object_eq
+from ..testing import object_eq
 from ..testing import divert_nexus_log,restore_nexus_log
 
 

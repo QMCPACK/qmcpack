@@ -10,7 +10,7 @@ except ImportError:
 from .. import versions
 from .. import testing
 from ..testing import divert_nexus_log,restore_nexus_log
-from ..testing import value_eq,object_eq,text_eq,print_diff
+from ..testing import value_eq,object_eq,text_eq
 
 
 def test_import():
@@ -446,7 +446,6 @@ if versions.h5py_available:
     def test_density_analysis():
         import os
         from numpy import array
-        from ..developer import obj
         from ..qmcpack_analyzer import QmcpackAnalyzer
 
         tpath = testing.setup_unit_test_output_directory(

@@ -8,7 +8,7 @@ except ImportError:
     pass
 
 from .. import testing
-from ..testing import value_eq,object_eq,text_eq
+from ..testing import object_eq
 
 
 def test_import():
@@ -27,7 +27,7 @@ def test_empty_init():
 
 def test_analyze():
     import os
-    from numpy import array,ndarray
+    from numpy import array
     from ..developer import obj
     from ..pwscf_analyzer import PwscfAnalyzer
 
