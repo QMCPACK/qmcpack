@@ -294,7 +294,6 @@ def test_empty_init():
 
 
 def test_reference_inputs():
-    from ..developer import obj
     ref_in = get_reference_inputs()
     assert(len(ref_in)>0)
 #end def test_reference_inputs

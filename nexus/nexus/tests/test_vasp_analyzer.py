@@ -63,7 +63,7 @@ def test_analyze():
     import os
     from numpy import array,ndarray
     from ..developer import obj
-    from ..vasp_analyzer import VaspAnalyzer,VXML,VXMLcoll,OutcarData
+    from ..vasp_analyzer import VaspAnalyzer,VXML,OutcarData
 
     tpath = testing.setup_unit_test_output_directory(
         test      = 'vasp_analyzer',

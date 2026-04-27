@@ -283,7 +283,6 @@ if scipy_available:
 
     def test_convex_hull():
         import numpy as np
-        from ..testing import value_eq
         from ..numerics import convex_hull
 
         points = [
@@ -402,7 +401,6 @@ def test_equilibration_length():
 
 if scipy_available:
     def test_ttest():
-        import numpy as np
         from ..testing import value_eq
         from ..numerics import ttest
 
@@ -440,10 +438,9 @@ def test_morse():
     from ..unit_converter import convert
     from ..numerics import morse,morse_re,morse_a,morse_De,morse_Einf,morse_width
     from ..numerics import morse_depth,morse_Ee,morse_k,morse_params
-    from ..numerics import morse_reduced_mass,morse_freq,morse_w,morse_wX
+    from ..numerics import morse_reduced_mass,morse_freq,morse_w
     from ..numerics import morse_E0,morse_En,morse_zero_point,morse_harmfreq
-    from ..numerics import morse_harmonic_potential,morse_spect_fit
-    from ..numerics import morse_rDw_fit,morse_fit,morse_fit_fine
+    from ..numerics import morse_rDw_fit
 
     rm = morse_reduced_mass('Ti','O')
     assert(value_eq(rm, 21858.453534035318))
@@ -563,7 +560,7 @@ def test_eos():
     import numpy as np
     from ..testing import value_eq
     from ..unit_converter import convert
-    from ..numerics import eos_fit,eos_eval,eos_param
+    from ..numerics import eos_eval,eos_param
 
     data = np.array([
             [0.875, -83.31851261], 
@@ -610,7 +607,7 @@ if scipy_available:
         import numpy as np
         from ..testing import value_eq
         from ..unit_converter import convert
-        from ..numerics import eos_fit,eos_eval,eos_param
+        from ..numerics import eos_fit,eos_eval
 
         data = np.array([
                 [0.875, -83.31851261], 

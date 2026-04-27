@@ -8,9 +8,8 @@ except ImportError:
     pass
 
 from .. import testing
-from ..testing import divert_nexus,restore_nexus
-from ..testing import divert_nexus_log,restore_nexus_log
-from ..testing import value_eq,object_eq
+from ..testing import restore_nexus
+from ..testing import object_eq
 
 
 associated_files = dict()

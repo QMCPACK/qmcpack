@@ -9,7 +9,7 @@ except ImportError:
 
 from .. import testing
 from ..testing import failed,FailedTest
-from ..testing import value_eq,object_eq
+from ..testing import object_eq
 
 
 def test_import():
