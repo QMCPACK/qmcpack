@@ -33,6 +33,7 @@
 #====================================================================#
 
 import os
+from pathlib import Path
 from copy import deepcopy
 import numpy as np
 from .developer import DevBase, obj
@@ -668,7 +669,7 @@ def generate_physical_system(**kwargs):
         s = kwargs['structure']
         is_str = isinstance(s,str)
         if is_str:
-            if os.path.exists(s):
+            if is_str or isinstance(s, Path):
                 if 'elem' in kwargs:
                     s = read_structure(s,elem=kwargs['elem'])
                 else:
