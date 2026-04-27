@@ -7,7 +7,7 @@ try:
 except ImportError:
     pass
 
-from .. import testing
+from pathlib import Path
 from ..testing import execute
 
 
@@ -16,7 +16,7 @@ def test_redo(tmp_path):
     tmp_dir = tmp_path / "test_nxs_redo_output"
     tmp_dir.mkdir(exist_ok=True)
 
-    exe = testing.executable_path('nxs-redo')
+    exe = Path(__file__).parent.parent / "bin/nxs-redo"
 
     command = '{} {}'.format(exe,tmp_dir)
 

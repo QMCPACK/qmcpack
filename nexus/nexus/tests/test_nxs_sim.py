@@ -8,23 +8,28 @@ except ImportError:
     pass
 
 import sys
-from .. import testing
-from ..testing import restore_nexus,clear_all_sims
+from pathlib import Path
+from ..testing import divert_nexus,restore_nexus,clear_all_sims
 from ..testing import execute,text_eq
 
 
 
-def test_sim():
-    import os
+def test_sim(tmp_path):
     from ..nexus_base import nexus_core
     from .test_simulation_module import get_sim
 
-    tpath = testing.setup_unit_test_output_directory('nxs_sim','test_sim',divert=True)
+    tmp_dir = tmp_path / "test_nxs_sim_output"
+    tmp_dir.mkdir()
+
+    divert_nexus()
+    nexus_core.local_directory  = tmp_dir
+    nexus_core.remote_directory = tmp_dir
+    nexus_core.file_locations = nexus_core.file_locations + [tmp_dir]
 
     nexus_core.runs    = ''
     nexus_core.results = ''
     
-    exe = testing.executable_path('nxs-sim')
+    exe = Path(__file__).parent.parent / "bin/nxs-sim"
 
     sim = get_sim()
 
@@ -32,8 +37,8 @@ def test_sim():
 
     sim.save_image()
 
-    simp_path = os.path.join(tpath,sim.imlocdir,'sim.p')
-    assert(os.path.isfile(simp_path))
+    simp_path = (tmp_dir / sim.imlocdir / 'sim.p').resolve()
+    assert(simp_path.is_file())
 
 
     # initial simulation state
