@@ -244,7 +244,6 @@ def test_value_checks():
 
 
 def test_object_checks():
-    import numpy as np
     from ..testing import object_diff,object_eq,object_neq
 
     assert(id(object_diff)==id(object_neq))

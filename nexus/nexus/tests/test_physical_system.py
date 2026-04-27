@@ -10,7 +10,7 @@ except ImportError:
 
 import numpy as np
 from .. import testing
-from ..testing import value_eq,object_eq,object_diff,print_diff
+from ..testing import value_eq,object_eq
 
 from .test_structure import structure_same
 
@@ -45,9 +45,7 @@ def test_import():
 
 
 def test_particle_initialization():
-    from ..developer import obj
     from ..physical_system import Matter,Particle,Ion,PseudoIon,Particles
-    from ..physical_system import PhysicalSystem,generate_physical_system
 
     # empty initialization
     Matter()

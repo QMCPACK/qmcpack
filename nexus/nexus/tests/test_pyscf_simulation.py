@@ -8,9 +8,8 @@ except ImportError:
     pass
 
 from .. import testing
-from ..testing import divert_nexus,restore_nexus,clear_all_sims
+from ..testing import restore_nexus,clear_all_sims
 from ..testing import failed,FailedTest
-from ..testing import value_eq,object_eq,text_eq
 
 
 def get_pyscf_sim(**kwargs):
@@ -77,7 +76,7 @@ def test_check_result():
 
 def test_get_result():
     import os
-    from ..developer import NexusError, obj
+    from ..developer import NexusError
     from ..nexus_base import nexus_core
 
     tpath = testing.setup_unit_test_output_directory('pyscf_simulation','test_get_result',divert=True)

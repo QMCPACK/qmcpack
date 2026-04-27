@@ -8,7 +8,7 @@ except ImportError:
     pass
 
 from .. import testing
-from ..testing import value_eq,object_eq
+from ..testing import object_eq
 
 
 associated_files = dict()

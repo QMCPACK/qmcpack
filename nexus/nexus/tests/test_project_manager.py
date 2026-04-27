@@ -8,7 +8,7 @@ except ImportError:
     pass
 
 from .. import testing
-from ..testing import value_eq,object_eq
+from ..testing import value_eq
 from ..testing import failed,FailedTest
 from ..testing import divert_nexus_log,restore_nexus_log
 from ..testing import divert_nexus,restore_nexus
@@ -196,7 +196,6 @@ def test_resolve_file_collisions():
 
 
 def test_propagate_blockages():
-    from ..developer import NexusError
     from ..simulation import Simulation
     from ..project_manager import ProjectManager
 
