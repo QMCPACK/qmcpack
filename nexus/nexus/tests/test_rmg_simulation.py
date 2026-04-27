@@ -10,11 +10,6 @@ except ImportError:
 from ..testing import clear_all_sims
 
 
-def test_import():
-    from ..rmg import Rmg,generate_rmg
-#end def test_import
-
-
 
 def test_minimal_init():
     from ..machines import job

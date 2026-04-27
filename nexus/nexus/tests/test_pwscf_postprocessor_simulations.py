@@ -33,17 +33,6 @@ def get_class_generators():
 
 
 
-def test_import():
-    from ..pwscf_postprocessors import PP,generate_pp
-    from ..pwscf_postprocessors import Dos,generate_dos
-    from ..pwscf_postprocessors import Bands,generate_bands
-    from ..pwscf_postprocessors import Projwfc,generate_projwfc
-    from ..pwscf_postprocessors import Cppp,generate_cppp
-    from ..pwscf_postprocessors import Pwexport,generate_pwexport
-#end def test_import
-
-
-
 def test_minimal_init():
     from ..machines import job
 

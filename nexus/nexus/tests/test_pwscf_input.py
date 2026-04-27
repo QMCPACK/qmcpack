@@ -49,13 +49,6 @@ def test_files():
 
 
 
-def test_import():
-    from ..pwscf_input import check_new_variables,check_section_classes
-    from ..pwscf_input import PwscfInput,generate_pwscf_input
-#end def test_import
-
-
-
 def test_input():
     # imports
     import os

@@ -681,12 +681,6 @@ def test_files():
 
 
 
-def test_import():
-    from ..rmg_input import RmgInput
-#end def test_import
-
-
-
 def test_empty_init():
     from ..rmg_input import RmgInput
     ri = RmgInput()

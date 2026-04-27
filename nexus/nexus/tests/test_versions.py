@@ -8,11 +8,6 @@ except ImportError:
     pass
 
 
-def test_import():
-    from .. import versions
-#end def test_import
-
-
 
 def test_constants():
     from ..nexus_version import nexus_version

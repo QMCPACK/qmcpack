@@ -45,12 +45,6 @@ def test_files():
 
 
 
-def test_import():
-    from ..vasp_analyzer import VaspAnalyzer,VXML,OutcarData
-#end def test_import
-
-
-
 def test_empty_init():
     from ..vasp_analyzer import VaspAnalyzer
 

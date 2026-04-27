@@ -28,12 +28,6 @@ def get_pyscf_sim(**kwargs):
 
 
 
-def test_import():
-    from ..pyscf_sim import Pyscf,generate_pyscf
-#end def test_import
-
-
-
 def test_minimal_init():
     from ..machines import job
     from ..pyscf_sim import Pyscf,generate_pyscf

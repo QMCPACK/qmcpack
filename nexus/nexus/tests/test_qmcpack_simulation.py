@@ -65,12 +65,6 @@ def get_qmcpack_sim(type='rsqmc',**kwargs):
 
 
 
-def test_import():
-    from ..qmcpack import Qmcpack,generate_qmcpack
-#end def test_import
-
-
-
 def test_minimal_init():
     from ..machines import job
     from ..qmcpack import Qmcpack,generate_qmcpack
