@@ -11,7 +11,7 @@ from .. import testing
 from ..testing import value_eq,object_eq
 from ..testing import FailedTest,failed
 from ..testing import divert_nexus_log,restore_nexus_log
-from ..testing import divert_nexus,restore_nexus
+from ..testing import restore_nexus
 
 from .. import versions
 
@@ -445,7 +445,6 @@ def test_simulation_input():
 
 
 def test_simulation_analyzer():
-    import os
     from ..developer import NexusError
     from ..simulation import SimulationAnalyzer
 
@@ -607,7 +606,7 @@ file2 = "my_file.dat"
 def test_simulation_input_multi_template():
     import os
     from string import Template
-    from ..developer import obj, NexusError
+    from ..developer import obj
     from ..simulation import SimulationInput
     from ..simulation import GenericSimulationInput
     from ..simulation import SimulationInputMultiTemplate

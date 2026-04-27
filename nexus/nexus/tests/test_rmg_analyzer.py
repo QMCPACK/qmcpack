@@ -7,9 +7,6 @@ try:
 except ImportError:
     pass
 
-from .. import testing
-from ..testing import value_eq,object_eq,text_eq
-
 
 def test_import():
     from ..rmg_analyzer import RmgAnalyzer

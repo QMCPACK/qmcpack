@@ -8,9 +8,7 @@ except ImportError:
     pass
 
 from .. import testing
-from ..testing import failed
-from ..testing import divert_nexus_log,restore_nexus_log
-from ..testing import value_eq,object_eq,check_object_eq
+from ..testing import value_eq,check_object_eq
 from .. import versions
 
 

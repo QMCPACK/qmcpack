@@ -7,11 +7,7 @@ try:
 except ImportError:
     pass
 
-from .. import testing
-from ..testing import divert_nexus,restore_nexus,clear_all_sims
-from ..testing import failed,FailedTest
-from ..testing import value_eq,object_eq,text_eq
-
+from ..testing import clear_all_sims
 
 
 def test_import():

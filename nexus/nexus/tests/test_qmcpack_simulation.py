@@ -8,9 +8,9 @@ except ImportError:
     pass
 
 from .. import testing
-from ..testing import divert_nexus,restore_nexus,clear_all_sims
+from ..testing import restore_nexus,clear_all_sims
 from ..testing import failed,FailedTest
-from ..testing import value_eq,object_eq,text_eq
+from ..testing import value_eq,text_eq
 
 
 
@@ -200,7 +200,7 @@ def test_incorporate_result():
     import shutil
     from subprocess import Popen,PIPE
     from numpy import array
-    from ..developer import NexusError, obj
+    from ..developer import obj
     from ..nexus_base import nexus_core
     from .test_vasp_simulation import setup_vasp_sim as get_vasp_sim
     from .test_vasp_simulation import pseudo_inputs as vasp_pseudo_inputs
