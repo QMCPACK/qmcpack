@@ -10,15 +10,6 @@ except ImportError:
 
 from ..testing import failed,FailedTest
 
-def test_import():
-    from ..developer import log,error,warn
-    from ..developer import ci,interact
-    from ..developer import DevBase
-    from ..developer import Void
-    from ..developer import unavailable,available
-    from ..developer import valid_variable_name
-#end def test_import
-
 
 
 def test_unavailable():

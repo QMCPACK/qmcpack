@@ -8,12 +8,6 @@ except ImportError:
     pass
 
 
-def test_import():
-    from ..execute import execute
-#end def test_import
-
-
-
 def test_execute():
     from ..execute import execute
 

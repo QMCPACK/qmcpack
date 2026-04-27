@@ -8,13 +8,6 @@ except ImportError:
     pass
 
 
-def test_import():
-    from .. import periodic_table
-    from ..periodic_table import Elements
-#end def test_import
-
-
-
 def test_periodic_table():
     from ..periodic_table import Elements
 
