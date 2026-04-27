@@ -1,5 +1,15 @@
 #! /usr/bin/env python3
 
+"""This script is designed to run Nexus's test suite using Pytest.
+
+In general, it should only be run by users who have installed Nexus and
+are looking to ensure their installation works in their environment.
+
+Developers should NOT use this script to run the test suite as it will
+suppress all warnings and fail fast, which is generally not desirable
+for development.
+"""
+
 import sys
 
 try:
