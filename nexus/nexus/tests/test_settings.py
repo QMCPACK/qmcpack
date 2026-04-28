@@ -12,11 +12,6 @@ from ..testing import divert_nexus,restore_nexus
 from ..testing import value_eq,object_eq
 
 
-def test_import():
-    from nexus import settings,Settings
-#end def test_import
-
-
 def test_settings():
     # test full imports
     import os

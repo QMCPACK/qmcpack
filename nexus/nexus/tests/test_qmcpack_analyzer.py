@@ -13,11 +13,6 @@ from ..testing import divert_nexus_log,restore_nexus_log
 from ..testing import value_eq,object_eq,text_eq
 
 
-def test_import():
-    from ..qmcpack_analyzer import QmcpackAnalyzer
-#end def test_import
-
-
 
 def test_empty_init():
     from ..developer import obj

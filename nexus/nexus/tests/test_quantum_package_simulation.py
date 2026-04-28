@@ -52,12 +52,6 @@ def get_quantum_package_sim(**kwargs):
 
 
 
-def test_import():
-    from ..quantum_package import QuantumPackage,generate_quantum_package
-#end def test_import
-
-
-
 def test_minimal_init():
     sim = get_quantum_package_sim()
 

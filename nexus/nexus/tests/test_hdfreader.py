@@ -12,12 +12,6 @@ from .. import testing
 from ..testing import value_eq
 
 
-def test_import():
-    from .. import hdfreader
-    from ..hdfreader import HDFreader,read_hdf
-#end def test_import
-
-
 if h5py_available:
     def test_read():
         import os

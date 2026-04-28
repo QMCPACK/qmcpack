@@ -44,15 +44,6 @@ def test_files():
 
 
 
-def test_import():
-    from .. import basisset
-    from ..basisset import BasisSets
-    from ..basisset import process_gaussian_text
-    from ..basisset import GaussianBasisSet
-#end def test_import
-
-
-
 def test_basissets():
     from ..basisset import BasisSets
     from ..basisset import BasisFile

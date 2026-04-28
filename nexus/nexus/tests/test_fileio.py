@@ -33,16 +33,6 @@ def test_files():
 
 
 
-def test_import():
-    from .. import fileio
-    from ..fileio import TextFile
-    from ..fileio import XsfFile
-    from ..fileio import PoscarFile
-    from ..fileio import ChgcarFile
-#end def test_import
-
-
-
 def test_textfile():
     from ..fileio import TextFile
 

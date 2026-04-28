@@ -19,17 +19,6 @@ projwfc_in = '''&projwfc
 
 
 
-def test_import():
-    from ..pwscf_postprocessors import PPInput,generate_pp_input
-    from ..pwscf_postprocessors import DosInput,generate_dos_input
-    from ..pwscf_postprocessors import BandsInput,generate_bands_input
-    from ..pwscf_postprocessors import ProjwfcInput,generate_projwfc_input
-    from ..pwscf_postprocessors import CpppInput,generate_cppp_input
-    from ..pwscf_postprocessors import PwexportInput,generate_pwexport_input
-#end def test_import
-
-
-
 def test_empty_init():
     from ..pwscf_postprocessors import PPInput,generate_pp_input
     from ..pwscf_postprocessors import DosInput,generate_dos_input
