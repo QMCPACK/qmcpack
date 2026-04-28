@@ -11,11 +11,6 @@ from .. import testing
 from ..testing import object_eq
 
 
-def test_import():
-    from ..pwscf_analyzer import PwscfAnalyzer
-#end def test_import
-
-
 
 def test_empty_init():
     from ..pwscf_analyzer import PwscfAnalyzer

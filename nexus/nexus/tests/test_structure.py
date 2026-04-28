@@ -275,14 +275,6 @@ def test_files():
 
 
 
-def test_import():
-    from ..structure import Structure,Crystal
-    from ..structure import generate_structure
-    from ..structure import read_structure
-#end def test_import
-
-
-
 def test_empty_init():
     from ..structure import Structure
     from ..structure import generate_structure

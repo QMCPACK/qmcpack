@@ -12,12 +12,6 @@ from ..testing import failed,FailedTest
 from ..testing import object_eq
 
 
-def test_import():
-    from ..bundle import bundle
-    from ..bundle import SimulationBundle
-#end def test_import
-
-
 
 def test_bundle():
     from ..developer import NexusError

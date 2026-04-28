@@ -33,12 +33,6 @@ def get_pw2qmcpack_sim(**kwargs):
 
 
 
-def test_pw2qmcpack_import():
-    from ..qmcpack_converters import Pw2qmcpack,generate_pw2qmcpack
-#end def test_pw2qmcpack_import
-
-
-
 def test_pw2qmcpack_minimal_init():
     from ..machines import job
     from ..qmcpack_converters import Pw2qmcpack,generate_pw2qmcpack

@@ -8,12 +8,6 @@ except ImportError:
     pass
 
 
-def test_import():
-    from ..memory import memory,resident,stacksize
-#end def test_import
-
-
-
 def test_memory():
     from ..memory import memory
 

@@ -8,13 +8,6 @@ except ImportError:
     pass
 
 
-def test_import():
-    from ..testing import value_diff,object_diff
-    from ..testing import value_eq,object_eq
-    from ..testing import value_neq,object_neq
-#end def test_import
-
-
 
 def test_value_checks():
     import numpy as np

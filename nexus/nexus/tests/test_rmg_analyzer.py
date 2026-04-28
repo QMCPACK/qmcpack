@@ -8,11 +8,6 @@ except ImportError:
     pass
 
 
-def test_import():
-    from ..rmg_analyzer import RmgAnalyzer
-#end def test_import
-
-
 
 def test_empty_init():
     from ..rmg_analyzer import RmgAnalyzer

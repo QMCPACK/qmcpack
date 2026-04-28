@@ -380,21 +380,6 @@ def get_test_workflow(index,**kwargs):
 
 
 
-
-def test_import():
-    from .. import simulation
-    from ..simulation import Simulation,SimulationInput,SimulationAnalyzer
-    from ..simulation import SimulationImage
-    from ..simulation import NullSimulationInput,NullSimulationAnalyzer
-    from ..simulation import GenericSimulation
-    from ..simulation import SimulationInputTemplate
-    from ..simulation import SimulationInputMultiTemplate
-    from ..simulation import input_template,multi_input_template
-    from ..simulation import generate_simulation
-#end def test_import
-
-
-
 def test_simulation_input():
     import os
     from ..developer import NexusError

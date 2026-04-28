@@ -78,12 +78,6 @@ def get_pwscf_sim(type='scf'):
 
 
 
-def test_import():
-    from ..pwscf import Pwscf,generate_pwscf
-#end def test_import
-
-
-
 def test_minimal_init():
     from ..machines import job
     from ..pwscf import Pwscf,generate_pwscf

@@ -8,13 +8,6 @@ except ImportError:
     pass
 
 
-def test_imports():
-    import numpy
-    from .. import testing
-    from .. import grid_functions
-#end def test_imports
-
-
 def test_coord_conversion():
 
     import numpy as np
