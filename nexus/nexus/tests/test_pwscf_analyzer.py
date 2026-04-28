@@ -9,7 +9,6 @@ except ImportError:
 
 from .. import testing
 from ..testing import object_eq
-#end def test_import
 
 
 
