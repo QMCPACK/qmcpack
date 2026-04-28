@@ -364,7 +364,7 @@ def test_write_simulation_status():
 
 
 
-def test_run_project():
+def test_run_project(tmp_path):
     from ..generic import generic_settings
     from ..nexus_base import nexus_core
     from ..simulation import Simulation,input_template
@@ -372,7 +372,13 @@ def test_run_project():
 
     from .test_simulation_module import get_test_workflow,n_test_workflows
 
-    tpath = testing.setup_unit_test_output_directory('project_manager','test_run_project',divert=True)
+    tmp_dir = tmp_path / "project_manager"
+    tmp_dir.mkdir()
+
+    divert_nexus()
+    nexus_core.local_directory  = tmp_dir
+    nexus_core.remote_directory = tmp_dir
+    nexus_core.file_locations = nexus_core.file_locations + [tmp_dir]
 
     assert(nexus_core.mode==nexus_core.modes.stages)
     assert(len(nexus_core.stages)==0)

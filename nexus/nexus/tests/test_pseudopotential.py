@@ -7,36 +7,16 @@ try:
 except ImportError:
     pass
 
-from .. import testing
+from pathlib import Path
 from ..testing import value_eq,object_eq
 from ..testing import divert_nexus_log,restore_nexus_log
 
 
-associated_files = dict()
-
-
-def get_filenames():
-    filenames = [
-        'C.BFD.gms',
-        'C.BFD.upf',
-        'C.BFD.xml',
-        ]
-    return filenames
-#end def get_filenames
-
-
-def get_files():
-    return testing.collect_unit_test_file_paths('pseudopotential',associated_files)
-#end def get_files
-
-
-
-def test_files():
-    filenames = get_filenames()
-    files = get_files()
-    assert(set(files.keys())==set(filenames))
-#end def test_files
-
+TEST_FILES = {
+    "C.BFD.gms": Path(__file__+"/../test_pseudopotential_files/C.BFD.gms").resolve(),
+    "C.BFD.upf": Path(__file__+"/../../examples/qmcpack/pseudopotentials/C.BFD.upf").resolve(),
+    "C.BFD.xml": Path(__file__+"/../../examples/qmcpack/pseudopotentials/C.BFD.xml").resolve(),
+}
 
 
 def test_pp_elem_label():
@@ -69,11 +49,6 @@ def test_pseudopotentials():
     from ..pseudopotential import PseudoFile
     from ..pseudopotential import gamessPPFile
 
-    filenames = get_filenames()
-    files = get_files()
-
-    filepaths = [files[fn] for fn in filenames]
-
     # empty initialization
     Pseudopotentials()
     PseudoFile()
@@ -81,10 +56,11 @@ def test_pseudopotentials():
 
     # standard initialization
     divert_nexus_log()
-    pps = Pseudopotentials(filepaths)
+    file_paths = list(TEST_FILES.values())
+    pps = Pseudopotentials(file_paths)
     restore_nexus_log()
 
-    for fn in filenames:
+    for fn in TEST_FILES.keys():
         assert(fn in pps)
         pp = pps[fn]
         assert(isinstance(pp,PseudoFile))
@@ -207,17 +183,15 @@ def test_ppset():
 
 
 
-def test_pseudopotential_classes():
-    import os
+def test_pseudopotential_classes(tmp_path):
     import numpy as np
     from ..pseudopotential import SemilocalPP
     from ..pseudopotential import GaussianPP
     from ..pseudopotential import QmcpackPP
     from ..pseudopotential import CasinoPP
 
-    tpath = testing.setup_unit_test_output_directory('pseudopotential','test_pseudopotential_classes')
-
-    files = get_files()
+    tmp_dir = tmp_path / "test_pseudopotential_output"
+    tmp_dir.mkdir()
 
     # empty initialization
     SemilocalPP()
@@ -225,13 +199,7 @@ def test_pseudopotential_classes():
     QmcpackPP()
     CasinoPP()
 
-    f = open(files['C.BFD.xml'],'r')
-    pp_relpath = f.read().strip()
-    pp_path = os.path.split(files['C.BFD.xml'])[0]
-    filepath = os.path.realpath(os.path.join(pp_path,pp_relpath))
-    f.close()
-
-    qpp = QmcpackPP(filepath)
+    qpp = QmcpackPP(TEST_FILES['C.BFD.xml'])
 
     # SemilocalPP attributes/methods
     assert(qpp.name is None)
@@ -369,7 +337,7 @@ r*potential (L=1) in Ha
 
     
     # tests for GaussianPP
-    gpp = GaussianPP(files['C.BFD.gms'],format='gamess')
+    gpp = GaussianPP(TEST_FILES['C.BFD.gms'],format='gamess')
     assert(gpp.Zcore   == 2   )
     assert(gpp.Zval    == 4   )
     assert(gpp.core    == 'He')
@@ -396,16 +364,16 @@ r*potential (L=1) in Ha
     assert(value_eq(gpp.components.p[1].expon,4.48361888))
 
     # check cross-format write/read
-    gamess_file = os.path.join(tpath,'C.BFD.gamess')
+    gamess_file = tmp_dir / 'C.BFD.gamess'
     gpp.write(gamess_file,format='gamess')
 
-    gaussian_file = os.path.join(tpath,'C.BFD.gaussian')
+    gaussian_file = tmp_dir / 'C.BFD.gaussian'
     gpp.write(gaussian_file,format='gaussian')
 
-    qmcpack_file = os.path.join(tpath,'C.BFD.qmcpack')
+    qmcpack_file = tmp_dir / 'C.BFD.qmcpack'
     gpp.write(qmcpack_file,format='qmcpack')
 
-    casino_file = os.path.join(tpath,'C.BFD.casino')
+    casino_file = tmp_dir / 'C.BFD.casino'
     gpp.write(casino_file,format='casino')
 
 
@@ -428,7 +396,7 @@ r*potential (L=1) in Ha
     del qo.rmax
     assert(object_eq(co,qo,atol=1e-12))
 
-    qmcpack_from_casino_file = os.path.join(tpath,'C.BFD.qmcpack_from_casino')
+    qmcpack_from_casino_file = tmp_dir / 'C.BFD.qmcpack_from_casino'
     cpp.write_qmcpack(qmcpack_from_casino_file)
 
     qpp_casino = QmcpackPP(qmcpack_from_casino_file)
