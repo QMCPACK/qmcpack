@@ -37,6 +37,7 @@
 #====================================================================#
 
 import os
+from pathlib import Path
 import numpy as np
 from .execute import execute
 from .fileio import TextFile
@@ -177,6 +178,8 @@ class Pseudopotentials(DevBase):
                 pps.append(pp)
             elif isinstance(pp,str):
                 ppfiles.append(pp)
+            elif isinstance(pp, Path):
+                ppfiles.append(str(pp))
             else:
                 self.error('expected PseudoFile type or filepath, got '+str(type(pp)),exit=False)
                 errors = True
@@ -296,16 +299,19 @@ class PPset(DevBase):
             #end if
             ppcoll = obj()
             for pp in pps:
-                if not isinstance(pp,str):
+                if not isinstance(pp, (str, Path)):
                     self.error('incorrect use of ppset\nnon-filename provided with set labeled "{0}" for simulation code "{1}"\neach pseudopential file name must be a string\nreceived type: {2}\nwith value: {3}'.format(label,code,pp.__class__.__name__,pp))
                 #end if
-                elem_label,symbol,is_elem = pp_elem_label(pp)
+                if isinstance(pp, str):
+                    elem_label,symbol,is_elem = pp_elem_label(pp)
+                elif isinstance(pp, Path):
+                    elem_label,symbol,is_elem = pp_elem_label(pp.name)
                 if not is_elem:
                     self.error('invalid filename provided to ppset\ncannot determine element for pseudopotential file: {0}\npseudopotential file names must be prefixed by an atomic symbol or label\n(e.g. Si, Si1, etc)'.format(pp))
                 elif symbol in ppcoll:
                     self.error('incorrect use of ppset\nmore than one pseudopotential file provided for element "{0}" for code "{1}" in set labeled "{2}"\nfirst file: {3}\nsecond file: {4}'.format(symbol,code,label,ppcoll[symbol],pp))
                 #end if
-                ppcoll[symbol] = pp
+                ppcoll[symbol] = str(pp)
             #end for
             pseudos[clow] = ppcoll
         #end for
