@@ -111,27 +111,28 @@ def test_particle_initialization():
 
 
 
-def test_physical_system_initialization():
+def test_physical_system_initialization(tmp_path):
     import os
     from ..developer import obj
     from ..structure import generate_structure
     from ..physical_system import generate_physical_system
     from ..physical_system import PhysicalSystem
-    
-    tpath = testing.setup_unit_test_output_directory('physical_system','test_physical_system_initialization')
+
+    tmp_dir = tmp_path / "test_physical_system_output"
+    tmp_dir.mkdir()
 
     d2 = generate_structure(
         structure = 'diamond',
         cell      = 'prim',
         )
-    d2_path = os.path.join(tpath,'diamond2.xsf')
+    d2_path = tmp_dir / 'diamond2.xsf'
     d2.write(d2_path)
 
     d8 = generate_structure(
         structure = 'diamond',
         cell      = 'conv',
         )
-    d8_path = os.path.join(tpath,'diamond8.xsf')
+    d8_path = tmp_dir / 'diamond8.xsf'
     d8.write(d8_path)
 
 
@@ -379,7 +380,7 @@ def test_physical_system_initialization():
 
     # test load
     for i,sys in enumerate(systems):
-        path = os.path.join(tpath,'system_{}'.format(i))
+        path = tmp_dir / 'system_{}'.format(i)
         sys.save(path)
         sys2 = PhysicalSystem()
         sys2.load(path)
