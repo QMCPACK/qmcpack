@@ -42,10 +42,10 @@ def copy_example_files(example_dir: str):
     example_path = example_root / example_dir
     output_path = output_root / example_dir
     test_path = shutil.copytree(
-        example_path,
-        output_path,
-        dirs_exist_ok=True,
-        ignore=ignore_patterns("*.py"),
+        src           = example_path,
+        dest          = output_path,
+        dirs_exist_ok = True,
+        ignore        = ignore_patterns("*.py"),
     )
 
     return test_path
@@ -53,10 +53,11 @@ def copy_example_files(example_dir: str):
 
 def run_example_script(script: Path, test_path: Path):
 
+    script = script.resolve() # Absolute path helps in debugging
     old_cwd = Path.cwd()
     os.chdir(test_path)
 
-    script_command = f"PYTHONPATH={nexus_root} {sys.executable} {script.resolve()} --generate_only --sleep=0.01"
+    script_command = f"PYTHONPATH={nexus_root} {sys.executable} {script} --generate_only --sleep=0.01"
     process = Popen(script_command, shell=True, stdout=PIPE, stderr=PIPE, close_fds=True)
     out, err = process.communicate()
     returncode = process.returncode
