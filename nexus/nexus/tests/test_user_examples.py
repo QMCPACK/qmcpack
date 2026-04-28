@@ -43,7 +43,7 @@ def copy_example_files(example_dir: str):
     output_path = output_root / example_dir
     test_path = shutil.copytree(
         src           = example_path,
-        dest          = output_path,
+        dst           = output_path,
         dirs_exist_ok = True,
         ignore        = ignore_patterns("*.py"),
     )
