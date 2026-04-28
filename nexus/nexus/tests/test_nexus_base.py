@@ -12,13 +12,6 @@ from ..testing import object_eq
 from ..testing import divert_nexus_log,restore_nexus_log
 
 
-def test_import():
-    from .. import nexus_base
-    from ..nexus_base import nexus_core,nexus_noncore,nexus_core_noncore
-    from ..nexus_base import NexusCore
-#end def test_import
-
-
 
 def test_namespaces():
     from ..nexus_base import nexus_core,nexus_core_defaults

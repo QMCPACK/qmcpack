@@ -27,16 +27,6 @@ def test_files():
 #end def test_files
 
 
-def test_import():
-    from .. import xmlreader
-    from ..xmlreader import XMLreader,readxml
-    from ..xmlreader import parse_string
-    from ..xmlreader import find_pair
-    from ..xmlreader import remove_pair_sections
-    from ..xmlreader import remove_empty_lines
-#end def test_import
-
-
 def test_read():
     from ..developer import obj
     from ..xmlreader import readxml,XMLelement

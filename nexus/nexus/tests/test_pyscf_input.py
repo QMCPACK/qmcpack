@@ -48,11 +48,6 @@ mf.kernel()
 '''
 
 
-def test_import():
-    from ..pyscf_input import PyscfInput,generate_pyscf_input
-#end def test_import
-
-
 def test_empty_init():
     from ..developer import obj
     from ..pyscf_input import PyscfInput,generate_pyscf_input

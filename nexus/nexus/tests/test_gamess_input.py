@@ -291,12 +291,6 @@ def test_files():
 
 
 
-def test_import():
-    from ..gamess_input import GamessInput,generate_gamess_input
-#end def test_import
-
-
-
 def test_keyspec_groups():
     from ..gamess_input import check_keyspec_groups
 

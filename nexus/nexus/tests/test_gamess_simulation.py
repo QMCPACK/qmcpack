@@ -54,12 +54,6 @@ def get_gamess_sim(type='rhf'):
 
 
 
-def test_import():
-    from ..gamess import Gamess,generate_gamess
-#end def test_import
-
-
-
 def test_minimal_init():
     from ..machines import job
     from ..gamess import Gamess,generate_gamess

@@ -12,17 +12,6 @@ from ..testing import object_eq,text_eq
 
 
 
-def test_import():
-    from ..pwscf_postprocessors import PPAnalyzer
-    from ..pwscf_postprocessors import DosAnalyzer
-    from ..pwscf_postprocessors import BandsAnalyzer
-    from ..pwscf_postprocessors import ProjwfcAnalyzer
-    from ..pwscf_postprocessors import CpppAnalyzer
-    from ..pwscf_postprocessors import PwexportAnalyzer
-#end def test_import
-
-
-
 def test_empty_init():
     from ..pwscf_postprocessors import PPAnalyzer
     from ..pwscf_postprocessors import DosAnalyzer

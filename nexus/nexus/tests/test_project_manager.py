@@ -14,11 +14,6 @@ from ..testing import divert_nexus_log,restore_nexus_log
 from ..testing import divert_nexus,restore_nexus
 
 
-def test_import():
-    from ..project_manager import ProjectManager
-#end def test_import
-
-
 
 def test_init():
     from ..developer import obj

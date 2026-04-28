@@ -8,11 +8,6 @@ except ImportError:
     pass
 
 
-def test_import():
-    from ..unit_converter import convert
-#end def test_import
-
-
 
 def test_convert():
     import numpy as np

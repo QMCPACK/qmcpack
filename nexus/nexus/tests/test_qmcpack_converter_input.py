@@ -12,20 +12,6 @@ from ..testing import value_eq,object_eq
 
 
 
-def test_import():
-    from ..qmcpack_converters import Pw2qmcpackInput
-    from ..qmcpack_converters import generate_pw2qmcpack_input
-
-    from ..qmcpack_converters import Convert4qmcInput
-    from ..qmcpack_converters import generate_convert4qmc_input
-
-    from ..qmcpack_converters import PyscfToAfqmcInput
-    from ..qmcpack_converters import generate_pyscf_to_afqmc_input
-#end def test_import
-
-
-
-
 pw2qmcpack_in = '''&inputpp
   prefix = 'pwscf'
   outdir = 'pwscf_output'

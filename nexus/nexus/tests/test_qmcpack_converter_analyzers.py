@@ -9,14 +9,6 @@ except ImportError:
 
 
 
-def test_import():
-    from ..qmcpack_converters import Pw2qmcpackAnalyzer
-    from ..qmcpack_converters import Convert4qmcAnalyzer
-    from ..qmcpack_converters import PyscfToAfqmcAnalyzer
-#end def import
-
-
-
 def test_pw2qmcpack_analyzer_init():
     from ..qmcpack_converters import Pw2qmcpackAnalyzer
     # empty init

@@ -250,12 +250,6 @@ o2_xyz = '''2
 '''
 
 
-def test_import():
-    from ..quantum_package_input import QuantumPackageInput
-    from ..quantum_package_input import generate_quantum_package_input
-#end def test_import
-
-
 
 def test_empty_init():
     from ..quantum_package_input import QuantumPackageInput

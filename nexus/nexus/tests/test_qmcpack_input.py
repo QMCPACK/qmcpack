@@ -559,13 +559,6 @@ def test_files():
 
 
 
-def test_import():
-    from ..qmcpack_input import QmcpackInput
-    from ..qmcpack_input import simulation,meta,section
-#end def test_import
-
-
-
 def test_qixml_class_init():
     from ..developer import obj
     from ..qmcpack_input import classes
