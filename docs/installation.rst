@@ -164,9 +164,8 @@ Nightly testing currently includes at least the following software versions:
 * OpenMPI 5.0.6
 * CUDA 12.6
 * ROCm 6.4.0
-* Python 3.10.6, 3.12.3, 3.13.2
-* NumPy 1.26.4, 2.2.5
-* Pytest 6.2.5, 7.4.4
+* Python 3.13.2
+* NumPy 2.2.5
 
 For GPU acceleration on NVIDIA GPUs we test LLVM with CUDA using the above versions. On AMD GPUs we support using the latest ROCm
 version and its matching amdclang compiler, as listed above. On Intel GPUs we test the up-to-date OneAPI release.

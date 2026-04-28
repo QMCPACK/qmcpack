@@ -58,15 +58,6 @@ def get_supercomputers():
 
 
 
-
-def test_import():
-    from ..machines import Machine,Workstation,InteractiveCluster,Supercomputer
-    from ..machines import Job,job
-    from ..machines import get_machine,get_machine_name
-#end def test_import
-
-
-
 def test_cpu_count():
     from ..machines import cpu_count
     assert(isinstance(cpu_count(),int))

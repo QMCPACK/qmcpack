@@ -11,14 +11,6 @@ from ..testing import check_object_eq
 from ..testing import FailedTest,failed
 
 
-def test_import():
-    from .. import observables
-    from ..observables import AttributeProperties,DefinedAttributeBase
-    from ..observables import Observable 
-    from ..observables import MomentumDistribution
-#end def test_import
-
-
 
 def test_defined_attribute_base():
     from ..developer import obj, NexusError

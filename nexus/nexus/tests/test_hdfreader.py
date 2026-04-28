@@ -11,12 +11,6 @@ from nexus.versions import h5py_available
 from ..testing import value_eq
 
 
-def test_import():
-    from .. import hdfreader
-    from ..hdfreader import HDFreader,read_hdf
-#end def test_import
-
-
 if h5py_available:
     def test_read(tmp_path):
         import numpy as np

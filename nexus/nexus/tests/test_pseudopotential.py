@@ -38,20 +38,6 @@ def test_files():
 #end def test_files
 
 
-def test_import():
-    from .. import pseudopotential
-    from ..pseudopotential import Pseudopotentials
-    from ..pseudopotential import PseudoFile
-    from ..pseudopotential import gamessPPFile
-    from ..pseudopotential import PPset
-    from ..pseudopotential import Pseudopotential
-    from ..pseudopotential import SemilocalPP
-    from ..pseudopotential import GaussianPP
-    from ..pseudopotential import QmcpackPP
-    from ..pseudopotential import CasinoPP
-#end def test_import
-
-
 
 def test_pp_elem_label():
     from ..pseudopotential import pp_elem_label

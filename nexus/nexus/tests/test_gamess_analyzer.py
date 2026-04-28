@@ -11,11 +11,6 @@ from .. import testing
 from ..testing import object_eq
 
 
-def test_import():
-    from ..gamess_analyzer import GamessAnalyzer
-#end def test_import
-
-
 def test_empty_init():
     from ..gamess_analyzer import GamessAnalyzer
 

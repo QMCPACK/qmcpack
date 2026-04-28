@@ -76,12 +76,6 @@ def setup_vasp_sim(path,identifier='vasp',files=False):
 
 
 
-def test_import():
-    from ..vasp import Vasp,generate_vasp
-#end def test_import
-
-
-
 def test_minimal_init():
     from ..machines import job
     from ..vasp import Vasp,generate_vasp

@@ -35,15 +35,6 @@ def system_same(s1,s2,pseudized=True,tiled=False):
 #end def system_same
 
 
-
-def test_import():
-    from .. import physical_system
-    from ..physical_system import Matter,Particle,Ion,PseudoIon,Particles
-    from ..physical_system import PhysicalSystem,generate_physical_system
-#end def test_import
-
-
-
 def test_particle_initialization():
     from ..physical_system import Matter,Particle,Ion,PseudoIon,Particles
 

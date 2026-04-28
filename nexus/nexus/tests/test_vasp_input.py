@@ -174,12 +174,6 @@ def test_files():
 
 
 
-def test_import():
-    from ..vasp_input import VaspInput,generate_vasp_input
-#end def test_import
-
-
-
 def test_keyword_consistency():
     from ..vasp_input import Incar,Stopcar
 
