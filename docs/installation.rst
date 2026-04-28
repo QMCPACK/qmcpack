@@ -145,6 +145,10 @@ unsupported and untested by the developers although they may still work.
 Many of the utilities provided with QMCPACK require Python (v3). The numpy and matplotlib libraries are required for full
 functionality.
 
+.. note::
+
+  We additionally recommend installing ``pytest`` for testing Python code, such as that in Nexus, however this is not a requirement for QMCPACK.
+
 Nightly testing currently includes at least the following software versions:
 
 * Compilers
@@ -450,7 +454,7 @@ See :ref:`Sanitizer-Libraries` for more information.
   ::
 
     ENABLE_GCOV  OFF(default)/ON, build with C++ source code line coverage measurement using gcov
-    ENABLE_PYCOV OFF(default)/ON, build with Python source code line coverage measurement using coverage.py
+    ENABLE_PYCOV OFF(default)/ON, build with Python source code line coverage measurement using coverage.py and/or pytest
 
 
 Installation from CMake

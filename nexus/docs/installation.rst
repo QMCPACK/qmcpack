@@ -186,7 +186,7 @@ Installing Python dependencies
 
 When manually installing Nexus, you must also install the Python dependencies. The ``numpy`` module must be installed for Nexus to
 function at a basic level. To realize the full range of functionality available, it is recommended that the ``scipy``,
-``matplotlib``, ``h5py``, ``pydot``, ``spglib``, ``pycifrw``, ``cif2cell`` and ``seekpath`` modules be installed as well. In
+``matplotlib``, ``h5py``, ``pydot``, ``spglib``, ``pycifrw``, ``cif2cell``, ``seekpath``, and ``pytest`` modules be installed as well. In
 supercomputing environments, most of these packages will *not* be available via system modules due to their specialized nature; you
 will need to install them via ``pip``, ``uv``, or individual manual installation.
 
@@ -203,6 +203,7 @@ You can perform a user level installation via ``pip``. If using ``uv``, prepend 
     pip3 install --user PyCifRW
     pip3 install --user cif2cell
     pip3 install --user seekpath
+    pip3 install --user pytest
 
 .. note::
     ``PyCifRW`` is a dependency of ``cif2cell``, thus if you install ``cif2cell`` you will already have ``PyCifRW`` installed as well.
@@ -227,6 +228,7 @@ example, here is how one may install some of the packages with ``apt``:
     sudo apt install python3-scipy python3-matplotlib python3-h5py
     sudo apt install python3-pydot
     sudo apt install python3-pip
+    sudo apt install python3-pytest
 
 Simple substitutions will be needed on distributions with different package managers (e.g. ``dnf``). Note that the most specialist
 packages may not be available via this route.
@@ -257,6 +259,9 @@ The purpose of each library is described below:
 ``seekpath`` 
     Used to find high symmetry lines in reciprocal space for excited state calculations with QMCPACK.
 
+``pytest``
+    Used to test your Nexus installation.
+
 Of course, to run full calculations, the simulation codes and converters involved must be installed as well. These include a patched
 version of Quantum ESPRESSO (``pw.x``, ``pw2qmcpack.x``, optionally ``pw2casino.x``), QMCPACK (``qmcpack``, ``qmcpack_complex``,
 ``convert4qmc``, ``wfconvert``, ``ppconvert``), VASP, and/or GAMESS. Complete coverage of this task is beyond the scope of the
@@ -268,7 +273,9 @@ Testing your Nexus installation
 Nexus's testing suite is designed to run with ``pytest >= 6.2.4``.
 We make optional use of the ``pytest-cov`` and ``pytest-order`` plugins. They will not cause test failure if they are not installed.
 
-To run the tests with ``pytest`` (``pip install --user pytest``), enter the ``nexus`` directory and simply invoke the ``pytest`` command:
+If you have installed Nexus through ``pip`` or ``uv``, you can run the Nexus testing suite through the ``nxs-test`` command line script, which will automatically run the tests for the version of Nexus installed in your Python environment.
+
+If you have cloned ``qmcpack`` and are using the version of Nexus that comes with it, or if you are working on developing Nexus, you can enter the ``nexus`` directory and simply invoke the ``pytest`` command:
 
 .. code-block:: bash
 
@@ -347,10 +354,6 @@ To run the tests with ``pytest`` (``pip install --user pytest``), enter the ``ne
 Some tests may be skipped depending on what dependencies you have available, or if they are marked to be skipped.
 Additionally, you may see a number of warnings appear; some of these may be warnings about Nexus, but it is likely that the majority arise from a Nexus dependency.
 In general it is safe to ignore these warnings as they likely do not affect the functionality of Nexus.
-
-.. note::
-    If you are planning on adding a new feature to Nexus, please add a test for the new feature.
-    Additionally, if you are planning on changing an existing Nexus feature, you must ensure that you either write a test for it, update the existing test, or ensure that your changes do not fail the existing test; your changes will not get merged otherwise!
 
 Developer Topics
 ----------------
@@ -447,6 +450,10 @@ To obtain an annotated view of the statements in the source that are not yet cov
     > pytest --cov=nexus --cov-report=html
 
 Open ``htmlcov/index.html`` in a browser to view the report. More information regarding the ``coverage`` tool can be found at https://coverage.readthedocs.io/en/latest/.
+
+.. note::
+    If you are planning on adding a new feature to Nexus, please add a test for the new feature.
+    Additionally, if you are planning on changing an existing Nexus feature, you must ensure that you either write a test for it, update the existing test, or ensure that your changes do not fail the existing test; your changes will not get merged otherwise!
 
 Creating Portable Nexus Builds
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
