@@ -228,7 +228,7 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
       }
 
       app_summary() << "    Using table method for multideterminant evaluation" << std::endl
-                    << "    See B. Clark et al. J. Chem. Phys. 135 244105 (2011) https://doi.org/10.1063/1.3665391" << std::endl;
+                    << "    See B. K. Clark et al. J. Chem. Phys. 135 244105 (2011) https://doi.org/10.1063/1.3665391" << std::endl;
       if (BFTrans)
         myComm->barrier_and_abort("Backflow is not supported by Multi-Slater determinants using the table method!");
 
