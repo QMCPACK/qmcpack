@@ -7,11 +7,11 @@ try:
 except ImportError:
     pass
 
-from .. import testing
+from . import isolate_nexus_core
 from ..testing import value_eq
 from ..testing import failed,FailedTest
 from ..testing import divert_nexus_log,restore_nexus_log
-from ..testing import divert_nexus,restore_nexus
+# from ..testing import divert_nexus,restore_nexus
 
 
 
@@ -288,7 +288,7 @@ def test_check_dependencies():
 #end def test_check_dependencies
 
 
-
+@isolate_nexus_core
 def test_write_simulation_status():
     from ..generic import generic_settings
     from ..nexus_base import nexus_core
@@ -297,7 +297,7 @@ def test_write_simulation_status():
 
     from .test_simulation_module import get_test_workflow
 
-    divert_nexus()
+    # divert_nexus()
 
     log = generic_settings.devlog
 
@@ -357,13 +357,13 @@ def test_write_simulation_status():
     '''
     assert(status_log().strip()==status_ref.strip())
 
-    restore_nexus()
+    # restore_nexus()
 
     Simulation.clear_all_sims()
 #end def test_write_simulation_status
 
 
-
+@isolate_nexus_core(needs_tmp_path=True)
 def test_run_project(tmp_path):
     from ..generic import generic_settings
     from ..nexus_base import nexus_core
@@ -375,7 +375,7 @@ def test_run_project(tmp_path):
     tmp_dir = tmp_path / "project_manager"
     tmp_dir.mkdir()
 
-    divert_nexus()
+    # divert_nexus()
     nexus_core.local_directory  = tmp_dir
     nexus_core.remote_directory = tmp_dir
     nexus_core.file_locations = nexus_core.file_locations + [tmp_dir]
@@ -450,7 +450,7 @@ a    = $a
         assert(finished(s))
     #end for
 
-    restore_nexus()
+    # restore_nexus()
 
     Simulation.clear_all_sims()
 #end def test_run_project
