@@ -7,6 +7,7 @@ try:
 except ImportError:
     pass
 
+from pathlib import Path
 from .. import versions
 from .. import testing
 from ..testing import execute,text_eq,check_value_eq
@@ -18,7 +19,7 @@ if versions.h5py_available:
 
         tpath = testing.setup_unit_test_output_directory('qdens','test_density')
 
-        exe = testing.executable_path('qdens')
+        exe = Path(__file__).parent.parent / "bin/qdens"
 
         qa_files_path = testing.unit_test_file_path('qmcpack_analyzer','diamond_gamma/dmc')
         command = 'rsync -a {} {}'.format(qa_files_path,tpath)

@@ -8,6 +8,7 @@ except ImportError:
     pass
 
 import sys
+from pathlib import Path
 from .. import testing
 from ..testing import execute,text_eq
 
@@ -22,7 +23,7 @@ def get_test_info():
 
         tpath = testing.setup_unit_test_output_directory('qmca','test_qmca')
         
-        exe = testing.executable_path('qmca')
+        exe = Path(__file__).parent.parent / "bin/qmca"
 
         dirs = ['diamond_gamma','diamond_twist']
 

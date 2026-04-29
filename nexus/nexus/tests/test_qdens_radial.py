@@ -7,6 +7,7 @@ try:
 except ImportError:
     pass
 
+from pathlib import Path
 from .. import versions
 from .. import testing
 from ..testing import execute,text_eq,check_value_eq
@@ -18,7 +19,7 @@ if versions.spglib_available:
 
         tpath = testing.setup_unit_test_output_directory('qdens_radial','test_radial_density')
 
-        exe = testing.executable_path('qdens-radial')
+        exe = Path(__file__).parent.parent / "bin/qdens-radial"
 
         qr_vmc_files_path = testing.unit_test_file_path('qdens_radial','diamond_twist/vmc')
         command = 'rsync -a {} {}'.format(qr_vmc_files_path,tpath)

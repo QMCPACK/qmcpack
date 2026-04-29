@@ -7,6 +7,7 @@ try:
 except ImportError:
     pass
 
+from pathlib import Path
 from .. import versions
 from .. import testing
 from ..testing import execute,text_eq
@@ -19,7 +20,7 @@ if versions.scipy_available:
 
         tpath = testing.setup_unit_test_output_directory('qmc_fit','test_fit')
 
-        exe = testing.executable_path('qmc-fit')
+        exe = Path(__file__).parent.parent / "bin/qmc-fit"
         
         qa_files_path = testing.unit_test_file_path('qmcpack_analyzer','diamond_gamma/dmc')
         command = 'rsync -a {} {}'.format(qa_files_path,tpath)
