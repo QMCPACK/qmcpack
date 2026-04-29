@@ -26,7 +26,7 @@ if(ADD_TEST)
   if(ENABLE_PYCOV)
     add_test(NAME ntest_nexus_coverage_all
              COMMAND ${Python3_EXECUTABLE} -m ${NTEST} ${qmcpack_SOURCE_DIR}/nexus/nexus/tests -c ${qmcpack_SOURCE_DIR}/nexus/pyproject.toml
-                                                                                   --cov=nexus
+                                                                                   --cov
                                                                                    --cov-report=xml
                                                                                    --cov-config=${qmcpack_SOURCE_DIR}/nexus/pyproject.toml
     )
