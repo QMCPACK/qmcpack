@@ -7,9 +7,8 @@ try:
 except ImportError:
     pass
 
-from .. import testing
+from pathlib import Path
 from ..testing import object_eq
-
 
 
 def test_empty_init():
@@ -19,22 +18,14 @@ def test_empty_init():
 #end def test_empty_init
 
 
-
 def test_analyze():
-    import os
     from numpy import array
     from ..developer import obj
     from ..pwscf_analyzer import PwscfAnalyzer
 
-    tpath = testing.setup_unit_test_output_directory(
-        test      = 'pwscf_analyzer',
-        subtest   = 'test_analyze',
-        file_sets = ['scf_output','relax_output','nscf_output'],
-        )
-
-    scf_path = os.path.join(tpath,'scf_output')
-    relax_path = os.path.join(tpath,'relax_output')
-    nscf_path = os.path.join(tpath,'nscf_output')
+    scf_path = Path(__file__+"/../test_pwscf_analyzer_files/scf_output").resolve()
+    relax_path = Path(__file__+"/../test_pwscf_analyzer_files/relax_output").resolve()
+    nscf_path = Path(__file__+"/../test_pwscf_analyzer_files/nscf_output").resolve()
 
     # scf w/o actual analysis
     pa = PwscfAnalyzer(scf_path,'scf.in','scf.out')
