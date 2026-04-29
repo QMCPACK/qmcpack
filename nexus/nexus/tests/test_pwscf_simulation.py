@@ -7,6 +7,9 @@ try:
 except ImportError:
     pass
 
+from . import isolate_nexus_core
+from nexus.nexus_base import nexus_core, nexus_noncore
+from nexus.pseudopotential import Pseudopotentials
 from .. import testing
 from ..testing import restore_nexus,clear_all_sims
 from ..testing import failed,FailedTest
@@ -110,11 +113,22 @@ def test_check_result():
 #end def test_check_result
 
 
-
-def test_get_result():
+@isolate_nexus_core(needs_tmp_path=True)
+def test_get_result(tmp_path):
     from ..developer import NexusError
 
-    tpath = testing.setup_unit_test_output_directory('pwscf_simulation','test_get_result',**pseudo_inputs)
+    tmp_dir = tmp_path / "pseudopotentials"
+    tmp_dir.mkdir()
+    psp_file = tmp_dir / "C.BFD.upf"
+    psp_file.touch()
+    nexus_core.local_directory  = str(tmp_dir)
+    nexus_core.remote_directory = tmp_dir
+    nexus_core.file_locations = nexus_core.file_locations + [tmp_dir]
+    pps = Pseudopotentials(psp_file)
+    nexus_core.pseudopotentials    = pps
+    nexus_noncore.pseudopotentials = pps
+    nexus_core.pseudo_dir    = str(tmp_dir)
+    nexus_noncore.pseudo_dir = str(tmp_dir)
 
     sim = get_pwscf_sim('scf')
 
@@ -143,7 +157,7 @@ def test_get_result():
 
     assert(set(result.keys())==set(result_ref.keys()))
     for k,path in result.items():
-        path = path.replace(tpath,'').lstrip('/')
+        path = path.replace(str(tmp_dir),'').lstrip('/')
         assert(path==result_ref[k])
     #end for
 
@@ -155,12 +169,11 @@ def test_get_result():
 
     assert(set(result.keys())==set(result_ref.keys()))
     for k,path in result.items():
-        path = path.replace(tpath,'').lstrip('/')
+        path = path.replace(str(tmp_dir),'').lstrip('/')
         assert(path==result_ref[k])
     #end for
 
     clear_all_sims()
-    restore_nexus()
 #end def test_get_result
 
 

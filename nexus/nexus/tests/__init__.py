@@ -1,4 +1,6 @@
 from enum import IntEnum, auto
+from pathlib import Path
+from copy import deepcopy
 import functools
 from nexus.nexus_base import (
     nexus_core,
@@ -32,11 +34,13 @@ def divert_nexus_core():
     nexus_core_storage = {}
     for key in NEXUS_CORE_KEYS:
         nexus_core_storage[key] = nexus_core[key]
+        nexus_core[key] = deepcopy(nexus_core[key])
 
     nexus_noncore_storage = {}
     for key in NEXUS_NONCORE_KEYS:
         if key in nexus_noncore:
             nexus_noncore_storage[key] = nexus_noncore[key]
+            nexus_noncore[key] = deepcopy(nexus_noncore[key])
 
     return nexus_core_storage, nexus_noncore_storage
 
@@ -122,6 +126,10 @@ def isolate_nexus_core(needs_tmp_path: bool = False):
         else:
             return wrap
     return decorator_isolate_nexus_core
+
+
+def create_pseudo_files(pseudos: list[Path]):
+    ...
 
 
 class NexusTestOrder(IntEnum):
