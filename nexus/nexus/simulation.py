@@ -68,6 +68,7 @@
 import os
 import sys
 import shutil
+from pathlib import Path
 from string import Template
 from subprocess import Popen
 import tempfile
@@ -101,6 +102,8 @@ class SimulationInput(NexusCore):
     #end def write_file_text
 
     def read(self,filepath):
+        if isinstance(filepath, Path):
+            filepath = str(filepath.resolve())
         tokens = filepath.split(None,1)
         if len(tokens)>1:
             text = filepath
