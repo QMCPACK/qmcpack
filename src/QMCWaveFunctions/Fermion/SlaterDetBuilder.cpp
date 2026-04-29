@@ -227,14 +227,15 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
         spo_clones.emplace_back(spo_tmp->makeClone());
       }
 
-      app_summary() << "    Using Bryan's table method." << std::endl;
+      app_summary() << "    Using table method for multideterminant evaluation" << std::endl
+                    << "    See B. Clark et al. J. Chem. Phys. 135 244105 (2011) https://doi.org/10.1063/1.3665391" << std::endl;
       if (BFTrans)
         myComm->barrier_and_abort("Backflow is not supported by Multi-Slater determinants using the table method!");
 
       if (msd_algorithm == "precomputed_table_method")
-        app_summary() << "    Using the table method with precomputing. Faster" << std::endl;
+        app_summary() << "    Using precomputing for faster evaluation" << std::endl;
       else
-        app_summary() << "    Using the table method without precomputing. Slower." << std::endl;
+        app_summary() << "    Not using precomputing for faster evaluation" << std::endl;
 
       auto msd_fast = createMSDFast(element, targetPtcl, std::move(spo_clones), targetPtcl.isSpinor(),
                                     msd_algorithm == "precomputed_table_method");
@@ -408,9 +409,11 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
   }
 
   if (delay_rank > 1)
-    app_summary() << "      Using rank-" << delay_rank << " delayed update" << std::endl;
+    app_summary() << "      Using rank-" << delay_rank << " delayed update" << std::endl
+                  << "      See Y. Luo et al. J. Chem. Theory Comput. 21 12064 (2025) https://doi.org/10.1021/acs.jctc.5c01541" << std::endl;
   else
-    app_summary() << "      Using rank-1 Sherman-Morrison Fahy update (SM1)" << std::endl;
+    app_summary() << "      Using rank-1 Sherman-Morrison Fahy update (SM1)" << std::endl
+                  << "      See S. Fahy et al. Phys. Rev. B 42 3503 (1990) https://doi.org/10.1103/PhysRevB.42.3503" << std::endl;
 
   std::unique_ptr<DiracDeterminantBase> adet;
 
