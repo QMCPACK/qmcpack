@@ -1,11 +1,10 @@
-try:
-    import pytest
-    from . import NexusTestOrder
-    pytestmark = pytest.mark.order(NexusTestOrder.RMG_INPUT)
-    from ..generic import generic_settings
-    generic_settings.raise_error = True
-except ImportError:
-    pass
+import pytest
+
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.RMG_INPUT)
+
+from ..generic import generic_settings
+generic_settings.raise_error = True
 
 from .. import testing
 from ..testing import value_eq,check_object_eq

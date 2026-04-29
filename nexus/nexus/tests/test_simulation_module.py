@@ -1,11 +1,11 @@
-try:
-    import pytest
-    from . import NexusTestOrder
-    pytestmark = pytest.mark.order(NexusTestOrder.SIMULATION)
-    from ..generic import generic_settings
-    generic_settings.raise_error = True
-except ImportError:
-    pass
+import pytest
+
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.SIMULATION)
+
+from ..generic import generic_settings
+generic_settings.raise_error = True
+
 
 from .. import testing
 from ..testing import value_eq,object_eq
@@ -108,7 +108,6 @@ get_sim_simulations = []
 def get_sim(**kwargs):
     from ..machines import job
     from ..simulation import Simulation
-
     test_job = job(machine='ws1',app_command='test.x')
 
     n = len(get_sim_simulations)
