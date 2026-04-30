@@ -8,89 +8,31 @@ except ImportError:
     pass
 
 import sys
+import os
 from pathlib import Path
-from .. import testing
 from ..testing import execute,text_eq
 
 
-test_info = dict()
-directories = dict()
+QMCA_EXE = Path(__file__).parent.parent / "bin/qmca"
 
-
-def get_test_info():
-    if len(test_info)==0:
-        import os
-
-        tpath = testing.setup_unit_test_output_directory('qmca','test_qmca')
-        
-        exe = Path(__file__).parent.parent / "bin/qmca"
-
-        dirs = ['diamond_gamma','diamond_twist']
-
-        for dir in dirs:
-            qa_files_path = testing.unit_test_file_path('qmcpack_analyzer',dir)
-            command = 'rsync -a {} {}'.format(qa_files_path,tpath)
-            out,err,rc = execute(command)
-            assert(rc==0)
-            data_path = os.path.join(tpath,dir)
-            assert(os.path.exists(data_path))
-        #end for
-
-        paths = dict(
-            vmc       = 'diamond_gamma/vmc',
-            opt       = 'diamond_gamma/opt',
-            dmc       = 'diamond_gamma/dmc',
-            vmc_twist = 'diamond_twist/vmc',
-            multi     = 'diamond_gamma',
-            )
-
-        test_info['tpath'] = tpath
-        test_info['exe']   = exe
-        for name,path in paths.items():
-            directories[name] = os.path.join(tpath,path)
-        #end for
-    #end if
-#end def get_test_info
-
-
-def get_exe():
-    get_test_info()
-    return test_info['exe']
-#end def get_exe    
-
-
-def enter(path_name):
-    import os
-    assert(path_name in directories)
-    path = directories[path_name]
-    assert(os.path.exists(path))
-    assert('cwd' not in directories)
-    directories['cwd'] = os.getcwd()
-    assert('cwd' in directories)
-    os.chdir(path)
-#end def enter
-
-
-def leave():
-    import os
-    assert('cwd' in directories)
-    cwd = directories.pop('cwd')
-    assert(not 'cwd' in directories)
-    os.chdir(cwd)
-#end def leave
-
+QA_PATHS = {
+    "vmc":       Path(__file__+"/../test_qmcpack_analyzer_files/diamond_gamma/vmc").resolve(),
+    "opt":       Path(__file__+"/../test_qmcpack_analyzer_files/diamond_gamma/opt").resolve(),
+    "dmc":       Path(__file__+"/../test_qmcpack_analyzer_files/diamond_gamma/dmc").resolve(),
+    "vmc_twist": Path(__file__+"/../test_qmcpack_analyzer_files/diamond_twist/vmc").resolve(),
+    "multi":     Path(__file__+"/../test_qmcpack_analyzer_files/diamond_gamma").resolve(),
+}
 
 
 def test_help():
-    exe = get_exe()
 
     help_text = 'Usage: qmca'
 
-    command = sys.executable+' {}'.format(exe)
+    command = f'{sys.executable} {QMCA_EXE}'
     out,err,rc = execute(command)
     assert(help_text in out)
 
-    command = sys.executable+' {} -h'.format(exe)
+    command = f'{sys.executable} {QMCA_EXE} -h'
     out,err,rc = execute(command)
     assert(help_text in out)
 #end def test_help
@@ -98,11 +40,10 @@ def test_help():
 
 
 def test_examples():
-    exe = get_exe()
 
     example_text = 'QMCA examples'
 
-    command = sys.executable+' {} -x'.format(exe)
+    command = f'{sys.executable} {QMCA_EXE} -x'
     out,err,rc = execute(command)
     assert(example_text in out)
 #end def test_examples
@@ -110,11 +51,11 @@ def test_examples():
 
 
 def test_unit_conversion():
-    exe = get_exe()
 
-    enter('vmc')
+    cwd = Path.cwd()
+    os.chdir(QA_PATHS["vmc"])
 
-    command = sys.executable+' {} -e 5 -q e -u eV --fp=16.8f *scalar*'.format(exe)
+    command = f'{sys.executable} {QMCA_EXE} -e 5 -q e -u eV --fp=16.8f *scalar*'
     out,err,rc = execute(command)
 
     out_ref = '''
@@ -123,17 +64,17 @@ def test_unit_conversion():
 
     assert(text_eq(out,out_ref))
 
-    leave()
+    os.chdir(cwd)
 #end def test_unit_conversion
 
 
 
 def test_selected_quantities():
-    exe = get_exe()
 
-    enter('vmc')
+    cwd = Path.cwd()
+    os.chdir(QA_PATHS["vmc"])
 
-    command = sys.executable+" {} -e 5 -q 'e k p' --fp=16.8f *scalar*".format(exe)
+    command = f"{sys.executable} {QMCA_EXE} -e 5 -q 'e k p' --fp=16.8f *scalar*"
     out,err,rc = execute(command)
 
     out_ref = '''
@@ -145,17 +86,17 @@ def test_selected_quantities():
 
     assert(text_eq(out,out_ref))
 
-    leave()
+    os.chdir(cwd)
 #end def test_selected_quantities
 
 
 
 def test_all_quantities():
-    exe = get_exe()
 
-    enter('vmc')
+    cwd = Path.cwd()
+    os.chdir(QA_PATHS["vmc"])
 
-    command = sys.executable+" {} -e 5 --fp=16.8f *scalar*".format(exe)
+    command = f"{sys.executable} {QMCA_EXE} -e 5 --fp=16.8f *scalar*"
     out,err,rc = execute(command)
 
     out_ref = '''
@@ -182,17 +123,17 @@ def test_all_quantities():
 
     assert(text_eq(out,out_ref))
 
-    leave()
+    os.chdir(cwd)
 #end def test_all_quantities
 
 
 
 def test_energy_variance():
-    exe = get_exe()
 
-    enter('opt')
+    cwd = Path.cwd()
+    os.chdir(QA_PATHS["opt"])
 
-    command = sys.executable+" {} -e 5 -q ev --fp=16.8f *scalar*".format(exe)
+    command = f"{sys.executable} {QMCA_EXE} -e 5 -q ev --fp=16.8f *scalar*"
     out,err,rc = execute(command)
 
     out_ref = '''
@@ -207,17 +148,17 @@ opt series 5 -10.46086055 +/- 0.00375811  0.39354343 +/- 0.00913372  0.0376
 
     assert(text_eq(out,out_ref))
 
-    leave()
+    os.chdir(cwd)
 #end def test_energy_variance
 
 
 
 def test_multiple_equilibration():
-    exe = get_exe()
 
-    enter('dmc')
+    cwd = Path.cwd()
+    os.chdir(QA_PATHS["dmc"])
 
-    command = sys.executable+" {} -e '5 10 15 20' -q ev --fp=16.8f *scalar*".format(exe)
+    command = f"{sys.executable} {QMCA_EXE} -e '5 10 15 20' -q ev --fp=16.8f *scalar*"
     out,err,rc = execute(command)
 
     out_ref = '''
@@ -230,17 +171,17 @@ dmc series 3 -10.52807733 +/- 0.00122687  0.38565052 +/- 0.00196074  0.0366
 
     assert(text_eq(out,out_ref))
 
-    leave()
+    os.chdir(cwd)
 #end def test_multiple_equilibration
 
 
 
 def test_join():
-    exe = get_exe()
 
-    enter('dmc')
+    cwd = Path.cwd()
+    os.chdir(QA_PATHS["dmc"])
 
-    command = sys.executable+" {} -e 5 -j '1 3' -q ev --fp=16.8f *scalar*".format(exe)
+    command = f"{sys.executable} {QMCA_EXE} -e 5 -j '1 3' -q ev --fp=16.8f *scalar*"
     out,err,rc = execute(command)
 
     out_ref = '''
@@ -251,17 +192,17 @@ dmc  series 1 -10.53022752 +/- 0.00073527  0.38410495 +/- 0.00082972  0.0365
 
     assert(text_eq(out,out_ref))
 
-    leave()
+    os.chdir(cwd)
 #end def test_join
 
 
 
 def test_multiple_directories():
-    exe = get_exe()
 
-    enter('multi')
+    cwd = Path.cwd()
+    os.chdir(QA_PATHS["multi"])
 
-    command = sys.executable+" {} -e 5 -q ev --fp=16.8f */*scalar*".format(exe)
+    command = f"{sys.executable} {QMCA_EXE} -e 5 -q ev --fp=16.8f */*scalar*"
     out,err,rc = execute(command)
 
     out_ref = '''
@@ -283,17 +224,17 @@ vmc/vmc series 0 -10.45972798 +/- 0.00380164  0.39708591 +/- 0.00971200  0.0380
 
     assert(text_eq(out,out_ref))
 
-    leave()
+    os.chdir(cwd)
 #end def test_multiple_directories
 
 
 
 def test_twist_average():
-    exe = get_exe()
 
-    enter('vmc_twist')
+    cwd = Path.cwd()
+    os.chdir(QA_PATHS["vmc_twist"])
 
-    command = sys.executable+" {} -a -e 5 -q ev --fp=16.8f *scalar*".format(exe)
+    command = f"{sys.executable} {QMCA_EXE} -a -e 5 -q ev --fp=16.8f *scalar*"
     out,err,rc = execute(command)
 
     out_ref = '''
@@ -303,17 +244,17 @@ avg series 0 -11.34367335 +/- 0.00257603  0.57340688 +/- 0.00442552  0.0505
 
     assert(text_eq(out,out_ref))
 
-    leave()
+    os.chdir(cwd)
 #end def test_twist_average
 
 
 
 def test_weighted_twist_average():
-    exe = get_exe()
 
-    enter('vmc_twist')
+    cwd = Path.cwd()
+    os.chdir(QA_PATHS["vmc_twist"])
 
-    command = sys.executable+" {} -a -w '1 3 3 1' -e 5 -q ev --fp=16.8f *scalar*".format(exe)
+    command = f"{sys.executable} {QMCA_EXE} -a -w '1 3 3 1' -e 5 -q ev --fp=16.8f *scalar*"
     out,err,rc = execute(command)
 
     out_ref = '''
@@ -323,6 +264,6 @@ avg series 0 -11.44375840 +/- 0.00292164  0.44863011 +/- 0.00502859  0.0392
 
     assert(text_eq(out,out_ref))
 
-    leave()
+    os.chdir(cwd)
 #end def test_weighted_twist_average
 

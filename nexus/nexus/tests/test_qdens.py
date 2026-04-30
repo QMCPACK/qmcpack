@@ -8,79 +8,110 @@ except ImportError:
     pass
 
 from pathlib import Path
+import shutil
 from .. import versions
-from .. import testing
-from ..testing import execute,text_eq,check_value_eq
+from ..testing import execute, text_eq
 
 
 if versions.h5py_available:
-    def test_density():
-        import os
-
-        tpath = testing.setup_unit_test_output_directory('qdens','test_density')
+    def test_density(tmp_path):
 
         exe = Path(__file__).parent.parent / "bin/qdens"
 
-        qa_files_path = testing.unit_test_file_path('qmcpack_analyzer','diamond_gamma/dmc')
-        command = 'rsync -a {} {}'.format(qa_files_path,tpath)
+        qa_files_path = Path(__file__+"/../test_qmcpack_analyzer_files/diamond_gamma").resolve()
+        shutil.copytree(qa_files_path, tmp_path, dirs_exist_ok=True)
+
+        dmc_path = tmp_path / 'dmc'
+
+        files_bef = (
+            dmc_path / "dmc.s000.stat.h5",
+            dmc_path / "dmc.s000.scalar.dat",
+            dmc_path / "dmc.s001.stat.h5",
+            dmc_path / "dmc.s001.scalar.dat",
+            dmc_path / "dmc.s002.stat.h5",
+            dmc_path / "dmc.s002.scalar.dat",
+            dmc_path / "dmc.s003.stat.h5",
+            dmc_path / "dmc.s003.scalar.dat",
+            dmc_path / "dmc.in.xml",
+            dmc_path / "dmc.out",
+            dmc_path / "dmc.err",
+        )
+
+        assert(set(dmc_path.iterdir()) == set(files_bef))
+
+        command = f'{exe} -v -e 4 -f xsf -i {dmc_path}/dmc.in.xml {dmc_path}/*stat.h5'
+
         out,err,rc = execute(command)
-        assert(rc==0)
-        dmc_path = os.path.join(tpath,'dmc')
-        dmc_infile = os.path.join(dmc_path,'dmc.in.xml')
-        assert(os.path.exists(dmc_infile))
 
-        files_bef = '''
-    dmc.err     dmc.s000.scalar.dat  dmc.s001.stat.h5     dmc.s003.scalar.dat
-    dmc.in.xml  dmc.s000.stat.h5     dmc.s002.scalar.dat  dmc.s003.stat.h5
-    dmc.out     dmc.s001.scalar.dat  dmc.s002.stat.h5
-        '''.split()
+        files_aft = (
+            tmp_path / "dmc/dmc.err",
+            tmp_path / "dmc/dmc.in.xml",
+            tmp_path / "dmc/dmc.out",
+            tmp_path / "dmc/dmc.s000.scalar.dat",
+            tmp_path / "dmc/dmc.s000.SpinDensity_d+err.xsf",
+            tmp_path / "dmc/dmc.s000.SpinDensity_d-err.xsf",
+            tmp_path / "dmc/dmc.s000.SpinDensity_d.xsf",
+            tmp_path / "dmc/dmc.s000.SpinDensity_u+d+err.xsf",
+            tmp_path / "dmc/dmc.s000.SpinDensity_u+d-err.xsf",
+            tmp_path / "dmc/dmc.s000.SpinDensity_u-d+err.xsf",
+            tmp_path / "dmc/dmc.s000.SpinDensity_u-d-err.xsf",
+            tmp_path / "dmc/dmc.s000.SpinDensity_u+d.xsf",
+            tmp_path / "dmc/dmc.s000.SpinDensity_u-d.xsf",
+            tmp_path / "dmc/dmc.s000.SpinDensity_u+err.xsf",
+            tmp_path / "dmc/dmc.s000.SpinDensity_u-err.xsf",
+            tmp_path / "dmc/dmc.s000.SpinDensity_u.xsf",
+            tmp_path / "dmc/dmc.s000.stat.h5",
+            tmp_path / "dmc/dmc.s001.scalar.dat",
+            tmp_path / "dmc/dmc.s001.SpinDensity_d+err.xsf",
+            tmp_path / "dmc/dmc.s001.SpinDensity_d-err.xsf",
+            tmp_path / "dmc/dmc.s001.SpinDensity_d.xsf",
+            tmp_path / "dmc/dmc.s001.SpinDensity_u+d+err.xsf",
+            tmp_path / "dmc/dmc.s001.SpinDensity_u+d-err.xsf",
+            tmp_path / "dmc/dmc.s001.SpinDensity_u-d+err.xsf",
+            tmp_path / "dmc/dmc.s001.SpinDensity_u-d-err.xsf",
+            tmp_path / "dmc/dmc.s001.SpinDensity_u+d.xsf",
+            tmp_path / "dmc/dmc.s001.SpinDensity_u-d.xsf",
+            tmp_path / "dmc/dmc.s001.SpinDensity_u+err.xsf",
+            tmp_path / "dmc/dmc.s001.SpinDensity_u-err.xsf",
+            tmp_path / "dmc/dmc.s001.SpinDensity_u.xsf",
+            tmp_path / "dmc/dmc.s001.stat.h5",
+            tmp_path / "dmc/dmc.s002.scalar.dat",
+            tmp_path / "dmc/dmc.s002.SpinDensity_d+err.xsf",
+            tmp_path / "dmc/dmc.s002.SpinDensity_d-err.xsf",
+            tmp_path / "dmc/dmc.s002.SpinDensity_d.xsf",
+            tmp_path / "dmc/dmc.s002.SpinDensity_u+d+err.xsf",
+            tmp_path / "dmc/dmc.s002.SpinDensity_u+d-err.xsf",
+            tmp_path / "dmc/dmc.s002.SpinDensity_u-d+err.xsf",
+            tmp_path / "dmc/dmc.s002.SpinDensity_u-d-err.xsf",
+            tmp_path / "dmc/dmc.s002.SpinDensity_u+d.xsf",
+            tmp_path / "dmc/dmc.s002.SpinDensity_u-d.xsf",
+            tmp_path / "dmc/dmc.s002.SpinDensity_u+err.xsf",
+            tmp_path / "dmc/dmc.s002.SpinDensity_u-err.xsf",
+            tmp_path / "dmc/dmc.s002.SpinDensity_u.xsf",
+            tmp_path / "dmc/dmc.s002.stat.h5",
+            tmp_path / "dmc/dmc.s003.scalar.dat",
+            tmp_path / "dmc/dmc.s003.SpinDensity_d+err.xsf",
+            tmp_path / "dmc/dmc.s003.SpinDensity_d-err.xsf",
+            tmp_path / "dmc/dmc.s003.SpinDensity_d.xsf",
+            tmp_path / "dmc/dmc.s003.SpinDensity_u+d+err.xsf",
+            tmp_path / "dmc/dmc.s003.SpinDensity_u+d-err.xsf",
+            tmp_path / "dmc/dmc.s003.SpinDensity_u-d+err.xsf",
+            tmp_path / "dmc/dmc.s003.SpinDensity_u-d-err.xsf",
+            tmp_path / "dmc/dmc.s003.SpinDensity_u+d.xsf",
+            tmp_path / "dmc/dmc.s003.SpinDensity_u-d.xsf",
+            tmp_path / "dmc/dmc.s003.SpinDensity_u+err.xsf",
+            tmp_path / "dmc/dmc.s003.SpinDensity_u-err.xsf",
+            tmp_path / "dmc/dmc.s003.SpinDensity_u.xsf",
+            tmp_path / "dmc/dmc.s003.stat.h5",
+        )
 
-        assert(check_value_eq(set(os.listdir(dmc_path)),set(files_bef)))
+        assert(set(dmc_path.iterdir()) == set(files_aft))
 
-        command = '{0} -v -e 4 -f xsf -i {1}/dmc.in.xml {1}/*stat.h5'.format(exe,dmc_path)
+        tot_file = dmc_path / 'dmc.s003.SpinDensity_u+d.xsf'
+        pol_file = dmc_path / 'dmc.s003.SpinDensity_u-d.xsf'
 
-        out,err,rc = execute(command)
-
-        files_aft = '''
-            dmc.err                           dmc.s001.stat.h5
-            dmc.in.xml                        dmc.s002.scalar.dat
-            dmc.out                           dmc.s002.SpinDensity_d-err.xsf
-            dmc.s000.scalar.dat               dmc.s002.SpinDensity_d+err.xsf
-            dmc.s000.SpinDensity_d-err.xsf    dmc.s002.SpinDensity_d.xsf
-            dmc.s000.SpinDensity_d+err.xsf    dmc.s002.SpinDensity_u-d-err.xsf
-            dmc.s000.SpinDensity_d.xsf        dmc.s002.SpinDensity_u-d+err.xsf
-            dmc.s000.SpinDensity_u-d-err.xsf  dmc.s002.SpinDensity_u+d-err.xsf
-            dmc.s000.SpinDensity_u-d+err.xsf  dmc.s002.SpinDensity_u+d+err.xsf
-            dmc.s000.SpinDensity_u+d-err.xsf  dmc.s002.SpinDensity_u-d.xsf
-            dmc.s000.SpinDensity_u+d+err.xsf  dmc.s002.SpinDensity_u+d.xsf
-            dmc.s000.SpinDensity_u-d.xsf      dmc.s002.SpinDensity_u-err.xsf
-            dmc.s000.SpinDensity_u+d.xsf      dmc.s002.SpinDensity_u+err.xsf
-            dmc.s000.SpinDensity_u-err.xsf    dmc.s002.SpinDensity_u.xsf
-            dmc.s000.SpinDensity_u+err.xsf    dmc.s002.stat.h5
-            dmc.s000.SpinDensity_u.xsf        dmc.s003.scalar.dat
-            dmc.s000.stat.h5                  dmc.s003.SpinDensity_d-err.xsf
-            dmc.s001.scalar.dat               dmc.s003.SpinDensity_d+err.xsf
-            dmc.s001.SpinDensity_d-err.xsf    dmc.s003.SpinDensity_d.xsf
-            dmc.s001.SpinDensity_d+err.xsf    dmc.s003.SpinDensity_u-d-err.xsf
-            dmc.s001.SpinDensity_d.xsf        dmc.s003.SpinDensity_u-d+err.xsf
-            dmc.s001.SpinDensity_u-d-err.xsf  dmc.s003.SpinDensity_u+d-err.xsf
-            dmc.s001.SpinDensity_u-d+err.xsf  dmc.s003.SpinDensity_u+d+err.xsf
-            dmc.s001.SpinDensity_u+d-err.xsf  dmc.s003.SpinDensity_u-d.xsf
-            dmc.s001.SpinDensity_u+d+err.xsf  dmc.s003.SpinDensity_u+d.xsf
-            dmc.s001.SpinDensity_u-d.xsf      dmc.s003.SpinDensity_u-err.xsf
-            dmc.s001.SpinDensity_u+d.xsf      dmc.s003.SpinDensity_u+err.xsf
-            dmc.s001.SpinDensity_u-err.xsf    dmc.s003.SpinDensity_u.xsf
-            dmc.s001.SpinDensity_u+err.xsf    dmc.s003.stat.h5
-            dmc.s001.SpinDensity_u.xsf
-            '''.split()
-
-        assert(check_value_eq(set(os.listdir(dmc_path)),set(files_aft),verbose=True))
-
-        tot_file = os.path.join(dmc_path,'dmc.s003.SpinDensity_u+d.xsf')
-        pol_file = os.path.join(dmc_path,'dmc.s003.SpinDensity_u-d.xsf')
-
-        tot = open(tot_file,'r').read()
-        pol = open(pol_file,'r').read()
+        tot = tot_file.read_text()
+        pol = pol_file.read_text()
 
         tot_ref = '''
              CRYSTAL
