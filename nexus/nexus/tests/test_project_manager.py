@@ -1,5 +1,4 @@
 import pytest
-
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.PROJECT_MANAGER)
 
