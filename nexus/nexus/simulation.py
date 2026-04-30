@@ -475,13 +475,19 @@ class Simulation(NexusCore):
         #end for
         if 'path' in allowed:
             p = self.path
+            if isinstance(p, Path):
+                p = str(p.resolve())
+
             if not isinstance(p,str):
-                self.error('path must be a string, you provided {0} (type {1})'.format(p,p.__class__.__name__))
+                self.error('path must be a string or Path, you provided {0} (type {1})'.format(p,p.__class__.__name__))
             #end if
             if p.startswith('./'):
                 p = p[2:]
             #end if
             ld = nexus_core.local_directory
+            if isinstance(ld, Path):
+                ld = str(ld.resolve())
+
             if p.startswith(ld):
                 p = p.split(ld)[1].lstrip('/')
             #end if
