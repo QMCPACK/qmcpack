@@ -117,7 +117,6 @@ nexus_modules = [
     "gamess",
     "versions",
     "vasp_analyzer",
-    "gaussian_process",
     "pwscf_data_reader",
     "qmcpack_input",
     "pyscf_analyzer",
