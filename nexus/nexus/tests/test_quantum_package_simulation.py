@@ -7,18 +7,19 @@ try:
 except ImportError:
     pass
 
-from .. import testing
-from ..testing import restore_nexus
+from pathlib import Path
+from . import isolate_nexus_core
+
 from ..testing import failed,FailedTest
 from ..testing import object_eq
 
 
 def clear_all_sims():
     from ..quantum_package import QuantumPackage
-
+    from nexus.simulation import Simulation
     QuantumPackage.qprc = None
 
-    testing.clear_all_sims()
+    Simulation.clear_all_sims()
 #end def clear_all_sims
 
 
@@ -150,18 +151,19 @@ def test_incorporate_result():
 #end def test_incorporate_result
 
 
-
-def test_check_sim_status():
+@isolate_nexus_core(needs_tmp_path=True)
+def test_check_sim_status(tmp_path):
     import os
     from ..nexus_base import nexus_core
 
-    tpath = testing.setup_unit_test_output_directory('quantum_package_simulation','test_check_sim_status',divert=True)
-
     nexus_core.runs = ''
+    nexus_core.local_directory  = tmp_path
+    nexus_core.remote_directory = tmp_path
+    nexus_core.file_locations = nexus_core.file_locations + [tmp_path]
 
     sim = get_quantum_package_sim()
 
-    assert(sim.locdir.rstrip('/')==tpath.rstrip('/'))
+    assert(Path(sim.locdir).resolve()==tmp_path)
 
     assert(not sim.finished)
     assert(not sim.failed)
@@ -176,12 +178,10 @@ def test_check_sim_status():
     #end try
 
     sim.create_directories()
-    outfile = os.path.join(sim.locdir,sim.outfile)
+    outfile = Path(sim.locdir).resolve() / sim.outfile
     outfile_text = '* SCF energy'
-    out = open(outfile,'w')
-    out.write(outfile_text)
-    out.close()
-    assert(outfile_text in open(outfile,'r').read())
+    outfile.write_text(outfile_text)
+    assert(outfile_text in outfile.read_text())
     sim.job.finished = True
 
     sim.check_sim_status()
@@ -190,5 +190,4 @@ def test_check_sim_status():
     assert(not sim.failed)
 
     clear_all_sims()
-    restore_nexus()
 #end def test_check_sim_status
