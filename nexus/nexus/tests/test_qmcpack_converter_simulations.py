@@ -7,6 +7,8 @@ try:
 except ImportError:
     pass
 
+from . import isolate_nexus_core, create_pseudo_files
+from nexus.nexus_base import nexus_core
 from .. import testing
 from ..testing import restore_nexus,clear_all_sims
 from ..testing import failed,FailedTest
@@ -89,13 +91,17 @@ def test_pw2qmcpack_get_result():
 #end def test_pw2qmcpack_get_result
 
 
-
-def test_pw2qmcpack_incorporate_result():
+@isolate_nexus_core(needs_tmp_path=True)
+def test_pw2qmcpack_incorporate_result(tmp_path):
     from ..developer import NexusError
     from ..simulation import Simulation
-    from .test_pwscf_simulation import pseudo_inputs,get_pwscf_sim
+    from .test_pwscf_simulation import get_pwscf_sim
 
-    tpath = testing.setup_unit_test_output_directory('pwscf_simulation','test_check_result',**pseudo_inputs)
+    nexus_core.local_directory  = str(tmp_path)
+    nexus_core.remote_directory = tmp_path
+    nexus_core.file_locations = nexus_core.file_locations + [tmp_path]
+
+    create_pseudo_files(tmp_path, ["C.BFD.upf"])
 
     other = Simulation()
 
@@ -117,7 +123,6 @@ def test_pw2qmcpack_incorporate_result():
     sim.incorporate_result('orbitals',None,scf)
 
     clear_all_sims()
-    restore_nexus()
 #end def test_pw2qmcpack_incorporate_result
 
 

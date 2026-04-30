@@ -9,6 +9,7 @@ from nexus.nexus_base import (
     nexus_noncore_defaults,
 )
 from nexus.generic import generic_settings, object_interface
+from nexus.pseudopotential import Pseudopotentials
 
 NEXUS_CORE_KEYS = (
     "local_directory",
@@ -128,8 +129,35 @@ def isolate_nexus_core(needs_tmp_path: bool = False):
     return decorator_isolate_nexus_core
 
 
-def create_pseudo_files(pseudos: list[Path]):
-    ...
+def create_pseudo_files(tmp_dir: Path, pseudos: list[str]):
+    """Create empty pseudopotential files and add them to the global pseudopotentials.
+
+    This function must be called in a function that has been decorated
+    with ``@isolate_nexus_core(needs_tmp_path=True)``.
+
+    Parameters
+    ----------
+    tmp_dir : Path
+        Path to the temporary directory of a test.
+    pseudos : list of str
+        List of pseudopotential names. These are created at the path
+        ``tmp_dir/pseudopotential/<pseudos>``.
+    """
+
+    pseudo_dir = tmp_dir / "pseudopotentials"
+    pseudo_dir.mkdir(parents=True)
+
+    new_pseudos = []
+    for pseudo in pseudos:
+        pseudo_file = pseudo_dir / pseudo
+        pseudo_file.touch()
+        new_pseudos.append(pseudo_file)
+
+    pseudopotentials = Pseudopotentials(new_pseudos)
+    nexus_core.pseudopotentials    = pseudopotentials
+    nexus_noncore.pseudopotentials = pseudopotentials
+    nexus_core.pseudo_dir    = str(pseudo_dir)
+    nexus_noncore.pseudo_dir = str(pseudo_dir)
 
 
 class NexusTestOrder(IntEnum):
