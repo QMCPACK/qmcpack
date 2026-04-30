@@ -7,7 +7,6 @@ try:
 except ImportError:
     pass
 
-from .. import testing
 from ..testing import object_eq
 
 
@@ -49,15 +48,12 @@ def test_empty_init():
 
 
 
-def test_read():
-    import os
+def test_read(tmp_path):
     from ..developer import obj
     from ..pwscf_postprocessors import ProjwfcInput
 
-    tpath = testing.setup_unit_test_output_directory('pwscf_postprocessor_input','test_read')
-
-    infile_path = os.path.join(tpath,'projwfc.in')
-    open(infile_path,'w').write(projwfc_in)
+    infile_path = tmp_path / 'projwfc.in'
+    infile_path.write_text(projwfc_in)
 
     pi = ProjwfcInput(infile_path)
     
@@ -73,17 +69,14 @@ def test_read():
 
 
 
-def test_write():
-    import os
+def test_write(tmp_path):
     from ..developer import obj
     from ..pwscf_postprocessors import ProjwfcInput
 
-    tpath = testing.setup_unit_test_output_directory('pwscf_postprocessor_input','test_write')
+    infile_path = tmp_path / 'projwfc.in'
+    infile_path.write_text(projwfc_in)
 
-    infile_path = os.path.join(tpath,'projwfc.in')
-    open(infile_path,'w').write(projwfc_in)
-
-    write_path = os.path.join(tpath,'projwfc_write.in')
+    write_path = tmp_path / 'projwfc_write.in'
     pi_write = ProjwfcInput(infile_path)
     
     pi_write.write(write_path)

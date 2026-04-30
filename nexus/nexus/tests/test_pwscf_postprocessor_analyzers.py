@@ -7,9 +7,14 @@ try:
 except ImportError:
     pass
 
-from .. import testing
+from pathlib import Path
 from ..testing import object_eq,text_eq
 
+
+TEST_FILES = {
+    "pwf.in":  Path(__file__+"/../test_pwscf_postprocessor_analyzers_files/pwf.in").resolve(),
+    "pwf.out": Path(__file__+"/../test_pwscf_postprocessor_analyzers_files/pwf.out").resolve(),
+}
 
 
 def test_empty_init():
@@ -29,19 +34,11 @@ def test_empty_init():
 #end def test_empty_init
 
 
-
-def test_projwfc_analyzer():
-    import os
+def test_projwfc_analyzer(tmp_path):
     from ..developer import obj
     from ..pwscf_postprocessors import ProjwfcAnalyzer
 
-    tpath = testing.setup_unit_test_output_directory(
-        test      = 'pwscf_postprocessor_analyzers',
-        subtest   = 'test_projwfc_analyzer',
-        file_sets = ['pwf.in','pwf.out'],
-        )
-
-    projwfc_in = os.path.join(tpath,'pwf.in')
+    projwfc_in = TEST_FILES["pwf.in"]
 
     pa = ProjwfcAnalyzer(projwfc_in)
 
@@ -155,11 +152,11 @@ def test_projwfc_analyzer():
     assert(object_eq(pa.to_obj(),pa_ref))
 
 
-    lowdin_file = os.path.join(tpath,'pwf.lowdin')
+    lowdin_file = tmp_path / 'pwf.lowdin'
 
     pa.write_lowdin(lowdin_file)
 
-    text = open(lowdin_file,'r').read()
+    text = lowdin_file.read_text()
 
     text_ref = '''
         nup+ndn = 5.9977
@@ -188,11 +185,11 @@ def test_projwfc_analyzer():
     assert(text_eq(text,text_ref))
 
 
-    lowdin_file = os.path.join(tpath,'pwf.lowdin_long')
+    lowdin_file = tmp_path / 'pwf.lowdin_long'
 
     pa.write_lowdin(lowdin_file,long=True)
 
-    text = open(lowdin_file,'r').read()
+    text = lowdin_file.read_text()
 
     text_ref = '''
         nup+ndn = 5.9977

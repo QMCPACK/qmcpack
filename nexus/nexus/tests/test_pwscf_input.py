@@ -8,8 +8,8 @@ except ImportError:
     pass
 
 from pathlib import Path
+from . import isolate_nexus_core
 from ..testing import failed
-from ..testing import divert_nexus_log,restore_nexus_log
 from ..testing import object_eq,object_diff
 
 
@@ -28,7 +28,7 @@ TEST_FILES = {
     "README": Path(__file__+"/../test_pwscf_input_files/README").resolve(),
 }
 
-
+@isolate_nexus_core(needs_tmp_path=True)
 def test_input(tmp_path):
     # imports
     import numpy as np
@@ -40,9 +40,6 @@ def test_input(tmp_path):
 
     tmp_dir = tmp_path / "test_pwscf_input_output"
     tmp_dir.mkdir()
-
-    # divert logging function
-    divert_nexus_log()
 
     # definitions
     def check_pw_same(pw1_,pw2_,l1='pw1',l2='pw2'):
@@ -343,8 +340,4 @@ def test_input(tmp_path):
     pw.write(write_path)
     pw4 = PwscfInput(write_path)
     check_pw_same(pwg,pw3,'generate','write')
-
-
-    # restore logging function
-    restore_nexus_log()
 #end def test_input
