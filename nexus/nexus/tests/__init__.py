@@ -129,8 +129,12 @@ def isolate_nexus_core(needs_tmp_path: bool = False):
     return decorator_isolate_nexus_core
 
 
-def create_pseudo_files(tmp_dir: Path, pseudos: list[str]):
-    """Create empty pseudopotential files and add them to the global pseudopotentials.
+def create_pseudo_files(
+    tmp_dir: Path,
+    pseudos: list[str],
+    pseudo_strs: list[str | None] | None = None
+):
+    """Create pseudopotential files and add them to the global pseudopotentials.
 
     This function must be called in a function that has been decorated
     with ``@isolate_nexus_core(needs_tmp_path=True)``.
@@ -140,18 +144,30 @@ def create_pseudo_files(tmp_dir: Path, pseudos: list[str]):
     tmp_dir : Path
         Path to the temporary directory of a test.
     pseudos : list of str
-        List of pseudopotential names. These are created at the path
+        List of pseudopotential name(s). These are created at the path
         ``tmp_dir/pseudopotential/<pseudos>``.
+    pseudo_strs : list of str or None, optional
+        Text to write into the pseudopotential file(s). Must have the
+        same length as ``pseudos``.
     """
+
+    if pseudo_strs is None:
+        pseudo_strs = [""] * len(pseudos)
+    elif len(pseudo_strs) != len(pseudos):
+        raise ValueError(
+            "Test improperly written!\n"
+            "Must have pseudo text or `None` for every pseudo file!"
+        )
 
     pseudo_dir = tmp_dir / "pseudopotentials"
     pseudo_dir.mkdir(parents=True)
 
     new_pseudos = []
-    for pseudo in pseudos:
+    for pseudo, text in zip(pseudos, pseudo_strs):
         pseudo_file = pseudo_dir / pseudo
-        pseudo_file.touch()
+        pseudo_file.write_text(text)
         new_pseudos.append(pseudo_file)
+
 
     pseudopotentials = Pseudopotentials(new_pseudos)
     nexus_core.pseudopotentials    = pseudopotentials

@@ -7,11 +7,10 @@ try:
 except ImportError:
     pass
 
+from pathlib import Path
+from . import isolate_nexus_core
 from .. import versions
-from .. import testing
-from ..testing import divert_nexus_log,restore_nexus_log
 from ..testing import value_eq,object_eq,text_eq
-
 
 
 def test_empty_init():
@@ -68,18 +67,13 @@ def test_empty_init():
 
 
 def test_vmc_dmc_analysis():
-    import os
     from ..developer import obj
     from ..qmcpack_analyzer import QmcpackAnalyzer
 
-    tpath = testing.setup_unit_test_output_directory(
-        test      = 'qmcpack_analyzer',
-        subtest   = 'test_vmc_dmc_analysis',
-        file_sets = ['diamond_gamma'],
-        )
+    test_files = Path(__file__+"/../test_qmcpack_analyzer_files/diamond_gamma").resolve()
 
     # test load of vmc data
-    infile = os.path.join(tpath,'diamond_gamma/vmc/vmc.in.xml')
+    infile = test_files / 'vmc/vmc.in.xml'
 
     qa = QmcpackAnalyzer(infile)
 
@@ -213,7 +207,7 @@ def test_vmc_dmc_analysis():
 
     
     # test analysis of dmc data
-    infile = os.path.join(tpath,'diamond_gamma/dmc/dmc.in.xml')
+    infile = test_files / 'dmc/dmc.in.xml'
 
     qa = QmcpackAnalyzer(infile,analyze=True,equilibration=5)
 
@@ -234,26 +228,16 @@ def test_vmc_dmc_analysis():
         })
 
     assert(object_eq(le,le_ref))
-
 #end def test_vmc_dmc_analysis
 
 
-
+@isolate_nexus_core
 def test_optimization_analysis():
-    import os
     from numpy import array
     from ..developer import obj
     from ..qmcpack_analyzer import QmcpackAnalyzer
-    
-    tpath = testing.setup_unit_test_output_directory(
-        test      = 'qmcpack_analyzer',
-        subtest   = 'test_optimization_analysis',
-        file_sets = ['diamond_gamma'],
-        )
 
-    divert_nexus_log()
-
-    infile = os.path.join(tpath,'diamond_gamma/opt/opt.in.xml')
+    infile = Path(__file__+"/../test_qmcpack_analyzer_files/diamond_gamma/opt/opt.in.xml").resolve()
 
     qa = QmcpackAnalyzer(infile,analyze=True,equilibration=5)
 
@@ -379,25 +363,15 @@ def test_optimization_analysis():
         )
 
     assert(object_eq(opt.to_obj(),opt_ref,atol=1e-8))
-
-    restore_nexus_log()
 #end def test_optimization_analysis
 
 
 
 def test_twist_average_analysis():
-    import os
     from ..developer import obj
     from ..qmcpack_analyzer import QmcpackAnalyzer
 
-    tpath = testing.setup_unit_test_output_directory(
-        test      = 'qmcpack_analyzer',
-        subtest   = 'test_twist_average_analysis',
-        file_sets = ['diamond_twist'],
-        )
-
-    # test analysis of twist averaged vmc data
-    infile = os.path.join(tpath,'diamond_twist/vmc/vmc.in')
+    infile = Path(__file__+"/../test_qmcpack_analyzer_files/diamond_twist/vmc/vmc.in").resolve()
 
     qa = QmcpackAnalyzer(infile,analyze=True,equilibration=5)
 
@@ -432,25 +406,16 @@ def test_twist_average_analysis():
     le_avg     = qa.qmc[0].scalars.LocalEnergy.mean
     le_avg_ref = -11.343673354655264
     assert(value_eq(le_avg,le_avg_ref))
-    
 #end def test_twist_average_analysis
 
 
 
 if versions.h5py_available:
     def test_density_analysis():
-        import os
         from numpy import array
         from ..qmcpack_analyzer import QmcpackAnalyzer
 
-        tpath = testing.setup_unit_test_output_directory(
-            test      = 'qmcpack_analyzer',
-            subtest   = 'test_density_analysis',
-            file_sets = ['diamond_gamma'],
-            )
-
-        infile = os.path.join(tpath,'diamond_gamma/dmc/dmc.in.xml')
-
+        infile = Path(__file__+"/../test_qmcpack_analyzer_files/diamond_gamma/dmc/dmc.in.xml").resolve()
         qa = QmcpackAnalyzer(infile,analyze=True,equilibration=5)
 
         qmc = qa.qmc[0]

@@ -7,8 +7,11 @@ try:
 except ImportError:
     pass
 
-from .. import testing
-from ..testing import restore_nexus,clear_all_sims
+from pathlib import Path
+
+from . import isolate_nexus_core, create_pseudo_files
+
+from ..testing import clear_all_sims
 from ..testing import failed,FailedTest
 from ..testing import value_eq,text_eq
 
@@ -114,22 +117,21 @@ def test_check_result():
 #end def test_check_result
 
 
-
-def test_get_result():
-    import os
-    from subprocess import Popen,PIPE
+@isolate_nexus_core(needs_tmp_path=True)
+def test_get_result(tmp_path):
     from ..developer import NexusError, obj
     from ..nexus_base import nexus_core
     from ..qmcpack_analyzer import QmcpackAnalyzer
 
-    tpath = testing.setup_unit_test_output_directory('qmcpack_simulation','test_get_result',divert=True)
-
     nexus_core.runs    = ''
     nexus_core.results = ''
+    nexus_core.local_directory  = str(tmp_path)
+    nexus_core.remote_directory = tmp_path
+    nexus_core.file_locations = nexus_core.file_locations + [tmp_path]
 
     sim = get_qmcpack_sim()
 
-    assert(sim.locdir.rstrip('/')==tpath.rstrip('/'))
+    assert(Path(sim.locdir).resolve() == tmp_path)
 
     try:
         sim.get_result('unknown',None)
@@ -153,16 +155,11 @@ def test_get_result():
 
     assert(set(result.keys())==set(result_ref.keys()))
     for k,v in result.items():
-        assert(v.replace(tpath,'').lstrip('/')==result_ref[k])
+        assert(Path(v).relative_to(tmp_path)==Path(result_ref[k]))
     #end for
 
-    qa_files_path = testing.unit_test_file_path('qmcpack_analyzer','diamond_gamma/opt')
-    command = 'rsync -a {} {}'.format(qa_files_path,tpath)
-    process = Popen(command,shell=True,stdout=PIPE,stderr=PIPE,close_fds=True)
-    out,err = process.communicate()
-    opt_path = os.path.join(tpath,'opt')
-    opt_infile = os.path.join(opt_path,'opt.in.xml')
-    assert(os.path.exists(opt_infile))
+    opt_infile = Path(__file__+"/../test_qmcpack_analyzer_files/diamond_gamma/opt/opt.in.xml").resolve()
+    assert(opt_infile.exists())
 
     qa = QmcpackAnalyzer(opt_infile,analyze=True,equilibration=5)
 
@@ -170,7 +167,7 @@ def test_get_result():
 
     sim.create_directories()
 
-    qa.save(os.path.join(sim.imresdir,sim.analyzer_image))
+    qa.save(Path(sim.imresdir).resolve() / sim.analyzer_image)
 
     result = sim.get_result('jastrow',None)
 
@@ -180,46 +177,53 @@ def test_get_result():
 
     assert(set(result.keys())==set(result_ref.keys()))
     for k,v in result.items():
-        assert(v.replace(tpath,'').lstrip('/')==result_ref[k])
+        assert(Path(v).relative_to(tmp_path)==Path(result_ref[k]))
     #end for
 
     clear_all_sims()
-    restore_nexus()
 #end def test_get_result
 
 
-
-def test_incorporate_result():
-    import os
+@isolate_nexus_core(needs_tmp_path=True)
+def test_incorporate_result(tmp_path):
     import shutil
-    from subprocess import Popen,PIPE
     from numpy import array
     from ..developer import obj
     from ..nexus_base import nexus_core
     from .test_vasp_simulation import setup_vasp_sim as get_vasp_sim
-    from .test_vasp_simulation import pseudo_inputs as vasp_pseudo_inputs
     from .test_qmcpack_converter_simulations import get_pw2qmcpack_sim
     from .test_qmcpack_converter_simulations import get_convert4qmc_sim
     from .test_qmcpack_converter_simulations import get_pyscf_to_afqmc_sim
 
-    pseudo_inputs = obj(vasp_pseudo_inputs)
-
-    tpath = testing.setup_unit_test_output_directory('qmcpack_simulation','test_incorporate_result',**pseudo_inputs)
-
     nexus_core.runs    = ''
     nexus_core.results = ''
+    nexus_core.local_directory  = tmp_path
+    nexus_core.remote_directory = tmp_path
+    nexus_core.file_locations = nexus_core.file_locations + [tmp_path]
 
+    create_pseudo_files(
+        tmp_dir=tmp_path,
+        pseudos=["C.POTCAR"],
+        pseudo_strs=[(
+            "This is not a real POTCAR file.\n"
+            "\n"
+            "End of Dataset\n"
+        )]
+    )
 
     # incorporate vasp structure
     sim = get_qmcpack_sim(identifier='qmc_vasp_structure',tiling=(2,2,2))
 
-    vasp_struct = get_vasp_sim(tpath,identifier='vasp_structure',files=True)
+    vasp_struct = get_vasp_sim(tmp_path,identifier='vasp_structure',files=True)
 
-    assert(sim.locdir.strip('/')==tpath.strip('/'))
+    assert(Path(sim.locdir).resolve()==tmp_path)
 
     pc_file = 'diamond_POSCAR'
     cc_file = vasp_struct.identifier+'.CONTCAR'
-    shutil.copy2(os.path.join(tpath,pc_file),os.path.join(tpath,cc_file))
+    shutil.copy2(
+        src = tmp_path / pc_file,
+        dst = tmp_path / cc_file,
+    )
 
     result = vasp_struct.get_result('structure',None)
 
@@ -249,15 +253,12 @@ def test_incorporate_result():
 
     result = p2q_orb.get_result('orbitals',None)
 
-    p2q_output_path = os.path.join(tpath,'pwscf_output')
-    if not os.path.exists(p2q_output_path):
-        os.makedirs(p2q_output_path)
-    #end if
-    p2q_h5file = os.path.join(p2q_output_path,'pwscf.pwscf.h5')
-    f = open(p2q_h5file,'w')
-    f.write('')
-    f.close()
-    assert(os.path.exists(p2q_h5file))
+    p2q_output_path = tmp_path / 'pwscf_output'
+    p2q_output_path.mkdir()
+
+    p2q_h5file = p2q_output_path / 'pwscf.pwscf.h5'
+    p2q_h5file.touch()
+    assert(p2q_h5file.exists())
 
     spo = sim.input.get('bspline')
     assert(spo.href=='MISSING.h5')
@@ -274,8 +275,8 @@ def test_incorporate_result():
 
     result = c4q_orb.get_result('orbitals',None)
 
-    wfn_file  = os.path.join(tpath,'c4q_orbitals.wfj.xml')
-    wfn_file2 = os.path.join(tpath,'c4q_orbitals.orbs.h5')
+    wfn_file  = tmp_path / 'c4q_orbitals.wfj.xml'
+    wfn_file2 = tmp_path / 'c4q_orbitals.orbs.h5'
     input = sim.input.copy()
     dset = input.get('determinantset')
     dset.href = 'orbs.h5'
@@ -283,9 +284,9 @@ def test_incorporate_result():
     del input.simulation
     input.qmcsystem = qs
     input.write(wfn_file)
-    assert(os.path.exists(wfn_file))
-    open(wfn_file2,'w').write('fake')
-    assert(os.path.exists(wfn_file2))
+    assert(wfn_file.exists())
+    wfn_file2.write_text('fake')
+    assert(wfn_file2.exists())
 
     from ..qmcpack_input import QmcpackInput
     inp = QmcpackInput(wfn_file)
@@ -302,15 +303,11 @@ def test_incorporate_result():
     # incorporate qmcpack jastrow
     sim = get_qmcpack_sim(identifier='qmc_jastrow')
 
-    qa_files_path = testing.unit_test_file_path('qmcpack_analyzer','diamond_gamma/opt')
-    command = 'rsync -a {} {}'.format(qa_files_path,tpath)
-    process = Popen(command,shell=True,stdout=PIPE,stderr=PIPE,close_fds=True)
-    out,err = process.communicate()
-    opt_path = os.path.join(tpath,'opt')
-    opt_infile = os.path.join(opt_path,'opt.in.xml')
-    assert(os.path.exists(opt_infile))
-    opt_file = os.path.join(opt_path,'opt.s004.opt.xml')
-    assert(os.path.exists(opt_file))
+    opt_path = Path(__file__+"/../test_qmcpack_analyzer_files/diamond_gamma/opt").resolve()
+    opt_infile = opt_path / 'opt.in.xml'
+    assert(opt_infile.exists())
+    opt_file = opt_path / 'opt.s004.opt.xml'
+    assert(opt_file.exists())
 
     result = obj(opt_file=opt_file)
 
@@ -373,22 +370,21 @@ def test_incorporate_result():
     assert(ham.filename=='p2a_wavefunction.afqmc.h5')
     
     clear_all_sims()
-    restore_nexus()
 #end def test_incorporate_result()
 
 
-
-def test_check_sim_status():
-    import os
+@isolate_nexus_core(needs_tmp_path=True)
+def test_check_sim_status(tmp_path):
     from ..nexus_base import nexus_core
 
-    tpath = testing.setup_unit_test_output_directory('qmcpack_simulation','test_check_sim_status',divert=True)
-
     nexus_core.runs = ''
+    nexus_core.local_directory  = tmp_path
+    nexus_core.remote_directory = tmp_path
+    nexus_core.file_locations = nexus_core.file_locations + [tmp_path]
 
     sim = get_qmcpack_sim(identifier='qmc')
 
-    assert(sim.locdir.rstrip('/')==tpath.rstrip('/'))
+    assert(Path(sim.locdir).resolve()==tmp_path)
 
     assert(not sim.finished)
     assert(not sim.failed)
@@ -402,18 +398,14 @@ def test_check_sim_status():
     assert(not sim.finished)
     assert(not sim.failed)
 
-    outfile = os.path.join(tpath,sim.outfile)
+    outfile = tmp_path / sim.outfile
     out_text = 'Total Execution'
-    out = open(outfile,'w')
-    out.write(out_text)
-    out.close()
-    assert(os.path.exists(outfile))
-    assert(out_text in open(outfile,'r').read())
-    errfile = os.path.join(tpath,sim.errfile)
-    err = open(errfile,'w')
-    err.write('')
-    err.close()
-    assert(os.path.exists(errfile))
+    outfile.write_text(out_text)
+    assert(outfile.exists())
+    assert(out_text in outfile.read_text())
+    errfile = tmp_path / sim.errfile
+    errfile.touch()
+    assert(errfile.exists())
 
     sim.check_sim_status()
 
@@ -421,6 +413,5 @@ def test_check_sim_status():
     assert(not sim.failed)
 
     clear_all_sims()
-    restore_nexus()
 #end def test_check_sim_status()
 

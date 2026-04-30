@@ -7,16 +7,18 @@ try:
 except ImportError:
     pass
 
+from pathlib import Path
+
+from . import isolate_nexus_core
+
 from .. import versions
-from .. import testing
-from ..testing import divert_nexus_log,restore_nexus_log
 from ..testing import value_eq,object_eq,check_object_eq
 
-associated_files = dict()
-
-def get_files():
-    return testing.collect_unit_test_file_paths('qmcpack_input',associated_files)
-#end def get_files
+TEST_FILES = {
+    "CH4_afqmc.in.xml":    Path(__file__+"/../test_qmcpack_input_files/CH4_afqmc.in.xml").resolve(),
+    "OH_mixed_pos.in.xml": Path(__file__+"/../test_qmcpack_input_files/OH_mixed_pos.in.xml").resolve(),
+    "VO2_M1_afm.in.xml":   Path(__file__+"/../test_qmcpack_input_files/VO2_M1_afm.in.xml").resolve(),
+}
 
 
 def format_value(v):
@@ -544,19 +546,6 @@ def check_vs_serial_reference(qi,name):
     remove_metadata(sr)
     assert check_object_eq(sq,obj(sr),bypass=True,verbose=True)
 #end def check_vs_serial_reference
-
-
-
-def test_files():
-    filenames = [
-        'VO2_M1_afm.in.xml',
-        'CH4_afqmc.in.xml',
-        'OH_mixed_pos.in.xml',
-        ]
-    files = get_files()
-    assert(set(filenames)==set(files.keys()))
-#end def test_files
-
 
 
 def test_qixml_class_init():
@@ -1394,9 +1383,7 @@ def test_read():
     import numpy as np
     from ..qmcpack_input import QmcpackInput
 
-    files = get_files()
-
-    qi_read = QmcpackInput(files['VO2_M1_afm.in.xml'])
+    qi_read = QmcpackInput(TEST_FILES['VO2_M1_afm.in.xml'])
     assert(not qi_read.is_afqmc_input())
     qi_read.pluralize()
     assert(not qi_read.is_afqmc_input())
@@ -1418,14 +1405,14 @@ def test_read():
 
 
     # test read for afqmc input file
-    qi = QmcpackInput(files['CH4_afqmc.in.xml'])
+    qi = QmcpackInput(TEST_FILES['CH4_afqmc.in.xml'])
     assert(qi.is_afqmc_input())
 
     check_vs_serial_reference(qi,'CH4_afqmc.in.xml read')
 
 
     # test reading mixed integer/float positions 
-    qi = QmcpackInput(files['OH_mixed_pos.in.xml'])
+    qi = QmcpackInput(TEST_FILES['OH_mixed_pos.in.xml'])
     pos = qi.qmcsystem.particlesets.ion0.position
     assert pos.dtype==float
     pos_ref = np.array(
@@ -1437,19 +1424,14 @@ def test_read():
 
 
 
-def test_write():
-    import os
+def test_write(tmp_path):
     from ..qmcpack_input import QmcpackInput
-
-    tpath = testing.setup_unit_test_output_directory('qmcpack_input','test_write')
-
-    files = get_files()
 
     # test write real space qmc input file
     ref_file   = 'VO2_M1_afm.in.xml'
-    write_file = os.path.join(tpath,'write_'+ref_file)
+    write_file = tmp_path / ('write_'+ref_file)
 
-    qi_read = QmcpackInput(files[ref_file])
+    qi_read = QmcpackInput(TEST_FILES[ref_file])
 
     text = qi_read.write()
     assert('<simulation>' in text)
@@ -1500,9 +1482,9 @@ def test_write():
 
     # test write for afqmc input file
     ref_file   = 'CH4_afqmc.in.xml'
-    write_file = os.path.join(tpath,'write_'+ref_file)
+    write_file = tmp_path / ('write_'+ref_file)
 
-    qi_read = QmcpackInput(files[ref_file])
+    qi_read = QmcpackInput(TEST_FILES[ref_file])
 
     text = qi_read.write()
     assert('<simulation' in text)
@@ -1541,9 +1523,7 @@ def test_write():
 def test_get():
     from ..qmcpack_input import QmcpackInput
 
-    files = get_files()
-
-    qi = QmcpackInput(files['VO2_M1_afm.in.xml'])
+    qi = QmcpackInput(TEST_FILES['VO2_M1_afm.in.xml'])
 
     s    = qi.simulation
     p    = s.project
@@ -1759,7 +1739,7 @@ def test_get():
     #end for
 
 
-    qi = QmcpackInput(files['CH4_afqmc.in.xml'])
+    qi = QmcpackInput(TEST_FILES['CH4_afqmc.in.xml'])
 
     s  = qi.simulation
     pr = s.project
@@ -1816,12 +1796,10 @@ def test_get():
 #end def test_get
 
 
-
+@isolate_nexus_core
 def test_incorporate_system():
     from ..physical_system import generate_physical_system
     from ..qmcpack_input import generate_qmcpack_input
-
-    divert_nexus_log()
 
     system = generate_physical_system(
         units    = 'A',
@@ -1885,9 +1863,6 @@ def test_incorporate_system():
     del qi.get('qmcsystem').particlesets
 
     assert(object_eq(qi,qi_ref))
-
-    restore_nexus_log()
-
 #end def test_incorporate_system
 
 
