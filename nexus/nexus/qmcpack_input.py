@@ -134,6 +134,7 @@
 
 
 import os
+from pathlib import Path
 import inspect
 import keyword
 import numpy as np
@@ -3166,7 +3167,7 @@ class QmcpackInput(SimulationInput,Names):
         element  = None
         if arg0 is None and arg1 is None:
             None
-        elif isinstance(arg0,str) and arg1 is None:
+        elif isinstance(arg0,(str, Path)) and arg1 is None:
             filepath = arg0
         elif isinstance(arg0,QIxml) and arg1 is None:
             element = arg0
