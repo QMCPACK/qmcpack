@@ -53,6 +53,7 @@ case "$1" in
         echo 'Configure for building with GCC and Intel MKL'
 
         source /opt/intel/oneapi/setvars.sh
+        unset CPATH C_INCLUDE_PATH CPLUS_INCLUDE_PATH LIBRARY_PATH
 
         cmake -GNinja \
               -DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \
