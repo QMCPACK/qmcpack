@@ -55,16 +55,10 @@ Repository = "https://github.com/QMCPACK/qmcpack"
 [tool.coverage.run]
 patch = ["subprocess"]
 parallel = true
-omit = [
-    "nexus/tests/*",
-    "nexus/examples/*",
-]
+omit = ["nexus/tests/*"]
 
 [tool.coverage.report]
-omit = [
-    "nexus/tests/*",
-    "nexus/examples/*",
-]
+omit = ["nexus/tests/*"]
 
 [tool.pytest.ini_options]
 #addopts = ["--cov=nexus", "--cov-report=xml"]
