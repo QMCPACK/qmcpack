@@ -242,6 +242,7 @@ case "$1" in
              "need built-from-source OpenBLAS due to bug in rpm"
         
         source /opt/intel/oneapi/setvars.sh
+        unset CPATH C_INCLUDE_PATH CPLUS_INCLUDE_PATH LIBRARY_PATH
 
         export OMPI_CC=/opt/intel/oneapi/compiler/2023.0.0/linux/bin/intel64/icc
         export OMPI_CXX=/opt/intel/oneapi/compiler/2023.0.0/linux/bin/intel64/icpc
