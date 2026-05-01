@@ -1,11 +1,9 @@
-try:
-    import pytest
-    from . import NexusTestOrder
-    pytestmark = pytest.mark.order(NexusTestOrder.PERIODIC_TABLE)
-    from ..generic import generic_settings
-    generic_settings.raise_error = True
-except ImportError:
-    pass
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.PERIODIC_TABLE)
+
+from ..generic import generic_settings
+generic_settings.raise_error = True
 
 
 def test_periodic_table():

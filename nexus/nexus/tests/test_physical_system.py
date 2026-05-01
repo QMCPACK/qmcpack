@@ -1,12 +1,9 @@
-#! /usr/bin/env python3
-try:
-    import pytest
-    from . import NexusTestOrder
-    pytestmark = pytest.mark.order(NexusTestOrder.PHYSICAL_SYSTEM)
-    from ..generic import generic_settings
-    generic_settings.raise_error = True
-except ImportError:
-    pass
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.PHYSICAL_SYSTEM)
+
+from ..generic import generic_settings
+generic_settings.raise_error = True
 
 import numpy as np
 from .. import testing
