@@ -9,7 +9,7 @@ try:
 except ImportError:
     pass
 
-
+from pathlib import Path
 import numpy as np
 from .. import versions
 from .. import testing
@@ -42,17 +42,15 @@ def object_diff(*args,**kwargs):
 #end def object_diff
 
 
-associated_files     = dict()
+TEST_FILES = {
+    'La2CuO4_ICSD69312.cif': Path(__file__+"/../test_structure_files/La2CuO4_ICSD69312.cif").resolve(),
+    'coronene.xyz': Path(__file__+"/../test_structure_files/coronene.xyz").resolve(),
+}
+
 reference_inputs     = dict()
 reference_structures = dict()
 generated_structures = dict()
 crystal_structures   = dict()
-
-
-def get_files():
-    return testing.collect_unit_test_file_paths('structure',associated_files)
-#end def get_files
-
 
 def structure_diff(s1,s2):
     keys = ('units','elem','pos','axes','kpoints','kweights','kaxes')
@@ -261,18 +259,6 @@ def example_structure_h4():
     s1 = Structure(axes=axes, elem=elem, pos=pos, units='B')
     return s1
 #end def example_structure_h4
-
-
-
-def test_files():
-    filenames = [
-        'La2CuO4_ICSD69312.cif',
-        'coronene.xyz',
-        ]
-    files = get_files()
-    assert(set(files.keys())==set(filenames))
-#end def test_files
-
 
 
 def test_empty_init():
@@ -634,14 +620,11 @@ def test_gen_graphene():
 
 
 
-def test_read_write():
+def test_read_write(tmp_path):
     """
     Write/read conventional diamond cell to/from XYZ, XSF, and POSCAR formats.
     """
-    import os
     from ..structure import generate_structure, read_structure
-
-    tpath = testing.setup_unit_test_output_directory('structure','test_read_write')
 
     d8 = generate_structure(
         structure = 'diamond',
@@ -649,15 +632,15 @@ def test_read_write():
         )
 
     # Write an XYZ file
-    xyz_file = os.path.join(tpath,'diamond8.xyz')
+    xyz_file = tmp_path / 'diamond8.xyz'
     d8.write(xyz_file)
     
     # Write an XSF file
-    xsf_file = os.path.join(tpath,'diamond8.xsf')
+    xsf_file = tmp_path / 'diamond8.xsf'
     d8.write(xsf_file)
 
     # Write a POSCAR file
-    poscar_file = os.path.join(tpath,'diamond8.POSCAR')
+    poscar_file = tmp_path / 'diamond8.POSCAR'
     d8.write(poscar_file)
 
     # Read an XYZ file
@@ -684,10 +667,8 @@ if versions.pycifrw_available and versions.cif2cell_available:
         """
         from ..structure import read_structure,generate_structure
 
-        files = get_files()
-
         # Read from CIF file
-        s = read_structure(files['La2CuO4_ICSD69312.cif'])
+        s = read_structure(str(TEST_FILES['La2CuO4_ICSD69312.cif']))
 
         ref = generate_structure(
             units = 'A',
@@ -722,8 +703,6 @@ def test_bounding_box():
     import numpy as np
     from ..structure import generate_structure,read_structure
 
-    files = get_files()
-
     h2o = generate_structure(
         elem  = ['O','H','H'], 
         pos   = [[0.000000, 0.000000, 0.000000],
@@ -744,7 +723,7 @@ def test_bounding_box():
     assert(value_eq(tuple(h2o_auto.pos[-1]),(4.,4.75716,4.29313)))
 
 
-    s = read_structure(files['coronene.xyz'])
+    s = read_structure(TEST_FILES['coronene.xyz'])
 
     # make a bounding box that is at least 5 A from the nearest atom
     s.bounding_box(mindist=5.0)
