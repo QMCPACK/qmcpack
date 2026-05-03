@@ -8,7 +8,6 @@ generic_settings.raise_error = True
 from pathlib import Path
 from . import isolate_nexus_core
 from .. import testing
-from ..testing import restore_nexus
 from ..testing import failed,FailedTest
 from ..testing import object_eq
 
@@ -82,7 +81,6 @@ def test_check_result():
 
 @isolate_nexus_core(needs_tmp_path=True)
 def test_get_result(tmp_path):
-    import os
     from ..developer import obj, NexusError
     from ..nexus_base import nexus_core
 
@@ -97,7 +95,7 @@ def test_get_result(tmp_path):
 
     sim.create_directories()
     sim.write_inputs()
-    Path(sim.imresdir).resolve().mkdir()
+    Path(sim.imresdir).resolve().mkdir(exist_ok=True)
     analyzer = sim.analyzer_type(sim)
     analyzer.save(Path(sim.imresdir).resolve() / sim.analyzer_image)
 
