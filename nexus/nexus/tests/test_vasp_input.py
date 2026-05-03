@@ -5,16 +5,11 @@ pytestmark = pytest.mark.order(NexusTestOrder.VASP_ANALYZER)
 from ..generic import generic_settings
 generic_settings.raise_error = True
 
+from pathlib import Path
+from nexus.nexus_base import nexus_core
+from . import isolate_nexus_core
 from .. import testing
-from ..testing import restore_nexus
 from ..testing import object_eq
-
-
-associated_files = dict()
-
-def get_files():
-    return testing.collect_unit_test_file_paths('vasp_input',associated_files)
-#end def get_files
 
 
 def format_value(v):
@@ -157,19 +152,13 @@ def check_vs_serial_reference(gi,name):
 #end def check_vs_serial_reference
 
 
-
-def test_files():
-    filenames = [
-        'd16bulk.POSCAR',
-        'diamond_INCAR',
-        'diamond_KPOINTS',
-        'diamond_POSCAR',
-        'diamond_POTCAR',
-        ]
-    files = get_files()
-    assert(set(filenames)==set(files.keys()))
-#end def test_files
-
+TEST_FILES = {
+    "d16bulk.POSCAR": Path(__file__+"/../test_vasp_input_files/d16bulk.POSCAR").resolve(),
+    "diamond_INCAR": Path(__file__+"/../test_vasp_input_files/diamond_INCAR").resolve(),
+    "diamond_KPOINTS": Path(__file__+"/../test_vasp_input_files/diamond_KPOINTS").resolve(),
+    "diamond_POSCAR": Path(__file__+"/../test_vasp_input_files/diamond_POSCAR").resolve(),
+    "diamond_POTCAR": Path(__file__+"/../test_vasp_input_files/diamond_POTCAR").resolve(),
+}
 
 
 def test_keyword_consistency():
@@ -192,20 +181,8 @@ def test_empty_init():
 def test_read():
     from ..vasp_input import VaspInput
 
-    vfiles = [
-        'diamond_INCAR',
-        'diamond_KPOINTS',
-        'diamond_POSCAR',
-        'diamond_POTCAR',
-        ]
-
-    tpath = testing.setup_unit_test_output_directory(
-        test      = 'vasp_input',
-        subtest   = 'test_read',
-        file_sets = {'':vfiles}
-        )
-
-    vi = VaspInput(tpath,prefix='diamond_')
+    test_files_dir = TEST_FILES['diamond_INCAR'].parent
+    vi = VaspInput(test_files_dir, prefix='diamond_')
 
     del vi.potcar.filepath
 
@@ -214,27 +191,16 @@ def test_read():
 
 
 
-def test_write():
+def test_write(tmp_path):
     from ..vasp_input import VaspInput
 
-    vfiles = [
-        'diamond_INCAR',
-        'diamond_KPOINTS',
-        'diamond_POSCAR',
-        'diamond_POTCAR',
-        ]
+    test_files_dir = TEST_FILES['diamond_INCAR'].parent
 
-    tpath = testing.setup_unit_test_output_directory(
-        test      = 'vasp_input',
-        subtest   = 'test_write',
-        file_sets = {'':vfiles}
-        )
-
-    vi_read = VaspInput(tpath,prefix='diamond_')
+    vi_read = VaspInput(test_files_dir, prefix='diamond_')
     
-    vi_read.write(tpath,prefix='write_diamond_')
+    vi_read.write(tmp_path, prefix='write_diamond_')
 
-    vi_write = VaspInput(tpath,prefix='write_diamond_')
+    vi_write = VaspInput(tmp_path, prefix='write_diamond_')
 
     del vi_write.potcar.filepath
 
@@ -242,30 +208,25 @@ def test_write():
 #end test_write
 
 
-
-def test_generate():
-    import os
+@isolate_nexus_core(needs_tmp_path=True)
+def test_generate(tmp_path):
     from ..nexus_base import nexus_noncore
     from ..physical_system import generate_physical_system
     from ..vasp_input import generate_vasp_input,VaspInput
 
-    tpath = testing.setup_unit_test_output_directory('vasp_input','test_generate',divert=True)
+    pseudo_dir = tmp_path / 'pseudopotentials'
+    pseudo_dir.mkdir()
 
-    pseudo_dir = os.path.join(tpath,'pseudopotentials')
-
+    nexus_core.local_directory  = str(tmp_path)
+    nexus_core.remote_directory = tmp_path
+    nexus_core.file_locations = nexus_core.file_locations + [tmp_path]
     nexus_noncore.pseudo_dir = pseudo_dir
 
-    if not os.path.exists(pseudo_dir):
-        os.makedirs(pseudo_dir)
-    #end if
+    (pseudo_dir / 'C.POTCAR').write_text(c_potcar_text)
 
-    open(os.path.join(pseudo_dir,'C.POTCAR'),'w').write(c_potcar_text)
-
-
-    files = get_files()
 
     dia16 = generate_physical_system(
-        structure = files['d16bulk.POSCAR'],
+        structure = TEST_FILES['d16bulk.POSCAR'],
         C         = 4                  
         )
 
@@ -289,6 +250,4 @@ def test_generate():
     del vi.potcar.filepath
 
     check_vs_serial_reference(vi,'generate')
-
-    restore_nexus()
 #end def test_generate

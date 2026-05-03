@@ -212,7 +212,7 @@ def test_incorporate_result(tmp_path):
     # incorporate vasp structure
     sim = get_qmcpack_sim(identifier='qmc_vasp_structure',tiling=(2,2,2))
 
-    vasp_struct = get_vasp_sim(tmp_path,identifier='vasp_structure',files=True)
+    vasp_struct = get_vasp_sim(tmp_path,identifier='vasp_structure',copy_files=True)
 
     assert(Path(sim.locdir).resolve()==tmp_path)
 

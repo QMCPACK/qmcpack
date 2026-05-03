@@ -5,42 +5,27 @@ pytestmark = pytest.mark.order(NexusTestOrder.VASP_ANALYZER)
 from ..generic import generic_settings
 generic_settings.raise_error = True
 
-from .. import testing
+from pathlib import Path
 from ..testing import value_eq,object_eq
 
 
-associated_files = dict()
-
-def get_files():
-    return testing.collect_unit_test_file_paths('vasp_analyzer',associated_files)
-#end def get_files
-
-
-relax_files = [
-    'relax.CONTCAR',
-    'relax.DOSCAR',
-    'relax.EIGENVAL',
-    'relax.err',
-    'relax.IBZKPT',
-    'relax.INCAR',
-    'relax.KPOINTS',
-    'relax.OSZICAR',
-    'relax.out',
-    'relax.OUTCAR',
-    'relax.PCDAT',
-    'relax.POSCAR',
-    'relax.qsub.in',
-    'relax.vasprun.xml',
-    'relax.XDATCAR',
-    ]
-
-
-def test_files():
-    filenames = relax_files
-    files = get_files()
-    assert(set(filenames)==set(files.keys()))
-#end def test_files
-
+TEST_FILES = {
+    "relax.CONTCAR":     Path(__file__+"/../test_vasp_analyzer_files/relax.CONTCAR").resolve(),
+    "relax.DOSCAR":      Path(__file__+"/../test_vasp_analyzer_files/relax.DOSCAR").resolve(),
+    "relax.EIGENVAL":    Path(__file__+"/../test_vasp_analyzer_files/relax.EIGENVAL").resolve(),
+    "relax.err":         Path(__file__+"/../test_vasp_analyzer_files/relax.err").resolve(),
+    "relax.IBZKPT":      Path(__file__+"/../test_vasp_analyzer_files/relax.IBZKPT").resolve(),
+    "relax.INCAR":       Path(__file__+"/../test_vasp_analyzer_files/relax.INCAR").resolve(),
+    "relax.KPOINTS":     Path(__file__+"/../test_vasp_analyzer_files/relax.KPOINTS").resolve(),
+    "relax.OSZICAR":     Path(__file__+"/../test_vasp_analyzer_files/relax.OSZICAR").resolve(),
+    "relax.out":         Path(__file__+"/../test_vasp_analyzer_files/relax.out").resolve(),
+    "relax.OUTCAR":      Path(__file__+"/../test_vasp_analyzer_files/relax.OUTCAR").resolve(),
+    "relax.PCDAT":       Path(__file__+"/../test_vasp_analyzer_files/relax.PCDAT").resolve(),
+    "relax.POSCAR":      Path(__file__+"/../test_vasp_analyzer_files/relax.POSCAR").resolve(),
+    "relax.qsub.in":     Path(__file__+"/../test_vasp_analyzer_files/relax.qsub.in").resolve(),
+    "relax.vasprun.xml": Path(__file__+"/../test_vasp_analyzer_files/relax.vasprun.xml").resolve(),
+    "relax.XDATCAR":     Path(__file__+"/../test_vasp_analyzer_files/relax.XDATCAR").resolve(),
+}
 
 
 def test_empty_init():
@@ -52,18 +37,11 @@ def test_empty_init():
 
 
 def test_analyze():
-    import os
     from numpy import array,ndarray
     from ..developer import obj
     from ..vasp_analyzer import VaspAnalyzer,VXML,OutcarData
 
-    tpath = testing.setup_unit_test_output_directory(
-        test      = 'vasp_analyzer',
-        subtest   = 'test_analyze',
-        file_sets = relax_files,
-        )
-
-    incar_path = os.path.join(tpath,'relax.INCAR')
+    incar_path = TEST_FILES['relax.INCAR']
 
 
     # empty init
