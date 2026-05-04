@@ -503,7 +503,7 @@ def init_job(j,
 #end def init_job
 
 
-@isolate_nexus_core(needs_tmp_path=True)
+@isolate_nexus_core
 def test_workstation_scheduling(tmp_path):
     import time
     from ..machines import Workstation
@@ -629,7 +629,7 @@ def test_supercomputer_init():
 #end def test_supercomputer_init
 
 
-@isolate_nexus_core(needs_tmp_path=True)
+@isolate_nexus_core
 def test_supercomputer_scheduling(tmp_path):
     import os
     import time

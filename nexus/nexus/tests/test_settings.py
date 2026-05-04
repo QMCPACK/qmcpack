@@ -11,7 +11,7 @@ from .. import testing
 from ..testing import object_eq
 
 
-@isolate_nexus_core(needs_tmp_path=True)
+@isolate_nexus_core
 def test_settings(tmp_path):
     # test full imports
     import os

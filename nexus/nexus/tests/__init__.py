@@ -1,3 +1,4 @@
+from inspect import signature
 from enum import IntEnum, auto
 from pathlib import Path
 from copy import deepcopy
@@ -10,6 +11,7 @@ from nexus.nexus_base import (
 )
 from nexus.generic import generic_settings, object_interface
 from nexus.pseudopotential import Pseudopotentials
+from nexus.simulation import Simulation
 
 # qmcpack/nexus/nexus/tests/
 TEST_DIR = Path(__file__).resolve().parent
@@ -106,30 +108,47 @@ def restore_nexus_log(logging_storage: dict):
     object_interface._logfile = logging_storage.pop('objlog')
 
 
-def isolate_nexus_core(needs_tmp_path: bool = False):
+def isolate_nexus_core(test_func = None):
     """Isolate changes in ``nexus_core`` for a test function."""
-    def decorator_isolate_nexus_core(test_func = None):
-        @functools.wraps(test_func)
-        def wrap_path(tmp_path):
-            nexus_core_storage, nexus_noncore_storage = divert_nexus_core()
-            logfile, logging_storage = divert_nexus_log()
-            test_func(tmp_path)
-            restore_nexus_core(nexus_core_storage, nexus_noncore_storage)
-            restore_nexus_log(logging_storage)
 
-        @functools.wraps(test_func)
-        def wrap():
-            nexus_core_storage, nexus_noncore_storage = divert_nexus_core()
-            logfile, logging_storage = divert_nexus_log()
+    needs_tmp_path = "tmp_path" in str(signature(test_func))
+
+    @functools.wraps(test_func)
+    def wrap_path(tmp_path):
+        nexus_core_storage, nexus_noncore_storage = divert_nexus_core()
+        logfile, logging_storage = divert_nexus_log()
+        try:
+            test_func(tmp_path)
+            test_err = None
+        except Exception as err:
+            test_err = err
+
+        restore_nexus_core(nexus_core_storage, nexus_noncore_storage)
+        restore_nexus_log(logging_storage)
+        Simulation.clear_all_sims()
+        if test_err is not None:
+            raise test_err
+
+    @functools.wraps(test_func)
+    def wrap():
+        nexus_core_storage, nexus_noncore_storage = divert_nexus_core()
+        logfile, logging_storage = divert_nexus_log()
+        try:
             test_func()
-            restore_nexus_core(nexus_core_storage, nexus_noncore_storage)
-            restore_nexus_log(logging_storage)
-        
-        if needs_tmp_path:
-            return wrap_path
-        else:
-            return wrap
-    return decorator_isolate_nexus_core
+            test_err = None
+        except Exception as err:
+            test_err = err
+
+        restore_nexus_core(nexus_core_storage, nexus_noncore_storage)
+        restore_nexus_log(logging_storage)
+        Simulation.clear_all_sims()
+        if test_err is not None:
+            raise test_err
+
+    if needs_tmp_path:
+        return wrap_path
+    else:
+        return wrap
 
 
 def create_pseudo_files(

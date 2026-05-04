@@ -331,7 +331,7 @@ def test_write(tmp_path):
 #end def test_write
 
 
-@isolate_nexus_core(needs_tmp_path=True)
+@isolate_nexus_core
 def test_generate(tmp_path):
     from ..developer import obj
     from ..nexus_base import nexus_noncore

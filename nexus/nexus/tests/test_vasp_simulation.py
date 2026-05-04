@@ -80,7 +80,7 @@ def test_minimal_init():
 #end def test_minimal_init
 
 
-@isolate_nexus_core(needs_tmp_path=True)
+@isolate_nexus_core
 def test_check_result(tmp_path):
 
     nexus_core.local_directory  = str(tmp_path)
@@ -102,7 +102,7 @@ def test_check_result(tmp_path):
 #end def test_check_result
 
 
-@isolate_nexus_core(needs_tmp_path=True)
+@isolate_nexus_core
 def test_get_result(tmp_path):
     import shutil
     from numpy import array
@@ -190,7 +190,7 @@ def test_get_result(tmp_path):
 #end def test_get_result
 
 
-@isolate_nexus_core(needs_tmp_path=True)
+@isolate_nexus_core
 def test_incorporate_result(tmp_path):
     import shutil
     from numpy import array
@@ -264,7 +264,7 @@ def test_incorporate_result(tmp_path):
 #end def test_incorporate_result
 
 
-@isolate_nexus_core(needs_tmp_path=True)
+@isolate_nexus_core
 def test_check_sim_status(tmp_path):
 
     nexus_core.local_directory  = str(tmp_path)
@@ -302,7 +302,7 @@ def test_check_sim_status(tmp_path):
 #end def test_check_sim_status
 
 
-@isolate_nexus_core(needs_tmp_path=True)
+@isolate_nexus_core
 def test_get_output_files(tmp_path):
 
     nexus_core.local_directory  = str(tmp_path)

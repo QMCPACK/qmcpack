@@ -79,7 +79,7 @@ def test_check_result():
 #end def test_check_result
 
 
-@isolate_nexus_core(needs_tmp_path=True)
+@isolate_nexus_core
 def test_get_result(tmp_path):
     from ..developer import obj, NexusError
     from ..nexus_base import nexus_core
@@ -170,7 +170,7 @@ def test_incorporate_result():
 #end def test_incorporate_result
 
 
-@isolate_nexus_core(needs_tmp_path=True)
+@isolate_nexus_core
 def test_check_sim_status(tmp_path):
     from ..nexus_base import nexus_core
 

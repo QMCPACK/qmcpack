@@ -210,7 +210,7 @@ def test_write(tmp_path):
 #end test_write
 
 
-@isolate_nexus_core(needs_tmp_path=True)
+@isolate_nexus_core
 def test_generate(tmp_path):
     from ..nexus_base import nexus_noncore
     from ..physical_system import generate_physical_system

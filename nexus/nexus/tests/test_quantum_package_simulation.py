@@ -149,7 +149,7 @@ def test_incorporate_result():
 #end def test_incorporate_result
 
 
-@isolate_nexus_core(needs_tmp_path=True)
+@isolate_nexus_core
 def test_check_sim_status(tmp_path):
     import os
     from ..nexus_base import nexus_core

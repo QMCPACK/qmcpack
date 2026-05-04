@@ -110,7 +110,7 @@ def test_logging():
 #end def test_logging
 
 
-@isolate_nexus_core(needs_tmp_path=True)
+@isolate_nexus_core
 def test_intrinsics(tmp_path):
     # test object_interface functions
     import os

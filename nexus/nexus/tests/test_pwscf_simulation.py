@@ -87,7 +87,7 @@ def test_minimal_init():
 #end def test_minimal_init
 
 
-@isolate_nexus_core(needs_tmp_path=True)
+@isolate_nexus_core
 def test_check_result(tmp_path):
 
     nexus_core.local_directory  = str(tmp_path)
@@ -108,7 +108,7 @@ def test_check_result(tmp_path):
 #end def test_check_result
 
 
-@isolate_nexus_core(needs_tmp_path=True)
+@isolate_nexus_core
 def test_get_result(tmp_path):
     from ..developer import NexusError
 
@@ -165,7 +165,7 @@ def test_get_result(tmp_path):
 #end def test_get_result
 
 
-@isolate_nexus_core(needs_tmp_path=True)
+@isolate_nexus_core
 def test_incorporate_result(tmp_path):
     from ..developer import obj
 
@@ -223,7 +223,7 @@ def test_incorporate_result(tmp_path):
 #end def test_incorporate_result
 
 
-@isolate_nexus_core(needs_tmp_path=True)
+@isolate_nexus_core
 def test_check_sim_status(tmp_path):
 
     nexus_core.local_directory  = str(tmp_path)

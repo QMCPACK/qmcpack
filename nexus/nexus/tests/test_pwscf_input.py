@@ -27,7 +27,7 @@ TEST_FILES = {
 for file in TEST_FILES.values():
     assert(file.exists()), f"Test file not found! {file}"
 
-@isolate_nexus_core(needs_tmp_path=True)
+@isolate_nexus_core
 def test_input(tmp_path):
     # imports
     import numpy as np

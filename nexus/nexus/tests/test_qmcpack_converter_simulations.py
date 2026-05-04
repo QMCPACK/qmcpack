@@ -90,7 +90,7 @@ def test_pw2qmcpack_get_result():
 #end def test_pw2qmcpack_get_result
 
 
-@isolate_nexus_core(needs_tmp_path=True)
+@isolate_nexus_core
 def test_pw2qmcpack_incorporate_result(tmp_path):
     from ..developer import NexusError
     from ..simulation import Simulation
@@ -125,7 +125,7 @@ def test_pw2qmcpack_incorporate_result(tmp_path):
 #end def test_pw2qmcpack_incorporate_result
 
 
-@isolate_nexus_core(needs_tmp_path=True)
+@isolate_nexus_core
 def test_pw2qmcpack_check_sim_status(tmp_path):
     from ..nexus_base import nexus_core
 
@@ -349,7 +349,7 @@ def test_convert4qmc_incorporate_result():
 #end def test_convert4qmc_incorporate_result
 
 
-@isolate_nexus_core(needs_tmp_path=True)
+@isolate_nexus_core
 def test_convert4qmc_check_sim_status(tmp_path):
     from ..nexus_base import nexus_core
 
@@ -522,7 +522,7 @@ def test_pyscf_to_afqmc_incorporate_result():
 #end def test_pyscf_to_afqmc_incorporate_result
 
 
-@isolate_nexus_core(needs_tmp_path=True)
+@isolate_nexus_core
 def test_pyscf_to_afqmc_check_sim_status(tmp_path):
     from ..nexus_base import nexus_core
 

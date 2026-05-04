@@ -65,7 +65,7 @@ def test_check_result():
 #end def test_check_result
 
 
-@isolate_nexus_core(needs_tmp_path=True)
+@isolate_nexus_core
 def test_get_result(tmp_path):
     from ..developer import NexusError
     from ..nexus_base import nexus_core

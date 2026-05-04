@@ -11,7 +11,7 @@ from ..testing import clear_all_sims
 from ..testing import execute,text_eq
 
 
-@isolate_nexus_core(needs_tmp_path=True)
+@isolate_nexus_core
 def test_sim(tmp_path):
     from ..nexus_base import nexus_core
     from .test_simulation_module import get_sim

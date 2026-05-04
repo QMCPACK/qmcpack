@@ -1006,7 +1006,7 @@ def test_indicator_checks():
 #end def test_indicator_checks
 
 
-@isolate_nexus_core(needs_tmp_path=True)
+@isolate_nexus_core
 def test_create_directories(tmp_path):
     import os
     from ..simulation import Simulation
@@ -1031,7 +1031,7 @@ def test_create_directories(tmp_path):
 #end def test_create_directories
 
 
-@isolate_nexus_core(needs_tmp_path=True)
+@isolate_nexus_core
 def test_file_text(tmp_path):
     from ..simulation import Simulation
 
@@ -1708,7 +1708,7 @@ def test_copy_file(tmp_path):
 #end def test_copy_file
 
 
-@isolate_nexus_core(needs_tmp_path=True)
+@isolate_nexus_core
 def test_save_load_image(tmp_path):
     from ..developer import obj
     from ..simulation import Simulation,SimulationImage
@@ -1757,7 +1757,7 @@ def test_save_load_image(tmp_path):
 #end def test_save_load_image
 
 
-@isolate_nexus_core(needs_tmp_path=True)
+@isolate_nexus_core
 def test_load_analyzer_image(tmp_path):
     from ..simulation import Simulation
 
@@ -1789,7 +1789,7 @@ def test_load_analyzer_image(tmp_path):
 #end def test_load_analyzer_image
 
 
-@isolate_nexus_core(needs_tmp_path=True)
+@isolate_nexus_core
 def test_save_attempt(tmp_path):
     from ..simulation import Simulation
 
@@ -1821,7 +1821,7 @@ def test_save_attempt(tmp_path):
 #end def test_save_attempt
 
 
-@isolate_nexus_core(needs_tmp_path=True)
+@isolate_nexus_core
 def test_write_inputs(tmp_path):
     from ..simulation import Simulation,input_template
 
@@ -1873,7 +1873,7 @@ a    = 1
 #end def test_write_inputs
 
 
-@isolate_nexus_core(needs_tmp_path=True)
+@isolate_nexus_core
 def test_send_files(tmp_path):
     from ..nexus_base import nexus_core
     from ..simulation import Simulation
@@ -1925,7 +1925,7 @@ def test_send_files(tmp_path):
 #end def test_send_files
 
 
-@isolate_nexus_core(needs_tmp_path=True)
+@isolate_nexus_core
 def test_submit(tmp_path):
     from ..machines import job
     from ..simulation import Simulation
@@ -1959,7 +1959,7 @@ def test_submit(tmp_path):
 #end def test_submit
 
 
-@isolate_nexus_core(needs_tmp_path=True)
+@isolate_nexus_core
 def test_update_process_id(tmp_path):
     from ..simulation import Simulation
 
@@ -1991,7 +1991,7 @@ def test_update_process_id(tmp_path):
 #end def test_update_process_id
 
 
-@isolate_nexus_core(needs_tmp_path=True)
+@isolate_nexus_core
 def test_check_status(tmp_path):
     from ..simulation import Simulation
 
@@ -2026,7 +2026,7 @@ def test_check_status(tmp_path):
 #end def test_check_status
 
 
-@isolate_nexus_core(needs_tmp_path=True)
+@isolate_nexus_core
 def test_get_output(tmp_path):
     from ..simulation import Simulation
 
@@ -2088,7 +2088,7 @@ def test_get_output(tmp_path):
 #end def test_get_output
 
 
-@isolate_nexus_core(needs_tmp_path=True)
+@isolate_nexus_core
 def test_analyze(tmp_path):
     from ..simulation import Simulation
 
@@ -2121,7 +2121,7 @@ def test_analyze(tmp_path):
 #end def test_analyze
 
 
-@isolate_nexus_core(needs_tmp_path=True)
+@isolate_nexus_core
 def test_progress(tmp_path):
     from ..nexus_base import nexus_core
     from ..simulation import Simulation,input_template
@@ -2304,7 +2304,7 @@ a    = $a
 #end def test_progress
 
 
-@isolate_nexus_core(needs_tmp_path=True)
+@isolate_nexus_core
 def test_execute(tmp_path):
     from ..machines import job
     from ..simulation import Simulation
@@ -2487,7 +2487,7 @@ def test_block_dependents():
 #end def test_block_dependents
 
 
-@isolate_nexus_core(needs_tmp_path=True)
+@isolate_nexus_core
 def test_reconstruct_cascade(tmp_path):
     from ..simulation import Simulation
 

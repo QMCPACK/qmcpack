@@ -350,7 +350,7 @@ def test_write_simulation_status():
 #end def test_write_simulation_status
 
 
-@isolate_nexus_core(needs_tmp_path=True)
+@isolate_nexus_core
 def test_run_project(tmp_path):
     from ..generic import generic_settings
     from ..nexus_base import nexus_core

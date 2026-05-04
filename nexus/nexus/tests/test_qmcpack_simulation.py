@@ -115,7 +115,7 @@ def test_check_result():
 #end def test_check_result
 
 
-@isolate_nexus_core(needs_tmp_path=True)
+@isolate_nexus_core
 def test_get_result(tmp_path):
     from ..developer import NexusError, obj
     from ..nexus_base import nexus_core
@@ -182,7 +182,7 @@ def test_get_result(tmp_path):
 #end def test_get_result
 
 
-@isolate_nexus_core(needs_tmp_path=True)
+@isolate_nexus_core
 def test_incorporate_result(tmp_path):
     import shutil
     from numpy import array
@@ -371,7 +371,7 @@ def test_incorporate_result(tmp_path):
 #end def test_incorporate_result()
 
 
-@isolate_nexus_core(needs_tmp_path=True)
+@isolate_nexus_core
 def test_check_sim_status(tmp_path):
     from ..nexus_base import nexus_core
 
