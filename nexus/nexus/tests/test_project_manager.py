@@ -8,9 +8,6 @@ generic_settings.raise_error = True
 from . import isolate_nexus_core
 from ..testing import value_eq
 from ..testing import failed,FailedTest
-from ..testing import divert_nexus_log,restore_nexus_log
-# from ..testing import divert_nexus,restore_nexus
-
 
 
 def test_init():
@@ -144,15 +141,13 @@ def test_screen_fake_sims():
 #end def test_screen_fake_sims
 
 
-
+@isolate_nexus_core
 def test_resolve_file_collisions():
     from ..developer import NexusError
     from ..simulation import Simulation
     from ..project_manager import ProjectManager
 
     from .test_simulation_module import get_test_workflow,n_test_workflows
-
-    divert_nexus_log()
 
     sims = []
     for n in range(n_test_workflows):
@@ -180,8 +175,6 @@ def test_resolve_file_collisions():
     except Exception as e:
         failed(str(e))
     #end try
-
-    restore_nexus_log()
 
     Simulation.clear_all_sims()
 #end def test_resolve_file_collisions
@@ -268,8 +261,6 @@ def test_check_dependencies():
 
     from .test_simulation_module import get_test_workflow
 
-    divert_nexus_log()
-
     sims = get_test_workflow(1)
 
     pm = ProjectManager()
@@ -279,8 +270,6 @@ def test_check_dependencies():
     idp = id(pm.progressing_cascades)
 
     pm.check_dependencies()
-
-    restore_nexus_log()
 
     Simulation.clear_all_sims()
 #end def test_check_dependencies

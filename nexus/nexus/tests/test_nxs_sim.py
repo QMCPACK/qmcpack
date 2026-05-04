@@ -7,11 +7,12 @@ generic_settings.raise_error = True
 
 import sys
 from pathlib import Path
-from ..testing import divert_nexus,restore_nexus,clear_all_sims
+from . import isolate_nexus_core
+from ..testing import clear_all_sims
 from ..testing import execute,text_eq
 
 
-
+@isolate_nexus_core(needs_tmp_path=True)
 def test_sim(tmp_path):
     from ..nexus_base import nexus_core
     from .test_simulation_module import get_sim
@@ -19,7 +20,6 @@ def test_sim(tmp_path):
     tmp_dir = tmp_path / "test_nxs_sim_output"
     tmp_dir.mkdir()
 
-    divert_nexus()
     nexus_core.local_directory  = tmp_dir
     nexus_core.remote_directory = tmp_dir
     nexus_core.file_locations = nexus_core.file_locations + [tmp_dir]
@@ -125,5 +125,4 @@ def test_sim(tmp_path):
     assert(text_eq(out,out_ref))
 
     clear_all_sims()
-    restore_nexus()
 #end def test_sim

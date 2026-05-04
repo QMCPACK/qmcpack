@@ -5,9 +5,9 @@ pytestmark = pytest.mark.order(NexusTestOrder.MACHINES)
 from ..generic import generic_settings
 generic_settings.raise_error = True
 
+from . import isolate_nexus_core
 from .. import testing
 from ..testing import object_eq,object_diff,failed,FailedTest
-from ..testing import divert_nexus_log,restore_nexus_log
 
 
 all_machines = []
@@ -503,7 +503,7 @@ def init_job(j,
 #end def init_job
 
 
-
+@isolate_nexus_core
 def test_workstation_scheduling(tmp_path):
     import time
     from ..machines import Workstation
@@ -554,7 +554,6 @@ def test_workstation_scheduling(tmp_path):
 
 
     # test submit_jobs() and submit_job()
-    divert_nexus_log()
     assert(j.system_id is None)
     assert(len(ws.running)==0)
     assert(len(ws.processes)==0)
@@ -570,7 +569,6 @@ def test_workstation_scheduling(tmp_path):
     assert(p.popen.pid==j.system_id)
     assert(id(p.job)==id(j))
     assert(set(ws.jobs.keys())==set([j.internal_id]))
-    restore_nexus_log()
 
     # allow a moment for all system calls to resolve
     time.sleep(0.1)
@@ -634,7 +632,7 @@ def test_supercomputer_init():
 #end def test_supercomputer_init
 
 
-
+@isolate_nexus_core
 def test_supercomputer_scheduling(tmp_path):
     import os
     import time
@@ -733,7 +731,6 @@ aprun -e OMP_NUM_THREADS=8 -d 8 -cc depth -j 1 -n 16 -N 8 echo run'''
 
 
     # test submit_jobs() and submit_job()
-    divert_nexus_log()
     assert(j.system_id is None)
 
     sc.submit_jobs() # will call system echo
@@ -744,7 +741,6 @@ aprun -e OMP_NUM_THREADS=8 -d 8 -cc depth -j 1 -n 16 -N 8 echo run'''
     assert(sc.running==set([j.internal_id]))
     assert(set(sc.processes.keys())==set([123]))
     assert(set(sc.jobs.keys())==set([j.internal_id]))
-    restore_nexus_log()
 
 
     # allow a moment for all system calls to resolve

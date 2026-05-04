@@ -10,11 +10,8 @@ from pathlib import Path
 from . import isolate_nexus_core
 from nexus.nexus_base import nexus_core
 
-from .. import testing
 from ..testing import value_eq,object_eq
 from ..testing import FailedTest,failed
-from ..testing import divert_nexus_log,restore_nexus_log
-from ..testing import restore_nexus
 
 from .. import versions
 
@@ -455,7 +452,6 @@ def test_simulation_analyzer():
 
 
 def test_simulation_input_template(tmp_path):
-    import os
     from string import Template
     from ..developer import obj, NexusError
     from ..simulation import SimulationInput
@@ -2310,7 +2306,6 @@ a    = $a
 
 @isolate_nexus_core(needs_tmp_path=True)
 def test_execute(tmp_path):
-    import os
     from ..machines import job
     from ..simulation import Simulation
 

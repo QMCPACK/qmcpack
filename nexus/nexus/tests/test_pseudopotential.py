@@ -6,8 +6,8 @@ from ..generic import generic_settings
 generic_settings.raise_error = True
 
 from pathlib import Path
+from . import isolate_nexus_core
 from ..testing import value_eq,object_eq
-from ..testing import divert_nexus_log,restore_nexus_log
 
 
 TEST_FILES = {
@@ -41,7 +41,7 @@ def test_pp_elem_label():
 #end def test_pp_elem_label
 
 
-
+@isolate_nexus_core
 def test_pseudopotentials():
     from ..pseudopotential import Pseudopotentials
     from ..pseudopotential import PseudoFile
@@ -53,10 +53,8 @@ def test_pseudopotentials():
     gamessPPFile()
 
     # standard initialization
-    divert_nexus_log()
     file_paths = list(TEST_FILES.values())
     pps = Pseudopotentials(file_paths)
-    restore_nexus_log()
 
     for fn in TEST_FILES.keys():
         assert(fn in pps)

@@ -5,16 +5,15 @@ pytestmark = pytest.mark.order(NexusTestOrder.GENERIC_OPERATION)
 from ..generic import generic_settings
 generic_settings.raise_error = True
 
+from . import isolate_nexus_core, FakeLog
 from ..testing import failed,FailedTest
-from ..testing import divert_nexus_log,restore_nexus_log,FakeLog
 from ..testing import object_eq,object_neq
 
+@isolate_nexus_core
 def test_logging():
     from ..generic import log,warn,error
     from ..generic import generic_settings,NexusError
 
-    # send messages to object rather than stdout
-    divert_nexus_log()
     logfile = generic_settings.devlog
 
     # test log
@@ -108,13 +107,10 @@ def test_logging():
     except Exception as e:
         failed(str(e))
     #end try
-
-    restore_nexus_log()
-
 #end def test_logging
 
 
-
+@isolate_nexus_core
 def test_intrinsics(tmp_path):
     # test object_interface functions
     import os
@@ -357,8 +353,7 @@ def test_intrinsics(tmp_path):
     os.remove('log.out')
     assert(so==s)
 
-    # send messages to object rather than stdout
-    divert_nexus_log()
+
     logfile = object_interface._logfile
 
     #   simple message
@@ -462,9 +457,6 @@ def test_intrinsics(tmp_path):
     except Exception as e:
         failed(str(e))
     #end try
-
-    # restore logging function
-    restore_nexus_log()
 
 #end def test_intrinsics
 
