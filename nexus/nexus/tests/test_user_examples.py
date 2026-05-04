@@ -17,28 +17,27 @@ nexus_root = Path(__file__).resolve().parent.parent.parent # qmcpack/nexus
 example_root  = nexus_root / "nexus/examples"
 test_root     = nexus_root / "nexus/tests"
 reference_dir = test_root / "reference/user_examples"
-output_root   = test_root / "test_user_examples_output"
 
 qmcpack_pseudos  = example_root / "qmcpack/pseudopotentials"
 espresso_pseudos = example_root / "quantum_espresso/pseudopotentials"
 
 
-def copy_pseudos(code: str):
+def copy_pseudos(code: str, tmp_dir: Path):
 
     if code == "qmcpack":
-        output_path = output_root / "qmcpack/pseudopotentials"
+        output_path = tmp_dir / "qmcpack/pseudopotentials"
         shutil.copytree(qmcpack_pseudos, output_path, dirs_exist_ok=True)
     elif code == "quantum_espresso":
-        output_path = output_root / "quantum_espresso/pseudopotentials"
+        output_path = tmp_dir / "quantum_espresso/pseudopotentials"
         shutil.copytree(espresso_pseudos, output_path, dirs_exist_ok=True)
     else:
         raise ValueError(f"Invalid code for pseudopotential identification: {code}")
 
 
-def copy_example_files(example_dir: str):
+def copy_example_files(example_dir: str, tmp_dir: Path):
 
     example_path = example_root / example_dir
-    output_path = output_root / example_dir
+    output_path = tmp_dir / example_dir
     test_path = shutil.copytree(
         src           = example_path,
         dst           = output_path,
@@ -88,6 +87,7 @@ def run_example_script(script: Path, test_path: Path):
 
 def check_generated_files(
     code: str,
+    tmp_dir: Path,
     example_path: str,
     filepath: str,
 ):
@@ -106,7 +106,7 @@ def check_generated_files(
     )
 
     ref_filepath = reference_dir / example_path / filepath
-    gen_filepath = output_root / example_path / filepath
+    gen_filepath = tmp_dir / example_path / filepath
 
     if not ref_filepath.exists():
         raise FileNotFoundError(
@@ -168,12 +168,7 @@ def check_generated_files(
     return True, "Success!"
 
 
-# Move pseudos
-copy_pseudos("qmcpack")
-copy_pseudos("quantum_espresso")
-
-
-def test_pwscf_relax_Ge_T():
+def test_pwscf_relax_Ge_T(tmp_path):
 
     test_data = dict(
         path = 'quantum_espresso/relax_Ge_T_vs_kpoints', 
@@ -188,7 +183,8 @@ def test_pwscf_relax_Ge_T():
         ],
     )
 
-    test_path = copy_example_files(test_data["path"])
+    test_path = copy_example_files(test_data["path"], tmp_path)
+    copy_pseudos("quantum_espresso", tmp_path)
 
     for script in test_data["scripts"]:
         script_path = example_root / test_data["path"] / script
@@ -198,13 +194,14 @@ def test_pwscf_relax_Ge_T():
     for code, filetype, filepath in test_data["files"]:
         success, message = check_generated_files(
             code,
+            tmp_path,
             test_data["path"],
             filepath,
         )
         assert(success), message
 
 
-def test_gamess_H2O():
+def test_gamess_H2O(tmp_path):
 
     test_data = dict(
         path = 'gamess/H2O',
@@ -222,7 +219,7 @@ def test_gamess_H2O():
         ],
     )
 
-    test_path = copy_example_files(test_data["path"])
+    test_path = copy_example_files(test_data["path"], tmp_path)
 
     for script in test_data["scripts"]:
         script_path = example_root / test_data["path"] / script
@@ -232,13 +229,14 @@ def test_gamess_H2O():
     for code, filetype, filepath in test_data["files"]:
         success, message = check_generated_files(
             code,
+            tmp_path,
             test_data["path"],
             filepath,
         )
         assert(success), message
 
 
-def test_qmcpack_H2O():
+def test_qmcpack_H2O(tmp_path):
 
     test_data = dict(
         path = 'qmcpack/rsqmc_misc/H2O',
@@ -253,7 +251,10 @@ def test_qmcpack_H2O():
         ],
     )
 
-    test_path = copy_example_files(test_data["path"])
+    test_path = copy_example_files(test_data["path"], tmp_path)
+    copy_pseudos("quantum_espresso", tmp_path)
+    copy_pseudos("qmcpack", tmp_path)
+
 
     for script in test_data["scripts"]:
         script_path = example_root / test_data["path"] / script
@@ -263,13 +264,14 @@ def test_qmcpack_H2O():
     for code, filetype, filepath in test_data["files"]:
         success, message = check_generated_files(
             code,
+            tmp_path,
             test_data["path"],
             filepath,
         )
         assert(success), message
 
 
-def test_qmcpack_LiH():
+def test_qmcpack_LiH(tmp_path):
 
     test_data = dict(
         path = 'qmcpack/rsqmc_misc/LiH',
@@ -285,7 +287,9 @@ def test_qmcpack_LiH():
         ],
     )
 
-    test_path = copy_example_files(test_data["path"])
+    test_path = copy_example_files(test_data["path"], tmp_path)
+    copy_pseudos("quantum_espresso", tmp_path)
+    copy_pseudos("qmcpack", tmp_path)
 
     for script in test_data["scripts"]:
         script_path = example_root / test_data["path"] / script
@@ -295,13 +299,14 @@ def test_qmcpack_LiH():
     for code, filetype, filepath in test_data["files"]:
         success, message = check_generated_files(
             code,
+            tmp_path,
             test_data["path"],
             filepath,
         )
         assert(success), message
 
 
-def test_qmcpack_c20():
+def test_qmcpack_c20(tmp_path):
 
     test_data = dict(
         path = 'qmcpack/rsqmc_misc/c20',
@@ -316,7 +321,9 @@ def test_qmcpack_c20():
         ],
     )
 
-    test_path = copy_example_files(test_data["path"])
+    test_path = copy_example_files(test_data["path"], tmp_path)
+    copy_pseudos("quantum_espresso", tmp_path)
+    copy_pseudos("qmcpack", tmp_path)
 
     for script in test_data["scripts"]:
         script_path = example_root / test_data["path"] / script
@@ -326,13 +333,14 @@ def test_qmcpack_c20():
     for code, filetype, filepath in test_data["files"]:
         success, message = check_generated_files(
             code,
+            tmp_path,
             test_data["path"],
             filepath,
         )
         assert(success), message
 
 
-def test_qmcpack_diamond():
+def test_qmcpack_diamond(tmp_path):
 
     test_data = dict(
         path = 'qmcpack/rsqmc_misc/diamond',
@@ -349,7 +357,9 @@ def test_qmcpack_diamond():
         ],
     )
 
-    test_path = copy_example_files(test_data["path"])
+    test_path = copy_example_files(test_data["path"], tmp_path)
+    copy_pseudos("quantum_espresso", tmp_path)
+    copy_pseudos("qmcpack", tmp_path)
 
     for script in test_data["scripts"]:
         script_path = example_root / test_data["path"] / script
@@ -359,13 +369,14 @@ def test_qmcpack_diamond():
     for code, filetype, filepath in test_data["files"]:
         success, message = check_generated_files(
             code,
+            tmp_path,
             test_data["path"],
             filepath,
         )
         assert(success), message
 
 
-def test_qmcpack_graphene():
+def test_qmcpack_graphene(tmp_path):
 
     test_data = dict(
         path = 'qmcpack/rsqmc_misc/graphene',
@@ -383,7 +394,9 @@ def test_qmcpack_graphene():
         ],
     )
 
-    test_path = copy_example_files(test_data["path"])
+    test_path = copy_example_files(test_data["path"], tmp_path)
+    copy_pseudos("quantum_espresso", tmp_path)
+    copy_pseudos("qmcpack", tmp_path)
 
     for script in test_data["scripts"]:
         script_path = example_root / test_data["path"] / script
@@ -393,13 +406,14 @@ def test_qmcpack_graphene():
     for code, filetype, filepath in test_data["files"]:
         success, message = check_generated_files(
             code,
+            tmp_path,
             test_data["path"],
             filepath,
         )
         assert(success), message
 
 
-def test_qmcpack_oxygen_dimer():
+def test_qmcpack_oxygen_dimer(tmp_path):
 
     test_data = dict(
         path = 'qmcpack/rsqmc_misc/oxygen_dimer',
@@ -414,7 +428,9 @@ def test_qmcpack_oxygen_dimer():
         ],
     )
 
-    test_path = copy_example_files(test_data["path"])
+    test_path = copy_example_files(test_data["path"], tmp_path)
+    copy_pseudos("quantum_espresso", tmp_path)
+    copy_pseudos("qmcpack", tmp_path)
 
     for script in test_data["scripts"]:
         script_path = example_root / test_data["path"] / script
@@ -424,6 +440,7 @@ def test_qmcpack_oxygen_dimer():
     for code, filetype, filepath in test_data["files"]:
         success, message = check_generated_files(
             code,
+            tmp_path,
             test_data["path"],
             filepath,
         )
