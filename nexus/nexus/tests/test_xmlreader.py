@@ -5,11 +5,11 @@ pytestmark = pytest.mark.order(NexusTestOrder.XMLREADER)
 from ..generic import generic_settings
 generic_settings.raise_error = True
 
-from pathlib import Path
+from . import TEST_DIR
 from ..testing import object_eq
 
 TEST_FILES = {
-    "vmc.in.xml": Path(__file__+"/../test_xmlreader_files/vmc.in.xml").resolve(),
+    "vmc.in.xml": TEST_DIR / "test_xmlreader_files/vmc.in.xml",
 }
 
 

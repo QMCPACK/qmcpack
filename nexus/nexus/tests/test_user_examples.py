@@ -11,9 +11,9 @@ import sys
 import shutil
 from shutil import ignore_patterns
 from subprocess import Popen, PIPE
+from . import TEST_DIR
 
-
-nexus_root = Path(__file__).resolve().parent.parent.parent # qmcpack/nexus
+nexus_root = TEST_DIR.parent.parent # qmcpack/nexus
 example_root  = nexus_root / "nexus/examples"
 test_root     = nexus_root / "nexus/tests"
 reference_dir = test_root / "reference/user_examples"

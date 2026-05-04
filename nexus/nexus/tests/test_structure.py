@@ -5,8 +5,8 @@ pytestmark = pytest.mark.order(NexusTestOrder.STRUCTURE)
 from ..generic import generic_settings
 generic_settings.raise_error = True
 
-from pathlib import Path
 import numpy as np
+from . import TEST_DIR
 from .. import versions
 from .. import testing
 from ..testing import value_eq as value_eq_orig
@@ -39,8 +39,8 @@ def object_diff(*args,**kwargs):
 
 
 TEST_FILES = {
-    'La2CuO4_ICSD69312.cif': Path(__file__+"/../test_structure_files/La2CuO4_ICSD69312.cif").resolve(),
-    'coronene.xyz': Path(__file__+"/../test_structure_files/coronene.xyz").resolve(),
+    'La2CuO4_ICSD69312.cif': TEST_DIR / "test_structure_files/La2CuO4_ICSD69312.cif",
+    'coronene.xyz': TEST_DIR / "test_structure_files/coronene.xyz",
 }
 
 reference_inputs     = dict()

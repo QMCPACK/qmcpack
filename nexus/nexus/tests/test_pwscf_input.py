@@ -5,8 +5,8 @@ pytestmark = pytest.mark.order(NexusTestOrder.PWSCF_INPUT)
 from ..generic import generic_settings
 generic_settings.raise_error = True
 
-from pathlib import Path
-from . import isolate_nexus_core
+
+from . import isolate_nexus_core, TEST_DIR
 from ..testing import failed
 from ..testing import object_eq,object_diff
 
@@ -14,16 +14,16 @@ from ..testing import object_eq,object_diff
 associated_files = dict()
 
 TEST_FILES = {
-    "Cr_noncolin.in":         Path(__file__+"/../test_pwscf_input_files/Cr_noncolin.in").resolve(),
-    "Fe_start_ns_eig.in":     Path(__file__+"/../test_pwscf_input_files/Fe_start_ns_eig.in").resolve(),
-    "LiI_vc_relax.in":        Path(__file__+"/../test_pwscf_input_files/LiI_vc_relax.in").resolve(),
-    "Ni_surface.in":          Path(__file__+"/../test_pwscf_input_files/Ni_surface.in").resolve(),
-    "TiO2_band_structure.in": Path(__file__+"/../test_pwscf_input_files/TiO2_band_structure.in").resolve(),
-    "TiO2_relax_freeze.in":   Path(__file__+"/../test_pwscf_input_files/TiO2_relax_freeze.in").resolve(),
-    "VO2_M1_afm.in":          Path(__file__+"/../test_pwscf_input_files/VO2_M1_afm.in").resolve(),
-    "VO2_M1_afm.xsf":         Path(__file__+"/../test_pwscf_input_files/VO2_M1_afm.xsf").resolve(),
-    "WSe2_band_structure.in": Path(__file__+"/../test_pwscf_input_files/WSe2_band_structure.in").resolve(),
-    "README": Path(__file__+"/../test_pwscf_input_files/README").resolve(),
+    "Cr_noncolin.in":         TEST_DIR / "test_pwscf_input_files/Cr_noncolin.in",
+    "Fe_start_ns_eig.in":     TEST_DIR / "test_pwscf_input_files/Fe_start_ns_eig.in",
+    "LiI_vc_relax.in":        TEST_DIR / "test_pwscf_input_files/LiI_vc_relax.in",
+    "Ni_surface.in":          TEST_DIR / "test_pwscf_input_files/Ni_surface.in",
+    "TiO2_band_structure.in": TEST_DIR / "test_pwscf_input_files/TiO2_band_structure.in",
+    "TiO2_relax_freeze.in":   TEST_DIR / "test_pwscf_input_files/TiO2_relax_freeze.in",
+    "VO2_M1_afm.in":          TEST_DIR / "test_pwscf_input_files/VO2_M1_afm.in",
+    "VO2_M1_afm.xsf":         TEST_DIR / "test_pwscf_input_files/VO2_M1_afm.xsf",
+    "WSe2_band_structure.in": TEST_DIR / "test_pwscf_input_files/WSe2_band_structure.in",
+    "README": TEST_DIR / "test_pwscf_input_files/README",
 }
 
 @isolate_nexus_core(needs_tmp_path=True)

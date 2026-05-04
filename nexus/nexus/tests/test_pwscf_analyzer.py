@@ -5,7 +5,8 @@ pytestmark = pytest.mark.order(NexusTestOrder.PWSCF_ANALYZER)
 from ..generic import generic_settings
 generic_settings.raise_error = True
 
-from pathlib import Path
+
+from . import TEST_DIR
 from ..testing import object_eq
 
 
@@ -21,9 +22,9 @@ def test_analyze():
     from ..developer import obj
     from ..pwscf_analyzer import PwscfAnalyzer
 
-    scf_path = Path(__file__+"/../test_pwscf_analyzer_files/scf_output").resolve()
-    relax_path = Path(__file__+"/../test_pwscf_analyzer_files/relax_output").resolve()
-    nscf_path = Path(__file__+"/../test_pwscf_analyzer_files/nscf_output").resolve()
+    scf_path = TEST_DIR / "test_pwscf_analyzer_files/scf_output"
+    relax_path = TEST_DIR / "test_pwscf_analyzer_files/relax_output"
+    nscf_path = TEST_DIR / "test_pwscf_analyzer_files/nscf_output"
 
     # scf w/o actual analysis
     pa = PwscfAnalyzer(scf_path,'scf.in','scf.out')

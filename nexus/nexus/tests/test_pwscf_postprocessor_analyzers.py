@@ -5,13 +5,13 @@ pytestmark = pytest.mark.order(NexusTestOrder.PWSCF_POSTPROCESSOR_ANALYZERS)
 from ..generic import generic_settings
 generic_settings.raise_error = True
 
-from pathlib import Path
+from . import TEST_DIR
 from ..testing import object_eq,text_eq
 
 
 TEST_FILES = {
-    "pwf.in":  Path(__file__+"/../test_pwscf_postprocessor_analyzers_files/pwf.in").resolve(),
-    "pwf.out": Path(__file__+"/../test_pwscf_postprocessor_analyzers_files/pwf.out").resolve(),
+    "pwf.in":  TEST_DIR / "test_pwscf_postprocessor_analyzers_files/pwf.in",
+    "pwf.out": TEST_DIR / "test_pwscf_postprocessor_analyzers_files/pwf.out",
 }
 
 

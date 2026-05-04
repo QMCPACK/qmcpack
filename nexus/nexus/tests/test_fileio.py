@@ -5,16 +5,16 @@ pytestmark = pytest.mark.order(NexusTestOrder.FILEIO)
 from ..generic import generic_settings
 generic_settings.raise_error = True
 
-from pathlib import Path
+from . import TEST_DIR
 from ..testing import value_eq, object_eq
 
 
 TEST_FILES = {
-    "scf.in":               Path(__file__+"/../test_fileio_files/scf.in").resolve(),
-    "VO2_R_48_dens.CHGCAR": Path(__file__+"/../test_fileio_files/VO2_R_48_dens.CHGCAR").resolve(),
-    "VO2_R_48_dens.xsf":    Path(__file__+"/../test_fileio_files/VO2_R_48_dens.xsf").resolve(),
-    "VO2_R_48.POSCAR":      Path(__file__+"/../test_fileio_files/VO2_R_48.POSCAR").resolve(),
-    "VO2_R_48.xsf":         Path(__file__+"/../test_fileio_files/VO2_R_48.xsf").resolve(),
+    "scf.in":               TEST_DIR / "test_fileio_files/scf.in",
+    "VO2_R_48_dens.CHGCAR": TEST_DIR / "test_fileio_files/VO2_R_48_dens.CHGCAR",
+    "VO2_R_48_dens.xsf":    TEST_DIR / "test_fileio_files/VO2_R_48_dens.xsf",
+    "VO2_R_48.POSCAR":      TEST_DIR / "test_fileio_files/VO2_R_48.POSCAR",
+    "VO2_R_48.xsf":         TEST_DIR / "test_fileio_files/VO2_R_48.xsf",
 }
 
 

@@ -5,9 +5,8 @@ pytestmark = pytest.mark.order(NexusTestOrder.VASP_ANALYZER)
 from ..generic import generic_settings
 generic_settings.raise_error = True
 
-from pathlib import Path
 from nexus.nexus_base import nexus_core
-from . import isolate_nexus_core
+from . import isolate_nexus_core, TEST_DIR
 from .. import testing
 from ..testing import object_eq
 
@@ -153,11 +152,11 @@ def check_vs_serial_reference(gi,name):
 
 
 TEST_FILES = {
-    "d16bulk.POSCAR": Path(__file__+"/../test_vasp_input_files/d16bulk.POSCAR").resolve(),
-    "diamond_INCAR": Path(__file__+"/../test_vasp_input_files/diamond_INCAR").resolve(),
-    "diamond_KPOINTS": Path(__file__+"/../test_vasp_input_files/diamond_KPOINTS").resolve(),
-    "diamond_POSCAR": Path(__file__+"/../test_vasp_input_files/diamond_POSCAR").resolve(),
-    "diamond_POTCAR": Path(__file__+"/../test_vasp_input_files/diamond_POTCAR").resolve(),
+    "d16bulk.POSCAR":  TEST_DIR / "test_vasp_input_files/d16bulk.POSCAR",
+    "diamond_INCAR":   TEST_DIR / "test_vasp_input_files/diamond_INCAR",
+    "diamond_KPOINTS": TEST_DIR / "test_vasp_input_files/diamond_KPOINTS",
+    "diamond_POSCAR":  TEST_DIR / "test_vasp_input_files/diamond_POSCAR",
+    "diamond_POTCAR":  TEST_DIR / "test_vasp_input_files/diamond_POTCAR",
 }
 
 

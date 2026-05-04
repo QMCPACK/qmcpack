@@ -5,7 +5,8 @@ pytestmark = pytest.mark.order(NexusTestOrder.QDENS)
 from ..generic import generic_settings
 generic_settings.raise_error = True
 
-from pathlib import Path
+
+from . import TEST_DIR
 import shutil
 from .. import versions
 from ..testing import execute, text_eq
@@ -14,9 +15,9 @@ from ..testing import execute, text_eq
 if versions.h5py_available:
     def test_density(tmp_path):
 
-        exe = Path(__file__).parent.parent / "bin/qdens"
+        exe = TEST_DIR.parent / "bin/qdens"
 
-        qa_files_path = Path(__file__+"/../test_qmcpack_analyzer_files/diamond_gamma").resolve()
+        qa_files_path = TEST_DIR / "test_qmcpack_analyzer_files/diamond_gamma"
         shutil.copytree(qa_files_path, tmp_path, dirs_exist_ok=True)
 
         dmc_path = tmp_path / 'dmc'

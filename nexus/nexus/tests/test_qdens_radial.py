@@ -5,7 +5,7 @@ pytestmark = pytest.mark.order(NexusTestOrder.QDENS_RADIAL)
 from ..generic import generic_settings
 generic_settings.raise_error = True
 
-from pathlib import Path
+from . import TEST_DIR
 from .. import versions
 from ..testing import execute,text_eq,check_value_eq
 
@@ -13,9 +13,9 @@ from ..testing import execute,text_eq,check_value_eq
 if versions.spglib_available:
     def test_radial_density():
 
-        exe = Path(__file__).parent.parent / "bin/qdens-radial"
+        exe = TEST_DIR.parent / "bin/qdens-radial"
 
-        vmc_path = Path(__file__+"/../test_qdens_radial_files/diamond_twist/vmc").resolve()
+        vmc_path = TEST_DIR / "test_qdens_radial_files/diamond_twist/vmc"
 
         vmc_files_bef = (
             vmc_path / "vmc.avg.s000.SpinDensity_u+d+err.xsf",
@@ -40,7 +40,7 @@ if versions.spglib_available:
 
         assert(check_value_eq(set(vmc_path.iterdir()),set(vmc_files_bef)))
 
-        dmc_path = Path(__file__+"/../test_qdens_radial_files/diamond_twist/dmc").resolve()
+        dmc_path = TEST_DIR / "test_qdens_radial_files/diamond_twist/dmc"
 
         dmc_files_bef = (
             dmc_path / "dmc.avg.s001.SpinDensity_u+d+err.xsf",

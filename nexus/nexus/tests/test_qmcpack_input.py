@@ -5,17 +5,15 @@ pytestmark = pytest.mark.order(NexusTestOrder.QMCPACK_INPUT)
 from ..generic import generic_settings
 generic_settings.raise_error = True
 
-from pathlib import Path
-
-from . import isolate_nexus_core
+from . import isolate_nexus_core, TEST_DIR
 
 from .. import versions
 from ..testing import value_eq,object_eq,check_object_eq
 
 TEST_FILES = {
-    "CH4_afqmc.in.xml":    Path(__file__+"/../test_qmcpack_input_files/CH4_afqmc.in.xml").resolve(),
-    "OH_mixed_pos.in.xml": Path(__file__+"/../test_qmcpack_input_files/OH_mixed_pos.in.xml").resolve(),
-    "VO2_M1_afm.in.xml":   Path(__file__+"/../test_qmcpack_input_files/VO2_M1_afm.in.xml").resolve(),
+    "CH4_afqmc.in.xml":    TEST_DIR / "test_qmcpack_input_files/CH4_afqmc.in.xml",
+    "OH_mixed_pos.in.xml": TEST_DIR / "test_qmcpack_input_files/OH_mixed_pos.in.xml",
+    "VO2_M1_afm.in.xml":   TEST_DIR / "test_qmcpack_input_files/VO2_M1_afm.in.xml",
 }
 
 

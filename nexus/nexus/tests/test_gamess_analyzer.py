@@ -5,12 +5,12 @@ pytestmark = pytest.mark.order(NexusTestOrder.GAMESS_ANALYZER)
 from ..generic import generic_settings
 generic_settings.raise_error = True
 
-from pathlib import Path
+from . import TEST_DIR
 from ..testing import object_eq
 
 TEST_FILES = {
-    "gms.inp": Path(__file__+"/../test_gamess_analyzer_files/gms.inp").resolve(),
-    "gms.out": Path(__file__+"/../test_gamess_analyzer_files/gms.out").resolve(),
+    "gms.inp": TEST_DIR / "test_gamess_analyzer_files/gms.inp",
+    "gms.out": TEST_DIR / "test_gamess_analyzer_files/gms.out",
 }
 
 

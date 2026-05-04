@@ -5,8 +5,7 @@ pytestmark = pytest.mark.order(NexusTestOrder.QMCPACK_ANALYZER)
 from ..generic import generic_settings
 generic_settings.raise_error = True
 
-from pathlib import Path
-from . import isolate_nexus_core
+from . import isolate_nexus_core, TEST_DIR
 from .. import versions
 from ..testing import value_eq,object_eq,text_eq
 
@@ -68,7 +67,7 @@ def test_vmc_dmc_analysis():
     from ..developer import obj
     from ..qmcpack_analyzer import QmcpackAnalyzer
 
-    test_files = Path(__file__+"/../test_qmcpack_analyzer_files/diamond_gamma").resolve()
+    test_files = TEST_DIR / "test_qmcpack_analyzer_files/diamond_gamma"
 
     # test load of vmc data
     infile = test_files / 'vmc/vmc.in.xml'
@@ -235,7 +234,7 @@ def test_optimization_analysis():
     from ..developer import obj
     from ..qmcpack_analyzer import QmcpackAnalyzer
 
-    infile = Path(__file__+"/../test_qmcpack_analyzer_files/diamond_gamma/opt/opt.in.xml").resolve()
+    infile = TEST_DIR / "test_qmcpack_analyzer_files/diamond_gamma/opt/opt.in.xml"
 
     qa = QmcpackAnalyzer(infile,analyze=True,equilibration=5)
 
@@ -369,7 +368,7 @@ def test_twist_average_analysis():
     from ..developer import obj
     from ..qmcpack_analyzer import QmcpackAnalyzer
 
-    infile = Path(__file__+"/../test_qmcpack_analyzer_files/diamond_twist/vmc/vmc.in").resolve()
+    infile = TEST_DIR / "test_qmcpack_analyzer_files/diamond_twist/vmc/vmc.in"
 
     qa = QmcpackAnalyzer(infile,analyze=True,equilibration=5)
 
@@ -413,7 +412,7 @@ if versions.h5py_available:
         from numpy import array
         from ..qmcpack_analyzer import QmcpackAnalyzer
 
-        infile = Path(__file__+"/../test_qmcpack_analyzer_files/diamond_gamma/dmc/dmc.in.xml").resolve()
+        infile = TEST_DIR / "test_qmcpack_analyzer_files/diamond_gamma/dmc/dmc.in.xml"
         qa = QmcpackAnalyzer(infile,analyze=True,equilibration=5)
 
         qmc = qa.qmc[0]

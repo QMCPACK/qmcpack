@@ -11,6 +11,9 @@ from nexus.nexus_base import (
 from nexus.generic import generic_settings, object_interface
 from nexus.pseudopotential import Pseudopotentials
 
+# qmcpack/nexus/nexus/tests/
+TEST_DIR = Path(__file__).resolve().parent
+
 NEXUS_CORE_KEYS = (
     "local_directory",
     "remote_directory",

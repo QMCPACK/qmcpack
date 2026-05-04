@@ -5,10 +5,8 @@ pytestmark = pytest.mark.order(NexusTestOrder.QMC_FIT)
 from ..generic import generic_settings
 generic_settings.raise_error = True
 
-from pathlib import Path
-import shutil
+from . import TEST_DIR
 from .. import versions
-from .. import testing
 from ..testing import execute,text_eq
 
 
@@ -16,8 +14,8 @@ from ..testing import execute,text_eq
 if versions.scipy_available:
     def test_fit(tmp_path):
 
-        exe = Path(__file__).parent.parent / "bin/qmc-fit"        
-        dmc_path = Path(__file__+"/../test_qmcpack_analyzer_files/diamond_gamma/dmc").resolve()
+        exe = TEST_DIR.parent / "bin/qmc-fit"        
+        dmc_path = TEST_DIR / "test_qmcpack_analyzer_files/diamond_gamma/dmc"
 
         dmc_infile = dmc_path / 'dmc.in.xml'
         assert(dmc_infile.exists())

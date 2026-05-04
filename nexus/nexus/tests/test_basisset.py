@@ -5,20 +5,20 @@ pytestmark = pytest.mark.order(NexusTestOrder.BASISSET)
 from ..generic import generic_settings
 generic_settings.raise_error = True
 
-from pathlib import Path
+from . import TEST_DIR
 from ..testing import object_eq
 
 
-TEST_FILES = [
-    Path(__file__+"/../test_basisset_files/Fe.aug-cc-pwcv5z-dk.0.bas").resolve(),
-    Path(__file__+"/../test_basisset_files/Fe.aug-cc-pwcv5z-dk.0.gbs").resolve(),
-    Path(__file__+"/../test_basisset_files/Fe.BFD_VQZ.bas").resolve(),
-    Path(__file__+"/../test_basisset_files/Fe.BFD_VQZ.gbs").resolve(),
-    Path(__file__+"/../test_basisset_files/Fe.stuttgart_rsc_1997.0.bas").resolve(),
-    Path(__file__+"/../test_basisset_files/Fe.stuttgart_rsc_1997.0.gbs").resolve(),
-    Path(__file__+"/../test_basisset_files/Fe.stuttgart_rsc_1997_ecp.0.bas").resolve(),
-    Path(__file__+"/../test_basisset_files/Fe.stuttgart_rsc_1997_ecp.0.gbs").resolve(),
-]
+TEST_FILES = {
+    "Fe.aug-cc-pwcv5z-dk.0.bas":       TEST_DIR / "test_basisset_files/Fe.aug-cc-pwcv5z-dk.0.bas",
+    "Fe.aug-cc-pwcv5z-dk.0.gbs":       TEST_DIR / "test_basisset_files/Fe.aug-cc-pwcv5z-dk.0.gbs",
+    "Fe.BFD_VQZ.bas":                  TEST_DIR / "test_basisset_files/Fe.BFD_VQZ.bas",
+    "Fe.BFD_VQZ.gbs":                  TEST_DIR / "test_basisset_files/Fe.BFD_VQZ.gbs",
+    "Fe.stuttgart_rsc_1997.0.bas":     TEST_DIR / "test_basisset_files/Fe.stuttgart_rsc_1997.0.bas",
+    "Fe.stuttgart_rsc_1997.0.gbs":     TEST_DIR / "test_basisset_files/Fe.stuttgart_rsc_1997.0.gbs",
+    "Fe.stuttgart_rsc_1997_ecp.0.bas": TEST_DIR / "test_basisset_files/Fe.stuttgart_rsc_1997_ecp.0.bas",
+    "Fe.stuttgart_rsc_1997_ecp.0.gbs": TEST_DIR / "test_basisset_files/Fe.stuttgart_rsc_1997_ecp.0.gbs",
+}
 
 
 def test_basissets():
@@ -31,9 +31,9 @@ def test_basissets():
     BasisFile()
     gamessBasisFile()
 
-    basis_file  = BasisFile(TEST_FILES[1])
-    gamess_basis_file = gamessBasisFile(TEST_FILES[0])
-    basis_sets  = BasisSets(TEST_FILES[2:]+[basis_file,gamess_basis_file])
+    basis_file  = BasisFile(TEST_FILES["Fe.aug-cc-pwcv5z-dk.0.gbs"])
+    gamess_basis_file = gamessBasisFile(TEST_FILES["Fe.aug-cc-pwcv5z-dk.0.bas"])
+    basis_sets  = BasisSets(list(TEST_FILES.values())[2:]+[basis_file,gamess_basis_file])
 
     assert(basis_file.element=='Fe')
     assert(basis_file.filename=='Fe.aug-cc-pwcv5z-dk.0.gbs')
@@ -44,7 +44,7 @@ def test_basissets():
     assert(gamess_basis_file.text.endswith('1         1.3776500              1.0000000'))
     assert(len(gamess_basis_file.text.strip())==21135)
 
-    for fn in TEST_FILES:
+    for fn in TEST_FILES.values():
         assert(fn.name in basis_sets)
         assert(isinstance(basis_sets[fn.name],BasisFile))
         if fn.suffix == '.bas':
@@ -77,7 +77,7 @@ def test_process_gaussian_text():
         'Fe.stuttgart_rsc_1997_ecp.0.gbs' : ( 17, None ),
         }
 
-    for file in TEST_FILES:
+    for file in TEST_FILES.values():
 
         if file.suffix == '.bas':
             format = 'gamess'
@@ -124,7 +124,7 @@ def test_gaussianbasisset():
         'Fe.stuttgart_rsc_1997.0.gbs' : 15,
         }
 
-    for file in TEST_FILES:
+    for file in TEST_FILES.values():
         if 'ecp' not in file.name:
             if file.suffix == '.bas':
                 format = 'gamess'

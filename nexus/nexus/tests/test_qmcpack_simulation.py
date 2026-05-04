@@ -7,7 +7,7 @@ generic_settings.raise_error = True
 
 from pathlib import Path
 
-from . import isolate_nexus_core, create_pseudo_files
+from . import isolate_nexus_core, create_pseudo_files, TEST_DIR
 
 from ..testing import clear_all_sims
 from ..testing import failed,FailedTest
@@ -156,7 +156,7 @@ def test_get_result(tmp_path):
         assert(Path(v).relative_to(tmp_path)==Path(result_ref[k]))
     #end for
 
-    opt_infile = Path(__file__+"/../test_qmcpack_analyzer_files/diamond_gamma/opt/opt.in.xml").resolve()
+    opt_infile = TEST_DIR / "test_qmcpack_analyzer_files/diamond_gamma/opt/opt.in.xml"
     assert(opt_infile.exists())
 
     qa = QmcpackAnalyzer(opt_infile,analyze=True,equilibration=5)
@@ -301,7 +301,7 @@ def test_incorporate_result(tmp_path):
     # incorporate qmcpack jastrow
     sim = get_qmcpack_sim(identifier='qmc_jastrow')
 
-    opt_path = Path(__file__+"/../test_qmcpack_analyzer_files/diamond_gamma/opt").resolve()
+    opt_path = TEST_DIR / "test_qmcpack_analyzer_files/diamond_gamma/opt"
     opt_infile = opt_path / 'opt.in.xml'
     assert(opt_infile.exists())
     opt_file = opt_path / 'opt.s004.opt.xml'

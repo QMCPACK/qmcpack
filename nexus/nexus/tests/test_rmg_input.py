@@ -5,39 +5,39 @@ pytestmark = pytest.mark.order(NexusTestOrder.RMG_INPUT)
 from ..generic import generic_settings
 generic_settings.raise_error = True
 
-from pathlib import Path
+from . import TEST_DIR
 from ..testing import value_eq,check_object_eq
 from .. import versions
 
 TEST_FILES = {
-    "AlN32_input":                                                 Path(__file__+"/../test_rmg_input_files/AlN32_input").resolve(),
-    "atomO_polarized_input":                                       Path(__file__+"/../test_rmg_input_files/atomO_polarized_input").resolve(),
-    "BlackPhosphorus_Delocalize_both_pp_and_proj_davidson_input":  Path(__file__+"/../test_rmg_input_files/BlackPhosphorus_Delocalize_both_pp_and_proj_davidson_input").resolve(),
-    "BlackPhosphorus_Delocalize_both_pp_and_proj_multigrid_input": Path(__file__+"/../test_rmg_input_files/BlackPhosphorus_Delocalize_both_pp_and_proj_multigrid_input").resolve(),
-    "BlackPhosphorus_input":                                       Path(__file__+"/../test_rmg_input_files/BlackPhosphorus_input").resolve(),
-    "BlackPhosphorus_input_1nongammapoint":                        Path(__file__+"/../test_rmg_input_files/BlackPhosphorus_input_1nongammapoint").resolve(),
-    "BlackPhosphorus_input_band":                                  Path(__file__+"/../test_rmg_input_files/BlackPhosphorus_input_band").resolve(),
-    "BlackPhosphorus_Localize_both_pp_and_proj_davidson_input":    Path(__file__+"/../test_rmg_input_files/BlackPhosphorus_Localize_both_pp_and_proj_davidson_input").resolve(),
-    "BlackPhosphorus_Localize_both_pp_and_proj_multigrid_input":   Path(__file__+"/../test_rmg_input_files/BlackPhosphorus_Localize_both_pp_and_proj_multigrid_input").resolve(),
-    "BlackPhosphorus_Localize_pp_only_davidson_input":             Path(__file__+"/../test_rmg_input_files/BlackPhosphorus_Localize_pp_only_davidson_input").resolve(),
-    "BlackPhosphorus_Localize_pp_only_multigrid_input":            Path(__file__+"/../test_rmg_input_files/BlackPhosphorus_Localize_pp_only_multigrid_input").resolve(),
-    "BlackPhosphorus_Localize_proj_only_davidson_input":           Path(__file__+"/../test_rmg_input_files/BlackPhosphorus_Localize_proj_only_davidson_input").resolve(),
-    "BlackPhosphorus_Localize_proj_only_multigrid_input":          Path(__file__+"/../test_rmg_input_files/BlackPhosphorus_Localize_proj_only_multigrid_input").resolve(),
-    "C60_input":                                                   Path(__file__+"/../test_rmg_input_files/C60_input").resolve(),
-    "Diamond16_input":                                             Path(__file__+"/../test_rmg_input_files/Diamond16_input").resolve(),
-    "Diamond2_input":                                              Path(__file__+"/../test_rmg_input_files/Diamond2_input").resolve(),
-    "Fe_2atom_input":                                              Path(__file__+"/../test_rmg_input_files/Fe_2atom_input").resolve(),
-    "graphite_stress_input":                                       Path(__file__+"/../test_rmg_input_files/graphite_stress_input").resolve(),
-    "Mg_2atom_input":                                              Path(__file__+"/../test_rmg_input_files/Mg_2atom_input").resolve(),
-    "nanotube_80_input":                                           Path(__file__+"/../test_rmg_input_files/nanotube_80_input").resolve(),
-    "nanotube_80_input_band":                                      Path(__file__+"/../test_rmg_input_files/nanotube_80_input_band").resolve(),
-    "nanotube_80_input_band1":                                     Path(__file__+"/../test_rmg_input_files/nanotube_80_input_band1").resolve(),
-    "NiO512_input":                                                Path(__file__+"/../test_rmg_input_files/NiO512_input").resolve(),
-    "NiO8_input":                                                  Path(__file__+"/../test_rmg_input_files/NiO8_input").resolve(),
-    "Pt_bulk_spinorbit_input":                                     Path(__file__+"/../test_rmg_input_files/Pt_bulk_spinorbit_input").resolve(),
-    "Pt_bulk_spinorbit_input_band":                                Path(__file__+"/../test_rmg_input_files/Pt_bulk_spinorbit_input_band").resolve(),
-    "Si_8atoms_EXX_kpoints_input":                                 Path(__file__+"/../test_rmg_input_files/Si_8atoms_EXX_kpoints_input").resolve(),
-    "U_bulk_spinorbit_RMG_input":                                  Path(__file__+"/../test_rmg_input_files/U_bulk_spinorbit_RMG_input").resolve(),
+    "AlN32_input":                                                 TEST_DIR / "test_rmg_input_files/AlN32_input",
+    "atomO_polarized_input":                                       TEST_DIR / "test_rmg_input_files/atomO_polarized_input",
+    "BlackPhosphorus_Delocalize_both_pp_and_proj_davidson_input":  TEST_DIR / "test_rmg_input_files/BlackPhosphorus_Delocalize_both_pp_and_proj_davidson_input",
+    "BlackPhosphorus_Delocalize_both_pp_and_proj_multigrid_input": TEST_DIR / "test_rmg_input_files/BlackPhosphorus_Delocalize_both_pp_and_proj_multigrid_input",
+    "BlackPhosphorus_input":                                       TEST_DIR / "test_rmg_input_files/BlackPhosphorus_input",
+    "BlackPhosphorus_input_1nongammapoint":                        TEST_DIR / "test_rmg_input_files/BlackPhosphorus_input_1nongammapoint",
+    "BlackPhosphorus_input_band":                                  TEST_DIR / "test_rmg_input_files/BlackPhosphorus_input_band",
+    "BlackPhosphorus_Localize_both_pp_and_proj_davidson_input":    TEST_DIR / "test_rmg_input_files/BlackPhosphorus_Localize_both_pp_and_proj_davidson_input",
+    "BlackPhosphorus_Localize_both_pp_and_proj_multigrid_input":   TEST_DIR / "test_rmg_input_files/BlackPhosphorus_Localize_both_pp_and_proj_multigrid_input",
+    "BlackPhosphorus_Localize_pp_only_davidson_input":             TEST_DIR / "test_rmg_input_files/BlackPhosphorus_Localize_pp_only_davidson_input",
+    "BlackPhosphorus_Localize_pp_only_multigrid_input":            TEST_DIR / "test_rmg_input_files/BlackPhosphorus_Localize_pp_only_multigrid_input",
+    "BlackPhosphorus_Localize_proj_only_davidson_input":           TEST_DIR / "test_rmg_input_files/BlackPhosphorus_Localize_proj_only_davidson_input",
+    "BlackPhosphorus_Localize_proj_only_multigrid_input":          TEST_DIR / "test_rmg_input_files/BlackPhosphorus_Localize_proj_only_multigrid_input",
+    "C60_input":                                                   TEST_DIR / "test_rmg_input_files/C60_input",
+    "Diamond16_input":                                             TEST_DIR / "test_rmg_input_files/Diamond16_input",
+    "Diamond2_input":                                              TEST_DIR / "test_rmg_input_files/Diamond2_input",
+    "Fe_2atom_input":                                              TEST_DIR / "test_rmg_input_files/Fe_2atom_input",
+    "graphite_stress_input":                                       TEST_DIR / "test_rmg_input_files/graphite_stress_input",
+    "Mg_2atom_input":                                              TEST_DIR / "test_rmg_input_files/Mg_2atom_input",
+    "nanotube_80_input":                                           TEST_DIR / "test_rmg_input_files/nanotube_80_input",
+    "nanotube_80_input_band":                                      TEST_DIR / "test_rmg_input_files/nanotube_80_input_band",
+    "nanotube_80_input_band1":                                     TEST_DIR / "test_rmg_input_files/nanotube_80_input_band1",
+    "NiO512_input":                                                TEST_DIR / "test_rmg_input_files/NiO512_input",
+    "NiO8_input":                                                  TEST_DIR / "test_rmg_input_files/NiO8_input",
+    "Pt_bulk_spinorbit_input":                                     TEST_DIR / "test_rmg_input_files/Pt_bulk_spinorbit_input",
+    "Pt_bulk_spinorbit_input_band":                                TEST_DIR / "test_rmg_input_files/Pt_bulk_spinorbit_input_band",
+    "Si_8atoms_EXX_kpoints_input":                                 TEST_DIR / "test_rmg_input_files/Si_8atoms_EXX_kpoints_input",
+    "U_bulk_spinorbit_RMG_input":                                  TEST_DIR / "test_rmg_input_files/U_bulk_spinorbit_RMG_input",
 }
 
 

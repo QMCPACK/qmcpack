@@ -8,17 +8,18 @@ generic_settings.raise_error = True
 import sys
 import os
 from pathlib import Path
+from . import TEST_DIR
 from ..testing import execute,text_eq
 
 
-QMCA_EXE = Path(__file__).parent.parent / "bin/qmca"
+QMCA_EXE = TEST_DIR.parent / "bin/qmca"
 
 QA_PATHS = {
-    "vmc":       Path(__file__+"/../test_qmcpack_analyzer_files/diamond_gamma/vmc").resolve(),
-    "opt":       Path(__file__+"/../test_qmcpack_analyzer_files/diamond_gamma/opt").resolve(),
-    "dmc":       Path(__file__+"/../test_qmcpack_analyzer_files/diamond_gamma/dmc").resolve(),
-    "vmc_twist": Path(__file__+"/../test_qmcpack_analyzer_files/diamond_twist/vmc").resolve(),
-    "multi":     Path(__file__+"/../test_qmcpack_analyzer_files/diamond_gamma").resolve(),
+    "vmc":       TEST_DIR / "test_qmcpack_analyzer_files/diamond_gamma/vmc",
+    "opt":       TEST_DIR / "test_qmcpack_analyzer_files/diamond_gamma/opt",
+    "dmc":       TEST_DIR / "test_qmcpack_analyzer_files/diamond_gamma/dmc",
+    "vmc_twist": TEST_DIR / "test_qmcpack_analyzer_files/diamond_twist/vmc",
+    "multi":     TEST_DIR / "test_qmcpack_analyzer_files/diamond_gamma",
 }
 
 

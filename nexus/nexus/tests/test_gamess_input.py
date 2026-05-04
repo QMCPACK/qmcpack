@@ -6,18 +6,17 @@ from ..generic import generic_settings
 generic_settings.raise_error = True
 
 import shutil
-from pathlib import Path
-from . import isolate_nexus_core
+from . import isolate_nexus_core, TEST_DIR
 from nexus.nexus_base import nexus_core
 from ..testing import object_eq
 
 
 TEST_FILES = {
-    "rhf.inp": Path(__file__+"/../test_gamess_input_files/rhf.inp").resolve(),
-    "cisd.inp": Path(__file__+"/../test_gamess_input_files/cisd.inp").resolve(),
-    "cas.inp": Path(__file__+"/../test_gamess_input_files/cas.inp").resolve(),
-    "H.BFD_V5Z_ANO.gms": Path(__file__+"/../test_gamess_input_files/H.BFD_V5Z_ANO.gms").resolve(),
-    "O.BFD_V5Z.gms": Path(__file__+"/../test_gamess_input_files/O.BFD_V5Z.gms").resolve(),
+    "rhf.inp":           TEST_DIR / "test_gamess_input_files/rhf.inp",
+    "cisd.inp":          TEST_DIR / "test_gamess_input_files/cisd.inp",
+    "cas.inp":           TEST_DIR / "test_gamess_input_files/cas.inp",
+    "H.BFD_V5Z_ANO.gms": TEST_DIR / "test_gamess_input_files/H.BFD_V5Z_ANO.gms",
+    "O.BFD_V5Z.gms":     TEST_DIR / "test_gamess_input_files/O.BFD_V5Z.gms",
 }
 
 

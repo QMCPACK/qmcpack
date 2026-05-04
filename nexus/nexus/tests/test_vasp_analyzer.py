@@ -5,26 +5,26 @@ pytestmark = pytest.mark.order(NexusTestOrder.VASP_ANALYZER)
 from ..generic import generic_settings
 generic_settings.raise_error = True
 
-from pathlib import Path
+from . import TEST_DIR
 from ..testing import value_eq,object_eq
 
 
 TEST_FILES = {
-    "relax.CONTCAR":     Path(__file__+"/../test_vasp_analyzer_files/relax.CONTCAR").resolve(),
-    "relax.DOSCAR":      Path(__file__+"/../test_vasp_analyzer_files/relax.DOSCAR").resolve(),
-    "relax.EIGENVAL":    Path(__file__+"/../test_vasp_analyzer_files/relax.EIGENVAL").resolve(),
-    "relax.err":         Path(__file__+"/../test_vasp_analyzer_files/relax.err").resolve(),
-    "relax.IBZKPT":      Path(__file__+"/../test_vasp_analyzer_files/relax.IBZKPT").resolve(),
-    "relax.INCAR":       Path(__file__+"/../test_vasp_analyzer_files/relax.INCAR").resolve(),
-    "relax.KPOINTS":     Path(__file__+"/../test_vasp_analyzer_files/relax.KPOINTS").resolve(),
-    "relax.OSZICAR":     Path(__file__+"/../test_vasp_analyzer_files/relax.OSZICAR").resolve(),
-    "relax.out":         Path(__file__+"/../test_vasp_analyzer_files/relax.out").resolve(),
-    "relax.OUTCAR":      Path(__file__+"/../test_vasp_analyzer_files/relax.OUTCAR").resolve(),
-    "relax.PCDAT":       Path(__file__+"/../test_vasp_analyzer_files/relax.PCDAT").resolve(),
-    "relax.POSCAR":      Path(__file__+"/../test_vasp_analyzer_files/relax.POSCAR").resolve(),
-    "relax.qsub.in":     Path(__file__+"/../test_vasp_analyzer_files/relax.qsub.in").resolve(),
-    "relax.vasprun.xml": Path(__file__+"/../test_vasp_analyzer_files/relax.vasprun.xml").resolve(),
-    "relax.XDATCAR":     Path(__file__+"/../test_vasp_analyzer_files/relax.XDATCAR").resolve(),
+    "relax.CONTCAR":     TEST_DIR / "test_vasp_analyzer_files/relax.CONTCAR",
+    "relax.DOSCAR":      TEST_DIR / "test_vasp_analyzer_files/relax.DOSCAR",
+    "relax.EIGENVAL":    TEST_DIR / "test_vasp_analyzer_files/relax.EIGENVAL",
+    "relax.err":         TEST_DIR / "test_vasp_analyzer_files/relax.err",
+    "relax.IBZKPT":      TEST_DIR / "test_vasp_analyzer_files/relax.IBZKPT",
+    "relax.INCAR":       TEST_DIR / "test_vasp_analyzer_files/relax.INCAR",
+    "relax.KPOINTS":     TEST_DIR / "test_vasp_analyzer_files/relax.KPOINTS",
+    "relax.OSZICAR":     TEST_DIR / "test_vasp_analyzer_files/relax.OSZICAR",
+    "relax.out":         TEST_DIR / "test_vasp_analyzer_files/relax.out",
+    "relax.OUTCAR":      TEST_DIR / "test_vasp_analyzer_files/relax.OUTCAR",
+    "relax.PCDAT":       TEST_DIR / "test_vasp_analyzer_files/relax.PCDAT",
+    "relax.POSCAR":      TEST_DIR / "test_vasp_analyzer_files/relax.POSCAR",
+    "relax.qsub.in":     TEST_DIR / "test_vasp_analyzer_files/relax.qsub.in",
+    "relax.vasprun.xml": TEST_DIR / "test_vasp_analyzer_files/relax.vasprun.xml",
+    "relax.XDATCAR":     TEST_DIR / "test_vasp_analyzer_files/relax.XDATCAR",
 }
 
 
