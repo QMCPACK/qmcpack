@@ -30,13 +30,31 @@ author = 'QMCPACK Developers'
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-import sys, os
+import sys
+import os
 sys.path.append(os.path.abspath('extensions'))
 
-import sphinx_rtd_theme
+# import sphinx_rtd_theme
 
-extensions = ['sphinxcontrib.bibtex', "sphinx_rtd_theme"]
-bibtex_bibfiles = ['bibs/running.bib', 'bibs/methods.bib', 'bibs/introduction.bib', 'bibs/afqmc.bib', 'bibs/intro_wavefunction.bib', 'bibs/spin-orbit.bib', 'bibs/hamiltonianobservable.bib', 'bibs/design_features.bib', 'bibs/lab_excited.bib', 'bibs/additional_tools.bib', 'bibs/developing.bib', 'bibs/labs_qmc_basics.bib', 'bibs/simulationcell.bib', 'bibs/features.bib', 'bibs/sCI.bib', 'bibs/LCAO.bib']
+extensions = ['sphinxcontrib.bibtex', "pydata_sphinx_theme"]
+bibtex_bibfiles = [
+    'bibs/running.bib',
+    'bibs/methods.bib',
+    'bibs/introduction.bib',
+    'bibs/afqmc.bib',
+    'bibs/intro_wavefunction.bib',
+    'bibs/spin-orbit.bib',
+    'bibs/hamiltonianobservable.bib',
+    'bibs/design_features.bib',
+    'bibs/lab_excited.bib',
+    'bibs/additional_tools.bib',
+    'bibs/developing.bib',
+    'bibs/labs_qmc_basics.bib',
+    'bibs/simulationcell.bib',
+    'bibs/features.bib',
+    'bibs/sCI.bib',
+    'bibs/LCAO.bib',
+]
 
 numfig = True
 
@@ -54,7 +72,7 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx_rtd_theme'
+html_theme = 'pydata_sphinx_theme'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -64,3 +82,24 @@ html_static_path = ['_static']
 html_css_files = [
     'custom.css',
 ]
+html_theme_options = {
+    "logo": {
+        "alt_text": "QMCPACK",
+        "image_dark": "figs/QMCPACK_logo.png",
+        "image_light": "figs/QMCPACK_logo.png",
+    },
+    "icon_links": [
+        {
+            "name": "GitHub",
+            "url": "https://github.com/QMCPACK/qmcpack",
+            "icon": "fa-brands fa-github",
+        },
+    ],
+    "navbar_end": [
+        "search-button",
+        "theme-switcher",
+        "navbar-icon-links"
+    ],
+    "show_toc_level": 3,
+    "secondary_sidebar_items": ["page-toc"],
+}
