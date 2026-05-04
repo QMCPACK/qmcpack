@@ -46,7 +46,7 @@ def test_write_splash():
 #end def test_write_splash
     
 
-@isolate_nexus_core
+@isolate_nexus_core(needs_tmp_path=True)
 def test_enter_leave(tmp_path):
     import os
     from ..nexus_base import NexusCore
