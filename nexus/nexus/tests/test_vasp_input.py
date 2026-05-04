@@ -159,6 +159,9 @@ TEST_FILES = {
     "diamond_POTCAR":  TEST_DIR / "test_vasp_input_files/diamond_POTCAR",
 }
 
+for file in TEST_FILES.values():
+    assert(file.exists()), f"Test file not found! {file}"
+
 
 def test_keyword_consistency():
     from ..vasp_input import Incar,Stopcar

@@ -16,6 +16,9 @@ TEST_FILES = {
     "VO2_M1_afm.in.xml":   TEST_DIR / "test_qmcpack_input_files/VO2_M1_afm.in.xml",
 }
 
+for file in TEST_FILES.values():
+    assert(file.exists()), f"Test file not found! {file}"
+
 
 def format_value(v):
     import numpy as np

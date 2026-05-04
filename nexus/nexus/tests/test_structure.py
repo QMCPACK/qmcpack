@@ -43,6 +43,9 @@ TEST_FILES = {
     'coronene.xyz': TEST_DIR / "test_structure_files/coronene.xyz",
 }
 
+for file in TEST_FILES.values():
+    assert(file.exists()), f"Test file not found! {file}"
+
 reference_inputs     = dict()
 reference_structures = dict()
 generated_structures = dict()

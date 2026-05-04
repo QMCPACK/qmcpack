@@ -20,6 +20,9 @@ TEST_FILES = {
     "Fe.stuttgart_rsc_1997_ecp.0.gbs": TEST_DIR / "test_basisset_files/Fe.stuttgart_rsc_1997_ecp.0.gbs",
 }
 
+for file in TEST_FILES.values():
+    assert(file.exists()), f"Test file not found! {file}"
+
 
 def test_basissets():
     from ..basisset import BasisSets

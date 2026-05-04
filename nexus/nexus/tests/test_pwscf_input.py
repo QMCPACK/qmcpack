@@ -11,8 +11,6 @@ from ..testing import failed
 from ..testing import object_eq,object_diff
 
 
-associated_files = dict()
-
 TEST_FILES = {
     "Cr_noncolin.in":         TEST_DIR / "test_pwscf_input_files/Cr_noncolin.in",
     "Fe_start_ns_eig.in":     TEST_DIR / "test_pwscf_input_files/Fe_start_ns_eig.in",
@@ -25,6 +23,9 @@ TEST_FILES = {
     "WSe2_band_structure.in": TEST_DIR / "test_pwscf_input_files/WSe2_band_structure.in",
     "README": TEST_DIR / "test_pwscf_input_files/README",
 }
+
+for file in TEST_FILES.values():
+    assert(file.exists()), f"Test file not found! {file}"
 
 @isolate_nexus_core(needs_tmp_path=True)
 def test_input(tmp_path):

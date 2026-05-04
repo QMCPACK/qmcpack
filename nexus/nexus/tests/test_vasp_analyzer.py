@@ -27,6 +27,9 @@ TEST_FILES = {
     "relax.XDATCAR":     TEST_DIR / "test_vasp_analyzer_files/relax.XDATCAR",
 }
 
+for file in TEST_FILES.values():
+    assert(file.exists()), f"Test file not found! {file}"
+
 
 def test_empty_init():
     from ..vasp_analyzer import VaspAnalyzer

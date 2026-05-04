@@ -13,6 +13,9 @@ TEST_FILES = {
     "gms.out": TEST_DIR / "test_gamess_analyzer_files/gms.out",
 }
 
+for file in TEST_FILES.values():
+    assert(file.exists()), f"Test file not found! {file}"
+
 
 def test_empty_init():
     from ..gamess_analyzer import GamessAnalyzer

@@ -15,6 +15,9 @@ TEST_FILES = {
     "C.BFD.xml": TEST_DIR / "../examples/qmcpack/pseudopotentials/C.BFD.xml",
 }
 
+for file in TEST_FILES.values():
+    assert(file.exists()), f"Test file not found! {file}"
+
 
 def test_pp_elem_label():
     from ..pseudopotential import pp_elem_label

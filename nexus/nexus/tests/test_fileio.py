@@ -17,6 +17,9 @@ TEST_FILES = {
     "VO2_R_48.xsf":         TEST_DIR / "test_fileio_files/VO2_R_48.xsf",
 }
 
+for file in TEST_FILES.values():
+    assert(file.exists()), f"Test file not found! {file}"
+
 
 def test_textfile():
     from ..fileio import TextFile

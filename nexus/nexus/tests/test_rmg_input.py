@@ -40,6 +40,9 @@ TEST_FILES = {
     "U_bulk_spinorbit_RMG_input":                                  TEST_DIR / "test_rmg_input_files/U_bulk_spinorbit_RMG_input",
 }
 
+for file in TEST_FILES.values():
+    assert(file.exists()), f"Test file not found! {file}"
+
 
 def make_serial_reference(ri):
     import numpy as np

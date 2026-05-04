@@ -19,6 +19,9 @@ TEST_FILES = {
     "O.BFD_V5Z.gms":     TEST_DIR / "test_gamess_input_files/O.BFD_V5Z.gms",
 }
 
+for file in TEST_FILES.values():
+    assert(file.exists()), f"Test file not found! {file}"
+
 
 def make_serial_reference(gi):
     s = gi.serial()
