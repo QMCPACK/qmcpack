@@ -41,9 +41,7 @@ if h5py_available:
             return g
         #end def add_group
 
-        tmp_dir = tmp_path / "test_read"
-        tmp_dir.mkdir(exist_ok=True)
-        testfile = tmp_dir / "test.h5"
+        testfile = tmp_path / "test.h5"
         f = h5py.File(testfile,'w')
 
         add_datasets(f)

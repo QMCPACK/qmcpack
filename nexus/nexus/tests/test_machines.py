@@ -512,9 +512,6 @@ def test_workstation_scheduling(tmp_path):
     # create workstation for testing
     ws = Workstation('wss',16,'mpirun')
 
-    tmp_dir = tmp_path / "test_workstation_scheduling"
-    tmp_dir.mkdir(exist_ok=True)
-
     # test process_job(), process_job_options(), write_job()
     j = job(machine=ws.name,cores=4,threads=2,local=True)
     assert(j.machine==ws.name)
@@ -524,7 +521,7 @@ def test_workstation_scheduling(tmp_path):
     assert(j.processes==2)
     assert(j.run_options.np=='-np 2')
     assert(j.batch_mode==False)
-    init_job(j,dir=tmp_dir) # imitate interaction w/ simulation object
+    init_job(j,dir=tmp_path) # imitate interaction w/ simulation object
     assert(ws.write_job(j)=='export OMP_NUM_THREADS=2\nmpirun -np 2 echo run')
 
     j = job(machine=ws.name,serial=True)
@@ -535,7 +532,7 @@ def test_workstation_scheduling(tmp_path):
     assert(j.processes==1)
     assert(j.run_options.np=='-np 1')
     assert(j.batch_mode==False)
-    init_job(j,dir=tmp_dir) # imitate interaction w/ simulation object
+    init_job(j,dir=tmp_path) # imitate interaction w/ simulation object
     assert(ws.write_job(j)=='export OMP_NUM_THREADS=1\necho run')
 
 
@@ -640,9 +637,6 @@ def test_supercomputer_scheduling(tmp_path):
     from ..machines import Theta
     from ..machines import job,Job
 
-    tmp_dir = tmp_path / "test_supercomputer_scheduling"
-    tmp_dir.mkdir(exist_ok=True)
-
     # create supercomputer for testing
     class ThetaSched(Theta):
         name = 'theta_sched'
@@ -675,7 +669,7 @@ def test_supercomputer_scheduling(tmp_path):
 
 
     # test write_job()
-    init_job(j,id='123',dir=tmp_dir) # imitate interaction w/ simulation object
+    init_job(j,id='123',dir=tmp_path) # imitate interaction w/ simulation object
     ref_wj = '''#!/bin/bash
 #COBALT -q default
 #COBALT -A ABC123
@@ -715,7 +709,7 @@ aprun -e OMP_NUM_THREADS=8 -d 8 -cc depth -j 1 -n 16 -N 8 echo run'''
     # test write_job() to file
     sc.write_job(j,file=True)
 
-    subfile_path = os.path.join(tmp_dir,j.subfile)
+    subfile_path = os.path.join(tmp_path,j.subfile)
     assert(os.path.exists(subfile_path))
     wj = open(subfile_path,'r').read().strip()
     assert('aprun ' in wj)

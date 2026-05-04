@@ -280,9 +280,7 @@ def test_intrinsics(tmp_path):
     assert('a' not in o2)
 
     # test save/load
-    tmp_dir = tmp_path / "test_intrinsics"
-    tmp_dir.mkdir(exist_ok=True)
-    save_file = tmp_dir / "o.p"
+    save_file = tmp_path / "o.p"
     o.save(save_file)
     o2 = obj()
     o2.load(save_file)

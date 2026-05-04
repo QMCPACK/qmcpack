@@ -106,21 +106,18 @@ def test_physical_system_initialization(tmp_path):
     from ..physical_system import generate_physical_system
     from ..physical_system import PhysicalSystem
 
-    tmp_dir = tmp_path / "test_physical_system_output"
-    tmp_dir.mkdir()
-
     d2 = generate_structure(
         structure = 'diamond',
         cell      = 'prim',
         )
-    d2_path = tmp_dir / 'diamond2.xsf'
+    d2_path = tmp_path / 'diamond2.xsf'
     d2.write(d2_path)
 
     d8 = generate_structure(
         structure = 'diamond',
         cell      = 'conv',
         )
-    d8_path = tmp_dir / 'diamond8.xsf'
+    d8_path = tmp_path / 'diamond8.xsf'
     d8.write(d8_path)
 
 
@@ -368,7 +365,7 @@ def test_physical_system_initialization(tmp_path):
 
     # test load
     for i,sys in enumerate(systems):
-        path = tmp_dir / 'system_{}'.format(i)
+        path = tmp_path / 'system_{}'.format(i)
         sys.save(path)
         sys2 = PhysicalSystem()
         sys2.load(path)

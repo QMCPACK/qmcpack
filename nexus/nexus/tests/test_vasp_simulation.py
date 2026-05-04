@@ -82,7 +82,7 @@ def test_minimal_init():
 
 @isolate_nexus_core(needs_tmp_path=True)
 def test_check_result(tmp_path):
-    
+
     nexus_core.local_directory  = str(tmp_path)
     nexus_core.remote_directory = tmp_path
     nexus_core.file_locations = nexus_core.file_locations + [tmp_path]

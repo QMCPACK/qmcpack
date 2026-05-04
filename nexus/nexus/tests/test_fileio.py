@@ -125,11 +125,8 @@ def test_xsffile(tmp_path):
     assert(f.is_valid())
     assert(object_eq(f,ref))
 
-    tmp_dir = tmp_path / "test_fileio_output"
-    tmp_dir.mkdir(exist_ok=True)
-
     # test write
-    outfile = tmp_dir / "test.xsf"
+    outfile = tmp_path / "test.xsf"
     f.write(outfile)
     f2 = XsfFile(outfile)
     assert(f2.is_valid())
@@ -158,10 +155,7 @@ def test_xsffile_density(tmp_path):
     assert(isinstance(d,np.ndarray))
     assert(d.shape==(4,6,8))
 
-    tmp_dir = tmp_path / "test_xsffile_density"
-    tmp_dir.mkdir(exist_ok=True)
-
-    outfile = tmp_dir / "test_density.xsf"
+    outfile = tmp_path / "test_density.xsf"
     f.write(outfile)
     f2 = XsfFile(outfile)
     assert(f2.is_valid())
@@ -252,10 +246,7 @@ def test_poscar_file(tmp_path):
     assert(object_eq(f,ref))
 
     # test write
-    tmp_dir = tmp_path / "test_poscarfile"
-    tmp_dir.mkdir(exist_ok=True)
-
-    outfile = tmp_dir / "test.POSCAR"
+    outfile = tmp_path / "test.POSCAR"
     f.write(outfile)
     f2 = PoscarFile(outfile)
     assert(f2.is_valid())
@@ -296,10 +287,7 @@ def test_chgcar_file(tmp_path):
     assert(object_eq(f,ref))
 
     # test write
-    tmp_dir = tmp_path / "test_chgcarfile"
-    tmp_dir.mkdir(exist_ok=True)
-
-    outfile = tmp_dir / "test.CHGCAR"
+    outfile = tmp_path / "test.CHGCAR"
     f.write(outfile)
     f2 = ChgcarFile(outfile)
     assert(f2.is_valid())

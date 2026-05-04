@@ -6,8 +6,7 @@ from ..generic import generic_settings
 generic_settings.raise_error = True
 
 import sys
-from pathlib import Path
-from . import isolate_nexus_core
+from . import isolate_nexus_core, TEST_DIR
 from ..testing import clear_all_sims
 from ..testing import execute,text_eq
 
@@ -17,17 +16,14 @@ def test_sim(tmp_path):
     from ..nexus_base import nexus_core
     from .test_simulation_module import get_sim
 
-    tmp_dir = tmp_path / "test_nxs_sim_output"
-    tmp_dir.mkdir()
-
-    nexus_core.local_directory  = tmp_dir
-    nexus_core.remote_directory = tmp_dir
-    nexus_core.file_locations = nexus_core.file_locations + [tmp_dir]
+    nexus_core.local_directory  = tmp_path
+    nexus_core.remote_directory = tmp_path
+    nexus_core.file_locations = nexus_core.file_locations + [tmp_path]
 
     nexus_core.runs    = ''
     nexus_core.results = ''
     
-    exe = Path(__file__).parent.parent / "bin/nxs-sim"
+    exe = TEST_DIR.parent / "bin/nxs-sim"
 
     sim = get_sim()
 
@@ -35,7 +31,7 @@ def test_sim(tmp_path):
 
     sim.save_image()
 
-    simp_path = (tmp_dir / sim.imlocdir / 'sim.p').resolve()
+    simp_path = (tmp_path / sim.imlocdir / 'sim.p').resolve()
     assert(simp_path.is_file())
 
 

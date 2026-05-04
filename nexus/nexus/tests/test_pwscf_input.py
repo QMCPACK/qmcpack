@@ -36,9 +36,6 @@ def test_input(tmp_path):
     from ..pwscf_input import check_new_variables,check_section_classes
     from ..pwscf_input import PwscfInput,generate_pwscf_input
 
-    tmp_dir = tmp_path / "test_pwscf_input_output"
-    tmp_dir.mkdir()
-
     # definitions
     def check_pw_same(pw1_,pw2_,l1='pw1',l2='pw2'):
         pw_same = object_eq(pw1_, pw2_, int_as_float=True, atol=5e-4)
@@ -133,7 +130,7 @@ def test_input(tmp_path):
 
 
     # test write
-    infile = tmp_dir / 'pwscf.in'
+    infile = tmp_path / 'pwscf.in'
     pw.write(infile)
     pw2 = PwscfInput()
     pw2.read(infile)
@@ -146,7 +143,7 @@ def test_input(tmp_path):
         if file_path.suffix != ".in":
             continue
         read_path = file_path
-        write_path = tmp_dir / input_file
+        write_path = tmp_path / input_file
         pw = PwscfInput(read_path)
         pw.write(write_path)
         pw2 = PwscfInput(write_path)
@@ -162,7 +159,7 @@ def test_input(tmp_path):
     infile      = 'VO2_M1_afm.in'
     struct_file = TEST_FILES['VO2_M1_afm.xsf']
     read_path   = TEST_FILES[infile]
-    write_path  = tmp_dir / infile
+    write_path  = tmp_path / infile
 
     s = read_structure(struct_file)
     s.elem[0] = 'V1'
@@ -217,7 +214,7 @@ def test_input(tmp_path):
     # based on sample_inputs/Fe_start_ns_eig.in
     infile     = 'Fe_start_ns_eig.in'
     read_path  = TEST_FILES[infile]
-    write_path = tmp_dir / infile
+    write_path = tmp_path / infile
 
     pw = generate_pwscf_input(
         selector        = 'generic',

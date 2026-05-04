@@ -185,9 +185,6 @@ def test_pseudopotential_classes(tmp_path):
     from ..pseudopotential import QmcpackPP
     from ..pseudopotential import CasinoPP
 
-    tmp_dir = tmp_path / "test_pseudopotential_output"
-    tmp_dir.mkdir()
-
     # empty initialization
     SemilocalPP()
     GaussianPP()
@@ -359,16 +356,16 @@ r*potential (L=1) in Ha
     assert(value_eq(gpp.components.p[1].expon,4.48361888))
 
     # check cross-format write/read
-    gamess_file = tmp_dir / 'C.BFD.gamess'
+    gamess_file = tmp_path / 'C.BFD.gamess'
     gpp.write(gamess_file,format='gamess')
 
-    gaussian_file = tmp_dir / 'C.BFD.gaussian'
+    gaussian_file = tmp_path / 'C.BFD.gaussian'
     gpp.write(gaussian_file,format='gaussian')
 
-    qmcpack_file = tmp_dir / 'C.BFD.qmcpack'
+    qmcpack_file = tmp_path / 'C.BFD.qmcpack'
     gpp.write(qmcpack_file,format='qmcpack')
 
-    casino_file = tmp_dir / 'C.BFD.casino'
+    casino_file = tmp_path / 'C.BFD.casino'
     gpp.write(casino_file,format='casino')
 
 
@@ -391,7 +388,7 @@ r*potential (L=1) in Ha
     del qo.rmax
     assert(object_eq(co,qo,atol=1e-12))
 
-    qmcpack_from_casino_file = tmp_dir / 'C.BFD.qmcpack_from_casino'
+    qmcpack_from_casino_file = tmp_path / 'C.BFD.qmcpack_from_casino'
     cpp.write_qmcpack(qmcpack_from_casino_file)
 
     qpp_casino = QmcpackPP(qmcpack_from_casino_file)

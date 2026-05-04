@@ -50,21 +50,17 @@ def test_write_splash():
 def test_enter_leave(tmp_path):
     import os
     from ..nexus_base import NexusCore
-
-    tmp_dir = tmp_path / "test_nexus_base_output"
-    tmp_dir.mkdir(exist_ok=True)
-
     cwd = os.getcwd()
 
     log = generic_settings.devlog
 
     nc = NexusCore()
 
-    nc.enter(tmp_dir)
+    nc.enter(tmp_path)
     tcwd = os.getcwd()
-    assert(tcwd==str(tmp_dir))
+    assert(tcwd==str(tmp_path))
     assert('Entering' in log.contents())
-    assert(str(tmp_dir) in log.contents())
+    assert(str(tmp_path) in log.contents())
 
     nc.leave()
     assert(os.getcwd()==cwd)
