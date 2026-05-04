@@ -197,12 +197,6 @@ def get_convert4qmc_sim(**kwargs):
 
 
 
-def test_convert4qmc_import():
-    from ..qmcpack_converters import Convert4qmc,generate_convert4qmc
-#end def test_convert4qmc_import
-
-
-
 def test_convert4qmc_minimal_init():
     from ..machines import job
     from ..qmcpack_converters import Convert4qmc,generate_convert4qmc
@@ -421,12 +415,6 @@ def get_pyscf_to_afqmc_sim(**kwargs):
 
     return sim
 #end def get_pyscf_to_afqmc_sim
-
-
-
-def test_pyscf_to_afqmc_import():
-    from ..qmcpack_converters import PyscfToAfqmc,generate_pyscf_to_afqmc
-#end def test_pyscf_to_afqmc_import
 
 
 
