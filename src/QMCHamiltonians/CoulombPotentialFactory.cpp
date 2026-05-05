@@ -132,7 +132,7 @@ void HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
     // particles never change position during a qmcrun.
     bool quantum = (sourceInp == targetPtcl.getName());
     app_summary() << "    AA ParticleSet: " << sourceInp << " dynamic particle set: " << (quantum ? "true" : "false")
-                  << '\n';
+                  << std::endl;
 
     if (applyPBC)
     {
