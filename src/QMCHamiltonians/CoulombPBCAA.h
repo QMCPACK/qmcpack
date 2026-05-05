@@ -54,7 +54,6 @@ struct CoulombPBCAA : public OperatorDependsOnlyOnParticleSet, public ForceBase
 
   bool is_active;
   bool FirstTime;
-  bool is_static_initialized{false};
   int SourceID;
   int NumSpecies;
   int ChargeAttribIndx;

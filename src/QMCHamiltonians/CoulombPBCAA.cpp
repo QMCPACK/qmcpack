@@ -40,11 +40,13 @@ struct CoulombPBCAA::CoulombPBCAAMultiWalkerResource : public Resource
 
   Vector<CoulombPBCAA::Return_t, OffloadPinnedAllocator<CoulombPBCAA::Return_t>> values_offload;
 
-  /// at least a chunks worth of per particle sr values
-  Matrix<CoulombPBCAA::Return_t, OffloadPinnedAllocator<CoulombPBCAA::Return_t>> pp_sr_values_offload;
+  // These will be needed for mw_evalPerParticle that actually works
+  // with offload.
+  // /// at least a chunks worth of per particle sr values
+  // Matrix<CoulombPBCAA::Return_t, OffloadPinnedAllocator<CoulombPBCAA::Return_t>> pp_sr_values_offload;
 
-  /// Working space for pp_sr_values to be returned.
-  Matrix<RealType> pp_sr_values;
+  // /// Working space for pp_sr_values to be returned.
+  // Matrix<RealType> pp_sr_values;
 
   /// a walkers worth of per particle coulomb AA potential values
   Vector<RealType> v_sample;
@@ -220,22 +222,7 @@ void CoulombPBCAA::mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
 
   // Tired of warnings about dangling else
   if (!o_leader.is_active)
-  {
-    if (!o_leader.is_static_initialized)
-      return;
-    else
-    {
-      for (int iw = 0; iw < o_list.size(); iw++)
-      {
-        auto& coulomb_aa = o_list.getCastedElement<CoulombPBCAA>(iw);
-        if (!coulomb_aa.is_static_initialized)
-        {
-          o_list.getCastedElement<OperatorDependsOnlyOnParticleSet>(iw).evaluate(p_list[iw]);
-        }
-      }
-      return;
-    }
-  }
+    return;
 
   if (use_offload_)
   {
