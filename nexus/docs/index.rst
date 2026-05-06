@@ -11,12 +11,11 @@ The Nexus User Guide
    :caption: Table of Contents
 
    usedocs
-   overview
-   installation
+   user_guide/index
    user-scripts
-   examples
    reading
    python-basics
    theory
    qmcpack-input-mod
+   api_docs/index
    code-style

@@ -30,14 +30,22 @@ highlight_language = "python"
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-import sys, os
+import sys
+import os
 sys.path.append(os.path.abspath('extensions'))
 
-import sphinx_rtd_theme
-
-extensions = ['sphinxcontrib.bibtex', "sphinx_rtd_theme"]
+extensions = [
+    "sphinxcontrib.bibtex",
+    "sphinx.ext.coverage",
+    "sphinx.ext.mathjax",
+    "pydata_sphinx_theme",
+    "sphinx_design",
+    "numpydoc",
+]
 bibtex_bibfiles = ['bibs/methods.bib']
 
+numpydoc_class_members_toctree = False
+numpydoc_show_class_members = True
 numfig = True
 
 # Add any paths that contain templates here, relative to this directory.
@@ -54,7 +62,7 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx_rtd_theme'
+html_theme = "pydata_sphinx_theme"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -64,3 +72,26 @@ html_static_path = ['_static']
 html_css_files = [
     'custom.css',
 ]
+html_theme_options = {
+    "icon_links": [
+        {
+            "name": "GitHub",
+            "url": "https://github.com/QMCPACK/qmcpack",
+            "icon": "fa-brands fa-github",
+        },
+    ],
+    "navbar_end": [
+        "search-button",
+        "theme-switcher",
+        "navbar-icon-links"
+    ],
+    "show_toc_level": 3,
+    "secondary_sidebar_items": ["page-toc"],
+}
+
+# html_sidebars = {
+#     "user_guide": [],
+#     "theory": [],
+# }
+
+html_context = {"default_mode": "auto"}
