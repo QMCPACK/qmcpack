@@ -115,15 +115,35 @@ def test_path_string():
 def test_path_object():
     from nexus.utilities import path_object,path_string
 
-    # fix Path information destruction
+    # guard against Path information destruction
     assert str(Path(''   )) == '.'
     assert str(Path('./a')) == 'a'
 
-    p,leading = path_object('')
+    try:
+        p = path_object('')
+        expected = False
+    except RuntimeError:
+        expected = True
+    assert expected
+
+    try:
+        p = path_object('./a')
+        expected = False
+    except RuntimeError:
+        expected = True
+    assert expected
+
+
+    # don't guard
+    assert str(path_object(''   , guard=False)) == '.'
+    assert str(path_object('./a', guard=False)) == 'a'
+
+    # fix Path information destruction
+    p,leading = path_object('',return_leading=True)
     assert p==Path('')
     assert path_string(p,leading) == ''
 
-    p,leading = path_object('./a')
+    p,leading = path_object('./a',return_leading=True)
     assert p==Path('./a')
     assert path_string(p,leading) == './a'
 

@@ -182,8 +182,10 @@ def path_string(path, leading=None):
 
 
 
-def path_object(path          ,
-                strict = False,
+def path_object(path                  ,
+                strict         = False,
+                guard          = True ,
+                return_leading = False,
                 ):
     """Convert a path to a ``pathlib.Path`` object.
 
@@ -203,6 +205,7 @@ def path_object(path          ,
     leading  : None, '', './'
         Stores any information lost when converting to Path.
     """
+    guard &= not return_leading
     is_str  = isinstance(path,str)
     is_Path = isinstance(path,Path)
     if strict and not is_str:
@@ -223,5 +226,10 @@ def path_object(path          ,
             prepend &= not po.startswith('..')
             if prepend:
                 leading = './'
-    return path_out, leading
+    if guard and leading is not None:
+        raise RuntimeError('information has been lost in conversion to Path object')
+    if not return_leading:
+        return path_out
+    else:
+        return path_out, leading
 #end def path_object
