@@ -48,7 +48,7 @@ Example
 
 The first example is one test from ``src/Numerics/tests/test_grid_functor.cpp``.
 
-.. code-block::
+.. code-block:: cpp
   :caption: Unit test example using Catch.
   :name: Listing 75
 
@@ -169,7 +169,7 @@ The ``Libxml2Document`` class has a ``parseFromString`` function to parse XML in
 
 The following code fragment to read the xml is common
 
-.. code-block::
+.. code-block:: cpp
 
   const char* xml_str = R"(<tmp><wavefunction></wavefunction></tmp>)";
   Libxml2Document doc;
