@@ -1,19 +1,13 @@
-try:
-    import pytest
-    from . import NexusTestOrder
-    pytestmark = pytest.mark.order(NexusTestOrder.BUNDLE)
-except ImportError:
-    pass
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.BUNDLE)
+
+from ..generic import generic_settings
+generic_settings.raise_error = True
 
 from .. import testing
 from ..testing import failed,FailedTest
-from ..testing import value_eq,object_eq
-
-
-def test_import():
-    from ..bundle import bundle
-    from ..bundle import SimulationBundle
-#end def test_import
+from ..testing import object_eq
 
 
 

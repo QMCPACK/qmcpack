@@ -1,9 +1,9 @@
-try:
-    import pytest
-    from . import NexusTestOrder
-    pytestmark = pytest.mark.order(NexusTestOrder.QMCPACK_INPUT)
-except ImportError:
-    pass
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.QMCPACK_INPUT)
+
+from ..generic import generic_settings
+generic_settings.raise_error = True
 
 from .. import versions
 from .. import testing
@@ -554,13 +554,6 @@ def test_files():
     files = get_files()
     assert(set(filenames)==set(files.keys()))
 #end def test_files
-
-
-
-def test_import():
-    from ..qmcpack_input import QmcpackInput
-    from ..qmcpack_input import simulation,meta,section
-#end def test_import
 
 
 

@@ -1,23 +1,12 @@
-try:
-    import pytest
-    from . import NexusTestOrder
-    pytestmark = pytest.mark.order(NexusTestOrder.PWSCF_POSTPROCESSOR_ANALYZERS)
-except ImportError:
-    pass
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.PWSCF_POSTPROCESSOR_ANALYZERS)
+
+from ..generic import generic_settings
+generic_settings.raise_error = True
 
 from .. import testing
-from ..testing import value_eq,object_eq,text_eq
-
-
-
-def test_import():
-    from ..pwscf_postprocessors import PPAnalyzer
-    from ..pwscf_postprocessors import DosAnalyzer
-    from ..pwscf_postprocessors import BandsAnalyzer
-    from ..pwscf_postprocessors import ProjwfcAnalyzer
-    from ..pwscf_postprocessors import CpppAnalyzer
-    from ..pwscf_postprocessors import PwexportAnalyzer
-#end def test_import
+from ..testing import object_eq,text_eq
 
 
 

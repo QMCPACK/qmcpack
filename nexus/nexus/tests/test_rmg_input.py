@@ -1,14 +1,12 @@
-try:
-    import pytest
-    from . import NexusTestOrder
-    pytestmark = pytest.mark.order(NexusTestOrder.RMG_INPUT)
-except ImportError:
-    pass
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.RMG_INPUT)
+
+from ..generic import generic_settings
+generic_settings.raise_error = True
 
 from .. import testing
-from ..testing import failed
-from ..testing import divert_nexus_log,restore_nexus_log
-from ..testing import value_eq,object_eq,check_object_eq
+from ..testing import value_eq,check_object_eq
 from .. import versions
 
 
@@ -678,12 +676,6 @@ def test_files():
     files = get_files()
     assert(set(files.keys())==set(filenames))
 #end def test_files
-
-
-
-def test_import():
-    from ..rmg_input import RmgInput
-#end def test_import
 
 
 

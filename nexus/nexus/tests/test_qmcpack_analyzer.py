@@ -1,19 +1,14 @@
-try:
-    import pytest
-    from . import NexusTestOrder
-    pytestmark = pytest.mark.order(NexusTestOrder.QMCPACK_ANALYZER)
-except ImportError:
-    pass
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.QMCPACK_ANALYZER)
+
+from ..generic import generic_settings
+generic_settings.raise_error = True
 
 from .. import versions
 from .. import testing
 from ..testing import divert_nexus_log,restore_nexus_log
-from ..testing import value_eq,object_eq,text_eq,print_diff
-
-
-def test_import():
-    from ..qmcpack_analyzer import QmcpackAnalyzer
-#end def test_import
+from ..testing import value_eq,object_eq,text_eq
 
 
 
@@ -444,7 +439,6 @@ if versions.h5py_available:
     def test_density_analysis():
         import os
         from numpy import array
-        from ..developer import obj
         from ..qmcpack_analyzer import QmcpackAnalyzer
 
         tpath = testing.setup_unit_test_output_directory(

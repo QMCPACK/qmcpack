@@ -1,26 +1,12 @@
-try:
-    import pytest
-    from . import NexusTestOrder
-    pytestmark = pytest.mark.order(NexusTestOrder.QMCPACK_CONVERTER_INPUT)
-except ImportError:
-    pass
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.QMCPACK_CONVERTER_INPUT)
+
+from ..generic import generic_settings
+generic_settings.raise_error = True
 
 from .. import testing
-from ..testing import value_eq,object_eq,text_eq
-
-
-
-def test_import():
-    from ..qmcpack_converters import Pw2qmcpackInput
-    from ..qmcpack_converters import generate_pw2qmcpack_input
-
-    from ..qmcpack_converters import Convert4qmcInput
-    from ..qmcpack_converters import generate_convert4qmc_input
-
-    from ..qmcpack_converters import PyscfToAfqmcInput
-    from ..qmcpack_converters import generate_pyscf_to_afqmc_input
-#end def test_import
-
+from ..testing import value_eq,object_eq
 
 
 

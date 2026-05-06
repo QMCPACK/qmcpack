@@ -1,9 +1,9 @@
-try:
-    import pytest
-    from . import NexusTestOrder
-    pytestmark = pytest.mark.order(NexusTestOrder.VASP_ANALYZER)
-except ImportError:
-    pass
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.VASP_ANALYZER)
+
+from ..generic import generic_settings
+generic_settings.raise_error = True
 
 from .. import testing
 from ..testing import value_eq,object_eq
@@ -43,12 +43,6 @@ def test_files():
 
 
 
-def test_import():
-    from ..vasp_analyzer import VaspAnalyzer,VXML,OutcarData
-#end def test_import
-
-
-
 def test_empty_init():
     from ..vasp_analyzer import VaspAnalyzer
 
@@ -61,7 +55,7 @@ def test_analyze():
     import os
     from numpy import array,ndarray
     from ..developer import obj
-    from ..vasp_analyzer import VaspAnalyzer,VXML,VXMLcoll,OutcarData
+    from ..vasp_analyzer import VaspAnalyzer,VXML,OutcarData
 
     tpath = testing.setup_unit_test_output_directory(
         test      = 'vasp_analyzer',

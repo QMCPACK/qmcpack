@@ -1,14 +1,14 @@
-try:
-    import pytest
-    from . import NexusTestOrder
-    pytestmark = pytest.mark.order(NexusTestOrder.GAMESS_INPUT)
-except ImportError:
-    pass
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.GAMESS_INPUT)
+
+from ..generic import generic_settings
+generic_settings.raise_error = True
 
 from .. import testing
-from ..testing import divert_nexus,restore_nexus
+from ..testing import restore_nexus
 from ..testing import divert_nexus_log,restore_nexus_log
-from ..testing import value_eq,object_eq
+from ..testing import object_eq
 
 
 associated_files = dict()
@@ -286,12 +286,6 @@ def test_files():
     files = get_files()
     assert(set(filenames)==set(files.keys()))
 #end def test_files
-
-
-
-def test_import():
-    from ..gamess_input import GamessInput,generate_gamess_input
-#end def test_import
 
 
 

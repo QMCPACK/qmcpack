@@ -1,14 +1,13 @@
-try:
-    import pytest
-    from . import NexusTestOrder
-    pytestmark = pytest.mark.order(NexusTestOrder.PYSCF_SIMULATION)
-except ImportError:
-    pass
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.PYSCF_SIMULATION)
+
+from ..generic import generic_settings
+generic_settings.raise_error = True
 
 from .. import testing
-from ..testing import divert_nexus,restore_nexus,clear_all_sims
+from ..testing import restore_nexus,clear_all_sims
 from ..testing import failed,FailedTest
-from ..testing import value_eq,object_eq,text_eq
 
 
 def get_pyscf_sim(**kwargs):
@@ -24,12 +23,6 @@ def get_pyscf_sim(**kwargs):
 
     return sim
 #end def get_pyscf_sim
-
-
-
-def test_import():
-    from ..pyscf_sim import Pyscf,generate_pyscf
-#end def test_import
 
 
 
@@ -75,7 +68,7 @@ def test_check_result():
 
 def test_get_result():
     import os
-    from ..developer import NexusError, obj
+    from ..developer import NexusError
     from ..nexus_base import nexus_core
 
     tpath = testing.setup_unit_test_output_directory('pyscf_simulation','test_get_result',divert=True)

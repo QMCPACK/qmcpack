@@ -1,23 +1,21 @@
-try:
-    import pytest
-    from . import NexusTestOrder
-    pytestmark = pytest.mark.order(NexusTestOrder.GENERIC_OPERATION)
-except ImportError:
-    pass
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.GENERIC_OPERATION)
+
+from ..generic import generic_settings
+generic_settings.raise_error = True
 
 from .. import testing
 from ..testing import failed,FailedTest
 from ..testing import divert_nexus_log,restore_nexus_log,FakeLog
-from ..testing import value_eq,object_eq,object_neq
-
+from ..testing import object_eq,object_neq
 
 def test_logging():
-    from ..generic import log,message,warn,error
+    from ..generic import log,warn,error
     from ..generic import generic_settings,NexusError
 
     # send messages to object rather than stdout
     divert_nexus_log()
-
     logfile = generic_settings.devlog
 
     # test log

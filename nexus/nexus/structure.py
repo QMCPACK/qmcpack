@@ -117,6 +117,7 @@ Module contents
 """
 
 import os
+from pathlib import Path
 import numpy as np
 from copy import deepcopy
 from random import randint
@@ -5199,7 +5200,9 @@ class Structure(Sobj):
         if filepath is None and format is None:
             self.error('please specify either the filepath or format arguments to write()')
         elif format is None:
-            if '.' in filepath:
+            if isinstance(filepath, Path):
+                format = filepath.suffix.lstrip(".")
+            elif '.' in filepath:
                 format = filepath.split('.')[-1]
             else:
                 self.error(

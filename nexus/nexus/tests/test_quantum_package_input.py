@@ -1,12 +1,12 @@
-try:
-    import pytest
-    from . import NexusTestOrder
-    pytestmark = pytest.mark.order(NexusTestOrder.QUANTUM_PACKAGE_INPUT)
-except ImportError:
-    pass
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.QUANTUM_PACKAGE_INPUT)
+
+from ..generic import generic_settings
+generic_settings.raise_error = True
 
 from .. import testing
-from ..testing import value_eq,object_eq,text_eq,check_object_eq
+from ..testing import object_eq
 
 
 def format_value(v):
@@ -248,16 +248,9 @@ o2_xyz = '''2
 '''
 
 
-def test_import():
-    from ..quantum_package_input import QuantumPackageInput
-    from ..quantum_package_input import generate_quantum_package_input
-#end def test_import
-
-
 
 def test_empty_init():
     from ..quantum_package_input import QuantumPackageInput
-    from ..quantum_package_input import generate_quantum_package_input
 
     qi = QuantumPackageInput()
 
@@ -282,7 +275,6 @@ def test_read():
 
 def test_generate():
     import os
-    from ..developer import obj
     from ..physical_system import generate_physical_system
     from ..quantum_package_input import generate_quantum_package_input
 

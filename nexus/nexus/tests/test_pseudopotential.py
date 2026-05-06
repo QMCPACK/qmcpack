@@ -1,9 +1,9 @@
-try:
-    import pytest
-    from . import NexusTestOrder
-    pytestmark = pytest.mark.order(NexusTestOrder.PSEUDOPOTENTIAL)
-except ImportError:
-    pass
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.PSEUDOPOTENTIAL)
+
+from ..generic import generic_settings
+generic_settings.raise_error = True
 
 from .. import testing
 from ..testing import value_eq,object_eq
@@ -34,20 +34,6 @@ def test_files():
     files = get_files()
     assert(set(files.keys())==set(filenames))
 #end def test_files
-
-
-def test_import():
-    from .. import pseudopotential
-    from ..pseudopotential import Pseudopotentials
-    from ..pseudopotential import PseudoFile
-    from ..pseudopotential import gamessPPFile
-    from ..pseudopotential import PPset
-    from ..pseudopotential import Pseudopotential
-    from ..pseudopotential import SemilocalPP
-    from ..pseudopotential import GaussianPP
-    from ..pseudopotential import QmcpackPP
-    from ..pseudopotential import CasinoPP
-#end def test_import
 
 
 

@@ -1,14 +1,14 @@
-try:
-    import pytest
-    from . import NexusTestOrder
-    pytestmark = pytest.mark.order(NexusTestOrder.PWSCF_INPUT)
-except ImportError:
-    pass
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.PWSCF_INPUT)
+
+from ..generic import generic_settings
+generic_settings.raise_error = True
 
 from .. import testing
 from ..testing import failed
 from ..testing import divert_nexus_log,restore_nexus_log
-from ..testing import value_eq,object_eq,object_diff
+from ..testing import object_eq,object_diff
 
 
 associated_files = dict()
@@ -47,18 +47,10 @@ def test_files():
 
 
 
-def test_import():
-    from ..pwscf_input import check_new_variables,check_section_classes
-    from ..pwscf_input import PwscfInput,generate_pwscf_input
-#end def test_import
-
-
-
 def test_input():
     # imports
     import os
     import numpy as np
-    from .. import pwscf_input as pwi
     from ..developer import obj
     from ..structure import read_structure
     from ..physical_system import generate_physical_system

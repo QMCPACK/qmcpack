@@ -1,21 +1,12 @@
-try:
-    import pytest
-    from . import NexusTestOrder
-    pytestmark = pytest.mark.order(NexusTestOrder.OBSERVABLES)
-except ImportError:
-    pass
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.OBSERVABLES)
 
-from .. import testing
-from ..testing import value_eq,object_eq,text_eq,check_object_eq
+from ..generic import generic_settings
+generic_settings.raise_error = True
+
+from ..testing import check_object_eq
 from ..testing import FailedTest,failed
-
-
-def test_import():
-    from .. import observables
-    from ..observables import AttributeProperties,DefinedAttributeBase
-    from ..observables import Observable 
-    from ..observables import MomentumDistribution
-#end def test_import
 
 
 

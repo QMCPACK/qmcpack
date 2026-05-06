@@ -1,11 +1,9 @@
-#!/env/bin/python
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.STRUCTURE)
 
-try:
-    import pytest
-    from . import NexusTestOrder
-    pytestmark = pytest.mark.order(NexusTestOrder.STRUCTURE)
-except ImportError:
-    pass
+from ..generic import generic_settings
+generic_settings.raise_error = True
 
 
 import numpy as np
@@ -273,14 +271,6 @@ def test_files():
 
 
 
-def test_import():
-    from ..structure import Structure,Crystal
-    from ..structure import generate_structure
-    from ..structure import read_structure
-#end def test_import
-
-
-
 def test_empty_init():
     from ..structure import Structure
     from ..structure import generate_structure
@@ -292,7 +282,6 @@ def test_empty_init():
 
 
 def test_reference_inputs():
-    from ..developer import obj
     ref_in = get_reference_inputs()
     assert(len(ref_in)>0)
 #end def test_reference_inputs

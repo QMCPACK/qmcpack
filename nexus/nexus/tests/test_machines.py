@@ -1,12 +1,12 @@
-try:
-    import pytest
-    from . import NexusTestOrder
-    pytestmark = pytest.mark.order(NexusTestOrder.MACHINES)
-except ImportError:
-    pass
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.MACHINES)
+
+from ..generic import generic_settings
+generic_settings.raise_error = True
 
 from .. import testing
-from ..testing import value_eq,object_eq,failed,FailedTest
+from ..testing import object_eq,object_diff,failed,FailedTest
 from ..testing import divert_nexus_log,restore_nexus_log
 
 
@@ -53,15 +53,6 @@ def get_supercomputers():
     ws,sc = get_machine_data()
     return sc
 #end def get_supercomputers
-
-
-
-
-def test_import():
-    from ..machines import Machine,Workstation,InteractiveCluster,Supercomputer
-    from ..machines import Job,job
-    from ..machines import get_machine,get_machine_name
-#end def test_import
 
 
 

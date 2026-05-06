@@ -1,12 +1,12 @@
-try:
-    import pytest
-    from . import NexusTestOrder
-    pytestmark = pytest.mark.order(NexusTestOrder.XMLREADER)
-except ImportError:
-    pass
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.XMLREADER)
+
+from ..generic import generic_settings
+generic_settings.raise_error = True
 
 from .. import testing
-from ..testing import value_eq,object_eq
+from ..testing import object_eq
 
 
 associated_files = dict()
@@ -23,16 +23,6 @@ def test_files():
     files = get_files()
     assert(set(files.keys())==set(filenames))
 #end def test_files
-
-
-def test_import():
-    from .. import xmlreader
-    from ..xmlreader import XMLreader,readxml
-    from ..xmlreader import parse_string
-    from ..xmlreader import find_pair
-    from ..xmlreader import remove_pair_sections
-    from ..xmlreader import remove_empty_lines
-#end def test_import
 
 
 def test_read():

@@ -1,14 +1,14 @@
-try:
-    import pytest
-    from . import NexusTestOrder
-    pytestmark = pytest.mark.order(NexusTestOrder.QUANTUM_PACKAGE_SIMULATION)
-except ImportError:
-    pass
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.QUANTUM_PACKAGE_SIMULATION)
+
+from ..generic import generic_settings
+generic_settings.raise_error = True
 
 from .. import testing
-from ..testing import divert_nexus,restore_nexus
+from ..testing import restore_nexus
 from ..testing import failed,FailedTest
-from ..testing import value_eq,object_eq,text_eq
+from ..testing import object_eq
 
 
 def clear_all_sims():
@@ -47,12 +47,6 @@ def get_quantum_package_sim(**kwargs):
     
     return sim
 #end def get_quantum_package_sim
-
-
-
-def test_import():
-    from ..quantum_package import QuantumPackage,generate_quantum_package
-#end def test_import
 
 
 
@@ -111,7 +105,7 @@ def test_get_result():
 
 
 def test_incorporate_result():
-    from ..developer import NexusError, obj
+    from ..developer import NexusError
     from ..machines import job
     from ..simulation import Simulation
     from ..gamess import generate_gamess,Gamess
@@ -157,7 +151,6 @@ def test_incorporate_result():
 
 def test_check_sim_status():
     import os
-    from ..developer import NexusError, obj
     from ..nexus_base import nexus_core
 
     tpath = testing.setup_unit_test_output_directory('quantum_package_simulation','test_check_sim_status',divert=True)

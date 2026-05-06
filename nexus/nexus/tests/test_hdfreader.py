@@ -1,19 +1,13 @@
-try:
-    import pytest
-    from . import NexusTestOrder
-    pytestmark = pytest.mark.order(NexusTestOrder.HDFREADER)
-except ImportError:
-    pass
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.HDFREADER)
+
+from ..generic import generic_settings
+generic_settings.raise_error = True
 
 from nexus.versions import h5py_available
 from .. import testing
-from ..testing import value_eq,object_eq
-
-
-def test_import():
-    from .. import hdfreader
-    from ..hdfreader import HDFreader,read_hdf
-#end def test_import
+from ..testing import value_eq
 
 
 if h5py_available:

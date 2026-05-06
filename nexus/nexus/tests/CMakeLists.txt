@@ -2,56 +2,63 @@
 include("${PROJECT_SOURCE_DIR}/CMake/test_labels.cmake")
 include("${PROJECT_SOURCE_DIR}/CMake/python.cmake")
 
-check_python_reqs(numpy "nexus base" ADD_TEST)
+check_python_reqs("numpy;pytest" "nexus base" ADD_TEST)
 
 if(ADD_TEST)
-  file(TIMESTAMP ${qmcpack_SOURCE_DIR}/nexus/nexus/bin/nxs-test NEXUS_TESTLIST_TIMESTAMP)
-  if(NOT "${NEXUS_TESTLIST_TIMESTAMP}" STREQUAL "${CACHE_NEXUS_TESTLIST_TIMESTAMP}")
-    message("Generating Nexus test list for the first time or after a nxs-test time stamp change")
-    execute_process(COMMAND ${Python3_EXECUTABLE} ${qmcpack_SOURCE_DIR}/nexus/nexus/bin/nxs-test --ctestlist
-                    RESULT_VARIABLE NEXUS_TESTLIST_RESULT OUTPUT_VARIABLE NEXUS_TESTLIST)
-    if(NOT NEXUS_TESTLIST_RESULT EQUAL 0)
-      message(FATAL_ERROR "Command line '${Python3_EXECUTABLE} ${qmcpack_SOURCE_DIR}/nexus/nexus/bin/nxs-test --ctestlist' failed!")
-    endif()
-
-    set(CACHE_NEXUS_TESTLIST
-        ${NEXUS_TESTLIST}
-        CACHE INTERNAL "NEXUS_TESTLIST cache variable" FORCE)
-    set(CACHE_NEXUS_TESTLIST_TIMESTAMP
-        ${NEXUS_TESTLIST_TIMESTAMP}
-        CACHE INTERNAL "Timestamp used to validate NEXUS_TESTLIST cache variables" FORCE)
-  else()
-    message("nxs-test time stamp remains unchanged. Using cached Nexus test list")
-    set(NEXUS_TESTLIST ${CACHE_NEXUS_TESTLIST})
+  message("Generating Nexus test list")
+  execute_process(COMMAND ${Python3_EXECUTABLE} -m pytest --collect-only -qq --disable-warnings ${qmcpack_SOURCE_DIR}/nexus/nexus/tests
+                  RESULT_VARIABLE NEXUS_TESTLIST_RESULT OUTPUT_VARIABLE NEXUS_TESTLIST)
+  if(NOT NEXUS_TESTLIST_RESULT EQUAL 0)
+    message(FATAL_ERROR "Command line ' ${Python3_EXECUTABLE} -m pytest --collect-only -qq ${qmcpack_SOURCE_DIR}/nexus/nexus/tests ' failed!")
   endif()
+
+  string(REPLACE "\n" ";" NEXUS_TESTLIST "${NEXUS_TESTLIST}") # Join into a single line with semicolon separators
+  list(REMOVE_ITEM NEXUS_TESTLIST "") # remove empty entries
+  set(CACHE_NEXUS_TESTLIST
+      ${NEXUS_TESTLIST}
+      CACHE INTERNAL "NEXUS_TESTLIST cache variable" FORCE)
   if(NEXUS_TESTLIST)
     message("Adding Nexus tests")
   else()
     message("Nexus test list is empty. No Nexus tests added.")
   endif()
-  foreach(TESTNAME ${NEXUS_TESTLIST})
-    #message("Adding test ntest_nexus_${TESTNAME}")
-    set(NTEST "${qmcpack_SOURCE_DIR}/nexus/nexus/bin/nxs-test")
-    IF(ENABLE_PYCOV)
-      add_test(NAME ntest_nexus_${TESTNAME} COMMAND ${PYTHON_COVERAGE_EXECUTABLE} run -p ${NTEST} -R ${TESTNAME}\$ --ctest
-                                                    --pythonpath=${PROJECT_SOURCE_DIR}/nexus:$ENV{PYTHONPATH})
-
-    ELSE()
-      add_test(NAME ntest_nexus_${TESTNAME} COMMAND ${Python3_EXECUTABLE} ${NTEST} -R ${TESTNAME}\$ --ctest
-                                                    --pythonpath=${PROJECT_SOURCE_DIR}/nexus:$ENV{PYTHONPATH})
-    ENDIF() 
-    set_tests_properties(ntest_nexus_${TESTNAME} PROPERTIES ENVIRONMENT PYTHONPATH=$ENV{PYTHONPATH})
+  set(NTEST "pytest")
+  if(ENABLE_PYCOV)
+    add_test(NAME ntest_nexus_coverage_all
+             COMMAND ${Python3_EXECUTABLE} -m ${NTEST} ${qmcpack_SOURCE_DIR}/nexus/nexus/tests -c ${qmcpack_SOURCE_DIR}/nexus/pyproject.toml
+                                                                                   --cov
+                                                                                   --cov-report=xml
+                                                                                   --cov-config=${qmcpack_SOURCE_DIR}/nexus/pyproject.toml
+    )
+    set_tests_properties(ntest_nexus_coverage_all PROPERTIES ENVIRONMENT PYTHONPATH=$ENV{PYTHONPATH})
     set_property(
-      TEST ntest_nexus_${TESTNAME}
+      TEST ntest_nexus_coverage_all
       APPEND
       PROPERTY LABELS "nexus;deterministic")
     set(TEST_LABELS "")
-    add_test_labels(ntest_nexus_${TESTNAME} TEST_LABELS)
-    # Use a resource lock to avoid potential race condition in copying example inputs
-    if(${TESTNAME} MATCHES ".*example.*")
-      set_tests_properties(ntest_nexus_${TESTNAME} PROPERTIES RESOURCE_LOCK nexus_examples_resource)
-    endif()
-  endforeach()
+    add_test_labels(ntest_nexus_coverage_all TEST_LABELS)
+  else()
+    foreach(TESTFILE IN LISTS NEXUS_TESTLIST)
+      string(REGEX REPLACE "\.py:.*[0-9]" "" TESTFILE "${TESTFILE}")
+      string(REPLACE "nexus/tests/test_" "" TESTNAME "${TESTFILE}")
+      #message("Adding test ntest_nexus_${TESTNAME}")
+
+      add_test(NAME ntest_nexus_${TESTNAME}
+               COMMAND ${Python3_EXECUTABLE} -m ${NTEST} ${qmcpack_SOURCE_DIR}/nexus/${TESTFILE}.py -c ${qmcpack_SOURCE_DIR}/nexus/pyproject.toml
+              )
+      set_tests_properties(ntest_nexus_${TESTNAME} PROPERTIES ENVIRONMENT PYTHONPATH=$ENV{PYTHONPATH})
+      set_property(
+        TEST ntest_nexus_${TESTNAME}
+        APPEND
+        PROPERTY LABELS "nexus;deterministic")
+      set(TEST_LABELS "")
+      add_test_labels(ntest_nexus_${TESTNAME} TEST_LABELS)
+      # Use a resource lock to avoid potential race condition in copying example inputs
+      if(${TESTNAME} MATCHES ".*example.*")
+        set_tests_properties(ntest_nexus_${TESTNAME} PROPERTIES RESOURCE_LOCK nexus_examples_resource)
+      endif()
+    endforeach()
+  endif()
 else()
-  message("Skipping Nexus tests because numpy is not present in python installation")
+  message(WARNING "Skipping Nexus tests because python numpy package and/or pytest were not found")
 endif()

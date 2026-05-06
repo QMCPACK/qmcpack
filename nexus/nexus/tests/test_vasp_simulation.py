@@ -1,14 +1,14 @@
-try:
-    import pytest
-    from . import NexusTestOrder
-    pytestmark = pytest.mark.order(NexusTestOrder.VASP_SIMULATION)
-except ImportError:
-    pass
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.VASP_SIMULATION)
+
+from ..generic import generic_settings
+generic_settings.raise_error = True
 
 from .. import testing
-from ..testing import divert_nexus,restore_nexus,clear_all_sims
+from ..testing import restore_nexus,clear_all_sims
 from ..testing import failed,FailedTest
-from ..testing import value_eq,object_eq,text_eq,check_object_eq
+from ..testing import value_eq,object_eq,check_object_eq
 
 from .test_vasp_input import c_potcar_text,get_files
 
@@ -71,12 +71,6 @@ def setup_vasp_sim(path,identifier='vasp',files=False):
         
     return sim
 #end def setup_vasp_sim
-
-
-
-def test_import():
-    from ..vasp import Vasp,generate_vasp
-#end def test_import
 
 
 

@@ -1,18 +1,13 @@
-try:
-    import pytest
-    from . import NexusTestOrder
-    pytestmark = pytest.mark.order(NexusTestOrder.SETTINGS_OPERATION)
-except ImportError:
-    pass
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.SETTINGS_OPERATION)
+
+from ..generic import generic_settings
+generic_settings.raise_error = True
 
 from .. import testing
 from ..testing import divert_nexus,restore_nexus
 from ..testing import value_eq,object_eq
-
-
-def test_import():
-    from nexus import settings,Settings
-#end def test_import
 
 
 def test_settings():

@@ -1,14 +1,15 @@
-try:
-    import pytest
-    from . import NexusTestOrder
-    pytestmark = pytest.mark.order(NexusTestOrder.USER_EXAMPLES)
-except ImportError:
-    pass
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.USER_EXAMPLES)
+
+from ..generic import generic_settings
+generic_settings.raise_error = True
 
 from pathlib import Path
 import os
 import sys
 import shutil
+from shutil import ignore_patterns
 from subprocess import Popen, PIPE
 
 
@@ -38,17 +39,23 @@ def copy_example_files(example_dir: str):
 
     example_path = example_root / example_dir
     output_path = output_root / example_dir
-    test_path = shutil.copytree(example_path, output_path, dirs_exist_ok=True)
+    test_path = shutil.copytree(
+        src           = example_path,
+        dst           = output_path,
+        dirs_exist_ok = True,
+        ignore        = ignore_patterns("*.py"),
+    )
 
     return test_path
 
 
-def run_example_script(script: str, test_path: Path):
+def run_example_script(script: Path, test_path: Path):
 
+    script = script.resolve() # Absolute path helps in debugging
     old_cwd = Path.cwd()
     os.chdir(test_path)
 
-    script_command = f"PYTHONPATH={nexus_root} {sys.executable} ./{script} --generate_only --sleep=0.01"
+    script_command = f"PYTHONPATH={nexus_root} {sys.executable} {script} --generate_only --sleep=0.01"
     process = Popen(script_command, shell=True, stdout=PIPE, stderr=PIPE, close_fds=True)
     out, err = process.communicate()
     returncode = process.returncode
@@ -184,7 +191,8 @@ def test_pwscf_relax_Ge_T():
     test_path = copy_example_files(test_data["path"])
 
     for script in test_data["scripts"]:
-        success, message = run_example_script(script, test_path)
+        script_path = example_root / test_data["path"] / script
+        success, message = run_example_script(script_path, test_path)
         assert(success), message
 
     for code, filetype, filepath in test_data["files"]:
@@ -217,7 +225,8 @@ def test_gamess_H2O():
     test_path = copy_example_files(test_data["path"])
 
     for script in test_data["scripts"]:
-        success, message = run_example_script(script, test_path)
+        script_path = example_root / test_data["path"] / script
+        success, message = run_example_script(script_path, test_path)
         assert(success), message
 
     for code, filetype, filepath in test_data["files"]:
@@ -247,7 +256,8 @@ def test_qmcpack_H2O():
     test_path = copy_example_files(test_data["path"])
 
     for script in test_data["scripts"]:
-        success, message = run_example_script(script, test_path)
+        script_path = example_root / test_data["path"] / script
+        success, message = run_example_script(script_path, test_path)
         assert(success), message
 
     for code, filetype, filepath in test_data["files"]:
@@ -278,7 +288,8 @@ def test_qmcpack_LiH():
     test_path = copy_example_files(test_data["path"])
 
     for script in test_data["scripts"]:
-        success, message = run_example_script(script, test_path)
+        script_path = example_root / test_data["path"] / script
+        success, message = run_example_script(script_path, test_path)
         assert(success), message
 
     for code, filetype, filepath in test_data["files"]:
@@ -308,7 +319,8 @@ def test_qmcpack_c20():
     test_path = copy_example_files(test_data["path"])
 
     for script in test_data["scripts"]:
-        success, message = run_example_script(script, test_path)
+        script_path = example_root / test_data["path"] / script
+        success, message = run_example_script(script_path, test_path)
         assert(success), message
 
     for code, filetype, filepath in test_data["files"]:
@@ -340,7 +352,8 @@ def test_qmcpack_diamond():
     test_path = copy_example_files(test_data["path"])
 
     for script in test_data["scripts"]:
-        success, message = run_example_script(script, test_path)
+        script_path = example_root / test_data["path"] / script
+        success, message = run_example_script(script_path, test_path)
         assert(success), message
 
     for code, filetype, filepath in test_data["files"]:
@@ -373,7 +386,8 @@ def test_qmcpack_graphene():
     test_path = copy_example_files(test_data["path"])
 
     for script in test_data["scripts"]:
-        success, message = run_example_script(script, test_path)
+        script_path = example_root / test_data["path"] / script
+        success, message = run_example_script(script_path, test_path)
         assert(success), message
 
     for code, filetype, filepath in test_data["files"]:
@@ -403,7 +417,8 @@ def test_qmcpack_oxygen_dimer():
     test_path = copy_example_files(test_data["path"])
 
     for script in test_data["scripts"]:
-        success, message = run_example_script(script, test_path)
+        script_path = example_root / test_data["path"] / script
+        success, message = run_example_script(script_path, test_path)
         assert(success), message
 
     for code, filetype, filepath in test_data["files"]:
