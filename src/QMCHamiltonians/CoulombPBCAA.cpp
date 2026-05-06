@@ -40,14 +40,6 @@ struct CoulombPBCAA::CoulombPBCAAMultiWalkerResource : public Resource
 
   Vector<CoulombPBCAA::Return_t, OffloadPinnedAllocator<CoulombPBCAA::Return_t>> values_offload;
 
-  // These will be needed for mw_evalPerParticle that actually works
-  // with offload.
-  // /// at least a chunks worth of per particle sr values
-  // Matrix<CoulombPBCAA::Return_t, OffloadPinnedAllocator<CoulombPBCAA::Return_t>> pp_sr_values_offload;
-
-  // /// Working space for pp_sr_values to be returned.
-  // Matrix<RealType> pp_sr_values;
-
   /// a walkers worth of per particle coulomb AA potential values
   Vector<RealType> v_sample;
 
@@ -764,118 +756,7 @@ Matrix<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSRPerParticle_offload(
       "CoulombPBCAA_offload and estimators requiring per particle energies are not currently supported!");
 
   return {};
-  // const size_t nw  = o_list.size();
-  // auto& p_leader   = p_list.getLeader();
-  // auto& caa_leader = o_list.getCastedLeader<CoulombPBCAA>();
-  // ScopedTimer local_timer(caa_leader.evalSR_timer_);
-
-  // RefVectorWithLeader<DistanceTable> dt_list(p_leader.getDistTable(caa_leader.d_aa_ID));
-  // dt_list.reserve(p_list.size());
-  // for (ParticleSet& p : p_list)
-  //   dt_list.push_back(p.getDistTable(caa_leader.d_aa_ID));
-
-  // auto& dtaa_leader = dynamic_cast<DistanceTableAA&>(p_leader.getDistTable(caa_leader.d_aa_ID));
-  // // This is actually a compile time constant.
-  // const size_t chunk_size = dtaa_leader.get_num_particls_stored();
-  // if (chunk_size == 0)
-  //   throw std::runtime_error("bug dtaa_leader.get_num_particls_stored() == 0");
-  // // I assume there should also be some maximum chunk size here!
-  // auto& values_offload       = caa_leader.mw_res_handle_.getResource().values_offload;
-  // auto& pp_sr_values_offload = caa_leader.mw_res_handle_.getResource().pp_sr_values_offload;
-
-  // const size_t total_num      = p_leader.getTotalNum();
-  // const size_t total_num_half = (total_num + 1) / 2;
-  // const size_t num_padded     = getAlignedSize<RealType>(total_num);
-  // const size_t num_chunks     = (total_num_half + chunk_size - 1) / chunk_size;
-  // const size_t pp_sr_count    = (((total_num - 1) * total_num) / 2) * nw;
-
-  // const auto m_Y         = caa_leader.rVs_offload->get_m_Y().data();
-  // const auto m_Y2        = caa_leader.rVs_offload->get_m_Y2().data();
-  // const auto first_deriv = caa_leader.rVs_offload->get_first_deriv();
-  // const auto const_value = caa_leader.rVs_offload->get_const_value();
-  // const auto r_min       = caa_leader.rVs_offload->get_r_min();
-  // const auto r_max       = caa_leader.rVs_offload->get_r_max();
-  // const auto X           = caa_leader.rVs_offload->get_X().data();
-  // const auto delta_inv   = caa_leader.rVs_offload->get_delta_inv();
-  // const auto Zat         = caa_leader.Zat_offload->data();
-
-  // {
-  //   values_offload.resize(nw);
-  //   std::fill_n(values_offload.data(), nw, 0);
-  //   auto value_ptr = values_offload.data();
-  //   values_offload.updateTo();
-
-  //   pp_sr_values_offload.resize(pp_sr_count, nw);
-  //   std::fill_n(pp_sr_values_offload.data(), nw * pp_sr_count, 0);
-  //   auto pp_sr_value_ptr = pp_sr_values_offload.data();
-  //   pp_sr_values_offload.updateTo();
-
-  //   for (size_t ichunk = 0; ichunk < num_chunks; ichunk++)
-  //   {
-  //     const size_t first           = ichunk * chunk_size;
-  //     const size_t last            = std::min(first + chunk_size, total_num);
-  //     const size_t this_chunk_size = last - first;
-
-  //     auto* mw_dist = dtaa_leader.mw_evalDistsInRange(dt_list, p_list, first, last);
-
-  //     ScopedTimer offload_scope(caa_leader.offload_timer_);
-
-  //     //
-  //     PRAGMA_OFFLOAD("omp target teams distribute num_teams(nw)")
-  //     for (std::int32_t iw = 0; iw < nw; iw++)
-  //     {
-  //       mRealType SR = 0.0;
-  //       PRAGMA_OFFLOAD("omp parallel for reduction(+ : SR)")
-  //       for (std::int32_t jcol = 0; jcol < total_num; jcol++)
-  //         for (std::int32_t irow = first; irow < last; irow++)
-  //         {
-  //           const RealType dist = mw_dist[num_padded * (irow - first + iw * this_chunk_size) + jcol];
-  //           if (irow == jcol || (irow * 2 + 1 == total_num && jcol > irow))
-  //             continue;
-  //           // Subtraction should be done with signed numbers
-  //           const std::int32_t i = irow > jcol ? irow : total_num - 1 - irow;
-  //           const std::int32_t j = irow > jcol ? jcol : total_num - 1 - jcol;
-  //           auto sr_value        = Zat[i] * Zat[j] *
-  //               OffloadSpline::splint(r_min, r_max, X, delta_inv, m_Y, m_Y2, first_deriv, const_value, dist) / dist;
-  //           // To me this is more intuitive way to map a strictly
-  //           // triangular matrix elements into a vector
-  //           // it trades more operations for clarity later, and I'd
-  //           // wager free compared to the cost of transferring the
-  //           // values to the host
-  //           std::int32_t index_pp_sr = (pp_sr_count * iw) + ((i * (i - 1)) / 2) + j;
-  //           pp_sr_value_ptr[index_pp_sr] += sr_value;
-
-  //           SR += sr_value;
-  //         }
-  //       value_ptr[iw] += SR;
-  //     }
-  //   }
-
-  //   values_offload.updateFrom();
-  //   pp_sr_values_offload.updateFrom();
-  // }
-
-  // Matrix<Return_t> pp_sr_values(pp_sr_count, nw);
-  // std::vector<Return_t> values(nw);
-  // for (int iw = 0; iw < nw; iw++)
-  // {
-  //   values[iw] = values_offload[iw];
-
-  //   for (int ipi = 0; ipi < total_num; ++ipi)
-  //   {
-  //     // The diagonal will always still be 0 see the eval above.
-  //     for (int ipj = 0; ipj < total_num; ++ipj)
-  //     {
-  //       if (ipi == ipj || ipj > ipi)
-  //         continue;
-  //       int tri_index = ((ipi) * (ipi - 1)) / 2 + ipj;
-  //       auto value    = pp_sr_values_offload(iw, tri_index);
-  //       pp_sr_values(ipi, iw) += value;
-  //     }
-  //   }
-  // }
-  // return pp_sr_values;
-} // namespace qmcplusplus
+}
 
 Matrix<CoulombPBCAA::RealType> CoulombPBCAA::mw_evalSRPerParticle(const RefVectorWithLeader<OperatorBase>& o_list,
                                                                   const RefVectorWithLeader<ParticleSet>& p_list)
