@@ -1060,7 +1060,7 @@ Here's a summary of some of the tests provided:
 
    .. code-block:: xml
 
-      <parameter name="ratio">deriv</parameter>}
+      <parameter name="ratio">deriv</parameter>
 
    Computes electron gradients, laplacians, and wave function parameter
    derivatives using implemented calls and compares them to
