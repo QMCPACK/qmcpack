@@ -89,8 +89,8 @@ inline std::ostream& operator<<(std::ostream& out, const NativePrint<std::array<
   return out;
 }
 
-template<class T>
-inline std::ostream& operator<<(std::ostream& out, const NativePrint<Vector<T>>& np_vec)
+template<class T, class ALLOC>
+inline std::ostream& operator<<(std::ostream& out, const NativePrint<Vector<T, ALLOC>>& np_vec)
 {
   out << "{ ";
   auto vec = np_vec.get_obj();
@@ -102,6 +102,7 @@ inline std::ostream& operator<<(std::ostream& out, const NativePrint<Vector<T>>&
   out << " }";
   return out;
 }
+
 
 template<class T>
 inline std::ostream& operator<<(
