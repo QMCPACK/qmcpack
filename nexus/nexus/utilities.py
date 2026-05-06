@@ -201,7 +201,7 @@ def path_object(path          ,
     path_out : Path
         The path as a ``pathlib.Path`` object.
     leading  : None, '', './'
-        Stores information any information lost when converting to Path.
+        Stores any information lost when converting to Path.
     """
     is_str  = isinstance(path,str)
     is_Path = isinstance(path,Path)
