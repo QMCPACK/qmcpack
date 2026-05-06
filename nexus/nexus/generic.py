@@ -115,7 +115,6 @@ nexus_modules = [
     "qmcpack_method_analyzers",
     "observables",
     "gamess",
-    "versions",
     "vasp_analyzer",
     "pwscf_data_reader",
     "qmcpack_input",

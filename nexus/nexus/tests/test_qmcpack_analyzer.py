@@ -5,7 +5,6 @@ pytestmark = pytest.mark.order(NexusTestOrder.QMCPACK_ANALYZER)
 from ..generic import generic_settings
 generic_settings.raise_error = True
 
-from .. import versions
 from .. import testing
 from ..testing import divert_nexus_log,restore_nexus_log
 from ..testing import value_eq,object_eq,text_eq
@@ -435,53 +434,51 @@ def test_twist_average_analysis():
 
 
 
-if versions.h5py_available:
-    def test_density_analysis():
-        import os
-        from numpy import array
-        from ..qmcpack_analyzer import QmcpackAnalyzer
+def test_density_analysis():
+    _ = pytest.importorskip("h5py")
+    import os
+    from numpy import array
+    from ..qmcpack_analyzer import QmcpackAnalyzer
 
-        tpath = testing.setup_unit_test_output_directory(
-            test      = 'qmcpack_analyzer',
-            subtest   = 'test_density_analysis',
-            file_sets = ['diamond_gamma'],
-            )
+    tpath = testing.setup_unit_test_output_directory(
+        test      = 'qmcpack_analyzer',
+        subtest   = 'test_density_analysis',
+        file_sets = ['diamond_gamma'],
+        )
 
-        infile = os.path.join(tpath,'diamond_gamma/dmc/dmc.in.xml')
+    infile = os.path.join(tpath,'diamond_gamma/dmc/dmc.in.xml')
 
-        qa = QmcpackAnalyzer(infile,analyze=True,equilibration=5)
+    qa = QmcpackAnalyzer(infile,analyze=True,equilibration=5)
 
-        qmc = qa.qmc[0]
+    qmc = qa.qmc[0]
 
-        qmc_keys = 'info data scalars scalars_hdf SpinDensity'.split()
-        assert(set(qmc.keys())==set(qmc_keys))
+    qmc_keys = 'info data scalars scalars_hdf SpinDensity'.split()
+    assert(set(qmc.keys())==set(qmc_keys))
 
-        sd = qmc.SpinDensity
+    sd = qmc.SpinDensity
 
-        sd_keys = 'info method_info data u d'.split()
-        assert(set(sd.keys())==set(sd_keys))
+    sd_keys = 'info method_info data u d'.split()
+    assert(set(sd.keys())==set(sd_keys))
 
-        d_keys = 'mean error'.split()
-        assert(set(sd.u.keys())==set(d_keys))
-        assert(set(sd.d.keys())==set(d_keys))
+    d_keys = 'mean error'.split()
+    assert(set(sd.u.keys())==set(d_keys))
+    assert(set(sd.d.keys())==set(d_keys))
 
-        d_mean = sd.u.mean + sd.d.mean
+    d_mean = sd.u.mean + sd.d.mean
 
-        d_mean_ref = array(
-                      [[[0.72833333, 0.604     , 0.514     ],
-                       [0.63666667, 0.19533333, 0.19683333],
-                       [0.51166667, 0.19183333, 0.4175    ]],
-                      [[0.6065    , 0.19533333, 0.19      ],
-                       [0.19066667, 0.052     , 0.129     ],
-                       [0.18783333, 0.13433333, 0.10483333]],
-                      [[0.50633333, 0.19633333, 0.42483333],
-                       [0.1775    , 0.12966667, 0.09983333],
-                       [0.417     , 0.106     , 0.15583333]]],
-                       dtype=float)
+    d_mean_ref = array(
+                    [[[0.72833333, 0.604     , 0.514     ],
+                    [0.63666667, 0.19533333, 0.19683333],
+                    [0.51166667, 0.19183333, 0.4175    ]],
+                    [[0.6065    , 0.19533333, 0.19      ],
+                    [0.19066667, 0.052     , 0.129     ],
+                    [0.18783333, 0.13433333, 0.10483333]],
+                    [[0.50633333, 0.19633333, 0.42483333],
+                    [0.1775    , 0.12966667, 0.09983333],
+                    [0.417     , 0.106     , 0.15583333]]],
+                    dtype=float)
 
-        assert(d_mean.shape==(3,3,3))
-        assert(value_eq(d_mean,d_mean_ref))
+    assert(d_mean.shape==(3,3,3))
+    assert(value_eq(d_mean,d_mean_ref))
 
-    #end def test_density_analysis
-#end if
-
+#end def test_density_analysis
