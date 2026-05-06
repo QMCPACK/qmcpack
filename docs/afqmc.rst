@@ -28,7 +28,7 @@ For example, in the example, multiple Hamiltonian objects with different
 names can be defined. The one actually used in the calculation is the
 one passed to “execute” as ham.
 
-.. code-block::
+.. code-block:: xml
   :caption: Sample input file for AFQMC.
   :name: Listing 51
 
@@ -820,7 +820,7 @@ The following is a growing list of useful advice for new users, followed by a sa
    parallel implementation. For large calculations, values between 6–12
    for both quantities should be reasonable, depending on architecture.
 
-.. code-block::
+.. code-block:: xml
   :caption: Example of sections of an AFQMC input file for a large calculation.
   :name: Listing 56
 

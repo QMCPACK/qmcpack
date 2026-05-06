@@ -165,7 +165,7 @@ We will now use Nexus to generate the trial wavefunction for this BCC beryllium.
 
 Fortunately, the Nexus will handle determination of the proper k-vectors given the tiling matrix.  All that is needed is to place the tiling matrix in the ``Be-2at-setup.py`` file.   Now the definition of the physical system is
 
-::
+.. code-block:: python
 
   bcc_Be = generate_physical_system(
       lattice    = 'cubic',
@@ -228,13 +228,13 @@ finite-size effects. To fix this, delete the directory
 ``bcc-beryllium/opt-2at``, change the line near the top of
 ``Be-2at-setup.py`` from
 
-::
+.. code-block:: python
 
   qmcpack    = '/soft/applications/qmcpack/Binaries/qmcpack'
 
 to
 
-::
+.. code-block:: python
 
   qmcpack    = '/soft/applications/qmcpack/Binaries/qmcpack_comp'
 
@@ -370,7 +370,7 @@ variance.
 Finally, edit the file ``graphene-final.py``, which will perform two DMC
 calculations. In the first, (qmc1) replace the following lines:
 
-::
+.. code-block:: python
 
   meshfactor   = xxx,
   precision    = '---',
