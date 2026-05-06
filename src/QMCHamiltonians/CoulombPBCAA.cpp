@@ -195,6 +195,9 @@ void CoulombPBCAA::deleteParticleQuantities()
 void CoulombPBCAA::informOfPerParticleListener()
 {
   // turnOnParticleSK is written so it can be called again and again.
+  if (use_offload_)
+    throw UniformCommunicateError(
+        "CoulombPBCAA cannot support omptarget and per particle reporting, set CoulombPBCAA and ParticleSet A to no!");
   Ps.turnOnPerParticleSK();
   OperatorBase::informOfPerParticleListener();
 }
@@ -220,7 +223,6 @@ void CoulombPBCAA::mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
   auto& p_leader = p_list.getLeader();
   assert(this == &o_list.getLeader());
 
-  // Tired of warnings about dangling else
   if (!o_leader.is_active)
     return;
 
@@ -309,9 +311,6 @@ void CoulombPBCAA::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
   Matrix<RealType> pp_sr_values;
   if (o_leader.is_active)
   {
-    // This really should be determined by the DynamicPos type and not
-    // the use_offload_ switch because many other state are set based
-    // on the DynamicPos type and ignore if offload is not enabled.
     if (use_offload_)
       pp_sr_values = mw_evalSRPerParticle_offload(o_list, p_list);
     else
