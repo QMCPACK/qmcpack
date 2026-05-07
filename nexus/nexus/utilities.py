@@ -164,16 +164,13 @@ def is_relative_path(path):
 
 
 
-def path_string(path, leading=None, check=True):
+def path_string(path,check=True):
     """Convert a path to a string.
 
     Parameters
     ----------
     path : str or Path
         A file path or directory path. 
-    leading: None, '', or './', default=None
-      Only used if path is a Path object.
-      Restores information lost when using Path(p) externally.
     check: bool, default=True
       Check if a path contains only valid characters.
       ValueError is raised for invalid paths.
@@ -183,81 +180,13 @@ def path_string(path, leading=None, check=True):
     path_out : str
         The path as a string.
     """
-    if leading not in (None,'','./'):
-        raise ValueError("leading must be None, '', or './'")
-    if isinstance(path, str):
-        if leading is not None:
-            raise ValueError('leading cannot be supplied for str paths.')
+    if isinstance(path,str):
         path_out = path
-    elif isinstance(path, Path):
+    elif isinstance(path,Path):
         path_out = str(path)
-        if leading is not None:
-            if path_out=='.' and leading=='':
-                path_out = ''
-            elif leading=='./' and not path_out.startswith('/'):
-                path_out = './'+path_out
     else:
         raise ValueError('path must be of type "str" or "Path"')
     if check and not is_valid_path(path_out):
         raise ValueError('path contains invalid characters:\n'+path_out)
     return path_out
 #end def path_string
-
-
-
-def path_object(path                  ,
-                strict         = False,
-                guard          = True ,
-                return_leading = False,
-                ):
-    """Convert a path to a pathlib.Path object.
-
-    This function should be called in a pair with revert_path().
-
-    Parameters
-    ----------
-    path : str or Path
-        A file path or directory path. 
-    strict : bool, default=False
-        If True, require that path is a str.
-    guard : bool, default=True
-        Raise an exception if conversion to Path loses information.
-    return_leading : bool, default=False
-        Return information lost when converting to Path.
-
-    Returns
-    -------
-    path_out : Path
-        The path as a pathlib.Path object.
-    leading  : None, '', './'
-        Stores any information lost when converting to Path.
-        Only returned if return_leading is True.
-    """
-    guard &= not return_leading
-    is_str  = isinstance(path,str)
-    is_Path = isinstance(path,Path)
-    if strict and not is_str:
-        raise ValueError('path must be "str" type')
-    elif not (is_str or is_Path):
-        raise ValueError('path must be of type "str" or "Path"')
-    leading = None
-    if is_Path:
-        path_out = path
-    else:
-        path_out = Path(path)
-        if path=='':
-            leading = ''
-        else:
-            po = str(path_out)
-            prepend  = path.startswith('./')
-            prepend &= po!='.'
-            prepend &= not po.startswith('..')
-            if prepend:
-                leading = './'
-    if guard and leading is not None:
-        raise RuntimeError('information has been lost in conversion to Path object')
-    if not return_leading:
-        return path_out
-    else:
-        return path_out, leading
-#end def path_object
