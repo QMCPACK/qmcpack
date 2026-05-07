@@ -164,7 +164,7 @@ def is_relative_path(path):
 
 
 
-def path_string(path, leading=None):
+def path_string(path, leading=None, check=True):
     """Convert a path to a string.
 
     Parameters
@@ -174,6 +174,9 @@ def path_string(path, leading=None):
     leading: None, '', or './', default=None
       Only used if path is a Path object.
       Restores information lost when using Path(p) externally.
+    check: bool, default=True
+      Check if a path contains only valid characters.
+      ValueError is raised for invalid paths.
 
     Returns
     -------
@@ -195,6 +198,8 @@ def path_string(path, leading=None):
                 path_out = './'+path_out
     else:
         raise ValueError('path must be of type "str" or "Path"')
+    if check and not is_valid_path(path_out):
+        raise ValueError('path contains invalid characters:\n'+path_out)
     return path_out
 #end def path_string
 
