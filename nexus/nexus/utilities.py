@@ -143,6 +143,16 @@ def is_valid_path(path):
 
 
 
+def is_valid_filename(filename):
+    '''Screen out filenames with invalid characters'''
+    if isinstance(filename,Path):
+        filename = str(filename)
+    is_valid = is_valid_path(filename) and '/' not in filename
+    return is_valid
+#end def is_valid_filename
+
+
+
 def is_relative_path(path):
     '''Determine if a path is relative to some current working directory'''
     if isinstance(path,Path):
@@ -161,7 +171,7 @@ def path_string(path,check=True):
 
     Parameters
     ----------
-    path : str or Path
+    path : str, bytes or Path
         A file path or directory path. 
     check: bool, default=True
       Check if a path contains only valid characters.
@@ -174,10 +184,12 @@ def path_string(path,check=True):
     """
     if isinstance(path,str):
         path_out = path
+    elif isinstance(path,bytes):
+        path_out = str(path,encoding='utf-8')
     elif isinstance(path,Path):
         path_out = str(path)
     else:
-        raise ValueError('path must be of type "str" or "Path"')
+        raise ValueError('path must be of type "str", "bytes" or "Path"')
     if check and not is_valid_path(path_out):
         raise ValueError('path contains invalid characters:\n'+path_out)
     return path_out

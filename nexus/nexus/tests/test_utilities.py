@@ -97,6 +97,31 @@ def test_path_string():
         assert p3==p_Path_out
         assert os.path.realpath(p1)==os.path.realpath(p2)
 
+
+    # test bytes
+    in_out_paths = [
+        # in         out ps(str))    
+        ( b''        , ''        ),
+        ( b'.'       , '.'       ),
+        ( b'./'      , './'      ),
+        ( b'./..'    , './..'    ),
+        ( b'a/b'     , 'a/b'     ),
+        ( b'a/b/'    , 'a/b/'    ),
+        ( b'./a/b'   , './a/b'   ),
+        ( b'./a/b/'  , './a/b/'  ),
+        ( b'./a/./b' , './a/./b' ),
+        ( b'../a/..' , '../a/..' ),
+        ( b'a/../b'  , 'a/../b'  ),
+        ( b'/'       , '/'       ),
+        ( b'//'      , '//'      ),
+        ( b'///'     , '///'     ),
+        ( b'/a/'     , '/a/'     ),
+        ( b'/a/b/'   , '/a/b/'   ),
+        ]
+
+    for p_in, p_str_out in in_out_paths:
+        assert path_string(p_in)==p_str_out
+
 #end def test_path_string
 
 
