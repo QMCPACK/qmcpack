@@ -125,12 +125,24 @@ from pathlib import Path
 
 
 
+def _path_to_str(path):
+    '''Simple conversion from bytes/Path types to str'''
+    if isinstance(path,str):
+        path = path
+    elif isinstance(path,bytes):
+        path = str(path,encoding='utf-8')
+    elif isinstance(path,Path):
+        path = str(path)
+    else:
+        raise ValueError('path must be of type "str", "bytes" or "Path"')
+    return path
+#end def _path_to_str
+
+
+
 def is_valid_path(path):
     '''Screen out paths with invalid characters'''
-    if isinstance(path,Path):
-        path = str(path)
-    if not isinstance(path,str):
-        raise ValueError('path must be of type Path or str')
+    path = _path_to_str(path)
     if not hasattr(is_valid_path,'invalid_chars'):
         unprintable = [chr(c) for c in range(128) if chr(c) not in string.printable]
         special = '!@#$%^&*;|?\`",()[]{}<>' + "'"
@@ -145,8 +157,7 @@ def is_valid_path(path):
 
 def is_valid_filename(filename):
     '''Screen out filenames with invalid characters'''
-    if isinstance(filename,Path):
-        filename = str(filename)
+    filename = _path_to_str(filename)
     is_valid = is_valid_path(filename) and '/' not in filename
     return is_valid
 #end def is_valid_filename
@@ -155,10 +166,7 @@ def is_valid_filename(filename):
 
 def is_relative_path(path):
     '''Determine if a path is relative to some current working directory'''
-    if isinstance(path,Path):
-        path = str(path)
-    if not isinstance(path,str):
-        raise ValueError('path must be of type Path or str')
+    path     = _path_to_str(path)
     absolute = len(path)>0 and (path[0]=='/' or path[0]=='~')
     relative = not absolute
     return relative
@@ -182,14 +190,7 @@ def path_string(path,check=True):
     path_out : str
         The path as a string.
     """
-    if isinstance(path,str):
-        path_out = path
-    elif isinstance(path,bytes):
-        path_out = str(path,encoding='utf-8')
-    elif isinstance(path,Path):
-        path_out = str(path)
-    else:
-        raise ValueError('path must be of type "str", "bytes" or "Path"')
+    path_out = _path_to_str(path)
     if check and not is_valid_path(path_out):
         raise ValueError('path contains invalid characters:\n'+path_out)
     return path_out
