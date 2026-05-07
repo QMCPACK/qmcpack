@@ -143,6 +143,19 @@ def is_valid_path(path):
 
 
 
+def is_relative_path(path):
+    '''Determine if a path is relative to some current working directory'''
+    if isinstance(path,Path):
+        path = str(path)
+    if not isinstance(path,str):
+        raise ValueError('path must be of type Path or str')
+    absolute = len(path)>0 and (path[0]=='/' or path[0]=='~')
+    relative = not absolute
+    return relative
+#end def is_relative_path
+
+
+
 def path_string(path,check=True):
     """Convert a path to a string.
 

@@ -101,6 +101,43 @@ def test_path_string():
 
 
 
+def test_is_relative_path():
+    from nexus.utilities import is_relative_path
+
+    relative_paths = [
+        '',
+        '.',
+        './',
+        '..',
+        '../',
+        '../somewhere/..',
+        './somewhere/above/',
+        '../somewhere/below',
+        'a/bald/or/bare/path',
+        ]
+
+    non_relative_paths = [
+        '/',
+        '/home',
+        '/home/me',
+        '/usr/bin/',
+        '/lustre/proj/scratch',
+        ] + [os.path.realpath(p) for p in relative_paths]
+
+    for path_type in (str,Path):
+        for p in relative_paths:
+            p = path_type(p)
+            print([p,str(p)])
+            assert is_relative_path(p)
+
+        for p in non_relative_paths:
+            p = path_type(p)
+            assert not is_relative_path(p)
+
+#end def test_is_relative_path
+
+
+
 def test_path_dual_typing():
     '''Illustrate issues w/ mixing pathlib.Path with os.path'''
 
