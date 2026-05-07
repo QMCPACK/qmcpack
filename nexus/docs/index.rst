@@ -8,14 +8,10 @@ The Nexus User Guide
 
 .. toctree::
    :maxdepth: 2
+   :numbered:
    :caption: Table of Contents
 
-   usedocs
    user_guide/index
-   user-scripts
-   reading
-   python-basics
-   theory
-   qmcpack-input-mod
    api_docs/index
+   extra_reading/index
    code-style

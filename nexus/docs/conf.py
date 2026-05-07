@@ -17,7 +17,7 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'Nexus Guide'
+project = 'Nexus'
 copyright = '2020, Jaron T. Krogel'
 author = 'Jaron T. Krogel'
 
