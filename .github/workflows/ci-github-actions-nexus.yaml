@@ -73,7 +73,7 @@ jobs:
 
     - name: Downgrade to Minimum Versions (Python 3.10 only)
       if: contains(matrix.python-version, '3.10')
-      run: uv pip install numpy==1.22.0 scipy==1.8.0 h5py==3.6.0 matplotlib==3.3.0 spglib==1.16.0 cif2cell==2.1.0 pydot==2.0.0 seekpath==2.0.0
+      run: uv pip install numpy==1.22.0 scipy==1.8.0 matplotlib==3.3.0 spglib==1.16.0 cif2cell==2.1.0 pydot==2.0.0 seekpath==2.0.0
       working-directory: ./nexus
 
     - name: Run Nexus Tests
