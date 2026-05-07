@@ -88,7 +88,7 @@ def test_path_string():
         ]
 
     for p_in, p_str_out, p_Path_out in in_out_paths:
-        p1 = path_string(p_in)
+        p1 = path_string(p_in,strict=True,check=True)
         p2 = path_string(Path(p_in))
         p3 = str(Path(p_in))
         assert p1==p_in
@@ -120,7 +120,7 @@ def test_path_string():
         ]
 
     for p_in, p_str_out in in_out_paths:
-        assert path_string(p_in)==p_str_out
+        assert path_string(p_in,check=True)==p_str_out
 
 #end def test_path_string
 

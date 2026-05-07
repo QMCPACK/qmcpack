@@ -128,7 +128,7 @@ from pathlib import Path
 def _path_to_str(path):
     '''Simple conversion from bytes/Path types to str'''
     if isinstance(path,str):
-        path = path
+        pass
     elif isinstance(path,bytes):
         path = str(path,encoding='utf-8')
     elif isinstance(path,Path):
@@ -174,23 +174,31 @@ def is_relative_path(path):
 
 
 
-def path_string(path,check=True):
+def path_string(path,strict=False,check=False):
     """Convert a path to a string.
 
     Parameters
     ----------
     path : str, bytes or Path
         A file path or directory path. 
-    check: bool, default=True
-      Check if a path contains only valid characters.
-      ValueError is raised for invalid paths.
+    strict : bool, default=False
+        Require inputted path to be str type.
+        Raises ValueError otherwise.
+    check : bool, default=True
+        Check if a path contains only valid characters.
+        ValueError is raised for invalid paths.
 
     Returns
     -------
     path_out : str
         The path as a string.
     """
-    path_out = _path_to_str(path)
+    if strict:
+        if not isinstance(path,str):
+            raise ValueError('path must strictly be str type')
+        path_out = path
+    else:
+        path_out = _path_to_str(path)
     if check and not is_valid_path(path_out):
         raise ValueError('path contains invalid characters:\n'+path_out)
     return path_out
