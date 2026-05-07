@@ -152,23 +152,21 @@ def path_string(path, leading=None):
     path : str or Path
         A file path or directory path. 
     leading: None, '', or './', default=None
-      Only used if ``path`` is a ``Path`` object.
+      Only used if path is a Path object.
       Restores information lost when using Path(p) externally.
 
     Returns
     -------
     path_out : str
-        The path as a string. Trailing / is removed, similar to Path.
+        The path as a string.
     """
+    if leading not in (None,'','./'):
+        raise ValueError("leading must be None, '', or './'")
     if isinstance(path, str):
         if leading is not None:
             raise ValueError('leading cannot be supplied for str paths.')
-        path_out = path.rstrip('/')
-        if len(path_out)==0 and len(path)>0:
-            path_out = path
+        path_out = path
     elif isinstance(path, Path):
-        if leading not in (None,'','./'):
-            raise ValueError("leading must be None, "", or './'")
         path_out = str(path)
         if leading is not None:
             if path_out=='.' and leading=='':
@@ -187,23 +185,28 @@ def path_object(path                  ,
                 guard          = True ,
                 return_leading = False,
                 ):
-    """Convert a path to a ``pathlib.Path`` object.
+    """Convert a path to a pathlib.Path object.
 
-    This function should be called in a pair with ``revert_path()``.
+    This function should be called in a pair with revert_path().
 
     Parameters
     ----------
     path : str or Path
         A file path or directory path. 
     strict : bool, default=False
-        If ``True``, require that ``path`` is a ``str``.
+        If True, require that path is a str.
+    guard : bool, default=True
+        Raise an exception if conversion to Path loses information.
+    return_leading : bool, default=False
+        Return information lost when converting to Path.
 
     Returns
     -------
     path_out : Path
-        The path as a ``pathlib.Path`` object.
+        The path as a pathlib.Path object.
     leading  : None, '', './'
         Stores any information lost when converting to Path.
+        Only returned if return_leading is True.
     """
     guard &= not return_leading
     is_str  = isinstance(path,str)

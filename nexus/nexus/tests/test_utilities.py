@@ -83,26 +83,27 @@ def test_path_string():
         # in         out ps(str) out ps(Path)    
         ( ''        , ''        , '.'       ),
         ( '.'       , '.'       , '.'       ),
-        ( './'      , '.'       , '.'       ),
+        ( './'      , './'      , '.'       ),
         ( './..'    , './..'    , '..'      ),
         ( 'a/b'     , 'a/b'     , 'a/b'     ),
-        ( 'a/b/'    , 'a/b'     , 'a/b'     ),
+        ( 'a/b/'    , 'a/b/'    , 'a/b'     ),
         ( './a/b'   , './a/b'   , 'a/b'     ),
-        ( './a/b/'  , './a/b'   , 'a/b'     ),
+        ( './a/b/'  , './a/b/'  , 'a/b'     ),
         ( './a/./b' , './a/./b' , 'a/b'     ),
         ( '../a/..' , '../a/..' , '../a/..' ),
         ( 'a/../b'  , 'a/../b'  , 'a/../b'  ),
         ( '/'       , '/'       , '/'       ),
         ( '//'      , '//'      , '//'      ),
         ( '///'     , '///'     , '/'       ),
-        ( '/a/'     , '/a'      , '/a'      ),
-        ( '/a/b/'   , '/a/b'    , '/a/b'    ),
+        ( '/a/'     , '/a/'     , '/a'      ),
+        ( '/a/b/'   , '/a/b/'   , '/a/b'    ),
         ]
 
     for p_in, p_str_out, p_Path_out in in_out_paths:
         p1 = path_string(p_in)
         p2 = path_string(Path(p_in))
         p3 = str(Path(p_in))
+        assert p1==p_in
         assert p1==p_str_out
         assert p2==p_Path_out
         assert p3==p_Path_out
@@ -148,3 +149,68 @@ def test_path_object():
     assert path_string(p,leading) == './a'
 
 #end def test_path_object
+
+
+
+def test_path_dual_typing():
+    '''Illustrate issues w/ mixing pathlib.Path with os.path'''
+
+    # joining paths 
+    #   os.system('ls') and os.system('./ls') are very different!
+    assert os.path.join('','ls')                       == 'ls'   # right
+    assert str(Path('')/Path('ls'))                    == 'ls'   # right
+    assert os.path.join(Path(''),Path('ls'))           == './ls' # wrong!!
+    assert os.path.join(str(Path('')),str(Path('ls'))) == './ls' # wrong!!
+
+
+    # splitting paths
+    assert os.path.split('dir/name')       == ('dir','name') # right
+    assert os.path.split(Path('dir/name')) == ('dir','name') # right
+    assert str(Path('dir/name').parent)    == 'dir'          # right
+    assert Path('dir/name').name           == 'name'         # right
+
+    assert os.path.split('name')       == ('','name') # right
+    assert os.path.split(Path('name')) == ('','name') # right
+    assert str(Path('name').parent)    == '.'         # wrong!!
+    assert Path('name').name           == 'name'      # right
+
+    assert os.path.split('dir/')       == ('dir',''   )  # right
+    assert os.path.split(Path('dir/')) == (''   ,'dir')  # wrong!!
+    assert str(Path('dir/').parent)    == '.'            # wrong!!
+    assert Path('dir/').name           == 'dir'          # wrong!!
+
+    #   or in short
+    assert os.path.dirname( 'dir/name') == str(Path('dir/name').parent)
+    assert os.path.basename('dir/name') ==     Path('dir/name').name
+    
+    assert os.path.dirname( 'name'    ) != str(Path('name').parent)
+    assert os.path.basename('name'    ) ==     Path('name').name
+    
+    assert os.path.dirname( 'dir/'    ) != str(Path('dir/').parent)
+    assert os.path.basename('dir/'    ) !=     Path('dir/').name
+
+
+    # relative paths
+    assert os.path.relpath('/home/me/dir','/home/me')        == 'dir'
+    assert str(Path('/home/me/dir').relative_to('/home/me')) == 'dir'
+
+    assert os.path.relpath('/home/me','/home/me/dir') == '..'
+    try:
+        Path('/home/me').relative_to('/home/me/dir')
+        works = True
+    except ValueError:
+        works = False
+    assert not works
+
+    assert os.path.relpath('./up/..', '.'      ) == '.'
+    assert os.path.relpath('.'      , './up/..') == '.'
+
+    assert str(Path('./up/..').relative_to('.')) == 'up/..'
+    try:
+        Path('.').relative_to('./up/..')
+        works = True
+    except ValueError:
+        works = False
+    assert not works
+
+#end def test_path_dual_typing
