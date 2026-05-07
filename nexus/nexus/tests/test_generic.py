@@ -14,6 +14,8 @@ from ..testing import object_eq,object_neq
 TEST_FILES = {
     "old_nxs_pwscf_input.p": Path(__file__+"/../test_generic_files/old_nxs_pwscf_input.p").resolve(),
     "old_nxs_sim.p":         Path(__file__+"/../test_generic_files/old_nxs_sim.p").resolve(),
+    "old_nxs_pwscf_input_numpy_1.p": Path(__file__+"/../test_generic_files/old_nxs_pwscf_input_numpy_1.p").resolve(),
+    "old_nxs_sim_numpy_1.p":         Path(__file__+"/../test_generic_files/old_nxs_sim_numpy_1.p").resolve(),
 }
 
 
@@ -1141,12 +1143,15 @@ def test_old_nexus_unpickle():
     from ..generic import obj
 
     sim_obj = obj()
-    sim_obj.load(TEST_FILES["old_nxs_sim.p"])
+    if np.lib.NumpyVersion(np.__version__) >= '2.0.0b1':
+        sim_obj.load(TEST_FILES["old_nxs_sim.p"])
+    else:
+        sim_obj.load(TEST_FILES["old_nxs_sim_numpy_1.p"])
 
     assert(sim_obj.analyzed            is True)
     assert(sim_obj.analyzer_image      == "analyzer.p")
     assert(sim_obj.app_name            == "pw.x")
-    assert(sim_obj.app_props           == ["serial", "mpi"])
+    assert(set(sim_obj.app_props)      == set(["serial", "mpi"]))
     assert(sim_obj.block               is False)
     assert(sim_obj.block_subcascade    is False)
     assert(sim_obj.errfile             == "relax.err")
@@ -1207,7 +1212,10 @@ def test_old_nexus_unpickle():
     ], dtype=np.float64)
 
     inp_obj = obj()
-    inp_obj.load(TEST_FILES["old_nxs_pwscf_input.p"])
+    if np.lib.NumpyVersion(np.__version__) >= '2.0.0b1':
+        inp_obj.load(TEST_FILES["old_nxs_pwscf_input.p"])
+    else:
+        inp_obj.load(TEST_FILES["old_nxs_pwscf_input_numpy_1.p"])
 
     assert(inp_obj.atomic_positions.atoms == ref_atomic_positions_atoms)
     np.testing.assert_allclose(inp_obj.atomic_positions.positions, ref_atomic_positions_positions, atol=1e-8)
