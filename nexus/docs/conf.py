@@ -73,6 +73,12 @@ html_css_files = [
     'custom.css',
 ]
 html_theme_options = {
+    "logo": {
+        #"alt_text": "Nexus Docs",
+        "text": "Nexus Documentation",
+        "image_dark": "_static/nexus_logo.svg",
+        "image_light": "_static/nexus_logo.svg",
+    },
     "icon_links": [
         {
             "name": "GitHub",
@@ -88,7 +94,7 @@ html_theme_options = {
     "show_toc_level": 3,
     "secondary_sidebar_items": ["page-toc"],
 }
-
+html_favicon = "_static/nexus_logo.svg"
 # html_sidebars = {
 #     "user_guide": [],
 #     "theory": [],
