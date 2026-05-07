@@ -6,6 +6,63 @@ import os
 from pathlib import Path
 
 
+
+def test_is_valid_path():
+    from nexus.utilities import is_valid_path
+
+    valid_paths = [
+        '/home/me/file.txt',
+        'back/../and/../forth/',
+        '/tmp/session_data',
+        './runs/qmc/vmc.s000.scalar.dat',
+        'hyphens-are-healthy',
+        'periods.produce.paradise',
+        'underscores_unlock_understanding',
+        'pi_is_about_3.14159265358979323846264338327950'
+        ]
+
+    invalid_paths = [
+        'yes!',
+        '@somewhere.com',
+        '#comment',
+        '$100',
+        '20%',
+        '2^3',
+        'here&there',
+        'height*width',
+        'definitely;maybe',
+        'this|that',
+        'why?',
+        's\ash',
+        '`command`',
+        "ain't",
+        '"special"',
+        'x,y',
+        '(pa',
+        'ren)',
+        '[brac',
+        'ket]',
+        'lt<',
+        'gt>',
+        'spacious ',
+        'pull\tab',
+        '\newline',
+        'ca\r\riage',
+        'Do not go where the path may lead,' 
+        ' go instead where there is no path'
+        ' and leave a trail.',
+        ]
+
+    for path in valid_paths:
+        assert is_valid_path(path)
+
+    for path in invalid_paths:
+        assert not is_valid_path(path)
+
+#end def test_is_valid_path
+
+
+
 def test_relative_path():
     from nexus.utilities import relative_path
 
@@ -23,8 +80,6 @@ def test_relative_path():
         assert relative_path(p2,p1)=='../../good/place'
 
 #end def test_relative_path
-
-
 
 
 

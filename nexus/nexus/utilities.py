@@ -119,8 +119,28 @@ def to_str(s):
 
 
 
+import string
 import os
 from pathlib import Path
+
+
+
+def is_valid_path(path):
+    '''Screen out paths with invalid characters'''
+    if isinstance(path,Path):
+        path = str(path)
+    if not isinstance(path,str):
+        raise ValueError('path must be of type Path or str')
+    if not hasattr(is_valid_path,'invalid_chars'):
+        unprintable = [chr(c) for c in range(128) if chr(c) not in string.printable]
+        special = '!@#$%^&*;|?\`",()[]{}<>' + "'"
+        invalid = set(unprintable) | set(special) | set(string.whitespace)
+        is_valid_path.invalid_chars = invalid
+    invalid_chars = is_valid_path.invalid_chars
+    is_valid = len( set(path) & invalid_chars )==0
+    return is_valid
+#end def is_valid_path
+
 
 
 def relative_path(path_start,path_end):
