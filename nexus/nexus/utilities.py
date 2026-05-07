@@ -158,7 +158,17 @@ def is_valid_path(path):
 def is_valid_filename(filename):
     '''Screen out filenames with invalid characters'''
     filename = _path_to_str(filename)
-    is_valid = is_valid_path(filename) and '/' not in filename
+    is_valid = True
+    if len(filename)==0:
+        is_valid = False
+    elif filename=='.':
+        is_valid = False
+    elif filename.startswith('..'):
+        is_valid = False
+    elif '/' in filename:
+        is_valid = False
+    elif not is_valid_path(filename):
+        is_valid = False
     return is_valid
 #end def is_valid_filename
 
@@ -174,7 +184,11 @@ def is_relative_path(path):
 
 
 
-def path_string(path,strict=False,check=False):
+def path_string(path,
+                strict   = False,
+                relative = False,
+                check    = False
+                ):
     """Convert a path to a string.
 
     Parameters
@@ -183,6 +197,9 @@ def path_string(path,strict=False,check=False):
         A file path or directory path. 
     strict : bool, default=False
         Require inputted path to be str type.
+        Raises ValueError otherwise.
+    relative : bool, default=False
+        Check if path is a relative path.
         Raises ValueError otherwise.
     check : bool, default=True
         Check if a path contains only valid characters.
@@ -193,12 +210,16 @@ def path_string(path,strict=False,check=False):
     path_out : str
         The path as a string.
     """
+    if relative and not is_relative_path(path):
+        raise ValueError('path must be relative')
     if strict:
         if not isinstance(path,str):
             raise ValueError('path must strictly be str type')
         path_out = path
     else:
         path_out = _path_to_str(path)
+    if relative and not is_relative_path(path_out):
+        raise ValueError('path_string converted relative path into non-relative path')
     if check and not is_valid_path(path_out):
         raise ValueError('path contains invalid characters:\n'+path_out)
     return path_out

@@ -8,9 +8,14 @@ from pathlib import Path
 
 
 def test_is_valid_path():
-    from nexus.utilities import is_valid_path
+    from nexus.utilities import is_valid_path,is_valid_filename
 
     valid_paths = [
+        '',
+        '.',
+        '..',
+        '/',
+        '//',
         '/home/me/file.txt',
         'back/../and/../forth/',
         '/tmp/session_data',
@@ -58,6 +63,36 @@ def test_is_valid_path():
 
     for path in invalid_paths:
         assert not is_valid_path(path)
+
+
+    valid_filenames = [
+        'file.txt',
+        'session_data',
+        'vmc.s000.scalar.dat',
+        'hyphens-are-healthy',
+        'periods.produce.paradise',
+        'underscores_unlock_understanding',
+        'pi_is_about_3.14159265358979323846264338327950'
+        ]
+
+    invalid_filenames = [
+        '',
+        '.',
+        '..',
+        '/',
+        '//',
+        '/home/me/file.txt',
+        'back/../and/../forth/',
+        '/tmp/session_data',
+        './runs/qmc/vmc.s000.scalar.dat',
+        ]+invalid_paths
+
+    for filename in valid_filenames:
+        assert is_valid_filename(filename)
+
+    for filename in invalid_filenames:
+        print([filename])
+        assert not is_valid_filename(filename)
 
 #end def test_is_valid_path
 
@@ -122,6 +157,40 @@ def test_path_string():
     for p_in, p_str_out in in_out_paths:
         assert path_string(p_in,check=True)==p_str_out
 
+
+    # test strict guard
+    p = 'str_path'
+    p = path_string(p,strict=True) # raises no error
+    p = b'bytes_path'
+    try:
+        p = path_string(p,strict=True)
+        expected = False
+    except ValueError:
+        expected = True
+    assert expected
+
+    # test relative guard
+    p = 'a/relative/path'
+    p = path_string(p,relative=True) # raises no error
+    p = '/an/absolute/path'
+    try:
+        p = path_string(p,relative=True)
+        expected = False
+    except ValueError:
+        expected = True
+    assert expected
+
+    # test validity check guard
+    p = 'a/b'
+    p = path_string(p,check=True) # raises no error
+    p = 'a*b'
+    try:
+        p = path_string(p,check=True)
+        expected = False
+    except ValueError:
+        expected = True
+    assert expected
+    
 #end def test_path_string
 
 
