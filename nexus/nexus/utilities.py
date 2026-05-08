@@ -146,7 +146,8 @@ def is_valid_path(path):
     if not hasattr(is_valid_path,'invalid_chars'):
         unprintable = [chr(c) for c in range(128) if chr(c) not in string.printable]
         special = '!@#$%^&*;|?\`",()[]{}<>' + "'"
-        invalid = set(unprintable) | set(special) | set(string.whitespace)
+        whitespace = set(string.whitespace) - set([' '])
+        invalid = set(unprintable) | set(special) | whitespace
         is_valid_path.invalid_chars = invalid
     invalid_chars = is_valid_path.invalid_chars
     is_valid = len( set(path) & invalid_chars )==0

@@ -24,6 +24,9 @@ def test_is_valid_path():
         'periods.produce.paradise',
         'underscores_unlock_understanding',
         'pi_is_about_3.14159265358979323846264338327950'
+        # Unsettling that prose can be paths, 
+        # but ' ' must be accomodated
+        'spaces are sinister',
         ]
 
     invalid_paths = [
@@ -49,11 +52,10 @@ def test_is_valid_path():
         'ket]',
         'lt<',
         'gt>',
-        'spacious ',
         'pull\tab',
         '\newline',
         'ca\r\riage',
-        'Do not go where the path may lead,' 
+        'Do not go where the path may lead,' # comma
         ' go instead where there is no path'
         ' and leave a trail.',
         ]
