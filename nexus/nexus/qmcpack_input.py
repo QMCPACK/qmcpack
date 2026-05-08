@@ -7094,48 +7094,71 @@ def generate_jastrow3(function='polynomial',esize=3,isize=3,rcut=4.,coeff=None,i
 
 
 def generate_kspace_jastrow(
-        kc1    = None, 
-        kc2    = None, 
-        nk1    = 0, 
-        nk2    = 0,
-        symm1  = 'isotropic', 
-        symm2  = 'isotropic', 
-        coeff1 = None, 
-        coeff2 = None,
-        opt1   = None,
-        opt2   = None,
+        kc1:    float | None = None, 
+        kc2:    float | None = None, 
+        nk1:    int          = 0, 
+        nk2:    int          = 0,
+        symm1:  str          = 'isotropic', 
+        symm2:  str          = 'isotropic', 
+        coeff1: list         = None, 
+        coeff2: list         = None,
+        opt1:   bool | None  = None,
+        opt2:   bool | None  = None,
         ):
     """Generate ``<jastrow type="kSpace">``
 
     Parameters
     ----------
     kc1 : float, optional
-        KCut for one-body Jastrow, default 0
+        kcut for one-body Jastrow. Must provide this and/or ``kc2``.
     kc2 : float, optional
-        KCut for two-body Jastrow, default 0
+        kcut for two-body Jastrow. Must provide this and/or ``kc1``.
     nk1 : int, default=0
         Number of coefficients for one-body Jastrow.
     nk2 : int, default=0
         Number of coefficients for two-body Jastrow.
     symm1 : {'crystal', 'isotropic', 'none'}, default='isotropic'
         Impose specified symmetry on 1-body Jastrow coefficients.
-        crystal : Impose crystal symmetry on coefficients according to the structure factor.
-        isotropic : Impose spherical symmetry on coefficients according to G-vector magnitude.
-        none : Impose no symmetry on the coefficients.
+        See Notes for description.
     symm2 : {'crystal', 'isotropic', 'none'}, default='isotropic'
         Impose specified symmetry on 2-body Jastrow coefficients.
-        crystal : Impose crystal symmetry on coefficients according to the structure factor.
-        isotropic : Impose spherical symmetry on coefficients according to G-vector magnitude.
-        none : Impose no symmetry on the coefficients.
+        See Notes for description.
     coeff1 : list, optional
         One-body Jastrow coefficients, optional.
     coeff2 : list, optional
         Two-body Jastrow coefficients, optional.
+    opt1 : bool or None, default=None
+        Set whether or not the one-body Jastrow coefficients are optimizable.
+        See Notes for more information.
+    opt2 : bool or None, default=None
+        Set whether or not the two-body Jastrow coefficients are optimizable.
+        See Notes for more information.
 
     Returns
     -------
     jk : QIxml
         ``kspace_jastrow`` qmcpack_input element
+
+    Notes
+    -----
+    The ``symm1`` and ``symm2`` parameters yield the following behavior:
+
+    ``"crystal"``
+        Impose crystal symmetry on coefficients according to the
+        structure factor.
+
+    ``"isotropic"``
+        Impose spherical symmetry on coefficients according to G-vector
+        magnitude.
+
+    ``"none"``
+        Impose no symmetry on the coefficients.
+
+    The parameters ``opt1`` and ``opt2`` are not necessarily guaranteed
+    to control the behavior of QMCPACK. See QMCPACK's documentation on
+    `k-space Jastrow`_.
+
+    .. _k-space Jastrow: https://qmcpack.readthedocs.io/en/develop/intro_wavefunction.html#long-ranged-jastrow-k-space-jastrow
     """
     J1k = kc1 is not None
     J2k = kc2 is not None
