@@ -54,7 +54,7 @@ if __name__ == "__main__":
             )
             sys.exit(1)
 
-        for idx, arg in enumerate(sys.argv[1:]):
+        for arg in sys.argv[1:]:
             pytest_args.append(arg)
 
     retcode = pytest.main([
