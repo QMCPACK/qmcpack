@@ -148,8 +148,11 @@ void NEEnergyDensityEstimator::registerListeners(QMCHamiltonian& ham_leader)
   QMCHamiltonian::mw_registerKineticListener(ham_leader, kinetic_listener);
   ListenerVector<Real> potential_listener("potential", getListener(local_pot_values_));
   QMCHamiltonian::mw_registerLocalPotentialListener(ham_leader, potential_listener);
-  ListenerVector<Real> ion_potential_listener("potential", getListener(local_ion_pot_values_));
-  QMCHamiltonian::mw_registerLocalIonPotentialListener(ham_leader, ion_potential_listener);
+  if (pset_static_)
+  {
+    ListenerVector<Real> ion_potential_listener("potential", getListener(local_ion_pot_values_));
+    QMCHamiltonian::mw_registerLocalIonPotentialListener(ham_leader, ion_potential_listener);
+  }
 }
 
 /** This function collects the per particle energies.
