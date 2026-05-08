@@ -40,9 +40,27 @@ if __name__ == "__main__":
     except PermissionError:
         pass
 
+    pytest_args = []
+    if len(sys.argv) > 1:
+        if "-h" in sys.argv or "--help" in sys.argv:
+            print(
+                "Usage:\n"
+                '$ nxs-test <pytest_args>\n\n'
+                "See https://docs.pytest.org/en/stable/how-to/usage.html\n"
+                "for specification of arguments.\n\n"
+                "To select only specific tests, use `-k '<expr>'` from\n"
+                "Pytest's section on specifying which tests to run.\n"
+                "The other methods listed there are not supported by nxs-test."
+            )
+            sys.exit(1)
+
+        for idx, arg in enumerate(sys.argv[1:]):
+            pytest_args.append(arg)
+
     retcode = pytest.main([
         "--exitfirst",
         "--disable-warnings",
+       *pytest_args,
        f"{test_dir}",
     ])
 
