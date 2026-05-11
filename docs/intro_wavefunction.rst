@@ -39,7 +39,7 @@ where :math:`\textit{A}(\vec{r})`
 is one of the antisymmetric functions: (1) Slater determinant, (2) multislater determinant, or (3) pfaffian and :math:`\textit{J}_k`
 is any of the Jastrow functions (described in :ref:`jastrow`).  The antisymmetric functions are built from a set of single particle orbitals (SPO) ``(sposet)``. QMCPACK implements four different types of ``sposet``, described in the following section. Each ``sposet`` is designed for a different type of calculation, so their definition and generation varies accordingly.
 
-.. code-block::
+.. code-block:: xml
    :caption: wavefunction XML element skeleton.
    :name: wavefunction.skeleton.xml
 
@@ -78,7 +78,7 @@ QMCPACK supports a range of SPOSet types:
 sposet_collection input style
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. code-block::
+.. code-block:: xml
   :caption: SPO XML element framework.
   :name: spo.collection.xml
 
@@ -120,7 +120,7 @@ SPOSet construction related details out of ``determinantset``. This revised
 specification keeps the basis set details separate from information about the
 determinants. 
 
-.. code-block::
+.. code-block:: xml
   :caption: Deprecated input style.
   :name: spo.singledet.old.xml
 
@@ -137,7 +137,7 @@ determinants.
 
 After updating the input style.
 
-.. code-block::
+.. code-block:: xml
   :caption: Updated input style.
   :name: spo.singledet.xml
 
@@ -216,7 +216,7 @@ OpenMP/MPI hybrid QMC.
 The input XML block for the spline SPOs is given in :ref:`spline.spo.xml`. A list of options is given in
 :numref:`table3`.
 
-.. code-block::
+.. code-block:: xml
   :caption: Spline SPO XML element
   :name: spline.spo.xml
 
@@ -344,7 +344,7 @@ In this section we describe the input sections of ``sposet_collection`` for the 
 Here is an :ref:`example <spo.singledet.lcao.xml>` of single determinant with LCAO.
 The input sections for multideterminant trial wavefunctions are described in :ref:`multideterminants`.
 
-.. code-block::
+.. code-block:: xml
   :caption: ``slaterdeterminant`` with an LCAO ``sposet_collection`` example
   :name: spo.singledet.lcao.xml
 
@@ -373,7 +373,7 @@ The input sections for multideterminant trial wavefunctions are described in :re
 Here is the :ref:`basic structure <spo.lcao.xml>` for LCAO ``sposet_collection`` input block.
 A list of options for ``sposet_collection`` is given in :numref:`table4`.
 
-.. code-block::
+.. code-block:: xml
    :caption: Basic input block for ``sposet_collection`` for LCAO.
    :name: spo.lcao.xml
 
@@ -439,7 +439,7 @@ Attribute:
 - cuspCorrection
     Enable (disable) use of the cusp correction algorithm (CASINO REFERENCE) for a ``basisset`` built with GTO functions. The algorithm is implemented as described in (CASINO REFERENCE) and works only with transform="yes" and an input GTO basis set. No further input is needed.
 
-.. code-block::
+.. code-block:: xml
   :caption: Basic input block for ``basisset``.
   :name: Listing 4
 
@@ -608,7 +608,7 @@ Orbitals in region C are computed as the regular B-spline basis described in :re
 
 To enable hybrid orbital representation, the input XML needs to see the tag ``hybridrep="yes"`` shown in :ref:`Listing 6 <Listing 6>`.
 
-.. code-block::
+.. code-block:: xml
   :caption: Hybrid orbital representation input example.
   :name: Listing 6
 
@@ -620,7 +620,7 @@ To enable hybrid orbital representation, the input XML needs to see the tag ``hy
 
 Second, the information describing the atomic regions is required in the particle set, shown in :ref:`Listing 7 <Listing 7>`.
 
-.. code-block::
+.. code-block:: xml
   :caption: particleset elements for ions with information needed by hybrid orbital representation.
   :name: Listing 7
 
@@ -682,7 +682,7 @@ The lowest-energy plane-wave states compatible with the boundary condition are o
 This following example can also be used for Helium simulations by specifying the
 proper pair interaction in the Hamiltonian section and using a bosonic wavefunction.
 
-.. code-block::
+.. code-block:: xml
   :caption: 2D Fermi liquid example: particle specification
   :name: Listing 8
 
@@ -702,7 +702,7 @@ proper pair interaction in the Hamiltonian section and using a bosonic wavefunct
     </group>
   </particleset>
 
-.. code-block::
+.. code-block:: xml
   :caption: 2D Fermi liquid example (Slater Jastrow wavefunction)
   :name: Listing 9
 
@@ -766,7 +766,7 @@ Attribute:
 
 .. centered:: Table 2 Options for the ``slaterdeterminant`` XML-block.
 
-.. code-block::
+.. code-block:: xml
    :caption: Slaterdeterminant set XML element.
    :name: Listing 1
 
@@ -855,7 +855,7 @@ Additional information:
 - When the multideterminant wavefunction is read from an HDF5 file in the ``detlist`` child, the HDF5 dataset must use 64 bit unsigned integers to represent the determinants. The ``utils/determinants_tools.py`` script described in further detail below will check that the determinants are stored using the correct type and correct files that are storing signed 64 bit integers.
 
 
-.. code-block::
+.. code-block:: xml
    :caption: multideterminant set XML element.
    :name: multideterminant.xml
 
@@ -951,7 +951,7 @@ Attribute:
 | ``name``        | Text     |                |         | Name of rotated SPOSet             |
 +-----------------+----------+----------------+---------+------------------------------------+
 
-.. code-block::
+.. code-block:: xml
    :caption: Orbital Rotation XML element.
    :name: Listing 1R
 
@@ -1072,7 +1072,7 @@ Example Use Case
 
 Having specified the general form, we present a general example of one-body and two-body backflow transformations in a hydrogen-helium mixture.  The hydrogen and helium ions have independent backflow transformations, as do the like and unlike-spin two-body terms.  One caveat is in order:  ionic backflow transformations must be listed in the order they appear in the particle set.  If in our example, helium is listed first and hydrogen is listed second, the following example would be correct.  However, switching backflow declaration to hydrogen first then helium, will result in an error.  Outside of this, declaration of one-body blocks and two-body blocks are not sensitive to ordering.
 
-::
+.. code-block:: xml
 
   <backflow>
   <!--The One-Body term with independent e-He and e-H terms. IN THAT ORDER -->
@@ -1106,7 +1106,7 @@ Having specified the general form, we present a general example of one-body and 
 
 Currently, backflow works only with single-Slater determinant wavefunctions.  When a backflow transformation has been declared, it should be placed within the ``<determinantset>`` block, but outside of the ``<slaterdeterminant>`` blocks, like so:
 
-::
+.. code-block:: xml
 
   <determinantset ... >
       <!--basis set declarations go here, if there are any -->
@@ -1410,7 +1410,7 @@ specified, the default cutoff of the Wigner Seitz cell radius is used; this
 Jastrow must be used with a 3D periodic system such as a bulk solid. The name of
 the particleset holding the ionic positions is "i."
 
-::
+.. code-block:: xml
 
   <jastrow name="J1" type="One-Body" function="Bspline" print="yes" source="i">
    <correlation elementType="C" cusp="0.0" size="4">
@@ -1424,7 +1424,7 @@ the ions is labeled as ion0 rather than "i," as in the other example.  Also in t
 the ion is lithium with a coulomb potential, so the cusp condition is satisfied by
 setting cusp="d."
 
-::
+.. code-block:: xml
 
   <jastrow name="J1" type="One-Body" function="Bspline" source="ion0" spin="yes">
     <correlation speciesA="Li" speciesB="u" size="7" rcut="6">
@@ -1517,7 +1517,7 @@ Example use case
 Specify a spin-independent function with independent Jastrow factors for two different species (Li and H).
 The name of the particleset holding the ionic positions is "i."
 
-::
+.. code-block:: xml
 
   <jastrow name="J1" function="pade2" type="One-Body" print="yes" source="i">
     <correlation elementType="Li">
@@ -1572,7 +1572,7 @@ will typically be fixed as the desired cusp condition is known.
 
 To specify this one-body Jastrow factor, use an input section like the following.
 
-::
+.. code-block:: xml
 
   <jastrow name="J1Cusps" type="One-Body" function="shortrangecusp" source="ion0" print="yes">
     <correlation rcut="6" cusp="3" elementType="Li">
@@ -1762,7 +1762,7 @@ Specify a spin-dependent function with four parameters for each channel.  In thi
 a radius of 4.0 bohr (rather than to the default of the Wigner Seitz cell radius).  Also, in this example,
 the coefficients are set to not be optimized during an optimization step.
 
-::
+.. code-block:: xml
 
   <jastrow name="J2" type="Two-Body" function="Bspline" print="yes">
     <correlation speciesA="u" speciesB="u" size="8" rcut="4.0">
@@ -1976,7 +1976,7 @@ Additional information:
 
 -  ``symmetry=none``: Impose no symmetry on the coefficients.
 
-.. code-block::
+.. code-block:: xml
   :caption: k-space Jastrow with one- and two-body terms.
   :name: Listing 10
 
@@ -1991,7 +1991,7 @@ Additional information:
    </correlation>
   </jastrow>
 
-.. code-block::
+.. code-block:: xml
   :caption: k-space Jastrow with one-body term only.
   :name: Listing 11
 
@@ -2002,7 +2002,7 @@ Additional information:
      </correlation>
   </jastrow>
 
-.. code-block::
+.. code-block:: xml
   :caption: k-space Jastrow with two-body term only.
   :name: Listing 12
 
@@ -2127,7 +2127,7 @@ For both the Yukawa and Gaskell RPA Jastrows, the default value for :math:`r_s` 
     | ``kc``:math:`^o`  | kc           | :math:`k_c>0`  | :math:`2\left(\tfrac{9\pi}{4}\right)^{1/3}\tfrac{4\pi N_e}{3\Omega}` | k-space cutoff          |
     +-------------------+--------------+----------------+----------------------------------------------------------------------+-------------------------+
 
-.. code-block::
+.. code-block:: xml
   :caption: Two body RPA Jastrow with long- and short-ranged parts.
   :name: Listing 13
 
@@ -2173,7 +2173,7 @@ Example use case
 Here is an example of H2O molecule. After optimizing one and two body Jastrow factors, add the following block in the wavefunction.
 The coefficients will be filled zero automatically if not given.
 
-::
+.. code-block:: xml
 
   <jastrow name="J3" type="eeI" function="polynomial" source="ion0" print="yes">
     <correlation ispecies="O" especies="u" isize="3" esize="3" rcut="10">
@@ -2248,7 +2248,7 @@ Additional information:
 Example Use Case
 ~~~~~~~~~~~~~~~~
 
-::
+.. code-block:: xml
 
   <qmcsystem>
     <simulationcell>

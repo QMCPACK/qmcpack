@@ -75,7 +75,7 @@ wavefunction can be generated according to the following example for a
 supertwist shifted away from :math:`\Gamma`, leading to a complex
 wavefunction.
 
-.. code-block::
+.. code-block:: python
   :caption: Example PySCF input for single k-point calculation for a :math:`2 \times 1 \times 1` carbon supercell.
   :name: Listing 48
 
@@ -127,7 +127,7 @@ wavefunction.
 
 Note that the last three lines of the file
 
-::
+.. code-block:: python
 
   title="C_diamond-tiled-cplx"
   from PyscfToQmcpack import savetoqmcpack
@@ -153,7 +153,7 @@ https://github.com/QMCPACK/qmcpack_workshop_2019 under
 For the converter in the script to be called properly, you need
 to specify the path to the file in your PYTHONPATH such as
 
-::
+.. code-block:: bash
 
   export PYTHONPATH=QMCPACK_PATH/src/QMCTools:$PYTHONPATH
 
@@ -171,7 +171,7 @@ further modification.
 
 Running convert4qmc will generate 3 input files:
 
-.. code-block::
+.. code-block:: xml
   :caption: C_diamond-tiled-cplx.structure.xml. This file contains the geometry of the system.
   :name: Listing 49
 
@@ -216,7 +216,7 @@ As one can see, for both examples, the two-atom primitive cell has been
 expanded to contain four atoms in a :math:`2 \times 1 \times 1` carbon
 cell.
 
-.. code-block::
+.. code-block:: xml
   :caption: C_diamond-tiled-cplx.wfj.xml. This file contains the trial wavefunction.
   :name: Listing 50
 

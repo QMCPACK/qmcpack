@@ -85,7 +85,7 @@ Additional information:
 
 The particle configurations are written to a ``.config.h5`` file.
 
-.. code-block::
+.. code-block:: xml
   :caption: The following is an example of running a simulation that can be restarted.
   :name: Listing 42
 
@@ -101,7 +101,7 @@ Check that this file exists before attempting a restart.
 
 To continue a run, specify the ``mcwalkerset`` element before your VMC/DMC block:
 
-.. code-block::
+.. code-block:: xml
   :caption: Restart (read walkers from previous run).
   :name: Listing 43
 
@@ -310,7 +310,7 @@ Additional information:
 
 An example VMC section for a simple batched ``vmc`` run:
 
-::
+.. code-block:: xml
 
   <qmc method="vmc" move="pbyp">
     <estimator name="LocalEnergy" hdf5="no"/>
@@ -443,7 +443,7 @@ Additional information:
 
 An example VMC section for a simple VMC run:
 
-::
+.. code-block:: xml
 
   <qmc method="vmc" move="pbyp">
     <estimator name="LocalEnergy" hdf5="no"/>
@@ -460,7 +460,7 @@ Here we set 256 ``walkers`` per MPI, have a brief initial equilibration of 100 `
 
 The following is an example of VMC section storing configurations (walker samples) for optimization.
 
-::
+.. code-block:: xml
 
   <qmc method="vmc" move="pbyp" gpu="yes">
      <estimator name="LocalEnergy" hdf5="no"/>
@@ -496,7 +496,7 @@ can therefore make use of crowds, batching, and supports running a large number 
 
 A typical optimization block looks like the following. It starts with method="linear" and contains three blocks of parameters.
 
-::
+.. code-block:: xml
 
   <loop max="10">
    <qmc method="linear" move="pbyp" gpu="yes">
@@ -589,7 +589,7 @@ Additional information:
 
 The cost function consists of three components: energy, unreweighted variance, and reweighted variance.
 
-::
+.. code-block:: xml
 
      <cost name="energy">                   0.95 </cost>
      <cost name="unreweightedvariance">     0.00 </cost>
@@ -606,7 +606,7 @@ If variational parameters are set as not optimizable in the predominant way, the
 
 The following example shows optimizing subsets of parameters in stages in a single QMCPACK run.
 
-::
+.. code-block:: xml
 
     <qmc method="linear">
       ...
@@ -652,7 +652,7 @@ optimizers can be switched among “OneShiftOnly” (default), “adaptive,”
 “descent,” “hybrid,” "sr_cg," and “quartic” (old) using the following line in the
 optimization block:
 
-::
+.. code-block:: xml
 
 <parameter name="MinMethod"> THE METHOD YOU LIKE </parameter>
 
@@ -716,7 +716,7 @@ also use large ``minwalkers``, for example adding three-body Jastrow factor to c
 developing a reliable optimization recipe for a new system, one should check convergence of the process with significantly increased
 samples, e.g. 4x, and repeat the check each time the flexibility in the wavefunction and number of parameters is increased.
 
-::
+.. code-block:: xml
 
   <loop max="6">
    <qmc method="linear" move="pbyp" gpu="yes">
@@ -901,7 +901,7 @@ Recommendations:
     filtration is on so that accelerated descent can be used to optimize
     parameters that the LM leaves untouched. :cite:`Otis2021`
 
-::
+.. code-block:: xml
 
   <loop max="15">
    <qmc method="linear" move="pbyp">
@@ -1081,8 +1081,7 @@ Additional information and recommendations:
    it may be useful to try the hybrid optimization approach described in
    the next subsection.
 
-::
-
+.. code-block:: xml
 
   <loop max="2000">
      <qmc method="linear" move="pbyp" checkpoint="-1" gpu="no">
@@ -1148,8 +1147,7 @@ There are two additional parameters used in the hybrid optimization and it requi
   | ``Stored_Vectors``  | integer      | :math:`> 0` | 5           | Number of vectors to transfer to BLM |
   +---------------------+--------------+-------------+-------------+--------------------------------------+
 
-::
-
+.. code-block:: xml
 
   <loop max="203">
   <qmc method="linear" move="pbyp" checkpoint="-1" gpu="no">
@@ -1304,7 +1302,7 @@ Recommendations:
    3-Body J), set ``exp0`` to 0 and do a single inner iteration (max its=1) per
    sample of configurations.
 
-::
+.. code-block:: xml
 
   <!-- Specify the optimizer options -->
   <parameter name="MinMethod">quartic</parameter>
@@ -1347,15 +1345,15 @@ stored in HDF5 format. The optimization header block will have to
 specify that the new CI coefficients will be saved to HDF5 format. If
 the tag is not added coefficients will not be saved.
 
-::
+.. code-block:: xml
 
   <qmc method="linear" move="pbyp" gpu="no" hdf5="yes">
 
-  The rest of the optimization block remains the same.
+The rest of the optimization block remains the same.
 
 When running the optimization, the new coefficients will be stored in a ``*.sXXX.opt.h5`` file,  where XXX corresponds to the series number. The H5 file contains only the optimized coefficients. The corresponding ``*.sXXX.opt.xml`` will be updated for each optimization block as follows:
 
-::
+.. code-block:: xml
 
   <detlist size="1487" type="DETS" nca="0" ncb="0" nea="2" neb="2" nstates="85" cutoff="1e-2" href="../LiH.orbs.h5" opt_coeffs="LiH.s001.opt.h5"/>
 
@@ -1376,7 +1374,7 @@ The gradients of the energy with respect to the variational parameters can be ch
 The check compares the analytic derivatives with a finite difference approximation.
 These are activated by giving a ``gradient_test`` method in an ``optimize`` block, as follows:
 
-::
+.. code-block:: xml
 
      <qmc method="linear" move="pbyp">
       <optimize method="gradient_test">
@@ -1399,7 +1397,7 @@ It contains one line per loop iteration, to allow using existing tools to comput
 
 The input would look like the following:
 
-::
+.. code-block:: xml
 
     <qmc method="linear" move="pbyp" checkpoint="-1" gpu="no">
       <optimize method="gradient_test">
@@ -1563,7 +1561,7 @@ where :math:`E_\text{ref}` is the :math:`E_\text{pop\_avg}` average over all the
   'limited_history' uses weighted average of :math:`E_\text{pop\_avg}` of the latest at maximum
   min(1, int(1.0 / (feedback * tau))) steps collected post warm-up. Default 'unlimited_history'.
 
-.. code-block::
+.. code-block:: xml
   :caption: The following is an example of a minimal DMC section using the batched ``dmc`` driver
   :name: Listing 48b
 
@@ -1836,7 +1834,7 @@ where :math:`E_\text{ref}` is the :math:`E_\text{pop\_avg}` average over all the
       wavefunction quality via the term :math:`\sigma`.
       :math:`\mathrm{sigmaBound}` is default to 10.
 
-.. code-block::
+.. code-block:: xml
   :caption: The following is an example of a very simple DMC section.
   :name: Listing 44
 
@@ -1850,7 +1848,7 @@ where :math:`E_\text{ref}` is the :math:`E_\text{pop\_avg}` average over all the
 The time step should be individually adjusted for each problem.  Please refer to the theory section
 on diffusion Monte Carlo.
 
-.. code-block::
+.. code-block:: xml
   :caption: The following is an example of running a simulation that can be restarted.
   :name: Listing 45
 
@@ -1866,7 +1864,7 @@ This also works in VMC. This will output an h5 file with the name
 attempting a restart. To read in this file for a continuation run,
 specify the following:
 
-.. code-block::
+.. code-block:: xml
   :caption: Restart (read walkers from previous run).
   :name: Listing 46
 
@@ -1876,7 +1874,7 @@ BH is the project id, and s002 is the calculation number to read in the walkers 
 
 Combining VMC and DMC in a single run (wavefunction optimization can be combined in this way too) is the standard way in which QMCPACK is typically run.   There is no need to run two separate jobs since method sections can be stacked and walkers are transferred between them.
 
-.. code-block::
+.. code-block:: xml
   :caption: Combined VMC and DMC run.
   :name: Listing 47
 
@@ -1906,7 +1904,7 @@ Combining VMC and DMC in a single run (wavefunction optimization can be combined
 Reptation Monte Carlo
 ---------------------
 
-Note: repatation Monte Carlo is not currently supported as a batched driver.
+Note: reptation Monte Carlo is not currently supported as a batched driver.
 It can only be run by selecting use of legacy drivers via the driver_version project level setting, see :ref:`driver-version-parameter`.
 To aid prioritization, potential users are welcome to request porting and describe their science case.
 
@@ -2010,7 +2008,7 @@ declaration to ensure correct sampling:
 
 
 
-.. _walker_logging
+.. _walker_logging:
 
 Walker Data Logging
 ===================
@@ -2029,7 +2027,7 @@ The default walker data logging functionality is enabled by including the
 <walkerlogs/> XML element (once) just before the QMC driver sections, 
 for example:
 
-::
+.. code-block:: xml
 
   <walkerlogs/>
   <qmc method="vmc" move="pbyp">
