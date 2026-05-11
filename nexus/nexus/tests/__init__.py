@@ -8,9 +8,10 @@ class NexusTestOrder(IntEnum):
     going to be indicative of where the actual root problem is.
     """
 
-    TESTING                         = auto() # 1
-    EXECUTE                         = auto() # 2
-    MEMORY                          = auto() # etc.
+    TESTING                         = auto()
+    EXECUTE                         = auto()
+    MEMORY                          = auto()
+    UTILITIES                       = auto()
     GENERIC_OPERATION               = auto()
     DEVELOPER                       = auto()
     UNIT_CONVERTER                  = auto()
