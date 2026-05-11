@@ -5,7 +5,6 @@ pytestmark = pytest.mark.order(NexusTestOrder.QMCPACK_INPUT)
 from ..generic import generic_settings
 generic_settings.raise_error = True
 
-from .. import versions
 from .. import testing
 from ..testing import divert_nexus_log,restore_nexus_log
 from ..testing import value_eq,object_eq,check_object_eq
@@ -2149,37 +2148,39 @@ def test_magnetization_density():
     assert 'name="dr"' not in text, "dr parameter should not be present"
 #end def test_magnetization_density
 
-if versions.seekpath_available:
-    def test_symbolic_excited_state():
-        from nexus import generate_physical_system
-        from nexus import generate_qmcpack_input
 
-        dia = generate_physical_system(
-            units     = 'A',
-            axes      = [[ 1.785,  1.785,  0.   ],
-                         [ 0.   ,  1.785,  1.785],
-                         [ 1.785,  0.   ,  1.785]],
-            elem      = ['C','C'],
-            pos       = [[ 0.    ,  0.    ,  0.    ],
-                         [ 0.8925,  0.8925,  0.8925]],
-            use_prim  = True,    # Use SeeK-path library to identify prim cell
-            tiling    = [2,1,2], 
-            kgrid     = (1,1,1), 
-            kshift    = (0,0,0), # Assumes we study transitions from Gamma. For non-gamma tilings, use kshift appropriately
-            #C         = 4
-            )
+def test_symbolic_excited_state():
+    _ = pytest.importorskip("spglib")
+    _ = pytest.importorskip("seekpath")
+    from nexus import generate_physical_system
+    from nexus import generate_qmcpack_input
 
-        qmc_optical = generate_qmcpack_input(
-            det_format     = 'old',
-            input_type     = 'basic',
-            spin_polarized = True,
-            system         = dia,
-            excitation     = ['up', 'gamma vb x cb'], 
-            jastrows       = [],
-            qmc            = 'vmc',
-            )
+    dia = generate_physical_system(
+        units     = 'A',
+        axes      = [[ 1.785,  1.785,  0.   ],
+                        [ 0.   ,  1.785,  1.785],
+                        [ 1.785,  0.   ,  1.785]],
+        elem      = ['C','C'],
+        pos       = [[ 0.    ,  0.    ,  0.    ],
+                        [ 0.8925,  0.8925,  0.8925]],
+        use_prim  = True,    # Use SeeK-path library to identify prim cell
+        tiling    = [2,1,2], 
+        kgrid     = (1,1,1), 
+        kshift    = (0,0,0), # Assumes we study transitions from Gamma. For non-gamma tilings, use kshift appropriately
+        #C         = 4
+        )
 
-        expect = '''<slaterdeterminant>
+    qmc_optical = generate_qmcpack_input(
+        det_format     = 'old',
+        input_type     = 'basic',
+        spin_polarized = True,
+        system         = dia,
+        excitation     = ['up', 'gamma vb x cb'], 
+        jastrows       = [],
+        qmc            = 'vmc',
+        )
+
+    expect = '''<slaterdeterminant>
    <determinant id="updet" size="24">
       <occupation mode="excited" spindataset="0" pairs="1" format="band">             
 0 5 3 6
@@ -2189,21 +2190,21 @@ if versions.seekpath_available:
       <occupation mode="ground" spindataset="1"/>
    </determinant>
 </slaterdeterminant>'''.strip()
-        text = qmc_optical.get('slaterdeterminant').write().strip()
-        assert(text==expect)
+    text = qmc_optical.get('slaterdeterminant').write().strip()
+    assert(text==expect)
 
 
-        qmc_optical = generate_qmcpack_input(
-            det_format     = 'old',
-            input_type     = 'basic',
-            spin_polarized = True,
-            system         = dia,
-            excitation     = ['up', 'gamma vb-1 x cb'], 
-            jastrows       = [],
-            qmc            = 'vmc',
-            )
+    qmc_optical = generate_qmcpack_input(
+        det_format     = 'old',
+        input_type     = 'basic',
+        spin_polarized = True,
+        system         = dia,
+        excitation     = ['up', 'gamma vb-1 x cb'], 
+        jastrows       = [],
+        qmc            = 'vmc',
+        )
 
-        expect = '''<slaterdeterminant>
+    expect = '''<slaterdeterminant>
    <determinant id="updet" size="24">
       <occupation mode="excited" spindataset="0" pairs="1" format="band">             
 0 4 3 6
@@ -2213,21 +2214,21 @@ if versions.seekpath_available:
       <occupation mode="ground" spindataset="1"/>
    </determinant>
 </slaterdeterminant>'''.strip()
-        text = qmc_optical.get('slaterdeterminant').write().strip()
-        assert(text==expect)
+    text = qmc_optical.get('slaterdeterminant').write().strip()
+    assert(text==expect)
 
 
-        qmc_optical = generate_qmcpack_input(
-            det_format     = 'old',
-            input_type     = 'basic',
-            spin_polarized = True,
-            system         = dia,
-            excitation     = ['up', 'gamma vb x cb+1'], 
-            jastrows       = [],
-            qmc            = 'vmc',
-            )
+    qmc_optical = generate_qmcpack_input(
+        det_format     = 'old',
+        input_type     = 'basic',
+        spin_polarized = True,
+        system         = dia,
+        excitation     = ['up', 'gamma vb x cb+1'], 
+        jastrows       = [],
+        qmc            = 'vmc',
+        )
 
-        expect = '''<slaterdeterminant>
+    expect = '''<slaterdeterminant>
    <determinant id="updet" size="24">
       <occupation mode="excited" spindataset="0" pairs="1" format="band">             
 0 5 3 7
@@ -2237,9 +2238,7 @@ if versions.seekpath_available:
       <occupation mode="ground" spindataset="1"/>
    </determinant>
 </slaterdeterminant>'''.strip()
-        text = qmc_optical.get('slaterdeterminant').write().strip()
-        assert(text==expect)
+    text = qmc_optical.get('slaterdeterminant').write().strip()
+    assert(text==expect)
 
-    #end def test_symbolic_excited_state
-#end if
-
+#end def test_symbolic_excited_state

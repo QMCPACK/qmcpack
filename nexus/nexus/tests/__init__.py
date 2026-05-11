@@ -8,10 +8,6 @@ class NexusTestOrder(IntEnum):
     going to be indicative of where the actual root problem is.
     """
 
-    VERSIONS                        = auto() # 1
-    REQUIRED_DEPENDENCIES           = auto() # 2
-    OPTIONAL_DEPENDENCIES           = auto() # etc.
-    NEXUS_IMPORTS                   = auto()
     TESTING                         = auto()
     EXECUTE                         = auto()
     MEMORY                          = auto()
