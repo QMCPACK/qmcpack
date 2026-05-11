@@ -18,7 +18,7 @@
 
 import time
 from . import memory
-from .developer import obj
+from .developer import obj, DevBase
 from .nexus_base import NexusCore, nexus_core
 from .simulation import Simulation
 
@@ -381,3 +381,22 @@ class ProjectManager(NexusCore):
 #end class ProjectManager
 
 
+
+
+class DynamicWorkflowManager(NexusCore):
+    def __init__(self):
+        self.tmp = 'dyn'
+    #end def __init__
+
+#end class DynamicWorkflowManager
+
+
+
+
+def workflow_manager():
+    if not nexus_core.dynamic:
+        wm = ProjectManager()
+    else:
+        wm = DynamicWorkflowManager()
+    return wm
+#end def workflow_manager

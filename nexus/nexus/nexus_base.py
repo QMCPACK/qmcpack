@@ -102,6 +102,8 @@ nexus_core_defaults = obj(
     progress_tty      = False,             # used by: ProjectManager
     graph_sims        = False,             # used by: ProjectManager
     command_line      = True,              # used by: Settings
+    dynamic           = False,             # used by: DynamicWorkflowManager
+                                           #          Simulation
     **nexus_core_noncore_defaults
     )
 

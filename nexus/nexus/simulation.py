@@ -71,7 +71,7 @@ import shutil
 from string import Template
 from subprocess import Popen
 import tempfile
-from .developer import obj, unavailable
+from .developer import obj, unavailable, DevBase
 from .physical_system import PhysicalSystem
 from .machines import Job
 from .pseudopotential import ppset
@@ -1830,3 +1830,11 @@ def graph_sims(sims=None,savefile=None,useid=False,exit=True,quants=True,display
 #end def graph_sims
 
 
+
+
+class DynamicProcess(DevBase):
+    def __init__(self,sim):
+        assert isinstance(sim,Simulation)
+        self.sim=sim
+    #end def __init__
+#end class DynamicProcess
