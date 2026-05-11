@@ -15,6 +15,7 @@ class NexusTestOrder(IntEnum):
     TESTING                         = auto()
     EXECUTE                         = auto()
     MEMORY                          = auto()
+    UTILITIES                       = auto()
     GENERIC_OPERATION               = auto()
     DEVELOPER                       = auto()
     UNIT_CONVERTER                  = auto()
