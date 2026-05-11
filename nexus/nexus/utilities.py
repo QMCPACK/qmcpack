@@ -134,7 +134,7 @@ def _path_to_str(path):
     elif isinstance(path,Path):
         path = str(path)
     else:
-        raise ValueError('path must be of type "str", "bytes" or "Path"')
+        raise TypeError('path must be of type "str", "bytes" or "Path". Type received: {}'.format(path.__class__.__name__))
     return path
 #end def _path_to_str
 
