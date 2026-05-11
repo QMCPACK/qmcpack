@@ -116,8 +116,10 @@ Module contents
 ---------------
 """
 
+from __future__ import annotations
 import os
 from pathlib import Path
+from collections.abc import Sequence
 import numpy as np
 from copy import deepcopy
 from random import randint
@@ -131,6 +133,7 @@ from numpy import (
     sqrt,
 )
 from numpy.linalg import inv, det, norm
+import numpy.typing as npt
 from .unit_converter import convert
 from .numerics import nearest_neighbors, convex_hull, voronoi_neighbors
 from .periodic_table import Elements
@@ -2034,9 +2037,163 @@ class Structure(Sobj):
         return nn.ravel()
     #end def locate_simple
 
-    
+
+    def locate_by_structure(
+        self,
+        structure: Structure,
+        invert: bool = False,
+    ) -> list[int]:
+        """Locate the atoms in a structure by the unit cell of another structure.
+
+        Parameters
+        ----------
+        structure : Structure
+            The other structure whose unit cell will be used.
+        invert : bool, default=False
+            Optionally locate only atoms outside the unit cell.
+        """
+        indices = structure.inside(self.pos)
+        if invert:
+            indices = list(set(range(len(self.pos)))-set(indices))
+
+        return indices
+
+
+    def locate_by_mask(
+        self,
+        mask_array: npt.NDArray[np.bool],
+        invert: bool = False,
+    ) -> list[int]:
+        """Locate the atoms in a structure by a mask array.
+
+        Parameters
+        ----------
+        mask_array : ndarray of bool
+            Mask array of booleans.
+        invert : bool, default=False
+            Optionally return atoms where the array is ``False`` instead
+            of where the array is ``True``.
+        """
+        indices = np.arange(len(self.pos))[mask_array]
+        if invert:
+            indices = list(set(range(len(self.pos)))-set(indices))
+
+        return indices
+
+
+    def locate_by_indices(
+        self,
+        indices: int | list[int],
+        invert: bool = False,
+    ) -> list[int]:
+        """Locate the atoms in a structure by an index or list of indices.
+
+        Parameters
+        ----------
+        indices : int or list of int
+            Index or list of indices of the desired atoms. If this is a
+            single ``int`` then it will be turned into a list of ``int``.
+        invert : bool, default=False
+            Optionally invert the indices.
+
+        Returns
+        -------
+        indices : list of int
+            List of indices of the located atoms. This will have the
+            same values as the input unless ``invert=True``.
+        """
+        if isinstance(indices, int):
+            indices = [indices]
+        else:
+            indices = list(indices)
+
+        if invert:
+            indices = list(set(range(len(self.pos)))-set(indices))
+
+        return indices
+
+
+    def locate_by_elements(
+        self,
+        elements: str | int | Elements | list[str | Elements | int],
+        invert: bool = False,
+    ) -> list[int]:
+        """Locate the atoms in a structure by their element.
+
+        Parameters
+        ----------
+        elements : str, int, Elements, or a list of str, int, Elements.
+            Atomic symbol(s), number(s), or member(s) of the
+            ``Elements`` enum.
+        invert : bool, default=False
+            Optionally invert the indices.
+        """
+        if not isinstance(elements, Sequence):
+            elements = [elements]
+
+        indices = []
+        for elem in elements:
+            for i in range(len(self.elem)):
+                if self.elem[i] == elem:
+                    indices.append(i)
+
+        if invert:
+            indices = list(set(range(len(self.pos)))-set(indices))
+
+        return indices
+
+
+    def locate_by_neighbors(
+        self,
+        pos: list[int | npt.NDArray[np.floating]],
+        radii: int | float | list[int | float],
+        invert: bool = False
+    ) -> list[int]:
+        """Locate atoms in a structure if they are within a distance from a position.
+
+        Parameters
+        ----------
+        pos : list of int or list of vectors
+            Either the indices of atoms in the structure, or a list of
+            3D coordinates.
+        radii : int or float or list of int or float
+            Radii within which atoms must be to be selected.
+        invert : bool, default=False
+            Optionally invert the indices.
+        """
+        if isinstance(pos, Sequence) and isinstance(pos[0], int):
+            pos = self.pos[pos]
+        else:
+            pos = np.asarray(pos, dtype=np.float64)
+
+        if isinstance(radii, float | int):
+            radii = [radii] * len(pos)
+        elif len(radii) != len(pos):
+            self.error(
+                "Lengths of input radii and positions do not match\n"
+               f"  len(radii)={len(radii)}\n"
+               f"  len(pos)={len(pos)}"
+            )
+
+        dist_table = self.min_image_distances(pos)
+        ipos = np.arange(len(self.pos))
+        indices = []
+        for i in range(len(pos)):
+            indices.extend(ipos[dist_table[i] < radii[i]])
+
+        if invert:
+            indices = list(set(range(len(self.pos)))-set(indices))
+
+        return indices
+
+
     # test needed
-    def locate(self,identifiers,radii=None,exterior=False):
+    def locate(
+        self,
+        identifiers,
+        radii=None,
+        exterior=False
+    ):
         indices = None
         if isinstance(identifiers,Structure):
             cell = identifiers
@@ -2101,7 +2258,7 @@ class Structure(Sobj):
         return indices
     #end def locate
 
-    
+
     def freeze(self,identifiers=None,radii=None,exterior=False,negate=False,directions='xyz'):
         if isinstance(identifiers,np.ndarray) and identifiers.shape==self.pos.shape and identifiers.dtype==bool:
             if negate:
