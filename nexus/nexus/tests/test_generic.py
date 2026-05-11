@@ -1218,7 +1218,7 @@ def test_old_nexus_unpickle():
         inp_obj.load(TEST_FILES["old_nxs_pwscf_input_numpy_1.p"])
 
     assert(inp_obj.atomic_positions.atoms == ref_atomic_positions_atoms)
-    np.testing.assert_allclose(inp_obj.atomic_positions.positions, ref_atomic_positions_positions, atol=1e-8)
+    np.testing.assert_allclose(inp_obj.atomic_positions.positions, ref_atomic_positions_positions, rtol=1e-7)
     assert(inp_obj.atomic_positions.specifier == "bohr")
 
     assert(inp_obj.atomic_species.atoms               == ["Ge"])
@@ -1227,7 +1227,7 @@ def test_old_nexus_unpickle():
     assert(inp_obj.atomic_species.pseudopotentials.Ge == "Ge.pbe-kjpaw.UPF")
 
     assert(inp_obj.cell_parameters.specifier == "bohr")
-    np.testing.assert_allclose(inp_obj.cell_parameters.vectors, ref_cell_parameters_vectors, atol=1e-8)
+    np.testing.assert_allclose(inp_obj.cell_parameters.vectors, ref_cell_parameters_vectors, rtol=1e-7)
 
     assert(inp_obj.control.calculation  == "relax")
     assert(inp_obj.control.disk_io      == "low")
