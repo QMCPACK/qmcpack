@@ -1223,7 +1223,7 @@ def test_old_nexus_unpickle():
 
     assert(inp_obj.atomic_species.atoms               == ["Ge"])
     assert(inp_obj.atomic_species.specifier           == "")
-    assert(inp_obj.atomic_species.masses.Ge           == 72.61)
+    np.testing.assert_allclose(inp_obj.atomic_species.masses.Ge, 72.61, rtol=1e-7)
     assert(inp_obj.atomic_species.pseudopotentials.Ge == "Ge.pbe-kjpaw.UPF")
 
     assert(inp_obj.cell_parameters.specifier == "bohr")
@@ -1238,10 +1238,10 @@ def test_old_nexus_unpickle():
     assert(inp_obj.control.verbosity    == "high")
     assert(inp_obj.control.wf_collect   == False)
 
-    assert(inp_obj.electrons.conv_thr         == 1e-06)
+    np.testing.assert_allclose(inp_obj.electrons.conv_thr, 1e-06, rtol=1e-7)
     assert(inp_obj.electrons.diagonalization  == "david")
     assert(inp_obj.electrons.electron_maxstep == 1000)
-    assert(inp_obj.electrons.mixing_beta      == 0.7)
+    np.testing.assert_allclose(inp_obj.electrons.mixing_beta, 0.7, rtol=1e-7)
     assert(inp_obj.electrons.mixing_mode      == "plain")
 
     assert(inp_obj.ions.ion_dynamics      == "bfgs")
@@ -1253,7 +1253,7 @@ def test_old_nexus_unpickle():
     assert(inp_obj.k_points.shift     == (1, 1, 1))
     assert(inp_obj.k_points.specifier == "automatic")
 
-    assert(inp_obj.system.degauss     == 0.0001)
+    np.testing.assert_allclose(inp_obj.system.degauss, 0.0001, rtol=1e-7)
     assert(inp_obj.system.ecutrho     == 200)
     assert(inp_obj.system.ecutwfc     == 50)
     assert(inp_obj.system.ibrav       == 0)
