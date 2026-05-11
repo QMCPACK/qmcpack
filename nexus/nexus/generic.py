@@ -36,6 +36,7 @@ from copy import deepcopy
 import pickle
 from pickle import UnpicklingError
 from random import randint
+from pathlib import Path
 
 from .utilities import sorted_py2
 
@@ -62,65 +63,7 @@ def nocopy(value):
 
 sorted_generic = sorted_py2
 
-# There must be a better way to do this than store these, but this was faster for testing
-nexus_modules = [
-    "xmlreader",
-    "fileio",
-    "quantum_package_analyzer",
-    "pwscf",
-    "pwscf_analyzer",
-    "quantum_package_input",
-    "testing",
-    "rmg_input",
-    "machines",
-    "qmcpack_converters",
-    "simulation",
-    "pwscf_postprocessors",
-    "pyscf_sim",
-    "unit_converter",
-    "execute",
-    "qmcpack_result_analyzers",
-    "basisset",
-    "project_manager",
-    "gamess_input",
-    "quantum_package",
-    "pwscf_input",
-    "pyscf_input",
-    "physical_system",
-    "pseudopotential",
-    "nexus_version",
-    "periodic_table",
-    "rmg_analyzer",
-    "memory",
-    "vasp_input",
-    "qmcpack",
-    "numerics",
-    "qmcpack_analyzer",
-    "structure",
-    "gamess_analyzer",
-    "developer",
-    "template_simulation",
-    "bundle",
-    "qmcpack_property_analyzers",
-    "qmcpack_quantity_analyzers",
-    "rmg",
-    "grid_functions",
-    "hdfreader",
-    "utilities",
-    "qmcpack_analyzer_base",
-    "vasp",
-    "generic",
-    "nexus_base",
-    "debug",
-    "qmcpack_method_analyzers",
-    "observables",
-    "gamess",
-    "vasp_analyzer",
-    "pwscf_data_reader",
-    "qmcpack_input",
-    "pyscf_analyzer",
-]
-
+nexus_modules = [mod.stem for mod in Path(__file__).parent.iterdir() if mod.suffix == ".py"]
 
 class NexusUnpickler(pickle.Unpickler):
     """This class is designed for backwards compatibility with pickles generated
