@@ -68,7 +68,7 @@ Additional information:
    one hamiltonian component or observable requires the detailed knowledge of the wavefunction that it operates on.
    If the specified value is not an empty string, it must match the ``name`` attribute of a ``wavefunction`` xml node.
 
-.. code-block::
+.. code-block:: xml
   :caption: All electron Hamiltonian XML element.
   :name: Listing 14
 
@@ -79,7 +79,7 @@ Additional information:
   </hamiltonian>
 
 
-.. code-block::
+.. code-block:: xml
   :caption: Pseudopotential Hamiltonian XML element.
   :name: Listing 15
 
@@ -230,19 +230,19 @@ Additional information:
 
 -  **gpu**: When not specified, use the ``gpu`` attribute of ``particleset``.
 
-.. code-block::
+.. code-block:: xml
   :caption: QMCPXML element for Coulomb interaction between electrons.
   :name: Listing 16
 
   <pairpot name="ElecElec" type="coulomb" source="e" target="e"/>
 
-.. code-block::
+.. code-block:: xml
   :caption: QMCPXML element for Coulomb interaction between electrons and ions (all-electron only).
   :name: Listing 17
 
   <pairpot name="ElecIon"  type="coulomb" source="i" target="e"/>
 
-.. code-block::
+.. code-block:: xml
   :caption: QMCPXML element for Coulomb interaction between ions.
   :name: Listing 18
 
@@ -380,13 +380,13 @@ Additional information:
    the structure of the Slater-Jastrow wave function in order to analytically
    perform the spin integral.
 
-.. code-block::
+.. code-block:: xml
   :caption: QMCPXML element for pseudopotential electron-ion interaction (psf files).
   :name: Listing 19
 
     <pairpot name="PseudoPot" type="pseudo"  source="i" format="psf"/>
 
-.. code-block::
+.. code-block:: xml
   :caption: QMCPXML element for pseudopotential electron-ion interaction (xml files). If SOC terms present in xml, they are added to local energy
   :name: Listing 20
 
@@ -395,7 +395,7 @@ Additional information:
       <pseudo elementType="H" href="H.xml"/>
     </pairpot>
 
-.. code-block::
+.. code-block:: xml
   :caption: QMCPXML element for pseudopotential to accumulate the spin-orbit energy, but do not include in local energy
   :name: Listing 21
 
@@ -436,7 +436,7 @@ attributes:
   | ``l-local``:math:`^o`             | integer      |                 |             | Override local channel    |
   +-----------------------------------+--------------+-----------------+-------------+---------------------------+
 
-.. code-block::
+.. code-block:: xml
   :caption: QMCPXML element for pseudopotential of single ionic species.
   :name: Listing 21b
 
@@ -491,7 +491,7 @@ Remarks:
 -  **Developer note:** Currently the ``name`` attribute for the MPC
    interaction is ignored. The name is always reset to ``MPC``.
 
-.. code-block::
+.. code-block:: xml
   :caption: MPC for finite-size postcorrection.
   :name: Listing 22
 
@@ -597,7 +597,7 @@ attributes:
   | ``source``:math:`^o`  | text         | ``particleset.name``   | e           | Identify quantum particles |
   +-----------------------+--------------+------------------------+-------------+----------------------------+
 
-.. code-block::
+.. code-block:: xml
   :caption: "Chiesa" kinetic energy finite-size postcorrection.
   :name: Listing 23
 
@@ -692,7 +692,7 @@ Additional information:
    the cell, and hence the density grid, is defined from :math:`0` to
    :math:`L`).
 
-.. code-block::
+.. code-block:: xml
   :caption: QMCPXML,caption=Density estimator (uniform grid).
   :name: Listing 24
 
@@ -781,7 +781,7 @@ Additional information:
    not specified. Simultaneous use of ``corner`` and ``center`` will
    cause QMCPACK to abort.
 
-.. code-block::
+.. code-block:: xml
   :caption: Spin density estimator (uniform grid).
   :name: Listing 25
 
@@ -789,7 +789,7 @@ Additional information:
     <parameter name="grid"> 40 40 40 </parameter>
   </estimator>
 
-.. code-block::
+.. code-block:: xml
   :caption: Spin density estimator (uniform grid centered about origin).
   :name: Listing 26
 
@@ -911,7 +911,7 @@ Additional information:
    Post-processing tools are provided in Nexus.
 
 
-.. code-block::
+.. code-block:: xml
   :caption: Magnetization density estimator (uniform grid).
   :name: Listing 27
 
@@ -1011,13 +1011,13 @@ Additional information:
    ``gofr_e_0_0``, ``gofr_e_0_1``, and ``gofr_e_1_1`` for up-up,
    up-down, and down-down correlations, respectively.
 
-.. code-block::
+.. code-block:: xml
   :caption: Pair correlation function estimator element.
   :name: Listing 28
 
   <estimator type="gofr" name="gofr" num_bin="200" rmax="3.0" />
 
-.. code-block::
+.. code-block:: xml
   :caption: Pair correlation function estimator element with additional electron-ion correlations.
   :name: Listing 29
 
@@ -1108,13 +1108,13 @@ Additional information:
    ``gofr_e_0_0``, ``gofr_e_0_1``, and ``gofr_e_1_1`` for up-up,
    up-down, and down-down correlations, respectively.
 
-.. code-block::
+.. code-block:: xml
   :caption: Pair correlation function estimator element.
   :name: Listing PCorr 1
 
   <estimator type="PairCorrelation" name="gofr_ee" num_bin="200" rmax="3.0" />
 
-.. code-block::
+.. code-block:: xml
   :caption: Pair correlation function estimator element with additional electron-ion correlations.
   :name: Listing PCorr 2
 
@@ -1181,7 +1181,7 @@ Additional information:
    electronic density, thus meaning it will not accurately measure the
    electron-electron density response.
 
-.. code-block::
+.. code-block:: xml
   :caption: Static structure factor estimator element.
   :name: Listing 30
 
@@ -1241,7 +1241,7 @@ Additional information:
    electronic density, thus meaning it wil not accurately measure the
    electron-electron density response.
 
-.. code-block::
+.. code-block:: xml
   :caption: SkAll estimator element.
   :name: Listing 31
 
@@ -1276,7 +1276,7 @@ attributes:
   | ``hdf5``:math:`^o`  | boolean      | yes/no         | no          | Output to ``stat.h5`` (yes) |
   +---------------------+--------------+----------------+-------------+-----------------------------+
 
-.. code-block::
+.. code-block:: xml
   :caption: Species kinetic energy estimator element.
   :name: Listing 32
 
@@ -1337,7 +1337,7 @@ Additional information:
 -  ``hdf5``: Used to record particle-resolved distances in the h5 file
    if ``gdf5=yes``.
 
-.. code-block::
+.. code-block:: xml
   :caption: Lattice deviation estimator element.
   :name: Listing 33
 
@@ -1442,7 +1442,7 @@ Additional information:
    ``name``.
 - **Important:** in order for the estimator to work, a traces XML input element (<traces array="yes" write="no"/>) must appear following the <qmcsystem/> element and prior to any <qmc/> element.
 
-.. code-block::
+.. code-block:: xml
   :caption: Energy density estimator accumulated on a :math:`20 \times  10 \times 10` grid over the simulation cell.
   :name: Listing 34
 
@@ -1455,7 +1455,7 @@ Additional information:
      </spacegrid>
   </estimator>
 
-.. code-block::
+.. code-block:: xml
   :caption: Energy density estimator accumulated within spheres of radius 6.9 Bohr centered on the first and second atoms in the ion0 particleset.
   :name: Listing 35
 
@@ -1479,7 +1479,7 @@ Additional information:
     </spacegrid>
   </estimator>
 
-.. code-block::
+.. code-block:: xml
   :caption: Energy density estimator accumulated within Voronoi polyhedra centered on the ions.
   :name: Listing 36
 
@@ -1855,7 +1855,7 @@ Additional information:
    any detail here; the interested reader is referred to
    :cite:`Krogel2014`.
 
-.. code-block::
+.. code-block:: xml
   :caption: One body density matrix with uniform grid integration.
   :name: Listing 37
 
@@ -1868,7 +1868,7 @@ Additional information:
     <parameter name="center"       >  0 0 0         </parameter>
   </estimator>
 
-.. code-block::
+.. code-block:: xml
   :caption: One body density matrix with uniform sampling.
   :name: Listing 38
 
@@ -1881,7 +1881,7 @@ Additional information:
     <parameter name="center"       >  0 0 0         </parameter>
   </estimator>
 
-.. code-block::
+.. code-block:: xml
   :caption: One body density matrix with density sampling.
   :name: Listing 39
 
@@ -1894,7 +1894,7 @@ Additional information:
     <parameter name="use_drift"    >  no            </parameter>
   </estimator>
 
-.. code-block::
+.. code-block:: xml
   :caption: Example ``sposet`` initialization for density matrix use.  Occupied and virtual orbital sets are created separately, then joined (``basis="spo_u spo_uv"``).
   :name: Listing 40
 
@@ -1904,7 +1904,7 @@ Additional information:
     <sposet type="bspline" name="spo_uv" group="0" index_min="4" index_max="10"/>
   </sposet_builder>
 
-.. code-block::
+.. code-block:: xml
   :caption: Example ``sposet`` initialization for density matrix use. Density matrix orbital basis created separately (``basis="dm_basis"``).
   :name: Listing 41
 
@@ -2019,7 +2019,7 @@ Additional information:
 
 The following is an example use case.
 
-::
+.. code-block:: xml
 
   <simulationcell>
     ...
@@ -2168,7 +2168,7 @@ Additional information:
 
 The following is an example use case.
 
-::
+.. code-block:: xml
 
   <hamiltonian>
     <estimator name="F" type="Force" mode="acforce" fast_derivatives="yes" spacewarp="no"/>
@@ -2216,7 +2216,7 @@ Additional information:
 
 The following is an example use case.
 
-::
+.. code-block:: xml
 
   <simulationcell>
     ...
