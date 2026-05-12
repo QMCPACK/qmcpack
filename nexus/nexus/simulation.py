@@ -68,7 +68,6 @@
 import os
 import sys
 import shutil
-from pathlib import Path
 from string import Template
 from subprocess import Popen
 import tempfile
