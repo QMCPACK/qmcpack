@@ -1,15 +1,13 @@
-try:
-    import pytest
-    from . import NexusTestOrder
-    pytestmark = pytest.mark.order(NexusTestOrder.RMG_INPUT)
-    from ..generic import generic_settings
-    generic_settings.raise_error = True
-except ImportError:
-    pass
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.RMG_INPUT)
 
+from ..generic import generic_settings
+generic_settings.raise_error = True
+
+from importlib.util import find_spec
 from .. import testing
 from ..testing import value_eq,check_object_eq
-from .. import versions
 
 
 associated_files = dict()
@@ -913,7 +911,7 @@ def test_generate():
         )
     check_vs_serial_reference(ri,infile)
 
-    if versions.spglib_available and versions.seekpath_available:
+    if find_spec("spglib") is not None and find_spec("seekpath") is not None:
         nio8 = generate_physical_system(
             units     = 'B',
             axes      = 7.8811*np.identity(3),

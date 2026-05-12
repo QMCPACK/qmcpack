@@ -41,7 +41,7 @@ Attribute:
 
 An example of a block is given below:
 
-::
+.. code-block:: xml
 
    <simulationcell>
        <parameter name="lattice">
@@ -107,7 +107,7 @@ specified axes.
 An example of a ``simulationcell`` block using is given below. The size of the box along
 the z-axis increases from 12 to 18 by the vacuum scale of 1.5.
 
-::
+.. code-block:: xml
 
    <simulationcell>
        <parameter name="lattice">
@@ -320,7 +320,7 @@ Example use cases
 
 .. centered:: Particleset elements for ions and electrons randomizing electron start positions.
 
-::
+.. code-block:: xml
 
      <particleset name="i" size="2">
        <group name="Li">
@@ -352,7 +352,7 @@ Example use cases
 
 .. centered:: Particleset elements for ions and electrons specifying electron start positions.
 
-::
+.. code-block:: xml
 
      <particleset name="e">
        <group name="u" size="4">
@@ -397,7 +397,7 @@ Example use cases
 
 .. centered:: Particleset elements for ions specifying positions by ion type.
 
-::
+.. code-block:: xml
 
      <particleset name="ion0">
        <group name="O" size="1">

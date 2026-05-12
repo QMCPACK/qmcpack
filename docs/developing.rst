@@ -153,9 +153,10 @@ Type and class names
 
 Type and class names should start with a capital letter and have a capital letter for each new word. Underscores (``_``) are not
 allowed. It's redundant to end these names with ``Type`` or ``_t``.
-.. code:: c++
 
-   \\no
+.. code:: cpp
+
+   // no
    using ValueMatrix_t = Matrix<Value>;
    using RealType = double;
 
@@ -185,7 +186,7 @@ Lambda expressions
 
 Named lambda expressions follow the naming convention for functions:
 
-::
+.. code:: cpp
 
   auto myWhatever = [](int i) { return i + 4; };
 
@@ -199,7 +200,7 @@ Test case and test names
 
 Test code files should be named as follows:
 
-::
+.. code:: cpp
 
   class DiracMatrix;
   //leads to
@@ -219,7 +220,7 @@ Use the ``// Comment`` syntax for actual comments.
 
 Use
 
-::
+.. code:: cpp
 
   /** base class for Single-particle orbital sets
    *
@@ -230,7 +231,7 @@ Use
 
 or
 
-::
+.. code:: cpp
 
   ///index in the builder list of sposets
   int builder_index;
@@ -245,7 +246,7 @@ File docs
 
 Do not put the file name after the ``\file`` Doxygen command. Doxygen will fill it in for the file the tag appears in.
 
-::
+.. code:: cpp
 
   /** \file
    *  File level documentation
@@ -266,7 +267,7 @@ For function parameters whose type is non-const reference or pointer to non-cons
 
 Example:
 
-::
+.. code:: cpp
 
   /** Updates foo and computes bar using in_1 .. in_5.
    * \param[in] in_3
@@ -306,7 +307,7 @@ particularly large changes, commit the formatting changes in a separate pull req
 Disable the use of clang-format for sections of code that would be more readable when formatted differently, e.g., for matrices or
 for code blocks where a particular alignment would clearly help readability.
 
-::
+.. code:: cpp
 
   // clang-format off
   Matrix my_matrix = { {1, 2, 3},
@@ -357,7 +358,7 @@ Pointers and references
 
 Pointer or reference operators should go with the type. But understand the compiler reads them from right to left.
 
-::
+.. code:: cpp
 
   Type* var;
   Type& var;
@@ -370,7 +371,7 @@ Templates
 
 The angle brackets of templates should not have any external or internal padding.
 
-::
+.. code:: cpp
 
   template<class C>
   class Class1;
@@ -389,7 +390,7 @@ Variable declarations and definitions
 
 - Avoid declaring multiple variables in the same declaration, especially if they are not fundamental types:
 
-  ::
+  .. code:: cpp
 
     int x, y;                        // Not recommended
     Matrix a("my-matrix"), b(size);  // Not allowed
@@ -402,7 +403,7 @@ Variable declarations and definitions
 
 - Use the following order for keywords and modifiers in  variable declarations:
 
-  ::
+  .. code:: cpp
 
     // General type
     [static] [const/constexpr] Type variable_name;
@@ -429,7 +430,7 @@ on it, in which case one parameter per line aligned with the first parameter sho
 
 Also include the parameter names in the declaration of a function, that is,
 
-::
+.. code:: cpp
 
   // calculates a*b+c
   double function(double a, double b, double c);
@@ -451,7 +452,7 @@ Conditionals
 
 Examples:
 
-::
+.. code:: cpp
 
   if (condition)
     statement;
@@ -478,7 +479,7 @@ Switch statements should always have a default case.
 
 Example:
 
-::
+.. code:: cpp
 
   switch (var)
   {
@@ -502,7 +503,7 @@ Loops
 
 Examples:
 
-::
+.. code:: cpp
 
   for (statement; condition; statement)
     statement;
@@ -537,7 +538,7 @@ Class format
 
 Example:
 
-::
+.. code:: cpp
 
   class Foo : public Bar
   {
@@ -569,7 +570,7 @@ Constructor initializer lists
 
 Examples:
 
-::
+.. code:: cpp
 
   // When everything fits on one line:
   Foo::Foo(int var) : var_(var)
@@ -691,7 +692,7 @@ Pre-increment and pre-decrement
 Use the pre-increment (pre-decrement) operator when a variable is incremented (decremented) and the value of the expression is not
 used. In particular, use the pre-increment (pre-decrement) operator for loop counters where i is not used:
 
-::
+.. code:: cpp
 
   for (int i = 0; i < N; ++i)
   {
@@ -721,7 +722,7 @@ Use of const
 
 - Member functions should be specified const whenever possible.
 
-  ::
+  .. code:: cpp
 
     // Declaration
     int computeFoo(int bar, const Matrix& m)
@@ -798,7 +799,7 @@ Adding and using timers
 In your class header file, add ```#include <NewTimer.h>```. Add a timer enumeration and define the timer names in the
 header file or preferably cpp file. For example, put the following under "protected/private"
 
-::
+.. code:: cpp
 
   enum PSTimers
   {
@@ -812,7 +813,7 @@ header file or preferably cpp file. For example, put the following under "protec
 
 Initialize timers in the constructor:
 
-::
+.. code:: cpp
 
   # if you have many timers;
   const TimerNameList_t<PSTimers>
@@ -827,7 +828,7 @@ Initialize timers in the constructor:
 
 Finally, there are two ways of using the timers. Using the ScopedTimer is required when possible.
 
-::
+.. code:: cpp
 
   // RAII pattern
   {
@@ -976,7 +977,7 @@ interface may change to use functions to set and retrieve positions so
 the SoA transformation of the particle data can happen automatically.
 For now, it is crucial to call ``P.update()`` to populate ``RSoA`` anytime ``P.R`` is changed. Otherwise, the distance tables associated with ``R`` will be uninitialized or out-of-date.
 
-::
+.. code:: cpp
 
   const SimulationCell sc;
   ParticleSet elec(sc), ions(sc);
@@ -1037,7 +1038,7 @@ Looping over particles
 
 Some sample code on how to loop over all the particles in an electron-ion distance table:
 
-::
+.. code:: cpp
 
 
   // d_table is an electron-ion distance table
@@ -1057,7 +1058,7 @@ out of the loop.
 
 An example of the first approach is
 
-::
+.. code:: cpp
 
 
   // P is a ParticleSet
@@ -1069,7 +1070,7 @@ An example of the first approach is
 
 An example of the second approach is
 
-::
+.. code:: cpp
 
   // P is a ParticleSet
   assert(P.IsGrouped == true); // ensure particles are grouped
@@ -1227,7 +1228,7 @@ For particle-by-particle moves, each timestep advance
 The following example shows part of an input block for VMC with
 all-electron moves and drift.
 
-::
+.. code:: xml
 
    <qmc method="vmc" target="e" move="alle">
      <parameter name="use_drift">yes</parameter>
@@ -1244,7 +1245,7 @@ To get the electron-ion distances, add the ion ``ParticleSet`` using
 ``addTable`` and save the returned index. Use that index to get the
 ion-electron distance table.
 
-::
+.. code:: cpp
 
    const int ei_id = elecs.addTable(ions); // in the constructor only
    const auto& ei_table = elecs.getDistTable(ei_id); // when consuming a distance table
@@ -1491,7 +1492,7 @@ value of the determinant is stored during the inversion of the matrix
 :math:`M` (``cgetrf``\ :math:`\rightarrow`\ ``cgetri``). Suppose
 :math:`M=LU`, then :math:`S=\prod\limits_{i=1}^N L_{ii} U_{ii}`.
 
-::
+.. code:: cpp
 
   // In DiracDeterminantWithBackflow::evaluateLog(P,G,L)
   Phi->evaluate(BFTrans->QP, FirstIndex, LastIndex, psiM,dpsiM,grad_grad_psiM);
@@ -1557,7 +1558,7 @@ from the notations of ref. :cite:`Kwon1993backflow`. This
 name change is intended to help the reader associate M with the QMCPACK
 variable ``psiM``.
 
-::
+.. code:: cpp
 
   // In DiracDeterminantWithBackflow::evaluateLog(P,G,L)
   for(int i=0; i<num; i++) // k in above formula
@@ -1614,7 +1615,7 @@ the calculations of :math:`L_i`. The first :math:`BF` term can be
 directly calculated in a loop over quasi-particle coordinates
 :math:`j\alpha`.
 
-::
+.. code:: cpp
 
   // In DiracDeterminantWithBackflow::evaluateLog(P,G,L)
   for(int j=0; j<NumPtcls; j++)
@@ -1646,7 +1647,7 @@ which is simply the outer product of :math:`F\otimes F`. Then the
 :math:`AAFF` term can be calculated by fully contracting :math:`AA` with
 :math:`FF`.
 
-::
+.. code:: cpp
 
   // In DiracDeterminantWithBackflow::evaluateLog(P,G,L)
   for(int j=0; j<NumPtcls; j++)
@@ -1669,7 +1670,7 @@ Finally, define the SPO derivative term:
 then the last term is given by the contraction of :math:`Md2M` (``q_j``)
 with the diagonal of :math:`AA`.
 
-::
+.. code:: cpp
 
   for(int j=0; j<NumPtcls; j++)
   {
@@ -1780,7 +1781,7 @@ Cloning
 
 When ``OpenMP`` threads are spawned, the estimator will be cloned by the ``CloneManager``, which is a parent class of many QMC drivers.
 
-::
+.. code:: cpp
 
   // In CloneManager.cpp
   #pragma omp parallel for shared(w,psi,ham)
@@ -1793,7 +1794,7 @@ When ``OpenMP`` threads are spawned, the estimator will be cloned by the ``Clone
 
 In the preceding snippet, ``ham`` is the reference to the estimator on the master thread. If the implemented estimator does not allocate memory for any array, then the default constructor should suffice for the ``makeClone`` method.
 
-::
+.. code:: cpp
 
   // In SpeciesKineticEnergy.cpp
   OperatorBase* SpeciesKineticEnergy::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
@@ -1803,7 +1804,7 @@ In the preceding snippet, ``ham`` is the reference to the estimator on the maste
 
 If memory is allocated during estimator construction (usually when parsing the XML node in the ``put`` method), then the ``makeClone`` method should perform the same initialization on each thread.
 
-::
+.. code:: cpp
 
   OperatorBase* LatticeDeviationEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
   {
@@ -1817,7 +1818,7 @@ Evaluate
 
 After the observable class (derived class of OperatorBase) is constructed and prepared (by the put() method), it is ready to be used in a QMCDriver. A QMCDriver will call ``H.auxHevaluate(W,thisWalker)`` after every accepted move, where H is the QMCHamiltonian that holds all main and auxiliary Hamiltonian elements, W is a MCWalkerConfiguration, and thisWalker is a pointer to the current walker being worked on. As shown in the following, this function goes through each auxiliary Hamiltonian element and evaluates it using the current walker configuration. Under the hood, observables are calculated and dumped to the main particle set's property list for later collection.
 
-::
+.. code:: cpp
 
   // In QMCHamiltonian.cpp
   // This is more efficient.
@@ -1869,7 +1870,7 @@ The first step is to create a barebone class structure for this simple scalar es
 
 To achieve this, first create a header file "SpeciesKineticEnergy.h" in the QMCHamiltonians folder, with only the required functions declared as follows:
 
-::
+.. code:: cpp
 
   // In SpeciesKineticEnergy.h
   #ifndef QMCPLUSPLUS_SPECIESKINETICENERGY_H
@@ -1910,7 +1911,7 @@ To achieve this, first create a header file "SpeciesKineticEnergy.h" in the QMCH
 
 Notice that a local reference ``tpset`` to the target particle set ``P`` is saved in the constructor. The target particle set carries much information useful for calculating observables. Next, make "SpeciesKineticEnergy.cpp," and make vacuous definitions.
 
-::
+.. code:: cpp
 
   // In SpeciesKineticEnergy.cpp
   #include <QMCHamiltonians/SpeciesKineticEnergy.h>
@@ -1943,7 +1944,7 @@ Notice that a local reference ``tpset`` to the target particle set ``P`` is save
 
 Now, head over to HamiltonianFactory and instantiate this observable if an XML node is found requesting it. Look for "gofr" in HamiltonianFactory.cpp, for example, and follow the if block.
 
-::
+.. code:: cpp
 
   // In HamiltonianFactory.cpp
   #include <QMCHamiltonians/SpeciesKineticEnergy.h>
@@ -1961,7 +1962,7 @@ Evaluate
 
 The evaluate() method is where we perform the calculation of the desired observable. In a first iteration, we will simply hard-code the name and mass of the particles.
 
-::
+.. code:: cpp
 
   // In SpeciesKineticEnergy.cpp
   #include <QMCHamiltonians/BareKineticEnergy.h> // laplaician() defined here
@@ -1998,7 +1999,7 @@ kinetic energy of the up electron (group=“u") or the down electron
 (group=“d"). This is easily achievable using the OhmmsAttributeSet
 class,
 
-::
+.. code:: cpp
 
   // In SpeciesKineticEnergy.cpp
   #include <OhmmsData/AttributeSet.h>
@@ -2020,7 +2021,7 @@ class,
 
 where we may keep "group" and "minus\_over\_2m" as local variables to our specific class.
 
-::
+.. code:: cpp
 
   // In SpeciesKineticEnergy.h
   private:
@@ -2039,7 +2040,7 @@ Make sure the sum of the “ukinetic" and “dkinetic" columns is
 
 For easy reference, a summary of the complete list of changes follows:
 
-::
+.. code:: cpp
 
   // In HamiltonianFactory.cpp
   #include "QMCHamiltonians/SpeciesKineticEnergy.h"
@@ -2050,7 +2051,7 @@ For easy reference, a summary of the complete list of changes follows:
   	targetH->addOperator(apot,potName,false);
   }
 
-::
+.. code:: cpp
 
   // In SpeciesKineticEnergy.h
   #include <Particle/WalkerSetRef.h>
@@ -2092,7 +2093,7 @@ For easy reference, a summary of the complete list of changes follows:
   } // namespace qmcplusplus
   #endif
 
-::
+.. code:: cpp
 
   // In SpeciesKineticEnergy.cpp
   #include <QMCHamiltonians/SpeciesKineticEnergy.h>
@@ -2148,7 +2149,7 @@ Multiple scalars
 
 It is fairly straightforward to create more than one column in the ``scalar.dat`` file with a single observable class. For example, if we want a single SpeciesKineticEnergy estimator to simultaneously record the kinetic energies of all species in the target particle set, we only have to write two new methods: addObservables() and setObservables(), then tweak the behavior of evaluate(). First, we will have to override the default behavior of addObservables() to make room for more than one column in the ``scalar.dat`` file as follows,
 
-::
+.. code:: cpp
 
   // In SpeciesKineticEnergy.cpp
   void SpeciesKineticEnergy::addObservables(PropertySetType& plist, BufferType& collectables)
@@ -2164,7 +2165,7 @@ where “num_species” and “species_name” can be local variables
 initialized in the constructor. We should also initialize some local
 arrays to hold temporary data.
 
-::
+.. code:: cpp
 
   // In SpeciesKineticEnergy.h
   private:
@@ -2191,7 +2192,7 @@ arrays to hold temporary data.
 
 Next, we need to override the default behavior of ``setObservables()`` to transfer multiple values to the property list kept by the main particle set, which eventually goes into the ``scalar.dat`` file.
 
-::
+.. code:: cpp
 
   // In SpeciesKineticEnergy.cpp
   void SpeciesKineticEnergy::setObservables(PropertySetType& plist)
@@ -2202,7 +2203,7 @@ Next, we need to override the default behavior of ``setObservables()`` to transf
 Finally, we need to change the behavior of evaluate() to fill the local
 vector “species_kinetic” with appropriate observable values.
 
-::
+.. code:: cpp
 
   SpeciesKineticEnergy::Return_t SpeciesKineticEnergy::evaluate(ParticleSet& P)
   {
@@ -2226,7 +2227,7 @@ HDF5 output
 
 If we desire an observable that will output hundreds of scalars per simulation step (e.g., SkEstimator), then it is preferred to output to the ``stat.h5`` file instead of the ``scalar.dat`` file for better organization. A large chunk of data to be registered in the ``stat.h5`` file is called a "Collectable" in QMCPACK. In particular, if a OperatorBase object is initialized with ``UpdateMode.set(COLLECTABLE,1)``, then the "Collectables" object carried by the main particle set will be processed and written to the ``stat.h5`` file, where "UpdateMode" is a bit set (i.e., a collection of flags) with the following enumeration:
 
-::
+.. code:: cpp
 
   // In OperatorBase.h
   ///enum for UpdateMode
@@ -2241,7 +2242,7 @@ If we desire an observable that will output hundreds of scalars per simulation s
 
 As a simple example, to put the two columns we produced in the previous section into the ``stat.h5`` file, we will first need to declare that our observable uses "Collectables."
 
-::
+.. code:: cpp
 
   // In constructor add:
   hdf5_out = true;
@@ -2249,7 +2250,7 @@ As a simple example, to put the two columns we produced in the previous section 
 
 Then make some room in the "Collectables" object carried by the target particle set.
 
-::
+.. code:: cpp
 
   // In addObservables(PropertySetType& plist, BufferType& collectables) add:
   if (hdf5_out)
@@ -2261,7 +2262,7 @@ Then make some room in the "Collectables" object carried by the target particle 
 
 Next, make some room in the ``stat.h5`` file by overriding the registerCollectables() method.
 
-::
+.. code:: cpp
 
   // In SpeciesKineticEnergy.cpp
   void SpeciesKineticEnergy::registerCollectables(std::vector<observable_helper>& h5desc, hid_t gid) const
@@ -2278,7 +2279,7 @@ Next, make some room in the ``stat.h5`` file by overriding the registerCollectab
 
 Finally, edit evaluate() to use the space in the "Collectables" object.
 
-::
+.. code:: cpp
 
   // In SpeciesKineticEnergy.cpp
   SpeciesKineticEnergy::Return_t SpeciesKineticEnergy::evaluate(ParticleSet& P)
@@ -2393,7 +2394,7 @@ Collect stage
 
 File output is performed by the master ``EstimatorManager`` owned by ``QMCDriver``. The first 8+ entries in ``EstimatorManagerBase::AverageCache`` will be written to ``scalar.dat``. The remaining entries in ``AverageCache`` will be written to ``stat.h5``. File writing is triggered by ``EstimatorManagerBase`` ``::collectBlockAverages`` inside ``EstimatorManagerBase::stopBlock``.
 
-::
+.. code:: cpp
 
   // In EstimatorManagerBase.cpp::collectBlockAverages
     if(Archive)
@@ -2412,7 +2413,7 @@ File output is performed by the master ``EstimatorManager`` owned by ``QMCDriver
 
 ``EstimatorManagerBase::collectBlockAverages`` is triggered from the master-thread estimator via either ``stopBlock(std::vector)`` or ``stopBlock(RealType, true)``. Notice that file writing is NOT triggered by the slave-thread estimator method ``stopBlock(RealType, false)``.
 
-::
+.. code:: cpp
 
   // In EstimatorManagerBase.cpp
   void EstimatorManagerBase::stopBlock(RealType accept, bool collectall)
@@ -2431,7 +2432,7 @@ File output is performed by the master ``EstimatorManager`` owned by ``QMCDriver
       collectBlockAverages(1);
   }
 
-::
+.. code:: cpp
 
   // In ScalarEstimatorBase.h
   template<typename IT>
@@ -2466,7 +2467,7 @@ should unload a subset of walkers. Thus, the slave estimator should call
 ``SimpleFixedNodeBranch::myEstimator``, should unload data from the
 entire walker ensemble. This is achieved by calling ``accumulate(W)``.
 
-::
+.. code:: cpp
 
   void EstimatorManagerBase::accumulate(MCWalkerConfiguration& W)
   { // intended to be called by master estimator only
@@ -2478,7 +2479,7 @@ entire walker ensemble. This is achieved by calling ``accumulate(W)``.
       Collectables->accumulate_all(W.Collectables,1.0);
   }
 
-::
+.. code:: cpp
 
   void EstimatorManagerBase::accumulate(MCWalkerConfiguration& W
    , MCWalkerConfiguration::iterator it
@@ -2492,7 +2493,7 @@ entire walker ensemble. This is achieved by calling ``accumulate(W)``.
       Collectables->accumulate_all(W.Collectables,1.0);
   }
 
-::
+.. code:: cpp
 
   // In LocalEnergyEstimator.h
   inline void accumulate(const Walker_t& awalker, RealType wgt)
@@ -2507,7 +2508,7 @@ entire walker ensemble. This is achieved by calling ``accumulate(W)``.
       scalars[target](ePtr[source],wwght);
   }
 
-::
+.. code:: cpp
 
   // In CollectablesEstimator.h
   inline void accumulate_all(const MCWalkerConfiguration::Buffer_t& data, RealType wgt)
@@ -2528,7 +2529,7 @@ Load ensemble stage
   ``::KineticEnergy``, and ``::Observables`` must be properly populated
   at the end of the evaluate stage.
 
-::
+.. code:: cpp
 
   // In QMCHamiltonian.h
     template<class IT>
@@ -2552,7 +2553,7 @@ Evaluate stage
   ``QMCHamiltonian::evaluate`` and ``QMCHamiltonian::``
 | ``auxHevaluate``.
 
-::
+.. code:: cpp
 
   // In QMCHamiltonian.cpp
   QMCHamiltonian::Return_t
@@ -2577,7 +2578,7 @@ Evaluate stage
     return LocalEnergy;
   }
 
-::
+.. code:: cpp
 
   // In QMCHamiltonian.cpp
   void QMCHamiltonian::auxHevaluate(ParticleSet& P, Walker_t& ThisWalker)
@@ -2603,7 +2604,7 @@ Estimator use cases
 VMCSingleOMP pseudo code
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-::
+.. code:: cpp
 
   bool VMCSingleOMP::run()
   {
@@ -2634,7 +2635,7 @@ VMCSingleOMP pseudo code
 DMCOMP  pseudo code
 ^^^^^^^^^^^^^^^^^^^
 
-::
+.. code:: cpp
 
   bool DMCOMP::run()
   {

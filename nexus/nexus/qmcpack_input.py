@@ -134,6 +134,7 @@
 
 
 import os
+from pathlib import Path
 import inspect
 import keyword
 import numpy as np
@@ -3166,7 +3167,7 @@ class QmcpackInput(SimulationInput,Names):
         element  = None
         if arg0 is None and arg1 is None:
             None
-        elif isinstance(arg0,str) and arg1 is None:
+        elif isinstance(arg0,(str, Path)) and arg1 is None:
             filepath = arg0
         elif isinstance(arg0,QIxml) and arg1 is None:
             element = arg0
@@ -7093,86 +7094,119 @@ def generate_jastrow3(function='polynomial',esize=3,isize=3,rcut=4.,coeff=None,i
 
 
 def generate_kspace_jastrow(
-        kc1    = None, 
-        kc2    = None, 
-        nk1    = 0, 
-        nk2    = 0,
-        symm1  = 'isotropic', 
-        symm2  = 'isotropic', 
-        coeff1 = None, 
-        coeff2 = None,
-        opt1   = None,
-        opt2   = None,
+        kc1:    float | None = None, 
+        kc2:    float | None = None, 
+        nk1:    int          = 0, 
+        nk2:    int          = 0,
+        symm1:  str          = 'isotropic', 
+        symm2:  str          = 'isotropic', 
+        coeff1: list         = None, 
+        coeff2: list         = None,
+        opt1:   bool | None  = None,
+        opt2:   bool | None  = None,
         ):
-  """Generate <jastrow type="kSpace">
+    """Generate ``<jastrow type="kSpace">``
 
-  Parameters
-  ----------
+    Parameters
+    ----------
     kc1 : float, optional
-      kcut for one-body Jastrow, default 0
+        kcut for one-body Jastrow. Must provide this and/or ``kc2``.
     kc2 : float, optional
-      kcut for two-body Jastrow, default 0
-    nk1 : int, optional
-      number of coefficients for one-body Jastrow, default 0
-    nk2 : int, optional
-      number of coefficients for two-body Jastrow, default 0
-    symm1 : str, optional
-      one of ['crystal', 'isotropic', 'none'], default 'isotropic'
-    symm2 : str, optional
-      one of ['crystal', 'isotropic', 'none'], default is 'isotropic'
+        kcut for two-body Jastrow. Must provide this and/or ``kc1``.
+    nk1 : int, default=0
+        Number of coefficients for one-body Jastrow.
+    nk2 : int, default=0
+        Number of coefficients for two-body Jastrow.
+    symm1 : {'crystal', 'isotropic', 'none'}, default='isotropic'
+        Impose specified symmetry on 1-body Jastrow coefficients.
+        See Notes for description.
+    symm2 : {'crystal', 'isotropic', 'none'}, default='isotropic'
+        Impose specified symmetry on 2-body Jastrow coefficients.
+        See Notes for description.
     coeff1 : list, optional
-      one-body Jastrow coefficients, default None
+        One-body Jastrow coefficients, optional.
     coeff2 : list, optional
-      list, optional two-body Jastrow coefficients, default None
-  Returns
-  -------
-    jk: QIxml
-      kspace_jastrow qmcpack_input element
-  """
-  J1k = kc1 is not None
-  J2k = kc2 is not None
-  if not J1k and not J2k:
-      QmcpackInput.class_error('must have at least one term', 'generate_kspace_jastrow')
-  #end if      
-  if coeff1 is None: coeff1 = [0]*nk1
-  if coeff2 is None: coeff2 = [0]*nk2
-  if len(coeff1) != nk1:
-      QmcpackInput.class_error('coeff1 mismatch', 'generate_kspace_jastrow')
-  #end if
-  if len(coeff2) != nk2:
-      QmcpackInput.class_error('coeff2 mismatch', 'generate_kspace_jastrow')
-  #end if
+        Two-body Jastrow coefficients, optional.
+    opt1 : bool or None, default=None
+        Set whether or not the one-body Jastrow coefficients are optimizable.
+        See Notes for more information.
+    opt2 : bool or None, default=None
+        Set whether or not the two-body Jastrow coefficients are optimizable.
+        See Notes for more information.
 
-  corrs = []
-  if J1k:
-      corr1 = correlation(
-          type         = 'One-Body',
-          symmetry     = symm1,
-          kc           = kc1,
-          coefficients = section(id='cG1', type='Array', coeff=coeff1),
-          )
-      if opt1 is not None:
-          corr1.coefficients.optimize = bool(opt1)
-      corrs.append(corr1)
-  #end if
-  if J2k:
-      corr2 = correlation(
-          type         = 'Two-Body',
-          symmetry     = symm2,
-          kc           = kc2,
-          coefficients = section(id='cG2', type='Array', coeff=coeff2),
-          )
-      if opt2 is not None:
-          corr2.coefficients.optimize = bool(opt2)
-      corrs.append(corr2)
-  #end if
-  jk = kspace_jastrow(
-      type         = 'kSpace',
-      name         = 'Jk',
-      source       = 'ion0',
-      correlations = collection(corrs),
-      )
-  return jk
+    Returns
+    -------
+    jk : QIxml
+        ``kspace_jastrow`` qmcpack_input element
+
+    Notes
+    -----
+    The ``symm1`` and ``symm2`` parameters yield the following behavior:
+
+    ``"crystal"``
+        Impose crystal symmetry on coefficients according to the
+        structure factor.
+
+    ``"isotropic"``
+        Impose spherical symmetry on coefficients according to G-vector
+        magnitude.
+
+    ``"none"``
+        Impose no symmetry on the coefficients.
+
+    The parameters ``opt1`` and ``opt2`` are not necessarily guaranteed
+    to control the behavior of QMCPACK. See QMCPACK's documentation on
+    `k-space Jastrow`_.
+
+    .. _k-space Jastrow: https://qmcpack.readthedocs.io/en/develop/intro_wavefunction.html#long-ranged-jastrow-k-space-jastrow
+    """
+    J1k = kc1 is not None
+    J2k = kc2 is not None
+    if not J1k and not J2k:
+        QmcpackInput.class_error('must have at least one term', 'generate_kspace_jastrow')
+    #end if      
+    if coeff1 is None:
+        coeff1 = [0]*nk1
+    if coeff2 is None:
+        coeff2 = [0]*nk2
+
+    if len(coeff1) != nk1:
+        QmcpackInput.class_error('coeff1 mismatch', 'generate_kspace_jastrow')
+    #end if
+    if len(coeff2) != nk2:
+        QmcpackInput.class_error('coeff2 mismatch', 'generate_kspace_jastrow')
+    #end if
+
+    corrs = []
+    if J1k:
+        corr1 = correlation(
+            type         = 'One-Body',
+            symmetry     = symm1,
+            kc           = kc1,
+            coefficients = section(id='cG1', type='Array', coeff=coeff1),
+            )
+        if opt1 is not None:
+            corr1.coefficients.optimize = bool(opt1)
+        corrs.append(corr1)
+    #end if
+    if J2k:
+        corr2 = correlation(
+            type         = 'Two-Body',
+            symmetry     = symm2,
+            kc           = kc2,
+            coefficients = section(id='cG2', type='Array', coeff=coeff2),
+            )
+        if opt2 is not None:
+            corr2.coefficients.optimize = bool(opt2)
+        corrs.append(corr2)
+    #end if
+    jk = kspace_jastrow(
+        type         = 'kSpace',
+        name         = 'Jk',
+        source       = 'ion0',
+        correlations = collection(corrs),
+        )
+    return jk
 # end def generate_kspace_jastrow
 
 

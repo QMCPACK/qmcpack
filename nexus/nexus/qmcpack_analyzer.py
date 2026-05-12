@@ -25,6 +25,7 @@
 import os
 import sys
 import traceback
+from pathlib import Path
 import numpy as np
 #custom library imports
 from .developer import obj, unavailable
@@ -117,7 +118,7 @@ class QmcpackAnalysisRequest(QAobject):
                  output=set(['averages','samples']),
                  ndmc_blocks=1000,equilibration=None,group_num=None,
                  traces=False,dm_settings=None):
-        self.source          = source          
+        self.source          = source if not isinstance(source, Path) else str(source.resolve())
         self.destination     = destination     
         self.savefile        = str(savefile)
         self.output          = set(output)
@@ -241,7 +242,7 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
             #end if
         elif isinstance(arg0,QmcpackAnalysisRequest):
             request = arg0
-        elif isinstance(arg0,str):
+        elif isinstance(arg0, (str, Path)):
             kwargs['source']=arg0
             request = QmcpackAnalysisRequest(**kwargs)
         else:
