@@ -48,6 +48,7 @@ from .developer import DevBase, obj, unavailable, error
 from .basisset import process_gaussian_text, GaussianBasisSet
 from .physical_system import PhysicalSystem
 from .testing import object_eq
+from .utilities import path_string
 
 try:
     import matplotlib.pyplot as plt
@@ -179,7 +180,7 @@ class Pseudopotentials(DevBase):
             elif isinstance(pp,str):
                 ppfiles.append(pp)
             elif isinstance(pp, Path):
-                ppfiles.append(str(pp))
+                ppfiles.append(path_string(pp))
             else:
                 self.error('expected PseudoFile type or filepath, got '+str(type(pp)),exit=False)
                 errors = True
@@ -311,7 +312,7 @@ class PPset(DevBase):
                 elif symbol in ppcoll:
                     self.error('incorrect use of ppset\nmore than one pseudopotential file provided for element "{0}" for code "{1}" in set labeled "{2}"\nfirst file: {3}\nsecond file: {4}'.format(symbol,code,label,ppcoll[symbol],pp))
                 #end if
-                ppcoll[symbol] = str(pp)
+                ppcoll[symbol] = path_string(pp)
             #end for
             pseudos[clow] = ppcoll
         #end for
