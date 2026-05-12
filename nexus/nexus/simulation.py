@@ -68,7 +68,6 @@
 import os
 import sys
 import shutil
-from pathlib import Path
 from string import Template
 from subprocess import Popen
 import tempfile
@@ -77,6 +76,7 @@ from .physical_system import PhysicalSystem
 from .machines import Job
 from .pseudopotential import ppset
 from .nexus_base import NexusCore, nexus_core
+from .utilities import path_string
 
  
 class SimulationInput(NexusCore):
@@ -102,8 +102,7 @@ class SimulationInput(NexusCore):
     #end def write_file_text
 
     def read(self,filepath):
-        if isinstance(filepath, Path):
-            filepath = str(filepath.resolve())
+        filepath = path_string(filepath)
         tokens = filepath.split(None,1)
         if len(tokens)>1:
             text = filepath
@@ -474,9 +473,7 @@ class Simulation(NexusCore):
             self[name] = kw[name]
         #end for
         if 'path' in allowed:
-            p = self.path
-            if isinstance(p, Path):
-                p = str(p.resolve())
+            p = path_string(self.path)
 
             if not isinstance(p,str):
                 self.error('path must be a string or Path, you provided {0} (type {1})'.format(p,p.__class__.__name__))
@@ -484,9 +481,7 @@ class Simulation(NexusCore):
             if p.startswith('./'):
                 p = p[2:]
             #end if
-            ld = nexus_core.local_directory
-            if isinstance(ld, Path):
-                ld = str(ld.resolve())
+            ld = path_string(nexus_core.local_directory)
 
             if p.startswith(ld):
                 p = p.split(ld)[1].lstrip('/')
