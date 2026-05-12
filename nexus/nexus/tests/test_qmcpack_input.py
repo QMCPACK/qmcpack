@@ -2133,11 +2133,11 @@ def test_symbolic_excited_state():
     dia = generate_physical_system(
         units     = 'A',
         axes      = [[ 1.785,  1.785,  0.   ],
-                        [ 0.   ,  1.785,  1.785],
-                        [ 1.785,  0.   ,  1.785]],
+                     [ 0.   ,  1.785,  1.785],
+                     [ 1.785,  0.   ,  1.785]],
         elem      = ['C','C'],
         pos       = [[ 0.    ,  0.    ,  0.    ],
-                        [ 0.8925,  0.8925,  0.8925]],
+                     [ 0.8925,  0.8925,  0.8925]],
         use_prim  = True,    # Use SeeK-path library to identify prim cell
         tiling    = [2,1,2], 
         kgrid     = (1,1,1), 

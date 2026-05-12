@@ -672,23 +672,23 @@ def test_read_cif():
     ref = generate_structure(
         units = 'A',
         axes  = [[ 2.665,   0.    , -6.5525],
-                    [ 0.   ,   5.4126,  0.    ],
-                    [ 2.665,   0.    ,  6.5525]],
+                 [ 0.   ,   5.4126,  0.    ],
+                 [ 2.665,   0.    ,  6.5525]],
         elem  = 'La La La La Cu Cu O O O O O O O O'.split(),
         pos   = [[ 2.665 ,      5.37038172, -1.8071795 ],
-                    [ 2.665 ,      2.74851828,  4.7453205 ],
-                    [ 2.665 ,      2.66408172, -4.7453205 ],
-                    [ 2.665 ,      0.04221828,  1.8071795 ],
-                    [ 0.    ,      0.        ,  0.        ],
-                    [ 2.665 ,      2.7063    ,  0.        ],
-                    [ 1.3325,      1.35315   , -0.128429  ],
-                    [ 3.9975,      4.05945   ,  0.128429  ],
-                    [ 3.9975,      1.35315   , -0.128429  ],
-                    [ 1.3325,      4.05945   ,  0.128429  ],
-                    [ 2.665 ,      0.23490684, -4.1398695 ],
-                    [ 2.665 ,      2.47139316,  2.4126305 ],
-                    [ 2.665 ,      2.94120684, -2.4126305 ],
-                    [ 2.665 ,      5.17769316,  4.1398695 ]],
+                 [ 2.665 ,      2.74851828,  4.7453205 ],
+                 [ 2.665 ,      2.66408172, -4.7453205 ],
+                 [ 2.665 ,      0.04221828,  1.8071795 ],
+                 [ 0.    ,      0.        ,  0.        ],
+                 [ 2.665 ,      2.7063    ,  0.        ],
+                 [ 1.3325,      1.35315   , -0.128429  ],
+                 [ 3.9975,      4.05945   ,  0.128429  ],
+                 [ 3.9975,      1.35315   , -0.128429  ],
+                 [ 1.3325,      4.05945   ,  0.128429  ],
+                 [ 2.665 ,      0.23490684, -4.1398695 ],
+                 [ 2.665 ,      2.47139316,  2.4126305 ],
+                 [ 2.665 ,      2.94120684, -2.4126305 ],
+                 [ 2.665 ,      5.17769316,  4.1398695 ]],
         )
 
     assert(structure_same(s,ref))
@@ -774,8 +774,8 @@ def test_primitive_search():
         )
 
     tmatrix = [[ 2, -2,  2],
-                [ 2,  2, -2],
-                [-2,  2,  2]]
+               [ 2,  2, -2],
+               [-2,  2,  2]]
 
     d64 = d2.tile(tmatrix)
 
@@ -789,8 +789,8 @@ def test_primitive_search():
     tmatrix = d64.tilematrix(dprim)
 
     axes_ref = np.array([[0.   , 1.785, 1.785],
-                            [1.785, 0.   , 1.785],
-                            [1.785, 1.785, 0.   ]])
+                         [1.785, 0.   , 1.785],
+                         [1.785, 1.785, 0.   ]])
     tmatrix_ref = np.array([[-2,  2,  2],
                             [ 2, -2,  2],
                             [ 2,  2, -2]])
@@ -1610,21 +1610,21 @@ def test_rmg_transform():
 
     res = obj()
     for struct,cell in ref.keys():
-            s = generate_structure(
-                structure = struct,
-                cell      = cell,
-                )
-            st,rmg_inputs,R,tmatrix,bv = s.rmg_transform(
-                allow_tile    = True,
-                allow_general = True,
-                all_results   = True,
-                )
-            res[struct,cell] = obj(
-                rmg_inputs = rmg_inputs,
-                R          = R,
-                tmatrix    = tmatrix,
-                bv         = bv,
-                )
+        s = generate_structure(
+            structure = struct,
+            cell      = cell,
+            )
+        st,rmg_inputs,R,tmatrix,bv = s.rmg_transform(
+            allow_tile    = True,
+            allow_general = True,
+            all_results   = True,
+            )
+        res[struct,cell] = obj(
+            rmg_inputs = rmg_inputs,
+            R          = R,
+            tmatrix    = tmatrix,
+            bv         = bv,
+            )
     #end for
 
     assert(testing.check_object_eq(res,ref,atol=1e-12))
