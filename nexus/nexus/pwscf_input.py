@@ -905,7 +905,6 @@ for sec in section_classes:
 #end for
 
 
-exit_ = sys.exit
 def check_new_variables(exit=True):
     sections = section_classes
     msg = ''
@@ -926,7 +925,7 @@ def check_new_variables(exit=True):
         log('section checks of new variables passed')
     #end if
     if exit:
-        exit_()
+        sys.exit()
     #end if
 #end def check_new_variables
 #check_new_variables()
@@ -971,7 +970,7 @@ def check_section_classes(exit=True):
         log('pwscf input checks passed')
     #end if
     if exit:
-        exit_()
+        sys.exit()
     #end if
 #end def check_section_classes
 #check_section_classes()
