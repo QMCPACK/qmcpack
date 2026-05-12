@@ -45,6 +45,7 @@
 
 
 import os
+import sys
 import inspect
 from copy import deepcopy
 import numpy as np
@@ -904,7 +905,7 @@ for sec in section_classes:
 #end for
 
 
-exit_ = exit
+exit_ = sys.exit
 def check_new_variables(exit=True):
     sections = section_classes
     msg = ''
