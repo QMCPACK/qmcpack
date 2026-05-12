@@ -13,8 +13,6 @@ from nexus.nexus_base import nexus_core
 from ..testing import value_eq,object_eq
 from ..testing import FailedTest,failed
 
-from .. import versions
-
 from ..developer import obj
 from ..simulation import Simulation,SimulationInput,SimulationAnalyzer
 
@@ -2836,14 +2834,14 @@ def test_generic_simulation(tmp_path):
 
 
 
-if versions.matplotlib_available and versions.pydot_available:
-    def test_graph_sims():
-        from ..simulation import Simulation,graph_sims
+def test_graph_sims():
+    _ = pytest.importorskip("matplotlib")
+    _ = pytest.importorskip("pydot")
+    from ..simulation import Simulation,graph_sims
 
-        sims = get_test_workflow(3)
+    sims = get_test_workflow(3)
 
-        graph_sims(sims.list(),display=False,exit=False)
+    graph_sims(sims.list(),display=False,exit=False)
 
-        Simulation.clear_all_sims()
-    #end def test_graph_sims
-#end if
+    Simulation.clear_all_sims()
+#end def test_graph_sims

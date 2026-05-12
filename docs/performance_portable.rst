@@ -61,7 +61,7 @@ Use the following changes to update input files to use the batched drivers.
 1. Update the project block to include the ``driver_version`` parameter. While not required (their use is the default), specifying the ``driver_version``
    helps indicate that the input is for the modern code. For example:
 
-::
+.. code-block:: xml
 
   <project id="my_qmc_research" series="0">
      <parameter name="driver_version">batch</parameter>
