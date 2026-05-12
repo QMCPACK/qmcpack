@@ -153,26 +153,26 @@ Nightly testing currently includes at least the following software versions:
 
 * Compilers
   
-  * Clang/LLVM 20.1.4
-  * GCC 14.2.0, 12.4.0
+  * Clang/LLVM 22.1.1
+  * GCC 15.2.0, 13.4.0
   * OneAPI 2025.3
 
-* Boost 1.88.0, 1.82.0
+* Boost 1.90.0, 1.84.0
 * HDF5 1.14.5
 * FFTW 3.3.10
-* CMake 3.31.6
-* OpenMPI 5.0.6
-* CUDA 12.6
-* ROCm 6.4.0
-* Python 3.13.2
-* NumPy 2.2.5
+* CMake 4.2.3, 3.27.9
+* OpenMPI 5.0.10
+* CUDA 12.9
+* ROCm 7.0.1
+* Python 3.14.2
+* NumPy 2.3.5
 
 For GPU acceleration on NVIDIA GPUs we test LLVM with CUDA using the above versions. On AMD GPUs we support using the latest ROCm
 version and its matching amdclang compiler, as listed above. On Intel GPUs we test the up-to-date OneAPI release.
 
 GitHub Actions-based tests include additional version combinations from within our two-year support window.
 
-Workflow tests are currently performed with Quantum ESPRESSO v7.4.1 and PySCF v2.9.0. These check trial wavefunction generation and
+Workflow tests are currently performed with Quantum ESPRESSO v7.5 and PySCF v2.13.0. These check trial wavefunction generation and
 conversion through to actual QMC runs.
 
 C++ 17 standard library
@@ -900,7 +900,7 @@ Job script example with one MPI rank per GPU. Frontier is configured in low oper
 cores are not available on each node by default. i.e. We use 7 OpenMP CPU threads per MPI rank. The part of the job script that
 makes specific modules available is copied directly from the build script used above.
 
-::
+.. code-block:: bash
 
   #!/bin/bash
   #SBATCH -A MAT151
@@ -952,7 +952,7 @@ Installing on systems with ARMv8-based processors
 
 The following build recipe was verified using the 'Arm Compiler for HPC' on the ANL JLSE Comanche system with Cavium ThunderX2 processors on November 6, 2018.
 
-::
+.. code-block:: bash
 
   # load armclang compiler
   module load Generic-AArch64/RHEL/7/arm-hpc-compiler/18.4
@@ -964,7 +964,7 @@ The following build recipe was verified using the 'Arm Compiler for HPC' on the 
 
 Then using the following command:
 
-::
+.. code-block:: bash
 
   mkdir build_armclang
   cd build_armclang

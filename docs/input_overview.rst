@@ -23,7 +23,7 @@ QMCPACK uses XML to represent structured data in its input file.  Instead of tex
 
 QMCPACK input looks like
 
-::
+.. code-block:: xml
 
   <project id="vmc" series="0">
   </project>
@@ -38,7 +38,7 @@ XML elements start with ``<element_name>``, end with ``</element_name>}``, and c
 
 The overall structure of the input file reflects different aspects of the QMC simulation: the simulation cell, particles, trial wavefunction, Hamiltonian, and QMC run parameters.  A condensed version of the actual input file is shown as follows:
 
-::
+.. code-block:: xml
 
   <?xml version="1.0"?>
   <simulation>
@@ -131,7 +131,7 @@ Random number initialization
 
 The random number generator state is initialized from the ``random`` element using the ``seed`` attribute:
 
-::
+.. code-block:: xml
 
   <random seed="1000"/>
 
