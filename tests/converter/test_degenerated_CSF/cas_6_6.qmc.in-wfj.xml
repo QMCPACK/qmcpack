@@ -1,0 +1,71 @@
+<?xml version="1.0"?>
+<simulation>
+  <project id="cas_6_6" series="0"/>
+  <include href="cas_6_6.structure.xml"/>
+  <include href="cas_6_6.wfj.xml"/>
+  <hamiltonian name="h0" type="generic" target="e">
+    <pairpot name="ElecElec" type="coulomb" source="e" target="e" physical="true"/>
+    <pairpot name="IonIon" type="coulomb" source="ion0" target="ion0"/>
+    <pairpot name="IonElec" type="coulomb" source="ion0" target="e"/>
+  </hamiltonian>
+  <qmc method="vmc" move="pbyp" checkpoint="-1">
+    <estimator name="LocalEnergy" hdf5="no"/>
+    <parameter name="walkers">1</parameter>
+    <parameter name="samplesperthread">1</parameter>
+    <parameter name="stepsbetweensamples">10</parameter>
+    <parameter name="substeps">5</parameter>
+    <parameter name="warmupSteps">20</parameter>
+    <parameter name="blocks">10</parameter>
+    <parameter name="timestep">0.5</parameter>
+    <parameter name="usedrift">no</parameter>
+  </qmc>
+  <loop max="4">
+    <qmc method="linear" move="pbyp" checkpoint="-1">
+      <estimator name="LocalEnergy" hdf5="no"/>
+      <parameter name="blocks">20</parameter>
+      <parameter name="warmupSteps">2</parameter>
+      <parameter name="timestep">0.5</parameter>
+      <parameter name="walkers">1</parameter>
+      <parameter name="samples">80000</parameter>
+      <parameter name="substeps">5</parameter>
+      <parameter name="usedrift">no</parameter>
+      <parameter name="MinMethod">OneShiftOnly</parameter>
+      <parameter name="minwalkers">0.1</parameter>
+    </qmc>
+  </loop>
+  <loop max="10">
+    <qmc method="linear" move="pbyp" checkpoint="-1">
+      <estimator name="LocalEnergy" hdf5="no"/>
+      <parameter name="blocks">40</parameter>
+      <parameter name="warmupSteps">5</parameter>
+      <parameter name="timestep">0.5</parameter>
+      <parameter name="walkers">1</parameter>
+      <parameter name="samples">160000</parameter>
+      <parameter name="substeps">5</parameter>
+      <parameter name="usedrift">no</parameter>
+      <parameter name="MinMethod">OneShiftOnly</parameter>
+      <parameter name="minwalkers">0.5</parameter>
+    </qmc>
+  </loop>
+  <qmc method="vmc" move="pbyp" checkpoint="-1">
+    <estimator name="LocalEnergy" hdf5="no"/>
+    <parameter name="walkers">1</parameter>
+    <parameter name="samplesperthread">1</parameter>
+    <parameter name="stepsbetweensamples">10</parameter>
+    <parameter name="substeps">30</parameter>
+    <parameter name="warmupSteps">100</parameter>
+    <parameter name="blocks">200</parameter>
+    <parameter name="timestep">0.1</parameter>
+    <parameter name="usedrift">no</parameter>
+  </qmc>
+  <qmc method="dmc" move="pbyp" checkpoint="20">
+    <estimator name="LocalEnergy" hdf5="no"/>
+    <parameter name="targetwalkers">16000</parameter>
+    <parameter name="reconfiguration">no</parameter>
+    <parameter name="warmupSteps">100</parameter>
+    <parameter name="timestep">0.0005</parameter>
+    <parameter name="steps">30</parameter>
+    <parameter name="blocks">1000</parameter>
+    <parameter name="nonlocalmoves">v3</parameter>
+  </qmc>
+</simulation>
