@@ -19,9 +19,10 @@
 
 import os
 import numpy as np
+from .nexus_base import nexus_core
 from .developer import obj
 from .physical_system import PhysicalSystem
-from .simulation import Simulation
+from .simulation import Simulation, DynamicProcess
 from .pwscf_input import PwscfInput, generate_pwscf_input
 from .pwscf_analyzer import PwscfAnalyzer
 from .execute import execute
@@ -89,6 +90,9 @@ class Pwscf(Simulation):
     supports_restarts = True # supports restartable, but not force restart yet
 
     vdw_table = None
+
+    # dynamic workflow support
+    allowed_requirements = ['none','structure','charge_density','orbitals']
 
     @staticmethod
     def settings(vdw_table=None):
@@ -356,11 +360,74 @@ class Pwscf(Simulation):
     def app_command(self):
         return self.app_name+' -input '+self.infile
     #end def app_command
+
+
+    # dynamic workflow support
+
+    def fill_produces(self):
+        calc = 'scf'
+        if 'calculation' in self.input.control:
+            calc = self.input.control.calculation.lower()
+
+        # charge density
+        if calc=='scf':
+            self.produces.add('charge_density')
+            self.produces.add('energy')
+
+        # orbitals
+        if 'scf' in calc:
+            nkpoints = 1
+            if 'grid' in k_points and k_points.grid==(1,1,1):
+                nkpoints = 1
+            elif 'kpoints' in self.input.k_points:
+                nkpoints = len(self.input.k_points.kpoints)
+            nosym = True
+            if 'nosym' in self.input.system:
+                nosym = self.input.system.nosym
+            if nkpoints==1 or not nosym:
+                self.produces.add('orbitals')
+
+        # structure
+        if 'relax' in calc:
+            self.produces.add('structure')
+            self.produces.add('energy')
+    #end def fill_produces
+
+
+    def recieve_charge_density(self,charge_density_path):
+        if not os.isdir(charge_density_path):
+            self.error('charge density path is not a directory.Path provided: {}'.format(charge_density_path))
+        c = self.input.control
+        res_path = os.path.realpath(charge_density_path)
+        loc_path = os.path.realpath(self.locdir)
+        if res_path==loc_path:
+            return # don't need to do anything if in same directory
+        outdir = os.path.join(self.locdir,c.outdir)
+        command = 'rsync -av {0}/* {1}/'.format(res_path,outdir)
+        if not os.path.exists(outdir):
+            os.makedirs(outdir)
+        sync_record = os.path.join(outdir,'nexus_sync_record')
+        if not os.path.exists(sync_record):
+            print('    Running rsync for the {} directory. This might take a while.'.format(outdir))
+            execute(command)
+            print('    Completed rsync for the {} directory.'.format(outdir))
+            f = open(sync_record,'w')
+            f.write('\n')
+            f.close()
+    #end def recieve_charge_density
+
+
 #end class Pwscf
 
 
 
 def generate_pwscf(**kwargs):
+
+    if nexus_core.dynamic:
+        dp,dyn_args = DynamicProcess.check_first_gen(kwargs)
+        if dp is not None:
+            return dp
+
     sim_args,inp_args = Pwscf.separate_inputs(kwargs)
 
     if 'input' not in sim_args:
@@ -368,6 +435,9 @@ def generate_pwscf(**kwargs):
         sim_args.input = generate_pwscf_input(input_type,**inp_args)
     #end if
     pwscf = Pwscf(**sim_args)
+
+    if nexus_core.dynamic:
+        pwscf = DynamicProcess(sim=pwscf,**dyn_args)
 
     return pwscf
 #end def generate_pwscf

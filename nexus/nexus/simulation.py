@@ -75,7 +75,7 @@ from .developer import obj, unavailable, DevBase
 from .physical_system import PhysicalSystem
 from .machines import Job
 from .pseudopotential import ppset
-from .nexus_base import NexusCore, nexus_core
+from .nexus_base import NexusCore, nexus_core, dynamic_storage
 
  
 class SimulationInput(NexusCore):
@@ -268,7 +268,6 @@ class Simulation(NexusCore):
     sim_directories = dict()
     all_sims = []
 
-
     @classmethod
     def clear_all_sims(cls):
         cls.sim_directories.clear()
@@ -356,7 +355,10 @@ class Simulation(NexusCore):
         #if 'system' in inp_args and isinstance(inp_args.system,PhysicalSystem):
         #    inp_args.system = inp_args.system.copy()
         ##end if
-        return sim_args,inp_args
+        if not nexus_core.dynamic:
+            return sim_args,inp_args
+        else:
+            return sim_args,inp_args,dyn_inputs
     #end def separate_inputs
 
 
@@ -425,6 +427,19 @@ class Simulation(NexusCore):
         self.post_init()
 
         Simulation.all_sims.append(self)
+
+        # dynamic workflow support
+        if nexus_core.dynamic:
+            assert self.simid not in dynamic_storage.simulation_ids
+            self.produces = set()
+            self.products = obj()
+            self.fill_produces()
+            dynamic_storage.simulations[self.simid] = self
+            dynamic_storage.simulation_ids.add(self.simid)
+            # instantly restore image/state data from disk
+            self.reconstruct_cascade()
+            if self.finished:
+                self.fill_products()
     #end def __init__
 
 
@@ -703,6 +718,8 @@ class Simulation(NexusCore):
             
 
     def depends(self,*dependencies):
+        if nexus_core.dynamic:
+            self.error('dynamic workflows do not allow explicit dependencies between simulations')
         if len(dependencies)==0:
             return
         #end if
@@ -1178,6 +1195,10 @@ class Simulation(NexusCore):
             #end if
             self.analyzed = True
             self.save_image()
+
+            # support dynamic workflows
+            if nexus_core.dynamic:
+                self.fill_products()
         #end if
     #end def analyze
 
@@ -1421,6 +1442,17 @@ class Simulation(NexusCore):
             exit_call()
         #end if
     #end def show_input
+
+
+    # dynamic workflow support
+    
+    def fill_produces(self):
+        None
+    #end def fill_produces
+
+    def fill_products(self):
+        None
+    #end def fill_products
 #end class Simulation
 
 
@@ -1833,8 +1865,294 @@ def graph_sims(sims=None,savefile=None,useid=False,exit=True,quants=True,display
 
 
 class DynamicProcess(DevBase):
-    def __init__(self,sim):
-        assert isinstance(sim,Simulation)
-        self.sim=sim
+    '''Enables dynamic workflows execution
+
+    Basic DP contains a single simulation.
+    Derived classes may perform more elaborate processes, 
+    i.e. recovery for failed jobs, resetting the primary
+    simulation object (sim data member) to point at the 
+    final sim in the process.
+
+    Takes the place of Simulation in user scripts. All
+    generate_* simulation functions return DP's when 
+    executing dynamic workflows.
+
+    '''
+
+    all_dynamic_processes = obj()
+
+    allowed_requirements = set([
+        'none',
+        'structure',
+        'charge_density',
+        'orbitals',
+        'jastrow',
+        'wavefunction',
+        ])
+
+    @classmethod
+    def check_first_gen(cls,kw):
+        if 'dynamic_id' not in kwargs:
+            self.error('dynamic workflows require the "dynamic_id" keyword in generate_* functions')
+        dpid = kwargs.pop('dynamic_id')
+        if dpid in DynamicProcess.all_dynamic_processes:
+            dp = DynamicProcess.all_dynamic_processes[dpid]
+            return dp,None
+        else:
+            dp = None
+        if 'requires' not in kwargs:
+            cls.class_error('dependency requirements must be given via the "requires" keyword for dynamic workflows')
+        requires = kwargs.pop('requires')
+        dyn_args = obj(dpid=dpid,requires=requires)
+        return dp,dyn_args
+    #end def check_first_gen
+
+
+    def __init__(self,dpid,sim,requires,produces):
+        if dpid in self.all_dynamic_processes:
+            self.error('dynamic process created with overlapping id.  Provided id: {}'.format(dpid))
+        if not isinstance(sim,Simulation):
+            self.error('expected Simulation type but received type {}'.format(sim.__class__.__name__))
+        if isinstance(requires,str):
+            requires = [requires]
+        if not isinstance(requires,(list,tuple)):
+            self.error('')
+        if not isinstance(requires,set):
+            requires = set(requires)
+        invalid_reqs = requires-self.allowed_requirements
+        if len(invalid_reqs)>0:
+            self.error('invalid requirements provided.\nAllowed requirements: {}\nRequirements provided: {}'.format(list(self.allowed_requirements),list(invalid_reqs)))
+        if len(requires)==0:
+            self.error("every simulation dynamic process must specify least one dependency requirement.\nIf there are no dependencies/requirements, set requires='none'")
+        if 'none' in requires:
+            requires.remove('none')
+        if isinstance(produces,str):
+            produces = [produces]
+        if not isinstance(produces,set):
+            produces = set(produces)
+
+        self.dpid             = dpid     # unique identifier, str
+        self.sim              = sim      # wrapped Simulation object
+        self.requires         = requires # replaces dependencies
+        self.unfulfilled_reqs = set(requires)
+        self.req_values       = obj()
+        self.reqs_met         = False
+
+        self.all_dynamic_processes[dpid] = self
+        dynamic_storage.dynamic_processes[dpid] = self
+        dynamic_storage.dynamic_process_ids.add(dpid)
     #end def __init__
+
+
+    def requirements_met(self):
+        if self.reqs_met:
+            return True
+        reqs_met  = True
+        reqs_met &= len(self.unfulfilled_reqs)==0
+        reqs_met &= len(self.requires-set(self.req_values))==0
+        if reqs_met:
+            self.reqs_met = reqs_met
+        return reqs_met
+    #end def requirements_met
+
+    def _check_get_product(self,prod_name):
+        '''Support product getter functions
+        
+        Note that requirements are a subset of products
+        '''
+        sim = self.sim
+        msg = None
+        if not prod_name in sim.produces:
+            msg = 'simulation does not produce "{}"'.format(prod_name)
+        elif not sim.finished:
+            msg = 'simulation is not finished, requested prod_name "{}" has not been computed yet'.format(prod_name)
+        elif not sim.analyzed:
+            msg = 'simulation has not been analyzed, requested prod_name "{}" has not been computed yet'.format(prod_name)
+        elif prod_name not in sim.products:
+            msg = 'simulation products have not been handled correctly.  This is a developer error'
+        if msg is not None:
+            self.error(msg+'\nSimulation type: {}\nSimulation id: {}\nSimulation directory: {}\nDynamic process id: {}'.format(sim.__class__.__name__,sim.simid,sim.locdir,self.dpid))
+        return sim.products[prod_name]
+    #end def _check_get_product
+
+
+    def _check_set_requirement(self,req_name,req_value=None,is_path=False):
+        '''Support requirement setter functions'''
+        # check supported requirement value types
+        if not isinstance(req_value,str):
+            self.error('product "{}" must be a string.\nReceived type: {}'.format(req_name,req_value.__class__.__name__))
+        # check if requirement value has already been set
+        if req_value not in self.requirement_values:
+            self.req_values[req_name] = req_value
+            already_set = False
+        elif req_value!=self.req_values[req_name]:
+            self.error('attempted assignment of required parameter "{}" with value differing from the original.\nOriginal value: {}\nValue received: {}'.format(req_name,self.req_values[req_name],req_value))
+        else:
+            already_set = True
+        # if already set, return
+        if already_set:
+            return already_set
+        # proceed with incorporation
+        # ensure requirement is one of the supported options in general
+        if req_name not in sim.supported_requirements:
+            self.error('incorporating "{}" into simulation type {} is not supported.'.format(req_name,self.sim.__class__.__name__))
+        elif is_path:
+            # special existence checks for paths
+            path = req_value
+            if not isinstance(path,str):
+                self.error('path to "{}" must be a string.\nReceived type: {}'.format(req_name,path.__class__.__name__))
+            elif not os.path.exists(path):
+                self.error('"{}" path does not exist.\nPath provided: {}'.format(product,path))
+        # mark the requirement as fulfilled
+        self.unfulfilled_requirements.remove(prod_name)
+        return already_set
+    #end def _check_set_requirement
+
+
+    # general access to product info
+    @property
+    def produces(self):
+        return self.sim.produces
+
+    @property
+    def products(self):
+        return self.sim.products
+
+    # getters for all possible requirements (subset of products)
+    @property
+    def structure(self):
+        return self._check_get_product('structure')
+
+    @property
+    def charge_density(self):
+        return self._check_get_product('charge_density')
+
+    @property
+    def orbitals(self):
+        return self._check_get_product('orbitals')
+
+    @property
+    def jastrow(self):
+        return self._check_get_product('jastrow')
+
+    @property
+    def wavefunction(self):
+        return self._check_get_product('wavefunction')
+
+
+    # setters for all possible requirements
+    @structure.setter
+    def structure(self,struct):
+        already_set = self._check_set_requirement(
+            'structure',struct,is_path=True)
+        if already_set:
+            return
+        struct = read_structure(struct)
+        self.sim.input.incorporate_structure(struct)
+    #end def structure
+
+    @charge_density.setter
+    def charge_density(self,charge_density):
+        already_set = self._check_set_requirement(
+            'charge_density',charge_density,is_path=True)
+        if already_set:
+            return
+        self.sim.receive_charge_density(charge_density)
+    #end def charge_density
+
+    @orbitals.setter
+    def orbitals(self,orbitals):
+        already_set = self._check_set_requirement(
+            'orbitals',orbitals,is_path=True)
+        if already_set:
+            return
+        self.sim.receive_orbitals(orbitals)
+    #end def orbitals
+
+    @jastrow.setter
+    def jastrow(self,jastrow):
+        already_set = self._check_set_requirement(
+            'jastrow',jastrow,is_path=True)
+        if already_set:
+            return
+        self.sim.receive_jastrow(jastrow)
+    #end def jastrow
+
+    @wavefunction.setter
+    def wavefunction(self,wavefunction):
+        already_set = self._check_set_requirement(
+            'wavefunction',wavefunction,is_path=True)
+        if already_set:
+            return
+        self.sim.receive_wavefunction(wavefunction)
+    #end def wavefunction
+
+
+    # preserve Simulation UI
+    #   data fields and functions
+    @property
+    def simid(self):
+        return self.sim.simid
+
+    @property
+    def identifier(self):
+        return self.sim.identifier
+
+    @property
+    def job(self):
+        return self.sim.job
+     
+    @property
+    def input(self):
+        return self.sim.input
+
+    @input.setter
+    def input(self,input):
+        self.sim.input = input
+
+    def show_input(self):
+        self.sim.show_input()
+
+    @property
+    def system(self):
+        return self.sim.system
+
+    @property
+    def analyzer_image(self):
+        return self.sim.analyzer_image
+
+    #   status_flags
+    @property
+    def setup(self):
+        return self.sim.setup
+
+    @property
+    def sent_files(self):
+        return self.sim.sent_files
+
+    @property
+    def submitted(self):
+        return self.sim.submitted
+
+    @property
+    def finished(self):
+        return self.sim.finished
+
+    @property
+    def got_output(self):
+        return self.sim.got_output
+
+    @property
+    def analyzed(self):
+        return self.sim.analyzed
+
+    # execution modification
+    @property
+    def skip_submit(self):
+        return self.sim.skip_submit
+
+    @property
+    def block(self):
+        return self.sim.block
+
 #end class DynamicProcess

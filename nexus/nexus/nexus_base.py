@@ -247,3 +247,12 @@ _____________________________________________________
         os.chdir(NexusCore.working_directory)
     #end def leave
 #end class NexusCore
+
+
+# support dynamic workflows
+dynamic_storage = obj(
+    simulations         = obj(), # all sims, in dyn proc or not
+    simulation_ids      = set(),
+    dynamic_processes   = obj(),
+    dynamic_process_ids = set(),
+    )
