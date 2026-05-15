@@ -498,8 +498,8 @@ def recenter_points(pos, center, axes):
     pos : NDArray
         Array of positions centered around the given center
 
-    Note
-    ----
+    Notes
+    -----
     This function also ensures that points close (within 1e-12) to the minimum edge (-0.5) of the
     cell are placed exactly on that edge. The intent here is to make sure that atoms close to or
     on the leading edge (+0.5) are wrapped around to retain periodicity.
@@ -1334,8 +1334,8 @@ class Structure(Sobj):
         rmin_edge : float-like or array-like, default=1e-8
             Minimum acceptable distance from the cell edges to any atom in the molecule, potentially specified per-axis.
 
-        Note
-        ----
+        Notes
+        -----
         The default rmin_edge of 1e-8 is designed to just barely contain the molecule. It is
         important to ensure that for larger, non-periodic molecular systems or atoms that the unit
         cell size is sufficiently large to contain the charge density otherwise the molecular system
@@ -3483,17 +3483,17 @@ class Structure(Sobj):
 
     # test needed
     def recorner(self, center = None):
-        """Center atoms around the origin of the cell
-        
+        """Center atoms around the origin of the cell.
+
         Parameters
         ----------
         center : NDArray, default = self.center
             Position of the center of the cell.
-        
-        Note
-        ----
-        If the user supplies `center`, then this will modify `self.center` to reflect
-        that change.
+
+        Notes
+        -----
+        If the user supplies ``center``, then this will modify
+        ``self.center`` to reflect that change.
         """
         if center is not None:
             self.center = np.array(center, dtype=float)
@@ -5240,10 +5240,10 @@ class Structure(Sobj):
         Notes
         -----
         This function will write the positions in the format
-        (in this case using `with_elem=True`)
-        ```python
+        (in this case using ``with_elem=True``)
+        .. code-block:: python
+
             "{element:2} {dim1:12.8f} {dim2:12.8f} ... {dimN:12.8f}\\n"
-        ```
         """
         s = self.copy()
         s.change_units(units)
@@ -5266,8 +5266,8 @@ class Structure(Sobj):
 
 
     def write_xyz(self, filepath=None):
-        """Write a `Structure` object to an XYZ file
-        
+        """Write a ``Structure`` object to an XYZ file
+
         Parameters
         ----------
         filepath : PathLike or None, default=None
@@ -5280,9 +5280,9 @@ class Structure(Sobj):
         xyz : str
             The text that was or would have been written to the XYZ file.
 
-        Note
-        ----
-        To get a string of only the atomic positions, use `pos_to_str()` instead.
+        Notes
+        -----
+        To get a string of only the atomic positions, use ``pos_to_str()`` instead.
         """
         if self.dim!=3:
             self.error('write_xyz is currently only implemented for 3 dimensions')
