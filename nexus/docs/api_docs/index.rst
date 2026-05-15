@@ -10,6 +10,7 @@ This is an in-depth look at all of the user-facing classes and functions in Nexu
 
 .. toctree::
     :maxdepth: 2
+    :titlesonly:
 
     structure
     qmcpack/index

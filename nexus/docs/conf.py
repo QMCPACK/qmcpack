@@ -31,10 +31,14 @@ highlight_language = "python"
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 import sys
-import os
-sys.path.append(os.path.abspath('extensions'))
+from pathlib import Path
+sys.path.append(Path(__file__).parent.parent.resolve())
 
 extensions = [
+    "sphinx.ext.autosummary",
+    "sphinx.ext.autodoc",
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.viewcode",
     "sphinxcontrib.bibtex",
     "sphinx.ext.coverage",
     "sphinx.ext.mathjax",
@@ -93,6 +97,8 @@ html_theme_options = {
     ],
     "show_toc_level": 3,
     "secondary_sidebar_items": ["page-toc"],
+    "pygments_light_style": "default",
+    "pygments_dark_style": "monokai",
 }
 html_favicon = "_static/nexus_logo.svg"
 # html_sidebars = {
