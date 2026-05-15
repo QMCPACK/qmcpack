@@ -36,7 +36,7 @@ d = array('''
 0.010  -14.9894693877551
 0.010  -14.989117346938775'''.split(),dtype=float)
 
-d.shape = len(d)/2,2
+d.shape = len(d)//2, 2
 
 tau    = d[::2,0]         # UNR timesteps
 E_unr  = d[::2,1]         # UNR DMC energy means
@@ -49,10 +49,10 @@ p_unr = tuple((array(p1)+array(p2))/2)
 Efit = polyval(p_unr,tfit)
 
 # print out UNR Fig 7 means and error bars
-print
-print 'Extracted Emix data from UNR Fig. 7'
+print()
+print('Extracted Emix data from UNR Fig. 7')
 for i in range(len(tau)):
-    print '{0:6.4f}  {1:12.6f} +/- {2:12.6f}'.format(tau[i],E_unr[i],Ee_unr[i])
+    print('{0:6.4f}  {1:12.6f} +/- {2:12.6f}'.format(tau[i],E_unr[i],Ee_unr[i]))
 #end for
 
 
@@ -105,7 +105,7 @@ qd = array('''
 0.010   -14.989505  0.000078
 0.005   -14.989772  0.000067
 '''.split(),dtype=float)
-qd.shape = len(qd)/3,3
+qd.shape = len(qd)//3, 3
  
 # extract timestep, mean and errorbar
 qtau    = qd[:,0]
