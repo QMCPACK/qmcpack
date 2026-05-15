@@ -10,7 +10,7 @@ def count_vals(s):
     x,y,z = 0,0,0
     mult = 1
     for c,c1 in zip(s,s[1:]+' '):
-        #print 'c,c1',c,c1
+        #print('c,c1', c, c1)
         if c.isdigit():
             continue
         if c1.isdigit():
@@ -23,7 +23,7 @@ def count_vals(s):
              z += mult
         mult = 1
         if not c.isdigit() and c not in ['S','X','Y','Z']:
-             print 'Error, unknown character',c
+             print('Error, unknown character', c)
     return x,y,z
 
 # order by max number of repeats, then x,y,z
@@ -166,11 +166,11 @@ def read_order(fname):
                 already_seen[order] = 1
             #new_sum = x + y + z
             #if new_sum != current_sum:
-            #    print '  # ',shell_name[new_sum]
+            #    print('  # ', shell_name[new_sum])
             #    current_sum = new_sum
     
-            #print order,x,y,z
-            #print "  ijk.append('%s')"%to_string(x,y,z)
+            #print(order, x, y, z)
+            #print("  ijk.append('%s')"%to_string(x,y,z))
     return order_list
 
 if __name__ == "__main__":
@@ -178,13 +178,13 @@ if __name__ == "__main__":
     order_list = read_order('order.txt')
 
     # Create get_ijk for gen_cartesian_tensor.py
-    #print create_get_ijk(order_list)
+    #print(create_get_ijk(order_list))
 
     # Create getABC for CartesianTensor.h.in
-    #print create_getABC(order_list)
+    #print(create_getABC(order_list))
 
     # Create getABC for SoaCartesianTensor.h.in
-    #print create_getABC_SoA(order_list)
+    #print(create_getABC_SoA(order_list))
 
     # Create order dictionary for PyscfToQmcpack.py in QMCTools
-    print create_gms_order_for_pyscf(order_list)
+    print(create_gms_order_for_pyscf(order_list))

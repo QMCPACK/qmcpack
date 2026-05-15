@@ -860,7 +860,7 @@ def run_template(fname_in, fname_out, bodies):
         if key in bodies:
           line = bodies[key]
         else:
-          print 'Error, template item not found, key:',key, ' line = ',line
+          print('Error, template item not found, key:', key, ' line = ', line)
       out += line
 
   with open(fname_out, 'w') as f:
@@ -904,11 +904,11 @@ def create_soa_cartesian_tensor_h():
 
 
 if __name__ == '__main__':
-    #print gen_evaluate()
-    #print gen_evaluate_all()
-    #print gen_evaluate_with_hessian()
-    #print gen_evaluate_with_third_deriv()
-    #print gen_evaluate_third_deriv_only()
+    #print(gen_evaluate())
+    #print(gen_evaluate_all())
+    #print(gen_evaluate_with_hessian())
+    #print(gen_evaluate_with_third_deriv())
+    #print(gen_evaluate_third_deriv_only())
 
     # Create CartesianTensor.h from CartesianTensor.h.in
     create_cartesian_tensor_h()
