@@ -1,4 +1,4 @@
-
+#! /usr/bin/env python3
 # Generate angular tensors using symbolic expressions for the GTO's and derivatives
 
 # There are two steps to the code generation, and only the second is automated.

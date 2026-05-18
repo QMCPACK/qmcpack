@@ -1,4 +1,4 @@
-
+#! /usr/bin/env python3
 # Generate order of i,j,k indices from Gamess output
 
 # Also see the SETLAB routine in inputb.src for the ordering
