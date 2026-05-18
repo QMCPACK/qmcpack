@@ -4941,7 +4941,8 @@ class Structure(Sobj):
         elem = []
         pos  = []
         if os.path.exists(filepath):
-            lines = open(filepath,'r').read().strip().splitlines()
+            with open(filepath, "r") as f:
+                lines = f.read().strip().splitlines()
         else:
             lines = filepath.strip().splitlines() # "filepath" is file contents
         #end if
@@ -5022,7 +5023,8 @@ class Structure(Sobj):
 
     def read_poscar(self,filepath,elem=None):
         if os.path.exists(filepath):
-            lines = open(filepath,'r').read().splitlines()
+            with open(filepath, "r") as f:
+                lines = f.read().splitlines()
         else:
             lines = filepath.splitlines()  # "filepath" is file contents
         #end if
@@ -5142,7 +5144,8 @@ class Structure(Sobj):
     # test needed
     def read_fhi_aims(self,filepath):
         if os.path.exists(filepath):
-            lines = open(filepath,'r').read().splitlines()
+            with open(filepath, "r") as f:
+                lines = f.read().splitlines()
         else:
             lines = filepath.splitlines() # "filepath" is contents
         #end if
@@ -5300,7 +5303,8 @@ class Structure(Sobj):
         #end for
 
         if filepath is not None:
-            open(filepath,'w').write(c)
+            with open(filepath, "w") as f:
+                f.write(c)
         #end if
         return c
     #end def write_xyz
@@ -5333,7 +5337,8 @@ class Structure(Sobj):
             c += '   {0:>3} {1:12.8f}  {2:12.8f}  {3:12.8f}\n'.format(enum,r[0],r[1],r[2])
         #end for
         if filepath is not None:
-            open(filepath,'w').write(c)
+            with open(filepath, "w") as f:
+                f.write(c)
         #end if
         return c
     #end def write_xsf
@@ -5352,7 +5357,8 @@ class Structure(Sobj):
         poscar.pos        = s.pos
         c = poscar.write_text()
         if filepath is not None:
-            open(filepath,'w').write(c)
+            with open(filepath, "w") as f:
+                f.write(c)
         #end if
         return c
     #end def write_poscar
@@ -5372,7 +5378,8 @@ class Structure(Sobj):
             c += 'atom_frac   {0: 12.8f}  {1: 12.8f}  {2: 12.8f}  {3}\n'.format(p[0],p[1],p[2],e)
         #end for
         if filepath is not None:
-            open(filepath,'w').write(c)
+            with open(filepath, "w") as f:
+                f.write(c)
         #end if
         return c
     #end def write_fhi_aims

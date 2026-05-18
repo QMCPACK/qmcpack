@@ -194,6 +194,7 @@ class GamessAnalyzer(SimulationAnalyzer):
                 self.ao_populations = ao_populations
             #end if
         #end if
+        log.close()
     #end def analyze_log
 
 
@@ -484,6 +485,7 @@ class GamessAnalyzer(SimulationAnalyzer):
                     #end if
                     punch.norbitals = norbs
                 #end if
+                text.close()
             #end if
         except:
             if self.info.exit:

@@ -119,7 +119,8 @@ class gamessPPFile(PseudoFile):
     #end def __init__
 
     def read(self,filepath):
-        lines = open(filepath,'r').read().splitlines()
+        with open(filepath, "r") as f:
+            lines = f.read().splitlines()
         new_block  = True
         tokens     = []
         block      = ''
@@ -390,7 +391,8 @@ class Pseudopotential(DevBase):
             self.error('cannot read {0}, file does not exist'.format(filepath))
         #end if
         self.element = pp_elem_label(os.path.split(filepath)[1])[0]
-        text = open(filepath,'r').read()
+        with open(filepath, "r") as f:
+            text = f.read()
         self.read_text(text,format,filepath=filepath)
     #end def read
 
@@ -405,7 +407,8 @@ class Pseudopotential(DevBase):
         #end if
         text = self.write_text(format)
         if filepath is not None:
-            open(filepath,'w').write(text)
+            with open(filepath, "w") as f:
+                f.write(text)
         #end if
         return text
     #end def write
@@ -1489,7 +1492,8 @@ class SemilocalPP(Pseudopotential):
         text = header+grid+L2+semilocal+footer
 
         if filepath is not None:
-            open(filepath,'w').write(text)
+            with open (filepath, "w") as f:
+                f.write(text)
         #end if
         return text
     #end def write_qmcpack
@@ -2656,7 +2660,7 @@ class CasinoPP(SemilocalPP):
             #end for
             lpots.append(convert(v,self.unitmap[units],'Ha'))
         #end while
-
+        file.close()
         # fill in SemilocalPP class data obtained from read
         self.element = element
         self.Zval    = int(Z)
