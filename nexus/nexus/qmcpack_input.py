@@ -4600,11 +4600,9 @@ class QmcpackInput(SimulationInput,Names):
             .. code-block:: python
 
                 qi.modify(
-                    pseudo_files = {
-                        "Mo": "Mo.ccECP.xml",
-                        "S" : "S.ccECP.xml",
-                    }
-                )
+                    pseudo_files = dict(
+                        Mo = 'Mo.ccECP.xml',
+                        S  = 'S.ccECP.xml'))
 
             Atomic species matching is case insensitive.
         calculations : None or list of qmc or loop objects
