@@ -12,8 +12,7 @@
 #      C. Apply clang-format on modified source files.
 
 
-from collections import namedtuple, defaultdict
-from sympy import *
+from sympy import sympify, Symbol, symbols, diff
 
 # See the GaussianOrbitals notebook in the qmc_algorithms repo for more explanation,
 #  especially about the normalization.
