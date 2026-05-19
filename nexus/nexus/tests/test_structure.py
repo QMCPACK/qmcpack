@@ -11,6 +11,7 @@ from .. import testing
 from ..testing import value_eq as value_eq_orig
 from ..testing import object_eq as object_eq_orig
 from ..testing import object_diff as object_diff_orig
+from ..testing import text_eq
 
 
 struct_atol = 1e-10
@@ -1779,9 +1780,9 @@ def test_reset_axes():
 
     structure.reset_axes(new_axes)
 
-    np.testing.assert_allclose(structure.axes, new_axes, rtol=1e-7)
-    np.testing.assert_allclose(structure.kaxes, new_kaxes, rtol=1e-7)
-    np.testing.assert_allclose(structure.center, new_center, rtol=1e-7)
+    np.testing.assert_allclose(structure.axes, new_axes)
+    np.testing.assert_allclose(structure.kaxes, new_kaxes)
+    np.testing.assert_allclose(structure.center, new_center)
 
 
 def test_reset_axes_none():
@@ -1836,9 +1837,9 @@ def test_reset_axes_none():
 
     structure.reset_axes(axes = None)
 
-    np.testing.assert_allclose(structure.axes, original_axes, rtol=1e-7)
-    np.testing.assert_allclose(structure.kaxes, ref_kaxes, rtol=1e-7)
-    np.testing.assert_allclose(structure.center, ref_center, rtol=1e-7)
+    np.testing.assert_allclose(structure.axes, original_axes)
+    np.testing.assert_allclose(structure.kaxes, ref_kaxes)
+    np.testing.assert_allclose(structure.center, ref_center)
 
 def test_write_axes():
     from nexus.structure import Structure
@@ -1870,7 +1871,8 @@ def test_write_axes():
         "  0.00000000  12.00000000   0.00000000\n"
         "  0.00000000   0.00000000 300.00000000\n"
     )
-    assert(structure.write_axes() == ref_write_axes)
+    calc_write_axes = structure.write_axes()
+    assert(text_eq(calc_write_axes, ref_write_axes))
 
 
 def test_corners():
@@ -1909,4 +1911,4 @@ def test_corners():
         [7.0, 14.0, 35.0],
     ]
 
-    np.testing.assert_allclose(structure.corners(), ref_corners, rtol=1e-7)
+    np.testing.assert_allclose(structure.corners(), ref_corners)
