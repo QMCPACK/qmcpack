@@ -393,12 +393,12 @@ class DynamicWorkflowManager(NexusCore):
 
     def __init__(self):
         # dynamic processes by status
-        self.untouched_dp   = {} # newly minted, perform initial setup
-        self.blocked_dp     = {} # blocked by the user, do nothing
-        self.active_dp      = {} # actively progressing through run stages
-        self.finished_dp    = {} # system or batch process no longer running
-        self.succeeded_dp   = {} # may have failed if detection is faulty
-        self.failed_dp      = {} # known to have failed
+        self.untouched_dp = obj() # newly minted, perform initial setup
+        self.blocked_dp   = obj() # blocked by the user, do nothing
+        self.active_dp    = obj() # actively progressing through run stages
+        self.finished_dp  = obj() # system or batch process no longer running
+        self.succeeded_dp = obj() # may have failed if detection is faulty
+        self.failed_dp    = obj() # known to have failed
 
         self.machine = Machine.get(Job.machine)
         self.add_new_dyn_procs()
@@ -420,7 +420,6 @@ class DynamicWorkflowManager(NexusCore):
         all_sims = dynamic_storage.simulation_ids
         rogue_sims = all_sims-self.all_sims
         if len(rogue_sims)>0:
-            print(all_sims[list(rogue_sims)[0]])
             msg = 'encountered simulations not associated with any dynamic process.\nSimulation ids: {}\nSimulation directories:'
             paths = [all_sims[simid].locdir for simid in rogue_sims]
             for p in sorted(paths):
@@ -462,15 +461,18 @@ class DynamicWorkflowManager(NexusCore):
             del self.untouched_dp[dpid]
 
         # manage active sims
+        rem = []
         for dp in self.active_dp.values():
-            if not dp.requirements_met():
-                self.error('Requirements not met for simulation execution.\nSimulation type: {}\nSimulation id: {}\nSimulation directory: {}\nDynamic process id: {}'.format(sim.__class__.__name__,sim.simid,sim.locdir,dp.dpid))
+            #if not dp.requirements_met():
+            #    self.error('Requirements not met for simulation execution.\nSimulation type:      {}\nSimulation id:        {}\nSimulation directory: {}\nDynamic process id:   {}\nUnmet requirements:   {}'.format(sim.__class__.__name__,sim.simid,sim.locdir,dp.dpid,dp.unmet_reqs))
             sim = dp.sim
             assert len(sim.dependencies)==0
             assert len(sim.dependents)==0
+            if len(dp.unmet_reqs)>0:
+                continue
             if not sim.finished:
                 sim.submit()
-            else:
+            if sim.finished:
                 if not sim.got_output:
                     sim.get_output()
                 if not sim.analyzed:
@@ -480,7 +482,9 @@ class DynamicWorkflowManager(NexusCore):
                     self.failed_dp[dp.dpid] = dp
                 else:
                     self.succeeded_dp[dp.dpid] = dp
-                del self.active_dp[dp.dpid]
+                rem.append(dp.dpid)
+        for dpid in rem:
+            del self.active_dp[dpid]
 
         # submit jobs on the machine and store machine pid in sim
         self.machine.submit_jobs()

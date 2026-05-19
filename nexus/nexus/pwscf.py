@@ -375,7 +375,10 @@ class Pwscf(Simulation):
             self.produces.add('energy')
 
         # orbitals
-        if 'scf' in calc:
+        if calc=='nscf':
+            self.produces.add('orbitals')
+        elif calc=='scf':
+            k_points = self.input.k_points
             nkpoints = 1
             if 'grid' in k_points and k_points.grid==(1,1,1):
                 nkpoints = 1
@@ -394,8 +397,27 @@ class Pwscf(Simulation):
     #end def fill_produces
 
 
-    def recieve_charge_density(self,charge_density_path):
-        if not os.isdir(charge_density_path):
+    def fill_products(self):
+        if len(self.produces)==0:
+            return
+        analyzer = self.load_analyzer_image()
+        if 'energy' in self.produces:
+            self.products.energy = analyzer.E
+        if 'charge_density' in self.produces:
+            outdir = analyzer.input.control.outdir
+            path = os.path.join(self.locdir,outdir)
+            self.products.charge_density = path
+        if 'orbitals' in self.produces:
+            outdir = analyzer.input.control.outdir
+            path = os.path.join(self.locdir,outdir)
+            self.products.orbitals = path
+        if 'structure' in self.produces:
+            raise NotImplementedError('dev needs to implement structure product for pwscf')
+    #end def fill_products
+
+
+    def receive_charge_density(self,charge_density_path):
+        if not os.path.isdir(charge_density_path):
             self.error('charge density path is not a directory.Path provided: {}'.format(charge_density_path))
         c = self.input.control
         res_path = os.path.realpath(charge_density_path)
@@ -411,6 +433,8 @@ class Pwscf(Simulation):
             print('    Running rsync for the {} directory. This might take a while.'.format(outdir))
             execute(command)
             print('    Completed rsync for the {} directory.'.format(outdir))
+            # fix "permission denied" on some systems
+            execute('chmod -R a+rw '+outdir)
             f = open(sync_record,'w')
             f.write('\n')
             f.close()

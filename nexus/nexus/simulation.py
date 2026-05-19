@@ -355,10 +355,7 @@ class Simulation(NexusCore):
         #if 'system' in inp_args and isinstance(inp_args.system,PhysicalSystem):
         #    inp_args.system = inp_args.system.copy()
         ##end if
-        if not nexus_core.dynamic:
-            return sim_args,inp_args
-        else:
-            return sim_args,inp_args,dyn_inputs
+        return sim_args,inp_args
     #end def separate_inputs
 
 
@@ -434,6 +431,8 @@ class Simulation(NexusCore):
             self.produces = set()
             self.products = obj()
             self.fill_produces()
+            for prod in self.produces:
+                self.products[prod] = None
             dynamic_storage.simulations[self.simid] = self
             dynamic_storage.simulation_ids.add(self.simid)
             # instantly restore image/state data from disk
@@ -1447,11 +1446,11 @@ class Simulation(NexusCore):
     # dynamic workflow support
     
     def fill_produces(self):
-        None
+        self.not_implemented('fill_produces')
     #end def fill_produces
 
     def fill_products(self):
-        None
+        self.not_implemented('fill_products')
     #end def fill_products
 #end class Simulation
 
@@ -1892,33 +1891,38 @@ class DynamicProcess(DevBase):
 
     @classmethod
     def check_first_gen(cls,kw):
-        if 'dynamic_id' not in kwargs:
-            self.error('dynamic workflows require the "dynamic_id" keyword in generate_* functions')
-        dpid = kwargs.pop('dynamic_id')
+        dpid = kw.pop('dynamic_id',None)
         if dpid in DynamicProcess.all_dynamic_processes:
             dp = DynamicProcess.all_dynamic_processes[dpid]
             return dp,None
         else:
             dp = None
-        if 'requires' not in kwargs:
+        if 'requires' not in kw:
             cls.class_error('dependency requirements must be given via the "requires" keyword for dynamic workflows')
-        requires = kwargs.pop('requires')
+        requires = kw.pop('requires')
         dyn_args = obj(dpid=dpid,requires=requires)
         return dp,dyn_args
     #end def check_first_gen
 
 
-    def __init__(self,dpid,sim,requires,produces):
+    def __init__(self,sim,requires,dpid=None):
+        produces = sim.produces
+        if dpid is None:
+            key1 = sim.locdir.rstrip('/')+'_key1/'
+            key2 = sim.identifier+'_key2'
+            dpid = key1,key2
         if dpid in self.all_dynamic_processes:
             self.error('dynamic process created with overlapping id.  Provided id: {}'.format(dpid))
         if not isinstance(sim,Simulation):
             self.error('expected Simulation type but received type {}'.format(sim.__class__.__name__))
         if isinstance(requires,str):
             requires = [requires]
-        if not isinstance(requires,(list,tuple)):
-            self.error('')
-        if not isinstance(requires,set):
-            requires = set(requires)
+        elif not isinstance(requires,(tuple,list,set)):
+            self.error('keyword "requires" must be a tuple, list or set of requirements')
+        for req in requires:
+            if not isinstance(req,str):
+                self.error('each requirement in "requires" must be given as a string.\nType received: {}\nValue received: {}'.format(req.__class__.__name__,req))
+        requires = set(requires)
         invalid_reqs = requires-self.allowed_requirements
         if len(invalid_reqs)>0:
             self.error('invalid requirements provided.\nAllowed requirements: {}\nRequirements provided: {}'.format(list(self.allowed_requirements),list(invalid_reqs)))
@@ -1928,15 +1932,20 @@ class DynamicProcess(DevBase):
             requires.remove('none')
         if isinstance(produces,str):
             produces = [produces]
-        if not isinstance(produces,set):
-            produces = set(produces)
+        if not isinstance(produces,(tuple,list,set)):
+            self.error('keyword "requires" must be a tuple, list or set of products')
+        for prod in produces:
+            if not isinstance(req,str):
+                self.error('each product in "produces" must be given as a string.\nType received: {}\nValue received: {}'.format(req.__class__.__name__,req))
+        produces = set(produces)
 
-        self.dpid             = dpid     # unique identifier, str
-        self.sim              = sim      # wrapped Simulation object
-        self.requires         = requires # replaces dependencies
-        self.unfulfilled_reqs = set(requires)
+        self.dpid       = dpid     # unique identifier, str
+        self.sim        = sim      # wrapped Simulation object
+        self.requires   = requires # replaces dependencies
+        self.unmet_reqs = set(requires)
         self.req_values       = obj()
         self.reqs_met         = False
+        self.produces         = produces
 
         self.all_dynamic_processes[dpid] = self
         dynamic_storage.dynamic_processes[dpid] = self
@@ -1948,7 +1957,7 @@ class DynamicProcess(DevBase):
         if self.reqs_met:
             return True
         reqs_met  = True
-        reqs_met &= len(self.unfulfilled_reqs)==0
+        reqs_met &= len(self.unmet_reqs)==0
         reqs_met &= len(self.requires-set(self.req_values))==0
         if reqs_met:
             self.reqs_met = reqs_met
@@ -1982,7 +1991,7 @@ class DynamicProcess(DevBase):
         if not isinstance(req_value,str):
             self.error('product "{}" must be a string.\nReceived type: {}'.format(req_name,req_value.__class__.__name__))
         # check if requirement value has already been set
-        if req_value not in self.requirement_values:
+        if req_name not in self.req_values:
             self.req_values[req_name] = req_value
             already_set = False
         elif req_value!=self.req_values[req_name]:
@@ -1994,7 +2003,7 @@ class DynamicProcess(DevBase):
             return already_set
         # proceed with incorporation
         # ensure requirement is one of the supported options in general
-        if req_name not in sim.supported_requirements:
+        if req_name not in self.sim.allowed_requirements:
             self.error('incorporating "{}" into simulation type {} is not supported.'.format(req_name,self.sim.__class__.__name__))
         elif is_path:
             # special existence checks for paths
@@ -2004,15 +2013,15 @@ class DynamicProcess(DevBase):
             elif not os.path.exists(path):
                 self.error('"{}" path does not exist.\nPath provided: {}'.format(product,path))
         # mark the requirement as fulfilled
-        self.unfulfilled_requirements.remove(prod_name)
+        self.unmet_reqs.remove(req_name)
         return already_set
     #end def _check_set_requirement
 
 
     # general access to product info
-    @property
-    def produces(self):
-        return self.sim.produces
+    #@property
+    #def produces(self):
+    #    return self.sim.produces
 
     @property
     def products(self):
@@ -2146,6 +2155,10 @@ class DynamicProcess(DevBase):
     def analyzed(self):
         return self.sim.analyzed
 
+    @property
+    def failed(self):
+        return self.sim.failed
+
     # execution modification
     @property
     def skip_submit(self):
@@ -2154,5 +2167,4 @@ class DynamicProcess(DevBase):
     @property
     def block(self):
         return self.sim.block
-
 #end class DynamicProcess
