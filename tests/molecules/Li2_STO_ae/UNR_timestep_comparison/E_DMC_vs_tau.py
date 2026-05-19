@@ -57,7 +57,7 @@ for i in range(len(tau)):
 
 
 # recreate UNR Figure 7 (mixed estimator only)
-plt.figure(tight_layout=True)
+plt.figure(layout="constrained")
 plt.plot(tfit,Efit,'k-')
 plt.errorbar(tau,E_unr,Ee_unr,fmt='bs',capsize=5,markerfacecolor='white')
 plt.xlim([0,0.25])
@@ -118,7 +118,7 @@ Efit_v320  = polyval(p_v320,tfit)
 
 
 # Plot QMCPACK v3.2.0 data alongside UNR results
-plt.figure(tight_layout=True)
+plt.figure(layout="constrained")
 plt.plot(tfit,Efit,'k-')
 plt.errorbar(tau,E_unr,Ee_unr,fmt='ks',capsize=5,markerfacecolor='white',label='UNR')
 plt.plot(tfit,Efit_v320,'g-')
@@ -132,7 +132,7 @@ plt.savefig('UNR_vs_QMCPACK.pdf')
 
 
 # Make a zoomed version of the plot
-plt.figure(tight_layout=True)
+plt.figure(layout="constrained")
 plt.plot(tfit,Efit,'k-')
 plt.errorbar(tau,E_unr,Ee_unr,fmt='ks',capsize=5,markerfacecolor='white',label='UNR')
 plt.plot(tfit,Efit_v320,'g-')
