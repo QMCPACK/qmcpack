@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 
-from matplotlib.pyplot import figure,plot,xlabel,ylabel,title,show,ylim,legend,xlim,rcParams,savefig,xticks,yticks,errorbar,tight_layout
+from matplotlib.pyplot import figure,plot,xlabel,ylabel,title,show,ylim,legend,xlim,rcParams,savefig,xticks,yticks,errorbar
 
 params = {'legend.fontsize':14,'figure.facecolor':'white','figure.subplot.hspace':0.,
           'axes.labelsize':16,'xtick.labelsize':14,'ytick.labelsize':14}
@@ -36,7 +36,7 @@ d = array('''
 0.010  -14.9894693877551
 0.010  -14.989117346938775'''.split(),dtype=float)
 
-d.shape = len(d)//2, 2
+d = d.reshape((len(d) // 2, 2))
 
 tau    = d[::2,0]         # UNR timesteps
 E_unr  = d[::2,1]         # UNR DMC energy means
@@ -105,7 +105,7 @@ qd = array('''
 0.010   -14.989505  0.000078
 0.005   -14.989772  0.000067
 '''.split(),dtype=float)
-qd.shape = len(qd)//3, 3
+qd = qd.reshape((len(qd) // 3, 3))
  
 # extract timestep, mean and errorbar
 qtau    = qd[:,0]
