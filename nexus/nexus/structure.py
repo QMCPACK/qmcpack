@@ -119,7 +119,6 @@ Module contents
 from __future__ import annotations
 import os
 from pathlib import Path
-from collections.abc import Sequence
 import numpy as np
 from copy import deepcopy
 from random import randint
@@ -2223,7 +2222,7 @@ class Structure(Sobj):
         ),
         radii:  int | float | list[int | float] | None = None,
         invert: bool = False,
-    ) -> list[int]:
+    ) -> npt.NDArray[np.int64]:
         """Locate atoms in a structure by some identifier(s).
 
         Parameters
