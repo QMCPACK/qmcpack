@@ -399,7 +399,6 @@ class DynamicWorkflowManager(NexusCore):
         self.finished_dp  = obj() # system or batch process no longer running
         self.succeeded_dp = obj() # may have failed if detection is faulty
         self.failed_dp    = obj() # known to have failed
-
         self.machine = Machine.get(Job.machine)
         self.add_new_dyn_procs()
     #end def __init__
@@ -500,7 +499,7 @@ class DynamicWorkflowManager(NexusCore):
 
 
 
-def workflow_manager():
+def workflow_manager(**kw):
     if not hasattr(workflow_manager,'first'):
         workflow_manager.first = True
     else:
@@ -509,6 +508,6 @@ def workflow_manager():
         error('workflow_manager is only compatible with dynamic workflows.\nIf you intend to use dynamic workflows, please set dynamic=True in settings.')
     elif not workflow_manager.first:
         error('function "workflow_manager" should only be called once')
-    wm = DynamicWorkflowManager()
+    wm = DynamicWorkflowManager(**kw)
     return wm
 #end def workflow_manager

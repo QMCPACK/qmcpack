@@ -401,15 +401,16 @@ class Pwscf(Simulation):
         if len(self.produces)==0:
             return
         analyzer = self.load_analyzer_image()
+        input    = analyzer.input
         if 'energy' in self.produces:
             self.products.energy = analyzer.E
         if 'charge_density' in self.produces:
-            outdir = analyzer.input.control.outdir
-            path = os.path.join(self.locdir,outdir)
+            outdir = input.control.outdir
+            path   = os.path.join(self.locdir,outdir)
             self.products.charge_density = path
         if 'orbitals' in self.produces:
-            outdir = analyzer.input.control.outdir
-            path = os.path.join(self.locdir,outdir)
+            outdir = input.control.outdir
+            path   = os.path.join(self.locdir,outdir)
             self.products.orbitals = path
         if 'structure' in self.produces:
             raise NotImplementedError('dev needs to implement structure product for pwscf')

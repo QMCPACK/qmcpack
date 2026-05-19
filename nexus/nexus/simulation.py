@@ -73,7 +73,7 @@ from subprocess import Popen
 import tempfile
 from .developer import obj, unavailable, DevBase
 from .physical_system import PhysicalSystem
-from .machines import Job
+from .machines import Job, Workstation, get_machine
 from .pseudopotential import ppset
 from .nexus_base import NexusCore, nexus_core, dynamic_storage
 
@@ -1335,6 +1335,12 @@ class Simulation(NexusCore):
             self.load_image()
             # continue from interruption
             if self.submitted and not self.finished and self.process_id is not None:
+                machine = get_machine(Job.machine)
+                if isinstance(machine,Workstation):
+                    # fully rerun following interrupt
+                    self.save_attempt()
+                    self.reset_indicators()
+                
                 self.job.system_id = self.process_id # load process id of job
                 self.job.reenter_queue()
             #end if
@@ -1891,7 +1897,15 @@ class DynamicProcess(DevBase):
 
     @classmethod
     def check_first_gen(cls,kw):
-        dpid = kw.pop('dynamic_id',None)
+        nc_loc     = nexus_core.local_directory
+        runs       = nexus_core.runs
+        path       = kw['path']
+        identifier = kw['identifier']
+        locdir = os.path.join(nc_loc,runs,path)
+        if 'dynamic_id' not in kw:
+            cls.class_error('dynamic_id is required for dynamic workflows in a generate_* function.\nSimulation run location: {}\nSimulation identifier  : {}'.format(locdir,identifier))
+        dynamic_id = kw.pop('dynamic_id')
+        dpid = (locdir,identifier,dynamic_id)
         if dpid in DynamicProcess.all_dynamic_processes:
             dp = DynamicProcess.all_dynamic_processes[dpid]
             return dp,None
@@ -1905,16 +1919,16 @@ class DynamicProcess(DevBase):
     #end def check_first_gen
 
 
-    def __init__(self,sim,requires,dpid=None):
-        produces = sim.produces
-        if dpid is None:
-            key1 = sim.locdir.rstrip('/')+'_key1/'
-            key2 = sim.identifier+'_key2'
-            dpid = key1,key2
+    def __init__(self,dpid,sim,requires):
+        # check dynamic id
         if dpid in self.all_dynamic_processes:
             self.error('dynamic process created with overlapping id.  Provided id: {}'.format(dpid))
+
+        # check simulation type
         if not isinstance(sim,Simulation):
             self.error('expected Simulation type but received type {}'.format(sim.__class__.__name__))
+
+        # check requires
         if isinstance(requires,str):
             requires = [requires]
         elif not isinstance(requires,(tuple,list,set)):
@@ -1930,6 +1944,9 @@ class DynamicProcess(DevBase):
             self.error("every simulation dynamic process must specify least one dependency requirement.\nIf there are no dependencies/requirements, set requires='none'")
         if 'none' in requires:
             requires.remove('none')
+
+        # check produces
+        produces = sim.produces
         if isinstance(produces,str):
             produces = [produces]
         if not isinstance(produces,(tuple,list,set)):
@@ -1939,21 +1956,24 @@ class DynamicProcess(DevBase):
                 self.error('each product in "produces" must be given as a string.\nType received: {}\nValue received: {}'.format(req.__class__.__name__,req))
         produces = set(produces)
 
+        # initial values
         self.dpid       = dpid     # unique identifier, str
         self.sim        = sim      # wrapped Simulation object
         self.requires   = requires # replaces dependencies
         self.unmet_reqs = set(requires)
-        self.req_values       = obj()
-        self.reqs_met         = False
-        self.produces         = produces
+        self.req_values = obj()
+        self.reqs_met   = False
+        self.produces   = produces
 
-        self.all_dynamic_processes[dpid] = self
+        # store references in global registries
+        self.all_dynamic_processes[dpid]        = self
         dynamic_storage.dynamic_processes[dpid] = self
         dynamic_storage.dynamic_process_ids.add(dpid)
     #end def __init__
 
 
     def requirements_met(self):
+        '''Check if all input/dependency requirements are met'''
         if self.reqs_met:
             return True
         reqs_met  = True
@@ -1974,13 +1994,13 @@ class DynamicProcess(DevBase):
         if not prod_name in sim.produces:
             msg = 'simulation does not produce "{}"'.format(prod_name)
         elif not sim.finished:
-            msg = 'simulation is not finished, requested prod_name "{}" has not been computed yet'.format(prod_name)
+            msg = 'Simulation is not finished\nProduct "{}" not yet computed'.format(prod_name)
         elif not sim.analyzed:
             msg = 'simulation has not been analyzed, requested prod_name "{}" has not been computed yet'.format(prod_name)
         elif prod_name not in sim.products:
             msg = 'simulation products have not been handled correctly.  This is a developer error'
         if msg is not None:
-            self.error(msg+'\nSimulation type: {}\nSimulation id: {}\nSimulation directory: {}\nDynamic process id: {}'.format(sim.__class__.__name__,sim.simid,sim.locdir,self.dpid))
+            self.error(msg+'\nSimulation type     : {}\nSimulation id       : {}\nSimulation directory: {}\nDynamic process id  : {}'.format(sim.__class__.__name__,sim.simid,sim.locdir,self.dpid))
         return sim.products[prod_name]
     #end def _check_get_product
 

@@ -1421,10 +1421,15 @@ class Supercomputer(Machine):
             #end if
             self.process_job(job)
             self.jobs[jid] = job
+            # If a workstation job is requeued
+            # then it is waking from interruption 
+            # and should be resubmitted from the top
             job.status = job.states.running
-            self.running.add(jid)
-            process = obj(job=job)
-            self.processes[pid] = process
+            #self.running.add(jid)
+            #process = obj(job=job)
+            #self.processes[pid] = process
+            job.status = job.states.waiting
+            self.waiting.add(jid)
         else:
             self.error('requeue_job received non-Job instance '+job.__class__.__name__)
         #end if
