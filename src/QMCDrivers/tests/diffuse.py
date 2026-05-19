@@ -41,16 +41,16 @@ R = np.array([[1.0, 0.0, 0.0],
 
 scaled_chi_vals = chi_vals * math.sqrt(tau)
 
-print 'One step'
+print('One step')
 for r_val, chi_val in zip(R, scaled_chi_vals):
   rp_val = drift_diffuse_func(r_val, np.zeros(3), chi_val, tau)
-  print ['%.15g'%v for v in rp_val]
+  print(['%.15g'%v for v in rp_val])
 
 # In test_vmc_omp, there are two steps taken - one for the initial 'randomize' step,
 #  and one for for the actual VMC step.
-print 'Two steps'
+print('Two steps')
 for r_val, chi_val in zip(R, scaled_chi_vals):
   rp_val = drift_diffuse_func(r_val, np.zeros(3), chi_val, tau)
   rp2_val = drift_diffuse_func(rp_val, np.zeros(3), chi_val, tau)
-  print ['%.15g'%v for v in rp2_val]
+  print(['%.15g'%v for v in rp2_val])
 
