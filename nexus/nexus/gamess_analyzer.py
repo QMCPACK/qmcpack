@@ -194,7 +194,8 @@ class GamessAnalyzer(SimulationAnalyzer):
                 self.ao_populations = ao_populations
             #end if
         #end if
-        log.close()
+        if log is not None:
+            log.close()
     #end def analyze_log
 
 
