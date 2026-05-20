@@ -37,6 +37,7 @@ docs = [
     "pydata-sphinx-theme>=0.17.1",
     "numpydoc>=1.10.0",
     "sphinx-design>=0.6.1",
+    "intersphinx-registry>=0.2605.28",
 ]
 
 [project.optional-dependencies]

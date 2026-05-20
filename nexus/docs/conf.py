@@ -34,6 +34,8 @@ import sys
 from pathlib import Path
 sys.path.append(Path(__file__).parent.parent.resolve())
 
+from intersphinx_registry import get_intersphinx_mapping
+
 extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.autodoc",
@@ -50,6 +52,14 @@ bibtex_bibfiles = ['bibs/methods.bib']
 
 numpydoc_class_members_toctree = False
 numpydoc_show_class_members = True
+numpydoc_xref_ignore = {"optional", "type_without_description"}
+numpydoc_xref_param_type = True
+numpydoc_xref_aliases = {
+    "ArrayLike": "numpy.typing.ArrayLike",
+    "NDArray": "numpy.typing.NDArray",
+    "array_like": "numpy.typing.ArrayLike",
+    "ndarray": "numpy.typing.NDArray",
+}
 numfig = True
 
 # Add any paths that contain templates here, relative to this directory.
@@ -107,3 +117,5 @@ html_favicon = "_static/nexus_logo.svg"
 # }
 
 html_context = {"default_mode": "auto"}
+
+intersphinx_mapping = get_intersphinx_mapping(packages=["python", "numpy"])

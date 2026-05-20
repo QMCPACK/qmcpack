@@ -652,6 +652,15 @@ wheels = [
 ]
 
 [[package]]
+name = "intersphinx-registry"
+version = "0.2605.28"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/cd/b6/cb61d8f425fb016aee75ccf2c209d1f5ac2934c2e960ed9f68035891f4be/intersphinx_registry-0.2605.28.tar.gz", hash = "sha256:51df71bd1709c9b6ab86df62ffaac24dcfb57c36aa267673903d99ed67666d34", size = 19633, upload-time = "2026-05-19T12:22:51.151Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/dc/03/46a5d36db68a3f344285f81baa3c35650b24ed17a7b4a851bdcdae85980c/intersphinx_registry-0.2605.28-py2.py3-none-any.whl", hash = "sha256:4e3b6662425328993a16dba5411bbe6d3a782a54374f9b0f15308fb741310142", size = 21891, upload-time = "2026-05-19T12:22:49.822Z" },
+]
+
+[[package]]
 name = "jinja2"
 version = "3.1.6"
 source = { registry = "https://pypi.org/simple" }
@@ -986,6 +995,7 @@ dev = [
     { name = "pytest-order" },
 ]
 docs = [
+    { name = "intersphinx-registry" },
     { name = "numpydoc" },
     { name = "pydata-sphinx-theme" },
     { name = "sphinx", version = "8.1.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
@@ -1018,6 +1028,7 @@ dev = [
     { name = "pytest-order", specifier = ">=1.3.0" },
 ]
 docs = [
+    { name = "intersphinx-registry", specifier = ">=0.2605.28" },
     { name = "numpydoc", specifier = ">=1.10.0" },
     { name = "pydata-sphinx-theme", specifier = ">=0.17.1" },
     { name = "sphinx", specifier = ">=8.1.0" },
@@ -1881,7 +1892,8 @@ name = "sphinx-design"
 version = "0.7.0"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version >= '3.12'",
+    "python_full_version >= '3.14'",
+    "python_full_version >= '3.12' and python_full_version < '3.14'",
     "python_full_version == '3.11.*'",
 ]
 dependencies = [
