@@ -14,4 +14,7 @@ python:
       command: sync
       groups:
         - docs
+        - dev
+      extras:
+        - full
       path: nexus/
