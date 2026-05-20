@@ -398,6 +398,10 @@ class Pwscf(Simulation):
 
 
     def fill_products(self):
+        if not self.filled_products:
+            self.filled_products = True
+        else:
+            self.error('fill_products must be called only once.\nThis is likely a developer error.')
         if len(self.produces)==0:
             return
         analyzer = self.load_analyzer_image()
@@ -413,7 +417,23 @@ class Pwscf(Simulation):
             path   = os.path.join(self.locdir,outdir)
             self.products.orbitals = path
         if 'structure' in self.produces:
-            raise NotImplementedError('dev needs to implement structure product for pwscf')
+            pa = analyzer
+            structs = pa.structures
+            struct  = structs[len(structs)-1].copy()
+            pos     = struct.positions
+            atoms   = struct.atoms
+            if 'celldm(1)' in self.input.system:
+                scale = self.input.system['celldm(1)']
+            else:
+                scale = 1.0
+            pos = scale*np.array(pos)
+            structure = self.system.structure.copy()
+            structure.change_units('B')
+            structure.set_pos(pos)
+            structure.set_elem(atoms)
+            if 'axes' in struct:
+                structure._set_axes(struct.axes)
+            self.products.structure = structure
     #end def fill_products
 
 
@@ -441,6 +461,19 @@ class Pwscf(Simulation):
             f.close()
     #end def recieve_charge_density
 
+
+    def receive_structure(self,struct):
+        struct.change_units('B')
+        self.system.structure = struct
+        self.system.remove_folded()
+        input = self.input
+        preserve_kp = 'k_points' in input and 'specifier' in input.k_points and (input.k_points.specifier=='automatic' or input.k_points.specifier=='gamma')
+        if preserve_kp:
+            kp = input.k_points.copy()
+        input.incorporate_system(self.system)
+        if preserve_kp:
+            input.k_points = kp
+    #end def receive_structure
 
 #end class Pwscf
 

@@ -72,6 +72,7 @@ from string import Template
 from subprocess import Popen
 import tempfile
 from .developer import obj, unavailable, DevBase
+from .structure import Structure
 from .physical_system import PhysicalSystem
 from .machines import Job, Workstation, get_machine
 from .pseudopotential import ppset
@@ -430,6 +431,7 @@ class Simulation(NexusCore):
             assert self.simid not in dynamic_storage.simulation_ids
             self.produces = set()
             self.products = obj()
+            self.filled_products = False
             self.fill_produces()
             for prod in self.produces:
                 self.products[prod] = None
@@ -2006,17 +2008,28 @@ class DynamicProcess(DevBase):
     #end def _check_get_product
 
 
-    def _check_set_requirement(self,req_name,req_value=None,is_path=False):
+    def _check_set_requirement(self,
+                               req_name,
+                               req_value = None,
+                               req_type  = str,
+                               is_path   = False,
+                               ):
         '''Support requirement setter functions'''
         # check supported requirement value types
-        if not isinstance(req_value,str):
-            self.error('product "{}" must be a string.\nReceived type: {}'.format(req_name,req_value.__class__.__name__))
+        if not isinstance(req_value,req_type):
+            if not isinstance(req_type,tuple):
+                ts = req_type.__name__
+            else:
+                ts = [t.__name__ for t in req_type]
+            self.error('product "{}" must be of type "{}".\nReceived type: {}'.format(req_name,ts,req_value.__class__.__name__))
         # check if requirement value has already been set
         if req_name not in self.req_values:
             self.req_values[req_name] = req_value
             already_set = False
-        elif req_value!=self.req_values[req_name]:
+        elif isinstance(req_value,(str,int)) and req_value!=self.req_values[req_name]:
             self.error('attempted assignment of required parameter "{}" with value differing from the original.\nOriginal value: {}\nValue received: {}'.format(req_name,self.req_values[req_name],req_value))
+        elif id(req_value)!=id(self.req_values[req_name]):
+            self.error('attempted assignment of required parameter "{}" with python id differing from the original.\nOriginal id: {}\nid received: {}'.format(req_name,id(self.req_values[req_name]),id(req_value)))            
         else:
             already_set = True
         # if already set, return
@@ -2026,13 +2039,8 @@ class DynamicProcess(DevBase):
         # ensure requirement is one of the supported options in general
         if req_name not in self.sim.allowed_requirements:
             self.error('incorporating "{}" into simulation type {} is not supported.'.format(req_name,self.sim.__class__.__name__))
-        elif is_path:
-            # special existence checks for paths
-            path = req_value
-            if not isinstance(path,str):
-                self.error('path to "{}" must be a string.\nReceived type: {}'.format(req_name,path.__class__.__name__))
-            elif not os.path.exists(path):
-                self.error('"{}" path does not exist.\nPath provided: {}'.format(product,path))
+        elif is_path and isinstance(req_value,str) and not os.path.exists(req_value):
+            self.error('"{}" path does not exist.\nPath provided: {}'.format(product,req_value))
         # mark the requirement as fulfilled
         self.unmet_reqs.remove(req_name)
         return already_set
@@ -2078,11 +2086,14 @@ class DynamicProcess(DevBase):
     @structure.setter
     def structure(self,struct):
         already_set = self._check_set_requirement(
-            'structure',struct,is_path=True)
+            'structure',struct,req_type=(str,Structure),is_path=True)
         if already_set:
             return
-        struct = read_structure(struct)
-        self.sim.input.incorporate_structure(struct)
+        if isinstance(struct,str):
+            struct = read_structure(struct)
+        else:
+            struct = struct.copy()
+        self.sim.receive_structure(struct)
     #end def structure
 
     @charge_density.setter
@@ -2201,4 +2212,19 @@ class DynamicProcess(DevBase):
     @property
     def block(self):
         return self.sim.block
+
+
+    # try on new user-facing status properties
+    @property
+    def done(self):
+        return self.sim.finished
+
+    @property
+    def succ(self):
+        return self.sim.finished and not self.sim.failed
+
+    @property
+    def fail(self):
+        return self.sim.failed
+        #return self.sim.finished and self.sim.failed
 #end class DynamicProcess
