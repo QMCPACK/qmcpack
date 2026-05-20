@@ -116,6 +116,7 @@ Module contents
 ---------------
 """
 
+from __future__ import annotations
 import os
 from pathlib import Path
 import numpy as np
@@ -131,6 +132,7 @@ from numpy import (
     sqrt,
 )
 from numpy.linalg import inv, det, norm
+import numpy.typing as npt
 from .unit_converter import convert
 from .numerics import nearest_neighbors, convex_hull, voronoi_neighbors
 from .periodic_table import Elements
@@ -2034,74 +2036,291 @@ class Structure(Sobj):
         return nn.ravel()
     #end def locate_simple
 
-    
-    # test needed
-    def locate(self,identifiers,radii=None,exterior=False):
-        indices = None
-        if isinstance(identifiers,Structure):
-            cell = identifiers
+
+    def locate_by_cell(
+        self,
+        cell  : Structure | npt.NDArray,
+        invert: bool = False,
+    ) -> npt.NDArray[np.int64]:
+        """Locate the atoms in a structure contained by a crystal cell.
+
+        Parameters
+        ----------
+        structure : Structure or NDArray
+            The other structure whose unit cell will be used or an array
+            of the unit cell.
+        invert : bool, default=False
+            Optionally locate only atoms outside the unit cell.
+        """
+        if isinstance(cell, Structure):
             indices = cell.inside(self.pos)
-        elif isinstance(identifiers,np.ndarray) and identifiers.dtype==bool:
-            indices = np.arange(len(self.pos))[identifiers]
-        elif isinstance(identifiers,int):
-            indices = [identifiers]
-        elif len(identifiers)>0 and isinstance(identifiers[0],int):
-            indices = identifiers
-        elif isinstance(identifiers,str):
-            atom = identifiers
-            indices = []
-            for i in range(len(self.elem)):
-                if self.elem[i]==atom:
-                    indices.append(i)
-                #end if
-            #end for
-        elif len(identifiers)>0 and isinstance(identifiers[0],str):
-            indices = []
-            for atom in identifiers:
-                for i in range(len(self.elem)):
-                    if self.elem[i]==atom:
-                        indices.append(i)
-                    #end if
-                #end for
-            #end for
-        #end if
-        if radii is not None or indices is None:
-            if indices is None:
-                pos = identifiers
-            else:
-                pos = self.pos[indices]
-            #end if
-            if isinstance(radii,float) or isinstance(radii,int):
-                radii = len(pos)*[radii]
-            elif radii is not None and len(radii)!=len(pos):
-                self.error(
-                    "lengths of input radii and positions do not match\n"
-                    "  len(radii)={0}\n"
-                    "  len(pos)={1}".format(
-                        len(radii), len(pos)
-                    )
+        else:
+            cell = np.asarray(cell, dtype=np.float64)
+            if cell.shape != (self.dim, self.dim):
+                raise ValueError(
+                    f"The cell must have shape ({self.dim}, {self.dim}) but instead has shape {cell.shape}!"
                 )
-            #end if
-            dtable = self.min_image_distances(pos)
-            indices = []
-            if radii is None:
-                for i in range(len(pos)):
-                    indices.append(dtable[i].argmin())
-                #end for
-            else:
-                ipos = np.arange(len(self.pos))
-                for i in range(len(pos)):
-                    indices.extend(ipos[dtable[i]<radii[i]])
-                #end for
-            #end if
-        #end if
-        if exterior:
-            indices = list(set(range(len(self.pos)))-set(indices))
-        #end if
+            indices = self.inside(self.pos, axes=cell, center=cell.sum(axis=0)/2)
+
+        if invert:
+            mask = np.ones(self.size(), dtype=np.bool_)
+            mask[indices] = False
+            indices = np.arange(self.size())[mask]
+
+        indices = np.asarray(indices, dtype=np.int64)
+        indices.sort()
+        return np.flip(indices)
+
+
+    def locate_by_mask(
+        self,
+        mask_array: npt.ArrayLike,
+        invert    : bool = False,
+    ) -> npt.NDArray[np.int64]:
+        """Locate the atoms in a structure by a mask array.
+
+        Parameters
+        ----------
+        mask_array : ArrayLike of bool
+            Mask array of booleans.
+        invert : bool, default=False
+            Optionally return atoms where the array is ``False`` instead
+            of where the array is ``True``.
+        """
+        mask_array = np.asarray(mask_array, dtype=np.bool_)
+        if invert:
+            mask_array = ~mask_array
+
+        indices = np.arange(self.size(), dtype=np.int64)[mask_array]
+        indices.sort()
+        return np.flip(indices)
+
+
+    def locate_by_indices(
+        self,
+        indices: int | list[int],
+        invert : bool = False,
+    ) -> npt.NDArray[np.int64]:
+        """Locate the atoms in a structure by an index or list of indices.
+
+        Parameters
+        ----------
+        indices : int or list of int
+            Index or list of indices of the desired atoms. If this is a
+            single ``int`` then it will be turned into a list of ``int``.
+        invert : bool, default=False
+            Optionally invert the indices.
+
+        Returns
+        -------
+        indices : ndarray of int
+            List of indices of the located atoms. This will have the
+            same values as the input unless ``invert=True``.
+        """
+        if isinstance(indices, int):
+            indices = [indices]
+        else:
+            indices = np.asarray(indices, dtype=np.int64)
+
+        if invert:
+            mask = np.ones(self.size(), dtype=np.bool_)
+            mask[indices] = False
+            indices = np.arange(self.size())[mask]
+
+        indices = np.asarray(indices, dtype=np.int64)
+        indices.sort()
+        return np.flip(indices)
+
+
+    def locate_by_elements(
+        self,
+        elements: str | int | Elements | list[str | Elements | int],
+        invert  : bool = False,
+    ) -> npt.NDArray[np.int64]:
+        """Locate the atoms in a structure by their element.
+
+        Parameters
+        ----------
+        elements : str, int, Elements, or a list of str, int, Elements.
+            Atomic symbol(s), number(s), or member(s) of the
+            ``Elements`` enum.
+        invert : bool, default=False
+            Optionally invert the indices.
+        """
+        if not isinstance(elements, list | tuple | np.ndarray):
+            elements = [elements]
+        elif len(elements) == 0:
+            raise ValueError("Can not use an empty list/tuple/array for locating atoms!")
+
+        indices = []
+        for elem in elements:
+            for i, self_elem in enumerate(self.elem):
+                if self_elem == elem:
+                    indices.append(i)
+
+        if invert:
+            mask = np.ones(self.size(), dtype=np.bool_)
+            mask[indices] = False
+            indices = np.arange(self.size())[mask]
+
+        indices = np.asarray(indices, dtype=np.int64)
+        indices.sort()
+        return np.flip(indices)
+
+
+    def locate_by_neighbors(
+        self,
+        pos   : list[int | npt.NDArray[np.floating]],
+        radii : int | float | list[int | float],
+        invert: bool = False,
+    ) -> npt.NDArray[np.int64]:
+        """Locate atoms in a structure if they are within a distance from a position.
+
+        Parameters
+        ----------
+        pos : list of int or list of vectors
+            Either the indices of atoms in the structure, or a list of
+            3D coordinates.
+        radii : int or float or list of int or float
+            Radii within which atoms must be to be selected.
+        invert : bool, default=False
+            Optionally invert the indices.
+        """
+        if len(pos) == 0:
+            raise ValueError("Can not use an empty list/tuple/array for locating atoms!")
+
+        if isinstance(pos, list | tuple | np.ndarray) and isinstance(pos[0], int):
+            pos = self.pos[pos]
+        else:
+            pos = np.asarray(pos, dtype=np.float64)
+
+        if isinstance(radii, float | int):
+            radii = [radii] * len(pos)
+        elif len(radii) != len(pos):
+            self.error(
+                "Lengths of input radii and positions do not match\n"
+               f"  len(radii)={len(radii)}\n"
+               f"  len(pos)={len(pos)}"
+            )
+
+        dist_table = self.min_image_distances(pos)
+        ipos = np.arange(len(self.pos))
+        indices = []
+        for i in range(len(pos)):
+            indices.extend(ipos[dist_table[i] < radii[i]])
+
+        if invert:
+            mask = np.ones(self.size(), dtype=np.bool_)
+            mask[indices] = False
+            indices = np.arange(self.size())[mask]
+
+        indices = np.asarray(indices, dtype=np.int64)
+        indices.sort()
+        return np.flip(indices)
+
+
+    def locate(
+        self,
+        identifiers: (
+            Structure
+            | npt.NDArray[np.bool_]
+            | int
+            | str
+            | Elements
+            | list[str | Elements | int | float]
+        ),
+        radii : int | float | list[int | float] | None = None,
+        invert: bool = False,
+    ) -> npt.NDArray[np.int64]:
+        """Locate atoms in a structure by some identifier(s).
+
+        Parameters
+        ----------
+        identifiers : Structure or ndarray or int or str or Elements or list of ndarray/int/str/Elements
+            Used to select between the various locate functions.
+        radii : int or float or list of int/float
+            See ``locate_by_neighbors`` for description.
+        invert : bool, default=False
+            Optionally invert the selection to choose all atoms `not`
+            selected by the identifiers.
+
+        See Also
+        --------
+        locate_by_cell :
+            Called when ``identifiers`` is a ``Structure``.
+        locate_by_mask :
+            Called when ``identifiers`` is an ndarray of bool.
+        locate_by_indices :
+            Called when ``identifiers`` is an int or list of int.
+        locate_by_elements :
+            Called when ``identifiers`` is a str or Elements or list of either.
+        locate_by_neighbors :
+            Called when ``identifiers`` is a 2D ndarray or ``radii`` is provided.
+        """
+
+        # We will use the matched positions in locate_by_neighbor with the supplied radii
+        delay_invert = radii is not None and invert is True
+        if delay_invert:
+            invert = False
+
+        if isinstance(identifiers, Structure):
+            indices = self.locate_by_cell(
+                cell   = identifiers,
+                invert = invert,
+            )
+        elif isinstance(identifiers, np.ndarray) and identifiers.dtype == bool:
+            indices = self.locate_by_mask(
+                mask_array = identifiers,
+                invert     = invert,
+            )
+        elif isinstance(identifiers, int):
+            indices = self.locate_by_indices(
+                indices = identifiers,
+                invert  = invert,
+            )
+        elif isinstance(identifiers, str | Elements):
+            indices = self.locate_by_elements(
+                elements = identifiers,
+                invert   = invert,
+            )
+        elif isinstance(identifiers, list | tuple | np.ndarray):
+            if len(identifiers) == 0:
+                raise ValueError("Can not use an empty list/tuple/array for locating atoms!")
+
+            if isinstance(identifiers[0], int):
+                indices = self.locate_by_indices(
+                    indices = identifiers,
+                    invert  = invert,
+                )
+            elif isinstance(identifiers[0], str | Elements):
+                indices = self.locate_by_elements(
+                    elements = identifiers,
+                    invert   = invert,
+                )
+            elif isinstance(identifiers[0], np.ndarray):
+                identifiers = np.asarray(identifiers, dtype=np.float64)
+                if identifiers.shape[1] != 3:
+                    raise ValueError(
+                        f"Can not use array with shape {identifiers.shape} to locate atoms!"
+                    )
+                indices = self.locate_by_neighbors(
+                    pos=self.pos[indices],
+                    radii=radii,
+                    invert=invert or delay_invert,
+                )
+                return indices # Early return to avoid redundant second call.
+
+        if radii is not None and len(indices) > 0: # If we don't have any indices skip this step.
+            indices = self.locate_by_neighbors(
+                pos=self.pos[indices],
+                radii=radii,
+                invert=delay_invert,
+            )
+
         return indices
     #end def locate
 
-    
+
     def freeze(self,identifiers=None,radii=None,exterior=False,negate=False,directions='xyz'):
         if isinstance(identifiers,np.ndarray) and identifiers.shape==self.pos.shape and identifiers.dtype==bool:
             if negate:
@@ -2610,12 +2829,12 @@ class Structure(Sobj):
                 core.append(pd.center)
             #end for
             core = np.array(core)
-            bulk_ind = self.locate(core,radii=dtol,exterior=True)
-            core_ind = self.locate(bulk_ind,exterior=True)
+            bulk_ind = self.locate(core,radii=dtol,invert=True)
+            core_ind = self.locate(bulk_ind,invert=True)
             bulk = self.pos[bulk_ind]
         else:
             core_ind = self.locate(identifiers,radii,exterior)
-            bulk_ind = self.locate(core_ind,exterior=True)
+            bulk_ind = self.locate(core_ind,invert=True)
             core = self.pos[core_ind]
             bulk = self.pos[bulk_ind]
         #end if
