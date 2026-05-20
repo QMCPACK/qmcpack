@@ -1752,45 +1752,45 @@ class Structure(Sobj):
 
     # test needed
     def rotate(self,r,rp=None,passive=False,units="radians",check=True):
-        """
-        Arbitrary rotation of the structure.
+        """Arbitrary rotation of the structure.
+
         Parameters
         ----------
-        r  : `array_like, float, shape (3,3)` or `array_like, float, shape (3,)` or `str`
-            If a 3x3 matrix, then code executes rotation consistent with this matrix -- 
-            it is assumed that the matrix acts on a column-major vector (eg, v'=Rv)
-            If a three-dimensional array, then the operation of the function depends
-            on the input type of rp in the following ways:
-                1. If rp is a scalar, then rp is assumed to be an angle and a rotation 
-                   of rp is made about the axis defined by r
-                2. If rp is a vector, then rp is assumed to be an axis and a rotation is made 
-                   such that r aligns with rp
-                3. If rp is a str, then the rotation is such that r aligns with the
-                   axis given by the str ('x', 'y', 'z', 'a0', 'a1', or 'a2')
-            If a str then the axis, r, is defined by the input label (e.g. 'x', 'y', 'z', 'a1', 'a2', or 'a3')
-            and the operation of the function depends on the input type of rp in the following
-            ways (same as above):
-                1. If rp is a scalar, then rp is assumed to be an angle and a rotation 
-                   of rp is made about the axis defined by r
-                2. If rp is a vector, then rp is assumed to be an axis and a rotation is made 
-                   such that r aligns with rp
-                3. If rp is a str, then the rotation is such that r aligns with the
-                   axis given by the str ('x', 'y', 'z', 'a0', 'a1', or 'a2')
-        rp : `array_like, float, shape (3), optional` or `str, optional`
-            If a 3-dimensional vector is given, then rp is assumed to be an axis and a rotation is made
-            such that the axis r is aligned with rp.
-            If a str, then rp is assumed to be an angle and a rotation about the axis defined by r 
-            is made by an angle rp
-            If a str is given, then rp is assumed to be an axis defined by the given label
-            (e.g. 'x', 'y', 'z', 'a1', 'a2', or 'a3') and a rotation is made such that the axis r 
-            is aligned with rp.
-        passive : `bool, optional, default False`
-            If `True`, perform a passive rotation
-            If `False`, perform an active rotation
-        units : `str, optional, default "radians"`
-            Units of rp, if rp is given as an angle (scalar)
-        check : `bool, optional, default True`
-            Perform a check to verify rotation matrix is orthogonal
+        r : array_like of float with shape (3,3) or array_like of float shape (3,) or str
+            If a 3x3 matrix, then code executes rotation consistent with this
+            matrix -- it is assumed that the matrix acts on a column-major
+            vector (eg, v'=Rv). If a three-dimensional array, then the operation
+            of the function depends on the input type of ``rp`` in the
+            following ways:
+
+            1. If ``rp`` is a scalar, then ``rp`` is assumed to be an angle and
+               a rotation of ``rp`` is made about the axis defined by ``r``.
+            2. If ``rp`` is a vector, then ``rp`` is assumed to be an axis and a 
+               rotation is made such that ``r`` aligns with ``rp``.
+            3. If ``rp`` is a ``str``, then the rotation is such that ``r``
+               aligns with the axis given by the str
+               ``('x', 'y', 'z', 'a0', 'a1', or 'a2')``.
+
+            If a ``str`` then the axis, ``r``, is defined by the input label
+            (e.g. 'x', 'y', 'z', 'a1', 'a2', or 'a3') and the operation of the
+            function depends on the input type of ``rp`` in the same ways as
+            above.
+        rp : array_like of float with shape (3) or str, optional
+            If a 3-dimensional vector is given, then ``rp`` is assumed to be an
+            axis and a rotation is made such that the axis ``r`` is aligned with
+            ``rp``.
+            If a str, then ``rp`` is assumed to be an angle and a
+            rotation about the axis defined by ``r`` is made by an angle ``rp``.
+            If a str is given, then ``rp`` is assumed to be an axis defined by
+            the given label (e.g. 'x', 'y', 'z', 'a1', 'a2', or 'a3') and a
+            rotation is made such that the axis ``r`` is aligned with ``rp``.
+        passive : bool, default=False
+            If ``True``, perform a passive rotation.
+            If ``False``, perform an active rotation.
+        units : {"radians", "rad", "degrees", "deg"}, default="radians"
+            Units of ``rp``, if ``rp`` is given as an angle (scalar).
+        check : bool, default=True
+            Perform a check to verify rotation matrix is orthogonal.
         """
         if rp is not None:
             dirmap = dict(x=[1,0,0],y=[0,1,0],z=[0,0,1])
