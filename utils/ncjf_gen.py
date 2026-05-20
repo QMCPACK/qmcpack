@@ -4,6 +4,7 @@ import re
 import sys
 import numpy as np
 from copy import deepcopy
+from functools import reduce
 import xml.etree.ElementTree as et
 
 
@@ -182,7 +183,7 @@ class gaussian:
     return self
 
   # g / c or g1 / g2
-  def __div__(self,other):
+  def __truediv__(self,other):
     try:
       A = self.A - other.A
       B = self.B - other.B
@@ -199,7 +200,7 @@ class gaussian:
       return gaussian("none",A,B,C)
 
   # c / g
-  def __rdiv__(self,other):
+  def __rtruediv__(self,other):
     A = self.A
     B = self.B
     C = self.C - np.log(other)
@@ -209,7 +210,7 @@ class gaussian:
 
 
   # g /= c or g1 /= g2
-  def __idiv__(self,other):
+  def __itruediv__(self,other):
     # other is another gaussian
     try:
       self.A -= other.A
@@ -274,8 +275,8 @@ def atomic_coords(ptclfile):
   posnode = ptclroot.find(".//particleset[@name='ion0']/attrib[@name='position']")
   posblock =  posnode.text
   pts = []
-  re_num = "(-?\d\.\d+e[+-]\d\d)"
-  re_pos = "{re_num}\s+{re_num}\s+{re_num}".format(re_num=re_num)
+  re_num = r"(-?\d\.\d+e[+-]\d\d)"
+  re_pos = r"{re_num}\s+{re_num}\s+{re_num}".format(re_num=re_num)
   for pos in re.finditer(re_pos, posblock):
     pts.append( np.array(pos.groups(), dtype=np.float64) )
   return pts
@@ -328,12 +329,12 @@ def write_ncjf(outpath, g_list, F, ncjf_name, gref = None):
     region_tag.append(gaussian_tag)
   # indent and write to file
   indent(cjf_tag)
-  print "  writing cjf tags to file: {}".format(outpath)
+  print("  writing cjf tags to file: {}".format(outpath))
   et.ElementTree(cjf_tag).write(outpath)
 
 if __name__ == "__main__":
   if len(sys.argv) < 3:
-    print "usage: ncjf_gen.py qmc.ptcl.xml cjf.xml"
+    print("usage: ncjf_gen.py qmc.ptcl.xml cjf.xml")
     sys.exit(0)
   ptclfile = sys.argv[1]
   cjffile = sys.argv[2]
