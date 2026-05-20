@@ -1611,6 +1611,14 @@ class Qmcpack(Simulation):
     #end def fill_products
 
 
+    def receive_structure(self,struct):
+        struct.change_units('B')
+        self.system.structure = struct
+        self.system.remove_folded()
+        self.input.incorporate_system(self.system)
+    #end def receive_structure
+
+
     def receive_pwscf_orbitals(self,orb_file):
         if not orb_file.endswith('.h5'):
             self.error('pwscf orbitals must be in hdf5 (.h5) file.\nFile provided: {}'.format(orb_file))

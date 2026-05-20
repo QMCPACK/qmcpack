@@ -18,6 +18,7 @@
 
 
 import os
+import shutil
 import numpy as np
 from .nexus_base import nexus_core
 from .developer import obj
@@ -446,14 +447,16 @@ class Pwscf(Simulation):
         if res_path==loc_path:
             return # don't need to do anything if in same directory
         outdir = os.path.join(self.locdir,c.outdir)
-        command = 'rsync -av {0}/* {1}/'.format(res_path,outdir)
+        # try shutil copytree, should be ok if never copying over
+        #command = 'rsync -av {0}/* {1}/'.format(res_path,outdir)
         if not os.path.exists(outdir):
             os.makedirs(outdir)
         sync_record = os.path.join(outdir,'nexus_sync_record')
         if not os.path.exists(sync_record):
-            print('    Running rsync for directory:\n      {}.\n      This might take a while.'.format(outdir))
-            execute(command)
-            print('    Completed rsync for directory:\n      {}'.format(outdir))
+            print('    Copying directory: {}\n      this might take a while'.format(outdir))
+            #execute(command)
+            shutil.copytree(res_path, outdir, dirs_exist_ok=True)
+            print('      directory copy complete')
             # fix "permission denied" on some systems
             execute('chmod -R a+rw '+outdir)
             f = open(sync_record,'w')
