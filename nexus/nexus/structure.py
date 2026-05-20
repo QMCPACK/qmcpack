@@ -2059,7 +2059,7 @@ class Structure(Sobj):
             indices = self.inside(self.pos, axes=cell, center=cell.sum(axis=0)/2)
 
         if invert:
-            mask = np.ones(self.size(), dtype=np.bool)
+            mask = np.ones(self.size(), dtype=np.bool_)
             mask[indices] = False
             indices = np.arange(self.size())[mask]
 
@@ -2083,7 +2083,7 @@ class Structure(Sobj):
             Optionally return atoms where the array is ``False`` instead
             of where the array is ``True``.
         """
-        mask_array = np.asarray(mask_array, dtype=np.bool)
+        mask_array = np.asarray(mask_array, dtype=np.bool_)
         if invert:
             mask_array = ~mask_array
 
@@ -2119,7 +2119,7 @@ class Structure(Sobj):
             indices = np.asarray(indices, dtype=np.int64)
 
         if invert:
-            mask = np.ones(self.size(), dtype=np.bool)
+            mask = np.ones(self.size(), dtype=np.bool_)
             mask[indices] = False
             indices = np.arange(self.size())[mask]
 
@@ -2153,7 +2153,7 @@ class Structure(Sobj):
                     indices.append(i)
 
         if invert:
-            mask = np.ones(self.size(), dtype=np.bool)
+            mask = np.ones(self.size(), dtype=np.bool_)
             mask[indices] = False
             indices = np.arange(self.size())[mask]
 
@@ -2201,7 +2201,7 @@ class Structure(Sobj):
             indices.extend(ipos[dist_table[i] < radii[i]])
 
         if invert:
-            mask = np.ones(self.size(), dtype=np.bool)
+            mask = np.ones(self.size(), dtype=np.bool_)
             mask[indices] = False
             indices = np.arange(self.size())[mask]
 
@@ -2214,7 +2214,7 @@ class Structure(Sobj):
         self,
         identifiers: (
             Structure
-            | npt.NDArray[np.bool]
+            | npt.NDArray[np.bool_]
             | int
             | str
             | Elements
