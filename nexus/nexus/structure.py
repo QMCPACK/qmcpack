@@ -2039,7 +2039,7 @@ class Structure(Sobj):
 
     def locate_by_cell(
         self,
-        cell:   Structure | npt.NDArray,
+        cell  : Structure | npt.NDArray,
         invert: bool = False,
     ) -> npt.NDArray[np.int64]:
         """Locate the atoms in a structure contained by a crystal cell.
@@ -2056,6 +2056,10 @@ class Structure(Sobj):
             indices = cell.inside(self.pos)
         else:
             cell = np.asarray(cell, dtype=np.float64)
+            if cell.shape != (self.dim, self.dim):
+                raise ValueError(
+                    f"The cell must have shape ({self.dim}, {self.dim}) but instead has shape {cell.shape}!"
+                )
             indices = self.inside(self.pos, axes=cell, center=cell.sum(axis=0)/2)
 
         if invert:
@@ -2071,7 +2075,7 @@ class Structure(Sobj):
     def locate_by_mask(
         self,
         mask_array: npt.ArrayLike,
-        invert:     bool = False,
+        invert    : bool = False,
     ) -> npt.NDArray[np.int64]:
         """Locate the atoms in a structure by a mask array.
 
@@ -2095,7 +2099,7 @@ class Structure(Sobj):
     def locate_by_indices(
         self,
         indices: int | list[int],
-        invert:  bool = False,
+        invert : bool = False,
     ) -> npt.NDArray[np.int64]:
         """Locate the atoms in a structure by an index or list of indices.
 
@@ -2131,7 +2135,7 @@ class Structure(Sobj):
     def locate_by_elements(
         self,
         elements: str | int | Elements | list[str | Elements | int],
-        invert:   bool = False,
+        invert  : bool = False,
     ) -> npt.NDArray[np.int64]:
         """Locate the atoms in a structure by their element.
 
@@ -2145,6 +2149,8 @@ class Structure(Sobj):
         """
         if not isinstance(elements, list | tuple | np.ndarray):
             elements = [elements]
+        elif len(elements) == 0:
+            raise ValueError("Can not use an empty list/tuple/array for locating atoms!")
 
         indices = []
         for elem in elements:
@@ -2164,8 +2170,8 @@ class Structure(Sobj):
 
     def locate_by_neighbors(
         self,
-        pos:    list[int | npt.NDArray[np.floating]],
-        radii:  int | float | list[int | float],
+        pos   : list[int | npt.NDArray[np.floating]],
+        radii : int | float | list[int | float],
         invert: bool = False,
     ) -> npt.NDArray[np.int64]:
         """Locate atoms in a structure if they are within a distance from a position.
@@ -2180,6 +2186,9 @@ class Structure(Sobj):
         invert : bool, default=False
             Optionally invert the indices.
         """
+        if len(pos) == 0:
+            raise ValueError("Can not use an empty list/tuple/array for locating atoms!")
+
         if isinstance(pos, list | tuple | np.ndarray) and isinstance(pos[0], int):
             pos = self.pos[pos]
         else:
@@ -2220,7 +2229,7 @@ class Structure(Sobj):
             | Elements
             | list[str | Elements | int | float]
         ),
-        radii:  int | float | list[int | float] | None = None,
+        radii : int | float | list[int | float] | None = None,
         invert: bool = False,
     ) -> npt.NDArray[np.int64]:
         """Locate atoms in a structure by some identifier(s).
@@ -2264,7 +2273,7 @@ class Structure(Sobj):
                 mask_array = identifiers,
                 invert     = invert,
             )
-        elif isinstance(identifiers, int): 
+        elif isinstance(identifiers, int):
             indices = self.locate_by_indices(
                 indices = identifiers,
                 invert  = invert,
@@ -2275,6 +2284,9 @@ class Structure(Sobj):
                 invert   = invert,
             )
         elif isinstance(identifiers, list | tuple | np.ndarray):
+            if len(identifiers) == 0:
+                raise ValueError("Can not use an empty list/tuple/array for locating atoms!")
+
             if isinstance(identifiers[0], int):
                 indices = self.locate_by_indices(
                     indices = identifiers,
@@ -2298,7 +2310,7 @@ class Structure(Sobj):
                 )
                 return indices # Early return to avoid redundant second call.
 
-        if radii is not None:
+        if radii is not None and len(indices) > 0: # If we don't have any indices skip this step.
             indices = self.locate_by_neighbors(
                 pos=self.pos[indices],
                 radii=radii,
