@@ -2,7 +2,7 @@
 include("${PROJECT_SOURCE_DIR}/CMake/test_labels.cmake")
 include("${PROJECT_SOURCE_DIR}/CMake/python.cmake")
 
-check_python_reqs("numpy;pytest" "nexus base" ADD_TEST)
+check_python_reqs("numpy;pytest" "Nexus" ADD_TEST)
 
 if(ADD_TEST)
   message("Generating Nexus test list")
@@ -59,6 +59,4 @@ if(ADD_TEST)
       endif()
     endforeach()
   endif()
-else()
-  message(WARNING "Skipping Nexus tests because python numpy package and/or pytest were not found")
 endif()
