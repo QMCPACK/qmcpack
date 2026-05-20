@@ -97,8 +97,8 @@ def test_pw2qmcpack_incorporate_result(tmp_path):
     from .test_pwscf_simulation import get_pwscf_sim
 
     nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = tmp_path
-    nexus_core.file_locations = nexus_core.file_locations + [tmp_path]
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
 
     create_pseudo_files(tmp_path, ["C.BFD.upf"])
 
@@ -131,8 +131,8 @@ def test_pw2qmcpack_check_sim_status(tmp_path):
 
     nexus_core.runs = ''
     nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = tmp_path
-    nexus_core.file_locations = nexus_core.file_locations + [tmp_path]
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
 
     sim = get_pw2qmcpack_sim()
 
@@ -355,8 +355,8 @@ def test_convert4qmc_check_sim_status(tmp_path):
 
     nexus_core.runs = ''
     nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = tmp_path
-    nexus_core.file_locations = nexus_core.file_locations + [tmp_path]
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
 
     sim = get_convert4qmc_sim()
 
@@ -528,8 +528,8 @@ def test_pyscf_to_afqmc_check_sim_status(tmp_path):
 
     nexus_core.runs = ''
     nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = tmp_path
-    nexus_core.file_locations = nexus_core.file_locations + [tmp_path]
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
 
     sim = get_pyscf_to_afqmc_sim()
 

@@ -220,8 +220,8 @@ def test_generate(tmp_path):
     pseudo_dir.mkdir()
 
     nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = tmp_path
-    nexus_core.file_locations = nexus_core.file_locations + [tmp_path]
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
     nexus_noncore.pseudo_dir = pseudo_dir
 
     (pseudo_dir / 'C.POTCAR').write_text(c_potcar_text)

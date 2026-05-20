@@ -84,8 +84,8 @@ def test_minimal_init():
 def test_check_result(tmp_path):
 
     nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = tmp_path
-    nexus_core.file_locations = nexus_core.file_locations + [tmp_path]
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
     create_pseudo_files(
         tmp_dir=tmp_path,
         pseudos=["C.POTCAR"],
@@ -197,8 +197,8 @@ def test_incorporate_result(tmp_path):
     from ..developer import obj
 
     nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = tmp_path
-    nexus_core.file_locations = nexus_core.file_locations + [tmp_path]
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
     create_pseudo_files(
         tmp_dir=tmp_path,
         pseudos=["C.POTCAR"],
@@ -268,8 +268,8 @@ def test_incorporate_result(tmp_path):
 def test_check_sim_status(tmp_path):
 
     nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = tmp_path
-    nexus_core.file_locations = nexus_core.file_locations + [tmp_path]
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
     create_pseudo_files(
         tmp_dir=tmp_path,
         pseudos=["C.POTCAR"],
@@ -306,8 +306,8 @@ def test_check_sim_status(tmp_path):
 def test_get_output_files(tmp_path):
 
     nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = tmp_path
-    nexus_core.file_locations = nexus_core.file_locations + [tmp_path]
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
     create_pseudo_files(
         tmp_dir=tmp_path,
         pseudos=["C.POTCAR"],

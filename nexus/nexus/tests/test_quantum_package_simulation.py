@@ -155,9 +155,9 @@ def test_check_sim_status(tmp_path):
     from ..nexus_base import nexus_core
 
     nexus_core.runs = ''
-    nexus_core.local_directory  = tmp_path
-    nexus_core.remote_directory = tmp_path
-    nexus_core.file_locations = nexus_core.file_locations + [tmp_path]
+    nexus_core.local_directory  = str(tmp_path)
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
 
     sim = get_quantum_package_sim()
 

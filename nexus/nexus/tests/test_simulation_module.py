@@ -1010,8 +1010,8 @@ def test_create_directories(tmp_path):
     from ..simulation import Simulation
 
     nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = tmp_path
-    nexus_core.file_locations = nexus_core.file_locations + [tmp_path]
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
 
     s = Simulation()
 
@@ -1034,8 +1034,8 @@ def test_file_text(tmp_path):
     from ..simulation import Simulation
 
     nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = tmp_path
-    nexus_core.file_locations = nexus_core.file_locations + [tmp_path]
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
 
     s = Simulation()
     s.create_directories()
@@ -1712,8 +1712,8 @@ def test_save_load_image(tmp_path):
     from ..simulation import Simulation,SimulationImage
 
     nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = tmp_path
-    nexus_core.file_locations = nexus_core.file_locations + [tmp_path]
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
 
     nsave = 30
     nload = 22
@@ -1760,8 +1760,8 @@ def test_load_analyzer_image(tmp_path):
     from ..simulation import Simulation
 
     nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = tmp_path
-    nexus_core.file_locations = nexus_core.file_locations + [tmp_path]
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
 
     sim = get_test_sim()
 
@@ -1792,8 +1792,8 @@ def test_save_attempt(tmp_path):
     from ..simulation import Simulation
 
     nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = tmp_path
-    nexus_core.file_locations = nexus_core.file_locations + [tmp_path]
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
 
     sim = get_test_sim()
 
@@ -1824,8 +1824,8 @@ def test_write_inputs(tmp_path):
     from ..simulation import Simulation,input_template
 
     nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = tmp_path
-    nexus_core.file_locations = nexus_core.file_locations + [tmp_path]
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
 
     template = '''
 name = "$name"
@@ -1877,8 +1877,8 @@ def test_send_files(tmp_path):
     from ..simulation import Simulation
 
     nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = tmp_path
-    nexus_core.file_locations = nexus_core.file_locations + [tmp_path]
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
 
     # make fake data files
     data_file1 = 'data_file1.txt'
@@ -1929,8 +1929,8 @@ def test_submit(tmp_path):
     from ..simulation import Simulation
 
     nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = tmp_path
-    nexus_core.file_locations = nexus_core.file_locations + [tmp_path]
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
 
     s = get_test_sim(
         job = job(machine='ws1',app_command='echo run'),
@@ -1962,8 +1962,8 @@ def test_update_process_id(tmp_path):
     from ..simulation import Simulation
 
     nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = tmp_path
-    nexus_core.file_locations = nexus_core.file_locations + [tmp_path]
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
 
     s = get_test_sim()
     j = s.job
@@ -1994,8 +1994,8 @@ def test_check_status(tmp_path):
     from ..simulation import Simulation
 
     nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = tmp_path
-    nexus_core.file_locations = nexus_core.file_locations + [tmp_path]
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
 
     s = get_test_sim()
     j = s.job
@@ -2029,8 +2029,8 @@ def test_get_output(tmp_path):
     from ..simulation import Simulation
 
     nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = tmp_path
-    nexus_core.file_locations = nexus_core.file_locations + [tmp_path]
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
 
     s = get_test_sim()
 
@@ -2091,8 +2091,8 @@ def test_analyze(tmp_path):
     from ..simulation import Simulation
 
     nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = tmp_path
-    nexus_core.file_locations = nexus_core.file_locations + [tmp_path]
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
 
     s = get_test_sim()
 
@@ -2125,8 +2125,8 @@ def test_progress(tmp_path):
     from ..simulation import Simulation,input_template
 
     nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = tmp_path
-    nexus_core.file_locations = nexus_core.file_locations + [tmp_path]
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
 
     assert(nexus_core.mode==nexus_core.modes.stages)
     assert(len(nexus_core.stages)==0)
@@ -2308,8 +2308,8 @@ def test_execute(tmp_path):
     from ..simulation import Simulation
 
     nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = tmp_path
-    nexus_core.file_locations = nexus_core.file_locations + [tmp_path]
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
 
     import shutil
     serial = shutil.which('mpirun') is None
@@ -2490,8 +2490,8 @@ def test_reconstruct_cascade(tmp_path):
     from ..simulation import Simulation
 
     nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = tmp_path
-    nexus_core.file_locations = nexus_core.file_locations + [tmp_path]
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
 
     sims = get_test_workflow(2)
     assert(len(sims)==7)
