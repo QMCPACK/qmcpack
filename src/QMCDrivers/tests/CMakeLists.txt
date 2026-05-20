@@ -122,6 +122,8 @@ if(HAVE_MPI)
       qmcwfs
       qmcparticle
       qmcwfs_omptarget
+      spline2
+      spline2_omptarget
       qmcparticle_omptarget
       qmcutil
       platform_omptarget_LA)
