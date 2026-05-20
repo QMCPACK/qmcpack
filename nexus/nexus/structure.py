@@ -131,6 +131,7 @@ from numpy import (
     sqrt,
 )
 from numpy.linalg import inv, det, norm
+import numpy.typing as npt
 from .unit_converter import convert
 from .numerics import nearest_neighbors, convex_hull, voronoi_neighbors
 from .periodic_table import Elements
@@ -1143,8 +1144,33 @@ class Structure(Sobj):
     #end def has_folded_structure
 
             
-    # test needed
-    def group_atoms(self,folded=True):
+    def group_atoms(self, folded=True) -> None:
+        """Group the atoms by their element type, sorting in alphabetical order.
+
+        Parameters
+        ----------
+        folded : bool, default=True
+            Optionally sort the folded structure, if it exists.
+
+        Examples
+        --------
+        >>> structure = Structure(
+        ...     elem = ["Be", "N", "C", "Be", "C", "O"],
+        ...     pos = np.array([
+        ...         [0, 0, 0],
+        ...         [0, 0, 0],
+        ...         [0, 0, 0],
+        ...         [0, 0, 0],
+        ...         [0, 0, 0],
+        ...         [0, 0, 0],
+        ...     ], dtype=np.float64),
+        ... )
+        >>> print(structure.elem)
+        ['Be' 'N' 'C' 'Be' 'C' 'O']
+        >>> structure.group_atoms()
+        >>> print(structure.elem)
+        ['Be' 'Be' 'C' 'C' 'N' 'O']
+        """
         if len(self.elem)>0:
             order = self.elem.argsort()
             if (self.elem!=self.elem[order]).any():
@@ -1158,8 +1184,35 @@ class Structure(Sobj):
     #end def group_atoms
 
 
-    # test needed
-    def rename(self,folded=True,**name_pairs):
+    def rename(self, folded=True, **name_pairs) -> None:
+        """Rename element names in a structure.
+
+        Parameters
+        ----------
+        folded : bool, default=True
+            Rename elements in folded structure as well as tiled structure
+            (if there is no folded structure then this does nothing)
+        **name_pairs : dict[str]
+            A dictionary containing key:value pairs where the key is the old
+            element name and the value is the new element name.
+
+        Examples
+        --------
+        >>> structure = Structure(
+        ...     elem = ["N", "C", "O", "H"],
+        ...     pos = np.array([
+        ...         [0, 0, 0],
+        ...         [0, 0, 0],
+        ...         [0, 0, 0],
+        ...         [0, 0, 0],
+        ...     ], dtype=np.float64),
+        ... )
+        >>> print(structure.elem)
+        ['N' 'C' 'O' 'H']
+        >>> structure.rename(N="Dy", C="Er")
+        >>> print(structure.elem)
+        ['Dy' 'Er' 'O' 'H']
+        """
         elem = self.elem
         for old,new in name_pairs.items():
             for i in range(len(self.elem)):
@@ -1174,8 +1227,77 @@ class Structure(Sobj):
     #end def rename
 
 
-    # test needed
-    def reset_axes(self,axes=None):
+    def reset_axes(self, axes: npt.ArrayLike | None = None) -> None:
+        """Reset the structure's axes, k-space axes, and center.
+
+        Notes
+        -----
+        If ``axes`` is given, this function will remove the previous folded
+        structure (as new axes could invalidate the tiling) and then set
+        ``self.axes`` to the new axes, update the k-space axes, and set the
+        center of the cell to be the (0.5, 0.5, 0.5) point.
+
+        If ``axes`` are not given (e.g. ``axes=None``, the default), then this
+        function will reuse the same axes as the current structure, reset the
+        k-space axes, and set the cell center at the (0.5, 0.5, 0.5) point.
+
+        Examples
+        --------
+        Providing axes will also make sure ``kaxes`` and ``center`` are consistent.
+
+        >>> structure = Structure(
+        ...     axes = np.array([
+        ...         [6.0, 0.0, 0.0],
+        ...         [0.0, 6.0, 0.0],
+        ...         [0.0, 0.0, 6.0],
+        ...     ]),
+        ... )
+        >>> print(structure.axes)
+        [[6. 0. 0.]
+        [0. 6. 0.]
+        [0. 0. 6.]]
+        >>> print(structure.kaxes)
+        [[1.04719755 0.         0.        ]
+        [0.         1.04719755 0.        ]
+        [0.         0.         1.04719755]]
+        >>> print(structure.center)
+        [3. 3. 3.]
+
+        >>> structure.reset_axes(np.array([
+        ...     [12.0,  0.0,  0.0],
+        ...     [ 0.0, 12.0,  0.0],
+        ...     [ 0.0,  0.0, 12.0],
+        ... ]))
+        >>> print(structure.axes)
+        [[12.  0.  0.]
+        [ 0. 12.  0.]
+        [ 0.  0. 12.]]
+        >>> print(structure.kaxes)
+        [[0.52359878 0.         0.        ]
+        [0.         0.52359878 0.        ]
+        [0.         0.         0.52359878]]
+        >>> print(structure.center)
+        [6. 6. 6.]
+
+        Alternatively, if you don't provide ``axes`` you can ensure that the
+        ``kaxes`` and ``center`` of the structure are correct. Here we set
+        ``center`` to be at the origin, then use ``reset_axes`` to correct it.
+
+        >>> structure = Structure(
+        ...     axes = np.array([
+        ...         [6.0, 0.0, 0.0],
+        ...         [0.0, 6.0, 0.0],
+        ...         [0.0, 0.0, 6.0],
+        ...     ]),
+        ...     center = np.array([0.0, 0.0, 0.0]),
+        ... )
+        >>> print(structure.center)
+        [0. 0. 0.]
+
+        >>> structure.reset_axes()
+        >>> print(structure.center)
+        [3. 3. 3.]
+        """
         if axes is None:
             axes = self.axes
         else:
@@ -1217,7 +1339,11 @@ class Structure(Sobj):
     #end def reshape_axes
 
 
-    def write_axes(self):
+    def write_axes(self) -> str:
+        """Write the unit cell axes as a string.
+
+        Only implemented for ``self.dim=3``.
+        """
         c = ''
         for a in self.axes:
             c+='{0:12.8f} {1:12.8f} {2:12.8f}\n'.format(a[0],a[1],a[2])
@@ -1225,8 +1351,12 @@ class Structure(Sobj):
         return c
     #end def write_axes
 
-    
-    def corners(self):
+
+    def corners(self) -> npt.NDArray[np.float64]:
+        """Calculate vectors corresponding to the 8 corners of the unit cell.
+
+        Only implemented for ``self.dim=3``.
+        """
         a = self.axes
         c = np.array([(0,0,0),
                    a[0],
