@@ -1893,6 +1893,7 @@ class DynamicProcess(DevBase):
         'orbitals',
         'jastrow',
         'wavefunction',
+        'pwscf_orbitals', # explicit QE
         ])
 
     @classmethod
@@ -2068,6 +2069,10 @@ class DynamicProcess(DevBase):
     def wavefunction(self):
         return self._check_get_product('wavefunction')
 
+    @property
+    def pwscf_orbitals(self):
+        return self._check_get_product('pwscf_orbitals')
+ 
 
     # setters for all possible requirements
     @structure.setter
@@ -2115,6 +2120,15 @@ class DynamicProcess(DevBase):
             return
         self.sim.receive_wavefunction(wavefunction)
     #end def wavefunction
+
+    @pwscf_orbitals.setter
+    def pwscf_orbitals(self,pwscf_orbitals):
+        already_set = self._check_set_requirement(
+            'pwscf_orbitals',pwscf_orbitals,is_path=True)
+        if already_set:
+            return
+        self.sim.receive_pwscf_orbitals(pwscf_orbitals)
+    #end def pwscf_orbitals
 
 
     # preserve Simulation UI

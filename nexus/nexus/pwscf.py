@@ -419,7 +419,7 @@ class Pwscf(Simulation):
 
     def receive_charge_density(self,charge_density_path):
         if not os.path.isdir(charge_density_path):
-            self.error('charge density path is not a directory.Path provided: {}'.format(charge_density_path))
+            self.error('charge density path is not a directory.\nPath provided: {}'.format(charge_density_path))
         c = self.input.control
         res_path = os.path.realpath(charge_density_path)
         loc_path = os.path.realpath(self.locdir)
@@ -431,9 +431,9 @@ class Pwscf(Simulation):
             os.makedirs(outdir)
         sync_record = os.path.join(outdir,'nexus_sync_record')
         if not os.path.exists(sync_record):
-            print('    Running rsync for the {} directory. This might take a while.'.format(outdir))
+            print('    Running rsync for directory:\n      {}.\n      This might take a while.'.format(outdir))
             execute(command)
-            print('    Completed rsync for the {} directory.'.format(outdir))
+            print('    Completed rsync for directory:\n      {}'.format(outdir))
             # fix "permission denied" on some systems
             execute('chmod -R a+rw '+outdir)
             f = open(sync_record,'w')

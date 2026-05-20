@@ -601,6 +601,8 @@ class Qmcpack(Simulation):
     application_properties = set(['serial','omp','mpi'])
     application_results    = set(['jastrow','cuspcorr','wavefunction'])
 
+    # dynamic workflow support
+    allowed_requirements = ['none','pwscf_orbitals','jastrow','wavefunction']
 
     def has_afqmc_input(self):
         afqmc_input = False
@@ -1580,6 +1582,170 @@ class Qmcpack(Simulation):
         #end for
         return edata
     #end def read_bandinfo_dat
+
+
+    # dynamic worfklow support
+
+    def fill_produces(self):
+        calctypes = self.input.get_output_info('calctypes')
+        if 'opt' in calctypes:
+            if self.input.has_jastrows():
+                self.produces.add('jastrows')
+            self.produces.add('wavefunction')
+    #end def fill_produces
+
+
+    def fill_products(self):
+        if len(self.produces)==0:
+            return
+        if 'jastrow' in self.produces or 'wavefunction' in self.produces:
+            analyzer = self.load_analyzer_image()
+            if 'results' not in analyzer or 'optimization' not in analyzer.results:
+                self.error('analyzer did not compute results required to determine jastrow or wavefunction')
+            opt_file = str(analyzer.results.optimization.optimal_file)
+            opt_file = os.path.join(self.locdir,opt_file)
+            if 'jastrow' in self.produces:
+                self.products.jastrow = opt_file
+            if 'wavefunction' in self.produces:
+                self.products.wavefunction = opt_file
+    #end def fill_products
+
+
+    def receive_pwscf_orbitals(self,orb_file):
+        if not orb_file.endswith('.h5'):
+            self.error('pwscf orbitals must be in hdf5 (.h5) file.\nFile provided: {}'.format(orb_file))
+        input  = self.input
+        system = self.system
+        h5file = orb_file
+        wavefunction = input.get('wavefunction')
+        if isinstance(wavefunction,collection):
+            wavefunction = wavefunction.get_single('psi0')
+        wf = wavefunction
+        if 'sposet_builder' in wf and wf.sposet_builder.type=='bspline':
+            orb_elem = wf.sposet_builder
+        elif 'sposet_builders' in wf and 'bspline' in wf.sposet_builders:
+            orb_elem = wf.sposet_builders.bspline
+        elif 'sposet_builders' in wf and 'einspline' in wf.sposet_builders:
+            orb_elem = wf.sposet_builders.einspline
+        elif 'determinantset' in wf and wf.determinantset.type in ('bspline','einspline'):
+            orb_elem = wf.determinantset
+        else:
+            self.error('Could not incorporate pw2qmcpack orbitals.\nbspline sposet_builder and determinantset are both missing.')
+        if 'href' in orb_elem and isinstance(orb_elem.href,str) and os.path.exists(orb_elem.href):
+            # user specified h5 file for orbitals, bypass orbital dependency
+            orb_elem.href = os.path.relpath(orb_elem.href,self.locdir)
+        else:
+            orb_elem.href = os.path.relpath(h5file,self.locdir)
+            if system.structure.folded_structure is not None:
+                orb_elem.tilematrix = np.array(system.structure.tmatrix)
+        defs = obj(
+            #twistnum   = 0,
+            meshfactor = 1.0
+            )
+        for var,val in defs.items():
+            if var not in orb_elem:
+                orb_elem[var] = val
+        has_twist    = 'twist' in orb_elem
+        has_twistnum = 'twistnum' in orb_elem
+        if  not has_twist and not has_twistnum:
+            orb_elem.twistnum = 0
+
+        structure = system.structure
+        nkpoints = len(structure.kpoints)
+        if nkpoints==0:
+            self.error('system must have kpoints to assign twistnums')
+
+        twistnums = list(range(len(structure.kpoints)))
+        if self.should_twist_average:
+            self.twist_average(twistnums)
+        elif not has_twist and orb_elem.twistnum is None:
+            orb_elem.twistnum = twistnums[0]
+
+    #end def receive_pwscf_orbitals
+
+
+    def receive_jastrow(self,jastrow_file):
+        opt_file     = jastrow_file
+        opt          = QmcpackInput(opt_file)
+        wavefunction = input.get('wavefunction')
+        optwf = opt.qmcsystem.wavefunction
+        # handle spinor case
+        spinor = input.get('spinor')
+        if spinor is not None and spinor:
+            # remove u-d term from optmized jastrow
+            # also set correct cusp condition
+            J2 = optwf.get('J2')
+            if J2 is not None:
+                corr = J2.get('correlation')
+                if 'ud' in corr:
+                    del corr.ud
+                if 'uu' in corr:
+                    corr.uu.cusp = -0.5
+            J3 = optwf.get('J3')
+            if J3 is not None:
+                corr = J3.get('correlation')
+                if hasattr(corr, 'coefficients'):
+                    # For single-species systems, the data structure changes.
+                    # In this case, the only J3 term should be 'uu'.
+                    # Otherwise, the user might be trying to do something strange.
+                    assert 'uu' in corr.coefficients.id, 'Only uu J3 terms are allowed in SOC calculations.'
+                else:
+                    j3_ids = []
+                    for j3_term in corr:
+                        j3_id = j3_term.coefficients.id
+                        j3_ids.append(j3_id)
+                    for j3_id in j3_ids:
+                        if 'ud' in j3_id:
+                            delattr(corr, j3_id)
+        def process_jastrow(wf):                
+            if 'jastrow' in wf:
+                js = [wf.jastrow]
+            elif 'jastrows' in wf:
+                js = list(wf.jastrows.values())
+            else:
+                js = []
+            jd = dict()
+            for j in js:
+                jtype = j.type.lower().replace('-','_').replace(' ','_')
+                key   = jtype
+                # take care of multiple jastrows of the same type
+                if key in jd:  # use name to distinguish
+                    key += j.name
+                    if key in jd:  # if still duplicate then error out
+                        msg = 'duplicate jastrow in '+self.__class__.__name__
+                        self.error(msg)
+                jd[key] = j
+            return jd
+        #end def process_jastrow
+        if wavefunction is None:
+            qs = input.get('qmcsystem')
+            qs.wavefunction = optwf.copy()
+        else:
+            jold = process_jastrow(wavefunction)
+            jopt = process_jastrow(optwf)
+            jnew = list(jopt.values())
+            for jtype in jold.keys():
+                if jtype not in jopt:
+                    jnew.append(jold[jtype])
+            if len(jnew)==1:
+                wavefunction.jastrow = jnew[0].copy()
+            else:
+                wavefunction.jastrows = collection(jnew)
+    #end def receive_jastrow
+
+
+    def receive_wavefunction(self,wf_file):
+        opt = QmcpackInput(wf_file)
+        qs  = input.get('qmcsystem')
+        wfn = opt.qmcsystem.wavefunction.copy()
+        ovp = 'override_variational_parameters' # name is too long
+        if ovp in wfn:
+            href = os.path.join(sim.locdir,wfn[ovp].href)
+            href = os.path.relpath(href,self.locdir)
+            wfn[ovp].href = href
+        qs.wavefunction = wfn
+    #end def receive_wavefunction
+
 #end class Qmcpack
 
 
