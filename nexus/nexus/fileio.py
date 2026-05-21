@@ -255,7 +255,9 @@ class StandardFile(DevBase):
         if not os.path.exists(filepath):
             self.error('read failed\nfile does not exist: {0}'.format(filepath))
         #end if
-        self.read_text(open(filepath,'r').read())
+        with open(filepath, "r") as f:
+            self.read_text(f.read())
+
         self.check_valid('read failed')
     #end def read
 
@@ -264,7 +266,8 @@ class StandardFile(DevBase):
         self.check_valid('write failed')
         text = self.write_text()
         if filepath is not None:
-            open(filepath,'w').write(text)
+            with open(filepath, "w") as f:
+                f.write(text)
         #end if
         return text
     #end def write
