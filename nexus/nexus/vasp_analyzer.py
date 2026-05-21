@@ -366,7 +366,8 @@ def read_vxml(filepath):
         VXML.class_error('file {0} does not exist'.format(filepath),'read_vxml')
     #end if
     #print 'read'
-    contents = open(filepath,'r').read()
+    with open(filepath, "r") as f:
+        contents = f.read()
     #print 'replace'
     contents = contents.replace('<rc>',' ').replace('</rc>',' ')
     contents = contents.replace('<r>' ,' ').replace('</r>' ,' ')

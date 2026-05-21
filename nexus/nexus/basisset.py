@@ -154,6 +154,7 @@ class gaussBasisFile(BasisFile):
         #end if
         file = TextFile(filepath)
         self.read_file(file)
+        file.close()
     #end def read
 
     def read_file(self,file):
@@ -319,7 +320,8 @@ class GaussianBasisSet(DevBase):
         #end if
         #self.name = split_delims(os.path.split(filepath)[1])[0]
         self.name = os.path.split(filepath)[1].split('.')[0]
-        text = open(filepath,'r').read()
+        with open(filepath, "r") as f:
+            text = f.read()
         self.read_text(text,format)
     #end def read
 

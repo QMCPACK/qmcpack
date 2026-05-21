@@ -5335,7 +5335,8 @@ class QmcpackInputTemplate(SimulationInputTemplate):
                             include_file = token.replace('href','').replace('=','').replace('"','').strip()
                             include_path = os.path.join(basepath,include_file)
                             if os.path.exists(include_path):
-                                icont = open(include_path,'r').read()+'\n'
+                                with open(include_path, "r") as f:
+                                    icont = f.read() + "\n"
                                 line = ''
                                 for iline in icont.splitlines():
                                     if '<?' not in iline:

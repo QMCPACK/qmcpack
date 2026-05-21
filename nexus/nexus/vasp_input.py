@@ -324,7 +324,8 @@ class VFile(Vobj):
         if not os.path.exists(filepath):
             self.error('file {0} does not exist'.format(filepath))
         #end if
-        text = open(filepath,'r').read()
+        with open(filepath, "r") as f:
+            text = f.read()
         self.read_text(text,filepath)
         return text
     #end def read
@@ -333,7 +334,8 @@ class VFile(Vobj):
     def write(self,filepath=None):
         text = self.write_text(filepath)
         if filepath is not None:
-            open(filepath,'w').write(text)
+            with open(filepath, "w") as f:
+                f.write(text)
         #end if
         return text
     #end def write
@@ -1341,7 +1343,8 @@ class Potcar(VFormattedFile):
             #end for
         elif self.filepath is not None and self.files is not None:
             for file in self.files:
-                text += open(os.path.join(self.filepath,file),'r').read()
+                with open(os.path.join(self.filepath, file), "r") as f:
+                    text += f.read()
             #end for
         #end if
         return text
