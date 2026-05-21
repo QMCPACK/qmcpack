@@ -37,6 +37,7 @@
 #====================================================================#
 
 import os
+from pathlib import Path
 import numpy as np
 from .execute import execute
 from .fileio import TextFile
@@ -47,6 +48,7 @@ from .developer import DevBase, obj, unavailable, error
 from .basisset import process_gaussian_text, GaussianBasisSet
 from .physical_system import PhysicalSystem
 from .testing import object_eq
+from .utilities import path_string, is_valid_filename
 
 try:
     import matplotlib.pyplot as plt
@@ -56,6 +58,9 @@ except:
 
 
 def pp_elem_label(filename,guard=False):
+    if guard and not is_valid_filename(filename):
+        error(f"Pseudopotential file name {filename} is invalid!")
+
     el = ''
     for c in filename:
         if c=='.' or c=='_' or c=='-':
@@ -176,8 +181,8 @@ class Pseudopotentials(DevBase):
         for pp in pseudopotentials:
             if isinstance(pp,PseudoFile):
                 pps.append(pp)
-            elif isinstance(pp,str):
-                ppfiles.append(pp)
+            elif isinstance(pp, str | Path):
+                ppfiles.append(path_string(pp))
             else:
                 self.error('expected PseudoFile type or filepath, got '+str(type(pp)),exit=False)
                 errors = True
@@ -297,16 +302,18 @@ class PPset(DevBase):
             #end if
             ppcoll = obj()
             for pp in pps:
-                if not isinstance(pp,str):
+                if not isinstance(pp, (str, Path)):
                     self.error('incorrect use of ppset\nnon-filename provided with set labeled "{0}" for simulation code "{1}"\neach pseudopential file name must be a string\nreceived type: {2}\nwith value: {3}'.format(label,code,pp.__class__.__name__,pp))
-                #end if
-                elem_label,symbol,is_elem = pp_elem_label(pp)
+                else:
+                    pp = path_string(pp)
+                    elem_label, symbol, is_elem = pp_elem_label(pp)
+
                 if not is_elem:
                     self.error('invalid filename provided to ppset\ncannot determine element for pseudopotential file: {0}\npseudopotential file names must be prefixed by an atomic symbol or label\n(e.g. Si, Si1, etc)'.format(pp))
                 elif symbol in ppcoll:
                     self.error('incorrect use of ppset\nmore than one pseudopotential file provided for element "{0}" for code "{1}" in set labeled "{2}"\nfirst file: {3}\nsecond file: {4}'.format(symbol,code,label,ppcoll[symbol],pp))
                 #end if
-                ppcoll[symbol] = pp
+                ppcoll[symbol] = path_string(pp)
             #end for
             pseudos[clow] = ppcoll
         #end for
