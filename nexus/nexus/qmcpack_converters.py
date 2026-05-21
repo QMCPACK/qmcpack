@@ -386,9 +386,8 @@ class Pw2qmcpack(Simulation):
 
     def check_sim_status(self):
         outfile = os.path.join(self.locdir,self.outfile)
-        fobj = open(outfile,'r')
-        output = fobj.read()
-        fobj.close()
+        with open(outfile, "r") as fobj:
+            output = fobj.read()
         inputpp = self.input.inputpp
         prefix = 'pwscf'
         outdir = './'
@@ -856,7 +855,8 @@ class Convert4qmc(Simulation):
 
 
     def check_sim_status(self):
-        output = open(os.path.join(self.locdir,self.outfile),'r').read()
+        with open(os.path.join(self.locdir,self.outfile), "r") as out:
+            output = out.read()
         #errors = open(os.path.join(self.locdir,self.errfile),'r').read()
 
         # Recent versions of convert4qmc no longer produce the orbs.h5 file.
@@ -1348,7 +1348,8 @@ class PyscfToAfqmc(Simulation):
 
 
     def check_sim_status(self):
-        output = open(os.path.join(self.locdir,self.outfile),'r').read()
+        with open(os.path.join(self.locdir,self.outfile), "r") as out:
+            output = out.read()
 
         success = '# Finished.' in output
         success &= os.path.exists(os.path.join(self.locdir,self.input.output))

@@ -11,6 +11,7 @@ from .. import testing
 from ..testing import value_eq as value_eq_orig
 from ..testing import object_eq as object_eq_orig
 from ..testing import object_diff as object_diff_orig
+from ..testing import text_eq
 
 
 struct_atol = 1e-10
@@ -1647,3 +1648,267 @@ def test_rmg_transform():
 
     assert(testing.check_object_eq(res,ref,atol=1e-12))
 #end def test_rmg_transform
+
+
+def test_group_atoms():
+    from nexus.structure import Structure
+
+    unordered_elem = ["H", "N", "C", "H", "C", "O", "H", "H", "O", "H"]
+    ordered_elem = ["C", "C", "H", "H", "H", "H", "H", "N", "O", "O"]
+
+    structure = Structure(
+        axes = np.array([
+            [6.00000, 0.00000, 0.00000],
+            [0.00000, 6.00000, 0.00000],
+            [0.00000, 0.00000, 6.00000],
+        ], dtype=np.float64),
+        elem = unordered_elem,
+        pos = np.array([
+            [ 0.711045, 1.361274, 3.966292],
+            [ 1.848745, 2.865874, 3.041292],
+            [ 0.679145, 1.977474, 3.067692],
+            [ 1.827545, 3.514674, 3.813792],
+            [-0.580355, 2.805074, 3.070592],
+            [-0.510755, 4.011174, 3.052592],
+            [ 2.706445, 2.334474, 3.038892],
+            [ 0.690245, 1.335874, 2.186592],
+            [-1.779455, 2.202274, 3.093292],
+            [-2.558655, 2.774774, 3.094192],
+        ], dtype=np.float64),
+        units="A",
+    )
+
+    np.testing.assert_array_equal(structure.elem, unordered_elem)
+
+    structure.group_atoms()
+    np.testing.assert_array_equal(structure.elem, ordered_elem)
+
+
+def test_rename():
+    from nexus.structure import Structure
+
+    original_elem = ["N", "C", "C", "O", "O", "H", "H", "H", "H", "H"]
+
+    structure = Structure(
+        axes = np.array([
+            [6.00000, 0.00000, 0.00000],
+            [0.00000, 6.00000, 0.00000],
+            [0.00000, 0.00000, 6.00000],
+        ], dtype=np.float64),
+        elem = original_elem,
+        pos = np.array([
+            [ 1.848745, 2.865874, 3.041292],
+            [ 0.679145, 1.977474, 3.067692],
+            [-0.580355, 2.805074, 3.070592],
+            [-0.510755, 4.011174, 3.052592],
+            [-1.779455, 2.202274, 3.093292],
+            [ 1.827545, 3.514674, 3.813792],
+            [ 2.706445, 2.334474, 3.038892],
+            [ 0.690245, 1.335874, 2.186592],
+            [ 0.711045, 1.361274, 3.966292],
+            [-2.558655, 2.774774, 3.094192],
+        ], dtype=np.float64),
+        units="A",
+    )
+
+    np.testing.assert_array_equal(structure.elem, original_elem)
+
+    new_elem = ["La", "Np", "Np", "Te", "Te", "Ag", "Ag", "Ag", "Ag", "Ag"]
+    structure.rename(
+        folded=True,
+        N = "La",
+        C = "Np",
+        O = "Te",
+        H = "Ag",
+    )
+
+    np.testing.assert_array_equal(structure.elem, new_elem)
+
+
+def test_reset_axes():
+    from nexus.structure import Structure
+
+    original_axes = np.array([
+        [6.00000, 0.00000, 0.00000],
+        [0.00000, 6.00000, 0.00000],
+        [0.00000, 0.00000, 6.00000],
+    ], dtype=np.float64)
+
+    original_kaxes = np.array([
+        [1.0471975511965976, 0.0, 0.0],
+        [0.0, 1.0471975511965976, 0.0],
+        [0.0, 0.0, 1.0471975511965976],
+    ], dtype=np.float64)
+
+    original_center = np.array([3.0, 3.0, 3.0], dtype=np.float64)
+
+    structure = Structure(
+        axes = original_axes,
+        elem = ["N", "C", "C", "O", "O", "H", "H", "H", "H", "H"],
+        pos = np.array([
+            [ 1.848745, 2.865874, 3.041292],
+            [ 0.679145, 1.977474, 3.067692],
+            [-0.580355, 2.805074, 3.070592],
+            [-0.510755, 4.011174, 3.052592],
+            [-1.779455, 2.202274, 3.093292],
+            [ 1.827545, 3.514674, 3.813792],
+            [ 2.706445, 2.334474, 3.038892],
+            [ 0.690245, 1.335874, 2.186592],
+            [ 0.711045, 1.361274, 3.966292],
+            [-2.558655, 2.774774, 3.094192],
+        ], dtype=np.float64),
+        units="A",
+    )
+
+    np.testing.assert_array_equal(structure.axes, original_axes)
+    np.testing.assert_array_equal(structure.kaxes, original_kaxes)
+    np.testing.assert_array_equal(structure.center, original_center)
+
+    new_axes = np.array([
+        [12.00000,  0.00000,  0.00000],
+        [ 0.00000, 12.00000,  0.00000],
+        [ 0.00000,  0.00000, 12.00000],
+    ], dtype=np.float64)
+
+    new_kaxes = np.array([
+        [0.5235987755982988, 0.0, 0.0],
+        [0.0, 0.5235987755982988, 0.0],
+        [0.0, 0.0, 0.5235987755982988],
+    ], dtype=np.float64)
+
+    new_center = np.array([6.0, 6.0, 6.0], dtype=np.float64)
+
+    structure.reset_axes(new_axes)
+
+    np.testing.assert_allclose(structure.axes, new_axes)
+    np.testing.assert_allclose(structure.kaxes, new_kaxes)
+    np.testing.assert_allclose(structure.center, new_center)
+
+
+def test_reset_axes_none():
+    from nexus.structure import Structure
+
+    original_axes = np.array([
+        [6.00000, 0.00000, 0.00000],
+        [0.00000, 6.00000, 0.00000],
+        [0.00000, 0.00000, 6.00000],
+    ], dtype=np.float64)
+
+    original_kaxes = np.array([
+        [7.0, 0.0, 0.0],
+        [0.0, 7.0, 0.0],
+        [0.0, 0.0, 7.0],
+    ], dtype=np.float64)
+
+    original_center = np.array([400.0, 400.0, 400.0], dtype=np.float64)
+
+    structure = Structure(
+        axes = original_axes,
+        elem = ["N", "C", "C", "O", "O", "H", "H", "H", "H", "H"],
+        pos = np.array([
+            [ 1.848745, 2.865874, 3.041292],
+            [ 0.679145, 1.977474, 3.067692],
+            [-0.580355, 2.805074, 3.070592],
+            [-0.510755, 4.011174, 3.052592],
+            [-1.779455, 2.202274, 3.093292],
+            [ 1.827545, 3.514674, 3.813792],
+            [ 2.706445, 2.334474, 3.038892],
+            [ 0.690245, 1.335874, 2.186592],
+            [ 0.711045, 1.361274, 3.966292],
+            [-2.558655, 2.774774, 3.094192],
+        ], dtype=np.float64),
+        units="A",
+        center = original_center,
+    )
+
+    structure.kaxes = original_kaxes
+
+    np.testing.assert_array_equal(structure.axes, original_axes)
+    np.testing.assert_array_equal(structure.kaxes, original_kaxes)
+    np.testing.assert_array_equal(structure.center, original_center)
+
+    ref_kaxes = np.array([
+        [1.0471975511965976, 0.0, 0.0],
+        [0.0, 1.0471975511965976, 0.0],
+        [0.0, 0.0, 1.0471975511965976],
+    ], dtype=np.float64)
+
+    ref_center = np.array([3.0, 3.0, 3.0], dtype=np.float64)
+
+    structure.reset_axes(axes = None)
+
+    np.testing.assert_allclose(structure.axes, original_axes)
+    np.testing.assert_allclose(structure.kaxes, ref_kaxes)
+    np.testing.assert_allclose(structure.center, ref_center)
+
+def test_write_axes():
+    from nexus.structure import Structure
+
+    structure = Structure(
+        axes = np.array([
+            [6.00000,  0.00000,   0.00000],
+            [0.00000, 12.00000,   0.00000],
+            [0.00000,  0.00000, 300.00000],
+        ], dtype=np.float64),
+        elem = ["N", "C", "C", "O", "O", "H", "H", "H", "H", "H"],
+        pos = np.array([
+            [ 1.848745, 2.865874, 3.041292],
+            [ 0.679145, 1.977474, 3.067692],
+            [-0.580355, 2.805074, 3.070592],
+            [-0.510755, 4.011174, 3.052592],
+            [-1.779455, 2.202274, 3.093292],
+            [ 1.827545, 3.514674, 3.813792],
+            [ 2.706445, 2.334474, 3.038892],
+            [ 0.690245, 1.335874, 2.186592],
+            [ 0.711045, 1.361274, 3.966292],
+            [-2.558655, 2.774774, 3.094192],
+        ], dtype=np.float64),
+        units="A",
+    )
+
+    ref_write_axes = (
+        "  6.00000000   0.00000000   0.00000000\n"
+        "  0.00000000  12.00000000   0.00000000\n"
+        "  0.00000000   0.00000000 300.00000000\n"
+    )
+    calc_write_axes = structure.write_axes()
+    assert(text_eq(calc_write_axes, ref_write_axes))
+
+
+def test_corners():
+    from nexus.structure import Structure
+
+    structure = Structure(
+        axes = np.array([
+            [7.00000,  0.00000,  0.00000],
+            [0.00000, 14.00000,  0.00000],
+            [0.00000,  0.00000, 35.00000],
+        ], dtype=np.float64),
+        elem = ["N", "C", "C", "O", "O", "H", "H", "H", "H", "H"],
+        pos = np.array([
+            [ 1.848745, 2.865874, 3.041292],
+            [ 0.679145, 1.977474, 3.067692],
+            [-0.580355, 2.805074, 3.070592],
+            [-0.510755, 4.011174, 3.052592],
+            [-1.779455, 2.202274, 3.093292],
+            [ 1.827545, 3.514674, 3.813792],
+            [ 2.706445, 2.334474, 3.038892],
+            [ 0.690245, 1.335874, 2.186592],
+            [ 0.711045, 1.361274, 3.966292],
+            [-2.558655, 2.774774, 3.094192],
+        ], dtype=np.float64),
+        units="A",
+    )
+
+    ref_corners = [
+        [0.0,  0.0,  0.0],
+        [7.0,  0.0,  0.0],
+        [0.0, 14.0,  0.0],
+        [0.0,  0.0, 35.0],
+        [7.0, 14.0,  0.0],
+        [0.0, 14.0, 35.0],
+        [7.0,  0.0, 35.0],
+        [7.0, 14.0, 35.0],
+    ]
+
+    np.testing.assert_allclose(structure.corners(), ref_corners)

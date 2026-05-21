@@ -760,7 +760,8 @@ class ProjwfcAnalyzer(SimulationAnalyzer):
             #end if
         #end for
         if filepath is not None:
-            open(filepath,'w').write(text)
+            with open(filepath, "w") as f:
+                f.write(text)
         #end if
         return text
     #end def write_lowdin
