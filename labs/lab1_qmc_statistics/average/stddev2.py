@@ -9,4 +9,4 @@ stddev = ( (1./(5.-1.)) * (
 )
 )**0.5
 
-print stddev
+print(stddev)
