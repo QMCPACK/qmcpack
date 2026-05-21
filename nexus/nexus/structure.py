@@ -2221,16 +2221,9 @@ class Structure(Sobj):
 
     def locate(
         self,
-        identifiers: (
-            Structure
-            | npt.NDArray[np.bool_]
-            | int
-            | str
-            | Elements
-            | list[str | Elements | int | float]
-        ),
-        radii : int | float | list[int | float] | None = None,
-        invert: bool = False,
+        identifiers: Structure | npt.NDArray[np.bool_] | int | str | Elements | list[str | Elements | int | float],
+        radii      : int | float | list[int | float] | None = None,
+        invert     : bool = False,
     ) -> npt.NDArray[np.int64]:
         """Locate atoms in a structure by some identifier(s).
 
