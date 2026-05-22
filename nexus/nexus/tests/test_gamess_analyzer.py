@@ -11,7 +11,7 @@ from ..testing import object_eq
 TEST_FILES = {
     "gms.inp": TEST_DIR / "test_gamess_analyzer_files/gms.inp",
     "gms.out": TEST_DIR / "test_gamess_analyzer_files/gms.out",
-}
+    }
 
 for file in TEST_FILES.values():
     assert(file.exists()), f"Test file not found! {file}"

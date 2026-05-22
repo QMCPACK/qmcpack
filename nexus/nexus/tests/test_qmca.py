@@ -20,7 +20,7 @@ QA_PATHS = {
     "dmc":       TEST_DIR / "test_qmcpack_analyzer_files/diamond_gamma/dmc",
     "vmc_twist": TEST_DIR / "test_qmcpack_analyzer_files/diamond_twist/vmc",
     "multi":     TEST_DIR / "test_qmcpack_analyzer_files/diamond_gamma",
-}
+    }
 
 
 def test_help():

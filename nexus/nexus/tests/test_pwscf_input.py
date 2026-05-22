@@ -22,7 +22,7 @@ TEST_FILES = {
     "VO2_M1_afm.xsf":         TEST_DIR / "test_pwscf_input_files/VO2_M1_afm.xsf",
     "WSe2_band_structure.in": TEST_DIR / "test_pwscf_input_files/WSe2_band_structure.in",
     "README": TEST_DIR / "test_pwscf_input_files/README",
-}
+    }
 
 for file in TEST_FILES.values():
     assert(file.exists()), f"Test file not found! {file}"

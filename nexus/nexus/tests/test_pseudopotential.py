@@ -13,7 +13,7 @@ TEST_FILES = {
     "C.BFD.gms": TEST_DIR / "test_pseudopotential_files/C.BFD.gms",
     "C.BFD.upf": TEST_DIR / "../examples/qmcpack/pseudopotentials/C.BFD.upf",
     "C.BFD.xml": TEST_DIR / "../examples/qmcpack/pseudopotentials/C.BFD.xml",
-}
+    }
 
 for file in TEST_FILES.values():
     assert(file.exists()), f"Test file not found! {file}"

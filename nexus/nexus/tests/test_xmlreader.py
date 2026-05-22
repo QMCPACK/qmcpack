@@ -10,7 +10,7 @@ from ..testing import object_eq
 
 TEST_FILES = {
     "vmc.in.xml": TEST_DIR / "test_xmlreader_files/vmc.in.xml",
-}
+    }
 
 for file in TEST_FILES.values():
     assert(file.exists()), f"Test file not found! {file}"

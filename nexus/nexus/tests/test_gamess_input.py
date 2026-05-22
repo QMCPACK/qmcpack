@@ -17,7 +17,7 @@ TEST_FILES = {
     "cas.inp":           TEST_DIR / "test_gamess_input_files/cas.inp",
     "H.BFD_V5Z_ANO.gms": TEST_DIR / "test_gamess_input_files/H.BFD_V5Z_ANO.gms",
     "O.BFD_V5Z.gms":     TEST_DIR / "test_gamess_input_files/O.BFD_V5Z.gms",
-}
+    }
 
 for file in TEST_FILES.values():
     assert(file.exists()), f"Test file not found! {file}"

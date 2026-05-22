@@ -3,12 +3,7 @@ from enum import IntEnum, auto
 from pathlib import Path
 from copy import deepcopy
 import functools
-from nexus.nexus_base import (
-    nexus_core,
-    nexus_noncore,
-    nexus_core_noncore,
-    nexus_noncore_defaults,
-)
+from nexus.nexus_base import nexus_core, nexus_noncore, nexus_core_noncore, nexus_noncore_defaults
 from nexus.generic import generic_settings, object_interface
 from nexus.pseudopotential import Pseudopotentials
 from nexus.simulation import Simulation
@@ -95,7 +90,7 @@ def divert_nexus_log():
     logging_storage = {
         'devlog': generic_settings.devlog,
         'objlog': object_interface._logfile,
-    }
+        }
     logfile = FakeLog()
     generic_settings.devlog   = logfile
     object_interface._logfile = logfile
@@ -155,7 +150,7 @@ def create_pseudo_files(
     tmp_dir: Path,
     pseudos: list[str],
     pseudo_strs: list[str | None] | None = None
-):
+    ):
     """Create pseudopotential files and add them to the global pseudopotentials.
 
     This function must be called in a function that has been decorated
@@ -179,7 +174,7 @@ def create_pseudo_files(
         raise ValueError(
             "Test improperly written!\n"
             "Must have pseudo text or `None` for every pseudo file!"
-        )
+            )
 
     pseudo_dir = tmp_dir / "pseudopotentials"
     pseudo_dir.mkdir(parents=True)

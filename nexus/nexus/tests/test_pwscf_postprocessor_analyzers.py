@@ -12,7 +12,7 @@ from ..testing import object_eq,text_eq
 TEST_FILES = {
     "pwf.in":  TEST_DIR / "test_pwscf_postprocessor_analyzers_files/pwf.in",
     "pwf.out": TEST_DIR / "test_pwscf_postprocessor_analyzers_files/pwf.out",
-}
+    }
 
 for file in TEST_FILES.values():
     assert(file.exists()), f"Test file not found! {file}"

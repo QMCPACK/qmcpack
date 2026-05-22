@@ -15,7 +15,7 @@ TEST_FILES = {
     "old_nxs_sim.p":         Path(__file__+"/../test_generic_files/old_nxs_sim.p").resolve(),
     "old_nxs_pwscf_input_numpy_1.p": Path(__file__+"/../test_generic_files/old_nxs_pwscf_input_numpy_1.p").resolve(),
     "old_nxs_sim_numpy_1.p":         Path(__file__+"/../test_generic_files/old_nxs_sim_numpy_1.p").resolve(),
-}
+    }
 
 @isolate_nexus_core
 def test_logging():

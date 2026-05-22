@@ -12,7 +12,7 @@ TEST_FILES = {
     "CH4_afqmc.in.xml":    TEST_DIR / "test_qmcpack_input_files/CH4_afqmc.in.xml",
     "OH_mixed_pos.in.xml": TEST_DIR / "test_qmcpack_input_files/OH_mixed_pos.in.xml",
     "VO2_M1_afm.in.xml":   TEST_DIR / "test_qmcpack_input_files/VO2_M1_afm.in.xml",
-}
+    }
 
 for file in TEST_FILES.values():
     assert(file.exists()), f"Test file not found! {file}"

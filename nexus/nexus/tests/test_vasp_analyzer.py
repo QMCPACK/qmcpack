@@ -25,7 +25,7 @@ TEST_FILES = {
     "relax.qsub.in":     TEST_DIR / "test_vasp_analyzer_files/relax.qsub.in",
     "relax.vasprun.xml": TEST_DIR / "test_vasp_analyzer_files/relax.vasprun.xml",
     "relax.XDATCAR":     TEST_DIR / "test_vasp_analyzer_files/relax.XDATCAR",
-}
+    }
 
 for file in TEST_FILES.values():
     assert(file.exists()), f"Test file not found! {file}"

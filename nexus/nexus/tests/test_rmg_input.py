@@ -38,7 +38,7 @@ TEST_FILES = {
     "Pt_bulk_spinorbit_input_band":                                TEST_DIR / "test_rmg_input_files/Pt_bulk_spinorbit_input_band",
     "Si_8atoms_EXX_kpoints_input":                                 TEST_DIR / "test_rmg_input_files/Si_8atoms_EXX_kpoints_input",
     "U_bulk_spinorbit_RMG_input":                                  TEST_DIR / "test_rmg_input_files/U_bulk_spinorbit_RMG_input",
-}
+    }
 
 for file in TEST_FILES.values():
     assert(file.exists()), f"Test file not found! {file}"
