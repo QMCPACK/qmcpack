@@ -119,6 +119,7 @@ Module contents
 from __future__ import annotations
 import os
 from pathlib import Path
+from typing import TypeAlias, Self
 import numpy as np
 from copy import deepcopy
 from random import randint
@@ -139,6 +140,16 @@ from .periodic_table import Elements
 from .fileio import XsfFile, PoscarFile
 from .developer import DevBase, obj, unavailable, error
 from . import numpy_extensions as npe
+
+
+IdType: TypeAlias = "Structure | npt.NDArray[np.bool_] | int | str | Elements | list[str | Elements | int | float]"
+"""Alias for identifiers that can be used to locate specific atoms in a Structure.
+
+The ``Self`` type will resolve to subclasses of ``Structure``.
+"""
+
+RType: TypeAlias = int | float | list[int | float]
+"""Alias for types that can be accepted as a radius or list of radii."""
 
 try:
     from scipy.special import erfc
@@ -2221,9 +2232,9 @@ class Structure(Sobj):
 
     def locate(
         self,
-        identifiers: Structure | npt.NDArray[np.bool_] | int | str | Elements | list[str | Elements | int | float],
-        radii      : int | float | list[int | float] | None = None,
-        invert     : bool = False,
+        identifiers: IdType,
+        radii      : RType = None,
+        invert     : bool  = False,
     ) -> npt.NDArray[np.int64]:
         """Locate atoms in a structure by some identifier(s).
 
