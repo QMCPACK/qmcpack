@@ -1723,7 +1723,7 @@ class GaussianPP(SemilocalPP):
 
         if not Elements.is_element(element):
             if not Elements.is_element(self.element):
-                self.error('cannot identify element for pseudopotential file '+filepath)
+                self.error('cannot identify element for pseudopotential file '+path_string(filepath))
             #end if
         else:
             self.element = element
