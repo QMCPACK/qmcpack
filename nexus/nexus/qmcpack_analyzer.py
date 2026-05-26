@@ -221,8 +221,12 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
             ghost_atoms(*ghosts)
         #end if
 
-        if isinstance(arg0,Simulation):
+        if isinstance(arg0, Simulation):
             sim = arg0
+            if sim.failed:
+                self.warn("Simulation failed, skipping analysis!")
+                self.info.analyzed = sim.failed
+
             if 'analysis_request' in sim:
                 request = sim.analysis_request.copy()
             else:

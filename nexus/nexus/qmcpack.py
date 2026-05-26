@@ -1151,10 +1151,10 @@ class Qmcpack(Simulation):
         errors = self.errfile_text()
 
         ran_to_end  = 'Total Execution' in output
+        run_started = 'QMCPACK' in output
         aborted     = 'Fatal Error' in errors
         files_exist = True
         cusp_run    = False
-
         if not self.has_generic_input():
             if not isinstance(self.input,TracedQmcpackInput):
                 cusp_run = self.input.cusp_correction()
@@ -1186,9 +1186,11 @@ class Qmcpack(Simulation):
             #end if
         #end if
 
+        if not run_started:
+            self.warn("QMCPACK did not start properly!\n")
 
         self.succeeded = ran_to_end
-        self.failed    = aborted
+        self.failed    = aborted or not run_started
         self.finished  = files_exist and (self.job.finished or ran_to_end) and not aborted 
 
         if cusp_run and files_exist:

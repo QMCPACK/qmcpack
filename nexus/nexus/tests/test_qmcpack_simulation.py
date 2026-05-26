@@ -401,7 +401,10 @@ def test_check_sim_status():
     assert(not sim.failed)
 
     outfile = os.path.join(tpath,sim.outfile)
-    out_text = 'Total Execution'
+    out_text = (
+        'QMCPACK\n'
+        'Total Execution'
+    )
     out = open(outfile,'w')
     out.write(out_text)
     out.close()

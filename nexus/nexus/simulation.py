@@ -1270,7 +1270,13 @@ class Simulation(NexusCore):
                     if not self.got_output and 'get_output' in nexus_core.stages:
                         self.get_output()
                     #end if
+
+                    analyzed = self.analyzed
+                    if hasattr(self, "info"): # QmcpackAnalyzer uses QAInformation
+                        analyzed |= self.info.analyzed
+
                     if not self.analyzed and 'analyze' in nexus_core.stages:
+
                         self.analyze()
                     #end if
                 #end if
