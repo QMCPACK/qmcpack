@@ -30,6 +30,7 @@ from .developer import DevBase, obj, error, to_str
 from .periodic_table import Elements
 from .unit_converter import convert
 from . import numpy_extensions as npe
+from .utilities import path_string
 
 class TextFile(DevBase):
     # interface to mmap files
@@ -39,11 +40,13 @@ class TextFile(DevBase):
         self.mm = None
         self.f  = None
         if filepath is not None:
+            filepath = path_string(filepath)
             self.open(filepath)
         #end if
     #end def __init__
 
     def open(self,filepath):
+        filepath = path_string(filepath)
         if not os.path.exists(filepath):
             self.error('cannot open non-existent file: {0}'.format(filepath))
         #end if
@@ -243,7 +246,8 @@ class StandardFile(DevBase):
     def __init__(self,filepath=None):
         if filepath is None:
             None
-        elif isinstance(filepath, (str, Path)):
+        elif isinstance(filepath, str | bytes | Path):
+            filepath = path_string(filepath)
             self.read(filepath)
         else:
             self.error('unsupported input: {0}'.format(filepath))

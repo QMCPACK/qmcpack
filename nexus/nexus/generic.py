@@ -38,7 +38,7 @@ from pickle import UnpicklingError
 from random import randint
 from pathlib import Path
 
-from .utilities import sorted_py2
+from .utilities import sorted_py2, path_string
 
 
 class generic_settings:
@@ -1047,7 +1047,8 @@ class obj(object_interface):
 
     def path_exists(self,path):
         o = self
-        if isinstance(path,str):
+        if isinstance(path, str | bytes | Path):
+            path = path_string(path)
             path = path.split('/')
         #end if
         for p in path:
@@ -1062,7 +1063,8 @@ class obj(object_interface):
     def set_path(self,path,value=None):
         o = self
         cls = self.__class__
-        if isinstance(path,str):
+        if isinstance(path, str | bytes | Path):
+            path = path_string(path)
             path = path.split('/')
         #end if
         for p in path[0:-1]:
@@ -1076,7 +1078,8 @@ class obj(object_interface):
 
     def get_path(self,path,value=None):
         o = self
-        if isinstance(path,str):
+        if isinstance(path, str | bytes | Path):
+            path = path_string(path)
             path = path.split('/')
         #end if
         for p in path[0:-1]:
