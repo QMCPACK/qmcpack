@@ -30,6 +30,7 @@ from .nexus_version import nexus_version
 from .generic       import generic_settings
 from .developer     import obj,                error,              log
 from .debug         import ci
+from .utilities     import path_string
 
 from .nexus_base      import NexusCore,              nexus_core,     nexus_noncore,          nexus_core_noncore,         restore_nexus_core_defaults,    nexus_core_defaults
 from .machines        import Job,                    job,            Machine, Supercomputer, get_machine
@@ -193,6 +194,17 @@ class Settings(NexusCore):
     # sets up Nexus core class behavior and passes information to broader class structure
     def __call__(self,**kwargs):
         kwargs = obj(**kwargs)
+        # Ensure no pathlib.Path objects are stored
+        core_path_vars = (
+            "runs",
+            "results",
+            "pseudo_dir",
+            "local_directory",
+            "remote_directory",
+        )
+        for var in core_path_vars:
+            if var in kwargs:
+                kwargs[var] = path_string(kwargs[var])
 
         # guard against invalid settings
         not_allowed = set(kwargs.keys()) - Settings.allowed_vars
@@ -599,9 +611,9 @@ class Settings(NexusCore):
         if 'file_locations' in kw:
             fl = kw.file_locations
             if isinstance(fl,str):
-                nexus_core.file_locations.extend([fl])
+                nexus_core.file_locations.extend([path_string(fl)])
             else:
-                nexus_core.file_locations.extend(list(fl))
+                nexus_core.file_locations.extend([path_string(f) for f in fl])
             #end if
         #end if
         if 'pseudo_dir' not in kw:

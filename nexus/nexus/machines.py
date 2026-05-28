@@ -51,6 +51,7 @@ import numpy as np
 from .developer import DevBase, obj
 from .nexus_base import NexusCore, nexus_core
 from .execute import execute
+from .utilities import path_string
 import importlib.util
 import importlib.machinery
 
@@ -239,6 +240,18 @@ class Job(NexusCore):
     def __init__(self,**kwargs):
         # rewrap keyword arguments
         kw = obj(**kwargs)
+        # Ensure no pathlib.Path objects are stored
+        path_arguments = (
+            "directory",
+            "subdir",
+            "app_name",
+            "outfile",
+            "errfile",
+            "subfile",
+        )
+        for arg in path_arguments:
+            if arg in kw:
+                kw[arg] = path_string(kw[arg])
 
         # save information used to initialize job object
         self.init_info = kw.copy()
