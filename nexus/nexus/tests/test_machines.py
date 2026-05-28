@@ -8,7 +8,8 @@ generic_settings.raise_error = True
 from . import isolate_nexus_core
 from .. import testing
 from ..testing import object_eq,object_diff,failed,FailedTest
-
+from ..testing import divert_nexus_log,restore_nexus_log
+from ..utilities import path_string
 
 all_machines = []
 machines_data = dict()
@@ -487,7 +488,7 @@ def init_job(j,
              ):
     import os
     identifier = id
-    directory  = dir
+    directory  = path_string(dir)
     j.set_id()
     j.identifier  = identifier
     j.directory   = directory
