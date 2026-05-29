@@ -1,12 +1,12 @@
-try:
-    import pytest
-    from . import NexusTestOrder
-    pytestmark = pytest.mark.order(NexusTestOrder.PWSCF_POSTPROCESSOR_INPUT)
-except ImportError:
-    pass
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.PWSCF_POSTPROCESSOR_INPUT)
+
+from ..generic import generic_settings
+generic_settings.raise_error = True
 
 from .. import testing
-from ..testing import value_eq,object_eq,text_eq
+from ..testing import object_eq
 
 
 projwfc_in = '''&projwfc
@@ -14,17 +14,6 @@ projwfc_in = '''&projwfc
   outdir = 'pwscf_output'
 /
 '''
-
-
-
-def test_import():
-    from ..pwscf_postprocessors import PPInput,generate_pp_input
-    from ..pwscf_postprocessors import DosInput,generate_dos_input
-    from ..pwscf_postprocessors import BandsInput,generate_bands_input
-    from ..pwscf_postprocessors import ProjwfcInput,generate_projwfc_input
-    from ..pwscf_postprocessors import CpppInput,generate_cppp_input
-    from ..pwscf_postprocessors import PwexportInput,generate_pwexport_input
-#end def test_import
 
 
 

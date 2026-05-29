@@ -1,12 +1,12 @@
-try:
-    import pytest
-    from . import NexusTestOrder
-    pytestmark = pytest.mark.order(NexusTestOrder.BASISSET)
-except ImportError:
-    pass
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.BASISSET)
+
+from ..generic import generic_settings
+generic_settings.raise_error = True
 
 from .. import testing
-from ..testing import value_eq,object_eq
+from ..testing import object_eq
 from ..testing import divert_nexus_log,restore_nexus_log
 
 
@@ -39,15 +39,6 @@ def test_files():
     files = get_files()
     assert(set(files.keys())==set(filenames))
 #end def test_files
-
-
-
-def test_import():
-    from .. import basisset
-    from ..basisset import BasisSets
-    from ..basisset import process_gaussian_text
-    from ..basisset import GaussianBasisSet
-#end def test_import
 
 
 

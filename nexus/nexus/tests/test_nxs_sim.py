@@ -1,13 +1,13 @@
-try:
-    import pytest
-    from . import NexusTestOrder
-    pytestmark = pytest.mark.order(NexusTestOrder.NXS_SIM)
-except ImportError:
-    pass
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.NXS_SIM)
+
+from ..generic import generic_settings
+generic_settings.raise_error = True
 
 import sys
 from .. import testing
-from ..testing import divert_nexus,restore_nexus,clear_all_sims
+from ..testing import restore_nexus,clear_all_sims
 from ..testing import execute,text_eq
 
 

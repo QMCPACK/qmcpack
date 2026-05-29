@@ -1,20 +1,15 @@
-try:
-    import pytest
-    from . import NexusTestOrder
-    pytestmark = pytest.mark.order(NexusTestOrder.PROJECT_MANAGER)
-except ImportError:
-    pass
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.PROJECT_MANAGER)
+
+from ..generic import generic_settings
+generic_settings.raise_error = True
 
 from .. import testing
-from ..testing import value_eq,object_eq
+from ..testing import value_eq
 from ..testing import failed,FailedTest
 from ..testing import divert_nexus_log,restore_nexus_log
 from ..testing import divert_nexus,restore_nexus
-
-
-def test_import():
-    from ..project_manager import ProjectManager
-#end def test_import
 
 
 
@@ -194,7 +189,6 @@ def test_resolve_file_collisions():
 
 
 def test_propagate_blockages():
-    from ..developer import NexusError
     from ..simulation import Simulation
     from ..project_manager import ProjectManager
 

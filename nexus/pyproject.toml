@@ -31,6 +31,11 @@ dev = [
     "pytest-cov>=7.0.0",
     "pytest-order>=1.3.0",
 ]
+docs = [
+    "sphinx>=8.1.0",
+    "sphinx-rtd-theme>=3.1.0",
+    "sphinxcontrib-bibtex>=2.6.5",
+]
 
 [project.optional-dependencies]
 
@@ -50,18 +55,17 @@ Repository = "https://github.com/QMCPACK/qmcpack"
 [tool.coverage.run]
 patch = ["subprocess"]
 parallel = true
-omit = [
-    "nexus/tests/*",
-    "nexus/examples/*",
-]
+omit = ["nexus/tests/*"]
 
 [tool.coverage.report]
-omit = [
-    "nexus/tests/*",
-    "nexus/examples/*",
-]
+omit = ["nexus/tests/*"]
 
 [tool.pytest.ini_options]
 #addopts = ["--cov=nexus", "--cov-report=xml"]
+filterwarnings = [
+    "ignore::UserWarning",
+    "ignore::DeprecationWarning:spglib.*",
+    "ignore:::.*.CifFile",
+]
 testpaths = ["nexus/tests"]
 xfail_strict = true

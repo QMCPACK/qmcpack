@@ -1,14 +1,13 @@
-#! /usr/bin/env python3
-try:
-    import pytest
-    from . import NexusTestOrder
-    pytestmark = pytest.mark.order(NexusTestOrder.PHYSICAL_SYSTEM)
-except ImportError:
-    pass
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.PHYSICAL_SYSTEM)
+
+from ..generic import generic_settings
+generic_settings.raise_error = True
 
 import numpy as np
 from .. import testing
-from ..testing import value_eq,object_eq,object_diff,print_diff
+from ..testing import value_eq,object_eq
 
 from .test_structure import structure_same
 
@@ -33,19 +32,8 @@ def system_same(s1,s2,pseudized=True,tiled=False):
 #end def system_same
 
 
-
-def test_import():
-    from .. import physical_system
-    from ..physical_system import Matter,Particle,Ion,PseudoIon,Particles
-    from ..physical_system import PhysicalSystem,generate_physical_system
-#end def test_import
-
-
-
 def test_particle_initialization():
-    from ..developer import obj
     from ..physical_system import Matter,Particle,Ion,PseudoIon,Particles
-    from ..physical_system import PhysicalSystem,generate_physical_system
 
     # empty initialization
     Matter()

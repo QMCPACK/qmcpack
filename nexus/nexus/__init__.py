@@ -22,9 +22,11 @@
 #====================================================================#
 
 import os
+import sys
+import importlib
+from importlib.metadata import PackageNotFoundError
 
 from .nexus_version import nexus_version
-from .versions      import current_versions,   policy_versions,    check_versions
 from .generic       import generic_settings
 from .developer     import obj,                error,              log
 from .debug         import ci
@@ -212,15 +214,82 @@ class Settings(NexusCore):
         NexusCore.write_splash()
 
         # print version information
+        self.log("Checking current machine for Nexus dependencies...\n")
+        pkg_sort = {
+            "numpy":      0,
+            "scipy":      1,
+            "h5py":       2,
+            "matplotlib": 3,
+            "spglib":     4,
+            "cif2cell":   5,
+            "pydot":      6,
+            "seekpath":   7,
+        }
+
         try:
-            from .versions import versions
-            if versions is not None:
-                err,s,serr = versions.check(write=False,full=True)
-                self.log(s)
-            #end if
-        except Exception:
-            pass
-        #end try
+            nxs_requirements = importlib.metadata.requires("nexus")
+            nxs_deps = {}
+            for req in nxs_requirements:
+                pkg_name = req.split("=")[0][:-1]
+                pkg_ver_min = req.split(">=")[-1]
+                if ";" in pkg_ver_min:
+                    pkg_ver_min = pkg_ver_min.split(";")[0]
+                    status = "optional"
+                else:
+                    status = "required"
+
+                nxs_deps[pkg_name] = {"min_ver": pkg_ver_min, "status": status}
+        except PackageNotFoundError:
+            nxs_deps = {
+                "numpy":      {"min_ver": "x.x.x", "status": "required"},
+                "scipy":      {"min_ver": "x.x.x", "status": "optional"},
+                "h5py":       {"min_ver": "x.x.x", "status": "optional"},
+                "matplotlib": {"min_ver": "x.x.x", "status": "optional"},
+                "spglib":     {"min_ver": "x.x.x", "status": "optional"},
+                "cif2cell":   {"min_ver": "x.x.x", "status": "optional"},
+                "pydot":      {"min_ver": "x.x.x", "status": "optional"},
+                "seekpath":   {"min_ver": "x.x.x", "status": "optional"},
+            }
+
+        nxs_deps = {k:v for k, v in sorted(nxs_deps.items(), key=lambda x: pkg_sort.get(x[0], 1000))}
+
+        available_pkgs = {}
+        for module in nxs_deps.keys():
+            if importlib.util.find_spec(module) is not None:
+                available_pkgs[module] = importlib.metadata.version(module)
+            else:
+                available_pkgs[module] = "Unavailable"
+
+        version_text = ""
+
+        name_align = max([len(i) for i in nxs_deps.keys()])
+        version_text +=  "  Currently Available Nexus Dependencies:\n"
+        version_text += f"    {'Python':<{name_align}} = {sys.version.split()[0]}\n"
+        for pkg_name, pkg_ver in available_pkgs.items():
+            version_text += f"    {pkg_name:<{name_align}} = {pkg_ver:<11} ({nxs_deps[pkg_name]['status']})\n"
+
+        version_text +=  "\n"
+        version_text +=  "  Recommended Nexus Dependencies:\n"
+        version_text += f"    {'Python':<{name_align}} >= 3.10.0\n"
+        for pkg_name, pkg_info in nxs_deps.items():
+            version_text += f"    {pkg_name:<{name_align}} >= {pkg_info['min_ver']:<10} ({pkg_info['status']})\n"
+
+        version_text += "\n"
+        missing_deps = set(nxs_deps) - set([i for i, a in available_pkgs.items() if a != "Unavailable"])
+        if len(missing_deps) > 0:
+            version_text += "  Required dependencies are met,\n"
+            version_text += "  however some optional dependencies are missing.\n"
+            version_text += "  Some features of Nexus may be unavailable.\n\n"
+
+            version_text += "  Missing dependencies:\n"
+            for missing in missing_deps:
+                version_text += f"    - {missing} ({nxs_deps[pkg_name]['status']})\n"
+        else:
+            version_text += "  All dependencies are present.\n"
+
+        version_text += "\n"
+
+        self.log(version_text)
 
         self.log('Applying user settings')
 

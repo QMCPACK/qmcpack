@@ -1,17 +1,16 @@
-try:
-    import pytest
-    from . import NexusTestOrder
-    pytestmark = pytest.mark.order(NexusTestOrder.SIMULATION)
-except ImportError:
-    pass
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.SIMULATION)
+
+from ..generic import generic_settings
+generic_settings.raise_error = True
+
 
 from .. import testing
 from ..testing import value_eq,object_eq
 from ..testing import FailedTest,failed
 from ..testing import divert_nexus_log,restore_nexus_log
-from ..testing import divert_nexus,restore_nexus
-
-from .. import versions
+from ..testing import restore_nexus
 
 from ..developer import obj
 from ..simulation import Simulation,SimulationInput,SimulationAnalyzer
@@ -106,7 +105,6 @@ get_sim_simulations = []
 def get_sim(**kwargs):
     from ..machines import job
     from ..simulation import Simulation
-
     test_job = job(machine='ws1',app_command='test.x')
 
     n = len(get_sim_simulations)
@@ -378,21 +376,6 @@ def get_test_workflow(index,**kwargs):
 
 
 
-
-def test_import():
-    from .. import simulation
-    from ..simulation import Simulation,SimulationInput,SimulationAnalyzer
-    from ..simulation import SimulationImage
-    from ..simulation import NullSimulationInput,NullSimulationAnalyzer
-    from ..simulation import GenericSimulation
-    from ..simulation import SimulationInputTemplate
-    from ..simulation import SimulationInputMultiTemplate
-    from ..simulation import input_template,multi_input_template
-    from ..simulation import generate_simulation
-#end def test_import
-
-
-
 def test_simulation_input():
     import os
     from ..developer import NexusError
@@ -443,7 +426,6 @@ def test_simulation_input():
 
 
 def test_simulation_analyzer():
-    import os
     from ..developer import NexusError
     from ..simulation import SimulationAnalyzer
 
@@ -605,7 +587,7 @@ file2 = "my_file.dat"
 def test_simulation_input_multi_template():
     import os
     from string import Template
-    from ..developer import obj, NexusError
+    from ..developer import obj
     from ..simulation import SimulationInput
     from ..simulation import GenericSimulationInput
     from ..simulation import SimulationInputMultiTemplate
@@ -2902,14 +2884,14 @@ def test_generic_simulation():
 
 
 
-if versions.matplotlib_available and versions.pydot_available:
-    def test_graph_sims():
-        from ..simulation import Simulation,graph_sims
+def test_graph_sims():
+    _ = pytest.importorskip("matplotlib")
+    _ = pytest.importorskip("pydot")
+    from ..simulation import Simulation,graph_sims
 
-        sims = get_test_workflow(3)
+    sims = get_test_workflow(3)
 
-        graph_sims(sims.list(),display=False,exit=False)
+    graph_sims(sims.list(),display=False,exit=False)
 
-        Simulation.clear_all_sims()
-    #end def test_graph_sims
-#end if
+    Simulation.clear_all_sims()
+#end def test_graph_sims

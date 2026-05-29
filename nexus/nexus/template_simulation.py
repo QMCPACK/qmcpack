@@ -318,8 +318,11 @@ class TemplateSimulation(Simulation):
         #  read output/error files to check whether simulation has
         #    completed successfully
         #  one could also check whether all output files exist
-        output = open(os.path.join(self.locdir,self.outfile),'r').read()
-        errors = open(os.path.join(self.locdir,self.errfile),'r').read()
+        with open(os.path.join(self.locdir,self.outfile), "r") as out:
+            output = out.read()
+
+        with open(os.path.join(self.locdir,self.errfile), "r") as err:
+            errors = err.read()
         
         success = False
         # check output and errors

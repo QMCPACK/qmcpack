@@ -1,19 +1,17 @@
-#!/env/bin/python
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.STRUCTURE)
 
-try:
-    import pytest
-    from . import NexusTestOrder
-    pytestmark = pytest.mark.order(NexusTestOrder.STRUCTURE)
-except ImportError:
-    pass
+from ..generic import generic_settings
+generic_settings.raise_error = True
 
 
 import numpy as np
-from .. import versions
 from .. import testing
 from ..testing import value_eq as value_eq_orig
 from ..testing import object_eq as object_eq_orig
 from ..testing import object_diff as object_diff_orig
+from ..testing import text_eq
 
 
 struct_atol = 1e-10
@@ -273,14 +271,6 @@ def test_files():
 
 
 
-def test_import():
-    from ..structure import Structure,Crystal
-    from ..structure import generate_structure
-    from ..structure import read_structure
-#end def test_import
-
-
-
 def test_empty_init():
     from ..structure import Structure
     from ..structure import generate_structure
@@ -292,7 +282,6 @@ def test_empty_init():
 
 
 def test_reference_inputs():
-    from ..developer import obj
     ref_in = get_reference_inputs()
     assert(len(ref_in)>0)
 #end def test_reference_inputs
@@ -684,44 +673,44 @@ def test_read_write():
 
 
 
-if versions.pycifrw_available and versions.cif2cell_available:
-    def test_read_cif():
-        """
-        Read La2CuO4 structure from a CIF file.
-        """
-        from ..structure import read_structure,generate_structure
+def test_read_cif():
+    """
+    Read La2CuO4 structure from a CIF file.
+    """
+    _ = pytest.importorskip("cif2cell")
+    _ = pytest.importorskip("CifFile")
+    from ..structure import read_structure,generate_structure
 
-        files = get_files()
+    files = get_files()
 
-        # Read from CIF file
-        s = read_structure(files['La2CuO4_ICSD69312.cif'])
+    # Read from CIF file
+    s = read_structure(files['La2CuO4_ICSD69312.cif'])
 
-        ref = generate_structure(
-            units = 'A',
-            axes  = [[ 2.665,   0.    , -6.5525],
-                     [ 0.   ,   5.4126,  0.    ],
-                     [ 2.665,   0.    ,  6.5525]],
-            elem  = 'La La La La Cu Cu O O O O O O O O'.split(),
-            pos   = [[ 2.665 ,      5.37038172, -1.8071795 ],
-                     [ 2.665 ,      2.74851828,  4.7453205 ],
-                     [ 2.665 ,      2.66408172, -4.7453205 ],
-                     [ 2.665 ,      0.04221828,  1.8071795 ],
-                     [ 0.    ,      0.        ,  0.        ],
-                     [ 2.665 ,      2.7063    ,  0.        ],
-                     [ 1.3325,      1.35315   , -0.128429  ],
-                     [ 3.9975,      4.05945   ,  0.128429  ],
-                     [ 3.9975,      1.35315   , -0.128429  ],
-                     [ 1.3325,      4.05945   ,  0.128429  ],
-                     [ 2.665 ,      0.23490684, -4.1398695 ],
-                     [ 2.665 ,      2.47139316,  2.4126305 ],
-                     [ 2.665 ,      2.94120684, -2.4126305 ],
-                     [ 2.665 ,      5.17769316,  4.1398695 ]],
-            )
+    ref = generate_structure(
+        units = 'A',
+        axes  = [[ 2.665,   0.    , -6.5525],
+                    [ 0.   ,   5.4126,  0.    ],
+                    [ 2.665,   0.    ,  6.5525]],
+        elem  = 'La La La La Cu Cu O O O O O O O O'.split(),
+        pos   = [[ 2.665 ,      5.37038172, -1.8071795 ],
+                    [ 2.665 ,      2.74851828,  4.7453205 ],
+                    [ 2.665 ,      2.66408172, -4.7453205 ],
+                    [ 2.665 ,      0.04221828,  1.8071795 ],
+                    [ 0.    ,      0.        ,  0.        ],
+                    [ 2.665 ,      2.7063    ,  0.        ],
+                    [ 1.3325,      1.35315   , -0.128429  ],
+                    [ 3.9975,      4.05945   ,  0.128429  ],
+                    [ 3.9975,      1.35315   , -0.128429  ],
+                    [ 1.3325,      4.05945   ,  0.128429  ],
+                    [ 2.665 ,      0.23490684, -4.1398695 ],
+                    [ 2.665 ,      2.47139316,  2.4126305 ],
+                    [ 2.665 ,      2.94120684, -2.4126305 ],
+                    [ 2.665 ,      5.17769316,  4.1398695 ]],
+        )
 
-        assert(structure_same(s,ref))
+    assert(structure_same(s,ref))
 
-    #end def test_read_cif
-#end if
+#end def test_read_cif
 
 
 
@@ -790,46 +779,45 @@ def test_opt_tiling():
 
 
 
-if versions.seekpath_available:
-    def test_primitive_search():
-        """
-        Find the primitive cell given a supercell.
-        """
+def test_primitive_search():
+    """
+    Find the primitive cell given a supercell.
+    """
+    _ = pytest.importorskip("spglib")
+    _ = pytest.importorskip("seekpath")
+    from ..structure import generate_structure
 
-        from ..structure import generate_structure
+    d2 = generate_structure(
+        structure = 'diamond',
+        cell      = 'prim',
+        )
 
-        d2 = generate_structure(
-            structure = 'diamond',
-            cell      = 'prim',
-            )
+    tmatrix = [[ 2, -2,  2],
+                [ 2,  2, -2],
+                [-2,  2,  2]]
 
-        tmatrix = [[ 2, -2,  2],
-                   [ 2,  2, -2],
-                   [-2,  2,  2]]
+    d64 = d2.tile(tmatrix)
 
-        d64 = d2.tile(tmatrix)
+    # Remove all traces of the 2 atom cell, supercell is all that remains
+    d64.remove_folded()
+    del d2
 
-        # Remove all traces of the 2 atom cell, supercell is all that remains
-        d64.remove_folded()
-        del d2
+    # Find the primitive cell from the supercell
+    dprim = d64.primitive()
 
-        # Find the primitive cell from the supercell
-        dprim = d64.primitive()
+    tmatrix = d64.tilematrix(dprim)
 
-        tmatrix = d64.tilematrix(dprim)
+    axes_ref = np.array([[0.   , 1.785, 1.785],
+                            [1.785, 0.   , 1.785],
+                            [1.785, 1.785, 0.   ]])
+    tmatrix_ref = np.array([[-2,  2,  2],
+                            [ 2, -2,  2],
+                            [ 2,  2, -2]])
 
-        axes_ref = np.array([[0.   , 1.785, 1.785],
-                             [1.785, 0.   , 1.785],
-                             [1.785, 1.785, 0.   ]])
-        tmatrix_ref = np.array([[-2,  2,  2],
-                                [ 2, -2,  2],
-                                [ 2,  2, -2]])
+    assert(value_eq(dprim.axes,axes_ref))
+    assert(value_eq(tmatrix,tmatrix_ref))
 
-        assert(value_eq(dprim.axes,axes_ref))
-        assert(value_eq(tmatrix,tmatrix_ref))
-
-    #end def test_primitive_search
-#end if
+#end def test_primitive_search
 
 
 
@@ -1089,106 +1077,105 @@ def test_monkhorst_pack_kpoints():
 
 
 
-if versions.spglib_available:
-    def test_symm_kpoints():
-        """
-        Add symmetrized Monkhorst-Pack kpoints.
-        """
-        from ..structure import generate_structure
+def test_symm_kpoints():
+    """
+    Add symmetrized Monkhorst-Pack kpoints.
+    """
+    _ = pytest.importorskip("spglib")
+    from ..structure import generate_structure
 
-        # Note: this demo requires spglib
+    # Note: this demo requires spglib
 
-        g44 = generate_structure(
-            structure  = 'graphene',
-            cell       = 'prim',
-            tiling     = (4,4,1),
-            kgrid      = (4,4,1),
-            kshift     = (0,0,0),
-            symm_kgrid = True,
-            )
+    g44 = generate_structure(
+        structure  = 'graphene',
+        cell       = 'prim',
+        tiling     = (4,4,1),
+        kgrid      = (4,4,1),
+        kshift     = (0,0,0),
+        symm_kgrid = True,
+        )
 
-        g11 = g44.folded_structure
+    g11 = g44.folded_structure
 
-        g44_kw_ref = np.array([1,6,3,6],dtype=float)
+    g44_kw_ref = np.array([1,6,3,6],dtype=float)
 
-        g44_ukp_ref = np.array([
-            [ 0.00, 0.00, 0.00 ],
-            [ 0.25, 0.00, 0.00 ],
-            [ 0.50, 0.00, 0.00 ],
-            [ 0.25, 0.25, 0.00 ]])
+    g44_ukp_ref = np.array([
+        [ 0.00, 0.00, 0.00 ],
+        [ 0.25, 0.00, 0.00 ],
+        [ 0.50, 0.00, 0.00 ],
+        [ 0.25, 0.25, 0.00 ]])
 
-        g11_ukp_ref = np.array([
-            [ 0.0000, 0.0000, 0.0000 ],
-            [ 0.0625, 0.0000, 0.0000 ],
-            [ 0.1250, 0.0000, 0.0000 ],
-            [ 0.0625, 0.0625, 0.0000 ],
-            [ 0.2500, 0.0000, 0.0000 ],
-            [ 0.3125, 0.0000, 0.0000 ],
-            [ 0.3750, 0.0000, 0.0000 ],
-            [ 0.3125, 0.0625, 0.0000 ],
-            [ 0.5000, 0.0000, 0.0000 ],
-            [ 0.5625, 0.0000, 0.0000 ],
-            [ 0.6250, 0.0000, 0.0000 ],
-            [ 0.5625, 0.0625, 0.0000 ],
-            [ 0.7500, 0.0000, 0.0000 ],
-            [ 0.8125, 0.0000, 0.0000 ],
-            [ 0.8750, 0.0000, 0.0000 ],
-            [ 0.8125, 0.0625, 0.0000 ],
-            [ 0.0000, 0.2500, 0.0000 ],
-            [ 0.0625, 0.2500, 0.0000 ],
-            [ 0.1250, 0.2500, 0.0000 ],
-            [ 0.0625, 0.3125, 0.0000 ],
-            [ 0.2500, 0.2500, 0.0000 ],
-            [ 0.3125, 0.2500, 0.0000 ],
-            [ 0.3750, 0.2500, 0.0000 ],
-            [ 0.3125, 0.3125, 0.0000 ],
-            [ 0.5000, 0.2500, 0.0000 ],
-            [ 0.5625, 0.2500, 0.0000 ],
-            [ 0.6250, 0.2500, 0.0000 ],
-            [ 0.5625, 0.3125, 0.0000 ],
-            [ 0.7500, 0.2500, 0.0000 ],
-            [ 0.8125, 0.2500, 0.0000 ],
-            [ 0.8750, 0.2500, 0.0000 ],
-            [ 0.8125, 0.3125, 0.0000 ],
-            [ 0.0000, 0.5000, 0.0000 ],
-            [ 0.0625, 0.5000, 0.0000 ],
-            [ 0.1250, 0.5000, 0.0000 ],
-            [ 0.0625, 0.5625, 0.0000 ],
-            [ 0.2500, 0.5000, 0.0000 ],
-            [ 0.3125, 0.5000, 0.0000 ],
-            [ 0.3750, 0.5000, 0.0000 ],
-            [ 0.3125, 0.5625, 0.0000 ],
-            [ 0.5000, 0.5000, 0.0000 ],
-            [ 0.5625, 0.5000, 0.0000 ],
-            [ 0.6250, 0.5000, 0.0000 ],
-            [ 0.5625, 0.5625, 0.0000 ],
-            [ 0.7500, 0.5000, 0.0000 ],
-            [ 0.8125, 0.5000, 0.0000 ],
-            [ 0.8750, 0.5000, 0.0000 ],
-            [ 0.8125, 0.5625, 0.0000 ],
-            [ 0.0000, 0.7500, 0.0000 ],
-            [ 0.0625, 0.7500, 0.0000 ],
-            [ 0.1250, 0.7500, 0.0000 ],
-            [ 0.0625, 0.8125, 0.0000 ],
-            [ 0.2500, 0.7500, 0.0000 ],
-            [ 0.3125, 0.7500, 0.0000 ],
-            [ 0.3750, 0.7500, 0.0000 ],
-            [ 0.3125, 0.8125, 0.0000 ],
-            [ 0.5000, 0.7500, 0.0000 ],
-            [ 0.5625, 0.7500, 0.0000 ],
-            [ 0.6250, 0.7500, 0.0000 ],
-            [ 0.5625, 0.8125, 0.0000 ],
-            [ 0.7500, 0.7500, 0.0000 ],
-            [ 0.8125, 0.7500, 0.0000 ],
-            [ 0.8750, 0.7500, 0.0000 ],
-            [ 0.8125, 0.8125, 0.0000 ]])
+    g11_ukp_ref = np.array([
+        [ 0.0000, 0.0000, 0.0000 ],
+        [ 0.0625, 0.0000, 0.0000 ],
+        [ 0.1250, 0.0000, 0.0000 ],
+        [ 0.0625, 0.0625, 0.0000 ],
+        [ 0.2500, 0.0000, 0.0000 ],
+        [ 0.3125, 0.0000, 0.0000 ],
+        [ 0.3750, 0.0000, 0.0000 ],
+        [ 0.3125, 0.0625, 0.0000 ],
+        [ 0.5000, 0.0000, 0.0000 ],
+        [ 0.5625, 0.0000, 0.0000 ],
+        [ 0.6250, 0.0000, 0.0000 ],
+        [ 0.5625, 0.0625, 0.0000 ],
+        [ 0.7500, 0.0000, 0.0000 ],
+        [ 0.8125, 0.0000, 0.0000 ],
+        [ 0.8750, 0.0000, 0.0000 ],
+        [ 0.8125, 0.0625, 0.0000 ],
+        [ 0.0000, 0.2500, 0.0000 ],
+        [ 0.0625, 0.2500, 0.0000 ],
+        [ 0.1250, 0.2500, 0.0000 ],
+        [ 0.0625, 0.3125, 0.0000 ],
+        [ 0.2500, 0.2500, 0.0000 ],
+        [ 0.3125, 0.2500, 0.0000 ],
+        [ 0.3750, 0.2500, 0.0000 ],
+        [ 0.3125, 0.3125, 0.0000 ],
+        [ 0.5000, 0.2500, 0.0000 ],
+        [ 0.5625, 0.2500, 0.0000 ],
+        [ 0.6250, 0.2500, 0.0000 ],
+        [ 0.5625, 0.3125, 0.0000 ],
+        [ 0.7500, 0.2500, 0.0000 ],
+        [ 0.8125, 0.2500, 0.0000 ],
+        [ 0.8750, 0.2500, 0.0000 ],
+        [ 0.8125, 0.3125, 0.0000 ],
+        [ 0.0000, 0.5000, 0.0000 ],
+        [ 0.0625, 0.5000, 0.0000 ],
+        [ 0.1250, 0.5000, 0.0000 ],
+        [ 0.0625, 0.5625, 0.0000 ],
+        [ 0.2500, 0.5000, 0.0000 ],
+        [ 0.3125, 0.5000, 0.0000 ],
+        [ 0.3750, 0.5000, 0.0000 ],
+        [ 0.3125, 0.5625, 0.0000 ],
+        [ 0.5000, 0.5000, 0.0000 ],
+        [ 0.5625, 0.5000, 0.0000 ],
+        [ 0.6250, 0.5000, 0.0000 ],
+        [ 0.5625, 0.5625, 0.0000 ],
+        [ 0.7500, 0.5000, 0.0000 ],
+        [ 0.8125, 0.5000, 0.0000 ],
+        [ 0.8750, 0.5000, 0.0000 ],
+        [ 0.8125, 0.5625, 0.0000 ],
+        [ 0.0000, 0.7500, 0.0000 ],
+        [ 0.0625, 0.7500, 0.0000 ],
+        [ 0.1250, 0.7500, 0.0000 ],
+        [ 0.0625, 0.8125, 0.0000 ],
+        [ 0.2500, 0.7500, 0.0000 ],
+        [ 0.3125, 0.7500, 0.0000 ],
+        [ 0.3750, 0.7500, 0.0000 ],
+        [ 0.3125, 0.8125, 0.0000 ],
+        [ 0.5000, 0.7500, 0.0000 ],
+        [ 0.5625, 0.7500, 0.0000 ],
+        [ 0.6250, 0.7500, 0.0000 ],
+        [ 0.5625, 0.8125, 0.0000 ],
+        [ 0.7500, 0.7500, 0.0000 ],
+        [ 0.8125, 0.7500, 0.0000 ],
+        [ 0.8750, 0.7500, 0.0000 ],
+        [ 0.8125, 0.8125, 0.0000 ]])
 
-        assert(value_eq(g44.kweights,g44_kw_ref))
-        assert(value_eq(g44.kpoints_unit(),g44_ukp_ref))
-        assert(value_eq(g11.kpoints_unit(),g11_ukp_ref))
+    assert(value_eq(g44.kweights,g44_kw_ref))
+    assert(value_eq(g44.kpoints_unit(),g44_ukp_ref))
+    assert(value_eq(g11.kpoints_unit(),g11_ukp_ref))
 
-    #end def test_symm_kpoints
-#end if
+#end def test_symm_kpoints
 
 
 def test_count_kshells():
@@ -1235,22 +1222,22 @@ def test_volume():
 
 
 
-if versions.scipy_available:
-    def test_madelung():
-        gen = get_generated_structures()
-        d64 = gen.diamond_64
-        assert(value_eq(d64.madelung(),-0.210284756321))
-    #end def test_madelung
+def test_madelung():
+    _ = pytest.importorskip("scipy")
+    gen = get_generated_structures()
+    d64 = gen.diamond_64
+    assert(value_eq(d64.madelung(),-0.210284756321))
+#end def test_madelung
 
 
 
-    def test_makov_payne():
-        gen = get_generated_structures()
-        d64 = gen.diamond_64
-        assert(value_eq(d64.makov_payne(q=1,eps=5.68),0.0185109820705))
-        assert(value_eq(d64.makov_payne(q=2,eps=5.68),0.074043928282))
-    #end def test_makov_payne
-#end if
+def test_makov_payne():
+    _ = pytest.importorskip("scipy")
+    gen = get_generated_structures()
+    d64 = gen.diamond_64
+    assert(value_eq(d64.makov_payne(q=1,eps=5.68),0.0185109820705))
+    assert(value_eq(d64.makov_payne(q=2,eps=5.68),0.074043928282))
+#end def test_makov_payne
 
 
 
@@ -1359,66 +1346,64 @@ def test_freeze():
 
 
 
-if versions.scipy_available:
-    def test_embed():
-        """
-        Embed a "relaxed" structure in a larger pristine cell.
-        """
-        import numpy as np
-        from ..structure import generate_structure
-        from .. import numpy_extensions as npe
+def test_embed():
+    """
+    Embed a "relaxed" structure in a larger pristine cell.
+    """
+    _ = pytest.importorskip("scipy")
+    import numpy as np
+    from ..structure import generate_structure
+    from .. import numpy_extensions as npe
 
-        center = (0,0,0)
+    center = (0,0,0)
 
-        g = generate_structure(
-            structure = 'graphene',
-            cell      = 'prim',
-            tiling    = (4,4,1),
-            )
-        g.recenter(center)
+    g = generate_structure(
+        structure = 'graphene',
+        cell      = 'prim',
+        tiling    = (4,4,1),
+        )
+    g.recenter(center)
 
-        # Represent the "relaxed" cell
-        gr = g.copy()
-        npos = len(gr.pos)
-        dr = gr.min_image_vectors(center)
-        npe.reshape_inplace(dr, (npos, 3))
-        r = np.linalg.norm(dr,axis=1)
-        dilation = 2*r*np.exp(-r)
-        for i in range(npos):
-            if r[i]>0:
-                gr.pos[i] += dilation[i]/r[i]*dr[i]
-            #end if
-        #end for
+    # Represent the "relaxed" cell
+    gr = g.copy()
+    npos = len(gr.pos)
+    dr = gr.min_image_vectors(center)
+    npe.reshape_inplace(dr, (npos, 3))
+    r = np.linalg.norm(dr,axis=1)
+    dilation = 2*r*np.exp(-r)
+    for i in range(npos):
+        if r[i]>0:
+            gr.pos[i] += dilation[i]/r[i]*dr[i]
+        #end if
+    #end for
 
-        # Represent the unrelaxed large cell
-        gl = generate_structure(
-            structure = 'graphene',
-            cell      = 'rect',
-            tiling    = (8,4,1),
-            )
-        gl.recenter(center)
+    # Represent the unrelaxed large cell
+    gl = generate_structure(
+        structure = 'graphene',
+        cell      = 'rect',
+        tiling    = (8,4,1),
+        )
+    gl.recenter(center)
 
-        # Embed the relaxed cell in the large unrelaxed cell
-        ge = gl.copy()
-        ge.embed(gr)
+    # Embed the relaxed cell in the large unrelaxed cell
+    ge = gl.copy()
+    ge.embed(gr)
 
-        assert(len(ge.elem)==len(gl.elem))
-        assert(len(ge.pos)==len(gl.pos))
+    assert(len(ge.elem)==len(gl.elem))
+    assert(len(ge.pos)==len(gl.pos))
 
-        # check that the large local distortion made in the small cell
-        # is present in the large cell after embedding
-        rnn_max_ref = 2.1076122431022664
-        
-        # Check small cell distortion max distance
-        rnn_max = np.linalg.norm(gr.pos[0]-gr.pos[1])
-        assert(value_eq(rnn_max,rnn_max_ref))
+    # check that the large local distortion made in the small cell
+    # is present in the large cell after embedding
+    rnn_max_ref = 2.1076122431022664
+    
+    # Check small cell distortion max distance
+    rnn_max = np.linalg.norm(gr.pos[0]-gr.pos[1])
+    assert(value_eq(rnn_max,rnn_max_ref))
 
-        # Check large cell distortion max distance
-        rnn_max = np.linalg.norm(ge.pos[0]-ge.pos[1])
-        assert(value_eq(rnn_max,rnn_max_ref))
-
-    #end test_embed
-#end if
+    # Check large cell distortion max distance
+    rnn_max = np.linalg.norm(ge.pos[0]-ge.pos[1])
+    assert(value_eq(rnn_max,rnn_max_ref))
+#end def test_embed
 
 
 
@@ -1479,188 +1464,451 @@ def test_interpolate():
 
 
 
-if versions.spglib_available:
-    def test_point_group_operations():
-        from ..structure import generate_structure,Crystal
+def test_point_group_operations():
+    _ = pytest.importorskip("spglib")
+    from ..structure import generate_structure,Crystal
 
-        nrotations = dict(
-            Ca2CuO3    =  8,
-            CaO        = 48,
-            Cl2Ca2CuO2 = 16,
-            CuO        =  2,
-            CuO2_plane = 16,
-            La2CuO4    =  2,
-            NaCl       = 48,
-            ZnO        =  6,
-            calcium    = 48,
-            copper     = 48,
-            diamond    = 24,
-            graphene   = 12,
-            oxygen     =  4,
-            rocksalt   = 48,
-            wurtzite   =  6,
+    nrotations = dict(
+        Ca2CuO3    =  8,
+        CaO        = 48,
+        Cl2Ca2CuO2 = 16,
+        CuO        =  2,
+        CuO2_plane = 16,
+        La2CuO4    =  2,
+        NaCl       = 48,
+        ZnO        =  6,
+        calcium    = 48,
+        copper     = 48,
+        diamond    = 24,
+        graphene   = 12,
+        oxygen     =  4,
+        rocksalt   = 48,
+        wurtzite   =  6,
+        )
+
+    for struct,cell in sorted(Crystal.known_crystals.keys()):
+        if cell!='prim':
+            continue
+        #end if
+
+        s = generate_structure(
+            structure = struct,
+            cell      = cell,
             )
+            
+        rotations = s.point_group_operations()
+        assert(struct in nrotations)
+        assert(len(rotations)==nrotations[struct])
 
-        for struct,cell in sorted(Crystal.known_crystals.keys()):
-            if cell!='prim':
-                continue
-            #end if
+        valid = s.check_point_group_operations(rotations,exit=False)
+        assert(valid)
+    #end for
 
+#end def test_point_group_operations
+
+
+
+def test_rmg_transform():
+    _ = pytest.importorskip("spglib")
+    _ = pytest.importorskip("seekpath")
+    from numpy import array
+    from ..developer import obj
+    from ..structure import generate_structure
+
+    ref = obj({
+        ('Ca2CuO3', 'conv') : obj(
+            R          = array([[ 8.62068966e-01,  0.00000000e+00,  0.00000000e+00],
+                                [-5.27865000e-17,  1.16000000e+00,  0.00000000e+00],
+                                [-5.27865000e-17, -7.10295144e-17,  1.00000000e+00]]),
+            bv         = 'orthorhombic_P',
+            tmatrix    = None,
+            rmg_inputs = obj(
+                a_length             = 3.2500000000000004,
+                b_length             = 3.7700000000000005,
+                bravais_lattice_type = 'Orthorhombic Primitive',
+                c_length             = 12.23,
+                length_units         = 'Angstrom',
+                ),
+            ),
+        ('Ca2CuO3', 'prim') : obj(
+            R          = array([[ 1.38777878e-17,  1.00000000e+00, -7.13693767e-18],
+                                [ 2.77555756e-17,  3.61249492e-17,  3.76307692e+00],
+                                [ 2.65739984e-01, -5.79633098e-18, -2.39520632e-17]]),
+            bv         = 'orthorhombic_P',
+            tmatrix    = array([[0, 1, 1],
+                                [1, 0, 1],
+                                [1, 1, 0]]),
+            rmg_inputs = obj(
+                a_length             = 3.2500000000000004,
+                b_length             = 3.77,
+                bravais_lattice_type = 'Orthorhombic Primitive',
+                c_length             = 12.23,
+                length_units         = 'Angstrom',
+                ),
+            ),
+        ('CaO', 'conv') : obj(
+            R          = array([[ 1.000000e+00,  0.000000e+00,  0.000000e+00],
+                                [-6.123234e-17,  1.000000e+00,  0.000000e+00],
+                                [-6.123234e-17, -6.123234e-17,  1.000000e+00]]),
+            bv         = 'cubic_P',
+            tmatrix    = None,
+            rmg_inputs = obj(
+                a_length             = 4.81,
+                b_length             = 4.81,
+                bravais_lattice_type = 'Cubic Primitive',
+                c_length             = 4.81,
+                length_units         = 'Angstrom',
+                ),
+            ),
+        ('CaO', 'prim') : obj(
+            R          = array([[-1.28679696e-17,  1.00000000e+00,  1.28679696e-17],
+                                [ 1.28679696e-17,  1.28679696e-17,  1.00000000e+00],
+                                [ 1.00000000e+00, -1.28679696e-17, -1.28679696e-17]]),
+            bv         = 'cubic_F',
+            tmatrix    = None,
+            rmg_inputs = obj(
+                a_length             = 4.81,
+                b_length             = 4.81,
+                bravais_lattice_type = 'Cubic Face Centered',
+                c_length             = 4.81,
+                length_units         = 'Angstrom',
+                ),
+            ),
+        ('Cl2Ca2CuO2', 'afm') : obj(
+            R          = array([[ 0.70710678,  0.70710678,  0.        ],
+                                [-0.70710678,  0.70710678,  0.        ],
+                                [ 0.        ,  0.        ,  1.        ]]),
+            bv         = 'tetragonal_P',
+            tmatrix    = None,
+            rmg_inputs = obj(
+                a_length             = 5.471592272821505,
+                b_length             = 5.471592272821505,
+                bravais_lattice_type = 'Tetragonal Primitive',
+                c_length             = 15.049999999999999,
+                length_units         = 'Angstrom',
+                ),
+            ),
+        ('Cl2Ca2CuO2', 'prim') : obj(
+            R          = array([[-1.99922127e-16,  1.00000000e+00,  1.13566145e-16],
+                                [ 1.84864975e-17, -1.84864975e-17,  3.88989403e+00],
+                                [ 2.57076412e-01,  1.87078112e-18, -1.25038407e-17]]),
+            bv         = 'tetragonal_P',
+            tmatrix    = array([[0, 1, 1],
+                                [1, 0, 1],
+                                [1, 1, 0]]),
+            rmg_inputs = obj(
+                a_length             = 3.8689999999999998,
+                b_length             = 3.869,
+                bravais_lattice_type = 'Tetragonal Primitive',
+                c_length             = 15.05,
+                length_units         = 'Angstrom',
+                ),
+            ),
+        ('CuO', 'conv') : obj(
+            R          = None,
+            bv         = 'monoclinic_P',
+            tmatrix    = None,
+            rmg_inputs = obj(
+                ),
+            ),
+        ('ZnO', 'conv') : obj(
+            R          = array([[ 1.00000000e+00,  0.00000000e+00,  0.00000000e+00],
+                                [-2.51021563e-16,  1.00000000e+00,  0.00000000e+00],
+                                [-6.12323400e-17, -1.06057524e-16,  1.00000000e+00]]),
+            bv         = 'hexagonal_P',
+            tmatrix    = None,
+            rmg_inputs = obj(
+                a_length             = 3.349999999999999,
+                b_length             = 3.349999999999999,
+                bravais_lattice_type = 'Hexagonal Primitive',
+                c_length             = 5.22,
+                length_units         = 'Angstrom',
+                ),
+            ),
+        })
+
+    res = obj()
+    for struct,cell in ref.keys():
             s = generate_structure(
                 structure = struct,
                 cell      = cell,
                 )
-                
-            rotations = s.point_group_operations()
-            assert(struct in nrotations)
-            assert(len(rotations)==nrotations[struct])
+            st,rmg_inputs,R,tmatrix,bv = s.rmg_transform(
+                allow_tile    = True,
+                allow_general = True,
+                all_results   = True,
+                )
+            res[struct,cell] = obj(
+                rmg_inputs = rmg_inputs,
+                R          = R,
+                tmatrix    = tmatrix,
+                bv         = bv,
+                )
+    #end for
 
-            valid = s.check_point_group_operations(rotations,exit=False)
-            assert(valid)
-        #end for
-
-    #end def test_point_group_operations
-#end if
+    assert(testing.check_object_eq(res,ref,atol=1e-12))
+#end def test_rmg_transform
 
 
+def test_group_atoms():
+    from nexus.structure import Structure
 
-if versions.spglib_available and versions.seekpath_available:
-    def test_rmg_transform():
-        from numpy import array
-        from ..developer import obj
-        from ..structure import generate_structure
+    unordered_elem = ["H", "N", "C", "H", "C", "O", "H", "H", "O", "H"]
+    ordered_elem = ["C", "C", "H", "H", "H", "H", "H", "N", "O", "O"]
 
-        ref = obj({
-            ('Ca2CuO3', 'conv') : obj(
-                R          = array([[ 8.62068966e-01,  0.00000000e+00,  0.00000000e+00],
-                                    [-5.27865000e-17,  1.16000000e+00,  0.00000000e+00],
-                                    [-5.27865000e-17, -7.10295144e-17,  1.00000000e+00]]),
-                bv         = 'orthorhombic_P',
-                tmatrix    = None,
-                rmg_inputs = obj(
-                    a_length             = 3.2500000000000004,
-                    b_length             = 3.7700000000000005,
-                    bravais_lattice_type = 'Orthorhombic Primitive',
-                    c_length             = 12.23,
-                    length_units         = 'Angstrom',
-                    ),
-                ),
-            ('Ca2CuO3', 'prim') : obj(
-                R          = array([[ 1.38777878e-17,  1.00000000e+00, -7.13693767e-18],
-                                    [ 2.77555756e-17,  3.61249492e-17,  3.76307692e+00],
-                                    [ 2.65739984e-01, -5.79633098e-18, -2.39520632e-17]]),
-                bv         = 'orthorhombic_P',
-                tmatrix    = array([[0, 1, 1],
-                                    [1, 0, 1],
-                                    [1, 1, 0]]),
-                rmg_inputs = obj(
-                    a_length             = 3.2500000000000004,
-                    b_length             = 3.77,
-                    bravais_lattice_type = 'Orthorhombic Primitive',
-                    c_length             = 12.23,
-                    length_units         = 'Angstrom',
-                    ),
-                ),
-            ('CaO', 'conv') : obj(
-                R          = array([[ 1.000000e+00,  0.000000e+00,  0.000000e+00],
-                                    [-6.123234e-17,  1.000000e+00,  0.000000e+00],
-                                    [-6.123234e-17, -6.123234e-17,  1.000000e+00]]),
-                bv         = 'cubic_P',
-                tmatrix    = None,
-                rmg_inputs = obj(
-                    a_length             = 4.81,
-                    b_length             = 4.81,
-                    bravais_lattice_type = 'Cubic Primitive',
-                    c_length             = 4.81,
-                    length_units         = 'Angstrom',
-                    ),
-                ),
-            ('CaO', 'prim') : obj(
-                R          = array([[-1.28679696e-17,  1.00000000e+00,  1.28679696e-17],
-                                    [ 1.28679696e-17,  1.28679696e-17,  1.00000000e+00],
-                                    [ 1.00000000e+00, -1.28679696e-17, -1.28679696e-17]]),
-                bv         = 'cubic_F',
-                tmatrix    = None,
-                rmg_inputs = obj(
-                    a_length             = 4.81,
-                    b_length             = 4.81,
-                    bravais_lattice_type = 'Cubic Face Centered',
-                    c_length             = 4.81,
-                    length_units         = 'Angstrom',
-                    ),
-                ),
-            ('Cl2Ca2CuO2', 'afm') : obj(
-                R          = array([[ 0.70710678,  0.70710678,  0.        ],
-                                    [-0.70710678,  0.70710678,  0.        ],
-                                    [ 0.        ,  0.        ,  1.        ]]),
-                bv         = 'tetragonal_P',
-                tmatrix    = None,
-                rmg_inputs = obj(
-                    a_length             = 5.471592272821505,
-                    b_length             = 5.471592272821505,
-                    bravais_lattice_type = 'Tetragonal Primitive',
-                    c_length             = 15.049999999999999,
-                    length_units         = 'Angstrom',
-                    ),
-                ),
-            ('Cl2Ca2CuO2', 'prim') : obj(
-                R          = array([[-1.99922127e-16,  1.00000000e+00,  1.13566145e-16],
-                                    [ 1.84864975e-17, -1.84864975e-17,  3.88989403e+00],
-                                    [ 2.57076412e-01,  1.87078112e-18, -1.25038407e-17]]),
-                bv         = 'tetragonal_P',
-                tmatrix    = array([[0, 1, 1],
-                                    [1, 0, 1],
-                                    [1, 1, 0]]),
-                rmg_inputs = obj(
-                    a_length             = 3.8689999999999998,
-                    b_length             = 3.869,
-                    bravais_lattice_type = 'Tetragonal Primitive',
-                    c_length             = 15.05,
-                    length_units         = 'Angstrom',
-                    ),
-                ),
-            ('CuO', 'conv') : obj(
-                R          = None,
-                bv         = 'monoclinic_P',
-                tmatrix    = None,
-                rmg_inputs = obj(
-                    ),
-                ),
-            ('ZnO', 'conv') : obj(
-                R          = array([[ 1.00000000e+00,  0.00000000e+00,  0.00000000e+00],
-                                    [-2.51021563e-16,  1.00000000e+00,  0.00000000e+00],
-                                    [-6.12323400e-17, -1.06057524e-16,  1.00000000e+00]]),
-                bv         = 'hexagonal_P',
-                tmatrix    = None,
-                rmg_inputs = obj(
-                    a_length             = 3.349999999999999,
-                    b_length             = 3.349999999999999,
-                    bravais_lattice_type = 'Hexagonal Primitive',
-                    c_length             = 5.22,
-                    length_units         = 'Angstrom',
-                    ),
-                ),
-            })
+    structure = Structure(
+        axes = np.array([
+            [6.00000, 0.00000, 0.00000],
+            [0.00000, 6.00000, 0.00000],
+            [0.00000, 0.00000, 6.00000],
+        ], dtype=np.float64),
+        elem = unordered_elem,
+        pos = np.array([
+            [ 0.711045, 1.361274, 3.966292],
+            [ 1.848745, 2.865874, 3.041292],
+            [ 0.679145, 1.977474, 3.067692],
+            [ 1.827545, 3.514674, 3.813792],
+            [-0.580355, 2.805074, 3.070592],
+            [-0.510755, 4.011174, 3.052592],
+            [ 2.706445, 2.334474, 3.038892],
+            [ 0.690245, 1.335874, 2.186592],
+            [-1.779455, 2.202274, 3.093292],
+            [-2.558655, 2.774774, 3.094192],
+        ], dtype=np.float64),
+        units="A",
+    )
 
-        res = obj()
-        for struct,cell in ref.keys():
-             s = generate_structure(
-                 structure = struct,
-                 cell      = cell,
-                 )
-             st,rmg_inputs,R,tmatrix,bv = s.rmg_transform(
-                 allow_tile    = True,
-                 allow_general = True,
-                 all_results   = True,
-                 )
-             res[struct,cell] = obj(
-                 rmg_inputs = rmg_inputs,
-                 R          = R,
-                 tmatrix    = tmatrix,
-                 bv         = bv,
-                 )
-        #end for
+    np.testing.assert_array_equal(structure.elem, unordered_elem)
 
-        assert(testing.check_object_eq(res,ref,atol=1e-12))
-    #end def test_rmg_transform
-#end if
+    structure.group_atoms()
+    np.testing.assert_array_equal(structure.elem, ordered_elem)
+
+
+def test_rename():
+    from nexus.structure import Structure
+
+    original_elem = ["N", "C", "C", "O", "O", "H", "H", "H", "H", "H"]
+
+    structure = Structure(
+        axes = np.array([
+            [6.00000, 0.00000, 0.00000],
+            [0.00000, 6.00000, 0.00000],
+            [0.00000, 0.00000, 6.00000],
+        ], dtype=np.float64),
+        elem = original_elem,
+        pos = np.array([
+            [ 1.848745, 2.865874, 3.041292],
+            [ 0.679145, 1.977474, 3.067692],
+            [-0.580355, 2.805074, 3.070592],
+            [-0.510755, 4.011174, 3.052592],
+            [-1.779455, 2.202274, 3.093292],
+            [ 1.827545, 3.514674, 3.813792],
+            [ 2.706445, 2.334474, 3.038892],
+            [ 0.690245, 1.335874, 2.186592],
+            [ 0.711045, 1.361274, 3.966292],
+            [-2.558655, 2.774774, 3.094192],
+        ], dtype=np.float64),
+        units="A",
+    )
+
+    np.testing.assert_array_equal(structure.elem, original_elem)
+
+    new_elem = ["La", "Np", "Np", "Te", "Te", "Ag", "Ag", "Ag", "Ag", "Ag"]
+    structure.rename(
+        folded=True,
+        N = "La",
+        C = "Np",
+        O = "Te",
+        H = "Ag",
+    )
+
+    np.testing.assert_array_equal(structure.elem, new_elem)
+
+
+def test_reset_axes():
+    from nexus.structure import Structure
+
+    original_axes = np.array([
+        [6.00000, 0.00000, 0.00000],
+        [0.00000, 6.00000, 0.00000],
+        [0.00000, 0.00000, 6.00000],
+    ], dtype=np.float64)
+
+    original_kaxes = np.array([
+        [1.0471975511965976, 0.0, 0.0],
+        [0.0, 1.0471975511965976, 0.0],
+        [0.0, 0.0, 1.0471975511965976],
+    ], dtype=np.float64)
+
+    original_center = np.array([3.0, 3.0, 3.0], dtype=np.float64)
+
+    structure = Structure(
+        axes = original_axes,
+        elem = ["N", "C", "C", "O", "O", "H", "H", "H", "H", "H"],
+        pos = np.array([
+            [ 1.848745, 2.865874, 3.041292],
+            [ 0.679145, 1.977474, 3.067692],
+            [-0.580355, 2.805074, 3.070592],
+            [-0.510755, 4.011174, 3.052592],
+            [-1.779455, 2.202274, 3.093292],
+            [ 1.827545, 3.514674, 3.813792],
+            [ 2.706445, 2.334474, 3.038892],
+            [ 0.690245, 1.335874, 2.186592],
+            [ 0.711045, 1.361274, 3.966292],
+            [-2.558655, 2.774774, 3.094192],
+        ], dtype=np.float64),
+        units="A",
+    )
+
+    np.testing.assert_array_equal(structure.axes, original_axes)
+    np.testing.assert_array_equal(structure.kaxes, original_kaxes)
+    np.testing.assert_array_equal(structure.center, original_center)
+
+    new_axes = np.array([
+        [12.00000,  0.00000,  0.00000],
+        [ 0.00000, 12.00000,  0.00000],
+        [ 0.00000,  0.00000, 12.00000],
+    ], dtype=np.float64)
+
+    new_kaxes = np.array([
+        [0.5235987755982988, 0.0, 0.0],
+        [0.0, 0.5235987755982988, 0.0],
+        [0.0, 0.0, 0.5235987755982988],
+    ], dtype=np.float64)
+
+    new_center = np.array([6.0, 6.0, 6.0], dtype=np.float64)
+
+    structure.reset_axes(new_axes)
+
+    np.testing.assert_allclose(structure.axes, new_axes)
+    np.testing.assert_allclose(structure.kaxes, new_kaxes)
+    np.testing.assert_allclose(structure.center, new_center)
+
+
+def test_reset_axes_none():
+    from nexus.structure import Structure
+
+    original_axes = np.array([
+        [6.00000, 0.00000, 0.00000],
+        [0.00000, 6.00000, 0.00000],
+        [0.00000, 0.00000, 6.00000],
+    ], dtype=np.float64)
+
+    original_kaxes = np.array([
+        [7.0, 0.0, 0.0],
+        [0.0, 7.0, 0.0],
+        [0.0, 0.0, 7.0],
+    ], dtype=np.float64)
+
+    original_center = np.array([400.0, 400.0, 400.0], dtype=np.float64)
+
+    structure = Structure(
+        axes = original_axes,
+        elem = ["N", "C", "C", "O", "O", "H", "H", "H", "H", "H"],
+        pos = np.array([
+            [ 1.848745, 2.865874, 3.041292],
+            [ 0.679145, 1.977474, 3.067692],
+            [-0.580355, 2.805074, 3.070592],
+            [-0.510755, 4.011174, 3.052592],
+            [-1.779455, 2.202274, 3.093292],
+            [ 1.827545, 3.514674, 3.813792],
+            [ 2.706445, 2.334474, 3.038892],
+            [ 0.690245, 1.335874, 2.186592],
+            [ 0.711045, 1.361274, 3.966292],
+            [-2.558655, 2.774774, 3.094192],
+        ], dtype=np.float64),
+        units="A",
+        center = original_center,
+    )
+
+    structure.kaxes = original_kaxes
+
+    np.testing.assert_array_equal(structure.axes, original_axes)
+    np.testing.assert_array_equal(structure.kaxes, original_kaxes)
+    np.testing.assert_array_equal(structure.center, original_center)
+
+    ref_kaxes = np.array([
+        [1.0471975511965976, 0.0, 0.0],
+        [0.0, 1.0471975511965976, 0.0],
+        [0.0, 0.0, 1.0471975511965976],
+    ], dtype=np.float64)
+
+    ref_center = np.array([3.0, 3.0, 3.0], dtype=np.float64)
+
+    structure.reset_axes(axes = None)
+
+    np.testing.assert_allclose(structure.axes, original_axes)
+    np.testing.assert_allclose(structure.kaxes, ref_kaxes)
+    np.testing.assert_allclose(structure.center, ref_center)
+
+def test_write_axes():
+    from nexus.structure import Structure
+
+    structure = Structure(
+        axes = np.array([
+            [6.00000,  0.00000,   0.00000],
+            [0.00000, 12.00000,   0.00000],
+            [0.00000,  0.00000, 300.00000],
+        ], dtype=np.float64),
+        elem = ["N", "C", "C", "O", "O", "H", "H", "H", "H", "H"],
+        pos = np.array([
+            [ 1.848745, 2.865874, 3.041292],
+            [ 0.679145, 1.977474, 3.067692],
+            [-0.580355, 2.805074, 3.070592],
+            [-0.510755, 4.011174, 3.052592],
+            [-1.779455, 2.202274, 3.093292],
+            [ 1.827545, 3.514674, 3.813792],
+            [ 2.706445, 2.334474, 3.038892],
+            [ 0.690245, 1.335874, 2.186592],
+            [ 0.711045, 1.361274, 3.966292],
+            [-2.558655, 2.774774, 3.094192],
+        ], dtype=np.float64),
+        units="A",
+    )
+
+    ref_write_axes = (
+        "  6.00000000   0.00000000   0.00000000\n"
+        "  0.00000000  12.00000000   0.00000000\n"
+        "  0.00000000   0.00000000 300.00000000\n"
+    )
+    calc_write_axes = structure.write_axes()
+    assert(text_eq(calc_write_axes, ref_write_axes))
+
+
+def test_corners():
+    from nexus.structure import Structure
+
+    structure = Structure(
+        axes = np.array([
+            [7.00000,  0.00000,  0.00000],
+            [0.00000, 14.00000,  0.00000],
+            [0.00000,  0.00000, 35.00000],
+        ], dtype=np.float64),
+        elem = ["N", "C", "C", "O", "O", "H", "H", "H", "H", "H"],
+        pos = np.array([
+            [ 1.848745, 2.865874, 3.041292],
+            [ 0.679145, 1.977474, 3.067692],
+            [-0.580355, 2.805074, 3.070592],
+            [-0.510755, 4.011174, 3.052592],
+            [-1.779455, 2.202274, 3.093292],
+            [ 1.827545, 3.514674, 3.813792],
+            [ 2.706445, 2.334474, 3.038892],
+            [ 0.690245, 1.335874, 2.186592],
+            [ 0.711045, 1.361274, 3.966292],
+            [-2.558655, 2.774774, 3.094192],
+        ], dtype=np.float64),
+        units="A",
+    )
+
+    ref_corners = [
+        [0.0,  0.0,  0.0],
+        [7.0,  0.0,  0.0],
+        [0.0, 14.0,  0.0],
+        [0.0,  0.0, 35.0],
+        [7.0, 14.0,  0.0],
+        [0.0, 14.0, 35.0],
+        [7.0,  0.0, 35.0],
+        [7.0, 14.0, 35.0],
+    ]
+
+    np.testing.assert_allclose(structure.corners(), ref_corners)

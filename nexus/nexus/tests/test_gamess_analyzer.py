@@ -1,17 +1,12 @@
-try:
-    import pytest
-    from . import NexusTestOrder
-    pytestmark = pytest.mark.order(NexusTestOrder.GAMESS_ANALYZER)
-except ImportError:
-    pass
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.GAMESS_ANALYZER)
+
+from ..generic import generic_settings
+generic_settings.raise_error = True
 
 from .. import testing
-from ..testing import value_eq,object_eq,text_eq
-
-
-def test_import():
-    from ..gamess_analyzer import GamessAnalyzer
-#end def test_import
+from ..testing import object_eq
 
 
 def test_empty_init():
@@ -24,7 +19,7 @@ def test_empty_init():
 
 def test_analyze():
     import os
-    from numpy import array,ndarray
+    from numpy import array
     from ..developer import obj
     from ..gamess_analyzer import GamessAnalyzer
 

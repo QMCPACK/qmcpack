@@ -1,12 +1,12 @@
-try:
-    import pytest
-    from . import NexusTestOrder
-    pytestmark = pytest.mark.order(NexusTestOrder.PYSCF_INPUT)
-except ImportError:
-    pass
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.PYSCF_INPUT)
+
+from ..generic import generic_settings
+generic_settings.raise_error = True
 
 from .. import testing
-from ..testing import value_eq,object_eq,text_eq
+from ..testing import object_eq,text_eq
 
 
 mno_poscar = '''MnO Crystal
@@ -44,11 +44,6 @@ $system
 mf = scf.RHF(mol)
 mf.kernel()
 '''
-
-
-def test_import():
-    from ..pyscf_input import PyscfInput,generate_pyscf_input
-#end def test_import
 
 
 def test_empty_init():

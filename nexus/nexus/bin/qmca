@@ -5,6 +5,15 @@ from pathlib import Path
 import sys
 from optparse import OptionParser
 
+if sys.version_info[0:3] < (3, 10, 0):
+    v = sys.version_info[0:3]
+    print(
+       f"Your version of Python ({v[0]}.{v[1]}.{v[2]}) is less than the minimum required for Nexus!\n"
+        "To use Nexus, please install at least Python 3.10.0 or higher!\n\n"
+        "If you already have a higher version installed, ensure that your Python\n"
+        "environment is properly activated and your $PATH is set correctly."
+    )
+    sys.exit(1)
 
 # Gold implementation. All the Nexus scripts need to be updated once modified.
 # Locate and import the closely coupled Nexus module

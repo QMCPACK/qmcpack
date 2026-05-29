@@ -1,14 +1,9 @@
-try:
-    import pytest
-    from . import NexusTestOrder
-    pytestmark = pytest.mark.order(NexusTestOrder.PYSCF_ANALYZER)
-except ImportError:
-    pass
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.PYSCF_ANALYZER)
 
-
-def test_import():
-    from ..pyscf_analyzer import PyscfAnalyzer
-#end def test_import
+from ..generic import generic_settings
+generic_settings.raise_error = True
 
 
 

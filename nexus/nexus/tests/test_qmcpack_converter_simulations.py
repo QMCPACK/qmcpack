@@ -1,14 +1,14 @@
-try:
-    import pytest
-    from . import NexusTestOrder
-    pytestmark = pytest.mark.order(NexusTestOrder.QMCPACK_CONVERTER_SIMULATIONS)
-except ImportError:
-    pass
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.QMCPACK_CONVERTER_SIMULATIONS)
+
+from ..generic import generic_settings
+generic_settings.raise_error = True
 
 from .. import testing
-from ..testing import divert_nexus,restore_nexus,clear_all_sims
+from ..testing import restore_nexus,clear_all_sims
 from ..testing import failed,FailedTest
-from ..testing import value_eq,object_eq,text_eq
+from ..testing import object_eq
 
 
 #====================================================================#
@@ -28,12 +28,6 @@ def get_pw2qmcpack_sim(**kwargs):
 
     return sim
 #end def get_pw2qmcpack_sim
-
-
-
-def test_pw2qmcpack_import():
-    from ..qmcpack_converters import Pw2qmcpack,generate_pw2qmcpack
-#end def test_pw2qmcpack_import
 
 
 
@@ -95,7 +89,7 @@ def test_pw2qmcpack_get_result():
 
 
 def test_pw2qmcpack_incorporate_result():
-    from ..developer import NexusError, obj
+    from ..developer import NexusError
     from ..simulation import Simulation
     from .test_pwscf_simulation import pseudo_inputs,get_pwscf_sim
 
@@ -109,7 +103,7 @@ def test_pw2qmcpack_incorporate_result():
 
     try:
         sim.incorporate_result('unknown',None,other)
-        raise TestFailed
+        raise FailedTest
     except NexusError:
         None
     except FailedTest:
@@ -128,7 +122,6 @@ def test_pw2qmcpack_incorporate_result():
 
 def test_pw2qmcpack_check_sim_status():
     import os
-    from ..developer import NexusError, obj
     from ..nexus_base import nexus_core
 
     tpath = testing.setup_unit_test_output_directory('qmcpack_converter_simulations','test_pw2qmcpack_check_sim_status',divert=True)
@@ -279,7 +272,6 @@ def test_convert4qmc_incorporate_result():
     from ..developer import NexusError, obj
     from ..simulation import Simulation
     from ..gamess import Gamess
-    from ..pyscf_sim import Pyscf
     from ..quantum_package import QuantumPackage
     from .test_gamess_simulation import get_gamess_sim
     from .test_pyscf_simulation import get_pyscf_sim
@@ -314,7 +306,7 @@ def test_convert4qmc_incorporate_result():
     sim = sim_start.copy()
     try:
         sim.incorporate_result('unknown',None,other)
-        raise TestFailed
+        raise FailedTest
     except NexusError:
         None
     except FailedTest:
@@ -366,7 +358,6 @@ def test_convert4qmc_incorporate_result():
 
 def test_convert4qmc_check_sim_status():
     import os
-    from ..developer import NexusError, obj
     from ..nexus_base import nexus_core
 
     tpath = testing.setup_unit_test_output_directory('qmcpack_converter_simulations','test_convert4qmc_check_sim_status',divert=True)
@@ -523,7 +514,7 @@ def test_pyscf_to_afqmc_incorporate_result():
 
     try:
         sim.incorporate_result('unknown',None,other)
-        raise TestFailed
+        raise FailedTest
     except NexusError:
         None
     except FailedTest:
@@ -549,7 +540,6 @@ def test_pyscf_to_afqmc_incorporate_result():
 
 def test_pyscf_to_afqmc_check_sim_status():
     import os
-    from ..developer import NexusError, obj
     from ..nexus_base import nexus_core
 
     tpath = testing.setup_unit_test_output_directory('qmcpack_converter_simulations','test_pyscf_to_afqmc_check_sim_status',divert=True)

@@ -1,14 +1,14 @@
-try:
-    import pytest
-    from . import NexusTestOrder
-    pytestmark = pytest.mark.order(NexusTestOrder.PWSCF_SIMULATION)
-except ImportError:
-    pass
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.PWSCF_SIMULATION)
+
+from ..generic import generic_settings
+generic_settings.raise_error = True
 
 from .. import testing
-from ..testing import divert_nexus,restore_nexus,clear_all_sims
+from ..testing import restore_nexus,clear_all_sims
 from ..testing import failed,FailedTest
-from ..testing import value_eq,object_eq,text_eq
+from ..testing import value_eq,object_eq
 
 
 
@@ -73,12 +73,6 @@ def get_pwscf_sim(type='scf'):
 
     return sim
 #end def get_pwscf_sim
-
-
-
-def test_import():
-    from ..pwscf import Pwscf,generate_pwscf
-#end def test_import
 
 
 

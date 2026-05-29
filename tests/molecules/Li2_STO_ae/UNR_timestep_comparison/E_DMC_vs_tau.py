@@ -1,10 +1,10 @@
 #! /usr/bin/env python3
 
-from matplotlib.pyplot import figure,plot,xlabel,ylabel,title,show,ylim,legend,xlim,rcParams,savefig,xticks,yticks,errorbar,tight_layout
+import matplotlib.pyplot as plt
 
 params = {'legend.fontsize':14,'figure.facecolor':'white','figure.subplot.hspace':0.,
           'axes.labelsize':16,'xtick.labelsize':14,'ytick.labelsize':14}
-rcParams.update(params)
+plt.rcParams.update(params)
 
 from numpy import array
 from numpy import polyfit,polyval,linspace
@@ -36,7 +36,7 @@ d = array('''
 0.010  -14.9894693877551
 0.010  -14.989117346938775'''.split(),dtype=float)
 
-d.shape = len(d)/2,2
+d = d.reshape((len(d) // 2, 2))
 
 tau    = d[::2,0]         # UNR timesteps
 E_unr  = d[::2,1]         # UNR DMC energy means
@@ -49,25 +49,25 @@ p_unr = tuple((array(p1)+array(p2))/2)
 Efit = polyval(p_unr,tfit)
 
 # print out UNR Fig 7 means and error bars
-print
-print 'Extracted Emix data from UNR Fig. 7'
+print()
+print('Extracted Emix data from UNR Fig. 7')
 for i in range(len(tau)):
-    print '{0:6.4f}  {1:12.6f} +/- {2:12.6f}'.format(tau[i],E_unr[i],Ee_unr[i])
+    print('{0:6.4f}  {1:12.6f} +/- {2:12.6f}'.format(tau[i],E_unr[i],Ee_unr[i]))
 #end for
 
 
 # recreate UNR Figure 7 (mixed estimator only)
-figure(tight_layout=True)
-plot(tfit,Efit,'k-')
-errorbar(tau,E_unr,Ee_unr,fmt='bs',capsize=5,markerfacecolor='white')
-xlim([0,0.25])
-xticks([0,0.05,0.1,0.15,0.2,0.25])
-ylim([-14.996,-14.988])
-yticks([-14.996,-14.994,-14.992,-14.990,-14.988])
-xlabel('Time Step $\\tau$ (Hartree$^{-1}$)')
-ylabel('Energy (Hartrees)')
-title('Reconstruction of UNR Figure 7',fontsize=16)
-savefig('UNR_Fig7_reconstructed.pdf')
+plt.figure(layout="constrained")
+plt.plot(tfit,Efit,'k-')
+plt.errorbar(tau,E_unr,Ee_unr,fmt='bs',capsize=5,markerfacecolor='white')
+plt.xlim([0,0.25])
+plt.xticks([0,0.05,0.1,0.15,0.2,0.25])
+plt.ylim([-14.996,-14.988])
+plt.yticks([-14.996,-14.994,-14.992,-14.990,-14.988])
+plt.xlabel('Time Step $\\tau$ (Hartree$^{-1}$)')
+plt.ylabel('Energy (Hartrees)')
+plt.title('Reconstruction of UNR Figure 7',fontsize=16)
+plt.savefig('UNR_Fig7_reconstructed.pdf')
 
 
 # QMCPACK data, generated on 29 Sep 2017 with version 3.2.0
@@ -105,7 +105,7 @@ qd = array('''
 0.010   -14.989505  0.000078
 0.005   -14.989772  0.000067
 '''.split(),dtype=float)
-qd.shape = len(qd)/3,3
+qd = qd.reshape((len(qd) // 3, 3))
  
 # extract timestep, mean and errorbar
 qtau    = qd[:,0]
@@ -118,32 +118,32 @@ Efit_v320  = polyval(p_v320,tfit)
 
 
 # Plot QMCPACK v3.2.0 data alongside UNR results
-figure(tight_layout=True)
-plot(tfit,Efit,'k-')
-errorbar(tau,E_unr,Ee_unr,fmt='ks',capsize=5,markerfacecolor='white',label='UNR')
-plot(tfit,Efit_v320,'g-')
-errorbar(qtau,E_v320,Ee_v320,fmt='g^',capsize=5,label='QMCPACK')
-xlim([0,0.27])
-xlabel('Time Step $\\tau$ (Ha$^{-1}$)')
-ylabel('DMC Energy (Ha)')
-legend(loc='lower left')
-title('UNR vs. QMCPACK',fontsize=16)
-savefig('UNR_vs_QMCPACK.pdf')
+plt.figure(layout="constrained")
+plt.plot(tfit,Efit,'k-')
+plt.errorbar(tau,E_unr,Ee_unr,fmt='ks',capsize=5,markerfacecolor='white',label='UNR')
+plt.plot(tfit,Efit_v320,'g-')
+plt.errorbar(qtau,E_v320,Ee_v320,fmt='g^',capsize=5,label='QMCPACK')
+plt.xlim([0,0.27])
+plt.xlabel('Time Step $\\tau$ (Ha$^{-1}$)')
+plt.ylabel('DMC Energy (Ha)')
+plt.legend(loc='lower left')
+plt.title('UNR vs. QMCPACK',fontsize=16)
+plt.savefig('UNR_vs_QMCPACK.pdf')
 
 
 # Make a zoomed version of the plot
-figure(tight_layout=True)
-plot(tfit,Efit,'k-')
-errorbar(tau,E_unr,Ee_unr,fmt='ks',capsize=5,markerfacecolor='white',label='UNR')
-plot(tfit,Efit_v320,'g-')
-errorbar(qtau,E_v320,Ee_v320,fmt='g^',capsize=5,label='QMCPACK')
-xlim([0,0.15])
-ylim([-14.996,-14.988])
-xlabel('Time Step $\\tau$ (Ha$^{-1}$)')
-ylabel('DMC Energy (Ha)')
-legend(loc='lower left')
-title('UNR vs. QMCPACK (zoomed)',fontsize=16)
-savefig('UNR_vs_QMCPACK_zoomed.pdf')
+plt.figure(layout="constrained")
+plt.plot(tfit,Efit,'k-')
+plt.errorbar(tau,E_unr,Ee_unr,fmt='ks',capsize=5,markerfacecolor='white',label='UNR')
+plt.plot(tfit,Efit_v320,'g-')
+plt.errorbar(qtau,E_v320,Ee_v320,fmt='g^',capsize=5,label='QMCPACK')
+plt.xlim([0,0.15])
+plt.ylim([-14.996,-14.988])
+plt.xlabel('Time Step $\\tau$ (Ha$^{-1}$)')
+plt.ylabel('DMC Energy (Ha)')
+plt.legend(loc='lower left')
+plt.title('UNR vs. QMCPACK (zoomed)',fontsize=16)
+plt.savefig('UNR_vs_QMCPACK_zoomed.pdf')
 
 
-show()
+plt.show()

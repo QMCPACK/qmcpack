@@ -1,9 +1,9 @@
-try:
-    import pytest
-    from . import NexusTestOrder
-    pytestmark = pytest.mark.order(NexusTestOrder.QMCA)
-except ImportError:
-    pass
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.QMCA)
+
+from ..generic import generic_settings
+generic_settings.raise_error = True
 
 import sys
 from .. import testing

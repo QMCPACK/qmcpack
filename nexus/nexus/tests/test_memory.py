@@ -1,15 +1,9 @@
-try:
-    import pytest
-    from . import NexusTestOrder
-    pytestmark = pytest.mark.order(NexusTestOrder.MEMORY)
-except ImportError:
-    pass
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.MEMORY)
 
-
-def test_import():
-    from ..memory import memory,resident,stacksize
-#end def test_import
-
+from ..generic import generic_settings
+generic_settings.raise_error = True
 
 
 def test_memory():

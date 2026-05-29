@@ -1,14 +1,14 @@
-try:
-    import pytest
-    from . import NexusTestOrder
-    pytestmark = pytest.mark.order(NexusTestOrder.GAMESS_SIMULATION)
-except ImportError:
-    pass
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.GAMESS_SIMULATION)
+
+from ..generic import generic_settings
+generic_settings.raise_error = True
 
 from .. import testing
-from ..testing import divert_nexus,restore_nexus
+from ..testing import restore_nexus
 from ..testing import failed,FailedTest
-from ..testing import value_eq,object_eq,text_eq
+from ..testing import object_eq
 
 
 def clear_all_sims():
@@ -52,12 +52,6 @@ def get_gamess_sim(type='rhf'):
 
 
 
-def test_import():
-    from ..gamess import Gamess,generate_gamess
-#end def test_import
-
-
-
 def test_minimal_init():
     from ..machines import job
     from ..gamess import Gamess,generate_gamess
@@ -76,7 +70,6 @@ def test_minimal_init():
 
 
 def test_check_result():
-    tpath = testing.setup_unit_test_output_directory('gamess_simulation','test_check_result')
 
     sim = get_gamess_sim('rhf')
     
@@ -143,10 +136,8 @@ def test_get_result():
 
 
 def test_incorporate_result():
-    import os
-    from ..developer import NexusError, obj
 
-    tpath = testing.setup_unit_test_output_directory('gamess_simulation','test_incorporate_result')
+    from ..developer import NexusError, obj
 
     sim = get_gamess_sim('rhf')
 
@@ -186,7 +177,6 @@ def test_incorporate_result():
 
 def test_check_sim_status():
     import os
-    from ..developer import NexusError, obj
     from ..nexus_base import nexus_core
 
     tpath = testing.setup_unit_test_output_directory('gamess_simulation','test_check_sim_status',divert=True)
