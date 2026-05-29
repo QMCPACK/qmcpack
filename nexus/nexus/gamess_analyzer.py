@@ -21,6 +21,7 @@ from .developer import obj
 from .fileio import TextFile
 from .simulation import SimulationAnalyzer,Simulation
 from .gamess_input import GamessInput
+from .utilities import path_string
 
 
 def assign_value(host,dest,file,string):
@@ -68,6 +69,7 @@ class GamessAnalyzer(SimulationAnalyzer):
             infile = arg0
         #end if
         if infile is not None:
+            infile = path_string(infile)
             info = self.info
             info.path = os.path.dirname(infile)
             info.input = GamessInput(infile)
@@ -194,6 +196,8 @@ class GamessAnalyzer(SimulationAnalyzer):
                 self.ao_populations = ao_populations
             #end if
         #end if
+        if log is not None:
+            log.close()
     #end def analyze_log
 
 
@@ -484,6 +488,7 @@ class GamessAnalyzer(SimulationAnalyzer):
                     #end if
                     punch.norbitals = norbs
                 #end if
+                text.close()
             #end if
         except:
             if self.info.exit:

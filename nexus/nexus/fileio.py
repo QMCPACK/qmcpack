@@ -30,6 +30,7 @@ from .developer import DevBase, obj, error, to_str
 from .periodic_table import Elements
 from .unit_converter import convert
 from . import numpy_extensions as npe
+from .utilities import path_string
 
 class TextFile(DevBase):
     # interface to mmap files
@@ -39,11 +40,13 @@ class TextFile(DevBase):
         self.mm = None
         self.f  = None
         if filepath is not None:
+            filepath = path_string(filepath)
             self.open(filepath)
         #end if
     #end def __init__
 
     def open(self,filepath):
+        filepath = path_string(filepath)
         if not os.path.exists(filepath):
             self.error('cannot open non-existent file: {0}'.format(filepath))
         #end if
@@ -243,7 +246,8 @@ class StandardFile(DevBase):
     def __init__(self,filepath=None):
         if filepath is None:
             None
-        elif isinstance(filepath, (str, Path)):
+        elif isinstance(filepath, str | bytes | Path):
+            filepath = path_string(filepath)
             self.read(filepath)
         else:
             self.error('unsupported input: {0}'.format(filepath))
@@ -255,7 +259,9 @@ class StandardFile(DevBase):
         if not os.path.exists(filepath):
             self.error('read failed\nfile does not exist: {0}'.format(filepath))
         #end if
-        self.read_text(open(filepath,'r').read())
+        with open(filepath, "r") as f:
+            self.read_text(f.read())
+
         self.check_valid('read failed')
     #end def read
 
@@ -264,7 +270,8 @@ class StandardFile(DevBase):
         self.check_valid('write failed')
         text = self.write_text()
         if filepath is not None:
-            open(filepath,'w').write(text)
+            with open(filepath, "w") as f:
+                f.write(text)
         #end if
         return text
     #end def write

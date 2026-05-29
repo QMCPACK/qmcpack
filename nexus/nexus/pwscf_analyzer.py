@@ -178,7 +178,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
         #end try
 
         try:
-            lines = open(outfile,'r').read().splitlines()
+            with open(outfile, "r") as f:
+                lines = f.read().splitlines()
         except:
             nx+=1
             if self.info.warn:
@@ -622,7 +623,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
 
         try:
             if pw2c_outfile_name is not None:
-                lines = open(os.path.join(path,pw2c_outfile_name),'r').readlines()
+                with open(os.path.join(path,pw2c_outfile_name), "r") as out:
+                    lines = out.readlines()
                 for l in lines:
                     if l.find('Kinetic')!=-1:
                         tokens = l.split()
