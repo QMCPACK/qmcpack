@@ -24,7 +24,7 @@ def gen_prefactor():
   sym_basis = bspline_basis_set(3, all_knots, xs)
   #print("Number of basis functions = ",len(sym_basis))
 
-  cond_map = transpose_interval_and_coefficients(sym_basis)
+  cond_map = transpose_interval_and_coefficients(sym_basis, xs)
 
   spline_exprs = get_base_interval(cond_map)
   spline_exprs = [(idx,s.subs(Delta, 1)) for idx,s in spline_exprs]
