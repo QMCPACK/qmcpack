@@ -2013,3 +2013,25 @@ output files that can be tracked for completion status. For templating input fil
 ``input_template`` function is based on the standard Python ``string.Template`` class, 
 hence uses ``$`` as the default delimiter. If users want to use a different delimiter, 
 that is more suitable for their code syntax, they can develop their own template class.
+
+
+
+
+.. _dynamic-workflows:
+
+
+Examples for Features Under Active Development: Dynamic Workflows
+-----------------------------------------------------------------
+
+The files for these examples are found in: 
+
+.. code:: rest
+
+  /your_download_path/nexus/nexus/examples/dynamic_workflows
+
+This feature allows the development of algorithms composed of many simulation runs, a simple example being convergence of key parameters such as a planewave energy cutoff for DFT. Dynamic workflows are composed and run directly in full native Python, replacing the static graph-type execution typical of Nexus prior to this feature.
+
+Two early examples are provided: 1) a basic demonstration of how dependencies are processed and 2) a sequence of planewave energy cutoff and k-poing grid size based on a total energy tolerance.  
+
+See the ``README.rst`` file in the directory noted above.
+
