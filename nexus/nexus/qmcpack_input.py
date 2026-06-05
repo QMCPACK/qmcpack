@@ -146,6 +146,7 @@ from .structure import Structure, Jellium, get_kpath
 from .physical_system import PhysicalSystem
 from .simulation import SimulationInput, SimulationInputTemplate
 from .pwscf_input import array_to_string as pwscf_array_string
+from .utilities import path_string
 from . import numpy_extensions as npe
 
 yesno_dict     = {True:'yes' ,False:'no'}
@@ -3168,7 +3169,7 @@ class QmcpackInput(SimulationInput,Names):
         if arg0 is None and arg1 is None:
             None
         elif isinstance(arg0,(str, Path)) and arg1 is None:
-            filepath = arg0
+            filepath = path_string(arg0)
         elif isinstance(arg0,QIxml) and arg1 is None:
             element = arg0
         elif isinstance(arg0,meta) and isinstance(arg1,QIxml):
