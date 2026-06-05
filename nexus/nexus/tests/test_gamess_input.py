@@ -352,7 +352,7 @@ def test_generate(tmp_path):
         pp_copied = shutil.copy(
             src=pp,
             dst=pp_dir / file,
-        )
+            )
         ppfiles_full.append(str(pp_copied))
 
     nexus_noncore.pseudopotentials = Pseudopotentials(ppfiles_full)

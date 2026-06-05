@@ -206,7 +206,7 @@ def test_incorporate_result(tmp_path):
             "This is not a real POTCAR file.\n"
             "\n"
             "End of Dataset\n"
-        )]
+            )]
     )
 
     # incorporate vasp structure
@@ -221,7 +221,7 @@ def test_incorporate_result(tmp_path):
     shutil.copy2(
         src = tmp_path / pc_file,
         dst = tmp_path / cc_file,
-    )
+        )
 
     result = vasp_struct.get_result('structure',None)
 

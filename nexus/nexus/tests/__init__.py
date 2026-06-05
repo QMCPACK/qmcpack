@@ -24,11 +24,11 @@ NEXUS_CORE_KEYS = (
     "pseudopotentials",
     "runs",
     "results",
-)
+    )
 NEXUS_NONCORE_KEYS = (
     "pseudo_dir",
     "pseudopotentials",
-)
+    )
 
 def divert_nexus_core():
     """Store Nexus's core and noncore keys and return them."""

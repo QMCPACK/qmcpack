@@ -284,8 +284,6 @@ def test_write_simulation_status():
 
     from .test_simulation_module import get_test_workflow
 
-    # divert_nexus()
-
     log = generic_settings.devlog
 
     sims = get_test_workflow(3)
@@ -343,8 +341,6 @@ def test_write_simulation_status():
     setup, sent_files, submitted, finished, got_output, analyzed, failed
     '''
     assert(status_log().strip()==status_ref.strip())
-
-    # restore_nexus()
 
     Simulation.clear_all_sims()
 #end def test_write_simulation_status

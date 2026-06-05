@@ -41,7 +41,7 @@ def object_diff(*args,**kwargs):
 TEST_FILES = {
     'La2CuO4_ICSD69312.cif': TEST_DIR / "test_structure_files/La2CuO4_ICSD69312.cif",
     'coronene.xyz': TEST_DIR / "test_structure_files/coronene.xyz",
-}
+    }
 
 for file in TEST_FILES.values():
     assert(file.exists()), f"Test file not found! {file}"

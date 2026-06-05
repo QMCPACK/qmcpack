@@ -157,7 +157,7 @@ TEST_FILES = {
     "diamond_KPOINTS": TEST_DIR / "test_vasp_input_files/diamond_KPOINTS",
     "diamond_POSCAR":  TEST_DIR / "test_vasp_input_files/diamond_POSCAR",
     "diamond_POTCAR":  TEST_DIR / "test_vasp_input_files/diamond_POTCAR",
-}
+    }
 
 for file in TEST_FILES.values():
     assert(file.exists()), f"Test file not found! {file}"

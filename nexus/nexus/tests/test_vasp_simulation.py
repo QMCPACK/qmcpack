@@ -90,7 +90,7 @@ def test_check_result(tmp_path):
         tmp_dir=tmp_path,
         pseudos=["C.POTCAR"],
         pseudo_strs=[c_potcar_text],
-    )
+        )
 
     sim = setup_vasp_sim(tmp_path)
 
@@ -112,7 +112,7 @@ def test_get_result(tmp_path):
         tmp_dir=tmp_path,
         pseudos=["C.POTCAR"],
         pseudo_strs=[c_potcar_text],
-    )
+        )
 
     sim = setup_vasp_sim(tmp_path, identifier='diamond', copy_files=True)
 
@@ -274,7 +274,7 @@ def test_check_sim_status(tmp_path):
         tmp_dir=tmp_path,
         pseudos=["C.POTCAR"],
         pseudo_strs=[c_potcar_text],
-    )
+        )
 
     sim = setup_vasp_sim(tmp_path)
 
@@ -312,7 +312,7 @@ def test_get_output_files(tmp_path):
         tmp_dir=tmp_path,
         pseudos=["C.POTCAR"],
         pseudo_strs=[c_potcar_text],
-    )
+        )
 
     sim = setup_vasp_sim(tmp_path)
 

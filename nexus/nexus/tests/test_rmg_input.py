@@ -690,7 +690,7 @@ def test_read():
         "Pt_bulk_spinorbit_input",
         "Pt_bulk_spinorbit_input_band",
         "Si_8atoms_EXX_kpoints_input",
-    )
+        )
 
     # print out the reference text (used in generate_serial_references)
     #for infile in input_files_check:
