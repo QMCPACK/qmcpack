@@ -1337,11 +1337,12 @@ class Simulation(NexusCore):
             self.load_image()
             # continue from interruption
             if self.submitted and not self.finished and self.process_id is not None:
-                machine = get_machine(Job.machine)
-                if isinstance(machine,Workstation):
-                    # fully rerun following interrupt
-                    self.save_attempt()
-                    self.reset_indicators()
+                if nexus_core.dynamic:
+                    machine = get_machine(Job.machine)
+                    if isinstance(machine,Workstation):
+                        # fully rerun following interrupt
+                        self.save_attempt()
+                        self.reset_indicators()
                 
                 self.job.system_id = self.process_id # load process id of job
                 self.job.reenter_queue()

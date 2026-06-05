@@ -15,6 +15,7 @@ from ..testing import restore_nexus
 from .. import versions
 
 from ..developer import obj
+from ..machines import Job
 from ..simulation import Simulation,SimulationInput,SimulationAnalyzer
 
 
@@ -2538,6 +2539,10 @@ def test_reconstruct_cascade():
     sims = get_test_workflow(2)
     assert(len(sims)==7)
 
+    machine_in = Job.machine
+    Job.machine = sims.s1.job.machine
+
+
     for s in sims:
         imagefile = os.path.join(s.imlocdir,s.sim_image)
         assert(not os.path.exists(imagefile))
@@ -2715,6 +2720,7 @@ def test_reconstruct_cascade():
 
     restore_nexus()
 
+    Job.machine = machine_in
     Simulation.clear_all_sims()
 #end def test_reconstruct_cascade
 

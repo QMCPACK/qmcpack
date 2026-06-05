@@ -52,7 +52,7 @@ def test_settings():
                 'primary_modes', 'progress_tty', 'pseudo_dir',
                 'pseudopotentials', 'remote_directory', 'results', 'runs',
                 'skip_submit', 'sleep', 'stages', 'stages_set', 'status',
-                'status_modes', 'status_only', 'trace', 'verbose'
+                'status_modes', 'status_only', 'trace', 'verbose', 'dynamic'
                 ])
         nnckeys_check = set([
                 'basis_dir', 'basissets', 'pseudo_dir', 'pseudopotentials'
@@ -64,7 +64,7 @@ def test_settings():
                 'modes', 'monitor', 'primary_modes', 'progress_tty',
                 'pseudo_dir', 'pseudopotentials', 'remote_directory', 'results',
                 'runs', 'skip_submit', 'sleep', 'stages', 'stages_set', 'status',
-                'status_modes', 'status_only', 'trace', 'verbose'
+                'status_modes', 'status_only', 'trace', 'verbose', 'dynamic'
                 ])
         setkeys_allowed = setkeys_check | Settings.allowed_vars
 
