@@ -28,7 +28,7 @@
 import os
 import gc as garbage_collector
 from os import PathLike
-from pathlib import Path
+from .utilities import path_string
 from .nexus_version import nexus_version
 from .memory import resident
 from .developer import DevBase, obj, log
@@ -232,8 +232,7 @@ _____________________________________________________
             Optional message to pass to the output log.
         """
         NexusCore.working_directory = os.getcwd()
-        if isinstance(directory, Path):
-            directory = str(directory.resolve())
+        directory = path_string(directory)
 
         self.log('    Entering ' + directory, msg)
         if changedir:

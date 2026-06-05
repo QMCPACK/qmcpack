@@ -1,9 +1,10 @@
+import string
+from numbers import Number
+from pathlib import Path
 
 # attempt to regain python 2 sorting
 # code below is from https://stackoverflow.com/questions/26575183/how-can-i-get-2-x-like-sorting-behaviour-in-python-3-x
 #===========================
-from numbers import Number
-
 
 # decorator for type to function mapping special cases
 def per_type_cmp(type_):
@@ -118,51 +119,45 @@ def to_str(s):
 #end def to_str
 
 
-
-import string
-import os
-from pathlib import Path
-
-
-
-def _path_to_str(path):
-    '''Simple conversion from bytes/Path types to str'''
-    if isinstance(path,str):
+def _path_to_str(path: str | bytes | Path) -> str:
+    '''Simple conversion from bytes/Path types to str.'''
+    if isinstance(path, str):
         pass
-    elif isinstance(path,bytes):
-        path = str(path,encoding='utf-8')
-    elif isinstance(path,Path):
+    elif isinstance(path, bytes):
+        path = str(path, encoding='utf-8')
+    elif isinstance(path, Path):
         path = str(path)
     else:
-        raise ValueError('path must be of type "str", "bytes" or "Path"')
+        raise TypeError(
+            'path must be of type "str", "bytes" or "Path". Type received: {}'
+            .format(path.__class__.__name__)
+        )
     return path
 #end def _path_to_str
 
 
-
-def is_valid_path(path):
-    '''Screen out paths with invalid characters'''
+def is_valid_path(path: str | bytes | Path) -> bool:
+    '''Screen out paths with invalid characters.'''
     path = _path_to_str(path)
     if not hasattr(is_valid_path,'invalid_chars'):
         unprintable = [chr(c) for c in range(128) if chr(c) not in string.printable]
-        special = '!@#$%^&*;|?\`",()[]{}<>' + "'"
+        special = r'!@#$%^&*;|?\`",()[]{}<>' + r"'"
         whitespace = set(string.whitespace) - set([' '])
         invalid = set(unprintable) | set(special) | whitespace
         is_valid_path.invalid_chars = invalid
     invalid_chars = is_valid_path.invalid_chars
-    is_valid = len( set(path) & invalid_chars )==0
+    is_valid = len(set(path) & invalid_chars) == 0
     return is_valid
 #end def is_valid_path
 
 
-
-def is_valid_filename(filename):
-    '''Screen out filenames with invalid characters'''
+def is_valid_filename(filename: str | bytes | Path) -> bool:
+    '''Screen out filenames with invalid characters.'''
     filename = _path_to_str(filename)
     is_valid = True
-    if len(filename)==0:
+    if len(filename) == 0:
         is_valid = False
-    elif filename=='.':
+    elif filename == '.':
         is_valid = False
     elif filename.startswith('..'):
         is_valid = False
@@ -170,26 +165,26 @@ def is_valid_filename(filename):
         is_valid = False
     elif not is_valid_path(filename):
         is_valid = False
+
     return is_valid
 #end def is_valid_filename
 
 
-
-def is_relative_path(path):
-    '''Determine if a path is relative to some current working directory'''
+def is_relative_path(path: str | bytes | Path):
+    '''Determine if a path is relative to some current working directory.'''
     path     = _path_to_str(path)
-    absolute = len(path)>0 and (path[0]=='/' or path[0]=='~')
+    absolute = len(path) > 0 and (path[0] == '/' or path[0] == '~')
     relative = not absolute
     return relative
 #end def is_relative_path
 
 
-
-def path_string(path,
-                strict   = False,
-                relative = False,
-                check    = False
-                ):
+def path_string(
+    path:     str | bytes | Path,
+    strict:   bool = False,
+    relative: bool = False,
+    check:    bool = False,
+) -> str:
     """Convert a path to a string.
 
     Parameters
@@ -214,7 +209,7 @@ def path_string(path,
     if relative and not is_relative_path(path):
         raise ValueError('path must be relative')
     if strict:
-        if not isinstance(path,str):
+        if not isinstance(path, str):
             raise ValueError('path must strictly be str type')
         path_out = path
     else:

@@ -20,7 +20,8 @@ function(CHECK_PYTEST_VERSION pytest_version_ok)
                   RESULT_VARIABLE PYTEST_VERSION_RESULT
                   OUTPUT_VARIABLE PYTEST_VERSION
                   ERROR_VARIABLE PYTEST_VERSION_ERROR
-                  OUTPUT_STRIP_TRAILING_WHITESPACE)
+                  OUTPUT_STRIP_TRAILING_WHITESPACE
+                  ERROR_STRIP_TRAILING_WHITESPACE)
   if(PYTEST_VERSION)
     string(REPLACE "pytest " "" PYTEST_VERSION ${PYTEST_VERSION})
   else()
@@ -61,7 +62,7 @@ function(CHECK_PYTHON_REQS module_list test_name add_test)
     endif()
     if(NOT ${cached_variable_name})
       if(test_name)
-        message("Missing python module ${python_module}, not adding test ${test_name}")
+        message("Skipping ${test_name} tests because valid module ${python_module} is not found.")
       endif()
       set(${add_test}
           false

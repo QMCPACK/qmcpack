@@ -68,6 +68,7 @@
 import os
 import sys
 import shutil
+from pathlib import Path
 from string import Template
 from subprocess import Popen
 import tempfile
@@ -77,6 +78,7 @@ from .physical_system import PhysicalSystem
 from .machines import Job, Workstation, get_machine
 from .pseudopotential import ppset
 from .nexus_base import NexusCore, nexus_core, dynamic_storage
+from .utilities import path_string
 
  
 class SimulationInput(NexusCore):
@@ -102,6 +104,7 @@ class SimulationInput(NexusCore):
     #end def write_file_text
 
     def read(self,filepath):
+        filepath = path_string(filepath)
         tokens = filepath.split(None,1)
         if len(tokens)>1:
             text = filepath
@@ -115,6 +118,7 @@ class SimulationInput(NexusCore):
     def write(self,filepath=None):
         text = self.write_text(filepath)
         if filepath is not None:
+            filepath = path_string(filepath)
             self.write_file_text(filepath,text)
         #end if
         return text
@@ -487,14 +491,18 @@ class Simulation(NexusCore):
             self[name] = kw[name]
         #end for
         if 'path' in allowed:
-            p = self.path
-            if not isinstance(p,str):
-                self.error('path must be a string, you provided {0} (type {1})'.format(p,p.__class__.__name__))
+            if not isinstance(self.path, str | Path):
+                self.error('path must be a string or Path, you provided {0} (type {1})'.format(self.path,self.path.__class__.__name__))
+            else:
+                self.path = path_string(self.path)
+                p = self.path
+
             #end if
             if p.startswith('./'):
                 p = p[2:]
             #end if
             ld = nexus_core.local_directory
+
             if p.startswith(ld):
                 p = p.split(ld)[1].lstrip('/')
             #end if

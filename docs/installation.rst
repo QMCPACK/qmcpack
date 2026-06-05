@@ -900,7 +900,7 @@ Job script example with one MPI rank per GPU. Frontier is configured in low oper
 cores are not available on each node by default. i.e. We use 7 OpenMP CPU threads per MPI rank. The part of the job script that
 makes specific modules available is copied directly from the build script used above.
 
-::
+.. code-block:: bash
 
   #!/bin/bash
   #SBATCH -A MAT151
@@ -952,7 +952,7 @@ Installing on systems with ARMv8-based processors
 
 The following build recipe was verified using the 'Arm Compiler for HPC' on the ANL JLSE Comanche system with Cavium ThunderX2 processors on November 6, 2018.
 
-::
+.. code-block:: bash
 
   # load armclang compiler
   module load Generic-AArch64/RHEL/7/arm-hpc-compiler/18.4
@@ -964,7 +964,7 @@ The following build recipe was verified using the 'Arm Compiler for HPC' on the 
 
 Then using the following command:
 
-::
+.. code-block:: bash
 
   mkdir build_armclang
   cd build_armclang

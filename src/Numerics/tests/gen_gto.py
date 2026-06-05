@@ -11,24 +11,24 @@ def single_gaussian():
 
   alpha_val = 3.0
   r_val = 1.2
-  print 'alpha = ',alpha_val
-  print 'r = ',r_val
+  print('alpha = ',alpha_val)
+  print('r = ',r_val)
 
   phi = exp(-alpha*r**2)
-  print phi
-  print 'f == ',phi.subs(alpha, alpha_val).subs(r,r_val)
+  print(phi)
+  print('f == ',phi.subs(alpha, alpha_val).subs(r,r_val))
 
   d_phi = diff(phi, r)
-  print 'symbolic df = ',d_phi
-  print 'df == ',d_phi.subs(alpha, alpha_val).subs(r,r_val)
+  print('symbolic df = ',d_phi)
+  print('df == ',d_phi.subs(alpha, alpha_val).subs(r,r_val))
 
   dd_phi = diff(phi, r, 2)
-  print 'symbolic d2f = ',dd_phi
-  print 'd2f == ',dd_phi.subs(alpha, alpha_val).subs(r,r_val)
+  print('symbolic d2f = ',dd_phi)
+  print('d2f == ',dd_phi.subs(alpha, alpha_val).subs(r,r_val))
 
   d3d_phi = diff(phi, r, 3)
-  print 'symbolic d3f = ',d3d_phi
-  print 'd3f == ',d3d_phi.subs(alpha, alpha_val).subs(r,r_val)
+  print('symbolic d3f = ',d3d_phi)
+  print('d3f == ',d3d_phi.subs(alpha, alpha_val).subs(r,r_val))
 
 
 CG_basis = namedtuple('CG_basis',['orbtype','nbasis','zeta','contraction_coeff'])
@@ -118,7 +118,7 @@ def create_sym(ijk=[0,0,0]):
   norm = create_radial_gto_norm_symbolic()
   l_val = sum(ijk)
   norm_s = norm.subs({Symbol('i'):ijk[0], Symbol('j'):ijk[1],Symbol('k'):ijk[2], Symbol('L'):l_val})
-  print 'norm_s',norm_s
+  print('norm_s',norm_s)
   norm = lambdify(Symbol('alpha'), norm_s)
 
   i = Symbol('i',integer=True)
@@ -135,30 +135,30 @@ def eval_sym(cg_sym, norm, norm2, N_basis, c, alpha2, h_basis):
     cc = h_basis.contraction_coeff[i]
     cz = h_basis.zeta[i]
     cg_unroll = cg_unroll.subs(c[i+1],cc).subs(alpha2[i+1],cz).subs(norm2[i+1],norm(cz))
-    print cc,cz,norm(cz),'normL',norm(1.0)
+    print(cc,cz,norm(cz),'normL',norm(1.0))
   return cg_unroll
 
 def compute_from_sym(h_basis, ijk=[0,0,0]):
 
   cg_sym, norm, norm2, c, alpha2, N_basis = create_sym(ijk)
-  print 'norm',norm
+  print('norm',norm)
   cg = eval_sym(cg_sym, norm, norm2, N_basis, c, alpha2, h_basis)
   r = Symbol('r')
   x = Symbol('x')
   # setting x to 1.0 is important to compute just the radial part
   slist = {r:1.3, x:1.0}
 
-  print cg
-  print 'f = ',cg.subs(slist)
+  print(cg)
+  print('f = ',cg.subs(slist))
 
   d_cg = diff(cg, r);
-  print 'df = ',d_cg.subs(slist)
+  print('df = ',d_cg.subs(slist))
 
   dd_cg = diff(cg, r, 2);
-  print 'ddf = ',dd_cg.subs(slist)
+  print('ddf = ',dd_cg.subs(slist))
 
   d3_cg = diff(cg, r, 3);
-  print 'd3f = ',d3_cg.subs(slist)
+  print('d3f = ',d3_cg.subs(slist))
 
 # generated from read_order.py
 def get_ijk():
@@ -360,7 +360,7 @@ def run_template(fname_in, fname_out, bodies):
         if key in bodies:
           line = bodies[key]
         else:
-          print 'Error, template item not found, key:',key, ' line = ',line
+          print('Error, template item not found, key:',key, ' line = ',line)
       out += line
 
   with open(fname_out, 'w') as f:

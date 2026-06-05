@@ -36,8 +36,9 @@ from copy import deepcopy
 import pickle
 from pickle import UnpicklingError
 from random import randint
+from pathlib import Path
 
-from .utilities import sorted_py2
+from .utilities import sorted_py2, path_string
 
 
 class generic_settings:
@@ -62,66 +63,7 @@ def nocopy(value):
 
 sorted_generic = sorted_py2
 
-# There must be a better way to do this than store these, but this was faster for testing
-nexus_modules = [
-    "xmlreader",
-    "fileio",
-    "quantum_package_analyzer",
-    "pwscf",
-    "pwscf_analyzer",
-    "quantum_package_input",
-    "testing",
-    "rmg_input",
-    "machines",
-    "qmcpack_converters",
-    "simulation",
-    "pwscf_postprocessors",
-    "pyscf_sim",
-    "unit_converter",
-    "execute",
-    "qmcpack_result_analyzers",
-    "basisset",
-    "project_manager",
-    "gamess_input",
-    "quantum_package",
-    "pwscf_input",
-    "pyscf_input",
-    "physical_system",
-    "pseudopotential",
-    "nexus_version",
-    "periodic_table",
-    "rmg_analyzer",
-    "memory",
-    "vasp_input",
-    "qmcpack",
-    "numerics",
-    "qmcpack_analyzer",
-    "structure",
-    "gamess_analyzer",
-    "developer",
-    "template_simulation",
-    "bundle",
-    "qmcpack_property_analyzers",
-    "qmcpack_quantity_analyzers",
-    "rmg",
-    "grid_functions",
-    "hdfreader",
-    "utilities",
-    "qmcpack_analyzer_base",
-    "vasp",
-    "generic",
-    "nexus_base",
-    "debug",
-    "qmcpack_method_analyzers",
-    "observables",
-    "gamess",
-    "versions",
-    "vasp_analyzer",
-    "pwscf_data_reader",
-    "qmcpack_input",
-    "pyscf_analyzer",
-]
-
+nexus_modules = [mod.stem for mod in Path(__file__).parent.iterdir() if mod.suffix == ".py"]
 
 class NexusUnpickler(pickle.Unpickler):
     """This class is designed for backwards compatibility with pickles generated
@@ -1105,7 +1047,8 @@ class obj(object_interface):
 
     def path_exists(self,path):
         o = self
-        if isinstance(path,str):
+        if isinstance(path, str | bytes | Path):
+            path = path_string(path)
             path = path.split('/')
         #end if
         for p in path:
@@ -1120,7 +1063,8 @@ class obj(object_interface):
     def set_path(self,path,value=None):
         o = self
         cls = self.__class__
-        if isinstance(path,str):
+        if isinstance(path, str | bytes | Path):
+            path = path_string(path)
             path = path.split('/')
         #end if
         for p in path[0:-1]:
@@ -1134,7 +1078,8 @@ class obj(object_interface):
 
     def get_path(self,path,value=None):
         o = self
-        if isinstance(path,str):
+        if isinstance(path, str | bytes | Path):
+            path = path_string(path)
             path = path.split('/')
         #end if
         for p in path[0:-1]:

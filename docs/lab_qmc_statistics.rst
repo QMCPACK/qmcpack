@@ -480,7 +480,7 @@ can lead to autocorrelation since the new samples will be in the
 neighborhood of previous samples. Type ``grep timestep H.xml`` to see
 the varying time step values in this QMCPACK input file (``H.xml``):
 
-::
+.. code-block:: xml
 
   <parameter name="timestep">10</parameter>
   <parameter name="timestep">5</parameter>

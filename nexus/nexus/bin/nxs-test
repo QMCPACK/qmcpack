@@ -12,6 +12,16 @@ for development.
 
 import sys
 
+if sys.version_info[0:3] < (3, 10, 0):
+    v = sys.version_info[0:3]
+    print(
+       f"Your version of Python ({v[0]}.{v[1]}.{v[2]}) is less than the minimum required for Nexus!\n"
+        "To use Nexus, please install at least Python 3.10.0 or higher!\n\n"
+        "If you already have a higher version installed, ensure that your Python\n"
+        "environment is properly activated and your $PATH is set correctly."
+    )
+    sys.exit(1)
+
 try:
     import pytest
 except ImportError:
@@ -40,9 +50,27 @@ if __name__ == "__main__":
     except PermissionError:
         pass
 
+    pytest_args = []
+    if len(sys.argv) > 1:
+        if "-h" in sys.argv or "--help" in sys.argv:
+            print(
+                "Usage:\n"
+                '$ nxs-test <pytest_args>\n\n'
+                "See https://docs.pytest.org/en/stable/how-to/usage.html\n"
+                "for specification of arguments.\n\n"
+                "To select only specific tests, use `-k '<expr>'` from\n"
+                "Pytest's section on specifying which tests to run.\n"
+                "The other methods listed there are not supported by nxs-test."
+            )
+            sys.exit(1)
+
+        for arg in sys.argv[1:]:
+            pytest_args.append(arg)
+
     retcode = pytest.main([
         "--exitfirst",
         "--disable-warnings",
+       *pytest_args,
        f"{test_dir}",
     ])
 
