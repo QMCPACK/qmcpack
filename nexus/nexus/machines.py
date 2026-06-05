@@ -248,7 +248,7 @@ class Job(NexusCore):
             "outfile",
             "errfile",
             "subfile",
-        )
+            )
         for arg in path_arguments:
             if arg in kw:
                 kw[arg] = path_string(kw[arg])

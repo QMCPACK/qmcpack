@@ -201,7 +201,7 @@ class Settings(NexusCore):
             "pseudo_dir",
             "local_directory",
             "remote_directory",
-        )
+            )
         for var in core_path_vars:
             if var in kwargs:
                 kwargs[var] = path_string(kwargs[var])
