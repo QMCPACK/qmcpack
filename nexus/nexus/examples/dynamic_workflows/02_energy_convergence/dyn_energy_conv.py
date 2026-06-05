@@ -51,8 +51,13 @@ def gen_qe(run_type   = 'scf',
            path       = None,
            system     = None,
            ecutwfc    = None,
-           nkgrid     = 1,
+           nkgrid     = None,
            ):
+    if nkgrid is None:
+        nkgrid = 1
+        path = '01_ecut_conv/ecut_'+str(ecutwfc)
+    else:
+        path = '02_kgrid_conv/kgrid_{0}{0}{0}'.format(nkgrid)
     assert run_type in ('scf','nscf')
     if run_type=='scf':
         kgrid = 3*[nkgrid]
@@ -109,10 +114,9 @@ ecut      = 50     # initial energy cutoff
 tol       = 1e-4   # tolerance for convergence (Ry)
 converged = False
 ecuts = []
-path_str = lambda ecut: '01_ecut_conv/ecut_'+str(ecut)
 
 # Start with a single QE simulation, ecut = 50 Ry
-qe = gen_qe(path=path_str(ecut),ecutwfc=ecut)
+qe = gen_qe(ecutwfc=ecut)
 
 # Convergence iterations
 while not converged:
@@ -128,7 +132,7 @@ while not converged:
             # If not, increase the energy cutoff by 50%
             ecut = int(((1.5*ecut)//10)*10)
             # Run subsequent QE with higher cutoff
-            qe = gen_qe(path=path_str(ecut),ecutwfc=ecut)
+            qe = gen_qe(ecutwfc=ecut)
             print_progress(ecut,energies)
         else:
             # When converged, report the final energy cutoff
@@ -174,8 +178,7 @@ nkgrid    = 1
 tol       = 1e-3
 converged = False
 nkgrids   = []
-path_str  = lambda nk: '02_kgrid_conv/kgrid_{0}{0}{0}'.format(nk)
-qe = gen_qe(path=path_str(nkgrid),ecutwfc=ecut,nkgrid=nkgrid)
+qe = gen_qe(ecutwfc=ecut,nkgrid=nkgrid)
 while not converged:
     print('poll')
     if qe.succ:
@@ -183,7 +186,7 @@ while not converged:
         nkgrids.append(nkgrid)
         if len(energies)<2 or abs(energies[-1]-energies[-2])>tol:
             nkgrid += 1
-            qe = gen_qe(path=path_str(nkgrid),ecutwfc=ecut,nkgrid=nkgrid)
+            qe = gen_qe(ecutwfc=ecut,nkgrid=nkgrid)
             print_progress(nkgrid,energies)
         else:
             print_progress(nkgrid,energies)
