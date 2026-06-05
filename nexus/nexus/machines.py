@@ -255,7 +255,7 @@ class Job(NexusCore):
 
         # Theoretically a bash alias can have invalid filename characters,
         # so we treat app_name with some more special logic.
-        if kw.app_name is not None:
+        if "app_name" in kw:
             if isinstance(kw.app_name, Path):
                 kw.app_name = path_string(kw.app_name)
             elif not isinstance(kw.app_name, str):
