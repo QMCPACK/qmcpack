@@ -387,6 +387,7 @@ class Pseudopotential(DevBase):
 
 
     def read(self,filepath,format=None):
+        filepath = path_string(filepath)
         if self.requires_format:
             if format is None:
                 self.error('format keyword must be specified to read file {0}\nvalid options are: {1}'.format(filepath,self.formats))
@@ -2435,7 +2436,7 @@ class GaussianPP(SemilocalPP):
         keep_chans = keep.split()
         # Are the labels recognized?
         if keep_chans[0] not in chan_labels or keep_chans[1] not in chan_labels:
-            slef.error('Requested channel to keep is not recognized')
+            self.error('Requested channel to keep is not recognized')
         #end if
         # Does the original potential contain the requested channels?
         if keep_chans[0] not in comps or keep_chans[1] not in comps:
@@ -2623,6 +2624,7 @@ class CasinoPP(SemilocalPP):
     unitmap = dict(rydberg='Ry',hartree='Ha',ev='eV')
 
     def read(self,filepath,format=None):
+        filepath = path_string(filepath)
         if not os.path.exists(filepath):
             self.error('cannot read {0}, file does not exist'.format(filepath))
         #end if

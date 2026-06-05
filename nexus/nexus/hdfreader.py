@@ -22,6 +22,7 @@ import numpy as np
 import keyword
 from inspect import getmembers
 from .developer import DevBase, obj, unavailable, valid_variable_name
+from .utilities import path_string
 
 try:
     import h5py
@@ -263,7 +264,7 @@ class HDFgroup(DevBase):
 class HDFreader(DevBase):
     
     def __init__(self,fpath,verbose=False,view=False):
-        
+        fpath = path_string(fpath)
         HDFglobals.view = view
 
         if verbose:

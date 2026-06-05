@@ -493,7 +493,7 @@ class Simulation(NexusCore):
             self.path = p
         #end if
         if 'files' in allowed:
-            self.files = set(self.files)
+            self.files = set([path_string(f) for f in self.files])
         #end if
         if not isinstance(self.input,(self.input_type,GenericSimulationInput)):
             self.error('input must be of type {0}\nreceived {1}\nplease provide input appropriate to {2}'.format(self.input_type.__name__,self.input.__class__.__name__,self.__class__.__name__))

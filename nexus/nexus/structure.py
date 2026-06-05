@@ -137,6 +137,7 @@ from .numerics import nearest_neighbors, convex_hull, voronoi_neighbors
 from .periodic_table import Elements
 from .fileio import XsfFile, PoscarFile
 from .developer import DevBase, obj, unavailable, error
+from .utilities import path_string
 from . import numpy_extensions as npe
 
 try:
@@ -5023,6 +5024,7 @@ class Structure(Sobj):
 
     def read(self,filepath,format=None,elem=None,block=None,grammar='1.1',cell='prim',contents=False):
         if os.path.exists(filepath):
+            filepath = path_string(filepath)
             path,file = os.path.split(filepath)
             if format is None:
                 if '.' in file:

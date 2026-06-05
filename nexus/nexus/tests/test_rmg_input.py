@@ -6,50 +6,42 @@ from ..generic import generic_settings
 generic_settings.raise_error = True
 
 from importlib.util import find_spec
-from .. import testing
+from . import TEST_DIR
 from ..testing import value_eq,check_object_eq
 
+TEST_FILES = {
+    "AlN32_input":                                                 TEST_DIR / "test_rmg_input_files/AlN32_input",
+    "atomO_polarized_input":                                       TEST_DIR / "test_rmg_input_files/atomO_polarized_input",
+    "BlackPhosphorus_Delocalize_both_pp_and_proj_davidson_input":  TEST_DIR / "test_rmg_input_files/BlackPhosphorus_Delocalize_both_pp_and_proj_davidson_input",
+    "BlackPhosphorus_Delocalize_both_pp_and_proj_multigrid_input": TEST_DIR / "test_rmg_input_files/BlackPhosphorus_Delocalize_both_pp_and_proj_multigrid_input",
+    "BlackPhosphorus_input":                                       TEST_DIR / "test_rmg_input_files/BlackPhosphorus_input",
+    "BlackPhosphorus_input_1nongammapoint":                        TEST_DIR / "test_rmg_input_files/BlackPhosphorus_input_1nongammapoint",
+    "BlackPhosphorus_input_band":                                  TEST_DIR / "test_rmg_input_files/BlackPhosphorus_input_band",
+    "BlackPhosphorus_Localize_both_pp_and_proj_davidson_input":    TEST_DIR / "test_rmg_input_files/BlackPhosphorus_Localize_both_pp_and_proj_davidson_input",
+    "BlackPhosphorus_Localize_both_pp_and_proj_multigrid_input":   TEST_DIR / "test_rmg_input_files/BlackPhosphorus_Localize_both_pp_and_proj_multigrid_input",
+    "BlackPhosphorus_Localize_pp_only_davidson_input":             TEST_DIR / "test_rmg_input_files/BlackPhosphorus_Localize_pp_only_davidson_input",
+    "BlackPhosphorus_Localize_pp_only_multigrid_input":            TEST_DIR / "test_rmg_input_files/BlackPhosphorus_Localize_pp_only_multigrid_input",
+    "BlackPhosphorus_Localize_proj_only_davidson_input":           TEST_DIR / "test_rmg_input_files/BlackPhosphorus_Localize_proj_only_davidson_input",
+    "BlackPhosphorus_Localize_proj_only_multigrid_input":          TEST_DIR / "test_rmg_input_files/BlackPhosphorus_Localize_proj_only_multigrid_input",
+    "C60_input":                                                   TEST_DIR / "test_rmg_input_files/C60_input",
+    "Diamond16_input":                                             TEST_DIR / "test_rmg_input_files/Diamond16_input",
+    "Diamond2_input":                                              TEST_DIR / "test_rmg_input_files/Diamond2_input",
+    "Fe_2atom_input":                                              TEST_DIR / "test_rmg_input_files/Fe_2atom_input",
+    "graphite_stress_input":                                       TEST_DIR / "test_rmg_input_files/graphite_stress_input",
+    "Mg_2atom_input":                                              TEST_DIR / "test_rmg_input_files/Mg_2atom_input",
+    "nanotube_80_input":                                           TEST_DIR / "test_rmg_input_files/nanotube_80_input",
+    "nanotube_80_input_band":                                      TEST_DIR / "test_rmg_input_files/nanotube_80_input_band",
+    "nanotube_80_input_band1":                                     TEST_DIR / "test_rmg_input_files/nanotube_80_input_band1",
+    "NiO512_input":                                                TEST_DIR / "test_rmg_input_files/NiO512_input",
+    "NiO8_input":                                                  TEST_DIR / "test_rmg_input_files/NiO8_input",
+    "Pt_bulk_spinorbit_input":                                     TEST_DIR / "test_rmg_input_files/Pt_bulk_spinorbit_input",
+    "Pt_bulk_spinorbit_input_band":                                TEST_DIR / "test_rmg_input_files/Pt_bulk_spinorbit_input_band",
+    "Si_8atoms_EXX_kpoints_input":                                 TEST_DIR / "test_rmg_input_files/Si_8atoms_EXX_kpoints_input",
+    "U_bulk_spinorbit_RMG_input":                                  TEST_DIR / "test_rmg_input_files/U_bulk_spinorbit_RMG_input",
+    }
 
-associated_files = dict()
-
-input_files = '''
-    AlN32_input
-    atomO_polarized_input
-    BlackPhosphorus_Delocalize_both_pp_and_proj_davidson_input
-    BlackPhosphorus_Delocalize_both_pp_and_proj_multigrid_input
-    BlackPhosphorus_input
-    BlackPhosphorus_input_1nongammapoint
-    BlackPhosphorus_input_band
-    BlackPhosphorus_Localize_both_pp_and_proj_davidson_input
-    BlackPhosphorus_Localize_both_pp_and_proj_multigrid_input
-    BlackPhosphorus_Localize_pp_only_davidson_input
-    BlackPhosphorus_Localize_pp_only_multigrid_input
-    BlackPhosphorus_Localize_proj_only_davidson_input
-    BlackPhosphorus_Localize_proj_only_multigrid_input
-    C60_input
-    Diamond16_input
-    Diamond2_input
-    Fe_2atom_input
-    graphite_stress_input
-    Mg_2atom_input
-    nanotube_80_input
-    nanotube_80_input_band
-    nanotube_80_input_band1
-    NiO512_input
-    NiO8_input
-    Pt_bulk_spinorbit_input
-    Pt_bulk_spinorbit_input_band
-    Si_8atoms_EXX_kpoints_input
-    U_bulk_spinorbit_RMG_input
-    '''.split()
-    
-
-
-
-def get_files():
-    return testing.collect_unit_test_file_paths('rmg_input',associated_files)
-#end def get_files
-
+for file in TEST_FILES.values():
+    assert(file.exists()), f"Test file not found! {file}"
 
 
 def make_serial_reference(ri):
@@ -671,45 +663,34 @@ def check_vs_serial_reference(gi,name):
 #end def check_vs_serial_reference
 
 
-def test_files():
-    filenames = input_files
-    files = get_files()
-    assert(set(files.keys())==set(filenames))
-#end def test_files
-
-
-
 def test_empty_init():
     from ..rmg_input import RmgInput
     ri = RmgInput()
 #end test_empty_init
 
 
-
 def test_read():
     from ..rmg_input import RmgInput
-    
-    files = get_files()
 
     infiles_read = {}
-    for infile in input_files:
-        ri_read = RmgInput(files[infile])
+    for infile in TEST_FILES:
+        ri_read = RmgInput(TEST_FILES[infile])
         assert(ri_read.is_valid())
         infiles_read[infile] = ri_read
     #end for
 
-    input_files_check = '''
-        BlackPhosphorus_input
-        BlackPhosphorus_input_band
-        BlackPhosphorus_Localize_both_pp_and_proj_multigrid_input
-        C60_input
-        Diamond16_input
-        graphite_stress_input
-        NiO8_input
-        Pt_bulk_spinorbit_input
-        Pt_bulk_spinorbit_input_band
-        Si_8atoms_EXX_kpoints_input
-        '''.split()
+    input_files_check = (
+        "BlackPhosphorus_input",
+        "BlackPhosphorus_input_band",
+        "BlackPhosphorus_Localize_both_pp_and_proj_multigrid_input",
+        "C60_input",
+        "Diamond16_input",
+        "graphite_stress_input",
+        "NiO8_input",
+        "Pt_bulk_spinorbit_input",
+        "Pt_bulk_spinorbit_input_band",
+        "Si_8atoms_EXX_kpoints_input",
+        )
 
     # print out the reference text (used in generate_serial_references)
     #for infile in input_files_check:
@@ -729,18 +710,13 @@ def test_read():
 
 
 
-def test_write():
-    import os
+def test_write(tmp_path):
     from ..rmg_input import RmgInput
 
-    tpath = testing.setup_unit_test_output_directory('rmg_input','test_write')
-    
-    files = get_files()
+    for infile in TEST_FILES:
+        write_file = tmp_path / infile
 
-    for infile in input_files:
-        write_file = os.path.join(tpath,infile)
-
-        ri_read = RmgInput(files[infile])
+        ri_read = RmgInput(TEST_FILES[infile])
 
         ri_read.write(write_file)
 
