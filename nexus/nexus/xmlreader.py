@@ -29,6 +29,7 @@ import re
 import os
 import numpy as np
 from .developer import DevBase, obj, valid_variable_name
+from .utilities import path_string
 
 
 def parse_string(s, delim = None):
@@ -282,6 +283,7 @@ class XMLreader(DevBase):
         if element_aliases is None:
             element_aliases = {}
 
+        fpath = path_string(fpath)
         #assign values
         self.fpath=fpath
         if fpath is None:
