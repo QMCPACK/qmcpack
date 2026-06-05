@@ -5,8 +5,8 @@ pytestmark = pytest.mark.order(NexusTestOrder.STRUCTURE)
 from ..generic import generic_settings
 generic_settings.raise_error = True
 
-
 import numpy as np
+from . import TEST_DIR
 from .. import testing
 from ..testing import value_eq as value_eq_orig
 from ..testing import object_eq as object_eq_orig
@@ -38,17 +38,18 @@ def object_diff(*args,**kwargs):
 #end def object_diff
 
 
-associated_files     = dict()
+TEST_FILES = {
+    'La2CuO4_ICSD69312.cif': TEST_DIR / "test_structure_files/La2CuO4_ICSD69312.cif",
+    'coronene.xyz': TEST_DIR / "test_structure_files/coronene.xyz",
+    }
+
+for file in TEST_FILES.values():
+    assert(file.exists()), f"Test file not found! {file}"
+
 reference_inputs     = dict()
 reference_structures = dict()
 generated_structures = dict()
 crystal_structures   = dict()
-
-
-def get_files():
-    return testing.collect_unit_test_file_paths('structure',associated_files)
-#end def get_files
-
 
 def structure_diff(s1,s2):
     keys = ('units','elem','pos','axes','kpoints','kweights','kaxes')
@@ -257,18 +258,6 @@ def example_structure_h4():
     s1 = Structure(axes=axes, elem=elem, pos=pos, units='B')
     return s1
 #end def example_structure_h4
-
-
-
-def test_files():
-    filenames = [
-        'La2CuO4_ICSD69312.cif',
-        'coronene.xyz',
-        ]
-    files = get_files()
-    assert(set(files.keys())==set(filenames))
-#end def test_files
-
 
 
 def test_empty_init():
@@ -630,14 +619,11 @@ def test_gen_graphene():
 
 
 
-def test_read_write():
+def test_read_write(tmp_path):
     """
     Write/read conventional diamond cell to/from XYZ, XSF, and POSCAR formats.
     """
-    import os
     from ..structure import generate_structure, read_structure
-
-    tpath = testing.setup_unit_test_output_directory('structure','test_read_write')
 
     d8 = generate_structure(
         structure = 'diamond',
@@ -645,15 +631,15 @@ def test_read_write():
         )
 
     # Write an XYZ file
-    xyz_file = os.path.join(tpath,'diamond8.xyz')
+    xyz_file = tmp_path / 'diamond8.xyz'
     d8.write(xyz_file)
     
     # Write an XSF file
-    xsf_file = os.path.join(tpath,'diamond8.xsf')
+    xsf_file = tmp_path / 'diamond8.xsf'
     d8.write(xsf_file)
 
     # Write a POSCAR file
-    poscar_file = os.path.join(tpath,'diamond8.POSCAR')
+    poscar_file = tmp_path / 'diamond8.POSCAR'
     d8.write(poscar_file)
 
     # Read an XYZ file
@@ -681,31 +667,29 @@ def test_read_cif():
     _ = pytest.importorskip("CifFile")
     from ..structure import read_structure,generate_structure
 
-    files = get_files()
-
     # Read from CIF file
-    s = read_structure(files['La2CuO4_ICSD69312.cif'])
+    s = read_structure(str(TEST_FILES['La2CuO4_ICSD69312.cif']))
 
     ref = generate_structure(
         units = 'A',
         axes  = [[ 2.665,   0.    , -6.5525],
-                    [ 0.   ,   5.4126,  0.    ],
-                    [ 2.665,   0.    ,  6.5525]],
+                 [ 0.   ,   5.4126,  0.    ],
+                 [ 2.665,   0.    ,  6.5525]],
         elem  = 'La La La La Cu Cu O O O O O O O O'.split(),
         pos   = [[ 2.665 ,      5.37038172, -1.8071795 ],
-                    [ 2.665 ,      2.74851828,  4.7453205 ],
-                    [ 2.665 ,      2.66408172, -4.7453205 ],
-                    [ 2.665 ,      0.04221828,  1.8071795 ],
-                    [ 0.    ,      0.        ,  0.        ],
-                    [ 2.665 ,      2.7063    ,  0.        ],
-                    [ 1.3325,      1.35315   , -0.128429  ],
-                    [ 3.9975,      4.05945   ,  0.128429  ],
-                    [ 3.9975,      1.35315   , -0.128429  ],
-                    [ 1.3325,      4.05945   ,  0.128429  ],
-                    [ 2.665 ,      0.23490684, -4.1398695 ],
-                    [ 2.665 ,      2.47139316,  2.4126305 ],
-                    [ 2.665 ,      2.94120684, -2.4126305 ],
-                    [ 2.665 ,      5.17769316,  4.1398695 ]],
+                 [ 2.665 ,      2.74851828,  4.7453205 ],
+                 [ 2.665 ,      2.66408172, -4.7453205 ],
+                 [ 2.665 ,      0.04221828,  1.8071795 ],
+                 [ 0.    ,      0.        ,  0.        ],
+                 [ 2.665 ,      2.7063    ,  0.        ],
+                 [ 1.3325,      1.35315   , -0.128429  ],
+                 [ 3.9975,      4.05945   ,  0.128429  ],
+                 [ 3.9975,      1.35315   , -0.128429  ],
+                 [ 1.3325,      4.05945   ,  0.128429  ],
+                 [ 2.665 ,      0.23490684, -4.1398695 ],
+                 [ 2.665 ,      2.47139316,  2.4126305 ],
+                 [ 2.665 ,      2.94120684, -2.4126305 ],
+                 [ 2.665 ,      5.17769316,  4.1398695 ]],
         )
 
     assert(structure_same(s,ref))
@@ -717,8 +701,6 @@ def test_read_cif():
 def test_bounding_box():
     import numpy as np
     from ..structure import generate_structure,read_structure
-
-    files = get_files()
 
     h2o = generate_structure(
         elem  = ['O','H','H'], 
@@ -740,7 +722,7 @@ def test_bounding_box():
     assert(value_eq(tuple(h2o_auto.pos[-1]),(4.,4.75716,4.29313)))
 
 
-    s = read_structure(files['coronene.xyz'])
+    s = read_structure(TEST_FILES['coronene.xyz'])
 
     # make a bounding box that is at least 5 A from the nearest atom
     s.bounding_box(mindist=5.0)
@@ -793,8 +775,8 @@ def test_primitive_search():
         )
 
     tmatrix = [[ 2, -2,  2],
-                [ 2,  2, -2],
-                [-2,  2,  2]]
+               [ 2,  2, -2],
+               [-2,  2,  2]]
 
     d64 = d2.tile(tmatrix)
 
@@ -808,8 +790,8 @@ def test_primitive_search():
     tmatrix = d64.tilematrix(dprim)
 
     axes_ref = np.array([[0.   , 1.785, 1.785],
-                            [1.785, 0.   , 1.785],
-                            [1.785, 1.785, 0.   ]])
+                         [1.785, 0.   , 1.785],
+                         [1.785, 1.785, 0.   ]])
     tmatrix_ref = np.array([[-2,  2,  2],
                             [ 2, -2,  2],
                             [ 2,  2, -2]])
@@ -1629,21 +1611,21 @@ def test_rmg_transform():
 
     res = obj()
     for struct,cell in ref.keys():
-            s = generate_structure(
-                structure = struct,
-                cell      = cell,
-                )
-            st,rmg_inputs,R,tmatrix,bv = s.rmg_transform(
-                allow_tile    = True,
-                allow_general = True,
-                all_results   = True,
-                )
-            res[struct,cell] = obj(
-                rmg_inputs = rmg_inputs,
-                R          = R,
-                tmatrix    = tmatrix,
-                bv         = bv,
-                )
+        s = generate_structure(
+            structure = struct,
+            cell      = cell,
+            )
+        st,rmg_inputs,R,tmatrix,bv = s.rmg_transform(
+            allow_tile    = True,
+            allow_general = True,
+            all_results   = True,
+            )
+        res[struct,cell] = obj(
+            rmg_inputs = rmg_inputs,
+            R          = R,
+            tmatrix    = tmatrix,
+            bv         = bv,
+            )
     #end for
 
     assert(testing.check_object_eq(res,ref,atol=1e-12))

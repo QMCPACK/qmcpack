@@ -6,17 +6,15 @@ from ..generic import generic_settings
 generic_settings.raise_error = True
 
 
-from .. import testing
+from pathlib import Path
+from . import isolate_nexus_core
+from nexus.nexus_base import nexus_core
+
 from ..testing import value_eq,object_eq
 from ..testing import FailedTest,failed
-from ..testing import divert_nexus_log,restore_nexus_log
-from ..testing import restore_nexus
 
 from ..developer import obj
 from ..simulation import Simulation,SimulationInput,SimulationAnalyzer
-
-
-testing.divert_nexus_errors()
 
 
 class SimulationInputForTests(SimulationInput):
@@ -376,21 +374,18 @@ def get_test_workflow(index,**kwargs):
 
 
 
-def test_simulation_input():
-    import os
+def test_simulation_input(tmp_path):
     from ..developer import NexusError
     from ..simulation import SimulationInput
-
-    tpath = testing.setup_unit_test_output_directory('simulation','test_simulation_input')
 
     # empty init
     si = SimulationInput()
 
     # write
-    infile = os.path.join(tpath,'sim_input.in')
+    infile = tmp_path / 'sim_input.in'
     wtext = 'simulation input'
     si.write_file_text(infile,wtext)
-    assert(os.path.exists(infile))
+    assert(infile.exists())
 
     # read
     rtext = si.read_file_text(infile)
@@ -454,17 +449,13 @@ def test_simulation_analyzer():
 
 
 
-def test_simulation_input_template():
-    import os
+def test_simulation_input_template(tmp_path):
     from string import Template
     from ..developer import obj, NexusError
     from ..simulation import SimulationInput
     from ..simulation import GenericSimulationInput
     from ..simulation import SimulationInputTemplate
     from ..simulation import input_template
-
-    tpath = testing.setup_unit_test_output_directory('simulation','test_simulation_input_template')
-
 
     # empty init
     si_empty = input_template()
@@ -491,10 +482,9 @@ file1 = "$file.$ext1"
 file2 = "$file.$ext2"
 '''
 
-    template_filepath = os.path.join(tpath,'template_file.txt')
+    template_filepath = tmp_path / 'template_file.txt'
 
-    open(template_filepath,'w').write(template_text)
-
+    template_filepath.write_text(template_text)
 
     # read
     si_read = input_template(template_filepath)
@@ -576,16 +566,14 @@ file2 = "my_file.dat"
     text = si_write.write()
     assert(text==text_ref)
     
-    input_filepath = os.path.join(tpath,'input_file.txt')
+    input_filepath = tmp_path / 'input_file.txt'
     si_write.write(input_filepath)
-    assert(open(input_filepath,'r').read()==text_ref)
-
+    assert(input_filepath.read_text()==text_ref)
 #end def test_simulation_input_template
 
 
 
-def test_simulation_input_multi_template():
-    import os
+def test_simulation_input_multi_template(tmp_path):
     from string import Template
     from ..developer import obj
     from ..simulation import SimulationInput
@@ -593,29 +581,27 @@ def test_simulation_input_multi_template():
     from ..simulation import SimulationInputMultiTemplate
     from ..simulation import multi_input_template
 
-    tpath = testing.setup_unit_test_output_directory('simulation','test_simulation_input_multi_template')
-
     # make template files
-    template1_filepath = os.path.join(tpath,'template1.txt')
-    template2_filepath = os.path.join(tpath,'template2.txt')
-    template3_filepath = os.path.join(tpath,'template3.txt')
+    template1_filepath = tmp_path / 'template1.txt'
+    template2_filepath = tmp_path / 'template2.txt'
+    template3_filepath = tmp_path / 'template3.txt'
 
-    open(template1_filepath,'w').write('''
+    template1_filepath.write_text('''
 name = "$name"
 a    = $a
 ''')
-    open(template2_filepath,'w').write('''
+    template2_filepath.write_text('''
 name = "$name"
 b    = $b
 ''')
-    open(template3_filepath,'w').write('''
+    template3_filepath.write_text('''
 name = "$name"
 c    = $c
 ''')
 
-    input1_filepath = os.path.join(tpath,'input_file1.txt')
-    input2_filepath = os.path.join(tpath,'input_file2.txt')
-    input3_filepath = os.path.join(tpath,'input_file3.txt')
+    input1_filepath = tmp_path / 'input_file1.txt'
+    input2_filepath = tmp_path / 'input_file2.txt'
+    input3_filepath = tmp_path / 'input_file3.txt'
 
 
     # empty init
@@ -708,9 +694,9 @@ c    = 3
     assert(object_eq(si_write.write(),write_ref))
 
     si_write.write(input1_filepath)
-    assert(os.path.exists(input1_filepath))
-    assert(os.path.exists(input2_filepath))
-    assert(os.path.exists(input3_filepath))
+    assert(input1_filepath.exists())
+    assert(input2_filepath.exists())
+    assert(input3_filepath.exists())
 
 
     # read
@@ -731,7 +717,6 @@ c    = 3
         assert(sit.allow_not_set==set())
     #end for
     assert(object_eq(si_read.write(),write_ref))
-
 #end def test_simulation_input_multi_template
 
 
@@ -1019,12 +1004,14 @@ def test_indicator_checks():
 #end def test_indicator_checks
 
 
-
-def test_create_directories():
+@isolate_nexus_core
+def test_create_directories(tmp_path):
     import os
     from ..simulation import Simulation
 
-    tpath = testing.setup_unit_test_output_directory('simulation','test_create_directories',divert=True)
+    nexus_core.local_directory  = str(tmp_path)
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
 
     s = Simulation()
 
@@ -1038,35 +1025,32 @@ def test_create_directories():
     assert(os.path.exists(s.imlocdir))
     assert(s.created_directories)
 
-    restore_nexus()
-
     Simulation.clear_all_sims()
 #end def test_create_directories
 
 
-
-def test_file_text():
-    import os
+@isolate_nexus_core
+def test_file_text(tmp_path):
     from ..simulation import Simulation
 
-    tpath = testing.setup_unit_test_output_directory('simulation','test_create_directories',divert=True)
+    nexus_core.local_directory  = str(tmp_path)
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
 
     s = Simulation()
     s.create_directories()
 
-    outfile = os.path.join(s.locdir,s.outfile)
-    errfile = os.path.join(s.locdir,s.errfile)
+    outfile = Path(s.locdir).resolve() / s.outfile
+    errfile = Path(s.locdir).resolve() / s.errfile
 
     out_text = 'output'
     err_text = 'error'
 
-    open(outfile,'w').write(out_text)
-    open(errfile,'w').write(err_text)
+    outfile.write_text(out_text)
+    errfile.write_text(err_text)
 
     assert(s.outfile_text()==out_text)
     assert(s.errfile_text()==err_text)
-
-    restore_nexus()
 
     Simulation.clear_all_sims()
 #end def test_file_text
@@ -1424,7 +1408,7 @@ def test_has_generic_input():
 #end def test_has_generic_input
 
 
-
+@isolate_nexus_core
 def test_check_dependencies():
     from ..developer import obj, NexusError
     from ..simulation import Simulation
@@ -1499,7 +1483,6 @@ def test_check_dependencies():
 
 
     # existent dependency but generic input
-    divert_nexus_log()
     class GenInput(SimulationInput,GenericSimulationInput):
         None
     #end class GenInput
@@ -1526,7 +1509,6 @@ def test_check_dependencies():
     except Exception as e:
         failed(str(e))
     #end try
-    restore_nexus_log()
 
     Simulation.clear_all_sims()
 #end def test_check_dependencies
@@ -1563,7 +1545,7 @@ def test_get_dependencies():
     s22 = get_test_sim(dependencies=deps)
     simdeps[s22.simid] = deps
 
-    dependencies = [
+    deps = [
         (s21,'quant1'),
         (s22,'quant2'),
         ]
@@ -1698,41 +1680,40 @@ def test_downstream_simids():
 
 
 
-def test_copy_file():
+def test_copy_file(tmp_path):
     import os
     from ..simulation import Simulation
-
-    tpath = testing.setup_unit_test_output_directory('simulation','test_copy_file')
     
-    opath = os.path.join(tpath,'other')
+    opath = tmp_path / 'other'
     if not os.path.exists(opath):
         os.makedirs(opath)
     #end if
 
-    file1 = os.path.join(tpath,'file.txt')
-    file2 = os.path.join(opath,'file.txt')
+    file1 = tmp_path / 'file.txt'
+    file2 = opath / 'file.txt'
 
-    open(file1,'w').write('text')
-    assert(os.path.exists(file1))
+    file1.write_text('text')
+    assert(file1.exists())
 
     s = get_sim()
 
     s.copy_file(file1,opath)
 
-    assert(os.path.exists(file2))
-    assert(open(file2,'r').read().strip()=='text')
+    assert(file2.exists())
+    assert(file2.read_text().strip()=='text')
     
     Simulation.clear_all_sims()
 #end def test_copy_file
 
 
-
-def test_save_load_image():
-    import os
+@isolate_nexus_core
+def test_save_load_image(tmp_path):
     from ..developer import obj
     from ..simulation import Simulation,SimulationImage
 
-    tpath = testing.setup_unit_test_output_directory('simulation','test_save_load_image',divert=True)
+    nexus_core.local_directory  = str(tmp_path)
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
 
     nsave = 30
     nload = 22
@@ -1747,8 +1728,8 @@ def test_save_load_image():
 
     sim.save_image()
 
-    imagefile = os.path.join(sim.imlocdir,sim.sim_image)
-    assert(os.path.exists(imagefile))
+    imagefile = Path(sim.imlocdir) / sim.sim_image
+    assert(imagefile.exists())
 
     image = obj()
     image.load(imagefile)
@@ -1770,52 +1751,49 @@ def test_save_load_image():
         assert(field in sim)
         assert(value_eq(sim[field],orig[field]))
     #end for
-
-    restore_nexus()
-
     Simulation.clear_all_sims()
 #end def test_save_load_image
 
 
-
-def test_load_analyzer_image():
-    import os
+@isolate_nexus_core
+def test_load_analyzer_image(tmp_path):
     from ..simulation import Simulation
 
-    tpath = testing.setup_unit_test_output_directory('simulation','test_save_load_analyzer_image',divert=True)
+    nexus_core.local_directory  = str(tmp_path)
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
 
     sim = get_test_sim()
 
-    if not os.path.exists(sim.imresdir):
-        os.makedirs(sim.imresdir)
+    if not Path(sim.imresdir).exists():
+        Path(sim.imresdir).mkdir(parents=True)
     #end if
 
-    analyzer_file = os.path.join(sim.imresdir,sim.analyzer_image)
+    analyzer_file = Path(sim.imresdir).resolve() / sim.analyzer_image
 
     a = sim.analyzer_type(None)
     assert(not a.analysis_performed)
     a.analyze()
     assert(a.analysis_performed)
     a.save(analyzer_file)
-    assert(os.path.exists(analyzer_file))
+    assert(Path(analyzer_file).exists())
 
     a2 = sim.load_analyzer_image()
     assert(isinstance(a2,sim.analyzer_type))
     assert(a2.analysis_performed)
     assert(object_eq(a2,a))
 
-    restore_nexus()
-
     Simulation.clear_all_sims()
 #end def test_load_analyzer_image
 
 
-
-def test_save_attempt():
-    import os
+@isolate_nexus_core
+def test_save_attempt(tmp_path):
     from ..simulation import Simulation
 
-    tpath = testing.setup_unit_test_output_directory('simulation','test_save_attempt',divert=True)
+    nexus_core.local_directory  = str(tmp_path)
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
 
     sim = get_test_sim()
 
@@ -1825,30 +1803,29 @@ def test_save_attempt():
 
     assert(sim.attempt_files()==files)
     for file in files:
-        open(os.path.join(sim.locdir,file),'w').write('made an attempt')
+        (Path(sim.locdir).resolve() / file).write_text('made an attempt')
     #end for
 
-    attempt_dir = os.path.join(sim.locdir,'{}_attempt1'.format(sim.identifier))
-    assert(not os.path.exists(attempt_dir))
+    attempt_dir = Path(sim.locdir).resolve() / f'{sim.identifier}_attempt1'
+    assert(not attempt_dir.exists())
     sim.save_attempt()
-    assert(os.path.exists(attempt_dir))
+    assert(attempt_dir.exists())
     for file in files:
-        assert(not os.path.exists(os.path.join(sim.locdir,file)))
-        assert(os.path.exists(os.path.join(attempt_dir,file)))
+        assert(not (Path(sim.locdir).resolve() / file).exists())
+        assert((Path(attempt_dir).resolve() / file).exists())
     #end for
-
-    restore_nexus()
 
     Simulation.clear_all_sims()
 #end def test_save_attempt
 
 
-
-def test_write_inputs():
-    import os
+@isolate_nexus_core
+def test_write_inputs(tmp_path):
     from ..simulation import Simulation,input_template
 
-    tpath = testing.setup_unit_test_output_directory('simulation','test_write_inputs',divert=True)
+    nexus_core.local_directory  = str(tmp_path)
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
 
     template = '''
 name = "$name"
@@ -1868,49 +1845,47 @@ a    = 1
         )
     s.create_directories()
 
-    input_file       = os.path.join(s.locdir,s.infile)
-    image_file       = os.path.join(s.imlocdir,s.sim_image)
-    input_image_file = os.path.join(s.imlocdir,s.input_image)
+    input_file       = Path(s.locdir).resolve() / s.infile
+    image_file       = Path(s.imlocdir).resolve() / s.sim_image
+    input_image_file = Path(s.imlocdir).resolve() / s.input_image
 
     assert(not s.setup)
-    assert(not os.path.exists(input_file))
-    assert(not os.path.exists(image_file))
-    assert(not os.path.exists(input_image_file))
+    assert(not input_file.exists())
+    assert(not image_file.exists())
+    assert(not input_image_file.exists())
 
     s.write_inputs()
 
     assert(s.setup)
-    assert(os.path.exists(input_file))
-    assert(os.path.exists(image_file))
-    assert(os.path.exists(input_image_file))
+    assert(input_file.exists())
+    assert(image_file.exists())
+    assert(input_image_file.exists())
 
-    assert(open(input_file,'r').read()==input_ref)
+    assert(input_file.read_text()==input_ref)
 
     s.setup = False
     s.load_image()
     assert(s.setup)
 
-    restore_nexus()
-
     Simulation.clear_all_sims()
-
 #end def test_write_inputs
 
 
-
-def test_send_files():
-    import os
+@isolate_nexus_core
+def test_send_files(tmp_path):
     from ..nexus_base import nexus_core
     from ..simulation import Simulation
 
-    tpath = testing.setup_unit_test_output_directory('simulation','test_send_files',divert=True)
+    nexus_core.local_directory  = str(tmp_path)
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
 
     # make fake data files
     data_file1 = 'data_file1.txt'
     data_file2 = 'data_file2.txt'
 
-    open(os.path.join(tpath,data_file1),'w').write('data1')
-    open(os.path.join(tpath,data_file2),'w').write('data2')
+    (tmp_path / data_file1).write_text('data1')
+    (tmp_path / data_file2).write_text('data2')
 
     data_files = [data_file1,data_file2] 
 
@@ -1924,39 +1899,38 @@ def test_send_files():
 
     s.create_directories()
 
-    loc_data_file1 = os.path.join(s.locdir,data_file1)
-    loc_data_file2 = os.path.join(s.locdir,data_file2)
+    loc_data_file1 = Path(s.locdir).resolve() / data_file1
+    loc_data_file2 = Path(s.locdir).resolve() / data_file2
 
     assert(not s.sent_files)
-    assert(not os.path.exists(loc_data_file1))
-    assert(not os.path.exists(loc_data_file2))
+    assert(not loc_data_file1.exists())
+    assert(not loc_data_file2.exists())
 
     s.send_files()
 
     assert(s.sent_files)
-    assert(os.path.exists(loc_data_file1))
-    assert(os.path.exists(loc_data_file2))
+    assert(loc_data_file1.exists())
+    assert(loc_data_file2.exists())
 
-    assert(open(loc_data_file1,'r').read()=='data1')
-    assert(open(loc_data_file2,'r').read()=='data2')
+    assert(loc_data_file1.read_text()=='data1')
+    assert(loc_data_file2.read_text()=='data2')
 
     s.sent_files = False
     s.load_image()
     assert(s.sent_files)
 
-    restore_nexus()
-
     Simulation.clear_all_sims()
-
 #end def test_send_files
 
 
-
-def test_submit():
+@isolate_nexus_core
+def test_submit(tmp_path):
     from ..machines import job
     from ..simulation import Simulation
 
-    tpath = testing.setup_unit_test_output_directory('simulation','test_submit',divert=True)
+    nexus_core.local_directory  = str(tmp_path)
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
 
     s = get_test_sim(
         job = job(machine='ws1',app_command='echo run'),
@@ -1979,18 +1953,17 @@ def test_submit():
     assert(j.internal_id in m.jobs)
     assert(j.internal_id in m.waiting)
 
-    restore_nexus()
-
     Simulation.clear_all_sims()
-
 #end def test_submit
 
 
-
-def test_update_process_id():
+@isolate_nexus_core
+def test_update_process_id(tmp_path):
     from ..simulation import Simulation
 
-    tpath = testing.setup_unit_test_output_directory('simulation','test_update_process_id',divert=True)
+    nexus_core.local_directory  = str(tmp_path)
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
 
     s = get_test_sim()
     j = s.job
@@ -2012,19 +1985,17 @@ def test_update_process_id():
     s.load_image()
     assert(s.process_id==ref_pid)
 
-    restore_nexus()
-
     Simulation.clear_all_sims()
-
 #end def test_update_process_id
 
 
-
-def test_check_status():
-    import os
+@isolate_nexus_core
+def test_check_status(tmp_path):
     from ..simulation import Simulation
 
-    tpath = testing.setup_unit_test_output_directory('simulation','test_check_status',divert=True)
+    nexus_core.local_directory  = str(tmp_path)
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
 
     s = get_test_sim()
     j = s.job
@@ -2037,8 +2008,8 @@ def test_check_status():
 
     s.create_directories()
 
-    open(os.path.join(s.locdir,s.outfile),'w').write('out')
-    open(os.path.join(s.locdir,s.errfile),'w').write('err')
+    (Path(s.locdir).resolve() / s.outfile).write_text('out')
+    (Path(s.locdir).resolve() / s.errfile).write_text('err')
     j.finished = True
 
     s.check_status()
@@ -2049,29 +2020,27 @@ def test_check_status():
     s.load_image()
     assert(s.finished)
 
-    restore_nexus()
-
     Simulation.clear_all_sims()
-
 #end def test_check_status
 
 
-
-def test_get_output():
-    import os
+@isolate_nexus_core
+def test_get_output(tmp_path):
     from ..simulation import Simulation
 
-    tpath = testing.setup_unit_test_output_directory('simulation','test_get_output',divert=True)
+    nexus_core.local_directory  = str(tmp_path)
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
 
     s = get_test_sim()
 
     s.create_directories()
 
-    remote_image  = os.path.join(s.imremdir,s.sim_image)
-    results_image = os.path.join(s.imresdir,s.sim_image)
+    remote_image  = Path(s.imremdir).resolve() / s.sim_image
+    results_image = Path(s.imresdir).resolve() / s.sim_image
 
-    assert(not os.path.exists(remote_image))
-    assert(not os.path.exists(results_image))
+    assert(not remote_image.exists())
+    assert(not results_image.exists())
     assert(not s.finished)
 
     assert(value_eq(s.get_output_files(),[]))
@@ -2082,22 +2051,22 @@ def test_get_output():
     res_files = []
 
     for file in files:
-        loc_files.append(os.path.join(s.locdir,file))
-        res_files.append(os.path.join(s.resdir,file))
+        loc_files.append(Path(s.locdir).resolve() / file)
+        res_files.append(Path(s.resdir).resolve() / file)
     #end for
 
     for loc_file in loc_files:
-        open(loc_file,'w').write('contents')
+        loc_file.write_text('contents')
     #end for
     s.finished = True
 
     assert(not s.got_output)
     for loc_file,res_file in zip(loc_files,res_files):
-        assert(os.path.exists(loc_file))
+        assert(loc_file.exists())
         if s.resdir!=s.locdir:
-            assert(not os.path.exists(res_file))
+            assert(not res_file.exists())
         else:
-            assert(os.path.exists(res_file))
+            assert(res_file.exists())
         #end if
     #end for
 
@@ -2105,27 +2074,25 @@ def test_get_output():
 
     assert(s.got_output)
     for loc_file,res_file in zip(loc_files,res_files):
-        assert(os.path.exists(loc_file))
-        assert(os.path.exists(res_file))
+        assert(loc_file.exists())
+        assert(res_file.exists())
     #end for
 
     s.got_output = False
     s.load_image()
     assert(s.got_output)
 
-    restore_nexus()
-
     Simulation.clear_all_sims()
-
 #end def test_get_output
 
 
-
-def test_analyze():
-    import os
+@isolate_nexus_core
+def test_analyze(tmp_path):
     from ..simulation import Simulation
 
-    tpath = testing.setup_unit_test_output_directory('simulation','test_analyze',divert=True)
+    nexus_core.local_directory  = str(tmp_path)
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
 
     s = get_test_sim()
 
@@ -2134,34 +2101,32 @@ def test_analyze():
     assert(not s.finished)
     s.finished = True
 
-    analyzer_image = os.path.join(s.imresdir,s.analyzer_image)
+    analyzer_image = Path(s.imresdir).resolve() / s.analyzer_image
 
     assert(not s.analyzed)
-    assert(not os.path.exists(analyzer_image))
+    assert(not analyzer_image.exists())
 
     s.analyze()
 
     assert(s.analyzed)
-    assert(os.path.exists(analyzer_image))
+    assert(analyzer_image.exists())
 
     s.analyzed = False
     s.load_image()
     assert(s.analyzed)
 
-    restore_nexus()
-
     Simulation.clear_all_sims()
-
 #end def test_analyze
 
 
-
-def test_progress():
-    import os
+@isolate_nexus_core
+def test_progress(tmp_path):
     from ..nexus_base import nexus_core
     from ..simulation import Simulation,input_template
 
-    tpath = testing.setup_unit_test_output_directory('simulation','test_progress',divert=True)
+    nexus_core.local_directory  = str(tmp_path)
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
 
     assert(nexus_core.mode==nexus_core.modes.stages)
     assert(len(nexus_core.stages)==0)
@@ -2213,12 +2178,12 @@ a    = $a
     assert(not s.analyzed)
     assert(s.files==set())
     assert(s.job.status==0)
-    assert(not os.path.exists(s.locdir))
-    assert(not os.path.exists(s.remdir))
-    assert(not os.path.exists(s.resdir))
-    assert(not os.path.exists(s.imlocdir))
-    assert(not os.path.exists(s.imremdir))
-    assert(not os.path.exists(s.imresdir))
+    assert(not Path(s.locdir).exists())
+    assert(not Path(s.remdir).exists())
+    assert(not Path(s.resdir).exists())
+    assert(not Path(s.imlocdir).exists())
+    assert(not Path(s.imremdir).exists())
+    assert(not Path(s.imresdir).exists())
 
     s.progress()
 
@@ -2232,22 +2197,22 @@ a    = $a
     assert(not s.analyzed)
     assert(s.files==set([s.infile]))
     assert(s.job.status==1)
-    assert(os.path.exists(s.locdir))
-    assert(os.path.exists(s.remdir))
-    assert(os.path.exists(s.imlocdir))
-    assert(os.path.exists(s.imremdir))
-    assert(os.path.exists(os.path.join(s.locdir,s.infile)))
-    assert(os.path.exists(os.path.join(s.imlocdir,s.sim_image)))
-    assert(os.path.exists(os.path.join(s.imlocdir,s.input_image)))
-    assert(not os.path.exists(os.path.join(s.locdir,s.outfile)))
-    assert(not os.path.exists(os.path.join(s.locdir,s.errfile)))
-    assert(not os.path.exists(os.path.join(s.imlocdir,s.analyzer_image)))
+    assert(Path(s.locdir).exists())
+    assert(Path(s.remdir).exists())
+    assert(Path(s.imlocdir).exists())
+    assert(Path(s.imremdir).exists())
+    assert((Path(s.locdir).resolve() / s.infile).exists())
+    assert((Path(s.imlocdir).resolve() / s.sim_image).exists())
+    assert((Path(s.imlocdir).resolve() / s.input_image).exists())
+    assert(not (Path(s.locdir).resolve() / s.outfile).exists())
+    assert(not (Path(s.locdir).resolve() / s.errfile).exists())
+    assert(not (Path(s.imlocdir).resolve() / s.analyzer_image).exists())
     if s.resdir!=s.locdir:
-        assert(not os.path.exists(s.resdir))
-        assert(not os.path.exists(s.imresdir))
+        assert(not Path(s.resdir).exists())
+        assert(not Path(s.imresdir).exists())
     else:
-        assert(os.path.exists(s.resdir))
-        assert(os.path.exists(s.imresdir))
+        assert(Path(s.resdir).exists())
+        assert(Path(s.imresdir).exists())
     #end if
     
     # check image
@@ -2266,12 +2231,12 @@ a    = $a
     # simulate job completion
     #   create output and error files
     #   set job status to finished
-    open(os.path.join(s.locdir,s.outfile),'w').write('out')
-    open(os.path.join(s.locdir,s.errfile),'w').write('err')
+    (Path(s.locdir).resolve() / s.outfile).write_text('out')
+    (Path(s.locdir).resolve() / s.errfile).write_text('err')
     s.job.finished = True
 
-    assert(os.path.exists(os.path.join(s.locdir,s.outfile)))
-    assert(os.path.exists(os.path.join(s.locdir,s.errfile)))
+    assert((Path(s.locdir) / s.outfile).exists())
+    assert((Path(s.locdir) / s.errfile).exists())
 
 
     # second progression
@@ -2297,18 +2262,18 @@ a    = $a
     assert(s.finished)
     assert(s.got_output)
     assert(s.analyzed)
-    assert(os.path.exists(s.resdir))
-    assert(os.path.exists(s.imresdir))
-    assert(os.path.exists(os.path.join(s.resdir,s.infile)))
-    assert(os.path.exists(os.path.join(s.resdir,s.errfile)))
-    assert(os.path.exists(os.path.join(s.resdir,s.outfile)))
-    assert(os.path.exists(os.path.join(s.imresdir,s.sim_image)))
-    assert(os.path.exists(os.path.join(s.imresdir,s.input_image)))
-    assert(os.path.exists(os.path.join(s.imresdir,s.analyzer_image)))
+    assert(Path(s.resdir).exists())
+    assert(Path(s.imresdir).exists())
+    assert((Path(s.resdir) / s.infile).exists())
+    assert((Path(s.resdir) / s.errfile).exists())
+    assert((Path(s.resdir) / s.outfile).exists())
+    assert((Path(s.imresdir) / s.sim_image).exists())
+    assert((Path(s.imresdir) / s.input_image).exists())
+    assert((Path(s.imresdir) / s.analyzer_image).exists())
     if s.resdir!=s.locdir:
-        assert(not os.path.exists(os.path.join(s.imlocdir,s.analyzer_image)))
+        assert(not (Path(s.imlocdir) / s.analyzer_image).exists())
     else:
-        assert(os.path.exists(os.path.join(s.imlocdir,s.analyzer_image)))
+        assert((Path(s.imlocdir) / s.analyzer_image).exists())
     #end if
 
     # check image
@@ -2333,21 +2298,18 @@ a    = $a
 
     assert(object_eq(s,sbef))
 
-
-    restore_nexus()
-
     Simulation.clear_all_sims()
-
 #end def test_progress
 
 
-
-def test_execute():
-    import os
+@isolate_nexus_core
+def test_execute(tmp_path):
     from ..machines import job
     from ..simulation import Simulation
 
-    tpath = testing.setup_unit_test_output_directory('simulation','test_execute',divert=True)
+    nexus_core.local_directory  = str(tmp_path)
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
 
     import shutil
     serial = shutil.which('mpirun') is None
@@ -2358,33 +2320,30 @@ def test_execute():
 
     s.create_directories()
 
-    outfile = os.path.join(s.locdir,s.outfile)
-    errfile = os.path.join(s.locdir,s.errfile)
+    outfile = Path(s.locdir) / s.outfile
+    errfile = Path(s.locdir) / s.errfile
 
     assert(not s.submitted)
     assert(not s.job.finished)
     assert(s.job.status==0)
-    assert(not os.path.exists(outfile))
-    assert(not os.path.exists(errfile))
+    assert(not outfile.exists())
+    assert(not errfile.exists())
 
     s.execute()
 
     assert(s.submitted)
     assert(s.job.finished)
     assert(s.job.status==4)
-    assert(os.path.exists(outfile))
-    assert(os.path.exists(errfile))
-    assert(open(outfile,'r').read().strip()=='run')
-    err_contents = open(errfile,'r').read().strip()
+    assert(outfile.exists())
+    assert(errfile.exists())
+    assert(outfile.read_text().strip()=='run')
+    err_contents = errfile.read_text().strip()
     # Handle spurious error message from OpenMPI
     #   see also: https://github.com/QMCPACK/qmcpack/pull/4339#discussion_r1033813856
     err_contents = err_contents.replace('Invalid MIT-MAGIC-COOKIE-1 key','').strip()
     assert(err_contents=='')
 
-    restore_nexus()
-
     Simulation.clear_all_sims()
-
 #end def test_execute
 
 
@@ -2526,19 +2485,20 @@ def test_block_dependents():
 #end def test_block_dependents
 
 
-
-def test_reconstruct_cascade():
-    import os
+@isolate_nexus_core
+def test_reconstruct_cascade(tmp_path):
     from ..simulation import Simulation
 
-    tpath = testing.setup_unit_test_output_directory('simulation','test_reconstruct_cascade',divert=True)
+    nexus_core.local_directory  = str(tmp_path)
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
 
     sims = get_test_workflow(2)
     assert(len(sims)==7)
 
     for s in sims:
-        imagefile = os.path.join(s.imlocdir,s.sim_image)
-        assert(not os.path.exists(imagefile))
+        imagefile = Path(s.imlocdir) / s.sim_image
+        assert(not imagefile.exists())
         assert(not s.loaded)
         assert(not s.submitted)
         assert(not s.finished)
@@ -2552,8 +2512,8 @@ def test_reconstruct_cascade():
     #end for
 
     for s in sims:
-        imagefile = os.path.join(s.imlocdir,s.sim_image)
-        assert(os.path.exists(imagefile))
+        imagefile = Path(s.imlocdir) / s.sim_image
+        assert(imagefile.exists())
         assert(not s.loaded)
         assert(not s.submitted)
         assert(not s.finished)
@@ -2564,8 +2524,8 @@ def test_reconstruct_cascade():
     sims.s1.reconstruct_cascade()
 
     for s in sims:
-        imagefile = os.path.join(s.imlocdir,s.sim_image)
-        assert(os.path.exists(imagefile))
+        imagefile = Path(s.imlocdir) / s.sim_image
+        assert(imagefile.exists())
         assert(s.loaded)
         assert(not s.submitted)
         assert(not s.finished)
@@ -2711,8 +2671,6 @@ def test_reconstruct_cascade():
     assert(empty(sims.s51))
     assert(empty(sims.s52))
 
-    restore_nexus()
-
     Simulation.clear_all_sims()
 #end def test_reconstruct_cascade
 
@@ -2776,11 +2734,9 @@ def test_traverse_full_cascade():
 #end def test_traverse_full_cascade
 
 
-
+@isolate_nexus_core
 def test_write_dependents():
     from ..simulation import Simulation
-
-    divert_nexus_log()
 
     for i in range(n_test_workflows):
         sims = get_test_workflow(i)
@@ -2790,8 +2746,6 @@ def test_write_dependents():
             #end if
         #end for
     #end for
-
-    restore_nexus_log()
 
     Simulation.clear_all_sims()
 #end def test_write_dependents
@@ -2822,21 +2776,18 @@ def test_generate_simulation():
 #end def test_generate_simulation
 
 
-def test_generic_simulation():
-    import os
+def test_generic_simulation(tmp_path):
     from ..simulation import Simulation,GenericSimulation
     from ..simulation import generate_simulation,SimulationInputTemplate
     from ..machines import job
-
-    tpath = testing.setup_unit_test_output_directory('simulation','test_generic_simulation')
 
     # Test 1: Create GenericSimulation with string input
     script_text = 'print("Hello from GenericSimulation")'
     sim1 = generate_simulation(
         identifier = 'test_generic_string',
-        path       = os.path.join(tpath,'test1'),
+        path       = str(tmp_path / 'test1'),
         job        = job(machine='ws1', serial=True, app='python3'),
-        input      = script_text,
+        input      = str(script_text),
         outfiles   = ['output.txt'],
         )
     assert(isinstance(sim1,GenericSimulation))
@@ -2853,18 +2804,17 @@ def test_generic_simulation():
     assert('python3' in sim1.app_command() or sim1.job.app_name == 'python3')
 
 
-    script_file = os.path.join(tpath,'test_script.py')
+    script_file = tmp_path / 'test_script.py'
     script_file_content = 'print("Hello from file")\n'
-    with open(script_file,'w') as f:
-        f.write(script_file_content)
+    script_file.write_text(script_file_content)
     #end with
     
     # Test 2: GenericSimulation with file path input
     sim2 = generate_simulation(
         identifier = 'test_generic_file',
-        path       = os.path.join(tpath,'test2'),
+        path       = str(tmp_path / 'test2'),
         job        = job(machine='ws1', serial=True, app='python3'),
-        input      = script_file,
+        input      = str(script_file),
         outfiles   = ['result.txt'],
         )
     assert(isinstance(sim2,GenericSimulation))

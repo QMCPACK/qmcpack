@@ -5,28 +5,22 @@ pytestmark = pytest.mark.order(NexusTestOrder.QMC_FIT)
 from ..generic import generic_settings
 generic_settings.raise_error = True
 
-from .. import testing
+from . import TEST_DIR
 from ..testing import execute,text_eq
 
 
 
-def test_fit():
+def test_fit(tmp_path):
     _ = pytest.importorskip("scipy")
     import os
 
-    tpath = testing.setup_unit_test_output_directory('qmc_fit','test_fit')
+    exe = TEST_DIR.parent / "bin/qmc-fit"        
+    dmc_path = TEST_DIR / "test_qmcpack_analyzer_files/diamond_gamma/dmc"
 
-    exe = testing.executable_path('qmc-fit')
-    
-    qa_files_path = testing.unit_test_file_path('qmcpack_analyzer','diamond_gamma/dmc')
-    command = 'rsync -a {} {}'.format(qa_files_path,tpath)
-    out,err,rc = execute(command)
-    assert(rc==0)
-    dmc_path = os.path.join(tpath,'dmc')
-    dmc_infile = os.path.join(dmc_path,'dmc.in.xml')
-    assert(os.path.exists(dmc_infile))
+    dmc_infile = dmc_path / 'dmc.in.xml'
+    assert(dmc_infile.exists())
 
-    command = "{} ts --noplot -e 10 -s 1 -t '0.02 0.01 0.005' -f linear {}/*scalar*".format(exe,dmc_path)
+    command = f"{exe} ts --noplot -e 10 -s 1 -t '0.02 0.01 0.005' -f linear {dmc_path}/*scalar*"
 
     out,err,rc = execute(command)
 
