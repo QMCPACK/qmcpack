@@ -28,6 +28,7 @@ from .structure import Structure, get_kpath
 from .pwscf_input import PwscfInput
 from .pwscf_data_reader import read_qexml
 from .fileio import TextFile
+from .utilities import path_string
 from . import numpy_extensions as npe
 
 
@@ -88,7 +89,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             outfile_name= sim.outfile
             self.input_structure = sim.system.structure
         elif arg0 is not None:
-            path = arg0
+            path = path_string(arg0)
             if not os.path.exists(path):
                 self.error('path to QE data does not exist\npath provided: {}'.format(path))
             #end if
