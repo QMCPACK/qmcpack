@@ -3,9 +3,27 @@
 from nexus import settings,job,workflow_manager
 from nexus import generate_physical_system
 from nexus import generate_pwscf
-from nexus import generate_pw2qmcpack
-from nexus import generate_qmcpack
 
+'''
+A simple type of dynamic workflow is to automatically determine 
+converged parameter values.  In DFT, two such cases are convergence 
+of the total energy with respect to increasing planewave energy 
+cutoff and to increasingly large k-poing grids.  
+
+This example first iteratively finds a converged planewave energy 
+cutoff for a diamond primitive cell using a BFD potential for carbon 
+and terminating when successive iterations produce total energies 
+within 1e-4 Ry of each other.  The resulting energy cutoff is then 
+fed into another iterative convergence procedure for the k-point grid, 
+which stops when a tolerance of 1e-3 Ry has been met.  The converged 
+values for the energy cutoff and k-point grid are 330 Ry and 7x7x7, 
+respectively.  
+
+From this example, it is clear how the workflow can be extended to 
+include subsequent supercell expansion, Jastrow factor optimization, 
+and VMC/DMC runs with total energies converged below a specified 
+minimum statistical errorbar.
+'''
 
 settings(
     results    = '',
@@ -60,6 +78,7 @@ wm = workflow_manager()
 
 
 # determine planewave energy cutoff
+energies  = []
 ecut      = 50  
 tol       = 1e-4
 converged = False

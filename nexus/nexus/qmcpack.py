@@ -1748,9 +1748,7 @@ class Qmcpack(Simulation):
         wfn = opt.qmcsystem.wavefunction.copy()
         ovp = 'override_variational_parameters' # name is too long
         if ovp in wfn:
-            href = os.path.join(sim.locdir,wfn[ovp].href)
-            href = os.path.relpath(href,self.locdir)
-            wfn[ovp].href = href
+            wfn[ovp].href = os.path.relpath(wfn[ovp].href,self.locdir)
         qs.wavefunction = wfn
     #end def receive_wavefunction
 

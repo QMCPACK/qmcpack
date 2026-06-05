@@ -18,7 +18,7 @@
 
 import time
 from . import memory
-from .developer import obj, DevBase
+from .developer import obj, error
 from .nexus_base import NexusCore, nexus_core, dynamic_storage
 from .simulation import Simulation
 from .machines import Machine,Job
@@ -414,7 +414,7 @@ class DynamicWorkflowManager(NexusCore):
                 sim = dp.sim
                 self.all_sims.add(sim.simid)
                 if len(sim.dependencies)>0 or len(sim.dependents)>0:
-                    self.error('encountered simulation with explicit dependencies, but these are not allowed in dynamic workflows.\nSimulation id: {}\nSimulation directory'.format(sim.simid,sim.locdir))
+                    self.error('encountered simulation with explicit dependencies, but these are not allowed in dynamic workflows.\nSimulation id: {}\nSimulation directory: {}'.format(sim.simid,sim.locdir))
         # screen for simulations not associated with dyn process
         all_sims = dynamic_storage.simulation_ids
         rogue_sims = all_sims-self.all_sims
@@ -423,7 +423,7 @@ class DynamicWorkflowManager(NexusCore):
             paths = [all_sims[simid].locdir for simid in rogue_sims]
             for p in sorted(paths):
                 msg += '\n'+p
-            msg += '\nThis is likely a developer error.\nPlease contact the developers'.format(list(sorted(rogue_sims)))
+            msg += '\nThis is likely a developer error.\nPlease contact the developers.'
             self.error(msg)
     #end def add_new_dyn_procs
 

@@ -39,7 +39,7 @@ from .debug import ci, interact
 class DevBase(obj):
     def not_implemented(self,name=None):
         if name is None:
-            msg = 'a member function has not been implemented for class "{}"'.format(name,self.__class__.__name__)
+            msg = 'a member function has not been implemented for class "{}"'.format(self.__class__.__name__)
         else:
             msg = 'member function "{}" has not been implemented for class "{}"'.format(name,self.__class__.__name__)
         self.error(msg,trace=True)

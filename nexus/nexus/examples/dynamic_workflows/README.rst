@@ -13,6 +13,12 @@ to dynamic workflows and the code in these examples may change at any time.
 
 Two examples are provided:
 
+1. A basic demonstration of how dependencies are processed. 
+2. A sequence of planewave energy cutoff and k-poing grid size based on a total energy tolerance. 
+
+See the descriptions at the top of the example `.py` files.
+
+
 Basic dependencies  
 ------------------
 

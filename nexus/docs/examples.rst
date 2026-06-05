@@ -2031,7 +2031,10 @@ The files for these examples are found in:
 
 This feature allows the development of algorithms composed of many simulation runs, a simple example being convergence of key parameters such as a planewave energy cutoff for DFT. Dynamic workflows are composed and run directly in full native Python, replacing the static graph-type execution typical of Nexus prior to this feature.
 
-Two early examples are provided: 1) a basic demonstration of how dependencies are processed and 2) a sequence of planewave energy cutoff and k-poing grid size based on a total energy tolerance.  
+Two early examples are provided: 
 
-See the ``README.rst`` file in the directory noted above.
+1. A basic demonstration of how dependencies are processed. 
+2. A sequence of planewave energy cutoff and k-poing grid size based on a total energy tolerance.  
+
+See the ``README.rst`` file in the directory noted above and the descriptions at the top of the example `.py` files.
 

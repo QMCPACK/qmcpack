@@ -507,7 +507,7 @@ def generate_pw2qmcpack(**kwargs):
     pw2qmcpack = Pw2qmcpack(**sim_args)
 
     if nexus_core.dynamic:
-        pwscf = DynamicProcess(sim=pw2qmcpack,**dyn_args)
+        pw2qmcpack = DynamicProcess(sim=pw2qmcpack,**dyn_args)
 
     return pw2qmcpack
 #end def generate_pw2qmcpack

@@ -73,7 +73,7 @@ from string import Template
 from subprocess import Popen
 import tempfile
 from .developer import obj, unavailable, DevBase
-from .structure import Structure
+from .structure import Structure, read_structure
 from .physical_system import PhysicalSystem
 from .machines import Job, Workstation, get_machine
 from .pseudopotential import ppset
@@ -1892,7 +1892,6 @@ class DynamicProcess(DevBase):
     Takes the place of Simulation in user scripts. All
     generate_* simulation functions return DP's when 
     executing dynamic workflows.
-
     '''
 
     all_dynamic_processes = obj()
@@ -2003,7 +2002,7 @@ class DynamicProcess(DevBase):
         '''
         sim = self.sim
         msg = None
-        if not prod_name in sim.produces:
+        if prod_name not in sim.produces:
             msg = 'simulation does not produce "{}"'.format(prod_name)
         elif not sim.finished:
             msg = 'Simulation is not finished\nProduct "{}" not yet computed'.format(prod_name)
@@ -2049,7 +2048,7 @@ class DynamicProcess(DevBase):
         if req_name not in self.sim.allowed_requirements:
             self.error('incorporating "{}" into simulation type {} is not supported.'.format(req_name,self.sim.__class__.__name__))
         elif is_path and isinstance(req_value,str) and not os.path.exists(req_value):
-            self.error('"{}" path does not exist.\nPath provided: {}'.format(product,req_value))
+            self.error('"{}" path does not exist.\nPath provided: {}'.format(req_name,req_value))
         # mark the requirement as fulfilled
         self.unmet_reqs.remove(req_name)
         return already_set

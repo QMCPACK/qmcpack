@@ -1,5 +1,16 @@
 #! /usr/bin/env python3
 
+'''
+This example shows how a familiar DAG-like Nexus workflow 
+is translated to the dynamic setting.  
+
+Here, a relaxation calculation passes a relaxed structure 
+to subsequent SCF and NSCF runs, now at the moment of completion.  
+
+Similarly, SCF produces and provides a charge density for 
+the final NSCF run.
+'''
+
 import numpy as np
 from nexus import settings,job
 from nexus import generate_physical_system
@@ -10,7 +21,7 @@ from nexus import workflow_manager
 settings(
     results    = '',
     pseudo_dir = '../../qmcpack/pseudopotentials',
-    machine    = 'ws12',
+    machine    = 'ws8',
     dynamic    = True,
     )
 
