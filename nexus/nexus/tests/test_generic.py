@@ -6,9 +6,8 @@ from ..generic import generic_settings
 generic_settings.raise_error = True
 
 from pathlib import Path
-from .. import testing
+from . import isolate_nexus_core, FakeLog
 from ..testing import failed,FailedTest
-from ..testing import divert_nexus_log,restore_nexus_log,FakeLog
 from ..testing import object_eq,object_neq
 
 TEST_FILES = {
@@ -16,15 +15,13 @@ TEST_FILES = {
     "old_nxs_sim.p":         Path(__file__+"/../test_generic_files/old_nxs_sim.p").resolve(),
     "old_nxs_pwscf_input_numpy_1.p": Path(__file__+"/../test_generic_files/old_nxs_pwscf_input_numpy_1.p").resolve(),
     "old_nxs_sim_numpy_1.p":         Path(__file__+"/../test_generic_files/old_nxs_sim_numpy_1.p").resolve(),
-}
+    }
 
-
+@isolate_nexus_core
 def test_logging():
     from ..generic import log,warn,error
     from ..generic import generic_settings,NexusError
 
-    # send messages to object rather than stdout
-    divert_nexus_log()
     logfile = generic_settings.devlog
 
     # test log
@@ -118,21 +115,16 @@ def test_logging():
     except Exception as e:
         failed(str(e))
     #end try
-
-    restore_nexus_log()
-
 #end def test_logging
 
 
-
-def test_intrinsics():
+@isolate_nexus_core
+def test_intrinsics(tmp_path):
     # test object_interface functions
     import os
     from ..generic import obj,object_interface
     from ..generic import generic_settings,NexusError
     from numpy import array,bool_
-
-    tpath = testing.setup_unit_test_output_directory('generic','test_intrinsics')
 
     # test object set/get
     # make a simple object
@@ -296,7 +288,7 @@ def test_intrinsics():
     assert('a' not in o2)
 
     # test save/load
-    save_file = os.path.join(tpath,'o.p')
+    save_file = tmp_path / "o.p"
     o.save(save_file)
     o2 = obj()
     o2.load(save_file)
@@ -367,8 +359,7 @@ def test_intrinsics():
     os.remove('log.out')
     assert(so==s)
 
-    # send messages to object rather than stdout
-    divert_nexus_log()
+
     logfile = object_interface._logfile
 
     #   simple message
@@ -472,9 +463,6 @@ def test_intrinsics():
     except Exception as e:
         failed(str(e))
     #end try
-
-    # restore logging function
-    restore_nexus_log()
 
 #end def test_intrinsics
 

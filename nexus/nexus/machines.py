@@ -44,6 +44,7 @@
 
 
 import os
+from pathlib import Path
 #from multiprocessing import cpu_count
 from socket import gethostname
 from subprocess import Popen
@@ -244,14 +245,21 @@ class Job(NexusCore):
         path_arguments = (
             "directory",
             "subdir",
-            "app_name",
             "outfile",
             "errfile",
             "subfile",
-        )
+            )
         for arg in path_arguments:
             if arg in kw:
                 kw[arg] = path_string(kw[arg])
+
+        # Theoretically a bash alias can have invalid filename characters,
+        # so we treat app_name with some more special logic.
+        if "app_name" in kw:
+            if isinstance(kw.app_name, Path):
+                kw.app_name = path_string(kw.app_name)
+            elif not isinstance(kw.app_name, str):
+                self.error("app_name must be a str or Path object!")
 
         # save information used to initialize job object
         self.init_info = kw.copy()

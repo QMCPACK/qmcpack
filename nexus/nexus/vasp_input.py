@@ -45,6 +45,7 @@ from .simulation import SimulationInput
 from .structure import interpolate_structures, Structure
 from .physical_system import PhysicalSystem
 from .developer import DevBase, obj, error
+from .utilities import path_string
 from . import numpy_extensions as npe
 
 # support functions for keyword files
@@ -298,6 +299,7 @@ assign_value_functions = obj(
 
 class Vobj(DevBase):
     def get_path(self,filepath):
+        filepath = path_string(filepath)
         if os.path.exists(filepath) and os.path.isdir(filepath):
             path = filepath
         else:
@@ -315,6 +317,7 @@ class Vobj(DevBase):
 class VFile(Vobj):
     def __init__(self,filepath=None):
         if filepath is not None:
+            filepath = path_string(filepath)
             self.read(filepath)
         #end if
     #end def __init__
@@ -1452,6 +1455,7 @@ class VaspInput(SimulationInput,Vobj):
 
 
     def read(self,filepath,prefix='',postfix=''):
+        filepath = path_string(filepath)
         path = self.get_path(filepath)
         for file in os.listdir(path):
             name = str(file)

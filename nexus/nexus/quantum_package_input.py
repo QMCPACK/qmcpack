@@ -405,7 +405,7 @@ class QuantumPackageInput(SimulationInput):
 
 
     def read(self,filepath):
-        epath = filepath.rstrip('/')
+        epath = str(filepath).rstrip('/')
         if not os.path.exists(epath):
             self.error('cannot read input\nprovided ezfio directory does not exist\ndirectory provided:  {0}'.format(epath))
         elif not os.path.isdir(epath):
@@ -438,7 +438,7 @@ class QuantumPackageInput(SimulationInput):
         #end if
 
         # get the ezfio path
-        epath = filepath.rstrip('/')
+        epath = str(filepath).rstrip('/')
 
         # check that write can occur
         if not epath.endswith('.ezfio'):
