@@ -27,8 +27,8 @@ message is printed and the tests are skipped. Feedback is welcomed.
 ### NEXUS [2.3.0]
 
 Nexus is updated to be a standard Python package for easier use and installation. e.g. Nexus and all dependencies are now
-straightforwardly installable with uv.
-https://nexus-workflows.readthedocs.io/en/latest/installation.html#installation-using-the-uv-package-manager . Existing use and
+straightforwardly installable with uv. See [Installing Nexus with
+UV](https://nexus-workflows.readthedocs.io/en/latest/installation.html#installation-using-the-uv-package-manager). Existing use and
 installation methods will continue to be supported. The test infrastructure has also been fully updated to use the standard pytest
 and coverage.py packages.
 
