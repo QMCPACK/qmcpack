@@ -109,14 +109,16 @@ def print_progress(ecut,energies):
 print(3*'\n'+70*'*')
 print('Determining converged PW energy cutoff')
 print(70*'*'+'\n')
+max_runs  = 10     # maximum number of scf runs allowed
 energies  = []     # total energy history
 ecut      = 50     # initial energy cutoff
 tol       = 1e-4   # tolerance for convergence (Ry)
 converged = False
-ecuts = []
+ecuts     = []
 
 # Start with a single QE simulation, ecut = 50 Ry
-qe = gen_qe(ecutwfc=ecut)
+nruns = 1
+qe    = gen_qe(ecutwfc=ecut)
 
 # Convergence iterations
 while not converged:
@@ -129,11 +131,20 @@ while not converged:
         ecuts.append(ecut)
         # Check if the tolerance has been met
         if len(energies)<2 or abs(energies[-1]-energies[-2])>tol:
+            print_progress(ecut,energies)
             # If not, increase the energy cutoff by 50%
             ecut = int(((1.5*ecut)//10)*10)
             # Run subsequent QE with higher cutoff
+            nruns += 1
+            if nruns>max_runs:
+                dE = abs(energies[-1]-energies[-2])
+                print('\n'+50*'*')
+                print('Maximum number of runs exceeded ({})'.format(max_runs))
+                print('Convergence level requested: {:6.4e}'.format(tol))
+                print('Convergence level reached  : {:6.4e}'.format(abs(dE)))
+                print(50*'*'+'\n')
+                exit(1)
             qe = gen_qe(ecutwfc=ecut)
-            print_progress(ecut,energies)
         else:
             # When converged, report the final energy cutoff
             print_progress(ecut,energies)
@@ -143,7 +154,7 @@ while not converged:
             converged = True # to exit polling loop
     elif qe.fail:
         print('\nQE run failed!!!')
-        break
+        exit(1)
 
     # Run simulations actively upon poll
     wm.poll(1)
@@ -173,21 +184,32 @@ def print_progress(nkgrid,energies):
 print(3*'\n'+70*'*')
 print('Determining converged k-point grid')
 print(70*'*'+'\n')
+max_runs  = 10
 energies  = []
 nkgrid    = 1
 tol       = 1e-3
 converged = False
 nkgrids   = []
-qe = gen_qe(ecutwfc=ecut,nkgrid=nkgrid)
+nruns = 1
+qe    = gen_qe(ecutwfc=ecut,nkgrid=nkgrid)
 while not converged:
     print('poll')
     if qe.succ:
         energies.append(qe.products.energy)
         nkgrids.append(nkgrid)
         if len(energies)<2 or abs(energies[-1]-energies[-2])>tol:
-            nkgrid += 1
-            qe = gen_qe(ecutwfc=ecut,nkgrid=nkgrid)
             print_progress(nkgrid,energies)
+            nkgrid += 1
+            nruns += 1
+            if nruns>max_runs:
+                dE = abs(energies[-1]-energies[-2])
+                print('\n'+50*'*')
+                print('Maximum number of runs exceeded ({})'.format(max_runs))
+                print('Convergence level requested: {:6.4e}'.format(tol))
+                print('Convergence level reached  : {:6.4e}'.format(abs(dE)))
+                print(50*'*'+'\n')
+                exit(1)
+            qe = gen_qe(ecutwfc=ecut,nkgrid=nkgrid)
         else:
             print_progress(nkgrid,energies)
             print('\n'+50*'*')
@@ -196,7 +218,7 @@ while not converged:
             converged = True # to exit polling loop
     elif qe.fail:
         print('\nQE run failed!!!')
-        break
+        exit(1)
     wm.poll(1)
 
 

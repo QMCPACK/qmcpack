@@ -49,7 +49,7 @@ def gen_qe(run_type   = 'scf',
            path       = None,
            system     = None,
            ecutwfc    = None,
-           nkgrid     = 1,
+           nkgrid     = None,
            ):
     if nkgrid is None:
         nkgrid = 1
@@ -83,41 +83,54 @@ wm = workflow_manager()
 
 
 # determine planewave energy cutoff
+max_runs  = 10
 energies  = []
 ecut      = 50  
 tol       = 1e-4
 converged = False
 ecuts     = []
-qe = gen_qe(ecutwfc=ecut)
+nruns = 1
+qe    = gen_qe(ecutwfc=ecut)
 while not converged:
     if qe.succ:
         energies.append(qe.products.energy)
         ecuts.append(ecut)
         if len(energies)<2 or abs(energies[-1]-energies[-2])>tol:
+            nruns +=1
+            if nruns>max_runs:
+                dE = abs(energies[-1]-energies[-2])
+                print('\nMaximum number of runs exceeded!!!')
+                exit(1)
             # dynamic portion
             ecut = int(((1.5*ecut)//10)*10)
-            qe = gen_qe(ecutwfc=ecut)
+            qe   = gen_qe(ecutwfc=ecut)
         else:
             print('Converged!!!  Final energy cutoff: '+str(ecut))
             converged = True
     elif qe.fail:
         print('\nQE run failed!!!')
-        break
+        exit(1)
     wm.poll(1)
 
-
 # determine k-point grid, using the converged energy cutoff
+max_runs  = 10
 energies  = []
 nkgrid    = 1
 tol       = 1e-3
 converged = False
 nkgrids   = []
-qe = gen_qe(ecutwfc=ecut,nkgrid=nkgrid)
+nruns = 1
+qe    = gen_qe(ecutwfc=ecut,nkgrid=nkgrid)
 while not converged:
     if qe.succ:
         energies.append(qe.products.energy)
         nkgrids.append(nkgrid)
         if len(energies)<2 or abs(energies[-1]-energies[-2])>tol:
+            nruns +=1
+            if nruns>max_runs:
+                dE = abs(energies[-1]-energies[-2])
+                print('\nMaximum number of runs exceeded!!!')
+                exit(1)
             # dynamic portion
             nkgrid += 1
             qe = gen_qe(ecutwfc=ecut,nkgrid=nkgrid)
@@ -126,7 +139,7 @@ while not converged:
             converged = True
     elif qe.fail:
         print('\nQE run failed!!!')
-        break
+        exit(1)
     wm.poll(1)
 
 
