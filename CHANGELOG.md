@@ -42,7 +42,7 @@ and coverage.py packages.
 * Nexus "executables" (qmca, qdens, nxs-sim etc.) are directly usable via the installed package.
   [#5851](https://github.com/QMCPACK/qmcpack/pull/5851)
 * Testing moved to pytest [#5894](https://github.com/QMCPACK/qmcpack/pull/5894),
-  [#5924](https://github.com/QMCPACK/qmcpack/pull/5924). This included many updates to files handling throuhghout, e.g.
+  [#5924](https://github.com/QMCPACK/qmcpack/pull/5924). This included many updates to files handling throughout, e.g.
   [#5943](https://github.com/QMCPACK/qmcpack/pull/5943).
 * Improved error handling and messaging, e.g.  [#5985](https://github.com/QMCPACK/qmcpack/pull/5985),
   [#5981](https://github.com/QMCPACK/qmcpack/pull/5981)
