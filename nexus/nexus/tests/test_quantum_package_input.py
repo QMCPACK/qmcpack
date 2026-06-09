@@ -5,6 +5,8 @@ pytestmark = pytest.mark.order(NexusTestOrder.QUANTUM_PACKAGE_INPUT)
 from ..generic import generic_settings
 generic_settings.raise_error = True
 
+from pathlib import Path
+
 from .. import testing
 from ..testing import object_eq
 
@@ -259,12 +261,9 @@ def test_empty_init():
 
 
 def test_read():
-    import os
     from ..quantum_package_input import QuantumPackageInput
 
-    tpath = testing.setup_unit_test_output_directory('quantum_package_input','test_generate',file_sets=['h2o.ezfio'])
-
-    ezfio = os.path.join(tpath,'h2o.ezfio')
+    ezfio = Path(__file__+"/../test_quantum_package_input_files/h2o.ezfio").resolve()
 
     qi = QuantumPackageInput(ezfio)
 
@@ -273,16 +272,14 @@ def test_read():
 
 
 
-def test_generate():
+def test_generate(tmp_path):
     import os
     from ..physical_system import generate_physical_system
     from ..quantum_package_input import generate_quantum_package_input
 
-    tpath = testing.setup_unit_test_output_directory('quantum_package_input','test_generate')
-
     # water molecule rhf
-    xyz_path = os.path.join(tpath,'H2O.xyz')
-    open(xyz_path,'w').write(h2o_xyz)
+    xyz_path = tmp_path / 'H2O.xyz'
+    xyz_path.write_text(h2o_xyz)
 
     system = generate_physical_system(
         structure = xyz_path,
@@ -301,8 +298,8 @@ def test_generate():
 
 
     # O2 molecule selci
-    xyz_path = os.path.join(tpath,'O2.xyz')
-    open(xyz_path,'w').write(o2_xyz)
+    xyz_path = tmp_path / 'O2.xyz'
+    xyz_path.write_text(o2_xyz)
 
     system = generate_physical_system(
         structure = xyz_path,

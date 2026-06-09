@@ -5,12 +5,14 @@ pytestmark = pytest.mark.order(NexusTestOrder.SETTINGS_OPERATION)
 from ..generic import generic_settings
 generic_settings.raise_error = True
 
+from pathlib import Path
+from . import isolate_nexus_core
 from .. import testing
-from ..testing import divert_nexus,restore_nexus
-from ..testing import value_eq,object_eq
+from ..testing import object_eq
 
 
-def test_settings():
+@isolate_nexus_core
+def test_settings(tmp_path):
     # test full imports
     import os
     from nexus import settings,Settings,obj
@@ -26,11 +28,6 @@ def test_settings():
     from ..quantum_package import QuantumPackage
 
     testing.check_final_state()
-
-    tpath = testing.setup_unit_test_output_directory('settings','test_settings')
-
-    # divert logging function
-    divert_nexus()
 
     def aux_defaults():
         # check that Job and ProjectManager settings are at default values
@@ -89,7 +86,7 @@ def test_settings():
                 if isinstance(v1,obj):
                     assert(object_eq(v1,v2))
                 else:
-                    assert(value_eq(v1,v2))
+                    assert(v1 == v2)
                 #end if
             #end for
         #end for
@@ -134,8 +131,8 @@ def test_settings():
     check_empty_settings()
 
     # check that a few basic user settings are applied appropriately
-    cwd = os.getcwd()
-    os.chdir(tpath)
+    cwd = Path.cwd()
+    os.chdir(tmp_path)
     dft_pseudos = ['Ni.opt.upf','O.opt.upf']
     qmc_pseudos = ['Ni.opt.xml','O.opt.xml']
     pseudos = dft_pseudos+qmc_pseudos
@@ -143,9 +140,9 @@ def test_settings():
     if not os.path.exists(pseudo_path):
         os.makedirs(pseudo_path)
         for file in pseudos:
-            filepath = os.path.join(pseudo_path,file)
-            if not os.path.exists(filepath):
-                open(filepath,'w').close()
+            filepath = Path(pseudo_path) / file
+            if not filepath.exists():
+                filepath.touch()
             #end if
         #end for
     #end if
@@ -170,7 +167,4 @@ def test_settings():
 
     # check that a new empty settings works following basic
     check_empty_settings()
-
-    # restore logging function
-    restore_nexus()
 #end def test_settings
