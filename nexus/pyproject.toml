@@ -1,6 +1,6 @@
 [project]
 name = "nexus"
-version = "2.2.9"
+version = "2.3.9"
 description = "Automated workflow manager for DFT & QMC calculations"
 readme = "README.md"
 requires-python = ">=3.10"
