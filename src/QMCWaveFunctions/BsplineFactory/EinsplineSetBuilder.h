@@ -170,7 +170,7 @@ public:
    */
   bool ReadGvectors_ESHDF();
 
-  Tensor<double, OHMMS_DIM> Lattice, RecipLattice, LatticeInv, SuperLattice, GGt;
+  Tensor<double, OHMMS_DIM> Lattice, RecipLattice, LatticeInv, SuperLattice;
   UnitCellType SuperCell, PrimCell, PrimCellInv;
   int NumBands, NumElectrons, NumSpins, NumTwists;
   int MaxNumGvecs;
@@ -258,6 +258,12 @@ protected:
                     int twist_num_inp,
                     const TinyVector<double, OHMMS_DIM>& twist_inp,
                     bool skipChecks = false);
+
+  /** obtain the attributes of a sposet tag's child named memory.
+   * @param cur the current xml node
+   * @return the distribution size
+   */
+  static std::pair<int, int> obtainMemoryAttributes(xmlNodePtr cur);
 
   /** analyze twists of orbitals in h5 and determinine twist_num_
    * @param twist_num_inp twistnum XML input

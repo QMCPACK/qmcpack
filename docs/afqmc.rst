@@ -28,7 +28,7 @@ For example, in the example, multiple Hamiltonian objects with different
 names can be defined. The one actually used in the calculation is the
 one passed to “execute” as ham.
 
-.. code-block::
+.. code-block:: xml
   :caption: Sample input file for AFQMC.
   :name: Listing 51
 
@@ -290,7 +290,7 @@ The back_propagation estimator has the following parameters:
 -  **nsteps**. Maximum number of back-propagation steps. Default: 10
 
 -  **naverages**. Number of back propagation calculations to perform.
-   The number of steps will be chosed equally distributed in the range
+   The number of steps will be chosen equally distributed in the range
    0,nsteps. Default: 1
 
 -  **block_size**. Number of blocks to use in the internal average of
@@ -340,7 +340,7 @@ this form of factorization QMCPACK allows for the integrals to be stored
 in either dense or sparse format.
 
 The dense case is the simplest and is only implemented for Hamiltonians
-with *real* integrals (and basis functions, i.e. not the homegeneous
+with *real* integrals (and basis functions, i.e. not the homogeneous
 electron gas which has complex orbitals but real integrals). The file
 format is given as follows:
 
@@ -820,7 +820,7 @@ The following is a growing list of useful advice for new users, followed by a sa
    parallel implementation. For large calculations, values between 6–12
    for both quantities should be reasonable, depending on architecture.
 
-.. code-block::
+.. code-block:: xml
   :caption: Example of sections of an AFQMC input file for a large calculation.
   :name: Listing 56
 

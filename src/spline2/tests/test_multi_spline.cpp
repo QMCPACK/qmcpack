@@ -14,10 +14,12 @@
 
 #include "OhmmsSoA/VectorSoaContainer.h"
 #include "spline2/MultiBspline.hpp"
+#include "spline2/MultiBsplineOffloadMapper.hpp"
 #include "spline2/SingleBsplineAllocator.hpp"
 #include "spline2/MultiBsplineEval.hpp"
 #include "QMCWaveFunctions/BsplineFactory/contraction_helper.hpp"
 #include "config/stdlib/Constants.h"
+#include "OMPTarget/OffloadAlignedAllocators.hpp"
 
 namespace qmcplusplus
 {
@@ -153,13 +155,11 @@ struct test_splines : public test_splines_base<T, GRID_SIZE, NUM_SPLINES>
   using base::npad;
   using base::num_splines;
 
-  test_splines() : test_splines_base<T, GRID_SIZE, NUM_SPLINES>(){};
+  test_splines() : test_splines_base<T, GRID_SIZE, NUM_SPLINES>() {};
 
   void test()
   {
-    MultiBspline<T> bs;
-
-    bs.create(grid, bc, npad);
+    MultiBspline<T> bs(grid, bc, npad);
 
     REQUIRE(bs.num_splines() == npad);
 
@@ -167,7 +167,7 @@ struct test_splines : public test_splines_base<T, GRID_SIZE, NUM_SPLINES>
     UBspline_3d_d* aspline = mAllocator.allocateUBspline(grid[0], grid[1], grid[2], bc[0], bc[1], bc[2], data.data());
 
     for (int i = 0; i < num_splines; i++)
-      copy_spline<double, T>(*aspline, *bs.getSplinePtr(), i);
+      bs.set_spline(*aspline, i);
 
     mAllocator.destroy(aspline);
 
@@ -210,13 +210,11 @@ struct test_splines<T, 5, 1> : public test_splines_base<T, 5, 1>
   using base::npad;
   using base::num_splines;
 
-  test_splines() : test_splines_base<T, 5, 1>(){};
+  test_splines() : test_splines_base<T, 5, 1>() {};
 
   void test()
   {
-    MultiBspline<T> bs;
-
-    bs.create(grid, bc, npad);
+    MultiBspline<T> bs(grid, bc, npad);
 
     REQUIRE(bs.num_splines() == npad);
 
@@ -224,7 +222,7 @@ struct test_splines<T, 5, 1> : public test_splines_base<T, 5, 1>
     UBspline_3d_d* aspline = mAllocator.allocateUBspline(grid[0], grid[1], grid[2], bc[0], bc[1], bc[2], data.data());
 
     for (int i = 0; i < num_splines; i++)
-      copy_spline<double, T>(*aspline, *bs.getSplinePtr(), i);
+      bs.set_spline(*aspline, i);
 
     mAllocator.destroy(aspline);
 
@@ -298,7 +296,6 @@ struct test_splines<T, 5, 1> : public test_splines_base<T, 5, 1>
     CHECK(hess[0][1] == Approx(1.174505743e-09));
     CHECK(hess[0][2] == Approx(-1.1483271e-09));
     CHECK(hess[0][3] == Approx(133.9204891));
-
     CHECK(hess[0][4] == Approx(-2.15319293e-09));
     CHECK(hess[0][5] == Approx(34.53786329));
 
@@ -317,6 +314,39 @@ struct test_splines<T, 5, 1> : public test_splines_base<T, 5, 1>
     CHECK(ghess[0][7] == Approx(-2.575826885e-09).epsilon(eps));
     CHECK(ghess[0][8] == Approx(-4.683496702e-09).epsilon(eps));
     CHECK(ghess[0][9] == Approx(-81.53283531));
+
+    MultiBsplineOffloadMapper<T> mapped_bs(bs);
+    mapped_bs.mapToDevice();
+    mapped_bs.updateToDevice();
+
+    const int num_pos = 3;
+    Vector<T, OffloadAllocator<T>> pos_arr{0.1, 0.2, 0.3, 0.3, 0.1, 0.2, 0.1, 0.2, 0.3};
+    pos_arr.updateTo();
+
+    auto num_splines_padded = bs.num_splines_padded();
+
+    Vector<T, OffloadAllocator<T>> spline_v_vals(num_pos * num_splines_padded);
+    mapped_bs.mw_evaluate_v(num_pos, pos_arr.data(), spline_v_vals.data(), num_splines_padded);
+    spline_v_vals.updateFrom();
+
+    CHECK(spline_v_vals[0] == Approx(-0.9476393279));
+    CHECK(spline_v_vals[num_splines_padded * 2] == Approx(-0.9476393279));
+
+    Vector<T, OffloadAllocator<T>> spline_vgh_vals(num_pos * num_splines_padded * SoAFields3D::NUM_FIELDS);
+    mapped_bs.mw_evaluate_vgh(num_pos, pos_arr.data(), spline_vgh_vals.data(),
+                              num_splines_padded * SoAFields3D::NUM_FIELDS, num_splines_padded);
+    spline_vgh_vals.updateFrom();
+
+    CHECK(spline_vgh_vals[0] == Approx(-0.9476393279));
+    CHECK(spline_vgh_vals[num_splines_padded * SoAFields3D::GRAD1] == Approx(5.989106342));
+    CHECK(spline_vgh_vals[num_splines_padded * SoAFields3D::HESS22] == Approx(34.53786329));
+
+    Vector<T, OffloadAllocator<T>>
+        spline_vgh_vals_w2(spline_vgh_vals, &spline_vgh_vals[num_splines_padded * SoAFields3D::NUM_FIELDS * 2],
+                           num_splines_padded * SoAFields3D::NUM_FIELDS);
+    CHECK(spline_vgh_vals_w2[0] == Approx(-0.9476393279));
+    CHECK(spline_vgh_vals_w2[num_splines_padded * SoAFields3D::GRAD1] == Approx(5.989106342));
+    CHECK(spline_vgh_vals_w2[num_splines_padded * SoAFields3D::HESS22] == Approx(34.53786329));
   }
 };
 

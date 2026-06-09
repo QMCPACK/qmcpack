@@ -129,7 +129,7 @@ public:
    */
   void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<OperatorBase>& o_list) const override;
 
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) override;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) const override;
 
   void addComponent(int groupID, std::unique_ptr<NonLocalECPComponent>&& pp);
 

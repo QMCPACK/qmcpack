@@ -90,7 +90,7 @@ public:
     return true;
   }
 
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& P) override;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& P) const override;
 };
 
 } // namespace qmcplusplus

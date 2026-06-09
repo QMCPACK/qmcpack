@@ -75,8 +75,7 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
 )";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particles));
 
   xmlNodePtr root = doc.getRoot();
   xmlNodePtr pw1  = xmlFirstElementChild(root);
@@ -179,8 +178,7 @@ TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
 )";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particles));
 
   xmlNodePtr root = doc.getRoot();
   xmlNodePtr pw1  = xmlFirstElementChild(root);

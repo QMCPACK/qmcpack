@@ -95,8 +95,7 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
 )";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  CHECK(okay);
+  REQUIRE(doc.parseFromString(particles));
 
   xmlNodePtr root = doc.getRoot();
 

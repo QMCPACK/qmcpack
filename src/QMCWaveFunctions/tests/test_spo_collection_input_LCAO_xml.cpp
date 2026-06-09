@@ -61,8 +61,7 @@ void test_He_sto3g_xml_input(const std::string& spo_xml_string)
   elec.update();
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(spo_xml_string);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(spo_xml_string));
 
   xmlNodePtr ein_xml = doc.getRoot();
 

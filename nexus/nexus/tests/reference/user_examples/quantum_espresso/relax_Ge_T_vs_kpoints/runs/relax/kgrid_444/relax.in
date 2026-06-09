@@ -41,7 +41,7 @@
 
 
 ATOMIC_SPECIES 
-   Ge 72.61 Ge.pbe-kjpaw.UPF
+   Ge 72.63 Ge.pbe-kjpaw.UPF
 
 ATOMIC_POSITIONS bohr
    Ge       5.34792496       5.34792496       5.34792496 

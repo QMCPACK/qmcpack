@@ -142,7 +142,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     ScopedTimer pbyp_local_timer(timers.movepbyp_timer);
     for (int ig = 0; ig < pset_leader.groups(); ++ig)
     {
-      TauParams<RealType, CT> taus(sft.qmcdrv_input.get_tau(), sft.population.get_ptclgrp_inv_mass()[ig],
+      TauParams<RealType, CT> taus(sft.qmcdrv_input.get_tau(), 1.0 / pset_leader.get_mass_by_group()[ig],
                                    sft.qmcdrv_input.get_spin_mass());
 
       twf_dispatcher.flex_prepareGroup(walker_twfs, walker_elecs, ig);

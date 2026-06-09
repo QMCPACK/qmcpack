@@ -34,7 +34,6 @@ namespace qmcplusplus
 ECPotentialBuilder::ECPotentialBuilder(QMCHamiltonian& h,
                                        ParticleSet& ions,
                                        ParticleSet& els,
-                                       TrialWaveFunction& psi,
                                        Communicate* c)
     : MPIObjectBase(c),
       hasLocalPot(false),
@@ -43,8 +42,7 @@ ECPotentialBuilder::ECPotentialBuilder(QMCHamiltonian& h,
       hasL2Pot(false),
       targetH(h),
       IonConfig(ions),
-      targetPtcl(els),
-      targetPsi(psi)
+      targetPtcl(els)
 {}
 
 ECPotentialBuilder::~ECPotentialBuilder() = default;
@@ -154,7 +152,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
       throw UniformCommunicateError("spin_integrator=\"exact\" requires algorithm=\"batched\".\n");
 
     std::unique_ptr<SOECPotential> apot =
-        std::make_unique<SOECPotential>(IonConfig, targetPtcl, targetPsi, use_exact_spin, NLPP_algo == "batched");
+        std::make_unique<SOECPotential>(IonConfig, targetPtcl, use_exact_spin, NLPP_algo == "batched");
     int nknot_max = 0;
     int sknot_max = 0;
     for (int i = 0; i < soPot.size(); i++)
@@ -180,7 +178,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
   }
   if (hasL2Pot)
   {
-    std::unique_ptr<L2Potential> apot = std::make_unique<L2Potential>(IonConfig, targetPtcl, targetPsi);
+    std::unique_ptr<L2Potential> apot = std::make_unique<L2Potential>(IonConfig, targetPtcl);
     for (int i = 0; i < L2Pot.size(); i++)
       if (L2Pot[i])
         apot->add(i, std::move(L2Pot[i]));

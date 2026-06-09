@@ -1,8 +1,14 @@
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.MACHINES)
 
+from ..generic import generic_settings
+generic_settings.raise_error = True
+
+from . import isolate_nexus_core
 from .. import testing
-from ..testing import value_eq,object_eq,failed,FailedTest
-from ..testing import divert_nexus_log,restore_nexus_log
-
+from ..testing import object_eq,object_diff,failed,FailedTest
+from ..utilities import path_string
 
 all_machines = []
 machines_data = dict()
@@ -47,15 +53,6 @@ def get_supercomputers():
     ws,sc = get_machine_data()
     return sc
 #end def get_supercomputers
-
-
-
-
-def test_import():
-    from ..machines import Machine,Workstation,InteractiveCluster,Supercomputer
-    from ..machines import Job,job
-    from ..machines import get_machine,get_machine_name
-#end def test_import
 
 
 
@@ -490,7 +487,7 @@ def init_job(j,
              ):
     import os
     identifier = id
-    directory  = dir
+    directory  = path_string(dir)
     j.set_id()
     j.identifier  = identifier
     j.directory   = directory
@@ -506,17 +503,14 @@ def init_job(j,
 #end def init_job
 
 
-
-def test_workstation_scheduling():
+@isolate_nexus_core
+def test_workstation_scheduling(tmp_path):
     import time
     from ..machines import Workstation
     from ..machines import job,Job
 
-    tpath = testing.setup_unit_test_output_directory('machines','test_workstation_scheduling')
-
     # create workstation for testing
     ws = Workstation('wss',16,'mpirun')
-
 
     # test process_job(), process_job_options(), write_job()
     j = job(machine=ws.name,cores=4,threads=2,local=True)
@@ -527,7 +521,7 @@ def test_workstation_scheduling():
     assert(j.processes==2)
     assert(j.run_options.np=='-np 2')
     assert(j.batch_mode==False)
-    init_job(j,dir=tpath) # imitate interaction w/ simulation object
+    init_job(j,dir=tmp_path) # imitate interaction w/ simulation object
     assert(ws.write_job(j)=='export OMP_NUM_THREADS=2\nmpirun -np 2 echo run')
 
     j = job(machine=ws.name,serial=True)
@@ -538,7 +532,7 @@ def test_workstation_scheduling():
     assert(j.processes==1)
     assert(j.run_options.np=='-np 1')
     assert(j.batch_mode==False)
-    init_job(j,dir=tpath) # imitate interaction w/ simulation object
+    init_job(j,dir=tmp_path) # imitate interaction w/ simulation object
     assert(ws.write_job(j)=='export OMP_NUM_THREADS=1\necho run')
 
 
@@ -557,7 +551,6 @@ def test_workstation_scheduling():
 
 
     # test submit_jobs() and submit_job()
-    divert_nexus_log()
     assert(j.system_id is None)
     assert(len(ws.running)==0)
     assert(len(ws.processes)==0)
@@ -573,7 +566,6 @@ def test_workstation_scheduling():
     assert(p.popen.pid==j.system_id)
     assert(id(p.job)==id(j))
     assert(set(ws.jobs.keys())==set([j.internal_id]))
-    restore_nexus_log()
 
     # allow a moment for all system calls to resolve
     time.sleep(0.1)
@@ -637,15 +629,13 @@ def test_supercomputer_init():
 #end def test_supercomputer_init
 
 
-
-def test_supercomputer_scheduling():
+@isolate_nexus_core
+def test_supercomputer_scheduling(tmp_path):
     import os
     import time
     from ..developer import obj
     from ..machines import Theta
     from ..machines import job,Job
-
-    tpath = testing.setup_unit_test_output_directory('machines','test_supercomputer_scheduling')
 
     # create supercomputer for testing
     class ThetaSched(Theta):
@@ -679,7 +669,7 @@ def test_supercomputer_scheduling():
 
 
     # test write_job()
-    init_job(j,id='123',dir=tpath) # imitate interaction w/ simulation object
+    init_job(j,id='123',dir=tmp_path) # imitate interaction w/ simulation object
     ref_wj = '''#!/bin/bash
 #COBALT -q default
 #COBALT -A ABC123
@@ -719,7 +709,7 @@ aprun -e OMP_NUM_THREADS=8 -d 8 -cc depth -j 1 -n 16 -N 8 echo run'''
     # test write_job() to file
     sc.write_job(j,file=True)
 
-    subfile_path = os.path.join(tpath,j.subfile)
+    subfile_path = os.path.join(tmp_path,j.subfile)
     assert(os.path.exists(subfile_path))
     wj = open(subfile_path,'r').read().strip()
     assert('aprun ' in wj)
@@ -735,7 +725,6 @@ aprun -e OMP_NUM_THREADS=8 -d 8 -cc depth -j 1 -n 16 -N 8 echo run'''
 
 
     # test submit_jobs() and submit_job()
-    divert_nexus_log()
     assert(j.system_id is None)
 
     sc.submit_jobs() # will call system echo
@@ -746,7 +735,6 @@ aprun -e OMP_NUM_THREADS=8 -d 8 -cc depth -j 1 -n 16 -N 8 echo run'''
     assert(sc.running==set([j.internal_id]))
     assert(set(sc.processes.keys())==set([123]))
     assert(set(sc.jobs.keys())==set([j.internal_id]))
-    restore_nexus_log()
 
 
     # allow a moment for all system calls to resolve

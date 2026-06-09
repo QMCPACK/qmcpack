@@ -1,0 +1,77 @@
+#! /usr/bin/env python3
+
+"""This script is designed to run Nexus's test suite using Pytest.
+
+In general, it should only be run by users who have installed Nexus and
+are looking to ensure their installation works in their environment.
+
+Developers should NOT use this script to run the test suite as it will
+suppress all warnings and fail fast, which is generally not desirable
+for development.
+"""
+
+import sys
+
+if sys.version_info[0:3] < (3, 10, 0):
+    v = sys.version_info[0:3]
+    print(
+       f"Your version of Python ({v[0]}.{v[1]}.{v[2]}) is less than the minimum required for Nexus!\n"
+        "To use Nexus, please install at least Python 3.10.0 or higher!\n\n"
+        "If you already have a higher version installed, ensure that your Python\n"
+        "environment is properly activated and your $PATH is set correctly."
+    )
+    sys.exit(1)
+
+try:
+    import pytest
+except ImportError:
+    print(
+        "You must have pytest installed to run Nexus's testing suite!\n"
+        "You can install it using one of the following commands:\n"
+        "$ pip3 install pytest\n"
+        "$ uv pip install pytest\n\n"
+        "It is also recommended to install pytest-order to aid in potential debugging:\n"
+        "$ pip3 install pytest-order\n"
+        "$ uv pip install pytest-order\n"
+    )
+    sys.exit(1)
+
+if __name__ == "__main__":
+
+    import os
+    from pathlib import Path
+
+    test_dir = Path(__file__).resolve().parent.parent / "tests"
+
+    try:
+        # This makes the output from pytest cleaner in that it doesn't print
+        # the full path from the user's CWD to the Nexus libraries.
+        os.chdir(test_dir)
+    except PermissionError:
+        pass
+
+    pytest_args = []
+    if len(sys.argv) > 1:
+        if "-h" in sys.argv or "--help" in sys.argv:
+            print(
+                "Usage:\n"
+                '$ nxs-test <pytest_args>\n\n'
+                "See https://docs.pytest.org/en/stable/how-to/usage.html\n"
+                "for specification of arguments.\n\n"
+                "To select only specific tests, use `-k '<expr>'` from\n"
+                "Pytest's section on specifying which tests to run.\n"
+                "The other methods listed there are not supported by nxs-test."
+            )
+            sys.exit(1)
+
+        for arg in sys.argv[1:]:
+            pytest_args.append(arg)
+
+    retcode = pytest.main([
+        "--exitfirst",
+        "--disable-warnings",
+       *pytest_args,
+       f"{test_dir}",
+    ])
+
+    sys.exit(retcode)

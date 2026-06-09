@@ -27,7 +27,7 @@
 namespace qmcplusplus
 {
 template<typename T>
-SPOSetT<T>::SPOSetT(const std::string& my_name) : my_name_(my_name), OrbitalSetSize(0)
+SPOSetT<T>::SPOSetT(const std::string& my_name, size_t size) : my_name_(my_name), OrbitalSetSize(size)
 {}
 
 template<typename T>
@@ -68,9 +68,7 @@ void SPOSetT<T>::evaluateDetSpinorRatios(const VirtualParticleSet& VP,
                                          const std::pair<ValueVector, ValueVector>& spinor_multiplier,
                                          const ValueVector& invrow,
                                          std::vector<ValueType>& ratios)
-{
-  throw std::runtime_error("Need specialization of " + getClassName() + "::evaluateDetSpinorRatios");
-}
+{ throw std::runtime_error("Need specialization of " + getClassName() + "::evaluateDetSpinorRatios"); }
 
 template<typename T>
 void SPOSetT<T>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSetT>& spo_list,
@@ -112,9 +110,7 @@ void SPOSetT<T>::evaluateVGL_spin(const ParticleSet& P,
                                   GradVector& dpsi,
                                   ValueVector& d2psi,
                                   ValueVector& dspin)
-{
-  throw std::runtime_error("Need specialization of SPOSet::evaluateVGL_spin");
-}
+{ throw std::runtime_error("Need specialization of SPOSet::evaluateVGL_spin"); }
 
 template<typename T>
 void SPOSetT<T>::mw_evaluateVGL(const RefVectorWithLeader<SPOSetT>& spo_list,
@@ -148,9 +144,7 @@ void SPOSetT<T>::mw_evaluateVGLWithSpin(const RefVectorWithLeader<SPOSetT>& spo_
                                         const RefVector<GradVector>& dpsi_v_list,
                                         const RefVector<ValueVector>& d2psi_v_list,
                                         OffloadMatrix<ComplexType>& mw_dspin) const
-{
-  throw std::runtime_error(getClassName() + "::mw_evaluateVGLWithSpin() is not supported. \n");
-}
+{ throw std::runtime_error(getClassName() + "::mw_evaluateVGLWithSpin() is not supported. \n"); }
 
 template<typename T>
 void SPOSetT<T>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPOSetT>& spo_list,
@@ -203,9 +197,7 @@ void SPOSetT<T>::mw_evaluateVGLandDetRatioGradsWithSpin(const RefVectorWithLeade
 
 template<typename T>
 void SPOSetT<T>::evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix& grad_grad_grad_logdet)
-{
-  throw std::runtime_error("Need specialization of SPOSet::evaluateThirdDeriv(). \n");
-}
+{ throw std::runtime_error("Need specialization of SPOSet::evaluateThirdDeriv(). \n"); }
 
 template<typename T>
 void SPOSetT<T>::evaluate_notranspose_spin(const ParticleSet& P,
@@ -241,9 +233,7 @@ void SPOSetT<T>::evaluate_notranspose(const ParticleSet& P,
                                       ValueMatrix& logdet,
                                       GradMatrix& dlogdet,
                                       HessMatrix& grad_grad_logdet)
-{
-  throw std::runtime_error("Need specialization of SPOSet::evaluate_notranspose() for grad_grad_logdet. \n");
-}
+{ throw std::runtime_error("Need specialization of SPOSet::evaluate_notranspose() for grad_grad_logdet. \n"); }
 
 template<typename T>
 void SPOSetT<T>::evaluate_notranspose(const ParticleSet& P,
@@ -253,16 +243,12 @@ void SPOSetT<T>::evaluate_notranspose(const ParticleSet& P,
                                       GradMatrix& dlogdet,
                                       HessMatrix& grad_grad_logdet,
                                       GGGMatrix& grad_grad_grad_logdet)
-{
-  throw std::runtime_error("Need specialization of SPOSet::evaluate_notranspose() for grad_grad_grad_logdet. \n");
-}
+{ throw std::runtime_error("Need specialization of SPOSet::evaluate_notranspose() for grad_grad_grad_logdet. \n"); }
 
 
 template<typename T>
 std::unique_ptr<SPOSetT<T>> SPOSetT<T>::makeClone() const
-{
-  throw std::runtime_error("Missing  SPOSetT<T>::makeClone for " + getClassName());
-}
+{ throw std::runtime_error("Missing  SPOSetT<T>::makeClone for " + getClassName()); }
 
 template<typename T>
 void SPOSetT<T>::basic_report(const std::string& pad) const

@@ -1,20 +1,12 @@
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.QMCPACK_CONVERTER_INPUT)
+
+from ..generic import generic_settings
+generic_settings.raise_error = True
 
 from .. import testing
-from ..testing import value_eq,object_eq,text_eq
-
-
-
-def test_import():
-    from ..qmcpack_converters import Pw2qmcpackInput
-    from ..qmcpack_converters import generate_pw2qmcpack_input
-
-    from ..qmcpack_converters import Convert4qmcInput
-    from ..qmcpack_converters import generate_convert4qmc_input
-
-    from ..qmcpack_converters import PyscfToAfqmcInput
-    from ..qmcpack_converters import generate_pyscf_to_afqmc_input
-#end def test_import
-
+from ..testing import value_eq,object_eq
 
 
 
@@ -36,15 +28,12 @@ def test_pw2qmcpack_input_empty_init():
 
 
 
-def test_pw2qmcpack_input_read():
-    import os
+def test_pw2qmcpack_input_read(tmp_path):
     from ..developer import obj
     from ..qmcpack_converters import Pw2qmcpackInput
 
-    tpath = testing.setup_unit_test_output_directory('qmcpack_converter_input','test_pw2qmcpack_input_read')
-
-    infile_path = os.path.join(tpath,'p2q.in')
-    open(infile_path,'w').write(pw2qmcpack_in)
+    infile_path = tmp_path / 'p2q.in'
+    infile_path.write_text(pw2qmcpack_in)
 
     pi = Pw2qmcpackInput(infile_path)
     
@@ -60,17 +49,14 @@ def test_pw2qmcpack_input_read():
 
 
 
-def test_pw2qmcpack_input_write():
-    import os
+def test_pw2qmcpack_input_write(tmp_path):
     from ..developer import obj
     from ..qmcpack_converters import Pw2qmcpackInput
 
-    tpath = testing.setup_unit_test_output_directory('qmcpack_converter_input','test_pw2qmcpack_input_write')
+    infile_path = tmp_path / 'p2q.in'
+    infile_path.write_text(pw2qmcpack_in)
 
-    infile_path = os.path.join(tpath,'p2q.in')
-    open(infile_path,'w').write(pw2qmcpack_in)
-
-    write_path = os.path.join(tpath,'p2q_write.in')
+    write_path = tmp_path / 'p2q_write.in'
     pi_write = Pw2qmcpackInput(infile_path)
     
     pi_write.write(write_path)

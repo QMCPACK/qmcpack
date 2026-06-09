@@ -39,9 +39,7 @@ struct SHOState : public SPOInfo
   }
 
   inline void sho_report(const std::string& pad = "") const
-  {
-    app_log() << pad << "qn=" << quantum_number << "  e=" << energy << std::endl;
-  }
+  { app_log() << pad << "qn=" << quantum_number << "  e=" << energy << std::endl; }
 };
 
 
@@ -101,13 +99,10 @@ struct SHOSet : public SPOSet
 
   //empty methods
   /// number of orbitals is determined only by initial request
-  inline void setOrbitalSetSize(int norbs) override {}
 
   ///unimplemented functions call this to abort
   inline void not_implemented(const std::string& method)
-  {
-    APP_ABORT("SHOSet::" + method + " has not been implemented.");
-  }
+  { APP_ABORT("SHOSet::" + method + " has not been implemented."); }
 
 
   //methods to be implemented in the future (possibly)

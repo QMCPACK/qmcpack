@@ -10,6 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
+#include "MockGoldWalkerElements.h"
 #include "catch.hpp"
 
 #include "EnergyDensityEstimator.h"
@@ -46,8 +47,8 @@ TEST_CASE("NEEnergyDensityEstimator::Constructor", "[estimators]")
                                {1.657151589, 0.883870516, 1.201243939}, {0.97317591, 1.245644974, 0.284564732}};
 
   Libxml2Document doc;
-  using Input     = testing::EnergyDensityInputs;
-  bool okay       = doc.parseFromString(Input::getXml(Input::valid::CELL));
+  using Input = testing::EnergyDensityInputs;
+  REQUIRE(doc.parseFromString(Input::getXml(Input::valid::CELL)));
   xmlNodePtr node = doc.getRoot();
   EnergyDensityInput edein{node};
   {
@@ -72,8 +73,8 @@ TEST_CASE("NEEnergyDensityEstimator::spawnCrowdClone", "[estimators]")
                                {1.657151589, 0.883870516, 1.201243939}, {0.97317591, 1.245644974, 0.284564732}};
 
   Libxml2Document doc;
-  using Input     = testing::EnergyDensityInputs;
-  bool okay       = doc.parseFromString(Input::getXml(Input::valid::CELL));
+  using Input = testing::EnergyDensityInputs;
+  REQUIRE(doc.parseFromString(Input::getXml(Input::valid::CELL)));
   xmlNodePtr node = doc.getRoot();
   EnergyDensityInput edein{node};
   {
@@ -90,8 +91,12 @@ TEST_CASE("NEEnergyDensityEstimator::AccumulateIntegration", "[estimators]")
 {
   Communicate* comm = OHMMS::Controller;
 
+#ifndef ENABLE_OFFLOAD
   testing::EnergyDensityTest eden_test(comm, 4 /*num_walkers*/, generate_test_data);
-
+#else
+  testing::EnergyDensityTest eden_test(comm, 4 /*num_walkers*/, &testing::makeGoldWalkerElementsWithEI,
+                                       generate_test_data);
+#endif
   auto ham_list    = eden_test.getHamList();
   auto& ham_leader = ham_list.getLeader();
   auto ham_lock    = ResourceCollectionTeamLock(eden_test.getHamRes(), ham_list);
@@ -150,7 +155,12 @@ TEST_CASE("NEEnergyDensityEstimator::Collect", "[estimators]")
 {
   Communicate* comm = OHMMS::Controller;
 
+#ifndef ENABLE_OFFLOAD
   testing::EnergyDensityTest eden_test(comm, 4 /*num_walkers*/, generate_test_data);
+#else
+  testing::EnergyDensityTest eden_test(comm, 4 /*num_walkers*/, &testing::makeGoldWalkerElementsWithEI,
+                                       generate_test_data);
+#endif
 
   auto ham_list    = eden_test.getHamList();
   auto& ham_leader = ham_list.getLeader();

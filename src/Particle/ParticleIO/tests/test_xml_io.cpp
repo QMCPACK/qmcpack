@@ -73,8 +73,7 @@ TEST_CASE("read_particleset_xml", "[particle_io][xml]")
 </tmp>
 )";
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particles));
 
   xmlNodePtr root = doc.getRoot();
   xmlNodePtr part1 = xmlFirstElementChild(root);
@@ -129,8 +128,7 @@ TEST_CASE("read_particleset_recorder_xml", "[particle_io][xml]")
 </tmp>
 )";
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particles));
 
   xmlNodePtr root = doc.getRoot();
 
@@ -179,8 +177,7 @@ TEST_CASE("read_dynamic_spin_eset_xml", "[particle_io][xml]")
 </tmp>
 )";
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particles));
 
   xmlNodePtr root = doc.getRoot();
 

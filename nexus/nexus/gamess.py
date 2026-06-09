@@ -225,7 +225,8 @@ class Gamess(Simulation):
 
 
     def check_sim_status(self):
-        output = open(os.path.join(self.locdir,self.outfile),'r').read()
+        with open(os.path.join(self.locdir,self.outfile), "r") as out:
+            output = out.read()
         #errors = open(os.path.join(self.locdir,self.errfile),'r').read()
         
         self.failed = 'EXECUTION OF GAMESS TERMINATED -ABNORMALLY-' in output

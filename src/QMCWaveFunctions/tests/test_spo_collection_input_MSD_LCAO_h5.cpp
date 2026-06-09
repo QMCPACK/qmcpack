@@ -66,8 +66,7 @@ void test_LiH_msd_xml_input(const std::string& spo_xml_string,
   tspecies(massIdx, downIdx) = 1.0;
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(spo_xml_string);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(spo_xml_string));
 
   xmlNodePtr ein_xml = doc.getRoot();
 
@@ -236,8 +235,7 @@ void test_LiH_msd_xml_input_with_positron(const std::string& spo_xml_string,
   tspecies(chargeIdx, positronIdx) = 1.0;
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(spo_xml_string);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(spo_xml_string));
 
   xmlNodePtr ein_xml = doc.getRoot();
 

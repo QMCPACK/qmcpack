@@ -1,7 +1,13 @@
-from .. import testing
-from ..testing import divert_nexus,restore_nexus,clear_all_sims
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.PYSCF_SIMULATION)
+
+from ..generic import generic_settings
+generic_settings.raise_error = True
+
+from . import isolate_nexus_core
+from ..testing import clear_all_sims
 from ..testing import failed,FailedTest
-from ..testing import value_eq,object_eq,text_eq
 
 
 def get_pyscf_sim(**kwargs):
@@ -17,12 +23,6 @@ def get_pyscf_sim(**kwargs):
 
     return sim
 #end def get_pyscf_sim
-
-
-
-def test_import():
-    from ..pyscf_sim import Pyscf,generate_pyscf
-#end def test_import
 
 
 
@@ -65,22 +65,21 @@ def test_check_result():
 #end def test_check_result
 
 
-
-def test_get_result():
-    import os
-    from ..developer import NexusError, obj
+@isolate_nexus_core
+def test_get_result(tmp_path):
+    from ..developer import NexusError
     from ..nexus_base import nexus_core
 
-    tpath = testing.setup_unit_test_output_directory('pyscf_simulation','test_get_result',divert=True)
+    nexus_core.local_directory  = str(tmp_path)
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
 
     nexus_core.runs = ''
 
     template_file = 'scf_template.py'
     template_text = 'template $chkfile'
-    template_filepath = os.path.join(tpath,template_file)
-    f = open(template_filepath,'w')
-    f.write(template_text)
-    f.close()
+    template_filepath = tmp_path / template_file
+    template_filepath.write_text(template_text)
 
     sim = get_pyscf_sim(
         prefix     = 'scf',
@@ -101,14 +100,13 @@ def test_get_result():
 
     result = sim.get_result('orbitals',None)
 
-    assert(result.h5_file.replace(tpath,'').lstrip('/')=='scf.h5')
+    assert(result.h5_file.replace(str(tmp_path),'').lstrip('/')=='scf.h5')
 
     result = sim.get_result('wavefunction',None)
 
-    assert(result.chkfile.replace(tpath,'').lstrip('/')=='scf.chk')
+    assert(result.chkfile.replace(str(tmp_path),'').lstrip('/')=='scf.chk')
 
     clear_all_sims()
-    restore_nexus()
 #end def test_get_result
 
 

@@ -41,8 +41,7 @@ TEST_CASE("HamiltonianPool", "[qmcapp]")
 </hamiltonian>)";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(hamiltonian_xml);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(hamiltonian_xml));
 
   xmlNodePtr root = doc.getRoot();
 
@@ -52,7 +51,7 @@ TEST_CASE("HamiltonianPool", "[qmcapp]")
 
   RuntimeOptions runtime_options;
   WaveFunctionPool wfp(runtime_options, pp, c);
-  wfp.addFactory(WaveFunctionFactory::buildEmptyTWFForTesting(runtime_options, "psi0"), true);
+  wfp.add("psi0", std::make_unique<TrialWaveFunction>(runtime_options, "psi0"));
 
   HamiltonianPool hpool(pp, wfp, c);
 
@@ -60,11 +59,23 @@ TEST_CASE("HamiltonianPool", "[qmcapp]")
 
   hpool.put(root);
 
-  QMCHamiltonian* h = hpool.getHamiltonian("h0");
-  REQUIRE(h != nullptr);
+  // test contains()
+  REQUIRE(hpool.contains("h0"));
+  REQUIRE(!hpool.contains("h1"));
 
+  // test getHamiltonian()
+  QMCHamiltonian& ham(hpool.getHamiltonian().value());
   // Bare kinetic energy is always added
-  REQUIRE(h->size() == 2);
+  REQUIRE(ham.size() == 2);
+
+  auto ham_noname_optional = hpool.getHamiltonian();
+  REQUIRE(ham_noname_optional);
+  QMCHamiltonian& ham_noname(*ham_noname_optional);
+  REQUIRE(&ham == &ham_noname);
+  auto ham_empty_optional = hpool.getHamiltonian("");
+  REQUIRE(ham_empty_optional);
+  QMCHamiltonian& ham_empty(*ham_empty_optional);
+  REQUIRE(&ham == &ham_empty);
 }
 
 } // namespace qmcplusplus

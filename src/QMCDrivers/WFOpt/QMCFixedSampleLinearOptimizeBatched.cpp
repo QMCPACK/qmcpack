@@ -135,55 +135,10 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(
   m_param.add(options_LMY_.ratio_threshold, "deriv_threshold");
   m_param.add(options_LMY_.store_samples, "store_samples");
   m_param.add(options_LMY_.filter_info, "filter_info");
-
-
-#ifdef HAVE_LMY_ENGINE
-  //app_log() << "construct QMCFixedSampleLinearOptimizeBatched" << endl;
-  std::vector<double> shift_scales(3, 1.0);
-  EngineObj = new cqmc::engine::LMYEngine<ValueType>(&vdeps,
-                                                     false, // exact sampling
-                                                     true,  // ground state?
-                                                     false, // variance correct,
-                                                     true,
-                                                     true,  // print matrices,
-                                                     true,  // build matrices
-                                                     false, // spam
-                                                     false, // use var deps?
-                                                     true,  // chase lowest
-                                                     false, // chase closest
-                                                     false, // eom
-                                                     false,
-                                                     false,  // eom related
-                                                     false,  // eom related
-                                                     false,  // use block?
-                                                     120000, // number of samples
-                                                     0,      // number of parameters
-                                                     60,     // max krylov iter
-                                                     0,      // max spam inner iter
-                                                     1,      // spam appro degree
-                                                     0,      // eom related
-                                                     0,      // eom related
-                                                     0,      // eom related
-                                                     0.0,    // omega
-                                                     0.0,    // var weight
-                                                     1.0e-6, // convergence threshold
-                                                     0.99,   // minimum S singular val
-                                                     0.0, 0.0,
-                                                     10.0, // max change allowed
-                                                     1.00, // identity shift
-                                                     1.00, // overlap shift
-                                                     0.3,  // max parameter change
-                                                     shift_scales, app_log());
-#endif
 }
 
 /** Clean up the vector */
-QMCFixedSampleLinearOptimizeBatched::~QMCFixedSampleLinearOptimizeBatched()
-{
-#ifdef HAVE_LMY_ENGINE
-  delete EngineObj;
-#endif
-}
+QMCFixedSampleLinearOptimizeBatched::~QMCFixedSampleLinearOptimizeBatched() = default;
 
 QMCFixedSampleLinearOptimizeBatched::RealType QMCFixedSampleLinearOptimizeBatched::costFunc(RealType dl)
 {
@@ -222,7 +177,7 @@ void QMCFixedSampleLinearOptimizeBatched::start()
 }
 
 #ifdef HAVE_LMY_ENGINE
-void QMCFixedSampleLinearOptimizeBatched::engine_start(cqmc::engine::LMYEngine<ValueType>* EngineObj,
+void QMCFixedSampleLinearOptimizeBatched::engine_start(cqmc::engine::LMYEngine<ValueType>& EngineObj,
                                                        DescentEngine& descentEngineObj,
                                                        std::string MinMethod)
 {
@@ -232,7 +187,7 @@ void QMCFixedSampleLinearOptimizeBatched::engine_start(cqmc::engine::LMYEngine<V
   if (MinMethod == "descent")
     handle = std::make_unique<DescentEngineHandle>(descentEngineObj);
   else if (MinMethod == "adaptive")
-    handle = std::make_unique<LMYEngineHandle>(*EngineObj);
+    handle = std::make_unique<LMYEngineHandle>(EngineObj);
   else
     handle = std::make_unique<NullEngineHandle>();
 
@@ -673,6 +628,50 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
   options_LMY_.previous_optimizer_type = options_LMY_.current_optimizer_type;
   options_LMY_.current_optimizer_type  = OptimizerNames.at(MinMethod);
 
+#ifdef HAVE_LMY_ENGINE
+  if (!EngineObj &&
+      (options_LMY_.current_optimizer_type == OptimizerType::DESCENT ||
+       options_LMY_.current_optimizer_type == OptimizerType::ADAPTIVE))
+  {
+    // app_log() << "construct QMCFixedSampleLinearOptimizeBatched" << endl;
+    std::vector<double> shift_scales(3, 1.0);
+    EngineObj = std::make_unique<cqmc::engine::LMYEngine<ValueType>>(&vdeps,
+                                                                     false, // exact sampling
+                                                                     true,  // ground state?
+                                                                     false, // variance correct,
+                                                                     true,
+                                                                     true,  // print matrices,
+                                                                     true,  // build matrices
+                                                                     false, // spam
+                                                                     false, // use var deps?
+                                                                     true,  // chase lowest
+                                                                     false, // chase closest
+                                                                     false, // eom
+                                                                     false,
+                                                                     false,  // eom related
+                                                                     false,  // eom related
+                                                                     false,  // use block?
+                                                                     120000, // number of samples
+                                                                     0,      // number of parameters
+                                                                     60,     // max krylov iter
+                                                                     0,      // max spam inner iter
+                                                                     1,      // spam appro degree
+                                                                     0,      // eom related
+                                                                     0,      // eom related
+                                                                     0,      // eom related
+                                                                     0.0,    // omega
+                                                                     0.0,    // var weight
+                                                                     1.0e-6, // convergence threshold
+                                                                     0.99,   // minimum S singular val
+                                                                     0.0, 0.0,
+                                                                     10.0, // max change allowed
+                                                                     1.00, // identity shift
+                                                                     1.00, // overlap shift
+                                                                     0.3,  // max parameter change
+                                                                     shift_scales, app_log());
+  }
+#endif
+
   if (options_LMY_.current_optimizer_type == OptimizerType::DESCENT && !descentEngineObj)
     descentEngineObj = std::make_unique<DescentEngine>(myComm, opt_xml);
 
@@ -756,8 +755,8 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
   vmcEngine =
       std::make_unique<VMCBatched>(project_data_, std::move(qmcdriver_input_copy), nullptr,
                                    std::move(vmcdriver_input_copy), walker_configs_ref_,
-                                   MCPopulation(myComm->size(), myComm->rank(), &population_.get_golden_electrons(),
-                                                &population_.get_golden_twf(), &population_.get_golden_hamiltonian()),
+                                   MCPopulation(myComm->size(), myComm->rank(), population_.get_golden_electrons(),
+                                                population_.get_golden_twf(), population_.get_golden_hamiltonian()),
                                    rngs_, samples_, myComm);
 
   vmcEngine->setUpdateMode(vmcMove[0] == 'p');
@@ -1177,7 +1176,7 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
   EngineObj->reset();
 
   // generate samples and compute weights, local energies, and derivative vectors
-  engine_start(EngineObj, *descentEngineObj, MinMethod);
+  engine_start(*EngineObj, *descentEngineObj, MinMethod);
 
   int new_num = 0;
 
@@ -1321,7 +1320,7 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
       finish();
 
       // take sample
-      engine_start(EngineObj, *descentEngineObj, MinMethod);
+      engine_start(*EngineObj, *descentEngineObj, MinMethod);
     }
     else
     {
@@ -1332,12 +1331,12 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
 
       if (options_LMY_.filter_param)
       {
-        engine_start(EngineObj, *descentEngineObj, MinMethod);
+        engine_start(*EngineObj, *descentEngineObj, MinMethod);
         EngineObj->buildMatricesFromDerivatives();
       }
       else
       {
-        engine_start(EngineObj, *descentEngineObj, MinMethod);
+        engine_start(*EngineObj, *descentEngineObj, MinMethod);
         app_log() << "Should be building matrices from stored samples" << std::endl;
         EngineObj->buildMatricesFromDerivatives();
       }
@@ -1478,7 +1477,7 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
   for (int i = 0; i < numParams; i++)
     optTarget->Params(i) = currParams.at(i) - parameterDirections.at(central_index).at(i + 1);
   optTarget->IsValid      = true;
-  const RealType initCost = optTarget->LMYEngineCost(false, EngineObj);
+  const RealType initCost = optTarget->LMYEngineCost(false, *EngineObj);
 
   // compute the update directions for the smaller and larger shifts relative to that of the middle shift
   for (int i = 0; i < numParams; i++)
@@ -1499,9 +1498,9 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
     for (int i = 0; i < numParams; i++)
       optTarget->Params(i) = currParams.at(i) + (k == central_index ? 0.0 : parameterDirections.at(k).at(i + 1));
     optTarget->IsValid = true;
-    costValues.at(k)   = optTarget->LMYEngineCost(false, EngineObj);
+    costValues.at(k)   = optTarget->LMYEngineCost(false, *EngineObj);
     good_update.at(k)  = (good_update.at(k) &&
-                         std::abs((initCost - costValues.at(k)) / initCost) < options_LMY_.max_relative_cost_change);
+                          std::abs((initCost - costValues.at(k)) / initCost) < options_LMY_.max_relative_cost_change);
     if (!good_update.at(k))
       costValues.at(k) = std::abs(1.5 * initCost) + 1.0;
   }
@@ -1868,9 +1867,9 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration_conjugate_g
   }
 
   //We get the parameter direction from the SR solve above using CG algorithm
-  //Then, we can either use a line search with correlated sampling to find the best update along that direction, 
-  //or we can use a simple approach where we just accept the move based on the size of the step...sr_tau in this case. 
-  //The line search with correlated sampling converges faster, but can have issues if the weight from correlated 
+  //Then, we can either use a line search with correlated sampling to find the best update along that direction,
+  //or we can use a simple approach where we just accept the move based on the size of the step...sr_tau in this case.
+  //The line search with correlated sampling converges faster, but can have issues if the weight from correlated
   //sampling gets small and stays small. Otherwise, just taking a small sr_tau will work, but can take a lot of iterations
   //
   //im sure there are better ways to do this
@@ -1943,7 +1942,7 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration_conjugate_g
 bool QMCFixedSampleLinearOptimizeBatched::descent_run()
 {
   //Compute Lagrangian derivatives needed for parameter updates with engine_checkConfigurations, which is called inside engine_start
-  engine_start(EngineObj, *descentEngineObj, MinMethod);
+  engine_start(*EngineObj, *descentEngineObj, MinMethod);
 
   int descent_num = descentEngineObj->getDescentNum();
 

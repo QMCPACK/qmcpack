@@ -22,11 +22,15 @@
 #define QMCPLUSPLUS_BSPLINESET_H
 
 #include "QMCWaveFunctions/SPOSet.h"
-#include "spline/einspline_engine.hpp"
-#include "spline/einspline_util.hpp"
 
 namespace qmcplusplus
 {
+
+template<class ST>
+class SplineSetReader;
+template<class ST>
+class HybridRepSetReader;
+
 /** BsplineSet is the base class for SplineC2C, SplineC2R, SplineR2R.
  * Its derived template classes manage the storage and evaluation at given precision.
  * BsplineSet also implements a few fallback routines in case optimized implementation is not necessary in the derived class.
@@ -35,12 +39,8 @@ class BsplineSet : public SPOSet
 {
 protected:
   static const int D = DIM;
-  ///Index of this adoptor, when multiple adoptors are used for NUMA or distributed cases
-  size_t MyIndex;
-  ///first index of the SPOs this Spline handles
-  size_t first_spo;
-  ///last index of the SPOs this Spline handles
-  size_t last_spo;
+  ///primitive cell
+  const Lattice prim_lattice_;
   ///sign bits at the G/2 boundaries
   TinyVector<int, D> HalfG;
   ///flags to unpack sin/cos
@@ -52,13 +52,12 @@ protected:
   std::vector<SPOSet::PosType> kPoints;
   ///remap splines to orbitals
   aligned_vector<int> BandIndexMap;
-  ///band offsets used for communication
-  std::vector<int> offset;
 
 public:
-  BsplineSet(const std::string& my_name) : SPOSet(my_name), MyIndex(0), first_spo(0), last_spo(0) {}
+  BsplineSet(const std::string& my_name, size_t size, const Lattice& prim_lattice)
+      : SPOSet(my_name, size), prim_lattice_(prim_lattice)
+  {}
 
-  virtual bool isComplex() const         = 0;
   virtual std::string getKeyword() const = 0;
 
   auto& getHalfG() const { return HalfG; }
@@ -74,6 +73,9 @@ public:
 
   /// resize vectors related to spline evaluaton results.
   virtual void resizeStorage(size_t n) = 0;
+
+  /** remap kPoints to pack the double copy */
+  virtual void resize_kpoints() {}
 
   ///remap kpoints to group general kpoints & special kpoints
   int remap_kpoints()
@@ -118,8 +120,6 @@ public:
   using SPOSet::releaseResource;
 
   std::unique_ptr<SPOSet> makeClone() const override = 0;
-
-  void setOrbitalSetSize(int norbs) override { OrbitalSetSize = norbs; }
 
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
@@ -244,8 +244,10 @@ public:
     //Do nothing, since Einsplines don't explicitly depend on ion positions.
   }
 
-  template<class BSPLINESPO>
+  template<class ST>
   friend class SplineSetReader;
+  template<class ST>
+  friend class HybridRepSetReader;
   friend class BsplineReader;
 };
 

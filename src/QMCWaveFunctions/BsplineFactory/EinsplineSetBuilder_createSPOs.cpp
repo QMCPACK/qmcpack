@@ -29,7 +29,8 @@
 #include "einspline_helper.hpp"
 #include "BsplineReader.h"
 #include "BsplineSet.h"
-#include "createBsplineReader.h"
+#include "SplineSetReader.h"
+#include "HybridRepSetReader.h"
 
 #include <array>
 #include <string_view>
@@ -96,13 +97,41 @@ void EinsplineSetBuilder::set_metadata(int numOrbs,
   // setup primitive cell and supercell
   PrimCell.set(Lattice);
   SuperCell.set(SuperLattice);
-  GGt = dot(transpose(PrimCell.G), PrimCell.G);
 
   // Now, analyze the k-point mesh to figure out the what k-points  are needed
   AnalyzeTwists2(twist_num_inp, twist_inp);
 }
 
-std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
+
+std::pair<int, int> EinsplineSetBuilder::obtainMemoryAttributes(const xmlNodePtr cur)
+{
+  int distributed_ranks = 0;
+  int shared_ranks      = 0;
+  processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
+    if (cname == "coefs_mem")
+    {
+      OhmmsAttributeSet mem_attr;
+      mem_attr.add(distributed_ranks, "distributed_ranks");
+      mem_attr.add(shared_ranks, "shared_ranks");
+      mem_attr.put(element);
+    }
+  });
+
+  if (distributed_ranks < 1)
+    distributed_ranks = 1;
+
+  if (shared_ranks < 1)
+    shared_ranks = 1;
+
+  if (auto node_comm_size = OHMMS::Controller->NodeComm().size(); node_comm_size % distributed_ranks * shared_ranks > 0)
+    throw std::runtime_error("The number of MPI ranks per node (" + std::to_string(node_comm_size) +
+                             ") is not divisible by the product of distributed_ranks and shared_ranks (" +
+                             std::to_string(distributed_ranks * shared_ranks) + ").");
+
+  return {distributed_ranks, shared_ranks};
+}
+
+std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(const xmlNodePtr cur)
 {
   //use 2 bohr as the default when truncated orbitals are used based on the extend of the ions
   std::string spo_object_name;
@@ -116,12 +145,8 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   std::string sourceName;
   std::string spo_prec("double");
   std::string truncate("no");
-  std::string hybrid_rep("no");
+  std::string hybrid_rep;
   std::string skip_checks("no");
-  std::string use_einspline_set_extended(
-      "no"); // use old spline library for high-order derivatives, e.g. needed for backflow optimization
-  std::string useGPU;
-  std::string GPUsharing = "no";
 
   ScopedTimer spo_timer_scope(createGlobalTimer("einspline::CreateSPOSetFromXML", timer_level_medium));
 
@@ -137,9 +162,7 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     a_root.add(twist_inp, "twist");
     a_root.add(sourceName, "source");
     a_root.add(MeshFactor, "meshfactor");
-    a_root.add(hybrid_rep, "hybridrep");
-    a_root.add(useGPU, "gpu", CPUOMPTargetSelector::candidate_values);
-    a_root.add(GPUsharing, "gpusharing"); // split spline across GPUs visible per rank
+    a_root.add(hybrid_rep, "hybridrep", {"no", "yes"});
     a_root.add(spo_prec, "precision");
     a_root.add(truncate, "truncate");
     a_root.add(skip_checks, "skip_checks");
@@ -175,11 +198,7 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   Occ.resize(0, 0); // correspond to ground
   bool NewOcc(false);
 
-  xmlNodePtr spo_cur = cur;
-  cur                = cur->children;
-  while (cur != NULL)
-  {
-    std::string cname((const char*)(cur->name));
+  processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
     if (cname == "occupation")
     {
       std::string occ_mode("ground");
@@ -190,15 +209,15 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
       oAttrib.add(spinSet, "spindataset");
       oAttrib.add(occ_format, "format");
       oAttrib.add(particle_hole_pairs, "pairs");
-      oAttrib.put(cur);
+      oAttrib.put(element);
       if (occ_mode == "excited")
-        putContent(Occ, cur);
+        putContent(Occ, element);
       else if (occ_mode != "ground")
         myComm->barrier_and_abort("EinsplineSetBuilder::createSPOSet Only ground state occupation "
                                   "currently supported in EinsplineSetBuilder.");
     }
-    cur = cur->next;
-  }
+  });
+
   if (Occ != last_occ)
   {
     NewOcc = true;
@@ -245,28 +264,35 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   if (!ReadGvectors_ESHDF())
     myComm->barrier_and_abort("Failed to load g-vectors.");
 
-  bool use_single = (spo_prec == "single" || spo_prec == "float");
+  const bool use_single = (spo_prec == "single" || spo_prec == "float");
+  app_summary() << "    Using " << (use_single ? "single" : "double") << " precision B-spline coefficients."
+                << std::endl;
+
+  const bool use_hybridrep = hybrid_rep == "yes";
+  app_summary() << "    Using " << (use_hybridrep ? "hybrid" : "regular 3D cublic B-spline")
+                << " orbital representation." << std::endl;
 
   // safeguard for a removed feature
   if (truncate == "yes")
     myComm->barrier_and_abort(
         "The 'truncate' feature of spline SPO has been removed. Please use hybrid orbital representation.");
 
-#if !defined(QMC_COMPLEX)
-  if (use_real_splines_)
+  if (!MixedSplineReader)
   {
-    if (MixedSplineReader == 0)
-      MixedSplineReader = createBsplineReal(this, use_single, hybrid_rep == "yes");
-  }
-  else
-#endif
-  {
-    if (MixedSplineReader == 0)
-      MixedSplineReader = createBsplineComplex(this, use_single, hybrid_rep == "yes", useGPU);
+    if (use_hybridrep)
+      if (use_single)
+        MixedSplineReader = std::make_unique<HybridRepSetReader<float>>(this, !use_real_splines_);
+      else
+        MixedSplineReader = std::make_unique<HybridRepSetReader<double>>(this, !use_real_splines_);
+    else if (use_single)
+      MixedSplineReader = std::make_unique<SplineSetReader<float>>(this, !use_real_splines_);
+    else
+      MixedSplineReader = std::make_unique<SplineSetReader<double>>(this, !use_real_splines_);
   }
 
   MixedSplineReader->setCommon(XMLRoot);
-  auto OrbitalSet = MixedSplineReader->create_spline_set(spo_object_name, spinSet, numOrbs);
+  auto OrbitalSet =
+      MixedSplineReader->create_spline_set(spo_object_name, spinSet, obtainMemoryAttributes(cur), numOrbs);
   if (!OrbitalSet)
     myComm->barrier_and_abort("Failed to create SPOSet*");
   app_log() << "Time spent in creating B-spline SPOs " << mytimer.elapsed() << " sec" << std::endl;
@@ -294,7 +320,8 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSet(xmlNodePtr cur, SPOSet
   int norb = input_info.max_index();
   H5OrbSet aset(H5FileName, spinSet, norb);
 
-  auto bspline_zd = MixedSplineReader->create_spline_set(spo_object_name, spinSet, input_info);
+  auto bspline_zd =
+      MixedSplineReader->create_spline_set(spo_object_name, spinSet, obtainMemoryAttributes(cur), input_info);
   if (bspline_zd)
     SPOSetMap[aset] = bspline_zd.get();
   return bspline_zd;

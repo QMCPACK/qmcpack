@@ -127,8 +127,7 @@ void test_basic_walker_features(bool serial, std::string wtype)
 </WalkerSet> \
 ";
   Libxml2Document doc;
-  bool okay = doc.parseFromString(xml_block.c_str());
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(xml_block.c_str()));
 
   WalkerSet wset(TG, doc.getRoot(), info, rng);
   wset.resize(nwalkers, initA, initB);
@@ -426,8 +425,7 @@ void test_walker_io(std::string wtype)
 </WalkerSet> \
 ";
   Libxml2Document doc;
-  bool okay = doc.parseFromString(xml_block.c_str());
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(xml_block.c_str()));
 
   WalkerSet wset(TG, doc.getRoot(), info, rng);
   wset.resize(nwalkers, initA, initB);

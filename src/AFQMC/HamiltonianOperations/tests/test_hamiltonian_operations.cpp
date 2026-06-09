@@ -92,8 +92,7 @@ void ham_ops_basic_serial(boost::mpi3::communicator& world)
     )";
     const char* xml_block = hamil_xml.c_str();
     Libxml2Document doc;
-    bool okay = doc.parseFromString(xml_block);
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(xml_block));
     std::string ham_name("ham0");
     HamFac.push(ham_name, doc.getRoot());
 

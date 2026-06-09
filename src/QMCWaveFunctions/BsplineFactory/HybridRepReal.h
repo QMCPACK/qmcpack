@@ -64,10 +64,17 @@ private:
   using SPLINEBASE::myH;
   using SPLINEBASE::myL;
   using SPLINEBASE::myV;
-  using SPLINEBASE::PrimLattice;
+  using SPLINEBASE::prim_lattice_;
 
 public:
-  HybridRepReal(const std::string& my_name) : SPLINEBASE(my_name) {}
+  HybridRepReal(const std::string& my_name,
+                size_t size,
+                const Lattice& prim_lattice,
+                std::unique_ptr<MultiBsplineBase<ST>>&& multi_spline)
+      : SPLINEBASE(my_name, size, prim_lattice, std::move(multi_spline))
+  {}
+
+  HYBRIDBASE& getHybridRepCenterOrbitals() { return *this; }
 
   bool isRotationSupported() const override { return SPLINEBASE::isRotationSupported(); }
   void storeParamsBeforeRotation() override
@@ -87,22 +94,6 @@ public:
 
   std::unique_ptr<SPOSet> makeClone() const override { return std::make_unique<HybridRepReal>(*this); }
 
-  void bcast_tables(Communicate* comm)
-  {
-    SPLINEBASE::bcast_tables(comm);
-    HYBRIDBASE::bcast_tables(comm);
-  }
-
-  void gather_tables(Communicate* comm)
-  {
-    SPLINEBASE::gather_tables(comm);
-    HYBRIDBASE::gather_atomic_tables(comm, SPLINEBASE::offset);
-  }
-
-  bool read_splines(hdf_archive& h5f) { return HYBRIDBASE::read_splines(h5f) && SPLINEBASE::read_splines(h5f); }
-
-  bool write_splines(hdf_archive& h5f) { return HYBRIDBASE::write_splines(h5f) && SPLINEBASE::write_splines(h5f); }
-
   void evaluateValue(const ParticleSet& P, const int iat, ValueVector& psi) override
   {
     HYBRIDBASE::evaluate_v(P, iat, myV, info);
@@ -110,13 +101,13 @@ public:
       SPLINEBASE::evaluateValue(P, iat, psi);
     else if (info.region == Region::INSIDE)
     {
-      int bc_sign = HYBRIDBASE::get_bc_sign(P.activeR(iat), info.r_image, PrimLattice, HalfG);
+      int bc_sign = HYBRIDBASE::get_bc_sign(P.activeR(iat), info.r_image, prim_lattice_, HalfG);
       SPLINEBASE::assign_v(bc_sign, myV, psi, 0, myV.size());
     }
     else
     {
       psi_AO.resize(psi.size());
-      int bc_sign = HYBRIDBASE::get_bc_sign(P.activeR(iat), info.r_image, PrimLattice, HalfG);
+      int bc_sign = HYBRIDBASE::get_bc_sign(P.activeR(iat), info.r_image, prim_lattice_, HalfG);
       SPLINEBASE::assign_v(bc_sign, myV, psi_AO, 0, myV.size());
       SPLINEBASE::evaluateValue(P, iat, psi);
       HYBRIDBASE::interpolate_buffer_v(psi, psi_AO, info.f);
@@ -135,7 +126,7 @@ public:
       if (multi_myV.rows() < VP.getTotalNum())
         multi_myV.resize(VP.getTotalNum(), myV.size());
       std::vector<int> bc_signs(VP.getTotalNum());
-      HYBRIDBASE::evaluateValuesR2R(VP, PrimLattice, HalfG, multi_myV, bc_signs, info);
+      HYBRIDBASE::evaluateValuesR2R(VP, prim_lattice_, HalfG, multi_myV, bc_signs, info);
       for (int iat = 0; iat < VP.getTotalNum(); ++iat)
       {
         if (info.region == Region::INTER)
@@ -168,9 +159,7 @@ public:
                             const RefVector<ValueVector>& psi_list,
                             const std::vector<const ValueType*>& invRow_ptr_list,
                             std::vector<std::vector<ValueType>>& ratios_list) const final
-  {
-    BsplineSet::mw_evaluateDetRatios(spo_list, vp_list, psi_list, invRow_ptr_list, ratios_list);
-  }
+  { BsplineSet::mw_evaluateDetRatios(spo_list, vp_list, psi_list, invRow_ptr_list, ratios_list); }
 
   void evaluateVGL(const ParticleSet& P, const int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) override
   {
@@ -178,14 +167,14 @@ public:
     if (info.region == Region::INTER)
       SPLINEBASE::evaluateVGL(P, iat, psi, dpsi, d2psi);
     else if (info.region == Region::INSIDE)
-      SPLINEBASE::assign_vgl_from_l(HYBRIDBASE::get_bc_sign(P.activeR(iat), info.r_image, PrimLattice, HalfG), psi,
+      SPLINEBASE::assign_vgl_from_l(HYBRIDBASE::get_bc_sign(P.activeR(iat), info.r_image, prim_lattice_, HalfG), psi,
                                     dpsi, d2psi);
     else
     {
       psi_AO.resize(psi.size());
       dpsi_AO.resize(psi.size());
       d2psi_AO.resize(psi.size());
-      int bc_sign = HYBRIDBASE::get_bc_sign(P.activeR(iat), info.r_image, PrimLattice, HalfG);
+      int bc_sign = HYBRIDBASE::get_bc_sign(P.activeR(iat), info.r_image, prim_lattice_, HalfG);
       SPLINEBASE::assign_vgl_from_l(bc_sign, psi_AO, dpsi_AO, d2psi_AO);
       SPLINEBASE::evaluateVGL(P, iat, psi, dpsi, d2psi);
       HYBRIDBASE::interpolate_buffer_vgl(psi, dpsi, d2psi, psi_AO, dpsi_AO, d2psi_AO, info);
@@ -198,9 +187,7 @@ public:
                       const RefVector<ValueVector>& psi_v_list,
                       const RefVector<GradVector>& dpsi_v_list,
                       const RefVector<ValueVector>& d2psi_v_list) const final
-  {
-    BsplineSet::mw_evaluateVGL(sa_list, P_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list);
-  }
+  { BsplineSet::mw_evaluateVGL(sa_list, P_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list); }
 
   void mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPOSet>& spo_list,
                                       const RefVectorWithLeader<ParticleSet>& P_list,
@@ -209,9 +196,7 @@ public:
                                       OffloadMWVGLArray& phi_vgl_v,
                                       std::vector<ValueType>& ratios,
                                       std::vector<GradType>& grads) const final
-  {
-    BsplineSet::mw_evaluateVGLandDetRatioGrads(spo_list, P_list, iat, invRow_ptr_list, phi_vgl_v, ratios, grads);
-  }
+  { BsplineSet::mw_evaluateVGLandDetRatioGrads(spo_list, P_list, iat, invRow_ptr_list, phi_vgl_v, ratios, grads); }
 
   void evaluateVGH(const ParticleSet& P,
                    const int iat,
@@ -222,7 +207,7 @@ public:
     APP_ABORT("HybridRepReal::evaluateVGH not implemented!");
     HYBRIDBASE::evaluate_vgh(P, iat, myV, myG, myH, info);
     if (info.region == Region::INTER)
-      SPLINEBASE::assign_vgh(HYBRIDBASE::get_bc_sign(P.activeR(iat), info.r_image, PrimLattice, HalfG), psi, dpsi,
+      SPLINEBASE::assign_vgh(HYBRIDBASE::get_bc_sign(P.activeR(iat), info.r_image, prim_lattice_, HalfG), psi, dpsi,
                              grad_grad_psi, 0, myV.size());
     else
       SPLINEBASE::evaluateVGH(P, iat, psi, dpsi, grad_grad_psi);
@@ -234,9 +219,7 @@ public:
                      GradVector& dpsi,
                      HessVector& grad_grad_psi,
                      GGGVector& grad_grad_grad_psi) override
-  {
-    APP_ABORT("HybridRepCplx::evaluateVGHGH not implemented!");
-  }
+  { APP_ABORT("HybridRepCplx::evaluateVGHGH not implemented!"); }
 
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
@@ -249,10 +232,8 @@ public:
     BsplineSet::evaluate_notranspose(P, first, last, logdet, dlogdet, d2logdet);
   }
 
-  template<class BSPLINESPO>
-  friend class HybridRepSetReader;
-  template<class BSPLINESPO>
-  friend class SplineSetReader;
+  friend class HybridRepSetReader<ST>;
+  friend class SplineSetReader<ST>;
   friend class BsplineReader;
 };
 

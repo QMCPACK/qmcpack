@@ -85,8 +85,7 @@ void ham_factory(boost::mpi3::communicator& world)
     )";
     const char* xml_block = hamil_xml.c_str();
     Libxml2Document doc;
-    bool okay = doc.parseFromString(xml_block);
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(xml_block));
     std::string ham_name("ham0");
     HamFac.push(ham_name, doc.getRoot());
 
@@ -120,8 +119,7 @@ void ham_generation_timing(boost::mpi3::communicator& world)
     </Hamiltonian>
     )";
     Libxml2Document doc;
-    bool okay = doc.parseFromString(xml_block);
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(xml_block));
     std::string ham_name("ham0");
     HamFac.push(ham_name, doc.getRoot());
 

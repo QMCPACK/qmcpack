@@ -67,8 +67,7 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
 </tmp>
 )";
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particles));
 
   xmlNodePtr root = doc.getRoot();
 

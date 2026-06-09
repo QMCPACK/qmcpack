@@ -45,6 +45,8 @@ RUN export DEBIAN_FRONTEND=noninteractive &&\
     python3-pandas \
     python3-coverage \
     python3-pytest \
+    python3-pytest-cov \
+    python3-pytest-order \
     python3-pip \
     -y
 

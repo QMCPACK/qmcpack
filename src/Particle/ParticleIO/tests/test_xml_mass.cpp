@@ -63,8 +63,7 @@ TEST_CASE("read_particle_mass_same_xml", "[particle_io][xml]")
 )"; // simple cubic lattice at rs=1.31
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particles));
 
   xmlNodePtr root  = doc.getRoot();
   xmlNodePtr part1 = xmlFirstElementChild(root);

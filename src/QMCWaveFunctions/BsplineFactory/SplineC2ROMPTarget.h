@@ -18,6 +18,7 @@
 #ifndef QMCPLUSPLUS_SPLINE_C2R_OMPTARGET_H
 #define QMCPLUSPLUS_SPLINE_C2R_OMPTARGET_H
 
+#include <cstddef>
 #include <memory>
 #include "QMCWaveFunctions/BsplineFactory/BsplineSet.h"
 #include "OhmmsSoA/VectorSoaContainer.h"
@@ -70,19 +71,13 @@ public:
 private:
   /// timer for offload portion
   NewTimer& offload_timer_;
-  ///primitive cell
-  CrystalLattice<ST, 3> PrimLattice;
-  ///\f$GGt=G^t G \f$, transformation for tensor in LatticeUnit to CartesianUnit, e.g. Hessian
-  Tensor<ST, 3> GGt;
   ///number of complex bands
   int nComplexBands;
-  ///multi bspline set
-  std::shared_ptr<MultiBsplineBase<ST>> SplineInst;
 
   std::shared_ptr<OffloadVector<ST>> mKK;
   std::shared_ptr<OffloadPosVector<ST>> myKcart;
-  std::shared_ptr<OffloadVector<ST>> GGt_offload;
-  std::shared_ptr<OffloadVector<ST>> PrimLattice_G_offload;
+  const std::shared_ptr<OffloadVector<ST>> GGt_offload;
+  const std::shared_ptr<OffloadVector<ST>> prim_lattice_G_offload;
 
   ResourceHandle<SplineOMPTargetMultiWalkerMem<ST, TT>> mw_mem_handle_;
 
@@ -105,6 +100,8 @@ private:
                            const RefVector<ValueVector>& d2psi_v_list) const;
 
 protected:
+  ///multi bspline set
+  const std::shared_ptr<MultiBsplineBase<ST>> SplineInst;
   /// intermediate result vectors
   vContainer_type myV;
   vContainer_type myL;
@@ -113,25 +110,36 @@ protected:
   ghContainer_type mygH;
 
 public:
-  SplineC2ROMPTarget(const std::string& my_name, bool use_offload = true)
-      : BsplineSet(my_name),
+  SplineC2ROMPTarget(const std::string& my_name,
+                     size_t size,
+                     const Lattice& prim_lattice,
+                     std::unique_ptr<MultiBsplineBase<ST>>&& multi_spline,
+                     bool use_offload = true)
+      : BsplineSet(my_name, size, prim_lattice),
         offload_timer_(createGlobalTimer("SplineC2ROMPTarget::offload", timer_level_fine)),
         nComplexBands(0),
         GGt_offload(std::make_shared<OffloadVector<ST>>(9)),
-        PrimLattice_G_offload(std::make_shared<OffloadVector<ST>>(9))
-  {}
+        prim_lattice_G_offload(std::make_shared<OffloadVector<ST>>(9)),
+        SplineInst(std::move(multi_spline))
+  {
+    auto GGt(dot(transpose(prim_lattice.G), prim_lattice.G));
+    for (std::uint32_t i = 0; i < 9; i++)
+    {
+      (*prim_lattice_G_offload)[i] = prim_lattice_.G[i];
+      (*GGt_offload)[i]            = GGt[i];
+    }
+    prim_lattice_G_offload->updateTo();
+    GGt_offload->updateTo();
+  }
 
   SplineC2ROMPTarget(const SplineC2ROMPTarget& in);
 
   virtual std::string getClassName() const override { return "SplineC2ROMPTarget"; }
   virtual std::string getKeyword() const override { return "SplineC2R"; }
-  bool isComplex() const override { return true; };
   virtual bool isOMPoffload() const override { return true; }
 
   void createResource(ResourceCollection& collection) const override
-  {
-    auto resource_index = collection.addResource(std::make_unique<SplineOMPTargetMultiWalkerMem<ST, TT>>());
-  }
+  { auto resource_index = collection.addResource(std::make_unique<SplineOMPTargetMultiWalkerMem<ST, TT>>()); }
 
   void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const override
   {
@@ -160,33 +168,6 @@ public:
     mygH.resize(npad);
   }
 
-  void bcast_tables(Communicate* comm) { chunked_bcast(comm, SplineInst->getSplinePtr()); }
-
-  void gather_tables(Communicate* comm)
-  {
-    if (comm->size() == 1)
-      return;
-    const int Nbands      = kPoints.size();
-    const int Nbandgroups = comm->size();
-    offset.resize(Nbandgroups + 1, 0);
-    FairDivideLow(Nbands, Nbandgroups, offset);
-
-    for (size_t ib = 0; ib < offset.size(); ib++)
-      offset[ib] = offset[ib] * 2;
-    gatherv(comm, SplineInst->getSplinePtr(), SplineInst->getSplinePtr()->z_stride, offset);
-  }
-
-  template<typename BCT>
-  void create_spline(const Ugrid xyz_g[3], const BCT& xyz_bc)
-  {
-    resize_kpoints();
-    SplineInst = std::make_shared<MultiBsplineOffload<ST>>();
-    SplineInst->create(xyz_g, xyz_bc, myV.size());
-
-    app_log() << "MEMORY " << SplineInst->sizeInByte() / (1 << 20) << " MB allocated "
-              << "for the coefficients in 3D spline orbital representation" << std::endl;
-  }
-
   /// this routine can not be called from threaded region
   void finalizeConstruction() override
   {
@@ -194,19 +175,10 @@ public:
     // transfer static data to GPU
     mKK->updateTo();
     myKcart->updateTo();
-    for (std::uint32_t i = 0; i < 9; i++)
-    {
-      (*GGt_offload)[i]           = GGt[i];
-      (*PrimLattice_G_offload)[i] = PrimLattice.G[i];
-    }
-    PrimLattice_G_offload->updateTo();
-    GGt_offload->updateTo();
   }
 
-  inline void flush_zero() { SplineInst->flush_zero(); }
-
   /** remap kPoints to pack the double copy */
-  inline void resize_kpoints()
+  inline void resize_kpoints() override
   {
     nComplexBands = this->remap_kpoints();
     const int nk  = kPoints.size();
@@ -218,12 +190,6 @@ public:
       (*myKcart)(i) = kPoints[i];
     }
   }
-
-  void set_spline(SingleSplineType* spline_r, SingleSplineType* spline_i, int twist, int ispline, int level);
-
-  bool read_splines(hdf_archive& h5f);
-
-  bool write_splines(hdf_archive& h5f);
 
   void assign_v(const PointType& r, const vContainer_type& myV, ValueVector& psi, int first, int last) const;
 
@@ -300,8 +266,7 @@ public:
                                     GradMatrix& dlogdet,
                                     ValueMatrix& d2logdet) override;
 
-  template<class BSPLINESPO>
-  friend class SplineSetReader;
+  friend class SplineSetReader<ST>;
   friend class BsplineReader;
 };
 

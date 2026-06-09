@@ -45,8 +45,7 @@ TEST_CASE("ParticleSetPool", "[qmcapp]")
 </particleset>
 )";
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particles));
 
   xmlNodePtr root = doc.getRoot();
 
@@ -102,8 +101,7 @@ TEST_CASE("ParticleSetPool random", "[qmcapp]")
 </tmp>
 )";
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particles));
 
   xmlNodePtr root = doc.getRoot();
 
@@ -139,8 +137,7 @@ TEST_CASE("ParticleSetPool putLattice", "[qmcapp]")
   const char* lattice = R"(<parameter name="lattice"> </parameter>)";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(lattice);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(lattice));
 
   xmlNodePtr root = doc.getRoot();
   pp.readSimulationCellXML(root);

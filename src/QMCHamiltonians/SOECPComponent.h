@@ -91,7 +91,7 @@ public:
   SOECPComponent();
   ~SOECPComponent();
 
-  SOECPComponent* makeClone(const ParticleSet& qp);
+  SOECPComponent* makeClone(const ParticleSet& qp) const;
 
   ///add a new Spin-Orbit component
   void add(int l, RadialPotentialType* pp);

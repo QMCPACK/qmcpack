@@ -46,7 +46,6 @@ public:
 
   void checkOutVariables(const OptVariables& active) override;
 
-  void setOrbitalSetSize(int norbs) override;
 
   /**
   * @brief Setter method to set \phi_j(r_i). Stores input matrix in ref_psi_.

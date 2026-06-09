@@ -50,7 +50,6 @@ public:
 
   std::unique_ptr<SPOSet> makeClone() const final;
 
-  void setOrbitalSetSize(int norbs) final;
 
   void evaluateValue(const ParticleSet& P, int iat, ValueVector& psi) final;
 

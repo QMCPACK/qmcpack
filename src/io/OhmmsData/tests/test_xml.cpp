@@ -36,8 +36,7 @@ TEST_CASE("parseString", "[xml]")
     )");
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(s1);
-  REQUIRE(okay == true);
+  REQUIRE(doc.parseFromString(s1));
 
   xmlNodePtr root = doc.getRoot();
   REQUIRE(root != NULL);
@@ -56,8 +55,7 @@ TEST_CASE("XMLParsingString", "[xml]")
     )");
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(s1);
-  REQUIRE(okay == true);
+  REQUIRE(doc.parseFromString(s1));
 
   xmlNodePtr root = doc.getRoot();
   REQUIRE(root != NULL);
@@ -85,8 +83,7 @@ TEST_CASE("putContent", "[xml]")
     )");
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(s1);
-  REQUIRE(okay == true);
+  REQUIRE(doc.parseFromString(s1));
 
   xmlNodePtr root = doc.getRoot();
 
@@ -147,8 +144,7 @@ TEST_CASE("XPathObject", "[xml]")
     </simulation>
     )";
   Libxml2Document doc;
-  bool okay = doc.parseFromString(content);
-  REQUIRE(okay == true);
+  REQUIRE(doc.parseFromString(content));
 
   xmlXPathContextPtr path_ctx = doc.getXPathContext();
   OhmmsXPathObject xpath("//parameter", path_ctx);

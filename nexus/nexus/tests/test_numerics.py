@@ -1,30 +1,11 @@
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.NUMERICS)
 
-from nexus.versions import scipy_available
+from ..generic import generic_settings
+generic_settings.raise_error = True
 
-
-def test_import():
-    from .. import numerics
-    from ..numerics import curve_fit
-    from ..numerics import morse,morse_re,morse_a,morse_De,morse_Einf,morse_width
-    from ..numerics import morse_depth,morse_Ee,morse_k,morse_params
-    from ..numerics import morse_reduced_mass,morse_freq,morse_w,morse_wX
-    from ..numerics import morse_En,morse_zero_point,morse_harmfreq
-    from ..numerics import morse_harmonic_potential,morse_spect_fit
-    from ..numerics import morse_rDw_fit,morse_fit,morse_fit_fine
-    from ..numerics import murnaghan,birch,vinet
-    from ..numerics import murnaghan_pressure,birch_pressure,vinet_pressure
-    from ..numerics import eos_param,eos_eval,eos_fit,eos_Einf,eos_V,eos_B,eos_Bp
-    from ..numerics import jackknife,jackknife_aux,check_jackknife_inputs
-    from ..numerics import ndgrid
-    from ..numerics import simstats,simplestats,equilibration_length,ttest
-    from ..numerics import surface_normals,simple_surface
-    from ..numerics import func_fit
-    from ..numerics import distance_table,nearest_neighbors,voronoi_neighbors
-    from ..numerics import convex_hull
-
-#end def test_import
-
-
+from importlib.util import find_spec
 
 def test_ndgrid():
     import numpy as np
@@ -189,7 +170,7 @@ def test_nearest_neighbors():
     check_nn(nn)
     assert(value_eq(dist,dist_ref))
 
-    if scipy_available:
+    if find_spec("scipy") is not None:
         nn = nearest_neighbors(3,plow,phigh)
         check_nn(nn)
 
@@ -202,101 +183,100 @@ def test_nearest_neighbors():
 
 
 
-if scipy_available:
-    def test_voronoi_neighbors():
-        import numpy as np
-        from ..testing import value_eq
-        from ..numerics import voronoi_neighbors
+def test_voronoi_neighbors():
+    _ = pytest.importorskip("scipy")
+    import numpy as np
+    from ..testing import value_eq
+    from ..numerics import voronoi_neighbors
 
-        points = [
-            [0,0,0],
-            [1,0,0],
-            [0,1,0],
-            [1,1,0],
-            [0,0,1],
-            [1,0,1],
-            [0,1,1],
-            [1,1,1],
-            ]
-        points = np.array(points,dtype=float)
+    points = [
+        [0,0,0],
+        [1,0,0],
+        [0,1,0],
+        [1,1,0],
+        [0,0,1],
+        [1,0,1],
+        [0,1,1],
+        [1,1,1],
+        ]
+    points = np.array(points,dtype=float)
 
-        joggle = np.array(
-            [[0.60801892, 0.68024807, 0.09037058],
-             [0.95800898, 0.43112463, 0.52981569],
-             [0.08862067, 0.69084511, 0.35177345],
-             [0.37363091, 0.57409599, 0.95654043],
-             [0.8310818 , 0.17146777, 0.90490215],
-             [0.17600223, 0.89772462, 0.75582196],
-             [0.7408217 , 0.22768522, 0.64564984],
-             [0.71678216, 0.6409734 , 0.53354209]])
-        joggle *= 1e-8
+    joggle = np.array(
+        [[0.60801892, 0.68024807, 0.09037058],
+            [0.95800898, 0.43112463, 0.52981569],
+            [0.08862067, 0.69084511, 0.35177345],
+            [0.37363091, 0.57409599, 0.95654043],
+            [0.8310818 , 0.17146777, 0.90490215],
+            [0.17600223, 0.89772462, 0.75582196],
+            [0.7408217 , 0.22768522, 0.64564984],
+            [0.71678216, 0.6409734 , 0.53354209]])
+    joggle *= 1e-8
 
-        points += joggle
+    points += joggle
 
-        nn_pairs_ref = [[0,1],
-                        [0,2],
-                        [0,4],
-                        [0,3],
-                        [0,6],
-                        [0,5],
-                        [7,3],
-                        [7,5],
-                        [7,6],
-                        [3,1],
-                        [3,2],
-                        [3,6],
-                        [3,5],
-                        [1,5],
-                        [5,4],
-                        [5,6],
-                        [6,4],
-                        [6,2]]
-        nn_pairs_ref = np.array(nn_pairs_ref,dtype=int)
+    nn_pairs_ref = [[0,1],
+                    [0,2],
+                    [0,4],
+                    [0,3],
+                    [0,6],
+                    [0,5],
+                    [7,3],
+                    [7,5],
+                    [7,6],
+                    [3,1],
+                    [3,2],
+                    [3,6],
+                    [3,5],
+                    [1,5],
+                    [5,4],
+                    [5,6],
+                    [6,4],
+                    [6,2]]
+    nn_pairs_ref = np.array(nn_pairs_ref,dtype=int)
 
-        d1 = 1.0
-        d2 = float(np.sqrt(2.))
+    d1 = 1.0
+    d2 = float(np.sqrt(2.))
 
-        nn_pairs = voronoi_neighbors(points)
+    nn_pairs = voronoi_neighbors(points)
 
-        dist_ref = 3*[d1]+3*[d2]+5*[d1]+2*[d2]+2*[d1]+[d2]+2*[d1]
+    dist_ref = 3*[d1]+3*[d2]+5*[d1]+2*[d2]+2*[d1]+[d2]+2*[d1]
 
-        assert(isinstance(nn_pairs,np.ndarray))
-        nn_pairs = np.array(nn_pairs,dtype=int)
-        assert(value_eq(nn_pairs,nn_pairs_ref))
+    assert(isinstance(nn_pairs,np.ndarray))
+    nn_pairs = np.array(nn_pairs,dtype=int)
+    assert(value_eq(nn_pairs,nn_pairs_ref))
 
-        for n,(i,j) in enumerate(nn_pairs):
-            d = np.linalg.norm(points[i]-points[j])
-            assert(value_eq(float(d),dist_ref[n]))
-        #end for
+    for n,(i,j) in enumerate(nn_pairs):
+        d = np.linalg.norm(points[i]-points[j])
+        assert(value_eq(float(d),dist_ref[n]))
+    #end for
 
-    #end def test_voronoi_neighbors
+#end def test_voronoi_neighbors
 
 
 
-    def test_convex_hull():
-        import numpy as np
-        from ..testing import value_eq
-        from ..numerics import convex_hull
+def test_convex_hull():
+    _ = pytest.importorskip("scipy")
+    import numpy as np
+    from ..numerics import convex_hull
 
-        points = [
-            [0,0,0],
-            [1,0,0],
-            [0,1,0],
-            [1,1,0],
-            [0,0,1],
-            [1,0,1],
-            [0,1,1],
-            [1,1,1],
-            ]
-        points = np.array(points,dtype=float)-0.5
-        
-        points = np.append(2*points,points,axis=0)
+    points = [
+        [0,0,0],
+        [1,0,0],
+        [0,1,0],
+        [1,1,0],
+        [0,0,1],
+        [1,0,1],
+        [0,1,1],
+        [1,1,1],
+        ]
+    points = np.array(points,dtype=float)-0.5
+    
+    points = np.append(2*points,points,axis=0)
 
-        hull = convex_hull(points)
+    hull = convex_hull(points)
 
-        assert(hull==list(range(8)))
-    #end def test_convex_hull
-#end if
+    assert(hull==list(range(8)))
+#end def test_convex_hull
 
 
 
@@ -392,19 +372,17 @@ def test_equilibration_length():
 
 
 
-if scipy_available:
-    def test_ttest():
-        import numpy as np
-        from ..testing import value_eq
-        from ..numerics import ttest
+def test_ttest():
+    _ = pytest.importorskip("scipy")
+    from ..testing import value_eq
+    from ..numerics import ttest
 
-        p = ttest(0.,1.,100,0.,1.,100)
-        assert(value_eq(float(p),1.0))
+    p = ttest(0.,1.,100,0.,1.,100)
+    assert(value_eq(float(p),1.0))
 
-        p = ttest(0.,1.,10000,1.,1.,10000)
-        assert(value_eq(float(p),0.479508361523))
-    #end def test_ttest
-#end if
+    p = ttest(0.,1.,10000,1.,1.,10000)
+    assert(value_eq(float(p),0.479508361523))
+#end def test_ttest
 
 
 
@@ -432,13 +410,12 @@ def test_morse():
     from ..unit_converter import convert
     from ..numerics import morse,morse_re,morse_a,morse_De,morse_Einf,morse_width
     from ..numerics import morse_depth,morse_Ee,morse_k,morse_params
-    from ..numerics import morse_reduced_mass,morse_freq,morse_w,morse_wX
+    from ..numerics import morse_reduced_mass,morse_freq,morse_w
     from ..numerics import morse_E0,morse_En,morse_zero_point,morse_harmfreq
-    from ..numerics import morse_harmonic_potential,morse_spect_fit
-    from ..numerics import morse_rDw_fit,morse_fit,morse_fit_fine
+    from ..numerics import morse_rDw_fit
 
     rm = morse_reduced_mass('Ti','O')
-    assert(value_eq(rm,21862.2266134))
+    assert(value_eq(rm, 21858.453534035318))
 
     r_ref,D_ref,w_ref = 1.620,6.87,1009.18
     r_ref_A = r_ref
@@ -456,7 +433,7 @@ def test_morse():
     assert(value_eq(float(w),w_ref))
     assert(value_eq(float(Einf),0.0))
 
-    width_ref = 1.0451690611
+    width_ref = 1.0452592627174173
     width = morse_width(p)
     assert(value_eq(float(width),width_ref))
 
@@ -469,7 +446,7 @@ def test_morse():
     Ee = morse_Ee(p)
     assert(value_eq(float(Ee),-D_ref))
 
-    k_ref = 0.462235185922
+    k_ref = 0.46215541133767707
     k = morse_k(p)
     assert(value_eq(float(k),k_ref))
 
@@ -516,38 +493,36 @@ def test_morse():
 
 
 
-if scipy_available:
-    def test_morse_fit():
-        import numpy as np
-        from ..testing import value_eq
-        from ..unit_converter import convert
-        from ..numerics import morse
-        from ..numerics import morse_rDw_fit,morse_fit,morse_fit_fine
+def test_morse_fit():
+    _ = pytest.importorskip("scipy")
+    import numpy as np
+    from ..testing import value_eq
+    from ..unit_converter import convert
+    from ..numerics import morse
+    from ..numerics import morse_rDw_fit,morse_fit,morse_fit_fine
 
-        r_ref,D_ref,w_ref = 1.620,6.87,1009.18
-        r_ref_A = r_ref
-        p = morse_rDw_fit(r_ref,D_ref,w_ref,'Ti','O',Dunit='eV')
+    r_ref,D_ref,w_ref = 1.620,6.87,1009.18
+    r_ref_A = r_ref
+    p = morse_rDw_fit(r_ref,D_ref,w_ref,'Ti','O',Dunit='eV')
 
-        r_ref = convert(r_ref,'A','B')
+    r_ref = convert(r_ref,'A','B')
 
 
-        rfine = np.linspace(0.8*r_ref,1.2*r_ref,100)
-        Efine = morse(p,rfine)
+    rfine = np.linspace(0.8*r_ref,1.2*r_ref,100)
+    Efine = morse(p,rfine)
 
-        pf = morse_fit(rfine,Efine,p)
+    pf = morse_fit(rfine,Efine,p)
 
-        pref = tuple(np.array(p,dtype=float))
-        pf   = tuple(np.array(pf,dtype=float))
+    pref = tuple(np.array(p,dtype=float))
+    pf   = tuple(np.array(pf,dtype=float))
 
-        assert(value_eq(pf,pref))
+    assert(value_eq(pf,pref))
 
-        pf,Ef = morse_fit_fine(rfine,Efine,p,rfine,both=True)
-        pf   = tuple(np.array(pf,dtype=float))
-        assert(value_eq(pf,pref))
-        assert(value_eq(Ef,Efine))
-    #end def test_morse_fit
-#end if
-
+    pf,Ef = morse_fit_fine(rfine,Efine,p,rfine,both=True)
+    pf   = tuple(np.array(pf,dtype=float))
+    assert(value_eq(pf,pref))
+    assert(value_eq(Ef,Efine))
+#end def test_morse_fit
 
 
 
@@ -555,7 +530,7 @@ def test_eos():
     import numpy as np
     from ..testing import value_eq
     from ..unit_converter import convert
-    from ..numerics import eos_fit,eos_eval,eos_param
+    from ..numerics import eos_eval,eos_param
 
     data = np.array([
             [0.875, -83.31851261], 
@@ -597,48 +572,47 @@ def test_eos():
 
 
 
-if scipy_available:
-    def test_eos_fit():
-        import numpy as np
-        from ..testing import value_eq
-        from ..unit_converter import convert
-        from ..numerics import eos_fit,eos_eval,eos_param
+def test_eos_fit():
+    _ = pytest.importorskip("scipy")
+    import numpy as np
+    from ..testing import value_eq
+    from ..unit_converter import convert
+    from ..numerics import eos_fit,eos_eval
 
-        data = np.array([
-                [0.875, -83.31851261], 
-                [0.900, -83.38085214], 
-                [0.925, -83.42172843], 
-                [0.950, -83.44502216], 
-                [0.975, -83.45476035], 
-                [1.025, -83.44564229], 
-                [1.050, -83.43127254], 
-                [1.000, -83.45412846], 
-                [1.100, -83.39070714], 
-                [1.125, -83.36663810], 
-                ])
+    data = np.array([
+            [0.875, -83.31851261], 
+            [0.900, -83.38085214], 
+            [0.925, -83.42172843], 
+            [0.950, -83.44502216], 
+            [0.975, -83.45476035], 
+            [1.025, -83.44564229], 
+            [1.050, -83.43127254], 
+            [1.000, -83.45412846], 
+            [1.100, -83.39070714], 
+            [1.125, -83.36663810], 
+            ])
 
-        a = 5.539 # lattice constant
+    a = 5.539 # lattice constant
 
-        V = (a*data[:,0])**3
-        E = convert(data[:,1],'Ry','eV')
+    V = (a*data[:,0])**3
+    E = convert(data[:,1],'Ry','eV')
 
-        # done originally to get params below
-        #pf = eos_fit(V,E,'vinet')
+    # done originally to get params below
+    #pf = eos_fit(V,E,'vinet')
 
-        Einf = -1.13547294e+03
-        V0   =  1.62708941e+02
-        B0   =  1.34467867e-01
-        Bp0  =  4.55846963e+00
+    Einf = -1.13547294e+03
+    V0   =  1.62708941e+02
+    B0   =  1.34467867e-01
+    Bp0  =  4.55846963e+00
 
-        pf = Einf,V0,B0,Bp0
+    pf = Einf,V0,B0,Bp0
 
-        Ef = eos_eval(pf,V,'vinet')
+    Ef = eos_eval(pf,V,'vinet')
 
-        pf2 = eos_fit(V,Ef,'vinet')
+    pf2 = eos_fit(V,Ef,'vinet')
 
-        pf  = np.array(pf,dtype=float)
-        pf2 = np.array(pf2,dtype=float)
+    pf  = np.array(pf,dtype=float)
+    pf2 = np.array(pf2,dtype=float)
 
-        assert(value_eq(pf,pf2,atol=1e-3))
-    #end def test_eos_fit
-#end if
+    assert(value_eq(pf,pf2,atol=1e-3))
+#end def test_eos_fit

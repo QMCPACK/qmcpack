@@ -1,15 +1,13 @@
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.PROJECT_MANAGER)
 
-from .. import testing
-from ..testing import value_eq,object_eq
+from ..generic import generic_settings
+generic_settings.raise_error = True
+
+from . import isolate_nexus_core
+from ..testing import value_eq
 from ..testing import failed,FailedTest
-from ..testing import divert_nexus_log,restore_nexus_log
-from ..testing import divert_nexus,restore_nexus
-
-
-def test_import():
-    from ..project_manager import ProjectManager
-#end def test_import
-
 
 
 def test_init():
@@ -143,15 +141,13 @@ def test_screen_fake_sims():
 #end def test_screen_fake_sims
 
 
-
+@isolate_nexus_core
 def test_resolve_file_collisions():
     from ..developer import NexusError
     from ..simulation import Simulation
     from ..project_manager import ProjectManager
 
     from .test_simulation_module import get_test_workflow,n_test_workflows
-
-    divert_nexus_log()
 
     sims = []
     for n in range(n_test_workflows):
@@ -180,15 +176,12 @@ def test_resolve_file_collisions():
         failed(str(e))
     #end try
 
-    restore_nexus_log()
-
     Simulation.clear_all_sims()
 #end def test_resolve_file_collisions
 
 
 
 def test_propagate_blockages():
-    from ..developer import NexusError
     from ..simulation import Simulation
     from ..project_manager import ProjectManager
 
@@ -268,8 +261,6 @@ def test_check_dependencies():
 
     from .test_simulation_module import get_test_workflow
 
-    divert_nexus_log()
-
     sims = get_test_workflow(1)
 
     pm = ProjectManager()
@@ -280,13 +271,11 @@ def test_check_dependencies():
 
     pm.check_dependencies()
 
-    restore_nexus_log()
-
     Simulation.clear_all_sims()
 #end def test_check_dependencies
 
 
-
+@isolate_nexus_core
 def test_write_simulation_status():
     from ..generic import generic_settings
     from ..nexus_base import nexus_core
@@ -294,8 +283,6 @@ def test_write_simulation_status():
     from ..project_manager import ProjectManager
 
     from .test_simulation_module import get_test_workflow
-
-    divert_nexus()
 
     log = generic_settings.devlog
 
@@ -355,14 +342,12 @@ def test_write_simulation_status():
     '''
     assert(status_log().strip()==status_ref.strip())
 
-    restore_nexus()
-
     Simulation.clear_all_sims()
 #end def test_write_simulation_status
 
 
-
-def test_run_project():
+@isolate_nexus_core
+def test_run_project(tmp_path):
     from ..generic import generic_settings
     from ..nexus_base import nexus_core
     from ..simulation import Simulation,input_template
@@ -370,7 +355,10 @@ def test_run_project():
 
     from .test_simulation_module import get_test_workflow,n_test_workflows
 
-    tpath = testing.setup_unit_test_output_directory('project_manager','test_run_project',divert=True)
+    # divert_nexus()
+    nexus_core.local_directory  = str(tmp_path)
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
 
     assert(nexus_core.mode==nexus_core.modes.stages)
     assert(len(nexus_core.stages)==0)
@@ -442,7 +430,7 @@ a    = $a
         assert(finished(s))
     #end for
 
-    restore_nexus()
+    # restore_nexus()
 
     Simulation.clear_all_sims()
 #end def test_run_project

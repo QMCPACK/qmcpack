@@ -134,17 +134,19 @@
 
 
 import os
+from pathlib import Path
 import inspect
 import keyword
 import numpy as np
 from .numpy_extensions import reshape_inplace
 from .xmlreader import XMLreader, XMLelement
 from .developer import DevBase, obj, hidden, error
-from .periodic_table import is_element
+from .periodic_table import Elements
 from .structure import Structure, Jellium, get_kpath
 from .physical_system import PhysicalSystem
 from .simulation import SimulationInput, SimulationInputTemplate
 from .pwscf_input import array_to_string as pwscf_array_string
+from .utilities import path_string
 from . import numpy_extensions as npe
 
 yesno_dict     = {True:'yes' ,False:'no'}
@@ -957,7 +959,7 @@ class QIxml(Names):
             #    self.error(msg,'QmcpackInput',exit=exit,trace=exit)
             ##end if
 
-            print(obj(dict(self.__class__.__dict__)))
+            #print(obj(dict(self.__class__.__dict__)))
 
             self.error(msg,'QmcpackInput',exit=exit,trace=exit)
         #end if
@@ -1897,6 +1899,15 @@ sposet_builder = QIxmlFactory(
     typekey = 'type'
     )
 
+sposet_collection = QIxmlFactory(
+    name    = 'sposet_collection',
+    types   = dict(bspline=bspline_builder,
+                   einspline=bspline_builder,
+                   heg=heg_builder,
+                   composite=composite_builder,
+                   molecularorbital = molecular_orbital_builder),
+    typekey = 'type'
+    )
 
 
 class wavefunction(QIxml):
@@ -1904,7 +1915,7 @@ class wavefunction(QIxml):
     attributes = ['name','target','id','ref']+['info','type']
     #            afqmc
     parameters = ['filetype','filename','cutoff']
-    elements   = ['sposet_builder','determinantset','jastrow','override_variational_parameters']
+    elements   = ['sposet_builder','determinantset','jastrow','override_variational_parameters','sposet_collection']
     identifier = 'name','id'
 #end class wavefunction
 
@@ -2762,15 +2773,16 @@ classes = [   #standard classes
     afqmcinfo,walkerset,propagator,execute,back_propagation,onerdm
     ]
 types = dict( #simple types and factories
-    #host           = param,
-    #date           = param,
-    #user           = param,
-    pairpot        = pairpot,
-    estimator      = estimator,
-    sposet_builder = sposet_builder,
-    jastrow        = jastrow,
-    qmc            = qmc,
-    optimizer      = optimizer,
+    #host              = param,
+    #date              = param,
+    #user              = param,
+    pairpot           = pairpot,
+    estimator         = estimator,
+    sposet_builder    = sposet_builder,
+    sposet_collection = sposet_collection,
+    jastrow           = jastrow,
+    qmc               = qmc,
+    optimizer         = optimizer,
     )
 plurals = obj(
     particlesets    = 'particleset',
@@ -3156,8 +3168,8 @@ class QmcpackInput(SimulationInput,Names):
         element  = None
         if arg0 is None and arg1 is None:
             None
-        elif isinstance(arg0,str) and arg1 is None:
-            filepath = arg0
+        elif isinstance(arg0,(str, Path)) and arg1 is None:
+            filepath = path_string(arg0)
         elif isinstance(arg0,QIxml) and arg1 is None:
             element = arg0
         elif isinstance(arg0,meta) and isinstance(arg1,QIxml):
@@ -4530,482 +4542,506 @@ class QmcpackInput(SimulationInput,Names):
                qmc                 = None,
                **gen_calcs
                ):
-        """
-        Modify the parameters and xml elements of a QMCPACK input file.
+        """Modify the parameters and xml elements of a QMCPACK input file.
 
         Parameters
         ----------
-        driver : {'batched', 'legacy', None}, default = None
-            Sets `driver_version` in QMCPACK input. If None, 'batched' is assumed.
-        remove_system : bool, default = False 
-            Removes `<simulationcell/>` and `<particleset/>'.
-        change_system : PhysicalSystem (such as from `generate_physical_system`
-            Updates physical system information in `<simulationcell/>` and `<particleset/>' 
-            to match the contents of the PhysicalSystem object.
-        remove_jastrows: bool, default = False
-            Removes all `<jastrow/>` elements.
-        remove_J1: bool, default = False
-            Remove only the one-body jastrow, `<jastrow type="One-Body"/>`
-        remove_J2: bool, default = False
-            Remove only the two-body jastrow, `<jastrow type="Two-Body"/>`
-        remove_J3: bool, default = False
-            Remove only the three-body jastrow, `<jastrow type="eeI"/>`
-        remove_determinants: bool, default = False
-            Removes `<determinantset/>`
-        remove_multidet: bool, default = False
-            Removes `<multideterminant/>`
-        remove_calculations: bool, default = False
-            Removes all `<qmc/>` and `<loop/> elements.
-        optimize: {bool, None}, default = None
-            Sets `optimize` parameter in all wavefunction components.
-            If `True` or `False` `optimize` is set accordingly.
-            If `None` no changes are made.
-        jastrow_opt: {bool, None}, default = None
-            Sets `optimize` parameters in all `<jastrow/>` elements.
-            Logic is identical to `optimize`.
-        orbitals_h5: {str, None}
+        driver : {'batched', 'legacy'} or None, default=None
+            Sets ``driver_version`` in QMCPACK input. If ``None``, ``'batched'``
+            is assumed.
+        remove_system : bool, default=False
+            Removes ``<simulationcell/>`` and ``<particleset/>``.
+        change_system : PhysicalSystem (such as from `generate_physical_system`)
+            Updates physical system information in ``<simulationcell/>`` and
+            ``<particleset/>`` to match the contents of the ``PhysicalSystem``
+            object.
+        remove_jastrows : bool, default=False
+            Removes all ``<jastrow/>`` elements.
+        remove_J1 : bool, default=False
+            Remove only the one-body jastrow, ``<jastrow type="One-Body"/>``
+        remove_J2 : bool, default=False
+            Remove only the two-body jastrow, ``<jastrow type="Two-Body"/>``
+        remove_J3 : bool, default=False
+            Remove only the three-body jastrow, ``<jastrow type="eeI"/>``
+        remove_determinants : bool, default=False
+            Removes ``<determinantset/>``
+        remove_multidet : bool, default=False
+            Removes ``<multideterminant/>``
+        remove_calculations : bool, default=False
+            Removes all ``<qmc/>`` and ``<loop/>`` elements.
+        optimize : bool or None, default=None
+            Sets ``optimize`` parameter in all wavefunction components.
+            If ``True`` or ``False`` ``optimize`` is set accordingly.
+            If ``None`` no changes are made.
+        jastrow_opt : bool or None, default=None
+            Sets ``optimize`` parameters in all ``<jastrow/>`` elements.
+            Logic is identical to ``optimize``.
+        orbitals_h5 : str or None
             Sets path to an HDF5 file containing single particle orbitals.
-            If type `str`, `href` is set in `<sposet_builder/>' or 
-           `<sposet_collection/>' if present and in `<determinantset/>' 
+            If type ``str``, ``href`` is set in ``<sposet_builder/>`` or
+            ``<sposet_collection/>`` if present and in ``<determinantset/>``
             otherwise.
-            If `None`, no action is taken.
-        multidet_h5: {bool, None}, default = None
+            If ``None``, no action is taken.
+        multidet_h5 : bool or None, default=None
             Set path to an HDF5 file containing multideterminat coefficents.
-            If type `str`, `href` is set in `<multideterminant/>`.
-            If `None`, no action is taken.
-        multidet_cutoff: {float, None}, default = None
-            Sets the multideterminant coefficient cutoff, which itself 
-            determints to include based on their magnitude relative to 
+            If type ``str``, ``href`` is set in ``<multideterminant/>``.
+            If ``None``, no action is taken.
+        multidet_cutoff : float or None, default=None
+            Sets the multideterminant coefficient cutoff, which itself
+            determints to include based on their magnitude relative to
             the cutoff.
-            If type `float`, `cutoff` in `<detlist/>` is set.
-            If `None`, no action is taken.
-        pseudo_files: **kwargs, default = **{}
+            If type ``float``, ``cutoff`` in ``<detlist/>`` is set.
+            If ``None``, no action is taken.
+        pseudo_files : dict of str:str, default={}
             Sets paths to pseudopotential files.
-            Any atomic species as keywords and pseudopotential filepaths as 
-            values.
-            For example: 
+            Any atomic species as keywords and pseudopotential filepaths
+            as values.
+            For example:
+
+            .. code-block:: python
+
                 qi.modify(
                     pseudo_files = dict(
                         Mo = 'Mo.ccECP.xml',
                         S  = 'S.ccECP.xml'))
+
             Atomic species matching is case insensitive.
-        calculations: `None` or list of `qmc` or `loop` objects 
-            Overwrite all `<qmc/>' or `<loop/>' elements with those provided.
-            If `None`, no action is taken.
+        calculations : None or list of qmc or loop objects
+            Overwrite all ``<qmc/>`` or ``<loop/>`` elements with those provided.
+            If ``None``, no action is taken.
+
+        Notes
+        -----
+        The remaining input parameters are broken into sections based on
+        what part of the input file they modify.
 
         Jastrow Generation Parameters
-        -----------------------------
-        Generate Jastrow factors based on the parameters given.  Existing 
-        Jastrows are overwritten.
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-        The parameter signature is identical to `generate_jastrows_alt` 
-        called both here and by `generate_qmcpack_input` or 
-        `generate_qmcpack`.
+        Generate Jastrow factors based on the parameters given. Existing
+        Jastrows are overwritten. The parameter signature is identical
+        to ``generate_jastrows_alt`` called both here and by
+        ``generate_qmcpack_input`` or ``generate_qmcpack``.
 
-        J1: bool, default False
-            Creates a one-body B-spline Jastrow if `True`.
-            If no other `J1_` parameters are given, sensible defaults are set:
-            cutoff set to the Wigner-Seitz radius for periodic systems or to 
+        J1 : bool, default=False
+            Creates a one-body B-spline Jastrow if ``True``.
+            If no other ``J1_`` parameters are given, sensible defaults are set:
+            cutoff set to the Wigner-Seitz radius for periodic systems or to
             5 Bohr for open boundary conditions.
             By default, one knot is placed every 0.5 Bohr up to the cutoff.
-        J2: bool, default False.
-            Creates both one-body and two-body B-spline Jastrows if `True`.
-            If no other `J2_` parameters are given, sensible defaults are set:
-            cutoff set to the Wigner-Seitz radius for periodic systems or to 
+        J2 : bool, default=False.
+            Creates both one-body and two-body B-spline Jastrows if ``True``.
+            If no other ``J2_`` parameters are given, sensible defaults are set:
+            cutoff set to the Wigner-Seitz radius for periodic systems or to
             10 Bohr for open boundary conditions.
             By default, one knot is placed every 0.5 Bohr up to the cutoff.
-        J3: bool, default False.
-            Creates one-, two-, and three-body B-spline Jastrows if `True`.
-            If no other `J3_` parameters are given, sensible defaults are set:
-            cutoff set to 5 Bohr, `isize=3`, esize=3`.
-        J1_rcut: {float, None}, default = None
-            Sets the cutoff (`rcut`) in the one-body Jastrow.
-            If `None`, the Wigner-Seitz radius is used for periodic systems, 
-            or the value of `J1_rcut_open` for open boundary conditions.
-        J1_rcut_open: float, default = 5.0
-            Sets the cutoff (`rcut`) in the one-body Jastrow for open systems..
-        J1_size: {int, None}, default = None
+        J3 : bool, default=False.
+            Creates one-, two-, and three-body B-spline Jastrows if ``True``.
+            If no other ``J3_`` parameters are given, sensible defaults are set:
+            cutoff set to 5 Bohr, ``isize=3``, ``esize=3``.
+        J1_rcut : float or None, default=None
+            Sets the cutoff (``rcut``) in the one-body Jastrow.
+            If ``None``, the Wigner-Seitz radius is used for periodic systems,
+            or the value of ``J1_rcut_open`` for open boundary conditions.
+        J1_rcut_open : float, default=5.0
+            Sets the cutoff (``rcut``) in the one-body Jastrow for open systems.
+        J1_size : int or None, default=None
             Sets the number of knots in the one-body B-spline Jastrow.
-            If `int`, knots are placed up to the cutoff.
-            If `None`, `J1_dr` is used instead.
-        J1_dr: float, default = 0.5
-            Sets B-spline knots every `J1_dr` up to the cutoff.
-        J1_opt: {True, False, None}, default = None
-            If `bool`, sets `optimize` flag in the one-body Jastrow.
-            If `None`, no action is taken.
-        J2_rcut: {float, None}, default = None
-            Sets the cutoff (`rcut`) in the two-body Jastrow.
-            If `None`, the Wigner-Seitz radius is used for periodic systems, 
-            or the value of `J2_rcut_open` for open boundary conditions.
-        J2_rcut_open: float, default = 10.0
-            Sets the cutoff (`rcut`) in the two-body Jastrow for open systems.
-        J2_size: {int, None}, default = None
+            If ``int``, knots are placed up to the cutoff.
+            If ``None``, ``J1_dr`` is used instead.
+        J1_dr : float, default=0.5
+            Sets B-spline knots every ``J1_dr`` up to the cutoff.
+        J1_opt : bool or None, default=None
+            If ``bool``, sets ``optimize`` flag in the one-body Jastrow.
+            If ``None``, no action is taken.
+        J2_rcut : float or None, default=None
+            Sets the cutoff (``rcut``) in the two-body Jastrow.
+            If ``None``, the Wigner-Seitz radius is used for periodic systems,
+            or the value of ``J2_rcut_open`` for open boundary conditions.
+        J2_rcut_open : float, default=10.0
+            Sets the cutoff (``rcut``) in the two-body Jastrow for open systems.
+        J2_size : int or None, default=None
             Sets the number of knots in the one-body B-spline Jastrow.
-            If `int`, knots are placed up to the cutoff.
-            If `None`, `J2_dr` is used instead.
-        J2_dr: float, default = 0.5
-            Sets B-spline knots every `J2_dr` up to the cutoff.
-        J2_opt: {True, False, None}, default = None
-            If `bool`, sets `optimize` flag in the two-body Jastrow.
-            If `None`, no action is taken.
-        J2_init: {'zero', 'rpa'}, default = 'zero'
-            If `zero`, set all B-spline coefficients to 0.0.
-            If `rpa`, set B-spline coefficents based on the RPA Jastrow for 
-            a homogeneous electron gas with the same electron density as the 
+            If ``int``, knots are placed up to the cutoff.
+            If ``None``, ``J2_dr`` is used instead.
+        J2_dr : float, default=0.5
+            Sets B-spline knots every ``J2_dr`` up to the cutoff.
+        J2_opt : bool or None, default=None
+            If ``bool``, sets ``optimize`` flag in the two-body Jastrow.
+            If ``None``, no action is taken.
+        J2_init : {'zero', 'rpa'}, default='zero'
+            If ``zero``, set all B-spline coefficients to 0.0.
+            If ``rpa``, set B-spline coefficents based on the RPA Jastrow for
+            a homogeneous electron gas with the same electron density as the
             current atomic system.
-            For an open system only 'zero' is allowed.
-        J1k: bool, default False
-            Creates a one-body k-space Jastrow with defaults below if `True`.
-        J1k_kcut: float, default 5.0
+            For an open system only ``'zero'`` is allowed.
+        J1k : bool, default=False
+            Creates a one-body k-space Jastrow with defaults below if ``True``.
+        J1k_kcut : float, default=5.0
             Sets the k-space cutoff which determines how many plane-waves
             and coefficients are used.
-        J1k_symm: {'crystal', 'isotropic', 'none'}
+        J1k_symm : {'crystal', 'isotropic', 'none'}
             Whether to use symmetries to constrain the plane-wave coefficients.
-            If 'crystal', enforce translation symmetries.
-            If 'isotropic', impose symmetry based on identical |k|.
-            If 'none', the coefficients are fully unconstrained.
-        J1k_opt: {True, False, None}, default = None
-            If `bool`, sets `optimize` flag in the one-body k-space Jastrow.
-            If `None`, no action is taken.
-        J2k: bool, default False
-            Creates a two-body k-space Jastrow with defaults below if `True`.
-        J2k_kcut: float, default 5.0
+            If ``'crystal'``, enforce translation symmetries.
+            If ``'isotropic'``, impose symmetry based on identical :math:`|k|`.
+            If ``'none'``, the coefficients are fully unconstrained.
+        J1k_opt : bool or None, default=None
+            If ``bool``, sets ``optimize`` flag in the one-body k-space Jastrow.
+            If ``None``, no action is taken.
+        J2k : bool, default=False
+            Creates a two-body k-space Jastrow with defaults below if ``True``.
+        J2k_kcut : float, default=5.0
             Sets the k-space cutoff which determines how many plane-waves
             and coefficients are used.
-        J2k_symm: {'crystal', 'isotropic', 'none'}
+        J2k_symm : {'crystal', 'isotropic', 'none'}
             Whether to use symmetries to constrain the plane-wave coefficients.
-            If 'crystal', enforce translation symmetries.
-            If 'isotropic', impose symmetry based on identical |k-k'|.
-            If 'none', the coefficients are fully unconstrained.
-        J2k_opt: {True, False, None}, default = None
-            If `bool`, sets `optimize` flag in the two-body k-space Jastrow.
-            If `None`, no action is taken.
+            If ``'crystal'``, enforce translation symmetries.
+            If ``'isotropic'``, impose symmetry based on identical :math:`|k-k'|`.
+            If ``'none'``, the coefficients are fully unconstrained.
+        J2k_opt : bool or None, default=None
+            If ``bool``, sets ``optimize`` flag in the two-body k-space Jastrow.
+            If ``None``, no action is taken.
 
         QMC Calculation Generation Parameters
-        -------------------------------------
-        Generate `<qmc/>` and/or `<loop/>` elements.  Any existing elements
-        are overwritten
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-        The number of input parameters depends on the value of `qmc` and 
-        are given as keyword inputs represented by **gen_calcs.
+        Generate ``<qmc/>`` and/or ``<loop/>`` elements.  Any existing elements
+        are overwritten.
+
+        The number of input parameters depends on the value of ``qmc`` and
+        are given as keyword inputs represented by ``gen_calcs``.
 
         Only inputs for batched drivers are described below.
 
-        Parameters at the top are shared by nearly all `qmc` methods.
+        Parameters at the top are shared by nearly all ``qmc`` methods.
 
-        qmc: {'vmc', 'vmc_test', 'vmc_noJ', 'dmc', 'dmc_test', 'dmc_noJ',
-              'opt', None}
-            If `None`, no action is taken.
+        qmc : {'vmc', 'vmc_test', 'vmc_noJ', 'dmc', 'dmc_test', 'dmc_noJ', 'opt'} or None
+            If ``None``, no action is taken.
             Otherwise calculations are generated as detailed below.
 
         Shared Parameters
-        -----------------
-        total_walkers: {None, int}, default None
-            If not `None`, set the `total_walkers` parameter, which is the 
-            number of independent walker configuration trajectories across 
+        ^^^^^^^^^^^^^^^^^
+
+        total_walkers : int or None, default=None
+            If not ``None``, set the ``total_walkers`` parameter, which is the
+            number of independent walker configuration trajectories across
             within each VMC sampling.  If using MPI or threads, the walkers
             will be divided roughly evenly between each MPI rank/thread.
-        walkers_per_rank: {None, int}, default = None
-            If not `None`, set the `walkers_per_rank` parameter, which is 
-            the number of independent walker configuration trajectories 
-            within each MPI rank.  In this case, the total number of 
-            walkers is #MPI_ranks*`walkers_per_rank`.
-            Only one of {`walkers_per_rank`, `total_walkers`} should be
+        walkers_per_rank : int or None, default=None
+            If not ``None``, set the ``walkers_per_rank`` parameter, which is
+            the number of independent walker configuration trajectories
+            within each MPI rank.  In this case, the total number of
+            walkers is ``#MPI_ranks*walkers_per_rank``.
+            Only one of {``walkers_per_rank``, ``total_walkers``} should be
             provided.
-        warmupsteps: int
+        warmupsteps : int
             Number of VMC steps used to move the walker population toward
-            the equilibrium distribution before sampling estimators 
+            the equilibrium distribution before sampling estimators
             such as the total energy.
-        blocks: int
-            Sets `blocks` parameter, the outer loop in the VMC/DMC 
+        blocks : int
+            Sets ``blocks`` parameter, the outer loop in the VMC/DMC
             sampling process.
-        steps: {int, None}, default = None
-            If not None, set the `steps` parameter, the inner loop in 
-            the VMC/DMC sampling.  The resulting number of samples per 
-            walker is `blocks`*`steps`.
-            Only one of {`samples`, `steps`} should be provided.
-        substeps: int
-            Sets the `substeps` parameter, which is the number of VMC 
-            steps in between the generation of each sample.  Used to 
-            decorrelate walker configurations between the collection of 
-            each sample (energy evaluation).  Does not apply to DMC 
+        steps : int or None, default=None
+            If not None, set the ``steps`` parameter, the inner loop in
+            the VMC/DMC sampling.  The resulting number of samples per
+            walker is ``blocks*steps``.
+            Only one of {``samples``, ``steps``} should be provided.
+        substeps : int
+            Sets the ``substeps`` parameter, which is the number of VMC
+            steps in between the generation of each sample.  Used to
+            decorrelate walker configurations between the collection of
+            each sample (energy evaluation).  Does not apply to DMC
             calculations.
-        timestep: float
-            Sets the `timestep` parameter, which is the width of the 
-            gaussian used to generate the next configuration in each 
-            walker's configuration trajectory.  Affects the acceptance 
-            ratio, and hence the efficiency of the sampling.  In production 
-            DMC a small value should be used (e.g. 0.01) to prioritize the 
-            accuracy of the solution (minimize timestep) over apparent 
+        timestep : float
+            Sets the ``timestep`` parameter, which is the width of the
+            gaussian used to generate the next configuration in each
+            walker's configuration trajectory.  Affects the acceptance
+            ratio, and hence the efficiency of the sampling.  In production
+            DMC a small value should be used (e.g. 0.01) to prioritize the
+            accuracy of the solution (minimize timestep) over apparent
             gains in efficiency.
-        usedrift: bool
-            Sets the `usedrift` parameter.
-            If `True`, use the logarithmic gradient to shift the gaussian 
+        usedrift : bool
+            Sets the ``usedrift`` parameter.
+            If ``True``, use the logarithmic gradient to shift the gaussian
             center for a more efficient sampling (higher acceptance ratio).
             Used only in VMC.
-        checkpoint: {int, None}, default = None
-            If not `None`, set the `checkpoint` parameter.  A checkpoint 
-            HDF5 file will be written every `checkpoint` blocks.
-        maxcpusecs: {float, None}
-            If not `None`, set the `maxcpusecs` parameter.  QMCPACK will
+        checkpoint : int or None, default=None
+            If not ``None``, set the ``checkpoint`` parameter.  A checkpoint
+            HDF5 file will be written every ``checkpoint`` blocks.
+        maxcpusecs : float or None
+            If not ``None``, set the ``maxcpusecs`` parameter.  QMCPACK will
             terminate gracefully if the walltime exceeds this value.
-        crowds: {int, None}, default = None
-            If not `None`, set the `crowds` parameter, which controls 
-            the partitioning of walkers for parallel (thread/gpu) 
+        crowds : int or None, default=None
+            If not ``None``, set the ``crowds`` parameter, which controls
+            the partitioning of walkers for parallel (thread/gpu)
             execution.
-        spinmass: {float, None}, default = None
-            If not `None`, set the `spinmass` parameter.  Generally only 
+        spinmass : float or None, default=None
+            If not ``None``, set the ``spinmass`` parameter.  Generally only
             used in calculations including spin-orbit coupling.
 
-        Case `qmc='vmc'`
-        ----------------
+        Case ``qmc='vmc'``
+        ^^^^^^^^^^^^^^^^^^
+
         As in "Shared Parameters" above, but with the defaults below.
 
-        warmupsteps: int, default = 50
-        blocks: int, default = 800
-        steps: int, default = 10
-        substeps: int, default = 3
-        timestep: float, default = 0.3
-        usedrift: bool, default = False
+        - ``warmupsteps : int, default=50``
+        - ``blocks : int, default=800``
+        - ``steps : int, default=10``
+        - ``substeps : int, default=3``
+        - ``timestep : float, default=0.3``
+        - ``usedrift : bool, default=False``
 
-        Case `qmc='vmc_test'`
-        -------------------
-        As in `qmc='vmc'`, but with the defaults below.  Intended to 
-        make a quick test run to check for successful execution or to 
+        Case ``qmc='vmc_test'``
+        ^^^^^^^^^^^^^^^^^^^^^^^
+
+        As in ``qmc='vmc'``, but with the defaults below.  Intended to
+        make a quick test run to check for successful execution or to
         obtain timing estimates to design production runs.
 
-        Case `qmc='vmc_noJ'`
-        -------------------
-        As in `qmc='vmc'`, but with the defaults below.  Uses increased 
-        sampling intended to better deal with the increased variance 
+        Case ``qmc='vmc_noJ'``
+        ^^^^^^^^^^^^^^^^^^^^^^
+
+        As in ``qmc='vmc'``, but with the defaults below.  Uses increased
+        sampling intended to better deal with the increased variance
         present in Jastrow-free runs.
-        
-        warmupsteps: int, default = 200
-        blocks: int, default = 800
-        steps: int, default = 100
-           
-        Case `qmc='dmc'`
-        ---------------
+
+        - ``warmupsteps : int, default=200``
+        - ``blocks : int, default=800``
+        - ``steps : int, default=100``
+
+        Case ``qmc='dmc'``
+        ^^^^^^^^^^^^^^^^^^
+
         As in "Shared Parameters" above, but with the defaults below.
         These parameter names and defaults refer to the DMC sections.
-        
-        warmupsteps: int, default = 20
-        blocks: int, default = 200
-        steps: int, default = 10
-        timestep: float, default = 0.01
 
-        nonlocalmoves: {None, True, False, 'v0', 'v1', 'v3'}, default = None
+        - ``warmupsteps : int, default=20``
+        - ``blocks : int, default=200``
+        - ``steps : int, default=10``
+        - ``timestep : float, default=0.01``
+
+        nonlocalmoves : {'v0', 'v1', 'v3'} or bool or None, default=None
             Perform T-moves or the locality approximation.
-            If None, use QMCPACK's default (locality approx)
-            If False, use the locality approximation.
-            If True or 'v0', use the first developed T-moves algorithm.
-            If 'v1', use the second developed T-moves algorithm.
-            If 'v3', use a modified T-moves algorithm, courtesy Ye Luo.
-        branching_cutoff_scheme:
+            If ``None``, use QMCPACK's default (locality approx)
+            If ``False``, use the locality approximation.
+            If ``True`` or ``'v0'``, use the first developed T-moves algorithm.
+            If ``'v1'``, use the second developed T-moves algorithm.
+            If ``'v3'``, use a modified T-moves algorithm, courtesy Ye Luo.
+        branching_cutoff_scheme
             See QMCPACK manual.
-        crowd_serialize_walkers:
+        crowd_serialize_walkers
             See QMCPACK manual.
-        reconfiguration:
+        reconfiguration
             See QMCPACK manual.
-        maxage:
+        maxage
             See QMCPACK manual.
-        feedback:
+        feedback
             See QMCPACK manual.
-        sigmabound:
+        sigmabound
             See QMCPACK manual.
-
-        vmc_warmupsteps: int, default = 30
-            Set `warmupsteps` in the VMC block executed prior to DMC.
+        vmc_warmupsteps : int, default=30
+            Set ``warmupsteps`` in the VMC block executed prior to DMC.
             The parameters below set the respective params in VMC.
-        vmc_blocks: int, default = 40
-        vmc_steps: int, default = 10
-        vmc_substeps: int, default = 3
-        vmc_timestep: float, default = 0.3
-        vmc_usedrift: bool, default = False
-        vmc_checkpoint: {int, None}, default = None
-        vmc_spin_mass: {float, None}, default = None
 
-        eq_dmc: bool, default = False
+        vmc_blocks : int, default=40
+        vmc_steps : int, default=10
+        vmc_substeps : int, default=3
+        vmc_timestep : float, default=0.3
+        vmc_usedrift : bool, default=False
+        vmc_checkpoint : int or None, default=None
+        vmc_spin_mass : float or None, default=None
+
+        eq_dmc : bool, default=False
             Insert a DMC block following VMC for the purpose of
             rapid equilibration prior to the subsequent production
             DMC sections.
-        eq_warmupsteps: int, default = 20
-        eq_blocks: int, default = 20
-        eq_steps: int, default = 5
-        eq_timestep: float, default = 0.02
-           The timestep should be greater than or equal to the ones used 
-           in the subsequent DMC sections. 
-        eq_checkpoint: {int, None}, default = None
-        
-        ntimesteps: int, default = 1
-           If greater than one, create a sequence of `ntimesteps` DMC
-           sections with successively smaller timesteps.  Intended for 
-           DMC timestep extrapolation.
-        timestep_factor: float, default = 0.5
-           The first timestep is given by `timestep`, the following ones 
-           are reduced by successive multiplication of `timestep_factor`.
 
-        Case `qmc='dmc_test'`
-        -------------------
-        As in `qmc='dmc', but with the defaults below. Intended to 
-        make a quick test run to check for successful execution or to 
+        eq_warmupsteps : int, default=20
+        eq_blocks : int, default=20
+        eq_steps : int, default=5
+
+        eq_timestep : float, default=0.02
+            The timestep should be greater than or equal to the ones used
+            in the subsequent DMC sections.
+
+        eq_checkpoint : int or None, default=None
+
+        ntimesteps : int, default=1
+            If greater than one, create a sequence of ``ntimesteps`` DMC
+            sections with successively smaller timesteps.  Intended for
+            DMC timestep extrapolation.
+        timestep_factor : float, default=0.5
+            The first timestep is given by ``timestep``, the following ones
+            are reduced by successive multiplication of ``timestep_factor``.
+
+        Case ``qmc='dmc_test'``
+        ^^^^^^^^^^^^^^^^^^^^^^^
+
+        As in ``qmc='dmc'``, but with the defaults below. Intended to
+        make a quick test run to check for successful execution or to
         obtain timing estimates to design production runs.
 
-        warmupsteps: int, default = 2
-        blocks: int, default = 10
-        steps: int, default = 2
-        vmc_warmupsteps: int, default = 10
-        vmc_blocks: int, default = 4
-        eq_dmc: bool, default = False
-        eq_warmupsteps: int, default = 2
-        eq_blocks: int, default = 5
-        eq_steps: int, default = 2
-           
-        Case `qmc='dmc_noJ'`
-        ------------------
-        As in `qmc='dmc'`, but with the defaults below.  Uses increased 
-        sampling intended to better deal with the increased variance 
-        present in Jastrow-free runs.  Note that Jastrow-free runs are 
-        much more likely to be unstable due to large fluctations in the 
+        - ``warmupsteps : int, default=2``
+        - ``blocks : int, default=10``
+        - ``steps : int, default=2``
+        - ``vmc_warmupsteps : int, default=10``
+        - ``vmc_blocks : int, default=4``
+        - ``eq_dmc : bool, default=False``
+        - ``eq_warmupsteps : int, default=2``
+        - ``eq_blocks : int, default=5``
+        - ``eq_steps : int, default=2``
+
+        Case ``qmc='dmc_noJ'``
+        ^^^^^^^^^^^^^^^^^^^^^^
+
+        As in ``qmc='dmc'``, but with the defaults below.  Uses increased
+        sampling intended to better deal with the increased variance
+        present in Jastrow-free runs.  Note that Jastrow-free runs are
+        much more likely to be unstable due to large fluctations in the
         branching weights.
 
-        warmupsteps: int, default = 40
-        blocks: int, default = 400
-        steps: int, default = 20
-           
-        Case `qmc='opt'`
-        ---------------
+        - ``warmupsteps : int, default=40``
+        - ``blocks : int, default=400``
+        - ``steps : int, default=20``
+
+        Case ``qmc='opt'``
+        ^^^^^^^^^^^^^^^^^^
+
         Generate calculation elements for wavefunction optimization.
 
-        The parameter signature is identical to `generate_opt_calculations`,
-        which depends on the value of `method` and `minmethod`.
+        The parameter signature is identical to ``generate_opt_calculations``,
+        which depends on the value of ``method`` and ``minmethod``.
 
-        method: {'linear', 'cslinear'}, default = 'linear'
-            If `linear`, use one of the versions of the linear method.
-            If 'cslinear', use the correlated sampling linear method.
+        method : {'linear', 'cslinear'}, default='linear'
+            If ``'linear'``, use one of the versions of the linear method.
+            If ``'cslinear'``, use the correlated sampling linear method.
 
-        minmethod: {'quartic' , 'rescale' , 'linemin', 
-                    'adaptive', 'oneshift', 'sr_cg'  }
-                   default = 'quartic'
+        minmethod : {'quartic' , 'rescale' , 'linemin', 'adaptive', 'oneshift', 'sr_cg'}, default='quartic'
 
-        minwalkers: float, default = 0.3
-            Minimum threshold to accept a parameter update based on the 
+        minwalkers : float, default=0.3
+            Minimum threshold to accept a parameter update based on the
             ratio of wavefunction values between internal sub-iterations.
-            The value of `minwalkers` should be given in the range (0,1].
-            A small value of `minwalkers` will easily accept parameter 
+            The value of ``minwalkers`` should be given in the range (0,1].
+            A small value of ``minwalkers`` will easily accept parameter
             updates, likely resulting in an unstable run.
-        cost: {'energy','variance', tuple}
-            If 'energy', energy minization is performed.
-            If 'variance', variance minimization is performed.
-            If length 2 tuple of floats `(we, wv)`,
-                cost = we*energy + wv*variance
-            If length 3 tuple of floats `(we, wv, wuv)`,
-                cost = we*energy + wv*variance + wuv*unreweightedvariance
-            When `minmethod='oneshift', no cost function is being 
-            minimized, but instead the parameter updates are determined 
-            solely by `minwalkers`.
-        cycles: int, default = 12
-           Number of top level optimization iterations to perform.
-           Sets `<loop max="cycles"/>.
-        samples: {None, int}, default = None
-            If not `None` set the `samples` parameter, i.e. the total 
-            number of VMC walker configurations to use in each optimization 
+        cost : {'energy', 'variance'} or tuple
+            If ``'energy'``, energy minization is performed.
+            If ``'variance'``, variance minimization is performed.
+            If length 2 tuple of floats ``(we, wv)``,
+
+                ``cost = we*energy + wv*variance``
+
+            If length 3 tuple of floats ``(we, wv, wuv)``,
+
+                ``cost = we*energy + wv*variance + wuv*unreweightedvariance``
+
+            When ``minmethod='oneshift'``, no cost function is being
+            minimized, but instead the parameter updates are determined
+            solely by ``minwalkers``.
+        cycles : int, default=12
+            Number of top level optimization iterations to perform.
+            Sets ``<loop max="cycles"/>``.
+        samples : int or None, default=None
+            If not ``None`` set the ``samples`` parameter, i.e. the total
+            number of VMC walker configurations to use in each optimization
             cycle.
-        init_cycles: int, default = 0
-           If init_cycles>0, introduce a preceding optimization loop of 
-           the same type (same `minmethod`, `cost` and most other 
-           parameters).  
-           Sets `<loop max="init_cycles"/> in this prior loop.
-           A few parameters can be set to different values from the 
-           subsequent/main loop as listed below.
-        init_samples: {None, int}, default = None
-           If not `None` set the `samples` parameter, i.e. the total 
-           number of VMC walker configurations to use in the preceding 
-           optimization loop.
-        init_steps: {None, int}
-           If not `None` set the `steps` parameter in the preceding 
-           optimization loop.
-        init_minwalkers: float, default=0.1
-           If not `None` set the `minwalkers` parameter in the preceding 
-           optimization loop.  Often set to a smaller value than in the 
-           subsequent/main loop to allow more aggressive parameter updates 
-           in hopes of a faster convergence to the general vicinity 
-           of the cost minimum.
-        init_line_search: bool, default = False
-           Only applicable to `minmethod`='sr_cg', see below.
-           If True, perform a linesearch along the direction of the 
-           parameter gradient using the minimum cost to determine the 
-           parameter stepsize.
-        init_sr_tau: float, default = 0.1
-           Only applicable to `minmethod`='opt_sr', see below.
-           Set the `sr_tau` parameter appearing in the stochastic 
-           reconfiguration projector.
+        init_cycles : int, default=0
+            If ``init_cycles>0``, introduce a preceding optimization loop of
+            the same type (same ``minmethod``, ``cost`` and most other
+            parameters).
+            Sets ``<loop max="init_cycles"/>`` in this prior loop.
+            A few parameters can be set to different values from the
+            subsequent/main loop as listed below.
+        init_samples : int or None, default=None
+            If not ``None`` set the ``samples`` parameter, i.e. the total
+            number of VMC walker configurations to use in the preceding
+            optimization loop.
+        init_steps : int or None
+            If not ``None`` set the ``steps`` parameter in the preceding
+            optimization loop.
+        init_minwalkers : float, default=0.1
+            If not ``None`` set the ``minwalkers`` parameter in the preceding
+            optimization loop.  Often set to a smaller value than in the
+            subsequent/main loop to allow more aggressive parameter updates
+            in hopes of a faster convergence to the general vicinity
+            of the cost minimum.
+        init_line_search : bool, default=False
+            Only applicable to ``minmethod='sr_cg'``, see below.
+            If ``True``, perform a linesearch along the direction of the
+            parameter gradient using the minimum cost to determine the
+            parameter stepsize.
+        init_sr_tau : float, default=0.1
+            Only applicable to ``minmethod='opt_sr'``, see below.
+            Set the ``sr_tau`` parameter appearing in the stochastic
+            reconfiguration projector.
 
-        Case `qmc='opt'` `method={'linear', 'cslinear'}` 
-             `minmethod={'quartic', 'rescale', 'linemin'}`
-        -------------------------------------------------
-        minmethod: {'quartic', 'rescale', 'linemin'}, default = 'quartic'
-            Sets `minmethod` parameter.  See QMCPACK manual.
-        usebuffer: bool, default = True
-            Sets `usebuffer` parameter.  See QMCPACK manual.
-        exp0: float, default = -6
-            Sets `exp0` parameter.  See QMCPACK manual.
-        bigchange: float, default = 10.0
-            Sets `bigchange` parameter.  See QMCPACK manual.
-        alloweddifference: float, default = 1e-4
-            Sets `alloweddifference` parameter.  See QMCPACK manual.
-        stepsize: float, default = 0.15
-            Sets `stepsize` parameter.  See QMCPACK manual.
-        nstabilizers: int, default = 1
-            Sets `nstabilizers` parameter.  See QMCPACK manual.
-        var_cycles: int, default = 0
-           If var_cycles>0, introduce a preceding loop of variance 
-           minmization to obtain a preconditioned starting point, e.g. 
-           to stabilize subsequent energy minimization.
-           Sets `<loop max="var_cycles"/> in this prior loop.
-           Uses all other parameters as set for the subsequent/main loop, 
-           perhaps excepting `samples`.
-        var_samples: {None, int}, default = None
-           If not `None` set the `samples` parameter, i.e. the total 
-           number of VMC walker configurations to use in the preceding 
-           variance minimization cycle.
+        Case ``qmc='opt'`` ``method={'linear', 'cslinear'}`` ``minmethod={'quartic', 'rescale', 'linemin'}``
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-        Case `qmc='opt'` `method='linear' `minmethod='oneshift'`
-        -------------------------------------------------------
-        Use the "oneshift" variant of the linear method, courtesy Ye Luo.
-        
-        shift_i: float
-            Set the `shift_i` parameter.  See QMCPACK manual.
-        shift_s: float
-            Set the `shift_s` parameter.  See QMCPACK manual.
-        
-        Case `qmc='opt'` `method='linear' `minmethod='adaptive'`
-        -------------------------------------------------------
-        max_relative_change: float, default = 10.0
-            Sets `max_relative_change` parameter.  See QMCPACK manual.
-        max_param_change: float, default = 0.3
-            Sets `max_param_change` parameter.  See QMCPACK manual.
-        shift_i: float, default = 0.01
-            Set the `shift_i` parameter.  See QMCPACK manual.
-        shift_s: float, default = 1.0
-            Set the `shift_s` parameter.  See QMCPACK manual.
+        minmethod : {'quartic', 'rescale', 'linemin'}, default='quartic'
+            Sets ``minmethod`` parameter. See QMCPACK manual.
+        usebuffer : bool, default=True
+            Sets ``usebuffer`` parameter. See QMCPACK manual.
+        exp0 : float, default=-6
+            Sets ``exp0`` parameter. See QMCPACK manual.
+        bigchange : float, default=10.0
+            Sets ``bigchange`` parameter. See QMCPACK manual.
+        alloweddifference : float, default=1e-4
+            Sets ``alloweddifference`` parameter. See QMCPACK manual.
+        stepsize : float, default=0.15
+            Sets ``stepsize`` parameter. See QMCPACK manual.
+        nstabilizers : int, default=1
+            Sets ``nstabilizers`` parameter. See QMCPACK manual.
+        var_cycles : int, default=0
+            If ``var_cycles>0``, introduce a preceding loop of variance
+            minmization to obtain a preconditioned starting point, e.g.
+            to stabilize subsequent energy minimization.
+            Sets ``<loop max="var_cycles"/>`` in this prior loop.
+            Uses all other parameters as set for the subsequent/main loop,
+            perhaps excepting ``samples``.
+        var_samples : int or None, default=None
+            If not ``None`` set the ``samples`` parameter, i.e. the total
+            number of VMC walker configurations to use in the preceding
+            variance minimization cycle.
 
-        Case `qmc='opt'` `method='linear' `minmethod='sr_cg'`
-        ------------------------------------------------------
-        Use a preliminary implementation of stochastic reconfiguration, 
+        Case ``qmc='opt'`` ``method='linear'`` ``minmethod='oneshift'``
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+        Use the ``"oneshift"`` variant of the linear method, courtesy Ye Luo.
+
+        shift_i : float
+            Set the ``shift_i`` parameter. See QMCPACK manual.
+        shift_s : float
+            Set the ``shift_s`` parameter. See QMCPACK manual.
+
+        Case ``qmc='opt'`` ``method='linear'`` ``minmethod='adaptive'``
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+        max_relative_change : float, default=10.0
+            Sets ``max_relative_change`` parameter. See QMCPACK manual.
+        max_param_change : float, default=0.3
+            Sets ``max_param_change`` parameter. See QMCPACK manual.
+        shift_i : float, default=0.01
+            Set the ``shift_i`` parameter. See QMCPACK manual.
+        shift_s : float, default=1.0
+            Set the ``shift_s`` parameter. See QMCPACK manual.
+
+        Case ``qmc='opt'`` ``method='linear'`` ``minmethod='sr_cg'``
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        Use a preliminary implementation of stochastic reconfiguration,
         courtesy Cody Melton.
-        
-        sr_tau: float, default = 0.01
-            Set the `sr_tau` parameter, which is the timestep in the 
+
+        sr_tau : float, default=0.01
+            Set the ``sr_tau`` parameter, which is the timestep in the
             stochastic reconfiguration projector.
-        sr_tolerance: float, default = 0.001.
-            Set the `sr_tolerance` parameter.  See QMCPACK manual.
-        sr_regularization: float, default = 0.01.
-            Set the `sr_regularization` parameter.  See QMCPACK manual.
-        linesearch: bool, default = False
-            Perform a correlated sampling linesearch to determine tau 
+        sr_tolerance : float, default=0.001.
+            Set the ``sr_tolerance`` parameter. See QMCPACK manual.
+        sr_regularization : float, default=0.01.
+            Set the ``sr_regularization`` parameter. See QMCPACK manual.
+        linesearch : bool, default=False
+            Perform a correlated sampling linesearch to determine tau
             automatically for each iteration.
-            If `True`, the default for `sr_tau` is 0.1 instead.
+            If ``True``, the default for ``sr_tau`` is 0.1 instead.
         """
 
         if optimize is not None:
@@ -5300,7 +5336,8 @@ class QmcpackInputTemplate(SimulationInputTemplate):
                             include_file = token.replace('href','').replace('=','').replace('"','').strip()
                             include_path = os.path.join(basepath,include_file)
                             if os.path.exists(include_path):
-                                icont = open(include_path,'r').read()+'\n'
+                                with open(include_path, "r") as f:
+                                    icont = f.read() + "\n"
                                 line = ''
                                 for iline in icont.splitlines():
                                     if '<?' not in iline:
@@ -6318,11 +6355,11 @@ def generate_hamiltonian(name         = 'h0',
                 pseudos = collection()
                 for ion in ions:
                     label = ion.name
-                    iselem,symbol = is_element(ion.name,symbol=True)
+                    iselem, element = Elements.is_element(ion.name, return_element=True)
                     if label in ppfiles:
                         ppfile = ppfiles[label]
-                    elif symbol in ppfiles:
-                        ppfile = ppfiles[symbol]
+                    elif element.symbol in ppfiles:
+                        ppfile = ppfiles[element.symbol]
                     else:
                         QmcpackInput.class_error('pseudos provided to generate_hamiltonian are incomplete\n  a pseudopotential for ion of type {0} is missing\n  pseudos provided:\n{1}'.format(ion.name,str(ppfiles)))
                     #end if
@@ -7083,86 +7120,119 @@ def generate_jastrow3(function='polynomial',esize=3,isize=3,rcut=4.,coeff=None,i
 
 
 def generate_kspace_jastrow(
-        kc1    = None, 
-        kc2    = None, 
-        nk1    = 0, 
-        nk2    = 0,
-        symm1  = 'isotropic', 
-        symm2  = 'isotropic', 
-        coeff1 = None, 
-        coeff2 = None,
-        opt1   = None,
-        opt2   = None,
+        kc1:    float | None = None, 
+        kc2:    float | None = None, 
+        nk1:    int          = 0, 
+        nk2:    int          = 0,
+        symm1:  str          = 'isotropic', 
+        symm2:  str          = 'isotropic', 
+        coeff1: list         = None, 
+        coeff2: list         = None,
+        opt1:   bool | None  = None,
+        opt2:   bool | None  = None,
         ):
-  """Generate <jastrow type="kSpace">
+    """Generate ``<jastrow type="kSpace">``
 
-  Parameters
-  ----------
+    Parameters
+    ----------
     kc1 : float, optional
-      kcut for one-body Jastrow, default 0
+        kcut for one-body Jastrow. Must provide this and/or ``kc2``.
     kc2 : float, optional
-      kcut for two-body Jastrow, default 0
-    nk1 : int, optional
-      number of coefficients for one-body Jastrow, default 0
-    nk2 : int, optional
-      number of coefficients for two-body Jastrow, default 0
-    symm1 : str, optional
-      one of ['crystal', 'isotropic', 'none'], default 'isotropic'
-    symm2 : str, optional
-      one of ['crystal', 'isotropic', 'none'], default is 'isotropic'
+        kcut for two-body Jastrow. Must provide this and/or ``kc1``.
+    nk1 : int, default=0
+        Number of coefficients for one-body Jastrow.
+    nk2 : int, default=0
+        Number of coefficients for two-body Jastrow.
+    symm1 : {'crystal', 'isotropic', 'none'}, default='isotropic'
+        Impose specified symmetry on 1-body Jastrow coefficients.
+        See Notes for description.
+    symm2 : {'crystal', 'isotropic', 'none'}, default='isotropic'
+        Impose specified symmetry on 2-body Jastrow coefficients.
+        See Notes for description.
     coeff1 : list, optional
-      one-body Jastrow coefficients, default None
+        One-body Jastrow coefficients, optional.
     coeff2 : list, optional
-      list, optional two-body Jastrow coefficients, default None
-  Returns
-  -------
-    jk: QIxml
-      kspace_jastrow qmcpack_input element
-  """
-  J1k = kc1 is not None
-  J2k = kc2 is not None
-  if not J1k and not J2k:
-      QmcpackInput.class_error('must have at least one term', 'generate_kspace_jastrow')
-  #end if      
-  if coeff1 is None: coeff1 = [0]*nk1
-  if coeff2 is None: coeff2 = [0]*nk2
-  if len(coeff1) != nk1:
-      QmcpackInput.class_error('coeff1 mismatch', 'generate_kspace_jastrow')
-  #end if
-  if len(coeff2) != nk2:
-      QmcpackInput.class_error('coeff2 mismatch', 'generate_kspace_jastrow')
-  #end if
+        Two-body Jastrow coefficients, optional.
+    opt1 : bool or None, default=None
+        Set whether or not the one-body Jastrow coefficients are optimizable.
+        See Notes for more information.
+    opt2 : bool or None, default=None
+        Set whether or not the two-body Jastrow coefficients are optimizable.
+        See Notes for more information.
 
-  corrs = []
-  if J1k:
-      corr1 = correlation(
-          type         = 'One-Body',
-          symmetry     = symm1,
-          kc           = kc1,
-          coefficients = section(id='cG1', type='Array', coeff=coeff1),
-          )
-      if opt1 is not None:
-          corr1.coefficients.optimize = bool(opt1)
-      corrs.append(corr1)
-  #end if
-  if J2k:
-      corr2 = correlation(
-          type         = 'Two-Body',
-          symmetry     = symm2,
-          kc           = kc2,
-          coefficients = section(id='cG2', type='Array', coeff=coeff2),
-          )
-      if opt2 is not None:
-          corr2.coefficients.optimize = bool(opt2)
-      corrs.append(corr2)
-  #end if
-  jk = kspace_jastrow(
-      type         = 'kSpace',
-      name         = 'Jk',
-      source       = 'ion0',
-      correlations = collection(corrs),
-      )
-  return jk
+    Returns
+    -------
+    jk : QIxml
+        ``kspace_jastrow`` qmcpack_input element
+
+    Notes
+    -----
+    The ``symm1`` and ``symm2`` parameters yield the following behavior:
+
+    ``"crystal"``
+        Impose crystal symmetry on coefficients according to the
+        structure factor.
+
+    ``"isotropic"``
+        Impose spherical symmetry on coefficients according to G-vector
+        magnitude.
+
+    ``"none"``
+        Impose no symmetry on the coefficients.
+
+    The parameters ``opt1`` and ``opt2`` are not necessarily guaranteed
+    to control the behavior of QMCPACK. See QMCPACK's documentation on
+    `k-space Jastrow`_.
+
+    .. _k-space Jastrow: https://qmcpack.readthedocs.io/en/develop/intro_wavefunction.html#long-ranged-jastrow-k-space-jastrow
+    """
+    J1k = kc1 is not None
+    J2k = kc2 is not None
+    if not J1k and not J2k:
+        QmcpackInput.class_error('must have at least one term', 'generate_kspace_jastrow')
+    #end if      
+    if coeff1 is None:
+        coeff1 = [0]*nk1
+    if coeff2 is None:
+        coeff2 = [0]*nk2
+
+    if len(coeff1) != nk1:
+        QmcpackInput.class_error('coeff1 mismatch', 'generate_kspace_jastrow')
+    #end if
+    if len(coeff2) != nk2:
+        QmcpackInput.class_error('coeff2 mismatch', 'generate_kspace_jastrow')
+    #end if
+
+    corrs = []
+    if J1k:
+        corr1 = correlation(
+            type         = 'One-Body',
+            symmetry     = symm1,
+            kc           = kc1,
+            coefficients = section(id='cG1', type='Array', coeff=coeff1),
+            )
+        if opt1 is not None:
+            corr1.coefficients.optimize = bool(opt1)
+        corrs.append(corr1)
+    #end if
+    if J2k:
+        corr2 = correlation(
+            type         = 'Two-Body',
+            symmetry     = symm2,
+            kc           = kc2,
+            coefficients = section(id='cG2', type='Array', coeff=coeff2),
+            )
+        if opt2 is not None:
+            corr2.coefficients.optimize = bool(opt2)
+        corrs.append(corr2)
+    #end if
+    jk = kspace_jastrow(
+        type         = 'kSpace',
+        name         = 'Jk',
+        source       = 'ion0',
+        correlations = collection(corrs),
+        )
+    return jk
 # end def generate_kspace_jastrow
 
 
@@ -8222,7 +8292,7 @@ def generate_batched_vmc_calculations(
     optional_vmc_inputs = obj(
         total_walkers = total_walkers,
         walkers_per_rank = walkers_per_rank,
-        #checkpoint       = checkpoint, # no checkpointing support yet
+        checkpoint       = checkpoint,
         maxcpusecs       = maxcpusecs,
         crowds           = crowds,
         spin_mass        = spin_mass,
@@ -8296,8 +8366,8 @@ def generate_batched_dmc_calculations(
         total_walkers    = total_walkers,
         walkers_per_rank = walkers_per_rank,
         crowds           = crowds,
-        spin_mass         = vmc_spin_mass,
-        #checkpoint       = vmc_checkpoint, # not supported yet
+        spin_mass        = vmc_spin_mass,
+        checkpoint       = vmc_checkpoint,
         )
     for name,value in optional_vmc_inputs.items():
         if value is not None:
@@ -8315,7 +8385,6 @@ def generate_batched_dmc_calculations(
                 blocks        = eq_blocks,
                 steps         = eq_steps,
                 timestep      = eq_timestep,
-                #checkpoint    = eq_checkpoint, # not supported yet
                 )
             )
     #end if
@@ -8328,7 +8397,6 @@ def generate_batched_dmc_calculations(
                 blocks        = blocks,
                 steps         = int(sfac*steps),
                 timestep      = tfac*timestep,
-                #checkpoint    = checkpoint,  # not supported yet
                 )
             )
         tfac *= timestep_factor
@@ -8347,6 +8415,7 @@ def generate_batched_dmc_calculations(
         feedback                = feedback,
         sigmabound              = sigmabound,
         spin_mass               = spin_mass,
+        checkpoint              = checkpoint,
         )
     for calc in dmc_calcs:
         if isinstance(calc,dmc):

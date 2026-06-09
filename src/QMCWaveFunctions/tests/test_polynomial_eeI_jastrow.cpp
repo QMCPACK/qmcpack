@@ -228,8 +228,7 @@ void test_J3_polynomial3D(const DynamicCoordinateKind kind_selected)
 </tmp>
 )";
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particles));
 
   xmlNodePtr root = doc.getRoot();
 

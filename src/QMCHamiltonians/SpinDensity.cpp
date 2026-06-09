@@ -50,7 +50,7 @@ void SpinDensity::reset()
 }
 
 
-std::unique_ptr<OperatorBase> SpinDensity::makeClone(ParticleSet& P)
+std::unique_ptr<OperatorBase> SpinDensity::makeClone(ParticleSet& P) const
 {
   return std::make_unique<SpinDensity>(*this);
 }

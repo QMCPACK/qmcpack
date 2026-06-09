@@ -47,7 +47,7 @@ public:
 
   bool get(std::ostream& os) const override;
 
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp) final;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp) const final;
 
 private:
   const int d_ei_id_;

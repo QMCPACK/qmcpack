@@ -45,9 +45,6 @@ ourhostname=`hostname|sed 's/\..*//g'`
 echo --- Host is $ourhostname
 
 export SPACK_ROOT=$HOME/apps/spack
-if [ -e $SPACK_ROOT ]; then
-    rm -r -f $SPACK_ROOT
-fi
 export SPACK_USER_CONFIG_PATH=$HOME/apps/spack_user_config  # Avoid using $HOME/.spack
 if [ ! -e $SPACK_USER_CONFIG_PATH ]; then
     mkdir $SPACK_USER_CONFIG_PATH
@@ -58,6 +55,26 @@ fi
 if [ -e $HOME/.spack ]; then
     rm -r -f $HOME/.spack 
 fi
+
+
+# Pin the version of the package repository for reproducibility
+# Docs: https://spack.readthedocs.io/en/latest/repositories.html#updating-and-pinning
+# The package repo will be at something like ~/.spack/package_repos/fncqgg4/
+
+cat >>$SPACK_USER_CONFIG_PATH/repos.yaml<<EOF
+repos:
+  builtin:
+    commit: ba81a382694253e885f2f3012992ed8d7df2fe08
+
+#commit ba81a382694253e885f2f3012992ed8d7df2fe08 (HEAD -> develop, origin/develop)
+#Author: Alec Scott <scott112@llnl.gov>
+#Date:   Wed Apr 8 16:29:47 2026 -0700
+#
+#    helm: new package (#4179)
+#
+#    Signed-off-by: Alec Scott <alec@llnl.gov>
+EOF
+
 
 # Setup build multiplicity and preferred directories for spack
 # Choose the fastest filesytem. Don't abuse shared nodes.
@@ -85,7 +102,6 @@ packages:
         externals:
         - spec: openssl@1.1.1k
           prefix: /usr
-          buildable: False
 EOF
 ;;
     nitrogen )
@@ -111,7 +127,6 @@ packages:
         externals:
         - spec: openssl@1.1.1k
           prefix: /usr
-          buildable: False
 EOF
 ;;
     sulfur )
@@ -137,7 +152,6 @@ packages:
         externals:
         - spec: openssl@1.1.1k
           prefix: /usr
-          buildable: False
 EOF
 	;;
     *)
@@ -178,30 +192,35 @@ fi
 
 cd $HOME/apps
 
-if [ -e $HOME/apps/spack ]; then
-    rm -r -f $HOME/apps/spack
+if [ -e spack ]; then
+    cd spack
+    echo -- Resetting existing spack git repo
+    git checkout -f
+    git clean -fd
+    git checkout develop
+    git pull
+    cd ..
+else
+    git clone https://github.com/spack/spack.git
 fi
-
-git clone https://github.com/spack/spack.git
 
 if [ ! -e spack/CHANGELOG.md ]; then
     echo "--- FAILED TO FIND spack/CHANGELOG.md . BAD CLONE or I/O PROBLEMS. ABORTING"
     exit 1	 
 fi
 
-cd $HOME/apps/spack
-
+cd $SPACK_ROOT
 # For reproducibility, use a specific version of Spack
 # Prefer to use tagged releases https://github.com/spack/spack/releases
-git checkout b8c31b22a5d1619d0137bc3fc69e24389ca436fb
-#commit b8c31b22a5d1619d0137bc3fc69e24389ca436fb (HEAD -> develop, origin/develop, origin/HEAD)
+git checkout 45b9069e4997f4b453b2770886b1e8ba790980f4
+#commit 45b9069e4997f4b453b2770886b1e8ba790980f4 (HEAD -> develop, origin/develop, origin/HEAD)
 #Author: Harmen Stoppels <me@harmenstoppels.nl>
-#Date:   Fri May 16 12:09:20 2025 +0200
+#Date:   Wed Apr 8 14:38:32 2026 +0200
 #
-#    builtin: crlf -> lf (#50505)
+#    new_installer.py: sub_process < /dev/null (#52221)
 
 # Limit overly strong rmg boost dependency to allow concretizer:unify:true
-sed -ibak 's/boost@1.61.0:1.82.0/boost@1.61.0:1.82.0", when="@:6.1.2/g' var/spack/repos/spack_repo/builtin/packages/rmgdft/package.py
+#sed -ibak 's/boost@1.61.0:1.82.0/boost@1.61.0:1.82.0", when="@:6.1.2/g' var/spack/repos/spack_repo/builtin/packages/rmgdft/package.py
 
 echo --- Git version and last log entry
 git log -1
@@ -213,70 +232,107 @@ cd bin
 # Consider using a GCC toolset on Red Hat systems to use
 # recent compilers with better architecture support.
 # e.g. dnf install gcc-toolset-14
-if [ -e /opt/rh/gcc-toolset-14/enable ]; then
-    echo --- Using gcc-toolset-14 for newer compilers
-    source /opt/rh/gcc-toolset-14/enable 
-fi
+#if [ -e /opt/rh/gcc-toolset-14/enable ]; then
+#    echo --- Using gcc-toolset-14 for newer compilers
+#    source /opt/rh/gcc-toolset-14/enable 
+#fi
 
 export DISPLAY="" 
-export SPACK_ROOT=$HOME/apps/spack
-export SPACK_USER_CONFIG_PATH=$HOME/apps/spack_user_config  # Avoid using $HOME/.spack
+# SPACK_ROOT & SPACK_USER_CONFIG_PATH already set
 export PATH=$SPACK_ROOT/bin:$PATH
 . $SPACK_ROOT/share/spack/setup-env.sh
 echo --- Bootstrap
 spack bootstrap now
+spack gpg init
+
+echo --- Setup/use mirror in /scratch/$USER/spack_mirror
+if [ ! -e /scratch/$USER/spack_mirror ];then
+    mkdir /scratch/$USER/spack_mirror
+    #spack mirror create -d /scratch/$USER/spack_mirror #  Will error due to no packages
+else
+    echo --- Mirror already exists. Carefully consider if refresh needed after major spack updates.
+    du -ksh /scratch/$USER/spack_mirror
+fi
+spack mirror add localmirror /scratch/$USER/spack_mirror
+spack buildcache update-index /scratch/$USER/spack_mirror
+spack mirror set --autopush localmirror  # enable automatic push for an existing mirror
+spack mirror set --unsigned localmirror  # disable signing and verification
 
 echo --- Spack list
 spack find
+echo --- Spack compilers
+spack compilers
+echo --- Spack compiler find
+spack compiler find
+echo --- Spack compilers
+spack compilers
 echo --- Modules list
 module list
 echo --- End listings
 
-echo --- gcc@${gcc_vnew} `date`
-spack install gcc@${gcc_vnew}
-echo --- load gcc@${gcc_vnew}
-spack load gcc@${gcc_vnew}
-module list
-spack compiler find
-spack unload gcc@${gcc_vnew}
-echo --- gcc@${gcc_vold}  `date`
-spack install gcc@${gcc_vold}
-echo --- load gcc@${gcc_vold}
-spack load gcc@${gcc_vold}
-module list
-spack compiler find
-spack unload gcc@${gcc_vold}
-echo --- gcc@${gcc_vcuda}
-spack install gcc@${gcc_vcuda}
-spack load gcc@${gcc_vcuda}
-spack compiler find
-spack unload gcc@${gcc_vcuda}
-if [ "$ourplatform" == "Intel" ]; then
-echo --- gcc@${gcc_vintel}  `date`
-spack install gcc@${gcc_vintel}
-spack load gcc@${gcc_vintel}
-spack compiler find
-spack unload gcc@${gcc_vintel}
-fi
-echo --- gcc@${gcc_vnvhpc}  `date`
-spack install gcc@${gcc_vnvhpc}
-spack load gcc@${gcc_vnvhpc}
-spack compiler find
-spack unload gcc@${gcc_vnvhpc}
-echo --- llvm@${llvm_vnew}  `date`
-spack install llvm@${llvm_vnew}
-spack load llvm@${llvm_vnew}
-spack compiler find
-spack unload llvm@${llvm_vnew}
+#DEBUGecho --- Screen llvm compilations
+#DEBUGecho --- Trying without cuda_arch
+#DEBUGecho --- llvm@22 for offload  `date`
+#DEBUGspack spec llvm@22 +libomptarget +libomptarget_debug ^cuda@${cuda_voffload} +allow-unsupported-compilers
+#DEBUGspack install llvm@22 +libomptarget +libomptarget_debug ^cuda@${cuda_voffload} +allow-unsupported-compilers
+#DEBUGspack load llvm@22 +libomptarget +libomptarget_debug ^cuda@${cuda_voffload} +allow-unsupported-compilers
+#DEBUGspack unload llvm
+#DEBUGecho --- llvm@21 for offload  `date`
+#DEBUGspack spec llvm@21 +libomptarget +libomptarget_debug ^cuda@${cuda_voffload} +allow-unsupported-compilers
+#DEBUGspack install llvm@21 +libomptarget +libomptarget_debug ^cuda@${cuda_voffload} +allow-unsupported-compilers
+#DEBUGspack load llvm@21 +libomptarget +libomptarget_debug ^cuda@${cuda_voffload} +allow-unsupported-compilers
+#DEBUGspack unload llvm
+#DEBUGecho --- llvm@20 for offload  `date`
+#DEBUGspack spec llvm@20 +libomptarget +libomptarget_debug ^cuda@${cuda_voffload} +allow-unsupported-compilers
+#DEBUGspack install llvm@20 +libomptarget +libomptarget_debug ^cuda@${cuda_voffload} +allow-unsupported-compilers
+#DEBUGspack load llvm@20 +libomptarget +libomptarget_debug ^cuda@${cuda_voffload} +allow-unsupported-compilers
+#DEBUGspack unload llvm
+#DEBUGecho --- llvm@19 for offload  `date`
+#DEBUGspack spec llvm@19 +libomptarget +libomptarget_debug ^cuda@${cuda_voffload} +allow-unsupported-compilers
+#DEBUGspack install llvm@19 +libomptarget +libomptarget_debug ^cuda@${cuda_voffload} +allow-unsupported-compilers
+#DEBUGspack load llvm@19 +libomptarget +libomptarget_debug ^cuda@${cuda_voffload} +allow-unsupported-compilers
+#DEBUGspack unload llvm
+
+# 2026-03-28: Install LLVM first. Will use system gcc and avoid problems/spack bugs with newer gcc, binutils etc.
 echo --- llvm@${llvm_voffload} for offload  `date`
-spack install gcc@${gcc_vllvmoffload}
-spack install cuda@${cuda_voffload} +allow-unsupported-compilers
-spack load cuda@${cuda_voffload} +allow-unsupported-compilers
-spack install llvm@${llvm_voffload} targets=all ^gcc@${gcc_vllvmoffload}
-spack load llvm@${llvm_voffload}  targets=all  ^gcc@${gcc_vllvmoffload}
-spack compiler find
-spack unload llvm@${llvm_voffload}
-spack unload cuda@${cuda_voffload}
+
+spack spec llvm@${llvm_voffload} openmp=project +libomptarget +libomptarget_debug ^cuda@${cuda_voffload} +allow-unsupported-compilers
+spack install llvm@${llvm_voffload} openmp=project +libomptarget +libomptarget_debug ^cuda@${cuda_voffload} +allow-unsupported-compilers
+spack load llvm@${llvm_voffload} openmp=project +libomptarget +libomptarget_debug ^cuda@${cuda_voffload} +allow-unsupported-compilers
+spack unload llvm
+
+echo --- llvm@${llvm_vnew}  `date`
+if [ "${llvm_vnew}" == "${llvm_voffload}" ]; then
+    echo Skipping: Offload and New LLVM versions are identical
+else
+    spack install llvm@${llvm_vnew} openmp=project
+    spack load llvm@${llvm_vnew} openmp=project
+    spack compiler find
+    spack unload llvm@${llvm_vnew}
+fi
+
+echo --- gcc@${gcc_vold}  `date`
+if [ "${gcc_vllvmoffload}" == "${gcc_vold}" ]; then
+    echo Skipping: Already available via offload version
+else
+    spack install gcc@${gcc_vold}
+    spack load gcc@${gcc_vold}
+    module list
+    spack compiler find
+    spack unload gcc@${gcc_vold}
+fi
+
+echo --- gcc@${gcc_vnew} `date`
+if [ "${gcc_vllvmoffload}" == "${gcc_vnew}" ] || [ "${gcc_vold}" == "${gcc_vnew}" ] ; then
+    echo Skipping: Already available via offload or old versions
+else
+    spack install gcc@${gcc_vnew}
+    spack load gcc@${gcc_vnew}
+    module list
+    spack compiler find
+    spack unload gcc@${gcc_vnew}
+fi
+
 echo --- Spack compilers  `date`
 spack compilers
 echo --- Modules list

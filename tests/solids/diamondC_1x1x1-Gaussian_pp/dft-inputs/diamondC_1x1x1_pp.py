@@ -57,7 +57,7 @@ e_scf=mf.kernel()
 
 ener = open('e_scf','w')
 ener.write('%s\n' % (e_scf))
-print 'e_scf',e_scf
+print('e_scf', e_scf)
 
 
 title="C_Diamond"

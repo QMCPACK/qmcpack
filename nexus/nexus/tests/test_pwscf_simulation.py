@@ -1,15 +1,17 @@
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.PWSCF_SIMULATION)
 
-from .. import testing
-from ..testing import divert_nexus,restore_nexus,clear_all_sims
+from ..generic import generic_settings
+generic_settings.raise_error = True
+
+from pathlib import Path
+
+from . import isolate_nexus_core, create_pseudo_files
+from nexus.nexus_base import nexus_core
+from ..testing import clear_all_sims
 from ..testing import failed,FailedTest
-from ..testing import value_eq,object_eq,text_eq
-
-
-
-pseudo_inputs = dict(
-    pseudo_dir = 'pseudopotentials',
-    pseudo_files_create = ['C.BFD.upf'],
-    )
+from ..testing import value_eq,object_eq
 
 
 def get_system():
@@ -49,13 +51,13 @@ def get_pwscf_sim(type='scf'):
             job          = job(machine='ws1',cores=1),
             input_type   = 'generic',
             calculation  = 'scf',
-            input_dft    = 'lda', 
-            ecutwfc      = 200,   
-            conv_thr     = 1e-8, 
+            input_dft    = 'lda',
+            ecutwfc      = 200,
+            conv_thr     = 1e-8,
             nosym        = True,
             wf_collect   = True,
             system       = get_system(),
-            pseudos      = ['C.BFD.upf'], 
+            pseudos      = ['C.BFD.upf'],
             nogamma      = True,
             )
     else:
@@ -67,12 +69,6 @@ def get_pwscf_sim(type='scf'):
 
     return sim
 #end def get_pwscf_sim
-
-
-
-def test_import():
-    from ..pwscf import Pwscf,generate_pwscf
-#end def test_import
 
 
 
@@ -91,12 +87,17 @@ def test_minimal_init():
 #end def test_minimal_init
 
 
+@isolate_nexus_core
+def test_check_result(tmp_path):
 
-def test_check_result():
-    tpath = testing.setup_unit_test_output_directory('pwscf_simulation','test_check_result',**pseudo_inputs)
+    nexus_core.local_directory  = str(tmp_path)
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+
+    create_pseudo_files(tmp_path, ["C.BFD.upf"])
 
     sim = get_pwscf_sim('scf')
-    
+
     assert(not sim.check_result('unknown',None))
     assert(sim.check_result('charge_density',None))
     assert(sim.check_result('restart',None))
@@ -104,15 +105,18 @@ def test_check_result():
     assert(not sim.check_result('structure',None))
 
     clear_all_sims()
-    restore_nexus()
 #end def test_check_result
 
 
-
-def test_get_result():
+@isolate_nexus_core
+def test_get_result(tmp_path):
     from ..developer import NexusError
 
-    tpath = testing.setup_unit_test_output_directory('pwscf_simulation','test_get_result',**pseudo_inputs)
+    nexus_core.local_directory  = str(tmp_path)
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+
+    create_pseudo_files(tmp_path, ["C.BFD.upf"])
 
     sim = get_pwscf_sim('scf')
 
@@ -141,7 +145,7 @@ def test_get_result():
 
     assert(set(result.keys())==set(result_ref.keys()))
     for k,path in result.items():
-        path = path.replace(tpath,'').lstrip('/')
+        path = path.replace(str(tmp_path),'').lstrip('/')
         assert(path==result_ref[k])
     #end for
 
@@ -153,19 +157,23 @@ def test_get_result():
 
     assert(set(result.keys())==set(result_ref.keys()))
     for k,path in result.items():
-        path = path.replace(tpath,'').lstrip('/')
+        path = path.replace(str(tmp_path),'').lstrip('/')
         assert(path==result_ref[k])
     #end for
 
     clear_all_sims()
-    restore_nexus()
 #end def test_get_result
 
 
-
-def test_incorporate_result():
+@isolate_nexus_core
+def test_incorporate_result(tmp_path):
     from ..developer import obj
-    tpath = testing.setup_unit_test_output_directory('pwscf_simulation','test_incorporate_result',**pseudo_inputs)
+
+    nexus_core.local_directory  = str(tmp_path)
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+
+    create_pseudo_files(tmp_path, ["C.BFD.upf"])
 
     sim = get_pwscf_sim('scf')
 
@@ -189,7 +197,7 @@ def test_incorporate_result():
     assert(c.restart_mode=='restart')
     del c.restart_mode
     assert(object_eq(sim.to_obj(),sim_start))
-    
+
     # structure
     altered_structure = sim.system.structure.copy()
     altered_structure.pos += 0.1
@@ -212,21 +220,23 @@ def test_incorporate_result():
     assert(object_eq(sim.to_obj(),sim_ref))
 
     clear_all_sims()
-    restore_nexus()
 #end def test_incorporate_result
 
 
+@isolate_nexus_core
+def test_check_sim_status(tmp_path):
 
-def test_check_sim_status():
-    import os
-    tpath = testing.setup_unit_test_output_directory('pwscf_simulation','test_check_sim_status',**pseudo_inputs)
+    nexus_core.local_directory  = str(tmp_path)
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+
+    create_pseudo_files(tmp_path, ["C.BFD.upf"])
 
     sim = get_pwscf_sim('scf')
 
-    assert(sim.locdir.rstrip('/')==os.path.join(tpath,'scf').rstrip('/'))
-    if not os.path.exists(sim.locdir):
-        os.makedirs(sim.locdir)
-    #end if
+    sim_dir = Path(sim.locdir).resolve()
+    assert(sim_dir == (tmp_path / 'scf').resolve())
+    sim_dir.mkdir()
 
     assert(not sim.finished)
 
@@ -240,23 +250,17 @@ def test_check_sim_status():
 
     assert(not sim.finished)
 
-    out_path = os.path.join(tpath,'scf',sim.outfile)
-
-    out_text = ''
-    outfile = open(out_path,'w')
-    outfile.write(out_text)
-    outfile.close()
-    assert(os.path.exists(out_path))
+    out_path = sim_dir / sim.outfile
+    out_path.touch()
+    assert(out_path.exists())
 
     sim.check_sim_status()
 
     assert(not sim.finished)
 
-    out_text = 'JOB DONE'
-    outfile = open(out_path,'w')
-    outfile.write(out_text)
-    outfile.close()
-    assert(out_text in open(out_path,'r').read())
+    out_text = "JOB DONE"
+    out_path.write_text(out_text)
+    assert(out_text in out_path.read_text())
 
     sim.check_sim_status()
 
@@ -264,6 +268,5 @@ def test_check_sim_status():
     assert(not sim.failed)
 
     clear_all_sims()
-    restore_nexus()
 #end def test_check_sim_status
 

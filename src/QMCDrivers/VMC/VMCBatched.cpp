@@ -111,7 +111,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
       // up and down electrons are "species" within qmpack
       for (int ig = 0; ig < walker_leader.groups(); ++ig) //loop over species
       {
-        TauParams<RealType, CT> taus(sft.qmcdrv_input.get_tau(), sft.population.get_ptclgrp_inv_mass()[ig],
+        TauParams<RealType, CT> taus(sft.qmcdrv_input.get_tau(), 1.0 / walker_leader.get_mass_by_group()[ig],
                                      sft.qmcdrv_input.get_spin_mass());
 
         twf_dispatcher.flex_prepareGroup(walker_twfs, walker_elecs, ig);

@@ -59,8 +59,7 @@ TEST_CASE("DMCDriver+QMCDriverNew integration", "[drivers]")
   outputManager.pause();
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(valid_dmc_input_sections[valid_dmc_input_dmc_batch_index]);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(valid_dmc_input_sections[valid_dmc_input_dmc_batch_index]));
   xmlNodePtr node = doc.getRoot();
   QMCDriverInput qmcdriver_input;
   qmcdriver_input.readXML(node);
@@ -75,8 +74,8 @@ TEST_CASE("DMCDriver+QMCDriverNew integration", "[drivers]")
   WalkerConfigurations walker_confs;
 
   DMCBatched dmcdriver(test_project, std::move(qmcdriver_input), nullptr, std::move(dmcdriver_input), walker_confs,
-                       MCPopulation(comm->size(), comm->rank(), particle_pool.getParticleSet("e"),
-                                    wavefunction_pool.getPrimary(), hamiltonian_pool.getPrimary()),
+                       MCPopulation(comm->size(), comm->rank(), *particle_pool.getParticleSet("e"),
+                                    wavefunction_pool.getWaveFunction().value(), hamiltonian_pool.getHamiltonian().value()),
                        rng_pool.getRngRefs(), comm);
 
   // setStatus must be called before process

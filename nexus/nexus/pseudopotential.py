@@ -37,16 +37,18 @@
 #====================================================================#
 
 import os
+from pathlib import Path
 import numpy as np
 from .execute import execute
 from .fileio import TextFile
 from .xmlreader import readxml
-from .periodic_table import pt, is_element
+from .periodic_table import Elements
 from .unit_converter import convert
 from .developer import DevBase, obj, unavailable, error
 from .basisset import process_gaussian_text, GaussianBasisSet
 from .physical_system import PhysicalSystem
 from .testing import object_eq
+from .utilities import path_string, is_valid_filename
 
 try:
     import matplotlib.pyplot as plt
@@ -56,6 +58,9 @@ except:
 
 
 def pp_elem_label(filename,guard=False):
+    if guard and not is_valid_filename(filename):
+        error(f"Pseudopotential file name {filename} is invalid!")
+
     el = ''
     for c in filename:
         if c=='.' or c=='_' or c=='-':
@@ -64,14 +69,21 @@ def pp_elem_label(filename,guard=False):
         el+=c
     #end for
     elem_label = el
-    is_elem,symbol = is_element(el,symbol=True)
+    is_elem, element = Elements.is_element(el, return_element=True)
     if guard: 
         if not is_elem:
-            error('cannot determine element for pseudopotential file: {0}\npseudopotential file names must be prefixed by an atomic symbol or label\n(e.g. Si, Si1, etc)'.format(filename))
+            error(
+                'cannot determine element for pseudopotential file: {0}\n'
+                'pseudopotential file names must be prefixed by an atomic symbol or label\n'
+                '(e.g. Si, Si1, etc)'.format(filename)
+            )
         #end if
-        return elem_label,symbol
+        return elem_label, element.symbol
     else:
-        return elem_label,symbol,is_elem
+        if isinstance(element, Elements):
+            return elem_label, element.symbol, is_elem
+        else:
+            return elem_label, element, is_elem
     #end if
 #end def pp_elem_label
 
@@ -112,7 +124,8 @@ class gamessPPFile(PseudoFile):
     #end def __init__
 
     def read(self,filepath):
-        lines = open(filepath,'r').read().splitlines()
+        with open(filepath, "r") as f:
+            lines = f.read().splitlines()
         new_block  = True
         tokens     = []
         block      = ''
@@ -168,8 +181,8 @@ class Pseudopotentials(DevBase):
         for pp in pseudopotentials:
             if isinstance(pp,PseudoFile):
                 pps.append(pp)
-            elif isinstance(pp,str):
-                ppfiles.append(pp)
+            elif isinstance(pp, str | Path):
+                ppfiles.append(path_string(pp))
             else:
                 self.error('expected PseudoFile type or filepath, got '+str(type(pp)),exit=False)
                 errors = True
@@ -289,16 +302,18 @@ class PPset(DevBase):
             #end if
             ppcoll = obj()
             for pp in pps:
-                if not isinstance(pp,str):
+                if not isinstance(pp, (str, Path)):
                     self.error('incorrect use of ppset\nnon-filename provided with set labeled "{0}" for simulation code "{1}"\neach pseudopential file name must be a string\nreceived type: {2}\nwith value: {3}'.format(label,code,pp.__class__.__name__,pp))
-                #end if
-                elem_label,symbol,is_elem = pp_elem_label(pp)
+                else:
+                    pp = path_string(pp)
+                    elem_label, symbol, is_elem = pp_elem_label(pp)
+
                 if not is_elem:
                     self.error('invalid filename provided to ppset\ncannot determine element for pseudopotential file: {0}\npseudopotential file names must be prefixed by an atomic symbol or label\n(e.g. Si, Si1, etc)'.format(pp))
                 elif symbol in ppcoll:
                     self.error('incorrect use of ppset\nmore than one pseudopotential file provided for element "{0}" for code "{1}" in set labeled "{2}"\nfirst file: {3}\nsecond file: {4}'.format(symbol,code,label,ppcoll[symbol],pp))
                 #end if
-                ppcoll[symbol] = pp
+                ppcoll[symbol] = path_string(pp)
             #end for
             pseudos[clow] = ppcoll
         #end for
@@ -372,6 +387,7 @@ class Pseudopotential(DevBase):
 
 
     def read(self,filepath,format=None):
+        filepath = path_string(filepath)
         if self.requires_format:
             if format is None:
                 self.error('format keyword must be specified to read file {0}\nvalid options are: {1}'.format(filepath,self.formats))
@@ -383,7 +399,8 @@ class Pseudopotential(DevBase):
             self.error('cannot read {0}, file does not exist'.format(filepath))
         #end if
         self.element = pp_elem_label(os.path.split(filepath)[1])[0]
-        text = open(filepath,'r').read()
+        with open(filepath, "r") as f:
+            text = f.read()
         self.read_text(text,format,filepath=filepath)
     #end def read
 
@@ -398,7 +415,8 @@ class Pseudopotential(DevBase):
         #end if
         text = self.write_text(format)
         if filepath is not None:
-            open(filepath,'w').write(text)
+            with open(filepath, "w") as f:
+                f.write(text)
         #end if
         return text
     #end def write
@@ -1482,7 +1500,8 @@ class SemilocalPP(Pseudopotential):
         text = header+grid+L2+semilocal+footer
 
         if filepath is not None:
-            open(filepath,'w').write(text)
+            with open (filepath, "w") as f:
+                f.write(text)
         #end if
         return text
     #end def write_qmcpack
@@ -1621,7 +1640,7 @@ class GaussianPP(SemilocalPP):
             else:
                 atomic_number = int(conv_atomic_number[-2:])
             #end if
-            element = pt.simple_elements[atomic_number].symbol
+            element = Elements(atomic_number).symbol
             if 'input' not in lines[i].lower():
                 self.error('INPUT must be present for crystal pseudpotential read')
             #end if
@@ -1679,7 +1698,7 @@ class GaussianPP(SemilocalPP):
             Zval = int(Zval)
             lmax = int(lmax)-1
             element = self.element
-            Zcore = int(pt[element].atomic_number)-Zval
+            Zcore = int(Elements(element).atomic_number)-Zval
             ns =  [int(n) for n in lines[i].split()]; i+=1
             while i<len(lines):
                 for n in ns:
@@ -1703,19 +1722,19 @@ class GaussianPP(SemilocalPP):
             basis = bs.basis
         #end if
 
-        if element not in pt:
-            if self.element not in pt:
-                self.error('cannot identify element for pseudopotential file '+filepath)
+        if not Elements.is_element(element):
+            if not Elements.is_element(self.element):
+                self.error('cannot identify element for pseudopotential file '+path_string(filepath))
             #end if
         else:
             self.element = element
         #end if
-        Zatom = pt[element].atomic_number
+        Zatom = Elements(element).atomic_number
         Zval = Zatom-Zcore
         if Zcore==0:
             core = None
         else:
-            core = pt.simple_elements[Zcore].symbol
+            core = Elements(Zcore).symbol
         #end if
         self.set(
             core    = core,
@@ -1803,7 +1822,7 @@ class GaussianPP(SemilocalPP):
             text += '\n'
         elif format=='crystal':
             if basis is not None:
-                conv_atomic_number = 200 + pt[self.element].atomic_number
+                conv_atomic_number = 200 + Elements(self.element).atomic_number
                 text+='{0} {1}\n'.format(conv_atomic_number,basis.size())
                 btext = basis.write_text(format,occ=occ)
             else:
@@ -2417,7 +2436,7 @@ class GaussianPP(SemilocalPP):
         keep_chans = keep.split()
         # Are the labels recognized?
         if keep_chans[0] not in chan_labels or keep_chans[1] not in chan_labels:
-            slef.error('Requested channel to keep is not recognized')
+            self.error('Requested channel to keep is not recognized')
         #end if
         # Does the original potential contain the requested channels?
         if keep_chans[0] not in comps or keep_chans[1] not in comps:
@@ -2528,7 +2547,7 @@ class QmcpackPP(SemilocalPP):
         if self.Zcore==0:
             self.core = '0'
         else:
-            self.core = pt.simple_elements[self.Zcore].symbol
+            self.core = Elements(self.Zcore).symbol
         #end if
 
         g = pp.grid
@@ -2605,6 +2624,7 @@ class CasinoPP(SemilocalPP):
     unitmap = dict(rydberg='Ry',hartree='Ha',ev='eV')
 
     def read(self,filepath,format=None):
+        filepath = path_string(filepath)
         if not os.path.exists(filepath):
             self.error('cannot read {0}, file does not exist'.format(filepath))
         #end if
@@ -2612,10 +2632,10 @@ class CasinoPP(SemilocalPP):
         file = TextFile(filepath)
         # read scalar values at the top
         Zatom,Z = file.readtokensf('Atomic number and pseudo-charge',int,float)
-        if Zatom>len(pt.simple_elements):
+        if Zatom > Elements.num_elements():
             self.error('element {0} is not in the periodic table')
         #end if
-        element = pt.simple_elements[Zatom].symbol
+        element = Elements(Zatom).symbol
         units = file.readtokensf('Energy units',str)
         if units not in self.unitmap:
             self.error('units {0} unrecognized from casino PP file {1}'.format(units,filepath))
@@ -2649,7 +2669,7 @@ class CasinoPP(SemilocalPP):
             #end for
             lpots.append(convert(v,self.unitmap[units],'Ha'))
         #end while
-
+        file.close()
         # fill in SemilocalPP class data obtained from read
         self.element = element
         self.Zval    = int(Z)
@@ -2657,7 +2677,7 @@ class CasinoPP(SemilocalPP):
         if self.Zcore==0:
             self.core = '0'
         else:
-            self.core = pt.simple_elements[self.Zcore].symbol
+            self.core = Elements(self.Zcore).symbol
         #end if
         self.lmax  = lmax
         self.local = lloc

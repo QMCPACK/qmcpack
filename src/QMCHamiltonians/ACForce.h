@@ -49,10 +49,10 @@ public:
 
   /** Cloning **/
   //We don't actually use this makeClone method.  We just put an APP_ABORT here
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) const final;
 
   //Not derived from base class.  But we need it to properly set the Hamiltonian reference.
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& H);
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& H) const;
 
   void addObservables(PropertySetType& plist, BufferType& collectables) final;
 
@@ -62,7 +62,7 @@ public:
 
   /** Since we store a reference to QMCHamiltonian, the baseclass method add2Hamiltonian 
  *  isn't sufficient.  We override it here. **/
-  void add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& targetH) final;
+  void add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& targetH) const final;
 
   /** Computes multiplicative regularizer f(G,epsilon) according to Pathak-Wagner arXiv:2002.01434 .
   * G estimates proximity to node, and f(G,epsilon) in that paper is used to scale all values.   

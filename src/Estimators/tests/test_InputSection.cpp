@@ -135,8 +135,7 @@ TEST_CASE("InputSection::readXML", "[estimators]")
 
     // parse xml doc
     Libxml2Document doc;
-    bool okay = doc.parseFromString(xml);
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(xml));
     xmlNodePtr cur = doc.getRoot();
 
     // read xml
@@ -189,8 +188,7 @@ TEST_CASE("InputSection::readXML", "[estimators]")
 
     // parse xml doc
     Libxml2Document doc;
-    bool okay = doc.parseFromString(xml);
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(xml));
     xmlNodePtr cur = doc.getRoot();
 
     // read xml
@@ -259,8 +257,7 @@ TEST_CASE("InputSection::readXML", "[estimators]")
     {
       // parse xml doc
       Libxml2Document doc;
-      bool okay = doc.parseFromString(xml);
-      REQUIRE(okay);
+      REQUIRE(doc.parseFromString(xml));
       xmlNodePtr cur = doc.getRoot();
 
       // read xml
@@ -274,8 +271,7 @@ TEST_CASE("InputSection::InvalidElement", "[estimators]")
 {
   std::string invalid_element{R"(<test> &lt; </test>)"};
   Libxml2Document doc;
-  bool okay = doc.parseFromString(invalid_element);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(invalid_element));
   xmlNodePtr cur = doc.getRoot();
   TestInputSection ti;
   CHECK_THROWS_AS(ti.readXML(cur), UniformCommunicateError);
@@ -481,7 +477,7 @@ TEST_CASE("InputSection::custom", "[estimators]")
 )XML";
 
   Libxml2Document doc;
-  bool okay      = doc.parseFromString(xml);
+  REQUIRE(doc.parseFromString(xml));
   xmlNodePtr cur = doc.getRoot();
   CustomTestInput cti;
   cti.readXML(cur);
@@ -603,8 +599,7 @@ TEST_CASE("InputSection::Delegate", "[estimators]")
 )XML";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(xml);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(xml));
   xmlNodePtr cur = doc.getRoot();
 
   DelegatingInput dti(cur);
@@ -624,8 +619,7 @@ TEST_CASE("InputSection::Delegate", "[estimators]")
 </test>
 )XML";
 
-  okay = doc.parseFromString(xml_duplicate_delegate_name);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(xml_duplicate_delegate_name));
   cur = doc.getRoot();
 
   CHECK_THROWS_AS(dti = DelegatingInput(cur), UniformCommunicateError);

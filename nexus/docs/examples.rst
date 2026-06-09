@@ -22,7 +22,7 @@ directory in your Nexus installation:
 
 .. code-block: rest
 
-  /your_download_path/nexus/examples
+  /your_download_path/nexus/nexus/examples
 
 The examples assume that you have working versions of ``pw.x``,
 ``pw2qmcpack.x``, ``qmcpack`` (real version), and ``qmcpack_complex``
@@ -79,7 +79,7 @@ The files for this example are found in:
 
 .. code-block:: rest
 
-  /your_download_path/nexus/examples/qmcpack/diamond
+  /your_download_path/nexus/nexus/examples/qmcpack/diamond
 
 By following the instructions contained in this section the reader can
 execute a simple workflow with Nexus. The workflow presented here is
@@ -205,7 +205,7 @@ the user’s ``PATH`` and are named ``pw.x``, ``qmcpack``, and
 installation instructions for these codes. A test of Nexus including the
 generation of input files, but without actual job submission, can be
 performed without installing these codes. However, Python itself and
-NumPy are required to run Nexus (see :ref:`install-python`. The
+NumPy are required to run Nexus (see :ref:`install-python`). The
 example also assumes the local machine is a workstation with 16
 available cores (“``ws16``”). If fewer than 16 cores are available,
 *e.g.* 4, change the example files to reflect this:
@@ -382,7 +382,7 @@ The files for this example are found in:
 
 .. code:: rest
 
-  /your_download_path/nexus/examples/qmcpack/graphene
+  /your_download_path/nexus/nexus/examples/qmcpack/graphene
 
 Take a moment to study the “input file” script (``graphene.py``) and the
 attendant comments (prefixed with #).
@@ -819,7 +819,7 @@ The files for this example are found in:
 
 .. code:: rest
 
-  /your_download_path/nexus/examples/qmcpack/c20
+  /your_download_path/nexus/nexus/examples/qmcpack/c20
 
 Take a moment to study the “input file” script (``c20_example.py``) and
 the attendant comments (prefixed with #). The relevant differences from
@@ -1161,7 +1161,7 @@ The files for this example are found in:
 
 .. code:: rest
 
-  /your_download_path/nexus/examples/qmcpack/oxygen_dimer
+  /your_download_path/nexus/nexus/examples/qmcpack/oxygen_dimer
 
 Enter the ``examples/qmcpack/oxygen_dimer`` directory. Open
 ``oxygen_dimer.py`` with a text editor. The overall format is similar to
@@ -1498,7 +1498,7 @@ The files for this example are found in:
 
 .. code:: rest
 
-  /your_download_path/nexus/examples/qmcpack/rsqmc_misc/excited
+  /your_download_path/nexus/nexus/examples/qmcpack/rsqmc_misc/excited
 
 Please study `Lab 5`_ in QMCPACK manual for an in-depth discussion of the
 excited states calculations. The primitive cell for a structure is not
@@ -1715,7 +1715,7 @@ The files for this example are found in:
 
 .. code:: rest
 
-  /your_download_path/nexus/examples/generic
+  /your_download_path/nexus/nexus/examples/generic
 
 GenericSimulation class provides support for executing custom scripts with Nexus.
 It uses template files for input generation and also provides output file tracking to determine simulation completion status.

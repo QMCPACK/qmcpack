@@ -52,7 +52,7 @@ TEST_CASE("StructureFactorEstimator::StructureFactorEstimator", "[estimators]")
   // NOLINTEND(cppcoreguidelines-avoid-magic-numbers)
 
   Libxml2Document doc;
-  bool okay       = doc.parseFromString(Input::getXml(Input::valid::SKALL));
+  REQUIRE(doc.parseFromString(Input::getXml(Input::valid::SKALL)));
   xmlNodePtr node = doc.getRoot();
   UPtr<StructureFactorInput> sf_in;
   sf_in = std::make_unique<StructureFactorInput>(node);
@@ -68,7 +68,7 @@ TEST_CASE("StructureFactorEstimator::Accumulate", "[estimators]")
   comm = OHMMS::Controller;
 
   Libxml2Document doc;
-  bool okay       = doc.parseFromString(Input::getXml(Input::valid::SKALL));
+  REQUIRE(doc.parseFromString(Input::getXml(Input::valid::SKALL)));
   xmlNodePtr node = doc.getRoot();
   UPtr<StructureFactorInput> sf_in;
   sf_in = std::make_unique<StructureFactorInput>(node);
@@ -133,19 +133,18 @@ TEST_CASE("StructureFactorEstimator::Accumulate", "[estimators]")
 
   auto wavefunction_pool =
       MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
-  auto& spomap = wavefunction_pool.getWaveFunction("wavefunction")->getSPOMap();
 
-  auto& trial_wavefunction = *(wavefunction_pool.getPrimary());
+  TrialWaveFunction& psi(wavefunction_pool.getWaveFunction().value());
   std::vector<UPtr<TrialWaveFunction>> twfcs(nwalkers);
   for (int iw = 0; iw < nwalkers; ++iw)
-    twfcs[iw] = trial_wavefunction.makeClone(psets[iw]);
+    twfcs[iw] = psi.makeClone(psets[iw]);
 
   auto ref_wfns = convertUPtrToRefVector(twfcs);
 
   // These hamiltomians are just pro forma arguments needed to hold off UBSan,
   // StructureFactorEstimator never accesses into them.
   auto hamiltonian_pool  = MinimalHamiltonianPool::makeHamWithEEEI(comm, particle_pool, wavefunction_pool);
-  auto& gold_hamiltonian = *(hamiltonian_pool.getPrimary());
+  QMCHamiltonian& gold_hamiltonian(hamiltonian_pool.getHamiltonian().value());
   std::vector<UPtr<QMCHamiltonian>> hams(nwalkers);
   for (int iw = 0; iw < nwalkers; ++iw)
     hams[iw] = gold_hamiltonian.makeClone(psets[iw], ref_wfns[iw]);

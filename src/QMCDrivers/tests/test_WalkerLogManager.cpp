@@ -40,8 +40,7 @@ TEST_CASE("WalkerLogManager::move", "[drivers]")
 
   using WLInput = testing::WalkerLogInputSections;
   Libxml2Document doc;
-  bool okay = doc.parseFromString(WLInput::getXml(WLInput::valid::DEFAULT));
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(WLInput::getXml(WLInput::valid::DEFAULT)));
   xmlNodePtr node = doc.getRoot();
   WalkerLogInput walker_log_input{node};
   auto make_stuff = [comm](WalkerLogInput& walker_log_input) -> LogAndStuff {

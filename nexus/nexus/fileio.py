@@ -27,9 +27,10 @@ import mmap
 import numpy as np
 from numpy.linalg import det, norm
 from .developer import DevBase, obj, error, to_str
-from .periodic_table import is_element, pt as ptable
+from .periodic_table import Elements
 from .unit_converter import convert
 from . import numpy_extensions as npe
+from .utilities import path_string
 
 class TextFile(DevBase):
     # interface to mmap files
@@ -39,11 +40,13 @@ class TextFile(DevBase):
         self.mm = None
         self.f  = None
         if filepath is not None:
+            filepath = path_string(filepath)
             self.open(filepath)
         #end if
     #end def __init__
 
     def open(self,filepath):
+        filepath = path_string(filepath)
         if not os.path.exists(filepath):
             self.error('cannot open non-existent file: {0}'.format(filepath))
         #end if
@@ -243,7 +246,8 @@ class StandardFile(DevBase):
     def __init__(self,filepath=None):
         if filepath is None:
             None
-        elif isinstance(filepath, (str, Path)):
+        elif isinstance(filepath, str | bytes | Path):
+            filepath = path_string(filepath)
             self.read(filepath)
         else:
             self.error('unsupported input: {0}'.format(filepath))
@@ -255,7 +259,9 @@ class StandardFile(DevBase):
         if not os.path.exists(filepath):
             self.error('read failed\nfile does not exist: {0}'.format(filepath))
         #end if
-        self.read_text(open(filepath,'r').read())
+        with open(filepath, "r") as f:
+            self.read_text(f.read())
+
         self.check_valid('read failed')
     #end def read
 
@@ -264,7 +270,8 @@ class StandardFile(DevBase):
         self.check_valid('write failed')
         text = self.write_text()
         if filepath is not None:
-            open(filepath,'w').write(text)
+            with open(filepath, "w") as f:
+                f.write(text)
         #end if
         return text
     #end def write
@@ -826,9 +833,9 @@ class XsfFile(StandardFile):
         s.recenter()
         elem = []
         for e in s.elem:
-            is_elem,e = is_element(e,symbol=True)
+            is_elem, e = Elements.is_element(e, return_element=True)
             if is_elem:
-                elem.append(ptable.elements[e].atomic_number)
+                elem.append(e.atomic_number)
             else:
                 elem.append(0)
             #end if
@@ -1127,7 +1134,7 @@ class PoscarFile(StandardFile):
                 msgs.append('elem must be an array of text')
             else:
                 for e in self.elem:
-                    iselem,symbol = is_element(e,symbol=True)
+                    iselem, e = Elements.is_element(e, return_element=True)
                     if not iselem:
                         msgs.append('elem entry "{0}" is not an element'.format(e))
                     #end if
@@ -1193,11 +1200,11 @@ class PoscarFile(StandardFile):
         #end for
         if self.elem is not None:
             for e in self.elem:
-                iselem,symbol = is_element(e,symbol=True)
+                iselem, e = Elements.is_element(e, return_element=True)
                 if not iselem:
                     self.error('{0} is not an element'.format(e))
                 #end if
-                text += e+' '
+                text += e.symbol+' '
             #end for
             text += '\n'
         #end if
@@ -1269,7 +1276,7 @@ class PoscarFile(StandardFile):
         species_ind = species
         species = []
         for i in species_ind:
-            species.append(ptable.simple_elements[i].symbol)
+            species.append(Elements(i).symbol)
         #end for
 
         self.scale      = 1.0

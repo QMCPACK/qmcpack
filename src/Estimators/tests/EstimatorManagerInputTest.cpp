@@ -32,8 +32,7 @@ Libxml2Document createEstimatorManagerNewGlobalInputXML()
   estimators_doc.newDoc("Estimators");
   {
     Libxml2Document doc;
-    bool okay = doc.parseFromString(ScalarInput::getXml(ScalarInput::valid::LOCAL_ENERGY));
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(ScalarInput::getXml(ScalarInput::valid::LOCAL_ENERGY)));
     xmlNodePtr node = doc.getRoot();
     estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
   }
@@ -49,8 +48,7 @@ Libxml2Document createEstimatorNewGlobalOperatorEstInputXML()
   {
     using Input = testing::ValidStructureFactorInput;
     Libxml2Document doc;
-    bool okay = doc.parseFromString(Input::getXml(Input::valid::SKALL));
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(Input::getXml(Input::valid::SKALL)));
     xmlNodePtr node = doc.getRoot();
     estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
   }
@@ -65,31 +63,27 @@ Libxml2Document createEstimatorManagerNewInputXML()
   {
     using Input = testing::ValidOneBodyDensityMatricesInput;
     Libxml2Document doc;
-    bool okay = doc.parseFromString(Input::getXml(Input::valid::VANILLA));
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(Input::getXml(Input::valid::VANILLA)));
     xmlNodePtr node = doc.getRoot();
     estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
   }
   {
     Libxml2Document doc;
-    bool okay = doc.parseFromString(valid_momentum_distribution_input_sections[0]);
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(valid_momentum_distribution_input_sections[0]));
     xmlNodePtr node = doc.getRoot();
     estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
   }
   {
     using Input = testing::EnergyDensityInputs;
     Libxml2Document doc;
-    bool okay = doc.parseFromString(Input::getXml(Input::valid::CELL));
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(Input::getXml(Input::valid::CELL)));
     xmlNodePtr node = doc.getRoot();
     estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
   }
   {
     using Input = testing::ValidStructureFactorInput;
     Libxml2Document doc;
-    bool okay = doc.parseFromString(Input::getXml(Input::valid::SKALL));
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(Input::getXml(Input::valid::SKALL)));
     xmlNodePtr node = doc.getRoot();
     estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
   }
@@ -98,8 +92,7 @@ Libxml2Document createEstimatorManagerNewInputXML()
   for (auto& input_xml : scalar_input)
   {
     Libxml2Document doc;
-    bool okay = doc.parseFromString(input_xml);
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(input_xml));
     xmlNodePtr node = doc.getRoot();
     estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
   }
@@ -115,30 +108,26 @@ Libxml2Document createEstimatorManagerNewVMCInputXML()
   {
     using Input = testing::ValidOneBodyDensityMatricesInput;
     Libxml2Document doc;
-    bool okay = doc.parseFromString(Input::getXml(Input::valid::VANILLA));
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(Input::getXml(Input::valid::VANILLA)));
     xmlNodePtr node = doc.getRoot();
     estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
   }
   {
     Libxml2Document doc;
-    bool okay = doc.parseFromString(valid_momentum_distribution_input_sections[0]);
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(valid_momentum_distribution_input_sections[0]));
     xmlNodePtr node = doc.getRoot();
     estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
   }
   {
     using Input = testing::EnergyDensityInputs;
     Libxml2Document doc;
-    bool okay = doc.parseFromString(Input::getXml(Input::valid::CELL));
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(Input::getXml(Input::valid::CELL)));
     xmlNodePtr node = doc.getRoot();
     estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
   }
   {
     Libxml2Document doc;
-    bool okay = doc.parseFromString(ScalarInput::getXml(ScalarInput::valid::LOCAL_ENERGY));
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(ScalarInput::getXml(ScalarInput::valid::LOCAL_ENERGY)));
     xmlNodePtr node = doc.getRoot();
     estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
   }
@@ -154,8 +143,7 @@ Libxml2Document createEstimatorManagerEnergyDenistyInputXML()
   {
     using Input = testing::EnergyDensityInputs;
     Libxml2Document doc;
-    bool okay = doc.parseFromString(Input::getXml(Input::valid::CELL));
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(Input::getXml(Input::valid::CELL)));
     xmlNodePtr node = doc.getRoot();
     estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
   }
@@ -164,16 +152,14 @@ Libxml2Document createEstimatorManagerEnergyDenistyInputXML()
     std::string_view xml{R"XML(
 <estimator type="PerParticleHamiltonianLogger" to_stdout="false"/>
 )XML"};
-    bool okay = doc.parseFromString(xml);
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(xml));
     xmlNodePtr node = doc.getRoot();
     estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
   }
 
   {
     Libxml2Document doc;
-    bool okay = doc.parseFromString(ScalarInput::getXml(ScalarInput::valid::LOCAL_ENERGY));
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(ScalarInput::getXml(ScalarInput::valid::LOCAL_ENERGY)));
     xmlNodePtr node = doc.getRoot();
     estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
   }

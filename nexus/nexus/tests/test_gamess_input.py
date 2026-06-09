@@ -1,16 +1,26 @@
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.GAMESS_INPUT)
 
-from .. import testing
-from ..testing import divert_nexus,restore_nexus
-from ..testing import divert_nexus_log,restore_nexus_log
-from ..testing import value_eq,object_eq
+from ..generic import generic_settings
+generic_settings.raise_error = True
+
+import shutil
+from . import isolate_nexus_core, TEST_DIR
+from nexus.nexus_base import nexus_core
+from ..testing import object_eq
 
 
-associated_files = dict()
+TEST_FILES = {
+    "rhf.inp":           TEST_DIR / "test_gamess_input_files/rhf.inp",
+    "cisd.inp":          TEST_DIR / "test_gamess_input_files/cisd.inp",
+    "cas.inp":           TEST_DIR / "test_gamess_input_files/cas.inp",
+    "H.BFD_V5Z_ANO.gms": TEST_DIR / "test_gamess_input_files/H.BFD_V5Z_ANO.gms",
+    "O.BFD_V5Z.gms":     TEST_DIR / "test_gamess_input_files/O.BFD_V5Z.gms",
+    }
 
-def get_files():
-    return testing.collect_unit_test_file_paths('gamess_input',associated_files)
-#end def get_files
-
+for file in TEST_FILES.values():
+    assert(file.exists()), f"Test file not found! {file}"
 
 
 def make_serial_reference(gi):
@@ -267,36 +277,11 @@ def check_vs_serial_reference(gi,name):
     assert(object_eq(sg,sr))
 #end def check_vs_serial_reference
 
-
-
-def test_files():
-    filenames = [
-        'rhf.inp',
-        'cisd.inp',
-        'cas.inp',
-        'H.BFD_V5Z_ANO.gms',
-        'O.BFD_V5Z.gms',
-        ]
-    files = get_files()
-    assert(set(filenames)==set(files.keys()))
-#end def test_files
-
-
-
-def test_import():
-    from ..gamess_input import GamessInput,generate_gamess_input
-#end def test_import
-
-
-
+@isolate_nexus_core
 def test_keyspec_groups():
     from ..gamess_input import check_keyspec_groups
 
-    divert_nexus_log()
-
     check_keyspec_groups()
-
-    restore_nexus_log()
 #end def test_keyspec_groups
 
 
@@ -316,34 +301,26 @@ def test_empty_init():
 
 def test_read():
     from ..gamess_input import GamessInput
-    
-    files = get_files()
 
     input_files = ['rhf.inp','cisd.inp','cas.inp']
 
     for infile in input_files:
-        gi_read = GamessInput(files[infile])
+        gi_read = GamessInput(TEST_FILES[infile])
         check_vs_serial_reference(gi_read,infile)
     #end for
-
 #end def test_read
 
 
 
-def test_write():
-    import os
+def test_write(tmp_path):
     from ..gamess_input import GamessInput
-
-    tpath = testing.setup_unit_test_output_directory('gamess_input','test_write')
-    
-    files = get_files()
 
     input_files = ['rhf.inp','cisd.inp','cas.inp']
 
     for infile in input_files:
-        write_file = os.path.join(tpath,infile)
+        write_file = tmp_path / infile
 
-        gi_read = GamessInput(files[infile])
+        gi_read = GamessInput(TEST_FILES[infile])
 
         gi_read.write(write_file)
 
@@ -351,31 +328,32 @@ def test_write():
 
         check_vs_serial_reference(gi_write,infile)
     #end for
-
 #end def test_write
 
 
-
-def test_generate():
-    import os
+@isolate_nexus_core
+def test_generate(tmp_path):
     from ..developer import obj
     from ..nexus_base import nexus_noncore
     from ..pseudopotential import Pseudopotentials
     from ..physical_system import generate_physical_system
     from ..gamess_input import generate_gamess_input
-    
-    ppfiles = ['H.BFD_V5Z_ANO.gms','O.BFD_V5Z.gms']
 
-    tpath = testing.setup_unit_test_output_directory(
-        test      = 'gamess_input',
-        subtest   = 'test_generate',
-        divert    = True,
-        file_sets = {
-            'pseudopotentials':ppfiles
-            }
-        )
+    ppfiles = ["H.BFD_V5Z_ANO.gms","O.BFD_V5Z.gms"]
+    pp_dir = tmp_path / "pseudopotentials"
+    pp_dir.mkdir()
 
-    ppfiles_full = [os.path.join(tpath,'pseudopotentials',f) for f in ppfiles]
+    nexus_core.local_directory  = str(tmp_path)
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    ppfiles_full = []
+    for file in ppfiles:
+        pp = TEST_FILES[file]
+        pp_copied = shutil.copy(
+            src=pp,
+            dst=pp_dir / file,
+            )
+        ppfiles_full.append(str(pp_copied))
 
     nexus_noncore.pseudopotentials = Pseudopotentials(ppfiles_full)
 
@@ -475,8 +453,6 @@ def test_generate():
         gi = generate_gamess_input(**inputs[infile])
         check_vs_serial_reference(gi,infile)
     #end for
-
-    restore_nexus()
 #end def test_generate
 
 

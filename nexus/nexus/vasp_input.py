@@ -39,12 +39,13 @@
 
 import os
 import numpy as np
-from .periodic_table import is_element
+from .periodic_table import Elements
 from .nexus_base import nexus_noncore
 from .simulation import SimulationInput
 from .structure import interpolate_structures, Structure
 from .physical_system import PhysicalSystem
 from .developer import DevBase, obj, error
+from .utilities import path_string
 from . import numpy_extensions as npe
 
 # support functions for keyword files
@@ -298,6 +299,7 @@ assign_value_functions = obj(
 
 class Vobj(DevBase):
     def get_path(self,filepath):
+        filepath = path_string(filepath)
         if os.path.exists(filepath) and os.path.isdir(filepath):
             path = filepath
         else:
@@ -315,6 +317,7 @@ class Vobj(DevBase):
 class VFile(Vobj):
     def __init__(self,filepath=None):
         if filepath is not None:
+            filepath = path_string(filepath)
             self.read(filepath)
         #end if
     #end def __init__
@@ -324,7 +327,8 @@ class VFile(Vobj):
         if not os.path.exists(filepath):
             self.error('file {0} does not exist'.format(filepath))
         #end if
-        text = open(filepath,'r').read()
+        with open(filepath, "r") as f:
+            text = f.read()
         self.read_text(text,filepath)
         return text
     #end def read
@@ -333,7 +337,8 @@ class VFile(Vobj):
     def write(self,filepath=None):
         text = self.write_text(filepath)
         if filepath is not None:
-            open(filepath,'w').write(text)
+            with open(filepath, "w") as f:
+                f.write(text)
         #end if
         return text
     #end def write
@@ -1196,11 +1201,11 @@ class Poscar(VFormattedFile):
         #end for
         if self.elem is not None:
             for e in self.elem:
-                iselem,symbol = is_element(e,symbol=True)
+                iselem, element = Elements.is_element(e, return_element=True)
                 if not iselem:
                     self.error('{0} is not an element'.format(e))
                 #end if
-                text += symbol+' '
+                text += element.symbol+' '
             #end for
             text += '\n'
         #end if
@@ -1341,7 +1346,8 @@ class Potcar(VFormattedFile):
             #end for
         elif self.filepath is not None and self.files is not None:
             for file in self.files:
-                text += open(os.path.join(self.filepath,file),'r').read()
+                with open(os.path.join(self.filepath, file), "r") as f:
+                    text += f.read()
             #end for
         #end if
         return text
@@ -1449,6 +1455,7 @@ class VaspInput(SimulationInput,Vobj):
 
 
     def read(self,filepath,prefix='',postfix=''):
+        filepath = path_string(filepath)
         path = self.get_path(filepath)
         for file in os.listdir(path):
             name = str(file)
@@ -1612,7 +1619,8 @@ class VaspInput(SimulationInput,Vobj):
             #end for
             ordered_pseudos = []
             for element in species:
-                iselem,symbol = is_element(element,symbol=True)
+                iselem, elem = Elements.is_element(element, return_element=True)
+                symbol = elem.symbol
                 if not iselem:
                     self.error('{0} is not an element'.format(element))
                 elif symbol not in pseudo_map:

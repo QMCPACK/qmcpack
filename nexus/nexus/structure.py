@@ -117,6 +117,7 @@ Module contents
 """
 
 import os
+from pathlib import Path
 import numpy as np
 from copy import deepcopy
 from random import randint
@@ -130,12 +131,13 @@ from numpy import (
     sqrt,
 )
 from numpy.linalg import inv, det, norm
+import numpy.typing as npt
 from .unit_converter import convert
 from .numerics import nearest_neighbors, convex_hull, voronoi_neighbors
-from .periodic_table import is_element
-from .periodic_table import pt as ptable
+from .periodic_table import Elements
 from .fileio import XsfFile, PoscarFile
 from .developer import DevBase, obj, unavailable, error
+from .utilities import path_string
 from . import numpy_extensions as npe
 
 try:
@@ -498,8 +500,8 @@ def recenter_points(pos, center, axes):
     pos : NDArray
         Array of positions centered around the given center
 
-    Note
-    ----
+    Notes
+    -----
     This function also ensures that points close (within 1e-12) to the minimum edge (-0.5) of the
     cell are placed exactly on that edge. The intent here is to make sure that atoms close to or
     on the leading edge (+0.5) are wrapped around to retain periodicity.
@@ -1143,8 +1145,33 @@ class Structure(Sobj):
     #end def has_folded_structure
 
             
-    # test needed
-    def group_atoms(self,folded=True):
+    def group_atoms(self, folded=True) -> None:
+        """Group the atoms by their element type, sorting in alphabetical order.
+
+        Parameters
+        ----------
+        folded : bool, default=True
+            Optionally sort the folded structure, if it exists.
+
+        Examples
+        --------
+        >>> structure = Structure(
+        ...     elem = ["Be", "N", "C", "Be", "C", "O"],
+        ...     pos = np.array([
+        ...         [0, 0, 0],
+        ...         [0, 0, 0],
+        ...         [0, 0, 0],
+        ...         [0, 0, 0],
+        ...         [0, 0, 0],
+        ...         [0, 0, 0],
+        ...     ], dtype=np.float64),
+        ... )
+        >>> print(structure.elem)
+        ['Be' 'N' 'C' 'Be' 'C' 'O']
+        >>> structure.group_atoms()
+        >>> print(structure.elem)
+        ['Be' 'Be' 'C' 'C' 'N' 'O']
+        """
         if len(self.elem)>0:
             order = self.elem.argsort()
             if (self.elem!=self.elem[order]).any():
@@ -1158,8 +1185,35 @@ class Structure(Sobj):
     #end def group_atoms
 
 
-    # test needed
-    def rename(self,folded=True,**name_pairs):
+    def rename(self, folded=True, **name_pairs) -> None:
+        """Rename element names in a structure.
+
+        Parameters
+        ----------
+        folded : bool, default=True
+            Rename elements in folded structure as well as tiled structure
+            (if there is no folded structure then this does nothing)
+        **name_pairs : dict[str]
+            A dictionary containing key:value pairs where the key is the old
+            element name and the value is the new element name.
+
+        Examples
+        --------
+        >>> structure = Structure(
+        ...     elem = ["N", "C", "O", "H"],
+        ...     pos = np.array([
+        ...         [0, 0, 0],
+        ...         [0, 0, 0],
+        ...         [0, 0, 0],
+        ...         [0, 0, 0],
+        ...     ], dtype=np.float64),
+        ... )
+        >>> print(structure.elem)
+        ['N' 'C' 'O' 'H']
+        >>> structure.rename(N="Dy", C="Er")
+        >>> print(structure.elem)
+        ['Dy' 'Er' 'O' 'H']
+        """
         elem = self.elem
         for old,new in name_pairs.items():
             for i in range(len(self.elem)):
@@ -1174,8 +1228,77 @@ class Structure(Sobj):
     #end def rename
 
 
-    # test needed
-    def reset_axes(self,axes=None):
+    def reset_axes(self, axes: npt.ArrayLike | None = None) -> None:
+        """Reset the structure's axes, k-space axes, and center.
+
+        Notes
+        -----
+        If ``axes`` is given, this function will remove the previous folded
+        structure (as new axes could invalidate the tiling) and then set
+        ``self.axes`` to the new axes, update the k-space axes, and set the
+        center of the cell to be the (0.5, 0.5, 0.5) point.
+
+        If ``axes`` are not given (e.g. ``axes=None``, the default), then this
+        function will reuse the same axes as the current structure, reset the
+        k-space axes, and set the cell center at the (0.5, 0.5, 0.5) point.
+
+        Examples
+        --------
+        Providing axes will also make sure ``kaxes`` and ``center`` are consistent.
+
+        >>> structure = Structure(
+        ...     axes = np.array([
+        ...         [6.0, 0.0, 0.0],
+        ...         [0.0, 6.0, 0.0],
+        ...         [0.0, 0.0, 6.0],
+        ...     ]),
+        ... )
+        >>> print(structure.axes)
+        [[6. 0. 0.]
+        [0. 6. 0.]
+        [0. 0. 6.]]
+        >>> print(structure.kaxes)
+        [[1.04719755 0.         0.        ]
+        [0.         1.04719755 0.        ]
+        [0.         0.         1.04719755]]
+        >>> print(structure.center)
+        [3. 3. 3.]
+
+        >>> structure.reset_axes(np.array([
+        ...     [12.0,  0.0,  0.0],
+        ...     [ 0.0, 12.0,  0.0],
+        ...     [ 0.0,  0.0, 12.0],
+        ... ]))
+        >>> print(structure.axes)
+        [[12.  0.  0.]
+        [ 0. 12.  0.]
+        [ 0.  0. 12.]]
+        >>> print(structure.kaxes)
+        [[0.52359878 0.         0.        ]
+        [0.         0.52359878 0.        ]
+        [0.         0.         0.52359878]]
+        >>> print(structure.center)
+        [6. 6. 6.]
+
+        Alternatively, if you don't provide ``axes`` you can ensure that the
+        ``kaxes`` and ``center`` of the structure are correct. Here we set
+        ``center`` to be at the origin, then use ``reset_axes`` to correct it.
+
+        >>> structure = Structure(
+        ...     axes = np.array([
+        ...         [6.0, 0.0, 0.0],
+        ...         [0.0, 6.0, 0.0],
+        ...         [0.0, 0.0, 6.0],
+        ...     ]),
+        ...     center = np.array([0.0, 0.0, 0.0]),
+        ... )
+        >>> print(structure.center)
+        [0. 0. 0.]
+
+        >>> structure.reset_axes()
+        >>> print(structure.center)
+        [3. 3. 3.]
+        """
         if axes is None:
             axes = self.axes
         else:
@@ -1217,7 +1340,11 @@ class Structure(Sobj):
     #end def reshape_axes
 
 
-    def write_axes(self):
+    def write_axes(self) -> str:
+        """Write the unit cell axes as a string.
+
+        Only implemented for ``self.dim=3``.
+        """
         c = ''
         for a in self.axes:
             c+='{0:12.8f} {1:12.8f} {2:12.8f}\n'.format(a[0],a[1],a[2])
@@ -1225,8 +1352,12 @@ class Structure(Sobj):
         return c
     #end def write_axes
 
-    
-    def corners(self):
+
+    def corners(self) -> npt.NDArray[np.float64]:
+        """Calculate vectors corresponding to the 8 corners of the unit cell.
+
+        Only implemented for ``self.dim=3``.
+        """
         a = self.axes
         c = np.array([(0,0,0),
                    a[0],
@@ -1334,8 +1465,8 @@ class Structure(Sobj):
         rmin_edge : float-like or array-like, default=1e-8
             Minimum acceptable distance from the cell edges to any atom in the molecule, potentially specified per-axis.
 
-        Note
-        ----
+        Notes
+        -----
         The default rmin_edge of 1e-8 is designed to just barely contain the molecule. It is
         important to ensure that for larger, non-periodic molecular systems or atoms that the unit
         cell size is sufficiently large to contain the charge density otherwise the molecular system
@@ -1752,45 +1883,45 @@ class Structure(Sobj):
 
     # test needed
     def rotate(self,r,rp=None,passive=False,units="radians",check=True):
-        """
-        Arbitrary rotation of the structure.
+        """Arbitrary rotation of the structure.
+
         Parameters
         ----------
-        r  : `array_like, float, shape (3,3)` or `array_like, float, shape (3,)` or `str`
-            If a 3x3 matrix, then code executes rotation consistent with this matrix -- 
-            it is assumed that the matrix acts on a column-major vector (eg, v'=Rv)
-            If a three-dimensional array, then the operation of the function depends
-            on the input type of rp in the following ways:
-                1. If rp is a scalar, then rp is assumed to be an angle and a rotation 
-                   of rp is made about the axis defined by r
-                2. If rp is a vector, then rp is assumed to be an axis and a rotation is made 
-                   such that r aligns with rp
-                3. If rp is a str, then the rotation is such that r aligns with the
-                   axis given by the str ('x', 'y', 'z', 'a0', 'a1', or 'a2')
-            If a str then the axis, r, is defined by the input label (e.g. 'x', 'y', 'z', 'a1', 'a2', or 'a3')
-            and the operation of the function depends on the input type of rp in the following
-            ways (same as above):
-                1. If rp is a scalar, then rp is assumed to be an angle and a rotation 
-                   of rp is made about the axis defined by r
-                2. If rp is a vector, then rp is assumed to be an axis and a rotation is made 
-                   such that r aligns with rp
-                3. If rp is a str, then the rotation is such that r aligns with the
-                   axis given by the str ('x', 'y', 'z', 'a0', 'a1', or 'a2')
-        rp : `array_like, float, shape (3), optional` or `str, optional`
-            If a 3-dimensional vector is given, then rp is assumed to be an axis and a rotation is made
-            such that the axis r is aligned with rp.
-            If a str, then rp is assumed to be an angle and a rotation about the axis defined by r 
-            is made by an angle rp
-            If a str is given, then rp is assumed to be an axis defined by the given label
-            (e.g. 'x', 'y', 'z', 'a1', 'a2', or 'a3') and a rotation is made such that the axis r 
-            is aligned with rp.
-        passive : `bool, optional, default False`
-            If `True`, perform a passive rotation
-            If `False`, perform an active rotation
-        units : `str, optional, default "radians"`
-            Units of rp, if rp is given as an angle (scalar)
-        check : `bool, optional, default True`
-            Perform a check to verify rotation matrix is orthogonal
+        r : array_like of float with shape (3,3) or array_like of float shape (3,) or str
+            If a 3x3 matrix, then code executes rotation consistent with this
+            matrix -- it is assumed that the matrix acts on a column-major
+            vector (eg, v'=Rv). If a three-dimensional array, then the operation
+            of the function depends on the input type of ``rp`` in the
+            following ways:
+
+            1. If ``rp`` is a scalar, then ``rp`` is assumed to be an angle and
+               a rotation of ``rp`` is made about the axis defined by ``r``.
+            2. If ``rp`` is a vector, then ``rp`` is assumed to be an axis and a 
+               rotation is made such that ``r`` aligns with ``rp``.
+            3. If ``rp`` is a ``str``, then the rotation is such that ``r``
+               aligns with the axis given by the str
+               ``('x', 'y', 'z', 'a0', 'a1', or 'a2')``.
+
+            If a ``str`` then the axis, ``r``, is defined by the input label
+            (e.g. 'x', 'y', 'z', 'a1', 'a2', or 'a3') and the operation of the
+            function depends on the input type of ``rp`` in the same ways as
+            above.
+        rp : array_like of float with shape (3) or str, optional
+            If a 3-dimensional vector is given, then ``rp`` is assumed to be an
+            axis and a rotation is made such that the axis ``r`` is aligned with
+            ``rp``.
+            If a str, then ``rp`` is assumed to be an angle and a
+            rotation about the axis defined by ``r`` is made by an angle ``rp``.
+            If a str is given, then ``rp`` is assumed to be an axis defined by
+            the given label (e.g. 'x', 'y', 'z', 'a1', 'a2', or 'a3') and a
+            rotation is made such that the axis ``r`` is aligned with ``rp``.
+        passive : bool, default=False
+            If ``True``, perform a passive rotation.
+            If ``False``, perform an active rotation.
+        units : {"radians", "rad", "degrees", "deg"}, default="radians"
+            Units of ``rp``, if ``rp`` is given as an angle (scalar).
+        check : bool, default=True
+            Perform a check to verify rotation matrix is orthogonal.
         """
         if rp is not None:
             dirmap = dict(x=[1,0,0],y=[0,1,0],z=[0,0,1])
@@ -2394,8 +2525,8 @@ class Structure(Sobj):
             species_labels = set(self.elem)
             species = set()
             for e in species_labels:
-                is_elem,symbol = is_element(e,symbol=True)
-                species.add(symbol)
+                is_elem, element = Elements.is_element(e, return_element=True)
+                species.add(element.symbol)
             #end for
             return species_labels,species
         #end if
@@ -2418,7 +2549,8 @@ class Structure(Sobj):
             species  = []
             spec_set = set()
             for e in self.elem:
-                is_elem,symbol = is_element(e,symbol=True)
+                is_elem, element = Elements.is_element(e, return_element=True)
+                symbol = element.symbol
                 if e not in speclab_set:
                     speclab_set.add(e)
                     species_labels.append(e)
@@ -3482,17 +3614,17 @@ class Structure(Sobj):
 
     # test needed
     def recorner(self, center = None):
-        """Center atoms around the origin of the cell
-        
+        """Center atoms around the origin of the cell.
+
         Parameters
         ----------
         center : NDArray, default = self.center
             Position of the center of the cell.
-        
-        Note
-        ----
-        If the user supplies `center`, then this will modify `self.center` to reflect
-        that change.
+
+        Notes
+        -----
+        If the user supplies ``center``, then this will modify
+        ``self.center`` to reflect that change.
         """
         if center is not None:
             self.center = np.array(center, dtype=float)
@@ -4892,6 +5024,7 @@ class Structure(Sobj):
 
     def read(self,filepath,format=None,elem=None,block=None,grammar='1.1',cell='prim',contents=False):
         if os.path.exists(filepath):
+            filepath = path_string(filepath)
             path,file = os.path.split(filepath)
             if format is None:
                 if '.' in file:
@@ -4940,7 +5073,8 @@ class Structure(Sobj):
         elem = []
         pos  = []
         if os.path.exists(filepath):
-            lines = open(filepath,'r').read().strip().splitlines()
+            with open(filepath, "r") as f:
+                lines = f.read().strip().splitlines()
         else:
             lines = filepath.strip().splitlines() # "filepath" is file contents
         #end if
@@ -5008,7 +5142,7 @@ class Structure(Sobj):
             if isinstance(n,str):
                 elem.append(n)
             else:
-                elem.append(ptable.simple_elements[n].symbol)
+                elem.append(Elements(n).symbol)
             #end if
         #end for
         self.dim   = 3
@@ -5021,7 +5155,8 @@ class Structure(Sobj):
 
     def read_poscar(self,filepath,elem=None):
         if os.path.exists(filepath):
-            lines = open(filepath,'r').read().splitlines()
+            with open(filepath, "r") as f:
+                lines = f.read().splitlines()
         else:
             lines = filepath.splitlines()  # "filepath" is file contents
         #end if
@@ -5141,7 +5276,8 @@ class Structure(Sobj):
     # test needed
     def read_fhi_aims(self,filepath):
         if os.path.exists(filepath):
-            lines = open(filepath,'r').read().splitlines()
+            with open(filepath, "r") as f:
+                lines = f.read().splitlines()
         else:
             lines = filepath.splitlines() # "filepath" is contents
         #end if
@@ -5199,7 +5335,9 @@ class Structure(Sobj):
         if filepath is None and format is None:
             self.error('please specify either the filepath or format arguments to write()')
         elif format is None:
-            if '.' in filepath:
+            if isinstance(filepath, Path):
+                format = filepath.suffix.lstrip(".")
+            elif '.' in filepath:
                 format = filepath.split('.')[-1]
             else:
                 self.error(
@@ -5237,10 +5375,10 @@ class Structure(Sobj):
         Notes
         -----
         This function will write the positions in the format
-        (in this case using `with_elem=True`)
-        ```python
+        (in this case using ``with_elem=True``)
+        .. code-block:: python
+
             "{element:2} {dim1:12.8f} {dim2:12.8f} ... {dimN:12.8f}\\n"
-        ```
         """
         s = self.copy()
         s.change_units(units)
@@ -5263,8 +5401,8 @@ class Structure(Sobj):
 
 
     def write_xyz(self, filepath=None):
-        """Write a `Structure` object to an XYZ file
-        
+        """Write a ``Structure`` object to an XYZ file
+
         Parameters
         ----------
         filepath : PathLike or None, default=None
@@ -5277,9 +5415,9 @@ class Structure(Sobj):
         xyz : str
             The text that was or would have been written to the XYZ file.
 
-        Note
-        ----
-        To get a string of only the atomic positions, use `pos_to_str()` instead.
+        Notes
+        -----
+        To get a string of only the atomic positions, use ``pos_to_str()`` instead.
         """
         if self.dim!=3:
             self.error('write_xyz is currently only implemented for 3 dimensions')
@@ -5297,7 +5435,8 @@ class Structure(Sobj):
         #end for
 
         if filepath is not None:
-            open(filepath,'w').write(c)
+            with open(filepath, "w") as f:
+                f.write(c)
         #end if
         return c
     #end def write_xyz
@@ -5318,27 +5457,20 @@ class Structure(Sobj):
         c += '   {0} 1\n'.format(len(s.elem))
         for i in range(len(s.elem)):
             e = s.elem[i]
-            identified = e in ptable.elements
-            if not identified:
-                if len(e)>2:
-                    e = e[0:2]
-                elif len(e)==2:
-                    e = e[0:1]
-                #end if
-                identified = e in ptable.elements
-            #end if
+            identified, element = Elements.is_element(e, return_element=True)
             if not identified:
                 self.error(
                     "{0} is not an element\n"
                     "xsf file cannot be written".format(e)
                 )
             #end if
-            enum = ptable.elements[e].atomic_number
+            enum = element.atomic_number
             r = s.pos[i]
             c += '   {0:>3} {1:12.8f}  {2:12.8f}  {3:12.8f}\n'.format(enum,r[0],r[1],r[2])
         #end for
         if filepath is not None:
-            open(filepath,'w').write(c)
+            with open(filepath, "w") as f:
+                f.write(c)
         #end if
         return c
     #end def write_xsf
@@ -5357,7 +5489,8 @@ class Structure(Sobj):
         poscar.pos        = s.pos
         c = poscar.write_text()
         if filepath is not None:
-            open(filepath,'w').write(c)
+            with open(filepath, "w") as f:
+                f.write(c)
         #end if
         return c
     #end def write_poscar
@@ -5377,7 +5510,8 @@ class Structure(Sobj):
             c += 'atom_frac   {0: 12.8f}  {1: 12.8f}  {2: 12.8f}  {3}\n'.format(p[0],p[1],p[2],e)
         #end for
         if filepath is not None:
-            open(filepath,'w').write(c)
+            with open(filepath, "w") as f:
+                f.write(c)
         #end if
         return c
     #end def write_fhi_aims
@@ -5503,11 +5637,11 @@ class Structure(Sobj):
     def get_atomic_numbers(self):
         an = []
         for e in self.elem:
-            iselem,esymb = is_element(e,symbol=True)
+            iselem, element = Elements.is_element(e, return_element=True)
             if not iselem:
-                self.error('Atomic symbol, {}, not recognized'.format(esymb))
+                self.error('Atomic symbol, {}, not recognized'.format(element))
             else:
-                an.append(ptable[esymb].atomic_number)
+                an.append(element.atomic_number)
             #end if
         #end for
         return np.array(an,dtype='intc')
@@ -5674,11 +5808,11 @@ class Structure(Sobj):
         # collect sets of species labels
         species_by_specnum = obj()
         for e,sn in zip(self.elem,ds.equivalent_atoms):
-            is_elem,es = is_element(e,symbol=True)
+            is_elem,element = Elements.is_element(e, return_element=True)
             if sn not in species_by_specnum:
                 species_by_specnum[sn] = set()
             #end if
-            species_by_specnum[sn].add(es)
+            species_by_specnum[sn].add(element.symbol)
         #end for
         for sn,sset in species_by_specnum.items():
             if len(sset)>1:
@@ -5965,10 +6099,7 @@ def get_conventional_cell(
     bcharge     = structure.background_charge*volfac
     pos         = dot(posd,axes)
     sout        = structure.copy()
-    elem        = np.empty(len(enumbers), dtype='str')
-    for el in ptable.elements.items():
-        elem[enumbers==el[1].atomic_number]=el[0]
-    #end for
+    elem        = np.array([Elements(i).symbol for i in enumbers], dtype=str)
     if abs(bcharge-int(bcharge)) > 1E-6:
         raise ValueError("Invalid background charge for conventional structure")
     #end if
@@ -5991,10 +6122,7 @@ def get_primitive_cell(
     bcharge     = structure.background_charge*volfac
     pos         = dot(posd,axes)
     sout        = structure.copy()
-    elem        = np.array(enumbers, dtype='str')
-    for el in ptable.elements.items():
-        elem[enumbers==el[1].atomic_number]=el[0]
-    #end for
+    elem        = np.array([Elements(i).symbol for i in enumbers], dtype=str)
     return {'structure' : Structure(axes=axes, elem=elem, pos=pos, background_charge=bcharge, units='A'),
             'T'         : seekpathout['primitive_transformation_matrix']}
 #end def get_primitive_cell

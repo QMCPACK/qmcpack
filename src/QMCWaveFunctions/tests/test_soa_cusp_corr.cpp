@@ -65,8 +65,7 @@ TEST_CASE("applyCuspInfo", "[wavefunction]")
   Communicate* c = OHMMS::Controller;
 
   Libxml2Document doc;
-  bool okay = doc.parse("hcn.structure.xml");
-  REQUIRE(okay);
+  REQUIRE(doc.parse("hcn.structure.xml"));
   xmlNodePtr root = doc.getRoot();
 
   const SimulationCell simulation_cell;
@@ -97,8 +96,7 @@ TEST_CASE("applyCuspInfo", "[wavefunction]")
   elec.update();
 
   Libxml2Document doc2;
-  okay = doc2.parse("hcn.wfnoj.xml");
-  REQUIRE(okay);
+  REQUIRE(doc2.parse("hcn.wfnoj.xml"));
   xmlNodePtr root2 = doc2.getRoot();
 
   WaveFunctionComponentBuilder::PSetMap particle_set_map;
@@ -145,9 +143,8 @@ TEST_CASE("applyCuspInfo", "[wavefunction]")
   int orbital_set_size = 7;
   Matrix<CuspCorrectionParameters> info;
   info.resize(num_center, orbital_set_size);
-  okay = readCuspInfo("hcn_downdet.cuspInfo.xml", "downdet", orbital_set_size, info);
 
-  REQUIRE(okay);
+  REQUIRE(readCuspInfo("hcn_downdet.cuspInfo.xml", "downdet", orbital_set_size, info));
   Vector<RealType> xgrid;
   Vector<RealType> rad_orb;
   int ngrid = 10;
@@ -235,8 +232,7 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
   Communicate* c = OHMMS::Controller;
 
   Libxml2Document doc;
-  bool okay = doc.parse("hcn.structure.xml");
-  REQUIRE(okay);
+  REQUIRE(doc.parse("hcn.structure.xml"));
   xmlNodePtr root = doc.getRoot();
 
   const SimulationCell simulation_cell;
@@ -267,8 +263,7 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
   elec.update();
 
   Libxml2Document doc2;
-  okay = doc2.parse("hcn.wfnoj.xml");
-  REQUIRE(okay);
+  REQUIRE(doc2.parse("hcn.wfnoj.xml"));
   xmlNodePtr root2 = doc2.getRoot();
 
   WaveFunctionComponentBuilder::PSetMap particle_set_map;
@@ -410,8 +405,7 @@ TEST_CASE("Ethanol MO with cusp", "[wavefunction]")
   Communicate* c = OHMMS::Controller;
 
   Libxml2Document doc;
-  bool okay = doc.parse("ethanol.structure.xml");
-  REQUIRE(okay);
+  REQUIRE(doc.parse("ethanol.structure.xml"));
   xmlNodePtr root = doc.getRoot();
 
   const SimulationCell simulation_cell;
@@ -442,8 +436,7 @@ TEST_CASE("Ethanol MO with cusp", "[wavefunction]")
   elec.update();
 
   Libxml2Document doc2;
-  okay = doc2.parse("ethanol.wfnoj.xml");
-  REQUIRE(okay);
+  REQUIRE(doc2.parse("ethanol.wfnoj.xml"));
   xmlNodePtr root2 = doc2.getRoot();
 
   WaveFunctionComponentBuilder::PSetMap particle_set_map;
