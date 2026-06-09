@@ -34,8 +34,8 @@ from .utilities     import path_string
 
 from .nexus_base      import NexusCore,              nexus_core,     nexus_noncore,          nexus_core_noncore,         restore_nexus_core_defaults,    nexus_core_defaults
 from .machines        import Job,                    job,            Machine, Supercomputer, get_machine
-from .simulation      import generate_simulation,    input_template, multi_input_template,   generate_template_input,    generate_multi_template_input,  graph_sims
-from .project_manager import ProjectManager
+from .simulation      import generate_simulation,    input_template, multi_input_template,   generate_template_input,    generate_multi_template_input,  graph_sims, DynamicProcess
+from .project_manager import ProjectManager,     DynamicWorkflowManager,     workflow_manager
 
 from .structure       import Structure,          generate_structure,         generate_cell,  read_structure
 from .physical_system import PhysicalSystem,     generate_physical_system
@@ -88,6 +88,7 @@ def run_project(*args,**kwargs):
     return pm
 #end def run_project
 
+
 # test needed
 # read input function
 #   place here for now as it depends on all other input functions
@@ -130,7 +131,7 @@ class Settings(NexusCore):
         pseudo_dir      sleep           local_directory remote_directory 
         monitor         skip_submit     load_images     stages          
         verbose         debug           trace           progress_tty
-        graph_sims      command_line
+        graph_sims      command_line    dynamic
         '''.split())
 
     core_process_vars = set('''

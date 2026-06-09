@@ -102,6 +102,8 @@ nexus_core_defaults = obj(
     progress_tty      = False,             # used by: ProjectManager
     graph_sims        = False,             # used by: ProjectManager
     command_line      = True,              # used by: Settings
+    dynamic           = False,             # used by: DynamicWorkflowManager
+                                           #          Simulation
     **nexus_core_noncore_defaults
     )
 
@@ -244,3 +246,12 @@ _____________________________________________________
         os.chdir(NexusCore.working_directory)
     #end def leave
 #end class NexusCore
+
+
+# support dynamic workflows
+dynamic_storage = obj(
+    simulations         = obj(), # all sims, in dyn proc or not
+    simulation_ids      = set(),
+    dynamic_processes   = obj(),
+    dynamic_process_ids = set(),
+    )

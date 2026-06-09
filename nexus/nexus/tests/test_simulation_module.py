@@ -14,6 +14,7 @@ from ..testing import value_eq,object_eq
 from ..testing import FailedTest,failed
 
 from ..developer import obj
+from ..machines import Job
 from ..simulation import Simulation,SimulationInput,SimulationAnalyzer
 
 
@@ -2496,6 +2497,10 @@ def test_reconstruct_cascade(tmp_path):
     sims = get_test_workflow(2)
     assert(len(sims)==7)
 
+    machine_in = Job.machine
+    Job.machine = sims.s1.job.machine
+
+
     for s in sims:
         imagefile = Path(s.imlocdir) / s.sim_image
         assert(not imagefile.exists())
@@ -2671,6 +2676,8 @@ def test_reconstruct_cascade(tmp_path):
     assert(empty(sims.s51))
     assert(empty(sims.s52))
 
+
+    Job.machine = machine_in
     Simulation.clear_all_sims()
 #end def test_reconstruct_cascade
 

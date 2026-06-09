@@ -46,7 +46,9 @@
 import os
 import numpy as np
 from .developer import obj, error
+from .nexus_base import nexus_core
 from .simulation import Simulation, SimulationInput, SimulationAnalyzer
+from .simulation import DynamicProcess
 from .pwscf import Pwscf
 from .gamess import Gamess
 from .pyscf_sim import Pyscf
@@ -292,6 +294,9 @@ class Pw2qmcpack(Simulation):
     application_properties = set(['serial'])
     application_results    = set(['orbitals','gc_occupation'])
 
+    # dynamic workflow support
+    allowed_requirements = ['orbitals']
+
     def check_result(self,result_name,sim):
         calculating_result = False
         if result_name=='orbitals':
@@ -436,18 +441,73 @@ class Pw2qmcpack(Simulation):
     def app_command(self):
         return self.app_name+'<'+self.infile
     #end def app_command
+
+
+    # dynamic workflow support
+
+    def fill_produces(self):
+        self.produces.add('orbitals')
+    #end def fill_produces
+
+
+    def fill_products(self):
+        inputpp = self.input.inputpp
+        prefix = 'pwscf'
+        outdir = './'
+        if 'prefix' in inputpp:
+            prefix = inputpp.prefix
+        if 'outdir' in inputpp:
+            outdir = inputpp.outdir
+        if outdir.startswith('./'):
+            outdir = outdir[2:]
+        orb_file = os.path.join(self.locdir,outdir,prefix+'.pwscf.h5')
+        self.products.orbitals = orb_file
+    #end def fill_products
+
+
+    def receive_orbitals(self,orb_path):
+        # This just checks if output paths match.
+        # Otherwise running pw2qmcpack will fail.
+        orbdir = os.path.realpath(orb_path)
+        if not os.path.isdir(orb_path):
+            self.error('orbitals path is not a directory.\nPath provided: {}'.format(orb_path))
+        savedir = None
+        for d in os.listdir(orbdir):
+            if d.endswith('.save'):
+                savedir = d
+                break
+        if savedir is None or not os.path.exists(os.path.join(orbdir,savedir)):
+            self.error('.save directory does not exist at provided orbitals path.\nPath provided: {}'.format(orb_path))
+        prefix = savedir.rsplit('.',1)
+        p2in   = self.input.inputpp
+        if prefix!=p2in.prefix:
+            self.error('pw2qmcpack must have same prefix as pwscf run\npwscf prefix: {}\npw2qmcpack prefix: {}'.format(prefix,p2in.prefix))
+        p2dir = os.path.realpath(os.path.join(self.locdir,p2in.outdir))
+        if p2dir!=orbdir:
+            self.error('pwscf orbital location does not match pw2qmcpack.\npwscf location: {}\npw2qmcpack location: {}'.format(orbdir,p2dir))
+    #end def receive_orbitals
+
 #end class Pw2qmcpack
 
 
 
 
 def generate_pw2qmcpack(**kwargs):
+
+    if nexus_core.dynamic:
+        dp,dyn_args = DynamicProcess.check_first_gen(kwargs)
+        if dp is not None:
+            return dp
+
     sim_args,inp_args = Simulation.separate_inputs(kwargs)
 
     if 'input' not in sim_args:
         sim_args.input = generate_pw2qmcpack_input(**inp_args)
     #end if
     pw2qmcpack = Pw2qmcpack(**sim_args)
+
+    if nexus_core.dynamic:
+        pw2qmcpack = DynamicProcess(sim=pw2qmcpack,**dyn_args)
 
     return pw2qmcpack
 #end def generate_pw2qmcpack
