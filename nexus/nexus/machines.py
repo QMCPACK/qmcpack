@@ -44,6 +44,7 @@
 
 
 import os
+from pathlib import Path
 #from multiprocessing import cpu_count
 from socket import gethostname
 from subprocess import Popen
@@ -51,6 +52,7 @@ import numpy as np
 from .developer import DevBase, obj
 from .nexus_base import NexusCore, nexus_core
 from .execute import execute
+from .utilities import path_string
 import importlib.util
 import importlib.machinery
 
@@ -239,6 +241,25 @@ class Job(NexusCore):
     def __init__(self,**kwargs):
         # rewrap keyword arguments
         kw = obj(**kwargs)
+        # Ensure no pathlib.Path objects are stored
+        path_arguments = (
+            "directory",
+            "subdir",
+            "outfile",
+            "errfile",
+            "subfile",
+            )
+        for arg in path_arguments:
+            if arg in kw:
+                kw[arg] = path_string(kw[arg])
+
+        # Theoretically a bash alias can have invalid filename characters,
+        # so we treat app_name with some more special logic.
+        if "app_name" in kw:
+            if isinstance(kw.app_name, Path):
+                kw.app_name = path_string(kw.app_name)
+            elif not isinstance(kw.app_name, str):
+                self.error("app_name must be a str or Path object!")
 
         # save information used to initialize job object
         self.init_info = kw.copy()
@@ -1421,10 +1442,17 @@ class Supercomputer(Machine):
             #end if
             self.process_job(job)
             self.jobs[jid] = job
-            job.status = job.states.running
-            self.running.add(jid)
-            process = obj(job=job)
-            self.processes[pid] = process
+            if not nexus_core.dynamic:
+                self.running.add(jid)
+                process = obj(job=job)
+                self.processes[pid] = process
+            else:
+                # If a workstation job is requeued
+                # then it is waking from interruption 
+                # and should be resubmitted from the top
+                job.status = job.states.running
+                job.status = job.states.waiting
+                self.waiting.add(jid)
         else:
             self.error('requeue_job received non-Job instance '+job.__class__.__name__)
         #end if

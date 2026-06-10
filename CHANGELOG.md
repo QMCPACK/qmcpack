@@ -2,6 +2,58 @@
 
 Notable changes to QMCPACK are documented in this file.
 
+## [4.3.0] - 2026-06-09
+
+This release contains two new QMC features and numerous "behind the scenes" updates to improve both QMCPACK and Nexus. As detailed
+in the Nexus section, most notably, Nexus is now fully installable as a Python package and the Python-based testing now uses pytest.
+The QMCPACK CMake has been updated consistently. Tests will be created provided the necessary packages are available otherwise a
+message is printed and the tests are skipped. Feedback is welcomed.
+
+* Upcoming breaking change: Classic/non-batched drivers will be removed in a future release. See
+  https://qmcpack.readthedocs.io/en/develop/performance_portable.html for instructions on using the batched/performance portable
+  drivers. We recommend that all new projects should only use the batched drivers. For compatibility with future QMCPACK versions,
+  verify that all new QMCPACK input XML and Nexus scripts explicitly request batched drivers.
+* Energy density supported in batched code (CPU only) [#5865](https://github.com/QMCPACK/qmcpack/pull/5865)
+* New developmental features to share splines between processes to reduce memory usage. This feature (spline distributed_ranks,
+  shared_ranks) allows the large spline data buffers to be shared between MPI processes within a node, potentially significantly
+  reducing overall CPU memory usage. This CPU feature will be expanded in future versions to support more complex sharing
+  arrangements. Shared splines between GPUs is also under development. While these features are being enhanced, please contact
+  developers for more information on how to best use them. [#5908](https://github.com/QMCPACK/qmcpack/pull/5908),
+  [#5889](https://github.com/QMCPACK/qmcpack/pull/5889)
+* Citations for table method and delayed update are now included in the output. Please advise where any additional references would
+  be useful. [#5938](https://github.com/QMCPACK/qmcpack/pull/5938)
+* CUDA minimum version updated 12.3 [#5876](https://github.com/QMCPACK/qmcpack/pull/5876)
+* Several Python helper and testing scripts have been updated to modern Python 3 and package versions. Please report any files that
+  still need updates.
+* Development container updated to include PySCF 2.13.0 [#5956](https://github.com/QMCPACK/qmcpack/pull/5956)
+* Fix bounds error in MPC spline evaluation [#5830](https://github.com/QMCPACK/qmcpack/pull/5830)
+* Various documentation and build recipe updates, minor bug fixes and quality of life improvements.
+
+### NEXUS [2.3.0]
+
+Nexus is updated to be a standard Python package for easier use and installation. e.g. Nexus and all dependencies are now
+straightforwardly installable with uv or pip. See e.g. [Installing Nexus with
+uv](https://nexus-workflows.readthedocs.io/en/latest/installation.html#installation-using-the-uv-package-manager). Existing use and
+installation methods will continue to be supported. The test infrastructure has also been fully updated to use the standard pytest
+and coverage.py packages.
+
+* Python >= 3.10 is a minimum requirement. Use e.g. uv, spack, or a system package manager to get a newer Python if needed.
+* Installable as a Python package [#5742](https://github.com/QMCPACK/qmcpack/pull/5742)
+* Nexus "executables" (qmca, qdens, nxs-sim etc.) are directly usable via the installed package.
+  [#5851](https://github.com/QMCPACK/qmcpack/pull/5851)
+* Testing moved to pytest [#5894](https://github.com/QMCPACK/qmcpack/pull/5894),
+  [#5924](https://github.com/QMCPACK/qmcpack/pull/5924). This included many updates to files handling throughout, e.g.
+  [#5943](https://github.com/QMCPACK/qmcpack/pull/5943).
+* Improved error handling and messaging, e.g.  [#5985](https://github.com/QMCPACK/qmcpack/pull/5985),
+  [#5981](https://github.com/QMCPACK/qmcpack/pull/5981)
+* Several edge case bug fixes and refinements, e.g. [#5960](https://github.com/QMCPACK/qmcpack/pull/5960),
+  [#5972](https://github.com/QMCPACK/qmcpack/pull/5972)
+* Checkpoint setting supported in generate_qmcpack [#5869](https://github.com/QMCPACK/qmcpack/pull/5869)
+* Updated manual install script [#5870](https://github.com/QMCPACK/qmcpack/pull/5870)
+* Added `pathlib.Path` support throughout, e.g. [#5937](https://github.com/QMCPACK/qmcpack/pull/5937) 
+* `uv.lock` file for developers [#5885](https://github.com/QMCPACK/qmcpack/pull/5885)
+* Refactoring and cleanup throughout.
+
 ## [4.2.0] - 2026-02-12
 
 This release is recommended for all users and includes several new features, improved GPU support, a broad range of other useful
@@ -9,8 +61,8 @@ improvements, and compatibility and bug fixes. NEXUS also receives significant u
 function as a conventional Python package (requiring an update PYTHONPATH).
 
 * Upcoming breaking change: Classic/non-batched drivers will be removed in a future release. See
-  https://qmcpack.readthedocs.io/en/develop/performance_portable.html for instructions on using the batched/performance portable drivers.
-  New projects should only use the batched drivers.
+  https://qmcpack.readthedocs.io/en/develop/performance_portable.html for instructions on using the batched/performance portable
+  drivers. New projects should only use the batched drivers.
 * Added new variable period for estimator measurements feature, input parameter estimator_period, and Nexus support
   [#5574](https://github.com/QMCPACK/qmcpack/pull/5574), [#5577](https://github.com/QMCPACK/qmcpack/pull/5577).
   Substantial speed and efficiency improvements are possible for properties with a long autocorrelation period.

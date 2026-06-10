@@ -30,11 +30,12 @@ from .nexus_version import nexus_version
 from .generic       import generic_settings
 from .developer     import obj,                error,              log
 from .debug         import ci
+from .utilities     import path_string
 
 from .nexus_base      import NexusCore,              nexus_core,     nexus_noncore,          nexus_core_noncore,         restore_nexus_core_defaults,    nexus_core_defaults
 from .machines        import Job,                    job,            Machine, Supercomputer, get_machine
-from .simulation      import generate_simulation,    input_template, multi_input_template,   generate_template_input,    generate_multi_template_input,  graph_sims
-from .project_manager import ProjectManager
+from .simulation      import generate_simulation,    input_template, multi_input_template,   generate_template_input,    generate_multi_template_input,  graph_sims, DynamicProcess
+from .project_manager import ProjectManager,     DynamicWorkflowManager,     workflow_manager
 
 from .structure       import Structure,          generate_structure,         generate_cell,  read_structure
 from .physical_system import PhysicalSystem,     generate_physical_system
@@ -87,6 +88,7 @@ def run_project(*args,**kwargs):
     return pm
 #end def run_project
 
+
 # test needed
 # read input function
 #   place here for now as it depends on all other input functions
@@ -129,7 +131,7 @@ class Settings(NexusCore):
         pseudo_dir      sleep           local_directory remote_directory 
         monitor         skip_submit     load_images     stages          
         verbose         debug           trace           progress_tty
-        graph_sims      command_line
+        graph_sims      command_line    dynamic
         '''.split())
 
     core_process_vars = set('''
@@ -193,6 +195,17 @@ class Settings(NexusCore):
     # sets up Nexus core class behavior and passes information to broader class structure
     def __call__(self,**kwargs):
         kwargs = obj(**kwargs)
+        # Ensure no pathlib.Path objects are stored
+        core_path_vars = (
+            "runs",
+            "results",
+            "pseudo_dir",
+            "local_directory",
+            "remote_directory",
+            )
+        for var in core_path_vars:
+            if var in kwargs:
+                kwargs[var] = path_string(kwargs[var])
 
         # guard against invalid settings
         not_allowed = set(kwargs.keys()) - Settings.allowed_vars
@@ -599,9 +612,9 @@ class Settings(NexusCore):
         if 'file_locations' in kw:
             fl = kw.file_locations
             if isinstance(fl,str):
-                nexus_core.file_locations.extend([fl])
+                nexus_core.file_locations.extend([path_string(fl)])
             else:
-                nexus_core.file_locations.extend(list(fl))
+                nexus_core.file_locations.extend([path_string(f) for f in fl])
             #end if
         #end if
         if 'pseudo_dir' not in kw:

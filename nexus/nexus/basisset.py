@@ -9,6 +9,7 @@ import numpy as np
 from .periodic_table import Elements
 from .developer import DevBase, obj, error, to_str, unavailable
 from .fileio import TextFile
+from .utilities import path_string
 
 try:
     import matplotlib.pyplot as plt
@@ -109,6 +110,7 @@ class BasisFile(DevBase):
         self.filename      = None
         self.location      = None
         if filepath is not None:
+            filepath = path_string(filepath)
             self.filename = os.path.basename(filepath)
             self.location = os.path.realpath(filepath)
             elem_label = self.filename.split('.')[0]
@@ -334,7 +336,8 @@ class GaussianBasisSet(DevBase):
         #end if
         text = self.write_text(format)
         if filepath is not None:
-            open(filepath,'w').write(text)
+            with open(filepath,'w') as fobj:
+                fobj.write(text)
         #end if
         return text
     #end def write

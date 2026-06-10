@@ -29,6 +29,7 @@ if(ADD_TEST)
                                                                                    --cov
                                                                                    --cov-report=xml
                                                                                    --cov-config=${qmcpack_SOURCE_DIR}/nexus/pyproject.toml
+                                                                                   --basetemp=${qmcpack_BINARY_DIR}/nexus-test-tmp-dir/
     )
     set_tests_properties(ntest_nexus_coverage_all PROPERTIES ENVIRONMENT PYTHONPATH=$ENV{PYTHONPATH})
     set_property(
@@ -42,9 +43,12 @@ if(ADD_TEST)
       string(REGEX REPLACE "\.py:.*[0-9]" "" TESTFILE "${TESTFILE}")
       string(REPLACE "nexus/tests/test_" "" TESTNAME "${TESTFILE}")
       #message("Adding test ntest_nexus_${TESTNAME}")
-
+      set(NEXUS_TEST_DIR ${qmcpack_BINARY_DIR}/nexus-test-tmp-dir/test_${TESTNAME}_output)
+      make_directory(${NEXUS_TEST_DIR})
       add_test(NAME ntest_nexus_${TESTNAME}
-               COMMAND ${Python3_EXECUTABLE} -m ${NTEST} ${qmcpack_SOURCE_DIR}/nexus/${TESTFILE}.py -c ${qmcpack_SOURCE_DIR}/nexus/pyproject.toml
+               COMMAND ${Python3_EXECUTABLE} -m ${NTEST} ${qmcpack_SOURCE_DIR}/nexus/${TESTFILE}.py 
+                                                                            -c ${qmcpack_SOURCE_DIR}/nexus/pyproject.toml
+                                                                            --basetemp=${NEXUS_TEST_DIR}
               )
       set_tests_properties(ntest_nexus_${TESTNAME} PROPERTIES ENVIRONMENT PYTHONPATH=$ENV{PYTHONPATH})
       set_property(
