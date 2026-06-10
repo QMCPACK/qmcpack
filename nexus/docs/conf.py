@@ -66,6 +66,8 @@ numpydoc_xref_aliases = {
 }
 numfig = True
 
+add_function_parentheses = False
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
@@ -107,18 +109,15 @@ html_theme_options = {
     "navbar_end": [
         "search-button",
         "theme-switcher",
-        "navbar-icon-links"
+        "navbar-icon-links",
     ],
     "show_toc_level": 3,
+    "collapse_navigation": True,
     "secondary_sidebar_items": ["page-toc"],
     "pygments_light_style": "default",
     "pygments_dark_style": "monokai",
 }
 html_favicon = "_static/nexus_logo.svg"
-# html_sidebars = {
-#     "user_guide": [],
-#     "theory": [],
-# }
 
 html_context = {"default_mode": "auto"}
 
