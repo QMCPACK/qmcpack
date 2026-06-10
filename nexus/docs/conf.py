@@ -46,8 +46,12 @@ extensions = [
     "sphinx.ext.mathjax",
     "pydata_sphinx_theme",
     "sphinx_design",
+    "sphinx_copybutton",
     "numpydoc",
 ]
+
+copybutton_exclude = '.linenos, .gp, .go' # Don't copy line numbers, prompts, or outputs.
+
 bibtex_bibfiles = ['bibs/methods.bib']
 
 numpydoc_class_members_toctree = False
