@@ -2028,8 +2028,10 @@ class GaussianPP(SemilocalPP):
 
     # test needed
     def simplify(self):
-        '''
-        This function simplifies the Guassian ECP. The simplificactions are as follows:
+        '''This function simplifies the Gaussian ECP.
+        
+        The simplificactions are as follows:
+
         1. Remove all terms with coefficients that are equal to zero -- unless only one term exists.
         2. Within each component, look for terms that have matching exponents and r-powers, if any are
            present, then sum their coefficicents to make a single term. If the coefficients sum to
