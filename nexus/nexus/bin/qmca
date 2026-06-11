@@ -835,6 +835,10 @@ QMCA examples:
    qmca -pa -q e -e 10 qmc.g*.s*.scalar.dat
    qmca -ta -q e -e 10 qmc.g*.s*.scalar.dat
 
+ saving plots to PNG files (-i/--image uses prefix qmca_plot; --image-prefix sets a custom prefix)
+   qmca -t -q e -i qmc.s*.scalar.dat
+   qmca -ta -q ev --image-prefix myrun qmc.g*.s*.scalar.dat
+
  multiple quantities and prefixes can be used for plots as well
 '''
         self.log(examples)
@@ -931,9 +935,13 @@ QMCA examples:
                           action='store_true',default=False,
                           help='Display output data sorted alphabetically by file name (default=%default).'
                           )
-        parser.add_option('-i','--image',dest='image',
+        parser.add_option('-i','--image', dest='save_image',
                           action='store_true',default=False,
-                          help='(pending) Save image files (default=%default).'
+                          help='Save plot PNG files (default prefix: qmca_plot).'
+                          )
+        parser.add_option('--image-prefix',dest='image_prefix',
+                          default='None',metavar='BASENAME',
+                          help='Save plot PNG files with basename prefix (default=%default).'
                           )
         parser.add_option('-r','--report',dest='report',
                           action='store_true',default=False,
@@ -979,7 +987,7 @@ QMCA examples:
                           help='Use twist weights in twist_info.dat files or not.  Options: "use", "ignore", "require".  "use" means use when present, "ignore" means do not use, "require" means must be used (default=%default).'
                           )
 
-        unsupported = set('histogram image reblock report'.split())
+        unsupported = set('histogram reblock report'.split())
 
         units = obj(hartree='Ha',ha='Ha',ev='eV',rydberg='Ry',ry='Ry',kelvin='K',kj_mol='kJ_mol',joules='J')
 
@@ -1064,8 +1072,12 @@ QMCA examples:
             #end if
             opt.join = j
         #end if
-        if opt.image=='None':
-            opt.image=None
+        if opt.image_prefix!='None':
+            opt.image = opt.image_prefix
+        elif opt.save_image:
+            opt.image = 'qmca_plot'
+        else:
+            opt.image = None
         #end if
         twist_info_options = ('use','ignore','require')
         if opt.twist_info not in twist_info_options:
@@ -1449,7 +1461,9 @@ QMCA examples:
             tracestyle  = color+line
             histstyle   = color+line
             iplot,itrace,ihist = list(range(3))
+            mode_names = ['series','trace','histogram']
             modes = [opt.plot,opt.trace,opt.histogram]
+            save_plots = opt.image is not None
             quantities = []
             for q in opt.quantities:
                 all_present = True
@@ -1562,12 +1576,23 @@ QMCA examples:
                                         ax.legend(loc=2,bbox_to_anchor=(1.0,1.0),borderaxespad=0.)
                                     #end if
                                 #end if
+                                if save_plots:
+                                    safe_prefix = prefix.replace('/','_').replace(os.sep,'_')
+                                    fname = '{0}_{1}_{2}_{3}.png'.format(
+                                        opt.image,safe_prefix,quantity,mode_names[mode])
+                                    fig.savefig(fname,dpi=150,bbox_inches='tight')
+                                    if self.verbose:
+                                        self.log('saved plot to {0}'.format(fname),n=1)
+                                    #end if
+                                    plt.close(fig)
+                                #end if
                             #end if
                         #end for
                     #end if
                 #end for
             #end for
-            plt.show()
+            if not save_plots:
+                plt.show()
         #end if
     #end def analyze_data
 #end class QMCA
