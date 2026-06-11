@@ -12,3 +12,4 @@ User Guide
     installation
     examples
     user-scripts
+    qmcpack-input-mod

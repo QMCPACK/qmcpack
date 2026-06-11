@@ -26,4 +26,3 @@ The QMCPACK utilities are split across 9 modules:
     input
     main
     analyzer
-    qmcpack-input-mod
