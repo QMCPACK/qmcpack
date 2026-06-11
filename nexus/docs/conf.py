@@ -32,7 +32,15 @@ highlight_language = "python"
 # ones.
 import sys
 from pathlib import Path
+import importlib
+from importlib.metadata import PackageNotFoundError
 sys.path.append(Path(__file__).parent.parent.resolve())
+
+try:
+    release = importlib.metadata.version("nexus")
+except PackageNotFoundError:
+    release = "2.3.9"
+
 
 from intersphinx_registry import get_intersphinx_mapping
 
@@ -118,6 +126,10 @@ html_theme_options = {
     "pygments_dark_style": "monokai",
 }
 html_favicon = "_static/nexus_logo.svg"
+
+html_sidebars = {
+    "theory": [],
+}
 
 html_context = {"default_mode": "auto"}
 
