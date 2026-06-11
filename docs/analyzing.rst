@@ -40,66 +40,66 @@ typing ``qmca`` at the command line with no other inputs (also try
 
     Usage: qmca [options] [file(s)]
 
-  Options:
-    --version             show program's version number and exit
-    -v, --verbose         Print detailed information (default=False).
-    -q QUANTITIES, --quantities=QUANTITIES
-                          Quantity or list of quantities to analyze.  See names
-                          and abbreviations below (default=all).
-    -u UNITS, --units=UNITS
-                          Desired energy units.  Can be Ha (Hartree), Ry
-                          (Rydberg), eV (electron volts), kJ_mol (k.
-                          joule/mole), K (Kelvin), J (Joules) (default=Ha).
-    -e EQUILIBRATION, --equilibration=EQUILIBRATION
-                          Equilibration length in blocks (default=auto).
-    -a, --average         Average over files in each series (default=False).
-    --save_average        Save averaged data into scalar.dat files.
-                          (default=False).
-    -w WEIGHTS, --weights=WEIGHTS
-                          List of weights for averaging (default=None).
-    -j JOIN, --join=JOIN  Join data for a range of series (default=None).
-    -b, --reblock         (pending) Use reblocking to calculate statistics
-                          (default=False).
-    -p, --plot            Plot quantities vs. series (default=False).
-    -t, --trace           Plot a trace of quantities (default=False).
-    -h, --histogram       (pending) Plot a histogram of quantities
-                          (default=False).
-    -o, --overlay         Overlay plots (default=False).
-    --legend=LEGEND       Placement of legend.  None for no legend, outside for
-                          outside legend (default=upper right).
-    --noautocorr          Do not calculate autocorrelation. Warning: error bars
-                          are no longer valid! (default=False).
-    --noac                Alias for --noautocorr (default=False).
-    --sac                 Show autocorrelation of sample data (default=False).
-    --sv                  Show variance of sample data (default=False).
-    --sort                Display output data sorted alphabetically by file name
-                          (default=False).
-    -i, --image           Save plot PNG files (default prefix: qmca_plot).
-    --image-prefix=BASENAME
-                          Save plot PNG files with basename prefix
-                          (default=None).
-    -r, --report          (pending) Write a report (default=False).
-    -s, --show_options    Print user provided options (default=False).
-    -x, --examples        Print examples and exit (default=False).
-    --help                Print help information and exit (default=False).
-    -d DESIRED_ERROR, --desired_error=DESIRED_ERROR
-                          Show number of samples needed for desired error bar
-                          (default=none).
-    -n PARTICLE_NUMBER, --enlarge_system=PARTICLE_NUMBER
-                          Show number of samples needed to maintain error bar on
-                          larger system: desired particle number first, current
-                          particle number second (default=none)
-    --fp=PRECISION        Sets the floating point precision of displayed
-                          statistical results.  Must be a floating point format
-                          string such as 16.8f, 8.6e, or similar (default=none).
-    --nowarn              Suppress warning messages (default=False).
-    --average_all         Average over all files, ignoring differences in path
-                          (default=False).
-    --twist_info=TWIST_INFO
-                          Use twist weights in twist_info.dat files or not.
-                          Options: "use", "ignore", "require".  "use" means use
-                          when present, "ignore" means do not use, "require"
-                          means must be used (default=use).
+    Options:
+      --version             show program's version number and exit
+      -v, --verbose         Print detailed information (default=False).
+      -q QUANTITIES, --quantities=QUANTITIES
+                            Quantity or list of quantities to analyze.  See names
+                            and abbreviations below (default=all).
+      -u UNITS, --units=UNITS
+                            Desired energy units.  Can be Ha (Hartree), Ry
+                            (Rydberg), eV (electron volts), kJ_mol (k.
+                            joule/mole), K (Kelvin), J (Joules) (default=Ha).
+      -e EQUILIBRATION, --equilibration=EQUILIBRATION
+                            Equilibration length in blocks (default=auto).
+      -a, --average         Average over files in each series (default=False).
+      --save_average        Save averaged data into scalar.dat files.
+                            (default=False).
+      -w WEIGHTS, --weights=WEIGHTS
+                            List of weights for averaging (default=None).
+      -j JOIN, --join=JOIN  Join data for a range of series (default=None).
+      -b, --reblock         (pending) Use reblocking to calculate statistics
+                            (default=False).
+      -p, --plot            Plot quantities vs. series (default=False).
+      -t, --trace           Plot a trace of quantities (default=False).
+      -h, --histogram       (pending) Plot a histogram of quantities
+                            (default=False).
+      -o, --overlay         Overlay plots (default=False).
+      --legend=LEGEND       Placement of legend.  None for no legend, outside for
+                            outside legend (default=upper right).
+      --noautocorr          Do not calculate autocorrelation. Warning: error bars
+                            are no longer valid! (default=False).
+      --noac                Alias for --noautocorr (default=False).
+      --sac                 Show autocorrelation of sample data (default=False).
+      --sv                  Show variance of sample data (default=False).
+      --sort                Display output data sorted alphabetically by file name
+                            (default=False).
+      -i, --image           Save plot PNG files (default prefix: qmca_plot).
+      --image-prefix=BASENAME
+                            Save plot PNG files with basename prefix
+                            (default=None).
+      -r, --report          (pending) Write a report (default=False).
+      -s, --show_options    Print user provided options (default=False).
+      -x, --examples        Print examples and exit (default=False).
+      --help                Print help information and exit (default=False).
+      -d DESIRED_ERROR, --desired_error=DESIRED_ERROR
+                            Show number of samples needed for desired error bar
+                            (default=none).
+      -n PARTICLE_NUMBER, --enlarge_system=PARTICLE_NUMBER
+                            Show number of samples needed to maintain error bar on
+                            larger system: desired particle number first, current
+                            particle number second (default=none)
+      --fp=PRECISION        Sets the floating point precision of displayed
+                            statistical results.  Must be a floating point format
+                            string such as 16.8f, 8.6e, or similar (default=none).
+      --nowarn              Suppress warning messages (default=False).
+      --average_all         Average over all files, ignoring differences in path
+                            (default=False).
+      --twist_info=TWIST_INFO
+                            Use twist weights in twist_info.dat files or not.
+                            Options: "use", "ignore", "require".  "use" means use
+                            when present, "ignore" means do not use, "require"
+                            means must be used (default=use).
 
 .. _qmca-mean-error:
 
