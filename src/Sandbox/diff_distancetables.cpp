@@ -88,7 +88,8 @@ int main(int argc, char** argv)
 
   auto super_lattice(createSuperLattice(create_prim_lattice(), tmat));
   super_lattice.LR_rc = 5;
-  ParticleSet ions(super_lattice), els(super_lattice);
+  SimulationCell supercell(super_lattice);
+  ParticleSet ions(supercell), els(supercell);
 
   ions.setName("ion0");
   els.setName("e");

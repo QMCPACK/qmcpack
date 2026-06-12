@@ -128,14 +128,14 @@ int main(int argc, char** argv)
   int nptcl = 0;
   double t0 = 0.0, t1 = 0.0;
 
-  auto super_lattice(createSuperLattice(create_prim_lattice(), tmat));
-  ParticleSet ions(super_lattice);
+  SimulationCell supercell(createSuperLattice(create_prim_lattice(), tmat));
+  ParticleSet ions(supercell);
   tile_cell(ions, tmat);
 
   auto& rnc_children = RandomNumberControl::getChildren();
   std::vector<uint_type> mt(Random.state_size(), 0);
   std::vector<std::vector<uint_type>> mt_children(NumThreads, mt);
-  std::vector<MCWalkerConfiguration> elecs(NumThreads, MCWalkerConfiguration(super_lattice));
+  std::vector<MCWalkerConfiguration> elecs(NumThreads, MCWalkerConfiguration(supercell));
 
 #pragma omp parallel reduction(+ : t0)
   {

@@ -53,6 +53,9 @@ public:
 
   void output_particleset_info(Libxml2Document& doc, xmlNodePtr root);
 
+  ///return true, if the pool is empty
+  inline bool empty() const { return myPool.empty(); }
+
   /** initialize the supercell shared by all the particle sets
    *
    *  return value is never checked anywhere
@@ -62,8 +65,8 @@ public:
    */
   bool readSimulationCellXML(xmlNodePtr cur);
 
-  ///return true, if the pool is empty
-  inline bool empty() const { return myPool.empty(); }
+  /// create simulation cell by a lattice. Used for unit tests.
+  void createSimulationCellByLattice(const Lattice& lattice);
 
   /** add a ParticleSet* to the pool with its ownership transferred
    * ParticleSet built outside the ParticleSetPool must be constructed with
@@ -94,9 +97,6 @@ public:
   /// get simulation cell
   const auto& getSimulationCell() const { return *simulation_cell_; }
 
-  /// set simulation cell
-  void setSimulationCell(const SimulationCell& simulation_cell) { *simulation_cell_ = simulation_cell; }
-
   /** randomize a particleset particleset/@random='yes' && particleset@random_source exists
    */
   void randomize();
@@ -106,7 +106,7 @@ private:
    *
    * updated by
    * - readSimulationCellXML() parsing <simulationcell> element
-   * - setSimulationCell()
+   * - createSimulationCellByLattice()
    */
   std::unique_ptr<SimulationCell> simulation_cell_;
   /** List of ParticleSet owned

@@ -101,6 +101,11 @@ bool ParticleSetPool::readSimulationCellXML(xmlNodePtr cur)
   return lattice_defined;
 }
 
+void ParticleSetPool::createSimulationCellByLattice(const Lattice& lattice)
+{
+  simulation_cell_ = std::make_unique<SimulationCell>(lattice);
+}
+
 /** process an xml element
  * @param cur current xmlNodePtr
  * @return true, if successful.
