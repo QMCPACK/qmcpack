@@ -835,9 +835,11 @@ QMCA examples:
    qmca -pa -q e -e 10 qmc.g*.s*.scalar.dat
    qmca -ta -q e -e 10 qmc.g*.s*.scalar.dat
 
- saving plots to PNG files (-i/--image uses prefix qmca_plot; --image-prefix sets a custom prefix)
+ saving plots to files (-i/--image uses prefix qmca_plot; --image-prefix sets a custom prefix)
    qmca -t -q e -i qmc.s*.scalar.dat
    qmca -ta -q ev --image-prefix myrun qmc.g*.s*.scalar.dat
+ saving plots to PDF files (--image-format pdf for vector output suited to publication)
+   qmca -t -q e --image-format pdf --image-prefix myrun qmc.s*.scalar.dat
 
  multiple quantities and prefixes can be used for plots as well
 '''
@@ -937,11 +939,15 @@ QMCA examples:
                           )
         parser.add_option('-i','--image', dest='save_image',
                           action='store_true',default=False,
-                          help='Save plot PNG files (default prefix: qmca_plot).'
+                          help='Save plot files (default prefix: qmca_plot).'
                           )
         parser.add_option('--image-prefix',dest='image_prefix',
                           default='None',metavar='BASENAME',
-                          help='Save plot PNG files with basename prefix (default=%default).'
+                          help='Save plot files with basename prefix (default=%default).'
+                          )
+        parser.add_option('--image-format',dest='image_format',
+                          default='png',metavar='FORMAT',
+                          help='Output format for saved plots: png, pdf, svg, or eps (default=%default).'
                           )
         parser.add_option('-r','--report',dest='report',
                           action='store_true',default=False,
@@ -1079,6 +1085,12 @@ QMCA examples:
         else:
             opt.image = None
         #end if
+        image_formats = ('png','pdf','svg','eps')
+        fmt = opt.image_format.lower().lstrip('.')
+        if fmt not in image_formats:
+            self.error('image_format option is invalid\nimage_format must be one of: {}\nyou provided: {}'.format(image_formats,opt.image_format))
+        #end if
+        opt.image_format = fmt
         twist_info_options = ('use','ignore','require')
         if opt.twist_info not in twist_info_options:
             self.error('twist_info option is invalid\ntwist_info must be one of: {}\nyou provided: {}'.format(twist_info_options,opt.twist_info))
@@ -1578,9 +1590,14 @@ QMCA examples:
                                 #end if
                                 if save_plots:
                                     safe_prefix = prefix.replace('/','_').replace(os.sep,'_')
-                                    fname = '{0}_{1}_{2}_{3}.png'.format(
-                                        opt.image,safe_prefix,quantity,mode_names[mode])
-                                    fig.savefig(fname,dpi=150,bbox_inches='tight')
+                                    fmt = opt.image_format
+                                    fname = '{0}_{1}_{2}_{3}.{4}'.format(
+                                        opt.image,safe_prefix,quantity,mode_names[mode],fmt)
+                                    save_kwargs = dict(format=fmt,bbox_inches='tight')
+                                    if fmt=='png':
+                                        save_kwargs['dpi'] = 150
+                                    #end if
+                                    fig.savefig(fname,**save_kwargs)
                                     if self.verbose:
                                         self.log('saved plot to {0}'.format(fname),n=1)
                                     #end if

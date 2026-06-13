@@ -74,10 +74,12 @@ typing ``qmca`` at the command line with no other inputs (also try
       --sv                  Show variance of sample data (default=False).
       --sort                Display output data sorted alphabetically by file name
                             (default=False).
-      -i, --image           Save plot PNG files (default prefix: qmca_plot).
+      -i, --image           Save plot files (default prefix: qmca_plot).
       --image-prefix=BASENAME
-                            Save plot PNG files with basename prefix
+                            Save plot files with basename prefix
                             (default=None).
+      --image-format=FORMAT Output format for saved plots: png, pdf, svg, or eps
+                            (default=png).
       -r, --report          (pending) Write a report (default=False).
       -s, --show_options    Print user provided options (default=False).
       -x, --examples        Print examples and exit (default=False).
@@ -938,6 +940,14 @@ Saving a trace plot of the local energy to a PNG file with a custom prefix:
 
   >qmca -t -q e --image-prefix myrun *scalar*
 
+Saving a trace plot to a PDF file for publication (vector format):
+
+::
+
+  >qmca -t -q e --image-format pdf --image-prefix myrun *scalar*
+
+PDF, SVG, and EPS output are resolution-independent and better suited to journal
+submission than PNG.
 
 Applying an equilibration cutoff to VMC data (series 0):
 
