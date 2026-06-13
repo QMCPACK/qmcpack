@@ -53,8 +53,11 @@ typing ``qmca`` at the command line with no other inputs (also try
       -e EQUILIBRATION, --equilibration=EQUILIBRATION
                             Equilibration length in blocks (default=auto).
       -a, --average         Average over files in each series (default=False).
+      --save_average        Save averaged data into scalar.dat files.
+                            (default=False).
       -w WEIGHTS, --weights=WEIGHTS
                             List of weights for averaging (default=None).
+      -j JOIN, --join=JOIN  Join data for a range of series (default=None).
       -b, --reblock         (pending) Use reblocking to calculate statistics
                             (default=False).
       -p, --plot            Plot quantities vs. series (default=False).
@@ -69,7 +72,14 @@ typing ``qmca`` at the command line with no other inputs (also try
       --noac                Alias for --noautocorr (default=False).
       --sac                 Show autocorrelation of sample data (default=False).
       --sv                  Show variance of sample data (default=False).
-      -i, --image           (pending) Save image files (default=False).
+      --sort                Display output data sorted alphabetically by file name
+                            (default=False).
+      -i, --image           Save plot files (default prefix: qmca_plot).
+      --image-prefix=BASENAME
+                            Save plot files with basename prefix
+                            (default=None).
+      --image-format=FORMAT Output format for saved plots: png, pdf, svg, or eps
+                            (default=png).
       -r, --report          (pending) Write a report (default=False).
       -s, --show_options    Print user provided options (default=False).
       -x, --examples        Print examples and exit (default=False).
@@ -81,6 +91,17 @@ typing ``qmca`` at the command line with no other inputs (also try
                             Show number of samples needed to maintain error bar on
                             larger system: desired particle number first, current
                             particle number second (default=none)
+      --fp=PRECISION        Sets the floating point precision of displayed
+                            statistical results.  Must be a floating point format
+                            string such as 16.8f, 8.6e, or similar (default=none).
+      --nowarn              Suppress warning messages (default=False).
+      --average_all         Average over all files, ignoring differences in path
+                            (default=False).
+      --twist_info=TWIST_INFO
+                            Use twist weights in twist_info.dat files or not.
+                            Options: "use", "ignore", "require".  "use" means use
+                            when present, "ignore" means do not use, "require"
+                            means must be used (default=use).
 
 .. _qmca-mean-error:
 
@@ -566,29 +587,59 @@ command line with no other input. This following is a current list:
 ::
 
   Abbreviations and full names for quantities:
-      ar              = AcceptRatio
-      bc              = BlockCPU
-      bw              = BlockWeight
-      ce              = CorrectedEnergy
-      de              = DiffEff
-      e               = LocalEnergy
-      ee              = ElecElec
-      eff             = Efficiency
-      ii              = IonIon
-      k               = Kinetic
-      kc              = KEcorr
-      l               = LocalECP
-      le2             = LocalEnergy_sq
-      mpc             = MPC
-      n               = NonLocalECP
-      nw              = NumOfWalkers
-      p               = LocalPotential
-      sw              = AvgSentWalkers
-      te              = TrialEnergy
-      ts              = TotalSamples
-      tt              = TotalTime
-      v               = Variance
-      w               = Weight
+    ar              = AcceptRatio
+    bc              = BlockCPU
+    bw              = BlockWeight
+    ce              = CorrectedEnergy
+    de              = DiffEff
+    de_AB           = dLocEne_0_1
+    dee_AB          = dElecElec_0_1
+    dii_AB          = dIonIon_0_1
+    e               = LocalEnergy
+    e_A             = LocEne_0
+    e_B             = LocEne_1
+    ee              = ElecElec
+    ee_A            = ElecElec_0
+    ee_B            = ElecElec_1
+    ee_m            = ElecElec_m
+    ee_p            = ElecElec_p
+    eff             = Efficiency
+    ei_A            = ElecIon_0
+    ei_AB           = dElecIon_0_1
+    ei_B            = ElecIon_1
+    el              = EnergyEstim__nume_real
+    fl              = Flux
+    fl_A            = Flux_0
+    fl_AB           = dFlux_0_1
+    fl_B            = Flux_1
+    ii              = IonIon
+    ii_A            = IonIon_0
+    ii_B            = IonIon_1
+    k               = Kinetic
+    k_A             = Kinetic_0
+    k_AB            = dKinetic_0_1
+    k_B             = Kinetic_1
+    k_m             = Kinetic_m
+    k_p             = Kinetic_p
+    kc              = KEcorr
+    l               = LocalECP
+    le2             = LocalEnergy_sq
+    mpc             = MPC
+    n               = NonLocalECP
+    nw              = NumOfWalkers
+    p               = LocalPotential
+    p_A             = LocPot_0
+    p_AB            = dLocPot_0_1
+    p_B             = LocPot_1
+    p_p             = LocalPotential_pure
+    sw              = AvgSentWalkers
+    te              = TrialEnergy
+    ts              = TotalSamples
+    tt              = TotalTime
+    v               = Variance
+    w               = Weight
+    wp_A            = wpsi_0
+    wp_B            = wpsi_1
 
 See the output overview for ``scalar.dat``
 (:ref:`scalardat-file`) and ``dmc.dat``
@@ -876,6 +927,27 @@ Plotting a trace of the local energy:
 ::
 
   >qmca -t -q e *scalar*
+
+Saving a trace plot of the local energy to a PNG file (default prefix: qmca_plot):
+
+::
+
+  >qmca -t -q e --image *scalar*
+
+Saving a trace plot of the local energy to a PNG file with a custom prefix:
+
+::
+
+  >qmca -t -q e --image-prefix myrun *scalar*
+
+Saving a trace plot to a PDF file for publication (vector format):
+
+::
+
+  >qmca -t -q e --image-format pdf --image-prefix myrun *scalar*
+
+PDF, SVG, and EPS output are resolution-independent and better suited to journal
+submission than PNG.
 
 Applying an equilibration cutoff to VMC data (series 0):
 

@@ -835,6 +835,12 @@ QMCA examples:
    qmca -pa -q e -e 10 qmc.g*.s*.scalar.dat
    qmca -ta -q e -e 10 qmc.g*.s*.scalar.dat
 
+ saving plots to files (-i/--image uses prefix qmca_plot; --image-prefix sets a custom prefix)
+   qmca -t -q e -i qmc.s*.scalar.dat
+   qmca -ta -q ev --image-prefix myrun qmc.g*.s*.scalar.dat
+ saving plots to PDF files (--image-format pdf for vector output suited to publication)
+   qmca -t -q e --image-format pdf --image-prefix myrun qmc.s*.scalar.dat
+
  multiple quantities and prefixes can be used for plots as well
 '''
         self.log(examples)
@@ -931,9 +937,17 @@ QMCA examples:
                           action='store_true',default=False,
                           help='Display output data sorted alphabetically by file name (default=%default).'
                           )
-        parser.add_option('-i','--image',dest='image',
+        parser.add_option('-i','--image', dest='save_image',
                           action='store_true',default=False,
-                          help='(pending) Save image files (default=%default).'
+                          help='Save plot files (default prefix: qmca_plot).'
+                          )
+        parser.add_option('--image-prefix',dest='image_prefix',
+                          default='None',metavar='BASENAME',
+                          help='Save plot files with basename prefix (default=%default).'
+                          )
+        parser.add_option('--image-format',dest='image_format',
+                          default='png',metavar='FORMAT',
+                          help='Output format for saved plots: png, pdf, svg, or eps (default=%default).'
                           )
         parser.add_option('-r','--report',dest='report',
                           action='store_true',default=False,
@@ -979,7 +993,7 @@ QMCA examples:
                           help='Use twist weights in twist_info.dat files or not.  Options: "use", "ignore", "require".  "use" means use when present, "ignore" means do not use, "require" means must be used (default=%default).'
                           )
 
-        unsupported = set('histogram image reblock report'.split())
+        unsupported = set('histogram reblock report'.split())
 
         units = obj(hartree='Ha',ha='Ha',ev='eV',rydberg='Ry',ry='Ry',kelvin='K',kj_mol='kJ_mol',joules='J')
 
@@ -1064,9 +1078,19 @@ QMCA examples:
             #end if
             opt.join = j
         #end if
-        if opt.image=='None':
-            opt.image=None
+        if opt.image_prefix!='None':
+            opt.image = opt.image_prefix
+        elif opt.save_image:
+            opt.image = 'qmca_plot'
+        else:
+            opt.image = None
         #end if
+        image_formats = ('png','pdf','svg','eps')
+        fmt = opt.image_format.lower().lstrip('.')
+        if fmt not in image_formats:
+            self.error('image_format option is invalid\nimage_format must be one of: {}\nyou provided: {}'.format(image_formats,opt.image_format))
+        #end if
+        opt.image_format = fmt
         twist_info_options = ('use','ignore','require')
         if opt.twist_info not in twist_info_options:
             self.error('twist_info option is invalid\ntwist_info must be one of: {}\nyou provided: {}'.format(twist_info_options,opt.twist_info))
@@ -1449,7 +1473,9 @@ QMCA examples:
             tracestyle  = color+line
             histstyle   = color+line
             iplot,itrace,ihist = list(range(3))
+            mode_names = ['series','trace','histogram']
             modes = [opt.plot,opt.trace,opt.histogram]
+            save_plots = opt.image is not None
             quantities = []
             for q in opt.quantities:
                 all_present = True
@@ -1562,12 +1588,28 @@ QMCA examples:
                                         ax.legend(loc=2,bbox_to_anchor=(1.0,1.0),borderaxespad=0.)
                                     #end if
                                 #end if
+                                if save_plots:
+                                    safe_prefix = prefix.replace('/','_').replace(os.sep,'_')
+                                    fmt = opt.image_format
+                                    fname = '{0}_{1}_{2}_{3}.{4}'.format(
+                                        opt.image,safe_prefix,quantity,mode_names[mode],fmt)
+                                    save_kwargs = dict(format=fmt,bbox_inches='tight')
+                                    if fmt=='png':
+                                        save_kwargs['dpi'] = 150
+                                    #end if
+                                    fig.savefig(fname,**save_kwargs)
+                                    if self.verbose:
+                                        self.log('saved plot to {0}'.format(fname),n=1)
+                                    #end if
+                                    plt.close(fig)
+                                #end if
                             #end if
                         #end for
                     #end if
                 #end for
             #end for
-            plt.show()
+            if not save_plots:
+                plt.show()
         #end if
     #end def analyze_data
 #end class QMCA

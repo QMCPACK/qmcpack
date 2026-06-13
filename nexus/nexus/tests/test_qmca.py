@@ -266,3 +266,57 @@ avg series 0 -11.44375840 +/- 0.00292164  0.44863011 +/- 0.00502859  0.0392
     os.chdir(cwd)
 #end def test_weighted_twist_average
 
+
+
+def test_save_plot_pdf():
+
+    try:
+        import matplotlib.pyplot  # noqa: F401
+    except ImportError:
+        pytest.skip('matplotlib not available')
+
+    cwd = Path.cwd()
+    os.chdir(QA_PATHS["vmc"])
+
+    prefix = 'testplot_pdf'
+    plot_file = f'{prefix}_vmc_LocalEnergy_trace.pdf'
+    if os.path.exists(plot_file):
+        os.remove(plot_file)
+
+    command = (f'{sys.executable} {QMCA_EXE} -t -q e -e 5 '
+               f'--image-prefix {prefix} --image-format pdf --nowarn *scalar*')
+    out,err,rc = execute(command)
+    assert rc==0
+    assert os.path.exists(plot_file)
+
+    os.remove(plot_file)
+    os.chdir(cwd)
+#end def test_save_plot_pdf
+
+
+
+def test_save_plot_png_default():
+
+    try:
+        import matplotlib.pyplot  # noqa: F401
+    except ImportError:
+        pytest.skip('matplotlib not available')
+
+    cwd = Path.cwd()
+    os.chdir(QA_PATHS["vmc"])
+
+    prefix = 'testplot_png'
+    plot_file = f'{prefix}_vmc_LocalEnergy_trace.png'
+    if os.path.exists(plot_file):
+        os.remove(plot_file)
+
+    command = (f'{sys.executable} {QMCA_EXE} -t -q e -e 5 '
+               f'--image-prefix {prefix} --image --nowarn *scalar*')
+    out,err,rc = execute(command)
+    assert rc==0
+    assert os.path.exists(plot_file)
+
+    os.remove(plot_file)
+    os.chdir(cwd)
+#end def test_save_plot_png_default
+
