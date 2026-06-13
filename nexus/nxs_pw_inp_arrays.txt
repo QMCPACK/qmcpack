@@ -1,0 +1,24 @@
+"celldm",
+!"starting_magnetization",
+!"hubbard_alpha",            # Removed?
+!"hubbard_u",                # Removed?
+!"hubbard_j0",               # Removed?
+!"hubbard_beta",
+!"hubbard_j",                # Removed?
+"starting_ns_eigenvalue",
+!"angle1",
+!"angle2",
+"fixed_magnetization",
+"fe_step",                  # Removed?
+"efield_cart",
+!"london_c6",
+!"london_rvdw",
+!"starting_charge"
+
+
+fnhscl                 -start 1 -end ntyp   REAL
+solute_epsilon         -start 1 -end ntyp   REAL
+solute_sigma           -start 1 -end ntyp   REAL
+Hubbard_occ            -start 1,1 -end ntyp,3 -indexes ityp,i   REAL
+nhgrp                  -start 1 -end ntyp   INTEGER
+solute_lj              -start 1 -end ntyp   CHARACTER

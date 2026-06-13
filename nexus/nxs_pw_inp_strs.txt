@@ -1,0 +1,45 @@
+"calculation",
+"title",
+"verbosity",
+"restart_mode",
+"outdir",
+"wfcdir",
+"prefix",
+"disk_io",
+"pseudo_dir",
+"occupations",
+"smearing",
+"input_dft",
+"U_projection_type",        # Removed?
+"constrained_magnetization",
+"mixing_mode",
+"diagonalization",
+"startingpot",
+"startingwfc",
+"ion_dynamics",
+"ion_positions",
+"phase_space",              # Removed?
+"pot_extrapolation",
+"wfc_extrapolation",
+"ion_temperature",
+"opt_scheme",               # Removed?
+"CI_scheme",                # Removed?
+"cell_dynamics",
+"cell_dofree",
+"which_compensation",       # Removed?
+"assume_isolated",
+"exxdiv_treatment",
+"esm_bc",
+"vdw_corr",
+"efield_phase",
+
+
+"pol_type",         # New?
+"dmft_prefix",      # New?
+"ion_velocities",   # New?
+"fcp_dynamics",     # New?
+"fcp_temperature",  # New?
+"closure",          # New?
+"starting1d",       # New?
+"starting3d",       # New?
+"laue_wall",        # New?
