@@ -920,4 +920,4 @@ the generated workflows during development (``--generate_only``).
 - ``--vdw_table`` : Path to the vdw_table file used with Quantum ESPRESSO (required only if running Quantum ESPRESSO with van der Waals functionals).
 - ``--qprc`` : Path to the quantum_package.rc file used with Quantum Package.
 
-.. bibliography:: bibs/methods.bib
+.. bibliography:: /bibs/methods.bib
