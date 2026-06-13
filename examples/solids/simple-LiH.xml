@@ -4,7 +4,7 @@
     <application name="qmcapp" role="molecu" class="serial" version="0.2">
       Simple Example of solid LiH
     </application>
-    <parameter name="driver_version">legacy</parameter>
+    <parameter name="driver_version">batched</parameter>
   </project>
 
   <random seed="49154"/>
@@ -87,9 +87,7 @@
 
   <qmc method="vmc" move="pbyp" gpu="yes">
     <estimator name="LocalEnergy" hdf5="no"/>
-    <parameter name="walkers">    1 </parameter>
-    <parameter name="samplesperthread">      64 </parameter>
-    <parameter name="stepsbetweensamples">    1 </parameter>
+    <parameter name="total_walkers">    128 </parameter>
     <parameter name="substeps">  5 </parameter>
     <parameter name="warmupSteps">  100 </parameter>
     <parameter name="blocks">  1 </parameter>
@@ -98,8 +96,7 @@
   </qmc>
   <qmc method="dmc" move="pbyp" checkpoint="-1" gpu="yes">
     <estimator name="LocalEnergy" hdf5="no"/>
-    <parameter name="minimumtargetwalkers"> 128 </parameter>
-    <parameter name="reconfiguration">   no </parameter>
+    <parameter name="total_walkers"> 128 </parameter>
     <parameter name="warmupSteps">  100 </parameter>
     <parameter name="timestep">  0.005 </parameter>
     <parameter name="steps">   10 </parameter>

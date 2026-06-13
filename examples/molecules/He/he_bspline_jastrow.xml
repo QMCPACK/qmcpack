@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <simulation>
 <project id="He" series="0">
-  <parameter name="driver_version">legacy</parameter>
+  <parameter name="driver_version">batched</parameter>
 </project>
 
   <!-- Location of atoms -->
@@ -99,7 +99,7 @@
 
   <qmc method="vmc" target="e">
     <parameter name="blocks">2000</parameter>
-    <parameter name="steps">100</parameter>
+    <parameter name="samples">200000</parameter>
     <parameter name="warmupsteps">100</parameter>
     <parameter name="timestep">0.1</parameter>
   </qmc>
