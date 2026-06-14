@@ -54,7 +54,7 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
                0.00000000, -6.49690625, 0.00000000, 7.08268015};
 
   ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.setSimulationCell(lattice);
+  ptcl.createSimulationCellByLattice(lattice);
   auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions_(*ions_uptr);
@@ -675,8 +675,8 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   inv_row = {0.1, 0.2, 0.3};
   inv_row.updateTo();
   std::vector<const SPOSet::ValueType*> inv_row_ptr(2, spo->isOMPoffload() ? inv_row.device_data() : inv_row.data());
-  const auto& ei_table1    = elec_.getDistTableAB(elec_.addTable(ions_));
-  const auto& ei_table2     = elec_2.getDistTableAB(elec_2.addTable(ions_));
+  const auto& ei_table1 = elec_.getDistTableAB(elec_.addTable(ions_));
+  const auto& ei_table2 = elec_2.getDistTableAB(elec_2.addTable(ions_));
   ParticleSet::mw_update(p_list);
   for (int iat = 0; iat < 3; iat++)
   {
