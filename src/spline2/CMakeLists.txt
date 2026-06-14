@@ -10,7 +10,7 @@
 #//////////////////////////////////////////////////////////////////////////////////////
 
 
-add_library(spline2_omptarget OBJECT MultiBsplineOffload.cpp)
+add_library(spline2_omptarget OBJECT MultiBsplineOffload.cpp MultiBsplineOffloadMapper.cpp)
 target_link_libraries(spline2_omptarget PUBLIC einspline platform_runtime)
 
 set(SPLINE2_SRC MultiBspline.cpp MultiBspline1D.cpp SplineUtils.cpp)

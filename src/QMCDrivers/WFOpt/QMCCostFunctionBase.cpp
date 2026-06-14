@@ -131,19 +131,13 @@ QMCCostFunctionBase::Return_rt QMCCostFunctionBase::Cost(bool needGrad)
 }
 
 QMCCostFunctionBase::Return_rt QMCCostFunctionBase::fillHamVec(std::vector<Return_rt>& ham)
-{
-  throw std::runtime_error("Need to implement fillHamVec");
-}
+{ throw std::runtime_error("Need to implement fillHamVec"); }
 
 void QMCCostFunctionBase::calcOvlParmVec(const std::vector<Return_rt>& param, std::vector<Return_rt>& ovlParmVec)
-{
-  throw std::runtime_error("Need to implement calcOvlParmVec");
-}
+{ throw std::runtime_error("Need to implement calcOvlParmVec"); }
 
 void QMCCostFunctionBase::checkConfigurationsSR(EngineHandle& handle)
-{
-  throw std::runtime_error("Need to implement checkConfigurationsSR");
-}
+{ throw std::runtime_error("Need to implement checkConfigurationsSR"); }
 
 void QMCCostFunctionBase::printEstimates()
 {
@@ -393,12 +387,11 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
   InitVariables = opt_vars;
   //get the indices
   Psi.checkOutVariables(opt_vars);
-  
+
   if (const auto num_opt_vars = opt_vars.size(); num_opt_vars == 0)
     throw UniformCommunicateError("QMCCostFunctionBase::put No valid optimizable variables are found.");
   else
-    app_log() << " In total " << num_opt_vars << " parameters being optimized after applying constraints."
-              << std::endl;
+    app_log() << " In total " << num_opt_vars << " parameters being optimized after applying constraints." << std::endl;
   //     app_log() << "<active-optimizables> " << std::endl;
   //     opt_vars.print(app_log());
   //     app_log() << "</active-optimizables>" << std::endl;
@@ -1025,7 +1018,7 @@ void QMCCostFunctionBase::resetOptimizableObjects(TrialWaveFunction& psi, const 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 #ifdef HAVE_LMY_ENGINE
 QMCCostFunctionBase::Return_rt QMCCostFunctionBase::LMYEngineCost(const bool needDeriv,
-                                                                  cqmc::engine::LMYEngine<Return_t>* EngineObj)
+                                                                  cqmc::engine::LMYEngine<Return_t>& EngineObj)
 {
   // prepare local energies, weights, and possibly derivative vectors, and compute standard cost
   const Return_rt standardCost = this->Cost(needDeriv);

@@ -170,7 +170,7 @@ can get an estimate of the autocorrelation time in the following way:
   >qmca -q e -e 100 qmc.s000.scalar.dat --sac
   qmc  series 0  LocalEnergy           =  -45.877363 +/- 0.017432    4.8
 
-The flag ``–sac`` stands for (s)how (a)uto(c)orrelation. In this case,
+The flag ``–sac`` stands for show autocorrelation. In this case,
 the autocorrelation estimate is :math:`4.8\approx 5` samples. Since the
 total run contained 800 samples and we have excluded 100 of them, we can
 estimate the number of independent samples as :math:`(800-100)/5=140`.

@@ -78,9 +78,13 @@ case "$ourhostname" in
 		clangoffloadnompi_offloadcuda_mixed_complex \
                 clangoffloadnompi_offloadcuda_debug \
                 clangoffloadnompi_offloadcuda_complex_debug \
+                clangoffloadnompi_offloadcpu \				    
+                clangnewmpi clangnewmpi_mixed clangnewmpi_complex clangnewmpi_mixed_complex \
+		clangnewnompi_debug clangnewnompi_debug_asan \
                 gccnewnompi_debug_asan gccnewnompi_debug_ubsan \
-                gccnewmpi_mkl clangnewmpi gccnewnompi gccnewmpi gccoldmpi clangnewmpi_complex gccnewnompi_complex gccnewmpi_complex \
-                clangnewmpi_mixed gccnewnompi_mixed gccnewmpi_mixed clangnewmpi_mixed_complex gccnewnompi_mixed_complex gccnewmpi_mixed_complex"
+                gccnewmpi gccnewmpi_mkl gccnewnompi gccnewnompi_complex gccnewmpi_complex \
+                gccnewnompi_mixed gccnewmpi_mixed gccnewnompi_mixed_complex gccnewmpi_mixed_complex \
+                gccoldmpi"
 	else
 	    buildsys="gccnewmpi_mkl clangnewmpi gccnewmpi clangnewmpi_complex clangnewmpi_mixed clangnewmpi_mixed_complex clangoffloadmpi_offloadcuda"
 	fi
@@ -88,14 +92,16 @@ case "$ourhostname" in
 	;;
     nitrogen2 )
 	if [[ $jobtype == "nightly" ]]; then
-	    buildsys="amdclangnompi_offloadhip_complex \
-		amdclangnompi_offloadhip amdclangnompi_offloadhip_debug \
-		amdclangnompi_offloadhip_complex_debug \
-		amdclangnompi_offloadhip_mixed amdclangnompi_offloadhip_mixed_debug \
-		amdclangnompi_offloadhip_mixed_complex amdclangnompi_offloadhip_mixed_complex_debug \
-                gccnewnompi gccnewnompi_aocl gccnewnompi_complex gccnewnompi_debug gccnewnompi_complex_debug \
-                gccnewnompi_mixed_debug gccnewnompi_mixed_complex_debug gccnewnompi_aocl_mixed_complex_debug gccnewmpi gccnewmpi_aocl clangnewmpi \
-		amdclangnompi amdclangnompi_debug"
+	    buildsys="gccoldmpi_aocl gccoldnompi_aocl_mixed_complex_debug gccoldnompi gccoldnompi_debug \
+		      amdclangnompi_offloadhip_complex \
+		      amdclangnompi_offloadhip amdclangnompi_offloadhip_debug \
+		      amdclangnompi_offloadhip_complex_debug \
+		      amdclangnompi_offloadhip_mixed amdclangnompi_offloadhip_mixed_debug \
+		      amdclangnompi_offloadhip_mixed_complex amdclangnompi_offloadhip_mixed_complex_debug \
+                      gccnewnompi gccnewnompi_complex gccnewnompi_debug gccnewnompi_complex_debug \
+                      gccnewnompi_mixed_debug gccnewnompi_mixed_complex_debug gccnewmpi \
+                      clangnewmpi \
+		      amdclangnompi amdclangnompi_debug"
 	else
 	    buildsys="gccnewmpi gccnewmpi_aocl amdclangnompi gccnewnompi gccnewnompi_aocl clangnewmpi amdclangnompi_offloadhip"
 	fi
@@ -179,7 +185,7 @@ module() { eval `/usr/bin/modulecmd bash $*`; }
 
 export SPACK_USER_CONFIG_PATH=$HOME/apps/spack_user_config  # Avoid using $HOME/.spack
 export SPACK_ROOT=$HOME/apps/spack
-export PATH=$SPACK_ROOT/bin:$PATH
+#export PATH=$SPACK_ROOT/bin:$PATH
 . $SPACK_ROOT/share/spack/setup-env.sh
 
 
@@ -216,7 +222,8 @@ fi
 # Sanity check cmake config file present
 if [ -e qmcpack/CMakeLists.txt ]; then
 
-export PYTHONPATH=${test_dir}/qmcpack/nexus
+# TODO: Update PYTHONPATH for modern tool location
+#export PYTHONPATH=${test_dir}/qmcpack/nexus/lib
 echo --- PYTHONPATH=$PYTHONPATH
 
 echo --- Starting test builds and tests
@@ -242,29 +249,33 @@ cd build_$sys
 ourenv=env${syscompilermpi}
 echo --- Activating environment $ourenv
 spack env activate $ourenv
-echo --- Sourcing environment $ourenv
-if [ ! -e $HOME/apps/spack/var/spack/environments/$ourenv/loads ]; then
-    echo Loads file missing for environment $ourenv
-    exit 1
-fi
-source $HOME/apps/spack/var/spack/environments/$ourenv/loads    
+#MAR26retcode=$?
+#MAR26if (( rc != 0 )); then
+#MAR26  echo "FAILED to activate $ourenv (exit code $rc)"
+#MAR26  break
+#MAR26else
+#MAR26  echo "Successfully activated $ourenv"
+#MAR26fi
+#MAR26 TODO: Verify views work
+#MAR26echo --- Sourcing environment $ourenv
+#MAR26if [ ! -e $HOME/apps/spack/var/spack/environments/$ourenv/loads ]; then
+#MAR26    echo Loads file missing for environment $ourenv
+#MAR26    exit 1
+#MAR26fi
+#MAR26 source $HOME/apps/spack/var/spack/environments/$ourenv/loads    
 # Compiler sanity check:
-which gcc
-which clang
-which mpicc
+echo "gcc is `which gcc`"
+echo "clang is `which clang`"
+echo "mpicc is `which mpicc`"
 # Extra configuration for this build
 # All base sw should be available via the environments
 
 # Ensure GNU C++ library available. Problem symptoms:
 # $ bin/qmcpack
 # bin/qmcpack: /lib64/libstdc++.so.6: version `GLIBCXX_3.4.26' not found (required by bin/qmcpack)
-
-echo LD_LIBRARY_PATH=$LD_LIBRARY_PATH
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:`which gcc|sed 's/bin\/gcc/lib64/g'`
-echo LD_LIBRARY_PATH=$LD_LIBRARY_PATH
-
-
-
+#MAR26#echo LD_LIBRARY_PATH=$LD_LIBRARY_PATH
+#MAR26#export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:`which gcc|sed 's/bin\/gcc/lib64/g'`
+#MAR26#echo LD_LIBRARY_PATH=$LD_LIBRARY_PATH
 
 # Setup additional python paths when gccnew and therefore pyscf available. TO DO: test for module availability
 case "$sys" in
@@ -364,13 +375,20 @@ if [[ $sys == *"clang"* ]]; then
     
 # Clang OpenMP offload CUDA builds. Setup here due to clang specific arguments
     if [[ $sys == *"offloadcuda"* ]]; then
-        QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-NVGPU
+	# Default OpenMP offload with CUDA support
+        QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-Offload-NVGPU
         CMCFG="$CMCFG -DCMAKE_CXX_FLAGS=-Wno-unknown-cuda-version"
 	QMC_OPTIONS="${QMC_OPTIONS};-DQMC_GPU_ARCHS=sm_70"
     fi
     if [[ $sys == *"offloadhip"* ]]; then
-        QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-AMDGPU
+	# Default OpenMP offload with ROCm/HIP support
+        QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-Offload-AMDGPU
 	QMC_OPTIONS="${QMC_OPTIONS};-DQMC_GPU_ARCHS=$amdgpuarch"
+    fi
+    if [[ $sys == *"offloadcpu"* ]]; then
+	# Pure OpenMP offload to host cpu (i.e. no GPU required)
+        QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-Offload-CPU
+	QMC_OPTIONS="${QMC_OPTIONS};-DQMC_GPU=openmp;-DOFFLOAD_TARGET=x86_64-pc-linux-gnu"
     fi
 fi
 
@@ -441,6 +459,16 @@ else
 	export QMC_OPTIONS="${QMC_OPTIONS};-DBLA_VENDOR=OpenBLAS"
     fi
 fi
+
+# END of compiler setup
+if [[ $sys == *"nompi"* ]]; then
+echo MPI is disabled
+else
+    echo MPI is enabled
+    echo OMPI_CC=$OMPI_CC
+    echo OMPI_CXX=$OMPI_CXX
+fi
+
 
 # Complex
 if [[ $sys == *"complex"* ]]; then

@@ -109,7 +109,7 @@ private:
 
 #ifdef HAVE_LMY_ENGINE
   formic::VarDeps vdeps;
-  cqmc::engine::LMYEngine<ValueType>* EngineObj;
+  std::unique_ptr<cqmc::engine::LMYEngine<ValueType>> EngineObj;
 #endif
 
   //engine for running various gradient descent based algorithms for optimization
@@ -233,7 +233,7 @@ private:
   ///common operation to start optimization, used by the derived classes
   void start();
 #ifdef HAVE_LMY_ENGINE
-  void engine_start(cqmc::engine::LMYEngine<ValueType>* EngineObj,
+  void engine_start(cqmc::engine::LMYEngine<ValueType>& EngineObj,
                     DescentEngine& descentEngineObj,
                     std::string MinMethod);
 #endif

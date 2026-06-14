@@ -27,20 +27,20 @@
          </group>
       </particleset>
       <particleset name="ion0">
-         <group name="Li" size="1" mass="12652.6689728">
+         <group name="Li" size="1" mass="12650.8460843">
             <parameter name="charge"              >    1                     </parameter>
             <parameter name="valence"             >    1                     </parameter>
             <parameter name="atomicnumber"        >    3                     </parameter>
-            <parameter name="mass"                >    12652.6689728            </parameter>
+            <parameter name="mass"                >    12650.8460843            </parameter>
             <attrib name="position" datatype="posArray" condition="0">
                      0.00000000        0.00000000        0.00000000
             </attrib>
          </group>
-         <group name="H" size="1" mass="1837.36221934">
+         <group name="H" size="1" mass="1837.47159264">
             <parameter name="charge"              >    1                     </parameter>
             <parameter name="valence"             >    1                     </parameter>
             <parameter name="atomicnumber"        >    1                     </parameter>
-            <parameter name="mass"                >    1837.36221934            </parameter>
+            <parameter name="mass"                >    1837.47159264            </parameter>
             <attrib name="position" datatype="posArray" condition="0">
                      3.55000000        3.55000000        3.55000000
             </attrib>

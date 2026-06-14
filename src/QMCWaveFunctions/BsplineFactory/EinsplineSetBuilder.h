@@ -259,6 +259,12 @@ protected:
                     const TinyVector<double, OHMMS_DIM>& twist_inp,
                     bool skipChecks = false);
 
+  /** obtain the attributes of a sposet tag's child named memory.
+   * @param cur the current xml node
+   * @return the distribution size
+   */
+  static std::pair<int, int> obtainMemoryAttributes(xmlNodePtr cur);
+
   /** analyze twists of orbitals in h5 and determinine twist_num_
    * @param twist_num_inp twistnum XML input
    * @param twist_inp twst XML input

@@ -1,9 +1,9 @@
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.EXECUTE)
 
-
-def test_import():
-    from ..execute import execute
-#end def test_import
-
+from ..generic import generic_settings
+generic_settings.raise_error = True
 
 
 def test_execute():

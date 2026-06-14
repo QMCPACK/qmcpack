@@ -102,7 +102,36 @@ void EinsplineSetBuilder::set_metadata(int numOrbs,
   AnalyzeTwists2(twist_num_inp, twist_inp);
 }
 
-std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
+
+std::pair<int, int> EinsplineSetBuilder::obtainMemoryAttributes(const xmlNodePtr cur)
+{
+  int distributed_ranks = 0;
+  int shared_ranks      = 0;
+  processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
+    if (cname == "coefs_mem")
+    {
+      OhmmsAttributeSet mem_attr;
+      mem_attr.add(distributed_ranks, "distributed_ranks");
+      mem_attr.add(shared_ranks, "shared_ranks");
+      mem_attr.put(element);
+    }
+  });
+
+  if (distributed_ranks < 1)
+    distributed_ranks = 1;
+
+  if (shared_ranks < 1)
+    shared_ranks = 1;
+
+  if (auto node_comm_size = OHMMS::Controller->NodeComm().size(); node_comm_size % distributed_ranks * shared_ranks > 0)
+    throw std::runtime_error("The number of MPI ranks per node (" + std::to_string(node_comm_size) +
+                             ") is not divisible by the product of distributed_ranks and shared_ranks (" +
+                             std::to_string(distributed_ranks * shared_ranks) + ").");
+
+  return {distributed_ranks, shared_ranks};
+}
+
+std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(const xmlNodePtr cur)
 {
   //use 2 bohr as the default when truncated orbitals are used based on the extend of the ions
   std::string spo_object_name;
@@ -169,11 +198,7 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   Occ.resize(0, 0); // correspond to ground
   bool NewOcc(false);
 
-  xmlNodePtr spo_cur = cur;
-  cur                = cur->children;
-  while (cur != NULL)
-  {
-    std::string cname((const char*)(cur->name));
+  processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
     if (cname == "occupation")
     {
       std::string occ_mode("ground");
@@ -184,15 +209,15 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
       oAttrib.add(spinSet, "spindataset");
       oAttrib.add(occ_format, "format");
       oAttrib.add(particle_hole_pairs, "pairs");
-      oAttrib.put(cur);
+      oAttrib.put(element);
       if (occ_mode == "excited")
-        putContent(Occ, cur);
+        putContent(Occ, element);
       else if (occ_mode != "ground")
         myComm->barrier_and_abort("EinsplineSetBuilder::createSPOSet Only ground state occupation "
                                   "currently supported in EinsplineSetBuilder.");
     }
-    cur = cur->next;
-  }
+  });
+
   if (Occ != last_occ)
   {
     NewOcc = true;
@@ -266,7 +291,8 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   }
 
   MixedSplineReader->setCommon(XMLRoot);
-  auto OrbitalSet = MixedSplineReader->create_spline_set(spo_object_name, spinSet, numOrbs);
+  auto OrbitalSet =
+      MixedSplineReader->create_spline_set(spo_object_name, spinSet, obtainMemoryAttributes(cur), numOrbs);
   if (!OrbitalSet)
     myComm->barrier_and_abort("Failed to create SPOSet*");
   app_log() << "Time spent in creating B-spline SPOs " << mytimer.elapsed() << " sec" << std::endl;
@@ -294,7 +320,8 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSet(xmlNodePtr cur, SPOSet
   int norb = input_info.max_index();
   H5OrbSet aset(H5FileName, spinSet, norb);
 
-  auto bspline_zd = MixedSplineReader->create_spline_set(spo_object_name, spinSet, input_info);
+  auto bspline_zd =
+      MixedSplineReader->create_spline_set(spo_object_name, spinSet, obtainMemoryAttributes(cur), input_info);
   if (bspline_zd)
     SPOSetMap[aset] = bspline_zd.get();
   return bspline_zd;

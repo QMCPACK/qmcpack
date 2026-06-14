@@ -27,6 +27,8 @@
 
 import os
 import gc as garbage_collector
+from os import PathLike
+from .utilities import path_string
 from .nexus_version import nexus_version
 from .memory import resident
 from .developer import DevBase, obj, log
@@ -100,6 +102,8 @@ nexus_core_defaults = obj(
     progress_tty      = False,             # used by: ProjectManager
     graph_sims        = False,             # used by: ProjectManager
     command_line      = True,              # used by: Settings
+    dynamic           = False,             # used by: DynamicWorkflowManager
+                                           #          Simulation
     **nexus_core_noncore_defaults
     )
 
@@ -213,9 +217,24 @@ _____________________________________________________
         #end if
     #end def tlog
 
-    def enter(self,directory,changedir=True,msg=''):
+    def enter(self, directory: PathLike, changedir: bool = True, msg: str = ''):
+        """Have Nexus enter a directory and change its current working directory.
+        
+        Parameters
+        ----------
+        directory : PathLike
+            Directory to enter. Can be a ``str`` or ``pathlib.Path``
+            object.
+        changedir : bool, default=True
+            Default of ``True`` will change the CWD, setting to ``False``
+            will not change the CWD.
+        msg : str, optional
+            Optional message to pass to the output log.
+        """
         NexusCore.working_directory = os.getcwd()
-        self.log('    Entering '+directory,msg)
+        directory = path_string(directory)
+
+        self.log('    Entering ' + directory, msg)
         if changedir:
             os.chdir(directory)
         #end if
@@ -227,3 +246,12 @@ _____________________________________________________
         os.chdir(NexusCore.working_directory)
     #end def leave
 #end class NexusCore
+
+
+# support dynamic workflows
+dynamic_storage = obj(
+    simulations         = obj(), # all sims, in dyn proc or not
+    simulation_ids      = set(),
+    dynamic_processes   = obj(),
+    dynamic_process_ids = set(),
+    )

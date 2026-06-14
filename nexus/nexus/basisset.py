@@ -4,10 +4,12 @@
 
 
 import os
+from pathlib import Path
 import numpy as np
-from .periodic_table import is_element
+from .periodic_table import Elements
 from .developer import DevBase, obj, error, to_str, unavailable
 from .fileio import TextFile
+from .utilities import path_string
 
 try:
     import matplotlib.pyplot as plt
@@ -32,7 +34,7 @@ class BasisSets(DevBase):
         for bs in basissets:
             if isinstance(bs,BasisFile):
                 bss.append(bs)
-            elif isinstance(bs,str):
+            elif isinstance(bs,(str, Path)):
                 bsfiles.append(bs)
             else:
                 self.error('expected BasisFile type or filepath, got '+str(type(bs)),exit=False)
@@ -70,12 +72,13 @@ class BasisSets(DevBase):
         self.log('')
         self.log('  Basissets')
         for filepath in bsfiles:
-            self.log('    reading basis: '+filepath)
-            ext = filepath.split('.')[-1].lower()
+            filepath_str = str(filepath)
+            self.log('    reading basis: '+filepath_str)
+            ext = filepath_str.split('.')[-1].lower()
             if ext=='gms_bas' or ext=='bas':
-                bs = gamessBasisFile(filepath)
+                bs = gamessBasisFile(filepath_str)
             else:
-                bs = BasisFile(filepath)
+                bs = BasisFile(filepath_str)
             #end if
             bss.append(bs)
         #end for
@@ -107,14 +110,15 @@ class BasisFile(DevBase):
         self.filename      = None
         self.location      = None
         if filepath is not None:
+            filepath = path_string(filepath)
             self.filename = os.path.basename(filepath)
-            self.location = os.path.abspath(filepath)
+            self.location = os.path.realpath(filepath)
             elem_label = self.filename.split('.')[0]
-            is_elem,symbol = is_element(elem_label,symbol=True)
+            is_elem, elem = Elements.is_element(elem_label, return_element=True)
             if not is_elem:
                 self.error('cannot determine element for basis file: {0}\nbasis file names must be prefixed by an atomic symbol or label\n(e.g. Si, Si1, etc)'.format(filepath))
             #end if
-            self.element = symbol
+            self.element = elem.symbol
             self.element_label = elem_label
         #end if
     #end def __init__
@@ -123,8 +127,6 @@ class BasisFile(DevBase):
         self.not_implemented()
     #end def cleaned_text
 #end class BasisFile
-
-
 
 
 class gaussBasisFile(BasisFile):
@@ -154,13 +156,13 @@ class gaussBasisFile(BasisFile):
         #end if
         file = TextFile(filepath)
         self.read_file(file)
+        file.close()
     #end def read
 
     def read_file(self,file):
         self.not_implemented()
     #end def read_file
 #end class gaussBasisFile
-
 
 
 class gamessBasisFile(gaussBasisFile):
@@ -203,11 +205,6 @@ class gamessBasisFile(gaussBasisFile):
     #end def read_file
 #end class gamessBasisFile
 
-
-
-
-
- 
 
 def process_gaussian_text(text,format,pp=True,basis=True,preserve_spacing=False):
     if format=='gamess' or format=='gaussian' or format=='atomscf':
@@ -291,8 +288,6 @@ def process_gaussian_text(text,format,pp=True,basis=True,preserve_spacing=False)
 #end def process_gaussian_text
 
 
-
-
 class GaussianBasisSet(DevBase):
     lset_full = tuple('spdfghijk')
     lstyles = obj(s='g-',p='r-',d='b-',f='m-',g='c-',h='k-',i='g-.',j='r-.',k='b-.')
@@ -327,7 +322,8 @@ class GaussianBasisSet(DevBase):
         #end if
         #self.name = split_delims(os.path.split(filepath)[1])[0]
         self.name = os.path.split(filepath)[1].split('.')[0]
-        text = open(filepath,'r').read()
+        with open(filepath, "r") as f:
+            text = f.read()
         self.read_text(text,format)
     #end def read
 
@@ -340,7 +336,8 @@ class GaussianBasisSet(DevBase):
         #end if
         text = self.write_text(format)
         if filepath is not None:
-            open(filepath,'w').write(text)
+            with open(filepath,'w') as fobj:
+                fobj.write(text)
         #end if
         return text
     #end def write
@@ -433,7 +430,6 @@ class GaussianBasisSet(DevBase):
     #end def read_lines
 
 
-    
     def write_text(self,format=None,occ=None):
         text = ''
         format = format.lower()

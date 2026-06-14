@@ -11,6 +11,8 @@
 
 #include "SplineUtils.h"
 #include <sstream>
+#include "spline2/MultiBsplineBase.hpp"
+#include "spline2/MultiBspline1D.hpp"
 #include "spline2/einspline_engine.hpp"
 #include "spline2/einspline_util.hpp"
 
@@ -20,18 +22,32 @@ template<typename ST>
 bool SplineUtils<ST>::read(MultiBsplineBase<ST>& spline, hdf_archive& h5f)
 {
   std::ostringstream o;
-  o << "spline_" << my_index;
-  einspline_engine<ST, 3> bigtable(*spline.getSplinePtr());
-  return h5f.readEntry(bigtable, o.str());
+  bool success = true;
+  int my_index = 0;
+  do
+  {
+    o << "spline_" << my_index;
+    einspline_engine<ST, 3> bigtable(spline.getBlock(my_index));
+    success = h5f.readEntry(bigtable, o.str());
+    my_index++;
+  } while (my_index < spline.getNumBlocks() && success);
+  return success;
 }
 
 template<typename ST>
 bool SplineUtils<ST>::write(MultiBsplineBase<ST>& spline, hdf_archive& h5f)
 {
   std::ostringstream o;
-  o << "spline_" << my_index;
-  einspline_engine<ST, 3> bigtable(*spline.getSplinePtr());
-  return h5f.writeEntry(bigtable, o.str());
+  bool success = true;
+  int my_index = 0;
+  do
+  {
+    o << "spline_" << my_index;
+    einspline_engine<ST, 3> bigtable(spline.getBlock(my_index));
+    success = h5f.writeEntry(bigtable, o.str());
+    my_index++;
+  } while (my_index < spline.getNumBlocks() && success);
+  return success;
 }
 
 template<typename ST>
@@ -49,19 +65,23 @@ bool SplineUtils<ST>::write(MultiBspline1D<ST>& spline, hdf_archive& h5f)
 }
 
 template<typename ST>
-void SplineUtils<ST>::gatherv(MultiBsplineBase<ST>& spline, const std::vector<int>& offset, Communicate& comm)
+void SplineUtils<ST>::gatherv(MultiBsplineBase<ST>& spline,
+                              size_t iblock,
+                              const std::vector<int>& offset,
+                              Communicate& comm)
 {
   if (comm.size() == 1)
     return;
-  qmcplusplus::gatherv<ST, 3>(&comm, spline.getSplinePtr(), spline.getSplinePtr()->z_stride, offset);
+  auto& spline_block = spline.getBlock(iblock);
+  qmcplusplus::gatherv<ST, 3>(&comm, &spline_block, spline_block.z_stride, offset);
 }
 
 template<typename ST>
-void SplineUtils<ST>::bcast(MultiBsplineBase<ST>& spline, Communicate& comm)
+void SplineUtils<ST>::bcast(MultiBsplineBase<ST>& spline, size_t iblock, Communicate& comm)
 {
   if (comm.size() == 1)
     return;
-  chunked_bcast(&comm, spline.getSplinePtr());
+  chunked_bcast(&comm, &spline.getBlock(iblock));
 }
 
 template<typename ST>

@@ -1,8 +1,17 @@
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.QMCPACK_CONVERTER_SIMULATIONS)
 
-from .. import testing
-from ..testing import divert_nexus,restore_nexus,clear_all_sims
+from ..generic import generic_settings
+generic_settings.raise_error = True
+
+from pathlib import Path
+
+from . import isolate_nexus_core, create_pseudo_files
+from nexus.nexus_base import nexus_core
+from ..testing import clear_all_sims
 from ..testing import failed,FailedTest
-from ..testing import value_eq,object_eq,text_eq
+from ..testing import object_eq
 
 
 #====================================================================#
@@ -22,12 +31,6 @@ def get_pw2qmcpack_sim(**kwargs):
 
     return sim
 #end def get_pw2qmcpack_sim
-
-
-
-def test_pw2qmcpack_import():
-    from ..qmcpack_converters import Pw2qmcpack,generate_pw2qmcpack
-#end def test_pw2qmcpack_import
 
 
 
@@ -87,13 +90,17 @@ def test_pw2qmcpack_get_result():
 #end def test_pw2qmcpack_get_result
 
 
-
-def test_pw2qmcpack_incorporate_result():
-    from ..developer import NexusError, obj
+@isolate_nexus_core
+def test_pw2qmcpack_incorporate_result(tmp_path):
+    from ..developer import NexusError
     from ..simulation import Simulation
-    from .test_pwscf_simulation import pseudo_inputs,get_pwscf_sim
+    from .test_pwscf_simulation import get_pwscf_sim
 
-    tpath = testing.setup_unit_test_output_directory('pwscf_simulation','test_check_result',**pseudo_inputs)
+    nexus_core.local_directory  = str(tmp_path)
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+
+    create_pseudo_files(tmp_path, ["C.BFD.upf"])
 
     other = Simulation()
 
@@ -103,7 +110,7 @@ def test_pw2qmcpack_incorporate_result():
 
     try:
         sim.incorporate_result('unknown',None,other)
-        raise TestFailed
+        raise FailedTest
     except NexusError:
         None
     except FailedTest:
@@ -115,23 +122,21 @@ def test_pw2qmcpack_incorporate_result():
     sim.incorporate_result('orbitals',None,scf)
 
     clear_all_sims()
-    restore_nexus()
 #end def test_pw2qmcpack_incorporate_result
 
 
-
-def test_pw2qmcpack_check_sim_status():
-    import os
-    from ..developer import NexusError, obj
+@isolate_nexus_core
+def test_pw2qmcpack_check_sim_status(tmp_path):
     from ..nexus_base import nexus_core
 
-    tpath = testing.setup_unit_test_output_directory('qmcpack_converter_simulations','test_pw2qmcpack_check_sim_status',divert=True)
-
     nexus_core.runs = ''
+    nexus_core.local_directory  = str(tmp_path)
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
 
     sim = get_pw2qmcpack_sim()
 
-    assert(sim.locdir.rstrip('/')==tpath.rstrip('/'))
+    assert(Path(sim.locdir).resolve() == tmp_path)
 
     assert(not sim.finished)
     assert(not sim.failed)
@@ -146,25 +151,20 @@ def test_pw2qmcpack_check_sim_status():
     #end try
 
     sim.create_directories()
-    outfile = os.path.join(sim.locdir,sim.outfile)
+    outfile = Path(sim.locdir) / sim.outfile
     outfile_text = 'JOB DONE'
-    out = open(outfile,'w')
-    out.write(outfile_text)
-    out.close()
-    assert(outfile_text in open(outfile,'r').read())
+    outfile.write_text(outfile_text)
+    assert(outfile_text in outfile.read_text())
     prefix = sim.input.inputpp.prefix
     outdir = sim.input.inputpp.outdir
-    outdir_path = os.path.join(tpath,outdir)
-    if not os.path.exists(outdir_path):
-        os.makedirs(outdir_path)
-    #end if
+    outdir_path = tmp_path / outdir
+    outdir_path.mkdir(parents=True)
+
     filenames = [prefix+'.pwscf.h5',prefix+'.ptcl.xml',prefix+'.wfs.xml']
     for filename in filenames:
-        filepath = os.path.join(tpath,outdir,filename)
-        f = open(filepath,'w')
-        f.write('')
-        f.close()
-        assert(os.path.exists(filepath))
+        filepath = outdir_path / filename
+        filepath.touch()
+        assert(filepath.exists())
     #end for
     sim.job.finished = True
     
@@ -174,7 +174,6 @@ def test_pw2qmcpack_check_sim_status():
     assert(not sim.failed)
 
     clear_all_sims()
-    restore_nexus()
 #end def test_pw2qmcpack_check_sim_status
 
 
@@ -195,12 +194,6 @@ def get_convert4qmc_sim(**kwargs):
 
     return sim
 #end def get_convert4qmc_sim
-
-
-
-def test_convert4qmc_import():
-    from ..qmcpack_converters import Convert4qmc,generate_convert4qmc
-#end def test_convert4qmc_import
 
 
 
@@ -273,7 +266,6 @@ def test_convert4qmc_incorporate_result():
     from ..developer import NexusError, obj
     from ..simulation import Simulation
     from ..gamess import Gamess
-    from ..pyscf_sim import Pyscf
     from ..quantum_package import QuantumPackage
     from .test_gamess_simulation import get_gamess_sim
     from .test_pyscf_simulation import get_pyscf_sim
@@ -308,7 +300,7 @@ def test_convert4qmc_incorporate_result():
     sim = sim_start.copy()
     try:
         sim.incorporate_result('unknown',None,other)
-        raise TestFailed
+        raise FailedTest
     except NexusError:
         None
     except FailedTest:
@@ -357,19 +349,18 @@ def test_convert4qmc_incorporate_result():
 #end def test_convert4qmc_incorporate_result
 
 
-
-def test_convert4qmc_check_sim_status():
-    import os
-    from ..developer import NexusError, obj
+@isolate_nexus_core
+def test_convert4qmc_check_sim_status(tmp_path):
     from ..nexus_base import nexus_core
 
-    tpath = testing.setup_unit_test_output_directory('qmcpack_converter_simulations','test_convert4qmc_check_sim_status',divert=True)
-
     nexus_core.runs = ''
+    nexus_core.local_directory  = str(tmp_path)
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
 
     sim = get_convert4qmc_sim()
 
-    assert(sim.locdir.rstrip('/')==tpath.rstrip('/'))
+    assert(Path(sim.locdir).resolve() == tmp_path)
 
     assert(not sim.finished)
     assert(not sim.failed)
@@ -384,18 +375,16 @@ def test_convert4qmc_check_sim_status():
     #end try
 
     sim.create_directories()
-    outfile = os.path.join(sim.locdir,sim.outfile)
+
+    outfile = Path(sim.locdir).resolve() / sim.outfile
     outfile_text = 'QMCGaussianParserBase::dump'
-    out = open(outfile,'w')
-    out.write(outfile_text)
-    out.close()
+    outfile.write_text(outfile_text)
+
     assert(outfile_text in open(outfile,'r').read())
     for filename in sim.list_output_files():
-        filepath = os.path.join(sim.locdir,filename)
-        f = open(filepath,'w')
-        f.write('')
-        f.close()
-        assert(os.path.exists(filepath))
+        filepath = Path(sim.locdir).resolve() / filename
+        filepath.touch()
+        assert(filepath.exists())
     #end for
     sim.job.finished = True
 
@@ -405,7 +394,6 @@ def test_convert4qmc_check_sim_status():
     assert(not sim.failed)
 
     clear_all_sims()
-    restore_nexus()
 #end def test_convert4qmc_check_sim_status
 
 
@@ -427,12 +415,6 @@ def get_pyscf_to_afqmc_sim(**kwargs):
 
     return sim
 #end def get_pyscf_to_afqmc_sim
-
-
-
-def test_pyscf_to_afqmc_import():
-    from ..qmcpack_converters import PyscfToAfqmc,generate_pyscf_to_afqmc
-#end def test_pyscf_to_afqmc_import
 
 
 
@@ -517,7 +499,7 @@ def test_pyscf_to_afqmc_incorporate_result():
 
     try:
         sim.incorporate_result('unknown',None,other)
-        raise TestFailed
+        raise FailedTest
     except NexusError:
         None
     except FailedTest:
@@ -540,19 +522,18 @@ def test_pyscf_to_afqmc_incorporate_result():
 #end def test_pyscf_to_afqmc_incorporate_result
 
 
-
-def test_pyscf_to_afqmc_check_sim_status():
-    import os
-    from ..developer import NexusError, obj
+@isolate_nexus_core
+def test_pyscf_to_afqmc_check_sim_status(tmp_path):
     from ..nexus_base import nexus_core
 
-    tpath = testing.setup_unit_test_output_directory('qmcpack_converter_simulations','test_pyscf_to_afqmc_check_sim_status',divert=True)
-
     nexus_core.runs = ''
+    nexus_core.local_directory  = str(tmp_path)
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
 
     sim = get_pyscf_to_afqmc_sim()
 
-    assert(sim.locdir.rstrip('/')==tpath.rstrip('/'))
+    assert(Path(sim.locdir).resolve()==tmp_path)
 
     assert(not sim.finished)
     assert(not sim.failed)
@@ -569,17 +550,14 @@ def test_pyscf_to_afqmc_check_sim_status():
     sim.input.output = 'afqmc.h5'
 
     sim.create_directories()
-    outfile = os.path.join(sim.locdir,sim.outfile)
+    outfile = Path(sim.locdir).resolve() / sim.outfile
     outfile_text = '# Finished.'
-    out = open(outfile,'w')
-    out.write(outfile_text)
-    out.close()
-    assert(outfile_text in open(outfile,'r').read())
-    output_file = os.path.join(sim.locdir,sim.input.output)
-    f = open(output_file,'w')
-    f.write('')
-    f.close()
-    assert(os.path.exists(output_file))
+    outfile.write_text(outfile_text)
+
+    assert(outfile_text in outfile.read_text())
+    output_file = Path(sim.locdir).resolve() / sim.input.output
+    output_file.touch()
+    assert(output_file.exists())
     sim.job.finished = True
 
     sim.check_sim_status()
@@ -588,5 +566,4 @@ def test_pyscf_to_afqmc_check_sim_status():
     assert(not sim.failed)
 
     clear_all_sims()
-    restore_nexus()
 #end def test_pyscf_to_afqmc_check_sim_status

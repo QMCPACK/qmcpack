@@ -97,4 +97,19 @@ TEST_CASE("test_communicate_split_four", "[message]")
   }
 }
 
+TEST_CASE("test_communicate_split_two_stripe_three", "[message]")
+{
+  Communicate* c = OHMMS::Controller;
+  // For simplicity, only test the case where the number of processes is divisible by 6.
+  if (c->size() % 6 != 0)
+    return;
+
+  auto c2              = std::make_unique<Communicate>(*c, 2, 3);
+  const int group_size = c->size() / 2;
+  const int new_rank   = c->rank() % 3 + c->rank() / 6 * 3;
+  REQUIRE(c2->size() == group_size);
+  REQUIRE(c2->rank() == new_rank);
+  REQUIRE(c2->getGroupID() == (c->rank() / 3 % 2));
+}
+
 } // namespace qmcplusplus

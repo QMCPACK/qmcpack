@@ -79,7 +79,7 @@ If you would like to install these packages manually, this can be done via `pip`
 
 Please see the [Nexus User Guide](https://nexus-workflows.readthedocs.io/en/latest/index.html) for more information about installing dependencies and how they are used by Nexus.
 
-### c. Legacy Installation Instructions
+### c. Manual Installation Instructions (via PYTHONPATH)
 
 All that should be needed to get Nexus working on your system is to add the path to its library files to the PYTHONPATH  environment variable. 
    
@@ -97,16 +97,14 @@ The executables packaged with Nexus can be used once they are added to the PATH 
 ```bash
 export PATH=/your/path/to/nexus/bin/:$PATH
 ```
-Both of these steps can alternately be performed by the installer packaged with Nexus. To use it, simply type the following at the command line:
+Both of these steps can alternately be performed by the installer packaged with Nexus. To use it, simply type the following at the command line (shown for bash):
 ```bash
-> /your/path/to/nexus/install
+> /your/path/to/nexus/manual_install ~/.bashrc
 ```
 Check the end of your `.bashrc` (or equivalent) to make sure the `$PATH` and `$PYTHONPATH` variables have been set properly.
 
-If you want the binaries to be copied to a location outside the downloaded Nexus distribution, then just provide that as a path to the installer:
-```bash
-> /your/path/to/nexus/install /some/other/location
-```
+Note that this installation route will take precedence over existing pip, uv, or other manual installations.  This can be useful when downloading a recently updated version of Nexus for a bugfix, etc.
+
 
 ## 3) Summary of important library files
 

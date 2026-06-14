@@ -177,7 +177,7 @@ prefix ``Mysim`` and output files will be
   the user to modify the ECP name to match the one used to generate
   the wavefunction.
 
-  ::
+  .. code-block:: xml
 
       <?xml version="1.0"?>
     <simulation>
@@ -211,7 +211,7 @@ prefix ``Mysim`` and output files will be
     minimum number of blocks to reproduce the HF/DFT energy used to
     generate the trial wavefunction.
 
-    ::
+    .. code-block:: xml
 
         <qmc method="vmc" move="pbyp" checkpoint="-1">
           <estimator name="LocalEnergy" hdf5="no"/>
@@ -230,7 +230,7 @@ prefix ``Mysim`` and output files will be
   system; however, they need to be updated and optimized for each
   system. The initial values might only be suitable for a small molecule.
 
-  ::
+  .. code-block:: xml
 
       <loop max="4">
         <qmc method="linear" move="pbyp" checkpoint="-1">
@@ -270,7 +270,7 @@ prefix ``Mysim`` and output files will be
     Production VMC and DMC:
 
     Examine the results of the optimization before running these blocks.
-    For example, choose the best optimized jastrow from all obtained, put in the
+    For example, choose the best optimized Jastrow from all obtained, put in the
     wavefunction file, and do not reoptimize.
 
     -->
@@ -369,7 +369,7 @@ Command line options
 
   This option is to be used when a multideterminant expansion (mainly a CI expansion) is present in an HDF5 file. The trial wavefunction file will not display the full list of multideterminants and will add a path to the HDF5 file as follows (full example for the C2 molecule in qmcpack/tests/molecules/C2_pp).
 
-  ::
+  .. code-block:: xml
 
     <?xml version="1.0"?>
     <qmcsystem>
@@ -404,7 +404,7 @@ Command line options
 
   This option generates the ``*.orbs.h5`` HDF5 file containing the basis set and the orbital coefficients. If the wavefunction contains a multideterminant expansion from QP2, it will also be stored in this file. This option minimizes the size of the ``*.wfj.xml`` file, which points to the HDF file, as in the following example:
 
-  ::
+  .. code-block:: xml
 
       <?xml version="1.0"?>
      <qmcsystem>
@@ -451,7 +451,7 @@ Command line options
   et al. :cite:`Ma2005` When this option is present, the
   wavefunction file has a new set of tags:
 
-  ::
+  .. code-block:: xml
 
     qmcsystem>
      <wavefunction name="psi0" target="e">
@@ -465,7 +465,7 @@ Command line options
   In the “orbitals“ section of the wavefunction file, a new tag
   “cuspInfo” will be added for orbitals spin-up and orbitals spin-down:
 
-  ::
+  .. code-block:: xml
 
       <slaterdeterminant>
            <determinant id="updet" size="2"
@@ -497,7 +497,7 @@ Command line options
 
   QMCPACK builds the wavefunction as a named object. In the vast majority of cases, one wavefunction is simulated at a time, but there may be situations where we want to distinguish different parts of a wavefunction, or even use multiple wavefunctions. This option can change the name for these cases.
 
-  ::
+  .. code-block:: xml
 
      <wavefunction name="psi0" target="e">
 
@@ -505,7 +505,7 @@ Command line options
 
   Although similar to **-psi_tag**, this is used for the type of ions.
 
-  ::
+  .. code-block:: xml
 
     <particleset name="ion0" size="2">
 
@@ -609,7 +609,7 @@ Supported codes
     PySCF script, this path must be added to the PYTHONPATH environment
     variable. For the bash shell, this can be done as follows:
 
-    ::
+    .. code-block:: bash
 
       export PYTHONPATH=/PATH_TO_QMCPACK/qmcpack/src/QMCTools:\$PYTHONPATH
 
@@ -617,7 +617,7 @@ Supported codes
 
     Copy and paste the following code in a file named LiH.py.
 
-    ::
+    .. code-block:: python
 
       #! /usr/bin/env python3
       from pyscf import gto, scf, df
@@ -989,7 +989,7 @@ The QMC code CASINO also makes available its pseudopotentials available at the w
 
 QMCPACK can directly read in the CASINO-formated pseudopotential (``pp.data``), but four parameters found in the pseudopotential summary file must be specified in the pseudo element (``l-local``, ``lmax``, ``nrule``, ``cutoff``)[see :ref:`nlpp` for details]:
 
-.. code-block::
+.. code-block:: xml
   :caption: XML syntax to use CASINO-formatted pseudopotentials in QMCPACK
   :name: Listing 73
 
@@ -1018,7 +1018,7 @@ into optimization, VMC, or DMC runs, as it is a valid <qmc> block.
 
 As an example, the following code generates a random walker configuration and compares the trial wave function ratio computed in two different ways:
 
-.. code-block::
+.. code-block:: xml
   :caption: The following executes the wavefunction ratio test in "wftester"
   :name: Listing 74
 
@@ -1030,7 +1030,7 @@ Here's a summary of some of the tests provided:
 
 -  Ratio Test. Invoked with
 
-   ::
+   .. code-block:: xml
 
       <parameter name="ratio">yes</parameter>
 
@@ -1039,7 +1039,7 @@ Here's a summary of some of the tests provided:
 
 -  Clone Test. Invoked with
 
-   ::
+   .. code-block:: xml
 
       <parameter name="clone">yes</parameter>
 
@@ -1048,7 +1048,7 @@ Here's a summary of some of the tests provided:
 
 -  Elocal Test. Invoked with
 
-   ::
+   .. code-block:: xml
 
       <parameter name="printEloc">yes</parameter>
 
@@ -1058,9 +1058,9 @@ Here's a summary of some of the tests provided:
 
 -  Derivative Test. Invoked with
 
-   ::
+   .. code-block:: xml
 
-      <parameter name="ratio">deriv</parameter>}
+      <parameter name="ratio">deriv</parameter>
 
    Computes electron gradients, laplacians, and wave function parameter
    derivatives using implemented calls and compares them to
@@ -1068,7 +1068,7 @@ Here's a summary of some of the tests provided:
 
 -  Ion Gradient Test. Invoked with
 
-   ::
+   .. code-block:: xml
 
       <parameter name="source">ion0</parameter>
 
@@ -1077,7 +1077,7 @@ Here's a summary of some of the tests provided:
 
 -  “Basic Test". Invoked with
 
-   ::
+   .. code-block:: xml
 
       <parameter name="basic">yes</parameter>
 

@@ -144,7 +144,8 @@ class Vasp(Simulation):
         if all_exist:
             success = True
             for outpath in outpaths:
-                outcar = open(outpath,'r').read()
+                with open(outpath, "r") as f:
+                    outcar = f.read()
                 success &= 'General timing and accounting' in outcar
             #end for
         #end if

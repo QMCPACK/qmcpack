@@ -203,7 +203,7 @@ foreach(CATEGORY common trialwf sposet jastrow determinant)
   set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
 
   if(CATEGORY IN_LIST CATEGORY_MPI AND HAVE_MPI)
-    foreach(NUM_RANKS 2 3)
+    foreach(NUM_RANKS 2 3 6)
       set(UTEST_NAME_MPI ${UTEST_NAME}-r${NUM_RANKS})
       add_unit_test(${UTEST_NAME_MPI} ${NUM_RANKS} 1 $<TARGET_FILE:${UTEST_EXE}>)
       set_tests_properties(${UTEST_NAME_MPI} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})

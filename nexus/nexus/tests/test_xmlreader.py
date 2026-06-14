@@ -1,32 +1,19 @@
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.XMLREADER)
 
-from .. import testing
-from ..testing import value_eq,object_eq
+from ..generic import generic_settings
+generic_settings.raise_error = True
 
+from . import TEST_DIR
+from ..testing import object_eq
 
-associated_files = dict()
+TEST_FILES = {
+    "vmc.in.xml": TEST_DIR / "test_xmlreader_files/vmc.in.xml",
+    }
 
-def get_files():
-    return testing.collect_unit_test_file_paths('xmlreader',associated_files)
-#end def get_files
-
-
-def test_files():
-    filenames = [
-        'vmc.in.xml',
-        ]
-    files = get_files()
-    assert(set(files.keys())==set(filenames))
-#end def test_files
-
-
-def test_import():
-    from .. import xmlreader
-    from ..xmlreader import XMLreader,readxml
-    from ..xmlreader import parse_string
-    from ..xmlreader import find_pair
-    from ..xmlreader import remove_pair_sections
-    from ..xmlreader import remove_empty_lines
-#end def test_import
+for file in TEST_FILES.values():
+    assert(file.exists()), f"Test file not found! {file}"
 
 
 def test_read():
@@ -251,8 +238,7 @@ def test_read():
             ),
         )
 
-    files = get_files()
-    x = readxml(files['vmc.in.xml'])
+    x = readxml(TEST_FILES['vmc.in.xml'])
     assert(isinstance(x,XMLelement))
     x.remove_hidden()
     o = x.to_obj()

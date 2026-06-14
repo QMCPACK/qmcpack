@@ -28,6 +28,12 @@ class MinimalHamiltonianPool
 </hamiltonian>
   )";
 
+  static constexpr const char* const hamiltonian_ei_xml = R"(
+<hamiltonian name="h0" type="generic" target="e">
+  <pairpot type="coulomb" name="ElecIon" source="ion" target="e"/>
+</hamiltonian>
+  )";
+
   static constexpr const char* const hamiltonian_eeei_xml = R"(
 <hamiltonian name="h0" type="generic" target="e">
   <pairpot type="coulomb" name="ElecElec" source="e" target="e"/>
@@ -58,6 +64,13 @@ public:
   static HamiltonianPool make_hamWithEE(Communicate* comm,
                                         ParticleSetPool& particle_pool,
                                         WaveFunctionPool& wavefunction_pool);
+
+  /// make a HamitonianPool with a primary hamiltonian with Coulombic electron electron interaction
+  static HamiltonianPool makeHamWithEI(Communicate* comm,
+                                       ParticleSetPool& particle_pool,
+                                       WaveFunctionPool& wavefunction_pool);
+
+
   /** make a HamitonianPool with a primary hamiltonian with Coulombic electron
    *  electron interaction and electron ion interaction
    */

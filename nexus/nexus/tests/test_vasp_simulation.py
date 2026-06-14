@@ -1,33 +1,31 @@
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.VASP_SIMULATION)
 
-from .. import testing
-from ..testing import divert_nexus,restore_nexus,clear_all_sims
+from ..generic import generic_settings
+generic_settings.raise_error = True
+
+from pathlib import Path
+from . import isolate_nexus_core, create_pseudo_files
+from nexus.nexus_base import nexus_core
+from ..testing import clear_all_sims
 from ..testing import failed,FailedTest
-from ..testing import value_eq,object_eq,text_eq,check_object_eq
+from ..testing import value_eq,object_eq,check_object_eq
 
-from .test_vasp_input import c_potcar_text,get_files
+from .test_vasp_input import c_potcar_text, TEST_FILES
 
 
-pseudo_inputs = dict(
-    pseudo_dir = 'pseudopotentials',
-    pseudo_files_create = [('C.POTCAR',c_potcar_text)],
-    )
-
-def setup_vasp_sim(path,identifier='vasp',files=False):
+def setup_vasp_sim(path,identifier='vasp',copy_files=False):
     import shutil
     from ..nexus_base import nexus_core
     from ..machines import job
     from ..physical_system import generate_physical_system
     from ..vasp import generate_vasp,Vasp
-    
-    copy_files = files
-    del files
 
     nexus_core.runs = ''
 
-    files = get_files()
-
     dia16 = generate_physical_system(
-        structure = files['d16bulk.POSCAR'],
+        structure = TEST_FILES['d16bulk.POSCAR'],
         C         = 4                  
         )
 
@@ -59,18 +57,12 @@ def setup_vasp_sim(path,identifier='vasp',files=False):
             'diamond_POTCAR',
             ]
         for vfile in vfiles:
-            shutil.copy2(files[vfile],path)
+            shutil.copy2(TEST_FILES[vfile],path)
         #end for
     #end if
         
     return sim
 #end def setup_vasp_sim
-
-
-
-def test_import():
-    from ..vasp import Vasp,generate_vasp
-#end def test_import
 
 
 
@@ -88,31 +80,41 @@ def test_minimal_init():
 #end def test_minimal_init
 
 
+@isolate_nexus_core
+def test_check_result(tmp_path):
 
-def test_check_result():
-    tpath = testing.setup_unit_test_output_directory('vasp_simulation','test_check_result',**pseudo_inputs)
+    nexus_core.local_directory  = str(tmp_path)
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    create_pseudo_files(
+        tmp_dir=tmp_path,
+        pseudos=["C.POTCAR"],
+        pseudo_strs=[c_potcar_text],
+        )
 
-    sim = setup_vasp_sim(tpath)
+    sim = setup_vasp_sim(tmp_path)
 
     assert(not sim.check_result('unknown',None))
 
     assert(sim.check_result('structure',None))
 
     clear_all_sims()
-    restore_nexus()
 #end def test_check_result
 
 
-
-def test_get_result():
-    import os
+@isolate_nexus_core
+def test_get_result(tmp_path):
     import shutil
     from numpy import array
     from ..developer import obj, NexusError
 
-    tpath = testing.setup_unit_test_output_directory('vasp_simulation','test_get_result',**pseudo_inputs)
+    create_pseudo_files(
+        tmp_dir=tmp_path,
+        pseudos=["C.POTCAR"],
+        pseudo_strs=[c_potcar_text],
+        )
 
-    sim = setup_vasp_sim(tpath,identifier='diamond',files=True)
+    sim = setup_vasp_sim(tmp_path, identifier='diamond', copy_files=True)
 
     try:
         sim.get_result('unknown',None)
@@ -125,14 +127,14 @@ def test_get_result():
         failed(str(e))
     #end try
 
-    pcfile = os.path.join(tpath,'diamond_POSCAR')
-    ccfile = os.path.join(tpath,sim.identifier+'.CONTCAR')
+    pcfile = tmp_path / 'diamond_POSCAR'
+    ccfile = tmp_path / (sim.identifier+'.CONTCAR')
 
-    assert(sim.locdir.strip('/')==tpath.strip('/'))
+    assert(Path(sim.locdir).resolve()==tmp_path)
 
     shutil.copy2(pcfile,ccfile)
 
-    assert(os.path.exists(ccfile))
+    assert(ccfile.exists())
 
     result = sim.get_result('structure',None)
 
@@ -185,33 +187,38 @@ def test_get_result():
     assert(check_object_eq(result,result_ref))
 
     clear_all_sims()
-    restore_nexus()
 #end def test_get_result
 
 
-
-def test_incorporate_result():
-    import os
+@isolate_nexus_core
+def test_incorporate_result(tmp_path):
     import shutil
     from numpy import array
     from ..developer import obj
 
-    tpath = testing.setup_unit_test_output_directory('vasp_simulation','test_incorporate_result',**pseudo_inputs)
+    nexus_core.local_directory  = str(tmp_path)
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    create_pseudo_files(
+        tmp_dir=tmp_path,
+        pseudos=["C.POTCAR"],
+        pseudo_strs=[c_potcar_text],
+    )
 
-    sim = setup_vasp_sim(tpath,identifier='diamond',files=True)
+    sim = setup_vasp_sim(tmp_path,identifier='diamond',copy_files=True)
 
-    pcfile = os.path.join(tpath,'diamond_POSCAR')
-    ccfile = os.path.join(tpath,sim.identifier+'.CONTCAR')
+    pcfile = tmp_path / 'diamond_POSCAR'
+    ccfile = tmp_path / (sim.identifier+'.CONTCAR')
 
-    assert(sim.locdir.strip('/')==tpath.strip('/'))
+    assert(Path(sim.locdir).resolve()==tmp_path)
 
     shutil.copy2(pcfile,ccfile)
 
-    assert(os.path.exists(ccfile))
+    assert(ccfile.exists())
 
     result = sim.get_result('structure',None)
 
-    sim2 = setup_vasp_sim(tpath)
+    sim2 = setup_vasp_sim(tmp_path)
 
     pid = id(sim2.input.poscar)
 
@@ -254,19 +261,24 @@ def test_incorporate_result():
     assert(object_eq(sim2.input.poscar.to_obj(),poscar_ref))
 
     clear_all_sims()
-    restore_nexus()
 #end def test_incorporate_result
 
 
+@isolate_nexus_core
+def test_check_sim_status(tmp_path):
 
-def test_check_sim_status():
-    import os
+    nexus_core.local_directory  = str(tmp_path)
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    create_pseudo_files(
+        tmp_dir=tmp_path,
+        pseudos=["C.POTCAR"],
+        pseudo_strs=[c_potcar_text],
+        )
 
-    tpath = testing.setup_unit_test_output_directory('vasp_simulation','test_check_sim_status',**pseudo_inputs)
+    sim = setup_vasp_sim(tmp_path)
 
-    sim = setup_vasp_sim(tpath)
-
-    assert(sim.locdir.strip('/')==tpath.strip('/'))
+    assert(Path(sim.locdir).resolve()==tmp_path)
 
     assert(not sim.finished)
     assert(not sim.input.performing_neb())
@@ -275,13 +287,11 @@ def test_check_sim_status():
 
     assert(not sim.finished)
 
-    outcar_file = os.path.join(tpath,'OUTCAR')
+    outcar_file = tmp_path / 'OUTCAR'
     outcar_text = 'General timing and accounting'
-    outcar = open(outcar_file,'w')
-    outcar.write(outcar_text)
-    outcar.close()
-    assert(os.path.exists(outcar_file))
-    assert(outcar_text in open(outcar_file,'r').read())
+    outcar_file.write_text(outcar_text)
+    assert(outcar_file.exists())
+    assert(outcar_text in outcar_file.read_text())
 
     sim.check_sim_status()
 
@@ -289,23 +299,26 @@ def test_check_sim_status():
     assert(not sim.failed)
 
     clear_all_sims()
-    restore_nexus()
 #end def test_check_sim_status
 
 
+@isolate_nexus_core
+def test_get_output_files(tmp_path):
 
-def test_get_output_files():
-    import os
+    nexus_core.local_directory  = str(tmp_path)
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    create_pseudo_files(
+        tmp_dir=tmp_path,
+        pseudos=["C.POTCAR"],
+        pseudo_strs=[c_potcar_text],
+        )
 
-    tpath = testing.setup_unit_test_output_directory('vasp_simulation','test_get_output_files',**pseudo_inputs)
-
-    sim = setup_vasp_sim(tpath)
+    sim = setup_vasp_sim(tmp_path)
 
     vfiles = 'INCAR KPOINTS POSCAR CONTCAR OUTCAR'.split()
     for vfile in vfiles:
-        f = open(os.path.join(tpath,vfile),'w')
-        f.write('')
-        f.close()
+        (tmp_path / vfile).touch()
     #end for
 
     files = sim.get_output_files()
@@ -313,9 +326,8 @@ def test_get_output_files():
     assert(value_eq(files,vfiles))
 
     for vfile in vfiles:
-        assert(os.path.exists(os.path.join(tpath,sim.identifier+'.'+vfile)))
+        assert((tmp_path / (sim.identifier+'.'+vfile)))
     #end for
 
     clear_all_sims()
-    restore_nexus()
 #end def test_get_output_files

@@ -27,8 +27,8 @@ jobs:
             GCC9-NoMPI-NoOMP-Complex,
             GCC9-MPI-Sandbox-Real,
             GCC9-NoMPI-Sandbox-Complex,
-            GCC9-MPI-Debug-Gcov-Real,
-            GCC9-MPI-Debug-Gcov-Complex,
+            GCC13-MPI-Debug-Gcov-Real,
+            GCC13-MPI-Debug-Gcov-Complex,
             GCC12-NoMPI-Werror-Real,
             GCC12-NoMPI-Werror-Complex,
             GCC12-NoMPI-Werror-Real-Mixed,
@@ -65,14 +65,14 @@ jobs:
               image: ghcr.io/qmcpack/ubuntu22-serial:latest
               options: -u 1001
 
-          - jobname: GCC9-MPI-Debug-Gcov-Real
+          - jobname: GCC13-MPI-Debug-Gcov-Real
             container:
-              image: ghcr.io/qmcpack/ubuntu22-openmpi:latest
+              image: ghcr.io/qmcpack/ubuntu24-openmpi:latest
               options: -u 1001
 
-          - jobname: GCC9-MPI-Debug-Gcov-Complex
+          - jobname: GCC13-MPI-Debug-Gcov-Complex
             container:
-              image: ghcr.io/qmcpack/ubuntu22-openmpi:latest
+              image: ghcr.io/qmcpack/ubuntu24-openmpi:latest
               options: -u 1001
 
           - jobname: GCC12-NoMPI-Werror-Real
@@ -122,7 +122,7 @@ jobs:
 
     steps:
       - name: Checkout Action
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Configure
         run: tests/test_automation/github-actions/ci/run_step.sh configure
@@ -139,7 +139,7 @@ jobs:
 
       - name: Upload Coverage
         if: contains(matrix.jobname, 'Gcov') && github.repository_owner == 'QMCPACK'
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           files: ../qmcpack-build/coverage.xml,../qmcpack-build/python_coverage.xml
           flags: tests-deterministic # optional
@@ -161,10 +161,10 @@ jobs:
 
     steps:
       - name: Checkout Action
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set Python Version
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
@@ -172,7 +172,7 @@ jobs:
         run: |
           brew upgrade || brew link --overwrite python@3.12
           brew install gcc@14 ninja hdf5 fftw boost
-          python3 -m pip install numpy h5py
+          python3 -m pip install numpy h5py pytest pytest-cov pytest-order
 
       - name: Configure
         run: tests/test_automation/github-actions/ci/run_step.sh configure
@@ -223,7 +223,7 @@ jobs:
 
     steps:
       - name: Checkout Action
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Echo Debug
         run: |

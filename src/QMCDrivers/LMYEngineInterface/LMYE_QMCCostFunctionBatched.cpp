@@ -26,15 +26,15 @@ size_t QMCCostFunctionBatched::total_samples() { return samples_.getNumSamples()
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::LMYEngineCost_detail(
-    cqmc::engine::LMYEngine<Return_t>* EngineObj)
+    cqmc::engine::LMYEngine<Return_t>& EngineObj)
 {
   // get total number of samples
   const size_t m = this->total_samples();
   // reset Engine object
-  EngineObj->reset();
+  EngineObj.reset();
 
   // turn off wavefunction update mode
-  EngineObj->turn_off_update();
+  EngineObj.turn_off_update();
 
 #pragma omp parallel
   {
@@ -47,22 +47,22 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::LMYEngineCost_detail(
       const Return_rt* restrict saved = RecordsOnNode_[iw];
 
       // take sample
-      EngineObj->take_sample(saved[ENERGY_NEW], 1.0, saved[REWEIGHT] / SumValue[SUM_WGT]);
+      EngineObj.take_sample(saved[ENERGY_NEW], 1.0, saved[REWEIGHT] / SumValue[SUM_WGT]);
     }
   }
   //}
   // finish taking sample
-  EngineObj->sample_finish();
+  EngineObj.sample_finish();
 
   // compute energy and target relevant quantities
-  EngineObj->energy_target_compute();
+  EngineObj.energy_target_compute();
 
   // prepare variables to hold the output of the engine call
-  double energy_avg  = EngineObj->energy_mean();
-  double energy_sdev = EngineObj->energy_sdev();
-  double energy_serr = EngineObj->energy_statistical_err();
-  double target_avg  = EngineObj->target_value();
-  double target_serr = EngineObj->target_statistical_err();
+  double energy_avg  = EngineObj.energy_mean();
+  double energy_sdev = EngineObj.energy_sdev();
+  double energy_serr = EngineObj.energy_statistical_err();
+  double target_avg  = EngineObj.target_value();
+  double target_serr = EngineObj.target_statistical_err();
 
 
   // return the cost function value (target function if we are targeting excited states and energy if we are doing groud state calculations)

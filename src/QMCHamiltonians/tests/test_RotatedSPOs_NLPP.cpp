@@ -59,8 +59,7 @@ void test_hcpBe_rotation(bool use_single_det, bool use_nlpp_batched)
   lattice.R(2, 2) = 6.78114995;
 
 
-  const SimulationCell simulation_cell(lattice);
-  pp.setSimulationCell(simulation_cell);
+  pp.createSimulationCellByLattice(lattice);
   auto elec_ptr = std::make_unique<ParticleSet>(pp.getSimulationCell());
   auto& elec(*elec_ptr);
   auto ions_uptr = std::make_unique<ParticleSet>(pp.getSimulationCell());

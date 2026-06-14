@@ -18,7 +18,7 @@ endif()
 ######################################################################
 project(
   qmcpack
-  VERSION 4.2.9
+  VERSION 4.3.9
   LANGUAGES C CXX)
 
 #--------------------------------------------------------------------
@@ -164,6 +164,7 @@ set(VALID_SANITIZERS "asan" "ubsan" "tsan" "msan" "typesan")
 set(ENABLE_SANITIZER "" CACHE STRING "Valid input: ${VALID_SANITIZERS} or left empty")
 
 option(QMC_INSTALL_NEXUS "Install Nexus alongside QMCPACK" ON)
+option(QMC_DOXYGEN "Enable use of Doxygen documentation generator tool" ON)
 
 ######################################################################
 # Set compiler specific options/flags
@@ -291,7 +292,7 @@ if(ENABLE_GCOV)
 endif(ENABLE_GCOV)
 
 if(ENABLE_PYCOV)
-  find_program(PYTHON_COVERAGE_EXECUTABLE NAMES python3-coverage coverage.py REQUIRED)
+  find_program(PYTHON_COVERAGE_EXECUTABLE NAMES python3-coverage coverage.py coverage3 coverage REQUIRED)
   message(STATUS "Python coverage is enabled. Using ${PYTHON_COVERAGE_EXECUTABLE}")
 endif(ENABLE_PYCOV)
 
@@ -684,7 +685,7 @@ if(ENABLE_CUDA AND NOT QMC_CUDA2HIP)
   if(ENABLE_CUDA)
     include(TestCUDAHostCompatibility)
   endif()
-  find_package(CUDAToolkit 11.0 REQUIRED)
+  find_package(CUDAToolkit 12.3 REQUIRED)
   if(NOT TARGET CUDA::cublas)
     message(
       FATAL_ERROR
@@ -1059,7 +1060,9 @@ message(STATUS "Ready to parse QMCPACK source tree")
 
 add_subdirectory(external_codes)
 add_subdirectory(src)
-add_subdirectory(doxygen)
+if(QMC_DOXYGEN)
+  add_subdirectory(doxygen)
+endif(QMC_DOXYGEN)
 
 if(NOT QMC_BUILD_SANDBOX_ONLY)
   if(NOT QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
@@ -1076,5 +1079,6 @@ if(NOT QMC_BUILD_SANDBOX_ONLY)
     foreach(NEXUS_SCRIPT IN LISTS QMCPACK_NEXUS_SCRIPTS)
       install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ../lib/nexus/bin/${NEXUS_SCRIPT} ${CMAKE_INSTALL_PREFIX}/bin/${NEXUS_SCRIPT})")
     endforeach()
+    install(PROGRAMS ${qmcpack_SOURCE_DIR}/nexus/manual_install DESTINATION ${CMAKE_INSTALL_PREFIX}/lib RENAME nexus-setup-env)
   endif()
 endif()

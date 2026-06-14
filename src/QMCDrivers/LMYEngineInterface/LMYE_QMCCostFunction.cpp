@@ -32,16 +32,16 @@ size_t QMCCostFunction::total_samples()
 /// \brief  Computes the cost function using the LMYEngine
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-QMCCostFunction::Return_rt QMCCostFunction::LMYEngineCost_detail(cqmc::engine::LMYEngine<ValueType>* EngineObj)
+QMCCostFunction::Return_rt QMCCostFunction::LMYEngineCost_detail(cqmc::engine::LMYEngine<ValueType>& EngineObj)
 {
   // get total number of samples
   const size_t m = this->total_samples();
 
   // reset Engine object
-  EngineObj->reset();
+  EngineObj.reset();
 
   // turn off wavefunction update mode
-  EngineObj->turn_off_update();
+  EngineObj.turn_off_update();
 
   //for (int ip = 0, j = 0; ip < NumThreads; ip++) {
 #pragma omp parallel
@@ -61,22 +61,22 @@ QMCCostFunction::Return_rt QMCCostFunction::LMYEngineCost_detail(cqmc::engine::L
       //lce_vec.at(j) = saved[ENERGY_NEW];
 
       // take sample
-      EngineObj->take_sample(saved[ENERGY_NEW], 1.0, saved[REWEIGHT] / SumValue[SUM_WGT]);
+      EngineObj.take_sample(saved[ENERGY_NEW], 1.0, saved[REWEIGHT] / SumValue[SUM_WGT]);
     }
   }
   //}
   // finish taking sample
-  EngineObj->sample_finish();
+  EngineObj.sample_finish();
 
   // compute energy and target relevant quantities
-  EngineObj->energy_target_compute();
+  EngineObj.energy_target_compute();
 
   // prepare variables to hold the output of the engine call
-  double energy_avg  = EngineObj->energy_mean();
-  double energy_sdev = EngineObj->energy_sdev();
-  double energy_serr = EngineObj->energy_statistical_err();
-  double target_avg  = EngineObj->target_value();
-  double target_serr = EngineObj->target_statistical_err();
+  double energy_avg  = EngineObj.energy_mean();
+  double energy_sdev = EngineObj.energy_sdev();
+  double energy_serr = EngineObj.energy_statistical_err();
+  double target_avg  = EngineObj.target_value();
+  double target_serr = EngineObj.target_statistical_err();
 
   // prepare a stream to hold engine printout
   //std::stringstream engine_out;

@@ -31,7 +31,7 @@ optimization, Variational Monte Carlo (VMC), and Diffusion Monte Carlo (DMC) in
 periodic or open boundary conditions), automated job management on workstations
 (by acting as a virtual queue) and clusters/supercomputers
 including handling of dependencies
-between calculations and job bundling,  and extraction of results from
+between calculations and job bundling, and extraction of results from
 completed calculations for analysis.  The integration of these capabilities
 permits the user to focus on the high-level tasks of problem formulation and
 interpretation of the results without (in principle) becoming too involved
@@ -50,3 +50,8 @@ with if/else logic and for loops.  Knowledge of the Python programming language
 is helpful to perform complex calculations, but not essential for use of
 Nexus.  Starting from working "input files" such as those covered
 on the :ref:`examples` page is a good way to proceed.
+
+Citing Nexus
+------------
+
+The citation paper for Nexus is J. T. Krogel, Computer Physics Communications **198** 154 (2016), https://doi.org/10.1016/j.cpc.2015.08.012 .

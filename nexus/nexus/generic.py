@@ -32,12 +32,14 @@
 
 import sys
 import traceback
+from typing import TextIO
 from copy import deepcopy
 import pickle
 from pickle import UnpicklingError
 from random import randint
+from pathlib import Path
 
-from .utilities import sorted_py2
+from .utilities import sorted_py2, path_string
 
 
 class generic_settings:
@@ -62,67 +64,7 @@ def nocopy(value):
 
 sorted_generic = sorted_py2
 
-# There must be a better way to do this than store these, but this was faster for testing
-nexus_modules = [
-    "xmlreader",
-    "fileio",
-    "quantum_package_analyzer",
-    "pwscf",
-    "pwscf_analyzer",
-    "quantum_package_input",
-    "testing",
-    "rmg_input",
-    "machines",
-    "qmcpack_converters",
-    "simulation",
-    "pwscf_postprocessors",
-    "pyscf_sim",
-    "unit_converter",
-    "execute",
-    "qmcpack_result_analyzers",
-    "basisset",
-    "project_manager",
-    "gamess_input",
-    "quantum_package",
-    "pwscf_input",
-    "pyscf_input",
-    "physical_system",
-    "pseudopotential",
-    "nexus_version",
-    "periodic_table",
-    "rmg_analyzer",
-    "memory",
-    "vasp_input",
-    "qmcpack",
-    "numerics",
-    "qmcpack_analyzer",
-    "structure",
-    "gamess_analyzer",
-    "developer",
-    "template_simulation",
-    "bundle",
-    "qmcpack_property_analyzers",
-    "qmcpack_quantity_analyzers",
-    "rmg",
-    "grid_functions",
-    "hdfreader",
-    "utilities",
-    "qmcpack_analyzer_base",
-    "vasp",
-    "generic",
-    "nexus_base",
-    "debug",
-    "qmcpack_method_analyzers",
-    "observables",
-    "gamess",
-    "versions",
-    "vasp_analyzer",
-    "gaussian_process",
-    "pwscf_data_reader",
-    "qmcpack_input",
-    "pyscf_analyzer",
-]
-
+nexus_modules = [mod.stem for mod in Path(__file__).parent.iterdir() if mod.suffix == ".py"]
 
 class NexusUnpickler(pickle.Unpickler):
     """This class is designed for backwards compatibility with pickles generated
@@ -195,7 +137,55 @@ def warn(msg,header=None,indent='    ',logfile=None):
 #end def warn
 
 
-def error(msg,header=None,exit=True,trace=True,indent='    ',logfile=None):
+def error(
+    msg     : str,
+    header  : str | None    = None,
+    exit    : bool          = True,
+    trace   : int | None    = -1,
+    indent  : str           = '    ',
+    logfile : TextIO | None = None,
+    ):
+    """Report an error.
+
+    Parameters
+    ----------
+    msg : str
+        The message to write
+    header : str, optional
+        Header to print before the message. Will have ``" error:"`` appended to
+        it.
+    exit : bool, default=True
+        Whether or not to force an exit through ``sys.exit()``. See Notes.
+    trace : int or None, default=-1
+        How much of the traceback to print.
+
+        ``None`` prints the full traceback, positive integers limit to a number
+        of frames relative to this function, and negative integers limit to a
+        number of frames up to this function. Setting this to ``0`` will disable
+        the traceback completely.
+
+        The default value is ``-1``, which will print only the traceback up to
+        the location that this function was called, but will not show the
+        location of this function.
+    indent : str, default="    "
+        A string that will be used to indent the error message.
+    logfile : TextIO, default=generic_settings.devlog
+        The already-opened file to write to. Typically this is ``sys.stdout``.
+
+    Raises
+    ------
+    NexusError
+        If ``generic_settings.raise_error = True``.
+
+    Notes
+    -----
+    If you set ``exit=True``, then this will call ``sys.exit(1)``, which will
+    force an exit that can not be caught or handled.
+
+    See Also
+    --------
+    generic_settings
+    """
     if generic_settings.raise_error:
         raise NexusError(msg)
     #end if
@@ -206,8 +196,9 @@ def error(msg,header=None,exit=True,trace=True,indent='    ',logfile=None):
     message(msg,header,post_header,indent,logfile)
     if exit:
         log('  exiting.\n')
-        if trace:
-            traceback.print_stack()
+        if trace is True: # Preserve old behavior
+            trace = None
+        traceback.print_stack(limit=trace)
         #end if
         exit_call()
     #end if
@@ -577,7 +568,13 @@ class object_interface(object):
         warn(message,header,logfile=self._logfile)
     #end def warn
 
-    def error(self,message,header=None,exit=True,trace=True):
+    def error(self,message,header=None,exit=True,trace=-2):
+        """Report an error inside a class.
+
+        This is the same as ``generic.error()``, but with ``trace=-2`` as the
+        default. This has the benefit of only printing a traceback up to the
+        call location, and not inadvertently pointing someone to ``generic.py``.
+        """
         if header is None:
             header = self.__class__.__name__
         #end if
@@ -598,7 +595,14 @@ class object_interface(object):
     #end def class_warn
 
     @classmethod
-    def class_error(cls,message,header=None,exit=True,trace=True,post_header=' Error:'):
+    def class_error(cls,message,header=None,exit=True,trace=-2,post_header=' Error:'):
+        """Report an error relating to a class.
+
+        See Also
+        --------
+        object_interface.error : Used inside subclasses of ``object_interface``.
+        generic.error : Called when you are not reporting an error specific to a class.
+        """
         if header is None:
             header = cls.__name__
         #end if
@@ -1106,7 +1110,8 @@ class obj(object_interface):
 
     def path_exists(self,path):
         o = self
-        if isinstance(path,str):
+        if isinstance(path, str | bytes | Path):
+            path = path_string(path)
             path = path.split('/')
         #end if
         for p in path:
@@ -1121,7 +1126,8 @@ class obj(object_interface):
     def set_path(self,path,value=None):
         o = self
         cls = self.__class__
-        if isinstance(path,str):
+        if isinstance(path, str | bytes | Path):
+            path = path_string(path)
             path = path.split('/')
         #end if
         for p in path[0:-1]:
@@ -1135,7 +1141,8 @@ class obj(object_interface):
 
     def get_path(self,path,value=None):
         o = self
-        if isinstance(path,str):
+        if isinstance(path, str | bytes | Path):
+            path = path_string(path)
             path = path.split('/')
         #end if
         for p in path[0:-1]:

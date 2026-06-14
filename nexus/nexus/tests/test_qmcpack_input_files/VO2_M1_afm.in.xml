@@ -26,11 +26,11 @@
          </group>
       </particleset>
       <particleset name="ion0">
-         <group name="V" size="16" mass="92861.5851912">
+         <group name="V" size="16" mass="92860.6737469">
             <parameter name="charge"              >    13                    </parameter>
             <parameter name="valence"             >    13                    </parameter>
             <parameter name="atomicnumber"        >    23                    </parameter>
-            <parameter name="mass"                >    92861.5851912            </parameter>
+            <parameter name="mass"                >    92860.6737469            </parameter>
             <attrib name="position" datatype="posArray" condition="0">
                      2.45778327        8.39460555        0.22661828
                      8.41192147        8.75579295       -0.22661828

@@ -1,14 +1,21 @@
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.QMCPACK_INPUT)
 
-from .. import versions
-from .. import testing
-from ..testing import divert_nexus_log,restore_nexus_log
+from ..generic import generic_settings
+generic_settings.raise_error = True
+
+from . import isolate_nexus_core, TEST_DIR
 from ..testing import value_eq,object_eq,check_object_eq
 
-associated_files = dict()
+TEST_FILES = {
+    "CH4_afqmc.in.xml":    TEST_DIR / "test_qmcpack_input_files/CH4_afqmc.in.xml",
+    "OH_mixed_pos.in.xml": TEST_DIR / "test_qmcpack_input_files/OH_mixed_pos.in.xml",
+    "VO2_M1_afm.in.xml":   TEST_DIR / "test_qmcpack_input_files/VO2_M1_afm.in.xml",
+    }
 
-def get_files():
-    return testing.collect_unit_test_file_paths('qmcpack_input',associated_files)
-#end def get_files
+for file in TEST_FILES.values():
+    assert(file.exists()), f"Test file not found! {file}"
 
 
 def format_value(v):
@@ -180,7 +187,7 @@ def generate_serial_references():
         'simulation/qmcsystem/particlesets/ion0/groups/O/valence' : 6,
         'simulation/qmcsystem/particlesets/ion0/groups/V/atomicnumber' : 23,
         'simulation/qmcsystem/particlesets/ion0/groups/V/charge' : 13,
-        'simulation/qmcsystem/particlesets/ion0/groups/V/mass' : 92861.5851912,
+        'simulation/qmcsystem/particlesets/ion0/groups/V/mass' : 92860.6737469,
         'simulation/qmcsystem/particlesets/ion0/groups/V/name' : 'V',
         'simulation/qmcsystem/particlesets/ion0/groups/V/position' : np.array([
             [2.45778327, 8.39460555, 0.22661828],
@@ -538,26 +545,6 @@ def check_vs_serial_reference(qi,name):
 #end def check_vs_serial_reference
 
 
-
-def test_files():
-    filenames = [
-        'VO2_M1_afm.in.xml',
-        'CH4_afqmc.in.xml',
-        'OH_mixed_pos.in.xml',
-        ]
-    files = get_files()
-    assert(set(filenames)==set(files.keys()))
-#end def test_files
-
-
-
-def test_import():
-    from ..qmcpack_input import QmcpackInput
-    from ..qmcpack_input import simulation,meta,section
-#end def test_import
-
-
-
 def test_qixml_class_init():
     from ..developer import obj
     from ..qmcpack_input import classes
@@ -687,7 +674,7 @@ def test_compose():
                                 charge       = 13,
                                 valence      = 13,
                                 atomicnumber = 23,
-                                mass         = 92861.5851912,
+                                mass         = 92860.6737469,
                                 position     = np.array([
                                     [ 2.45778327,  8.39460555,  0.22661828],
                                     [ 8.41192147,  8.75579295, -0.22661828],
@@ -1393,9 +1380,7 @@ def test_read():
     import numpy as np
     from ..qmcpack_input import QmcpackInput
 
-    files = get_files()
-
-    qi_read = QmcpackInput(files['VO2_M1_afm.in.xml'])
+    qi_read = QmcpackInput(TEST_FILES['VO2_M1_afm.in.xml'])
     assert(not qi_read.is_afqmc_input())
     qi_read.pluralize()
     assert(not qi_read.is_afqmc_input())
@@ -1417,14 +1402,14 @@ def test_read():
 
 
     # test read for afqmc input file
-    qi = QmcpackInput(files['CH4_afqmc.in.xml'])
+    qi = QmcpackInput(TEST_FILES['CH4_afqmc.in.xml'])
     assert(qi.is_afqmc_input())
 
     check_vs_serial_reference(qi,'CH4_afqmc.in.xml read')
 
 
     # test reading mixed integer/float positions 
-    qi = QmcpackInput(files['OH_mixed_pos.in.xml'])
+    qi = QmcpackInput(TEST_FILES['OH_mixed_pos.in.xml'])
     pos = qi.qmcsystem.particlesets.ion0.position
     assert pos.dtype==float
     pos_ref = np.array(
@@ -1436,19 +1421,14 @@ def test_read():
 
 
 
-def test_write():
-    import os
+def test_write(tmp_path):
     from ..qmcpack_input import QmcpackInput
-
-    tpath = testing.setup_unit_test_output_directory('qmcpack_input','test_write')
-
-    files = get_files()
 
     # test write real space qmc input file
     ref_file   = 'VO2_M1_afm.in.xml'
-    write_file = os.path.join(tpath,'write_'+ref_file)
+    write_file = tmp_path / ('write_'+ref_file)
 
-    qi_read = QmcpackInput(files[ref_file])
+    qi_read = QmcpackInput(TEST_FILES[ref_file])
 
     text = qi_read.write()
     assert('<simulation>' in text)
@@ -1499,9 +1479,9 @@ def test_write():
 
     # test write for afqmc input file
     ref_file   = 'CH4_afqmc.in.xml'
-    write_file = os.path.join(tpath,'write_'+ref_file)
+    write_file = tmp_path / ('write_'+ref_file)
 
-    qi_read = QmcpackInput(files[ref_file])
+    qi_read = QmcpackInput(TEST_FILES[ref_file])
 
     text = qi_read.write()
     assert('<simulation' in text)
@@ -1540,9 +1520,7 @@ def test_write():
 def test_get():
     from ..qmcpack_input import QmcpackInput
 
-    files = get_files()
-
-    qi = QmcpackInput(files['VO2_M1_afm.in.xml'])
+    qi = QmcpackInput(TEST_FILES['VO2_M1_afm.in.xml'])
 
     s    = qi.simulation
     p    = s.project
@@ -1758,7 +1736,7 @@ def test_get():
     #end for
 
 
-    qi = QmcpackInput(files['CH4_afqmc.in.xml'])
+    qi = QmcpackInput(TEST_FILES['CH4_afqmc.in.xml'])
 
     s  = qi.simulation
     pr = s.project
@@ -1815,12 +1793,10 @@ def test_get():
 #end def test_get
 
 
-
+@isolate_nexus_core
 def test_incorporate_system():
     from ..physical_system import generate_physical_system
     from ..qmcpack_input import generate_qmcpack_input
-
-    divert_nexus_log()
 
     system = generate_physical_system(
         units    = 'A',
@@ -1884,9 +1860,6 @@ def test_incorporate_system():
     del qi.get('qmcsystem').particlesets
 
     assert(object_eq(qi,qi_ref))
-
-    restore_nexus_log()
-
 #end def test_incorporate_system
 
 
@@ -2150,37 +2123,39 @@ def test_magnetization_density():
     assert 'name="dr"' not in text, "dr parameter should not be present"
 #end def test_magnetization_density
 
-if versions.seekpath_available:
-    def test_symbolic_excited_state():
-        from nexus import generate_physical_system
-        from nexus import generate_qmcpack_input
 
-        dia = generate_physical_system(
-            units     = 'A',
-            axes      = [[ 1.785,  1.785,  0.   ],
-                         [ 0.   ,  1.785,  1.785],
-                         [ 1.785,  0.   ,  1.785]],
-            elem      = ['C','C'],
-            pos       = [[ 0.    ,  0.    ,  0.    ],
-                         [ 0.8925,  0.8925,  0.8925]],
-            use_prim  = True,    # Use SeeK-path library to identify prim cell
-            tiling    = [2,1,2], 
-            kgrid     = (1,1,1), 
-            kshift    = (0,0,0), # Assumes we study transitions from Gamma. For non-gamma tilings, use kshift appropriately
-            #C         = 4
-            )
+def test_symbolic_excited_state():
+    _ = pytest.importorskip("spglib")
+    _ = pytest.importorskip("seekpath")
+    from nexus import generate_physical_system
+    from nexus import generate_qmcpack_input
 
-        qmc_optical = generate_qmcpack_input(
-            det_format     = 'old',
-            input_type     = 'basic',
-            spin_polarized = True,
-            system         = dia,
-            excitation     = ['up', 'gamma vb x cb'], 
-            jastrows       = [],
-            qmc            = 'vmc',
-            )
+    dia = generate_physical_system(
+        units     = 'A',
+        axes      = [[ 1.785,  1.785,  0.   ],
+                     [ 0.   ,  1.785,  1.785],
+                     [ 1.785,  0.   ,  1.785]],
+        elem      = ['C','C'],
+        pos       = [[ 0.    ,  0.    ,  0.    ],
+                     [ 0.8925,  0.8925,  0.8925]],
+        use_prim  = True,    # Use SeeK-path library to identify prim cell
+        tiling    = [2,1,2], 
+        kgrid     = (1,1,1), 
+        kshift    = (0,0,0), # Assumes we study transitions from Gamma. For non-gamma tilings, use kshift appropriately
+        #C         = 4
+        )
 
-        expect = '''<slaterdeterminant>
+    qmc_optical = generate_qmcpack_input(
+        det_format     = 'old',
+        input_type     = 'basic',
+        spin_polarized = True,
+        system         = dia,
+        excitation     = ['up', 'gamma vb x cb'], 
+        jastrows       = [],
+        qmc            = 'vmc',
+        )
+
+    expect = '''<slaterdeterminant>
    <determinant id="updet" size="24">
       <occupation mode="excited" spindataset="0" pairs="1" format="band">             
 0 5 3 6
@@ -2190,21 +2165,21 @@ if versions.seekpath_available:
       <occupation mode="ground" spindataset="1"/>
    </determinant>
 </slaterdeterminant>'''.strip()
-        text = qmc_optical.get('slaterdeterminant').write().strip()
-        assert(text==expect)
+    text = qmc_optical.get('slaterdeterminant').write().strip()
+    assert(text==expect)
 
 
-        qmc_optical = generate_qmcpack_input(
-            det_format     = 'old',
-            input_type     = 'basic',
-            spin_polarized = True,
-            system         = dia,
-            excitation     = ['up', 'gamma vb-1 x cb'], 
-            jastrows       = [],
-            qmc            = 'vmc',
-            )
+    qmc_optical = generate_qmcpack_input(
+        det_format     = 'old',
+        input_type     = 'basic',
+        spin_polarized = True,
+        system         = dia,
+        excitation     = ['up', 'gamma vb-1 x cb'], 
+        jastrows       = [],
+        qmc            = 'vmc',
+        )
 
-        expect = '''<slaterdeterminant>
+    expect = '''<slaterdeterminant>
    <determinant id="updet" size="24">
       <occupation mode="excited" spindataset="0" pairs="1" format="band">             
 0 4 3 6
@@ -2214,21 +2189,21 @@ if versions.seekpath_available:
       <occupation mode="ground" spindataset="1"/>
    </determinant>
 </slaterdeterminant>'''.strip()
-        text = qmc_optical.get('slaterdeterminant').write().strip()
-        assert(text==expect)
+    text = qmc_optical.get('slaterdeterminant').write().strip()
+    assert(text==expect)
 
 
-        qmc_optical = generate_qmcpack_input(
-            det_format     = 'old',
-            input_type     = 'basic',
-            spin_polarized = True,
-            system         = dia,
-            excitation     = ['up', 'gamma vb x cb+1'], 
-            jastrows       = [],
-            qmc            = 'vmc',
-            )
+    qmc_optical = generate_qmcpack_input(
+        det_format     = 'old',
+        input_type     = 'basic',
+        spin_polarized = True,
+        system         = dia,
+        excitation     = ['up', 'gamma vb x cb+1'], 
+        jastrows       = [],
+        qmc            = 'vmc',
+        )
 
-        expect = '''<slaterdeterminant>
+    expect = '''<slaterdeterminant>
    <determinant id="updet" size="24">
       <occupation mode="excited" spindataset="0" pairs="1" format="band">             
 0 5 3 7
@@ -2238,9 +2213,7 @@ if versions.seekpath_available:
       <occupation mode="ground" spindataset="1"/>
    </determinant>
 </slaterdeterminant>'''.strip()
-        text = qmc_optical.get('slaterdeterminant').write().strip()
-        assert(text==expect)
+    text = qmc_optical.get('slaterdeterminant').write().strip()
+    assert(text==expect)
 
-    #end def test_symbolic_excited_state
-#end if
-
+#end def test_symbolic_excited_state

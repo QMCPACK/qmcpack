@@ -45,13 +45,14 @@
 
 
 import os
+import sys
 import inspect
 from copy import deepcopy
 import numpy as np
 from numpy import pi
 from numpy.linalg import inv
 from .unit_converter import convert
-from .periodic_table import is_element
+from .periodic_table import Elements
 from .structure import Structure, kmesh
 from .physical_system import PhysicalSystem
 from .developer import DevBase, obj, log, warn, error
@@ -904,7 +905,6 @@ for sec in section_classes:
 #end for
 
 
-exit_ = exit
 def check_new_variables(exit=True):
     sections = section_classes
     msg = ''
@@ -925,7 +925,7 @@ def check_new_variables(exit=True):
         log('section checks of new variables passed')
     #end if
     if exit:
-        exit_()
+        sys.exit()
     #end if
 #end def check_new_variables
 #check_new_variables()
@@ -970,7 +970,7 @@ def check_section_classes(exit=True):
         log('pwscf input checks passed')
     #end if
     if exit:
-        exit_()
+        sys.exit()
     #end if
 #end def check_section_classes
 #check_section_classes()
@@ -2210,9 +2210,9 @@ def generate_any_pwscf_input(**kwargs):
             pp = pw.atomic_species.pseudopotentials
             for atom in pw.atomic_species.atoms:
                 if atom not in pp:
-                    iselem,symbol = is_element(atom,symbol=True)
-                    if iselem and symbol in pp:
-                        pp[atom] = str(pp[symbol])
+                    iselem, element = Elements.is_element(atom, return_element=True)
+                    if iselem and element.symbol in pp:
+                        pp[atom] = str(pp[element.symbol])
                     #end if
                 #end if
             #end for

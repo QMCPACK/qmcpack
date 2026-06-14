@@ -1,8 +1,13 @@
-#! /usr/bin/env python3
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.PHYSICAL_SYSTEM)
+
+from ..generic import generic_settings
+generic_settings.raise_error = True
 
 import numpy as np
 from .. import testing
-from ..testing import value_eq,object_eq,object_diff,print_diff
+from ..testing import value_eq,object_eq
 
 from .test_structure import structure_same
 
@@ -27,19 +32,8 @@ def system_same(s1,s2,pseudized=True,tiled=False):
 #end def system_same
 
 
-
-def test_import():
-    from .. import physical_system
-    from ..physical_system import Matter,Particle,Ion,PseudoIon,Particles
-    from ..physical_system import PhysicalSystem,generate_physical_system
-#end def test_import
-
-
-
 def test_particle_initialization():
-    from ..developer import obj
     from ..physical_system import Matter,Particle,Ion,PseudoIon,Particles
-    from ..physical_system import PhysicalSystem,generate_physical_system
 
     # empty initialization
     Matter()
@@ -65,7 +59,7 @@ def test_particle_initialization():
 
     # matter
     elements = Matter.elements
-    assert(len(elements)==103)
+    assert(len(elements)==119)
     assert('Si' in elements)
 
     pc = Matter.particle_collection
@@ -89,7 +83,8 @@ def test_particle_initialization():
     
     si = pc.Si
     assert(si.name=='Si')
-    assert(value_eq(si.mass,51197.6459833))
+    print(si.mass)
+    assert(value_eq(si.mass,51195.82309476658))
     assert(si.charge==14)
     assert(si.protons==14)
     assert(si.neutrons==14)
@@ -104,27 +99,25 @@ def test_particle_initialization():
 
 
 
-def test_physical_system_initialization():
+def test_physical_system_initialization(tmp_path):
     import os
     from ..developer import obj
     from ..structure import generate_structure
     from ..physical_system import generate_physical_system
     from ..physical_system import PhysicalSystem
-    
-    tpath = testing.setup_unit_test_output_directory('physical_system','test_physical_system_initialization')
 
     d2 = generate_structure(
         structure = 'diamond',
         cell      = 'prim',
         )
-    d2_path = os.path.join(tpath,'diamond2.xsf')
+    d2_path = tmp_path / 'diamond2.xsf'
     d2.write(d2_path)
 
     d8 = generate_structure(
         structure = 'diamond',
         cell      = 'conv',
         )
-    d8_path = os.path.join(tpath,'diamond8.xsf')
+    d8_path = tmp_path / 'diamond8.xsf'
     d8.write(d8_path)
 
 
@@ -372,7 +365,7 @@ def test_physical_system_initialization():
 
     # test load
     for i,sys in enumerate(systems):
-        path = os.path.join(tpath,'system_{}'.format(i))
+        path = tmp_path / 'system_{}'.format(i)
         sys.save(path)
         sys2 = PhysicalSystem()
         sys2.load(path)

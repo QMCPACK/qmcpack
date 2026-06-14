@@ -77,8 +77,15 @@ public:
 #endif
 
   /** constructor that splits in_comm
+   * in_comm.size() == 12 ; nparts = 2; stripe = 0
+   *   | group 0      | group 1       |
+   *   |  0 1 2 3 4 5 | 6 7 8 9 10 11 |
+   * in_comm.size() == 12 ; nparts = 2; stripe = 3;
+   *   | group 0 | group 1 |
+   *   |  0 1 2  |  3 4 5  |
+   *   |  6 7 8  | 9 10 11 |
    */
-  Communicate(const Communicate& in_comm, int nparts);
+  Communicate(const Communicate& in_comm, int nparts, int stripe = 0);
 
   /**destructor
    * Call proper finalization of Communication library

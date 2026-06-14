@@ -1,22 +1,29 @@
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.NXS_SIM)
+
+from ..generic import generic_settings
+generic_settings.raise_error = True
 
 import sys
-from .. import testing
-from ..testing import divert_nexus,restore_nexus,clear_all_sims
+from . import isolate_nexus_core, TEST_DIR
+from ..testing import clear_all_sims
 from ..testing import execute,text_eq
 
 
-
-def test_sim():
-    import os
+@isolate_nexus_core
+def test_sim(tmp_path):
     from ..nexus_base import nexus_core
     from .test_simulation_module import get_sim
 
-    tpath = testing.setup_unit_test_output_directory('nxs_sim','test_sim',divert=True)
+    nexus_core.local_directory  = str(tmp_path)
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
 
     nexus_core.runs    = ''
     nexus_core.results = ''
     
-    exe = testing.executable_path('nxs-sim')
+    exe = TEST_DIR.parent / "bin/nxs-sim"
 
     sim = get_sim()
 
@@ -24,8 +31,8 @@ def test_sim():
 
     sim.save_image()
 
-    simp_path = os.path.join(tpath,sim.imlocdir,'sim.p')
-    assert(os.path.isfile(simp_path))
+    simp_path = (tmp_path / sim.imlocdir / 'sim.p').resolve()
+    assert(simp_path.is_file())
 
 
     # initial simulation state
@@ -114,5 +121,4 @@ def test_sim():
     assert(text_eq(out,out_ref))
 
     clear_all_sims()
-    restore_nexus()
 #end def test_sim

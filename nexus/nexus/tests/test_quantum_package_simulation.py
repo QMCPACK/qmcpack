@@ -1,16 +1,23 @@
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.QUANTUM_PACKAGE_SIMULATION)
 
-from .. import testing
-from ..testing import divert_nexus,restore_nexus
+from ..generic import generic_settings
+generic_settings.raise_error = True
+
+from pathlib import Path
+from . import isolate_nexus_core
+
 from ..testing import failed,FailedTest
-from ..testing import value_eq,object_eq,text_eq
+from ..testing import object_eq
 
 
 def clear_all_sims():
     from ..quantum_package import QuantumPackage
-
+    from nexus.simulation import Simulation
     QuantumPackage.qprc = None
 
-    testing.clear_all_sims()
+    Simulation.clear_all_sims()
 #end def clear_all_sims
 
 
@@ -41,12 +48,6 @@ def get_quantum_package_sim(**kwargs):
     
     return sim
 #end def get_quantum_package_sim
-
-
-
-def test_import():
-    from ..quantum_package import QuantumPackage,generate_quantum_package
-#end def test_import
 
 
 
@@ -105,7 +106,7 @@ def test_get_result():
 
 
 def test_incorporate_result():
-    from ..developer import NexusError, obj
+    from ..developer import NexusError
     from ..machines import job
     from ..simulation import Simulation
     from ..gamess import generate_gamess,Gamess
@@ -148,19 +149,19 @@ def test_incorporate_result():
 #end def test_incorporate_result
 
 
-
-def test_check_sim_status():
+@isolate_nexus_core
+def test_check_sim_status(tmp_path):
     import os
-    from ..developer import NexusError, obj
     from ..nexus_base import nexus_core
 
-    tpath = testing.setup_unit_test_output_directory('quantum_package_simulation','test_check_sim_status',divert=True)
-
     nexus_core.runs = ''
+    nexus_core.local_directory  = str(tmp_path)
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
 
     sim = get_quantum_package_sim()
 
-    assert(sim.locdir.rstrip('/')==tpath.rstrip('/'))
+    assert(Path(sim.locdir).resolve()==tmp_path)
 
     assert(not sim.finished)
     assert(not sim.failed)
@@ -175,12 +176,10 @@ def test_check_sim_status():
     #end try
 
     sim.create_directories()
-    outfile = os.path.join(sim.locdir,sim.outfile)
+    outfile = Path(sim.locdir).resolve() / sim.outfile
     outfile_text = '* SCF energy'
-    out = open(outfile,'w')
-    out.write(outfile_text)
-    out.close()
-    assert(outfile_text in open(outfile,'r').read())
+    outfile.write_text(outfile_text)
+    assert(outfile_text in outfile.read_text())
     sim.job.finished = True
 
     sim.check_sim_status()
@@ -189,5 +188,4 @@ def test_check_sim_status():
     assert(not sim.failed)
 
     clear_all_sims()
-    restore_nexus()
 #end def test_check_sim_status

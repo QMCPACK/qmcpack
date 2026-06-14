@@ -1,46 +1,34 @@
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.VASP_ANALYZER)
 
-from .. import testing
+from ..generic import generic_settings
+generic_settings.raise_error = True
+
+from . import TEST_DIR
 from ..testing import value_eq,object_eq
 
 
-associated_files = dict()
+TEST_FILES = {
+    "relax.CONTCAR":     TEST_DIR / "test_vasp_analyzer_files/relax.CONTCAR",
+    "relax.DOSCAR":      TEST_DIR / "test_vasp_analyzer_files/relax.DOSCAR",
+    "relax.EIGENVAL":    TEST_DIR / "test_vasp_analyzer_files/relax.EIGENVAL",
+    "relax.err":         TEST_DIR / "test_vasp_analyzer_files/relax.err",
+    "relax.IBZKPT":      TEST_DIR / "test_vasp_analyzer_files/relax.IBZKPT",
+    "relax.INCAR":       TEST_DIR / "test_vasp_analyzer_files/relax.INCAR",
+    "relax.KPOINTS":     TEST_DIR / "test_vasp_analyzer_files/relax.KPOINTS",
+    "relax.OSZICAR":     TEST_DIR / "test_vasp_analyzer_files/relax.OSZICAR",
+    "relax.out":         TEST_DIR / "test_vasp_analyzer_files/relax.out",
+    "relax.OUTCAR":      TEST_DIR / "test_vasp_analyzer_files/relax.OUTCAR",
+    "relax.PCDAT":       TEST_DIR / "test_vasp_analyzer_files/relax.PCDAT",
+    "relax.POSCAR":      TEST_DIR / "test_vasp_analyzer_files/relax.POSCAR",
+    "relax.qsub.in":     TEST_DIR / "test_vasp_analyzer_files/relax.qsub.in",
+    "relax.vasprun.xml": TEST_DIR / "test_vasp_analyzer_files/relax.vasprun.xml",
+    "relax.XDATCAR":     TEST_DIR / "test_vasp_analyzer_files/relax.XDATCAR",
+    }
 
-def get_files():
-    return testing.collect_unit_test_file_paths('vasp_analyzer',associated_files)
-#end def get_files
-
-
-relax_files = [
-    'relax.CONTCAR',
-    'relax.DOSCAR',
-    'relax.EIGENVAL',
-    'relax.err',
-    'relax.IBZKPT',
-    'relax.INCAR',
-    'relax.KPOINTS',
-    'relax.OSZICAR',
-    'relax.out',
-    'relax.OUTCAR',
-    'relax.PCDAT',
-    'relax.POSCAR',
-    'relax.qsub.in',
-    'relax.vasprun.xml',
-    'relax.XDATCAR',
-    ]
-
-
-def test_files():
-    filenames = relax_files
-    files = get_files()
-    assert(set(filenames)==set(files.keys()))
-#end def test_files
-
-
-
-def test_import():
-    from ..vasp_analyzer import VaspAnalyzer,VXML,OutcarData
-#end def test_import
-
+for file in TEST_FILES.values():
+    assert(file.exists()), f"Test file not found! {file}"
 
 
 def test_empty_init():
@@ -52,18 +40,11 @@ def test_empty_init():
 
 
 def test_analyze():
-    import os
     from numpy import array,ndarray
     from ..developer import obj
-    from ..vasp_analyzer import VaspAnalyzer,VXML,VXMLcoll,OutcarData
+    from ..vasp_analyzer import VaspAnalyzer,VXML,OutcarData
 
-    tpath = testing.setup_unit_test_output_directory(
-        test      = 'vasp_analyzer',
-        subtest   = 'test_analyze',
-        file_sets = relax_files,
-        )
-
-    incar_path = os.path.join(tpath,'relax.INCAR')
+    incar_path = TEST_FILES['relax.INCAR']
 
 
     # empty init

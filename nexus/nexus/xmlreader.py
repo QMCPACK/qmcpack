@@ -29,6 +29,7 @@ import re
 import os
 import numpy as np
 from .developer import DevBase, obj, valid_variable_name
+from .utilities import path_string
 
 
 def parse_string(s, delim = None):
@@ -282,6 +283,7 @@ class XMLreader(DevBase):
         if element_aliases is None:
             element_aliases = {}
 
+        fpath = path_string(fpath)
         #assign values
         self.fpath=fpath
         if fpath is None:
@@ -306,8 +308,8 @@ class XMLreader(DevBase):
 
         #read in xml file
         if xml is None:
-            fobj = open(fpath,'r')
-            self.xml = fobj.read()
+            with open(fpath, "r") as fobj:
+                self.xml = fobj.read()
         else:
             self.xml = xml
         #end if
@@ -350,10 +352,9 @@ class XMLreader(DevBase):
             if ir != -1:
                 cont = self.xml[il:ir].strip(pair[0]).rstrip(pair[1])
                 fname = cont.split('=',1)[1].strip().strip('"')
-                fobj = open(os.path.join(self.base_path,fname),'r')
-                fcont = fobj.read()
+                with open(os.path.join(self.base_path,fname), "r") as fobj:
+                    fcont = fobj.read()
                 fcont = remove_pair_sections(fcont,qpair)
-                fobj.close()
                 self.xml = self.xml.replace(self.xml[il:ir],fcont)
             #end if
         #end while

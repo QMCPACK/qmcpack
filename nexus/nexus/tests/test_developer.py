@@ -1,14 +1,12 @@
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.DEVELOPER)
+
+from ..generic import generic_settings
+generic_settings.raise_error = True
+
 
 from ..testing import failed,FailedTest
-
-def test_import():
-    from ..developer import log,error,warn
-    from ..developer import ci,interact
-    from ..developer import DevBase
-    from ..developer import Void
-    from ..developer import unavailable,available
-    from ..developer import valid_variable_name
-#end def test_import
 
 
 

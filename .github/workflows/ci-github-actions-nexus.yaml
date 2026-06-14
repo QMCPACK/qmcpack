@@ -1,0 +1,83 @@
+name: Nexus Testing
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+  pull_request:
+    branches:
+      - develop
+      - main
+
+jobs:
+  linux:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.14"]
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Action
+      uses: actions/checkout@v6
+
+    - name: Setup Graphviz
+      run: sudo apt-get install graphviz
+
+    - name: Install uv and Setup Python ${{ matrix.python-version }}
+      uses: astral-sh/setup-uv@v7
+      with:
+        version: "0.11.11"
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install Project and All Dependencies
+      run: uv sync --locked --all-extras --dev
+      working-directory: ./nexus
+
+    - name: Downgrade to Minimum Versions (Python 3.10 only)
+      if: contains(matrix.python-version, '3.10')
+      run: uv pip install numpy==1.22.0 scipy==1.8.0 h5py==3.6.0 matplotlib==3.3.0 spglib==1.16.0 cif2cell==2.1.0 pydot==2.0.0 seekpath==2.0.0
+      working-directory: ./nexus
+
+    - name: Run Nexus Tests
+      run: |
+        source .venv/bin/activate
+        pytest nexus/tests/
+      working-directory: ./nexus
+
+  macos:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.14"]
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout Action
+      uses: actions/checkout@v6
+
+    - name: Setup Graphviz
+      run: brew install graphviz
+
+    - name: Install uv and Setup Python ${{ matrix.python-version }}
+      uses: astral-sh/setup-uv@v7
+      with:
+        version: "0.11.11"
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install Project and All Dependencies
+      run: uv sync --locked --all-extras --dev
+      working-directory: ./nexus
+
+    - name: Downgrade to Minimum Versions (Python 3.10 only)
+      if: contains(matrix.python-version, '3.10')
+      run: uv pip install numpy==1.22.0 scipy==1.8.0 spglib==1.16.0 cif2cell==2.1.0 pydot==2.0.0 seekpath==2.0.0
+      working-directory: ./nexus
+
+    - name: Run Nexus Tests
+      run: |
+        source .venv/bin/activate
+        pytest nexus/tests/
+      working-directory: ./nexus

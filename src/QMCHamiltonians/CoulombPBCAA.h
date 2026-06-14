@@ -242,6 +242,16 @@ private:
    *  \param[out]  pp_consts   constant values for the particles self interaction
    */
   void evalPerParticleConsts(Vector<RealType>& pp_consts) const;
+
+  /** Currently mostly copy paste of mw_evalSR_offload
+   *  but would require branching in OFFLOAD section
+   *  does additional data movement
+   */
+  static Matrix<CoulombPBCAA::Return_t> mw_evalSRPerParticle_offload(const RefVectorWithLeader<OperatorBase>& o_list,
+                                                                     const RefVectorWithLeader<ParticleSet>& p_list);
+
+  static Matrix<CoulombPBCAA::RealType> mw_evalSRPerParticle(const RefVectorWithLeader<OperatorBase>& o_list,
+                                                             const RefVectorWithLeader<ParticleSet>& p_list);
 };
 
 } // namespace qmcplusplus

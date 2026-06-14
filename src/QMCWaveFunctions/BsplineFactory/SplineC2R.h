@@ -24,7 +24,7 @@
 #include <memory>
 #include "QMCWaveFunctions/BsplineFactory/BsplineSet.h"
 #include "OhmmsSoA/VectorSoaContainer.h"
-#include "spline2/MultiBspline.hpp"
+#include "spline2/MultiBsplineBase.hpp"
 #include "Utilities/FairDivide.h"
 
 namespace qmcplusplus
@@ -68,12 +68,9 @@ private:
   vContainer_type mKK;
   VectorSoaContainer<ST, 3> myKcart;
 
-  ///thread private ratios for reduction when using nested threading, numVP x numThread
-  Matrix<TT> ratios_private;
-
 protected:
   ///multi bspline set
-  const std::shared_ptr<MultiBspline<ST>> SplineInst;
+  const std::shared_ptr<MultiBsplineBase<ST>> SplineInst;
   /// intermediate result vectors
   vContainer_type myV;
   vContainer_type myL;
@@ -86,14 +83,9 @@ public:
             size_t size,
             const Lattice& prim_lattice,
             std::unique_ptr<MultiBsplineBase<ST>>&& multi_spline,
-            bool use_offload = false)
-      : BsplineSet(my_name, size, prim_lattice),
-        GGt(dot(transpose(prim_lattice.G), prim_lattice.G)),
-        nComplexBands(0),
-        SplineInst(dynamic_cast<MultiBspline<ST>*>(multi_spline.release()))
-  {}
-
+            bool use_offload = false);
   SplineC2R(const SplineC2R& in);
+
   virtual std::string getClassName() const override { return "SplineC2R"; }
   virtual std::string getKeyword() const override { return "SplineC2R"; }
 
