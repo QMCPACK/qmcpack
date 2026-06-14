@@ -115,7 +115,7 @@ int main(int argc, char** argv)
   if (!AverageWalkersPerNode)
     AverageWalkersPerNode = NumThreads;
   //set nwtot, to be random
-  nwtot = std::abs(AverageWalkersPerNode + myComm->rank() % 5 - 2);
+  nwtot = std::max(1, AverageWalkersPerNode + myComm->rank() % 5 - 2);
   FairDivideLow(nwtot, NumThreads, wPerNode);
 
   //Random.init(iseed);
