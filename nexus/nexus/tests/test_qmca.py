@@ -270,9 +270,10 @@ avg series 0 -11.44375840 +/- 0.00292164  0.44863011 +/- 0.00502859  0.0392
 
 def test_save_plot_pdf():
 
+    os.environ['MPLBACKEND'] = 'Agg'
     try:
         import matplotlib.pyplot  # noqa: F401
-    except ImportError:
+    except (ImportError, RuntimeError):
         pytest.skip('matplotlib not available')
 
     cwd = Path.cwd()
@@ -283,7 +284,7 @@ def test_save_plot_pdf():
     if os.path.exists(plot_file):
         os.remove(plot_file)
 
-    command = (f'{sys.executable} {QMCA_EXE} -t -q e -e 5 '
+    command = (f'MPLBACKEND=Agg {sys.executable} {QMCA_EXE} -t -q e -e 5 '
                f'--image-prefix {prefix} --image-format pdf --nowarn *scalar*')
     out,err,rc = execute(command)
     assert rc==0
@@ -297,9 +298,10 @@ def test_save_plot_pdf():
 
 def test_save_plot_png_default():
 
+    os.environ['MPLBACKEND'] = 'Agg'
     try:
         import matplotlib.pyplot  # noqa: F401
-    except ImportError:
+    except (ImportError, RuntimeError):
         pytest.skip('matplotlib not available')
 
     cwd = Path.cwd()
@@ -310,7 +312,7 @@ def test_save_plot_png_default():
     if os.path.exists(plot_file):
         os.remove(plot_file)
 
-    command = (f'{sys.executable} {QMCA_EXE} -t -q e -e 5 '
+    command = (f'MPLBACKEND=Agg {sys.executable} {QMCA_EXE} -t -q e -e 5 '
                f'--image-prefix {prefix} --image --nowarn *scalar*')
     out,err,rc = execute(command)
     assert rc==0
