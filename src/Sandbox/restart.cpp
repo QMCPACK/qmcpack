@@ -125,7 +125,6 @@ int main(int argc, char** argv)
   if (myComm->rank())
     outputManager.shutOff();
 
-  int nptcl = 0;
   double t0 = 0.0, t1 = 0.0;
 
   SimulationCell supercell(createSuperLattice(create_prim_lattice(), tmat));
@@ -135,36 +134,32 @@ int main(int argc, char** argv)
   auto& rnc_children = RandomNumberControl::getChildren();
   std::vector<uint_type> mt(Random.state_size(), 0);
   std::vector<std::vector<uint_type>> mt_children(NumThreads, mt);
-  std::vector<MCWalkerConfiguration> elecs(NumThreads, MCWalkerConfiguration(supercell));
+  MCWalkerConfiguration elecs_with_walkers(supercell);
+
+  const int nions = ions.getTotalNum();
+  const int nels  = count_electrons(ions);
+
+  elecs_with_walkers.create({nels / 2, nels - nels / 2});
+  elecs_with_walkers.createWalkers(nwtot);
+
+  std::vector<ParticleSet> elecs(NumThreads, elecs_with_walkers);
 
 #pragma omp parallel reduction(+ : t0)
   {
     const int ip = omp_get_thread_num();
 
-    MCWalkerConfiguration& els                = elecs[ip];
+    auto& els                                 = elecs[ip];
     RandomNumberControl::Generator& random_th = *rnc_children[ip];
 
-    const int nions = ions.getTotalNum();
-    const int nels  = count_electrons(ions);
-    const int nels3 = 3 * nels;
-
-#pragma omp master
-    nptcl = nels;
-
-    { //create up/down electrons
-      els.create({nels / 2, nels - nels / 2});
+    { //setup up/down electrons
       els.R.InUnit = PosUnit::Lattice;
-      std::generate(&els.R[0][0], &els.R[0][0] + nels3, std::ref(random_th));
+      std::generate(&els.R[0][0], &els.R[0][0] + nels * 3, std::ref(random_th));
       els.convert2Cart(els.R); // convert to Cartiesian
       els.update();
     }
 
-    if (!ip)
-      elecs[0].createWalkers(nwtot);
-#pragma omp barrier
-
-    for (MCWalkerConfiguration::iterator wi = elecs[0].begin() + wPerNode[ip];
-         wi != elecs[0].begin() + wPerNode[ip + 1]; wi++)
+    for (MCWalkerConfiguration::iterator wi = elecs_with_walkers.begin() + wPerNode[ip];
+         wi != elecs_with_walkers.begin() + wPerNode[ip + 1]; wi++)
       els.saveWalker(**wi);
 
     // save random seeds
@@ -172,7 +167,7 @@ int main(int argc, char** argv)
   } //end of omp parallel
   Random.save(mt);
 
-  setWalkerOffsets(elecs[0], myComm);
+  setWalkerOffsets(elecs_with_walkers, myComm);
 
   //storage variables for timers
   double h5write = 0.0, h5read = 0.0;         //random seed R/W speeds
@@ -231,10 +226,10 @@ int main(int argc, char** argv)
   }
 
   // dump electron coordinates.
-  HDFWalkerOutput wOut(elecs[0].getTotalNum(), directory + "restart", myComm);
+  HDFWalkerOutput wOut(elecs_with_walkers.getTotalNum(), directory + "restart", myComm);
   myComm->barrier();
   h5clock.restart(); //start timer
-  wOut.dump(elecs[0], 1);
+  wOut.dump(elecs_with_walkers, 1);
   myComm->barrier();
   walkerWrite += h5clock.elapsed(); //store timer
   if (!myComm->rank())
@@ -242,9 +237,9 @@ int main(int argc, char** argv)
 
   // save walkers before destroying them
   std::vector<Walker_t> saved_walkers;
-  for (int wi = 0; wi < elecs[0].getActiveWalkers(); wi++)
-    saved_walkers.push_back(*elecs[0][wi]);
-  elecs[0].destroyWalkers(elecs[0].begin(), elecs[0].end());
+  for (int wi = 0; wi < elecs_with_walkers.getActiveWalkers(); wi++)
+    saved_walkers.push_back(*elecs_with_walkers[wi]);
+  elecs_with_walkers.destroyWalkers(elecs_with_walkers.begin(), elecs_with_walkers.end());
 
   // load walkers
   std::string restart_input = R"(
@@ -260,21 +255,21 @@ int main(int argc, char** argv)
   xmlNodePtr restart_leaf = xmlFirstElementChild(root);
 
   HDFVersion in_version(0, 4);
-  HDFWalkerInput_0_4 wIn(elecs[0], elecs[0].getTotalNum(), myComm, in_version);
+  HDFWalkerInput_0_4 wIn(elecs_with_walkers, elecs_with_walkers.getTotalNum(), myComm, in_version);
   myComm->barrier();
   h5clock.restart(); //start timer
   wIn.put(restart_leaf);
   myComm->barrier();
   walkerRead += h5clock.elapsed(); //store time spent
 
-  if (saved_walkers.size() != elecs[0].getActiveWalkers())
+  if (saved_walkers.size() != elecs_with_walkers.getActiveWalkers())
     std::cout << "Fail: Rank " << myComm->rank() << " had " << saved_walkers.size() << "  walkers but loaded only "
-              << elecs[0].getActiveWalkers() << " walkers from file!" << std::endl;
+              << elecs_with_walkers.getActiveWalkers() << " walkers from file!" << std::endl;
 
   mismatch_count = 0;
   for (int wi = 0; wi < saved_walkers.size(); wi++)
   {
-    saved_walkers[wi].R = saved_walkers[wi].R - elecs[0][wi]->R;
+    saved_walkers[wi].R = saved_walkers[wi].R - elecs_with_walkers[wi]->R;
     if (Dot(saved_walkers[wi].R, saved_walkers[wi].R) > std::numeric_limits<RealType>::epsilon())
       mismatch_count++;
   }
@@ -311,15 +306,15 @@ int main(int argc, char** argv)
 
     if (subComm->getGroupID() == 0)
     {
-      elecs[0].destroyWalkers(elecs[0].begin(), elecs[0].end());
-      HDFWalkerInput_0_4 subwIn(elecs[0], elecs[0].getTotalNum(), subComm, in_version);
+      elecs_with_walkers.destroyWalkers(elecs_with_walkers.begin(), elecs_with_walkers.end());
+      HDFWalkerInput_0_4 subwIn(elecs_with_walkers, elecs_with_walkers.getTotalNum(), subComm, in_version);
       subwIn.put(restart_leaf);
       subComm->barrier();
       if (!subComm->rank())
         std::cout << "Walkers are loaded again by the subgroup!\n";
-      setWalkerOffsets(elecs[0], subComm);
-      HDFWalkerOutput subwOut(elecs[0].getTotalNum(), "XXXX", subComm);
-      subwOut.dump(elecs[0], 1);
+      setWalkerOffsets(elecs_with_walkers, subComm);
+      HDFWalkerOutput subwOut(elecs_with_walkers.getTotalNum(), "XXXX", subComm);
+      subwOut.dump(elecs_with_walkers, 1);
       if (!subComm->rank())
         std::cout << "Walkers are dumped again by the subgroup!\n";
     }
