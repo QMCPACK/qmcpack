@@ -172,10 +172,16 @@ _____________________________________________________
 
     def log(self,*texts,**kwargs):
         """Write output to log file.
-           Keyword arguments
-            n - spaces to indent
-            progress - if True and output is to a terminal, overwrite and
-                       update the last line, rather than scrolling.
+
+        Parameters
+        ----------
+        *texts
+            Strings that will be joined by newlines
+        n : int, kwargs
+            Spaces to indent
+        progress : bool, kwargs
+            If ``True`` and output is to a terminal, overwrite and update the
+            last line, rather than scrolling.
         """
         if nexus_core.verbose:
             if len(kwargs)>0:
