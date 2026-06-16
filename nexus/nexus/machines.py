@@ -1943,31 +1943,37 @@ class Supercomputer(Machine):
     #end def seconds_to_walltime
 
     def validate_queue_config(self, job):
-        """
-        Validate job against queue configuration constraints
-        Returns True if valid, raises an error with detailed message if invalid
+        """Validate job against queue configuration constraints
+        
+        Returns
+        -------
+        bool
+            ``True`` if valid, raises an error with detailed message if invalid
 
-        Queue config format:
-        queue_configs = {
-            'default': 'queue_name',
-            'queue_name': {
-                'min_nodes'     : minimum number of nodes,
-                'max_nodes'     : maximum number of nodes,
-                'max_walltime'      : maximum walltime in hours,
-                'cores_per_node': cores per node,
-                'ram_per_node'  : RAM per node in GB,
-                'constraints'   : {
-                    'knl': {
-                        'max_nodes': knl specific max nodes,
-                        'max_time': knl specific max time,
-                        ...
-                    },
-                    'haswell': {...},
-                    'gpu': {...},
-                    'cpu': {...}
-                }
-            }
-        }
+        Examples
+        --------
+        Queue config format
+
+        >>> queue_configs = {
+        ...     'default': 'queue_name',
+        ...     'queue_name': {
+        ...         'min_nodes'     : minimum number of nodes,
+        ...         'max_nodes'     : maximum number of nodes,
+        ...         'max_walltime'      : maximum walltime in hours,
+        ...         'cores_per_node': cores per node,
+        ...         'ram_per_node'  : RAM per node in GB,
+        ...         'constraints'   : {
+        ...             'knl': {
+        ...                 'max_nodes': knl specific max nodes,
+        ...                 'max_time': knl specific max time,
+        ...                 ...
+        ...             },
+        ...             'haswell': {...},
+        ...             'gpu': {...},
+        ...             'cpu': {...}
+        ...         }
+        ...     }
+        ... }
         """
         if self.queue_configs is None:
             return True
