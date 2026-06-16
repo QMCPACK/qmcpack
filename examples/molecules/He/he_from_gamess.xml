@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <simulation>
 <project id="He" series="0">
-  <parameter name="driver_version">legacy</parameter>
+  <parameter name="driver_version">batched</parameter>
 </project>
 
   <!-- Location of atoms -->
@@ -2068,7 +2068,6 @@
     <qmc method="linear" move="pbyp" checkpoint="-1" gpu="no">
     <parameter name="blocks">     100  </parameter>
       <parameter name="warmupsteps"> 25 </parameter>
-      <parameter name="steps"> 1 </parameter>
       <parameter name="substeps"> 20 </parameter>
       <parameter name="timestep"> 0.5 </parameter>
       <parameter name="samples"> 51200  </parameter>
@@ -2090,7 +2089,7 @@
 
   <qmc method="vmc" target="e">
     <parameter name="blocks">2000</parameter>
-    <parameter name="steps">100</parameter>
+    <parameter name="samples">200000</parameter>
     <parameter name="warmupsteps">100</parameter>
     <parameter name="timestep">0.1</parameter>
   </qmc>
