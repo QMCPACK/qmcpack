@@ -7,6 +7,7 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
+from typing import TypeAlias
 from .developer import warn
 
 
@@ -577,3 +578,6 @@ class Elements(ElementData, Enum):
     Ts = Tennessine
     Og = Oganesson
 #end class Element
+
+
+ElementLike: TypeAlias = Elements | str | int

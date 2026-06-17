@@ -2,117 +2,227 @@
 ##  (c) Copyright 2015-  by Jaron T. Krogel                     ##
 ##################################################################
 
+"""Representations of particles, atoms, and complete physical systems."""
 
-#====================================================================#
-#  physical_system.py                                                #
-#    Representations of matter, particles, and particles collected   #
-#    together in complete systems.                                   #
-#                                                                    #
-#  Content summary:                                                  #
-#    PhysicalSystem                                                  #
-#      Class representing electrons+ions for a simulation.           #
-#                                                                    #
-#    generate_physical_system                                        #
-#      User function to create arbitrary physical systems.           #
-#                                                                    #
-#    Matter                                                          #
-#      Base class for all forms of matter.                           #
-#      Class contains a list of all matter known to Nexus.           #
-#                                                                    #
-#    Particle                                                        #
-#      Class representing a particular particle species.             #
-#                                                                    #
-#    Ion, PseudoIon                                                  #
-#      Specialized Particle classes for ion species and ions         #
-#      represented by pseudopotentials.                              #
-#                                                                    #
-#    Particles                                                       #
-#      A collection of particles.                                    #
-#      PhysicalSystem objects contain a Particles instance.          #
-#                                                                    #
-#====================================================================#
-
+from __future__ import annotations
 import os
 from pathlib import Path
 from copy import deepcopy
+from typing import Self
 import numpy as np
-from .developer import DevBase, obj
-from .unit_converter import convert
-from .periodic_table import Elements
+from .developer import DevBase, obj, warn
+from .periodic_table import Elements, ElementLike
 from .structure import Structure, generate_structure, read_structure
 
 
-class Matter(DevBase):
-    particle_collection = None
+class Electrons:
+    """A collection of electrons.
 
-    @classmethod
-    def set_elements(cls,elements):
-        cls.elements = set(elements)
-    #end def set_elements
+    Attributes
+    ----------
+    count : int or float
+        The total number of electrons.
+    spin : int or float
+        The total spin of the electrons.
+    charge : int or float
+        The charge of the electrons, equal to ``-1 * self.count``.
+    multiplicity : int | float, read-only
+        The spin multiplicity of the electrons, equal to :math:`2S+1` where
+        :math:`S` is ``self.spin``.
+    """
 
-    @classmethod
-    def set_particle_collection(cls,pc):
-        cls.particle_collection = pc
-    #end def set_particle_collection
+    def __init__(
+        self,
+        count: int | float,
+        spin: int | float,
+    ):
+        if count % 2 != 0 and spin == 0:
+            warn("Electrons object created with odd number of electrons and zero spin!")
 
-    @classmethod
-    def new_particles(cls,*particles,**named_particles):
-        cls.particle_collection.add_particles(*particles,**named_particles)
-    #end def new_particles
+        self.count = count
+        self.spin = spin
 
-    def is_element(self,name,symbol=False):
-        if symbol:
-            is_elem, element = Elements.is_element(name, return_element=symbol)
-            return is_elem, element.symbol
+    @property
+    def charge(self) -> int | float:
+        """Total charge in atomic units. Equal to ``-1 * self.count``."""
+        return -1 * self.count
+
+    @property
+    def multiplicity(self) -> int | float:
+        """Defined as :math:`2S+1` where :math:`S` is ``self.spin``.
+
+        **Read-only**
+        """
+        return 2*self.spin + 1
+
+    @property
+    def n_up(self) -> int | float:
+        """The number of up-spin electrons."""
+        return (self.count / 2) + self.spin
+
+    @property
+    def n_down(self) -> int | float:
+        """The number of down-spin electrons."""
+        return (self.count / 2) - self.spin
+#end class Electrons
+
+
+class Ion:
+    """Class representing an ion.
+
+    Attributes
+    ----------
+    element : Elements
+        The element for this ion.
+    label : str
+        The label for the ion.
+    charge : int or float
+        The charge associated with the ion.
+    spin : int or float
+        The spin of the ion.
+    Zeff : int or None
+        The effective nuclear charge of the ion.
+    mass_number : int
+        The mass number of the ion.
+    name : str, read-only property
+        The name of the element.
+    symbol : str, read-only property
+        The atomic symbol of the element.
+    atomic_weight : float, read-only property
+        The atomic weight of the element
+    mass : float, read-only property
+        Alias for ``atomic_weight``.
+    atomic_number : int, property
+        The atomic number of the element. Changing this will change the element.
+    protons : int, property
+        Alias for ``atomic_number``.
+    neutrons : int, property
+        The number of neutrons. Calculated from ``mass_number``. Changing this
+        will change ``mass_number``.
+
+    Parameters
+    ----------
+    element : ElementLike
+        A member of the ``Elements`` enum, atomic symbol, or atomic number.
+    label : str, optional
+        The label for the ion. If not given, defaults to ``element.symbol``.
+    charge : int or float, default=0
+        The charge associated with the ion.
+    spin : int or float, default=0
+        The spin of the ion.
+    Zeff : int, optional
+        The effective nuclear charge of the ion.
+    mass_number : int, optional
+        The mass number of the ion. Defaults to the most abundant isotope.
+    
+    Examples
+    --------
+    The most basic creation for an ``Ion`` only needs an element. All other
+    attributes will be populated as necessary.
+    """
+
+    def __init__(
+        self,
+        element    : ElementLike,
+        label      : str | None  = None,
+        charge     : int | float = 0,
+        spin       : int | float = 0,
+        mass_number: int | None  = None,
+        Zeff       : int | None  = None,
+    ):
+        self.element = Elements(element)
+        self.label   = label if label is not None else self.element.symbol
+        self.charge  = charge
+        self.spin    = spin
+        self.Zeff    = Zeff
+        if mass_number is not None:
+            if mass_number not in self.element.isotopes.keys():
+                warn(
+                    f"Mass number {mass_number} is not in the known isotopes for element {self.element.symbol}!"
+                )
+            self.mass_number = mass_number
         else:
-            is_elem = Elements.is_element(name)
-            return is_elem
-    #end def is_element
-#end class Matter
+            self.mass_number = self.element.most_common_isotope()[0]
 
+    def is_pseudo(self) -> bool:
+        """Check if this ion is pseudized."""
+        return not (self.Zeff is None or self.Zeff == 0)
 
-class Particle(Matter):
-    def __init__(self,name=None,mass=None,charge=None,spin=None):
-        self.name   = name  
-        self.mass   = mass  
-        self.charge = charge
-        self.spin   = spin  
-    #end def __init__
+    def pseudize(self, Zeff: int):
+        self.Zeff = Zeff
 
-    def set_count(self,count):
-        self.count  = count 
-    #end def set_count
-#end class Particle
+    def is_ghost(self) -> bool:
+        return self.element is Elements.Unknown
 
+    @property
+    def name(self) -> str:
+        return self.element.name
 
-class Ion(Particle):
-    def __init__(self,name=None,mass=None,charge=None,spin=None,
-                 protons=None,neutrons=None):
-        Particle.__init__(self,name,mass,charge,spin)
-        self.protons  = protons
-        self.neutrons = neutrons
-    #end def __init__
+    @property
+    def symbol(self) -> str:
+        return self.element.symbol
 
-    def pseudize(self,valence):
-        ps = PseudoIon()
-        ps.transfer_from(self)
-        ps.charge = valence
-        ps.core_electrons    = ps.protons - valence
-        return ps
-    #end def pseudize
+    @property
+    def atomic_weight(self) -> float:
+        return self.element.atomic_weight
+
+    @property
+    def mass(self) -> float:
+        """Alias for ``atomic_weight``."""
+        return self.atomic_weight
+
+    @property
+    def atomic_number(self) -> int:
+        return self.element.atomic_number
+
+    @atomic_number.setter
+    def atomic_number(self, atomic_number: int) -> None:
+        if (at_num_int := int(atomic_number)) == atomic_number:
+            atomic_number = at_num_int
+        else:
+            raise ValueError(
+                f"The new atomic number must be an integer, but is {atomic_number}!"
+            )
+
+        self.element = Elements(atomic_number)
+
+    @property
+    def protons(self) -> int:
+        """Alias for ``self.atomic_number``."""
+        return self.element.atomic_number
+
+    @protons.setter
+    def protons(self, protons: int) -> None:
+        self.atomic_number = protons
+
+    @property
+    def neutrons(self) -> int:
+        return self.element.neutrons(self.mass_number)
+
+    @neutrons.setter
+    def neutrons(self, neutrons: int) -> None:
+        if (neutron_int := int(neutrons)) == neutrons:
+            self.mass_number = self.element.atomic_number + neutron_int
+        else:
+            raise ValueError(
+                f"The number of neutrons must be an integer, but is {neutrons}!"
+            )
+
+    def __str__(self) -> str:
+        return self.label
+
+    def __eq__(self, other: Self) -> bool:
+        return (
+            self.element is other.element
+            and self.charge      == other.charge
+            and self.spin        == other.spin
+            and self.mass_number == other.mass_number
+            and self.Zeff        == other.Zeff
+        )
 #end class Ion
 
 
-class PseudoIon(Ion):
-    def __init__(self,name=None,mass=None,charge=None,spin=None,
-                 protons=None,neutrons=None,core_electrons=None):
-        Ion.__init__(self,name,mass,charge,spin,protons,neutrons)
-        self.core_electrons    = core_electrons    
-    #end def __init__
-#end class PseudoIon
-
-
-class Particles(Matter):
+class Particles:
     def __init__(self,*particles,**named_particles):
         self.add_particles(*particles,**named_particles)
     #end def __init__
@@ -168,7 +278,7 @@ class Particles(Matter):
         #end for
     #end def rename
 
-    def get_ions(self):
+    def get_ions(self) -> obj:
         ions = obj()
         for name,particle in self.items():
             if self.is_element(name):
@@ -194,7 +304,7 @@ class Particles(Matter):
         #end if
     #end def count_ions
 
-    def get_electrons(self):
+    def get_electrons(self) -> obj:
         electrons = obj()
         for electron in ('up_electron','down_electron'):
             if electron in self:
@@ -227,62 +337,22 @@ class Particles(Matter):
     #end def electron_counts
 #end class Particles
 
-amu_me = convert(1.,'amu','me')
 
-plist = [
-    Particle('up_electron'  ,1.0,-1, 1),
-    Particle('down_electron',1.0,-1,-1),
-    ]
+class PhysicalSystem:
 
-for elem in Elements:
-    plist.append(
-        Ion(
-            name     = elem.symbol,
-            mass     = elem.atomic_weight * amu_me,
-            charge   = elem.atomic_number,
-            spin     = 0, # Don't have this data
-            protons  = elem.atomic_number,
-            neutrons = round(elem.atomic_weight-elem.atomic_number),
-        )
-    )
-#end for
-for elem in Elements:
-    for mass_number, rel_atomic_mass in elem.isotopes.items():
-        plist.append(
-            Ion(
-                name     = f"{elem.symbol}_{mass_number}",
-                mass     = rel_atomic_mass * amu_me,
-                charge   = elem.atomic_number,
-                spin     = 0, # Don't have this data
-                protons  = elem.atomic_number,
-                neutrons = round(rel_atomic_mass - elem.atomic_number),
-            )
-        )
-    #end for
-#end for
-
-Matter.set_elements([e.symbol for e in Elements])
-Matter.set_particle_collection(Particles(plist))
-
-del plist
-
-
-
-class PhysicalSystem(Matter):
-
-    def __init__(self,structure=None,net_charge=0,net_spin=0,particles=None,**valency):
+    def __init__(self,structure=None,net_charge=0,net_spin=0,**valency):
         self.pseudized = False
         if structure is None:
             self.structure = Structure()
         else:
             self.structure = structure
         #end if
-        if particles is None:
-            self.particles = Particles()
-        else:
-            self.particles = particles.copy()
+        # if particles is None:
+        #     self.particles = Particles()
+        # else:
+        #     self.particles = particles.copy()
         #end if
-
+        self.particles = Particles()
         self.folded_system = None
         if self.structure.has_folded():
             if self.structure.is_tiled():
@@ -316,7 +386,7 @@ class PhysicalSystem(Matter):
                 structure  = structure.folded_structure,
                 net_charge = net_charge_fold,
                 net_spin   = net_spin_fold,
-                particles  = particles,
+                # particles  = particles,
                 **valency
                 )
         #end if
@@ -339,6 +409,7 @@ class PhysicalSystem(Matter):
             pc[ion] = elem.count(ion)
         #end for
         missing = set(pc.keys())-set(self.particles.keys())
+        print(missing)
         if len(missing)>0 or len(elem)==0:
             if clear:
                 self.particles.clear()
@@ -798,7 +869,7 @@ def generate_physical_system(**kwargs):
 # test needed
 def ghost_atoms(*particles):
     for particle in particles:
-        Matter.particle_collection.add_particles(Ion(name=particle,mass=0,charge=0,spin=0,protons=0,neutrons=0))
+        ...
     #end for
 #end def ghost_atoms
 

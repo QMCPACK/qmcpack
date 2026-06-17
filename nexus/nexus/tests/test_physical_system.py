@@ -6,8 +6,9 @@ from ..generic import generic_settings
 generic_settings.raise_error = True
 
 import numpy as np
-from .. import testing
-from ..testing import value_eq,object_eq
+from ..testing import value_eq, object_eq
+from ..physical_system import Electrons, Ion, PhysicalSystem
+from ..periodic_table import Elements
 
 from .test_structure import structure_same
 
@@ -32,79 +33,146 @@ def system_same(s1,s2,pseudized=True,tiled=False):
 #end def system_same
 
 
-def test_particle_initialization():
-    from ..physical_system import Matter,Particle,Ion,PseudoIon,Particles
+def test_electrons():
+    ref_charge = -10
+    ref_multiplicity = 3
+    ref_n_up = 6
+    ref_n_down = 4
 
-    # empty initialization
-    Matter()
-    p = Particle()
-    i = Ion()
-    pi = PseudoIon()
-    Particles()
+    electrons = Electrons(count=10, spin=1)
 
-    def check_none(v,vfields):
-        for f in vfields:
-            assert(f in v)
-            assert(v[f] is None)
-        #end for
-    #end def check_none
+    assert(electrons.charge       == ref_charge)
+    assert(electrons.multiplicity == ref_multiplicity)
+    assert(electrons.n_up         == ref_n_up)
+    assert(electrons.n_down       == ref_n_down)
 
-    pfields  = 'name mass charge spin'.split()
-    ifields  = pfields + 'protons neutrons'.split()
-    pifields = ifields+['core_electrons']
+    ref_charge = -35
+    ref_multiplicity = 2
+    ref_n_up = 18
+    ref_n_down = 17
 
-    check_none(p,pfields)
-    check_none(i,ifields)
-    check_none(pi,pifields)
+    electrons = Electrons(count=35, spin=0.5)
 
-    # matter
-    elements = Matter.elements
-    assert(len(elements)==119)
-    assert('Si' in elements)
+    assert(electrons.charge       == ref_charge)
+    assert(electrons.multiplicity == ref_multiplicity)
+    assert(electrons.n_up         == ref_n_up)
+    assert(electrons.n_down       == ref_n_down)
 
-    pc = Matter.particle_collection
-    for e in elements:
-        assert(e in pc)
-    #end for
-    assert('up_electron' in pc)
-    assert('down_electron' in pc)
 
-    u = pc.up_electron
-    assert(u.name=='up_electron')
-    assert(value_eq(u.mass,1.0))
-    assert(u.charge==-1)
-    assert(u.spin==1)
+def test_custom_ion():
+    ion = Ion(
+        element     = Elements.Iron,
+        label       = "Fe1",
+        charge      = 2,
+        spin        = 1,
+        mass_number = 54,
+        Zeff        = 16,
+    )
 
-    d = pc.down_electron
-    assert(d.name=='down_electron')
-    assert(value_eq(d.mass,1.0))
-    assert(d.charge==-1)
-    assert(d.spin==-1)
-    
-    si = pc.Si
-    assert(si.name=='Si')
-    print(si.mass)
-    assert(value_eq(si.mass,51195.82309476658))
-    assert(si.charge==14)
-    assert(si.protons==14)
-    assert(si.neutrons==14)
+    assert(ion.element       is Elements.Iron)
+    assert(ion.label         == "Fe1")
+    assert(ion.charge        == 2)
+    assert(ion.spin          == 1)
+    assert(ion.mass_number   == 54)
+    assert(ion.Zeff          == 16)
+    assert(ion.is_pseudo()   is True)
+    assert(ion.is_ghost()    is False)
+    assert(ion.name          == "Iron")
+    assert(ion.symbol        == "Fe")
+    assert(ion.atomic_weight == 55.845)
+    assert(ion.mass          == 55.845)
+    assert(ion.atomic_number == 26)
+    assert(ion.protons       == 26)
+    assert(ion.neutrons      == 28)
 
-    # test get_particle
-    assert(object_eq(pc.get_particle('Si'),si))
-    si1 = si.copy()
-    si1.name = 'Si1'
-    assert(object_eq(pc.get_particle('Si1'),si1))
 
-#end def test_particle_initialization
+def test_minimal_ion():
+    """Test to make sure the defaults are populated correctly."""
+    ion = Ion("Fe")
+
+    assert(ion.element       is Elements.Iron)
+    assert(ion.label         == "Fe")
+    assert(ion.charge        == 0)
+    assert(ion.spin          == 0)
+    assert(ion.mass_number   == 56)
+    assert(ion.Zeff          is None)
+    assert(ion.is_pseudo()   is False)
+    assert(ion.is_ghost()    is False)
+    assert(ion.name          == Elements.Iron.name)
+    assert(ion.symbol        == Elements.Iron.symbol)
+    assert(ion.atomic_weight == Elements.Iron.atomic_weight)
+    assert(ion.mass          == Elements.Iron.atomic_weight)
+    assert(ion.atomic_number == Elements.Iron.atomic_number)
+    assert(ion.protons       == Elements.Iron.atomic_number)
+    assert(ion.neutrons      == Elements.Iron.neutrons())
+
+
+def test_ion_setters():
+    """Test to make sure the setters for the ``Ion`` class work.
+
+    This test also checks to make sure there are no side-effects from the
+    setters. This means we check every property after each setter is used.
+    """
+    ion = Ion(
+        element     = Elements.Iron,
+        mass_number = 54,
+    )
+    # Mass number is set to 54 so we can use Chromium's isotopes without a warning
+
+    assert(ion.element       is Elements.Iron)
+    assert(ion.label         == "Fe")
+    assert(ion.charge        == 0)
+    assert(ion.spin          == 0)
+    assert(ion.mass_number   == 54)
+    assert(ion.Zeff          is None)
+    assert(ion.is_pseudo()   is False)
+    assert(ion.is_ghost()    is False)
+    assert(ion.name          == Elements.Iron.name)
+    assert(ion.symbol        == Elements.Iron.symbol)
+    assert(ion.atomic_weight == Elements.Iron.atomic_weight)
+    assert(ion.atomic_number == Elements.Iron.atomic_number)
+    assert(ion.neutrons      == Elements.Iron.neutrons(mass_number=54))
+
+    ref_element = Elements.Chromium
+    ion.atomic_number = 24
+
+    assert(ion.element       is ref_element)
+    assert(ion.label         == "Fe") # We don't want to change custom labels
+    assert(ion.charge        == 0)
+    assert(ion.spin          == 0)
+    assert(ion.mass_number   == 54) # The mass number also shouldn't get changed
+    assert(ion.Zeff          is None)
+    assert(ion.is_pseudo()   is False)
+    assert(ion.is_ghost()    is False)
+    assert(ion.name          == ref_element.name)
+    assert(ion.symbol        == ref_element.symbol)
+    assert(ion.atomic_weight == ref_element.atomic_weight)
+    assert(ion.atomic_number == ref_element.atomic_number)
+    assert(ion.neutrons      == ref_element.neutrons(mass_number=54))
+
+    new_mass_number = 52
+    ion.neutrons = 28
+
+    assert(ion.element       is ref_element)
+    assert(ion.label         == "Fe")
+    assert(ion.charge        == 0)
+    assert(ion.spin          == 0)
+    assert(ion.mass_number   == new_mass_number)
+    assert(ion.Zeff          is None)
+    assert(ion.is_pseudo()   is False)
+    assert(ion.is_ghost()    is False)
+    assert(ion.name          == ref_element.name)
+    assert(ion.symbol        == ref_element.symbol)
+    assert(ion.atomic_weight == ref_element.atomic_weight)
+    assert(ion.atomic_number == ref_element.atomic_number)
+    assert(ion.neutrons      == ref_element.neutrons(mass_number=new_mass_number))
 
 
 
 def test_physical_system_initialization(tmp_path):
-    import os
     from ..developer import obj
     from ..structure import generate_structure
     from ..physical_system import generate_physical_system
-    from ..physical_system import PhysicalSystem
 
     d2 = generate_structure(
         structure = 'diamond',
