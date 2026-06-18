@@ -66,8 +66,8 @@ class FullObsHandler : public AFQMCInfo
   using stdCVector_ref = boost::multi::array_ref<ComplexType, 1>;
 
   using shm_stack_alloc_type = LocalTGBufferManager::template allocator_t<ComplexType>;
-  using StaticSHMVector      = boost::multi::static_array<ComplexType, 1, shm_stack_alloc_type>;
-  using StaticSHM4Tensor     = boost::multi::static_array<ComplexType, 4, shm_stack_alloc_type>;
+  using StaticSHMVector      = boost::multi::dynamic_array<ComplexType, 1, shm_stack_alloc_type>;
+  using StaticSHM4Tensor     = boost::multi::dynamic_array<ComplexType, 4, shm_stack_alloc_type>;
 
 public:
   FullObsHandler(afqmc::TaskGroup_& tg_,
@@ -206,7 +206,7 @@ public:
 
     if (G4D_host.num_elements() != G4D.num_elements())
     {
-      G4D_host = mpi3C4Tensor(G4D.extensions(), shared_allocator<ComplexType>{TG.TG_local()});
+      G4D_host = mpi3C4Tensor(G4D.extents(), shared_allocator<ComplexType>{TG.TG_local()});
       TG.TG_local().barrier();
     }
 

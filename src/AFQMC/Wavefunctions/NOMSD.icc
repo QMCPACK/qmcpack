@@ -357,11 +357,11 @@ void NOMSD<devPsiT>::MixedDensityMatrix_for_E_from_SM(const MatSM& SM,
 
   if (transposed_G_for_E_)
   {
-    assert((G.extensions() == boost::multi::extensions_t<2>{nw, static_cast<boost::multi::size_t>(dm_size(false))}));
+    assert((G.extents() == boost::multi::extensions_t<2>{nw, static_cast<boost::multi::ssize_t>(dm_size(false))}));
   }
   else
   {
-    assert((G.extensions() == boost::multi::extensions_t<2>{static_cast<boost::multi::size_t>(dm_size(false)), nw}));
+    assert((G.extents() == boost::multi::extensions_t<2>{static_cast<boost::multi::ssize_t>(dm_size(false)), nw}));
   }
   assert(Ov.size() >= nw);
 
@@ -391,7 +391,7 @@ void NOMSD<devPsiT>::MixedDensityMatrix_for_E_from_SM(const MatSM& SM,
       if (transposed_G_for_E_)
         G[iw] = G1D_;
       else
-        G(G.extension(), iw) = G1D_;
+        G(G.extent(), iw) = G1D_;
     }
   }
   else
@@ -466,13 +466,13 @@ void NOMSD<devPsiT>::DensityMatrix_shared(const WlkSet& wset,
   assert(Ov.stride() == 1);
   if (transposed)
   {
-    assert((G.extensions() ==
-            boost::multi::extensions_t<2>{wset.size(), static_cast<boost::multi::size_t>(dm_size(not compact))}));
+    assert((G.extents() ==
+            boost::multi::extensions_t<2>{wset.size(), static_cast<boost::multi::ssize_t>(dm_size(not compact))}));
   }
   else
   {
-    assert((G.extensions() ==
-            boost::multi::extensions_t<2>{static_cast<boost::multi::size_t>(dm_size(not compact)), wset.size()}));
+    assert((G.extents() ==
+            boost::multi::extensions_t<2>{static_cast<boost::multi::ssize_t>(dm_size(not compact)), wset.size()}));
   }
   const int nw = wset.size();
   assert(Ov.size() >= nw);
@@ -516,7 +516,7 @@ void NOMSD<devPsiT>::DensityMatrix_shared(const WlkSet& wset,
       }
       else
       {
-        G(G.extension(), iw) = G1D_;
+        G(G.extent(), iw) = G1D_;
       }
     }
   }
@@ -612,13 +612,13 @@ void NOMSD<devPsiT>::DensityMatrix_batched(const WlkSet& wset,
 
   if (transposed)
   {
-    assert((G.extensions() ==
-            boost::multi::extensions_t<2>{wset.size(), static_cast<boost::multi::size_t>(dm_size(not compact))}));
+    assert((G.extents() ==
+            boost::multi::extensions_t<2>{wset.size(), static_cast<boost::multi::ssize_t>(dm_size(not compact))}));
   }
   else
   {
-    assert((G.extensions() ==
-            boost::multi::extensions_t<2>{static_cast<boost::multi::size_t>(dm_size(not compact)), wset.size()}));
+    assert((G.extents() ==
+            boost::multi::extensions_t<2>{static_cast<boost::multi::ssize_t>(dm_size(not compact)), wset.size()}));
   }
 
   const int nw = wset.size();
@@ -689,7 +689,7 @@ void NOMSD<devPsiT>::DensityMatrix_batched(const WlkSet& wset,
         }
         else
         {
-          ma::copy(G2D_[ib], G(G.extension(0), iw + ib));
+          ma::copy(G2D_[ib], G(G.extent(), iw + ib));
         }
         Ov[iw + ib] = ov;
       }
@@ -878,13 +878,13 @@ void NOMSD<devPsiT>::MixedDensityMatrix_shared(const WlkSet& wset, MatG&& G, TVe
   assert(Ov.stride() == 1);
   if (transpose)
   {
-    assert((G.extensions() ==
-            boost::multi::extensions_t<2>{wset.size(), static_cast<boost::multi::size_t>(dm_size(not compact))}));
+    assert((G.extents() ==
+            boost::multi::extensions_t<2>{wset.size(), static_cast<boost::multi::ssize_t>(dm_size(not compact))}));
   }
   else
   {
-    assert((G.extensions() ==
-            boost::multi::extensions_t<2>{static_cast<boost::multi::size_t>(dm_size(not compact)), wset.size()}));
+    assert((G.extents() ==
+            boost::multi::extensions_t<2>{static_cast<boost::multi::ssize_t>(dm_size(not compact)), wset.size()}));
   }
   const int nw   = wset.size();
   const int ndet = ci.size();
@@ -935,7 +935,7 @@ void NOMSD<devPsiT>::MixedDensityMatrix_shared(const WlkSet& wset, MatG&& G, TVe
       else
       {
         std::lock_guard<shared_mutex> guard(*mutex);
-        ma::axpy(ov, G1D_, G(G.extension(0), iw));
+        ma::axpy(ov, G1D_, G(G.extent(), iw));
       }
       Ov[iw] += ov;
     }
@@ -986,7 +986,7 @@ void NOMSD<devPsiT>::MixedDensityMatrix_shared(const WlkSet& wset, MatG&& G, TVe
           else
           {
             std::lock_guard<shared_mutex> guard(*mutex);
-            ma::axpy(ov, G1D_2, G(G.extension(0), iw));
+            ma::axpy(ov, G1D_2, G(G.extent(), iw));
           }
           Ov[iw] += ov;
         }
@@ -1148,13 +1148,13 @@ void NOMSD<devPsiT>::MixedDensityMatrix_batched(const WlkSet& wset, MatG&& G, TV
   assert(Ov.stride() == 1);
   if (transpose)
   {
-    assert((G.extensions() ==
-            boost::multi::extensions_t<2>{wset.size(), static_cast<boost::multi::size_t>(dm_size(not compact))}));
+    assert((G.extents() ==
+            boost::multi::extensions_t<2>{wset.size(), static_cast<boost::multi::ssize_t>(dm_size(not compact))}));
   }
   else
   {
-    assert((G.extensions() ==
-            boost::multi::extensions_t<2>{static_cast<boost::multi::size_t>(dm_size(not compact)), wset.size()}));
+    assert((G.extents() ==
+            boost::multi::extensions_t<2>{static_cast<boost::multi::ssize_t>(dm_size(not compact)), wset.size()}));
   }
   const int nw   = wset.size();
   const int ndet = ci.size();
@@ -2028,7 +2028,7 @@ void NOMSD<devPsiT>::WalkerAveragedDensityMatrix_batched(const WlkSet& wset,
             if(transpose) {
               ma::axpy(ov,G2D_[ib],G[iw+ib]);   
             } else {
-              ma::axpy(ov,G2D_[ib],G(G.extension(0),iw+ib));   
+              ma::axpy(ov,G2D_[ib],G(G.extent(),iw+ib));   
             } 
             Ov[iw+ib] += ov;
           }
@@ -2259,44 +2259,44 @@ void NOMSD<devPsiT>::OrthogonalizeExcited(Mat&& A, SpinTypes spin, double LogOve
   {
     if (extendedMatAlpha.size() != NMO || get<1>(extendedMatAlpha.sizes()) != maxOccupExtendedMat.first)
       extendedMatAlpha.reextent({NMO, maxOccupExtendedMat.first});
-    extendedMatAlpha(extendedMatAlpha.extension(0), {0, NAEA}) = A;
-    extendedMatAlpha(extendedMatAlpha.extension(0), {NAEA + 1, maxOccupExtendedMat.first}) =
-        excitedOrbMat[0](excitedOrbMat.extension(1), {NAEA + 1, maxOccupExtendedMat.first});
+    extendedMatAlpha(extendedMatAlpha.extent(), {0, NAEA}) = A;
+    extendedMatAlpha(extendedMatAlpha.extent(), {NAEA + 1, maxOccupExtendedMat.first}) =
+        excitedOrbMat[0](get<1>(excitedOrbMat.extents()), {NAEA + 1, maxOccupExtendedMat.first});
     // move i->a, copy trial orb i
     for (auto& i : excitations)
       if (i.first < NMO && i.second < NMO)
       {
-        extendedMatAlpha(extendedMatAlpha.extension(0), i.second) =
-            extendedMatAlpha(extendedMatAlpha.extension(0), i.first);
-        extendedMatAlpha(extendedMatAlpha.extension(0), i.first) =
-            excitedOrbMat[0](excitedOrbMat.extension(1), i.first);
+        extendedMatAlpha(extendedMatAlpha.extent(), i.second) =
+            extendedMatAlpha(extendedMatAlpha.extent(), i.first);
+        extendedMatAlpha(extendedMatAlpha.extent(), i.first) =
+            excitedOrbMat[0](get<1>(excitedOrbMat.extents()), i.first);
       }
     ComplexType detR             = SDetOp.Orthogonalize(extendedMatAlpha, LogOverlapFactor);
-    A(A.extension(0), {0, NAEA}) = extendedMatAlpha(extendedMatAlpha.extension(0), {0, NAEA});
+    A(A.extent(), {0, NAEA}) = extendedMatAlpha(extendedMatAlpha.extent(), {0, NAEA});
     for (auto& i : excitations)
       if (i.first < NMO && i.second < NMO)
-        A(A.extension(0), i.first) = extendedMatAlpha(extendedMatAlpha.extension(0), i.second);
+        A(A.extent(), i.first) = extendedMatAlpha(extendedMatAlpha.extent(), i.second);
   }
   else
   {
     if (extendedMatBeta.size() != NMO || get<1>(extendedMatBeta.sizes()) != maxOccupExtendedMat.second)
       extendedMatBeta.reextent({NMO, maxOccupExtendedMat.second});
-    extendedMatBeta(extendedMatBeta.extension(0), {0, NAEB}) = A;
-    extendedMatBeta(extendedMatBeta.extension(0), {NAEB + 1, maxOccupExtendedMat.second}) =
-        excitedOrbMat[1](excitedOrbMat.extension(1), {NAEB + 1, maxOccupExtendedMat.second});
+    extendedMatBeta(extendedMatBeta.extent(), {0, NAEB}) = A;
+    extendedMatBeta(extendedMatBeta.extent(), {NAEB + 1, maxOccupExtendedMat.second}) =
+        excitedOrbMat[1](get<1>(excitedOrbMat.extents()), {NAEB + 1, maxOccupExtendedMat.second});
     // move i->a, copy trial orb i
     for (auto& i : excitations)
       if (i.first >= NMO && i.second >= NMO)
       {
-        extendedMatBeta(extendedMatBeta.extension(0), i.second) =
-            extendedMatBeta(extendedMatBeta.extension(0), i.first);
-        extendedMatBeta(extendedMatBeta.extension(0), i.first) = excitedOrbMat[1](excitedOrbMat.extension(1), i.first);
+        extendedMatBeta(extendedMatBeta.extent(), i.second) =
+            extendedMatBeta(extendedMatBeta.extent(), i.first);
+        extendedMatBeta(extendedMatBeta.extent(), i.first) = excitedOrbMat[1](get<1>(excitedOrbMat.extents()), i.first);
       }
     ComplexType detR             = SDetOp.Orthogonalize(extendedMatBeta, LogOverlapFactor);
-    A(A.extension(0), {0, NAEB}) = extendedMatBeta(extendedMatBeta.extension(0), {0, NAEB});
+    A(A.extent(), {0, NAEB}) = extendedMatBeta(extendedMatBeta.extent(), {0, NAEB});
     for (auto& i : excitations)
       if (i.first >= NMO && i.second >= NMO)
-        A(A.extension(0), i.first) = extendedMatBeta(extendedMatBeta.extension(0), i.second);
+        A(A.extent(), i.first) = extendedMatBeta(extendedMatBeta.extent(), i.second);
   }
 }
 

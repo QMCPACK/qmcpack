@@ -79,7 +79,7 @@ inline void write_distributed_MA(MultiArray& A,
       // write local piece
       {
         using Mat_ref = boost::multi::array_ref<value_type, 2>;
-        Mat_ref A_(to_address(A.origin()), A.extensions());
+        Mat_ref A_(to_address(A.origin()), A.extents());
         hyperslab_proxy<Mat_ref, 2> slab(A_, gdim, std::array<size_t, 2>{size_t(get<0>(A.sizes())), size_t(get<1>(A.sizes()))}, offset);
         dump.write(slab, name);
       }

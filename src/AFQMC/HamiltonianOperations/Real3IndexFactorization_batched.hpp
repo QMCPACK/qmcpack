@@ -283,7 +283,7 @@ public:
     if (addH1)
     {
       CVector_ref haj_ref(make_device_ptr(haj[nd].origin()), iextensions<1u>{haj[nd].num_elements()});
-      ma::product(ComplexType(1.), Gc, haj_ref, ComplexType(1.), E(E.extension(0), 0));
+      ma::product(ComplexType(1.), Gc, haj_ref, ComplexType(1.), E(E.extent(), 0));
       for (int i = 0; i < nwalk; i++)
         E[i][0] += E0;
     }
@@ -393,8 +393,8 @@ public:
 #if defined(MIXED_PRECISION)
     size_t mem_needs = X.num_elements() + v.num_elements();
     set_buffer(mem_needs);
-    SpCVector_ref vsp(TBuff.origin(), v.extensions());
-    SpCVector_ref Xsp(vsp.origin() + vsp.num_elements(), X.extensions());
+    SpCVector_ref vsp(TBuff.origin(), v.extents());
+    SpCVector_ref Xsp(vsp.origin() + vsp.num_elements(), X.extents());
     copy_n_cast(make_device_ptr(X.origin()), X.num_elements(), Xsp.origin());
     ma::product(SPValueType(a), Likn, Xsp, SPValueType(c), vsp);
     copy_n_cast(vsp.origin(), vsp.num_elements(), make_device_ptr(v.origin()));
@@ -415,8 +415,8 @@ public:
 #if defined(MIXED_PRECISION)
     size_t mem_needs = X.num_elements() + v.num_elements();
     set_buffer(mem_needs);
-    SpCMatrix_ref vsp(TBuff.origin(), v.extensions());
-    SpCMatrix_ref Xsp(vsp.origin() + vsp.num_elements(), X.extensions());
+    SpCMatrix_ref vsp(TBuff.origin(), v.extents());
+    SpCMatrix_ref Xsp(vsp.origin() + vsp.num_elements(), X.extents());
     copy_n_cast(make_device_ptr(X.origin()), X.num_elements(), Xsp.origin());
     ma::product(SPValueType(a), Likn, Xsp, SPValueType(c), vsp);
     copy_n_cast(vsp.origin(), vsp.num_elements(), make_device_ptr(v.origin()));
@@ -440,8 +440,8 @@ public:
 #if defined(MIXED_PRECISION)
       size_t mem_needs = G.num_elements() + v.num_elements();
       set_buffer(mem_needs);
-      SpCVector_ref vsp(TBuff.origin(), v.extensions());
-      SpCVector_ref Gsp(vsp.origin() + vsp.num_elements(), G.extensions());
+      SpCVector_ref vsp(TBuff.origin(), v.extents());
+      SpCVector_ref Gsp(vsp.origin() + vsp.num_elements(), G.extents());
       copy_n_cast(make_device_ptr(G.origin()), G.num_elements(), Gsp.origin());
       if (walker_type == CLOSED)
         a *= 2.0;
@@ -462,8 +462,8 @@ public:
 #if defined(MIXED_PRECISION)
       size_t mem_needs = G.num_elements() + v.num_elements();
       set_buffer(mem_needs);
-      SpCVector_ref vsp(TBuff.origin(), v.extensions());
-      SpCVector_ref Gsp(vsp.origin() + vsp.num_elements(), G.extensions());
+      SpCVector_ref vsp(TBuff.origin(), v.extents());
+      SpCVector_ref Gsp(vsp.origin() + vsp.num_elements(), G.extents());
       copy_n_cast(make_device_ptr(G.origin()), G.num_elements(), Gsp.origin());
       if (walker_type == CLOSED)
         a *= 2.0;
@@ -493,8 +493,8 @@ public:
 #if defined(MIXED_PRECISION)
       size_t mem_needs = G.num_elements() + v.num_elements();
       set_buffer(mem_needs);
-      SpCMatrix_ref vsp(TBuff.origin(), v.extensions());
-      SpCMatrix_ref Gsp(vsp.origin() + vsp.num_elements(), G.extensions());
+      SpCMatrix_ref vsp(TBuff.origin(), v.extents());
+      SpCMatrix_ref Gsp(vsp.origin() + vsp.num_elements(), G.extents());
       copy_n_cast(make_device_ptr(G.origin()), G.num_elements(), Gsp.origin());
       if (walker_type == CLOSED)
         a *= 2.0;
@@ -516,8 +516,8 @@ public:
 #if defined(MIXED_PRECISION)
       size_t mem_needs = G.num_elements() + v.num_elements();
       set_buffer(mem_needs);
-      SpCMatrix_ref vsp(TBuff.origin(), v.extensions());
-      SpCMatrix_ref Gsp(vsp.origin() + vsp.num_elements(), G.extensions());
+      SpCMatrix_ref vsp(TBuff.origin(), v.extents());
+      SpCMatrix_ref Gsp(vsp.origin() + vsp.num_elements(), G.extents());
       copy_n_cast(make_device_ptr(G.origin()), G.num_elements(), Gsp.origin());
       if (walker_type == CLOSED)
         a *= 2.0;

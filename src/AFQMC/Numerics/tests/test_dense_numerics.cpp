@@ -455,7 +455,7 @@ void test_dense_mat_mul_device(Allocator& alloc)
     copy_n(m.data(), m.size(), M.origin());
     REQUIRE(M.num_elements() == m.size());
 
-    array_ref<T, 2, typename Allocator::pointer> Mref(M.origin(), M.extensions());
+    array_ref<T, 2, typename Allocator::pointer> Mref(M.origin(), M.extents());
     // not yet implemented in GPU
     //    REQUIRE( ma::is_hermitian(Mref) );
   }

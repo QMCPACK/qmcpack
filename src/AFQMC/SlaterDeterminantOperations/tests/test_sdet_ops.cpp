@@ -74,6 +74,7 @@ using namespace afqmc;
 /*
 TEST_CASE("SDetOps_double_serial", "[sdet_ops]")
 {
+  using std::get;
   Communicate *c;
   //c = OHMMS::Controller;
 
@@ -129,8 +130,8 @@ TEST_CASE("SDetOps_double_serial", "[sdet_ops]")
   CHECK(SDet.Overlap(Aref,Bref) == Approx(ov));
 
   // Test array_view
-  CHECK(SDet.Overlap(A(A.extension(0),A.extension(1)),B) == Approx(ov));
-  CHECK(SDet.Overlap(A,B(B.extension(0),B.extension(1))) == Approx(ov));
+  CHECK(SDet.Overlap(A(A.extent(),get<1>(A.extents())),B) == Approx(ov));
+  CHECK(SDet.Overlap(A,B(B.extent(),get<1>(B.extents()))) == Approx(ov));
 
   array A_ = A({0,2},{0,3});
   array B_ = B({0,3},{0,2});
@@ -216,6 +217,7 @@ TEST_CASE("SDetOps_double_serial", "[sdet_ops]")
 
 TEST_CASE("SDetOps_double_mpi3", "[sdet_ops]")
 {
+  using std::get;
 
   Communicate *c = OHMMS::Controller;
 
@@ -274,8 +276,8 @@ TEST_CASE("SDetOps_double_mpi3", "[sdet_ops]")
   CHECK(SDet.Overlap(Aref,Bref,node) == Approx(ov));
 
   // Test array_view
-  CHECK(SDet.Overlap(A(A.extension(0),A.extension(1)),B,node) == Approx(ov));
-  CHECK(SDet.Overlap(A,B(B.extension(0),B.extension(1)),node) == Approx(ov));
+  CHECK(SDet.Overlap(A(A.extent(),get<1>(A.extents())),B,node) == Approx(ov));
+  CHECK(SDet.Overlap(A,B(B.extent(),get<1>(B.extents())),node) == Approx(ov));
 
   array A_ = A({0,2},{0,3});
   array B_ = B({0,3},{0,2});
@@ -383,6 +385,7 @@ TEST_CASE("SDetOps_double_mpi3", "[sdet_ops]")
 template<class Allocator, class BufferManager>
 void SDetOps_complex_serial(Allocator alloc, BufferManager b)
 {
+  using std::get;
   static_assert(std::is_same<typename Allocator::value_type, ComplexType>::value, "Incorrect type.\n");
 
   const int NMO = 4;
@@ -434,9 +437,9 @@ void SDetOps_complex_serial(Allocator alloc, BufferManager b)
   //SECTION("array_view")
   {
     Type ov_;
-    ov_ = SDet.Overlap(A(A.extension(0), A.extension(1)), B, 0.0);
+    ov_ = SDet.Overlap(A(A.extent(), get<1>(A.extents())), B, 0.0);
     myCHECK(ov_, ov);
-    ov_ = SDet.Overlap(A, B(B.extension(0), B.extension(1)), 0.0);
+    ov_ = SDet.Overlap(A, B(B.extent(), get<1>(B.extents())), 0.0);
     myCHECK(ov_, ov);
   }
 
@@ -691,9 +694,9 @@ TEST_CASE("SDetOps_complex_mpi3", "[sdet_ops]")
   myCHECK(ov_, ov);
 
   // Test array_view
-  ov_ = SDet.Overlap(A(A.extension(0), A.extension(1)), B, 0.0, node);
+  ov_ = SDet.Overlap(A(A.extent(), get<1>(A.extents())), B, 0.0, node);
   myCHECK(ov_, ov);
-  ov_ = SDet.Overlap(A, B(B.extension(0), B.extension(1)), 0.0, node);
+  ov_ = SDet.Overlap(A, B(B.extent(), get<1>(B.extents())), 0.0, node);
   myCHECK(ov_, ov);
 
   array A_ = A({0, 2}, {0, 3});
@@ -867,9 +870,9 @@ TEST_CASE("SDetOps_complex_csr", "[sdet_ops]")
   myCHECK(ov_, ov);
 
   // Test array_view
-  ov_ = SDet.Overlap(Acsr, B(B.extension(0), B.extension(1)), 0.0, node);
+  ov_ = SDet.Overlap(Acsr, B(B.extent(), get<1>(B.extents())), 0.0, node);
   myCHECK(ov_, ov);
-  ov_ = SDet.Overlap(Acsr, B(B.extension(0), B.extension(1)), 0.0);
+  ov_ = SDet.Overlap(Acsr, B(B.extent(), get<1>(B.extents())), 0.0);
   myCHECK(ov_, ov);
 
   shared_communicator node_ = node.split(node.rank() % 2, node.rank());

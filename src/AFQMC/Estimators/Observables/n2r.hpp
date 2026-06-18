@@ -216,7 +216,7 @@ public:
     assert(Xw.size() == nw);
     assert(ovlp.size() >= nw);
     assert(G.num_elements() == G_host.num_elements());
-    assert(G.extensions() == G_host.extensions());
+    assert(G.extents() == G_host.extents());
 
     int nsp;
     if (walker_type == CLOSED)
@@ -268,8 +268,8 @@ public:
       if (TG.TG_local().root())
         denom[iw] += Xw[iw];
       auto&& Gu = G[iw][0];
-      auto&& Orb0N(Orbitals(Orbitals.extension(0), {i0, iN}));
-      auto&& T0N(T(T.extension(0), {i0, iN}));
+      auto&& Orb0N(Orbitals(Orbitals.extent(), {i0, iN}));
+      auto&& T0N(T(T.extent(), {i0, iN}));
       ma::product(Gu, Orb0N, T0N);
       using ma::batched_dot;
       batched_dot('H', 'T', (iN - i0), NMO, ComplexType(1.0), ma::pointer_dispatch(Orb0N.origin()), Orb0N.stride(0),

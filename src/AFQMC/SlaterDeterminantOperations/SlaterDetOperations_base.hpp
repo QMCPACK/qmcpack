@@ -39,10 +39,10 @@ public:
   using buffer_type_R = typename BufferManager::template allocator_t<R>;
   using buffer_type_T = typename BufferManager::template allocator_t<T>;
 
-  using IVector = boost::multi::static_array<int, 1, buffer_type_I>;
-  using RVector = boost::multi::static_array<R, 1, buffer_type_R>;
-  using TVector = boost::multi::static_array<T, 1, buffer_type_T>;
-  using TMatrix = boost::multi::static_array<T, 2, buffer_type_T>;
+  using IVector = boost::multi::dynamic_array<int, 1, buffer_type_I>;
+  using RVector = boost::multi::dynamic_array<R, 1, buffer_type_R>;
+  using TVector = boost::multi::dynamic_array<T, 1, buffer_type_T>;
+  using TMatrix = boost::multi::dynamic_array<T, 2, buffer_type_T>;
 
   SlaterDetOperations_base(BufferManager b) : buffer_manager(b) {}
 

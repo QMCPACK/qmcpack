@@ -82,7 +82,7 @@ Propagator PropagatorFactory::buildAFQMCPropagator(TaskGroup_& TG,
     }
   }
 
-  boost::multi::array<ComplexType, 1> vMF_(vMF.extensions());
+  boost::multi::array<ComplexType, 1> vMF_(vMF.extents());
   using std::copy_n;
   copy_n(vMF.origin(), vMF.num_elements(), vMF_.origin());
   RealType vmax = 0, v_ = 0;

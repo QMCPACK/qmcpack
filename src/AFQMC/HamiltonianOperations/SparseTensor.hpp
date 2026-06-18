@@ -213,7 +213,7 @@ public:
 #if defined(MIXED_PRECISION)
     size_t mem_needs = Gc.num_elements();
     set_buffer(mem_needs);
-    boost::multi::array_ref<SPComplexType, 2> Gsp(to_address(SM_TMats.origin()), Gc.extensions());
+    boost::multi::array_ref<SPComplexType, 2> Gsp(to_address(SM_TMats.origin()), Gc.extents());
     size_t i0, iN;
     std::tie(i0, iN) = FairDivideBoundary(size_t(comm->rank()), size_t(Gc.num_elements()), size_t(comm->size()));
     copy_n_cast(to_address(Gc.origin()) + i0, iN - i0, to_address(Gsp.origin()) + i0);
@@ -227,7 +227,7 @@ public:
     {
       boost::multi::array_cref<ComplexType, 1> haj_ref(to_address(haj[k].origin()),
                                                        iextensions<1u>{haj[k].num_elements()});
-      ma::product(ComplexType(1.), ma::T(Gc), haj_ref, ComplexType(1.), E(E.extension(0), 0));
+      ma::product(ComplexType(1.), ma::T(Gc), haj_ref, ComplexType(1.), E(E.extent(), 0));
       for (int i = 0; i < nwalk; i++)
         E[i][0] += E0;
     }
@@ -256,7 +256,7 @@ public:
       {
         for (int wi = 0; wi < get<1>(Gc.sizes()); wi++)
         {
-          auto _v_ = v_(v_.extension(0), wi);
+          auto _v_ = v_(v_.extent(), wi);
           if (getKl)
           {
             auto Kli = (*Kl)[wi];
@@ -272,7 +272,7 @@ public:
         }
       }
       for (int wi = 0; wi < get<1>(Gc.sizes()); wi++)
-        E[wi][2] = 0.5 * scl * static_cast<ComplexType>(ma::dot(v_(v_.extension(0), wi), v_(v_.extension(0), wi)));
+        E[wi][2] = 0.5 * scl * static_cast<ComplexType>(ma::dot(v_(v_.extent(), wi), v_(v_.extent(), wi)));
     }
 #if defined(MIXED_PRECISION)
 #endif
@@ -347,8 +347,8 @@ public:
         copy_n_cast(to_address(v.origin()) + i0, iN - i0, vptr + i0);
     }
     // setup array references
-    boost::multi::array_cref<SPComplexType, 2> Xsp(Xptr, X.extensions());
-    boost::multi::array_ref<SPComplexType, 2> vsp(vptr, v.extensions());
+    boost::multi::array_cref<SPComplexType, 2> Xsp(Xptr, X.extents());
+    boost::multi::array_ref<SPComplexType, 2> vsp(vptr, v.extents());
     comm->barrier();
 
     using std::get;
@@ -433,8 +433,8 @@ public:
         copy_n_cast(to_address(v.origin()) + i0, iN - i0, vptr + i0);
     }
     // setup array references
-    boost::multi::array_cref<SPComplexType, 2> Gsp(Gptr, G.extensions());
-    boost::multi::array_ref<SPComplexType, 2> vsp(vptr, v.extensions());
+    boost::multi::array_cref<SPComplexType, 2> Gsp(Gptr, G.extents());
+    boost::multi::array_ref<SPComplexType, 2> vsp(vptr, v.extents());
     comm->barrier();
 
     using std::get;

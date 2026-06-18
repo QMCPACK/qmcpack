@@ -103,7 +103,7 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
     wfn.MixedDensityMatrix_for_vbias(wset, G);
 #endif
     AFQMCTimers[G_for_vbias_timer].get().stop();
-    //std::cout<<" G: " <<ma::dot(G(G.extension(0),0),G(G.extension(0),0)) <<std::endl;
+    //std::cout<<" G: " <<ma::dot(G(G.extent(),0),G(G.extent(),0)) <<std::endl;
 
     StaticSPMatrix vbias({long(localnCV), long(nwalk)},
                          buffer_manager.get_generator().template get_allocator<SPComplexType>());
@@ -376,16 +376,16 @@ void AFQMCBasePropagator::BackPropagate(int nbpsteps, int nStabalize, WlkSet& ws
         if (nbatched_qr != 0)
         {
           if (walker_type != COLLINEAR)
-            Orthogonalize_batched(wset, detR(detR.extension(0), {nr, nr + 1}));
+            Orthogonalize_batched(wset, detR(detR.extent(), {nr, nr + 1}));
           else
-            Orthogonalize_batched(wset, detR(detR.extension(0), {2 * nr, 2 * nr + 2}));
+            Orthogonalize_batched(wset, detR(detR.extent(), {2 * nr, 2 * nr + 2}));
         }
         else
         {
           if (walker_type != COLLINEAR)
-            Orthogonalize_shared(wset, detR(detR.extension(0), {nr, nr + 1}));
+            Orthogonalize_shared(wset, detR(detR.extent(), {nr, nr + 1}));
           else
-            Orthogonalize_shared(wset, detR(detR.extension(0), {2 * nr, 2 * nr + 2}));
+            Orthogonalize_shared(wset, detR(detR.extent(), {2 * nr, 2 * nr + 2}));
         }
       }
       TG.TG_local().barrier();
@@ -485,7 +485,7 @@ void AFQMCBasePropagator::apply_propagators(char TA,
         int nt = ni * nwalk + tk / 2;
         if (oldw != tk / 2)
         {
-          local_vHS = vHS3D(local_vHS.extension(0), local_vHS.extension(1), nt);
+          local_vHS = vHS3D(local_vHS.extent(), get<1>(local_vHS.extents()), nt);
           oldw      = tk / 2;
         }
         if (tk % 2 == 0)
@@ -497,7 +497,7 @@ void AFQMCBasePropagator::apply_propagators(char TA,
       {
         int tk    = (ntasks_total_serial + last_task_index);
         int nt    = ni * nwalk + tk / 2;
-        local_vHS = vHS3D(local_vHS.extension(0), local_vHS.extension(1), nt);
+        local_vHS = vHS3D(local_vHS.extent(), get<1>(local_vHS.extents()), nt);
         if (tk % 2 == 0)
           SDetOp->Propagate(*wset[tk / 2].SlaterMatrix(Alpha), P1[0], local_vHS, local_group_comm, order, TA);
         else
@@ -510,7 +510,7 @@ void AFQMCBasePropagator::apply_propagators(char TA,
       for (int tk = tk0; tk < tkN; ++tk)
       {
         int nt    = ni * nwalk + tk;
-        local_vHS = vHS3D(local_vHS.extension(0), local_vHS.extension(1), nt);
+        local_vHS = vHS3D(local_vHS.extent(), get<1>(local_vHS.extents()), nt);
         //std::cout<<" pp: " <<tk <<" " <<ma::sum(local_vHS) <<"\n" <<std::endl;
         SDetOp->Propagate(*wset[tk].SlaterMatrix(Alpha), P1[0], local_vHS, order, TA, noncol);
       }
@@ -518,7 +518,7 @@ void AFQMCBasePropagator::apply_propagators(char TA,
       {
         int iw    = ntasks_total_serial + last_task_index;
         int nt    = ni * nwalk + iw;
-        local_vHS = vHS3D(local_vHS.extension(0), local_vHS.extension(1), nt);
+        local_vHS = vHS3D(local_vHS.extent(), get<1>(local_vHS.extents()), nt);
         SDetOp->Propagate(*wset[iw].SlaterMatrix(Alpha), P1[0], local_vHS, local_group_comm, order, TA, noncol);
       }
     }
@@ -578,7 +578,7 @@ void AFQMCBasePropagator::apply_propagators_batched(char TA, WSet& wset, int ni,
     for (int iw = 0; iw < nwalk; iw += nbatch, nt += nbatch)
     {
       int nb = std::min(nbatch, nwalk - iw);
-      ma::transpose(vHS2D(vHS2D.extension(0), {nt, nt + nb}), local_vHS.sliced(0, nb));
+      ma::transpose(vHS2D(vHS2D.extent(), {nt, nt + nb}), local_vHS.sliced(0, nb));
       Ai.clear();
       for (int ni = 0; ni < nb; ni++)
         Ai.emplace_back(wset[iw + ni].SlaterMatrix(Alpha));

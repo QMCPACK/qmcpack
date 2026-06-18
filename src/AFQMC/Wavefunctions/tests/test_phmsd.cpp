@@ -236,7 +236,7 @@ void test_phmsd(boost::mpi3::communicator& world)
     REQUIRE(get<1>(initial_guess.sizes()) == NMO);
     REQUIRE(get<2>(initial_guess.sizes()) == NAEA);
 
-    wset.resize(nwalk, initial_guess[0], initial_guess[1](initial_guess.extension(1), {0, NAEB}));
+    wset.resize(nwalk, initial_guess[0], initial_guess[1](get<1>(initial_guess.extents()), {0, NAEB}));
     // 1. Test Overlap Explicitly
     // 1.a Get raw occupancies and coefficients from file.
     std::vector<ComplexType> coeffs;

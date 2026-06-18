@@ -70,7 +70,7 @@ class generalizedFockMatrix : public AFQMCInfo
   using mpi3C4Tensor   = boost::multi::array<ComplexType, 4, shared_allocator<ComplexType>>;
 
   using stack_alloc_type = DeviceBufferManager::template allocator_t<ComplexType>;
-  using Static3Tensor    = boost::multi::static_array<ComplexType, 3, stack_alloc_type>;
+  using Static3Tensor    = boost::multi::dynamic_array<ComplexType, 3, stack_alloc_type>;
 
 public:
   generalizedFockMatrix(afqmc::TaskGroup_& tg_,
@@ -130,7 +130,7 @@ public:
     assert(Xw.size() == nw);
     assert(ovlp.size() >= nw);
     assert(G.num_elements() == G_host.num_elements());
-    assert(G.extensions() == G_host.extensions());
+    assert(G.extents() == G_host.extents());
     assert(G[0].num_elements() == dm_size);
 
     using std::get;

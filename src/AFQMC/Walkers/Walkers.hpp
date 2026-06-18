@@ -117,7 +117,7 @@ struct walker_iterator
 public:
   template<class WBuff>
   walker_iterator(int k, WBuff&& w_, const wlk_indices& i_, const wlk_descriptor& d_)
-      : pos(k), W(w_.origin(), w_.extensions()), indx(&i_), desc(&d_)
+      : pos(k), W(w_.origin(), w_.extents()), indx(&i_), desc(&d_)
   {}
 
   using pointer         = Ptr;
@@ -128,11 +128,11 @@ public:
 
   /*
     walker_iterator(walker_iterator const& it):
-        pos(it.pos),W(it.W.origin(),it.W.extensions()),indx(it.indx),desc(it.desc)
+        pos(it.pos),W(it.W.origin(),it.W.extents()),indx(it.indx),desc(it.desc)
     {}
 
     walker_iterator(walker_iterator && it):
-        pos(it.pos),W(it.W.origin(),it.W.extensions()),indx(it.indx),desc(it.desc)
+        pos(it.pos),W(it.W.origin(),it.W.extents()),indx(it.indx),desc(it.desc)
     {}
 */
 

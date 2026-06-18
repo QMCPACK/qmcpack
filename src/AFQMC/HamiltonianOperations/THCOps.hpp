@@ -64,7 +64,7 @@ class THCOps
   using const_sp_pointer = typename device_allocator<SPComplexType>::const_pointer;
 
   template<class U, int N>
-  using Array = boost::multi::static_array<U, N, device_alloc_type<U>>;
+  using Array = boost::multi::dynamic_array<U, N, device_alloc_type<U>>;
   template<class U, int N>
   using Array_ref = boost::multi::array_ref<U, N, typename device_alloc_type<U>::pointer>;
   template<class U, int N>
@@ -72,7 +72,7 @@ class THCOps
   // arrays on shared work space
   // remember that this is device memory when built with accelerator support
   template<class U, int N>
-  using ShmArray = boost::multi::static_array<U, N, shm_alloc_type<U>>;
+  using ShmArray = boost::multi::dynamic_array<U, N, shm_alloc_type<U>>;
 
   // arrays on node allocator, for fixed arrays, e.g. Luv, Piu, ...
   // remember that this is device memory when built with accelerator support
@@ -272,7 +272,7 @@ public:
     fill_n(E.origin(), E.num_elements(), ComplexType(0.0));
     if (addH1)
     {
-      ma::product(ComplexType(1.0), G, haj[k], ComplexType(0.0), E(E.extension(), 0));
+      ma::product(ComplexType(1.0), G, haj[k], ComplexType(0.0), E(E.extent(), 0));
       for (int i = 0; i < nwalk; i++)
         E[i][0] += E0;
     }
@@ -324,7 +324,7 @@ public:
       copy_n_cast(make_device_ptr(G.origin()) + i0, iN - i0, make_device_ptr(Gbuff.origin()) + i0);
       Gptr = make_device_ptr(Gbuff.origin());
     }
-    Array_cref<SPComplexType, 2> Gsp(Gptr, G.extensions());
+    Array_cref<SPComplexType, 2> Gsp(Gptr, G.extents());
 
     // Guv[nspin][nu][nv]
     ShmArray<SPComplexType, 3> Guv({nwmax, nu, nv},
@@ -543,7 +543,7 @@ public:
       boost::multi::array_ref<ComplexType,2> Tub(to_address(SM_TMats.origin())+cnt,{nu,nel_});
       cnt+=Tub.num_elements();
       assert(cnt <= memory_needs);
-      boost::multi::static_array<ComplexType,3,dev_buffer_type> eloc({2,nwalk,3}
+      boost::multi::dynamic_array<ComplexType,3,dev_buffer_type> eloc({2,nwalk,3}
                         device_buffer_manager.get_generator().template get_allocator<ComplexType>());
       std::fill_n(eloc.origin(),eloc.num_elements(),ComplexType(0.0));
 
@@ -556,10 +556,10 @@ public:
         auto Eb = E[1][0];
         boost::multi::array_cref<ComplexType,2> G2DA(to_address(GrefA.origin()),
                                           {nwalk,GrefA[0].num_elements()});
-        ma::product(ComplexType(1.0),G2DA,haj[0],ComplexType(0.0),Ea(Ea.extension(),0));
+        ma::product(ComplexType(1.0),G2DA,haj[0],ComplexType(0.0),Ea(Ea.extent(),0));
         boost::multi::array_cref<ComplexType,2> G2DB(to_address(GrefA.origin()),
                                           {nwalk,GrefA[0].num_elements()});
-        ma::product(ComplexType(1.0),G2DB,haj[0],ComplexType(0.0),Eb(Eb.extension(),0));
+        ma::product(ComplexType(1.0),G2DB,haj[0],ComplexType(0.0),Eb(Eb.extent(),0));
         for(int i=0; i<nwalk; i++) {
             Ea[i][0] += E0;
             Eb[i][0] += E0;
@@ -750,8 +750,8 @@ public:
       cnt += size_t(X.num_elements());
     }
     // setup array references
-    Array_cref<SPComplexType, 2> Xsp(Xptr, X.extensions());
-    Array_ref<SPComplexType, 2> vsp(vptr, v.extensions());
+    Array_cref<SPComplexType, 2> Xsp(Xptr, X.extents());
+    Array_ref<SPComplexType, 2> vsp(vptr, v.extents());
 
     int u0, uN;
     std::tie(u0, uN) = FairDivideBoundary(comm->rank(), nu, comm->size());
@@ -906,8 +906,8 @@ public:
         copy_n_cast(make_device_ptr(v.origin()) + i0, iN - i0, vptr + i0);
     }
     // setup array references
-    Array_cref<SPComplexType, 2> Gsp(Gptr, G.extensions());
-    Array_ref<SPComplexType, 2> vsp(vptr, v.extensions());
+    Array_cref<SPComplexType, 2> Gsp(Gptr, G.extents());
+    Array_ref<SPComplexType, 2> vsp(vptr, v.extents());
 
     using std::get;
     if (haj.size() == 1)
@@ -920,9 +920,9 @@ public:
                                      {get<0>(Luv.sizes()), 2 * get<1>(Luv.sizes())});
       Array_ref<SPRealType, 2> Guu_R(pointer_cast<SPRealType>(Guu.origin()), {nu, 2 * nwalk});
       Array_ref<SPRealType, 2> vsp_R(pointer_cast<SPRealType>(vsp.origin()), {get<0>(vsp.sizes()), 2 * get<1>(vsp.sizes())});
-      ma::product(SPRealType(a), T(Luv_R(Luv_R.extension(), {c0, cN})), Guu_R, SPRealType(c), vsp_R.sliced(c0, cN));
+      ma::product(SPRealType(a), T(Luv_R(Luv_R.extent(), {c0, cN})), Guu_R, SPRealType(c), vsp_R.sliced(c0, cN));
 #else
-      ma::product(SPRealType(a), T(Luv(Luv.extension(), {c0, cN})), Guu, SPRealType(c), vsp.sliced(c0, cN));
+      ma::product(SPRealType(a), T(Luv(Luv.extent(), {c0, cN})), Guu, SPRealType(c), vsp.sliced(c0, cN));
 #endif
     }
     else
@@ -935,9 +935,9 @@ public:
                                      {get<0>(Luv.sizes()), 2 * get<1>(Luv.sizes())});
       Array_ref<SPRealType, 2> Guu_R(pointer_cast<SPRealType>(Guu.origin()), {nu, 2 * nwalk});
       Array_ref<SPRealType, 2> vsp_R(pointer_cast<SPRealType>(vsp.origin()), {get<0>(vsp.sizes()), 2 * get<1>(vsp.sizes())});
-      ma::product(SPRealType(a), T(Luv_R(Luv_R.extension(), {c0, cN})), Guu_R, SPRealType(c), vsp_R.sliced(c0, cN));
+      ma::product(SPRealType(a), T(Luv_R(Luv_R.extent(), {c0, cN})), Guu_R, SPRealType(c), vsp_R.sliced(c0, cN));
 #else
-      ma::product(SPRealType(a), T(Luv(Luv.extension(), {c0, cN})), Guu, SPRealType(c), vsp.sliced(c0, cN));
+      ma::product(SPRealType(a), T(Luv(Luv.extent(), {c0, cN})), Guu, SPRealType(c), vsp.sliced(c0, cN));
 #endif
     }
     if (not std::is_same<vType, SPComplexType>::value)
@@ -1006,7 +1006,7 @@ protected:
       std::tie(k0, kN) = FairDivideBoundary(comm->rank(), nmo_, comm->size());
       ShmArray<SPComplexType, 2> TGw({nmo_, nw * nel_},
                                      shm_buffer_manager.get_generator().template get_allocator<SPComplexType>());
-      ma::transpose(Gw(Gw.extension(), {k0, kN}), TGw.sliced(k0, kN));
+      ma::transpose(Gw(Gw.extent(), {k0, kN}), TGw.sliced(k0, kN));
       comm->barrier();
       ma::product(ma::T(Piu({0, nmo_}, {u0, uN})), TGw, T1);
     }
@@ -1205,14 +1205,14 @@ protected:
       assert(T1.size(1) == size_t(nv));
 
       ma::product(G,rotPiu({0,nmo_},{v0,vN}),
-                  T1(T1.extension(),{v0,vN}));
+                  T1(T1.extent(),{v0,vN}));
       // This operation might benefit from a 2-D work distribution
       ma::product(rotcPua[k].sliced(nu0,nu0+nu),
-                  T1(T1.extension(),{v0,vN}),
-                  Guv(Guv.extension(),{v0,vN}));
+                  T1(T1.extent(),{v0,vN}),
+                  Guv(Guv.extent(),{v0,vN}));
       for(int v=v0; v<vN; ++v)
         if( v < nu0 || v >= nu0+nu ) {
-          Guu[v] = ma::dot(rotcPua[k][v],T1(T1.extension(),v)); 
+          Guu[v] = ma::dot(rotcPua[k][v],T1(T1.extent(),v)); 
         } else
          Guu[v] = Guv[v-nu0][v];
       comm->barrier();

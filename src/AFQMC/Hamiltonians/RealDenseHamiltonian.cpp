@@ -143,7 +143,7 @@ HamiltonianOperations RealDenseHamiltonian::getHamiltonianOperations(bool pureSD
         APP_ABORT("");
       }
     }
-    RMatrix_ref h1_(to_address(H1.origin()), H1.extensions());
+    RMatrix_ref h1_(to_address(H1.origin()), H1.extents());
     if (!dump.readEntry(h1_, std::string("hcore")))
     {
       app_error() << " Error in RealDenseHamiltonian::getHamiltonianOperations():"
@@ -155,7 +155,7 @@ HamiltonianOperations RealDenseHamiltonian::getHamiltonianOperations(bool pureSD
   {
     // read L
     dump.push("DenseFactorized", false);
-    SpRMatrix_ref L(to_address(Likn.origin()), Likn.extensions());
+    SpRMatrix_ref L(to_address(Likn.origin()), Likn.extents());
     hyperslab_proxy<SpRMatrix_ref, 2> hslab(L,
                                             std::array<size_t, 2>{static_cast<size_t>(NMO * NMO),
                                                                   static_cast<size_t>(global_ncvecs)},
@@ -196,7 +196,7 @@ HamiltonianOperations RealDenseHamiltonian::getHamiltonianOperations(bool pureSD
   std::vector<shmSp3Tensor> Lank;
   Lank.reserve(PsiT.size());
   for (int nd = 0; nd < PsiT.size(); nd++)
-    Lank.emplace_back(shmSp3Tensor({static_cast<boost::multi::size_t>(PsiT[nd].size(0)), local_ncv, NMO}, shared_allocator<SPComplexType>{distNode}));
+    Lank.emplace_back(shmSp3Tensor({static_cast<boost::multi::ssize_t>(PsiT[nd].size(0)), local_ncv, NMO}, shared_allocator<SPComplexType>{distNode}));
   int nrow = NEL;
   if (ndet > 1)
     nrow = 0; // not used if ndet>1

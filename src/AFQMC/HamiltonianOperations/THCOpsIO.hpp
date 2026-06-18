@@ -234,16 +234,16 @@ inline THCOps loadTHCOps(hdf_archive& dump,
       {
         // cPua = H(Piu) * conj(A)
         ma::Matrix2MA('T', PsiT[2 * i], A);
-        ma::product(H(Piu), A, cPua[i](cPua[i].extension(0), {0, NAEA}));
-        ma::product(H(rotPiu), A, rotcPua[i](cPua[i].extension(0), {0, NAEA}));
+        ma::product(H(Piu), A, cPua[i](cPua[i].extent(), {0, NAEA}));
+        ma::product(H(rotPiu), A, rotcPua[i](cPua[i].extent(), {0, NAEA}));
         ma::Matrix2MA('T', PsiT[2 * i + 1], B);
-        ma::product(H(Piu), B, cPua[i](cPua[i].extension(0), {NAEA, NAEA + NAEB}));
-        ma::product(H(rotPiu), B, rotcPua[i](cPua[i].extension(0), {NAEA, NAEA + NAEB}));
+        ma::product(H(Piu), B, cPua[i](cPua[i].extent(), {NAEA, NAEA + NAEB}));
+        ma::product(H(rotPiu), B, rotcPua[i](cPua[i].extent(), {NAEA, NAEA + NAEB}));
       }
     }
     else
     {
-      boost::multi::array<SPComplexType, 2> A({static_cast<boost::multi::size_t>(PsiT[0].size(1)), static_cast<boost::multi::size_t>(PsiT[0].size(0))});
+      boost::multi::array<SPComplexType, 2> A({static_cast<boost::multi::ssize_t>(PsiT[0].size(1)), static_cast<boost::multi::ssize_t>(PsiT[0].size(0))});
       for (int i = 0; i < ndet; i++)
       {
         ma::Matrix2MA('T', PsiT[i], A);

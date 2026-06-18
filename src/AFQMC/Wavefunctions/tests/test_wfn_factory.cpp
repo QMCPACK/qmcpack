@@ -158,7 +158,7 @@ void wfn_fac(boost::mpi3::communicator& world)
       REQUIRE(get<2>(initial_guess.sizes()) == NAEA);
 
       if (type == COLLINEAR)
-        wset.resize(nwalk, initial_guess[0], initial_guess[1](initial_guess.extension(1), {0, NAEB}));
+        wset.resize(nwalk, initial_guess[0], initial_guess[1](get<1>(initial_guess.extents()), {0, NAEB}));
       else
         wset.resize(nwalk, initial_guess[0], initial_guess[0]);
 
@@ -296,7 +296,7 @@ void wfn_fac(boost::mpi3::communicator& world)
       REQUIRE(get<2>(initial_guess.sizes()) == NAEA);
 
       if (type == COLLINEAR)
-        wset2.resize(nwalk, initial_guess[0], initial_guess[1](initial_guess.extension(1), {0, NAEB}));
+        wset2.resize(nwalk, initial_guess[0], initial_guess[1](get<1>(initial_guess.extents()), {0, NAEB}));
       else
         wset2.resize(nwalk, initial_guess[0], initial_guess[0]);
 
@@ -491,7 +491,7 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
     REQUIRE(get<2>(initial_guess.sizes()) == NAEA);
 
     if (type == COLLINEAR)
-      wset.resize(nwalk, initial_guess[0], initial_guess[1](initial_guess.extension(1), {0, NAEB}));
+      wset.resize(nwalk, initial_guess[0], initial_guess[1](get<1>(initial_guess.extents()), {0, NAEB}));
     else
       wset.resize(nwalk, initial_guess[0], initial_guess[0]);
 
@@ -650,7 +650,7 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
     REQUIRE(get<2>(initial_guess.sizes()) == NAEA);
 
     if (type == COLLINEAR)
-      wset2.resize(nwalk, initial_guess[0], initial_guess[1](initial_guess.extension(1), {0, NAEB}));
+      wset2.resize(nwalk, initial_guess[0], initial_guess[1](get<1>(initial_guess.extents()), {0, NAEB}));
     else
       wset2.resize(nwalk, initial_guess[0], initial_guess[0]);
 
@@ -875,8 +875,9 @@ TEST_CASE("wfn_fac_collinear_phmsd", "[wavefunction_factory]")
         initial_guess[1][i][j] = initial_guess[0][i][j];
         //initial_guess[1][i][j] += distribution(generator);
     }
+    using std::get;
     wset.resize(nwalk,initial_guess[0],
-                         initial_guess[1](initial_guess.extension(1),{0,NAEB}));
+                         initial_guess[1](get<1>(initial_guess.extents()),{0,NAEB}));
     qmcplusplus::Timer Time;
     // no guarantee that overlap is 1.0
     double t1;

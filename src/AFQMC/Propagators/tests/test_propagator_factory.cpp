@@ -146,7 +146,7 @@ void propg_fac_shared(boost::mpi3::communicator& world)
     REQUIRE(get<1>(initial_guess.sizes()) == NPOL * NMO);
     REQUIRE(get<2>(initial_guess.sizes()) == NAEA);
     wset.resize(nwalk, initial_guess[0], initial_guess[0]);
-    //                         initial_guess[1](XXX.extension(0),{0,NAEB}));
+    //                         initial_guess[1](XXX.extent(),{0,NAEB}));
 
     const char* propg_xml_block = R"(<Propagator name="prop0"></Propagator>)";
     Libxml2Document doc4;

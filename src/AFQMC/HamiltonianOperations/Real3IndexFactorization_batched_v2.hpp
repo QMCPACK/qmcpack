@@ -73,14 +73,14 @@ class Real3IndexFactorization_batched_v2
   using SpC4Tensor_ref = boost::multi::array_ref<SPComplexType, 4, sp_pointer>;
   using C4Tensor_ref   = boost::multi::array_ref<ComplexType, 4, pointer>;
 
-  using StaticVector   = boost::multi::static_array<SPComplexType, 1, device_alloc_type>;
-  using StaticMatrix   = boost::multi::static_array<SPComplexType, 2, device_alloc_type>;
-  using Static3Tensor  = boost::multi::static_array<SPComplexType, 3, device_alloc_type>;
-  using Static4Tensor  = boost::multi::static_array<SPComplexType, 4, device_alloc_type>;
-  using StaticRVector  = boost::multi::static_array<SPRealType, 1, device_alloc_Rtype>;
-  using StaticRMatrix  = boost::multi::static_array<SPRealType, 2, device_alloc_Rtype>;
-  using Static3RTensor = boost::multi::static_array<SPRealType, 3, device_alloc_Rtype>;
-  using Static4RTensor = boost::multi::static_array<SPRealType, 4, device_alloc_Rtype>;
+  using StaticVector   = boost::multi::dynamic_array<SPComplexType, 1, device_alloc_type>;
+  using StaticMatrix   = boost::multi::dynamic_array<SPComplexType, 2, device_alloc_type>;
+  using Static3Tensor  = boost::multi::dynamic_array<SPComplexType, 3, device_alloc_type>;
+  using Static4Tensor  = boost::multi::dynamic_array<SPComplexType, 4, device_alloc_type>;
+  using StaticRVector  = boost::multi::dynamic_array<SPRealType, 1, device_alloc_Rtype>;
+  using StaticRMatrix  = boost::multi::dynamic_array<SPRealType, 2, device_alloc_Rtype>;
+  using Static3RTensor = boost::multi::dynamic_array<SPRealType, 3, device_alloc_Rtype>;
+  using Static4RTensor = boost::multi::dynamic_array<SPRealType, 4, device_alloc_Rtype>;
 
   using shmCMatrix    = ComplexMatrix<Allocator_shared>;
   using shmSpC3Tensor = SPComplex3Tensor<SpAllocator_shared>;
@@ -117,7 +117,7 @@ public:
         local_nCV(0),
         E0(e0_),
         hij(std::move(hij_)),
-        hij_dev(hij.extensions(), make_node_allocator<ComplexType>(TG)),
+        hij_dev(hij.extents(), make_node_allocator<ComplexType>(TG)),
         haj(std::move(haj_)),
         Likn(std::move(vik)),
         Lnak(std::move(move_vector<shmSpC3Tensor>(std::move(vnak)))),
@@ -283,7 +283,7 @@ public:
     if (addH1)
     {
       CVector_ref haj_ref(make_device_ptr(haj[nd].origin()), iextensions<1u>{haj[nd].num_elements()});
-      ma::product(ComplexType(1.), Gc, haj_ref, ComplexType(1.), E(E.extension(0), 0));
+      ma::product(ComplexType(1.), Gc, haj_ref, ComplexType(1.), E(E.extent(), 0));
       for (int i = 0; i < nwalk; i++)
         E[i][0] += E0;
     }
@@ -443,8 +443,8 @@ public:
         copy_n_cast(make_device_ptr(v.origin()), v.num_elements(), vptr);
     }
     // work
-    boost::multi::array_cref<SPComplexType const, 2, const_sp_pointer> Xsp(Xptr, X.extensions());
-    boost::multi::array_ref<SPComplexType, 2, sp_pointer> vsp(vptr, v.extensions());
+    boost::multi::array_cref<SPComplexType const, 2, const_sp_pointer> Xsp(Xptr, X.extents());
+    boost::multi::array_ref<SPComplexType, 2, sp_pointer> vsp(vptr, v.extents());
     ma::product(SPValueType(a), Likn, Xsp, SPValueType(c), vsp);
     if (not std::is_same<vType, SPComplexType>::value)
     {
@@ -510,8 +510,8 @@ public:
         copy_n_cast(make_device_ptr(v.origin()), v.num_elements(), vptr);
     }
     // setup array references
-    boost::multi::array_cref<SPComplexType const, 2, const_sp_pointer> Gsp(Gptr, G.extensions());
-    boost::multi::array_ref<SPComplexType, 2, sp_pointer> vsp(vptr, v.extensions());
+    boost::multi::array_cref<SPComplexType const, 2, const_sp_pointer> Gsp(Gptr, G.extents());
+    boost::multi::array_ref<SPComplexType, 2, sp_pointer> vsp(vptr, v.extents());
 
     using std::get;
 

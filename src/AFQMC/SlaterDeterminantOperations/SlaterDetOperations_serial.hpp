@@ -45,7 +45,7 @@ public:
   using IVector       = typename Base::IVector;
   using TVector       = typename Base::TVector;
   using TMatrix       = typename Base::TMatrix;
-  using TTensor       = boost::multi::static_array<T, 3, buffer_type_T>;
+  using TTensor       = boost::multi::dynamic_array<T, 3, buffer_type_T>;
 
   using Base::MixedDensityMatrix;
   using Base::MixedDensityMatrix_noHerm;

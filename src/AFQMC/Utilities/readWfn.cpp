@@ -348,7 +348,7 @@ void read_general_wavefunction(std::ifstream& in,
         {
           PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(OrbMat, 1e-8, 'H', comm));
           PsiT.emplace_back(
-              csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(OrbMat(OrbMat.extension(0), {0, NAEB}), 1e-8,
+              csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(OrbMat(OrbMat.extent(), {0, NAEB}), 1e-8,
                                                                        'H', comm));
         }
         else if (walker_type == NONCOLLINEAR)
@@ -384,9 +384,9 @@ void read_general_wavefunction(std::ifstream& in,
 
         PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(OrbMat, 1e-8, 'H', comm));
         if (comm.rank() == 0)
-          read_mat(in, OrbMat(OrbMat.extension(0), {0, NAEB}), Cstyle, fullMOMat, NMO, NAEB);
+          read_mat(in, OrbMat(OrbMat.extent(), {0, NAEB}), Cstyle, fullMOMat, NMO, NAEB);
         PsiT.emplace_back(
-            csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(OrbMat(OrbMat.extension(0), {0, NAEB}), 1e-8, 'H',
+            csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(OrbMat(OrbMat.extent(), {0, NAEB}), 1e-8, 'H',
                                                                      comm));
       }
     }

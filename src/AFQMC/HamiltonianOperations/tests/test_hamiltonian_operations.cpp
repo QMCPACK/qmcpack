@@ -177,7 +177,8 @@ void ham_ops_basic_serial(boost::mpi3::communicator& world)
     ComplexType Ovlp = SDet.MixedDensityMatrix(devPsiT[0], devOrbMat[0], G.sliced(0, NAEA), 0.0, true);
     if (WTYPE == COLLINEAR)
     {
-      Ovlp *= SDet.MixedDensityMatrix(devPsiT[1], devOrbMat[1](devOrbMat.extension(1), {0, NAEB}),
+      using std::get;
+      Ovlp *= SDet.MixedDensityMatrix(devPsiT[1], devOrbMat[1](get<1>(devOrbMat.extents()), {0, NAEB}),
                                       G.sliced(NAEA, NAEA + NAEB), 0.0, true);
     }
     CHECK(real(Ovlp) == Approx(1.0));
@@ -312,7 +313,7 @@ void ham_ops_basic_serial(boost::mpi3::communicator& world)
     //}
     //Ovlp = SDet.MixedDensityMatrix(devPsiT[0],devOrbMat[0], G2.sliced(0,NMO),0.0,false);
     //if(WTYPE==COLLINEAR) {
-    //Ovlp *= SDet.MixedDensityMatrix(devPsiT[1],devOrbMat[1](devOrbMat.extension(1),{0,NAEB}), G.sliced(NMO,2*NMO),0.0,false);
+    //Ovlp *= SDet.MixedDensityMatrix(devPsiT[1],devOrbMat[1](get<1>(devOrbMat.extents()),{0,NAEB}), G.sliced(NMO,2*NMO),0.0,false);
     //}
     int nwalk = 1;
     CMatrix Gw2({nwalk, dm_size}, alloc_);

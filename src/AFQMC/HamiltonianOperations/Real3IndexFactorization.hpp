@@ -296,7 +296,7 @@ public:
     {
       boost::multi::array_cref<ComplexType, 1> haj_ref(to_address(haj[nd].origin()),
                                                        iextensions<1u>{haj[nd].num_elements()});
-      ma::product(ComplexType(1.), Gc, haj_ref, ComplexType(1.), E(E.extension(0), 0));
+      ma::product(ComplexType(1.), Gc, haj_ref, ComplexType(1.), E(E.extent(), 0));
       for (int i = 0; i < nwalk; i++)
         E[i][0] += E0;
     }
@@ -349,7 +349,7 @@ public:
         long i0, iN;
         std::tie(i0, iN) =
             FairDivideBoundary(long(TG.TG_local().rank()), long(nel[ispin] * local_nCV), long(TG.TG_local().size()));
-        ma::product(GF, ma::T(Lan.sliced(i0, iN)), Twban(Twban.extension(0), {i0, iN}));
+        ma::product(GF, ma::T(Lan.sliced(i0, iN)), Twban(Twban.extent(), {i0, iN}));
         TG.TG_local().barrier();
 
         for (int n = 0, an = 0; n < nwalk; ++n)
@@ -489,8 +489,8 @@ public:
         copy_n_cast(to_address(v.origin()) + i0, iN - i0, vptr + i0);
     }
     // setup array references
-    boost::multi::array_cref<SPComplexType const, 2> Xsp(Xptr, X.extensions());
-    boost::multi::array_ref<SPComplexType, 2> vsp(vptr, v.extensions());
+    boost::multi::array_cref<SPComplexType const, 2> Xsp(Xptr, X.extents());
+    boost::multi::array_ref<SPComplexType, 2> vsp(vptr, v.extents());
     TG.TG_local().barrier();
 
     ma::product(SPValueType(a), Likn.sliced(ik0, ikN), Xsp, SPValueType(c), vsp.sliced(ik0, ikN));
@@ -566,8 +566,8 @@ public:
         copy_n_cast(to_address(v.origin()) + i0, iN - i0, vptr + i0);
     }
     // setup array references
-    boost::multi::array_cref<SPComplexType const, 2> Gsp(Gptr, G.extensions());
-    boost::multi::array_ref<SPComplexType, 2> vsp(vptr, v.extensions());
+    boost::multi::array_cref<SPComplexType const, 2> Gsp(Gptr, G.extents());
+    boost::multi::array_ref<SPComplexType, 2> vsp(vptr, v.extents());
     TG.TG_local().barrier();
 
     using std::get;
@@ -581,7 +581,7 @@ public:
 
       if (walker_type == CLOSED)
         a *= 2.0;
-      ma::product(SPValueType(a), ma::T(Lakn(Lakn.extension(0), {ic0, icN})), Gsp, SPValueType(c),
+      ma::product(SPValueType(a), ma::T(Lakn(Lakn.extent(), {ic0, icN})), Gsp, SPValueType(c),
                   vsp.sliced(ic0, icN));
     }
     else
@@ -595,7 +595,7 @@ public:
 
       if (walker_type == CLOSED)
         a *= 2.0;
-      ma::product(SPValueType(a), ma::T(Likn(Likn.extension(0), {ic0, icN})), Gsp, SPValueType(c),
+      ma::product(SPValueType(a), ma::T(Likn(Likn.extent(), {ic0, icN})), Gsp, SPValueType(c),
                   vsp.sliced(ic0, icN));
     }
     // copy data back if changing precision

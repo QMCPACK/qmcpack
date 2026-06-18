@@ -918,7 +918,7 @@ void AFQMCDistributedPropagatorDistCV::BackPropagate(int nbpsteps,
       }
 
       // 2.3 Calculate vHS
-      //std::cout<<" k, X: " <<TG.Global().rank() <<" " <<k <<" " <<ma::dot(X(X.extension(0),0),X(X.extension(0),0)) <<"\n\n" <<std::endl;
+      //std::cout<<" k, X: " <<TG.Global().rank() <<" " <<k <<" " <<ma::dot(X(X.extent(),0),X(X.extent(),0)) <<"\n\n" <<std::endl;
       wfn.vHS(X, vHS);
       //std::cout<<" k, vHS: " <<TG.Global().rank() <<" " <<k <<" " <<ma::dot(vHS[0],vHS[0]) <<"\n\n" <<std::endl;
 
@@ -977,16 +977,16 @@ void AFQMCDistributedPropagatorDistCV::BackPropagate(int nbpsteps,
         if (nbatched_qr != 0)
         {
           if (walker_type != COLLINEAR)
-            Orthogonalize_batched(wset, detR(detR.extension(0), {nr, nr + 1}));
+            Orthogonalize_batched(wset, detR(detR.extent(), {nr, nr + 1}));
           else
-            Orthogonalize_batched(wset, detR(detR.extension(0), {2 * nr, 2 * nr + 2}));
+            Orthogonalize_batched(wset, detR(detR.extent(), {2 * nr, 2 * nr + 2}));
         }
         else
         {
           if (walker_type != COLLINEAR)
-            Orthogonalize_shared(wset, detR(detR.extension(0), {nr, nr + 1}));
+            Orthogonalize_shared(wset, detR(detR.extent(), {nr, nr + 1}));
           else
-            Orthogonalize_shared(wset, detR(detR.extension(0), {2 * nr, 2 * nr + 2}));
+            Orthogonalize_shared(wset, detR(detR.extent(), {2 * nr, 2 * nr + 2}));
         }
       }
 

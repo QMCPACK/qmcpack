@@ -77,7 +77,7 @@ inline void count_Qk_x_Rl(WALKER_TYPES walker_type,
   {
     // <a,b | k,l> = Ta(ka,lb) - Tb(la,kb)
     // Ta(ka,lb) = Q(k,a,:)*R(l,b,:)
-    ma::product(Qk, Rl(Rl.extension(0), {bl0, blN}), Ta(Ta.extension(0), {bl0, blN}));
+    ma::product(Qk, Rl(Rl.extent(), {bl0, blN}), Ta(Ta.extent(), {bl0, blN}));
     TG.node_barrier();
     for (int ka = ka0; ka < kaN; ka++)
     {                         // ka = local range index
@@ -109,7 +109,7 @@ inline void count_Qk_x_Rl(WALKER_TYPES walker_type,
       {
         // <a,b | k,l> = Ta(ka,lb) - Tb(la,kb)
         // Ta(ka,lb) = Q(k,a,:)*R(l,b,:)
-        ma::product(Qk, Rl(Rl.extension(0), {bl0, blN}), Ta(Ta.extension(0), {bl0, blN}));
+        ma::product(Qk, Rl(Rl.extent(), {bl0, blN}), Ta(Ta.extent(), {bl0, blN}));
         TG.node_barrier();
         for (int k = k0, ka = 0; k < kN; k++)
         {
@@ -135,7 +135,7 @@ inline void count_Qk_x_Rl(WALKER_TYPES walker_type,
       else if (std::abs(EJX) > 1e-8)
       {
         // <a,b | k,l> = Ta(ka,lb) = Q(k,a,:)*R(l,b,:)
-        ma::product(Qk, Rl(Rl.extension(0), {bl0, blN}), Ta(Ta.extension(0), {bl0, blN}));
+        ma::product(Qk, Rl(Rl.extent(), {bl0, blN}), Ta(Ta.extent(), {bl0, blN}));
         TG.node_barrier();
         for (int k = k0, ka = 0; k < kN; k++)
         {
@@ -158,7 +158,7 @@ inline void count_Qk_x_Rl(WALKER_TYPES walker_type,
       {
         // <a,b | k,l> = Ta(ka,lb) - Tb(la,kb)
         // Ta(ka,lb) = Q(k,a,:)*R(l,b,:)
-        ma::product(Qk, Rl(Rl.extension(0), {bl0, blN}), Ta(Ta.extension(0), {bl0, blN}));
+        ma::product(Qk, Rl(Rl.extent(), {bl0, blN}), Ta(Ta.extent(), {bl0, blN}));
         TG.node_barrier();
         for (int k = k0, ka = 0; k < kN; k++)
         {
@@ -239,7 +239,7 @@ inline void Qk_x_Rl(WALKER_TYPES walker_type,
   {
     // <a,b | k,l> = Ta(ka,lb) - Tb(la,kb)
     // Ta(ka,lb) = Q(k,a,:)*R(l,b,:)
-    ma::product(Qk, Rl(Rl.extension(0), {bl0, blN}), Ta(Ta.extension(0), {bl0, blN}));
+    ma::product(Qk, Rl(Rl.extent(), {bl0, blN}), Ta(Ta.extent(), {bl0, blN}));
     TG.node_barrier();
     for (int ka = ka0; ka < kaN; ka++)
     {                         // ka = local range index
@@ -279,7 +279,7 @@ inline void Qk_x_Rl(WALKER_TYPES walker_type,
       {
         // <a,b | k,l> = Ta(ka,lb) - Tb(la,kb)
         // Ta(ka,lb) = Q(k,a,:)*R(l,b,:)
-        ma::product(Qk, Rl(Rl.extension(0), {bl0, blN}), Ta(Ta.extension(0), {bl0, blN}));
+        ma::product(Qk, Rl(Rl.extent(), {bl0, blN}), Ta(Ta.extent(), {bl0, blN}));
         TG.node_barrier();
         for (int ka = ka0; ka < kaN; ka++)
         {                         // ka = local range index
@@ -312,7 +312,7 @@ inline void Qk_x_Rl(WALKER_TYPES walker_type,
       else if (std::abs(EJX) > 1e-8)
       {
         // <a,b | k,l> = Ta(ka,lb) = Q(k,a,:)*R(l,b,:)
-        ma::product(Qk, Rl(Rl.extension(0), {bl0, blN}), Ta(Ta.extension(0), {bl0, blN}));
+        ma::product(Qk, Rl(Rl.extent(), {bl0, blN}), Ta(Ta.extent(), {bl0, blN}));
         TG.node_barrier();
         for (int ka = ka0; ka < kaN; ka++)
         {                         // ka = local range index
@@ -338,7 +338,7 @@ inline void Qk_x_Rl(WALKER_TYPES walker_type,
       {
         // <a,b | k,l> = Ta(ka,lb) - Tb(la,kb)
         // Ta(ka,lb) = Q(k,a,:)*R(l,b,:)
-        ma::product(Qk, Rl(Rl.extension(0), {bl0, blN}), Ta(Ta.extension(0), {bl0, blN}));
+        ma::product(Qk, Rl(Rl.extent(), {bl0, blN}), Ta(Ta.extent(), {bl0, blN}));
         TG.node_barrier();
         for (int ka = ka0; ka < kaN; ka++)
         {                         // ka = local range index

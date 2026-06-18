@@ -113,9 +113,9 @@ inline void apply_expM(const MatA& V, MatB&& S, MatC& T1, MatC& T2, communicator
   {
     const ComplexType fact = im * static_cast<ComplexType>(1.0 / static_cast<double>(n));
     if (TA == 'H' || TA == 'h')
-      ma::product(fact, ma::H(V(V.extension(0), {M0, Mn})), *pT1, zero, (*pT2).sliced(M0, Mn));
+      ma::product(fact, ma::H(V(V.extent(), {M0, Mn})), *pT1, zero, (*pT2).sliced(M0, Mn));
     else if (TA == 'T' || TA == 't')
-      ma::product(fact, ma::T(V(V.extension(0), {M0, Mn})), *pT1, zero, (*pT2).sliced(M0, Mn));
+      ma::product(fact, ma::T(V(V.extent(), {M0, Mn})), *pT1, zero, (*pT2).sliced(M0, Mn));
     else
       ma::product(fact, V.sliced(M0, Mn), *pT1, zero, (*pT2).sliced(M0, Mn));
     // overload += ???

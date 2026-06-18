@@ -54,9 +54,9 @@ void PHMSD::Energy_shared(const WlkSet& wset, Mat&& E, TVec&& Ov)
   double LogOverlapFactor(wset.getLogOverlapFactor());
   // resize shm structures if needed
 
-  Ovmsd.reextent({nspins, static_cast<boost::multi::size_t>(maxn_unique_confg), nwalk});
+  Ovmsd.reextent({nspins, static_cast<boost::multi::ssize_t>(maxn_unique_confg), nwalk});
 
-  Emsd.reextent({nspins, static_cast<boost::multi::size_t>(maxn_unique_confg), nwalk, 3});
+  Emsd.reextent({nspins, static_cast<boost::multi::ssize_t>(maxn_unique_confg), nwalk, 3});
 
   // resize Alpha here, if beta is needed resize below
 
@@ -96,9 +96,9 @@ void PHMSD::Energy_shared(const WlkSet& wset, Mat&& E, TVec&& Ov)
 
     GrefB.reextent({nwalk, dm_dims(false, Beta).first, dm_dims(false, Beta).second});
 
-    QQ0A .reextent({nwalk, static_cast<boost::multi::size_t>(OrbMats[0].size(0)), NAEA});
+    QQ0A .reextent({nwalk, static_cast<boost::multi::ssize_t>(OrbMats[0].size(0)), NAEA});
 
-    QQ0B .reextent({nwalk, static_cast<boost::multi::size_t>(OrbMats.back().size(0)), NAEB});
+    QQ0B .reextent({nwalk, static_cast<boost::multi::ssize_t>(OrbMats.back().size(0)), NAEB});
 
     for (int iw = 0, nc = 0; iw < nwalk; iw++)
     {
@@ -141,9 +141,9 @@ void PHMSD::Energy_shared(const WlkSet& wset, Mat&& E, TVec&& Ov)
   {
     ComplexType ov0;
 
-    KEright.reextent({static_cast<boost::multi::size_t>(abij.number_of_unique_excitations()[0]), nwalk, static_cast<boost::multi::size_t>(nkev)});
+    KEright.reextent({static_cast<boost::multi::ssize_t>(abij.number_of_unique_excitations()[0]), nwalk, static_cast<boost::multi::ssize_t>(nkev)});
 
-    KEleft.reextent({nwalk, static_cast<boost::multi::size_t>(nkev)});
+    KEleft.reextent({nwalk, static_cast<boost::multi::ssize_t>(nkev)});
 
     for (int spin = 0; spin < nspins; ++spin)
     {
@@ -667,24 +667,24 @@ void PHMSD::MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool com
           if (compact)
           {
             boost::multi::array_ref<ComplexType, 2> Gw(to_address(G[iw].origin()), {GAdims.first, GAdims.second});
-            ma::product(T(Ra), GA2D0_shm(GA2D0_shm.extension(0), {M0, Mn}), Gw(Gw.extension(0), {M0, Mn}));
+            ma::product(T(Ra), GA2D0_shm(GA2D0_shm.extent(), {M0, Mn}), Gw(Gw.extent(), {M0, Mn}));
           }
           else
           {
             boost::multi::array_ref<ComplexType, 2> Gw(to_address(G[iw].origin()),
                                                        {GAdims_full.first, GAdims_full.second});
-            ma::product(T(Ra), GA2D0_shm(GA2D0_shm.extension(0), {M0, Mn}),
-                        GA2D_(GA2D_.extension(0), {M0, Mn}));               // can be local
-            ma::product(T(OrbMats[0]), GA2D_(GA2D_.extension(0), {M0, Mn}), // can be local
-                        Gw(Gw.extension(0), {M0, Mn}));
+            ma::product(T(Ra), GA2D0_shm(GA2D0_shm.extent(), {M0, Mn}),
+                        GA2D_(GA2D_.extent(), {M0, Mn}));               // can be local
+            ma::product(T(OrbMats[0]), GA2D_(GA2D_.extent(), {M0, Mn}), // can be local
+                        Gw(Gw.extent(), {M0, Mn}));
           }
         }
         else
         {
           if (compact)
           {
-            ma::product(T(Ra), GA2D0_shm(GA2D0_shm.extension(0), {M0, Mn}),
-                        GA2D_(GA2D_.extension(0), {M0, Mn})); // can be local
+            ma::product(T(Ra), GA2D0_shm(GA2D0_shm.extent(), {M0, Mn}),
+                        GA2D_(GA2D_.extent(), {M0, Mn})); // can be local
             boost::multi::array_ref<ComplexType, 3> Gw(to_address(G.origin()),
                                                        {GAdims.first, GAdims.second, long(get<1>(G.sizes()))});
             // copying by hand for now, implement strided copy in ma_blas
@@ -695,10 +695,10 @@ void PHMSD::MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool com
           }
           else
           {
-            ma::product(T(Ra), GA2D0_shm(GA2D0_shm.extension(0), {M0, Mn}),
-                        GA2D_(GA2D_.extension(0), {M0, Mn})); // can be local
-            ma::product(T(OrbMats[0]), GA2D_(GA2D_.extension(0), {M0, Mn}),
-                        Gfulla(Gfulla.extension(0), {M0, Mn})); // can be local
+            ma::product(T(Ra), GA2D0_shm(GA2D0_shm.extent(), {M0, Mn}),
+                        GA2D_(GA2D_.extent(), {M0, Mn})); // can be local
+            ma::product(T(OrbMats[0]), GA2D_(GA2D_.extent(), {M0, Mn}),
+                        Gfulla(Gfulla.extent(), {M0, Mn})); // can be local
             using std::get;
             boost::multi::array_ref<ComplexType, 3> Gw(to_address(G.origin()),
                                                        {long(get<0>(Gfulla.sizes())), long(get<1>(Gfulla.sizes())), long(get<1>(G.sizes()))});
@@ -719,25 +719,25 @@ void PHMSD::MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool com
           {
             boost::multi::array_ref<ComplexType, 2> Gw(to_address(G[iw].origin()) + GAdims.first * GAdims.second,
                                                        {GBdims.first, GBdims.second});
-            ma::product(T(Rb), GB2D0_shm(GB2D0_shm.extension(0), {M0, Mn}), Gw(Gw.extension(0), {M0, Mn}));
+            ma::product(T(Rb), GB2D0_shm(GB2D0_shm.extent(), {M0, Mn}), Gw(Gw.extent(), {M0, Mn}));
           }
           else
           {
             boost::multi::array_ref<ComplexType, 2> Gw(to_address(G[iw].origin()) +
                                                            GAdims_full.first * GAdims_full.second,
                                                        {GBdims_full.first, GBdims_full.second});
-            ma::product(T(Rb), GB2D0_shm(GB2D0_shm.extension(0), {M0, Mn}),
-                        GB2D_(GB2D_.extension(0), {M0, Mn}));                   // can be local
-            ma::product(T(OrbMats.back()), GB2D_(GB2D_.extension(0), {M0, Mn}), // can be local
-                        Gw(Gw.extension(0), {M0, Mn}));
+            ma::product(T(Rb), GB2D0_shm(GB2D0_shm.extent(), {M0, Mn}),
+                        GB2D_(GB2D_.extent(), {M0, Mn}));                   // can be local
+            ma::product(T(OrbMats.back()), GB2D_(GB2D_.extent(), {M0, Mn}), // can be local
+                        Gw(Gw.extent(), {M0, Mn}));
           }
         }
         else
         {
           if (compact)
           {
-            ma::product(T(Rb), GB2D0_shm(GB2D0_shm.extension(0), {M0, Mn}),
-                        GB2D_(GB2D_.extension(0), {M0, Mn})); // can be local
+            ma::product(T(Rb), GB2D0_shm(GB2D0_shm.extent(), {M0, Mn}),
+                        GB2D_(GB2D_.extent(), {M0, Mn})); // can be local
             using std::get;
             boost::multi::array_ref<ComplexType, 3> Gw(to_address(G[GAdims.first * GAdims.second].origin()),
                                                        {GBdims.first, GBdims.second, long(get<1>(G.sizes()))});
@@ -749,10 +749,10 @@ void PHMSD::MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool com
           }
           else
           {
-            ma::product(T(Rb), GB2D0_shm(GB2D0_shm.extension(0), {M0, Mn}),
-                        GB2D_(GB2D_.extension(0), {M0, Mn})); // can be local
-            ma::product(T(OrbMats[0]), GB2D_(GB2D_.extension(0), {M0, Mn}),
-                        Gfullb(Gfullb.extension(0), {M0, Mn})); // can be local
+            ma::product(T(Rb), GB2D0_shm(GB2D0_shm.extent(), {M0, Mn}),
+                        GB2D_(GB2D_.extent(), {M0, Mn})); // can be local
+            ma::product(T(OrbMats[0]), GB2D_(GB2D_.extent(), {M0, Mn}),
+                        Gfullb(Gfullb.extent(), {M0, Mn})); // can be local
             using std::get;
             boost::multi::array_ref<ComplexType, 3> Gw(to_address(G[Gfulla.num_elements()].origin()),
                                                        {long(get<0>(Gfullb.sizes())), long(get<1>(Gfullb.sizes())), long(get<1>(G.sizes()))});
@@ -846,7 +846,7 @@ void PHMSD::DensityMatrix_shared(const WlkSet& wset,
       if (transposed)
         G[iw] = G1D_;
       else
-        G(G.extension(0), iw) = G1D_;
+        G(G.extent(), iw) = G1D_;
     }
   }
   else
@@ -1214,45 +1214,45 @@ void PHMSD::OrthogonalizeExcited(Mat&& A, SpinTypes spin, double LogOverlapFacto
     using std::get;
     if (get<0>(extendedMatAlpha.sizes()) != NMO || get<1>(extendedMatAlpha.sizes()) != maxOccupExtendedMat.first)
       extendedMatAlpha.reextent({NMO, maxOccupExtendedMat.first});
-    extendedMatAlpha(extendedMatAlpha.extension(0), {0, NAEA}) = A;
-    extendedMatAlpha(extendedMatAlpha.extension(0), {NAEA + 1, maxOccupExtendedMat.first}) =
-        excitedOrbMat[0](excitedOrbMat.extension(1), {NAEA + 1, maxOccupExtendedMat.first});
+    extendedMatAlpha(extendedMatAlpha.extent(), {0, NAEA}) = A;
+    extendedMatAlpha(extendedMatAlpha.extent(), {NAEA + 1, maxOccupExtendedMat.first}) =
+        excitedOrbMat[0](get<1>(excitedOrbMat.extents()), {NAEA + 1, maxOccupExtendedMat.first});
     // move i->a, copy trial orb i
     for (auto& i : excitations)
       if (i.first < NMO && i.second < NMO)
       {
-        extendedMatAlpha(extendedMatAlpha.extension(0), i.second) =
-            extendedMatAlpha(extendedMatAlpha.extension(0), i.first);
-        extendedMatAlpha(extendedMatAlpha.extension(0), i.first) =
-            excitedOrbMat[0](excitedOrbMat.extension(1), i.first);
+        extendedMatAlpha(extendedMatAlpha.extent(), i.second) =
+            extendedMatAlpha(extendedMatAlpha.extent(), i.first);
+        extendedMatAlpha(extendedMatAlpha.extent(), i.first) =
+            excitedOrbMat[0](get<1>(excitedOrbMat.extents()), i.first);
       }
     ComplexType det              = SDetOp.Orthogonalize(extendedMatAlpha, LogOverlapFactor);
-    A(A.extension(0), {0, NAEA}) = extendedMatAlpha(extendedMatAlpha.extension(0), {0, NAEA});
+    A(A.extent(), {0, NAEA}) = extendedMatAlpha(extendedMatAlpha.extent(), {0, NAEA});
     for (auto& i : excitations)
       if (i.first < NMO && i.second < NMO)
-        A(A.extension(0), i.first) = extendedMatAlpha(extendedMatAlpha.extension(0), i.second);
+        A(A.extent(), i.first) = extendedMatAlpha(extendedMatAlpha.extent(), i.second);
   }
   else
   {
     using std::get;
     if (get<0>(extendedMatBeta.sizes()) != NMO || get<1>(extendedMatBeta.sizes()) != maxOccupExtendedMat.second)
       extendedMatBeta.reextent({NMO, maxOccupExtendedMat.second});
-    extendedMatBeta(extendedMatBeta.extension(0), {0, NAEB}) = A;
-    extendedMatBeta(extendedMatBeta.extension(0), {NAEB + 1, maxOccupExtendedMat.second}) =
-        excitedOrbMat[1](excitedOrbMat.extension(1), {NAEB + 1, maxOccupExtendedMat.second});
+    extendedMatBeta(extendedMatBeta.extent(), {0, NAEB}) = A;
+    extendedMatBeta(extendedMatBeta.extent(), {NAEB + 1, maxOccupExtendedMat.second}) =
+        excitedOrbMat[1](get<1>(excitedOrbMat.extents()), {NAEB + 1, maxOccupExtendedMat.second});
     // move i->a, copy trial orb i
     for (auto& i : excitations)
       if (i.first >= NMO && i.second >= NMO)
       {
-        extendedMatBeta(extendedMatBeta.extension(0), i.second) =
-            extendedMatBeta(extendedMatBeta.extension(0), i.first);
-        extendedMatBeta(extendedMatBeta.extension(0), i.first) = excitedOrbMat[1](excitedOrbMat.extension(1), i.first);
+        extendedMatBeta(extendedMatBeta.extent(), i.second) =
+            extendedMatBeta(extendedMatBeta.extent(), i.first);
+        extendedMatBeta(extendedMatBeta.extent(), i.first) = excitedOrbMat[1](get<1>(excitedOrbMat.extents()), i.first);
       }
     ComplexType detR             = SDetOp.Orthogonalize(extendedMatBeta, LogOverlapFactor);
-    A(A.extension(0), {0, NAEB}) = extendedMatBeta(extendedMatBeta.extension(0), {0, NAEB});
+    A(A.extent(), {0, NAEB}) = extendedMatBeta(extendedMatBeta.extent(), {0, NAEB});
     for (auto& i : excitations)
       if (i.first >= NMO && i.second >= NMO)
-        A(A.extension(0), i.first) = extendedMatBeta(extendedMatBeta.extension(0), i.second);
+        A(A.extent(), i.first) = extendedMatBeta(extendedMatBeta.extent(), i.second);
   }
 }
 
@@ -1279,7 +1279,7 @@ void PHMSD::vMF(Vec&& v)
 
   //shmCMatrix ovlps({2,maxn_unique_confg},shared_allocator<ComplexType>{TG.Node()});
   //boost::multi::array<ComplexType,2> ovlps({2,maxn_unique_confg});
-  boost::multi::array<ComplexType, 2> ovlps({2, static_cast<boost::multi::size_t>(maxn_unique_confg)});
+  boost::multi::array<ComplexType, 2> ovlps({2, static_cast<boost::multi::ssize_t>(maxn_unique_confg)});
   //if(TG.Node().root())
   std::fill_n(to_address(ovlps.origin()), 2 * maxn_unique_confg, ComplexType(0.0));
 

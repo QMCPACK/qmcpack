@@ -445,7 +445,7 @@ public:
         for (int a = 0; a < nelpk[nd][K]; ++a)
           for (int pol = 0; pol < npol; ++pol)
             ma::product(ComplexType(1.), ma::T(G3Da[(na + a) * npol + pol].sliced(nk, nk + nopk[K])), haj_K[a][pol],
-                        ComplexType(1.), E(E.extension(0), 0));
+                        ComplexType(1.), E(E.extent(), 0));
         na += nelpk[nd][K];
         if (walker_type == COLLINEAR)
         {
@@ -453,7 +453,7 @@ public:
                                                          {nelpk[nd][nkpts + K], nopk[K]});
           for (int b = 0; b < nelpk[nd][nkpts + K]; ++b)
             ma::product(ComplexType(1.), ma::T(G3Db[nb + b].sliced(nk, nk + nopk[K])), haj_Kb[b], ComplexType(1.),
-                        E(E.extension(0), 0));
+                        E(E.extent(), 0));
           nb += nelpk[nd][nkpts + K];
         }
         nk += nopk[K];
@@ -464,14 +464,14 @@ public:
           na = nelpk[nd][K];
           CVector_ref haj_K(to_address(haj[nd * nkpts + K].origin()), {na * npol * nk});
           SpMatrix_ref Gaj(to_address(GKK[0][K][K].origin()), {nwalk, na * npol * nk});
-          ma::product(ComplexType(1.), Gaj, haj_K, ComplexType(1.), E(E.extension(0), 0));
+          ma::product(ComplexType(1.), Gaj, haj_K, ComplexType(1.), E(E.extent(), 0));
         }
         if (walker_type == COLLINEAR)
         {
           na = nelpk[nd][nkpts + K];
           CVector_ref haj_K(to_address(haj[nd * nkpts + K].origin()) + nelpk[nd][K] * nk, {na * nk});
           SpMatrix_ref Gaj(to_address(GKK[1][K][K].origin()), {nwalk, na * nk});
-          ma::product(ComplexType(1.), Gaj, haj_K, ComplexType(1.), E(E.extension(0), 0));
+          ma::product(ComplexType(1.), Gaj, haj_K, ComplexType(1.), E(E.extent(), 0));
         }
 #endif
       }
@@ -813,7 +813,7 @@ public:
                                                       {nelpk[nd][K], nopk[K]});
         for (int a = 0; a < nelpk[nd][K]; ++a)
           ma::product(ComplexType(1.), ma::T(G3Da[na + a].sliced(nk, nk + nopk[K])), haj_K[a], ComplexType(1.),
-                      E(E.extension(0), 0));
+                      E(E.extent(), 0));
         na += nelpk[nd][K];
         if (walker_type == COLLINEAR)
         {
@@ -821,7 +821,7 @@ public:
                                                          {nelpk[nd][nkpts + K], nopk[K]});
           for (int b = 0; b < nelpk[nd][nkpts + K]; ++b)
             ma::product(ComplexType(1.), ma::T(G3Db[nb + b].sliced(nk, nk + nopk[K])), haj_Kb[b], ComplexType(1.),
-                        E(E.extension(0), 0));
+                        E(E.extent(), 0));
           nb += nelpk[nd][nkpts + K];
         }
         nk += nopk[K];
@@ -831,14 +831,14 @@ public:
           na = nelpk[nd][K];
           CVector_ref haj_K(to_address(haj[nd * nkpts + K].origin()), {na * nk});
           SpMatrix_ref Gaj(to_address(GKK[0][K][K].origin()), {nwalk, na * nk});
-          ma::product(ComplexType(1.), Gaj, haj_K, ComplexType(1.), E(E.extension(0), 0));
+          ma::product(ComplexType(1.), Gaj, haj_K, ComplexType(1.), E(E.extent(), 0));
         }
         if (walker_type == COLLINEAR)
         {
           na = nelpk[nd][nkpts + K];
           CVector_ref haj_K(to_address(haj[nd * nkpts + K].origin()) + nelpk[nd][K] * nk, {na * nk});
           SpMatrix_ref Gaj(to_address(GKK[1][K][K].origin()), {nwalk, na * nk});
-          ma::product(ComplexType(1.), Gaj, haj_K, ComplexType(1.), E(E.extension(0), 0));
+          ma::product(ComplexType(1.), Gaj, haj_K, ComplexType(1.), E(E.extent(), 0));
         }
 #endif
       }
@@ -1171,7 +1171,7 @@ public:
       }
       comm->barrier();
     }
-    SpMatrix_ref X(Xptr, Xw.extensions());
+    SpMatrix_ref X(Xptr, Xw.extents());
 
     // "rotate" X
     //  XIJ = 0.5*a*(Xn+ -i*Xn-), XJI = 0.5*a*(Xn+ +i*Xn-)

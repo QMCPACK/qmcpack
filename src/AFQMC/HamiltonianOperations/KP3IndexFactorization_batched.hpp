@@ -94,11 +94,11 @@ class KP3IndexFactorization_batched
   using Sp4Tensor_ref = SPComplexArray_ref<4, sp_pointer>;
   using Sp5Tensor_ref = SPComplexArray_ref<5, sp_pointer>;
 
-  using StaticIVector = boost::multi::static_array<int, 1, device_alloc_Itype>;
-  using StaticVector  = boost::multi::static_array<SPComplexType, 1, device_alloc_type>;
-  using StaticMatrix  = boost::multi::static_array<SPComplexType, 2, device_alloc_type>;
-  using Static3Tensor = boost::multi::static_array<SPComplexType, 3, device_alloc_type>;
-  using Static4Tensor = boost::multi::static_array<SPComplexType, 4, device_alloc_type>;
+  using StaticIVector = boost::multi::dynamic_array<int, 1, device_alloc_Itype>;
+  using StaticVector  = boost::multi::dynamic_array<SPComplexType, 1, device_alloc_type>;
+  using StaticMatrix  = boost::multi::dynamic_array<SPComplexType, 2, device_alloc_type>;
+  using Static3Tensor = boost::multi::dynamic_array<SPComplexType, 3, device_alloc_type>;
+  using Static4Tensor = boost::multi::dynamic_array<SPComplexType, 4, device_alloc_type>;
 
   using shmCVector  = ComplexVector<Allocator_shared>;
   using shmCMatrix  = ComplexMatrix<Allocator_shared>;
@@ -675,8 +675,8 @@ public:
             LQmptr = make_device_ptr(LQKank[nd * nspin * nkpts + spin * nkpts + Qm].origin());
           }
 
-          SpMatrix_ref LQ(LQptr, LQKank[nd * nspin * nkpts + spin * nkpts + Q].extensions());
-          SpMatrix_ref LQm(LQmptr, LQKank[nd * nspin * nkpts + spin * nkpts + Qm].extensions());
+          SpMatrix_ref LQ(LQptr, LQKank[nd * nspin * nkpts + spin * nkpts + Q].extents());
+          SpMatrix_ref LQm(LQmptr, LQKank[nd * nspin * nkpts + spin * nkpts + Qm].extents());
 
           if (needs_copy)
           {
@@ -1229,10 +1229,10 @@ public:
     // "rotate" X
     //  XIJ = 0.5*a*(Xn+ -i*Xn-), XJI = 0.5*a*(Xn+ +i*Xn-)
 #if defined(MIXED_PRECISION)
-    StaticMatrix Xdev(X.extensions(), device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    StaticMatrix Xdev(X.extents(), device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
     copy_n_cast(make_device_ptr(X.origin()), X.num_elements(), Xdev.origin());
 #else
-    SpMatrix_ref Xdev(make_device_ptr(X.origin()), X.extensions());
+    SpMatrix_ref Xdev(make_device_ptr(X.origin()), X.extents());
 #endif
     for (int Q = 0; Q < nkpts; ++Q)
     {

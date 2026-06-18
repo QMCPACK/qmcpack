@@ -688,9 +688,9 @@ Tp MixedDensityMatrix(const MatA& hermA,
   if (N0 != Nn)
   {
     if (herm)
-      ma::product(hermA, B(B.extension(0), {N0, Nn}), T1(T1.extension(0), {N0, Nn}));
+      ma::product(hermA, B(B.extent(), {N0, Nn}), T1(T1.extent(), {N0, Nn}));
     else
-      ma::product(H(hermA), B(B.extension(0), {N0, Nn}), T1(T1.extension(0), {N0, Nn}));
+      ma::product(H(hermA), B(B.extent(), {N0, Nn}), T1(T1.extent(), {N0, Nn}));
   }
 
   comm.barrier();
@@ -718,7 +718,7 @@ Tp MixedDensityMatrix(const MatA& hermA,
     //            T(B),
     //            C.sliced(N0,Nn));
     if (N0 != Nn)
-      ma::product(T(T1(T1.extension(0), {N0, Nn})), T(B), C.sliced(N0, Nn));
+      ma::product(T(T1(T1.extent(), {N0, Nn})), T(B), C.sliced(N0, Nn));
   }
   else
   {
@@ -730,7 +730,7 @@ Tp MixedDensityMatrix(const MatA& hermA,
       //            T2.sliced(N0,Nn));
 
       if (N0 != Nn)
-        ma::product(ComplexType(1.0), T(T1(T1.extension(0), {N0, Nn})), T(B), ComplexType(0.0), T2.sliced(N0, Nn));
+        ma::product(ComplexType(1.0), T(T1(T1.extent(), {N0, Nn})), T(B), ComplexType(0.0), T2.sliced(N0, Nn));
 
       comm.barrier();
 
@@ -739,7 +739,7 @@ Tp MixedDensityMatrix(const MatA& hermA,
 
       // C = conj(A) * T2
       if (N0 != Nn)
-        ma::product(T(hermA), T2(T2.extension(0), {N0, Nn}), C(C.extension(0), {N0, Nn}));
+        ma::product(T(hermA), T2(T2.extent(), {N0, Nn}), C(C.extent(), {N0, Nn}));
     }
     else
     {
@@ -755,7 +755,7 @@ Tp MixedDensityMatrix(const MatA& hermA,
 
       // C = T( B * T2) = T(T2) * T(B)
       if (N0 != Nn)
-        ma::product(T(T2(T2.extension(0), {N0, Nn})), T(B), C.sliced(N0, Nn));
+        ma::product(T(T2(T2.extent(), {N0, Nn})), T(B), C.sliced(N0, Nn));
     }
   }
   comm.barrier();
@@ -804,9 +804,9 @@ Tp Overlap(const MatA& hermA,
   if (N0 != Nn)
   {
     if (herm)
-      ma::product(hermA, B(B.extension(0), {N0, Nn}), T1(T1.extension(0), {N0, Nn}));
+      ma::product(hermA, B(B.extent(), {N0, Nn}), T1(T1.extent(), {N0, Nn}));
     else
-      ma::product(H(hermA), B(B.extension(0), {N0, Nn}), T1(T1.extension(0), {N0, Nn}));
+      ma::product(H(hermA), B(B.extent(), {N0, Nn}), T1(T1.extent(), {N0, Nn}));
   }
 
   comm.barrier();
@@ -859,7 +859,7 @@ Tp OverlapForWoodbury(const MatA& hermA,
   Tp ovlp;
   // T(B)*conj(A)
   if (N0 != Nn)
-    ma::product(hermA, B(B.extension(0), {N0, Nn}), TMN(TMN.extension(0), {N0, Nn}));
+    ma::product(hermA, B(B.extent(), {N0, Nn}), TMN(TMN.extent(), {N0, Nn}));
   comm.barrier();
   if (comm.rank() == 0)
   {
@@ -874,7 +874,7 @@ Tp OverlapForWoodbury(const MatA& hermA,
   std::tie(M0, Mn) = FairDivideBoundary(comm.rank(), sz, comm.size());
 
   // QQ0 = TMN * inv(TNN)
-  ma::product(TMN.sliced(M0, Mn), TNN, QQ0({M0, Mn}, QQ0.extension(1))); //.sliced(M0,Mn));
+  ma::product(TMN.sliced(M0, Mn), TNN, QQ0({M0, Mn}, get<1>(QQ0.extents()))); //.sliced(M0,Mn));
                                                                          //QQ0.sliced(M0,Mn));
   comm.barrier();
   return ovlp;
@@ -938,7 +938,7 @@ Tp MixedDensityMatrixForWoodbury(const MatA& hermA,
   // TAB = herm(A)*B
   if (N0 != Nn)
   {
-    ma::product(hermA, B(B.extension(0), {N0, Nn}), TAB(TAB.extension(0), {N0, Nn}));
+    ma::product(hermA, B(B.extent(), {N0, Nn}), TAB(TAB.extent(), {N0, Nn}));
 
     // TNN = TAB[ref,:]
     for (int i = 0; i < NEL; i++)
@@ -958,26 +958,26 @@ Tp MixedDensityMatrixForWoodbury(const MatA& hermA,
 
   // QQ0 = TAB * inv(TNN)
   if (P0 != Pn)
-    ma::product(TAB.sliced(P0, Pn), TNN, QQ0({P0, Pn}, QQ0.extension(1)));
+    ma::product(TAB.sliced(P0, Pn), TNN, QQ0({P0, Pn}, get<1>(QQ0.extents())));
   //QQ0.sliced(P0,Pn));
   if (compact)
   {
     // C = T(TNN) * T(B)
     if (N0 != Nn)
-      ma::product(T(TNN(TNN.extension(0), {N0, Nn})), T(B), C({N0, Nn}, C.extension(1)));
+      ma::product(T(TNN(TNN.extent(), {N0, Nn})), T(B), C({N0, Nn}, get<1>(C.extents())));
   }
   else
   {
     // TNM = T(TNN) * T(B)
     if (N0 != Nn)
-      ma::product(T(TNN(TNN.extension(0), {N0, Nn})), T(B), TNM.sliced(N0, Nn));
+      ma::product(T(TNN(TNN.extent(), {N0, Nn})), T(B), TNM.sliced(N0, Nn));
 
     int sz           = get<1>(TNM.sizes());
     std::tie(N0, Nn) = FairDivideBoundary(comm.rank(), sz, comm.size());
     comm.barrier();
 
     // C = conj(A) * TNM
-    ma::product(T(hermA), TNM(TNM.extension(0), {N0, Nn}), C(C.extension(0), {N0, Nn}));
+    ma::product(T(hermA), TNM(TNM.extent(), {N0, Nn}), C(C.extent(), {N0, Nn}));
   }
 
   comm.barrier();

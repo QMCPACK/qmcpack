@@ -529,7 +529,7 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type,
         break;
       if (transpose)
       {
-        auto vec = Q(Q.extension(0), cnt);
+        auto vec = Q(Q.extent(), cnt);
         for (auto& v : vec)
           v = SPComplexType(0, 0);
         auto Aa = (*Alpha)[a];
@@ -576,7 +576,7 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type,
           break;
         if (transpose)
         {
-          auto vec = Q(Q.extension(0), cnt);
+          auto vec = Q(Q.extent(), cnt);
           for (auto& v : vec)
             v = SPComplexType(0, 0);
           auto Aa = (*Beta)[a];
