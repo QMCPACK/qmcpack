@@ -60,12 +60,6 @@ add_test(NAME speed.hip.amd.x COMMAND $<TARGET_FILE:speed.hip.amd.x>)
 
 # # target_include_directories(${TEST_EXE}        PRIVATE ../../../../../include)
 
-#   target_compile_definitions(${TEST_EXE} PRIVATE "BOOST_PP_VARIADICS")
-#   target_compile_definitions(${TEST_EXE} PRIVATE ${Boost_DEFINITIONS})
-#   target_include_directories(${TEST_EXE} SYSTEM PRIVATE ${Boost_INCLUDE_DIRS})
-#   target_link_libraries(${TEST_EXE} PRIVATE ${Boost_LIBRARIES})
-#   target_link_directories(${TEST_EXE} PRIVATE ${Boost_LIBRARY_DIRS})
-
 # #    if(ENABLE_CUDA)
 # #     add_test(NAME ${TEST_EXE} COMMAND ./${TEST_EXE})
 # #    endif()

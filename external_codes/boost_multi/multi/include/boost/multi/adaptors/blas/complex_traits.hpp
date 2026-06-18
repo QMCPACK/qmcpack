@@ -4,7 +4,6 @@
 
 #ifndef BOOST_MULTI_ADAPTORS_BLAS_COMPLEX_TRAITS_HPP
 #define BOOST_MULTI_ADAPTORS_BLAS_COMPLEX_TRAITS_HPP
-#pragma once
 
 #if defined(__NVCC__) || defined(__HIPCC__)  // defined(__HIP_PLATFORM_AMD__) || defined(__HIP_PLATFORM_NVIDIA__)
 #include<thrust/complex.h>

@@ -1,36 +1,42 @@
 cmake_minimum_required(VERSION 3.16)
 
-set(CMAKE_VERBOSE_MAKEFILE ON)
+if(ENABLE_CUDA OR DEFINED CXXCUDA)
+	enable_language(CUDA)
+	if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
+		set(CMAKE_CUDA_ARCHITECTURES native)
+	endif()
+	find_package(CUDAToolkit REQUIRED COMPONENTS Thrust)  # requires cmake 3.17
+endif()
 
-find_package(Boost REQUIRED COMPONENTS unit_test_framework)
+find_package(Boost CONFIG REQUIRED)  # tests require Boost.Core LightweightTest
 
-include_directories(${Boost_INCLUDE_DIRS})
+enable_testing()
+include(CTest)
 
-file(
-	GLOB TEST_SRCS
-	RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
-	*.cu
-)
-# set(TEST_SRCS managed.cu )
+include_directories(${CMAKE_BINARY_DIR})
+
+set(TEST_SRCS)
+#	neighbor_list.cu)
 
 foreach(TEST_FILE ${TEST_SRCS})
-	get_filename_component(TEST_EXE ${TEST_FILE} NAME_WE)
-	add_executable(${TEST_EXE} ${TEST_FILE})
 	if(ENABLE_CUDA OR DEFINED CXXCUDA)
-		set_source_files_properties(${TEST_FILE} PROPERTIES LANGUAGE CUDA)
-		# target_compile_options(${TEST_EXE} PRIVATE -std=c++17 --expt-relaxed-constexpr)
-	endif()
-	# target_compile_features   (${TEST_EXE} PUBLIC cxx_std_17)
-	target_compile_definitions(${TEST_EXE} PRIVATE "BOOST_PP_VARIADICS")
-	target_compile_definitions(${TEST_EXE} PRIVATE ${Boost_DEFINITIONS})
-	# target_include_directories(${TEST_EXE} SYSTEM PRIVATE ${Boost_INCLUDE_DIRS})
-	target_link_libraries(${TEST_EXE} PRIVATE ${Boost_LIBRARIES})
-	target_link_directories(${TEST_EXE} PRIVATE ${Boost_LIBRARY_DIRS})
-	target_link_libraries(${TEST_EXE} PRIVATE multi)
+		set(TEST_EXE "${TEST_FILE}.x")
+		add_executable(${TEST_EXE} ${TEST_FILE})
 
-	# if(NOT ENABLE_CUDA) target_compile_options  (${TEST_EXE} PRIVATE -Werror -Wall -Wextra -fno-common $<$<CXX_COMPILER_ID:GNU>: -Wpedantic -Wformat-truncation -fstack-usage>#-Wconversion
-	# $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>>:
-	# -Wpedantic -Wmove> $<$<CXX_COMPILER_ID:Intel>: -wd161 -diag-disable=remark -Warray-bounds -Wchar-subscripts -Wcomment -Wenum-compare -Wformat -Wuninitialized -Wmaybe-uninitialized -Wmain -Wnarrowing -Wnonnull -Wparentheses
-	# -Wpointer-sign -Wreorder -Wno-return-type -Wsign-compare -Wsequence-point -Wtrigraphs -Wunused-function -Wunused-but-set-variable -Wunused-variable -Wwrite-strings -Werror -diag-error:3846 > $<$<CXX_COMPILER_ID:MSVC>: /W4>) endif()
-	add_test(NAME ${TEST_EXE} COMMAND $<TARGET_FILE:${TEST_EXE}>)
+		target_compile_definitions(${TEST_EXE} PRIVATE ${Boost_DEFINITIONS})
+
+		# target_include_directories(${TEST_EXE}        PRIVATE ${PROJECT_SOURCE_DIR}/include)
+		target_include_directories(${TEST_EXE}        PRIVATE ${CUDA_INCLUDE_DIRS})
+	
+		#target_compile_options(${TEST_EXE} PRIVATE --expt-relaxed-constexpr)
+	
+		target_link_libraries(${TEST_EXE} PRIVATE ${CUDA_LIBRARIES})
+		target_link_libraries(${TEST_EXE} PRIVATE multi)
+
+		set_source_files_properties(${TEST_FILE} PROPERTIES LANGUAGE CUDA)
+		
+		add_test(NAME ${TEST_EXE} COMMAND ./${TEST_EXE})
+	endif()
 endforeach()
+
+# target_compile_options(neighbor_list.cu.x PRIVATE $<$<COMPILE_LANG_AND_ID:CUDA,NVIDIA>:--extended-lambda>)

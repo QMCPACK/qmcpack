@@ -1,0 +1,191 @@
+[#technical]
+
+= Technical points (design rationale)
+
+:idprefix: technical_
+
+[#technical_indexing]
+== Indexing (square brackets vs. parenthesis?)
+
+The chained bracket notation (`A[i][j][k]`) allows you to refer to elements and lower-dimensional subarrays consistently and generically, and it is the recommended way to access array objects.
+It is a frequently raised question whether the chained bracket notation is beneficial for performance, as each use of the bracket leads to the creation of temporary objects, which in turn generates a partial copy of the layout.
+Moreover, this goes against link:https://isocpp.org/wiki/faq/operator-overloading#matrix-subscript-op[historical recommendations].
+
+It turns out that modern compilers with a fair level of optimization (`-O2`) can elide these temporary objects so that `A[i][j][k]` generates identical machine code as `A.base() + i*stride1 + j*stride2 + k*stride3` (+offsets not shown).
+In a subsequent optimization, constant indices can have their "partial stride" computation removed from loops. 
+As a result, these two loops lead to the link:https://godbolt.org/z/eEWWq34Yc[same machine code]:
+
+[source,cpp]
+----
+	// given the values of i and k and accumulating variable acc ...
+    for(long j = 0; j != M; ++j) {acc += A[i][j][k];}
+----
+
+[source,cpp]
+----
+    auto* base = A.base() + i*std::get<0>(A.strides()) + k*std::get<2>(A.strides());
+    for(long j = 0; j != M; ++j) {acc += *(base + j*std::get<1>(A.strides()));}
+----
+
+Incidentally, the library also supports parenthesis notation with multiple indices `A(i, j, k)` for element or partial access;
+it does so as part of a more general syntax to generate sub-blocks.
+In any case, `A(i, j, k)` is expanded to `A[i][j][k]` internally in the library when `i`, `j`, and `k` are normal integer indices.
+For this reason, `A(i, j, k)`, `A(i, j)(k)`, `A(i)(j)(k)`, `A[i](j)[k]` are examples of equivalent expressions.
+
+(Since C++23, the library also accepts multidimensional subscript notation `A[i, j, k]`)
+
+Sub-block notation, when at least one argument is an index range, e.g., `A({i0, i1}, j, k)` has no equivalent with individual square-bracket notation.
+Note also that `A({i0, i1}, j, k)` is not equivalent to `A({i0, i1})(j, k)`; their resulting sublocks have different dimensionality.
+
+Additionally, array coordinates can be directly stored in tuple-like data structures, allowing this functional syntax:
+
+[source,cpp]
+----
+std::array<int, 3> p = {2, 3, 4};
+std::apply(A, p) = 234;  // same as assignment A(2, 3, 4) = 234; and same as A[2][3][4] = 234;
+----
+
+Since C++23 (when the `__cpp_multidimensional_subscript` is available), element access supports multidimensional subscript notation.
+In this case, `A[i, j]` is equivalent to `A[i][j]`, and `A[i, j, k]` is equivalent to `A[i][j][k]`, etc., where `i` , `j`, `k`, ... are indices.
+
+[#technical_iteration]
+== Out-of-bounds pointer formation in the abstract machine
+
+The C++ abstract machine imposes strict rules on pointer arithmetic ([expr.add]): In particular, forming a pointer more than one position past the end of an allocation is undefined behavior -- even if the pointer is never dereferenced.
+
+Since this library's iteration is pointer-based (iterators are thin wrappers over pointers with stride information), these restrictions apply to its iterators as well.
+
+=== Affected cases
+
+There are three cases where an iterator's underlying pointer may overshoot the allocation boundary:
+
+1. **Strided views whose stride does not evenly divide the extent.**
+For example, given a 1D array of 10 elements, `A.strided(3)` produces a view of elements {0, 3, 6, 9}.
+Computing `.end()` requires forming the pointer `base + 3 * 4 = base + 12`, which is two positions past the end of the 10-element allocation -- undefined behavior under [expr.add].
+(User-level mitigation, if needed: ensure that stride value divides the extent size.)
+
+2. **Negative strides (reversed).**
+Reversed or negatively-strided views compute their `.end()` as a pointer _before_ the beginning of the allocation, which is equally undefined.
+(User-level mitigation, if needed: use `std::reverse_iterator` wrapper.)
+
+3. **Iterators of transposed (or rotated) arrays.**
+When a 2D array is transposed, iterating over the leading dimension advances the pointer by the original row stride.
+The `.end()` iterator may land past the allocation when the column count times the row stride exceeds the total number of elements.
+(User-level mitigation, if needed: use index access.)
+
+In all three cases, the undefined behavior occurs at the point of _forming_ the pointer value, not at the point of dereferencing it.
+
+=== Practical status
+
+This issue is specific to libraries that expose pointer-based strided iterators compatible with the STL iteration model (`.begin()`, `.end()`, pointer arithmetic with stride).
+Boost.Multi is unusual in providing both: STL-compatible strided iterators (which are subject to this issue) and index-based access (which is not).
+
+No tested compiler complains about the illegality of these transiently out-of-bounds pointer values, and the affected code behaves correctly on all tested platforms.
+However, sanitizers (e.g., AddressSanitizer) can in principle flag the formation of such pointers.
+(`constexpr` contexts can also reject this situation.)
+
+=== Library-level mitigations
+
+Possible mitigations at the library level include, at a cost:
+
+- Over-allocating (padding the allocation so that strided `.end()` pointers remain in-bounds).
+- Using integer offset arithmetic internally and forming pointers only at the point of dereference.
+- Representing `.end()` as a sentinel or count rather than a pointer.
+- Clearly state (and debug-check) that stride that do not divide the size are undefined behavior.
+
+These mitigations are not implemented, but the library is prepared to adopt them if necessary.
+
+=== Unaffected: functional (lazy) views
+
+`multi::restriction` objects are not affected by this problem because they do not manipulate pointers.
+Operations like `.transposed()`, `.strided()`, and `.reversed()` on a restriction simply rebind the index mapping; no pointer arithmetic is involved.
+
+[#technical_change_dimensionality]
+== Can I change the dimensionality of an array dynamically?
+
+No, dimensionality cannot be set or changed dynamically, this is fundamental to this library.
+Dimensionality is part of the type of the array or subarray objects.
+This is a choice is made because it is useful to know the dimensionality of an object at compile-time rather than conditionally.
+The reason is that in general there are not many algorithms or uses that work in the same way in different dimensions.
+
+The library achieves a different kind of cross-dimensional flexibility by:
+a) Treating D-dimensional arrays as, for example, a one-dimensional sequence of (D-1)-dimensional subarrays.
+A new D-dimensional array can be generated from an array of lower dimensionality
+
+[source,cpp]
+----
+multi::array<int, 1> A1D = {1, 2, 3};
+multi::array<int, 2> A2D(2, A1D);
+
+assert((A2D == multi::array<int, 2>{{1, 2, 3}, {1, 2, 3}}));
+
+assert( A2D[0] == A1D );
+assert( A2D[1] == A1D );
+----
+
+https://godbolt.org/z/rMEoG3d5c
+
+b) By providing `.elements()` method which gives a flattened view of array of any dimensionality. 
+
+[source,cpp]
+----
+multi::array<int, 1> A1D = {1, 2, 3};
+multi::array<int, 2> A2D = {{1, 2, 3}, {4, 5, 6}};
+
+std::for_each(A1D.elements().begin(), A1D.elements().end(), [](auto&& elem) {elem *= 2;} );
+std::for_each(A2D.elements().begin(), A2D.elements().end(), [](auto&& elem) {elem *= 2;} );
+----
+
+[#technical_dimensionality_static]
+== Why is the array's dimensionality hardcoded, while the array's sizes can be defined at runtime?
+
+The main idea is that the extents of an array can be determined at runtime, for applications such as simulations, the sizes adapt to the problem sizes, or set interactively/input by the user or from a previous run.
+This is a useful combination for medium to large arrays, therefore the library mainly provides arrays which sizes can be determined at run time.
+Since dimensionality known at compile-time can help determine if algorithms are available for specific dimensions during compilation.
+
+Even if the sizes of some arrays are fixed (like for a chessboard, 8 x 8), there is utility in choosing arbitrary subsets of the array for processing.
+
+The alternative, static sizes (hard coded) can be useful for two different orthogonal reasons
+a) Compile-time sizes, to optimize access (unroll loops),
+b) Use stack, to avoid allocations
+
+Different features have different trade-offs:
+
+|===
+|                         | Pros                                     | Cons                                                        
+
+| Dynamic dimensionality  | Avoids (dimension) templates/duck typing | Frequent runtime checks for dimensionality, layout and indices need to be dynamic themselves
+| Dynamics sizes          | Runtime adjust sizes                     | Requires either allocations or sizes are compile-time bounded
+| Fixed sizes             | Can be stack-based/loop unrolling        | No runtime choice, imposes small sizes                       
+| Stack-based             | Avoids allocations                       | Sizes are fixed or 
+|===
+
+Here is what the library provides:
+
+|===
+| Type                              | Dimensionality   | Sizes                     | Memory                   | Ownership
+
+| `multi::array<T, D>`              | Static           | Dynamic/Mutable           | Heap (allocates)         | Yes, transferable (movable)
+| `multi::dynamic_array<T, D>`      | Static           | Dynamic/Immutable         | Heap (allocates)         | Yes, non-transferable (pinned)
+| `multi::array_ref<T, D>`          | Static           | Dynamic/Immutable         | Any  (doesn't allocate)  | No, (pinned)
+| `multi::subarray<T, D>`           | Static           | Dynamic/Immutable         | Any  (doesn't allocate)  | No, (pinned)
+| `multi::inplace_array<T, D, ...>` | Static           | Dynamic/Mutable (bounded) | Stack                    | Yes, non-transferable (pinned)
+|===
+
+Other cases with dynamic dimension and/or static sizes are not provided directly by this library, but can be handled by this alternatives:
+
+|===
+| Type                                                                                       | Dimensionality   | Sizes                          | Memory                   | Ownership
+
+| xtensor, `std::variant<multi::array<T, 1>, multi::array<T, 2>, ...>`, see Python interface | Dynamic          | Dynamic/Mutable                | Heap  (allocates)        | Yes
+| `std::mdspan<T, DynamicExt>`                                                               | Static           | Dynamic/Immutable (rebindable) | Any   (doesn't allocate) | No (rebindable)
+| `std::mdspan<T, StaticExt>`                                                                | Static           | Static/Immutable (rebindable)  | Any   (allocate)         | No (rebindable)
+| `std::mdarray<T, DynamicExt...>` (C++26)                                                   | Static           | Dynamic/Mutable                | Heap  (allocates)        | Yes (container adaptor)
+| `std::mdarray<T, StaticExt...>` (C++26)                                                    | Static           | Static or Dynamic/Mutable      | Heap  (allocates)        | Yes (container adaptor)
+| `std::array<std::array<T, S1>, S2, ...>`                                                   | Static           | Immutable                      | Stack (doesn't allocate) | No, (pinned)
+|===
+
+[#technical_cpp17_minimum]
+== Why is the C++17 standard chosen as the minimum?
+
+The implementation uses `if constexpr` intensively, if you need C++14 please open an issue.

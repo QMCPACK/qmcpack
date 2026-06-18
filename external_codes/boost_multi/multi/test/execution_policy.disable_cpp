@@ -3,7 +3,7 @@
 // Distributed under the Boost Software License, Version 1.0.
 // https://www.boost.org/LICENSE_1_0.txt
 
-#include <boost/multi/array.hpp>
+// #include <boost/multi/array.hpp>
 
 #include <chrono>  // NOLINT(build/c++11)
 #include <complex>
@@ -45,20 +45,20 @@
 namespace multi = boost::multi;
 
 BOOST_AUTO_TEST_CASE(dummy_test) {
-	multi::static_array<double, 1> const arr(multi::extensions_t<1>{multi::iextension{10}}, 1.0);
+	multi::dynamic_array<double, 1> const arr(multi::extensions_t<1>{multi::iextension{10}}, 1.0);
 	BOOST_REQUIRE( arr[0] == 1.0 );
 }
 
 // BOOST_AUTO_TEST_CASE(multi_par_construct_1d) {
-//  multi::static_array<double, 1> const arr(multi::extensions_t<1>{multi::iextension{10}}, 1.0);
-//  //  multi::static_array<double, 1> arr(multi::array<double, 1>::extensions_type{10}, 1.0);
+//  multi::dynamic_array<double, 1> const arr(multi::extensions_t<1>{multi::iextension{10}}, 1.0);
+//  //  multi::dynamic_array<double, 1> arr(multi::array<double, 1>::extensions_type{10}, 1.0);
 //  BOOST_REQUIRE( size(arr) == 10 );
 //  BOOST_REQUIRE( arr[1] == 1.0 );
 
 // #if defined(TBB_FOUND) || (defined(__GNUC__) && !defined(__clang__) && !defined(__NVCOMPILER) && (__GLIBCXX__ >= 20190502))
 // #if !defined(__NVCC__) && !(defined(__clang__) && defined(__CUDA__))
 // #if !defined(PSTL_USE_PARALLEL_POLICIES) || !(PSTL_USE_PARALLEL_POLICIES == 0)
-//  multi::static_array<double, 1> const arr2(std::execution::par, arr);
+//  multi::dynamic_array<double, 1> const arr2(std::execution::par, arr);
 
 //  BOOST_REQUIRE( arr2 == arr );
 // #endif

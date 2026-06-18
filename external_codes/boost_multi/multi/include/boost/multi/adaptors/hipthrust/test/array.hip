@@ -3,7 +3,7 @@
 // https://www.boost.org/LICENSE_1_0.txt
 
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi hip thrust"
-#include <boost/test/unit_test.hpp>
+// #include <boost/test/unit_test.hpp>
 #include <boost/mpl/list.hpp>
 #include <boost/timer/timer.hpp>
 

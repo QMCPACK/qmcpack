@@ -1,47 +1,34 @@
-// Copyright 2018-2024 Alfredo A. Correa
+// Copyright 2018-2025 Alfredo A. Correa
 // Distributed under the Boost Software License, Version 1.0.
 // https://www.boost.org/LICENSE_1_0.txt
 
-#ifndef BOOST_MULTI_DETAIL_SERIALIZATION_HPP_
-#define BOOST_MULTI_DETAIL_SERIALIZATION_HPP_
+#ifndef BOOST_MULTI_DETAIL_SERIALIZATION_HPP
+#define BOOST_MULTI_DETAIL_SERIALIZATION_HPP
+// #pragma once
 
-#include <algorithm>  // for std::for_each
-#include <cstddef>  // for std::byte
-#include <cstdint>  // for std::uint32_t
-#include <type_traits>
+#include <algorithm>    // for std::for_each  // IWYU pragma: keep  // bug in iwyu 0.18
+#include <cstddef>      // for size_t, byte
+#include <cstdint>      // for uint32_t
+#include <iterator>     // for next
+#include <type_traits>  // for enable_if_t, decay_t
+#include <utility>      // for forward
 
-namespace boost {  // NOLINT(modernize-concat-nested-namespaces) keep c++14 compat
-namespace archive {  // NOLINT(modernize-concat-nested-namespaces) keep c++14 compat
-namespace detail {
+#if defined(__cpp_lib_byte) && (__cpp_lib_byte >= 201603L )
+using BOOST_MULTI_BYTE = std::byte;
+#else
+using BOOST_MULTI_BYTE = unsigned char;
+#endif
 
-template<class Ar> class common_iarchive;
-template<class Ar> class common_oarchive;
+namespace boost::archive::detail { template <class Ar> class common_iarchive; }  // lines 24-24
+namespace boost::archive::detail { template <class Ar> class common_oarchive; }  // lines 25-25
 
-}  // end namespace detail
-}  // end namespace archive
+namespace boost::serialization { struct binary_object; }
+namespace boost::serialization { template <class T> class array_wrapper; }
+namespace boost::serialization { template <class T> class nvp; }
 
-namespace serialization {  // NOLINT(modernize-concat-nested-namespaces) keep c++14 compat
-
-template<class T> class nvp;  // dependency "in name only"
-template<class T> class array_wrapper;  // dependency "in name only"
-struct binary_object;  // dependency "in name only", if you get an error here, it means that eventually you need to include #include<boost/serialization/binary_object.hpp>
-
-template<typename T> struct version;
-
-// template<class Archive, class T>//, std::enable_if_t<std::is_same<T, std::decay_t<T>>{}, int> =0>
-// auto operator>>(Archive& ar, T&& t) -> Archive& {return ar>> t;}
-
-}  // end namespace serialization
-}  // end namespace boost
-
-namespace cereal {
-
-template<class ArchiveType, std::uint32_t Flags> struct OutputArchive;
-template<class ArchiveType, std::uint32_t Flags> struct InputArchive;
-
-template<class T> class NameValuePair;  // dependency "in name only", if you get an error here you many need to #include <cereal/archives/xml.hpp> at some point
-
-}  // end namespace cereal
+namespace cereal { template <class ArchiveType, std::uint32_t Flags> struct InputArchive; }
+namespace cereal { template <class ArchiveType, std::uint32_t Flags> struct OutputArchive; }
+namespace cereal { template <class T> class NameValuePair; }  // if you get an error here you many need to #include <cereal/archives/xml.hpp> at some point  // IWYU pragma: keep  // bug in iwyu 0.18
 
 namespace boost {  // NOLINT(modernize-concat-nested-namespaces) keep c++14 compat
 namespace multi {
@@ -49,22 +36,21 @@ namespace multi {
 template<class Ar, class Enable = void>
 struct archive_traits {
 	template<class T>
-	/*inline*/ static auto make_nvp(char const* /*n*/, T&& value) noexcept { return std::forward<T>(value); }
+	/*inline*/ static auto make_nvp(char const* /*n*/, T&& value) noexcept { return std::forward<T>(value); }  // match original boost declaration
 };
 
-template<class Archive, class MA, std::enable_if_t<std::is_same_v<MA, std::decay_t<MA>> && (MA::dimensionality > -1), int> = 0>
+template<class Archive, class MA, std::enable_if_t<std::is_same_v<MA, std::decay_t<MA>> && (MA::dimensionality > -1), int> = 0>  // NOLINT(modernize-use-constraints) TODO(correaa)
 auto operator>>(Archive& arxiv, MA&& self)  // this is for compatibility with Archive type
 	-> decltype(arxiv >> static_cast<MA&>(std::forward<MA>(self))) {
 	return arxiv >> static_cast<MA&>(std::forward<MA>(self));
 }
 
-template<class Archive, class MA, std::enable_if_t<std::is_same_v<MA, std::decay_t<MA>> && (MA::dimensionality > -1), int> = 0>
+template<class Archive, class MA, std::enable_if_t<std::is_same_v<MA, std::decay_t<MA>> && (MA::dimensionality > -1), int> = 0>  // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays,modernize-use-constraints) for C++20
 auto operator<<(Archive& arxiv, MA&& self)  // this is for compatibility with Archive type
-	-> decltype(arxiv << static_cast<MA&>(std::forward<MA>(self))) {
-	return arxiv << static_cast<MA&>(std::forward<MA>(self));
-}
+->decltype(arxiv << static_cast<MA&>(std::forward<MA>(self))) {
+	return arxiv << static_cast<MA&>(std::forward<MA>(self)); }
 
-template<class Archive, class MA, std::enable_if_t<std::is_same_v<MA, std::decay_t<MA>> && (MA::dimensionality > -1), int> = 0>
+template<class Archive, class MA, std::enable_if_t<std::is_same_v<MA, std::decay_t<MA>> && (MA::dimensionality > -1), int> = 0>  // NOLINT(modernize-use-constraints) TODO(correaa)
 auto operator&(Archive& arxiv, MA&& self)  // this is for compatibility with Archive type
 	-> decltype(arxiv & static_cast<MA&>(std::forward<MA>(self))) {
 	return arxiv & static_cast<MA&>(std::forward<MA>(self));
@@ -78,11 +64,11 @@ struct archive_traits<Ar, typename std::enable_if_t<std::is_base_of_v<boost::arc
 		using type = boost::serialization::binary_object;
 	};
 
-	template<class T> /*inline*/ static auto make_nvp(char const* name, T& value) noexcept -> nvp<T> const { return nvp<T>{name, value}; }  // NOLINT(readability-const-return-type) : match original boost declaration
-	template<class T> /*inline*/ static auto make_nvp(char const* name, T&& value) noexcept -> nvp<T> const { return nvp<T>{name, static_cast<T&>(std::forward<T>(value))}; }  // NOLINT(readability-const-return-type) : match original boost declaration
+	template<class T> /*inline*/ static auto make_nvp(char const* name, T& value) noexcept -> nvp<T> const { return nvp<T>{name, value}; }  // NOLINT(readability-const-return-type) match original boost declaration
+	template<class T> /*inline*/ static auto make_nvp(char const* name, T&& value) noexcept -> nvp<T> const { return nvp<T>{name, value /*static_cast<T&>(std::forward<T>(value))*/}; }  // NOLINT(readability-const-return-type,cppcoreguidelines-missing-std-forward) match original boost declaration
 
 	template<class T>        /*inline*/ static auto make_array(T* first, std::size_t size) noexcept -> array_wrapper<T> const { return array_wrapper<T>{first, size}; }  // NOLINT(readability-const-return-type) original boost declaration
-	template<class T = void> /*inline*/ static auto make_binary_object(std::byte const* first, std::size_t size) noexcept -> const typename binary_object_t<T>::type { return typename binary_object_t<T>::type(first, size); }  // if you get an error here you need to eventually `#include<boost/serialization/binary_object.hpp>`// NOLINT(readability-const-return-type,clang-diagnostic-ignored-qualifiers) : original boost declaration
+	template<class T = void> /*inline*/ static auto make_binary_object(BOOST_MULTI_BYTE const* first, std::size_t size) noexcept -> const typename binary_object_t<T>::type { return typename binary_object_t<T>::type(first, size); }  // if you get an error here you need to eventually `#include<boost/serialization/binary_object.hpp>`// NOLINT(readability-const-return-type,clang-diagnostic-ignored-qualifiers,readability-redundant-typename) original boost declaration
 };
 
 template<class Ar>
@@ -111,7 +97,7 @@ struct archive_traits<
 		void serialize(Archive& arxiv, unsigned int const /*version*/) {
 			std::for_each(  // std::for_each_n is absent in GCC 7
 				p_, std::next(p_, c_),
-				[&arxiv](auto& item) { arxiv& make_nvp("item", item); }
+				[&arxiv](auto& item) -> void { arxiv& make_nvp("item", item); }
 			);
 			// for(std::size_t i = 0; i != c_; ++i) {  // NOLINT(altera-unroll-loops) TODO(correaa) consider using an algorithm
 			//  auto& item = p_[i];  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
@@ -128,31 +114,26 @@ struct archive_traits<
 	/*inline*/ static auto make_array(T* ptr, std::size_t count) -> array_wrapper<T> { return array_wrapper<T>{ptr, count}; }
 
 	template<class T>
-	/*inline*/ static auto make_nvp(char const* name, array_wrapper<T>&& value) noexcept { return make_nvp(name, static_cast<array_wrapper<T>&>(std::move(value))); }
+	/*inline*/ static auto make_nvp(char const* name, array_wrapper<T>&& value) noexcept { return make_nvp(name, /*static_cast<array_wrapper<T>&>(std::move(*/ value /*))*/); }  // NOLINT(cppcoreguidelines-rvalue-reference-param-not-moved)
 };
 
 }  // end namespace multi
 }  // end namespace boost
 
-namespace boost {
-
-template<class T, std::size_t D, class As>
-class multi_array;
-
-}  // end namespace boost
-
 namespace boost {  // NOLINT(modernize-concat-nested-namespaces) keep c++14 compat
+
 namespace serialization {
 
-template<class T>  // , class = std::enable_if_t<std::is_same_v<T&&, T&>> >
-inline auto make_nvp(char const* name, T&& value) {
-	return boost::serialization::make_nvp(name, static_cast<T&>(std::forward<T>(value)));
+// workaround for rvalue subarrays
+template<class T, class = std::enable_if_t<std::is_rvalue_reference_v<T&&> > >  // NOLINT(modernize-use-constraints) for C++20
+inline auto make_nvp(char const* name, T&& value) noexcept -> ::boost::serialization::nvp<T> {  // NOLINT(cppcoreguidelines-missing-std-forward) workaround legacy interface
+	return ::boost::serialization::nvp<T>(name, value);
 }
 
 }  // end namespace serialization
 
-using boost::serialization::make_nvp;
+using ::boost::serialization::make_nvp;
 
 }  // end namespace boost
 
-#endif  // BOOST_MULTI_DETAIL_SERIALIZATION_HPP_
+#endif  // BOOST_MULTI_DETAIL_SERIALIZATION_HPP

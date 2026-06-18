@@ -1,9 +1,9 @@
-// Copyright 2022-2023 Alfredo A. Correa
+// Copyright 2022-2026 Alfredo A. Correa
 // Distributed under the Boost Software License, Version 1.0.
 // https://www.boost.org/LICENSE_1_0.txt
 
-#ifndef BOOST_MULTI_CONFIG_VERSION_HPP_
-#define BOOST_MULTI_CONFIG_VERSION_HPP_
+#ifndef BOOST_MULTI_CONFIG_VERSION_HPP
+#define BOOST_MULTI_CONFIG_VERSION_HPP
 
 // NOLINTBEGIN(cppcoreguidelines-macro-usage,modernize-macro-to-enum) indicate library version
 #define BOOST_MULTI_VERSION_MAJOR  0

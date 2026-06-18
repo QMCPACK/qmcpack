@@ -1,5 +1,5 @@
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi HIP thrust"
-#include<boost/test/unit_test.hpp>
+// #include<boost/test/unit_test.hpp>
 
 #include <thrust/host_vector.h>
 #include <thrust/device_vector.h>
@@ -37,7 +37,7 @@ BOOST_AUTO_TEST_CASE(vector){
 	D[1] = 88;
 
 	thrust::device_ptr<int> p = D.data();  // this works with rocm hip 5.6
-//	thrust::pointer<int, thrust::detail::seq_t> p = D.data();  // this works with rocm hip 5.6
+//  thrust::pointer<int, thrust::detail::seq_t> p = D.data();  // this works with rocm hip 5.6
 
 	BOOST_REQUIRE( p[0] == 99 );
 

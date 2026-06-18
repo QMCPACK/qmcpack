@@ -1,11 +1,9 @@
-#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4-*-
-$CXXX $CXXFLAGS -O3 $0 -o $0x -DHAVE_FFTW3_THREADS -lfftw3 -lfftw3_threads -lboost_unit_test_framework -lboost_timer&&$0x&&rm $0x;exit
-#endif
-// © Alfredo A. Correa 2020
+// Copyright 2020-2025 Alfredo A. Correa
+// Distributed under the Boost Software License, Version 1.0.
+// https://www.boost.org/LICENSE_1_0.txt
 
-#define BOOST_TEST_MODULE "C++ Unit Tests for Multi FFTW copy"
-#define BOOST_TEST_DYN_LINK
-#include<boost/test/unit_test.hpp>
+sass
+
 #include<boost/timer/timer.hpp>
 
 #include "../../fftw.hpp"
@@ -76,7 +74,7 @@ BOOST_AUTO_TEST_CASE(fftw_copy){
 			rotated(out) = out;
 		}
 		BOOST_REQUIRE( out[1][2][3][4] == in[2][3][4][1] );
-	//	BOOST_REQUIRE( rotated(out) == in );
+	//  BOOST_REQUIRE( rotated(out) == in );
 	}
 	{
 		multi::array<complex, 4> out = in;

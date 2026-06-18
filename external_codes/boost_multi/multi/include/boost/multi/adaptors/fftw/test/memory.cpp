@@ -2,25 +2,17 @@
 // Copyright 2023 Alfredo A. Correa
 
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi FFTW memory"
-#include<boost/test/unit_test.hpp>
+// #include<boost/test/unit_test.hpp>
 
 #include <multi/adaptors/fftw.hpp>
 #include <multi/array.hpp>
 
-#include<chrono>
-#include<iostream>
-#include<random>
+#include <chrono>
+#include <iostream>
+#include <string_view>
+#include <random>
 
 #include<fftw3.h>
-
-class watch : private std::chrono::high_resolution_clock{
-	std::string label;
-	time_point start = now();
-
- public:
-	explicit watch(std::string label) : label{std::move(label)} {}
-	~watch(){std::cerr<< label<<": "<< std::chrono::duration<double>(now() - start).count() <<" sec"<<std::endl;}
-};
 
 template<class T> struct randomizer {
 	template<class M> void operator()(M&& arr) const {
@@ -486,7 +478,7 @@ BOOST_AUTO_TEST_CASE(fftw_2D_const_range_part1) {
 	};
 
 	{
-		multi::static_array<complex, 2> fwd(in.extensions());
+		multi::dynamic_array<complex, 2> fwd(in.extensions());
 
 		auto* data = fwd.data_elements();
 
@@ -832,9 +824,9 @@ BOOST_AUTO_TEST_CASE(fftw_2D_const_range_ref_transposed_nonpod) {
 
 BOOST_AUTO_TEST_CASE(fftw_2D_const_range_ref_transposed_nonpod_square) {
 	multi::array<std::string, 2> in = {
-		{  "100.0 + 2.0*I",  "9.0 - 1.0*I", "2.0 +  4.0*I"},  // std::string NOLINT(fuchsia-default-arguments-calls)
-		{    "3.0 + 3.0*I",  "7.0 - 4.0*I", "1.0 +  9.0*I"},  // std::string NOLINT(fuchsia-default-arguments-calls)
-		{    "4.0 + 1.0*I",  "5.0 + 3.0*I", "2.0 +  4.0*I"},  // std::string NOLINT(fuchsia-default-arguments-calls)
+		{  "100.0 + 2.0*I",  "9.0 - 1.0*I", "2.0 +  4.0*I"},  // std::string
+		{    "3.0 + 3.0*I",  "7.0 - 4.0*I", "1.0 +  9.0*I"},  // std::string
+		{    "4.0 + 1.0*I",  "5.0 + 3.0*I", "2.0 +  4.0*I"},  // std::string
 	};
 	multi::array<std::string, 2> const in_transpose = in.transposed();
 	in = in.transposed();

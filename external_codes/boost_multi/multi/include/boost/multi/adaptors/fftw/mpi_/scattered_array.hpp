@@ -142,7 +142,7 @@ public:
 		alloc_{alloc},
 		local_data_{std::allocator_traits<Alloc>::allocate(alloc_, scattered_array::local_count())}//,
 	{
-		if(not std::is_trivially_default_constructible<typename scattered_array::element_type>{})
+		if(not std::is_trivially_default_constructible<typename scattered_array::element>{})
 			adl_alloc_uninitialized_default_construct_n(alloc_, local_cutout().data_elements()/*local_ptr_->base()*/, local_cutout().num_elements());//local_ptr_->num_elements());
 	}
 	scattered_array(scattered_array const& other) :

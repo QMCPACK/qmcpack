@@ -1,0 +1,82 @@
+name: Build and Deploy Docs
+
+on:
+  push:
+    branches: ["develop", "master"]  # main Trigger on push to the active branches
+  workflow_dispatch:  # Allow manual runs
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js (for Antora)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Clang and CMake
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake libboost-dev
+
+      - name: Install MrDocs
+        run: |
+          wget --no-verbose https://github.com/cppalliance/mrdocs/releases/download/v0.8.0/MrDocs-0.8.0-Linux.tar.gz
+          tar xzf MrDocs-0.8.0-Linux.tar.gz
+          echo "$PWD/MrDocs-0.8.0-Linux/bin" >> $GITHUB_PATH
+
+      - name: Generate compile_commands.json for MrDocs
+        run: |
+          cmake -B build-mrdocs \
+            -DCMAKE_CXX_COMPILER=clang++ \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DMULTI_BUILD_TESTS=OFF \
+            -DMULTI_BUILD_PACKAGE=OFF
+
+      - name: Run MrDocs
+        run: mrdocs mrdocs.yml
+
+      - name: Build Docs with Antora
+        run: |
+          cd doc
+          npm ci --ignore-scripts
+          npx antora multi-playbook.yml
+
+      - name: Prepare artifact for GitHub Pages
+        run: cp -r doc/html .public
+
+      # Makes another copy of doc/html/index.html into .public but with the name multi.html
+      - name: Create multi.hmtl redirect
+        run: cp doc/html/index.html .public/multi.html
+
+      - name: Upload artifact for GitHub Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .public  # e.g. bin.v2/libs/foo/doc/html or similar
+
+  deploy-docs:
+    needs: build-docs
+    runs-on: ubuntu-latest
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

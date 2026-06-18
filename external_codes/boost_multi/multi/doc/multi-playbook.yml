@@ -1,0 +1,18 @@
+site:
+  title: Boost.Multi
+  start_page: ROOT::intro.adoc
+content:
+  sources:
+    - url: ..
+      start_path: doc
+      branches: HEAD
+output:
+  dir: html
+ui:
+  bundle:
+    url: https://github.com/boostorg/website-v2-docs/releases/download/ui-develop/ui-bundle.zip
+  output_dir: multi/_
+antora:
+  extensions:
+    - require: '@cppalliance/antora-downloads-extension'
+    - require: '@antora/lunr-extension'

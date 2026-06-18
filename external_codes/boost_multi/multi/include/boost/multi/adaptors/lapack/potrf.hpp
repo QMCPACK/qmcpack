@@ -6,8 +6,8 @@
 #define BOOST_MULTI_ADAPTORS_LAPACK_POTRF_HPP
 #pragma once
 
-#include <boost/multi/array.hpp>
-#include <boost/multi/detail/config/NODISCARD.hpp>
+#include "boost/multi/array.hpp"
+#include "boost/multi/detail/config/NODISCARD.hpp"
 
 #include "../lapack/core.hpp"
 #include "../lapack/filling.hpp"

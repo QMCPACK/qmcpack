@@ -3,7 +3,7 @@
 
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi allocators"
 #define BOOST_TEST_DYN_LINK
-#include<boost/test/unit_test.hpp>
+// #include<boost/test/unit_test.hpp>
 
 #include "multi/array.hpp"
 
@@ -40,7 +40,7 @@
 	using BIArchive = boost::archive::binary_iarchive;
 
 	using boost::serialization::make_nvp;
-//	using boost::serialization::make_array;
+//  using boost::serialization::make_array;
 #endif
 
 #include <numeric>
@@ -85,19 +85,19 @@ BOOST_AUTO_TEST_CASE(extensions_serialization) {
 	{
 		XOArchive xoa{ss};
 		xoa<<                                   make_nvp("x", x);
-	//	xoa<< multi::archive_traits<XOArchive>::make_nvp("x", x);
-	//	xoa<<                                          AR_NVP(x);
-	//	xoa<<                                      CEREAL_NVP(x);
-	//	xoa<<                                                 x ;
+	//  xoa<< multi::archive_traits<XOArchive>::make_nvp("x", x);
+	//  xoa<<                                          AR_NVP(x);
+	//  xoa<<                                      CEREAL_NVP(x);
+	//  xoa<<                                                 x ;
 	}
 	{
-		multi::extensions_t<2> y;
+		multi::extents_t<2> y;
 		{
 			XIArchive xia{ss};
 			xia>>                                   make_nvp("x", y);
-		//	xia>> multi::archive_traits<XIArchive>::make_nvp("x", y);
-		//	xia>>                           cereal::make_nvp("x", y);
-		//	xia>>                                                 y ;
+		//  xia>> multi::archive_traits<XIArchive>::make_nvp("x", y);
+		//  xia>>                           cereal::make_nvp("x", y);
+		//  xia>>                                                 y ;
 		}
 		BOOST_REQUIRE(x == y);
 	}
@@ -110,10 +110,10 @@ BOOST_AUTO_TEST_CASE(carray_serialization) {
 		{
 			XOArchive xoa{ss};
 			xoa<<                                   make_nvp("A", A);
-		//	xoa<<                                          AR_NVP(A);
-		//	xoa<<                                      CEREAL_NVP(A);
-		//	xoa<<                                                 A ;
-		//	xoa<< multi::archive_traits<XOArchive>::make_nvp("A", A);
+		//  xoa<<                                          AR_NVP(A);
+		//  xoa<<                                      CEREAL_NVP(A);
+		//  xoa<<                                                 A ;
+		//  xoa<< multi::archive_traits<XOArchive>::make_nvp("A", A);
 		}
 		std::ofstream ofs{"serialization_A.xml"};
 		ofs<< ss.str();
@@ -122,9 +122,9 @@ BOOST_AUTO_TEST_CASE(carray_serialization) {
 		double B[3][3];  // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays) test legacy types
 		XIArchive xia{ss};
 		xia>>                                   make_nvp("A", B);
-	//	xia>>                           cereal::make_nvp("A", B);
-	//	xia>>                                                 B ;
-	//	xia>> multi::archive_traits<XIArchive>::make_nvp("A", B);
+	//  xia>>                           cereal::make_nvp("A", B);
+	//  xia>>                                                 B ;
+	//  xia>> multi::archive_traits<XIArchive>::make_nvp("A", B);
 		BOOST_REQUIRE( B[1][2] == 5.0 );  // NOLINT(clang-analyzer-core.UndefinedBinaryOperatorResult) is it?
 		BOOST_REQUIRE( A[1][2] == B[1][2] );  // NOLINT(clang-analyzer-core.UndefinedBinaryOperatorResult) is it?
 	}
@@ -141,20 +141,20 @@ BOOST_AUTO_TEST_CASE(array_serialization) {
 	{
 		XOArchive xoa{ss};
 		xoa<<      make_nvp("arr", arr);
-	//	xoa<<               AR_NVP(arr);
-	//	xoa<<           CEREAL_NVP(arr);
-	//	xoa<<                      arr ;
-	//	xoa<< CEREAL_NVP(arr);
-	//	xoa<< multi::archive_traits<XOArchive>::make_nvp("arr", arr);
+	//  xoa<<               AR_NVP(arr);
+	//  xoa<<           CEREAL_NVP(arr);
+	//  xoa<<                      arr ;
+	//  xoa<< CEREAL_NVP(arr);
+	//  xoa<< multi::archive_traits<XOArchive>::make_nvp("arr", arr);
 	}
 	{
 		multi::array<double, 2> arr2;
 		{
 			XIArchive xia{ss};
 			xia>>                                   make_nvp("arr", arr2);
-		//	xia>>                           cereal::make_nvp("arr", arr2);
-		//	xia>>                                                   arr2 ;
-		//	xia>> multi::archive_traits<XIArchive>::make_nvp("arr", arr2);
+		//  xia>>                           cereal::make_nvp("arr", arr2);
+		//  xia>>                                                   arr2 ;
+		//  xia>> multi::archive_traits<XIArchive>::make_nvp("arr", arr2);
 		}
 		BOOST_REQUIRE( extensions(arr2) == extensions(arr) );
 		BOOST_REQUIRE( arr2 == arr );
@@ -174,20 +174,20 @@ BOOST_AUTO_TEST_CASE(array_serialization_string) {
 	{
 		XOArchive xoa{ss};
 		xoa<<                                   make_nvp("arr", arr);
-	//	xoa<<                                            AR_NVP(arr) ;
-	//	xoa<<                           BOOST_SERIALIZATION_NVP(arr) ;
-	//	xoa<<                                        CEREAL_NVP(arr) ;
-	//	xoa<<                                                   arr ;
-	//	xoa<< multi::archive_traits<XOArchive>::make_nvp("arr", arr);
+	//  xoa<<                                            AR_NVP(arr) ;
+	//  xoa<<                           BOOST_SERIALIZATION_NVP(arr) ;
+	//  xoa<<                                        CEREAL_NVP(arr) ;
+	//  xoa<<                                                   arr ;
+	//  xoa<< multi::archive_traits<XOArchive>::make_nvp("arr", arr);
 	}
 	{
 		multi::array<std::string, 2> arr2{};
 		{
 			XIArchive xia{ss};
 			xia>>                                   make_nvp("arr", arr2);
-		//	xia>>                           cereal::make_nvp("arr", arr2);
-		//	xia>>                                                   arr2 ;
-		//	xia>> multi::archive_traits<XIArchive>::make_nvp("arr", arr2);
+		//  xia>>                           cereal::make_nvp("arr", arr2);
+		//  xia>>                                                   arr2 ;
+		//  xia>> multi::archive_traits<XIArchive>::make_nvp("arr", arr2);
 		}
 		BOOST_REQUIRE( extensions(arr2) == extensions(arr) );
 		BOOST_REQUIRE( arr2 == arr );
@@ -230,14 +230,14 @@ BOOST_AUTO_TEST_CASE(array_serialization_string_binary) {
 	{
 		BOArchive boa{ss};
 		boa<< arr;
-	//	boa<< multi::archive_traits<BOArchive>::make_nvp("arr", arr);
+	//  boa<< multi::archive_traits<BOArchive>::make_nvp("arr", arr);
 	}
 	{
 		multi::array<std::string, 2> arr2{};
 		{
 			BIArchive bia{ss};
 			bia>> arr2;
-			//	bia>> multi::archive_traits<BIArchive>::make_nvp("arr", arr2);
+			//  bia>> multi::archive_traits<BIArchive>::make_nvp("arr", arr2);
 		}
 		BOOST_REQUIRE( extensions(arr2) == extensions(arr) );
 		BOOST_REQUIRE( arr2 == arr );
@@ -252,15 +252,15 @@ BOOST_AUTO_TEST_CASE(vector) {
 	{
 		XOArchive xoa{ss};
 		xoa<< make_nvp("v_data", multi::archive_traits<XOArchive>::make_array(v.data(), v.size()));
-	//	xoa<< make_nvp("v_data",                                   make_array(v.data(), v.size()));
-	//	xoa<< make_nvp("v_data",             boost::serialization::make_array(v.data(), v.size()));
+	//  xoa<< make_nvp("v_data",                                   make_array(v.data(), v.size()));
+	//  xoa<< make_nvp("v_data",             boost::serialization::make_array(v.data(), v.size()));
 	}
 	{
 		std::vector<double> w(100);
 		XIArchive xia{ss};
 		xia>> make_nvp("v_data", multi::archive_traits<XIArchive>::make_array(w.data(), w.size()));
-	//	xia>> make_nvp("v_data",                                   make_array(w.data(), w.size()));
-	//	xia>> make_nvp("v_data",             boost::serialization::make_array(w.data(), w.size()));
+	//  xia>> make_nvp("v_data",                                   make_array(w.data(), w.size()));
+	//  xia>> make_nvp("v_data",             boost::serialization::make_array(w.data(), w.size()));
 		BOOST_REQUIRE( v == w );
 	}
 }
@@ -272,15 +272,15 @@ BOOST_AUTO_TEST_CASE(vector_binary) {
 	{
 		BOArchive xoa{ss};
 		xoa<< make_nvp("v_data", multi::archive_traits<XOArchive>::make_array(v.data(), v.size()));
-	//	xoa<< make_nvp("v_data",                                   make_array(v.data(), v.size()));
-	//	xoa<< make_nvp("v_data",             boost::serialization::make_array(v.data(), v.size()));
+	//  xoa<< make_nvp("v_data",                                   make_array(v.data(), v.size()));
+	//  xoa<< make_nvp("v_data",             boost::serialization::make_array(v.data(), v.size()));
 	}
 	{
 		std::vector<double> w(100);
 		BIArchive xia{ss};
 		xia>> make_nvp("v_data", multi::archive_traits<XIArchive>::make_array(w.data(), w.size()));
-	//	xia>> make_nvp("v_data",                                   make_array(w.data(), w.size()));
-	//	xia>> make_nvp("v_data",             boost::serialization::make_array(w.data(), w.size()));
+	//  xia>> make_nvp("v_data",                                   make_array(w.data(), w.size()));
+	//  xia>> make_nvp("v_data",             boost::serialization::make_array(w.data(), w.size()));
 		BOOST_REQUIRE( v == w );
 	}
 }
@@ -296,19 +296,19 @@ BOOST_AUTO_TEST_CASE(array_serialization_3D) {
 	{
 		XOArchive xoa{ss};
 		xoa<<      make_nvp("arr", arr);
-	//	xoa<<               AR_NVP(arr);
-	//	xoa<<           CEREAL_NVP(arr);
-	//	xoa<<                      arr ;
-	//	xoa<< multi::archive_traits<XOArchive>::make_nvp("arr", arr);
+	//  xoa<<               AR_NVP(arr);
+	//  xoa<<           CEREAL_NVP(arr);
+	//  xoa<<                      arr ;
+	//  xoa<< multi::archive_traits<XOArchive>::make_nvp("arr", arr);
 	}
 	{
 		multi::array<double, 3> arr2{};
 		{
 			XIArchive xia{ss};
 			xia>>                                   make_nvp("arr", arr2);
-		//	xia>>                           cereal::make_nvp("arr", arr2);
-		//	xia>>                                                   arr2 ;
-		//	xia>> multi::archive_traits<XIArchive>::make_nvp("arr", arr2);
+		//  xia>>                           cereal::make_nvp("arr", arr2);
+		//  xia>>                                                   arr2 ;
+		//  xia>> multi::archive_traits<XIArchive>::make_nvp("arr", arr2);
 		}
 		BOOST_REQUIRE( extensions(arr2) == extensions(arr) );
 		BOOST_REQUIRE( arr2 == arr );

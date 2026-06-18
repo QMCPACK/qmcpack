@@ -7,7 +7,7 @@ import ../../config/checks/config : requires ;
 
 project : requirements
 
-  <library>/boost/test//boost_unit_test_framework
+  # <library>/boost/test//boost_unit_test_framework
 
   <toolset>gcc:<cxxflags>-Wall
   <toolset>gcc:<cxxflags>-Wextra
@@ -41,6 +41,9 @@ project : requirements
   <toolset>msvc:<warnings-as-errors>on
   #<toolset>clang:<warnings-as-errors>on
   <toolset>gcc:<warnings-as-errors>on
+
+  # Permissive- mode is only enabled by default from C++20 so we mianually add it
+  <toolset>msvc:<cxxflags>/permissive-
 
   [ requires cxx17_if_constexpr cxx17_structured_bindings cxx17_std_apply ]
   ;

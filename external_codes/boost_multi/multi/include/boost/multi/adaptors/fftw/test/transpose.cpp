@@ -2,24 +2,29 @@
 // Distributed under the Boost Software License, Version 1.0.
 // https://www.boost.org/LICENSE_1_0.txt
 
-#include <boost/test/unit_test.hpp>
+#include <boost/core/lightweight_test.hpp>
 
 #include <boost/multi/adaptors/fftw.hpp>
+#include <boost/multi/array.hpp>
 
-#include <chrono>  // NOLINT(build/c++11)
-#include <complex>
-#include <iostream>
-#include <random>
+#include <algorithm>   // for generate
+#include <chrono>      // for operator-, duration, system...  // NOLINT(build/c++11)
+#include <complex>     // for operator==, complex
+#include <functional>  // for invoke  // IWYU pragma: keep
+#include <iostream>    // for operator<<, basic_os...
+#include <random>      // for linear_congruential_...
+#include <string>      // for operator<<, operator""s
+#include <utility>     // for move
 
 namespace multi = boost::multi;
 
-class watch  // NOLINT(cppcoreguidelines-special-member-functions,hicpp-special-member-functions)
+class watch  // NOLINT(cppcoreguidelines-special-member-functions,hicpp-special-member-functions,misc-use-internal-linkage)
 : private std::chrono::high_resolution_clock {
 	std::string label_;
 	time_point  start_ = now();
 
  public:
-	explicit watch(std::string label) : label_{std::move(label)} {}  // NOLINT(fuchsia-default-arguments-calls)
+	explicit watch(std::string label) : label_{std::move(label)} {}
 
 	watch(watch const&) = delete;
 
@@ -29,18 +34,17 @@ class watch  // NOLINT(cppcoreguidelines-special-member-functions,hicpp-special-
 	~watch() { std::cerr << label_ << ": " << elapsed_sec() << " sec" << '\n'; }  // NOLINT(cpp:S4963)
 };
 
-using fftw_fixture = multi::fftw::environment;
-BOOST_TEST_GLOBAL_FIXTURE(fftw_fixture);
+auto main() -> int {  // NOLINT(readability-function-cognitive-complexity,bugprone-exception-escape)
+	multi::fftw::environment const env;
 
-BOOST_AUTO_TEST_CASE(fftw_transpose) {
 	using namespace std::string_literals;  // NOLINT(build/namespaces) for ""s
 
 	using complex = std::complex<double>;
 
-	auto const in = std::invoke([] {
+	auto const in = std::invoke([] () {
 		multi::array<complex, 2> ret({101, 99});  // ({1013, 997});  // ({10137, 9973});
 		std::generate(
-			ret.data_elements(), ret.data_elements() + ret.num_elements(),
+			ret.elements().begin(), ret.elements().end(),
 			[eng = std::default_random_engine{std::random_device{}()}, uniform_01 = std::uniform_real_distribution<>{}]() mutable {
 				return complex{uniform_01(eng), uniform_01(eng)};
 			}
@@ -50,10 +54,12 @@ BOOST_AUTO_TEST_CASE(fftw_transpose) {
 
 	multi::array<complex, 2> out = in;
 
-	watch const unnamed{"transposition with aux   %ws wall, CPU (%p%)\n"s};
+	watch const unnamed{"transposition with aux   %ws wall, CPU (%p%)\n"s};  //  NOLINT(misc-include-cleaner) bug in clang-tidy 18
 
-	multi::array<complex, 2> aux = ~out;
+	multi::array<complex, 2> aux{~out};
 
 	out = std::move(aux);
-	BOOST_REQUIRE( out[35][79] == in[79][35] );
+	BOOST_TEST( out[35][79] == in[79][35] );
+
+	return boost::report_errors();
 }
