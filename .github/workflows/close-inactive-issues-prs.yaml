@@ -9,14 +9,17 @@ jobs:
     permissions:
       issues: write
       pull-requests: write
+    env:
+      stale-time: 2555 # 7 years
+      close-time: 28   # 4 weeks
     steps:
       - uses: actions/stale@v10
         with:
-          days-before-issue-stale: 2920
-          days-before-issue-close: 28
+          days-before-issue-stale: ${{ env.stale-time }}
+          days-before-issue-close: ${{ env.close-time }}
           stale-issue-label: "stale"
-          stale-issue-message: "This issue is stale because it has been open for 2920 days with no activity. It will be closed in 28 days if there is no fresh activity. Please comment within 28 days if this issue is still important to you and it should be kept open."
-          close-issue-message: "This issue was closed because it has been inactive for 28 days since being marked as stale."
+          stale-issue-message: "This issue is stale because it has been open for ${{ env.stale-time }} days with no activity. It will be closed in ${{ env.close-time }} days if there is no fresh activity. Please comment within 28 days if this issue is still important to you and it should be kept open."
+          close-issue-message: "This issue was closed because it has been inactive for ${{ env.close-time }} days since being marked as stale."
           days-before-pr-stale: -1
           days-before-pr-close: -1
           repo-token: ${{ secrets.GITHUB_TOKEN }}
