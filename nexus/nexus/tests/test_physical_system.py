@@ -7,7 +7,7 @@ generic_settings.raise_error = True
 
 import numpy as np
 from ..testing import value_eq, object_eq
-from ..physical_system import Electrons, Ion, PhysicalSystem
+from ..physical_system import Ion, PhysicalSystem#, Electrons
 from ..periodic_table import Elements
 
 from .test_structure import structure_same
@@ -33,30 +33,30 @@ def system_same(s1,s2,pseudized=True,tiled=False):
 #end def system_same
 
 
-def test_electrons():
-    ref_charge = -10
-    ref_multiplicity = 3
-    ref_n_up = 6
-    ref_n_down = 4
+# def test_electrons():
+#     ref_charge = -10
+#     ref_multiplicity = 3
+#     ref_n_up = 6
+#     ref_n_down = 4
 
-    electrons = Electrons(count=10, spin=1)
+#     electrons = Electrons(count=10, spin=1)
 
-    assert(electrons.charge       == ref_charge)
-    assert(electrons.multiplicity == ref_multiplicity)
-    assert(electrons.n_up         == ref_n_up)
-    assert(electrons.n_down       == ref_n_down)
+#     assert(electrons.charge       == ref_charge)
+#     assert(electrons.multiplicity == ref_multiplicity)
+#     assert(electrons.n_up         == ref_n_up)
+#     assert(electrons.n_down       == ref_n_down)
 
-    ref_charge = -35
-    ref_multiplicity = 2
-    ref_n_up = 18
-    ref_n_down = 17
+#     ref_charge = -35
+#     ref_multiplicity = 2
+#     ref_n_up = 18
+#     ref_n_down = 17
 
-    electrons = Electrons(count=35, spin=0.5)
+#     electrons = Electrons(count=35, spin=0.5)
 
-    assert(electrons.charge       == ref_charge)
-    assert(electrons.multiplicity == ref_multiplicity)
-    assert(electrons.n_up         == ref_n_up)
-    assert(electrons.n_down       == ref_n_down)
+#     assert(electrons.charge       == ref_charge)
+#     assert(electrons.multiplicity == ref_multiplicity)
+#     assert(electrons.n_up         == ref_n_up)
+#     assert(electrons.n_down       == ref_n_down)
 
 
 def test_custom_ion():

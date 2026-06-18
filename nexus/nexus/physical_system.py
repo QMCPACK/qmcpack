@@ -15,7 +15,7 @@ from .periodic_table import Elements, ElementLike
 from .structure import Structure, generate_structure, read_structure
 
 
-class Electrons:
+class FloatElectrons:
     """A collection of electrons.
 
     Attributes
@@ -64,7 +64,77 @@ class Electrons:
     def n_down(self) -> int | float:
         """The number of down-spin electrons."""
         return (self.count / 2) - self.spin
-#end class Electrons
+#end class FloatElectrons
+
+
+class IntElectrons:
+    """A collection of electrons.
+
+    Note that this class enforces that the number of up- and down-spin
+    electrons are integers. If you are using a code that allows for a
+    non-integer number of electrons, you must set that value when
+    generating the input and/or simulation object for that code.
+
+    Attributes
+    ----------
+    n_up : int
+        The number of up-spin electrons
+    n_down : int
+        The number of down-spin electrons.
+    spin : int or float, read-only
+        The total spin of the system.
+
+        An up-spin electron has a spin of +1/2, a down-spin electron has
+        a spin of -1/2.
+    charge : int, read-only
+        The charge of the electrons, equal to ``-1 * self.count``.
+    multiplicity : int or float, read-only
+        The spin multiplicity of the electrons, equal to :math:`2S+1` where
+        :math:`S` is the spin.
+    """
+
+    def __init__(
+        self,
+        n_up: int,
+        n_down: int,
+    ):
+        if not (isinstance(n_up, int) and isinstance(n_down, int)):
+            warn("")
+
+        self.n_up = n_up
+        self.n_down = n_down
+
+    @property
+    def count(self) -> int:
+        return self.n_up + self.n_down
+
+    @property
+    def charge(self) -> int | float:
+        """Total charge in atomic units. Equal to ``-1 * self.count``."""
+        return -1 * self.count
+
+    @property
+    def multiplicity(self) -> int | float:
+        """Defined as :math:`2S+1` where :math:`S` is ``self.spin``.
+
+        **Read-only**
+        """
+        return 2*self.total_spin + 1
+
+    @property
+    def total_spin(self) -> int | float:
+        """The total spin of the electrons.
+
+        This will return an ``int`` if the spin is an integer, otherwise
+        it will return a ``float``. This allows for ``isinstance``
+        checks on the return value.
+        """
+        up_down_diff = self.n_up - self.n_down
+        if up_down_diff % 2 == 0:
+            return up_down_diff // 2
+        else:
+            return up_down_diff / 2
+#end class IntElectrons
 
 
 class Ion:
@@ -114,7 +184,7 @@ class Ion:
         The effective nuclear charge of the ion.
     mass_number : int, optional
         The mass number of the ion. Defaults to the most abundant isotope.
-    
+
     Examples
     --------
     The most basic creation for an ``Ion`` only needs an element. All other
@@ -214,6 +284,7 @@ class Ion:
     def __eq__(self, other: Self) -> bool:
         return (
             self.element is other.element
+            and self.label       == other.label
             and self.charge      == other.charge
             and self.spin        == other.spin
             and self.mass_number == other.mass_number
@@ -339,20 +410,42 @@ class Particles:
 
 
 class PhysicalSystem:
+    """A system of electrons and ions with a structure.
 
-    def __init__(self,structure=None,net_charge=0,net_spin=0,**valency):
-        self.pseudized = False
+    The ``PhysicalSystem`` is used to create inputs for all simulations.
+    The difference between a ``PhysicalSystem`` and a ``Structure`` is
+    that a ``Structure`` contains no information about charge, spin,
+    pseudopotentials, elements, or electrons. The ``PhysicalSystem``
+    class contains a ``Structure``, but it also includes the additional
+    data required to define a real system that would be used in a
+    calculation.
+
+    Attributes
+    ----------
+    structure : Structure
+        The structure of the ions in the system.
+    ions : list of Ion
+        The unique ions of the system. These are unique if and only if
+        they share the same element, label, charge, spin, mass number,
+        and effective nuclear charge. See ``Ion`` for more information.
+    electrons : Electrons
+        The up-spin and down-spin electrons in the system.
+
+
+    """
+
+    def __init__(
+        self,
+        structure: Structure | None = None,
+        net_charge: int | float = 0,
+        net_spin: int | float = 0,
+        Zeffs: dict[str: int | float] | None = None,
+    ):
         if structure is None:
             self.structure = Structure()
         else:
             self.structure = structure
-        #end if
-        # if particles is None:
-        #     self.particles = Particles()
-        # else:
-        #     self.particles = particles.copy()
-        #end if
-        self.particles = Particles()
+
         self.folded_system = None
         if self.structure.has_folded():
             if self.structure.is_tiled():
@@ -391,7 +484,7 @@ class PhysicalSystem:
                 )
         #end if
 
-        self.valency_in = obj(**valency)
+        self.valency_in = obj(Zeffs)
         self.net_charge_in = net_charge
         self.net_spin_in   = net_spin
 
