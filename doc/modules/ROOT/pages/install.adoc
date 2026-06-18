@@ -1,0 +1,63 @@
+[#install]
+
+= Installation
+
+:idprefix: install_
+
+Before using the library, you can try it https://godbolt.org/z/dvacqK8jE[online],
+or you can download the core library as a https://correaa.gitlab.io/boost-multi/boost-multi.hpp[single header].
+
+_Multi_ has no external dependencies and can be used immediately after downloading.
+
+[source,bash]
+----
+git clone https://gitlab.com/correaa/boost-multi.git
+----
+
+_Multi_ doesn't require installation since a single header is enough to use the entire core library;
+
+[source,c++]
+----
+#include <multi/array.hpp>
+
+int main() { ... }
+----
+
+The library can still be installed with CMake.
+The header (and CMake) files will be installed in the chosen prefix location (by default, `/usr/local/include/multi` and `/usr/local/share/multi`).
+
+[source,bash]
+----
+cd boost-multi
+mkdir -p build && cd build
+cmake . -B ./build  # --install-prefix=$HOME/.local
+cmake --install ./build  # or sudo ...
+----
+
+_Testing_ the library requires link:https://www.boost.org/doc/libs/latest/libs/core/doc/html/core/lightweight_test.html[Boost.Core] (headers), installed for example, via
+`sudo apt install cmake git g{plus}{plus} libboost-test-dev make`
+or `sudo dnf install boost-devel cmake gcc-c{plus}{plus} git`.
+A CMake build system is provided to compile and run basic tests.
+
+[source,bash]
+----
+ctest -C ./build
+----
+
+Once installed, other CMake projects (targets) can depend on Multi by adding a single line: `add_subdirectory(my_multi_path)`, or by adding `find_package`:
+
+[source,cmake]
+----
+find_package(multi)  # see https://gitlab.com/correaa/boost-multi
+----
+
+Alternatively, the library can be fetched on demand:
+
+[source,cmake]
+----
+include(FetchContent)
+FetchContent_Declare(multi GIT_REPOSITORY https://gitlab.com/correaa/boost-multi.git)
+FetchContent_MakeAvailable(multi)
+...
+target_link_libraries(my_target PUBLIC multi)
+----

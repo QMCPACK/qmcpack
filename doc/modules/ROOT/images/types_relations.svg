@@ -1,0 +1,949 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   version="1.1"
+   id="svg1"
+   width="611.35571"
+   height="302.73105"
+   viewBox="0 0 611.35572 302.73105"
+   sodipodi:docname="types_relations.svg"
+   inkscape:version="1.4.3 (0d15f75042, 2025-12-25)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1">
+    <marker
+       style="overflow:visible"
+       id="ArrowWide"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Wide arrow"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         style="fill:none;stroke:context-stroke;stroke-width:1;stroke-linecap:butt"
+         d="M 3,-3 0,0 3,3"
+         transform="rotate(180,0.125,0)"
+         sodipodi:nodetypes="ccc"
+         id="path1" />
+    </marker>
+    <linearGradient
+       x1="0"
+       y1="0"
+       x2="0"
+       y2="3.9851"
+       gradientUnits="userSpaceOnUse"
+       id="linearGradient43">
+      <stop
+         style="stop-opacity:1;stop-color:#f9e6e6"
+         offset="0"
+         id="stop41" />
+      <stop
+         style="stop-opacity:1;stop-color:#f9e6e6"
+         offset="0.5"
+         id="stop42" />
+      <stop
+         style="stop-opacity:1;stop-color:#bf0000"
+         offset="1"
+         id="stop43" />
+    </linearGradient>
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath44">
+      <path
+         d="M 9.2119333,271.70533 H 595.51963 V 261.03855 H 9.2119333 Z"
+         id="path44" />
+    </clipPath>
+    <mask
+       maskUnits="userSpaceOnUse"
+       x="0"
+       y="0"
+       width="1"
+       height="1"
+       id="mask44">
+      <g
+         id="g60"
+         clip-path="url(#clipPath61)">
+        <path
+           d="M 0,0 H 8 V 8 H 0 Z"
+           transform="matrix(1.3333333,0,0,-1.3333333,14.545333,295.50544)"
+           style="fill:url(#radialGradient45);stroke:none"
+           opacity="1"
+           clip-path="url(#clipPath45)"
+           id="path55" />
+        <path
+           d="M 0,0 H 16 V 16 H 0 Z"
+           transform="matrix(1.3333333,0,0,-1.3333333,579.512,295.50544)"
+           style="fill:url(#radialGradient47);stroke:none"
+           opacity="1"
+           clip-path="url(#clipPath47)"
+           id="path56" />
+        <path
+           d="M 0,0 H 8 V 8 H 0 Z"
+           transform="matrix(1.3333333,0,0,-1.3333333,590.17867,260.48544)"
+           style="fill:url(#radialGradient49);stroke:none"
+           opacity="1"
+           clip-path="url(#clipPath49)"
+           id="path57" />
+        <path
+           d="M 0,0 H 8 V 22.765 H 0 Z"
+           transform="matrix(1.3333333,0,0,-1.3333333,590.17867,285.50544)"
+           style="fill:url(#linearGradient51);stroke:none"
+           opacity="1"
+           clip-path="url(#clipPath51)"
+           id="path58" />
+        <path
+           d="M 0,0 H 427.725 V 8 H 0 Z"
+           transform="matrix(1.3333333,0,0,-1.3333333,19.878667,295.50544)"
+           style="fill:url(#linearGradient53);stroke:none"
+           opacity="1"
+           clip-path="url(#clipPath53)"
+           id="path59" />
+        <path
+           d="M 4.00005,8.1001 H 435.73073 V 34.36548 H 4.00005 Z"
+           style="fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none"
+           transform="matrix(1.3333333,0,0,-1.3333333,14.545333,295.50544)"
+           clip-path="url(#clipPath54)"
+           id="path60" />
+      </g>
+    </mask>
+    <radialGradient
+       fx="4.0000501"
+       fy="4.0000501"
+       cx="4.0000501"
+       cy="4.0000501"
+       r="4.0000501"
+       gradientUnits="userSpaceOnUse"
+       id="radialGradient45">
+      <stop
+         style="stop-opacity:1;stop-color:#808080"
+         offset="0"
+         id="stop44" />
+      <stop
+         style="stop-opacity:1;stop-color:#000000"
+         offset="1"
+         id="stop45" />
+    </radialGradient>
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath45">
+      <path
+         d="M 2.5000011e-7,0 H 443.72501 V 34.365001 H 2.5000011e-7 Z"
+         id="path45" />
+    </clipPath>
+    <radialGradient
+       fx="8.0000896"
+       fy="8.0000896"
+       cx="8.0000896"
+       cy="8.0000896"
+       r="8.0000896"
+       gradientUnits="userSpaceOnUse"
+       id="radialGradient47">
+      <stop
+         style="stop-opacity:1;stop-color:#ffffff"
+         offset="0"
+         id="stop46" />
+      <stop
+         style="stop-opacity:1;stop-color:#000000"
+         offset="1"
+         id="stop47" />
+    </radialGradient>
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath47">
+      <path
+         d="M -423.72501,0 H 20.000001 V 34.365001 H -423.72501 Z"
+         id="path47" />
+    </clipPath>
+    <radialGradient
+       fx="4.0000501"
+       fy="4.0000501"
+       cx="4.0000501"
+       cy="4.0000501"
+       r="4.0000501"
+       gradientUnits="userSpaceOnUse"
+       id="radialGradient49">
+      <stop
+         style="stop-opacity:1;stop-color:#808080"
+         offset="0"
+         id="stop48" />
+      <stop
+         style="stop-opacity:1;stop-color:#000000"
+         offset="1"
+         id="stop49" />
+    </radialGradient>
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath49">
+      <path
+         d="M -431.72501,-26.265001 H 11.999998 V 8.1000002 H -431.72501 Z"
+         id="path49" />
+    </clipPath>
+    <linearGradient
+       x1="0"
+       y1="0"
+       x2="8.0000896"
+       y2="0"
+       gradientUnits="userSpaceOnUse"
+       id="linearGradient51">
+      <stop
+         style="stop-opacity:1;stop-color:#ffffff"
+         offset="0"
+         id="stop50" />
+      <stop
+         style="stop-opacity:1;stop-color:#000000"
+         offset="1"
+         id="stop51" />
+    </linearGradient>
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath51">
+      <path
+         d="M -431.72501,-7.5000002 H 11.999998 V 26.865001 H -431.72501 Z"
+         id="path51" />
+    </clipPath>
+    <linearGradient
+       x1="0"
+       y1="0"
+       x2="0"
+       y2="8.0000896"
+       gradientUnits="userSpaceOnUse"
+       id="linearGradient53">
+      <stop
+         style="stop-opacity:1;stop-color:#000000"
+         offset="0"
+         id="stop52" />
+      <stop
+         style="stop-opacity:1;stop-color:#ffffff"
+         offset="1"
+         id="stop53" />
+    </linearGradient>
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath53">
+      <path
+         d="M -4.0000003,0 H 439.72501 V 34.365001 H -4.0000003 Z"
+         id="path53" />
+    </clipPath>
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath54">
+      <path
+         d="M 2.5000011e-7,0 H 443.72501 V 34.365001 H 2.5000011e-7 Z"
+         id="path54" />
+    </clipPath>
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath61">
+      <path
+         d="M 14.545333,295.50544 H 606.17867 v -45.82 H 14.545333 Z"
+         id="path61" />
+    </clipPath>
+    <radialGradient
+       fx="1.67136"
+       fy="3.6619401"
+       cx="2.5671401"
+       cy="2.5671401"
+       r="2.5671401"
+       gradientUnits="userSpaceOnUse"
+       id="radialGradient109"
+       gradientTransform="matrix(1.3333333,0,0,-1.3333333,29.518667,610.768)">
+      <stop
+         style="stop-opacity:1;stop-color:#e0e0f4"
+         offset="0"
+         id="stop105" />
+      <stop
+         style="stop-opacity:1;stop-color:#6666c6"
+         offset="0.3101506"
+         id="stop106" />
+      <stop
+         style="stop-opacity:1;stop-color:#24247d"
+         offset="0.62030898"
+         id="stop107" />
+      <stop
+         style="stop-opacity:1;stop-color:#191959"
+         offset="0.85293361"
+         id="stop108" />
+      <stop
+         style="stop-opacity:1;stop-color:#ffffff"
+         offset="1"
+         id="stop109" />
+    </radialGradient>
+    <radialGradient
+       fx="1.67136"
+       fy="3.6619401"
+       cx="2.5671401"
+       cy="2.5671401"
+       r="2.5671401"
+       gradientUnits="userSpaceOnUse"
+       id="radialGradient114"
+       gradientTransform="matrix(1.3333333,0,0,-1.3333333,29.518667,628.83333)">
+      <stop
+         style="stop-opacity:1;stop-color:#e0e0f4"
+         offset="0"
+         id="stop110" />
+      <stop
+         style="stop-opacity:1;stop-color:#6666c6"
+         offset="0.3101506"
+         id="stop111" />
+      <stop
+         style="stop-opacity:1;stop-color:#24247d"
+         offset="0.62030898"
+         id="stop112" />
+      <stop
+         style="stop-opacity:1;stop-color:#191959"
+         offset="0.85293361"
+         id="stop113" />
+      <stop
+         style="stop-opacity:1;stop-color:#ffffff"
+         offset="1"
+         id="stop114" />
+    </radialGradient>
+  </defs>
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="1.6692475"
+     inkscape:cx="248.01595"
+     inkscape:cy="101.54276"
+     inkscape:current-layer="g1" />
+  <g
+     id="g1"
+     inkscape:groupmode="layer"
+     inkscape:label="31"
+     transform="translate(-45.53759,-39.763858)">
+    <text
+       id="text36"
+       xml:space="preserve"
+       x="44.952778"
+       y="131.2394"
+       style="font-size:16px;stroke-width:1.33333"><tspan
+         id="tspan36"
+         style="font-variant:normal;font-weight:normal;font-size:11.2911px;font-family:'Fira Code';writing-mode:lr-tb;fill:#0066cc;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1.33333"
+         x="44.952778"
+         y="131.2394">multi</tspan></text>
+    <text
+       id="text37"
+       xml:space="preserve"
+       x="78.826111"
+       y="131.2394"
+       style="font-size:16px;stroke-width:1.33333"><tspan
+         id="tspan37"
+         style="font-variant:normal;font-weight:normal;font-size:11.2911px;font-family:'Fira Code';writing-mode:lr-tb;fill:#202020;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1.33333"
+         x="78.826111"
+         y="131.2394">::</tspan></text>
+    <text
+       id="text38"
+       xml:space="preserve"
+       x="92.37545"
+       y="131.2394"
+       style="font-size:16px;stroke-width:1.33333"><tspan
+         id="tspan38"
+         style="font-variant:normal;font-weight:bold;font-size:11.2911px;font-family:'Fira Code';writing-mode:lr-tb;fill:#0066cc;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1.33333"
+         x="92.37545"
+         y="131.2394">array[_ref]</tspan></text>
+    <text
+       id="text39"
+       xml:space="preserve"
+       x="126.24877"
+       y="131.2394"
+       style="font-size:16px;stroke-width:1.33333"><tspan
+         id="tspan39"
+         style="font-variant:normal;font-weight:normal;font-size:11.2911px;font-family:'Fira Code';writing-mode:lr-tb;fill:#202020;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1.33333"
+         x="126.24877"
+         dx="0 0 0 0 0 0 0 0 0 6.7746396"
+         y="131.2394">      &lt;T,D&gt;</tspan></text>
+    <path
+       d="M 0,-7.00008 H 439.73077 V 27.26538 H 0 Z"
+       style="fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none"
+       transform="matrix(1.3333333,0,0,-1.3333333,14.545333,286.10533)"
+       opacity="1"
+       mask="url(#mask44)"
+       id="path62" />
+    <path
+       style="fill:#0066cc;stroke:#000000;marker-end:url(#ArrowWide)"
+       d="M 52.527406,137.67264 163.93634,205.02633"
+       id="path123"
+       sodipodi:nodetypes="cc" />
+    <text
+       id="text125"
+       xml:space="preserve"
+       x="202.0952"
+       y="185.55533"
+       style="font-size:16px;stroke-width:1.33333"><tspan
+         id="tspan125"
+         style="font-variant:normal;font-weight:bold;font-size:11.2911px;font-family:'Fira Code';writing-mode:lr-tb;fill:#0066cc;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1.33333"
+         x="202.0952"
+         y="185.55533">subarray</tspan></text>
+    <text
+       id="text126"
+       xml:space="preserve"
+       x="256.2912"
+       y="185.55533"
+       style="font-size:16px;stroke-width:1.33333"><tspan
+         id="tspan126"
+         style="font-variant:normal;font-weight:normal;font-size:11.2911px;font-family:'Fira Code';writing-mode:lr-tb;fill:#202020;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1.33333"
+         x="256.2912"
+         dx="0 0 0 6.7746396 0 0 0 0"
+         y="185.55533">&lt;T,D - 1&gt;</tspan></text>
+    <path
+       style="fill:#0066cc;stroke:#000000;marker-end:url(#ArrowWide)"
+       d="m 130.4713,137.67264 66.08287,38.54834"
+       id="path126"
+       sodipodi:nodetypes="cc" />
+    <text
+       id="text127"
+       xml:space="preserve"
+       x="188.29059"
+       y="49.188416"
+       style="font-size:9.8803px;stroke-width:0.823357"
+       transform="rotate(30)"><tspan
+         id="tspan127"
+         style="font-variant:normal;font-weight:normal;font-size:6.97247px;font-family:'Fira Code';writing-mode:lr-tb;fill:#0066cc;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.823357"
+         x="188.29059"
+         y="49.188416">.operator[](index) </tspan></text>
+    <text
+       id="text128"
+       xml:space="preserve"
+       x="128.19884"
+       y="85.794968"
+       style="font-size:9.8803px;stroke-width:0.823357"
+       transform="rotate(31.315227)"><tspan
+         id="tspan128"
+         style="font-variant:normal;font-weight:normal;font-size:6.97247px;font-family:'Fira Code';writing-mode:lr-tb;fill:#0066cc;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.823357"
+         x="128.19884"
+         y="85.794968">.operator[](index) const </tspan></text>
+    <text
+       id="text129"
+       xml:space="preserve"
+       x="169.47737"
+       y="212.24265"
+       style="font-size:16px;stroke-width:1.33333"><tspan
+         id="tspan129"
+         style="font-variant:normal;font-weight:bold;font-size:11.2911px;font-family:'Fira Code';writing-mode:lr-tb;fill:#0066cc;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1.33333"
+         x="169.47737"
+         y="212.24265">const_subarray</tspan></text>
+    <text
+       id="text130"
+       xml:space="preserve"
+       x="223.67336"
+       y="212.24265"
+       style="font-size:16px;stroke-width:1.33333"><tspan
+         id="tspan130"
+         style="font-variant:normal;font-weight:normal;font-size:11.2911px;font-family:'Fira Code';writing-mode:lr-tb;fill:#202020;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1.33333"
+         x="223.67336"
+         dx="0 0 0 0 0 0 0 0 0 6.7746396 0 0 0 0"
+         y="212.24265">      &lt;T,D - 1&gt;</tspan></text>
+    <path
+       style="fill:#0066cc;stroke:#000000;marker-end:url(#ArrowWide)"
+       d="m 329.61941,177.5882 66.42528,-37.95527"
+       id="path130"
+       sodipodi:nodetypes="cc" />
+    <text
+       id="text131"
+       xml:space="preserve"
+       x="194.19426"
+       y="314.0246"
+       style="font-size:9.8803px;stroke-width:0.823357"
+       transform="rotate(-30)"><tspan
+         id="tspan131"
+         style="font-variant:normal;font-weight:normal;font-size:6.97247px;font-family:'Fira Code';writing-mode:lr-tb;fill:#0066cc;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.823357"
+         x="194.19426"
+         y="314.0246">.operator+() const </tspan></text>
+    <text
+       id="text132"
+       xml:space="preserve"
+       x="404.5961"
+       y="137.59351"
+       style="font-size:16px;stroke-width:1.33333"><tspan
+         id="tspan132"
+         style="font-variant:normal;font-weight:normal;font-size:11.2911px;font-family:'Fira Code';writing-mode:lr-tb;fill:#0066cc;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1.33333"
+         x="404.5961"
+         y="137.59351">multi</tspan></text>
+    <text
+       id="text133"
+       xml:space="preserve"
+       x="438.46942"
+       y="137.59351"
+       style="font-size:16px;stroke-width:1.33333"><tspan
+         id="tspan133"
+         style="font-variant:normal;font-weight:normal;font-size:11.2911px;font-family:'Fira Code';writing-mode:lr-tb;fill:#202020;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1.33333"
+         x="438.46942"
+         y="137.59351">::</tspan></text>
+    <text
+       id="text134"
+       xml:space="preserve"
+       x="452.01877"
+       y="137.59351"
+       style="font-size:16px;stroke-width:1.33333"><tspan
+         id="tspan134"
+         style="font-variant:normal;font-weight:bold;font-size:11.2911px;font-family:'Fira Code';writing-mode:lr-tb;fill:#0066cc;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1.33333"
+         x="452.01877"
+         y="137.59351">array</tspan></text>
+    <text
+       id="text135"
+       xml:space="preserve"
+       x="485.89209"
+       y="137.59351"
+       style="font-size:16px;stroke-width:1.33333"><tspan
+         id="tspan135"
+         style="font-variant:normal;font-weight:normal;font-size:11.2911px;font-family:'Fira Code';writing-mode:lr-tb;fill:#202020;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1.33333"
+         x="485.89209"
+         dx="0 0 0 6.7746396 0 0 0 0"
+         y="137.59351">&lt;T,D - 1&gt;</tspan></text>
+    <path
+       style="fill:#0066cc;stroke:#000000;marker-end:url(#ArrowWide)"
+       d="M 336.39715,205.54634 442.21798,141.75097"
+       id="path135"
+       sodipodi:nodetypes="cc" />
+    <text
+       id="text136"
+       xml:space="preserve"
+       x="213.67099"
+       y="353.15051"
+       style="font-size:9.8803px;stroke-width:0.823357"
+       transform="rotate(-30)"><tspan
+         id="tspan136"
+         style="font-variant:normal;font-weight:normal;font-size:6.97247px;font-family:'Fira Code';writing-mode:lr-tb;fill:#0066cc;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.823357"
+         x="213.67099"
+         y="353.15051">.operator+() const </tspan></text>
+    <text
+       id="text137"
+       xml:space="preserve"
+       x="247.13663"
+       y="77.132584"
+       style="font-size:16px;stroke-width:1.33333"><tspan
+         id="tspan137"
+         style="font-variant:normal;font-weight:bold;font-size:11.2911px;font-family:'Fira Code';writing-mode:lr-tb;fill:#0066cc;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1.33333"
+         x="247.13663"
+         y="77.132584">iterator</tspan></text>
+    <text
+       id="text138"
+       xml:space="preserve"
+       x="301.33261"
+       y="77.132584"
+       style="font-size:16px;stroke-width:1.33333"><tspan
+         id="tspan138"
+         style="font-variant:normal;font-weight:normal;font-size:11.2911px;font-family:'Fira Code';writing-mode:lr-tb;fill:#202020;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1.33333"
+         x="301.33261"
+         dx="0 0 0 6.7746396"
+         y="77.132584">&lt;T,D&gt;</tspan></text>
+    <text
+       id="text139"
+       xml:space="preserve"
+       x="200.97954"
+       y="77.038483"
+       style="font-size:16px;stroke-width:1.33333"><tspan
+         id="tspan139"
+         style="font-variant:normal;font-weight:normal;font-size:11.2911px;font-family:'Fira Code';writing-mode:lr-tb;fill:#0066cc;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1.33333"
+         x="200.97954"
+         y="77.038483">multi</tspan></text>
+    <text
+       id="text140"
+       xml:space="preserve"
+       x="234.85287"
+       y="77.038483"
+       style="font-size:16px;stroke-width:1.33333"><tspan
+         id="tspan140"
+         style="font-variant:normal;font-weight:normal;font-size:11.2911px;font-family:'Fira Code';writing-mode:lr-tb;fill:#202020;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1.33333"
+         x="234.85287"
+         y="77.038483">::</tspan></text>
+    <path
+       style="fill:#0066cc;stroke:#000000;marker-end:url(#ArrowWide)"
+       d="M 132.64163,118.70667 199.0669,80.751398"
+       id="path140"
+       sodipodi:nodetypes="cc" />
+    <text
+       id="text141"
+       xml:space="preserve"
+       x="67.710335"
+       y="163.71486"
+       style="font-size:9.8803px;stroke-width:0.823357"
+       transform="rotate(-30)"><tspan
+         id="tspan141"
+         style="font-variant:normal;font-weight:normal;font-size:6.97247px;font-family:'Fira Code';writing-mode:lr-tb;fill:#0066cc;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.823357"
+         x="67.710335"
+         y="163.71486">.begin()</tspan></text>
+    <path
+       style="fill:#0066cc;stroke:#000000;marker-end:url(#ArrowWide)"
+       d="m 252.94634,83.970802 -0.0812,83.196648"
+       id="path141"
+       sodipodi:nodetypes="cc" />
+    <text
+       id="text142"
+       xml:space="preserve"
+       x="81.706383"
+       y="-258.61935"
+       style="font-size:9.8803px;stroke-width:0.823357"
+       transform="rotate(90)"><tspan
+         id="tspan142"
+         style="font-variant:normal;font-weight:normal;font-size:6.97247px;font-family:'Fira Code';writing-mode:lr-tb;fill:#0066cc;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.823357"
+         x="81.706383"
+         y="-258.61935">.operator*() const</tspan></text>
+    <text
+       id="text143"
+       xml:space="preserve"
+       x="493.43378"
+       y="79.674232"
+       style="font-size:16px;stroke-width:1.33333"><tspan
+         id="tspan143"
+         style="font-variant:normal;font-weight:bold;font-size:11.2911px;font-family:'Fira Code';writing-mode:lr-tb;fill:#0066cc;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1.33333"
+         x="493.43378"
+         y="79.674232">iterator</tspan></text>
+    <text
+       id="text144"
+       xml:space="preserve"
+       x="547.62976"
+       y="79.674232"
+       style="font-size:16px;stroke-width:1.33333"><tspan
+         id="tspan144"
+         style="font-variant:normal;font-weight:normal;font-size:11.2911px;font-family:'Fira Code';writing-mode:lr-tb;fill:#202020;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1.33333"
+         x="547.62976"
+         dx="0 0 0 6.7746396 0 0"
+         y="79.674232">&lt;T,D - 1&gt;</tspan></text>
+    <text
+       id="text145"
+       xml:space="preserve"
+       x="447.2767"
+       y="79.580132"
+       style="font-size:16px;stroke-width:1.33333"><tspan
+         id="tspan145"
+         style="font-variant:normal;font-weight:normal;font-size:11.2911px;font-family:'Fira Code';writing-mode:lr-tb;fill:#0066cc;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1.33333"
+         x="447.2767"
+         y="79.580132">multi</tspan></text>
+    <text
+       id="text146"
+       xml:space="preserve"
+       x="481.15002"
+       y="79.580132"
+       style="font-size:16px;stroke-width:1.33333"><tspan
+         id="tspan146"
+         style="font-variant:normal;font-weight:normal;font-size:11.2911px;font-family:'Fira Code';writing-mode:lr-tb;fill:#202020;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1.33333"
+         x="481.15002"
+         y="79.580132">::</tspan></text>
+    <path
+       style="fill:#0066cc;stroke:#000000;marker-end:url(#ArrowWide)"
+       d="M 305.39757,168.03274 447.22508,82.63336"
+       id="path146"
+       sodipodi:nodetypes="cc" />
+    <text
+       id="text147"
+       xml:space="preserve"
+       x="192.6584"
+       y="292.81046"
+       style="font-size:9.8803px;stroke-width:0.823357"
+       transform="rotate(-30)"><tspan
+         id="tspan147"
+         style="font-variant:normal;font-weight:normal;font-size:6.97247px;font-family:'Fira Code';writing-mode:lr-tb;fill:#0066cc;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.823357"
+         x="192.6584"
+         y="292.81046">.begin()&amp;   or  <tspan
+   style="font-weight:bold"
+   id="tspan158">begin()&amp;&amp;</tspan></tspan></text>
+    <text
+       id="text148"
+       xml:space="preserve"
+       x="245.13663"
+       y="49.132584"
+       style="font-size:16px;stroke-width:1.33333"><tspan
+         id="tspan148"
+         style="font-variant:normal;font-weight:bold;font-size:11.2911px;font-family:'Fira Code';writing-mode:lr-tb;fill:#0066cc;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1.33333"
+         x="245.13663"
+         y="49.132584">const_iterator</tspan></text>
+    <text
+       id="text149"
+       xml:space="preserve"
+       x="299.33261"
+       y="49.132584"
+       style="font-size:16px;stroke-width:1.33333"><tspan
+         id="tspan149"
+         style="font-variant:normal;font-weight:normal;font-size:11.2911px;font-family:'Fira Code';writing-mode:lr-tb;fill:#202020;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1.33333"
+         x="299.33261"
+         dx="0 0 0 0 0 0 0 0 0 6.7746396"
+         y="49.132584">      &lt;T,D&gt;</tspan></text>
+    <text
+       id="text150"
+       xml:space="preserve"
+       x="198.97954"
+       y="49.038483"
+       style="font-size:16px;stroke-width:1.33333"><tspan
+         id="tspan150"
+         style="font-variant:normal;font-weight:normal;font-size:11.2911px;font-family:'Fira Code';writing-mode:lr-tb;fill:#0066cc;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1.33333"
+         x="198.97954"
+         y="49.038483">multi</tspan></text>
+    <text
+       id="text151"
+       xml:space="preserve"
+       x="232.85287"
+       y="49.038483"
+       style="font-size:16px;stroke-width:1.33333"><tspan
+         id="tspan151"
+         style="font-variant:normal;font-weight:normal;font-size:11.2911px;font-family:'Fira Code';writing-mode:lr-tb;fill:#202020;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1.33333"
+         x="232.85287"
+         y="49.038483">::</tspan></text>
+    <path
+       style="fill:#0066cc;stroke:#000000;marker-end:url(#ArrowWide)"
+       d="M 79.690615,120.82471 196.10163,51.098829"
+       id="path151"
+       sodipodi:nodetypes="cc" />
+    <text
+       id="text152"
+       xml:space="preserve"
+       x="49.019993"
+       y="136.78235"
+       style="font-size:9.8803px;stroke-width:0.823357"
+       transform="rotate(-30)"><tspan
+         id="tspan152"
+         style="font-variant:normal;font-weight:normal;font-size:6.97247px;font-family:'Fira Code';writing-mode:lr-tb;fill:#0066cc;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.823357"
+         x="49.019993"
+         y="136.78235">.begin() const</tspan></text>
+    <text
+       id="text153"
+       xml:space="preserve"
+       x="492.70459"
+       y="49.132584"
+       style="font-size:16px;stroke-width:1.33333"><tspan
+         id="tspan153"
+         style="font-variant:normal;font-weight:bold;font-size:11.2911px;font-family:'Fira Code';writing-mode:lr-tb;fill:#0066cc;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1.33333"
+         x="492.70459"
+         y="49.132584">const_iterator</tspan></text>
+    <text
+       id="text154"
+       xml:space="preserve"
+       x="546.90057"
+       y="49.132584"
+       style="font-size:16px;stroke-width:1.33333"><tspan
+         id="tspan154"
+         style="font-variant:normal;font-weight:normal;font-size:11.2911px;font-family:'Fira Code';writing-mode:lr-tb;fill:#202020;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1.33333"
+         x="546.90057"
+         dx="0 0 0 0 0 0 0 0 0 6.7746396"
+         y="49.132584">      &lt;T,D - 1&gt;</tspan></text>
+    <text
+       id="text155"
+       xml:space="preserve"
+       x="446.54752"
+       y="49.038483"
+       style="font-size:16px;stroke-width:1.33333"><tspan
+         id="tspan155"
+         style="font-variant:normal;font-weight:normal;font-size:11.2911px;font-family:'Fira Code';writing-mode:lr-tb;fill:#0066cc;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1.33333"
+         x="446.54752"
+         y="49.038483">multi</tspan></text>
+    <text
+       id="text156"
+       xml:space="preserve"
+       x="480.42084"
+       y="49.038483"
+       style="font-size:16px;stroke-width:1.33333"><tspan
+         id="tspan156"
+         style="font-variant:normal;font-weight:normal;font-size:11.2911px;font-family:'Fira Code';writing-mode:lr-tb;fill:#202020;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1.33333"
+         x="480.42084"
+         y="49.038483">::</tspan></text>
+    <path
+       style="fill:#0066cc;stroke:#000000;marker-end:url(#ArrowWide)"
+       d="M 262.85592,166.15078 448.31507,53.216871"
+       id="path156"
+       sodipodi:nodetypes="cc" />
+    <text
+       id="text157"
+       xml:space="preserve"
+       x="199.80087"
+       y="267.36926"
+       style="font-size:9.8803px;stroke-width:0.823357"
+       transform="rotate(-30)"><tspan
+         id="tspan157"
+         style="font-variant:normal;font-weight:normal;font-size:6.97247px;font-family:'Fira Code';writing-mode:lr-tb;fill:#0066cc;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.823357"
+         x="199.80087"
+         y="267.36926">.begin() const&amp;</tspan></text>
+    <text
+       id="text159"
+       xml:space="preserve"
+       x="172.44264"
+       y="256.29788"
+       style="font-size:16px;stroke-width:1.33333"><tspan
+         id="tspan159"
+         style="font-variant:normal;font-weight:bold;font-size:11.2911px;font-family:'Fira Code';writing-mode:lr-tb;fill:#0066cc;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1.33333"
+         x="172.44264"
+         y="256.29788">subarray</tspan></text>
+    <text
+       id="text160"
+       xml:space="preserve"
+       x="230.45111"
+       y="257.14511"
+       style="font-size:16px;stroke-width:1.33333"><tspan
+         id="tspan160"
+         style="font-variant:normal;font-weight:normal;font-size:11.2911px;font-family:'Fira Code';writing-mode:lr-tb;fill:#202020;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1.33333"
+         x="230.45111"
+         dx="0 0 0 6.7746396"
+         y="257.14511">&lt;T,D&gt;</tspan></text>
+    <path
+       style="fill:none;stroke:#000000;marker-start:url(#ArrowWide)"
+       d="M 164.78356,249.08158 53.374623,181.72789 v -35.21478"
+       id="path160"
+       sodipodi:nodetypes="cc" />
+    <text
+       id="text161"
+       xml:space="preserve"
+       x="151.82018"
+       y="122.99194"
+       style="font-size:9.8803px;stroke-width:0.823357"
+       transform="rotate(31.315227)"><tspan
+         id="tspan161"
+         style="font-variant:normal;font-weight:normal;font-size:6.97247px;font-family:'Fira Code';writing-mode:lr-tb;fill:#0066cc;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.823357"
+         x="151.82018"
+         y="122.99194">.operator()(index_range)</tspan></text>
+    <path
+       style="fill:#0066cc;stroke:#000000;marker-end:url(#ArrowWide)"
+       d="m 337.61567,212.65128 66.08287,38.54834"
+       id="path161"
+       sodipodi:nodetypes="cc" />
+    <text
+       id="text162"
+       xml:space="preserve"
+       x="397.44876"
+       y="11.55001"
+       style="font-size:9.8803px;stroke-width:0.823357"
+       transform="rotate(30)"><tspan
+         id="tspan162"
+         style="font-variant:normal;font-weight:normal;font-size:6.97247px;font-family:'Fira Code';writing-mode:lr-tb;fill:#0066cc;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.823357"
+         x="397.44876"
+         y="11.55001">.operator[](index) </tspan></text>
+    <text
+       id="text163"
+       xml:space="preserve"
+       x="412.62842"
+       y="258.41592"
+       style="font-size:16px;stroke-width:1.33333"><tspan
+         id="tspan163"
+         style="font-variant:normal;font-weight:bold;font-size:11.2911px;font-family:'Fira Code';writing-mode:lr-tb;fill:#0066cc;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1.33333"
+         x="412.62842"
+         y="258.41592">const_subarray</tspan></text>
+    <text
+       id="text164"
+       xml:space="preserve"
+       x="466.8244"
+       y="258.41592"
+       style="font-size:16px;stroke-width:1.33333"><tspan
+         id="tspan164"
+         style="font-variant:normal;font-weight:normal;font-size:11.2911px;font-family:'Fira Code';writing-mode:lr-tb;fill:#202020;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1.33333"
+         x="466.8244"
+         dx="0 0 0 0 0 0 0 0 0 6.7746396 0 0 0"
+         y="258.41592">      &lt;T,D - 2&gt;</tspan></text>
+    <path
+       style="fill:#0066cc;stroke:#000000;marker-end:url(#ArrowWide)"
+       d="m 214.63354,262.49436 -0.0812,65.22448"
+       id="path164"
+       sodipodi:nodetypes="cc" />
+    <text
+       id="text165"
+       xml:space="preserve"
+       x="260.22992"
+       y="-220.30656"
+       style="font-size:9.8803px;stroke-width:0.823357"
+       transform="rotate(90)"><tspan
+         id="tspan165"
+         style="font-variant:normal;font-weight:normal;font-size:6.97247px;font-family:'Fira Code';writing-mode:lr-tb;fill:#0066cc;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.823357"
+         x="260.22992"
+         y="-220.30656">.operator&amp;() &amp;&amp;</tspan></text>
+    <text
+       id="text166"
+       xml:space="preserve"
+       x="187.44728"
+       y="339.56894"
+       style="font-size:16px;stroke-width:1.33333"><tspan
+         id="tspan166"
+         style="font-variant:normal;font-weight:bold;font-size:11.2911px;font-family:'Fira Code';writing-mode:lr-tb;fill:#0066cc;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1.33333"
+         x="187.44728"
+         y="339.56894">subarray_ptr</tspan></text>
+    <text
+       id="text167"
+       xml:space="preserve"
+       x="245.45575"
+       y="340.41617"
+       style="font-size:16px;stroke-width:1.33333"><tspan
+         id="tspan167"
+         style="font-variant:normal;font-weight:normal;font-size:11.2911px;font-family:'Fira Code';writing-mode:lr-tb;fill:#202020;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1.33333"
+         x="245.45575"
+         dx="0 0 0 0 0 0 0 6.7746396"
+         y="340.41617">    &lt;T,D&gt;</tspan></text>
+    <path
+       style="fill:#0066cc;stroke:#000000;marker-end:url(#ArrowWide)"
+       d="m 251.63732,329.12214 0.0812,-65.22448"
+       id="path167"
+       sodipodi:nodetypes="cc" />
+    <text
+       id="text168"
+       xml:space="preserve"
+       x="-322.39124"
+       y="244.16708"
+       style="font-size:9.8803px;stroke-width:0.823357"
+       transform="rotate(-90)"><tspan
+         id="tspan168"
+         style="font-variant:normal;font-weight:normal;font-size:6.97247px;font-family:'Fira Code';writing-mode:lr-tb;fill:#0066cc;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.823357"
+         x="-322.39124"
+         y="244.16708">.operator*()</tspan></text>
+    <path
+       style="fill:#0066cc;stroke:#000000;marker-end:url(#ArrowWide)"
+       d="m 55.252466,197.79455 -0.0812,105.36233"
+       id="path168"
+       sodipodi:nodetypes="cc" />
+    <text
+       id="text169"
+       xml:space="preserve"
+       x="207.51157"
+       y="-60.92548"
+       style="font-size:9.8803px;stroke-width:0.823357"
+       transform="rotate(90)"><tspan
+         id="tspan169"
+         style="font-variant:normal;font-weight:normal;font-size:6.97247px;font-family:'Fira Code';writing-mode:lr-tb;fill:#0066cc;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.823357"
+         x="207.51157"
+         y="-60.92548">.elements()</tspan></text>
+    <text
+       id="text159-8"
+       xml:space="preserve"
+       x="52.162464"
+       y="320.12363"
+       style="font-size:16px;stroke-width:1.33333"><tspan
+         sodipodi:role="line"
+         id="tspan170"
+         x="52.162464"
+         y="320.12363"><tspan
+           id="tspan159-6"
+           style="font-variant:normal;font-weight:bold;font-size:11.2911px;font-family:'Fira Code';writing-mode:lr-tb;fill:#0066cc;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1.33333"
+           x="52.162464"
+           y="320.12363">elements_type</tspan></tspan><tspan
+         sodipodi:role="line"
+         id="tspan171"
+         x="52.162464"
+         y="340.12363"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:10.6667px;font-family:'Fira Code';-inkscape-font-specification:'Fira Code'">(a 1D view range)</tspan></text>
+    <path
+       style="fill:#0066cc;stroke:#000000;marker-end:url(#ArrowWide)"
+       d="M 162.66137,260.69714 94.28591,303.15688"
+       id="path172"
+       sodipodi:nodetypes="cc" />
+    <text
+       id="text172"
+       xml:space="preserve"
+       x="-51.725758"
+       y="303.64096"
+       style="font-size:9.8803px;stroke-width:0.823357"
+       transform="rotate(-30)"><tspan
+         id="tspan172"
+         style="font-variant:normal;font-weight:normal;font-size:6.97247px;font-family:'Fira Code';writing-mode:lr-tb;fill:#0066cc;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.823357"
+         x="-51.725758"
+         y="303.64096">.elements()</tspan></text>
+  </g>
+</svg>

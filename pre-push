@@ -1,0 +1,110 @@
+#!/bin/bash
+# sudo apt install git cmake ninja-build ccache g++ clang binutils-gold libboost-dev make libclang-rt-dev libc++-dev nvidia-cuda-toolkit libfftw3-dev valgrind clang-tidy --no-install-recommends
+# sudo dnf install boost-devel blas-devel ccache clang clang-tools-extra cmake cppcheck fftw-devel git lcov libasan liblas-devel libubsan ninja-build valgrind
+# install circle # mkdir -p $HOME/bin && wget https://www.circle-lang.org/linux/build_latest.tgz -P $HOME/tmp/ && tar zxvf $HOME/tmp/build_latest.tgz --directory $HOME/bin/ && $HOME/bin/circle --version
+# install nvc++
+#   on Ubuntu:
+#     curl https://developer.download.nvidia.com/hpc-sdk/ubuntu/DEB-GPG-KEY-NVIDIA-HPC-SDK | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-hpcsdk-archive-keyring.gpg
+#     echo 'deb [signed-by=/usr/share/keyrings/nvidia-hpcsdk-archive-keyring.gpg] https://developer.download.nvidia.com/hpc-sdk/ubuntu/amd64 /' | sudo tee /etc/apt/sources.list.d/nvhpc.list
+#     sudo apt-get update -y
+#     sudo apt-get install -y nvhpc
+#   on Fedora:
+#   sudo yum-config-manager --add-repo https://developer.download.nvidia.com/hpc-sdk/rhel/nvhpc.repo && sudo yum install -y nvhpc-cuda-multi-24.5
+# install oneAPI
+#  wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
+#  echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
+#  sudo apt update
+#  sudo apt install intel-hpckit
+# brew install cmake ninja ccache gcc@14 boost include-what-you-use cpplint cppcheck clang-tidy
+
+set -x  # echo on
+
+export CMAKE_GENERATOR=Ninja
+export NINJA_STATUS="[%f/%t||%r] "
+export CMAKE_COLOR_DIAGNOSTICS="ON"
+export CMAKE_CUDA_COMPILER_LAUNCHER="ccache"
+export CMAKE_CXX_COMPILER_LAUNCHER="ccache"
+# CMAKE_COMPILE_WARNING_AS_ERROR is NOT read from the environment by CMake
+
+ccache -z
+
+if [[ $OSTYPE == "darwin"* ]]; then
+	PHYS_CORES=$(sysctl -n hw.physicalcpu)
+else
+	PHYS_CORES=$(lscpu -p=core | grep -v '^#' | sort -u | wc -l)
+fi
+export CMAKE_BUILD_PARALLEL_LEVEL=$((PHYS_CORES + 0))
+
+export CTEST_OUTPUT_ON_FAILURE=1
+export CTEST_PARALLEL_LEVEL=$PHYS_CORES
+
+if [ -z "$1" ]; then
+echo "no arg"
+else
+CMT="--target $1"
+CTR="--verbose -R $1"
+fi
+
+if [[ $OSTYPE != "darwin"* ]]; then
+
+export PMIX_MCA_gds=hash
+export UBSAN_OPTIONS=print_stacktrace=1
+
+ ([ -d .build.clang++.libcpp ] || CXX=clang++                       cmake -S . -B .build.clang++.libcpp -DCMAKE_BUILD_TYPE=Debug -DCMAKE_COMPILE_WARNING_AS_ERROR=ON   -DCMAKE_CXX_STANDARD=23 -DDISABLE_MPI=1 -DCMAKE_CXX_FLAGS="-stdlib=libc++ -D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG -fsanitize=address,undefined" -DCMAKE_EXE_LINKER_FLAGS="-stdlib=libc++ -fsanitize=address,undefined"  && cmake --build .build.clang++.libcpp $CMT && (ctest --test-dir .build.clang++.libcpp $CTR || ctest --test-dir .build.clang++.libcpp --rerun-failed $CTR) ) || exit 666
+ ([ -d .build.g++ ]            || CXX=g++                           cmake -S . -B .build.g++            -DCMAKE_BUILD_TYPE=Debug -DCMAKE_COMPILE_WARNING_AS_ERROR=ON   -DCMAKE_CXX_FLAGS="-Wno-error=deprecated-declarations"            && cmake --build .build.g++            $CMT && (ctest --test-dir .build.g++   --rerun-failed $CTR || ctest --test-dir .build.g++            --rerun-failed $CTR) ) || exit 666
+#([ -d .build.clang++ ]        || CXX=clang++ CXXFLAGS=-Weverything cmake -S . -B .build.clang++        -DCMAKE_BUILD_TYPE=Debug -DCMAKE_COMPILE_WARNING_AS_ERROR="ON"                                                               && cmake --build .build.clang++        $CMT && (ctest --test-dir .build.clang++              $CTR || ctest --test-dir .build.clang++        --rerun-failed $CTR) ) || exit 666
+
+ ([ -d .build.g++.c++23 ]      || CXX=g++                           cmake -S . -B .build.g++.c++23      -DCMAKE_BUILD_TYPE=Debug -DCMAKE_COMPILE_WARNING_AS_ERROR=ON   -DCMAKE_CXX_STANDARD=23 -DCMAKE_CXX_FLAGS="-fconcepts-diagnostics-depth=30" && cmake --build .build.g++.c++23      $CMT && (ctest --test-dir .build.g++.c++23            $CTR || ctest --test-dir .build.g++.c++23      --rerun-failed $CTR) ) || exit 666
+
+if [[ $(uname -m) != 'aarch64' ]]; then
+(clang-format-21 --version 2>/dev/null && clang-format-21 --output-replacements-xml --dry-run -Werror include/**/*.hpp test/*.cpp || exit 666) || echo "clang-format-21 not installed" 
+#diff -u include/**/*.hpp test/*.cpp <(clang-format-19 include/**/*.hpp test/*.cpp)
+
+#(CXX="$HOME/bin/circle" cmake -S . -B .build.circle     -DCMAKE_BUILD_TYPE=Debug   -DCMAKE_CXX_STANDARD=20 -DDISABLE_MPI=1 -DCMAKE_CXX_EXTENSIONS=OFF -DENABLE_CIRCLE=1 -DCMAKE_THREAD_LIBS_INIT="-lpthread"                                                                                              && cmake --build .build.circle     $CMT && (ctest --test-dir .build.circle     $CTR || ctest --test-dir .build.circle     --rerun-failed $CTR)) || exit 666
+#nice -n 15 bash -c '(DIR=.build.nvcc.debug-cu17; [ -d "$DIR" ] || cmake -S . -B "$DIR" -DCMAKE_BUILD_TYPE=Debug   -DCMAKE_CXX_STANDARD=17 -DENABLE_CUDA=1 -DCMAKE_CUDA_COMPILER=nvcc -DCMAKE_CUDA_FLAGS="--extended-lambda --threads 2" -DCMAKE_CUDA_HOST_COMPILER=g++-12 -DCMAKE_CXX_COMPILER=g++-12 -DCMAKE_CUDA_ARCHITECTURES=native && cmake --build .build.nvcc.debug-cu17 $CMT && (ctest --test-dir .build.nvcc.debug-cu17 $CTR || ctest --test-dir .build.nvcc.debug-cu17 --rerun-failed $CTR))' || exit 666
+ nice -n 15 bash -c '(DIR=.build.nvcc.debug;      [ -d "$DIR" ] || cmake -S . -B "$DIR" -DCMAKE_BUILD_TYPE=Debug   -DCMAKE_CXX_STANDARD=20 -DENABLE_CUDA=1 -DCMAKE_CUDA_COMPILER=nvcc -DCMAKE_CUDA_FLAGS="--extended-lambda --threads 2" -DCMAKE_CUDA_HOST_COMPILER=g++-12 -DCMAKE_CXX_COMPILER=g++-12 -DCMAKE_CUDA_ARCHITECTURES=native && cmake --build .build.nvcc.debug      $CMT && (ctest --test-dir .build.nvcc.debug $CTR      || ctest --test-dir .build.nvcc.debug      --rerun-failed $CTR))' || exit 666
+#nice -n 15 bash -c '(DIR=.build.nvcc;            [ -d "$DIR" ] || cmake -S . -B "$DIR" -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=20 -DENABLE_CUDA=1 -DCMAKE_CUDA_COMPILER=nvcc -DCMAKE_CUDA_FLAGS="--extended-lambda --threads 2" -DCMAKE_CUDA_HOST_COMPILER=g++-12 -DCMAKE_CXX_COMPILER=g++-12 -DCMAKE_CUDA_ARCHITECTURES=native && cmake --build .build.nvcc            $CMT && (ctest --test-dir .build.nvcc       $CTR      || ctest --test-dir .build.nvcc            --rerun-failed $CTR))' || exit 666
+#(source /opt/intel/oneapi/setvars.sh && CXX=/opt/intel/oneapi/compiler/latest/bin/icpx cmake -S . -B .build.icpx  -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=20                                                                                                                                      && cmake --build .build.icpx       $CMT && (ctest --test-dir .build.icpx       $CTR || ctest --test-dir .build.icpx       --rerun-failed $CTR)) || exit 666
+#(CXX=/opt/nvidia/hpc_sdk/Linux_x86_64/2025/compilers/bin/nvc++ cmake -S . -B .build.nvc++   -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=17 -DBLA_PREFER_PKGCONFIG=ON -DCMAKE_CXX_COMPILER=/opt/nvidia/hpc_sdk/Linux_x86_64/2025/compilers/bin/nvc++                                                   && cmake --build .build.nvc++      $CMT && (ctest --test-dir .build.nvc++      $CTR || ctest --test-dir .build.nvc++      --rerun-failed $CTR)) || exit 666
+ nice -n 15 bash -c '([ -d .build.nvc++26 ] || CXX=/opt/nvidia/hpc_sdk/Linux_x86_64/2026/compilers/bin/nvc++ cmake -S . -B .build.nvc++26 -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=20 -DBLA_PREFER_PKGCONFIG=ON -DCMAKE_CXX_COMPILER=/opt/nvidia/hpc_sdk/Linux_x86_64/2026/compilers/bin/nvc++                                                   && cmake --build .build.nvc++26    $CMT && (ctest --test-dir .build.nvc++26    $CTR || ctest --test-dir .build.nvc++26    --rerun-failed $CTR))' || exit 666
+ nice -n 15 bash -c '([ -d .build.culang ] || cmake -S . -B .build.culang       -DCMAKE_BUILD_TYPE=Release -DENABLE_CUDA=1 -DCMAKE_CUDA_COMPILER=clang++-20 -DCMAKE_CUDA_HOST_COMPILER=clang++-20 -DCMAKE_CXX_COMPILER=clang++-20 -DCMAKE_CUDA_FLAGS="-Wno-unknown-cuda-version" -DCMAKE_CUDA_ARCHITECTURES=native                                                                                               && cmake --build .build.culang     $CMT && (ctest --test-dir .build.culang     $CTR || ctest --test-dir .build.culang     --rerun-failed $CTR))' || exit 666
+fi
+
+#([ -d .build.clang++-rel ]    || CXX=clang++                       cmake -S . -B .build.clang++-rel    -DCMAKE_BUILD_TYPE=Release -DENABLE_TBLIS=ON -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=gold -Wl,--detect-odr-violations" && cmake --build .build.clang++-rel    $CMT && (ctest --test-dir .build.clang++-rel          $CTR || ctest --test-dir .build.clang++-rel    --rerun-failed $CTR) ) || exit 666
+#([ -d .build.clang++-16 ]     || CXX=clang++-16                    cmake -S . -B .build.clang++-16     -DCMAKE_BUILD_TYPE=Debug   -DCMAKE_CXX_STANDARD=20                                     && cmake --build .build.clang++-16     $CMT && (ctest --test-dir .build.clang++-16           $CTR || ctest --test-dir .build.clang++-16     --rerun-failed $CTR) ) || exit 666
+#([ -d .build.clang++.c++23 ]  || CXX=clang++                       cmake -S . -B .build.clang++.c++23  -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=23                                     && cmake --build .build.clang++.c++23  $CMT && (ctest --test-dir .build.clang++.c++23        $CTR || ctest --test-dir .build.clang++.c++23  --rerun-failed $CTR) ) || exit 666
+ # -Wconsumed enforcement: only compiles partitioned.cpp.x — clang 18/19/20 consumed-analyzer crashes on ranges-heavy TUs (e.g. broadcast_softmax.cpp)
+#([ -d .build.clang++.consumed ] || CXX=clang++-20                    cmake -S . -B .build.clang++.consumed -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_STANDARD=20 -DDISABLE_MPI=1 -DCMAKE_CXX_FLAGS="-Wconsumed -Werror=consumed") && cmake --build .build.clang++.consumed --target partitioned.cpp.x || exit 666
+#([ -d .build.g++-rel ]        || CXX=g++                           cmake -S . -B .build.g++-rel        -DCMAKE_BUILD_TYPE=Release -DENABLE_TBLIS=ON -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=TRUE -DCMAKE_CXX_FLAGS="-Wodr -Wlto-type-mismatch" -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=gold -Wl,--detect-odr-violations -Wodr -Wlto-type-mismatch" && cmake --build .build.g++-rel        $CMT && (ctest --test-dir .build.g++-rel              $CTR || ctest --test-dir .build.g++-rel        --rerun-failed $CTR) ) || exit 666
+
+ nice -n 15 bash -c '([ -d .build.g++.plus ] || CXX=g++     cmake -S . -B .build.g++.plus     -DCMAKE_BUILD_TYPE=Release -DCMAKE_COMPILE_WARNING_AS_ERROR=ON -DCMAKE_CXX_STANDARD=23 -DDISABLE_MPI=1 -DBLA_VENDOR=OpenBLAS `#-DCMAKE_CXX_CPPCHECK="cppcheck;--enable=all;--suppress=missingIncludeSystem;--suppress=unhandledChar;--inline-suppr;--std=c++17;--checkers-report=cppcheck.report;--error-exitcode=1"` -DCMAKE_CXX_FLAGS="-D_GLIBCXX_DEBUG=1 -DRUNNING_ON_VALGRIND -fconcepts-diagnostics-depth=4 -fimplicit-constexpr -Wlto-type-mismatch -Wodr -Wno-analyzer-null-dereference -Wno-analyzer-possible-null-dereference -Wno-analyzer-malloc-leak -Wno-analyzer-use-of-uninitialized-value -Wno-analyzer-use-after-free" && cmake --build .build.g++.plus     $CMT && (PMIX_MCA_gds=hash ctest --test-dir .build.g++.plus      --rerun-failed --overwrite MemoryCheckCommandOptions="--trace-children=yes --leak-check=full --track-origins=yes --show-leak-kinds=all --errors-for-leak-kinds=all --gen-suppressions=all --error-exitcode=1" --overwrite MemoryCheckSuppressionFile=$PWD/.valgrind-suppressions -T memcheck $CTR))' || exit 666
+ ([ -d .build.clang++.plus ] || CXX=clang++ cmake -S . -B .build.clang++.plus -DCMAKE_BUILD_TYPE=Release -DCMAKE_COMPILE_WARNING_AS_ERROR=ON -DCMAKE_CXX_STANDARD=20 -DDISABLE_MPI=1 -DBLA_VENDOR=Generic -DCMAKE_CXX_CLANG_TIDY="clang-tidy" -DCMAKE_CXX_FLAGS="-g -fsanitize=address,undefined -fno-sanitize-recover=undefined -fno-omit-frame-pointer -DUBSAN=1" -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined" `#-DCMAKE_CXX_INCLUDE_WHAT_YOU_USE="iwyu;-Xiwyu;--mapping_file=/home/correaa/boost-multi/.iwyu-test.imp;-Xiwyu;--no_fwd_decls"`                                                                                                                                                                                                                         && cmake --build .build.clang++.plus $CMT && (                  ctest --test-dir .build.clang++.plus                                                                                                                                                                                                                                                                                        $CTR  || ctest --parallel 1 --rerun-failed $CTR)) || exit 666
+
+## sudo setfacl --modify user:correaa:rw /var/run/docker.sock
+# gitlab-runner exec docker rocm
+
+else
+# brew install boost ccache clang-tidy cmake cppcheck cpplint ninja llvm@19 llvm@16
+# ln -s "$(brew --prefix llvm)/bin/clang-tidy" "/usr/local/bin/clang-tidy"
+# git clone thrust; cd thrust; mkdir build; cd build; cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$HOME -DTHRUST_ENABLE_HEADER_TESTING=OFF -DTHRUST_ENABLE_TESTING=OFF -DTHRUST_ENABLE_EXAMPLES=OFF
+
+ $(brew --prefix)/opt/llvm@20/bin/clang-format --dry-run -Werror include/**/*.hpp test/*.cpp
+
+export CMAKE_PREFIX_PATH=$HOME/lib/cmake/thrust
+#export Thurst_DIR=/Users/correatedesco1/include/thrust/cmake
+ (CXX=c++ CXXFLAGS="-fexperimental-library" cmake -S . -B .build.c++.std23 -DCMAKE_BUILD_TYPE=Debug -DENABLE_TBLIS=ON -DCMAKE_CXX_STANDARD=23                                                                                                                                                                                                       && cmake --build .build.c++.std23 $CMT &&                                           (ctest --test-dir .build.c++.std23 $CTR                      || ctest --verbose --test-dir .build.c++.std23 --rerun-failed $CTR) ) || exit 666
+ (CXX=c++                                   cmake -S . -B .build.c++.asan  -DCMAKE_BUILD_TYPE=Release -DOpenMP_ROOT=/opt/homebrew/opt/libomp    -DENABLE_TBLIS=ON -DCMAKE_CXX_STANDARD=20 -DCMAKE_CXX_FLAGS="-D_LIBCPP_DEBUG=1 -fsanitize=undefined -fsanitize=pointer-overflow -fsanitize-trap=pointer-overflow -fsanitize=address -fno-omit-frame-pointer -fsanitize=signed-integer-overflow" && cmake --build .build.c++.asan  $CMT && ASAN_OPTIONS="new_delete_type_mismatch=1"  ctest --test-dir .build.c++.asan  $CTR                                                                                          ) || exit 666
+ (CXX=g++-14                                cmake -S . -B .build.g++-14    -DCMAKE_BUILD_TYPE=Release -DOpenMP_ROOT=/opt/homebrew/opt/libomp    -DCMAKE_CXX_STANDARD=23 -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=TRUE -DCMAKE_CXX_FLAGS="-D_GLIBCXX_ASSERTIONS -D_GLIBCXX_DEBUG=1 -D_FORTIFY_SOURCE=3"                                                                            && cmake --build .build.g++-14    $CMT &&                                            ctest --test-dir .build.g++-14    $CTR                                                                                          ) || exit 666
+ (CXX=c++                                   cmake -S . -B .build.c++.plus  -DCMAKE_BUILD_TYPE=Release -DOpenMP_ROOT=/opt/homebrew/opt/libomp    `#-DCMAKE_CXX_CLANG_TIDY=clang-tidy` -DCMAKE_CXX_CPPLINT="cpplint;--quiet" -DCMAKE_CXX_FLAGS="-DCPPCHECK=1 -Werror=deprecated-declarations" -DCMAKE_CXX_CPPCHECK="cppcheck;-DCPPCHECK=1;--enable=all;--suppress=preprocessorErrorDirective;--suppress=missingIncludeSystem;--suppress=unhandledChar;--checkers-report=cppcheck.report;--suppress=checkersReport;--suppress=syntaxError;--suppress=unmatchedSuppression;--suppress=unusedFunction;--suppress=constParameterReference;--suppress=normalCheckLevelMaxBranches;--inline-suppr;--std=c++17;--error-exitcode=1" -DCMAKE_CXX_INCLUDE_WHAT_YOU_USE="include-what-you-use;-Xiwyu;--mapping_file=/Users/correatedesco1/boost-multi/.iwyu-test.imp;-Xiwyu;--no_fwd_decls;-Xiwyu;-Werror" && cmake --build .build.c++.plus $CMT --verbose --parallel && (ctest --test-dir .build.c++.plus $CTR || ctest --test-dir .build.c++.tidy --rerun-failed $CTR)) || exit 666
+ (CXX=clang++                               cmake -S . -B .build.c++.std26 -DCMAKE_BUILD_TYPE=Release                                                                                                                        -DCMAKE_CXX_STANDARD=26                                                                                                                                                                                                       && cmake --build .build.c++.std26 $CMT &&                                           (ctest --test-dir .build.c++.std26 $CTR                      || ctest --verbose --test-dir .build.c++.std26 --rerun-failed $CTR) ) || exit 666
+
+if [[ $(uname -m) == 'arm64' ]]; then
+ (CXX=c++                                   cmake -S . -B .build.c++.m32   -DCMAKE_BUILD_TYPE=Release -DOpenMP_ROOT=/opt/homebrew/opt/libomp    -DCMAKE_CXX_FLAGS="-m32" -DDISABLE_TBLIS=ON                                                                                                                                                                                                      && cmake --build .build.c++.m32   $CMT &&                                            ctest --test-dir .build.c++.m32   $CTR                                                                                          ) || exit 666
+ (CXX=c++                                   cmake -S . -B .build.c++.tidy  -DCMAKE_BUILD_TYPE=Release -DOpenMP_ROOT=/opt/homebrew/opt/libomp    -DDISABLE_TBLIS=ON -DCMAKE_CXX_CLANG_TIDY=$(brew --prefix)/llvm/22.1.7_1/bin/clang-tidy                                                                                                                                                                                             && cmake --build .build.c++.tidy  $CMT &&                                            ctest --test-dir .build.c++.tidy  $CTR                                                                                          ) || exit 666
+fi
+
+fi
+
+ccache -s
+
+# fuser --kill /dev/nvidia-uvm; while fuser --silent /dev/nvidia-uvm; do sleep 1; done; modprobe -r nvidia_uvm && modprobe nvidia_uvm

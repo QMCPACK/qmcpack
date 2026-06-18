@@ -1,0 +1,11 @@
+name: multi
+version: ~
+title: Boost.Multi
+asciidoc:
+  attributes:
+    page-pagination: ''
+    stem: latexmath
+nav:
+  - modules/ROOT/nav.adoc
+  - modules/reference/nav.adoc
+start_page: intro.adoc

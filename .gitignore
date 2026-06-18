@@ -1,30 +1,44 @@
-*.pyc
-*.aux
-qmcpack_manual.bbl
-qmcpack_manual.blg
-qmcpack_manual.log
-qmcpack_manual.out
-qmcpack_manual.toc
-qmcpack_manual.pdf
-.DS_Store
-/build_*/
-nexus/tests/unit/*output
-tests/solids/NiO_a4_e48_pp/NiO-fcc-supertwist111-supershift000-S1.h5
+build*
+.build*
+.vscode
+.devcontainer/*
+.cache/clangd/*
 
-# Eclipse IDE
-.cproject
-.project
-.settings/
-.pydevproject
+# Prerequisites
+*.d
 
-# Visual Studio code settings
-.vscode/
-.cache/
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
 
-# Doxygen output
-doxygen/output/
-doxygen/qmcpack_all.tag
+# Precompiled Headers
+*.gch
+*.pch
 
-# Sphinx output
-docs/_build/
-nexus/sphinx_docs/_build/
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Cmake
+cmake-build-debug
+
+# Clion
+.idea
