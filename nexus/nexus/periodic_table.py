@@ -27,9 +27,9 @@ class ElementData:
             self.group,
             tuple(self.isotopes.keys()),
             tuple(self.isotopes.values()),
-        ))
+            ))
 
-    def most_common_isotope(self) -> tuple[int, float]:
+    def principle_isotope(self) -> tuple[int, float]:
         """Get the mass number and relative atomic weight of the most common isotope.
 
         Isotopic abundances defined by IUPAC [1]_.
@@ -63,12 +63,12 @@ class ElementData:
             If mass number is not in the known isotopes for the element.
         """
         if mass_number is None:
-            mass_number = self.most_common_isotope()[0]
+            mass_number = self.principle_isotope()[0]
         elif mass_number not in self.isotopes.keys():
             warn(
                 f"Mass number {mass_number} is not in the known isotopes for {self.name}.\n"
                 "Will proceed with given mass number, but you may want to check your inputs!"
-            )
+                )
 
         return mass_number - self.atomic_number
 #end class ElementData
