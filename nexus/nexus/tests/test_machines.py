@@ -56,10 +56,10 @@ def get_supercomputers():
 
 
 
-def test_cpu_count():
-    from ..machines import cpu_count
-    assert(isinstance(cpu_count(),int))
-#end def test_cpu_count
+def test_get_cpu_cores():
+    from ..machines import get_cpu_cores
+    assert(isinstance(get_cpu_cores(), int))
+#end def test_get_cpu_cores
 
 
 
