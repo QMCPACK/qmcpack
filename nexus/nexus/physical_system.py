@@ -2,7 +2,7 @@
 ##  (c) Copyright 2015-  by Jaron T. Krogel                     ##
 ##################################################################
 
-"""Representations of particles, atoms, and complete physical systems."""
+"""Representations of electrons, ions, and complete physical systems."""
 
 from __future__ import annotations
 import os
@@ -15,111 +15,67 @@ from .periodic_table import Elements, ElementLike
 from .structure import Structure, generate_structure, read_structure
 
 
-class FloatElectrons:
+class Electrons:
     """A collection of electrons.
+
+    Note that this class does not make guarantees about having an
+    integer amount of electrons, but provides ``is_fractional`` to check
+    for non-integer numbers of electrons.
 
     Attributes
     ----------
-    count : int or float
-        The total number of electrons.
-    spin : int or float
-        The total spin of the electrons.
-    charge : int or float
-        The charge of the electrons, equal to ``-1 * self.count``.
-    multiplicity : int | float, read-only
-        The spin multiplicity of the electrons, equal to :math:`2S+1` where
-        :math:`S` is ``self.spin``.
-    """
-
-    def __init__(
-        self,
-        count: int | float,
-        spin: int | float,
-    ):
-        if count % 2 != 0 and spin == 0:
-            warn("Electrons object created with odd number of electrons and zero spin!")
-
-        self.count = count
-        self.spin = spin
-
-    @property
-    def charge(self) -> int | float:
-        """Total charge in atomic units. Equal to ``-1 * self.count``."""
-        return -1 * self.count
-
-    @property
-    def multiplicity(self) -> int | float:
-        """Defined as :math:`2S+1` where :math:`S` is ``self.spin``.
-
-        **Read-only**
-        """
-        return 2*self.spin + 1
-
-    @property
-    def n_up(self) -> int | float:
-        """The number of up-spin electrons."""
-        return (self.count / 2) + self.spin
-
-    @property
-    def n_down(self) -> int | float:
-        """The number of down-spin electrons."""
-        return (self.count / 2) - self.spin
-#end class FloatElectrons
-
-
-class IntElectrons:
-    """A collection of electrons.
-
-    Note that this class enforces that the number of up- and down-spin
-    electrons are integers. If you are using a code that allows for a
-    non-integer number of electrons, you must set that value when
-    generating the input and/or simulation object for that code.
-
-    Attributes
-    ----------
-    n_up : int
-        The number of up-spin electrons
-    n_down : int
+    n_up : int or float
+        The number of up-spin electrons.
+    n_down : int or float
         The number of down-spin electrons.
     spin : int or float, read-only
         The total spin of the system.
 
         An up-spin electron has a spin of +1/2, a down-spin electron has
         a spin of -1/2.
-    charge : int, read-only
-        The charge of the electrons, equal to ``-1 * self.count``.
+    total_charge : int or float, read-only
+        The total charge of the electrons, equal to ``-1 * self.count``.
     multiplicity : int or float, read-only
-        The spin multiplicity of the electrons, equal to :math:`2S+1` where
-        :math:`S` is the spin.
+        The spin multiplicity of the electrons, equal to :math:`2S+1`
+        where :math:`S` is the spin.
     """
 
     def __init__(
         self,
-        n_up: int,
-        n_down: int,
-    ):
-        if not (isinstance(n_up, int) and isinstance(n_down, int)):
-            warn("")
+        n_up: int | float,
+        n_down: int | float,
+        ):
+        if abs(int(n_up) - n_up) < 1e-4:
+            self.n_up = int(n_up)
+        else:
+            self.n_up = n_up
 
-        self.n_up = n_up
-        self.n_down = n_down
+        if abs(int(n_down) - n_down) < 1e-4:
+            self.n_up = int(n_down)
+        else:
+            self.n_up = n_down
+
+    def as_integers(self) -> Self:
+        """Return a version of the instance with integer numbers of electrons."""
+        return Electrons(int(self.n_up), int(self.n_down))
+
+    def is_fractional(self) -> bool:
+        """Returns ``True`` if the number of up- and down-spin electrons is not an integer."""
+        return isinstance(self.n_up, float) and isinstance(self.n_down, float)
 
     @property
     def count(self) -> int:
         return self.n_up + self.n_down
 
     @property
-    def charge(self) -> int | float:
+    def total_charge(self) -> int | float:
         """Total charge in atomic units. Equal to ``-1 * self.count``."""
         return -1 * self.count
 
     @property
     def multiplicity(self) -> int | float:
-        """Defined as :math:`2S+1` where :math:`S` is ``self.spin``.
-
-        **Read-only**
-        """
-        return 2*self.total_spin + 1
+        """Defined as :math:`2S+1` where :math:`S` is ``self.spin``."""
+        return 2 * self.total_spin + 1
 
     @property
     def total_spin(self) -> int | float:
@@ -134,82 +90,94 @@ class IntElectrons:
             return up_down_diff // 2
         else:
             return up_down_diff / 2
-#end class IntElectrons
+
+    def __eq__(self, other: Self) -> bool:
+        return self.n_up == other.n_up and self.n_down == other.n_down
+#end class Electrons
 
 
-class Ion:
-    """Class representing an ion.
+class Ions:
+    """Class representing a collection of ions of the same type.
 
     Attributes
     ----------
     element : Elements
-        The element for this ion.
+        The element for this ion collection.
+    count : int or float
+        The number of ions in this collection.
     label : str
-        The label for the ion.
-    charge : int or float
-        The charge associated with the ion.
-    spin : int or float
-        The spin of the ion.
+        The label for the ion collection.
+    unit_charge : int or float
+        The charge associated with a single one of the ions.
+    unit_spin : int or float
+        The spin of a single one of the ions.
     Zeff : int or None
-        The effective nuclear charge of the ion.
+        The effective nuclear charge of one of the ion.
     mass_number : int
-        The mass number of the ion.
+        The mass number of a single one of the ions.
     name : str, read-only property
         The name of the element.
     symbol : str, read-only property
         The atomic symbol of the element.
     atomic_weight : float, read-only property
-        The atomic weight of the element
+        The atomic weight of the element.
     mass : float, read-only property
         Alias for ``atomic_weight``.
     atomic_number : int, property
-        The atomic number of the element. Changing this will change the element.
+        The atomic number of the element. Changing this will change the
+        element.
     protons : int, property
         Alias for ``atomic_number``.
     neutrons : int, property
-        The number of neutrons. Calculated from ``mass_number``. Changing this
-        will change ``mass_number``.
+        The number of neutrons. Calculated from ``mass_number``.
+        Changing this will change ``mass_number``.
 
     Parameters
     ----------
     element : ElementLike
-        A member of the ``Elements`` enum, atomic symbol, or atomic number.
+        A member of the ``Elements`` enum, atomic symbol, or atomic
+        number.
+    count : int or float
+        The number of ions in this collection.
     label : str, optional
-        The label for the ion. If not given, defaults to ``element.symbol``.
-    charge : int or float, default=0
-        The charge associated with the ion.
-    spin : int or float, default=0
-        The spin of the ion.
+        The label for the ion. If not given, defaults to
+        ``element.symbol``.
+    unit_charge : int or float, default=0
+        The charge associated with a single one of the ions.
+    unit_spin : int or float, default=0
+        The spin of a single one of the ions.
     Zeff : int, optional
         The effective nuclear charge of the ion.
     mass_number : int, optional
-        The mass number of the ion. Defaults to the most abundant isotope.
+        The mass number of the ion. Defaults to the principle isotope.
 
     Examples
     --------
-    The most basic creation for an ``Ion`` only needs an element. All other
-    attributes will be populated as necessary.
+    The most basic creation for ``Ions`` only needs an element and a
+    count. All other attributes will be populated as necessary.
     """
 
     def __init__(
         self,
         element    : ElementLike,
+        count      : int | float,
         label      : str | None  = None,
-        charge     : int | float = 0,
-        spin       : int | float = 0,
+        unit_charge: int | float = 0,
+        unit_spin  : int | float = 0,
         mass_number: int | None  = None,
         Zeff       : int | None  = None,
-    ):
-        self.element = Elements(element)
-        self.label   = label if label is not None else self.element.symbol
-        self.charge  = charge
-        self.spin    = spin
-        self.Zeff    = Zeff
+        ):
+        self.element     = Elements(element)
+        self.count       = count
+        self.label       = label if label is not None else self.element.symbol
+        self.unit_charge = unit_charge
+        self.unit_spin   = unit_spin
+        self.Zeff        = Zeff
         if mass_number is not None:
             if mass_number not in self.element.isotopes.keys():
                 warn(
                     f"Mass number {mass_number} is not in the known isotopes for element {self.element.symbol}!"
-                )
+                    )
             self.mass_number = mass_number
         else:
             self.mass_number = self.element.most_common_isotope()[0]
@@ -252,7 +220,7 @@ class Ion:
         else:
             raise ValueError(
                 f"The new atomic number must be an integer, but is {atomic_number}!"
-            )
+                )
 
         self.element = Elements(atomic_number)
 
@@ -276,21 +244,27 @@ class Ion:
         else:
             raise ValueError(
                 f"The number of neutrons must be an integer, but is {neutrons}!"
-            )
+                )
 
-    def __str__(self) -> str:
-        return self.label
+    @property
+    def total_charge(self) -> int | float:
+        return self.unit_charge * self.count
+
+    @property
+    def total_spin(self) -> int | float:
+        return self.unit_spin * self.count
 
     def __eq__(self, other: Self) -> bool:
         return (
             self.element is other.element
+            and self.count       == other.count
             and self.label       == other.label
-            and self.charge      == other.charge
-            and self.spin        == other.spin
+            and self.unit_charge == other.unit_charge
+            and self.unit_spin   == other.unit_spin
             and self.mass_number == other.mass_number
             and self.Zeff        == other.Zeff
-        )
-#end class Ion
+            )
+#end class Ions
 
 
 class Particles:
@@ -424,22 +398,33 @@ class PhysicalSystem:
     ----------
     structure : Structure
         The structure of the ions in the system.
-    ions : list of Ion
+    ions : list of Ions
         The unique ions of the system. These are unique if and only if
-        they share the same element, label, charge, spin, mass number,
-        and effective nuclear charge. See ``Ion`` for more information.
+        they share the same element, count, label, charge, spin, mass
+        number, and effective nuclear charge. See ``Ions`` for more
+        information.
     electrons : Electrons
         The up-spin and down-spin electrons in the system.
-
-
+    
+    Parameters
+    ----------
+    structure : Structure
+        The structure of the ions in the system.
+    total_charge : int or float, default=0
+        The total charge of the system.
+    total_spin : int or float, default=0
+        The total spin of the system.
+    Zeffs : dict[ElementLike: int or float], default=dict()
+        A dictionary mapping the effective nuclear charges of the system
+        to the ions of the system.
     """
 
     def __init__(
         self,
-        structure: Structure | None = None,
-        net_charge: int | float = 0,
-        net_spin: int | float = 0,
-        Zeffs: dict[str: int | float] | None = None,
+        structure   : Structure | None       = None,
+        total_charge: int | float            = 0,
+        total_spin  : int | float            = 0,
+        Zeffs       : dict[str: int | float] = dict(),
     ):
         if structure is None:
             self.structure = Structure()
@@ -449,22 +434,23 @@ class PhysicalSystem:
         self.folded_system = None
         if self.structure.has_folded():
             if self.structure.is_tiled():
-                vratio = structure.volume()/structure.folded_structure.volume()
-                ncells = int(round(vratio))
-                if abs(vratio-ncells)>1e-4:
+                vratio = structure.volume() / structure.folded_structure.volume()
+                ncells = round(vratio)
+                net_charge_fold = total_charge // ncells
+
+                if abs(vratio - ncells) > 1e-4:
                     self.error('volume of system does not divide evenly into folded system')
-                #end if
-                if net_charge%ncells!=0:
+
+                if total_charge % ncells != 0:
                     self.error('net charge of system does not divide evenly into folded system')
-                #end if
-                if isinstance(net_spin,str):
-                    net_spin_fold = net_spin
-                elif net_spin%ncells!=0:
+
+                if isinstance(total_spin, str):
+                    net_spin_fold = total_spin
+                elif total_spin % ncells != 0:
                     self.error('net_spin of system does not divide evenly into folded system')
                 else:
-                    net_spin_fold = net_spin//ncells 
-                #end if
-                net_charge_fold = net_charge//ncells
+                    net_spin_fold = total_spin // ncells
+
             elif not self.structure.has_axes(): # folded molecule
                 # net charge/spin are not physically meaningful
                 # for a point group folded molecule
@@ -474,51 +460,59 @@ class PhysicalSystem:
             else:
                 self.error('folded structure is not correctly integrated with full structure\nfolded physical system cannot be constructed')
             #end if
-                
+
             self.folded_system = PhysicalSystem(
                 structure  = structure.folded_structure,
-                net_charge = net_charge_fold,
-                net_spin   = net_spin_fold,
-                # particles  = particles,
-                **valency
+                total_charge = net_charge_fold,
+                total_spin   = net_spin_fold,
+                Zeffs      = Zeffs
                 )
         #end if
 
-        self.valency_in = obj(Zeffs)
-        self.net_charge_in = net_charge
-        self.net_spin_in   = net_spin
+        elems = list(self.structure.elem)
+        ions = []
+        for element_label in set(elems):
+            Zeff = Zeffs.get(element_label)
+            is_elem, element = Elements.is_element(element_label, return_element=True)
+            if not is_elem:
+                self.error(
+                    f"Tried to initialize a physical system with unknown element {element}."
+                    )
+            ion = Ions(
+                element = element,
+                count   = elems.count(element_label),
+                label   = element_label,
+                Zeff    = Zeff,
+            )
+            ions.append(ion)
+        self.ions: list[Ions] = ions
 
-        self.update_particles(clear=False)
+        self.valency_in = obj(Zeffs)
+        self.net_charge_in = total_charge
+        self.net_spin_in   = total_spin
 
         self.check_folded_system()
     #end def __init__
 
+    def _set_electrons(self, total_charge: int | float, total_spin: int | float):
+        ...
+    #end def _set_electrons
 
-    def update_particles(self,clear=True):
-        #add ions
-        pc = dict()
-        elem = list(self.structure.elem)
-        for ion in set(elem):
-            pc[ion] = elem.count(ion)
-        #end for
-        missing = set(pc.keys())-set(self.particles.keys())
-        print(missing)
-        if len(missing)>0 or len(elem)==0:
-            if clear:
-                self.particles.clear()
-            #end if
-            self.add_particles(**pc)
+    @property
+    def ion_charge(self) -> int | float:
+        ion_charge = 0
+        for ion in self.ions:
+            ion_charge += ion.total_charge
 
-            #pseudize
-            if len(self.valency_in)>0:
-                self.pseudize(**self.valency_in)
-            #end if
+        return ion_charge
 
-            #add electrons
-            self.generate_electrons(self.net_charge_in,self.net_spin_in)
-        #end if
-    #end def update_particles
+    @property
+    def ion_spin(self) -> int | float:
+        ion_spin = 0
+        for ion in self.ions:
+            ion_spin += ion.total_spin
 
+        return ion_spin
 
     def update(self):
         self.net_charge = self.structure.background_charge
@@ -720,8 +714,8 @@ class PhysicalSystem:
         system = self.copy()
         supersystem = PhysicalSystem(
             structure  = supercell,
-            net_charge = net_charge,
-            net_spin   = net_spin,
+            total_charge = net_charge,
+            total_spin   = net_spin,
             **self.valency
             )
         supersystem.folded_system = system
@@ -918,8 +912,8 @@ def generate_physical_system(**kwargs):
         # Has some supercell tiling
         fps = PhysicalSystem(
             structure  = structure.folded_structure,
-            net_charge = net_charge,
-            net_spin   = net_spin,
+            total_charge = net_charge,
+            total_spin   = net_spin,
             **valency
             )
         structure.remove_folded()
@@ -936,8 +930,8 @@ def generate_physical_system(**kwargs):
         #end if
         ps = PhysicalSystem(
             structure  = structure,
-            net_charge = net_charge,
-            net_spin   = net_spin,
+            total_charge = net_charge,
+            total_spin   = net_spin,
             **valency
             )
         structure.set_folded(folded_structure)
@@ -946,8 +940,8 @@ def generate_physical_system(**kwargs):
         # No supercell tiling
         ps = PhysicalSystem(
             structure  = structure,
-            net_charge = net_charge,
-            net_spin   = net_spin,
+            total_charge = net_charge,
+            total_spin   = net_spin,
             **valency
             )
     #end if
