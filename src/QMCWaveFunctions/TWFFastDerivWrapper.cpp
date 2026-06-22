@@ -336,8 +336,9 @@ void TWFFastDerivWrapper::computeMDDerivatives_Obs(const std::vector<ValueMatrix
 
     // s[h,v] = -Minv_B[h,o].Minv_Mv[o,v]
     ValueMatrix s_hv(nocc, nvirt);
-    BLAS::gemm('n', 'n', nvirt, nocc, nocc, -1.0, Minv_Mv[sid].data(), Minv_Mv[sid].cols(), Minv_B[sid].data(),
-               Minv_B[sid].cols(), 0.0, s_hv.data(), s_hv.cols());
+    if (nvirt > 0)
+      BLAS::gemm('n', 'n', nvirt, nocc, nocc, -1.0, Minv_Mv[sid].data(), Minv_Mv[sid].cols(), Minv_B[sid].data(),
+                 Minv_B[sid].cols(), 0.0, s_hv.data(), s_hv.cols());
 
     // s[h,v] = Minv_B[h,v] - Minv_B[h,o].Minv_Mv[o,v]
     for (size_t i = 0; i < s_hv.rows(); i++)
@@ -428,6 +429,9 @@ void TWFFastDerivWrapper::computeMDDerivatives_Obs(const std::vector<ValueMatrix
 
 void TWFFastDerivWrapper::transform_Av_AoBv(const ValueMatrix& A, const ValueMatrix& B, ValueMatrix& X) const
 {
+  // if nvirt == 0, no work to do
+  if (X.cols() == 0) return;
+
   // A [h,o+v]
   // B [o,v]
 
@@ -530,8 +534,9 @@ void TWFFastDerivWrapper::computeMDDerivatives_dmu(const std::vector<ValueMatrix
     transform_Av_AoBv(Minv_B[sid], Minv_Mv[sid], X3b_ov);
 
     // X432b[h,v] -= Minv_dM[h,o].X3b[o,v]
-    BLAS::gemm('n', 'n', nvirt, nocc, nocc, -1.0, X3b_ov.data(), X3b_ov.cols(), Minv_dM[sid].data(),
-               Minv_dM[sid].cols(), 1.0, X432b_hv.data(), X432b_hv.cols());
+    if (nvirt > 0)
+      BLAS::gemm('n', 'n', nvirt, nocc, nocc, -1.0, X3b_ov.data(), X3b_ov.cols(), Minv_dM[sid].data(),
+                 Minv_dM[sid].cols(), 1.0, X432b_hv.data(), X432b_hv.cols());
 
 
     // compute difference from ref here and add that term back later
