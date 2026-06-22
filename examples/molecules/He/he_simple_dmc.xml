@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <simulation>
 <project id="He" series="0">
-  <parameter name="driver_version">legacy</parameter>
+  <parameter name="driver_version">batched</parameter>
 </project>
 
   <!-- Location of atoms -->

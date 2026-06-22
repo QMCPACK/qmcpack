@@ -54,7 +54,7 @@ TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
   lattice.R = {3.37316115, 3.37316115, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
 
   ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.setSimulationCell(lattice);
+  ptcl.createSimulationCellByLattice(lattice);
   // LAttice seems fine after this point...
 
   auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
@@ -573,7 +573,7 @@ TEST_CASE("RotatedSPOs hcpBe", "[wavefunction]")
                0.00000000, 0.00000000, 0.00000000, 6.78114995};
 
   ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.setSimulationCell(lattice);
+  ptcl.createSimulationCellByLattice(lattice);
   auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions(*ions_uptr);
@@ -741,7 +741,7 @@ const std::vector<QMCTraits::ValueType>& getMyVarsFull(RotatedSPOs& rot) { retur
 TEST_CASE("RotatedSPOs read and write parameters", "[wavefunction]")
 {
   // only run with comm size 1.
-  if(OHMMS::Controller->size() > 1)
+  if (OHMMS::Controller->size() > 1)
     return;
 
   //There is an issue with the real<->complex parameter parsing to h5 in QMC_COMPLEX.

@@ -38,7 +38,7 @@ TEST_CASE("Einspline SPO from HDF NiO a16 97 electrons", "[wavefunction]")
   lattice.R = {3.94055, 3.94055, 7.8811, 3.94055, 3.94055, -7.8811, -7.8811, 7.8811, 0};
 
   ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.setSimulationCell(lattice);
+  ptcl.createSimulationCellByLattice(lattice);
   auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions_(*ions_uptr);
