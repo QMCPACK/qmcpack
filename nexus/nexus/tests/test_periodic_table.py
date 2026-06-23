@@ -2,13 +2,12 @@ import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.PERIODIC_TABLE)
 
+from ..periodic_table import Elements
 from ..generic import generic_settings
 generic_settings.raise_error = True
 
 
 def test_periodic_table():
-    from ..periodic_table import Elements
-
     ref_element_symbols = (
         "Xx", "H",  "He", "Li", "Be", "B",  "C",  "N",  "O",  "F",
         "Ne", "Na", "Mg", "Al", "Si", "P",  "S",  "Cl", "Ar", "K",
@@ -68,8 +67,6 @@ def test_periodic_table():
 
 
 def test_call_elements():
-    from ..periodic_table import Elements
-
     # Good calls
     assert(Elements("Hydrogen") is Elements.Hydrogen)
     assert(Elements("H") is Elements.Hydrogen)
@@ -101,8 +98,6 @@ def test_call_elements():
 
 
 def test_is_element():
-    from ..periodic_table import Elements
-
     ref_symbols = (
         "Xx", "H",  "He", "Li", "Be", "B",  "C",  "N",  "O",  "F",
         "Ne", "Na", "Mg", "Al", "Si", "P",  "S",  "Cl", "Ar", "K",
@@ -256,7 +251,6 @@ def test_is_element():
 
 
 def test_element_set():
-    from ..periodic_table import Elements
     ref_set = set([
         Elements.Xx,
         Elements.H,
@@ -277,7 +271,31 @@ def test_element_set():
 
 
 def test_representation():
-    from ..periodic_table import Elements
-
     ref_repr = "<Elements.Carbon: symbol='C', atomic_number=6, atomic_weight=12.011, group=14>"
     assert(repr(Elements.Carbon) == ref_repr)
+
+
+def test_most_common_isotope():
+    carbon_ref  = (12, 12.0)
+    argon_ref   = (40, 39.9623831237)
+    iron_ref    = (56, 55.93493633)
+    bromine_ref = (79, 78.9183376)
+
+    assert(Elements.Carbon.principle_isotope() == carbon_ref)
+    assert(Elements.Argon.principle_isotope() == argon_ref)
+    assert(Elements.Iron.principle_isotope() == iron_ref)
+    assert(Elements.Bromine.principle_isotope() == bromine_ref)
+
+
+def test_protons():
+    for element in Elements:
+        assert(element.protons() == element.atomic_number)
+
+
+def test_neutrons():
+    ref_neutrons_12 = 6
+    ref_neutrons_13 = 7
+
+    assert(Elements.Carbon.neutrons() == ref_neutrons_12)
+    assert(Elements.Carbon.neutrons(mass_number=12) == ref_neutrons_12)
+    assert(Elements.Carbon.neutrons(mass_number=13) == ref_neutrons_13)
