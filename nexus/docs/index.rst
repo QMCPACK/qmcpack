@@ -14,7 +14,7 @@ The Nexus User Guide
 
 **Helpful Links**:
 `GitHub <https://github.com/QMCPACK/qmcpack>`_ |
-`Issue Tracking <https://github.com/QMCPACK/qmcpack/issues>`_
+`Report an Issue <https://github.com/QMCPACK/qmcpack/issues>`_
 
 The Nexus Python package provides both basic and advanced tooling for running calculations on supercomputing clusters for several density functional theory (DFT) and wavefunction theory (WFT) programs, as well as for driving QMCPACK calculations.
 
