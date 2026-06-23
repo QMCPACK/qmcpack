@@ -7,7 +7,7 @@ generic_settings.raise_error = True
 
 import numpy as np
 from ..testing import value_eq, object_eq
-from ..physical_system import Ion, PhysicalSystem#, Electrons
+from ..physical_system import IonSpecies, PhysicalSystem, Electrons, Positrons
 from ..periodic_table import Elements
 
 from .test_structure import structure_same
@@ -33,140 +33,245 @@ def system_same(s1,s2,pseudized=True,tiled=False):
 #end def system_same
 
 
-# def test_electrons():
-#     ref_charge = -10
-#     ref_multiplicity = 3
-#     ref_n_up = 6
-#     ref_n_down = 4
+def test_electrons():
+    ref_charge       = -16
+    ref_multiplicity = 3
+    ref_n_up         = 9
+    ref_n_down       = 7
 
-#     electrons = Electrons(count=10, spin=1)
+    electrons = Electrons(count=16, spin=1, spin_orbit=False)
 
-#     assert(electrons.charge       == ref_charge)
-#     assert(electrons.multiplicity == ref_multiplicity)
-#     assert(electrons.n_up         == ref_n_up)
-#     assert(electrons.n_down       == ref_n_down)
+    assert(electrons.total_charge    == ref_charge)
+    assert(electrons.multiplicity    == ref_multiplicity)
+    assert(electrons.n_up            == ref_n_up)
+    assert(electrons.n_down          == ref_n_down)
+    assert(not electrons.is_fractional())
 
-#     ref_charge = -35
-#     ref_multiplicity = 2
-#     ref_n_up = 18
-#     ref_n_down = 17
+    ref_charge       = -15
+    ref_multiplicity = 3
+    ref_n_up         = 8.5
+    ref_n_down       = 6.5
 
-#     electrons = Electrons(count=35, spin=0.5)
+    electrons = Electrons(count=15, spin=1, spin_orbit=False)
 
-#     assert(electrons.charge       == ref_charge)
-#     assert(electrons.multiplicity == ref_multiplicity)
-#     assert(electrons.n_up         == ref_n_up)
-#     assert(electrons.n_down       == ref_n_down)
+    assert(electrons.total_charge == ref_charge)
+    assert(not electrons.is_fractional())
+    assert(electrons.multiplicity == ref_multiplicity)
+    assert(electrons.n_up         == ref_n_up)
+    assert(electrons.n_down       == ref_n_down)
+
+    ref_charge       = -16
+    ref_multiplicity = 2
+    ref_n_up         = 8.5
+    ref_n_down       = 7.5
+
+    electrons = Electrons(count=16, spin=0.5, spin_orbit=False)
+
+    assert(electrons.total_charge == ref_charge)
+    assert(not electrons.is_fractional())
+    assert(electrons.multiplicity == ref_multiplicity)
+    assert(electrons.n_up         == ref_n_up)
+    assert(electrons.n_down       == ref_n_down)
+
+    ref_charge       = -15
+    ref_multiplicity = 2
+    ref_n_up         = 8
+    ref_n_down       = 7
+
+    electrons = Electrons(count=15, spin=0.5, spin_orbit=False)
+
+    assert(electrons.total_charge == ref_charge)
+    assert(not electrons.is_fractional())
+    assert(electrons.multiplicity == ref_multiplicity)
+    assert(electrons.n_up         == ref_n_up)
+    assert(electrons.n_down       == ref_n_down)
+
+    ref_charge       = -15
+    ref_multiplicity = 2
+    ref_n_up         = 7
+    ref_n_down       = 8
+
+    electrons = Electrons(count=15, spin=-0.5, spin_orbit=False)
+
+    assert(electrons.total_charge == ref_charge)
+    assert(not electrons.is_fractional())
+    assert(electrons.multiplicity == ref_multiplicity)
+    assert(electrons.n_up         == ref_n_up)
+    assert(electrons.n_down       == ref_n_down)
 
 
-def test_custom_ion():
-    ion = Ion(
+def test_electrons_eq():
+
+    ref_charge       = -16
+    ref_multiplicity = 3
+    ref_n_up         = 9
+    ref_n_down       = 7
+
+    electrons1 = Electrons(count=16, spin=1, spin_orbit=False)
+
+    assert(electrons1.total_charge    == ref_charge)
+    assert(electrons1.multiplicity    == ref_multiplicity)
+    assert(electrons1.n_up            == ref_n_up)
+    assert(electrons1.n_down          == ref_n_down)
+    assert(not electrons1.is_fractional())
+
+    electrons2 = Electrons(count=16, spin=1, spin_orbit=False)
+
+    assert(electrons2.total_charge    == ref_charge)
+    assert(electrons2.multiplicity    == ref_multiplicity)
+    assert(electrons2.n_up            == ref_n_up)
+    assert(electrons2.n_down          == ref_n_down)
+    assert(not electrons2.is_fractional())
+
+    assert(electrons1 == electrons2)
+
+
+def test_positrons():
+    """More minimal test since the code is the same as for ``Electrons``."""
+
+    ref_charge       = 16
+    ref_multiplicity = 3
+    ref_n_up         = 9
+    ref_n_down       = 7
+
+    positrons1 = Positrons(count=16, spin=1, spin_orbit=False)
+
+    assert(positrons1.total_charge    == ref_charge)
+    assert(positrons1.multiplicity    == ref_multiplicity)
+    assert(positrons1.n_up            == ref_n_up)
+    assert(positrons1.n_down          == ref_n_down)
+    assert(not positrons1.is_fractional())
+
+    positrons2 = Positrons(count=16, spin=1, spin_orbit=False)
+
+    assert(positrons2.total_charge    == ref_charge)
+    assert(positrons2.multiplicity    == ref_multiplicity)
+    assert(positrons2.n_up            == ref_n_up)
+    assert(positrons2.n_down          == ref_n_down)
+    assert(not positrons2.is_fractional())
+
+    assert(positrons1 == positrons2)
+
+
+def test_electron_positron_neq():
+
+    ref_positron_charge       = 16
+    ref_positron_multiplicity = 3
+    ref_positron_n_up         = 9
+    ref_positron_n_down       = 7
+
+    positrons = Positrons(count=16, spin=1, spin_orbit=False)
+
+    assert(positrons.total_charge    == ref_positron_charge)
+    assert(positrons.multiplicity    == ref_positron_multiplicity)
+    assert(positrons.n_up            == ref_positron_n_up)
+    assert(positrons.n_down          == ref_positron_n_down)
+    assert(not positrons.is_fractional())
+
+    ref_electron_charge       = -16
+    ref_electron_multiplicity = 3
+    ref_electron_n_up         = 9
+    ref_electron_n_down       = 7
+
+    electrons = Electrons(count=16, spin=1, spin_orbit=False)
+
+    assert(electrons.total_charge    == ref_electron_charge)
+    assert(electrons.multiplicity    == ref_electron_multiplicity)
+    assert(electrons.n_up            == ref_electron_n_up)
+    assert(electrons.n_down          == ref_electron_n_down)
+    assert(not electrons.is_fractional())
+
+    assert(electrons != positrons)
+
+
+def test_custom_ion_species():
+    ion = IonSpecies(
         element     = Elements.Iron,
+        count       = 12,
         label       = "Fe1",
-        charge      = 2,
-        spin        = 1,
-        mass_number = 54,
+        unit_charge = 2,
+        unit_spin   = 1,
         Zeff        = 16,
-    )
+        )
 
-    assert(ion.element       is Elements.Iron)
-    assert(ion.label         == "Fe1")
-    assert(ion.charge        == 2)
-    assert(ion.spin          == 1)
-    assert(ion.mass_number   == 54)
-    assert(ion.Zeff          == 16)
-    assert(ion.is_pseudo()   is True)
-    assert(ion.is_ghost()    is False)
-    assert(ion.name          == "Iron")
-    assert(ion.symbol        == "Fe")
-    assert(ion.atomic_weight == 55.845)
-    assert(ion.mass          == 55.845)
-    assert(ion.atomic_number == 26)
-    assert(ion.protons       == 26)
-    assert(ion.neutrons      == 28)
+    assert(ion.element      is Elements.Iron)
+    assert(ion.count        == 12)
+    assert(ion.label        == "Fe1")
+    assert(ion.unit_charge  == 2)
+    assert(ion.unit_spin    == 1)
+    assert(ion.Zeff         == 16)
+    assert(ion.is_pseudo()  is True)
+    assert(ion.is_ghost()   is False)
+    assert(ion.symbol       == "Fe")
+    assert(ion.total_mass   == 670.14)
+    assert(ion.total_spin   == 12)
+    assert(ion.total_charge == 24)
 
 
-def test_minimal_ion():
+def test_minimal_ion_species():
     """Test to make sure the defaults are populated correctly."""
-    ion = Ion("Fe")
+    ion = IonSpecies(element="Fe", count=12)
 
-    assert(ion.element       is Elements.Iron)
-    assert(ion.label         == "Fe")
-    assert(ion.charge        == 0)
-    assert(ion.spin          == 0)
-    assert(ion.mass_number   == 56)
-    assert(ion.Zeff          is None)
-    assert(ion.is_pseudo()   is False)
-    assert(ion.is_ghost()    is False)
-    assert(ion.name          == Elements.Iron.name)
-    assert(ion.symbol        == Elements.Iron.symbol)
-    assert(ion.atomic_weight == Elements.Iron.atomic_weight)
-    assert(ion.mass          == Elements.Iron.atomic_weight)
-    assert(ion.atomic_number == Elements.Iron.atomic_number)
-    assert(ion.protons       == Elements.Iron.atomic_number)
-    assert(ion.neutrons      == Elements.Iron.neutrons())
+    assert(ion.element      is Elements.Iron)
+    assert(ion.label        == "Fe")
+    assert(ion.count        == 12)
+    assert(ion.unit_charge  == 0)
+    assert(ion.unit_spin    == 0)
+    assert(ion.Zeff         is None)
+    assert(ion.is_pseudo()  is False)
+    assert(ion.is_ghost()   is False)
+    assert(ion.symbol       == Elements.Iron.symbol)
+    assert(ion.total_mass   == 670.14)
+    assert(ion.total_spin   == 0)
+    assert(ion.total_charge == 0)
 
 
-def test_ion_setters():
-    """Test to make sure the setters for the ``Ion`` class work.
+def test_ion_species_eq():
+    """Test to make sure ``IonSpecies.__eq__()`` works as expected"""
 
-    This test also checks to make sure there are no side-effects from the
-    setters. This means we check every property after each setter is used.
-    """
-    ion = Ion(
-        element     = Elements.Iron,
-        mass_number = 54,
-    )
-    # Mass number is set to 54 so we can use Chromium's isotopes without a warning
+    ref_element      = Elements.Iron
+    ref_label        = "Fe"
+    ref_count        = 12
+    ref_unit_charge  = 0
+    ref_unit_spin    = 0
+    ref_Zeff         = None
+    ref_is_pseudo    = False
+    ref_is_ghost     = False
+    ref_symbol       = Elements.Iron.symbol
+    ref_total_mass   = 670.14
+    ref_total_spin   = 0
+    ref_total_charge = 0
 
-    assert(ion.element       is Elements.Iron)
-    assert(ion.label         == "Fe")
-    assert(ion.charge        == 0)
-    assert(ion.spin          == 0)
-    assert(ion.mass_number   == 54)
-    assert(ion.Zeff          is None)
-    assert(ion.is_pseudo()   is False)
-    assert(ion.is_ghost()    is False)
-    assert(ion.name          == Elements.Iron.name)
-    assert(ion.symbol        == Elements.Iron.symbol)
-    assert(ion.atomic_weight == Elements.Iron.atomic_weight)
-    assert(ion.atomic_number == Elements.Iron.atomic_number)
-    assert(ion.neutrons      == Elements.Iron.neutrons(mass_number=54))
+    ion1 = IonSpecies(element="Fe", count=12)
+    ion2 = IonSpecies(element="Fe", count=12)
 
-    ref_element = Elements.Chromium
-    ion.atomic_number = 24
+    assert(ion1.element      is ref_element)
+    assert(ion1.label        == ref_label)
+    assert(ion1.count        == ref_count)
+    assert(ion1.unit_charge  == ref_unit_charge)
+    assert(ion1.unit_spin    == ref_unit_spin)
+    assert(ion1.Zeff         is ref_Zeff)
+    assert(ion1.is_pseudo()  is ref_is_pseudo)
+    assert(ion1.is_ghost()   is ref_is_ghost)
+    assert(ion1.symbol       == ref_symbol)
+    assert(ion1.total_mass   == ref_total_mass)
+    assert(ion1.total_spin   == ref_total_spin)
+    assert(ion1.total_charge == ref_total_charge)
 
-    assert(ion.element       is ref_element)
-    assert(ion.label         == "Fe") # We don't want to change custom labels
-    assert(ion.charge        == 0)
-    assert(ion.spin          == 0)
-    assert(ion.mass_number   == 54) # The mass number also shouldn't get changed
-    assert(ion.Zeff          is None)
-    assert(ion.is_pseudo()   is False)
-    assert(ion.is_ghost()    is False)
-    assert(ion.name          == ref_element.name)
-    assert(ion.symbol        == ref_element.symbol)
-    assert(ion.atomic_weight == ref_element.atomic_weight)
-    assert(ion.atomic_number == ref_element.atomic_number)
-    assert(ion.neutrons      == ref_element.neutrons(mass_number=54))
+    assert(ion2.element      is ref_element)
+    assert(ion2.label        == ref_label)
+    assert(ion2.count        == ref_count)
+    assert(ion2.unit_charge  == ref_unit_charge)
+    assert(ion2.unit_spin    == ref_unit_spin)
+    assert(ion2.Zeff         is ref_Zeff)
+    assert(ion2.is_pseudo()  is ref_is_pseudo)
+    assert(ion2.is_ghost()   is ref_is_ghost)
+    assert(ion2.symbol       == ref_symbol)
+    assert(ion2.total_mass   == ref_total_mass)
+    assert(ion2.total_spin   == ref_total_spin)
+    assert(ion2.total_charge == ref_total_charge)
 
-    new_mass_number = 52
-    ion.neutrons = 28
-
-    assert(ion.element       is ref_element)
-    assert(ion.label         == "Fe")
-    assert(ion.charge        == 0)
-    assert(ion.spin          == 0)
-    assert(ion.mass_number   == new_mass_number)
-    assert(ion.Zeff          is None)
-    assert(ion.is_pseudo()   is False)
-    assert(ion.is_ghost()    is False)
-    assert(ion.name          == ref_element.name)
-    assert(ion.symbol        == ref_element.symbol)
-    assert(ion.atomic_weight == ref_element.atomic_weight)
-    assert(ion.atomic_number == ref_element.atomic_number)
-    assert(ion.neutrons      == ref_element.neutrons(mass_number=new_mass_number))
-
+    assert(ion1 == ion2)
 
 
 def test_physical_system_initialization(tmp_path):

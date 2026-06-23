@@ -7,6 +7,7 @@
 from __future__ import annotations
 import os
 from pathlib import Path
+from abc import ABC
 from copy import deepcopy
 from typing import Self
 import numpy as np
@@ -15,88 +16,173 @@ from .periodic_table import Elements, ElementLike
 from .structure import Structure, generate_structure, read_structure
 
 
-class Electrons:
-    """A collection of electrons.
+class ElectronsPositronsBase(ABC):
+    """Base class for ``Electrons`` and ``Positrons``.
 
     Note that this class does not make guarantees about having an
-    integer amount of electrons, but provides ``is_fractional`` to check
-    for non-integer numbers of electrons.
+    integer amount of particles, but provides ``is_fractional`` to check
+    for non-integer numbers of particles. If the class is created with
+    integer-value floats for ``count`` and ``spin``, they will be
+    converted into ints.
 
     Attributes
     ----------
-    n_up : int or float
-        The number of up-spin electrons.
-    n_down : int or float
-        The number of down-spin electrons.
-    spin : int or float, read-only
+    count : int or float, property
+        The total number of particles
+    spin : int or float, property
         The total spin of the system.
 
-        An up-spin electron has a spin of +1/2, a down-spin electron has
+        An up-spin particle has a spin of +1/2, a down-spin particle has
         a spin of -1/2.
-    total_charge : int or float, read-only
-        The total charge of the electrons, equal to ``-1 * self.count``.
-    multiplicity : int or float, read-only
-        The spin multiplicity of the electrons, equal to :math:`2S+1`
+    n_up : int or float, read-only property
+        The number of up-spin particles.
+        Not defined for spin-orbit systems.
+    n_down : int or float, read-only property
+        The number of down-spin particles.
+        Not defined for spin-orbit systems.
+    total_charge : int or float, read-only property
+        The total charge of the particles, equal to
+        ``self.unit_charge * self.count``.
+    multiplicity : int or float, read-only property
+        The spin multiplicity of the particles, equal to :math:`2S+1`
         where :math:`S` is the spin.
     """
 
+    unit_charge: int = ...
+
     def __init__(
         self,
-        n_up: int | float,
-        n_down: int | float,
+        count     : int | float,
+        spin      : int | float,
+        spin_orbit: bool = False,
         ):
-        if abs(int(n_up) - n_up) < 1e-4:
-            self.n_up = int(n_up)
-        else:
-            self.n_up = n_up
-
-        if abs(int(n_down) - n_down) < 1e-4:
-            self.n_up = int(n_down)
-        else:
-            self.n_up = n_down
-
-    def as_integers(self) -> Self:
-        """Return a version of the instance with integer numbers of electrons."""
-        return Electrons(int(self.n_up), int(self.n_down))
-
-    def is_fractional(self) -> bool:
-        """Returns ``True`` if the number of up- and down-spin electrons is not an integer."""
-        return isinstance(self.n_up, float) and isinstance(self.n_down, float)
+        self.count      = count
+        self.spin       = spin
+        self.spin_orbit = spin_orbit
 
     @property
-    def count(self) -> int:
-        return self.n_up + self.n_down
+    def count(self) -> int | float:
+        return self._count
+
+    @count.setter
+    def count(self, new_count: int | float) -> None:
+        if abs((int_count := int(new_count)) - new_count) < 1e-8:
+            self._count = int_count
+        else:
+            self._count = new_count
+
+    @property
+    def spin(self) -> int | float:
+        return self._spin
+
+    @spin.setter
+    def spin(self, new_spin: int | float) -> None:
+        if abs((int_spin := int(new_spin)) - new_spin) < 1e-8:
+            self._spin = int_spin
+        else:
+            self._spin = new_spin
+
+    def n_up_down(self) -> tuple[int, int] | tuple[float, float]:
+        if self.spin_orbit:
+            # Use self.__class__.__name__ to get name of subclass, not base class
+            raise RuntimeError(
+                f"{self.__class__.__name__} can not be split into up- and down-spin with a spin-orbit system!"
+                )
+        if isinstance(self.count, int):
+            if isinstance(self.spin, int):
+                if self.count % 2 == 0:
+                    # e.g. 16 electrons, +1 total spin yields 9 up and 7 down
+                    n_up   = (self.count // 2) + self.spin
+                    n_down = (self.count // 2) - self.spin
+                else:
+                    # e.g. 15 electrons, +1 total spin yields 8.5 up and 6.5 down
+                    n_up   = (self.count / 2) + self.spin
+                    n_down = (self.count / 2) - self.spin
+            else:
+                if self.count % 2 == 0:
+                    # e.g. 16 electrons, +1/2 total spin yields 8.5 up and 7.5 down
+                    n_up   = (self.count / 2) + self.spin
+                    n_down = (self.count / 2) - self.spin
+                else:
+                    if self.spin > 0:
+                        # e.g. 15 electrons, +1/2 total spin yields 8 up and 7 down
+                        n_down = self.count // 2
+                        n_up   = self.count - n_down
+                    else:
+                        # e.g. 15 electrons, -1/2 total spin yields 7 up and 8 down
+                        n_up   = self.count // 2
+                        n_down = self.count - n_up
+        else:
+            n_up   = (self.count / 2) + self.spin
+            n_down = (self.count / 2) - self.spin
+
+        return n_up, n_down
+
+    @property
+    def n_up(self) -> int | float:
+        if self.spin_orbit:
+            raise RuntimeError(
+                f"Up-spin {self.__class__.__name__} are not defined with a spin-orbit system!"
+                )
+        return self.n_up_down()[0]
+
+    @property
+    def n_down(self) -> int | float:
+        if self.spin_orbit:
+            raise RuntimeError(
+                f"Down-spin {self.__class__.__name__} are not defined with a spin-orbit system!"
+                )
+        return self.n_up_down()[1]
+
+    def is_fractional(self) -> bool:
+        """Returns ``True`` if the count of particles is not an int."""
+        return isinstance(self.count, float)
 
     @property
     def total_charge(self) -> int | float:
-        """Total charge in atomic units. Equal to ``-1 * self.count``."""
-        return -1 * self.count
+        return self.unit_charge * self.count
 
     @property
     def multiplicity(self) -> int | float:
-        """Defined as :math:`2S+1` where :math:`S` is ``self.spin``."""
-        return 2 * self.total_spin + 1
+        """Defined as :math:`2S+1` where :math:`S` is ``self.spin``.
 
-    @property
-    def total_spin(self) -> int | float:
-        """The total spin of the electrons.
-
-        This will return an ``int`` if the spin is an integer, otherwise
-        it will return a ``float``. This allows for ``isinstance``
-        checks on the return value.
+        Undefined for spin-orbit systems and fractional counts.
         """
-        up_down_diff = self.n_up - self.n_down
-        if up_down_diff % 2 == 0:
-            return up_down_diff // 2
+        if self.spin_orbit:
+            raise RuntimeError("Multiplicity is undefined for spin-orbit systems!")
+        elif self.is_fractional():
+            raise RuntimeError("Multiplicity is undefined for fractional counts!")
         else:
-            return up_down_diff / 2
+            return (2 * abs(self.spin)) + 1
 
     def __eq__(self, other: Self) -> bool:
-        return self.n_up == other.n_up and self.n_down == other.n_down
+        return (
+            self.unit_charge    == other.unit_charge
+            and self.count      == other.count
+            and self.spin       == other.spin
+            and self.spin_orbit is other.spin_orbit
+            )
+
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}(count={self.count}, spin={self.spin}, spin_orbit={self.spin_orbit})"
+        )
+#end class ElectronsPositronsBase
+
+
+class Electrons(ElectronsPositronsBase):
+    """Class representing a collection of electrons."""
+    unit_charge: int = -1
 #end class Electrons
 
 
-class Ions:
+class Positrons(ElectronsPositronsBase):
+    """Class representing a collection of positrons."""
+    unit_charge: int = 1
+#end class Positrons
+
+
+class IonSpecies:
     """Class representing a collection of ions of the same type.
 
     Attributes
@@ -164,7 +250,6 @@ class Ions:
         label      : str | None  = None,
         unit_charge: int | float = 0,
         unit_spin  : int | float = 0,
-        mass_number: int | None  = None,
         Zeff       : int | None  = None,
         ):
         self.element     = Elements(element)
@@ -173,85 +258,37 @@ class Ions:
         self.unit_charge = unit_charge
         self.unit_spin   = unit_spin
         self.Zeff        = Zeff
-        if mass_number is not None:
-            if mass_number not in self.element.isotopes.keys():
-                warn(
-                    f"Mass number {mass_number} is not in the known isotopes for element {self.element.symbol}!"
-                    )
-            self.mass_number = mass_number
-        else:
-            self.mass_number = self.element.most_common_isotope()[0]
 
     def is_pseudo(self) -> bool:
         """Check if this ion is pseudized."""
         return not (self.Zeff is None or self.Zeff == 0)
 
     def pseudize(self, Zeff: int):
+        """Equivalent to setting ``self.Zeff = Zeff``."""
         self.Zeff = Zeff
 
     def is_ghost(self) -> bool:
+        """Check if this collection of ions represents ghost atoms."""
         return self.element is Elements.Unknown
 
     @property
-    def name(self) -> str:
-        return self.element.name
-
-    @property
     def symbol(self) -> str:
+        """Atomic symbol of the element."""
         return self.element.symbol
 
     @property
-    def atomic_weight(self) -> float:
-        return self.element.atomic_weight
-
-    @property
-    def mass(self) -> float:
-        """Alias for ``atomic_weight``."""
-        return self.atomic_weight
-
-    @property
-    def atomic_number(self) -> int:
-        return self.element.atomic_number
-
-    @atomic_number.setter
-    def atomic_number(self, atomic_number: int) -> None:
-        if (at_num_int := int(atomic_number)) == atomic_number:
-            atomic_number = at_num_int
-        else:
-            raise ValueError(
-                f"The new atomic number must be an integer, but is {atomic_number}!"
-                )
-
-        self.element = Elements(atomic_number)
-
-    @property
-    def protons(self) -> int:
-        """Alias for ``self.atomic_number``."""
-        return self.element.atomic_number
-
-    @protons.setter
-    def protons(self, protons: int) -> None:
-        self.atomic_number = protons
-
-    @property
-    def neutrons(self) -> int:
-        return self.element.neutrons(self.mass_number)
-
-    @neutrons.setter
-    def neutrons(self, neutrons: int) -> None:
-        if (neutron_int := int(neutrons)) == neutrons:
-            self.mass_number = self.element.atomic_number + neutron_int
-        else:
-            raise ValueError(
-                f"The number of neutrons must be an integer, but is {neutrons}!"
-                )
+    def total_mass(self) -> float:
+        """Total mass of all ions in the collection."""
+        return self.element.atomic_weight * self.count
 
     @property
     def total_charge(self) -> int | float:
+        """Total charge of all ions in the collection."""
         return self.unit_charge * self.count
 
     @property
     def total_spin(self) -> int | float:
+        """Total spin of all ions in the collection."""
         return self.unit_spin * self.count
 
     def __eq__(self, other: Self) -> bool:
@@ -261,126 +298,9 @@ class Ions:
             and self.label       == other.label
             and self.unit_charge == other.unit_charge
             and self.unit_spin   == other.unit_spin
-            and self.mass_number == other.mass_number
             and self.Zeff        == other.Zeff
             )
-#end class Ions
-
-
-class Particles:
-    def __init__(self,*particles,**named_particles):
-        self.add_particles(*particles,**named_particles)
-    #end def __init__
-
-    def add_particles(self,*particles,**named_particles):
-        if len(particles)==1 and isinstance(particles[0],list):
-            particles = particles[0]
-        #end if
-        for particle in particles:
-            self[particle.name] = particle
-        #end for
-        for name,particle in named_particles.items():
-            self[name] = particle
-        #end for
-    #end def add_particles
-
-    def get_particle(self,name):
-        p = None
-        if name in self:
-            p = self[name]
-        else:
-            iselem,symbol = self.is_element(name,symbol=True)
-            if iselem and symbol in self:
-                p = self[symbol].copy()
-                p.name = name
-                self[name] = p
-            #end if
-        #end if
-        return p
-    #end def get_particle
-
-    # test needed
-    def get(self,quantity):
-        q = obj()
-        for name,particle in self.items():
-            q[name] = particle[quantity]
-        #end for
-        return q
-    #end def get
-
-    def rename(self,**name_pairs):
-        for old,new in name_pairs.items():
-            if old in self:
-                o = self[old]
-                o.name = new
-                del self[old]
-                if new in self:
-                    self[new].count += o.count
-                else:
-                    self[new] = o
-                #end if
-            #end if
-        #end for
-    #end def rename
-
-    def get_ions(self) -> obj:
-        ions = obj()
-        for name,particle in self.items():
-            if self.is_element(name):
-                ions[name] = particle
-            #end if
-        #end for
-        return ions
-    #end def get_ions
-        
-    def count_ions(self,species=False):
-        nions = 0
-        nspecies = 0
-        for name,particle in self.items():
-            if self.is_element(name):
-                nspecies += 1
-                nions += particle.count
-            #end if
-        #end for
-        if species:
-            return nions,nspecies
-        else:
-            return nions
-        #end if
-    #end def count_ions
-
-    def get_electrons(self) -> obj:
-        electrons = obj()
-        for electron in ('up_electron','down_electron'):
-            if electron in self:
-                electrons[electron] = self[electron]
-            #end if
-        #end for
-        return electrons
-    #end def get_electrons
-
-    def count_electrons(self):
-        nelectrons = 0
-        for electron in ('up_electron','down_electron'):
-            if electron in self:
-                nelectrons += self[electron].count
-            #end if
-        #end for
-        return nelectrons
-    #end def count_electrons
-
-    def electron_counts(self):
-        counts = []
-        for electron in ('up_electron','down_electron'):
-            if electron in self:
-                counts.append(self[electron].count)
-            else:
-                counts.append(0)
-            #end if
-        #end for
-        return counts
-    #end def electron_counts
-#end class Particles
+#end class IonSpecies
 
 
 class PhysicalSystem:
@@ -405,7 +325,10 @@ class PhysicalSystem:
         information.
     electrons : Electrons
         The up-spin and down-spin electrons in the system.
-    
+    particles : Particles
+        A subclass of ``Particles`` that is defined by a simulation
+        class.
+
     Parameters
     ----------
     structure : Structure
@@ -465,7 +388,7 @@ class PhysicalSystem:
                 structure  = structure.folded_structure,
                 total_charge = net_charge_fold,
                 total_spin   = net_spin_fold,
-                Zeffs      = Zeffs
+                Zeffs        = Zeffs
                 )
         #end if
 
@@ -478,25 +401,19 @@ class PhysicalSystem:
                 self.error(
                     f"Tried to initialize a physical system with unknown element {element}."
                     )
-            ion = Ions(
+            ion = IonSpecies(
                 element = element,
                 count   = elems.count(element_label),
                 label   = element_label,
                 Zeff    = Zeff,
             )
             ions.append(ion)
-        self.ions: list[Ions] = ions
+        self.ions = ions
 
         self.valency_in = obj(Zeffs)
-        self.net_charge_in = total_charge
-        self.net_spin_in   = total_spin
 
         self.check_folded_system()
     #end def __init__
-
-    def _set_electrons(self, total_charge: int | float, total_spin: int | float):
-        ...
-    #end def _set_electrons
 
     @property
     def ion_charge(self) -> int | float:
@@ -565,7 +482,7 @@ class PhysicalSystem:
         for ion,valence_charge in valency.items():
             if ion in self.particles:
                 ionp = self.particles[ion]
-                if isinstance(ionp,Ion):
+                if isinstance(ionp,IonSpecies):
                     self.particles[ion] = ionp.pseudize(valence_charge)
                     self.pseudized = True
                 else:
@@ -866,7 +783,7 @@ def generate_physical_system(**kwargs):
     del kwargs['tiled_spin']
     del kwargs['extensive']
     if 'particles' in kwargs:
-        particles = kwargs['particles']
+        # particles = kwargs['particles']
         del kwargs['particles']
     else:
         generation_info.particles = None
@@ -959,4 +876,3 @@ def ghost_atoms(*particles):
         ...
     #end for
 #end def ghost_atoms
-
