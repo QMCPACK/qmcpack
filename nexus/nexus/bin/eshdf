@@ -192,7 +192,8 @@ def first_eshdf_file(args):
 
 def interpret_nk_options(parser):
     options,args = parser.parse_args()
-    opt.transfer_from(options.__dict__)
+    #opt.transfer_from(options.__dict__)
+    opt.update(**options.__dict__)
     for k,v in opt.items():
         if v=='None':
             opt[k] = None

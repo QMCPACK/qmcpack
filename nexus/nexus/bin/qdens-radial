@@ -194,7 +194,7 @@ class QMCDensityRadialProcessor(QDRBase):
         options,file_in = parser.parse_args()
 
         QDRBase.parser = parser
-        QDRBase.options.transfer_from(options.__dict__)
+        QDRBase.options.update(**options.__dict__)
 
         # Command line options as Nexus obj() data structure
         opt = self.options
@@ -405,7 +405,7 @@ class QMCDensityRadialProcessor(QDRBase):
                             sum_sq_dict[at] = 0.0
                         #end for
                     else:
-                        for at in equiv_atoms:
+                        for at in equiv_atoms.values():
                             sum_dict[at] = 0.0
                             sum_sq_dict[at] = 0.0
                         #end for
@@ -435,7 +435,7 @@ class QMCDensityRadialProcessor(QDRBase):
                         sum_sq_dict[at] += rdens_samp.tot[at].density[-1]**2
                     #end for
                 else:
-                    for ati,at in enumerate(equiv_atoms):
+                    for ati,at in enumerate(equiv_atoms.values()):
                         sum_dict[at] += rdens_samp.tot[at].density[-1]
                         sum_sq_dict[at] += rdens_samp.tot[at].density[-1]**2
                     #end for
@@ -447,7 +447,7 @@ class QMCDensityRadialProcessor(QDRBase):
                     std_dict[at] = np.sqrt(sum_sq_dict[at]/nsamples-(sum_dict[at]/nsamples)**2)
                 #end for
             else:
-                for ati,at in enumerate(equiv_atoms):
+                for ati,at in enumerate(equiv_atoms.values()):
                     std_dict[at] = np.sqrt(sum_sq_dict[at]/nsamples-(sum_dict[at]/nsamples)**2)
                 #end for
             #end if
@@ -515,7 +515,7 @@ class QMCDensityRadialProcessor(QDRBase):
                 #end if
             #end for
         else:
-            for ati,at in enumerate(equiv_atoms):
+            for ati,at in enumerate(equiv_atoms.values()):
                 if len(opt.radii)>1:
                     # Distinct radii for all species
                     r = opt.radii[ati]

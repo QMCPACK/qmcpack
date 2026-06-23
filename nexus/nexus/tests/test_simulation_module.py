@@ -7,6 +7,7 @@ generic_settings.raise_error = True
 
 
 from pathlib import Path
+from copy import deepcopy
 from . import isolate_nexus_core
 from nexus.nexus_base import nexus_core
 
@@ -814,7 +815,7 @@ def test_init():
     # minimal non-empty init, tests init_job()
     sm = Simulation(job=test_job)
 
-    sm_ref = se_ref.copy()
+    sm_ref = deepcopy(se_ref)
     del sm_ref.job
     smo = obj()
     for k in sm_ref.keys():
@@ -1716,7 +1717,7 @@ def test_copy_file(tmp_path):
 
 @isolate_nexus_core
 def test_save_load_image(tmp_path):
-    from ..developer import obj
+    from ..developer import obj, load
     from ..simulation import Simulation,SimulationImage
 
     nexus_core.local_directory  = str(tmp_path)
@@ -1739,8 +1740,9 @@ def test_save_load_image(tmp_path):
     imagefile = Path(sim.imlocdir) / sim.sim_image
     assert(imagefile.exists())
 
-    image = obj()
-    image.load(imagefile)
+    #image = obj()
+    #image.load(imagefile)
+    image = load(imagefile)
     assert(len(image)==nsave)
     for field in SimulationImage.save_fields:
         assert(field in image)
@@ -2369,15 +2371,15 @@ def test_reset_wait_ids():
 
     for i in range(n_test_workflows):
         sims = get_test_workflow(i)
-        for s in sims:
+        for s in sims.values():
             s.wait_ids = None
         #end for
-        for s in sims:
+        for s in sims.values():
             if len(s.dependencies)==0:
                 s.reset_wait_ids()
             #end if
         #end for
-        for s in sims:
+        for s in sims.values():
             assert(isinstance(s.wait_ids,set))
             assert(s.wait_ids==s.dependency_ids)
         #end for
@@ -2399,10 +2401,10 @@ def test_check_subcascade():
         sims = get_test_workflow(i)
 
         # no cascades are finished
-        for s in sims:
+        for s in sims.values():
             assert(not s.finished)
         #end for
-        for s in sims:
+        for s in sims.values():
             if len(s.dependencies)==0:
                 finished = s.check_subcascade()
                 assert(isinstance(finished,bool))
@@ -2411,21 +2413,21 @@ def test_check_subcascade():
         #end for
 
         # all cascades are finished
-        for s in sims:
+        for s in sims.values():
             s.finished = True
         #end for
-        for s in sims:
+        for s in sims.values():
             if len(s.dependencies)==0:
                 finished = s.check_subcascade()
             #end if
         #end for
 
         # only a single cascade is finished
-        for s in sims:
+        for s in sims.values():
             s.finished = False
         #end for
         single = None
-        for s in sims:
+        for s in sims.values():
             if len(s.dependencies)==0:
                 if single is None:
                     single = s
@@ -2433,13 +2435,13 @@ def test_check_subcascade():
             #end if
         #end for
         single.traverse_full_cascade(finish)
-        for s in sims:
+        for s in sims.values():
             if len(s.dependencies)==0:
                 finished = s.check_subcascade()
                 if id(s)==id(single):
                     if not finished:
                         from ..simulation import graph_sims
-                        for sim in sims:
+                        for sim in sims.values():
                             if sim.finished:
                                 sim.block = True
                             #end if
@@ -2455,7 +2457,7 @@ def test_check_subcascade():
 
         # all simulations are finished except one
         # not all cascades are finished
-        for s in sims:
+        for s in sims.values():
             s.finished = True
         #end for
         n = 0
@@ -2466,7 +2468,7 @@ def test_check_subcascade():
             #end if
         #end for
         finished = True
-        for s in sims:
+        for s in sims.values():
             if len(s.dependencies)==0:
                 finished &= s.check_subcascade()
             #end if
@@ -2489,7 +2491,7 @@ def test_block_dependents():
 
     for i in range(n_test_workflows):
         sims = get_test_workflow(i)
-        for s in sims:
+        for s in sims.values():
             if len(s.dependencies)==0:
                 s.block_dependents()
                 s.traverse_full_cascade(assert_blocked)
@@ -2516,7 +2518,7 @@ def test_reconstruct_cascade(tmp_path):
     Job.machine = sims.s1.job.machine
 
 
-    for s in sims:
+    for s in sims.values():
         imagefile = Path(s.imlocdir) / s.sim_image
         assert(not imagefile.exists())
         assert(not s.loaded)
@@ -2526,12 +2528,12 @@ def test_reconstruct_cascade(tmp_path):
         assert(s.job.system_id is None)
     #end for
 
-    for s in sims:
+    for s in sims.values():
         s.create_directories()
         s.save_image()
     #end for
 
-    for s in sims:
+    for s in sims.values():
         imagefile = Path(s.imlocdir) / s.sim_image
         assert(imagefile.exists())
         assert(not s.loaded)
@@ -2543,7 +2545,7 @@ def test_reconstruct_cascade(tmp_path):
 
     sims.s1.reconstruct_cascade()
 
-    for s in sims:
+    for s in sims.values():
         imagefile = Path(s.imlocdir) / s.sim_image
         assert(imagefile.exists())
         assert(s.loaded)
@@ -2619,7 +2621,7 @@ def test_reconstruct_cascade(tmp_path):
         return empty(s) and not s.loaded
     #end def cleared
 
-    for s in sims:
+    for s in sims.values():
         assert(cleared(s))
     #end for
 
@@ -2642,19 +2644,19 @@ def test_reconstruct_cascade(tmp_path):
     s.submitted        = True
     s.process_id       = get_process_id()
     
-    for s in sims:
+    for s in sims.values():
         s.create_directories()
         s.save_image()
         clear(s)
     #end for
 
-    for s in sims:
+    for s in sims.values():
         assert(cleared(s))
     #end for
 
     sims.s1.reconstruct_cascade()
 
-    for s in sims:
+    for s in sims.values():
         assert(s.loaded)
     #end for
 
@@ -2713,13 +2715,13 @@ def test_traverse_cascade():
     for i in range(n_test_workflows):
         sims = get_test_workflow(i)
         counts = dict()
-        for s in sims:
+        for s in sims.values():
             if len(s.dependencies)==0:
                 s.traverse_cascade(count_visits,counts)
             #end if
         #end for
         assert(len(counts)==len(sims))
-        for s in sims:
+        for s in sims.values():
             assert(s.simid in counts)
             assert(counts[s.simid]==1)
         #end for
@@ -2739,15 +2741,15 @@ def test_traverse_full_cascade():
 
     for i in range(n_test_workflows):
         sims = get_test_workflow(i)
-        for s in sims:
+        for s in sims.values():
             assert(not s.finished)
         #end for
-        for s in sims:
+        for s in sims.values():
             if len(s.dependencies)==0:
                 s.traverse_full_cascade(finish)
             #end if
         #end for
-        for s in sims:
+        for s in sims.values():
             assert(s.finished)
         #end for
     #end for
@@ -2762,7 +2764,7 @@ def test_write_dependents():
 
     for i in range(n_test_workflows):
         sims = get_test_workflow(i)
-        for s in sims:
+        for s in sims.values():
             if len(s.dependencies)==0:
                 s.write_dependents()
             #end if
@@ -2863,7 +2865,7 @@ def test_graph_sims():
 
     sims = get_test_workflow(3)
 
-    graph_sims(sims.list(),display=False,exit=False)
+    graph_sims([s for s in sims.values()],display=False,exit=False)
 
     Simulation.clear_all_sims()
 #end def test_graph_sims

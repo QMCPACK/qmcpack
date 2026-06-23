@@ -34,7 +34,6 @@ from .nexus_version import nexus_version
 from .memory import resident
 #from .developer import DevBase, obj, log
 #from .developer import DevBase, obj2 as obj, log
-from .generic import object_interface
 from .developer import DevBase2 as DevBase, obj2 as obj, log, error
 
 
@@ -263,13 +262,7 @@ _____________________________________________________
 
     @classmethod
     def class_error(cls,message,header=None,exit=True,trace=-2,post_header=' Error:'):
-        """Report an error relating to a class.
-
-        See Also
-        --------
-        object_interface.error : Used inside subclasses of ``object_interface``.
-        generic.error : Called when you are not reporting an error specific to a class.
-        """
+        """Report an error relating to a class."""
         if header is None:
             header = cls.__name__
         #end if

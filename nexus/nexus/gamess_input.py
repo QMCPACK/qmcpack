@@ -31,6 +31,7 @@
 #====================================================================#
 
 
+from copy import deepcopy
 import numpy as np
 from .periodic_table import Elements
 from .developer import DevBase, obj, error, warn
@@ -69,7 +70,7 @@ class Group(GIbase):
         if text is not None:
             self.read(text)
         #end if
-        self.set(**kwargs)
+        self.update(**kwargs)
     #end def __init__
 
     def read(self,text):
@@ -759,7 +760,7 @@ class GamessInput(SimulationInput,GIbase):
         #end if
     #end for
     all_keywords = set()
-    for g in keyspec_groups:
+    for g in keyspec_groups.values():
         all_keywords |= g.keywords
     #end for
     group_keyword_overlap = all_groups & all_keywords
@@ -989,7 +990,7 @@ ps_defaults = obj()
 for var in ps_inputs:
     ps_defaults[var]=None
 #end for
-ps_defaults.set(
+ps_defaults.update(
     descriptor = 'A molecule.',
     symmetry   = 'C1'
     )
@@ -1001,10 +1002,13 @@ for var in GamessInput.all_keywords:
 
 def generate_any_gamess_input(**kwargs):
     kwset = set(kwargs.keys())
-    pskw = ps_defaults.copy()
+    pskw = deepcopy(ps_defaults)
     ps_overlap = ps_inputs & kwset
     if len(ps_overlap)>0:
-        pskw.move_from(kwargs,ps_overlap)
+        #pskw.move_from(kwargs,ps_overlap)
+        for k in ps_overlap:
+            if k in kwargs:
+                pskw[k] = kwargs.pop(k)
         kwset = set(kwargs.keys())
     #end if
     for name in kwargs.keys():
@@ -1013,8 +1017,8 @@ def generate_any_gamess_input(**kwargs):
             kwargs[name] = GIarray(val)
         #end if
     #end for
-    kw = kw_defaults.copy()
-    kw.set(**kwargs)
+    kw = deepcopy(kw_defaults)
+    kw.update(**kwargs)
     kwrem = obj(**kwargs)
 
     invalid_names = kwset-GamessInput.all_name_aliases
@@ -1072,7 +1076,10 @@ def generate_any_gamess_input(**kwargs):
         keywords = group_type.keywords & set(kwrem.keys())
         if len(keywords)>0:
             group_info = obj()
-            group_info.move_from(kwrem,keywords)
+            #group_info.move_from(kwrem,keywords)
+            for k in keywords:
+                if k in kwrem:
+                    group_info[k] = kwrem.pop(k)
             gi[name] = group_type(**group_info)
         #end if
     #end for
@@ -1089,10 +1096,14 @@ def generate_any_gamess_input(**kwargs):
             gi.contrl = ContrlGroup()
         #end if
         # allow user override of charge and multiplicity from physical system
-        gi.contrl.set_optional(
+        #gi.contrl.set_optional(
+        d = dict(
             icharg = system.net_charge,
             mult   = system.net_spin+1,
             )
+        for k,v in d.items():
+            if k not in gi:
+                gi.contrl[k] = v
         s = system.structure
         if s.has_folded():
             sf = s.folded_structure
@@ -1125,7 +1136,7 @@ def generate_any_gamess_input(**kwargs):
                 #end if
             #end for
         else:
-            gi.contrl.set(
+            gi.contrl.update(
                 coord = 'unique',
                 ecp   = 'read'
                 )
@@ -1226,7 +1237,7 @@ def check_keyspec_groups():
             err += '  keyspec group {0} has unrecognized allowed_value keywords:\n    {1}\n'.format(g.__name__,sorted(extra_keys))
         #end if
         type_keys = set()
-        for keys in go:
+        for keys in go.values():
             type_keys |= keys
         #end for
         undefined = g.keywords-type_keys

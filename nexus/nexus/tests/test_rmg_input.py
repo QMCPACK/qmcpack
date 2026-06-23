@@ -912,7 +912,10 @@ def test_generate():
         nio8.structure = s_trans
         assert(value_eq(R,np.eye(3,dtype=float)))
         assert(tmatrix is None)
-        shared_inputs.delete('bravais_lattice_type','a_length','b_length','c_length','wavefunction_grid')
+        keys = 'bravais_lattice_type','a_length','b_length','c_length','wavefunction_grid'
+        #shared_inputs.delete(keys)
+        for k in keys:
+            del shared_inputs[k]
         d = dict(**rmg_inputs)
         d.update(**shared_inputs)
         ri = generate_rmg_input(

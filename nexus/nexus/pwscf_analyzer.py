@@ -171,6 +171,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             if self.info.md_only:
                 return
             #end if
+
         except:
             nx+=1
             if self.info.warn:
@@ -269,7 +270,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     up_spin   = False
                     index = -1
                 #end if
-                              
+
                 if 'number of k points=' in l:
                     try:
                         num_kpoints      = int(l.strip().split()[4])
@@ -325,7 +326,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     else:
                         index = nfound -1 
                     #end if
-                    band_channel.append(bk)
+                    #band_channel.append(bk)
+                    band_channel[len(band_channel)] = bk
                     #if nfound==1:
                     #    bands.up = obj(
                     #        eigs = eigs,
@@ -342,10 +344,12 @@ class PwscfAnalyzer(SimulationAnalyzer):
             vbm        = obj(energy=-1.0e6)
             cbm        = obj(energy=1.0e6)
             direct_gap = obj(energy=1.0e6)
-            for band_channel in bands:
-                for b in band_channel:
-                    e_val  = np.max(b.eigs[b.occs > 0.5])
-                    e_cond = np.min(b.eigs[b.occs < 0.5])
+            for band_channel in bands.values():
+                for b in band_channel.values():
+                    occ   = b.occs > 0.5
+                    unocc = b.occs < 0.5
+                    e_val  = np.max(b.eigs[occ])
+                    e_cond = np.min(b.eigs[unocc])
 
                     if e_val > vbm.energy:
                         vbm.energy          = e_val
@@ -392,7 +396,9 @@ class PwscfAnalyzer(SimulationAnalyzer):
             if nfound>0:
                 self.bands = bands
             #end if
-            # Kayahan edited --end
+
+        # Kayahan edited --end
+
         except:
             nx+=1
             if self.info.warn:

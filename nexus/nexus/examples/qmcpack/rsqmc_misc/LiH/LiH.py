@@ -141,14 +141,14 @@ opt = generate_qmcpack(
     dependencies    = (p2q,'orbitals'),
     )
 pp = opt.input.get('pseudos')
-pp.Li.set(
+pp.Li.update(
     format  = 'casino',
     l_local = 's',
     nrule   = 2,
     lmax    = 2,
     cutoff  = 2.19,
     )
-pp.H.set(
+pp.H.update(
     format  = 'casino',
     l_local = 's',
     nrule   = 2,
@@ -191,14 +191,14 @@ qmc = generate_qmcpack(
     dependencies   = [(p2q,'orbitals'),(opt,'jastrow')],
     )
 pp = qmc.input.get('pseudos')
-pp.Li.set(
+pp.Li.update(
     format  = 'casino',
     l_local = 's',
     nrule   = 2,
     lmax    = 2,
     cutoff  = 2.37,
     )
-pp.H.set(
+pp.H.update(
     format  = 'casino',
     l_local = 's',
     nrule   = 2,

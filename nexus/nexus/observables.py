@@ -153,13 +153,11 @@ class DefinedAttributeBase(DevBase):
         if len(other_cls)==1 and issubclass(other_cls[0],DefinedAttributeBase):
             cls.obtain_attributes(other_cls[0])
         #end if
-        if cls.class_has('attribute_definitions'):
+        if hasattr(cls,'attribute_definitions'):
             attr_defs = cls.attribute_definitions
         else:
             attr_defs = obj()
-            cls.class_set(
-                attribute_definitions = attr_defs
-                )
+            setattr(cls,'attribute_definitions',attr_defs)
         #end if
         for name,attr_props in attribute_properties.items():
             attr_props = AttributeProperties(**attr_props)
@@ -173,8 +171,8 @@ class DefinedAttributeBase(DevBase):
                 #end for
             #end if
         #end for
-        if cls.class_has('unassigned_default'):
-            for p in attr_defs:
+        if hasattr(cls,'unassigned_default'):
+            for p in attr_defs.values():
                 if 'default' not in p.assigned:
                     p.default = cls.unassigned_default
                 #end if
@@ -201,21 +199,22 @@ class DefinedAttributeBase(DevBase):
                 sublevel_attributes.add(name)
             #end if
         #end for
-        cls.class_set(
+        #cls.class_set(
+        d = dict(
             required_attributes = required_attributes,
             deepcopy_attributes = deepcopy_attributes,
             typed_attributes    = typed_attributes,
             toplevel_attributes = toplevel_attributes,
             sublevel_attributes = sublevel_attributes,
             )
+        for k,v in d.items():
+            setattr(cls,k,v)
     #end def define_attributes
 
 
     @classmethod
     def obtain_attributes(cls,super_cls):
-        cls.class_set(
-            attribute_definitions = super_cls.attribute_definitions.copy()
-            )
+        setattr(cls,'attribute_definitions',deepcopy(super_cls.attribute_definitions))
     #end def obtain_attributes
 
 
@@ -254,7 +253,10 @@ class DefinedAttributeBase(DevBase):
         invalid     = value_names - attr_names
         if len(invalid)>0:
             v = obj()
-            v.transfer_from(values,invalid)
+            #v.transfer_from(values,invalid)
+            for k in invalid:
+                if k in values:
+                    v[k] = values[k]
             self.error('Attempted to set unrecognized attributes\nUnrecognized attributes:\n{}'.format(v))
         #end if
         missing = set(cls.required_attributes) - value_names
@@ -328,7 +330,7 @@ class DefinedAttributeBase(DevBase):
 
     def check_unassigned(self,value):
         cls = self.__class__
-        unassigned = cls.class_has('unassigned_default') and value is cls.unassigned_default
+        unassigned = hasattr(cls,'unassigned_default') and value is cls.unassigned_default
         return unassigned
     #end def check_unassigned
 
@@ -1163,7 +1165,7 @@ class Density(ObservableWithComponents):
     def volume_normalize(self):
         g = self.get_attribute('grid')
         dV = g.volume()/g.ncells
-        for c in self.components():
+        for c in self.components().values():
             c.values /= dV
         #end for
     #end def volume_normalize
@@ -1197,7 +1199,7 @@ class Density(ObservableWithComponents):
     def change_density_units(self,units):
         units_old = self.get_attribute('density_units')
         dscale    = 1.0/convert(1.0,units_old,units)
-        for c in self.components():
+        for c in self.components().values():
             c.values *= dscale**3
         #end for
         self.set_attribute('density_units',units) # Update the object info to reflect the conversion
@@ -1239,7 +1241,8 @@ class Density(ObservableWithComponents):
             #end for
         else:
             species = list(rmax.keys())
-            species_rmax.transfer_from(rmax)
+            #species_rmax.transfer_from(rmax)
+            species_rmax.update(**rmax)
         #end if
         vlog('Constructing spherical grid for each species',n=1,time=True)
         species_grids = obj()
@@ -1307,8 +1310,8 @@ class Density(ObservableWithComponents):
         else:
             crdfs = rdfs.copy()
         #end if
-        for crdf in crdfs:
-            for d in crdf:
+        for crdf in crdfs.values():
+            for d in crdf.values():
                 dr = d.radius[1]-d.radius[0]
                 d.density = d.density.cumsum()*dr
             #end for
@@ -1520,7 +1523,8 @@ class StatFile(DevBase):
         #end for
         if isinstance(observables,str):
             if observables=='all':
-                self.transfer_from(observable_groups)
+                #self.transfer_from(observable_groups)
+                self.update(**observable_groups)
             #end if
         else:
             for obs in observables:

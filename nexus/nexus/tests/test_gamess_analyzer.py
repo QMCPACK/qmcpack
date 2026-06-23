@@ -6,7 +6,7 @@ from ..generic import generic_settings
 generic_settings.raise_error = True
 
 from . import TEST_DIR
-from ..testing import object_eq
+from ..testing import object_eq,print_diff
 
 TEST_FILES = {
     "gms.inp": TEST_DIR / "test_gamess_analyzer_files/gms.inp",
@@ -246,6 +246,8 @@ def test_analyze():
             prefix          = 'gms',
             ),
         )
+
+    print_diff(to_obj(ga),ga_ref)
 
     assert(object_eq(to_obj(ga),ga_ref))
 

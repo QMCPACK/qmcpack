@@ -26,9 +26,11 @@ import os
 import sys
 import traceback
 from pathlib import Path
+from copy import deepcopy
 import numpy as np
 #custom library imports
-from .developer import obj, unavailable
+from .generic import sorted_generic
+from .developer import obj, unavailable, DevBase
 from .physical_system import ghost_atoms
 #QmcpackAnalyzer classes imports
 from .qmcpack_analyzer_base import QAobject, QAanalyzer, QAanalyzerCollection
@@ -161,7 +163,8 @@ class QmcpackAnalysisRequest(QAobject):
         #end if
         if isinstance(equilibration,(dict,obj)):
             eq = obj()
-            eq.transfer_from(equilibration)
+            #eq.transfer_from(equilibration)
+            eq.update(**equilibration)
         else:
             eq = equilibration
         #end if
@@ -305,7 +308,7 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
         input.pluralize()
         input.unroll_calculations()
         calculations = input.simulation.calculations
-        self.info.set(
+        self.info.update(
             input = input,
             ordered_input = input.read_xml(request.source)
             )
@@ -353,7 +356,8 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
             group_num    = group_num,
             system       = input.return_system()
             )
-        self.info.transfer_from(run_info)
+        #self.info.transfer_from(run_info)
+        self.info.update(**run_info)
 
         self.set_global_info()        
 
@@ -418,7 +422,8 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
             maxtime = 0
             times = dict()
             for series,dmc in self.dmc.items():
-                blocks,steps,timestep = dmc.info.method_input.list('blocks','steps','timestep')
+                #blocks,steps,timestep = dmc.info.method_input.list('blocks','steps','timestep')
+                blocks,steps,timestep = [dmc.info.method_input[k] for k in ('blocks','steps','timestep')]
                 times[series] = blocks*steps*timestep
                 maxtime = max(times[series],maxtime)
             #end for
@@ -483,7 +488,7 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
                 if self.info.type!='bundled':
                     QAanalyzer.analyze(self,force=force)
                 else:
-                    for analyzer in self.bundled_analyzers:
+                    for analyzer in self.bundled_analyzers.values():
                         analyzer.analyze()
                     #end for
                     QAanalyzer.analyze(self,force=force)
@@ -560,7 +565,7 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
         #  or twist in all ids
         twistnums = set()
         twist_ids = True
-        for analyzer in analyzers:
+        for analyzer in analyzers.values():
             input = analyzer.info.input
             twistnum = input.get('twistnum')
             project = input.get('project')
@@ -574,9 +579,11 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
         if twist_averaging:
             self.info.perform_bundle_average = True
         #end if
-        example = analyzers.list()[0]
-        input,system = example.info.tuple('input','system')
-        self.info.set(
+        example = [v for v in analyzers.values()][0]
+        #input,system = example.info.tuple('input','system')
+        info = example.info
+        input,system = info.input,info.system
+        self.info.update(
             input  = input.copy(),
             system = system.copy()
             )
@@ -598,7 +605,12 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
         if len(analyzers)>0:
             self.vlog('performing bundle (e.g. twist) averaging',n=1)
             #create local data structures to match those in the bundle
-            example = analyzers.list()[0].copy()
+            #example = analyzers.list()[0].copy()
+            ex = []
+            for k in sorted_generic(analyzers.keys()):
+                ex.append(analyzers[k])
+            example = deepcopy(ex[0])
+            #example = [v for v in analyzers.values()][0]
             for method_type in self.capabilities.methods:
                 if method_type in self:
                     del self[method_type]
@@ -627,13 +639,13 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
             if 'qmc' in self:
                 #zero out the average data
                 self.vlog('zeroing own qmc data',n=2)
-                for qmc in self.qmc:
+                for qmc in self.qmc.values():
                     qmc.zero_data()
                 #end for
 
                 #resize the average data
                 self.vlog('finding minimum data size (for incomplete runs)',n=2)
-                for analyzer in analyzers:
+                for analyzer in analyzers.values():
                     for series,qmc in self.qmc.items():
                         qmc.minsize_data(analyzer.qmc[series])
                     #end for
@@ -641,7 +653,7 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
     
                 #accumulate the average data
                 self.vlog('accumulating data from bundled runs',n=2)
-                for analyzer in analyzers:
+                for analyzer in analyzers.values():
                     for series,qmc in self.qmc.items():
                         qmc.accumulate_data(analyzer.qmc[series])
                     #end for
@@ -650,7 +662,7 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
                 #normalize the average data
                 norm_factor = len(analyzers)
                 self.vlog('normalizing bundle average (factor={0})'.format(norm_factor),n=2)
-                for qmc in self.qmc:
+                for qmc in self.qmc.values():
                     qmc.normalize_data(norm_factor)
                 #end for
             #end if
@@ -670,7 +682,7 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
         #end if
         self._unlink_dynamic_methods()
         self.saved_global = QAobject._global
-        self._save(filepath)
+        DevBase.save(self,filepath)
         self._relink_dynamic_methods()
         return
     #end def save
@@ -680,7 +692,7 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
             filepath = self.info.savefilepath
         #end if
         self.vlog('loading QmcpackAnalyzer from file {0}'.format(filepath),n=1)
-        self._load(filepath)
+        DevBase.load(self,filepath)
         QAobject._global = self.saved_global
         del self.saved_global
         self._relink_dynamic_methods()
@@ -702,7 +714,7 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
                 self.log(pad+header)
                 pad += '  '
             #end if
-            for method in self.qmc:
+            for method in self.qmc.values():
                 method.check_traces(pad)
             #end for
         else:

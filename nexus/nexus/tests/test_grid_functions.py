@@ -516,7 +516,7 @@ def test_grid_initialization():
     props = get_props()
 
     # check validity
-    for g in grids:
+    for g in grids.values():
         assert(g.valid())
     #end for
 

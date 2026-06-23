@@ -1938,7 +1938,7 @@ class PwscfInput(SimulationInput):
 
 
     def standardize_types(self):
-        for s in self:
+        for s in self.values():
             if isinstance(s,Section):
                 array_keys = []
                 for k in s.keys():

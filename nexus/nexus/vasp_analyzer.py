@@ -31,10 +31,11 @@
 
 import os
 import numpy as np
+from . import numpy_extensions as npe
+from .generic import sorted_generic
+from .developer import DevBase, obj
 from .simulation import Simulation,SimulationAnalyzer
 from .vasp_input import Incar
-from .developer import DevBase, obj
-from . import numpy_extensions as npe
 
 # vasp xml reader classes/functions
 
@@ -112,7 +113,7 @@ class VXML(DevBase):
             #end if
         #end for
         # have all sub objects parse (read fields, set _value)
-        for v in self:
+        for v in self.values():
             if isinstance(v,VXML):
                 v._parse()
             #end if
@@ -155,7 +156,8 @@ class VXML(DevBase):
             if 'type' in self._attr:
                 del self._attr.type
             #end if
-            self.transfer_from(self._attr)
+            #self.transfer_from(self._attr)
+            self.update(**self._attr)
         #end if
 
         return
@@ -230,10 +232,10 @@ class VXML(DevBase):
                     else:
                         dtype = float
                     #end if
-                    fields.append(obj(name=fname,dtype=dtype))
+                    fields[len(fields)] = obj(name=fname,dtype=dtype)
                 elif line.startswith('<set'):
                     if not set_dims:
-                        dims   = dims.list()
+                        dims = [v for v in dims.values()]
                         dims.reverse()
                         dims = tuple(dims)
                         dim_counts = np.zeros((len(dims),),dtype=int)
@@ -286,7 +288,7 @@ class VXML(DevBase):
         del self._attr
         del self._lines
         del self._value
-        for v in self:
+        for v in self.values():
             if isinstance(v,VXML):
                 v._remove_hidden()
             #end if
@@ -303,7 +305,7 @@ class VXMLcoll(VXML):
 
     def _reorder(self):
         n=0
-        for key in self.sorted_keys():
+        for key in sorted_generic(self.keys()):
             value = self[key]
             if isinstance(value,VXML):
                 del self[key]

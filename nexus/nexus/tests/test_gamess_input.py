@@ -8,7 +8,7 @@ generic_settings.raise_error = True
 import shutil
 from . import isolate_nexus_core, TEST_DIR
 from nexus.nexus_base import nexus_core
-from ..testing import object_eq
+from ..testing import object_eq,dict_serialize
 
 
 TEST_FILES = {
@@ -273,7 +273,8 @@ def get_serial_references():
 def check_vs_serial_reference(gi,name):
     from ..developer import obj
     sr = obj(get_serial_references()[name])
-    sg = gi.serial()
+    #sg = gi.serial()
+    sg = dict_serialize(gi,dict_type=obj)
     assert(object_eq(sg,sr))
 #end def check_vs_serial_reference
 

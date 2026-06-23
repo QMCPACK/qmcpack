@@ -8,7 +8,7 @@ generic_settings.raise_error = True
 from nexus.nexus_base import nexus_core
 from . import isolate_nexus_core, TEST_DIR
 from .. import testing
-from ..testing import object_eq
+from ..testing import object_eq,dict_serialize
 
 
 def format_value(v):
@@ -40,7 +40,9 @@ def format_value(v):
 
 
 def make_serial_reference(gi):
-    s = gi.serial()
+    from ..developer import obj
+    #s = gi.serial()
+    s = dict_serialize(gi,dict_type=obj)
     ref = '    ref = {\n'
     for k in sorted(s.keys()):
         v = s[k]
@@ -141,7 +143,8 @@ def get_serial_references():
 def check_vs_serial_reference(gi,name):
     from ..developer import obj
     sr = obj(get_serial_references()[name])
-    sg = gi.serial()
+    #sg = gi.serial()
+    sg = dict_serialize(gi,dict_type=obj)
     same = object_eq(sg,sr)
     if not same:
         print('\n'+name+' differs')

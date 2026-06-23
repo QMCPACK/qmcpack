@@ -217,7 +217,7 @@ def test_pyscf_to_afqmc_input_init():
     pi = PyscfToAfqmcInput()
     assert(pi.is_valid())
     assert(set(pi.keys())==set(PyscfToAfqmcInput.input_defaults.keys()))
-    for v in pi:
+    for v in pi.values():
         assert(v is None or v==False or v=='pyscf_to_afqmc.py')
     #end for
 

@@ -409,8 +409,9 @@ class GamessAnalyzer(SimulationAnalyzer):
                 spec_index = np.array(spec_index,dtype=int),
                 angular    = np.array(angular   ,dtype=str),
                 )
-            basis.transfer_from(linds)
-            ao_populations.set(
+            #basis.transfer_from(linds)
+            basis.update(**linds)
+            ao_populations.update(
                 mulliken         = mulliken,
                 lowdin           = lowdin,
                 mulliken_shell   = mulliken_shell,

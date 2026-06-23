@@ -362,7 +362,7 @@ class PhysicalSystem(Matter):
     def update(self):
         self.net_charge = self.structure.background_charge
         self.net_spin   = 0
-        for p in self.particles:
+        for p in self.particles.values():
             self.net_charge += p.count*p.charge
             self.net_spin   += p.count*p.spin
         #end for

@@ -24,7 +24,7 @@ def get_machine_data():
         supercomputers = obj()
         for machine in Machine.machines.values():
             if isinstance(machine,Workstation):
-                workstations.append(machine)
+                workstations[len(workstations)] = machine
             elif isinstance(machine,Supercomputer):
                 supercomputers[machine.name] = machine
             else:
@@ -238,6 +238,8 @@ def test_job_get_machine():
 #end def test_job_get_machine
 
 
+def first(d):
+    return d[min(d.keys())]
 
 def test_job_set_environment():
     from ..machines import job
@@ -245,8 +247,8 @@ def test_job_set_environment():
     workstations,supercomputers = get_machine_data()
 
     machines = []
-    machines.append(workstations.first())
-    machines.append(supercomputers.first())
+    machines.append(first(workstations))
+    machines.append(first(supercomputers))
 
     for m in machines:
         j = job(machine=m.name,skip_machine=True)
@@ -701,7 +703,7 @@ def test_supercomputer_scheduling(tmp_path):
 export OMP_NUM_THREADS=8
 aprun -e OMP_NUM_THREADS=8 -d 8 -cc depth -j 1 -n 16 -N 8 echo run'''
     wj = sc.write_job(j)
-    for flag in refro:
+    for flag in refro.values():
         assert(flag in wj)
     #end for
     assert('aprun ' in wj)
@@ -776,6 +778,9 @@ aprun -e OMP_NUM_THREADS=8 -d 8 -cc depth -j 1 -n 16 -N 8 echo run'''
 #end def test_supercomputer_scheduling
 
 
+from random import randint
+def select_random(d): 
+    return d[randint(0,len(d)-1)]
 
 def test_process_job():
     from random import randint
@@ -804,7 +809,7 @@ def test_process_job():
     njobs = nwj
     for nm in range(nworkstations):
         if nworkstations<len(workstations):
-            machine = workstations.select_random() # select machine at random
+            machine = select_random(workstations) # select machine at random
         else:
             machine = workstations[nm]
         #end if
@@ -854,7 +859,7 @@ def test_process_job():
     cores_min   = 1
     threads_min = 1
     shared_job_inputs = obj(name='some_job',account='some_account')
-    for machine in supercomputers:
+    for machine in supercomputers.values():
         job_inputs = []
         job_inputs_base = []
         threads_max = 2*machine.cores_per_node
@@ -2272,7 +2277,7 @@ srun -N 2 -n 64 test.x
         else:
             acc = None
         #end if
-        ji = job_inputs.copy()
+        ji = deepcopy(job_inputs)
         if name=='summit': # exceptional treatment for summit nodes
             ji.gpus = 6
         if name=='flight':

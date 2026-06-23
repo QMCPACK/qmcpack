@@ -73,6 +73,7 @@ import copy
 import numpy as np
 from numpy import pi,sin,cos,sqrt
 from numpy.linalg import LinAlgError, inv, det, eig
+from .generic import sorted_generic
 from .developer import obj
 from .fileio import XsfFile
 from .hdfreader import HDFreader, HDFgroup
@@ -147,6 +148,8 @@ class ScalarsDatAnalyzer(DatAnalyzer):
         filepath = self.info.filepath
         quantities = QAanalyzer.request.quantities
 
+        print()
+        print(filepath)
         lt = np.loadtxt(filepath)
         if len(lt.shape)==1:
             npe.reshape_inplace(lt, (1, len(lt)))
@@ -170,6 +173,8 @@ class ScalarsDatAnalyzer(DatAnalyzer):
 
 
     def analyze_local(self):
+        #self.load_data_local()
+
         nbe = QAanalyzer.method_info.nblocks_exclude
         self.info.nblocks_exclude = nbe
         data = self.data
@@ -237,7 +242,11 @@ class DmcDatAnalyzer(DatAnalyzer):
 
         self.info.nsteps_exclude = nse
 
-        nsteps = len(data.list()[0])-nse
+        ld = []
+        for k in sorted_generic(data.keys()):
+            ld.append(data[k])
+        #nsteps = len(data.list()[0])-nse
+        nsteps = len(ld)[0]-nse
 
         #nsteps = blocks*steps-nse
         block_avg = nsteps > 2*ndmc_blocks
@@ -412,7 +421,7 @@ class ScalarsHDFAnalyzer(HDFAnalyzer):
 class EnergyDensityAnalyzer(HDFAnalyzer):
     def __init__(self,name,nindent=0):
         HDFAnalyzer.__init__(self,nindent=nindent)
-        self.info.set(
+        self.info.update(
             name = name,
             reordered = False
             )
@@ -428,7 +437,8 @@ class EnergyDensityAnalyzer(HDFAnalyzer):
         if name in data:
             hdfg = data[name]
             hdfg._remove_hidden(deep=False)
-            self.data.transfer_from(hdfg)
+            #self.data.transfer_from(hdfg)
+            self.data.update(**hdfg)
             del data[name]
         else:
             self.info.should_remove = True
@@ -1611,7 +1621,7 @@ class DensityMatricesAnalyzer(HDFAnalyzer):
                         b+=1
                     #end for
                     d,dvar,derr,dkap = simstats(ddata.transpose())
-                    msres.set(
+                    msres.update(
                         eigval  = d,
                         eigvec  = np.identity(len(d)),
                         eigmean = d,
@@ -1682,7 +1692,7 @@ class DensityMatricesAnalyzer(HDFAnalyzer):
                     eigval,eigvec = eig(m)
 
                     # save common results
-                    msres.set(
+                    msres.update(
                         matrix            = m,
                         matrix_error      = merr,
                         sig_states        = sig_states,
@@ -1721,7 +1731,7 @@ class DensityMatricesAnalyzer(HDFAnalyzer):
                         esi = np.imag(eigsum)
                         eigvar  = (nb-1)/nb*(eigsum2r+i*eigsum2i-(esr**2+i*esi**2)/nb)
                         eigerr  = sqrt(np.real(eigvar))+i*sqrt(np.imag(eigvar))
-                        msres.set(
+                        msres.update(
                             eigmean         = eigmean,
                             eigerr          = eigerr
                             )
@@ -1760,7 +1770,7 @@ class DensityMatricesAnalyzer(HDFAnalyzer):
                             eigvar  = (nb-1)/nb*(eigsum2r+i*eigsum2i-(esr**2+i*esi**2)/nb)
                             geigerr  = sqrt(np.real(eigvar))+i*sqrt(np.imag(eigvar))
                             # save the results
-                            msres.set(
+                            msres.update(
                                 eigocc   = eigocc,
                                 geigocc  = geigocc,
                                 geigval  = geigval,
@@ -1835,7 +1845,7 @@ class DensityMatricesAnalyzer(HDFAnalyzer):
                     v = vec[:,i]
                     occ[i] = np.dot(v.conj(),np.dot(nm,v))
                 #end for
-                es.set(
+                es.update(
                     energies       = val,
                     occupations    = occ,
                     energy_vectors = vec
@@ -1874,7 +1884,7 @@ class DensityMatricesAnalyzer(HDFAnalyzer):
 class DensityAnalyzerBase(HDFAnalyzer):
     def __init__(self,name,nindent=0):
         HDFAnalyzer.__init__(self)
-        self.info.set(
+        self.info.update(
             name        = name,
             structure   = self.run_info.system.structure,
             file_prefix = self.run_info.file_prefix,
@@ -1944,7 +1954,8 @@ class SpinDensityAnalyzer(DensityAnalyzerBase):
             hdata = data[name]
             hdata._remove_hidden()
             self.data = QAHDFdata()
-            self.data.transfer_from(hdata)
+            #self.data.transfer_from(hdata)
+            self.data.update(**hdata)
             del data[name]
         else:
             self.info.should_remove = True
@@ -1959,7 +1970,7 @@ class SpinDensityAnalyzer(DensityAnalyzerBase):
                           np.ceil(sqrt(self.info.structure.axes[2].dot(self.info.structure.axes[2]))/dr[2])),dtype=int)
         #end if
 
-        for d in self.data:
+        for d in self.data.values():
             b = len(d.value)
             npe.reshape_inplace(d.value, (b, g[0], g[1], g[2]))
             if 'value_squared' in d:
@@ -2034,7 +2045,8 @@ class StructureFactorAnalyzer(HDFAnalyzer):
             hdata = data[name]
             hdata._remove_hidden()
             self.data = QAHDFdata()
-            self.data.transfer_from(hdata)
+            #self.data.transfer_from(hdata)
+            self.data.update(**hdata)
             del data[name]
         else:
             self.info.should_remove = True
@@ -2084,7 +2096,7 @@ class DensityAnalyzer(DensityAnalyzerBase):
             hdata = data[name]
             hdata._remove_hidden()
             self.data = QAHDFdata()
-            self.data.transfer_from(hdata)
+            self.data.update(**hdata)
             del data[name]
         else:
             self.info.should_remove = True

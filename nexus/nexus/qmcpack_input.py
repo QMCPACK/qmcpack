@@ -135,6 +135,7 @@
 
 import os
 from pathlib import Path
+from copy import deepcopy
 import inspect
 import keyword
 import numpy as np
@@ -560,7 +561,7 @@ class QIxml(Names):
 
     @classmethod
     def init_class(cls):
-        cls.class_set_optional(
+        fields = dict(
             tag         = cls.__name__,
             identifier  = None,
             attributes  = [],
@@ -578,8 +579,12 @@ class QIxml(Names):
             collection_id = None,
             exp_names   = None,
             )
+        for k,v in fields.items():
+            if not hasattr(cls,k):
+                setattr(cls,k,v)
         for v in ['attributes','elements','parameters','attribs','costs','h5tags']:
-            names = cls.class_get(v)
+            #names = cls.class_get(v)
+            names = getattr(cls,v)
             for i in range(len(names)):
                 if names[i] in cls.escape_names:
                     names[i]+='_'
@@ -593,9 +598,12 @@ class QIxml(Names):
                 cls.plurals_inv[e] = plurals_inv[e]
             #end if
         #end for
-        cls.plurals = cls.plurals_inv.inverse()
+        #cls.plurals = cls.plurals_inv.inverse()
+        cls.plurals = obj({v:k for k,v in cls.plurals_inv.items()})
         if cls.exp_names is not None:
-            cls.expanded_names = obj(Names.expanded_names,cls.exp_names)
+            en = obj(**Names.expanded_names)
+            en.update(**cls.exp_names)
+            cls.expanded_names = en
         #end if
     #end def init_class
 
@@ -722,7 +730,8 @@ class QIxml(Names):
             elif isinstance(a,section):
                 self.init_from_inputs(a.args,a.kwargs)
             elif isinstance(a,self.__class__):
-                self.transfer_from(a)
+                #self.transfer_from(a)
+                self.update(**a)
             else:
                 self.init_from_inputs(args,kwargs)
             #end if
@@ -1485,7 +1494,7 @@ class QIxml(Names):
     #end def get_host
 
     def get_precision(self):
-        return self.__class__.class_get('precision')
+        return getattr(self.__class__,'precision')
     #end def get_precision
 #end class QIxml
 
@@ -2818,7 +2827,8 @@ plurals = obj(
     transformations = 'transformation',
     rotated_sposets = 'rotated_sposet',
     )
-plurals_inv = plurals.inverse()
+#plurals_inv = plurals.inverse()
+plurals_inv  = obj({v:k for k,v in plurals.items()})
 plural_names = set(plurals.keys())
 single_names = set(plurals.values())
 Names.set_expanded_names(
@@ -2889,114 +2899,114 @@ for c in classes:
 
 
 #set default values
-simulation.defaults.set(
+simulation.defaults.update(
     project      = project,
     qmcsystem    = qmcsystem,
     calculations = lambda:list()
     )
-project.defaults.set(
+project.defaults.update(
     series=0,
     application = application
     )
-application.defaults.set(
+application.defaults.update(
     name='qmcpack',role='molecu',class_='serial',version='1.0'
     )
-#simulationcell.defaults.set(
+#simulationcell.defaults.update(
 #    bconds = 'p p p',lr_dim_cutoff=15
 #    )
-wavefunction.defaults.set(
+wavefunction.defaults.update(
     name='psi0'
     )
-#determinantset.defaults.set(
+#determinantset.defaults.update(
 #    type='einspline',tilematrix=lambda:eye(3,dtype=int),meshfactor=1.,gpu=False,precision='double'
 #    )
-#occupation.defaults.set(
+#occupation.defaults.update(
 #    mode='ground',spindataset=0
 #    )
-jastrow1.defaults.set(
+jastrow1.defaults.update(
     name='J1',type='one-body',function='bspline',print=True,source='ion0',
     correlation=correlation
     )
-jastrow2.defaults.set(
+jastrow2.defaults.update(
     name='J2',type='two-body',function='bspline',print=True,
     correlation=correlation
     )
-jastrow3.defaults.set(
+jastrow3.defaults.update(
     name='J3',type='eeI',function='polynomial',print=True,source='ion0',
     correlation=correlation
     )
-correlation.defaults.set(
+correlation.defaults.update(
     coefficients=coefficients
     )
-coefficients.defaults.set(
+coefficients.defaults.update(
     type='Array'
     )
-#hamiltonian.defaults.set(
+#hamiltonian.defaults.update(
 #    name='h0',type='generic',target='e',
 #    constant = constant,
 #    pairpots = classcollection(coulomb,pseudopotential,mpc),
 #    estimators = classcollection(chiesa),
 #    )
-#coulomb.defaults.set(
+#coulomb.defaults.update(
 #    name='ElecElec',type='coulomb',source='e',target='e'
 #    )
-#constant.defaults.set(
+#constant.defaults.update(
 #    name='IonIon',type='coulomb',source='ion0',target='ion0'
 #    )
-#pseudopotential.defaults.set(
+#pseudopotential.defaults.update(
 #    name='PseudoPot',type='pseudo',source='ion0',wavefunction='psi0',format='xml'
 #    )
-#mpc.defaults.set(
+#mpc.defaults.update(
 #    name='MPC',type='MPC',ecut=60.0,source='e',target='e',physical=False
 #    )
-localenergy.defaults.set(
+localenergy.defaults.update(
     name='LocalEnergy',hdf5=True
     )
-#chiesa.defaults.set(
+#chiesa.defaults.update(
 #    name='KEcorr',type='chiesa',source='e',psi='psi0'
 #    )
-#energydensity.defaults.set(
+#energydensity.defaults.update(
 #    type='EnergyDensity',name='EDvoronoi',dynamic='e',static='ion0',
 #    spacegrid = spacegrid
 #    )
-#spacegrid.defaults.set(
+#spacegrid.defaults.update(
 #    coord='voronoi'
 #    )
-density.defaults.set(
+density.defaults.update(
     type='density',name='Density'
     )
-spindensity.defaults.set(
+spindensity.defaults.update(
     type='spindensity',name='SpinDensity'
     )
-magnetizationdensity.defaults.set(
+magnetizationdensity.defaults.update(
     type='magnetizationdensity',name='MagnetizationDensity'
     )
-skall.defaults.set(
+skall.defaults.update(
     type='skall',name='skall',source='ion0',target='e',hdf5=True
     )
-force.defaults.set(
+force.defaults.update(
     type='Force',name='force'
     )
-pressure.defaults.set(
+pressure.defaults.update(
     type='Pressure'
     )
-momentum.defaults.set(
+momentum.defaults.update(
     type='momentum'
     )
-momentumdistribution.defaults.set(
+momentumdistribution.defaults.update(
     type='MomentumDistribution',name='nofk'
     )
-dm1b.defaults.set(
+dm1b.defaults.update(
     type = 'dm1b',name='DensityMatrices',energy_matrix=False,
     evaluator='matrix',
     )
-onebodydensitymatrices.defaults.set(
+onebodydensitymatrices.defaults.update(
     type = 'OneBodyDensityMatrices',name='DensityMatrices',energy_matrix=False,
     evaluator='matrix',
     )
 
 
-linear.defaults.set(
+linear.defaults.update(
      method = 'linear',move='pbyp',checkpoint=-1,
      #estimators = classcollection(localenergy)
 #  #jtk
@@ -3019,7 +3029,7 @@ linear.defaults.set(
 #    stabilizerscale   = .5,
 #    usebuffer         = True,
     )
-cslinear.defaults.set(
+cslinear.defaults.update(
     method='cslinear', move='pbyp', checkpoint=-1,
     #estimators = classcollection(localenergy)
   #jtk
@@ -3074,7 +3084,7 @@ cslinear.defaults.set(
     #usebuffer         = True,
     #estimators = classcollection(localenergy)
     )
-vmc.defaults.set(
+vmc.defaults.update(
     method='vmc',move='pbyp',
     #walkers     = 1,
     #warmupsteps = 50,
@@ -3083,44 +3093,44 @@ vmc.defaults.set(
     #timestep    = .5,
     #estimators = classcollection(localenergy)
     )
-dmc.defaults.set(
+dmc.defaults.update(
     method='dmc',move='pbyp',
     #warmupsteps   = 20,
     #timestep      = .01,
     #nonlocalmoves = True,
     #estimators = classcollection(localenergy)
     )
-vmc_batch.defaults.set(
+vmc_batch.defaults.update(
     method='vmc_batch',move='pbyp',
     )
-dmc_batch.defaults.set(
+dmc_batch.defaults.update(
     method='dmc_batch',move='pbyp',
     )
-linear_batch.defaults.set(
+linear_batch.defaults.update(
     method='linear_batch',move='pbyp',
     )
 
 
 
 # afqmc defaults
-afqmcinfo.defaults.set(
+afqmcinfo.defaults.update(
     name = 'info0',
     )
-walkerset.defaults.set(
+walkerset.defaults.update(
     name = 'wset0',
     )
-propagator.defaults.set(
+propagator.defaults.update(
     name = 'prop0',
     info = 'info0',
     )
-execute.defaults.set(
+execute.defaults.update(
     info = 'info0',
     ham  = 'ham0',
     wfn  = 'wfn0',
     wset = 'wset0',
     prop = 'prop0',
     )
-back_propagation.defaults.set(
+back_propagation.defaults.update(
     name='back_propagation'
     )
 
@@ -4469,7 +4479,7 @@ class QmcpackInput(SimulationInput,Names):
             self.error('calculation type "{}" is unrecognized.\nValid options are: {}'.format(qmc,allowed_qmc))
         kw = obj(**kw)
         driver = self.get_driver()
-        kw.set_optional(**qmc_defaults[driver][qmc])
+        set_optional(kw,qmc_defaults[driver][qmc])
         kw.driver = driver
         #self.remove_calculations()
         if qmc=='opt':
@@ -6408,11 +6418,11 @@ def generate_hamiltonian(name         = 'h0',
             elif not isinstance(estimator,QIxml):
                 QmcpackInput.class_error('generate_hamiltonian received an invalid estimator\n  an estimator must either be a name or a QIxml object\n  inputted estimator type: {0}\n  inputted estimator contents: {1}'.format(estimator.__class__.__name__,estimator))
             elif isinstance(estimator,energydensity):
-                est.set_optional(
+                set_optional(est,dict(
                     type = 'EnergyDensity',
                     dynamic = ename,
                     static  = iname,
-                    )
+                    ))
             elif isinstance(estimator,dm1b):
                 est = process_dm1b_estimator(estimator,wfname,wf_elem=wf_elem)
             #end if
@@ -7486,6 +7496,10 @@ def generate_opts(opt_reqs,**kwargs):
 
 
 # legacy driver defaults
+def set_optional(d,d2):
+    for k,v in d2.items():
+        if k not in d:
+            d[k] = d2[k]
 
 opt_legacy_defaults = obj(
     method          = 'linear',
@@ -7573,12 +7587,15 @@ vmc_test_legacy_defaults = obj(
     warmupsteps = 10,
     blocks      = 20,
     steps       =  4,
-    ).set_optional(**vmc_legacy_defaults)
+    )
+set_optional(vmc_test_legacy_defaults,vmc_legacy_defaults)
+
 vmc_noJ_legacy_defaults = obj(
     warmupsteps = 200,
     blocks      = 800,
     steps       = 100,
-    ).set_optional(**vmc_legacy_defaults)
+    )
+set_optional(vmc_noJ_legacy_defaults,vmc_legacy_defaults)
 
 dmc_legacy_defaults = obj(
     warmupsteps             = 20,
@@ -7623,12 +7640,15 @@ dmc_test_legacy_defaults = obj(
     warmupsteps     =  2,
     blocks          = 10,
     steps           =  2,
-    ).set_optional(**dmc_legacy_defaults)
+    )
+set_optional(dmc_test_legacy_defaults,dmc_legacy_defaults)
+
 dmc_noJ_legacy_defaults = obj(
     warmupsteps     =  40,
     blocks          = 400,
     steps           =  20,
-    ).set_optional(**dmc_legacy_defaults)
+    )
+set_optional(dmc_noJ_legacy_defaults,dmc_legacy_defaults)
 
 
 # batched driver defaults
@@ -7734,12 +7754,15 @@ vmc_test_batched_defaults = obj(
     warmupsteps = 10,
     blocks      = 20,
     steps       =  4,
-    ).set_optional(**vmc_batched_defaults)
+    )
+set_optional(vmc_test_batched_defaults,vmc_batched_defaults)
+
 vmc_noJ_batched_defaults = obj(
     warmupsteps = 200,
     blocks      = 800,
     steps       = 100,
-    ).set_optional(**vmc_batched_defaults)
+    )
+set_optional(vmc_noJ_batched_defaults,vmc_batched_defaults)
 
 dmc_batched_defaults = obj(
     total_walkers           = None,
@@ -7786,12 +7809,15 @@ dmc_test_batched_defaults = obj(
     warmupsteps     =  2,
     blocks          = 10,
     steps           =  2,
-    ).set_optional(**dmc_batched_defaults)
+    )
+set_optional(dmc_test_batched_defaults,dmc_batched_defaults)
+
 dmc_noJ_batched_defaults = obj(
     warmupsteps     =  40,
     blocks          = 400,
     steps           =  20,
-    ).set_optional(**dmc_batched_defaults)
+    )
+set_optional(dmc_noJ_batched_defaults,dmc_batched_defaults)
 
 
 
@@ -8462,6 +8488,7 @@ def read_jastrows(filepath):
 
 
 
+
 gen_basic_input_defaults = obj(
     id               = 'qmc',            
     series           = 0,                
@@ -8550,7 +8577,7 @@ def generate_basic_input(**kwargs):
     # capture inputs
     kw = obj(kwargs)
     # apply general defaults
-    kw.set_optional(**gen_basic_input_defaults)
+    set_optional(kw,gen_basic_input_defaults)
     valid = set(gen_basic_input_defaults.keys())
     # apply method specific defaults
     if kw.qmc is not None:
@@ -8562,7 +8589,7 @@ def generate_basic_input(**kwargs):
             QmcpackInput.class_error('Invalid input for argument "qmc".\nInvalid input: {}\nValid options are: {}'.format(kw.qmc,sorted(qmc_driver_defaults.keys())),'generate_qmcpack_input')
         #end if
         qmc_keys = ['driver']
-        kw.set_optional(**qmc_driver_defaults[kw.qmc])
+        set_optional(kw,qmc_driver_defaults[kw.qmc])
         qmc_keys += list(qmc_driver_defaults[kw.qmc].keys())
         if kw.qmc=='opt':
             opt_method_driver_defaults = opt_method_defaults[kw.driver]
@@ -8570,7 +8597,7 @@ def generate_basic_input(**kwargs):
             if key not in opt_method_driver_defaults:
                 QmcpackInput.class_error('invalid input for arguments "method,minmethod".\nInvalid input: {}\nValid options are: {}'.format(key,sorted(opt_method_driver_defaults.keys())),'generate_qmcpack_input')
             #end if
-            kw.set_optional(**opt_method_driver_defaults[key])
+            set_optional(kw,opt_method_driver_defaults[key])
             qmc_keys += list(opt_method_driver_defaults[key].keys())
             del key
         #end if
@@ -8631,7 +8658,7 @@ def generate_basic_input(**kwargs):
         kw.hybridrep = True
     #end if
 
-    metadata = QmcpackInput.default_metadata.copy()
+    metadata = deepcopy(QmcpackInput.default_metadata)
 
     proj = project(
         id             = kw.id,
@@ -8902,7 +8929,10 @@ def generate_basic_input(**kwargs):
     #end if
 
     if len(kw.calculations)==0 and kw.qmc is not None:
-        qmc_inputs = kw.obj(*qmc_keys)
+        #qmc_inputs = kw.obj(*qmc_keys)
+        qmc_inputs = obj()
+        for k in qmc_keys:
+            qmc_inputs[k] = kw[k]
         if kw.qmc=='opt':
             kw.calculations = generate_opt_calculations(**qmc_inputs)
         elif 'vmc' in kw.qmc:
@@ -8988,7 +9018,7 @@ def generate_basic_afqmc_input(**kwargs):
         #end if
     #end for
     # apply general defaults
-    kw.set_optional(**gen_basic_afqmc_input_defaults)
+    set_optional(kw,gen_basic_afqmc_input_defaults)
     valid = set(gen_basic_afqmc_input_defaults.keys())
     # screen for invalid keywords
     invalid_kwargs = set(kw.keys())-valid
@@ -8997,7 +9027,7 @@ def generate_basic_afqmc_input(**kwargs):
     #end if
 
     metadata = meta(
-        generation_info = gen_info.copy(),
+        generation_info = deepcopy(gen_info),
         )
 
     sim = simulation(

@@ -168,7 +168,7 @@ class OptimizationAnalyzer(ResultAnalyzer):
         #end for
                 
 
-        self.set(
+        self.update(
             any_complete   = any_complete,
             all_complete   = all_complete,
             unstable       = unstable,
@@ -382,7 +382,7 @@ class OptimizationAnalyzer(ResultAnalyzer):
 class TimestepStudyAnalyzer(ResultAnalyzer):
     def __init__(self,dmc,nindent=0):
         QAanalyzer.__init__(self,nindent=nindent)
-        self.set(
+        self.update(
             dmc = dmc,
             timesteps = [],
             energies  = [],
@@ -398,7 +398,7 @@ class TimestepStudyAnalyzer(ResultAnalyzer):
         timesteps = []
         energies  = []
         errors    = []
-        for dmc in self.dmc:
+        for dmc in self.dmc.values():
             timesteps.append(dmc.info.method_input.timestep)
             energies.append(dmc.scalars.LocalEnergy.mean)
             errors.append(dmc.scalars.LocalEnergy.error)

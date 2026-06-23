@@ -83,8 +83,9 @@ def test_defined_attribute_base():
     DA.define_attributes(**da_attributes)
 
     def get_class_dict(cls):
-        o = obj()
-        o.transfer_from(cls.__dict__)
+        #o = obj()
+        #o.transfer_from(cls.__dict__)
+        o = obj(**cls.__dict__)
         for k in list(o.keys()):
             if k.startswith('_'):
                 del o[k]
@@ -321,9 +322,9 @@ def test_defined_attribute_base():
 
     DA_def2.define_attributes(**da_attributes)
 
-    assert(not DefinedAttributeBase.class_has('unassigned_default'))
-    assert(DA_def.class_has('unassigned_default'))
-    assert(DA_def2.class_has('unassigned_default'))
+    assert(not hasattr(DefinedAttributeBase,'unassigned_default'))
+    assert(hasattr(DA_def ,'unassigned_default'))
+    assert(hasattr(DA_def2,'unassigned_default'))
     assert(DA_def.unassigned_default is None)
     assert(DA_def2.unassigned_default is None)
 
