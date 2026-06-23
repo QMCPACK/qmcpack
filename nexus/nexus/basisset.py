@@ -7,7 +7,8 @@ import os
 from pathlib import Path
 import numpy as np
 from .periodic_table import Elements
-from .developer import DevBase, obj, error, to_str, unavailable
+#from .developer import DevBase, obj, error, to_str, unavailable
+from .developer import DevBase2 as DevBase, obj2 as obj, log, error, to_str, unavailable
 from .fileio import TextFile
 from .utilities import path_string
 
@@ -69,11 +70,11 @@ class BasisSets(DevBase):
             bsfiles = bsfiles[0]
         #end if
         bss = []
-        self.log('')
-        self.log('  Basissets')
+        log('')
+        log('  Basissets')
         for filepath in bsfiles:
             filepath_str = str(filepath)
-            self.log('    reading basis: '+filepath_str)
+            log('    reading basis: '+filepath_str)
             ext = filepath_str.split('.')[-1].lower()
             if ext=='gms_bas' or ext=='bas':
                 bs = gamessBasisFile(filepath_str)
@@ -82,7 +83,7 @@ class BasisSets(DevBase):
             #end if
             bss.append(bs)
         #end for
-        self.log('')
+        log('')
         self.addbs(bss)
     #end def readbs
 
@@ -364,9 +365,11 @@ class GaussianBasisSet(DevBase):
                     index,expon,coeff = basis_lines[i].split(); i+=1
                     expon = GaussianBasisSet.process_float(expon)
                     coeff = GaussianBasisSet.process_float(coeff)
-                    bterms.append(obj(expon=expon,coeff=coeff))
+                    #bterms.append(obj(expon=expon,coeff=coeff))
+                    bterms[len(bterms)] = obj(expon=expon,coeff=coeff)
                 #end for
-                basis.append(obj(l=ltext,scale=scale,terms=bterms))
+                #basis.append(obj(l=ltext,scale=scale,terms=bterms))
+                basis[len(basis)] = obj(l=ltext,scale=scale,terms=bterms)
             #end while
         #end if
         elif format=='gaussian':
@@ -381,9 +384,11 @@ class GaussianBasisSet(DevBase):
                     expon,coeff = basis_lines[i].split(); i+=1
                     expon = GaussianBasisSet.process_float(expon)
                     coeff = GaussianBasisSet.process_float(coeff)
-                    bterms.append(obj(expon=expon,coeff=coeff))
+                    #bterms.append(obj(expon=expon,coeff=coeff))
+                    bterms[len(bterms)] = obj(expon=expon,coeff=coeff)
                 #end for
-                basis.append(obj(l=ltext,scale=scale,terms=bterms))
+                #basis.append(obj(l=ltext,scale=scale,terms=bterms))
+                basis[len(basis)] = obj(l=ltext,scale=scale,terms=bterms)
             #end while
         elif format=='crystal':
             i=0
@@ -404,9 +409,11 @@ class GaussianBasisSet(DevBase):
                         expon,coeff = basis_lines[i].split(); i+=1
                         expon = GaussianBasisSet.process_float(expon)
                         coeff = GaussianBasisSet.process_float(coeff)
-                        bterms.append(obj(expon=expon,coeff=coeff))
+                        #bterms.append(obj(expon=expon,coeff=coeff))
+                        bterms[len(bterms)] = obj(expon=expon,coeff=coeff)
                     #end for
-                    basis.append(obj(l=ltext,scale=scale,terms=bterms))
+                    #basis.append(obj(l=ltext,scale=scale,terms=bterms))
+                    basis[len(basis)] = obj(l=ltext,scale=scale,terms=bterms)
                 else: # sp has shared exponent for s and p, split them now
                     sterms = obj()
                     pterms = obj()
@@ -415,11 +422,15 @@ class GaussianBasisSet(DevBase):
                         expon = GaussianBasisSet.process_float(expon)
                         scoeff = GaussianBasisSet.process_float(scoeff)
                         pcoeff = GaussianBasisSet.process_float(pcoeff)
-                        sterms.append(obj(expon=expon,coeff=scoeff))
-                        pterms.append(obj(expon=expon,coeff=pcoeff))
+                        #sterms.append(obj(expon=expon,coeff=scoeff))
+                        #pterms.append(obj(expon=expon,coeff=pcoeff))
+                        sterms[len(sterms)] = obj(expon=expon,coeff=scoeff)
+                        pterms[len(sterms)] = obj(expon=expon,coeff=pcoeff)
                     #end for
-                    basis.append(obj(l='s',scale=scale,terms=sterms))
-                    basis.append(obj(l='p',scale=scale,terms=pterms))
+                    #basis.append(obj(l='s',scale=scale,terms=sterms))
+                    #basis.append(obj(l='p',scale=scale,terms=pterms))
+                    basis[len(basis)] = obj(l='s',scale=scale,terms=sterms)
+                    basis[len(basis)] = obj(l='p',scale=scale,terms=pterms)
                 #end if
             #end while
         else:
@@ -521,7 +532,8 @@ class GaussianBasisSet(DevBase):
             if l not in lbasis:
                 lbasis[l] = obj()
             #end if
-            lbasis[l].append(bf)
+            #lbasis[l].append(bf)
+            lbasis[l][len(lbasis[l])] = bf
         #end for
         return lbasis
     #end def lbasis
@@ -536,7 +548,8 @@ class GaussianBasisSet(DevBase):
                 lbas = lbasis[l]
                 for n in range(len(lbas)):
                     bf = lbas[n]
-                    self.basis.append(bf)
+                    #self.basis.append(bf)
+                    self.basis[len(self.basis)] = bf
                 #end for
             #end if
         #end for
@@ -583,9 +596,11 @@ class GaussianBasisSet(DevBase):
                 #end for
                 for expon in exponents:
                     cterms = obj()
-                    cterms.append(obj(expon=expon,coeff=1.0))
+                    #cterms.append(obj(expon=expon,coeff=1.0))
+                    cterms[0] = obj(expon=expon,coeff=1.0)
                     bf = obj(l=l,scale=np.array([1.0]),terms=cterms)
-                    self.basis.append(bf)
+                    #self.basis.append(bf)
+                    self.basis[len(self.basis)] = bf
                 #end for
             #end if
         #end for
@@ -739,7 +754,8 @@ class GaussianBasisSet(DevBase):
             if l in lbasis:
                 lbas = lbasis[l]
                 for k in sorted(lbas.keys()):
-                    self.basis.append(lbas[k])
+                    #self.basis.append(lbas[k])
+                    self.basis[len(self.basis)] = lbas[k]
                 #end for
             #end if
         #end for
@@ -806,7 +822,8 @@ class GaussianBasisSet(DevBase):
                 lbas = lbasis[l]
                 for n in range(len(lbas)):
                     bf = lbas[n]
-                    self.basis.append(bf)
+                    #self.basis.append(bf)
+                    self.basis[len(self.basis)] = bf
                 #end for
             #end if
         #end for
@@ -829,14 +846,16 @@ class GaussianBasisSet(DevBase):
                     lbas = lbasis[l]
                     for n in range(len(lbas)):
                         bf = lbas[n]
-                        self.basis.append(bf)
+                        #self.basis.append(bf)
+                        self.basis[len(self.basis)] = bf
                     #end for
                 #end if
                 if l in lbasis_other:
                     lbas = lbasis_other[l]
                     for n in range(len(lbas)):
                         bf = lbas[n]
-                        self.basis.append(bf)
+                        #self.basis.append(bf)
+                        self.basis[len(self.basis)] = bf
                     #end for
                 #end if
             #end for
@@ -846,12 +865,14 @@ class GaussianBasisSet(DevBase):
                 widths     = []
                 orig_widths = np.array([])
                 if l in lbasis:
-                    primitives.extend(lbasis[l].list())
+                    #primitives.extend(lbasis[l].list())
+                    primitives.extend(list(lbasis[l].values()))
                     widths.extend(gwidths[l])
                     orig_widths = gwidths[l]
                 #end if
                 if l in lbasis_other:
-                    prims = lbasis_other[l].list()
+                    #prims = lbasis_other[l].list()
+                    prims = list(lbasis_other[l].values())
                     owidths = gwidths_other[l]
                     for n in range(len(prims)):
                         w = owidths[n]
@@ -863,7 +884,8 @@ class GaussianBasisSet(DevBase):
                 #end if
                 primitives = np.array(primitives,dtype=object)[np.array(widths).argsort()]
                 for bf in primitives:
-                    self.basis.append(bf)
+                    #self.basis.append(bf)
+                    self.basis[len(self.basis)] = bf
                 #end for
             #end for
         #end if

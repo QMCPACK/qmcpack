@@ -136,7 +136,8 @@ from .unit_converter import convert
 from .numerics import nearest_neighbors, convex_hull, voronoi_neighbors
 from .periodic_table import Elements
 from .fileio import XsfFile, PoscarFile
-from .developer import DevBase, obj, unavailable, error
+#from .developer import DevBase, obj, unavailable, error
+from .developer import DevBase2 as DevBase, obj2 as obj, unavailable, error
 from .utilities import path_string
 from . import numpy_extensions as npe
 
@@ -561,7 +562,8 @@ mask_filter = MaskFilter()
 
 def optimal_tilematrix(axes,volfac,dn=1,tol=1e-3,filter=trivial_filter,mask=None,nc=5,Tref=None):
     if mask is not None:
-        mask_filter.set(mask)
+        #mask_filter.set(mask)
+        mask_filter.update(mask)
         filter = mask_filter
     #end if
     dim = 3
@@ -814,7 +816,8 @@ class Structure(Sobj):
 
     @classmethod
     def set_operations(cls):
-        cls.operations.set(
+        #cls.operations.set(
+        cls.operations.update(
             remove_folded_structure = cls.remove_folded_structure,
             recenter = cls.recenter,
             )
@@ -3766,7 +3769,8 @@ class Structure(Sobj):
 
         if in_place:
             self.clear()
-            self.transfer_from(ts)
+            #self.transfer_from(ts)
+            self.update(**ts)
             ts = self
         #end if
 
@@ -6601,7 +6605,8 @@ def structure_animation(filepath,structures,tiling=None):
 class DefectStructure(Structure):
     def __init__(self,*args,**kwargs):
         if len(args)>0 and isinstance(args[0],Structure):
-            self.transfer_from(args[0],copy=True)
+            #self.transfer_from(args[0],copy=True)
+            self.update(**args[0].copy())
         else:
             Structure.__init__(self,*args,**kwargs)
         #end if
@@ -7088,7 +7093,8 @@ class Crystal(Structure):
                 lattice_info = self.known_crystals[li_old.lattice,li_old.cell].copy()
                 del li_old.lattice
                 del li_old.cell
-                lattice_info.transfer_from(li_old,copy=False)
+                #lattice_info.transfer_from(li_old,copy=False)
+                lattice_info.update(**li_old)
             #end while
             if 'cell' in lattice_info:
                 cell = lattice_info.cell
@@ -7124,7 +7130,8 @@ class Crystal(Structure):
                     inputs[var] = lattice_info[var]
                 #end if
             #end for
-            centering,constants,atoms,basis,basis_vectors,tiling,cscale,axes,units=inputs.list('centering','constants','atoms','basis','basis_vectors','tiling','cscale','axes','units')
+            #centering,constants,atoms,basis,basis_vectors,tiling,cscale,axes,units=inputs.list('centering','constants','atoms','basis','basis_vectors','tiling','cscale','axes','units')
+            centering,constants,atoms,basis,basis_vectors,tiling,cscale,axes,units=[inputs[k] for k in ('centering','constants','atoms','basis','basis_vectors','tiling','cscale','axes','units')]
         #end if
 
         if constants is None:
@@ -7340,7 +7347,8 @@ class Crystal(Structure):
         #end for
         pos = np.array(pos)
 
-        self.set(
+        #self.set(
+        self.update(
             constants = np.array([a,b,c]),
             angles    = np.array([alpha,beta,gamma]),
             generation_info = generation_info
@@ -7374,8 +7382,9 @@ class Crystal(Structure):
 
 # test needed
 class Jellium(Structure):
-    prefactors = obj()
-    prefactors.transfer_from({1:2*pi,2:4*pi,3:4./3*pi})
+    #prefactors = obj()
+    #prefactors.transfer_from({1:2*pi,2:4*pi,3:4./3*pi})
+    prefactors = obj({1:2*pi,2:4*pi,3:4./3*pi})
 
     def __init__(self,charge=None,background_charge=None,cell=None,volume=None,density=None,rs=None,dim=3,
                  axes=None,kpoints=None,kweights=None,kgrid=None,kshift=None,units=None,tiling=None):

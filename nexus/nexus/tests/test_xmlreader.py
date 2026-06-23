@@ -17,7 +17,8 @@ for file in TEST_FILES.values():
 
 
 def test_read():
-    from ..developer import obj
+    #from ..developer import obj
+    from ..developer import obj, to_obj
     from ..xmlreader import readxml,XMLelement
 
     ref = obj(
@@ -241,7 +242,8 @@ def test_read():
     x = readxml(TEST_FILES['vmc.in.xml'])
     assert(isinstance(x,XMLelement))
     x.remove_hidden()
-    o = x.to_obj()
+    #o = x.to_obj()
+    o = to_obj(x)
 
     assert(object_eq(o,ref))
 #end def test_read

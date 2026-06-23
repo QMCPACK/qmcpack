@@ -26,7 +26,8 @@ from pathlib import Path
 import mmap
 import numpy as np
 from numpy.linalg import det, norm
-from .developer import DevBase, obj, error, to_str
+#from .developer import DevBase, obj, error, to_str
+from .developer import DevBase2 as DevBase, obj2 as obj, error, to_str
 from .periodic_table import Elements
 from .unit_converter import convert
 from . import numpy_extensions as npe
@@ -896,7 +897,10 @@ class XsfFile(StandardFile):
 
 
     def get_density(self):
-        return self.data.first().first().first()
+        #return self.data.first().first().first()
+        def first(d):
+            return d[min(d.keys())]
+        return first(first(first(self.data)))
     #end def get_density
 
 
@@ -1617,7 +1621,8 @@ def read_poscar_chgcar(host,text):
         poscar = PoscarFile()
     #end if
 
-    poscar.set(
+    #poscar.set(
+    poscar.update(
         description = description,
         scale       = scale,
         axes        = axes,
@@ -1631,7 +1636,8 @@ def read_poscar_chgcar(host,text):
         )
 
     if is_chgcar:
-        host.set(
+        #host.set(
+        host.update(
             poscar         = poscar,
             grid           = grid,
             charge_density = charge_density,

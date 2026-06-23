@@ -13,7 +13,7 @@ from .unit_converter import convert
 from .developer import DevBase, obj, log, error, unavailable
 from .numerics import simstats
 from .grid_functions import grid_function, read_grid, StructuredGrid, grid as generate_grid
-from .grid_functions import SpheroidGrid
+from .grid_functions import SpheroidGrid,ParallelotopeGridFunction
 from .structure import Structure, get_seekpath_full
 from .fileio import XsfFile
 from .hdfreader import read_hdf
@@ -1403,23 +1403,23 @@ class Density(ObservableWithComponents):
 Density.define_attributes(
     Observable,
     raw = obj(
-        type       = obj,
+        type       = ParallelotopeGridFunction,
         no_default = True,
         ),
     u = obj(
-        type       = obj,
+        type       = ParallelotopeGridFunction,
         no_default = True,
         ),
     d = obj(
-        type       = obj,
+        type       = ParallelotopeGridFunction,
         no_default = True,
         ),
     tot = obj(
-        type       = obj,
+        type       = ParallelotopeGridFunction,
         no_default = True,
         ),
     pol = obj(
-        type       = obj,
+        type       = ParallelotopeGridFunction,
         no_default = True,
         ),
     grid = obj(

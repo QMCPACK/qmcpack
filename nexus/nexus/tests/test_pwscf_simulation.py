@@ -209,11 +209,16 @@ def test_incorporate_result(tmp_path):
     sim.incorporate_result('structure',result,None)
 
     sim_ref = sim_start.copy()
-    pos_ref = sim_ref.system.structure.delete('pos')+0.1
-    sim_ref.input.atomic_positions.delete('positions')
+    #pos_ref = sim_ref.system.structure.delete('pos')+0.1
+    #sim_ref.input.atomic_positions.delete('positions')
+    pos_ref = sim_ref.system.structure.__dict__.pop('pos')+0.1
+    sim_ref.input.atomic_positions.__dict__.pop('positions')
 
-    pos = sim.system.structure.delete('pos')
-    apos = sim.input.atomic_positions.delete('positions')
+
+    #pos = sim.system.structure.delete('pos')
+    #apos = sim.input.atomic_positions.delete('positions')
+    pos = sim.system.structure.__dict__.pop('pos')
+    apos = sim.input.atomic_positions.__dict__.pop('positions')
 
     assert(value_eq(pos,pos_ref))
     assert(value_eq(apos,pos_ref))

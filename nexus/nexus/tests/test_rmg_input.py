@@ -910,13 +910,16 @@ def test_generate():
         assert(value_eq(R,np.eye(3,dtype=float)))
         assert(tmatrix is None)
         shared_inputs.delete('bravais_lattice_type','a_length','b_length','c_length','wavefunction_grid')
+        d = dict(**rmg_inputs)
+        d.update(**shared_inputs)
         ri = generate_rmg_input(
             Hubbard_U       = obj(Ni=6.5),
             virtual_frac    = 1./6,
             wf_grid_spacing = 0.22,
             pseudos         = ['Ni_oncv.UPF','O_oncv.UPF'],
             system          = nio8,
-            **obj(rmg_inputs,shared_inputs)
+            #**obj(rmg_inputs,shared_inputs)
+            **d
             )
         assert(value_eq(ri.length_units,'Bohr'))
         del ri.length_units

@@ -358,3 +358,162 @@ def valid_variable_name(s):
         return False
     #end if
 #end def valid_variable_name
+
+
+
+
+
+
+
+
+
+import copy
+from .generic import sorted_generic
+
+
+
+def save(o,filepath):
+    with open(fpath,'wb') as f:
+        binary = pickle.HIGHEST_PROTOCOL
+        pickle.dump(self,f,binary)
+
+def load(filepath):
+    with open(filepath,'rb') as f:
+        dl = pickle.load(f)
+    return dl
+
+
+
+def _pp_repr(self):
+    s=''
+    for k in sorted_generic(self.keys()):
+        v = self.__dict__[k]
+        if hasattr(v,'__class__'):
+            s+='  {0:<20}  {1:<20}\n'.format(str(k),v.__class__.__name__)
+        else:
+            s+='  {0:<20}  {1:<20}\n'.format(str(k),type(v))
+    return s
+
+
+def _pp_str(self,nindent=1):
+    pad = '  '
+    npad = nindent*pad
+    s=''
+    normal = []
+    qable  = []
+    for k,v in self.items():
+        if isinstance(v,(obj2,DevBase2)):
+            qable.append(k)
+        else:
+            normal.append(k)
+    normal = sorted_generic(normal)
+    qable  = sorted_generic(qable)
+    indent = npad+18*' '
+    for k in normal:
+        v = self[k]
+        vstr = str(v).replace('\n','\n'+indent)
+        s+=npad+'{0:<15} = '.format(str(k))+vstr+'\n'
+    for k in qable:
+        v = self[k]
+        s+=npad+str(k)+'\n'
+        s+=v.__str__(nindent+1)
+        if isinstance(k,str):
+            s+=npad+'end '+k+'\n'
+    return s
+
+
+
+class obj2:
+    # dict interface
+    def __init__(self,*args,**kwargs):   self.__dict__.update(dict(*args,**kwargs))
+    def items(self):              return self.__dict__.items()
+    def clear(self):              return self.__dict__.clear()
+    def copy(self):               return self.__class__(self.__dict__)
+    def fromkeys(self,*a,**kw):   return self.__class__(self.__dict__.fromkeys(*a,**kw))
+    def get(self,*a,**kw):        return self.__dict__.get(*a,**kw)
+    def keys(self):               return self.__dict__.keys()
+    def pop(self,*a,**kw):        return self.__dict__.pop(*a,**kw)
+    def values(self):             return self.__dict__.values()
+    def popitem(self,*a,**kw):    return self.__dict__.popitem(*a,**kw)
+    def setdefault(self,*a,**kw): return self.__dict__.setdefault(*a,**kw)
+    def update(self,*a,**kw):     return self.__dict__.update(*a,**kw)
+
+    # protected dict interface
+    def _items(self):              return self.__dict__.items()
+    def _clear(self):              return self.__dict__.clear()
+    def _copy(self):               return self.__class__(self.__dict__)
+    def _fromkeys(self,*a,**kw):   return self.__class__(self.__dict__.fromkeys(*a,**kw))
+    def _get(self,*a,**kw):        return self.__dict__.get(*a,**kw)
+    def _keys(self):               return self.__dict__.keys()
+    def _pop(self,*a,**kw):        return self.__dict__.pop(*a,**kw)
+    def _values(self):             return self.__dict__.values()
+    def _popitem(self,*a,**kw):    return self.__dict__.popitem(*a,**kw)
+    def _setdefault(self,*a,**kw): return self.__dict__.setdefault(*a,**kw)
+    def _update(self,*a,**kw):     return self.__dict__.update(*a,**kw)
+
+    # basic functions, including dot access
+    def __len__(self):               return len(self.__dict__)
+    def __contains__(self,key):      return key in self.__dict__
+    def __getitem__(self,key):       return self.__dict__[key]
+    def __setitem__(self,key,value): self.__dict__[key]=value
+    def __delitem__(self,key):       del self.__dict__[key]
+    def __iter__(self):
+        for item in self.__dict__: 
+            yield item
+
+    # pretty print
+    __repr__ = _pp_repr
+    __str__  = _pp_str
+
+
+
+class DevBase2:
+    # similar to/same as dict
+    def __len__(self):          return len(self.__dict__)
+    def __contains__(self,key): return key in self.__dict__
+    def __getitem__(self,key):  return self.__dict__[key]
+    def __setitem__(self,key,value): self.__dict__[key]=value
+    def __delitem__(self,key):       del self.__dict__[key]
+    def keys(self):             return self.__dict__.keys()
+    def values(self):           return self.__dict__.values()
+    def items(self):            return self.__dict__.items()
+    def update(self,*a,**kw):   return self.__dict__.update(*a,**kw)
+    def clear(self):            return self.__dict__.clear()
+
+    # correctly iterate over values, not keys
+    def __iter__(self):
+        for item in self.__dict__.values():
+            yield item
+
+    # pretty print
+    __repr__ = _pp_repr
+    __str__  = _pp_str
+
+    # save and load
+    def save(self,filepath=None):
+        if filepath is None:
+            filepath='./'+self.__class__.__name__+'.p'
+        save(self,filepath)
+
+    def load(self,filepath=None):
+        if filepath is None:
+            filepath='./'+self.__class__.__name__+'.p'
+        tmp = load(filepath)
+        d = self.__dict__
+        d.clear()
+        for k,v in tmp.__dict__.items():
+            d[k] = v
+
+    def copy(self):
+        return copy.deepcopy(self)
+
+
+
+def to_obj(d):
+    o = obj()
+    for k,v in d.items():
+        if hasattr(v,'__dict__'):
+            o[k] = to_obj(v)
+        else:
+            o[k] = v
+    return o

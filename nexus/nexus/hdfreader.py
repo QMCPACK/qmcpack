@@ -21,7 +21,8 @@
 import numpy as np
 import keyword
 from inspect import getmembers
-from .developer import DevBase, obj, unavailable, valid_variable_name
+#from .developer import DevBase, obj, unavailable, valid_variable_name
+from .developer import DevBase2 as DevBase, obj2 as obj, unavailable, valid_variable_name
 from .utilities import path_string
 
 try:

@@ -84,13 +84,40 @@ def value_diff(v1,v2,atol=def_atol,rtol=def_rtol,int_as_float=False):
 #end def value_diff
 
 
+
+
+def dict_serialize(d,serial=None,path=None,dict_type=None):
+    # serialize a dict-like object (flat string_path-value mapping)
+    if dict_type is None:
+        dict_type = d.__class__
+    first = serial is None
+    if first:
+        serial = dict_type()
+        path = ''
+    for k,v in d.items():
+        p = path+str(k)
+        if hasattr(v,'items') and callable(getattr(v,'items')) and not isinstance(v,type):
+            if len(v)==0:
+                serial[p]=dict_type()
+            else:
+                dict_serialize(v,serial,p+'/',dict_type)
+        else:
+            serial[p]=v
+    if first:
+        return serial
+#end def dict_serialize
+
+
+
 # determine if two objects differ
 def object_diff(o1,o2,atol=def_atol,rtol=def_rtol,int_as_float=False,full=False,bypass=False):
     diff1 = dict()
     diff2 = dict()
     if not bypass:
-        o1 = o1._serial().__dict__
-        o2 = o2._serial().__dict__
+        #o1 = o1._serial().__dict__
+        #o2 = o2._serial().__dict__
+        o1 = dict_serialize(o1,dict_type=dict)
+        o2 = dict_serialize(o2,dict_type=dict)
     #end if
     keys1 = set(o1.keys())
     keys2 = set(o2.keys())

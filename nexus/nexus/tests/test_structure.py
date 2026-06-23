@@ -51,10 +51,16 @@ reference_structures = dict()
 generated_structures = dict()
 crystal_structures   = dict()
 
+def sub_obj(s,keys):
+    from ..developer import obj
+    return obj({k:s[k] for k in keys})
+
 def structure_diff(s1,s2):
     keys = ('units','elem','pos','axes','kpoints','kweights','kaxes')
-    o1 = s1.obj(keys)
-    o2 = s2.obj(keys)
+    #o1 = s1.obj(keys)
+    #o2 = s2.obj(keys)
+    o1 = sub_obj(s1,keys)
+    o2 = sub_obj(s2,keys)
     return object_diff(o1,o2,full=True)
 #end def structure_diff
 
@@ -62,8 +68,10 @@ def structure_diff(s1,s2):
 def structure_same(s1,s2):
     import numpy as np
     keys = ('units','elem','axes','kpoints','kweights','kaxes','frozen','mag')
-    o1 = s1.obj(keys)
-    o2 = s2.obj(keys)
+    #o1 = s1.obj(keys)
+    #o2 = s2.obj(keys)
+    o1 = sub_obj(s1,keys)
+    o2 = sub_obj(s2,keys)
     osame = object_eq(o1,o2)
     psame = value_eq(s1.pos,s2.pos)
     if osame and not psame and len(s1.pos)==len(s2.pos):

@@ -12,11 +12,18 @@ from ..testing import value_eq,object_eq
 from .test_structure import structure_same
 
 
+def sub_obj(s,keys):
+    from ..developer import obj
+    return obj({k:s[k] for k in keys})
+
+
 def system_same(s1,s2,pseudized=True,tiled=False):
     same = True
     keys = ('net_charge','net_spin','pseudized','particles')
-    o1 = s1.obj(keys)
-    o2 = s2.obj(keys)
+    #o1 = s1.obj(keys)
+    #o2 = s2.obj(keys)
+    o1 = sub_obj(s1,keys)
+    o2 = sub_obj(s2,keys)
     qsame = object_eq(o1,o2)
     vsame = True
     if pseudized:
@@ -101,7 +108,7 @@ def test_particle_initialization():
 
 def test_physical_system_initialization(tmp_path):
     import os
-    from ..developer import obj
+    from ..developer import obj, to_obj
     from ..structure import generate_structure
     from ..physical_system import generate_physical_system
     from ..physical_system import PhysicalSystem
@@ -273,15 +280,18 @@ def test_physical_system_initialization(tmp_path):
     assert(ref.net_spin==0)
     assert(ref.pseudized)
     assert(object_eq(ref.valency,obj(C=4)))
-    assert(object_eq(ref.particles.to_obj(),pref))
+    #assert(object_eq(ref.particles.to_obj(),pref))
+    assert(object_eq(to_obj(ref.particles),pref))
     assert(structure_same(sref,d8))
     assert(value_eq(sref.axes,3.57*np.eye(3)))
     assert(tuple(sref.bconds)==tuple('ppp'))
     assert(list(sref.elem)==8*['C'])
     assert(value_eq(tuple(sref.pos[-1]),(2.6775,2.6775,0.8925)))
     assert(sref.units=='A')
-    assert(object_eq(ref.particles.get_ions().to_obj(),obj(C=pref.C)))
-    assert(object_eq(ref.particles.get_electrons().to_obj(),obj(down_electron=pref.down_electron,up_electron=pref.up_electron)))
+    #assert(object_eq(ref.particles.get_ions().to_obj(),obj(C=pref.C)))
+    #assert(object_eq(ref.particles.get_electrons().to_obj(),obj(down_electron=pref.down_electron,up_electron=pref.up_electron)))
+    assert(object_eq(to_obj(ref.particles.get_ions()),obj(C=pref.C)))
+    assert(object_eq(to_obj(ref.particles.get_electrons()),obj(down_electron=pref.down_electron,up_electron=pref.up_electron)))
 
     # check direct system w/ tiling
     ref = direct_tile
@@ -290,7 +300,8 @@ def test_physical_system_initialization(tmp_path):
     assert(ref.net_spin==0)
     assert(ref.pseudized)
     assert(object_eq(ref.valency,obj(C=4)))
-    assert(object_eq(ref.particles.to_obj(),pref))
+    #assert(object_eq(ref.particles.to_obj(),pref))
+    assert(object_eq(to_obj(ref.particles),pref))
     assert(structure_same(sref,d8_tile))
     assert(value_eq(sref.axes,3.57*np.eye(3)))
     assert(tuple(sref.bconds)==tuple('ppp'))
@@ -306,7 +317,8 @@ def test_physical_system_initialization(tmp_path):
     assert(ref.net_spin==0)
     assert(ref.pseudized)
     assert(object_eq(ref.valency,obj(C=4)))
-    assert(object_eq(ref.particles.to_obj(),pref))
+    #assert(object_eq(ref.particles.to_obj(),pref))
+    assert(object_eq(to_obj(ref.particles),pref))
     assert(structure_same(sref,d2))
     assert(value_eq(sref.axes,1.785*np.array([[1.,1,0],[0,1,1],[1,0,1]])))
     assert(tuple(sref.bconds)==tuple('ppp'))

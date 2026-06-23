@@ -86,7 +86,8 @@ import inspect
 import numpy as np
 from numpy import pi, exp, sqrt, sin, cos
 from numpy.linalg import norm
-from .developer import obj, unavailable, error
+#from .developer import obj, unavailable, error
+from .developer import obj2 as obj, unavailable, error
 from .unit_converter import convert
 from .periodic_table import Elements
 

@@ -44,7 +44,8 @@ from .fileio import TextFile
 from .xmlreader import readxml
 from .periodic_table import Elements
 from .unit_converter import convert
-from .developer import DevBase, obj, unavailable, error
+#from .developer import DevBase, obj, unavailable, error
+from .developer import DevBase2 as DevBase, obj2 as obj, unavailable, log, error
 from .basisset import process_gaussian_text, GaussianBasisSet
 from .physical_system import PhysicalSystem
 from .testing import object_eq
@@ -215,13 +216,13 @@ class Pseudopotentials(DevBase):
             ppfiles = ppfiles[0]
         #end if
         pps = []
-        self.log('\n  Pseudopotentials')
+        log('\n  Pseudopotentials')
         for filepath in ppfiles:
             filename = os.path.basename(filepath)
             elem_label,symbol,is_elem = pp_elem_label(filename)
             is_file = os.path.isfile(filepath)
             if is_elem and is_file:
-                self.log('    reading pp: ',filepath)
+                log('    reading pp: ',filepath)
                 ext = filepath.split('.')[-1].lower()
                 if ext=='gms':
                     pp = gamessPPFile(filepath)
@@ -230,12 +231,12 @@ class Pseudopotentials(DevBase):
                 #end if
                 pps.append(pp)
             elif not is_file:
-                self.log('    ignoring directory: ',filepath)
+                log('    ignoring directory: ',filepath)
             elif not is_elem:
-                self.log('    ignoring file w/o atomic symbol: ',filepath)
+                log('    ignoring file w/o atomic symbol: ',filepath)
             #end if
         #end for
-        self.log(' ')
+        log(' ')
         self.addpp(pps)
     #end def readpp
 
@@ -1736,7 +1737,8 @@ class GaussianPP(SemilocalPP):
         else:
             core = Elements(Zcore).symbol
         #end if
-        self.set(
+        #self.set(
+        self.update(
             core    = core,
             Zval    = Zval,
             Zcore   = Zcore,
@@ -1962,7 +1964,8 @@ class GaussianPP(SemilocalPP):
         if l==self.local or l is None:
             v += -self.Zval
         #end if
-        for g in vcomp:
+        #for g in vcomp:
+        for g in vcomp.values():
             if g.rpow==1:
                 v += g.coeff * np.exp(-g.expon*r**2)
             else:

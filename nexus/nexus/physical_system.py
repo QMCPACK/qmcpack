@@ -37,6 +37,7 @@ from pathlib import Path
 from copy import deepcopy
 import numpy as np
 from .developer import DevBase, obj
+#from .developer import DevBase2 as DevBase, obj2 as obj
 from .unit_converter import convert
 from .periodic_table import Elements
 from .structure import Structure, generate_structure, read_structure
@@ -96,6 +97,7 @@ class Ion(Particle):
     def pseudize(self,valence):
         ps = PseudoIon()
         ps.transfer_from(self)
+        #ps.update(**self)
         ps.charge = valence
         ps.core_electrons    = ps.protons - valence
         return ps
@@ -698,6 +700,8 @@ def generate_physical_system(**kwargs):
 
     generation_info = obj()
     generation_info.transfer_from(deepcopy(kwargs))
+    ##  is this the reason tests fail w/ obj2 migration??
+    #generation_info = obj(**deepcopy(dict(**kwargs)))
 
     net_charge = kwargs['net_charge']
     net_spin   = kwargs['net_spin']

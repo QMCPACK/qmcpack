@@ -20,7 +20,10 @@
 #====================================================================#
 
 
-from .developer import DevBase, obj, error
+#from .developer import DevBase, obj, error
+from .developer import error
+from .developer import obj2 as obj
+from .developer import DevBase2 as DevBase
 
 
 class Unit(DevBase):

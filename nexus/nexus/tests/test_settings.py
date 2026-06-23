@@ -15,7 +15,9 @@ from ..testing import object_eq
 def test_settings(tmp_path):
     # test full imports
     import os
-    from nexus import settings,Settings,obj
+    from nexus import settings,Settings
+    from ..developer import DevBase,obj
+    from ..developer import DevBase2,obj2
     from ..nexus_base import nexus_core,nexus_core_defaults
     from ..nexus_base import nexus_noncore,nexus_noncore_defaults
     from ..nexus_base import nexus_core_noncore,nexus_core_noncore_defaults
@@ -83,7 +85,8 @@ def test_settings(tmp_path):
             for k in shared_keys:
                 v1 = o1[k]
                 v2 = o2[k]
-                if isinstance(v1,obj):
+                #if isinstance(v1,obj):
+                if isinstance(v1,(obj,DevBase,obj2,DevBase2)):
                     assert(object_eq(v1,v2))
                 else:
                     assert(v1 == v2)
