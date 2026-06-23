@@ -888,7 +888,8 @@ class VaspAnalyzer(SimulationAnalyzer):
                         elast = enum==emax
                         elec_step.read(ilast,elast,all=False)
                         if ilast and elast:
-                            self.transfer_from(elec_step)
+                            #self.transfer_from(elec_step)
+                            self.update(**elec_step)
                         #end if
                     #end for
                 #end if

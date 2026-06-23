@@ -47,7 +47,7 @@ def test_empty_init():
 
 
 def test_read(tmp_path):
-    from ..developer import obj
+    from ..developer import obj, to_obj
     from ..pwscf_postprocessors import ProjwfcInput
 
     infile_path = tmp_path / 'projwfc.in'
@@ -62,13 +62,13 @@ def test_read(tmp_path):
             ),
         )
 
-    assert(object_eq(pi.to_obj(),pi_ref))
+    assert(object_eq(to_obj(pi),pi_ref))
 #end def test_read
 
 
 
 def test_write(tmp_path):
-    from ..developer import obj
+    from ..developer import obj, to_obj
     from ..pwscf_postprocessors import ProjwfcInput
 
     infile_path = tmp_path / 'projwfc.in'
@@ -88,13 +88,13 @@ def test_write(tmp_path):
             ),
         )
 
-    assert(object_eq(pi_read.to_obj(),pi_ref))
+    assert(object_eq(to_obj(pi_read),pi_ref))
 #end def test_write
 
 
 
 def test_generate():
-    from ..developer import obj
+    from ..developer import obj, to_obj
     from ..pwscf_postprocessors import generate_projwfc_input
 
     pi = generate_projwfc_input(
@@ -109,5 +109,5 @@ def test_generate():
             ),
         )
 
-    assert(object_eq(pi.to_obj(),pi_ref))
+    assert(object_eq(to_obj(pi),pi_ref))
 #end def test_generate

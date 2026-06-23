@@ -36,8 +36,8 @@ import os
 from pathlib import Path
 from copy import deepcopy
 import numpy as np
-from .developer import DevBase, obj
-#from .developer import DevBase2 as DevBase, obj2 as obj
+#from .developer import DevBase, obj
+from .developer import DevBase2 as DevBase, obj2 as obj
 from .unit_converter import convert
 from .periodic_table import Elements
 from .structure import Structure, generate_structure, read_structure
@@ -96,8 +96,9 @@ class Ion(Particle):
 
     def pseudize(self,valence):
         ps = PseudoIon()
-        ps.transfer_from(self)
-        #ps.update(**self)
+        #ps.transfer_from(self)
+        for k,v in self.items():
+            ps[k] = v
         ps.charge = valence
         ps.core_electrons    = ps.protons - valence
         return ps
@@ -138,7 +139,7 @@ class Particles(Matter):
         else:
             iselem,symbol = self.is_element(name,symbol=True)
             if iselem and symbol in self:
-                p = self[symbol].copy()
+                p = deepcopy(self[symbol])
                 p.name = name
                 self[name] = p
             #end if
@@ -282,7 +283,7 @@ class PhysicalSystem(Matter):
         if particles is None:
             self.particles = Particles()
         else:
-            self.particles = particles.copy()
+            self.particles = deepcopy(particles)
         #end if
 
         self.folded_system = None
@@ -378,7 +379,7 @@ class PhysicalSystem(Matter):
             if particle is None:
                 self.error('particle {0} is unknown'.format(name))
             else:
-                particle = particle.copy()
+                particle = deepcopy(particle)
             #end if
             particle.set_count(count)
             plist.append(particle)
@@ -423,7 +424,8 @@ class PhysicalSystem(Matter):
         if errors:
             self.error('system cannot be generated')
         #end if
-        self.valency = obj(**valency)
+        #self.valency = obj(**valency)
+        self.valency = obj(**valency) # culprit!!!
         self.update()
     #end def pseudize
 
@@ -514,7 +516,7 @@ class PhysicalSystem(Matter):
 
 
     def copy(self):
-        cp = DevBase.copy(self)
+        cp = deepcopy(self)
         if self.folded_system is not None and self.structure.folded_structure is not None:
             del cp.folded_system.structure
             cp.folded_system.structure = cp.structure.folded_structure
@@ -555,7 +557,7 @@ class PhysicalSystem(Matter):
                 net_spin   = self.net_spin
             #end if
         #end if
-        system = self.copy()
+        system = deepcopy(self)
         supersystem = PhysicalSystem(
             structure  = supercell,
             net_charge = net_charge,
@@ -698,10 +700,7 @@ def generate_physical_system(**kwargs):
         #end if
     #end if
 
-    generation_info = obj()
-    generation_info.transfer_from(deepcopy(kwargs))
-    ##  is this the reason tests fail w/ obj2 migration??
-    #generation_info = obj(**deepcopy(dict(**kwargs)))
+    generation_info = obj(**deepcopy(kwargs))
 
     net_charge = kwargs['net_charge']
     net_spin   = kwargs['net_spin']

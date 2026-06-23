@@ -29,7 +29,7 @@ def test_pw2qmcpack_input_empty_init():
 
 
 def test_pw2qmcpack_input_read(tmp_path):
-    from ..developer import obj
+    from ..developer import obj, to_obj
     from ..qmcpack_converters import Pw2qmcpackInput
 
     infile_path = tmp_path / 'p2q.in'
@@ -44,13 +44,13 @@ def test_pw2qmcpack_input_read(tmp_path):
             ),
         )
 
-    assert(object_eq(pi.to_obj(),pi_ref))
+    assert(object_eq(to_obj(pi),pi_ref))
 #end def test_pw2qmcpack_input_read
 
 
 
 def test_pw2qmcpack_input_write(tmp_path):
-    from ..developer import obj
+    from ..developer import obj, to_obj
     from ..qmcpack_converters import Pw2qmcpackInput
 
     infile_path = tmp_path / 'p2q.in'
@@ -70,13 +70,13 @@ def test_pw2qmcpack_input_write(tmp_path):
             ),
         )
 
-    assert(object_eq(pi_read.to_obj(),pi_ref))
+    assert(object_eq(to_obj(pi_read),pi_ref))
 #end def test_pw2qmcpack_input_write
 
 
 
 def test_pw2qmcpack_input_generate():
-    from ..developer import obj
+    from ..developer import obj, to_obj
     from ..qmcpack_converters import generate_pw2qmcpack_input
 
     pi = generate_pw2qmcpack_input(
@@ -92,7 +92,7 @@ def test_pw2qmcpack_input_generate():
             ),
         )
 
-    assert(object_eq(pi.to_obj(),pi_ref))
+    assert(object_eq(to_obj(pi),pi_ref))
 #end def test_pw2qmcpack_input_generate
 
 
@@ -110,7 +110,7 @@ def test_convert4qmc_input_empty_init():
 
 
 def test_convert4qmc_input_generate():
-    from ..developer import obj
+    from ..developer import obj, to_obj
     from ..qmcpack_converters import generate_convert4qmc_input
 
     ci = generate_convert4qmc_input(
@@ -152,7 +152,7 @@ def test_convert4qmc_input_generate():
         zero_ci            = False,
         )
 
-    assert(object_eq(ci.to_obj(),ci_ref))
+    assert(object_eq(to_obj(ci),ci_ref))
 #end def test_convert4qmc_input_generate
 
 

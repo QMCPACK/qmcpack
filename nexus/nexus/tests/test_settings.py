@@ -116,6 +116,9 @@ def test_settings(tmp_path):
         assert(isinstance(nexus_noncore.basissets,BasisSets))
         assert(len(nexus_noncore.basissets)==0)
         nnc_defaults = obj(nexus_noncore_defaults,nexus_core_noncore_defaults)
+        nnc_defaults = dict(**nexus_noncore_defaults)
+        nnc_defaults.update(nexus_core_noncore_defaults)
+        nnc_defaults = obj(**nnc_defaults)
         nexus_noncore.pseudopotentials = None
         nexus_noncore.basissets        = None
         assert(object_eq(nexus_noncore,nnc_defaults))

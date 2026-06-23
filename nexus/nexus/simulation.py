@@ -72,7 +72,8 @@ from pathlib import Path
 from string import Template
 from subprocess import Popen
 import tempfile
-from .developer import obj, unavailable, DevBase
+#from .developer import obj, unavailable, DevBase
+from .developer import DevBase2 as DevBase, obj2 as obj, unavailable
 from .structure import Structure, read_structure
 from .physical_system import PhysicalSystem
 from .machines import Job, Workstation, get_machine
@@ -226,7 +227,9 @@ class SimulationImage(NexusCore):
 
     def save_image(self,sim,imagefile):
         self.clear()
-        self.transfer_from(sim,SimulationImage.save_fields)
+        #self.transfer_from(sim,SimulationImage.save_fields)
+        for k in SimulationImage.save_fields:
+            self[k] = sim[k]
         self.save(imagefile)
         self.clear()
     #end def save_image
@@ -234,7 +237,9 @@ class SimulationImage(NexusCore):
     def load_image(self,sim,imagefile):
         self.clear()
         self.load(imagefile)
-        self.transfer_to(sim,SimulationImage.load_fields)
+        #self.transfer_to(sim,SimulationImage.load_fields)
+        for k in SimulationImage.save_fields:
+            sim[k] = self[k]
         self.clear()
     #end def load_image
 
@@ -303,8 +308,12 @@ class Simulation(NexusCore):
         inp_kw   = (kw - sim_kw) | (kw & overlapping_kw)    
         sim_args = obj()
         inp_args = obj()
-        sim_args.transfer_from(kwargs,sim_kw)
-        inp_args.transfer_from(kwargs,inp_kw)
+        #sim_args.transfer_from(kwargs,sim_kw)
+        #inp_args.transfer_from(kwargs,inp_kw)
+        for k in sim_kw:
+            sim_args[k] = kwargs[k]
+        for k in inp_kw:
+            inp_args[k] = kwargs[k]
         if 'system' in inp_args:
             system = inp_args.system
             if not isinstance(system,PhysicalSystem):
@@ -599,7 +608,7 @@ class Simulation(NexusCore):
 
     def active(self):
         deps_completed = True
-        for dep in self.dependencies:
+        for dep in self.dependencies.values():
             deps_completed &= dep.sim.completed()
         #end for
         active = deps_completed and not self.completed()
@@ -823,7 +832,7 @@ class Simulation(NexusCore):
 
     def check_dependencies(self,result):
         dep_satisfied = result.dependencies_satisfied
-        for dep in self.dependencies:
+        for dep in self.dependencies.values():
             sim = dep.sim
             for result_name in dep.result_names:
                 if result_name!='other':
@@ -849,13 +858,13 @@ class Simulation(NexusCore):
 
     def get_dependencies(self):
         if nexus_core.generate_only or self.finished:
-            for dep in self.dependencies:
+            for dep in self.dependencies.values():
                 for result_name in dep.result_names:
                     dep.results[result_name] = result_name
                 #end for
             #end for
         else:
-            for dep in self.dependencies:
+            for dep in self.dependencies.values():
                 sim = dep.sim
                 for result_name in dep.result_names:
                     if result_name!='other':
@@ -893,7 +902,7 @@ class Simulation(NexusCore):
         if simids is None:
             simids = set()
         #end if
-        for sim in self.dependents:
+        for sim in self.dependents.values():
             simids.add(sim.simid)
             sim.downstream_simids(simids)
         #end for
@@ -1214,7 +1223,7 @@ class Simulation(NexusCore):
 
     def reset_wait_ids(self):
         self.wait_ids = set(self.dependency_ids)
-        for sim in self.dependents:
+        for sim in self.dependents.values():
             sim.reset_wait_ids()
         #end for
     #end def reset_wait_ids
@@ -1223,7 +1232,7 @@ class Simulation(NexusCore):
     def check_subcascade(self):
         finished = self.finished or self.block
         if not self.block and not self.block_subcascade and not self.failed:
-            for sim in self.dependents:
+            for sim in self.dependents.values():
                 finished &= sim.check_subcascade()
             #end for
         #end if
@@ -1237,7 +1246,7 @@ class Simulation(NexusCore):
             self.block = True
         #end if
         self.block_subcascade = True
-        for sim in self.dependents:
+        for sim in self.dependents.values():
             sim.block_dependents()
         #end for
     #end def block_dependents
@@ -1315,7 +1324,7 @@ class Simulation(NexusCore):
                 progress = self.finished
             #end if
             if progress and not self.block_subcascade and not self.failed:
-                for sim in self.dependents:
+                for sim in self.dependents.values():
                     if not sim.bundled:
                         sim.progress(self.simid)
                     #end if
@@ -1357,7 +1366,7 @@ class Simulation(NexusCore):
             #end if
             self.loaded = True
         #end if
-        for sim in self.dependents:
+        for sim in self.dependents.values():
             sim.reconstruct_cascade()
         #end for
         return self
@@ -1371,7 +1380,7 @@ class Simulation(NexusCore):
         #end if
         if len(self.wait_ids)==0:
             operation(self,*args,**kwargs)
-            for sim in self.dependents:
+            for sim in self.dependents.values():
                 kwargs['dependency_id'] = self.simid
                 sim.traverse_cascade(operation,*args,**kwargs)
             #end for
@@ -1382,7 +1391,7 @@ class Simulation(NexusCore):
     # used only in tests
     def traverse_full_cascade(self,operation,*args,**kwargs):
         operation(self,*args,**kwargs)
-        for sim in self.dependents:
+        for sim in self.dependents.values():
             sim.traverse_full_cascade(operation,*args,**kwargs)
         #end for
     #end def traverse_full_cascade
@@ -1403,7 +1412,7 @@ class Simulation(NexusCore):
         outs.append(list(self.dependency_ids))
         self.log(*outs,n=n)
         n+=1
-        for sim in self.dependents:
+        for sim in self.dependents.values():
             sim.write_dependents(n=n,location=location,block_status=block_status)
         #end for
     #end def write_dependents
@@ -1628,7 +1637,8 @@ class SimulationInputTemplateDev(SimulationInput):
         if len(invalid)>0:
             self.error('attempted to assign invalid keywords\ninvalid keywords: {0}\nvalid options are: {1}'.format(sorted(invalid),sorted(self.keywords)))
         #end if
-        self.values.set(**values)
+        #self.values.set(**values)
+        self.values.update(**values)
     #end def assign
 
     def read_text(self,text,filepath=None):
@@ -1841,7 +1851,7 @@ def graph_sims(sims=None,savefile=None,useid=False,exit=True,quants=True,display
         nodes[node.id] = node
         graph.add_node(node.node)
     #end for
-    for node in nodes:
+    for node in nodes.values():
         for simid,dep in node.sim.dependencies.items():
             other = nodes[simid].node
             if quants:

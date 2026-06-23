@@ -23,6 +23,7 @@
 
 import os
 import sys
+from copy import deepcopy
 import importlib
 from importlib.metadata import PackageNotFoundError
 
@@ -237,7 +238,7 @@ class Settings(NexusCore):
             "cif2cell":   5,
             "pydot":      6,
             "seekpath":   7,
-        }
+            }
 
         try:
             nxs_requirements = importlib.metadata.requires("nexus")
@@ -332,9 +333,12 @@ class Settings(NexusCore):
 
 
         # copy input settings
-        self.transfer_from(mach_kw.copy())
-        self.transfer_from(gamess_kw.copy())
-        self.transfer_from(pwscf_kw.copy())
+        #self.transfer_from(deepcopy(mach_kw))
+        #self.transfer_from(deepcopy(gamess_kw))
+        #self.transfer_from(deepcopy(pwscf_kw))
+        self.update(**deepcopy(mach_kw))
+        self.update(**deepcopy(gamess_kw))
+        self.update(**deepcopy(pwscf_kw))
 
         # process machine settings
         self.process_machine_settings(mach_kw)
@@ -346,12 +350,17 @@ class Settings(NexusCore):
         self.process_noncore_settings(kw)
 
         # transfer select core data to the global namespace
-        nexus_core_noncore.transfer_from(nexus_core,list(nexus_core_noncore.keys()))
-        nexus_noncore.set(**nexus_core_noncore.copy()) # prevent write to core namespace
+        #nexus_core_noncore.transfer_from(nexus_core,list(nexus_core_noncore.keys()))
+        #nexus_noncore.set(**nexus_core_noncore.copy()) # prevent write to core namespace
+        for k in nexus_core_noncore.keys():
+            nexus_core_noncore[k] = nexus_core[k]
+        nexus_noncore.update(**deepcopy(nexus_core_noncore)) # prevent write to core namespace
 
         # copy final core and noncore settings
-        self.transfer_from(nexus_core.copy())
-        self.transfer_from(nexus_noncore.copy())
+        #self.transfer_from(deepcopy(nexus_core))
+        #self.transfer_from(deepcopy(nexus_noncore))
+        self.update(**deepcopy(nexus_core))
+        self.update(**deepcopy(nexus_noncore))
 
 
         # process gamess settings
@@ -447,8 +456,9 @@ class Settings(NexusCore):
 
         # parse the command line inputs
         options,files_in = parser.parse_args()
-        opt = obj()
-        opt.transfer_from(options.__dict__)
+        #opt = obj()
+        #opt.transfer_from(options.__dict__)
+        opt = obj(**options.__dict__)
 
         # check that all options are allowed (developer check)
         invalid = set(opt.keys())-Settings.allowed_vars

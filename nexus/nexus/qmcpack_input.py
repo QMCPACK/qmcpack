@@ -3929,7 +3929,7 @@ class QmcpackInput(SimulationInput,Names):
                     pp.pseudos = pseudos
                 #end if
             #end if
-            for ion in ions:
+            for ion in ions.values():
                 gpos = pos[elem==ion.name]
                 g = group(
                     name         = ion.name,
@@ -6353,7 +6353,7 @@ def generate_hamiltonian(name         = 'h0',
                     #end for
                 #end if
                 pseudos = collection()
-                for ion in ions:
+                for ion in ions.values():
                     label = ion.name
                     iselem, element = Elements.is_element(ion.name, return_element=True)
                     if label in ppfiles:

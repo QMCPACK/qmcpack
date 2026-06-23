@@ -27,13 +27,14 @@ def system_same(s1,s2,pseudized=True,tiled=False):
     qsame = object_eq(o1,o2)
     vsame = True
     if pseudized:
-        vsame = s1.valency==s2.valency
+        vsame = dict(**s1.valency)==dict(**s2.valency)
     #end if
     ssame = structure_same(s1.structure,s2.structure)
     fsame = True
     if tiled:
         fsame = system_same(s1.folded_system,s2.folded_system)
     #end if
+    print(qsame,vsame,ssame,fsame)
     same = qsame and vsame and ssame and fsame
     return same
 #end def system_same

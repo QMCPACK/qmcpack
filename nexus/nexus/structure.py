@@ -122,14 +122,7 @@ import numpy as np
 from copy import deepcopy
 from random import randint
 import itertools
-from numpy import (
-    cos,
-    cross,
-    dot,
-    pi,
-    sin,
-    sqrt,
-)
+from numpy import cos,cross,dot,pi,sin,sqrt
 from numpy.linalg import inv, det, norm
 import numpy.typing as npt
 from .unit_converter import convert
@@ -6998,7 +6991,7 @@ class Crystal(Structure):
     for (name,cell) in kc_keys:
         desc = known_crystals[name,cell]
         if cell=='prim' and (name,'conv') not in known_crystals:
-            cdesc = desc.copy()
+            cdesc = deepcopy(desc)
             if cdesc.cell=='primitive':
                 cdesc.cell = 'conventional'
                 known_crystals[name,'conv'] = cdesc
@@ -7068,7 +7061,7 @@ class Crystal(Structure):
             add_kpath      = add_kpath     ,
             symm_kgrid     = symm_kgrid    ,
             )
-        generation_info = gi.copy()
+        generation_info = deepcopy(gi)
 
         lattice_in = lattice
         if isinstance(lattice,str):
@@ -7081,16 +7074,16 @@ class Crystal(Structure):
         known_crystal = False
         if (lattice_in,cell) in self.known_crystals:
             known_crystal = True
-            lattice_info = self.known_crystals[lattice_in,cell].copy()
+            lattice_info = deepcopy(self.known_crystals[lattice_in,cell])
         elif (lattice,cell) in self.known_crystals:
             known_crystal = True
-            lattice_info = self.known_crystals[lattice,cell].copy()
+            lattice_info = deepcopy(self.known_crystals[lattice,cell])
         #end if
         
         if known_crystal:
             while 'lattice' in lattice_info and 'cell' in lattice_info and (lattice_info.lattice,lattice_info.cell) in self.known_crystals:
                 li_old = lattice_info
-                lattice_info = self.known_crystals[li_old.lattice,li_old.cell].copy()
+                lattice_info = deepcopy(self.known_crystals[li_old.lattice,li_old.cell])
                 del li_old.lattice
                 del li_old.cell
                 #lattice_info.transfer_from(li_old,copy=False)

@@ -51,7 +51,7 @@ from .qmcpack_input import (
     generate_opt,
     generate_opts,
     check_excitation_type,
-)
+    )
 from .qmcpack_analyzer import QmcpackAnalyzer
 from .qmcpack_converters import Pw2qmcpack, Convert4qmc, Convertpw4qmc, PyscfToAfqmc
 from .pyscf_sim import Pyscf
@@ -852,7 +852,10 @@ class Qmcpack(Simulation):
             #end if
 
             # Activate GCTA occupations if gcta is specified by the user
-            gcta_flavor = self.get_optional('gcta', None)
+            #gcta_flavor = self.get_optional('gcta', None)
+            gcta_flavor = None
+            if 'gcta' in self:
+                gcta_flavor = self.gcta
 
             if (gcta_flavor is not None) and (self.sent_files is not True):
                 # Create a GCTA object with deepcopied arguments to avoid interference with Qmcpack instance

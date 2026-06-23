@@ -81,6 +81,7 @@ Module contents
 """
 
 import os
+from copy import deepcopy
 #from .developer import DevBase, obj, error, unavailable
 from .developer import DevBase2 as DevBase, obj2 as obj, error, unavailable
 from .fileio import StandardFile,XsfFile
@@ -1076,11 +1077,11 @@ class Grid(GBase):
             `points` which is copied shallowly.
         """
         if not shallow:
-            c = DevBase.copy(self)
+            c = deepcopy(self)
         else:
             points = self.points
             del self.points
-            c = DevBase.copy(self)
+            c = deepcopy(self)
             c.points = points
             self.points = points
         #end if
@@ -3314,7 +3315,7 @@ class GridFunction(GBase):
         elif len(kwargs)>0:
             self.error('received both a grid object and parameters intended for grid initialization\nplease remove the following parameters and try again: {}'.format(sorted(kwargs.keys())))
         elif copy_grid:
-            grid = grid.copy()
+            grid = deepcopy(grid)
         #end if
 
         # process values input
@@ -3717,7 +3718,7 @@ class StructuredGridFunctionWithAxes(StructuredGridFunction):
             return values
         elif grid is not None:
             if copy:
-                grid = grid.copy()
+                grid = deepcopy(grid)
             #end if
             gf = grid.grid_function(
                 grid        = grid,

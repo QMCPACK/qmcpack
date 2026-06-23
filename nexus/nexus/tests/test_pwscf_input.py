@@ -31,7 +31,8 @@ for file in TEST_FILES.values():
 def test_input(tmp_path):
     # imports
     import numpy as np
-    from ..developer import obj
+    #from ..developer import obj
+    from ..developer import obj2 as obj
     from ..structure import read_structure
     from ..physical_system import generate_physical_system
     from ..pwscf_input import check_new_variables,check_section_classes
@@ -59,7 +60,8 @@ def test_input(tmp_path):
 
     # based on sample_inputs/Fe_start_ns_eig.in
     pw = PwscfInput()
-    pw.control.set(
+    #pw.control.set(
+    pw.control.update(
         calculation   = 'scf' ,
         restart_mode  = 'from_scratch' ,
         wf_collect    = True ,
@@ -71,7 +73,8 @@ def test_input(tmp_path):
         tstress       = True ,
         tprnfor       = True ,
         )
-    pw.system.set(
+    #pw.system.set(
+    pw.system.update(
         ibrav           = 1,
         nat             = 2,
         ntyp            = 1,
@@ -85,7 +88,8 @@ def test_input(tmp_path):
         assume_isolated = 'martyna-tuckerman',
         lda_plus_u      = True ,
         )
-    pw.system.set({
+    #pw.system.set({
+    pw.system.update({
         'celldm(1)' : 15,
         'starting_magnetization(1)' : 0.9,
         'hubbard_u(1)' : 3.1,
@@ -95,18 +99,21 @@ def test_input(tmp_path):
         'starting_ns_eigenvalue(4,2,1)' : 0.9654373,
         'starting_ns_eigenvalue(5,2,1)' : 0.9954307,
         })
-    pw.electrons.set(
+    #pw.electrons.set(
+    pw.electrons.update(
         conv_thr        = 1.0e-9 ,
         mixing_beta     = 0.7 ,
         diagonalization = 'david' ,
         mixing_fixed_ns = 500,
         )
-    pw.atomic_species.set(
+    #pw.atomic_species.set(
+    pw.atomic_species.update(
         atoms            = ['Fe'],
         masses           = obj(Fe=58.69000),
         pseudopotentials = obj(Fe='Fe.pbe-nd-rrkjus.UPF'),
         )
-    pw.atomic_positions.set(
+    #pw.atomic_positions.set(
+    pw.atomic_positions.update(
         specifier = 'angstrom',
         atoms     = ['Fe','Fe'],
         positions = np.array([
@@ -114,7 +121,8 @@ def test_input(tmp_path):
             [0.000000000,   0.000000000,   0.000000000], 
             ]),
         )
-    pw.k_points.set(
+    #pw.k_points.set(
+    pw.k_points.update(
         specifier = 'automatic',
         grid      = np.array((1,1,1)),
         shift     = np.array((1,1,1)),
@@ -254,7 +262,8 @@ def test_input(tmp_path):
         kgrid           = np.array((1,1,1)),
         kshift          = np.array((1,1,1)),
         )
-    pw.system.set({
+    #pw.system.set({
+    pw.system.update({
         'celldm(1)' : 15,
         'starting_magnetization(1)' : 0.9,
         'hubbard_u(1)' : 3.1,

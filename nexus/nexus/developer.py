@@ -367,15 +367,17 @@ def valid_variable_name(s):
 
 
 
+import sys
 import copy
-from .generic import sorted_generic
+import pickle
+from .generic import sorted_generic, generic_settings
 
 
 
 def save(o,filepath):
-    with open(fpath,'wb') as f:
+    with open(filepath,'wb') as f:
         binary = pickle.HIGHEST_PROTOCOL
-        pickle.dump(self,f,binary)
+        pickle.dump(o,f,binary)
 
 def load(filepath):
     with open(filepath,'rb') as f:
@@ -428,7 +430,15 @@ class obj2:
     def __init__(self,*args,**kwargs):   self.__dict__.update(dict(*args,**kwargs))
     def items(self):              return self.__dict__.items()
     def clear(self):              return self.__dict__.clear()
-    def copy(self):               return self.__class__(self.__dict__)
+    
+    # change from deep copy to shallow is pernicious
+    #   nuke it until purged from all code
+    #   probably should fully remove DevBase2.copy in a second pass
+    #def copy(self):               return self.__class__(self.__dict__)
+    def copy(self):
+        raise RuntimeError('shallow copy called by obj!!!')
+        return self.__class__(self.__dict__)
+
     def fromkeys(self,*a,**kw):   return self.__class__(self.__dict__.fromkeys(*a,**kw))
     def get(self,*a,**kw):        return self.__dict__.get(*a,**kw)
     def keys(self):               return self.__dict__.keys()
@@ -457,7 +467,10 @@ class obj2:
     def __getitem__(self,key):       return self.__dict__[key]
     def __setitem__(self,key,value): self.__dict__[key]=value
     def __delitem__(self,key):       del self.__dict__[key]
+
+    # iter also diverges, blow up
     def __iter__(self):
+        raise RuntimeError('obj iteration called!!!')
         for item in self.__dict__: 
             yield item
 
@@ -485,6 +498,10 @@ class DevBase2:
         for item in self.__dict__.values():
             yield item
 
+    # (deep) copy
+    def copy(self):
+        return copy.deepcopy(self)
+
     # pretty print
     __repr__ = _pp_repr
     __str__  = _pp_str
@@ -504,8 +521,33 @@ class DevBase2:
         for k,v in tmp.__dict__.items():
             d[k] = v
 
-    def copy(self):
-        return copy.deepcopy(self)
+    # logging
+    @property
+    def _logfile(self):
+        return generic_settings.devlog
+
+    def log(self,*a,**kw):
+        kw.setdefault('logfile',self._logfile)
+        log(*a,**kw)
+
+    def warn(self,message,header=None):
+        if header is None:
+            header=self.__class__.__name__
+        warn(message,header,logfile=self._logfile)
+
+    def error(self,message,header=None,exit=True,trace=-2):
+        if header is None:
+            header = self.__class__.__name__
+        error(message,header,exit,trace,self._logfile)
+
+    # general dev, ditch?
+    def not_implemented(self,name=None):
+        if name is None:
+            msg = 'a member function has not been implemented for class "{}"'.format(self.__class__.__name__)
+        else:
+            msg = 'member function "{}" has not been implemented for class "{}"'.format(name,self.__class__.__name__)
+        self.error(msg,trace=True)
+
 
 
 

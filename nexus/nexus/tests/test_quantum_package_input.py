@@ -8,7 +8,7 @@ generic_settings.raise_error = True
 from pathlib import Path
 
 from .. import testing
-from ..testing import object_eq
+from ..testing import object_eq, dict_serialize
 
 
 def format_value(v):
@@ -40,7 +40,9 @@ def format_value(v):
 
 
 def make_serial_reference(qi):
-    s = qi.serial()
+    from ..developer import obj
+    #s = qi.serial()
+    s = dict_serialize(qi,dict_type=obj)
     ref = '    ref = {\n'
     for k in sorted(s.keys()):
         v = s[k]
@@ -230,7 +232,8 @@ def get_serial_references():
 def check_vs_serial_reference(qi,name):
     from ..developer import obj
     sr = obj(get_serial_references()[name])
-    sg = qi.serial()
+    #sg = qi.serial()
+    sg = dict_serialize(qi,dict_type=obj)
     assert(object_eq(sg,sr))
 #end def check_vs_serial_reference
 

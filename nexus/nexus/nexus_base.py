@@ -28,10 +28,14 @@
 import os
 import gc as garbage_collector
 from os import PathLike
+from copy import deepcopy
 from .utilities import path_string
 from .nexus_version import nexus_version
 from .memory import resident
-from .developer import DevBase, obj, log
+#from .developer import DevBase, obj, log
+#from .developer import DevBase, obj2 as obj, log
+from .generic import object_interface
+from .developer import DevBase2 as DevBase, obj2 as obj, log, error
 
 
 # Nexus namespaces
@@ -112,9 +116,13 @@ def restore_nexus_core_defaults():
     nexus_noncore.clear()
     nexus_core_noncore.clear()
 
-    nexus_core.set(**nexus_core_defaults.copy())
-    nexus_noncore.set(**nexus_noncore_defaults.copy())
-    nexus_core_noncore.transfer_from(nexus_core,keys=list(nexus_core_noncore_defaults.keys()))
+    #nexus_core.set(**nexus_core_defaults.copy())
+    #nexus_noncore.set(**nexus_noncore_defaults.copy())
+    nexus_core.update(**deepcopy(nexus_core_defaults))
+    nexus_noncore.update(**deepcopy(nexus_noncore_defaults))
+    #nexus_core_noncore.transfer_from(nexus_core,keys=list(nexus_core_noncore_defaults.keys()))
+    for k in nexus_core_noncore_defaults.keys():
+        nexus_core_noncore[k] = nexus_core[k]
 #end def restore_nexus_core_defaults
 
 restore_nexus_core_defaults()
@@ -251,6 +259,22 @@ _____________________________________________________
     def leave(self):
         os.chdir(NexusCore.working_directory)
     #end def leave
+
+
+    @classmethod
+    def class_error(cls,message,header=None,exit=True,trace=-2,post_header=' Error:'):
+        """Report an error relating to a class.
+
+        See Also
+        --------
+        object_interface.error : Used inside subclasses of ``object_interface``.
+        generic.error : Called when you are not reporting an error specific to a class.
+        """
+        if header is None:
+            header = cls.__name__
+        #end if
+        error(message,header,exit,trace,logfile=cls._logfile)
+    #end def class_error
 #end class NexusCore
 
 

@@ -669,10 +669,13 @@ class Convert4qmcInput(SimulationInput):
         #end if
 
         # assign inputs
-        self.set(**kwargs)
+        self.update(**kwargs)
 
         # assign default values
-        self.set_optional(**self.input_defaults)
+        #self.set_optional(**self.input_defaults)
+        for k,v in self.input_defaults.items():
+            if k not in self:
+                self[k] = v
 
         # check that all keyword inputs are valid
         self.check_valid()
@@ -1232,10 +1235,13 @@ class PyscfToAfqmcInput(SimulationInput):
         #end if
 
         # assign inputs
-        self.set(**kwargs)
+        self.update(**kwargs)
 
         # assign default values
-        self.set_optional(**self.input_defaults)
+        #self.set_optional(**self.input_defaults)
+        for k,v in self.input_defaults.items():
+            if k not in self:
+                self[k] = v
 
         # check that all keyword inputs are valid
         self.check_valid()

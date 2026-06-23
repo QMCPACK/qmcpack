@@ -6,6 +6,7 @@ from ..generic import generic_settings
 generic_settings.raise_error = True
 
 from pathlib import Path
+from copy import deepcopy
 
 from . import isolate_nexus_core, create_pseudo_files
 from nexus.nexus_base import nexus_core
@@ -167,7 +168,7 @@ def test_get_result(tmp_path):
 
 @isolate_nexus_core
 def test_incorporate_result(tmp_path):
-    from ..developer import obj
+    from ..developer import obj, to_obj
 
     nexus_core.local_directory  = str(tmp_path)
     nexus_core.remote_directory = str(tmp_path)
@@ -177,9 +178,9 @@ def test_incorporate_result(tmp_path):
 
     sim = get_pwscf_sim('scf')
 
-    sim_start = sim.to_obj().copy()
+    sim_start = deepcopy(to_obj(sim))
 
-    assert(object_eq(sim.to_obj(),sim_start))
+    assert(object_eq(to_obj(sim),sim_start))
 
     # charge density
     result = obj(
@@ -188,7 +189,7 @@ def test_incorporate_result(tmp_path):
 
     sim.incorporate_result('charge_density',result,None)
 
-    assert(object_eq(sim.to_obj(),sim_start))
+    assert(object_eq(to_obj(sim),sim_start))
 
     # restart
     sim.incorporate_result('restart',result,None)
@@ -196,7 +197,7 @@ def test_incorporate_result(tmp_path):
     c = sim.input.control
     assert(c.restart_mode=='restart')
     del c.restart_mode
-    assert(object_eq(sim.to_obj(),sim_start))
+    assert(object_eq(to_obj(sim),sim_start))
 
     # structure
     altered_structure = sim.system.structure.copy()
@@ -222,7 +223,7 @@ def test_incorporate_result(tmp_path):
 
     assert(value_eq(pos,pos_ref))
     assert(value_eq(apos,pos_ref))
-    assert(object_eq(sim.to_obj(),sim_ref))
+    assert(object_eq(to_obj(sim),sim_ref))
 
     clear_all_sims()
 #end def test_incorporate_result

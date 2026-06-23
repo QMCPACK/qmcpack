@@ -452,7 +452,7 @@ def test_simulation_analyzer():
 
 def test_simulation_input_template(tmp_path):
     from string import Template
-    from ..developer import obj, NexusError
+    from ..developer import obj, to_obj, NexusError
     from ..simulation import SimulationInput
     from ..simulation import GenericSimulationInput
     from ..simulation import SimulationInputTemplate
@@ -472,7 +472,7 @@ def test_simulation_input_template(tmp_path):
         )
 
     assert(len(si_empty)==4)
-    assert(object_eq(si_empty.to_obj(),si_empty_ref))
+    assert(object_eq(to_obj(si_empty),si_empty_ref))
 
 
     # template reference data
@@ -576,7 +576,7 @@ file2 = "my_file.dat"
 
 def test_simulation_input_multi_template(tmp_path):
     from string import Template
-    from ..developer import obj
+    from ..developer import obj, to_obj
     from ..simulation import SimulationInput
     from ..simulation import GenericSimulationInput
     from ..simulation import SimulationInputMultiTemplate
@@ -617,7 +617,7 @@ c    = $c
         )
 
     assert(len(si_empty)==1)
-    assert(object_eq(si_empty.to_obj(),si_empty_ref))
+    assert(object_eq(to_obj(si_empty),si_empty_ref))
 
 
     # filename init
@@ -793,7 +793,10 @@ def test_init():
         input                = SimulationInput(),
         )
 
-    assert(object_eq(se.obj(list(se_ref.keys())),se_ref))
+    seo = obj()
+    for k in se_ref.keys():
+        seo[k] = se[k]
+    assert(object_eq(seo,se_ref))
     assert(isinstance(se.simid,int))
     assert(se.simid>=0)
     assert(se.simid<Simulation.sim_count)
@@ -813,7 +816,10 @@ def test_init():
 
     sm_ref = se_ref.copy()
     del sm_ref.job
-    assert(object_eq(sm.obj(list(sm_ref.keys())),sm_ref))
+    smo = obj()
+    for k in sm_ref.keys():
+        smo[k] = sm[k]
+    assert(object_eq(smo,sm_ref))
     assert(isinstance(se.simid,int))
     assert(se.simid>=0)
     assert(se.simid<Simulation.sim_count)
@@ -1059,7 +1065,8 @@ def test_file_text(tmp_path):
 
 
 def check_dependency_objects(*sims,**kwargs):
-    from ..developer import obj
+    #from ..developer import obj
+    from ..developer import obj2 as obj
     from ..simulation import Simulation
     empty    = kwargs.get('empty',False)
     wait_ids = kwargs.get('wait_ids',True)
@@ -2217,7 +2224,9 @@ a    = $a
     #end if
     
     # check image
-    inds.transfer_from(s,indicators)
+    #inds.transfer_from(s,indicators)
+    for k in indicators:
+        inds[k] = s[k]
     s.reset_indicators()
     s.load_image()
     assert(s.setup)
@@ -2226,7 +2235,9 @@ a    = $a
     assert(not s.finished)
     assert(not s.got_output)
     assert(not s.analyzed)
-    s.transfer_from(inds,indicators)
+    #s.transfer_from(inds,indicators)
+    for k in indicators:
+        s[k] = inds[k]
 
 
     # simulate job completion
@@ -2278,7 +2289,9 @@ a    = $a
     #end if
 
     # check image
-    inds.transfer_from(s,indicators)
+    #inds.transfer_from(s,indicators)
+    for k in indicators:
+        inds[k] = s[k]
     s.reset_indicators()
     s.load_image()
     assert(s.setup)
@@ -2287,7 +2300,9 @@ a    = $a
     assert(s.finished)
     assert(s.got_output)
     assert(s.analyzed)
-    s.transfer_from(inds,indicators)
+    #s.transfer_from(inds,indicators)
+    for k in indicators:
+        s[k] = inds[k]
 
     
     # attempt third progression

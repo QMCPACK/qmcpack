@@ -24,6 +24,7 @@ import os
 from os import PathLike
 from pathlib import Path
 import mmap
+from copy import deepcopy
 import numpy as np
 from numpy.linalg import det, norm
 #from .developer import DevBase, obj, error, to_str
@@ -829,7 +830,7 @@ class XsfFile(StandardFile):
 
     # test needed
     def incorporate_structure(self,structure):
-        s = structure.copy()
+        s = deepcopy(structure)
         s.change_units('A')
         s.recenter()
         elem = []

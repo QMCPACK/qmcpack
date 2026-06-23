@@ -45,12 +45,14 @@
 
 import os
 from pathlib import Path
+from copy import deepcopy
 import platform
 from socket import gethostname
 import subprocess
 from subprocess import Popen, CalledProcessError
 import numpy as np
-from .developer import DevBase, obj, warn
+#from .developer import DevBase, obj, warn
+from .developer import DevBase2 as DevBase, obj2 as obj, warn
 from .nexus_base import NexusCore, nexus_core
 from .execute import execute
 from .utilities import path_string
@@ -120,11 +122,10 @@ class Options(DevBase):
         self.add(**kwargs)
     #end def __init__
 
-
     def add(self,**kwargs):
-        self.transfer_from(kwargs)
+        for k,v in kwargs.items():
+            self[k] = v
     #end def add
-
 
     def read(self,options):
         if isinstance(options,(dict,obj)):
@@ -142,7 +143,6 @@ class Options(DevBase):
             self.error('invalid type provided to Options')
         #end if
     #end def read
-
 
     def write(self):
         s = ''
@@ -220,7 +220,7 @@ job_defaults_nonassign = obj(
     skip_machine       = False,
     )
 
-job_defaults = obj(job_defaults_assign,job_defaults_nonassign)
+job_defaults = obj({**job_defaults_assign,**job_defaults_nonassign})
 
 class Job(NexusCore):
 
@@ -233,7 +233,7 @@ class Job(NexusCore):
         running   = 3,
         finished  = 4
         )
-    state_names = states.inverse()
+    state_names = obj({v:k for k,v in states.items()})
 
     job_count = 0
 
@@ -282,25 +282,39 @@ class Job(NexusCore):
                 self.error("app_name must be a str or Path object!")
 
         # save information used to initialize job object
-        self.init_info = kw.copy()
+        self.init_info = deepcopy(kw)
 
         # set defaults
-        kw.set_optional(**job_defaults)
+        #kw.set_optional(**job_defaults)
+        for k,v in job_defaults.items():
+            if k not in kw:
+                kw[k] = v
 
         # extract keywords not assigned
-        app          = kw.delete('app')
-        machine      = kw.delete('machine')
-        options      = kw.delete('options')
-        app_flags    = kw.delete('app_flags')
-        app_options  = kw.delete('app_options')
-        run_options  = kw.delete('run_options')
-        sub_options  = kw.delete('sub_options')
-        env          = kw.delete('env')
-        fake         = kw.delete('fake')
-        skip_machine = kw.delete('skip_machine')
+        #app          = kw.delete('app')
+        #machine      = kw.delete('machine')
+        #options      = kw.delete('options')
+        #app_flags    = kw.delete('app_flags')
+        #app_options  = kw.delete('app_options')
+        #run_options  = kw.delete('run_options')
+        #sub_options  = kw.delete('sub_options')
+        #env          = kw.delete('env')
+        #fake         = kw.delete('fake')
+        #skip_machine = kw.delete('skip_machine')
+
+        app          = kw.pop('app')
+        machine      = kw.pop('machine')
+        options      = kw.pop('options')
+        app_flags    = kw.pop('app_flags')
+        app_options  = kw.pop('app_options')
+        run_options  = kw.pop('run_options')
+        sub_options  = kw.pop('sub_options')
+        env          = kw.pop('env')
+        fake         = kw.pop('fake')
+        skip_machine = kw.pop('skip_machine')
 
         # assign keywords
-        self.set(**kw)
+        self.update(**kw)
 
         # assign fake job
         self.fake_job           = fake
@@ -452,7 +466,7 @@ class Job(NexusCore):
             #end if
         #end if
         sim.set_app_name(app_name)
-        self.set(
+        self.update(
             name    = sim.identifier,
             simid   = sim.simid,
             outfile = sim.outfile,
@@ -717,7 +731,7 @@ class Job(NexusCore):
 
 
     def serial_clone(self):
-        kw = self.init_info.copy()
+        kw = deepcopy(self.init_info)
         kw.serial=True
         return Job(**kw)
     #end def serial_clone
@@ -1087,7 +1101,7 @@ class Workstation(Machine):
 
     def submit_jobs(self):
         cores_used = 0
-        for process in self.processes:
+        for process in self.processes.values():
             cores_used += process.job.cores
         #end for
         cores_available = self.cores-cores_used
@@ -3672,13 +3686,16 @@ class Summit(Supercomputer):
                 pprs  = ppn//resource_sets_per_node
                 gpurs = 1
             #end if
-            opt.set(
+            #opt.set(
+            data = dict(
                 resource_sets= '-n {0}'.format(nrs),
                 rs_per_node  = '-r {0}'.format(resource_sets_per_node),
                 tasks_per_rs = '-a {0}'.format(pprs),
                 cpus_per_rs  = '-c {0}'.format(pprs*job.threads),
                 gpus_per_rs  = '-g {0}'.format(gpurs),
                 )
+            for k,v in data.items():
+                opt[k] = v
             job.run_options.add(**opt)
         #end if
     #end def post_process_job
