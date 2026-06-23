@@ -9,7 +9,7 @@ import os
 from pathlib import Path
 from abc import ABC, abstractmethod
 from copy import deepcopy
-from typing import Self
+from typing import Self, Any
 import numpy as np
 from .developer import DevBase, obj
 from .periodic_table import Elements, ElementLike
@@ -191,6 +191,38 @@ class Electrons(ElectronsPositronsBase):
     @property
     def unit_charge(self) -> int:
         return -1
+
+    @classmethod
+    def neutralize_to(
+        cls,
+        ions         : dict[Any, IonSpecies],
+        total_charge : int | float,
+        electron_spin: int | float | None = None,
+        spin_orbit   : bool = False,
+    ) -> Self:
+        """Neutralize the charge of ``ions`` to ``total_charge``.
+
+        This will prioritize creating an integer number of electrons
+        with the specified spin, however it will fall back to a
+        fractional number of electrons if necessary.
+
+        Parameters
+        ----------
+        ions : dict[Any, IonSpecies]
+            A dictionary containing values of ``IonSpecies``.
+        total_charge : int | float
+            The desired total charge of the combined ion-electron system.
+        electron_spin : int | float, optional
+            The desired total spin of the electrons. If this is not
+            specified, then this will be set to the smallest, positive,
+            half-integer or integer spin state that is compatible with
+            the number of electrons.
+        spin_orbit : bool, default=False
+            Specify whether or not the system is a spin-orbit system.
+            Passed to the class constructor.
+        """
+        ...
+
 #end class Electrons
 
 
@@ -335,6 +367,11 @@ class IonSpecies:
         ) -> dict[str, Self]:
         """Create a dict with ``IonSpecies`` from a ``Structure`` object.
 
+        It is important to note that this class only represents the ions
+        in a structure, not any other particles (e.g. electrons). Thus,
+        this will not capture the background charge of the structure if
+        it is defined.
+
         Parameters
         ----------
         structure : Structure
@@ -395,6 +432,11 @@ class IonSpecies:
          N: IonSpecies(element=N, count=1, label=N, unit_charge=3, unit_spin=1, Zeff=5)
          O: IonSpecies(element=O, count=2, label=O, unit_charge=2, unit_spin=0, Zeff=6)
         """
+        if structure.has_folded():
+            raise NotImplementedError(
+                "IonSpecies.from_structure() does not currently support folded structures!"
+                )
+
         ions = {}
         elem_list = list(structure.elem)
         elem_set = set(elem_list)
@@ -402,7 +444,7 @@ class IonSpecies:
             is_elem, element = Elements.is_element(label, return_element=True)
             if not is_elem:
                 raise ValueError(
-                    f"Can not determine element from label {label}"
+                    f"Can not determine element from label {label}!"
                     )
 
             ion = cls(
@@ -414,8 +456,8 @@ class IonSpecies:
                 Zeff        = elem_Zeff.get(label, element.atomic_number),
                 )
             ions[label] = ion
-        # Sort so keys (labels) are in alphabetical order.
-        ions = {l: ions[l] for l in sorted(ions.keys())}
+        # Sort so keys (ion labels) are in alphabetical order.
+        ions = {lbl: ions[lbl] for lbl in sorted(ions.keys())}
         return ions
 #end class IonSpecies
 
