@@ -9,6 +9,7 @@ import numpy as np
 from ..testing import value_eq, object_eq
 from ..physical_system import IonSpecies, PhysicalSystem, Electrons, Positrons
 from ..periodic_table import Elements
+from ..structure import Structure
 
 from .test_structure import structure_same
 
@@ -101,7 +102,6 @@ def test_electrons():
 
 
 def test_electrons_eq():
-
     ref_charge       = -16
     ref_multiplicity = 3
     ref_n_up         = 9
@@ -227,8 +227,6 @@ def test_minimal_ion_species():
 
 
 def test_ion_species_eq():
-    """Test to make sure ``IonSpecies.__eq__()`` works as expected"""
-
     ref_element      = Elements.Iron
     ref_label        = "Fe1"
     ref_count        = 12
@@ -279,6 +277,68 @@ def test_ion_species_repr():
     ref_repr = "IonSpecies(element=Fe, count=12, label=Fe, unit_charge=0, unit_spin=0, Zeff=None)"
     ion = IonSpecies(element="Fe", count=12)
     assert(repr(ion) == ref_repr)
+
+
+def test_ion_species_hash():
+    ion1 = IonSpecies(
+        element     = Elements.Carbon,
+        count       = 1,
+        label       = "C2",
+        unit_charge = 0,
+        unit_spin   = 0,
+        Zeff        = 6,
+        )
+    ion2 = IonSpecies(
+        element     = "C", # Use a slightly different element specifier to make sure it resolves.
+        count       = 1,
+        label       = "C2",
+        unit_charge = 0,
+        unit_spin   = 0,
+        Zeff        = 6,
+        )
+    assert(ion1 == ion2) # Make sure they're actually equal.
+    assert(hash(ion1) == hash(ion2))
+
+
+def test_ion_species_from_structure():
+    ref_ions = {
+        "C1": IonSpecies(element=Elements.Carbon,   count=1, label="C1", unit_charge=0, unit_spin=0, Zeff=6),
+        "C2": IonSpecies(element=Elements.Carbon,   count=1, label="C2", unit_charge=0, unit_spin=0, Zeff=6),
+        "H" : IonSpecies(element=Elements.Hydrogen, count=5, label="H",  unit_charge=0, unit_spin=0, Zeff=1),
+        "N" : IonSpecies(element=Elements.Nitrogen, count=1, label="N",  unit_charge=0, unit_spin=0, Zeff=7),
+        "O" : IonSpecies(element=Elements.Oxygen,   count=2, label="O",  unit_charge=0, unit_spin=0, Zeff=8),
+        }
+
+    structure = Structure(
+        elem = ["N", "C1", "C2", "O", "O", "H", "H", "H", "H", "H"],
+        pos = np.zeros((10,3)),
+        )
+    ions = IonSpecies.from_structure(
+        structure=structure,
+        )
+
+    assert(ions == ref_ions)
+
+    ref_ions = {
+        "C1": IonSpecies(element=Elements.Carbon,   count=1, label="C1", unit_charge=2, unit_spin=0,   Zeff=4),
+        "C2": IonSpecies(element=Elements.Carbon,   count=1, label="C2", unit_charge=4, unit_spin=0.5, Zeff=6),
+        "H" : IonSpecies(element=Elements.Hydrogen, count=5, label="H",  unit_charge=1, unit_spin=0.5, Zeff=1),
+        "N" : IonSpecies(element=Elements.Nitrogen, count=1, label="N",  unit_charge=3, unit_spin=1,   Zeff=5),
+        "O" : IonSpecies(element=Elements.Oxygen,   count=2, label="O",  unit_charge=2, unit_spin=0,   Zeff=6),
+        }
+
+    structure = Structure(
+        elem = ["N", "C1", "C2", "O", "O", "H", "H", "H", "H", "H"],
+        pos = np.zeros((10,3)),
+        )
+    ions = IonSpecies.from_structure(
+        structure   = structure,
+        elem_charge = dict(N=3, C1=2, C2=4,   O=2, H=1),
+        elem_spin   = dict(N=1, C1=0, C2=0.5, O=0, H=0.5),
+        elem_Zeff   = dict(N=5, C1=4, C2=6,   O=6, H=1),
+        )
+
+    assert(ions == ref_ions)
 
 
 def test_physical_system_initialization(tmp_path):
@@ -559,14 +619,13 @@ def test_physical_system_initialization(tmp_path):
     assert(p.count_ions(species=True)==(8,1))
     assert(p.count_electrons()==32)
     assert(p.electron_counts()==[16,16])
-
 #end def test_physical_system_initialization
 
 
 
 def test_change_units():
     from ..physical_system import generate_physical_system
-    
+
     sys = generate_physical_system(
         units = 'A',
         axes  = [[3.57, 0.00, 0.00],
@@ -589,7 +648,7 @@ def test_change_units():
     assert(value_eq(s.pos[-1],np.array([2.6775,2.6775,0.8925])))
     sys.change_units('B')
     assert(value_eq(s.pos[-1],np.array([5.05974172,5.05974172,1.68658057])))
-#end def test_change_units   
+#end def test_change_units
 
 
 

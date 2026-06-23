@@ -315,57 +315,87 @@ class IonSpecies:
             f"Zeff={self.Zeff})"
             )
 
+    def __hash__(self) -> int: # Enables making unordered sets
+        return hash((
+            self.element,
+            self.count,
+            self.label,
+            self.unit_charge,
+            self.unit_spin,
+            self.Zeff,
+            ))
+
     @classmethod
     def from_structure(
         cls,
         structure  : Structure,
-        elem_charge: dict[str: int | float] = dict(),
-        elem_spin  : dict[str: int | float] = dict(),
-        elem_Zeff  : dict[str: int | float] = dict(),
-        ) -> list[Self]:
-        """Create a list of ``IonSpecies`` from a ``Structure`` object.
+        elem_charge: dict[str, int | float] = dict(),
+        elem_spin  : dict[str, int | float] = dict(),
+        elem_Zeff  : dict[str, int | float] = dict(),
+        ) -> dict[str, Self]:
+        """Create a dict with ``IonSpecies`` from a ``Structure`` object.
 
         Parameters
         ----------
         structure : Structure
             The structure from which to pull ions.
-        elem_charge : dict[str: int | float], default=dict()
+        elem_charge : dict[str, int | float], optional
             A dictionary mapping the elements to their charges.
             Defaults to 0 if not given.
-        elem_spin : dict[str: int | float], default=dict()
+        elem_spin : dict[str, int | float], optional
             A dictionary mapping the elements to their spin states.
             Defaults to 0 if not given.
-        elem_Zeff : dict[str: int | float], default=dict()
+        elem_Zeff : dict[str, int | float], optional
             A dictionary mapping the elements to their effective nuclear
             charges. Defaults to the atomic number if not supplied.
-        
+
         Returns
         -------
-        ions : list of IonSpecies
-            A list of the ions found in the structure.
-        
+        ions : dict[str, IonSpecies]
+            A dictionary of the ion species found in the structure.
+            The ion labels are used for the keys, sorted in alphabetical
+            order.
+
         Examples
         --------
-        Minimal call signature
-        
+        Minimal call signature, populated with defaults.
+
         >>> structure = Structure(
         ...     elem = ["N", "C1", "C2", "O", "O", "H", "H", "H", "H", "H"],
-        ... )
+        ...     pos = np.zeros((10,3)),
+        ...     )
         >>> ions = IonSpecies.from_structure(
         ...     structure=structure,
-        ...     elem_charge=dict(N=3, C1=2, C2=4, O=2, H=1),
-        ...     elem_spin=dict(N=1, C1=0, C2=0.5, O=0, H=0.5),
-        ...     elem_Zeff=dict(N=5, C1=4, C2=6, O=6, H=1),
-        ... )
-        >>> for ion in ions:
-        ...     print(repr(ion))
-        IonSpecies(element=C, count=1, label=C2, unit_charge=4, unit_spin=0.5, Zeff=6)
-        IonSpecies(element=C, count=1, label=C1, unit_charge=2, unit_spin=0, Zeff=4)
-        IonSpecies(element=H, count=5, label=H, unit_charge=1, unit_spin=0.5, Zeff=1)
-        IonSpecies(element=N, count=1, label=N, unit_charge=3, unit_spin=1, Zeff=5)
-        IonSpecies(element=O, count=2, label=O, unit_charge=2, unit_spin=0, Zeff=6)
+        ...     )
+        >>> for label, ion in ions.items():
+        ...     print(f"{label:2}: {repr(ion)}")
+        C1: IonSpecies(element=C, count=1, label=C1, unit_charge=0, unit_spin=0, Zeff=6)
+        C2: IonSpecies(element=C, count=1, label=C2, unit_charge=0, unit_spin=0, Zeff=6)
+         H: IonSpecies(element=H, count=5, label=H, unit_charge=0, unit_spin=0, Zeff=1)
+         N: IonSpecies(element=N, count=1, label=N, unit_charge=0, unit_spin=0, Zeff=7)
+         O: IonSpecies(element=O, count=2, label=O, unit_charge=0, unit_spin=0, Zeff=8)
+
+        Full call signature, all values specified.
+
+        >>> structure = Structure(
+        ...     elem = ["N", "C1", "C2", "O", "O", "H", "H", "H", "H", "H"],
+        ...     pos = np.zeros((10,3)),
+        ...     )
+        >>> ions = IonSpecies.from_structure(
+        ...     structure   = structure,
+        ...     elem_charge = dict(N=3, C1=2, C2=4,   O=2, H=1  ),
+        ...     elem_spin   = dict(N=1, C1=0, C2=0.5, O=0, H=0.5),
+        ...     elem_Zeff   = dict(N=5, C1=4, C2=6,   O=6, H=1  ),
+        ...     )
+        >>> for label, ion in ions.items():
+        ...     print(f"{label:2}: {repr(ion)}")
+        C1: IonSpecies(element=C, count=1, label=C1, unit_charge=2, unit_spin=0, Zeff=4)
+        C2: IonSpecies(element=C, count=1, label=C2, unit_charge=4, unit_spin=0.5, Zeff=6)
+         H: IonSpecies(element=H, count=5, label=H, unit_charge=1, unit_spin=0.5, Zeff=1)
+         N: IonSpecies(element=N, count=1, label=N, unit_charge=3, unit_spin=1, Zeff=5)
+         O: IonSpecies(element=O, count=2, label=O, unit_charge=2, unit_spin=0, Zeff=6)
         """
-        ions = []
+        ions = {}
         elem_list = list(structure.elem)
         elem_set = set(elem_list)
         for label in elem_set:
@@ -382,8 +412,10 @@ class IonSpecies:
                 unit_charge = elem_charge.get(label, 0),
                 unit_spin   = elem_spin.get(label, 0),
                 Zeff        = elem_Zeff.get(label, element.atomic_number),
-            )
-            ions.append(ion)
+                )
+            ions[label] = ion
+        # Sort so keys (labels) are in alphabetical order.
+        ions = {l: ions[l] for l in sorted(ions.keys())}
         return ions
 #end class IonSpecies
 
