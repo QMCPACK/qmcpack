@@ -218,7 +218,7 @@ class IonSpecies:
     unit_spin : int or float
         The spin of a single one of the ions.
     Zeff : int or None
-        The effective nuclear charge of one of the ion.
+        The effective nuclear charge of one of the ions.
     symbol : str, read-only property
         The atomic symbol of the element.
     total_charge : float, read-only property
@@ -314,6 +314,77 @@ class IonSpecies:
             f"unit_spin={self.unit_spin}, "
             f"Zeff={self.Zeff})"
             )
+
+    @classmethod
+    def from_structure(
+        cls,
+        structure  : Structure,
+        elem_charge: dict[str: int | float] = dict(),
+        elem_spin  : dict[str: int | float] = dict(),
+        elem_Zeff  : dict[str: int | float] = dict(),
+        ) -> list[Self]:
+        """Create a list of ``IonSpecies`` from a ``Structure`` object.
+
+        Parameters
+        ----------
+        structure : Structure
+            The structure from which to pull ions.
+        elem_charge : dict[str: int | float], default=dict()
+            A dictionary mapping the elements to their charges.
+            Defaults to 0 if not given.
+        elem_spin : dict[str: int | float], default=dict()
+            A dictionary mapping the elements to their spin states.
+            Defaults to 0 if not given.
+        elem_Zeff : dict[str: int | float], default=dict()
+            A dictionary mapping the elements to their effective nuclear
+            charges. Defaults to the atomic number if not supplied.
+        
+        Returns
+        -------
+        ions : list of IonSpecies
+            A list of the ions found in the structure.
+        
+        Examples
+        --------
+        Minimal call signature
+        
+        >>> structure = Structure(
+        ...     elem = ["N", "C1", "C2", "O", "O", "H", "H", "H", "H", "H"],
+        ... )
+        >>> ions = IonSpecies.from_structure(
+        ...     structure=structure,
+        ...     elem_charge=dict(N=3, C1=2, C2=4, O=2, H=1),
+        ...     elem_spin=dict(N=1, C1=0, C2=0.5, O=0, H=0.5),
+        ...     elem_Zeff=dict(N=5, C1=4, C2=6, O=6, H=1),
+        ... )
+        >>> for ion in ions:
+        ...     print(repr(ion))
+        IonSpecies(element=C, count=1, label=C2, unit_charge=4, unit_spin=0.5, Zeff=6)
+        IonSpecies(element=C, count=1, label=C1, unit_charge=2, unit_spin=0, Zeff=4)
+        IonSpecies(element=H, count=5, label=H, unit_charge=1, unit_spin=0.5, Zeff=1)
+        IonSpecies(element=N, count=1, label=N, unit_charge=3, unit_spin=1, Zeff=5)
+        IonSpecies(element=O, count=2, label=O, unit_charge=2, unit_spin=0, Zeff=6)
+        """
+        ions = []
+        elem_list = list(structure.elem)
+        elem_set = set(elem_list)
+        for label in elem_set:
+            is_elem, element = Elements.is_element(label, return_element=True)
+            if not is_elem:
+                raise ValueError(
+                    f"Can not determine element from label {label}"
+                    )
+
+            ion = cls(
+                element     = element,
+                count       = elem_list.count(label),
+                label       = label,
+                unit_charge = elem_charge.get(label, 0),
+                unit_spin   = elem_spin.get(label, 0),
+                Zeff        = elem_Zeff.get(label, element.atomic_number),
+            )
+            ions.append(ion)
+        return ions
 #end class IonSpecies
 
 
@@ -363,10 +434,7 @@ class PhysicalSystem:
         electrons: Electrons | None = None,
         positrons: Positrons | None = None,
         ):
-        if structure is None:
-            self.structure = Structure()
-        else:
-            self.structure = structure
+        self.structure = structure
 
         self.folded_system = None
         if self.structure.has_folded():
@@ -429,10 +497,14 @@ class PhysicalSystem:
         self.check_folded_system()
     #end def __init__
 
+    @classmethod
+    def from_structure(self, structure: Structure) -> Self:
+        ...
+
     @property
     def ion_charge(self) -> int | float:
         ion_charge = 0
-        for ion in self.ions:
+        for ion in self.ions.values():
             ion_charge += ion.total_charge
 
         return ion_charge
