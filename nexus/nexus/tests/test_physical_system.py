@@ -230,7 +230,7 @@ def test_ion_species_eq():
     """Test to make sure ``IonSpecies.__eq__()`` works as expected"""
 
     ref_element      = Elements.Iron
-    ref_label        = "Fe"
+    ref_label        = "Fe1"
     ref_count        = 12
     ref_unit_charge  = 0
     ref_unit_spin    = 0
@@ -239,11 +239,10 @@ def test_ion_species_eq():
     ref_is_ghost     = False
     ref_symbol       = Elements.Iron.symbol
     ref_total_mass   = 670.14
-    ref_total_spin   = 0
     ref_total_charge = 0
+    ref_total_spin   = 0
 
-    ion1 = IonSpecies(element="Fe", count=12)
-    ion2 = IonSpecies(element="Fe", count=12)
+    ion1 = IonSpecies(element="Fe", label="Fe1", count=12)
 
     assert(ion1.element      is ref_element)
     assert(ion1.label        == ref_label)
@@ -255,8 +254,10 @@ def test_ion_species_eq():
     assert(ion1.is_ghost()   is ref_is_ghost)
     assert(ion1.symbol       == ref_symbol)
     assert(ion1.total_mass   == ref_total_mass)
-    assert(ion1.total_spin   == ref_total_spin)
     assert(ion1.total_charge == ref_total_charge)
+    assert(ion1.total_spin   == ref_total_spin)
+
+    ion2 = IonSpecies(element=Elements.Iron, label="Fe1", count=12)
 
     assert(ion2.element      is ref_element)
     assert(ion2.label        == ref_label)
@@ -268,10 +269,16 @@ def test_ion_species_eq():
     assert(ion2.is_ghost()   is ref_is_ghost)
     assert(ion2.symbol       == ref_symbol)
     assert(ion2.total_mass   == ref_total_mass)
-    assert(ion2.total_spin   == ref_total_spin)
     assert(ion2.total_charge == ref_total_charge)
+    assert(ion2.total_spin   == ref_total_spin)
 
     assert(ion1 == ion2)
+
+
+def test_ion_species_repr():
+    ref_repr = "IonSpecies(element=Fe, count=12, label=Fe, unit_charge=0, unit_spin=0, Zeff=None)"
+    ion = IonSpecies(element="Fe", count=12)
+    assert(repr(ion) == ref_repr)
 
 
 def test_physical_system_initialization(tmp_path):
@@ -684,3 +691,53 @@ def test_kf_rpa():
     assert np.isclose(kfs[0], 1.465, atol=1e-3)
     assert np.isclose(kfs[1], 1.465/2**(1./3), atol=1e-3)
 #end def test_kf_rpa
+
+
+@pytest.mark.xfail(
+    raises=RuntimeError,
+    reason="Can not split into up- and down-spin with spin_orbit=True",
+)
+def test_spin_orbit_fail_updown():
+    electrons = Electrons(count=16, spin=1, spin_orbit=True)
+    electrons.n_up_down()
+#end def test_spin_orbit_fail_updown
+
+
+@pytest.mark.xfail(
+    raises=RuntimeError,
+    reason="Can not split into up-spin with spin_orbit=True",
+)
+def test_spin_orbit_fail_up():
+    electrons = Electrons(count=16, spin=1, spin_orbit=True)
+    electrons.n_up
+#end def test_spin_orbit_fail_up
+
+
+@pytest.mark.xfail(
+    raises=RuntimeError,
+    reason="Can not split into down-spin with spin_orbit=True",
+)
+def test_spin_orbit_fail_down():
+    electrons = Electrons(count=16, spin=1, spin_orbit=True)
+    electrons.n_down
+#end def test_spin_orbit_fail_down
+
+
+@pytest.mark.xfail(
+    raises=RuntimeError,
+    reason="Multiplicity undefined with spin_orbit=True",
+)
+def test_spin_orbit_fail_multiplicity():
+    electrons = Electrons(count=16, spin=1, spin_orbit=True)
+    electrons.multiplicity
+#end def test_spin_orbit_fail_multiplicity
+
+
+@pytest.mark.xfail(
+    raises=RuntimeError,
+    reason="Multiplicity undefined with fractional count",
+)
+def test_fractional_count_fail_multiplicity():
+    electrons = Electrons(count=16.5, spin=1, spin_orbit=False)
+    electrons.multiplicity
+#end def test_fractional_count_multiplicity

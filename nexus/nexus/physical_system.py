@@ -7,11 +7,11 @@
 from __future__ import annotations
 import os
 from pathlib import Path
-from abc import ABC
+from abc import ABC, abstractmethod
 from copy import deepcopy
 from typing import Self
 import numpy as np
-from .developer import DevBase, obj, warn
+from .developer import DevBase, obj
 from .periodic_table import Elements, ElementLike
 from .structure import Structure, generate_structure, read_structure
 
@@ -48,7 +48,10 @@ class ElectronsPositronsBase(ABC):
         where :math:`S` is the spin.
     """
 
-    unit_charge: int = ...
+    @property
+    @abstractmethod
+    def unit_charge(self) -> int:
+        ...
 
     def __init__(
         self,
@@ -83,6 +86,21 @@ class ElectronsPositronsBase(ABC):
             self._spin = new_spin
 
     def n_up_down(self) -> tuple[int, int] | tuple[float, float]:
+        """Return a tuple representing the number of up- and down-spin electrons.
+
+        Examples
+        --------
+        >>> Electrons(count=16, spin=1).n_up_down()
+        (9, 7) # (up, down)
+        >>> Electrons(count=15, spin=1).n_up_down()
+        (8.5, 6.5)
+        >>> Electrons(count=16, spin=1/2).n_up_down()
+        (8.5, 7.5)
+        >>> Electrons(count=15, spin=1/2).n_up_down()
+        (8, 7)
+        >>> Electrons(count=15, spin=-1/2).n_up_down()
+        (7, 8)
+        """
         if self.spin_orbit:
             # Use self.__class__.__name__ to get name of subclass, not base class
             raise RuntimeError(
@@ -91,25 +109,20 @@ class ElectronsPositronsBase(ABC):
         if isinstance(self.count, int):
             if isinstance(self.spin, int):
                 if self.count % 2 == 0:
-                    # e.g. 16 electrons, +1 total spin yields 9 up and 7 down
                     n_up   = (self.count // 2) + self.spin
                     n_down = (self.count // 2) - self.spin
                 else:
-                    # e.g. 15 electrons, +1 total spin yields 8.5 up and 6.5 down
                     n_up   = (self.count / 2) + self.spin
                     n_down = (self.count / 2) - self.spin
             else:
                 if self.count % 2 == 0:
-                    # e.g. 16 electrons, +1/2 total spin yields 8.5 up and 7.5 down
                     n_up   = (self.count / 2) + self.spin
                     n_down = (self.count / 2) - self.spin
                 else:
                     if self.spin > 0:
-                        # e.g. 15 electrons, +1/2 total spin yields 8 up and 7 down
                         n_down = self.count // 2
                         n_up   = self.count - n_down
                     else:
-                        # e.g. 15 electrons, -1/2 total spin yields 7 up and 8 down
                         n_up   = self.count // 2
                         n_down = self.count - n_up
         else:
@@ -165,20 +178,27 @@ class ElectronsPositronsBase(ABC):
 
     def __repr__(self) -> str:
         return (
-            f"{self.__class__.__name__}(count={self.count}, spin={self.spin}, spin_orbit={self.spin_orbit})"
-        )
+            f"{self.__class__.__name__}("
+            f"count={self.count}, "
+            f"spin={self.spin}, "
+            f"spin_orbit={self.spin_orbit})"
+            )
 #end class ElectronsPositronsBase
 
 
 class Electrons(ElectronsPositronsBase):
     """Class representing a collection of electrons."""
-    unit_charge: int = -1
+    @property
+    def unit_charge(self) -> int:
+        return -1
 #end class Electrons
 
 
 class Positrons(ElectronsPositronsBase):
     """Class representing a collection of positrons."""
-    unit_charge: int = 1
+    @property
+    def unit_charge(self) -> int:
+        return 1
 #end class Positrons
 
 
@@ -199,24 +219,14 @@ class IonSpecies:
         The spin of a single one of the ions.
     Zeff : int or None
         The effective nuclear charge of one of the ion.
-    mass_number : int
-        The mass number of a single one of the ions.
-    name : str, read-only property
-        The name of the element.
     symbol : str, read-only property
         The atomic symbol of the element.
-    atomic_weight : float, read-only property
-        The atomic weight of the element.
-    mass : float, read-only property
-        Alias for ``atomic_weight``.
-    atomic_number : int, property
-        The atomic number of the element. Changing this will change the
-        element.
-    protons : int, property
-        Alias for ``atomic_number``.
-    neutrons : int, property
-        The number of neutrons. Calculated from ``mass_number``.
-        Changing this will change ``mass_number``.
+    total_charge : float, read-only property
+        Unit charge multiplied by count.
+    total_spin : float, read-only property
+        Unit spin multiplied by count.
+    total_mass : float, read-only property
+        Atomic weight multiplied by count.
 
     Parameters
     ----------
@@ -234,13 +244,6 @@ class IonSpecies:
         The spin of a single one of the ions.
     Zeff : int, optional
         The effective nuclear charge of the ion.
-    mass_number : int, optional
-        The mass number of the ion. Defaults to the principle isotope.
-
-    Examples
-    --------
-    The most basic creation for ``Ions`` only needs an element and a
-    count. All other attributes will be populated as necessary.
     """
 
     def __init__(
@@ -300,6 +303,17 @@ class IonSpecies:
             and self.unit_spin   == other.unit_spin
             and self.Zeff        == other.Zeff
             )
+
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}("
+            f"element={self.element}, "
+            f"count={self.count}, "
+            f"label={self.label}, "
+            f"unit_charge={self.unit_charge}, "
+            f"unit_spin={self.unit_spin}, "
+            f"Zeff={self.Zeff})"
+            )
 #end class IonSpecies
 
 
@@ -344,11 +358,11 @@ class PhysicalSystem:
 
     def __init__(
         self,
-        structure   : Structure | None       = None,
-        total_charge: int | float            = 0,
-        total_spin  : int | float            = 0,
-        Zeffs       : dict[str: int | float] = dict(),
-    ):
+        structure: Structure,
+        ions     : dict[str: IonSpecies] | None = None,
+        electrons: Electrons | None = None,
+        positrons: Positrons | None = None,
+        ):
         if structure is None:
             self.structure = Structure()
         else:
@@ -467,7 +481,7 @@ class PhysicalSystem:
             net_spin = nelectrons%2
         #end if
         nup   = float(nelectrons + net_spin - self.net_spin)/2
-        ndown = float(nelectrons - net_spin + self.net_spin)/2        
+        ndown = float(nelectrons - net_spin + self.net_spin)/2
         if abs(nup-int(nup))>1e-3:
             self.error('requested spin state {0} incompatible with {1} electrons'.format(net_spin,nelectrons))
         #end if
@@ -500,7 +514,7 @@ class PhysicalSystem:
         self.update()
     #end def pseudize
 
-        
+
     def check_folded_system(self,exit=True,message=False):
         msg = ''
         sys_folded    = self.folded_system is not None
@@ -665,12 +679,12 @@ class PhysicalSystem:
         #end if
     #end def get_smallest
 
-    
+
     def is_magnetic(self):
         return self.net_spin!=0 or self.structure.is_magnetic()
     #end def is_magnetic
 
-    
+
     def spin_polarized_orbitals(self):
         return self.is_magnetic()
     #end def spin_polarized_orbitals
@@ -862,7 +876,7 @@ def generate_physical_system(**kwargs):
             **valency
             )
     #end if
-    
+
     ps.generation_info = generation_info
 
     return ps
