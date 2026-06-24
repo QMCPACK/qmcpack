@@ -10,6 +10,7 @@ from pathlib import Path
 from abc import ABC, abstractmethod
 from copy import deepcopy
 from typing import Self, Any
+from collections.abc import Mapping
 import numpy as np
 from .developer import DevBase, obj
 from .periodic_table import Elements, ElementLike
@@ -195,7 +196,7 @@ class Electrons(ElectronsPositronsBase):
     @classmethod
     def neutralize_to(
         cls,
-        ions         : dict[Any, IonSpecies],
+        ions         : Mapping[Any, IonSpecies] | list[IonSpecies],
         total_charge : int | float,
         electron_spin: int | float | None = None,
         spin_orbit   : bool = False,
@@ -208,11 +209,12 @@ class Electrons(ElectronsPositronsBase):
 
         Parameters
         ----------
-        ions : dict[Any, IonSpecies]
-            A dictionary containing values of ``IonSpecies``.
-        total_charge : int | float
+        ions : Mapping[Any, IonSpecies] or list of IonSpecies
+            A ``dict`` or ``obj`` with ``IonSpecies`` as values or a
+            list of ``IonSpecies``.
+        total_charge : int or float
             The desired total charge of the combined ion-electron system.
-        electron_spin : int | float, optional
+        electron_spin : int or float, optional
             The desired total spin of the electrons. If this is not
             specified, then this will be set to the smallest, positive,
             half-integer or integer spin state that is compatible with
@@ -221,8 +223,28 @@ class Electrons(ElectronsPositronsBase):
             Specify whether or not the system is a spin-orbit system.
             Passed to the class constructor.
         """
-        ...
+        if isinstance(ions, Mapping):
+            ions = ions.values()
 
+        ions_charge = 0
+        for ion in ions:
+            ions_charge += ion.total_charge
+
+        n_electrons = ions_charge - total_charge
+        if electron_spin is None:
+            if isinstance(ions_charge, int):
+                if n_electrons % 2 == 0:
+                    electron_spin = 0
+                else:
+                    electron_spin = 0.5
+            else: # ions_charge is float
+                electron_spin = (n_electrons % 2) / 2
+
+        return Electrons(
+            count      = n_electrons,
+            spin       = electron_spin,
+            spin_orbit = spin_orbit,
+            )
 #end class Electrons
 
 
@@ -361,9 +383,9 @@ class IonSpecies:
     def from_structure(
         cls,
         structure  : Structure,
-        elem_charge: dict[str, int | float] = dict(),
-        elem_spin  : dict[str, int | float] = dict(),
-        elem_Zeff  : dict[str, int | float] = dict(),
+        elem_charge: Mapping[str, int | float] = dict(),
+        elem_spin  : Mapping[str, int | float] = dict(),
+        elem_Zeff  : Mapping[str, int | float] = dict(),
         ) -> dict[str, Self]:
         """Create a dict with ``IonSpecies`` from a ``Structure`` object.
 
@@ -376,15 +398,16 @@ class IonSpecies:
         ----------
         structure : Structure
             The structure from which to pull ions.
-        elem_charge : dict[str, int | float], optional
-            A dictionary mapping the elements to their charges.
+        elem_charge : Mapping[str, int or float], optional
+            A dict or ``obj`` mapping the elements to their charges.
             Defaults to 0 if not given.
-        elem_spin : dict[str, int | float], optional
-            A dictionary mapping the elements to their spin states.
+        elem_spin : Mapping[str, int or float], optional
+            A dict or ``obj`` mapping the elements to their spin states.
             Defaults to 0 if not given.
-        elem_Zeff : dict[str, int | float], optional
-            A dictionary mapping the elements to their effective nuclear
-            charges. Defaults to the atomic number if not supplied.
+        elem_Zeff : Mapping[str, int or float], optional
+            A dict or ``obj`` mapping the elements to their effective 
+            nuclear charges.
+            Defaults to the atomic number if not supplied.
 
         Returns
         -------
@@ -463,7 +486,7 @@ class IonSpecies:
 
 
 class PhysicalSystem:
-    """A system of electrons and ions with a structure.
+    """A system of ions and electrons with a structure.
 
     The ``PhysicalSystem`` is used to create inputs for all simulations.
     The difference between a ``PhysicalSystem`` and a ``Structure`` is
@@ -477,103 +500,104 @@ class PhysicalSystem:
     ----------
     structure : Structure
         The structure of the ions in the system.
-    ions : list of Ions
-        The unique ions of the system. These are unique if and only if
-        they share the same element, count, label, charge, spin, mass
-        number, and effective nuclear charge. See ``Ions`` for more
-        information.
+    ions : Mapping[str, IonSpecies]
+        The unique ions of the system.
     electrons : Electrons
-        The up-spin and down-spin electrons in the system.
-    particles : Particles
-        A subclass of ``Particles`` that is defined by a simulation
-        class.
+        The electrons in the system.
+    positrons : Positrons or None
+        The positrons in the system.
 
     Parameters
     ----------
     structure : Structure
         The structure of the ions in the system.
-    total_charge : int or float, default=0
-        The total charge of the system.
-    total_spin : int or float, default=0
-        The total spin of the system.
-    Zeffs : dict[ElementLike: int or float], default=dict()
-        A dictionary mapping the effective nuclear charges of the system
-        to the ions of the system.
+    ions : Mapping[str, IonSpecies]
+        The unique ions of the system.
+    electrons : Electrons
+        The electrons in the system.
+    positrons : Positrons, optional
+        The positrons to add to the system.
     """
 
     def __init__(
         self,
         structure: Structure,
-        ions     : dict[str: IonSpecies] | None = None,
-        electrons: Electrons | None = None,
+        ions     : Mapping[str, IonSpecies],
+        electrons: Electrons,
         positrons: Positrons | None = None,
         ):
         self.structure = structure
+        self.ions = ions
+        self.electrons = electrons
+        self.positrons = positrons
 
         self.folded_system = None
         if self.structure.has_folded():
-            if self.structure.is_tiled():
-                vratio = structure.volume() / structure.folded_structure.volume()
-                ncells = round(vratio)
-                net_charge_fold = total_charge // ncells
-
-                if abs(vratio - ncells) > 1e-4:
-                    self.error('volume of system does not divide evenly into folded system')
-
-                if total_charge % ncells != 0:
-                    self.error('net charge of system does not divide evenly into folded system')
-
-                if isinstance(total_spin, str):
-                    net_spin_fold = total_spin
-                elif total_spin % ncells != 0:
-                    self.error('net_spin of system does not divide evenly into folded system')
-                else:
-                    net_spin_fold = total_spin // ncells
-
-            elif not self.structure.has_axes(): # folded molecule
-                # net charge/spin are not physically meaningful
-                # for a point group folded molecule
-                # set them to safe values; they will not be used later
-                net_charge_fold = 0
-                net_spin_fold   = 'low'
-            else:
-                self.error('folded structure is not correctly integrated with full structure\nfolded physical system cannot be constructed')
-            #end if
-
-            self.folded_system = PhysicalSystem(
-                structure  = structure.folded_structure,
-                total_charge = net_charge_fold,
-                total_spin   = net_spin_fold,
-                Zeffs        = Zeffs
+            raise NotImplementedError(
+                "Folded structures have not been implemented yet!"
                 )
-        #end if
-
-        elems = list(self.structure.elem)
-        ions = []
-        for element_label in set(elems):
-            Zeff = Zeffs.get(element_label)
-            is_elem, element = Elements.is_element(element_label, return_element=True)
-            if not is_elem:
-                self.error(
-                    f"Tried to initialize a physical system with unknown element {element}."
-                    )
-            ion = IonSpecies(
-                element = element,
-                count   = elems.count(element_label),
-                label   = element_label,
-                Zeff    = Zeff,
-            )
-            ions.append(ion)
-        self.ions = ions
-
-        self.valency_in = obj(Zeffs)
-
-        self.check_folded_system()
     #end def __init__
 
     @classmethod
-    def from_structure(self, structure: Structure) -> Self:
-        ...
+    def from_structure(
+        cls,
+        structure    : Structure,
+        total_charge : int | float | None        = None,
+        electron_spin: int | float | None        = None,
+        spin_orbit   : bool                      = False,
+        elem_charge  : Mapping[str, int | float] = dict(),
+        elem_spin    : Mapping[str, int | float] = dict(),
+        elem_Zeff    : Mapping[str, int | float] = dict(),
+        positrons    : Positrons | None          = None,
+        ) -> Self:
+        """Create a ``PhysicalSystem`` from a ``Structure`` object.
+
+        Parameters
+        ----------
+        structure : Structure
+            The structure to use for creating the ``PhysicalSystem``.
+        total_charge : int or float, optional
+            The total charge of the system. Will use
+            ``Structure.background_charge`` if it is not ``None``,
+            otherwise it will default to zero.
+        electron_spin : int or float, optional
+            See :py:meth:`~.Electrons.neutralize_to()`.
+        spin_orbit : bool, default=False
+            See :py:meth:`~.Electrons.neutralize_to()`.
+        elem_charge : Mapping[str, int or float], optional
+            See :py:meth:`~.IonSpecies.from_structure()`.
+        elem_spin : Mapping[str, int or float], optional
+            See :py:meth:`~.IonSpecies.from_structure()`.
+        elem_Zeff : Mapping[str, int or float], optional
+            See :py:meth:`~.IonSpecies.from_structure()`.
+        positrons : Positrons, optional
+            Additional positrons to add to the system.
+        """
+        if total_charge is None:
+            if structure.background_charge is not None:
+                total_charge = structure.background_charge
+            else:
+                total_charge = 0
+
+        ions = IonSpecies.from_structure(
+            structure   = structure,
+            elem_charge = elem_charge,
+            elem_spin   = elem_spin,
+            elem_Zeff   = elem_Zeff,
+        )
+        electrons = Electrons.neutralize_to(
+            ions          = ions,
+            total_charge  = total_charge,
+            electron_spin = electron_spin,
+            spin_orbit    = spin_orbit,
+        )
+        return PhysicalSystem(
+            structure = structure,
+            ions      = ions,
+            electrons = electrons,
+            positrons = positrons,
+        )
+
 
     @property
     def ion_charge(self) -> int | float:
