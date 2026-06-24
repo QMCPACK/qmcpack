@@ -53,7 +53,7 @@ class ElementData:
         return self.atomic_number
 
     def neutrons(self, mass_number: int | None = None) -> int:
-        """Get the number of neutrons for the isotope with the givenmass number.
+        """Get the number of neutrons for the isotope with the given mass number.
 
         If no mass number is provided, this defaults to the most common isotope.
 
