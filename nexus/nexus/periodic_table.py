@@ -32,7 +32,7 @@ class ElementData:
     def principle_isotope(self) -> tuple[int, float]:
         """Get the mass number and relative atomic weight of the most common isotope.
 
-        Isotopic abundances defined by IUPAC [1]_.
+        Isotopic abundances defined by NIST [1]_.
 
         Returns
         -------
@@ -43,7 +43,7 @@ class ElementData:
 
         References
         ----------
-        .. [1] https://www.ciaaw.org/isotopic-abundances.htm
+        .. [1] https://www.nist.gov/pml/atomic-weights-and-isotopic-compositions-relative-atomic-masses
         """
         mass_number = list(self.isotopes.keys())[0]
         return mass_number, self.isotopes[mass_number]
@@ -53,7 +53,7 @@ class ElementData:
         return self.atomic_number
 
     def neutrons(self, mass_number: int | None = None) -> int:
-        """Get the number of neutrons for the isotope with the given mass number.
+        """Get the number of neutrons for the isotope with the givenmass number.
 
         If no mass number is provided, this defaults to the most common isotope.
 
@@ -94,14 +94,15 @@ class Elements(ElementData, Enum):
         This can be accessed as ``Element.Name.isotopes[mass_number]``,
         which yields the relative atomic mass.
 
-        These dictionaries are sorted in order of decreasing isotopic abundance,
-        as defined by IUPAC [3]_.
+        These dictionaries are sorted in order of decreasing isotopic
+        abundance, as defined by NIST [2]_. The code to generate the
+        isotope dictionaries can be found at
+        https://github.com/QMCPACK/qmcpack/pull/6006.
 
     References
     ----------
     .. [1] https://iupac.qmul.ac.uk/AtWt/
     .. [2] https://www.nist.gov/pml/atomic-weights-and-isotopic-compositions-relative-atomic-masses
-    .. [3] https://www.ciaaw.org/isotopic-abundances.htm
 
     Examples
     --------
