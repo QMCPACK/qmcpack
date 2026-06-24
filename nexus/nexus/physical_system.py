@@ -455,11 +455,6 @@ class IonSpecies:
          N: IonSpecies(element=N, count=1, label=N, unit_charge=3, unit_spin=1, Zeff=5)
          O: IonSpecies(element=O, count=2, label=O, unit_charge=2, unit_spin=0, Zeff=6)
         """
-        if structure.has_folded():
-            raise NotImplementedError(
-                "IonSpecies.from_structure() does not currently support folded structures!"
-                )
-
         ions = {}
         elem_list = list(structure.elem)
         elem_set = set(elem_list)
@@ -506,6 +501,9 @@ class PhysicalSystem:
         The electrons in the system.
     positrons : Positrons or None
         The positrons in the system.
+    folded : PhysicalSystem or None
+        If ``structure`` has a folded structure, this will be the
+        ``PhysicalSystem`` that corresponds to the folded structure.
 
     Parameters
     ----------
@@ -526,16 +524,11 @@ class PhysicalSystem:
         electrons: Electrons,
         positrons: Positrons | None = None,
         ):
-        self.structure = structure
-        self.ions = ions
-        self.electrons = electrons
-        self.positrons = positrons
-
-        self.folded_system = None
-        if self.structure.has_folded():
-            raise NotImplementedError(
-                "Folded structures have not been implemented yet!"
-                )
+        self.structure     = structure
+        self.ions          = ions
+        self.electrons     = electrons
+        self.positrons     = positrons
+        self.folded_system = self._process_folded_structure()
     #end def __init__
 
     @classmethod
@@ -591,16 +584,77 @@ class PhysicalSystem:
             electron_spin = electron_spin,
             spin_orbit    = spin_orbit,
         )
-        return PhysicalSystem(
+        system = cls(
             structure = structure,
             ions      = ions,
             electrons = electrons,
             positrons = positrons,
-        )
+            )
+        return system
 
+    def _process_folded_structure(self) -> Self | None:
+        """Get the appropriate folded system from ``self.structure.folded_structure``.
+
+        If ``self.structure.folded_structure`` is ``None``, this will
+        just return ``None``.
+        """
+        if not self.structure.has_folded():
+            return None
+
+        if not hasattr(self.structure, "tmatrix") or self.structure.tmatrix is None:
+            raise RuntimeError(
+                "Structure has a folded structure but no tile matrix, can not proceed!"
+                )
+        elif (msg := self.structure.check_tiling(exit=False)) != "":
+            raise RuntimeError(
+                "Folded structure is not consistent, can not initialize PhysicalSystem!\n"
+                f"Reason:\n{msg}"
+                )
+
+        n_cells_tiled = int(np.round(np.abs(np.linalg.det(self.structure.tmatrix))))
+        folded_total_charge = self.net_charge / n_cells_tiled
+        if abs((int_fold_chg := int(folded_total_charge)) - folded_total_charge) < 1e-8:
+            folded_total_charge = int_fold_chg
+
+        folded_elec_spin = self.electron_spin / n_cells_tiled
+        if abs((int_fold_spin := int(folded_elec_spin)) - folded_elec_spin) < 1e-8:
+            folded_elec_spin = int_fold_spin
+
+        elem_chg_map  = {}
+        elem_spin_map = {}
+        elem_Zeff_map = {}
+        for label, species in self.ions.items():
+            elem_chg_map[label]  = species.unit_charge
+            elem_spin_map[label] = species.unit_spin
+            elem_Zeff_map[label] = species.Zeff
+
+        folded_ions = IonSpecies.from_structure(
+            structure   = self.structure.folded_structure,
+            elem_charge = elem_chg_map,
+            elem_spin   = elem_spin_map,
+            elem_Zeff   = elem_Zeff_map,
+            )
+        folded_electrons = Electrons.neutralize_to(
+            ions          = folded_ions,
+            total_charge  = folded_total_charge,
+            electron_spin = folded_elec_spin,
+            spin_orbit    = self.electrons.spin_orbit,
+            )
+        if self.positrons is not None:
+            folded_positrons = self.positrons / n_cells_tiled
+        else:
+            folded_positrons = None
+
+        return self.__class__.__init__(
+            structure = self.structure.folded_structure,
+            ions      = folded_ions,
+            electrons = folded_electrons,
+            positrons = folded_positrons
+            )
 
     @property
     def ion_charge(self) -> int | float:
+        """Alias for ``PhysicalSystem.ions.total_charge``"""
         ion_charge = 0
         for ion in self.ions.values():
             ion_charge += ion.total_charge
@@ -609,11 +663,59 @@ class PhysicalSystem:
 
     @property
     def ion_spin(self) -> int | float:
+        """Alias for ``PhysicalSystem.ions.total_spin``"""
         ion_spin = 0
         for ion in self.ions:
             ion_spin += ion.total_spin
 
         return ion_spin
+
+    @property
+    def electron_charge(self) -> int | float:
+        """Alias for ``PhysicalSystem.electrons.total_charge``"""
+        return self.electrons.total_charge
+
+    @property
+    def electron_spin(self) -> int | float:
+        """Alias for ``PhysicalSystem.electrons.spin``"""
+        return self.electrons.spin
+
+    @property
+    def positron_charge(self) -> int | float | None:
+        """Returns ``None`` if ``PhysicalSystem.positrons`` is ``None``."""
+        if self.positrons is not None:
+            return self.positrons.total_charge
+        else:
+            return None
+
+    @property
+    def positron_spin(self) -> int | float | None:
+        """Returns ``None`` if ``PhysicalSystem.positrons`` is ``None``."""
+        if self.positrons is not None:
+            return self.positrons.spin
+        else:
+            return None
+
+    @property
+    def net_charge(self) -> int | float:
+        """Ion charge plus electron charge plus positron charge.
+
+        Setting this value erases electron spin information and changes
+        the number of electrons in the system.
+        """
+        if self.positrons is not None:
+            return self.ion_charge + self.electron_charge + self.positron_charge
+        else:
+            return self.ion_charge + self.electron_charge
+
+    @net_charge.setter
+    def net_charge(self, new_charge: int | float):
+        spin_orbit = self.electrons.spin_orbit
+        self.electrons = Electrons.neutralize_to(
+            ions         = self.ions,
+            total_charge = new_charge,
+            spin_orbit   = spin_orbit,
+            )
 
     def update(self):
         self.net_charge = self.structure.background_charge
