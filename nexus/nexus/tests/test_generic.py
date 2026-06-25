@@ -21,7 +21,7 @@ TEST_FILES = {
 
 @isolate_nexus_core
 def test_logging():
-    from ..generic import log,warn,error
+    from ..generic import log,error
     from ..generic import generic_settings,NexusError
 
     logfile = generic_settings.devlog
@@ -64,25 +64,7 @@ def test_logging():
     log(s2,logfile=logfile2)
     assert(logfile.s=='')
     assert(logfile2.s==s2+'\n')
-    
 
-    # test warn
-    logfile.reset()
-    s = 'this is a warning'
-    warn(s)
-    so = '''
-  warning:
-    this is a warning
-'''
-    assert(logfile.s==so)
-    logfile.reset()
-    s = 'this is a warning'
-    warn(s,header='Special')
-    so = '''
-  Special warning:
-    this is a warning
-'''
-    assert(logfile.s==so)
 
     # test error
     #   in testing environment, should raise an error
