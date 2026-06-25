@@ -5,22 +5,19 @@ pytestmark = pytest.mark.order(NexusTestOrder.NXS_REDO)
 from ..generic import generic_settings
 generic_settings.raise_error = True
 
-from .. import testing
-from ..testing import create_file,create_path,execute
+from . import TEST_DIR
+from ..testing import execute
 
 
-def test_redo():
-    import os
+def test_redo(tmp_path):
 
-    tpath = testing.setup_unit_test_output_directory('nxs_redo','test_redo')
-    
-    exe = testing.executable_path('nxs-redo')
+    exe = TEST_DIR.parent / "bin/nxs-redo"
 
-    command = '{} {}'.format(exe,tpath)
+    command = '{} {}'.format(exe,tmp_path)
 
 
     # empty directory
-    assert(os.listdir(tpath)==[])
+    assert(list(tmp_path.iterdir())==[])
 
     out,err,rc = execute(command)
 
@@ -28,32 +25,32 @@ def test_redo():
 
 
     # directory w/ files, but not nexus simulation directory
-    create_file('qmc.in.xml',tpath)
+    (tmp_path / "qmc.in.xml").touch()
 
     out,err,rc = execute(command)
 
     assert('no simulation directories found' in out)
 
-    assert(set(os.listdir(tpath))==set(['qmc.in.xml']))
+    assert(set(tmp_path.iterdir())==set([tmp_path / 'qmc.in.xml']))
 
 
     # nexus simulation directory
-    create_path('sim_qmc',tpath)
+    (tmp_path / "sim_qmc").mkdir()
 
-    assert(set(os.listdir(tpath))==set(['qmc.in.xml','sim_qmc']))
+    assert(set(tmp_path.iterdir())==set([tmp_path / 'qmc.in.xml', tmp_path / 'sim_qmc']))
 
     out,err,rc = execute(command)
 
-    assert(set(os.listdir(tpath))==set(['attempt1']))
+    assert(set(tmp_path.iterdir())==set([tmp_path / 'attempt1']))
 
 
     # nexus simulation directory w/ prior attempt
-    create_file('qmc.in.xml',tpath)
-    create_path('sim_qmc',tpath)
+    (tmp_path / "qmc.in.xml").touch()
+    (tmp_path / "sim_qmc").mkdir()
 
-    assert(set(os.listdir(tpath))==set(['attempt1','qmc.in.xml','sim_qmc']))
+    assert(set(tmp_path.iterdir())==set([tmp_path / 'attempt1',tmp_path / 'qmc.in.xml',tmp_path / 'sim_qmc']))
 
     out,err,rc = execute(command)
 
-    assert(set(os.listdir(tpath))==set(['attempt1','attempt2']))
+    assert(set(tmp_path.iterdir())==set([tmp_path / 'attempt1',tmp_path / 'attempt2']))
 #end def test_redo

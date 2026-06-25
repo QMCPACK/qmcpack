@@ -36,6 +36,7 @@ from .periodic_table import Elements
 from .developer import DevBase, obj, error, warn
 from .nexus_base import nexus_noncore
 from .simulation import SimulationInput
+from .utilities import path_string
 
 
 class GIbase(DevBase):
@@ -801,6 +802,7 @@ class GamessInput(SimulationInput,GIbase):
 
     def __init__(self,filepath=None):
         if filepath is not None:
+            filepath = path_string(filepath)
             self.read(filepath)
         #end if
     #end def __init__

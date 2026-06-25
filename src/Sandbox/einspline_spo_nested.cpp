@@ -102,9 +102,9 @@ int main(int argc, char** argv)
   spo_type spo_main;
   int nTiles = 1;
 
-  auto super_lattice(createSuperLattice(create_prim_lattice(), tmat));
+  SimulationCell supercell(createSuperLattice(create_prim_lattice(), tmat));
   {
-    ParticleSet ions(super_lattice);
+    ParticleSet ions(supercell);
     tile_cell(ions, tmat);
     const int nions = ions.getTotalNum();
     const int nels  = count_electrons(ions) / 2;
@@ -114,7 +114,7 @@ int main(int argc, char** argv)
       cout << "\nNumber of orbitals/splines = " << nels << " and Tile size = " << tileSize
            << " and Number of tiles = " << nTiles << " and Iterations = " << nsteps << endl;
     spo_main.set(nx, ny, nz, nels, nTiles);
-    spo_main.Lattice.set(super_lattice.R);
+    spo_main.Lattice.set(supercell.getLattice().R);
   }
 
   double tInit = 0.0;
@@ -134,7 +134,7 @@ int main(int argc, char** argv)
     //create generator within the thread
     RandomGenerator random_th(MakeSeed(ip, np));
 
-    ParticleSet ions(super_lattice), els(super_lattice);
+    ParticleSet ions(supercell), els(supercell);
     tile_cell(ions, tmat);
 
     const int nions = ions.getTotalNum();

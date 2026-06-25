@@ -144,8 +144,15 @@ machine.
       generate_only = True,                 # only write input files, do not run
       sleep         = 3,                    # check on jobs every 3 seconds
       pseudo_dir    = './pseudopotentials', # path to PP file collection
-      machine       = 'ws8'                 # local machine is an 8 core workstation
+      machine       = 'ws'                  # automatically detect the number of cores
       )
+
+.. tip::
+
+    Specifying the number of cores in a workstation with, e.g., ``machine = "ws8"`` for
+    an 8-core workstation is still possible, however many users will likely want to
+    switch to using the new automatic core count functionality in Nexus, which only
+    requires specifying ``machine = "ws"`` (demonstrated in the above code).
 
 A few additional parameters are available in ``settings`` to control
 where runs are performed, where output data is gathered, and whether to

@@ -26,7 +26,7 @@ class SimulationCell
 public:
   using FullPrecReal = QMCTraits::FullPrecRealType;
   SimulationCell();
-  SimulationCell(const Lattice& lattice);
+  explicit SimulationCell(const Lattice& lattice);
 
   const Lattice& getLattice() const { return lattice_; }
   const Lattice& getPrimLattice() const { return primitive_lattice_; }

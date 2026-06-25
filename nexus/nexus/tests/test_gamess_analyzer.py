@@ -5,8 +5,16 @@ pytestmark = pytest.mark.order(NexusTestOrder.GAMESS_ANALYZER)
 from ..generic import generic_settings
 generic_settings.raise_error = True
 
-from .. import testing
+from . import TEST_DIR
 from ..testing import object_eq
+
+TEST_FILES = {
+    "gms.inp": TEST_DIR / "test_gamess_analyzer_files/gms.inp",
+    "gms.out": TEST_DIR / "test_gamess_analyzer_files/gms.out",
+    }
+
+for file in TEST_FILES.values():
+    assert(file.exists()), f"Test file not found! {file}"
 
 
 def test_empty_init():
@@ -18,21 +26,12 @@ def test_empty_init():
 
 
 def test_analyze():
-    import os
     from numpy import array
     from ..developer import obj
     from ..gamess_analyzer import GamessAnalyzer
 
-    tpath = testing.setup_unit_test_output_directory(
-        test      = 'gamess_analyzer',
-        subtest   = 'test_analyze',
-        file_sets = ['gms.inp','gms.out'],
-        )
-
-    outpath = os.path.join(tpath,'gms.inp')
-
     # no analysis
-    ga = GamessAnalyzer(outpath)
+    ga = GamessAnalyzer(TEST_FILES["gms.inp"])
 
     del ga.info.input
     del ga.info.path
@@ -134,7 +133,7 @@ def test_analyze():
 
 
     # full analysis
-    ga = GamessAnalyzer(outpath,analyze=True)
+    ga = GamessAnalyzer(TEST_FILES["gms.out"],analyze=True)
 
     del ga.info.input
     del ga.info.path

@@ -18,10 +18,12 @@
 
 
 import os
+import shutil
 import numpy as np
+from .nexus_base import nexus_core
 from .developer import obj
 from .physical_system import PhysicalSystem
-from .simulation import Simulation
+from .simulation import Simulation, DynamicProcess
 from .pwscf_input import PwscfInput, generate_pwscf_input
 from .pwscf_analyzer import PwscfAnalyzer
 from .execute import execute
@@ -89,6 +91,9 @@ class Pwscf(Simulation):
     supports_restarts = True # supports restartable, but not force restart yet
 
     vdw_table = None
+
+    # dynamic workflow support
+    allowed_requirements = ['none','structure','charge_density','orbitals']
 
     @staticmethod
     def settings(vdw_table=None):
@@ -356,11 +361,134 @@ class Pwscf(Simulation):
     def app_command(self):
         return self.app_name+' -input '+self.infile
     #end def app_command
+
+
+    # dynamic workflow support
+
+    def fill_produces(self):
+        calc = 'scf'
+        if 'calculation' in self.input.control:
+            calc = self.input.control.calculation.lower()
+
+        # charge density
+        if calc=='scf':
+            self.produces.add('charge_density')
+            self.produces.add('energy')
+
+        # orbitals
+        if calc=='nscf':
+            self.produces.add('orbitals')
+        elif calc=='scf':
+            k_points = self.input.k_points
+            nkpoints = 1
+            if 'grid' in k_points and k_points.grid==(1,1,1):
+                nkpoints = 1
+            elif 'kpoints' in self.input.k_points:
+                nkpoints = len(self.input.k_points.kpoints)
+            nosym = True
+            if 'nosym' in self.input.system:
+                nosym = self.input.system.nosym
+            if nkpoints==1 or not nosym:
+                self.produces.add('orbitals')
+
+        # structure
+        if 'relax' in calc:
+            self.produces.add('structure')
+            self.produces.add('energy')
+    #end def fill_produces
+
+
+    def fill_products(self):
+        if not self.filled_products:
+            self.filled_products = True
+        else:
+            self.error('fill_products must be called only once.\nThis is likely a developer error.')
+        if len(self.produces)==0:
+            return
+        analyzer = self.load_analyzer_image()
+        input    = analyzer.input
+        if 'energy' in self.produces:
+            self.products.energy = analyzer.E
+        if 'charge_density' in self.produces:
+            outdir = input.control.outdir
+            path   = os.path.join(self.locdir,outdir)
+            self.products.charge_density = path
+        if 'orbitals' in self.produces:
+            outdir = input.control.outdir
+            path   = os.path.join(self.locdir,outdir)
+            self.products.orbitals = path
+        if 'structure' in self.produces:
+            pa = analyzer
+            structs = pa.structures
+            struct  = structs[len(structs)-1].copy()
+            pos     = struct.positions
+            atoms   = struct.atoms
+            if 'celldm(1)' in self.input.system:
+                scale = self.input.system['celldm(1)']
+            else:
+                scale = 1.0
+            pos = scale*np.array(pos)
+            structure = self.system.structure.copy()
+            structure.change_units('B')
+            structure.set_pos(pos)
+            structure.set_elem(atoms)
+            if 'axes' in struct:
+                structure._set_axes(struct.axes)
+            self.products.structure = structure
+    #end def fill_products
+
+
+    def receive_charge_density(self,charge_density_path):
+        if not os.path.isdir(charge_density_path):
+            self.error('charge density path is not a directory.\nPath provided: {}'.format(charge_density_path))
+        c = self.input.control
+        res_path = os.path.realpath(charge_density_path)
+        loc_path = os.path.realpath(self.locdir)
+        if res_path==loc_path:
+            return # don't need to do anything if in same directory
+        outdir = os.path.join(self.locdir,c.outdir)
+        # try shutil copytree, should be ok if never copying over
+        #command = 'rsync -av {0}/* {1}/'.format(res_path,outdir)
+        if not os.path.exists(outdir):
+            os.makedirs(outdir)
+        sync_record = os.path.join(outdir,'nexus_sync_record')
+        if not os.path.exists(sync_record):
+            print('    Copying directory: {}\n      this might take a while'.format(outdir))
+            #execute(command)
+            shutil.copytree(res_path, outdir, dirs_exist_ok=True)
+            print('      directory copy complete')
+            # fix "permission denied" on some systems
+            execute('chmod -R a+rw '+outdir)
+            f = open(sync_record,'w')
+            f.write('\n')
+            f.close()
+    #end def recieve_charge_density
+
+
+    def receive_structure(self,struct):
+        struct.change_units('B')
+        self.system.structure = struct
+        self.system.remove_folded()
+        input = self.input
+        preserve_kp = 'k_points' in input and 'specifier' in input.k_points and (input.k_points.specifier=='automatic' or input.k_points.specifier=='gamma')
+        if preserve_kp:
+            kp = input.k_points.copy()
+        input.incorporate_system(self.system)
+        if preserve_kp:
+            input.k_points = kp
+    #end def receive_structure
+
 #end class Pwscf
 
 
 
 def generate_pwscf(**kwargs):
+
+    if nexus_core.dynamic:
+        dp,dyn_args = DynamicProcess.check_first_gen(kwargs)
+        if dp is not None:
+            return dp
+
     sim_args,inp_args = Pwscf.separate_inputs(kwargs)
 
     if 'input' not in sim_args:
@@ -368,6 +496,9 @@ def generate_pwscf(**kwargs):
         sim_args.input = generate_pwscf_input(input_type,**inp_args)
     #end if
     pwscf = Pwscf(**sim_args)
+
+    if nexus_core.dynamic:
+        pwscf = DynamicProcess(sim=pwscf,**dyn_args)
 
     return pwscf
 #end def generate_pwscf

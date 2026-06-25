@@ -18,9 +18,10 @@
 
 import time
 from . import memory
-from .developer import obj
-from .nexus_base import NexusCore, nexus_core
+from .developer import obj, error
+from .nexus_base import NexusCore, nexus_core, dynamic_storage
 from .simulation import Simulation
+from .machines import Machine,Job
 
 
 def trivial(sim,*args,**kwargs):
@@ -381,3 +382,132 @@ class ProjectManager(NexusCore):
 #end class ProjectManager
 
 
+
+
+class DynamicWorkflowManager(NexusCore):
+    '''Replacement for ProjectManager for dynamic workflows'''
+
+    # all dynamic processes encountered
+    all_dp         = set() # all dp found via add_new_dyn_procs
+    all_sims       = set() # all sims associated w/ dp
+
+    def __init__(self):
+        # dynamic processes by status
+        self.untouched_dp = obj() # newly minted, perform initial setup
+        self.blocked_dp   = obj() # blocked by the user, do nothing
+        self.active_dp    = obj() # actively progressing through run stages
+        self.finished_dp  = obj() # system or batch process no longer running
+        self.succeeded_dp = obj() # may have failed if detection is faulty
+        self.failed_dp    = obj() # known to have failed
+        self.machine = Machine.get(Job.machine)
+        self.add_new_dyn_procs()
+    #end def __init__
+
+
+    def add_new_dyn_procs(self):
+        new_dps = dynamic_storage.dynamic_process_ids-self.all_dp
+        if len(new_dps)>0:
+            for dpid in new_dps:
+                dp = dynamic_storage.dynamic_processes[dpid]
+                self.all_dp.add(dpid)
+                self.untouched_dp[dpid] = dp
+                sim = dp.sim
+                self.all_sims.add(sim.simid)
+                if len(sim.dependencies)>0 or len(sim.dependents)>0:
+                    self.error('encountered simulation with explicit dependencies, but these are not allowed in dynamic workflows.\nSimulation id: {}\nSimulation directory: {}'.format(sim.simid,sim.locdir))
+        # screen for simulations not associated with dyn process
+        all_sims = dynamic_storage.simulation_ids
+        rogue_sims = all_sims-self.all_sims
+        if len(rogue_sims)>0:
+            msg = 'encountered simulations not associated with any dynamic process.\nSimulation ids: {}\nSimulation directories:'
+            paths = [all_sims[simid].locdir for simid in rogue_sims]
+            for p in sorted(paths):
+                msg += '\n'+p
+            msg += '\nThis is likely a developer error.\nPlease contact the developers.'
+            self.error(msg)
+    #end def add_new_dyn_procs
+
+
+    def poll(self,sleep=None):
+        if sleep is None:
+            sleep = nexus_core.sleep
+
+        # find and add newly created dynamic process objects
+        self.add_new_dyn_procs()
+
+        # update the machine queue for currently running jobs
+        self.machine.query_queue()
+
+        # setup new sims
+        rem = []
+        for dp in self.untouched_dp.values():
+            sim = dp.sim
+            assert len(sim.dependencies)==0
+            assert len(sim.dependents)==0
+            if sim.block:
+                self.blocked_dp[dp.dpid] = dp
+                del self.untouched_dp[dp.dpid]
+                continue
+            if not sim.created_directories:
+                sim.create_directories()
+            if not sim.setup:
+                sim.write_inputs()
+            if not sim.sent_files:
+                sim.send_files()
+            self.active_dp[dp.dpid] = dp
+            rem.append(dp.dpid)
+        for dpid in rem:
+            del self.untouched_dp[dpid]
+
+        # manage active sims
+        rem = []
+        for dp in self.active_dp.values():
+            #if not dp.requirements_met():
+            #    self.error('Requirements not met for simulation execution.\nSimulation type:      {}\nSimulation id:        {}\nSimulation directory: {}\nDynamic process id:   {}\nUnmet requirements:   {}'.format(sim.__class__.__name__,sim.simid,sim.locdir,dp.dpid,dp.unmet_reqs))
+            sim = dp.sim
+            assert len(sim.dependencies)==0
+            assert len(sim.dependents)==0
+            if len(dp.unmet_reqs)>0:
+                continue
+            if not sim.finished:
+                sim.submit()
+            if sim.finished:
+                if not sim.got_output:
+                    sim.get_output()
+                if not sim.analyzed:
+                    sim.analyze()
+                self.finished_dp[dp.dpid] = dp
+                if sim.failed:
+                    self.failed_dp[dp.dpid] = dp
+                else:
+                    self.succeeded_dp[dp.dpid] = dp
+                rem.append(dp.dpid)
+        for dpid in rem:
+            del self.active_dp[dpid]
+
+        # submit jobs on the machine and store machine pid in sim
+        self.machine.submit_jobs()
+        for dp in self.active_dp.values():
+            dp.sim.update_process_id()
+
+        # wait until next poll
+        time.sleep(sleep)
+    #end def poll
+
+#end class DynamicWorkflowManager
+
+
+
+
+def workflow_manager(**kw):
+    if not hasattr(workflow_manager,'first'):
+        workflow_manager.first = True
+    else:
+        workflow_manager.first = False
+    if not nexus_core.dynamic:
+        error('workflow_manager is only compatible with dynamic workflows.\nIf you intend to use dynamic workflows, please set dynamic=True in settings.')
+    elif not workflow_manager.first:
+        error('function "workflow_manager" should only be called once')
+    wm = DynamicWorkflowManager(**kw)
+    return wm
+#end def workflow_manager

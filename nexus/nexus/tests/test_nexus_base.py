@@ -5,9 +5,8 @@ pytestmark = pytest.mark.order(NexusTestOrder.NEXUS_BASE)
 from ..generic import generic_settings
 generic_settings.raise_error = True
 
-from .. import testing
+from . import isolate_nexus_core
 from ..testing import object_eq
-from ..testing import divert_nexus_log,restore_nexus_log
 
 
 
@@ -33,41 +32,36 @@ def test_empty_init():
 #end def test_empty_init
 
 
-
+@isolate_nexus_core
 def test_write_splash():
     from ..nexus_base import NexusCore
-    log = divert_nexus_log()
+
+    log = generic_settings.devlog
     nc = NexusCore()
     assert(not nc.wrote_splash)
     nc.write_splash()
     assert('Nexus' in log.contents())
     assert('Please cite:' in log.contents())
     assert(nc.wrote_splash)
-    restore_nexus_log()
 #end def test_write_splash
     
 
-
-def test_enter_leave():
+@isolate_nexus_core
+def test_enter_leave(tmp_path):
     import os
     from ..nexus_base import NexusCore
-
-    tpath = testing.setup_unit_test_output_directory('nexus_base','test_enter_leave')
-
     cwd = os.getcwd()
 
-    log = divert_nexus_log()
+    log = generic_settings.devlog
 
     nc = NexusCore()
 
-    nc.enter(tpath)
+    nc.enter(tmp_path)
     tcwd = os.getcwd()
-    assert(tcwd==tpath)
+    assert(tcwd==str(tmp_path))
     assert('Entering' in log.contents())
-    assert(tpath in log.contents())
+    assert(str(tmp_path) in log.contents())
 
     nc.leave()
     assert(os.getcwd()==cwd)
-
-    restore_nexus_log()
 #end def test_enter_leave

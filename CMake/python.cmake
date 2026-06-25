@@ -62,7 +62,7 @@ function(CHECK_PYTHON_REQS module_list test_name add_test)
     endif()
     if(NOT ${cached_variable_name})
       if(test_name)
-        message("Missing python module ${python_module}, not adding test ${test_name}")
+        message("Skipping ${test_name} tests because valid module ${python_module} is not found.")
       endif()
       set(${add_test}
           false
