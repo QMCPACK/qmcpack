@@ -11,7 +11,7 @@ from .. import testing
 from ..testing import value_eq as value_eq_orig
 from ..testing import object_eq as object_eq_orig
 from ..testing import object_diff as object_diff_orig
-
+from ..structure import Structure, Crystal
 
 struct_atol = 1e-10
 
@@ -1650,15 +1650,13 @@ def test_rmg_transform():
 
 
 def test_locate():
-    from nexus.structure import Structure
-
     # Glycine
     structure = Structure(
         axes = np.array([
             [6.00000, 0.00000, 0.00000],
             [0.00000, 6.00000, 0.00000],
             [0.00000, 0.00000, 6.00000],
-        ], dtype=np.float64),
+            ], dtype=float),
         elem = ["N", "C", "C", "O", "O", "H", "H", "H", "H", "H"],
         pos = np.array([
             [ 1.848745, 2.865874, 3.041292],
@@ -1671,17 +1669,17 @@ def test_locate():
             [ 0.690245, 1.335874, 2.186592],
             [ 0.711045, 1.361274, 3.966292],
             [-2.558655, 2.774774, 3.094192],
-        ], dtype=np.float64),
+            ], dtype=float),
         units="A",
-    )
+        )
 
     other_structure = Structure(
         axes = np.array([
             [6.00000, 0.00000, 0.00000],
             [0.00000, 6.00000, 0.00000],
             [0.00000, 0.00000, 6.00000],
-        ], dtype=np.float64),
-    )
+            ], dtype=float),
+        )
 
     atoms_inside_cell  = structure.locate(other_structure)
     atoms_outside_cell = structure.locate(other_structure, invert=True)
@@ -1735,3 +1733,25 @@ def test_locate():
 
     assert(set(selected_atoms)   == {0, 3, 4, 5, 6, 9})
     assert(set(unselected_atoms) == {1, 2, 7, 8})
+
+
+def test_locate_periodic():
+    conv_prim_locate_ref = {0, 1}
+    conv_conv_locate_ref = {0, 1, 2, 3, 4, 5, 6, 7}
+
+    diamond_conv = Crystal(lattice="diamond", cell="conv")
+
+    diamond_2x2x2 = diamond_conv.tile(2,2,2)
+
+    diamond_prim = Crystal(lattice="diamond", cell="prim")
+
+    located_atoms = diamond_conv.locate(diamond_prim)
+    assert(set(located_atoms) == conv_prim_locate_ref)
+
+    located_atoms = diamond_2x2x2.locate(diamond_prim)
+    assert(set(located_atoms) == conv_prim_locate_ref)
+
+    located_atoms = diamond_2x2x2.locate(diamond_conv)
+    assert(set(located_atoms) == conv_conv_locate_ref)
+    located_atoms = diamond_2x2x2.locate(diamond_conv)
+    assert(set(located_atoms) == conv_conv_locate_ref)

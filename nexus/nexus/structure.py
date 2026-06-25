@@ -119,19 +119,12 @@ Module contents
 from __future__ import annotations
 import os
 from pathlib import Path
-from typing import TypeAlias, Self
+from typing import TypeAlias
 import numpy as np
 from copy import deepcopy
 from random import randint
 import itertools
-from numpy import (
-    cos,
-    cross,
-    dot,
-    pi,
-    sin,
-    sqrt,
-)
+from numpy import cos, cross, dot, pi, sin, sqrt
 from numpy.linalg import inv, det, norm
 import numpy.typing as npt
 from .unit_converter import convert
@@ -143,13 +136,17 @@ from . import numpy_extensions as npe
 
 
 IdType: TypeAlias = "Structure | npt.NDArray[np.bool_] | int | str | Elements | list[str | Elements | int | float]"
-"""Alias for identifiers that can be used to locate specific atoms in a Structure.
+"""Alias for identifiers that can be used to locate specific atoms in a Structure."""
 
-The ``Self`` type will resolve to subclasses of ``Structure``.
-"""
+PosType: TypeAlias = list[int | npt.NDArray[np.floating]]
+"""Alias for types that can be used as positions in a ``locate`` call."""
 
 RType: TypeAlias = int | float | list[int | float]
 """Alias for types that can be accepted as a radius or list of radii."""
+
+ElementOrList: TypeAlias = str | int | Elements | list[str | Elements | int]
+"""Alias for types that can be coerced into an element, or a list of those types."""
+
 
 try:
     from scipy.special import erfc
@@ -2052,7 +2049,7 @@ class Structure(Sobj):
         self,
         cell  : Structure | npt.NDArray,
         invert: bool = False,
-    ) -> npt.NDArray[np.int64]:
+        ) -> npt.NDArray[np.int64]:
         """Locate the atoms in a structure contained by a crystal cell.
 
         Parameters
@@ -2066,11 +2063,11 @@ class Structure(Sobj):
         if isinstance(cell, Structure):
             indices = cell.inside(self.pos)
         else:
-            cell = np.asarray(cell, dtype=np.float64)
+            cell = np.asarray(cell, dtype=float)
             if cell.shape != (self.dim, self.dim):
-                raise ValueError(
+                self.error(
                     f"The cell must have shape ({self.dim}, {self.dim}) but instead has shape {cell.shape}!"
-                )
+                    )
             indices = self.inside(self.pos, axes=cell, center=cell.sum(axis=0)/2)
 
         if invert:
@@ -2087,7 +2084,7 @@ class Structure(Sobj):
         self,
         mask_array: npt.ArrayLike,
         invert    : bool = False,
-    ) -> npt.NDArray[np.int64]:
+        ) -> npt.NDArray[np.int64]:
         """Locate the atoms in a structure by a mask array.
 
         Parameters
@@ -2098,11 +2095,11 @@ class Structure(Sobj):
             Optionally return atoms where the array is ``False`` instead
             of where the array is ``True``.
         """
-        mask_array = np.asarray(mask_array, dtype=np.bool_)
+        mask_array = np.asarray(mask_array, dtype=bool)
         if invert:
             mask_array = ~mask_array
 
-        indices = np.arange(self.size(), dtype=np.int64)[mask_array]
+        indices = np.arange(self.size(), dtype=int)[mask_array]
         indices.sort()
         return np.flip(indices)
 
@@ -2111,7 +2108,7 @@ class Structure(Sobj):
         self,
         indices: int | list[int],
         invert : bool = False,
-    ) -> npt.NDArray[np.int64]:
+        ) -> npt.NDArray[np.int64]:
         """Locate the atoms in a structure by an index or list of indices.
 
         Parameters
@@ -2134,20 +2131,20 @@ class Structure(Sobj):
             indices = np.asarray(indices, dtype=np.int64)
 
         if invert:
-            mask = np.ones(self.size(), dtype=np.bool_)
+            mask = np.ones(self.size(), dtype=bool)
             mask[indices] = False
             indices = np.arange(self.size())[mask]
 
-        indices = np.asarray(indices, dtype=np.int64)
+        indices = np.asarray(indices, dtype=int)
         indices.sort()
         return np.flip(indices)
 
 
     def locate_by_elements(
         self,
-        elements: str | int | Elements | list[str | Elements | int],
+        elements: ElementOrList,
         invert  : bool = False,
-    ) -> npt.NDArray[np.int64]:
+        ) -> npt.NDArray[np.int64]:
         """Locate the atoms in a structure by their element.
 
         Parameters
@@ -2161,7 +2158,7 @@ class Structure(Sobj):
         if not isinstance(elements, list | tuple | np.ndarray):
             elements = [elements]
         elif len(elements) == 0:
-            raise ValueError("Can not use an empty list/tuple/array for locating atoms!")
+            self.error("Can not use an empty list/tuple/array for locating atoms!")
 
         indices = []
         for elem in elements:
@@ -2181,10 +2178,10 @@ class Structure(Sobj):
 
     def locate_by_neighbors(
         self,
-        pos   : list[int | npt.NDArray[np.floating]],
-        radii : int | float | list[int | float],
+        pos   : PosType,
+        radii : RType,
         invert: bool = False,
-    ) -> npt.NDArray[np.int64]:
+        ) -> npt.NDArray[np.int64]:
         """Locate atoms in a structure if they are within a distance from a position.
 
         Parameters
@@ -2198,7 +2195,7 @@ class Structure(Sobj):
             Optionally invert the indices.
         """
         if len(pos) == 0:
-            raise ValueError("Can not use an empty list/tuple/array for locating atoms!")
+            self.error("Can not use an empty list/tuple/array for locating atoms!")
 
         if isinstance(pos, list | tuple | np.ndarray) and isinstance(pos[0], int):
             pos = self.pos[pos]
@@ -2212,7 +2209,7 @@ class Structure(Sobj):
                 "Lengths of input radii and positions do not match\n"
                f"  len(radii)={len(radii)}\n"
                f"  len(pos)={len(pos)}"
-            )
+                )
 
         dist_table = self.min_image_distances(pos)
         ipos = np.arange(len(self.pos))
@@ -2225,7 +2222,7 @@ class Structure(Sobj):
             mask[indices] = False
             indices = np.arange(self.size())[mask]
 
-        indices = np.asarray(indices, dtype=np.int64)
+        indices = np.asarray(indices, dtype=int)
         indices.sort()
         return np.flip(indices)
 
@@ -2235,7 +2232,7 @@ class Structure(Sobj):
         identifiers: IdType,
         radii      : RType = None,
         invert     : bool  = False,
-    ) -> npt.NDArray[np.int64]:
+        ) -> npt.NDArray[np.int64]:
         """Locate atoms in a structure by some identifier(s).
 
         Parameters
@@ -2271,25 +2268,25 @@ class Structure(Sobj):
             indices = self.locate_by_cell(
                 cell   = identifiers,
                 invert = invert,
-            )
+                )
         elif isinstance(identifiers, np.ndarray) and identifiers.dtype == bool:
             indices = self.locate_by_mask(
                 mask_array = identifiers,
                 invert     = invert,
-            )
+                )
         elif isinstance(identifiers, int):
             indices = self.locate_by_indices(
                 indices = identifiers,
                 invert  = invert,
-            )
+                )
         elif isinstance(identifiers, str | Elements):
             indices = self.locate_by_elements(
                 elements = identifiers,
                 invert   = invert,
-            )
+                )
         elif isinstance(identifiers, list | tuple | np.ndarray):
             if len(identifiers) == 0:
-                raise ValueError("Can not use an empty list/tuple/array for locating atoms!")
+                self.error("Can not use an empty list/tuple/array for locating atoms!")
 
             if isinstance(identifiers[0], int):
                 indices = self.locate_by_indices(
@@ -2300,18 +2297,18 @@ class Structure(Sobj):
                 indices = self.locate_by_elements(
                     elements = identifiers,
                     invert   = invert,
-                )
+                    )
             elif isinstance(identifiers[0], np.ndarray):
                 identifiers = np.asarray(identifiers, dtype=np.float64)
                 if identifiers.shape[1] != 3:
-                    raise ValueError(
+                    self.error(
                         f"Can not use array with shape {identifiers.shape} to locate atoms!"
-                    )
+                        )
                 indices = self.locate_by_neighbors(
                     pos=self.pos[indices],
                     radii=radii,
                     invert=invert or delay_invert,
-                )
+                    )
                 return indices # Early return to avoid redundant second call.
 
         if radii is not None and len(indices) > 0: # If we don't have any indices skip this step.
@@ -2319,7 +2316,7 @@ class Structure(Sobj):
                 pos=self.pos[indices],
                 radii=radii,
                 invert=delay_invert,
-            )
+                )
 
         return indices
     #end def locate
