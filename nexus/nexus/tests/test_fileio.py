@@ -145,7 +145,7 @@ def test_xsffile_density(tmp_path):
 
     grid = 3,5,7
     dens = 0.01*np.arange(np.prod(grid),dtype=float)
-    dens.shape=grid
+    dens = dens.reshape(grid, copy=False)
 
     ref.add_density(ref.primvec,dens,add_ghost=True)
     assert(ref.is_valid())

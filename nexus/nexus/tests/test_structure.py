@@ -484,7 +484,7 @@ def test_matrix_tiling():
         npass = 0
         for tmat in matrix_tilings:
             tmat = np.array(tmat,dtype=int)
-            tmat.shape = 3,3
+            tmat = tmat.reshape((3, 3), copy=False)
             st = s.tile(tmat)
             st.check_tiling()
         #end for
