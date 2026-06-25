@@ -76,9 +76,14 @@ def __nexus_showwarning(message, category, filename, lineno, file=None, line=Non
     if file is None:
         file = generic_settings.devlog
 
+    indent = ""
+    cls    = ""
     if isinstance(message, DeprecationWarning):
-        indent, msg = str(message).split(";", maxsplit=1)
-        cls = ""
+        message = str(message)
+        if ";" in message:
+            indent, msg = message.split(";", maxsplit=1)
+        else:
+            msg = message
     elif isinstance(message, NexusDevWarning | NexusUserWarning):
         msg    = message.message
         indent = message.indent
