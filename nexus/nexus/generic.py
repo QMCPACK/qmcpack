@@ -88,6 +88,8 @@ def __nexus_showwarning(message, category, filename, lineno, file=None, line=Non
         msg    = message.message
         indent = message.indent
         cls    = f"{message.cls}:" if message.cls is not None else ""
+    else:
+        msg = message
 
     if os.path.exists(filename):
         # Printing the whole file path can be very confusing, so we just
