@@ -9,12 +9,18 @@ import os
 from pathlib import Path
 from abc import ABC, abstractmethod
 from copy import deepcopy
-from typing import Self, Any
-from collections.abc import Mapping
+from typing import Self, TypeAlias
+from collections.abc import Mapping, Iterable
 import numpy as np
 from .developer import DevBase, obj
 from .periodic_table import Elements, ElementLike
 from .structure import Structure, generate_structure, read_structure
+
+LabelNumMap: TypeAlias = Mapping[str, int | float]
+"""Mapping (e.g. ``dict`` or ``obj``) from an ion label to a number."""
+
+ElemNumMap: TypeAlias = Mapping[ElementLike, int | float]
+"""Mapping (e.g. ``dict`` or ``obj``) from an element to a number."""
 
 
 class ElectronsPositronsBase(ABC):
@@ -196,7 +202,7 @@ class Electrons(ElectronsPositronsBase):
     @classmethod
     def neutralize_to(
         cls,
-        ions         : Mapping[Any, IonSpecies] | list[IonSpecies],
+        ions         : Iterable[IonSpecies],
         total_charge : int | float,
         electron_spin: int | float | None = None,
         spin_orbit   : bool = False,
@@ -209,7 +215,7 @@ class Electrons(ElectronsPositronsBase):
 
         Parameters
         ----------
-        ions : Mapping[Any, IonSpecies] or list of IonSpecies
+        ions : Iterable of IonSpecies
             A ``dict`` or ``obj`` with ``IonSpecies`` as values or a
             list of ``IonSpecies``.
         total_charge : int or float
@@ -228,16 +234,16 @@ class Electrons(ElectronsPositronsBase):
 
         ions_charge = 0
         for ion in ions:
-            ions_charge += ion.total_charge
+            ions_charge += ion.total_charge_deficit
 
         n_electrons = ions_charge - total_charge
         if electron_spin is None:
-            if isinstance(ions_charge, int):
+            if isinstance(ions_charge, int) and isinstance(n_electrons, int):
                 if n_electrons % 2 == 0:
                     electron_spin = 0
                 else:
                     electron_spin = 0.5
-            else: # ions_charge is float
+            else:
                 electron_spin = (n_electrons % 2) / 2
 
         return Electrons(
@@ -267,17 +273,24 @@ class IonSpecies:
         The number of ions in this collection.
     label : str
         The label for the ion collection.
-    unit_charge : int or float
-        The charge associated with a single one of the ions.
+    formal_charge : int or float
+        The formal charge associated with a single one of the ions.
     unit_spin : int or float
         The spin of a single one of the ions.
-    Zeff : int or None
+    Zeff : int or float
         The effective nuclear charge of one of the ions.
     symbol : str, read-only property
         The atomic symbol of the element.
-    total_charge : float, read-only property
-        Unit charge multiplied by count.
-    total_spin : float, read-only property
+    total_formal_charge : int or float, read-only property
+        Formal charge multiplied by count.
+    total_nuclear_charge : int or float, read-only property
+        Zeff multiplied by count.
+    electron_deficit : int or float, read-only property
+        Number of electrons required to reach the formal charge.
+    total_electron_deficit : int or float, read-only property
+        Number of electrons required to reach the formal charge
+        multiplied by count.
+    total_spin : int or float, read-only property
         Unit spin multiplied by count.
     total_mass : float, read-only property
         Atomic weight multiplied by count.
@@ -292,33 +305,34 @@ class IonSpecies:
     label : str, optional
         The label for the ion. If not given, defaults to
         ``element.symbol``.
-    unit_charge : int or float, default=0
-        The charge associated with a single one of the ions.
+    formal_charge : int or float, default=0
+        The formal charge associated with a single one of the ions.
     unit_spin : int or float, default=0
         The spin of a single one of the ions.
     Zeff : int, optional
-        The effective nuclear charge of the ion.
+        The effective nuclear charge of the ion. Defaults to the atomic
+        number (a.k.a. all-electron).
     """
 
     def __init__(
         self,
-        element    : ElementLike,
-        count      : int | float,
-        label      : str | None  = None,
-        unit_charge: int | float = 0,
-        unit_spin  : int | float = 0,
-        Zeff       : int | None  = None,
+        element      : ElementLike,
+        count        : int | float,
+        label        : str | None         = None,
+        formal_charge: int | float        = 0,
+        unit_spin    : int | float        = 0,
+        Zeff         : int | float | None = None,
         ):
-        self.element     = Elements(element)
-        self.count       = count
-        self.label       = label if label is not None else self.element.symbol
-        self.unit_charge = unit_charge
-        self.unit_spin   = unit_spin
-        self.Zeff        = Zeff
+        self.element       = Elements(element)
+        self.count         = count
+        self.label         = label if label is not None else self.element.symbol
+        self.formal_charge = formal_charge
+        self.unit_spin     = unit_spin
+        self.Zeff          = Zeff if Zeff is not None else self.element.atomic_number
 
     def is_pseudo(self) -> bool:
         """Check if this ion is pseudized."""
-        return not (self.Zeff is None or self.Zeff == 0)
+        return self.Zeff != self.element.atomic_number
 
     def pseudize(self, Zeff: int):
         """Equivalent to setting ``self.Zeff = Zeff``."""
@@ -339,9 +353,31 @@ class IonSpecies:
         return self.element.atomic_weight * self.count
 
     @property
-    def total_charge(self) -> int | float:
-        """Total charge of all ions in the collection."""
-        return self.unit_charge * self.count
+    def charge_deficit(self) -> int | float:
+        """The required number of electrons to get to the formal charge.
+
+        Equal to the effective nuclear charge minus the formal charge.
+
+        For example, a single all-electron oxygen (``Zeff=8``) that has 
+        ``formal_charge=-1`` needs :math:`8 - (-1) = 8 + 1 = 9`
+        electrons to achieve the desired format charge.
+        """
+        return self.Zeff - self.formal_charge
+
+    @property
+    def total_nuclear_charge(self) -> int | float:
+        """Nuclear charge times count."""
+        return self.Zeff * self.count
+
+    @property
+    def total_formal_charge(self) -> int | float:
+        """Unit charge times count."""
+        return self.formal_charge * self.count
+
+    @property
+    def total_charge_deficit(self) -> int | float:
+        """Number of electrons to achieve the desired formal charge times count."""
+        return self.charge_deficit * self.count
 
     @property
     def total_spin(self) -> int | float:
@@ -351,11 +387,11 @@ class IonSpecies:
     def __eq__(self, other: Self) -> bool:
         return (
             self.element is other.element
-            and self.count       == other.count
-            and self.label       == other.label
-            and self.unit_charge == other.unit_charge
-            and self.unit_spin   == other.unit_spin
-            and self.Zeff        == other.Zeff
+            and self.count         == other.count
+            and self.label         == other.label
+            and self.formal_charge == other.formal_charge
+            and self.unit_spin     == other.unit_spin
+            and self.Zeff          == other.Zeff
             )
 
     def __repr__(self) -> str:
@@ -364,7 +400,7 @@ class IonSpecies:
             f"element={self.element}, "
             f"count={self.count}, "
             f"label={self.label}, "
-            f"unit_charge={self.unit_charge}, "
+            f"formal_charge={self.formal_charge}, "
             f"unit_spin={self.unit_spin}, "
             f"Zeff={self.Zeff})"
             )
@@ -374,7 +410,7 @@ class IonSpecies:
             self.element,
             self.count,
             self.label,
-            self.unit_charge,
+            self.formal_charge,
             self.unit_spin,
             self.Zeff,
             ))
@@ -383,9 +419,9 @@ class IonSpecies:
     def from_structure(
         cls,
         structure  : Structure,
-        elem_charge: Mapping[str, int | float] = dict(),
-        elem_spin  : Mapping[str, int | float] = dict(),
-        elem_Zeff  : Mapping[str, int | float] = dict(),
+        elem_charge: LabelNumMap = dict(),
+        elem_spin  : LabelNumMap = dict(),
+        elem_Zeff  : LabelNumMap = dict(),
         ) -> dict[str, Self]:
         """Create a dict with ``IonSpecies`` from a ``Structure`` object.
 
@@ -399,14 +435,14 @@ class IonSpecies:
         structure : Structure
             The structure from which to pull ions.
         elem_charge : Mapping[str, int or float], optional
-            A dict or ``obj`` mapping the elements to their charges.
+            A dict or ``obj`` mapping the elements to formal charges.
             Defaults to 0 if not given.
         elem_spin : Mapping[str, int or float], optional
-            A dict or ``obj`` mapping the elements to their spin states.
+            A dict or ``obj`` mapping the elements to spin states.
             Defaults to 0 if not given.
         elem_Zeff : Mapping[str, int or float], optional
-            A dict or ``obj`` mapping the elements to their effective 
-            nuclear charges.
+            A dict or ``obj`` mapping the elements to effective nuclear
+            charges.
             Defaults to the atomic number if not supplied.
 
         Returns
@@ -429,11 +465,11 @@ class IonSpecies:
         ...     )
         >>> for label, ion in ions.items():
         ...     print(f"{label:2}: {repr(ion)}")
-        C1: IonSpecies(element=C, count=1, label=C1, unit_charge=0, unit_spin=0, Zeff=6)
-        C2: IonSpecies(element=C, count=1, label=C2, unit_charge=0, unit_spin=0, Zeff=6)
-         H: IonSpecies(element=H, count=5, label=H, unit_charge=0, unit_spin=0, Zeff=1)
-         N: IonSpecies(element=N, count=1, label=N, unit_charge=0, unit_spin=0, Zeff=7)
-         O: IonSpecies(element=O, count=2, label=O, unit_charge=0, unit_spin=0, Zeff=8)
+        C1: IonSpecies(element=C, count=1, label=C1, formal_charge=0, unit_spin=0, Zeff=6)
+        C2: IonSpecies(element=C, count=1, label=C2, formal_charge=0, unit_spin=0, Zeff=6)
+         H: IonSpecies(element=H, count=5, label=H, formal_charge=0, unit_spin=0, Zeff=1)
+         N: IonSpecies(element=N, count=1, label=N, formal_charge=0, unit_spin=0, Zeff=7)
+         O: IonSpecies(element=O, count=2, label=O, formal_charge=0, unit_spin=0, Zeff=8)
 
         Full call signature, all values specified.
 
@@ -449,11 +485,11 @@ class IonSpecies:
         ...     )
         >>> for label, ion in ions.items():
         ...     print(f"{label:2}: {repr(ion)}")
-        C1: IonSpecies(element=C, count=1, label=C1, unit_charge=2, unit_spin=0, Zeff=4)
-        C2: IonSpecies(element=C, count=1, label=C2, unit_charge=4, unit_spin=0.5, Zeff=6)
-         H: IonSpecies(element=H, count=5, label=H, unit_charge=1, unit_spin=0.5, Zeff=1)
-         N: IonSpecies(element=N, count=1, label=N, unit_charge=3, unit_spin=1, Zeff=5)
-         O: IonSpecies(element=O, count=2, label=O, unit_charge=2, unit_spin=0, Zeff=6)
+        C1: IonSpecies(element=C, count=1, label=C1, formal_charge=2, unit_spin=0, Zeff=4)
+        C2: IonSpecies(element=C, count=1, label=C2, formal_charge=4, unit_spin=0.5, Zeff=6)
+         H: IonSpecies(element=H, count=5, label=H, formal_charge=1, unit_spin=0.5, Zeff=1)
+         N: IonSpecies(element=N, count=1, label=N, formal_charge=3, unit_spin=1, Zeff=5)
+         O: IonSpecies(element=O, count=2, label=O, formal_charge=2, unit_spin=0, Zeff=6)
         """
         ions = {}
         elem_list = list(structure.elem)
@@ -466,15 +502,17 @@ class IonSpecies:
                     )
 
             ion = cls(
-                element     = element,
-                count       = elem_list.count(label),
-                label       = label,
-                unit_charge = elem_charge.get(label, 0),
-                unit_spin   = elem_spin.get(label, 0),
-                Zeff        = elem_Zeff.get(label, element.atomic_number),
+                element       = element,
+                count         = elem_list.count(label),
+                label         = label,
+                formal_charge = elem_charge.get(label, 0),
+                unit_spin     = elem_spin.get(label, 0),
+                Zeff          = elem_Zeff.get(label, element.atomic_number),
                 )
             ions[label] = ion
         # Sort so keys (ion labels) are in alphabetical order.
+        # This is ever so slightly better than the random order
+        # that comes from using set(elem_list) above.
         ions = {lbl: ions[lbl] for lbl in sorted(ions.keys())}
         return ions
 #end class IonSpecies
@@ -535,13 +573,13 @@ class PhysicalSystem:
     def from_structure(
         cls,
         structure    : Structure,
-        total_charge : int | float | None        = None,
-        electron_spin: int | float | None        = None,
-        spin_orbit   : bool                      = False,
-        elem_charge  : Mapping[str, int | float] = dict(),
-        elem_spin    : Mapping[str, int | float] = dict(),
-        elem_Zeff    : Mapping[str, int | float] = dict(),
-        positrons    : Positrons | None          = None,
+        total_charge : int | float | None = None,
+        electron_spin: int | float | None = None,
+        spin_orbit   : bool               = False,
+        elem_charge  : LabelNumMap        = dict(),
+        elem_spin    : LabelNumMap        = dict(),
+        elem_Zeff    : LabelNumMap        = dict(),
+        positrons    : Positrons | None   = None,
         ) -> Self:
         """Create a ``PhysicalSystem`` from a ``Structure`` object.
 
@@ -566,24 +604,27 @@ class PhysicalSystem:
         positrons : Positrons, optional
             Additional positrons to add to the system.
         """
-        if total_charge is None:
-            if structure.background_charge is not None:
-                total_charge = structure.background_charge
-            else:
-                total_charge = 0
-
         ions = IonSpecies.from_structure(
             structure   = structure,
             elem_charge = elem_charge,
             elem_spin   = elem_spin,
             elem_Zeff   = elem_Zeff,
-        )
+            )
+
+        if total_charge is None:
+            if structure.background_charge is not None:
+                total_charge = structure.background_charge
+            else:
+                total_charge = 0
+                for ion in ions.values():
+                    total_charge += ion.total_formal_charge
+
         electrons = Electrons.neutralize_to(
             ions          = ions,
             total_charge  = total_charge,
             electron_spin = electron_spin,
             spin_orbit    = spin_orbit,
-        )
+            )
         system = cls(
             structure = structure,
             ions      = ions,
@@ -612,7 +653,9 @@ class PhysicalSystem:
                 )
 
         n_cells_tiled = int(np.round(np.abs(np.linalg.det(self.structure.tmatrix))))
-        folded_total_charge = self.net_charge / n_cells_tiled
+
+        # Ignore positrons for this, since we use this to get the number of electrons
+        folded_total_charge = (self.ion_charge + self.electron_charge) / n_cells_tiled
         if abs((int_fold_chg := int(folded_total_charge)) - folded_total_charge) < 1e-8:
             folded_total_charge = int_fold_chg
 
@@ -624,7 +667,7 @@ class PhysicalSystem:
         elem_spin_map = {}
         elem_Zeff_map = {}
         for label, species in self.ions.items():
-            elem_chg_map[label]  = species.unit_charge
+            elem_chg_map[label]  = species.formal_charge
             elem_spin_map[label] = species.unit_spin
             elem_Zeff_map[label] = species.Zeff
 
@@ -641,23 +684,37 @@ class PhysicalSystem:
             spin_orbit    = self.electrons.spin_orbit,
             )
         if self.positrons is not None:
-            folded_positrons = self.positrons / n_cells_tiled
+            if self.positrons.count % n_cells_tiled == 0:
+                folded_positron_count = self.positrons.count // n_cells_tiled
+            else:
+                folded_positron_count = self.positrons.count / n_cells_tiled
+
+            if self.positrons.spin % n_cells_tiled == 0:
+                folded_positron_spin = self.positrons.spin // n_cells_tiled
+            else:
+                folded_positron_spin = self.positrons.spin / n_cells_tiled
+
+            folded_positrons = Positrons(
+                count      = folded_positron_count,
+                spin       = folded_positron_spin,
+                spin_orbit = self.positrons.spin_orbit,
+            )
         else:
             folded_positrons = None
 
-        return self.__class__.__init__(
+        return self.__class__(
             structure = self.structure.folded_structure,
             ions      = folded_ions,
             electrons = folded_electrons,
-            positrons = folded_positrons
+            positrons = folded_positrons,
             )
 
     @property
     def ion_charge(self) -> int | float:
-        """Alias for ``PhysicalSystem.ions.total_charge``"""
+        """Alias for ``PhysicalSystem.ions.total_nuclear_charge``"""
         ion_charge = 0
         for ion in self.ions.values():
-            ion_charge += ion.total_charge
+            ion_charge += ion.total_nuclear_charge
 
         return ion_charge
 
@@ -665,7 +722,7 @@ class PhysicalSystem:
     def ion_spin(self) -> int | float:
         """Alias for ``PhysicalSystem.ions.total_spin``"""
         ion_spin = 0
-        for ion in self.ions:
+        for ion in self.ions.values():
             ion_spin += ion.total_spin
 
         return ion_spin
@@ -698,23 +755,19 @@ class PhysicalSystem:
 
     @property
     def net_charge(self) -> int | float:
-        """Ion charge plus electron charge plus positron charge.
-
-        Setting this value erases electron spin information and changes
-        the number of electrons in the system.
-        """
+        """Ion charge plus electron charge plus positron charge."""
         if self.positrons is not None:
             return self.ion_charge + self.electron_charge + self.positron_charge
         else:
             return self.ion_charge + self.electron_charge
 
-    @net_charge.setter
-    def net_charge(self, new_charge: int | float):
-        spin_orbit = self.electrons.spin_orbit
-        self.electrons = Electrons.neutralize_to(
-            ions         = self.ions,
-            total_charge = new_charge,
-            spin_orbit   = spin_orbit,
+    def __repr__(self) -> str:
+        return (
+            f"{type(self).__name__}("
+            f"structure={None!s}, " # Not sure how to do this yet.
+            f"ions={self.ions!s}, "
+            f"electrons={self.electrons!s}, "
+            f"positrons={self.positrons!s})"
             )
 
     def update(self):
