@@ -80,8 +80,14 @@ def __nexus_showwarning(message, category, filename, lineno, file=None, line=Non
     cls    = ""
     if isinstance(message, DeprecationWarning):
         message = str(message)
-        if ";" in message:
-            indent, msg = message.split(";", maxsplit=1)
+        # To pass indentation through `DeprecationWarning` we prepend it
+        # to the message along with a pipe character "|".
+        # Here we strip the whitespace indentation, then make sure the
+        # message starts with the pipe character before splitting it to
+        # retrieve the indentation.
+        # This reduces the chance of an accidental split.
+        if message.lstrip().startswith("|"):
+            indent, msg = message.split("|", maxsplit=1)
         else:
             msg = message
     elif isinstance(message, NexusDevWarning | NexusUserWarning):
@@ -92,11 +98,14 @@ def __nexus_showwarning(message, category, filename, lineno, file=None, line=Non
         msg = message
 
     if os.path.exists(filename):
-        # Printing the whole file path can be very confusing, so we just
-        # print the file name and its parent directory.
-        filename = os.path.relpath(filename, os.path.dirname(filename+"/../../"))
+        filename = os.path.realpath(filename)
 
-    file.write(f"{indent}{filename}:{lineno}:{cls} {category.__name__}: {msg}\n")
+    msg = (indent*2)+msg.strip().replace("\n", "\n"+(indent*2))
+
+    file.write(
+        f"{indent}{filename}:{lineno}:{cls} {category.__name__}:\n"
+        f"{msg}\n"
+        )
 
 warnings.showwarning = __nexus_showwarning
 
@@ -231,7 +240,7 @@ def warn(
             # to the user file no matter where the warning was raised.
             warnings.warn(msg, stacklevel=len(traceback.format_stack()))
         case "deprecate":
-            msg = DeprecationWarning(f"{indent};{msg}")
+            msg = DeprecationWarning(f"{indent}|{msg}")
             warnings.warn(msg, stacklevel=3)
         case "class":
             msg = NexusUserWarning(msg, indent, cls)
@@ -263,7 +272,7 @@ def nxs_deprecate(
         def wrapper(*args, **kwargs):
             warn_msg = f"{f.__qualname__} is deprecated as of Nexus version {since}, and will be removed in a future update."
             if replacement is not None:
-                warn_msg += f" Please use {replacement} instead."
+                warn_msg += f"\nPlease use {replacement} instead."
 
             warn(msg=warn_msg, indent=indent, warn_type="deprecate")
             return f(*args, **kwargs)
