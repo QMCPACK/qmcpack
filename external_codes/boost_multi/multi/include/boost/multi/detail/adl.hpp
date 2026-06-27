@@ -4,25 +4,25 @@
 
 #ifndef BOOST_MULTI_DETAIL_ADL_HPP
 #define BOOST_MULTI_DETAIL_ADL_HPP
-// #pragma once
 
-// #include "boost/multi/detail/what.hpp"
-
-#if !(defined(__CUDA__) || defined(__NVCC__) || defined(__CUDACC__) ||     \
-	defined(__HIP_PLATFORM_NVIDIA__) || defined(__HIP_PLATFORM_AMD__) || \
-	defined(__HIPCC__))
-#ifndef THRUST_DEVICE_SYSTEM
-#define THRUST_DEVICE_SYSTEM THRUST_DEVICE_SYSTEM_CPP
-#endif
-#endif
-
-#if defined(__CUDA__) || defined(__NVCC__) || defined(__CUDACC__) ||     \
-	defined(__HIP_PLATFORM_NVIDIA__) || defined(__HIP_PLATFORM_AMD__) || \
-	defined(__HIPCC__) || (defined(__has_include) && __has_include(<thrust/version.h>)) || defined(BOOST_MULTI_HAS_THRUST)
+// super fancy block to detect Thrust
+#if defined(__CUDACC__) ||              /* nvcc, or clang --cuda (device compilation) */                                        \
+	defined(__NVCC__) ||                /* nvcc legacy macro                            */                                      \
+	defined(__CUDA__) ||                /* clang --cuda (host-side TU)                 */                                       \
+	defined(__HIP_PLATFORM_AMD__) ||    /* hipcc targeting AMD, or clang+HIP on AMD    */                                       \
+	defined(__HIP_PLATFORM_NVIDIA__) || /* hipcc targeting NVIDIA                      */                                       \
+	defined(__HIPCC__) ||               /* hipcc generic                                */                                      \
+	defined(__HIP__) ||                 /* clang --offload=hip                         */                                       \
+	defined(THRUST_DEVICE_SYSTEM) ||    /* explicitly configured by CMake (e.g. NVIDIA thrust_create_target propagates this) */ \
+	defined(BOOST_MULTI_HAS_THRUST)     /* explicit opt-in, e.g. set by Multi's CMake when find_package(Thrust) succeeds    */
+// TODO(correaa) perhaps add detection through __has_include
 #define BOOST_MULTI_ADL_HAS_THRUST 1
 #endif
 
 #ifdef BOOST_MULTI_ADL_HAS_THRUST
+#ifndef THRUST_DEVICE_SYSTEM
+#define THRUST_DEVICE_SYSTEM THRUST_DEVICE_SYSTEM_CPP  // fallback for BOOST_MULTI_HAS_THRUST without explicit backend
+#endif
 
 #ifdef __NVCC__
 #pragma nv_diagnostic push
@@ -31,14 +31,14 @@
 #pragma nv_diag_suppress = 20015  // deep inside Thrust: calling a constexpr __host__ function from a __host__ __device__ function is not allowed
 #endif
 
-#include <exception>  // for std::terminate, fixes a bug un Thrust 2
-
 #include <thrust/copy.h>
 #include <thrust/detail/allocator/destroy_range.h>
 #include <thrust/detail/memory_algorithms.h>
 #include <thrust/equal.h>
 #include <thrust/swap.h>
 #include <thrust/uninitialized_copy.h>
+
+#include <exception>  // for std::terminate, fixes a bug un Thrust 2
 
 namespace thrust {
 template<class... Ts> void thrust_involved(Ts const&... /*unused*/) {}
@@ -205,6 +205,7 @@ class adl_copy_t {
 };
 inline constexpr adl_copy_t adl_copy;
 
+// clang-format off
 namespace adl {
 // namespace custom {template<class...> struct fill_t;}
 class fill_t {
@@ -232,7 +233,7 @@ class transform_t {
 	constexpr auto operator()(As&&... args) const BOOST_MULTI_DECLRET(_(priority<5>(), std::forward<As>(args)...))
 };
 inline constexpr transform_t transform;
-
+// clang-format on
 
 }  // end namespace adl
 
@@ -429,7 +430,9 @@ namespace xtd {
 
 template<class T, class InputIt, class Size, class ForwardIt>
 constexpr auto alloc_uninitialized_copy_n(std::allocator<T>& /*alloc*/, InputIt first, Size count, ForwardIt d_first) {
-	return adl_uninitialized_copy_n(first, count, d_first);
+	// a std::allocator unambiguously denotes host memory, so never route through thrust's
+	// __host__ __device__ path (which fails to compile for host-only types like std::string)
+	return std::uninitialized_copy_n(first, count, d_first);
 }
 
 // template<class T, class InputIt, class Size, class ForwardIt>
@@ -708,15 +711,17 @@ class adl_alloc_uninitialized_copy_n_t {
 };
 inline constexpr adl_alloc_uninitialized_copy_n_t adl_alloc_uninitialized_copy_n;
 
+// clang-format off
 class alloc_uninitialized_move_n_t {
 	// TODO(correaa) : fallback to no alloc version
 	template<class... As> static constexpr auto _(priority<1> /**/, As&&... args) { return xtd::alloc_uninitialized_move_n(std::forward<As>(args)...); }
-	template<class... As> static constexpr auto _(priority<2> /**/, As&&... args) BOOST_MULTI_DECLRET(alloc_uninitialized_move_n(std::forward<As>(args)...)) template<class T, class... As> static constexpr auto _(priority<3> /**/, T&& arg, As&&... args) BOOST_MULTI_DECLRET(std::forward<T>(arg).alloc_uninitialized_move_n(std::forward<As>(args)...))
+ template<class... As> static constexpr auto    _(priority<2> /**/, As&&... args) BOOST_MULTI_DECLRET(alloc_uninitialized_move_n(std::forward<As>(args)...)) template<class T, class... As> static constexpr auto _(priority<3> /**/, T&& arg, As&&... args) BOOST_MULTI_DECLRET(std::forward<T>(arg).alloc_uninitialized_move_n(std::forward<As>(args)...))
 
 	 public : template<class... As>
 			  constexpr auto operator()(As&&... args) const { return _(priority<3>(), std::forward<As>(args)...); }
 };
 inline constexpr alloc_uninitialized_move_n_t adl_alloc_uninitialized_move_n;
+// clang-format off
 
 class uninitialized_fill_n_t {
 	template<class... As>          static constexpr auto _(priority<1>/**/,          As&&... args) BOOST_MULTI_DECLRET((              std::   uninitialized_fill_n(std::forward<As>(args)...)))
@@ -768,3 +773,4 @@ inline constexpr alloc_uninitialized_fill_n_t adl_alloc_uninitialized_fill_n;
 #undef BOOST_MULTI_JUSTRET
 
 #endif  // BOOST_MULTI_DETAIL_ADL_HPP
+
