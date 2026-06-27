@@ -432,7 +432,7 @@ def test_ps_from_molecule_structure():
         pos   = ref_structure_pos,
         units = ref_structure_units,
         )
-    system = PhysicalSystem.from_structure(
+    system = PhysicalSystem(
         structure     = structure,
         total_charge  = None,
         electron_spin = 0,
@@ -470,7 +470,7 @@ def test_ps_from_molecule_structure():
         'O2': IonSpecies(element=Elements.Oxygen,   count=1, label="O2", formal_charge=0, unit_spin=0,   Zeff=8)
         }
 
-    system = PhysicalSystem.from_structure(
+    system = PhysicalSystem(
         structure     = structure,
         total_charge  = -1,
         electron_spin = 0,
@@ -611,7 +611,7 @@ def test_ps_from_tiled_structure():
     np.testing.assert_allclose(tiled_structure.folded_structure.axes, ref_folded_axes)
     np.testing.assert_allclose(tiled_structure.folded_structure.pos,  ref_folded_pos)
 
-    tiled_ps = PhysicalSystem.from_structure(
+    tiled_ps = PhysicalSystem(
         structure     = tiled_structure,
         total_charge  = 0,
         electron_spin = 0,

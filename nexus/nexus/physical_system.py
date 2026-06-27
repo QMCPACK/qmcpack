@@ -5,13 +5,16 @@
 """Representations of electrons, ions, and complete physical systems."""
 
 from __future__ import annotations
-import os
-from pathlib import Path
 from abc import ABC, abstractmethod
-from copy import deepcopy
-from typing import Self, TypeAlias
 from collections.abc import Mapping, Iterable
+from copy import deepcopy
+import os
+from os import PathLike
+from pathlib import Path
+from typing import Self, TypeAlias
+
 import numpy as np
+
 from .developer import DevBase, obj
 from .periodic_table import Elements, ElementLike
 from .structure import Structure, generate_structure, read_structure
@@ -545,34 +548,30 @@ class PhysicalSystem:
 
     Parameters
     ----------
-    structure : Structure
-        The structure of the ions in the system.
-    ions : Mapping[str, IonSpecies]
-        The unique ions of the system.
-    electrons : Electrons
-        The electrons in the system.
+    structure : Structure or PathLike
+        The structure to use for creating the ``PhysicalSystem``, or a
+        path to a file with structural information.
+    total_charge : int or float, optional
+        The total charge of the system. Will use
+        ``Structure.background_charge`` if it is not ``None``,
+        otherwise it will default to zero.
+    electron_spin : int or float, optional
+        See :py:meth:`~.Electrons.neutralize_to()`.
+    spin_orbit : bool, default=False
+        See :py:meth:`~.Electrons.neutralize_to()`.
+    elem_charge : Mapping[str, int or float], optional
+        See :py:meth:`~.IonSpecies.from_structure()`.
+    elem_spin : Mapping[str, int or float], optional
+        See :py:meth:`~.IonSpecies.from_structure()`.
+    elem_Zeff : Mapping[str, int or float], optional
+        See :py:meth:`~.IonSpecies.from_structure()`.
     positrons : Positrons, optional
-        The positrons to add to the system.
+        Additional positrons to add to the system.
     """
 
     def __init__(
         self,
-        structure: Structure,
-        ions     : Mapping[str, IonSpecies],
-        electrons: Electrons,
-        positrons: Positrons | None = None,
-        ):
-        self.structure     = structure
-        self.ions          = ions
-        self.electrons     = electrons
-        self.positrons     = positrons
-        self.folded_system = self._process_folded_structure()
-    #end def __init__
-
-    @classmethod
-    def from_structure(
-        cls,
-        structure    : Structure,
+        structure    : Structure | PathLike,
         total_charge : int | float | None = None,
         electron_spin: int | float | None = None,
         spin_orbit   : bool               = False,
@@ -580,58 +579,35 @@ class PhysicalSystem:
         elem_spin    : LabelNumMap        = dict(),
         elem_Zeff    : LabelNumMap        = dict(),
         positrons    : Positrons | None   = None,
-        ) -> Self:
-        """Create a ``PhysicalSystem`` from a ``Structure`` object.
+        ):
+        if isinstance(structure, str | bytes | Path):
+            structure = Structure().read(structure)
 
-        Parameters
-        ----------
-        structure : Structure
-            The structure to use for creating the ``PhysicalSystem``.
-        total_charge : int or float, optional
-            The total charge of the system. Will use
-            ``Structure.background_charge`` if it is not ``None``,
-            otherwise it will default to zero.
-        electron_spin : int or float, optional
-            See :py:meth:`~.Electrons.neutralize_to()`.
-        spin_orbit : bool, default=False
-            See :py:meth:`~.Electrons.neutralize_to()`.
-        elem_charge : Mapping[str, int or float], optional
-            See :py:meth:`~.IonSpecies.from_structure()`.
-        elem_spin : Mapping[str, int or float], optional
-            See :py:meth:`~.IonSpecies.from_structure()`.
-        elem_Zeff : Mapping[str, int or float], optional
-            See :py:meth:`~.IonSpecies.from_structure()`.
-        positrons : Positrons, optional
-            Additional positrons to add to the system.
-        """
-        ions = IonSpecies.from_structure(
-            structure   = structure,
+        self.structure = structure
+        self.ions = IonSpecies.from_structure(
+            structure   = self.structure,
             elem_charge = elem_charge,
             elem_spin   = elem_spin,
             elem_Zeff   = elem_Zeff,
             )
 
         if total_charge is None:
-            if structure.background_charge is not None:
-                total_charge = structure.background_charge
+            if self.structure.background_charge is not None:
+                total_charge = self.structure.background_charge
             else:
                 total_charge = 0
-                for ion in ions.values():
+                for ion in self.ions.values():
                     total_charge += ion.total_formal_charge
 
-        electrons = Electrons.neutralize_to(
-            ions          = ions,
+        self.electrons = Electrons.neutralize_to(
+            ions          = self.ions,
             total_charge  = total_charge,
             electron_spin = electron_spin,
             spin_orbit    = spin_orbit,
             )
-        system = cls(
-            structure = structure,
-            ions      = ions,
-            electrons = electrons,
-            positrons = positrons,
-            )
-        return system
+        self.positrons = positrons
+        self.folded_system = self._process_folded_structure()
+    #end def __init__
 
     def _process_folded_structure(self) -> Self | None:
         """Get the appropriate folded system from ``self.structure.folded_structure``.
@@ -671,18 +647,6 @@ class PhysicalSystem:
             elem_spin_map[label] = species.unit_spin
             elem_Zeff_map[label] = species.Zeff
 
-        folded_ions = IonSpecies.from_structure(
-            structure   = self.structure.folded_structure,
-            elem_charge = elem_chg_map,
-            elem_spin   = elem_spin_map,
-            elem_Zeff   = elem_Zeff_map,
-            )
-        folded_electrons = Electrons.neutralize_to(
-            ions          = folded_ions,
-            total_charge  = folded_total_charge,
-            electron_spin = folded_elec_spin,
-            spin_orbit    = self.electrons.spin_orbit,
-            )
         if self.positrons is not None:
             if self.positrons.count % n_cells_tiled == 0:
                 folded_positron_count = self.positrons.count // n_cells_tiled
@@ -702,30 +666,26 @@ class PhysicalSystem:
         else:
             folded_positrons = None
 
-        return self.__class__(
-            structure = self.structure.folded_structure,
-            ions      = folded_ions,
-            electrons = folded_electrons,
-            positrons = folded_positrons,
+        return PhysicalSystem(
+            structure     = self.structure.folded_structure,
+            total_charge  = folded_total_charge,
+            electron_spin = folded_elec_spin,
+            spin_orbit    = self.electrons.spin_orbit,
+            elem_charge   = elem_chg_map,
+            elem_spin     = elem_spin_map,
+            elem_Zeff     = elem_Zeff_map,
+            positrons     = folded_positrons,
             )
 
     @property
     def ion_charge(self) -> int | float:
-        """Alias for ``PhysicalSystem.ions.total_nuclear_charge``"""
-        ion_charge = 0
-        for ion in self.ions.values():
-            ion_charge += ion.total_nuclear_charge
-
-        return ion_charge
+        """The total charge of all ions in the system."""
+        return sum([ion.total_nuclear_charge for ion in self.ions.values()])
 
     @property
     def ion_spin(self) -> int | float:
-        """Alias for ``PhysicalSystem.ions.total_spin``"""
-        ion_spin = 0
-        for ion in self.ions.values():
-            ion_spin += ion.total_spin
-
-        return ion_spin
+        """The total spin of all ions in the system."""
+        return sum([ion.total_spin for ion in self.ions.values()])
 
     @property
     def electron_charge(self) -> int | float:
@@ -770,77 +730,7 @@ class PhysicalSystem:
             f"positrons={self.positrons!s})"
             )
 
-    def update(self):
-        self.net_charge = self.structure.background_charge
-        self.net_spin   = 0
-        for p in self.particles:
-            self.net_charge += p.count*p.charge
-            self.net_spin   += p.count*p.spin
-        #end for
-        self.net_charge = int(round(float(self.net_charge)))
-        self.net_spin   = int(round(float(self.net_spin)))
-    #end def update
-
-
-    def add_particles(self,**particle_counts):
-        pc = self.particle_collection # all known particles
-        plist = []
-        for name,count in particle_counts.items():
-            particle = pc.get_particle(name)
-            if particle is None:
-                self.error('particle {0} is unknown'.format(name))
-            else:
-                particle = particle.copy()
-            #end if
-            particle.set_count(count)
-            plist.append(particle)
-        #end for
-        self.particles.add_particles(plist)
-        self.update()
-    #end def add_particles
-
-
-    def generate_electrons(self,net_charge=0,net_spin=0):
-        nelectrons = -net_charge + self.net_charge
-        if net_spin=='low':
-            net_spin = nelectrons%2
-        #end if
-        nup   = float(nelectrons + net_spin - self.net_spin)/2
-        ndown = float(nelectrons - net_spin + self.net_spin)/2
-        if abs(nup-int(nup))>1e-3:
-            self.error('requested spin state {0} incompatible with {1} electrons'.format(net_spin,nelectrons))
-        #end if
-        nup   = int(nup)
-        ndown = int(ndown)
-        self.add_particles(up_electron=nup,down_electron=ndown)
-    #end def generate_electrons
-
-
-    def pseudize(self,**valency):
-        errors = False
-        for ion,valence_charge in valency.items():
-            if ion in self.particles:
-                ionp = self.particles[ion]
-                if isinstance(ionp,IonSpecies):
-                    self.particles[ion] = ionp.pseudize(valence_charge)
-                    self.pseudized = True
-                else:
-                    self.error(ion+' cannot be pseudized',exit=False)
-                #end if
-            else:
-                self.error(ion+' is not in the physical system',exit=False)
-                errors = True
-            #end if
-        #end for
-        if errors:
-            self.error('system cannot be generated')
-        #end if
-        self.valency = obj(**valency)
-        self.update()
-    #end def pseudize
-
-
-    def check_folded_system(self,exit=True,message=False):
+    def check_folded_system(self, exit=True, message=False) -> bool | tuple[bool, str]:
         msg = ''
         sys_folded    = self.folded_system is not None
         struct_folded = self.structure.folded_structure is not None
@@ -862,7 +752,12 @@ class PhysicalSystem:
     #end def check_folded_system
 
 
-    def check_consistent(self,tol=1e-8,exit=True,message=False):
+    def check_consistent(
+        self,
+        tol    : float = 1e-8,
+        exit   : bool  = True,
+        message: bool  = False,
+        ) -> bool | tuple[bool, str]:
         fs,fm = self.check_folded_system(exit=False,message=True)
         cs,cm = self.structure.check_consistent(tol,exit=False,message=True)
         msg = ''
@@ -884,26 +779,23 @@ class PhysicalSystem:
     #end def check_consistent
 
 
-    def is_valid(self):
+    def is_valid(self) -> bool | tuple[bool, str]:
         return self.check_consistent(exit=False)
     #end def is_valid
 
 
-    def change_units(self,units):
-        self.structure.change_units(units,folded=False)
+    def change_units(self, units: str) -> None:
+        self.structure.change_units(units, folded=False)
         if self.folded_system is not None:
             self.folded_system.change_units(units)
-        #end if
     #end def change_units
 
 
-    def group_atoms(self):
+    def group_atoms(self) -> None:
         self.structure.group_atoms(folded=False)
         if self.folded_system is not None:
             self.folded_system.group_atoms()
-        #end if
     #end def group_atoms
-
 
     def rename(self,folded=True,**name_pairs):
         self.particles.rename(**name_pairs)
