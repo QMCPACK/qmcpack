@@ -14,8 +14,9 @@ from pathlib import Path
 from typing import Self, TypeAlias
 
 import numpy as np
+import numpy.typing as npt
 
-from .developer import DevBase, obj
+from .developer import obj, warn
 from .periodic_table import Elements, ElementLike
 from .structure import Structure, generate_structure, read_structure
 
@@ -333,7 +334,7 @@ class IonSpecies:
         self.unit_spin     = unit_spin
         self.Zeff          = Zeff if Zeff is not None else self.element.atomic_number
 
-    def is_pseudo(self) -> bool:
+    def pseudized(self) -> bool:
         """Check if this ion is pseudized."""
         return self.Zeff != self.element.atomic_number
 
@@ -607,7 +608,6 @@ class PhysicalSystem:
             )
         self.positrons = positrons
         self.folded_system = self._process_folded_structure()
-    #end def __init__
 
     def _process_folded_structure(self) -> Self | None:
         """Get the appropriate folded system from ``self.structure.folded_structure``.
@@ -662,7 +662,7 @@ class PhysicalSystem:
                 count      = folded_positron_count,
                 spin       = folded_positron_spin,
                 spin_orbit = self.positrons.spin_orbit,
-            )
+                )
         else:
             folded_positrons = None
 
@@ -721,6 +721,15 @@ class PhysicalSystem:
         else:
             return self.ion_charge + self.electron_charge
 
+    @property
+    def pseudized(self) -> bool:
+        """Return ``True`` if **any** of the ions are pseudized."""
+        pseudized = False
+        for ion in self.ions.values():
+            pseudized |= ion.pseudized()
+
+        return pseudized
+
     def __repr__(self) -> str:
         return (
             f"{type(self).__name__}("
@@ -731,26 +740,63 @@ class PhysicalSystem:
             )
 
     def check_folded_system(self, exit=True, message=False) -> bool | tuple[bool, str]:
-        msg = ''
-        sys_folded    = self.folded_system is not None
-        struct_folded = self.structure.folded_structure is not None
-        if sys_folded!=struct_folded:
-            msg+='folding of physical system and structure is not consistent\nsystem folded: {0}\nstructure folded: {1}\n'.format(sys_folded,struct_folded)
-        #end if
-        if sys_folded and id(self.structure.folded_structure)!=id(self.folded_system.structure):
-            msg+='structure of folded system and folded structure are distinct\nthis is not allowed and may be a developer error'
-        #end if
-        success = len(msg)==0
-        if not success and exit:
-            self.error(msg)
-        #end if
-        if not message:
-            return success
-        else:
-            return success,msg
-        #end if
-    #end def check_folded_system
+        """Check if the current folded system matches the folded structure.
 
+        Parameters
+        ----------
+        exit : bool, default=True
+            Whether or not to raise an error on mismatch.
+        message : bool, default=False
+            Whether or not to include the message with the output.
+            Even if the systems match this will return the message along
+            with the success state, in which case the message will be an
+            empty string.
+
+        Returns
+        -------
+        success : bool
+            ``True`` if the systems match, ``False`` otherwise.
+        msg : str, optional
+            Only returned if ``message=True``.
+
+        Raises
+        ------
+        ValueError
+            If the systems do not match and ``exit=True``.
+        """
+        msg = ""
+        # Either they are both None or they both point to the same object.
+        if self.folded_system.structure is not self.structure.folded_structure:
+            msg += "The folded structure is not the folded system's structure!\n"
+
+        tmp_folded_system = self._process_folded_structure()
+        if self.ions != tmp_folded_system.ions:
+            msg += "The folded system's ions do not match the expected ions!\n"
+            msg += "Current Folded Ions:\n\n"
+            for label, ion in self.folded_system.ions.items():
+                msg += f"    {label}: {ion!r}\n"
+
+            msg += "\nExpected Folded Ions:\n\n"
+            for label, ion in tmp_folded_system.ions.items():
+                msg += f"    {label}: {ion!r}\n"
+        
+        if self.electrons != tmp_folded_system.electrons:
+            msg += "The folded system's electrons do not match the expected electrons!\n"
+            msg += f"Current Folded Electrons:  {self.electrons!r}\n"
+            msg += f"Expected Folded Electrons: {tmp_folded_system.electrons!r}\n"
+        
+        if self.positrons != tmp_folded_system.positrons:
+            msg += "The folded system's positrons do not match the expected positrons!\n"
+            msg += f"Current Folded Positrons:  {self.electrons!r}\n"
+            msg += f"Expected Folded Positrons: {tmp_folded_system.electrons!r}\n"
+
+        success = len(msg) == 0
+        if exit and not success:
+            raise ValueError(msg)
+        elif message:
+            return success, message
+        else:
+            return success
 
     def check_consistent(
         self,
@@ -758,188 +804,158 @@ class PhysicalSystem:
         exit   : bool  = True,
         message: bool  = False,
         ) -> bool | tuple[bool, str]:
-        fs,fm = self.check_folded_system(exit=False,message=True)
-        cs,cm = self.structure.check_consistent(tol,exit=False,message=True)
-        msg = ''
+        """Check that the folded system and structure match their tiled versions.
+
+        See ``PhysicalSystem.check_folded_system`` and
+        ``Structure.check_consistent`` for a description of the
+        parameters.
+        """
+        fs, fm = self.check_folded_system(exit=False, message=True)
+        cs, cm = self.structure.check_consistent(tol, exit=False, message=True)
+        msg = ""
         if not fs:
-            msg += fm+'\n'
-        #end if
+            msg += fm + "\n"
+
         if not cs:
-            msg += cm+'\n'
-        #end if
-        consistent = len(msg)==0
+            msg += cm + "\n"
+
+        consistent = len(msg) == 0
         if not consistent and exit:
-            self.error(msg)
-        #end if
+            raise ValueError(msg)
+
         if not message:
             return consistent
         else:
-            return consistent,msg
-        #end if
-    #end def check_consistent
+            return consistent, msg
 
-
-    def is_valid(self) -> bool | tuple[bool, str]:
+    def is_valid(self) -> bool:
+        """Check if the system's folded system and structure are valid."""
         return self.check_consistent(exit=False)
-    #end def is_valid
-
 
     def change_units(self, units: str) -> None:
+        """Alias for ``self.structure.change_units()``."""
         self.structure.change_units(units, folded=False)
         if self.folded_system is not None:
             self.folded_system.change_units(units)
-    #end def change_units
-
 
     def group_atoms(self) -> None:
+        """Alias for ``self.structure.group_atoms()``."""
         self.structure.group_atoms(folded=False)
         if self.folded_system is not None:
             self.folded_system.group_atoms()
-    #end def group_atoms
 
-    def rename(self,folded=True,**name_pairs):
-        self.particles.rename(**name_pairs)
-        self.structure.rename(folded=False,**name_pairs)
-        if self.pseudized:
-            for old,new in name_pairs.items():
-                if old in self.valency:
-                    if new not in self.valency:
-                        self.valency[new] = self.valency[old]
-                    #end if
-                    del self.valency[old]
-                #end if
-            #end for
-            self.valency_in = self.valency
-        #end if
-        if self.folded_system is not None and folded:
-            self.folded_system.rename(folded=folded,**name_pairs)
-        #end if
-    #end def rename
+    def rename(self, **name_pairs):
+        """Replace the labels for the ions.
 
-
-    def copy(self):
-        cp = DevBase.copy(self)
-        if self.folded_system is not None and self.structure.folded_structure is not None:
-            del cp.folded_system.structure
-            cp.folded_system.structure = cp.structure.folded_structure
-        #end if
-        return cp
-    #end def copy
-
-
-    def load(self,filepath):
-        DevBase.load(self,filepath)
-        if self.folded_system is not None and self.structure.folded_structure is not None:
-            del self.folded_system.structure
-            self.folded_system.structure = self.structure.folded_structure
-        #end if
-    #end def load
-
-
-    def tile(self,*td,**kwargs):
-        extensive = True
-        net_spin  = None
-        if 'extensive' in kwargs:
-            extensive = kwargs['extensive']
-        #end if
-        if 'net_spin' in kwargs:
-            net_spin = kwargs['net_spin']
-        #end if
-        supercell = self.structure.tile(*td)
-        supercell.remove_folded()
-        if extensive:
-            ncells = int(round(supercell.volume()/self.structure.volume()))
-            net_charge = ncells*self.net_charge
-            if net_spin is None:
-                net_spin = ncells*self.net_spin
-            #end if
-        else:
-            net_charge = self.net_charge
-            if net_spin is None:
-                net_spin   = self.net_spin
-            #end if
-        #end if
-        system = self.copy()
-        supersystem = PhysicalSystem(
-            structure  = supercell,
-            total_charge = net_charge,
-            total_spin   = net_spin,
-            **self.valency
+        This will also rename ``self.structure.elem``.
+        """
+        if name_pairs.pop("folded", None) is not None:
+            warn(
+                "Passing `folded` to PhysicalSystem.rename() is no longer supported.\n"
+                "This function will now always rename the folded system to maintain parity."
             )
-        supersystem.folded_system = system
-        supersystem.structure.set_folded(system.structure)
-        return supersystem
-    #end def tile
+        old_keys = list(self.ions.keys())
+        for old, new in name_pairs.items():
+            if old not in self.ions:
+                warn(
+                    f"The label '{old}' does not exist in the current system.\n"
+                    f"Known labels are {old_keys}"
+                    )
+            else:
+                self.ions[new] = self.ions[old]
+                self.ions[new].label = new
+                del self.ions[old]
 
+        # folded=False because we will do it through the folded system.
+        self.structure.rename(folded=False, **name_pairs)
+        if self.folded_system is not None:
+            self.folded_system.rename(**name_pairs)
 
-    def has_folded(self):
+    def tile(self, *td) -> Self:
+        """Tile an existing system.
+
+        Note that this function returns a brand new ``PhysicalSystem``
+        instance, with a folded system that matches the old system. The
+        old system is not changed.
+        """
+        supercell = self.structure.tile(*td)
+
+        n_cells_tiled = int(np.round(np.abs(np.linalg.det(supercell.tmatrix))))
+        # Copy over data from the old system
+        elem_chg_map  = {}
+        elem_spin_map = {}
+        elem_Zeff_map = {}
+        for label, species in self.ions.items():
+            elem_chg_map[label]  = species.formal_charge
+            elem_spin_map[label] = species.unit_spin
+            elem_Zeff_map[label] = species.Zeff
+
+        if self.positrons is not None:
+            tiled_positrons = Positrons(
+                count      = self.positrons.count * n_cells_tiled,
+                spin       = self.positrons.spin * n_cells_tiled,
+                spin_orbit = self.positrons.spin_orbit,
+                )
+        else:
+            tiled_positrons = None
+
+        tiled_system = PhysicalSystem(
+            structure     = supercell,
+            total_charge  = (self.ion_charge + self.electron_charge) * n_cells_tiled,
+            electron_spin = self.electron_spin * n_cells_tiled,
+            elem_charge   = elem_chg_map,
+            elem_spin     = elem_spin_map,
+            elem_Zeff     = elem_Zeff_map,
+            positrons     = tiled_positrons,
+            )
+        # TODO: Check that the old system is equal to the new folded system.
+        return tiled_system
+
+    def has_folded(self) -> bool:
+        """Check if the system has a folded system."""
         return self.folded_system is not None
-    #end def has_folded
 
-
-    def remove_folded_system(self):
+    def remove_folded_system(self) -> None:
+        """Remove the existing folded system, if it exists."""
         self.folded_system = None
         self.structure.remove_folded_structure()
-    #end def remove_folded_system
 
-
-    def remove_folded(self):
-        self.remove_folded_system()
-    #end def remove_folded
-
-
-    def get_smallest(self):
+    def get_smallest(self) -> Self:
+        """Return the folded system if it exists, otherwise return itself."""
         if self.has_folded():
             return self.folded_system
         else:
             return self
-        #end if
-    #end def get_smallest
 
+    def is_magnetic(self) -> bool:
+        return self.electron_spin != 0 or self.ion_spin != 0
 
-    def is_magnetic(self):
-        return self.net_spin!=0 or self.structure.is_magnetic()
-    #end def is_magnetic
-
-
-    def spin_polarized_orbitals(self):
-        return self.is_magnetic()
-    #end def spin_polarized_orbitals
-
-
-    # test needed
-    def large_Zeff_elem(self,Zmin):
+    def large_Zeff_elem(self, Zmin: int | float) -> list[str]:
+        """Get the element labels with a ``Zeff`` greater than ``Zmin``."""
         elem = []
-        for atom,Zeff in self.valency.items():
-            if Zeff>Zmin:
-                elem.append(atom)
-            #end if
-        #end for
+        for label, ion in self.ions.items():
+            if ion.Zeff > Zmin:
+                elem.append(label)
+
         return elem
-    #end def large_Zeff_elem
 
-
-    # test needed
-    def ae_pp_species(self):
-        species = set(self.structure.elem)
+    def ae_pp_species(self) -> tuple[set[str], set[str] | set]:
         if self.pseudized:
-            pp_species = set(self.valency.keys())
-            ae_species = species-pp_species
-        else:
+            pp_species = set([lbl for lbl, ion in self.ions.items() if ion.pseudized()])
+            ae_species = set(self.ions.keys()) - pp_species
+        else: # All species are all-electron
             pp_species = set()
-            ae_species = species
-        #end if
-        return ae_species,pp_species
-    #end def ae_pp_species
+            ae_species = set(self.ions.keys())
 
+        return ae_species, pp_species
 
-    def kf_rpa(self):
-      nelecs = self.particles.electron_counts()
-      volume = self.structure.volume()
-      kvol1 = (2*np.pi)**3/volume  # k-space volume per particle
-      kfs = [(3*nelec*kvol1/(4*np.pi))**(1./3) for nelec in nelecs]
-      return np.array(kfs)
-    #end def kf_rpa
+    def kf_rpa(self) -> npt.NDArray[np.floating]:
+        nelecs = self.electrons.n_up_down()
+
+        # k-space volume per particle
+        kvol1 = (2 * np.pi)**3 / self.structure.volume()
+        kfs = [(3 * nelec * kvol1 / (4 * np.pi))**(1./3) for nelec in nelecs]
+        return np.array(kfs, dtype=float)
 #end class PhysicalSystem
 
 
