@@ -14,6 +14,7 @@
 	defined(__HIPCC__) ||               /* hipcc generic                                */                                      \
 	defined(__HIP__) ||                 /* clang --offload=hip                         */                                       \
 	defined(THRUST_DEVICE_SYSTEM) ||    /* explicitly configured by CMake (e.g. NVIDIA thrust_create_target propagates this) */ \
+	(defined(__has_include) && __has_include(<thrust/version.h>))  && !__has_include(<rocprim/type_traits.hpp>) || \
 	defined(BOOST_MULTI_HAS_THRUST)     /* explicit opt-in, e.g. set by Multi's CMake when find_package(Thrust) succeeds    */
 // TODO(correaa) perhaps add detection through __has_include
 #define BOOST_MULTI_ADL_HAS_THRUST 1
@@ -21,7 +22,9 @@
 
 #ifdef BOOST_MULTI_ADL_HAS_THRUST
 #ifndef THRUST_DEVICE_SYSTEM
+#if !(defined(__CUDA__) || defined(__NVCC__) || defined(__HIP_PLATFORM_NVIDIA__) || defined(__HIP_PLATFORM_AMD__) || defined(__HIPCC__))
 #define THRUST_DEVICE_SYSTEM THRUST_DEVICE_SYSTEM_CPP  // fallback for BOOST_MULTI_HAS_THRUST without explicit backend
+#endif
 #endif
 
 #ifdef __NVCC__
@@ -773,4 +776,3 @@ inline constexpr alloc_uninitialized_fill_n_t adl_alloc_uninitialized_fill_n;
 #undef BOOST_MULTI_JUSTRET
 
 #endif  // BOOST_MULTI_DETAIL_ADL_HPP
-
