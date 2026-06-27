@@ -770,7 +770,7 @@ class PhysicalSystem:
             msg += "The folded structure is not the folded system's structure!\n"
 
         tmp_folded_system = self._process_folded_structure()
-        if self.ions != tmp_folded_system.ions:
+        if self.folded_system.ions != tmp_folded_system.ions:
             msg += "The folded system's ions do not match the expected ions!\n"
             msg += "Current Folded Ions:\n\n"
             for label, ion in self.folded_system.ions.items():
@@ -779,16 +779,16 @@ class PhysicalSystem:
             msg += "\nExpected Folded Ions:\n\n"
             for label, ion in tmp_folded_system.ions.items():
                 msg += f"    {label}: {ion!r}\n"
-        
-        if self.electrons != tmp_folded_system.electrons:
+
+        if self.folded_system.electrons != tmp_folded_system.electrons:
             msg += "The folded system's electrons do not match the expected electrons!\n"
-            msg += f"Current Folded Electrons:  {self.electrons!r}\n"
+            msg += f"Current Folded Electrons:  {self.folded_system.electrons!r}\n"
             msg += f"Expected Folded Electrons: {tmp_folded_system.electrons!r}\n"
         
-        if self.positrons != tmp_folded_system.positrons:
+        if self.folded_system.positrons != tmp_folded_system.positrons:
             msg += "The folded system's positrons do not match the expected positrons!\n"
-            msg += f"Current Folded Positrons:  {self.electrons!r}\n"
-            msg += f"Expected Folded Positrons: {tmp_folded_system.electrons!r}\n"
+            msg += f"Current Folded Positrons:  {self.folded_system.positrons!r}\n"
+            msg += f"Expected Folded Positrons: {tmp_folded_system.positrons!r}\n"
 
         success = len(msg) == 0
         if exit and not success:
@@ -950,18 +950,23 @@ class PhysicalSystem:
         return ae_species, pp_species
 
     def kf_rpa(self) -> npt.NDArray[np.floating]:
-        nelecs = self.electrons.n_up_down()
+        n_elecs = self.electrons.n_up_down()
+        n_elecs = [float(e) for e in n_elecs]
 
         # k-space volume per particle
         kvol1 = (2 * np.pi)**3 / self.structure.volume()
-        kfs = [(3 * nelec * kvol1 / (4 * np.pi))**(1./3) for nelec in nelecs]
+        kfs = []
+        for n_elec in n_elecs:
+            kf = (3 * n_elec * kvol1 / (4 * np.pi))**(1./3)
+            kfs.append(kf)
+
         return np.array(kfs, dtype=float)
 #end class PhysicalSystem
 
 
 ps_defaults = dict(
     type='crystal',
-    kshift = (0,0,0),
+    kshift=(0,0,0),
     net_charge=0,
     net_spin=0,
     pretile=None,
@@ -969,7 +974,7 @@ ps_defaults = dict(
     tiled_spin=None,
     extensive=True
     )
-def generate_physical_system(**kwargs):
+def generate_physical_system(**kwargs) -> PhysicalSystem:
     for var,val in ps_defaults.items():
         if var not in kwargs:
             kwargs[var] = val

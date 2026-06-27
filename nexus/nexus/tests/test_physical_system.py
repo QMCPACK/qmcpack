@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.PHYSICAL_SYSTEM)
@@ -6,14 +8,126 @@ from ..generic import generic_settings, obj
 generic_settings.raise_error = True
 
 import numpy as np
+import numpy.typing as npt
 from ..testing import value_eq, object_eq
 from ..physical_system import IonSpecies, PhysicalSystem, Electrons, Positrons, generate_physical_system
 from ..periodic_table import Elements
 from ..structure import Structure, generate_structure
+from ..unit_converter import convert
 
 
-def assert_system_eq(actual: PhysicalSystem, desired: PhysicalSystem):
-    ...
+def get_LaAlO3_references() -> dict[str, list | npt.NDArray[np.floating] | dict[str, IonSpecies] | Electrons | Positrons]:
+    """Get reference elem, pos, axes, ions, electrons, and positrons for LaAlO3.
+
+    This includes both folded and 2x2x2-tiled versions.
+    """
+    ref_folded_elem = [
+        "La", "Al", "O1", "O2", "O3",
+        ]
+    ref_tiled_elem = [
+        "La", "Al", "O1", "O2", "O3",
+        "La", "Al", "O1", "O2", "O3",
+        "La", "Al", "O1", "O2", "O3",
+        "La", "Al", "O1", "O2", "O3",
+        "La", "Al", "O1", "O2", "O3",
+        "La", "Al", "O1", "O2", "O3",
+        "La", "Al", "O1", "O2", "O3",
+        "La", "Al", "O1", "O2", "O3",
+        ]
+    ref_folded_axes = np.array([
+        [3.780, 0.000, 0.000],
+        [0.000, 3.780, 0.000],
+        [0.000, 0.000, 3.780],
+        ], dtype=float)
+    ref_tiled_axes = np.array([
+        [7.560,  0.000,  0.000],
+        [0.000,  7.560,  0.000],
+        [0.000,  0.000,  7.560],
+        ], dtype=float)
+    ref_folded_pos = np.array([
+        [0.000,  0.000,  0.000],
+        [1.890,  1.890,  1.890],
+        [1.890,  1.890,  0.000],
+        [0.000,  1.890,  1.890],
+        [1.890,  0.000,  1.890],
+        ], dtype=float)
+    ref_tiled_pos = np.array([
+        [0.000,  0.000,  0.000],
+        [1.890,  1.890,  1.890],
+        [1.890,  1.890,  0.000],
+        [0.000,  1.890,  1.890],
+        [1.890,  0.000,  1.890],
+        [3.780,  0.000,  0.000],
+        [5.670,  1.890,  1.890],
+        [5.670,  1.890,  0.000],
+        [3.780,  1.890,  1.890],
+        [5.670,  0.000,  1.890],
+        [0.000,  3.780,  0.000],
+        [1.890,  5.670,  1.890],
+        [1.890,  5.670,  0.000],
+        [0.000,  5.670,  1.890],
+        [1.890,  3.780,  1.890],
+        [3.780,  3.780,  0.000],
+        [5.670,  5.670,  1.890],
+        [5.670,  5.670,  0.000],
+        [3.780,  5.670,  1.890],
+        [5.670,  3.780,  1.890],
+        [0.000,  0.000,  3.780],
+        [1.890,  1.890,  5.670],
+        [1.890,  1.890,  3.780],
+        [0.000,  1.890,  5.670],
+        [1.890,  0.000,  5.670],
+        [3.780,  0.000,  3.780],
+        [5.670,  1.890,  5.670],
+        [5.670,  1.890,  3.780],
+        [3.780,  1.890,  5.670],
+        [5.670,  0.000,  5.670],
+        [0.000,  3.780,  3.780],
+        [1.890,  5.670,  5.670],
+        [1.890,  5.670,  3.780],
+        [0.000,  5.670,  5.670],
+        [1.890,  3.780,  5.670],
+        [3.780,  3.780,  3.780],
+        [5.670,  5.670,  5.670],
+        [5.670,  5.670,  3.780],
+        [3.780,  5.670,  5.670],
+        [5.670,  3.780,  5.670],
+        ], dtype=float)
+
+    ref_folded_ions = {
+        'Al': IonSpecies(element=Elements.Aluminum,  count=1, label="Al", formal_charge=0, unit_spin=2.5, Zeff=3),
+        'La': IonSpecies(element=Elements.Lanthanum, count=1, label="La", formal_charge=0, unit_spin=3.5, Zeff=11),
+        'O1': IonSpecies(element=Elements.Oxygen,    count=1, label="O1", formal_charge=0, unit_spin=0,   Zeff=6),
+        'O2': IonSpecies(element=Elements.Oxygen,    count=1, label="O2", formal_charge=0, unit_spin=0,   Zeff=6),
+        'O3': IonSpecies(element=Elements.Oxygen,    count=1, label="O3", formal_charge=0, unit_spin=0,   Zeff=6),
+        }
+    ref_tiled_ions = {
+        'Al': IonSpecies(element=Elements.Aluminum,  count=8, label="Al", formal_charge=0, unit_spin=2.5, Zeff=3),
+        'La': IonSpecies(element=Elements.Lanthanum, count=8, label="La", formal_charge=0, unit_spin=3.5, Zeff=11),
+        'O1': IonSpecies(element=Elements.Oxygen,    count=8, label="O1", formal_charge=0, unit_spin=0,   Zeff=6),
+        'O2': IonSpecies(element=Elements.Oxygen,    count=8, label="O2", formal_charge=0, unit_spin=0,   Zeff=6),
+        'O3': IonSpecies(element=Elements.Oxygen,    count=8, label="O3", formal_charge=0, unit_spin=0,   Zeff=6),
+        }
+    ref_folded_electrons = Electrons(count=32,  spin=0, spin_orbit=False)
+    ref_tiled_electrons  = Electrons(count=256, spin=0, spin_orbit=False)
+
+    ref_folded_positrons = Positrons(count=8,  spin=0, spin_orbit=False)
+    ref_tiled_positrons  = Positrons(count=64, spin=0, spin_orbit=False)
+
+    return {
+        "ref_folded_elem"      : ref_folded_elem,
+        "ref_tiled_elem"       : ref_tiled_elem,
+        "ref_folded_axes"      : ref_folded_axes,
+        "ref_tiled_axes"       : ref_tiled_axes,
+        "ref_folded_pos"       : ref_folded_pos,
+        "ref_tiled_pos"        : ref_tiled_pos,
+        "ref_folded_ions"      : ref_folded_ions,
+        "ref_tiled_ions"       : ref_tiled_ions,
+        "ref_folded_electrons" : ref_folded_electrons,
+        "ref_tiled_electrons"  : ref_tiled_electrons,
+        "ref_folded_positrons" : ref_folded_positrons,
+        "ref_tiled_positrons"  : ref_tiled_positrons,
+        }
 
 
 def test_electrons():
@@ -403,7 +517,7 @@ def test_electrons_neutralize_to():
 #end def test_electrons_neutralize_to
 
 
-def test_ps_from_molecule_structure():
+def test_molecular_system():
     ref_ions = {
         'C':  IonSpecies(element=Elements.Carbon,   count=2, label="C",  formal_charge= 0, unit_spin=0,   Zeff=6),
         'H':  IonSpecies(element=Elements.Hydrogen, count=4, label="H",  formal_charge= 0, unit_spin=0.5, Zeff=1),
@@ -495,102 +609,23 @@ def test_ps_from_molecule_structure():
     assert(system.electron_charge == system.electrons.total_charge)
     assert(system.net_charge      == -1)
     assert(system.net_charge      == system.ion_charge + system.electron_charge)
-#end def test_ps_from_molecule_structure
+#end def test_molecular_system
 
 
-def test_ps_from_tiled_structure():
-    ref_folded_elem = [
-        "La", "Al", "O1", "O2", "O3",
-        ]
-    ref_tiled_elem = [
-        "La", "Al", "O1", "O2", "O3",
-        "La", "Al", "O1", "O2", "O3",
-        "La", "Al", "O1", "O2", "O3",
-        "La", "Al", "O1", "O2", "O3",
-        "La", "Al", "O1", "O2", "O3",
-        "La", "Al", "O1", "O2", "O3",
-        "La", "Al", "O1", "O2", "O3",
-        "La", "Al", "O1", "O2", "O3",
-        ]
-    ref_folded_axes = np.array([
-        [3.780, 0.000, 0.000],
-        [0.000, 3.780, 0.000],
-        [0.000, 0.000, 3.780],
-        ], dtype=float)
-    ref_tiled_axes = np.array([
-        [7.560,  0.000,  0.000],
-        [0.000,  7.560,  0.000],
-        [0.000,  0.000,  7.560],
-        ], dtype=float)
-    ref_folded_pos = np.array([
-        [0.000,  0.000,  0.000],
-        [1.890,  1.890,  1.890],
-        [1.890,  1.890,  0.000],
-        [0.000,  1.890,  1.890],
-        [1.890,  0.000,  1.890],
-        ], dtype=float)
-    ref_tiled_pos = np.array([
-        [0.000,  0.000,  0.000],
-        [1.890,  1.890,  1.890],
-        [1.890,  1.890,  0.000],
-        [0.000,  1.890,  1.890],
-        [1.890,  0.000,  1.890],
-        [3.780,  0.000,  0.000],
-        [5.670,  1.890,  1.890],
-        [5.670,  1.890,  0.000],
-        [3.780,  1.890,  1.890],
-        [5.670,  0.000,  1.890],
-        [0.000,  3.780,  0.000],
-        [1.890,  5.670,  1.890],
-        [1.890,  5.670,  0.000],
-        [0.000,  5.670,  1.890],
-        [1.890,  3.780,  1.890],
-        [3.780,  3.780,  0.000],
-        [5.670,  5.670,  1.890],
-        [5.670,  5.670,  0.000],
-        [3.780,  5.670,  1.890],
-        [5.670,  3.780,  1.890],
-        [0.000,  0.000,  3.780],
-        [1.890,  1.890,  5.670],
-        [1.890,  1.890,  3.780],
-        [0.000,  1.890,  5.670],
-        [1.890,  0.000,  5.670],
-        [3.780,  0.000,  3.780],
-        [5.670,  1.890,  5.670],
-        [5.670,  1.890,  3.780],
-        [3.780,  1.890,  5.670],
-        [5.670,  0.000,  5.670],
-        [0.000,  3.780,  3.780],
-        [1.890,  5.670,  5.670],
-        [1.890,  5.670,  3.780],
-        [0.000,  5.670,  5.670],
-        [1.890,  3.780,  5.670],
-        [3.780,  3.780,  3.780],
-        [5.670,  5.670,  5.670],
-        [5.670,  5.670,  3.780],
-        [3.780,  5.670,  5.670],
-        [5.670,  3.780,  5.670],
-        ], dtype=float)
-
-    ref_folded_ions = {
-        'Al': IonSpecies(element=Elements.Aluminum,  count=1, label="Al", formal_charge=0, unit_spin=2.5, Zeff=3),
-        'La': IonSpecies(element=Elements.Lanthanum, count=1, label="La", formal_charge=0, unit_spin=3.5, Zeff=11),
-        'O1': IonSpecies(element=Elements.Oxygen,    count=1, label="O1", formal_charge=0, unit_spin=0,   Zeff=6),
-        'O2': IonSpecies(element=Elements.Oxygen,    count=1, label="O2", formal_charge=0, unit_spin=0,   Zeff=6),
-        'O3': IonSpecies(element=Elements.Oxygen,    count=1, label="O3", formal_charge=0, unit_spin=0,   Zeff=6),
-        }
-    ref_tiled_ions = {
-        'Al': IonSpecies(element=Elements.Aluminum,  count=8, label="Al", formal_charge=0, unit_spin=2.5, Zeff=3),
-        'La': IonSpecies(element=Elements.Lanthanum, count=8, label="La", formal_charge=0, unit_spin=3.5, Zeff=11),
-        'O1': IonSpecies(element=Elements.Oxygen,    count=8, label="O1", formal_charge=0, unit_spin=0,   Zeff=6),
-        'O2': IonSpecies(element=Elements.Oxygen,    count=8, label="O2", formal_charge=0, unit_spin=0,   Zeff=6),
-        'O3': IonSpecies(element=Elements.Oxygen,    count=8, label="O3", formal_charge=0, unit_spin=0,   Zeff=6),
-        }
-    ref_folded_electrons = Electrons(count=32,  spin=0, spin_orbit=False)
-    ref_tiled_electrons  = Electrons(count=256, spin=0, spin_orbit=False)
-
-    ref_folded_positrons = Positrons(count=8,  spin=0, spin_orbit=False)
-    ref_tiled_positrons  = Positrons(count=64, spin=0, spin_orbit=False)
+def test_pretiled_system():
+    refs = get_LaAlO3_references()
+    ref_folded_elem      = refs["ref_folded_elem"]
+    ref_tiled_elem       = refs["ref_tiled_elem"]
+    ref_folded_axes      = refs["ref_folded_axes"]
+    ref_tiled_axes       = refs["ref_tiled_axes"]
+    ref_folded_pos       = refs["ref_folded_pos"]
+    ref_tiled_pos        = refs["ref_tiled_pos"]
+    ref_folded_ions      = refs["ref_folded_ions"]
+    ref_tiled_ions       = refs["ref_tiled_ions"]
+    ref_folded_electrons = refs["ref_folded_electrons"]
+    ref_tiled_electrons  = refs["ref_tiled_electrons"]
+    ref_folded_positrons = refs["ref_folded_positrons"]
+    ref_tiled_positrons  = refs["ref_tiled_positrons"]
 
     folded_structure = Structure(
         axes=ref_folded_axes,
@@ -637,6 +672,314 @@ def test_ps_from_tiled_structure():
     assert(tiled_ps.folded_system.ions      == ref_folded_ions)
     assert(tiled_ps.folded_system.electrons == ref_folded_electrons)
     assert(tiled_ps.folded_system.positrons == ref_folded_positrons)
+
+    # Now that we've checked everything manually, the last
+    # check is to make sure the built-in checks work
+    assert(tiled_ps.check_folded_system())
+    assert(tiled_ps.check_consistent())
+    assert(tiled_ps.is_valid())
+    assert(tiled_ps.has_folded())
+    assert(tiled_ps.get_smallest() is tiled_ps.folded_system)
+    tiled_ps.remove_folded_system()
+    assert(tiled_ps.folded_system is None)
+#end def test_pretiled_system
+
+
+def test_tile():
+    refs = get_LaAlO3_references()
+    ref_folded_elem      = refs["ref_folded_elem"]
+    ref_tiled_elem       = refs["ref_tiled_elem"]
+    ref_folded_axes      = refs["ref_folded_axes"]
+    ref_tiled_axes       = refs["ref_tiled_axes"]
+    ref_folded_pos       = refs["ref_folded_pos"]
+    ref_tiled_pos        = refs["ref_tiled_pos"]
+    ref_folded_ions      = refs["ref_folded_ions"]
+    ref_tiled_ions       = refs["ref_tiled_ions"]
+    ref_folded_electrons = refs["ref_folded_electrons"]
+    ref_tiled_electrons  = refs["ref_tiled_electrons"]
+    ref_folded_positrons = refs["ref_folded_positrons"]
+    ref_tiled_positrons  = refs["ref_tiled_positrons"]
+
+    folded_structure = Structure(
+        axes=ref_folded_axes,
+        elem=ref_folded_elem,
+        pos=ref_folded_pos,
+        units="A",
+        )
+
+    assert(folded_structure.elem.tolist() == ref_folded_elem)
+    np.testing.assert_allclose(folded_structure.axes, ref_folded_axes)
+    np.testing.assert_allclose(folded_structure.pos,  ref_folded_pos)
+
+    folded_ps = PhysicalSystem(
+        structure     = folded_structure,
+        total_charge  = 0,
+        electron_spin = 0,
+        spin_orbit    = False,
+        elem_spin     = dict(La=3.5, Al=2.5, O1=0, O2=0, O3=0),
+        elem_Zeff     = dict(La=11,  Al=3,   O1=6, O2=6, O3=6),
+        positrons     = ref_folded_positrons,
+        )
+
+    assert(folded_ps.folded_system is None)
+    assert(folded_ps.ions          == ref_folded_ions)
+    assert(folded_ps.electrons     == ref_folded_electrons)
+    assert(folded_ps.positrons     == ref_folded_positrons)
+
+    tiled_ps = folded_ps.tile(2,2,2)
+
+    assert(tiled_ps.structure.elem.tolist() == ref_tiled_elem)
+    np.testing.assert_allclose(tiled_ps.structure.axes, ref_tiled_axes)
+    np.testing.assert_allclose(tiled_ps.structure.pos,  ref_tiled_pos)
+
+    assert(tiled_ps.folded_system.structure.elem.tolist() == ref_folded_elem)
+    np.testing.assert_allclose(tiled_ps.folded_system.structure.axes, ref_folded_axes)
+    np.testing.assert_allclose(tiled_ps.folded_system.structure.pos,  ref_folded_pos)
+
+    assert(tiled_ps.ions      == ref_tiled_ions)
+    assert(tiled_ps.electrons == ref_tiled_electrons)
+    assert(tiled_ps.positrons == ref_tiled_positrons)
+
+    assert(tiled_ps.folded_system.ions      == ref_folded_ions)
+    assert(tiled_ps.folded_system.electrons == ref_folded_electrons)
+    assert(tiled_ps.folded_system.positrons == ref_folded_positrons)
+#end def test_tile
+
+
+def test_change_units():
+    refs = get_LaAlO3_references()
+    ref_folded_elem      = refs["ref_folded_elem"]
+    ref_tiled_elem       = refs["ref_tiled_elem"]
+    ref_folded_axes      = refs["ref_folded_axes"]
+    ref_tiled_axes       = refs["ref_tiled_axes"]
+    ref_folded_pos       = refs["ref_folded_pos"]
+    ref_tiled_pos        = refs["ref_tiled_pos"]
+    ref_folded_ions      = refs["ref_folded_ions"]
+    ref_tiled_ions       = refs["ref_tiled_ions"]
+    ref_folded_electrons = refs["ref_folded_electrons"]
+    ref_tiled_electrons  = refs["ref_tiled_electrons"]
+    ref_folded_positrons = refs["ref_folded_positrons"]
+    ref_tiled_positrons  = refs["ref_tiled_positrons"]
+
+    # This is already tested in `test_unit_converter.py`
+    ref_folded_axes_bohr = convert(ref_folded_axes, "A", "B")
+    ref_tiled_axes_bohr  = convert(ref_tiled_axes, "A", "B")
+    ref_folded_pos_bohr  = convert(ref_folded_pos, "A", "B")
+    ref_tiled_pos_bohr   = convert(ref_tiled_pos, "A", "B")
+
+    folded_structure = Structure(
+        axes=ref_folded_axes,
+        elem=ref_folded_elem,
+        pos=ref_folded_pos,
+        units="A",
+        )
+
+    # 8x everything
+    tiled_structure = folded_structure.tile(2,2,2)
+    tiled_ps = PhysicalSystem(
+        structure     = tiled_structure,
+        total_charge  = 0,
+        electron_spin = 0,
+        spin_orbit    = False,
+        elem_spin     = dict(La=3.5, Al=2.5, O1=0, O2=0, O3=0),
+        elem_Zeff     = dict(La=11,  Al=3,   O1=6, O2=6, O3=6),
+        positrons     = ref_tiled_positrons,
+        )
+
+    # Test everything beforehand, make sure it's in working order.
+    assert(tiled_ps.structure.elem.tolist() == ref_tiled_elem)
+    np.testing.assert_allclose(tiled_ps.structure.axes, ref_tiled_axes)
+    np.testing.assert_allclose(tiled_ps.structure.pos,  ref_tiled_pos)
+
+    assert(tiled_ps.folded_system.structure.elem.tolist() == ref_folded_elem)
+    np.testing.assert_allclose(tiled_ps.folded_system.structure.axes, ref_folded_axes)
+    np.testing.assert_allclose(tiled_ps.folded_system.structure.pos,  ref_folded_pos)
+
+    assert(tiled_ps.ions      == ref_tiled_ions)
+    assert(tiled_ps.electrons == ref_tiled_electrons)
+    assert(tiled_ps.positrons == ref_tiled_positrons)
+
+    assert(tiled_ps.folded_system.ions      == ref_folded_ions)
+    assert(tiled_ps.folded_system.electrons == ref_folded_electrons)
+    assert(tiled_ps.folded_system.positrons == ref_folded_positrons)
+
+    # Change units
+    tiled_ps.change_units("B")
+
+    # Make sure nothing else was touched.
+    assert(tiled_ps.structure.elem.tolist() == ref_tiled_elem)
+    assert(tiled_ps.folded_system.structure.elem.tolist() == ref_folded_elem)
+
+    assert(tiled_ps.ions      == ref_tiled_ions)
+    assert(tiled_ps.electrons == ref_tiled_electrons)
+    assert(tiled_ps.positrons == ref_tiled_positrons)
+
+    assert(tiled_ps.folded_system.ions      == ref_folded_ions)
+    assert(tiled_ps.folded_system.electrons == ref_folded_electrons)
+    assert(tiled_ps.folded_system.positrons == ref_folded_positrons)
+
+    # These are the only things that should have changed
+    np.testing.assert_allclose(tiled_ps.structure.axes, ref_tiled_axes_bohr)
+    np.testing.assert_allclose(tiled_ps.structure.pos,  ref_tiled_pos_bohr)
+
+    np.testing.assert_allclose(tiled_ps.folded_system.structure.axes, ref_folded_axes_bohr)
+    np.testing.assert_allclose(tiled_ps.folded_system.structure.pos,  ref_folded_pos_bohr)
+#end def test_change_units
+
+
+def test_rename():
+    refs = get_LaAlO3_references()
+    ref_folded_elem      = refs["ref_folded_elem"]
+    ref_tiled_elem       = refs["ref_tiled_elem"]
+    ref_folded_ions      = refs["ref_folded_ions"]
+    ref_tiled_ions       = refs["ref_tiled_ions"]
+
+    # "La" -> "La2"
+    # "Al" -> "Al2"
+    ref_folded_elem_new = [
+        "La2", "Al2", "O1", "O2", "O3",
+        ]
+    ref_tiled_elem_new  = [
+        "La2", "Al2", "O1", "O2", "O3",
+        "La2", "Al2", "O1", "O2", "O3",
+        "La2", "Al2", "O1", "O2", "O3",
+        "La2", "Al2", "O1", "O2", "O3",
+        "La2", "Al2", "O1", "O2", "O3",
+        "La2", "Al2", "O1", "O2", "O3",
+        "La2", "Al2", "O1", "O2", "O3",
+        "La2", "Al2", "O1", "O2", "O3",
+        ]
+    ref_folded_ions_new = {
+        'Al2': IonSpecies(element=Elements.Aluminum,  count=1, label="Al2", formal_charge=0, unit_spin=2.5, Zeff=3),
+        'La2': IonSpecies(element=Elements.Lanthanum, count=1, label="La2", formal_charge=0, unit_spin=3.5, Zeff=11),
+        'O1': IonSpecies(element=Elements.Oxygen,    count=1, label="O1", formal_charge=0, unit_spin=0,   Zeff=6),
+        'O2': IonSpecies(element=Elements.Oxygen,    count=1, label="O2", formal_charge=0, unit_spin=0,   Zeff=6),
+        'O3': IonSpecies(element=Elements.Oxygen,    count=1, label="O3", formal_charge=0, unit_spin=0,   Zeff=6),
+        }
+    ref_tiled_ions_new = {
+        'Al2': IonSpecies(element=Elements.Aluminum,  count=8, label="Al2", formal_charge=0, unit_spin=2.5, Zeff=3),
+        'La2': IonSpecies(element=Elements.Lanthanum, count=8, label="La2", formal_charge=0, unit_spin=3.5, Zeff=11),
+        'O1': IonSpecies(element=Elements.Oxygen,    count=8, label="O1", formal_charge=0, unit_spin=0,   Zeff=6),
+        'O2': IonSpecies(element=Elements.Oxygen,    count=8, label="O2", formal_charge=0, unit_spin=0,   Zeff=6),
+        'O3': IonSpecies(element=Elements.Oxygen,    count=8, label="O3", formal_charge=0, unit_spin=0,   Zeff=6),
+        }
+
+    folded_structure = Structure(
+        axes=refs["ref_folded_axes"],
+        elem=ref_folded_elem,
+        pos=refs["ref_folded_pos"],
+        units="A",
+        )
+
+    folded_ps = PhysicalSystem(
+        structure     = folded_structure,
+        total_charge  = 0,
+        electron_spin = 0,
+        spin_orbit    = False,
+        elem_spin     = dict(La=3.5, Al=2.5, O1=0, O2=0, O3=0),
+        elem_Zeff     = dict(La=11,  Al=3,   O1=6, O2=6, O3=6),
+        positrons     = refs["ref_folded_positrons"],
+        )
+
+    tiled_ps = folded_ps.tile(2,2,2)
+
+    assert(tiled_ps.structure.elem.tolist()               == ref_tiled_elem)
+    assert(tiled_ps.folded_system.structure.elem.tolist() == ref_folded_elem)
+
+    assert(tiled_ps.ions               == ref_tiled_ions)
+    assert(tiled_ps.folded_system.ions == ref_folded_ions)
+
+    tiled_ps.rename(
+        La="La2",
+        Al="Al2",
+    )
+
+    assert(tiled_ps.structure.elem.tolist()               == ref_tiled_elem_new)
+    assert(tiled_ps.folded_system.structure.elem.tolist() == ref_folded_elem_new)
+
+    assert(tiled_ps.ions               == ref_tiled_ions_new)
+    assert(tiled_ps.folded_system.ions == ref_folded_ions_new)
+#end def test_rename
+
+
+def test_group_atoms():
+    folded_ungrouped_elem = ["B1", "N", "O", "He", "Al"]
+    tiled_ungrouped_elem  = ["B1", "N", "O", "He", "Al", "B1", "N", "O", "He", "Al"]
+    folded_grouped_elem   = ["Al", "B1", "He", "N", "O"]
+    tiled_grouped_elem    = ["Al", "Al", "B1", "B1", "He", "He", "N", "N", "O", "O"]
+
+    folded_ungrouped_pos = np.array([
+        [1, 1, 1], # B1 = 1
+        [3, 3, 3], # N  = 3
+        [4, 4, 4], # O  = 4
+        [2, 2, 2], # He = 2
+        [0, 0, 0], # Al = 0
+    ], dtype=float)
+    tiled_ungrouped_pos = np.array([
+        [ 1,  1,  1], # B1 = 1
+        [ 3,  3,  3], # N  = 3
+        [ 4,  4,  4], # O  = 4
+        [ 2,  2,  2], # He = 2
+        [ 0,  0,  0], # Al = 0
+        [11,  1,  1], # B1 = 1
+        [13,  3,  3], # N  = 3
+        [14,  4,  4], # O  = 4
+        [12,  2,  2], # He = 2
+        [10,  0,  0], # Al = 0
+    ], dtype=float)
+    folded_grouped_pos = np.array([
+        [0, 0, 0], # Al = 0
+        [1, 1, 1], # B1 = 1
+        [2, 2, 2], # He = 2
+        [3, 3, 3], # N  = 3
+        [4, 4, 4], # O  = 4
+    ], dtype=float)
+    tiled_grouped_pos = np.array([
+        [ 0, 0, 0], # Al = 0
+        [10, 0, 0], # Al = 0
+        [ 1, 1, 1], # B1 = 1
+        [11, 1, 1], # B1 = 1
+        [ 2, 2, 2], # He = 2
+        [12, 2, 2], # He = 2
+        [ 3, 3, 3], # N  = 3
+        [13, 3, 3], # N  = 3
+        [ 4, 4, 4], # O  = 4
+        [14, 4, 4], # O  = 4
+    ], dtype=float)
+
+    folded_structure = Structure(
+        axes=np.array([
+            [10,  0,  0],
+            [ 0, 10,  0],
+            [ 0,  0, 10],
+        ], dtype=float),
+        elem=folded_ungrouped_elem,
+        pos=folded_ungrouped_pos,
+        units="A",
+        )
+
+    assert(folded_structure.elem.tolist() == folded_ungrouped_elem)
+    np.testing.assert_allclose(folded_structure.pos, folded_ungrouped_pos)
+
+    folded_ps = PhysicalSystem(structure=folded_structure)
+
+    tiled_ps = folded_ps.tile(2,1,1)
+
+    assert(tiled_ps.structure.elem.tolist() == tiled_ungrouped_elem)
+    np.testing.assert_allclose(tiled_ps.structure.pos,  tiled_ungrouped_pos)
+
+    assert(tiled_ps.folded_system.structure.elem.tolist() == folded_ungrouped_elem)
+    np.testing.assert_allclose(tiled_ps.folded_system.structure.pos,  folded_ungrouped_pos)
+
+    tiled_ps.group_atoms()
+
+    assert(tiled_ps.structure.elem.tolist() == tiled_grouped_elem)
+    np.testing.assert_allclose(tiled_ps.structure.pos,  tiled_grouped_pos)
+
+    assert(tiled_ps.folded_system.structure.elem.tolist() == folded_grouped_elem)
+    np.testing.assert_allclose(tiled_ps.folded_system.structure.pos,  folded_grouped_pos)
+#end def test_group_atoms
+
 
 @pytest.mark.skip
 def test_physical_system_initialization(tmp_path):
@@ -916,132 +1259,29 @@ def test_physical_system_initialization(tmp_path):
 #end def test_physical_system_initialization
 
 
-@pytest.mark.skip
-def test_change_units():
-    from ..physical_system import generate_physical_system
-
-    sys = generate_physical_system(
-        units = 'A',
-        axes  = [[3.57, 0.00, 0.00],
-                 [0.00, 3.57, 0.00],
-                 [0.00, 0.00, 3.57]],
-        elem  = 8*['C'],
-        posu  = [[0.00, 0.00, 0.00],
-                 [0.25, 0.25, 0.25],
-                 [0.00, 0.50, 0.50],
-                 [0.25, 0.75, 0.75],
-                 [0.50, 0.00, 0.50],
-                 [0.75, 0.25, 0.75],
-                 [0.50, 0.50, 0.00],
-                 [0.75, 0.75, 0.25]],
-        C     = 4,
-        )
-
-    s = sys.structure
-
-    assert(value_eq(s.pos[-1],np.array([2.6775,2.6775,0.8925])))
-    sys.change_units('B')
-    assert(value_eq(s.pos[-1],np.array([5.05974172,5.05974172,1.68658057])))
-#end def test_change_units
-
-
-@pytest.mark.skip
-def test_rename():
-    from ..developer import obj
-    from ..physical_system import generate_physical_system
-
-    sys = generate_physical_system(
-        units  = 'A',
-        axes   = [[1.785, 1.785, 0.   ],
-                  [0.   , 1.785, 1.785],
-                  [1.785, 0.   , 1.785]],
-        elem   = ['C1','C2'],
-        posu   = [[0.00, 0.00, 0.00],
-                  [0.25, 0.25, 0.25]],
-        tiling = [[ 1, -1,  1],
-                  [ 1,  1, -1],
-                  [-1,  1,  1]],
-        C1     = 4,
-        C2     = 4,
-        )
-
-    ref = sys
-    assert(object_eq(ref.valency,obj(C1=4,C2=4)))
-    assert(list(ref.structure.elem)==4*['C1','C2'])
-    assert(ref.particles.count_ions()==8)
-    assert(ref.particles.count_ions(species=True)==(8,2))
-    ref = sys.folded_system
-    assert(object_eq(ref.valency,obj(C1=4,C2=4)))
-    assert(list(ref.structure.elem)==['C1','C2'])
-    assert(ref.particles.count_ions()==2)
-    assert(ref.particles.count_ions(species=True)==(2,2))
-
-    sys.rename(C1='C',C2='C')
-
-    ref = sys
-    assert(object_eq(ref.valency,obj(C=4)))
-    assert(list(ref.structure.elem)==8*['C'])
-    assert(ref.particles.count_ions()==8)
-    assert(ref.particles.count_ions(species=True)==(8,1))
-    ref = sys.folded_system
-    assert(object_eq(ref.valency,obj(C=4)))
-    assert(list(ref.structure.elem)==2*['C'])
-    assert(ref.particles.count_ions()==2)
-    assert(ref.particles.count_ions(species=True)==(2,1))
-#end def test_rename
-
-
-@pytest.mark.skip
-def test_tile():
-    from ..physical_system import generate_physical_system
-
-    d2_ref = generate_physical_system(
-        units  = 'A',
-        axes   = [[1.785, 1.785, 0.   ],
-                  [0.   , 1.785, 1.785],
-                  [1.785, 0.   , 1.785]],
-        elem   = 2*['C'],
-        posu   = [[0.00, 0.00, 0.00],
-                  [0.25, 0.25, 0.25]],
-        C      = 4,
-        )
-
-    d8_ref = generate_physical_system(
-        units  = 'A',
-        axes   = [[1.785, 1.785, 0.   ],
-                  [0.   , 1.785, 1.785],
-                  [1.785, 0.   , 1.785]],
-        elem   = 2*['C'],
-        posu   = [[0.00, 0.00, 0.00],
-                  [0.25, 0.25, 0.25]],
-        tiling = [[ 1, -1,  1],
-                  [ 1,  1, -1],
-                  [-1,  1,  1]],
-        C      = 4,
-        )
-
-    d8 = d2_ref.tile([[ 1, -1,  1],
-                      [ 1,  1, -1],
-                      [-1,  1,  1]])
-
-    assert_system_eq(d8, d8_ref)
-#end def test_tile
-
-
-@pytest.mark.skip
 def test_kf_rpa():
-    from .test_structure import example_structure_h4
-    from ..physical_system import generate_physical_system
-    s1 = example_structure_h4()
-    ps = generate_physical_system(
-        structure = s1,
-        net_charge = 1,
-        net_spin = 1,
-        H = 1
+    alat = 3.3521298178767225
+
+    structure = Structure(
+        axes = np.eye(3) * alat,
+        elem = ["H", "H", "H", "H"],
+        pos  = np.array([
+            [   0.0,    0.0,    0.0],
+            [alat/2,    0.0,    0.0],
+            [   0.0, alat/2,    0.0],
+            [   0.0,    0.0, alat/2],
+            ], dtype=float),
+        units = "B",
         )
+    ps = PhysicalSystem(
+        structure     = structure,
+        total_charge  = 1,
+        electron_spin = 0.5, # The old `net_spin` is not equal to the spin quantum number.
+        elem_Zeff     = {"H": 1},
+    )
     kfs = ps.kf_rpa()
-    assert np.isclose(kfs[0], 1.465, atol=1e-3)
-    assert np.isclose(kfs[1], 1.465/2**(1./3), atol=1e-3)
+    np.testing.assert_allclose(kfs[0], 1.465,           atol=1e-3)
+    np.testing.assert_allclose(kfs[1], 1.465/2**(1./3), atol=1e-3)
 #end def test_kf_rpa
 
 
