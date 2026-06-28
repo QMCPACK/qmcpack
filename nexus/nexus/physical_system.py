@@ -940,6 +940,7 @@ class PhysicalSystem:
         return elem
 
     def ae_pp_species(self) -> tuple[set[str], set[str] | set]:
+        """Get the all-electron and pseudized species, respectively."""
         if self.pseudized:
             pp_species = set([lbl for lbl, ion in self.ions.items() if ion.pseudized()])
             ae_species = set(self.ions.keys()) - pp_species

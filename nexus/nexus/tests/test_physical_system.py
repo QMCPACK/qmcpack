@@ -1,5 +1,3 @@
-from typing import Any
-
 import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.PHYSICAL_SYSTEM)
@@ -1283,6 +1281,47 @@ def test_kf_rpa():
     np.testing.assert_allclose(kfs[0], 1.465,           atol=1e-3)
     np.testing.assert_allclose(kfs[1], 1.465/2**(1./3), atol=1e-3)
 #end def test_kf_rpa
+
+
+def test_ae_pp_species():
+    # Glycinate
+    structure = Structure(
+        elem  = ["N", "C", "C", "O1", "O2", "H", "H", "H", "H"],
+        pos   = np.empty((9, 3), dtype=float),
+        units = "A",
+        )
+    system = PhysicalSystem(
+        structure     = structure,
+        total_charge  = None,
+        electron_spin = 0,
+        spin_orbit    = False,
+        elem_Zeff     = dict(N=5, O1=6),
+        )
+    
+    ae_species, pp_species = system.ae_pp_species()
+    assert(ae_species == {"C", "O2", "H"})
+    assert(pp_species == {"N", "O1"})
+#end def test_ae_pp_species
+
+
+def test_large_Zeff_elem():
+        # Glycinate
+    structure = Structure(
+        elem  = ["N", "C", "C", "O1", "O2", "H", "H", "H", "H"],
+        pos   = np.empty((9, 3), dtype=float),
+        units = "A",
+        )
+
+    system = PhysicalSystem(
+        structure     = structure,
+        total_charge  = None,
+        electron_spin = 0,
+        spin_orbit    = False,
+        elem_Zeff     = dict(N=5, O1=6),
+        )
+
+    large_Zeff_elem = system.large_Zeff_elem(Zmin=5)
+    assert(set(large_Zeff_elem) == {"C", "O1", "O2"})
 
 
 @pytest.mark.xfail(
