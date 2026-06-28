@@ -16,6 +16,7 @@
 #define AFQMC_SHM_PTR_WITH_RAW_PTR_DISPATCH_HPP
 
 #include <functional>
+#include <utility>
 #include "Configuration.h"
 #include "AFQMC/config.0.h"
 #include <cassert>
@@ -252,6 +253,11 @@ struct allocator_shm_ptr_with_raw_ptr_dispatch
   allocator_shm_ptr_with_raw_ptr_dispatch& operator=(allocator_shm_ptr_with_raw_ptr_dispatch const& other)
   {
     assert((*this) == other); // TODO make comm a shared_ptr
+    return *this;
+  }
+  allocator_shm_ptr_with_raw_ptr_dispatch& operator=(allocator_shm_ptr_with_raw_ptr_dispatch&& other) noexcept
+  {
+    commP_ = std::exchange(other.commP_, nullptr);
     return *this;
   }
   bool operator==(allocator_shm_ptr_with_raw_ptr_dispatch const& other) const { return commP_ == other.commP_; }
