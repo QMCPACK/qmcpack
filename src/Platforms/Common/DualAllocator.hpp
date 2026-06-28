@@ -15,6 +15,7 @@
 #define QMCPLUSPLUS_DUAL_ALLOCATOR_H
 
 #include <memory>
+#include <utility>
 #include <atomic>
 #include <exception>
 #include "allocator_traits.hpp"
@@ -46,7 +47,15 @@ struct DualAllocator : public HostAllocator
 
   DualAllocator() : device_ptr_(nullptr) {};
   DualAllocator(const DualAllocator&) : device_ptr_(nullptr) {}
-  DualAllocator& operator=(const DualAllocator&) { device_ptr_ = nullptr; }
+  DualAllocator& operator=(const DualAllocator&) noexcept { device_ptr_ = nullptr; return *this; }
+  DualAllocator& operator=(DualAllocator&& other) noexcept
+  {
+    HostAllocator::operator=(std::move(static_cast<HostAllocator&>(other)));
+    allocator_        = std::move(other.allocator_);
+    device_allocator_ = std::move(other.device_allocator_);
+    device_ptr_       = std::exchange(other.device_ptr_, nullptr);
+    return *this;
+  }
   template<class U, class V>
   DualAllocator(const DualAllocator<U, V>&) : device_ptr_(nullptr)
   {}
