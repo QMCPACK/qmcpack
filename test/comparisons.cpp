@@ -132,9 +132,9 @@ auto main() -> int {  // NOLINT(readability-function-cognitive-complexity,bugpro
 		BOOST_TEST(  begin(arr) <  end(arr) );
 		BOOST_TEST( !(begin(arr) <  begin(arr)) );
 
-		BOOST_TEST( cbegin(arr) < cend(arr) );
+		BOOST_TEST( arr.cbegin() < arr.cend() );
 
-		BOOST_TEST(  end(arr) -  begin(arr) == size(arr) );
+		BOOST_TEST( arr.end() -  arr.begin() == arr.size() );
 	}
 	{
 		class range_1d {  // a type that has .extensions() and .elements() but is NOT a const_subarray

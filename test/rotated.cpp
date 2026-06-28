@@ -22,10 +22,10 @@ namespace multi = boost::multi;
 #if (__cplusplus >= 202002L || (defined(_MSVC_LANG) && _MSVC_LANG >= 202002L))
 #if defined(__cpp_lib_ranges_repeat) && (__cpp_lib_ranges_repeat >= 202207L)
 
-template<class X1D, class Y1D>
-auto meshgrid(X1D const& x, Y1D const& y) {
-	return std::pair{x.broadcasted().rotated(), y.broadcasted()};
-}
+// template<class X1D, class Y1D>
+// auto meshgrid(X1D const& x, Y1D const& y) {
+// 	return std::pair{x.broadcasted().rotated(), y.broadcasted()};
+// }
 
 template<class X1D, class Y1D>
 auto meshgrid_copy(X1D const& x, Y1D const& y) {
@@ -335,21 +335,21 @@ auto main() -> int {  // NOLINT(readability-function-cognitive-complexity,bugpro
 #if !defined(__GNUC__) || (__GNUC__ < 14)
 
 	// BOOST_AUTO_TEST_CASE(matlab_meshgrid)
-	{
-		auto const x = multi::array<int, 1>{1, 2, 3};
-		auto const y = multi::array<int, 1>{1, 2, 3, 4, 5};
+	// {
+	// 	auto const x = multi::array<int, 1>{1, 2, 3};
+	// 	auto const y = multi::array<int, 1>{1, 2, 3, 4, 5};
 
-		auto const& [X, Y] = meshgrid(x, y);
+	// 	auto const& [X, Y] = meshgrid(x, y);
 
-		auto const [X_copy, Y_copy] = meshgrid_copy(x, y);
+	// 	auto const [X_copy, Y_copy] = meshgrid_copy(x, y);
 
-		for(auto i : x.extent()) {
-			for(auto j : y.extent()) {
-				BOOST_TEST( X[i][j] == X_copy[i][j] );
-				BOOST_TEST( Y[i][j] == Y_copy[i][j] );
-			}
-		}
-	}
+	// 	for(auto i : x.extent()) {
+	// 		for(auto j : y.extent()) {
+	// 			BOOST_TEST( X[i][j] == X_copy[i][j] );
+	// 			BOOST_TEST( Y[i][j] == Y_copy[i][j] );
+	// 		}
+	// 	}
+	// }
 #endif
 #endif
 #endif

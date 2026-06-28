@@ -24,7 +24,7 @@ auto copy_n(It first, Size n, OutIt d_first)
 template<class X1D, class Y1D>
 auto copy(X1D const& x, Y1D&& y)  // NOLINT(readability-identifier-length) BLAS naming
 	-> decltype(blas::copy_n(x.begin(), size(x), y.begin()), std::forward<Y1D>(y)) {
-	assert((x.size() == y.size()));  // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay) : assert
+	assert((x.size() == y.size()));
 	/**/ return blas::copy_n(x.begin(), x.size(), y.begin()), std::forward<Y1D>(y);
 }
 

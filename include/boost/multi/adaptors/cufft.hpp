@@ -58,9 +58,9 @@ static auto cuda_get_error_enum(cufftResult error) -> char const* {
 }
 
 #define cufftSafeCall(err) implcufftSafeCall(err, __FILE__, __LINE__)
-inline void implcufftSafeCall(cufftResult err, const char* file, const int line) {
+inline void implcufftSafeCall(cufftResult err, const char* /*file*/, const int /*line*/) {
 	if(CUFFT_SUCCESS != err) {
-		std::cerr << "CUFFT error in file " << file << ", line " << line << "\nerror " << err << ": " << cuda_get_error_enum(err) << "\n";
+		// std::cerr << "CUFFT error in file " << file << ", line " << line << "\nerror " << err << ": " << cuda_get_error_enum(err) << "\n";
 		// fprintf(stderr, "CUFFT error in file '%s', line %d\n %s\nerror %d: %s\nterminating!\n", __FILE__, __LINE__, err,
 		//                         _cudaGetErrorEnum(err));
 		cudaDeviceReset() == cudaSuccess ? void() : assert(0);

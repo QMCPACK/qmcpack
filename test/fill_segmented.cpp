@@ -93,7 +93,7 @@ void fill_segmented(SegIt first, SegIt last, T x) {
 
 namespace multi = boost::multi;
 
-auto main() -> int {  // NOLINT(readability-function-cognitive-complexity)
+auto main() -> int {  // NOLINT(readability-function-cognitive-complexity,bugprone-exception-escape)
 	multi::array<int, 2> arr1({2, 3});
 	std::fill(arr1().elements().begin(), arr1().elements().end(), 7);
 

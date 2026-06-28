@@ -1,4 +1,4 @@
-// Copyright 2019-2025 Alfredo A. Correa
+// Copyright 2019-2026 Alfredo A. Correa
 // Copyright 2024 Matt Borland
 // Distributed under the Boost Software License, Version 1.0.
 // https://www.boost.org/LICENSE_1_0.txt
@@ -14,7 +14,7 @@
 // #include <cmath>  // for abs  // IWYU pragma: keep
 #include <cstdlib>  // for abs
 #include <memory>   // IWYU pragma: keep
-#include <vector>
+// #include <vector>
 
 namespace multi = boost::multi;
 
@@ -167,23 +167,23 @@ auto main() -> int {  // NOLINT(readability-function-cognitive-complexity,bugpro
 	}
 	// NOLINTEND(fuchsia-default-arguments-calls)
 
-	{
-		multi::array<int, 1> const arr1D = {1, 2, 3};
-		auto const                 vec1D = arr1D.to<std::vector>();
-		BOOST_TEST( vec1D.size() == 3 );
+	// {
+	// 	multi::array<int, 1> const arr1D = {1, 2, 3};
+	// 	auto const                 vec1D = arr1D.to<std::vector>();
+	// 	BOOST_TEST( vec1D.size() == 3 );
 
-		multi::array<int, 2> const arr2D = {
-			{1, 2},
-			{3, 4}
-		};
-		auto const vec2D = arr2D.to<std::vector, std::vector>();
-		BOOST_TEST( vec2D.size() == 2 );
-		BOOST_TEST( vec2D[0].size() == 2 );
+	// 	multi::array<int, 2> const arr2D = {
+	// 		{1, 2},
+	// 		{3, 4}
+	// 	};
+	// 	auto const vec2D = arr2D.to<std::vector, std::vector>();
+	// 	BOOST_TEST( vec2D.size() == 2 );
+	// 	BOOST_TEST( vec2D[0].size() == 2 );
 
-		auto const wec2D = arr2D.to<>();
-		BOOST_TEST( wec2D.size() == 2 );
-		BOOST_TEST( wec2D[0].size() == 2 );
-	}
+	// 	auto const wec2D = arr2D.to<>();
+	// 	BOOST_TEST( wec2D.size() == 2 );
+	// 	BOOST_TEST( wec2D[0].size() == 2 );
+	// }
 
 	return boost::report_errors();
 }

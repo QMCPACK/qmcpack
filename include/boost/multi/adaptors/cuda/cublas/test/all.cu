@@ -1,4 +1,4 @@
-// Copyright 2023-2025 Alfredo A. Correa
+// Copyright 2023-2026 Alfredo A. Correa
 // Distributed under the Boost Software License, Version 1.0.
 // https://www.boost.org/LICENSE_1_0.txt
 
@@ -23,6 +23,16 @@
 #include <thrust/transform_reduce.h>
 
 #include <numeric>
+
+#include <thrust/version.h>  // for THRUST_VERSION
+
+#if THRUST_VERSION >= 300000  // CCCL/Thrust 3.0+
+#include <cuda/std/functional>
+using plus_t = ::cuda::std::plus<>;
+#else
+#include <thrust/functional.h>
+using plus_t = ::thrust::plus<>;  // deprecated in CCCL 3
+#endif
 
 namespace multi = boost::multi;
 
@@ -194,7 +204,7 @@ int main() {
 			auto res2 = thrust::transform_reduce(
 				x.begin(), x.end(),
 				[] __host__ __device__(T const& e) { return std::abs(e.real()) + std::abs(e.imag()); },
-				double{}, thrust::plus<>{}
+				double{}, plus_t{}
 			);
 			BOOST_TEST( res == res2 );
 		}
@@ -315,7 +325,7 @@ int main() {
 			BOOST_TEST( res == res2 );
 		}
 		{
-			auto res2 = sqrt(thrust::transform_reduce(x.begin(), x.end(), [] __host__ __device__(T const& e) { return thrust::norm(e); }, double{}, thrust::plus<>{}));
+			auto res2 = sqrt(thrust::transform_reduce(x.begin(), x.end(), [] __host__ __device__(T const& e) { return thrust::norm(e); }, double{}, plus_t{}));
 			BOOST_TEST( res == res2 );
 		}
 		{
@@ -384,7 +394,7 @@ int main() {
 			{
 				//  auto [x2, A2, B2] = generate_ABx<complex, thrust::cuda::allocator<complex> >();
 				//  thrust::for_each(x2.begin(), x2.end(), [s] __device__ (T& e) {return e*=s;});
-				auto res2 = thrust::inner_product(x.begin(), x.end(), y.begin(), T{}, thrust::plus<>{}, [] __device__(T const& t1, T const& t2) { return conj(t1) * t2; });
+				auto res2 = thrust::inner_product(x.begin(), x.end(), y.begin(), T{}, plus_t{}, [] __device__(T const& t1, T const& t2) { return conj(t1) * t2; });
 				BOOST_TEST(res == res2);
 			}
 		}
@@ -403,7 +413,7 @@ int main() {
 			{
 				//  auto [x2, A2, B2] = generate_ABx<complex, thrust::cuda::allocator<complex> >();
 				//  thrust::for_each(x2.begin(), x2.end(), [s] __device__ (T& e) {return e*=s;});
-				auto res2 = thrust::inner_product(x.begin(), x.end(), y.begin(), T{}, thrust::plus<>{}, [] __device__(T const& t1, T const& t2) { return t1 * conj(t2); });
+				auto res2 = thrust::inner_product(x.begin(), x.end(), y.begin(), T{}, plus_t{}, [] __device__(T const& t1, T const& t2) { return t1 * conj(t2); });
 				BOOST_TEST(res == res2);
 			}
 			{
@@ -444,7 +454,7 @@ int main() {
 			// {
 			// //  auto [x2, A2, B2] = generate_ABx<complex, thrust::cuda::allocator<complex> >();
 			// //  thrust::for_each(x2.begin(), x2.end(), [s] __device__ (T& e) {return e*=s;});
-			//  auto res2 = thrust::inner_product(x.begin(), x.end(), y.begin(), T{}, thrust::plus<>{}, [] __device__ (T const& t1, T const& t2) {return t1*conj(t2);});
+			//  auto res2 = thrust::inner_product(x.begin(), x.end(), y.begin(), T{}, plus_t{}, [] __device__ (T const& t1, T const& t2) {return t1*conj(t2);});
 			//  BOOST_TEST(res == res2);
 			// }
 			// {

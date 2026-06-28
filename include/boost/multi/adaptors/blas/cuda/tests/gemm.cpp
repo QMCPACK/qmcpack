@@ -3,7 +3,6 @@
 // https://www.boost.org/LICENSE_1_0.txt
 
 // #include <boost/test/unit_test.hpp>  // TODO(correaa) convert into lightweight test
-#include <boost/timer/timer.hpp>
 
 #include <boost/multi/adaptors/cuda/cublas.hpp>
 #include <boost/multi/array.hpp>
@@ -11,12 +10,34 @@
 #include <boost/multi/adaptors/cuda.hpp>
 #include <boost/multi/adaptors/blas.hpp>
 
+#include <chrono>
 #include <cmath>                                   // for abs  // IWYU pragma: keep
 // IWYU pragma: no_include <cstdlib>                                   // for abs
 #include <exception>                                 // for exception
+#include <iostream>
 #include <random>
+#include <string>
+#include <utility>  // move
 
 namespace multi = boost::multi;
+
+namespace {
+// minimal RAII wall-clock timer (replaces boost::timer::auto_cpu_timer)
+class auto_timer {
+	std::string                           label_;
+	std::chrono::steady_clock::time_point start_ = std::chrono::steady_clock::now();
+
+ public:
+	explicit auto_timer(std::string label = {}) : label_{std::move(label)} {}
+	auto_timer(auto_timer const&)                    = delete;
+	auto_timer(auto_timer&&)                         = delete;
+	auto operator=(auto_timer const&) -> auto_timer& = delete;
+	auto operator=(auto_timer&&) -> auto_timer&      = delete;
+	~auto_timer() {
+		std::cerr << label_ << std::chrono::duration<double>(std::chrono::steady_clock::now() - start_).count() << " s (wall)\n";
+	}
+};
+}  // namespace
 
 BOOST_AUTO_TEST_CASE(const multi_adaptors_blas_cuda_gemm_complex_3x2_3x2){
 	using complex = std::complex<double>; complex const I{0, 1};
@@ -134,7 +155,7 @@ BOOST_AUTO_TEST_CASE(const multi_adaptors_blas_cuda_gemm_context_timing){
 	}
 	namespace blas = multi::blas;
 	{
-		boost::timer::auto_cpu_timer t; // 2.398206s
+		auto_timer t; // 2.398206s
 		for(auto i = 0; i != 10; ++i){
 			blas::context ctx;
 			blas::gemm(ctx, 1.0, A, B, 0.0, C);
@@ -144,7 +165,7 @@ BOOST_AUTO_TEST_CASE(const multi_adaptors_blas_cuda_gemm_context_timing){
 	{
 		device_array A_gpu = A, B_gpu = B, C_gpu({size(A), size(~B)});
 
-		boost::timer::auto_cpu_timer t; // 0.707426s
+		auto_timer t; // 0.707426s
 		for(auto i = 0; i != 10; ++i){
 			multi::cublas::context ctx;
 			blas::gemm(ctx, 1.0, A_gpu, B_gpu, 0.0, C_gpu);
@@ -153,7 +174,7 @@ BOOST_AUTO_TEST_CASE(const multi_adaptors_blas_cuda_gemm_context_timing){
 	{
 		device_array A_gpu = A, B_gpu = B, C_gpu({size(A), size(~B)});
 
-		boost::timer::auto_cpu_timer t; // 0.613534s
+		auto_timer t; // 0.613534s
 		multi::cublas::context ctx;
 		for(auto i = 0; i != 10; ++i) blas::gemm(ctx, 1.0, A_gpu, B_gpu, 0.0, C_gpu);
 	}

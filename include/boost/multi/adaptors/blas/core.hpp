@@ -27,7 +27,7 @@
 #ifndef NDEBUG
 	#include<stdexcept>
 	#include<string>
-	#define BOOST_MULTI_ASSERT1(ExpR)              (void)((ExpR)?0:throw std::logic_error("\n" __FILE__ ":"+std::to_string(__LINE__)+"::\n"+std::string(BOOST_MULTI_BLAS_PRETTY_FUNCTION)+"\nLogic assertion `" #ExpR "' failed.")) /*NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)*/
+	#define BOOST_MULTI_ASSERT1(ExpR)              (void)((ExpR)?0:throw std::logic_error("\n" __FILE__ ":"+std::to_string(__LINE__)+"::\n"+std::string(BOOST_MULTI_BLAS_PRETTY_FUNCTION)+"\nLogic assertion `" #ExpR "' failed."))
 	#define BOOST_MULTI_ASSERT2(ExpR, DescriptioN) (void)((ExpR)?0:throw std::DescriptioN("\n" __FILE__ ":"+std::to_string(__LINE__)+"::\n"+std::string(BOOST_MULTI_BLAS_PRETTY_FUNCTION)+"\nLogic assertion `" #ExpR "' failed."))
 #else
 	#define BOOST_MULTI_ASSERT1(ExpR)              assert(ExpR)
@@ -219,7 +219,7 @@ xTRSM(s); xTRSM(d); xTRSM(c)   ; xTRSM(z)   ;
 namespace boost::multi::blas {
 
 // Boundary Checked value
-#define BC(value) [](auto checked) {assert(checked >= std::numeric_limits<INT>::min() && checked < std::numeric_limits<INT>::max()); return checked;}(value)  /*NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)*/
+#define BC(value) [](auto checked) {assert(checked >= std::numeric_limits<INT>::min() && checked < std::numeric_limits<INT>::max()); return checked;}(value)
 
 namespace core {
 
@@ -502,9 +502,9 @@ template<class UL, class C, class S, class ALPHA, class AAP, class AA = typename
 v herk(        UL uplo, C transA,             S n, S k, ALPHA const* alpha, AAP aa, S lda,             BETA const* beta, CCP cc, S ldc)  /*NOLINT(bugprone-easily-swappable-parameters,readability-identifier-length)*/               \
 /*=delete;*/                                                                                                                                                                                                                          \
 {                                                                                                                                                                                                                                     \
-	if(transA == 'N' || transA == 'n') { BOOST_MULTI_ASSERT1( lda >= max(S{1}, n) ); }  /* NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)*/                                                         \
+	if(transA == 'N' || transA == 'n') { BOOST_MULTI_ASSERT1( lda >= max(S{1}, n) ); } \
 	if(transA != 'N' && transA != 'n') { BOOST_MULTI_ASSERT1( lda >= max(S{1}, k) ); }                                                                                                                                                \
-	BOOST_MULTI_ASSERT1( ldc >= max(S{1}, n) );  /* NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)*/                                                                                                \
+	BOOST_MULTI_ASSERT1( ldc >= max(S{1}, n) ); \
 	/*BOOST_MULTI_MARK_SCOPE("cpu_herk");*/                                                                                                                                                                                                      \
 	BLAS(T##herk)(      uplo, transA,            static_cast<ssize_t>(BC(n)), static_cast<ssize_t>(BC(k)), *reinterpret_cast<Real const*>(alpha), reinterpret_cast<T const*>(aa), static_cast<ssize_t>(BC(lda)),        *reinterpret_cast<Real const*>(beta), reinterpret_cast<T*>(cc), static_cast<ssize_t>(BC(ldc)));  /*NOLINT(cppcoreguidelines-pro-type-reinterpret-cast,bugprone-macro-parentheses)*/                                                                                            \
 }                                                                                                                                                                                                                                          \
@@ -552,13 +552,13 @@ enable_if_t<  /* NOLINT(modernize-use-constraints) for C++20 */                 
 	is_convertible_v<AAP, AA*> && is_convertible_v<BBP, BB*>                                                                                                                                                     \
 ,int> =0>                                                                                                                                                                                                         \
 v trsm(char side, char uplo, char transA, char diag, SSize m, SSize n, ALPHA alpha, AAP aa, SSize lda, BBP bb, SSize ldb) { /*NOLINT(bugprone-easily-swappable-parameters,readability-identifier-length)*/  \
-	assert( side   == 'L' || side   == 'R' );                   /* NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)*/                                                             \
-	assert( uplo   == 'U' || uplo   == 'L' );                   /* NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)*/                                                             \
-	assert( transA == 'N' || transA == 'T' || transA == 'C' );  /* NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)*/                                                             \
-	assert( diag   == 'U' || diag   == 'N' );                   /* NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)*/                                                             \
+	assert( side   == 'L' || side   == 'R' ); \
+	assert( uplo   == 'U' || uplo   == 'L' ); \
+	assert( transA == 'N' || transA == 'T' || transA == 'C' ); \
+	assert( diag   == 'U' || diag   == 'N' ); \
 	BOOST_MULTI_ASSERT1( m >= 0 && n >= 0 );                                                                                                                                                                           \
 	using std::max;                                                                                                                                                                                           \
-	if(side == 'L') {BOOST_MULTI_ASSERT1( lda >= max(SSize{1}, m) );}   /* NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)*/                                                         \
+	if(side == 'L') {BOOST_MULTI_ASSERT1( lda >= max(SSize{1}, m) );} \
 	if(side == 'R') {BOOST_MULTI_ASSERT1( lda >= max(SSize{1}, n) );}                                                                                                                                                 \
 	BOOST_MULTI_ASSERT1( ldb >= max(SSize{1}, m) );                                                                                                                                                                   \
 	BLAS(T##trsm)(side, uplo, transA, diag, static_cast<ssize_t>(BC(m)), static_cast<ssize_t>(BC(n)), alpha, reinterpret_cast<T const*>(static_cast<AA*>(aa)), static_cast<ssize_t>(BC(lda)), reinterpret_cast<T*>(static_cast<BB*>(bb)), static_cast<ssize_t>(BC(ldb)));   /*NOLINT(cppcoreguidelines-pro-type-reinterpret-cast,bugprone-macro-parentheses)*/                                                                  \

@@ -124,7 +124,9 @@ foreach(TEST_FILE ${TEST_SRCS})
 
 		target_compile_options(
 			${TEST_EXE} PRIVATE
+			# $<$<COMPILE_LANG_AND_ID:CUDA,NVIDIA>:>  # nvcc front-end; applies under both gcc and MSVC hosts
 			$<$<CXX_COMPILER_ID:GNU>:
+				-Wdeprecated-declarations
 				$<$<COMPILE_LANG_AND_ID:CUDA,NVIDIA>:
 					-Xcompiler=-Wconversion
 					-Xcompiler=-Wsign-conversion

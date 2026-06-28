@@ -6,6 +6,13 @@
 > This library is under active Boost review until **March 15, 2026**.  
 > If you are interested in reviewing the library, please send an email to the review manager, **Matt Borland** (matt AT mattborland DOT com).
 
+Quick start: 
+```
+git clone https://gitlab.com/correaa/boost-multi && cd boost-multi
+cmake . -B ./build && camke --build ./build && ctest -C ./build
+```
+read the [documentation](https://correaa.gitlab.io/boost-multi/) or explore `./test`.
+
 **[Boost.] Multi**
 
 > **Disclosure: This is not an official or accepted Boost library and is unrelated to the std::mdspan proposal. It is in the process of being proposed for inclusion in [Boost](https://www.boost.org/) and it doesn't depend on Boost libraries.**
@@ -78,7 +85,7 @@ The library can be also installed with CMake.
 The header (and CMake) files will be installed in the chosen prefix location (by default, `/usr/local/include/multi` and `/usr/local/share/multi`).
 ```bash
 cd boost-multi
-mkdir -p build && cd build
+mkdir build
 cmake . -B ./build  # --install-prefix=$HOME/.local
 cmake --install ./build  # or sudo ...
 ```
@@ -89,7 +96,7 @@ A CMake build system is provided to compile and run basic tests.
 ctest -C ./build
 ```
 
-Once installed, other CMake projects (targets) can depend on Multi by adding a simple `add_subdirectory(my_multi_path)` or by `find_package`:
+Once installed, other CMake projects (targets) can depend on Multi by adding `add_subdirectory(my_multi_path)` or by `find_package`:
 ```cmake
 find_package(multi)  # see https://gitlab.com/correaa/boost-multi
 ```

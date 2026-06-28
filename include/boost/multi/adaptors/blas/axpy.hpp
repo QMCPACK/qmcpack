@@ -120,13 +120,13 @@ class axpy_range {
 
 	template<class Other>
 	friend auto operator+=(Other&& other, axpy_range const& self) -> Other&& {
-		assert(other.size() == self.count_); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay) : bug in clang-tidy https://reviews.llvm.org/D31130
+		assert(other.size() == self.count_);
 		blas::axpy_n(self.ctxt_, +static_cast<typename ItX::value_type>(self.alpha_), self.x_begin_, self.count_, other.begin());
 		return std::forward<Other>(other);
 	}
 	template<class Other>
 	friend auto operator-=(Other&& other, axpy_range const& self) -> Other&& {
-		assert(other.size() == self.count_); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay) : bug in clang-tidy https://reviews.llvm.org/D31130
+		assert(other.size() == self.count_);
 		blas::axpy_n(self.ctxt_, -static_cast<typename ItX::value_type>(self.alpha_), self.x_begin_, self.count_, other.begin());
 		return std::forward<Other>(other);
 	}

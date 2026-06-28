@@ -95,7 +95,7 @@ auto main() -> int {  // NOLINT(readability-function-cognitive-complexity,bugpro
 		}
 		{
 			multi::array arr(10, int{});
-			BOOST_TEST( size(arr) == 10 );
+			BOOST_TEST( arr.size() == 10 );
 			BOOST_TEST( arr[5] == int{} );
 		}
 #endif
@@ -105,7 +105,7 @@ auto main() -> int {  // NOLINT(readability-function-cognitive-complexity,bugpro
 	{
 #if defined(__cpp_deduction_guides) && !defined(__NVCC__)
 		multi::array arr({10, 20}, int{});
-		BOOST_TEST( size(arr) == 10 );
+		BOOST_TEST( arr.size() == 10 );
 		BOOST_TEST( arr[5][6] == int{} );
 #endif
 	}

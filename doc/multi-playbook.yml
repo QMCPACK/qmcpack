@@ -1,7 +1,8 @@
 site:
   title: Boost.Multi
-  start_page: ROOT::intro.adoc
+  start_page: multi::intro.adoc
 content:
+  edit_url: '{web_url}/-/edit/develop/{path}'  # GitLab uses /-/edit/; pin to develop since CI builds at a detached HEAD ({refname} would be "HEAD")
   sources:
     - url: ..
       start_path: doc

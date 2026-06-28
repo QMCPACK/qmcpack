@@ -1,4 +1,4 @@
-// Copyright 2018-2025 Alfredo A. Correa
+// Copyright 2018-2026 Alfredo A. Correa
 // Copyright 2024 Matt Borland
 // Distributed under the Boost Software License, Version 1.0.
 // https://www.boost.org/LICENSE_1_0.txt
@@ -12,10 +12,10 @@
 #include <array>       // for array, operator==
 #include <cstddef>     // for offsetof, size_t
 #include <functional>  // for mem_fn  // IWYU pragma: keep
-#include <iterator>    // for size
-#include <memory>      // for addressof  // IWYU pragma: keep
-#include <string>      // for operator""s, allocator, char_traits
-#include <tuple>       // for tie, operator==, tuple
+// #include <iterator>    // for size
+#include <memory>  // for addressof  // IWYU pragma: keep
+#include <string>  // for operator""s, allocator, char_traits
+#include <tuple>   // for tie, operator==, tuple
 
 #ifdef _MSC_VER
 #pragma warning(disable : 4371)
@@ -116,7 +116,8 @@ auto main() -> int {  // NOLINT(readability-function-cognitive-complexity,bugpro
 		AoS[1][1] = particle{99, v3d{{1.0, 2.0}}};  // NOLINT(modernize-use-designated-initializers) for C++20
 
 		auto&& masses = AoS.member_cast<int>(&particle::mass);
-		BOOST_TEST(size(masses) == 2);
+
+		BOOST_TEST(masses.size() == 2);
 		BOOST_TEST(masses[1][1] == 99 );
 
 		multi::array<int, 2> masses_copy{masses};

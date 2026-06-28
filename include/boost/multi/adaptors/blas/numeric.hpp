@@ -24,6 +24,12 @@
 
 #if defined(__CUDA__) || defined(__NVCC__) || defined(__HIP_PLATFORM_NVIDIA__) || defined(__HIP_PLATFORM_AMD__) || defined(__HIPCC__)
 #include <thrust/device_reference.h>  // for thrust::tagged_reference
+#if defined(__CUDA__) || defined(__NVCC__)
+#include <thrust/system/cuda/detail/execution_policy.h>  // IWYU pragma: keep  // for thrust::cuda_cub::tag
+#endif
+#if defined(__HIP_PLATFORM_NVIDIA__) || defined(__HIP_PLATFORM_AMD__) || defined(__HIPCC__)
+#include <thrust/system/hip/detail/execution_policy.h>  // IWYU pragma: keep  // for thrust::hip::tag
+#endif
 #endif
 
 #ifdef __NVCC__

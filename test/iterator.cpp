@@ -157,7 +157,7 @@ auto main() -> int {  // NOLINT(readability-function-cognitive-complexity,bugpro
 
 		BOOST_TEST( size(arr) == 3 );
 		BOOST_TEST( size(arr[0]) == 2 );
-		BOOST_TEST( size(arr[0][0]) == 2 );
+		BOOST_TEST( arr[0][0].size() == 2 );
 		BOOST_TEST( arr[0][0][1] == 11 );
 
 		BOOST_TEST( begin(arr) < end(arr) );
@@ -169,11 +169,12 @@ auto main() -> int {  // NOLINT(readability-function-cognitive-complexity,bugpro
 
 		//  BOOST_TEST( rbegin(A) < rend(A) );
 
-		BOOST_TEST( end(arr) - begin(arr) == size(arr) );
+		BOOST_TEST( arr.end() - arr.begin() == size(arr) );
 		//  BOOST_TEST( rend(A) - rbegin(A) == size(A) );
 
-		BOOST_TEST( size(*begin(arr)   ) == 2 );
-		BOOST_TEST( size( begin(arr)[1]) == 2 );
+		BOOST_TEST((*begin(arr)  ).size() == 2 );
+		BOOST_TEST(  begin(arr)  ->size() == 2 );
+		BOOST_TEST(  begin(arr)[1].size() == 2 );
 
 		BOOST_TEST( &(arr[1][1].begin()[0]) == &arr[1][1][0] );  // NOLINT(readability-container-data-pointer) test access
 		BOOST_TEST( &arr[0][1][0] == &arr[0][1][0] );

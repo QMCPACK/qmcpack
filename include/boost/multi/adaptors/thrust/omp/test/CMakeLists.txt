@@ -10,7 +10,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 find_package(Boost CONFIG REQUIRED)  # tests require Boost.Core LightweightTest
 
-find_package(OpenMP)
+find_package(OpenMP COMPONENTS CXX)
 
 if(${CMAKE_CXX_COMPILER_ID} MATCHES "NVHPC")
     if(${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS_EQUAL "22.11")

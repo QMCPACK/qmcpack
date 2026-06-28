@@ -12,7 +12,7 @@ include_directories(../include)
 #...
 #target_link_library(my_target PUBLIC multi)
 
-find_package(Boost REQUIRED COMPONENTS iostreams serialization unit_test_framework timer)
+find_package(Boost REQUIRED COMPONENTS iostreams serialization unit_test_framework)
 add_subdirectory("../" multi-bin)
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

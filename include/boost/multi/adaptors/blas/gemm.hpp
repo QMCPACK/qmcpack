@@ -44,10 +44,10 @@ template<class Context, class It2DA, class Size, class It2DB, class It2DC,
 	std::enable_if_t<(!is_conjugated<It2DA>{} && !is_conjugated<It2DB>{}), int> = 0>  // NOLINT(modernize-use-constraints) TODO(correaa) for C++20
 auto gemm_n(Context&& ctxt, typename It2DA::element alpha, It2DA a_first, Size a_count, It2DB b_first, typename It2DA::element beta, It2DC c_first) // NOLINT(readability-function-cognitive-complexity) : 125
 {
-	assert( b_first->size() == c_first->size() );          // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
-	assert( a_first.stride()==1 || a_first->stride()==1 ); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
-	assert( b_first.stride()==1 || b_first->stride()==1 ); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
-	assert( c_first.stride()==1 || c_first->stride()==1 ); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
+	assert( b_first->size() == c_first->size() );
+	assert( a_first.stride()==1 || a_first->stride()==1 );
+	assert( b_first.stride()==1 || b_first->stride()==1 );
+	assert( c_first.stride()==1 || c_first->stride()==1 );
 
 	if(a_count == 0) { return c_first; }
 
@@ -78,7 +78,7 @@ auto gemm_n(Context&& ctxt, typename It2DA::element alpha, It2DA a_first, Size a
 		else                                        {CTXT->gemm('N', 'N', a_count, b_first->size(), a_first->size(), &alpha, a_first.base(), a_first->stride(), b_first.base(), b_first->stride(), &beta, c_first.base(), c_first->stride());}
 	}else if(a_first. stride()==1 && b_first.stride( )==1 && c_first->stride()==1) {          
 	                                                {CTXT->gemm('T', 'T', b_first->size(), a_count, a_first->size(), &alpha, b_first.base(), b_first->stride(), a_first.base(), a_first->stride(), &beta, c_first.base(), c_first. stride());}
-	} else {assert(0);}  // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
+	} else {assert(0);}
 
 	return c_first + a_count;
 }
@@ -87,10 +87,10 @@ template<class Context, class It2DA, class Size, class It2DB, class It2DC,
 	std::enable_if_t<(!is_conjugated<It2DA>{} && is_conjugated<It2DB>{}), int> =0>  // NOLINT(modernize-use-constraints) TODO(correaa) for C++20
 auto gemm_n(Context&& ctxt, typename It2DA::element alpha, It2DA a_first, Size a_count, It2DB b_first, typename It2DA::element beta, It2DC c_first) // NOLINT(readability-function-cognitive-complexity) : 125
 {
-	assert( b_first->size() == c_first->size() );          // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
-	assert( a_first.stride()==1 || a_first->stride()==1 ); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
-	assert( b_first.stride()==1 || b_first->stride()==1 ); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
-	assert( c_first.stride()==1 || c_first->stride()==1 ); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
+	assert( b_first->size() == c_first->size() );
+	assert( a_first.stride()==1 || a_first->stride()==1 );
+	assert( b_first.stride()==1 || b_first->stride()==1 );
+	assert( c_first.stride()==1 || c_first->stride()==1 );
 
 	if(a_count == 0) { return c_first; }
 
@@ -105,7 +105,7 @@ auto gemm_n(Context&& ctxt, typename It2DA::element alpha, It2DA a_first, Size a
 								{CTXT->gemm('C', 'T', c_first->size(), a_count, a_first->size(), &alpha, underlying(b_first.base()), b_first->stride(), a_first.base(), a_first->stride(), &beta, c_first.base(), c_first->stride());}
 	}else if(a_first. stride()==1 && b_first. stride()==1 && c_first->stride()==1){
 								{CTXT->gemm('C', 'T', a_count, c_first->size(), a_first->size(), &alpha, underlying(b_first.base()), b_first->stride(), a_first.base(), a_first->stride(), &beta, c_first.base(), c_first. stride());}
-	}else{assert(0);}  // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
+	}else{assert(0);}
 
 	return c_first + a_count;
 }
@@ -114,10 +114,10 @@ template<class Context, class It2DA, class Size, class It2DB, class It2DC,
 	std::enable_if_t<(is_conjugated<It2DA>{} && !is_conjugated<It2DB>{}), int> =0>  // NOLINT(modernize-use-constraints) TODO(correaa) for C++20
 auto gemm_n(Context&& ctxt, typename It2DA::element alpha, It2DA a_first, Size a_count, It2DB b_first, typename It2DA::element beta, It2DC c_first) // NOLINT(readability-function-cognitive-complexity) : 125
 {
-	assert( b_first->size() == c_first->size() );          // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
-	assert( a_first.stride()==1 || a_first->stride()==1 ); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
-	assert( b_first.stride()==1 || b_first->stride()==1 ); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
-	assert( c_first.stride()==1 || c_first->stride()==1 ); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
+	assert( b_first->size() == c_first->size() );
+	assert( a_first.stride()==1 || a_first->stride()==1 );
+	assert( b_first.stride()==1 || b_first->stride()==1 );
+	assert( c_first.stride()==1 || c_first->stride()==1 );
 
 	if(a_count == 0) { return c_first; }
 
@@ -133,10 +133,10 @@ template<class Context, class It2DA, class Size, class It2DB, class It2DC,
 	std::enable_if_t<(is_conjugated<It2DA>{} && is_conjugated<It2DB>{}), int> =0>  // NOLINT(modernize-use-constraints) TODO(correaa) for C++20
 auto gemm_n(Context&& ctxt, typename It2DA::element alpha, It2DA a_first, Size a_count, It2DB b_first, typename It2DA::element beta, It2DC c_first) // NOLINT(readability-function-cognitive-complexity) : 125
 {
-	assert( b_first->size() == c_first->size() );          // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
-	assert( a_first.stride()==1 || a_first->stride()==1 ); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
-	assert( b_first.stride()==1 || b_first->stride()==1 ); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
-	assert( c_first.stride()==1 || c_first->stride()==1 ); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
+	assert( b_first->size() == c_first->size() );
+	assert( a_first.stride()==1 || a_first->stride()==1 );
+	assert( b_first.stride()==1 || b_first->stride()==1 );
+	assert( c_first.stride()==1 || c_first->stride()==1 );
 
 	if(a_count == 0) { return c_first; }
 	if      (a_first. stride()==1 && b_first. stride()==1 && c_first->stride()==1){
@@ -154,6 +154,7 @@ auto gemm_n(typename It2DA::element alpha, It2DA a_first, Size a_count, It2DB b_
 
 template<class Context, class A, class B, class C>
 auto gemm(Context&& ctx, typename A::element alpha, A const& a, B const& b, typename A::element beta, C&& c) -> C&& {  // NOLINT(readability-identifier-length) BLAS naming
+	using std::size;
 	assert( size( a) == size( c) );
 	if(! a.is_empty()) {assert( size(~a) == size( b) );}
 	if constexpr(is_conjugated<C>{}) {blas::gemm  (std::forward<Context>(ctx), conj(alpha), conj(a),           conj(b) , conj(beta), conj(c) );}
@@ -224,7 +225,7 @@ class gemm_iterator {
 	friend auto operator+(gemm_iterator ret, difference_type n) { return ret += n; }
 
 	friend auto operator-(gemm_iterator const& a, gemm_iterator const& b) -> difference_type {  // NOLINT(readability-identifier-length) BLAS naming
-		assert(a.b_begin_ == b.b_begin_);  // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
+		assert(a.b_begin_ == b.b_begin_);
 		return a.a_it_ - b.a_it_;
 	}
 	friend auto operator==(gemm_iterator const& self, gemm_iterator const& other) -> bool {return self.a_it_ == other.a_it_;}
@@ -254,7 +255,7 @@ class gemm_iterator {
 
 	template<class ItOut>
 	friend auto uninitialized_copy(gemm_iterator const& first, gemm_iterator const& last, ItOut d_first) {
-		// assert( first.s_ == last.s_ ); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
+		// assert( first.s_ == last.s_ );
 		return uninitialized_copy_n(first, last - first, d_first);
 	}
 

@@ -157,6 +157,7 @@ class range {
 	: first_{std::forward<Range>(other).first()}, last_{std::forward<Range>(other).last()} {}
 
 	BOOST_MULTI_HD constexpr range(IndexType first, IndexTypeLast last) : first_{first}, last_{last} {}
+	// BOOST_MULTI_HD constexpr range(IndexTypeLast count) : first_{}, last_{first_ + count} {}
 
 	// TODO(correaa) make this iterator SCARY
 	class const_iterator : public boost::multi::iterator_facade<const_iterator, value_type, std::random_access_iterator_tag, const_reference, difference_type> {

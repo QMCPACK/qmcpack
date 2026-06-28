@@ -212,7 +212,7 @@ constexpr auto eye(multi::ssize_t size) {
 
 template<class Array, class DefaultZero>
 constexpr auto zeros(Array&& arr, DefaultZero df) {
-	auto exts = arr.extensions();  // mull-ignore: cxx_init_const
+	auto exts = arr.extents();  // mull-ignore: cxx_init_const
 	return restricted([arr_ = std::forward<Array>(arr), df](auto... ijk) { return df(arr_(ijk...)); }, exts);
 }
 

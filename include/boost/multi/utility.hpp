@@ -515,20 +515,20 @@ template<class T, std::size_t N>
 constexpr auto corigin(T const (&array)[N]) noexcept { return corigin(array[0]); }  // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays) for backwards compatibility
 
 template<class T, typename = decltype(std::declval<T>().extent())>
-auto        has_extension_aux(T const&) -> std::true_type;
-inline auto has_extension_aux(...) -> std::false_type;
-template<class T> struct has_extension : decltype(has_extension_aux(std::declval<T>())){};  // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg,cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
+auto        has_extent_aux(T const&) -> std::true_type;
+inline auto has_extent_aux(...) -> std::false_type;
+template<class T> struct has_extent : decltype(has_extent_aux(std::declval<T>())){};  // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg,cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
 
-template<class Container, class = std::enable_if_t<!has_extension<Container>::value>>  // NOLINT(modernize-use-constraints) TODO(correaa)
+template<class Container, class = std::enable_if_t<!has_extent<Container>::value>>  // NOLINT(modernize-use-constraints) TODO(correaa)
 auto extent(Container const& cont)
 	-> decltype(multi::extent_t<std::make_signed_t<decltype(size(cont))>>(0, static_cast<std::make_signed_t<decltype(size(cont))>>(size(cont)))) {
 	return multi::extent_t<std::make_signed_t<decltype(size(cont))>>(0, static_cast<std::make_signed_t<decltype(size(cont))>>(size(cont)));
 }
 
-template<class Container, class = std::enable_if_t<!has_extension<Container>::value>>  // NOLINT(modernize-use-constraints)
+template<class Container, class = std::enable_if_t<!has_extent<Container>::value>>  // NOLINT(modernize-use-constraints)
 [[deprecated("use extent")]] auto extension(Container const& cont) -> decltype(extent(cont)) { return extent(cont); }
 
-template<dimensionality_type Rank, class Container, std::enable_if_t<!has_extension<Container>::value, int> = 0>  // NOLINT(modernize-use-constraints) for C++20
+template<dimensionality_type Rank, class Container, std::enable_if_t<!has_extent<Container>::value, int> = 0>  // NOLINT(modernize-use-constraints) for C++20
 auto extents(Container const& cont) {
 	if constexpr(Rank == 0) {
 		return multi::extents_t<0>{};
@@ -537,10 +537,6 @@ auto extents(Container const& cont) {
 		return multi::extent_t<std::make_signed_t<decltype(size(cont))>>(0, static_cast<std::make_signed_t<decltype(size(cont))>>(size(cont))) * extents<Rank - 1>(cont.front());
 	}
 }
-
-// template<class T, typename = decltype(std::declval<T>().shape())>
-//        auto has_shape_aux(T const&) -> std::true_type;
-// inline auto has_shape_aux(...     ) -> std::false_type;
 
 template<class T> struct has_shape : decltype(has_shape_aux(std::declval<T>())){};  // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg,cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay) trick
 
@@ -591,11 +587,6 @@ auto transposed(Arr2D&& arr)
 	return std::forward<Arr2D>(arr).transposed();
 }
 
-// template<class BoostMultiArray, std::enable_if_t<has_shape<BoostMultiArray>::value && !has_extensions<BoostMultiArray>::value, int> =0>
-// constexpr auto extents(BoostMultiArray const& array) {
-//  return extensions_aux2(array, std::make_index_sequence<BoostMultiArray::dimensionality>{});
-// }
-
 template<class T, std::enable_if_t<!has_extents<T>::value /*&& !has_shape<T>::value*/, int> = 0>  // NOLINT(modernize-use-constraints) TODO(correaa) in C++20
 constexpr auto extents(T const& /*unused*/) -> multi::layout_t<0>::extents_type { return {}; }
 
@@ -617,7 +608,7 @@ template<> struct extensions_aux<0> {
 	template<class T> static auto call(T const& /*unused*/) { return multi::extents_t<0>{}; }  // std::make_tuple();}
 };
 
-template<dimensionality_type D, class T, std::enable_if_t<has_extension<T>::value, int> = 0>  // NOLINT(modernize-use-constraints) TODO(correaa) for C++20
+template<dimensionality_type D, class T, std::enable_if_t<has_extent<T>::value, int> = 0>  // NOLINT(modernize-use-constraints) TODO(correaa) for C++20
 auto extents(T const& array) {
 	return extensions_aux<D>::call(array);
 }
@@ -851,46 +842,52 @@ constexpr auto layout(std::initializer_list<T> const& il) {
 }
 
 template<class T>
-constexpr auto layout(std::initializer_list<std::initializer_list<T>> const& il) {
-	if(il.size() == 0) {
-		return multi::layout_t<2>{};
-	}
-	if(il.size() == 1) {
-		return multi::layout_t<2>(
-			layout(*il.begin()),
-			static_cast<multi::ssize_t>(il.size()),
-			0,
-			static_cast<multi::ssize_t>(il.size())  // * il.begin()->size())
-		);
-	}
-	auto strd =
-		base(*(il.begin() + 1)) -  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-		base(*(il.begin() + 0))    // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-		;
+constexpr auto layout(std::initializer_list<std::initializer_list<T>> const& il2d) = delete;
 
-	assert(base(*(il.end() - 1)) - base(*il.begin()) == static_cast<std::ptrdiff_t>(il.size() - 1) * strd);  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+// template<class T>
+// constexpr auto layout(std::initializer_list<std::initializer_list<T>> const& il2d) {
+// 	if(il2d.size() == 0) {
+// 		return multi::layout_t<2>{};
+// 	}
+// 	if(il2d.size() == 1) {
+// 		return multi::layout_t<2>(
+// 			layout(*il2d.begin()),
+// 			static_cast<multi::ssize_t>(il2d.size()),
+// 			0,
+// 			static_cast<multi::ssize_t>(il2d.size())  // * il.begin()->size())
+// 		);
+// 	}
+// 	auto strd =
+// 		base(*(il2d.begin() + 1)) -  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+// 		base(*(il2d.begin() + 0))    // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+// 		;
 
-	return multi::layout_t<2>(
-		layout(*il.begin()),
-		strd,  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-		0,
-		static_cast<multi::ssize_t>(il.size()) * strd
-	);
-}
+// 	assert(base(*(il2d.end() - 1)) - base(*il2d.begin()) == static_cast<std::ptrdiff_t>(il2d.size() - 1) * strd);  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+
+// 	return multi::layout_t<2>(
+// 		layout(*il2d.begin()),
+// 		strd,  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+// 		0,
+// 		static_cast<multi::ssize_t>(il2d.size()) * strd
+// 	);
+// }
 
 template<class T>
-constexpr auto layout(std::initializer_list<std::initializer_list<std::initializer_list<T>>> const& il) {
-	if(il.size() == 0) {
-		return multi::layout_t<3>(multi::extents_t<3>{});
-	}
-	return multi::layout_t<3>{
-		layout(*il.begin()),
-		base(il.begin() + 1) -     // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-			base(il.begin() + 0),  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-		0,
-		static_cast<multi::ssize_t>(il.size()),
-	};
-}
+constexpr auto layout(std::initializer_list<std::initializer_list<std::initializer_list<T>>> const& il3d) = delete;
+
+// template<class T>
+// constexpr auto layout(std::initializer_list<std::initializer_list<std::initializer_list<T>>> const& il3d) {
+// 	if(il3d.size() == 0) {
+// 		return multi::layout_t<3>(multi::extents_t<3>{});
+// 	}
+// 	return multi::layout_t<3>{
+// 		layout(*il3d.begin()),
+// 		base(il3d.begin() + 1) -     // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+// 			base(il3d.begin() + 0),  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+// 		0,
+// 		static_cast<multi::ssize_t>(il3d.size()),
+// 	};
+// }
 
 #ifdef __clang__
 #pragma clang diagnostic pop
@@ -907,18 +904,18 @@ inline auto valid_mull(int age) -> bool {
 namespace boost::multi::detail {
 
 template<class F>
-BOOST_MULTI_HD constexpr auto invoke_square(F&& fn) -> decltype(auto) {  // NOLINT(cert-dcl58-cpp,bugprone-std-namespace-modification) normal idiom to defined tuple get
-	return std::forward<F>(fn);
+BOOST_MULTI_HD constexpr auto invoke_square(F&& fun) -> decltype(auto) {  // NOLINT(cert-dcl58-cpp,bugprone-std-namespace-modification) normal idiom to defined tuple get
+	return std::forward<F>(fun);
 }
 
 template<class F, class Arg>
-BOOST_MULTI_HD constexpr auto invoke_square(F&& fn, Arg&& arg) -> decltype(auto) {  // NOLINT(cert-dcl58-cpp,bugprone-std-namespace-modification) normal idiom to defined tuple get
-	return std::forward<F>(fn)[std::forward<Arg>(arg)];
+BOOST_MULTI_HD constexpr auto invoke_square(F&& fun, Arg&& arg) -> decltype(auto) {  // NOLINT(cert-dcl58-cpp,bugprone-std-namespace-modification) normal idiom to defined tuple get
+	return std::forward<F>(fun)[std::forward<Arg>(arg)];
 }
 
 template<class F, class Arg, class... Args>
-BOOST_MULTI_HD constexpr auto invoke_square(F&& fn, Arg&& arg, Args&&... args) -> decltype(auto) {  // NOLINT(cert-dcl58-cpp,bugprone-std-namespace-modification) normal idiom to defined tuple get
-	return invoke_square(std::forward<F>(fn)[std::forward<Arg>(arg)], std::forward<Args>(args)...);
+BOOST_MULTI_HD constexpr auto invoke_square(F&& fun, Arg&& arg, Args&&... args) -> decltype(auto) {  // NOLINT(cert-dcl58-cpp,bugprone-std-namespace-modification) normal idiom to defined tuple get
+	return invoke_square(std::forward<F>(fun)[std::forward<Arg>(arg)], std::forward<Args>(args)...);
 	// return            std::forward<F>(fn)[std::forward<Arg>(arg),  std::forward<Arg>(args)...];  // will not work with iterators or cursors in the current state, it is also a C++23-only feature
 }
 

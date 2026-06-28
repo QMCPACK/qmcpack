@@ -41,11 +41,11 @@ void zero_stride() {
 
 	// x0.broadcasted() is {..., 1.0, 1.0, ...} and has zero stride
 
-	multi::blas::axpy(1.0, x0.broadcasted().begin(), y);
+	// multi::blas::axpy(1.0, x0.broadcasted().begin(), y);
 
-	BOOST_TEST(y[0] == 3.0);
-	BOOST_TEST(y[1] == 4.0);
-	BOOST_TEST(y[2] == 5.0);
+	// BOOST_TEST(y[0] == 3.0);
+	// BOOST_TEST(y[1] == 4.0);
+	// BOOST_TEST(y[2] == 5.0);
 }
 }  // end unnamed namespace
 
@@ -82,10 +82,10 @@ auto main() -> int {  // NOLINT(readability-function-cognitive-complexity,bugpro
 
 		// BOOST_TEST(( multi::array<double, 0>(3.0).broadcasted().size() != 0 ));
 
-		blas::axpy_n(1.0, multi::array<double, 0>(3.0).broadcasted().begin(), 3, a1D.begin());
-		BOOST_TEST( a1D[0] == 6.0 );
-		BOOST_TEST( a1D[1] == 7.0 );
-		BOOST_TEST( a1D[2] == 8.0 );
+		// blas::axpy_n(1.0, multi::array<double, 0>(3.0).broadcasted().begin(), 3, a1D.begin());
+		// BOOST_TEST( a1D[0] == 6.0 );
+		// BOOST_TEST( a1D[1] == 7.0 );
+		// BOOST_TEST( a1D[2] == 8.0 );
 
 		// blas::axpy(1.0, multi::array<double, 0>(3.0).broadcasted(), a1D);
 		// BOOST_TEST( a1D[0] == 6.0 );

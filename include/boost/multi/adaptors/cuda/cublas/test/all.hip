@@ -236,7 +236,7 @@ BOOST_AUTO_TEST_CASE(cublas_asum_complex_column) {
 	{
 		auto res2 = thrust::transform_reduce(
 			x.begin(), x.end(), [] __device__ (T const& e) {return std::abs(e.real()) + std::abs(e.imag());},
-			double{}, thrust::plus<>{}
+			double{}, thrust::plus<>{}  // TODO(correaa) using universal std::plus
 		);
 		BOOST_TEST( res == res2 );
 	}
@@ -350,7 +350,7 @@ BOOST_AUTO_TEST_CASE(cublas_nrm2_complex_column) {
 	{
 		auto res2 = sqrt(thrust::transform_reduce(
 			x.begin(), x.end(), [] __device__ (T const& e) {return thrust::norm(e);},
-			double{}, thrust::plus<>{}
+			double{}, thrust::plus<>{}  // TODO(correaa) using universal std::plus
 		));
 		BOOST_TEST( res == res2 );
 	}
@@ -415,7 +415,9 @@ BOOST_AUTO_TEST_CASE(cublas_dot_complex_column) {
 		{
 		//  auto [x2, A2, B2] = generate_ABx<complex, thrust::hip::allocator<complex> >();
 		//  thrust::for_each(x2.begin(), x2.end(), [s] __device__ (T& e) {return e*=s;});
-			auto res2 = thrust::inner_product(x.begin(), x.end(), y.begin(), T{}, thrust::plus<>{}, [] __device__ (T const& t1, T const& t2) {return conj(t1)*t2;});
+			auto res2 = thrust::inner_product(x.begin(), x.end(), y.begin(), T{},
+			thrust::plus<>{},  // TODO(correaa) using universal std::plus
+			[] __device__ (T const& t1, T const& t2) {return conj(t1)*t2;});
 			BOOST_TEST(res == res2);
 		}
 	}
@@ -434,7 +436,9 @@ BOOST_AUTO_TEST_CASE(cublas_dot_complex_column) {
 		{
 		//  auto [x2, A2, B2] = generate_ABx<complex, thrust::hip::allocator<complex> >();
 		//  thrust::for_each(x2.begin(), x2.end(), [s] __device__ (T& e) {return e*=s;});
-			auto res2 = thrust::inner_product(x.begin(), x.end(), y.begin(), T{}, thrust::plus<>{}, [] __device__ (T const& t1, T const& t2) {return t1*conj(t2);});
+			auto res2 = thrust::inner_product(x.begin(), x.end(), y.begin(), T{}, 
+			thrust::plus<>{},   // TODO(correaa) using universal std::plus
+			[] __device__ (T const& t1, T const& t2) {return t1*conj(t2);});
 			BOOST_TEST(res == res2);
 		}
 		{
@@ -459,45 +463,8 @@ BOOST_AUTO_TEST_CASE(cublas_dot_complex_column) {
 		}
 	}
 	{
-		// T res;
-		// blas::dot(blas::C(x), blas::C(y), res);
 		multi::array<T, 2, Alloc> res({1, 1}, 0.0);
 		auto rr = blas::gemm( 1.0, x.partitioned(1), blas::H(y.partitioned(1)), 0.0, res)[0][0];
-		// {
-		//  using blas::operators::operator,;
-		//  auto res2 = +(x, blas::C(y));
-		//  BOOST_TEST(res == res2);
-		// }
-		// {
-		//  auto res2 = +blas::dot(x, blas::C(y));
-		//  BOOST_TEST(res == res2);
-		// }
-		// {
-		// //  auto [x2, A2, B2] = generate_ABx<complex, thrust::hip::allocator<complex> >();
-		// //  thrust::for_each(x2.begin(), x2.end(), [s] __device__ (T& e) {return e*=s;});
-		//  auto res2 = thrust::inner_product(x.begin(), x.end(), y.begin(), T{}, thrust::plus<>{}, [] __device__ (T const& t1, T const& t2) {return t1*conj(t2);});
-		//  BOOST_TEST(res == res2);
-		// }
-		// {
-		//  BOOST_TEST( blas::dot(blas::C(x), x) == pow(blas::nrm2(x), 2.0) );
-		//  BOOST_TEST( blas::dot(x, blas::C(x)) == pow(blas::nrm2(x), 2.0) );
-
-		//  using blas::operators::operator,;
-		//  using blas::operators::operator*;
-		//  using blas::operators::abs;
-		//  using blas::operators::norm;
-		//  using blas::operators::operator^;
-
-		//  BOOST_TEST( (*x, x) == pow(abs(x), 2.0) );
-		//  BOOST_TEST( (*x, x) == pow(abs(x), 2)   );
-		//  BOOST_TEST( (*x, x) == norm(x)          );
-
-		//  BOOST_TEST( (x, *x) == pow(abs(x), 2.0) );
-		//  BOOST_TEST( (x, *x) == pow(abs(x), 2)   );
-		//  BOOST_TEST( (x, *x) == norm(x)          );
-
-		//  BOOST_TEST( (*x, x) == (x^2)            );
-		// }
 	}
 }
 
@@ -506,7 +473,7 @@ BOOST_AUTO_TEST_CASE(cublas_axpy_complex_one) {
 	complex const I{0.0, 1.0};
 
 	using T = complex;
-	using Alloc =  thrust::hip::allocator<complex>;
+	using Alloc = thrust::hip::allocator<complex>;
 
 	multi::array<complex, 1, Alloc> const x = { {1.1, 0.0}, {2.1, 0.0}, {3.1, 0.0}, {4.1, 0.0} };  // NOLINT(readability-identifier-length) BLAS naming
 	multi::array<complex, 1, Alloc> y = { {2.1, 0.0}, {4.1, 0.0}, {6.1, 0.0}, {11.0, 0.0} };  // NOLINT(readability-identifier-length) BLAS naming

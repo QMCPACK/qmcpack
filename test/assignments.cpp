@@ -9,9 +9,9 @@
 
 #include <algorithm>  // for fill
 // #include <complex>    // for complex
-#include <cstddef>   // for size_t
-#include <iterator>  // for size
-#include <memory>    // for std::allocator  // IWYU pragma: keep
+#include <cstddef>  // for size_t
+// #include <iterator>  // for size
+#include <memory>  // for std::allocator  // IWYU pragma: keep
 // IWYU pragma: no_include <type_traits>  // for decay_t
 #include <utility>  // for move
 #include <vector>   // for vector, allocator
@@ -83,7 +83,7 @@ auto main() -> int {  // NOLINT(readability-function-cognitive-complexity,bugpro
 		BOOST_TEST( arr3.data_elements() == arr_data );
 
 		multi::array<double, 2> const arr4(std::move(arr2));
-		BOOST_TEST( size(arr4) == 3 );
+		BOOST_TEST( arr4.size() == 3 );
 	}
 
 	// BOOST_AUTO_TEST_CASE(range_assignment)

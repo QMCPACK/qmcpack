@@ -42,6 +42,9 @@ cache:
   key: apt-$CI_JOB_IMAGE
   paths:
     - .apt-cache/
+  when: always  # keep downloaded .debs even on failed/timed-out jobs (cached archives are valid regardless of build result)
+  fallback_keys:
+    - apt-$CI_JOB_IMAGE  # seed from a prior cache if the exact key is missing (e.g. cache-version bump)
 
 stages:
   - build
@@ -111,7 +114,6 @@ arm64:
     refs:
       - develop
   tags:
-    - non-shared
     - arm  # for image
   script:
     - apt-get -qq install --no-install-recommends -y --quiet ca-certificates g++ git cmake ninja-build make libblas-dev liblapack-dev libboost-timer-dev libboost-serialization-dev libopenmpi-dev pkg-config libfftw3-dev tar wget
@@ -393,9 +395,9 @@ clang++-19 mull-19 deb:  # installs mull from the GitHub releases .deb instead o
     - x86_64  # for mull
     - large-memory-space
     - non-shared
-  # only:
-  #   refs:
-  #     - develop
+  only:
+    refs:
+      - develop
   interruptible: true
   allow_failure: false
   script:
@@ -416,11 +418,11 @@ clang++-19 mull-19 deb:  # installs mull from the GitHub releases .deb instead o
     - ls -all `which mull-runner-19`
     - file `which mull-runner-19`
     - mull-runner-19 --version
-    - CXX=clang++-19 cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-O3 -DNDEBUG -fpass-plugin=/usr/lib/mull-ir-frontend-19 -g -grecord-command-line"
-    - cmake --build . || cmake --build . --parallel 1 --verbose
+    - CXX=clang++-19 cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-O3 -DNDEBUG -DMULL=1 -fpass-plugin=/usr/lib/mull-ir-frontend-19 -g -grecord-command-line"
+    - cmake --build . --parallel 4
     - ctest
     - cd test
-    - ls *.x | xargs -n 1 sh -c 'echo $0 && ((mull-runner-19 --timeout 120000 --ld-search-path=/usr/lib/x86_64-linux-gnu $0 -test-program=ctest -- -j2 --stop-on-failure) || exit 255)'
+    - ls *.x | xargs -n 1 sh -c 'echo $0 && ((mull-runner-19 --timeout 120000 --ld-search-path=/usr/lib/x86_64-linux-gnu $0 -test-program=ctest -- -j2 --timeout 60 --stop-on-failure) || exit 255)'
   needs: ["clang++", "g++"]
   timeout: 3 hours 00 minutes
 
@@ -658,7 +660,7 @@ vs2022-shell cudatk:
   needs: ["vs2022-shell", "cuda"]
   timeout: 60 minutes
 
-vs2022-shell cuda:
+vs2022-shell cuda run:  # nvcc 13+ does not compiler for arch 61 (XPS card)
   stage: build
   allow_failure: false
   only:
@@ -709,7 +711,10 @@ clang++-m32:
 
 clang++-latest tidy iwyu everything:
   stage: build
-  image: debian:latest  # clang 18 as of Apr 2024
+  image: debian:latest
+  only:
+    refs:
+      - develop
   tags:
     - non-shared
     - docker
@@ -772,9 +777,8 @@ oneapi:
   only:
     refs:
       - develop
-  before_script: []
+  # before_script: []  # inherit global before_script (force-unsafe-io + apt cache wiring + apt-get update)
   script:
-    - apt-get update
     - apt-get install --no-install-recommends -y --quiet ninja-build ca-certificates cmake curl libboost-serialization-dev libboost-timer-dev libblas-dev liblapack-dev libfftw3-dev make pkg-config
     - mkdir build && cd build
     - icpx --version
@@ -847,7 +851,7 @@ nvhpc-22.7:
     - OMPI_ALLOW_RUN_AS_ROOT=1 OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1 ctest --output-on-failure
   needs: ["nvhpc"]
 
-nvhpc-26.1:  # highest nvhpc that is not 26.3 (26.3 has a compiler bug), tested as a real gate
+nvhpc-26.3:
   stage: build
   image: nvcr.io/nvidia/nvhpc:26.3-devel-cuda13.1-ubuntu24.04  # https://catalog.ngc.nvidia.com/orgs/nvidia/containers/nvhpc/tags
   tags:
@@ -865,6 +869,25 @@ nvhpc-26.1:  # highest nvhpc that is not 26.3 (26.3 has a compiler bug), tested 
     - cmake --build . || cmake --build . --parallel 1 --verbose
     - OMPI_ALLOW_RUN_AS_ROOT=1 OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1 ctest --output-on-failure
   needs: ["nvhpc"]
+
+nvhpc-26.3 cuda-13.1:  # CUDA device compilation through nvhpc (nvhpc's nvcc driver + nvc++ as host/CXX), like the new pre-push CUDA 13 line. g++ as host fails because CUDA 13.1's crt/math_functions.h declares rsqrt/rsqrtf without noexcept while glibc 2.41+ declares them noexcept(true); only nvc++'s front-end tolerates it. Compile-only: the nvidia-gpu runner is Pascal sm_61 which CUDA 13 dropped, so device binaries can't be executed here.
+  stage: build
+  image: nvcr.io/nvidia/nvhpc:26.3-devel-cuda13.1-ubuntu24.04  # https://catalog.ngc.nvidia.com/orgs/nvidia/containers/nvhpc/tags
+  tags:
+    - non-shared
+    - large-disk-space
+    - x86_64
+  only:
+    refs:
+      - develop
+  script:
+    - apt-get install --no-install-recommends -y cmake ninja-build make libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev pkg-config
+    - /opt/nvidia/hpc_sdk/Linux_x86_64/2026/compilers/bin/nvcc --version
+    - /opt/nvidia/hpc_sdk/Linux_x86_64/2026/compilers/bin/nvc++ --version
+    - mkdir build && cd build
+    - cmake .. -DCMAKE_BUILD_TYPE=Release -DENABLE_CUDA=1 -DCMAKE_CUDA_COMPILER=/opt/nvidia/hpc_sdk/Linux_x86_64/2026/compilers/bin/nvcc -DCMAKE_CUDA_HOST_COMPILER=/opt/nvidia/hpc_sdk/Linux_x86_64/2026/compilers/bin/nvc++ -DCMAKE_CXX_COMPILER=/opt/nvidia/hpc_sdk/Linux_x86_64/2026/compilers/bin/nvc++ -DCMAKE_CUDA_FLAGS="--extended-lambda --threads 2" -DCMAKE_CUDA_ARCHITECTURES=75
+    - cmake --build . || cmake --build . --parallel 1 --verbose
+  needs: ["cuda-13.3.0", "nvhpc-26.3"]
 
 # nvhpc-26.3:
 #   stage: build
@@ -953,9 +976,9 @@ culang++-16 cuda-11.4.3:
     - cmake .. -DCMAKE_BUILD_TYPE=Release -DENABLE_CUDA=1 -DCMAKE_CUDA_COMPILER=clang++-16 -DCMAKE_CXX_COMPILER=clang++-16
     - cmake --build . || cmake --build . --parallel 1 --verbose
     - ctest --output-on-failure
-  needs: ["culang++-20 cuda-12.6.3 tidy"]
+  needs: ["culang++"]
 
-culang++-20 cuda-12.6.3 tidy:  # https://catalog.ngc.nvidia.com/orgs/nvidia/containers/cuda/tags
+culang++:  # https://catalog.ngc.nvidia.com/orgs/nvidia/containers/cuda/tags
   stage: build
   image: nvcr.io/nvidia/cuda:12.6.3-devel-ubuntu24.04
   allow_failure: false
@@ -1007,7 +1030,7 @@ culang++-21 cuda-12.8.2 tidy:  # https://catalog.ngc.nvidia.com/orgs/nvidia/cont
     - cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_CUDA_FLAGS="-Wno-unknown-cuda-version" -DCMAKE_CXX_CLANG_TIDY=clang-tidy-21 -DENABLE_CUDA=1 -DCMAKE_CUDA_COMPILER=clang++-21 -DCMAKE_CXX_COMPILER=clang++-21 -DCMAKE_CUDA_ARCHITECTURES=native  # =75  # =80
     - cmake --build . || cmake --build . --parallel 1 --verbose
     - ctest --output-on-failure
-  needs: ["culang++-20 cuda-12.6.3 tidy"]
+  needs: ["culang++"]
 
 cuda-12.6.3:
   stage: build
@@ -1083,15 +1106,14 @@ cuda-13.3.0:
 rocm:
   stage: build
   image: rocm/dev-ubuntu-24.04
-  allow_failure: false
+  allow_failure: true  # TODO(correaa) flip to false once the (re-enabled) HIP subdirs build clean on ROCm 7 / CCCL 3
   tags:
     - non-shared
     - docker
     - high-bandwidth  # for download rocm extras
     - x86_64  # for rocm image
-  before_script: []
+  # before_script: []  # inherit global before_script (force-unsafe-io + apt cache wiring + apt-get update)
   script:
-    - apt-get -qq update
     - apt-get install --no-install-recommends -y ninja-build cmake wget pkg-config make libboost-serialization-dev libboost-timer-dev libblas-dev libfftw3-dev wget gpg
     - apt-get install --no-install-recommends -y rocthrust-dev hipblas-dev hipfft-dev rocm-device-libs
     - /opt/rocm/bin/hipconfig --full
@@ -1103,7 +1125,7 @@ rocm:
     - export CMAKE_PREFIX_PATH=/opt/rocm:${CMAKE_PREFIX_PATH}
     - export ROCM_PATH=/opt/rocm
     - export HIP_PATH=/opt/rocm
-    - cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_HIP_COMPILER=/opt/rocm/llvm/bin/clang++ -DCMAKE_CXX_FLAGS="-DMULTI_USE_HIP" -DCMAKE_HIP_FLAGS="-DMULTI_USE_HIP" -DENABLE_HIP=1 -DCMAKE_HIP_ARCHITECTURES=gfx90a  # TODO(correaa) add CMAKE_BUILD_TYPE
+    - cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_HIP_COMPILER=/opt/rocm/llvm/bin/clang++ -DCMAKE_CXX_COMPILER=/opt/rocm/llvm/bin/clang++ -DCMAKE_CXX_FLAGS="-DMULTI_USE_HIP" -DCMAKE_HIP_FLAGS="-DMULTI_USE_HIP" -DENABLE_HIP=1 -DCMAKE_HIP_ARCHITECTURES=gfx90a  # TODO(correaa) add CMAKE_BUILD_TYPE
     - cmake --build . || cmake --build . --parallel 1 --verbose
     - ctest || ctest --rerun-failed --output-on-failure || echo "ctest failed, probably due to lack of hardware"
   needs: ["clang++"]
@@ -1121,11 +1143,10 @@ rocm-release:
     - amdrocm
     - high-bandwidth  # for download rocm extras
     - x86_64  # for rocm image
-  before_script: []
+  # before_script: []  # inherit global before_script (force-unsafe-io + apt cache wiring + apt-get update)
   script:
-    - apt-get -qq update
     - apt-get install --no-install-recommends -y ninja-build cmake wget pkg-config make libboost-serialization-dev libboost-timer-dev libblas-dev libfftw3-dev wget gpg
-    - apt-get install --no-install-recommends -y rocthrust-dev hipblas-dev hipfft-dev rocm-device-libs
+    - apt-get install --no-install-recommends -y rocthrust-dev hipblas-dev hipfft-dev  # rocm-device-libs is in the image's /opt/rocm; installing it from apt pulls a conflicting ROCm 5.7 stack from Ubuntu universe
     - /opt/rocm/bin/hipconfig --full
     - rocm-smi
     - HIPCC_VERBOSE=1 /opt/rocm/bin/hipcc --version
@@ -1155,7 +1176,7 @@ rocm-latest:
     - x86_64  # for rocm image
   script:
     - apt-get install --no-install-recommends -y cmake ninja-build wget pkg-config make libboost-serialization-dev libboost-timer-dev libblas-dev libfftw3-dev wget gpg
-    - apt-get install --no-install-recommends -y rocthrust-dev hipblas-dev hipfft-dev rocm-device-libs
+    - apt-get install --no-install-recommends -y rocthrust-dev hipblas-dev hipfft-dev  # rocm-device-libs is in the image's /opt/rocm; installing it from apt pulls a conflicting ROCm 5.7 stack from Ubuntu universe
     - /opt/rocm/bin/hipconfig --full
     - HIPCC_VERBOSE=1 /opt/rocm/bin/hipcc --version
     - /opt/rocm/llvm/bin/clang++ --version
@@ -1184,7 +1205,7 @@ rocm-6.4.4:
     - x86_64  # for rocm image
   script:
     - apt-get install --no-install-recommends -y cmake ninja-build wget pkg-config make libboost-serialization-dev libboost-timer-dev libblas-dev libfftw3-dev wget gpg
-    - apt-get install --no-install-recommends -y rocthrust-dev hipblas-dev hipfft-dev rocm-device-libs
+    - apt-get install --no-install-recommends -y rocthrust-dev hipblas-dev hipfft-dev  # rocm-device-libs is in the image's /opt/rocm; installing it from apt pulls a conflicting ROCm 5.7 stack from Ubuntu universe
     - /opt/rocm/bin/hipconfig --full
     - HIPCC_VERBOSE=1 /opt/rocm/bin/hipcc --version
     - /opt/rocm/llvm/bin/clang++ --version
@@ -1289,7 +1310,7 @@ inq:
     - cd inq
     - mkdir build && cd build
     - cmake .. --install-prefix=$PREFIX -DCMAKE_BUILD_TYPE=Release
-    - cmake --build. --parallel 4 || cmake --build . --parallel 1 --verbose
+    - cmake --build . --parallel 4 || cmake --build . --parallel 1 --verbose
     - apt-get -qq --no-install-recommends -y install python3-numpy
     - cmake --install .
     - export OMPI_ALLOW_RUN_AS_ROOT=1
@@ -1330,7 +1351,7 @@ inq-debug:
     - INQ_EXEC_ENV="mpirun --oversubscribe -n 4" ctest --output-on-failure --timeout 600
   needs: ["g++"]
 
-inq cuda 70:
+inq cuda:
   allow_failure: false
   stage: test
   image: nvcr.io/nvidia/cuda:12.0.1-devel-ubuntu22.04  # nvcr.io/nvidia/cuda:11.8.0-devel-ubuntu22.04
@@ -1338,23 +1359,22 @@ inq cuda 70:
     - non-shared
     - nvidia-gpu
     - arch75
-  # before_script:
-  #   - apt-get -qq update && apt-get -qq install --no-install-recommends -y ca-certificates cmake git gfortran libopenmpi-dev libblas-dev libboost-filesystem-dev libboost-iostreams-dev libboost-serialization-dev libfftw3-dev libhdf5-dev liblapack-dev pkg-config python3-dev
   script:
     - apt-get -qq install --no-install-recommends -y ca-certificates cmake ninja-build git gfortran libopenmpi-dev libblas-dev libboost-filesystem-dev libboost-iostreams-dev libboost-serialization-dev libfftw3-dev libhdf5-dev liblapack-dev pkg-config python3-dev
     - export CMAKE_GENERATOR="Unix Makefiles"  # "Ninja"
     - nvidia-smi
-    # - export CUDA_VISIBLE_DEVICES=0,1
     - __nvcc_device_query
     - export PREFIX=`mktemp -d`
-    - git clone --recurse-submodules https://gitlab.com/npneq/inq.git  --branch update-multi-extents-rename
+    - git clone --recurse-submodules https://gitlab.com/npneq/inq.git
     - rm -rf inq/external_libs/multi
     - ln -s $CI_PROJECT_DIR inq/external_libs/multi
     - cd inq
+    - export GPUBIND=`pwd`/scripts/gpubind
+    - echo $GPUBIND
     - rm -f cmake/FindNCCL.cmake  # disable NCCL workaround
     - mkdir build && cd build
     - /usr/local/cuda/bin/nvcc --version
-    - CUDACXX=/usr/local/cuda/bin/nvcc cmake .. --install-prefix=$PREFIX -DENABLE_CUDA=1 -DCMAKE_BUILD_TYPE=Release -DCMAKE_CUDA_ARCHITECTURES=native-real  # =75  # =80
+    - CUDACXX=/usr/local/cuda/bin/nvcc cmake .. --install-prefix=$PREFIX -DENABLE_CUDA=1 -DCMAKE_BUILD_TYPE=Release -DCMAKE_CUDA_ARCHITECTURES=70  # native doesn't work in this version of cmake # =75  # =80
     - time (cmake --build . --parallel 4 || cmake --build . --parallel 1)
     - apt-get -qq --no-install-recommends -y install python3-numpy
     - cmake --install .
@@ -1362,14 +1382,13 @@ inq cuda 70:
     - export OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1
     - export OMPI_MCA_btl_vader_single_copy_mechanism=none
     - export OMPI_MCA_rmaps_base_oversubscribe=1
-    # - ctest -j 4 --output-on-failure --timeout 2400
-    - INQ_EXEC_ENV="mpirun --oversubscribe -n 4" ctest --parallel 2 --output-on-failure --timeout 4800
+    - export CUDA_VISIBLE_DEVICES=0,1
+    - INQ_EXEC_ENV="mpirun --oversubscribe -n 2 $GPUBIND" ctest --parallel 2 --output-on-failure --timeout 4800
   timeout: 4 hours 00 minutes
-  needs: ["inq", "cuda"]
+  needs: ["inq"]  # , "cuda"]
 
 inq rocm:
   stage: test
-  # image: rocm/dev-ubuntu-22.04
   image: rocm/dev-ubuntu-24.04
   allow_failure: false
   tags:
@@ -1378,7 +1397,7 @@ inq rocm:
     - x86_64  # for image
   script:
     - export CMAKE_GENERATOR="Unix Makefiles"  # "Ninja"
-    - apt-get -qq install --no-install-recommends -y ca-certificates cmake ninja-build git gfortran gpg hipblas-dev hipfft-dev libopenmpi-dev libblas-dev libboost-filesystem-dev libboost-iostreams-dev libboost-serialization-dev libfftw3-dev libhdf5-dev liblapack-dev make pkg-config python3-dev rocthrust-dev rocm-device-libs wget
+    - apt-get -qq install --no-install-recommends -y ca-certificates cmake ninja-build git gfortran gpg hipblas-dev hipfft-dev libopenmpi-dev libblas-dev libboost-filesystem-dev libboost-iostreams-dev libboost-serialization-dev libfftw3-dev libhdf5-dev liblapack-dev make pkg-config python3-dev rocthrust-dev wget  # rocm-device-libs removed: in the image's /opt/rocm; apt pulls a conflicting ROCm 5.7 stack
     - /opt/rocm/bin/hipconfig --full
     - HIPCC_VERBOSE=1 /opt/rocm/bin/hipcc --version
     - cmake --version
@@ -1412,9 +1431,6 @@ qmcpack:
   tags:
     - non-shared
     - docker
-  # before_script:
-  #   - apt-get -qq update
-  #   - apt-get -qq install --no-install-recommends -y ca-certificates cmake g++ git gfortran libblas-dev libboost-serialization-dev libfftw3-dev libhdf5-dev liblapack-dev libopenmpi-dev make numdiff pkg-config python3 python3-h5py python3-numpy python3-mpi4py python3-scipy libxml2-dev
   script:
     - export CMAKE_GENERATOR="Unix Makefiles"  # "Ninja"
     - apt-get -qq install --no-install-recommends -y ca-certificates cmake ninja-build g++ git gfortran libblas-dev libboost-serialization-dev libfftw3-dev libhdf5-dev liblapack-dev libopenmpi-dev make numdiff pkg-config python3 python3-h5py python3-numpy python3-mpi4py python3-scipy libxml2-dev
@@ -1440,8 +1456,6 @@ qmcpack cuda:
     - nvidia-gpu
     - high-bandwidth
   allow_failure: false
-  # before_script:
-  #   - apt-get -qq update && apt-get -qq install --no-install-recommends -y ca-certificates cmake git libopenmpi-dev cmake g++ git gfortran libblas-dev libboost-serialization-dev libfftw3-dev libhdf5-dev liblapack-dev libopenmpi-dev make numdiff pkg-config python3 python3-h5py python3-numpy python3-mpi4py python3-scipy rsync libxml2-dev
   script:
     - export CMAKE_GENERATOR="Unix Makefiles"  # "Ninja"
     - apt-get -qq install --no-install-recommends -y ca-certificates cmake ninja-build git libopenmpi-dev cmake g++ git gfortran libblas-dev libboost-serialization-dev libfftw3-dev libhdf5-dev liblapack-dev libopenmpi-dev make numdiff pkg-config python3 python3-h5py python3-numpy python3-mpi4py python3-scipy rsync libxml2-dev
@@ -1461,6 +1475,38 @@ qmcpack cuda:
     - OMPI_ALLOW_RUN_AS_ROOT=1 OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1 ctest -R ppconvert --output-on-failure
     - OMPI_ALLOW_RUN_AS_ROOT=1 OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1 ctest -R afqmc     --output-on-failure
   needs: ["qmcpack","cuda"]
+
+qmcpack rocm:
+  stage: build  # test
+  image:
+    name: rocm/dev-ubuntu-24.04:6.4.1-complete
+  tags:
+    - non-shared
+    - high-bandwidth
+  allow_failure: true
+  script:
+    - export CMAKE_GENERATOR="Unix Makefiles"
+    - apt-get -qq install --no-install-recommends -y ca-certificates cmake ninja-build git openmpi-bin libopenmpi-dev g++ gfortran libblas-dev libboost-serialization-dev libfftw3-dev libhdf5-openmpi-dev liblapack-dev make numdiff pkg-config python3 python3-h5py python3-numpy python3-mpi4py python3-scipy rsync libxml2-dev
+    - apt-get -qq install --no-install-recommends -y hipblas-dev rocsolver-dev rocblas-dev rocrand-dev hipsparse-dev
+    - rocm-smi
+    - rsync --version
+    - git clone --depth 1 https://github.com/QMCPACK/qmcpack.git
+    # - git clone           https://github.com/correaa/qmcpack.git --branch complete-pointer-concept-for-shm_ptr
+    - cd qmcpack
+    - git config --global user.email "alfredo.correa@gmail.com" && git config --global user.name "Alfredo Correa"
+    - git rm -r external_codes/boost_multi/multi && git commit -m "remove multi subtree"
+    - git subtree add --squash -P external_codes/boost_multi/multi $CI_REPOSITORY_URL $CI_COMMIT_SHA
+    - cd build
+    - hipcc --version
+    # - rocminfo
+    - export OMPI_CC=amdclang
+    - export OMPI_CXX=amdclang++
+    - cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=amdclang -DCMAKE_CXX_COMPILER=amdclang++ -DMPI_C_COMPILER=mpicc -DMPI_CXX_COMPILER=mpicxx -DBUILD_AFQMC_HIP=ON -DQMC_CXX_STANDARD=17 -DQMC_GPU="openmp;hip" -DQMC_GPU_ARCHS=gfx90a -DCMAKE_CXX_FLAGS="-Wno-deprecated -Wno-deprecated-declarations"
+    - VERBOSE=1 make -j 4 
+    #   ppconvert test_afqmc_matrix test_afqmc_numerics test_afqmc_slaterdeterminantoperations test_afqmc_walkers test_afqmc_hamiltonians test_afqmc_hamiltonian_operations test_afqmc_phmsd test_afqmc_wfn_factory test_afqmc_prop_factory test_afqmc_estimators qmc-afqmc-performance
+    # - OMPI_ALLOW_RUN_AS_ROOT=1 OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1 ctest -R ppconvert --output-on-failure
+    # - OMPI_ALLOW_RUN_AS_ROOT=1 OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1 ctest -R afqmc     --output-on-failure
+#  needs: ["qmcpack","rocm"]
 
 # sonar cloud
 # from instructions
@@ -1525,6 +1571,7 @@ pages-presentation:
 headers:
   stage: build
   allow_failure: false
+  interruptible: false
   tags:
     - non-shared
     - docker
@@ -1569,25 +1616,22 @@ headers:
 mrdocs:
   stage: build
   allow_failure: false
+  interruptible: false
   tags:
     - non-shared
     - docker
     - x86_64  # for MrDocs binary
   script:
     - apt-get -qq install --no-install-recommends -y --quiet make clang cmake ninja-build tree ca-certificates wget
-    - wget --no-verbose https://github.com/cppalliance/mrdocs/releases/download/develop-release/MrDocs-develop-Linux.tar.gz
-    #- wget --no-verbose https://github.com/cppalliance/mrdocs/releases/download/v0.8.0/MrDocs-0.8.0-Linux.tar.gz
+    - wget --no-verbose https://github.com/cppalliance/mrdocs/releases/download/develop-release/MrDocs-develop-Linux.tar.gz  # https://github.com/cppalliance/mrdocs/releases/download/v0.8.0/MrDocs-0.8.0-Linux.tar.gz
     - tar zxf MrDocs-develop-Linux.tar.gz
     - ls -all
     - export PATH=$PWD/MrDocs-0.8.0-Linux/bin:$PATH
     - mrdocs --version
     - mrdocs --help
-    - cmake -B build-mrdocs
-        -DCMAKE_CXX_COMPILER=clang++
+    - cmake -B build-mrdocs -DCMAKE_CXX_COMPILER=clang++
         -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-        -DCMAKE_BUILD_TYPE=Release
-        -DMULTI_BUILD_TESTS=OFF
-        -DMULTI_BUILD_PACKAGE=OFF
+        -DCMAKE_BUILD_TYPE=Release -DMULTI_BUILD_TESTS=OFF -DMULTI_BUILD_PACKAGE=OFF
     - mrdocs mrdocs.yml
     - tree -L 3 doc/modules/reference/pages  # avoid piping to head (SIGPIPE + pipefail fails the job)
   artifacts:
@@ -1601,6 +1645,7 @@ antora:
   image: antora/antora
   stage: build
   allow_failure: false
+  interruptible: false
   tags:
     - non-shared
     - docker

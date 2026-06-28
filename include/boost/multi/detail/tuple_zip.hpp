@@ -64,8 +64,8 @@ template<> class tuple<> {  // NOLINT(cppcoreguidelines-special-member-functions
 	BOOST_MULTI_HD constexpr auto operator>(tuple const& /*other*/) const { return false; }
 
 	template<class F>
-	BOOST_MULTI_HD constexpr friend auto apply(F&& fn, tuple<> const& /*self*/) -> decltype(auto) {  // NOLINT(cert-dcl58-cpp) normal idiom to defined tuple get
-		return std::forward<F>(fn)();
+	BOOST_MULTI_HD constexpr friend auto apply(F&& fun, tuple<> const& /*self*/) -> decltype(auto) {  // NOLINT(cert-dcl58-cpp) normal idiom to defined tuple get
+		return std::forward<F>(fun)();
 	}
 };
 
@@ -159,16 +159,16 @@ template<class T0, class... Ts> class tuple<T0, Ts...> : tuple<Ts...> {  // NOLI
 #pragma nv_exec_check_disable
 #endif
 	template<class F, std::size_t... I>
-	BOOST_MULTI_HD constexpr auto apply_impl_(F&& fn, std::index_sequence<I...> /*012*/) const& -> decltype(auto) {  // NOLINT(cert-dcl58-cpp) normal idiom to defined tuple get
-		return std::forward<F>(fn)(this->get<I>()...);
+	BOOST_MULTI_HD constexpr auto apply_impl_(F&& fun, std::index_sequence<I...> /*012*/) const& -> decltype(auto) {  // NOLINT(cert-dcl58-cpp) normal idiom to defined tuple get
+		return std::forward<F>(fun)(this->get<I>()...);
 	}
 
 #ifdef __NVCC__
 #pragma nv_exec_check_disable
 #endif
 	template<class F, std::size_t... I>
-	BOOST_MULTI_DEV constexpr auto apply_impl_(F&& fn, std::index_sequence<I...> /*012*/) & -> decltype(auto) {  // NOLINT(cert-dcl58-cpp) normal idiom to defined tuple get
-		return std::forward<F>(fn)(this->get<I>()...);
+	BOOST_MULTI_DEV constexpr auto apply_impl_(F&& fun, std::index_sequence<I...> /*012*/) & -> decltype(auto) {  // NOLINT(cert-dcl58-cpp) normal idiom to defined tuple get
+		return std::forward<F>(fun)(this->get<I>()...);
 	}
 
 #ifdef __NVCC__
@@ -176,37 +176,37 @@ template<class T0, class... Ts> class tuple<T0, Ts...> : tuple<Ts...> {  // NOLI
 #endif
 	template<class F, std::size_t... I>
 	BOOST_MULTI_HD  // BOOST_MULTI_DEV
-	constexpr auto apply_impl_(F&& fn, std::index_sequence<I...> /*012*/) && -> decltype(auto) {  // NOLINT(cert-dcl58-cpp) normal idiom to defined tuple get
-		return std::forward<F>(fn)(std::move(*this).template get<I>()...);
+	constexpr auto apply_impl_(F&& fun, std::index_sequence<I...> /*012*/) && -> decltype(auto) {  // NOLINT(cert-dcl58-cpp) normal idiom to defined tuple get
+		return std::forward<F>(fun)(std::move(*this).template get<I>()...);
 	}
 
  public:
 	template<class F>
-	BOOST_MULTI_HD constexpr auto apply(F&& fn) const& -> decltype(auto) {  // NOLINT(cert-dcl58-cpp) normal idiom to defined tuple get
-		return apply_impl_(std::forward<F>(fn), std::make_index_sequence<sizeof...(Ts) + 1>{});
+	BOOST_MULTI_HD constexpr auto apply(F&& fun) const& -> decltype(auto) {  // NOLINT(cert-dcl58-cpp) normal idiom to defined tuple get
+		return apply_impl_(std::forward<F>(fun), std::make_index_sequence<sizeof...(Ts) + 1>{});
 	}
 	template<class F>
-	BOOST_MULTI_HD constexpr auto apply(F&& fn) & -> decltype(auto) {  // NOLINT(cert-dcl58-cpp) normal idiom to defined tuple get
-		return apply_impl_(std::forward<F>(fn), std::make_index_sequence<sizeof...(Ts) + 1>{});
+	BOOST_MULTI_HD constexpr auto apply(F&& fun) & -> decltype(auto) {  // NOLINT(cert-dcl58-cpp) normal idiom to defined tuple get
+		return apply_impl_(std::forward<F>(fun), std::make_index_sequence<sizeof...(Ts) + 1>{});
 	}
 	template<class F>
-	BOOST_MULTI_HD constexpr auto apply(F&& fn) && -> decltype(auto) {  // NOLINT(cert-dcl58-cpp) normal idiom to defined tuple get
-		return std::move(*this).apply_impl_(std::forward<F>(fn), std::make_index_sequence<sizeof...(Ts) + 1>{});
-	}
-
-	template<class F>
-	friend BOOST_MULTI_HD constexpr auto apply(F&& fn, tuple<T0, Ts...> const& self) -> decltype(auto) {  // NOLINT(cert-dcl58-cpp) normal idiom to defined tuple get
-		return self.apply(std::forward<F>(fn));
+	BOOST_MULTI_HD constexpr auto apply(F&& fun) && -> decltype(auto) {  // NOLINT(cert-dcl58-cpp) normal idiom to defined tuple get
+		return std::move(*this).apply_impl_(std::forward<F>(fun), std::make_index_sequence<sizeof...(Ts) + 1>{});
 	}
 
 	template<class F>
-	friend BOOST_MULTI_HD constexpr auto apply(F&& fn, tuple<T0, Ts...> & self) -> decltype(auto) {  // NOLINT(cert-dcl58-cpp) normal idiom to defined tuple get
-		return self.apply(std::forward<F>(fn));
+	friend BOOST_MULTI_HD constexpr auto apply(F&& fun, tuple<T0, Ts...> const& self) -> decltype(auto) {  // NOLINT(cert-dcl58-cpp) normal idiom to defined tuple get
+		return self.apply(std::forward<F>(fun));
 	}
 
 	template<class F>
-	friend BOOST_MULTI_HD constexpr auto apply(F&& fn, tuple<T0, Ts...> && self) -> decltype(auto) {  // NOLINT(cert-dcl58-cpp) normal idiom to defined tuple get
-		return std::move(self).apply(std::forward<F>(fn));
+	friend BOOST_MULTI_HD constexpr auto apply(F&& fun, tuple<T0, Ts...> & self) -> decltype(auto) {  // NOLINT(cert-dcl58-cpp) normal idiom to defined tuple get
+		return self.apply(std::forward<F>(fun));
+	}
+
+	template<class F>
+	friend BOOST_MULTI_HD constexpr auto apply(F&& fun, tuple<T0, Ts...> && self) -> decltype(auto) {  // NOLINT(cert-dcl58-cpp) normal idiom to defined tuple get
+		return std::move(self).apply(std::forward<F>(fun));
 	}
 
  private:
@@ -454,33 +454,33 @@ struct std::tuple_element<N, boost::multi::detail::tuple<T0, Ts...>> {  // NOLIN
 #pragma nv_exec_check_disable
 #endif
 template<class F, class Tuple, std::size_t... I>
-BOOST_MULTI_HD constexpr auto std_apply_timpl(F&& fn, Tuple&& tp, std::index_sequence<I...> /*012*/) -> decltype(auto) {  // NOLINT(cert-dcl58-cpp) normal idiom to defined tuple get
+BOOST_MULTI_HD constexpr auto std_apply_timpl(F&& fun, Tuple&& tp, std::index_sequence<I...> /*012*/) -> decltype(auto) {  // NOLINT(cert-dcl58-cpp) normal idiom to defined tuple get
 	(void)tp;  // fix "error #827: parameter "t" was never referenced" in NVC++ and "error #869: parameter "t" was never referenced" in oneAPI-ICPC
-	return std::forward<F>(fn)(boost::multi::detail::get<I>(std::forward<Tuple>(tp))...);  // NOLINT(bugprone-use-after-move,hicpp-invalid-access-moved) use forward_as?
+	return std::forward<F>(fun)(boost::multi::detail::get<I>(std::forward<Tuple>(tp))...);  // NOLINT(bugprone-use-after-move,hicpp-invalid-access-moved) use forward_as?
 }
 
 namespace std {  // NOLINT(cert-dcl58-cpp,bugprone-std-namespace-modification) to implement structured bindings
 
 template<class F, class... Ts>
-BOOST_MULTI_HD constexpr auto apply(F&& fn, boost::multi::detail::tuple<Ts...> const& tp) -> decltype(auto) {  // NOLINT(cert-dcl58-cpp,bugprone-std-namespace-modification) normal to define tuple get
+BOOST_MULTI_HD constexpr auto apply(F&& fun, boost::multi::detail::tuple<Ts...> const& tp) -> decltype(auto) {  // NOLINT(cert-dcl58-cpp,bugprone-std-namespace-modification) normal to define tuple get
 	return std_apply_timpl(
-		std::forward<F>(fn), tp,
+		std::forward<F>(fun), tp,
 		std::make_index_sequence<sizeof...(Ts)>{}
 	);
 }
 
 template<class F, class... Ts>
-BOOST_MULTI_HD constexpr auto apply(F&& fn, boost::multi::detail::tuple<Ts...>& tp) -> decltype(auto) {  // NOLINT(cert-dcl58-cpp,bugprone-std-namespace-modification) normal to define tuple get
+BOOST_MULTI_HD constexpr auto apply(F&& fun, boost::multi::detail::tuple<Ts...>& tp) -> decltype(auto) {  // NOLINT(cert-dcl58-cpp,bugprone-std-namespace-modification) normal to define tuple get
 	return std_apply_timpl(
-		std::forward<F>(fn), tp,
+		std::forward<F>(fun), tp,
 		std::make_index_sequence<sizeof...(Ts)>{}
 	);
 }
 
 template<class F, class... Ts>
-BOOST_MULTI_HD constexpr auto apply(F&& fn, boost::multi::detail::tuple<Ts...>&& tp) -> decltype(auto) {  // NOLINT(cert-dcl58-cpp,bugprone-std-namespace-modification) normal idiom to defined tuple get
+BOOST_MULTI_HD constexpr auto apply(F&& fun, boost::multi::detail::tuple<Ts...>&& tp) -> decltype(auto) {  // NOLINT(cert-dcl58-cpp,bugprone-std-namespace-modification) normal idiom to defined tuple get
 	return std_apply_timpl(	
-		std::forward<F>(fn), std::move(tp),
+		std::forward<F>(fun), std::move(tp),
 		std::make_index_sequence<sizeof...(Ts)>{}
 	);
 }

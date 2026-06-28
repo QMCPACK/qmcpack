@@ -4,9 +4,11 @@
 
 #ifndef BOOST_MULTI_ADAPTORS_THRUST_REDUCE_BY_INDEX_HPP
 #define BOOST_MULTI_ADAPTORS_THRUST_REDUCE_BY_INDEX_HPP
-#include <type_traits>
-#pragma once
+// #pragma once
 
+#include <type_traits>
+
+#include <thrust/execution_policy.h>
 #include <thrust/functional.h>
 #include <thrust/reduce.h>
 #include <thrust/iterator/discard_iterator.h>
@@ -23,7 +25,7 @@ struct divide_by {
 
 template<class ExecutionPolicy, class T, class S>
 auto reduce_by_index(ExecutionPolicy&& ep, T const& M, S&& sums) -> S&& {
-	assert(M.extension() == sums.extension());
+	assert(M.extent() == sums.extent());
 
 	// auto const row_ids_begin =
 	//     ::thrust::make_transform_iterator(
@@ -33,7 +35,7 @@ auto reduce_by_index(ExecutionPolicy&& ep, T const& M, S&& sums) -> S&& {
 	// ;
 	// auto const row_ids_end = row_ids_begin + M.elements().size();
 
-	auto row_index = [] __host__ __device__ (int i, int j) {return i;} ^ M.extents();
+	auto row_index = [] __host__ __device__ (typename T::index i, typename T::index /*j*/) { return i; } ^ M.extents();
 
 	auto const row_ids_begin = row_index.elements().begin();
 	auto const row_ids_end   = row_index.elements().end();
@@ -59,7 +61,7 @@ auto reduce_by_index(ExecutionPolicy&& ep, T const& M, S&& sums) -> S&& {
 
 template<class ExecutionPolicy, class T, class S, class BinaryOp>
 auto reduce_by_index(ExecutionPolicy&& ep, T const& M, S&& sums, BinaryOp&& op) -> S&& {
-	assert(M.extension() == sums.extension());
+	assert(M.extent() == sums.extent());
 
 	auto const row_ids_begin =
 	    ::thrust::make_transform_iterator(
@@ -92,12 +94,12 @@ auto reduce_by_index(ExecutionPolicy&& ep, T const& M, S&& sums, BinaryOp&& op) 
 
 template<class T, class S>
 auto reduce_by_index(T const& M, S&& sums) -> S&& {
-    return reduce_by_index(::thrust::cuda::par, M, std::forward<S>(sums));
+    return reduce_by_index(::thrust::device, M, std::forward<S>(sums));
 }
 
 template<class T, class S, class BinOp>
 auto reduce_by_index(T const& M, S&& sums, BinOp&& op) -> S&& {
-    return reduce_by_index(::thrust::cuda::par, M, std::forward<S>(sums), std::forward<BinOp>(op));
+    return reduce_by_index(::thrust::device, M, std::forward<S>(sums), std::forward<BinOp>(op));
 }
 
 template<class T>

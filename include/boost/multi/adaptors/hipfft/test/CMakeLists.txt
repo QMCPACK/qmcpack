@@ -10,13 +10,18 @@ enable_language(HIP)
 find_package(hipFFT REQUIRED)
 
 # FFTW has to go before blas to avoid unscrupulous (i.e. MKL) blas implementations that include FFTW and don't implement it properly
-find_package(PkgConfig REQUIRED)
+find_package(PkgConfig)
+if(NOT PkgConfig_FOUND)
+	message(FATAL_ERROR "Could not find pkg-config, needed to locate FFTW. On Ubuntu/Debian install it with:\n  sudo apt-get install pkg-config\n(on Fedora/RHEL: sudo dnf install pkgconf-pkg-config).")
+endif()
 pkg_search_module(
 	FFTW
-	REQUIRED
 	fftw3
 	IMPORTED_TARGET
 )
+if(NOT FFTW_FOUND)
+	message(FATAL_ERROR "Could not find FFTW (fftw3.pc). On Ubuntu/Debian install the development package with:\n  sudo apt-get install libfftw3-dev\n(on Fedora/RHEL: sudo dnf install fftw-devel).")
+endif()
 include_directories(PkgConfig::FFTW)
 link_libraries(PkgConfig::FFTW)
 
@@ -31,7 +36,7 @@ add_executable(hipfft.cpp.x hipfft.cpp)
 set_source_files_properties(hipfft.cpp PROPERTIES LANGUAGE HIP)
 
 # target_link_libraries(${TEST_EXE} PRIVATE multi)
-target_link_libraries(hipfft.cpp.x PRIVATE hip::hipfft Boost::unit_test_framework multi)
+target_link_libraries(hipfft.cpp.x PRIVATE hip::hipfft multi)
 
 add_test(NAME hipfft.cpp.x COMMAND $<TARGET_FILE:hipfft.cpp.x>)
 

@@ -96,8 +96,8 @@ class herk_range {
 
 template<class AA, class BB, class A2D, class C2D, class = typename A2D::element_ptr, std::enable_if_t<is_complex_array<C2D>{}, int> = 0>  // NOLINT(modernize-use-constraints) TODO(correaa) for C++20
 auto herk(filling c_side, AA alpha, A2D const& a, BB beta, C2D&& c) -> C2D&& {                                                             // NOLINT(readability-function-cognitive-complexity,readability-identifier-length) 74, BLAS naming
-	assert(a.size() == c.size());                                                                                                          // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
-	assert(c.size() == c.rotated().size());                                                                                                // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
+	assert(a.size() == c.size());
+	assert(c.size() == c.rotated().size());
 	if(c.is_empty()) {
 		return std::forward<C2D>(c);
 	}
@@ -144,7 +144,7 @@ auto herk(filling c_side, AA alpha, A2D const& a, BB beta, C2D&& c) -> C2D&& {  
 			else if(stride(a) == 1 && c.stride() == 1) {
 				herk(c_side == filling::upper ? 'U' : 'L', 'N', c.size(), a.rotated().size(), &alpha, base_a, a.rotated().stride(), &beta, base_c, c.rotated().stride());
 			}
-			//  else                                   {assert(0);} // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
+			//  else                                   {assert(0);}
 		}
 		// cppcheck-suppress-end knownConditionTrueFalse ; bug in cppcheck 2.18?
 

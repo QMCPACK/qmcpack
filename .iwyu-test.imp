@@ -61,5 +61,11 @@
     { "include": ["@<__bit_reference>", "private", "<utility>", "public"] },
     { "include": ["@<__fwd/string_view.h>", "private", "<string_view>", "public"] },
     { "include": ["@<__ostream/basic_ostream.h>", "private", "<ostream>", "public"] },
-    { "include": ["@<__config>", "private", "<cstddef>", "public"] }
+    { "include": ["@<__config>", "private", "<cstddef>", "public"] },
+    { "include": ["@<pstl/execution_defs.h>", "private", "<execution>", "public"] },
+    { "include": ["@<pstl/execution_impl.h>", "private", "<execution>", "public"] },
+    { "include": ["@<pstl/glue_execution_defs.h>", "private", "<execution>", "public"] },
+    { "include": ["@<pstl/glue_numeric_impl.h>", "private", "<numeric>", "public"] },
+    { "include": ["@<pstl/numeric_impl.h>", "private", "<numeric>", "public"] },
+    { "include": ["@<pstl/parallel_backend_serial.h>", "private", "<numeric>", "public"] }
 ]

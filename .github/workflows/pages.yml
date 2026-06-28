@@ -59,9 +59,11 @@ jobs:
       - name: Prepare artifact for GitHub Pages
         run: cp -r doc/html .public
 
-      # Makes another copy of doc/html/index.html into .public but with the name multi.html
-      - name: Create multi.hmtl redirect
-        run: cp doc/html/index.html .public/multi.html
+      # Self-generated redirects (don't depend on an Antora-produced index.html); mirrors the GitLab `pages` job
+      - name: Create landing redirects
+        run: |
+          echo '<meta http-equiv="refresh" content="0; url=multi/intro.html">' > .public/index.html
+          echo '<meta http-equiv="refresh" content="0; url=multi/intro.html">' > .public/multi.html
 
       - name: Upload artifact for GitHub Pages
         uses: actions/upload-pages-artifact@v3

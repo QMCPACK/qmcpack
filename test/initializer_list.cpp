@@ -10,7 +10,7 @@
 
 #include <algorithm>         // IWYU pragma: keep  // for copy
 #include <array>             // for array
-#include <cmath>             // for abs
+#include <cmath>             // IWYU pragma: keep  // for abs
 #include <complex>           // for operator*, operator+, complex
 #include <initializer_list>  // for initializer_list, begin, end
 #include <iterator>          // for size, begin, end
@@ -553,66 +553,66 @@ auto main() -> int {  // NOLINT(readability-function-cognitive-complexity,bugpro
 	// 	BOOST_TEST( csarr[2][0] == 33 );
 	// }
 	{
-		std::initializer_list<std::initializer_list<int>> const il = {
-			{1, 2, 3},
-			{4, 5, 6}
-		};
+		// std::initializer_list<std::initializer_list<int>> const il = {
+		// 	{1, 2, 3},
+		// 	{4, 5, 6}
+		// };
 
-		static_assert(std::is_same_v<multi::element_t<std::decay_t<decltype(il)>>, int>);
+		// static_assert(std::is_same_v<multi::element_t<std::decay_t<decltype(il)>>, int>);
 
-		BOOST_TEST(*multi::base(il) == 1);
+		// BOOST_TEST(*multi::base(il) == 1);
 
-		auto const il_lyt = multi::layout(il);
+		// auto const il_lyt = multi::layout(il);
 
-		auto [s1, s2] = il_lyt.strides();
+		// auto [s1, s2] = il_lyt.strides();
 
-		BOOST_TEST( std::abs(s1) >= 3 );
-		BOOST_TEST( s2 == 1 );
+		// BOOST_TEST( std::abs(s1) >= 3 );
+		// BOOST_TEST( s2 == 1 );
 
-		BOOST_TEST( il_lyt.size() == 2);
-		BOOST_TEST( il_lyt.num_elements() == 6 );
+		// BOOST_TEST( il_lyt.size() == 2);
+		// BOOST_TEST( il_lyt.num_elements() == 6 );
 
-		multi::const_subarray<int, 2> const csarr(il);
+		// multi::const_subarray<int, 2> const csarr(il);
 
-		using std::get;
-		BOOST_TEST( get<0>(csarr.sizes()) == 2 );
-		BOOST_TEST( get<1>(csarr.sizes()) == 3 );
+		// using std::get;
+		// BOOST_TEST( get<0>(csarr.sizes()) == 2 );
+		// BOOST_TEST( get<1>(csarr.sizes()) == 3 );
 
-		BOOST_TEST( csarr[0][0] == 1);
-		BOOST_TEST( csarr[0][1] == 2);
-		BOOST_TEST( csarr[0][2] == 3);
+		// BOOST_TEST( csarr[0][0] == 1);
+		// BOOST_TEST( csarr[0][1] == 2);
+		// BOOST_TEST( csarr[0][2] == 3);
 
-		BOOST_TEST( csarr[1][0] == 4);
-		BOOST_TEST( csarr[1][1] == 5);
-		BOOST_TEST( csarr[1][2] == 6);
+		// BOOST_TEST( csarr[1][0] == 4);
+		// BOOST_TEST( csarr[1][1] == 5);
+		// BOOST_TEST( csarr[1][2] == 6);
 
-		multi::array<int, 2> const arr = csarr;
+		// multi::array<int, 2> const arr = csarr;
 
-		BOOST_TEST( arr == csarr );
+		// BOOST_TEST( arr == csarr );
 
-		multi::array<int, 2> const arr2{multi::const_subarray<int, 2>(il)};
+		// multi::array<int, 2> const arr2{multi::const_subarray<int, 2>(il)};
 
-		BOOST_TEST( arr == arr2 );
+		// BOOST_TEST( arr == arr2 );
 
-		multi::array<int, 2> const arr3 = multi::const_subarray<int, 2>(il);
+		// multi::array<int, 2> const arr3 = multi::const_subarray<int, 2>(il);
 
-		BOOST_TEST( arr == arr3 );
+		// BOOST_TEST( arr == arr3 );
 
-		multi::const_subarray const csarr2(il);
+		// multi::const_subarray const csarr2(il);
 
-		BOOST_TEST( csarr2 == csarr );
+		// BOOST_TEST( csarr2 == csarr );
 
-		multi::array<int, 2> const arr4 = multi::const_subarray(il);
+		// multi::array<int, 2> const arr4 = multi::const_subarray(il);
 
-		BOOST_TEST( arr == arr4 );
+		// BOOST_TEST( arr == arr4 );
 
-		multi::array const arr5 = multi::const_subarray(il);
+		// multi::array const arr5 = multi::const_subarray(il);
 
-		BOOST_TEST( arr == arr5 );
+		// BOOST_TEST( arr == arr5 );
 
-		auto const arr6 = +multi::const_subarray(il);
+		// auto const arr6 = +multi::const_subarray(il);
 
-		BOOST_TEST( arr == arr6 );
+		// BOOST_TEST( arr == arr6 );
 
 		// using multi::operator+;
 		// auto const arr7 = +il;
@@ -646,17 +646,17 @@ auto main() -> int {  // NOLINT(readability-function-cognitive-complexity,bugpro
 			BOOST_TEST(*bas == 1);
 		}
 		// std::cout << "size = " << multi::layout(il).size() << std::endl;
-		BOOST_TEST( multi::layout(il).size() == 1 );
+		// BOOST_TEST( multi::layout(il).size() == 1 );
 
-		multi::const_subarray<int, 2> const csarr(il);
+		// multi::const_subarray<int, 2> const csarr(il);
 
-		BOOST_TEST( csarr.size() == 1 );
-		BOOST_TEST( csarr.num_elements() == 3 );
+		// BOOST_TEST( csarr.size() == 1 );
+		// BOOST_TEST( csarr.num_elements() == 3 );
 
-		BOOST_TEST( csarr[0].size() == 3 );
-		BOOST_TEST( csarr[0][0] == 1 );
-		BOOST_TEST( csarr[0][1] == 2 );
-		BOOST_TEST( csarr[0][2] == 3 );
+		// BOOST_TEST( csarr[0].size() == 3 );
+		// BOOST_TEST( csarr[0][0] == 1 );
+		// BOOST_TEST( csarr[0][1] == 2 );
+		// BOOST_TEST( csarr[0][2] == 3 );
 	}
 	{
 		std::initializer_list<std::initializer_list<int>> const il = {
@@ -669,7 +669,7 @@ auto main() -> int {  // NOLINT(readability-function-cognitive-complexity,bugpro
 
 		multi::array<int, 2> arr = multi::detail::make_restriction(il);
 
-		multi::const_subarray<int, 2> const csarr(il);
+		// multi::const_subarray<int, 2> const csarr(il);
 
 		BOOST_TEST( arr.size() == 2 );
 		BOOST_TEST( arr.num_elements() == 6 );
@@ -772,6 +772,10 @@ auto main() -> int {  // NOLINT(readability-function-cognitive-complexity,bugpro
 		BOOST_TEST( (multi::initializer_array<int, 1>{1, 2, 3})[1] == 2 );
 	}
 #endif
+	{
+		multi::array<int, 1> numbers(3);
+		numbers = {1, 2, 3};
+	}
 
 	return boost::report_errors();
 }

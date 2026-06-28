@@ -80,11 +80,11 @@ using core::trsm;
 template<class Context, class A2D, class B2D>
 auto trsm(Context&& ctxt, blas::side a_side, blas::filling a_fill, blas::diagonal a_diag, typename A2D::element alpha, A2D const& a, B2D&& b) // NOLINT(readability-function-cognitive-complexity,readability-identifier-length) cognitive load 115, BLAS naming
 -> B2D&& {
-	if(a_side == blas::side::left ) {assert(size(~a) >= size( b));}  // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
-	if(a_side == blas::side::right) {assert(size( a) >= size(~b));}  // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
+	if(a_side == blas::side::left ) {assert(size(~a) >= size( b));}
+	if(a_side == blas::side::right) {assert(size( a) >= size(~b));}
 
-	assert( stride( a) == 1 || stride(~a) == 1 );  // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
-	assert( stride( b) == 1 || stride(~b) == 1 );  // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
+	assert( stride( a) == 1 || stride(~a) == 1 );
+	assert( stride( b) == 1 || stride(~b) == 1 );
 
 	// cppcheck-suppress-begin knownConditionTrueFalse ; bug in cppcheck 2.18?
 	if(size(b) != 0) {

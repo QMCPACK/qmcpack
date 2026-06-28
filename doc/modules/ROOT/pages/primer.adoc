@@ -33,19 +33,20 @@ Individual elements can be accessed by the multidimensional indices, using brack
 assert( A[1][2] == 6 );
 ----
 
-Arrays can be viewed simultaneously as a nested array or as _flat_ sequence of elements.
+Arrays can be viewed simultaneously as a nested array or as a _flat_ sequence of elements.
 
-```
+[source,cpp]
+----
 assert( A.elements().size() == 6 );  // total number of elements
 
-assert( A.elements()[6] == 6 );
-assert( &A.elements()[6] == &A[1][2] );
-```
+assert( A.elements()[5] == 6 );
+assert( &A.elements()[5] == &A[1][2] );
+----
 
 The elements also can be accessed through iterators;
 `A.begin()`, `A.begin()->begin()` and `A.elements().begin()` are examples of valid ways to access the data structure that allow the interaction with algorithms.
 
-The value of an array can be copied, (moved,) and compared;
+The value of an array can be copied, moved, and compared;
 copies are equal but independent (disjoint).
 
 [source,cpp]
@@ -53,12 +54,12 @@ copies are equal but independent (disjoint).
 multi::array<int, 2> B = A;                 // we make a copy
 
 assert(  B              ==  A              );  // copies are equal
-assert(  B.extents() ==  A.extents() );  // extensions (sizes) are equal
+assert(  B.extents()    ==  A.extents()    );  // extensions (sizes) are equal
 assert(  B[0][1]        ==  A[0][1]        );  // all elements are equal
 assert( &B[0][1]        != &A[0][1]        );  // elements are independent (different addresses)
 ----
 
-More often, an array can be initialized from its sizes alone, a default element may or may not be specified. 
+More often, an array can be initialized from its sizes alone; a default element may or may not be specified.
 
 [source,cpp]
 ----
@@ -67,7 +68,7 @@ assert( C.elements().size() == 3*4*5 );  // or C.num_elements()
 ----
 
 Arrays can be passed by value or by reference.
-Most of the time, arguments should be passed through generic parameters to also allow functions to work with parts (subblocks, slices, etc.) of an array.
+Most of the time, arguments should be passed through generic parameters to also allow functions to work with parts (sub-blocks, slices, etc.) of an array.
 The most useful functions work on the _concept_ of an array rather than on a concrete type, for example:
 
 [source,cpp]
@@ -78,14 +79,14 @@ auto element_1_1(ArrayOfInts2D const& m) -> int const& { return m[1][1]; }
 assert( &element_1_1(A) == &A[1][1] );
 ----
 
-The function expects any array or subarray of dimension 2 (or greater) and returns an element with type `int`.
+The function expects any array or subarray of dimension 2 or greater and returns an element with type `int`.
 
 The generic function template arguments that are not intended to be modified are passed by `const&`; otherwise, they are passed by forward-reference `&&`.
-In this way, the functions can be also applied to subblocks of larger matrices.
+In this way, the functions can also be applied to sub-blocks of larger matrices.
 
 [source,cpp]
 ----
 assert( &element_1_1(C[0]) == &C[0][1][1] );
 ----
 
-Although most of the examples use numeric elements for conciseness, the library is designed to hold general types e.g. non-numeric, non-trivial types, like `std::string`, other containers or, in general, user-defined value-types.
+Although most of the examples use numeric elements for conciseness, the library is designed to hold general types, e.g., non-numeric, non-trivial types, like `std::string`, other containers or, in general, user-defined value-types.

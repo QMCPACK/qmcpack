@@ -212,9 +212,9 @@ auto main() -> int {  // NOLINT(readability-function-cognitive-complexity,bugpro
 			[](auto idx) { return multi::array<std::string, 2>({idx, idx}, std::to_string(idx)); }
 		);
 
-		BOOST_TEST( size(arr[0]) == 0 );
-		BOOST_TEST( size(arr[1]) == 1 );
-		BOOST_TEST( size(arr[8]) == 8 );
+		BOOST_TEST( arr[0].size() == 0 );
+		BOOST_TEST( arr[1].size() == 1 );
+		BOOST_TEST( arr[8].size() == 8 );
 
 		using namespace std::string_literals;  // NOLINT(build/namespaces)
 		BOOST_TEST( arr[8][4][4] == "8"s );

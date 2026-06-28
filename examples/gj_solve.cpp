@@ -1,14 +1,17 @@
 #ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4-*-
-$CXX -DNDEBUG $0 -o $0x -lboost_timer&&$0x&&rm $0x;exit
+$CXX -DNDEBUG $0 -o $0x&&$0x&&rm $0x;exit
 #endif
 // Copyright 2019-2023 Alfredo A. Correa
 
 #include <multi/array.hpp>
 
-#include<iostream>
-#include<vector>
-#include<numeric> // iota
 #include<algorithm>
+#include<chrono>
+#include<iostream>
+#include<numeric> // iota
+#include<string>
+#include<utility> // move
+#include<vector>
 
 namespace multi = boost::multi;
 using std::cout;
@@ -63,7 +66,23 @@ auto gj_solve2(Matrix&& A, Vector&& y) -> decltype(y[0] /= A[0][0], y) {
 	return y;
 }
 
-#include <boost/timer/timer.hpp>
+namespace {
+// minimal RAII wall-clock timer (replaces boost::timer::auto_cpu_timer)
+class auto_timer {
+	std::string                           label_;
+	std::chrono::steady_clock::time_point start_ = std::chrono::steady_clock::now();
+
+ public:
+	explicit auto_timer(std::string label = {}) : label_{std::move(label)} {}
+	auto_timer(auto_timer const&)                    = delete;
+	auto_timer(auto_timer&&)                         = delete;
+	auto operator=(auto_timer const&) -> auto_timer& = delete;
+	auto operator=(auto_timer&&) -> auto_timer&      = delete;
+	~auto_timer() {
+		std::cerr << label_ << std::chrono::duration<double>(std::chrono::steady_clock::now() - start_).count() << " s (wall)\n";
+	}
+};
+}  // namespace
 
 int main(){
 	{
@@ -83,7 +102,7 @@ int main(){
 		std::vector<double> y(3000);
 		std::iota(y.begin(), y.end(), 0.2);
 		{
-			boost::timer::auto_cpu_timer t;
+			auto_timer t;
 			gj_solve(A({1000, 4000}, {0, 3000}), y);
 		}
 		cout << y[45] << std::endl;
@@ -95,7 +114,7 @@ int main(){
 		std::vector<double> y(3000);
 		std::iota(y.begin(), y.end(), 0.2);
 		{
-			boost::timer::auto_cpu_timer t;
+			auto_timer t;
 			gj_solve2(A({1000, 4000}, {0, 3000}), y);
 		}
 		cout << y[45] << std::endl;

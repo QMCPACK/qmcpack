@@ -88,11 +88,13 @@ auto main() -> int {  // NOLINT(readability-function-cognitive-complexity,bugpro
 	{
 		multi::array<char, 2> const carr({10, 10}, '9');
 
+		using std::size;
+
 		BOOST_TEST( size( carr(1, {0, 3}) ) == 3 );
 
 		BOOST_TEST( carr(1, {0, 3})[1] == '9' );
 		static_assert(decltype(carr({0, 3}, 1))::rank_v == 1);
-		BOOST_TEST( size(carr.sliced(0, 3)) == 3 );
+		BOOST_TEST( carr.sliced(0, 3).size() == 3 );
 
 		BOOST_TEST( carr.range({0, 3}).rotated()[1].unrotated().size() == 3 );
 
@@ -127,18 +129,14 @@ auto main() -> int {  // NOLINT(readability-function-cognitive-complexity,bugpro
 		BOOST_TEST(           arr.num_elements() == 3*5L                           );
 		BOOST_TEST(           arr[1][2] == "h"                                     );
 
-		BOOST_TEST(      size(arr          ({1, 3}, {2, 5})) == 2                  );
-		BOOST_TEST(    extent(arr          ({1, 3}, {2, 5})).first() == 0          );
+		BOOST_TEST(           arr          ({1, 3}, {2, 5}).size() == 2                  );
+		BOOST_TEST(           arr          ({1, 3}, {2, 5}).extent().first() == 0          );
 		BOOST_TEST(           arr          ({1, 3}, {2, 5}).num_elements() == 2*3L );
 		BOOST_TEST(           arr          ({1, 3}, {2, 5}).num_elements() == 2*3L );
 		BOOST_TEST(           arr          ({1, 3}, {2, 5})[0][0] == "h"           );
 		BOOST_TEST(          &arr          ({1, 3}, {2, 5})[0][0] == &arr[1][2]    );
 
-		BOOST_TEST(      size(arr.stenciled({1, 3}, {2, 5})) == 2                  );
-		// BOOST_TEST( extension(arr.stenciled({1, 3}, {2, 5})).first() == 1          );
-		// BOOST_TEST(           arr.stenciled({1, 3}, {2, 5}).num_elements() == 2*3L );
-		// BOOST_TEST(           arr.stenciled({1, 3}, {2, 5}) [1][2] == "h"          );
-		// BOOST_TEST(          &arr.stenciled({1, 3}, {2, 5}) [1][2] == &arr[1][2]   );
+		BOOST_TEST(           arr.stenciled({1, 3}, {2, 5}).size() == 2                  );
 
 		BOOST_TEST(  arr().elements().size() == arr.num_elements() );
 

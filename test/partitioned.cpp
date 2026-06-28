@@ -1,4 +1,4 @@
-// Copyright 2018-2025 Alfredo A. Correa
+// Copyright 2018-2026 Alfredo A. Correa
 // Copyright 2024 Matt Borland
 // Distributed under the Boost Software License, Version 1.0.
 // https://www.boost.org/LICENSE_1_0.txt
@@ -7,10 +7,10 @@
 
 #include <boost/core/lightweight_test.hpp>
 
-#include <algorithm>    // for is_sorted
-#include <array>        // for array
-#include <cstddef>      // for ptrdiff_t
-#include <iterator>     // for size
+#include <algorithm>  // for is_sorted
+#include <array>      // for array
+#include <cstddef>    // for ptrdiff_t
+// #include <iterator>     // for size
 #include <string>       // for operator""s, string, string_lite...
 #include <tuple>        // for apply  // IWYU pragma: keep
 #include <type_traits>  // for declval, decay_t, decay, decay<>...
@@ -68,8 +68,8 @@ auto main() -> int {  // NOLINT(readability-function-cognitive-complexity,bugpro
 		// static_assert(std::decay_t<decltype(A2_ref)>::rank{} == decltype(A1)::rank{} + 1);
 		static_assert(std::decay_t<decltype(A2_ref)>::rank_v == decltype(A1)::rank_v + 1);
 
-		BOOST_TEST( size(A2_ref   ) == 2 );
-		BOOST_TEST( size(A2_ref[0]) == 3 );
+		BOOST_TEST( A2_ref.size() == 2 );
+		BOOST_TEST( A2_ref[0].size() == 3 );
 
 		BOOST_TEST( &A2_ref[1][0] == &A1[3] );
 
@@ -348,9 +348,9 @@ auto main() -> int {  // NOLINT(readability-function-cognitive-complexity,bugpro
 		static_assert(std::decay_t<decltype(A3_ref)>::dimensionality == decltype(A2)::dimensionality + 1);
 
 		BOOST_TEST( A3_ref.num_elements() == A2.num_elements() );
-		BOOST_TEST( size(A3_ref) == 2 );
-		BOOST_TEST( size(A3_ref[0]) == 2 );
-		BOOST_TEST( size(A3_ref[0][0]) == 6 );
+		BOOST_TEST( A3_ref.size() == 2 );
+		BOOST_TEST( A3_ref[0].size() == 2 );
+		BOOST_TEST( A3_ref[0][0].size() == 6 );
 		BOOST_TEST( &A3_ref[1][1][0] == &A2[3][0] );
 
 		A3_ref[0][0][0] = 99;
@@ -383,7 +383,7 @@ auto main() -> int {  // NOLINT(readability-function-cognitive-complexity,bugpro
 		BOOST_TEST( get<0>(A2.sizes()) == 6 );
 		BOOST_TEST( get<1>(A2.sizes()) == 2 );
 
-		BOOST_TEST( size(A2.partitioned(3)) == 3 );
+		BOOST_TEST( A2.partitioned(3).size() == 3 );
 
 		static_assert(decltype(A2.partitioned(3))::dimensionality == 3);
 		// static_assert(decltype(A2.partitioned(3))::rank{} == 3);
@@ -396,12 +396,9 @@ auto main() -> int {  // NOLINT(readability-function-cognitive-complexity,bugpro
 		BOOST_TEST( get<1>(sizes(A2.partitioned(3))) == 2 );
 		BOOST_TEST( get<2>(sizes(A2.partitioned(3))) == 2 );
 
-		BOOST_TEST( size(A2.partitioned(1)) == 1 );
+		BOOST_TEST( A2.partitioned(1).size() == 1 );
 
 		static_assert(decltype(A2.partitioned(1))::dimensionality == 3);
-		// static_assert(decltype(A2.partitioned(1))::rank{} == 3);
-		// static_assert(decltype(A2.partitioned(1))::rank::value == 3);
-		// static_assert(decltype(A2.partitioned(1))::rank_v == 3);
 
 		BOOST_TEST( &A2.partitioned(1).rotated()[3][1][0] == &A2[3][1] );
 	}
@@ -511,11 +508,11 @@ auto main() -> int {  // NOLINT(readability-function-cognitive-complexity,bugpro
 	// BOOST_AUTO_TEST_CASE(array_partitioned_vs_chunked_1D)
 	{
 		multi::array<double, 1> arr = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0};
-		BOOST_TEST( size(arr.partitioned(3)) == 3 );
+		BOOST_TEST( arr.partitioned(3).size() == 3 );
 		BOOST_TEST(( arr.partitioned(3)[1] == multi::array<double, 1>{4.0, 5.0, 6.0, 7.0} ));
 		BOOST_TEST( &arr.partitioned(3)[1][2] == &arr[6] );
 
-		BOOST_TEST( size(arr.chunked(3)) == 4 );
+		BOOST_TEST(  arr.chunked(3).size() == 4 );
 		BOOST_TEST(( arr.chunked(3)[1] == multi::array<double, 1>({3.0, 4.0, 5.0}) ));
 		BOOST_TEST( &arr.chunked(3)[1][2] == &arr[5] );
 	}
@@ -526,7 +523,7 @@ auto main() -> int {  // NOLINT(readability-function-cognitive-complexity,bugpro
 		BOOST_TEST( arr.partitioned(20).size() == 20 );
 		BOOST_TEST( &arr.partitioned(20)[1][2] == &arr[7] );
 
-		BOOST_TEST( size(arr.chunked(5)) == 20 );
+		BOOST_TEST( arr.chunked(5).size() == 20 );
 		BOOST_TEST( &arr.chunked(5)[1][2] == &arr[7] );
 	}
 

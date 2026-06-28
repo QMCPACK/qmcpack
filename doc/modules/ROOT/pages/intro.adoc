@@ -13,36 +13,42 @@ link:https://github.com/correaa/boost-multi[image:https://img.shields.io/badge/g
 
 _Multi_ is a modern C++ library that provides manipulation and access of data in multidimensional arrays for both CPU and GPU memory.
 
+NOTE: This library is proposed for inclusion in Boost and is currently under Boost review, under the name *Boost.Multi*. It is already usable as a standalone, header-only library (see below for requirements)
+
 Multidimensional array data structures are essential in various fields of computing, including data analysis, image processing, and scientific simulations. When combined with GPUs, they also play a significant role in Artificial Intelligence and Machine Learning.
 
 In many simulations, space is divided into a grid, and values are stored at each grid cell.
 For example, arrays can represent fields of physical values, such as temperature variations within a block of material, or the velocity field of a fluid.
 The state of a game can be represented by placing pieces in a board made of squares.
-Arrays can also be used to numerical matrices, vectors, and more generally, tensors, to perform linear algebra operations.
-They can represent other abstract data structures, like networks, graph connections, or store data in multiple columns.
-Arrays are amenable to bulk processing in computing, and also to slicing, and reductions.
+Arrays can also be used to represent numerical matrices, vectors, and, more generally, tensors, to perform linear algebra operations.
+They can represent other abstract data structures, such as networks, graph connections, or store data in multiple columns.
+Arrays are amenable to efficient bulk processing, slicing, and reductions.
 
 Here are 3 examples of arrays of different dimensionalities:
 
-[source,plaintext]
+[source]
 ----
- 1D ├─0───┼─1───┼─2───┼   2D  ┼─0──┼─1──┼─2──┼   3D  ┼─0──┼─1──┼─2──┤       4D, ... ND
-    |  a  |  b  |  c  |       0  f |  g |  h |       0  m |  n |  o |2──┤
-    └─────┴─────┴─────┘       ┼────┼────┼────┤       ┼────┼────┼────┤ u |
-                              1  i |  j |  k |       1  p |  q |  r |───┤
-                              ┴────┴────┴────┘       ┴────┴────┴────┘ x |
-                                                         ┴────┴────┴────┘
+ 1D                    2D                  3D
+                                                  
+   0   1   2         0   1   2          0   1   2  plane 0
+ +---+---+---+     +---+---+---+      +---+---+---+   plane 1
+ | a | b | c |   0 | f | g | h |    0 | m | n | o |---+
+ +---+---+---+     +---+---+---+      +---+---+---+ u |
+                 1 | i | j | k |    1 | p | q | r |---+
+                   +---+---+---+      +---+---+---+ x |
+                                          +---+---+---+
 ----
-Note that the depicted 3D case has only two planes, the first index (e.g. `1`) selects a plane (e.g. bottom).
+Note that the depicted 3D case has two "planes", the first index selects a plane (plane `0` or `1`).
 
-These depicted 1D, 2D, and 3D arrays containing letters and can be represented, within this library, as C++ objects declared as:
-```cpp
-#include <boost/multi.hpp>
+These depicted 1D, 2D, and 3D arrays contain single characters and can be defined as C++ objects in this library:
+[source,cpp]
+----
+#include <boost/multi/array.hpp>
 multi::array<char, 1> A1D = {'a', 'b', 'c'};
 multi::array<char, 2> A2D = { {'f', 'g', 'h'}, {'i', 'j', 'k'} };
 multi::array<char, 3> A3D = /*... nested list of letters (chars) */ ;
-```
-and their elements, when retrieved by their coordinates (indices) are such that, for example: 
+----
+and their elements, when retrieved by their coordinates (indices) are such that, for example:
 
 [source,cpp]
 ----
@@ -51,38 +57,80 @@ assert( A2D[1][0] == 'i' );     // A2D[1, 0]     available since C++23
 assert( A3D[1][0][2] == 'u' );  // A3D[1, 0, 2]  available since C++23
 ----
 
+A subarray of a larger array, such as a row, is a _reference_ into the original data.
+Arrays and subarrays are usable with standard algorithms, while whole-array assignment makes an independent _copy_ (value semantics):
+
+[source,cpp]
+----
+multi::array<int, 2> A({2, 3}, 0);        // 2×3 array, elements set to 0
+std::iota(A[1].begin(), A[1].end(), 10);  // fill row with index 1 via an STL algorithm: 10, 11, 12
+assert( A[1][2] == 12 );                  // the change is visible in A
+
+multi::array<int, 2> B = A;  // deep copy (value semantics)
+B[1][2] = 99;                // mutates B only
+assert( A[1][2] == 12 );     // A is unaffected
+----
+
 The library features logical access recursively across dimensions and to elements through indices and iterators.
-The internal data structure layout (when mapped to computer memory) is
+The internal data structure layout, when mapped to computer memory, is
 https://en.wikipedia.org/wiki/Stride_of_an_array[stride-based],
 which makes it compatible with low-level C libraries.
 
 The library interface is designed to be compatible with standard algorithms and ranges (STL) and special memory (including GPUs) and follows modern C++ design principles.
 
-The following _combination of features_ of this library are not present in the Standard or generally in other libraries:
+The library offers the following _combination of features_ (some of which are not present in the Standard or generally in xref:appendix.adoc#appendix_comparison[other libraries]):
 
-* Value semantics of multidimensional array containers and well-defined referential semantics of subarrays to avoid unnecessary copies if possible.
+* Value semantics of multidimensional array containers and well-defined referential semantics of subarrays to avoid unnecessary copies if possible (ideally `std::mdarray` will address this partially, post C{plus}{plus}26).
 * Availability of different access patterns to the elements in the multidimensional structure, as nested sequences or as a single sequence of elements.
 A _D_-dimensional array can be interpreted either as an (STL-compatible) sequence of (_D_-1)-dimensional subarrays or as a flattened one-dimensional (also STL-compatible) sequence of elements.
-* Interoperability with both legacy C and modern C++ libraries (e.g., STL, ranges, Thrust --CUDA and AMD GPUs--, Boost).
+* Interoperability with both legacy C and modern C++ libraries (e.g., STL, ranges, Thrust -- CUDA and AMD GPUs --, Boost), specifically through iterators and ranges (not present in the Standard library).
 * Memory management and allocation to exploit modern memory spaces, including GPU memory, mapped memory, and fancy pointers.
 * Lazy arrays and evaluation of array expressions well integrated with the rest of the library.
 
+The library's primary concern is with the storage and logic structure of data.
+It doesn't make specific algebraic or geometric assumptions about the arrays and their elements,
+although they are still good building blocks for implementing mathematical and numerical algorithms on top of them, such as representing algebraic dense matrices in the 2D case, or tensors in the general case.
+
 Do not confuse this library with
 https://www.boost.org/doc/libs/1_69_0/libs/multi_array/doc/index.html[Boost.MultiArray]
-or with standard `std::mdspan` (accepted in C{plus}{plus}23)
+or with the standard link:https://en.cppreference.com/w/cpp/container/mdspan.html[`std::mdspan`] (accepted in C{plus}{plus}23).
 This library shares some of their goals and is compatible and complementary to them;
 but it is designed at a different level of generality and with other priorities (such as the features listed above).
 The code is entirely independent and has fundamental implementation and semantics differences.
-For example, `std::mdspan` does not provide iterators, and it is not well integrated with the rest of the STL.
-Problems such as deep assignment, or const-propagation are not fully solved, and ownership is delegated to a separate proposal `std::mdarray` (C{plus}{plus}26).
+For example, `std::mdspan` is a non-owning view with no iterators and is not a range, so it does not work directly with STL algorithms or ranges; its assignment rebinds the view rather than copying elements, leaving deep assignment and `const`-propagation through subarrays unsolved.
+The Standard also provides no owning, allocator-aware container for special memory spaces (GPU, managed memory, fancy pointers) nor lazy array-expression evaluation; ownership is delegated to a future `std::mdarray` container adaptor (post C{plus}{plus}26), which adds value semantics.
+In summary, if you need owning arrays, clear value semantics, and iterators or ranges compatibility, and you only need strided array layouts, use this library instead of `std::mdspan` or xref:appendix.adoc#appendix_comparison[other libraries].
 
-The library's primary concern is with the storage and logic structure of data.
-It doesn't make specific algebraic or geometric assumptions about the arrays and their elements.
-(although they are still good building blocks for implementing on top of this mathematical and numerical algorithms,
-such as representing algebraic dense matrices in the 2D case, or tensors in the general case.)
+The library does not throw exceptions and provides basic exception guarantees, such as no memory leaks, in their presence.
+Exceptions are propagated transparantly from allocations or element construction.
+Indexing, e.g. out-of-bounds errors, and other logical errors result in undefined behavior, which this library attempts to reflect via assertions.
 
-The library does not throw exceptions and provides basic exception guarantees (such as no memory leaks) in their presence (e.g., thrown from allocations).
-Indexing errors and other logical errors result in undefined behavior, which this library attempts to reflect via assertions.
+== More About Use Cases
+
+:idprefix: usecases_
+
+Multidimensional arrays appear everywhere in practice.
+A digital photograph is a two-dimensional grid of pixels, or three-dimensional once color channels are included (height × width × channel), and a video adds a further time axis.
+Spreadsheets and database extracts are two-dimensional tables of rows and columns, while machine-learning workloads continuously move large tensors (of shape batch × channel × height × width) between CPU and GPU.
+Audio spectrograms, medical CT and MRI scans that sample a volume, and climate models spanning latitude, longitude, altitude, and time are all naturally expressed as arrays of three or more dimensions.
+In each case the data is logically a single object addressed by several coordinates, which is precisely what a multidimensional array represents.
+
+In the author's own field of condensed matter physics and chemistry, the quantum states of individual electrons are discretized on a regular 3-dimensional grid of complex numbers.
+Many quantities of interest are obtained by summing functions evaluated over these elements.
+Gradients are computed with stencils or via fast Fourier transforms.
+These 3-dimensional objects can themselves be regarded as vectors in a linear space, and the operators acting on that space are in turn matrices with a 2-dimensional array representation.
+
+Typically, at the lowest level, data is processed in bulk by specially tuned numerical CPU or GPU libraries that expect data in the layouts supported by this library.
+
+== Next Steps
+
+:idprefix: next_
+
+* xref:install.adoc[Installation] -- add _Multi_ to your project (single-header, CMake, vcpkg, ...).
+* xref:primer.adoc[Getting Started] -- a hands-on primer: construction, indexing, and slicing.
+* xref:tutorial.adoc[Advanced Usage] -- memory, iteration, conversions, const-correctness, and more.
+* xref:interop.adoc[Interoperability] -- STL and ranges, Thrust/CUDA, serialization, Boost.Interprocess, pass:[{fmt}], ...
+* xref:appendix.adoc#appendix_comparison[Comparison to other array libraries and languages] -- how _Multi_ relates to Boost.MultiArray, `std::mdspan`, Eigen, Fortran, and NumPy/APL.
 
 == Requirements
 
@@ -104,11 +152,11 @@ Edison Design's https://edg.com/c[EDG] https://godbolt.org/z/693fxPedx[(6.5+)]
 and
 Microsoft's     https://visualstudio.microsoft.com/vs/features/cplusplus[MSVC] (https://godbolt.org/z/Kqrva137M[+14.1]).
 
-(_Multi_ code inside CUDA kernel can be compiled with `nvcc` or with https://godbolt.org/z/7dTKdPTxc[clang (in CUDA mode)].
-Inside HIP code, it can be compiled with AMD's clang rocm (5.0+).)
+_Multi_ code inside a CUDA kernel can be compiled with `nvcc` or with https://godbolt.org/z/7dTKdPTxc[clang (in CUDA mode)].
+Inside HIP code, it can be compiled with AMD's clang rocm (5.0+).
 
 Optional _adaptor_ sublibraries (included in `multi/adaptors/`) have specific dependencies: link:https://www.fftw.org[fftw], link:https://www.netlib.org/blas/[blas]/link:https://www.netlib.org/lapack/[lapack], link:https://developer.nvidia.com/thrust[Thrust], or link:https://developer.nvidia.com/cuda/toolkit[CUDA]
-(all of them can be installed with
-`sudo apt install libfftw3-dev lib64-dev liblapack64-dev libthrust-dev nvidia-cuda-dev`
-or `sudo dnf install fftw-devel ...`.
-)
+(all can be installed with
+`sudo apt install libfftw3-dev libblas-dev liblapack-dev nvidia-cuda-toolkit`
+or
+`sudo dnf install fftw-devel ...`.)

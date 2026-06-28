@@ -7,7 +7,7 @@
 
 #include <boost/core/lightweight_test.hpp>
 
-#include <iterator>  // for size
+// #include <iterator>  // for size
 
 namespace multi = boost::multi;
 
@@ -17,9 +17,9 @@ auto main() -> int {  // NOLINT(readability-function-cognitive-complexity,bugpro
 		multi::array<int, 1> arr = {0, 10, 20};
 		(void)arr;
 		BOOST_TEST( arr == arr(multi::ALL) );
-		BOOST_TEST( size(arr( 1 <= multi::ALL )) == 2 );
+		BOOST_TEST( arr( 1 <= multi::ALL ).size() == 2 );
 		BOOST_TEST( arr( 1 <= multi::ALL )[0] == 10 );
-		BOOST_TEST( size(arr( multi::ALL < 2 )) == 2 );
+		BOOST_TEST( arr( multi::ALL < 2 ).size() == 2 );
 		BOOST_TEST( arr( multi::ALL < 2 )[1] == 10 );
 	}
 
@@ -70,13 +70,9 @@ auto main() -> int {  // NOLINT(readability-function-cognitive-complexity,bugpro
 			{300, 310, 320},
 		};
 
-		BOOST_TEST( size( arr(arr.extent(), 2) ) == size(arr) );
+		BOOST_TEST( arr(arr.extent(), 2).size() == arr.size() );
 
 		auto&& col2(arr(arr.extent(), 2));  // select column #2
-		// same as arr(extesion(arr), 2)
-		// same as arr(arr.extension(0), 2);
-		// same as rotated(arr)[2];
-		//  BOOST_TEST( col2.size(0) == size(arr) );
 
 		BOOST_TEST( dimensionality(col2) == 1 );
 

@@ -223,6 +223,7 @@ struct                                                                          
 
 	using ref_::dropped;
 
+	/// Gives a subarray dropping the first `n` indices in the leading dimension
 	constexpr auto dropped(difference_type n) && -> decltype(auto) { return ref_::dropped(n).element_moved(); }
 
 	constexpr dynamic_array(dynamic_array&& other) /*noexcept(false)*/  // NOLINT(cppcoreguidelines-noexcept-move-operations,hicpp-noexcept-move,performance-noexcept-move-constructor,bugprone-exception-escape)
@@ -387,26 +388,36 @@ struct                                                                          
 		  array_alloc::allocate(static_cast<typename multi::allocator_traits<allocator_type>::size_type>(other.num_elements())),  // NOLINT(readability-redundant-typename)
 		  other.extents()
 	  ) {
+		try {
 #if defined(__clang__) && defined(__CUDACC__)
-		if constexpr(!std::is_trivially_default_constructible_v<typename dynamic_array::element> && !multi::force_element_trivial_default_construction<typename dynamic_array::element>) {
-			adl_alloc_uninitialized_default_construct_n(dynamic_array::alloc(), this->data_elements(), this->num_elements());
-		}
-		adl_copy_n(other.data_elements(), other.num_elements(), this->data_elements());
+			if constexpr(!std::is_trivially_default_constructible_v<typename dynamic_array::element> && !multi::force_element_trivial_default_construction<typename dynamic_array::element>) {
+				adl_alloc_uninitialized_default_construct_n(dynamic_array::alloc(), this->data_elements(), this->num_elements());
+			}
+			adl_copy_n(other.data_elements(), other.num_elements(), this->data_elements());
 #else
-		adl_alloc_uninitialized_copy_n(dynamic_array::alloc(), other.data_elements(), other.num_elements(), this->data_elements());
+			adl_alloc_uninitialized_copy_n(dynamic_array::alloc(), other.data_elements(), other.num_elements(), this->data_elements());
 #endif
+		} catch(...) {
+			this->deallocate();  // basic guarantee: release the raw buffer if an element constructor throws
+			throw;
+		}
 	}
 
 	explicit dynamic_array(typename dynamic_array::extents_type extensions, typename dynamic_array::element const& elem, allocator_type const& alloc)  // NOLINT(readability-redundant-typename)
 	: array_alloc{alloc},
 	  ref_{array_alloc::allocate(static_cast<typename multi::allocator_traits<allocator_type>::size_type>(typename dynamic_array::layout_type{extensions}.num_elements()), nullptr), extensions} {  // NOLINT(readability-redundant-typename)
-		array_alloc::uninitialized_fill_n(this->data_elements(), static_cast<typename multi::allocator_traits<allocator_type>::size_type>(this->num_elements()), elem);                             // NOLINT(readability-redundant-typename)
+		try {
+			array_alloc::uninitialized_fill_n(this->data_elements(), static_cast<typename multi::allocator_traits<allocator_type>::size_type>(this->num_elements()), elem);  // NOLINT(readability-redundant-typename)
+		} catch(...) {
+			this->deallocate();  // basic guarantee: release the raw buffer if an element copy throws
+			throw;
+		}
 	}
 
 	template<class Element>
 	// for classic sfinae, needed by MSVC?
 	explicit dynamic_array(Element const& elem, allocator_type const& alloc, std::enable_if_t<std::is_convertible_v<Element, typename dynamic_array::element> && (D == 0), int> /*dummy*/ = 0)  // if you get a compilation error here, you might be trying to initialize an array with a list of incorrect dimensionality
-	: dynamic_array(typename dynamic_array::extents_type{}, elem, alloc) {}                                                                                                                  // NOLINT(readability-redundant-typename) for C++23
+	: dynamic_array(typename dynamic_array::extents_type{}, elem, alloc) {}                                                                                                                     // NOLINT(readability-redundant-typename) for C++23
 
 	template<
 		class It,
@@ -454,7 +465,12 @@ struct                                                                          
 
 	explicit dynamic_array(::boost::multi::extents_t<D> const& extensions, allocator_type const& alloc)
 	: array_alloc{alloc}, ref_(array_alloc::allocate(static_cast<typename multi::allocator_traits<allocator_type>::size_type>(typename dynamic_array::layout_type{extensions}.num_elements())), extensions) {
-		uninitialized_default_construct();
+		try {
+			uninitialized_default_construct();
+		} catch(...) {
+			this->deallocate();  // basic guarantee: release the raw buffer if an element constructor throws
+			throw;
+		}
 	}
 
 	template<class... Args>
@@ -618,7 +634,16 @@ struct                                                                          
 		  other.extents()
 	  ) {
 		assert(this->stride() != 0);
+#if defined(__cpp_exceptions) && (__cplusplus >= 202002L)
+		try {  // try-in-constexpr is only legal since C++20; in C++17 a constexpr ctor cannot have a try-block
+			uninitialized_copy_elements(other.data_elements());
+		} catch(...) {
+			this->deallocate();
+			throw;
+		}  // basic guarantee: free the raw buffer if an element copy throws
+#else
 		uninitialized_copy_elements(other.data_elements());
+#endif
 	}
 
 	template<class ExecutionPolicy, std::enable_if_t<!std::is_convertible_v<ExecutionPolicy, typename dynamic_array::extents_type>, int> = 0>  // NOLINT(modernize-use-constraints,modernize-type-traits) TODO(correaa) for C++20
@@ -687,10 +712,10 @@ struct                                                                          
 		assert(this->stride() != 0);
 	}
 
-	/// returns an iterator to the beginning 
+	/// returns an iterator to the beginning
 	constexpr auto begin() const& noexcept -> typename dynamic_array::const_iterator { return ref_::begin(); }
 
-	/// returns an iterator to the end 
+	/// returns an iterator to the end
 	constexpr auto end() const& noexcept -> typename dynamic_array::const_iterator { return ref_::end(); }
 
 	constexpr auto begin() && noexcept -> typename dynamic_array::move_iterator { return ref_::begin(); }
@@ -754,7 +779,7 @@ struct                                                                          
 
  private:
 	/// A pointer wrapper that moves on dereferences
-	using element_move_ptr = multi::move_ptr<typename dynamic_array::element_ptr>;
+	using element_move_ptr = multi::move_ptr<typename dynamic_array::element, typename dynamic_array::element_ptr>;  // move_ptr<element, element_ptr> (e.g. move_ptr<int, int*>), matching array_types/subarray; the previous move_ptr<element_ptr> was a move-pointer over pointers
 
  public:
 	/// Subarray reference after binding first index, `multi::subarray<T, D - 1, P>` or, for `D == 1`, `std::pointer_traits<pointer>::reference` (usually `T&`)
@@ -789,14 +814,12 @@ struct                                                                          
 	BOOST_MULTI_HD constexpr auto data_elements() & -> typename dynamic_array::element_ptr { return this->base_; }
 
 	// cppcheck-suppress duplInheritedMember ; to override
-	BOOST_MULTI_HD constexpr auto data_elements() && -> typename dynamic_array::element_move_ptr { return std::make_move_iterator(this->base_); }
+	BOOST_MULTI_HD constexpr auto data_elements() && -> typename dynamic_array::element_move_ptr { return typename dynamic_array::element_move_ptr{this->base_}; }  // construct the library move-pointer (not a std::move_iterator) to match the declared return type
 
-	// BOOST_MULTI_FRIEND_CONSTEXPR auto data_elements(dynamic_array const& self) { return self.data_elements(); }
-	// BOOST_MULTI_FRIEND_CONSTEXPR auto data_elements(dynamic_array& self) { return self.data_elements(); }
-	// BOOST_MULTI_FRIEND_CONSTEXPR auto data_elements(dynamic_array&& self) { return std::move(self).data_elements(); }
-
-	/// Returns the base pointer of the array
+	/// Returns the base const-pointer of the array (the base of the layout, generally a pointer to the element with lowest indices)
 	constexpr auto base() & -> typename dynamic_array::element_ptr { return ref_::base(); }
+
+	/// Returns the base pointer of the array (the base of the layout, generally a pointer to the element with lowest indices)
 	constexpr auto base() const& -> typename dynamic_array::element_const_ptr { return typename dynamic_array::element_const_ptr{ref_::base()}; }
 
 	constexpr auto origin() & -> typename dynamic_array::element_ptr { return ref_::origin(); }
@@ -832,8 +855,8 @@ struct                                                                          
 
 	// Element-move (deep move) assignment, moves each element from the @p other array. Source and destination extents should match
 	// @note Linear complexity in the number of elements (cheaper than copy assignment if elements are effectively movable)
-	constexpr auto operator=(dynamic_array&& other) noexcept -> dynamic_array& {                               // lints  (cppcoreguidelines-special-member-functions,hicpp-special-member-functions)
-		assert(other.extents() == dynamic_array::extents());                                                   // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay) : allow a constexpr-friendly assert
+	constexpr auto operator=(dynamic_array&& other) noexcept -> dynamic_array& {  // lints  (cppcoreguidelines-special-member-functions,hicpp-special-member-functions)
+		assert(other.extents() == dynamic_array::extents());
 		adl_move(other.data_elements(), other.data_elements() + other.num_elements(), this->data_elements());  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic) there is no std::move_n algorithm
 		assert(this->stride() != 0);
 		return *this;
@@ -964,28 +987,28 @@ struct                                                                          
 	}
 
 	BOOST_MULTI_HD constexpr auto fancy_splitted() & {
-		multi::layout_t<1> const l1({}, this->layout().stride(), 0, this->layout().nelems() / this->layout().stride() / 2 * this->layout().stride());
-		multi::layout_t<1> const l2({}, this->layout().stride(), 0, (this->layout().nelems() / this->layout().stride() + 1) / 2 * this->layout().stride());
+		multi::layout_t<1> const lyt1({}, this->layout().stride(), 0, this->layout().nelems() / this->layout().stride() / 2 * this->layout().stride());
+		multi::layout_t<1> const lyt2({}, this->layout().stride(), 0, (this->layout().nelems() / this->layout().stride() + 1) / 2 * this->layout().stride());
 
 		// auto p1 = this->base_;                // mallocate_me_(this->base_);                // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic,llvm-qualified-auto,readability-qualified-auto)
 		// auto p2 = this->base_ + l1.nelems();  // mallocate_me_(this->base_ + l1.nelems());  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic,llvm-qualified-auto,readability-qualified-auto)
 
-		auto p1 = mallocate_me_(this->base_);                // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic,llvm-qualified-auto,readability-qualified-auto)
-		auto p2 = mallocate_me_(this->base_ + l1.nelems());  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic,llvm-qualified-auto,readability-qualified-auto)
+		auto ptr1 = mallocate_me_(this->base_);                  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic,llvm-qualified-auto,readability-qualified-auto)
+		auto ptr2 = mallocate_me_(this->base_ + lyt1.nelems());  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic,llvm-qualified-auto,readability-qualified-auto)
 
 #ifndef _BOOST_MULTI_SUPPRESS_ASSUMPTIONS
 #if defined(__cpp_attributes_assume) && __cpp_attributes_assume >= 202207L
 		[[assume(
-			std::less_equal<>{}(p1 + l1.nelems(), p2) ||
-			std::less_equal<>{}(p2 + l2.nelems(), p1)
+			std::less_equal<>{}(ptr1 + lyt1.nelems(), ptr2) ||
+			std::less_equal<>{}(ptr2 + lyt2.nelems(), ptr1)
 		)]];
 #endif
 #endif
 		return std::pair<
 			subarray<T, 1, typename dynamic_array::element_ptr>,
 			subarray<T, 1, typename dynamic_array::element_ptr>>(
-			subarray<T, 1, typename dynamic_array::element_ptr>(l1, p1),
-			subarray<T, 1, typename dynamic_array::element_ptr>(l2, p2)
+			subarray<T, 1, typename dynamic_array::element_ptr>(lyt1, ptr1),
+			subarray<T, 1, typename dynamic_array::element_ptr>(lyt2, ptr2)
 		);
 	}
 
@@ -1330,7 +1353,7 @@ struct dynamic_array<T, 0, Alloc>  // NOLINT(misc-multiple-inheritance) : design
 	friend constexpr auto unrotated(dynamic_array const& self) -> decltype(auto) { return self.unrotated(); }
 
 	constexpr auto operator=(dynamic_array const& other) -> dynamic_array& {
-		assert(extents(other) == dynamic_array::extents());  // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay) : allow a constexpr-friendly assert
+		assert(extents(other) == dynamic_array::extents());
 		if(this == &other) {
 			return *this;
 		}  // lints (cert-oop54-cpp) : handle self-assignment properly
@@ -1350,7 +1373,7 @@ struct dynamic_array<T, 0, Alloc>  // NOLINT(misc-multiple-inheritance) : design
 #endif
 
 	constexpr auto operator=(dynamic_array&& other) noexcept -> dynamic_array& {
-		assert(equal_extensions_if_(std::integral_constant<bool, (dynamic_array::rank_v != 0)>{}, other));     // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay) : allow a constexpr-friendly assert
+		assert(equal_extensions_if_(std::integral_constant<bool, (dynamic_array::rank_v != 0)>{}, other));
 		adl_move(other.data_elements(), other.data_elements() + other.num_elements(), this->data_elements());  // there is no std::move_n algorithm  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
 		return *this;
 	}
@@ -1629,14 +1652,14 @@ struct array : unique_array<T, D, Alloc> {
 
 #ifndef NOEXCEPT_ASSIGNMENT
 	auto operator=(array&& other) noexcept -> array& {
+		static_assert(std::is_nothrow_move_assignable_v<typename array::allocator_type>, "move-assignment adopts the source allocator and is noexcept; the allocator must be nothrow-move-assignable");
 		if(this == std::addressof(other)) {
 			return *this;
 		}
 		clear();
-		this->base_ = other.base_;
-		if constexpr(multi::allocator_traits<typename array::allocator_type>::propagate_on_container_move_assignment::value) {
-			this->alloc() = std::move(other.alloc());
-		}
+		// TODO(correaa) the allocator is moved unconditionally (move always propagates it). This is consistent and keeps move-assignment allocation-free and noexcept. It can be extended later to honor propagate_on_container_move_assignment==false
+		this->alloc()          = std::move(other.alloc());             // adopt their allocator and their buffer together, so the two always match (no wrong-allocator free) and we never allocate
+		this->base_            = std::exchange(other.base_, nullptr);  // in this design the moved-from allocator should be always be
 		this->layout_mutable() = std::exchange(other.layout_mutable(), typename array::layout_type(typename array::extents_type{}));
 		return *this;
 	}
@@ -1663,7 +1686,7 @@ struct array : unique_array<T, D, Alloc> {
 		return *this;
 	}
 #else
-	auto operator=(array o) noexcept -> array& { return swap(o), *this; }
+	auto operator=(array other) noexcept -> array& { return swap(other), *this; }
 #endif
 
 	template<typename OtherT, typename OtherEP, class OtherLayout>
@@ -1818,12 +1841,25 @@ struct array : unique_array<T, D, Alloc> {
 			extensions
 		);
 		if constexpr(!(std::is_trivially_default_constructible_v<typename array::element> || multi::force_element_trivial_default_construction<typename array::element>)) {
-			adl_alloc_uninitialized_value_construct_n(this->alloc(), tmp.data_elements(), tmp.num_elements());
+			try {
+				adl_alloc_uninitialized_value_construct_n(this->alloc(), tmp.data_elements(), tmp.num_elements());
+			} catch(...) {  // basic guarantee: value_construct_n already rolled back its elements, release the raw buffer
+				multi::allocator_traits<typename array::allocator_type>::deallocate(this->alloc(), tmp.base(), static_cast<typename multi::allocator_traits<typename array::allocator_type>::size_type>(tmp.num_elements()));
+				throw;
+			}
 		}
 
 		auto const intersect = intersection(this->extents(), extensions);
 
-		tmp.apply(intersect) = this->apply(intersect);  // TODO(correaa) : use `.moved_elements()`? or move_n?
+		try {
+			tmp.apply(intersect) = this->apply(intersect);  // TODO(correaa) : use `.moved_elements()`? or move_n?
+		} catch(...) {                                      // basic guarantee: all of tmp's elements are constructed here, destroy them and release the buffer
+			if constexpr(!(std::is_trivially_default_constructible_v<typename array::element> || multi::force_element_trivial_default_construction<typename array::element>)) {
+				adl_alloc_destroy_n(this->alloc(), tmp.data_elements(), tmp.num_elements());
+			}
+			multi::allocator_traits<typename array::allocator_type>::deallocate(this->alloc(), tmp.base(), static_cast<typename multi::allocator_traits<typename array::allocator_type>::size_type>(tmp.num_elements()));
+			throw;
+		}
 
 		this->destroy();
 		this->deallocate();
@@ -1889,42 +1925,62 @@ struct array : unique_array<T, D, Alloc> {
 template<class T> array(T[]) -> array<T, static_cast<dimensionality_type>(1U)>;  // NOSONAR(cpp:S5945) NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)
 
 //  vvv these are necessary to catch {n, m, ...} notation (or single integer notation)
+/// Deduction guide: builds a 0-dimensional `array` from a 5-D extents specification and a fill value `T`, enabling the braced `{}` extents notation.
 template<class T, class = std::enable_if_t<!multi::is_allocator_v<T>>> array(iextensions<0>, T) -> array<T, static_cast<dimensionality_type>(0U)>;  // TODO(correaa) use some std::allocator_traits instead of is_allocator
+/// Deduction guide: builds a 1-dimensional `array` from a 5-D extents specification and a fill value `T`, enabling the braced `{n0}` extents notation.
 template<class T, class = std::enable_if_t<!multi::is_allocator_v<T>>> array(iextensions<1>, T) -> array<T, static_cast<dimensionality_type>(1U)>;
+/// Deduction guide: builds a 2-dimensional `array` from a 5-D extents specification and a fill value `T`, enabling the braced `{n0, n1}` extents notation.
 template<class T, class = std::enable_if_t<!multi::is_allocator_v<T>>> array(iextensions<2>, T) -> array<T, static_cast<dimensionality_type>(2U)>;
+/// Deduction guide: builds a 3-dimensional `array` from a 5-D extents specification and a fill value `T`, enabling the braced `{n0, n1, n2}` extents notation.
 template<class T, class = std::enable_if_t<!multi::is_allocator_v<T>>> array(iextensions<3>, T) -> array<T, static_cast<dimensionality_type>(3U)>;
+/// Deduction guide: builds a 4-dimensional `array` from a 5-D extents specification and a fill value `T`, enabling the braced `{n0, n1, n2, n3}` extents notation.
 template<class T, class = std::enable_if_t<!multi::is_allocator_v<T>>> array(iextensions<4>, T) -> array<T, static_cast<dimensionality_type>(4U)>;
+/// Deduction guide: builds a 5-dimensional `array` from a 5-D extents specification and a fill value `T`, enabling the braced `{n0, n1, n2, n3, n4}` extents notation.
 template<class T, class = std::enable_if_t<!multi::is_allocator_v<T>>> array(iextensions<5>, T) -> array<T, static_cast<dimensionality_type>(5U)>;
 
 // generalization, will not work with naked {n, m, ...} notation (or single integer notation)
-template<dimensionality_type D, class T, class = std::enable_if_t<!boost::multi::is_allocator_v<T>>>
-array(iextensions<D>, T) -> array<T, D>;
+// template<dimensionality_type D, class T, class = std::enable_if_t<!boost::multi::is_allocator_v<T>>>
+// array(iextensions<D>, T) -> array<T, D>;
 
-template<class MatrixRef, class DT = typename MatrixRef::decay_type, class T = typename DT::element, dimensionality_type D = DT::rank_v, class Alloc = typename DT::allocator_type>
+/// Deduction guide: builds an owning `array` from a reference/view `MatrixRef`, deducing element type, dimensionality and allocator from its `decay_type`, so the source's allocator type is preserved.
+/// @tparam MatrixRef The source reference/view type (provides a `decay_type`)
+/// @tparam DT The decayed (owning) type, `MatrixRef::decay_type`
+/// @tparam T Deduced element type (`DT::element`)
+/// @tparam D Deduced dimensionality (`DT::rank_v`)
+/// @tparam Alloc Deduced allocator type (`DT::allocator_type`)
+// this is important for the Multi's adaptors
+template<class MatrixRef, class DT = typename MatrixRef::decay_type, class T = typename DT::element, dimensionality_type D = DT::dimensionality, class Alloc = typename DT::allocator_type>
 array(MatrixRef) -> array<T, D, Alloc>;
 
-template<class MatValues, class T = typename MatValues::element, dimensionality_type D = MatValues::rank_v>
+/// Deduction guide: builds an owning `array` from a value-providing type `MatValues` that exposes `element` and `rank_v` (e.g. a nested `initializer_list` structure), using the default allocator.
+/// @tparam MatValues The source values type (provides `element` and `rank_v`)
+/// @tparam T Deduced element type (`MatValues::element`)
+/// @tparam D Deduced dimensionality (`MatValues::rank_v`)
+template<class MatValues, class T = typename MatValues::element, dimensionality_type D = MatValues::dimensionality>
 array(MatValues) -> array<T, D>;
 
+/// Deduction guide: builds an owning `array` by decaying a read-only `const_subarray` view, keeping its element type `T` and dimensionality `D`.
+/// @tparam T Element type of the source view
+/// @tparam D Number of dimensions
 template<class T, dimensionality_type D>
 array(const_subarray<T, D>) -> array<T, D>;
 
 template<class MatValues, class T = typename MatValues::element, dimensionality_type D = MatValues::rank_v, class Alloc = std::allocator<T>, class = std::enable_if_t<multi::is_allocator_v<Alloc>>>  /// , class Alloc = typename DT::allocator_type>
 array(MatValues, Alloc) -> array<T, D, Alloc>;
 
-template<typename T, dimensionality_type D, typename P> array(subarray<T, D, P>) -> array<T, D>;
+// template<typename T, dimensionality_type D, typename P> array(subarray<T, D, P>) -> array<T, D>;
 
-template<
-	class Range, std::enable_if_t<!has_extents<Range>::value, int> = 0,
-	typename V = decltype(*::std::begin(std::declval<Range const&>()))
-	// typename V = typename std::iterator_traits<decltype(::std::begin(std::declval<Range const&>()))>::value_type
-	>
-array(Range) -> array<V, 1>;
+// template<
+// 	class Range, std::enable_if_t<!has_extents<Range>::value, int> = 0,
+// 	typename V = decltype(*::std::begin(std::declval<Range const&>()))
+// 	// typename V = typename std::iterator_traits<decltype(::std::begin(std::declval<Range const&>()))>::value_type
+// 	>
+// array(Range) -> array<V, 1>;
 
-template<class Reference>
-auto operator+(Reference const& ref) -> decltype(array<typename Reference::element, Reference::dimensionality>(ref)) {
-	return array<typename Reference::element, Reference::dimensionality>(ref);
-}
+// template<class Reference>
+// auto operator+(Reference const& ref) -> decltype(array<typename Reference::element, Reference::dimensionality>(ref)) {
+// 	return array<typename Reference::element, Reference::dimensionality>(ref);
+// }
 
 #endif  // ends defined(__cpp_deduction_guides)
 
@@ -1948,7 +2004,13 @@ struct detail::array_traits<T[N], void, void> {  // NOLINT(cppcoreguidelines-avo
 namespace boost::multi::pmr {
 
 #ifdef BOOST_MULTI_HAS_MEMORY_RESOURCE
+/// Alias for `multi::array` using `std::pmr::polymorphic_allocator`, so storage comes from a `std::pmr::memory_resource`.
+/// @tparam T Element type
+/// @tparam D Number of dimensions
 template<class T, boost::multi::dimensionality_type D> using array         = ::boost::multi::array<T, D, std::pmr::polymorphic_allocator<T>>;
+/// Alias for `multi::dynamic_array` using `std::pmr::polymorphic_allocator`, so storage comes from a `std::pmr::memory_resource`.
+/// @tparam T Element type
+/// @tparam D Number of dimensions
 template<class T, boost::multi::dimensionality_type D> using dynamic_array = ::boost::multi::dynamic_array<T, D, std::pmr::polymorphic_allocator<T>>;
 #else
 template<class T, boost::multi::dimensionality_type D> struct [[deprecated("no PMR allocator")]] array;          // your version of C++ doesn't provide polymorphic_allocators

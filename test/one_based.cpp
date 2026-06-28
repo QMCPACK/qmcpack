@@ -13,7 +13,7 @@
 
 #include <algorithm>  // for equal
 #include <array>      // for array
-#include <iterator>   // for size, begin, end
+// #include <iterator>   // for size, begin, end
 
 namespace multi = boost::multi;
 
@@ -57,11 +57,13 @@ auto main() -> int {
 
 	// BOOST_AUTO_TEST_CASE(reindex_from_0_to_indexed_from_1)
 	{
-		multi::array<int, 2> A1({
-									{1, 1 + 10},
-									{1, 1 + 20}
+		multi::array<int, 2> A1(
+			{
+				{1, 1 + 10},
+				{1, 1 + 20}
         },
-								0);
+			0
+		);
 
 		BOOST_TEST( A1.extent().front() ==  1);
 		BOOST_TEST( A1.extent().back()  == 10);

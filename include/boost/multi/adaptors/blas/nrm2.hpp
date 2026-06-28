@@ -62,7 +62,7 @@ class nrm2_ptr {
 	template<class ItOut, class Size2>
 	friend constexpr auto copy_n(nrm2_ptr first, Size2 count, ItOut d_first) {
 //  ->decltype(blas::nrm2_n(std::declval<ItX>(), Size2{}     , d_first), d_first + count) {
-		assert(count == 1); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
+		assert(count == 1);
 #if defined(__clang__) && (__clang_major__ >= 16) && !defined(__INTEL_LLVM_COMPILER)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
