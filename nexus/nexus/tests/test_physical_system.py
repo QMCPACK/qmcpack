@@ -222,6 +222,13 @@ def test_electrons_eq():
 #end def test_electrons_eq
 
 
+def test_electrons_repr():
+    ref_repr = "Electrons(count=16, spin=1, spin_orbit=False)"
+    electrons = Electrons(count=16, spin=1, spin_orbit=False)
+    assert(repr(electrons) == ref_repr)
+#end def test_electrons_repr
+
+
 def test_positrons():
     """More minimal test since the code is the same as for ``Electrons``."""
 
@@ -248,6 +255,13 @@ def test_positrons():
 
     assert(positrons1 == positrons2)
 #end def test_positrons
+
+
+def test_positrons_repr():
+    ref_repr = "Positrons(count=16, spin=1, spin_orbit=False)"
+    positrons = Positrons(count=16, spin=1, spin_orbit=False)
+    assert(repr(positrons) == ref_repr)
+#end def test_positrons_repr
 
 
 def test_electron_positron_neq():
@@ -607,6 +621,10 @@ def test_molecular_system():
     assert(system.electron_charge == system.electrons.total_charge)
     assert(system.net_charge      == -1)
     assert(system.net_charge      == system.ion_charge + system.electron_charge)
+
+    # Check some simple functions
+    assert(system.num_ions()      == 9)
+    assert(system.num_ion_types() == 5)
 #end def test_molecular_system
 
 

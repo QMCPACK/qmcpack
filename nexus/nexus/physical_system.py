@@ -16,7 +16,7 @@ from typing import Self, TypeAlias
 import numpy as np
 import numpy.typing as npt
 
-from .developer import obj, warn
+from .developer import obj, warn, error
 from .periodic_table import Elements, ElementLike
 from .structure import Structure, generate_structure, read_structure
 
@@ -189,7 +189,7 @@ class ElectronsPositronsBase(ABC):
 
     def __repr__(self) -> str:
         return (
-            f"{self.__class__.__name__}("
+            f"{type(self).__name__}("
             f"count={self.count}, "
             f"spin={self.spin}, "
             f"spin_orbit={self.spin_orbit})"
@@ -557,17 +557,24 @@ class PhysicalSystem:
         ``Structure.background_charge`` if it is not ``None``,
         otherwise it will default to zero.
     electron_spin : int or float, optional
-        See :py:meth:`~.Electrons.neutralize_to()`.
+        Set the total spin of the electrons.
+
+        Note that up-spin electrons are +1/2 and down-spin are -1/2.
     spin_orbit : bool, default=False
-        See :py:meth:`~.Electrons.neutralize_to()`.
+        Signal that the system has spin-orbit coupling.
     elem_charge : Mapping[str, int or float], optional
-        See :py:meth:`~.IonSpecies.from_structure()`.
+        Mapping from element labels to their formal charges.
     elem_spin : Mapping[str, int or float], optional
-        See :py:meth:`~.IonSpecies.from_structure()`.
+        Mapping from element labels to their spin states.
     elem_Zeff : Mapping[str, int or float], optional
-        See :py:meth:`~.IonSpecies.from_structure()`.
+        Mapping from element labels to effective nuclear charges.
     positrons : Positrons, optional
         Additional positrons to add to the system.
+
+    See Also
+    --------
+    IonSpecies.from_structure()
+    Electrons.neutralize_to()
     """
 
     def __init__(
@@ -729,6 +736,12 @@ class PhysicalSystem:
             pseudized |= ion.pseudized()
 
         return pseudized
+
+    def num_ions(self) -> int | float:
+        return sum([ion.count for ion in self.ions.values()])
+
+    def num_ion_types(self) -> int:
+        return len(self.ions)
 
     def __repr__(self) -> str:
         return (
@@ -973,104 +986,84 @@ ps_defaults = dict(
     pretile=None,
     tiling=None,
     tiled_spin=None,
-    extensive=True
+    extensive=True,
     )
 def generate_physical_system(**kwargs) -> PhysicalSystem:
     for var,val in ps_defaults.items():
         if var not in kwargs:
             kwargs[var] = val
-        #end if
-    #end for
+
     type = kwargs['type']
     if type=='atom' or type=='dimer' or type=='trimer':
         del kwargs['kshift']
         del kwargs['tiling']
-        #if not 'units' in kwargs:
-        #    kwargs['units'] = 'B'
-        ##end if
         tiling = None
     else:
         tiling = kwargs['tiling']
-    #end if
 
     if 'structure' in kwargs:
         s = kwargs['structure']
-        is_str = isinstance(s,str)
-        if is_str or isinstance(s, Path):
+        if isinstance(s, str | Path):
             if os.path.exists(s):
                 if 'elem' in kwargs:
                     s = read_structure(s,elem=kwargs['elem'])
                 else:
                     s = read_structure(s)
-                #end if
+
                 if 'axes' in kwargs:
                     s.reset_axes(kwargs['axes'])
-                #end if
+
                 kwargs['structure'] = s
             else:
-                slow = s.lower()
+                s_low = s.lower()
                 format = None
-                if '.' in slow:
-                    format = slow.rsplit('.')[1]
-                elif 'poscar' in slow:
+                if '.' in s_low:
+                    format = s_low.rsplit('.')[1]
+                elif 'poscar' in s_low:
                     format = 'poscar'
-                #end if
-                is_path = '/' in s
-                is_file = format in set('xyz xsf poscar cif fhi-aims'.split())
-                if is_path or is_file:
-                    PhysicalSystem.class_error('user provided structure file does not exist\nstructure file path: '+s,'generate_physical_system')
-                #end if
-            #end if
-        #end if
-    #end if
+
+                if '/' in s or format in set("xyz", "xsf", "poscar", "cif", "fhi-aims"):
+                    error(
+                        'User provided structure file does not exist\n'
+                        'Structure file path: '+s
+                        )
 
     generation_info = obj()
     generation_info.transfer_from(deepcopy(kwargs))
 
-    net_charge = kwargs['net_charge']
-    net_spin   = kwargs['net_spin']
-    tiled_spin = kwargs['tiled_spin']
-    extensive  = kwargs['extensive']
-    del kwargs['net_spin']
-    del kwargs['net_charge']
-    del kwargs['tiled_spin']
-    del kwargs['extensive']
-    if 'particles' in kwargs:
-        # particles = kwargs['particles']
-        del kwargs['particles']
-    else:
-        generation_info.particles = None
-    #end if
-    pretile = kwargs['pretile']
-    del kwargs['pretile']
-    valency = dict()
-    remove = []
-    for var in kwargs:
-        #if var in Matter.elements:
-        if Elements.is_element(var):
-            valency[var] = kwargs[var]
-            remove.append(var)
-        #end if
-    #end if
-    generation_info.valency = deepcopy(valency)
-    for var in remove:
-        del kwargs[var]
-    #end for
+    net_charge = kwargs.pop("net_charge")
+    net_spin   = kwargs.pop("net_spin")
+    tiled_spin = kwargs.pop("tiled_spin")
+    extensive  = kwargs.pop("extensive")
 
+    if 'particles' in kwargs:
+        warn("generate_physical_system no longer supports the `particles` parameter.")
+        del kwargs['particles']
+
+    elem_Zeff_map = dict()
+    for var in kwargs:
+        if Elements.is_element(var):
+            elem_Zeff_map[var] = kwargs.pop(var)
+
+    pretile = kwargs.pop("pretile", None)
     if pretile is None:
         structure = generate_structure(**kwargs)
     else:
         for d in range(len(pretile)):
-            if tiling[d]%pretile[d]!=0:
-                PhysicalSystem.class_error('pretile does not divide evenly into tiling\n  tiling provided: {0}\n  pretile provided: {1}'.format(tiling,pretile),'generate_physical_system')
-            #end if
-        #end for
-        tiling = tuple(np.array(tiling)//np.array(pretile))
+            if tiling[d] % pretile[d] != 0:
+                error(
+                    'pretile does not divide evenly into tiling\n'
+                    '  tiling provided: {0}\n'
+                    '  pretile provided: {1}'
+                    .format(tiling, pretile)
+                    )
+
+        tiling = tuple(np.array(tiling) // np.array(pretile))
         kwargs['tiling'] = pretile
         pre = generate_structure(**kwargs)
         pre.remove_folded_structure()
         structure = pre.tile(tiling)
-    #end if
+
     if isinstance(tiling, tuple):
         tiling_mat = np.diag(tiling)
     elif tiling is None:
@@ -1081,41 +1074,40 @@ def generate_physical_system(**kwargs) -> PhysicalSystem:
     if not np.array_equal(tiling_mat, np.eye(3)) and structure.has_folded():
         # Has some supercell tiling
         fps = PhysicalSystem(
-            structure  = structure.folded_structure,
-            total_charge = net_charge,
-            total_spin   = net_spin,
-            **valency
+            structure     = structure.folded_structure,
+            total_charge  = net_charge,
+            electron_spin = net_spin,
+            elem_Zeff     = elem_Zeff_map,
             )
         structure.remove_folded()
         folded_structure = fps.structure
         if extensive:
             ncells = int(round(structure.volume()/folded_structure.volume()))
-            net_charge = ncells*net_charge
-            if not isinstance(net_spin,str):
-                net_spin   = ncells*net_spin
-            #end if
-        #end if
+            net_charge = ncells * net_charge
+            if not isinstance(net_spin, str):
+                net_spin = ncells * net_spin
+
         if tiled_spin is not None:
             net_spin = tiled_spin
-        #end if
+
         ps = PhysicalSystem(
-            structure  = structure,
-            total_charge = net_charge,
-            total_spin   = net_spin,
-            **valency
+            structure     = structure,
+            total_charge  = net_charge,
+            electron_spin = net_spin,
+            elem_Zeff     = elem_Zeff_map,
             )
         structure.set_folded(folded_structure)
         ps.folded_system = fps
     else:
         # No supercell tiling
         ps = PhysicalSystem(
-            structure  = structure,
-            total_charge = net_charge,
-            total_spin   = net_spin,
-            **valency
+            structure     = structure,
+            total_charge  = net_charge,
+            electron_spin = net_spin,
+            elem_Zeff     = elem_Zeff_map,
             )
-    #end if
 
+    # For now we will store it.
     ps.generation_info = generation_info
 
     return ps
