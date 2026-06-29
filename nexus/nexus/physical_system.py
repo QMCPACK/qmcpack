@@ -779,6 +779,12 @@ class PhysicalSystem:
         """
         msg = ""
         # Either they are both None or they both point to the same object.
+        if self.folded_system is None:
+            if message:
+                return True, msg
+            else:
+                return True
+
         if self.folded_system.structure is not self.structure.folded_structure:
             msg += "The folded structure is not the folded system's structure!\n"
 
@@ -1022,7 +1028,7 @@ def generate_physical_system(**kwargs) -> PhysicalSystem:
                 elif 'poscar' in s_low:
                     format = 'poscar'
 
-                if '/' in s or format in set("xyz", "xsf", "poscar", "cif", "fhi-aims"):
+                if '/' in s or format in set(["xyz", "xsf", "poscar", "cif", "fhi-aims"]):
                     error(
                         'User provided structure file does not exist\n'
                         'Structure file path: '+s
@@ -1041,9 +1047,14 @@ def generate_physical_system(**kwargs) -> PhysicalSystem:
         del kwargs['particles']
 
     elem_Zeff_map = dict()
+    elems_to_delete = []
     for var in kwargs:
         if Elements.is_element(var):
-            elem_Zeff_map[var] = kwargs.pop(var)
+            elem_Zeff_map[var] = kwargs[var]
+            elems_to_delete.append(var)
+
+    for var in elems_to_delete:
+        del kwargs[var]
 
     pretile = kwargs.pop("pretile", None)
     if pretile is None:

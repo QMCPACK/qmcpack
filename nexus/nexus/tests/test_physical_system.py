@@ -2,15 +2,14 @@ import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.PHYSICAL_SYSTEM)
 
-from ..generic import generic_settings, obj
+from ..generic import generic_settings
 generic_settings.raise_error = True
 
 import numpy as np
 import numpy.typing as npt
-from ..testing import value_eq, object_eq
 from ..physical_system import IonSpecies, PhysicalSystem, Electrons, Positrons, generate_physical_system
 from ..periodic_table import Elements
-from ..structure import Structure, generate_structure
+from ..structure import Structure
 from ..unit_converter import convert
 
 
@@ -126,6 +125,145 @@ def get_LaAlO3_references() -> dict[str, list | npt.NDArray[np.floating] | dict[
         "ref_folded_positrons" : ref_folded_positrons,
         "ref_tiled_positrons"  : ref_tiled_positrons,
         }
+
+
+def get_d2_d8_references()-> dict[str, list[str] | npt.NDArray[np.floating] | tuple[str]]:
+    # Primitive Diamond Cell
+    d2_ref_axes = np.array([
+        [1.785, 1.785, 0.000],
+        [0.000, 1.785, 1.785],
+        [1.785, 0.000, 1.785],
+        ], dtype=float)
+    d2_ref_elem = ["C", "C"]
+    d2_ref_pos  = np.array([
+        [0.0000, 0.0000, 0.0000],
+        [0.8925, 0.8925, 0.8925],
+        ], dtype=float)
+    d2_ref_units  = "A"
+    d2_ref_bconds = ("p", "p", "p")
+
+    d2_structure = Structure(
+        axes   = d2_ref_axes,
+        elem   = d2_ref_elem,
+        pos    = d2_ref_pos,
+        units  = d2_ref_units,
+        bconds = d2_ref_bconds,
+    )
+
+    d2_ref_ions = {
+        "C": IonSpecies(
+            element       = Elements.Carbon,
+            count         = 2,
+            label         = "C",
+            formal_charge = 0,
+            unit_spin     = 0,
+            Zeff          = 4,
+            ),
+    }
+    d2_ref_electrons = Electrons(count=8, spin=0, spin_orbit=False)
+
+    # Conventional Diamond Cell
+    d8_ref_axes = np.array([
+        [3.57, 0.00, 0.00],
+        [0.00, 3.57, 0.00],
+        [0.00, 0.00, 3.57],
+        ], dtype=float)
+    d8_ref_elem = ["C", "C", "C", "C", "C", "C", "C", "C"]
+    d8_ref_pos  = np.array([
+        [0.0000, 0.0000, 0.0000],
+        [0.8925, 0.8925, 0.8925],
+        [1.7850, 1.7850, 0.0000],
+        [2.6775, 2.6775, 0.8925],
+        [0.0000, 1.7850, 1.7850],
+        [0.8925, 2.6775, 2.6775],
+        [1.7850, 0.0000, 1.7850],
+        [2.6775, 0.8925, 2.6775],
+        ], dtype=float)
+    # The conventional cell in `known_crystals` and the cell produced
+    # by `Structure.tile()` can have slightly different orderings
+    d8_ref_pos_known = np.array([
+        [0.0000, 0.0000, 0.0000],
+        [0.8925, 0.8925, 0.8925],
+        [0.0000, 1.7850, 1.7850],
+        [0.8925, 2.6775, 2.6775],
+        [1.7850, 0.0000, 1.7850],
+        [2.6775, 0.8925, 2.6775],
+        [1.7850, 1.7850, 0.0000],
+        [2.6775, 2.6775, 0.8925],
+        ], dtype=float)
+    d8_ref_units = "A"
+    d8_ref_bconds = ("p", "p", "p")
+
+    d8_structure = Structure(
+        axes   = d8_ref_axes,
+        elem   = d8_ref_elem,
+        pos    = d8_ref_pos,
+        units  = d8_ref_units,
+        bconds = d8_ref_bconds,
+    )
+    d8_ref_ions = {
+        "C": IonSpecies(
+            element       = Elements.Carbon,
+            count         = 8,
+            label         = "C",
+            formal_charge = 0,
+            unit_spin     = 0,
+            Zeff          = 4,
+            ),
+    }
+    d8_ref_electrons = Electrons(count=32, spin=0, spin_orbit=False)
+
+    return {
+        "d2_ref_axes":      d2_ref_axes,
+        "d2_ref_elem":      d2_ref_elem,
+        "d2_ref_pos":       d2_ref_pos,
+        "d2_ref_units":     d2_ref_units,
+        "d2_ref_bconds":    d2_ref_bconds,
+        "d2_structure":     d2_structure,
+        "d2_ref_ions":      d2_ref_ions,
+        "d2_ref_electrons": d2_ref_electrons,
+        "d8_ref_axes":      d8_ref_axes,
+        "d8_ref_elem":      d8_ref_elem,
+        "d8_ref_pos":       d8_ref_pos,
+        "d8_ref_pos_known": d8_ref_pos_known,
+        "d8_ref_units":     d8_ref_units,
+        "d8_ref_bconds":    d8_ref_bconds,
+        "d8_structure":     d8_structure,
+        "d8_ref_ions":      d8_ref_ions,
+        "d8_ref_electrons": d8_ref_electrons,
+        }
+#end def get_d2_d8_references
+
+
+def test_d2_d8_references():
+    # We don't test the ions and electrons because they aren't put into
+    # another object. The structures, however, should be verified.
+    refs = get_d2_d8_references()
+
+    d2_ref_axes   = refs["d2_ref_axes"]
+    d2_ref_elem   = refs["d2_ref_elem"]
+    d2_ref_pos    = refs["d2_ref_pos"]
+    d2_ref_units  = refs["d2_ref_units"]
+    d2_ref_bconds = refs["d2_ref_bconds"]
+    d2_structure  = refs["d2_structure"]
+    np.testing.assert_allclose(d2_structure.axes, d2_ref_axes)
+    np.testing.assert_allclose(d2_structure.pos, d2_ref_pos)
+    assert(d2_structure.elem.tolist()  == d2_ref_elem)
+    assert(d2_structure.units          == d2_ref_units)
+    assert(tuple(d2_structure.bconds)  == d2_ref_bconds)
+
+    d8_ref_axes   = refs["d8_ref_axes"]
+    d8_ref_elem   = refs["d8_ref_elem"]
+    d8_ref_pos    = refs["d8_ref_pos"]
+    d8_ref_units  = refs["d8_ref_units"]
+    d8_ref_bconds = refs["d8_ref_bconds"]
+    d8_structure  = refs["d8_structure"]
+    np.testing.assert_allclose(d8_structure.axes, d8_ref_axes)
+    np.testing.assert_allclose(d8_structure.pos, d8_ref_pos)
+    assert(d8_structure.elem.tolist()  == d8_ref_elem)
+    assert(d8_structure.units          == d8_ref_units)
+    assert(tuple(d8_structure.bconds)  == d8_ref_bconds)
+#end def test_d2_d8_references
 
 
 def test_electrons():
@@ -997,39 +1135,99 @@ def test_group_atoms():
 #end def test_group_atoms
 
 
-@pytest.mark.skip
-def test_physical_system_initialization(tmp_path):
-    d2 = generate_structure(
-        structure = 'diamond',
-        cell      = 'prim',
+def test_generate_struct():
+    refs = get_d2_d8_references()
+    d2_ref_axes   = refs["d2_ref_axes"]
+    d2_ref_pos    = refs["d2_ref_pos"]
+    d2_ref_elem   = refs["d2_ref_elem"]
+    d2_ref_units  = refs["d2_ref_units"]
+    d2_ref_bconds = refs["d2_ref_bconds"]
+    d2_structure  = refs["d2_structure"]
+    d8_ref_axes   = refs["d8_ref_axes"]
+    d8_ref_pos    = refs["d8_ref_pos"]
+    d8_ref_elem   = refs["d8_ref_elem"]
+    d8_ref_units  = refs["d8_ref_units"]
+    d8_ref_bconds = refs["d8_ref_bconds"]
+    d8_structure  = refs["d8_structure"]
+
+    d2_ref_ions      = refs["d2_ref_ions"]
+    d2_ref_electrons = refs["d2_ref_electrons"]
+    d8_ref_ions      = refs["d8_ref_ions"]
+    d8_ref_electrons = refs["d8_ref_electrons"]
+
+    struct_notile = generate_physical_system(
+        structure = d8_structure,
+        C         = 4,
         )
-    d2_path = tmp_path / 'diamond2.xsf'
-    d2.write(d2_path)
 
-    d8 = generate_structure(
-        structure = 'diamond',
-        cell      = 'conv',
+    struct_tile = generate_physical_system(
+        structure = d2_structure,
+        tiling    = [[ 1, -1,  1],
+                     [ 1,  1, -1],
+                     [-1,  1,  1]],
+        C         = 4,
         )
-    d8_path = tmp_path / 'diamond8.xsf'
-    d8.write(d8_path)
+
+    actual = struct_notile
+    assert(actual.net_charge    == 0)
+    assert(actual.electron_spin == 0)
+    assert(actual.pseudized)
+    np.testing.assert_allclose(actual.structure.axes, d8_ref_axes, atol=1e-12)
+    np.testing.assert_allclose(actual.structure.pos,  d8_ref_pos)
+    assert(actual.structure.elem.tolist()  == d8_ref_elem)
+    assert(actual.structure.units          == d8_ref_units)
+    assert(tuple(actual.structure.bconds)  == d8_ref_bconds)
+    assert(actual.ions      == d8_ref_ions)
+    assert(actual.electrons == d8_ref_electrons)
+
+    actual        = struct_tile
+    actual_folded = struct_tile.folded_system
+    assert(actual.net_charge    == 0)
+    assert(actual.electron_spin == 0)
+    assert(actual.pseudized)
+    np.testing.assert_allclose(actual.structure.axes, d8_ref_axes, atol=1e-12)
+    np.testing.assert_allclose(actual.structure.pos,  d8_ref_pos)
+    assert(actual.structure.elem.tolist()  == d8_ref_elem)
+    assert(actual.structure.units          == d8_ref_units)
+    assert(tuple(actual.structure.bconds)  == d8_ref_bconds)
+    assert(actual.ions      == d8_ref_ions)
+    assert(actual.electrons == d8_ref_electrons)
+
+    assert(actual_folded.net_charge    == 0)
+    assert(actual_folded.electron_spin == 0)
+    assert(actual_folded.pseudized)
+    np.testing.assert_allclose(actual_folded.structure.axes, d2_ref_axes)
+    np.testing.assert_allclose(actual_folded.structure.pos,  d2_ref_pos)
+    assert(actual_folded.structure.elem.tolist()  == d2_ref_elem)
+    assert(actual_folded.structure.units          == d2_ref_units)
+    assert(tuple(actual_folded.structure.bconds)  == d2_ref_bconds)
+    assert(actual_folded.ions      == d2_ref_ions)
+    assert(actual_folded.electrons == d2_ref_electrons)
+
+    assert(struct_notile.is_valid())
+    assert(struct_tile.is_valid())
+    assert(not struct_notile.has_folded())
+    assert(struct_tile.has_folded())
+#end def test_generate_struct
 
 
-    d8_tile = d2.tile([[ 1, -1,  1],
-                       [ 1,  1, -1],
-                       [-1,  1,  1]])
+def test_generate_direct():
+    refs = get_d2_d8_references()
+    d2_ref_axes   = refs["d2_ref_axes"]
+    d2_ref_pos    = refs["d2_ref_pos"]
+    d2_ref_elem   = refs["d2_ref_elem"]
+    d2_ref_units  = refs["d2_ref_units"]
+    d2_ref_bconds = refs["d2_ref_bconds"]
+    d8_ref_axes   = refs["d8_ref_axes"]
+    d8_ref_pos    = refs["d8_ref_pos"]
+    d8_ref_elem   = refs["d8_ref_elem"]
+    d8_ref_units  = refs["d8_ref_units"]
+    d8_ref_bconds = refs["d8_ref_bconds"]
 
-    d8_tile_pos_ref = np.array([
-        [0.  , 0.  , 0.  ],
-        [0.25, 0.25, 0.25],
-        [0.5 , 0.5 , 0.  ],
-        [0.75, 0.75, 0.25],
-        [0.  , 0.5 , 0.5 ],
-        [0.25, 0.75, 0.75],
-        [0.5 , 0.  , 0.5 ],
-        [0.75, 0.25, 0.75]])
-
-    assert(value_eq(d8_tile.pos_unit(),d8_tile_pos_ref,atol=1e-8))
-
+    d2_ref_ions      = refs["d2_ref_ions"]
+    d2_ref_electrons = refs["d2_ref_electrons"]
+    d8_ref_ions      = refs["d8_ref_ions"]
+    d8_ref_electrons = refs["d8_ref_electrons"]
 
     direct_notile = generate_physical_system(
         units = 'A',
@@ -1039,12 +1237,12 @@ def test_physical_system_initialization(tmp_path):
         elem  = 8*['C'],
         posu  = [[0.00, 0.00, 0.00],
                  [0.25, 0.25, 0.25],
+                 [0.50, 0.50, 0.00],
+                 [0.75, 0.75, 0.25],
                  [0.00, 0.50, 0.50],
                  [0.25, 0.75, 0.75],
                  [0.50, 0.00, 0.50],
-                 [0.75, 0.25, 0.75],
-                 [0.50, 0.50, 0.00],
-                 [0.75, 0.75, 0.25]],
+                 [0.75, 0.25, 0.75]],
         C     = 4,
         )
 
@@ -1062,18 +1260,74 @@ def test_physical_system_initialization(tmp_path):
         C      = 4,
         )
 
-    struct_notile = generate_physical_system(
-        structure = d8,
-        C         = 4,
-        )
+    actual = direct_notile
+    assert(actual.net_charge    == 0)
+    assert(actual.electron_spin == 0)
+    assert(actual.pseudized)
+    np.testing.assert_allclose(actual.structure.axes, d8_ref_axes, atol=1e-12)
+    np.testing.assert_allclose(actual.structure.pos,  d8_ref_pos)
+    assert(actual.structure.elem.tolist()  == d8_ref_elem)
+    assert(actual.structure.units          == d8_ref_units)
+    assert(tuple(actual.structure.bconds)  == d8_ref_bconds)
+    assert(actual.ions      == d8_ref_ions)
+    assert(actual.electrons == d8_ref_electrons)
 
-    struct_tile = generate_physical_system(
-        structure = d2,
-        tiling    = [[ 1, -1,  1],
-                     [ 1,  1, -1],
-                     [-1,  1,  1]],
-        C         = 4,
-        )
+    actual        = direct_tile
+    actual_folded = direct_tile.folded_system
+    assert(actual.net_charge    == 0)
+    assert(actual.electron_spin == 0)
+    assert(actual.pseudized)
+    np.testing.assert_allclose(actual.structure.axes, d8_ref_axes, atol=1e-12)
+    np.testing.assert_allclose(actual.structure.pos,  d8_ref_pos)
+    assert(actual.structure.elem.tolist()  == d8_ref_elem)
+    assert(actual.structure.units          == d8_ref_units)
+    assert(tuple(actual.structure.bconds)  == d8_ref_bconds)
+    assert(actual.ions      == d8_ref_ions)
+    assert(actual.electrons == d8_ref_electrons)
+
+    assert(actual_folded.net_charge    == 0)
+    assert(actual_folded.electron_spin == 0)
+    assert(actual_folded.pseudized)
+    np.testing.assert_allclose(actual_folded.structure.axes, d2_ref_axes)
+    np.testing.assert_allclose(actual_folded.structure.pos,  d2_ref_pos)
+    assert(actual_folded.structure.elem.tolist()  == d2_ref_elem)
+    assert(actual_folded.structure.units          == d2_ref_units)
+    assert(tuple(actual_folded.structure.bconds)  == d2_ref_bconds)
+    assert(actual_folded.ions      == d2_ref_ions)
+    assert(actual_folded.electrons == d2_ref_electrons)
+
+    assert(direct_notile.is_valid())
+    assert(direct_tile.is_valid())
+    assert(not direct_notile.has_folded())
+    assert(direct_tile.has_folded())
+#end def test_generate_direct
+
+
+def test_generate_with_path(tmp_path):
+    refs = get_d2_d8_references()
+    d2_ref_axes   = refs["d2_ref_axes"]
+    d2_ref_pos    = refs["d2_ref_pos"]
+    d2_ref_elem   = refs["d2_ref_elem"]
+    d2_ref_units  = refs["d2_ref_units"]
+    d2_ref_bconds = refs["d2_ref_bconds"]
+    d2_structure  = refs["d2_structure"]
+    d8_ref_axes   = refs["d8_ref_axes"]
+    d8_ref_pos    = refs["d8_ref_pos"]
+    d8_ref_elem   = refs["d8_ref_elem"]
+    d8_ref_units  = refs["d8_ref_units"]
+    d8_ref_bconds = refs["d8_ref_bconds"]
+    d8_structure  = refs["d8_structure"]
+
+    d2_ref_ions      = refs["d2_ref_ions"]
+    d2_ref_electrons = refs["d2_ref_electrons"]
+    d8_ref_ions      = refs["d8_ref_ions"]
+    d8_ref_electrons = refs["d8_ref_electrons"]
+
+    d2_path = tmp_path / 'diamond2.xsf'
+    d2_structure.write(d2_path)
+
+    d8_path = tmp_path / 'diamond8.xsf'
+    d8_structure.write(d8_path)
 
     read_notile = generate_physical_system(
         structure = d8_path,
@@ -1087,6 +1341,68 @@ def test_physical_system_initialization(tmp_path):
                      [-1,  1,  1]],
         C         = 4,
         )
+
+    actual = read_notile
+    assert(actual.net_charge    == 0)
+    assert(actual.electron_spin == 0)
+    assert(actual.pseudized)
+    np.testing.assert_allclose(actual.structure.axes, d8_ref_axes, atol=1e-12)
+    np.testing.assert_allclose(actual.structure.pos,  d8_ref_pos)
+    assert(actual.structure.elem.tolist()  == d8_ref_elem)
+    assert(actual.structure.units          == d8_ref_units)
+    assert(tuple(actual.structure.bconds)  == d8_ref_bconds)
+    assert(actual.ions      == d8_ref_ions)
+    assert(actual.electrons == d8_ref_electrons)
+
+    actual        = read_tile
+    actual_folded = read_tile.folded_system
+    assert(actual.net_charge    == 0)
+    assert(actual.electron_spin == 0)
+    assert(actual.pseudized)
+    np.testing.assert_allclose(actual.structure.axes, d8_ref_axes, atol=1e-12)
+    np.testing.assert_allclose(actual.structure.pos,  d8_ref_pos)
+    assert(actual.structure.elem.tolist()  == d8_ref_elem)
+    assert(actual.structure.units          == d8_ref_units)
+    assert(tuple(actual.structure.bconds)  == d8_ref_bconds)
+    assert(actual.ions      == d8_ref_ions)
+    assert(actual.electrons == d8_ref_electrons)
+
+    assert(actual_folded.net_charge    == 0)
+    assert(actual_folded.electron_spin == 0)
+    assert(actual_folded.pseudized)
+    np.testing.assert_allclose(actual_folded.structure.axes, d2_ref_axes)
+    np.testing.assert_allclose(actual_folded.structure.pos,  d2_ref_pos)
+    assert(actual_folded.structure.elem.tolist()  == d2_ref_elem)
+    assert(actual_folded.structure.units          == d2_ref_units)
+    assert(tuple(actual_folded.structure.bconds)  == d2_ref_bconds)
+    assert(actual_folded.ions      == d2_ref_ions)
+    assert(actual_folded.electrons == d2_ref_electrons)
+
+    assert(read_notile.is_valid())
+    assert(read_tile.is_valid())
+    assert(not read_notile.has_folded())
+    assert(read_tile.has_folded())
+#end def test_generate_with_path
+
+
+def test_generate_gen():
+    refs = get_d2_d8_references()
+    d2_ref_axes      = refs["d2_ref_axes"]
+    d2_ref_pos       = refs["d2_ref_pos"]
+    d2_ref_elem      = refs["d2_ref_elem"]
+    d2_ref_units     = refs["d2_ref_units"]
+    d2_ref_bconds    = refs["d2_ref_bconds"]
+    d8_ref_axes      = refs["d8_ref_axes"]
+    d8_ref_pos       = refs["d8_ref_pos"]
+    d8_ref_pos_known = refs["d8_ref_pos_known"] # Use known_crystals version
+    d8_ref_elem      = refs["d8_ref_elem"]
+    d8_ref_units     = refs["d8_ref_units"]
+    d8_ref_bconds    = refs["d8_ref_bconds"]
+
+    d2_ref_ions      = refs["d2_ref_ions"]
+    d2_ref_electrons = refs["d2_ref_electrons"]
+    d8_ref_ions      = refs["d8_ref_ions"]
+    d8_ref_electrons = refs["d8_ref_electrons"]
 
     gen_notile = generate_physical_system(
         lattice   = 'cubic',        # cubic tetragonal orthorhombic rhombohedral
@@ -1117,6 +1433,68 @@ def test_physical_system_initialization(tmp_path):
         C         = 4,
         )
 
+    actual = gen_notile
+    assert(actual.net_charge    == 0)
+    assert(actual.electron_spin == 0)
+    assert(actual.pseudized)
+    np.testing.assert_allclose(actual.structure.axes, d8_ref_axes,      atol=1e-12)
+    np.testing.assert_allclose(actual.structure.pos,  d8_ref_pos_known, atol=1e-12)
+    assert(actual.structure.elem.tolist()  == d8_ref_elem)
+    assert(actual.structure.units          == d8_ref_units)
+    assert(tuple(actual.structure.bconds)  == d8_ref_bconds)
+    assert(actual.ions      == d8_ref_ions)
+    assert(actual.electrons == d8_ref_electrons)
+
+    actual        = gen_tile
+    actual_folded = gen_tile.folded_system
+    assert(actual.net_charge    == 0)
+    assert(actual.electron_spin == 0)
+    assert(actual.pseudized)
+    np.testing.assert_allclose(actual.structure.axes, d8_ref_axes, atol=1e-12)
+    np.testing.assert_allclose(actual.structure.pos,  d8_ref_pos)
+    assert(actual.structure.elem.tolist()  == d8_ref_elem)
+    assert(actual.structure.units          == d8_ref_units)
+    assert(tuple(actual.structure.bconds)  == d8_ref_bconds)
+    assert(actual.ions      == d8_ref_ions)
+    assert(actual.electrons == d8_ref_electrons)
+
+    assert(actual_folded.net_charge    == 0)
+    assert(actual_folded.electron_spin == 0)
+    assert(actual_folded.pseudized)
+    np.testing.assert_allclose(actual_folded.structure.axes, d2_ref_axes)
+    np.testing.assert_allclose(actual_folded.structure.pos,  d2_ref_pos)
+    assert(actual_folded.structure.elem.tolist()  == d2_ref_elem)
+    assert(actual_folded.structure.units          == d2_ref_units)
+    assert(tuple(actual_folded.structure.bconds)  == d2_ref_bconds)
+    assert(actual_folded.ions      == d2_ref_ions)
+    assert(actual_folded.electrons == d2_ref_electrons)
+
+    assert(gen_notile.is_valid())
+    assert(gen_tile.is_valid())
+    assert(not gen_notile.has_folded())
+    assert(gen_tile.has_folded())
+#end def test_generate_gen
+
+
+def test_generate_lookup():
+    refs = get_d2_d8_references()
+    d2_ref_axes      = refs["d2_ref_axes"]
+    d2_ref_pos       = refs["d2_ref_pos"]
+    d2_ref_elem      = refs["d2_ref_elem"]
+    d2_ref_units     = refs["d2_ref_units"]
+    d2_ref_bconds    = refs["d2_ref_bconds"]
+    d8_ref_axes      = refs["d8_ref_axes"]
+    d8_ref_pos       = refs["d8_ref_pos"]
+    d8_ref_pos_known = refs["d8_ref_pos_known"] # Use known_crystals version
+    d8_ref_elem      = refs["d8_ref_elem"]
+    d8_ref_units     = refs["d8_ref_units"]
+    d8_ref_bconds    = refs["d8_ref_bconds"]
+
+    d2_ref_ions      = refs["d2_ref_ions"]
+    d2_ref_electrons = refs["d2_ref_electrons"]
+    d8_ref_ions      = refs["d8_ref_ions"]
+    d8_ref_electrons = refs["d8_ref_electrons"]
+
     lookup_notile = generate_physical_system(
         structure = 'diamond',
         cell      = 'conv',
@@ -1132,130 +1510,123 @@ def test_physical_system_initialization(tmp_path):
         C         = 4,
         )
 
-    pref = obj(
-        C = obj(
-            charge          = 4,
-            core_electrons  = 2,
-            count           = 8,
-            mass            = 21894.7135906,
-            name            = 'C',
-            neutrons        = 6,
-            protons         = 6,
-            spin            = 0,
-            ),
-        down_electron = obj(
-            charge          = -1,
-            count           = 16,
-            mass            = 1.0,
-            name            = 'down_electron',
-            spin            = -1,
-            ),
-        up_electron = obj(
-            charge          = -1,
-            count           = 16,
-            mass            = 1.0,
-            name            = 'up_electron',
-            spin            = 1,
-            ),
+    actual = lookup_notile
+    assert(actual.net_charge    == 0)
+    assert(actual.electron_spin == 0)
+    assert(actual.pseudized)
+    np.testing.assert_allclose(actual.structure.axes, d8_ref_axes,      atol=1e-12)
+    np.testing.assert_allclose(actual.structure.pos,  d8_ref_pos_known, atol=1e-12)
+    assert(actual.structure.elem.tolist()  == d8_ref_elem)
+    assert(actual.structure.units          == d8_ref_units)
+    assert(tuple(actual.structure.bconds)  == d8_ref_bconds)
+    assert(actual.ions      == d8_ref_ions)
+    assert(actual.electrons == d8_ref_electrons)
+
+    actual        = lookup_tile
+    actual_folded = lookup_tile.folded_system
+    assert(actual.net_charge    == 0)
+    assert(actual.electron_spin == 0)
+    assert(actual.pseudized)
+    np.testing.assert_allclose(actual.structure.axes, d8_ref_axes, atol=1e-12)
+    np.testing.assert_allclose(actual.structure.pos,  d8_ref_pos)
+    assert(actual.structure.elem.tolist()  == d8_ref_elem)
+    assert(actual.structure.units          == d8_ref_units)
+    assert(tuple(actual.structure.bconds)  == d8_ref_bconds)
+    assert(actual.ions      == d8_ref_ions)
+    assert(actual.electrons == d8_ref_electrons)
+
+    assert(actual_folded.net_charge    == 0)
+    assert(actual_folded.electron_spin == 0)
+    assert(actual_folded.pseudized)
+    np.testing.assert_allclose(actual_folded.structure.axes, d2_ref_axes)
+    np.testing.assert_allclose(actual_folded.structure.pos,  d2_ref_pos)
+    assert(actual_folded.structure.elem.tolist()  == d2_ref_elem)
+    assert(actual_folded.structure.units          == d2_ref_units)
+    assert(tuple(actual_folded.structure.bconds)  == d2_ref_bconds)
+    assert(actual_folded.ions      == d2_ref_ions)
+    assert(actual_folded.electrons == d2_ref_electrons)
+
+    assert(lookup_notile.is_valid())
+    assert(lookup_tile.is_valid())
+    assert(not lookup_notile.has_folded())
+    assert(lookup_tile.has_folded())
+#end def test_generate_lookup
+
+
+@pytest.mark.skip
+def test_save_load(tmp_path):
+    refs = get_d2_d8_references()
+    d2_ref_axes   = refs["d2_ref_axes"]
+    d2_ref_pos    = refs["d2_ref_pos"]
+    d2_ref_elem   = refs["d2_ref_elem"]
+    d2_ref_units  = refs["d2_ref_units"]
+    d2_ref_bconds = refs["d2_ref_bconds"]
+    d8_ref_axes   = refs["d8_ref_axes"]
+    d8_ref_pos    = refs["d8_ref_pos"]
+    d8_ref_elem   = refs["d8_ref_elem"]
+    d8_ref_units  = refs["d8_ref_units"]
+    d8_ref_bconds = refs["d8_ref_bconds"]
+
+    d2_ref_ions      = refs["d2_ref_ions"]
+    d2_ref_electrons = refs["d2_ref_electrons"]
+    d8_ref_ions      = refs["d8_ref_ions"]
+    d8_ref_electrons = refs["d8_ref_electrons"]
+
+    lookup_notile = generate_physical_system(
+        structure = 'diamond',
+        cell      = 'conv',
+        C         = 4,
         )
 
-    # check direct system w/o tiling
-    ref = direct_notile
-    sref = ref.structure
-    assert(ref.net_charge==0)
-    assert(ref.net_spin==0)
-    assert(ref.pseudized)
-    assert(object_eq(ref.valency,obj(C=4)))
-    assert(object_eq(ref.particles.to_obj(),pref))
-    assert(structure_same(sref,d8))
-    assert(value_eq(sref.axes,3.57*np.eye(3)))
-    assert(tuple(sref.bconds)==tuple('ppp'))
-    assert(list(sref.elem)==8*['C'])
-    assert(value_eq(tuple(sref.pos[-1]),(2.6775,2.6775,0.8925)))
-    assert(sref.units=='A')
-    assert(object_eq(ref.particles.get_ions().to_obj(),obj(C=pref.C)))
-    assert(object_eq(ref.particles.get_electrons().to_obj(),obj(down_electron=pref.down_electron,up_electron=pref.up_electron)))
+    lookup_tile = generate_physical_system(
+        structure = 'diamond',
+        cell      = 'prim',
+        tiling    = [[ 1, -1,  1],
+                     [ 1,  1, -1],
+                     [-1,  1,  1]],
+        C         = 4,
+        )
 
-    # check direct system w/ tiling
-    ref = direct_tile
-    sref = ref.structure
-    assert(ref.net_charge==0)
-    assert(ref.net_spin==0)
-    assert(ref.pseudized)
-    assert(object_eq(ref.valency,obj(C=4)))
-    assert(object_eq(ref.particles.to_obj(),pref))
-    assert(structure_same(sref,d8_tile))
-    assert(value_eq(sref.axes,3.57*np.eye(3)))
-    assert(tuple(sref.bconds)==tuple('ppp'))
-    assert(list(sref.elem)==8*['C'])
-    assert(value_eq(tuple(sref.pos[-1]),(2.6775,0.8925,2.6775)))
-    assert(sref.units=='A')
-    ref = direct_tile.folded_system
-    sref = ref.structure
-    pref.C.count = 2
-    pref.down_electron.count = 4
-    pref.up_electron.count = 4
-    assert(ref.net_charge==0)
-    assert(ref.net_spin==0)
-    assert(ref.pseudized)
-    assert(object_eq(ref.valency,obj(C=4)))
-    assert(object_eq(ref.particles.to_obj(),pref))
-    assert(structure_same(sref,d2))
-    assert(value_eq(sref.axes,1.785*np.array([[1.,1,0],[0,1,1],[1,0,1]])))
-    assert(tuple(sref.bconds)==tuple('ppp'))
-    assert(list(sref.elem)==2*['C'])
-    assert(value_eq(tuple(sref.pos[-1]),(0.8925,0.8925,0.8925)))
-    assert(sref.units=='A')
+    actual = lookup_notile
+    assert(actual.net_charge    == 0)
+    assert(actual.electron_spin == 0)
+    assert(actual.pseudized)
+    np.testing.assert_allclose(actual.structure.axes, d8_ref_axes, atol=1e-12)
+    np.testing.assert_allclose(actual.structure.pos,  d8_ref_pos)
+    assert(actual.structure.elem.tolist()  == d8_ref_elem)
+    assert(actual.structure.units          == d8_ref_units)
+    assert(tuple(actual.structure.bconds)  == d8_ref_bconds)
+    assert(actual.ions      == d8_ref_ions)
+    assert(actual.electrons == d8_ref_electrons)
 
+    actual        = lookup_tile
+    actual_folded = lookup_tile.folded_system
+    assert(actual.net_charge    == 0)
+    assert(actual.electron_spin == 0)
+    assert(actual.pseudized)
+    np.testing.assert_allclose(actual.structure.axes, d8_ref_axes, atol=1e-12)
+    np.testing.assert_allclose(actual.structure.pos,  d8_ref_pos)
+    assert(actual.structure.elem.tolist()  == d8_ref_elem)
+    assert(actual.structure.units          == d8_ref_units)
+    assert(tuple(actual.structure.bconds)  == d8_ref_bconds)
+    assert(actual.ions      == d8_ref_ions)
+    assert(actual.electrons == d8_ref_electrons)
 
-    ref_notile = direct_notile
-    ref_tile   = direct_tile
+    assert(actual_folded.net_charge    == 0)
+    assert(actual_folded.electron_spin == 0)
+    assert(actual_folded.pseudized)
+    np.testing.assert_allclose(actual_folded.structure.axes, d2_ref_axes)
+    np.testing.assert_allclose(actual_folded.structure.pos,  d2_ref_pos)
+    assert(actual_folded.structure.elem.tolist()  == d2_ref_elem)
+    assert(actual_folded.structure.units          == d2_ref_units)
+    assert(tuple(actual_folded.structure.bconds)  == d2_ref_bconds)
+    assert(actual.ions      == d2_ref_ions)
+    assert(actual.electrons == d2_ref_electrons)
 
-    assert(system_same(struct_notile,ref_notile))
-    assert(system_same(read_notile  ,ref_notile))
-    assert(system_same(gen_notile   ,ref_notile))
-    assert(system_same(lookup_notile,ref_notile))
-
-    assert(system_same(struct_tile,ref_tile,tiled=True))
-    assert(system_same(read_tile  ,ref_tile,tiled=True))
-    assert(system_same(gen_tile   ,ref_tile,tiled=True))
-    assert(system_same(lookup_tile,ref_tile,tiled=True))
-
-    systems_notile = [
-        direct_notile,
-        struct_notile,
-        read_notile  ,
-        gen_notile   ,
-        lookup_notile,
-        ]
-    systems_tile = [
-        direct_tile,
-        struct_tile,
-        read_tile  ,
-        gen_tile   ,
-        lookup_tile,
-        ]
-    systems = systems_notile+systems_tile
-    for sys in systems:
-        assert(sys.is_valid())
-    #end for
-
-    # test has_folded
-    for sys in systems_notile:
-        assert(not sys.has_folded())
-    #end for
-    for sys in systems_tile:
-        assert(sys.has_folded())
-    #end for
-
-    # test copy
-    for sys in systems:
-        c = sys.copy()
-        assert(id(c)!=id(sys))
-        assert(c.is_valid())
-        assert(system_same(c,sys,tiled=sys.has_folded()))
-    #end for
-
+    assert(lookup_notile.is_valid())
+    assert(lookup_tile.is_valid())
+    assert(not lookup_notile.has_folded())
+    assert(lookup_tile.has_folded())
     # test load
     for i,sys in enumerate(systems):
         path = tmp_path / 'system_{}'.format(i)
@@ -1264,15 +1635,7 @@ def test_physical_system_initialization(tmp_path):
         sys2.load(path)
         assert(sys2.is_valid())
         assert(system_same(sys2,sys,tiled=sys.has_folded()))
-    #end for
-
-    # test particle counts
-    p = direct_notile.particles
-    assert(p.count_ions()==8)
-    assert(p.count_ions(species=True)==(8,1))
-    assert(p.count_electrons()==32)
-    assert(p.electron_counts()==[16,16])
-#end def test_physical_system_initialization
+#end def test_save_load
 
 
 def test_kf_rpa():
