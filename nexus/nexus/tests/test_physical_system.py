@@ -125,6 +125,7 @@ def get_LaAlO3_references() -> dict[str, list | npt.NDArray[np.floating] | dict[
         "ref_folded_positrons" : ref_folded_positrons,
         "ref_tiled_positrons"  : ref_tiled_positrons,
         }
+#end def get_LaAlO3_references
 
 
 def get_d2_d8_references()-> dict[str, list[str] | npt.NDArray[np.floating] | tuple[str]]:
@@ -1703,6 +1704,88 @@ def test_large_Zeff_elem():
 
     large_Zeff_elem = system.large_Zeff_elem(Zmin=5)
     assert(set(large_Zeff_elem) == {"C", "O1", "O2"})
+#end def test_large_Zeff_elem
+
+
+def test_copy():
+    refs = get_LaAlO3_references()
+    ref_folded_elem      = refs["ref_folded_elem"]
+    ref_tiled_elem       = refs["ref_tiled_elem"]
+    ref_folded_axes      = refs["ref_folded_axes"]
+    ref_tiled_axes       = refs["ref_tiled_axes"]
+    ref_folded_pos       = refs["ref_folded_pos"]
+    ref_tiled_pos        = refs["ref_tiled_pos"]
+    ref_folded_ions      = refs["ref_folded_ions"]
+    ref_tiled_ions       = refs["ref_tiled_ions"]
+    ref_folded_electrons = refs["ref_folded_electrons"]
+    ref_tiled_electrons  = refs["ref_tiled_electrons"]
+    ref_folded_positrons = refs["ref_folded_positrons"]
+    ref_tiled_positrons  = refs["ref_tiled_positrons"]
+
+    tiled_structure = Structure(
+        axes=ref_folded_axes,
+        elem=ref_folded_elem,
+        pos=ref_folded_pos,
+        units="A",
+        tiling=(2,2,2),
+        )
+
+    tiled_ps = PhysicalSystem(
+        structure     = tiled_structure,
+        total_charge  = 0,
+        electron_spin = 0,
+        spin_orbit    = False,
+        elem_spin     = dict(La=3.5, Al=2.5, O1=0, O2=0, O3=0),
+        elem_Zeff     = dict(La=11,  Al=3,   O1=6, O2=6, O3=6),
+        positrons     = ref_tiled_positrons,
+        )
+
+    # Make sure the folded system exists, and its structure
+    # is the folded structure. We use `is` because it compares
+    # memory addresses, which is what we want to be the same.
+    assert(tiled_ps.folded_system.structure is tiled_ps.structure.folded_structure)
+
+    assert(tiled_ps.structure.elem.tolist() == ref_tiled_elem)
+    np.testing.assert_allclose(tiled_ps.structure.axes, ref_tiled_axes)
+    np.testing.assert_allclose(tiled_ps.structure.pos,  ref_tiled_pos)
+
+    assert(tiled_ps.folded_system.structure.elem.tolist() == ref_folded_elem)
+    np.testing.assert_allclose(tiled_ps.folded_system.structure.axes, ref_folded_axes)
+    np.testing.assert_allclose(tiled_ps.folded_system.structure.pos,  ref_folded_pos)
+
+    assert(tiled_ps.ions      == ref_tiled_ions)
+    assert(tiled_ps.electrons == ref_tiled_electrons)
+    assert(tiled_ps.positrons == ref_tiled_positrons)
+
+    assert(tiled_ps.folded_system.ions      == ref_folded_ions)
+    assert(tiled_ps.folded_system.electrons == ref_folded_electrons)
+    assert(tiled_ps.folded_system.positrons == ref_folded_positrons)
+
+    # Make a copy of the tiled physical system, re-check everything.
+    tiled_ps_copy = tiled_ps.copy()
+    # Copied system is in sync with itself
+    assert(tiled_ps_copy.folded_system.structure is tiled_ps_copy.structure.folded_structure)
+    # Copied system's folded system's structure is not the original folded structure
+    assert(tiled_ps_copy.folded_system.structure is not tiled_ps.structure.folded_structure)
+    # Original system's folded system's structure is not the copy's folded structure
+    assert(tiled_ps.folded_system.structure is not tiled_ps_copy.structure.folded_structure)
+
+    assert(tiled_ps_copy.structure.elem.tolist() == ref_tiled_elem)
+    np.testing.assert_allclose(tiled_ps_copy.structure.axes, ref_tiled_axes)
+    np.testing.assert_allclose(tiled_ps_copy.structure.pos,  ref_tiled_pos)
+
+    assert(tiled_ps_copy.folded_system.structure.elem.tolist() == ref_folded_elem)
+    np.testing.assert_allclose(tiled_ps_copy.folded_system.structure.axes, ref_folded_axes)
+    np.testing.assert_allclose(tiled_ps_copy.folded_system.structure.pos,  ref_folded_pos)
+
+    assert(tiled_ps_copy.ions      == ref_tiled_ions)
+    assert(tiled_ps_copy.electrons == ref_tiled_electrons)
+    assert(tiled_ps_copy.positrons == ref_tiled_positrons)
+
+    assert(tiled_ps_copy.folded_system.ions      == ref_folded_ions)
+    assert(tiled_ps_copy.folded_system.electrons == ref_folded_electrons)
+    assert(tiled_ps_copy.folded_system.positrons == ref_folded_positrons)
+#end def test_copy
 
 
 @pytest.mark.xfail(

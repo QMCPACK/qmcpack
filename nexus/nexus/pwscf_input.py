@@ -55,6 +55,7 @@ from .unit_converter import convert
 from .periodic_table import Elements
 from .structure import Structure, kmesh
 from .physical_system import PhysicalSystem
+from .periodic_table import Elements
 from .developer import DevBase, obj, log, warn, error
 from .pseudopotential import pp_elem_label
 from .simulation import SimulationInput
@@ -1671,21 +1672,16 @@ class PwscfInput(SimulationInput):
         self.hubbard = hub_obj
     #end def incorporate_hubbard
 
-    def incorporate_system(self,system,elem_order=None):
+    def incorporate_system(self,system: PhysicalSystem,elem_order=None):
         system.check_folded_system()
-        system.update_particles()
         system.change_units('B')
-        p  = system.particles
         s  = system.structure
         nc = system.net_charge
-        ns = system.net_spin
-
-        nup = p.up_electron.count
-        ndn = p.down_electron.count
 
         self.system.ibrav        = 0
 #        self.system['celldm(1)'] = 1.0e0
-        nions,nspecies = p.count_ions(species=True)
+        nions = system.num_ions()
+        nspecies = system.num_ion_types()
         self.system.nat          = nions
         self.system.ntyp         = nspecies
         self.system.tot_charge   = nc
@@ -1717,12 +1713,12 @@ class PwscfInput(SimulationInput):
             #end if
         #end if
 
-        atoms = p.get_ions()
+        atoms = system.ions
         if 'masses' not in self.atomic_species:
             self.atomic_species.masses = obj()
         #end if
         for name,a in atoms.items():
-            self.atomic_species.masses[name] = convert(a.mass,'me','amu')
+            self.atomic_species.masses[name] = a.element.atomic_weight
         #end for
         if elem_order is None:
             self.atomic_species.atoms = list(sorted(atoms.keys()))
@@ -1739,7 +1735,8 @@ class PwscfInput(SimulationInput):
         pp = self.atomic_species.pseudopotentials
         for atom in self.atomic_species.atoms:
             if atom not in pp:
-                iselem,symbol = p.is_element(atom,symbol=True)
+                iselem, element = Elements.is_element(atom,return_element=True)
+                symbol = element.symbol
                 if iselem and symbol in pp:
                     pp[atom] = str(pp[symbol])
                 #end if
@@ -1766,21 +1763,19 @@ class PwscfInput(SimulationInput):
     #end def incorporate_system
 
 
-    def incorporate_system_old(self,system,spin_polarized=None):
+    def incorporate_system_old(self,system: PhysicalSystem,spin_polarized=None):
         system.check_folded_system()
-        system.update_particles()
         system.change_units('B')
-        p  = system.particles
         s  = system.structure
         nc = system.net_charge
-        ns = system.net_spin
 
-        nup = p.up_electron.count
-        ndn = p.down_electron.count
+        nup = system.electrons.n_up
+        ndn = system.electrons.n_down
 
         self.system.ibrav        = 0
 #        self.system['celldm(1)'] = 1.0e0
-        nions,nspecies = p.count_ions(species=True)
+        nions = system.num_ions()
+        nspecies = system.num_ion_types()
         self.system.nat          = nions
         self.system.ntyp         = nspecies
         #self.system.nelec        = nup+ndn
@@ -1819,10 +1814,10 @@ class PwscfInput(SimulationInput):
             #end if
         #end if
 
-        atoms = p.get_ions()
+        atoms = system.ions
         masses = obj()
         for name,a in atoms.items():
-            masses[name] = convert(a.mass,'me','amu')
+            masses[name] = a.element.atomic_weight
         #end for
         self.atomic_species.atoms  = list(sorted(atoms.keys()))
         self.atomic_species.masses = masses
@@ -1830,7 +1825,8 @@ class PwscfInput(SimulationInput):
         pp = self.atomic_species.pseudopotentials
         for atom in self.atomic_species.atoms:
             if atom not in pp:
-                iselem,symbol = p.is_element(atom,symbol=True)
+                iselem,element = Elements.is_element(atom,return_element=True)
+                symbol = element.symbol
                 if iselem and symbol in pp:
                     pp[atom] = str(pp[symbol])
                 #end if
@@ -1922,7 +1918,12 @@ class PwscfInput(SimulationInput):
             #end if
         #end if
 
-        system = PhysicalSystem(structure,net_charge,net_spin,**valency)
+        system = PhysicalSystem(
+            structure     = structure,
+            total_charge  = net_charge,
+            electron_spin = net_spin,
+            elem_Zeff     = valency,
+            )
 
         return system
     #end def return_system
@@ -1965,12 +1966,6 @@ class PwscfInput(SimulationInput):
 
 
 def generate_pwscf_input(selector,**kwargs):
-    if 'system' in kwargs:
-        system = kwargs['system']
-        if isinstance(system,PhysicalSystem):
-            system.update_particles()
-        #end if
-    #end if
     if selector=='generic':
         return generate_any_pwscf_input(**kwargs)
     if selector=='scf':
@@ -2250,7 +2245,7 @@ def generate_any_pwscf_input(**kwargs):
 
     #  tot_magnetization from system
     if totmag_sys and 'tot_magnetization' not in pw.system:
-        tot_magnetization = system.net_spin
+        tot_magnetization = system.electrons.n_up - system.electrons.n_down
         pw.system.tot_magnetization = tot_magnetization
     #end if
 
@@ -2265,7 +2260,7 @@ def generate_any_pwscf_input(**kwargs):
 
     # set nbnd using bandfac, if provided
     if nbnd is None and bandfac is not None:
-        nocc = max(system.particles.electron_counts())
+        nocc = max(system.electrons.n_up_down())
         pw.system.nbnd = int(np.ceil(nocc*bandfac))
     #end if
 

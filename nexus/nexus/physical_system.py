@@ -981,6 +981,9 @@ class PhysicalSystem:
             kfs.append(kf)
 
         return np.array(kfs, dtype=float)
+    
+    def copy(self) -> Self:
+        return deepcopy(self)
 #end class PhysicalSystem
 
 
