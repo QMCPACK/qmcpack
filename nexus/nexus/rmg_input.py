@@ -3410,7 +3410,6 @@ def generate_any_rmg_input(**kwargs):
             system = system.get_smallest()
         #end if
         system.check_folded_system()
-        system.update_particles()
 
         # set atomic species, positions, magnetic moments and mobility
         if 'atomic_coordinate_type' not in ri:
@@ -3503,10 +3502,10 @@ def generate_any_rmg_input(**kwargs):
         #end if
 
         if spin_polarized is None and 'noncollinear' not in ri:
-            spin_polarized = system.spin_polarized_orbitals()
+            spin_polarized = system.spin_polarized()
         elif spin_polarized is None and 'noncollinear' in ri:
             if not ri.noncollinear:
-                spin_polarized = system.spin_polarized_orbitals()
+                spin_polarized = system.spin_polarized()
             #end if
         #end if
 
@@ -3525,7 +3524,7 @@ def generate_any_rmg_input(**kwargs):
                     del ri[k]
                 #end if
             #end for
-            nup,ndn = system.particles.electron_counts()
+            nup,ndn = system.electrons.n_up_down()
             nvirt = int(np.ceil(virtual_frac*max(nup,ndn)))
             nptot = max(nup,ndn) + nvirt
             nup_virt = nptot-nup

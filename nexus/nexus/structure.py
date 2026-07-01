@@ -6543,12 +6543,12 @@ def interpolate_structures(struct1,struct2=None,images=None,min_image=True,recen
     system2 = None
     if not isinstance(struct1,Structure):
         system1 = struct1.copy()
-        system1.remove_folded()
+        system1.remove_folded_system()
         struct1 = system1.structure
     #end if
     if not isinstance(struct2,Structure):
         system2 = struct2.copy()
-        system2.remove_folded()
+        system2.remove_folded_system()
         struct2 = system2.structure
     #end if
 

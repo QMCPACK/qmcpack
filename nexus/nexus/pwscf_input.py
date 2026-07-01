@@ -1672,7 +1672,7 @@ class PwscfInput(SimulationInput):
         self.hubbard = hub_obj
     #end def incorporate_hubbard
 
-    def incorporate_system(self,system: PhysicalSystem,elem_order=None):
+    def incorporate_system(self,system,elem_order=None):
         system.check_folded_system()
         system.change_units('B')
         s  = system.structure
@@ -1763,7 +1763,7 @@ class PwscfInput(SimulationInput):
     #end def incorporate_system
 
 
-    def incorporate_system_old(self,system: PhysicalSystem,spin_polarized=None):
+    def incorporate_system_old(self,system,spin_polarized=None):
         system.check_folded_system()
         system.change_units('B')
         s  = system.structure

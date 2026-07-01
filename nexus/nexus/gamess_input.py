@@ -1091,7 +1091,7 @@ def generate_any_gamess_input(**kwargs):
         # allow user override of charge and multiplicity from physical system
         gi.contrl.set_optional(
             icharg = system.net_charge,
-            mult   = system.net_spin+1,
+            mult   = system.electrons.multiplicity,
             )
         s = system.structure
         if s.has_folded():

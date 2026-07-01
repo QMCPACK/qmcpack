@@ -188,11 +188,11 @@ class GCTA(DevBase):
         Returns the number of electrons in the primitive cell
         '''
         if self.system.folded_system is None:
-            n_up = self.system.particles.up_electron.count
-            n_dn = self.system.particles.down_electron.count
+            n_up = self.system.electrons.n_up
+            n_dn = self.system.electrons.n_down
         else:
-            n_up = self.system.folded_system.particles.up_electron.count
-            n_dn = self.system.folded_system.particles.down_electron.count
+            n_up = self.system.folded_system.electrons.n_up
+            n_dn = self.system.folded_system.electrons.n_down
         #end if
         nelecs = n_up + n_dn
         return nelecs
@@ -463,8 +463,8 @@ class GCTA(DevBase):
         '''
         Returns the net charge of a system with multiple twists (not averaged)
         '''
-        n_up = self.system.particles.up_electron.count
-        n_dn = self.system.particles.down_electron.count
+        n_up = self.system.electrons.n_up
+        n_dn = self.system.electrons.n_down
         n_total = n_up + n_dn
         nelecs_at_twist = self.nelecs_at_twist
         kweights = np.array(self.system.structure.kweights)
@@ -536,8 +536,8 @@ class GCTA(DevBase):
             spin_sum_twists = self.sum_spin_twists()
             qmc_magnet = spin_sum_twists / nosym_kpoints
         #end if
-        n_up = self.system.particles.up_electron.count
-        n_dn = self.system.particles.down_electron.count
+        n_up = self.system.electrons.n_up
+        n_dn = self.system.electrons.n_down
         n_total = n_up + n_dn
         nelecs_at_twist = self.nelecs_at_twist
         fermi_level = np.array(fermi_level)
@@ -1020,7 +1020,7 @@ class Qmcpack(Simulation):
             relstruct = result.structure.copy()
             relstruct.change_units('B')
             self.system.structure = relstruct
-            self.system.remove_folded()
+            self.system.remove_folded_system()
             self.input.incorporate_system(self.system)
 
         elif result_name=='cuspcorr':
@@ -1614,7 +1614,7 @@ class Qmcpack(Simulation):
     def receive_structure(self,struct):
         struct.change_units('B')
         self.system.structure = struct
-        self.system.remove_folded()
+        self.system.remove_folded_system()
         self.input.incorporate_system(self.system)
     #end def receive_structure
 

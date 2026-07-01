@@ -178,7 +178,9 @@ def test_incorporate_result(tmp_path):
     sim = get_pwscf_sim('scf')
 
     sim_start = sim.to_obj().copy()
+    from ..testing import check_object_eq
 
+    print(check_object_eq(sim.to_obj(), sim_start, verbose=True))
     assert(object_eq(sim.to_obj(),sim_start))
 
     # charge density

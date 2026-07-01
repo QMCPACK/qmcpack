@@ -217,7 +217,7 @@ $calculation
             sys_inputs.atom   = s.pos_to_str(units=s.units, with_elem=True)
             sys_inputs.unit   = s.units
             sys_inputs.charge = system.net_charge
-            sys_inputs.spin   = system.net_spin
+            sys_inputs.spin   = system.electron_spin
             if is_solid:
                 folded_structure     = s.copy()
                 sys_inputs.dimension = len(s.axes)

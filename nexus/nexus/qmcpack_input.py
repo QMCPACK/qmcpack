@@ -147,6 +147,7 @@ from .physical_system import PhysicalSystem
 from .simulation import SimulationInput, SimulationInputTemplate
 from .pwscf_input import array_to_string as pwscf_array_string
 from .utilities import path_string
+from .unit_converter import convert
 from . import numpy_extensions as npe
 
 yesno_dict     = {True:'yes' ,False:'no'}
@@ -3825,10 +3826,9 @@ class QmcpackInput(SimulationInput,Names):
         system.change_units('B')
         #system.structure.group_atoms()
         system.structure.order_by_species()
-        particles  = system.particles
+
         structure  = system.structure
-        net_charge = system.net_charge
-        net_spin   = system.net_spin
+        net_spin   = system.electron_spin
 
         qs,sc,ham,ps = self.get('qmcsystem','simulationcell','hamiltonian','particleset')
 
@@ -3898,17 +3898,17 @@ class QmcpackInput(SimulationInput,Names):
             sc.lattice = axes
         #end if    
 
-        elns = particles.get_electrons()
-        ions = particles.get_ions()
-        eup  = elns.up_electron
-        edn  = elns.down_electron
+        elns = system.electrons
+        ions = system.ions
+        eup  = elns.n_up
+        edn  = elns.n_down
 
         particlesets = []
         eps = particleset(
             name='e',random=True,
             groups = [
-                group(name='u',charge=-1,mass=eup.mass,size=eup.count),
-                group(name='d',charge=-1,mass=edn.mass,size=edn.count)
+                group(name='u',charge=-1,mass=elns.mass,size=eup),
+                group(name='d',charge=-1,mass=elns.mass,size=edn)
                 ]
             )
         particlesets.append(eps)
@@ -3929,20 +3929,20 @@ class QmcpackInput(SimulationInput,Names):
                     pp.pseudos = pseudos
                 #end if
             #end if
-            for ion in ions:
-                gpos = pos[elem==ion.name]
+            for label, ion in ions.items():
+                gpos = pos[elem==label]
                 g = group(
-                    name         = ion.name,
-                    charge       = ion.charge,
-                    valence      = ion.charge,
-                    atomicnumber = ion.protons,
-                    mass         = ion.mass,
+                    name         = ion.element.symbol,
+                    charge       = ion.Zeff,
+                    valence      = ion.Zeff,
+                    atomicnumber = ion.element.atomic_number,
+                    mass         = convert(ion.element.atomic_weight, "amu", "me"),
                     position     = gpos,
                     size         = len(gpos)
                     )
                 groups.append(g)
-                if pseudos is not None and ion.name not in pseudos:
-                    pseudos[ion.name] = pseudo(elementtype=ion.name,href='MISSING.xml')
+                if pseudos is not None and ion.element.symbol not in pseudos:
+                    pseudos[ion.element.symbol] = pseudo(elementtype=label,href='MISSING.xml')
                 #end if
             #end for
             ips.groups = make_collection(groups)
@@ -3960,10 +3960,10 @@ class QmcpackInput(SimulationInput,Names):
         udet,ddet = self.get('updet','downdet')
 
         if udet is not None:
-            udet.size = elns.up_electron.count
+            udet.size = eup
         #end if
         if ddet is not None:
-            ddet.size = elns.down_electron.count
+            ddet.size = edn
         #end if
 
         if np.abs(net_spin) > 1e-1:
@@ -4137,7 +4137,12 @@ class QmcpackInput(SimulationInput,Names):
 
         net_charge = ion_charge + eln_charge
 
-        system = PhysicalSystem(structure,net_charge,net_spin,**valency) 
+        system = PhysicalSystem(
+            structure     = structure,
+            total_charge  = net_charge,
+            electron_spin = net_spin,
+            elem_Zeff     = valency,
+            )
         
         if structure_only:
             return structure
@@ -5387,7 +5392,7 @@ def generate_simulationcell(bconds='ppp',lr_dim_cutoff=15,lr_tol=None,lr_handler
         structure = system.structure
         if isinstance(structure,Jellium):
             sc.rs         = structure.rs()
-            sc.nparticles = system.particles.count_electrons()
+            sc.nparticles = system.electrons.count
         else:
             #setting the 'lattice' (cell axes) requires some delicate care
             #  qmcpack will fail if this is even 1e-10 off of what is in 
@@ -5440,30 +5445,26 @@ def generate_particlesets(electrons   = 'e',
     system.check_folded_system()
     system.change_units('B')
 
-    particles  = system.particles
     structure  = system.structure
-    net_charge = system.net_charge
-    net_spin   = system.net_spin
-
-    elns = particles.get_electrons()
-    ions = particles.get_ions()
-    eup  = elns.up_electron
-    edn  = elns.down_electron
+    elns = system.electrons
+    ions = system.ions
+    eup  = elns.n_up
+    edn  = elns.n_down
 
     use_spinor = spinor is not None and spinor
 
     particleset_groups = []
     if not use_spinor:
-        if eup.count > 0:
-            particleset_groups.append(group(name=uname,charge=-1,mass=eup.mass,size=eup.count))
+        if eup > 0:
+            particleset_groups.append(group(name=uname,charge=-1,mass=elns.mass,size=eup))
         #end if
-        if edn.count > 0:
-            particleset_groups.append(group(name=dname,charge=-1,mass=edn.mass,size=edn.count))
+        if edn > 0:
+            particleset_groups.append(group(name=dname,charge=-1,mass=elns.mass,size=edn))
         #end if
     else:
-        ecount = eup.count+edn.count
+        ecount = elns.count
         if ecount>0:
-            particleset_groups.append(group(name=uname,charge=-1,mass=eup.mass,size=ecount))
+            particleset_groups.append(group(name=uname,charge=-1,mass=elns.mass,size=ecount))
         #end if
     #end if
 
@@ -5506,13 +5507,15 @@ def generate_particlesets(electrons   = 'e',
         groups = []
         for ion_spec in ion_species:
             ion = ions[ion_spec]
-            gpos = pos[elem==ion.name]
+            print(ion)
+            print(ion.total_nuclear_charge)
+            gpos = pos[elem==ion.element.symbol]
             g = group(
-                name         = ion.name,
-                charge       = ion.charge,
-                valence      = ion.charge,
-                atomicnumber = ion.protons,
-                mass         = ion.mass,
+                name         = ion.element.symbol,
+                charge       = ion.Zeff,
+                valence      = ion.Zeff,
+                atomicnumber = ion.element.atomic_number,
+                mass         = convert(ion.element.atomic_weight, "amu", "me"),
                 position     = gpos,
                 size         = len(gpos)
                 )
@@ -5556,9 +5559,9 @@ def generate_sposets(type           = None,
         if system is None and not have_counts:
             QmcpackInput.class_error('cannot generate sposets in occupation mode {0}\n  arguments nup & ndown or system must be given to generate_sposets'.format(occupation))
         elif not have_counts:
-            elns = system.particles.get_electrons()
-            nup  = elns.up_electron.count
-            ndn  = elns.down_electron.count
+            elns = system.electrons
+            nup  = elns.n_up
+            ndn  = elns.n_down
         else:
             ndn = ndown
         #end if
@@ -5805,9 +5808,9 @@ def generate_determinantset(up             = 'u',
     if system is None:
         QmcpackInput.class_error('generate_determinantset argument system must not be None')
     #end if
-    elns = system.particles.get_electrons()
-    nup  = elns.up_electron.count
-    ndn  = elns.down_electron.count
+    elns = system.electrons
+    nup  = elns.n_up
+    ndn  = elns.n_down
     use_spinor = spinor is not None and spinor
     if not spin_polarized and nup==ndn and not use_spinor:  
         spo_u = 'spo_ud'
@@ -5986,7 +5989,7 @@ def generate_determinantset_old(type           = 'bspline',
     if system is None:
         QmcpackInput.class_error('generate_determinantset argument system must not be None')
     #end if
-    elns = system.particles.get_electrons()
+    elns = system.electrons
     down_spin = 0
     if spin_polarized:
         down_spin=1
@@ -5996,8 +5999,8 @@ def generate_determinantset_old(type           = 'bspline',
         tilematrix = system.structure.tilematrix()
     #end if
     use_spinor = spinor is not None and spinor
-    nup = elns.up_electron.count
-    ndn = elns.down_electron.count
+    nup = elns.n_up
+    ndn = elns.n_down
     determinants_list = []
     if not use_spinor:
         if nup > 0:
@@ -6075,7 +6078,7 @@ def generate_determinantset_old(type           = 'bspline',
             # Are there an equal number of up and down electrons?
             # If no, then exit. Currently, singlet and triplet 
             # excitations are assumed to have ms = 0.
-            if elns.down_electron.count != elns.up_electron.count:
+            if elns.n_down != elns.n_up:
                 QmcpackInput.class_error('The \'singlet\' and \'triplet\' excitation types currently assume number of up and down electrons is the same for the reference ground state. Otherwise, one should use \'up\' or \'down\' types.\nFor your system: Nup={} and Ndown={}.\nWe plan to expand to additional cases in the future.'.format(elns.up_electron.count,elns.down_electron.count))
             #end if
 
@@ -6087,14 +6090,14 @@ def generate_determinantset_old(type           = 'bspline',
             if down_spin:
                 sposet_list = [sposet(name            = 'spo_u',
                                       spindataset     = 0,
-                                      size            = elns.up_electron.count+1,
+                                      size            = elns.n_up+1,
                                       occupation      = section(mode='ground'),
                                       coefficient     = section(size=90,spindataset=0),
                                       spos            = ''
                                      ),
                                sposet(name            = 'spo_d',
                                       spindataset     = 1,
-                                      size            = elns.up_electron.count+1,
+                                      size            = elns.n_up+1,
                                       occupation      = section(mode='ground'),
                                       coefficient     = section(spindataset=1),
                                       spos            = ''
@@ -6102,7 +6105,7 @@ def generate_determinantset_old(type           = 'bspline',
             else:
                 sposet_list = [sposet(name            = 'spo_ud',
                                       spindataset     = 0,
-                                      size            = elns.up_electron.count+1,
+                                      size            = elns.n_up+1,
                                       occupation      = section(mode='ground'),
                                       coefficient     = section(spindataset=0),
                                       spos            = ''
@@ -6127,8 +6130,8 @@ def generate_determinantset_old(type           = 'bspline',
                         type = 'CSF',
                         nca  = '0',
                         ncb  = '0',
-                        nea = elns.up_electron.count,
-                        neb = elns.down_electron.count,
+                        nea = elns.n_up,
+                        neb = elns.n_down,
                         cutoff = '0.001',
                         csf = csf(
                             id          = 'CSF_0',
@@ -6277,9 +6280,9 @@ def generate_determinantset_old(type           = 'bspline',
         elif exc_type == exc_types.lowest: # Type 4
             occ.format = 'energy'
             if exc_spin == exc_spins.up:
-                nel = elns.up_electron.count 
+                nel = elns.n_up 
             else:
-                nel = elns.down_electron.count 
+                nel = elns.n_down 
             #end if
             excitation = '-{} +{}'.format(nel,nel+1) 
             occ.contents = '\n'+excitation+'\n'
@@ -6319,17 +6322,16 @@ def generate_hamiltonian(name         = 'h0',
     del pseudos
     del wavefunction
 
-    particles = system.particles
-    if particles.count_electrons()==0:
+    if system.electrons.count==0:
         QmcpackInput.class_error('cannot generate hamiltonian, no electrons present')
     #end if
 
     pairpots = []
     if interactions is not None:
         pairpots.append(coulomb(name='ElecElec',type='coulomb',source=ename,target=ename))
-        if particles.count_ions()>0:
+        if len(system.ions)>0:
             pairpots.append(coulomb(name='IonIon',type='coulomb',source=iname,target=iname))
-            ions = particles.get_ions()
+            ions = system.ions
             if not system.pseudized:
                 pairpots.append(coulomb(name='ElecIon',type='coulomb',source=iname,target=ename))
             else:
@@ -6353,15 +6355,13 @@ def generate_hamiltonian(name         = 'h0',
                     #end for
                 #end if
                 pseudos = collection()
-                for ion in ions:
-                    label = ion.name
-                    iselem, element = Elements.is_element(ion.name, return_element=True)
+                for label, ion in ions.items():
                     if label in ppfiles:
                         ppfile = ppfiles[label]
                     elif element.symbol in ppfiles:
-                        ppfile = ppfiles[element.symbol]
+                        ppfile = ppfiles[ion.element.symbol]
                     else:
-                        QmcpackInput.class_error('pseudos provided to generate_hamiltonian are incomplete\n  a pseudopotential for ion of type {0} is missing\n  pseudos provided:\n{1}'.format(ion.name,str(ppfiles)))
+                        QmcpackInput.class_error('pseudos provided to generate_hamiltonian are incomplete\n  a pseudopotential for ion of type {0} is missing\n  pseudos provided:\n{1}'.format(label,str(ppfiles)))
                     #end if
                     pseudos.add(pseudo(elementtype=label,href=ppfile))
                 #end for
@@ -6577,7 +6577,7 @@ def generate_jastrows(jastrows,system=None,return_list=False,check_ions=False):
     jin = []
     have_ions = True
     if check_ions and system is not None:
-        have_ions = system.particles.count_ions()>0
+        have_ions = len(system.ions)>0
     #end if
     if isinstance(jastrows,str):
         jorders = set(jastrows.replace('generate',''))
@@ -6591,7 +6591,7 @@ def generate_jastrows(jastrows,system=None,return_list=False,check_ions=False):
             jterm = generate_jastrow('J3','polynomial',3,3,4.0,system=system)
         #end if
         if 'k' in jorders:
-            kcut = max(system.rpa_kf())
+            kcut = max(system.kf_rpa())
             nksh = system.structure.count_kshells(kcut)
             jterm = generate_kspace_jastrow(kc1=0, kc2=kcut, nk1=0, nk2=nksh)
         #end if
@@ -6671,7 +6671,7 @@ def generate_jastrows_alt(
         J2k_kcut     = 5.0,
         J2k_symm     = 'crystal',
         J2k_opt      = None,
-        system       = None,
+        system: PhysicalSystem       = None,
         ):
     if system is None:
         QmcpackInput.class_error('input variable "system" is required to generate jastrows','generate_jastrows_alt')
@@ -6682,8 +6682,8 @@ def generate_jastrows_alt(
 
     openbc = system.structure.is_open()
 
-    natoms = system.particles.count_ions()
-    nelec  = system.particles.count_electrons()
+    natoms = system.num_ions()
+    nelec  = system.electrons.count
 
     jastrows = []
     J2 |= J3
@@ -6950,7 +6950,7 @@ def generate_bspline_jastrow2(size=8,rcut=None,coeff=None,spins=('u','d'),densit
             if rcut is None and isperiodic:
                 rcut = rwigner
             #end if
-            nelectrons = system.particles.count_electrons()
+            nelectrons = system.electrons.count
             density = nelectrons/volume
         #end if
     elif init=='rpa':
@@ -7053,7 +7053,7 @@ def generate_jastrow2(function='bspline',*args,**kwargs):
         QmcpackInput.class_error('function is invalid\n  you provided: {0}\n  valid options are: bspline or pade'.format(function),'generate_jastrow2')
     #end if
     if 'system' in kwargs and kwargs['system'] is not None:
-        nup,ndn = kwargs['system'].particles.electron_counts()
+        nup,ndn = kwargs['system'].electrons.n_up_down()
         if nup<2:
             del j2.correlations.uu
         #end if
@@ -8434,9 +8434,6 @@ def generate_batched_dmc_calculations(
 
 def generate_qmcpack_input(**kwargs):
     QIcollections.clear()
-    system = kwargs.get('system',None)
-    if isinstance(system,PhysicalSystem):
-        system.update_particles()
     #end if
     selector = kwargs.pop('input_type','basic')
     if selector=='basic':
@@ -8622,7 +8619,7 @@ def generate_basic_input(**kwargs):
         kw.calculations = []
     #end if
     if kw.spin_polarized is None:
-        kw.spin_polarized = kw.system.net_spin>0
+        kw.spin_polarized = kw.system.electron_spin>0
     #end if
     if kw.partition is not None:
         kw.det_format = 'new'
@@ -9266,10 +9263,10 @@ if __name__=='__main__':
         from .physical_system import PhysicalSystem
         
         system = PhysicalSystem(
-            structure = generate_structure('diamond','fcc','Ge',(2,2,2),scale=5.639,units='A'),
-            net_charge = 1,
-            net_spin   = 1,
-            Ge = 4
+            structure     = generate_structure('diamond','fcc','Ge',(2,2,2),scale=5.639,units='A'),
+            total_charge  = 1,
+            electron_spin = 1,
+            elem_Zeff     = dict(Ge=4),
         )
 
         gi = generate_qmcpack_input('basic',system=system)
@@ -9286,10 +9283,10 @@ if __name__=='__main__':
         from .physical_system import PhysicalSystem
         
         system = PhysicalSystem(
-            structure = generate_structure('diamond','fcc','Ge',(2,2,2),scale=5.639,units='A'),
-            net_charge = 1,
-            net_spin   = 1,
-            Ge = 4
+            structure     = generate_structure('diamond','fcc','Ge',(2,2,2),scale=5.639,units='A'),
+            total_charge  = 1,
+            electron_spin = 1,
+            elem_Zeff     = dict(Ge=4),
         )
 
         gi = generate_qmcpack_input('basic',system=system)

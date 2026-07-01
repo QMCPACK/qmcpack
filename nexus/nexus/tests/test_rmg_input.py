@@ -659,6 +659,7 @@ def check_vs_serial_reference(gi,name):
     from ..developer import obj
     sr = obj(get_serial_references()[name])
     sg = gi.serial()
+    print(check_object_eq(sg,sr, verbose=True))
     assert(check_object_eq(sg,sr))
 #end def check_vs_serial_reference
 

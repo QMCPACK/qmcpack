@@ -11,7 +11,7 @@ from copy import deepcopy
 import os
 from os import PathLike
 from pathlib import Path
-from typing import Self, TypeAlias
+from typing import Self, TypeAlias, Literal
 
 import numpy as np
 import numpy.typing as npt
@@ -63,6 +63,10 @@ class ElectronsPositronsBase(ABC):
     @abstractmethod
     def unit_charge(self) -> int:
         ...
+
+    @property
+    def mass(self) -> float:
+        return 1.0
 
     def __init__(
         self,
@@ -589,9 +593,14 @@ class PhysicalSystem:
         positrons    : Positrons | None   = None,
         ):
         if isinstance(structure, str | bytes | Path):
-            structure = Structure().read(structure)
+            s = Structure()
+            s.read(structure)
+            self.structure = s
+        elif isinstance(structure, Structure):
+            self.structure = structure
+        else:
+            error("The `structure` parameter for PhysicalSystem must be a file path or a Structure!")
 
-        self.structure = structure
         self.ions = IonSpecies.from_structure(
             structure   = self.structure,
             elem_charge = elem_charge,
@@ -625,17 +634,18 @@ class PhysicalSystem:
         if not self.structure.has_folded():
             return None
 
-        if not hasattr(self.structure, "tmatrix") or self.structure.tmatrix is None:
-            raise RuntimeError(
-                "Structure has a folded structure but no tile matrix, can not proceed!"
-                )
-        elif (msg := self.structure.check_tiling(exit=False)) != "":
+        if (msg := self.structure.check_tiling(exit=False)) != "":
             raise RuntimeError(
                 "Folded structure is not consistent, can not initialize PhysicalSystem!\n"
                 f"Reason:\n{msg}"
                 )
 
-        n_cells_tiled = int(np.round(np.abs(np.linalg.det(self.structure.tmatrix))))
+        if not hasattr(self.structure, "tmatrix") or self.structure.tmatrix is None:
+            # Folded molecule
+            n_cells_tiled = 1
+        else:
+            # Folded crystal
+            n_cells_tiled = int(np.round(np.abs(np.linalg.det(self.structure.tmatrix))))
 
         # Ignore positrons for this, since we use this to get the number of electrons
         folded_total_charge = (self.ion_charge + self.electron_charge) / n_cells_tiled
@@ -743,10 +753,14 @@ class PhysicalSystem:
     def num_ion_types(self) -> int:
         return len(self.ions)
 
+    def spin_polarized(self) -> bool:
+        spn = self.electron_spin + sum([ion.total_spin for ion in self.ions.values()])
+        return spn != 0 or self.structure.is_magnetic()
+
     def __repr__(self) -> str:
         return (
             f"{type(self).__name__}("
-            f"structure={None!s}, " # Not sure how to do this yet.
+            f"structure=..., " # Not sure how to do this yet.
             f"ions={self.ions!s}, "
             f"electrons={self.electrons!s}, "
             f"positrons={self.positrons!s})"
@@ -981,7 +995,7 @@ class PhysicalSystem:
             kfs.append(kf)
 
         return np.array(kfs, dtype=float)
-    
+
     def copy(self) -> Self:
         return deepcopy(self)
 #end class PhysicalSystem

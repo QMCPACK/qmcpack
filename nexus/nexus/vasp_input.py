@@ -1525,7 +1525,7 @@ class VaspInput(SimulationInput,Vobj):
         # handle charged systems
         if set_nelect or system.net_charge!=0:
             #  warning: spin polarization is handled by the user!
-            self.incar.nelect = system.particles.count_electrons()
+            self.incar.nelect = system.electrons.count
         #end if
 
         return species
@@ -1598,10 +1598,10 @@ class VaspInput(SimulationInput,Vobj):
         net_spin   = 0
 
         system = PhysicalSystem(
-            structure  = structure,
-            net_charge = net_charge,
-            net_spin   = net_spin,
-            **valency
+            structure     = structure,
+            total_charge  = net_charge,
+            electron_spin = net_spin,
+            elem_Zeff     = valency,
             )
  
         return system
