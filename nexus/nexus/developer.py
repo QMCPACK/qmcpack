@@ -32,7 +32,8 @@
 
 
 from .utilities import to_str
-from .generic import obj, object_interface, hidden, NexusError, log, error, warn, message
+from .generic import obj, object_interface, hidden, NexusError
+from .generic import log, error, warn, message, nxs_deprecate
 from .debug import ci, interact
 
 
