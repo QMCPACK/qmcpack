@@ -88,8 +88,8 @@
      <parameter name="reconfiguration">   no </parameter>
      <parameter name="warmupSteps">  100 </parameter>
      <parameter name="timestep">  0.01 </parameter>
-     <parameter name="steps">   1 </parameter>
-     <parameter name="blocks">  1 </parameter>
+     <parameter name="steps">   10 </parameter>
+     <parameter name="blocks">  10 </parameter>
      <parameter name="nonlocalmoves">  no </parameter>
    </qmc>
 
