@@ -1921,7 +1921,7 @@ class PwscfInput(SimulationInput):
         system = PhysicalSystem(
             structure     = structure,
             total_charge  = net_charge,
-            electron_spin = net_spin,
+            unpaired_elns = net_spin,
             elem_Zeff     = valency,
             )
 

@@ -11,7 +11,7 @@ from copy import deepcopy
 import os
 from os import PathLike
 from pathlib import Path
-from typing import Self, TypeAlias, Literal
+from typing import Self, TypeAlias
 
 import numpy as np
 import numpy.typing as npt
@@ -20,11 +20,11 @@ from .developer import obj, warn, error
 from .periodic_table import Elements, ElementLike
 from .structure import Structure, generate_structure, read_structure
 
-LabelNumMap: TypeAlias = Mapping[str, int | float]
-"""Mapping (e.g. ``dict`` or ``obj``) from an ion label to a number."""
+LabelNumMap: TypeAlias = Mapping[str, int | float | npt.NDArray[np.floating]]
+"""Mapping (e.g. ``dict`` or ``obj``) from an ion label to a number or array."""
 
-ElemNumMap: TypeAlias = Mapping[ElementLike, int | float]
-"""Mapping (e.g. ``dict`` or ``obj``) from an element to a number."""
+ElemNumMap: TypeAlias = Mapping[ElementLike, int | float | npt.NDArray[np.floating]]
+"""Mapping (e.g. ``dict`` or ``obj``) from an element to a number or array."""
 
 
 class ElectronsPositronsBase(ABC):
@@ -39,12 +39,12 @@ class ElectronsPositronsBase(ABC):
     Attributes
     ----------
     count : int or float, property
-        The total number of particles
+        The total number of particles.
     spin : int or float, property
         The total spin of the system.
 
-        An up-spin particle has a spin of +1/2, a down-spin particle has
-        a spin of -1/2.
+        An up-spin particle has a spin of +1, a down-spin particle has
+        a spin of -1.
     n_up : int or float, read-only property
         The number of up-spin particles.
         Not defined for spin-orbit systems.
@@ -71,11 +71,11 @@ class ElectronsPositronsBase(ABC):
     def __init__(
         self,
         count     : int | float,
-        spin      : int | float,
+        n_unpaired: int | float,
         spin_orbit: bool = False,
         ):
         self.count      = count
-        self.spin       = spin
+        self.n_unpaired = n_unpaired
         self.spin_orbit = spin_orbit
 
     @property
@@ -90,59 +90,88 @@ class ElectronsPositronsBase(ABC):
             self._count = new_count
 
     @property
-    def spin(self) -> int | float:
-        return self._spin
+    def n_unpaired(self) -> int | float:
+        """The number of unpaired particles.
 
-    @spin.setter
-    def spin(self, new_spin: int | float) -> None:
-        if abs((int_spin := int(new_spin)) - new_spin) < 1e-8:
-            self._spin = int_spin
+        This is essentially the number of up-spin particles minus the
+        number of down-spin particles.
+        """
+        return self._n_unpaired
+
+    @n_unpaired.setter
+    def n_unpaired(self, n_unpaired: int | float) -> None:
+        if abs((int_n_unpaired := int(n_unpaired)) - n_unpaired) < 1e-8:
+            self._n_unpaired = int_n_unpaired
         else:
-            self._spin = new_spin
+            self._n_unpaired = n_unpaired
+
+    @property
+    def spin(self) -> int | float:
+        """Alias for ``self.n_unpaired``."""
+        return self.n_unpaired
+
+    @property
+    def quantum_spin(self) -> int | float:
+        """The spin quantum number of the particle collection.
+
+        This uses the definition of spin where up-spin is +1/2 and
+        down-spin is -1/2.
+        """
+        if isinstance(self.n_unpaired, int):
+            if self.n_unpaired % 2 == 0:
+                return self.n_unpaired // 2
+            else:
+                return self.n_unpaired / 2
+        else:
+            return self.n_unpaired / 2
+
+    @quantum_spin.setter
+    def quantum_spin(self, new_spin: int | float) -> None:
+        self.n_unpaired = new_spin * 2 # Delegate setting to n_unpaired
 
     def n_up_down(self) -> tuple[int, int] | tuple[float, float]:
-        """Return a tuple representing the number of up- and down-spin electrons.
+        """Return a tuple representing the number of up- and down-spin particles.
 
         Examples
         --------
-        >>> Electrons(count=16, spin=1).n_up_down()
+        >>> Electrons(count=16, n_unpaired=2).n_up_down()
         (9, 7) # (up, down)
-        >>> Electrons(count=15, spin=1).n_up_down()
+        >>> Electrons(count=15, n_unpaired=2).n_up_down()
         (8.5, 6.5)
-        >>> Electrons(count=16, spin=1/2).n_up_down()
+        >>> Electrons(count=16, n_unpaired=1).n_up_down()
         (8.5, 7.5)
-        >>> Electrons(count=15, spin=1/2).n_up_down()
+        >>> Electrons(count=15, n_unpaired=1).n_up_down()
         (8, 7)
-        >>> Electrons(count=15, spin=-1/2).n_up_down()
+        >>> Electrons(count=15, n_unpaired=-1).n_up_down()
         (7, 8)
         """
         if self.spin_orbit:
-            # Use self.__class__.__name__ to get name of subclass, not base class
+            # Use type(self).__name__ to get name of subclass, not base class
             raise RuntimeError(
-                f"{self.__class__.__name__} can not be split into up- and down-spin with a spin-orbit system!"
+                f"{type(self).__name__} can not be split into up- and down-spin with a spin-orbit system!"
                 )
         if isinstance(self.count, int):
-            if isinstance(self.spin, int):
+            if isinstance(self.quantum_spin, int):
                 if self.count % 2 == 0:
-                    n_up   = (self.count // 2) + self.spin
-                    n_down = (self.count // 2) - self.spin
+                    n_up   = (self.count // 2) + self.quantum_spin
+                    n_down = (self.count // 2) - self.quantum_spin
                 else:
-                    n_up   = (self.count / 2) + self.spin
-                    n_down = (self.count / 2) - self.spin
+                    n_up   = (self.count / 2) + self.quantum_spin
+                    n_down = (self.count / 2) - self.quantum_spin
             else:
                 if self.count % 2 == 0:
-                    n_up   = (self.count / 2) + self.spin
-                    n_down = (self.count / 2) - self.spin
+                    n_up   = (self.count / 2) + self.quantum_spin
+                    n_down = (self.count / 2) - self.quantum_spin
                 else:
-                    if self.spin > 0:
+                    if self.quantum_spin > 0:
                         n_down = self.count // 2
                         n_up   = self.count - n_down
                     else:
                         n_up   = self.count // 2
                         n_down = self.count - n_up
         else:
-            n_up   = (self.count / 2) + self.spin
-            n_down = (self.count / 2) - self.spin
+            n_up   = (self.count / 2) + self.quantum_spin
+            n_down = (self.count / 2) - self.quantum_spin
 
         return n_up, n_down
 
@@ -150,7 +179,7 @@ class ElectronsPositronsBase(ABC):
     def n_up(self) -> int | float:
         if self.spin_orbit:
             raise RuntimeError(
-                f"Up-spin {self.__class__.__name__} are not defined with a spin-orbit system!"
+                f"Up-spin {type(self).__name__} are not defined with a spin-orbit system!"
                 )
         return self.n_up_down()[0]
 
@@ -158,7 +187,7 @@ class ElectronsPositronsBase(ABC):
     def n_down(self) -> int | float:
         if self.spin_orbit:
             raise RuntimeError(
-                f"Down-spin {self.__class__.__name__} are not defined with a spin-orbit system!"
+                f"Down-spin {type(self).__name__} are not defined with a spin-orbit system!"
                 )
         return self.n_up_down()[1]
 
@@ -181,13 +210,13 @@ class ElectronsPositronsBase(ABC):
         elif self.is_fractional():
             raise RuntimeError("Multiplicity is undefined for fractional counts!")
         else:
-            return (2 * abs(self.spin)) + 1
+            return abs(self.n_unpaired) + 1
 
     def __eq__(self, other: Self) -> bool:
         return (
             self.unit_charge    == other.unit_charge
             and self.count      == other.count
-            and self.spin       == other.spin
+            and self.n_unpaired == other.n_unpaired
             and self.spin_orbit is other.spin_orbit
             )
 
@@ -195,7 +224,7 @@ class ElectronsPositronsBase(ABC):
         return (
             f"{type(self).__name__}("
             f"count={self.count}, "
-            f"spin={self.spin}, "
+            f"n_unpaired={self.n_unpaired}, "
             f"spin_orbit={self.spin_orbit})"
             )
 #end class ElectronsPositronsBase
@@ -210,10 +239,10 @@ class Electrons(ElectronsPositronsBase):
     @classmethod
     def neutralize_to(
         cls,
-        ions         : Iterable[IonSpecies],
-        total_charge : int | float,
-        electron_spin: int | float | None = None,
-        spin_orbit   : bool = False,
+        ions        : Iterable[IonSpecies],
+        total_charge: int | float,
+        n_unpaired  : int | float | None = None,
+        spin_orbit  : bool = False,
     ) -> Self:
         """Neutralize the charge of ``ions`` to ``total_charge``.
 
@@ -228,11 +257,13 @@ class Electrons(ElectronsPositronsBase):
             list of ``IonSpecies``.
         total_charge : int or float
             The desired total charge of the combined ion-electron system.
-        electron_spin : int or float, optional
-            The desired total spin of the electrons. If this is not
-            specified, then this will be set to the smallest, positive,
-            half-integer or integer spin state that is compatible with
-            the number of electrons.
+        n_unpaired : int or float, optional
+            The desired total number of unpaired electrons. If this is
+            not specified, then this function sets it to zero for an
+            even number of electrons and one for an odd number. If the
+            number of electrons is not an integer, then it sets it such
+            that the number of down-spin electrons is an integer and the
+            number of up-spin electrons is a float.
         spin_orbit : bool, default=False
             Specify whether or not the system is a spin-orbit system.
             Passed to the class constructor.
@@ -245,18 +276,20 @@ class Electrons(ElectronsPositronsBase):
             ions_charge += ion.total_charge_deficit
 
         n_electrons = ions_charge - total_charge
-        if electron_spin is None:
+        if n_unpaired is None:
             if isinstance(ions_charge, int) and isinstance(n_electrons, int):
                 if n_electrons % 2 == 0:
-                    electron_spin = 0
+                    n_unpaired = 0
                 else:
-                    electron_spin = 0.5
+                    n_unpaired = 1
             else:
-                electron_spin = (n_electrons % 2) / 2
+                # Gives us a value so the number of down-spin electrons
+                # is integral, and the number of up-spin is fractional.
+                n_unpaired = n_electrons % 2
 
         return Electrons(
             count      = n_electrons,
-            spin       = electron_spin,
+            n_unpaired = n_unpaired,
             spin_orbit = spin_orbit,
             )
 #end class Electrons
@@ -283,8 +316,8 @@ class IonSpecies:
         The label for the ion collection.
     formal_charge : int or float
         The formal charge associated with a single one of the ions.
-    unit_spin : int or float
-        The spin of a single one of the ions.
+    magnetization : int or float or NDArray
+        The magnetization of a single one of the ions.
     Zeff : int or float
         The effective nuclear charge of one of the ions.
     symbol : str, read-only property
@@ -298,8 +331,8 @@ class IonSpecies:
     total_electron_deficit : int or float, read-only property
         Number of electrons required to reach the formal charge
         multiplied by count.
-    total_spin : int or float, read-only property
-        Unit spin multiplied by count.
+    total_magnetization : int or float or NDArray, read-only property
+        Magnetization multiplied by count.
     total_mass : float, read-only property
         Atomic weight multiplied by count.
 
@@ -315,8 +348,8 @@ class IonSpecies:
         ``element.symbol``.
     formal_charge : int or float, default=0
         The formal charge associated with a single one of the ions.
-    unit_spin : int or float, default=0
-        The spin of a single one of the ions.
+    magnetization : int or float or ArrayLike, default=0
+        The magnetization of a single one of the ions.
     Zeff : int, optional
         The effective nuclear charge of the ion. Defaults to the atomic
         number (a.k.a. all-electron).
@@ -326,17 +359,21 @@ class IonSpecies:
         self,
         element      : ElementLike,
         count        : int | float,
-        label        : str | None         = None,
-        formal_charge: int | float        = 0,
-        unit_spin    : int | float        = 0,
-        Zeff         : int | float | None = None,
+        label        : str | None                  = None,
+        formal_charge: int | float                 = 0,
+        magnetization: int | float | npt.ArrayLike = 0,
+        Zeff         : int | float | None          = None,
         ):
         self.element       = Elements(element)
         self.count         = count
         self.label         = label if label is not None else self.element.symbol
         self.formal_charge = formal_charge
-        self.unit_spin     = unit_spin
         self.Zeff          = Zeff if Zeff is not None else self.element.atomic_number
+
+        if isinstance(magnetization, int | float):
+            self.magnetization = magnetization
+        elif isinstance(magnetization, list | tuple | np.ndarray):
+            self.magnetization = np.asarray(magnetization, dtype=np.float64)
 
     def pseudized(self) -> bool:
         """Check if this ion is pseudized."""
@@ -388,19 +425,20 @@ class IonSpecies:
         return self.charge_deficit * self.count
 
     @property
-    def total_spin(self) -> int | float:
-        """Total spin of all ions in the collection."""
-        return self.unit_spin * self.count
+    def total_magnetization(self) -> int | float | npt.NDArray[np.floating]:
+        """Total magnetization of all ions in the collection."""
+        return self.magnetization * self.count
 
     def __eq__(self, other: Self) -> bool:
-        return (
+        # Use np.all to handle cases where magnetization is an array
+        return bool(np.all(
             self.element is other.element
             and self.count         == other.count
             and self.label         == other.label
             and self.formal_charge == other.formal_charge
-            and self.unit_spin     == other.unit_spin
+            and self.magnetization == other.magnetization
             and self.Zeff          == other.Zeff
-            )
+            ))
 
     def __repr__(self) -> str:
         return (
@@ -409,17 +447,17 @@ class IonSpecies:
             f"count={self.count}, "
             f"label={self.label}, "
             f"formal_charge={self.formal_charge}, "
-            f"unit_spin={self.unit_spin}, "
+            f"magnetization={self.magnetization}, "
             f"Zeff={self.Zeff})"
             )
 
-    def __hash__(self) -> int: # Enables making unordered sets
+    def __hash__(self) -> int: # Enables making unordered sets or using as dict keys
         return hash((
             self.element,
             self.count,
             self.label,
             self.formal_charge,
-            self.unit_spin,
+            self.magnetization,
             self.Zeff,
             ))
 
@@ -428,7 +466,7 @@ class IonSpecies:
         cls,
         structure  : Structure,
         elem_charge: LabelNumMap = dict(),
-        elem_spin  : LabelNumMap = dict(),
+        elem_mag   : LabelNumMap = dict(),
         elem_Zeff  : LabelNumMap = dict(),
         ) -> dict[str, Self]:
         """Create a dict with ``IonSpecies`` from a ``Structure`` object.
@@ -445,8 +483,8 @@ class IonSpecies:
         elem_charge : Mapping[str, int or float], optional
             A dict or ``obj`` mapping the elements to formal charges.
             Defaults to 0 if not given.
-        elem_spin : Mapping[str, int or float], optional
-            A dict or ``obj`` mapping the elements to spin states.
+        elem_mag : Mapping[str, int or float], optional
+            A dict or ``obj`` mapping the elements to magnetizations.
             Defaults to 0 if not given.
         elem_Zeff : Mapping[str, int or float], optional
             A dict or ``obj`` mapping the elements to effective nuclear
@@ -473,11 +511,11 @@ class IonSpecies:
         ...     )
         >>> for label, ion in ions.items():
         ...     print(f"{label:2}: {repr(ion)}")
-        C1: IonSpecies(element=C, count=1, label=C1, formal_charge=0, unit_spin=0, Zeff=6)
-        C2: IonSpecies(element=C, count=1, label=C2, formal_charge=0, unit_spin=0, Zeff=6)
-         H: IonSpecies(element=H, count=5, label=H, formal_charge=0, unit_spin=0, Zeff=1)
-         N: IonSpecies(element=N, count=1, label=N, formal_charge=0, unit_spin=0, Zeff=7)
-         O: IonSpecies(element=O, count=2, label=O, formal_charge=0, unit_spin=0, Zeff=8)
+        C1: IonSpecies(element=C, count=1, label=C1, formal_charge=0, magnetization=0, Zeff=6)
+        C2: IonSpecies(element=C, count=1, label=C2, formal_charge=0, magnetization=0, Zeff=6)
+         H: IonSpecies(element=H, count=5, label=H, formal_charge=0, magnetization=0, Zeff=1)
+         N: IonSpecies(element=N, count=1, label=N, formal_charge=0, magnetization=0, Zeff=7)
+         O: IonSpecies(element=O, count=2, label=O, formal_charge=0, magnetization=0, Zeff=8)
 
         Full call signature, all values specified.
 
@@ -488,16 +526,16 @@ class IonSpecies:
         >>> ions = IonSpecies.from_structure(
         ...     structure   = structure,
         ...     elem_charge = dict(N=3, C1=2, C2=4,   O=2, H=1  ),
-        ...     elem_spin   = dict(N=1, C1=0, C2=0.5, O=0, H=0.5),
+        ...     elem_mag    = dict(N=1, C1=0, C2=0.5, O=0, H=0.5),
         ...     elem_Zeff   = dict(N=5, C1=4, C2=6,   O=6, H=1  ),
         ...     )
         >>> for label, ion in ions.items():
         ...     print(f"{label:2}: {repr(ion)}")
-        C1: IonSpecies(element=C, count=1, label=C1, formal_charge=2, unit_spin=0, Zeff=4)
-        C2: IonSpecies(element=C, count=1, label=C2, formal_charge=4, unit_spin=0.5, Zeff=6)
-         H: IonSpecies(element=H, count=5, label=H, formal_charge=1, unit_spin=0.5, Zeff=1)
-         N: IonSpecies(element=N, count=1, label=N, formal_charge=3, unit_spin=1, Zeff=5)
-         O: IonSpecies(element=O, count=2, label=O, formal_charge=2, unit_spin=0, Zeff=6)
+        C1: IonSpecies(element=C, count=1, label=C1, formal_charge=2, magnetization=0, Zeff=4)
+        C2: IonSpecies(element=C, count=1, label=C2, formal_charge=4, magnetization=0.5, Zeff=6)
+         H: IonSpecies(element=H, count=5, label=H, formal_charge=1, magnetization=0.5, Zeff=1)
+         N: IonSpecies(element=N, count=1, label=N, formal_charge=3, magnetization=1, Zeff=5)
+         O: IonSpecies(element=O, count=2, label=O, formal_charge=2, magnetization=0, Zeff=6)
         """
         ions = {}
         elem_list = list(structure.elem)
@@ -514,7 +552,7 @@ class IonSpecies:
                 count         = elem_list.count(label),
                 label         = label,
                 formal_charge = elem_charge.get(label, 0),
-                unit_spin     = elem_spin.get(label, 0),
+                magnetization = elem_mag.get(label, 0),
                 Zeff          = elem_Zeff.get(label, element.atomic_number),
                 )
             ions[label] = ion
@@ -560,16 +598,14 @@ class PhysicalSystem:
         The total charge of the system. Will use
         ``Structure.background_charge`` if it is not ``None``,
         otherwise it will default to zero.
-    electron_spin : int or float, optional
-        Set the total spin of the electrons.
-
-        Note that up-spin electrons are +1/2 and down-spin are -1/2.
+    unpaired_elns : int or float, optional
+        Set the number of unpaired electrons.
     spin_orbit : bool, default=False
         Signal that the system has spin-orbit coupling.
     elem_charge : Mapping[str, int or float], optional
         Mapping from element labels to their formal charges.
-    elem_spin : Mapping[str, int or float], optional
-        Mapping from element labels to their spin states.
+    elem_mag : Mapping[str, int or float], optional
+        Mapping from element labels to their magnetizations.
     elem_Zeff : Mapping[str, int or float], optional
         Mapping from element labels to effective nuclear charges.
     positrons : Positrons, optional
@@ -585,10 +621,10 @@ class PhysicalSystem:
         self,
         structure    : Structure | PathLike,
         total_charge : int | float | None = None,
-        electron_spin: int | float | None = None,
+        unpaired_elns: int | float | None = None,
         spin_orbit   : bool               = False,
         elem_charge  : LabelNumMap        = dict(),
-        elem_spin    : LabelNumMap        = dict(),
+        elem_mag     : LabelNumMap        = dict(),
         elem_Zeff    : LabelNumMap        = dict(),
         positrons    : Positrons | None   = None,
         ):
@@ -604,7 +640,7 @@ class PhysicalSystem:
         self.ions = IonSpecies.from_structure(
             structure   = self.structure,
             elem_charge = elem_charge,
-            elem_spin   = elem_spin,
+            elem_mag    = elem_mag,
             elem_Zeff   = elem_Zeff,
             )
 
@@ -617,10 +653,10 @@ class PhysicalSystem:
                     total_charge += ion.total_formal_charge
 
         self.electrons = Electrons.neutralize_to(
-            ions          = self.ions,
-            total_charge  = total_charge,
-            electron_spin = electron_spin,
-            spin_orbit    = spin_orbit,
+            ions         = self.ions,
+            total_charge = total_charge,
+            n_unpaired   = unpaired_elns,
+            spin_orbit   = spin_orbit,
             )
         self.positrons = positrons
         self.folded_system = self._process_folded_structure()
@@ -652,16 +688,16 @@ class PhysicalSystem:
         if abs((int_fold_chg := int(folded_total_charge)) - folded_total_charge) < 1e-8:
             folded_total_charge = int_fold_chg
 
-        folded_elec_spin = self.electron_spin / n_cells_tiled
-        if abs((int_fold_spin := int(folded_elec_spin)) - folded_elec_spin) < 1e-8:
-            folded_elec_spin = int_fold_spin
+        folded_elec_pairing = self.electron_spin / n_cells_tiled
+        if abs((int_fold_spin := int(folded_elec_pairing)) - folded_elec_pairing) < 1e-8:
+            folded_elec_pairing = int_fold_spin
 
         elem_chg_map  = {}
         elem_spin_map = {}
         elem_Zeff_map = {}
         for label, species in self.ions.items():
             elem_chg_map[label]  = species.formal_charge
-            elem_spin_map[label] = species.unit_spin
+            elem_spin_map[label] = species.magnetization
             elem_Zeff_map[label] = species.Zeff
 
         if self.positrons is not None:
@@ -671,13 +707,13 @@ class PhysicalSystem:
                 folded_positron_count = self.positrons.count / n_cells_tiled
 
             if self.positrons.spin % n_cells_tiled == 0:
-                folded_positron_spin = self.positrons.spin // n_cells_tiled
+                folded_positron_pairing = self.positrons.spin // n_cells_tiled
             else:
-                folded_positron_spin = self.positrons.spin / n_cells_tiled
+                folded_positron_pairing = self.positrons.spin / n_cells_tiled
 
             folded_positrons = Positrons(
                 count      = folded_positron_count,
-                spin       = folded_positron_spin,
+                n_unpaired = folded_positron_pairing,
                 spin_orbit = self.positrons.spin_orbit,
                 )
         else:
@@ -686,10 +722,10 @@ class PhysicalSystem:
         return PhysicalSystem(
             structure     = self.structure.folded_structure,
             total_charge  = folded_total_charge,
-            electron_spin = folded_elec_spin,
+            unpaired_elns = folded_elec_pairing,
             spin_orbit    = self.electrons.spin_orbit,
             elem_charge   = elem_chg_map,
-            elem_spin     = elem_spin_map,
+            elem_mag      = elem_spin_map,
             elem_Zeff     = elem_Zeff_map,
             positrons     = folded_positrons,
             )
@@ -702,7 +738,7 @@ class PhysicalSystem:
     @property
     def ion_spin(self) -> int | float:
         """The total spin of all ions in the system."""
-        return sum([ion.total_spin for ion in self.ions.values()])
+        return sum([ion.total_magnetization for ion in self.ions.values()])
 
     @property
     def electron_charge(self) -> int | float:
@@ -711,12 +747,18 @@ class PhysicalSystem:
 
     @property
     def electron_spin(self) -> int | float:
-        """Alias for ``PhysicalSystem.electrons.spin``"""
-        return self.electrons.spin
+        """Alias for ``PhysicalSystem.electrons.n_unpaired``.
+
+        Note that this value is not the spin quantum number, but rather
+        the number of unpaired electrons.
+        """
+        return self.electrons.n_unpaired
 
     @property
     def positron_charge(self) -> int | float | None:
-        """Returns ``None`` if ``PhysicalSystem.positrons`` is ``None``."""
+        """Alias for ``PhysicalSystem.positrons.total_charge``
+
+        Returns ``None`` if ``PhysicalSystem.positrons`` is ``None``."""
         if self.positrons is not None:
             return self.positrons.total_charge
         else:
@@ -724,9 +766,11 @@ class PhysicalSystem:
 
     @property
     def positron_spin(self) -> int | float | None:
-        """Returns ``None`` if ``PhysicalSystem.positrons`` is ``None``."""
+        """Alias for ``PhysicalSystem.positrons.n_unpaired``.
+
+        Returns ``None`` if ``PhysicalSystem.positrons`` is ``None``."""
         if self.positrons is not None:
-            return self.positrons.spin
+            return self.positrons.n_unpaired
         else:
             return None
 
@@ -754,7 +798,7 @@ class PhysicalSystem:
         return len(self.ions)
 
     def spin_polarized(self) -> bool:
-        spn = self.electron_spin + sum([ion.total_spin for ion in self.ions.values()])
+        spn = self.electron_spin + sum([ion.total_magnetization for ion in self.ions.values()])
         return spn != 0 or self.structure.is_magnetic()
 
     def __repr__(self) -> str:
@@ -916,17 +960,17 @@ class PhysicalSystem:
         n_cells_tiled = int(np.round(np.abs(np.linalg.det(supercell.tmatrix))))
         # Copy over data from the old system
         elem_chg_map  = {}
-        elem_spin_map = {}
+        elem_mag_map  = {}
         elem_Zeff_map = {}
         for label, species in self.ions.items():
             elem_chg_map[label]  = species.formal_charge
-            elem_spin_map[label] = species.unit_spin
+            elem_mag_map[label]  = species.magnetization
             elem_Zeff_map[label] = species.Zeff
 
         if self.positrons is not None:
             tiled_positrons = Positrons(
                 count      = self.positrons.count * n_cells_tiled,
-                spin       = self.positrons.spin * n_cells_tiled,
+                n_unpaired       = self.positrons.spin * n_cells_tiled,
                 spin_orbit = self.positrons.spin_orbit,
                 )
         else:
@@ -935,13 +979,14 @@ class PhysicalSystem:
         tiled_system = PhysicalSystem(
             structure     = supercell,
             total_charge  = (self.ion_charge + self.electron_charge) * n_cells_tiled,
-            electron_spin = self.electron_spin * n_cells_tiled,
+            unpaired_elns = self.electron_spin * n_cells_tiled,
             elem_charge   = elem_chg_map,
-            elem_spin     = elem_spin_map,
+            elem_mag      = elem_mag_map,
             elem_Zeff     = elem_Zeff_map,
             positrons     = tiled_positrons,
             )
         # TODO: Check that the old system is equal to the new folded system.
+        # Held up by laborious task of structure equality...
         return tiled_system
 
     def has_folded(self) -> bool:
@@ -1002,14 +1047,14 @@ class PhysicalSystem:
 
 
 ps_defaults = dict(
-    type='crystal',
-    kshift=(0,0,0),
-    net_charge=0,
-    net_spin=0,
-    pretile=None,
-    tiling=None,
-    tiled_spin=None,
-    extensive=True,
+    type       = 'crystal',
+    kshift     = (0,0,0),
+    net_charge = 0,
+    net_spin   = 0,
+    pretile    = None,
+    tiling     = None,
+    tiled_spin = None,
+    extensive  = True,
     )
 def generate_physical_system(**kwargs) -> PhysicalSystem:
     for var,val in ps_defaults.items():
@@ -1104,7 +1149,7 @@ def generate_physical_system(**kwargs) -> PhysicalSystem:
         fps = PhysicalSystem(
             structure     = structure.folded_structure,
             total_charge  = net_charge,
-            electron_spin = net_spin,
+            unpaired_elns = net_spin,
             elem_Zeff     = elem_Zeff_map,
             )
         structure.remove_folded()
@@ -1121,7 +1166,7 @@ def generate_physical_system(**kwargs) -> PhysicalSystem:
         ps = PhysicalSystem(
             structure     = structure,
             total_charge  = net_charge,
-            electron_spin = net_spin,
+            unpaired_elns = net_spin,
             elem_Zeff     = elem_Zeff_map,
             )
         structure.set_folded(folded_structure)
@@ -1131,7 +1176,7 @@ def generate_physical_system(**kwargs) -> PhysicalSystem:
         ps = PhysicalSystem(
             structure     = structure,
             total_charge  = net_charge,
-            electron_spin = net_spin,
+            unpaired_elns = net_spin,
             elem_Zeff     = elem_Zeff_map,
             )
 

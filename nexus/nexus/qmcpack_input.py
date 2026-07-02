@@ -4140,7 +4140,7 @@ class QmcpackInput(SimulationInput,Names):
         system = PhysicalSystem(
             structure     = structure,
             total_charge  = net_charge,
-            electron_spin = net_spin,
+            unpaired_elns = net_spin,
             elem_Zeff     = valency,
             )
         
@@ -9265,7 +9265,7 @@ if __name__=='__main__':
         system = PhysicalSystem(
             structure     = generate_structure('diamond','fcc','Ge',(2,2,2),scale=5.639,units='A'),
             total_charge  = 1,
-            electron_spin = 1,
+            unpaired_elns = 1,
             elem_Zeff     = dict(Ge=4),
         )
 
@@ -9285,7 +9285,7 @@ if __name__=='__main__':
         system = PhysicalSystem(
             structure     = generate_structure('diamond','fcc','Ge',(2,2,2),scale=5.639,units='A'),
             total_charge  = 1,
-            electron_spin = 1,
+            unpaired_elns = 1,
             elem_Zeff     = dict(Ge=4),
         )
 
