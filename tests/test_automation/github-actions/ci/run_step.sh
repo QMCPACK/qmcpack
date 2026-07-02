@@ -113,6 +113,14 @@ case "$1" in
       CMAKE_OPTIONS="$CMAKE_OPTIONS -DQMC_MIXED_PRECISION=OFF"
     fi
 
+    # Sandbox only
+    if [[ "${GH_JOBNAME}" =~ (-Sandbox) ]] ; then
+      echo 'Configure for sandbox only build -DQMC_BUILD_SANDBOX_ONLY=ON'
+      CMAKE_OPTIONS="$CMAKE_OPTIONS -DQMC_BUILD_SANDBOX_ONLY=ON"
+    else
+      CMAKE_OPTIONS="$CMAKE_OPTIONS -DQMC_BUILD_SANDBOX_ONLY=OFF"
+    fi
+
     if [[ "$CONTAINER_OS" =~ (centos) ]]
     then
        module avail
@@ -153,14 +161,6 @@ case "$1" in
               -DQMC_DATA=$QMC_DATA_DIR \
               ${GITHUB_WORKSPACE}
       ;;
-      *"GCC"*"-Sandbox"*)
-        echo 'Configure for enabling sandbox (minimal) only option with gcc'
-        cmake -GNinja $CMAKE_OPTIONS \
-              -DCMAKE_C_COMPILER=gcc \
-              -DCMAKE_CXX_COMPILER=g++ \
-              -DQMC_BUILD_SANDBOX_ONLY=ON \
-              ${GITHUB_WORKSPACE}
-      ;;
       *"GCC"*"-Gcov"*)
         echo 'Configure for code coverage with gcc and gcovr -DENABLE_GCOV=TRUE and upload reports to Codecov'
 
@@ -186,8 +186,7 @@ case "$1" in
               -DCMAKE_CXX_FLAGS=-Werror \
               ${GITHUB_WORKSPACE}
       ;;
-      *"GCC"*)
-        echo 'Configure for disabling OpenMP with QMC_OMP=0'
+      *"GCC"*) # Generic builds with gcc
         cmake -GNinja $CMAKE_OPTIONS \
               -DCMAKE_C_COMPILER=gcc \
               -DCMAKE_CXX_COMPILER=g++ \
