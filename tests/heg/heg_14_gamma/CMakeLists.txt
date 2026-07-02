@@ -156,11 +156,10 @@ qmc_run_and_check(
   HEG14GSSJ_DMC_SCALARS # DMC
 )
 
-function(add_heg_eden_stats_check test_name output_prefix series)
+function(add_heg_eden_stats_check test_name output_prefix series reference_filename)
   set(full_name "${test_name}-r4-t4")
   set(check_name "${full_name}-energydensity")
   if(QMC_OMP AND HAVE_MPI AND NOT TEST_MAX_PROCS LESS 16)
-    set(reference_filename "qmc-ref/short_heg_SJ_eden_batch.s000.stat_ref_energydensity.dat")
     add_test(
       NAME ${check_name}
       COMMAND
@@ -184,10 +183,16 @@ function(add_heg_eden_stats_check test_name output_prefix series)
   endif()
 endfunction()
 
-add_heg_eden_stats_check(short-heg_14_gamma-sj_eden_batch
-short_heg_SJ_eden_batch 0)
-add_heg_eden_stats_check(short-heg_14_gamma-sj-dmc_eden_batch
-short_heg_SJ_dmc_eden_batch 1)
+add_heg_eden_stats_check(
+  short-heg_14_gamma-sj_eden_batch
+  short_heg_SJ_eden_batch
+  0
+  qmc-ref/short_heg_SJ_eden_batch.s000.stat_ref_energydensity.dat)
+add_heg_eden_stats_check(
+  short-heg_14_gamma-sj_dmc_eden_batch
+  short_heg_SJ_dmc_eden_batch
+  1
+  qmc-ref/short_heg_SJ_dmc_eden_batch.s001.stat_ref_energydensity.dat)
 
 # batch deterministic
 if(QMC_MIXED_PRECISION)
