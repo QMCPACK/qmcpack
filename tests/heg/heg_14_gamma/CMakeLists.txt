@@ -147,6 +147,36 @@ qmc_run_and_check(
   HEG14GSSJ_NEW_SCALARS # DMC
 )
 
+function(add_heg_eden_stats_check test_name output_prefix)
+  set(full_name "${test_name}-r4-t4")
+  set(check_name "${full_name}-energydensity")
+  if(QMC_OMP AND HAVE_MPI AND NOT TEST_MAX_PROCS LESS 16)
+    add_test(
+      NAME ${check_name}
+      COMMAND
+        ${Python3_EXECUTABLE}
+        ${qmcpack_SOURCE_DIR}/tests/scripts/check_stats.py
+        -s
+        0
+        -q
+        energydensity,EDcell
+        -e
+        2
+        -c
+        8
+        -p
+        ${output_prefix}
+        -r
+        qmc-ref/short_heg_SJ_eden_batch.s000.stat_ref_energydensity.dat
+      WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${full_name}")
+    set_property(TEST ${check_name} APPEND PROPERTY DEPENDS ${full_name})
+    set_property(TEST ${check_name} APPEND PROPERTY LABELS "QMCPACK-checking-results")
+  endif()
+endfunction()
+
+add_heg_eden_stats_check(short-heg_14_gamma-sj_eden_batch short_heg_SJ_eden_batch)
+add_heg_eden_stats_check(short-heg_14_gamma-sj-dmc_eden_batch short_heg_SJ_dmc_eden_batch)
+
 # batch deterministic
 if(QMC_MIXED_PRECISION)
   list(APPEND DET_HEG14GSSJ_SCALARS "totenergy" "-1.24699382 0.00002")
