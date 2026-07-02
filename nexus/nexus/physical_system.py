@@ -11,7 +11,7 @@ from copy import deepcopy
 import os
 from os import PathLike
 from pathlib import Path
-from typing import Self, TypeAlias
+from typing import TypeAlias
 
 import numpy as np
 import numpy.typing as npt
@@ -191,7 +191,7 @@ class ElectronsPositronsBase(ABC):
         else:
             return abs(self.n_unpaired) + 1
 
-    def __eq__(self, other: Self) -> bool:
+    def __eq__(self, other) -> bool:
         return (
             self.unit_charge    == other.unit_charge
             and self.count      == other.count
@@ -222,7 +222,7 @@ class Electrons(ElectronsPositronsBase):
         total_charge: int | float,
         n_unpaired  : int | float | None = None,
         spin_orbit  : bool = False,
-    ) -> Self:
+    ) -> Electrons:
         """Neutralize the charge of ``ions`` to ``total_charge``.
 
         This will prioritize creating an integer number of electrons
@@ -400,7 +400,7 @@ class IonSpecies:
         """Total magnetization of all ions in the collection."""
         return self.magnetization * self.count
 
-    def __eq__(self, other: Self) -> bool:
+    def __eq__(self, other) -> bool:
         # Use np.all to handle cases where magnetization is an array
         return bool(np.all(
             self.element is other.element
@@ -439,7 +439,7 @@ class IonSpecies:
         elem_charge: LabelNumMap = dict(),
         elem_mag   : LabelNumMap = dict(),
         elem_Zeff  : LabelNumMap = dict(),
-        ) -> dict[str, Self]:
+        ) -> dict[str, IonSpecies]:
         """Create a dict with ``IonSpecies`` from a ``Structure`` object.
 
         It is important to note that this class only represents the ions
@@ -632,7 +632,7 @@ class PhysicalSystem:
         self.positrons = positrons
         self.folded_system = self._process_folded_structure()
 
-    def _process_folded_structure(self) -> Self | None:
+    def _process_folded_structure(self) -> PhysicalSystem | None:
         """Get the appropriate folded system from ``self.structure.folded_structure``.
 
         If ``self.structure.folded_structure`` is ``None``, this will
@@ -917,7 +917,7 @@ class PhysicalSystem:
         if self.folded_system is not None:
             self.folded_system.rename(**name_pairs)
 
-    def tile(self, *td) -> Self:
+    def tile(self, *td) -> PhysicalSystem:
         """Tile an existing system.
 
         Note that this function returns a brand new ``PhysicalSystem``
@@ -967,7 +967,7 @@ class PhysicalSystem:
         self.folded_system = None
         self.structure.remove_folded_structure()
 
-    def get_smallest(self) -> Self:
+    def get_smallest(self) -> PhysicalSystem:
         """Return the folded system if it exists, otherwise return itself."""
         if self.has_folded():
             return self.folded_system
@@ -1010,7 +1010,7 @@ class PhysicalSystem:
 
         return np.array(kfs, dtype=float)
 
-    def copy(self) -> Self:
+    def copy(self) -> PhysicalSystem:
         return deepcopy(self)
 #end class PhysicalSystem
 
