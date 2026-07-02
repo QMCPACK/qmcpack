@@ -27,6 +27,16 @@ ElemNumMap: TypeAlias = Mapping[ElementLike, int | float | npt.NDArray[np.floati
 """Mapping (e.g. ``dict`` or ``obj``) from an element to a number or array."""
 
 
+def _as_int_if_close(value: int | float, tol: float = 1e-8) -> int | float:
+    """Return an int if value is close to an integer within a given tolerance."""
+    if isinstance(value, int):
+        return value # Early exit
+    elif abs((int_value := round(value)) - value) < tol:
+        return int_value
+    else:
+        return value
+
+
 class ElectronsPositronsBase(ABC):
     """Base class for ``Electrons`` and ``Positrons``.
 
@@ -84,10 +94,7 @@ class ElectronsPositronsBase(ABC):
 
     @count.setter
     def count(self, new_count: int | float) -> None:
-        if abs((int_count := int(new_count)) - new_count) < 1e-8:
-            self._count = int_count
-        else:
-            self._count = new_count
+        self._count = _as_int_if_close(new_count)
 
     @property
     def n_unpaired(self) -> int | float:
@@ -100,10 +107,7 @@ class ElectronsPositronsBase(ABC):
 
     @n_unpaired.setter
     def n_unpaired(self, n_unpaired: int | float) -> None:
-        if abs((int_n_unpaired := int(n_unpaired)) - n_unpaired) < 1e-8:
-            self._n_unpaired = int_n_unpaired
-        else:
-            self._n_unpaired = n_unpaired
+        self._n_unpaired = _as_int_if_close(n_unpaired)
 
     @property
     def spin(self) -> int | float:
@@ -117,13 +121,7 @@ class ElectronsPositronsBase(ABC):
         This uses the definition of spin where up-spin is +1/2 and
         down-spin is -1/2.
         """
-        if isinstance(self.n_unpaired, int):
-            if self.n_unpaired % 2 == 0:
-                return self.n_unpaired // 2
-            else:
-                return self.n_unpaired / 2
-        else:
-            return self.n_unpaired / 2
+        return _as_int_if_close(self.n_unpaired / 2)
 
     @quantum_spin.setter
     def quantum_spin(self, new_spin: int | float) -> None:
@@ -150,28 +148,9 @@ class ElectronsPositronsBase(ABC):
             raise RuntimeError(
                 f"{type(self).__name__} can not be split into up- and down-spin with a spin-orbit system!"
                 )
-        if isinstance(self.count, int):
-            if isinstance(self.quantum_spin, int):
-                if self.count % 2 == 0:
-                    n_up   = (self.count // 2) + self.quantum_spin
-                    n_down = (self.count // 2) - self.quantum_spin
-                else:
-                    n_up   = (self.count / 2) + self.quantum_spin
-                    n_down = (self.count / 2) - self.quantum_spin
-            else:
-                if self.count % 2 == 0:
-                    n_up   = (self.count / 2) + self.quantum_spin
-                    n_down = (self.count / 2) - self.quantum_spin
-                else:
-                    if self.quantum_spin > 0:
-                        n_down = self.count // 2
-                        n_up   = self.count - n_down
-                    else:
-                        n_up   = self.count // 2
-                        n_down = self.count - n_up
-        else:
-            n_up   = (self.count / 2) + self.quantum_spin
-            n_down = (self.count / 2) - self.quantum_spin
+
+        n_up   = _as_int_if_close((self.count / 2) + self.quantum_spin)
+        n_down = _as_int_if_close((self.count / 2) - self.quantum_spin)
 
         return n_up, n_down
 
@@ -275,17 +254,9 @@ class Electrons(ElectronsPositronsBase):
         for ion in ions:
             ions_charge += ion.total_charge_deficit
 
-        n_electrons = ions_charge - total_charge
+        n_electrons = _as_int_if_close(ions_charge - total_charge)
         if n_unpaired is None:
-            if isinstance(ions_charge, int) and isinstance(n_electrons, int):
-                if n_electrons % 2 == 0:
-                    n_unpaired = 0
-                else:
-                    n_unpaired = 1
-            else:
-                # Gives us a value so the number of down-spin electrons
-                # is integral, and the number of up-spin is fractional.
-                n_unpaired = n_electrons % 2
+            n_unpaired = _as_int_if_close(n_electrons % 2)
 
         return Electrons(
             count      = n_electrons,
@@ -365,10 +336,10 @@ class IonSpecies:
         Zeff         : int | float | None          = None,
         ):
         self.element       = Elements(element)
-        self.count         = count
+        self.count         = _as_int_if_close(count)
         self.label         = label if label is not None else self.element.symbol
-        self.formal_charge = formal_charge
-        self.Zeff          = Zeff if Zeff is not None else self.element.atomic_number
+        self.formal_charge = _as_int_if_close(formal_charge)
+        self.Zeff          = _as_int_if_close(Zeff) if Zeff is not None else self.element.atomic_number
 
         if isinstance(magnetization, int | float):
             self.magnetization = magnetization
@@ -646,7 +617,7 @@ class PhysicalSystem:
 
         if total_charge is None:
             if self.structure.background_charge is not None:
-                total_charge = self.structure.background_charge
+                total_charge = _as_int_if_close(self.structure.background_charge)
             else:
                 total_charge = 0
                 for ion in self.ions.values():
@@ -685,12 +656,10 @@ class PhysicalSystem:
 
         # Ignore positrons for this, since we use this to get the number of electrons
         folded_total_charge = (self.ion_charge + self.electron_charge) / n_cells_tiled
-        if abs((int_fold_chg := int(folded_total_charge)) - folded_total_charge) < 1e-8:
-            folded_total_charge = int_fold_chg
+        folded_total_charge = _as_int_if_close(folded_total_charge)
 
         folded_elec_pairing = self.electron_spin / n_cells_tiled
-        if abs((int_fold_spin := int(folded_elec_pairing)) - folded_elec_pairing) < 1e-8:
-            folded_elec_pairing = int_fold_spin
+        folded_elec_pairing = _as_int_if_close(folded_elec_pairing)
 
         elem_chg_map  = {}
         elem_spin_map = {}
@@ -970,7 +939,7 @@ class PhysicalSystem:
         if self.positrons is not None:
             tiled_positrons = Positrons(
                 count      = self.positrons.count * n_cells_tiled,
-                n_unpaired       = self.positrons.spin * n_cells_tiled,
+                n_unpaired = self.positrons.spin * n_cells_tiled,
                 spin_orbit = self.positrons.spin_orbit,
                 )
         else:

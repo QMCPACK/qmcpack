@@ -279,7 +279,7 @@ class Pwscf(Simulation):
             relstruct = result.structure.copy()
             relstruct.change_units('B')
             self.system.structure = relstruct
-            self.system.remove_folded()
+            self.system.remove_folded_system()
 
             input = self.input
             preserve_kp = 'k_points' in input and 'specifier' in input.k_points and (input.k_points.specifier=='automatic' or input.k_points.specifier=='gamma')

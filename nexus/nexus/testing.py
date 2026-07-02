@@ -7,6 +7,8 @@ except:
     numpy_available = False
 #end try
 
+# Type check in object_diff
+from .physical_system import PhysicalSystem
 
 def_atol =  0.0
 def_rtol = 1e-6
@@ -77,6 +79,8 @@ def value_diff(v1,v2,atol=def_atol,rtol=def_rtol,int_as_float=False):
         diff = False
     elif hasattr(v1,'__len__') and hasattr(v2,'__len__') and len(v1)==0 and len(v2)==0:
         None
+    elif hasattr(v1, "__dict__") and hasattr(v2, "__dict__"):
+        diff = value_diff(v1.__dict__, v2.__dict__, atol, rtol, int_as_float)
     else:
         diff = True # unsupported types
     #end if
