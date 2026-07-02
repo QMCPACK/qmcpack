@@ -281,10 +281,10 @@ def test_most_common_isotope():
     iron_ref    = (56, 55.93493633)
     bromine_ref = (79, 78.9183376)
 
-    assert(Elements.Carbon.most_common_isotope() == carbon_ref)
-    assert(Elements.Argon.most_common_isotope() == argon_ref)
-    assert(Elements.Iron.most_common_isotope() == iron_ref)
-    assert(Elements.Bromine.most_common_isotope() == bromine_ref)
+    assert(Elements.Carbon.principle_isotope() == carbon_ref)
+    assert(Elements.Argon.principle_isotope() == argon_ref)
+    assert(Elements.Iron.principle_isotope() == iron_ref)
+    assert(Elements.Bromine.principle_isotope() == bromine_ref)
 
 
 def test_protons():

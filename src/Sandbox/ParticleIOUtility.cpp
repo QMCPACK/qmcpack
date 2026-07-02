@@ -48,9 +48,13 @@ void expandSuperCell(const ParticleSet& in, const Tensor<int, OHMMS_DIM>& tmat, 
   const int natoms    = in.getTotalNum();
   const int numCopies = std::abs(det(tmat));
 
+  std::vector<int> group_sizes;
+  for (int is = 0; is < in.groups(); is++)
+    group_sizes.push_back(in.groupsize(is) * numCopies);
+  out.create(group_sizes);
+
   const auto& primPos(in.R);
   const auto& primTypes(in.GroupID);
-  out.create({natoms * numCopies});
   const int maxCopies = 10;
   int index           = 0;
   //set the unit to the Cartesian!

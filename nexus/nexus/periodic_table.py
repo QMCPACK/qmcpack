@@ -28,12 +28,12 @@ class ElementData:
             self.group,
             tuple(self.isotopes.keys()),
             tuple(self.isotopes.values()),
-        ))
+            ))
 
-    def most_common_isotope(self) -> tuple[int, float]:
+    def principle_isotope(self) -> tuple[int, float]:
         """Get the mass number and relative atomic weight of the most common isotope.
 
-        Isotopic abundances defined by IUPAC [1]_.
+        Isotopic abundances defined by NIST [1]_.
 
         Returns
         -------
@@ -44,7 +44,7 @@ class ElementData:
 
         References
         ----------
-        .. [1] https://www.ciaaw.org/isotopic-abundances.htm
+        .. [1] https://www.nist.gov/pml/atomic-weights-and-isotopic-compositions-relative-atomic-masses
         """
         mass_number = list(self.isotopes.keys())[0]
         return mass_number, self.isotopes[mass_number]
@@ -64,12 +64,12 @@ class ElementData:
             If mass number is not in the known isotopes for the element.
         """
         if mass_number is None:
-            mass_number = self.most_common_isotope()[0]
+            mass_number = self.principle_isotope()[0]
         elif mass_number not in self.isotopes.keys():
             warn(
                 f"Mass number {mass_number} is not in the known isotopes for {self.name}.\n"
                 "Will proceed with given mass number, but you may want to check your inputs!"
-            )
+                )
 
         return mass_number - self.atomic_number
 #end class ElementData
@@ -95,14 +95,15 @@ class Elements(ElementData, Enum):
         This can be accessed as ``Element.Name.isotopes[mass_number]``,
         which yields the relative atomic mass.
 
-        These dictionaries are sorted in order of decreasing isotopic abundance,
-        as defined by IUPAC [3]_.
+        These dictionaries are sorted in order of decreasing isotopic
+        abundance, as defined by NIST [2]_. The code to generate the
+        isotope dictionaries can be found at
+        https://github.com/QMCPACK/qmcpack/pull/6006.
 
     References
     ----------
     .. [1] https://iupac.qmul.ac.uk/AtWt/
     .. [2] https://www.nist.gov/pml/atomic-weights-and-isotopic-compositions-relative-atomic-masses
-    .. [3] https://www.ciaaw.org/isotopic-abundances.htm
 
     Examples
     --------

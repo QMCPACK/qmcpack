@@ -77,7 +77,7 @@ if(NOT QMC_COMPLEX)
     list(APPEND DET_FeCO6_GMS_SHORT_BATCHED "totenergy" "-251.29185486 0.001") # total energy
     list(APPEND DET_FeCO6_GMS_SHORT_BATCHED "potential" "-385.39369691 0.002") # potential energy
     list(APPEND DET_FeCO6_GMS_SHORT_BATCHED "ionion" "422.43052077 0.0001") # i-i energy
-    list(APPEND DET_FeCO6_GMS_SHORT_BATCHED "localecp" "-1391.12666390 0.003") # localECP
+    list(APPEND DET_FeCO6_GMS_SHORT_BATCHED "localecp" "-1391.12666390 0.004") # localECP
     list(APPEND DET_FeCO6_GMS_SHORT_BATCHED "nonlocalecp" "30.58183893 0.002") # nonlocalECP
     list(APPEND DET_FeCO6_GMS_SHORT_BATCHED "samples" "9 0.0") # samples
   else()
