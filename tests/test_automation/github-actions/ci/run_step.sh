@@ -93,15 +93,15 @@ case "$1" in
     case "${GH_JOBNAME}" in
       *"ASan"*)
         echo 'Configure for address sanitizer including leak sanitizer (lsan) -DENABLE_SANITIZER=asan'
-        IS_SANITIZER=asan
+        CMAKE_OPTIONS="$CMAKE_OPTIONS -DENABLE_SANITIZER=asan"
       ;;
       *"UBSan"*)
         echo 'Configure for undefined behavior sanitizer -DENABLE_SANITIZER=ubsan'
-        IS_SANITIZER=ubsan
+        CMAKE_OPTIONS="$CMAKE_OPTIONS -DENABLE_SANITIZER=ubsan"
       ;; 
       *"TSan"*)
         echo 'Configure for thread sanitizer -DENABLE_SANITIZER=tsan'
-        IS_SANITIZER=tsan
+        CMAKE_OPTIONS="$CMAKE_OPTIONS -DENABLE_SANITIZER=tsan"
       ;;
     esac
 
@@ -193,13 +193,6 @@ case "$1" in
               -DCMAKE_CXX_COMPILER=g++ \
               ${GITHUB_WORKSPACE}
       ;;
-      *"Clang"*"San"*) # Sanitize with clang compilers
-        cmake -GNinja $CMAKE_OPTIONS \
-              -DCMAKE_C_COMPILER=clang \
-              -DCMAKE_CXX_COMPILER=clang++ \
-              -DENABLE_SANITIZER=$IS_SANITIZER \
-              ${GITHUB_WORKSPACE}
-      ;;
       *"Clang16"*"-Offload"*)
         echo 'Configure for building OpenMP offload with clang16 on x86_64 target'
         cmake -GNinja $CMAKE_OPTIONS \
@@ -234,6 +227,12 @@ case "$1" in
               -DQMC_GPU_ARCHS=sm_70 \
               -DCMAKE_PREFIX_PATH="/opt/OpenBLAS/0.3.18" \
               -DQMC_DATA=$QMC_DATA_DIR \
+              ${GITHUB_WORKSPACE}
+      ;;
+      *"Clang"*) # Generic builds with clang
+        cmake -GNinja $CMAKE_OPTIONS \
+              -DCMAKE_C_COMPILER=clang \
+              -DCMAKE_CXX_COMPILER=clang++ \
               ${GITHUB_WORKSPACE}
       ;;
       *"Intel21"*"-CUDA-AFQMC"*)
