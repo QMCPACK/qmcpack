@@ -5,6 +5,7 @@ pytestmark = pytest.mark.order(NexusTestOrder.MACHINES)
 from ..generic import generic_settings
 generic_settings.raise_error = True
 
+import os
 from . import isolate_nexus_core
 from .. import testing
 from ..testing import object_eq,object_diff,failed,FailedTest
@@ -56,10 +57,12 @@ def get_supercomputers():
 
 
 
-def test_cpu_count():
-    from ..machines import cpu_count
-    assert(isinstance(cpu_count(),int))
-#end def test_cpu_count
+def test_get_cpu_cores():
+    from ..machines import get_cpu_cores
+    assert(isinstance(get_cpu_cores(), int))
+    assert(get_cpu_cores() >= 0)
+    assert(get_cpu_cores() <= os.cpu_count())
+#end def test_get_cpu_cores
 
 
 
