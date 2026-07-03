@@ -29,7 +29,6 @@ from pathlib import Path
 import numpy as np
 #custom library imports
 from .developer import obj, unavailable
-from .physical_system import ghost_atoms
 #QmcpackAnalyzer classes imports
 from .qmcpack_analyzer_base import QAobject, QAanalyzer, QAanalyzerCollection
 from .qmcpack_property_analyzers import WavefunctionAnalyzer
@@ -217,8 +216,12 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
         #end if
 
         if 'ghost_atoms' in kwargs:
-            ghosts = kwargs.pop('ghost_atoms')
-            ghost_atoms(*ghosts)
+            _ = kwargs.pop('ghost_atoms')
+            self.warn(
+                "Ghost atoms are not currently supported!\n"
+                "If you need to represent a ghost atom with label `ghost_label`, please use\n"
+                "`IonSpecies(element=Elements.Unknown, label=ghost_label)`"
+                )
         #end if
 
         if isinstance(arg0,Simulation):
