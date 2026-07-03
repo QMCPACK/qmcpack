@@ -720,6 +720,7 @@ def test_molecular_system():
 
     # Property comparison
     assert(system.ion_charge      == 39)
+    assert(system.ion_mag         == 3.0)
     assert(system.electron_charge == -40)
     assert(system.electron_charge == system.electrons.total_charge)
     assert(system.net_charge      == -1)
@@ -829,6 +830,25 @@ def test_pretiled_system():
     assert(tiled_ps.folded_system.electrons == ref_folded_electrons)
     assert(tiled_ps.folded_system.positrons == ref_folded_positrons)
 
+    assert(tiled_ps.net_charge      ==   64) # 64 positrons
+    assert(tiled_ps.ion_charge      ==  256)
+    assert(tiled_ps.ion_mag         ==   48)
+    assert(tiled_ps.electron_charge == -256)
+    assert(tiled_ps.electron_spin   ==    0)
+    assert(tiled_ps.positron_charge ==   64)
+    assert(tiled_ps.positron_spin   ==    0)
+
+    assert(tiled_ps.folded_system.net_charge      ==   8) # 8 positrons
+    assert(tiled_ps.folded_system.ion_charge      ==  32)
+    assert(tiled_ps.folded_system.ion_mag         ==   6)
+    assert(tiled_ps.folded_system.electron_charge == -32)
+    assert(tiled_ps.folded_system.electron_spin   ==   0)
+    assert(tiled_ps.folded_system.positron_charge ==   8)
+    assert(tiled_ps.folded_system.positron_spin   ==   0)
+
+    assert(tiled_ps.is_magnetic())
+    assert(tiled_ps.folded_system.is_magnetic())
+
     # Now that we've checked everything manually, the last
     # check is to make sure the built-in checks work
     assert(tiled_ps.check_folded_system())
@@ -900,6 +920,39 @@ def test_tile():
     assert(tiled_ps.folded_system.electrons == ref_folded_electrons)
     assert(tiled_ps.folded_system.positrons == ref_folded_positrons)
 #end def test_tile
+
+
+def test_init_with_path(tmp_path):
+    refs = get_d2_d8_references()
+    d8_ref_axes   = refs["d8_ref_axes"]
+    d8_ref_pos    = refs["d8_ref_pos"]
+    d8_ref_elem   = refs["d8_ref_elem"]
+    d8_ref_units  = refs["d8_ref_units"]
+    d8_ref_bconds = refs["d8_ref_bconds"]
+    d8_structure  = refs["d8_structure"]
+
+    d8_ref_ions      = refs["d8_ref_ions"]
+    d8_ref_electrons = refs["d8_ref_electrons"]
+
+    d8_path = tmp_path / 'diamond8.xsf'
+    d8_structure.write(d8_path)
+
+    system = PhysicalSystem(
+        structure   = d8_path,
+        elem_Zeff   = dict(C=4),
+        )
+
+    assert(system.net_charge    == 0)
+    assert(system.electron_spin == 0)
+    assert(system.pseudized)
+    np.testing.assert_allclose(system.structure.axes, d8_ref_axes, atol=1e-12)
+    np.testing.assert_allclose(system.structure.pos,  d8_ref_pos)
+    assert(system.structure.elem.tolist() == d8_ref_elem)
+    assert(system.structure.units         == d8_ref_units)
+    assert(tuple(system.structure.bconds) == d8_ref_bconds)
+    assert(system.ions      == d8_ref_ions)
+    assert(system.electrons == d8_ref_electrons)
+#end def test_init_with_path
 
 
 def test_change_units():

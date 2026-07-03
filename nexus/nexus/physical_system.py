@@ -705,7 +705,7 @@ class PhysicalSystem:
         return sum([ion.total_nuclear_charge for ion in self.ions.values()])
 
     @property
-    def ion_spin(self) -> int | float:
+    def ion_mag(self) -> int | float:
         """The total spin of all ions in the system."""
         return sum([ion.total_magnetization for ion in self.ions.values()])
 
@@ -975,7 +975,7 @@ class PhysicalSystem:
             return self
 
     def is_magnetic(self) -> bool:
-        return self.electron_spin != 0 or self.ion_spin != 0
+        return self.electron_spin != 0 or self.ion_mag != 0
 
     def large_Zeff_elem(self, Zmin: int | float) -> list[str]:
         """Get the element labels with a ``Zeff`` greater than ``Zmin``."""
@@ -1026,6 +1026,21 @@ ps_defaults = dict(
     extensive  = True,
     )
 def generate_physical_system(**kwargs) -> PhysicalSystem:
+    """Generate a ``PhysicalSystem``.
+    
+    Parameters
+    ----------
+    net_charge : int or float
+        The net charge of the system. If this is not supplied but
+        ``background_charge`` is, that will be used instead. If both
+        are supplied, then ``net_charge`` is used.
+    net_spin : int or float
+        The number of up electrons minus the number of down electrons.
+    tiled_spin
+        The spin of the tiled system, if you 
+    extensive
+    pretile
+    """
     for var,val in ps_defaults.items():
         if var not in kwargs:
             kwargs[var] = val
