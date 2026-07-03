@@ -332,7 +332,7 @@ public:
 
         using ma::dot_wabn;
         dot_wabn(nwalk, nel[ispin], local_nCV, SPComplexType(-0.5 * scl), Twban.origin(), to_address(E[0].origin()) + 1,
-                 E.stride(0));
+                 E.stride());
         //          for(int n=0, an=0; n<nwalk; ++n) {
         //            ComplexType E_(0.0);
         //            for(int a=0; a<nel[ispin]; ++a, an++) {

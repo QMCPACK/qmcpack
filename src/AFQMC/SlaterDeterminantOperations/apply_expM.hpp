@@ -153,9 +153,9 @@ inline void apply_expM(const MatA& V, MatB&& S, MatC& T1, MatC& T2, int order = 
   assert(get<1>(S.sizes()) == get<1>(T2.sizes()));
   assert(get<2>(S.sizes()) == get<2>(T2.sizes()));
   // for now limit to continuous
-  assert(S.stride(0) == get<1>(S.sizes()) * get<2>(S.sizes()));
-  assert(T1.stride(0) == get<1>(T1.sizes()) * get<2>(T1.sizes()));
-  assert(T2.stride(0) == get<1>(T2.sizes()) * get<2>(T2.sizes()));
+  assert(S.stride() == get<1>(S.sizes()) * get<2>(S.sizes()));
+  assert(T1.stride() == get<1>(T1.sizes()) * get<2>(T1.sizes()));
+  assert(T2.stride() == get<1>(T2.sizes()) * get<2>(T2.sizes()));
   assert(S.stride(1) == get<2>(S.sizes()));
   assert(T1.stride(1) == get<2>(T1.sizes()));
   assert(T2.stride(1) == get<2>(T2.sizes()));
@@ -213,9 +213,9 @@ inline void apply_expM_noncollinear(const MatA& V, MatB&& S, MatC& T1, MatC& T2,
   assert(get<1>(S.sizes()) == get<1>(T2.sizes()));
   assert(get<2>(S.sizes()) == get<2>(T2.sizes()));
   // for now limit to continuous
-  assert(S.stride(0) == get<1>(S.sizes()) * get<2>(S.sizes()));
-  assert(T1.stride(0) == get<1>(T1.sizes()) * get<2>(T1.sizes()));
-  assert(T2.stride(0) == get<1>(T2.sizes()) * get<2>(T2.sizes()));
+  assert(S.stride() == get<1>(S.sizes()) * get<2>(S.sizes()));
+  assert(T1.stride() == get<1>(T1.sizes()) * get<2>(T1.sizes()));
+  assert(T2.stride() == get<1>(T2.sizes()) * get<2>(T2.sizes()));
   assert(S.stride(1) == get<2>(S.sizes()));
   assert(T1.stride(1) == get<2>(T1.sizes()));
   assert(T2.stride(1) == get<2>(T2.sizes()));
