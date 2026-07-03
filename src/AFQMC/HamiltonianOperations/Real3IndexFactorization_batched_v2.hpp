@@ -343,7 +343,7 @@ public:
 
           using ma::dot_wanb;
           dot_wanb(nwalk, nel[ispin], nvecs, SPComplexType(-0.5 * scl), Twbna.origin(), to_address(E[0].origin()) + 1,
-                   E.stride(0));
+                   E.stride());
 
           if (addEJ)
           {

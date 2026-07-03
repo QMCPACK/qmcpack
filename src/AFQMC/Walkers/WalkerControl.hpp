@@ -123,7 +123,7 @@ inline int swapWalkersAsync(WlkBucket& wset,
   static_assert(std::decay<Mat>::type::dimensionality == 2, "Wrong dimensionality");
   if (wlk_size != get<1>(Wexcess.sizes()))
     throw std::runtime_error("Array dimension error in swapWalkersAsync().");
-  if (1 != Wexcess.stride(1) || (get<0>(Wexcess.sizes()) > 0 && get<1>(Wexcess.sizes()) != Wexcess.stride(0)))
+  if (1 != Wexcess.stride(1) || (get<0>(Wexcess.sizes()) > 0 && get<1>(Wexcess.sizes()) != Wexcess.stride()))
     throw std::runtime_error("Array shape error in swapWalkersAsync().");
   if (CurrNumPerNode.size() < NumContexts || NewNumPerNode.size() < NumContexts)
     throw std::runtime_error("Array dimension error in swapWalkersAsync().");

@@ -731,7 +731,7 @@ public:
     using std::get;
     static_assert(std::decay<Mat>::type::dimensionality == 2, "Wrong dimensionality");
     auto&& F(*getFields(ip));
-    if (V.stride(0) == get<1>(V.sizes()))
+    if (V.stride() == get<1>(V.sizes()))
     {
       using std::copy_n;
       copy_n(V.origin(), F.num_elements(), F.origin());

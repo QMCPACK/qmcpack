@@ -651,7 +651,7 @@ void invert_withSVD(MultiArray2D&& m, MultiArray1DS&& S, MultiArray2DU&& U, Mult
                     pointer_dispatch(S.origin()), detvalue);
         // VT = VT * inv(S), which works since S is diagonal and real
         term_by_term_matrix_vector(TOp_DIV,1,VT.size(0),VT.size(1),pointer_dispatch(VT.origin()),
-                    VT.stride(0),pointer_dispatch(S.origin()),1);
+                    VT.stride(),pointer_dispatch(S.origin()),1);
         product(H(VT),H(U),std::forward<MultiArray2D>(m));
 }
 */

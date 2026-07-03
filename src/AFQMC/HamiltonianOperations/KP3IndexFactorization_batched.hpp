@@ -724,7 +724,7 @@ public:
                 copy_n(scl_factors.data(), scl_factors.size(), dev_scl_factors.origin());
                 using ma::batched_dot_wabn_wban;
                 batched_dot_wabn_wban(scl_factors.size(), nwalk, nocc_max, nchol_max, dev_scl_factors.origin(),
-                                      T1.origin(), to_address(E[0].origin()) + 1, E.stride(0));
+                                      T1.origin(), to_address(E[0].origin()) + 1, E.stride());
 
                 if (addEJ)
                 {
@@ -755,7 +755,7 @@ public:
             copy_n(scl_factors.data(), scl_factors.size(), dev_scl_factors.origin());
             using ma::batched_dot_wabn_wban;
             batched_dot_wabn_wban(scl_factors.size(), nwalk, nocc_max, nchol_max, dev_scl_factors.origin(), T1.origin(),
-                                  to_address(E[0].origin()) + 1, E.stride(0));
+                                  to_address(E[0].origin()) + 1, E.stride());
 
             if (addEJ)
             {
