@@ -33,7 +33,7 @@ from .debug         import ci
 from .utilities     import path_string
 
 from .nexus_base      import NexusCore,              nexus_core,     nexus_noncore,          nexus_core_noncore,         restore_nexus_core_defaults,    nexus_core_defaults
-from .machines        import Job,                    job,            Machine, Supercomputer, get_machine
+from .machines        import Job,                    job,            Machine, Supercomputer, get_machine, get_cpu_cores, Workstation
 from .simulation      import generate_simulation,    input_template, multi_input_template,   generate_template_input,    generate_multi_template_input,  graph_sims, DynamicProcess
 from .project_manager import ProjectManager,     DynamicWorkflowManager,     workflow_manager
 
@@ -504,6 +504,17 @@ class Settings(NexusCore):
         #end if
         if 'machine' in mset:
             machine_name = mset.machine
+            if machine_name in ("ws", "workstation"):
+                self.log("Automatically detecting physical CPU cores for workstation...", n=1)
+                n_cores = get_cpu_cores()
+                self.log(f"Using {n_cores} core workstation", n=1)
+                machine_name = f"ws{n_cores}"
+
+                if not Machine.exists(machine_name):
+                    # Register a workstation with the determined number of cores
+                    # if there is not already one that exists.
+                    Workstation(machine_name, n_cores, 'mpirun')
+
             if not Machine.exists(machine_name):
                 self.error('machine {0} is unknown'.format(machine_name))
             #end if
