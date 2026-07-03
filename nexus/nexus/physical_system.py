@@ -559,6 +559,10 @@ class PhysicalSystem:
     folded : PhysicalSystem or None
         If ``structure`` has a folded structure, this will be the
         ``PhysicalSystem`` that corresponds to the folded structure.
+    generation_info : obj, optional
+        Only available when the system is generated through
+        ``generate_physical_system``. Contains the arguments passed to
+        that function.
 
     Parameters
     ----------
@@ -1027,19 +1031,86 @@ ps_defaults = dict(
     )
 def generate_physical_system(**kwargs) -> PhysicalSystem:
     """Generate a ``PhysicalSystem``.
-    
+
     Parameters
     ----------
-    net_charge : int or float
-        The net charge of the system. If this is not supplied but
-        ``background_charge`` is, that will be used instead. If both
-        are supplied, then ``net_charge`` is used.
-    net_spin : int or float
+    net_charge : int or float, default=0
+        The net charge of the system. If this is ``None`` and
+        ``background_charge`` is supplied, that will be used instead.
+        If both are supplied, then ``net_charge`` is used. If neither are
+        supplied, then this defaults to zero.
+    net_spin : int or float, default=0
         The number of up electrons minus the number of down electrons.
-    tiled_spin
-        The spin of the tiled system, if you 
-    extensive
-    pretile
+    tiled_spin : int or float, optional
+        The spin of the tiled system. Only used if ``tiling`` is also
+        supplied.
+    extensive : bool, default=True
+        Whether or not to apply the tiling to ``net_charge`` and
+        ``net_spin``. If ``True``, it will multiply these by the number
+        of tiled cells.
+    pretile : NDArray, optional
+        Tiling to perform before tiling provided by ``tiling``. This
+        should be used if you wish to make the folded structure itself
+        be an already-tiled structure.
+    **zvals
+        Element labels or symbols with their corresponding z-valences.
+    **kwargs
+        The remaining keyword arguments are passed to
+        ``generate_structure``.
+
+    See Also
+    --------
+    structure.generate_structure
+
+    Examples
+    --------
+    Generate a 16-atom diamond supercell
+
+    >>> dia16 = generate_physical_system(
+    ...     units  = 'A',
+    ...     axes   = [[ 1.785,  1.785,  0.   ],
+    ...               [ 0.   ,  1.785,  1.785],
+    ...               [ 1.785,  0.   ,  1.785]],
+    ...     elem   = ['C','C'],
+    ...     pos    = [[ 0.    ,  0.    ,  0.    ],
+    ...               [ 0.8925,  0.8925,  0.8925]],
+    ...     tiling = (2,2,2),
+    ...     kgrid  = (1,1,1),
+    ...     kshift = (0,0,0),
+    ...     C      = 4
+    ...     )
+
+    Generate a LiH rocksalt crystal.
+
+    >>> rocksalt_LiH = generate_physical_system(
+    ...     lattice         = 'cubic',
+    ...     cell            = 'primitive',
+    ...     centering       = 'F',
+    ...     atoms           = ('Li','H'),
+    ...     basis           = [[0.0,0.0,0.0],
+    ...                        [0.5,0.5,0.5]],
+    ...     basis_vectors   = 'conventional',
+    ...     constants       = 7.1,
+    ...     units           = 'B',
+    ...     kgrid           = (1,1,1),
+    ...     kshift          = (0,0,0),
+    ...     net_charge      = 0,
+    ...     net_spin        = 0,
+    ...     Li              = 1,
+    ...     H               = 1,
+    ...     )
+
+    Generate an O2 dimer with a given separation.
+
+    >>> dimer = generate_physical_system(
+    ...     type       = 'dimer',
+    ...     dimer      = ('O','O'),
+    ...     separation = 1.2074,
+    ...     Lbox       = 15.0,
+    ...     units      = 'A',
+    ...     net_spin   = 2,
+    ...     O          = 6,
+    ...     )
     """
     for var,val in ps_defaults.items():
         if var not in kwargs:
@@ -1169,12 +1240,3 @@ def generate_physical_system(**kwargs) -> PhysicalSystem:
 
     return ps
 #end def generate_physical_system
-
-
-
-# test needed
-def ghost_atoms(*particles):
-    for particle in particles:
-        ...
-    #end for
-#end def ghost_atoms
