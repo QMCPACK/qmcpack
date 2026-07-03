@@ -36,6 +36,7 @@ jobs:
             Clang14-NoMPI-ASan-Real,
             Clang14-NoMPI-ASan-Complex,
             Clang14-NoMPI-UBSan-Real,
+            Clang14-NoMPI-Sandbox-ASan-Real,
             Clang16-NoMPI-Offload-Real,
             Clang16-NoMPI-Offload-Complex,
           ]
@@ -101,6 +102,11 @@ jobs:
               options: -u 1001
 
           - jobname: Clang14-NoMPI-ASan-Complex
+            container:
+              image: ghcr.io/qmcpack/ubuntu22-openmpi:latest
+              options: -u 1001
+
+          - jobname: Clang14-NoMPI-Sandbox-ASan-Real
             container:
               image: ghcr.io/qmcpack/ubuntu22-openmpi:latest
               options: -u 1001

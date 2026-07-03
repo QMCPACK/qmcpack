@@ -93,15 +93,15 @@ case "$1" in
     case "${GH_JOBNAME}" in
       *"ASan"*)
         echo 'Configure for address sanitizer including leak sanitizer (lsan) -DENABLE_SANITIZER=asan'
-        IS_SANITIZER=asan
+        CMAKE_OPTIONS="$CMAKE_OPTIONS -DENABLE_SANITIZER=asan"
       ;;
       *"UBSan"*)
         echo 'Configure for undefined behavior sanitizer -DENABLE_SANITIZER=ubsan'
-        IS_SANITIZER=ubsan
+        CMAKE_OPTIONS="$CMAKE_OPTIONS -DENABLE_SANITIZER=ubsan"
       ;; 
       *"TSan"*)
         echo 'Configure for thread sanitizer -DENABLE_SANITIZER=tsan'
-        IS_SANITIZER=tsan
+        CMAKE_OPTIONS="$CMAKE_OPTIONS -DENABLE_SANITIZER=tsan"
       ;;
     esac
 
@@ -111,6 +111,14 @@ case "$1" in
       CMAKE_OPTIONS="$CMAKE_OPTIONS -DQMC_MIXED_PRECISION=ON"
     else
       CMAKE_OPTIONS="$CMAKE_OPTIONS -DQMC_MIXED_PRECISION=OFF"
+    fi
+
+    # Sandbox only
+    if [[ "${GH_JOBNAME}" =~ (-Sandbox) ]] ; then
+      echo 'Configure for sandbox only build -DQMC_BUILD_SANDBOX_ONLY=ON'
+      CMAKE_OPTIONS="$CMAKE_OPTIONS -DQMC_BUILD_SANDBOX_ONLY=ON"
+    else
+      CMAKE_OPTIONS="$CMAKE_OPTIONS -DQMC_BUILD_SANDBOX_ONLY=OFF"
     fi
 
     if [[ "$CONTAINER_OS" =~ (centos) ]]
@@ -153,14 +161,6 @@ case "$1" in
               -DQMC_DATA=$QMC_DATA_DIR \
               ${GITHUB_WORKSPACE}
       ;;
-      *"GCC"*"-Sandbox"*)
-        echo 'Configure for enabling sandbox (minimal) only option with gcc'
-        cmake -GNinja $CMAKE_OPTIONS \
-              -DCMAKE_C_COMPILER=gcc \
-              -DCMAKE_CXX_COMPILER=g++ \
-              -DQMC_BUILD_SANDBOX_ONLY=ON \
-              ${GITHUB_WORKSPACE}
-      ;;
       *"GCC"*"-Gcov"*)
         echo 'Configure for code coverage with gcc and gcovr -DENABLE_GCOV=TRUE and upload reports to Codecov'
 
@@ -186,18 +186,10 @@ case "$1" in
               -DCMAKE_CXX_FLAGS=-Werror \
               ${GITHUB_WORKSPACE}
       ;;
-      *"GCC"*)
-        echo 'Configure for disabling OpenMP with QMC_OMP=0'
+      *"GCC"*) # Generic builds with gcc
         cmake -GNinja $CMAKE_OPTIONS \
               -DCMAKE_C_COMPILER=gcc \
               -DCMAKE_CXX_COMPILER=g++ \
-              ${GITHUB_WORKSPACE}
-      ;;
-      *"Clang"*"San"*) # Sanitize with clang compilers
-        cmake -GNinja $CMAKE_OPTIONS \
-              -DCMAKE_C_COMPILER=clang \
-              -DCMAKE_CXX_COMPILER=clang++ \
-              -DENABLE_SANITIZER=$IS_SANITIZER \
               ${GITHUB_WORKSPACE}
       ;;
       *"Clang16"*"-Offload"*)
@@ -234,6 +226,12 @@ case "$1" in
               -DQMC_GPU_ARCHS=sm_70 \
               -DCMAKE_PREFIX_PATH="/opt/OpenBLAS/0.3.18" \
               -DQMC_DATA=$QMC_DATA_DIR \
+              ${GITHUB_WORKSPACE}
+      ;;
+      *"Clang"*) # Generic builds with clang
+        cmake -GNinja $CMAKE_OPTIONS \
+              -DCMAKE_C_COMPILER=clang \
+              -DCMAKE_CXX_COMPILER=clang++ \
               ${GITHUB_WORKSPACE}
       ;;
       *"Intel21"*"-CUDA-AFQMC"*)
