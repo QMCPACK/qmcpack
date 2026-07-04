@@ -1153,10 +1153,10 @@ protected:
       // dispatch these through ma_blas_extensions!!!
       // Gwv = sum_a Twav Pva
       if (nu0 > 0) // calculate Guu from u={0,nu0}
-        Aijk_Bkj_Cik(nw, nelec[ispin], nu0, make_device_ptr(Tav.origin()), Tav.stride(1), Tav.stride(),
+        Aijk_Bkj_Cik(nw, nelec[ispin], nu0, make_device_ptr(Tav.origin()), get<1>(Tav.strides()), Tav.stride(),
                      make_device_ptr(rotcPua[k].origin()), rotcPua[k].stride(), make_device_ptr(Guu.origin()), nv);
       if (nu0 + nu < nv) // calculate Guu from u={nu0+nu,nv}
-        Aijk_Bkj_Cik(nw, nelec[ispin], nv - nu0 - nu, make_device_ptr(Tav.origin()) + nu0 + nu, Tav.stride(1),
+        Aijk_Bkj_Cik(nw, nelec[ispin], nv - nu0 - nu, make_device_ptr(Tav.origin()) + nu0 + nu, get<1>(Tav.strides()),
                      Tav.stride(), make_device_ptr(rotcPua[k][nu0 + nu].origin()), rotcPua[k].stride(),
                      make_device_ptr(Guu.origin()) + nu0 + nu, nv);
     }

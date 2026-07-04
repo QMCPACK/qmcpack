@@ -171,7 +171,7 @@ template<class VType, class MType,
 void emplace_back_array_ref(VType& V, MType&& M, bool device=true) {
   // noly makes sense for continguous arrays
   assert(M.stride() == M.size(1));
-  assert(M.stride(1) == 1);
+  assert(get<1>(M.strides()) == 1);
   if(device) {  
     V.emplace_back(make_device_ptr(M.origin()),iextensions<2u>{M.size(0),M.size(1)});
   } else {

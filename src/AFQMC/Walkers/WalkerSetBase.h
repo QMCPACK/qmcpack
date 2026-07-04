@@ -31,6 +31,7 @@
 
 namespace qmcplusplus
 {
+  using std::get;
 namespace afqmc
 {
 /*
@@ -167,7 +168,6 @@ public:
    */
   iterator begin()
   {
-    using std::get;
     assert(get<1>(walker_buffer.sizes()) == walker_size);
     return iterator(0, boost::multi::static_array_cast<element, pointer>(walker_buffer), data_displ, wlk_desc);
   }
@@ -177,7 +177,6 @@ public:
    */
   const_iterator begin() const
   {
-    using std::get;
     assert(get<1>(walker_buffer.sizes()) == walker_size);
     return const_iterator(0, boost::multi::static_array_cast<element, pointer>(walker_buffer), data_displ, wlk_desc);
   }
@@ -187,7 +186,6 @@ public:
    */
   iterator end()
   {
-    using std::get;
     assert(get<1>(walker_buffer.sizes()) == walker_size);
     return iterator(tot_num_walkers, boost::multi::static_array_cast<element, pointer>(walker_buffer), data_displ,
                     wlk_desc);
@@ -198,7 +196,6 @@ public:
    */
   reference operator[](int i)
   {
-    using std::get;
     if (i < 0 || i > tot_num_walkers)
       APP_ABORT("error: index out of bounds.\n");
     assert(get<1>(walker_buffer.sizes()) == walker_size);
@@ -212,7 +209,6 @@ public:
   {
     if (i < 0 || i > tot_num_walkers)
       APP_ABORT("error: index out of bounds.\n");
-    using std::get;
     assert(get<1>(walker_buffer.sizes()) == walker_size);
     return const_reference(boost::multi::static_array_cast<element, pointer>(walker_buffer.const_array_cast())[i], data_displ, wlk_desc);
   }
@@ -248,7 +244,6 @@ public:
   template<class MatA, class MatB>
   void resize(int n, MatA&& A, MatB&& B)
   {
-    using std::get;
     assert(get<0>(A.sizes()) == wlk_desc[0]);
     assert(get<1>(A.sizes()) == wlk_desc[1]);
     if (walkerType == COLLINEAR)
@@ -302,7 +297,6 @@ public:
 
   void resize_bp(int nbp, int nCV, int nref)
   {
-    using std::get;
 
     assert(get<1>(walker_buffer.sizes()) == walker_size);
     assert(bp_buffer.size() == bp_walker_size);
@@ -355,7 +349,6 @@ public:
       data_displ[SM_AUX] = walker_size;
       walker_size += nrow * ncol;
       CMatrix wb({get<0>(walker_buffer.sizes()), walker_size}, walker_buffer.get_allocator());
-      using std::get;
       ma::copy(walker_buffer, wb(get<0>(wb.extensions()), {0, sz}));
       walker_buffer = std::move(wb);
     }
@@ -371,7 +364,6 @@ public:
 
   int GlobalPopulation() const
   {
-    using std::get;
 
     int res = 0;
     assert(get<1>(walker_buffer.sizes()) == walker_size);
@@ -382,7 +374,6 @@ public:
 
   RealType GlobalWeight() const
   {
-    using std::get;
 
     RealType res = 0;
     assert(get<1>(walker_buffer.sizes()) == walker_size);
@@ -402,14 +393,13 @@ public:
   template<class Mat>
   void push_walkers(Mat&& M)
   {
-    using std::get;
 
     static_assert(std::decay<Mat>::type::dimensionality == 2, "Wrong dimensionality");
     if (tot_num_walkers + M.size() > capacity())
       APP_ABORT("Insufficient capacity");
     if (single_walker_size() + single_walker_bp_size() != get<1>(M.sizes()))
       APP_ABORT("Incorrect dimensions.");
-    if (M.stride(1) != 1)
+    if (get<1>(M.strides()) != 1)
       APP_ABORT("Incorrect strides.");
     if (!TG.TG_local().root())
     {
@@ -421,7 +411,6 @@ public:
     for (int i = 0; i < M.size(); i++)
     {
       W[tot_num_walkers] = M[i].sliced(0, walker_size);
-      using std::get;
       if (wlk_desc[3] > 0)
         BPW(get<0>(BPW.extensions()), tot_num_walkers) = M[i].sliced(walker_size, walker_size + bp_walker_size);
       tot_num_walkers++;
@@ -431,7 +420,6 @@ public:
   template<class Mat>
   void pop_walkers(Mat&& M)
   {
-    using std::get;
     static_assert(std::decay<Mat>::type::dimensionality == 2, "Wrong dimensionality");
     if (tot_num_walkers < int(M.size()))
       APP_ABORT("Insufficient walkers");
@@ -445,7 +433,7 @@ public:
       if (walker_size != int(get<1>(M.sizes())))
         APP_ABORT("Incorrect dimensions.");
     }
-    if (M.stride(1) != 1)
+    if (get<1>(M.strides()) != 1)
       APP_ABORT("Incorrect strides.");
 
     if (!TG.TG_local().root())
@@ -470,7 +458,6 @@ public:
               std::vector<std::pair<double, int>>::iterator itend,
               Mat& M)
   {
-    using std::get;
 
     if (std::distance(itbegin, itend) != tot_num_walkers)
       APP_ABORT("Error in WalkerSetBase::branch(): ptr_range != # walkers. \n");
@@ -523,7 +510,6 @@ public:
         // 3. swap
         std::swap(*kill, *keep);
         W[std::distance(itbegin, kill)] = W[tot_num_walkers - 1];
-        using std::get;
         if (wlk_desc[3] > 0)
           BPW(get<0>(BPW.extensions()), std::distance(itbegin, kill)) = BPW(get<0>(BPW.extensions()), tot_num_walkers - 1);
         --tot_num_walkers;
@@ -574,7 +560,6 @@ public:
         fill_n(W[pos].origin() + data_displ[WEIGHT], 1, ComplexType(itbegin->first, 0.0));
         if (wlk_desc[6] > 0 && his_pos >= 0 && his_pos < wlk_desc[6])
           fill_n(BPW[data_displ[WEIGHT_HISTORY] + his_pos].origin() + pos, 1, ComplexType(itbegin->first, 0.0));
-        using std::get;
         for (int i = 0; i < n; i++)
         {
           W[tot_num_walkers] = W[pos];
@@ -595,7 +580,6 @@ public:
   template<class T>
   void scaleWeight(const T& w0, bool scale_last_history = false)
   {
-    using std::get;
 
     if (!TG.TG_local().root())
       return;
@@ -653,7 +637,6 @@ public:
   template<class Vec>
   void copyToIO(Vec&& x, int n)
   {
-    using std::get;
 
     assert(n < tot_num_walkers);
     assert(x.size() >= walkerSizeIO());
@@ -666,7 +649,6 @@ public:
   template<class Vec>
   void copyFromIO(Vec&& x, int n)
   {
-    using std::get;
 
     assert(n < tot_num_walkers);
     assert(x.size() >= walkerSizeIO());
@@ -713,14 +695,12 @@ public:
     if (ip < 0 || ip > wlk_desc[3])
       APP_ABORT(" Error: index out of bounds in getFields. \n");
 
-    using std::get;
     int skip = (data_displ[FIELDS] + ip * wlk_desc[4]) * get<1>(bp_buffer.sizes());
     return stdCMatrix_ptr(to_address(bp_buffer.origin()) + skip, {wlk_desc[4], get<1>(bp_buffer.sizes())});
   }
 
   stdCTensor_ptr getFields()
   {
-    using std::get;
     return stdCTensor_ptr(to_address(bp_buffer.origin()) + data_displ[FIELDS] * get<1>(bp_buffer.sizes()),
                           {wlk_desc[3], wlk_desc[4], get<1>(bp_buffer.sizes())});
   }
@@ -728,7 +708,6 @@ public:
   template<class Mat>
   void storeFields(int ip, Mat&& V)
   {
-    using std::get;
     static_assert(std::decay<Mat>::type::dimensionality == 2, "Wrong dimensionality");
     auto&& F(*getFields(ip));
     if (V.stride() == get<1>(V.sizes()))
@@ -742,14 +721,12 @@ public:
 
   stdCMatrix_ptr getWeightFactors()
   {
-    using std::get;
     return stdCMatrix_ptr(to_address(bp_buffer.origin()) + data_displ[WEIGHT_FAC] * get<1>(bp_buffer.sizes()),
                           {wlk_desc[6], get<1>(bp_buffer.sizes())});
   }
 
   stdCMatrix_ptr getWeightHistory()
   {
-    using std::get;
     return stdCMatrix_ptr(to_address(bp_buffer.origin()) + data_displ[WEIGHT_HISTORY] * get<1>(bp_buffer.sizes()),
                           {wlk_desc[6], get<1>(bp_buffer.sizes())});
   }
@@ -762,7 +739,6 @@ public:
   // LogOverlapFactor_new = LogOverlapFactor + f/nx
   void adjustLogOverlapFactor(const double f)
   {
-    using std::get;
     assert(get<1>(walker_buffer.sizes()) == walker_size);
     double nx = (walkerType == NONCOLLINEAR ? 1.0 : 2.0);
     if (TG.TG_local().root())
