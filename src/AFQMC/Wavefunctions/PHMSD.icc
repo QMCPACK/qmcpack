@@ -421,12 +421,12 @@ void PHMSD::Energy_distributed(const WlkSet& wset, Mat&& E, TVec&& Ov)
 template<class WlkSet, class MatG, class TVec>
 void PHMSD::MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool compact, bool transpose)
 {
+  using std::get;
   // if not compact, calculate compact on temporary storage and multiply by OrbMat[] on the left at the end.
   using ma::T;
-  assert(G.stride(1) == 1);
+  assert(get<1>(G.strides()) == 1);
   assert(Ov.stride() == 1);
 
-  using std::get;
   if (transpose)
     assert(get<0>(G.sizes()) == wset.size() && get<1>(G.sizes()) == size_t(dm_size(not compact)));
   else
@@ -573,7 +573,6 @@ void PHMSD::MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool com
         if (compact)
         {
           ma::product(T(Rb), GB2D0_, GB2D_);
-          using std::get;
           //G({GAdims.first*GAdims.second,get<0>(G.sizes())},iw) = GB1D_;
           ma::copy(GB1D_, G({GAdims.first * GAdims.second, get<0>(G.sizes())}, iw));
         }
@@ -688,7 +687,6 @@ void PHMSD::MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool com
             boost::multi::array_ref<ComplexType, 3> Gw(to_address(G.origin()),
                                                        {GAdims.first, GAdims.second, long(get<1>(G.sizes()))});
             // copying by hand for now, implement strided copy in ma_blas
-            using std::get;
             for (size_t k = 0; k < get<0>(GA2D_.sizes()); ++k)
               for (size_t m = M0; m < Mn; ++m)
                 Gw[k][m][iw] = GA2D_[k][m];
@@ -699,7 +697,6 @@ void PHMSD::MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool com
                         GA2D_(GA2D_.extension(0), {M0, Mn})); // can be local
             ma::product(T(OrbMats[0]), GA2D_(GA2D_.extension(0), {M0, Mn}),
                         Gfulla(Gfulla.extension(0), {M0, Mn})); // can be local
-            using std::get;
             boost::multi::array_ref<ComplexType, 3> Gw(to_address(G.origin()),
                                                        {long(get<0>(Gfulla.sizes())), long(get<1>(Gfulla.sizes())), long(get<1>(G.sizes()))});
             // copying by hand for now, implement strided copy in ma_blas
@@ -738,11 +735,9 @@ void PHMSD::MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool com
           {
             ma::product(T(Rb), GB2D0_shm(GB2D0_shm.extension(0), {M0, Mn}),
                         GB2D_(GB2D_.extension(0), {M0, Mn})); // can be local
-            using std::get;
             boost::multi::array_ref<ComplexType, 3> Gw(to_address(G[GAdims.first * GAdims.second].origin()),
                                                        {GBdims.first, GBdims.second, long(get<1>(G.sizes()))});
             // copying by hand for now, implement strided copy in ma_blas
-            using std::get;
             for (size_t k = 0; k < get<0>(GB2D_.sizes()); ++k)
               for (size_t m = M0; m < Mn; ++m)
                 Gw[k][m][iw] = GB2D_[k][m];
@@ -753,7 +748,6 @@ void PHMSD::MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool com
                         GB2D_(GB2D_.extension(0), {M0, Mn})); // can be local
             ma::product(T(OrbMats[0]), GB2D_(GB2D_.extension(0), {M0, Mn}),
                         Gfullb(Gfullb.extension(0), {M0, Mn})); // can be local
-            using std::get;
             boost::multi::array_ref<ComplexType, 3> Gw(to_address(G[Gfulla.num_elements()].origin()),
                                                        {long(get<0>(Gfullb.sizes())), long(get<1>(Gfullb.sizes())), long(get<1>(G.sizes()))});
             // copying by hand for now, implement strided copy in ma_blas
@@ -806,7 +800,8 @@ void PHMSD::DensityMatrix_shared(const WlkSet& wset,
                                  bool compact,
                                  bool transposed)
 {
-  assert(G.stride(1) == 1);
+  using std::get;
+  assert(get<1>(G.strides()) == 1);
   assert(Ov.stride() == 1);
   if (transposed)
     assert(G.size(0) == wset.size() && G.size(1) == size_t(dm_size(not compact)));
@@ -824,7 +819,6 @@ void PHMSD::DensityMatrix_shared(const WlkSet& wset,
   if (localGbuff.size() < Gsize)
     localGbuff.reextent(iextensions<1u>{Gsize});
 
-  using std::get;
   if (walker_type != COLLINEAR)
   {
     if (herm)

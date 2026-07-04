@@ -247,6 +247,7 @@ template<
     >
 MultiArray2DC&& product(T alpha, SparseMatrixA const& A, MultiArray2DB const& B, T beta, MultiArray2DC&& C)
 {
+  using std::get;
   using elementA = std::remove_cv_t<typename SparseMatrixA::element>;
   using elementB = std::remove_cv_t<typename MultiArray2DB::element>;
   using elementC = typename std::decay<MultiArray2DC>::type::element;
@@ -256,10 +257,9 @@ MultiArray2DC&& product(T alpha, SparseMatrixA const& A, MultiArray2DB const& B,
   assert(op_tag<SparseMatrixA>::value == 'N' || op_tag<SparseMatrixA>::value == 'T' ||
          op_tag<SparseMatrixA>::value == 'C' || op_tag<SparseMatrixA>::value == 'H');
   assert(op_tag<MultiArray2DB>::value == 'N');
-  assert(arg(B).stride(1) == 1);
-  assert(std::forward<MultiArray2DC>(C).stride(1) == 1);
+  assert(get<1>(arg(B).strides()) == 1);
+  assert(get<1>(std::forward<MultiArray2DC>(C).strides()) == 1);
 
-  using std::get;
   if (op_tag<SparseMatrixA>::value == 'N')
   {
     assert(arg(A).size() == std::forward<MultiArray2DC>(C).size());

@@ -1036,14 +1036,14 @@ void MixedDensityMatrix(std::vector<MatA>& hermA,
     assert(get<2>(TNM3D.sizes()) == NMO);
   }
   assert(IWORK.num_elements() >= nbatch * (NEL + 1));
-  assert(TNN3D.stride(1) == NEL); // needed by getriBatched
+  assert(get<1>(TNN3D.strides()) == NEL); // needed by getriBatched
 
   using element = typename std::decay<MatC>::type::element;
   using pointer = typename std::decay<MatC>::type::element_ptr;
 
   int ldw = (*Bi[0]).stride();
-  int ldN = TNN3D.stride(1);
-  int ldC = C.stride(1);
+  int ldN = get<1>(TNN3D.strides());
+  int ldC = get<1>(C.strides());
   std::vector<pointer> Carray;
   std::vector<pointer> Warray;
   std::vector<pointer> NNarray;
@@ -1097,7 +1097,7 @@ void MixedDensityMatrix(std::vector<MatA>& hermA,
   {
     if (herm)
     {
-      int ldM = TNM3D.stride(1);
+      int ldM = get<1>(TNM3D.strides());
       std::vector<pointer> NMarray;
       std::vector<decltype(&TNM3D[0])> TNMi;
       NMarray.reserve(nbatch);
@@ -1128,7 +1128,7 @@ void MixedDensityMatrix(std::vector<MatA>& hermA,
       for (int b = 0; b < nbatch; ++b)
         ma::product(TNN3D[b], H(*hermA[b]), TNM3D[b]);
 
-      int ldM = TNM3D.stride(1);
+      int ldM = get<1>(TNM3D.strides());
       std::vector<pointer> NMarray;
       NMarray.reserve(nbatch);
       for (int i = 0; i < nbatch; i++)
@@ -1198,7 +1198,7 @@ void DensityMatrices(std::vector<MatA> const& Left,
 
   int ldR = (*Right[0]).stride();
   int ldL = (*Left[0]).stride();
-  int ldN = TNN3D.stride(1);
+  int ldN = get<1>(TNN3D.strides());
   int ldG = (*G[0]).stride();
   std::vector<pointer> Garray;
   std::vector<pointer> Rarray;
@@ -1246,7 +1246,7 @@ void DensityMatrices(std::vector<MatA> const& Left,
   }
   else
   {
-    int ldM = TNM3D.stride(1);
+    int ldM = get<1>(TNM3D.strides());
     std::vector<pointer> NMarray;
     NMarray.reserve(nbatch);
     for (int i = 0; i < nbatch; i++)
@@ -1313,7 +1313,7 @@ void Overlap(std::vector<MatA>& hermA,
   using pointer = typename std::decay<Mat>::type::element_ptr;
 
   int ldw = (*Bi[0]).stride();
-  int ldN = TNN3D.stride(1);
+  int ldN = get<1>(TNN3D.strides());
   std::vector<pointer> Warray;
   std::vector<pointer> NNarray;
   std::vector<decltype(&TNN3D[0])> Ci;

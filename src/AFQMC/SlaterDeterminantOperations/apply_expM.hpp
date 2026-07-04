@@ -156,12 +156,12 @@ inline void apply_expM(const MatA& V, MatB&& S, MatC& T1, MatC& T2, int order = 
   assert(S.stride() == get<1>(S.sizes()) * get<2>(S.sizes()));
   assert(T1.stride() == get<1>(T1.sizes()) * get<2>(T1.sizes()));
   assert(T2.stride() == get<1>(T2.sizes()) * get<2>(T2.sizes()));
-  assert(S.stride(1) == get<2>(S.sizes()));
-  assert(T1.stride(1) == get<2>(T1.sizes()));
-  assert(T2.stride(1) == get<2>(T2.sizes()));
-  assert(S.stride(2) == 1);
-  assert(T1.stride(2) == 1);
-  assert(T2.stride(2) == 1);
+  assert(get<1>(S.strides()) == get<2>(S.sizes()));
+  assert(get<1>(T1.strides()) == get<2>(T1.sizes()));
+  assert(get<1>(T2.strides()) == get<2>(T2.sizes()));
+  assert(get<2>(S.strides()) == 1);
+  assert(get<2>(T1.strides()) == 1);
+  assert(get<2>(T2.strides()) == 1);
 
   using ComplexType = typename std::decay<MatB>::type::element;
   ComplexType zero(0.);
@@ -216,12 +216,12 @@ inline void apply_expM_noncollinear(const MatA& V, MatB&& S, MatC& T1, MatC& T2,
   assert(S.stride() == get<1>(S.sizes()) * get<2>(S.sizes()));
   assert(T1.stride() == get<1>(T1.sizes()) * get<2>(T1.sizes()));
   assert(T2.stride() == get<1>(T2.sizes()) * get<2>(T2.sizes()));
-  assert(S.stride(1) == get<2>(S.sizes()));
-  assert(T1.stride(1) == get<2>(T1.sizes()));
-  assert(T2.stride(1) == get<2>(T2.sizes()));
-  assert(S.stride(2) == 1);
-  assert(T1.stride(2) == 1);
-  assert(T2.stride(2) == 1);
+  assert(get<1>(S.strides()) == get<2>(S.sizes()));
+  assert(get<1>(T1.strides()) == get<2>(T1.sizes()));
+  assert(get<1>(T2.strides()) == get<2>(T2.sizes()));
+  assert(get<2>(S.strides()) == 1);
+  assert(get<2>(T1.strides()) == 1);
+  assert(get<2>(T2.strides()) == 1);
 
   using ComplexType = typename std::decay<MatB>::type::element;
   ComplexType zero(0.);
@@ -235,7 +235,7 @@ inline void apply_expM_noncollinear(const MatA& V, MatB&& S, MatC& T1, MatC& T2,
   using pointerC = typename std::decay<MatC>::type::element_ptr;
 
   int nbatch = S.size();
-  int ldv    = V.stride(1);
+  int ldv    = get<1>(V.strides());
   int M      = get<2>(T2.sizes());
   int N      = get<1>(T2.sizes());
   int K      = get<1>(T1.sizes());
@@ -268,8 +268,8 @@ inline void apply_expM_noncollinear(const MatA& V, MatB&& S, MatC& T1, MatC& T2,
     ComplexType fact = im * static_cast<ComplexType>(1.0 / static_cast<double>(n));
     using ma::gemmBatched;
     // careful with fortran ordering
-    gemmBatched('N', TA, M, N, K, fact, pT1i->data(), (*pT1).stride(1), Vi.data(), ldv, zero, pT2i->data(),
-                (*pT2).stride(1), nbatch);
+    gemmBatched('N', TA, M, N, K, fact, pT1i->data(), get<1>((*pT1).strides()), Vi.data(), ldv, zero, pT2i->data(),
+                get<1>((*pT2).strides()), nbatch);
     using ma::axpy;
     axpy(S.num_elements(), ComplexType(1.0), (*pT2).origin(), 1, S.origin(), 1);
     std::swap(pT1, pT2);
