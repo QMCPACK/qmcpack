@@ -109,11 +109,11 @@ if [[ -v py_venv ]]; then
     echo Exiting...
     exit 1
   else
-    user_python=true
+    user_python=1
     echo "Using Python environment at '$py_venv'"
   fi
 else
-  user_python=false
+  user_python=0
   py_venv=$source_dir/.qmcvenv
   echo No Python environment provided
   echo "  -> Will check for one at '$py_venv'"
@@ -178,17 +178,17 @@ else
 fi
 echo -e "\nChecking for Nexus installation..."
 installed_packages="$(pip freeze)"
-found_nexus=false
+found_nexus=0
 for line in $installed_packages; do
   if [[ $line == "nexus" ]]; then
-    found_nexus=true
+    found_nexus=1
     echo Nexus installation found, will not re-install
     break
   fi
 done
 
-if [[ ! $found_nexus ]]; then
-  if [[ $user_python ]]; then
+if [[ $found_nexus == 0 ]]; then
+  if [[ $user_python == 1 ]]; then
     echo Nexus not found, ensure you have Nexus installed!
     exit 1
   fi
@@ -202,10 +202,9 @@ fi
 echo -e "\nDone setting up Python for build."
 echo -e   "=---------------------------------------------------------------------------------=\n"
 
-if [[ ! $user_python ]]; then
+if [[ $user_python == 0 ]]; then
   echo -e "To access Nexus analysis tools such as 'qmca', re-activate the virtual environment: source $py_venv/bin/activate\n"
 fi
-
 
 ##########################################
 ##    Assemble list of Build Targets    ##
