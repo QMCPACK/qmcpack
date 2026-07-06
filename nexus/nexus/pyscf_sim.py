@@ -84,7 +84,6 @@ class Pyscf(Simulation):
 
     def check_sim_status(self):
         self.failed = False
-        output = self.outfile_text()
         errors = self.errfile_text()
         pyscf_errors = [
             "NotConvergedError",        # pyscf/pyscf/geomopt/geometric_solver.py
