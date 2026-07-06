@@ -15,6 +15,7 @@ Usage: $0 [-s <source_dir>] [-i <install_dir>] [-e <espresso_dir>] [-p <python_e
 -e <espresso_dir>    Location of the bin directory of a Quantum ESPRESSO build with pw2qmcpack.x (sets -DQE_BIN).
 -p <python_env>      Location of a Python environment with Nexus installed (used to set -DPython3_EXECUTABLE).
 -t <cpu|gpu>         Target CPU or GPU variants only, if not specified then build all (gpu sets -DQMC_GPU_ARCHS=sm_80).
+-j <jobs>            Number of jobs to build with. Defaults to 16.
 -f                   Only build Full Precision variants (disables Mixed Precision variants).
 -m                   Only build Mixed Precision variants (disables Full Precision variants).
 -r                   Only build Real variants (Disables Complex variants).
@@ -43,21 +44,23 @@ EOF
 
 source_dir=`pwd`
 build_cpu_gpu="ALL"
+num_jobs=16
 full_precision=1
 mixed_precision=1
 real_variants=1
 complex_variants=1
-while getopts s:i:e:p:t:fmrch o; do
+while getopts s:i:e:p:t:j:fmrch o; do
   case $o in
     (s) source_dir="$(realpath $OPTARG)";;
     (i) install_dir="$(realpath $OPTARG)";;
     (e) qe_bin_dir="$(realpath $OPTARG)";;
     (p) py_venv="$(realpath $OPTARG)";;
     (t) build_cpu_gpu="$(echo $OPTARG | tr '[:lower:]' '[:upper:]')";;
-    (f) mixed_precision=0;;
-    (m) full_precision=0;;
-    (r) complex_variants=0;;
-    (c) real_variants=0;;
+    (j) num_jobs=$OPTARG;;
+    (f) mixed_precision=0;;  # Full precision only
+    (m) full_precision=0;;   # Mixed precision only
+    (r) complex_variants=0;; # Real only
+    (c) real_variants=0;;    # Complex only
     (h) usage;;
     (*) usage
   esac
@@ -152,7 +155,7 @@ echo -e "\n=--------------------------------------------------------------------
 ## Set up Python environment with Nexus ##
 ##########################################
 echo -e "\n=---------------------------------------------------------------------------------="
-echo -e "Setting up Python\n"
+echo -e "\nSetting up Python\n"
 
 if [[ ! -e $py_venv ]]; then
   echo "Virtual environment not found at '$py_venv'"
@@ -199,11 +202,12 @@ if [[ $found_nexus == 0 ]]; then
   cd -
 fi
 
-echo -e "\nDone setting up Python for build."
+echo -e "\nDone setting up Python for build.\n"
 echo -e   "=---------------------------------------------------------------------------------=\n"
 
 if [[ $user_python == 0 ]]; then
-  echo -e "To access Nexus analysis tools such as 'qmca', re-activate the virtual environment: source $py_venv/bin/activate\n"
+  echo "To access Nexus analysis tools such as 'qmca', re-activate the virtual environment:"
+  echo "  $ source $py_venv/bin/activate"
 fi
 
 ##########################################
@@ -278,26 +282,65 @@ for name in $build_targets; do
   if [[ $name == *"gpu"* ]]; then
     Compiler=Clang21
     CMAKE_FLAGS="$CMAKE_FLAGS -DQMC_GPU_ARCHS=sm_80"
-    module load gpu/1.0 > /dev/null 2>&1
-    module load PrgEnv-llvm > /dev/null 2>&1
-    module load llvm/21.1.4
-    module load openmpi/5.0.7
+    echo -e "\n=---------------------------------------------------------------------------------=\n"
+    reload_needed=1
+    gpu_mod_check="$(module list gpu/1.0 2>&1)"
+    for line in $gpu_mod_check; do
+      if [[ $line == "None" ]]; then
+        echo -e "Required Modules already loaded.\n"
+        reload_needed=0
+      fi
+    done
+
+    if [[ $reload_needed == 1 ]]; then
+      echo "Loading the following modules:"
+      echo "  - gpu/1.0"
+      echo "  - PrgEnv-llvm"
+      echo "  - llvm/21.1.4"
+      echo "  - openmpi/5.0.7"
+      echo
+
+      module load gpu/1.0
+      module load PrgEnv-llvm
+      module load llvm/21.1.4
+      module load openmpi/5.0.7
+    fi
 
     C_compiler=`which mpicc`
     CXX_compiler=`which mpicxx`
     export MPICH_CC=clang
     export MPICH_CXX=clang++
 
-    echo -e "\n=---------------------------------------------------------------------------------="
+    echo -e "\n=---------------------------------------------------------------------------------=\n"
     echo -e "Clang version information:\n"
     echo "$ clang -v"
     clang -v
-    echo -e   "=---------------------------------------------------------------------------------=\n"
+    echo -e "\n=---------------------------------------------------------------------------------=\n"
   else
     Compiler=GCC
-    module load cpu/1.0 > /dev/null 2>&1
-    module load PrgEnv-gnu > /dev/null 2>&1
-    module load craype cray-mpich > /dev/null 2>&1
+    echo -e "\n=---------------------------------------------------------------------------------=\n"
+
+    reload_needed=1
+    cpu_mod_check="$(module list cpu/1.0 2>&1)"
+    for line in $cpu_mod_check; do
+      if [[ $line == "None" ]]; then
+        echo -e "Required Modules already loaded.\n"
+        reload_needed=0
+      fi
+    done
+
+    if [[ $reload_needed == 1 ]]; then
+      echo Loading the following modules:
+      echo "  - cpu/1.0"
+      echo "  - PrgEnv-gnu"
+      echo "  - craype"
+      echo "  - cray-mpich"
+      echo
+
+      module load cpu/1.0
+      module load PrgEnv-gnu
+      module load craype cray-mpich
+    fi
     C_compiler=`which cc`
     CXX_compiler=`which CC`
   fi
@@ -314,11 +357,15 @@ for name in $build_targets; do
     build_dir=$folder
   fi
 
-  echo -e "\n=---------------------------------------------------------------------------------="
+  echo -e "=---------------------------------------------------------------------------------="
   echo -e "\nUsing flags:"
   for flag in $CMAKE_FLAGS; do
-    echo $flag
+    echo "  $flag"
   done
+  echo "  -DCMAKE_C_COMPILER=$C_compiler"
+  echo "  -DCMAKE_CXX_COMPILER=$CXX_compiler"
+  echo "  -S $source_dir"
+
   echo -e   "\nInstalling to $build_dir\n"
   echo -e   "=---------------------------------------------------------------------------------=\n"
 
@@ -328,16 +375,18 @@ for name in $build_targets; do
   cd $build_dir
 
   if [ ! -f CMakeCache.txt ] ; then
-    echo "$ cmake $CMAKE_FLAGS -DCMAKE_C_COMPILER=$C_compiler -DCMAKE_CXX_COMPILER=$CXX_compiler -S $source_dir"
+    echo -e "Generating project build system...\n"
     cmake $CMAKE_FLAGS -DCMAKE_C_COMPILER=$C_compiler -DCMAKE_CXX_COMPILER=$CXX_compiler -S $source_dir
   fi
 
-  echo "$ cmake --build . --parallel 16"
-  cmake --build . --parallel 16
+  echo "Building with the following command:"
+  echo -e "  $ cmake --build . --parallel $num_jobs\n"
+  cmake --build . --parallel $num_jobs
 
   cd $source_dir
 
-  echo -e "Done building configuration $folder\n\n"
+  echo -e "Done building configuration $folder\n"
+  echo -e   "=---------------------------------------------------------------------------------=\n"
 
 done
 
