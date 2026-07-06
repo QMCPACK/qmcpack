@@ -861,12 +861,12 @@ class Structure(Sobj):
         Scaling for all other physical values.
         See :py:meth:`~.Structure.rescale()` for more information.
     elem : ArrayLike, optional
-        Array of atomic symbols. Overrides ``elem_pos``.
+        Array of atomic symbols.
     pos : ArrayLike, optional
-        Positions of the atoms. Overrides ``elem_pos``.
+        Positions of the atoms.
     elem_pos : str, optional
         Multiline string with each line containing an atom where an atom
-        is an element and its position.
+        is an element and its position. Overrides ``elem`` and ``pos``.
     mag : ArrayLike, optional
         Magnetic moments of each atom.
     center : ArrayLike, optional
@@ -911,11 +911,9 @@ class Structure(Sobj):
     bconds : str or tuple of str, optional
         Boundary conditions either in all directions or specified for
         each dimension. Defaults to periodic in all directions.
-    posu : ArrayLike or bool, optional
-        Either the positions of the atoms in units of the lattice
-        parameter or a boolean to indicate that ``pos`` is in units of
-        the lattice parameter, in which case this signals to convert
-        them to realspace units.
+    posu : ArrayLike, optional
+        The positions of the atoms in units of the lattice parameter.
+        Overrides ``pos``.
     use_prim : bool, optional
         Option to convert the unit cell to a primitive cell.
         Requires that the ``seekpath`` package is installed [0]_.
