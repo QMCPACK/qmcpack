@@ -163,7 +163,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        jobname: [macOS-GCC15-NoMPI-Real]
+        jobname: [macOS-GCC16-NoMPI-Real]
 
     steps:
       - name: Checkout Action
@@ -177,7 +177,7 @@ jobs:
       - name: Setup Dependencies
         run: |
           brew upgrade || brew link --overwrite python@3.12
-          brew install gcc@15 ninja hdf5 fftw boost
+          brew install gcc@16 ninja hdf5 fftw boost
           python3 -m pip install numpy h5py pytest pytest-cov pytest-order
 
       - name: Configure
