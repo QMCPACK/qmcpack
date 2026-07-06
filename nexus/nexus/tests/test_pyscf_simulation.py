@@ -121,6 +121,11 @@ def test_get_result(tmp_path):
 
 @isolate_nexus_core
 def test_check_sim_status(tmp_path):
+    """Check that ``check_sim_status`` catches failures.
+
+    This tests the case that a user has installed PySCF, but has not
+    installed ``pyscf-dispersion`` with it, then tries to import it.
+    """
 
     nexus_core.runs = ''
     nexus_core.local_directory  = str(tmp_path)
@@ -191,9 +196,9 @@ def test_check_sim_status(tmp_path):
 
     err_text = """
 Traceback (most recent call last):
-  File "/dummy/path", line 1, in <module>
-    from pyscf import scf
-ModuleNotFoundError: No module named 'pyscf'
+  File "/home/runs/scf/scf.py", line 2, in <module>
+    from pyscf import dispersion
+ImportError: cannot import name 'dispersion' from 'pyscf' (/home/.venv/lib/python3.14/site-packages/pyscf/__init__.py)
 """
     err_path.write_text(err_text)
     assert(err_text in err_path.read_text())

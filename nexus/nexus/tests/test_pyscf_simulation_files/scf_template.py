@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
-
+from pyscf import dispersion
 from pyscf import scf
+
 
 # Nexus expands this with Mole info
 $system
