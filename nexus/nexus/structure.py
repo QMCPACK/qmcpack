@@ -6808,33 +6808,35 @@ class Crystal(Structure):
         The angles (``α``, ``β``, ``γ``) for the crystal.
     generation_info : obj of str: str
         The supplied inputs to the class constructor.
-    
+
     Parameters
     ----------
-    lattice
-    cell
-    centering
-    constants
-    atoms
-    basis
-    basis_vectors
-    tiling
-    cscale
-    axes
-    units
-    angular_units
-    kpoints
-    kgrid
-    mag
-    frozen
-    kshift
-    permute
-    operations
-    elem
-    pos
-    use_prim
-    add_kpath
-    symm_kgrid
+    lattice : str, optional
+    cell : str, optional
+    centering : {"P", "A", "B", "C", "F", "I", "R"}, optional
+    constants : float or tuple of float, optional
+        Lattice constants required for the specified lattice. The order
+        for these is ``(a, b, c, α, β, γ)``. If the specified lattice
+        does not require some constant, you can omit it, but retain the
+        overall order of the constants.
+    atoms : str or tuple of str, optional
+        The atomic symbol(s) of the atoms in the lattice.
+    basis : list of lists of floats, optional
+        A list of vectors that define the atom positions with respect
+        to the ``basis_vectors``. If there are multiple ``atoms``, this
+        should have the sample length as ``atoms``.
+    basis_vectors : ArrayLike of float or {"prim", "conv"}, optional
+        A set of 3 vectors that define the basis used to transform
+        ``basis``.
+    cscale : list of float, optional
+        Scaling values for the provided constants. Must have the same
+        length as ``constants``.
+
+    See Also
+    --------
+    Structure :
+        All remaining parameters are passed to this class's constructor.
+        See its docstring for more details.
     """
 
     lattice_constants = obj(
@@ -7974,6 +7976,11 @@ def generate_crystal_structure(
     element        = None,
     scale          = None,
     ):
+    """Generate a crystal structure.
+
+    See :py:class:`~.Crystal` and :py:class:`~.Structure` for a
+    description of the available parameters.
+    """
 
     if structure is not None:
         lattice = structure
