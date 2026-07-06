@@ -128,7 +128,7 @@ jobs:
 
     steps:
       - name: Checkout Action
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Configure
         run: tests/test_automation/github-actions/ci/run_step.sh configure
@@ -167,7 +167,7 @@ jobs:
 
     steps:
       - name: Checkout Action
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set Python Version
         uses: actions/setup-python@v6
@@ -229,7 +229,7 @@ jobs:
 
     steps:
       - name: Checkout Action
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Echo Debug
         run: |
