@@ -129,14 +129,14 @@ case "$1" in
     fi
     
     case "${GH_JOBNAME}" in
-      *"macOS-GCC14"*"-Real"*)
-        echo 'Configure for building on macOS using gcc14'
+      *"macOS-GCC15"*"-Real"*)
+        echo 'Configure for building on macOS using gcc15'
         cmake -GNinja $CMAKE_OPTIONS \
-              -DCMAKE_C_COMPILER=gcc-14 \
-              -DCMAKE_CXX_COMPILER=g++-14 \
-              -DCMAKE_EXE_LINKER_FLAGS="-Wl,-ld_classic" \
+              -DCMAKE_C_COMPILER=gcc-15 \
+              -DCMAKE_CXX_COMPILER=g++-15 \
               -DQMC_INSTALL_NEXUS=OFF \
               ${GITHUB_WORKSPACE}
+              # -DCMAKE_EXE_LINKER_FLAGS="-Wl,-ld_classic" used with gcc-14, macos-14
       ;;
       *"GCC9"*"-CUDA-AFQMC"*)
         echo 'Configure for building with CUDA and AFQMC, need built-from-source OpenBLAS due to bug in rpm'
@@ -283,7 +283,7 @@ case "$1" in
     
     # Run only deterministic tests (reasonable for CI) by default
     case "${GH_JOBNAME}" in
-      *"macOS-GCC14"*"-Real"*)
+      *"macOS-GCC15"*"-Real"*)
         TEST_LABEL="-L deterministic -E deterministic-unit_test_estimators"
         # estimator test bus error on mac only
       ;;
