@@ -17,6 +17,7 @@
 
 
 import os
+import textwrap
 from .developer import obj
 from .simulation import Simulation
 from .pyscf_input import PyscfInput, generate_pyscf_input
@@ -82,9 +83,40 @@ class Pyscf(Simulation):
 
 
     def check_sim_status(self):
-        # success of a generic pyscf script is too hard to assess
-        # burden of when to initiate dependent simulations left to user
-        self.failed   = False
+        self.failed = False
+        output = self.outfile_text()
+        errors = self.errfile_text()
+        pyscf_errors = [
+            "NotConvergedError",        # pyscf/pyscf/geomopt/geometric_solver.py
+            "BasisNotFoundError",       # pyscf/pyscf/lib/exceptions.py
+            "PointGroupSymmetryError",  # pyscf/pyscf/lib/exceptions.py
+            "WfnSymmetryError",         # pyscf/pyscf/lib/exceptions.py
+            "LinearDependencyError",    # pyscf/pyscf/lib/exceptions.py
+            "ProcessRuntimeError",      # pyscf/pyscf/lib/misc.py
+            "ThreadRuntimeError",       # pyscf/pyscf/lib/misc.py
+            "XCSplitError",             # pyscf/pyscf/mcpdft/_libxc.py
+            "BatchSizeError",           # pyscf/pyscf/mp/dfmp2_native.py
+            "KPointSymmetryError",      # pyscf/pyscf/pbc/lib/kpts_helper.py
+            "RotationAxisNotFound",     # pyscf/pyscf/symm/geom.py
+        ]
+        err_start = "Traceback (most recent call last):"
+        if err_start in errors:
+            self.failed = True
+        else:
+            for pyscf_err in pyscf_errors:
+                if pyscf_err in errors:
+                    self.failed = True
+
+        if self.failed:
+            error_txt = textwrap.indent(errors, "  ", lambda _: True)
+            self.log(
+                "\n"
+                "PySCF run failed!\n"
+                "Error File Contents:\n\n"
+               f"{error_txt}\n",
+                n=4
+                )
+
         self.finished = self.job.finished
     #end def check_sim_status
 
