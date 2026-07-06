@@ -6790,6 +6790,53 @@ class DefectStructure(Structure):
 
 
 class Crystal(Structure):
+    """Generate a crystal structure.
+
+    Attributes
+    ----------
+    lattice_constants
+    lattices
+    centering_types
+    lattice_centerings
+    centerings
+    cell_types
+    cell_aliases
+    cell_classes
+    constants : NDArray of float
+        The lattice constants (``a``, ``b``, ``c``) for the crystal.
+    angles : NDArray of float
+        The angles (``α``, ``β``, ``γ``) for the crystal.
+    generation_info : obj of str: str
+        The supplied inputs to the class constructor.
+    
+    Parameters
+    ----------
+    lattice
+    cell
+    centering
+    constants
+    atoms
+    basis
+    basis_vectors
+    tiling
+    cscale
+    axes
+    units
+    angular_units
+    kpoints
+    kgrid
+    mag
+    frozen
+    kshift
+    permute
+    operations
+    elem
+    pos
+    use_prim
+    add_kpath
+    symm_kgrid
+    """
+
     lattice_constants = obj(
         triclinic    = ['a','b','c','alpha','beta','gamma'],
         monoclinic   = ['a','b','c','beta'],
@@ -6799,8 +6846,10 @@ class Crystal(Structure):
         cubic        = ['a'],
         rhombohedral = ['a','alpha']
         )
+    """Mapping from a lattice type to the required values to create the cell."""
 
     lattices = list(lattice_constants.keys())
+    """List of lattice systems."""
 
     centering_types = obj(
         primitive             = 'P',
@@ -6809,6 +6858,7 @@ class Crystal(Structure):
         body_centered         = 'I',
         rhombohedral_centered = 'R'        
         )
+    """Mapping from centering types to their Pearson symbol."""
 
     lattice_centerings = obj(
         triclinic    = ['P'],
@@ -6819,6 +6869,7 @@ class Crystal(Structure):
         cubic        = ['P','I','F'],
         rhombohedral = ['P']
         )
+    """Mapping of lattice systems to allowed centering types."""
 
     centerings = obj(
         P = [],
@@ -6831,17 +6882,22 @@ class Crystal(Structure):
         )
 
     cell_types = set(['primitive','conventional'])
+    """Types of cells, currently only ``primitive`` and ``conventional``."""
 
     cell_aliases = obj(
         prim = 'primitive',
         conv = 'conventional'
         )
+    """Mapping from shortened aliases ``prim`` and ``conv`` to their cell type."""
+
     cell_classes = obj(
         sc  = 'cubic',
         bcc = 'cubic',
         fcc = 'cubic',
         hex = 'hexagonal'
         )
+    """Mapping from common lattice names to their lattices."""
+
     for lattice in lattices:
         cell_classes[lattice]=lattice
     #end for
@@ -7117,6 +7173,7 @@ class Crystal(Structure):
             basis     = [[0,0,0],[1./2,1./6,0]]
             )
         }
+    """Mapping from material names and their cell types to their crystal information."""
 
     kc_keys = list(known_crystals.keys())
     for (name,cell) in kc_keys:
