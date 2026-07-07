@@ -295,7 +295,8 @@ struct h5data_proxy<std::vector<std::string>>
           ref.push_back(char_list[i]);
       }
 
-      H5Dvlen_reclaim(datatype, dataspace, xfer_plist, char_list.data());
+      if (H5Dvlen_reclaim(datatype, dataspace, xfer_plist, char_list.data()) < 0)
+        ret = -1;
 
       H5Sclose(dataspace);
       H5Dclose(dataset);

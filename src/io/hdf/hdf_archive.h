@@ -155,7 +155,8 @@ public:
   inline void flush()
   {
     if (file_id != is_closed)
-      H5Fflush(file_id, H5F_SCOPE_LOCAL);
+      if (H5Fflush(file_id, H5F_SCOPE_LOCAL) < 0)
+        throw std::runtime_error("H5Fflush failed.");
   }
 
   ///return true if the file is closed
