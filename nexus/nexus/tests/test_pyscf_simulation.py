@@ -15,7 +15,7 @@ from ..testing import failed,FailedTest
 
 TEST_FILES = {
     "scf_template.py": TEST_DIR / "test_pyscf_simulation_files/scf_template.py",
-}
+    }
 
 
 def get_pyscf_sim(**kwargs):

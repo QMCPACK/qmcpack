@@ -97,7 +97,7 @@ class Pyscf(Simulation):
             "BatchSizeError",           # pyscf/pyscf/mp/dfmp2_native.py
             "KPointSymmetryError",      # pyscf/pyscf/pbc/lib/kpts_helper.py
             "RotationAxisNotFound",     # pyscf/pyscf/symm/geom.py
-        ]
+            ]
         err_start = "Traceback (most recent call last):"
         if err_start in errors:
             self.failed = True
