@@ -7,6 +7,9 @@
 # build_nersc_perlmutter_Clang.sh # build all the variants assuming the current directory is the source directory.
 # build_nersc_perlmutter_Clang.sh <source_dir> # build all the variants with a given source directory <source_dir>
 # build_nersc_perlmutter_Clang.sh <source_dir> <install_dir> # build all the variants with a given source directory <source_dir> and install to <install_dir>
+#
+# When running executables built with this script, the same set of modules should be loaded
+# export MPICH_GPU_SUPPORT_ENABLED=0 is also required to avoid errors such as "MPIDI_CRAY_init: GPU_SUPPORT_ENABLED is requested, but GTL library is not linked"
 
 module load llvm/21.1.4
 export MPICH_CC=`which clang`
