@@ -414,14 +414,6 @@ public:
     hyperslab_proxy<T, RANK> pxy(data, globals, counts, offsets);
     read(pxy, aname);
   }
-
-  inline void unlink(const std::string& aname)
-  {
-    if (Mode[NOIO])
-      return;
-    hid_t p       = group_id.empty() ? file_id : group_id.top();
-    herr_t status = H5Ldelete(p, aname.c_str(), H5P_DEFAULT);
-  }
 };
 
 } // namespace qmcplusplus
