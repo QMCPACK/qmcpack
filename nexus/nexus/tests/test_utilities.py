@@ -7,6 +7,21 @@ from pathlib import Path
 
 
 
+def test_docstrings():
+    from nexus import utilities
+    from nexus.docstrings import utilities as docstrings
+
+    assert utilities.to_str.__doc__            == docstrings.to_str
+    assert utilities._path_to_str.__doc__      == docstrings._path_to_str
+    assert utilities.is_valid_path.__doc__     == docstrings.is_valid_path
+    assert utilities.is_valid_filename.__doc__ == docstrings.is_valid_filename
+    assert utilities.is_relative_path.__doc__  == docstrings.is_relative_path
+    assert utilities.path_string.__doc__       == docstrings.path_string
+
+#end def test_docstrings
+
+
+
 def test_is_valid_path():
     from nexus.utilities import is_valid_path,is_valid_filename
 

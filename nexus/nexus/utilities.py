@@ -2,6 +2,8 @@ import string
 from numbers import Number
 from pathlib import Path
 
+from .docstrings import utilities as _docstrings
+
 # attempt to regain python 2 sorting
 # code below is from https://stackoverflow.com/questions/26575183/how-can-i-get-2-x-like-sorting-behaviour-in-python-3-x
 #===========================
@@ -110,7 +112,6 @@ def sorted_py2(iterable):
 
 
 def to_str(s):
-    '''Convert a value to a string'''
     if isinstance(s,bytes):
         return str(s,encoding='utf-8')
     else:
@@ -120,7 +121,6 @@ def to_str(s):
 
 
 def _path_to_str(path: str | bytes | Path) -> str:
-    '''Simple conversion from bytes/Path types to str.'''
     if isinstance(path, str):
         pass
     elif isinstance(path, bytes):
@@ -131,13 +131,12 @@ def _path_to_str(path: str | bytes | Path) -> str:
         raise TypeError(
             'path must be of type "str", "bytes" or "Path". Type received: {}'
             .format(path.__class__.__name__)
-        )
+            )
     return path
 #end def _path_to_str
 
 
 def is_valid_path(path: str | bytes | Path) -> bool:
-    '''Screen out paths with invalid characters.'''
     path = _path_to_str(path)
     if not hasattr(is_valid_path,'invalid_chars'):
         unprintable = [chr(c) for c in range(128) if chr(c) not in string.printable]
@@ -152,7 +151,6 @@ def is_valid_path(path: str | bytes | Path) -> bool:
 
 
 def is_valid_filename(filename: str | bytes | Path) -> bool:
-    '''Screen out filenames with invalid characters.'''
     filename = _path_to_str(filename)
     is_valid = True
     if len(filename) == 0:
@@ -165,13 +163,11 @@ def is_valid_filename(filename: str | bytes | Path) -> bool:
         is_valid = False
     elif not is_valid_path(filename):
         is_valid = False
-
     return is_valid
 #end def is_valid_filename
 
 
 def is_relative_path(path: str | bytes | Path):
-    '''Determine if a path is relative to some current working directory.'''
     path     = _path_to_str(path)
     absolute = len(path) > 0 and (path[0] == '/' or path[0] == '~')
     relative = not absolute
@@ -184,28 +180,7 @@ def path_string(
     strict:   bool = False,
     relative: bool = False,
     check:    bool = False,
-) -> str:
-    """Convert a path to a string.
-
-    Parameters
-    ----------
-    path : str, bytes or Path
-        A file path or directory path. 
-    strict : bool, default=False
-        Require inputted path to be str type.
-        Raises ValueError otherwise.
-    relative : bool, default=False
-        Check if path is a relative path.
-        Raises ValueError otherwise.
-    check : bool, default=True
-        Check if a path contains only valid characters.
-        ValueError is raised for invalid paths.
-
-    Returns
-    -------
-    path_out : str
-        The path as a string.
-    """
+    ) -> str:
     if relative and not is_relative_path(path):
         raise ValueError('path must be relative')
     if strict:
@@ -220,3 +195,12 @@ def path_string(
         raise ValueError('path contains invalid characters:\n'+path_out)
     return path_out
 #end def path_string
+
+
+# bind docstrings
+to_str.__doc__            = _docstrings.to_str
+_path_to_str.__doc__      = _docstrings._path_to_str
+is_valid_path.__doc__     = _docstrings.is_valid_path
+is_valid_filename.__doc__ = _docstrings.is_valid_filename
+is_relative_path.__doc__  = _docstrings.is_relative_path
+path_string.__doc__       = _docstrings.path_string
