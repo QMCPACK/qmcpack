@@ -13,6 +13,7 @@ from ..testing import object_eq as object_eq_orig
 from ..testing import object_diff as object_diff_orig
 from ..testing import text_eq
 from .. import numpy_extensions as npe
+from ..structure import generate_atom_structure, generate_dimer_structure, generate_trimer_structure
 
 
 struct_atol = 1e-10
@@ -618,6 +619,178 @@ def test_gen_graphene():
     assert(structure_same(graphene,ref))
 #end def test_gen_graphene
 
+
+def test_gen_atom():
+    ref_axes = np.array([
+        [4, 0, 0],
+        [0, 4, 0],
+        [0, 0, 4],
+        ], dtype=float)
+    ref_background_charge = 0
+    ref_bconds = ["p", "p", "p"]
+    ref_center = np.array([2, 2, 2], dtype=float)
+    ref_dim = 3
+    ref_elem = ["He"]
+    ref_kaxes = np.array([
+        [1.57079633, 0.00000000, 0.00000000],
+        [0.00000000, 1.57079633, 0.00000000],
+        [0.00000000, 0.00000000, 1.57079633],
+        ], dtype=float)
+    ref_kpoints = np.array([
+        [0.00000000, 0.00000000, 0.00000000],
+        [0.78539816, 0.00000000, 0.00000000],
+        [0.00000000, 0.78539816, 0.00000000],
+        [0.78539816, 0.78539816, 0.00000000],
+        [0.00000000, 0.00000000, 0.78539816],
+        [0.78539816, 0.00000000, 0.78539816],
+        [0.00000000, 0.78539816, 0.78539816],
+        [0.78539816, 0.78539816, 0.78539816],
+        ])
+    ref_kweights = np.array([1, 1, 1, 1, 1, 1, 1, 1], dtype=float)
+    ref_pos = np.array([
+        [2.000, 2.000, 2.000],
+        ], dtype=float)
+    ref_scale = 1.0
+    ref_units = "A"
+
+    structure = generate_atom_structure(
+        atom       = "He",
+        units      = "A",
+        Lbox       = 4.0,
+        kgrid      = [2, 2, 2],
+        bconds     = ["p", "p", "p"],
+        )
+
+    np.testing.assert_allclose(structure.pos,      ref_pos)
+    np.testing.assert_allclose(structure.axes,     ref_axes)
+    np.testing.assert_allclose(structure.center,   ref_center)
+    np.testing.assert_allclose(structure.kaxes,    ref_kaxes)
+    np.testing.assert_allclose(structure.kpoints,  ref_kpoints)
+    np.testing.assert_allclose(structure.kweights, ref_kweights)
+    assert(structure.elem.tolist()     == ref_elem)
+    assert(structure.dim               == ref_dim)
+    assert(structure.bconds.tolist()   == ref_bconds)
+    assert(structure.scale             == ref_scale)
+    assert(structure.units             == ref_units)
+    assert(structure.background_charge == ref_background_charge)
+#end def test_gen_atom
+
+
+def test_gen_dimer():
+    ref_axes = np.array([
+        [4, 0, 0],
+        [0, 4, 0],
+        [0, 0, 4],
+        ], dtype=float)
+    ref_background_charge = 0
+    ref_bconds = ["p", "p", "p"]
+    ref_center = np.array([2, 2, 2], dtype=float)
+    ref_dim = 3
+    ref_elem = ["O", "O"]
+    ref_kaxes = np.array([
+        [1.57079633, 0.00000000, 0.00000000],
+        [0.00000000, 1.57079633, 0.00000000],
+        [0.00000000, 0.00000000, 1.57079633],
+        ], dtype=float)
+    ref_kpoints = np.array([
+        [0.00000000, 0.00000000, 0.00000000],
+        [0.78539816, 0.00000000, 0.00000000],
+        [0.00000000, 0.78539816, 0.00000000],
+        [0.78539816, 0.78539816, 0.00000000],
+        [0.00000000, 0.00000000, 0.78539816],
+        [0.78539816, 0.00000000, 0.78539816],
+        [0.00000000, 0.78539816, 0.78539816],
+        [0.78539816, 0.78539816, 0.78539816],
+        ])
+    ref_kweights = np.array([1, 1, 1, 1, 1, 1, 1, 1], dtype=float)
+    ref_pos = np.array([
+        [1.375, 2.000, 2.000],
+        [2.625, 2.000, 2.000],
+        ], dtype=float)
+    ref_scale = 1.0
+    ref_units = "A"
+
+    structure = generate_dimer_structure(
+        dimer      = ["O", "O"],
+        units      = "A",
+        separation = 1.25,
+        Lbox       = 4.0,
+        kgrid      = [2, 2, 2],
+        bconds     = ["p", "p", "p"],
+        )
+
+    np.testing.assert_allclose(structure.pos,      ref_pos)
+    np.testing.assert_allclose(structure.axes,     ref_axes)
+    np.testing.assert_allclose(structure.center,   ref_center)
+    np.testing.assert_allclose(structure.kaxes,    ref_kaxes)
+    np.testing.assert_allclose(structure.kpoints,  ref_kpoints)
+    np.testing.assert_allclose(structure.kweights, ref_kweights)
+    assert(structure.elem.tolist()     == ref_elem)
+    assert(structure.dim               == ref_dim)
+    assert(structure.bconds.tolist()   == ref_bconds)
+    assert(structure.scale             == ref_scale)
+    assert(structure.units             == ref_units)
+    assert(structure.background_charge == ref_background_charge)
+#end def test_gen_dimer
+
+
+def test_gen_trimer():
+    ref_axes = np.array([
+        [4, 0, 0],
+        [0, 4, 0],
+        [0, 0, 4],
+        ], dtype=float)
+    ref_background_charge = 0
+    ref_bconds = ["p", "p", "p"]
+    ref_center = np.array([2, 2, 2], dtype=float)
+    ref_dim = 3
+    ref_elem = ["O", "H", "H"]
+    ref_kaxes = np.array([
+        [1.57079633, 0.00000000, 0.00000000],
+        [0.00000000, 1.57079633, 0.00000000],
+        [0.00000000, 0.00000000, 1.57079633],
+        ], dtype=float)
+    ref_kpoints = np.array([
+        [0.00000000, 0.00000000, 0.00000000],
+        [0.78539816, 0.00000000, 0.00000000],
+        [0.00000000, 0.78539816, 0.00000000],
+        [0.78539816, 0.78539816, 0.00000000],
+        [0.00000000, 0.00000000, 0.78539816],
+        [0.78539816, 0.00000000, 0.78539816],
+        [0.00000000, 0.78539816, 0.78539816],
+        [0.78539816, 0.78539816, 0.78539816],
+        ])
+    ref_kweights = np.array([1, 1, 1, 1, 1, 1, 1, 1], dtype=float)
+    ref_pos = np.array([
+        [1.62519, 1.51592618, 2.0000],
+        [2.62519, 1.51592618, 2.0000],
+        [1.37481, 2.48407382, 2.0000],
+        ], dtype=float)
+    ref_scale = 1.0
+    ref_units = "A"
+
+    structure = generate_trimer_structure(
+        trimer     = ["O", "H", "H"],
+        units      = "A",
+        separation = [1.0, 1.0],
+        angle      = 104.5,
+        Lbox       = 4.0,
+        kgrid      = [2, 2, 2],
+        )
+
+    np.testing.assert_allclose(structure.pos,      ref_pos)
+    np.testing.assert_allclose(structure.axes,     ref_axes)
+    np.testing.assert_allclose(structure.center,   ref_center)
+    np.testing.assert_allclose(structure.kaxes,    ref_kaxes)
+    np.testing.assert_allclose(structure.kpoints,  ref_kpoints)
+    np.testing.assert_allclose(structure.kweights, ref_kweights)
+    assert(structure.elem.tolist()     == ref_elem)
+    assert(structure.dim               == ref_dim)
+    assert(structure.bconds.tolist()   == ref_bconds)
+    assert(structure.scale             == ref_scale)
+    assert(structure.units             == ref_units)
+    assert(structure.background_charge == ref_background_charge)
+#end def test_gen_trimer
 
 
 def test_read_write(tmp_path):

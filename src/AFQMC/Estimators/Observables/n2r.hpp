@@ -272,8 +272,8 @@ public:
       auto&& T0N(T(T.extension(0), {i0, iN}));
       ma::product(Gu, Orb0N, T0N);
       using ma::batched_dot;
-      batched_dot('H', 'T', (iN - i0), NMO, ComplexType(1.0), ma::pointer_dispatch(Orb0N.origin()), Orb0N.stride(0),
-                  ma::pointer_dispatch(T0N.origin()), T0N.stride(0), ComplexType(0.0),
+      batched_dot('H', 'T', (iN - i0), NMO, ComplexType(1.0), ma::pointer_dispatch(Orb0N.origin()), Orb0N.stride(),
+                  ma::pointer_dispatch(T0N.origin()), T0N.stride(), ComplexType(0.0),
                   ma::pointer_dispatch(Gr.origin()) + i0, 1);
       /*
       fill_n(Gr.origin(),dm_size,ComplexType(0.0,0.0));
@@ -300,8 +300,8 @@ public:
       {
         auto&& Gd = G[iw][1];
         ma::product(Gd, Orb0N, T0N);
-        batched_dot('H', 'T', (iN - i0), NMO, ComplexType(1.0), ma::pointer_dispatch(Orb0N.origin()), Orb0N.stride(0),
-                    ma::pointer_dispatch(T0N.origin()), T0N.stride(0), ComplexType(0.0),
+        batched_dot('H', 'T', (iN - i0), NMO, ComplexType(1.0), ma::pointer_dispatch(Orb0N.origin()), Orb0N.stride(),
+                    ma::pointer_dispatch(T0N.origin()), T0N.stride(), ComplexType(0.0),
                     ma::pointer_dispatch(Gr.origin()) + i0, 1);
         using std::copy_n;
         copy_n(ma::pointer_dispatch(Gr.origin()) + i0, (iN - i0), Gr_[1].origin());
