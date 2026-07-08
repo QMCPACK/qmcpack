@@ -23,8 +23,6 @@ TEST_CASE("UserJastrowFunctor", "[wavefunction]")
 {
   using RealType = OptimizableFunctorBase::real_type;
 
-  Communicate* c = OHMMS::Controller;
-
   UserFunctor<RealType> uf("test_functor");
 
   // This may or may not need to be present

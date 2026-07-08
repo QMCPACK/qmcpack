@@ -630,7 +630,6 @@ void SDetOps_complex_serial(Allocator alloc, BufferManager b)
 
 TEST_CASE("SDetOps_complex_mpi3", "[sdet_ops]")
 {
-  Communicate* c = OHMMS::Controller;
 
   using boost::mpi3::shared_communicator;
   auto world               = boost::mpi3::environment::get_world_instance();
@@ -806,7 +805,6 @@ TEST_CASE("SDetOps_complex_mpi3", "[sdet_ops]")
 
 TEST_CASE("SDetOps_complex_csr", "[sdet_ops]")
 {
-  Communicate* c = OHMMS::Controller;
 
   using boost::mpi3::shared_communicator;
 

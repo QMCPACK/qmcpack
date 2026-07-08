@@ -50,7 +50,6 @@ public:
 
 TEST_CASE("QMCUpdate", "[drivers]")
 {
-  Communicate* c = OHMMS::Controller;
 
   const SimulationCell simulation_cell;
   MCWalkerConfiguration elec(simulation_cell);
@@ -80,7 +79,6 @@ TEST_CASE("QMCUpdate", "[drivers]")
 
 TEST_CASE("CloneManager", "[drivers]")
 {
-  Communicate* c = OHMMS::Controller;
 
   CloneManager cm;
 }

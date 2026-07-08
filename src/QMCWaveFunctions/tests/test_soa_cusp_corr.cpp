@@ -27,7 +27,6 @@ namespace qmcplusplus
 {
 TEST_CASE("readCuspInfo", "[wavefunction]")
 {
-  Communicate* c = OHMMS::Controller;
 
   using GridType = OneDimGridBase<double>;
 
