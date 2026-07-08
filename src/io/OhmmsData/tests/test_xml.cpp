@@ -114,7 +114,6 @@ TEST_CASE("putContent", "[xml]")
   putContent(e, item);
   REQUIRE(e.size() == 2);
 
-  vector<double> f;
   item = xmlNextElementSibling(item);
   REQUIRE(string((char*)item->name) == "item5");
   // Will hang, don't test for now

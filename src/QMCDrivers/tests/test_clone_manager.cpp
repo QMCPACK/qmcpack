@@ -50,7 +50,6 @@ public:
 
 TEST_CASE("QMCUpdate", "[drivers]")
 {
-
   const SimulationCell simulation_cell;
   MCWalkerConfiguration elec(simulation_cell);
   elec.setName("e");
@@ -77,10 +76,6 @@ TEST_CASE("QMCUpdate", "[drivers]")
 }
 
 
-TEST_CASE("CloneManager", "[drivers]")
-{
-
-  CloneManager cm;
-}
+TEST_CASE("CloneManager", "[drivers]") { CloneManager cm; }
 
 } // namespace qmcplusplus

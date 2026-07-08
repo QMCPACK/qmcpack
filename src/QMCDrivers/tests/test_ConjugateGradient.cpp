@@ -117,7 +117,7 @@ TEST_CASE("ConjugateGradient", "[drivers]")
 
   ConjugateGradient cg;
   std::vector<Real> soln(np, 0);
-  int niterations = cg.run(ls, b, soln);
+  cg.run(ls, b, soln);
   for (int i = 0; i < np; i++)
     CHECK(soln[i] == Approx(x[i]).epsilon(0.001));
 }

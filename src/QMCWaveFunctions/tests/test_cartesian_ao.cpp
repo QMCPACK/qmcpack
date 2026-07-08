@@ -52,7 +52,7 @@ void test_cartesian_ao()
     ions.create({1});
     ions.R[0]            = 0.0;
     SpeciesSet& ispecies = ions.getSpeciesSet();
-    int hIdx             = ispecies.addSpecies("H");
+    ispecies.addSpecies("H");
     ions.update();
 
     elec.addTable(ions);
@@ -60,7 +60,6 @@ void test_cartesian_ao()
 
     Libxml2Document doc;
     REQUIRE(doc.parse("cartesian_order.wfnoj.xml"));
-    xmlNodePtr root = doc.getRoot();
 
     WaveFunctionComponentBuilder::PSetMap particle_set_map;
     particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
@@ -120,7 +119,7 @@ void test_dirac_ao()
     ions.create({1});
     ions.R[0]            = 0.0;
     SpeciesSet& ispecies = ions.getSpeciesSet();
-    int hIdx             = ispecies.addSpecies("H");
+    ispecies.addSpecies("H");
     ions.update();
 
     elec.addTable(ions);
@@ -128,7 +127,6 @@ void test_dirac_ao()
 
     Libxml2Document doc;
     REQUIRE(doc.parse("dirac_order.wfnoj.xml"));
-    xmlNodePtr root = doc.getRoot();
 
     WaveFunctionComponentBuilder::PSetMap particle_set_map;
     particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));

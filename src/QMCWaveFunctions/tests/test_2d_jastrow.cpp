@@ -68,7 +68,6 @@ TEST_CASE("Jastrow 2D", "[wavefunction]")
   node = xmlFirstElementChild(root);
   XMLParticleParser parse_electrons(elec);
   parse_electrons.readXML(node);
-  int itab;
   elec.addTable(elec);
   elec.update(); // update distance tables
   const int nelec = elec.getTotalNum();

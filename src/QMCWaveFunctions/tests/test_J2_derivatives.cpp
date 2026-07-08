@@ -68,8 +68,8 @@ ParticleSet get_two_species_particleset(const SimulationCell& simulation_cell)
   elec.R[3] = {0.9, 0.5, 1.1};
 
   SpeciesSet& tspecies = elec.getSpeciesSet();
-  int upIdx            = tspecies.addSpecies("u");
-  int downIdx          = tspecies.addSpecies("d");
+  tspecies.addSpecies("u");
+  tspecies.addSpecies("d");
   elec.resetGroups();
 
   elec.addTable(elec);
