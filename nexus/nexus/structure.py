@@ -808,7 +808,134 @@ class Sobj(DevBase):
 
 
 
-class Structure(Sobj): 
+class Structure(Sobj):
+    """General class for all physical structures
+
+    Attributes
+    ----------
+    axes : NDArray
+        Lattice vectors of the cell as a square matrix of dimension
+        ``dim x dim``.
+    scale : int or float
+        Scaling for all other physical values.
+    elem : NDArray of str
+        Array of atomic symbols.
+    pos : NDArray of float
+        Positions of the atoms.
+    center : NDArray of float
+        Defined center of the cell.
+    kpoints : NDArray of float
+        Array containing the positions of k-points.
+    kweights : NDArray of float
+        Weight of individual k-points.
+    units : str
+        Units of the atom positions.
+    dim : int, default=3
+        Dimensionality of the Structure.
+    operations : Mapping of str to function
+        Operations to perform on the structure.
+        See :py:meth:`~.Structure.set_operations()` for more information.
+    background_charge : int, default=0
+        The total background charge of the system. Positive for cations,
+        negative for anions, and zero for neutral systems.
+    bconds : NDArray of str
+        Boundary conditions either in all directions or specified for
+        each dimension
+    mag : NDArray of float or None
+        Magnetic moments of each atom, or ``None`` if system is not
+        magnetized.
+    tmatrix : NDArray of int or None
+        A vector of ints for tiling the cell in each dimension.
+        See :py:meth:`~.Structure.tile()` for more information.
+    frozen : NDArray of bool or None, default=None
+        Mask array of booleans with the same length as the number of
+        atoms and width of ``dim``, where ``True`` indicates the atoms
+        are locked in place and ``False`` indicates they are free to
+        move.
+
+    Parameters
+    ----------
+    axes : ArrayLike, optional
+        Lattice vectors of the cell
+    scale : int or float, default=1.
+        Scaling for all other physical values.
+        See :py:meth:`~.Structure.rescale()` for more information.
+    elem : ArrayLike, optional
+        Array of atomic symbols.
+    pos : ArrayLike, optional
+        Positions of the atoms.
+    elem_pos : str, optional
+        Multiline string with each line containing an atom where an atom
+        is an element and its position. Overrides ``elem`` and ``pos``.
+    mag : ArrayLike, optional
+        Magnetic moments of each atom.
+    center : ArrayLike, optional
+        Defined center of the cell, defaults to the ``[0.5, 0.5, 0.5]``
+        point of the cell.
+    kpoints : ArrayLike, optional
+        Array containing the positions of k-points.
+    kweights : ArrayLike, optional
+        Weight of individual k-points, must be as long as the number of
+        k-points.
+    kgrid : int, optional
+        Number of subdivisions to create a Monkhorst-Pack k-point mesh.
+        See :py:func:`~.kmesh` for a more in-depth explanation.
+        Overrides ``kpoints`` if specified.
+    kshift : ArrayLike, optional
+        Vector to translate k-points if k-grid is specified.
+    permute : ArrayLike, optional
+        Vector to permute the structure.
+        See :py:meth:`~.Structure.permute()` for more information.
+    units : str, optional
+        Units of the positions. See :py:mod:`unit_converter.py` for a 
+        full list of supported units.
+    tiling : ArrayLike of int, optional
+        A vector of ints for tiling the cell in each dimension.
+        See :py:meth:`~.Structure.tile()` for more information.
+    rescale : bool, default=True
+        ``True`` will rescale the supplied structural information with
+        the scaling factor provided (see ``scale``), ``False`` sets the
+        ``scale`` without altering the provided structural information.
+    dim : int, default=3
+        Dimensionality of the Structure. See Notes for more information.
+    operations : iterable of str, optional
+        Operations to perform on the structure.
+        See :py:meth:`~.Structure.set_operations()` for more information.
+    background_charge : int, default=0
+        The total background charge of the system. Positive for cations,
+        negative for anions, and zero for neutral systems.
+    frozen : ArrayLike of bool, optional
+        Mask array of booleans with the same length as the number of
+        atoms and width of ``dim``.
+        See :py:meth:`~.Structure.set_frozen()` for more information.
+    bconds : str or tuple of str, optional
+        Boundary conditions either in all directions or specified for
+        each dimension. Defaults to periodic in all directions.
+    posu : ArrayLike, optional
+        The positions of the atoms in units of the lattice parameter.
+        Overrides ``pos``.
+    use_prim : bool, optional
+        Option to convert the unit cell to a primitive cell.
+        Requires that the ``seekpath`` package is installed [0]_.
+    add_kpath : bool, default=False
+        Optionally add k-points to the primitive cell. Only used if
+        ``use_prim`` is ``True``.
+    symm_kgrid : bool, default=False
+        Option for generating a Monkhorst-Pack k-point grid with only
+        symmetric k-points. Requires the ``spglib`` package [1]_.
+        See :py:meth:`~.Structure.add_symmetrized_mesh()` for more
+        information.
+
+    Notes
+    -----
+    Currently the :py:class:`~.Structure` class only partially supports
+    2-dimensional structures.
+
+    References
+    ----------
+    .. [0] https://seekpath.readthedocs.io/en/latest/
+    .. [1] https://spglib.readthedocs.io/en/stable/
+    """
 
     operations = obj()
 
@@ -6661,6 +6788,55 @@ class DefectStructure(Structure):
 
 
 class Crystal(Structure):
+    """Generate a crystal structure.
+
+    Attributes
+    ----------
+    lattice_constants
+    lattices
+    centering_types
+    lattice_centerings
+    centerings
+    cell_types
+    cell_aliases
+    cell_classes
+    constants : NDArray of float
+        The lattice constants (``a``, ``b``, ``c``) for the crystal.
+    angles : NDArray of float
+        The angles (``α``, ``β``, ``γ``) for the crystal.
+    generation_info : obj of str: str
+        The supplied inputs to the class constructor.
+
+    Parameters
+    ----------
+    lattice : str, optional
+    cell : str, optional
+    centering : {"P", "A", "B", "C", "F", "I", "R"}, optional
+    constants : float or tuple of float, optional
+        Lattice constants required for the specified lattice. The order
+        for these is ``(a, b, c, α, β, γ)``. If the specified lattice
+        does not require some constant, you can omit it, but retain the
+        overall order of the constants.
+    atoms : str or tuple of str, optional
+        The atomic symbol(s) of the atoms in the lattice.
+    basis : list of lists of floats, optional
+        A list of vectors that define the atom positions with respect
+        to the ``basis_vectors``. If there are multiple ``atoms``, this
+        should have the sample length as ``atoms``.
+    basis_vectors : ArrayLike of float or {"prim", "conv"}, optional
+        A set of 3 vectors that define the basis used to transform
+        ``basis``.
+    cscale : list of float, optional
+        Scaling values for the provided constants. Must have the same
+        length as ``constants``.
+
+    See Also
+    --------
+    Structure :
+        All remaining parameters are passed to this class's constructor.
+        See its docstring for more details.
+    """
+
     lattice_constants = obj(
         triclinic    = ['a','b','c','alpha','beta','gamma'],
         monoclinic   = ['a','b','c','beta'],
@@ -6670,8 +6846,10 @@ class Crystal(Structure):
         cubic        = ['a'],
         rhombohedral = ['a','alpha']
         )
+    """Mapping from a lattice type to the required values to create the cell."""
 
     lattices = list(lattice_constants.keys())
+    """List of lattice systems."""
 
     centering_types = obj(
         primitive             = 'P',
@@ -6680,6 +6858,7 @@ class Crystal(Structure):
         body_centered         = 'I',
         rhombohedral_centered = 'R'        
         )
+    """Mapping from centering types to their Pearson symbol."""
 
     lattice_centerings = obj(
         triclinic    = ['P'],
@@ -6690,6 +6869,7 @@ class Crystal(Structure):
         cubic        = ['P','I','F'],
         rhombohedral = ['P']
         )
+    """Mapping of lattice systems to allowed centering types."""
 
     centerings = obj(
         P = [],
@@ -6702,17 +6882,22 @@ class Crystal(Structure):
         )
 
     cell_types = set(['primitive','conventional'])
+    """Types of cells, currently only ``primitive`` and ``conventional``."""
 
     cell_aliases = obj(
         prim = 'primitive',
         conv = 'conventional'
         )
+    """Mapping from shortened aliases ``prim`` and ``conv`` to their cell type."""
+
     cell_classes = obj(
         sc  = 'cubic',
         bcc = 'cubic',
         fcc = 'cubic',
         hex = 'hexagonal'
         )
+    """Mapping from common lattice names to their lattices."""
+
     for lattice in lattices:
         cell_classes[lattice]=lattice
     #end for
@@ -6988,6 +7173,7 @@ class Crystal(Structure):
             basis     = [[0,0,0],[1./2,1./6,0]]
             )
         }
+    """Mapping from material names and their cell types to their crystal information."""
 
     kc_keys = list(known_crystals.keys())
     for (name,cell) in kc_keys:
@@ -7441,12 +7627,6 @@ class Jellium(Structure):
 #end class Jellium
 
 
-    
-    
-
-
-
-
 # test needed
 def generate_cell(shape,tiling=None,scale=1.,units=None,struct_type=Structure):
     if tiling is None:
@@ -7494,9 +7674,6 @@ def generate_structure(type='crystal',*args,**kwargs):
 #end def generate_structure
 
 
-
-
-# test needed
 def generate_atom_structure(
     atom        = None,
     units       = 'A',
@@ -7508,6 +7685,28 @@ def generate_atom_structure(
     bconds      = tuple('nnn'),
     struct_type = Structure
     ):
+    """Create a structure with a single atom in the center of a unit cell.
+
+    Parameters
+    ----------
+    atom : str
+        The atomic symbol of the atom.
+    units : str, default="A"
+        The units of the structure, defaults to Angstroms.
+    Lbox : int or float, optional
+        Length of the simulation box. Overrides ``axes``.
+    skew : int or float less than 1, default=0
+        ...
+    axes : ArrayLike of float, optional
+        The unit cell axes.
+    kgrid : tuple of int, default=(1,1,1)
+        Number of k-points in each direction. Used to create a
+        Monkhorst-Pack k-point mesh.
+    kshift : tuple of int, default=(0,0,0)
+        Vector to use to translate the k-points in the mesh.
+    bconds : tuple of str, default=("n","n","n")
+        Boundary conditions for the resulting structure.
+    """
     if atom is None:
         Structure.class_error('atom must be provided','generate_atom_structure')
     #end if
@@ -7525,7 +7724,6 @@ def generate_atom_structure(
 #end def generate_atom_structure
 
 
-# test needed
 def generate_dimer_structure(
     dimer       = None,
     units       = 'A',
@@ -7539,6 +7737,32 @@ def generate_dimer_structure(
     struct_type = Structure,
     axis        = 'x'
     ):
+    """Create a structure with a dimer in the center of a unit cell.
+
+    Parameters
+    ----------
+    dimer : list of str
+        The atomic symbols of the atoms in the dimer.
+    units : str, default="A"
+        The units of the structure, defaults to Angstroms.
+    separation : int or float
+        The separation between the atoms in the dimer.
+    Lbox : int or float, optional
+        Length of the simulation box. Overrides ``axes``.
+    skew : int or float less than 1, default=0
+        ...
+    axes : ArrayLike of float, optional
+        The unit cell axes.
+    kgrid : tuple of int, default=(1,1,1)
+        Number of k-points in each direction. Used to create a
+        Monkhorst-Pack k-point mesh.
+    kshift : tuple of int, default=(0,0,0)
+        Vector to use to translate the k-points in the mesh.
+    bconds : tuple of str, default=("n","n","n")
+        Boundary conditions for the resulting structure.
+    axis : {"x", "y", "z"}, optional
+        The axis that the dimer is aligned on.
+    """
     if dimer is None:
         Structure.class_error('dimer atoms must be provided to construct dimer','generate_dimer_structure')
     #end if
@@ -7571,7 +7795,6 @@ def generate_dimer_structure(
 #end def generate_dimer_structure
 
 
-# test needed
 def generate_trimer_structure(
     trimer        = None,
     units         = 'A',
@@ -7588,6 +7811,38 @@ def generate_trimer_structure(
     angular_units = 'degrees',
     plane_rot     = None
     ):
+    """Create a structure with a dimer in the center of a unit cell.
+
+    Parameters
+    ----------
+    trimer : list of str
+        The atomic symbols of the atoms in the trimer.
+    units : str, default="A"
+        The units of the structure, defaults to Angstroms.
+    separation : list of ints or floats
+        The separation between the atoms in the trimer. The first value
+        is the distance between atom 1 and atom 2, and the second value
+        is the distance between atom 1 and atom 3.
+    angle : int or float
+        The angle formed by the three atoms in the trimer.
+    Lbox : int or float, optional
+        Length of the simulation box. Overrides ``axes``.
+    skew : int or float less than 1, default=0
+        ...
+    axes : ArrayLike of float, optional
+        The unit cell axes.
+    kgrid : tuple of int, default=(1,1,1)
+        Number of k-points in each direction. Used to create a
+        Monkhorst-Pack k-point mesh.
+    kshift : tuple of int, default=(0,0,0)
+        Vector to use to translate the k-points in the mesh.
+    axis : {"x", "y", "z"}, optional
+        The axis that atom 1 and atom 2 of the trimer is aligned on.
+    axis2 : {"x", "y", "z"}, optional
+        The axis that atom 1 and atom 3 of the trimer is aligned on.
+    angular_units : {"degrees", "rad", "radians"}, optional
+        The units of the supplied angle.
+    """
     if trimer is None:
         Structure.class_error('trimer atoms must be provided to construct trimer','generate_trimer_structure')
     #end if
@@ -7719,6 +7974,11 @@ def generate_crystal_structure(
     element        = None,
     scale          = None,
     ):
+    """Generate a crystal structure.
+
+    See :py:class:`~.Crystal` and :py:class:`~.Structure` for a
+    description of the available parameters.
+    """
 
     if structure is not None:
         lattice = structure
