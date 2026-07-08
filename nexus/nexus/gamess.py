@@ -154,7 +154,7 @@ class Gamess(Simulation):
                     self.block()
                 #end if
                 guess_inputs = obj()
-                ecounts = self.system.electron_counts()
+                ecounts = self.system.n_up, self.system.n_down
                 orbs = result.orbitals
                 order_map = obj(up='iorder',down='jorder')
                 nelec_map = obj(up=ecounts[0],down=ecounts[1])

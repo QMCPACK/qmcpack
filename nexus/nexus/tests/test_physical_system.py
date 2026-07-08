@@ -8,7 +8,9 @@ generic_settings.raise_error = True
 import numpy as np
 from .. import testing
 from ..testing import value_eq,object_eq
-from nexus.physical_system import generate_physical_system, Particles
+from nexus.physical_system import generate_physical_system
+from nexus.periodic_table import Elements
+from nexus.unit_converter import convert
 
 from .test_structure import structure_same
 
@@ -530,11 +532,17 @@ def test_particle_equiv():
         C      = 4,
         )
 
-    assert(ref.particles.electron_counts()        == ref.electron_counts())
-    assert(ref.particles.count_electrons()        == ref.count_electrons())
-    assert(ref.particles.count_ions()             == ref.count_ions())
-    assert(ref.particles.count_ions(species=True) == ref.count_ions(species=True))
-    assert(object_eq(ref.particles.get_ions(),    ref.get_ions()))
-    assert(object_eq(ref.particles.up_electron,   ref.up_electron))
-    assert(object_eq(ref.particles.down_electron, ref.down_electron))
+    assert(ref.particles.electron_counts()        == [ref.n_up, ref.n_down])
+    assert(ref.particles.count_electrons()        ==  ref.n_elec)
+    assert(ref.particles.count_ions()             ==  ref.n_ions)
+    assert(ref.particles.count_ions(species=True) == (ref.n_ions, ref.n_species))
+    assert(set(ref.particles.get_ions().keys())   == ref.ion_labels)
+
+    ions = ref.particles.get_ions()
+    for ion in ref.ion_labels:
+        is_elem, element = Elements.is_element(ion, return_element=True)
+        assert(ions[ion].name == ion)
+        assert(ions[ion].charge == ref.Zeff[ion])
+        assert(value_eq(ions[ion].mass, convert(element.atomic_weight, "amu", "me")))
+
 #end def test_particle_equiv

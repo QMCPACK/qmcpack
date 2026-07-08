@@ -636,26 +636,54 @@ class PhysicalSystem(Matter):
     #end def kf_rpa
 
 
-    def electron_counts(self):
-        return self.particles.electron_counts()
-    
-    def count_electrons(self):
-        return self.particles.count_electrons()
+    @property
+    def n_elec(self):
+        ions = self.structure.elem.tolist()
+        tot_charge = 0
+        for ion in ions:
+            if hasattr(self, "valency"):
+                if ion in self.valency:
+                    tot_charge += self.valency[ion]
+                else:
+                    _, element = Elements.is_element(ion, return_element=True)
+                    tot_charge += element.atomic_number
+            else:
+                _, element = Elements.is_element(ion, return_element=True)
+                tot_charge += element.atomic_number
 
-    def count_ions(self, species=False):
-        return self.particles.count_ions(species)
-
-    def get_ions(self):
-        return self.particles.get_ions()
+        return tot_charge - self.net_charge
 
     @property
-    def up_electron(self):
-        return self.particles.up_electron
+    def n_up(self):
+        return (self.n_elec + self.net_spin) // 2
 
     @property
-    def down_electron(self):
-        return self.particles.down_electron
+    def n_down(self):
+        return (self.n_elec - self.net_spin) // 2
 
+    @property
+    def n_species(self):
+        return len(set(self.structure.elem))
+
+    @property
+    def n_ions(self):
+        return len(self.structure.elem)
+
+    @property
+    def ion_labels(self):
+        return set(self.structure.elem)
+
+    @property
+    def Zeff(self):
+        if hasattr(self, "valency"):
+            return self.valency
+
+        Zeff = {}
+        for ion in self.ion_labels:
+            _, element = Elements.is_element(ion, return_element=True)
+            Zeff[ion] = element.atomic_number
+
+        return Zeff
 #end class PhysicalSystem
 
 
