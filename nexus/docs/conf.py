@@ -36,6 +36,9 @@ import importlib
 from importlib.metadata import PackageNotFoundError
 sys.path.append(Path(__file__).parent.parent.resolve())
 
+# Not sure why, but Sphinx has problems with this import unless it's in this file
+from CifFile import CifFile
+
 try:
     release = importlib.metadata.version("nexus")
 except PackageNotFoundError:
