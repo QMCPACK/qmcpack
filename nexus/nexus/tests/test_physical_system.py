@@ -8,6 +8,7 @@ generic_settings.raise_error = True
 import numpy as np
 from .. import testing
 from ..testing import value_eq,object_eq
+from nexus.physical_system import generate_physical_system, Particles
 
 from .test_structure import structure_same
 
@@ -511,3 +512,29 @@ def test_kf_rpa():
     assert np.isclose(kfs[0], 1.465, atol=1e-3)
     assert np.isclose(kfs[1], 1.465/2**(1./3), atol=1e-3)
 #end def test_kf_rpa
+
+
+def test_particle_equiv():
+
+    ref = generate_physical_system(
+        units  = 'A',
+        axes   = [[1.785, 1.785, 0.   ],
+                  [0.   , 1.785, 1.785],
+                  [1.785, 0.   , 1.785]],
+        elem   = 2*['C'],
+        posu   = [[0.00, 0.00, 0.00],
+                  [0.25, 0.25, 0.25]],
+        tiling = [[ 1, -1,  1],
+                  [ 1,  1, -1],
+                  [-1,  1,  1]],
+        C      = 4,
+        )
+
+    assert(ref.particles.electron_counts()        == ref.electron_counts())
+    assert(ref.particles.count_electrons()        == ref.count_electrons())
+    assert(ref.particles.count_ions()             == ref.count_ions())
+    assert(ref.particles.count_ions(species=True) == ref.count_ions(species=True))
+    assert(object_eq(ref.particles.get_ions(),    ref.get_ions()))
+    assert(object_eq(ref.particles.up_electron,   ref.up_electron))
+    assert(object_eq(ref.particles.down_electron, ref.down_electron))
+#end def test_particle_equiv
