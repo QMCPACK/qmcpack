@@ -326,6 +326,7 @@ TEST_CASE("InputSection::init", "[estimators]")
              {"width", Real(2.5)},
              {"rational", bool(true)},
              {"sposets", std::vector<std::string>{"spo1", "spo2"}},
+             {"density", std::vector<Real>{10.0, 20.0, 30.0}},
              {"center", InputSection::Position(0.0, 0.0, 0.1)}});
 
     ti.report(std::cout);
@@ -338,6 +339,7 @@ TEST_CASE("InputSection::init", "[estimators]")
     CHECK(ti.has("count"));
     CHECK(ti.has("width"));
     CHECK(ti.has("rational"));
+    CHECK(ti.has("density"));
     // check value correctness
     CHECK(ti.get<std::string>("name") == "alice");
     CHECK(ti.get<int>("samples") == 10);
@@ -348,6 +350,7 @@ TEST_CASE("InputSection::init", "[estimators]")
     CHECK(ti.get<Real>("width") == Approx(2.5));
     CHECK(ti.get<bool>("rational") == true);
     CHECK(ti.get<std::vector<std::string>>("sposets") == std::vector<std::string>{"spo1", "spo2"});
+    CHECK(ti.get<std::vector<Real>>("density") == std::vector<Real>{10.0, 20.0, 30.0});
     CHECK(ti.get<InputSection::Position>("center") == InputSection::Position(0.0, 0.0, 0.1));
   }
 

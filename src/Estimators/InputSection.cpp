@@ -17,6 +17,15 @@
 namespace qmcplusplus
 {
 
+template<typename T>
+const T& anyCastOrThrow(const std::string& section_name, const std::string& name, const std::any& value)
+{
+  if (const auto* typed_value = std::any_cast<T>(&value))
+    return *typed_value;
+
+  throw UniformCommunicateError("std::any_cast failed in setFromValue for name:" + name + " in " + section_name);
+}
+
 [[noreturn]] std::any InputSection::assignAnyEnum(const std::string& tag) const
 {
   throw UniformCommunicateError("derived class must provide assignAnyEnum method if enum parameters are used");
@@ -275,32 +284,25 @@ void InputSection::assignValue(const std::string& name, const T& value)
 
 void InputSection::setFromValue(const std::string& name, const std::any& value)
 {
-  try
+  if (isString(name) || isEnumString(name))
+    assignValue(name, anyCastOrThrow<std::string>(section_name, name, value));
+  else if (isMultiString(name))
+    assignValue(name, anyCastOrThrow<std::vector<std::string>>(section_name, name, value));
+  else if (isMultiReal(name))
+    assignValue(name, anyCastOrThrow<std::vector<Real>>(section_name, name, value));
+  else if (isBool(name))
+    assignValue(name, anyCastOrThrow<bool>(section_name, name, value));
+  else if (isInteger(name))
+    assignValue(name, anyCastOrThrow<int>(section_name, name, value));
+  else if (isReal(name))
+    assignValue(name, anyCastOrThrow<Real>(section_name, name, value));
+  else if (isPosition(name))
+    assignValue(name, anyCastOrThrow<Position>(section_name, name, value));
+  else
   {
-    if (isString(name) || isEnumString(name))
-      assignValue(name, std::any_cast<std::string>(value));
-    else if (isMultiString(name))
-      assignValue(name, std::any_cast<std::vector<std::string>>(value));
-    else if (isMultiReal(name))
-      assignValue(name, std::any_cast<std::vector<std::string>>(value));
-    else if (isBool(name))
-      assignValue(name, std::any_cast<bool>(value));
-    else if (isInteger(name))
-      assignValue(name, std::any_cast<int>(value));
-    else if (isReal(name))
-      assignValue(name, std::any_cast<Real>(value));
-    else if (isPosition(name))
-      assignValue(name, std::any_cast<Position>(value));
-    else
-    {
-      std::stringstream error;
-      error << "InputSection::set_from_value name " << name << " in " << section_name << " does not have a type\n";
-      throw UniformCommunicateError(error.str());
-    }
-  }
-  catch (const std::bad_cast& exc)
-  {
-    std::throw_with_nested(UniformCommunicateError("std::any_cast failed in setFromValue for name:" + name));
+    std::stringstream error;
+    error << "InputSection::set_from_value name " << name << " in " << section_name << " does not have a type\n";
+    throw UniformCommunicateError(error.str());
   }
 }
 
