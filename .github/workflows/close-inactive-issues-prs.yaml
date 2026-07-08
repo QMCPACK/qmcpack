@@ -10,8 +10,8 @@ jobs:
       issues: write
       pull-requests: write
     env:
-      stale-issue-time: 2190 # 6 years
-      stale-pr-time: 2190 # 6 years
+      stale-issue-time: 1460 # 4 years
+      stale-pr-time: 1460 # 4 years
       close-time: 28   # 4 weeks
     steps:
       - uses: actions/stale@v10.3.0
