@@ -3525,7 +3525,7 @@ def generate_any_rmg_input(**kwargs):
                     del ri[k]
                 #end if
             #end for
-            nup,ndn = system.particles.electron_counts()
+            nup,ndn = system.electron_counts()
             nvirt = int(np.ceil(virtual_frac*max(nup,ndn)))
             nptot = max(nup,ndn) + nvirt
             nup_virt = nptot-nup

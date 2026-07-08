@@ -634,6 +634,28 @@ class PhysicalSystem(Matter):
       kfs = [(3*nelec*kvol1/(4*np.pi))**(1./3) for nelec in nelecs]
       return np.array(kfs)
     #end def kf_rpa
+
+
+    def electron_counts(self):
+        return self.particles.electron_counts()
+    
+    def count_electrons(self):
+        return self.particles.count_electrons()
+
+    def count_ions(self, species=False):
+        return self.particles.count_ions(species)
+
+    def get_ions(self):
+        return self.particles.get_ions()
+
+    @property
+    def up_electron(self):
+        return self.particles.up_electron
+
+    @property
+    def down_electron(self):
+        return self.particles.down_electron
+
 #end class PhysicalSystem
 
 

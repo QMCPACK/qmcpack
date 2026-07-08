@@ -1675,17 +1675,16 @@ class PwscfInput(SimulationInput):
         system.check_folded_system()
         system.update_particles()
         system.change_units('B')
-        p  = system.particles
         s  = system.structure
         nc = system.net_charge
         ns = system.net_spin
 
-        nup = p.up_electron.count
-        ndn = p.down_electron.count
+        nup = system.up_electron.count
+        ndn = system.down_electron.count
 
         self.system.ibrav        = 0
 #        self.system['celldm(1)'] = 1.0e0
-        nions,nspecies = p.count_ions(species=True)
+        nions,nspecies = system.count_ions(species=True)
         self.system.nat          = nions
         self.system.ntyp         = nspecies
         self.system.tot_charge   = nc
@@ -1717,7 +1716,7 @@ class PwscfInput(SimulationInput):
             #end if
         #end if
 
-        atoms = p.get_ions()
+        atoms = system.get_ions()
         if 'masses' not in self.atomic_species:
             self.atomic_species.masses = obj()
         #end if
@@ -1739,7 +1738,7 @@ class PwscfInput(SimulationInput):
         pp = self.atomic_species.pseudopotentials
         for atom in self.atomic_species.atoms:
             if atom not in pp:
-                iselem,symbol = p.is_element(atom,symbol=True)
+                iselem,symbol = system.is_element(atom,symbol=True)
                 if iselem and symbol in pp:
                     pp[atom] = str(pp[symbol])
                 #end if
@@ -1770,17 +1769,16 @@ class PwscfInput(SimulationInput):
         system.check_folded_system()
         system.update_particles()
         system.change_units('B')
-        p  = system.particles
         s  = system.structure
         nc = system.net_charge
         ns = system.net_spin
 
-        nup = p.up_electron.count
-        ndn = p.down_electron.count
+        nup = system.up_electron.count
+        ndn = system.down_electron.count
 
         self.system.ibrav        = 0
 #        self.system['celldm(1)'] = 1.0e0
-        nions,nspecies = p.count_ions(species=True)
+        nions,nspecies = system.count_ions(species=True)
         self.system.nat          = nions
         self.system.ntyp         = nspecies
         #self.system.nelec        = nup+ndn
@@ -1819,7 +1817,7 @@ class PwscfInput(SimulationInput):
             #end if
         #end if
 
-        atoms = p.get_ions()
+        atoms = system.get_ions()
         masses = obj()
         for name,a in atoms.items():
             masses[name] = convert(a.mass,'me','amu')
@@ -1830,7 +1828,7 @@ class PwscfInput(SimulationInput):
         pp = self.atomic_species.pseudopotentials
         for atom in self.atomic_species.atoms:
             if atom not in pp:
-                iselem,symbol = p.is_element(atom,symbol=True)
+                iselem,symbol = system.is_element(atom,symbol=True)
                 if iselem and symbol in pp:
                     pp[atom] = str(pp[symbol])
                 #end if
@@ -2265,7 +2263,7 @@ def generate_any_pwscf_input(**kwargs):
 
     # set nbnd using bandfac, if provided
     if nbnd is None and bandfac is not None:
-        nocc = max(system.particles.electron_counts())
+        nocc = max(system.electron_counts())
         pw.system.nbnd = int(np.ceil(nocc*bandfac))
     #end if
 

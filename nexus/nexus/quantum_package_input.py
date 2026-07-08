@@ -750,7 +750,7 @@ def generate_quantum_package_input(**kwargs):
     if 'electrons' not in qpi:
         qpi.electrons = Section()
     #end if
-    nup,ndn = system.particles.electron_counts()
+    nup,ndn = system.electron_counts()
     qpi.electrons.elec_alpha_num = nup
     qpi.electrons.elec_beta_num  = ndn
 
