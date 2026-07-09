@@ -1,0 +1,30 @@
+name: Close inactive issues
+on:
+  schedule:
+    - cron: "45 13 * * 3"
+      timezone: "America/New_York"
+jobs:
+  close-issues:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+    env:
+      stale-issue-time: 365 # 1 year
+      stale-pr-time: 365 # 1 year
+      close-time: 28   # 4 weeks
+    steps:
+      - uses: actions/stale@v10.3.0
+        with:
+          operations-per-run: 10
+          days-before-issue-stale: ${{ env.stale-issue-time }}
+          days-before-issue-close: ${{ env.close-time }}
+          stale-issue-label: "stale"
+          stale-issue-message: "This issue is stale because it has been open for ${{ env.stale-issue-time }} days with no activity. It will be closed in ${{ env.close-time }} days if there is no fresh activity. Please comment within ${{ env.close-time }} days if this issue is still important to you and it should be kept open."
+          close-issue-message: "This issue was closed because it has been inactive for ${{ env.close-time }} days since being marked as stale."
+          days-before-pr-stale: ${{ env.stale-pr-time }}
+          days-before-pr-close: ${{ env.close-time }}
+          stale-pr-label: "stale"
+          stale-pr-message: "This pull request is stale because it has been open for ${{ env.stale-pr-time }} days with no activity. It will be closed in ${{ env.close-time }} days if there is no fresh activity. Please comment within ${{ env.close-time }} days if this pull request is still important to you and it should be kept open."
+          close-pr-message: "This pull request was closed because it has been inactive for ${{ env.close-time }} days since being marked as stale."
+          repo-token: ${{ secrets.GITHUB_TOKEN }}

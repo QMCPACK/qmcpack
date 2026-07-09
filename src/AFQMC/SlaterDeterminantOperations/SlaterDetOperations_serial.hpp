@@ -353,7 +353,7 @@ public:
     for (int i = 0; i < nbatch; i++)
     {
       ma::transpose(AT[i], *Ai[i]);
-      scale_columns(NMO, NAEA, (*Ai[i]).origin(), (*Ai[i]).stride(0), scl[i].origin());
+      scale_columns(NMO, NAEA, (*Ai[i]).origin(), (*Ai[i]).stride(), scl[i].origin());
     }
 #else
     int nw = Ai.size();
@@ -392,7 +392,7 @@ public:
     for (int i = 0; i < nbatch; i++)
     {
       ma::transpose(AT[i], *Ai[i]);
-      scale_columns(NMO, NAEA, (*Ai[i]).origin(), (*Ai[i]).stride(0), scl[i].origin());
+      scale_columns(NMO, NAEA, (*Ai[i]).origin(), (*Ai[i]).stride(), scl[i].origin());
     }
 #else
     int nw = Ai.size();

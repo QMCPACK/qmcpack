@@ -1,16 +1,9 @@
-try:
-    import pytest
-    from . import NexusTestOrder
-    pytestmark = pytest.mark.order(NexusTestOrder.TESTING)
-except ImportError:
-    pass
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.TESTING)
 
-
-def test_import():
-    from ..testing import value_diff,object_diff
-    from ..testing import value_eq,object_eq
-    from ..testing import value_neq,object_neq
-#end def test_import
+from ..generic import generic_settings
+generic_settings.raise_error = True
 
 
 
@@ -242,7 +235,6 @@ def test_value_checks():
 
 
 def test_object_checks():
-    import numpy as np
     from ..testing import object_diff,object_eq,object_neq
 
     assert(id(object_diff)==id(object_neq))

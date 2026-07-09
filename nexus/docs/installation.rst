@@ -186,7 +186,7 @@ Installing Python dependencies
 
 When manually installing Nexus, you must also install the Python dependencies. The ``numpy`` module must be installed for Nexus to
 function at a basic level. To realize the full range of functionality available, it is recommended that the ``scipy``,
-``matplotlib``, ``h5py``, ``pydot``, ``spglib``, ``pycifrw``, ``cif2cell`` and ``seekpath`` modules be installed as well. In
+``matplotlib``, ``h5py``, ``pydot``, ``spglib``, ``pycifrw``, ``cif2cell``, ``seekpath``, and ``pytest`` modules be installed as well. In
 supercomputing environments, most of these packages will *not* be available via system modules due to their specialized nature; you
 will need to install them via ``pip``, ``uv``, or individual manual installation.
 
@@ -203,21 +203,20 @@ You can perform a user level installation via ``pip``. If using ``uv``, prepend 
     pip3 install --user PyCifRW
     pip3 install --user cif2cell
     pip3 install --user seekpath
+    pip3 install --user pytest
 
 .. note::
     ``PyCifRW`` is a dependency of ``cif2cell``, thus if you install ``cif2cell`` you will already have ``PyCifRW`` installed as well.
 
 While Nexus does not have strict version requirements, most recent dependency versions that have been tested and are known to work
-can be found at ``qmcpack/nexus/requirements.txt``. These specific library versions can be installed using the following command:
+can be found at ``qmcpack/nexus/pyproject.toml``. These specific library versions can be installed using the following command:
 
 .. code-block:: bash
 
-    pip3 install --user -r requirements.txt
-
-``qmcpack/nexus/requirements_minimal.txt`` can be used similarly but only contains a recently tested version of ``numpy``. 
+    pip3 install --user -r pyproject.toml
 
 .. note::
-    Additionally, for users of ``uv``, the project's ``pyproject.toml`` can be used to install dependencies in a similar fashion: ``uv pip install -r pyproject.toml``.
+    Additionally, for users of ``uv``, the project's ``uv.lock`` file can be used to install the exact versions of dependencies that Nexus is tested with using the command ``uv sync --all-extras --locked``.
 
 If you are making a system-wide installation, on a Linux-based system, such as Ubuntu or Fedora, installation of these Python
 modules can be accomplished using the distribution's package manager (e.g. ``apt`` for Debian-based systems like Ubuntu). For
@@ -229,6 +228,7 @@ example, here is how one may install some of the packages with ``apt``:
     sudo apt install python3-scipy python3-matplotlib python3-h5py
     sudo apt install python3-pydot
     sudo apt install python3-pip
+    sudo apt install python3-pytest
 
 Simple substitutions will be needed on distributions with different package managers (e.g. ``dnf``). Note that the most specialist
 packages may not be available via this route.
@@ -259,6 +259,9 @@ The purpose of each library is described below:
 ``seekpath`` 
     Used to find high symmetry lines in reciprocal space for excited state calculations with QMCPACK.
 
+``pytest``
+    Used to test your Nexus installation.
+
 Of course, to run full calculations, the simulation codes and converters involved must be installed as well. These include a patched
 version of Quantum ESPRESSO (``pw.x``, ``pw2qmcpack.x``, optionally ``pw2casino.x``), QMCPACK (``qmcpack``, ``qmcpack_complex``,
 ``convert4qmc``, ``wfconvert``, ``ppconvert``), VASP, and/or GAMESS. Complete coverage of this task is beyond the scope of the
@@ -267,163 +270,90 @@ current document, but please see :ref:`install-code`.
 Testing your Nexus installation
 -------------------------------
 
-Nexus is packaged with an extensive suite of tests that can be run with
-either the ``nxs-test`` executable packaged with Nexus or with
-``pytest``. If you have installed Nexus, the ``nxs-test`` tool should be
-in your ``PATH``. Installation is successful if all tests pass:
+Nexus's testing suite is designed to run with ``pytest >= 6.2.4``.
+We make optional use of the ``pytest-cov`` and ``pytest-order`` plugins. They will not cause test failure if they are not installed.
 
-::
+If you have installed Nexus through ``pip`` or ``uv``, you can run the Nexus testing suite through the ``nxs-test`` command line script, which will automatically run the tests for the version of Nexus installed in your Python environment.
 
-    > nxs-test
-
-    1/67 versions................................   Passed  0.01 sec
-    2/67 required_dependencies...................   Passed  0.00 sec
-    3/67 nexus_base..............................   Passed  0.00 sec
-    4/67 nexus_imports...........................   Passed  0.02 sec
-    5/67 testing.................................   Passed  0.03 sec
-    6/67 execute.................................   Passed  0.00 sec
-    7/67 memory..................................   Passed  0.00 sec
-    8/67 generic.................................   Passed  0.01 sec
-    9/67 developer...............................   Passed  0.00 sec
-    10/67 unit_converter..........................   Passed  0.00 sec
-    11/67 periodic_table..........................   Passed  0.00 sec
-    12/67 numerics................................   Passed  0.02 sec
-    13/67 grid_functions..........................   Passed  0.70 sec
-    14/67 fileio..................................   Passed  0.02 sec
-    15/67 hdfreader...............................   Passed  0.00 sec
-    16/67 xmlreader...............................   Passed  0.00 sec
-    17/67 structure...............................   Passed  0.50 sec
-    18/67 physical_system.........................   Passed  0.03 sec
-    19/67 basisset................................   Passed  0.02 sec
-    20/67 pseudopotential.........................   Passed  0.29 sec
-    21/67 machines................................   Passed  0.98 sec
-    22/67 simulation_module.......................   Passed  0.34 sec
-    23/67 bundle..................................   Passed  0.00 sec
-    24/67 project_manager.........................   Passed  2.90 sec
-    25/67 settings................................   Passed  0.00 sec
-    26/67 vasp_input..............................   Passed  0.01 sec
-    27/67 pwscf_input.............................   Passed  0.01 sec
-    28/67 pwscf_postprocessor_input...............   Passed  0.00 sec
-    29/67 gamess_input............................   Passed  0.00 sec
-    30/67 pyscf_input.............................   Passed  0.01 sec
-    31/67 quantum_package_input...................   Passed  0.06 sec
-    32/67 rmg_input...............................   Passed  0.06 sec
-    33/67 qmcpack_converter_input.................   Passed  0.00 sec
-    34/67 qmcpack_input...........................   Passed  0.06 sec
-    35/67 vasp_analyzer...........................   Passed  0.02 sec
-    36/67 pwscf_analyzer..........................   Passed  0.16 sec
-    37/67 pwscf_postprocessor_analyzers...........   Passed  0.00 sec
-    38/67 gamess_analyzer.........................   Passed  0.00 sec
-    39/67 pyscf_analyzer..........................   Passed  0.00 sec
-    40/67 quantum_package_analyzer................   Passed  0.00 sec
-    41/67 rmg_analyzer............................   Passed  0.00 sec
-    42/67 qmcpack_converter_analyzers.............   Passed  0.00 sec
-    43/67 qmcpack_analyzer........................   Passed  0.23 sec
-    44/67 vasp_simulation.........................   Passed  0.02 sec
-    45/67 pwscf_simulation........................   Passed  0.01 sec
-    46/67 gamess_simulation.......................   Passed  0.00 sec
-    47/67 pyscf_simulation........................   Passed  0.00 sec
-    48/67 quantum_package_simulation..............   Passed  0.00 sec
-    49/67 rmg_simulation..........................   Passed  0.00 sec
-    50/67 pwscf_postprocessor_simulations.........   Passed  0.00 sec
-    51/67 qmcpack_converter_simulations...........   Passed  0.01 sec
-    52/67 qmcpack_simulation......................   Passed  0.20 sec
-    53/67 observables.............................   Passed  0.00 sec
-    54/67 nxs_redo................................   Passed  0.92 sec
-    55/67 nxs_sim.................................   Passed  2.03 sec
-    56/67 qmca....................................   Passed  2.90 sec
-    57/67 qmc_fit.................................   Passed  0.00 sec
-    58/67 qdens...................................   Passed  0.00 sec
-    59/67 qdens_radial............................   Passed  0.00 sec
-    60/67 example_gamess_H2O......................   Passed  1.01 sec
-    61/67 example_pwscf_relax_Ge_T................   Passed  0.47 sec
-    62/67 example_qmcpack_H2O.....................   Passed  0.54 sec
-    63/67 example_qmcpack_LiH.....................   Passed  0.54 sec
-    64/67 example_qmcpack_c20.....................   Passed  0.52 sec
-    65/67 example_qmcpack_diamond.................   Passed  0.73 sec
-    66/67 example_qmcpack_graphene................   Passed  0.59 sec
-    67/67 example_qmcpack_oxygen_dimer............   Passed  0.50 sec
-
-    100% tests passed, 0 tests failed out of 67
-
-    Total test time = 17.54 sec
-
-Only portions of Nexus consistent with your Python installed Python libraries will be tested.
-
-To run the tests with ``pytest`` (``pip install --user pytest``), enter the unit test directory and simply invoke the ``pytest`` command:
+If you have cloned ``qmcpack`` and are using the version of Nexus that comes with it, or if you are working on developing Nexus, you can enter the ``nexus`` directory and simply invoke the ``pytest`` command:
 
 .. code-block:: bash
 
-    > cd nexus/tests/unit/
+    > cd nexus/
     > pytest
     =========================== test session starts ============================
-    platform linux -- Python 3.14.2, pytest-9.0.2, pluggy-1.6.0
-    rootdir: qmcpack/nexus
+    platform linux -- Python 3.14.4, pytest-9.0.3, pluggy-1.6.0
+    rootdir: /home/brock/Documents/github/qmcpack/nexus
     configfile: pyproject.toml
-    plugins: cov-7.0.0
-    collected 393 items                                                        
+    plugins: order-1.3.0, cov-7.1.0
+    collected 397 items
 
-    test_basisset.py .....                                               [  1%]
-    test_bundle.py ..                                                    [  1%]
-    test_developer.py ...                                                [  2%]
+    test_versions.py .....                                               [  1%]
+    test_required_dependencies.py .                                      [  1%]
+    test_nexus_imports.py .                                              [  1%]
+    test_testing.py ....                                                 [  2%]
     test_execute.py ..                                                   [  3%]
-    test_fileio.py .......                                               [  4%]
-    test_gamess_analyzer.py ...                                          [  5%]
-    test_gamess_input.py .......                                         [  7%]
-    test_gamess_simulation.py ......                                     [  8%]
-    test_generic.py ...                                                  [  9%]
-    test_grid_functions.py ......................                        [ 15%]
-    test_hdfreader.py ..                                                 [ 15%]
-    test_machines.py ......................                              [ 21%]
-    test_memory.py ....                                                  [ 22%]
-    test_nexus_base.py .....                                             [ 23%]
-    test_nexus_imports.py .                                              [ 23%]
-    test_numerics.py ...............                                     [ 27%]
-    test_nxs_redo.py .                                                   [ 27%]
-    test_nxs_sim.py .                                                    [ 28%]
-    test_observables.py ..                                               [ 28%]
-    test_optional_dependencies.py .......                                [ 30%]
-    test_periodic_table.py ...                                           [ 31%]
-    test_physical_system.py .......                                      [ 33%]
-    test_project_manager.py ...........                                  [ 35%]
-    test_pseudopotential.py ......                                       [ 37%]
-    test_pwscf_analyzer.py ...                                           [ 38%]
-    test_pwscf_input.py ...                                              [ 38%]
-    test_pwscf_postprocessor_analyzers.py ...                            [ 39%]
-    test_pwscf_postprocessor_input.py .....                              [ 40%]
-    test_pwscf_postprocessor_simulations.py ......                       [ 42%]
-    test_pwscf_simulation.py ......                                      [ 44%]
-    test_pyscf_analyzer.py ..                                            [ 44%]
-    test_pyscf_input.py ....                                             [ 45%]
-    test_pyscf_simulation.py .....                                       [ 46%]
-    test_qdens.py .                                                      [ 47%]
-    test_qdens_radial.py .                                               [ 47%]
-    test_qmc_fit.py .                                                    [ 47%]
-    test_qmca.py ...........                                             [ 50%]
-    test_qmcpack_analyzer.py ......                                      [ 51%]
-    test_qmcpack_converter_analyzers.py ....                             [ 52%]
-    test_qmcpack_converter_input.py ..........                           [ 55%]
-    test_qmcpack_converter_simulations.py ..................             [ 60%]
-    test_qmcpack_input.py .............                                  [ 63%]
-    test_qmcpack_simulation.py ......                                    [ 64%]
-    test_quantum_package_analyzer.py ..                                  [ 65%]
-    test_quantum_package_input.py ....                                   [ 66%]
-    test_quantum_package_simulation.py ......                            [ 67%]
-    test_required_dependencies.py .                                      [ 68%]
-    test_rmg_analyzer.py ..                                              [ 68%]
-    test_rmg_input.py ......                                             [ 70%]
-    test_rmg_simulation.py ..                                            [ 70%]
-    test_settings.py ..                                                  [ 71%]
-    test_simulation_module.py .........................................  [ 81%]
-    test_structure.py ...................................                [ 90%]
-    test_testing.py ....                                                 [ 91%]
-    test_unit_converter.py ...                                           [ 92%]
-    test_vasp_analyzer.py ....                                           [ 93%]
-    test_vasp_input.py .......                                           [ 95%]
-    test_vasp_simulation.py .......                                      [ 96%]
-    test_versions.py .....                                               [ 98%]
-    test_xmlreader.py .......                                            [100%]
+    test_memory.py ....                                                  [  4%]
+    test_generic.py ...                                                  [  5%]
+    test_developer.py ...                                                [  5%]
+    test_unit_converter.py ...                                           [  6%]
+    test_periodic_table.py ......                                        [  8%]
+    test_numerics.py ...............                                     [ 11%]
+    test_grid_functions.py ......................                        [ 17%]
+    test_fileio.py .......                                               [ 19%]
+    test_hdfreader.py ..                                                 [ 19%]
+    test_xmlreader.py .......                                            [ 21%]
+    test_structure.py ...................................                [ 30%]
+    test_physical_system.py .......                                      [ 31%]
+    test_basisset.py .....                                               [ 33%]
+    test_pseudopotential.py ......                                       [ 34%]
+    test_nexus_base.py .....                                             [ 36%]
+    test_machines.py ......................                              [ 41%]
+    test_simulation_module.py .........................................  [ 51%]
+    test_bundle.py ..                                                    [ 52%]
+    test_project_manager.py ...........                                  [ 55%]
+    test_settings.py ..                                                  [ 55%]
+    test_pwscf_input.py ...                                              [ 56%]
+    test_pwscf_postprocessor_input.py .....                              [ 57%]
+    test_gamess_input.py .......                                         [ 59%]
+    test_pyscf_input.py ....                                             [ 60%]
+    test_quantum_package_input.py ....                                   [ 61%]
+    test_rmg_input.py ......                                             [ 62%]
+    test_qmcpack_converter_input.py ..........                           [ 65%]
+    test_qmcpack_input.py .............                                  [ 68%]
+    test_vasp_analyzer.py ....                                           [ 69%]
+    test_vasp_input.py .......                                           [ 71%]
+    test_pwscf_analyzer.py ...                                           [ 72%]
+    test_pwscf_postprocessor_analyzers.py ...                            [ 73%]
+    test_gamess_analyzer.py ...                                          [ 73%]
+    test_pyscf_analyzer.py ..                                            [ 74%]
+    test_quantum_package_analyzer.py ..                                  [ 74%]
+    test_rmg_analyzer.py ..                                              [ 75%]
+    test_qmcpack_converter_analyzers.py ....                             [ 76%]
+    test_qmcpack_analyzer.py ......                                      [ 77%]
+    test_vasp_simulation.py .......                                      [ 79%]
+    test_pwscf_simulation.py ......                                      [ 81%]
+    test_gamess_simulation.py ......                                     [ 82%]
+    test_pyscf_simulation.py .....                                       [ 83%]
+    test_quantum_package_simulation.py ......                            [ 85%]
+    test_rmg_simulation.py ..                                            [ 85%]
+    test_pwscf_postprocessor_simulations.py ......                       [ 87%]
+    test_qmcpack_converter_simulations.py ..................             [ 91%]
+    test_qmcpack_simulation.py ......                                    [ 93%]
+    test_observables.py ..                                               [ 93%]
+    test_nxs_redo.py .                                                   [ 94%]
+    test_nxs_sim.py .                                                    [ 94%]
+    test_qmc_fit.py .                                                    [ 94%]
+    test_qdens.py .                                                      [ 94%]
+    test_qdens_radial.py .                                               [ 95%]
+    test_qmca.py ...........                                             [ 97%]
+    test_user_examples_alt.py ........                                   [100%]
 
+    ==================== 397 passed, 43 warnings in 58.38s =====================
+
+Some tests may be skipped depending on what dependencies you have available, or if they are marked to be skipped.
+Additionally, you may see a number of warnings appear; some of these may be warnings about Nexus, but it is likely that the majority arise from a Nexus dependency.
+In general it is safe to ignore these warnings as they likely do not affect the functionality of Nexus.
 
 Developer Topics
 ----------------
@@ -435,74 +365,95 @@ Code coverage can be assessed by using the ``pytest-cov`` plugin (``pip install 
 
 .. code-block:: bash
 
-    >cd nexus
-    >pytest-cov --cov=nexus 
+    > cd nexus
+    > pytest --cov=nexus
     ...
-    >coverage report
+    > coverage report
 
-    nexus/basisset.py                      631    375    41%
-    nexus/bundle.py                        191     68    64%
-    nexus/debug.py                          12      6    50%
-    nexus/developer.py                     261     97    63%
-    nexus/execute.py                        13      2    85%
-    nexus/fileio.py                        957    373    61%
-    nexus/gamess.py                        102     20    80%
-    nexus/gamess_analyzer.py               305    149    51%
-    nexus/gamess_input.py                  597    167    72%
-    nexus/generic.py                       817    173    79%
-    nexus/grid_functions.py               1192    435    64%
-    nexus/hdfreader.py                     215     61    72%
-    nexus/machines.py                     1887    463    75%
-    nexus/memory.py                         60      7    88%
-    nexus/nexus.py                         297    140    53%
-    nexus/nexus_base.py                     74     11    85%
-    nexus/numerics.py                      756    372    51%
-    nexus/periodic_table.py               1505     24    98%
-    nexus/physical_system.py               427     73    83%
-    nexus/plotting.py                       22      7    68%
-    nexus/project_manager.py               234     37    84%
-    nexus/pseudopotential.py              1225    559    54%
-    nexus/pwscf.py                         198     73    63%
-    nexus/pwscf_analyzer.py                634    316    50%
-    nexus/pwscf_data_reader.py             132    120     9%
-    nexus/pwscf_input.py                  1261    563    55%
-    nexus/pwscf_postprocessors.py          434     56    87%
-    nexus/pyscf_analyzer.py                  3      0   100%
-    nexus/pyscf_input.py                   181     26    86%
-    nexus/pyscf_sim.py                      57      8    86%
-    nexus/qmcpack.py                       344    146    58%
-    nexus/qmcpack_analyzer.py              457    104    77%
-    nexus/qmcpack_analyzer_base.py         327    137    58%
-    nexus/qmcpack_converters.py            507     83    84%
-    nexus/qmcpack_input.py                3605   1439    60%
-    nexus/qmcpack_method_analyzers.py      198     64    68%
-    nexus/qmcpack_property_analyzers.py    205     97    53%
-    nexus/qmcpack_quantity_analyzers.py   2070   1789    14%
-    nexus/qmcpack_result_analyzers.py      285    142    50%
-    nexus/quantum_package.py               253    141    44%
-    nexus/quantum_package_analyzer.py        3      0   100%
-    nexus/quantum_package_input.py         338    164    51%
-    nexus/simulation.py                   1019    169    83%
-    nexus/structure.py                    3830   2055    46%
-    nexus/superstring.py                   311    199    36%
-    nexus/testing.py                       409     67    84%
-    nexus/unit_converter.py                121      4    97%
-    nexus/vasp.py                           94     15    84%
-    nexus/vasp_analyzer.py                 548     73    87%
-    nexus/vasp_input.py                    906    412    55%
-    nexus/versions.py                      335     50    85%
-    nexus/xmlreader.py                     260     54    79%
+    Name                                  Stmts   Miss  Cover
+    ---------------------------------------------------------
+    nexus/__init__.py                       305     99    68%
+    nexus/_bin.py                            25     25     0%
+    nexus/basisset.py                       645    387    40%
+    nexus/bin/nxs-redo                       90     31    66%
+    nexus/bin/nxs-sim                       148     62    58%
+    nexus/bin/qdens                         846    438    48%
+    nexus/bin/qdens-radial                  282     84    70%
+    nexus/bin/qmc-fit                       380    186    51%
+    nexus/bin/qmca                          887    326    63%
+    nexus/bundle.py                         191     68    64%
+    nexus/debug.py                           12      6    50%
+    nexus/developer.py                      265     88    67%
+    nexus/execute.py                         14      2    86%
+    nexus/fileio.py                        1019    407    60%
+    nexus/gamess.py                         151     62    59%
+    nexus/gamess_analyzer.py                306    131    57%
+    nexus/gamess_input.py                   593    167    72%
+    nexus/gaussian_process.py               943    943     0%
+    nexus/generic.py                        842    184    78%
+    nexus/grid_functions.py                1641    689    58%
+    nexus/hdfreader.py                      205     59    71%
+    nexus/machines.py                      2593    705    73%
+    nexus/memory.py                          60      7    88%
+    nexus/nexus_base.py                      76     10    87%
+    nexus/nexus_version.py                    2      0   100%
+    nexus/numerics.py                       904    461    49%
+    nexus/numpy_extensions.py                 7      1    86%
+    nexus/observables.py                    891    492    45%
+    nexus/periodic_table.py                 301      4    99%
+    nexus/physical_system.py                429     67    84%
+    nexus/project_manager.py                233     37    84%
+    nexus/pseudopotential.py               1675   1003    40%
+    nexus/pwscf.py                          216     86    60%
+    nexus/pwscf_analyzer.py                 653    283    57%
+    nexus/pwscf_data_reader.py              130    120     8%
+    nexus/pwscf_input.py                   1387    494    64%
+    nexus/pwscf_postprocessors.py           517    113    78%
+    nexus/pyscf_analyzer.py                   3      0   100%
+    nexus/pyscf_input.py                    285     44    85%
+    nexus/pyscf_sim.py                       64     14    78%
+    nexus/qmcpack.py                       1044    789    24%
+    nexus/qmcpack_analyzer.py               456    106    77%
+    nexus/qmcpack_analyzer_base.py          326    136    58%
+    nexus/qmcpack_converters.py             673    215    68%
+    nexus/qmcpack_input.py                 4440   1906    57%
+    nexus/qmcpack_method_analyzers.py       196     64    67%
+    nexus/qmcpack_property_analyzers.py     204    100    51%
+    nexus/qmcpack_quantity_analyzers.py    2095   1818    13%
+    nexus/qmcpack_result_analyzers.py       289    144    50%
+    nexus/quantum_package.py                253    141    44%
+    nexus/quantum_package_analyzer.py         3      0   100%
+    nexus/quantum_package_input.py          337    164    51%
+    nexus/rmg.py                             33     10    70%
+    nexus/rmg_analyzer.py                   293    265    10%
+    nexus/rmg_input.py                      682    148    78%
+    nexus/simulation.py                    1055    185    82%
+    nexus/structure.py                     4121   2099    49%
+    nexus/template_simulation.py             64     64     0%
+    nexus/testing.py                        451     87    81%
+    nexus/unit_converter.py                 120      2    98%
+    nexus/utilities.py                       56     16    71%
+    nexus/vasp.py                            93     15    84%
+    nexus/vasp_analyzer.py                  547     73    87%
+    nexus/vasp_input.py                     958    454    53%
+    nexus/versions.py                       348     52    85%
+    nexus/xmlreader.py                      298     53    82%
+    ---------------------------------------------------------
+    TOTAL                                 39651  17491    56%
 
-The first column is the total number of statements, the second is the number not yet covered by the tests and the third is the percent covered. By averaging the third column, you can tell roughly what percent of Nexus is covered by testing. From the testing shown above, code coverage is at ~67.5%.
+The first column is the total number of statements, the second is the number not yet covered by the tests and the third is the percent covered. At the bottom is the sum total of all covered lines, all missed lines, and the average coverage percent.
 
 To obtain an annotated view of the statements in the source that are not yet covered, run:
 
 .. code-block:: bash
 
-    > pytest --cov=nexus --cov-report html
+    > pytest --cov=nexus --cov-report=html
 
-Open ``htmlcov/index.html`` in a browser to view the report. More information regarding the ``coverage`` tool can be found at https://coverage.readthedocs.io/en/v4.5.x/.
+Open ``htmlcov/index.html`` in a browser to view the report. More information regarding the ``coverage`` tool can be found at https://coverage.readthedocs.io/en/latest/.
 
+.. note::
+    If you are planning on adding a new feature to Nexus, please add a test for the new feature.
+    Additionally, if you are planning on changing an existing Nexus feature, you must ensure that you either write a test for it, update the existing test, or ensure that your changes do not fail the existing test; your changes will not get merged otherwise!
 
 Creating Portable Nexus Builds
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -512,7 +463,7 @@ With recent changes to Nexus's structure, it has become possible to build binary
 Wheel files are compressed ZIP-format archives that are officially recommended by the `Python Packaging Authority (PyPA) <https://packaging.python.org/en/latest/specifications/binary-distribution-format/>`__ and can be built by anyone with the right tools.
 To get started, you must have a tool capable of building a project; here we will be describing how to use ``uv`` for building distributions.
 First, start by cloning the QMCPACK GitHub repository and navigating to the ``nexus`` directory. 
-Next, though this step is not always necessary, it is recommended to run ``nxs-test`` to ensure you have a clean Nexus installation.
+Next, though this step is not always necessary, it is recommended to run ``pytest`` to ensure you have a clean Nexus installation.
 Finally, you can run the command ``uv build``, which will create a ``qmcpack/nexus/dist`` directory, and build two files to go in it.
 The first is a tar archive of the source code, and the second is a ``.whl`` file.
 This wheel file is then usable as an installation source, which you can access via the following command (if you are in a virtual environment):

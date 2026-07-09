@@ -786,7 +786,7 @@ inline void Communicate::gatherv(std::vector<char>& l,
                                  std::vector<int>& displ,
                                  int dest)
 {
-  int ierr = MPI_Gatherv(l.data(), l.size(), MPI_CHAR, g.data(), counts.data(), displ.data(), MPI_CHAR, dest, myMPI);
+  MPI_Gatherv(l.data(), l.size(), MPI_CHAR, g.data(), counts.data(), displ.data(), MPI_CHAR, dest, myMPI);
 }
 
 
@@ -797,8 +797,7 @@ inline void Communicate::gatherv(std::vector<double>& l,
                                  std::vector<int>& displ,
                                  int dest)
 {
-  int ierr =
-      MPI_Gatherv(l.data(), l.size(), MPI_DOUBLE, g.data(), counts.data(), displ.data(), MPI_DOUBLE, dest, myMPI);
+  MPI_Gatherv(l.data(), l.size(), MPI_DOUBLE, g.data(), counts.data(), displ.data(), MPI_DOUBLE, dest, myMPI);
 }
 
 template<>
@@ -808,7 +807,7 @@ inline void Communicate::gatherv(std::vector<float>& l,
                                  std::vector<int>& displ,
                                  int dest)
 {
-  int ierr = MPI_Gatherv(l.data(), l.size(), MPI_FLOAT, g.data(), counts.data(), displ.data(), MPI_FLOAT, dest, myMPI);
+  MPI_Gatherv(l.data(), l.size(), MPI_FLOAT, g.data(), counts.data(), displ.data(), MPI_FLOAT, dest, myMPI);
 }
 
 template<>
@@ -818,7 +817,7 @@ inline void Communicate::gatherv(std::vector<int>& l,
                                  std::vector<int>& displ,
                                  int dest)
 {
-  int ierr = MPI_Gatherv(l.data(), l.size(), MPI_INT, g.data(), counts.data(), displ.data(), MPI_INT, dest, myMPI);
+  MPI_Gatherv(l.data(), l.size(), MPI_INT, g.data(), counts.data(), displ.data(), MPI_INT, dest, myMPI);
 }
 
 template<>
@@ -840,7 +839,7 @@ inline void Communicate::allgatherv(std::vector<int>& l,
                                     std::vector<int>& counts,
                                     std::vector<int>& displ)
 {
-  int ierr = MPI_Allgatherv(l.data(), l.size(), MPI_INT, g.data(), counts.data(), displ.data(), MPI_INT, myMPI);
+  MPI_Allgatherv(l.data(), l.size(), MPI_INT, g.data(), counts.data(), displ.data(), MPI_INT, myMPI);
 }
 
 template<>
@@ -850,25 +849,25 @@ inline void Communicate::gatherv(std::vector<long>& l,
                                  std::vector<int>& displ,
                                  int dest)
 {
-  int ierr = MPI_Gatherv(l.data(), l.size(), MPI_LONG, g.data(), counts.data(), displ.data(), MPI_LONG, dest, myMPI);
+  MPI_Gatherv(l.data(), l.size(), MPI_LONG, g.data(), counts.data(), displ.data(), MPI_LONG, dest, myMPI);
 }
 
 template<>
 inline void Communicate::gather(std::vector<double>& l, std::vector<double>& g, int dest)
 {
-  int ierr = MPI_Gather(l.data(), l.size(), MPI_DOUBLE, g.data(), l.size(), MPI_DOUBLE, dest, myMPI);
+  MPI_Gather(l.data(), l.size(), MPI_DOUBLE, g.data(), l.size(), MPI_DOUBLE, dest, myMPI);
 }
 
 template<>
 inline void Communicate::gather(std::vector<char>& l, std::vector<char>& g, int dest)
 {
-  int ierr = MPI_Gather(l.data(), l.size(), MPI_CHAR, g.data(), l.size(), MPI_CHAR, dest, myMPI);
+  MPI_Gather(l.data(), l.size(), MPI_CHAR, g.data(), l.size(), MPI_CHAR, dest, myMPI);
 }
 
 template<>
 inline void Communicate::gather(std::vector<int>& l, std::vector<int>& g, int dest)
 {
-  int ierr = MPI_Gather(l.data(), l.size(), MPI_INT, g.data(), l.size(), MPI_INT, dest, myMPI);
+  MPI_Gather(l.data(), l.size(), MPI_INT, g.data(), l.size(), MPI_INT, dest, myMPI);
 }
 
 template<>
@@ -878,14 +877,13 @@ inline void Communicate::gatherv(PooledData<double>& l,
                                  std::vector<int>& displ,
                                  int dest)
 {
-  int ierr =
-      MPI_Gatherv(l.data(), l.size(), MPI_DOUBLE, g.data(), counts.data(), displ.data(), MPI_DOUBLE, dest, myMPI);
+  MPI_Gatherv(l.data(), l.size(), MPI_DOUBLE, g.data(), counts.data(), displ.data(), MPI_DOUBLE, dest, myMPI);
 }
 
 template<>
 inline void Communicate::gather(PooledData<double>& l, PooledData<double>& g, int dest)
 {
-  int ierr = MPI_Gather(l.data(), l.size(), MPI_DOUBLE, g.data(), l.size(), MPI_DOUBLE, dest, myMPI);
+  MPI_Gather(l.data(), l.size(), MPI_DOUBLE, g.data(), l.size(), MPI_DOUBLE, dest, myMPI);
 }
 
 template<>
@@ -923,7 +921,7 @@ inline void Communicate::gsum(std::vector<std::complex<double>>& g)
 template<>
 inline void Communicate::gatherv(char* l, char* g, int n, std::vector<int>& counts, std::vector<int>& displ, int dest)
 {
-  int ierr = MPI_Gatherv(l, n, MPI_CHAR, g, counts.data(), displ.data(), MPI_CHAR, dest, myMPI);
+  MPI_Gatherv(l, n, MPI_CHAR, g, counts.data(), displ.data(), MPI_CHAR, dest, myMPI);
 }
 
 template<>
@@ -939,8 +937,7 @@ inline void Communicate::scatterv(std::vector<char>& sb,
                                   std::vector<int>& displ,
                                   int source)
 {
-  int ierr =
-      MPI_Scatterv(sb.data(), counts.data(), displ.data(), MPI_CHAR, rb.data(), rb.size(), MPI_CHAR, source, myMPI);
+  MPI_Scatterv(sb.data(), counts.data(), displ.data(), MPI_CHAR, rb.data(), rb.size(), MPI_CHAR, source, myMPI);
 }
 
 template<typename T, typename TMPI, typename IT>

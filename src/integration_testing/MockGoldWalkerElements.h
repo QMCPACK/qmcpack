@@ -55,6 +55,10 @@ public:
  *  electron interaction and electron ion interaction
  */
 MockGoldWalkerElements makeGoldWalkerElementsWithEE(Communicate*, RuntimeOptions run_time_opt);
+/** make walker elements with primary hamiltonian with Coulombic electron
+ *  ion interaction
+ */
+MockGoldWalkerElements makeGoldWalkerElementsWithEI(Communicate*, RuntimeOptions run_time_opt);
 /** make walker elements with a primary hamiltonian with Coulombic electron
  *   electron interaction and electron ion interaction and ion ion interaction.
  */

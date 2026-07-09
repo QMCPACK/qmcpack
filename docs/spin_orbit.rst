@@ -51,7 +51,7 @@ Using the generated single particle spinors, we build the many-body wavefunction
 
 where we now utilize determinants of spinors, as opposed to the usual product of up and down determinants. An example xml input block for the trial wave function is show below:
 
-.. code-block::
+.. code-block:: xml
   :caption: wavefunction specification for a single determinant trial wave function
   :name: slisting1
 
@@ -92,7 +92,7 @@ The electon-electron cusp in this case should be -1/2, as discussed in :cite:`Me
 
 We also make a small modification in the particleset specification 
 
-.. code-block::
+.. code-block:: xml
   :caption: specification for the electron particle when performing spin-orbit calculations
   :name: slisting2
 
@@ -138,7 +138,7 @@ Note that this includes a contribution from the *spin drift* :math:`\mathbf{v}_{
 
 In both the VMC and DMC methods, there are no required changes to a typical input
 
-.. code-block::
+.. code-block:: xml
 
   <qmc method="vmc/dmc">
     <parameter name="steps"    >    50   </parameter>
@@ -152,7 +152,7 @@ Whether or not spin moves are used is determined internally by the ``spinor=yes`
 By default, the spin mass :math:`\mu_s` (which controls the rate of spin sampling relative to the spatial sampling) is set to 1.0. 
 This can be changed by adding an additional parameter to the QMC input
 
-.. code-block::
+.. code-block:: xml
 
  <parameter name="spinMass" > 0.25 </parameter>
 
@@ -194,7 +194,7 @@ We note the following relations between the two representations of the relativis
 
 The structure of the spin-orbit ``.xml`` is 
 
-.. code-block::
+.. code-block:: xml
 
   <?xml version="1.0" encoding="UTF-8"?>
   <pseudo>
@@ -217,7 +217,7 @@ In order to accumulate the spin-orbit energy, but exclude it from the local ener
 the ``physicalSO`` flag should be set to no in the Hamiltonian input.
 A typical application will include the SOC terms in the local energy, and an example input block is given as
 
-.. code-block::
+.. code-block:: xml
   
   <hamiltonian name="h0" type="generic" target="e">
     <pairpot name="ElecElec" type="coulomb" source="e" target="e" physical="true"/>

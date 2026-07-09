@@ -247,6 +247,7 @@ template<
     >
 MultiArray2DC&& product(T alpha, SparseMatrixA const& A, MultiArray2DB const& B, T beta, MultiArray2DC&& C)
 {
+  using std::get;
   using elementA = std::remove_cv_t<typename SparseMatrixA::element>;
   using elementB = std::remove_cv_t<typename MultiArray2DB::element>;
   using elementC = typename std::decay<MultiArray2DC>::type::element;
@@ -256,10 +257,9 @@ MultiArray2DC&& product(T alpha, SparseMatrixA const& A, MultiArray2DB const& B,
   assert(op_tag<SparseMatrixA>::value == 'N' || op_tag<SparseMatrixA>::value == 'T' ||
          op_tag<SparseMatrixA>::value == 'C' || op_tag<SparseMatrixA>::value == 'H');
   assert(op_tag<MultiArray2DB>::value == 'N');
-  assert(arg(B).stride(1) == 1);
-  assert(std::forward<MultiArray2DC>(C).stride(1) == 1);
+  assert(get<1>(arg(B).strides()) == 1);
+  assert(get<1>(std::forward<MultiArray2DC>(C).strides()) == 1);
 
-  using std::get;
   if (op_tag<SparseMatrixA>::value == 'N')
   {
     assert(arg(A).size() == std::forward<MultiArray2DC>(C).size());
@@ -651,7 +651,7 @@ void invert_withSVD(MultiArray2D&& m, MultiArray1DS&& S, MultiArray2DU&& U, Mult
                     pointer_dispatch(S.origin()), detvalue);
         // VT = VT * inv(S), which works since S is diagonal and real
         term_by_term_matrix_vector(TOp_DIV,1,VT.size(0),VT.size(1),pointer_dispatch(VT.origin()),
-                    VT.stride(0),pointer_dispatch(S.origin()),1);
+                    VT.stride(),pointer_dispatch(S.origin()),1);
         product(H(VT),H(U),std::forward<MultiArray2D>(m));
 }
 */

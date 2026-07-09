@@ -28,7 +28,7 @@
 import os
 import gc as garbage_collector
 from os import PathLike
-from pathlib import Path
+from .utilities import path_string
 from .nexus_version import nexus_version
 from .memory import resident
 from .developer import DevBase, obj, log
@@ -102,6 +102,8 @@ nexus_core_defaults = obj(
     progress_tty      = False,             # used by: ProjectManager
     graph_sims        = False,             # used by: ProjectManager
     command_line      = True,              # used by: Settings
+    dynamic           = False,             # used by: DynamicWorkflowManager
+                                           #          Simulation
     **nexus_core_noncore_defaults
     )
 
@@ -170,10 +172,16 @@ _____________________________________________________
 
     def log(self,*texts,**kwargs):
         """Write output to log file.
-           Keyword arguments
-            n - spaces to indent
-            progress - if True and output is to a terminal, overwrite and
-                       update the last line, rather than scrolling.
+
+        Parameters
+        ----------
+        *texts
+            Strings that will be joined by newlines
+        n : int, kwargs
+            Spaces to indent
+        progress : bool, kwargs
+            If ``True`` and output is to a terminal, overwrite and update the
+            last line, rather than scrolling.
         """
         if nexus_core.verbose:
             if len(kwargs)>0:
@@ -230,8 +238,7 @@ _____________________________________________________
             Optional message to pass to the output log.
         """
         NexusCore.working_directory = os.getcwd()
-        if isinstance(directory, Path):
-            directory = str(directory.resolve())
+        directory = path_string(directory)
 
         self.log('    Entering ' + directory, msg)
         if changedir:
@@ -245,3 +252,12 @@ _____________________________________________________
         os.chdir(NexusCore.working_directory)
     #end def leave
 #end class NexusCore
+
+
+# support dynamic workflows
+dynamic_storage = obj(
+    simulations         = obj(), # all sims, in dyn proc or not
+    simulation_ids      = set(),
+    dynamic_processes   = obj(),
+    dynamic_process_ids = set(),
+    )

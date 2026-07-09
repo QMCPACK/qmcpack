@@ -1,20 +1,11 @@
-try:
-    import pytest
-    from . import NexusTestOrder
-    pytestmark = pytest.mark.order(NexusTestOrder.RMG_SIMULATION)
-except ImportError:
-    pass
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.RMG_SIMULATION)
 
-from .. import testing
-from ..testing import divert_nexus,restore_nexus,clear_all_sims
-from ..testing import failed,FailedTest
-from ..testing import value_eq,object_eq,text_eq
+from ..generic import generic_settings
+generic_settings.raise_error = True
 
-
-
-def test_import():
-    from ..rmg import Rmg,generate_rmg
-#end def test_import
+from ..testing import clear_all_sims
 
 
 

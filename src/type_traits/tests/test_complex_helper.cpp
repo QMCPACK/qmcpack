@@ -28,10 +28,14 @@ public:
     Cmplx aa;
     CmplxRebuild bb;
     aa = bb;
+    static_cast<void>(aa);
+    static_cast<void>(bb);
 
     Real cc;
     RealRebuild dd(0);
     cc = dd;
+    static_cast<void>(cc);
+    static_cast<void>(dd);
   }
 };
 

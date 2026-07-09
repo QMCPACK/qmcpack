@@ -44,13 +44,16 @@
 
 
 import os
-#from multiprocessing import cpu_count
+from pathlib import Path
+import platform
 from socket import gethostname
-from subprocess import Popen
+import subprocess
+from subprocess import Popen, CalledProcessError
 import numpy as np
-from .developer import DevBase, obj
+from .developer import DevBase, obj, warn
 from .nexus_base import NexusCore, nexus_core
 from .execute import execute
+from .utilities import path_string
 import importlib.util
 import importlib.machinery
 
@@ -66,31 +69,50 @@ def our_load_source(modname, filename):
     loader.exec_module(module)
     return module
 
-def cpu_count():
-    """ Number of virtual or physical CPUs on this system, i.e.
-    user/real as output by time(1) when called with an optimally scaling
-    userspace-only program"""
 
-    # Python 2.6+
+def get_cpu_cores() -> int:
+    """Get the number of physical CPU cores, defaulting to logical if not available.
+
+    This function makes calls to ``lscpu`` on Linux and ``sysctl`` on MacOS.
+    If these commands fail, it will default to :py:func:`os.cpu_count()`, which returns
+    the number of logical processors in the system. This may be up to twice as
+    much as the number of physical cores.
+    """
+    n_cores = os.cpu_count() # Set ahead of time so it is never unbound
     try:
-        import multiprocessing
-        return multiprocessing.cpu_count()
-    except (ImportError, NotImplementedError):
-        pass
-    #end try
+        sysname = platform.system()
+        match sysname:
+            case "Linux":
+                query = subprocess.run(
+                    ["lscpu", "-p=Core,Socket"],
+                    capture_output=True,
+                    check=True,
+                    )
+                output = query.stdout.decode().strip().splitlines()
+                # set will automatically remove duplicate entries.
+                # Anything that remains is the list of physical cores.
+                output = set([i for i in output if not i.startswith("#")])
+                n_cores = len(output)
+            case "Darwin":
+                query = subprocess.run(
+                    ["sysctl", "-n", "hw.physicalcpu"],
+                    capture_output=True,
+                    check=True,
+                    )
+                n_cores = int(query.stdout.decode().strip())
+            case _:
+                warn(
+                   f"Operating system '{sysname}' not recognized by Nexus.\n"
+                    "Could not get number of physical CPU cores, defaulting to logical..."
+                    )
 
-    # POSIX
-    try:
-        res = int(os.sysconf('SC_NPROCESSORS_ONLN'))
+    except CalledProcessError as err:
+        warn(
+            "Could not get number of physical CPU cores, defaulting to logical...\n"
+           f"Error is:\n{err}"
+            )
 
-        if res > 0:
-            return res
-        #end if
-    except (AttributeError, ValueError):
-        pass
-    #end try
-#end def cpu_count
-
+    return n_cores
 
 
 class Options(DevBase):
@@ -239,6 +261,25 @@ class Job(NexusCore):
     def __init__(self,**kwargs):
         # rewrap keyword arguments
         kw = obj(**kwargs)
+        # Ensure no pathlib.Path objects are stored
+        path_arguments = (
+            "directory",
+            "subdir",
+            "outfile",
+            "errfile",
+            "subfile",
+            )
+        for arg in path_arguments:
+            if arg in kw:
+                kw[arg] = path_string(kw[arg])
+
+        # Theoretically a bash alias can have invalid filename characters,
+        # so we treat app_name with some more special logic.
+        if "app_name" in kw:
+            if isinstance(kw.app_name, Path):
+                kw.app_name = path_string(kw.app_name)
+            elif not isinstance(kw.app_name, str):
+                self.error("app_name must be a str or Path object!")
 
         # save information used to initialize job object
         self.init_info = kw.copy()
@@ -936,7 +977,7 @@ class Workstation(Machine):
         Machine.__init__(self,name)
         self.app_launcher = app_launcher
         if cores is None:
-            self.cores = cpu_count()
+            self.cores = get_cpu_cores()
         else:
             self.cores = cores
         #end if
@@ -1421,10 +1462,17 @@ class Supercomputer(Machine):
             #end if
             self.process_job(job)
             self.jobs[jid] = job
-            job.status = job.states.running
-            self.running.add(jid)
-            process = obj(job=job)
-            self.processes[pid] = process
+            if not nexus_core.dynamic:
+                self.running.add(jid)
+                process = obj(job=job)
+                self.processes[pid] = process
+            else:
+                # If a workstation job is requeued
+                # then it is waking from interruption 
+                # and should be resubmitted from the top
+                job.status = job.states.running
+                job.status = job.states.waiting
+                self.waiting.add(jid)
         else:
             self.error('requeue_job received non-Job instance '+job.__class__.__name__)
         #end if
@@ -1915,31 +1963,37 @@ class Supercomputer(Machine):
     #end def seconds_to_walltime
 
     def validate_queue_config(self, job):
-        """
-        Validate job against queue configuration constraints
-        Returns True if valid, raises an error with detailed message if invalid
+        """Validate job against queue configuration constraints
+        
+        Returns
+        -------
+        bool
+            ``True`` if valid, raises an error with detailed message if invalid
 
-        Queue config format:
-        queue_configs = {
-            'default': 'queue_name',
-            'queue_name': {
-                'min_nodes'     : minimum number of nodes,
-                'max_nodes'     : maximum number of nodes,
-                'max_walltime'      : maximum walltime in hours,
-                'cores_per_node': cores per node,
-                'ram_per_node'  : RAM per node in GB,
-                'constraints'   : {
-                    'knl': {
-                        'max_nodes': knl specific max nodes,
-                        'max_time': knl specific max time,
-                        ...
-                    },
-                    'haswell': {...},
-                    'gpu': {...},
-                    'cpu': {...}
-                }
-            }
-        }
+        Examples
+        --------
+        Queue config format
+
+        >>> queue_configs = {
+        ...     'default': 'queue_name',
+        ...     'queue_name': {
+        ...         'min_nodes'     : minimum number of nodes,
+        ...         'max_nodes'     : maximum number of nodes,
+        ...         'max_walltime'      : maximum walltime in hours,
+        ...         'cores_per_node': cores per node,
+        ...         'ram_per_node'  : RAM per node in GB,
+        ...         'constraints'   : {
+        ...             'knl': {
+        ...                 'max_nodes': knl specific max nodes,
+        ...                 'max_time': knl specific max time,
+        ...                 ...
+        ...             },
+        ...             'haswell': {...},
+        ...             'gpu': {...},
+        ...             'cpu': {...}
+        ...         }
+        ...     }
+        ... }
         """
         if self.queue_configs is None:
             return True

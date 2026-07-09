@@ -122,7 +122,7 @@ TEST_CASE("NonLocalECPotential", "[hamiltonian]")
 
   elec.createSK();
   elec.resetGroups();
-  const int ei_table_index = elec.addTable(ions);
+  elec.addTable(ions);
   elec.update();
 
   ParticleSet elec2(elec);

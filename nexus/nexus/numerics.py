@@ -803,25 +803,31 @@ def check_jackknife_inputs(args,kwargs,position):
 #"""
 
 def ndgrid(*args, **kwargs):
-    """
-    n-dimensional gridding like Matlab's NDGRID
-    
-    The input *args are an arbitrary number of numerical sequences, 
-    e.g. lists, arrays, or tuples.
-    The i-th dimension of the i-th output argument 
-    has copies of the i-th input argument.
-    
-    Optional keyword argument:
-    same_dtype : If False (default), the result is an ndarray.
-                 If True, the result is a lists of ndarrays, possibly with 
-                 different dtype. This can save space if some *args 
-                 have a smaller dtype than others.
+    """n-dimensional gridding like Matlab's NDGRID
 
-    Typical usage:
+    Parameters
+    ----------
+    *args
+        An arbitrary number of numerical sequences, e.g. lists, arrays, or tuples.
+
+        The i-th dimension of the i-th output argument has copies of the i-th
+        input argument.
+    same_dtype : bool, default False, kwargs
+        If False (default), the result is an ``ndarray``.
+
+        If True, the result is a lists of ``ndarrays``, possibly with
+        different dtype. This can save space if some ``*args`` have a
+        smaller dtype than others.
+
+    Examples
+    --------
+    Typical usage
+
     >>> x, y, z = [0, 1], [2, 3, 4], [5, 6, 7, 8]
     >>> X, Y, Z = ndgrid(x, y, z) # unpacking the returned ndarray into X, Y, Z
 
     Each of X, Y, Z has shape [len(v) for v in x, y, z].
+
     >>> X.shape == Y.shape == Z.shape == (2, 3, 4)
     True
     >>> X
@@ -847,6 +853,7 @@ def ndgrid(*args, **kwargs):
             [5, 6, 7, 8]]])
     
     With an unpacked argument list:
+
     >>> V = [[0, 1], [2, 3, 4]]
     >>> ndgrid(*V) # an array of two arrays with shape (2, 3)
     array([[[0, 0, 0],
@@ -856,11 +863,13 @@ def ndgrid(*args, **kwargs):
     
     For input vectors of different data types, same_dtype=False makes ndgrid()
     return a list of arrays with the respective dtype.
+
     >>> ndgrid([0, 1], [1.0, 1.1, 1.2], same_dtype=False)
     [array([[0, 0, 0], [1, 1, 1]]), 
      array([[ 1. ,  1.1,  1.2], [ 1. ,  1.1,  1.2]])]
     
     Default is to return a single array.
+
     >>> ndgrid([0, 1], [1.0, 1.1, 1.2])
     array([[[ 0. ,  0. ,  0. ], [ 1. ,  1. ,  1. ]],
            [[ 1. ,  1.1,  1.2], [ 1. ,  1.1,  1.2]]])

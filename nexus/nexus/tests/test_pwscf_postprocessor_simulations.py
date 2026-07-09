@@ -1,14 +1,12 @@
-try:
-    import pytest
-    from . import NexusTestOrder
-    pytestmark = pytest.mark.order(NexusTestOrder.PWSCF_POSTPROCESSOR_SIMULATIONS)
-except ImportError:
-    pass
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.PWSCF_POSTPROCESSOR_SIMULATIONS)
 
-from .. import testing
-from ..testing import divert_nexus,restore_nexus,clear_all_sims
+from ..generic import generic_settings
+generic_settings.raise_error = True
+
+from ..testing import clear_all_sims
 from ..testing import failed,FailedTest
-from ..testing import value_eq,object_eq,text_eq
 
 
 def get_class_generators():
@@ -30,17 +28,6 @@ def get_class_generators():
 
     return class_generators
 #end def get_class_generators
-
-
-
-def test_import():
-    from ..pwscf_postprocessors import PP,generate_pp
-    from ..pwscf_postprocessors import Dos,generate_dos
-    from ..pwscf_postprocessors import Bands,generate_bands
-    from ..pwscf_postprocessors import Projwfc,generate_projwfc
-    from ..pwscf_postprocessors import Cppp,generate_cppp
-    from ..pwscf_postprocessors import Pwexport,generate_pwexport
-#end def test_import
 
 
 

@@ -22,17 +22,20 @@
 #====================================================================#
 
 import os
+import sys
+import importlib
+from importlib.metadata import PackageNotFoundError
 
 from .nexus_version import nexus_version
-from .versions      import current_versions,   policy_versions,    check_versions
 from .generic       import generic_settings
 from .developer     import obj,                error,              log
 from .debug         import ci
+from .utilities     import path_string
 
 from .nexus_base      import NexusCore,              nexus_core,     nexus_noncore,          nexus_core_noncore,         restore_nexus_core_defaults,    nexus_core_defaults
-from .machines        import Job,                    job,            Machine, Supercomputer, get_machine
-from .simulation      import generate_simulation,    input_template, multi_input_template,   generate_template_input,    generate_multi_template_input,  graph_sims
-from .project_manager import ProjectManager
+from .machines        import Job,                    job,            Machine, Supercomputer, get_machine, get_cpu_cores, Workstation
+from .simulation      import generate_simulation,    input_template, multi_input_template,   generate_template_input,    generate_multi_template_input,  graph_sims, DynamicProcess
+from .project_manager import ProjectManager,     DynamicWorkflowManager,     workflow_manager
 
 from .structure       import Structure,          generate_structure,         generate_cell,  read_structure
 from .physical_system import PhysicalSystem,     generate_physical_system
@@ -85,6 +88,7 @@ def run_project(*args,**kwargs):
     return pm
 #end def run_project
 
+
 # test needed
 # read input function
 #   place here for now as it depends on all other input functions
@@ -127,7 +131,7 @@ class Settings(NexusCore):
         pseudo_dir      sleep           local_directory remote_directory 
         monitor         skip_submit     load_images     stages          
         verbose         debug           trace           progress_tty
-        graph_sims      command_line
+        graph_sims      command_line    dynamic
         '''.split())
 
     core_process_vars = set('''
@@ -191,6 +195,17 @@ class Settings(NexusCore):
     # sets up Nexus core class behavior and passes information to broader class structure
     def __call__(self,**kwargs):
         kwargs = obj(**kwargs)
+        # Ensure no pathlib.Path objects are stored
+        core_path_vars = (
+            "runs",
+            "results",
+            "pseudo_dir",
+            "local_directory",
+            "remote_directory",
+            )
+        for var in core_path_vars:
+            if var in kwargs:
+                kwargs[var] = path_string(kwargs[var])
 
         # guard against invalid settings
         not_allowed = set(kwargs.keys()) - Settings.allowed_vars
@@ -212,15 +227,82 @@ class Settings(NexusCore):
         NexusCore.write_splash()
 
         # print version information
+        self.log("Checking current machine for Nexus dependencies...\n")
+        pkg_sort = {
+            "numpy":      0,
+            "scipy":      1,
+            "h5py":       2,
+            "matplotlib": 3,
+            "spglib":     4,
+            "cif2cell":   5,
+            "pydot":      6,
+            "seekpath":   7,
+        }
+
         try:
-            from .versions import versions
-            if versions is not None:
-                err,s,serr = versions.check(write=False,full=True)
-                self.log(s)
-            #end if
-        except Exception:
-            pass
-        #end try
+            nxs_requirements = importlib.metadata.requires("nexus")
+            nxs_deps = {}
+            for req in nxs_requirements:
+                pkg_name = req.split("=")[0][:-1]
+                pkg_ver_min = req.split(">=")[-1]
+                if ";" in pkg_ver_min:
+                    pkg_ver_min = pkg_ver_min.split(";")[0]
+                    status = "optional"
+                else:
+                    status = "required"
+
+                nxs_deps[pkg_name] = {"min_ver": pkg_ver_min, "status": status}
+        except PackageNotFoundError:
+            nxs_deps = {
+                "numpy":      {"min_ver": "x.x.x", "status": "required"},
+                "scipy":      {"min_ver": "x.x.x", "status": "optional"},
+                "h5py":       {"min_ver": "x.x.x", "status": "optional"},
+                "matplotlib": {"min_ver": "x.x.x", "status": "optional"},
+                "spglib":     {"min_ver": "x.x.x", "status": "optional"},
+                "cif2cell":   {"min_ver": "x.x.x", "status": "optional"},
+                "pydot":      {"min_ver": "x.x.x", "status": "optional"},
+                "seekpath":   {"min_ver": "x.x.x", "status": "optional"},
+            }
+
+        nxs_deps = {k:v for k, v in sorted(nxs_deps.items(), key=lambda x: pkg_sort.get(x[0], 1000))}
+
+        available_pkgs = {}
+        for module in nxs_deps.keys():
+            if importlib.util.find_spec(module) is not None:
+                available_pkgs[module] = importlib.metadata.version(module)
+            else:
+                available_pkgs[module] = "Unavailable"
+
+        version_text = ""
+
+        name_align = max([len(i) for i in nxs_deps.keys()])
+        version_text +=  "  Currently Available Nexus Dependencies:\n"
+        version_text += f"    {'Python':<{name_align}} = {sys.version.split()[0]}\n"
+        for pkg_name, pkg_ver in available_pkgs.items():
+            version_text += f"    {pkg_name:<{name_align}} = {pkg_ver:<11} ({nxs_deps[pkg_name]['status']})\n"
+
+        version_text +=  "\n"
+        version_text +=  "  Recommended Nexus Dependencies:\n"
+        version_text += f"    {'Python':<{name_align}} >= 3.10.0\n"
+        for pkg_name, pkg_info in nxs_deps.items():
+            version_text += f"    {pkg_name:<{name_align}} >= {pkg_info['min_ver']:<10} ({pkg_info['status']})\n"
+
+        version_text += "\n"
+        missing_deps = set(nxs_deps) - set([i for i, a in available_pkgs.items() if a != "Unavailable"])
+        if len(missing_deps) > 0:
+            version_text += "  Required dependencies are met,\n"
+            version_text += "  however some optional dependencies are missing.\n"
+            version_text += "  Some features of Nexus may be unavailable.\n\n"
+
+            version_text += "  Missing dependencies:\n"
+            for missing in missing_deps:
+                version_text += f"    - {missing} ({nxs_deps[pkg_name]['status']})\n"
+        else:
+            version_text += "  All dependencies are present.\n"
+
+        version_text += "\n"
+
+        self.log(version_text)
 
         self.log('Applying user settings')
 
@@ -422,6 +504,17 @@ class Settings(NexusCore):
         #end if
         if 'machine' in mset:
             machine_name = mset.machine
+            if machine_name in ("ws", "workstation"):
+                self.log("Automatically detecting physical CPU cores for workstation...", n=1)
+                n_cores = get_cpu_cores()
+                self.log(f"Using {n_cores} core workstation", n=1)
+                machine_name = f"ws{n_cores}"
+
+                if not Machine.exists(machine_name):
+                    # Register a workstation with the determined number of cores
+                    # if there is not already one that exists.
+                    Workstation(machine_name, n_cores, 'mpirun')
+
             if not Machine.exists(machine_name):
                 self.error('machine {0} is unknown'.format(machine_name))
             #end if
@@ -530,9 +623,9 @@ class Settings(NexusCore):
         if 'file_locations' in kw:
             fl = kw.file_locations
             if isinstance(fl,str):
-                nexus_core.file_locations.extend([fl])
+                nexus_core.file_locations.extend([path_string(fl)])
             else:
-                nexus_core.file_locations.extend(list(fl))
+                nexus_core.file_locations.extend([path_string(f) for f in fl])
             #end if
         #end if
         if 'pseudo_dir' not in kw:

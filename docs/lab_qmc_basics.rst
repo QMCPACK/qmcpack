@@ -271,7 +271,7 @@ For this exercise, we will focus on minimizing the variance.
 
 First, we need to update the template particle and wavefunction information in ``O.q0.ptcl.xml`` and ``O.q0.wfs.xml``.  We want to simulate the O atom in open boundary conditions (the default is periodic).  To do this, open ```O.q0.ptcl.xml`` with your favorite text editor (e.g., ``emacs`` or ``vi``) and replace
 
-::
+.. code-block:: xml
 
   <parameter name="bconds">
      p p p
@@ -282,7 +282,7 @@ First, we need to update the template particle and wavefunction information in `
 
 with
 
-::
+.. code-block:: xml
 
   <parameter name="bconds">
      n n n
@@ -290,7 +290,7 @@ with
 
 Next we will select Jastrow factors appropriate for an atom.  In open boundary conditions, the B-spline Jastrow correlation functions should cut off to zero at some distance away from the atom.  Open ``O.q0.wfs.xml`` and add the following cutoffs (``rcut`` in Bohr radii) to the correlation factors:
 
-::
+.. code-block:: xml
 
   ...
   <correlation speciesA="u" speciesB="u" size="8" rcut="10.0">
@@ -310,7 +310,7 @@ parameters, which are just the values of :math:`u` on a uniformly spaced
 grid up to ``rcut``. Initially the parameters (``coefficients``) are set
 to zero:
 
-::
+.. code-block:: xml
 
   <correlation speciesA="u" speciesB="u" size="8" rcut="10.0">
     <coefficients id="uu" type="Array">
@@ -320,7 +320,7 @@ to zero:
 
 Finally, we need to assemble particle, wavefunction, and pseudopotential information into the main QMCPACK input file (``O.q0.opt.in.xml``) and specify inputs for the Jastrow optimization process.  Open ``O.q0.opt.in.xml`` and write in the location of the particle, wavefunction, and pseudopotential files ("``<!-- ... -->``" are comments):
 
-::
+.. code-block:: xml
 
   ...
   <!-- include simulationcell and particle information from pw2qmcpqack -->
@@ -335,7 +335,7 @@ Finally, we need to assemble particle, wavefunction, and pseudopotential informa
 
 The relevant portion of the input describing the linear optimization process is
 
-::
+.. code-block:: xml
 
   <loop max="MAX">
     <qmc method="linear" move="pbyp" checkpoint="-1">
@@ -527,7 +527,7 @@ The DMC algorithm contains two biases in addition to the fixed node and pseudopo
 
 In the same directory you used to perform wavefunction optimization (``oxygen_atom``) you will find a sample DMC input file for the neutral oxygen atom named ``O.q0.dmc.in.xml``.  Open this file in a text editor and note the differences from the optimization case.  Wavefunction information is no longer included from ``pw2qmcpack`` but instead should come from the optimization run:
 
-::
+.. code-block:: xml
 
   <!-- OPT_XML is from optimization, e.g. O.q0.opt.s008.opt.xml -->
   <include href="OPT_XML"/>
@@ -609,7 +609,7 @@ is sufficient for this system.
 
 Choose an initial DMC time step and create a sequence of :math:`N` time steps according to :eq:`eq69`.  Make :math:`N` copies of the DMC XML block in the input file.
 
-::
+.. code-block:: xml
 
   <qmc method="dmc" move="pbyp">
      <parameter name="warmupSteps"         >    DWARMUP         </parameter>
@@ -728,7 +728,7 @@ convenience, the necessary steps are summarized as follows.
   (a) Copy the optimization input (``O.q0.opt.in.xml``) to ``O.q1.opt.in.xml``
   (b) Edit ``O.q1.opt.in.xml`` to match the file prefix used in DFT.
 
-    ::
+    .. code-block:: xml
 
       ...
       <project id="O.q1.opt" series="0">
@@ -740,7 +740,7 @@ convenience, the necessary steps are summarized as follows.
 
   (c) Edit the particle XML file (``O.q1.ptcl.xml``) to have open boundary conditions.
 
-    ::
+    .. code-block:: xml
 
       <parameter name="bconds">
         n n n
@@ -748,7 +748,7 @@ convenience, the necessary steps are summarized as follows.
 
   (d) Add cutoffs to the Jastrow factors in the wavefunction XML file (``O.q1.wfs.xml``)
 
-    ::
+    .. code-block:: xml
 
       ...
       <correlation speciesA="u" speciesB="u" size="8" rcut="10.0">
@@ -766,7 +766,7 @@ convenience, the necessary steps are summarized as follows.
   (a) Copy the DMC input (``O.q0.dmc.in.xml``) to ``O.q1.dmc.in.xml``
   (b) Edit ``O.q1.dmc.in.xml`` to use the DFT prefix and the optimal Jastrow.
 
-    ::
+    .. code-block:: xml
 
       ...
       <project id="O.q1.dmc" series="0">
@@ -826,7 +826,7 @@ The set of automation tools we will be using is known as Nexus :cite:`Krogel2016
 
 Nexus is driven by simple user-defined scripts that resemble keyword-driven input files.  An example Nexus input file that performs a single VMC calculation (with pregenerated orbitals) follows.  Take a moment to read it over and especially note the comments (prefixed with "``\#``") explaining most of the contents.  If the input syntax is unclear you may want to consult portions of :ref:`python-basics`, which gives a condensed summary of Python constructs.  An additional example and details about the inner workings of Nexus can be found in the reference publication :cite:`Krogel2016nexus`.
 
-::
+.. code-block:: python
 
   #! /usr/bin/env python3
 
@@ -897,7 +897,7 @@ Enter the ``oxygen_dimer`` directory.  Copy your BFD pseudopotential from the at
 As in the example in the last section, the oxygen dimer is generated with the ``generate_physical_
 system`` function:
 
-::
+.. code-block:: python
 
   dimer = generate_physical_system(
       type       = 'dimer',
@@ -913,7 +913,7 @@ Similar syntax can be used to generate crystal structures or to specify systems 
 
 Next, objects representing a QE (PWSCF) run and subsequent orbital conversion step are constructed with respective ``generate_*`` functions:
 
-::
+.. code-block:: python
 
   dft = generate_pwscf(
       identifier   = 'dft',
@@ -935,7 +935,7 @@ Note the ``dependencies`` keyword.  This keyword is used to construct workflows 
 
 Objects representing QMCPACK simulations are then constructed with the ``generate_qmcpack`` function:
 
-::
+.. code-block:: python
 
   opt = generate_qmcpack(
       identifier   = 'opt',
@@ -1000,7 +1000,7 @@ Objects representing QMCPACK simulations are then constructed with the ``generat
 
 Shared details such as the run directory, job, pseudopotentials, and orbital file have been omitted (``...``).  The "``opt``" run will optimize a 1-body B-spline Jastrow with 8 knots having a cutoff of 5.0 Bohr and a B-spline Jastrow (for up-up and up-down correlations) with 8 knots and cutoffs of 10.0 Bohr.  The Jastrow list for the DMC run is empty, and the previous use of ``dependencies`` indicates that the DMC run depends on the optimization run for the Jastrow factor.  Nexus will submit the "``opt``" run first, and upon completion it will scan the output, select the optimal set of parameters, pass the Jastrow information to the "``qmc``" run, and then submit the DMC job.  Independent job workflows are submitted in parallel when permitted.  No input files are written or job submissions made until the "``run_project``" function is reached:
 
-::
+.. code-block:: python
 
   run_project(sims)
 
@@ -1008,7 +1008,7 @@ All of the simulation objects have been collected into a list (``sims``) for sub
 
 As written, ``O_dimer.py`` will perform calculations only at the equilibrium separation distance of 1.2074 {\AA} since the list of scaling factors (representing stretching or compressing the dimer)  contains only one value (``scales = [1.00]``).  Modify the file now to perform DMC calculations across a range of separation distances with each DMC run using the Jastrow factor optimized at the equilibrium separation distance.  Specifically, you will want to change the list of scaling factors to include both compression (``scale<1.0``) and stretch (``scale>1.0``):
 
-::
+.. code-block:: python
 
   scales = [1.00,0.90,0.95,1.05,1.10]
 
@@ -1257,7 +1257,7 @@ Before performing production calculations (more than just the initial setup in t
 
 Beyond PPs, all that is required to get started are the atomic positions and the dimensions/shape of the simulation cell.  The Nexus file ``example.py`` illustrates how to set up PWSCF and QMCPACK input files by providing minimal information regarding the physical system (an 8-atom cubic cell of diamond in the example).  Most of the contents should be familiar from your experience with the automated calculations of the oxygen dimer binding curve in :ref:`dimer-automation` (if you have skipped ahead you may want to skim that section for relevant information).  The most important change is the expanded description of the physical system:
 
-::
+.. code-block:: python
 
   # details of your physical system (diamond conventional cell below)
   my_project_name = 'diamond_vmc'   # directory to perform runs
@@ -1335,7 +1335,7 @@ Basic Python data types (``int``, ``float``, ``str``, ``tuple``, ``list``, ``arr
 Intrinsic types: ``int, float, str``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-::
+.. code-block:: python
 
   #this is a comment
   i=5                     # integer
@@ -1353,7 +1353,7 @@ Intrinsic types: ``int, float, str``
 Container types: ``tuple, list, array, dict, obj``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-::
+.. code-block:: python
 
   from numpy import array  # get array from numpy module
   from developer import obj  # get obj from Nexus' developer module
@@ -1412,7 +1412,7 @@ Container types: ``tuple, list, array, dict, obj``
 
 An important feature of Python to be aware of is that assignment is most often by reference, that is, new values are not always created.  This point is illustrated with an ``obj`` instance in the following example, but it also holds for ``list``, ``array``, ``dict``, and others.
 
-::
+.. code-block:: python
 
   >>> o = obj(a=5,b=6)
   >>>
@@ -1437,7 +1437,7 @@ Here ``p`` is just another name for ``o``, while ``q`` is a fully independent co
 Conditional Statements: ``if/elif/else``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-::
+.. code-block:: python
 
   a = 5
   if a is None:
@@ -1459,7 +1459,7 @@ The "``\#end if``" is not part of Python syntax, but you will see text like this
 Iteration: ``for``
 ^^^^^^^^^^^^^^^^^^
 
-::
+.. code-block:: python
 
   from developer import obj
 
@@ -1497,7 +1497,7 @@ Iteration: ``for``
 Functions: ``def``, argument syntax
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-::
+.. code-block:: python
 
   def f(a,b,c=5):          # basic function, c has a default value
       print(a,b,c)

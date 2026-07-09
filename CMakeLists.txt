@@ -18,7 +18,7 @@ endif()
 ######################################################################
 project(
   qmcpack
-  VERSION 4.2.9
+  VERSION 4.3.9
   LANGUAGES C CXX)
 
 #--------------------------------------------------------------------
@@ -292,7 +292,7 @@ if(ENABLE_GCOV)
 endif(ENABLE_GCOV)
 
 if(ENABLE_PYCOV)
-  find_program(PYTHON_COVERAGE_EXECUTABLE NAMES python3-coverage coverage.py REQUIRED)
+  find_program(PYTHON_COVERAGE_EXECUTABLE NAMES python3-coverage coverage.py coverage3 coverage REQUIRED)
   message(STATUS "Python coverage is enabled. Using ${PYTHON_COVERAGE_EXECUTABLE}")
 endif(ENABLE_PYCOV)
 

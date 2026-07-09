@@ -1,14 +1,9 @@
-try:
-    import pytest
-    from . import NexusTestOrder
-    pytestmark = pytest.mark.order(NexusTestOrder.QUANTUM_PACKAGE_ANALYZER)
-except ImportError:
-    pass
+import pytest
+from . import NexusTestOrder
+pytestmark = pytest.mark.order(NexusTestOrder.QUANTUM_PACKAGE_ANALYZER)
 
-
-def test_import():
-    from ..quantum_package_analyzer import QuantumPackageAnalyzer
-#end def test_import
+from ..generic import generic_settings
+generic_settings.raise_error = True
 
 
 

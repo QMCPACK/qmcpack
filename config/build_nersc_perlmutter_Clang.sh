@@ -148,6 +148,17 @@ if (( $complex_variants == 1 )); then
 else
   echo "Building Complex variants: False"
 fi
+echo
+echo "To run QMCPACK built by this script,"
+echo "you must load the same modules used during the build"
+echo
+echo "If you will be using the GPU-accelerated builds of QMCPACK,"
+echo "you must set the following environment variable:"
+echo "(bash)  export MPICH_GPU_SUPPORT_ENABLED=0"
+echo "(zsh)   export MPICH_GPU_SUPPORT_ENABLED=0"
+echo "(csh)   setenv MPICH_GPU_SUPPORT_ENABLED 0"
+echo "(fish)  set -gx MPICH_GPU_SUPPORT_ENABLED 0"
+echo
 echo -e "\n=---------------------------------------------------------------------------------=\n"
 
 
@@ -263,6 +274,8 @@ module unload PrgEnv-gnu
 module load craype cray-mpich
 module load cray-fftw
 module load cray-hdf5-parallel
+module load cmake
+export BOOST_ROOT=/global/common/software/m2113/opt/boost/1_82_0
 
 TYPE=Release
 Machine=perlmutter
@@ -308,8 +321,8 @@ for name in $build_targets; do
 
     C_compiler=`which mpicc`
     CXX_compiler=`which mpicxx`
-    export MPICH_CC=clang
-    export MPICH_CXX=clang++
+    export MPICH_CC=$C_compiler
+    export MPICH_CXX=$CXX_compiler
 
     echo -e "\n=---------------------------------------------------------------------------------=\n"
     echo -e "Clang version information:\n"

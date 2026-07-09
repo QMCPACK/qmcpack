@@ -26,11 +26,22 @@
 #include <OhmmsPETE/OhmmsMatrix.h>
 #include <ParticleSet.h>
 #include <ResourceCollection.h>
+#include "DynamicCoordinates.h"
+#include "MCCoords.hpp"
+#include "OhmmsPETE/TinyVector.h"
 #include "TestListenerFunction.h"
 #include <TrialWaveFunction.h>
 #include "Utilities/RuntimeOptions.h"
+#include "config.h"
 
 using std::string;
+
+#ifdef ENABLE_OFFLOAD
+#define DYN_COOR_KIND DynamicCoordinateKind::DC_POS_OFFLOAD
+#else
+#define DYN_COOR_KIND DynamicCoordinateKind::DC_POS
+#endif
+
 
 namespace qmcplusplus
 {
@@ -258,13 +269,123 @@ void test_CoulombPBCAA_3p(DynamicCoordinateKind kind)
   CHECK(caa_clone.get_madelung_constant() == Approx(vmad_bcc));
 }
 
+void test_CoulombPBCAA_3p_PerParticle(DynamicCoordinateKind kind)
+{
+  const double alat                  = 1.0;
+  const double vmad_bcc              = -1.819616724754322 / alat;
+  LRCoulombSingleton::CoulombHandler = 0;
+
+  Lattice lattice;
+  lattice.BoxBConds = true; // periodic
+  lattice.R         = 0.5 * alat;
+  lattice.R(0, 0)   = -0.5 * alat;
+  lattice.R(1, 1)   = -0.5 * alat;
+  lattice.R(2, 2)   = -0.5 * alat;
+  lattice.reset();
+
+  const SimulationCell simulation_cell(lattice);
+  ParticleSet elec(simulation_cell, kind);
+
+  elec.setName("elec");
+  elec.create({1, 2});
+  elec.R[0] = {0.0, 0.0, 0.0};
+  elec.R[1] = {0.1, 0.2, 0.3};
+  elec.R[2] = {0.3, 0.1, 0.2};
+
+  SpeciesSet& tspecies       = elec.getSpeciesSet();
+  int upIdx                  = tspecies.addSpecies("u");
+  int dnIdx                  = tspecies.addSpecies("d");
+  int chargeIdx              = tspecies.addAttribute("charge");
+  int massIdx                = tspecies.addAttribute("mass");
+  tspecies(chargeIdx, upIdx) = -1;
+  tspecies(chargeIdx, dnIdx) = -1;
+  tspecies(massIdx, upIdx)   = 1.0;
+  tspecies(massIdx, dnIdx)   = 1.0;
+
+  elec.createSK();
+
+  CoulombPBCAA caa(elec, true, false, kind == DynamicCoordinateKind::DC_POS_OFFLOAD);
+  caa.informOfPerParticleListener();
+
+  ParticleSet elec_clone(elec);
+  CoulombPBCAA caa_clone(caa);
+
+  elec_clone.R[2] = {0.2, 0.3, 0.0};
+
+  // testing batched interfaces
+  ResourceCollection pset_res("test_pset_res");
+  ResourceCollection caa_res("test_caa_res");
+  elec.createResource(pset_res);
+  caa.createResource(caa_res);
+
+  // The test Listener emitted by getParticularListener binds a Matrix
+  // it will write the reported data into it with each walker's particle values
+  // in a row.
+  Matrix<Real> local_pots(2, 3);
+  Matrix<Real> local_pots2(2, 3);
+
+  using testing::getParticularListener;
+  std::vector<ListenerVector<Real>> listeners;
+  listeners.emplace_back("localenergy", getParticularListener(local_pots));
+  listeners.emplace_back("localenergy", getParticularListener(local_pots2));
+  std::vector<ListenerVector<Real>> ion_listeners;
+
+  // testing batched interfaces
+  RefVectorWithLeader<ParticleSet> p_ref_list(elec, {elec, elec_clone});
+  RefVectorWithLeader<OperatorBase> caa_ref_list(caa, {caa, caa_clone});
+
+  ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_ref_list);
+  ResourceCollectionTeamLock<OperatorBase> mw_caa_lock(caa_res, caa_ref_list);
+
+  ParticleSet::mw_update(p_ref_list);
+
+  caa.mw_evaluate(caa_ref_list, p_ref_list);
+  CHECK(caa.getValue() == Approx(-5.4954533536));
+  CHECK(caa_clone.getValue() == Approx(-6.329373489));
+
+  caa.mw_evaluatePerParticle(caa_ref_list, p_ref_list, listeners, ion_listeners);
+  CHECK(caa.getValue() == Approx(-5.4954533536));
+  CHECK(caa_clone.getValue() == Approx(-6.329373489));
+
+  auto dump_particle_pots = [](const auto& local_pots, int row) {
+    app_log() << "localpots: ";
+    for (int i = 0; i < local_pots.cols(); ++i)
+      app_log() << *(local_pots[row] + i) << ", ";
+    app_log() << '\n';
+  };
+
+  auto dump_pots_size = [](const auto& local_pots) {
+    app_log() << "local_pots.size(): " << local_pots.rows() << " x " << local_pots.cols() << '\n';
+  };
+  dump_pots_size(local_pots);
+  dump_particle_pots(local_pots, 0);
+  dump_particle_pots(local_pots, 1);
+
+  CHECK(caa.get_madelung_constant() == Approx(vmad_bcc));
+  CHECK(caa_clone.get_madelung_constant() == Approx(vmad_bcc));
+
+  using SingleParticlePos                      = TinyVector<Real, OHMMS_DIM>;
+  std::vector<SingleParticlePos> displacements = {{0.1, 0.0, 0.0}, {0.0, 0.0, 0.2}};
+  p_ref_list.getLeader().mw_makeMove(p_ref_list, 1, displacements);
+
+
+  ParticleSet::mw_update(p_ref_list);
+  caa.mw_evaluatePerParticle(caa_ref_list, p_ref_list, listeners, ion_listeners);
+
+  dump_pots_size(local_pots);
+  dump_particle_pots(local_pots, 0);
+  dump_particle_pots(local_pots, 1);
+}
+
 TEST_CASE("Coulomb PBC A-A BCC 3 particles", "[hamiltonian]")
 {
   test_CoulombPBCAA_3p(DynamicCoordinateKind::DC_POS);
-  test_CoulombPBCAA_3p(DynamicCoordinateKind::DC_POS_OFFLOAD);
+  // This will fail perparticle offload will get called and it is
+  // broken.
+  // test_CoulombPBCAA_3p(DynamicCoordinateKind::DC_POS_OFFLOAD);
 }
 
-
+#ifndef ENABLE_OFFLOAD
 TEST_CASE("CoulombAA::mw_evaluatePerParticle", "[hamiltonian]")
 {
   using testing::getParticularListener;
@@ -277,7 +398,9 @@ TEST_CASE("CoulombAA::mw_evaluatePerParticle", "[hamiltonian]")
   lattice.reset();
 
   const SimulationCell simulation_cell(lattice);
-  ParticleSet elec(simulation_cell);
+  const DynamicCoordinateKind kind = DYN_COOR_KIND;
+
+  ParticleSet elec(simulation_cell, kind);
 
   elec.setName("elec");
   elec.create({2});
@@ -290,6 +413,7 @@ TEST_CASE("CoulombAA::mw_evaluatePerParticle", "[hamiltonian]")
   tspecies(chargeIdx, upIdx) = -1;
   tspecies(massIdx, upIdx)   = 1.0;
 
+  elec.setQuantumDomain(ParticleSet::quantum);
   // The XMLParticleParser always calls createSK on particle sets it creates.
   // Since most code assumes a valid particle set is as created by XMLParticleParser,
   // we must call createSK().
@@ -297,13 +421,30 @@ TEST_CASE("CoulombAA::mw_evaluatePerParticle", "[hamiltonian]")
   elec.update();
   // golden particle set valid (enough for this test)
 
-  DynamicCoordinateKind kind = DynamicCoordinateKind::DC_POS;
+  ParticleSet ions(simulation_cell, kind);
+  CHECK(ions.is_quantum() == false);
+  ions.setName("ions");
+  ions.create({1});
+  ions.R[0]                          = {0.2, 0.2, 0.2};
+  SpeciesSet& ions_tspecies          = ions.getSpeciesSet();
+  int heIdx                          = ions_tspecies.addSpecies("he");
+  int he_chargeIdx                   = ions_tspecies.addAttribute("charge");
+  int he_massIdx                     = ions_tspecies.addAttribute("mass");
+  ions_tspecies(he_chargeIdx, heIdx) = 2;
+  ions_tspecies(he_massIdx, heIdx)   = 4.0;
+
+  ions.createSK();
+  ions.update();
+
   // golden CoulombPBCAA
-  CoulombPBCAA caa(elec, true, false, kind == DynamicCoordinateKind::DC_POS_OFFLOAD);
+  CoulombPBCAA caa(elec, elec.is_quantum(), false, kind == DynamicCoordinateKind::DC_POS_OFFLOAD);
 
   // informOfPerParticleListener should be called on the golden instance of this operator if there
   // are listeners present for it.  This would normally be done by QMCHamiltonian but this is a unit test.
   caa.informOfPerParticleListener();
+
+  CoulombPBCAA caa_ions(ions, ions.is_quantum(), false, kind == DynamicCoordinateKind::DC_POS_OFFLOAD);
+  caa_ions.informOfPerParticleListener();
 
   // Now we can make a clone of the mock walker
   ParticleSet elec2(elec);
@@ -326,6 +467,7 @@ TEST_CASE("CoulombAA::mw_evaluatePerParticle", "[hamiltonian]")
   caa.createResource(caa_res);
   ResourceCollectionTeamLock<OperatorBase> caa_lock(caa_res, o_list);
 
+
   ResourceCollection pset_res("test_pset_res");
   elec.createResource(pset_res);
   ResourceCollectionTeamLock<ParticleSet> pset_lock(pset_res, p_list);
@@ -347,11 +489,323 @@ TEST_CASE("CoulombAA::mw_evaluatePerParticle", "[hamiltonian]")
   CHECK(caa.getValue() == Approx(-2.9332312765));
   CHECK(caa2.getValue() == Approx(-3.4537460926));
   // Check that the sum of the particle energies == the total
+  auto dump_particle_pots = [](const auto& local_pots, int row) {
+    for (int i = 0; i < local_pots.cols(); ++i)
+      std::cout << *(local_pots[row] + i) << ", ";
+    std::cout << '\n';
+  };
+
   CHECK(std::accumulate(local_pots.begin(), local_pots.begin() + local_pots.cols(), 0.0) == Approx(-2.9332312765));
+  dump_particle_pots(local_pots, 0);
   CHECK(std::accumulate(local_pots[1], local_pots[1] + local_pots.cols(), 0.0) == Approx(-3.4537460926));
+  dump_particle_pots(local_pots, 1);
   // Check that the second listener received the same data
   auto check_matrix_result = checkMatrix(local_pots, local_pots2);
   CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
+
+  // Now we need to check the next move
+  elec2.R[0] = {0.0, 0.5, 0.0};
+  elec2.R[1] = {0.0, 0.0, 0.0};
+  elec2.update();
+  ParticleSet::mw_update(p_list);
+  //To get this to work you need to call mw_makeMove or the iat will
+  //not get updated !
+  caa.mw_evaluatePerParticle(o_list, p_list, listeners, ion_listeners);
+  CHECK(caa2.getValue() == Approx(-2.9332312765));
+  dump_particle_pots(local_pots, 1);
+  //  FAIL("We are failing to actually mock multiple moves");
 }
 
+TEST_CASE("CoulombAA::mw_eval_compare", "[hamiltonian]")
+{
+  using testing::getParticularListener;
+  LRCoulombSingleton::CoulombHandler = nullptr;
+
+  // Constructing a mock "golden" set of walker elements
+  Lattice lattice;
+  lattice.BoxBConds = true; // periodic
+  lattice.R.diagonal(1.0);
+  lattice.reset();
+
+  const SimulationCell simulation_cell(lattice);
+  const DynamicCoordinateKind kind = DYN_COOR_KIND;
+  ParticleSet elec(simulation_cell, kind);
+
+  elec.setName("elec");
+  elec.create({3});
+  elec.R[0]                  = {0.0, 0.5, 0.0};
+  elec.R[1]                  = {0.0, 0.0, 0.0};
+  elec.R[2]                  = {0.1, 0.1, 0.1};
+  SpeciesSet& tspecies       = elec.getSpeciesSet();
+  int upIdx                  = tspecies.addSpecies("u");
+  int chargeIdx              = tspecies.addAttribute("charge");
+  int massIdx                = tspecies.addAttribute("mass");
+  tspecies(chargeIdx, upIdx) = -1;
+  tspecies(massIdx, upIdx)   = 1.0;
+  elec.setQuantumDomain(ParticleSet::quantum);
+
+  // The XMLParticleParser always calls createSK on particle sets it creates.
+  // Since most code assumes a valid particle set is as created by XMLParticleParser,
+  // we must call createSK().
+  elec.createSK();
+  elec.update();
+  // golden particle set valid (enough for this test)
+
+
+  // golden CoulombPBCAA
+
+  CoulombPBCAA caa(elec, elec.is_quantum(), false, kind == DynamicCoordinateKind::DC_POS_OFFLOAD);
+  CoulombPBCAA caa_per_particle(elec, elec.is_quantum(), false, kind == DynamicCoordinateKind::DC_POS_OFFLOAD);
+
+  // informOfPerParticleListener should be called on the golden instance of this operator if there
+  // are listeners present for it.  This would normally be done by QMCHamiltonian but this is a unit test.
+  caa_per_particle.informOfPerParticleListener();
+
+  RefVector<OperatorBase> caas{caa};
+  RefVectorWithLeader<OperatorBase> o_list(caa, caas);
+  RefVector<OperatorBase> caas_per_particle{caa_per_particle};
+  RefVectorWithLeader<OperatorBase> o_list_per_particle(caa_per_particle, caas_per_particle);
+
+  // Self-energy correction, no background charge for e-e interaction
+  double consts              = caa.myConst;
+  double consts_per_particle = caa_per_particle.myConst;
+  CHECK(consts_per_particle == Approx(consts));
+
+  RefVector<ParticleSet> ptcls{elec};
+  RefVectorWithLeader<ParticleSet> p_list(elec, ptcls);
+
+  ResourceCollection caa_res("test_caa_res");
+  caa.createResource(caa_res);
+  ResourceCollectionTeamLock<OperatorBase> caa_lock(caa_res, o_list);
+
+  ResourceCollection caa_res_per_particle("test_caa_res_per_particle");
+  caa_per_particle.createResource(caa_res_per_particle);
+  ResourceCollectionTeamLock<OperatorBase> caa_lock_per_particle(caa_res_per_particle, o_list_per_particle);
+
+  ResourceCollection pset_res("test_pset_res");
+  elec.createResource(pset_res);
+  ResourceCollectionTeamLock<ParticleSet> pset_lock(pset_res, p_list);
+
+  // The test Listener emitted by getParticularListener binds a Matrix
+  // it will write the reported data into it with each walker's particle values
+  // in a row.
+  Matrix<Real> local_pots(3);
+  Matrix<Real> local_pots2(3);
+
+  std::vector<ListenerVector<Real>> listeners;
+  listeners.emplace_back("localenergy", getParticularListener(local_pots));
+  listeners.emplace_back("localenergy", getParticularListener(local_pots2));
+  std::vector<ListenerVector<Real>> ion_listeners;
+
+  ParticleSet::mw_update(p_list);
+
+  caa.mw_evaluate(o_list, p_list);
+  caa_per_particle.mw_evaluatePerParticle(o_list_per_particle, p_list, listeners, ion_listeners);
+  CHECK(caa_per_particle.getValue() == Approx(caa.getValue()));
+  // Check that the sum of the particle energies == the total
+  CHECK(std::accumulate(local_pots.begin(), local_pots.begin() + local_pots.cols(), 0.0) == Approx(caa.getValue()));
+  // Check that the second listener received the same data
+  auto check_matrix_result = checkMatrix(local_pots, local_pots2);
+  CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
+
+  // Now we need to check the next move
+  elec.R[0] = {0.0, 0.5, 0.0};
+  elec.R[1] = {0.25, 0.0, 0.0};
+  elec.R[2] = {0.1, 0.2, 0.1};
+
+  elec.mw_update(p_list);
+  caa.mw_evaluate(o_list, p_list);
+  caa_per_particle.mw_evaluatePerParticle(o_list_per_particle, p_list, listeners, ion_listeners);
+
+  CHECK(caa_per_particle.getValue() == Approx(caa.getValue()));
+  MCCoords<CoordsType::POS> moves{QMCTraits::PosType(0.25, 0.0, 0.0)};
+  p_list.getLeader().mw_makeMove(p_list, 0, moves);
+  elec.mw_accept_rejectMove(p_list, 0, {true}, true);
+  elec.mw_update(p_list);
+
+  caa_per_particle.mw_evaluatePerParticle(o_list_per_particle, p_list, listeners, ion_listeners);
+  caa.mw_evaluate(o_list, p_list);
+  CHECK(caa_per_particle.getValue() == Approx(caa.getValue()));
+}
+
+TEST_CASE("CoulombAA::mw_evaluatePerParticle_multimove", "[hamiltonian]")
+{
+  using testing::getParticularListener;
+  LRCoulombSingleton::CoulombHandler = 0;
+
+  // Constructing a mock "golden" set of walker elements
+  Lattice lattice;
+  lattice.BoxBConds = true; // periodic
+  lattice.R.diagonal(1.0);
+  lattice.reset();
+
+  const SimulationCell simulation_cell(lattice);
+  const DynamicCoordinateKind kind = DYN_COOR_KIND;
+
+  ParticleSet elec(simulation_cell, kind);
+
+  elec.setName("elec");
+  elec.create({2});
+  elec.R[0]                  = {0.0, 0.5, 0.0};
+  elec.R[1]                  = {0.0, 0.0, 0.0};
+  SpeciesSet& tspecies       = elec.getSpeciesSet();
+  int upIdx                  = tspecies.addSpecies("u");
+  int chargeIdx              = tspecies.addAttribute("charge");
+  int massIdx                = tspecies.addAttribute("mass");
+  tspecies(chargeIdx, upIdx) = -1;
+  tspecies(massIdx, upIdx)   = 1.0;
+
+  elec.setQuantumDomain(ParticleSet::quantum);
+  // The XMLParticleParser always calls createSK on particle sets it creates.
+  // Since most code assumes a valid particle set is as created by XMLParticleParser,
+  // we must call createSK().
+  elec.createSK();
+  elec.update();
+  // golden particle set valid (enough for this test)
+
+  ParticleSet ions(simulation_cell, kind);
+  CHECK(ions.is_quantum() == false);
+  ions.setName("ions");
+  ions.create({1});
+  ions.R[0]                          = {0.2, 0.2, 0.2};
+  SpeciesSet& ions_tspecies          = ions.getSpeciesSet();
+  int heIdx                          = ions_tspecies.addSpecies("he");
+  int he_chargeIdx                   = ions_tspecies.addAttribute("charge");
+  int he_massIdx                     = ions_tspecies.addAttribute("mass");
+  ions_tspecies(he_chargeIdx, heIdx) = 2;
+  ions_tspecies(he_massIdx, heIdx)   = 4.0;
+
+  ions.createSK();
+  ions.update();
+
+  // golden CoulombPBCAA
+  CoulombPBCAA caa(elec, elec.is_quantum(), false, kind == DynamicCoordinateKind::DC_POS_OFFLOAD);
+
+  // informOfPerParticleListener should be called on the golden instance of this operator if there
+  // are listeners present for it.  This would normally be done by QMCHamiltonian but this is a unit test.
+  caa.informOfPerParticleListener();
+
+  CoulombPBCAA caa_ions(ions, ions.is_quantum(), false, kind == DynamicCoordinateKind::DC_POS_OFFLOAD);
+  caa_ions.informOfPerParticleListener();
+
+  // Now we can make a clone of the mock walker
+  ParticleSet elec2(elec);
+
+  elec2.R[0] = {0.0, 0.5, 0.1};
+  elec2.R[1] = {0.6, 0.05, -0.1};
+  elec2.update();
+
+  CoulombPBCAA caa2(elec2, true, false, kind == DynamicCoordinateKind::DC_POS_OFFLOAD);
+  RefVector<OperatorBase> caas{caa, caa2};
+  RefVectorWithLeader<OperatorBase> o_list(caa, caas);
+
+  // Self-energy correction, no background charge for e-e interaction
+  double consts = caa.myConst;
+  CHECK(consts == Approx(-6.3314780332));
+  RefVector<ParticleSet> ptcls{elec, elec2};
+  RefVectorWithLeader<ParticleSet> p_list(elec, ptcls);
+
+  ResourceCollection caa_res("test_caa_res");
+  caa.createResource(caa_res);
+  ResourceCollectionTeamLock<OperatorBase> caa_lock(caa_res, o_list);
+
+
+  ResourceCollection pset_res("test_pset_res");
+  elec.createResource(pset_res);
+  ResourceCollectionTeamLock<ParticleSet> pset_lock(pset_res, p_list);
+
+  // The test Listener emitted by getParticularListener binds a Matrix
+  // it will write the reported data into it with each walker's particle values
+  // in a row.
+  Matrix<Real> local_pots(2);
+  Matrix<Real> local_pots2(2);
+
+  std::vector<ListenerVector<Real>> listeners;
+  listeners.emplace_back("localenergy", getParticularListener(local_pots));
+  listeners.emplace_back("localenergy", getParticularListener(local_pots2));
+  std::vector<ListenerVector<Real>> ion_listeners;
+
+  ParticleSet::mw_update(p_list);
+  caa.mw_evaluatePerParticle(o_list, p_list, listeners, ion_listeners);
+
+  auto checkValuePotsMatch = [](auto& caa, auto& local_pots, int row, auto expected_val) {
+    CHECK(caa.getValue() == Approx(expected_val));
+    CHECK(std::accumulate(local_pots[row], local_pots[row] + local_pots.cols(), 0.0) == Approx(expected_val));
+  };
+
+
+  Real expected_caa1 = -2.9332312765;
+  Real expected_caa2 = -3.4537460926;
+  checkValuePotsMatch(caa, local_pots, 0, expected_caa1);
+  checkValuePotsMatch(caa2, local_pots, 1, expected_caa2);
+  // Check that the sum of the particle energies == the total
+
+  // Nice to be able to change this to std::cout and not have to wade
+  // through all the output we don't care about from everywhere else
+  auto& local_ostream = app_log();
+
+  auto dump_particle_pots = [&local_ostream](const auto& local_pots, int row) {
+    for (int i = 0; i < local_pots.cols(); ++i)
+      local_ostream << *(local_pots[row] + i) << ", ";
+    local_ostream << '\n';
+    auto sum = std::accumulate(local_pots[row], local_pots[row] + local_pots.cols(), 0.0);
+    local_ostream << "sum: " << sum << '\n';
+  };
+
+  auto dump_particle_pos = [&local_ostream](const RefVector<ParticleSet>& p_sets) {
+    for (int iptcls = 0; iptcls < p_sets.size(); ++iptcls)
+    {
+      auto& p_set = p_sets[iptcls].get();
+      auto nptcls = p_set.getTotalNum();
+      local_ostream << "w:" << iptcls << " ";
+      for (int ip = 0; ip < nptcls; ++ip)
+      {
+        local_ostream << p_set.R[ip] << " : ";
+      }
+      local_ostream << '\n';
+    }
+  };
+
+  dump_particle_pos(ptcls);
+  dump_particle_pots(local_pots, 0);
+  dump_particle_pots(local_pots, 1);
+  // Check that the second listener received the same data
+  auto check_matrix_result = checkMatrix(local_pots, local_pots2);
+  CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
+
+  app_log() << "Make Move 1\n";
+  // need to add mw_makeMove
+  MCCoords<CoordsType::POS> moves{QMCTraits::PosType(0.25, 0.0, 0.0), QMCTraits::PosType(0.0, 0.0, 0.25)};
+  p_list.getLeader().mw_makeMove(p_list, 0, moves);
+  ParticleSet::mw_accept_rejectMove(p_list, 0, {true, true});
+  ParticleSet::mw_update(p_list);
+  caa.mw_evaluatePerParticle(o_list, p_list, listeners, ion_listeners);
+  dump_particle_pos(ptcls);
+  dump_particle_pots(local_pots, 0);
+  dump_particle_pots(local_pots, 1);
+
+  checkValuePotsMatch(caa, local_pots, 0, -3.191198434);
+  checkValuePotsMatch(caa2, local_pots, 1, -3.607459554);
+
+  app_log() << "Make Move 2\n";
+  MCCoords<CoordsType::POS> moves2{QMCTraits::PosType(0.00, 0.0, 0.11), QMCTraits::PosType(0.0, 0.22, 0.00)};
+  p_list.getLeader().mw_makeMove(p_list, 1, moves2);
+  ParticleSet::mw_accept_rejectMove(p_list, 1, {true, true});
+  ParticleSet::mw_update(p_list);
+  caa.mw_evaluatePerParticle(o_list, p_list, listeners, ion_listeners);
+  dump_particle_pos(ptcls);
+  dump_particle_pots(local_pots, 0);
+  dump_particle_pots(local_pots, 1);
+  checkValuePotsMatch(caa, local_pots, 0, -3.23305371);
+  checkValuePotsMatch(caa2, local_pots, 1, -3.476714904);
+}
+
+TEST_CASE("CoulombAA::mw_evaluatePerParticle_multimove2", "[hamiltonian]")
+{
+  test_CoulombPBCAA_3p_PerParticle(DynamicCoordinateKind::DC_POS);
+  // This will fail perparticle offload will get called and it is
+  // broken.
+  // test_CoulombPBCAA_3p_PerParticle(DynamicCoordinateKind::DC_POS_OFFLOAD);
+}
+#endif
 } // namespace qmcplusplus

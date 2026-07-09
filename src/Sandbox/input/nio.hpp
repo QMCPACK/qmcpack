@@ -27,15 +27,13 @@ inline auto create_prim_lattice()
 
 void tile_cell(ParticleSet& ions, const Tensor<int, 3>& tmat)
 {
-  auto prim_lat(create_prim_lattice());
-  // create Ni and O by group
-  std::vector<int> nio_group{16, 16};
-  ParticleSet prim_ions(prim_lat);
-  // create particles by groups
-  prim_ions.create(nio_group);
+  SimulationCell sim_cell(create_prim_lattice());
+  ParticleSet prim_ions(sim_cell);
   // using lattice coordinates
   prim_ions.R.InUnit = PosUnit::Lattice;
 
+  // create Ni and O by group
+  prim_ions.create({16, 16});
   // O
   prim_ions.R[0]  = {0.5, 0.0, 0.25};
   prim_ions.R[1]  = {0.0, 0.0, 0.75};

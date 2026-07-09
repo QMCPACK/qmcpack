@@ -117,6 +117,7 @@ Module contents
 """
 
 import os
+from pathlib import Path
 import numpy as np
 from copy import deepcopy
 from random import randint
@@ -130,11 +131,13 @@ from numpy import (
     sqrt,
 )
 from numpy.linalg import inv, det, norm
+import numpy.typing as npt
 from .unit_converter import convert
 from .numerics import nearest_neighbors, convex_hull, voronoi_neighbors
 from .periodic_table import Elements
 from .fileio import XsfFile, PoscarFile
 from .developer import DevBase, obj, unavailable, error
+from .utilities import path_string
 from . import numpy_extensions as npe
 
 try:
@@ -497,8 +500,8 @@ def recenter_points(pos, center, axes):
     pos : NDArray
         Array of positions centered around the given center
 
-    Note
-    ----
+    Notes
+    -----
     This function also ensures that points close (within 1e-12) to the minimum edge (-0.5) of the
     cell are placed exactly on that edge. The intent here is to make sure that atoms close to or
     on the leading edge (+0.5) are wrapped around to retain periodicity.
@@ -805,7 +808,134 @@ class Sobj(DevBase):
 
 
 
-class Structure(Sobj): 
+class Structure(Sobj):
+    """General class for all physical structures
+
+    Attributes
+    ----------
+    axes : NDArray
+        Lattice vectors of the cell as a square matrix of dimension
+        ``dim x dim``.
+    scale : int or float
+        Scaling for all other physical values.
+    elem : NDArray of str
+        Array of atomic symbols.
+    pos : NDArray of float
+        Positions of the atoms.
+    center : NDArray of float
+        Defined center of the cell.
+    kpoints : NDArray of float
+        Array containing the positions of k-points.
+    kweights : NDArray of float
+        Weight of individual k-points.
+    units : str
+        Units of the atom positions.
+    dim : int, default=3
+        Dimensionality of the Structure.
+    operations : Mapping of str to function
+        Operations to perform on the structure.
+        See :py:meth:`~.Structure.set_operations()` for more information.
+    background_charge : int, default=0
+        The total background charge of the system. Positive for cations,
+        negative for anions, and zero for neutral systems.
+    bconds : NDArray of str
+        Boundary conditions either in all directions or specified for
+        each dimension
+    mag : NDArray of float or None
+        Magnetic moments of each atom, or ``None`` if system is not
+        magnetized.
+    tmatrix : NDArray of int or None
+        A vector of ints for tiling the cell in each dimension.
+        See :py:meth:`~.Structure.tile()` for more information.
+    frozen : NDArray of bool or None, default=None
+        Mask array of booleans with the same length as the number of
+        atoms and width of ``dim``, where ``True`` indicates the atoms
+        are locked in place and ``False`` indicates they are free to
+        move.
+
+    Parameters
+    ----------
+    axes : ArrayLike, optional
+        Lattice vectors of the cell
+    scale : int or float, default=1.
+        Scaling for all other physical values.
+        See :py:meth:`~.Structure.rescale()` for more information.
+    elem : ArrayLike, optional
+        Array of atomic symbols.
+    pos : ArrayLike, optional
+        Positions of the atoms.
+    elem_pos : str, optional
+        Multiline string with each line containing an atom where an atom
+        is an element and its position. Overrides ``elem`` and ``pos``.
+    mag : ArrayLike, optional
+        Magnetic moments of each atom.
+    center : ArrayLike, optional
+        Defined center of the cell, defaults to the ``[0.5, 0.5, 0.5]``
+        point of the cell.
+    kpoints : ArrayLike, optional
+        Array containing the positions of k-points.
+    kweights : ArrayLike, optional
+        Weight of individual k-points, must be as long as the number of
+        k-points.
+    kgrid : int, optional
+        Number of subdivisions to create a Monkhorst-Pack k-point mesh.
+        See :py:func:`~.kmesh` for a more in-depth explanation.
+        Overrides ``kpoints`` if specified.
+    kshift : ArrayLike, optional
+        Vector to translate k-points if k-grid is specified.
+    permute : ArrayLike, optional
+        Vector to permute the structure.
+        See :py:meth:`~.Structure.permute()` for more information.
+    units : str, optional
+        Units of the positions. See :py:mod:`unit_converter.py` for a 
+        full list of supported units.
+    tiling : ArrayLike of int, optional
+        A vector of ints for tiling the cell in each dimension.
+        See :py:meth:`~.Structure.tile()` for more information.
+    rescale : bool, default=True
+        ``True`` will rescale the supplied structural information with
+        the scaling factor provided (see ``scale``), ``False`` sets the
+        ``scale`` without altering the provided structural information.
+    dim : int, default=3
+        Dimensionality of the Structure. See Notes for more information.
+    operations : iterable of str, optional
+        Operations to perform on the structure.
+        See :py:meth:`~.Structure.set_operations()` for more information.
+    background_charge : int, default=0
+        The total background charge of the system. Positive for cations,
+        negative for anions, and zero for neutral systems.
+    frozen : ArrayLike of bool, optional
+        Mask array of booleans with the same length as the number of
+        atoms and width of ``dim``.
+        See :py:meth:`~.Structure.set_frozen()` for more information.
+    bconds : str or tuple of str, optional
+        Boundary conditions either in all directions or specified for
+        each dimension. Defaults to periodic in all directions.
+    posu : ArrayLike, optional
+        The positions of the atoms in units of the lattice parameter.
+        Overrides ``pos``.
+    use_prim : bool, optional
+        Option to convert the unit cell to a primitive cell.
+        Requires that the ``seekpath`` package is installed [0]_.
+    add_kpath : bool, default=False
+        Optionally add k-points to the primitive cell. Only used if
+        ``use_prim`` is ``True``.
+    symm_kgrid : bool, default=False
+        Option for generating a Monkhorst-Pack k-point grid with only
+        symmetric k-points. Requires the ``spglib`` package [1]_.
+        See :py:meth:`~.Structure.add_symmetrized_mesh()` for more
+        information.
+
+    Notes
+    -----
+    Currently the :py:class:`~.Structure` class only partially supports
+    2-dimensional structures.
+
+    References
+    ----------
+    .. [0] https://seekpath.readthedocs.io/en/latest/
+    .. [1] https://spglib.readthedocs.io/en/stable/
+    """
 
     operations = obj()
 
@@ -1142,8 +1272,33 @@ class Structure(Sobj):
     #end def has_folded_structure
 
             
-    # test needed
-    def group_atoms(self,folded=True):
+    def group_atoms(self, folded=True) -> None:
+        """Group the atoms by their element type, sorting in alphabetical order.
+
+        Parameters
+        ----------
+        folded : bool, default=True
+            Optionally sort the folded structure, if it exists.
+
+        Examples
+        --------
+        >>> structure = Structure(
+        ...     elem = ["Be", "N", "C", "Be", "C", "O"],
+        ...     pos = np.array([
+        ...         [0, 0, 0],
+        ...         [0, 0, 0],
+        ...         [0, 0, 0],
+        ...         [0, 0, 0],
+        ...         [0, 0, 0],
+        ...         [0, 0, 0],
+        ...     ], dtype=np.float64),
+        ... )
+        >>> print(structure.elem)
+        ['Be' 'N' 'C' 'Be' 'C' 'O']
+        >>> structure.group_atoms()
+        >>> print(structure.elem)
+        ['Be' 'Be' 'C' 'C' 'N' 'O']
+        """
         if len(self.elem)>0:
             order = self.elem.argsort()
             if (self.elem!=self.elem[order]).any():
@@ -1157,8 +1312,35 @@ class Structure(Sobj):
     #end def group_atoms
 
 
-    # test needed
-    def rename(self,folded=True,**name_pairs):
+    def rename(self, folded=True, **name_pairs) -> None:
+        """Rename element names in a structure.
+
+        Parameters
+        ----------
+        folded : bool, default=True
+            Rename elements in folded structure as well as tiled structure
+            (if there is no folded structure then this does nothing)
+        **name_pairs : dict[str]
+            A dictionary containing key:value pairs where the key is the old
+            element name and the value is the new element name.
+
+        Examples
+        --------
+        >>> structure = Structure(
+        ...     elem = ["N", "C", "O", "H"],
+        ...     pos = np.array([
+        ...         [0, 0, 0],
+        ...         [0, 0, 0],
+        ...         [0, 0, 0],
+        ...         [0, 0, 0],
+        ...     ], dtype=np.float64),
+        ... )
+        >>> print(structure.elem)
+        ['N' 'C' 'O' 'H']
+        >>> structure.rename(N="Dy", C="Er")
+        >>> print(structure.elem)
+        ['Dy' 'Er' 'O' 'H']
+        """
         elem = self.elem
         for old,new in name_pairs.items():
             for i in range(len(self.elem)):
@@ -1173,8 +1355,77 @@ class Structure(Sobj):
     #end def rename
 
 
-    # test needed
-    def reset_axes(self,axes=None):
+    def reset_axes(self, axes: npt.ArrayLike | None = None) -> None:
+        """Reset the structure's axes, k-space axes, and center.
+
+        Notes
+        -----
+        If ``axes`` is given, this function will remove the previous folded
+        structure (as new axes could invalidate the tiling) and then set
+        ``self.axes`` to the new axes, update the k-space axes, and set the
+        center of the cell to be the (0.5, 0.5, 0.5) point.
+
+        If ``axes`` are not given (e.g. ``axes=None``, the default), then this
+        function will reuse the same axes as the current structure, reset the
+        k-space axes, and set the cell center at the (0.5, 0.5, 0.5) point.
+
+        Examples
+        --------
+        Providing axes will also make sure ``kaxes`` and ``center`` are consistent.
+
+        >>> structure = Structure(
+        ...     axes = np.array([
+        ...         [6.0, 0.0, 0.0],
+        ...         [0.0, 6.0, 0.0],
+        ...         [0.0, 0.0, 6.0],
+        ...     ]),
+        ... )
+        >>> print(structure.axes)
+        [[6. 0. 0.]
+        [0. 6. 0.]
+        [0. 0. 6.]]
+        >>> print(structure.kaxes)
+        [[1.04719755 0.         0.        ]
+        [0.         1.04719755 0.        ]
+        [0.         0.         1.04719755]]
+        >>> print(structure.center)
+        [3. 3. 3.]
+
+        >>> structure.reset_axes(np.array([
+        ...     [12.0,  0.0,  0.0],
+        ...     [ 0.0, 12.0,  0.0],
+        ...     [ 0.0,  0.0, 12.0],
+        ... ]))
+        >>> print(structure.axes)
+        [[12.  0.  0.]
+        [ 0. 12.  0.]
+        [ 0.  0. 12.]]
+        >>> print(structure.kaxes)
+        [[0.52359878 0.         0.        ]
+        [0.         0.52359878 0.        ]
+        [0.         0.         0.52359878]]
+        >>> print(structure.center)
+        [6. 6. 6.]
+
+        Alternatively, if you don't provide ``axes`` you can ensure that the
+        ``kaxes`` and ``center`` of the structure are correct. Here we set
+        ``center`` to be at the origin, then use ``reset_axes`` to correct it.
+
+        >>> structure = Structure(
+        ...     axes = np.array([
+        ...         [6.0, 0.0, 0.0],
+        ...         [0.0, 6.0, 0.0],
+        ...         [0.0, 0.0, 6.0],
+        ...     ]),
+        ...     center = np.array([0.0, 0.0, 0.0]),
+        ... )
+        >>> print(structure.center)
+        [0. 0. 0.]
+
+        >>> structure.reset_axes()
+        >>> print(structure.center)
+        [3. 3. 3.]
+        """
         if axes is None:
             axes = self.axes
         else:
@@ -1216,7 +1467,11 @@ class Structure(Sobj):
     #end def reshape_axes
 
 
-    def write_axes(self):
+    def write_axes(self) -> str:
+        """Write the unit cell axes as a string.
+
+        Only implemented for ``self.dim=3``.
+        """
         c = ''
         for a in self.axes:
             c+='{0:12.8f} {1:12.8f} {2:12.8f}\n'.format(a[0],a[1],a[2])
@@ -1224,8 +1479,12 @@ class Structure(Sobj):
         return c
     #end def write_axes
 
-    
-    def corners(self):
+
+    def corners(self) -> npt.NDArray[np.float64]:
+        """Calculate vectors corresponding to the 8 corners of the unit cell.
+
+        Only implemented for ``self.dim=3``.
+        """
         a = self.axes
         c = np.array([(0,0,0),
                    a[0],
@@ -1333,8 +1592,8 @@ class Structure(Sobj):
         rmin_edge : float-like or array-like, default=1e-8
             Minimum acceptable distance from the cell edges to any atom in the molecule, potentially specified per-axis.
 
-        Note
-        ----
+        Notes
+        -----
         The default rmin_edge of 1e-8 is designed to just barely contain the molecule. It is
         important to ensure that for larger, non-periodic molecular systems or atoms that the unit
         cell size is sufficiently large to contain the charge density otherwise the molecular system
@@ -1751,45 +2010,45 @@ class Structure(Sobj):
 
     # test needed
     def rotate(self,r,rp=None,passive=False,units="radians",check=True):
-        """
-        Arbitrary rotation of the structure.
+        """Arbitrary rotation of the structure.
+
         Parameters
         ----------
-        r  : `array_like, float, shape (3,3)` or `array_like, float, shape (3,)` or `str`
-            If a 3x3 matrix, then code executes rotation consistent with this matrix -- 
-            it is assumed that the matrix acts on a column-major vector (eg, v'=Rv)
-            If a three-dimensional array, then the operation of the function depends
-            on the input type of rp in the following ways:
-                1. If rp is a scalar, then rp is assumed to be an angle and a rotation 
-                   of rp is made about the axis defined by r
-                2. If rp is a vector, then rp is assumed to be an axis and a rotation is made 
-                   such that r aligns with rp
-                3. If rp is a str, then the rotation is such that r aligns with the
-                   axis given by the str ('x', 'y', 'z', 'a0', 'a1', or 'a2')
-            If a str then the axis, r, is defined by the input label (e.g. 'x', 'y', 'z', 'a1', 'a2', or 'a3')
-            and the operation of the function depends on the input type of rp in the following
-            ways (same as above):
-                1. If rp is a scalar, then rp is assumed to be an angle and a rotation 
-                   of rp is made about the axis defined by r
-                2. If rp is a vector, then rp is assumed to be an axis and a rotation is made 
-                   such that r aligns with rp
-                3. If rp is a str, then the rotation is such that r aligns with the
-                   axis given by the str ('x', 'y', 'z', 'a0', 'a1', or 'a2')
-        rp : `array_like, float, shape (3), optional` or `str, optional`
-            If a 3-dimensional vector is given, then rp is assumed to be an axis and a rotation is made
-            such that the axis r is aligned with rp.
-            If a str, then rp is assumed to be an angle and a rotation about the axis defined by r 
-            is made by an angle rp
-            If a str is given, then rp is assumed to be an axis defined by the given label
-            (e.g. 'x', 'y', 'z', 'a1', 'a2', or 'a3') and a rotation is made such that the axis r 
-            is aligned with rp.
-        passive : `bool, optional, default False`
-            If `True`, perform a passive rotation
-            If `False`, perform an active rotation
-        units : `str, optional, default "radians"`
-            Units of rp, if rp is given as an angle (scalar)
-        check : `bool, optional, default True`
-            Perform a check to verify rotation matrix is orthogonal
+        r : array_like of float with shape (3,3) or array_like of float shape (3,) or str
+            If a 3x3 matrix, then code executes rotation consistent with this
+            matrix -- it is assumed that the matrix acts on a column-major
+            vector (eg, v'=Rv). If a three-dimensional array, then the operation
+            of the function depends on the input type of ``rp`` in the
+            following ways:
+
+            1. If ``rp`` is a scalar, then ``rp`` is assumed to be an angle and
+               a rotation of ``rp`` is made about the axis defined by ``r``.
+            2. If ``rp`` is a vector, then ``rp`` is assumed to be an axis and a 
+               rotation is made such that ``r`` aligns with ``rp``.
+            3. If ``rp`` is a ``str``, then the rotation is such that ``r``
+               aligns with the axis given by the str
+               ``('x', 'y', 'z', 'a0', 'a1', or 'a2')``.
+
+            If a ``str`` then the axis, ``r``, is defined by the input label
+            (e.g. 'x', 'y', 'z', 'a1', 'a2', or 'a3') and the operation of the
+            function depends on the input type of ``rp`` in the same ways as
+            above.
+        rp : array_like of float with shape (3) or str, optional
+            If a 3-dimensional vector is given, then ``rp`` is assumed to be an
+            axis and a rotation is made such that the axis ``r`` is aligned with
+            ``rp``.
+            If a str, then ``rp`` is assumed to be an angle and a
+            rotation about the axis defined by ``r`` is made by an angle ``rp``.
+            If a str is given, then ``rp`` is assumed to be an axis defined by
+            the given label (e.g. 'x', 'y', 'z', 'a1', 'a2', or 'a3') and a
+            rotation is made such that the axis ``r`` is aligned with ``rp``.
+        passive : bool, default=False
+            If ``True``, perform a passive rotation.
+            If ``False``, perform an active rotation.
+        units : {"radians", "rad", "degrees", "deg"}, default="radians"
+            Units of ``rp``, if ``rp`` is given as an angle (scalar).
+        check : bool, default=True
+            Perform a check to verify rotation matrix is orthogonal.
         """
         if rp is not None:
             dirmap = dict(x=[1,0,0],y=[0,1,0],z=[0,0,1])
@@ -3482,17 +3741,17 @@ class Structure(Sobj):
 
     # test needed
     def recorner(self, center = None):
-        """Center atoms around the origin of the cell
-        
+        """Center atoms around the origin of the cell.
+
         Parameters
         ----------
         center : NDArray, default = self.center
             Position of the center of the cell.
-        
-        Note
-        ----
-        If the user supplies `center`, then this will modify `self.center` to reflect
-        that change.
+
+        Notes
+        -----
+        If the user supplies ``center``, then this will modify
+        ``self.center`` to reflect that change.
         """
         if center is not None:
             self.center = np.array(center, dtype=float)
@@ -4892,6 +5151,7 @@ class Structure(Sobj):
 
     def read(self,filepath,format=None,elem=None,block=None,grammar='1.1',cell='prim',contents=False):
         if os.path.exists(filepath):
+            filepath = path_string(filepath)
             path,file = os.path.split(filepath)
             if format is None:
                 if '.' in file:
@@ -4940,7 +5200,8 @@ class Structure(Sobj):
         elem = []
         pos  = []
         if os.path.exists(filepath):
-            lines = open(filepath,'r').read().strip().splitlines()
+            with open(filepath, "r") as f:
+                lines = f.read().strip().splitlines()
         else:
             lines = filepath.strip().splitlines() # "filepath" is file contents
         #end if
@@ -5021,7 +5282,8 @@ class Structure(Sobj):
 
     def read_poscar(self,filepath,elem=None):
         if os.path.exists(filepath):
-            lines = open(filepath,'r').read().splitlines()
+            with open(filepath, "r") as f:
+                lines = f.read().splitlines()
         else:
             lines = filepath.splitlines()  # "filepath" is file contents
         #end if
@@ -5141,7 +5403,8 @@ class Structure(Sobj):
     # test needed
     def read_fhi_aims(self,filepath):
         if os.path.exists(filepath):
-            lines = open(filepath,'r').read().splitlines()
+            with open(filepath, "r") as f:
+                lines = f.read().splitlines()
         else:
             lines = filepath.splitlines() # "filepath" is contents
         #end if
@@ -5199,7 +5462,9 @@ class Structure(Sobj):
         if filepath is None and format is None:
             self.error('please specify either the filepath or format arguments to write()')
         elif format is None:
-            if '.' in filepath:
+            if isinstance(filepath, Path):
+                format = filepath.suffix.lstrip(".")
+            elif '.' in filepath:
                 format = filepath.split('.')[-1]
             else:
                 self.error(
@@ -5237,10 +5502,10 @@ class Structure(Sobj):
         Notes
         -----
         This function will write the positions in the format
-        (in this case using `with_elem=True`)
-        ```python
+        (in this case using ``with_elem=True``)
+        .. code-block:: python
+
             "{element:2} {dim1:12.8f} {dim2:12.8f} ... {dimN:12.8f}\\n"
-        ```
         """
         s = self.copy()
         s.change_units(units)
@@ -5263,8 +5528,8 @@ class Structure(Sobj):
 
 
     def write_xyz(self, filepath=None):
-        """Write a `Structure` object to an XYZ file
-        
+        """Write a ``Structure`` object to an XYZ file
+
         Parameters
         ----------
         filepath : PathLike or None, default=None
@@ -5277,9 +5542,9 @@ class Structure(Sobj):
         xyz : str
             The text that was or would have been written to the XYZ file.
 
-        Note
-        ----
-        To get a string of only the atomic positions, use `pos_to_str()` instead.
+        Notes
+        -----
+        To get a string of only the atomic positions, use ``pos_to_str()`` instead.
         """
         if self.dim!=3:
             self.error('write_xyz is currently only implemented for 3 dimensions')
@@ -5297,7 +5562,8 @@ class Structure(Sobj):
         #end for
 
         if filepath is not None:
-            open(filepath,'w').write(c)
+            with open(filepath, "w") as f:
+                f.write(c)
         #end if
         return c
     #end def write_xyz
@@ -5330,7 +5596,8 @@ class Structure(Sobj):
             c += '   {0:>3} {1:12.8f}  {2:12.8f}  {3:12.8f}\n'.format(enum,r[0],r[1],r[2])
         #end for
         if filepath is not None:
-            open(filepath,'w').write(c)
+            with open(filepath, "w") as f:
+                f.write(c)
         #end if
         return c
     #end def write_xsf
@@ -5349,7 +5616,8 @@ class Structure(Sobj):
         poscar.pos        = s.pos
         c = poscar.write_text()
         if filepath is not None:
-            open(filepath,'w').write(c)
+            with open(filepath, "w") as f:
+                f.write(c)
         #end if
         return c
     #end def write_poscar
@@ -5369,7 +5637,8 @@ class Structure(Sobj):
             c += 'atom_frac   {0: 12.8f}  {1: 12.8f}  {2: 12.8f}  {3}\n'.format(p[0],p[1],p[2],e)
         #end for
         if filepath is not None:
-            open(filepath,'w').write(c)
+            with open(filepath, "w") as f:
+                f.write(c)
         #end if
         return c
     #end def write_fhi_aims
@@ -6519,6 +6788,55 @@ class DefectStructure(Structure):
 
 
 class Crystal(Structure):
+    """Generate a crystal structure.
+
+    Attributes
+    ----------
+    lattice_constants
+    lattices
+    centering_types
+    lattice_centerings
+    centerings
+    cell_types
+    cell_aliases
+    cell_classes
+    constants : NDArray of float
+        The lattice constants (``a``, ``b``, ``c``) for the crystal.
+    angles : NDArray of float
+        The angles (``α``, ``β``, ``γ``) for the crystal.
+    generation_info : obj of str: str
+        The supplied inputs to the class constructor.
+
+    Parameters
+    ----------
+    lattice : str, optional
+    cell : str, optional
+    centering : {"P", "A", "B", "C", "F", "I", "R"}, optional
+    constants : float or tuple of float, optional
+        Lattice constants required for the specified lattice. The order
+        for these is ``(a, b, c, α, β, γ)``. If the specified lattice
+        does not require some constant, you can omit it, but retain the
+        overall order of the constants.
+    atoms : str or tuple of str, optional
+        The atomic symbol(s) of the atoms in the lattice.
+    basis : list of lists of floats, optional
+        A list of vectors that define the atom positions with respect
+        to the ``basis_vectors``. If there are multiple ``atoms``, this
+        should have the sample length as ``atoms``.
+    basis_vectors : ArrayLike of float or {"prim", "conv"}, optional
+        A set of 3 vectors that define the basis used to transform
+        ``basis``.
+    cscale : list of float, optional
+        Scaling values for the provided constants. Must have the same
+        length as ``constants``.
+
+    See Also
+    --------
+    Structure :
+        All remaining parameters are passed to this class's constructor.
+        See its docstring for more details.
+    """
+
     lattice_constants = obj(
         triclinic    = ['a','b','c','alpha','beta','gamma'],
         monoclinic   = ['a','b','c','beta'],
@@ -6528,8 +6846,10 @@ class Crystal(Structure):
         cubic        = ['a'],
         rhombohedral = ['a','alpha']
         )
+    """Mapping from a lattice type to the required values to create the cell."""
 
     lattices = list(lattice_constants.keys())
+    """List of lattice systems."""
 
     centering_types = obj(
         primitive             = 'P',
@@ -6538,6 +6858,7 @@ class Crystal(Structure):
         body_centered         = 'I',
         rhombohedral_centered = 'R'        
         )
+    """Mapping from centering types to their Pearson symbol."""
 
     lattice_centerings = obj(
         triclinic    = ['P'],
@@ -6548,6 +6869,7 @@ class Crystal(Structure):
         cubic        = ['P','I','F'],
         rhombohedral = ['P']
         )
+    """Mapping of lattice systems to allowed centering types."""
 
     centerings = obj(
         P = [],
@@ -6560,17 +6882,22 @@ class Crystal(Structure):
         )
 
     cell_types = set(['primitive','conventional'])
+    """Types of cells, currently only ``primitive`` and ``conventional``."""
 
     cell_aliases = obj(
         prim = 'primitive',
         conv = 'conventional'
         )
+    """Mapping from shortened aliases ``prim`` and ``conv`` to their cell type."""
+
     cell_classes = obj(
         sc  = 'cubic',
         bcc = 'cubic',
         fcc = 'cubic',
         hex = 'hexagonal'
         )
+    """Mapping from common lattice names to their lattices."""
+
     for lattice in lattices:
         cell_classes[lattice]=lattice
     #end for
@@ -6846,6 +7173,7 @@ class Crystal(Structure):
             basis     = [[0,0,0],[1./2,1./6,0]]
             )
         }
+    """Mapping from material names and their cell types to their crystal information."""
 
     kc_keys = list(known_crystals.keys())
     for (name,cell) in kc_keys:
@@ -7299,12 +7627,6 @@ class Jellium(Structure):
 #end class Jellium
 
 
-    
-    
-
-
-
-
 # test needed
 def generate_cell(shape,tiling=None,scale=1.,units=None,struct_type=Structure):
     if tiling is None:
@@ -7352,9 +7674,6 @@ def generate_structure(type='crystal',*args,**kwargs):
 #end def generate_structure
 
 
-
-
-# test needed
 def generate_atom_structure(
     atom        = None,
     units       = 'A',
@@ -7366,6 +7685,28 @@ def generate_atom_structure(
     bconds      = tuple('nnn'),
     struct_type = Structure
     ):
+    """Create a structure with a single atom in the center of a unit cell.
+
+    Parameters
+    ----------
+    atom : str
+        The atomic symbol of the atom.
+    units : str, default="A"
+        The units of the structure, defaults to Angstroms.
+    Lbox : int or float, optional
+        Length of the simulation box. Overrides ``axes``.
+    skew : int or float less than 1, default=0
+        ...
+    axes : ArrayLike of float, optional
+        The unit cell axes.
+    kgrid : tuple of int, default=(1,1,1)
+        Number of k-points in each direction. Used to create a
+        Monkhorst-Pack k-point mesh.
+    kshift : tuple of int, default=(0,0,0)
+        Vector to use to translate the k-points in the mesh.
+    bconds : tuple of str, default=("n","n","n")
+        Boundary conditions for the resulting structure.
+    """
     if atom is None:
         Structure.class_error('atom must be provided','generate_atom_structure')
     #end if
@@ -7383,7 +7724,6 @@ def generate_atom_structure(
 #end def generate_atom_structure
 
 
-# test needed
 def generate_dimer_structure(
     dimer       = None,
     units       = 'A',
@@ -7397,6 +7737,32 @@ def generate_dimer_structure(
     struct_type = Structure,
     axis        = 'x'
     ):
+    """Create a structure with a dimer in the center of a unit cell.
+
+    Parameters
+    ----------
+    dimer : list of str
+        The atomic symbols of the atoms in the dimer.
+    units : str, default="A"
+        The units of the structure, defaults to Angstroms.
+    separation : int or float
+        The separation between the atoms in the dimer.
+    Lbox : int or float, optional
+        Length of the simulation box. Overrides ``axes``.
+    skew : int or float less than 1, default=0
+        ...
+    axes : ArrayLike of float, optional
+        The unit cell axes.
+    kgrid : tuple of int, default=(1,1,1)
+        Number of k-points in each direction. Used to create a
+        Monkhorst-Pack k-point mesh.
+    kshift : tuple of int, default=(0,0,0)
+        Vector to use to translate the k-points in the mesh.
+    bconds : tuple of str, default=("n","n","n")
+        Boundary conditions for the resulting structure.
+    axis : {"x", "y", "z"}, optional
+        The axis that the dimer is aligned on.
+    """
     if dimer is None:
         Structure.class_error('dimer atoms must be provided to construct dimer','generate_dimer_structure')
     #end if
@@ -7429,7 +7795,6 @@ def generate_dimer_structure(
 #end def generate_dimer_structure
 
 
-# test needed
 def generate_trimer_structure(
     trimer        = None,
     units         = 'A',
@@ -7446,6 +7811,38 @@ def generate_trimer_structure(
     angular_units = 'degrees',
     plane_rot     = None
     ):
+    """Create a structure with a dimer in the center of a unit cell.
+
+    Parameters
+    ----------
+    trimer : list of str
+        The atomic symbols of the atoms in the trimer.
+    units : str, default="A"
+        The units of the structure, defaults to Angstroms.
+    separation : list of ints or floats
+        The separation between the atoms in the trimer. The first value
+        is the distance between atom 1 and atom 2, and the second value
+        is the distance between atom 1 and atom 3.
+    angle : int or float
+        The angle formed by the three atoms in the trimer.
+    Lbox : int or float, optional
+        Length of the simulation box. Overrides ``axes``.
+    skew : int or float less than 1, default=0
+        ...
+    axes : ArrayLike of float, optional
+        The unit cell axes.
+    kgrid : tuple of int, default=(1,1,1)
+        Number of k-points in each direction. Used to create a
+        Monkhorst-Pack k-point mesh.
+    kshift : tuple of int, default=(0,0,0)
+        Vector to use to translate the k-points in the mesh.
+    axis : {"x", "y", "z"}, optional
+        The axis that atom 1 and atom 2 of the trimer is aligned on.
+    axis2 : {"x", "y", "z"}, optional
+        The axis that atom 1 and atom 3 of the trimer is aligned on.
+    angular_units : {"degrees", "rad", "radians"}, optional
+        The units of the supplied angle.
+    """
     if trimer is None:
         Structure.class_error('trimer atoms must be provided to construct trimer','generate_trimer_structure')
     #end if
@@ -7577,6 +7974,11 @@ def generate_crystal_structure(
     element        = None,
     scale          = None,
     ):
+    """Generate a crystal structure.
+
+    See :py:class:`~.Crystal` and :py:class:`~.Structure` for a
+    description of the available parameters.
+    """
 
     if structure is not None:
         lattice = structure

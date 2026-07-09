@@ -70,7 +70,7 @@ void test_LCAO_DiamondC_2x1x1_real(const bool useOffload)
   ions_.R[2]           = {3.37316115, 3.37316115, 0.0};
   ions_.R[3]           = {5.059741726, 5.059741726, 1.686580575};
   SpeciesSet& ispecies = ions_.getSpeciesSet();
-  const int Cidx       = ispecies.addSpecies("C");
+  ispecies.addSpecies("C");
 
   ions_.print(app_log());
   ions_.update(); // propagate SoA.
@@ -486,7 +486,7 @@ void test_LCAO_DiamondC_2x1x1_cplx(const bool useOffload)
   ions_.R[2]           = {3.37316115, 3.37316115, 0.0};
   ions_.R[3]           = {5.059741726, 5.059741726, 1.686580575};
   SpeciesSet& ispecies = ions_.getSpeciesSet();
-  const int Cidx       = ispecies.addSpecies("C");
+  ispecies.addSpecies("C");
 
   ions_.print(app_log());
   ions_.update(); // propagate SoA.
@@ -908,11 +908,11 @@ void test_LCAO_DiamondC_2x1x1_cplx(const bool useOffload)
   }
 }
 
-TEST_CASE("LCAOrbitalSet batched PBC DiamondC", "[wavefunction]")
-{
-  SECTION("2x1x1 real") { test_LCAO_DiamondC_2x1x1_real(false); }
+TEST_CASE("LCAOrbitalSet batched PBC DiamondC",
+          "[wavefunction]"){SECTION("2x1x1 real"){test_LCAO_DiamondC_2x1x1_real(false);
+} // namespace qmcplusplus
 #ifdef QMC_COMPLEX
-  SECTION("2x1x1 cplx") { test_LCAO_DiamondC_2x1x1_cplx(false); }
+SECTION("2x1x1 cplx") { test_LCAO_DiamondC_2x1x1_cplx(false); }
 #endif
 }
 

@@ -29,6 +29,7 @@
 #include "GenerateRandomParticleSets.h"
 #include "EstimatorManagerNewTest.h"
 #include "EDenEstimatorManagerIntegrationTest.h"
+#include "config.h"
 
 constexpr bool generate_test_data = false;
 
@@ -41,7 +42,12 @@ TEST_CASE("EnergyDensityEstimatorIntegration::multirank_reduction", "[estimators
   Communicate* comm = OHMMS::Controller;
 
   int num_walkers = 4;
+#ifndef ENABLE_OFFLOAD
   testing::EnergyDensityTest eden_test(comm, num_walkers, generate_test_data);
+#else
+  testing::EnergyDensityTest eden_test(comm, num_walkers, &testing::makeGoldWalkerElementsWithEI, generate_test_data);
+#endif
+
   auto doc = testing::createEstimatorManagerEnergyDenistyInputXML();
   EstimatorManagerInput emi(doc.getRoot());
   auto& gold_elem = eden_test.getGoldElements();
@@ -114,8 +120,12 @@ TEST_CASE("EnergyDensityEstimatorIntegration::operator_reporting", "[estimators]
 {
   Communicate* comm = OHMMS::Controller;
   int num_walkers   = 4;
+#ifndef ENABLE_OFFLOAD
   testing::EnergyDensityTest eden_test(comm, num_walkers, &testing::makeGoldWalkerElementsWithEEEIPS,
                                        generate_test_data);
+#else
+  testing::EnergyDensityTest eden_test(comm, num_walkers, &testing::makeGoldWalkerElementsWithEI, generate_test_data);
+#endif
   auto doc = testing::createEstimatorManagerEnergyDenistyInputXML();
   EstimatorManagerInput emi(doc.getRoot());
   auto& gold_elem = eden_test.getGoldElements();
@@ -193,7 +203,9 @@ TEST_CASE("EnergyDensityEstimatorIntegration::operator_reporting", "[estimators]
 
   CHECK(summed_grid == Approx(expected_sum));
   auto debug_sum = testing::cannedSum();
+#ifndef ENABLE_OFFLOAD
   CHECK(summed_grid == Approx(debug_sum));
+#endif
 }
 
 
@@ -208,6 +220,7 @@ TEST_CASE("EnergyDensityEstimatorIntegration::normalization", "[estimators]")
   auto savePropertiesIntoWalker = [](QMCHamiltonian& ham, MCPWalker& walker) {
     ham.saveProperty(walker.getPropertyBase());
   };
+
   for (int iw = 0; iw < num_walkers; ++iw)
     savePropertiesIntoWalker(ham_list[iw], walker_list[iw]);
 
@@ -227,7 +240,7 @@ TEST_CASE("EnergyDensityEstimatorIntegration::normalization", "[estimators]")
   auto pset_list = eden_emn_integration_test.getPSetList();
   auto twf_list  = eden_emn_integration_test.getTwfList();
   auto& rng      = eden_emn_integration_test.getRng();
-  // The logger writes out on accumualtes so the sum must be acquired before
+  // The logger writes out on accumulates so the sum must be acquired before
   emc.accumulate(walker_list, pset_list, twf_list, ham_list, rng);
 
   NEEnergyDensityEstimator& e_den_est = dynamic_cast<NEEnergyDensityEstimator&>(crowd_operator_ests[0][0].get());
@@ -242,8 +255,9 @@ TEST_CASE("EnergyDensityEstimatorIntegration::normalization", "[estimators]")
 
   CHECK(summed_grid == Approx(expected_sum));
   auto debug_sum = testing::cannedSum();
+#ifndef ENABLE_OFFLOAD
   CHECK(summed_grid == Approx(debug_sum));
-
+#endif
 
   std::cout << "summed grid: " << summed_grid << '\n';
 

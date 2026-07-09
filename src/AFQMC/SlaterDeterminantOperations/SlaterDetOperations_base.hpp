@@ -307,10 +307,10 @@ public:
     ma::geqrf(AT, TAU, WORK);
     using ma::determinant_from_geqrf;
     using ma::scale_columns;
-    T res = determinant_from_geqrf(get<0>(AT.sizes()), AT.origin(), AT.stride(0), scl.origin(), LogOverlapFactor);
+    T res = determinant_from_geqrf(get<0>(AT.sizes()), AT.origin(), AT.stride(), scl.origin(), LogOverlapFactor);
     ma::gqr(AT, TAU, WORK);
     ma::transpose(AT, A);
-    scale_columns(get<0>(A.sizes()), get<1>(A.sizes()), A.origin(), A.stride(0), scl.origin());
+    scale_columns(get<0>(A.sizes()), get<1>(A.sizes()), A.origin(), A.stride(), scl.origin());
 #else
     int NMO = A.size();
     TVector TAU(iextensions<1u>{NMO}, buffer_manager.get_generator().template get_allocator<T>());

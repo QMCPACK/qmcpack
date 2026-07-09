@@ -70,7 +70,7 @@ TEST_CASE("EstimatorManagerCrowd PerParticleHamiltonianLogger integration", "[es
       MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
   auto& pset = *(particle_pool.getParticleSet("e"));
   // This is where the pset properties "properies" gain the different hamiltonian operator values.
-  auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
+  auto hamiltonian_pool = MinimalHamiltonianPool::makeHamWithEI(comm, particle_pool, wavefunction_pool);
 
   TrialWaveFunction& twf(wavefunction_pool.getWaveFunction().value());
   QMCHamiltonian& ham(hamiltonian_pool.getHamiltonian().value());
@@ -92,9 +92,7 @@ TEST_CASE("EstimatorManagerCrowd PerParticleHamiltonianLogger integration", "[es
   UPtrVector<TrialWaveFunction> twfs;
   std::vector<ParticleSet> psets;
 
-  int num_walkers   = 4;
-  int num_electrons = particle_pool.getParticleSet("e")->getTotalNum();
-  int num_ions      = particle_pool.getParticleSet("ion")->getTotalNum();
+  int num_walkers = 4;
 
   for (int iw = 0; iw < num_walkers; ++iw)
   {
