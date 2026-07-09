@@ -37,7 +37,9 @@
 #====================================================================#
 
 import os
+from os import PathLike
 from pathlib import Path
+import re
 import numpy as np
 from .execute import execute
 from .fileio import TextFile
@@ -86,6 +88,119 @@ def pp_elem_label(filename,guard=False):
             return elem_label, element, is_elem
     #end if
 #end def pp_elem_label
+
+
+def read_upf_z_valence(file: PathLike) -> int | float:
+    """Read Z-valence from a UPF-compliant pseudopotential file."""
+    zval = None
+    header_data = []
+    with open(file, "r") as pseudo:
+        found_header_start = False
+        while not found_header_start:
+            line = pseudo.readline()
+            if "<PP_HEADER" in line:
+                header_data.append(line)
+                found_header_start = True
+
+        if "/>" in line or "</PP_HEADER>" in line:
+            data = line.split('"')
+            for index, entry in enumerate(data):
+                if entry.strip() == "z_valence=":
+                    zval = float(data[index + 1])
+        else: # Go for brute-force search
+            for line in pseudo:
+                line = line.strip().casefold()
+                if "z_valence" in line and '"' in line:
+                    data = line.split('"')[-2]
+                    zval = float(data)
+                elif line.endswith("z valence"):
+                    zval = float(line.split()[0])
+                elif line.startswith("z valence"):
+                    zval = float(line.split()[-1])
+
+    if zval is None:
+        error(
+        f"Could not find Z valence in file: {file!s}\n"
+            "You may need to provide the Z valence manually!"
+            )
+    elif zval.is_integer():
+        return int(zval)
+    else:
+        return zval
+#end def read_upf_z_valence
+
+
+def read_xml_z_valence(file: PathLike) -> int | float:
+    """Read the Z-valence from a QMCPACK-compatible XML pseudopotential file."""
+    header_pattern = re.compile(r'zval=\"([\d\.]+)\"')
+
+    header_lines = []
+    with open(file, "r") as xml:
+        header_started = False
+        for line in xml:
+            if "<header" in line:
+                header_started = True
+
+            if header_started:
+                header_lines.append(line)
+
+            if "/>" in line or "</header>" in line:
+                header_lines.append(line)
+                break
+
+    header = " ".join(header_lines)
+    zval = re.search(header_pattern, header)
+
+    if zval is None:
+        error(
+           f"Could not find Z valence in file: {file!s}\n"
+            "You may need to provide the Z valence manually!"
+            )
+
+    zval = float(zval.groups()[0])
+
+    if zval.is_integer():
+        return int(zval)
+    else:
+        return zval
+#end def read_xml_z_valence
+
+
+def read_potcar_z_valence(file: PathLike) -> int | float:
+    """Read the Z-valence from a POTCAR file.
+
+    This function uses the format specifications from the VASP wiki, and
+    assumes that the file is a valid POTCAR, so the second line should
+    be the Z-valence [1]_.
+
+    References
+    ----------
+    .. [1] https://vasp.at/wiki/POTCAR#File_format
+    """
+    file = Path(file).resolve()
+    with open(file, "r") as potcar:
+        potcar.readline() # Skip first line
+        z_valence = potcar.readline().strip()
+        try:
+            zval = float(z_valence)
+        except ValueError: # Improperly formatted POTCAR, but try alternative location
+            for line in potcar:
+                if "ZVAL" in line:
+                    zval = re.search(r"ZVAL ?= ?([\d\.]+)", line)
+                    break
+
+            if zval is None:
+                raise ValueError(
+                    f"Can not find Z-valence in POTCAR file: {file!s}"
+                    )
+            else:
+                zval = float(zval.group(1))
+
+    if zval.is_integer():
+        return int(zval)
+    else:
+        return zval
+#end def read_potcar_z_valence
 
 
 # basic interface for nexus, only gamess really needs this for now

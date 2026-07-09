@@ -7,6 +7,7 @@ generic_settings.raise_error = True
 
 from . import isolate_nexus_core, TEST_DIR
 from ..testing import value_eq,object_eq
+from nexus.pseudopotential import read_upf_z_valence, read_xml_z_valence, read_potcar_z_valence
 
 
 TEST_FILES = {
@@ -399,3 +400,246 @@ r*potential (L=1) in Ha
 
 #end def test_pseudopotential_classes
 
+
+def test_read_upf_z_valence(tmp_path):
+    upf_v1_file = TEST_FILES["C.BFD.upf"]
+
+    upf_v1_file_zvalence = read_upf_z_valence(upf_v1_file)
+    assert(isinstance(upf_v1_file_zvalence, int))
+    assert(upf_v1_file_zvalence == 4)
+
+    upf_v_201_text = """
+<UPF version="2.0.1">
+  <PP_INFO>
+    ...
+    <PP_INPUTFILE>
+    ...
+    </PP_INPUTFILE>
+  </PP_INFO>
+  <!--                               -->
+  <!-- END OF HUMAN READABLE SECTION -->
+  <!--                               -->
+    <PP_HEADER
+       generated="By Someone"
+       author="Someone"
+       date="999999"
+       comment=""
+       element="C "
+       pseudo_type="NC"
+       relativistic="scalar"
+       is_ultrasoft="F"
+       is_paw="F"
+       is_coulomb="F"
+       has_so="F"
+       has_wfc="F"
+       has_gipaw="F"
+       core_correction="F"
+       functional="PBE"
+       z_valence="    4.00"
+       total_psenergy="  0.000E+00"
+       rho_cutoff="   6.00000000000E+00"
+       l_max="1"
+       l_local="-1"
+       mesh_size="   8"
+       number_of_wfc="0"
+       number_of_proj="1"/>
+ <PP_MESH>
+   <PP_R type="real"  size=" 8" columns="8">
+    0.0000    0.0100    0.0200    0.0300    0.0400    0.0500    0.0600    0.0700
+   </PP_R>
+ </PP_MESH>
+"""
+    upf_v201_file = tmp_path / "pseudo.upf"
+    upf_v201_file.write_text(upf_v_201_text)
+
+    upf_v201_file_zvalence = read_upf_z_valence(upf_v201_file)
+
+    assert(isinstance(upf_v201_file_zvalence, int))
+    assert(upf_v201_file_zvalence == 4)
+
+    # Write Z valence with a float return
+    upf_v_201_text_float = """
+<UPF version="2.0.1">
+  <PP_INFO>
+    ...
+    <PP_INPUTFILE>
+    ...
+    </PP_INPUTFILE>
+  </PP_INFO>
+  <!--                               -->
+  <!-- END OF HUMAN READABLE SECTION -->
+  <!--                               -->
+    <PP_HEADER
+       generated="By Someone"
+       author="Someone"
+       date="999999"
+       comment=""
+       element="C "
+       pseudo_type="NC"
+       relativistic="scalar"
+       is_ultrasoft="F"
+       is_paw="F"
+       is_coulomb="F"
+       has_so="F"
+       has_wfc="F"
+       has_gipaw="F"
+       core_correction="F"
+       functional="PBE"
+       z_valence="    4.50"
+       total_psenergy="  0.000E+00"
+       rho_cutoff="   6.00000000000E+00"
+       l_max="1"
+       l_local="-1"
+       mesh_size="   8"
+       number_of_wfc="0"
+       number_of_proj="1"/>
+ <PP_MESH>
+   <PP_R type="real"  size=" 8" columns="8">
+    0.0000    0.0100    0.0200    0.0300    0.0400    0.0500    0.0600    0.0700
+   </PP_R>
+ </PP_MESH>
+"""
+    upf_v201_file_float = tmp_path / "pseudo_float.upf"
+    upf_v201_file_float.write_text(upf_v_201_text_float)
+
+    upf_v201_file_float_zvalence = read_upf_z_valence(upf_v201_file_float)
+
+    assert(upf_v201_file_float_zvalence == 4.5)
+#end def test_read_upf_z_valence
+
+
+def test_read_xml_z_valence(tmp_path):
+    xml_file = TEST_FILES["C.BFD.xml"]
+
+    z_valence = read_xml_z_valence(xml_file)
+
+    assert(isinstance(z_valence, int))
+    assert(z_valence == 4)
+
+    # Modified version of C.BFD.xml with a float for the Z-valence
+    xml_with_float = """
+<?xml version="1.0" encoding="UTF-8"?>
+<pseudo version="0.5">
+  <header symbol="C" atomic-number="6" zval="4.5" relativistic="no" 
+   polarized="no" creator="ppconvert" flavor="Troullier-Martins" 
+   core-corrections="no" xc-functional-type="GGA" 
+   xc-functional-parametrization="Perdew-Burke-Ernzerhof"/>
+  <grid type="linear" units="bohr" ri="0" rf="1.00000000000000e+01" 
+   npts="10001"/>
+  <semilocal units="hartree" format="r*V" npots-down="2" npots-up="0" 
+  </semilocal>
+  <pseudowave-functions units="electrons/bohr^(-3/2)" 
+  </pseudowave-functions>
+</pseudo>
+"""
+
+    xml_file_float = tmp_path / "pseudo.xml"
+    xml_file_float.write_text(xml_with_float)
+
+    z_valence_float = read_xml_z_valence(xml_file_float)
+
+    assert(z_valence_float == 4.5)    
+#end def test_read_xml_z_valence
+
+
+def test_read_potcar_z_valence(tmp_path):
+    """POTCAR examples assembled from publicly available information [1]_.
+
+    First test is for a properly formatted POTCAR with an integer-value
+    Z-valence. Second test is for an improperly formatted POTCAR with an
+    integer-value Z-valence, to test the fallback method. Third test is
+    a properly formatted POTCAR with a non-integer-value Z-valence.
+
+    References
+    ----------
+    .. [1] https://vasp.at/wiki/POTCAR#File_format
+    """
+    potcar_proper = """
+PAW_PBE C 07Sep2000
+4.000
+TITEL = PAW_PBE C 07Sep2000
+LEXCH = PE
+POMASS = 47.880; ZVAL = 4.000 mass and valenz
+ENMAX = 222.335; ENMIN = 166.751 eV
+EAUG = 482.848
+Atomic configuration
+    8 entries
+     n  l   j            E        occ.
+     1  0  0.50     -4865.3608   2.0000
+     2  0  0.50      -533.1368   2.0000
+     2  1  1.50      -440.5031   6.0000
+     3  0  0.50       -59.3186   2.0000
+     3  1  1.50       -35.7012   6.0000
+     3  2  2.50        -1.9157   3.0000
+     4  0  0.50        -3.7291   1.0000
+     4  3  2.50        -1.3606   0.0000
+"""
+
+    potcar_proper_file = tmp_path / "POTCAR"
+    potcar_proper_file.write_text(potcar_proper)
+
+    z_valence = read_potcar_z_valence(potcar_proper_file)
+
+    assert(isinstance(z_valence, int))
+    assert(z_valence == 4)
+
+    # Modified version of POTCAR with incorrect 2nd line, to test the fallback system
+    potcar_improper = """
+PAW_PBE C 07Sep2000
+########NOT THE RIGHT LINE########
+TITEL = PAW_PBE C 07Sep2000
+LEXCH = PE
+POMASS = 47.880; ZVAL = 4.000 mass and valenz
+ENMAX = 222.335; ENMIN = 166.751 eV
+EAUG = 482.848
+Atomic configuration
+    8 entries
+     n  l   j            E        occ.
+     1  0  0.50     -4865.3608   2.0000
+     2  0  0.50      -533.1368   2.0000
+     2  1  1.50      -440.5031   6.0000
+     3  0  0.50       -59.3186   2.0000
+     3  1  1.50       -35.7012   6.0000
+     3  2  2.50        -1.9157   3.0000
+     4  0  0.50        -3.7291   1.0000
+     4  3  2.50        -1.3606   0.0000
+"""
+
+    potcar_improper_file = tmp_path / "POTCAR2"
+    potcar_improper_file.write_text(potcar_improper)
+
+    z_valence = read_potcar_z_valence(potcar_improper_file)
+
+    assert(isinstance(z_valence, int))
+    assert(z_valence == 4)
+
+    # Modified version of POTCAR with a non-integer Z-valence
+    potcar_float = """
+PAW_PBE C 07Sep2000
+4.500
+TITEL = PAW_PBE C 07Sep2000
+LEXCH = PE
+POMASS = 47.880; ZVAL = 4.500 mass and valenz
+ENMAX = 222.335; ENMIN = 166.751 eV
+EAUG = 482.848
+Atomic configuration
+    8 entries
+     n  l   j            E        occ.
+     1  0  0.50     -4865.3608   2.0000
+     2  0  0.50      -533.1368   2.0000
+     2  1  1.50      -440.5031   6.0000
+     3  0  0.50       -59.3186   2.0000
+     3  1  1.50       -35.7012   6.0000
+     3  2  2.50        -1.9157   3.0000
+     4  0  0.50        -3.7291   1.0000
+     4  3  2.50        -1.3606   0.0000
+"""
+
+    potcar_float_file = tmp_path / "POTCAR3"
+    potcar_float_file.write_text(potcar_float)
+
+    z_valence = read_potcar_z_valence(potcar_float_file)
+
+    assert(isinstance(z_valence, float))
+    assert(z_valence == 4.5)
+#end def test_read_potcar_z_valence
