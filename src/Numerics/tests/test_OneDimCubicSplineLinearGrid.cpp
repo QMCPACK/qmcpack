@@ -42,10 +42,8 @@ TEST_CASE("test oneDimCubicSplineLinearGrid", "[numerics]")
   for (int i = 0; i < check_xvals.size(); i++)
   {
     double r   = check_xvals[i];
-    double val = cubic_spline.splint(r);
+    double val = linear_grid_cubic_spline.splint(r);
     check_yvals.push_back(val);
-
-    //std::cout << i << " r = " << r << " val = " << val << " " << check_yvals[i] << std::endl;
   }
 
   CHECK(check_yvals[0] == Approx(0.5));

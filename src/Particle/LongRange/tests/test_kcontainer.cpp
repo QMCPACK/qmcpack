@@ -169,8 +169,6 @@ TEST_CASE("kcontainer at twist in 2D", "[longrange]")
 
 TEST_CASE("kcontainer for diamond", "[longrange]")
 {
-  int ndim = 3;
-
   using Real         = QMCTraits::RealType;
   using FullPrecReal = QMCTraits::FullPrecRealType;
 
