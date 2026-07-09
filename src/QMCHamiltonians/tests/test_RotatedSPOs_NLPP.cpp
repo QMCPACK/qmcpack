@@ -245,7 +245,7 @@ void test_hcpBe_rotation(bool use_single_det, bool use_nlpp_batched)
     NONLOCALECP
   };
 
-  double local_pp = h->getComponent(LOCALECP)->evaluate(psi, elec);
+  h->getComponent(LOCALECP)->evaluate(psi, elec);
 
   Vector<ValueType> dlogpsi2(2);
   Vector<ValueType> dhpsioverpsi2(2);

@@ -36,13 +36,13 @@ TEST_CASE("StructFact", "[lrhandler]")
 
   lattice.LR_dim_cutoff = 125;
   const SimulationCell simulation_cell(lattice);
-  ParticleSet ref(simulation_cell);       // handler needs ref.getSimulationCell().getKLists()
+  ParticleSet ref(simulation_cell); // handler needs ref.getSimulationCell().getKLists()
 
   SpeciesSet& tspecies = ref.getSpeciesSet();
-  int upIdx            = tspecies.addSpecies("u");
-  int downIdx          = tspecies.addSpecies("d");
+  tspecies.addSpecies("u");
+  tspecies.addSpecies("d");
 
-  ref.create({3,1});
+  ref.create({3, 1});
   ref.R[0] = {0.0, 1.0, 2.0};
   ref.R[1] = {1.0, 0.2, 3.0};
   ref.R[2] = {0.3, 4.0, 1.4};

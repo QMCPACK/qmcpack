@@ -34,8 +34,6 @@ namespace qmcplusplus
 {
 TEST_CASE("Bare Force", "[hamiltonian]")
 {
-  Communicate* c = OHMMS::Controller;
-
   const SimulationCell simulation_cell;
   ParticleSet ions(simulation_cell);
   ParticleSet elec(simulation_cell);
