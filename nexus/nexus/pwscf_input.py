@@ -1728,7 +1728,7 @@ class PwscfInput(SimulationInput):
             self.atomic_species.atoms = list(sorted(system.ion_labels))
         else:
             if set(elem_order)!=set(system.ion_labels):
-                self.error('elem_order is missing some atomic species\natomic species present: {0}\nelem_order: {1}'.format(sorted(masses.keys()),elem_order))
+                self.error('elem_order is missing some atomic species\natomic species present: {0}\nelem_order: {1}'.format(sorted(system.ion_labels),elem_order))
             elif len(elem_order)!=system.n_ions:
                 self.error('elem_order has repeated elements\nelem_order: {0}'.format(elem_order))
             #end if

@@ -6065,7 +6065,7 @@ def generate_determinantset_old(type           = 'bspline',
             # If no, then exit. Currently, singlet and triplet 
             # excitations are assumed to have ms = 0.
             if system.n_down != system.n_up:
-                QmcpackInput.class_error('The \'singlet\' and \'triplet\' excitation types currently assume number of up and down electrons is the same for the reference ground state. Otherwise, one should use \'up\' or \'down\' types.\nFor your system: Nup={} and Ndown={}.\nWe plan to expand to additional cases in the future.'.format(system.up_electron.count,system.down_electron.count))
+                QmcpackInput.class_error('The \'singlet\' and \'triplet\' excitation types currently assume number of up and down electrons is the same for the reference ground state. Otherwise, one should use \'up\' or \'down\' types.\nFor your system: Nup={} and Ndown={}.\nWe plan to expand to additional cases in the future.'.format(system.n_up,system.n_down))
             #end if
 
             coeff_sign = ''
@@ -6669,8 +6669,8 @@ def generate_jastrows_alt(
 
     openbc = system.structure.is_open()
 
-    natoms = system.count_ions()
-    nelec  = system.count_electrons()
+    natoms = system.n_ions
+    nelec  = system.n_elec
 
     jastrows = []
     J2 |= J3
