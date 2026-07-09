@@ -148,7 +148,6 @@ def read_upf_z_valence(file: PathLike) -> int | float:
                     break
                 elif "/>" in line or "</PP_HEADER>" in line:
                     break
-                    #end if
                 #end if
             #end while
         #end if
