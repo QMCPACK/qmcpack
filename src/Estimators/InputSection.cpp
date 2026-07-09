@@ -298,10 +298,6 @@ void InputSection::setFromValue(const std::string& name, const std::any& value)
       throw UniformCommunicateError(error.str());
     }
   }
-  catch (const UniformCommunicateError&)
-  {
-    throw;
-  }
   catch (...)
   {
     std::throw_with_nested(UniformCommunicateError("std::any_cast failed in setFromValue for name:" + name));
