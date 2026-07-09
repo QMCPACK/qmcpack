@@ -408,6 +408,33 @@ def test_read_upf_z_valence(tmp_path):
     assert(isinstance(upf_v1_file_zvalence, int))
     assert(upf_v1_file_zvalence == 4)
 
+    upf_v1_alt_text = """
+<PP_HEADER>
+   0         Version Number
+   Cu        Element
+   NC        Norm - Conserving pseudopotential
+    F      Nonlinear Core Correction
+SLA  PZ   NOGX NOGC    PZ   Exchange-Correlation functional
+ 19          Z valence
+ 0          Total energy
+ 0.000000   0.000000     Suggested cutoff for wfc and rho
+ 2           Max angular momentum component
+ 1163           Number of points in mesh
+ 3  2     Number of Wavefuncitons, Number of Projectors
+ Wavefunctions         nl  l   occ
+                       S  0  2.000000
+                       P  1  6.000000
+                       D  2  10.000000
+</PP_HEADER>
+"""
+    upf_v1_alt_file = tmp_path / "pseudo_alt_v1.upf"
+    upf_v1_alt_file.write_text(upf_v1_alt_text)
+
+    upf_v1_alt_file_zvalence = read_upf_z_valence(upf_v1_alt_file)
+
+    assert(isinstance(upf_v1_alt_file_zvalence, int))
+    assert(upf_v1_alt_file_zvalence == 19)
+
     upf_v_201_text = """
 <UPF version="2.0.1">
   <PP_INFO>
@@ -449,7 +476,7 @@ def test_read_upf_z_valence(tmp_path):
    </PP_R>
  </PP_MESH>
 """
-    upf_v201_file = tmp_path / "pseudo.upf"
+    upf_v201_file = tmp_path / "pseudo_v2.upf"
     upf_v201_file.write_text(upf_v_201_text)
 
     upf_v201_file_zvalence = read_upf_z_valence(upf_v201_file)
@@ -505,6 +532,34 @@ def test_read_upf_z_valence(tmp_path):
     upf_v201_file_float_zvalence = read_upf_z_valence(upf_v201_file_float)
 
     assert(upf_v201_file_float_zvalence == 4.5)
+
+    # Single-line header
+    upf_v_201_text_one_line = """
+<PP_HEADER generated="Generated using &quot;atomic&quot; code by A. Dal Corso  v.6.2.2" author="ADC" date=" 2May2018" comment="" element="Zn" pseudo_type="PAW" relativistic="scalar" is_ultrasoft="true" is_paw="true" is_coulomb="false" has_so="false" has_wfc="true" has_gipaw="true" paw_as_gipaw="true" core_correction="true" functional=" SLA  PW   PBX  PBC" z_valence="1.200000000000e1" total_psenergy="-2.434243516297e2" wfc_cutoff="4.363174091908e1" rho_cutoff="2.755329390766e2" l_max="2" l_max_rho="4" l_local="-1" mesh_size="1201" number_of_wfc="3" number_of_proj="6"/>
+"""
+    upf_v201_file_one_line = tmp_path / "pseudo_one_line.upf"
+    upf_v201_file_one_line.write_text(upf_v_201_text_one_line)
+
+    upf_v201_file_one_line_zvalence = read_upf_z_valence(upf_v201_file_one_line)
+
+    assert(upf_v201_file_one_line_zvalence == 12)
+
+    # Strangely formatted header
+    upf_v_201_text_strange = """
+<PP_HEADER generated="Generated using &quot;atomic&quot; code by A. Dal Corso  v.6.2.2" author="ADC" 
+
+date=" 2May2018" comment="" element="Zn" pseudo_type="PAW" relativistic="scalar" is_ultrasoft="true" is_paw="true" is_coulomb="false" has_so="false" has_wfc="true" has_gipaw="true" 
+
+paw_as_gipaw="true" core_correction="true" functional=" SLA  PW   PBX  PBC" z_valence = "1.200000000000e1" total_psenergy="-2.434243516297e2" 
+
+wfc_cutoff="4.363174091908e1" rho_cutoff="2.755329390766e2" l_max="2" l_max_rho="4" l_local="-1" mesh_size="1201" number_of_wfc="3" number_of_proj="6"/>
+"""
+    upf_v201_file_strange = tmp_path / "pseudo_strange.upf"
+    upf_v201_file_strange.write_text(upf_v_201_text_strange)
+
+    upf_v201_file_strange_zvalence = read_upf_z_valence(upf_v201_file_strange)
+
+    assert(upf_v201_file_strange_zvalence == 12)
 #end def test_read_upf_z_valence
 
 
