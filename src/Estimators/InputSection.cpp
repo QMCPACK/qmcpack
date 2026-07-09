@@ -282,7 +282,7 @@ void InputSection::setFromValue(const std::string& name, const std::any& value)
     else if (isMultiString(name))
       assignValue(name, std::any_cast<std::vector<std::string>>(value));
     else if (isMultiReal(name))
-      assignValue(name, std::any_cast<std::vector<std::string>>(value));
+      assignValue(name, std::any_cast<std::vector<Real>>(value));
     else if (isBool(name))
       assignValue(name, std::any_cast<bool>(value));
     else if (isInteger(name))
