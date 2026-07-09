@@ -120,7 +120,7 @@ def read_upf_z_valence(file: PathLike) -> int | float:
 
     if zval is None:
         error(
-        f"Could not find Z valence in file: {file!s}\n"
+           f"Could not find Z valence in file: {file!s}\n"
             "You may need to provide the Z valence manually!"
             )
     elif zval.is_integer():
@@ -190,8 +190,9 @@ def read_potcar_z_valence(file: PathLike) -> int | float:
                     break
 
             if zval is None:
-                raise ValueError(
-                    f"Can not find Z-valence in POTCAR file: {file!s}"
+                error(
+                   f"Could not find Z valence in file: {file!s}\n"
+                    "You may need to provide the Z valence manually!"
                     )
             else:
                 zval = float(zval.group(1))
