@@ -126,7 +126,7 @@ class BasisFile(DevBase):
     #end def __init__
 
     def cleaned_text(self):
-        self.not_implemented()
+        raise NotImplementedError
     #end def cleaned_text
 #end class BasisFile
 
@@ -162,7 +162,7 @@ class gaussBasisFile(BasisFile):
     #end def read
 
     def read_file(self,file):
-        self.not_implemented()
+        raise NotImplementedError
     #end def read_file
 #end class gaussBasisFile
 

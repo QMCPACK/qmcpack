@@ -346,12 +346,12 @@ class VFile(Vobj):
 
 
     def read_text(self,text,filepath=''):
-        self.not_implemented()
+        raise NotImplementedError
     #end def read_text
 
 
     def write_text(self,filepath=''):
-        self.not_implemented()
+        raise NotImplementedError
     #end def write_text
 
 

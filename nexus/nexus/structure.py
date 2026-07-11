@@ -7440,7 +7440,7 @@ class Jellium(Structure):
     #end def rs
 
     def tile(self):
-        self.not_implemented()
+        raise NotImplementedError
     #end def tile
 #end class Jellium
 

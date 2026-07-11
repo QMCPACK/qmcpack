@@ -2632,15 +2632,15 @@ class RmgKeyword(DevBase):
 
 class FormattedRmgKeyword(RmgKeyword):
     def read(self,value):
-        self.not_implemented()
+        raise NotImplementedError
     #end def read
 
     def write(self,value):
-        self.not_implemented()
+        raise NotImplementedError
     #end def write
 
     def assign(self,value):
-        self.not_implemented()
+        raise NotImplementedError
     #end def assign
 
     def valid(self,value,message=False):
@@ -2653,7 +2653,7 @@ class FormattedRmgKeyword(RmgKeyword):
     #end def valid
 
     def valid_no_msg(self,value):
-        self.not_implemented()
+        raise NotImplementedError
     #end def valid_no_msg
 #end class FormattedRmgKeyword
 

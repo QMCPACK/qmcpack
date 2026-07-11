@@ -385,7 +385,7 @@ class QAanalyzer(QAobject):
     #end def reset_indicators
 
     def init_sub_analyzers(self):
-        self.not_implemented()
+        raise NotImplementedError
     #end def init_sub_analyzers
 
     def load_data_local(self):

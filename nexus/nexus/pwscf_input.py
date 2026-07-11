@@ -288,11 +288,11 @@ class Element(PwscfInputBase):
     #end def add
 
     def read(self,lines):
-        self.not_implemented()
+        raise NotImplementedError
     #end def read
 
     def write(self,parent):
-        self.not_implemented()
+        raise NotImplementedError
     #end def write
 
     def post_process_read(self,parent):
@@ -505,15 +505,15 @@ class Card(Element):
     #end def write
 
     def read_text(self,lines):
-        self.not_implemented()
+        raise NotImplementedError
     #end def read_text
 
     def write_text(self):
-        self.not_implemented()
+        raise NotImplementedError
     #end def write_text
 
     def change_specifier(self,new_specifier):
-        self.not_implemented()
+        raise NotImplementedError
     #end def change_specifier
 
     def change_option(self,*args,**kwargs):
@@ -2950,4 +2950,3 @@ def generate_vcrelax_input(
 #
 #    return pw
 ##end def generate_nscf_input
-

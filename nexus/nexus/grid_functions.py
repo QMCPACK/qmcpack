@@ -691,7 +691,7 @@ class PlotHandler(DevBase):
                 ax.set_xlabel(ax1)
                 ax.set_ylabel(ax2)
             else:
-                self.not_implemented()
+                raise NotImplementedError
             #end if
             self.set_cur_fig(fig)
             self.set_cur_ax(ax)
@@ -903,7 +903,7 @@ class GBase(PlotHandler):
         (`Internal API`) Virtual function used to assign attributes local 
         to the current derived class.
         """
-        self.not_implemented()
+        raise NotImplementedError
     #end def initialize_local
 
 
@@ -912,12 +912,12 @@ class GBase(PlotHandler):
         (`Internal API`) Virtual function used to check the validity of 
         attributes local to the current derived class.
         """
-        self.not_implemented()
+        raise NotImplementedError
     #end def local_validity_checks
 
 
     def read_local(self,filepath,format):
-        self.not_implemented()
+        raise NotImplementedError
     #end def read_local
 
 
@@ -1828,7 +1828,7 @@ class StructuredGrid(Grid):
         (`Internal API`)  Derived class function to map points into the unit 
         cube.
         """
-        self.not_implemented()
+        raise NotImplementedError
     #end def unit_points_bare
 
 
@@ -1848,7 +1848,7 @@ class StructuredGrid(Grid):
             Array of points in the full coordinate space.  `ds` is the 
             dimension of the full space (`space_dim`).
         """
-        self.not_implemented()
+        raise NotImplementedError
     #end def points_from_unit
 
 
@@ -1857,7 +1857,7 @@ class StructuredGrid(Grid):
         (`Internal API`) Derived class function that computes the integration 
         metric in the unit coordinate space for a set of points defined there.
         """
-        self.not_implemented()
+        raise NotImplementedError
     #end def unit_metric_bare
 
 
@@ -1870,7 +1870,7 @@ class StructuredGrid(Grid):
         volume : `float`
             Volume of the space within the grid boundary.
         """
-        self.not_implemented()
+        raise NotImplementedError
     #end def volume
 
 
@@ -1884,7 +1884,7 @@ class StructuredGrid(Grid):
             Array containing the volume of each grid cell.  `N` is the number 
             of points in the grid.
         """
-        self.not_implemented()
+        raise NotImplementedError
     #end def cell_volumes
 #end class StructuredGrid
 

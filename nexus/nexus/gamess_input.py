@@ -74,11 +74,11 @@ class Group(GIbase):
     #end def __init__
 
     def read(self,text):
-        self.not_implemented()
+        raise NotImplementedError
     #end def read
 
     def write(self,text):
-        self.not_implemented()
+        raise NotImplementedError
     #end def read
 #end class Group
 
@@ -960,7 +960,7 @@ class GamessInput(SimulationInput,GIbase):
 
 
     def incorporate_system(self,system):
-        self.not_implemented()
+        raise NotImplementedError
     #end def incorporate_system
 #end class GamessInput
 
@@ -1305,7 +1305,6 @@ def check_keyspec_groups():
 #end def check_keyspec_groups
 
 #check_keyspec_groups()  # uncomment this to check keyword spec group self-consistency
-
 
 
 

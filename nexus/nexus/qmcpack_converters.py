@@ -292,7 +292,7 @@ class Pw2qmcpackAnalyzer(SimulationAnalyzer):
     #end def analyze
 
     def get_result(self,result_name):
-        self.not_implemented()
+        raise NotImplementedError
     #end def get_result
 #end class Pw2qmcpackAnalyzer
 

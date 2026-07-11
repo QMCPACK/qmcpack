@@ -68,7 +68,7 @@ def test_get_result():
         try:
             sim.get_result('anything',None)
             raise FailedTest
-        except NexusError:
+        except NotImplementedError:
             None
         except FailedTest:
             failed()
@@ -92,7 +92,7 @@ def test_incorporate_result():
         try:
             sim.incorporate_result('anything',None,None)
             raise FailedTest
-        except NexusError:
+        except NotImplementedError:
             None
         except FailedTest:
             failed()

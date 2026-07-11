@@ -515,17 +515,17 @@ class QuantumPackageInput(SimulationInput):
 
 
     def read_text(self,text,filepath=None):
-        self.not_implemented()
+        raise NotImplementedError
     #end def read_text
 
 
     def write_text(self,filepath=None):
-        self.not_implemented()
+        raise NotImplementedError
     #end def write_text
 
 
     def incorporate_system(self,system):
-        self.not_implemented()
+        raise NotImplementedError
     #end def incorporate_system
 
 

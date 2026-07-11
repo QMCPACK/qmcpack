@@ -885,7 +885,7 @@ class QIxml(Names):
         print('Arguments received:')
         print(args)
         print()
-        self.not_implemented()
+        raise NotImplementedError
     #end def init_from_args
 
 
@@ -5571,7 +5571,7 @@ class BundledQmcpackInput(SimulationInput):
 
         
     def generate_filenames(self,infile):
-        self.not_implemented()
+        raise NotImplementedError
     #end def generate_filenames
         
 

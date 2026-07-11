@@ -137,8 +137,7 @@ class obj:
     def clear(self):              return self.__dict__.clear()
     
     # change from deep copy to shallow is pernicious
-    #   nuke it until purged from all code
-    #   probably should fully remove DevBase2.copy in a second pass
+    #   blow up until purged from all code
     #def copy(self):               return self.__class__(self.__dict__)
     def copy(self):
         raise RuntimeError('shallow copy called by obj!!!')
@@ -160,7 +159,7 @@ class obj:
     def __delitem__(self,key):       del self.__dict__[key]
     def __eq__(self,other):          return self.__dict__==other
 
-    # iter also diverges, blow up
+    # change from default iteration over values to keys, blow up
     #def __iter__(self):
     #    return iter(self.__dict__)
     def __iter__(self):
@@ -171,6 +170,7 @@ class obj:
     # pretty print
     __repr__ = _pp_repr
     __str__  = _pp_str
+#end class obj
 
 
 
@@ -251,14 +251,7 @@ class DevBase:
             header = self.__class__.__name__
         error(message,header,exit,trace,self._logfile)
 
-    # general dev, ditch?
-    def not_implemented(self,name=None):
-        if name is None:
-            msg = 'a member function has not been implemented for class "{}"'.format(self.__class__.__name__)
-        else:
-            msg = 'member function "{}" has not been implemented for class "{}"'.format(name,self.__class__.__name__)
-        self.error(msg,trace=True)
-
+#end class DevBase
 
 
 
@@ -270,6 +263,8 @@ def to_obj(d):
         else:
             o[k] = v
     return o
+#end def to_obj
+
 
 
 # restore original/old obj and DevBase classes

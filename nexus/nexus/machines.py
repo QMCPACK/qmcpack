@@ -868,32 +868,32 @@ class Machine(NexusCore):
 
 
     def query_queue(self):
-        self.not_implemented()
+        raise NotImplementedError
     #end def query_queue
 
     def submit_jobs(self):
-        self.not_implemented()
+        raise NotImplementedError
     #end def submit_jobs
 
     # update all job information, must be idempotent
     def process_job(self,job):
-        self.not_implemented()
+        raise NotImplementedError
     #end def process_job
 
     def process_job_options(self,job):
-        self.not_implemented()
+        raise NotImplementedError
     #end def process_job_options
 
     def write_job(self,job,file=False):
-        self.not_implemented()
+        raise NotImplementedError
     #end def write_job
 
     def submit_job(self,job):
-        self.not_implemented()
+        raise NotImplementedError
     #end def submit_job
 
     def specialized_bundle_commands(self,job,launcher,serial):
-        self.not_implemented()
+        raise NotImplementedError
     #end def specialized_bundle_commands
 
     def __init__(self,name,queue_size=0):
@@ -1931,7 +1931,7 @@ class Supercomputer(Machine):
 
 
     def write_job_header(self,job):
-        self.not_implemented()
+        raise NotImplementedError
     #end def write_job_header
 
     @staticmethod
@@ -4711,7 +4711,6 @@ get_machine      = Machine.get
 
 #rename Job with lowercase
 job=Job
-
 
 
 

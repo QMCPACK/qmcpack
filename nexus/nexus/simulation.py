@@ -85,7 +85,7 @@ from .utilities import path_string
  
 class SimulationInput(NexusCore):
     def is_valid(self):
-        self.not_implemented()
+        raise NotImplementedError
     #end def is_valid
 
     def read_file_text(self,filepath):
@@ -131,21 +131,21 @@ class SimulationInput(NexusCore):
     #end def return_structure
 
     def read_text(self,text,filepath=None):
-        self.not_implemented()
+        raise NotImplementedError
     #end def read_text
 
     def write_text(self,filepath=None):
-        self.not_implemented()
+        raise NotImplementedError
     #end def write_text
 
     def incorporate_system(self,system):
         #take information from a physical system object and fill in input file
-        self.not_implemented()
+        raise NotImplementedError
     #end def incorporate_system
 
     def return_system(self,structure_only=False):
         #create a physical system object from input file information
-        self.not_implemented()
+        raise NotImplementedError
     #end def return_system
 #end class SimulationInput
 
@@ -154,11 +154,11 @@ class SimulationInput(NexusCore):
 
 class SimulationAnalyzer(NexusCore):
     def __init__(self,sim):
-        self.not_implemented()
+        raise NotImplementedError
     #end def __init__
 
     def analyze(self):
-        self.not_implemented()
+        raise NotImplementedError
     #end def analyze
 #end class SimulationAnalyzer
 
@@ -167,7 +167,7 @@ class SimulationAnalyzer(NexusCore):
 
 class SimulationEmulator(NexusCore):
     def run(self):
-        self.not_implemented()
+        raise NotImplementedError
     #end def run
 #end class SimulationEmulator
 
@@ -629,27 +629,27 @@ class Simulation(NexusCore):
 
 
     def check_result(self,result_name,sim):
-        self.not_implemented()
+        raise NotImplementedError
     #end def check_result
 
     def get_result(self,result_name,sim):
-        self.not_implemented()
+        raise NotImplementedError
     #end def get_result
 
     def incorporate_result(self,result_name,result,sim):
-        self.not_implemented()
+        raise NotImplementedError
     #end def incorporate_result
 
     def app_command(self):
-        self.not_implemented()
+        raise NotImplementedError
     #end def app_command
 
     def check_sim_status(self):
-        self.not_implemented()
+        raise NotImplementedError
     #end def check_sim_status
 
     def get_output_files(self): # returns list of output files to save
-        self.not_implemented()
+        raise NotImplementedError
     #end def get_output_files
 
 
@@ -1473,11 +1473,11 @@ class Simulation(NexusCore):
     # dynamic workflow support
     
     def fill_produces(self):
-        self.not_implemented('fill_produces')
+        raise NotImplementedError('fill_produces')
     #end def fill_produces
 
     def fill_products(self):
-        self.not_implemented('fill_products')
+        raise NotImplementedError('fill_products')
     #end def fill_products
 #end class Simulation
 
@@ -1517,7 +1517,7 @@ class NullSimulationInput(SimulationInput):
     #end def incorporate_system
 
     def return_system(self):
-        self.not_implemented()
+        raise NotImplementedError
     #end def return_system
 #end class NullSimulationInput
 

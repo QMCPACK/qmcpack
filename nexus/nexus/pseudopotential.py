@@ -424,19 +424,19 @@ class Pseudopotential(DevBase):
 
 
     def read_text(self,text,format=None,filepath=None):
-        self.not_implemented()
+        raise NotImplementedError
     #end def read_text
 
     def write_text(self,format=None):
-        self.not_implemented()
+        raise NotImplementedError
     #end def write_text
 
     def convert(self,format):
-        self.not_implemented()
+        raise NotImplementedError
     #end def convert
 
     def plot(self,r=None,show=True):
-        self.not_implemented()
+        raise NotImplementedError
     #end def plot
 #end class Pseudopotential
 
@@ -754,7 +754,7 @@ class SemilocalPP(Pseudopotential):
     # evaluate r*potential based on a potential component object
     #  component representation is specific to each derived class
     def evaluate_comp_rV(self,r,l,vcomp):
-        self.not_implemented()
+        raise NotImplementedError
     #end def evaluate_comp_rV
 
 

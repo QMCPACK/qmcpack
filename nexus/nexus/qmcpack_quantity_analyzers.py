@@ -147,7 +147,7 @@ class DatAnalyzer(QuantityAnalyzer):
     #end def __init__
 
     def analyze_local(self):
-        self.not_implemented()
+        raise NotImplementedError
     #end def load_data_local
 #end class DatAnalyzer
 
@@ -1947,7 +1947,7 @@ class DensityAnalyzerBase(HDFAnalyzer):
 
 
     def write_density(self,format='xsf'):
-        self.not_implemented()
+        raise NotImplementedError
     #end def write_density
 #end class DensityAnalyzerBase
 

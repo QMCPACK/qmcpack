@@ -51,7 +51,7 @@ class SimulationInputForTests(SimulationInput):
     #end def incorporate_system
 
     def return_system(self):
-        self.not_implemented()
+        raise NotImplementedError
     #end def return_system
 #end class SimulationInputForTests
 
@@ -410,7 +410,7 @@ def test_simulation_input(tmp_path):
         try:
             v(*args)
             raise FailedTest
-        except NexusError:
+        except NotImplementedError:
             None
         except FailedTest:
             failed(str(v))
@@ -440,7 +440,7 @@ def test_simulation_analyzer():
     try:
         SimulationAnalyzer(None)
         raise FailedTest
-    except NexusError:
+    except NotImplementedError:
         None
     except FailedTest:
         failed()
@@ -900,7 +900,7 @@ def test_virtuals():
         try:
             v(*args)
             raise FailedTest
-        except NexusError:
+        except NotImplementedError:
             None
         except FailedTest:
             failed(str(v))
