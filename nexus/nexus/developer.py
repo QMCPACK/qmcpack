@@ -314,8 +314,28 @@ def _pp_str(self,nindent=1):
 
 
 
+class dotdict(dict):
+    '''A dictionary with dot-access for keys'''
+    def __getattr__(self, item):
+        return self[item]
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
+    def copy(self): return self.__class__(self)
+    def __deepcopy__(self, memo):
+        result = self.__class__.__new__(self.__class__)
+        memo[id(self)] = result
+        for key, value in self.items():
+            result[copy.deepcopy(key, memo)] = copy.deepcopy(value, memo)
+        return result
+
+
+
 class obj:
     # dict interface
+    @classmethod
+    def fromkeys(cls, keys, value=None):
+        return cls(dict.fromkeys(keys, value))
+
     def __init__(self,*args,**kwargs):   self.__dict__.update(dict(*args,**kwargs))
     def items(self):              return self.__dict__.items()
     def clear(self):              return self.__dict__.clear()
@@ -343,8 +363,11 @@ class obj:
     def __getitem__(self,key):       return self.__dict__[key]
     def __setitem__(self,key,value): self.__dict__[key]=value
     def __delitem__(self,key):       del self.__dict__[key]
+    def __eq__(self,other):          return self.__dict__==other
 
     # iter also diverges, blow up
+    #def __iter__(self):
+    #    return iter(self.__dict__)
     def __iter__(self):
         raise RuntimeError('obj iteration called!!!')
         for item in self.__dict__: 
