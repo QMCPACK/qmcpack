@@ -70,6 +70,7 @@
 import os
 import re
 import copy
+from copy import deepcopy
 import numpy as np
 from numpy import pi,sin,cos,sqrt
 from numpy.linalg import LinAlgError, inv, det, eig
@@ -1912,7 +1913,7 @@ class DensityAnalyzerBase(HDFAnalyzer):
             self.error('sorry, the density can only be written in xsf format for now\n  you requested: {0}'.format(format))
         #end if
 
-        s = self.info.structure.copy()
+        s = deepcopy(self.info.structure)
         p = s.pos.ravel()
         if p.min()>0 and p.max()<1.0:
             s.pos_to_cartesian()
@@ -2490,7 +2491,7 @@ class SpaceGridBase(QAobject):
                 res = QAobject()
                 res.mean  = mean
                 res.error = error
-                res.data  = qi.copy()
+                res.data  = deepcopy(qi)
                 results.append(res)
             #end for
         #end for
@@ -2596,7 +2597,7 @@ class RectilinearGrid(SpaceGridBase):
                     self[k].mean  = v.mean.copy()
                     self[k].error = v.error.copy()
                 elif vtype==np.ndarray:
-                    self[k] = v.copy()
+                    self[k] = deepcopy(v)
                 elif vtype==HDFgroup:
                     self[k] = v
                 elif k in exclude:

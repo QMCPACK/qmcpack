@@ -1347,8 +1347,8 @@ class QIxml(Names):
 
     def difference(self,other,root=True):
         if root:
-            q1 = self.copy()
-            q2 = other.copy()
+            q1 = deepcopy(self)
+            q2 = deepcopy(other)
         else:
             q1 = self
             q2 = other
@@ -3391,8 +3391,8 @@ class QmcpackInput(SimulationInput,Names):
     #end def standard_placements
 
     def difference(self,other):
-        s1 = self.copy()
-        s2 = other.copy()
+        s1 = deepcopy(self)
+        s2 = deepcopy(other)
         b1 = s1.get_basename()
         b2 = s2.get_basename()
         q1 = s1[b1]
@@ -3836,7 +3836,7 @@ class QmcpackInput(SimulationInput,Names):
 
     def incorporate_system(self,system):
         self.warn('incorporate_system may or may not work\n  please check the qmcpack input produced\n  if it is wrong, please contact the developer')
-        system = system.copy()
+        system = deepcopy(system)
         system.check_folded_system()
         system.change_units('B')
         #system.structure.group_atoms()
@@ -5172,7 +5172,7 @@ class QmcpackInput(SimulationInput,Names):
         elif len(gen_calcs)>0:
             self.error('invalid keywords provided to the modify function:\n{}\n'.format(sorted(gen_calcs.keys()))+'  Please see the documentation.  If you are trying to generate qmc calculation sections, please provide the "qmc" keyword.')
         elif calculations is not None:
-            self.simulation.calculations = make_collection(calculations).copy()
+            self.simulation.calculations = deepcopy(make_collection(calculations))
     #end def modify
 
 
@@ -5295,7 +5295,7 @@ class TracedQmcpackInput(BundledQmcpackInput):
         range = len(self.inputs),len(self.inputs)+len(values)
         self.quantities.append(obj(quantity=quantity,range=range))
         for value in values:
-            inp = input.copy()
+            inp = deepcopy(input)
             qhost = inp.get_host(quantity)                               
             #print(qhost)
             if qhost is not None:
@@ -6473,7 +6473,7 @@ def generate_estimators_batched(estimators,
     ests = []
     for estimator in estimators:
         if isinstance(estimator,QIxml):
-            estimator = estimator.copy()
+            estimator = deepcopy(estimator)
         #end if
         est = estimator
         if isinstance(estimator,str):
@@ -6692,7 +6692,7 @@ def generate_jastrows_alt(
     if system is None:
         QmcpackInput.class_error('input variable "system" is required to generate jastrows','generate_jastrows_alt')
     elif system.structure.units!='B':
-        system = system.copy()
+        system = deepcopy(system)
         system.structure.change_units('B')
     #end if
 
@@ -8960,7 +8960,7 @@ def generate_basic_input(**kwargs):
             #end if
         #end for
     #end if
-    sim.calculations = make_collection(kw.calculations).copy()
+    sim.calculations = deepcopy(make_collection(kw.calculations))
 
     qi = QmcpackInput(metadata,sim)
 
@@ -9392,7 +9392,7 @@ if __name__=='__main__':
 
 
     if test_substitution:
-        q = qi.copy()
+        q = deepcopy(qi)
 
         q.remove('simulationcell','particleset','wavefunction')
         q.write('./output/qmcpack.remove.xml')

@@ -227,7 +227,7 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
         if isinstance(arg0,Simulation):
             sim = arg0
             if 'analysis_request' in sim:
-                request = sim.analysis_request.copy()
+                request = deepcopy(sim.analysis_request)
             else:
                 request = QmcpackAnalysisRequest(
                     source = os.path.join(sim.resdir,sim.infile),

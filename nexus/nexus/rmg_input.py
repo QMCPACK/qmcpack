@@ -1,4 +1,5 @@
 import numpy as np
+from copy import deepcopy
 
 from .developer import DevBase, obj, error
 from .unit_converter import convert
@@ -3417,7 +3418,7 @@ def generate_any_rmg_input(**kwargs):
 
         # add system details
         if copy_system:
-            system = system.copy()
+            system = deepcopy(system)
         #end if
         if use_folded:
             system = system.get_smallest()

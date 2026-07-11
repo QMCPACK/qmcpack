@@ -1394,7 +1394,7 @@ class ChgcarFile(StandardFile):
     def incorporate_xsf(self,xsf):
         poscar = PoscarFile()
         poscar.incorporate_xsf(xsf)
-        density = xsf.remove_ghost().copy()
+        density = deepcopy(xsf.remove_ghost())
         self.poscar         = poscar
         self.grid           = np.array(density.shape,dtype=int)
         self.charge_density = density.ravel(order='F')

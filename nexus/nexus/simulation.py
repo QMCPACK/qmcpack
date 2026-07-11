@@ -525,7 +525,7 @@ class Simulation(NexusCore):
             self.error('input must be of type {0}\nreceived {1}\nplease provide input appropriate to {2}'.format(self.input_type.__name__,self.input.__class__.__name__,self.__class__.__name__))
         #end if
         if isinstance(self.system,PhysicalSystem):
-            self.system = self.system.copy()
+            self.system = deepcopy(self.system)
             consistent,msg = self.system.check_consistent(exit=False,message=True)
             if not consistent:
                 locdir = os.path.join(nexus_core.local_directory,nexus_core.runs,self.path)
@@ -2111,7 +2111,7 @@ class DynamicProcess(DevBase):
         if isinstance(struct,str):
             struct = read_structure(struct)
         else:
-            struct = struct.copy()
+            struct = deepcopy(struct)
         self.sim.receive_structure(struct)
     #end def structure
 

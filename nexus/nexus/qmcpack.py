@@ -1004,7 +1004,7 @@ class Qmcpack(Simulation):
                 #end def process_jastrow
                 if wavefunction is None:
                     qs = input.get('qmcsystem')
-                    qs.wavefunction = optwf.copy()
+                    qs.wavefunction = deepcopy(optwf)
                 else:
                     jold = process_jastrow(wavefunction)
                     jopt = process_jastrow(optwf)
@@ -1075,7 +1075,7 @@ class Qmcpack(Simulation):
                 #end if
                 if 'xml' in result:
                     xml = QmcpackInput(result.xml)
-                    info_new = xml.simulation.afqmcinfo.copy()
+                    info_new = deepcopy(xml.simulation.afqmcinfo)
                     info = self.input.simulation.afqmcinfo
                     for k,v in info_new.items():
                         if k not in info:
@@ -1401,7 +1401,7 @@ class Qmcpack(Simulation):
                         band_1, band_2 = bands
                         
                         # Convert k_1 k_2 to wavevector indexes
-                        structure = self.system.structure.get_smallest().copy()
+                        structure = deepcopy(self.system.structure.get_smallest())
                         structure.change_units('A')
 
                         from .structure import get_kpath
@@ -1742,7 +1742,7 @@ class Qmcpack(Simulation):
         #end def process_jastrow
         if wavefunction is None:
             qs = input.get('qmcsystem')
-            qs.wavefunction = optwf.copy()
+            qs.wavefunction = deepcopy(optwf)
         else:
             jold = process_jastrow(wavefunction)
             jopt = process_jastrow(optwf)
@@ -1751,7 +1751,7 @@ class Qmcpack(Simulation):
                 if jtype not in jopt:
                     jnew.append(jold[jtype])
             if len(jnew)==1:
-                wavefunction.jastrow = jnew[0].copy()
+                wavefunction.jastrow = deepcopy(jnew[0])
             else:
                 wavefunction.jastrows = collection(jnew)
     #end def receive_jastrow
@@ -1760,7 +1760,7 @@ class Qmcpack(Simulation):
     def receive_wavefunction(self,wf_file):
         opt = QmcpackInput(wf_file)
         qs  = input.get('qmcsystem')
-        wfn = opt.qmcsystem.wavefunction.copy()
+        wfn = deepcopy(opt.qmcsystem.wavefunction)
         ovp = 'override_variational_parameters' # name is too long
         if ovp in wfn:
             wfn[ovp].href = os.path.relpath(wfn[ovp].href,self.locdir)

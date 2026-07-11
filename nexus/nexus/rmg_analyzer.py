@@ -4,6 +4,7 @@
 
 
 import os
+from copy import deepcopy
 import numpy as np
 from .developer import obj, to_str
 from .fileio import TextFile
@@ -420,7 +421,7 @@ class RmgAnalyzer(SimulationAnalyzer):
     def return_initial_structure(self):
         s = None
         if 'setup_info' in self and 'structure' in self.setup_info:
-            s = self.setup_info.structure.copy()
+            s = deepcopy(self.setup_info.structure)
         #end if
         return s
     #end def return_initial_structure

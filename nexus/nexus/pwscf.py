@@ -221,7 +221,7 @@ class Pwscf(Simulation):
             #end if
             pos   = scale*np.array(pos)
             
-            structure = self.system.structure.copy()
+            structure = deepcopy(self.system.structure)
             structure.change_units('B')
             structure.pos = pos
             structure.set_elem(atoms)
@@ -426,7 +426,7 @@ class Pwscf(Simulation):
         if 'structure' in self.produces:
             pa = analyzer
             structs = pa.structures
-            struct  = structs[len(structs)-1].copy()
+            struct  = deepcopy(structs[len(structs)-1])
             pos     = struct.positions
             atoms   = struct.atoms
             if 'celldm(1)' in self.input.system:
@@ -434,7 +434,7 @@ class Pwscf(Simulation):
             else:
                 scale = 1.0
             pos = scale*np.array(pos)
-            structure = self.system.structure.copy()
+            structure = deepcopy(self.system.structure)
             structure.change_units('B')
             structure.set_pos(pos)
             structure.set_elem(atoms)
@@ -478,7 +478,7 @@ class Pwscf(Simulation):
         input = self.input
         preserve_kp = 'k_points' in input and 'specifier' in input.k_points and (input.k_points.specifier=='automatic' or input.k_points.specifier=='gamma')
         if preserve_kp:
-            kp = input.k_points.copy()
+            kp = deepcopy(input.k_points)
         input.incorporate_system(self.system)
         if preserve_kp:
             input.k_points = kp

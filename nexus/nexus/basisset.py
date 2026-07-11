@@ -4,6 +4,7 @@
 
 
 import os
+from copy import deepcopy
 from pathlib import Path
 import numpy as np
 from .periodic_table import Elements
@@ -632,7 +633,7 @@ class GaussianBasisSet(DevBase):
         if self.uncontracted():
             return self.contracted_basis_size()
         #end if
-        uc = self.copy()
+        uc = deepcopy(self)
         uc.uncontract()
         return uc.contracted_basis_size()
     #end def uncontracted_basis_size
