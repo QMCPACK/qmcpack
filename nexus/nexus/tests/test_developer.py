@@ -643,3 +643,84 @@ def test_obj_legacy():
     assert(not o)
 
 #end def test_obj_legacy
+
+
+def test_developer_tools_devbase(tmp_path):
+    """Exercise the standalone DevBase implementation in developer_tools."""
+    from ..developer_tools import DevBase
+
+    class DerivedDevBase(DevBase):
+        def __init__(self,*args,**kwargs):
+            self.update(dict(*args,**kwargs))
+        #end def __init__
+    #end class DerivedDevBase
+
+    # Attribute and item access share the instance dictionary.
+    value = DerivedDevBase(a=1,b='two')
+    value.c = 3
+    value['d'] = 4
+    assert(value.a==value['a']==1)
+    assert(value.c==value['c']==3)
+    assert(value.d==value['d']==4)
+    assert(len(value)==4)
+    assert('a' in value and 'missing' not in value)
+    assert(set(value.keys())=={'a','b','c','d'})
+    assert(set(value.values())=={1,'two',3,4})
+    assert(dict(value.items())=={'a':1,'b':'two','c':3,'d':4})
+
+    value.update({'a':10},e=5)
+    assert(value.a==10 and value.e==5)
+    del value['d']
+    assert('d' not in value)
+    with pytest.raises(KeyError):
+        _ = value['missing']
+    with pytest.raises(RuntimeError,match='does not support bare iteration'):
+        iter(value)
+
+    # Pretty-printing remains available and handles nested DevBase values.
+    nested = DerivedDevBase(inner=DerivedDevBase(x=1),plain='value')
+    assert(isinstance(repr(nested),str))
+    assert(isinstance(str(nested),str))
+    assert('inner' in repr(nested) and 'plain' in str(nested))
+
+    # Protected dictionary operations retain the derived type and normal
+    # mapping semantics.
+    shared = []
+    protected = DerivedDevBase(a=1,b=shared)
+    copied = protected._copy()
+    assert(type(copied) is DerivedDevBase and copied is not protected)
+    assert(dict(copied._items())==dict(protected._items()))
+    assert(copied.b is shared)
+    assert(set(protected._keys())=={'a','b'})
+    assert(list(protected._values())==[1,shared])
+    assert(protected._get('a')==1)
+    assert(protected._get('missing',7)==7)
+    assert(protected._setdefault('c',3)==3 and protected.c==3)
+    assert(protected._update(d=4) is None and protected.d==4)
+    assert(protected._pop('d')==4 and 'd' not in protected)
+    key,popped = protected._popitem()
+    assert(key not in protected and popped is not None)
+
+    fromkeys = protected._fromkeys(('x','y'),shared)
+    assert(type(fromkeys) is DerivedDevBase)
+    assert(fromkeys.x is shared and fromkeys.y is shared)
+    protected._clear()
+    assert(len(protected)==0)
+
+    # Save/load replaces the receiving object's complete state.
+    filepath = tmp_path/'developer_tools_devbase.p'
+    saved = DevBase()
+    saved.a = [1,2]
+    saved.b = {'x':3}
+    saved.save(filepath)
+    loaded = DevBase()
+    loaded.stale = True
+    loaded.load(filepath)
+    assert('stale' not in loaded)
+    assert(loaded.a==[1,2] and loaded.b=={'x':3})
+    assert(loaded.a is not saved.a and loaded.b is not saved.b)
+
+    value.clear()
+    assert(len(value)==0)
+
+#end def test_developer_tools_devbase
