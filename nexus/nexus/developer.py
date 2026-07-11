@@ -52,10 +52,6 @@ def valid_variable_name(s):
 
 
 
-
-
-
-
 import sys
 import copy
 import pickle
@@ -148,7 +144,6 @@ class obj:
         raise RuntimeError('shallow copy called by obj!!!')
         return self.__class__(self.__dict__)
 
-    def fromkeys(self,*a,**kw):   return self.__class__(self.__dict__.fromkeys(*a,**kw))
     def get(self,*a,**kw):        return self.__dict__.get(*a,**kw)
     def keys(self):               return self.__dict__.keys()
     def pop(self,*a,**kw):        return self.__dict__.pop(*a,**kw)
