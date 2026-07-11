@@ -929,7 +929,7 @@ class HpAnalyzer(SimulationAnalyzer):
 
         self.input = HpInput(infile_path)
 
-        self.info.set(
+        self.info.update(
             path        = path,
             infile      = infile,
             outfile     = outfile,

@@ -472,7 +472,7 @@ class QuantumPackageInput(SimulationInput):
             struct_file = prefix+'.xyz'
             self.structure.write_xyz(struct_file)
             command = 'qp_create_ezfio'
-            if self.path_exists('ao_basis/ao_basis'):
+            if 'ao_basis' in self and 'ao_basis' in self.ao_basis:
                 command += ' -b '+self.ao_basis.ao_basis
             #end if
             command += ' '+struct_file

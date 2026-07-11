@@ -816,7 +816,9 @@ class QIxml(Names):
     def init_from_inputs(self,args,kwargs):
         if len(args)>0:
             if len(args)==1 and isinstance(args[0],self.__class__):
-                self.transfer_from(args[0])
+                a0 = args[0]
+                for k,v in a0.items():
+                    self[k] = v
             elif len(args)==1 and isinstance(args[0],dict):
                 self.init_from_kwargs(args[0])
             else:
@@ -1367,8 +1369,10 @@ class QIxml(Names):
             diff = cls()
             d1 = cls()
             d2 = cls()
-            d1.transfer_from(q1,unique1)
-            d2.transfer_from(q2,unique2)
+            for k in unique1:
+                d1[k] = q1[k]
+            for k in unique2:
+                d2[k] = q2[k]
             for k in shared:
                 value1 = q1[k]
                 value2 = q2[k]
@@ -1390,8 +1394,10 @@ class QIxml(Names):
                     kdifferent = len(kunique1)>0 or len(kunique2)>0
                     kd1 = collection()
                     kd2 = collection()
-                    kd1.transfer_from(value1,kunique1)
-                    kd2.transfer_from(value2,kunique2)
+                    for k in kunique1:
+                        kd1[k] = value1[k]
+                    for k in kunique2:
+                        kd2[k] = value2[k]
                     kdiff = collection()
                     for kk in kshared:
                         v1 = value1[kk]
@@ -5776,7 +5782,7 @@ def partition_sposets(sposet_builder,partition,partition_meshfactors=None):
                 del part_spo.size
             #end if
             if partition_contents is not None:
-                part_spo.set(**partition_contents[index_min])
+                part_spo.update(**partition_contents[index_min])
             #end if
             part_spos.append(part_spo)
             part_spo_names.append(part_spo_name)
@@ -7454,7 +7460,7 @@ def generate_opt(method,
 
     opt = opt_map[method]()
  
-    opt.set(
+    opt.update(
         walkers    = walkers,
         blocks     = blocks,
         #steps      = steps,

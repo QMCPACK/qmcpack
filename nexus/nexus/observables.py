@@ -99,7 +99,7 @@ class VLog(DevBase):
 
     def set_verbosity(self,level):
         if level not in self.verbosity_levels:
-            vlinv = self.verbosity_levels.inverse()
+            vlinv = {v:k for k,v in self.verbosity_levels.items()}
             error('Cannot set verbosity level to "{}".\nValid options are: {}'.format(level,[vlinv[i] for i in sorted(vlinv.keys())]))
         #end if
         self.verbosity = self.verbosity_levels[level]
@@ -658,7 +658,7 @@ class MomentumDistribution(ObservableWithComponents):
             vlog('Filtering applied previously with tolerance {:6.4e}, skipping.'.format(prior_tol))
             return data
         #end if
-        k     = data.first().k
+        k     = data[min(data.keys())].k
         km    = np.linalg.norm(k,axis=1)
         kmax  = 0.
         order = km.argsort()
@@ -994,7 +994,7 @@ class MomentumDistributionDFT(MomentumDistribution):
             sdata.k.extend(data.k)
             sdata.nk.extend(data.nk)
         #end for
-        for sdata in spin_data:
+        for sdata in spin_data.values():
             sdata.k  = np.array(sdata.k)
             sdata.nk = np.array(sdata.nk)
         #end for
@@ -1308,7 +1308,7 @@ class Density(ObservableWithComponents):
             kwargs['comps_return'] = True
             crdfs = self.radial_density(**kwargs)
         else:
-            crdfs = rdfs.copy()
+            crdfs = deepcopy(rdfs)
         #end if
         for crdf in crdfs.values():
             for d in crdf.values():
@@ -1332,7 +1332,7 @@ class Density(ObservableWithComponents):
         else:
             rdfs = self.cumulative_radial_density(component=component,**kwargs)
         #end if
-        rdf = rdfs.first()
+        rdf = rdfs[min(rdfs.keys())]
         species = list(rdf.keys())
 
         dist_units = self.get_attribute('distance_units',None)
@@ -1558,7 +1558,7 @@ class StatFile(DevBase):
         #end if
         if single and groups is not None:
             if len(groups)==1:
-                return groups.first()
+                return groups[min(groups.keys())]
             else:
                 self.error('Single stat.h5 observable group requested, but multiple are present.\nGroups present: {}'.format(sorted(groups.keys())))
             #end if

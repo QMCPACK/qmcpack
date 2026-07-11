@@ -1910,7 +1910,7 @@ class GaussianPP(SemilocalPP):
         bs = None
         if self.basis is not None:
             bs = GaussianBasisSet()
-            bs.basis = self.basis.copy()
+            bs.basis = deepcopy(self.basis)
         #end if
         return bs
     #end def get_basis
@@ -1925,7 +1925,7 @@ class GaussianPP(SemilocalPP):
     def uncontract(self):
         if self.basis is not None:
             bs = GaussianBasisSet()
-            bs.basis = self.basis.copy()
+            bs.basis = deepcopy(self.basis)
             bs.uncontract()
             self.basis = bs.basis
         #end if
@@ -2008,7 +2008,8 @@ class GaussianPP(SemilocalPP):
             self.error('component {} not present in PP.'.format(l))
         #end if
         chan_labels = ['s','p','d','f','g','h','i','j']
-        self.components[chan_labels[l]].append(obj(coeff=coeff,expon=expon,rpow=rpow))
+        comp = self.components[chan_labels[l]]
+        comp[len(comp)] = obj(coeff=coeff,expon=expon,rpow=rpow)
     #end def append_to_component
 
 
@@ -2023,7 +2024,7 @@ class GaussianPP(SemilocalPP):
             self.error('component {} not present in PP.'.format(l))
         #end if
         chan_labels = ['s','p','d','f','g','h','i','j']
-        for term in self.components[chan_labels[l]]:
+        for term in self.components[chan_labels[l]].values():
             term.coeff*=scale
         #end for
     #end def scale_component
@@ -2053,22 +2054,26 @@ class GaussianPP(SemilocalPP):
             #end for
         #end for
         for r in remove:
-            self.components[r[0]].delete(r[1])
+            self.components[r[0]].pop(r[1])
         #end for
-        comps = self.components.copy()
+        comps = deepcopy(self.components)
         for l in np.arange(self.lmax+1):
             comps[chan_labels[l]] = obj()
-            for term_idx,term in enumerate(self.components[chan_labels[l]]):
-                comps[chan_labels[l]].append(term)
+            cl = self.components[chan_labels[l]]
+            for k in cl.keys():
+                comp_l = comps[chan_labels[l]]
+                comp_l[len(comp_l)] = cl[k]
             #end for
         #end for
-        self.components = comps.copy()
-        comps = self.components.copy()
+        self.components = deepcopy(comps)
+        comps = deepcopy(self.components)
         for l in np.arange(self.lmax+1):
             terms = []
             comps[chan_labels[l]] = obj()
-            for term_idx,term in enumerate(self.components[chan_labels[l]]):
-                terms.append(term.list())
+            cl = self.components[chan_labels[l]]
+            for k in cl.keys():
+                term = cl[k]
+                terms.append([term[k] for k in sorted(term.keys())])
             #end for
             terms = np.array(terms)
             like_terms = []
@@ -2113,7 +2118,7 @@ class GaussianPP(SemilocalPP):
                         for mlist in like_terms:
                             if term_idx in mlist and term_idx not in added:
                                 coeff = 0.0
-                                mod_term = term.copy()
+                                mod_term = deepcopy(term)
                                 for ti in mlist: 
                                     coeff += self.components[chan_labels[l]][ti].coeff
                                 #end for
@@ -2132,13 +2137,13 @@ class GaussianPP(SemilocalPP):
             #end for
             if len(comps[chan_labels[l]])==0:
                 # All terms cancelled. Add placeholder
-                plcehldr = self.components['s'][0].copy()
+                plcehldr = deepcopy(self.components['s'][0])
                 plcehldr.coeff = 0.0
                 plcehldr.rpow = 2
                 plcehldr.expon = 1.0
                 comps[chan_labels[l]].append(plcehldr)
         #end for
-        self.components = comps.copy()
+        self.components = deepcopy(comps)
     #end def simplify
 
 
@@ -2149,9 +2154,9 @@ class GaussianPP(SemilocalPP):
         '''
         # CHECK IF THIS WORKS FOR lmax=1 !!!!!!
         # Only checked for lmax=2 and higher
-        p1 = self.copy()
+        p1 = deepcopy(self)
         p1.simplify()
-        p2 = self.copy()
+        p2 = deepcopy(self)
         p2.transform_to_truncated_L2(keep='s p',lmax=p2.lmax)
         p2.simplify()
         return object_eq(p2,p1)
@@ -2482,8 +2487,8 @@ class GaussianPP(SemilocalPP):
                 self.append_to_component(lmax,fctr*term.coeff,term.expon,term.rpow)
             #end for
 
-            vm_comp = self.components[chan_labels[lm]].copy()
-            vn_comp = self.components[chan_labels[ln]].copy()
+            vm_comp = deepcopy(self.components[chan_labels[lm]])
+            vn_comp = deepcopy(self.components[chan_labels[ln]])
             for l in np.arange(lmax):
                 fctr = l*(l+1)-lmax*(lmax+1)
                 fctr = float(fctr)/(lm*(lm+1)-ln*(ln+1))
@@ -2508,12 +2513,13 @@ class GaussianPP(SemilocalPP):
                 self.append_to_component(lmax,fctr*term.coeff,term.expon,term.rpow)
             #end for
 
-            vm_comp = self.components[chan_labels[lm]].copy()
+            vm_comp = deepcopy(self.components[chan_labels[lm]])
             for l in np.arange(lmax):
                 fctr = l*(l+1)-lmax*(lmax+1)
                 fctr = float(fctr)/(lm*(lm+1)-lloc*(lloc+1))
                 self.components[chan_labels[l]] = obj()
-                for term_idx,term in enumerate(vm_comp):
+                for k in vm_comp.keys():
+                    term = vm_comp[k]
                     self.append_to_component(l,coeff=fctr*term.coeff,expon=term.expon,rpow=term.rpow)
                 #end for
             #end for

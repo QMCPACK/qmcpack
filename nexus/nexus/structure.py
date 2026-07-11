@@ -1070,6 +1070,8 @@ class Structure(Sobj):
 
 
     def operate(self,operations):
+        if isinstance(operations,obj):
+            operations = operations.values()
         for op in operations:
             if op not in self.operations:
                 self.error(
@@ -2842,7 +2844,7 @@ class Structure(Sobj):
         if voronoi:
             actual_indices = True
             neighbors = self.voronoi_neighbors(indices,restrict=True,distance_ordered=False)
-            for nilist in neighbors:
+            for nilist in neighbors.values():
                 neigh_table.append(nilist)
             #end for
         else:
@@ -2974,7 +2976,7 @@ class Structure(Sobj):
                     dgd[di].append(gi)
                     #degree_map[gi] = d,di
                 #end for
-                for dgd in dgo:
+                for dgd in dgo.values():
                     for di,dgi in dgd.items():
                         dgd[di]=np.array(sorted(dgi),dtype=int)
                     #end for
@@ -3069,8 +3071,8 @@ class Structure(Sobj):
         for o in range(3,order+1):
             o1 = o/2+1    # split half order for odd, same for even, 
             o2 = o1+o%2
-            lg1 = lgraphs.get_optional(o1,None) # sets of half order lines
-            lg2 = lgraphs.get_optional(o2,None)
+            lg1 = lgraphs.get(o1,None) # sets of half order lines
+            lg2 = lgraphs.get(o2,None)
             if lg1 is not None and lg2 is not None:
                 rg = []
                 rset = set()

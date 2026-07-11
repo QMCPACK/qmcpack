@@ -803,7 +803,7 @@ class Simulation(NexusCore):
     def acquire_dependents(self,sim):
         # acquire the dependents from the other simulation
         dsims = obj(sim.dependents)
-        for dsim in dsims:
+        for dsim in dsims.values():
             dep = dsim.dependencies[sim.simid]
             dsim.depends(self,*dep.result_names)
         #end for
@@ -817,12 +817,12 @@ class Simulation(NexusCore):
     def eliminate(self):
         # reverse relationship of dependents (downstream)
         dsims = obj(self.dependents)
-        for dsim in dsims:
+        for dsim in dsims.values():
             dsim.undo_depends(self)
         #end for
         # reverse relationship of dependencies (upstream)
         deps = obj(self.dependencies)
-        for dep in deps:
+        for dep in deps.values():
             self.undo_depends(dep.sim)
         #end for
         # mark sim to be ignored in all future interactions

@@ -81,6 +81,14 @@ from .numerics import ndgrid, simstats, simplestats, equilibration_length
 from .qmcpack_analyzer_base import QAobject, QAanalyzer, QAdata, QAHDFdata
 from . import numpy_extensions as npe
 
+
+def first(o):
+    return o[min(o.keys())]
+
+def to_tuple(o,keys):
+    return tuple([o[k] for k in keys])
+
+
 class QuantityAnalyzer(QAanalyzer):
     def __init__(self,nindent=0):
         QAanalyzer.__init__(self,nindent=nindent)
@@ -100,7 +108,7 @@ class QuantityAnalyzer(QAanalyzer):
             qmax = q[middle:].max()
             qmin = q[middle:].min()
             ylims = [qmean-2*(qmean-qmin),qmean+2*(qmax-qmean)]
-            smean,svar = self[quantity].tuple('mean','sample_variance')
+            smean,svar = to_tuple(self[quantity],('mean','sample_variance'))
             sstd = sqrt(svar)
             plot(q,*args,**kwargs)
             plot([nbe,nbe],ylims,'k-.',lw=2)
@@ -314,7 +322,7 @@ class ScalarsHDFAnalyzer(HDFAnalyzer):
         #end for
         corrvars = ['LocalEnergy','ElecElec','MPC','KEcorr']
         if set(corrvars)<set(self.data.keys()):
-            Ed,Ved,Vmd,Kcd = self.data.tuple(*corrvars)
+            Ed,Ved,Vmd,Kcd = to_tuple(self.data,*corrvars)
             E_mpc_kc = obj()
             E  = Ed.value 
             Ve = Ved.value
@@ -1161,7 +1169,7 @@ class TracesAnalyzer(QAanalyzer):
         for file in sorted(files):
             filepath = os.path.join(path,file)
             trace_file = TracesFileHDF(filepath,blocks)
-            self.data.append(trace_file)
+            self.data[len(self.data)] = trace_file
         #end for
         #if self.run_info.request.traces:
         #    path = self.info.path
@@ -1214,7 +1222,7 @@ class TracesAnalyzer(QAanalyzer):
                 for qname in qnames:
                     summed_scalars[qname] = np.zeros(scalars[qname].shape)
                 #end for
-                wtot = np.zeros(summed_scalars.first().shape)
+                wtot = np.zeros(first(summed_scalars).shape)
                 for trace_file in self.data:
                     w = trace_file.scalars_by_block.Weight
                     wtot += w
@@ -1235,7 +1243,7 @@ class TracesAnalyzer(QAanalyzer):
                 for qname in qnames:
                     summed_scalars[qname] = np.zeros((len(scalars_hdf[qname].value),))
                 #end for
-                wtot = np.zeros(summed_scalars.first().shape)
+                wtot = np.zeros(first(summed_scalars).shape)
                 for trace_file in self.data:
                     w = trace_file.scalars_by_block.Weight
                     wtot += w
@@ -1268,7 +1276,7 @@ class TracesAnalyzer(QAanalyzer):
                 for qname in qnames:
                     summed_scalars[qname] = np.zeros(dmc[qname].shape)
                 #end for
-                wtot = np.zeros(summed_scalars.first().shape)
+                wtot = np.zeros(first(summed_scalars).shape)
                 for trace_file in self.data:
                     w = trace_file.scalars_by_step.Weight
                     wtot += w

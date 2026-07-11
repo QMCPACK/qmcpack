@@ -88,7 +88,9 @@ class QuantumPackage(Simulation):
         infile = self.identifier+'.in'
         infile = os.path.join(self.locdir,infile)
         f = open(infile,'w')
-        s = self.input.delete_optional('structure',None)
+        s = None
+        if 'structure' in self.input:
+            del self.input.structure
         f.write(str(self.input))
         if s is not None:
             self.input.structure = s
@@ -239,7 +241,7 @@ class QuantumPackage(Simulation):
                 n_det = read_qp_value(n_det_path)
                 if isinstance(n_det,int) and n_det<n_det_max:
                     self.save_attempt()
-                    input.set(read_wf=True)
+                    input.update(read_wf=True)
                     self.reset_indicators()
                 #end if
             #end if
@@ -357,7 +359,7 @@ class QuantumPackage(Simulation):
             fc += job2.run_command()+' >{0} 2>{1}\n'.format(slave_outfile,slave_errfile)
 
             if 'fci' in slave and not input.present('distributed_davidson'):
-                input.set(distributed_davidson=True)
+                input.update(distributed_davidson=True)
             #end if
         elif len(fc)>0 or jpost is not None:
             job.divert_out_err()

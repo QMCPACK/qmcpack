@@ -1484,7 +1484,7 @@ def layers_1d(xpoints,tol,xmin=None,xmax=None,merge=True,periodic=False,full_ret
     #end for
 
     # Find the mean of each set of points
-    for l in layers:
+    for l in layers.values():
         l.xmean = l.xsum/l.nsum
     #end for
 

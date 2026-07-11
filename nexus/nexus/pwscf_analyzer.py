@@ -703,7 +703,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                         #end if
                     #end for
                 #end for
-                self.xmldata.set(
+                self.xmldata.update(
                     data    = data,
                     kpoints = kpoints
                     )
@@ -734,7 +734,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             spins = obj(up='up',down='up')
         #end if
         tot = obj(up=0,down=0)
-        for kp in kpoints:
+        for kp in kpoints.values():
             w = kp.weight
             for s,sl in spins.items():
                 tot[s] += w*kp[sl].occupations.sum()
@@ -744,7 +744,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
         text += '  {0: 3.2f}  {1: 3.2f}  {2: 3.2f}  {3: 3.2f}\n'.format(tot.up+tot.down,tot.up-tot.down,tot.up,tot.down)
         text += '\nkpoint electron counts\n'
         weights = []
-        for kp in kpoints:
+        for kp in kpoints.values():
             weights.append(kp.weight)
         #end for
         weights = np.array(weights,dtype=float)

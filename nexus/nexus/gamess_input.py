@@ -268,14 +268,14 @@ class CardGroup(Group):
 
     def append_text(self,text):
         for tokens in self.read_line_tokens(text):
-            self.append(tokens)
+            self[len(self)] = tokens
         #end for
     #end def append_text
 
             
     def append_list(self,lst):
         for tokens in lst:
-            self.append(tokens)
+            self[len(self)] = tokens
         #end for
     #end def append_list
 

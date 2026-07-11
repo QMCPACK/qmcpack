@@ -1067,7 +1067,9 @@ class Qmcpack(Simulation):
                     xml = QmcpackInput(result.xml)
                     info_new = xml.simulation.afqmcinfo.copy()
                     info = self.input.simulation.afqmcinfo
-                    info.set_optional(**info_new)
+                    for k,v in info_new.items():
+                        if k not in info:
+                            info[k] = v
                     # override particular inputs set by default
                     if 'generation_info' in input._metadata:
                         g = input._metadata.generation_info

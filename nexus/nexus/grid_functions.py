@@ -4031,7 +4031,7 @@ class ParallelotopeGridFunction(StructuredGridFunctionWithAxes):
                     l.nsum += 1
                 #end if
             #end for
-            for l in layers:
+            for l in layers.values():
                 l.xmean = l.xsum/l.nsum
             #end for
             lprev = None

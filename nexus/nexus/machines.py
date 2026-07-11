@@ -969,7 +969,8 @@ class Machine(NexusCore):
                 self.error('app_directories must be of type dict or obj\nyou provided '+ad.__class__.__name__)
             #end if
         #end if
-        self.transfer_from(info)
+        for k,v in info.items():
+            self[k] = v
     #end def incorporate_user_info
 #end class Machine
 
