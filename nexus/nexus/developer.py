@@ -337,19 +337,6 @@ class obj:
     def setdefault(self,*a,**kw): return self.__dict__.setdefault(*a,**kw)
     def update(self,*a,**kw):     return self.__dict__.update(*a,**kw)
 
-    # protected dict interface
-    def _items(self):              return self.__dict__.items()
-    def _clear(self):              return self.__dict__.clear()
-    def _copy(self):               return self.__class__(self.__dict__)
-    def _fromkeys(self,*a,**kw):   return self.__class__(self.__dict__.fromkeys(*a,**kw))
-    def _get(self,*a,**kw):        return self.__dict__.get(*a,**kw)
-    def _keys(self):               return self.__dict__.keys()
-    def _pop(self,*a,**kw):        return self.__dict__.pop(*a,**kw)
-    def _values(self):             return self.__dict__.values()
-    def _popitem(self,*a,**kw):    return self.__dict__.popitem(*a,**kw)
-    def _setdefault(self,*a,**kw): return self.__dict__.setdefault(*a,**kw)
-    def _update(self,*a,**kw):     return self.__dict__.update(*a,**kw)
-
     # basic functions, including dot access
     def __len__(self):               return len(self.__dict__)
     def __contains__(self,key):      return key in self.__dict__
@@ -371,16 +358,16 @@ class obj:
 
 class DevBase:
     # similar to/same as dict
-    def __len__(self):          return len(self.__dict__)
-    def __contains__(self,key): return key in self.__dict__
-    def __getitem__(self,key):  return self.__dict__[key]
+    def __len__(self):               return len(self.__dict__)
+    def __contains__(self,key):      return key in self.__dict__
+    def __getitem__(self,key):       return self.__dict__[key]
     def __setitem__(self,key,value): self.__dict__[key]=value
     def __delitem__(self,key):       del self.__dict__[key]
-    def keys(self):             return self.__dict__.keys()
-    def values(self):           return self.__dict__.values()
-    def items(self):            return self.__dict__.items()
-    def update(self,*a,**kw):   return self.__dict__.update(*a,**kw)
-    def clear(self):            return self.__dict__.clear()
+    def keys(self):                  return self.__dict__.keys()
+    def values(self):                return self.__dict__.values()
+    def items(self):                 return self.__dict__.items()
+    def update(self,*a,**kw):        return self.__dict__.update(*a,**kw)
+    def clear(self):                 return self.__dict__.clear()
 
     # correctly iterate over values, not keys
     def __iter__(self):
@@ -395,6 +382,21 @@ class DevBase:
     # pretty print
     __repr__ = _pp_repr
     __str__  = _pp_str
+
+
+    # protected dict interface
+    def _items(self):              return self.__dict__.items()
+    def _clear(self):              return self.__dict__.clear()
+    def _copy(self):               return self.__class__(self.__dict__)
+    def _fromkeys(self,*a,**kw):   return self.__class__(self.__dict__.fromkeys(*a,**kw))
+    def _get(self,*a,**kw):        return self.__dict__.get(*a,**kw)
+    def _keys(self):               return self.__dict__.keys()
+    def _pop(self,*a,**kw):        return self.__dict__.pop(*a,**kw)
+    def _values(self):             return self.__dict__.values()
+    def _popitem(self,*a,**kw):    return self.__dict__.popitem(*a,**kw)
+    def _setdefault(self,*a,**kw): return self.__dict__.setdefault(*a,**kw)
+    def _update(self,*a,**kw):     return self.__dict__.update(*a,**kw)
+
 
     # save and load
     def save(self,filepath=None):
