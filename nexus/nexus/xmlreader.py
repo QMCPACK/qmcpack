@@ -29,7 +29,7 @@ import re
 import os
 import numpy as np
 #from .developer import DevBase, obj, valid_variable_name
-from .developer import DevBase2 as DevBase, obj2 as obj, valid_variable_name
+from .developer import DevBase, obj, valid_variable_name
 from .utilities import path_string
 
 

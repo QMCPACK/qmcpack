@@ -37,7 +37,7 @@ def test_empty_init():
 
 def test_projwfc_analyzer(tmp_path):
     #from ..developer import obj
-    from ..developer import obj2 as obj, to_obj
+    from ..developer import obj, to_obj
     from ..pwscf_postprocessors import ProjwfcAnalyzer
 
     projwfc_in = TEST_FILES["pwf.in"]

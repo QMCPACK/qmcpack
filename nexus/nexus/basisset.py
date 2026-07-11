@@ -9,7 +9,7 @@ from pathlib import Path
 import numpy as np
 from .periodic_table import Elements
 #from .developer import DevBase, obj, error, to_str, unavailable
-from .developer import DevBase2 as DevBase, obj2 as obj, log, error, to_str, unavailable
+from .developer import DevBase, obj, log, error, to_str, unavailable
 from .fileio import TextFile
 from .utilities import path_string
 

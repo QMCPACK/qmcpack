@@ -1067,7 +1067,7 @@ def test_file_text(tmp_path):
 
 def check_dependency_objects(*sims,**kwargs):
     #from ..developer import obj
-    from ..developer import obj2 as obj
+    from ..developer import obj
     from ..simulation import Simulation
     empty    = kwargs.get('empty',False)
     wait_ids = kwargs.get('wait_ids',True)

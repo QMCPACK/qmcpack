@@ -45,7 +45,7 @@ from .xmlreader import readxml
 from .periodic_table import Elements
 from .unit_converter import convert
 #from .developer import DevBase, obj, unavailable, error
-from .developer import DevBase2 as DevBase, obj2 as obj, unavailable, log, error
+from .developer import DevBase, obj, unavailable, log, error
 from .basisset import process_gaussian_text, GaussianBasisSet
 from .physical_system import PhysicalSystem
 from .testing import object_eq
@@ -2727,4 +2727,3 @@ class CasinoPP(SemilocalPP):
     #end def evaluate_comp_rV
 
 #end class CasinoPP
-

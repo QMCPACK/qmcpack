@@ -785,7 +785,7 @@ def select_random(d):
 def test_process_job():
     from random import randint
     #from ..developer import obj
-    from ..developer import obj2 as obj
+    from ..developer import obj
     from ..machines import Machine,Job
 
     nw  = 5

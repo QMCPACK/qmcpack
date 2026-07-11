@@ -33,7 +33,7 @@ def test_input(tmp_path):
     # imports
     import numpy as np
     #from ..developer import obj
-    from ..developer import obj2 as obj
+    from ..developer import obj
     from ..structure import read_structure
     from ..physical_system import generate_physical_system
     from ..pwscf_input import check_new_variables,check_section_classes

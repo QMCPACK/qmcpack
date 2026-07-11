@@ -52,7 +52,7 @@ import numpy as np
 from numpy import pi
 from numpy.linalg import inv
 #from .developer import DevBase, obj, log, warn, error
-from .developer import DevBase2 as DevBase, obj2 as obj, log, warn, error
+from .developer import DevBase, obj, log, warn, error
 from .unit_converter import convert
 from .periodic_table import Elements
 from .structure import Structure, kmesh
@@ -2950,5 +2950,4 @@ def generate_vcrelax_input(
 #
 #    return pw
 ##end def generate_nscf_input
-
 

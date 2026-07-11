@@ -74,7 +74,7 @@ from string import Template
 from subprocess import Popen
 import tempfile
 #from .developer import obj, unavailable, DevBase
-from .developer import DevBase2 as DevBase, obj2 as obj, unavailable
+from .developer import DevBase, obj, unavailable
 from .structure import Structure, read_structure
 from .physical_system import PhysicalSystem
 from .machines import Job, Workstation, get_machine

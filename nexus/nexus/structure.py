@@ -130,7 +130,7 @@ from .numerics import nearest_neighbors, convex_hull, voronoi_neighbors
 from .periodic_table import Elements
 from .fileio import XsfFile, PoscarFile
 #from .developer import DevBase, obj, unavailable, error
-from .developer import DevBase2 as DevBase, obj2 as obj, unavailable, error
+from .developer import DevBase, obj, unavailable, error
 from .utilities import path_string
 from . import numpy_extensions as npe
 

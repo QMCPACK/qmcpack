@@ -37,7 +37,7 @@ from pathlib import Path
 from copy import deepcopy
 import numpy as np
 #from .developer import DevBase, obj
-from .developer import DevBase2 as DevBase, obj2 as obj
+from .developer import DevBase, obj
 from .unit_converter import convert
 from .periodic_table import Elements
 from .structure import Structure, generate_structure, read_structure
@@ -804,4 +804,3 @@ def ghost_atoms(*particles):
         Matter.particle_collection.add_particles(Ion(name=particle,mass=0,charge=0,spin=0,protons=0,neutrons=0))
     #end for
 #end def ghost_atoms
-

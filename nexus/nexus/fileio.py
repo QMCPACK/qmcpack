@@ -28,7 +28,7 @@ from copy import deepcopy
 import numpy as np
 from numpy.linalg import det, norm
 #from .developer import DevBase, obj, error, to_str
-from .developer import DevBase2 as DevBase, obj2 as obj, error, to_str
+from .developer import DevBase, obj, error, to_str
 from .periodic_table import Elements
 from .unit_converter import convert
 from . import numpy_extensions as npe

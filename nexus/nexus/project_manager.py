@@ -19,7 +19,7 @@
 import time
 from . import memory
 #from .developer import obj, error
-from .developer import obj2 as obj, error
+from .developer import obj, error
 from .nexus_base import NexusCore, nexus_core, dynamic_storage
 from .simulation import Simulation
 from .machines import Machine,Job

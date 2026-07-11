@@ -33,8 +33,7 @@ from .utilities import path_string
 from .nexus_version import nexus_version
 from .memory import resident
 #from .developer import DevBase, obj, log
-#from .developer import DevBase, obj2 as obj, log
-from .developer import DevBase2 as DevBase, obj2 as obj, log, error
+from .developer import DevBase, obj, log, error
 
 
 # Nexus namespaces

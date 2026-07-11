@@ -52,7 +52,7 @@ import subprocess
 from subprocess import Popen, CalledProcessError
 import numpy as np
 #from .developer import DevBase, obj, warn
-from .developer import DevBase2 as DevBase, obj2 as obj, warn
+from .developer import DevBase, obj, warn
 from .nexus_base import NexusCore, nexus_core
 from .execute import execute
 from .utilities import path_string
@@ -4711,7 +4711,6 @@ get_machine      = Machine.get
 
 #rename Job with lowercase
 job=Job
-
 
 
 
