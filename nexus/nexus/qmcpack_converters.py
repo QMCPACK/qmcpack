@@ -95,6 +95,16 @@ readval={str:read_str,int:read_int,float:read_float,bool:read_bool}
 writeval={str:write_str,int:write_int,float:write_float,bool:write_bool}
 
 
+def get_path(o, path, value=None):
+    """Retrieve a value from a nested dict-like object by slash-delimited path."""
+    for key in path.split('/'):
+        if key not in o:
+            return value
+        o = o[key]
+    return o
+
+
+
 class Pw2qmcpackInput(SimulationInput):
     ints   = []
     floats = []
@@ -213,7 +223,7 @@ def read_eshdf_eig_data(filename, Ef_list):
             E_fermi = Ef+1e-8
             eig_s = []
             path = 'electrons/kpoint_{0}/spin_{1}'.format(k,s)
-            spin = h.get_path(path)
+            spin = get_path(h,path)
             eig = convert(np.array(spin.eigenvalues),'Ha','eV')
             nst = h5int(spin.number_of_states)
             for st in range(nst):

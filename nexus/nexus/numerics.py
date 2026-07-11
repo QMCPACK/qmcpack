@@ -536,7 +536,7 @@ def eos_fit(V,E,type='vinet',p0=None,cost='least_squares',jackknife=False,auxfun
             auxfunc = auxfuncs[auxname]
             auxres[auxname] = jackknife_aux(psamples,auxfunc,capture=auxcap)
             eq_vol = auxres[auxname][0]
-            auxfuncs.delete(auxname)
+            auxfuncs.pop(auxname)
             for auxname,auxfunc in auxfuncs.items():
                 num_variables = len(inspect.getargspec(auxfunc).args)
                 if num_variables > 1:

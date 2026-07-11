@@ -2047,8 +2047,10 @@ class GaussianPP(SemilocalPP):
         chan_labels = list(self.l_channels)
         remove = []
         for l in np.arange(self.lmax+1):
-            for term_idx,term in enumerate(self.components[chan_labels[l]]):
-                if abs(term.coeff)<1e-12 and len(self.components[chan_labels[l]])>1:
+            comp_l = self.components[chan_labels[l]]
+            for term_idx,k in enumerate(comp_l.keys()):
+                term = comp_l[term_idx]
+                if abs(term.coeff)<1e-12 and len(comp_l)>1:
                     remove.append((chan_labels[l],term_idx))
                 #end if
             #end for
@@ -2110,7 +2112,9 @@ class GaussianPP(SemilocalPP):
             # update comps
             comps[chan_labels[l]] = obj()
             added = []
-            for term_idx,term in enumerate(self.components[chan_labels[l]]):
+            comp_l = self.components[chan_labels[l]]
+            for term_idx,k in enumerate(comp_l.keys()):
+                term = comp_l[k]
                 if any(term_idx in subl for subl in like_terms):
                     if term_idx in added:
                         continue
@@ -2124,14 +2128,16 @@ class GaussianPP(SemilocalPP):
                                 #end for
                                 if abs(coeff)>1e-12:
                                     mod_term.coeff = coeff
-                                    comps[chan_labels[l]].append(mod_term)
+                                    cl = comps[chan_labels[l]]
+                                    cl[len(cl)] = mod_term
                                 #end if
                                 added.extend(mlist)
                             #end if
                         #end for
                     #end if
                 else:
-                    comps[chan_labels[l]].append(term)
+                    cl = comps[chan_labels[l]]
+                    cl[len(cl)] = term
                     added.append(term_idx)
                 #end if
             #end for
@@ -2141,7 +2147,8 @@ class GaussianPP(SemilocalPP):
                 plcehldr.coeff = 0.0
                 plcehldr.rpow = 2
                 plcehldr.expon = 1.0
-                comps[chan_labels[l]].append(plcehldr)
+                cl = comps[chan_labels[l]]
+                cl[len(cl)] = plcehldr
         #end for
         self.components = deepcopy(comps)
     #end def simplify
@@ -2418,7 +2425,8 @@ class GaussianPP(SemilocalPP):
             plt.show()
         #end if
         for expon_idx,expon in enumerate(exps0):
-            self.components['s'].append(obj(coeff=1.0*popt[expon_idx],expon=expon,rpow=2))
+            cs = self.components.s
+            cs[len(cs)] = obj(coeff=1.0*popt[expon_idx],expon=expon,rpow=2)
         #end if
         self.transform_to_truncated_L2(keep='s p',lmax=self.lmax)
         self.simplify()

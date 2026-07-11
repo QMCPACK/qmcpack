@@ -70,6 +70,16 @@ except:
 #end try
 
 
+def get_path(o, path, value=None):
+    """Retrieve a value from a nested dict-like object by slash-delimited path."""
+    for key in path.split('/'):
+        if key not in o:
+            return value
+        o = o[key]
+    return o
+
+
+
 class GCTA(DevBase):
     '''
     This class holds the functionality and data to carry out grand canonical twist averaging in Nexus.
@@ -158,7 +168,7 @@ class GCTA(DevBase):
             kweights.append(kw)
             for ispin in range(nspins):
                 path = 'electrons/kpoint_{0}/spin_{1}'.format(ikpoint,ispin)
-                spin = h.get_path(path)
+                spin = get_path(h,path)
                 eigs = convert(np.array(spin.eigenvalues),'Ha','eV')
                 nstates = h5_scalar(spin.number_of_states)
                 data[ikpoint,ispin] = obj(

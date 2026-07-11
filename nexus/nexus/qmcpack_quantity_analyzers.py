@@ -1185,7 +1185,7 @@ class TracesAnalyzer(QAanalyzer):
 
 
     def form_diagnostic_data(self):
-        for trace_file in self.data:
+        for trace_file in self.data.values():
             trace_file.form_diagnostic_data()
         #end for
     #end def form_diagnostic_data
@@ -1197,7 +1197,7 @@ class TracesAnalyzer(QAanalyzer):
 
     def check_particle_sums(self,tol=1e-8):
         same = True
-        for trace_file in self.data:
+        for trace_file in self.data.values():
             same &= trace_file.check_particle_sums(tol=tol)
         #end for
         return same
@@ -1223,7 +1223,7 @@ class TracesAnalyzer(QAanalyzer):
                     summed_scalars[qname] = np.zeros(scalars[qname].shape)
                 #end for
                 wtot = np.zeros(first(summed_scalars).shape)
-                for trace_file in self.data:
+                for trace_file in self.data.values():
                     w = trace_file.scalars_by_block.Weight
                     wtot += w
                     for qname in qnames:
@@ -1244,7 +1244,7 @@ class TracesAnalyzer(QAanalyzer):
                     summed_scalars[qname] = np.zeros((len(scalars_hdf[qname].value),))
                 #end for
                 wtot = np.zeros(first(summed_scalars).shape)
-                for trace_file in self.data:
+                for trace_file in self.data.values():
                     w = trace_file.scalars_by_block.Weight
                     wtot += w
                     for qname in qnames:
@@ -1277,7 +1277,7 @@ class TracesAnalyzer(QAanalyzer):
                     summed_scalars[qname] = np.zeros(dmc[qname].shape)
                 #end for
                 wtot = np.zeros(first(summed_scalars).shape)
-                for trace_file in self.data:
+                for trace_file in self.data.values():
                     w = trace_file.scalars_by_step.Weight
                     wtot += w
                     for qname in qnames:

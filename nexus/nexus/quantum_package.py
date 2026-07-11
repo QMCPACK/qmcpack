@@ -88,9 +88,7 @@ class QuantumPackage(Simulation):
         infile = self.identifier+'.in'
         infile = os.path.join(self.locdir,infile)
         f = open(infile,'w')
-        s = None
-        if 'structure' in self.input:
-            del self.input.structure
+        s = self.input.pop('structure',None)
         f.write(str(self.input))
         if s is not None:
             self.input.structure = s

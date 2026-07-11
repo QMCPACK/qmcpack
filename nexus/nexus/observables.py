@@ -34,6 +34,15 @@ except:
 #end try
 
 
+def get_path(o, path, value=None):
+    """Retrieve a value from a nested dict-like object by slash-delimited path."""
+    for key in path.split('/'):
+        if key not in o:
+            return value
+        o = o[key]
+    return o
+
+
 class VLog(DevBase):
 
     verbosity_levels = obj(
@@ -595,14 +604,14 @@ def read_eshdf_nofk_data(filename,Ef):
             nk_s    = np.zeros((ngvecs,),dtype=float)
             nelec_s = 0
             path    = 'electrons/kpoint_{0}/spin_{1}'.format(k,s)
-            spin    = h.get_path(path)
+            spin    = get_path(h,path)
             eigs    = convert(np.array(spin.eigenvalues),'Ha','eV')
             nstates = h5int(spin.number_of_states)
             for st in range(nstates):
                 eig = eigs[st]
                 if eig<E_fermi:
                     stpath   = path+'/state_{0}/psi_g'.format(st)
-                    psi      = np.array(h.get_path(stpath))
+                    psi      = np.array(get_path(h,stpath))
                     nk_orb   = (psi**2).sum(1)
                     kin_orb  = (kinetic*nk_orb).sum()
                     nelec_s += nk_orb.sum()
