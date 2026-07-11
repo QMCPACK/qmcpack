@@ -1,4 +1,5 @@
 import pytest
+from copy import deepcopy
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.QMCPACK_INPUT)
 
@@ -1837,7 +1838,7 @@ def test_incorporate_system():
         qmc             = 'dmc',
         )
 
-    qi_ref = qi.copy()
+    qi_ref = deepcopy(qi)
 
     shift = 0.1
     s = system.structure

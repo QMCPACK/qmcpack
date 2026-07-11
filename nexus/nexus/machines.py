@@ -724,7 +724,7 @@ class Job(NexusCore):
 
 
     def clone(self):
-        job = self.copy()
+        job = deepcopy(self)
         job.set_id()
         return job
     #end def clone
@@ -4711,7 +4711,6 @@ get_machine      = Machine.get
 
 #rename Job with lowercase
 job=Job
-
 
 
 

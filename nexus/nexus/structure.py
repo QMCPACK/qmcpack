@@ -1607,7 +1607,7 @@ class Structure(Sobj):
                 )
             )
         #end if
-        o = other.copy()
+        o = deepcopy(other)
         self.__dict__ = o.__dict__
     #end def clone_from
 
@@ -2307,7 +2307,7 @@ class Structure(Sobj):
             sub.elem = self.elem[indices].copy()
             sub.pos  = self.pos[indices].copy()
         else:
-            sub = self.copy()
+            sub = deepcopy(self)
             sub.elem = self.elem[indices]
             sub.pos  = self.pos[indices]
         #end if
@@ -2627,7 +2627,7 @@ class Structure(Sobj):
             nbox+=1
         #end if
         nwind = (nbox-1)//2
-        s = self.copy()
+        s = deepcopy(self)
         s.recenter()
         vaxis = s.axes[axis]
         daxis = norm(vaxis)
@@ -3272,7 +3272,7 @@ class Structure(Sobj):
         #end if
         indices = set(indices)
         # make a new version of this (small cell)
-        sn = self.copy()
+        sn = deepcopy(self)
         sn.recenter()
         # tile a large cell periodically
         d = 3
@@ -3716,7 +3716,7 @@ class Structure(Sobj):
             if in_place:
                 return self
             else:
-                return self.copy()
+                return deepcopy(self)
             #end if
         #end if
 
@@ -3739,7 +3739,7 @@ class Structure(Sobj):
             frozen = ncells*list(self.frozen)
         #end if
 
-        ts = self.copy()
+        ts = deepcopy(self)
         ts.center   = center
         ts.set_elem(elem)
         ts.axes     = axes
@@ -3756,10 +3756,10 @@ class Structure(Sobj):
         ts.unique_kpoints()
         if self.is_tiled():
             ts.tmatrix = dot(tilematrix,self.tmatrix)
-            ts.folded_structure = self.folded_structure.copy()
+            ts.folded_structure = deepcopy(self.folded_structure)
         else:
             ts.tmatrix = tilematrix
-            ts.folded_structure = self.copy()
+            ts.folded_structure = deepcopy(self)
         #end if
 
         if in_place:
@@ -4663,7 +4663,7 @@ class Structure(Sobj):
                 n+=1
             #end for
         #end for
-        sn = self.copy()
+        sn = deepcopy(self)
         nnr = nn[:,1:].ravel()
         sn.set_elem(t.elem[nnr])
         sn.pos  = t.pos[nnr]
@@ -4779,7 +4779,7 @@ class Structure(Sobj):
 
 
     def embed(self,small,dims=(0,1,2),dtol=1e-6,utol=1e-6):
-        small = small.copy()
+        small = deepcopy(small)
         small.recenter()
         center = np.array(self.center)
         self.recenter(small.center)
@@ -4890,8 +4890,8 @@ class Structure(Sobj):
 
 
     def interpolate(self,other,images,min_image=True,recenter=True,match_com=False,chained=False):
-        s1 = self.copy()
-        s2 = other.copy()
+        s1 = deepcopy(self)
+        s2 = deepcopy(other)
         s1.remove_folded()
         s2.remove_folded()
         if s2.units!=s1.units:
@@ -4936,7 +4936,7 @@ class Structure(Sobj):
             center = f1*c1   + f2*c2
             axes   = f1*ax1  + f2*ax2
             pos    = f1*pos1 + f2*pos2
-            s = s1.copy()
+            s = deepcopy(s1)
             s.reset_axes(axes)
             s.center = center
             s.pos    = pos
@@ -5379,7 +5379,7 @@ class Structure(Sobj):
 
             "{element:2} {dim1:12.8f} {dim2:12.8f} ... {dimN:12.8f}\\n"
         """
-        s = self.copy()
+        s = deepcopy(self)
         s.change_units(units)
 
         c = ""
@@ -5421,7 +5421,7 @@ class Structure(Sobj):
         if self.dim!=3:
             self.error('write_xyz is currently only implemented for 3 dimensions')
         #end if
-        s = self.copy()
+        s = deepcopy(self)
         s.change_units("A")
 
         c = ''
@@ -5445,7 +5445,7 @@ class Structure(Sobj):
         if self.dim!=3:
             self.error('write_xsf is currently only implemented for 3 dimensions')
         #end if
-        s = self.copy()
+        s = deepcopy(self)
         s.change_units('A')
         c  = ' CRYSTAL\n'
         c += ' PRIMVEC\n'
@@ -5476,7 +5476,7 @@ class Structure(Sobj):
 
 
     def write_poscar(self,filepath=None):
-        s = self.copy()
+        s = deepcopy(self)
         s.change_units('A')
         species,species_count = s.order_by_species()
         poscar = PoscarFile()
@@ -5497,7 +5497,7 @@ class Structure(Sobj):
 
     # test needed
     def write_fhi_aims(self,filepath=None):
-        s = self.copy()
+        s = deepcopy(self)
         s.change_units('A')
         c = ''
         c+='\n'
@@ -5911,7 +5911,7 @@ class Structure(Sobj):
                 tmatrix = None
             else:
                 # apply tiling matrix
-                st = sp.copy().tile(tmatrix)
+                st = deepcopy(sp).tile(tmatrix)
                 # update lattice type
                 rmg_lattice,bv = st.rmg_lattice(ret_bravais=True)
             #end if
@@ -5951,12 +5951,12 @@ class Structure(Sobj):
             all_results = True,
             )
         if rmg_lattice is None and allow_general:
-            s_trans    = self.copy()
+            s_trans    = deepcopy(self)
             rmg_inputs = obj()
             R          = None
             tmatrix    = None
         else:
-            s_trans = self.copy()
+            s_trans = deepcopy(self)
             R = np.dot(inv(s.axes),sp.axes)
             s_trans.matrix_transform(R.T)
             if tmatrix is not None:
@@ -6065,7 +6065,7 @@ def _getseekpath(
     if structure.has_folded():
         structure = structure.folded_structure
     #end if
-    structure = structure.copy()
+    structure = deepcopy(structure)
     if structure.units != 'A':
         structure.change_units('A')
     #end if
@@ -6097,7 +6097,7 @@ def get_conventional_cell(
         volfac      = seekpathout.volume_original_wrt_conv
     bcharge     = structure.background_charge*volfac
     pos         = dot(posd,axes)
-    sout        = structure.copy()
+    sout        = deepcopy(structure)
     elem        = np.array([Elements(i).symbol for i in enumbers], dtype=str)
     if abs(bcharge-int(bcharge)) > 1E-6:
         raise ValueError("Invalid background charge for conventional structure")
@@ -6120,7 +6120,7 @@ def get_primitive_cell(
     volfac      = seekpathout['volume_original_wrt_prim']
     bcharge     = structure.background_charge*volfac
     pos         = dot(posd,axes)
-    sout        = structure.copy()
+    sout        = deepcopy(structure)
     elem        = np.array([Elements(i).symbol for i in enumbers], dtype=str)
     return {'structure' : Structure(axes=axes, elem=elem, pos=pos, background_charge=bcharge, units='A'),
             'T'         : seekpathout['primitive_transformation_matrix']}
@@ -6142,7 +6142,7 @@ def get_kpath(
                                    recipe=recipe, reference_distance=reference_distance, with_time_reversal=with_time_reversal)
     #end if
     if check_standard:
-        structure = structure.copy()
+        structure = deepcopy(structure)
         structure.change_units('A')
         axes    = structure.axes
         primlat = seekpathout['primitive_lattice']
@@ -6191,7 +6191,7 @@ def get_structure_with_bands(
     ):
     if cell == 0:
         ''' Use input structure '''
-        struct_band = structure.copy()
+        struct_band = deepcopy(structure)
     elif cell == 1:
         ''' Use conventional structure '''
         struct_band = get_conventional_cell(structure=structure, symprec=symprec, angle_tolerance=angle_tolerance)['structure']
@@ -6439,7 +6439,7 @@ def get_band_tiling(
         mats             = np.array(mats)
         for m in mats:
             axes     = structure.axes.copy()
-            s        = structure.copy()
+            s        = deepcopy(structure)
             [m_t, r] = optimal_tilematrix(s.tile(m), volfac=mat_vol_mul)
             m_axes = dot(dot(m_t, m), axes)
             m_cubicity = cube_deviation(m_axes)
@@ -6541,12 +6541,12 @@ def interpolate_structures(struct1,struct2=None,images=None,min_image=True,recen
     system1 = None
     system2 = None
     if not isinstance(struct1,Structure):
-        system1 = struct1.copy()
+        system1 = deepcopy(struct1)
         system1.remove_folded()
         struct1 = system1.structure
     #end if
     if not isinstance(struct2,Structure):
-        system2 = struct2.copy()
+        system2 = deepcopy(struct2)
         system2.remove_folded()
         struct2 = system2.structure
     #end if
@@ -6565,7 +6565,7 @@ def interpolate_structures(struct1,struct2=None,images=None,min_image=True,recen
         #end if
         systems = []
         for s in structures:
-            ps = system.copy()
+            ps = deepcopy(system)
             ps.structure = s
             systems.append(ps)
         #end for
@@ -6601,7 +6601,7 @@ class DefectStructure(Structure):
     def __init__(self,*args,**kwargs):
         if len(args)>0 and isinstance(args[0],Structure):
             #self.transfer_from(args[0],copy=True)
-            self.update(**args[0].copy())
+            self.update(**deepcopy(args[0]))
         else:
             Structure.__init__(self,*args,**kwargs)
         #end if

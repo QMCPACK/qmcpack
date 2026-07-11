@@ -551,7 +551,7 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
                     break
                 #end if
             #end for
-            req = request.copy()
+            req = deepcopy(request)
             req.source = os.path.join(path,infile)
             req.group_num = gn
             qa = QmcpackAnalyzer(req,nindent=self.subindent())
@@ -584,8 +584,8 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
         info = example.info
         input,system = info.input,info.system
         self.info.update(
-            input  = input.copy(),
-            system = system.copy()
+            input  = deepcopy(input),
+            system = deepcopy(system)
             )
         self.vlog('average over bundled runs?  {0}'.format(self.info.perform_bundle_average),n=1)
     #end def bundle
@@ -788,5 +788,3 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
     #end def plot_trace
           
 #end class QmcpackAnalyzer
-
-

@@ -1,4 +1,6 @@
 import pytest
+from copy import deepcopy
+
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.PHYSICAL_SYSTEM)
 
@@ -99,7 +101,7 @@ def test_particle_initialization():
 
     # test get_particle
     assert(object_eq(pc.get_particle('Si'),si))
-    si1 = si.copy()
+    si1 = deepcopy(si)
     si1.name = 'Si1'
     assert(object_eq(pc.get_particle('Si1'),si1))
 
@@ -370,7 +372,7 @@ def test_physical_system_initialization(tmp_path):
 
     # test copy
     for sys in systems:
-        c = sys.copy()
+        c = deepcopy(sys)
         assert(id(c)!=id(sys))
         assert(c.is_valid())
         assert(system_same(c,sys,tiled=sys.has_folded()))

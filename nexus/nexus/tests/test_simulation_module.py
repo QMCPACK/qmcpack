@@ -2309,7 +2309,7 @@ a    = $a
     
     # attempt third progression
     #   nothing should happen
-    sbef = s.copy()
+    sbef = deepcopy(s)
     sbef.input.template = s.input.template
 
     s.progress()

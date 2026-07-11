@@ -18,6 +18,7 @@
 
 
 import os
+from copy import deepcopy
 from .developer import obj
 from .hdfreader import HDFreader
 from .qmcpack_analyzer_base import Checks,QAanalyzer,QAHDFdata
@@ -94,7 +95,7 @@ class MethodAnalyzer(QAanalyzer):
             file_prefix  = file_prefix,
             files        = files,
             data_sources = data_sources,
-            method_input = calc.copy(),
+            method_input = deepcopy(calc),
             nblocks_exclude = nblocks_exclude,
             complete     = complete,
             )

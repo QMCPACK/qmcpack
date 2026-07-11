@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 
 from pathlib import Path
+from copy import deepcopy
 from optparse import OptionParser
 import sys
 
@@ -304,15 +305,15 @@ class QMCDensityRadialProcessor(QDRBase):
             vmc_xsf_data = XsfFile(filepath=opt.vmc_file)
             dmc_xsf_data = XsfFile(filepath=file)
             # Initialize extrapolated XsfFile object
-            extrap_xsf_data = dmc_xsf_data.copy()
+            extrap_xsf_data = deepcopy(dmc_xsf_data)
             extrap_xsf_data.data[3]['density']['density'].values = 2.*dmc_xsf_data.data[3]['density']['density'].values-vmc_xsf_data.data[3]['density']['density'].values
-            file = extrap_xsf_data.copy()
+            file = deepcopy(extrap_xsf_data)
             if opt.write_extrap:
                 file.write('qmc-extrap.xsf')
             #end if
         else:
             dmc_xsf_data = XsfFile(filepath=file)
-            file = dmc_xsf_data.copy()
+            file = deepcopy(dmc_xsf_data)
             if opt.write_extrap:
                 self.log('\nWARNING: You provided --write, however, extrapolated density will not be written since a VMC file was not provided (via --vmc=VMC_FILE).\n')
             #end if
@@ -330,10 +331,10 @@ class QMCDensityRadialProcessor(QDRBase):
                 vmc_plus_err_xsf_data = XsfFile(filepath=opt.vmc_err_file)
                 dmc_plus_err_xsf_data = XsfFile(filepath=opt.dmc_err_file)
                 # Errors only
-                vmc_err_xsf_data = vmc_plus_err_xsf_data.copy() 
+                vmc_err_xsf_data = deepcopy(vmc_plus_err_xsf_data)
                 vmc_err_xsf_data.data[3]['density']['density'].values = vmc_plus_err_xsf_data.data[3]['density']['density'].values \
                                    - vmc_xsf_data.data[3]['density']['density'].values
-                dmc_err_xsf_data = dmc_plus_err_xsf_data.copy() 
+                dmc_err_xsf_data = deepcopy(dmc_plus_err_xsf_data)
                 dmc_err_xsf_data.data[3]['density']['density'].values = dmc_plus_err_xsf_data.data[3]['density']['density'].values \
                                    - dmc_xsf_data.data[3]['density']['density'].values
 
@@ -341,19 +342,19 @@ class QMCDensityRadialProcessor(QDRBase):
                 #   
                 # std_dev = sqrt(4*sigma_dmc**2+sigma_vmc**2)
                 #
-                extrap_err_xsf_data = dmc_err_xsf_data.copy()
+                extrap_err_xsf_data = deepcopy(dmc_err_xsf_data)
                 extrap_err_xsf_data.data[3]['density']['density'].values = np.sqrt(4.0*dmc_err_xsf_data.data[3]['density']['density'].values**2+vmc_err_xsf_data.data[3]['density']['density'].values**2)
-                err_data = extrap_err_xsf_data.copy()
+                err_data = deepcopy(extrap_err_xsf_data)
             elif opt.vmc_file is None:
                 # Data without errors
                 dmc_xsf_data = XsfFile(filepath=self.file_in)
                 # Data with errors
                 dmc_plus_err_xsf_data = XsfFile(filepath=opt.dmc_err_file)
                 # Errors only
-                dmc_err_xsf_data = dmc_plus_err_xsf_data.copy() 
+                dmc_err_xsf_data = deepcopy(dmc_plus_err_xsf_data)
                 dmc_err_xsf_data.data[3]['density']['density'].values = dmc_plus_err_xsf_data.data[3]['density']['density'].values \
                                    - dmc_xsf_data.data[3]['density']['density'].values
-                err_data = dmc_err_xsf_data.copy()
+                err_data = deepcopy(dmc_err_xsf_data)
 
             else:
                 self.error('VMC and DMC densities provided but only one +err file was given.\nPlease either provide no +err file (which avoids resampling) or\nprovide a +err file for both VMC and DMC with --vmcerr and --dmcerr arguments.')
@@ -374,7 +375,7 @@ class QMCDensityRadialProcessor(QDRBase):
             self.log('Will compute {} samples...'.format(nsamples))
             for i in range(nsamples):
                 self.log('sample: {}'.format(i))
-                resample_xsf_data = file.copy()
+                resample_xsf_data = deepcopy(file)
                 for d1_idx, d1 in enumerate(file.data[3]['density']['density'].values):
                     for d2_idx, d2 in enumerate(d1):
                         for d3_idx, d3 in enumerate(d2):
@@ -545,6 +546,4 @@ if __name__=='__main__':
 
     qdensradial.exit()
 #end if
-
-
 

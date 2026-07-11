@@ -1,4 +1,5 @@
 import pytest
+from copy import deepcopy
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.PSEUDOPOTENTIAL)
 
@@ -256,7 +257,7 @@ def test_pseudopotential_classes(tmp_path):
     assert(value_eq(qpp.v_at_zero('s'),22.551641791033372))
     assert(value_eq(qpp.v_at_zero('p'),-19.175372435022126))
 
-    qpp_fake = qpp.copy()
+    qpp_fake = deepcopy(qpp)
     r = np.linspace(0,10,6)
     vloc = 0*r + qpp.Zval
     vnl  = 0*r
@@ -402,4 +403,3 @@ r*potential (L=1) in Ha
     assert(object_eq(qpp_casino,qpp,int_as_float=True,atol=1e-12))
 
 #end def test_pseudopotential_classes
-

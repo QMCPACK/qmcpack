@@ -3,6 +3,7 @@
 import gc
 import os
 import sys
+from copy import deepcopy
 from pathlib import Path
 from optparse import OptionParser
 
@@ -179,7 +180,7 @@ def qmcpack_filepath(basepath,tokens,g=None):
 
 
 def get_grid(s,dr=None,delta=None,x_min=None,x_max=None,y_min=None,y_max=None,z_min=None,z_max=None):
-    s = s.copy()
+    s = deepcopy(s)
     s.change_units('B')
     grid = []
     if delta is None:
@@ -319,7 +320,7 @@ class SingleDensity(QDBase):
             self.grid = np.array(grid,dtype=int)
         #end if
         if structure is not None:
-            self.structure = structure.copy()
+            self.structure = deepcopy(structure)
         #end if
         if extension is not None:
             self.extension = extension
@@ -411,7 +412,7 @@ class SingleDensity(QDBase):
         if s is None:
             self._error('structure must be specified (via --structure) for output format xsf')
         #end if
-        s = s.copy()
+        s = deepcopy(s)
         p = s.pos.ravel()
         if p.min()>0 and p.max()<1.0:
             s.pos_to_cartesian()
@@ -458,7 +459,7 @@ class SingleDensity(QDBase):
         if s is None:
             self._error('structure must be specified (via --structure) for output format xsf')
         #end if
-        s = s.copy()
+        s = deepcopy(s)
         p = s.pos.ravel()
         if p.min()>0 and p.max()<1.0:
             s.pos_to_cartesian()
@@ -798,7 +799,7 @@ class StatFile(QDBase):
         ndim = 3
         permute = dim!=0
         if opt.structure is not None:
-            s = opt.structure.copy()
+            s = deepcopy(opt.structure)
             s.change_units('A')
             rmax = np.linalg.norm(s.axes[dim])
         else:
@@ -1137,7 +1138,7 @@ class QMCDensityProcessor(QDBase):
                             density_cell = convert(density_cell, 'B', 'A')
                         else:
                             # If density_cell is not given, use the structure cell
-                            dens_struct = structure.copy()
+                            dens_struct = deepcopy(structure)
                             dens_struct.change_units('A')
                             density_cell = dens_struct.axes
                         #end if
@@ -1464,6 +1465,3 @@ if __name__=='__main__':
 
     qdens.exit()
 #end if
-
-
-

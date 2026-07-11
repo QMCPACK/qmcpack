@@ -5,6 +5,7 @@ pytestmark = pytest.mark.order(NexusTestOrder.STRUCTURE)
 from ..generic import generic_settings
 generic_settings.raise_error = True
 
+from copy import deepcopy
 import numpy as np
 from . import TEST_DIR
 from .. import testing
@@ -319,7 +320,7 @@ def test_crystal_init():
 def test_change_units():
     import numpy as np
     ref = get_reference_structures()
-    s = ref.diamond_conv.copy()
+    s = deepcopy(ref.diamond_conv)
     assert(value_eq(s.pos[-1],np.array([2.6775,2.6775,0.8925])))
     s.change_units('B')
     assert(value_eq(s.pos[-1],np.array([5.05974172,5.05974172,1.68658057])))
@@ -330,8 +331,8 @@ def test_change_units():
 def test_rotate():
     import numpy as np
     ref = get_reference_structures()
-    s0 = ref.CuO_prim.copy()
-    s1 = ref.CuO_prim.copy()
+    s0 = deepcopy(ref.CuO_prim)
+    s1 = deepcopy(ref.CuO_prim)
 
     # Test the various parameter choices in the case that rp is given
     # Perform rotation taking x-axis to x-axis (original positions should be found)
@@ -719,12 +720,12 @@ def test_bounding_box():
         )
 
     # add a box by hand to the water molecule
-    h2o_diy = h2o.copy()
+    h2o_diy = deepcopy(h2o)
     h2o_diy.set_axes(8.0*np.eye(3))
     assert(value_eq(h2o_diy.axes,8.*np.eye(3)))
 
     # automatically add a bounding box to the water molecule
-    h2o_auto = h2o.copy()
+    h2o_auto = deepcopy(h2o)
     h2o_auto.bounding_box(box='cubic',minsize=8.0)
     assert(value_eq(h2o_auto.axes,8.*np.eye(3)))
     assert(value_eq(tuple(h2o_auto.pos[-1]),(4.,4.75716,4.29313)))
@@ -1029,7 +1030,7 @@ def test_monkhorst_pack_kpoints():
     g44 = g11.tile(4,4,1)
 
     # Add a Gamma-centered 2x2 Monkhorst-Pack grid
-    g44g = g44.copy()
+    g44g = deepcopy(g44)
     g11g = g44g.folded_structure
 
     g44g.add_kmesh(kgrid=(2,2,1),kshift=(0,0,0))
@@ -1041,7 +1042,7 @@ def test_monkhorst_pack_kpoints():
     assert(value_eq(g11g.kpoints_unit(),g11g_ukp_ref))
 
     # Add a shifted 2x2 Monkhorst-Pack grid
-    g44s = g44.copy()
+    g44s = deepcopy(g44)
     g11s = g44s.folded_structure
 
     g44s.add_kmesh(kgrid=(2,2,1),kshift=(0.5,0.5,0))
@@ -1355,7 +1356,7 @@ def test_embed():
     g.recenter(center)
 
     # Represent the "relaxed" cell
-    gr = g.copy()
+    gr = deepcopy(g)
     npos = len(gr.pos)
     dr = gr.min_image_vectors(center)
     npe.reshape_inplace(dr, (npos, 3))
@@ -1376,7 +1377,7 @@ def test_embed():
     gl.recenter(center)
 
     # Embed the relaxed cell in the large unrelaxed cell
-    ge = gl.copy()
+    ge = deepcopy(gl)
     ge.embed(gr)
 
     assert(len(ge.elem)==len(gl.elem))
@@ -1417,11 +1418,11 @@ def test_interpolate():
     npos2 = npos1+g11.axes[0]+g11.axes[1]
 
     # "Relaxed" structure with additional atom on one ring
-    gr1 = g.copy()
+    gr1 = deepcopy(g)
     gr1.add_atoms(['Cr'],[npos1])
 
     # "Relaxed" structure with additional atom on neighboring ring
-    gr2 = g.copy()
+    gr2 = deepcopy(g)
     gr2.add_atoms(['Cr'],[npos2])
     gr2.recenter()
 

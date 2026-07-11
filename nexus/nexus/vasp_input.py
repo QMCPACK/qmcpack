@@ -38,6 +38,7 @@
 
 
 import os
+from copy import deepcopy
 import numpy as np
 from .periodic_table import Elements
 from .nexus_base import nexus_noncore
@@ -1498,7 +1499,7 @@ class VaspInput(SimulationInput,Vobj):
         # assign poscar
         species = None
         if len(structure.elem)>0:
-            s = structure.copy()
+            s = deepcopy(structure)
             s.change_units('A')
             species,species_count = s.order_by_species()
             poscar = Poscar()
@@ -1860,7 +1861,7 @@ def generate_any_vasp_input(**kwargs):
 
 
 def generate_poscar(structure,coord='cartesian'):
-    s = structure.copy()
+    s = deepcopy(structure)
     s.change_units('A')
     species,species_count = s.order_by_species()
     poscar = Poscar()

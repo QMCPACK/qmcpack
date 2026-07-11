@@ -17,6 +17,7 @@
 
 
 import os
+from copy import deepcopy
 from .developer import DevBase,  obj, log, error
 from .structure import Structure
 from .physical_system import PhysicalSystem
@@ -772,7 +773,7 @@ def generate_quantum_package_input(**kwargs):
 
     # incorporate atomic and electronic structure
     system = gen_kw.system
-    qpi.structure = system.structure.copy()
+    qpi.structure = deepcopy(system.structure)
     if 'electrons' not in qpi:
         qpi.electrons = Section()
     #end if

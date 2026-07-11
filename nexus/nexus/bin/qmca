@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 
 import os
+from copy import deepcopy
 from pathlib import Path
 import sys
 from optparse import OptionParser
@@ -1284,7 +1285,7 @@ QMCA examples:
                         w = weights[npf]
                         d = pdata[series]
                         if npf==0:
-                            avg = d.copy()
+                            avg = deepcopy(d)
                             di = d.info
                             avg.info.update(
                                 filename = di.filename.replace(di.prefix,'avg'),
@@ -1343,7 +1344,7 @@ QMCA examples:
                             w = weights[npf]
                             d = pdata[series]
                             if npf==0:
-                                avg = d.copy()
+                                avg = deepcopy(d)
                                 di = d.info
                                 avg.info.update(
                                     filename = di.filename.replace(di.prefix,batch_prefix),

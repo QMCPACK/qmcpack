@@ -1,4 +1,5 @@
 import pytest
+from copy import deepcopy
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.PWSCF_INPUT)
 
@@ -133,7 +134,7 @@ def test_input(tmp_path):
 
     # test read
     pwr = PwscfInput(TEST_FILES['Fe_start_ns_eig.in'])
-    pwc = pw.copy()
+    pwc = deepcopy(pw)
     pwc.standardize_types()
     check_pw_same(pwc,pwr,'compose','read')
 
@@ -332,12 +333,12 @@ def test_input(tmp_path):
         hubbard_u              = {1 : 3.1},
         )
 
-    pwg = pw.copy()
+    pwg = deepcopy(pw)
     pwg.standardize_types()
 
     generations[infile] = pw
 
-    pw2 = compositions[infile].copy()
+    pw2 = deepcopy(compositions[infile])
     pw2.standardize_types()
     check_pw_same(pwg,pw2,'generate','compose')
     pw3 = reads[infile]

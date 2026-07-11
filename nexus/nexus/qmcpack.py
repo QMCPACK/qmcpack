@@ -1015,7 +1015,7 @@ class Qmcpack(Simulation):
                         #end if
                     #end for
                     if len(jnew)==1:
-                        wavefunction.jastrow = jnew[0].copy()
+                        wavefunction.jastrow = deepcopy(jnew[0])
                     else:
                         wavefunction.jastrows = collection(jnew)
                     #end if
@@ -1030,7 +1030,7 @@ class Qmcpack(Simulation):
                 self.error('incorporating particles from '+sim.__class__.__name__+' has not been implemented')
             # end if
         elif result_name=='structure':
-            relstruct = result.structure.copy()
+            relstruct = deepcopy(result.structure)
             relstruct.change_units('B')
             self.system.structure = relstruct
             self.system.remove_folded()
@@ -1053,7 +1053,7 @@ class Qmcpack(Simulation):
             if isinstance(sim,Qmcpack):
                 opt = QmcpackInput(result.opt_file)
                 qs = input.get('qmcsystem')
-                wfn = opt.qmcsystem.wavefunction.copy()
+                wfn = deepcopy(opt.qmcsystem.wavefunction)
                 ovp = 'override_variational_parameters' # name is too long
                 if ovp in wfn:
                     href = os.path.join(sim.locdir,wfn[ovp].href)

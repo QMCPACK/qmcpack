@@ -1,4 +1,5 @@
 import pytest
+from copy import deepcopy
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.PWSCF_ANALYZER)
 
@@ -110,7 +111,7 @@ def test_analyze():
 
     assert(object_eq(to_obj(pa),pa_ref))
 
-    input_read = pa.input.copy()
+    input_read = deepcopy(pa.input)
 
 
     # scf w/ full analysis
@@ -471,7 +472,7 @@ def test_analyze():
     
     assert(object_eq(to_obj(pa),pa_ref))
 
-    input_read = pa.input.copy()
+    input_read = deepcopy(pa.input)
 
     
 
@@ -684,6 +685,3 @@ def test_analyze():
     assert(object_eq(to_obj(pa),pa_ref))
 
 #end def test_analyze
-
-
-

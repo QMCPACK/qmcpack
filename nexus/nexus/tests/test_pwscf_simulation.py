@@ -200,7 +200,7 @@ def test_incorporate_result(tmp_path):
     assert(object_eq(to_obj(sim),sim_start))
 
     # structure
-    altered_structure = sim.system.structure.copy()
+    altered_structure = deepcopy(sim.system.structure)
     altered_structure.pos += 0.1
 
     result = obj(
@@ -275,4 +275,3 @@ def test_check_sim_status(tmp_path):
 
     clear_all_sims()
 #end def test_check_sim_status
-

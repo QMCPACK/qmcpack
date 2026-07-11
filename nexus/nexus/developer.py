@@ -400,6 +400,7 @@ class DevBase:
 
     # (deep) copy
     def copy(self):
+        raise RuntimeError('copy called by DevBase!!!')
         return copy.deepcopy(self)
 
     # pretty print

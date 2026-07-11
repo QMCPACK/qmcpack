@@ -1,4 +1,5 @@
 import pytest
+from copy import deepcopy
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.GENERIC_OPERATION)
 
@@ -268,7 +269,7 @@ def test_intrinsics(tmp_path):
     assert(isinstance(o2.tree(nindent=2),str))
 
     # test deepcopy
-    o2 = o.copy()
+    o2 = deepcopy(o)
     assert(id(o)!=id(o2))
     assert(object_eq(o,o2))
     o2.a=1
@@ -276,7 +277,7 @@ def test_intrinsics(tmp_path):
     
     # test eq
     assert(o==o2)
-    o4 = o3.copy()
+    o4 = deepcopy(o3)
     v = o3==o4
     assert(isinstance(v,bool_))
     assert(bool(v))
@@ -532,7 +533,7 @@ def test_extensions():
     assert(do==d)
     d2 = d.copy()
     d2['d'] = d
-    o2 = o.copy()
+    o2 = deepcopy(o)
     o2.d = o
     d2o = o2.to_dict()
     assert(d2o==d2)
@@ -542,7 +543,7 @@ def test_extensions():
     assert(isinstance(o2,obj))
     assert(id(o2)!=id(o))
     assert(object_eq(o2,o))
-    o2 = o.copy().to_obj()
+    o2 = deepcopy(o).to_obj()
     assert(object_eq(o2,o))
     
     # test list extensions
@@ -565,7 +566,7 @@ def test_extensions():
     assert(o2.random_key() is None)
 
     # test set
-    o2 = o.copy()
+    o2 = deepcopy(o)
     o2.set(
         b = 'b2',
         d = ('a','b','c'),
@@ -584,7 +585,7 @@ def test_extensions():
     #end for
 
     # test set optional
-    o2 = o.copy()
+    o2 = deepcopy(o)
     o2.set_optional(
         b = 'b2',
         d = ('a','b','c'),
@@ -625,24 +626,24 @@ def test_extensions():
     #end try
 
     # test delete
-    o2 = o.copy()
+    o2 = deepcopy(o)
     assert(o2.delete('c')==(1,1,1))
     assert('c' not in o2)
     keys = 'a','b','c',(3,4,5)
     vals = [1,'b',(1,1,1),(5,6,7)]
-    o2 = o.copy()
+    o2 = deepcopy(o)
     assert(o2.delete(*keys)==vals)
     assert(len(o2)==0)
     for k in keys:
         assert(k not in o2)
     #end for
-    o2 = o.copy()
+    o2 = deepcopy(o)
     assert(o2.delete(keys)==vals)
     assert(len(o2)==0)
     for k in keys:
         assert(k not in o2)
     #end for
-    o2 = o.copy()
+    o2 = deepcopy(o)
     try:
         o2.delete('a','d')
         raise FailedTest
@@ -655,7 +656,7 @@ def test_extensions():
     #end try
 
     # test delete optional
-    o2 = o.copy()
+    o2 = deepcopy(o)
     o2.delete_optional('c')
     assert('c' not in o2)
     assert('d' not in o2)
@@ -663,7 +664,7 @@ def test_extensions():
     assert('d' not in o2)
 
     # test delete required
-    o2 = o.copy()
+    o2 = deepcopy(o)
     o2.delete_required('c')
     assert('c' not in o2)
     try:
@@ -785,29 +786,29 @@ def test_extensions():
     assert(len(d2)==0)
     assert(object_eq(o,oref))
 
-    o2 = oref.copy()
+    o2 = deepcopy(oref)
     o = obj()
     o.move_from(o2)
     assert(len(o2)==0)
     assert(object_eq(o,oref))
 
-    osmall2 = oref.copy()
+    osmall2 = deepcopy(oref)
     del osmall2.b
     del osmall2.c
     del osmall2[3,4,5]
-    o2 = oref.copy()
+    o2 = deepcopy(oref)
     o = obj()
     o.move_from(o2,keys=['b','c',(3,4,5)])
     assert(object_eq(o,osmall))
     assert(object_eq(o2,osmall2))
 
-    o2 = oref.copy()
+    o2 = deepcopy(oref)
     o = obj()
     o.move_from_optional(o2,keys=['b','c',(3,4,5),'alpha','beta'])
     assert(object_eq(o,osmall))
     assert(object_eq(o2,osmall2))
 
-    o2 = oref.copy()
+    o2 = deepcopy(oref)
     o = obj()
     try:
         o.move_from(o2,keys=['a','x'])
@@ -821,31 +822,31 @@ def test_extensions():
     #end try
 
     # test move to
-    o2 = oref.copy()
+    o2 = deepcopy(oref)
     d = dict()
     o2.move_to(d)
     assert(len(o2)==0)
     assert(d==dref)
 
-    o2 = oref.copy()
+    o2 = deepcopy(oref)
     o = obj()
     o2.move_to(o)
     assert(len(o2)==0)
     assert(object_eq(o,oref))
 
-    o2 = oref.copy()
+    o2 = deepcopy(oref)
     o = obj()
     o2.move_to(o,keys=['b','c',(3,4,5)])
     assert(object_eq(o,osmall))
     assert(object_eq(o2,osmall2))
 
-    o2 = oref.copy()
+    o2 = deepcopy(oref)
     o = obj()
     o2.move_to_optional(o,keys=['b','c',(3,4,5),'alpha','beta'])
     assert(object_eq(o,osmall))
     assert(object_eq(o2,osmall2))
 
-    o2 = oref.copy()
+    o2 = deepcopy(oref)
     o = obj()
     try:
         o2.move_to(o,keys=['a','x'])
@@ -917,17 +918,17 @@ def test_extensions():
     #end try
 
     # test extract
-    o = oref.copy()
+    o = deepcopy(oref)
     o2 = o.extract()
     assert(len(o)==0)
     assert(object_eq(o2,oref))
 
-    o = oref.copy()
+    o = deepcopy(oref)
     o2 = o.extract(['b','c',(3,4,5)])
     assert(object_eq(o2,osmall))
     assert(object_eq(o,osmall2))
 
-    o = oref.copy()
+    o = deepcopy(oref)
     o2 = o.extract_optional(['b','c',(3,4,5),'alpha','beta'])
     assert(object_eq(o2,osmall))
     assert(object_eq(o,osmall2))

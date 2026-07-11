@@ -27,6 +27,7 @@
 
 
 import numpy as np
+from copy import deepcopy
 from .developer import obj
 from .unit_converter import convert
 from .qmcpack_analyzer_base import QAobject,QAanalyzer
@@ -225,7 +226,7 @@ class OptimizationAnalyzer(ResultAnalyzer):
             opt_series -= 1
             self.optimal_series = opt_series
             self.optimal_file = opts[opt_series].info.files.opt
-            self.optimal_wavefunction = opts[opt_series].wavefunction.info.wfn_xml.copy()
+            self.optimal_wavefunction = deepcopy(opts[opt_series].wavefunction.info.wfn_xml)
         #end if
     #end def analyze_local
 

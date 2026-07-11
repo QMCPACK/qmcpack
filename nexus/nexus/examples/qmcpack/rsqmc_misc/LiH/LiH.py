@@ -1,4 +1,6 @@
 #! /usr/bin/env python3
+
+from copy import deepcopy
 # LiH crystal with Quantum ESPRESSO orbitals
 
 from nexus import settings,job,run_project
@@ -120,7 +122,7 @@ linopt1 = linear(
     )
 
 # QMC Optimization Parameters - Finer Sampling Set
-linopt2 = linopt1.copy()
+linopt2 = deepcopy(linopt1)
 linopt2.samples = 16384
 
 # QMC Optimization

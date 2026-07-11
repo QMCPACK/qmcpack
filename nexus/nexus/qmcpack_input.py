@@ -2494,7 +2494,7 @@ class loop(QIxml):
         #end if
         for n in range(self.max):
             for i in range(len(calcs)):
-                calculations.append(calcs[i].copy())
+                calculations.append(deepcopy(calcs[i]))
             #end for
         #end for
         return make_collection(calculations)
@@ -3996,14 +3996,14 @@ class QmcpackInput(SimulationInput,Names):
         
 
     def get_electron_particle_set(self):
-        input = self.copy()
+        input = deepcopy(self)
         input.pluralize()
         return input.get('particlesets').e
     #end def get_electron_particle_set
 
 
     def return_system(self,structure_only=False):
-        input = self.copy()
+        input = deepcopy(self)
         input.pluralize()
         axes,ps,H = input.get('lattice','particlesets','hamiltonian')
 
@@ -6250,7 +6250,7 @@ def generate_determinantset_old(type           = 'bspline',
             band_1, band_2 = bands
             
             # Convert k_1 k_2 to wavevector indexes
-            structure = system.structure.get_smallest().copy()
+            structure = deepcopy(system.structure.get_smallest())
             structure.change_units('A')
             kpath       = get_kpath(structure=structure)
             kpath_label = np.array(kpath['explicit_kpoints_labels'])
@@ -6397,7 +6397,7 @@ def generate_hamiltonian(name         = 'h0',
     if estimators is not None:
         for estimator in estimators:
             if isinstance(estimator,QIxml):
-                estimator = estimator.copy()
+                estimator = deepcopy(estimator)
             #end if
             est=estimator
             if isinstance(estimator,str):
@@ -9140,7 +9140,7 @@ def generate_basic_afqmc_input(**kwargs):
         for est in kw.estimators:
             invalid = False
             if isinstance(est,QIxml):
-                est = est.copy()
+                est = deepcopy(est)
             else:
                 invalid = True
             #end if

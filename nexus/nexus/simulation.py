@@ -68,6 +68,7 @@
 import os
 import sys
 import shutil
+from copy import deepcopy
 from pathlib import Path
 from string import Template
 from subprocess import Popen
@@ -468,7 +469,7 @@ class Simulation(NexusCore):
         elif not isinstance(self.job,Job):
             self.error('Input field job must be set to a Job object\nyou provided an object of type: {0}\nwith value: {1}'.format(self.job.__class__.__name__,self.job))
         #end if
-        self.job = self.job.copy()
+        self.job = deepcopy(self.job)
         self.init_job_extra()
         self.job.initialize(self)
     #end def init_job
