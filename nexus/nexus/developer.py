@@ -16,14 +16,6 @@
 #      Base class inheriting generic abilities for obj, etc.         #
 #      Allows for unimplemented functions.                           #
 #                                                                    #
-#    unavailable                                                     #
-#      Function to create named void objects.                        #
-#      Used when imported entities do not exist on the local machine.#
-#      Allows execution tp proceed normally so long as none of these #
-#        non-existent entities are used during runtime execution.    #
-#      This enables the maximum amount of Nexus functionality to be  #
-#        accessed given the available modules.                       #
-#                                                                    #
 #====================================================================#
 
 

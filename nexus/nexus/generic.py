@@ -28,7 +28,8 @@ from pickle import UnpicklingError
 from random import randint
 from pathlib import Path
 
-from .utilities import sorted_py2, path_string
+from .utilities import path_string
+from .developer_tools import sorted_py2 as sorted_generic
 
 
 class generic_settings:
@@ -50,8 +51,6 @@ def nocopy(value):
 #end def nocopy
 
 
-
-sorted_generic = sorted_py2
 
 nexus_modules = [mod.stem for mod in Path(__file__).parent.iterdir() if mod.suffix == ".py"]
 
