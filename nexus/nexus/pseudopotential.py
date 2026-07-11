@@ -2,40 +2,7 @@
 ##  (c) Copyright 2015-  by Jaron T. Krogel                     ##
 ##################################################################
 
-
-#====================================================================#
-#  pseudopotential.py                                                #
-#    Classes for reading pseudopotential data and converting         #
-#    pseudopotentials between file formats.                          #
-#                                                                    #
-#  Content summary:                                                  #
-#    Pseudopotentials                                                #
-#      Class contains a list of all pseudopotentials available if    #
-#      user provides pseudo_dir in settings.                         #
-#                                                                    #
-#    PseudoFile                                                      #
-#      Represents a single pseudopotential file.  No functionality.  #
-#                                                                    #
-#    gamessPPFile                                                    #
-#      Represents a pseudopotential file for GAMESS.                 #
-#      Used during Nexus execution to separate basis and channel     #
-#      information to fill in the input file.                        #
-#                                                                    #
-#    Classes below are user-facing, but are not used by Nexus itself.#
-#                                                                    #
-#    Pseudopotential                                                 #
-#      Represents a generic pseudopotential.                         #
-#                                                                    #
-#    SemilocalPP                                                     #
-#      Represents a semi-local pseudopotential.                      #
-#      Contains data for each non-local channel.                     #
-#      Supports plotting, gaussian fitting, and writing to QMCPACK's #
-#        grid-based file format.                                     #
-#      GaussianPP and QmcpackPP are derived classes to read/write    #
-#        GAMESS/Gaussian and QMCPACK pseudopotential files.          #
-#                                                                    #
-#====================================================================#
-
+"""Classes for reading pseudopotential data and converting pseudopotentials between file formats."""
 import os
 from os import PathLike
 from pathlib import Path
@@ -46,11 +13,13 @@ from .fileio import TextFile
 from .xmlreader import readxml
 from .periodic_table import Elements
 from .unit_converter import convert
-from .developer import DevBase, obj, unavailable, error
+from .developer import DevBase, obj, unavailable, error, warn
 from .basisset import process_gaussian_text, GaussianBasisSet
 from .physical_system import PhysicalSystem
 from .testing import object_eq
 from .utilities import path_string, is_valid_filename
+from collections.abc import Mapping
+from typing import Literal, Self
 
 try:
     import matplotlib.pyplot as plt
@@ -442,7 +411,7 @@ class Pseudopotentials(DevBase):
 # user interface to group sets of pseudopotentials together and refer to them by labels
 #   labeling should eliminate the need to provide lists of pseudopotential files to each 
 #   simulation object (e.g. via a generate_* call) separately
-class PPset(DevBase):
+class GlobalPPset(DevBase):
     instance_counter = 0
 
     known_codes = set('pwscf gamess vasp qmcpack'.split())
@@ -455,46 +424,87 @@ class PPset(DevBase):
         )
 
     def __init__(self):
-        if PPset.instance_counter!=0:
-            self.error('cannot instantiate more than one PPset object\nintended use follows a singleton pattern')
+        if GlobalPPset.instance_counter!=0:
+            self.error(
+                'cannot instantiate more than one PPset object\n'
+                'intended use follows a singleton pattern'
+            )
         #end if
-        PPset.instance_counter+=1
+        GlobalPPset.instance_counter+=1
         self.pseudos = obj()
     #end def __init__
 
     def supports_code(self,code):
-        return code in PPset.known_codes
+        return code in GlobalPPset.known_codes
     #end def supports_code
 
-    def __call__(self,label,**code_pps):
+    def __call__(self, label: str, **code_pps):
         if not isinstance(label,str):
-            self.error('incorrect use of ppset\nlabel provided must be a string\nreceived type instead: {0}\nwith value: {1}'.format(label.__class__.__name__,label))
+            self.error(
+                'incorrect use of ppset\n'
+                'label provided must be a string\n'
+                'received type instead: {0}\n'
+                'with value: {1}'.format(label.__class__.__name__,label)
+            )
         #end if
         if label in self.pseudos:
-            self.error('incorrect use of ppset\npseudopotentials with label "{0}" have already been added to ppset'.format(label))
+            self.error(
+                'incorrect use of ppset\n'
+                'pseudopotentials with label "{0}" have already been added to ppset'.format(label)
+            )
         #end if
         pseudos = obj()
         self.pseudos[label]=pseudos
         for code,pps in code_pps.items():
             clow = code.lower()
             if clow not in self.known_codes:
-                self.error('incorrect use of ppset\ninvalid simulation code "{0}" provided with set labeled "{1}"\nknown simulation codes are: {2}'.format(code,label,sorted(self.known_codes)))
+                self.error(
+                    'incorrect use of ppset\n'
+                    'invalid simulation code "{0}" provided with set labeled "{1}"\n'
+                    'known simulation codes are: {2}'.format(
+                        code, label, sorted(self.known_codes)
+                    )
+                )
             #end if
             if not isinstance(pps,(list,tuple)):
-                self.error('incorrect use of ppset\nmust provide a list of pseudopotentials for code "{0}" in set labeled "{1}"\ntype provided instead of list: {2}'.format(code,label,pps.__class__.__name__))
+                self.error(
+                    'incorrect use of ppset\n'
+                    'must provide a list of pseudopotentials for code "{0}" in set labeled "{1}"\n'
+                    'type provided instead of list: {2}'.format(
+                        code, label, pps.__class__.__name__
+                    )
+                )
             #end if
             ppcoll = obj()
             for pp in pps:
-                if not isinstance(pp, (str, Path)):
-                    self.error('incorrect use of ppset\nnon-filename provided with set labeled "{0}" for simulation code "{1}"\neach pseudopential file name must be a string\nreceived type: {2}\nwith value: {3}'.format(label,code,pp.__class__.__name__,pp))
-                else:
-                    pp = path_string(pp)
-                    elem_label, symbol, is_elem = pp_elem_label(pp)
-
+                if not isinstance(pp,str):
+                    self.error(
+                        'incorrect use of ppset\n'
+                        'non-filename provided with set labeled "{0}" for simulation code "{1}"\n'
+                        'each pseudopential file name must be a string\n'
+                        'received type: {2}\n'
+                        'with value: {3}'.format(
+                            label, code, pp.__class__.__name__, pp
+                        )
+                    )
+                #end if
+                elem_label,symbol,is_elem = pp_elem_label(pp)
                 if not is_elem:
-                    self.error('invalid filename provided to ppset\ncannot determine element for pseudopotential file: {0}\npseudopotential file names must be prefixed by an atomic symbol or label\n(e.g. Si, Si1, etc)'.format(pp))
+                    self.error(
+                        'invalid filename provided to ppset\n'
+                        'cannot determine element for pseudopotential file: {0}\n'
+                        'pseudopotential file names must be prefixed by an atomic symbol or label\n'
+                        '(e.g. Si, Si1, etc)'.format(pp)
+                    )
                 elif symbol in ppcoll:
-                    self.error('incorrect use of ppset\nmore than one pseudopotential file provided for element "{0}" for code "{1}" in set labeled "{2}"\nfirst file: {3}\nsecond file: {4}'.format(symbol,code,label,ppcoll[symbol],pp))
+                    self.error(
+                        'incorrect use of ppset\n'
+                        'more than one pseudopotential file provided for element "{0}" for code "{1}" in set labeled "{2}"\n'
+                        'first file: {3}\n'
+                        'second file: {4}'.format(
+                            symbol, code, label, ppcoll[symbol], pp
+                        )
+                    )
                 #end if
                 ppcoll[symbol] = path_string(pp)
             #end for
@@ -517,31 +527,209 @@ class PPset(DevBase):
         #end if
         species_labels,species = system.structure.species(symbol=True)
         if not isinstance(label,str):
-            self.error('incorrect use of ppset\nlabel provided must be a string\nreceived type instead: {0}\nwith value: {1}'.format(label.__class__.__name__,label))
+            self.error(
+                'incorrect use of ppset\n'
+                'label provided must be a string\n'
+                'received type instead: {0}\n'
+                'with value: {1}'.format(label.__class__.__name__, label)
+            )
         #end if
         if not self.has_set(label):
-            self.error('incorrect use of ppset\npseudopotential set labeled "{0}" is not present in ppset\nset labels present: {1}\nplease either provide pseudopotentials with label "{0}" or correct the provided label'.format(label,sorted(self.pseudos.keys())))
+            self.error(
+                'incorrect use of ppset\n'
+                'pseudopotential set labeled "{0}" is not present in ppset\n'
+                'set labels present: {1}\n'
+                'please either provide pseudopotentials with label "{0}" or correct the provided label'
+                .format(label, sorted(self.pseudos.keys()))
+            )
         #end if
         pseudos = self.pseudos[label]
         clow = code.lower()
         if clow not in self.known_codes:
-            self.error('simulation code "{0}" is not known to ppset\nknown codes are: {1}'.format(code,sorted(self.known_codes)))
+            self.error(
+                'simulation code "{0}" is not known to ppset\n'
+                'known codes are: {1}'.format(
+                    code, sorted(self.known_codes)
+                )
+            )
         elif clow not in pseudos:
-            self.error('incorrect use of ppset\npseudopotentials were not provided for simulation code "{0}" in set labeled "{1}"\npseudopotentials are required for physical system with pseudo-elements: {2}\nplease add these pseudopotentials for code "{0}" in set "{1}"'.format(code,label,sorted(species)))
+            self.error(
+                'incorrect use of ppset\n'
+                'pseudopotentials were not provided for simulation code "{0}" in set labeled "{1}"\n'
+                'pseudopotentials are required for physical system with pseudo-elements: {2}\n'
+                'please add these pseudopotentials for code "{0}" in set "{1}"'
+                .format(code, label, sorted(species))
+            )
         #end if
         ppcoll = pseudos[clow]
         pps = []
         for symbol in species:
             if symbol not in ppcoll:
-                self.error('incorrect use of ppset\npseudopotentials were not provided for element "{0}" code "{1}" in set labeled "{2}"\nphysical system encountered with pseudo-elements: {3}\nplease ensure that pseudopotentials are provided for these elements in set "{2}" for code "{1}"'.format(symbol,code,label,sorted(species)))
+                self.error(
+                    'incorrect use of ppset\n'
+                    'pseudopotentials were not provided for element "{0}" code "{1}" in set labeled "{2}"\n'
+                    'physical system encountered with pseudo-elements: {3}\n'
+                    'please ensure that pseudopotentials are provided for these elements in set "{2}" for code "{1}"'
+                    .format(symbol, code, label, sorted(species))
+                )
             #end if
             pps.append(ppcoll[symbol])
         #end for
         return pps
     #end def get
 #end class PPset
-ppset = PPset()
+ppset = GlobalPPset() # Retain `ppset` alias for backwards compatibility
 
+
+class PseudoSet:
+    """Object representing a set of pseudopotentials.
+
+    Attributes
+    ----------
+    code : {"pwscf", "gamess", "vasp", "qmcpack"}
+        Name of the program that these pseudos are meant for.
+    pseudos : dict of Element: Path
+        Dictionary mapping elements to their pseudos.
+    pseudo_dirs : set of Path
+        The directories that the pseudopotentials are stored in.
+    Zeffs : Map of PathLike to int, or None
+        A ``dict`` or ``obj`` mapping pseudos to their effective nuclear
+        charges (Z-valences).
+    label : str or None
+        The label for the pseudopotentials. Only for pseudos created by
+        calling ``ppset``.
+
+    Parameters
+    ----------
+    code : {"pwscf", "gamess", "vasp", "qmcpack"}
+        Name of the program that these pseudos are meant for.
+    pseudos : list of str or Path
+        A list of pseudopotential files.
+    Zeffs : Map of PathLike to int, optional
+        A ``dict`` or ``obj`` mapping pseudos to their effective nuclear
+        charges (Z-valences). If this is supplied, it will override any
+        parts of the code that may try to parse the pseudopotential to
+        get the Z-valence.
+    """
+
+    known_codes = frozenset(["pwscf", "gamess", "vasp", "qmcpack"])
+
+    def __init__(
+        self,
+        code   : Literal["pwscf", "gamess", "vasp", "qmcpack"],
+        pseudos: list[PathLike],
+        Zeffs  : Mapping[PathLike, int] | None = None,
+    ):
+        code = code.lower()
+        if code not in PseudoSet.known_codes:
+            raise ValueError(
+                f"Code {code} is not known by Nexus!\n"
+                f"Known codes are {list(PseudoSet.known_codes)}" # list gives better output format
+                )
+        else:
+            self.code = code
+
+        self.Zeffs = Zeffs
+        self.pseudos = {}
+        for psp in pseudos:
+            psp = Path(psp).resolve()
+            if not psp.exists():
+                warn(
+                    f"Pseudo file {psp} can not be located"
+                    )
+            elem_label, symbol, is_elem = pp_elem_label(psp.name)
+            if not is_elem:
+                raise ValueError(
+                   f"Can not determine element for pseudopotential file: {psp}\n"
+                    "Pseudopotential file names must be prefixed by an atomic symbol or label\n"
+                    "(e.g. Si, Si1, etc)"
+                    )
+            elem = Elements(symbol)
+            if elem in self.pseudos:
+                raise ValueError(
+                    "Can not provide multiple pseudos for the same element!\n"
+                    f"Duplicate pseudo is at index {pseudos.index(psp)}\n"
+                    f"    Existing pseudo file:  {self.pseudos[elem]}\n"
+                    f"    Duplicate pseudo file: {psp}"
+                    )
+            self.pseudos[elem] = psp
+
+        self.pseudo_dirs = set()
+        for pseudo in self.pseudos.values():
+            self.pseudo_dirs.add(pseudo.parent)
+    #end def __init__
+
+    @classmethod
+    def from_dirs(
+        cls,
+        code       : Literal["pwscf", "gamess", "vasp", "qmcpack"],
+        pseudo_dirs: list[PathLike],
+        Zeffs      : Mapping[PathLike, int] | None = None,
+        ) -> Self:
+        """Read in pseudopotentials from a set of directories."""
+        dirs = set([Path(dir).resolve() for dir in pseudo_dirs])
+        pseudos = []
+        for dir in dirs:
+            if not dir.exists():
+                raise FileNotFoundError(
+                    f"Can not find pseudopotential directory: {dir}"
+                    )
+            elif not dir.is_dir():
+                raise NotADirectoryError(
+                    f"Specified path does not point to a directory: {dir}"
+                    )
+            for pseudo in dir.iterdir():
+                pseudos.append(pseudo)
+
+        return cls(
+            code    = code,
+            pseudos = pseudos,
+            Zeffs   = Zeffs,
+            )
+    #end def from_dirs
+
+    def get_pseudos(
+        self,
+        system: PhysicalSystem,
+        code  : Literal["pwscf", "gamess", "vasp", "qmcpack"] | None = None,
+        ):
+        """Get the pseudopotential files for the elements in a physical system.
+
+        Parameters
+        ----------
+        system : PhysicalSystem
+            The system to get pseudopotentials for.
+        code : {"pwscf", "gamess", "vasp", "qmcpack"}, optional
+            The name of the code requesting the pseudopotentials. 
+            If supplied, it will raise an error if the code requested
+            does not match the code of the ``PseudoSet``.
+        """
+        if not system.pseudized:
+            return []
+
+        if code is not None:
+            clow = code.lower()
+            if clow not in PseudoSet.known_codes:
+                raise ValueError(
+                    f"Code {code} is not known by Nexus!\n"
+                    f"Known codes are {list(PseudoSet.known_codes)}"
+                    )
+            if clow != self.code:
+                raise ValueError(
+                    f"Tried to get pseudopotentials for {code} from a set of {self.code} pseudos!"
+                    )
+
+        pps = []
+        for ion in system.ions.values():
+            if ion.element not in self.pseudos:
+                raise ValueError(
+                    f"No pseudopotential found for element {ion.element}!"
+                    )
+            pps.append(self.pseudos[ion.element])
+
+        return pps
+    #end def get_pseudos
+#end class PseudoSet
 
 # real pseudopotentials
 
