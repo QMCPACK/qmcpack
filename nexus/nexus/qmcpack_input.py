@@ -141,7 +141,8 @@ import keyword
 import numpy as np
 from .numpy_extensions import reshape_inplace
 from .xmlreader import XMLreader, XMLelement
-from .developer import DevBase, obj, hidden, error
+from .developer import DevBase, obj, error, log, warn
+from .generic import sorted_generic
 from .periodic_table import Elements
 from .structure import Structure, Jellium, get_kpath
 from .physical_system import PhysicalSystem
@@ -245,6 +246,336 @@ def render_bool(var,T,F):
 
 
 bool_write_types = set([yesno,onezero,truefalse])
+
+
+
+
+
+
+
+class hobj(obj):
+    def __init__(self,*args,**kwargs):
+        # Route initialization through the public mapping.  Calling
+        # obj.__init__ directly would place values beside hidden's internal
+        # _public_ and _hidden_ objects instead of in _public_.
+        self.update(*args,**kwargs)
+    #end def __init__
+
+    @property
+    def _dict(self):
+        return self.__dict__
+    #end def _dict
+
+    @property
+    def _alt(self):
+        return self.__dict__
+    #end def _alt
+
+    def __len__(self):
+        return len(self._dict)
+    #end def __len__
+
+    def __contains__(self,name):
+        return name in self._dict
+    #end def __contains__
+
+    def __getitem__(self,name):
+        return self._dict[name]
+    #end def __getitem__
+
+    def __setitem__(self,name,value):
+        self._dict[name] = value
+    #end def __setitem__
+
+    def __delitem__(self,name):
+        del self._dict[name]
+    #end def __delitem__
+
+    def __iter__(self):
+        for value in self._dict.values():
+            yield value
+        #end for
+    #end def __iter__
+
+    def keys(self):
+        return self._dict.keys()
+    #end def keys
+
+    def values(self):
+        return self._dict.values()
+    #end def keys
+
+    def items(self):
+        return self._dict.items()
+    #end def items
+
+    def clear(self):
+        self._dict.clear()
+    #end def clear
+
+    # The new obj implements these directly in terms of __dict__.  hobj must
+    # instead preserve its storage indirection so that hidden exposes only its
+    # public mapping.
+    def get(self,*args,**kwargs):
+        return self._dict.get(*args,**kwargs)
+    #end def get
+
+    def pop(self,*args,**kwargs):
+        return self._dict.pop(*args,**kwargs)
+    #end def pop
+
+    def popitem(self):
+        return self._dict.popitem()
+    #end def popitem
+
+    def setdefault(self,*args,**kwargs):
+        return self._dict.setdefault(*args,**kwargs)
+    #end def setdefault
+
+    def update(self,*args,**kwargs):
+        self._dict.update(*args,**kwargs)
+    #end def update
+
+    @classmethod
+    def fromkeys(cls,keys,value=None):
+        return cls(dict.fromkeys(keys,value))
+    #end def fromkeys
+
+    def __eq__(self,other):
+        if not hasattr(other,'items'):
+            return False
+        try:
+            other = dict(other.items())
+        except Exception:
+            return False
+        if len(self._dict)!=len(other):
+            return False
+        for name,value in self._dict.items():
+            if name not in other or type(value)!=type(other[name]):
+                return False
+            equal = value==other[name]
+            if isinstance(equal,(bool,np.bool_)):
+                if not equal:
+                    return False
+            else:
+                try:
+                    if not equal.all():
+                        return False
+                except Exception:
+                    return False
+                #end try
+            #end if
+        #end for
+        return True
+    #end def __eq__
+
+    def __repr__(self):
+        s = ''
+        for name in sorted_generic(self._dict.keys()):
+            if not isinstance(name,str) or not name.startswith('_'):
+                value = self._dict[name]
+                if hasattr(value,'__class__'):
+                    typename = value.__class__.__name__
+                else:
+                    typename = type(value)
+                #end if
+                s += '  {0:<20}  {1:<20}\n'.format(str(name),typename)
+            #end if
+        #end for
+        return s
+    #end def __repr__
+
+    def __str__(self,nindent=1):
+        pad = '  '
+        npad = nindent*pad
+        normal = []
+        nested = []
+        for name,value in self._dict.items():
+            if not isinstance(name,str) or not name.startswith('_'):
+                if isinstance(value,hobj):
+                    nested.append(name)
+                else:
+                    normal.append(name)
+                #end if
+            #end if
+        #end for
+        normal = sorted_generic(normal)
+        nested = sorted_generic(nested)
+        indent = npad+18*' '
+        s = ''
+        for name in normal:
+            value_string = str(self[name]).replace('\n','\n'+indent)
+            s += npad+'{0:<15} = '.format(str(name))+value_string+'\n'
+        #end for
+        for name in nested:
+            s += npad+str(name)+'\n'
+            s += self[name].__str__(nindent+1)
+            if isinstance(name,str):
+                s += npad+'end '+name+'\n'
+            #end if
+        #end for
+        return s
+    #end def __str__
+
+    def copy(self):
+        return deepcopy(self)
+    #end def copy
+
+    # logging and error reporting formerly inherited from generic.obj
+    def open_log(self,filepath):
+        self._logfile = open(filepath,'w')
+    #end def open_log
+
+    def close_log(self):
+        self._logfile.close()
+    #end def close_log
+
+    def write(self,s):
+        self._logfile.write(s)
+    #end def write
+
+    def log(self,*items,**kwargs):
+        if 'logfile' not in kwargs and '_logfile' in self.__dict__:
+            kwargs['logfile'] = self._logfile
+        log(*items,**kwargs)
+    #end def log
+
+    def warn(self,message,header=None):
+        if header is None:
+            header = self.__class__.__name__
+        logfile = self.__dict__.get('_logfile',None)
+        warn(message,header,logfile=logfile)
+    #end def warn
+
+    def error(self,message,header=None,exit=True,trace=-2):
+        if header is None:
+            header = self.__class__.__name__
+        logfile = self.__dict__.get('_logfile',None)
+        error(message,header,exit,trace,logfile)
+    #end def error
+
+    # access preserving functions
+    #  dict interface
+    def _keys(self,*args,**kwargs):
+        return hobj.keys(self,*args,**kwargs)
+    def _values(self,*args,**kwargs):
+        return hobj.values(self,*args,**kwargs)
+    def _items(self,*args,**kwargs):         
+        return hobj.items(self,*args,**kwargs)         
+    def _clear(self,*args,**kwargs):
+        hobj.clear(self,*args,**kwargs)
+    def _sorted_keys(self):
+        return sorted_generic(self._dict.keys())
+    def _open_log(self,*args,**kwargs):
+        hobj.open_log(self,*args,**kwargs)
+    def _close_log(self,*args,**kwargs):
+        hobj.close_log(self,*args,**kwargs)
+    def _write(self,*args,**kwargs):
+        hobj.write(self,*args,**kwargs)
+    def _log(self,*args,**kwargs):
+        hobj.log(self,*args,**kwargs)
+#end class hobj
+
+
+
+class hidden(hobj):
+    def __init__(self,*vals,**kwargs):
+        d = object.__getattribute__(self,'__dict__')
+        d['_hidden_'] = hobj()
+        d['_public_'] = hobj()
+        hobj.__init__(self,*vals,**kwargs)
+    #end def __init__
+
+    @property
+    def _dict(self):
+        return self.__dict__['_public_']
+    #end def __get_dict
+
+    @property
+    def _alt(self):
+        return self.__dict__['_hidden_']
+    #end def __alt
+
+    def __getattribute__(self,name):
+        d = object.__getattribute__(self,'__dict__')
+        if '_public_' in d:
+            p = d['_public_']
+            if name in p:
+                return p[name]
+            else:
+                return object.__getattribute__(self,name)
+            #end if
+        else:
+            return object.__getattribute__(self,name)
+        #end if
+    #end def __getattribute__
+
+    def __setattr__(self,name,value):
+        self._dict[name] = value
+    #end def __setattr__
+
+    def __delattr__(self,name):
+        del self._dict[name]
+    #end def __delattr__
+
+    def hidden(self):
+        return self.__dict__['_hidden_']
+    #end def hidden
+
+    def public(self):
+        return self.__dict__['_public_']
+    #end def public
+
+    def _hidden(self):
+        return hidden.hidden(self)
+    #end def _hidden
+
+    def _public(self):
+        return hidden.public(self)
+    #end def _public
+
+    def open_log(self,filepath):
+        self._alt._open_log(filepath)
+    #end def open_log
+
+    def close_log(self):
+        self._alt._close_log()
+    #end def close_log
+
+    def write(self,s):
+        self._alt._write(s)
+    #end def write
+
+    def log(self,*items,**kwargs):
+        self._alt._log(*items,**kwargs)
+    #end def log
+
+    def __repr__(self):
+        s=''
+        for k in sorted_generic(self._dict.keys()):
+            if not isinstance(k,str) or k[0]!='_':
+                v=self._dict[k]
+                if hasattr(v,'__class__'):
+                    s+='  {0:<20}  {1:<20}\n'.format(k,v.__class__.__name__)
+                else:
+                    s+='  {0:<20}  {1:<20}\n'.format(k,type(v))
+                #end if
+            #end if
+        #end for
+        return s
+    #end def __repr__
+
+    #  log, warning, and error messages
+    def _open_log(self,*args,**kwargs):
+        hidden.open_log(self,*args,**kwargs)
+    def _close_log(self,*args,**kwargs):
+        hidden.close_log(self,*args,**kwargs)
+    def _write(self,*args,**kwargs):
+        hidden.write(self,*args,**kwargs)
+    def _log(self,*args,**kwargs):
+        hidden.log(self,*args,**kwargs)
+
+#end class hidden
 
 
 

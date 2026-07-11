@@ -232,7 +232,7 @@ def text_diff(t1,t2,atol=def_atol,rtol=def_rtol,int_as_float=False,full=False,by
 
 # print the difference between two objects
 def print_diff(o1,o2,atol=def_atol,rtol=def_rtol,int_as_float=False,text=False,by_line=False): # used in debugging, not actual tests
-    from .generic import obj
+    from .developer import obj
     hline = '========== {} =========='
     print(hline.format('left object'))
     print(o1)
