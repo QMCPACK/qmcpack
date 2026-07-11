@@ -1031,7 +1031,7 @@ class QMCDensityProcessor(QDBase):
                             e[s] = ei[s]
                         #end for
                     elif isinstance(ei,dict):
-                        e.update(*ei)
+                        e.update(**ei)
                     else:
                         reblock_failed = True
                     #end if
