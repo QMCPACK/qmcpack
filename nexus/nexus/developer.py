@@ -19,7 +19,9 @@
 #====================================================================#
 
 
+from .developer_tools import save,load,_pp_repr,_pp_str,dotdict,obj,DevBase
 from .debug import ci, interact
+
 
 from .generic import NexusError, log, error, warn, message 
 from .generic import unavailable, available, Void
@@ -29,78 +31,12 @@ from .generic import obj_deprecated, DevBaseDeprecated
 import sys
 import copy
 import pickle
-from .generic import sorted_generic, generic_settings
+from .generic import generic_settings
 
 
 
-def save(o,filepath):
-    with open(filepath,'wb') as f:
-        binary = pickle.HIGHEST_PROTOCOL
-        pickle.dump(o,f,binary)
 
-def load(filepath):
-    with open(filepath,'rb') as f:
-        dl = pickle.load(f)
-    return dl
-
-
-
-def _pp_repr(self):
-    s=''
-    for k in sorted_generic(self.keys()):
-        v = self.__dict__[k]
-        if hasattr(v,'__class__'):
-            s+='  {0:<20}  {1:<20}\n'.format(str(k),v.__class__.__name__)
-        else:
-            s+='  {0:<20}  {1:<20}\n'.format(str(k),type(v))
-    return s
-
-
-def _pp_str(self,nindent=1):
-    pad = '  '
-    npad = nindent*pad
-    s=''
-    normal = []
-    qable  = []
-    for k,v in self.items():
-        if isinstance(v,(obj,DevBase)):
-            qable.append(k)
-        else:
-            normal.append(k)
-    normal = sorted_generic(normal)
-    qable  = sorted_generic(qable)
-    indent = npad+18*' '
-    for k in normal:
-        v = self[k]
-        vstr = str(v).replace('\n','\n'+indent)
-        s+=npad+'{0:<15} = '.format(str(k))+vstr+'\n'
-    for k in qable:
-        v = self[k]
-        s+=npad+str(k)+'\n'
-        s+=v.__str__(nindent+1)
-        if isinstance(k,str):
-            s+=npad+'end '+k+'\n'
-    return s
-
-
-
-class dotdict(dict):
-    '''A dictionary with dot-access for keys'''
-    def __getattr__(self, item):
-        return self[item]
-    __setattr__ = dict.__setitem__
-    __delattr__ = dict.__delitem__
-    def copy(self): return self.__class__(self)
-    def __deepcopy__(self, memo):
-        result = self.__class__.__new__(self.__class__)
-        memo[id(self)] = result
-        for key, value in self.items():
-            result[copy.deepcopy(key, memo)] = copy.deepcopy(value, memo)
-        return result
-
-
-
-class obj:
+class obj_nexus(obj):
     # dict interface
     @classmethod
     def fromkeys(cls, keys, value=None):
@@ -144,11 +80,11 @@ class obj:
     # pretty print
     __repr__ = _pp_repr
     __str__  = _pp_str
-#end class obj
+#end class obj_nexus
 
 
 
-class DevBase:
+class DevBaseNexus(DevBase):
     # similar to/same as dict
     def __len__(self):               return len(self.__dict__)
     def __contains__(self,key):      return key in self.__dict__
@@ -225,12 +161,12 @@ class DevBase:
             header = self.__class__.__name__
         error(message,header,exit,trace,self._logfile)
 
-#end class DevBase
+#end class DevBaseNexus
 
 
 
 def to_obj(d):
-    o = obj()
+    o = obj_nexus()
     for k,v in d.items():
         if hasattr(v,'__dict__'):
             o[k] = to_obj(v)
@@ -239,6 +175,9 @@ def to_obj(d):
     return o
 #end def to_obj
 
+
+obj     = obj_nexus
+DevBase = DevBaseNexus
 
 
 # restore original/old obj and DevBase classes
