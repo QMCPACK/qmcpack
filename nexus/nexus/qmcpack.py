@@ -1530,10 +1530,10 @@ class Qmcpack(Simulation):
                         elecs = self.nelecs_at_twist[itwist]
                         # step 1: resize particlesets
                         nup = elecs[0]
-                        qi.get('u').set(size=nup)
+                        qi.get('u').update(size=nup)
                         if len(elecs) == 2:
                             ndn = elecs[1]
-                            qi.get('d').set(size=ndn)
+                            qi.get('d').update(size=ndn)
                         #end if
                         # step 2: resize determinants
                         dset = qi.get('determinantset')
@@ -1552,7 +1552,7 @@ class Qmcpack(Simulation):
                             #end if
                             spo_name = det.get('sposet')
                             spo_size_map[spo_name] = nelec
-                            det.set(size=nelec)
+                            det.update(size=nelec)
                         #end for
                         # step 3: resize orbital sets
                         sb = qi.get('sposet_builder')
@@ -1561,7 +1561,7 @@ class Qmcpack(Simulation):
                         sposets = bb.sposets
                         for spo in sposets:
                             if spo.name in spo_size_map:
-                                spo.set(size=spo_size_map[spo.name])
+                                spo.update(size=spo_size_map[spo.name])
                             #end if
                         #end for
                     #end for

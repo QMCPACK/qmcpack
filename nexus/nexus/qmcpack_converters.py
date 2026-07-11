@@ -276,7 +276,8 @@ class Pw2qmcpackAnalyzer(SimulationAnalyzer):
         if isinstance(arg0,Simulation):
             sim = arg0
             self.infile = sim.infile
-            prefix,outdir = sim.input.inputpp.tuple('prefix','outdir')
+            prefix = sim.input.inputpp.prefix
+            outdir = sim.input.inputpp.outdir
             self.dir = sim.locdir
             self.h5file = os.path.join(sim.locdir,outdir,prefix+'.pwscf.h5')
         else:

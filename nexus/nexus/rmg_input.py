@@ -3151,7 +3151,7 @@ class RmgInput(SimulationInput):
             #end if
         #end for
         if len(unrecognized)>0:
-            unrec = obj(values).obj(unrecognized)
+            unrec = obj({k:values[k] for k in unrecognized})
             self.error('Unrecognized keywords encountered during assignment.\nUnrecognized keywords: {}\nCorresponding values:\n{}'.format(list(sorted(unrecognized)),unrec))
         #end if
     #end def assign

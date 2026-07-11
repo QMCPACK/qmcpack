@@ -2446,7 +2446,7 @@ def test_check_subcascade():
                                 sim.block = True
                             #end if
                         #end for
-                        graph_sims(sims.list())
+                        graph_sims(list(sims.values()))
                     #end if
                     assert(finished)
                 else:

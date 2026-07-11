@@ -259,7 +259,7 @@ class RmgAnalyzer(SimulationAnalyzer):
                             grid_pe = np.array(grid_pe,dtype=int)
                             spacing = np.array(spacing,dtype=float)
                             ecut,ecut_charge,ecut_units = b.equivalent_energy_cutoffs.split()
-                            b.set(
+                            b.update(
                                 grid         = grid,
                                 grid_pe      = grid_pe,
                                 grid_spacing = spacing,

@@ -23,21 +23,6 @@ for file in TEST_FILES.values():
     assert(file.exists()), f"Test file not found! {file}"
 
 
-def make_serial_reference(gi):
-    s = gi.serial()
-    ref = '    ref = {\n'
-    for k in sorted(s.keys()):
-        v = s[k]
-        if isinstance(v,str):
-            v = "'"+v+"'"
-        #end if
-        ref +="        '{}' : {},\n".format(k,v)
-    #end for
-    ref += '        }\n'
-    return ref
-#end def make_serial_reference
-
-
 serial_references = dict()
 
 
