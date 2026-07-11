@@ -16,10 +16,6 @@
 #      Base class inheriting generic abilities for obj, etc.         #
 #      Allows for unimplemented functions.                           #
 #                                                                    #
-#    Void                                                            #
-#      Class instances used to represent missing elements.           #
-#      Execution stops when any action is performed on a Void object.#
-#                                                                    #
 #    unavailable                                                     #
 #      Function to create named void objects.                        #
 #      Used when imported entities do not exist on the local machine.#
@@ -31,25 +27,11 @@
 #====================================================================#
 
 
-from .utilities import to_str
 from .debug import ci, interact
 
-from .generic import object_interface, NexusError, log, error, warn, message 
+from .generic import NexusError, log, error, warn, message 
 from .generic import unavailable, available, Void
 from .generic import obj_deprecated, DevBaseDeprecated
-
-
-def valid_variable_name(s):
-    """Check if a variable name contains invalid characters"""
-    if not any([i in ('!"#$%&\'()*+,-./:;<=>?@[\\]^`{|}-\n\t ') for i in s]):
-        return True
-    else:
-        return False
-    #end if
-#end def valid_variable_name
-
-
-
 
 
 import sys

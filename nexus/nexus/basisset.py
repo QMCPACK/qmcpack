@@ -8,10 +8,9 @@ from copy import deepcopy
 from pathlib import Path
 import numpy as np
 from .periodic_table import Elements
-#from .developer import DevBase, obj, error, to_str, unavailable
-from .developer import DevBase, obj, log, error, to_str, unavailable
+from .developer import DevBase, obj, log, error, unavailable
 from .fileio import TextFile
-from .utilities import path_string
+from .utilities import path_string, to_str
 
 try:
     import matplotlib.pyplot as plt

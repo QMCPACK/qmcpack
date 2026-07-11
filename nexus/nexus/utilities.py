@@ -119,6 +119,16 @@ def to_str(s):
 #end def to_str
 
 
+def valid_variable_name(s):
+    """Check if a variable name contains invalid characters."""
+    if not any([i in ('!"#$%&\'()*+,-./:;<=>?@[\\]^`{|}-\n\t ') for i in s]):
+        return True
+    else:
+        return False
+    #end if
+#end def valid_variable_name
+
+
 def _path_to_str(path: str | bytes | Path) -> str:
     '''Simple conversion from bytes/Path types to str.'''
     if isinstance(path, str):

@@ -6,7 +6,8 @@
 import os
 from copy import deepcopy
 import numpy as np
-from .developer import obj, to_str
+from .developer import obj
+from .utilities import to_str
 from .fileio import TextFile
 from .unit_converter import convert
 from .simulation import SimulationAnalyzer, Simulation

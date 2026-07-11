@@ -100,7 +100,7 @@ def test_unavailable():
 
 
 def test_valid_variable_name():
-    from ..developer import valid_variable_name
+    from ..utilities import valid_variable_name
 
     assert(valid_variable_name('valid_variable_name'))
     assert(valid_variable_name('_valid_variable_name'))
@@ -642,4 +642,3 @@ def test_obj_legacy():
     assert(not o)
 
 #end def test_obj_legacy
-
