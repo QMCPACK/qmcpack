@@ -31,118 +31,139 @@ from .generic import obj_deprecated, DevBaseDeprecated
 import sys
 import copy
 import pickle
+import traceback
 from .generic import generic_settings
 
 
 
 
-class obj_nexus(obj):
-    # dict interface
-    @classmethod
-    def fromkeys(cls, keys, value=None):
-        return cls(dict.fromkeys(keys, value))
+def deprecation_error():
+    message = (
+        'A now-deprecated member function of obj has been called.\n'
+        'Please report this issue to the Nexus developers immediately.\n'
+        'To temporarily restore the deprecated implementation, uncomment the\n'
+        'two lines at the bottom of:\n'
+        '  {}'.format(__file__)
+        )
+    highlight = '='*79
+    stack = ''.join(traceback.format_stack()[:-1])
+    report = (
+        '\n{0}\n{1}\n{0}\n'
+        '{0}\nTraceback (most recent call last):\n{2}{0}\n'
+        '{0}\n{1}\n{0}'.format(highlight,message,stack)
+        )
+    raise RuntimeError(report)
+#end def deprecation_error
 
-    def __init__(self,*args,**kwargs):   self.__dict__.update(dict(*args,**kwargs))
-    def items(self):              return self.__dict__.items()
-    def clear(self):              return self.__dict__.clear()
-    
-    # change from deep copy to shallow is pernicious
-    #   blow up until purged from all code
-    #def copy(self):               return self.__class__(self.__dict__)
-    def copy(self):
-        raise RuntimeError('shallow copy called by obj!!!')
-        return self.__class__(self.__dict__)
 
-    def get(self,*a,**kw):        return self.__dict__.get(*a,**kw)
-    def keys(self):               return self.__dict__.keys()
-    def pop(self,*a,**kw):        return self.__dict__.pop(*a,**kw)
-    def values(self):             return self.__dict__.values()
-    def popitem(self,*a,**kw):    return self.__dict__.popitem(*a,**kw)
-    def setdefault(self,*a,**kw): return self.__dict__.setdefault(*a,**kw)
-    def update(self,*a,**kw):     return self.__dict__.update(*a,**kw)
+class obj_defended:
+    """Defend against deprecated method calls in the Nexus codebase"""
+    def append(*args,**kwargs): deprecation_error()
+    def list(*args,**kwargs): deprecation_error()
+    def list_optional(*args,**kwargs): deprecation_error()
+    def tuple(*args,**kwargs): deprecation_error()
+    def dict(*args,**kwargs): deprecation_error()
+    def to_dict(*args,**kwargs): deprecation_error()
+    def obj(*args,**kwargs): deprecation_error()
+    def to_obj(*args,**kwargs): deprecation_error()
+    def first(*args,**kwargs): deprecation_error()
+    def last(*args,**kwargs): deprecation_error()
+    def select_random(*args,**kwargs): deprecation_error()
+    def sorted_keys(*args,**kwargs): deprecation_error()
+    def random_key(*args,**kwargs): deprecation_error()
+    def set(*args,**kwargs): deprecation_error()
+    def set_optional(*args,**kwargs): deprecation_error()
+    def get(*args,**kwargs): deprecation_error()
+    def get_optional(*args,**kwargs): deprecation_error()
+    def get_required(*args,**kwargs): deprecation_error()
+    def delete(*args,**kwargs): deprecation_error()
+    def delete_optional(*args,**kwargs): deprecation_error()
+    def delete_required(*args,**kwargs): deprecation_error()
+    def add(*args,**kwargs): deprecation_error()
+    def add_optional(*args,**kwargs): deprecation_error()
+    def transfer_from(*args,**kwargs): deprecation_error()
+    def transfer_to(*args,**kwargs): deprecation_error()
+    def move_from(*args,**kwargs): deprecation_error()
+    def move_to(*args,**kwargs): deprecation_error()
+    def move_from_optional(*args,**kwargs): deprecation_error()
+    def move_to_optional(*args,**kwargs): deprecation_error()
+    def copy_from(*args,**kwargs): deprecation_error()
+    def copy_to(*args,**kwargs): deprecation_error()
+    def extract(*args,**kwargs): deprecation_error()
+    def extract_optional(*args,**kwargs): deprecation_error()
+    def check_required(*args,**kwargs): deprecation_error()
+    def check_types(*args,**kwargs): deprecation_error()
+    def check_types_optional(*args,**kwargs): deprecation_error()
+    def shallow_copy(*args,**kwargs): deprecation_error()
+    def inverse(*args,**kwargs): deprecation_error()
+    def path_exists(*args,**kwargs): deprecation_error()
+    def set_path(*args,**kwargs): deprecation_error()
+    def get_path(*args,**kwargs): deprecation_error()
+    def serial(*args,**kwargs): deprecation_error()
+    def _append(*args,**kwargs): deprecation_error()
+    def _list(*args,**kwargs): deprecation_error()
+    def _list_optional(*args,**kwargs): deprecation_error()
+    def _tuple(*args,**kwargs): deprecation_error()
+    def _dict(*args,**kwargs): deprecation_error()
+    def _to_dict(*args,**kwargs): deprecation_error()
+    def _obj(*args,**kwargs): deprecation_error()
+    def _to_obj(*args,**kwargs): deprecation_error()
+    def _first(*args,**kwargs): deprecation_error()
+    def _last(*args,**kwargs): deprecation_error()
+    def _select_random(*args,**kwargs): deprecation_error()
+    def _sorted_keys(*args,**kwargs): deprecation_error()
+    def _random_key(*args,**kwargs): deprecation_error()
+    def _set(*args,**kwargs): deprecation_error()
+    def _set_optional(*args,**kwargs): deprecation_error()
+    def _get(*args,**kwargs): deprecation_error()
+    def _get_optional(*args,**kwargs): deprecation_error()
+    def _get_required(*args,**kwargs): deprecation_error()
+    def _delete(*args,**kwargs): deprecation_error()
+    def _delete_optional(*args,**kwargs): deprecation_error()
+    def _delete_required(*args,**kwargs): deprecation_error()
+    def _add(*args,**kwargs): deprecation_error()
+    def _add_optional(*args,**kwargs): deprecation_error()
+    def _transfer_from(*args,**kwargs): deprecation_error()
+    def _transfer_to(*args,**kwargs): deprecation_error()
+    def _move_from(*args,**kwargs): deprecation_error()
+    def _move_to(*args,**kwargs): deprecation_error()
+    def _move_from_optional(*args,**kwargs): deprecation_error()
+    def _move_to_optional(*args,**kwargs): deprecation_error()
+    def _copy_from(*args,**kwargs): deprecation_error()
+    def _copy_to(*args,**kwargs): deprecation_error()
+    def _extract(*args,**kwargs): deprecation_error()
+    def _extract_optional(*args,**kwargs): deprecation_error()
+    def _check_required(*args,**kwargs): deprecation_error()
+    def _check_types(*args,**kwargs): deprecation_error()
+    def _check_types_optional(*args,**kwargs): deprecation_error()
+    def _shallow_copy(*args,**kwargs): deprecation_error()
+    def _inverse(*args,**kwargs): deprecation_error()
+    def _path_exists(*args,**kwargs): deprecation_error()
+    def _set_path(*args,**kwargs): deprecation_error()
+    def _get_path(*args,**kwargs): deprecation_error()
+    def _serial(*args,**kwargs): deprecation_error()
+#end class obj_defended
 
-    # basic functions, including dot access
-    def __len__(self):               return len(self.__dict__)
-    def __contains__(self,key):      return key in self.__dict__
-    def __getitem__(self,key):       return self.__dict__[key]
-    def __setitem__(self,key,value): self.__dict__[key]=value
-    def __delitem__(self,key):       del self.__dict__[key]
-    def __eq__(self,other):          return self.__dict__==other
 
+class obj_nexus(obj,obj_defended):
     # change from default iteration over values to keys, blow up
-    #def __iter__(self):
-    #    return iter(self.__dict__)
-    def __iter__(self):
-        raise RuntimeError('obj iteration called!!!')
-        for item in self.__dict__: 
-            yield item
+    def __iter__(self): deprecation_error()
 
-    # pretty print
-    __repr__ = _pp_repr
-    __str__  = _pp_str
+    # change from deepcopy to shallow copy, blow up
+    def copy(self): deprecation_error()
 #end class obj_nexus
 
 
 
-class DevBaseNexus(DevBase):
-    # similar to/same as dict
-    def __len__(self):               return len(self.__dict__)
-    def __contains__(self,key):      return key in self.__dict__
-    def __getitem__(self,key):       return self.__dict__[key]
-    def __setitem__(self,key,value): self.__dict__[key]=value
-    def __delitem__(self,key):       del self.__dict__[key]
-    def keys(self):                  return self.__dict__.keys()
-    def values(self):                return self.__dict__.values()
-    def items(self):                 return self.__dict__.items()
-    def update(self,*a,**kw):        return self.__dict__.update(*a,**kw)
-    def clear(self):                 return self.__dict__.clear()
+class DevBaseNexus(DevBase,obj_defended):
 
-    # correctly iterate over values, not keys
-    def __iter__(self):
-        raise RuntimeError('DevBase bare iteration!')
-        for item in self.__dict__.values():
-            yield item
+    # change from default iteration over values to keys, blow up
+    def __iter__(self): deprecation_error()
 
-    # (deep) copy
-    def copy(self):
-        raise RuntimeError('copy called by DevBase!!!')
-        return copy.deepcopy(self)
+    # change from deepcopy to shallow copy, blow up
+    def copy(self): deprecation_error()
 
-    # pretty print
-    __repr__ = _pp_repr
-    __str__  = _pp_str
-
-
-    # protected dict interface
-    def _items(self):              return self.__dict__.items()
-    def _clear(self):              return self.__dict__.clear()
-    def _copy(self):               return self.__class__(self.__dict__)
-    def _fromkeys(self,*a,**kw):   return self.__class__(self.__dict__.fromkeys(*a,**kw))
-    def _get(self,*a,**kw):        return self.__dict__.get(*a,**kw)
-    def _keys(self):               return self.__dict__.keys()
-    def _pop(self,*a,**kw):        return self.__dict__.pop(*a,**kw)
-    def _values(self):             return self.__dict__.values()
-    def _popitem(self,*a,**kw):    return self.__dict__.popitem(*a,**kw)
-    def _setdefault(self,*a,**kw): return self.__dict__.setdefault(*a,**kw)
-    def _update(self,*a,**kw):     return self.__dict__.update(*a,**kw)
-
-
-    # save and load
-    def save(self,filepath=None):
-        if filepath is None:
-            filepath='./'+self.__class__.__name__+'.p'
-        save(self,filepath)
-
-    def load(self,filepath=None):
-        if filepath is None:
-            filepath='./'+self.__class__.__name__+'.p'
-        tmp = load(filepath)
-        d = self.__dict__
-        d.clear()
-        for k,v in tmp.__dict__.items():
-            d[k] = v
-
-    # logging
+    # logging - unique to Nexus-style DevBase (future refactor)
     @property
     def _logfile(self):
         return generic_settings.devlog
